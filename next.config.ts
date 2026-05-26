@@ -33,10 +33,22 @@ const securityHeaders = [
   },
 ];
 
+// When GITHUB_PAGES=1 (set by the GitHub Actions deploy workflow), emit a
+// fully static site to `out/`. This disables API routes and server features,
+// but is required for GitHub Pages hosting. Vercel and local dev use the
+// default (server) mode where the newsletter API route works normally.
+const isGitHubPages = process.env.GITHUB_PAGES === "1";
+
 const nextConfig: NextConfig = {
   turbopack: {
     root: projectRoot,
   },
+  ...(isGitHubPages && {
+    output: "export",
+    // next/image optimisation requires a server; use raw <img> sizing in static mode.
+    images: { unoptimized: true },
+  }),
+  // headers() is a no-op in static export mode but kept for Vercel / self-hosted.
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
