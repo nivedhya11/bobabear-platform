@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<title>Colors — Foundation</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 24px; background: var(--bg-page); }
+  .row { display: grid; grid-template-columns: 140px 1fr; gap: 16px; align-items: center; margin-bottom: 16px; }
+  .row:last-child { margin-bottom: 0; }
+  .name { font-family: var(--font-heading); font-size: 22px; color: var(--text-primary); line-height: 1; }
+  .name small { display: block; font-family: var(--font-body); font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-tertiary); margin-top: 6px; }
+  .scale { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; }
+  .step { aspect-ratio: 1 / 1.2; border-radius: var(--radius-sm); position: relative; border: 1px solid rgba(255,255,255,0.04);}
+  .step.base::after { content: '●'; position: absolute; inset: 0; display: grid; place-items: center; color: rgba(255,255,255,0.85); font-size: 10px; mix-blend-mode: difference; }
+</style>
+</head>
+<body>
+  <div class="row">
+    <div class="name">Bear Brown<small>Body type · base 600</small></div>
+    <div class="scale">
+      <div class="step" style="background:#FAF3EC"></div>
+      <div class="step" style="background:#F0DCC4"></div>
+      <div class="step" style="background:#DBBA92"></div>
+      <div class="step" style="background:#C39866"></div>
+      <div class="step" style="background:#A7764A"></div>
+      <div class="step" style="background:#8B5C38"></div>
+      <div class="step base" style="background:#7B4A2D"></div>
+      <div class="step" style="background:#5F3A24"></div>
+      <div class="step" style="background:#42281A"></div>
+      <div class="step" style="background:#1F120C"></div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="name">Boba Cream<small>Light surfaces · base 200</small></div>
+    <div class="scale">
+      <div class="step" style="background:#FEFCF7"></div>
+      <div class="step" style="background:#FDF8EB"></div>
+      <div class="step base" style="background:#FAF3E2"></div>
+      <div class="step" style="background:#F4E8C8"></div>
+      <div class="step" style="background:#EBD9A6"></div>
+      <div class="step" style="background:#D9C286"></div>
+      <div class="step" style="background:#B9A365"></div>
+      <div class="step" style="background:#948048"></div>
+      <div class="step" style="background:#6B5C34"></div>
+      <div class="step" style="background:#342D1A"></div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="name">Night Forest<small>Dark surfaces · base 800</small></div>
+    <div class="scale">
+      <div class="step" style="background:#EEF2EA"></div>
+      <div class="step" style="background:#D4DFC5"></div>
+      <div class="step" style="background:#A8BF8F"></div>
+      <div class="step" style="background:#7C9F5F"></div>
+      <div class="step" style="background:#558036"></div>
+      <div class="step" style="background:#3D6026"></div>
+      <div class="step" style="background:#2E4720"></div>
+      <div class="step" style="background:#22361A"></div>
+      <div class="step base" style="background:#1A2210"></div>
+      <div class="step" style="background:#0D1208"></div>
+    </div>
+  </div>
+</body>
+</html>

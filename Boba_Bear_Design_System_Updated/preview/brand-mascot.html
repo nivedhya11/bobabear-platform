@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<title>Brand — Mascot</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 24px; background: var(--bg-page); display: grid; grid-template-columns: 220px 1fr; gap: 20px; align-items: center; }
+  .stage { background: var(--aurora-butter); border-radius: var(--radius-xl); padding: 16px; display: grid; place-items: center; height: 180px; }
+  .meta { display: grid; gap: 10px; }
+  h3 { font-family: var(--font-heading); font-size: 22px; color: var(--text-primary); margin: 0; line-height: 1; }
+  .rules { font-family: var(--font-body); font-size: 13px; color: var(--text-secondary); line-height: 1.55; display: grid; gap: 6px; }
+  .rules .ok::before { content: '✓ '; color: var(--firefly-400); font-weight: 700; }
+  .rules .no::before { content: '✕ '; color: #F9C4CC; font-weight: 700; }
+  .warn { font-family: var(--font-mono); font-size: 10px; color: var(--saffron-300); padding: 6px 10px; border: 1px dashed var(--saffron-500); border-radius: var(--radius-sm); display: inline-block; }
+</style>
+</head>
+<body>
+  <div class="stage">
+    <img src="../assets/logo/mascot.svg" alt="Boba Bear mascot" style="width:140px;height:140px">
+  </div>
+  <div class="meta">
+    <h3>The bear is the performer</h3>
+    <div class="rules">
+      <div class="ok">Deadpan eyes · subtle smirk · pearl nose w/ white crescent</div>
+      <div class="ok">S-curve torso · sturdy blocky legs</div>
+      <div class="no">No plush-toy proportions · no inverted face</div>
+    </div>
+    <span class="warn">⚠ Placeholder · awaiting master file</span>
+  </div>
+</body>
+</html>

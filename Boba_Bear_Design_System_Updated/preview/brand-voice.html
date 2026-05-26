@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<title>Brand — Voice</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 22px 24px; background: var(--bg-page); color: var(--text-primary); display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; }
+  .col h4 { font-family: var(--font-body); text-transform: uppercase; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; margin: 0 0 10px; }
+  .col.ok h4 { color: var(--firefly-400); }
+  .col.no h4 { color: #F9C4CC; }
+  ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+  li { font-family: var(--font-body); font-size: 14px; line-height: 1.4; padding: 8px 12px; border-radius: var(--radius-md); }
+  .col.ok li { background: rgba(168, 216, 50, 0.10); color: var(--text-primary); border: 1px solid rgba(168, 216, 50, 0.30); }
+  .col.no li { background: rgba(225, 29, 72, 0.10); color: var(--text-secondary); border: 1px solid rgba(225, 29, 72, 0.30); text-decoration: line-through; text-decoration-color: rgba(225, 29, 72, 0.45); }
+</style>
+</head>
+<body>
+  <div class="col ok">
+    <h4>✓ Approved CTAs</h4>
+    <ul>
+      <li>Access the Drop</li>
+      <li>View Current Drop</li>
+      <li>Ping on WhatsApp</li>
+      <li>Securing the Drop…</li>
+      <li>Get on the list</li>
+    </ul>
+  </div>
+  <div class="col no">
+    <h4>✕ Never</h4>
+    <ul>
+      <li>Order Now</li>
+      <li>Buy Now</li>
+      <li>Add to Cart</li>
+      <li>HURRY · LIMITED TIME</li>
+      <li>Click Here</li>
+    </ul>
+  </div>
+</body>
+</html>

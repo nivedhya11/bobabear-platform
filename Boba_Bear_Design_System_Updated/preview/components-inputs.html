@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<title>Inputs</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 24px; background: var(--bg-page); color: var(--text-primary); display: grid; grid-template-columns: 1fr 1fr; gap: 18px 24px; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  label { font-family: var(--font-body); text-transform: uppercase; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; color: var(--text-label); }
+  input, select, textarea {
+    font-family: var(--font-body); font-size: 15px;
+    background: var(--bg-surface); color: var(--text-primary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+    transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+  }
+  input::placeholder { color: var(--text-tertiary); }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--border-focus); box-shadow: var(--focus-ring); }
+  .field.error input { border-color: var(--interactive-destructive); }
+  .help { font-family: var(--font-body); font-size: 12px; color: var(--text-tertiary); }
+  .help.err { color: var(--interactive-destructive); }
+  .pretend-focus { border-color: var(--border-focus) !important; box-shadow: var(--focus-ring) !important; }
+</style>
+</head>
+<body>
+  <div class="field">
+    <label>Phone</label>
+    <input type="tel" placeholder="+91 …">
+    <span class="help">For drop notifications. Never spammed.</span>
+  </div>
+  <div class="field">
+    <label>Pickup slot</label>
+    <input class="pretend-focus" value="Today · 6:30 PM">
+    <span class="help">Focused state</span>
+  </div>
+  <div class="field error">
+    <label>Email</label>
+    <input value="ya@" >
+    <span class="help err">Doesn't look right.</span>
+  </div>
+  <div class="field">
+    <label>Note for the bar</label>
+    <input placeholder="Less ice, extra pearls…" disabled value="Disabled · greyed">
+    <span class="help">Optional</span>
+  </div>
+</body>
+</html>

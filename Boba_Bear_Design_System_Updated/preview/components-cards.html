@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<title>Cards · Food (4:3)</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 22px 24px; background: var(--bg-page); color: var(--text-primary); }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    transition: all var(--dur-normal) var(--ease-out);
+    display: flex; flex-direction: column;
+  }
+  .card:hover { transform: translateY(-2px); border-color: var(--border-strong); box-shadow: var(--shadow-md); }
+  .img {
+    aspect-ratio: 4 / 3;
+    display: grid; place-items: center;
+    font-family: var(--font-display); font-size: 36px; color: var(--brown-800); letter-spacing: -0.02em;
+    position: relative;
+  }
+  .img.rose { background: var(--aurora-rose); }
+  .img.mint { background: var(--aurora-mint); }
+  .img.butter { background: var(--aurora-butter); }
+  /* Optional in-image tag (used when the photo art-direction places the tag) */
+  .img-tag {
+    position: absolute; top: 10px; left: 10px;
+    font-family: var(--font-body); font-size: 11px; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    background: rgba(26, 34, 16, 0.78); color: var(--cream-200);
+    padding: 4px 10px; border-radius: var(--radius-full);
+    backdrop-filter: var(--blur-sm);
+  }
+  .body { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 6px; }
+  .name { font-family: var(--font-heading); font-size: 20px; color: var(--text-primary); line-height: 1.2; margin: 0; }
+  .desc { font-family: var(--font-body); font-size: 13px; color: var(--text-secondary); line-height: 1.4; margin: 0; }
+  .foot { display: flex; align-items: center; justify-content: space-between; margin-top: 4px; }
+  .price { font-family: var(--font-body); font-weight: 700; font-size: 15px; color: var(--saffron-300); }
+  .chip {
+    font-family: var(--font-body); font-size: 11px; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    background: var(--bg-section); color: var(--text-tertiary);
+    padding: 4px 10px; border-radius: var(--radius-full);
+  }
+  .chip.new { background: var(--firefly-400); color: var(--forest-800); }
+</style>
+</head>
+<body>
+  <div class="grid">
+    <article class="card">
+      <div class="img rose">
+        <span class="img-tag">House boba</span>
+        <span>BB</span>
+      </div>
+      <div class="body">
+        <h3 class="name">Brown sugar pearl</h3>
+        <p class="desc">Slow-cooked tapioca, oat milk, single-origin.</p>
+        <div class="foot">
+          <span class="price">₹240</span>
+        </div>
+      </div>
+    </article>
+    <article class="card">
+      <div class="img mint">
+        <span>BB</span>
+      </div>
+      <div class="body">
+        <h3 class="name">Bibim-tikka rice</h3>
+        <p class="desc">Gochu-marinated paneer, sesame, kimchi.</p>
+        <div class="foot">
+          <span class="price">₹320</span>
+          <span class="chip new">New</span>
+        </div>
+      </div>
+    </article>
+    <article class="card">
+      <div class="img butter">
+        <span>BB</span>
+      </div>
+      <div class="body">
+        <h3 class="name">Yuzu-amla cold-brew</h3>
+        <p class="desc">Indian amla, Japanese yuzu, slow drip.</p>
+        <div class="foot">
+          <span class="price">₹220</span>
+          <span class="chip">Iced</span>
+        </div>
+      </div>
+    </article>
+  </div>
+</body>
+</html>

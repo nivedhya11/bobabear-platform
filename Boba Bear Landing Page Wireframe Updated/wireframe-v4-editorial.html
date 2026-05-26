@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Boba Bear — Wireframe v4 (Editorial Mix)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat+Brush&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #EFE6CE;          /* warm cream paper */
+    --paper-2: #E6DBBF;        /* shaded paper */
+    --ink: #1B1408;            /* near-black ink */
+    --ink-soft: #4A3A20;
+    --dark: #14201A;           /* forest dark */
+    --darker: #0C140F;
+    --coral: #E86A3A;          /* warm coral accent */
+    --orange: #F2A52C;
+    --matcha: #8FBE3F;
+    --matcha-deep: #5E8B26;
+    --rose: #E6A8B8;
+    --sky: #BFD9E0;
+    --line: rgba(27, 20, 8, 0.16);
+    --line-dim: rgba(27, 20, 8, 0.08);
+    --line-light: rgba(239, 230, 206, 0.22);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--paper); color: var(--ink); font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  .display { font-family: 'Caveat Brush', cursive; letter-spacing: 0.5px; line-height: 0.9; }
+  .serif { font-family: 'Instrument Serif', serif; font-style: italic; }
+  .mono { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; }
+  .wrap { max-width: 1320px; margin: 0 auto; padding: 0 48px; }
+  .grid-line { border-top: 1px solid var(--line); }
+
+  /* placeholders — minimal dotted, less hatched */
+  .ph {
+    background: var(--paper-2);
+    border: 1px dashed var(--line);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--ink-soft); font-size: 11px;
+    font-family: 'JetBrains Mono'; letter-spacing: 0.1em; text-transform: uppercase;
+    opacity: 0.85;
+  }
+  .ph-dark {
+    background: rgba(239, 230, 206, 0.04);
+    border: 1px dashed var(--line-light);
+    color: var(--paper); opacity: 0.65;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono'; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+  }
+
+  /* ===== TOP TICKER ===== */
+  .ticker {
+    background: var(--ink); color: var(--paper);
+    padding: 8px 0;
+    overflow: hidden; white-space: nowrap;
+    font-family: 'JetBrains Mono'; font-size: 10.5px; letter-spacing: 0.18em; text-transform: uppercase;
+  }
+  .ticker span { padding: 0 22px; }
+  .ticker .dot { color: var(--coral); }
+
+  /* ===== HEADER ===== */
+  header.nav {
+    position: sticky; top: 0; z-index: 50;
+    background: var(--paper);
+    border-bottom: 1px solid var(--line);
+    padding: 16px 48px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .brand { display: flex; align-items: baseline; gap: 12px; }
+  .brand .mark { font-family: 'Caveat Brush'; font-size: 26px; }
+  .brand .est { font-family: 'Instrument Serif'; font-style: italic; font-size: 14px; opacity: 0.55; }
+  .nav-links { display: flex; gap: 28px; font-size: 13px; }
+  .nav-links a { color: var(--ink); text-decoration: none; position: relative; }
+  .nav-links a.active::after { content: '•'; color: var(--coral); position: absolute; right: -10px; top: -2px; }
+  .nav-right { display: flex; align-items: center; gap: 14px; }
+  .icon-btn { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .order-pill {
+    background: var(--ink); color: var(--paper);
+    padding: 9px 18px; border-radius: 999px;
+    font-family: 'JetBrains Mono'; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .order-pill .pulse { width: 6px; height: 6px; border-radius: 50%; background: var(--matcha); box-shadow: 0 0 0 0 var(--matcha); }
+
+  /* ===== HERO — magazine cover ===== */
+  .hero {
+    padding: 28px 48px 48px;
+    position: relative; min-height: 88vh;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 48px;
+    align-items: stretch;
+  }
+  .hero-meta {
+    display: flex; justify-content: space-between;
+    grid-column: 1 / -1;
+    padding-bottom: 24px; border-bottom: 1px solid var(--line);
+    font-size: 10.5px; letter-spacing: 0.18em; text-transform: uppercase; opacity: 0.7;
+  }
+  .hero-meta .mono { opacity: 1; }
+  .hero-left { display: flex; flex-direction: column; justify-content: space-between; padding-top: 32px; }
+  .hero-title {
+    font-family: 'Caveat Brush';
+    font-size: clamp(96px, 12vw, 200px);
+    line-height: 0.88;
+    color: var(--ink);
+  }
+  .hero-title .coral { color: var(--coral); }
+  .hero-title .serif-i { font-family: 'Instrument Serif'; font-style: italic; font-weight: 400; letter-spacing: -2px; }
+  .kicker { font-family: 'Instrument Serif'; font-style: italic; font-size: 22px; color: var(--ink-soft); margin-bottom: 16px; }
+  .hero-foot { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 40px; gap: 24px; flex-wrap: wrap; }
+  .hero-byline { max-width: 360px; font-size: 13px; line-height: 1.7; opacity: 0.78; }
+  .hero-byline strong { font-weight: 500; color: var(--ink); }
+  .hero-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  .btn {
+    padding: 13px 22px; font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase;
+    border: none; cursor: pointer; border-radius: 2px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn-ink { background: var(--ink); color: var(--paper); }
+  .btn-coral { background: var(--coral); color: var(--paper); }
+  .btn-outline { background: transparent; color: var(--ink); border: 1px solid var(--ink); }
+
+  /* hero right — collage */
+  .hero-right { display: grid; grid-template-columns: 1.2fr 1fr; grid-template-rows: 1fr 1fr 0.6fr; gap: 12px; padding-top: 16px; position: relative; }
+  .hero-right .ph { border-radius: 2px; }
+  .hero-right .hero-img-1 { grid-row: 1 / 3; grid-column: 1; height: 100%; }
+  .hero-right .hero-img-2 { grid-row: 1; grid-column: 2; }
+  .hero-right .hero-img-3 { grid-row: 2; grid-column: 2; }
+  .hero-stat-card {
+    grid-row: 3; grid-column: 1 / -1;
+    border: 1px solid var(--line);
+    padding: 16px 18px; display: flex; justify-content: space-between; align-items: center;
+    background: var(--paper);
+  }
+  .hero-stat-card .num { font-family: 'Caveat Brush'; font-size: 38px; color: var(--coral); }
+  .hero-stat-card .lbl { font-family: 'JetBrains Mono'; font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; opacity: 0.65; }
+
+  .annot { font-family: 'Caveat Brush'; color: var(--coral); position: absolute; font-size: 14px; pointer-events: none; }
+
+  /* ===== MANIFESTO STRIP ===== */
+  .manifesto {
+    background: var(--paper);
+    padding: 80px 48px;
+    border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+    text-align: center;
+  }
+  .manifesto .em {
+    font-family: 'Instrument Serif'; font-style: italic;
+    font-size: clamp(36px, 4.6vw, 64px); line-height: 1.15;
+    max-width: 1000px; margin: 0 auto; color: var(--ink);
+  }
+  .manifesto .em .hi { color: var(--coral); }
+  .manifesto .sig { margin-top: 32px; font-family: 'Caveat Brush'; font-size: 28px; opacity: 0.85; }
+  .manifesto .by { font-family: 'JetBrains Mono'; font-size: 10px; opacity: 0.5; letter-spacing: 0.18em; margin-top: 4px; }
+
+  /* ===== MARQUEE — different from v3 (subtler, type-led) ===== */
+  .marquee-line {
+    background: var(--paper-2);
+    padding: 22px 0;
+    overflow: hidden; white-space: nowrap;
+    border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+    font-family: 'Caveat Brush'; font-size: 38px; line-height: 1; color: var(--ink);
+  }
+  .marquee-line span { padding: 0 28px; }
+  .marquee-line .dot { color: var(--coral); }
+  .marquee-line .ghost { color: transparent; -webkit-text-stroke: 1px var(--ink); }
+
+  /* ===== MENU SECTIONS — deconstructed restaurant menu ===== */
+  .menu-block { padding: 96px 0; position: relative; }
+  .menu-grid { display: grid; grid-template-columns: 1fr 2.4fr; gap: 80px; align-items: start; }
+  .menu-side { position: sticky; top: 100px; }
+  .menu-side .chap { font-family: 'JetBrains Mono'; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; opacity: 0.55; }
+  .menu-side h2 {
+    font-family: 'Caveat Brush';
+    font-size: clamp(80px, 9vw, 140px); line-height: 0.9; margin: 16px 0 24px;
+  }
+  .menu-side h2 .stk { -webkit-text-stroke: 1.5px var(--ink); color: transparent; }
+  .menu-side p { font-family: 'Instrument Serif'; font-style: italic; font-size: 19px; line-height: 1.4; max-width: 280px; opacity: 0.85; }
+  .menu-side .preview { margin-top: 32px; height: 240px; }
+
+  .menu-list { display: flex; flex-direction: column; }
+  .menu-row {
+    display: grid; grid-template-columns: 24px 1fr auto;
+    padding: 22px 0; border-bottom: 1px solid var(--line);
+    gap: 24px; align-items: baseline; cursor: pointer;
+    transition: background 0.15s;
+  }
+  .menu-row:hover { background: var(--paper-2); padding-left: 8px; padding-right: 8px; }
+  .menu-row .idx { font-family: 'JetBrains Mono'; font-size: 11px; opacity: 0.55; }
+  .menu-row .info { display: flex; flex-direction: column; gap: 6px; }
+  .menu-row .name { font-family: 'Caveat Brush'; font-size: 32px; }
+  .menu-row .desc { font-family: 'Instrument Serif'; font-style: italic; font-size: 15px; opacity: 0.7; }
+  .menu-row .meta { display: flex; gap: 18px; align-items: center; }
+  .menu-row .tag { font-family: 'JetBrains Mono'; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.55; }
+  .menu-row .price { font-family: 'Caveat Brush'; font-size: 24px; color: var(--coral); min-width: 60px; text-align: right; }
+
+  /* PLATES — alternate dark variant */
+  .menu-block.dark { background: var(--dark); color: var(--paper); }
+  .menu-block.dark .menu-row { border-bottom: 1px solid var(--line-light); }
+  .menu-block.dark .menu-row:hover { background: rgba(239, 230, 206, 0.04); }
+  .menu-block.dark .menu-row .desc { opacity: 0.7; }
+  .menu-block.dark .price { color: var(--orange); }
+  .menu-block.dark .menu-side h2 .stk { -webkit-text-stroke: 1.5px var(--paper); }
+  .menu-block.dark .preview { background: rgba(239, 230, 206, 0.04); border-color: var(--line-light); }
+
+  /* SWEET TOOTH — magazine spread style */
+  .sweet-block { padding: 96px 0; background: var(--paper); }
+  .sweet-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 48px; }
+  .sweet-head h2 { font-family: 'Caveat Brush'; font-size: clamp(80px, 9vw, 140px); line-height: 0.9; }
+  .sweet-head .right { max-width: 320px; text-align: right; }
+  .sweet-head .right p { font-family: 'Instrument Serif'; font-style: italic; font-size: 18px; line-height: 1.45; opacity: 0.78; }
+  .sweet-spread { display: grid; grid-template-columns: 1.4fr 1fr 1fr; grid-template-rows: 240px 240px; gap: 16px; }
+  .sweet-spread .a { grid-row: 1 / 3; grid-column: 1; }
+  .sweet-spread .b { grid-row: 1; grid-column: 2; }
+  .sweet-spread .c { grid-row: 1; grid-column: 3; }
+  .sweet-spread .d { grid-row: 2; grid-column: 2 / 4; }
+  .sweet-spread .item-meta { padding: 14px 16px; background: var(--paper); border: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; }
+  .sweet-spread .item-meta .nm { font-family: 'Caveat Brush'; font-size: 24px; }
+  .sweet-spread .item-meta .pr { font-family: 'JetBrains Mono'; font-size: 12px; color: var(--coral); }
+  .sweet-cell { display: flex; flex-direction: column; }
+  .sweet-cell .ph { flex: 1; }
+
+  /* ===== DROP — full-bleed cinematic ===== */
+  .drop-block {
+    background: var(--darker); color: var(--paper);
+    padding: 120px 48px;
+    position: relative; overflow: hidden;
+  }
+  .drop-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 56px; align-items: center; }
+  .drop-eyebrow { font-family: 'JetBrains Mono'; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; opacity: 0.6; }
+  .drop-title { font-family: 'Caveat Brush'; font-size: clamp(110px, 14vw, 220px); line-height: 0.86; margin-top: 12px; }
+  .drop-title .ghost { color: transparent; -webkit-text-stroke: 1.5px var(--paper); }
+  .drop-stats {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-top: 36px;
+    padding-top: 24px; border-top: 1px solid var(--line-light);
+  }
+  .drop-stats .cell .v { font-family: 'Caveat Brush'; font-size: 56px; color: var(--orange); line-height: 1; }
+  .drop-stats .cell .l { font-family: 'JetBrains Mono'; font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; opacity: 0.6; margin-top: 6px; }
+  .drop-cta { display: flex; gap: 12px; margin-top: 36px; flex-wrap: wrap; }
+  .drop-art { aspect-ratio: 4/5; }
+
+  /* ===== MERCH — bento grid ===== */
+  .merch-section { background: var(--paper); padding: 96px 0; }
+  .merch-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 48px; }
+  .merch-head h2 { font-family: 'Caveat Brush'; font-size: clamp(80px, 9vw, 140px); line-height: 0.9; }
+  .merch-head h2 .serif-i { font-family: 'Instrument Serif'; font-style: italic; font-weight: 400; letter-spacing: -2px; color: var(--coral); }
+  .merch-head .right { max-width: 320px; text-align: right; }
+  .merch-head .right p { font-family: 'Instrument Serif'; font-style: italic; font-size: 18px; line-height: 1.45; opacity: 0.78; }
+
+  .bento {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    grid-auto-rows: 200px;
+    gap: 16px;
+  }
+  .bento-card { border: 1px solid var(--line); padding: 18px; display: flex; flex-direction: column; justify-content: space-between; position: relative; }
+  .bento-card .ph { flex: 1; margin-bottom: 14px; }
+  .bento-card .nm { font-family: 'Caveat Brush'; font-size: 24px; }
+  .bento-card .ln { font-size: 11px; opacity: 0.6; margin-top: 2px; }
+  .bento-card .btm { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+  .bento-card .pr { font-family: 'JetBrains Mono'; font-size: 12px; color: var(--coral); }
+  .bento-card .add { font-family: 'JetBrains Mono'; font-size: 10px; padding: 6px 12px; background: var(--ink); color: var(--paper); border-radius: 999px; letter-spacing: 0.1em; }
+
+  .b-tee { grid-column: span 3; grid-row: span 2; }
+  .b-cup { grid-column: span 2; grid-row: span 2; }
+  .b-quote { grid-column: span 1; grid-row: span 1; background: var(--ink); color: var(--paper); border: none; display: flex; align-items: center; justify-content: center; text-align: center; }
+  .b-quote .q { font-family: 'Instrument Serif'; font-style: italic; font-size: 14px; line-height: 1.3; opacity: 0.9; }
+  .b-tote { grid-column: span 2; grid-row: span 1; }
+  .b-stick { grid-column: span 2; grid-row: span 1; background: var(--coral); color: var(--paper); border: none; }
+  .b-stick .nm { color: var(--paper); }
+  .b-stick .add { background: var(--paper); color: var(--ink); }
+  .b-num { grid-column: span 1; grid-row: span 1; background: var(--matcha); color: var(--ink); border: none; align-items: center; justify-content: center; }
+  .b-num .big { font-family: 'Caveat Brush'; font-size: 64px; line-height: 1; }
+  .b-num .lbl { font-family: 'JetBrains Mono'; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; margin-top: 4px; }
+
+  /* ===== COLLAB / COMMUNITY ===== */
+  .collab-section { background: var(--dark); color: var(--paper); padding: 96px 0; }
+  .collab-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 56px; }
+  .collab-head h2 { font-family: 'Caveat Brush'; font-size: clamp(80px, 9vw, 140px); line-height: 0.9; }
+  .collab-head .meta { text-align: right; max-width: 340px; }
+  .collab-head .meta p { font-family: 'Instrument Serif'; font-style: italic; font-size: 18px; line-height: 1.4; opacity: 0.85; }
+
+  /* artist credits wall */
+  .credits {
+    border-top: 1px solid var(--line-light);
+    padding-top: 32px;
+    display: grid; grid-template-columns: 1fr 1.4fr; gap: 56px;
+  }
+  .credits-list { display: flex; flex-direction: column; }
+  .credit-row { display: grid; grid-template-columns: auto 1fr auto; padding: 14px 0; border-bottom: 1px solid var(--line-light); gap: 16px; align-items: baseline; }
+  .credit-row .num { font-family: 'JetBrains Mono'; font-size: 10px; opacity: 0.5; }
+  .credit-row .name { font-family: 'Caveat Brush'; font-size: 22px; }
+  .credit-row .role { font-family: 'Instrument Serif'; font-style: italic; font-size: 13px; opacity: 0.7; }
+
+  .feature-collab { display: flex; flex-direction: column; gap: 16px; }
+  .feature-collab .ph-dark { flex: 1; min-height: 300px; }
+  .feature-collab .label { display: flex; justify-content: space-between; }
+  .feature-collab .label .mono { opacity: 0.7; }
+  .feature-collab .label .name { font-family: 'Caveat Brush'; font-size: 22px; }
+  .pitch-card {
+    border: 1px solid var(--line-light); padding: 24px;
+    display: flex; justify-content: space-between; align-items: center; gap: 24px;
+    margin-top: 24px;
+  }
+  .pitch-card .txt { font-family: 'Instrument Serif'; font-style: italic; font-size: 18px; max-width: 480px; }
+
+  /* ===== PRESS / QUOTES STRIP ===== */
+  .press-block { background: var(--paper); padding: 80px 0; border-top: 1px solid var(--line); }
+  .press-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 56px; }
+  .quote .q { font-family: 'Instrument Serif'; font-style: italic; font-size: 22px; line-height: 1.4; }
+  .quote .src { font-family: 'JetBrains Mono'; font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; margin-top: 16px; opacity: 0.55; }
+
+  /* ===== FINAL CTA — phone numpad metaphor ===== */
+  .cta-final {
+    background: var(--ink); color: var(--paper);
+    padding: 120px 48px; position: relative; overflow: hidden;
+  }
+  .cta-final .eyebrow { font-family: 'JetBrains Mono'; font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; opacity: 0.6; }
+  .cta-final h2 { font-family: 'Caveat Brush'; font-size: clamp(96px, 13vw, 200px); line-height: 0.9; margin-top: 14px; }
+  .cta-final h2 .coral { color: var(--coral); }
+  .cta-final h2 .serif-i { font-family: 'Instrument Serif'; font-style: italic; font-weight: 400; letter-spacing: -2px; }
+  .cta-final .sub { font-family: 'Instrument Serif'; font-style: italic; font-size: 20px; opacity: 0.78; margin-top: 18px; max-width: 540px; }
+
+  .door-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 56px; max-width: 880px; }
+  .door {
+    border: 1px solid var(--line-light); padding: 28px 24px;
+    display: flex; flex-direction: column; justify-content: space-between; gap: 32px;
+    background: rgba(239, 230, 206, 0.02);
+    text-decoration: none; color: var(--paper);
+    cursor: pointer; transition: background 0.2s, transform 0.2s;
+    min-height: 200px;
+  }
+  .door:hover { background: rgba(239, 230, 206, 0.08); transform: translateY(-3px); }
+  .door .nm { font-family: 'Caveat Brush'; font-size: 56px; line-height: 0.9; }
+  .door.zomato .nm { color: #FF6B7A; }
+  .door.swiggy .nm { color: #FC8019; }
+  .door.whats .nm { color: #25D366; }
+  .door .lbl { font-family: 'JetBrains Mono'; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; opacity: 0.6; }
+  .door .arr { font-family: 'JetBrains Mono'; font-size: 14px; opacity: 0.7; }
+  .door .row-b { display: flex; justify-content: space-between; align-items: flex-end; }
+
+  .walk-in { margin-top: 56px; padding-top: 32px; border-top: 1px solid var(--line-light); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+  .walk-in .where { font-family: 'Caveat Brush'; font-size: 32px; }
+  .walk-in .when { font-family: 'JetBrains Mono'; font-size: 12px; letter-spacing: 0.15em; opacity: 0.6; }
+
+  /* ===== FOOTER ===== */
+  footer.foot {
+    background: var(--darker); color: var(--paper);
+    padding: 80px 0 32px;
+    border-top: 1px solid var(--line-light);
+  }
+  .foot-top { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr 1.2fr; gap: 40px; }
+  .foot-mark { font-family: 'Caveat Brush'; font-size: 72px; line-height: 0.9; }
+  .foot-tag { font-family: 'Instrument Serif'; font-style: italic; font-size: 16px; opacity: 0.65; margin-top: 8px; }
+  .foot h4 { font-family: 'JetBrains Mono'; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; opacity: 0.55; margin-bottom: 16px; }
+  .foot ul { list-style: none; }
+  .foot li { font-size: 13px; margin-bottom: 8px; opacity: 0.82; }
+  .news-card {
+    border: 1px solid var(--line-light); padding: 16px;
+  }
+  .news-card p { font-family: 'Instrument Serif'; font-style: italic; font-size: 14px; opacity: 0.85; margin-bottom: 14px; }
+  .news-input { display: flex; border: 1px solid var(--line-light); }
+  .news-input input { flex: 1; padding: 10px 12px; background: transparent; border: none; color: var(--paper); font-family: inherit; font-size: 12px; outline: none; }
+  .news-input button { background: var(--coral); color: var(--paper); border: none; padding: 0 16px; font-family: 'JetBrains Mono'; font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; cursor: pointer; }
+  .foot-bot {
+    margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--line-light);
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 16px;
+    font-family: 'JetBrains Mono'; font-size: 10.5px; letter-spacing: 0.15em; text-transform: uppercase; opacity: 0.55;
+  }
+
+  /* responsive */
+  @media (max-width: 1024px) {
+    .hero { grid-template-columns: 1fr; min-height: auto; }
+    .menu-grid { grid-template-columns: 1fr; gap: 32px; }
+    .menu-side { position: static; }
+    .drop-grid, .collab-head, .credits, .merch-head, .sweet-head { grid-template-columns: 1fr; gap: 24px; }
+    .collab-head, .merch-head, .sweet-head { display: block; }
+    .collab-head .meta, .merch-head .right, .sweet-head .right { text-align: left; margin-top: 16px; }
+    .sweet-spread { grid-template-columns: 1fr 1fr; }
+    .bento { grid-template-columns: repeat(2, 1fr); }
+    .b-tee, .b-cup, .b-tote, .b-stick, .b-quote, .b-num { grid-column: span 2; grid-row: span 1; }
+    .door-row { grid-template-columns: 1fr; }
+    .foot-top { grid-template-columns: 1fr 1fr; }
+    .press-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 640px) {
+    .wrap { padding: 0 24px; }
+    header.nav { padding: 12px 24px; }
+    .hero { padding: 20px 24px 40px; }
+    .nav-links { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===================== TICKER ===================== -->
+<div class="ticker">
+  <span><span class="dot">●</span> next drop · 05.26.2026 — 12:00 ist</span>
+  <span><span class="dot">●</span> free delivery over ₹600</span>
+  <span><span class="dot">●</span> dispatch m–sat · 12–11pm</span>
+  <span><span class="dot">●</span> notify list now open</span>
+  <span><span class="dot">●</span> bear is unbothered</span>
+  <span><span class="dot">●</span> next drop · 05.26.2026 — 12:00 ist</span>
+</div>
+
+<!-- ===================== HEADER ===================== -->
+<header class="nav">
+  <div class="brand">
+    <span class="mark">boba bear<span style="color:var(--coral);">.</span></span>
+    <span class="est">— est. 2024, delhi</span>
+  </div>
+  <nav class="nav-links">
+    <a href="#" class="active">menu</a>
+    <a href="#">drop</a>
+    <a href="#">merch</a>
+    <a href="#">collab</a>
+    <a href="#">journal</a>
+    <a href="#">visit</a>
+  </nav>
+  <div class="nav-right">
+    <span class="icon-btn">⌕ search</span>
+    <span class="icon-btn">bag (0)</span>
+    <span class="order-pill"><span class="pulse"></span> order now</span>
+  </div>
+</header>
+
+<!-- ===================== HERO — magazine cover ===================== -->
+<section class="hero">
+  <div class="hero-meta">
+    <span class="mono">issue 01 / volume 26</span>
+    <span class="mono">↳ a kitchen, a bar, a bear</span>
+    <span class="mono">summer / 2026</span>
+  </div>
+
+  <div class="hero-left">
+    <div>
+      <div class="kicker">a kitchen that makes things,<br>a bear that doesn't ask why —</div>
+      <h1 class="hero-title">
+        FOR THE<br>
+        UN<span class="serif-i">bothe</span><span class="coral">RED.</span>
+      </h1>
+    </div>
+    <div class="hero-foot">
+      <div class="hero-byline">
+        <strong>Indo-Korean kitchen.</strong> Boba bar. A merch line drawn by hand. Run by a bear who doesn't care if you've had a long day — but will hand you a drink and a plate anyway.
+      </div>
+      <div class="hero-actions">
+        <a class="btn btn-coral" href="#">Order now →</a>
+        <a class="btn btn-outline" href="#">See the menu</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-right">
+    <div class="ph hero-img-1">hero portrait · drink in focus</div>
+    <div class="ph hero-img-2">grain / motion still</div>
+    <div class="ph hero-img-3">bear sticker</div>
+    <div class="hero-stat-card">
+      <div>
+        <div class="num">10 / 8 / 6</div>
+        <div class="lbl">drinks · plates · sweets</div>
+      </div>
+      <div style="text-align: right;">
+        <div class="num">26.05</div>
+        <div class="lbl">next drop · s/s 26</div>
+      </div>
+    </div>
+    <div class="annot" style="top: 10px; right: -10px; transform: rotate(8deg);">↘ live counter</div>
+  </div>
+</section>
+
+<!-- ===================== MANIFESTO ===================== -->
+<section class="manifesto">
+  <p class="em">
+    The bear doesn't shout. The bear doesn't beg. The bear puts <span class="hi">good cold things</span> in cups and <span class="hi">hot honest things</span> on plates, then steps back. The rest is up to you.
+  </p>
+  <div class="sig">— the bear</div>
+  <div class="by">an unbothered manifesto, 2024</div>
+</section>
+
+<!-- ===================== MARQUEE LINE ===================== -->
+<div class="marquee-line">
+  <span>the bar</span>
+  <span class="ghost">·</span>
+  <span class="dot">●</span>
+  <span>the plates</span>
+  <span class="ghost">·</span>
+  <span class="dot">●</span>
+  <span>the sweet</span>
+  <span class="ghost">·</span>
+  <span class="dot">●</span>
+  <span>the drop</span>
+  <span class="ghost">·</span>
+  <span class="dot">●</span>
+  <span>the bear</span>
+  <span class="ghost">·</span>
+  <span class="dot">●</span>
+  <span>the bar</span>
+</div>
+
+<!-- ===================== THE BAR ===================== -->
+<section class="menu-block">
+  <div class="wrap">
+    <div class="menu-grid">
+      <aside class="menu-side">
+        <span class="chap">01 · the bar — iced, always</span>
+        <h2>The <br><span class="stk">Bar.</span></h2>
+        <p>Premium leaf, ceremonial-grade matcha, pearls pressed each morning. No sugar shortcuts, no powders. The shaker is a love letter.</p>
+        <div class="preview ph">hover any drink ↗<br>live preview here</div>
+      </aside>
+      <div class="menu-list">
+        <div class="menu-row">
+          <span class="idx">01</span>
+          <div class="info"><span class="name">Bangkok Thai Tea</span><span class="desc">Silk-soft black tea, pearls of caramel, single-cube ice.</span></div>
+          <div class="meta"><span class="tag">signature</span><span class="price">₹220</span></div>
+        </div>
+        <div class="menu-row">
+          <span class="idx">02</span>
+          <div class="info"><span class="name">HK Tiger Milk</span><span class="desc">Striped, sweet, deadpan classic. A drink that doesn't need adjectives.</span></div>
+          <div class="meta"><span class="tag">classic</span><span class="price">₹240</span></div>
+        </div>
+        <div class="menu-row">
+          <span class="idx">03</span>
+          <div class="info"><span class="name">Purple Rain Taro</span><span class="desc">Taro + ube, layered cold. Drinks like a soft synth.</span></div>
+          <div class="meta"><span class="tag">house</span><span class="price">₹260</span></div>
+        </div>
+        <div class="menu-row">
+          <span class="idx">04</span>
+          <div class="info"><span class="name">Zen Master Matcha</span><span class="desc">Ceremonial-grade, no sugar shortcut. Tastes like a slow breath.</span></div>
+          <div class="meta"><span class="tag">house</span><span class="price">₹250</span></div>
+        </div>
+        <div class="menu-row">
+          <span class="idx">05</span>
+          <div class="info"><span class="name">Wild Berry Dirty</span><span class="desc">Matcha base, wild berry crush, a quiet little riot.</span></div>
+          <div class="meta"><span class="tag">new</span><span class="price">₹270</span></div>
+        </div>
+        <div class="menu-row">
+          <span class="idx">06</span>
+          <div class="info"><span class="name">Bear's Brown Sugar</span><span class="desc">Caramelised brown sugar, milk, fresh pearls. The bear's after-shift drink.</span></div>
+          <div class="meta"><span class="tag">staff pick</span><span class="price">₹250</span></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding-top: 24px;">
+          <span class="mono" style="opacity:0.55;">04 more on the full menu</span>
+          <a class="mono" style="color: var(--coral); text-decoration: none;" href="#">see all 10 drinks →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== THE PLATES (dark) ===================== -->
+<section class="menu-block dark">
+  <div class="wrap">
+    <div class="menu-grid">
+      <aside class="menu-side">
+        <span class="chap" style="opacity:0.7;">02 · the plates — indo-korean</span>
+        <h2>The <br><span class="stk">Plates.</span></h2>
+        <p>Burgers, momos, dogs, wraps. Heat slider from "mild flex" to "volcano." Eat with friends or alone — no judgment either way.</p>
+        <div class="preview ph-dark">hover any plate ↗<br>live preview here</div>
+      </aside>
+      <div class="menu-list">
+        <div class="menu-row">
+          <span class="idx">01</span>
+          <div class="info"><span class="name">Seoul Masala Burger</span><span class="desc">Gochujang-spiced patty, masala onions, brioche bun.</span></div>
+          <div class="meta"><span class="tag">▲ heat 2</span><span class="price">₹320</span></div>
+        </div>
+        <div class="menu-row">
+          <span class="idx">02</span>
+          <div class="info"><span class="name">Dynamite Red Momo</span><span class="desc">Steamed, then bathed in chilli-soy glaze. Confidence required.</span></div>
+          <div class="meta"><span class="tag">▲▲▲ heat 4</span><span class="price">₹260</span></div>
+        </div>
+        <div class="menu-row">
+          <span class="idx">03</span>
+          <div class="info"><span class="name">Gangnam Glaze Wings</span><span class="desc">Double-fried, sweet-spicy lacquer, sesame, scallion.</span></div>
+          <div class="meta"><span class="tag">▲▲ heat 3</span><span class="price">₹360</span></div>
+        </div>
+        <div class="menu-row">
+          <span class="idx">04</span>
+          <div class="info"><span class="name">Classic Seoul Dog</span><span class="desc">Pork sausage, kimchi slaw, mustard. No press, no pretense.</span></div>
+          <div class="meta"><span class="tag">▲ heat 2</span><span class="price">₹280</span></div>
+        </div>
+        <div class="menu-row">
+          <span class="idx">05</span>
+          <div class="info"><span class="name">Peri-Peri Fries</span><span class="desc">Hand-cut, peri-peri tossed, lime cheek.</span></div>
+          <div class="meta"><span class="tag">▲▲ heat 3</span><span class="price">₹180</span></div>
+        </div>
+        <div class="menu-row">
+          <span class="idx">06</span>
+          <div class="info"><span class="name">Loaded Bear Fries</span><span class="desc">Cheese pull, gochujang mayo, scallion, an obvious encore.</span></div>
+          <div class="meta"><span class="tag">▲ heat 2</span><span class="price">₹240</span></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding-top: 24px;">
+          <span class="mono" style="opacity:0.55;">02 more · veg/vegan filters available</span>
+          <a class="mono" style="color: var(--orange); text-decoration: none;" href="#">see all 8 plates →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== SWEET TOOTH — editorial spread ===================== -->
+<section class="sweet-block">
+  <div class="wrap">
+    <div class="sweet-head">
+      <h2>The<br>Sweet.</h2>
+      <div class="right">
+        <span class="mono" style="opacity:0.55;">03 · sweet tooth · indulgent only</span>
+        <p>Waffles. Sundaes. Soft serve. Three rules: cold, layered, sticky. Hover to peek the cross-section.</p>
+      </div>
+    </div>
+    <div class="sweet-spread">
+      <div class="sweet-cell a">
+        <div class="ph">hero · nutella waffle cross-section</div>
+        <div class="item-meta"><span class="nm">Nutella Waffle</span><span class="pr">₹280</span></div>
+      </div>
+      <div class="sweet-cell b">
+        <div class="ph">vanilla waffle</div>
+        <div class="item-meta"><span class="nm">Vanilla Waffle</span><span class="pr">₹240</span></div>
+      </div>
+      <div class="sweet-cell c">
+        <div class="ph">signature sundae</div>
+        <div class="item-meta"><span class="nm">Signature Sundae</span><span class="pr">₹320</span></div>
+      </div>
+      <div class="sweet-cell d">
+        <div class="ph">berry popping · oreo sundae · wide pan</div>
+        <div class="item-meta"><span class="nm">Nutella Oreo Sundae · Berry Popping</span><span class="pr">from ₹260</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== DROP (cinematic) ===================== -->
+<section class="drop-block">
+  <div class="wrap">
+    <div class="drop-grid">
+      <div>
+        <span class="drop-eyebrow">04 · the drop · summer / 2026</span>
+        <h2 class="drop-title">S/S <span class="ghost">26</span></h2>
+        <p style="font-family: 'Instrument Serif'; font-style: italic; font-size: 22px; margin-top: 16px; max-width: 460px; opacity: 0.85;">
+          A keepsake cup. A drop-day tee. One ceramic piece pressed by hand. Twelve total. Once they're gone, the bear shrugs.
+        </p>
+
+        <div class="drop-stats">
+          <div class="cell"><div class="v">02</div><div class="l">days</div></div>
+          <div class="cell"><div class="v">18</div><div class="l">hours</div></div>
+          <div class="cell"><div class="v">44</div><div class="l">min</div></div>
+          <div class="cell"><div class="v">09</div><div class="l">sec</div></div>
+        </div>
+
+        <div class="drop-cta">
+          <a class="btn btn-coral" href="#">Get on the list →</a>
+          <a class="btn btn-outline" style="color:var(--paper); border-color: var(--line-light);" href="#">Watch the teaser ▸</a>
+        </div>
+      </div>
+      <div class="drop-art ph-dark">
+        DROP HERO · cinematic video loop<br>single object, grain, slow rotate<br>hover to scrub · tap for sound
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== MERCH — bento ===================== -->
+<section class="merch-section">
+  <div class="wrap">
+    <div class="merch-head">
+      <h2>Wear<br>the <span class="serif-i">bear.</span></h2>
+      <div class="right">
+        <span class="mono" style="opacity:0.55;">05 · merch · numbered runs</span>
+        <p>Heavyweight cotton, screenprint, ceramic, canvas. Numbered runs, never restocked. If you see your size, you take your size.</p>
+      </div>
+    </div>
+
+    <div class="bento">
+      <div class="bento-card b-tee">
+        <div class="ph">tee · oversized · 3/4 angle</div>
+        <div>
+          <div class="nm">Unbothered Tee</div>
+          <div class="ln">240gsm heavyweight · oversized · screen print</div>
+          <div class="btm"><span class="pr">₹1,499 · 200/run</span><span class="add">+ add</span></div>
+        </div>
+      </div>
+      <div class="bento-card b-cup">
+        <div class="ph">keepsake ceramic cup</div>
+        <div>
+          <div class="nm">Keepsake Cup</div>
+          <div class="ln">double-wall ceramic · hand-pressed</div>
+          <div class="btm"><span class="pr">₹899 · 100/run</span><span class="add">+ add</span></div>
+        </div>
+      </div>
+      <div class="bento-card b-num">
+        <div class="big">12</div>
+        <div class="lbl">pieces this drop</div>
+      </div>
+      <div class="bento-card b-quote">
+        <p class="q">"if you see your size,<br>you take your size.<br>bear doesn't beg."</p>
+      </div>
+      <div class="bento-card b-tote">
+        <div class="ph">canvas tote</div>
+        <div>
+          <div class="nm">Bear Tote</div>
+          <div class="btm"><span class="pr">₹549</span><span class="add">+ add</span></div>
+        </div>
+      </div>
+      <div class="bento-card b-stick">
+        <div style="display:flex; flex-direction: column; justify-content: space-between; height: 100%;">
+          <div>
+            <div class="nm">Sticker Pack</div>
+            <div class="ln" style="opacity:0.85;">5 pieces · vinyl · weatherproof</div>
+          </div>
+          <div class="btm"><span class="pr" style="color: var(--paper);">free w/ order</span><span class="add">claim</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== COLLAB / COMMUNITY ===================== -->
+<section class="collab-section">
+  <div class="wrap">
+    <div class="collab-head">
+      <h2>The <span style="color: var(--orange);">artists.</span></h2>
+      <div class="meta">
+        <span class="mono" style="opacity:0.6;">06 · collabs · rolling open call</span>
+        <p>Every drop carries one collaborator. We pay, we credit, we ship them the run. Pitch a piece — bear reads everything.</p>
+      </div>
+    </div>
+
+    <div class="credits">
+      <div class="credits-list">
+        <div class="credit-row"><span class="num">001</span><span class="name">Aarav Sehgal</span><span class="role">illustration · S/S 26 cup</span></div>
+        <div class="credit-row"><span class="num">002</span><span class="name">Maya P.</span><span class="role">type · drop-day tee</span></div>
+        <div class="credit-row"><span class="num">003</span><span class="name">Studio Ahem</span><span class="role">photo · summer campaign</span></div>
+        <div class="credit-row"><span class="num">004</span><span class="name">Kabir Tandon</span><span class="role">3d · keepsake mascot</span></div>
+        <div class="credit-row"><span class="num">005</span><span class="name">Noor & Co.</span><span class="role">music · in-store playlist</span></div>
+        <div class="credit-row"><span class="num">006</span><span class="name">Ishita R.</span><span class="role">illustration · sticker pack</span></div>
+        <div class="credit-row"><span class="num">007</span><span class="name">— open —</span><span class="role">your name? pitch below.</span></div>
+      </div>
+      <div class="feature-collab">
+        <div class="ph-dark">featured collab · S/S 26 · hero image</div>
+        <div class="label">
+          <span class="name">"Pearls in the Rain"</span>
+          <span class="mono">Aarav Sehgal · 2026</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="pitch-card">
+      <p class="txt">Bear runs with artists. If you draw, type, photograph, mix, or make things by hand — send us a thing. We'll get back inside 14 days.</p>
+      <a class="btn btn-coral" href="#">Pitch the bear →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== PRESS / QUOTES ===================== -->
+<section class="press-block">
+  <div class="wrap">
+    <span class="mono" style="opacity:0.55;">heard in the wild ↓</span>
+    <div class="press-grid" style="margin-top: 32px;">
+      <div class="quote"><p class="q">"Tastes like a slow afternoon you didn't earn."</p><div class="src">— Brown Paper Bag, 2025</div></div>
+      <div class="quote"><p class="q">"The bear doesn't market. The bear just is."</p><div class="src">— Mid-day Magazine, 2026</div></div>
+      <div class="quote"><p class="q">"India's quietest cult drink brand."</p><div class="src">— Vogue India, 2026</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== FINAL CTA ===================== -->
+<section class="cta-final">
+  <div class="wrap">
+    <span class="eyebrow">07 · end of issue · start of order</span>
+    <h2>
+      pick your<br>
+      <span class="serif-i">door.</span> <span class="coral">→</span>
+    </h2>
+    <p class="sub">Three ways in. Same bear, same boba. The bear honestly doesn't care which one — the cup arrives either way.</p>
+
+    <div class="door-row">
+      <a class="door zomato" href="#">
+        <span class="lbl">↳ delivery via</span>
+        <div class="row-b"><span class="nm">Zomato</span><span class="arr">→</span></div>
+      </a>
+      <a class="door swiggy" href="#">
+        <span class="lbl">↳ delivery via</span>
+        <div class="row-b"><span class="nm">Swiggy</span><span class="arr">→</span></div>
+      </a>
+      <a class="door whats" href="#">
+        <span class="lbl">↳ ping the bear</span>
+        <div class="row-b"><span class="nm">WhatsApp</span><span class="arr">→</span></div>
+      </a>
+    </div>
+
+    <div class="walk-in">
+      <div>
+        <div class="where">or, just walk in.</div>
+        <div class="when">GK-2, M-block · new delhi · 12pm — 12am · seven days</div>
+      </div>
+      <a class="btn btn-outline" style="color: var(--paper); border-color: var(--line-light);" href="#">Get directions →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== FOOTER ===================== -->
+<footer class="foot">
+  <div class="wrap">
+    <div class="foot-top">
+      <div>
+        <div class="foot-mark">boba bear<span style="color: var(--coral);">.</span></div>
+        <div class="foot-tag">— a kitchen, a bar, a bear.</div>
+        <p style="font-size: 12px; opacity: 0.55; line-height: 1.7; margin-top: 20px; max-width: 280px;">
+          Indo-Korean kitchen, boba bar, and a hand-drawn merch line. Est. 2024 in Delhi.
+        </p>
+      </div>
+      <div>
+        <h4>The menu</h4>
+        <ul>
+          <li>The bar</li>
+          <li>The plates</li>
+          <li>The sweet</li>
+          <li>Vegan / gluten</li>
+        </ul>
+      </div>
+      <div>
+        <h4>The bear</h4>
+        <ul>
+          <li>About / journal</li>
+          <li>Collabs</li>
+          <li>Press</li>
+          <li>Careers</li>
+        </ul>
+      </div>
+      <div>
+        <h4>Find us</h4>
+        <ul>
+          <li>GK-2 M-block</li>
+          <li>New Delhi · 110048</li>
+          <li>12pm — 12am</li>
+          <li>+91 ●●●●● ●●●●</li>
+        </ul>
+      </div>
+      <div>
+        <h4>The newsletter</h4>
+        <div class="news-card">
+          <p>One short letter a month. New drops, new collabs, occasionally a recipe.</p>
+          <div class="news-input">
+            <input type="email" placeholder="your email →">
+            <button>send</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="foot-bot">
+      <span>© 2026 boba bear · all rights, no apologies</span>
+      <span>privacy · terms · accessibility</span>
+      <span>made in delhi · by humans</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,805 @@
+{
+  "categories": [
+    {
+      "name": "The Bar",
+      "slug": "the-bar",
+      "subcategories": [
+        {
+          "name": "Signature Boba",
+          "items": [
+            {
+              "name": "Gangnam Style Iced Coffee Boba",
+              "description": "Creamy iced coffee with chewy boba and chocolate-lined cup walls.",
+              "price": 199,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": [
+                "bestseller"
+              ]
+            },
+            {
+              "name": "Purple Rain Taro Boba",
+              "description": "Creamy taro boba with a rich purple blend and chewy tapioca pearls.",
+              "price": 259,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": [
+                "bestseller"
+              ]
+            },
+            {
+              "name": "Zen Master Matcha Boba",
+              "description": "Premium matcha blended with milk, dark chocolate, and chewy boba.",
+              "price": 269,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": [
+                "bestseller"
+              ]
+            },
+            {
+              "name": "Hong Kong Milk Tea Boba",
+              "description": "Bold black milk tea with caramel stripes and chewy tapioca pearls.",
+              "price": 239,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": [
+              ]
+            },
+            {
+              "name": "Bangkok Thai Tea Boba",
+              "description": "Creamy Thai tea with spiced sweetness and chewy tapioca pearls.",
+              "price": 249,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": [
+              ]
+            },
+            {
+              "name": "Dirty Cheesecake Boba",
+              "description": "Cheesecake-inspired boba with butterscotch notes and a creamy finish.",
+              "price": 259,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": [
+                "signature"
+              ]
+            },
+            {
+              "name": "Pink Velvet Cotton Candy Boba",
+              "description": "Pink velvet milk drink with cotton-candy sweetness and chewy boba.",
+              "price": 259,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": [
+                "signature",
+                "new"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Matcha Studio",
+          "items": [
+            {
+              "name": "Purple Rain Layered Matcha",
+              "description": "Layered taro, milk, and matcha with a smooth finish and bold contrast.",
+              "price": 289,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": [
+                "signature",
+                "bestseller"
+              ]
+            },
+            {
+              "name": "Wild Berry Dirty Matcha",
+              "description": "Berry, milk, and matcha layered into a clean, balanced iced drink.",
+              "price": 289,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": [
+                "signature"
+              ]
+            },
+            {
+              "name": "Mango Matcha Boba",
+              "description": "Premium matcha layered with ripe mango, milk, and chewy boba.",
+              "price": 249,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": [
+                "new"
+              ]
+            },
+            {
+              "name": "Strawberry Matcha Boba",
+              "description": "Premium matcha layered with sweet strawberry, milk, and chewy boba.",
+              "price": 249,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": [
+                "new"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Iced Coffees",
+          "items": [
+            {
+              "name": "Hazelnut Iced Coffee Boba",
+              "description": "Hazelnut iced coffee layered with milk and chewy boba.",
+              "price": 239,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": [
+                "bestseller"
+              ]
+            },
+            {
+              "name": "Butterscotch Caramel Iced Coffee Boba",
+              "description": "Iced coffee layered with butterscotch, caramel milk, and chewy boba.",
+              "price": 249,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": []
+            },
+            {
+              "name": "Seoul Tiramisu Iced Coffee Boba",
+              "description": "Tiramisu-style iced coffee with milk, cocoa notes, and chewy boba.",
+              "price": 249,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": []
+            },
+            {
+              "name": "K-Cinema Popcorn Coffee Boba",
+              "description": "Buttered-popcorn iced coffee with milk and chewy boba.",
+              "price": 249,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": [
+                "new"
+              ]
+            },
+            {
+              "name": "Filter Roast Cold Coffee Boba",
+              "description": "South Indian filter-roast cold coffee layered with milk and chewy boba.",
+              "price": 219,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": [
+                "new"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Iced Teas",
+          "items": [
+            {
+              "name": "Kala Khatta Iced Tea",
+              "description": "Kala khatta iced tea with popping boba and a tangy summer finish.",
+              "price": 179,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": []
+            },
+            {
+              "name": "Green Apple Black Iced Tea",
+              "description": "Crisp green apple black iced tea with a tart, refreshing finish.",
+              "price": 179,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": []
+            },
+            {
+              "name": "Strawberry Black Iced Tea",
+              "description": "Black iced tea steeped with ripe strawberry sweetness.",
+              "price": 179,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": []
+            },
+            {
+              "name": "Seoul Peach Black Iced Tea",
+              "description": "Black iced tea with juicy peach and a smooth, light finish.",
+              "price": 179,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": []
+            },
+            {
+              "name": "Seoul Mango Peach Iced Tea",
+              "description": "Mango and peach iced tea with a bright, fruity tropical note.",
+              "price": 189,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": []
+            },
+            {
+              "name": "Lychee Iced Tea",
+              "description": "Floral lychee iced tea with a delicate, fragrant sweetness.",
+              "price": 179,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": []
+            },
+            {
+              "name": "Watermelon Iced Tea",
+              "description": "Light watermelon iced tea with a clean, juicy summer finish.",
+              "price": 179,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": []
+            },
+            {
+              "name": "Hibiscus Ginger Mint Iced Tea",
+              "description": "Tart hibiscus iced tea with warm ginger and a cool mint lift.",
+              "price": 189,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": []
+            },
+            {
+              "name": "Lime Black Tea Boba",
+              "description": "Zesty lime black tea with chewy boba and a crisp citrus edge.",
+              "price": 189,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": []
+            }
+          ]
+        },
+        {
+          "name": "Refreshers",
+          "items": [
+            {
+              "name": "Jiji Mint Mojito",
+              "description": "A minty, fizz-free refresher with popping boba and a clean citrus finish.",
+              "price": 189,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": []
+            },
+            {
+              "name": "Electric Blue Lime Refresher",
+              "description": "Electric blue lime refresher with popping boba and a zesty kick.",
+              "price": 189,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": [
+                "bestseller",
+                "new"
+              ]
+            },
+            {
+              "name": "Magic Galaxy Refresher Drink",
+              "description": "Colour-shifting butterfly-pea refresher with lime and popping boba.",
+              "price": 199,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": [
+                "bestseller"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Ramyum",
+      "slug": "ramyum",
+      "subcategories": [
+        {
+          "name": "Ramyum",
+          "items": [
+            {
+              "name": "Viral Spicy Carbonara Ramyun Noodles",
+              "description": "Creamy, spicy dry-stir ramyun finished with sesame and spring onion.",
+              "price": 239,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": []
+            },
+            {
+              "name": "Cheesy Ramyum",
+              "description": "Dry-stir ramyun with a creamy cheese finish and savoury heat.",
+              "price": 239,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": []
+            },
+            {
+              "name": "Volcanic Fire Spicy Ramyun Noodles",
+              "description": "Extra spicy dry-stir ramyun with sesame, spring onion, and seaweed.",
+              "price": 225,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": []
+            },
+            {
+              "name": "Tangy Kimchi Ramyun Noodles",
+              "description": "Dry-stir ramyun with a tangy kimchi kick and a savoury finish.",
+              "price": 225,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Momos",
+      "slug": "momos",
+      "subcategories": [
+        {
+          "name": "Steamed & Fried Momos",
+          "items": [
+            {
+              "name": "Steamed Veg Momos",
+              "description": "Soft steamed veg momos served with spicy dip.",
+              "price": 119,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": []
+            },
+            {
+              "name": "Steamed Paneer Momos",
+              "description": "Steamed paneer momos with a soft filling and spicy dip.",
+              "price": 139,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": []
+            },
+            {
+              "name": "Fried Veg Momos",
+              "description": "Crisp fried veg momos served with spicy dip.",
+              "price": 129,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": []
+            },
+            {
+              "name": "Fried Paneer Momos",
+              "description": "Crisp fried paneer momos served with spicy dip.",
+              "price": 149,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": [
+                "bestseller"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Signature Momos",
+          "items": [
+            {
+              "name": "Dynamite Red Veg Momos",
+              "description": "Fried veg momos tossed in spicy Dynamite Red sauce.",
+              "price": 159,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": []
+            },
+            {
+              "name": "Dynamite Red Paneer Momos",
+              "description": "Fried paneer momos tossed in spicy Dynamite Red sauce.",
+              "price": 189,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": []
+            },
+            {
+              "name": "Gangnam Glaze Veg Momos",
+              "description": "Fried veg momos glazed in sweet-savoury Gangnam sauce.",
+              "price": 159,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": []
+            },
+            {
+              "name": "Gangnam Glaze Paneer Momos",
+              "description": "Fried paneer momos glazed in sweet-savoury Gangnam sauce.",
+              "price": 189,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": []
+            },
+            {
+              "name": "Seoul Masala Veg Momos",
+              "description": "Veg momos tossed in smoky Seoul Masala sauce.",
+              "price": 149,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": [
+                "bestseller"
+              ]
+            },
+            {
+              "name": "Seoul Masala Paneer Momos",
+              "description": "Paneer momos tossed in smoky Seoul Masala sauce.",
+              "price": 179,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": [
+                "bestseller"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Burger",
+      "slug": "burger",
+      "subcategories": [
+        {
+          "name": "Burgers",
+          "items": [
+            {
+              "name": "Dynamite Red Burger (Veg/Paneer)",
+              "description": "Crispy burger with spicy Dynamite Red sauce, lettuce, and mayo.",
+              "price": 199,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": [
+                "bestseller"
+              ]
+            },
+            {
+              "name": "Gangnam Glaze Burger (Veg/Paneer)",
+              "description": "Crispy burger with Gangnam glaze, fried onions, and savoury mayo.",
+              "price": 199,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": [
+                "bestseller"
+              ]
+            },
+            {
+              "name": "Pink Velvet Cheesy Burger (Veg/Paneer)",
+              "description": "Cheesy burger in a pink velvet bun with a creamy melt.",
+              "price": 219,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": []
+            },
+            {
+              "name": "Seoul Masala Burger (Veg/Paneer)",
+              "description": "Crispy burger with smoky Seoul Masala sauce, onion, and mint mayo.",
+              "price": 199,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": []
+            },
+            {
+              "name": "Classic Veg Burger",
+              "description": "A crispy classic veg patty with lettuce, onion, and creamy mayo.",
+              "price": 129,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": [
+                "new"
+              ]
+            },
+            {
+              "name": "Gangnam Big Stack Burger",
+              "description": "A double-stacked burger with Gangnam glaze, melty cheese, and fried onions.",
+              "price": 249,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": [
+                "new"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Wraps",
+      "slug": "wraps",
+      "subcategories": [
+        {
+          "name": "Wraps",
+          "items": [
+            {
+              "name": "Dynamite Red Wrap (Veg/Paneer)",
+              "description": "Loaded wrap with spicy Dynamite Red sauce, lettuce, and mayo.",
+              "price": 209,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": []
+            },
+            {
+              "name": "Gangnam Glaze Wrap (Veg/Paneer)",
+              "description": "Loaded wrap with Gangnam glaze, fried onions, and savoury mayo.",
+              "price": 209,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": []
+            },
+            {
+              "name": "Pink Velvet Wrap (Veg/Paneer)",
+              "description": "Wrap in a pink velvet tortilla with a creamy, cheesy filling.",
+              "price": 229,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": []
+            },
+            {
+              "name": "Seoul Masala Wrap (Veg/Paneer)",
+              "description": "Loaded wrap with smoky Seoul Masala sauce, onion, and mint mayo.",
+              "price": 209,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": [
+                "bestseller"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Fries",
+      "slug": "fries",
+      "subcategories": [
+        {
+          "name": "Fries",
+          "items": [
+            {
+              "name": "The OG Salted Fries",
+              "description": "Crisp thick-cut fries finished with a clean hit of salt.",
+              "price": 109,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": []
+            },
+            {
+              "name": "Dynamite Red Street Fries",
+              "description": "Fries loaded with spicy Dynamite Red sauce and spring onion.",
+              "price": 169,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": [
+                "bestseller"
+              ]
+            },
+            {
+              "name": "Gangnam Glaze Loaded Fries",
+              "description": "Fries glazed in sweet-savoury Gangnam sauce with fried onions.",
+              "price": 169,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": []
+            },
+            {
+              "name": "Seoul Masala Fusion Fries",
+              "description": "Fries tossed in smoky Seoul Masala spice with onion and mint mayo.",
+              "price": 159,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": []
+            },
+            {
+              "name": "Peri Peri Dynamite Fries",
+              "description": "Crisp fries dusted in fiery peri peri dynamite seasoning.",
+              "price": 149,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": []
+            },
+            {
+              "name": "Pink Velvet Fries",
+              "description": "Vibrant pink velvet fries with a sweet-savoury house dust.",
+              "price": 169,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": []
+            }
+          ]
+        },
+        {
+          "name": "Bites",
+          "items": [
+            {
+              "name": "Cheesy Potato Bites",
+              "description": "Crisp potato bites with a soft, melty cheese centre.",
+              "price": 149,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": [
+                "bestseller"
+              ]
+            },
+            {
+              "name": "Seoul Golden Hash Browns",
+              "description": "Crisp golden hash browns with a soft, fluffy centre.",
+              "price": 89,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Meals & Combos",
+      "slug": "meals-combos",
+      "subcategories": [
+        {
+          "name": "Meals",
+          "items": [
+            {
+              "name": "Classic Veg Burger Meal",
+              "description": "A classic veg burger served with fries and a drink.",
+              "price": 249,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": [
+                "new"
+              ]
+            },
+            {
+              "name": "Veg Burger Meal",
+              "description": "A veg burger served with fries and a drink.",
+              "price": 249,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": []
+            },
+            {
+              "name": "Paneer Burger Meal",
+              "description": "A paneer burger served with fries and a drink.",
+              "price": 329,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": []
+            },
+            {
+              "name": "Veg Wrap Meal",
+              "description": "A veg wrap served with fries and a drink.",
+              "price": 259,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": []
+            },
+            {
+              "name": "Paneer Wrap Meal",
+              "description": "A paneer wrap served with fries and a drink.",
+              "price": 339,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": []
+            }
+          ]
+        },
+        {
+          "name": "Combos",
+          "items": [
+            {
+              "name": "Exam Survivor Combo",
+              "description": "Spicy carbonara ramyun paired with a chilled boba drink.",
+              "price": 349,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Corn Dogs & More",
+      "slug": "corn-dogs-more",
+      "subcategories": [
+        {
+          "name": "Corn Dogs",
+          "items": [
+            {
+              "name": "Classic Corndog",
+              "description": "A crisp Korean-style corn dog with mozzarella and sauces.",
+              "price": 149,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": []
+            },
+            {
+              "name": "Dynamite Corndog",
+              "description": "Mozzarella corn dog rolled in spicy crumbs with Dynamite Red sauce.",
+              "price": 169,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": [
+                "new"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Rice Bowls",
+          "items": [
+            {
+              "name": "Veggie Rice Bowl",
+              "description": "A loaded veg rice bowl tossed in house sauce.",
+              "price": 229,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": [
+                "new"
+              ]
+            },
+            {
+              "name": "Paneer Rice Bowl",
+              "description": "A loaded paneer rice bowl tossed in house sauce.",
+              "price": 289,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "The Sweet",
+      "slug": "the-sweet",
+      "subcategories": [
+        {
+          "name": "Sundaes",
+          "items": [
+            {
+              "name": "Boba Bear Signature Ice Cream Sundae",
+              "description": "Vanilla ice cream topped with brown sugar sauce and chewy boba pearls.",
+              "price": 149,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": [
+                "signature"
+              ]
+            },
+            {
+              "name": "Nutella Oreo Crunch Ice Cream Sundae",
+              "description": "Vanilla ice cream topped with Nutella and crushed Oreo crunch.",
+              "price": 179,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": [
+                "bestseller"
+              ]
+            },
+            {
+              "name": "Berry Popping Sundae",
+              "description": "Vanilla ice cream topped with berry sauce and popping boba.",
+              "price": 169,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": []
+            }
+          ]
+        },
+        {
+          "name": "Marshmallows",
+          "items": [
+            {
+              "name": "Choco Cloud Marshmallow Sticks",
+              "description": "Toasted marshmallow sticks drizzled with chocolate over a soft, cloudy centre.",
+              "price": 99,
+              "tier": "TIER_A",
+              "addons": [],
+              "tags": [
+                "limited"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<title>Spacing — 4 px scale</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 22px 24px; background: var(--bg-page); color: var(--text-primary); }
+  .row { display: grid; grid-template-columns: 60px 80px 1fr; gap: 14px; align-items: center; height: 22px; }
+  .tok { font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); }
+  .px { font-family: var(--font-mono); font-size: 11px; color: var(--text-tertiary); text-align: right; }
+  .bar { height: 12px; background: var(--firefly-400); border-radius: 2px; }
+  .note { font-family: var(--font-body); font-size: 11px; color: var(--text-tertiary); margin-top: 10px; }
+</style>
+</head>
+<body>
+  <div class="row"><div class="tok">space-0_5</div><div class="px">2 px</div><div class="bar" style="width:2px"></div></div>
+  <div class="row"><div class="tok">space-1</div><div class="px">4 px</div><div class="bar" style="width:4px"></div></div>
+  <div class="row"><div class="tok">space-2</div><div class="px">8 px</div><div class="bar" style="width:8px"></div></div>
+  <div class="row"><div class="tok">space-3</div><div class="px">12 px</div><div class="bar" style="width:12px"></div></div>
+  <div class="row"><div class="tok">space-4</div><div class="px">16 px</div><div class="bar" style="width:16px"></div></div>
+  <div class="row"><div class="tok">space-5</div><div class="px">20 px</div><div class="bar" style="width:20px"></div></div>
+  <div class="row"><div class="tok">space-6</div><div class="px">24 px</div><div class="bar" style="width:24px"></div></div>
+  <div class="row"><div class="tok">space-8</div><div class="px">32 px</div><div class="bar" style="width:32px"></div></div>
+  <div class="row"><div class="tok">space-10</div><div class="px">40 px</div><div class="bar" style="width:40px"></div></div>
+  <div class="row"><div class="tok">space-12</div><div class="px">48 px</div><div class="bar" style="width:48px"></div></div>
+  <div class="row"><div class="tok">space-16</div><div class="px">64 px</div><div class="bar" style="width:64px"></div></div>
+  <div class="row"><div class="tok">space-20</div><div class="px">80 px</div><div class="bar" style="width:80px"></div></div>
+  <div class="row"><div class="tok">space-24</div><div class="px">96 px</div><div class="bar" style="width:96px"></div></div>
+  <div class="note">4 px base unit · 2 px is the single allowed half-step (focus offsets, hairline insets) · 6 px is intentionally not in the scale.</div>
+</body>
+</html>

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<title>Brand — Logo lockups</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 24px; background: var(--bg-page); display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; align-items: stretch; }
+  .tile { background: var(--bg-section); border: 1px solid var(--border-default); border-radius: var(--radius-lg); padding: 18px; display: grid; place-items: center; min-height: 160px; position: relative; }
+  .tile .cap { position: absolute; bottom: 8px; left: 14px; font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary); }
+  .tile.cream { background: var(--cream-200); }
+  .tile.cream .cap { color: var(--brown-700); }
+  .wm { font-family: var(--font-display); font-size: 42px; color: var(--saffron-400); letter-spacing: 0.02em; line-height: 1; text-shadow: 0 0 20px rgba(245, 166, 35, 0.45); }
+  .wm.dark { color: var(--brown-800); text-shadow: none; }
+  .wm.white { color: var(--cream-50); text-shadow: none; }
+  img { max-width: 100%; height: auto; }
+</style>
+</head>
+<body>
+  <div class="tile">
+    <img src="../assets/logo/mascot.svg" alt="mascot" style="width:90px;height:90px">
+    <div class="cap">mascot only</div>
+  </div>
+  <div class="tile">
+    <div class="wm">BOBA BEAR</div>
+    <div class="cap">full-color master · dark</div>
+  </div>
+  <div class="tile cream">
+    <div class="wm dark">BOBA BEAR</div>
+    <div class="cap">1-color stamp · cream</div>
+  </div>
+</body>
+</html>

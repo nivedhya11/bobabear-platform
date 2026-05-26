@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<title>Colors — Aurora</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 24px; background: var(--bg-page); display: grid; gap: 16px; }
+  .label { font-family: var(--font-body); font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-label); }
+  .swatches { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+  .sw { display: flex; flex-direction: column; gap: 6px; }
+  .sw .chip { height: 64px; border-radius: var(--radius-lg); }
+  .sw .n { font-family: var(--font-heading); font-size: 14px; color: var(--text-primary); line-height: 1; }
+  .sw .hex { font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary); }
+  .grad { height: 36px; border-radius: var(--radius-md); background: var(--aurora-gradient); }
+</style>
+</head>
+<body>
+  <div class="label">Aurora · the stage</div>
+  <div class="swatches">
+    <div class="sw"><div class="chip" style="background:#F9C4CC"></div><div class="n">Rose</div><div class="hex">#F9C4CC</div></div>
+    <div class="sw"><div class="chip" style="background:#FAC9A8"></div><div class="n">Peach</div><div class="hex">#FAC9A8</div></div>
+    <div class="sw"><div class="chip" style="background:#FAF0A0"></div><div class="n">Butter</div><div class="hex">#FAF0A0</div></div>
+    <div class="sw"><div class="chip" style="background:#B8F0C4"></div><div class="n">Mint</div><div class="hex">#B8F0C4</div></div>
+    <div class="sw"><div class="chip" style="background:#A8D8F5"></div><div class="n">Sky</div><div class="hex">#A8D8F5</div></div>
+    <div class="sw"><div class="chip" style="background:#D4BEF5"></div><div class="n">Lavender</div><div class="hex">#D4BEF5</div></div>
+  </div>
+  <div class="grad"></div>
+</body>
+</html>

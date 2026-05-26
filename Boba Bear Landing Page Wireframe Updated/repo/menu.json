@@ -1,0 +1,1278 @@
+{
+  "categories": [
+    {
+      "name": "Signature Boba",
+      "slug": "signature-boba",
+      "subcategories": [
+        {
+          "name": "Signature Boba",
+          "items": [
+            {
+              "name": "Gangnam Iced Coffee Boba",
+              "description": "Creamy iced coffee with chewy boba and chocolate-lined cup walls.",
+              "price": 199,
+              "tier": "TIER_A",
+              "addons": [
+                {
+                  "name": "Texture & Size Upgrades",
+                  "min": 0,
+                  "max": 2,
+                  "options": [
+                    {
+                      "name": "Extra Tapioca Pearls",
+                      "price": 39
+                    },
+                    {
+                      "name": "Extra Nata De Coco",
+                      "price": 39
+                    },
+                    {
+                      "name": "Upsize to Large [500 ml]",
+                      "price": 59
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Purple Rain Taro Boba",
+              "description": "Creamy taro boba with a rich purple blend and chewy tapioca pearls.",
+              "price": 259,
+              "tier": "TIER_A",
+              "addons": [
+                {
+                  "name": "Texture & Size Upgrades",
+                  "min": 0,
+                  "max": 2,
+                  "options": [
+                    {
+                      "name": "Extra Tapioca Pearls",
+                      "price": 39
+                    },
+                    {
+                      "name": "Extra Nata De Coco",
+                      "price": 39
+                    },
+                    {
+                      "name": "Upsize to Large [500 ml]",
+                      "price": 59
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Zen Master Matcha Boba",
+              "description": "Premium matcha blended with milk, dark chocolate, and chewy boba.",
+              "price": 269,
+              "tier": "TIER_A",
+              "addons": [
+                {
+                  "name": "Texture & Size Upgrades",
+                  "min": 0,
+                  "max": 2,
+                  "options": [
+                    {
+                      "name": "Extra Tapioca Pearls",
+                      "price": 39
+                    },
+                    {
+                      "name": "Extra Nata De Coco",
+                      "price": 39
+                    },
+                    {
+                      "name": "Upsize to Large [500 ml]",
+                      "price": 59
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Hong Kong Tiger Milk Tea Boba",
+              "description": "Bold black milk tea with caramel stripes and chewy tapioca pearls.",
+              "price": 239,
+              "tier": "TIER_A",
+              "addons": [
+                {
+                  "name": "Texture & Size Upgrades",
+                  "min": 0,
+                  "max": 2,
+                  "options": [
+                    {
+                      "name": "Extra Tapioca Pearls",
+                      "price": 39
+                    },
+                    {
+                      "name": "Extra Nata De Coco",
+                      "price": 39
+                    },
+                    {
+                      "name": "Upsize to Large [500 ml]",
+                      "price": 59
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Bangkok Thai Tea Boba",
+              "description": "Creamy Thai tea with spiced sweetness and chewy tapioca pearls.",
+              "price": 249,
+              "tier": "TIER_A",
+              "addons": [
+                {
+                  "name": "Texture & Size Upgrades",
+                  "min": 0,
+                  "max": 2,
+                  "options": [
+                    {
+                      "name": "Extra Tapioca Pearls",
+                      "price": 39
+                    },
+                    {
+                      "name": "Extra Nata De Coco",
+                      "price": 39
+                    },
+                    {
+                      "name": "Upsize to Large [500 ml]",
+                      "price": 59
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Dirty Cheesecake Boba",
+              "description": "Cheesecake-inspired boba drink with butterscotch notes and a creamy finish.",
+              "price": 259,
+              "tier": "TIER_B",
+              "addons": [
+                {
+                  "name": "Texture & Size Upgrades",
+                  "min": 0,
+                  "max": 2,
+                  "options": [
+                    {
+                      "name": "Extra Tapioca Pearls",
+                      "price": 39
+                    },
+                    {
+                      "name": "Extra Nata De Coco",
+                      "price": 39
+                    },
+                    {
+                      "name": "Upsize to Large [500 ml]",
+                      "price": 59
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Matcha Studio",
+          "items": [
+            {
+              "name": "Purple Rain Layered Matcha",
+              "description": "Layered taro, milk, and matcha with a smooth finish and bold contrast.",
+              "price": 289,
+              "tier": "TIER_A",
+              "addons": [
+                {
+                  "name": "Texture Upgrades",
+                  "min": 0,
+                  "max": 1,
+                  "options": [
+                    {
+                      "name": "Extra Tapioca Pearls",
+                      "price": 39
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Wild Berry Dirty Matcha",
+              "description": "Berry, milk, and matcha layered into a clean, balanced iced drink.",
+              "price": 289,
+              "tier": "TIER_A",
+              "addons": [
+                {
+                  "name": "Texture Upgrades",
+                  "min": 0,
+                  "max": 1,
+                  "options": [
+                    {
+                      "name": "Extra Tapioca Pearls",
+                      "price": 39
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Iced Coffees",
+          "items": [
+            {
+              "name": "Hazelnut Iced Coffee Boba",
+              "description": "Hazelnut iced coffee layered with milk and chewy boba.",
+              "price": 239,
+              "tier": "TIER_B",
+              "addons": [
+                {
+                  "name": "Coffee & Texture Upgrades",
+                  "min": 0,
+                  "max": 2,
+                  "options": [
+                    {
+                      "name": "Extra Tapioca Pearls",
+                      "price": 39
+                    },
+                    {
+                      "name": "Extra Coffee Shot",
+                      "price": 29
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Butterscotch Caramel Iced Coffee Boba",
+              "description": "Iced coffee layered with butterscotch, caramel milk, and chewy boba.",
+              "price": 249,
+              "tier": "TIER_B",
+              "addons": [
+                {
+                  "name": "Coffee & Texture Upgrades",
+                  "min": 0,
+                  "max": 2,
+                  "options": [
+                    {
+                      "name": "Extra Tapioca Pearls",
+                      "price": 39
+                    },
+                    {
+                      "name": "Extra Coffee Shot",
+                      "price": 29
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Seoul Tiramisu Iced Coffee Boba",
+              "description": "Tiramisu-style iced coffee with milk, cocoa notes, and chewy boba.",
+              "price": 249,
+              "tier": "TIER_B",
+              "addons": [
+                {
+                  "name": "Coffee & Texture Upgrades",
+                  "min": 0,
+                  "max": 2,
+                  "options": [
+                    {
+                      "name": "Extra Tapioca Pearls",
+                      "price": 39
+                    },
+                    {
+                      "name": "Extra Coffee Shot",
+                      "price": 29
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Refreshers",
+          "items": [
+            {
+              "name": "Jeju Mint Mojito",
+              "description": "A minty, fizz-free refresher with popping boba and a clean citrus finish.",
+              "price": 189,
+              "tier": "TIER_A",
+              "addons": [
+                {
+                  "name": "Refresher Add-Ons",
+                  "min": 0,
+                  "max": 2,
+                  "options": [
+                    {
+                      "name": "Extra Strawberry Popping Boba",
+                      "price": 39
+                    },
+                    {
+                      "name": "Extra Mango Popping Boba",
+                      "price": 39
+                    },
+                    {
+                      "name": "Extra Blueberry Popping Boba",
+                      "price": 39
+                    },
+                    {
+                      "name": "Extra Green Apple Popping Boba",
+                      "price": 39
+                    },
+                    {
+                      "name": "Extra Lychee Popping Boba",
+                      "price": 39
+                    },
+                    {
+                      "name": "Extra Peach Popping Boba",
+                      "price": 39
+                    },
+                    {
+                      "name": "Extra Coconut Jelly",
+                      "price": 39
+                    },
+                    {
+                      "name": "Extra Strawberry Jelly",
+                      "price": 39
+                    },
+                    {
+                      "name": "Extra Litchi Jelly",
+                      "price": 39
+                    },
+                    {
+                      "name": "Upsize to Large [500 ml]",
+                      "price": 59
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Electric Blue Iced Tea",
+              "description": "Blueberry iced tea with popping boba and a bright citrus note.",
+              "price": 179,
+              "tier": "TIER_B",
+              "addons": [
+                {
+                  "name": "Refresher Add-Ons",
+                  "min": 0,
+                  "max": 2,
+                  "options": [
+                    {
+                      "name": "Extra Strawberry Popping Boba",
+                      "price": 39
+                    },
+                    {
+                      "name": "Extra Mango Popping Boba",
+                      "price": 39
+                    },
+                    {
+                      "name": "Extra Blueberry Popping Boba",
+                      "price": 39
+                    },
+                    {
+                      "name": "Extra Green Apple Popping Boba",
+                      "price": 39
+                    },
+                    {
+                      "name": "Extra Lychee Popping Boba",
+                      "price": 39
+                    },
+                    {
+                      "name": "Extra Peach Popping Boba",
+                      "price": 39
+                    },
+                    {
+                      "name": "Extra Coconut Jelly",
+                      "price": 39
+                    },
+                    {
+                      "name": "Extra Strawberry Jelly",
+                      "price": 39
+                    },
+                    {
+                      "name": "Extra Litchi Jelly",
+                      "price": 39
+                    },
+                    {
+                      "name": "Upsize to Large [500 ml]",
+                      "price": 59
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Kala Khatta Iced Tea",
+              "description": "Kala khatta iced tea with popping boba and a tangy summer finish.",
+              "price": 179,
+              "tier": "TIER_B",
+              "addons": [
+                {
+                  "name": "Refresher Add-Ons",
+                  "min": 0,
+                  "max": 2,
+                  "options": [
+                    {
+                      "name": "Extra Strawberry Popping Boba",
+                      "price": 39
+                    },
+                    {
+                      "name": "Extra Mango Popping Boba",
+                      "price": 39
+                    },
+                    {
+                      "name": "Extra Blueberry Popping Boba",
+                      "price": 39
+                    },
+                    {
+                      "name": "Extra Green Apple Popping Boba",
+                      "price": 39
+                    },
+                    {
+                      "name": "Extra Lychee Popping Boba",
+                      "price": 39
+                    },
+                    {
+                      "name": "Extra Peach Popping Boba",
+                      "price": 39
+                    },
+                    {
+                      "name": "Extra Coconut Jelly",
+                      "price": 39
+                    },
+                    {
+                      "name": "Extra Strawberry Jelly",
+                      "price": 39
+                    },
+                    {
+                      "name": "Extra Litchi Jelly",
+                      "price": 39
+                    },
+                    {
+                      "name": "Upsize to Large [500 ml]",
+                      "price": 59
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Magic Galaxy Iced Tea",
+              "description": "Butterfly pea iced tea with lime and a bright color-shifting finish.",
+              "price": 199,
+              "tier": "TIER_B",
+              "addons": [
+                {
+                  "name": "Refresher Add-Ons",
+                  "min": 0,
+                  "max": 2,
+                  "options": [
+                    {
+                      "name": "Extra Strawberry Popping Boba",
+                      "price": 39
+                    },
+                    {
+                      "name": "Extra Mango Popping Boba",
+                      "price": 39
+                    },
+                    {
+                      "name": "Extra Blueberry Popping Boba",
+                      "price": 39
+                    },
+                    {
+                      "name": "Extra Green Apple Popping Boba",
+                      "price": 39
+                    },
+                    {
+                      "name": "Extra Lychee Popping Boba",
+                      "price": 39
+                    },
+                    {
+                      "name": "Extra Peach Popping Boba",
+                      "price": 39
+                    },
+                    {
+                      "name": "Extra Coconut Jelly",
+                      "price": 39
+                    },
+                    {
+                      "name": "Extra Strawberry Jelly",
+                      "price": 39
+                    },
+                    {
+                      "name": "Extra Litchi Jelly",
+                      "price": 39
+                    },
+                    {
+                      "name": "Upsize to Large [500 ml]",
+                      "price": 59
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "K-Combos",
+      "slug": "k-combos",
+      "subcategories": [
+        {
+          "name": "Solo Combos",
+          "items": [
+            {
+              "name": "Exam Survivor Kit",
+              "description": "Spicy carbonara ramyun with Gangnam Iced Coffee Boba.",
+              "price": 349,
+              "tier": "TIER_A",
+              "addons": [
+                {
+                  "raw": "No Add-Ons [Min 0 / Max 0]"
+                }
+              ]
+            },
+            {
+              "name": "Purple Rain Combo",
+              "description": "Veg momos, salted fries, and Purple Rain Taro Boba.",
+              "price": 449,
+              "tier": "TIER_A",
+              "addons": [
+                {
+                  "raw": "No Add-Ons [Min 0 / Max 0]"
+                }
+              ]
+            },
+            {
+              "name": "Seoul Mate Combo",
+              "description": "Veg momos with Jeju Mint Mojito.",
+              "price": 249,
+              "tier": "TIER_A",
+              "addons": [
+                {
+                  "raw": "No Add-Ons [Min 0 / Max 0]"
+                }
+              ]
+            },
+            {
+              "name": "Ramyun & Boba Combo",
+              "description": "Ramyun paired with a chilled boba drink.",
+              "price": 399,
+              "tier": "TIER_B",
+              "addons": [
+                {
+                  "raw": "No Add-Ons [Min 0 / Max 0]"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Sharing Combos",
+          "items": [
+            {
+              "name": "K-Drama Sharing Combo",
+              "description": "A sharing combo with momos, fries, and boba for two.",
+              "price": 599,
+              "tier": "TIER_B",
+              "addons": [
+                {
+                  "raw": "No Add-Ons [Min 0 / Max 0]"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Ramyun",
+      "slug": "ramyun",
+      "subcategories": [
+        {
+          "name": "Signature Ramyun",
+          "items": [
+            {
+              "name": "Spicy Carbonara Ramyun",
+              "description": "Creamy, spicy dry-stir ramyun finished with sesame and spring onion.",
+              "price": 239,
+              "tier": "TIER_A",
+              "addons": [
+                {
+                  "raw": "Ramyun Bowl Boosters [Min 0 / Max 4]: Double Noodles (₹69); Paneer Topping (₹49); Extra Veg Toss (₹39); Cheese Slice (₹39); Sweet Corn (₹29); Garlic Butter Drizzle (₹29); Extra Seaweed + Sesame Pack (₹19); Extra Spicy Sauce (₹19)\n\nComplete Your Order [Min 0 / Max 1]: Add Salted Fries (₹79); Add Jeju Mint Mojito (₹99); Add Electric Blue Iced Tea (₹99)"
+                }
+              ]
+            },
+            {
+              "name": "Cheesy Melt Ramyun",
+              "description": "Dry-stir ramyun with a creamy cheese finish and savoury heat.",
+              "price": 239,
+              "tier": "TIER_A",
+              "addons": [
+                {
+                  "raw": "Ramyun Bowl Boosters [Min 0 / Max 4]: Double Noodles (₹69); Paneer Topping (₹49); Extra Veg Toss (₹39); Cheese Slice (₹39); Sweet Corn (₹29); Garlic Butter Drizzle (₹29); Extra Seaweed + Sesame Pack (₹19); Extra Spicy Sauce (₹19)\n\nComplete Your Order [Min 0 / Max 1]: Add Salted Fries (₹79); Add Jeju Mint Mojito (₹99); Add Electric Blue Iced Tea (₹99)"
+                }
+              ]
+            },
+            {
+              "name": "Volcanic Fire Ramyun",
+              "description": "Extra spicy dry-stir ramyun with sesame, spring onion, and seaweed.",
+              "price": 225,
+              "tier": "TIER_A",
+              "addons": [
+                {
+                  "raw": "Ramyun Bowl Boosters [Min 0 / Max 4]: Double Noodles (₹69); Paneer Topping (₹49); Extra Veg Toss (₹39); Cheese Slice (₹39); Sweet Corn (₹29); Garlic Butter Drizzle (₹29); Extra Seaweed + Sesame Pack (₹19); Extra Spicy Sauce (₹19)\n\nComplete Your Order [Min 0 / Max 1]: Add Salted Fries (₹79); Add Jeju Mint Mojito (₹99); Add Electric Blue Iced Tea (₹99)"
+                }
+              ]
+            },
+            {
+              "name": "Kimchi Ramyun",
+              "description": "Dry-stir ramyun with a tangy kimchi kick and savoury finish.",
+              "price": 225,
+              "tier": "TIER_B",
+              "addons": [
+                {
+                  "raw": "Ramyun Bowl Boosters [Min 0 / Max 4]: Double Noodles (₹69); Paneer Topping (₹49); Extra Veg Toss (₹39); Cheese Slice (₹39); Sweet Corn (₹29); Garlic Butter Drizzle (₹29); Extra Seaweed + Sesame Pack (₹19); Extra Spicy Sauce (₹19)\n\nComplete Your Order [Min 0 / Max 1]: Add Salted Fries (₹79); Add Jeju Mint Mojito (₹99); Add Electric Blue Iced Tea (₹99)"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Momos",
+      "slug": "momos",
+      "subcategories": [
+        {
+          "name": "Steamed & Fried Momos",
+          "items": [
+            {
+              "name": "Veg Steamed Momos",
+              "description": "Soft steamed veg momos served with spicy dip.",
+              "price": 119,
+              "tier": "TIER_A",
+              "addons": [
+                {
+                  "raw": "Choose Your Extra Dip [Min 0 / Max 2]: Dynamite Red Spicy Dip (₹25); Gangnam Glaze Sweet Soy Dip (₹25); Seoul Masala Smoky Dip (₹25)\n\nComplete Your Order [Min 0 / Max 1]: Add Salted Fries (₹79); Add Jeju Mint Mojito (₹99); Add Electric Blue Iced Tea (₹99)"
+                }
+              ]
+            },
+            {
+              "name": "Veg Fried Momos",
+              "description": "Crisp fried veg momos served with spicy dip.",
+              "price": 129,
+              "tier": "TIER_A",
+              "addons": [
+                {
+                  "raw": "Choose Your Extra Dip [Min 0 / Max 2]: Dynamite Red Spicy Dip (₹25); Gangnam Glaze Sweet Soy Dip (₹25); Seoul Masala Smoky Dip (₹25)\n\nComplete Your Order [Min 0 / Max 1]: Add Salted Fries (₹79); Add Jeju Mint Mojito (₹99); Add Electric Blue Iced Tea (₹99)"
+                }
+              ]
+            },
+            {
+              "name": "Paneer Steamed Momos",
+              "description": "Steamed paneer momos with a soft filling and spicy dip.",
+              "price": 139,
+              "tier": "TIER_A",
+              "addons": [
+                {
+                  "raw": "Choose Your Extra Dip [Min 0 / Max 2]: Dynamite Red Spicy Dip (₹25); Gangnam Glaze Sweet Soy Dip (₹25); Seoul Masala Smoky Dip (₹25)\n\nComplete Your Order [Min 0 / Max 1]: Add Salted Fries (₹79); Add Jeju Mint Mojito (₹99); Add Electric Blue Iced Tea (₹99)"
+                }
+              ]
+            },
+            {
+              "name": "Paneer Fried Momos",
+              "description": "Crisp fried paneer momos served with spicy dip.",
+              "price": 149,
+              "tier": "TIER_B",
+              "addons": [
+                {
+                  "raw": "Choose Your Extra Dip [Min 0 / Max 2]: Dynamite Red Spicy Dip (₹25); Gangnam Glaze Sweet Soy Dip (₹25); Seoul Masala Smoky Dip (₹25)\n\nComplete Your Order [Min 0 / Max 1]: Add Salted Fries (₹79); Add Jeju Mint Mojito (₹99); Add Electric Blue Iced Tea (₹99)"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Signature Momos",
+          "items": [
+            {
+              "name": "Dynamite Red Veg Momos",
+              "description": "Fried veg momos tossed in spicy Dynamite Red sauce.",
+              "price": 159,
+              "tier": "TIER_A",
+              "addons": [
+                {
+                  "raw": "Choose Your Extra Dip [Min 0 / Max 2]: Dynamite Red Spicy Dip (₹25); Gangnam Glaze Sweet Soy Dip (₹25); Seoul Masala Smoky Dip (₹25)\n\nComplete Your Order [Min 0 / Max 1]: Add Salted Fries (₹79); Add Jeju Mint Mojito (₹99); Add Electric Blue Iced Tea (₹99)"
+                }
+              ]
+            },
+            {
+              "name": "Gangnam Glaze Veg Momos",
+              "description": "Fried veg momos glazed in sweet-savoury Gangnam sauce.",
+              "price": 159,
+              "tier": "TIER_A",
+              "addons": [
+                {
+                  "raw": "Choose Your Extra Dip [Min 0 / Max 2]: Dynamite Red Spicy Dip (₹25); Gangnam Glaze Sweet Soy Dip (₹25); Seoul Masala Smoky Dip (₹25)\n\nComplete Your Order [Min 0 / Max 1]: Add Salted Fries (₹79); Add Jeju Mint Mojito (₹99); Add Electric Blue Iced Tea (₹99)"
+                }
+              ]
+            },
+            {
+              "name": "Seoul Masala Veg Momos",
+              "description": "Veg momos tossed in smoky Seoul Masala sauce.",
+              "price": 149,
+              "tier": "TIER_A",
+              "addons": [
+                {
+                  "raw": "Choose Your Extra Dip [Min 0 / Max 2]: Dynamite Red Spicy Dip (₹25); Gangnam Glaze Sweet Soy Dip (₹25); Seoul Masala Smoky Dip (₹25)\n\nComplete Your Order [Min 0 / Max 1]: Add Salted Fries (₹79); Add Jeju Mint Mojito (₹99); Add Electric Blue Iced Tea (₹99)"
+                }
+              ]
+            },
+            {
+              "name": "Dynamite Red Paneer Momos",
+              "description": "Fried paneer momos tossed in spicy Dynamite Red sauce.",
+              "price": 189,
+              "tier": "TIER_A",
+              "addons": [
+                {
+                  "raw": "Choose Your Extra Dip [Min 0 / Max 2]: Dynamite Red Spicy Dip (₹25); Gangnam Glaze Sweet Soy Dip (₹25); Seoul Masala Smoky Dip (₹25)\n\nComplete Your Order [Min 0 / Max 1]: Add Salted Fries (₹79); Add Jeju Mint Mojito (₹99); Add Electric Blue Iced Tea (₹99)"
+                }
+              ]
+            },
+            {
+              "name": "Gangnam Glaze Paneer Momos",
+              "description": "Fried paneer momos glazed in sweet-savoury Gangnam sauce.",
+              "price": 189,
+              "tier": "TIER_B",
+              "addons": [
+                {
+                  "raw": "Choose Your Extra Dip [Min 0 / Max 2]: Dynamite Red Spicy Dip (₹25); Gangnam Glaze Sweet Soy Dip (₹25); Seoul Masala Smoky Dip (₹25)\n\nComplete Your Order [Min 0 / Max 1]: Add Salted Fries (₹79); Add Jeju Mint Mojito (₹99); Add Electric Blue Iced Tea (₹99)"
+                }
+              ]
+            },
+            {
+              "name": "Seoul Masala Paneer Momos",
+              "description": "Paneer momos tossed in smoky Seoul Masala sauce.",
+              "price": 179,
+              "tier": "TIER_B",
+              "addons": [
+                {
+                  "raw": "Choose Your Extra Dip [Min 0 / Max 2]: Dynamite Red Spicy Dip (₹25); Gangnam Glaze Sweet Soy Dip (₹25); Seoul Masala Smoky Dip (₹25)\n\nComplete Your Order [Min 0 / Max 1]: Add Salted Fries (₹79); Add Jeju Mint Mojito (₹99); Add Electric Blue Iced Tea (₹99)"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Burgers & Wraps",
+      "slug": "burgers-wraps",
+      "subcategories": [
+        {
+          "name": "Veg Burgers",
+          "items": [
+            {
+              "name": "Dynamite Red Veg Burger",
+              "description": "Crispy veg burger with spicy Dynamite Red sauce, lettuce, and mayo.",
+              "price": 159,
+              "tier": "TIER_A",
+              "addons": [
+                {
+                  "raw": "Make it a Double [Min 0 / Max 1]: Extra Crispy Veg Patty (₹59); Extra Premium Paneer Slab (₹99)\n\nLevel Up Your Bite [Min 0 / Max 3]: Melted Cheese Slice (₹29); Spicy Jalapeno Coins (₹25); Extra Fresh Veggies (₹19)\n\nChoose Your Extra Dip [Min 0 / Max 2]: Dynamite Red Spicy Dip (₹25); Gangnam Glaze Sweet Soy Dip (₹25); Seoul Masala Smoky Dip (₹25)\n\nComplete Your Order [Min 0 / Max 1]: Add Salted Fries (₹79); Add Jeju Mint Mojito (₹99); Add Electric Blue Iced Tea (₹99)"
+                }
+              ]
+            },
+            {
+              "name": "Gangnam Glaze Veg Burger",
+              "description": "Crispy veg burger with Gangnam glaze, fried onions, and savoury mayo.",
+              "price": 159,
+              "tier": "TIER_A",
+              "addons": [
+                {
+                  "raw": "Make it a Double [Min 0 / Max 1]: Extra Crispy Veg Patty (₹59); Extra Premium Paneer Slab (₹99)\n\nLevel Up Your Bite [Min 0 / Max 3]: Melted Cheese Slice (₹29); Spicy Jalapeno Coins (₹25); Extra Fresh Veggies (₹19)\n\nChoose Your Extra Dip [Min 0 / Max 2]: Dynamite Red Spicy Dip (₹25); Gangnam Glaze Sweet Soy Dip (₹25); Seoul Masala Smoky Dip (₹25)\n\nComplete Your Order [Min 0 / Max 1]: Add Salted Fries (₹79); Add Jeju Mint Mojito (₹99); Add Electric Blue Iced Tea (₹99)"
+                }
+              ]
+            },
+            {
+              "name": "Seoul Masala Veg Burger",
+              "description": "Crispy veg burger with smoky Seoul Masala sauce, onion, and mint mayo.",
+              "price": 149,
+              "tier": "TIER_B",
+              "addons": [
+                {
+                  "raw": "Make it a Double [Min 0 / Max 1]: Extra Crispy Veg Patty (₹59); Extra Premium Paneer Slab (₹99)\n\nLevel Up Your Bite [Min 0 / Max 3]: Melted Cheese Slice (₹29); Spicy Jalapeno Coins (₹25); Extra Fresh Veggies (₹19)\n\nChoose Your Extra Dip [Min 0 / Max 2]: Dynamite Red Spicy Dip (₹25); Gangnam Glaze Sweet Soy Dip (₹25); Seoul Masala Smoky Dip (₹25)\n\nComplete Your Order [Min 0 / Max 1]: Add Salted Fries (₹79); Add Jeju Mint Mojito (₹99); Add Electric Blue Iced Tea (₹99)"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Paneer Burgers",
+          "items": [
+            {
+              "name": "Dynamite Red Paneer Burger",
+              "description": "Crispy paneer burger with spicy Dynamite Red sauce, lettuce, and mayo.",
+              "price": 219,
+              "tier": "TIER_A",
+              "addons": [
+                {
+                  "raw": "Make it a Double [Min 0 / Max 1]: Extra Crispy Veg Patty (₹59); Extra Premium Paneer Slab (₹99)\n\nLevel Up Your Bite [Min 0 / Max 3]: Melted Cheese Slice (₹29); Spicy Jalapeno Coins (₹25); Extra Fresh Veggies (₹19)\n\nChoose Your Extra Dip [Min 0 / Max 2]: Dynamite Red Spicy Dip (₹25); Gangnam Glaze Sweet Soy Dip (₹25); Seoul Masala Smoky Dip (₹25)\n\nComplete Your Order [Min 0 / Max 1]: Add Salted Fries (₹79); Add Jeju Mint Mojito (₹99); Add Electric Blue Iced Tea (₹99)"
+                }
+              ]
+            },
+            {
+              "name": "Gangnam Glaze Paneer Burger",
+              "description": "Crispy paneer burger with Gangnam glaze, fried onions, and savoury mayo.",
+              "price": 219,
+              "tier": "TIER_A",
+              "addons": [
+                {
+                  "raw": "Make it a Double [Min 0 / Max 1]: Extra Crispy Veg Patty (₹59); Extra Premium Paneer Slab (₹99)\n\nLevel Up Your Bite [Min 0 / Max 3]: Melted Cheese Slice (₹29); Spicy Jalapeno Coins (₹25); Extra Fresh Veggies (₹19)\n\nChoose Your Extra Dip [Min 0 / Max 2]: Dynamite Red Spicy Dip (₹25); Gangnam Glaze Sweet Soy Dip (₹25); Seoul Masala Smoky Dip (₹25)\n\nComplete Your Order [Min 0 / Max 1]: Add Salted Fries (₹79); Add Jeju Mint Mojito (₹99); Add Electric Blue Iced Tea (₹99)"
+                }
+              ]
+            },
+            {
+              "name": "Seoul Masala Paneer Burger",
+              "description": "Crispy paneer burger with smoky Seoul Masala sauce, onion, and mint mayo.",
+              "price": 219,
+              "tier": "TIER_B",
+              "addons": [
+                {
+                  "raw": "Make it a Double [Min 0 / Max 1]: Extra Crispy Veg Patty (₹59); Extra Premium Paneer Slab (₹99)\n\nLevel Up Your Bite [Min 0 / Max 3]: Melted Cheese Slice (₹29); Spicy Jalapeno Coins (₹25); Extra Fresh Veggies (₹19)\n\nChoose Your Extra Dip [Min 0 / Max 2]: Dynamite Red Spicy Dip (₹25); Gangnam Glaze Sweet Soy Dip (₹25); Seoul Masala Smoky Dip (₹25)\n\nComplete Your Order [Min 0 / Max 1]: Add Salted Fries (₹79); Add Jeju Mint Mojito (₹99); Add Electric Blue Iced Tea (₹99)"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Veg Wraps",
+          "items": [
+            {
+              "name": "Dynamite Red Veg Wrap",
+              "description": "Veg wrap with spicy Dynamite Red sauce, lettuce, and mayo.",
+              "price": 169,
+              "tier": "TIER_A",
+              "addons": [
+                {
+                  "raw": "Make it a Double [Min 0 / Max 1]: Extra Crispy Veg Patty (₹59); Extra Premium Paneer Slab (₹99)\n\nLevel Up Your Bite [Min 0 / Max 3]: Melted Cheese Slice (₹29); Spicy Jalapeno Coins (₹25); Extra Fresh Veggies (₹19)\n\nChoose Your Extra Dip [Min 0 / Max 2]: Dynamite Red Spicy Dip (₹25); Gangnam Glaze Sweet Soy Dip (₹25); Seoul Masala Smoky Dip (₹25)\n\nComplete Your Order [Min 0 / Max 1]: Add Salted Fries (₹79); Add Jeju Mint Mojito (₹99); Add Electric Blue Iced Tea (₹99)"
+                }
+              ]
+            },
+            {
+              "name": "Gangnam Glaze Veg Wrap",
+              "description": "Veg wrap with Gangnam glaze, fried onions, and savoury mayo.",
+              "price": 169,
+              "tier": "TIER_A",
+              "addons": [
+                {
+                  "raw": "Make it a Double [Min 0 / Max 1]: Extra Crispy Veg Patty (₹59); Extra Premium Paneer Slab (₹99)\n\nLevel Up Your Bite [Min 0 / Max 3]: Melted Cheese Slice (₹29); Spicy Jalapeno Coins (₹25); Extra Fresh Veggies (₹19)\n\nChoose Your Extra Dip [Min 0 / Max 2]: Dynamite Red Spicy Dip (₹25); Gangnam Glaze Sweet Soy Dip (₹25); Seoul Masala Smoky Dip (₹25)\n\nComplete Your Order [Min 0 / Max 1]: Add Salted Fries (₹79); Add Jeju Mint Mojito (₹99); Add Electric Blue Iced Tea (₹99)"
+                }
+              ]
+            },
+            {
+              "name": "Seoul Masala Veg Wrap",
+              "description": "Veg wrap with smoky Seoul Masala sauce, onion, and mint mayo.",
+              "price": 159,
+              "tier": "TIER_B",
+              "addons": [
+                {
+                  "raw": "Make it a Double [Min 0 / Max 1]: Extra Crispy Veg Patty (₹59); Extra Premium Paneer Slab (₹99)\n\nLevel Up Your Bite [Min 0 / Max 3]: Melted Cheese Slice (₹29); Spicy Jalapeno Coins (₹25); Extra Fresh Veggies (₹19)\n\nChoose Your Extra Dip [Min 0 / Max 2]: Dynamite Red Spicy Dip (₹25); Gangnam Glaze Sweet Soy Dip (₹25); Seoul Masala Smoky Dip (₹25)\n\nComplete Your Order [Min 0 / Max 1]: Add Salted Fries (₹79); Add Jeju Mint Mojito (₹99); Add Electric Blue Iced Tea (₹99)"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Paneer Wraps",
+          "items": [
+            {
+              "name": "Dynamite Red Paneer Wrap",
+              "description": "Paneer wrap with spicy Dynamite Red sauce, lettuce, and mayo.",
+              "price": 219,
+              "tier": "TIER_A",
+              "addons": [
+                {
+                  "raw": "Make it a Double [Min 0 / Max 1]: Extra Crispy Veg Patty (₹59); Extra Premium Paneer Slab (₹99)\n\nLevel Up Your Bite [Min 0 / Max 3]: Melted Cheese Slice (₹29); Spicy Jalapeno Coins (₹25); Extra Fresh Veggies (₹19)\n\nChoose Your Extra Dip [Min 0 / Max 2]: Dynamite Red Spicy Dip (₹25); Gangnam Glaze Sweet Soy Dip (₹25); Seoul Masala Smoky Dip (₹25)\n\nComplete Your Order [Min 0 / Max 1]: Add Salted Fries (₹79); Add Jeju Mint Mojito (₹99); Add Electric Blue Iced Tea (₹99)"
+                }
+              ]
+            },
+            {
+              "name": "Gangnam Glaze Paneer Wrap",
+              "description": "Paneer wrap with Gangnam glaze, fried onions, and savoury mayo.",
+              "price": 219,
+              "tier": "TIER_A",
+              "addons": [
+                {
+                  "raw": "Make it a Double [Min 0 / Max 1]: Extra Crispy Veg Patty (₹59); Extra Premium Paneer Slab (₹99)\n\nLevel Up Your Bite [Min 0 / Max 3]: Melted Cheese Slice (₹29); Spicy Jalapeno Coins (₹25); Extra Fresh Veggies (₹19)\n\nChoose Your Extra Dip [Min 0 / Max 2]: Dynamite Red Spicy Dip (₹25); Gangnam Glaze Sweet Soy Dip (₹25); Seoul Masala Smoky Dip (₹25)\n\nComplete Your Order [Min 0 / Max 1]: Add Salted Fries (₹79); Add Jeju Mint Mojito (₹99); Add Electric Blue Iced Tea (₹99)"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Meals",
+      "slug": "meals",
+      "subcategories": [
+        {
+          "name": "Burger Meals",
+          "items": [
+            {
+              "name": "Veg Burger Meal",
+              "description": "A veg burger served with salted fries.",
+              "price": 249,
+              "tier": "TIER_A",
+              "addons": [
+                {
+                  "name": "Add a Drink",
+                  "min": 0,
+                  "max": 1,
+                  "options": [
+                    {
+                      "name": "Add Jeju Mint Mojito",
+                      "price": 99
+                    },
+                    {
+                      "name": "Add Electric Blue Iced Tea",
+                      "price": 99
+                    },
+                    {
+                      "name": "Add Kala Khatta Iced Tea",
+                      "price": 99
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Paneer Burger Meal",
+              "description": "A paneer burger served with salted fries.",
+              "price": 329,
+              "tier": "TIER_B",
+              "addons": [
+                {
+                  "name": "Add a Drink",
+                  "min": 0,
+                  "max": 1,
+                  "options": [
+                    {
+                      "name": "Add Jeju Mint Mojito",
+                      "price": 99
+                    },
+                    {
+                      "name": "Add Electric Blue Iced Tea",
+                      "price": 99
+                    },
+                    {
+                      "name": "Add Kala Khatta Iced Tea",
+                      "price": 99
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Fries, Bites & Corn Dogs",
+      "slug": "fries-bites-corn-dogs",
+      "subcategories": [
+        {
+          "name": "Fries",
+          "items": [
+            {
+              "name": "Salted Fries",
+              "description": "Crisp thick-cut fries finished with salt.",
+              "price": 109,
+              "tier": "TIER_A",
+              "addons": [
+                {
+                  "raw": "Choose Your Extra Dip [Min 0 / Max 2]: Dynamite Red Spicy Dip (₹25); Gangnam Glaze Sweet Soy Dip (₹25); Seoul Masala Smoky Dip (₹25)\n\nAdd a Refreshing Drink [Min 0 / Max 1]: Add Jeju Mint Mojito (₹99); Add Electric Blue Iced Tea (₹99); Add Kala Khatta Iced Tea (₹99)"
+                }
+              ]
+            },
+            {
+              "name": "Dynamite Red Fries",
+              "description": "Fries loaded with spicy Dynamite Red sauce and spring onion.",
+              "price": 169,
+              "tier": "TIER_A",
+              "addons": [
+                {
+                  "raw": "Choose Your Extra Dip [Min 0 / Max 2]: Dynamite Red Spicy Dip (₹25); Gangnam Glaze Sweet Soy Dip (₹25); Seoul Masala Smoky Dip (₹25)\n\nAdd a Refreshing Drink [Min 0 / Max 1]: Add Jeju Mint Mojito (₹99); Add Electric Blue Iced Tea (₹99); Add Kala Khatta Iced Tea (₹99)"
+                }
+              ]
+            },
+            {
+              "name": "Gangnam Glaze Fries",
+              "description": "Fries glazed in sweet-savoury Gangnam sauce and topped with fried onions.",
+              "price": 169,
+              "tier": "TIER_A",
+              "addons": [
+                {
+                  "raw": "Choose Your Extra Dip [Min 0 / Max 2]: Dynamite Red Spicy Dip (₹25); Gangnam Glaze Sweet Soy Dip (₹25); Seoul Masala Smoky Dip (₹25)\n\nAdd a Refreshing Drink [Min 0 / Max 1]: Add Jeju Mint Mojito (₹99); Add Electric Blue Iced Tea (₹99); Add Kala Khatta Iced Tea (₹99)"
+                }
+              ]
+            },
+            {
+              "name": "Seoul Masala Fries",
+              "description": "Fries tossed in smoky Seoul Masala sauce with onion and mint mayo.",
+              "price": 159,
+              "tier": "TIER_B",
+              "addons": [
+                {
+                  "raw": "Choose Your Extra Dip [Min 0 / Max 2]: Dynamite Red Spicy Dip (₹25); Gangnam Glaze Sweet Soy Dip (₹25); Seoul Masala Smoky Dip (₹25)\n\nAdd a Refreshing Drink [Min 0 / Max 1]: Add Jeju Mint Mojito (₹99); Add Electric Blue Iced Tea (₹99); Add Kala Khatta Iced Tea (₹99)"
+                }
+              ]
+            },
+            {
+              "name": "Peri Peri Fries",
+              "description": "Crisp fries tossed in peri peri seasoning.",
+              "price": 149,
+              "tier": "TIER_B",
+              "addons": [
+                {
+                  "raw": "Choose Your Extra Dip [Min 0 / Max 2]: Dynamite Red Spicy Dip (₹25); Gangnam Glaze Sweet Soy Dip (₹25); Seoul Masala Smoky Dip (₹25)\n\nAdd a Refreshing Drink [Min 0 / Max 1]: Add Jeju Mint Mojito (₹99); Add Electric Blue Iced Tea (₹99); Add Kala Khatta Iced Tea (₹99)"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Corn Dogs",
+          "items": [
+            {
+              "name": "Classic Seoul Corn Dog",
+              "description": "A crisp Korean-style corn dog with veggie sausage, mozzarella, and sauces.",
+              "price": 149,
+              "tier": "TIER_A",
+              "addons": [
+                {
+                  "raw": "Choose Your Extra Dip [Min 0 / Max 2]: Dynamite Red Spicy Dip (₹25); Gangnam Glaze Sweet Soy Dip (₹25); Seoul Masala Smoky Dip (₹25)\n\nAdd a Refreshing Drink [Min 0 / Max 1]: Add Jeju Mint Mojito (₹99); Add Electric Blue Iced Tea (₹99); Add Kala Khatta Iced Tea (₹99)"
+                }
+              ]
+            },
+            {
+              "name": "Dynamite Crumb Corn Dog",
+              "description": "Mozzarella corn dog rolled in spicy crumbs and finished with Dynamite Red sauce.",
+              "price": 169,
+              "tier": "TIER_B",
+              "addons": [
+                {
+                  "raw": "Choose Your Extra Dip [Min 0 / Max 2]: Dynamite Red Spicy Dip (₹25); Gangnam Glaze Sweet Soy Dip (₹25); Seoul Masala Smoky Dip (₹25)\n\nAdd a Refreshing Drink [Min 0 / Max 1]: Add Jeju Mint Mojito (₹99); Add Electric Blue Iced Tea (₹99); Add Kala Khatta Iced Tea (₹99)"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Quick Bites",
+          "items": [
+            {
+              "name": "Golden Hash Browns",
+              "description": "Crisp golden hash browns with a soft centre.",
+              "price": 89,
+              "tier": "TIER_A",
+              "addons": [
+                {
+                  "raw": "Choose Your Extra Dip [Min 0 / Max 2]: Dynamite Red Spicy Dip (₹25); Gangnam Glaze Sweet Soy Dip (₹25); Seoul Masala Smoky Dip (₹25)\n\nAdd a Refreshing Drink [Min 0 / Max 1]: Add Jeju Mint Mojito (₹99); Add Electric Blue Iced Tea (₹99); Add Kala Khatta Iced Tea (₹99)"
+                }
+              ]
+            },
+            {
+              "name": "Cheesy Potato Pop Shots",
+              "description": "Crisp potato bites with a soft cheesy centre.",
+              "price": 149,
+              "tier": "TIER_B",
+              "addons": [
+                {
+                  "raw": "Choose Your Extra Dip [Min 0 / Max 2]: Dynamite Red Spicy Dip (₹25); Gangnam Glaze Sweet Soy Dip (₹25); Seoul Masala Smoky Dip (₹25)\n\nAdd a Refreshing Drink [Min 0 / Max 1]: Add Jeju Mint Mojito (₹99); Add Electric Blue Iced Tea (₹99); Add Kala Khatta Iced Tea (₹99)"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Quesadillas",
+      "slug": "quesadillas",
+      "subcategories": [
+        {
+          "name": "Veg Quesadillas",
+          "items": [
+            {
+              "name": "Dynamite Red Corn Quesadilla",
+              "description": "Corn and cheese quesadilla with spicy Dynamite Red sauce.",
+              "price": 179,
+              "tier": "TIER_A",
+              "addons": [
+                {
+                  "raw": "Choose Your Extra Dip [Min 0 / Max 2]: Dynamite Red Spicy Dip (₹25); Gangnam Glaze Sweet Soy Dip (₹25); Seoul Masala Smoky Dip (₹25)\n\nComplete Your Order [Min 0 / Max 1]: Add Salted Fries (₹79); Add Jeju Mint Mojito (₹99); Add Electric Blue Iced Tea (₹99)"
+                }
+              ]
+            },
+            {
+              "name": "Gangnam Glaze Veg Quesadilla",
+              "description": "Veg and cheese quesadilla with sweet-savoury Gangnam glaze.",
+              "price": 179,
+              "tier": "TIER_A",
+              "addons": [
+                {
+                  "raw": "Choose Your Extra Dip [Min 0 / Max 2]: Dynamite Red Spicy Dip (₹25); Gangnam Glaze Sweet Soy Dip (₹25); Seoul Masala Smoky Dip (₹25)\n\nComplete Your Order [Min 0 / Max 1]: Add Salted Fries (₹79); Add Jeju Mint Mojito (₹99); Add Electric Blue Iced Tea (₹99)"
+                }
+              ]
+            },
+            {
+              "name": "Seoul Masala Veg Quesadilla",
+              "description": "Veg and cheese quesadilla with smoky Seoul Masala sauce.",
+              "price": 169,
+              "tier": "TIER_B",
+              "addons": [
+                {
+                  "raw": "Choose Your Extra Dip [Min 0 / Max 2]: Dynamite Red Spicy Dip (₹25); Gangnam Glaze Sweet Soy Dip (₹25); Seoul Masala Smoky Dip (₹25)\n\nComplete Your Order [Min 0 / Max 1]: Add Salted Fries (₹79); Add Jeju Mint Mojito (₹99); Add Electric Blue Iced Tea (₹99)"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Paneer Quesadillas",
+          "items": [
+            {
+              "name": "Dynamite Red Paneer Quesadilla",
+              "description": "Paneer and cheese quesadilla with spicy Dynamite Red sauce.",
+              "price": 229,
+              "tier": "TIER_A",
+              "addons": [
+                {
+                  "raw": "Choose Your Extra Dip [Min 0 / Max 2]: Dynamite Red Spicy Dip (₹25); Gangnam Glaze Sweet Soy Dip (₹25); Seoul Masala Smoky Dip (₹25)\n\nComplete Your Order [Min 0 / Max 1]: Add Salted Fries (₹79); Add Jeju Mint Mojito (₹99); Add Electric Blue Iced Tea (₹99)"
+                }
+              ]
+            },
+            {
+              "name": "Gangnam Glaze Paneer Quesadilla",
+              "description": "Paneer and cheese quesadilla with sweet-savoury Gangnam glaze.",
+              "price": 229,
+              "tier": "TIER_A",
+              "addons": [
+                {
+                  "raw": "Choose Your Extra Dip [Min 0 / Max 2]: Dynamite Red Spicy Dip (₹25); Gangnam Glaze Sweet Soy Dip (₹25); Seoul Masala Smoky Dip (₹25)\n\nComplete Your Order [Min 0 / Max 1]: Add Salted Fries (₹79); Add Jeju Mint Mojito (₹99); Add Electric Blue Iced Tea (₹99)"
+                }
+              ]
+            },
+            {
+              "name": "Seoul Masala Paneer Quesadilla",
+              "description": "Paneer and cheese quesadilla with smoky Seoul Masala sauce.",
+              "price": 229,
+              "tier": "TIER_B",
+              "addons": [
+                {
+                  "raw": "Choose Your Extra Dip [Min 0 / Max 2]: Dynamite Red Spicy Dip (₹25); Gangnam Glaze Sweet Soy Dip (₹25); Seoul Masala Smoky Dip (₹25)\n\nComplete Your Order [Min 0 / Max 1]: Add Salted Fries (₹79); Add Jeju Mint Mojito (₹99); Add Electric Blue Iced Tea (₹99)"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Desserts",
+      "slug": "desserts",
+      "subcategories": [
+        {
+          "name": "Sundaes",
+          "items": [
+            {
+              "name": "Signature Boba Sundae",
+              "description": "Vanilla ice cream topped with brown sugar sauce and chewy boba pearls.",
+              "price": 149,
+              "tier": "TIER_A",
+              "addons": [
+                {
+                  "raw": "Choose Your Drizzle [Min 0 / Max 2]: Nutella Drizzle (₹39); Dark Chocolate Drizzle (₹19); White Chocolate Drizzle (₹19)\n\nDessert Toppings [Min 0 / Max 3]: Vanilla Ice Cream [1 Scoop] (₹49); Oreo Crumbles (₹19); Whole Lotus Biscoff Cookie (₹29)"
+                }
+              ]
+            },
+            {
+              "name": "Caramel Cold Coffee Sundae",
+              "description": "Vanilla ice cream with cold coffee, caramel, and chewy boba pearls.",
+              "price": 189,
+              "tier": "TIER_A",
+              "addons": [
+                {
+                  "raw": "Choose Your Drizzle [Min 0 / Max 2]: Nutella Drizzle (₹39); Dark Chocolate Drizzle (₹19); White Chocolate Drizzle (₹19)\n\nDessert Toppings [Min 0 / Max 3]: Vanilla Ice Cream [1 Scoop] (₹49); Oreo Crumbles (₹19); Whole Lotus Biscoff Cookie (₹29)"
+                }
+              ]
+            },
+            {
+              "name": "Berry Popping Sundae",
+              "description": "Vanilla ice cream topped with berry sauce and popping boba.",
+              "price": 169,
+              "tier": "TIER_B",
+              "addons": [
+                {
+                  "raw": "Choose Your Drizzle [Min 0 / Max 2]: Nutella Drizzle (₹39); Dark Chocolate Drizzle (₹19); White Chocolate Drizzle (₹19)\n\nDessert Toppings [Min 0 / Max 3]: Vanilla Ice Cream [1 Scoop] (₹49); Oreo Crumbles (₹19); Whole Lotus Biscoff Cookie (₹29)"
+                }
+              ]
+            },
+            {
+              "name": "Nutella Oreo Sundae",
+              "description": "Vanilla ice cream topped with Nutella and crushed Oreo.",
+              "price": 179,
+              "tier": "TIER_B",
+              "addons": [
+                {
+                  "raw": "Choose Your Drizzle [Min 0 / Max 2]: Nutella Drizzle (₹39); Dark Chocolate Drizzle (₹19); White Chocolate Drizzle (₹19)\n\nDessert Toppings [Min 0 / Max 3]: Vanilla Ice Cream [1 Scoop] (₹49); Oreo Crumbles (₹19); Whole Lotus Biscoff Cookie (₹29)"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Waffles",
+          "items": [
+            {
+              "name": "Vanilla Waffle",
+              "description": "Warm vanilla waffle served with maple syrup.",
+              "price": 229,
+              "tier": "TIER_A",
+              "addons": [
+                {
+                  "raw": "Choose Your Drizzle [Min 0 / Max 2]: Nutella Drizzle (₹39); Dark Chocolate Drizzle (₹19); White Chocolate Drizzle (₹19)\n\nDessert Toppings [Min 0 / Max 3]: Vanilla Ice Cream [1 Scoop] (₹49); Oreo Crumbles (₹19); Whole Lotus Biscoff Cookie (₹29)"
+                }
+              ]
+            },
+            {
+              "name": "Dark Mocha Coffee Waffle",
+              "description": "Dark mocha waffle with a rich coffee-chocolate finish.",
+              "price": 269,
+              "tier": "TIER_A",
+              "addons": [
+                {
+                  "raw": "Choose Your Drizzle [Min 0 / Max 2]: Nutella Drizzle (₹39); Dark Chocolate Drizzle (₹19); White Chocolate Drizzle (₹19)\n\nDessert Toppings [Min 0 / Max 3]: Vanilla Ice Cream [1 Scoop] (₹49); Oreo Crumbles (₹19); Whole Lotus Biscoff Cookie (₹29)"
+                }
+              ]
+            },
+            {
+              "name": "Nutella Chocolate Waffle",
+              "description": "Warm waffle topped with Nutella and chocolate finish.",
+              "price": 259,
+              "tier": "TIER_B",
+              "addons": [
+                {
+                  "raw": "Choose Your Drizzle [Min 0 / Max 2]: Nutella Drizzle (₹39); Dark Chocolate Drizzle (₹19); White Chocolate Drizzle (₹19)\n\nDessert Toppings [Min 0 / Max 3]: Vanilla Ice Cream [1 Scoop] (₹49); Oreo Crumbles (₹19); Whole Lotus Biscoff Cookie (₹29)"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

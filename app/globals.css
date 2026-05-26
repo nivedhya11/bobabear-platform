@@ -1,0 +1,333 @@
+@import "tailwindcss";
+
+/* ─── Static design tokens ──────────────────────────────────────────────────
+   All values that don't change between light/dark live here.
+   Tailwind v4 generates utilities directly from @theme variables.
+   ──────────────────────────────────────────────────────────────────────── */
+@theme {
+  /* Firefly Green — logo outline, primary CTAs, active states */
+  --color-firefly-50:  #F5FAE6;
+  --color-firefly-100: #E8F3C4;
+  --color-firefly-200: #D3E889;
+  --color-firefly-300: #BDDE5A;
+  --color-firefly-400: #A8D832;
+  --color-firefly-500: #8FBD28;
+  --color-firefly-600: #759E20;
+  --color-firefly-700: #5A7C18;
+  --color-firefly-800: #405810;
+  --color-firefly-950: #1F2C08;
+
+  /* Saffron Gold — wordmark, promo badges, accent pops */
+  --color-saffron-50:  #FEF7EC;
+  --color-saffron-100: #FDE9C5;
+  --color-saffron-200: #FAD28A;
+  --color-saffron-300: #F8BC58;
+  --color-saffron-400: #F5A623;
+  --color-saffron-500: #D88C1A;
+  --color-saffron-600: #B37010;
+  --color-saffron-700: #8A5510;
+  --color-saffron-800: #5E3A0C;
+  --color-saffron-950: #2F1D06;
+
+  /* Bear Brown — mascot fill, earthy textures */
+  --color-bear-50:  #FAF3EC;
+  --color-bear-100: #F0DCC4;
+  --color-bear-200: #DBBA92;
+  --color-bear-300: #C39866;
+  --color-bear-400: #A7764A;
+  --color-bear-500: #8B5C38;
+  --color-bear-600: #7B4A2D;
+  --color-bear-700: #5F3A24;
+  --color-bear-800: #42281A;
+  --color-bear-950: #1F120C;
+
+  /* Boba Cream — light-mode page bg, packaging fill */
+  --color-cream-50:  #FEFCF7;
+  --color-cream-100: #FDF8EB;
+  --color-cream-200: #FAF3E2;
+  --color-cream-300: #F4E8C8;
+  --color-cream-400: #EBD9A6;
+  --color-cream-500: #D9C286;
+  --color-cream-600: #B9A365;
+  --color-cream-700: #948048;
+  --color-cream-800: #6B5C34;
+  --color-cream-950: #342D1A;
+
+  /* Night Forest — dark-mode page bg */
+  --color-forest-50:  #EEF2EA;
+  --color-forest-100: #D4DFC5;
+  --color-forest-200: #A8BF8F;
+  --color-forest-300: #7C9F5F;
+  --color-forest-400: #558036;
+  --color-forest-500: #3D6026;
+  --color-forest-600: #2E4720;
+  --color-forest-700: #22361A;
+  --color-forest-800: #1A2210;
+  --color-forest-950: #0D1208;
+
+  /* Aurora — pastel stage colours (not a scale, named keys only) */
+  --color-aurora-rose:     #F9C4CC;
+  --color-aurora-peach:    #FAC9A8;
+  --color-aurora-butter:   #FAF0A0;
+  --color-aurora-mint:     #B8F0C4;
+  --color-aurora-sky:      #A8D8F5;
+  --color-aurora-lavender: #D4BEF5;
+
+  /* Neutral — overrides Tailwind default neutral scale */
+  --color-neutral-50:  #FAFAFA;
+  --color-neutral-100: #F4F4F4;
+  --color-neutral-200: #E4E4E4;
+  --color-neutral-300: #C8C8C8;
+  --color-neutral-400: #A0A0A0;
+  --color-neutral-500: #787878;
+  --color-neutral-600: #5A5A5A;
+  --color-neutral-700: #3C3C3C;
+  --color-neutral-800: #242424;
+  --color-neutral-950: #0F0F0F;
+
+  /* Semantic status base values */
+  --color-success: #16A34A;
+  --color-warning: #F59E0B;
+  --color-info:    #3B82F6;
+  --color-error:   #E11D48;
+
+  /* ── Typography ───────────────────────────────────────────────────────── */
+
+  /* Font families — static fallbacks only. Next.js font loader sets these
+     same variable names via a class on <html>. Because @theme emits inside
+     a CSS @layer, un-layered Next.js class styles always win in the cascade,
+     so the loaded font is always used; these values are genuine SSR fallbacks. */
+  --font-display: "Luckiest Guy", cursive;
+  --font-heading: "Bubblegum Sans", cursive;
+  --font-body:    "Nunito", sans-serif;
+  --font-mono:    "JetBrains Mono", monospace;
+
+  /* Type scale — clamp() from §4 Framer fluid CSS, extended to full set.
+     min = mobile, preferred = fluid, max = desktop. */
+  --text-display-2xl: clamp(3.5rem, 7.5vw, 6rem);     /* 56–96px, lh 1.05 */
+  --text-display-xl:  clamp(2.75rem, 6vw, 5rem);       /* 44–80px, lh 1.05 */
+  --text-display-lg:  clamp(2.25rem, 5vw, 4rem);       /* 36–64px, lh 1.10 */
+  --text-h1: clamp(2rem, 4.5vw, 3.5rem);               /* 32–56px, lh 1.15 */
+  --text-h2: clamp(1.75rem, 3.2vw, 2.5rem);            /* 28–40px, lh 1.20 */
+  --text-h3: clamp(1.375rem, 2.5vw, 2rem);             /* 22–32px, lh 1.25 */
+  --text-h4: clamp(1.25rem, 2vw, 1.5rem);              /* 20–24px, lh 1.30 */
+  --text-h5: clamp(1.125rem, 1.8vw, 1.25rem);          /* 18–20px, lh 1.40 */
+  --text-body-lg:    clamp(1rem, 1.4vw, 1.125rem);     /* 16–18px, lh 1.60 */
+  --text-body-md:    clamp(0.9375rem, 1.2vw, 1rem);    /* 15–16px, lh 1.60 */
+  --text-body-sm:    0.875rem;                          /* 14px,    lh 1.50 */
+  --text-body-xs:    0.75rem;                           /* 12px,    lh 1.50 */
+  --text-label-lg:   0.875rem;                          /* 14px, wt 600, uppercase */
+  --text-label-md:   0.75rem;                           /* 12px, wt 700, uppercase */
+  --text-label-sm:   0.625rem;                          /* 10px, wt 700, uppercase */
+  --text-caption-md: 0.75rem;                           /* 12px,    lh 1.50 */
+  --text-caption-sm: 0.6875rem;                         /* 11px,    lh 1.50 */
+  --text-code-md:    0.875rem;                          /* 14px */
+  --text-code-sm:    0.75rem;                           /* 12px */
+
+  /* ── Border radius ────────────────────────────────────────────────────── */
+  --radius-xs:   2px;
+  --radius-sm:   4px;
+  --radius-md:   8px;    /* buttons, inputs */
+  --radius-lg:   12px;   /* cards */
+  --radius-xl:   16px;   /* modals, featured blocks */
+  --radius-2xl:  24px;   /* spotlight surfaces */
+  --radius-full: 9999px; /* pills, avatars */
+
+  /* ── Elevation / shadows ──────────────────────────────────────────────── */
+  --shadow-xs:          0 1px 2px rgba(26, 34, 16, 0.08);
+  --shadow-sm:          0 2px 6px rgba(26, 34, 16, 0.10);
+  --shadow-md:          0 4px 12px rgba(26, 34, 16, 0.14);
+  --shadow-lg:          0 8px 24px rgba(26, 34, 16, 0.18);
+  --shadow-xl:          0 16px 40px rgba(26, 34, 16, 0.24);
+  --shadow-glow-firefly: 0 4px 20px rgba(168, 216, 50, 0.40);
+  --shadow-glow-saffron: 0 4px 20px rgba(245, 166, 35, 0.35);
+  /* --shadow-focus-ring is semantic (changes per mode) — defined in :root/.light */
+
+  /* ── Motion — durations ───────────────────────────────────────────────── */
+  --duration-instant: 0ms;
+  --duration-fast:    150ms;
+  --duration-normal:  250ms;
+  --duration-slow:    400ms;
+  --duration-slower:  600ms;
+  --duration-crawl:   1200ms;
+
+  /* ── Motion — easing ──────────────────────────────────────────────────── */
+  --ease-out:           cubic-bezier(0, 0, 0.2, 1);
+  --ease-in:            cubic-bezier(0.4, 0, 1, 1);
+  --ease-in-out:        cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring-gentle: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ─── Semantic tokens — dark mode (default, no class needed) ────────────────
+   Naming follows the design system §3 exactly.
+   Exposed to Tailwind via @theme inline below.
+   ──────────────────────────────────────────────────────────────────────── */
+:root {
+  /* Backgrounds */
+  --bg-page:           #1A2210;
+  --bg-section:        #22361A;
+  --bg-surface:        #2E4720;
+  --bg-surface-raised: #3D6026;
+  --bg-surface-sunken: #0D1208;
+
+  /* Text */
+  --text-primary:      #FAF3E2;
+  --text-secondary:    #EBD9A6;
+  --text-tertiary:     #A8BF8F;
+  --text-disabled:     #558036;
+  --text-label:        #A8D832;
+  --text-on-primary:   #1A2210;
+  --text-on-secondary: #1A2210;
+
+  /* Borders */
+  --border-default: #2E4720;
+  --border-strong:  #558036;
+  --border-subtle:  #22361A;
+  --border-focus:   #A8D832;
+
+  /* Interactive */
+  --interactive-primary:          #A8D832;
+  --interactive-primary-hover:    #BDDE5A;
+  --interactive-primary-pressed:  #8FBD28;
+  --interactive-secondary:        #F5A623;
+  --interactive-secondary-hover:  #F8BC58;
+  --interactive-ghost-hover:      #2E472033;
+  --interactive-destructive:      #E11D48;
+
+  /* Focus ring */
+  --focus-ring:        rgba(168, 216, 50, 0.35);
+  --shadow-focus-ring: 0 0 0 3px var(--focus-ring);
+}
+
+/* ─── Semantic tokens — light mode (.light class on <html>) ─────────────── */
+.light {
+  --bg-page:           #FAF3E2;
+  --bg-section:        #FDF8EB;
+  --bg-surface:        #FEFCF7;
+  --bg-surface-raised: #FFFFFF;
+  --bg-surface-sunken: #F4E8C8;
+
+  --text-primary:      #42281A;
+  --text-secondary:    #5F3A24;
+  --text-tertiary:     #8B5C38;
+  --text-disabled:     #C39866;
+  --text-label:        #7B4A2D;
+  --text-on-primary:   #1A2210;
+  --text-on-secondary: #42281A;
+
+  --border-default: #EBD9A6;
+  --border-strong:  #C39866;
+  --border-subtle:  #F4E8C8;
+  --border-focus:   #759E20;
+
+  --interactive-primary:         #8FBD28;
+  --interactive-primary-hover:   #759E20;
+  --interactive-primary-pressed: #5A7C18;
+  --interactive-secondary:       #D88C1A;
+  --interactive-secondary-hover: #B37010;
+  --interactive-ghost-hover:     #EBD9A633;
+  --interactive-destructive:     #E11D48;
+
+  --focus-ring:        rgba(117, 158, 32, 0.25);
+  --shadow-focus-ring: 0 0 0 3px var(--focus-ring);
+}
+
+/* ─── Semantic token → Tailwind color utilities ─────────────────────────────
+   @theme inline keeps these as CSS var() references so they resolve at
+   runtime (needed for theme switching). Tailwind v4 handles opacity
+   modifiers automatically via color-mix.
+
+   Naming convention so class names read naturally:
+     bg-page          → background token
+     text-primary     → text/primary token
+     border-border    → border/default token
+     bg-interactive-primary → interactive/primary token
+   ──────────────────────────────────────────────────────────────────────── */
+@theme inline {
+  /* Backgrounds → bg-page, bg-section, bg-surface, etc. */
+  --color-page:           var(--bg-page);
+  --color-section:        var(--bg-section);
+  --color-surface:        var(--bg-surface);
+  --color-surface-raised: var(--bg-surface-raised);
+  --color-surface-sunken: var(--bg-surface-sunken);
+
+  /* Text → text-primary, text-secondary, text-tertiary, etc. */
+  --color-primary:      var(--text-primary);
+  --color-secondary:    var(--text-secondary);
+  --color-tertiary:     var(--text-tertiary);
+  --color-disabled:     var(--text-disabled);
+  --color-label:        var(--text-label);
+  --color-on-primary:   var(--text-on-primary);
+  --color-on-secondary: var(--text-on-secondary);
+
+  /* Borders → border-border, border-border-strong, etc. */
+  --color-border:        var(--border-default);
+  --color-border-strong: var(--border-strong);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-focus:  var(--border-focus);
+
+  /* Interactive → bg-interactive-primary, text-interactive-primary, etc. */
+  --color-interactive-primary:         var(--interactive-primary);
+  --color-interactive-primary-hover:   var(--interactive-primary-hover);
+  --color-interactive-primary-pressed: var(--interactive-primary-pressed);
+  --color-interactive-secondary:       var(--interactive-secondary);
+  --color-interactive-secondary-hover: var(--interactive-secondary-hover);
+  --color-interactive-ghost:           var(--interactive-ghost-hover);
+  --color-destructive:                 var(--interactive-destructive);
+}
+
+/* ─── Base styles ─────────────────────────────────────────────────────────── */
+html {
+  scroll-padding-top: 3.5rem; /* 56 px — offset for sticky nav */
+  scroll-behavior: smooth;
+}
+
+@media (min-width: 1024px) {
+  html {
+    scroll-padding-top: 4rem; /* 64 px */
+  }
+}
+
+/* ── Global prefers-reduced-motion kill-switch ──────────────────────────────
+   Safety net for all CSS animation and transition that isn't individually
+   guarded. Framer Motion components use useReducedMotion() for finer control.
+   ──────────────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration:        0.01ms !important;
+    animation-iteration-count: 1      !important;
+    transition-duration:       0.01ms !important;
+    scroll-behavior:           auto   !important;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+body {
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+}
+
+/* ─── Focus ring utility ──────────────────────────────────────────────────────
+   Applied as a class on every interactive element (Button, Chip, etc.).
+   Uses CSS outline so it renders outside the element and never conflicts with
+   box-shadow (which carries hover glow on primary/secondary buttons).
+   Color: --border-focus  →  Firefly-400 dark / Firefly-600 light.
+   Spec : 3 px ring · 2 px offset from element edge (§9 focus state).
+   ──────────────────────────────────────────────────────────────────────── */
+.focus-ring:focus-visible {
+  outline: 3px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+/* ─── Primary button text — Firefly 950 (#1F2C08) on Firefly 400 fill ────────
+   Ensures maximum contrast (~9:1) regardless of CSS-variable resolution order.
+   ──────────────────────────────────────────────────────────────────────────── */
+[class*="bg-interactive-primary"] {
+  color: #1F2C08;
+}

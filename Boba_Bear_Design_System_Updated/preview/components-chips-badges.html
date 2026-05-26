@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<title>Chips + Badges</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 22px 24px; background: var(--bg-page); color: var(--text-primary); display: grid; gap: 16px; }
+  .label { font-family: var(--font-body); text-transform: uppercase; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: var(--text-label); margin-bottom: 8px; }
+  .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .chip {
+    font-family: var(--font-body); font-weight: 600; font-size: 13px;
+    border-radius: var(--radius-full); padding: 6px 14px;
+    background: var(--bg-section); color: var(--text-secondary);
+    border: 1px solid transparent;
+  }
+  .chip.active { background: var(--interactive-primary); color: var(--text-on-primary); }
+  .chip.aurora-rose { background: var(--aurora-rose-soft); color: var(--brown-800); }
+  .chip.aurora-mint { background: var(--aurora-mint-soft); color: var(--brown-800); }
+  .chip.aurora-sky  { background: var(--aurora-sky-soft); color: var(--brown-800); }
+  .badge {
+    font-family: var(--font-body); font-weight: 700; font-size: 12px;
+    border-radius: var(--radius-full); padding: 4px 10px;
+    border: 1px solid;
+  }
+  .badge.success { background: rgba(22,163,74,0.18); border-color: #16A34A; color: #BDDE5A; }
+  .badge.warning { background: rgba(245,158,11,0.18); border-color: #B37010; color: #FAD28A; }
+  .badge.error   { background: rgba(225,29,72,0.20); border-color: #E11D48; color: #F9C4CC; }
+  .badge.info    { background: rgba(59,130,246,0.18); border-color: #3B82F6; color: #A8D8F5; }
+  .badge.neutral { background: var(--bg-section); border-color: var(--border-default); color: var(--text-tertiary); }
+</style>
+</head>
+<body>
+  <div>
+    <div class="label">Chips · category filter</div>
+    <div class="row">
+      <span class="chip active">All</span>
+      <span class="chip">Boba</span>
+      <span class="chip">Hot bowls</span>
+      <span class="chip">Iced</span>
+      <span class="chip">New drop</span>
+    </div>
+  </div>
+  <div>
+    <div class="label">Aurora chips · merch / drops</div>
+    <div class="row">
+      <span class="chip aurora-rose">Drop 04</span>
+      <span class="chip aurora-mint">Pre-order</span>
+      <span class="chip aurora-sky">Members</span>
+    </div>
+  </div>
+  <div>
+    <div class="label">Status badges</div>
+    <div class="row">
+      <span class="badge success">Confirmed</span>
+      <span class="badge warning">Pending</span>
+      <span class="badge error">Rejected</span>
+      <span class="badge info">FYI</span>
+      <span class="badge neutral">Draft</span>
+    </div>
+  </div>
+</body>
+</html>

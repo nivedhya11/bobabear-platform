@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<title>Cards · Merch (3:4)</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 22px 24px; background: var(--bg-page); color: var(--text-primary); }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    transition: all var(--dur-normal) var(--ease-out);
+    display: flex; flex-direction: column;
+  }
+  .card:hover { transform: translateY(-2px); border-color: var(--border-strong); box-shadow: var(--shadow-md); }
+  .img {
+    aspect-ratio: 3 / 4;
+    display: grid; place-items: center;
+    font-family: var(--font-display); font-size: 28px; color: var(--brown-800); letter-spacing: -0.02em;
+    position: relative;
+  }
+  .img.rose { background: var(--aurora-rose); }
+  .img.mint { background: var(--aurora-mint); }
+  .img.butter { background: var(--aurora-butter); }
+  .img.lavender { background: var(--aurora-lavender); }
+  /* Drop tag baked into the image */
+  .img-tag {
+    position: absolute; top: 10px; left: 10px;
+    font-family: var(--font-body); font-size: 11px; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    background: rgba(26, 34, 16, 0.78); color: var(--cream-200);
+    padding: 4px 10px; border-radius: var(--radius-full);
+    backdrop-filter: var(--blur-sm);
+  }
+  .body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 5px; }
+  .name { font-family: var(--font-heading); font-size: 17px; color: var(--text-primary); line-height: 1.2; margin: 0; }
+  .desc { font-family: var(--font-body); font-size: 12px; color: var(--text-secondary); line-height: 1.4; margin: 0; }
+  .foot { display: flex; align-items: center; justify-content: space-between; margin-top: 2px; }
+  .price { font-family: var(--font-body); font-weight: 700; font-size: 14px; color: var(--saffron-300); }
+  .chip {
+    font-family: var(--font-body); font-size: 10px; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    background: var(--bg-section); color: var(--text-tertiary);
+    padding: 3px 8px; border-radius: var(--radius-full);
+  }
+  .chip.lowstock { background: rgba(245, 166, 35, 0.18); color: var(--saffron-300); }
+</style>
+</head>
+<body>
+  <div class="grid">
+    <article class="card">
+      <div class="img rose">
+        <span class="img-tag">Drop 04 · 01</span>
+        BB
+      </div>
+      <div class="body">
+        <h3 class="name">Unbothered tee</h3>
+        <p class="desc">Heavy cotton, kraft tag.</p>
+        <div class="foot">
+          <span class="price">₹1,490</span>
+        </div>
+      </div>
+    </article>
+    <article class="card">
+      <div class="img mint">
+        <span class="img-tag">Drop 04 · 02</span>
+        BB
+      </div>
+      <div class="body">
+        <h3 class="name">House mug</h3>
+        <p class="desc">Stoneware, hand-glazed.</p>
+        <div class="foot">
+          <span class="price">₹890</span>
+          <span class="chip lowstock">Low</span>
+        </div>
+      </div>
+    </article>
+    <article class="card">
+      <div class="img butter">
+        <span class="img-tag">Drop 04 · 03</span>
+        BB
+      </div>
+      <div class="body">
+        <h3 class="name">Deadpan cap</h3>
+        <p class="desc">Six-panel, brushed twill.</p>
+        <div class="foot">
+          <span class="price">₹990</span>
+        </div>
+      </div>
+    </article>
+    <article class="card">
+      <div class="img lavender">
+        <span class="img-tag">Drop 04 · 04</span>
+        BB
+      </div>
+      <div class="body">
+        <h3 class="name">Kraft tote</h3>
+        <p class="desc">Heavy canvas, numbered.</p>
+        <div class="foot">
+          <span class="price">₹650</span>
+        </div>
+      </div>
+    </article>
+  </div>
+</body>
+</html>

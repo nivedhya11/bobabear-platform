@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<title>Navigation</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 24px; background: var(--bg-page); color: var(--text-primary); display: grid; gap: 16px; }
+  .nav {
+    height: 64px; padding: 0 24px;
+    background: rgba(26, 34, 16, 0.85);
+    backdrop-filter: var(--blur-md);
+    -webkit-backdrop-filter: var(--blur-md);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    display: flex; align-items: center; gap: 24px;
+  }
+  .brand {
+    font-family: var(--font-display); font-size: 22px;
+    color: var(--saffron-400);
+    letter-spacing: 0.02em; line-height: 1;
+    text-shadow: 0 0 16px rgba(245, 166, 35, 0.45);
+  }
+  .links { display: flex; gap: 4px; margin-left: 16px; }
+  .links a {
+    font-family: var(--font-body); font-weight: 600; font-size: 14px;
+    color: var(--text-secondary); text-decoration: none;
+    padding: 8px 12px; border-radius: var(--radius-md);
+    transition: all var(--dur-fast) var(--ease-out);
+  }
+  .links a:hover { background: var(--interactive-ghost-hover); color: var(--text-primary); }
+  .links a.active { color: var(--firefly-400); }
+  .spacer { flex: 1; }
+  .cta {
+    font-family: var(--font-body); font-weight: 700; font-size: 14px;
+    background: var(--interactive-primary); color: var(--text-on-primary);
+    padding: 10px 16px; border-radius: var(--radius-md); border: 0;
+  }
+  .marquee {
+    height: 36px;
+    background: var(--aurora-gradient);
+    overflow: hidden;
+    border-radius: var(--radius-md);
+    display: flex; align-items: center;
+  }
+  .marquee .track {
+    display: flex; gap: 28px; padding-left: 16px; align-items: center;
+    font-family: var(--font-display); font-size: 18px; color: var(--brown-800); letter-spacing: 0.02em;
+    white-space: nowrap;
+    animation: m 22s linear infinite;
+  }
+  .marquee .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--brown-800); display:inline-block; }
+  @keyframes m { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+</style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="brand">BOBA BEAR</div>
+    <div class="links">
+      <a href="#" class="active">Menu</a>
+      <a href="#">Drops</a>
+      <a href="#">Artists</a>
+      <a href="#">Locate</a>
+    </div>
+    <div class="spacer"></div>
+    <button class="cta">Access the Drop →</button>
+  </nav>
+  <div class="marquee">
+    <div class="track">
+      <span>DROP 04 LANDS FRIDAY</span><span class="dot"></span>
+      <span>FOR THE UNBOTHERED</span><span class="dot"></span>
+      <span>S-TIER SIPS. K-STREET DRIP.</span><span class="dot"></span>
+      <span>DROP 04 LANDS FRIDAY</span><span class="dot"></span>
+      <span>FOR THE UNBOTHERED</span><span class="dot"></span>
+      <span>S-TIER SIPS. K-STREET DRIP.</span><span class="dot"></span>
+    </div>
+  </div>
+</body>
+</html>

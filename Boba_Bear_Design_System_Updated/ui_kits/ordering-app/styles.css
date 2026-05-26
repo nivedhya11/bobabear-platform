@@ -1,0 +1,366 @@
+/* ============================================================
+   Boba Bear · Ordering app styles
+   Consumes design tokens from ../../colors_and_type.css
+   ============================================================ */
+
+* { box-sizing: border-box; }
+
+.bbm-app {
+  width: 100%;
+  height: 100%;
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ------------------ Top bar ------------------ */
+.bbm-topbar {
+  flex: 0 0 auto;
+  padding: 6px 20px 12px;
+  display: flex; align-items: center; gap: 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: rgba(26, 34, 16, 0.92);
+  backdrop-filter: var(--blur-md);
+}
+.bbm-topbar-brand {
+  font-family: var(--font-display); font-size: 22px;
+  color: var(--saffron-400); letter-spacing: 0.02em; line-height: 1;
+  text-shadow: 0 0 14px rgba(245, 166, 35, 0.45);
+}
+.bbm-topbar-loc {
+  display: flex; flex-direction: column; line-height: 1.2;
+  margin-left: 4px;
+}
+.bbm-topbar-loc small {
+  font-family: var(--font-body); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.bbm-topbar-loc span {
+  font-family: var(--font-heading); font-size: 14px; color: var(--text-primary);
+}
+
+.bbm-cartchip {
+  margin-left: auto;
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--firefly-400); color: var(--forest-800);
+  font-family: var(--font-body); font-weight: 700; font-size: 13px;
+  padding: 8px 12px; border-radius: var(--radius-full);
+  border: 0; cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+.bbm-cartchip:hover { box-shadow: var(--shadow-glow-firefly); }
+.bbm-cartchip .count { background: var(--forest-800); color: var(--firefly-400); padding: 1px 7px; border-radius: var(--radius-full); font-size: 11px; }
+
+/* ------------------ Scroll body ------------------ */
+.bbm-scroll {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 16px 16px 28px;
+  scrollbar-width: none;
+}
+.bbm-scroll::-webkit-scrollbar { display: none; }
+
+/* ------------------ Sections ------------------ */
+.bbm-eyebrow {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--font-body); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--text-label);
+  margin-bottom: 6px;
+}
+.bbm-eyebrow-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--firefly-400); box-shadow: 0 0 8px rgba(168,216,50,0.7); }
+
+.bbm-section-title {
+  font-family: var(--font-heading); font-size: 28px; color: var(--text-primary);
+  line-height: 1.15; margin: 0 0 16px;
+}
+
+/* ------------------ Hero banner ------------------ */
+.bbm-hero {
+  border-radius: var(--radius-xl);
+  background: var(--aurora-gradient);
+  padding: 18px 18px 20px;
+  position: relative; overflow: hidden;
+  margin-bottom: 20px;
+}
+.bbm-hero::after {
+  content: ''; position: absolute; inset: 0;
+  background-image: var(--grain);
+  mix-blend-mode: multiply;
+  opacity: 0.30; pointer-events: none;
+}
+.bbm-hero-tag {
+  font-family: var(--font-body); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--brown-800);
+}
+.bbm-hero-h {
+  font-family: var(--font-display); font-size: 32px;
+  color: var(--brown-800); line-height: 1; letter-spacing: -0.01em;
+  margin: 6px 0 0; max-width: 12ch;
+}
+.bbm-hero-cta {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--forest-800); color: var(--firefly-400);
+  font-family: var(--font-body); font-weight: 700; font-size: 13px;
+  padding: 8px 14px; border-radius: var(--radius-full);
+  margin-top: 12px; border: 0; cursor: pointer; position: relative;
+}
+
+/* ------------------ Chips ------------------ */
+.bbm-chips {
+  display: flex; gap: 8px; overflow-x: auto;
+  padding: 4px 2px 4px;
+  margin: 0 -4px 16px;
+  scrollbar-width: none;
+}
+.bbm-chips::-webkit-scrollbar { display: none; }
+.bbm-chip {
+  flex: 0 0 auto;
+  font-family: var(--font-body); font-weight: 600; font-size: 13px;
+  border-radius: var(--radius-full); padding: 8px 14px;
+  background: var(--bg-section); color: var(--text-secondary);
+  border: 0; cursor: pointer; white-space: nowrap;
+}
+.bbm-chip.active { background: var(--interactive-primary); color: var(--text-on-primary); }
+
+/* ------------------ Food cards (4:3) ------------------ */
+.bbm-card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.bbm-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: all var(--dur-fast) var(--ease-out);
+  cursor: pointer;
+  display: flex; flex-direction: column;
+}
+.bbm-card:active { transform: scale(0.98); }
+.bbm-card-img {
+  aspect-ratio: 4 / 3;
+  position: relative; display: grid; place-items: center;
+  font-family: var(--font-display); font-size: 22px; color: var(--brown-800);
+}
+.bbm-card-tag {
+  position: absolute; top: 8px; left: 8px;
+  font-family: var(--font-body); font-size: 9px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  background: rgba(26, 34, 16, 0.78); color: var(--cream-200);
+  padding: 3px 8px; border-radius: var(--radius-full);
+  backdrop-filter: var(--blur-sm);
+}
+.bbm-card-body { padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 3px; flex: 1; }
+.bbm-card-name { font-family: var(--font-heading); font-size: 15px; color: var(--text-primary); line-height: 1.2; margin: 0; }
+.bbm-card-desc { font-family: var(--font-body); font-size: 11px; color: var(--text-secondary); line-height: 1.35; margin: 0; }
+.bbm-card-foot { display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 6px; }
+.bbm-price { font-family: var(--font-body); font-weight: 700; font-size: 13px; color: var(--saffron-300); }
+.bbm-card-plus {
+  width: 24px; height: 24px; border-radius: var(--radius-full);
+  background: var(--firefly-400); color: var(--forest-800);
+  display: grid; place-items: center; font-size: 16px; font-weight: 700;
+  cursor: pointer; border: 0; line-height: 1;
+}
+
+/* Stage backgrounds */
+.stage-rose     { background: var(--aurora-rose); }
+.stage-peach    { background: var(--aurora-peach); }
+.stage-butter   { background: var(--aurora-butter); }
+.stage-mint     { background: var(--aurora-mint); }
+.stage-sky      { background: var(--aurora-sky); }
+.stage-lavender { background: var(--aurora-lavender); }
+
+/* ------------------ Item detail ------------------ */
+.bbm-detail-img {
+  margin: -16px -16px 16px;
+  aspect-ratio: 1 / 1;
+  position: relative; display: grid; place-items: center;
+  font-family: var(--font-display); font-size: 56px; color: var(--brown-800);
+}
+.bbm-detail-img .bbm-card-tag { top: 16px; left: 16px; font-size: 10px; padding: 5px 12px; }
+.bbm-back {
+  position: absolute; top: 16px; right: 16px;
+  width: 36px; height: 36px; border-radius: 50%;
+  background: rgba(26, 34, 16, 0.78); color: var(--cream-200);
+  display: grid; place-items: center; font-size: 18px;
+  border: 0; cursor: pointer; backdrop-filter: var(--blur-sm);
+}
+.bbm-detail-name { font-family: var(--font-heading); font-size: 28px; line-height: 1.15; color: var(--text-primary); margin: 0; }
+.bbm-detail-desc { font-family: var(--font-body); font-size: 14px; color: var(--text-secondary); line-height: 1.55; margin: 8px 0 0; }
+.bbm-detail-price { font-family: var(--font-display); font-size: 32px; color: var(--saffron-400); margin: 12px 0 0; text-shadow: 0 0 18px rgba(245, 166, 35, 0.35); }
+
+.bbm-mod-group { margin-top: 24px; }
+.bbm-mod-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+.bbm-mod-title { font-family: var(--font-heading); font-size: 18px; color: var(--text-primary); margin: 0; }
+.bbm-mod-hint { font-family: var(--font-body); font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-tertiary); }
+.bbm-mod-options { display: grid; gap: 8px; }
+.bbm-mod-option {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 14px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+.bbm-mod-option.active { border-color: var(--firefly-400); background: rgba(168, 216, 50, 0.06); }
+.bbm-mod-option .l { font-family: var(--font-body); font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.bbm-mod-option .r { font-family: var(--font-body); font-size: 13px; color: var(--text-tertiary); }
+
+.bbm-add-row {
+  margin-top: 24px;
+  display: flex; gap: 12px; align-items: center;
+}
+.bbm-qty {
+  display: inline-flex; align-items: center; gap: 12px;
+  background: var(--bg-section); border-radius: var(--radius-full);
+  padding: 6px 8px;
+}
+.bbm-qty button {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--bg-surface); color: var(--text-primary);
+  border: 1px solid var(--border-default);
+  font-size: 16px; font-weight: 700; line-height: 1; cursor: pointer;
+}
+.bbm-qty .n { font-family: var(--font-body); font-weight: 700; font-size: 16px; min-width: 18px; text-align: center; }
+
+.bbm-btn-primary {
+  flex: 1;
+  font-family: var(--font-body); font-weight: 700; font-size: 15px;
+  height: 48px; padding: 0 20px; border-radius: var(--radius-md);
+  background: var(--interactive-primary); color: var(--text-on-primary);
+  border: 0; cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+.bbm-btn-primary:active { background: var(--interactive-primary-pressed); }
+
+/* ------------------ Cart ------------------ */
+.bbm-cart-row {
+  display: grid; grid-template-columns: 56px 1fr auto; gap: 12px; align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.bbm-cart-row:last-child { border-bottom: 0; }
+.bbm-cart-thumb { width: 56px; height: 56px; border-radius: var(--radius-md); display: grid; place-items: center; font-family: var(--font-display); font-size: 16px; color: var(--brown-800); }
+.bbm-cart-meta { display: grid; gap: 2px; }
+.bbm-cart-meta .n { font-family: var(--font-heading); font-size: 15px; color: var(--text-primary); }
+.bbm-cart-meta .d { font-family: var(--font-body); font-size: 11px; color: var(--text-tertiary); }
+.bbm-cart-price { font-family: var(--font-body); font-weight: 700; font-size: 14px; color: var(--saffron-300); text-align: right; }
+
+.bbm-cart-totals { margin-top: 16px; padding: 16px; background: var(--bg-surface); border-radius: var(--radius-lg); border: 1px solid var(--border-default); }
+.bbm-cart-line { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; font-family: var(--font-body); font-size: 13px; color: var(--text-secondary); }
+.bbm-cart-line.total { padding-top: 12px; margin-top: 4px; border-top: 1px solid var(--border-subtle); font-size: 16px; color: var(--text-primary); font-weight: 700; }
+.bbm-cart-line.total .r { font-family: var(--font-display); color: var(--saffron-400); font-size: 22px; letter-spacing: 0.02em; }
+
+.bbm-secure {
+  margin-top: 16px;
+  width: 100%; height: 52px;
+  font-family: var(--font-body); font-weight: 700; font-size: 16px;
+  background: var(--interactive-primary); color: var(--text-on-primary);
+  border: 0; border-radius: var(--radius-md); cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+.bbm-secure:hover { box-shadow: var(--shadow-glow-firefly); }
+
+/* ------------------ Tracking ------------------ */
+.bbm-track-hero {
+  text-align: center; padding: 24px 16px 16px;
+}
+.bbm-track-eyebrow {
+  font-family: var(--font-body); font-size: 11px; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--firefly-400);
+}
+.bbm-track-h {
+  font-family: var(--font-display); font-size: 48px;
+  color: var(--saffron-400); line-height: 1; letter-spacing: -0.01em;
+  margin: 8px 0 4px;
+  text-shadow: 0 0 24px rgba(245, 166, 35, 0.45);
+}
+.bbm-track-sub {
+  font-family: var(--font-heading); font-size: 18px;
+  color: var(--text-secondary); margin: 0;
+}
+
+.bbm-pearls {
+  position: relative;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 32px 0 28px;
+  margin: 0 12px;
+}
+.bbm-pearls::before {
+  content: ''; position: absolute; left: 18px; right: 18px; top: 50%;
+  height: 2px; background: var(--border-default); transform: translateY(-1px);
+}
+.bbm-pearls .seg-fill {
+  position: absolute; left: 18px; top: 50%; height: 2px;
+  background: var(--firefly-400); transform: translateY(-1px);
+  transition: width var(--dur-slower) var(--ease-out);
+}
+.bbm-pearl {
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px;
+}
+.bbm-pearl-dot {
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--bg-section); border: 2px solid var(--border-default);
+  z-index: 1;
+}
+.bbm-pearl.done .bbm-pearl-dot { background: var(--firefly-400); border-color: var(--firefly-400); box-shadow: 0 0 14px rgba(168,216,50,0.5); }
+.bbm-pearl.active .bbm-pearl-dot {
+  background: var(--firefly-400); border-color: var(--firefly-400);
+  animation: bbmPulse 1.6s var(--ease-in-out) infinite;
+}
+.bbm-pearl-label {
+  font-family: var(--font-body); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.bbm-pearl.done .bbm-pearl-label, .bbm-pearl.active .bbm-pearl-label { color: var(--text-primary); }
+@keyframes bbmPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(168,216,50,0.6); }
+  50% { box-shadow: 0 0 0 8px rgba(168,216,50,0); }
+}
+
+.bbm-track-card {
+  margin: 16px 0 0;
+  padding: 16px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+}
+.bbm-track-eta {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-bottom: 12px;
+}
+.bbm-track-eta .l { font-family: var(--font-heading); font-size: 16px; color: var(--text-primary); }
+.bbm-track-eta .r { font-family: var(--font-display); font-size: 24px; color: var(--saffron-400); letter-spacing: 0.02em; text-shadow: 0 0 14px rgba(245, 166, 35, 0.35); }
+.bbm-track-note { font-family: var(--font-body); font-size: 12px; color: var(--text-tertiary); line-height: 1.5; }
+
+/* ------------------ Bottom screen-switcher tab (for the demo only) ------------------ */
+.bbm-tabbar {
+  flex: 0 0 auto;
+  display: flex;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--bg-page);
+  padding: 6px 8px 10px;
+}
+.bbm-tab {
+  flex: 1;
+  background: transparent; border: 0; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 8px 4px;
+  color: var(--text-tertiary);
+  font-family: var(--font-body); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+.bbm-tab.active { color: var(--firefly-400); }
+.bbm-tab .glyph {
+  width: 24px; height: 24px; display: grid; place-items: center;
+  font-family: var(--font-display); font-size: 16px;
+  border: 1.5px solid currentColor; border-radius: var(--radius-sm);
+  line-height: 1; padding-top: 2px;
+}

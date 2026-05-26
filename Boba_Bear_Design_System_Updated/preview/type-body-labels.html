@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<title>Type — Body + Labels (Nunito)</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 22px 28px; background: var(--bg-page); color: var(--text-primary); font-family: var(--font-body); }
+  .row { display: grid; grid-template-columns: 120px 1fr; gap: 18px; align-items: baseline; margin-bottom: 12px; }
+  .meta { font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary); line-height: 1.2; }
+  .bl { font-size:18px; line-height:1.55; }
+  .bm { font-size:16px; line-height:1.55; color: var(--text-secondary); }
+  .bs { font-size:14px; line-height:1.5; color: var(--text-secondary); }
+  .bx { font-size:12px; line-height:1.5; color: var(--text-tertiary); }
+  .lab { font-family: var(--font-body); text-transform: uppercase; color: var(--firefly-400); }
+  .ll { font-size:14px; font-weight:600; letter-spacing:0.06em; }
+  .lm { font-size:12px; font-weight:700; letter-spacing:0.08em; }
+  .ls { font-size:10px; font-weight:700; letter-spacing:0.12em; }
+</style>
+</head>
+<body>
+  <div class="row"><div class="meta">body/lg · 18</div><div class="bl">The bear doesn't try to sell you on the bear.</div></div>
+  <div class="row"><div class="meta">body/md · 16</div><div class="bm">Default running text. Used inside cards, menu descriptions, and product detail bodies.</div></div>
+  <div class="row"><div class="meta">body/sm · 14</div><div class="bs">Metadata. Order summary lines. Secondary descriptions.</div></div>
+  <div class="row"><div class="meta">body/xs · 12</div><div class="bx">Footnotes, fine print, timestamps.</div></div>
+  <div class="row"><div class="meta">label/lg · 14</div><div><span class="lab ll">Access the drop</span></div></div>
+  <div class="row"><div class="meta">label/md · 12</div><div><span class="lab lm">Now on the bar</span></div></div>
+  <div class="row"><div class="meta">label/sm · 10</div><div><span class="lab ls">Limited · for the unbothered</span></div></div>
+</body>
+</html>

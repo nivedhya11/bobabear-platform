@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<title>Motion</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 22px 24px; background: var(--bg-page); color: var(--text-primary); }
+  .label { font-family: var(--font-body); text-transform: uppercase; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: var(--text-label); margin-bottom: 10px; }
+  .row { display: grid; grid-template-columns: 110px 90px 1fr; gap: 14px; align-items: center; height: 26px; margin-bottom: 4px; }
+  .tok { font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); }
+  .ms { font-family: var(--font-mono); font-size: 11px; color: var(--text-tertiary); }
+  .track { position: relative; height: 8px; background: var(--bg-section); border-radius: var(--radius-full); overflow: hidden; }
+  .dot { position: absolute; top: -3px; width: 14px; height: 14px; border-radius: 50%; background: var(--firefly-400); }
+  .a1 { animation: r 0.15s infinite alternate var(--ease-out); }
+  .a2 { animation: r 0.25s infinite alternate var(--ease-out); }
+  .a3 { animation: r 0.4s  infinite alternate var(--ease-out); }
+  .a4 { animation: r 0.6s  infinite alternate var(--ease-out); }
+  @keyframes r { from { left: 0; } to { left: calc(100% - 14px); } }
+  .hr { height: 1px; background: var(--border-subtle); margin: 12px 0; }
+</style>
+</head>
+<body>
+  <div class="label">Duration</div>
+  <div class="row"><div class="tok">fast</div><div class="ms">150ms</div><div class="track"><div class="dot a1"></div></div></div>
+  <div class="row"><div class="tok">normal</div><div class="ms">250ms</div><div class="track"><div class="dot a2"></div></div></div>
+  <div class="row"><div class="tok">slow</div><div class="ms">400ms</div><div class="track"><div class="dot a3"></div></div></div>
+  <div class="row"><div class="tok">slower</div><div class="ms">600ms</div><div class="track"><div class="dot a4"></div></div></div>
+  <div class="hr"></div>
+  <div class="label">Easing</div>
+  <div class="row"><div class="tok">ease-out</div><div class="ms">default enter</div><div class="ms">cubic-bezier(0, 0, 0.2, 1)</div></div>
+  <div class="row"><div class="tok">ease-in</div><div class="ms">exit</div><div class="ms">cubic-bezier(0.4, 0, 1, 1)</div></div>
+  <div class="row"><div class="tok">spring</div><div class="ms">subtle confirm</div><div class="ms">cubic-bezier(0.34, 1.56, 0.64, 1)</div></div>
+</body>
+</html>

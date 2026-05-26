@@ -1,150 +1,128 @@
-# Boba Bear Website
+# Boba Bear — Landing Page
 
-Static website for **Boba Bear**, a premium **global lifestyle brand** built around K-street aesthetics, S-tier sips, and direct-to-consumer digital drops.
+Marketing landing page for **Boba Bear**, Dehradun's boba-tea bar and Korean street-food kitchen
+(*S-Tier Sips · K-Street Drip*). A single long-scroll page: hero video, signature-drop countdown,
+full menu (drinks / K-street plates / sweets), merch teaser, artists collab teaser, and an
+"access the drop" ordering section (Zomato / Swiggy / WhatsApp).
 
-## Brand System
+## Tech stack
 
-- **Primary headline:** `FOR THE UNBOTHERED.`
-- **Primary subheadline:** `S-Tier Sips. K-Street Drip.`
-- **Primary CTA:** `Catch the Drop.`
-- **Brand voice:** Premium, aloof, streetwear-inspired, culturally plugged-in
-- **Origin language:** `Origin: Bharat`
-- **Network language:** `Direct-to-Consumer Network`, `Digital Drops`, `Global Lifestyle Brand`
+| | |
+|---|---|
+| Framework | Next.js 16 (App Router, Turbopack) |
+| Language | TypeScript 5, React 19 |
+| Styling | Tailwind CSS v4 |
+| Animation | Framer Motion 12 |
+| Icons | lucide-react |
 
-## Business Reference
+## Prerequisites
 
-- **Brand name:** Boba Bear
-- **Parent company:** Nivedhya11 Hospitality Private Limited
-- **Current origin copy:** `📍 Origin: Bharat | Direct-to-Consumer Network`
-- **Operating model:** Digital drops and delivery-first ordering
-- **Customer ordering channels:** Swiggy, Zomato, WhatsApp
-- **Contact email:** `nivedhya11hospitality@gmail.com`
+- **Node.js 20+** and npm.
 
-## Project Files
+## Getting started
 
-- `index.html` — Main landing page
-- `privacy.html` — Privacy page (`Network Privacy & Data`)
-- `terms.html` — Terms page (`Terms of Access`)
-- `assets/images/logos/` — Brand logo and white stamp
-- `assets/images/ui/` — Hero mascot and UI reference assets
-- `assets/images/products/` — Featured product photography
+```bash
+npm install      # install dependencies
+npm run dev      # start the dev server → http://localhost:3000
+```
 
-## Homepage Structure (`index.html`)
+The page hot-reloads as you edit.
 
-The homepage is a **high-impact highlights page**, not a long full-menu page.
+## Build & run in production
 
-### Navigation
+```bash
+npm run build    # production build
+npm run start    # serve the production build → http://localhost:3000
+npm run lint     # ESLint
+```
 
-- `Current Drop`
-- `Beverage Studio`
-- `K-Street Bites`
-- `Global Network`
+## Environment variables
 
-### Hero
+The site runs with **no required environment variables**. One optional override:
 
-- Headline: `FOR THE UNBOTHERED.`
-- Subheadline: `S-Tier Sips. K-Street Drip.`
-- Support line: `A global lifestyle brand. Chapter 01: Bharat.`
-- Static badges:
-  - `Fresh Daily`
-  - `No Shortcuts`
-  - `K-Street OG`
-  - `Catch the Drop`
-- Primary button: `View Current Drop`
+| Variable | Default | Purpose |
+|---|---|---|
+| `NEXT_PUBLIC_SITE_URL` | `https://bobabear.in` | Canonical URL used in metadata, `sitemap.xml`, `robots.txt`, and JSON-LD. Set this to the real production domain before launch. |
 
-### Marquee
+Copy `.env.example` → `.env.local` and fill in if you need to override it.
 
-Current ticker copy:
+## Editing content (the common changes)
 
-`🐻 ✦ FOR THE UNBOTHERED ✦ S-TIER SIPS. K-STREET DRIP. ✦ CATCH THE DROP ✦ PURPLE RAIN MATCHA ✦ GAMJA CORN DOG ✦ SEOUL STREET MOMOS ✦ 🐻`
+Most day-to-day edits live in just a few places:
 
-### The Current Drop
+| What you want to change | Where |
+|---|---|
+| **Menu items, prices, descriptions, tags** | [`data/menu.json`](data/menu.json) |
+| **Promo tags on a menu card** (`new`, `limited`, `signature`, `bestseller`) | the `"tags"` array on each item in `data/menu.json`, e.g. `"tags": ["new", "limited"]` |
+| **Menu item photos** | drop the image in `public/assets/menu/` and map it in [`lib/menuImages.ts`](lib/menuImages.ts) |
+| **Drop date / countdown** | `DROP_DATE` in [`components/SignatureDrops.tsx`](components/SignatureDrops.tsx) (the countdown auto-flips to a "Drop Now Live" state once it passes) |
+| **Hero featured video** | replace `public/assets/video/hero-featured.mp4` |
+| **Business info, SEO copy, contact, socials** | [`lib/site.ts`](lib/site.ts) (single source of truth for metadata + structured data) |
+| **Brand colors / design tokens** | the `@theme` / `:root` blocks in [`app/globals.css`](app/globals.css) |
+| **Ordering links** (Zomato / Swiggy / WhatsApp) | `PLATFORMS` in [`components/AccessCTA.tsx`](components/AccessCTA.tsx) |
 
-Only these 5 featured items appear on the homepage:
+### Menu tags
 
-- `Borahae Purple Combo` — `₹449`
-- `Purple Rain Layered Matcha` — `₹289`
-- `Bangkok Street Thai Bubble Tea` — `₹249`
-- `Gamja Potato Corn Dog` — `₹179`
-- `Pink Velvet Cheesy Veg Burger` — `₹169`
+Every item in `data/menu.json` has a `tags` field. Leave it `[]` for no tag, or list one or more:
 
-### Archive CTA
+```json
+{
+  "name": "Wild Berry Dirty Matcha",
+  "price": 289,
+  "tags": ["new", "limited"]
+}
+```
 
-- Button text: `Access Full Archive on Swiggy & Zomato`
+Known tags: `signature`, `new`, `bestseller`, `limited`, `staff`. The cards render them as
+chips that wrap across the top-left of the image. Unknown values still render as a neutral chip,
+so a custom label won't break the layout.
 
-### Digital Drop Access
+## Project structure
 
-- Section title: `CATCH THE DROP.`
-- Supporting copy: `The Boba Bear network currently fulfills drops via Swiggy, Zomato, and WhatsApp. Quietly efficient. No unnecessary friction.`
-- Buttons:
-  - `Order on Swiggy`
-  - `Order on Zomato`
-  - `Order on WhatsApp`
+```
+app/                 App Router
+  layout.tsx         <head>, metadata, JSON-LD, fonts
+  page.tsx           the single landing page (composes the sections below)
+  globals.css        Tailwind theme + design tokens (colors, type, spacing)
+  api/newsletter/    community signup endpoint (placeholder — see below)
+  privacy/           privacy policy page
+  dev/               dev-only icon gallery (noindexed via robots.ts)
+  robots.ts, sitemap.ts, opengraph-image.tsx
+components/          section components (Hero, SignatureDrops, TheBar, ThePlates,
+                     TheSweet, MerchDrop, Artists, AccessCTA, Footer, Nav, …)
+  ui/                shared primitives (Button, Tag, Toggle, …)
+  motion/            reveal / stagger animation helpers
+  icons/             SVG icon components
+data/menu.json       all menu content + per-item tags
+lib/                 site.ts (SEO/business constants), menuImages.ts, utils.ts
+types/menu.ts        menu data types (incl. the MenuCardTag union)
+public/assets/       images & video (logos, drops, menu, merch, artists, video)
+```
 
-### Footer
+Page section order is defined in [`app/page.tsx`](app/page.tsx).
 
-- Company name: `Nivedhya11 Hospitality Private Limited`
-- Origin line: `📍 Origin: Bharat | Direct-to-Consumer Network`
-- Brand line: `Boba Bear is a global lifestyle brand. Our QSR collections are currently optimized for digital delivery.`
-- Legal links:
-  - `privacy.html`
-  - `terms.html`
+## Newsletter / signup API
 
-## Current Asset Mapping
+[`app/api/newsletter/route.ts`](app/api/newsletter/route.ts) is a **placeholder**. It validates the
+submitted email/phone, rate-limits per IP, and returns `200 OK` — but does **not** persist anything
+yet. Wire it to your email list / WhatsApp Business / CRM where the `TODO` is marked. It intentionally
+never logs the submitted contact value (PII).
 
-### Logos and UI
+## Deploy
 
-- Header logo: `assets/images/logos/logo-full.svg`
-- Footer stamp: `assets/images/logos/stamp-white.svg`
-- Hero mascot: `assets/images/ui/hero-digital-mascot.png`
+Optimized for [Vercel](https://vercel.com/): import the repo, set `NEXT_PUBLIC_SITE_URL`, deploy.
+Any Node host works too — run `npm run build` then `npm run start`. Baseline security headers
+(HSTS, X-Frame-Options, etc.) are configured in [`next.config.ts`](next.config.ts).
 
-### Product Images
+## Design & iteration resources
 
-- `assets/images/products/borahae-combo.png`
-- `assets/images/products/purple-rain-matcha.png`
-- `assets/images/products/bangkok-street-thai-bubble-tea.png`
-- `assets/images/products/gamja-corn-dog.png`
-- `assets/images/products/pink-velvet-burger.png`
+Kept in the repo so the design can be re-iterated in Figma or rebuilt with Claude Code:
 
-## Legal Pages
+- `figma-sync/` — script + section screenshots for syncing to Figma.
+- `Boba_Bear_Design_System_Updated/`, `boba-bear-design-system.md`,
+  `Updated_BOBA BEAR_ DESIGN SYSTEM (V1.1).md` — the design-system spec (color, type, components, voice).
+- `Boba Bear Landing Page Wireframe Updated/` — the build guide / wireframes.
+- `Boba_Bear_Images/` and the root `*.png` files — design reference screenshots.
+- `AGENTS.md` / `CLAUDE.md` — notes for AI-assisted edits.
 
-### `privacy.html`
-
-- Page title: `Network Privacy & Data`
-- Includes a short branded `TL;DR` intro before the formal legal text
-- Uses the shared brand styling with readable long-form copy
-- Keeps legal contact set to `nivedhya11hospitality@gmail.com`
-
-### `terms.html`
-
-- Page title: `Terms of Access`
-- Includes a short branded `TL;DR` intro before the formal legal text
-- Emphasizes IP protection and network access rules
-- Uses the same shared site shell and footer links
-
-## SEO and Metadata
-
-`index.html` currently includes:
-
-- `<title>`: `Boba Bear | S-Tier Sips & K-Street Drip`
-- Meta description aligned to the global lifestyle brand positioning
-- Open Graph metadata for social sharing
-- Twitter card metadata
-- JSON-LD schema describing the business and featured offer catalog
-
-## Ordering Links
-
-Current external actions wired into the site:
-
-- **Swiggy:** `https://www.swiggy.com/direct/brand/730987?source=swiggy-direct&subSource=generic`
-- **Zomato:** `https://link.zomato.com/xqzv/rshare?id=12538351530563d18`
-- **WhatsApp:** `https://wa.me/919259894495?text=I%20want%20to%20Catch%20the%20Drop.%20Send%20the%20menu%21`
-
-## Maintenance Notes
-
-- Keep homepage, privacy page, and terms page terminology aligned with the current brand lexicon
-- Prefer `Bharat` over `India` in user-facing brand copy where intentional
-- Avoid reintroducing deprecated phrasing such as `cloud kitchen`, `delivery kitchen`, `launch site`, or `branch` in brand-forward copy
-- If featured products change, update both homepage cards and asset references together
-- If the production domain is finalized, convert social preview image paths to absolute URLs
-- Keep footer legal links synchronized across `index.html`, `privacy.html`, and `terms.html`
+These are reference/tooling only — they are not imported by the app and do not ship in the build.

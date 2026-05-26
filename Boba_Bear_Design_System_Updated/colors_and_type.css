@@ -1,0 +1,453 @@
+/* ============================================================
+   Boba Bear · Design Tokens
+   For the Unbothered.
+   ------------------------------------------------------------
+   Single source of truth for color + type + spacing + motion.
+   Drop into any project alongside the Google Fonts import below.
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   Web fonts
+   - Luckiest Guy + Bubblegum Sans: self-hosted (brand-provided TTFs in fonts/)
+   - Nunito + JetBrains Mono: Google Fonts CDN until brand files land
+   ------------------------------------------------------------ */
+@font-face {
+  font-family: 'Luckiest Guy';
+  src: url('fonts/LuckiestGuy-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Bubblegum Sans';
+  src: url('fonts/BubblegumSans-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+/* ============================================================
+   1.  RAW COLOR SCALES (mode-agnostic)
+   ============================================================ */
+:root {
+  /* ---- Firefly Green — core identity, primary CTA ---- */
+  --firefly-50:  #F5FAE6;
+  --firefly-100: #E8F3C4;
+  --firefly-200: #D3E889;
+  --firefly-300: #BDDE5A;
+  --firefly-400: #A8D832;   /* brand base */
+  --firefly-500: #8FBD28;
+  --firefly-600: #759E20;
+  --firefly-700: #5A7C18;
+  --firefly-800: #405810;
+  --firefly-950: #1F2C08;
+
+  /* ---- Saffron Gold — wordmark, secondary accent ---- */
+  --saffron-50:  #FEF7EC;
+  --saffron-100: #FDE9C5;
+  --saffron-200: #FAD28A;
+  --saffron-300: #F8BC58;
+  --saffron-400: #F5A623;   /* brand base */
+  --saffron-500: #D88C1A;
+  --saffron-600: #B37010;
+  --saffron-700: #8A5510;
+  --saffron-800: #5E3A0C;
+  --saffron-950: #2F1D06;
+
+  /* ---- Bear Brown — body text on cream, mascot fill ---- */
+  --brown-50:  #FAF3EC;
+  --brown-100: #F0DCC4;
+  --brown-200: #DBBA92;
+  --brown-300: #C39866;
+  --brown-400: #A7764A;
+  --brown-500: #8B5C38;
+  --brown-600: #7B4A2D;     /* brand base */
+  --brown-700: #5F3A24;
+  --brown-800: #42281A;
+  --brown-950: #1F120C;
+
+  /* ---- Boba Cream — light surfaces, packaging ---- */
+  --cream-50:  #FEFCF7;
+  --cream-100: #FDF8EB;
+  --cream-200: #FAF3E2;     /* brand base */
+  --cream-300: #F4E8C8;
+  --cream-400: #EBD9A6;
+  --cream-500: #D9C286;
+  --cream-600: #B9A365;
+  --cream-700: #948048;
+  --cream-800: #6B5C34;
+  --cream-950: #342D1A;
+
+  /* ---- Night Forest — dark surfaces, premium pkg ---- */
+  --forest-50:  #EEF2EA;
+  --forest-100: #D4DFC5;
+  --forest-200: #A8BF8F;
+  --forest-300: #7C9F5F;
+  --forest-400: #558036;
+  --forest-500: #3D6026;
+  --forest-600: #2E4720;
+  --forest-700: #22361A;
+  --forest-800: #1A2210;    /* brand base */
+  --forest-950: #0D1208;
+
+  /* ---- Aurora — pastel stage family (NOT a scale) ---- */
+  --aurora-rose:     #F9C4CC;
+  --aurora-peach:    #FAC9A8;
+  --aurora-butter:   #FAF0A0;
+  --aurora-mint:     #B8F0C4;
+  --aurora-sky:      #A8D8F5;
+  --aurora-lavender: #D4BEF5;
+
+  /* Aurora soft (70%) — for tinted backdrops */
+  --aurora-rose-soft:     #F9C4CCB3;
+  --aurora-peach-soft:    #FAC9A8B3;
+  --aurora-butter-soft:   #FAF0A0B3;
+  --aurora-mint-soft:     #B8F0C4B3;
+  --aurora-sky-soft:      #A8D8F5B3;
+  --aurora-lavender-soft: #D4BEF5B3;
+
+  /* Aurora gradient — strategic indicators, drop conversion moments */
+  --aurora-gradient: linear-gradient(
+    90deg,
+    var(--aurora-rose) 0%,
+    var(--aurora-peach) 20%,
+    var(--aurora-butter) 40%,
+    var(--aurora-mint) 60%,
+    var(--aurora-sky) 80%,
+    var(--aurora-lavender) 100%
+  );
+
+  /* ---- Neutral utility ---- */
+  --neutral-50:  #FAFAFA;
+  --neutral-100: #F4F4F4;
+  --neutral-200: #E4E4E4;
+  --neutral-300: #C8C8C8;
+  --neutral-400: #A0A0A0;
+  --neutral-500: #787878;
+  --neutral-600: #5A5A5A;
+  --neutral-700: #3C3C3C;
+  --neutral-800: #242424;
+  --neutral-950: #0F0F0F;
+
+  /* ---- Semantic bases (use mode-tuned tokens below in UI) ---- */
+  --success: #16A34A;
+  --warning: #F59E0B;
+  --info:    #3B82F6;
+  --error:   #E11D48;
+
+  /* ============================================================
+     2.  SPACING (4 px base · 2 px half-step exception)
+     ============================================================
+     CHANGED FROM SOURCE: removed 6 (non-multiple). 2 stays as the
+     single allowed half-step for hairline insets (icon nudge, focus
+     ring offset). Everything else is a 4 px multiple. */
+  --space-0:   0px;
+  --space-0_5: 2px;     /* half-step — focus offset, hairlines only */
+  --space-1:   4px;
+  --space-2:   8px;
+  --space-3:   12px;
+  --space-4:   16px;
+  --space-5:   20px;
+  --space-6:   24px;
+  --space-8:   32px;
+  --space-10:  40px;
+  --space-12:  48px;
+  --space-16:  64px;
+  --space-20:  80px;
+  --space-24:  96px;
+  --space-32:  128px;
+  --space-40:  160px;
+
+  /* Component padding (vertical · horizontal) */
+  --pad-xs-y: 4px;  --pad-xs-x: 8px;
+  --pad-sm-y: 8px;  --pad-sm-x: 12px;   /* was 6×12 — bumped to 8 for 4-grid */
+  --pad-md-y: 12px; --pad-md-x: 16px;   /* was 10×16 — bumped to 12 for 4-grid */
+  --pad-lg-y: 16px; --pad-lg-x: 24px;   /* was 14×24 — bumped to 16 */
+  --pad-xl-y: 20px; --pad-xl-x: 32px;
+
+  /* Section spacing (vertical rhythm) */
+  --section-mobile:  48px;
+  --section-tablet:  64px;
+  --section-desktop: 96px;
+
+  /* Grid gaps */
+  --gap-tight:       8px;
+  --gap-default:    16px;
+  --gap-card:       24px;
+  --gap-comfortable: 32px;
+  --gap-generous:   48px;
+
+  /* Container */
+  --container-max:    1280px;
+  --gutter-mobile:    24px;
+  --gutter-tablet:    32px;
+  --gutter-desktop:   48px;
+
+  /* ============================================================
+     3.  RADII
+     ============================================================
+     Rule: don't mix scales. Buttons/inputs 8 · Cards 12. */
+  --radius-none: 0;
+  --radius-xs:   2px;
+  --radius-sm:   4px;
+  --radius-md:   8px;     /* buttons, inputs, dropdowns */
+  --radius-lg:   12px;    /* cards, menu chips */
+  --radius-xl:   16px;    /* modals, hero panels */
+  --radius-2xl:  24px;    /* spotlight surfaces */
+  --radius-full: 9999px;  /* pills, avatars */
+
+  /* ============================================================
+     4.  ELEVATION
+     ============================================================
+     Editorial flatness + warm depth. Static = flat. Hover = lift. */
+  --shadow-none: none;
+  --shadow-xs:   0 1px 2px rgba(26, 34, 16, 0.08);
+  --shadow-sm:   0 2px 6px rgba(26, 34, 16, 0.10);
+  --shadow-md:   0 4px 12px rgba(26, 34, 16, 0.14);
+  --shadow-lg:   0 8px 24px rgba(26, 34, 16, 0.18);
+  --shadow-xl:   0 16px 40px rgba(26, 34, 16, 0.24);
+  --shadow-glow-firefly: 0 4px 20px rgba(168, 216, 50, 0.40);
+  --shadow-glow-saffron: 0 4px 20px rgba(245, 166, 35, 0.35);
+
+  /* Inset shadows — recessed wells, pressed input look */
+  --shadow-inset-sm: inset 0 1px 2px rgba(26, 34, 16, 0.10);
+  --shadow-inset-md: inset 0 2px 6px rgba(26, 34, 16, 0.14);
+
+  /* ============================================================
+     5.  MOTION
+     ============================================================ */
+  --dur-instant: 0ms;
+  --dur-fast:    150ms;
+  --dur-normal:  250ms;
+  --dur-slow:    400ms;
+  --dur-slower:  600ms;
+  --dur-crawl:   1200ms;
+
+  --ease-linear:       linear;
+  --ease-out:          cubic-bezier(0, 0, 0.2, 1);
+  --ease-in:           cubic-bezier(0.4, 0, 1, 1);
+  --ease-in-out:       cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring:       cubic-bezier(0.34, 1.56, 0.64, 1);   /* subtle overshoot */
+
+  /* ============================================================
+     6.  TRANSPARENCY / BLUR
+     ============================================================
+     NEW: not in source spec — added for backdrops + glass nav. */
+  --opacity-disabled: 0.45;
+  --opacity-muted:    0.65;
+  --opacity-overlay:  0.60;
+
+  --blur-sm:  blur(6px);
+  --blur-md:  blur(12px);   /* sticky nav backdrop */
+  --blur-lg:  blur(24px);   /* hero protection gradient */
+
+  /* Protection gradient — fades the top/bottom of hero imagery
+     for legibility of overlaid display type. */
+  --protection-top:    linear-gradient(180deg, rgba(13,18,8,0.55) 0%, rgba(13,18,8,0) 100%);
+  --protection-bottom: linear-gradient(0deg,   rgba(13,18,8,0.65) 0%, rgba(13,18,8,0) 100%);
+
+  /* ============================================================
+     7.  Z-INDEX SCALE  (NEW)
+     ============================================================ */
+  --z-base:     1;
+  --z-sticky:   10;
+  --z-nav:      40;
+  --z-dropdown: 60;
+  --z-modal:    80;
+  --z-toast:    100;
+
+  /* ============================================================
+     8.  KRAFT / GRAIN TEXTURE  (NEW)
+     ============================================================
+     The streetwear-drop feel needs a paper grain. Inline SVG noise
+     overlay — apply with: background-image: var(--grain), <color>;
+     mix-blend-mode: multiply; opacity .35; */
+  --grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.1, 0 0 0 0 0.07, 0 0 0 0 0.04, 0 0 0 0.35 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+
+  /* ============================================================
+     9.  TYPOGRAPHY — families + raw scale
+     ============================================================ */
+  --font-display:  'Luckiest Guy', 'Impact', system-ui, sans-serif;
+  --font-heading:  'Bubblegum Sans', 'Comic Neue', system-ui, sans-serif;
+  --font-body:     'Nunito', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono:     'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* Fluid type scale — clamp(min, viewport, max).
+     Tracking and line-height applied via semantic classes below. */
+  --fs-display-2xl: clamp(56px, 7.5vw, 96px);
+  --fs-display-xl:  clamp(44px, 6vw,   80px);
+  --fs-display-lg:  clamp(36px, 5vw,   64px);
+  --fs-h1:          clamp(32px, 4.5vw, 56px);
+  --fs-h2:          clamp(28px, 3.2vw, 40px);
+  --fs-h3:          clamp(22px, 2.5vw, 32px);
+  --fs-h4:          clamp(20px, 2vw,   24px);
+  --fs-h5:          clamp(18px, 1.6vw, 20px);
+  --fs-body-lg:     clamp(16px, 1.4vw, 18px);
+  --fs-body-md:     clamp(15px, 1.2vw, 16px);
+  --fs-body-sm:     14px;
+  --fs-body-xs:     12px;
+  --fs-label-lg:    14px;
+  --fs-label-md:    12px;
+  --fs-label-sm:    10px;
+  --fs-caption:     12px;
+  --fs-code-md:     14px;
+  --fs-code-sm:     12px;
+}
+
+/* ============================================================
+   10.  SEMANTIC TOKENS — DARK MODE (default)
+   ============================================================
+   Boba Bear is dark-first. The dark palette is the "hero" mode:
+   Night Forest base, cream type, firefly green CTAs. */
+:root,
+:root[data-theme="dark"] {
+  --bg-page:            var(--forest-800);
+  --bg-section:         var(--forest-700);
+  --bg-surface:         var(--forest-600);
+  --bg-surface-raised:  var(--forest-500);
+  --bg-surface-sunken:  var(--forest-950);
+
+  --text-primary:       var(--cream-200);
+  --text-secondary:     var(--cream-400);
+  --text-tertiary:      var(--forest-200);
+  --text-disabled:      var(--forest-400);
+  --text-label:         var(--firefly-400);
+  --text-on-primary:    var(--forest-800);
+  --text-on-secondary:  var(--forest-800);
+  --text-link:          var(--firefly-300);
+
+  --border-default:     var(--forest-600);
+  --border-strong:      var(--forest-400);
+  --border-subtle:      var(--forest-700);
+  --border-focus:       var(--firefly-400);
+
+  --interactive-primary:         var(--firefly-400);
+  --interactive-primary-hover:   var(--firefly-300);
+  --interactive-primary-pressed: var(--firefly-500);
+  --interactive-secondary:        var(--saffron-400);
+  --interactive-secondary-hover:  var(--saffron-300);
+  --interactive-secondary-pressed: var(--saffron-500);
+  --interactive-ghost-hover:     rgba(46, 71, 32, 0.40);
+  --interactive-destructive:     var(--error);
+
+  --focus-ring:         0 0 0 3px rgba(168, 216, 50, 0.35);
+  --overlay-modal:      rgba(13, 18, 8, 0.65);
+}
+
+/* SEMANTIC TOKENS — LIGHT MODE */
+:root[data-theme="light"] {
+  --bg-page:            var(--cream-200);
+  --bg-section:         var(--cream-100);
+  --bg-surface:         var(--cream-50);
+  --bg-surface-raised:  #FFFFFF;
+  --bg-surface-sunken:  var(--cream-300);
+
+  --text-primary:       var(--brown-800);
+  --text-secondary:     var(--brown-700);
+  --text-tertiary:      var(--brown-500);
+  --text-disabled:      var(--brown-300);
+  --text-label:         var(--brown-600);
+  --text-on-primary:    var(--forest-800);
+  --text-on-secondary:  var(--brown-800);
+  --text-link:          var(--firefly-600);
+
+  --border-default:     var(--cream-400);
+  --border-strong:      var(--brown-300);
+  --border-subtle:      var(--cream-300);
+  --border-focus:       var(--firefly-600);
+
+  --interactive-primary:         var(--firefly-500);
+  --interactive-primary-hover:   var(--firefly-600);
+  --interactive-primary-pressed: var(--firefly-700);
+  --interactive-secondary:        var(--saffron-500);
+  --interactive-secondary-hover:  var(--saffron-600);
+  --interactive-secondary-pressed: var(--saffron-700);
+  --interactive-ghost-hover:     rgba(235, 217, 166, 0.40);
+  --interactive-destructive:     var(--error);
+
+  --focus-ring:         0 0 0 3px rgba(117, 158, 32, 0.30);
+  --overlay-modal:      rgba(31, 18, 12, 0.55);
+}
+
+/* ============================================================
+   11.  SEMANTIC TYPE — drop-in classes
+   ============================================================
+   Tracking moved from "%" notation to em values. LH tightened on
+   body (1.55 from 1.6) and h5 (1.3 from 1.4). */
+
+.display-2xl, .display-xl, .display-lg {
+  font-family: var(--font-display);
+  font-weight: 400;
+  text-transform: uppercase;
+}
+.display-2xl { font-size: var(--fs-display-2xl); line-height: 1.05; letter-spacing: -0.02em; }
+.display-xl  { font-size: var(--fs-display-xl);  line-height: 1.05; letter-spacing: -0.02em; }
+.display-lg  { font-size: var(--fs-display-lg);  line-height: 1.10; letter-spacing: -0.01em; }
+
+.h1, .h2, .h3, .h4, .h5 {
+  font-family: var(--font-heading);
+  font-weight: 400;
+}
+.h1 { font-size: var(--fs-h1); line-height: 1.15; letter-spacing: -0.01em; }
+.h2 { font-size: var(--fs-h2); line-height: 1.20; }
+.h3 { font-size: var(--fs-h3); line-height: 1.25; }
+.h4 { font-size: var(--fs-h4); line-height: 1.30; }
+.h5 { font-size: var(--fs-h5); line-height: 1.30; }     /* tightened */
+
+.body-lg, .body-md, .body-sm, .body-xs, .p {
+  font-family: var(--font-body);
+  font-weight: 400;
+}
+.body-lg, .p { font-size: var(--fs-body-lg); line-height: 1.55; }   /* was 1.6 */
+.body-md     { font-size: var(--fs-body-md); line-height: 1.55; }
+.body-sm     { font-size: var(--fs-body-sm); line-height: 1.5; }
+.body-xs     { font-size: var(--fs-body-xs); line-height: 1.5; }
+
+.label-lg, .label-md, .label-sm {
+  font-family: var(--font-body);
+  text-transform: uppercase;
+  line-height: 1;
+  color: var(--text-label);
+}
+.label-lg { font-size: var(--fs-label-lg); font-weight: 600; letter-spacing: 0.06em; }
+.label-md { font-size: var(--fs-label-md); font-weight: 700; letter-spacing: 0.08em; }
+.label-sm { font-size: var(--fs-label-sm); font-weight: 700; letter-spacing: 0.12em; }
+
+.caption {
+  font-family: var(--font-body);
+  font-size: var(--fs-caption);
+  line-height: 1.5;
+  color: var(--text-tertiary);
+}
+
+.code, code, kbd, samp {
+  font-family: var(--font-mono);
+  font-size: var(--fs-code-md);
+  font-weight: 400;
+}
+.code-sm { font-size: var(--fs-code-sm); }
+
+/* ============================================================
+   12.  GLOBAL BASELINE
+   ============================================================ */
+html, body {
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--firefly-400);
+  color: var(--forest-800);
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-sm);
+}

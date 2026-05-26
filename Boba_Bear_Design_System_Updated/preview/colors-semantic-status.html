@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<title>Colors — Semantic Status</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 20px; background: var(--bg-page); display: grid; gap: 14px; }
+  .label { font-family: var(--font-body); font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-label); }
+  .row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .tile { padding: 10px 12px; border-radius: var(--radius-md); display: flex; align-items: center; gap: 10px; border: 1px solid; }
+  .tile .dot { width: 10px; height: 10px; border-radius: var(--radius-full); }
+  .tile .l { font-family: var(--font-heading); font-size: 16px; line-height: 1; }
+  .tile .h { font-family: var(--font-mono); font-size: 10px; margin-left: auto; opacity: .7; }
+  .success { background: rgba(22,163,74,0.18); border-color: #16A34A; color: #BDDE5A; }
+  .warning { background: rgba(245,158,11,0.18); border-color: #B37010; color: #FAD28A; }
+  .info    { background: rgba(59,130,246,0.18); border-color: #3B82F6; color: #A8D8F5; }
+  .error   { background: rgba(225,29,72,0.20);  border-color: #E11D48; color: #F9C4CC; }
+</style>
+</head>
+<body>
+  <div class="label">Semantic · Status</div>
+  <div class="row">
+    <div class="tile success"><span class="dot" style="background:#16A34A"></span><span class="l">Success</span><span class="h">#16A34A</span></div>
+    <div class="tile warning"><span class="dot" style="background:#F59E0B"></span><span class="l">Warning</span><span class="h">#F59E0B</span></div>
+    <div class="tile info"><span class="dot" style="background:#3B82F6"></span><span class="l">Info</span><span class="h">#3B82F6</span></div>
+    <div class="tile error"><span class="dot" style="background:#E11D48"></span><span class="l">Error</span><span class="h">#E11D48</span></div>
+  </div>
+</body>
+</html>

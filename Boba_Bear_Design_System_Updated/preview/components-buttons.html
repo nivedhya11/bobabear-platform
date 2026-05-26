@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<title>Buttons</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 24px; background: var(--bg-page); color: var(--text-primary); display: grid; gap: 16px; }
+  .label { font-family: var(--font-body); text-transform: uppercase; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: var(--text-label); }
+  .row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .btn {
+    font-family: var(--font-body); font-weight: 700;
+    border-radius: var(--radius-md);
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    transition: all var(--dur-normal) var(--ease-out);
+    border: 0; cursor: pointer; white-space: nowrap;
+  }
+  .btn.sm { height: 32px; padding: 0 12px; font-size: 14px; }
+  .btn.md { height: 40px; padding: 0 16px; font-size: 16px; }
+  .btn.lg { height: 48px; padding: 0 24px; font-size: 18px; }
+  .btn.primary   { background: var(--interactive-primary); color: var(--text-on-primary); }
+  .btn.primary:hover  { background: var(--interactive-primary-hover); box-shadow: var(--shadow-glow-firefly); transform: translateY(-1px); }
+  .btn.secondary { background: var(--interactive-secondary); color: var(--text-on-secondary); }
+  .btn.secondary:hover { background: var(--interactive-secondary-hover); box-shadow: var(--shadow-glow-saffron); transform: translateY(-1px); }
+  .btn.outline { background: transparent; border: 1.5px solid var(--border-strong); color: var(--text-primary); }
+  .btn.outline:hover { background: var(--interactive-ghost-hover); }
+  .btn.ghost { background: transparent; color: var(--text-primary); }
+  .btn.ghost:hover { background: var(--interactive-ghost-hover); }
+  .btn.destructive { background: transparent; color: var(--interactive-destructive); border: 1.5px solid var(--interactive-destructive); }
+  .arrow { font-size: 1.1em; line-height: 0; }
+</style>
+</head>
+<body>
+  <div>
+    <div class="label" style="margin-bottom:10px">Variants · md</div>
+    <div class="row">
+      <button class="btn md primary">Access the Drop <span class="arrow">→</span></button>
+      <button class="btn md secondary">View Menu</button>
+      <button class="btn md outline">See lineup</button>
+      <button class="btn md ghost">Maybe later</button>
+      <button class="btn md destructive">Cancel order</button>
+    </div>
+  </div>
+  <div>
+    <div class="label" style="margin-bottom:10px">Sizes · primary</div>
+    <div class="row">
+      <button class="btn sm primary">Small · 32</button>
+      <button class="btn md primary">Default · 40</button>
+      <button class="btn lg primary">Large · 48</button>
+    </div>
+  </div>
+</body>
+</html>

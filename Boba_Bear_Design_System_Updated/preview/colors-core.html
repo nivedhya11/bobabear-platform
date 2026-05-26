@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<title>Colors — Core Identity</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 24px; background: var(--bg-page); }
+  .row { display: grid; grid-template-columns: 140px 1fr; gap: 16px; align-items: center; margin-bottom: 16px; }
+  .row:last-child { margin-bottom: 0; }
+  .name { font-family: var(--font-heading); font-size: 22px; color: var(--text-primary); line-height: 1; }
+  .name small { display: block; font-family: var(--font-body); font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-tertiary); margin-top: 6px; }
+  .scale { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; }
+  .step { aspect-ratio: 1 / 1.2; border-radius: var(--radius-sm); position: relative; }
+  .step.base::after { content: '●'; position: absolute; inset: 0; display: grid; place-items: center; color: rgba(255,255,255,0.85); font-size: 10px; mix-blend-mode: difference; }
+  .step span { position: absolute; bottom: -16px; left: 0; right: 0; text-align: center; font-family: var(--font-mono); font-size: 9px; color: var(--text-tertiary); }
+</style>
+</head>
+<body>
+  <div class="row">
+    <div class="name">Firefly Green<small>Primary CTA · base 400</small></div>
+    <div class="scale">
+      <div class="step" style="background:#F5FAE6"></div>
+      <div class="step" style="background:#E8F3C4"></div>
+      <div class="step" style="background:#D3E889"></div>
+      <div class="step" style="background:#BDDE5A"></div>
+      <div class="step base" style="background:#A8D832"></div>
+      <div class="step" style="background:#8FBD28"></div>
+      <div class="step" style="background:#759E20"></div>
+      <div class="step" style="background:#5A7C18"></div>
+      <div class="step" style="background:#405810"></div>
+      <div class="step" style="background:#1F2C08"></div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="name">Saffron Gold<small>Wordmark · base 400</small></div>
+    <div class="scale">
+      <div class="step" style="background:#FEF7EC"></div>
+      <div class="step" style="background:#FDE9C5"></div>
+      <div class="step" style="background:#FAD28A"></div>
+      <div class="step" style="background:#F8BC58"></div>
+      <div class="step base" style="background:#F5A623"></div>
+      <div class="step" style="background:#D88C1A"></div>
+      <div class="step" style="background:#B37010"></div>
+      <div class="step" style="background:#8A5510"></div>
+      <div class="step" style="background:#5E3A0C"></div>
+      <div class="step" style="background:#2F1D06"></div>
+    </div>
+  </div>
+</body>
+</html>
