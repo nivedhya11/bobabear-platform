@@ -1,16 +1,29 @@
-# Missing Menu Images
+# Menu Image Mapping
 
-Run `npm run audit:menu-images` at any time to see which images are still missing.
+Run `npm run audit:menu-images` at any time to see missing images, unused files, stale keys, and suspicious mappings.
 
-Menu images that have no file in `public/assets/menu/` render as a coloured **Aurora fallback card** (the item name centred over a brand-palette background). No code change is needed when a new photo is added — drop the file in the right place with the right name and the next build picks it up.
+Items without a photo render as a coloured **Aurora fallback card** — no code change needed when a new photo is added. Drop the file at `public/assets/menu/<filename>` and the next build picks it up automatically.
 
 ---
 
-## Images needing new product photography (28)
+## Confirmed mappings needing filename cleanup
 
-These items have no matching source photo anywhere in the repo. A real product shot is required for each.
+These images exist in `public/assets/menu/` and are correctly shown on the site, but the filename still reflects an older product name. The files should be renamed when convenient so the filename matches the current menu item name.
 
-Place the finished photo at `public/assets/menu/<filename>` using the exact filename listed below.
+| Menu item | Current filename | Preferred filename |
+|---|---|---|
+| Electric Blue Lime Refresher | `Electric_Blue_Iced_Tea.jpeg` | `Electric_Blue_Lime_Refresher.jpeg` |
+| Magic Galaxy Refresher Drink | `Magic_Galaxy_Iced_Tea.jpeg` | `Magic_Galaxy_Refresher_Drink.jpeg` |
+
+**To rename**: copy the file to the new name, update `lib/menuImages.ts`, rebuild.
+
+---
+
+## Images needing new product photography (27)
+
+These items have no matching photo in `public/assets/menu/`. An Aurora fallback card is shown.
+
+Place the finished photo at `public/assets/menu/<filename>` using the exact filename listed.
 
 ### The Bar
 
@@ -29,8 +42,6 @@ Place the finished photo at `public/assets/menu/<filename>` using the exact file
 | Watermelon Iced Tea | `Watermelon_Iced_Tea.jpeg` |
 | Hibiscus Ginger Mint Iced Tea | `Hibiscus_Ginger_Mint_Iced_Tea.jpeg` |
 | Lime Black Tea Boba | `Lime_Black_Tea_Boba.jpeg` |
-| Electric Blue Lime Refresher | `Electric_Blue_Lime_Refresher.jpeg` |
-| Magic Galaxy Refresher Drink | `Magic_Galaxy_Refresher_Drink.jpeg` |
 
 ### Burgers & Wraps
 
@@ -67,46 +78,57 @@ Place the finished photo at `public/assets/menu/<filename>` using the exact file
 
 ---
 
-## Image needing manual confirmation (1)
+## Needs manual confirmation
 
 `Paneer_Burger_Meal.jpeg` — the repo contains `Boba_Bear_Images/Premium_Paneer_Meal.jpeg`, which *may* correspond to this menu item, but the names differ enough to be ambiguous. **Do not copy blindly.**
 
 Steps to resolve:
-1. Check whether `Premium_Paneer_Meal.jpeg` is a photo of the "Paneer Burger Meal" combo.
+1. Confirm `Premium_Paneer_Meal.jpeg` is a photo of the "Paneer Burger Meal" combo.
 2. If yes: `cp Boba_Bear_Images/Premium_Paneer_Meal.jpeg public/assets/menu/Paneer_Burger_Meal.jpeg`
-3. If it's a different product: shoot or source the correct photo and place it at `public/assets/menu/Paneer_Burger_Meal.jpeg`.
+3. If it is a different product, source or shoot the correct photo.
+
+Other `Boba_Bear_Images/` source files with no clear menu match (likely retired or renamed items):
+
+| Source file | Notes |
+|---|---|
+| `Cheesy_Melt_Ramyun.jpeg` | Possible older version of "Cheesy Ramyum"; current public file already exists |
+| `The_Seoul_Street_Meal.jpeg` | No matching meal item; could be a combo |
+| `K-Drama_Sharing_Combo.jpeg` | No matching menu item |
+| `Seoul_Mate_Combo.jpeg` | No matching menu item |
+| `Purple_Rain_Combo.jpeg` | No matching menu item |
+| `Ramyum&Boba_Combo.jpeg` | No matching menu item |
+| `The_Gamja_Potato_Dog.jpeg` | No matching menu item (potato corndog variant?) |
+| `Classic_Seoul_Vanilla_Sweet_Waffle.jpeg` | Waffle items not in current menu |
+| `Gangnam_Dark_Mocha_Coffee_Waffle.jpeg` | Waffle items not in current menu |
+| `The_Viral_Nutella_Chocolate_Waffle.jpeg` | Waffle items not in current menu |
+| `Gangnam_Caramel_Cold_Coffee_Sundae.jpeg` | No matching sundae in menu |
 
 ---
 
-## Veg/Paneer combo image choices (6)
+## Veg/Paneer combo image choices
 
-These menu cards cover both Veg and Paneer variants under a single card (`"Dynamite Red Burger (Veg/Paneer)"`). `lib/menuImages.ts` maps each to one image path. The **Veg** variant photo was used as the default. Swap to the Paneer photo at any time by replacing the file:
+Menu cards labelled `(Veg/Paneer)` use a single image. The current public files use the Veg photo as default. Swap to the Paneer alternative at any time:
 
-| Menu item | Current file | Veg source | Paneer alternative |
+| Menu item | Current file | Veg source in Boba_Bear_Images/ | Paneer alternative |
 |---|---|---|---|
-| Dynamite Red Burger | `public/assets/menu/Dynamite_Red_Burger.jpg` | `Dynamite_Red_Veg_Burger.jpeg` | `Dynamite_Red_Paneer_Burger.jpeg` |
-| Gangnam Glaze Burger | `public/assets/menu/Gangnam_Glaze_Burger.jpg` | `Gangnam_Glaze_Veg_Burger.jpeg` | `Gangnam_Glaze_Paneer_Burger.jpeg` |
-| Seoul Masala Burger | `public/assets/menu/Seoul_Masala_Burger.jpg` | `Seoul_Masala_Veg_Burger.jpeg` | `Seoul_Masala_Paneer_Burger.jpeg` |
-| Dynamite Red Wrap | `public/assets/menu/Dynamite_Red_Wrap.jpg` | `Dynamite_Red_Veg_Wrap.jpeg` | `Dynamite_Red_Paneer_Wrap.jpeg` |
-| Gangnam Glaze Wrap | `public/assets/menu/Gangnam_Glaze_Wrap.jpg` | `Gangnam_Glaze_Veg_Wrap.jpeg` | `Gangnam_Glaze_Paneer_Wrap.jpeg` |
-| Seoul Masala Wrap | `public/assets/menu/Seoul_Masala_Wrap.jpg` | `Seoul_Masala_Veg_Wrap.jpeg` | `Seoul_Masala_Paneer_Wrap.jpeg` |
-
-Source photos for all six are in `Boba_Bear_Images/`.
+| Dynamite Red Burger | `Dynamite_Red_Burger.jpg` | `Dynamite_Red_Veg_Burger.jpeg` | `Dynamite_Red_Paneer_Burger.jpeg` |
+| Gangnam Glaze Burger | `Gangnam_Glaze_Burger.jpg` | `Gangnam_Glaze_Veg_Burger.jpeg` | `Gangnam_Glaze_Paneer_Burger.jpeg` |
+| Seoul Masala Burger | `Seoul_Masala_Burger.jpg` | `Seoul_Masala_Veg_Burger.jpeg` | `Seoul_Masala_Paneer_Burger.jpeg` |
+| Dynamite Red Wrap | `Dynamite_Red_Wrap.jpg` | `Dynamite_Red_Veg_Wrap.jpeg` | `Dynamite_Red_Paneer_Wrap.jpeg` |
+| Gangnam Glaze Wrap | `Gangnam_Glaze_Wrap.jpg` | `Gangnam_Glaze_Veg_Wrap.jpeg` | `Gangnam_Glaze_Paneer_Wrap.jpeg` |
+| Seoul Masala Wrap | `Seoul_Masala_Wrap.jpg` | `Seoul_Masala_Veg_Wrap.jpeg` | `Seoul_Masala_Paneer_Wrap.jpeg` |
 
 ---
 
-## Naming convention for future uploads
+## Naming convention
 
 1. Match the filename **exactly** as listed in `lib/menuImages.ts` — including case, underscores, and extension (`.jpeg` vs `.jpg`).
-2. Extension must match what `lib/menuImages.ts` expects. `.jpeg` and `.jpg` are both valid JPEG containers; pick the one the entry uses.
-3. Reasonable file size: compress to ≤ 300 KB where possible. Cards display images at ≤ 400 px wide; high-DPI screens benefit from 2× resolution.
+2. Both `.jpeg` and `.jpg` are valid; pick the one the entry uses.
+3. Compress to ≤ 300 KB where possible. Cards display at ≤ 400 px wide.
 4. Aspect ratios by card type:
-   - **Drink** cards render `aspect-[3/4]` (portrait) — shoot tall.
-   - **Plate / K-street** cards render `aspect-[4/3]` (landscape) — shoot wide.
-   - **Sweet** cards use a square crop on mobile.
-5. Place the file in `public/assets/menu/`. The next `npm run build` will include it in the static export automatically.
-
----
+   - **Drink** cards: `aspect-[3/4]` (portrait) — shoot tall.
+   - **Plate / K-street** cards: `aspect-[4/3]` (landscape) — shoot wide.
+   - **Sweet** cards: square crop on mobile.
 
 ## How to add a new image
 
@@ -114,15 +136,12 @@ Source photos for all six are in `Boba_Bear_Images/`.
 # 1. Drop the photo into the correct directory
 cp /path/to/your/photo.jpeg public/assets/menu/Your_Item_Name.jpeg
 
-# 2. Make sure lib/menuImages.ts has an entry for it
-#    (open the file and add the mapping if it isn't already there)
+# 2. Ensure lib/menuImages.ts has an entry for it
 
-# 3. Verify the audit passes without warnings
+# 3. Verify audit is clean
 npm run audit:menu-images
 
-# 4. Build and confirm the image appears in the static export
+# 4. Build and confirm
 npm run build
 ls out/assets/menu/Your_Item_Name.jpeg
 ```
-
-If the menu item is new (not yet in `data/menu.json` or `lib/menuImages.ts`), add it there first, then follow the steps above.

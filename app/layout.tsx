@@ -51,7 +51,7 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Boba Bear · Boba Tea & Korean Street Food in Dehradun",
+    default: "Boba Bear - For The Unbothered",
     template: "%s · Boba Bear",
   },
   description: SITE_DESCRIPTION,
@@ -64,12 +64,12 @@ export const metadata: Metadata = {
     siteName: SITE_NAME,
     locale: SITE_LOCALE,
     url: "/",
-    title: "Boba Bear · Boba Tea & Korean Street Food in Dehradun",
+    title: "Boba Bear - For The Unbothered",
     description: SITE_DESCRIPTION,
   },
   twitter: {
     card: "summary_large_image",
-    title: "Boba Bear · Boba Tea & Korean Street Food in Dehradun",
+    title: "Boba Bear - For The Unbothered",
     description: SITE_DESCRIPTION,
   },
   robots: {
@@ -77,7 +77,6 @@ export const metadata: Metadata = {
     follow: true,
     googleBot: { index: true, follow: true, "max-image-preview": "large" },
   },
-  icons: { icon: "/favicon.ico" },
 };
 
 // SSR defaults to dark (no `.light` class); the inline script below upgrades to

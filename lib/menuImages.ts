@@ -30,9 +30,7 @@ export const MENU_IMAGES: Record<string, string> = {
   "Filter Roast Cold Coffee Boba":         M + "Filter_Roast_Cold_Coffee_Boba.jpeg",
 
   // ── The Bar · Iced Teas ────────────────────────────────────────────────────
-  "Electric Blue Iced Tea":                M + "Electric_Blue_Iced_Tea.jpeg",
   "Kala Khatta Iced Tea":                  M + "Kala_Khatta_Iced_Tea.jpeg",
-  "Magic Galaxy Iced Tea":                 M + "Magic_Galaxy_Iced_Tea.jpeg",
   "Green Apple Black Iced Tea":            M + "Green_Apple_Black_Iced_Tea.jpeg",
   "Strawberry Black Iced Tea":             M + "Strawberry_Black_Iced_Tea.jpeg",
   "Seoul Peach Black Iced Tea":            M + "Seoul_Peach_Black_Iced_Tea.jpeg",
@@ -44,8 +42,10 @@ export const MENU_IMAGES: Record<string, string> = {
 
   // ── The Bar · Refreshers ───────────────────────────────────────────────────
   "Jiji Mint Mojito":                      M + "Jiji_Mint_Mojito.jpeg",
-  "Electric Blue Lime Refresher":          M + "Electric_Blue_Lime_Refresher.jpeg",
-  "Magic Galaxy Refresher Drink":          M + "Magic_Galaxy_Refresher_Drink.jpeg",
+  // TODO: rename Electric_Blue_Iced_Tea.jpeg → Electric_Blue_Lime_Refresher.jpeg once confirmed same drink
+  "Electric Blue Lime Refresher":          M + "Electric_Blue_Iced_Tea.jpeg",
+  // TODO: rename Magic_Galaxy_Iced_Tea.jpeg → Magic_Galaxy_Refresher_Drink.jpeg once confirmed same drink
+  "Magic Galaxy Refresher Drink":          M + "Magic_Galaxy_Iced_Tea.jpeg",
 
   // ── Ramyum ─────────────────────────────────────────────────────────────────
   "Viral Spicy Carbonara Ramyun Noodles":  M + "Viral_Spicy_Carbonara_Ramyun_Noodles.jpg",
