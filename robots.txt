@@ -1,0 +1,7 @@
+User-Agent: *
+Allow: /
+Disallow: /dev
+Disallow: /api
+
+Host: https://thebobabear.in
+Sitemap: https://thebobabear.in/sitemap.xml
