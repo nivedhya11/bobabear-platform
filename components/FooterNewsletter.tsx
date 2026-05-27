@@ -4,44 +4,26 @@
  * FooterNewsletter — community signup island inside the server Footer.
  *
  * Boxed card: italic blurb on top, then a single field that accepts an
- * email OR a mobile number + a filled saffron JOIN button. Posts the value
- * as `contact` to /api/newsletter (which validates either shape).
+ * email OR a mobile number + a filled saffron JOIN button. Submitting opens
+ * WhatsApp so the user can complete signup directly (the /api/newsletter
+ * server route is unavailable in the static export).
  */
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { CONTACT } from "@/lib/site";
 
-type Status =
-  | { state: "idle" }
-  | { state: "submitting" }
-  | { state: "ok";    message: string }
-  | { state: "error"; message: string };
+type Status = "idle" | "redirecting";
 
 export function FooterNewsletter() {
   const [contact, setContact] = useState("");
-  const [status,  setStatus]  = useState<Status>({ state: "idle" });
+  const [status,  setStatus]  = useState<Status>("idle");
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!contact) return;
-
-    setStatus({ state: "submitting" });
-    try {
-      const res  = await fetch("/api/newsletter", {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ contact }),
-      });
-      const data = (await res.json()) as { ok: boolean; error?: string };
-      if (data.ok) {
-        setStatus({ state: "ok", message: "You're in the bear's circle." });
-        setContact("");
-      } else {
-        setStatus({ state: "error", message: data.error ?? "Try again." });
-      }
-    } catch {
-      setStatus({ state: "error", message: "Network error. Try again." });
-    }
+    setStatus("redirecting");
+    window.open(CONTACT.whatsapp, "_blank", "noopener,noreferrer");
   }
 
   return (
@@ -77,10 +59,10 @@ export function FooterNewsletter() {
             inputMode="email"
             autoComplete="off"
             value={contact}
-            onChange={(e) => { setContact(e.target.value); setStatus({ state: "idle" }); }}
+            onChange={(e) => { setContact(e.target.value); setStatus("idle"); }}
             placeholder="mobile or email →"
             aria-label="Mobile number or email to join the Boba Bear community"
-            disabled={status.state === "submitting"}
+            disabled={status === "redirecting"}
             className={[
               "h-10 px-2.5 flex-1 min-w-0 rounded-sm",
               "bg-transparent text-[var(--text-primary)]",
@@ -92,7 +74,7 @@ export function FooterNewsletter() {
           />
           <button
             type="submit"
-            disabled={status.state === "submitting"}
+            disabled={status === "redirecting"}
             className={[
               "shrink-0 h-10 px-5 rounded-sm",
               "bg-[var(--interactive-secondary)] text-[var(--text-on-secondary)]",
@@ -103,7 +85,7 @@ export function FooterNewsletter() {
               "focus-ring",
             ].join(" ")}
           >
-            {status.state === "submitting" ? "…" : "Join"}
+            {status === "redirecting" ? "…" : "Join"}
           </button>
         </div>
 
@@ -111,16 +93,12 @@ export function FooterNewsletter() {
           aria-live="polite"
           className={cn(
             "font-body text-[11px] min-h-[1rem]",
-            status.state === "ok"    && "text-firefly-400",
-            status.state === "error" && "text-destructive",
-            (status.state === "idle" || status.state === "submitting") &&
-              "text-[var(--text-tertiary)]",
+            status === "redirecting" && "text-firefly-400",
+            status === "idle"        && "text-[var(--text-tertiary)]",
           )}
         >
-          {status.state === "ok"          && status.message}
-          {status.state === "error"       && status.message}
-          {status.state === "submitting"  && "Joining…"}
-          {status.state === "idle"        && " "}
+          {status === "redirecting" && "Opening WhatsApp to complete signup…"}
+          {status === "idle"        && " "}
         </p>
       </form>
     </div>

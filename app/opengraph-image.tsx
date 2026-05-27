@@ -1,6 +1,8 @@
 import { ImageResponse } from "next/og";
 import { SITE_TAGLINE } from "@/lib/site";
 
+export const dynamic = "force-static";
+
 export const alt =
   "Boba Bear — boba tea & Korean street food in Dehradun";
 export const size = { width: 1200, height: 630 };

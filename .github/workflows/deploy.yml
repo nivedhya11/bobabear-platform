@@ -26,7 +26,6 @@ jobs:
       - name: Build static export
         run: npm run build
         env:
-          GITHUB_PAGES: '1'
           NEXT_PUBLIC_SITE_URL: 'https://thebobabear.in'
 
       - name: Deploy to GitHub Pages

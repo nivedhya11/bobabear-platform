@@ -31,10 +31,12 @@ The page hot-reloads as you edit.
 ## Build & run in production
 
 ```bash
-npm run build    # production build
-npm run start    # serve the production build → http://localhost:3000
+npm run build    # static export → out/
 npm run lint     # ESLint
 ```
+
+> `output: "export"` is always enabled; the site is a fully static export. `npm run start` is not
+> used — serve `out/` with any static host or `npx serve out` locally.
 
 ## Environment variables
 
@@ -54,7 +56,7 @@ Most day-to-day edits live in just a few places:
 |---|---|
 | **Menu items, prices, descriptions, tags** | [`data/menu.json`](data/menu.json) |
 | **Promo tags on a menu card** (`new`, `limited`, `signature`, `bestseller`) | the `"tags"` array on each item in `data/menu.json`, e.g. `"tags": ["new", "limited"]` |
-| **Menu item photos** | drop the image in `public/assets/menu/` and map it in [`lib/menuImages.ts`](lib/menuImages.ts) |
+| **Menu item photos** | drop the image in `public/assets/menu/` using the exact filename from [`lib/menuImages.ts`](lib/menuImages.ts) — no code change needed |
 | **Drop date / countdown** | `DROP_DATE` in [`components/SignatureDrops.tsx`](components/SignatureDrops.tsx) (the countdown auto-flips to a "Drop Now Live" state once it passes) |
 | **Hero featured video** | replace `public/assets/video/hero-featured.mp4` |
 | **Business info, SEO copy, contact, socials** | [`lib/site.ts`](lib/site.ts) (single source of truth for metadata + structured data) |
@@ -84,7 +86,6 @@ app/                 App Router
   layout.tsx         <head>, metadata, JSON-LD, fonts
   page.tsx           the single landing page (composes the sections below)
   globals.css        Tailwind theme + design tokens (colors, type, spacing)
-  api/newsletter/    community signup endpoint (placeholder — see below)
   privacy/           privacy policy page
   dev/               dev-only icon gallery (noindexed via robots.ts)
   robots.ts, sitemap.ts, opengraph-image.tsx
@@ -96,23 +97,41 @@ components/          section components (Hero, SignatureDrops, TheBar, ThePlates
 data/menu.json       all menu content + per-item tags
 lib/                 site.ts (SEO/business constants), menuImages.ts, utils.ts
 types/menu.ts        menu data types (incl. the MenuCardTag union)
-public/assets/       images & video (logos, drops, menu, merch, artists, video)
+public/assets/menu/  product photos served by the static export
+scripts/             tooling (audit-menu-images.mjs)
+docs/                project documentation (missing-menu-images.md)
 ```
 
 Page section order is defined in [`app/page.tsx`](app/page.tsx).
 
-## Newsletter / signup API
+## Menu images
 
-[`app/api/newsletter/route.ts`](app/api/newsletter/route.ts) is a **placeholder**. It validates the
-submitted email/phone, rate-limits per IP, and returns `200 OK` — but does **not** persist anything
-yet. Wire it to your email list / WhatsApp Business / CRM where the `TODO` is marked. It intentionally
-never logs the submitted contact value (PII).
+Product photos live in `public/assets/menu/`. The mapping from menu item name to filename is in
+[`lib/menuImages.ts`](lib/menuImages.ts). Any item without a matching file renders as a coloured
+**Aurora fallback card** — this is intentional and handled in [`components/MenuCard.tsx`](components/MenuCard.tsx).
+
+```bash
+npm run audit:menu-images   # lists which photos are present vs still missing
+```
+
+To add a photo: drop the correctly-named file into `public/assets/menu/` and rebuild. No code
+changes needed. See [`docs/missing-menu-images.md`](docs/missing-menu-images.md) for the full
+checklist of missing images, naming rules, and aspect-ratio guidelines.
+
+## Newsletter / community signup
+
+The "Join" form in the footer opens the brand's WhatsApp link so users can sign up directly.
+A server-side API route is not used because the site is a fully static export.
 
 ## Deploy
 
-Optimized for [Vercel](https://vercel.com/): import the repo, set `NEXT_PUBLIC_SITE_URL`, deploy.
-Any Node host works too — run `npm run build` then `npm run start`. Baseline security headers
-(HSTS, X-Frame-Options, etc.) are configured in [`next.config.ts`](next.config.ts).
+The site is configured as a **static export** (`output: "export"` in [`next.config.ts`](next.config.ts))
+and deployed to **GitHub Pages** via the [deploy workflow](.github/workflows/deploy.yml). Every push
+to `main` triggers a build and deploys the `out/` directory to the `gh-pages` branch. The custom
+domain `thebobabear.in` is set via the `CNAME` file.
+
+Baseline security headers (HSTS, X-Frame-Options, etc.) are defined in `next.config.ts`; they are
+applied on Vercel or any Node host but are no-ops on GitHub Pages (static files only).
 
 ## Design & iteration resources
 

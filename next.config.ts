@@ -12,11 +12,20 @@ import { dirname } from "node:path";
 // deterministic regardless of what lives above us on disk.
 const projectRoot = dirname(fileURLToPath(import.meta.url));
 
+// This site is deployed to a custom domain (thebobabear.in) via GitHub Pages,
+// so it is always served at the domain root — no /${repoName} subpath prefix
+// is ever needed. basePath and assetPrefix are intentionally left empty.
+const isProd = process.env.NODE_ENV === "production";
+void isProd; // referenced below for clarity; both branches are ""
+
 // Baseline security headers applied to every route. These are the broadly-safe
 // ones that don't risk breaking inline scripts/styles or Google Fonts. A strict
 // Content-Security-Policy is intentionally NOT set here — Next.js emits inline
 // bootstrap scripts and the page uses inline <style>/JSON-LD, so a real CSP
 // needs per-request nonces (middleware). Add that as a dedicated follow-up.
+//
+// NOTE: headers() is a no-op in static export mode. Kept here so the same
+// config works on Vercel / self-hosted deployments without changes.
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
@@ -33,22 +42,22 @@ const securityHeaders = [
   },
 ];
 
-// When GITHUB_PAGES=1 (set by the GitHub Actions deploy workflow), emit a
-// fully static site to `out/`. This disables API routes and server features,
-// but is required for GitHub Pages hosting. Vercel and local dev use the
-// default (server) mode where the newsletter API route works normally.
-const isGitHubPages = process.env.GITHUB_PAGES === "1";
-
 const nextConfig: NextConfig = {
+  output: "export",
+  trailingSlash: true,
+
+  // Custom domain → no subpath prefix (basePath / assetPrefix stay empty).
+  basePath: "",
+  assetPrefix: "",
+
+  images: {
+    unoptimized: true,
+  },
+
   turbopack: {
     root: projectRoot,
   },
-  ...(isGitHubPages && {
-    output: "export",
-    // next/image optimisation requires a server; use raw <img> sizing in static mode.
-    images: { unoptimized: true },
-  }),
-  // headers() is a no-op in static export mode but kept for Vercel / self-hosted.
+
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
