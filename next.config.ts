@@ -54,6 +54,12 @@ const nextConfig: NextConfig = {
     unoptimized: true,
   },
 
+  // turbopack.root is used by `next dev` (Turbopack is the default dev server
+  // in Next.js 16). Production builds run via `next build --webpack` so this
+  // block is dev-only. The --webpack flag is necessary because Turbopack
+  // generates chunk filenames with `..` (e.g. `0..5to0tv3fzb.js`) that GitHub
+  // Pages' CDN normalises as path-traversal and 404s, leaving all Framer
+  // Motion elements stuck at their initial opacity:0 state.
   turbopack: {
     root: projectRoot,
   },

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 120" width="480" height="120" role="img" aria-label="Boba Bear wordmark">
+  <defs>
+    <filter id="saffronGlow" x="-10%" y="-30%" width="120%" height="160%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="6"></feGaussianBlur>
+    </filter>
+  </defs>
+  
+  <text x="50%" y="74" text-anchor="middle" font-family="&#39;Luckiest Guy&#39;, Impact, sans-serif" font-size="78" fill="#F5A623" opacity="0.45" filter="url(#saffronGlow)" style="letter-spacing:0.02em">BOBA BEAR</text>
+  <text x="50%" y="74" text-anchor="middle" font-family="&#39;Luckiest Guy&#39;, Impact, sans-serif" font-size="78" fill="#F5A623" style="letter-spacing:0.02em">BOBA BEAR</text>
+</svg>
