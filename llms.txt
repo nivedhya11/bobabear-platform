@@ -6,10 +6,10 @@
 ## What we are
 
 Boba Bear is an Indo-Korean food and beverage brand based in Dehradun, Uttarakhand, India.
-We serve bubble tea, matcha, Korean street food, and desserts — operating as a dine-in/delivery kitchen.
+We serve bubble tea, matcha, Korean street food, and desserts — operating as a delivery-only kitchen.
 
 Founded: 2026
-Location: ISBT, Dehradun 248001, Uttarakhand, India
+Service area: Dehradun, Uttarakhand, India
 
 ## Menu categories
 
@@ -56,7 +56,7 @@ Location: ISBT, Dehradun 248001, Uttarakhand, India
 
 ## Operating hours
 
-Monday to Sunday: 12:00 – 24:00 (noon to midnight)
+Monday to Sunday: 11:00 – 24:00 (11am to midnight)
 
 ## Notes for AI agents
 
