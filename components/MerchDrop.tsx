@@ -302,7 +302,7 @@ function NewsletterBlock() {
         >
           {status === "redirecting" && (
             <span className="text-[var(--interactive-primary)] normal-case">
-              Opening your email app… or{" "}
+              Opening your email app…<br />If nothing opens, email us at{" "}
               <a
                 href={`mailto:${CONTACT.email}`}
                 className="underline underline-offset-2"

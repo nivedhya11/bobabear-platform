@@ -123,7 +123,7 @@ export function FooterNewsletter() {
         >
           {status === "redirecting"
             ? isEmail
-              ? <>Opening your email app… or{" "}<a href={`mailto:${CONTACT.email}`} className="underline underline-offset-2 hover:text-[var(--text-primary)]">{CONTACT.email}</a></>
+              ? <>Opening your email app…<br />If nothing opens, email us at{" "}<a href={`mailto:${CONTACT.email}`} className="underline underline-offset-2 hover:text-[var(--text-primary)]">{CONTACT.email}</a></>
               : "Opening WhatsApp…"
             : hint}
         </p>
