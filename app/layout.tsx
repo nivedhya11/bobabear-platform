@@ -9,6 +9,7 @@ import "./globals.css";
 import { Nav } from "@/components/Nav";
 import { Ticker } from "@/components/Ticker";
 import { Footer } from "@/components/Footer";
+import { Analytics } from "@/components/Analytics";
 import {
   SITE_URL,
   SITE_NAME,
@@ -66,11 +67,20 @@ export const metadata: Metadata = {
     url: "/",
     title: "Boba Bear - For The Unbothered",
     description: SITE_DESCRIPTION,
+    images: [
+      {
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "Boba Bear — boba tea & Korean street food in Dehradun",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Boba Bear - For The Unbothered",
     description: SITE_DESCRIPTION,
+    images: ["/opengraph-image"],
   },
   robots: {
     index: true,
@@ -102,11 +112,14 @@ const restaurantJsonLd = {
   "@context": "https://schema.org",
   "@type": "Restaurant",
   name: SITE_NAME,
+  alternateName: "Boba Bear - For The Unbothered",
+  slogan: "For The Unbothered",
   description: SITE_DESCRIPTION,
   url: SITE_URL,
   telephone: CONTACT.phoneE164,
   email: CONTACT.email,
   image: `${SITE_URL}/opengraph-image`,
+  logo: `${SITE_URL}/assets/logos/boba-bear-full-logo.svg`,
   servesCuisine: [...BUSINESS.cuisine],
   priceRange: BUSINESS.priceRange,
   address: {
@@ -122,9 +135,34 @@ const restaurantJsonLd = {
     latitude: BUSINESS.geo.lat,
     longitude: BUSINESS.geo.lng,
   },
-  openingHours: BUSINESS.openingHours,
+  openingHoursSpecification: {
+    "@type": "OpeningHoursSpecification",
+    dayOfWeek: ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
+    opens: "12:00",
+    closes: "24:00",
+  },
   hasMenu: `${SITE_URL}/#bar`,
+  acceptsReservations: false,
   sameAs: [SOCIAL.instagram],
+  potentialAction: [
+    {
+      "@type": "OrderAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: CONTACT.whatsapp,
+        inLanguage: "en-IN",
+        actionPlatform: ["http://schema.org/MobileWebPlatform"],
+      },
+    },
+  ],
+};
+
+const websiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: SITE_NAME,
+  alternateName: "Boba Bear - For The Unbothered",
+  url: SITE_URL,
 };
 
 export default function RootLayout({
@@ -159,6 +197,13 @@ export default function RootLayout({
             __html: JSON.stringify(restaurantJsonLd).replace(/</g, "\\u003c"),
           }}
         />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(websiteJsonLd).replace(/</g, "\\u003c"),
+          }}
+        />
+        <Analytics />
         {/* Rainbow ticker rides above the nav — scrolls away while the nav
             sticks to the top. Order on screen: ticker · nav · hero. */}
         <Ticker />

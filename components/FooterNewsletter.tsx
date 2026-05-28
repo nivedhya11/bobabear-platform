@@ -3,17 +3,25 @@
 /**
  * FooterNewsletter — community signup island inside the server Footer.
  *
- * Boxed card: italic blurb on top, then a single field that accepts an
- * email OR a mobile number + a filled saffron JOIN button. Submitting opens
- * WhatsApp so the user can complete signup directly (the /api/newsletter
- * server route is unavailable in the static export).
+ * Routing logic (static-export safe — no server API):
+ *   • Input looks like an email → opens the user's mail client via mailto:
+ *     pre-filled to bobabear.unbothered@gmail.com with subject + body.
+ *   • Anything else (mobile number, name, etc.) → opens WhatsApp with the
+ *     standard "Catch the Drop" message.
+ *
+ * Both paths fire a GA4 event when the env var is present.
  */
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { CONTACT } from "@/lib/site";
+import { trackEvent } from "@/components/Analytics";
 
 type Status = "idle" | "redirecting";
+
+function looksLikeEmail(s: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());
+}
 
 export function FooterNewsletter() {
   const [contact, setContact] = useState("");
@@ -21,10 +29,29 @@ export function FooterNewsletter() {
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!contact) return;
+    const val = contact.trim();
+    if (!val) return;
     setStatus("redirecting");
-    window.open(CONTACT.whatsapp, "_blank", "noopener,noreferrer");
+
+    if (looksLikeEmail(val)) {
+      const subject = encodeURIComponent("Boba Bear enquiry");
+      const body = encodeURIComponent(
+        `Hi Boba Bear,\n\nEmail: ${val}\n\nMessage:\n`,
+      );
+      trackEvent("contact_form_mailto_opened", { method: "email" });
+      window.location.href = `mailto:${CONTACT.email}?subject=${subject}&body=${body}`;
+    } else {
+      trackEvent("whatsapp_click", { location: "footer_newsletter" });
+      window.open(CONTACT.whatsapp, "_blank", "noopener,noreferrer");
+    }
   }
+
+  const isEmail = looksLikeEmail(contact);
+  const hint = contact
+    ? isEmail
+      ? "Will open your mail app →"
+      : "Will open WhatsApp →"
+    : "Email us or drop your number";
 
   return (
     <div
@@ -40,9 +67,6 @@ export function FooterNewsletter() {
       </p>
 
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-2.5">
-        {/* Single bordered field (mirrors the Merch "Catch the Drop" field).
-            The orange focus frame lives on this box via focus-within, so the
-            indicator sits OUTSIDE the input and never overlaps the Join button. */}
         <div
           className={[
             "flex items-center gap-2 p-1.5 rounded-sm",
@@ -93,12 +117,16 @@ export function FooterNewsletter() {
           aria-live="polite"
           className={cn(
             "font-body text-[11px] min-h-[1rem]",
-            status === "redirecting" && "text-firefly-400",
-            status === "idle"        && "text-[var(--text-tertiary)]",
+            status === "redirecting"
+              ? "text-firefly-400"
+              : "text-[var(--text-tertiary)]",
           )}
         >
-          {status === "redirecting" && "Opening WhatsApp to complete signup…"}
-          {status === "idle"        && " "}
+          {status === "redirecting"
+            ? isEmail
+              ? "Opening mail app…"
+              : "Opening WhatsApp…"
+            : hint}
         </p>
       </form>
     </div>

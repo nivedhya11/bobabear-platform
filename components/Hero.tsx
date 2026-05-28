@@ -159,6 +159,9 @@ export function Hero() {
               "text-[var(--text-primary)]",
             ].join(" ")}
           >
+            {/* sr-only prefix so the H1 reads "Boba Bear — For The Unbothered"
+                to search engines while the visual headline stays unchanged. */}
+            <span className="sr-only">Boba Bear — </span>
             <StaggerWords text="For The" className="block" />
             <StaggerWords
               text="Unbothered"
@@ -166,6 +169,14 @@ export function Hero() {
               className="block text-[var(--interactive-secondary)]"
             />
           </h1>
+
+          {/* SEO copy — read by crawlers, hidden from layout. Carries the
+              primary location + menu keywords that back up the H1 signal. */}
+          <p className="sr-only">
+            Boba tea and Korean street food in Dehradun. Bubble tea, matcha,
+            milk tea, ramyun noodles, momos, loaded fries, corn dogs and
+            desserts. Order on Zomato, Swiggy or WhatsApp.
+          </p>
 
           {/* Desktop only: tagline + CTAs live in the left column.
               `lg:contents` keeps the exact desktop stack; hidden on mobile.

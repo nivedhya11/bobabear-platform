@@ -9,7 +9,7 @@
  */
 
 export const SITE_URL = (
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://bobabear.in"
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://thebobabear.in"
 ).replace(/\/$/, "");
 
 export const SITE_NAME = "Boba Bear";
@@ -20,7 +20,7 @@ export const SITE_LEGAL_NAME = "Nivedhya11 Hospitality Private Limited";
 /** Plain-language one-liner — leads with what & where for the user's mental
  *  model, carries the keywords search engines need. Kept under ~160 chars. */
 export const SITE_DESCRIPTION =
-  "Dehradun's boba tea bar and Korean street-food kitchen. Bubble tea, matcha, ramyun, momos, loaded fries & corn dogs — order on Zomato, Swiggy or WhatsApp.";
+  "Bubble tea, matcha, Korean street food, ramyun, momos, loaded fries and desserts in Dehradun. Order Boba Bear on Zomato, Swiggy or WhatsApp.";
 
 /** Brand tagline (accent line, Tier-2 voice) — used as a secondary signal. */
 export const SITE_TAGLINE = "S-Tier Sips · K-Street Drip";

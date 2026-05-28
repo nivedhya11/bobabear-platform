@@ -18,6 +18,7 @@ import {
   RevealChild,
   EASE_OUT,
 } from "@/components/motion/Reveal";
+import { trackEvent } from "@/components/Analytics";
 
 // ── Platform data ─────────────────────────────────────────────────────────────
 interface Platform {
@@ -67,6 +68,7 @@ function AccessCard({ platform, index }: { platform: Platform; index: number }) 
       target="_blank"
       rel="noopener"
       aria-label={ariaLabel}
+      onClick={() => trackEvent(`${platform.id}_click`, { location: "access_cta" })}
       className={[
         "group relative block focus-ring",
         "bg-[var(--bg-section)] border border-[var(--border-default)]",

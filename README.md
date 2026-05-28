@@ -44,7 +44,8 @@ The site runs with **no required environment variables**. One optional override:
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `NEXT_PUBLIC_SITE_URL` | `https://bobabear.in` | Canonical URL used in metadata, `sitemap.xml`, `robots.txt`, and JSON-LD. Set this to the real production domain before launch. |
+| `NEXT_PUBLIC_SITE_URL` | `https://thebobabear.in` | Canonical URL used in metadata, `sitemap.xml`, `robots.txt`, and JSON-LD. |
+| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | *(unset — analytics off)* | GA4 Measurement ID (`G-XXXXXXXXXX`). When unset, no analytics scripts load. |
 
 Copy `.env.example` → `.env.local` and fill in if you need to override it.
 
@@ -136,10 +137,33 @@ checklist of missing images, naming rules, and aspect-ratio guidelines.
 - Run `npm run audit:assets` to verify no stale references and that all asset directories are in order.
 - Run `npm run build` to regenerate `out/`. GitHub Pages deploys the generated `out/` via the deploy workflow.
 
+## Google Analytics (GA4)
+
+1. Create a GA4 property at [analytics.google.com](https://analytics.google.com) if you don't have one.
+2. Go to **Admin → Data Streams → your web stream → Measurement ID** — it looks like `G-XXXXXXXXXX`.
+3. Add it as a GitHub repository variable: **Settings → Secrets and variables → Actions → Variables → New repository variable**:
+   - Name: `NEXT_PUBLIC_GA_MEASUREMENT_ID`
+   - Value: `G-XXXXXXXXXX`
+4. Locally: copy `.env.example` → `.env.local` and fill in the value.
+5. When the variable is set the deploy workflow injects it into the build automatically.
+6. To verify: open the live site, then check **GA4 → Reports → Realtime** for active users.
+
+Custom events tracked:
+- `zomato_click`, `swiggy_click`, `whatsapp_click` — ordering link taps
+- `contact_form_mailto_opened` — email submitted from the footer form
+
 ## Newsletter / community signup
 
-The "Join" form in the footer opens the brand's WhatsApp link so users can sign up directly.
-A server-side API route is not used because the site is a fully static export.
+The footer "Join" form routes based on what the user enters:
+- **Email address** → opens the user's mail client with a pre-filled message to `bobabear.unbothered@gmail.com`.
+- **Mobile number or anything else** → opens WhatsApp with a pre-filled order message.
+
+No server API is used — the site is a fully static export.
+
+Free alternatives for real inbox submissions (implement if needed):
+- **[Formspree](https://formspree.io)** (free tier: 50 submissions/month) — simplest drop-in, works on GitHub Pages.
+- **[Google Forms](https://forms.google.com)** — zero cost, results in a spreadsheet.
+- **[EmailJS](https://emailjs.com)** free tier — client-side only, exposes service ID in source.
 
 ## Deploy
 

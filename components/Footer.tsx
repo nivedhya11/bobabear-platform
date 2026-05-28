@@ -17,6 +17,7 @@
  */
 
 import { FooterNewsletter } from "@/components/FooterNewsletter";
+import { EmailLink } from "@/components/EmailLink";
 import { Reveal } from "@/components/motion/Reveal";
 import { Instagram, MapPin, Clock, Phone, Mail } from "@/components/icons";
 import { CONTACT } from "@/lib/site";
@@ -222,12 +223,12 @@ function MobileFooter() {
           </a>
         </FindUsRow>
         <FindUsRow icon={<Mail size={16} strokeWidth={1.75} aria-hidden />}>
-          <a
+          <EmailLink
             href={`mailto:${CONTACT.email}`}
             className="hover:text-[var(--text-primary)] transition-colors duration-[150ms] ease-out break-all"
           >
             {CONTACT.email}
-          </a>
+          </EmailLink>
         </FindUsRow>
       </address>
     </div>
@@ -327,12 +328,12 @@ export function Footer() {
                 </a>
               </FindUsRow>
               <FindUsRow icon={<Mail size={16} strokeWidth={1.75} aria-hidden />}>
-                <a
+                <EmailLink
                   href={`mailto:${CONTACT.email}`}
                   className="hover:text-[var(--text-primary)] transition-colors duration-[150ms] ease-out break-all"
                 >
                   {CONTACT.email}
-                </a>
+                </EmailLink>
               </FindUsRow>
             </div>
           </address>
