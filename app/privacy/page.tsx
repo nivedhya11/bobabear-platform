@@ -68,7 +68,7 @@ export default function PrivacyPage() {
             <strong className="text-[var(--text-primary)] font-semibold">
               {SITE_LEGAL_NAME}
             </strong>
-            , {BUSINESS.street}, {BUSINESS.locality} {BUSINESS.postalCode},{" "}
+            , {BUSINESS.locality} {BUSINESS.postalCode},{" "}
             {BUSINESS.region}, India (&ldquo;we&rdquo;, &ldquo;us&rdquo;,
             &ldquo;our&rdquo;). This policy explains what personal information we
             collect through this website and how we use and protect it.
@@ -181,7 +181,7 @@ export default function PrivacyPage() {
               {SITE_LEGAL_NAME}
             </span>
             <span className="block">
-              {BUSINESS.street}, {BUSINESS.locality} {BUSINESS.postalCode},{" "}
+              {BUSINESS.locality} {BUSINESS.postalCode},{" "}
               {BUSINESS.region}, India
             </span>
             <span className="block">

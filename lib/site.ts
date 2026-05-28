@@ -42,16 +42,14 @@ export const SITE_KEYWORDS = [
 export const SITE_LOCALE = "en_IN";
 
 export const BUSINESS = {
-  street: "ISBT",
   locality: "Dehradun",
   region: "Uttarakhand",
   postalCode: "248001",
   country: "IN",
-  /** Approximate ISBT, Dehradun coordinates for local SEO.
-   *  TODO: replace with the exact storefront lat/lng from Google Maps. */
-  geo: { lat: 30.2884, lng: 78.0413 },
-  /** 12pm–12am, every day → schema.org opening-hours shorthand. */
-  openingHours: "Mo-Su 12:00-24:00",
+  /** 11am–12am, every day → schema.org opening-hours shorthand. */
+  openingHours: "Mo-Su 11:00-24:00",
+  /** Human-readable hours for the footer and contact section. */
+  hoursDisplay: "11am — 12am",
   priceRange: "₹₹",
   cuisine: ["Bubble Tea", "Korean", "Street Food", "Asian"],
 } as const;

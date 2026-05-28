@@ -19,8 +19,8 @@
 import { FooterNewsletter } from "@/components/FooterNewsletter";
 import { EmailLink } from "@/components/EmailLink";
 import { Reveal } from "@/components/motion/Reveal";
-import { Instagram, MapPin, Clock, Phone, Mail } from "@/components/icons";
-import { CONTACT } from "@/lib/site";
+import { Instagram, WhatsApp, Clock, Phone, Mail } from "@/components/icons";
+import { CONTACT, BUSINESS } from "@/lib/site";
 
 // ── Data ─────────────────────────────────────────────────────────────────────
 
@@ -160,9 +160,9 @@ function MobileFooter() {
         </p>
       </div>
 
-      {/* Join the community — the primary action */}
+      {/* Catch the Drop — the primary action */}
       <div className="w-full flex flex-col gap-4 text-left">
-        <ColHeading>Join the circle</ColHeading>
+        <ColHeading>Catch the Drop</ColHeading>
         <FooterNewsletter />
       </div>
 
@@ -205,14 +205,11 @@ function MobileFooter() {
         </div>
       </div>
 
-      {/* Find us */}
+      {/* Contact */}
       <address className="not-italic w-full flex flex-col gap-4 text-left pt-9 border-t border-[var(--border-subtle)]">
-        <ColHeading>Find Us</ColHeading>
-        <FindUsRow icon={<MapPin size={16} strokeWidth={1.75} aria-hidden />}>
-          ISBT · Dehradun 248001
-        </FindUsRow>
+        <ColHeading>Contact</ColHeading>
         <FindUsRow icon={<Clock size={16} strokeWidth={1.75} aria-hidden />}>
-          12pm — 12am
+          {BUSINESS.hoursDisplay}
         </FindUsRow>
         <FindUsRow icon={<Phone size={16} strokeWidth={1.75} aria-hidden />}>
           <a
@@ -230,6 +227,19 @@ function MobileFooter() {
             {CONTACT.email}
           </EmailLink>
         </FindUsRow>
+        <FindUsRow icon={<WhatsApp size={16} strokeWidth={1.75} aria-hidden />}>
+          <a
+            href={CONTACT.whatsapp}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-[var(--text-primary)] transition-colors duration-[150ms] ease-out"
+          >
+            WhatsApp us
+          </a>
+        </FindUsRow>
+        <p className="font-body text-[12px] text-[var(--text-tertiary)] italic">
+          Delivery-only · Dehradun
+        </p>
       </address>
     </div>
   );
@@ -310,14 +320,10 @@ export function Footer() {
           </div>
 
           <address className="not-italic flex flex-col gap-4">
-            <ColHeading>Find Us</ColHeading>
+            <ColHeading>Contact</ColHeading>
             <div className="flex flex-col gap-2.5">
-              <FindUsRow icon={<MapPin size={16} strokeWidth={1.75} aria-hidden />}>
-                <span className="block">ISBT</span>
-                <span className="block">Dehradun · 248001</span>
-              </FindUsRow>
               <FindUsRow icon={<Clock size={16} strokeWidth={1.75} aria-hidden />}>
-                12pm — 12am
+                {BUSINESS.hoursDisplay}
               </FindUsRow>
               <FindUsRow icon={<Phone size={16} strokeWidth={1.75} aria-hidden />}>
                 <a
@@ -335,13 +341,26 @@ export function Footer() {
                   {CONTACT.email}
                 </EmailLink>
               </FindUsRow>
+              <FindUsRow icon={<WhatsApp size={16} strokeWidth={1.75} aria-hidden />}>
+                <a
+                  href={CONTACT.whatsapp}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-[var(--text-primary)] transition-colors duration-[150ms] ease-out"
+                >
+                  WhatsApp us
+                </a>
+              </FindUsRow>
+              <p className="font-body text-[12px] text-[var(--text-tertiary)] italic pl-[26px]">
+                Delivery-only · Dehradun
+              </p>
             </div>
           </address>
         </div>
 
         {/* Zone 3 — community form */}
         <div className="col-span-4 flex flex-col gap-3">
-          <ColHeading>Join the circle</ColHeading>
+          <ColHeading>Catch the Drop</ColHeading>
           <FooterNewsletter />
         </div>
 

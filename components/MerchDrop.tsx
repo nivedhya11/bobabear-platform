@@ -19,10 +19,12 @@
  */
 
 import { useState } from "react";
-import { ArrowRight, Loader } from "@/components/icons";
+import { ArrowRight } from "@/components/icons";
 import { SectionHead } from "@/components/SectionHead";
 import { Reveal, RevealStagger, RevealChild } from "@/components/motion/Reveal";
 import { Button } from "@/components/ui/Button";
+import { CONTACT, SITE_URL } from "@/lib/site";
+import { trackEvent } from "@/components/Analytics";
 
 const IMG_TILE_BASE =
   "group relative h-full w-full overflow-hidden " +
@@ -221,33 +223,19 @@ function MerchTile({ img, name, alt, meta, span, feature }: Product) {
 
 function NewsletterBlock() {
   const [email,  setEmail]  = useState("");
-  const [status, setStatus] = useState<"idle" | "submitting" | "ok" | "error">("idle");
-  const [error,  setError]  = useState<string>("");
+  const [status, setStatus] = useState<"idle" | "redirecting">("idle");
 
-  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!email) return;
-    setStatus("submitting");
-    setError("");
-
-    try {
-      const res  = await fetch("/api/newsletter", {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ email }),
-      });
-      const data = (await res.json()) as { ok: boolean; error?: string };
-      if (data.ok) {
-        setStatus("ok");
-        setEmail("");
-      } else {
-        setStatus("error");
-        setError(data.error ?? "Something didn't land. Try again.");
-      }
-    } catch {
-      setStatus("error");
-      setError("Network hiccup. Try again.");
-    }
+    const val = email.trim();
+    if (!val) return;
+    setStatus("redirecting");
+    const subject = encodeURIComponent("Boba Bear drop updates");
+    const body = encodeURIComponent(
+      `Please notify me about Boba Bear drops.\n\nMy email: ${val}\nPage: ${SITE_URL}/`,
+    );
+    trackEvent("contact_form_mailto_opened");
+    window.location.href = `mailto:${CONTACT.email}?subject=${subject}&body=${body}`;
   }
 
   return (
@@ -284,7 +272,7 @@ function NewsletterBlock() {
             value={email}
             onChange={(e) => { setEmail(e.target.value); setStatus("idle"); }}
             placeholder="your@email.com"
-            disabled={status === "submitting"}
+            disabled={status === "redirecting"}
             className={[
               "flex-1 min-w-0 bg-transparent py-2 outline-none rounded-sm",
               "font-body text-[13px] text-[var(--text-primary)]",
@@ -297,20 +285,13 @@ function NewsletterBlock() {
             type="submit"
             variant="primary"
             size="md"
-            disabled={status === "submitting"}
+            disabled={status === "redirecting"}
             className="shrink-0"
           >
-            {status === "submitting" ? (
-              <>
-                Securing the Drop
-                <Loader size={16} strokeWidth={2.5} className="animate-spin" aria-hidden />
-              </>
-            ) : (
-              <>
-                Notify Me
-                <ArrowRight size={16} strokeWidth={2.5} aria-hidden />
-              </>
-            )}
+            <>
+              {status === "redirecting" ? "…" : "Notify Me"}
+              {status === "idle" && <ArrowRight size={16} strokeWidth={2.5} aria-hidden />}
+            </>
           </Button>
         </div>
 
@@ -319,14 +300,15 @@ function NewsletterBlock() {
           aria-live="polite"
           className="font-mono text-[10px] uppercase tracking-[0.14em] mt-2 min-h-[14px]"
         >
-          {status === "ok" && (
-            <span className="text-[var(--interactive-primary)]">
-              You&rsquo;re in. We&rsquo;ll ping you on drop day.
-            </span>
-          )}
-          {status === "error" && (
-            <span className="text-[var(--interactive-destructive)]">
-              {error}
+          {status === "redirecting" && (
+            <span className="text-[var(--interactive-primary)] normal-case">
+              Opening your email app… or{" "}
+              <a
+                href={`mailto:${CONTACT.email}`}
+                className="underline underline-offset-2"
+              >
+                {CONTACT.email}
+              </a>
             </span>
           )}
         </p>

@@ -106,8 +106,8 @@ export const viewport: Viewport = {
 // rendering. Kept in sync with the toggle in components/Nav.tsx.
 const themeInitScript = `(function(){try{var t=localStorage.getItem("theme");if(t==="light"||(t===null&&window.matchMedia("(prefers-color-scheme: light)").matches)){document.documentElement.classList.add("light");}}catch(e){}})();`;
 
-// schema.org Restaurant — powers local/rich results. Address, hours, phone
-// and email are all real; geo is an ISBT approximation (see lib/site.ts).
+// schema.org Restaurant — powers local/rich results. Delivery-only business;
+// no streetAddress is published. areaServed covers the service area.
 const restaurantJsonLd = {
   "@context": "https://schema.org",
   "@type": "Restaurant",
@@ -124,21 +124,16 @@ const restaurantJsonLd = {
   priceRange: BUSINESS.priceRange,
   address: {
     "@type": "PostalAddress",
-    streetAddress: BUSINESS.street,
     addressLocality: BUSINESS.locality,
     addressRegion: BUSINESS.region,
     postalCode: BUSINESS.postalCode,
     addressCountry: BUSINESS.country,
   },
-  geo: {
-    "@type": "GeoCoordinates",
-    latitude: BUSINESS.geo.lat,
-    longitude: BUSINESS.geo.lng,
-  },
+  areaServed: BUSINESS.locality,
   openingHoursSpecification: {
     "@type": "OpeningHoursSpecification",
     dayOfWeek: ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
-    opens: "12:00",
+    opens: "11:00",
     closes: "24:00",
   },
   hasMenu: `${SITE_URL}/#bar`,

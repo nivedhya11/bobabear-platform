@@ -14,7 +14,7 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { CONTACT } from "@/lib/site";
+import { CONTACT, SITE_URL } from "@/lib/site";
 import { trackEvent } from "@/components/Analytics";
 
 type Status = "idle" | "redirecting";
@@ -34,11 +34,11 @@ export function FooterNewsletter() {
     setStatus("redirecting");
 
     if (looksLikeEmail(val)) {
-      const subject = encodeURIComponent("Boba Bear enquiry");
+      const subject = encodeURIComponent("Boba Bear drop updates");
       const body = encodeURIComponent(
-        `Hi Boba Bear,\n\nEmail: ${val}\n\nMessage:\n`,
+        `Please notify me about Boba Bear drops.\n\nMy email: ${val}\nPage: ${SITE_URL}/`,
       );
-      trackEvent("contact_form_mailto_opened", { method: "email" });
+      trackEvent("contact_form_mailto_opened");
       window.location.href = `mailto:${CONTACT.email}?subject=${subject}&body=${body}`;
     } else {
       trackEvent("whatsapp_click", { location: "footer_newsletter" });
@@ -62,8 +62,7 @@ export function FooterNewsletter() {
       ].join(" ")}
     >
       <p className="font-heading italic text-[15px] md:text-[16px] text-[var(--text-secondary)] leading-[1.45]">
-        Join the bear&rsquo;s circle. Drops, collabs, and first dibs — straight
-        to your phone or inbox.
+        Get drop updates by email or WhatsApp. No spam.
       </p>
 
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-2.5">
@@ -109,7 +108,7 @@ export function FooterNewsletter() {
               "focus-ring",
             ].join(" ")}
           >
-            {status === "redirecting" ? "…" : "Join"}
+            {status === "redirecting" ? "…" : "Notify Me"}
           </button>
         </div>
 
@@ -124,7 +123,7 @@ export function FooterNewsletter() {
         >
           {status === "redirecting"
             ? isEmail
-              ? "Opening mail app…"
+              ? <>Opening your email app… or{" "}<a href={`mailto:${CONTACT.email}`} className="underline underline-offset-2 hover:text-[var(--text-primary)]">{CONTACT.email}</a></>
               : "Opening WhatsApp…"
             : hint}
         </p>
