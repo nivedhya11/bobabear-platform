@@ -27,7 +27,7 @@ jobs:
         run: npm run build
         env:
           NEXT_PUBLIC_SITE_URL: 'https://thebobabear.in'
-          NEXT_PUBLIC_GA_MEASUREMENT_ID: ${{ vars.NEXT_PUBLIC_GA_MEASUREMENT_ID }}
+          NEXT_PUBLIC_GA_MEASUREMENT_ID: 'G-CFR3M3J59V'
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
