@@ -19,68 +19,9 @@ These images exist in `public/assets/menu/` and are correctly shown on the site,
 
 ---
 
-## Images needing new product photography (27)
+## Images needing new product photography
 
-These items have no matching photo in `public/assets/menu/`. An Aurora fallback card is shown.
-
-Place the finished photo at `public/assets/menu/<filename>` using the exact filename listed.
-
-### The Bar
-
-| Menu item | Expected filename |
-|---|---|
-| Pink Velvet Cotton Candy Boba | `Pink_Velvet_Cotton_Candy_Boba.jpeg` |
-| Mango Matcha Boba | `Mango_Matcha_Boba.jpeg` |
-| Strawberry Matcha Boba | `Strawberry_Matcha_Boba.jpeg` |
-| K-Cinema Popcorn Coffee Boba | `K-Cinema_Popcorn_Coffee_Boba.jpeg` |
-| Filter Roast Cold Coffee Boba | `Filter_Roast_Cold_Coffee_Boba.jpeg` |
-| Green Apple Black Iced Tea | `Green_Apple_Black_Iced_Tea.jpeg` |
-| Strawberry Black Iced Tea | `Strawberry_Black_Iced_Tea.jpeg` |
-| Seoul Peach Black Iced Tea | `Seoul_Peach_Black_Iced_Tea.jpeg` |
-| Seoul Mango Peach Iced Tea | `Seoul_Mango_Peach_Iced_Tea.jpeg` |
-| Lychee Iced Tea | `Lychee_Iced_Tea.jpeg` |
-| Watermelon Iced Tea | `Watermelon_Iced_Tea.jpeg` |
-| Hibiscus Ginger Mint Iced Tea | `Hibiscus_Ginger_Mint_Iced_Tea.jpeg` |
-| Lime Black Tea Boba | `Lime_Black_Tea_Boba.jpeg` |
-
-### Burgers & Wraps
-
-| Menu item | Expected filename |
-|---|---|
-| Pink Velvet Cheesy Burger (Veg/Paneer) | `Pink_Velvet_Cheesy_Burger.jpg` |
-| Classic Veg Burger | `Classic_Veg_Burger.jpeg` |
-| Gangnam Big Stack Burger | `Gangnam_Big_Stack_Burger.jpeg` |
-| Pink Velvet Wrap (Veg/Paneer) | `Pink_Velvet_Wrap.jpg` |
-
-### Fries & Bites
-
-| Menu item | Expected filename |
-|---|---|
-| Pink Velvet Fries | `Pink_Velvet_Fries.jpg` |
-| Cheesy Potato Bites | `Cheesy_Potato_Bites.jpg` |
-
-### Meals & Combos
-
-| Menu item | Expected filename |
-|---|---|
-| Classic Veg Burger Meal | `Classic_Veg_Burger_Meal.jpeg` |
-| Veg Burger Meal | `Veg_Burger_Meal.jpeg` |
-| Veg Wrap Meal | `Veg_Wrap_Meal.jpeg` |
-| Paneer Wrap Meal | `Paneer_Wrap_Meal.jpeg` |
-| Veggie Rice Bowl | `Veggie_Rice_Bowl.jpeg` |
-| Paneer Rice Bowl | `Paneer_Rice_Bowl.jpeg` |
-
-### The Sweet
-
-| Menu item | Expected filename |
-|---|---|
-| Choco Cloud Marshmallow Sticks | `Choco_Cloud_Marshmallow_Sticks.jpg` |
-
----
-
-## Needs new product photography
-
-`Paneer_Burger_Meal.jpeg` — no source file has been confirmed for this item. Shoot or source a photo of the "Paneer Burger Meal" combo and drop it at `public/assets/menu/Paneer_Burger_Meal.jpeg`.
+All 74 mapped items currently have photos. Run `npm run audit:menu-images` to recheck if this changes after a menu update.
 
 ---
 

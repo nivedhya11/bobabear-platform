@@ -181,6 +181,35 @@ if (existsSync(videoDir)) {
   console.log("  –  public/assets/video/ does not exist (no video assets yet).");
 }
 
+// ── Check 7: merch images hardcoded in MerchDrop.tsx ─────────────────────────
+
+const MERCH_IMAGES = [
+  "tee-series-01.jpg",
+  "bottle-series-01.jpg",
+  "cup-series-01.jpg",
+  "tote-series-01.jpg",
+];
+const merchDir = join(root, "public", "assets", "merch");
+const merchMissing = MERCH_IMAGES.filter((f) => !existsSync(join(merchDir, f)));
+if (merchMissing.length > 0) {
+  console.log(`\n✗  Missing merch images in public/assets/merch/ (${merchMissing.length}):`);
+  for (const f of merchMissing) console.log(`     ${f}`);
+  violations++;
+} else {
+  console.log(`  ✓  Merch images present in public/assets/merch/ (${MERCH_IMAGES.length} file(s)).`);
+}
+
+// ── Check 8: artists image hardcoded in Artists.tsx ──────────────────────────
+
+const ARTISTS_IMAGE = "the-artists.jpg";
+const artistsDir = join(root, "public", "assets", "artists");
+if (!existsSync(join(artistsDir, ARTISTS_IMAGE))) {
+  console.log(`\n✗  Missing artists image: public/assets/artists/${ARTISTS_IMAGE}`);
+  violations++;
+} else {
+  console.log(`  ✓  Artists image present in public/assets/artists/.`);
+}
+
 // ── Summary ───────────────────────────────────────────────────────────────────
 
 console.log();

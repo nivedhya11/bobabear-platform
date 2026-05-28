@@ -97,8 +97,14 @@ components/          section components (Hero, SignatureDrops, TheBar, ThePlates
 data/menu.json       all menu content + per-item tags
 lib/                 site.ts (SEO/business constants), menuImages.ts, utils.ts
 types/menu.ts        menu data types (incl. the MenuCardTag union)
-public/assets/menu/  product photos served by the static export
-scripts/             tooling (audit-menu-images.mjs)
+public/assets/
+  menu/              product photos (one per menu item)
+  logos/             brand logos and favicon
+  drops/             signature-drop artwork
+  merch/             merch product shots (tee, bottle, cup, tote)
+  artists/           artists-section hero image
+  video/             hero video (hero-featured.mp4)
+scripts/             tooling (audit-menu-images.mjs, audit-assets.mjs)
 docs/                project documentation (missing-menu-images.md)
 ```
 
