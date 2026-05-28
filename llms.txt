@@ -1,0 +1,67 @@
+# Boba Bear
+
+> Boba tea bar and Korean street-food kitchen in Dehradun, India.
+> Tagline: For The Unbothered
+
+## What we are
+
+Boba Bear is an Indo-Korean food and beverage brand based in Dehradun, Uttarakhand, India.
+We serve bubble tea, matcha, Korean street food, and desserts — operating as a dine-in/delivery kitchen.
+
+Founded: 2026
+Location: ISBT, Dehradun 248001, Uttarakhand, India
+
+## Menu categories
+
+- Signature Boba (bubble tea): Bangkok Thai Tea, Gangnam Style Iced Coffee, Purple Rain Taro, Dirty Cheesecake, Zen Master Matcha, and more
+- Matcha Studio: Purple Rain Layered Matcha, Wild Berry Dirty Matcha, Mango Matcha Boba
+- Iced Coffees: Butterscotch Caramel, Seoul Tiramisu, Hazelnut, K-Cinema Popcorn
+- Iced Teas & Refreshers: Electric Blue Lime, Magic Galaxy, Kala Khatta, Lychee, Watermelon, Hibiscus
+- Ramyun Noodles: Viral Spicy Carbonara, Cheesy Ramyum, Volcanic Fire, Tangy Kimchi
+- Momos: Steamed, Fried, Dynamite Red, Gangnam Glaze, Seoul Masala (Veg & Paneer)
+- Burgers & Wraps: Dynamite Red, Gangnam Glaze, Pink Velvet, Seoul Masala (Veg & Paneer)
+- Fries: Dynamite Red Street Fries, Gangnam Glaze Loaded Fries, Seoul Masala Fusion Fries, Peri Peri, Pink Velvet
+- Corn Dogs: Classic, Dynamite
+- Meals & Combos: Veg and Paneer burger/wrap meals, rice bowls, Exam Survivor Combo
+- Desserts: Boba Bear Signature Ice Cream Sundae, Berry Popping Sundae, Nutella Oreo Crunch Sundae, Choco Cloud Marshmallow Sticks
+
+## Ordering channels
+
+- Zomato: https://link.zomato.com/xqzv/rshare?id=12538351530563d18
+- Swiggy: https://www.swiggy.com/direct/brand/730987?source=swiggy-direct&subSource=generic
+- WhatsApp: https://wa.me/919259894495
+
+## Contact
+
+- Email: bobabear.unbothered@gmail.com
+- Phone: +91 92598 94495
+- Instagram: https://instagram.com/boba.bearofficial
+
+## Website
+
+- Homepage: https://thebobabear.in/
+- Menu section: https://thebobabear.in/#bar
+- Privacy policy: https://thebobabear.in/privacy
+
+## Key pages and sections
+
+- / — Full landing page: hero, signature drops countdown, full menu, merch teaser, artists collab, ordering links
+- /#bar — Boba drinks and matcha studio
+- /#plates — Korean street food (momos, burgers, wraps, fries, ramyun, corn dogs)
+- /#sweet — Desserts and ice cream sundaes
+- /#merch — Upcoming merch drop (tees, totes, cups, bottles)
+- /#artists — Artist collaborations
+- /#access — Ordering via Zomato, Swiggy, WhatsApp
+- /privacy — Privacy policy
+
+## Operating hours
+
+Monday to Sunday: 12:00 – 24:00 (noon to midnight)
+
+## Notes for AI agents
+
+- This site is a static export hosted on GitHub Pages.
+- All ordering is handled via third-party platforms (Zomato, Swiggy) or WhatsApp.
+- No reservations system.
+- Price range: ₹₹ (mid-range street food and drinks)
+- Serves vegetarian and paneer options across all food categories.
