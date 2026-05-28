@@ -78,45 +78,24 @@ Place the finished photo at `public/assets/menu/<filename>` using the exact file
 
 ---
 
-## Needs manual confirmation
+## Needs new product photography
 
-`Paneer_Burger_Meal.jpeg` — the repo contains `Boba_Bear_Images/Premium_Paneer_Meal.jpeg`, which *may* correspond to this menu item, but the names differ enough to be ambiguous. **Do not copy blindly.**
-
-Steps to resolve:
-1. Confirm `Premium_Paneer_Meal.jpeg` is a photo of the "Paneer Burger Meal" combo.
-2. If yes: `cp Boba_Bear_Images/Premium_Paneer_Meal.jpeg public/assets/menu/Paneer_Burger_Meal.jpeg`
-3. If it is a different product, source or shoot the correct photo.
-
-Other `Boba_Bear_Images/` source files with no clear menu match (likely retired or renamed items):
-
-| Source file | Notes |
-|---|---|
-| `Cheesy_Melt_Ramyun.jpeg` | Possible older version of "Cheesy Ramyum"; current public file already exists |
-| `The_Seoul_Street_Meal.jpeg` | No matching meal item; could be a combo |
-| `K-Drama_Sharing_Combo.jpeg` | No matching menu item |
-| `Seoul_Mate_Combo.jpeg` | No matching menu item |
-| `Purple_Rain_Combo.jpeg` | No matching menu item |
-| `Ramyum&Boba_Combo.jpeg` | No matching menu item |
-| `The_Gamja_Potato_Dog.jpeg` | No matching menu item (potato corndog variant?) |
-| `Classic_Seoul_Vanilla_Sweet_Waffle.jpeg` | Waffle items not in current menu |
-| `Gangnam_Dark_Mocha_Coffee_Waffle.jpeg` | Waffle items not in current menu |
-| `The_Viral_Nutella_Chocolate_Waffle.jpeg` | Waffle items not in current menu |
-| `Gangnam_Caramel_Cold_Coffee_Sundae.jpeg` | No matching sundae in menu |
+`Paneer_Burger_Meal.jpeg` — no source file has been confirmed for this item. Shoot or source a photo of the "Paneer Burger Meal" combo and drop it at `public/assets/menu/Paneer_Burger_Meal.jpeg`.
 
 ---
 
 ## Veg/Paneer combo image choices
 
-Menu cards labelled `(Veg/Paneer)` use a single image. The current public files use the Veg photo as default. Swap to the Paneer alternative at any time:
+Menu cards labelled `(Veg/Paneer)` use a single image. The current files in `public/assets/menu/` use the Veg photo as default. To swap to a Paneer photo, replace the file at the listed path with the Paneer shot:
 
-| Menu item | Current file | Veg source in Boba_Bear_Images/ | Paneer alternative |
-|---|---|---|---|
-| Dynamite Red Burger | `Dynamite_Red_Burger.jpg` | `Dynamite_Red_Veg_Burger.jpeg` | `Dynamite_Red_Paneer_Burger.jpeg` |
-| Gangnam Glaze Burger | `Gangnam_Glaze_Burger.jpg` | `Gangnam_Glaze_Veg_Burger.jpeg` | `Gangnam_Glaze_Paneer_Burger.jpeg` |
-| Seoul Masala Burger | `Seoul_Masala_Burger.jpg` | `Seoul_Masala_Veg_Burger.jpeg` | `Seoul_Masala_Paneer_Burger.jpeg` |
-| Dynamite Red Wrap | `Dynamite_Red_Wrap.jpg` | `Dynamite_Red_Veg_Wrap.jpeg` | `Dynamite_Red_Paneer_Wrap.jpeg` |
-| Gangnam Glaze Wrap | `Gangnam_Glaze_Wrap.jpg` | `Gangnam_Glaze_Veg_Wrap.jpeg` | `Gangnam_Glaze_Paneer_Wrap.jpeg` |
-| Seoul Masala Wrap | `Seoul_Masala_Wrap.jpg` | `Seoul_Masala_Veg_Wrap.jpeg` | `Seoul_Masala_Paneer_Wrap.jpeg` |
+| Menu item | File in public/assets/menu/ |
+|---|---|
+| Dynamite Red Burger | `Dynamite_Red_Burger.jpg` |
+| Gangnam Glaze Burger | `Gangnam_Glaze_Burger.jpg` |
+| Seoul Masala Burger | `Seoul_Masala_Burger.jpg` |
+| Dynamite Red Wrap | `Dynamite_Red_Wrap.jpg` |
+| Gangnam Glaze Wrap | `Gangnam_Glaze_Wrap.jpg` |
+| Seoul Masala Wrap | `Seoul_Masala_Wrap.jpg` |
 
 ---
 

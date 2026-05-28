@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "figma:sync": "node figma-sync/screenshot.js",
-    "audit:menu-images": "node scripts/audit-menu-images.mjs"
+    "audit:menu-images": "node scripts/audit-menu-images.mjs",
+    "audit:assets": "node scripts/audit-assets.mjs"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.4",
