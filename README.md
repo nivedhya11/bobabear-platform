@@ -5,6 +5,16 @@ Marketing landing page for **Boba Bear**, Dehradun's boba-tea bar and Korean str
 full menu (drinks / K-street plates / sweets), merch teaser, artists collab teaser, and an
 "access the drop" ordering section (Zomato / Swiggy / WhatsApp).
 
+## Platform documentation
+
+This repository currently ships the marketing site described below. BOBA Bear's broader
+direct-ordering platform — product vision, first-release scope, operating model, architecture, and
+the multi-outlet/franchise foundation — is documented separately in
+[`docs/platform/README.md`](docs/platform/README.md). Anyone planning platform-level work (accounts,
+ordering, payments, outlets, organizations, roles) should read that document set before writing a
+specification or code; it is the canonical source of truth and takes precedence over older planning
+documents, wireframes, and design-system drafts elsewhere in this repository.
+
 ## Tech stack
 
 | | |
