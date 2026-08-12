@@ -1,0 +1,70 @@
+#!/usr/bin/env -S node --conditions=react-server --import tsx
+/**
+ * Create a workforce user with a temporary password (IMP-010).
+ *
+ * Uses Better Auth 1.6.25 `auth.api.signUpEmail` via the ephemeral operator
+ * auth runtime (disableSignUp: false, autoSignIn: false). Never hashes the
+ * password locally, never constructs a credential account, never prints the
+ * password or any secret.
+ *
+ * Usage:
+ *   npm run workforce:user:create -- --email=ops@example.test --name="Ops User" --password='temporary-password-15+'
+ */
+import process from "node:process";
+
+import { ConfigurationError } from "../../src/platform/config/config-error";
+import { AuthFoundationConfigurationError } from "../../src/server/auth/shared/errors";
+import { createWorkforceOperatorUser } from "../../src/server/auth/workforce/operator";
+import { WorkforceAuthConfigurationError } from "../../src/server/workforce-auth/errors";
+import {
+  openWorkforceOperatorCredentialRuntime,
+  parseWorkforceCliArgs,
+  printSafeError,
+  printSafeOk,
+  requireArg,
+  requireNormalizedEmail,
+  requireValidPassword,
+} from "./cli-support";
+
+async function main(): Promise<void> {
+  const args = parseWorkforceCliArgs(process.argv.slice(2));
+  const email = requireNormalizedEmail(requireArg(args, "email"));
+  const name = requireArg(args, "name").trim();
+  if (name.length === 0) {
+    throw new Error("Missing required --name argument.");
+  }
+  const password = requireValidPassword(requireArg(args, "password"));
+
+  const { runtime } = openWorkforceOperatorCredentialRuntime();
+  try {
+    const result = await createWorkforceOperatorUser(runtime, {
+      email,
+      name,
+      temporaryPassword: password,
+    });
+
+    printSafeOk({
+      operation: "workforce_user_create",
+      userId: result.userId,
+      passwordChangeRequired: true,
+      twoFactorEnabled: false,
+    });
+  } finally {
+    await runtime.close();
+  }
+}
+
+main().catch((error: unknown) => {
+  if (
+    error instanceof ConfigurationError ||
+    error instanceof AuthFoundationConfigurationError ||
+    error instanceof WorkforceAuthConfigurationError
+  ) {
+    printSafeError(error.message);
+  } else if (error instanceof Error) {
+    printSafeError(error.message);
+  } else {
+    printSafeError("workforce:user:create failed.");
+  }
+  process.exitCode = 1;
+});

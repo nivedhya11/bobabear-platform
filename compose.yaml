@@ -1,0 +1,392 @@
+name: boba-bear
+
+services:
+  postgres:
+    image: postgres:18.4-trixie
+    env_file:
+      - .env.docker.local
+    ports:
+      - "${POSTGRES_HOST_PORT:-5433}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\"",
+        ]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+      start_period: 5s
+    stop_grace_period: 30s
+
+  # Static Nginx web runtime (IMP-005A). Serves the Next.js `output:
+  # "export"` bundle only — no Node, no database credentials, no dependency
+  # on PostgreSQL for its own health. See docker/nginx/nginx.conf and the
+  # Dockerfile `web-runtime` stage.
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: web-runtime
+      args:
+        NEXT_PUBLIC_SITE_URL: "${NEXT_PUBLIC_SITE_URL:-https://thebobabear.in}"
+        NEXT_PUBLIC_GA_MEASUREMENT_ID: "${NEXT_PUBLIC_GA_MEASUREMENT_ID:-}"
+        BOBA_BEAR_IMAGE_RELEASE: "${BOBA_BEAR_IMAGE_RELEASE:-local-docker}"
+    image: boba-bear-app:local
+    ports:
+      - "${BOBA_BEAR_APP_HOST_PORT:-8080}:8080"
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp
+      - /var/cache/nginx
+      - /var/run
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:8080/"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    stop_grace_period: 10s
+    restart: "no"
+
+  # Dedicated customer phone + OTP auth service (IMP-009). Reachable only
+  # through the `app` (Nginx) container's narrow `/api/customer-auth/`
+  # reverse proxy (docker/nginx/nginx.conf) — never a published host port.
+  # Receives both the application-role database env file (it needs
+  # PostgreSQL, unlike `app`) and its own dedicated auth/OTP env file; never
+  # the migration env file.
+  customer-auth:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: customer-auth-runtime
+    image: boba-bear-customer-auth:local
+    expose: ["8081"]
+    env_file:
+      - .env.runtime.docker.local
+      - .env.customer-auth.docker.local
+    depends_on:
+      postgres:
+        condition: service_healthy
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:8081/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 15s
+    restart: "no"
+
+  # Dedicated workforce email + password + TOTP MFA auth service (IMP-010).
+  # Reachable only through the `app` (Nginx) container's narrow
+  # `/api/workforce-auth/` reverse proxy (docker/nginx/nginx.conf) — never a
+  # published host port. Receives both the application-role database env
+  # file (it needs PostgreSQL, unlike `app`) and its own dedicated workforce
+  # auth env file; never the migration env file, and never any
+  # CUSTOMER_AUTH_* secret.
+  workforce-auth:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: workforce-auth-runtime
+    image: boba-bear-workforce-auth:local
+    expose: ["8082"]
+    env_file:
+      - .env.runtime.docker.local
+      - .env.workforce-auth.docker.local
+    depends_on:
+      postgres:
+        condition: service_healthy
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:8082/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 15s
+    restart: "no"
+
+  # Dedicated customer-commerce transport façade (IMP-024 / D-359). Reachable
+  # only through the `app` (Nginx) container's narrow `/api/v1/` reverse
+  # proxy — never a published host port. Receives application-role database
+  # env plus customer-auth secrets (session cookie validation) and commerce
+  # listen config. Never migration credentials.
+  customer-commerce:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: customer-commerce-runtime
+    image: boba-bear-customer-commerce:local
+    expose: ["8083"]
+    env_file:
+      - .env.runtime.docker.local
+      - .env.customer-auth.docker.local
+      - .env.customer-commerce.docker.local
+    depends_on:
+      postgres:
+        condition: service_healthy
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:8083/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 15s
+    restart: "no"
+
+  # One-shot migration runner (IMP-005A). Never starts automatically with
+  # `docker compose up` — the `tools` profile excludes it unless explicitly
+  # invoked via `docker compose run --rm migrate` (`npm run docker:migrate`).
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: tooling
+    image: boba-bear-tooling:local
+    profiles: ["tools"]
+    env_file:
+      - .env.migration.docker.local
+    command: ["npm", "run", "db:migrate"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    restart: "no"
+
+  # One-shot application-role connectivity check. Receives only the runtime
+  # (application-role) env file — never migration or bootstrap credentials.
+  db-check:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: tooling
+    image: boba-bear-tooling:local
+    profiles: ["tools"]
+    env_file:
+      - .env.runtime.docker.local
+    command: ["npm", "run", "db:check"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    restart: "no"
+
+  # One-shot migration-role connectivity check. Receives only the migration
+  # env file — never application or bootstrap-admin credentials.
+  db-check-migration:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: tooling
+    image: boba-bear-tooling:local
+    profiles: ["tools"]
+    env_file:
+      - .env.migration.docker.local
+    command: ["npm", "run", "db:check:migration"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    restart: "no"
+
+  # One-shot existing-menu-v1 import (IMP-013). Application-role DML only.
+  # Default dry-run; pass --apply via `docker compose run ... -- --apply`.
+  menu-import-existing:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: tooling
+    image: boba-bear-tooling:local
+    profiles: ["tools"]
+    env_file:
+      - .env.runtime.docker.local
+    command: ["npm", "run", "menu:import-existing"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    restart: "no"
+
+  menu-verify-existing:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: tooling
+    image: boba-bear-tooling:local
+    profiles: ["tools"]
+    env_file:
+      - .env.runtime.docker.local
+    command: ["npm", "run", "menu:verify-existing"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    restart: "no"
+
+  # One-shot existing-menu Brand assortment bootstrap (IMP-014). Application-role DML only.
+  # Default dry-run; pass --apply via `docker compose run ... -- --apply`.
+  assortment-bootstrap-existing-menu:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: tooling
+    image: boba-bear-tooling:local
+    profiles: ["tools"]
+    env_file:
+      - .env.runtime.docker.local
+    command: ["npm", "run", "assortment:bootstrap-existing-menu"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    restart: "no"
+
+  assortment-verify-existing-menu:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: tooling
+    image: boba-bear-tooling:local
+    profiles: ["tools"]
+    env_file:
+      - .env.runtime.docker.local
+    command: ["npm", "run", "assortment:verify-existing-menu"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    restart: "no"
+
+  # One-shot existing-menu Brand pricing bootstrap (IMP-015). Application-role DML only.
+  # Default dry-run; pass --apply via `docker compose run ... -- --apply`.
+  pricing-bootstrap-existing-menu:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: tooling
+    image: boba-bear-tooling:local
+    profiles: ["tools"]
+    env_file:
+      - .env.runtime.docker.local
+    command: ["npm", "run", "pricing:bootstrap-existing-menu"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    restart: "no"
+
+  pricing-verify-existing-menu:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: tooling
+    image: boba-bear-tooling:local
+    profiles: ["tools"]
+    env_file:
+      - .env.runtime.docker.local
+    command: ["npm", "run", "pricing:verify-existing-menu"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    restart: "no"
+
+volumes:
+  postgres-data:

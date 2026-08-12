@@ -4,7 +4,7 @@
  * Checks that the production asset layout is clean:
  *  - No source file references Boba_Bear_Images (deprecated reference folder)
  *  - No source file references the generated out/ directory
- *  - All menu image paths in lib/menuImages.ts resolve under public/assets/menu/
+ *  - All menu image paths in src/lib/menuImages.ts resolve under public/assets/menu/
  *  - Logo paths exist under public/assets/logos/
  *  - Drop image paths exist under public/assets/drops/
  *  - Video path exists under public/assets/video/ (if any mapping references it)
@@ -45,7 +45,7 @@ function walk(dir, results = []) {
 
 // ── Gather source files ───────────────────────────────────────────────────────
 
-const SOURCE_DIRS = ["app", "components", "lib", "scripts", "data", "docs"];
+const SOURCE_DIRS = ["src/app", "src/components", "src/lib", "scripts", "src/data", "docs"];
 const SOURCE_EXTS = new Set([".ts", ".tsx", ".js", ".mjs", ".json", ".md"]);
 
 const sourceFiles = [];
@@ -104,6 +104,13 @@ for (const f of sourceFiles) {
   const text = readFileSync(f, "utf-8");
   const rel = f.replace(root + "/", "");
   if (rel.startsWith("scripts/audit-assets")) continue;
+  // The static-export server's entire job is serving the generated out/
+  // directory — this is a legitimate tooling reference, not app source
+  // depending on build output. The customer-auth E2E harness (IMP-009)
+  // reuses that same handler for the same reason.
+  if (rel === "scripts/serve-static-export.mjs") continue;
+  if (rel === "scripts/e2e/customer-auth-server.ts") continue;
+  if (rel === "scripts/e2e/workforce-auth-server.ts") continue;
   if (OUT_PATTERN.test(text)) {
     outRefs.push(rel);
   }
@@ -120,7 +127,7 @@ if (outRefs.length > 0) {
 
 // ── Check 3: menu image paths resolve under public/assets/menu/ ──────────────
 
-const menuImagesSrc = readText("lib/menuImages.ts");
+const menuImagesSrc = readText("src/lib/menuImages.ts");
 const menuDir = join(root, "public", "assets", "menu");
 const menuMissing = [];
 const menuPresent = [];
@@ -134,7 +141,7 @@ if (menuImagesSrc) {
     `  ✓  Menu image paths: ${menuPresent.length} present, ${menuMissing.length} missing (Aurora fallbacks).`
   );
 } else {
-  console.log("  ?  lib/menuImages.ts not found — skipping menu image check.");
+  console.log("  ?  src/lib/menuImages.ts not found — skipping menu image check.");
 }
 
 // ── Check 4: logos under public/assets/logos/ ────────────────────────────────

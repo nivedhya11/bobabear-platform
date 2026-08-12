@@ -1,0 +1,96 @@
+{
+  "version": 1,
+  "algorithm": "sha256",
+  "migrations": [
+    {
+      "tag": "0000_database-foundation",
+      "path": "drizzle/0000_database-foundation.sql",
+      "sha256": "2c9481bca62dd1e856ff8083cb8bcbe9aa25558af78ba40810100c91cdaf99cc"
+    },
+    {
+      "tag": "0001_transactional_outbox_idempotency",
+      "path": "drizzle/0001_transactional_outbox_idempotency.sql",
+      "sha256": "cd5f3a04ff8fbdddcd42e96a7faf8ea7a21a115be1a442d41b09608c5d6a400b"
+    },
+    {
+      "tag": "0002_better_auth_foundation",
+      "path": "drizzle/0002_better_auth_foundation.sql",
+      "sha256": "c174449d444455d77150a87d60f807d0f7395a2694757086e7a0dcf9991a4a16"
+    },
+    {
+      "tag": "0003_customer_phone_otp_authentication",
+      "path": "drizzle/0003_customer_phone_otp_authentication.sql",
+      "sha256": "37d2e931728daa43dd2f4a085dd569b2c3e45d32810b128533ac34a065ab79b3"
+    },
+    {
+      "tag": "0004_workforce_authentication_mfa",
+      "path": "drizzle/0004_workforce_authentication_mfa.sql",
+      "sha256": "bcf4ed284fd6ab96df865775e69c42e65e4a8326c96d63201dcb907c55968ddd"
+    },
+    {
+      "tag": "0005_organization_outlet_rbac_foundation",
+      "path": "drizzle/0005_organization_outlet_rbac_foundation.sql",
+      "sha256": "1dd73c239d1000e3c7b801d69f316474b315fec276e7728fdf1200ebac46b904"
+    },
+    {
+      "tag": "0006_canonical_catalog_model",
+      "path": "drizzle/0006_canonical_catalog_model.sql",
+      "sha256": "db905b5ebe565950925bc96e3a84196897823a8fbb26eafe191a5639de1e4a71"
+    },
+    {
+      "tag": "0007_existing_menu_import",
+      "path": "drizzle/0007_existing_menu_import.sql",
+      "sha256": "8b2cf7c95f42c2281efa281031904f0706280c7e7e2282ce64bc4c4ddf35a4d1"
+    },
+    {
+      "tag": "0008_assortment_operational_availability",
+      "path": "drizzle/0008_assortment_operational_availability.sql",
+      "sha256": "89ad947be8ca5eeca85505cada57608a170beafbfb679b54aa478cf564754124"
+    },
+    {
+      "tag": "0009_pricing_charges_tax",
+      "path": "drizzle/0009_pricing_charges_tax.sql",
+      "sha256": "c609d3fec7b47e23211414763d3ed5d42605eb379159cbae28e43c4a0fb7d3e1"
+    },
+    {
+      "tag": "0010_promotions_coupons",
+      "path": "drizzle/0010_promotions_coupons.sql",
+      "sha256": "21a1ab243b11245a5f52468f755463740a8ab3b0cedd5bc6b339fb650974df81"
+    },
+    {
+      "tag": "0011_customer_profiles",
+      "path": "drizzle/0011_customer_profiles.sql",
+      "sha256": "5445146cf9cb3519474ac84a969edb97cd31e58b7d039eadc2e0f7b4bb54d7cb"
+    },
+    {
+      "tag": "0012_customer_addresses",
+      "path": "drizzle/0012_customer_addresses.sql",
+      "sha256": "6a9318ab7841ef4be7f2768a399c26e221d19d0b1836c74a975a694385c0ee73"
+    },
+    {
+      "tag": "0013_serviceability",
+      "path": "drizzle/0013_serviceability.sql",
+      "sha256": "6a73625296f6433e2fdb12d67418ad94fb2e4fc703eae627e5c43b46d77df6ea"
+    },
+    {
+      "tag": "0014_cart",
+      "path": "drizzle/0014_cart.sql",
+      "sha256": "a73caebe9b301eb403e1395818bc44e0538d8c7779738ee6ff631edc74c4bb83"
+    },
+    {
+      "tag": "0015_checkout",
+      "path": "drizzle/0015_checkout.sql",
+      "sha256": "31394a02f7d7848c68803e0e1915dfa8c32c1a9e9955b1c8e6716d611e0e7f0c"
+    },
+    {
+      "tag": "0016_payment",
+      "path": "drizzle/0016_payment.sql",
+      "sha256": "2c563b7437705ca6d38fff44260ee1de3a5ff35cac84ce409937926c3e1eb558"
+    },
+    {
+      "tag": "0017_order",
+      "path": "drizzle/0017_order.sql",
+      "sha256": "2177d283a4b3db57068baabf1b0c5a5323569cfec3f150074ee8deb803dfef6c"
+    }
+  ]
+}

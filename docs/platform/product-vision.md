@@ -1,16 +1,21 @@
 ---
-Status: Canonical
-Last updated: 2026-08-01
+Status: SUPPORTING / HISTORICAL
+Canonical CURRENT vision: docs/platform/VISION.md
+Last updated: 2026-08-11
 ---
 
-# BOBA Bear — Product Vision
+# BOBA Bear — Product Vision (supporting terminology)
 
 ## Status
 
-This document records **Locked** business direction (the reasons a direct platform is being
+**SUPPORTING / HISTORICAL.** CURRENT product vision authority is [`VISION.md`](./VISION.md).
+This document retains terminology and historical business rationale.
+
+This document records business direction (the reasons a direct platform is being
 built, and the standardized terminology used across this documentation set) alongside a small
 number of items marked **Provisional** where noted. It does not define feature scope — see
-[`v1-product-scope.md`](./v1-product-scope.md) for that.
+[`v1-product-scope.md`](./v1-product-scope.md) for that. It does not own IMP numbering or accepted
+implementation state — see [`ROADMAP.md`](./ROADMAP.md) and [`STATE.md`](./STATE.md).
 
 ## What BOBA Bear is
 

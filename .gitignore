@@ -12,6 +12,11 @@
 
 # testing
 /coverage
+/playwright-report
+/playwright-report-customer-auth
+/test-results
+/test-results-customer-auth
+/blob-report
 
 # next.js
 /.next/
@@ -30,9 +35,19 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files — .env.local and .env.*.local are always git-ignored (see
+# AGENTS.md / docs/platform for the BOBA Bear configuration contract).
+# .env.example, .env.test and .env.docker.example are safe, committed
+# exceptions. .env.docker.local holds generated local PostgreSQL
+# credentials (IMP-004); .env.runtime.docker.local and
+# .env.migration.docker.local hold generated least-privilege container
+# credentials (IMP-005A); .env.customer-auth.docker.local (IMP-009) and
+# .env.workforce-auth.docker.local (IMP-010) hold generated auth-service
+# secrets. None of these are ever committed.
 .env*
 !.env.example
+!.env.test
+!.env.docker.example
 
 # vercel
 .vercel
@@ -40,3 +55,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# customer-auth service build output (IMP-009 — scripts/customer-auth/build.mjs)
+/dist-customer-auth
+
+# workforce-auth service build output (IMP-010 — scripts/workforce-auth/build.mjs)
+/dist-workforce-auth
+/dist-customer-commerce

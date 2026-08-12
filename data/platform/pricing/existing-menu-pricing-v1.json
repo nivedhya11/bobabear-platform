@@ -1,0 +1,683 @@
+{
+  "import_id": "existing-menu-v1",
+  "version": 1,
+  "source_inventory_sha256": "0a263d9e514d1d5c05bba7de421812c9a197f85a004c0bdb1ed171712abddaa4",
+  "price_book": {
+    "id": "a0150001-0000-4000-8000-000000000010",
+    "code": "direct-primary-v1",
+    "name": "Direct primary v1",
+    "sales_channel": "direct",
+    "currency": "INR",
+    "tax_inclusion_mode": "exclusive",
+    "effective_from": "2026-08-08T00:00:00+05:30"
+  },
+  "tax_category_id": "a0150001-0000-4000-8000-000000000001",
+  "variant_prices": [
+    {
+      "variant_id": "259afe35-0ccb-5cf1-a68c-3ae07a127e03",
+      "source_key": "item:the-bar/Signature Boba/Gangnam Style Iced Coffee Boba",
+      "source_item_name": "Gangnam Style Iced Coffee Boba",
+      "amount_paise": 19900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "63ab5434-72f4-5521-862d-b34b3407695a",
+      "source_key": "item:the-bar/Signature Boba/Purple Rain Taro Boba",
+      "source_item_name": "Purple Rain Taro Boba",
+      "amount_paise": 25900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "1a403dd2-8fec-5d19-b764-7eda47167f2b",
+      "source_key": "item:the-bar/Signature Boba/Zen Master Matcha Boba",
+      "source_item_name": "Zen Master Matcha Boba",
+      "amount_paise": 26900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "afbe2d74-0604-5645-9764-fcd74e4abc70",
+      "source_key": "item:the-bar/Signature Boba/Hong Kong Milk Tea Boba",
+      "source_item_name": "Hong Kong Milk Tea Boba",
+      "amount_paise": 23900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "2c660df4-24c1-57d3-b5e8-868374840436",
+      "source_key": "item:the-bar/Signature Boba/Bangkok Thai Tea Boba",
+      "source_item_name": "Bangkok Thai Tea Boba",
+      "amount_paise": 24900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "b3a9226a-e3aa-58bb-aa1f-ffae97c94d63",
+      "source_key": "item:the-bar/Signature Boba/Dirty Cheesecake Boba",
+      "source_item_name": "Dirty Cheesecake Boba",
+      "amount_paise": 25900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "ca4b02bf-9dd2-545b-bbfd-2687c4059ec0",
+      "source_key": "item:the-bar/Signature Boba/Pink Velvet Cotton Candy Boba",
+      "source_item_name": "Pink Velvet Cotton Candy Boba",
+      "amount_paise": 25900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "1cdc53d3-2f03-583c-8916-172df5e0fa48",
+      "source_key": "item:the-bar/Matcha Studio/Purple Rain Layered Matcha",
+      "source_item_name": "Purple Rain Layered Matcha",
+      "amount_paise": 28900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "1616dd97-fc77-54c0-a8d5-c2ad34cd4ab3",
+      "source_key": "item:the-bar/Matcha Studio/Wild Berry Dirty Matcha",
+      "source_item_name": "Wild Berry Dirty Matcha",
+      "amount_paise": 28900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "321162f9-9955-5281-82e8-2c87cc9788e5",
+      "source_key": "item:the-bar/Matcha Studio/Mango Matcha Boba",
+      "source_item_name": "Mango Matcha Boba",
+      "amount_paise": 24900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "42885b2e-96cc-5d68-b03c-d86a47bc0db5",
+      "source_key": "item:the-bar/Matcha Studio/Strawberry Matcha Boba",
+      "source_item_name": "Strawberry Matcha Boba",
+      "amount_paise": 24900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "05a00851-acfc-5830-b9e1-3eb37d9d38fa",
+      "source_key": "item:the-bar/Iced Coffees/Hazelnut Iced Coffee Boba",
+      "source_item_name": "Hazelnut Iced Coffee Boba",
+      "amount_paise": 23900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "3e1c1114-622f-52df-8327-460838db5e75",
+      "source_key": "item:the-bar/Iced Coffees/Butterscotch Caramel Iced Coffee Boba",
+      "source_item_name": "Butterscotch Caramel Iced Coffee Boba",
+      "amount_paise": 24900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "425895d7-4946-5ebf-ba22-404703848d16",
+      "source_key": "item:the-bar/Iced Coffees/Seoul Tiramisu Iced Coffee Boba",
+      "source_item_name": "Seoul Tiramisu Iced Coffee Boba",
+      "amount_paise": 24900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "0b8b7550-6697-548c-bfb1-92b22c06041b",
+      "source_key": "item:the-bar/Iced Coffees/K-Cinema Popcorn Coffee Boba",
+      "source_item_name": "K-Cinema Popcorn Coffee Boba",
+      "amount_paise": 24900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "b8392121-25e8-599b-89f7-34e55922ca5c",
+      "source_key": "item:the-bar/Iced Coffees/Filter Roast Cold Coffee Boba",
+      "source_item_name": "Filter Roast Cold Coffee Boba",
+      "amount_paise": 21900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "1a4e8bd3-926b-5404-a777-e85a01535e30",
+      "source_key": "item:the-bar/Iced Teas/Kala Khatta Iced Tea",
+      "source_item_name": "Kala Khatta Iced Tea",
+      "amount_paise": 17900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "252f2ca5-ea7f-52da-85af-e7a4f6c291c0",
+      "source_key": "item:the-bar/Iced Teas/Green Apple Black Iced Tea",
+      "source_item_name": "Green Apple Black Iced Tea",
+      "amount_paise": 17900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "fa176128-0998-5370-adcb-073d4175f4a0",
+      "source_key": "item:the-bar/Iced Teas/Strawberry Black Iced Tea",
+      "source_item_name": "Strawberry Black Iced Tea",
+      "amount_paise": 17900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "d00cdbd5-55e5-5b96-ba62-3b1d69e2d37e",
+      "source_key": "item:the-bar/Iced Teas/Seoul Peach Black Iced Tea",
+      "source_item_name": "Seoul Peach Black Iced Tea",
+      "amount_paise": 17900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "846b668d-880f-56c6-98dd-96257022ccae",
+      "source_key": "item:the-bar/Iced Teas/Seoul Mango Peach Iced Tea",
+      "source_item_name": "Seoul Mango Peach Iced Tea",
+      "amount_paise": 18900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "c4a92b24-13d2-52ca-9849-7d576f82b539",
+      "source_key": "item:the-bar/Iced Teas/Lychee Iced Tea",
+      "source_item_name": "Lychee Iced Tea",
+      "amount_paise": 17900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "ccf7fa28-33f3-54b2-b72b-63c3afb348e4",
+      "source_key": "item:the-bar/Iced Teas/Watermelon Iced Tea",
+      "source_item_name": "Watermelon Iced Tea",
+      "amount_paise": 17900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "13ef59f1-a8fb-5060-8995-624f23b58d91",
+      "source_key": "item:the-bar/Iced Teas/Hibiscus Ginger Mint Iced Tea",
+      "source_item_name": "Hibiscus Ginger Mint Iced Tea",
+      "amount_paise": 18900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "d370e020-36c9-53f8-bd17-74d50e8bc811",
+      "source_key": "item:the-bar/Iced Teas/Lime Black Tea Boba",
+      "source_item_name": "Lime Black Tea Boba",
+      "amount_paise": 18900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "857ca844-395c-5125-8aa1-515debf48d6e",
+      "source_key": "item:the-bar/Refreshers/Jiji Mint Mojito",
+      "source_item_name": "Jiji Mint Mojito",
+      "amount_paise": 18900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "a315f5f0-c517-535e-993d-7219a4fdfbcb",
+      "source_key": "item:the-bar/Refreshers/Electric Blue Lime Refresher",
+      "source_item_name": "Electric Blue Lime Refresher",
+      "amount_paise": 18900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "f7693341-6a7a-5553-9302-e9f062c8de56",
+      "source_key": "item:the-bar/Refreshers/Magic Galaxy Refresher Drink",
+      "source_item_name": "Magic Galaxy Refresher Drink",
+      "amount_paise": 19900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "19b35b3c-ad11-5a2d-95cd-9ab1a3e273a0",
+      "source_key": "item:ramyum/Ramyum/Viral Spicy Carbonara Ramyun Noodles",
+      "source_item_name": "Viral Spicy Carbonara Ramyun Noodles",
+      "amount_paise": 23900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "891d980a-042e-5dbd-b185-5e2ca8606fe3",
+      "source_key": "item:ramyum/Ramyum/Cheesy Ramyum",
+      "source_item_name": "Cheesy Ramyum",
+      "amount_paise": 23900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "13debdec-96b6-5fe9-bf59-cb110451d945",
+      "source_key": "item:ramyum/Ramyum/Volcanic Fire Spicy Ramyun Noodles",
+      "source_item_name": "Volcanic Fire Spicy Ramyun Noodles",
+      "amount_paise": 22500,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "2acf87f8-fbbd-576c-8a9a-e12320962ce7",
+      "source_key": "item:ramyum/Ramyum/Tangy Kimchi Ramyun Noodles",
+      "source_item_name": "Tangy Kimchi Ramyun Noodles",
+      "amount_paise": 22500,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "b9693e6b-6b17-5473-a378-e4a2584dcf37",
+      "source_key": "item:momos/Steamed & Fried Momos/Steamed Veg Momos",
+      "source_item_name": "Steamed Veg Momos",
+      "amount_paise": 11900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "2c7c7b56-2a77-5514-9ab0-d4f56b2ae2c6",
+      "source_key": "item:momos/Steamed & Fried Momos/Steamed Paneer Momos",
+      "source_item_name": "Steamed Paneer Momos",
+      "amount_paise": 13900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "7e32d3a2-121e-5bb8-908b-44deb95f4381",
+      "source_key": "item:momos/Steamed & Fried Momos/Fried Veg Momos",
+      "source_item_name": "Fried Veg Momos",
+      "amount_paise": 12900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "8d4742bc-e485-52c3-82c6-69c984c83456",
+      "source_key": "item:momos/Steamed & Fried Momos/Fried Paneer Momos",
+      "source_item_name": "Fried Paneer Momos",
+      "amount_paise": 14900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "62ce58b8-a00d-57bb-8d0f-adf04d2f576f",
+      "source_key": "item:momos/Signature Momos/Dynamite Red Veg Momos",
+      "source_item_name": "Dynamite Red Veg Momos",
+      "amount_paise": 15900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "5feaaf44-d17e-5ccb-a29e-1a7aa1e9232e",
+      "source_key": "item:momos/Signature Momos/Dynamite Red Paneer Momos",
+      "source_item_name": "Dynamite Red Paneer Momos",
+      "amount_paise": 18900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "0d0e51dd-b101-503a-8ac1-6535f547eccd",
+      "source_key": "item:momos/Signature Momos/Gangnam Glaze Veg Momos",
+      "source_item_name": "Gangnam Glaze Veg Momos",
+      "amount_paise": 15900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "3ea1766f-42d8-5f78-9d5a-e1b74b575caa",
+      "source_key": "item:momos/Signature Momos/Gangnam Glaze Paneer Momos",
+      "source_item_name": "Gangnam Glaze Paneer Momos",
+      "amount_paise": 18900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "63a4e4c9-04ae-55ad-9851-cc3405fe14f1",
+      "source_key": "item:momos/Signature Momos/Seoul Masala Veg Momos",
+      "source_item_name": "Seoul Masala Veg Momos",
+      "amount_paise": 14900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "538dea1b-4e4f-55f2-881b-48b79a280f95",
+      "source_key": "item:momos/Signature Momos/Seoul Masala Paneer Momos",
+      "source_item_name": "Seoul Masala Paneer Momos",
+      "amount_paise": 17900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "e3ff1d77-281a-59ba-b7e8-4d5d8e1dff83",
+      "source_key": "item:burger/Burgers/Dynamite Red Burger (Veg/Paneer)",
+      "source_item_name": "Dynamite Red Burger (Veg/Paneer)",
+      "amount_paise": 19900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "952e02f0-6c6a-5308-9fc7-2e5783d46e5a",
+      "source_key": "item:burger/Burgers/Gangnam Glaze Burger (Veg/Paneer)",
+      "source_item_name": "Gangnam Glaze Burger (Veg/Paneer)",
+      "amount_paise": 19900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "c23004a7-7292-544b-a4ae-45475e0ec4de",
+      "source_key": "item:burger/Burgers/Pink Velvet Cheesy Burger (Veg/Paneer)",
+      "source_item_name": "Pink Velvet Cheesy Burger (Veg/Paneer)",
+      "amount_paise": 21900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "fb5a518a-bdc2-5652-af6e-b51df27a7d21",
+      "source_key": "item:burger/Burgers/Seoul Masala Burger (Veg/Paneer)",
+      "source_item_name": "Seoul Masala Burger (Veg/Paneer)",
+      "amount_paise": 19900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "1e8b3786-56ca-5161-89e8-b1e25d00c508",
+      "source_key": "item:burger/Burgers/Classic Veg Burger",
+      "source_item_name": "Classic Veg Burger",
+      "amount_paise": 12900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "c2a88544-7cb6-5cff-8515-dec4d1aedae6",
+      "source_key": "item:burger/Burgers/Gangnam Big Stack Burger",
+      "source_item_name": "Gangnam Big Stack Burger",
+      "amount_paise": 24900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "bd1b95b0-e8b0-5398-aefa-22e625f4784e",
+      "source_key": "item:wraps/Wraps/Dynamite Red Wrap (Veg/Paneer)",
+      "source_item_name": "Dynamite Red Wrap (Veg/Paneer)",
+      "amount_paise": 20900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "51f8f9c0-0e15-54e1-b266-78d4c3da3aa7",
+      "source_key": "item:wraps/Wraps/Gangnam Glaze Wrap (Veg/Paneer)",
+      "source_item_name": "Gangnam Glaze Wrap (Veg/Paneer)",
+      "amount_paise": 20900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "a4a3e3ec-5009-557c-834a-e407dc18c477",
+      "source_key": "item:wraps/Wraps/Pink Velvet Wrap (Veg/Paneer)",
+      "source_item_name": "Pink Velvet Wrap (Veg/Paneer)",
+      "amount_paise": 22900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "9a05f612-1cf5-598e-ad69-d9d66c198305",
+      "source_key": "item:wraps/Wraps/Seoul Masala Wrap (Veg/Paneer)",
+      "source_item_name": "Seoul Masala Wrap (Veg/Paneer)",
+      "amount_paise": 20900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "360fdbc3-d00e-54db-8c51-5c8079d1d9c9",
+      "source_key": "item:fries/Fries/The OG Salted Fries",
+      "source_item_name": "The OG Salted Fries",
+      "amount_paise": 10900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "323eaf73-8923-5ce8-837b-482395912344",
+      "source_key": "item:fries/Fries/Dynamite Red Street Fries",
+      "source_item_name": "Dynamite Red Street Fries",
+      "amount_paise": 16900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "d8588d45-159f-5179-8c01-ebc79b55f94f",
+      "source_key": "item:fries/Fries/Gangnam Glaze Loaded Fries",
+      "source_item_name": "Gangnam Glaze Loaded Fries",
+      "amount_paise": 16900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "72ca6ebf-c579-50c2-adfd-7f23a697ac99",
+      "source_key": "item:fries/Fries/Seoul Masala Fusion Fries",
+      "source_item_name": "Seoul Masala Fusion Fries",
+      "amount_paise": 15900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "4b79dbec-3816-5a84-86f7-737800d2a790",
+      "source_key": "item:fries/Fries/Peri Peri Dynamite Fries",
+      "source_item_name": "Peri Peri Dynamite Fries",
+      "amount_paise": 14900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "d577df8f-23ed-579c-9def-c8019c1e7d4a",
+      "source_key": "item:fries/Fries/Pink Velvet Fries",
+      "source_item_name": "Pink Velvet Fries",
+      "amount_paise": 16900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "5dcf620d-92e5-5249-9cfe-a65de87f81ec",
+      "source_key": "item:fries/Bites/Cheesy Potato Bites",
+      "source_item_name": "Cheesy Potato Bites",
+      "amount_paise": 14900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "2b978ab0-9666-572f-ae93-511ee71d26fe",
+      "source_key": "item:fries/Bites/Seoul Golden Hash Browns",
+      "source_item_name": "Seoul Golden Hash Browns",
+      "amount_paise": 8900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "17b7d102-2e1f-5e80-b24f-c3558637ed9e",
+      "source_key": "item:meals-combos/Meals/Classic Veg Burger Meal",
+      "source_item_name": "Classic Veg Burger Meal",
+      "amount_paise": 24900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "94c508ee-e5da-54c4-8bbe-b89d5b22a9cf",
+      "source_key": "item:meals-combos/Meals/Veg Burger Meal",
+      "source_item_name": "Veg Burger Meal",
+      "amount_paise": 24900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "1a11a241-05ac-5f35-8818-b82d15dc7daa",
+      "source_key": "item:meals-combos/Meals/Paneer Burger Meal",
+      "source_item_name": "Paneer Burger Meal",
+      "amount_paise": 32900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "ca5b9602-11d7-54d1-86fd-4eea535746c3",
+      "source_key": "item:meals-combos/Meals/Veg Wrap Meal",
+      "source_item_name": "Veg Wrap Meal",
+      "amount_paise": 25900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "7578066a-385d-5184-b463-87c5f7844eb9",
+      "source_key": "item:meals-combos/Meals/Paneer Wrap Meal",
+      "source_item_name": "Paneer Wrap Meal",
+      "amount_paise": 33900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "69839640-dc69-593c-9fba-a9c4abc81275",
+      "source_key": "item:meals-combos/Combos/Exam Survivor Combo",
+      "source_item_name": "Exam Survivor Combo",
+      "amount_paise": 34900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "639502a9-27ad-5c77-b685-2fe786afcba9",
+      "source_key": "item:corn-dogs-more/Corn Dogs/Classic Corndog",
+      "source_item_name": "Classic Corndog",
+      "amount_paise": 14900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "3fc7e5bf-8b03-5cf9-b3f8-ab1589903a8d",
+      "source_key": "item:corn-dogs-more/Corn Dogs/Dynamite Corndog",
+      "source_item_name": "Dynamite Corndog",
+      "amount_paise": 16900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "6af135d2-5058-538f-91c2-04a5f1b50b9d",
+      "source_key": "item:corn-dogs-more/Rice Bowls/Veggie Rice Bowl",
+      "source_item_name": "Veggie Rice Bowl",
+      "amount_paise": 22900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "9d2e558e-0014-5591-9651-6c6981c2765d",
+      "source_key": "item:corn-dogs-more/Rice Bowls/Paneer Rice Bowl",
+      "source_item_name": "Paneer Rice Bowl",
+      "amount_paise": 28900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "5f76dcab-d6e7-58f1-a4e3-d9c4dcddbe96",
+      "source_key": "item:the-sweet/Sundaes/Boba Bear Signature Ice Cream Sundae",
+      "source_item_name": "Boba Bear Signature Ice Cream Sundae",
+      "amount_paise": 14900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "6aefff62-8716-50fe-8cc3-58b97b23091c",
+      "source_key": "item:the-sweet/Sundaes/Nutella Oreo Crunch Ice Cream Sundae",
+      "source_item_name": "Nutella Oreo Crunch Ice Cream Sundae",
+      "amount_paise": 17900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "9660b306-e224-5280-98d7-5d90e9229b8c",
+      "source_key": "item:the-sweet/Sundaes/Berry Popping Sundae",
+      "source_item_name": "Berry Popping Sundae",
+      "amount_paise": 16900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    },
+    {
+      "variant_id": "35d65b6b-0037-5a33-bd76-0251ea2ad1b1",
+      "source_key": "item:the-sweet/Marshmallows/Choco Cloud Marshmallow Sticks",
+      "source_item_name": "Choco Cloud Marshmallow Sticks",
+      "amount_paise": 9900,
+      "allow_territory_override": false,
+      "allow_organization_override": false,
+      "allow_outlet_override": false
+    }
+  ]
+}

@@ -23,8 +23,8 @@ import { fileURLToPath } from "url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, "..");
 
-// ── Parse lib/menuImages.ts ───────────────────────────────────────────────────
-const src = readFileSync(join(root, "lib/menuImages.ts"), "utf-8");
+// ── Parse src/lib/menuImages.ts ───────────────────────────────────────────────
+const src = readFileSync(join(root, "src/lib/menuImages.ts"), "utf-8");
 
 // Extract   "Item Name": M + "Filename.ext"  pairs
 const mappings = new Map(); // itemName → filename
@@ -33,12 +33,12 @@ for (const [, key, file] of src.matchAll(/"([^"]+)"\s*:\s*M \+ "([^"]+)"/g)) {
 }
 
 if (mappings.size === 0) {
-  console.error("audit-menu-images: no entries found in lib/menuImages.ts — check the regex.");
+  console.error("audit-menu-images: no entries found in src/lib/menuImages.ts — check the regex.");
   process.exit(1);
 }
 
-// ── Parse data/menu.json ──────────────────────────────────────────────────────
-const menuData = JSON.parse(readFileSync(join(root, "data/menu.json"), "utf-8"));
+// ── Parse src/data/menu.json ───────────────────────────────────────────────────
+const menuData = JSON.parse(readFileSync(join(root, "src/data/menu.json"), "utf-8"));
 const menuItems = new Set();
 
 function collectItems(node) {
@@ -120,7 +120,7 @@ const sep = "-".repeat(W);
 console.log();
 console.log("Menu image audit");
 console.log(SEP);
-console.log(`  Menu items (data/menu.json)   : ${menuItems.size}`);
+console.log(`  Menu items (src/data/menu.json) : ${menuItems.size}`);
 console.log(`  Mapped items (menuImages.ts)  : ${mappings.size}`);
 console.log(`  Mapped images present         : ${present.length}`);
 console.log(`  Mapped images missing         : ${missing.length}`);

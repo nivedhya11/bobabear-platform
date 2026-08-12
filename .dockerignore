@@ -1,0 +1,62 @@
+# Docker build context excludes. The Dockerfile copies named files/dirs
+# into each stage rather than doing a broad COPY, so this list exists to
+# keep the build context itself small and secret-free — not as the only
+# line of defense against secrets entering an image layer.
+
+.git
+.github
+node_modules
+.next
+out
+dist-customer-auth
+dist-workforce-auth
+dist-customer-commerce
+coverage
+playwright-report
+test-results
+blob-report
+
+# env files — everything except the committed, secret-free templates.
+.env
+.env.*
+!.env.example
+!.env.test
+!.env.docker.example
+
+# Explicit belt-and-suspenders: these generated/ignored files must never
+# reach the build context even if a future .env.* pattern above is loosened.
+.env.local
+.env.docker.local
+.env.runtime.docker.local
+.env.migration.docker.local
+.env.verify.docker.local
+.env.customer-auth.docker.local
+.env.workforce-auth.docker.local
+.env.customer-commerce.docker.local
+
+# figma-sync reference screenshots — large, not needed for the app image.
+figma-sync/*.png
+*.log
+
+# IDE / OS metadata
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+
+# Docker itself
+Dockerfile
+.dockerignore
+compose.yaml
+
+# Non-repo reference/wireframe assets and root-level design images — not
+# used by the build, no reason to ship them into the build context. Anchored
+# to the context root (leading "/") so this does NOT also match the real
+# application assets under public/assets/**.
+Boba Bear Landing Page Wireframe Updated
+Boba_Bear_Design_System_Updated
+/*.png
+/*.jpeg
+/*.jpg
+Updated_BOBA BEAR_ DESIGN SYSTEM (V1.1).md
+boba-bear-design-system.md

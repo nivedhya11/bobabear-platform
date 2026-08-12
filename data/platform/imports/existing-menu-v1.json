@@ -1,0 +1,2049 @@
+{
+  "import_id": "existing-menu-v1",
+  "version": 1,
+  "source_inventory_sha256": "0a263d9e514d1d5c05bba7de421812c9a197f85a004c0bdb1ed171712abddaa4",
+  "brand": {
+    "id": "56ff7724-d511-5ef4-b5d5-d629cbfb2388",
+    "code": "boba-bear",
+    "name": "BOBA Bear"
+  },
+  "menu": {
+    "id": "c3d715ce-76f7-585e-bdf1-db43bb132481",
+    "code": "primary",
+    "name": "Primary Menu"
+  },
+  "sections": [
+    {
+      "id": "136c0f61-ff49-52c6-99df-f2f316b0fb99",
+      "code": "the-bar",
+      "name": "The Bar",
+      "description": null,
+      "parent_section_id": null,
+      "position": 0,
+      "source_key": "category:the-bar"
+    },
+    {
+      "id": "44b44236-96d2-5ce5-a7c6-b67f48cd1a74",
+      "code": "ramyum",
+      "name": "Ramyum",
+      "description": null,
+      "parent_section_id": null,
+      "position": 1,
+      "source_key": "category:ramyum"
+    },
+    {
+      "id": "d6170d5f-957a-56ce-a492-0a6cbf9a8efb",
+      "code": "momos",
+      "name": "Momos",
+      "description": null,
+      "parent_section_id": null,
+      "position": 2,
+      "source_key": "category:momos"
+    },
+    {
+      "id": "5e99bcd9-da0e-5d05-825f-ba0d781219d9",
+      "code": "burger",
+      "name": "Burger",
+      "description": null,
+      "parent_section_id": null,
+      "position": 3,
+      "source_key": "category:burger"
+    },
+    {
+      "id": "e09afe7b-18f8-5060-b568-d1c0400e8ca9",
+      "code": "wraps",
+      "name": "Wraps",
+      "description": null,
+      "parent_section_id": null,
+      "position": 4,
+      "source_key": "category:wraps"
+    },
+    {
+      "id": "69dbe21e-f4b6-5a80-8d8b-59d925324242",
+      "code": "fries",
+      "name": "Fries",
+      "description": null,
+      "parent_section_id": null,
+      "position": 5,
+      "source_key": "category:fries"
+    },
+    {
+      "id": "f18bf2a6-3160-54e8-bcf9-01b5ce48cba8",
+      "code": "meals-combos",
+      "name": "Meals & Combos",
+      "description": null,
+      "parent_section_id": null,
+      "position": 6,
+      "source_key": "category:meals-combos"
+    },
+    {
+      "id": "61180bd9-9c09-5c63-9143-5e6116299c21",
+      "code": "corn-dogs-more",
+      "name": "Corn Dogs & More",
+      "description": null,
+      "parent_section_id": null,
+      "position": 7,
+      "source_key": "category:corn-dogs-more"
+    },
+    {
+      "id": "3d326e70-98cf-51b6-80aa-64aff2f5c3c0",
+      "code": "the-sweet",
+      "name": "The Sweet",
+      "description": null,
+      "parent_section_id": null,
+      "position": 8,
+      "source_key": "category:the-sweet"
+    },
+    {
+      "id": "83f66c27-c46a-51a1-b00d-772def7394aa",
+      "code": "the-bar__signature-boba",
+      "name": "Signature Boba",
+      "description": null,
+      "parent_section_id": "136c0f61-ff49-52c6-99df-f2f316b0fb99",
+      "position": 0,
+      "source_key": "subcategory:the-bar/Signature Boba"
+    },
+    {
+      "id": "ca366c82-0dbc-5e45-aff8-2710b8e128bd",
+      "code": "the-bar__matcha-studio",
+      "name": "Matcha Studio",
+      "description": null,
+      "parent_section_id": "136c0f61-ff49-52c6-99df-f2f316b0fb99",
+      "position": 1,
+      "source_key": "subcategory:the-bar/Matcha Studio"
+    },
+    {
+      "id": "28474525-3e05-5e95-8ba3-aaa35152aedb",
+      "code": "the-bar__iced-coffees",
+      "name": "Iced Coffees",
+      "description": null,
+      "parent_section_id": "136c0f61-ff49-52c6-99df-f2f316b0fb99",
+      "position": 2,
+      "source_key": "subcategory:the-bar/Iced Coffees"
+    },
+    {
+      "id": "7b5b0a84-234c-5af6-bb23-d3b0716958fc",
+      "code": "the-bar__iced-teas",
+      "name": "Iced Teas",
+      "description": null,
+      "parent_section_id": "136c0f61-ff49-52c6-99df-f2f316b0fb99",
+      "position": 3,
+      "source_key": "subcategory:the-bar/Iced Teas"
+    },
+    {
+      "id": "b0bdff3a-75bd-5181-abf8-8b27890b298c",
+      "code": "the-bar__refreshers",
+      "name": "Refreshers",
+      "description": null,
+      "parent_section_id": "136c0f61-ff49-52c6-99df-f2f316b0fb99",
+      "position": 4,
+      "source_key": "subcategory:the-bar/Refreshers"
+    },
+    {
+      "id": "d9657851-290c-50e9-a851-a26e8bb413b9",
+      "code": "ramyum__ramyum",
+      "name": "Ramyum",
+      "description": null,
+      "parent_section_id": "44b44236-96d2-5ce5-a7c6-b67f48cd1a74",
+      "position": 0,
+      "source_key": "subcategory:ramyum/Ramyum"
+    },
+    {
+      "id": "974e7b2b-0fe7-574f-b9ca-c63095f42716",
+      "code": "momos__steamed-fried-momos",
+      "name": "Steamed & Fried Momos",
+      "description": null,
+      "parent_section_id": "d6170d5f-957a-56ce-a492-0a6cbf9a8efb",
+      "position": 0,
+      "source_key": "subcategory:momos/Steamed & Fried Momos"
+    },
+    {
+      "id": "5ced7cff-a4b5-5a5b-892d-e916e51a1dfc",
+      "code": "momos__signature-momos",
+      "name": "Signature Momos",
+      "description": null,
+      "parent_section_id": "d6170d5f-957a-56ce-a492-0a6cbf9a8efb",
+      "position": 1,
+      "source_key": "subcategory:momos/Signature Momos"
+    },
+    {
+      "id": "c98a4991-628c-50b7-81dc-0691fba19f88",
+      "code": "burger__burgers",
+      "name": "Burgers",
+      "description": null,
+      "parent_section_id": "5e99bcd9-da0e-5d05-825f-ba0d781219d9",
+      "position": 0,
+      "source_key": "subcategory:burger/Burgers"
+    },
+    {
+      "id": "6ad576d1-6363-54ce-9b42-1f18becc12b1",
+      "code": "wraps__wraps",
+      "name": "Wraps",
+      "description": null,
+      "parent_section_id": "e09afe7b-18f8-5060-b568-d1c0400e8ca9",
+      "position": 0,
+      "source_key": "subcategory:wraps/Wraps"
+    },
+    {
+      "id": "8a554e8b-ac8f-5ea4-8599-f45c37a38e49",
+      "code": "fries__fries",
+      "name": "Fries",
+      "description": null,
+      "parent_section_id": "69dbe21e-f4b6-5a80-8d8b-59d925324242",
+      "position": 0,
+      "source_key": "subcategory:fries/Fries"
+    },
+    {
+      "id": "b64cbe81-ac98-5a83-8a8a-3604132c86a2",
+      "code": "fries__bites",
+      "name": "Bites",
+      "description": null,
+      "parent_section_id": "69dbe21e-f4b6-5a80-8d8b-59d925324242",
+      "position": 1,
+      "source_key": "subcategory:fries/Bites"
+    },
+    {
+      "id": "f6d44f12-e25f-5bee-b9dd-0b97c557b814",
+      "code": "meals-combos__meals",
+      "name": "Meals",
+      "description": null,
+      "parent_section_id": "f18bf2a6-3160-54e8-bcf9-01b5ce48cba8",
+      "position": 0,
+      "source_key": "subcategory:meals-combos/Meals"
+    },
+    {
+      "id": "7c75ccc7-e7d6-5b3f-aa0d-2aa201eae887",
+      "code": "meals-combos__combos",
+      "name": "Combos",
+      "description": null,
+      "parent_section_id": "f18bf2a6-3160-54e8-bcf9-01b5ce48cba8",
+      "position": 1,
+      "source_key": "subcategory:meals-combos/Combos"
+    },
+    {
+      "id": "d1817494-f533-5460-a425-c4aa7a5688e9",
+      "code": "corn-dogs-more__corn-dogs",
+      "name": "Corn Dogs",
+      "description": null,
+      "parent_section_id": "61180bd9-9c09-5c63-9143-5e6116299c21",
+      "position": 0,
+      "source_key": "subcategory:corn-dogs-more/Corn Dogs"
+    },
+    {
+      "id": "cb12ef86-cde9-5579-bc54-63e9677204a1",
+      "code": "corn-dogs-more__rice-bowls",
+      "name": "Rice Bowls",
+      "description": null,
+      "parent_section_id": "61180bd9-9c09-5c63-9143-5e6116299c21",
+      "position": 1,
+      "source_key": "subcategory:corn-dogs-more/Rice Bowls"
+    },
+    {
+      "id": "6fed57a5-bc51-5a6c-86f4-de89bf9c6bd7",
+      "code": "the-sweet__sundaes",
+      "name": "Sundaes",
+      "description": null,
+      "parent_section_id": "3d326e70-98cf-51b6-80aa-64aff2f5c3c0",
+      "position": 0,
+      "source_key": "subcategory:the-sweet/Sundaes"
+    },
+    {
+      "id": "206797fa-af1f-5d39-a909-ca5998152d7e",
+      "code": "the-sweet__marshmallows",
+      "name": "Marshmallows",
+      "description": null,
+      "parent_section_id": "3d326e70-98cf-51b6-80aa-64aff2f5c3c0",
+      "position": 1,
+      "source_key": "subcategory:the-sweet/Marshmallows"
+    }
+  ],
+  "products": [
+    {
+      "id": "17811221-4e12-5b70-a0ad-8a4fc5c54523",
+      "code": "gangnam-style-iced-coffee-boba",
+      "name": "Gangnam Style Iced Coffee Boba",
+      "description": "Creamy iced coffee with chewy boba and chocolate-lined cup walls.",
+      "product_kind": "standard",
+      "source_key": "item:the-bar/Signature Boba/Gangnam Style Iced Coffee Boba",
+      "variant": {
+        "id": "259afe35-0ccb-5cf1-a68c-3ae07a127e03",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "2be44ab8-0da6-5143-85b5-4f82c42b935a",
+      "code": "purple-rain-taro-boba",
+      "name": "Purple Rain Taro Boba",
+      "description": "Creamy taro boba with a rich purple blend and chewy tapioca pearls.",
+      "product_kind": "standard",
+      "source_key": "item:the-bar/Signature Boba/Purple Rain Taro Boba",
+      "variant": {
+        "id": "63ab5434-72f4-5521-862d-b34b3407695a",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "74372353-20e1-5a5c-8ed0-8764c1b8c191",
+      "code": "zen-master-matcha-boba",
+      "name": "Zen Master Matcha Boba",
+      "description": "Premium matcha blended with milk, dark chocolate, and chewy boba.",
+      "product_kind": "standard",
+      "source_key": "item:the-bar/Signature Boba/Zen Master Matcha Boba",
+      "variant": {
+        "id": "1a403dd2-8fec-5d19-b764-7eda47167f2b",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "64530ae2-695c-5fca-b173-e36ebb13119d",
+      "code": "hong-kong-milk-tea-boba",
+      "name": "Hong Kong Milk Tea Boba",
+      "description": "Bold black milk tea with caramel stripes and chewy tapioca pearls.",
+      "product_kind": "standard",
+      "source_key": "item:the-bar/Signature Boba/Hong Kong Milk Tea Boba",
+      "variant": {
+        "id": "afbe2d74-0604-5645-9764-fcd74e4abc70",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "78228ebf-c309-5374-8873-68db2d835e6f",
+      "code": "bangkok-thai-tea-boba",
+      "name": "Bangkok Thai Tea Boba",
+      "description": "Creamy Thai tea with spiced sweetness and chewy tapioca pearls.",
+      "product_kind": "standard",
+      "source_key": "item:the-bar/Signature Boba/Bangkok Thai Tea Boba",
+      "variant": {
+        "id": "2c660df4-24c1-57d3-b5e8-868374840436",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "b30d316e-fa7a-5b3b-92e4-2297ded2b93a",
+      "code": "dirty-cheesecake-boba",
+      "name": "Dirty Cheesecake Boba",
+      "description": "Cheesecake-inspired boba with butterscotch notes and a creamy finish.",
+      "product_kind": "standard",
+      "source_key": "item:the-bar/Signature Boba/Dirty Cheesecake Boba",
+      "variant": {
+        "id": "b3a9226a-e3aa-58bb-aa1f-ffae97c94d63",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "6729cf7f-2217-53b8-bb39-7d9217971d1f",
+      "code": "pink-velvet-cotton-candy-boba",
+      "name": "Pink Velvet Cotton Candy Boba",
+      "description": "Pink velvet milk drink with cotton-candy sweetness and chewy boba.",
+      "product_kind": "standard",
+      "source_key": "item:the-bar/Signature Boba/Pink Velvet Cotton Candy Boba",
+      "variant": {
+        "id": "ca4b02bf-9dd2-545b-bbfd-2687c4059ec0",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "489e83c8-6d4b-5dfc-8cc9-c6ac6c7259ea",
+      "code": "purple-rain-layered-matcha",
+      "name": "Purple Rain Layered Matcha",
+      "description": "Layered taro, milk, and matcha with a smooth finish and bold contrast.",
+      "product_kind": "standard",
+      "source_key": "item:the-bar/Matcha Studio/Purple Rain Layered Matcha",
+      "variant": {
+        "id": "1cdc53d3-2f03-583c-8916-172df5e0fa48",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "23ad16fd-ad04-54f8-8921-4f06962cbb6e",
+      "code": "wild-berry-dirty-matcha",
+      "name": "Wild Berry Dirty Matcha",
+      "description": "Berry, milk, and matcha layered into a clean, balanced iced drink.",
+      "product_kind": "standard",
+      "source_key": "item:the-bar/Matcha Studio/Wild Berry Dirty Matcha",
+      "variant": {
+        "id": "1616dd97-fc77-54c0-a8d5-c2ad34cd4ab3",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "f09782c1-4faf-5280-a074-5d2ab0b905fb",
+      "code": "mango-matcha-boba",
+      "name": "Mango Matcha Boba",
+      "description": "Premium matcha layered with ripe mango, milk, and chewy boba.",
+      "product_kind": "standard",
+      "source_key": "item:the-bar/Matcha Studio/Mango Matcha Boba",
+      "variant": {
+        "id": "321162f9-9955-5281-82e8-2c87cc9788e5",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "1a462454-94e4-51e1-bf90-0427060b6e3f",
+      "code": "strawberry-matcha-boba",
+      "name": "Strawberry Matcha Boba",
+      "description": "Premium matcha layered with sweet strawberry, milk, and chewy boba.",
+      "product_kind": "standard",
+      "source_key": "item:the-bar/Matcha Studio/Strawberry Matcha Boba",
+      "variant": {
+        "id": "42885b2e-96cc-5d68-b03c-d86a47bc0db5",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "6984aab7-b677-5679-bc98-e9a890443041",
+      "code": "hazelnut-iced-coffee-boba",
+      "name": "Hazelnut Iced Coffee Boba",
+      "description": "Hazelnut iced coffee layered with milk and chewy boba.",
+      "product_kind": "standard",
+      "source_key": "item:the-bar/Iced Coffees/Hazelnut Iced Coffee Boba",
+      "variant": {
+        "id": "05a00851-acfc-5830-b9e1-3eb37d9d38fa",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "c60cd823-1913-54ef-9415-9a6729cb781a",
+      "code": "butterscotch-caramel-iced-coffee-boba",
+      "name": "Butterscotch Caramel Iced Coffee Boba",
+      "description": "Iced coffee layered with butterscotch, caramel milk, and chewy boba.",
+      "product_kind": "standard",
+      "source_key": "item:the-bar/Iced Coffees/Butterscotch Caramel Iced Coffee Boba",
+      "variant": {
+        "id": "3e1c1114-622f-52df-8327-460838db5e75",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "9c91c757-80f5-50aa-b5e9-9f9721b1e824",
+      "code": "seoul-tiramisu-iced-coffee-boba",
+      "name": "Seoul Tiramisu Iced Coffee Boba",
+      "description": "Tiramisu-style iced coffee with milk, cocoa notes, and chewy boba.",
+      "product_kind": "standard",
+      "source_key": "item:the-bar/Iced Coffees/Seoul Tiramisu Iced Coffee Boba",
+      "variant": {
+        "id": "425895d7-4946-5ebf-ba22-404703848d16",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "b5cc42c8-1841-5fb4-a0e0-ac247637fa46",
+      "code": "k-cinema-popcorn-coffee-boba",
+      "name": "K-Cinema Popcorn Coffee Boba",
+      "description": "Buttered-popcorn iced coffee with milk and chewy boba.",
+      "product_kind": "standard",
+      "source_key": "item:the-bar/Iced Coffees/K-Cinema Popcorn Coffee Boba",
+      "variant": {
+        "id": "0b8b7550-6697-548c-bfb1-92b22c06041b",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "9c4bdbe4-e4e8-54b6-b9ec-42841fb21b7e",
+      "code": "filter-roast-cold-coffee-boba",
+      "name": "Filter Roast Cold Coffee Boba",
+      "description": "South Indian filter-roast cold coffee layered with milk and chewy boba.",
+      "product_kind": "standard",
+      "source_key": "item:the-bar/Iced Coffees/Filter Roast Cold Coffee Boba",
+      "variant": {
+        "id": "b8392121-25e8-599b-89f7-34e55922ca5c",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "40c68b67-994f-5989-a16b-044e88a58339",
+      "code": "kala-khatta-iced-tea",
+      "name": "Kala Khatta Iced Tea",
+      "description": "Kala khatta iced tea with popping boba and a tangy summer finish.",
+      "product_kind": "standard",
+      "source_key": "item:the-bar/Iced Teas/Kala Khatta Iced Tea",
+      "variant": {
+        "id": "1a4e8bd3-926b-5404-a777-e85a01535e30",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "a13588f7-0e86-51aa-bb23-7f968040b3c3",
+      "code": "green-apple-black-iced-tea",
+      "name": "Green Apple Black Iced Tea",
+      "description": "Crisp green apple black iced tea with a tart, refreshing finish.",
+      "product_kind": "standard",
+      "source_key": "item:the-bar/Iced Teas/Green Apple Black Iced Tea",
+      "variant": {
+        "id": "252f2ca5-ea7f-52da-85af-e7a4f6c291c0",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "22a6f5d2-5a86-516f-bb78-0b2f4cf411b5",
+      "code": "strawberry-black-iced-tea",
+      "name": "Strawberry Black Iced Tea",
+      "description": "Black iced tea steeped with ripe strawberry sweetness.",
+      "product_kind": "standard",
+      "source_key": "item:the-bar/Iced Teas/Strawberry Black Iced Tea",
+      "variant": {
+        "id": "fa176128-0998-5370-adcb-073d4175f4a0",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "f1ccb77a-dab8-510a-a9a8-a07c1c734cb3",
+      "code": "seoul-peach-black-iced-tea",
+      "name": "Seoul Peach Black Iced Tea",
+      "description": "Black iced tea with juicy peach and a smooth, light finish.",
+      "product_kind": "standard",
+      "source_key": "item:the-bar/Iced Teas/Seoul Peach Black Iced Tea",
+      "variant": {
+        "id": "d00cdbd5-55e5-5b96-ba62-3b1d69e2d37e",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "320c3c8a-76cc-52ba-8cec-951a1b987194",
+      "code": "seoul-mango-peach-iced-tea",
+      "name": "Seoul Mango Peach Iced Tea",
+      "description": "Mango and peach iced tea with a bright, fruity tropical note.",
+      "product_kind": "standard",
+      "source_key": "item:the-bar/Iced Teas/Seoul Mango Peach Iced Tea",
+      "variant": {
+        "id": "846b668d-880f-56c6-98dd-96257022ccae",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "2b184fe6-28f3-56ef-b781-440f5b3312d0",
+      "code": "lychee-iced-tea",
+      "name": "Lychee Iced Tea",
+      "description": "Floral lychee iced tea with a delicate, fragrant sweetness.",
+      "product_kind": "standard",
+      "source_key": "item:the-bar/Iced Teas/Lychee Iced Tea",
+      "variant": {
+        "id": "c4a92b24-13d2-52ca-9849-7d576f82b539",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "b7b6f8f0-71a6-5501-ac9b-436adaae11cd",
+      "code": "watermelon-iced-tea",
+      "name": "Watermelon Iced Tea",
+      "description": "Light watermelon iced tea with a clean, juicy summer finish.",
+      "product_kind": "standard",
+      "source_key": "item:the-bar/Iced Teas/Watermelon Iced Tea",
+      "variant": {
+        "id": "ccf7fa28-33f3-54b2-b72b-63c3afb348e4",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "9619b839-85f9-55e6-a402-0fc08e0acd81",
+      "code": "hibiscus-ginger-mint-iced-tea",
+      "name": "Hibiscus Ginger Mint Iced Tea",
+      "description": "Tart hibiscus iced tea with warm ginger and a cool mint lift.",
+      "product_kind": "standard",
+      "source_key": "item:the-bar/Iced Teas/Hibiscus Ginger Mint Iced Tea",
+      "variant": {
+        "id": "13ef59f1-a8fb-5060-8995-624f23b58d91",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "6af2834b-3637-5db1-a53a-ed680f69f49b",
+      "code": "lime-black-tea-boba",
+      "name": "Lime Black Tea Boba",
+      "description": "Zesty lime black tea with chewy boba and a crisp citrus edge.",
+      "product_kind": "standard",
+      "source_key": "item:the-bar/Iced Teas/Lime Black Tea Boba",
+      "variant": {
+        "id": "d370e020-36c9-53f8-bd17-74d50e8bc811",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "7280617e-2d3f-5233-bd58-54e6801a6e7f",
+      "code": "jiji-mint-mojito",
+      "name": "Jiji Mint Mojito",
+      "description": "A minty, fizz-free refresher with popping boba and a clean citrus finish.",
+      "product_kind": "standard",
+      "source_key": "item:the-bar/Refreshers/Jiji Mint Mojito",
+      "variant": {
+        "id": "857ca844-395c-5125-8aa1-515debf48d6e",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "e0a72d29-c437-5cb2-baf3-77327df4b85b",
+      "code": "electric-blue-lime-refresher",
+      "name": "Electric Blue Lime Refresher",
+      "description": "Electric blue lime refresher with popping boba and a zesty kick.",
+      "product_kind": "standard",
+      "source_key": "item:the-bar/Refreshers/Electric Blue Lime Refresher",
+      "variant": {
+        "id": "a315f5f0-c517-535e-993d-7219a4fdfbcb",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "d3274a17-0045-5be1-b613-38e8bae00d14",
+      "code": "magic-galaxy-refresher-drink",
+      "name": "Magic Galaxy Refresher Drink",
+      "description": "Colour-shifting butterfly-pea refresher with lime and popping boba.",
+      "product_kind": "standard",
+      "source_key": "item:the-bar/Refreshers/Magic Galaxy Refresher Drink",
+      "variant": {
+        "id": "f7693341-6a7a-5553-9302-e9f062c8de56",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "0d1fc75b-42d2-50f5-9b51-723c031ef0bb",
+      "code": "viral-spicy-carbonara-ramyun-noodles",
+      "name": "Viral Spicy Carbonara Ramyun Noodles",
+      "description": "Creamy, spicy dry-stir ramyun finished with sesame and spring onion.",
+      "product_kind": "standard",
+      "source_key": "item:ramyum/Ramyum/Viral Spicy Carbonara Ramyun Noodles",
+      "variant": {
+        "id": "19b35b3c-ad11-5a2d-95cd-9ab1a3e273a0",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "80ba6c3e-5511-5016-9084-0ed9bd89a63d",
+      "code": "cheesy-ramyum",
+      "name": "Cheesy Ramyum",
+      "description": "Dry-stir ramyun with a creamy cheese finish and savoury heat.",
+      "product_kind": "standard",
+      "source_key": "item:ramyum/Ramyum/Cheesy Ramyum",
+      "variant": {
+        "id": "891d980a-042e-5dbd-b185-5e2ca8606fe3",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "cc001006-d817-5476-ab9b-62c10089c23a",
+      "code": "volcanic-fire-spicy-ramyun-noodles",
+      "name": "Volcanic Fire Spicy Ramyun Noodles",
+      "description": "Extra spicy dry-stir ramyun with sesame, spring onion, and seaweed.",
+      "product_kind": "standard",
+      "source_key": "item:ramyum/Ramyum/Volcanic Fire Spicy Ramyun Noodles",
+      "variant": {
+        "id": "13debdec-96b6-5fe9-bf59-cb110451d945",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "73d16305-3a13-57ef-a77b-2b0fc377394f",
+      "code": "tangy-kimchi-ramyun-noodles",
+      "name": "Tangy Kimchi Ramyun Noodles",
+      "description": "Dry-stir ramyun with a tangy kimchi kick and a savoury finish.",
+      "product_kind": "standard",
+      "source_key": "item:ramyum/Ramyum/Tangy Kimchi Ramyun Noodles",
+      "variant": {
+        "id": "2acf87f8-fbbd-576c-8a9a-e12320962ce7",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "05991a6b-b328-54ea-b99f-558cc454de80",
+      "code": "steamed-veg-momos",
+      "name": "Steamed Veg Momos",
+      "description": "Soft steamed veg momos served with spicy dip.",
+      "product_kind": "standard",
+      "source_key": "item:momos/Steamed & Fried Momos/Steamed Veg Momos",
+      "variant": {
+        "id": "b9693e6b-6b17-5473-a378-e4a2584dcf37",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "752c5476-f1d2-57b0-9f76-0d596a381e07",
+      "code": "steamed-paneer-momos",
+      "name": "Steamed Paneer Momos",
+      "description": "Steamed paneer momos with a soft filling and spicy dip.",
+      "product_kind": "standard",
+      "source_key": "item:momos/Steamed & Fried Momos/Steamed Paneer Momos",
+      "variant": {
+        "id": "2c7c7b56-2a77-5514-9ab0-d4f56b2ae2c6",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "c9c7fe5c-0401-5025-88eb-742aca88915b",
+      "code": "fried-veg-momos",
+      "name": "Fried Veg Momos",
+      "description": "Crisp fried veg momos served with spicy dip.",
+      "product_kind": "standard",
+      "source_key": "item:momos/Steamed & Fried Momos/Fried Veg Momos",
+      "variant": {
+        "id": "7e32d3a2-121e-5bb8-908b-44deb95f4381",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "8742b1d7-c3e1-5bbd-ab9b-13c9ea64be03",
+      "code": "fried-paneer-momos",
+      "name": "Fried Paneer Momos",
+      "description": "Crisp fried paneer momos served with spicy dip.",
+      "product_kind": "standard",
+      "source_key": "item:momos/Steamed & Fried Momos/Fried Paneer Momos",
+      "variant": {
+        "id": "8d4742bc-e485-52c3-82c6-69c984c83456",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "343efc62-ba3a-5e71-af05-0c84323dfdfc",
+      "code": "dynamite-red-veg-momos",
+      "name": "Dynamite Red Veg Momos",
+      "description": "Fried veg momos tossed in spicy Dynamite Red sauce.",
+      "product_kind": "standard",
+      "source_key": "item:momos/Signature Momos/Dynamite Red Veg Momos",
+      "variant": {
+        "id": "62ce58b8-a00d-57bb-8d0f-adf04d2f576f",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "bb2b6f8e-a955-5f0c-aac4-914cf62a6667",
+      "code": "dynamite-red-paneer-momos",
+      "name": "Dynamite Red Paneer Momos",
+      "description": "Fried paneer momos tossed in spicy Dynamite Red sauce.",
+      "product_kind": "standard",
+      "source_key": "item:momos/Signature Momos/Dynamite Red Paneer Momos",
+      "variant": {
+        "id": "5feaaf44-d17e-5ccb-a29e-1a7aa1e9232e",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "4e2fab9d-b852-545b-8159-a684b89911fa",
+      "code": "gangnam-glaze-veg-momos",
+      "name": "Gangnam Glaze Veg Momos",
+      "description": "Fried veg momos glazed in sweet-savoury Gangnam sauce.",
+      "product_kind": "standard",
+      "source_key": "item:momos/Signature Momos/Gangnam Glaze Veg Momos",
+      "variant": {
+        "id": "0d0e51dd-b101-503a-8ac1-6535f547eccd",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "120a994f-84d1-5586-bde6-57aaff1b5f71",
+      "code": "gangnam-glaze-paneer-momos",
+      "name": "Gangnam Glaze Paneer Momos",
+      "description": "Fried paneer momos glazed in sweet-savoury Gangnam sauce.",
+      "product_kind": "standard",
+      "source_key": "item:momos/Signature Momos/Gangnam Glaze Paneer Momos",
+      "variant": {
+        "id": "3ea1766f-42d8-5f78-9d5a-e1b74b575caa",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "a6f71216-d770-56fd-bde4-74cb7e3f3cac",
+      "code": "seoul-masala-veg-momos",
+      "name": "Seoul Masala Veg Momos",
+      "description": "Veg momos tossed in smoky Seoul Masala sauce.",
+      "product_kind": "standard",
+      "source_key": "item:momos/Signature Momos/Seoul Masala Veg Momos",
+      "variant": {
+        "id": "63a4e4c9-04ae-55ad-9851-cc3405fe14f1",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "dd7d294f-307a-50b8-8e24-0875eaca6238",
+      "code": "seoul-masala-paneer-momos",
+      "name": "Seoul Masala Paneer Momos",
+      "description": "Paneer momos tossed in smoky Seoul Masala sauce.",
+      "product_kind": "standard",
+      "source_key": "item:momos/Signature Momos/Seoul Masala Paneer Momos",
+      "variant": {
+        "id": "538dea1b-4e4f-55f2-881b-48b79a280f95",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "1509d441-fda9-58d9-b91f-afa21c47bc7f",
+      "code": "dynamite-red-burger-veg-paneer",
+      "name": "Dynamite Red Burger (Veg/Paneer)",
+      "description": "Crispy burger with spicy Dynamite Red sauce, lettuce, and mayo.",
+      "product_kind": "standard",
+      "source_key": "item:burger/Burgers/Dynamite Red Burger (Veg/Paneer)",
+      "variant": {
+        "id": "e3ff1d77-281a-59ba-b7e8-4d5d8e1dff83",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "d94ca78d-9d36-5da7-9bc5-3e717a56ffab",
+      "code": "gangnam-glaze-burger-veg-paneer",
+      "name": "Gangnam Glaze Burger (Veg/Paneer)",
+      "description": "Crispy burger with Gangnam glaze, fried onions, and savoury mayo.",
+      "product_kind": "standard",
+      "source_key": "item:burger/Burgers/Gangnam Glaze Burger (Veg/Paneer)",
+      "variant": {
+        "id": "952e02f0-6c6a-5308-9fc7-2e5783d46e5a",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "4218f2ad-1649-5f03-b208-949617e1fcaf",
+      "code": "pink-velvet-cheesy-burger-veg-paneer",
+      "name": "Pink Velvet Cheesy Burger (Veg/Paneer)",
+      "description": "Cheesy burger in a pink velvet bun with a creamy melt.",
+      "product_kind": "standard",
+      "source_key": "item:burger/Burgers/Pink Velvet Cheesy Burger (Veg/Paneer)",
+      "variant": {
+        "id": "c23004a7-7292-544b-a4ae-45475e0ec4de",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "1d196540-f545-5d1d-8e97-9824395a975d",
+      "code": "seoul-masala-burger-veg-paneer",
+      "name": "Seoul Masala Burger (Veg/Paneer)",
+      "description": "Crispy burger with smoky Seoul Masala sauce, onion, and mint mayo.",
+      "product_kind": "standard",
+      "source_key": "item:burger/Burgers/Seoul Masala Burger (Veg/Paneer)",
+      "variant": {
+        "id": "fb5a518a-bdc2-5652-af6e-b51df27a7d21",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "89be42b8-e062-5726-b94a-a5d1abc6ba48",
+      "code": "classic-veg-burger",
+      "name": "Classic Veg Burger",
+      "description": "A crispy classic veg patty with lettuce, onion, and creamy mayo.",
+      "product_kind": "standard",
+      "source_key": "item:burger/Burgers/Classic Veg Burger",
+      "variant": {
+        "id": "1e8b3786-56ca-5161-89e8-b1e25d00c508",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "7d0b60d3-3a31-534e-80c5-c63f6dd27d69",
+      "code": "gangnam-big-stack-burger",
+      "name": "Gangnam Big Stack Burger",
+      "description": "A double-stacked burger with Gangnam glaze, melty cheese, and fried onions.",
+      "product_kind": "standard",
+      "source_key": "item:burger/Burgers/Gangnam Big Stack Burger",
+      "variant": {
+        "id": "c2a88544-7cb6-5cff-8515-dec4d1aedae6",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "69a8d2bf-84e5-511f-86a4-c837e93ed506",
+      "code": "dynamite-red-wrap-veg-paneer",
+      "name": "Dynamite Red Wrap (Veg/Paneer)",
+      "description": "Loaded wrap with spicy Dynamite Red sauce, lettuce, and mayo.",
+      "product_kind": "standard",
+      "source_key": "item:wraps/Wraps/Dynamite Red Wrap (Veg/Paneer)",
+      "variant": {
+        "id": "bd1b95b0-e8b0-5398-aefa-22e625f4784e",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "db58f737-b306-5d40-a064-f60e23d9f327",
+      "code": "gangnam-glaze-wrap-veg-paneer",
+      "name": "Gangnam Glaze Wrap (Veg/Paneer)",
+      "description": "Loaded wrap with Gangnam glaze, fried onions, and savoury mayo.",
+      "product_kind": "standard",
+      "source_key": "item:wraps/Wraps/Gangnam Glaze Wrap (Veg/Paneer)",
+      "variant": {
+        "id": "51f8f9c0-0e15-54e1-b266-78d4c3da3aa7",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "9952d345-1a8b-52ad-8283-042d250495fc",
+      "code": "pink-velvet-wrap-veg-paneer",
+      "name": "Pink Velvet Wrap (Veg/Paneer)",
+      "description": "Wrap in a pink velvet tortilla with a creamy, cheesy filling.",
+      "product_kind": "standard",
+      "source_key": "item:wraps/Wraps/Pink Velvet Wrap (Veg/Paneer)",
+      "variant": {
+        "id": "a4a3e3ec-5009-557c-834a-e407dc18c477",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "801239ad-1620-562c-8851-9b937ad99e6f",
+      "code": "seoul-masala-wrap-veg-paneer",
+      "name": "Seoul Masala Wrap (Veg/Paneer)",
+      "description": "Loaded wrap with smoky Seoul Masala sauce, onion, and mint mayo.",
+      "product_kind": "standard",
+      "source_key": "item:wraps/Wraps/Seoul Masala Wrap (Veg/Paneer)",
+      "variant": {
+        "id": "9a05f612-1cf5-598e-ad69-d9d66c198305",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "ea3bb654-5b0d-5b0d-b8a6-c442aed0c87e",
+      "code": "the-og-salted-fries",
+      "name": "The OG Salted Fries",
+      "description": "Crisp thick-cut fries finished with a clean hit of salt.",
+      "product_kind": "standard",
+      "source_key": "item:fries/Fries/The OG Salted Fries",
+      "variant": {
+        "id": "360fdbc3-d00e-54db-8c51-5c8079d1d9c9",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "0657615e-730c-5ff0-8b42-5ad559b793a6",
+      "code": "dynamite-red-street-fries",
+      "name": "Dynamite Red Street Fries",
+      "description": "Fries loaded with spicy Dynamite Red sauce and spring onion.",
+      "product_kind": "standard",
+      "source_key": "item:fries/Fries/Dynamite Red Street Fries",
+      "variant": {
+        "id": "323eaf73-8923-5ce8-837b-482395912344",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "4835c024-70ce-55dc-b0e4-f38cd1b62e89",
+      "code": "gangnam-glaze-loaded-fries",
+      "name": "Gangnam Glaze Loaded Fries",
+      "description": "Fries glazed in sweet-savoury Gangnam sauce with fried onions.",
+      "product_kind": "standard",
+      "source_key": "item:fries/Fries/Gangnam Glaze Loaded Fries",
+      "variant": {
+        "id": "d8588d45-159f-5179-8c01-ebc79b55f94f",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "bb9321a3-7aac-56c0-82d1-b2b5d04539da",
+      "code": "seoul-masala-fusion-fries",
+      "name": "Seoul Masala Fusion Fries",
+      "description": "Fries tossed in smoky Seoul Masala spice with onion and mint mayo.",
+      "product_kind": "standard",
+      "source_key": "item:fries/Fries/Seoul Masala Fusion Fries",
+      "variant": {
+        "id": "72ca6ebf-c579-50c2-adfd-7f23a697ac99",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "35065e67-c61e-56b5-9b9d-9a143e142109",
+      "code": "peri-peri-dynamite-fries",
+      "name": "Peri Peri Dynamite Fries",
+      "description": "Crisp fries dusted in fiery peri peri dynamite seasoning.",
+      "product_kind": "standard",
+      "source_key": "item:fries/Fries/Peri Peri Dynamite Fries",
+      "variant": {
+        "id": "4b79dbec-3816-5a84-86f7-737800d2a790",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "91972ddd-2a2a-53cc-be65-f0894366f44b",
+      "code": "pink-velvet-fries",
+      "name": "Pink Velvet Fries",
+      "description": "Vibrant pink velvet fries with a sweet-savoury house dust.",
+      "product_kind": "standard",
+      "source_key": "item:fries/Fries/Pink Velvet Fries",
+      "variant": {
+        "id": "d577df8f-23ed-579c-9def-c8019c1e7d4a",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "15869157-6e4d-55e4-bf3c-17c3fe9aba31",
+      "code": "cheesy-potato-bites",
+      "name": "Cheesy Potato Bites",
+      "description": "Crisp potato bites with a soft, melty cheese centre.",
+      "product_kind": "standard",
+      "source_key": "item:fries/Bites/Cheesy Potato Bites",
+      "variant": {
+        "id": "5dcf620d-92e5-5249-9cfe-a65de87f81ec",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "b3c21c63-395e-5846-a741-a060d2474192",
+      "code": "seoul-golden-hash-browns",
+      "name": "Seoul Golden Hash Browns",
+      "description": "Crisp golden hash browns with a soft, fluffy centre.",
+      "product_kind": "standard",
+      "source_key": "item:fries/Bites/Seoul Golden Hash Browns",
+      "variant": {
+        "id": "2b978ab0-9666-572f-ae93-511ee71d26fe",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "37604ad9-a25c-5773-aa73-7f3efb8a7cc8",
+      "code": "classic-veg-burger-meal",
+      "name": "Classic Veg Burger Meal",
+      "description": "A classic veg burger served with fries and a drink.",
+      "product_kind": "standard",
+      "source_key": "item:meals-combos/Meals/Classic Veg Burger Meal",
+      "variant": {
+        "id": "17b7d102-2e1f-5e80-b24f-c3558637ed9e",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "97f8286d-62dd-50e2-9024-472175017fb4",
+      "code": "veg-burger-meal",
+      "name": "Veg Burger Meal",
+      "description": "A veg burger served with fries and a drink.",
+      "product_kind": "standard",
+      "source_key": "item:meals-combos/Meals/Veg Burger Meal",
+      "variant": {
+        "id": "94c508ee-e5da-54c4-8bbe-b89d5b22a9cf",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "535f21e2-1a35-5d04-85bc-c5e14ba33a63",
+      "code": "paneer-burger-meal",
+      "name": "Paneer Burger Meal",
+      "description": "A paneer burger served with fries and a drink.",
+      "product_kind": "standard",
+      "source_key": "item:meals-combos/Meals/Paneer Burger Meal",
+      "variant": {
+        "id": "1a11a241-05ac-5f35-8818-b82d15dc7daa",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "d8b4f93d-3135-5c71-b7f2-4f9079ce33f8",
+      "code": "veg-wrap-meal",
+      "name": "Veg Wrap Meal",
+      "description": "A veg wrap served with fries and a drink.",
+      "product_kind": "standard",
+      "source_key": "item:meals-combos/Meals/Veg Wrap Meal",
+      "variant": {
+        "id": "ca5b9602-11d7-54d1-86fd-4eea535746c3",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "4383937e-fffe-5003-bd3c-456b442fd98d",
+      "code": "paneer-wrap-meal",
+      "name": "Paneer Wrap Meal",
+      "description": "A paneer wrap served with fries and a drink.",
+      "product_kind": "standard",
+      "source_key": "item:meals-combos/Meals/Paneer Wrap Meal",
+      "variant": {
+        "id": "7578066a-385d-5184-b463-87c5f7844eb9",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "676fdd90-89c2-5937-b337-d6e691ed1433",
+      "code": "exam-survivor-combo",
+      "name": "Exam Survivor Combo",
+      "description": "Spicy carbonara ramyun paired with a chilled boba drink.",
+      "product_kind": "standard",
+      "source_key": "item:meals-combos/Combos/Exam Survivor Combo",
+      "variant": {
+        "id": "69839640-dc69-593c-9fba-a9c4abc81275",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "99d992a8-0ebe-5341-8b42-6c749d70e3fe",
+      "code": "classic-corndog",
+      "name": "Classic Corndog",
+      "description": "A crisp Korean-style corn dog with mozzarella and sauces.",
+      "product_kind": "standard",
+      "source_key": "item:corn-dogs-more/Corn Dogs/Classic Corndog",
+      "variant": {
+        "id": "639502a9-27ad-5c77-b685-2fe786afcba9",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "00f67fe6-290c-570c-8b0e-26790360d95a",
+      "code": "dynamite-corndog",
+      "name": "Dynamite Corndog",
+      "description": "Mozzarella corn dog rolled in spicy crumbs with Dynamite Red sauce.",
+      "product_kind": "standard",
+      "source_key": "item:corn-dogs-more/Corn Dogs/Dynamite Corndog",
+      "variant": {
+        "id": "3fc7e5bf-8b03-5cf9-b3f8-ab1589903a8d",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "77d30421-3df6-565d-9f2d-02e8a63abf11",
+      "code": "veggie-rice-bowl",
+      "name": "Veggie Rice Bowl",
+      "description": "A loaded veg rice bowl tossed in house sauce.",
+      "product_kind": "standard",
+      "source_key": "item:corn-dogs-more/Rice Bowls/Veggie Rice Bowl",
+      "variant": {
+        "id": "6af135d2-5058-538f-91c2-04a5f1b50b9d",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "94124932-0d39-5da9-83d6-ab560a104122",
+      "code": "paneer-rice-bowl",
+      "name": "Paneer Rice Bowl",
+      "description": "A loaded paneer rice bowl tossed in house sauce.",
+      "product_kind": "standard",
+      "source_key": "item:corn-dogs-more/Rice Bowls/Paneer Rice Bowl",
+      "variant": {
+        "id": "9d2e558e-0014-5591-9651-6c6981c2765d",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "59439bf6-01f7-5c54-a93d-fbfd81d32e90",
+      "code": "boba-bear-signature-ice-cream-sundae",
+      "name": "Boba Bear Signature Ice Cream Sundae",
+      "description": "Vanilla ice cream topped with brown sugar sauce and chewy boba pearls.",
+      "product_kind": "standard",
+      "source_key": "item:the-sweet/Sundaes/Boba Bear Signature Ice Cream Sundae",
+      "variant": {
+        "id": "5f76dcab-d6e7-58f1-a4e3-d9c4dcddbe96",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "90f1b284-2e3a-5ec4-9895-442d040326bc",
+      "code": "nutella-oreo-crunch-ice-cream-sundae",
+      "name": "Nutella Oreo Crunch Ice Cream Sundae",
+      "description": "Vanilla ice cream topped with Nutella and crushed Oreo crunch.",
+      "product_kind": "standard",
+      "source_key": "item:the-sweet/Sundaes/Nutella Oreo Crunch Ice Cream Sundae",
+      "variant": {
+        "id": "6aefff62-8716-50fe-8cc3-58b97b23091c",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "0eaa7271-6d53-5c0e-a3d7-ce9b12a25c6d",
+      "code": "berry-popping-sundae",
+      "name": "Berry Popping Sundae",
+      "description": "Vanilla ice cream topped with berry sauce and popping boba.",
+      "product_kind": "standard",
+      "source_key": "item:the-sweet/Sundaes/Berry Popping Sundae",
+      "variant": {
+        "id": "9660b306-e224-5280-98d7-5d90e9229b8c",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    },
+    {
+      "id": "6816328f-b397-5cfd-810f-b5e9230ae393",
+      "code": "choco-cloud-marshmallow-sticks",
+      "name": "Choco Cloud Marshmallow Sticks",
+      "description": "Toasted marshmallow sticks drizzled with chocolate over a soft, cloudy centre.",
+      "product_kind": "standard",
+      "source_key": "item:the-sweet/Marshmallows/Choco Cloud Marshmallow Sticks",
+      "variant": {
+        "id": "35d65b6b-0037-5a33-bd76-0251ea2ad1b1",
+        "code": "default",
+        "is_default": true,
+        "is_selector_visible": false
+      }
+    }
+  ],
+  "entries": [
+    {
+      "id": "89366874-65a9-5d98-a96f-a56cb416e865",
+      "section_id": "83f66c27-c46a-51a1-b00d-772def7394aa",
+      "product_id": "17811221-4e12-5b70-a0ad-8a4fc5c54523",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Gangnam_Style_Iced_Coffee_Boba.jpeg",
+      "position": 0,
+      "source_key": "item:the-bar/Signature Boba/Gangnam Style Iced Coffee Boba"
+    },
+    {
+      "id": "6165165d-a3c9-5f46-9929-74106d8d166b",
+      "section_id": "83f66c27-c46a-51a1-b00d-772def7394aa",
+      "product_id": "2be44ab8-0da6-5143-85b5-4f82c42b935a",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Purple_Rain_Taro_Boba.jpg",
+      "position": 1,
+      "source_key": "item:the-bar/Signature Boba/Purple Rain Taro Boba"
+    },
+    {
+      "id": "4a344993-7e1e-5e9e-b861-be2dd4cacb86",
+      "section_id": "83f66c27-c46a-51a1-b00d-772def7394aa",
+      "product_id": "74372353-20e1-5a5c-8ed0-8764c1b8c191",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Zen_Master_Matcha_Boba.jpeg",
+      "position": 2,
+      "source_key": "item:the-bar/Signature Boba/Zen Master Matcha Boba"
+    },
+    {
+      "id": "bab365f5-6a5d-5d78-a6f3-be64dddf86ef",
+      "section_id": "83f66c27-c46a-51a1-b00d-772def7394aa",
+      "product_id": "64530ae2-695c-5fca-b173-e36ebb13119d",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Hong_Kong_Milk_Tea_Boba.jpeg",
+      "position": 3,
+      "source_key": "item:the-bar/Signature Boba/Hong Kong Milk Tea Boba"
+    },
+    {
+      "id": "6a5eebc3-6713-5de8-a5e2-22622a51e544",
+      "section_id": "83f66c27-c46a-51a1-b00d-772def7394aa",
+      "product_id": "78228ebf-c309-5374-8873-68db2d835e6f",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Bangkok_Thai_Tea_Boba.jpeg",
+      "position": 4,
+      "source_key": "item:the-bar/Signature Boba/Bangkok Thai Tea Boba"
+    },
+    {
+      "id": "c822bd65-ae5a-55ee-8454-7c79fed65cbe",
+      "section_id": "83f66c27-c46a-51a1-b00d-772def7394aa",
+      "product_id": "b30d316e-fa7a-5b3b-92e4-2297ded2b93a",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Dirty_Cheesecake_Boba.jpeg",
+      "position": 5,
+      "source_key": "item:the-bar/Signature Boba/Dirty Cheesecake Boba"
+    },
+    {
+      "id": "e9088469-ae3d-5a39-87ee-71fecb8f19e3",
+      "section_id": "83f66c27-c46a-51a1-b00d-772def7394aa",
+      "product_id": "6729cf7f-2217-53b8-bb39-7d9217971d1f",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Pink_Velvet_Cotton_Candy_Boba.jpeg",
+      "position": 6,
+      "source_key": "item:the-bar/Signature Boba/Pink Velvet Cotton Candy Boba"
+    },
+    {
+      "id": "18ea699a-d408-5ae4-943a-f5bbf018817c",
+      "section_id": "ca366c82-0dbc-5e45-aff8-2710b8e128bd",
+      "product_id": "489e83c8-6d4b-5dfc-8cc9-c6ac6c7259ea",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Purple_Rain_Layered_Matcha.jpeg",
+      "position": 0,
+      "source_key": "item:the-bar/Matcha Studio/Purple Rain Layered Matcha"
+    },
+    {
+      "id": "ae137b10-e118-53c0-9b87-8e12c8e95adb",
+      "section_id": "ca366c82-0dbc-5e45-aff8-2710b8e128bd",
+      "product_id": "23ad16fd-ad04-54f8-8921-4f06962cbb6e",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Wild_Berry_Dirty_Matcha.jpeg",
+      "position": 1,
+      "source_key": "item:the-bar/Matcha Studio/Wild Berry Dirty Matcha"
+    },
+    {
+      "id": "6caa1a8f-bfe0-5d81-836c-fc68d773b730",
+      "section_id": "ca366c82-0dbc-5e45-aff8-2710b8e128bd",
+      "product_id": "f09782c1-4faf-5280-a074-5d2ab0b905fb",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Mango_Matcha_Boba.jpeg",
+      "position": 2,
+      "source_key": "item:the-bar/Matcha Studio/Mango Matcha Boba"
+    },
+    {
+      "id": "d8d08cb9-b3f2-5146-8238-3a0577ef6a1f",
+      "section_id": "ca366c82-0dbc-5e45-aff8-2710b8e128bd",
+      "product_id": "1a462454-94e4-51e1-bf90-0427060b6e3f",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Strawberry_Matcha_Boba.jpeg",
+      "position": 3,
+      "source_key": "item:the-bar/Matcha Studio/Strawberry Matcha Boba"
+    },
+    {
+      "id": "2864f9ab-8e80-5bda-9509-664ef9dd8fc4",
+      "section_id": "28474525-3e05-5e95-8ba3-aaa35152aedb",
+      "product_id": "6984aab7-b677-5679-bc98-e9a890443041",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Hazelnut_Iced_Coffee_Boba.jpeg",
+      "position": 0,
+      "source_key": "item:the-bar/Iced Coffees/Hazelnut Iced Coffee Boba"
+    },
+    {
+      "id": "9c2f5bbd-c535-5603-93bc-feb067242509",
+      "section_id": "28474525-3e05-5e95-8ba3-aaa35152aedb",
+      "product_id": "c60cd823-1913-54ef-9415-9a6729cb781a",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Butterscotch_Caramel_Iced_Coffee_Boba.jpeg",
+      "position": 1,
+      "source_key": "item:the-bar/Iced Coffees/Butterscotch Caramel Iced Coffee Boba"
+    },
+    {
+      "id": "e8b8af90-5b53-53ef-b673-1a0be5f9d721",
+      "section_id": "28474525-3e05-5e95-8ba3-aaa35152aedb",
+      "product_id": "9c91c757-80f5-50aa-b5e9-9f9721b1e824",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Seoul_Tiramisu_Iced_Coffee_Boba.jpeg",
+      "position": 2,
+      "source_key": "item:the-bar/Iced Coffees/Seoul Tiramisu Iced Coffee Boba"
+    },
+    {
+      "id": "2c0da159-7f48-5b24-ba48-5daae1409ade",
+      "section_id": "28474525-3e05-5e95-8ba3-aaa35152aedb",
+      "product_id": "b5cc42c8-1841-5fb4-a0e0-ac247637fa46",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/K-Cinema_Popcorn_Coffee_Boba.jpeg",
+      "position": 3,
+      "source_key": "item:the-bar/Iced Coffees/K-Cinema Popcorn Coffee Boba"
+    },
+    {
+      "id": "e484a6bc-730e-506c-8379-3b02dc5a0427",
+      "section_id": "28474525-3e05-5e95-8ba3-aaa35152aedb",
+      "product_id": "9c4bdbe4-e4e8-54b6-b9ec-42841fb21b7e",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Filter_Roast_Cold_Coffee_Boba.jpeg",
+      "position": 4,
+      "source_key": "item:the-bar/Iced Coffees/Filter Roast Cold Coffee Boba"
+    },
+    {
+      "id": "b6da7582-dcaf-57cb-bb5b-5341e270e6c6",
+      "section_id": "7b5b0a84-234c-5af6-bb23-d3b0716958fc",
+      "product_id": "40c68b67-994f-5989-a16b-044e88a58339",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Kala_Khatta_Iced_Tea.jpeg",
+      "position": 0,
+      "source_key": "item:the-bar/Iced Teas/Kala Khatta Iced Tea"
+    },
+    {
+      "id": "f3e79448-0fa0-51ef-a829-69147f5005a6",
+      "section_id": "7b5b0a84-234c-5af6-bb23-d3b0716958fc",
+      "product_id": "a13588f7-0e86-51aa-bb23-7f968040b3c3",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Green_Apple_Black_Iced_Tea.jpeg",
+      "position": 1,
+      "source_key": "item:the-bar/Iced Teas/Green Apple Black Iced Tea"
+    },
+    {
+      "id": "4bb3916f-23f6-57a0-95d5-d67d6d7e9729",
+      "section_id": "7b5b0a84-234c-5af6-bb23-d3b0716958fc",
+      "product_id": "22a6f5d2-5a86-516f-bb78-0b2f4cf411b5",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Strawberry_Black_Iced_Tea.jpeg",
+      "position": 2,
+      "source_key": "item:the-bar/Iced Teas/Strawberry Black Iced Tea"
+    },
+    {
+      "id": "f07061eb-5b77-5b0e-b0bc-f31549671cd1",
+      "section_id": "7b5b0a84-234c-5af6-bb23-d3b0716958fc",
+      "product_id": "f1ccb77a-dab8-510a-a9a8-a07c1c734cb3",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Seoul_Peach_Black_Iced_Tea.jpeg",
+      "position": 3,
+      "source_key": "item:the-bar/Iced Teas/Seoul Peach Black Iced Tea"
+    },
+    {
+      "id": "e8dc970e-8f78-5968-a4ab-49bb21c21ca9",
+      "section_id": "7b5b0a84-234c-5af6-bb23-d3b0716958fc",
+      "product_id": "320c3c8a-76cc-52ba-8cec-951a1b987194",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Seoul_Mango_Peach_Iced_Tea.jpeg",
+      "position": 4,
+      "source_key": "item:the-bar/Iced Teas/Seoul Mango Peach Iced Tea"
+    },
+    {
+      "id": "031108a0-5c07-57df-8045-97054020be3b",
+      "section_id": "7b5b0a84-234c-5af6-bb23-d3b0716958fc",
+      "product_id": "2b184fe6-28f3-56ef-b781-440f5b3312d0",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Lychee_Iced_Tea.jpeg",
+      "position": 5,
+      "source_key": "item:the-bar/Iced Teas/Lychee Iced Tea"
+    },
+    {
+      "id": "f19a48c2-a489-57ce-9a97-2c857e392564",
+      "section_id": "7b5b0a84-234c-5af6-bb23-d3b0716958fc",
+      "product_id": "b7b6f8f0-71a6-5501-ac9b-436adaae11cd",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Watermelon_Iced_Tea.jpeg",
+      "position": 6,
+      "source_key": "item:the-bar/Iced Teas/Watermelon Iced Tea"
+    },
+    {
+      "id": "2c4dd803-8332-5d27-af61-554f9faa68c3",
+      "section_id": "7b5b0a84-234c-5af6-bb23-d3b0716958fc",
+      "product_id": "9619b839-85f9-55e6-a402-0fc08e0acd81",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Hibiscus_Ginger_Mint_Iced_Tea.jpeg",
+      "position": 7,
+      "source_key": "item:the-bar/Iced Teas/Hibiscus Ginger Mint Iced Tea"
+    },
+    {
+      "id": "7ef809a2-cdc3-58bf-9bfc-e49f8643839a",
+      "section_id": "7b5b0a84-234c-5af6-bb23-d3b0716958fc",
+      "product_id": "6af2834b-3637-5db1-a53a-ed680f69f49b",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Lime_Black_Tea_Boba.jpeg",
+      "position": 8,
+      "source_key": "item:the-bar/Iced Teas/Lime Black Tea Boba"
+    },
+    {
+      "id": "17b055c1-bda1-5562-8e51-fcda2263013b",
+      "section_id": "b0bdff3a-75bd-5181-abf8-8b27890b298c",
+      "product_id": "7280617e-2d3f-5233-bd58-54e6801a6e7f",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Jiji_Mint_Mojito.jpeg",
+      "position": 0,
+      "source_key": "item:the-bar/Refreshers/Jiji Mint Mojito"
+    },
+    {
+      "id": "4201958d-4897-5553-9263-9268bcea5f6c",
+      "section_id": "b0bdff3a-75bd-5181-abf8-8b27890b298c",
+      "product_id": "e0a72d29-c437-5cb2-baf3-77327df4b85b",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Electric_Blue_Iced_Tea.jpeg",
+      "position": 1,
+      "source_key": "item:the-bar/Refreshers/Electric Blue Lime Refresher"
+    },
+    {
+      "id": "c84dede5-584f-5566-8aac-ece3cbda9616",
+      "section_id": "b0bdff3a-75bd-5181-abf8-8b27890b298c",
+      "product_id": "d3274a17-0045-5be1-b613-38e8bae00d14",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Magic_Galaxy_Iced_Tea.jpeg",
+      "position": 2,
+      "source_key": "item:the-bar/Refreshers/Magic Galaxy Refresher Drink"
+    },
+    {
+      "id": "fadc7bb5-8886-547b-bf49-e1ca76c3cc17",
+      "section_id": "d9657851-290c-50e9-a851-a26e8bb413b9",
+      "product_id": "0d1fc75b-42d2-50f5-9b51-723c031ef0bb",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Viral_Spicy_Carbonara_Ramyun_Noodles.jpg",
+      "position": 0,
+      "source_key": "item:ramyum/Ramyum/Viral Spicy Carbonara Ramyun Noodles"
+    },
+    {
+      "id": "33921fb6-8a04-5417-8c95-a42fa9382644",
+      "section_id": "d9657851-290c-50e9-a851-a26e8bb413b9",
+      "product_id": "80ba6c3e-5511-5016-9084-0ed9bd89a63d",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Cheesy_Ramyum.jpeg",
+      "position": 1,
+      "source_key": "item:ramyum/Ramyum/Cheesy Ramyum"
+    },
+    {
+      "id": "08c26f97-2288-5c05-93ba-ad9f515d59f2",
+      "section_id": "d9657851-290c-50e9-a851-a26e8bb413b9",
+      "product_id": "cc001006-d817-5476-ab9b-62c10089c23a",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Volcanic_Fire_Spicy_Ramyun_Noodles.jpg",
+      "position": 2,
+      "source_key": "item:ramyum/Ramyum/Volcanic Fire Spicy Ramyun Noodles"
+    },
+    {
+      "id": "18fe5de2-c155-5b4a-97d9-3ad2c6e9264a",
+      "section_id": "d9657851-290c-50e9-a851-a26e8bb413b9",
+      "product_id": "73d16305-3a13-57ef-a77b-2b0fc377394f",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Tangy_Kimchi_Ramyun_Noodles.jpg",
+      "position": 3,
+      "source_key": "item:ramyum/Ramyum/Tangy Kimchi Ramyun Noodles"
+    },
+    {
+      "id": "f4b71728-deca-55a0-a354-d33cd5b94d54",
+      "section_id": "974e7b2b-0fe7-574f-b9ca-c63095f42716",
+      "product_id": "05991a6b-b328-54ea-b99f-558cc454de80",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Steamed_Veg_Momos.jpg",
+      "position": 0,
+      "source_key": "item:momos/Steamed & Fried Momos/Steamed Veg Momos"
+    },
+    {
+      "id": "c0e6fe60-38be-5adc-a3e3-9ff46649b6ff",
+      "section_id": "974e7b2b-0fe7-574f-b9ca-c63095f42716",
+      "product_id": "752c5476-f1d2-57b0-9f76-0d596a381e07",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Steamed_Paneer_Momos.jpg",
+      "position": 1,
+      "source_key": "item:momos/Steamed & Fried Momos/Steamed Paneer Momos"
+    },
+    {
+      "id": "5f9a82b1-06c4-5347-bf11-d5ddc1d7896d",
+      "section_id": "974e7b2b-0fe7-574f-b9ca-c63095f42716",
+      "product_id": "c9c7fe5c-0401-5025-88eb-742aca88915b",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Fried_Veg_Momos.jpg",
+      "position": 2,
+      "source_key": "item:momos/Steamed & Fried Momos/Fried Veg Momos"
+    },
+    {
+      "id": "d9fb85b4-0468-5140-8c6c-1bdafb904b08",
+      "section_id": "974e7b2b-0fe7-574f-b9ca-c63095f42716",
+      "product_id": "8742b1d7-c3e1-5bbd-ab9b-13c9ea64be03",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Fried_Paneer_Momos.jpg",
+      "position": 3,
+      "source_key": "item:momos/Steamed & Fried Momos/Fried Paneer Momos"
+    },
+    {
+      "id": "d3a94b03-6eda-5347-b814-7411873b9c88",
+      "section_id": "5ced7cff-a4b5-5a5b-892d-e916e51a1dfc",
+      "product_id": "343efc62-ba3a-5e71-af05-0c84323dfdfc",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Dynamite_Red_Veg_Momos.jpeg",
+      "position": 0,
+      "source_key": "item:momos/Signature Momos/Dynamite Red Veg Momos"
+    },
+    {
+      "id": "5dfa74b6-6203-576b-8452-f284b81f9a0c",
+      "section_id": "5ced7cff-a4b5-5a5b-892d-e916e51a1dfc",
+      "product_id": "bb2b6f8e-a955-5f0c-aac4-914cf62a6667",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Dynamite_Red_Paneer_Momos.jpeg",
+      "position": 1,
+      "source_key": "item:momos/Signature Momos/Dynamite Red Paneer Momos"
+    },
+    {
+      "id": "d15012d3-175a-533a-ab87-ec62a7db4263",
+      "section_id": "5ced7cff-a4b5-5a5b-892d-e916e51a1dfc",
+      "product_id": "4e2fab9d-b852-545b-8159-a684b89911fa",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Gangnam_Glaze_Veg_Momos.jpeg",
+      "position": 2,
+      "source_key": "item:momos/Signature Momos/Gangnam Glaze Veg Momos"
+    },
+    {
+      "id": "652b057b-28fd-5e19-8a6a-1e242083d4c9",
+      "section_id": "5ced7cff-a4b5-5a5b-892d-e916e51a1dfc",
+      "product_id": "120a994f-84d1-5586-bde6-57aaff1b5f71",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Gangnam_Glaze_Paneer_Momos.jpeg",
+      "position": 3,
+      "source_key": "item:momos/Signature Momos/Gangnam Glaze Paneer Momos"
+    },
+    {
+      "id": "6dfa6192-2d7d-5be6-84e6-942ee1f93994",
+      "section_id": "5ced7cff-a4b5-5a5b-892d-e916e51a1dfc",
+      "product_id": "a6f71216-d770-56fd-bde4-74cb7e3f3cac",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Seoul_Masala_Veg_Momos.jpg",
+      "position": 4,
+      "source_key": "item:momos/Signature Momos/Seoul Masala Veg Momos"
+    },
+    {
+      "id": "af2a831f-4dea-55b6-98f6-b2765b81f330",
+      "section_id": "5ced7cff-a4b5-5a5b-892d-e916e51a1dfc",
+      "product_id": "dd7d294f-307a-50b8-8e24-0875eaca6238",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Seoul_Masala_Paneer_Momos.jpeg",
+      "position": 5,
+      "source_key": "item:momos/Signature Momos/Seoul Masala Paneer Momos"
+    },
+    {
+      "id": "c2a44bcf-4b6b-5f57-ae3d-7b6cb2a5c39b",
+      "section_id": "c98a4991-628c-50b7-81dc-0691fba19f88",
+      "product_id": "1509d441-fda9-58d9-b91f-afa21c47bc7f",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Dynamite_Red_Burger.jpg",
+      "position": 0,
+      "source_key": "item:burger/Burgers/Dynamite Red Burger (Veg/Paneer)"
+    },
+    {
+      "id": "01e2b2ca-b5eb-57f8-acfa-99de0da9d465",
+      "section_id": "c98a4991-628c-50b7-81dc-0691fba19f88",
+      "product_id": "d94ca78d-9d36-5da7-9bc5-3e717a56ffab",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Gangnam_Glaze_Burger.jpg",
+      "position": 1,
+      "source_key": "item:burger/Burgers/Gangnam Glaze Burger (Veg/Paneer)"
+    },
+    {
+      "id": "4432e14c-3f70-5556-9caa-5c6ff49b285e",
+      "section_id": "c98a4991-628c-50b7-81dc-0691fba19f88",
+      "product_id": "4218f2ad-1649-5f03-b208-949617e1fcaf",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Pink_Velvet_Cheesy_Burger.jpg",
+      "position": 2,
+      "source_key": "item:burger/Burgers/Pink Velvet Cheesy Burger (Veg/Paneer)"
+    },
+    {
+      "id": "a036c5ad-9a50-504e-9b04-c560cfd9df43",
+      "section_id": "c98a4991-628c-50b7-81dc-0691fba19f88",
+      "product_id": "1d196540-f545-5d1d-8e97-9824395a975d",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Seoul_Masala_Burger.jpg",
+      "position": 3,
+      "source_key": "item:burger/Burgers/Seoul Masala Burger (Veg/Paneer)"
+    },
+    {
+      "id": "191dc7eb-531c-5542-ba52-daf9554cb89d",
+      "section_id": "c98a4991-628c-50b7-81dc-0691fba19f88",
+      "product_id": "89be42b8-e062-5726-b94a-a5d1abc6ba48",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Classic_Veg_Burger.jpeg",
+      "position": 4,
+      "source_key": "item:burger/Burgers/Classic Veg Burger"
+    },
+    {
+      "id": "4ad7786d-3dc2-5b17-bc7d-926f5d31c6be",
+      "section_id": "c98a4991-628c-50b7-81dc-0691fba19f88",
+      "product_id": "7d0b60d3-3a31-534e-80c5-c63f6dd27d69",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Gangnam_Big_Stack_Burger.jpeg",
+      "position": 5,
+      "source_key": "item:burger/Burgers/Gangnam Big Stack Burger"
+    },
+    {
+      "id": "5835bac2-1bc2-5f0b-9933-5ce285312dd9",
+      "section_id": "6ad576d1-6363-54ce-9b42-1f18becc12b1",
+      "product_id": "69a8d2bf-84e5-511f-86a4-c837e93ed506",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Dynamite_Red_Wrap.jpg",
+      "position": 0,
+      "source_key": "item:wraps/Wraps/Dynamite Red Wrap (Veg/Paneer)"
+    },
+    {
+      "id": "a534f160-6108-5feb-bf0d-30b886984366",
+      "section_id": "6ad576d1-6363-54ce-9b42-1f18becc12b1",
+      "product_id": "db58f737-b306-5d40-a064-f60e23d9f327",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Gangnam_Glaze_Wrap.jpg",
+      "position": 1,
+      "source_key": "item:wraps/Wraps/Gangnam Glaze Wrap (Veg/Paneer)"
+    },
+    {
+      "id": "3fc6a761-a851-5ec4-8019-6fa45c811291",
+      "section_id": "6ad576d1-6363-54ce-9b42-1f18becc12b1",
+      "product_id": "9952d345-1a8b-52ad-8283-042d250495fc",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Pink_Velvet_Wrap.jpg",
+      "position": 2,
+      "source_key": "item:wraps/Wraps/Pink Velvet Wrap (Veg/Paneer)"
+    },
+    {
+      "id": "2d7f568f-907a-56cc-a39c-43d5193fdc3e",
+      "section_id": "6ad576d1-6363-54ce-9b42-1f18becc12b1",
+      "product_id": "801239ad-1620-562c-8851-9b937ad99e6f",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Seoul_Masala_Wrap.jpg",
+      "position": 3,
+      "source_key": "item:wraps/Wraps/Seoul Masala Wrap (Veg/Paneer)"
+    },
+    {
+      "id": "894c2a7a-abce-5ad0-b585-88d4cc563c5b",
+      "section_id": "8a554e8b-ac8f-5ea4-8599-f45c37a38e49",
+      "product_id": "ea3bb654-5b0d-5b0d-b8a6-c442aed0c87e",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/The_OG_Salted_Fries.jpg",
+      "position": 0,
+      "source_key": "item:fries/Fries/The OG Salted Fries"
+    },
+    {
+      "id": "21ac8b7c-d939-51f0-b6dc-d770cf6e61f6",
+      "section_id": "8a554e8b-ac8f-5ea4-8599-f45c37a38e49",
+      "product_id": "0657615e-730c-5ff0-8b42-5ad559b793a6",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Dynamite_Red_Street_Fries.jpg",
+      "position": 1,
+      "source_key": "item:fries/Fries/Dynamite Red Street Fries"
+    },
+    {
+      "id": "1332c9a3-192d-5a06-9313-e4c3ea1212e8",
+      "section_id": "8a554e8b-ac8f-5ea4-8599-f45c37a38e49",
+      "product_id": "4835c024-70ce-55dc-b0e4-f38cd1b62e89",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Gangnam_Glaze_Loaded_Fries.jpg",
+      "position": 2,
+      "source_key": "item:fries/Fries/Gangnam Glaze Loaded Fries"
+    },
+    {
+      "id": "4753afdb-580a-5224-a95a-b8f256632ec9",
+      "section_id": "8a554e8b-ac8f-5ea4-8599-f45c37a38e49",
+      "product_id": "bb9321a3-7aac-56c0-82d1-b2b5d04539da",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Seoul_Masala_Fusion_Fries.jpg",
+      "position": 3,
+      "source_key": "item:fries/Fries/Seoul Masala Fusion Fries"
+    },
+    {
+      "id": "8aa41e91-2412-5130-a3b3-2b517696f75f",
+      "section_id": "8a554e8b-ac8f-5ea4-8599-f45c37a38e49",
+      "product_id": "35065e67-c61e-56b5-9b9d-9a143e142109",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Peri_Peri_Dynamite_Fries.jpg",
+      "position": 4,
+      "source_key": "item:fries/Fries/Peri Peri Dynamite Fries"
+    },
+    {
+      "id": "b5069b54-15d0-5d57-9414-74a832b6faad",
+      "section_id": "8a554e8b-ac8f-5ea4-8599-f45c37a38e49",
+      "product_id": "91972ddd-2a2a-53cc-be65-f0894366f44b",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Pink_Velvet_Fries.jpg",
+      "position": 5,
+      "source_key": "item:fries/Fries/Pink Velvet Fries"
+    },
+    {
+      "id": "19502606-b703-50d1-9cb3-42cf4c600835",
+      "section_id": "b64cbe81-ac98-5a83-8a8a-3604132c86a2",
+      "product_id": "15869157-6e4d-55e4-bf3c-17c3fe9aba31",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Cheesy_Potato_Bites.jpg",
+      "position": 0,
+      "source_key": "item:fries/Bites/Cheesy Potato Bites"
+    },
+    {
+      "id": "cd892e7d-906e-53bb-b02c-e26108f233fe",
+      "section_id": "b64cbe81-ac98-5a83-8a8a-3604132c86a2",
+      "product_id": "b3c21c63-395e-5846-a741-a060d2474192",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Seoul_Golden_Hash_Browns.jpeg",
+      "position": 1,
+      "source_key": "item:fries/Bites/Seoul Golden Hash Browns"
+    },
+    {
+      "id": "8a0181de-3d95-5a90-89a8-e2e7a9c01d34",
+      "section_id": "f6d44f12-e25f-5bee-b9dd-0b97c557b814",
+      "product_id": "37604ad9-a25c-5773-aa73-7f3efb8a7cc8",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Classic_Veg_Burger_Meal.jpeg",
+      "position": 0,
+      "source_key": "item:meals-combos/Meals/Classic Veg Burger Meal"
+    },
+    {
+      "id": "04303fd1-e916-5c82-a498-8648247236e6",
+      "section_id": "f6d44f12-e25f-5bee-b9dd-0b97c557b814",
+      "product_id": "97f8286d-62dd-50e2-9024-472175017fb4",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Veg_Burger_Meal.jpeg",
+      "position": 1,
+      "source_key": "item:meals-combos/Meals/Veg Burger Meal"
+    },
+    {
+      "id": "ca43ceda-bb7a-5c77-bb0f-3db4cbce37c9",
+      "section_id": "f6d44f12-e25f-5bee-b9dd-0b97c557b814",
+      "product_id": "535f21e2-1a35-5d04-85bc-c5e14ba33a63",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Paneer_Burger_Meal.jpeg",
+      "position": 2,
+      "source_key": "item:meals-combos/Meals/Paneer Burger Meal"
+    },
+    {
+      "id": "64fce111-cb41-50cb-8241-eeeef0b1b6ea",
+      "section_id": "f6d44f12-e25f-5bee-b9dd-0b97c557b814",
+      "product_id": "d8b4f93d-3135-5c71-b7f2-4f9079ce33f8",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Veg_Wrap_Meal.jpeg",
+      "position": 3,
+      "source_key": "item:meals-combos/Meals/Veg Wrap Meal"
+    },
+    {
+      "id": "5b6cef17-7047-5d62-819b-62494a86e143",
+      "section_id": "f6d44f12-e25f-5bee-b9dd-0b97c557b814",
+      "product_id": "4383937e-fffe-5003-bd3c-456b442fd98d",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Paneer_Wrap_Meal.jpeg",
+      "position": 4,
+      "source_key": "item:meals-combos/Meals/Paneer Wrap Meal"
+    },
+    {
+      "id": "d40a0901-6b45-583f-b2ab-d7df32d600b7",
+      "section_id": "7c75ccc7-e7d6-5b3f-aa0d-2aa201eae887",
+      "product_id": "676fdd90-89c2-5937-b337-d6e691ed1433",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Exam_Survivor_Combo.jpeg",
+      "position": 0,
+      "source_key": "item:meals-combos/Combos/Exam Survivor Combo"
+    },
+    {
+      "id": "71acc118-bd67-5327-a5b1-92e4f7bc0445",
+      "section_id": "d1817494-f533-5460-a425-c4aa7a5688e9",
+      "product_id": "99d992a8-0ebe-5341-8b42-6c749d70e3fe",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Classic_Corndog.jpeg",
+      "position": 0,
+      "source_key": "item:corn-dogs-more/Corn Dogs/Classic Corndog"
+    },
+    {
+      "id": "a948a800-898d-5bf2-b79b-1cc8901f8a01",
+      "section_id": "d1817494-f533-5460-a425-c4aa7a5688e9",
+      "product_id": "00f67fe6-290c-570c-8b0e-26790360d95a",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Dynamite_Corndog.jpeg",
+      "position": 1,
+      "source_key": "item:corn-dogs-more/Corn Dogs/Dynamite Corndog"
+    },
+    {
+      "id": "010b20df-7d83-55e7-80b6-83f7a4b91b28",
+      "section_id": "cb12ef86-cde9-5579-bc54-63e9677204a1",
+      "product_id": "77d30421-3df6-565d-9f2d-02e8a63abf11",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Veggie_Rice_Bowl.jpeg",
+      "position": 0,
+      "source_key": "item:corn-dogs-more/Rice Bowls/Veggie Rice Bowl"
+    },
+    {
+      "id": "362c8ada-4e6b-53a6-895e-4063693c3e59",
+      "section_id": "cb12ef86-cde9-5579-bc54-63e9677204a1",
+      "product_id": "94124932-0d39-5da9-83d6-ab560a104122",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Paneer_Rice_Bowl.jpeg",
+      "position": 1,
+      "source_key": "item:corn-dogs-more/Rice Bowls/Paneer Rice Bowl"
+    },
+    {
+      "id": "09689df7-5ec8-5805-b6ff-377d2402e96c",
+      "section_id": "6fed57a5-bc51-5a6c-86f4-de89bf9c6bd7",
+      "product_id": "59439bf6-01f7-5c54-a93d-fbfd81d32e90",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Boba_Bear_Signature_Ice_Cream_Sundae.jpeg",
+      "position": 0,
+      "source_key": "item:the-sweet/Sundaes/Boba Bear Signature Ice Cream Sundae"
+    },
+    {
+      "id": "f8af21e3-b6dd-5585-a5f5-9019be4e43c8",
+      "section_id": "6fed57a5-bc51-5a6c-86f4-de89bf9c6bd7",
+      "product_id": "90f1b284-2e3a-5ec4-9895-442d040326bc",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Nutella_Oreo_Crunch_Ice_Cream_Sundae.jpeg",
+      "position": 1,
+      "source_key": "item:the-sweet/Sundaes/Nutella Oreo Crunch Ice Cream Sundae"
+    },
+    {
+      "id": "ed8a07fb-2c57-5a62-973c-2b69366f3c6f",
+      "section_id": "6fed57a5-bc51-5a6c-86f4-de89bf9c6bd7",
+      "product_id": "0eaa7271-6d53-5c0e-a3d7-ce9b12a25c6d",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Berry_Popping_Sundae.jpeg",
+      "position": 2,
+      "source_key": "item:the-sweet/Sundaes/Berry Popping Sundae"
+    },
+    {
+      "id": "5708d123-283c-5bb7-bb24-566f827c85c8",
+      "section_id": "206797fa-af1f-5d39-a909-ca5998152d7e",
+      "product_id": "6816328f-b397-5cfd-810f-b5e9230ae393",
+      "display_name": null,
+      "display_description": null,
+      "image_path": "/assets/menu/Choco_Cloud_Marshmallow_Sticks.jpg",
+      "position": 0,
+      "source_key": "item:the-sweet/Marshmallows/Choco Cloud Marshmallow Sticks"
+    }
+  ],
+  "expected_zeros": {
+    "multi_variant_products": 0,
+    "modifier_groups": 0,
+    "modifier_options": 0,
+    "bundle_products": 0,
+    "bundle_groups": 0,
+    "bundle_options": 0,
+    "dietary_assignments": 0
+  }
+}

@@ -1,68 +1,146 @@
----
-Status: Canonical
-Last updated: 2026-08-01
----
+<!-- governance-meta
+{
+  "status": "CURRENT",
+  "authority": "DECISION_AUTHORITY",
+  "decisionRegisterVersion": "DR-2",
+  "lastReviewed": "2026-08-12"
+}
+-->
 
 # BOBA Bear — Decision Register
 
-## Status
+## 1. Register Rules
 
-This register is the structured, authoritative record of platform decisions. It captures the
-**current agreed direction** as documented on the date below; it does not assert historical
-approval dates earlier than this documentation set. Where a decision is later changed, the earlier
-row is marked **Superseded** rather than deleted, per the
-[documentation update protocol](./README.md#documentation-update-protocol).
+This register owns **which decisions are binding** and their supersession/amendment relationships.
+Detailed rationale and history remain in ADRs and supporting documents.
 
-## Status definitions
+### Decision statuses (exact)
 
-See [`README.md`](./README.md#decision-status-definitions) for the full definitions of Locked,
-Provisional, Open, Deferred, and Superseded.
+| Status | Meaning |
+|---|---|
+| PROPOSED | Draft; not binding |
+| CURRENT | Fully binding |
+| AMENDED | Still relevant, but binding force is qualified by an explicit amendment |
+| SUPERSEDED | No longer binding; retained for history |
+| HISTORICAL | Preserved context; not a competing current authority |
+| REJECTED | Explicitly not chosen |
 
-## Register
+Only **CURRENT** decisions are fully binding. **AMENDED** decisions must identify the amendment.
+**SUPERSEDED** records remain historical.
 
-| ID | Decision | Status | Rationale | Consequences | Related Documents | Date |
-|---|---|---|---|---|---|---|
-| D-001 | Build an independently owned BOBA Bear direct platform alongside continued aggregator use | Locked | Aggregator commissions, discounts, and paid acquisition erode margin and long-term customer ownership | Requires investment in a direct ordering channel without abandoning existing aggregator volume | [product-vision.md](./product-vision.md) | 2026-08-01 |
-| D-002 | Aggregator participation continues indefinitely; not being phased out | Locked | Aggregators remain a valid acquisition and incremental-order channel | Kitchen must operate a dual-system reality (Petpooja + direct) for the foreseeable future | [product-vision.md](./product-vision.md), [operating-model.md](./operating-model.md) | 2026-08-01 |
-| D-003 | V1 is a food-ordering release, for one outlet, in Dehradun | Locked | Focuses initial engineering and operational effort on the smallest viable direct-ordering loop | Merchandise, drops, multi-outlet, and franchise features are out of V1 | [v1-product-scope.md](./v1-product-scope.md) | 2026-08-01 |
-| D-004 | Initial customer channels are a mobile-first PWA and WhatsApp-assisted ordering | Locked | Fastest path to a real ordering experience without native app development overhead | Native apps deferred; WhatsApp must reuse the same catalog/cart/payment/order services, not a parallel system | [v1-product-scope.md](./v1-product-scope.md) | 2026-08-01 |
-| D-005 | Native Android and iOS applications are deferred beyond V1 | Deferred | Not required for the first sellable release | Native app work is not planned or scheduled until reconsidered | [v1-product-scope.md](./v1-product-scope.md), [roadmap-and-open-decisions.md](./roadmap-and-open-decisions.md) | 2026-08-01 |
-| D-006 | Merchandise checkout and a universal food-and-merchandise cart are deferred | Deferred | Food is the launch commerce category; merchandise likely needs a distinct fulfilment domain | Merch remains a teaser (as currently shipped) until this is reconsidered | [v1-product-scope.md](./v1-product-scope.md) | 2026-08-01 |
-| D-007 | Cross-category cart policy (food vs. merchandise vs. drops) | Open | Not yet resolved whether any categories can ever share one cart | No shared-cart work should be assumed or built until resolved | [v1-product-scope.md](./v1-product-scope.md), [roadmap-and-open-decisions.md](./roadmap-and-open-decisions.md) | 2026-08-01 |
-| D-008 | Advanced gated-drop engine, loyalty programme, and referral programme are deferred | Deferred | Not required for the first sellable release; identity/eligibility foundation is enough for V1 | Only the underlying customer-identity ownership (D-018) needs to exist now | [v1-product-scope.md](./v1-product-scope.md) | 2026-08-01 |
-| D-009 | Petpooja is not part of the BOBA Bear direct-order platform and will not be integrated in V1 | Locked | Petpooja is the aggregator-order POS; direct orders are a separate, owned system | Kitchen staff monitor two systems until a future phase, if ever, changes this | [operating-model.md](./operating-model.md) | 2026-08-01 |
-| D-010 | Initial Operations Console is scoped to direct-order fulfilment only, not a full POS | Locked | Avoids overbuilding a restaurant POS before direct ordering itself is proven | Counter billing, cash drawer, dine-in tables, and shift settlement are deferred | [operating-model.md](./operating-model.md), [v1-product-scope.md](./v1-product-scope.md) | 2026-08-01 |
-| D-011 | Dual-system kitchen operating reality (Petpooja + Operations Console) is accepted for the near term | Locked | Direct-consequence of D-002 and D-009 | Requires documented mitigations (alerts, labelling, dedicated screen) rather than elimination of the dual system | [operating-model.md](./operating-model.md) | 2026-08-01 |
-| D-012 | Architecture favors economical, operationally simple, India-hosted-preferred infrastructure | Locked (principle) / Open (specific provider) | Matches team size and current market; no provider has been evaluated or approved | No hosting provider may be assumed as selected anywhere in the repository | [architecture-foundation.md](./architecture-foundation.md) | 2026-08-01 |
-| D-013 | Initial architecture is a modular monolith, not microservices | Locked | Lower operational overhead for a small team while preserving future optionality via module boundaries | Kubernetes and microservices are deferred; module boundaries must still be enforced in code | [architecture-foundation.md](./architecture-foundation.md) | 2026-08-01 |
-| D-014 | The existing Next.js application and design system evolve in place rather than being rebuilt | Locked | Preserves validated marketing-site investment | Deployment architecture must still change; static export cannot host the transactional platform | [architecture-foundation.md](./architecture-foundation.md) | 2026-08-01 |
-| D-015 | GitHub Pages static export cannot host the transactional platform; deployment architecture must change | Locked (the need) / Open (the replacement) | Static export has no server runtime or database connectivity | A hosting/runtime decision is required before transactional features can ship | [architecture-foundation.md](./architecture-foundation.md), [roadmap-and-open-decisions.md](./roadmap-and-open-decisions.md) | 2026-08-01 |
-| D-016 | Platform uses a relational transactional data model | Locked | Strongest referential integrity and auditability guarantees for order/payment data | No schema or migration created yet; conceptual entities only | [architecture-foundation.md](./architecture-foundation.md) | 2026-08-01 |
-| D-017 | Platform is multi-organization and multi-outlet by foundation; V1 launches single-organization, single-outlet | Locked | Supports future COCO expansion and franchising without a foundational redesign | V1 implementation must still model Brand/Organization/Legal entity/Territory/Outlet as distinct entities even with one of each in use | [organization-outlet-access-model.md](./organization-outlet-access-model.md) | 2026-08-01 |
-| D-018 | Customer identity is owned by the BOBA Bear brand, not by any outlet or franchisee | Locked | Enables cross-outlet ordering, brand-level loyalty, and gated-drop eligibility | Franchisees receive only the customer data required to fulfil their own orders | [organization-outlet-access-model.md](./organization-outlet-access-model.md) | 2026-08-01 |
-| D-019 | Authorization is permission-based (capabilities), not hard-coded role-name checks | Locked | Keeps role definitions changeable without application-logic changes | Roles are bundles of permissions; new roles can be introduced without redesign | [organization-outlet-access-model.md](./organization-outlet-access-model.md) | 2026-08-01 |
-| D-020 | V1 exposes a limited role subset (Brand Administrator, Outlet Manager, Kitchen Operator, Delivery Coordinator, Support/Refund Operator, Finance Viewer) | Locked | Matches V1's single-outlet operational scope | Broader role families (regional, franchise, platform-level) are deferred, not built in V1 | [organization-outlet-access-model.md](./organization-outlet-access-model.md) | 2026-08-01 |
-| D-021 | Catalog inherits brand → territory → organization → outlet, with brand standards locked | Locked | Preserves brand consistency while allowing local operational control | Not every catalog field is overridable at every level | [organization-outlet-access-model.md](./organization-outlet-access-model.md) | 2026-08-01 |
-| D-022 | Pricing uses price books, not a single price on a product; V1 uses one Dehradun price book | Locked | Supports future city/organization/channel pricing without restructuring | No pricing engine is built in V1 beyond a single price book | [organization-outlet-access-model.md](./organization-outlet-access-model.md) | 2026-08-01 |
-| D-023 | A V1 cart may contain products from exactly one outlet | Locked | Outlets differ in legal entity, inventory, price, tax, and fulfilment | No cross-outlet cart or checkout is supported in V1 | [order-payment-delivery-model.md](./order-payment-delivery-model.md) | 2026-08-01 |
-| D-024 | Orders retain immutable historical snapshots of pricing and commercial context | Locked | Historical orders must not change when live catalog/pricing/ownership changes later | Order-item records duplicate relevant catalog/pricing data rather than referencing live values | [order-payment-delivery-model.md](./order-payment-delivery-model.md) | 2026-08-01 |
-| D-025 | Payment/settlement model uses abstracted payment-account and settlement-beneficiary concepts | Locked (abstraction) / Provisional (initial centralized control) | Franchise settlement will not always route to one permanent account | Franchise settlement features themselves remain deferred (D-026) | [order-payment-delivery-model.md](./order-payment-delivery-model.md) | 2026-08-01 |
-| D-026 | Franchise settlement features (central collection, royalty, marketing contribution, technology fee, delivery deductions, refund allocation) are deferred | Deferred | Not required before any franchise organization exists | Must not be implemented in V1 | [order-payment-delivery-model.md](./order-payment-delivery-model.md) | 2026-08-01 |
-| D-027 | Delivery uses third-party partners; customer generally bears delivery fee; rollout is city by city starting with Dehradun | Locked (approach) / Open (specific provider) | Avoids building in-house delivery logistics before it is warranted | A provider-neutral delivery interface is required regardless of which partner is chosen | [order-payment-delivery-model.md](./order-payment-delivery-model.md) | 2026-08-01 |
-| D-028 | Live rider GPS tracking is not promised to customers unless a confirmed provider supports it | Locked | Prevents committing to a capability that may not exist for the chosen provider | Order-state tracking is guaranteed; live GPS is conditional | [order-payment-delivery-model.md](./order-payment-delivery-model.md) | 2026-08-01 |
-| D-029 | Payment integrity principles (server-side verification, idempotent webhooks, no client-trusted "paid" state, separate payment/order state) | Locked | Prevents duplicate orders, fraud, and inconsistent state regardless of gateway chosen | Applies to whichever payment gateway is eventually selected | [order-payment-delivery-model.md](./order-payment-delivery-model.md) | 2026-08-01 |
-| D-030 | Order/payment/delivery state lists in the platform documentation are illustrative, not final | Provisional | Exact state machine requires detailed domain design not yet done | Implementation must not treat the illustrative lists as a final enum | [order-payment-delivery-model.md](./order-payment-delivery-model.md) | 2026-08-01 |
-| D-031 | Sensitive platform actions must produce durable, structured audit events | Locked | Required for operational accountability and franchise-era data-access boundaries | Every module listed in the architecture foundation must emit audit events for its sensitive actions | [architecture-foundation.md](./architecture-foundation.md) | 2026-08-01 |
-| D-032 | V1 organizational configuration is Platform → Brand: BOBA Bear → Corporate operating organization → Territory: Dehradun → Initial outlet | Locked (structure) / Open (legal-entity mapping) | Matches the guiding multi-org-foundation/single-org-launch principle | Legal entity, tax registration, and settlement-owner detail require confirmation against business records before being encoded as authoritative | [organization-outlet-access-model.md](./organization-outlet-access-model.md) | 2026-08-01 |
-| D-033 | Full restaurant POS capabilities (counter billing, cash drawer, dine-in tables, shift settlement, inventory, procurement, recipe costing, aggregator reconciliation, accounting integration) are deferred | Deferred | Out of scope for a direct-ordering V1 | Roadmapped as Stages 2–4 in [roadmap-and-open-decisions.md](./roadmap-and-open-decisions.md) | [v1-product-scope.md](./v1-product-scope.md), [roadmap-and-open-decisions.md](./roadmap-and-open-decisions.md) | 2026-08-01 |
-| D-034 | Franchise onboarding, contracts, royalty calculation, settlements, compliance inspections, document management, and master-franchise operations are deferred | Deferred | No franchise organization exists yet | Franchise-related entities exist structurally (D-017) but franchise operational features are not built | [v1-product-scope.md](./v1-product-scope.md), [organization-outlet-access-model.md](./organization-outlet-access-model.md) | 2026-08-01 |
-| D-035 | Hosting/cloud platform, OTP provider, payment gateway, and delivery provider selections are open | Open | No evaluation or approval has occurred for any of these | No document in this repository should be read as selecting any of these providers | [roadmap-and-open-decisions.md](./roadmap-and-open-decisions.md) | 2026-08-01 |
-| D-036 | Cancellation policy, refund policy, tax/invoicing requirements, and customer-support workflow are open | Open | Require business and legal input not yet captured | Implementation of these areas should surface the open question rather than assume an answer | [roadmap-and-open-decisions.md](./roadmap-and-open-decisions.md) | 2026-08-01 |
-| D-037 | Franchise pricing authority and franchise customer-data access boundaries are open | Open | Depends on a franchise model that does not yet exist | Franchise-facing features must not be built against an assumed answer | [organization-outlet-access-model.md](./organization-outlet-access-model.md), [roadmap-and-open-decisions.md](./roadmap-and-open-decisions.md) | 2026-08-01 |
+### ID rules
 
-## Related documents
+- Decision IDs use immutable `D-xxx` identities.
+- Historical product/architecture rows in
+  [`decision-register-historical.md`](./decision-register-historical.md) (D-001–D-355) remain
+  interpretable history under that **HISTORICAL** document. They are not independently CURRENT
+  sequencing or transport authority.
+- New decisions continue after the highest CURRENT/AMENDED register ID: next ID **D-361**.
+- ADR files keep `ADR-xxx` identities. This register references them in the Record column.
+  Mapping ADR-014 ↔ D-014 is **not** used here because historical `decision-register-historical.md`
+  already assigned D-014 to a different decision (Next.js evolution-in-place).
+- Canonical pathname is exactly `docs/platform/decision-register.md` (lowercase; portable across
+  case-sensitive and case-insensitive filesystems). Historical inventory uses the distinct name
+  `decision-register-historical.md` so both files can coexist on case-insensitive volumes (a prior
+  uppercase `DECISION-REGISTER.md` expectation was filesystem-dependent and is not used).
 
-- [`README.md`](./README.md) — decision-status definitions and the documentation update protocol.
-- [`roadmap-and-open-decisions.md`](./roadmap-and-open-decisions.md) — narrative context for every row marked Open.
-- All other canonical documents — each Locked or Deferred row above is explained in full in its
-  linked document; this register intentionally summarizes rather than repeats that explanation.
+### ADR preservation
+
+Do not rewrite old ADR bodies as though earlier decisions never happened. Use status metadata and
+notices; keep history interpretable.
+
+## 2. Current Global Decisions
+
+| ID | Title | Scope | Status | Record | Supersedes | Superseded By | Governs |
+|---|---|---|---|---|---|---|---|
+| D-356 | Public frontend remains static Next.js export; dynamic ordering/business transport lives outside dynamic Next.js execution | Global / Transport | AMENDED | This register + ADR-014 historical body | ADR-014 Route-Handler-as-canonical HTTP boundary (and related CURRENT readings of D-015/D-051 that required Route Handlers as the product HTTP host) | — (amended by **D-359** for exact IMP-024 topology) | ARCH-G01, ARCH-G02 |
+| D-357 | Accepted Order lifecycle is PLACED \| ACCEPTED \| FULFILLED \| CANCELLED; detailed kitchen states (e.g. PREPARING, READY) are deferred detailed fulfilment, not current Order authority | Order / Fulfilment | CURRENT | This register + ADR-010 historical body | Competing CURRENT reading of ADR-010 kitchen workflow as accepted Order lifecycle | — | ARCH-G07, IMP-023 accepted state, deferred detailed fulfilment |
+| D-358 | Current accepted system-role inventory is owned by STATE/code (presently 7 roles); ADR-005/D-020 historical “six roles” prose is not a competing current-state authority | Access Control / Inventory | CURRENT | This register + ADR-005 historical body | Competing CURRENT-state reading of ADR-005 role count | — | STATE technical inventory |
+| D-359 | IMP-024 customer-commerce topology: one dedicated `customer-commerce` `node:http` thin transport façade behind Nginx `/api/v1/*` on internal port 8083; static Next export retained; `customer-auth` / `workforce-auth` remain separate; no Route Handlers; no per-domain microservices; no speculative infra/schema merely for transport | Global / Transport / IMP-024 | CURRENT | This register + [`capabilities/IMP-024-customer-ordering-transport.md`](./capabilities/IMP-024-customer-ordering-transport.md) | Undecided topology clause of D-356 | — | ARCH-G01, ARCH-G02, ARCH-G14, IMP-024 architecture |
+| D-360 | Customer commerce public API convention: `/api/v1/*` (not `/api/v1/customer/*`); auth prefixes `/api/customer-auth/*` and `/api/workforce-auth/*` unchanged; routes map accepted application operations outward without manufacturing domain authority; base error `{ ok:false, code, requestId }`; domain codes authoritative; no `PAYMENT_NOT_RETRYABLE`; Problem Details not selected for IMP-024; Payment idempotency is JSON `idempotencyKey` and Payment-specific | Transport / API / IMP-024 | CURRENT | This register + [`capabilities/IMP-024-customer-ordering-transport.md`](./capabilities/IMP-024-customer-ordering-transport.md) | Competing CURRENT readings that would restore Route-Handler host or Problem Details as IMP-024 commerce envelope | — | IMP-024 public contract |
+
+## 3. Current Capability / Cross-Capability Decisions
+
+Initial DR-1 register focused on decisions required to remove authority ambiguity. DR-2 adds IMP-024
+transport CURRENT decisions (D-359, D-360) and amends D-356. ADR inventory status for CURRENT
+binding reads:
+
+| ADR | Title | Register status | Notes |
+|---|---|---|---|
+| ADR-001 | DigitalOcean platform | CURRENT | Cloud hosting foundation |
+| ADR-002 | Environments / CI-CD / release | CURRENT | Environment and release model |
+| ADR-003 | Modular monolith Node/TS | AMENDED | Module boundaries remain; HTTP host reading constrained by D-356 / D-359 |
+| ADR-004 | Identity / authentication / sessions | CURRENT | Distinct customer/workforce trust; see accepted IMP-008–010 refinements in STATE |
+| ADR-005 | Organization / outlet authorization | AMENDED | Scoped RBAC CURRENT; role-count inventory → D-358 / STATE |
+| ADR-006 | Catalog / assortment / availability | CURRENT | Read with accepted IMP-012–014 separations |
+| ADR-007 | Pricing / tax / charges / promotions | CURRENT | Invoice/credit-note **intent** CURRENT; implementation = ROADMAP IMP-028 (not complete) |
+| ADR-008 | Serviceability / cart / checkout | AMENDED | Domain foundations CURRENT where aligned with accepted IMP-018–021; superseded details yield to STATE |
+| ADR-009 | Payments / webhooks / refunds | AMENDED | Provider-neutral Payment domain CURRENT via IMP-022; Cashfree productionization and Refund implementation are future ROADMAP slices (IMP-026 / IMP-027), not IMP-022 completion claims |
+| ADR-010 | Order lifecycle / operations console | AMENDED | High-level Order ownership CURRENT via D-357 + IMP-023; detailed kitchen workflow and Operations Console implementation are future / deferred |
+| ADR-011 | Delivery providers | HISTORICAL / future-binding intent | Not implemented; ROADMAP IMP-031+ |
+| ADR-012 | Notifications / WhatsApp | HISTORICAL / future-binding intent | Not implemented; ROADMAP IMP-033+ |
+| ADR-013 | PostgreSQL / Drizzle / persistence | CURRENT | Persistence foundation |
+| ADR-014 | HTTP API / Route Handlers / contracts | SUPERSEDED (canonical HTTP=Route Handlers) | Historical body preserved; superseded by D-356 for transport host; IMP-024 commerce contract refined by D-359 / D-360 without restoring Route Handlers |
+| ADR-015 | Configuration / secrets / feature flags | CURRENT | Config boundary; accepted via IMP-003 |
+
+Where repository evidence was insufficient to assert a finer semantic split inside an ADR without
+guessing, status is limited to the rows above rather than inventing a full taxonomy.
+
+## 4. Amended Decisions
+
+| ID / Record | Amendment | Binding remainder |
+|---|---|---|
+| ADR-003 | D-356 / D-359 | Modular monolith and module boundaries remain; Route Handler as product HTTP host does not; IMP-024 host is `customer-commerce` |
+| ADR-005 | D-358 | Scoped RBAC model remains; current role **count** is STATE/code. |
+| ADR-008 | Accepted IMP-018–021 | Prefer STATE/accepted code for cart/checkout/serviceability specifics that drifted from early ADR prose. |
+| ADR-009 | ROADMAP IMP-026/027 + accepted IMP-022 | Payment domain foundation accepted; Cashfree GTM and Refund not accepted as done. |
+| ADR-010 | D-357 | Order post-purchase lifecycle ownership remains; detailed PREPARING/READY kitchen machine is not accepted current Order lifecycle. |
+| **D-356** | **D-359** | Static public Next.js export + dynamic transport outside dynamic Next.js remain binding. Exact IMP-024 topology (service/port/proxy) is decided by D-359, not left undecided. |
+
+## 5. Superseded Decisions
+
+| Record | What was superseded | Superseded by |
+|---|---|---|
+| ADR-014 “Next.js Route Handlers are the canonical HTTP boundary” | Route Handlers as CURRENT product HTTP host for dynamic commerce | D-356 (host) + D-359 (IMP-024 topology) |
+| GTM-R1 future IMP meanings in `implementation-roadmap.md` | Future slice numbering / GTM=IMP-035 | [`ROADMAP.md`](./ROADMAP.md) GTM-R2+ |
+
+## 6. Rejected Decisions
+
+No new REJECTED entries are introduced by DR-2. Historical rejections inside ADRs remain in those
+ADR bodies.
+
+## 7. Decision Change Log
+
+### DR-2 — 2026-08-12
+
+- Registered **D-359** IMP-024 `customer-commerce` topology; amended D-356 undecided-topology clause.
+- Registered **D-360** customer commerce `/api/v1/*` public API convention and error/idempotency wire rules.
+- Linked locked capability architecture
+  [`capabilities/IMP-024-customer-ordering-transport.md`](./capabilities/IMP-024-customer-ordering-transport.md).
+- Next free decision ID advanced to **D-361**.
+
+### DR-1 — 2026-08-11
+
+- Installed CURRENT decision-authority document.
+- Registered D-356 static frontend + external dynamic transport; superseded ADR-014 Route-Handler
+  host claim.
+- Registered D-357 Order lifecycle clarification relative to ADR-010.
+- Registered D-358 role-inventory ownership relative to ADR-005 historical six-role prose.
+- Clarified ADR-007 invoice intent remains architectural; implementation maps to IMP-028.
+- Declared historical [`decision-register-historical.md`](./decision-register-historical.md) as
+  HISTORICAL supporting inventory (D-001–D-355), not competing CURRENT transport/roadmap authority.
+- Canonical register path locked to lowercase `decision-register.md`; historical inventory remains
+  `decision-register-historical.md` (avoids the prior case-only `DECISION-REGISTER.md` collision on
+  case-insensitive filesystems).
+
+## 8. Authority Boundaries
+
+| Question | Authority |
+|---|---|
+| Which decisions are binding now | **This document (`decision-register.md`)** |
+| Detailed rationale / history | ADRs under [`decisions/`](./decisions/) |
+| Historical D-001–D-355 inventory | [`decision-register-historical.md`](./decision-register-historical.md) (HISTORICAL) |
+| Global architecture summary | [`ARCHITECTURE.md`](./ARCHITECTURE.md) |
+| IMP-024 capability architecture | [`capabilities/IMP-024-customer-ordering-transport.md`](./capabilities/IMP-024-customer-ordering-transport.md) |
+| IMP sequence | [`ROADMAP.md`](./ROADMAP.md) |
+| Accepted inventory | [`STATE.md`](./STATE.md) |

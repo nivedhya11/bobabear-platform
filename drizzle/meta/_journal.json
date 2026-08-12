@@ -1,0 +1,132 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1785822480076,
+      "tag": "0000_database-foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1785951929425,
+      "tag": "0001_transactional_outbox_idempotency",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786027489038,
+      "tag": "0002_better_auth_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1786044332066,
+      "tag": "0003_customer_phone_otp_authentication",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1786089042643,
+      "tag": "0004_workforce_authentication_mfa",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1786102940055,
+      "tag": "0005_organization_outlet_rbac_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1786112592490,
+      "tag": "0006_canonical_catalog_model",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1786121087702,
+      "tag": "0007_existing_menu_import",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1786129046651,
+      "tag": "0008_assortment_operational_availability",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1786164769124,
+      "tag": "0009_pricing_charges_tax",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1786174006515,
+      "tag": "0010_promotions_coupons",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1786180968547,
+      "tag": "0011_customer_profiles",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1786198939412,
+      "tag": "0012_customer_addresses",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1786206603957,
+      "tag": "0013_serviceability",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1786215332674,
+      "tag": "0014_cart",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1786253882903,
+      "tag": "0015_checkout",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1786358809931,
+      "tag": "0016_payment",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1786376454707,
+      "tag": "0017_order",
+      "breakpoints": true
+    }
+  ]
+}
