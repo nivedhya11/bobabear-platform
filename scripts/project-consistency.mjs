@@ -238,6 +238,7 @@ function checkRoadmapState(roadmap, state) {
     "IMP-023": "Order",
     "IMP-024": "Customer Ordering Transport",
     "IMP-025": "Customer Ordering UX",
+    "IMP-026": "Razorpay",
     "IMP-035": "Initial Administration",
     "IMP-040": "Launch Validation",
   };
@@ -308,7 +309,7 @@ function checkDecisionRegister(decision) {
     }
   }
 
-  for (const id of ["D-356", "D-357", "D-358", "D-359", "D-360"]) {
+  for (const id of ["D-356", "D-357", "D-358", "D-359", "D-360", "D-361", "D-362"]) {
     if (!seen.has(id)) {
       fail("DECISION_REQUIRED_IDS", `DECISION-REGISTER must register ${id}`);
     }
@@ -323,14 +324,47 @@ function checkDecisionRegister(decision) {
 
   const d359Row = [...globalSection.split("\n")].find((line) => /^\|\s*D-359\s*\|/.test(line));
   const d360Row = [...globalSection.split("\n")].find((line) => /^\|\s*D-360\s*\|/.test(line));
+  const d361Row = [...globalSection.split("\n")].find((line) => /^\|\s*D-361\s*\|/.test(line));
+  const d362Row = [...globalSection.split("\n")].find((line) => /^\|\s*D-362\s*\|/.test(line));
   if (d359Row && !/\|\s*CURRENT\s*\|/.test(d359Row)) {
     fail("D359_STATUS", "D-359 must be CURRENT");
   }
   if (d360Row && !/\|\s*CURRENT\s*\|/.test(d360Row)) {
     fail("D360_STATUS", "D-360 must be CURRENT");
   }
+  if (d361Row && !/\|\s*CURRENT\s*\|/.test(d361Row)) {
+    fail("D361_STATUS", "D-361 must be CURRENT");
+  }
+  if (d361Row && !/Razorpay/.test(d361Row)) {
+    fail("D361_PROVIDER", "D-361 must select Razorpay as the V1 production payment provider");
+  }
+  if (d362Row && !/\|\s*CURRENT\s*\|/.test(d362Row)) {
+    fail("D362_STATUS", "D-362 must be CURRENT");
+  }
+  if (
+    d362Row &&
+    (!/acknowledgement/i.test(d362Row) ||
+      !/recoverMissingOrdersBatch/.test(d362Row) ||
+      !/inbox/i.test(d362Row))
+  ) {
+    fail(
+      "D362_WEBHOOK_BOUNDARY",
+      "D-362 must lock webhook acknowledgement after durable Payment, recoverMissingOrdersBatch, and no new inbox",
+    );
+  }
   if (d359Row && d360Row) {
     note("D-359 and D-360 registered as CURRENT");
+  }
+  if (d361Row && /\|\s*CURRENT\s*\|/.test(d361Row) && /Razorpay/.test(d361Row)) {
+    note("D-361 registered as CURRENT (Razorpay)");
+  }
+  if (
+    d362Row &&
+    /\|\s*CURRENT\s*\|/.test(d362Row) &&
+    /acknowledgement/i.test(d362Row) &&
+    /recoverMissingOrdersBatch/.test(d362Row)
+  ) {
+    note("D-362 registered as CURRENT (webhook acknowledgement / missing-Order recovery)");
   }
 }
 
@@ -526,6 +560,130 @@ function checkImp025ArchitectureLock(roadmap, state, architecture) {
       );
     } else {
       note("ARCHITECTURE.md references IMP-025 capability artifact");
+    }
+  }
+}
+
+function checkImp026ArchitectureLock(roadmap, state, architecture, decision) {
+  const artifactRel = "docs/platform/capabilities/IMP-026-razorpay-productionization.md";
+  const artifact = resolveExactRelativeFile(artifactRel);
+  if (!artifact) {
+    fail("IMP026_CAPABILITY_MISSING", `Missing locked capability architecture at ${artifactRel}`);
+  } else {
+    note(`IMP-026 capability architecture present (${artifactRel})`);
+    const body = readFileSync(artifact, "utf8");
+    if (!/ARCHITECTURE_LOCKED/.test(body)) {
+      fail("IMP026_CAPABILITY_LOCK", "IMP-026 capability artifact must declare ARCHITECTURE_LOCKED");
+    }
+    if (!/NOT_STARTED/.test(body)) {
+      fail(
+        "IMP026_CAPABILITY_IMPL",
+        "IMP-026 capability artifact must declare implementation NOT_STARTED",
+      );
+    }
+    if (/IMPLEMENTATION_IN_PROGRESS/.test(body)) {
+      fail(
+        "IMP026_CAPABILITY_IMPL_STARTED",
+        "IMP-026 capability artifact must not mark IMPLEMENTATION_IN_PROGRESS after architecture lock only",
+      );
+    }
+    for (const needle of [
+      "D-361",
+      "D-362",
+      "Razorpay",
+      "razorpay_standard_checkout",
+      "/api/integrations/payments/razorpay/webhook",
+      "/api/v1/payments/{paymentId}/client-evidence",
+      "recoverMissingOrdersBatch",
+      "tryMaterializeOrderAfterPaymentCompletion",
+    ]) {
+      if (!body.includes(needle)) {
+        fail("IMP026_CAPABILITY_CONTRACT", `IMP-026 capability artifact must include ${needle}`);
+      }
+    }
+    if (!/durable Payment/.test(body) || !/provider-ack/.test(body)) {
+      fail(
+        "IMP026_CAPABILITY_ACK",
+        "IMP-026 capability artifact must distinguish durable Payment acknowledgement from provider-ack Order materialization",
+      );
+    }
+  }
+
+  if (roadmap) {
+    const futureSection = roadmap.text.split("## 5. Future GTM Slices")[1]?.split("## 6.")[0] || "";
+    const futureRow = [...futureSection.split("\n")].find((line) =>
+      /^\|\s*IMP-026\s*\|/.test(line),
+    );
+    if (!futureRow || !futureRow.includes("ARCHITECTURE_LOCKED")) {
+      fail(
+        "IMP026_ROADMAP_LIFECYCLE",
+        "ROADMAP future ledger must list IMP-026 as ARCHITECTURE_LOCKED",
+      );
+    } else {
+      note("IMP-026 ROADMAP lifecycle ARCHITECTURE_LOCKED");
+    }
+    if (futureRow && /Cashfree/.test(futureRow)) {
+      fail(
+        "IMP026_ROADMAP_STALE_PROVIDER",
+        "ROADMAP IMP-026 current meaning must not remain Cashfree",
+      );
+    }
+    if (/IMP-026[\s\S]{0,80}IMPLEMENTATION_IN_PROGRESS/.test(roadmap.text)) {
+      fail(
+        "IMP026_ROADMAP_IMPL_STARTED",
+        "ROADMAP must not mark IMP-026 IMPLEMENTATION_IN_PROGRESS after architecture lock only",
+      );
+    }
+  }
+
+  if (state) {
+    if (!/IMP-026 architecture:[\s\S]{0,40}ARCHITECTURE_LOCKED/.test(state.text)) {
+      fail("IMP026_STATE_ARCH_LOCK", "STATE must record IMP-026 architecture ARCHITECTURE_LOCKED");
+    } else {
+      note("STATE records IMP-026 architecture locked");
+    }
+    if (!/IMP-026 implementation:[\s\S]{0,40}NOT_STARTED/.test(state.text)) {
+      fail("IMP026_STATE_IMPL", "STATE must record IMP-026 implementation NOT_STARTED");
+    } else {
+      note("STATE records IMP-026 implementation NOT_STARTED");
+    }
+    if (/IMP-026[\s\S]{0,80}IMPLEMENTATION_IN_PROGRESS/.test(state.text)) {
+      fail(
+        "IMP026_STATE_IMPL_STARTED",
+        "STATE must not mark IMP-026 IMPLEMENTATION_IN_PROGRESS after architecture lock only",
+      );
+    }
+  }
+
+  if (architecture) {
+    if (!/IMP-026-razorpay-productionization\.md/.test(architecture.text)) {
+      fail(
+        "IMP026_ARCH_REFERENCE",
+        "ARCHITECTURE.md must reference IMP-026 capability architecture artifact",
+      );
+    } else {
+      note("ARCHITECTURE.md references IMP-026 capability artifact");
+    }
+    if (!/D-361/.test(architecture.text) || !/Razorpay/.test(architecture.text)) {
+      fail("IMP026_ARCH_PROVIDER", "ARCHITECTURE.md must reference D-361 / Razorpay");
+    } else {
+      note("ARCHITECTURE.md references D-361 / Razorpay");
+    }
+    if (!/D-362/.test(architecture.text) || !/recoverMissingOrdersBatch/.test(architecture.text)) {
+      fail(
+        "IMP026_ARCH_WEBHOOK",
+        "ARCHITECTURE.md must reference D-362 / recoverMissingOrdersBatch webhook recovery boundary",
+      );
+    } else {
+      note("ARCHITECTURE.md references D-362 / recoverMissingOrdersBatch");
+    }
+  }
+
+  if (decision) {
+    if (!/D-363/.test(decision.text)) {
+      fail("NEXT_DECISION_ID", "Decision register must advance next free ID to D-363 after D-362");
+    } else {
+      note("Next free decision ID D-363 recorded");
     }
   }
 }
@@ -729,17 +887,17 @@ export function runProjectConsistency() {
   if (vision && vision.meta.version !== "VISION-1") {
     fail("VISION_VERSION", `Expected VISION-1, got ${vision.meta.version}`);
   }
-  if (architecture && architecture.meta.architectureVersion !== "ARCH-R5") {
-    fail("ARCH_VERSION", `Expected ARCH-R5, got ${architecture.meta.architectureVersion}`);
+  if (architecture && architecture.meta.architectureVersion !== "ARCH-R7") {
+    fail("ARCH_VERSION", `Expected ARCH-R7, got ${architecture.meta.architectureVersion}`);
   }
-  if (decision && decision.meta.decisionRegisterVersion !== "DR-2") {
-    fail("DR_VERSION", `Expected DR-2, got ${decision.meta.decisionRegisterVersion}`);
+  if (decision && decision.meta.decisionRegisterVersion !== "DR-4") {
+    fail("DR_VERSION", `Expected DR-4, got ${decision.meta.decisionRegisterVersion}`);
   }
-  if (roadmap && roadmap.meta.roadmapVersion !== "GTM-R7") {
-    fail("ROADMAP_VERSION", `Expected GTM-R7, got ${roadmap.meta.roadmapVersion}`);
+  if (roadmap && roadmap.meta.roadmapVersion !== "GTM-R9") {
+    fail("ROADMAP_VERSION", `Expected GTM-R9, got ${roadmap.meta.roadmapVersion}`);
   }
-  if (state && state.meta.stateVersion !== "STATE-R6") {
-    fail("STATE_VERSION", `Expected STATE-R6, got ${state.meta.stateVersion}`);
+  if (state && state.meta.stateVersion !== "STATE-R8") {
+    fail("STATE_VERSION", `Expected STATE-R8, got ${state.meta.stateVersion}`);
   }
   if (state && state.meta.governanceHealth === "ALIGNED") {
     // During reconciliation install this may still be RECONCILIATION_REQUIRED;
@@ -753,6 +911,7 @@ export function runProjectConsistency() {
   checkDecisionRegister(decision);
   checkImp024ArchitectureLock(roadmap, state, architecture);
   checkImp025ArchitectureLock(roadmap, state, architecture);
+  checkImp026ArchitectureLock(roadmap, state, architecture, decision);
   checkTechnicalInventory();
   checkStaticWeb();
   checkAgentsPointer();

@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R7",
+  "roadmapVersion": "GTM-R9",
   "acceptedThrough": "IMP-025",
   "currentProductSlice": "NONE",
   "nextProductSlice": "IMP-026",
   "gtmBoundary": "IMP-040",
   "lastReviewed": "2026-08-13",
-  "supersedes": "GTM-R6"
+  "supersedes": "GTM-R8"
 }
 -->
 
@@ -77,20 +77,26 @@ IMP-025 locked artifact:
 
 [`capabilities/IMP-025-customer-ordering-ux.md`](./capabilities/IMP-025-customer-ordering-ux.md)
 
+IMP-026 locked artifact:
+
+[`capabilities/IMP-026-razorpay-productionization.md`](./capabilities/IMP-026-razorpay-productionization.md)
+
 ## 2. Current Position
 
 ```text
 Accepted Through:     IMP-025 — Customer Ordering UX
 Current Product Slice: NONE
-Next Product Slice:    IMP-026 — Cashfree Productionization & Payment GTM Readiness
+Next Product Slice:    IMP-026 — Razorpay Productionization & Payment GTM Readiness
 Public GTM Boundary:   IMP-040 — Launch Validation & Cutover
 ```
 
 IMP-024 architecture remains **ARCHITECTURE_LOCKED**. IMP-024 implementation is
 **COMPLETE_AND_ACCEPTED**. IMP-025 architecture remains **ARCHITECTURE_LOCKED**. IMP-025
-implementation is **COMPLETE_AND_ACCEPTED**. `acceptedThrough` is IMP-025. IMP-026 remains
-`PLANNED / NOT STARTED`. Implementation of IMP-026 is **not** authorized by this
-reconciliation.
+implementation is **COMPLETE_AND_ACCEPTED**. `acceptedThrough` is IMP-025. IMP-026 architecture is
+**ARCHITECTURE_LOCKED**. IMP-026 implementation remains `NOT STARTED` and is **not** authorized by
+this architecture lock. Current V1 payment provider is **Razorpay** (**D-361**), substituting the
+previously published Cashfree IMP-026 meaning without changing the slice number. Razorpay webhook
+acknowledgement / missing-Order recovery is **D-362** (amends D-361 ack/post-payment effect only).
 
 ## 3. Accepted Slices
 
@@ -132,13 +138,13 @@ NONE
 Next product slice:
 
 ```text
-IMP-026 — Cashfree Productionization & Payment GTM Readiness
-Lifecycle: PLANNED / NOT STARTED
-Architecture: not locked
+IMP-026 — Razorpay Productionization & Payment GTM Readiness
+Lifecycle: ARCHITECTURE_LOCKED / NOT STARTED
+Architecture: locked
 ```
 
-Independent acceptance of IMP-025 is recorded. Do not start IMP-026. Implementation of
-IMP-026 is not authorized by this reconciliation.
+Independent acceptance of IMP-025 is recorded. Do not start IMP-026 implementation.
+Implementation of IMP-026 is not authorized by this architecture lock.
 
 IMP-024 architecture remains locked at
 [`capabilities/IMP-024-customer-ordering-transport.md`](./capabilities/IMP-024-customer-ordering-transport.md).
@@ -146,13 +152,16 @@ IMP-024 architecture remains locked at
 IMP-025 architecture remains locked at
 [`capabilities/IMP-025-customer-ordering-ux.md`](./capabilities/IMP-025-customer-ordering-ux.md).
 
+IMP-026 architecture is locked at
+[`capabilities/IMP-026-razorpay-productionization.md`](./capabilities/IMP-026-razorpay-productionization.md).
+
 ## 5. Future GTM Slices
 
 Remaining numbered product slices to public GTM: **15** (IMP-026 → IMP-040).
 
 | IMP | Capability | Lifecycle |
 |---|---|---|
-| IMP-026 | Cashfree Productionization & Payment GTM Readiness | PLANNED |
+| IMP-026 | Razorpay Productionization & Payment GTM Readiness | ARCHITECTURE_LOCKED |
 | IMP-027 | Refund Foundation | PLANNED |
 | IMP-028 | Invoice / Tax Receipt / Credit Note | PLANNED |
 | IMP-029 | Operations Console API | PLANNED |
@@ -169,7 +178,8 @@ Remaining numbered product slices to public GTM: **15** (IMP-026 → IMP-040).
 | IMP-040 | Launch Validation & Cutover | PLANNED |
 
 IMP-025 architecture remains **ARCHITECTURE_LOCKED**. Implementation is
-**COMPLETE_AND_ACCEPTED**. IMP-026 remains `PLANNED / NOT STARTED`.
+**COMPLETE_AND_ACCEPTED**. IMP-026 architecture is **ARCHITECTURE_LOCKED**. IMP-026
+implementation remains `NOT STARTED`.
 
 ## 6. Deferred / Unscheduled Capabilities
 
@@ -214,6 +224,34 @@ Historical GTM-R1 meanings that are **not** current:
 Current public GTM boundary is **IMP-040**, not IMP-035.
 
 ## 9. Roadmap Change Log
+
+### GTM-R9 — 2026-08-13
+
+- Recorded **D-362**: Razorpay webhook acknowledgement and post-payment Order recovery boundary.
+  Amends D-361 only for webhook acknowledgement / post-payment Order effect semantics. D-361 remains
+  CURRENT for Razorpay provider selection / Standard Checkout.
+- Updated locked IMP-026 capability architecture
+  ([`capabilities/IMP-026-razorpay-productionization.md`](./capabilities/IMP-026-razorpay-productionization.md))
+  for acknowledgement-after-durable-Payment, Order materialization outside provider-ack path, and
+  missing-Order recovery via existing `recoverMissingOrdersBatch`.
+- IMP-026 lifecycle remains `ARCHITECTURE_LOCKED`. Implementation remains `NOT STARTED` and is
+  **not** authorized by this architecture lock.
+- `acceptedThrough` remains IMP-025; `currentProductSlice` remains `NONE`; `pendingAcceptance`
+  remains `NONE`; `nextProductSlice` remains IMP-026. Do not advance to IMP-027.
+
+### GTM-R8 — 2026-08-13
+
+- Explicit approved provider substitution: retitled IMP-026 from
+  `Cashfree Productionization & Payment GTM Readiness` to
+  **`IMP-026 — Razorpay Productionization & Payment GTM Readiness`**. Slice number unchanged.
+- Locked IMP-026 capability architecture
+  ([`capabilities/IMP-026-razorpay-productionization.md`](./capabilities/IMP-026-razorpay-productionization.md)).
+- Set IMP-026 lifecycle to `ARCHITECTURE_LOCKED`. Implementation remains `NOT STARTED` and is
+  **not** authorized by this architecture lock.
+- `acceptedThrough` remains IMP-025; `currentProductSlice` remains `NONE`; `pendingAcceptance`
+  remains `NONE`; `nextProductSlice` remains IMP-026.
+- Current V1 payment provider/surface authority is **D-361** (Razorpay / Razorpay Standard
+  Checkout), superseding D-161 / D-162 for current authority. Do not advance to IMP-027.
 
 ### GTM-R7 — 2026-08-13
 
@@ -291,6 +329,7 @@ Current public GTM boundary is **IMP-040**, not IMP-035.
 | Binding decisions | [`decision-register.md`](./decision-register.md) |
 | IMP-024 capability architecture | [`capabilities/IMP-024-customer-ordering-transport.md`](./capabilities/IMP-024-customer-ordering-transport.md) |
 | IMP-025 capability architecture | [`capabilities/IMP-025-customer-ordering-ux.md`](./capabilities/IMP-025-customer-ordering-ux.md) |
+| IMP-026 capability architecture | [`capabilities/IMP-026-razorpay-productionization.md`](./capabilities/IMP-026-razorpay-productionization.md) |
 
 Operating lifecycle:
 

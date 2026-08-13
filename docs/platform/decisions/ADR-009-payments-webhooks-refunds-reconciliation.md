@@ -1,14 +1,37 @@
 ---
-Status: Accepted
+Status: AMENDED
+Governance status: AMENDED
+Cashfree V1 provider / Hosted Checkout selection superseded by: D-361
+Provider-neutral Payment architecture: REMAINS CURRENT (accepted IMP-022)
 Decision date: 2026-08-02
-Last updated: 2026-08-02
+Last updated: 2026-08-13
 ---
 
 # ADR-009: Payments, Webhooks, Refunds, and Reconciliation
 
 ## Status
 
-Accepted
+**AMENDED** (2026-08-13).
+
+- **Cashfree Payment Gateway / Cashfree Hosted Checkout as current V1 provider and collection
+  surface** is **SUPERSEDED** by **[D-361](../decision-register.md)**: Razorpay is the V1 production
+  payment provider and Razorpay Standard Checkout is the V1 customer payment collection surface.
+  Razorpay-specific production architecture is governed by D-361 and
+  [`../capabilities/IMP-026-razorpay-productionization.md`](../capabilities/IMP-026-razorpay-productionization.md).
+  **[D-362](../decision-register.md)** amends D-361 only for Razorpay webhook acknowledgement
+  (HTTP 2xx after durable Payment acceptance; Order materialization outside provider-ack path;
+  missing-Order recovery via existing `recoverMissingOrdersBatch`). D-361 remains CURRENT for
+  provider selection.
+- **Provider-neutral Payment domain**, webhook / query / provider-evidence principles, refund domain
+  intent, and reconciliation requirements in this ADR **remain accepted** where aligned with
+  accepted IMP-022 and later CURRENT decisions. They are not rewritten as though Razorpay was always
+  selected.
+- Refund implementation remains **IMP-027**. IMP-026 current meaning is Razorpay productionization &
+  Payment GTM readiness, not Cashfree.
+
+This ADR body is preserved as historical rationale for the original Cashfree selection and the
+provider-neutral Payment architecture. Do not read Cashfree-specific provider-selection prose below
+as current V1 provider authority.
 
 ## Decision Date
 
@@ -92,6 +115,12 @@ summaries, or third-party payment-comparison pages. This ADR records the resulti
 decisions; it does not reproduce provider documentation.
 
 ## Decision Summary
+
+> **Governance note (2026-08-13):** The Cashfree V1 provider / Hosted Checkout selection in this
+> summary is **SUPERSEDED** by [D-361](../decision-register.md). Preserve the text below as
+> historical rationale. Current V1 provider is **Razorpay** with **Razorpay Standard Checkout**.
+> Provider-neutral Payments-module boundary, verified server-side evidence, webhook/query
+> precedence, and refund-intent remainder remain binding.
 
 BOBA Bear will use **Cashfree Payment Gateway with Cashfree Hosted Checkout** as the primary V1
 payment provider, integrated behind a **provider-neutral Payments module** so that Checkout, Orders,

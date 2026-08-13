@@ -2,7 +2,7 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R6",
+  "stateVersion": "STATE-R8",
   "acceptedThrough": "IMP-025",
   "currentProductSlice": "NONE",
   "nextProductSlice": "IMP-026",
@@ -30,8 +30,8 @@ Accepted Range:            IMP-001 → IMP-025 (including IMP-005A)
 ```text
 Current Product Implementation: NONE
 Pending Acceptance:             NONE
-Next Product Slice:             IMP-026 — Cashfree Productionization & Payment GTM Readiness
-Current Governance Activity:    IMP-025 COMPLETE_AND_ACCEPTED (reconciled)
+Next Product Slice:             IMP-026 — Razorpay Productionization & Payment GTM Readiness
+Current Governance Activity:    IMP-026 ARCHITECTURE_LOCKED (implementation NOT_STARTED)
 Governance Health:              ALIGNED
 ```
 
@@ -40,6 +40,8 @@ IMP-024 architecture:     ARCHITECTURE_LOCKED
 IMP-024 implementation:   COMPLETE_AND_ACCEPTED
 IMP-025 architecture:     ARCHITECTURE_LOCKED
 IMP-025 implementation:   COMPLETE_AND_ACCEPTED
+IMP-026 architecture:     ARCHITECTURE_LOCKED
+IMP-026 implementation:   NOT_STARTED
 ```
 
 Capability architecture:
@@ -48,12 +50,16 @@ Capability architecture:
 
 [`capabilities/IMP-025-customer-ordering-ux.md`](./capabilities/IMP-025-customer-ordering-ux.md)
 
+[`capabilities/IMP-026-razorpay-productionization.md`](./capabilities/IMP-026-razorpay-productionization.md)
+
 `acceptedThrough` is IMP-025. IMP-025 architecture remains locked; IMP-025 implementation is
-**COMPLETE_AND_ACCEPTED**. IMP-026 remains `PLANNED / NOT STARTED` and is **not** authorized
-by this reconciliation.
+**COMPLETE_AND_ACCEPTED**. IMP-026 architecture is **ARCHITECTURE_LOCKED**. IMP-026 implementation
+is `NOT_STARTED` and is **not** authorized by this architecture lock. Current V1 payment provider
+is **Razorpay** (**D-361**). Razorpay webhook acknowledgement / missing-Order recovery is
+**D-362**.
 
 `governanceHealth = ALIGNED` records independent acceptance through IMP-025.
-Implementation agents must not self-promote this field or start IMP-026.
+Implementation agents must not self-promote this field or start IMP-026 implementation.
 
 ## 3. Accepted Technical Inventory
 
@@ -158,6 +164,12 @@ acceptance:
 - Historical role-count prose (six roles) vs accepted inventory (seven) — clarified by **D-358**;
   current inventory is owned by this STATE document and code.
 
+STATE-R8 records **D-362** (Razorpay webhook acknowledgement / post-payment Order recovery) as an
+amendment of D-361 ack/post-payment effect only, without changing IMP-026 lifecycle or
+`acceptedThrough`. D-361 remains CURRENT for provider selection.
+STATE-R7 records IMP-026 architecture lock (`ARCHITECTURE_LOCKED`) with implementation
+`NOT_STARTED`, and the approved V1 provider substitution to Razorpay (**D-361**) without starting
+IMP-026 implementation or advancing `acceptedThrough`.
 STATE-R6 records independent acceptance of IMP-025 (`COMPLETE_AND_ACCEPTED`).
 STATE-R5 recorded IMP-025 coding-agent implementation complete
 (`IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`) without independent acceptance.
@@ -189,7 +201,7 @@ update and supersedes the pre-acceptance value for ongoing governance identity.
 
 Supporting primitives do not equal capability completion. Not yet accepted as product capabilities:
 
-- Cashfree Productionization
+- Razorpay Productionization & Payment GTM Readiness
 - Refund
 - Invoice / Tax Receipt / Credit Note
 - Operations Console API
@@ -215,6 +227,7 @@ Supporting primitives do not equal capability completion. Not yet accepted as pr
 | Binding decision status | [`decision-register.md`](./decision-register.md) |
 | IMP-024 locked capability architecture | [`capabilities/IMP-024-customer-ordering-transport.md`](./capabilities/IMP-024-customer-ordering-transport.md) |
 | IMP-025 locked capability architecture | [`capabilities/IMP-025-customer-ordering-ux.md`](./capabilities/IMP-025-customer-ordering-ux.md) |
+| IMP-026 locked capability architecture | [`capabilities/IMP-026-razorpay-productionization.md`](./capabilities/IMP-026-razorpay-productionization.md) |
 
 Agents may propose a STATE delta in their report. Only independent acceptance updates this file's
 accepted position and may promote `governanceHealth` to `ALIGNED`.

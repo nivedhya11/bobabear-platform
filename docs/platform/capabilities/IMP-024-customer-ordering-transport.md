@@ -6,7 +6,7 @@
   "title": "Customer Ordering Transport / API",
   "architectureLock": "ARCHITECTURE_LOCKED",
   "implementation": "COMPLETE_AND_ACCEPTED",
-  "lastReviewed": "2026-08-12",
+  "lastReviewed": "2026-08-13",
   "bindingDecisions": ["D-356", "D-359", "D-360", "D-357", "D-358"]
 }
 -->
@@ -17,6 +17,15 @@
 
 This document is the **locked capability architecture** for IMP-024. Architecture remains
 `ARCHITECTURE_LOCKED`. Implementation is `COMPLETE_AND_ACCEPTED`.
+
+> **Amendment (2026-08-13):** Current V1 production payment provider is **Razorpay**
+> ([D-361](../decision-register.md)). Historical Cashfree productionization deferrals in this
+> document now refer to IMP-026 Razorpay productionization. IMP-024 transport exclusions and
+> accepted `/api/v1/*` inventory are unchanged. IMP-026 adds provider webhook ingress
+> (`POST /api/integrations/payments/razorpay/webhook`) and provider-neutral client-evidence
+> (`POST /api/v1/payments/{paymentId}/client-evidence`) under D-361; webhook acknowledgement /
+> missing-Order recovery semantics are refined by **D-362**. Those routes are not retroactively part
+> of IMP-024 acceptance.
 
 ---
 
@@ -686,7 +695,8 @@ states or customer recovery APIs.
 
 Deferred or later IMPs (non-exhaustive): Menu public DB API; standalone Serviceability HTTP;
 `cancelCheckout` / customer cancellation; `cancelPayment`; Refund; Invoice; Delivery;
-Notifications; Ops Console; Cashfree productionization; Observability GTM; IMP-025 UX.
+Notifications; Ops Console; Razorpay productionization (IMP-026; historically published as Cashfree
+productionization); Observability GTM; IMP-025 UX.
 
 ---
 

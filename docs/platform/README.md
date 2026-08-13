@@ -45,6 +45,7 @@ Machine check: `npm run project:consistency`.
 |---|---|---|
 | [`capabilities/IMP-024-customer-ordering-transport.md`](./capabilities/IMP-024-customer-ordering-transport.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-024 transport; implementation COMPLETE_AND_ACCEPTED |
 | [`capabilities/IMP-025-customer-ordering-ux.md`](./capabilities/IMP-025-customer-ordering-ux.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-025 Customer Ordering UX; COMPLETE_AND_ACCEPTED |
+| [`capabilities/IMP-026-razorpay-productionization.md`](./capabilities/IMP-026-razorpay-productionization.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-026 Razorpay productionization & Payment GTM readiness (D-361 provider / D-362 webhook ack & missing-Order recovery); implementation NOT_STARTED |
 
 ## Supporting documents
 
@@ -76,6 +77,10 @@ supersession are owned by [`decision-register.md`](./decision-register.md). Nota
 - ADR-010 detailed kitchen workflow → **AMENDED** by D-357 (accepted Order lifecycle is IMP-023)
 - ADR-005 historical six-role prose → **AMENDED** by D-358 (inventory is STATE/code)
 - ADR-007 invoice intent remains CURRENT architecture intent; implementation = IMP-028
+- ADR-009 Cashfree V1 provider / Hosted Checkout selection → **SUPERSEDED for current provider
+  authority** by D-361 (Razorpay / Razorpay Standard Checkout); webhook acknowledgement /
+  post-payment Order recovery refined by D-362; provider-neutral Payment remainder remains;
+  IMP-026 architecture locked / implementation not started
 
 ## Documentation update protocol
 

@@ -30,6 +30,13 @@ This document is the **locked capability architecture** for IMP-025 — Customer
 Architecture remains locked. Implementation is independently accepted
 (`COMPLETE_AND_ACCEPTED`). This document does **not** authorize IMP-026.
 
+> **Amendment (2026-08-13):** Current V1 production payment provider is **Razorpay**
+> ([D-361](../decision-register.md)). IMP-025 remains provider-neutral customer Payment UX.
+> Historical Cashfree productionization deferrals below now refer to IMP-026 Razorpay
+> productionization. **D-362** amends D-361 webhook acknowledgement / post-payment Order recovery
+> only and does not change IMP-025 UX authority. Next free global decision ID after D-362 is
+> **D-363**.
+
 ---
 
 ## 1. Capability Identity
@@ -44,7 +51,7 @@ Architecture remains locked. Implementation is independently accepted
 | Accepted product through | IMP-025 — Customer Ordering UX |
 | Current product slice | `NONE` |
 | Consumes | Accepted IMP-001→IMP-024 foundations, especially IMP-024 customer-commerce transport |
-| Next related slices | IMP-026 Cashfree productionization; later Refund / Invoice / Ops / Delivery / Notifications |
+| Next related slices | IMP-026 Razorpay productionization; later Refund / Invoice / Ops / Delivery / Notifications |
 
 ---
 
@@ -128,8 +135,8 @@ Browse static ordering catalog
 
 ### 4.2 Explicitly excluded
 
-- Production Cashfree provider integration — **IMP-026**
-- Cashfree production webhook / GTM operationalization — **IMP-026**
+- Production Razorpay provider integration — **IMP-026**
+- Razorpay production webhook / GTM operationalization — **IMP-026**
 - Refund — **IMP-027**
 - Invoice — **IMP-028**
 - Ops Console API / UI — **IMP-029 / IMP-030**
@@ -152,7 +159,7 @@ Browse static ordering catalog
 
 | Concern | Owner |
 |---|---|
-| Cashfree productionization & payment GTM readiness | IMP-026 |
+| Razorpay productionization & payment GTM readiness | IMP-026 |
 | Refund | IMP-027 |
 | Invoice / tax receipt / credit note | IMP-028 |
 | Operations Console API / UI | IMP-029 / IMP-030 |
@@ -179,11 +186,13 @@ Do not opportunistically include later capabilities because UI could theoretical
 | **D-359** | Commerce traffic through dedicated `customer-commerce` façade behind Nginx `/api/v1/*` |
 | **D-360** | `/api/v1/*` public contract, error envelope, Payment JSON `idempotencyKey` |
 
-No new global `D-xxx` is required for this capability lock. Capability-local choices
+No new global `D-xxx` was required for this capability lock. Capability-local choices
 (static ordering-catalog projection, `sessionStorage` guest-token persistence, CTA hierarchy)
 remain inside this document.
 
-Next free global decision ID remains **D-361** (unused).
+Next free global decision ID is **D-363**. **D-361** is CURRENT (Razorpay V1 provider / Standard
+Checkout) and does not change IMP-025 provider-neutral UX authority. **D-362** amends D-361 webhook
+acknowledgement / post-payment Order recovery only.
 
 ### Applicable ADRs (read with register supersession)
 
@@ -193,7 +202,7 @@ Next free global decision ID remains **D-361** (unused).
 | ADR-004 | CURRENT foundations | Reuse existing customer phone OTP auth; do not invent a second auth system |
 | ADR-007 | CURRENT intent | Pricing/tax/charges remain server-authoritative; invoice implementation = IMP-028 |
 | ADR-008 | CURRENT foundations | Cart/Checkout/serviceability authority remains backend |
-| ADR-009 | CURRENT foundations | Payment provider-neutral contracts; Cashfree production = IMP-026 |
+| ADR-009 | CURRENT foundations | Payment provider-neutral contracts; Razorpay production = IMP-026 (D-361) |
 | ADR-010 | AMENDED by D-357 | Do not present kitchen states as Order authority |
 | ADR-014 | SUPERSEDED for HTTP host | Must not override D-356–D-360; no Route Handlers for commerce |
 
@@ -487,14 +496,15 @@ May:
 - handle zero-payable completion
 - transition to order confirmation when existing backend authority permits it
 
-Must **not** embed Cashfree-specific business logic into generic customer UX unless an already
-accepted provider-neutral contract requires a generic browser action.
+Must **not** embed provider-specific business logic (historically Cashfree; current V1 provider
+Razorpay under D-361) into generic customer UX unless an already accepted provider-neutral contract
+requires a generic browser action.
 
 ### IMP-026
 
 Owns:
 
-- Cashfree production adapter completion / productionization
+- Razorpay production adapter completion / productionization
 - production payment GTM readiness
 - production provider-specific webhook / operational concerns assigned to that slice
 

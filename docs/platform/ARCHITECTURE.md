@@ -2,7 +2,7 @@
 {
   "status": "CURRENT",
   "authority": "GLOBAL_ARCHITECTURE",
-  "architectureVersion": "ARCH-R5",
+  "architectureVersion": "ARCH-R7",
   "lastReviewed": "2026-08-13"
 }
 -->
@@ -56,6 +56,23 @@ Full route/error/operability contracts live in
 [`capabilities/IMP-024-customer-ordering-transport.md`](./capabilities/IMP-024-customer-ordering-transport.md)
 ([D-360](./decision-register.md)). The accepted Compose runtime includes `customer-commerce`
 (internal `:8083`) behind Nginx `/api/v1/*`.
+
+IMP-026 payment integration uses the **same** `customer-commerce` process ([D-361](./decision-register.md)).
+No new deployable service. Razorpay runs behind the existing `PaymentProvider` port.
+
+```text
+POST /api/integrations/payments/razorpay/webhook  → customer-commerce
+POST /api/v1/payments/{paymentId}/client-evidence → customer-commerce  (authenticated customer API)
+```
+
+`/api/integrations/*` is not part of `/api/v1/*` and is not a customer API. Nginx will route the
+Razorpay webhook path to `customer-commerce`. Client-evidence remains inside the D-360 `/api/v1/*`
+customer convention. Neither path is a Next.js Route Handler.
+
+Razorpay webhook acknowledgement ([D-362](./decision-register.md)) occurs only after verified
+Payment evidence is durably accepted/applied. Order materialization is a post-ack effect, not part
+of the provider-ack critical path. Missing-Order after Payment success is recovered via existing
+`recoverMissingOrdersBatch`. No new Payment inbox, worker/service, queue/broker, or Payment schema.
 
 Local default runtime uses Docker Desktop Compose. Staging/production cloud topology remains governed
 by ADR-001 / ADR-002 and future production slices; those details must not contradict the static
@@ -163,12 +180,16 @@ outbox/idempotency primitives exist; they are not a mandate to wrap every write.
 
 Durable upstream authority is not rolled back merely because a downstream recoverable
 materialization fails (example: Payment success remains authoritative if Order materialization is
-best-effort/recoverable).
+best-effort/recoverable). Razorpay webhook acknowledgement ([D-362](./decision-register.md)) follows
+durable Payment acceptance; Order materialization stays outside that ack path; missing-Order gaps
+are recovered via existing `recoverMissingOrdersBatch`.
 
 ## 10. External Integration Principles
 
 - Provider observations do not automatically become core domain authority.
-- Cashfree state does not automatically define Payment truth.
+- Payment-provider state does not automatically define Payment truth. Current V1 production
+  provider is **Razorpay** ([D-361](./decision-register.md)); historical Cashfree selection
+  (D-161 / D-162) is not current provider authority.
 - Delivery provider state does not automatically redefine Order truth.
 - WhatsApp delivery state does not become Order truth.
 - Keep business-domain authority provider-neutral where the business concept exists independently.
@@ -223,6 +244,7 @@ Dynamic commerce must remain outside dynamic Next.js execution unless superseded
 | Invoice / Credit Note document engine | FUTURE / NOT_IMPLEMENTED |
 | Exact IMP-024 transport topology | DECIDED — D-359 (`customer-commerce:8083` behind `/api/v1/*`); capability architecture locked; Compose wiring accepted with IMP-024 |
 | IMP-025 Customer Ordering UX | ARCHITECTURE_LOCKED — capability architecture [`capabilities/IMP-025-customer-ordering-ux.md`](./capabilities/IMP-025-customer-ordering-ux.md); static export + `/api/v1/*` client UX; implementation COMPLETE_AND_ACCEPTED |
+| IMP-026 Razorpay productionization | ARCHITECTURE_LOCKED — capability architecture [`capabilities/IMP-026-razorpay-productionization.md`](./capabilities/IMP-026-razorpay-productionization.md); Razorpay behind existing `PaymentProvider` in `customer-commerce` (D-361); webhook ack after durable Payment / missing-Order recovery via `recoverMissingOrdersBatch` (D-362); implementation NOT_STARTED |
 
 `NOT_DEFINED` / `NOT_IMPLEMENTED` ≠ `PROHIBITED_FOREVER`.
 
@@ -253,6 +275,8 @@ Dynamic commerce must remain outside dynamic Next.js execution unless superseded
 | IMP-024 customer-commerce topology | [D-359](./decision-register.md); capability lock [`capabilities/IMP-024-customer-ordering-transport.md`](./capabilities/IMP-024-customer-ordering-transport.md) |
 | IMP-024 `/api/v1/*` commerce API convention | [D-360](./decision-register.md) |
 | IMP-025 Customer Ordering UX | Capability lock [`capabilities/IMP-025-customer-ordering-ux.md`](./capabilities/IMP-025-customer-ordering-ux.md) (COMPLETE_AND_ACCEPTED) |
+| V1 production payment provider / collection surface | [D-361](./decision-register.md) (Razorpay / Razorpay Standard Checkout); capability lock [`capabilities/IMP-026-razorpay-productionization.md`](./capabilities/IMP-026-razorpay-productionization.md) |
+| Razorpay webhook acknowledgement / post-payment Order recovery | [D-362](./decision-register.md) (amends D-361 ack/post-payment effect only; D-361 remains CURRENT for provider selection) |
 | Order high-level lifecycle vs deferred kitchen detail | [D-357](./decision-register.md), amends ADR-010 reading |
 | Role inventory ownership | [D-358](./decision-register.md); current count in STATE |
 | Invoice architecture intent | ADR-007 (implementation = IMP-028 on ROADMAP) |
