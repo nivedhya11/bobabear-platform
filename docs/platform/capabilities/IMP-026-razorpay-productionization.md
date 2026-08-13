@@ -8,7 +8,7 @@
   "implementation": "NOT_STARTED",
   "implementationAuthorized": false,
   "lastReviewed": "2026-08-13",
-  "bindingDecisions": ["D-356", "D-357", "D-358", "D-359", "D-360", "D-361", "D-362"],
+  "bindingDecisions": ["D-356", "D-357", "D-358", "D-359", "D-360", "D-361", "D-362", "D-363"],
   "dependsOn": ["IMP-024", "IMP-025"],
   "supersedesProviderDecisions": ["D-161", "D-162"]
 }
@@ -27,14 +27,17 @@ Payment GTM Readiness.
 | Implementation | `NOT_STARTED` |
 | Implementation authorized | **NO** |
 | Acceptance | not started; `acceptedThrough` remains IMP-025 |
-| Schema change required | **NO** |
+| Schema change required | **YES** (Payment/provider ingress; one future migration during implementation) |
 
 Architecture is locked. Implementation is **not** started and is **not** authorized by this lock.
 
 This is an explicit approved provider substitution: historical Cashfree V1 provider/surface
 selection (**D-161**, **D-162**) is superseded for current authority by **D-361**. **D-362** amends
-D-361 only for webhook acknowledgement / post-payment Order recovery semantics; D-361 remains
-CURRENT for provider selection. Slice number **IMP-026** is unchanged.
+D-361 for post-payment Order effect / missing-Order recovery. **D-363** amends D-362 only for
+webhook acknowledgement timing / durable inbox / asynchronous Payment processing. D-361 remains
+CURRENT for provider selection. D-362 remains CURRENT for Order materialization outside the
+provider-ack path, missing-Order recovery, secondary reconciliation, and no new deployable service.
+Slice number **IMP-026** is unchanged.
 
 ---
 
@@ -53,7 +56,8 @@ CURRENT for provider selection. Slice number **IMP-026** is unchanged.
 | Consumes | Accepted IMP-001→IMP-025 foundations, especially IMP-022 Payment, IMP-023 Order, IMP-024 transport, IMP-025 provider-neutral UX |
 | Next related slices | IMP-027 Refund; later Invoice / Ops / Delivery / Notifications |
 | Binding provider decision | **D-361** |
-| Binding webhook / recovery decision | **D-362** (amends D-361 acknowledgement / post-payment Order effect only) |
+| Binding webhook / recovery decision | **D-362** (amends D-361 post-payment Order effect / missing-Order recovery; acknowledgement timing further amended by D-363) |
+| Binding webhook durability decision | **D-363** (amends D-362 acknowledgement timing only; durable inbox + asynchronous Payment processing) |
 | Historical provider decisions | **D-161** / **D-162** (superseded for current V1 provider/surface authority) |
 
 ---
@@ -69,7 +73,7 @@ CURRENT for provider selection. Slice number **IMP-026** is unchanged.
 | Accepted reality | [`../STATE.md`](../STATE.md) |
 | Transport contracts consumed | [`IMP-024-customer-ordering-transport.md`](./IMP-024-customer-ordering-transport.md) |
 | Customer UX contracts consumed | [`IMP-025-customer-ordering-ux.md`](./IMP-025-customer-ordering-ux.md) |
-| Provider-neutral Payment ADR | [`../decisions/ADR-009-payments-webhooks-refunds-reconciliation.md`](../decisions/ADR-009-payments-webhooks-refunds-reconciliation.md) (Cashfree selection superseded by D-361; webhook acknowledgement / post-payment Order recovery refined by D-362; provider-neutral remainder remains) |
+| Provider-neutral Payment ADR | [`../decisions/ADR-009-payments-webhooks-refunds-reconciliation.md`](../decisions/ADR-009-payments-webhooks-refunds-reconciliation.md) (Cashfree selection superseded by D-361; post-payment Order recovery refined by D-362; webhook acknowledgement timing / durable inbox refined by D-363; provider-neutral remainder remains) |
 | This capability lock | **This document** |
 | Agent rules | [`../../../AGENTS.md`](../../../AGENTS.md) |
 
@@ -79,9 +83,9 @@ Layering (unchanged):
 UI → Transport → Application Operations → Domain Authority → Persistence → Provider Adapter
 ```
 
-IMP-026 owns the **Razorpay adapter**, production composition, webhook ingress, client-evidence
-application operation, and GTM readiness of the existing Payment port. It must not invent a second
-Payment domain, Order authority, or deployable service.
+IMP-026 owns the **Razorpay adapter**, production composition, webhook ingress, durable webhook
+inbox, client-evidence application operation, and GTM readiness of the existing Payment port. It
+must not invent a second Payment domain, Order authority, or deployable service.
 
 ---
 
@@ -96,20 +100,21 @@ Conceptual outcome:
 ```text
 Accepted Checkout snapshot
 → BOBA Bear Payment + Attempt (existing idempotency)
-→ Razorpay provider execution / Order (adapter)
-→ razorpay_standard_checkout clientAction (browser-safe)
+→ Razorpay provider execution / Order (adapter; one Attempt = one Razorpay Order)
+→ razorpay_standard_checkout clientAction (browser-safe; provider internal retry disabled)
 → Razorpay Standard Checkout (browser adapter)
 → POST /api/v1/payments/{paymentId}/client-evidence
 → server-side verification + existing Payment transitions
 → webhook / query / reconciliation as durable evidence
 ```
 
-Razorpay webhook acknowledgement (**D-362**):
+Razorpay webhook acknowledgement (**D-363**, amends D-362 timing):
 
 ```text
 verified webhook
-→ durable Payment transition
+→ durable webhook inbox insert
 → HTTP 2xx
+→ asynchronous Payment evidence processing from inbox
 → Order materialization outside provider-ack critical path
    (existing tryMaterializeOrderAfterPaymentCompletion)
 
@@ -135,35 +140,43 @@ If Payment success exists but Order is absent:
 9. Isolated Razorpay browser Checkout adapter (not generic Payment UX rewrite)
 10. Checkout.js loading as provider integration code, not Payment authority
 11. `POST /api/integrations/payments/razorpay/webhook` hosted by `customer-commerce`
-12. Webhook signature verification before any Payment transition
-13. **D-362** webhook acknowledgement only after durable Payment acceptance/application
-14. Order materialization outside the Razorpay provider-ack critical path
-15. Missing-Order recovery via existing `recoverMissingOrdersBatch` (operationally invokable + proven)
-16. Productionization of existing `queryExecution` / `reconcilePaymentAttempt` for Razorpay
-17. Fail-closed Razorpay runtime composition into existing `customer-commerce`
-18. Server-only Razorpay configuration / secrets architecture
-19. Preservation of D-360 / Payment initiation idempotency
-20. GTM acceptance architecture (tests specified, not implemented here)
+12. Webhook signature verification before durable inbox acceptance
+13. **D-363** webhook acknowledgement only after durable inbox insert (not after Payment transition)
+14. Asynchronous inbox processing inside existing `customer-commerce` (no new deployable service)
+15. Order materialization outside the Razorpay provider-ack critical path (**D-362**)
+16. Missing-Order recovery via existing `recoverMissingOrdersBatch` (operationally invokable + proven)
+17. Productionization of existing `queryExecution` / `reconcilePaymentAttempt` for Razorpay
+18. One BOBA Bear Payment Attempt = one Razorpay Order; BOBA `retryPayment` owns retry
+19. Razorpay Standard Checkout internal retry disabled
+20. Automatic capture as the IMP-026 collection model; captured required for authoritative success
+21. Deterministic provider receipt / recover-before-recreate on uncertain Order create
+22. Fail-closed Razorpay runtime composition into existing `customer-commerce`
+23. Server-only Razorpay configuration / secrets architecture
+24. Preservation of D-360 / Payment initiation idempotency
+25. Payment/provider ingress schema change: dedicated `payment_provider_event_inbox` (one future migration)
+26. GTM acceptance architecture (tests specified, not implemented here)
 
 ### 4.2 Explicitly excluded
 
 - Razorpay production code in this architecture-lock task
 - New Payment domain / microservice / second payment state machine
 - New Order materialization logic or duplicate Order path
-- Payment schema change
 - Next.js Route Handlers / `src/app/api` commerce or webhook host
 - New deployable service
 - `NEXT_PUBLIC_*` Razorpay secrets or extra public-config mechanism for Key ID
-- Speculative queue / worker / scheduler solely for IMP-026
-- Kafka / RabbitMQ / Redis queue / SQS / another Compose service for IMP-026
-- New Payment webhook inbox table (`payment_provider_observations` is not an inbox)
-- Payment schema change
+- Kafka / RabbitMQ / Redis queue / SQS / another Compose service / generic worker framework
+- Overloading `payment_provider_observations` with inbox semantics
+- Razorpay-specific Order-correlation table (use existing generic provider reference persistence)
 - Permanent scheduled missing-Order recovery loop/service automatically required by D-362
 - Refund initiation, refund webhook workflow, customer refund UX, refund reconciliation — **IMP-027**
 - Multi-provider payment orchestration
 - International payments / EMI / BNPL / COD
 - Redesign of IMP-025 generic customer ordering UX
 - IMP-027 scope change
+
+The dedicated Postgres webhook inbox and in-process claim/process loop are **not** a new
+infrastructure platform. They are the minimum durable ingress mechanism for Razorpay provider
+events inside existing `customer-commerce`.
 
 ### 4.3 Deferred / later-roadmap ownership
 
@@ -174,7 +187,7 @@ If Payment success exists but Order is absent:
 | Operations Console API / UI | IMP-029 / IMP-030 |
 | Delivery | IMP-031+ |
 | Notifications / WhatsApp | IMP-033+ |
-| Scheduled reconciliation worker / operational automation | separate future work if not required for GTM acceptance; not required merely by D-362 |
+| Scheduled reconciliation worker / operational automation | separate future work if not required for GTM acceptance; not required merely by D-362 / D-363 |
 | Permanent scheduled missing-Order recovery runner | not automatically required by D-362; raise separately only if implementation later proves recovery cannot be operated safely without one |
 | Customer self-service cancellation | DEFERRED_UNSCHEDULED |
 | Multi-provider / intl / EMI / BNPL / COD | DEFERRED_UNSCHEDULED |
@@ -188,15 +201,17 @@ If Payment success exists but Order is absent:
 | ID | Relevance to IMP-026 |
 |---|---|
 | **D-361** | Razorpay is V1 production provider; Razorpay Standard Checkout is V1 collection surface |
-| **D-362** | Webhook 2xx only after durable Payment acceptance; Order materialization outside provider-ack path; missing-Order recovery via `recoverMissingOrdersBatch`; no new inbox/worker/schema |
+| **D-362** | Order materialization outside provider-ack path; missing-Order recovery via `recoverMissingOrdersBatch`; secondary reconciliation; no new deployable service |
+| **D-363** | Durable webhook inbox before HTTP 2xx; asynchronous Payment processing inside `customer-commerce`; one Attempt = one Razorpay Order; Checkout internal retry disabled; captured required for success; automatic capture; deterministic receipt / recover-before-recreate; Payment/provider ingress schema change |
 | **D-356** | Public frontend remains static Next.js export; no dynamic Next.js commerce/webhook host |
 | **D-357** | Order lifecycle vocabulary unchanged |
 | **D-358** | System-role inventory ownership unchanged |
 | **D-359** | Same `customer-commerce` process; no new service |
 | **D-360** | `/api/v1/*` customer contract + Payment JSON `idempotencyKey` preserved |
 
-**D-356–D-360 are unchanged.** D-361 remains CURRENT for provider selection. D-362 amends D-361
-only for webhook acknowledgement / post-payment Order effect. D-161 / D-162 remain historical
+**D-356–D-360 are unchanged.** D-361 remains CURRENT for provider selection. D-362 remains CURRENT
+for post-ack Order effect / missing-Order recovery / secondary reconciliation / no new deployable
+service. D-363 amends D-362 only for webhook acknowledgement timing. D-161 / D-162 remain historical
 Cashfree selection; they are not current V1 provider/surface authority.
 
 ### Applicable ADRs (read with register supersession)
@@ -204,12 +219,12 @@ Cashfree selection; they are not current V1 provider/surface authority.
 | ADR | Status for IMP-026 | Note |
 |---|---|---|
 | ADR-003 | AMENDED | Modular monolith; host constrained by D-356 / D-359 |
-| ADR-009 | AMENDED | Cashfree provider/surface selection superseded by D-361; webhook acknowledgement / post-payment Order recovery refined by D-362; provider-neutral Payment, webhook/query/evidence, refund intent remain |
+| ADR-009 | AMENDED | Cashfree provider/surface selection superseded by D-361; post-payment Order recovery refined by D-362; webhook acknowledgement timing / durable inbox refined by D-363; provider-neutral Payment, webhook/query/evidence, refund intent remain |
 | ADR-014 | SUPERSEDED for HTTP host | Must not restore Route Handlers; webhook is not a Next.js Route Handler |
 | ADR-015 | CURRENT foundations | Typed `BOBA_BEAR_*` config; no `NEXT_PUBLIC_*` secrets |
 
 Relevant global invariants: **ARCH-G02**, **ARCH-G06**, **ARCH-G07**, **ARCH-G10**, **ARCH-G11**,
-**ARCH-G12**, **ARCH-G14**.
+**ARCH-G12**, **ARCH-G13**, **ARCH-G14**.
 
 Relevant Non-Goals: not a speculative microservice platform; domain ≠ deployable service; V1 does
 not require multi-provider payment orchestration; no opportunistic deferred capabilities.
@@ -229,36 +244,49 @@ The future adapter must implement the existing relevant provider operations:
 
 | Operation | IMP-026 requirement |
 |---|---|
-| `createExecution` | Required — create Razorpay provider execution/order |
+| `createExecution` | Required — create/resolve Razorpay provider execution/order for the BOBA Attempt |
 | `queryExecution` | Required — authoritative recovery / reconciliation |
 | `verifyWebhook` | Required — signed webhook verification |
 | `cancelExecution` | Optional — only if existing Payment semantics require it (currently unused by Payment operations) |
 
 Domain retry continues to create a new Attempt and invoke provider execution according to accepted
-Payment behavior. Do **not** create a Razorpay-specific retry state machine.
+Payment behavior. Do **not** create a Razorpay-specific retry state machine. Do **not** reuse a
+failed/terminal Razorpay Order as a new BOBA Bear Attempt.
 
 Reuse existing generic persistence where sufficient:
 
 - `providerExecutionIdentity`
 - `payment_provider_references`
-- `payment_provider_observations`
-- provider event IDs (`providerEventId` dedup)
+- `payment_provider_observations` (applied provider evidence / audit — **not** an inbox)
+- provider event IDs (`providerEventId` dedup after application)
 - existing initiation idempotency (`payment_initiation_idempotency`, D-360)
 
+Dedicated durable ingress (D-363; **not** `payment_provider_observations`):
+
 ```text
-SCHEMA_CHANGE_REQUIRED: NO
+payment_provider_event_inbox
+= received / pending processing authority
 ```
 
-Verified against current Payment schema (`src/platform/database/schema/payment.ts`): five existing
-Payment tables already persist execution identity, provider references, observations
-(`sync` \| `webhook` \| `query` \| `reconciliation`), and initiation idempotency. Razorpay Order ID,
-Payment ID, and webhook event ID fit existing reference/observation columns. Client-evidence
-verification must use an existing `observationSource` (application-path verification records as
-`sync`; subsequent recovery uses `query` / `webhook` / `reconciliation`). Do **not** add a fifth
-observation source or Razorpay-specific tables.
+```text
+payment_provider_observations
+= existing applied provider evidence / audit authority
+```
 
-If implementation later proves an unavoidable schema requirement, stop and report the conflict
-rather than silently adding it.
+Do **not** overload `payment_provider_observations` with inbox semantics.
+
+```text
+SCHEMA_CHANGE_REQUIRED: YES
+Payment/provider ingress schema change: YES
+```
+
+One future migration is expected during IMP-026 implementation to persist
+`payment_provider_event_inbox`. Do **not** create that migration in this architecture lock.
+Do **not** add a Razorpay-specific Order-correlation table. Razorpay Order ID, Payment ID, and
+webhook event ID continue to fit existing reference/observation columns after application.
+Client-evidence verification must use an existing `observationSource` (application-path
+verification records as `sync`; subsequent recovery uses `query` / `webhook` / `reconciliation`).
+Do **not** add a fifth observation source.
 
 ---
 
@@ -272,14 +300,110 @@ Conceptual mapping only (not implemented here):
 | Internal Attempt ID | BOBA Bear |
 | Razorpay Order ID | Provider execution / reference identity (`providerExecutionIdentity` and/or `payment_provider_references`) |
 | Razorpay Payment ID | Provider reference (`payment_provider_references`) |
-| Razorpay webhook event ID | Provider event identity for deduplication (`providerEventId`) |
-| Sync / webhook / query / reconciliation evidence | Existing `payment_provider_observations` |
+| Deterministic provider receipt | Derived from stable BOBA Attempt / execution identity; used to create/recover Razorpay Order |
+| Razorpay webhook event ID | Provider event identity for inbox uniqueness and later application dedup (`providerEventId`) |
+| Received / pending provider event | `payment_provider_event_inbox` |
+| Sync / webhook / query / reconciliation evidence after application | Existing `payment_provider_observations` |
 
-Do **not** create parallel Razorpay-specific Payment tables.
+Do **not** create parallel Razorpay-specific Payment tables solely for Order correlation.
 
 Exact `referenceKind` strings are implementation-level so long as they remain provider-scoped,
 non-empty, unique per `(provider, referenceKind, referenceValue)`, and do not leak into generic
 Payment/Order domain types.
+
+### 7.1 One BOBA Attempt = one Razorpay Order
+
+```text
+one BOBA Bear Payment Attempt
+=
+one Razorpay Order
+```
+
+The BOBA Bear Attempt remains internal authority. The Razorpay Order is provider execution
+identity/reference.
+
+BOBA Bear `retryPayment` remains the retry authority. When BOBA Bear creates a new Payment Attempt,
+the Razorpay adapter creates/resolves a new provider Order for that Attempt.
+
+Do **not** reuse a failed/terminal Razorpay Order as a new BOBA Bear Attempt.
+
+### 7.2 Disable Razorpay internal Checkout retry
+
+Lock:
+
+```text
+Razorpay Standard Checkout retry.enabled = false
+```
+
+or the exact Razorpay-equivalent future integration configuration.
+
+Reason: BOBA Bear owns Payment retry semantics. The provider collection surface must not
+independently create repeated provider payment attempts under one BOBA Bear terminal Attempt in a
+way that conflicts with existing Payment transitions.
+
+Future user retry flow:
+
+```text
+failed BOBA Attempt
+→ BOBA Bear retryPayment
+→ new Attempt
+→ new Razorpay Order
+→ new Standard Checkout action
+```
+
+Do **not** implement this setting in this architecture lock.
+
+### 7.3 Razorpay financial-state mapping
+
+Lock the minimum provider-state interpretation. Do **not** create new BOBA Bear Payment states
+solely to mirror Razorpay. The existing Payment state machine remains authoritative.
+
+| Razorpay state | BOBA Bear interpretation |
+|---|---|
+| created / order-created | non-success |
+| payment authorized | non-success / pending provider evidence |
+| payment captured | authoritative provider-success evidence |
+| payment failed | provider definitive non-success according to existing Payment transition rules |
+| refund-related provider states | must **not** regress an already successful Payment; Refund ownership remains IMP-027 |
+
+Do **not** add Refund implementation.
+
+### 7.4 Automatic capture
+
+Automatic capture is the intended IMP-026 Razorpay collection model.
+
+Future provider-order creation must request/configure automatic capture using the
+provider-supported mechanism selected during implementation.
+
+BOBA Bear Order materialization must occur only after authoritative captured-success evidence.
+Do **not** treat mere authorization as sufficient for Order fulfillment/materialization.
+
+No capture implementation in this architecture lock.
+
+### 7.5 Deterministic provider Order identity / recovery
+
+The Razorpay adapter must create a provider Order using a deterministic, unique provider-safe
+receipt derived from stable BOBA Bear execution/Attempt identity.
+
+Requirements:
+
+- same BOBA Attempt always derives the same provider receipt identity
+- receipt must satisfy provider length/format requirements
+- receipt generation must be deterministic and tested
+- provider execution/reference persistence remains in existing generic Payment reference tables
+
+If Razorpay Order creation returns an uncertain network result:
+
+do **NOT** blindly create another Razorpay Order.
+
+The adapter must first attempt to recover/find the provider Order associated with the deterministic
+receipt or other locked provider correlation mechanism.
+
+Only if authoritative provider evidence establishes no existing provider execution may creation
+safely continue.
+
+Do **not** add a Razorpay-specific table solely for Order correlation. Existing generic provider
+reference persistence remains the durable reference authority after creation/recovery.
 
 ---
 
@@ -347,8 +471,8 @@ Application operation must:
 6. Query / reconcile provider state when necessary before treating Payment as financially successful.
 7. Reuse existing Order materialization after authoritative success:
    `tryMaterializeOrderAfterPaymentCompletion` (or exact current equivalent). Client-evidence is a
-   customer API, not the Razorpay provider-ack path; D-362 does not forbid awaiting materialization
-   here for UX. The Razorpay webhook acknowledgement path must not await it (**D-362**).
+   customer API, not the Razorpay provider-ack path; D-362 / D-363 do not forbid awaiting
+   materialization here for UX. The Razorpay webhook acknowledgement path must not await it.
 
 Do **not** create Order materialization inside the HTTP handler.
 
@@ -362,6 +486,8 @@ Suggested application name (implementation-level if a mechanical synonym is requ
 `submitPaymentClientEvidence`.
 
 This route is an **IMP-026** addition. It is not retroactively part of accepted IMP-024 inventory.
+D-361 client-evidence architecture remains unchanged: browser callback evidence is authenticated
+customer evidence, server-verified, and not independently authoritative.
 
 ---
 
@@ -421,7 +547,7 @@ kind = "razorpay_standard_checkout"
 ```
 
 The action is server-generated and browser-safe. It is an **integration instruction**, not Payment
-authority.
+authority. D-361 Standard Checkout `clientAction` remains unchanged.
 
 Minimum conceptual payload (all string values, no secrets):
 
@@ -510,44 +636,47 @@ This path is:
 - not implemented using Next.js Route Handlers
 - not a new service
 
-### 14.1 Provider acknowledgement critical path (**D-362**)
+### 14.1 Provider acknowledgement critical path (**D-363**)
 
 ```text
 POST /api/integrations/payments/razorpay/webhook
 → customer-commerce
-→ preserve raw body
-→ PaymentProvider.verifyWebhook
-→ sealed verified provider event
-→ resolve Payment Attempt
-→ applyProviderEvidence / existing Payment transitions
-→ durable Payment transaction commit
-→ HTTP 2xx acknowledgement
+→ preserve exact raw request body
+→ verify Razorpay webhook signature
+→ normalize/seal verified provider evidence
+→ durably insert verified event/evidence into payment_provider_event_inbox
+→ HTTP 2xx
 ```
 
 ```text
 raw-body verification
-→ durable Payment evidence application
+→ durable webhook inbox
 → HTTP 2xx
+→ asynchronous Payment transition
 ```
 
-The provider acknowledgement must occur **only after** verified Payment evidence has been durably
-accepted/applied.
+The HTTP request must **not** wait for:
 
-- Do **not** acknowledge an unverified webhook.
-- Do **not** acknowledge before durable Payment acceptance merely to improve latency.
-- Duplicate delivery remains safe through existing provider-event identity/deduplication, Payment
-  transition rules, first-success semantics, and Order uniqueness/materialization guarantees.
-- Do **not** introduce a second event-processing state machine.
-- Out-of-order provider evidence must be tolerated by existing transition/reconciliation authority
-  and must not regress successful Payment truth.
+- `applyProviderEvidence`
+- Payment row locking / transitions
+- provider reconciliation
+- Order materialization
+
+Do **not** acknowledge an event whose signature failed.
+
+Do **not** return successful acknowledgement unless the verified event has been durably accepted
+into the inbox or is already known as a durable duplicate.
+
+Former D-362 acknowledgement concept (verified evidence → apply Payment transition → HTTP 2xx) is
+**replaced for Razorpay** by D-363. D-362 remains CURRENT for Order materialization outside the
+provider-ack path, missing-Order recovery, secondary reconciliation, and no new deployable service.
 
 Additional ingress requirements:
 
-- preserve raw request body for signature verification
+- preserve exact raw request body for signature verification
 - pass relevant headers to the Razorpay adapter
 - provider adapter verifies webhook signature (`verifyWebhook`)
-- unverified event cannot reach Payment transition logic
-- verified evidence goes through existing verified-provider-event / application pipeline
+- unverified event cannot reach inbox acceptance or Payment transition logic
 - bounded raw-body size; fail closed on oversized/malformed input after safe rejection semantics
   compatible with provider retry
 
@@ -560,12 +689,146 @@ Do **not** create a webhook microservice.
 Nginx routing of this integration path is an IMP-026 **implementation** concern after a separate
 implementation authorization, not part of this lock.
 
-### 14.2 Post-ack effect — Order materialization
+### 14.2 Durable webhook inbox
+
+Lock a dedicated Postgres-backed inbound provider-event inbox.
+
+This is **not** `payment_provider_observations`.
+
+Conceptual responsibilities (do not prescribe more columns than necessary):
+
+- durable received-event storage
+- provider identity
+- provider event ID
+- verified replayable normalized evidence, or sufficient verified source material to reconstruct it safely
+- processing lifecycle / state
+- processing attempts
+- received timestamp
+- processed / completed timestamp
+- last safe error metadata where needed
+- duplicate protection
+
+Lock uniqueness for Razorpay provider event identity, conceptually:
+
+```text
+(provider, providerEventId)
+```
+
+| Store | Authority |
+|---|---|
+| `payment_provider_event_inbox` | received / pending processing authority |
+| `payment_provider_observations` | existing applied provider evidence / audit authority |
+
+```text
+Payment/provider ingress schema change: YES
+New deployable service:                 NO
+New queue / broker:                     NO
+Background processing host:             customer-commerce
+```
+
+One future migration is expected during implementation. Do **not** create it in this lock.
+
+### 14.3 Processing topology
+
+The durable inbox is processed asynchronously by the existing **`customer-commerce`** runtime.
+No new deployable service.
+
+Lock a small background claim/process loop owned by the existing `customer-commerce` process.
+
+Conceptual flow:
+
+```text
+durable inbox row
+→ claim
+→ existing Payment provider-event application path
+→ applyProviderEvidence
+→ existing Payment state machine
+→ mark inbox event processed
+```
+
+On authoritative Payment success:
+
+```text
+→ existing Order materialization
+```
+
+If Order materialization fails after successful Payment:
+
+```text
+→ existing recoverMissingOrdersBatch remains recovery authority
+```
+
+Do **not** create another Payment state machine.
+
+Do **not** create Razorpay-specific Order creation.
+
+### 14.4 Crash semantics
+
+| Failure point | Guarantee |
+|---|---|
+| Crash before durable inbox insert | No successful HTTP acknowledgement. Provider may redeliver. |
+| Crash after durable inbox insert but before HTTP 2xx | Provider may redeliver. Unique `(provider, providerEventId)` makes redelivery safe. |
+| Crash after HTTP 2xx but before Payment processing | Inbox event remains pending and must be processable after `customer-commerce` restart. |
+| Crash after Payment success but before Order materialization | `recoverMissingOrdersBatch` remains the canonical Order-gap recovery mechanism. |
+
+No acknowledged verified webhook may depend solely on volatile in-memory work.
+
+### 14.5 Claim / retry behavior
+
+Do **not** design a general-purpose queue platform. Lock only the minimum background-processing
+semantics needed for this payment-provider webhook inbox:
+
+- bounded batch claiming
+- safe concurrent claim semantics using existing Postgres conventions where possible
+- processing retry after transient failure
+- terminal / poison-event operational visibility
+- duplicate event safety
+- restart recovery
+
+Do **not** create:
+
+- Redis
+- Kafka
+- RabbitMQ
+- SQS
+- another Compose service
+- a generic cross-platform worker framework
+
+This is a payment-provider webhook inbox, not a new infrastructure platform.
+
+### 14.6 Unknown / uncorrelated provider events
+
+The inbox architecture must handle a verified Razorpay event even when immediate BOBA Bear
+Payment/Attempt correlation is unavailable.
+
+The event must **not** be silently lost simply because the provider execution cannot yet be
+correlated.
 
 ```text
 verified webhook
-→ durable Payment transition
+→ durable inbox
 → HTTP 2xx
+→ processor attempts correlation
+→ unresolved correlation remains visible / retryable or operationally actionable
+→ provider query / reconciliation may assist recovery
+```
+
+Do **not** invent Payment state.
+
+Do **not** leak raw provider payloads or secrets in operational logs.
+
+Unsupported / non-collection event types (including refund) must not enter Payment transitions.
+Refund remains **IMP-027**. Verified non-collection events may be durably inbox'd so they are not
+silently lost; they must not regress successful Payment. Exact terminal/ignore handling after
+durable capture is implementation-level provided it does not corrupt Payment.
+
+### 14.7 Post-ack effect — Order materialization (**D-362**)
+
+```text
+verified webhook
+→ durable inbox
+→ HTTP 2xx
+→ asynchronous Payment transition
 → Order materialization outside provider-ack critical path
 ```
 
@@ -583,60 +846,20 @@ Preserve:
 
 Do **not** create Razorpay-specific Order creation.
 
-Current accepted `processVerifiedProviderEvent` awaits Payment persistence/transitions and then
-awaits Order materialization. IMP-026 Razorpay webhook implementation must not keep Order
-materialization on the provider-ack critical path. Client-evidence and reconciliation paths may
-still invoke existing materialization after Payment success; those are not provider acknowledgements.
+Client-evidence and reconciliation paths may still invoke existing materialization after Payment
+success; those are not provider acknowledgements.
 
-### 14.3 No new inbox / worker / schema
+### 14.8 D-362 relationship
 
-```text
-New queue/broker:                 NO
-New deployable worker service:    NO
-New Payment webhook inbox table:  NO
-Payment schema change:            NO
-```
+D-362 remains CURRENT for:
 
-Do **not** require Kafka, RabbitMQ, Redis queue, SQS, or another Compose service for IMP-026.
+- Order materialization outside provider webhook critical path
+- missing-Order recovery
+- reconciliation as secondary provider-state recovery
+- no new deployable service
 
-Existing Postgres / Payment transition authority remains sufficient for the Payment webhook itself.
-`payment_provider_observations` is **not** an inbox and must not be used as one.
-
-Automatic scheduling is **not** part of this architecture lock. Do not invent speculative recurring
-infrastructure. IMP-026 must provide a production-operable missing-Order recovery invocation
-mechanism and runbook. A permanent scheduled recovery loop/service is **not** automatically required
-by D-362. If implementation later proves recovery cannot be operated safely without an automatic
-runner, that must be raised separately rather than silently added.
-
-### 14.4 Unknown-attempt webhook behavior
-
-Verified current processor behavior: `processVerifiedProviderEvent` returns `null` for an unknown
-provider execution identity and persists no observation.
-
-Under the accepted IMP-026 provider-order creation architecture, Razorpay execution identity is
-created from an existing BOBA Bear Attempt (`createExecution` after Attempt exists). A verified
-webhook whose provider execution cannot be correlated is therefore **abnormal**, not the expected
-steady-state path. It is still a required safe-failure case.
-
-The production webhook handler must:
-
-- distinguish an authenticated/verified webhook whose provider execution cannot yet be correlated
-- not corrupt Payment state
-- provide sufficient logging/operational evidence for investigation/reconciliation
-- not leak secrets or provider payloads
-- rely on provider query / reconciliation where appropriate
-- not invent an inbox schema or persist uncorrelated events into Payment tables as fake acceptance
-
-Unknown execution is **not** durable Payment acceptance. Do **not** HTTP 2xx as if Payment evidence
-was applied. Exact non-success status is implementation-level, compatible with provider retry and
-operational investigation, without creating Payment rows or observations that imply acceptance.
-
-Unsupported / non-collection event types (including refund) must not enter Payment transitions.
-Refund remains **IMP-027**. Exact ignore/ack behavior for non-collection events is
-implementation-level provided it does not corrupt Payment, does not create an inbox, and does not
-treat them as durable Payment acceptance.
-
-Do **not** implement this handler in this lock.
+D-363 amends D-362 specifically for webhook acknowledgement timing. Do **not** supersede D-362
+wholesale.
 
 ---
 
@@ -652,19 +875,22 @@ Fast UX signal requiring server verification. Not independently authoritative fi
 
 Authenticated customer submission of provider-returned browser evidence. Server verifies via
 `verifyClientEvidence`. Immediate confirmation **input** only after verification. Observation source
-for this application path: existing `sync`.
+for this application path: existing `sync`. After client evidence verification, authoritative
+provider state may be confirmed/query-reconciled before Payment success is established. D-361
+client-evidence boundary remains unchanged.
 
 ### Webhook
 
-Asynchronous signed provider evidence. Observation source: existing `webhook`. Provider
-acknowledgement (**D-362**) follows durable Payment application only. Order materialization is a
-**post-ack effect**, not part of acknowledgement.
+Asynchronous signed provider evidence. Observation source after application: existing `webhook`.
+Provider acknowledgement (**D-363**) follows durable inbox insert only. Payment transition is
+asynchronous from the webhook HTTP request. Order materialization is a **post-ack effect**, not
+part of acknowledgement (**D-362**).
 
 ### Provider query / reconciliation
 
 Authoritative recovery when browser/webhook state is incomplete or uncertain. Observation sources:
-existing `query` / `reconciliation`. Secondary to normal webhook ingestion; not the primary webhook
-durability mechanism.
+existing `query` / `reconciliation`. Secondary to normal webhook ingestion and the durable inbox;
+not a replacement for either.
 
 All provider evidence must normalize through existing Payment transition machinery.
 
@@ -672,10 +898,10 @@ No single browser callback directly creates an Order.
 
 Existing `tryMaterializeOrderAfterPaymentCompletion` (or exact current equivalent) remains the
 Order materialization path. On the Razorpay webhook path it runs **outside** provider
-acknowledgement (**D-362**).
+acknowledgement (**D-362** / **D-363**) and only after authoritative captured-success evidence.
 
 Browser Checkout success is **not** independently authoritative. The browser must not directly
-promote BOBA Bear Payment state.
+promote BOBA Bear Payment state. Authorized Razorpay state is **not** authoritative success.
 
 ---
 
@@ -701,6 +927,8 @@ Order absent
 → exactly one Order
 ```
 
+The new inbox does **not** replace Order-gap recovery.
+
 IMP-026 implementation / GTM acceptance must make missing-Order recovery **operationally invokable
 and proven**:
 
@@ -708,6 +936,7 @@ and proven**:
 - invoke existing Order recovery
 - idempotently materialize the missing Order
 - prove duplicate invocation does not create duplicate Orders
+- operational runbook
 
 Implementation must provide a production-operable invocation mechanism and runbook without a new
 deployable service. A Compose `tools`-profile CLI or equivalent operator entrypoint that calls
@@ -730,24 +959,33 @@ IMP-026 must productionize reconciliation capability for Razorpay.
 Reconciliation:
 
 - does **not** replace normal webhook ingestion
+- does **not** replace the durable inbox
 - is **not** the primary webhook durability mechanism
-- scheduled reconciliation infrastructure is **not** required merely by D-362
+- scheduled reconciliation infrastructure is **not** required merely by D-362 / D-363
+
+Reconciliation may recover:
+
+- missed provider state
+- uncertain browser flow
+- uncertain webhook outcome
 
 Do **not** introduce speculative queue/worker infrastructure solely for IMP-026 unless existing
-repository architecture already requires it.
+repository architecture already requires it. The inbox claim/process loop inside
+`customer-commerce` is not a reconciliation worker platform.
 
 Distinguish:
 
 | Responsibility | Authority |
 |---|---|
-| Provider acknowledgement critical path | verified webhook → durable Payment → HTTP 2xx (**D-362**) |
-| Post-ack effect | Order materialization outside provider-ack path |
+| Provider acknowledgement critical path | verified webhook → durable inbox → HTTP 2xx (**D-363**) |
+| Asynchronous Payment processing | inbox claim/process loop inside `customer-commerce` |
+| Post-ack effect | Order materialization outside provider-ack path (**D-362**) |
 | Missing-Order recovery | `recoverMissingOrdersBatch` |
 | Provider-state recovery | `queryExecution` / `reconcilePaymentAttempt` |
 
 | Now (IMP-026 GTM) | Later (not automatic) |
 |---|---|
-| Callable reconciliation capability required now (`reconcilePaymentAttempt` + `queryExecution` against Razorpay) | Speculative scheduled worker / operational automation — separate if not required for GTM acceptance; not required merely by D-362 |
+| Callable reconciliation capability required now (`reconcilePaymentAttempt` + `queryExecution` against Razorpay) | Speculative scheduled worker / operational automation — separate if not required for GTM acceptance; not required merely by D-362 / D-363 |
 
 A future scheduler can remain separate. GTM acceptance must prove recovery is possible by invoking
 existing reconciliation, not that a new worker platform exists. Reconciliation may still invoke
@@ -769,6 +1007,19 @@ Razorpay composition when production configuration selects/enables it.
 
 Do **not** create another deployment/service.
 
+Because the inbox processor lives inside `customer-commerce`, architecture requires safe service
+lifecycle behavior:
+
+- processor starts with `customer-commerce` only when Razorpay provider processing is
+  enabled/configured
+- graceful shutdown stops claiming new events
+- already-claimed work is handled according to repository-safe shutdown semantics
+- restart can recover pending/abandoned inbox work
+- fake E2E provider (`e2e-fake-main.ts` / `PAYMENT_FAKE_PROVIDER`) cannot silently activate this as
+  production Razorpay behavior
+
+Do **not** implement runtime hooks in this architecture lock.
+
 No canonical payment-provider selector env name exists today (unlike `CUSTOMER_OTP_PROVIDER`).
 Do **not** invent a cross-platform configuration standard in this docs task.
 
@@ -778,8 +1029,7 @@ Lock instead:
 - `disabledPaymentProvider` remains available for environments where payment provider is
   intentionally disabled
 - staging/production must not silently fall back to disabled/fake provider when Razorpay is expected
-- E2E fake provider (`e2e-fake-main.ts` / `PAYMENT_FAKE_PROVIDER`) cannot become the production
-  provider
+- E2E fake provider cannot become the production provider
 
 Exact selector-name / composition-function naming is **implementation-level**, not an unresolved
 provider decision.
@@ -806,6 +1056,13 @@ These names are compatible with the established `BOBA_BEAR_*` convention. Reuse 
 | `BOBA_BEAR_RAZORPAY_WEBHOOK_SECRET` | Server only. Distinct webhook verification purpose. Never sent to browser. No insecure default. |
 | `BOBA_BEAR_ENV` | Existing environment authority. |
 
+Preserve the existing Razorpay configuration contract from D-361. No new external broker
+configuration. The inbox uses existing Postgres persistence.
+
+If an implementation-level claim interval / batch size needs configuration later, prefer safe
+internal defaults unless repository authority requires configurable values. Do **not** create
+speculative configuration proliferation in this architecture lock.
+
 Production/staging must fail closed if Razorpay is enabled/expected but required secrets are
 missing or invalid.
 
@@ -829,12 +1086,12 @@ IMP-026 must **not** replace BOBA Bear idempotency with browser/provider-only id
 customer logical payment action
 → BOBA Bear idempotency (JSON idempotencyKey / payment_initiation_idempotency)
 → Payment Attempt
-→ provider execution/order creation (Razorpay Order)
+→ provider execution/order creation (Razorpay Order; deterministic receipt)
 ```
 
 Provider retries/reconciliation must not accidentally produce duplicate BOBA Bear payment truth.
-Existing first-success-wins, provider-event dedup, and unique `providerExecutionIdentity` /
-reference constraints remain the duplicate-truth controls.
+Existing first-success-wins, provider-event dedup, inbox uniqueness `(provider, providerEventId)`,
+and unique `providerExecutionIdentity` / reference constraints remain the duplicate-truth controls.
 
 ---
 
@@ -856,7 +1113,9 @@ IMP-026 must **not** implement:
 
 unless already unavoidable for Payment integrity, in which case stop and report the conflict.
 
-D-361 must not pull Refund implementation into IMP-026.
+Refund-related provider states must **not** regress an already successful Payment.
+
+D-361 / D-363 must not pull Refund implementation into IMP-026.
 
 ---
 
@@ -872,11 +1131,26 @@ tests in this lock.**
 - missing/invalid required configuration fails closed
 - secrets never reach browser/logs
 
-### Provider creation
+### Provider creation / Attempt identity
 
-- BOBA Bear Payment creates correct Razorpay provider execution/order
+- one BOBA Payment Attempt maps to one Razorpay Order
+- deterministic receipt / correlation proven
+- uncertain Order creation recovers existing provider Order rather than blindly duplicating
+- BOBA retry creates a new Attempt / provider Order
 - amount/currency comes from authoritative Checkout/Payment snapshot
-- provider references persist
+- provider references persist in existing generic tables
+
+### Razorpay Checkout retry
+
+- provider internal retry disabled (`retry.enabled = false` or Razorpay-equivalent)
+- BOBA retry flow remains authoritative
+
+### Capture
+
+- authorized does not create authoritative success
+- captured does
+- automatic capture configured/verified
+- Order materializes only after captured-success evidence
 
 ### Browser collection
 
@@ -890,18 +1164,57 @@ tests in this lock.**
 - invalid client signature rejected
 - authoritative stored provider Order identity used during verification
 
-### Webhook acknowledgement (**D-362**)
+### Ingress (**D-363**)
 
-- invalid signature never reaches Payment transitions and is not acknowledged as accepted
-- valid signature reaches durable Payment acceptance before HTTP 2xx
-- Order materialization does **not** delay webhook acknowledgement
-- duplicate delivery remains idempotent (provider-event dedup + first-success + Order uniqueness)
-- out-of-order provider evidence cannot regress successful Payment truth
-- raw-body verification proven
+- valid raw-body webhook signature accepted
+- invalid signature rejected (no successful acknowledgement)
+- durable inbox insert occurs before HTTP 2xx
+- duplicate provider event produces no duplicate pending event
 
-### Crash-gap / missing-Order recovery (**D-362**)
+### Crash / durability (**D-363**)
+
+- crash after inbox insert but before Payment processing does not lose the event
+- restart processes pending inbox event
+- processor retry works after transient failure
+- poison / terminal processing failure is operationally visible
+
+### Payment processing
+
+- one inbox event applies through existing Payment transitions
+- duplicate processing cannot duplicate successful state
+- out-of-order events cannot regress successful Payment
+
+### Browser / webhook ordering
 
 Prove:
+
+- client evidence before webhook
+- webhook before client evidence
+- duplicate webhook
+- delayed webhook
+- provider query after uncertain flow
+
+### Reconciliation / provider-state recovery
+
+- provider query can recover authoritative state when webhook/browser path is uncertain
+- recovery reuses Payment transitions
+- successful recovery reuses existing Order materialization
+- reconciliation does not replace normal webhook ingestion or the durable inbox
+
+### Payment lifecycle
+
+Test at least:
+
+- successful Payment
+- customer cancellation/drop-off
+- Payment failure
+- retryable flow as supported (`retryPayment` → new Attempt → new Razorpay Order)
+- browser return uncertainty
+- delayed/missed webhook recovery
+- duplicate webhook
+- webhook before/after browser callback
+
+### Order integrity / missing-Order recovery (**D-362**)
 
 ```text
 Payment success committed
@@ -911,44 +1224,19 @@ Order absent
 → exactly one Order
 ```
 
-Repeated recovery remains idempotent (no duplicate Orders).
-
-### Webhook + browser ordering
-
-Test:
-
-- browser client evidence before webhook
-- webhook before browser evidence
-- duplicate webhook
-- delayed webhook
-- provider query after uncertain webhook/browser state
-
-### Reconciliation / provider-state recovery
-
-- provider query can recover authoritative state when webhook/browser path is uncertain
-- recovery reuses Payment transitions
-- successful recovery reuses existing Order materialization
-- reconciliation does not replace normal webhook ingestion
-
-### Payment lifecycle
-
-Test at least:
-
-- successful Payment
-- customer cancellation/drop-off
-- Payment failure
-- retryable flow as supported
-- browser return uncertainty
-- delayed/missed webhook recovery
-- duplicate webhook
-- webhook before/after browser callback
-
-### Order integrity
-
-- Order materializes only after authoritative successful Payment
+- Order materializes only after authoritative successful Payment (captured)
 - duplicate provider evidence cannot duplicate Order
-- crash after Payment success / before Order materialization is recoverable via
-  `recoverMissingOrdersBatch`
+- crash after Payment success / before Order materialization is recoverable
+- recovery invocation, idempotency, repeated invocation, no duplicate Order, operational runbook
+
+### Runtime
+
+- production `customer-commerce` uses Razorpay only when correctly configured
+- E2E fake provider cannot become production provider / cannot silently activate production Razorpay inbox processing
+- no new deployable service
+- `customer-commerce` restart processes outstanding webhook inbox work
+- Nginx webhook path routes correctly
+- customer `/api/v1` contract remains intact
 
 ### Operational recovery
 
@@ -956,31 +1244,31 @@ Document how an operator can invoke missing-Order recovery in production without
 deployable service (tools-profile / operator entrypoint + runbook calling existing
 `recoverMissingOrdersBatch`). A permanent scheduled recovery loop is not automatically required.
 
-### Runtime
-
-- production `customer-commerce` uses Razorpay only when correctly configured
-- E2E fake provider cannot become production provider
-- Nginx webhook path routes correctly
-- customer `/api/v1` contract remains intact
-
 ---
 
 ## 23. Locked Runtime Topology
 
 ```text
-Payment provider:           Razorpay
-Provider host:              existing customer-commerce composition
-Webhook host:               customer-commerce
-Webhook path:               POST /api/integrations/payments/razorpay/webhook
-Webhook ack:                after durable Payment acceptance (D-362)
-Post-ack effect:            Order materialization outside provider-ack path
-Missing-Order recovery:     recoverMissingOrdersBatch
-Client-evidence path:       POST /api/v1/payments/{paymentId}/client-evidence
-Client action:              razorpay_standard_checkout
-New deployable service:     NO
-New Payment inbox:          NO
-New worker service:         NO
-Payment schema change:      NO
+Payment provider:                 Razorpay
+Provider host:                    existing customer-commerce composition
+Webhook host:                     customer-commerce
+Webhook path:                     POST /api/integrations/payments/razorpay/webhook
+Webhook ack:                      after durable inbox insert (D-363)
+Payment transition:               asynchronous from webhook HTTP request
+Post-ack effect:                  Order materialization outside provider-ack path (D-362)
+Missing-Order recovery:           recoverMissingOrdersBatch
+Provider-state recovery:          queryExecution / reconcilePaymentAttempt
+Webhook inbox:                    Postgres payment_provider_event_inbox
+Payment/provider ingress schema:  YES (one future migration)
+One BOBA Attempt = one Razorpay Order: YES
+Razorpay internal Checkout retry: DISABLED
+Captured required for success:    YES
+Automatic capture:                YES (IMP-026 intended model)
+Client-evidence path:             POST /api/v1/payments/{paymentId}/client-evidence
+Client action:                    razorpay_standard_checkout
+New deployable service:           NO
+New queue / broker:               NO
+Background processing host:       customer-commerce
 ```
 
 ```text
@@ -1004,9 +1292,9 @@ Authorized now:   NO
 Implementation is authorized only when **all** are true:
 
 1. This capability architecture remains CURRENT and `ARCHITECTURE_LOCKED`
-2. D-361 remains CURRENT for provider selection; D-362 remains CURRENT for webhook acknowledgement /
-   missing-Order recovery; D-356–D-360 unchanged; D-161/D-162 remain superseded for current provider
-   authority
+2. D-361 remains CURRENT for provider selection; D-362 remains CURRENT for post-ack Order effect /
+   missing-Order recovery; D-363 remains CURRENT for webhook acknowledgement timing / durable inbox;
+   D-356–D-360 unchanged; D-161/D-162 remain superseded for current provider authority
 3. `ARCHITECTURE.md` / `ROADMAP.md` / `STATE.md` agree architecture is locked and a **separate**
    coding-agent implementation authorization prompt has been issued
 4. `npm run project:consistency` passes
@@ -1022,7 +1310,8 @@ authorize Razorpay production code.
 |---|---|
 | IMP-026 Razorpay / GTM capability architecture | **This document** |
 | Current V1 provider / collection surface | D-361 |
-| Razorpay webhook acknowledgement / post-payment Order recovery | D-362 (amends D-361 ack/post-payment effect only) |
+| Razorpay post-payment Order effect / missing-Order recovery | D-362 (amends D-361 ack/post-payment effect; acknowledgement timing further amended by D-363) |
+| Razorpay durable webhook inbox / asynchronous Payment processing | D-363 (amends D-362 acknowledgement timing only) |
 | Historical Cashfree provider / Hosted Checkout selection | D-161 / D-162 (superseded for current authority) |
 | Provider-neutral Payment domain | Accepted IMP-022 + ADR-009 remainder |
 | Customer `/api/v1/*` convention | D-360 + IMP-024 |

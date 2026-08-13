@@ -34,8 +34,9 @@ Architecture remains locked. Implementation is independently accepted
 > ([D-361](../decision-register.md)). IMP-025 remains provider-neutral customer Payment UX.
 > Historical Cashfree productionization deferrals below now refer to IMP-026 Razorpay
 > productionization. **D-362** amends D-361 webhook acknowledgement / post-payment Order recovery
-> only and does not change IMP-025 UX authority. Next free global decision ID after D-362 is
-> **D-363**.
+> only and does not change IMP-025 UX authority. **D-363** amends D-362 acknowledgement timing /
+> durable inbox only and does not change IMP-025 UX authority. Next free global decision ID after
+> D-363 is **D-364**.
 
 ---
 
@@ -190,9 +191,10 @@ No new global `D-xxx` was required for this capability lock. Capability-local ch
 (static ordering-catalog projection, `sessionStorage` guest-token persistence, CTA hierarchy)
 remain inside this document.
 
-Next free global decision ID is **D-363**. **D-361** is CURRENT (Razorpay V1 provider / Standard
+Next free global decision ID is **D-364**. **D-361** is CURRENT (Razorpay V1 provider / Standard
 Checkout) and does not change IMP-025 provider-neutral UX authority. **D-362** amends D-361 webhook
-acknowledgement / post-payment Order recovery only.
+acknowledgement / post-payment Order recovery only. **D-363** amends D-362 acknowledgement timing /
+durable inbox only.
 
 ### Applicable ADRs (read with register supersession)
 

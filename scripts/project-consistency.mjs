@@ -309,7 +309,7 @@ function checkDecisionRegister(decision) {
     }
   }
 
-  for (const id of ["D-356", "D-357", "D-358", "D-359", "D-360", "D-361", "D-362"]) {
+  for (const id of ["D-356", "D-357", "D-358", "D-359", "D-360", "D-361", "D-362", "D-363"]) {
     if (!seen.has(id)) {
       fail("DECISION_REQUIRED_IDS", `DECISION-REGISTER must register ${id}`);
     }
@@ -326,6 +326,7 @@ function checkDecisionRegister(decision) {
   const d360Row = [...globalSection.split("\n")].find((line) => /^\|\s*D-360\s*\|/.test(line));
   const d361Row = [...globalSection.split("\n")].find((line) => /^\|\s*D-361\s*\|/.test(line));
   const d362Row = [...globalSection.split("\n")].find((line) => /^\|\s*D-362\s*\|/.test(line));
+  const d363Row = [...globalSection.split("\n")].find((line) => /^\|\s*D-363\s*\|/.test(line));
   if (d359Row && !/\|\s*CURRENT\s*\|/.test(d359Row)) {
     fail("D359_STATUS", "D-359 must be CURRENT");
   }
@@ -343,13 +344,25 @@ function checkDecisionRegister(decision) {
   }
   if (
     d362Row &&
-    (!/acknowledgement/i.test(d362Row) ||
-      !/recoverMissingOrdersBatch/.test(d362Row) ||
-      !/inbox/i.test(d362Row))
+    (!/recoverMissingOrdersBatch/.test(d362Row) || !/D-363/.test(d362Row))
   ) {
     fail(
       "D362_WEBHOOK_BOUNDARY",
-      "D-362 must lock webhook acknowledgement after durable Payment, recoverMissingOrdersBatch, and no new inbox",
+      "D-362 must remain CURRENT for recoverMissingOrdersBatch and record D-363 acknowledgement-timing amendment",
+    );
+  }
+  if (d363Row && !/\|\s*CURRENT\s*\|/.test(d363Row)) {
+    fail("D363_STATUS", "D-363 must be CURRENT");
+  }
+  if (
+    d363Row &&
+    (!/inbox/i.test(d363Row) ||
+      !/customer-commerce/.test(d363Row) ||
+      !/schema/i.test(d363Row))
+  ) {
+    fail(
+      "D363_WEBHOOK_INBOX",
+      "D-363 must lock durable webhook inbox, customer-commerce processing, and Payment/provider ingress schema change",
     );
   }
   if (d359Row && d360Row) {
@@ -361,10 +374,17 @@ function checkDecisionRegister(decision) {
   if (
     d362Row &&
     /\|\s*CURRENT\s*\|/.test(d362Row) &&
-    /acknowledgement/i.test(d362Row) &&
     /recoverMissingOrdersBatch/.test(d362Row)
   ) {
-    note("D-362 registered as CURRENT (webhook acknowledgement / missing-Order recovery)");
+    note("D-362 registered as CURRENT (missing-Order recovery / post-ack Order effect)");
+  }
+  if (
+    d363Row &&
+    /\|\s*CURRENT\s*\|/.test(d363Row) &&
+    /inbox/i.test(d363Row) &&
+    /customer-commerce/.test(d363Row)
+  ) {
+    note("D-363 registered as CURRENT (durable webhook inbox / async Payment processing)");
   }
 }
 
@@ -590,21 +610,35 @@ function checkImp026ArchitectureLock(roadmap, state, architecture, decision) {
     for (const needle of [
       "D-361",
       "D-362",
+      "D-363",
       "Razorpay",
       "razorpay_standard_checkout",
       "/api/integrations/payments/razorpay/webhook",
       "/api/v1/payments/{paymentId}/client-evidence",
       "recoverMissingOrdersBatch",
       "tryMaterializeOrderAfterPaymentCompletion",
+      "payment_provider_event_inbox",
     ]) {
       if (!body.includes(needle)) {
         fail("IMP026_CAPABILITY_CONTRACT", `IMP-026 capability artifact must include ${needle}`);
       }
     }
-    if (!/durable Payment/.test(body) || !/provider-ack/.test(body)) {
+    if (!/SCHEMA_CHANGE_REQUIRED: YES/.test(body)) {
+      fail(
+        "IMP026_CAPABILITY_SCHEMA",
+        "IMP-026 capability artifact must lock SCHEMA_CHANGE_REQUIRED: YES for the durable webhook inbox",
+      );
+    }
+    if (/SCHEMA_CHANGE_REQUIRED: NO/.test(body)) {
+      fail(
+        "IMP026_CAPABILITY_SCHEMA_STALE",
+        "IMP-026 capability artifact must not retain SCHEMA_CHANGE_REQUIRED: NO after D-363",
+      );
+    }
+    if (!/durable webhook inbox/.test(body) || !/provider-ack/.test(body)) {
       fail(
         "IMP026_CAPABILITY_ACK",
-        "IMP-026 capability artifact must distinguish durable Payment acknowledgement from provider-ack Order materialization",
+        "IMP-026 capability artifact must distinguish durable webhook inbox acknowledgement from provider-ack Order materialization",
       );
     }
   }
@@ -677,13 +711,21 @@ function checkImp026ArchitectureLock(roadmap, state, architecture, decision) {
     } else {
       note("ARCHITECTURE.md references D-362 / recoverMissingOrdersBatch");
     }
+    if (!/D-363/.test(architecture.text) || !/payment_provider_event_inbox/.test(architecture.text)) {
+      fail(
+        "IMP026_ARCH_INBOX",
+        "ARCHITECTURE.md must reference D-363 / payment_provider_event_inbox durable webhook inbox",
+      );
+    } else {
+      note("ARCHITECTURE.md references D-363 / payment_provider_event_inbox");
+    }
   }
 
   if (decision) {
-    if (!/D-363/.test(decision.text)) {
-      fail("NEXT_DECISION_ID", "Decision register must advance next free ID to D-363 after D-362");
+    if (!/D-364/.test(decision.text)) {
+      fail("NEXT_DECISION_ID", "Decision register must advance next free ID to D-364 after D-363");
     } else {
-      note("Next free decision ID D-363 recorded");
+      note("Next free decision ID D-364 recorded");
     }
   }
 }
@@ -887,17 +929,17 @@ export function runProjectConsistency() {
   if (vision && vision.meta.version !== "VISION-1") {
     fail("VISION_VERSION", `Expected VISION-1, got ${vision.meta.version}`);
   }
-  if (architecture && architecture.meta.architectureVersion !== "ARCH-R7") {
-    fail("ARCH_VERSION", `Expected ARCH-R7, got ${architecture.meta.architectureVersion}`);
+  if (architecture && architecture.meta.architectureVersion !== "ARCH-R8") {
+    fail("ARCH_VERSION", `Expected ARCH-R8, got ${architecture.meta.architectureVersion}`);
   }
-  if (decision && decision.meta.decisionRegisterVersion !== "DR-4") {
-    fail("DR_VERSION", `Expected DR-4, got ${decision.meta.decisionRegisterVersion}`);
+  if (decision && decision.meta.decisionRegisterVersion !== "DR-5") {
+    fail("DR_VERSION", `Expected DR-5, got ${decision.meta.decisionRegisterVersion}`);
   }
-  if (roadmap && roadmap.meta.roadmapVersion !== "GTM-R9") {
-    fail("ROADMAP_VERSION", `Expected GTM-R9, got ${roadmap.meta.roadmapVersion}`);
+  if (roadmap && roadmap.meta.roadmapVersion !== "GTM-R10") {
+    fail("ROADMAP_VERSION", `Expected GTM-R10, got ${roadmap.meta.roadmapVersion}`);
   }
-  if (state && state.meta.stateVersion !== "STATE-R8") {
-    fail("STATE_VERSION", `Expected STATE-R8, got ${state.meta.stateVersion}`);
+  if (state && state.meta.stateVersion !== "STATE-R9") {
+    fail("STATE_VERSION", `Expected STATE-R9, got ${state.meta.stateVersion}`);
   }
   if (state && state.meta.governanceHealth === "ALIGNED") {
     // During reconciliation install this may still be RECONCILIATION_REQUIRED;

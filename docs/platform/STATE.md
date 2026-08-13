@@ -2,7 +2,7 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R8",
+  "stateVersion": "STATE-R9",
   "acceptedThrough": "IMP-025",
   "currentProductSlice": "NONE",
   "nextProductSlice": "IMP-026",
@@ -56,7 +56,7 @@ Capability architecture:
 **COMPLETE_AND_ACCEPTED**. IMP-026 architecture is **ARCHITECTURE_LOCKED**. IMP-026 implementation
 is `NOT_STARTED` and is **not** authorized by this architecture lock. Current V1 payment provider
 is **Razorpay** (**D-361**). Razorpay webhook acknowledgement / missing-Order recovery is
-**D-362**.
+**D-362**. Razorpay durable webhook inbox / asynchronous Payment processing is **D-363**.
 
 `governanceHealth = ALIGNED` records independent acceptance through IMP-025.
 Implementation agents must not self-promote this field or start IMP-026 implementation.
@@ -164,6 +164,11 @@ acceptance:
 - Historical role-count prose (six roles) vs accepted inventory (seven) — clarified by **D-358**;
   current inventory is owned by this STATE document and code.
 
+STATE-R9 records **D-363** (Razorpay durable webhook inbox / asynchronous Payment processing) as an
+amendment of D-362 acknowledgement timing only, without changing IMP-026 lifecycle or
+`acceptedThrough`. D-362 remains CURRENT for Order materialization outside the provider-ack path,
+missing-Order recovery, secondary reconciliation, and no new deployable service. D-361 remains
+CURRENT for provider selection.
 STATE-R8 records **D-362** (Razorpay webhook acknowledgement / post-payment Order recovery) as an
 amendment of D-361 ack/post-payment effect only, without changing IMP-026 lifecycle or
 `acceptedThrough`. D-361 remains CURRENT for provider selection.

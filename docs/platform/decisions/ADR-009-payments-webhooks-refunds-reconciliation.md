@@ -18,10 +18,13 @@ Last updated: 2026-08-13
   payment provider and Razorpay Standard Checkout is the V1 customer payment collection surface.
   Razorpay-specific production architecture is governed by D-361 and
   [`../capabilities/IMP-026-razorpay-productionization.md`](../capabilities/IMP-026-razorpay-productionization.md).
-  **[D-362](../decision-register.md)** amends D-361 only for Razorpay webhook acknowledgement
-  (HTTP 2xx after durable Payment acceptance; Order materialization outside provider-ack path;
-  missing-Order recovery via existing `recoverMissingOrdersBatch`). D-361 remains CURRENT for
-  provider selection.
+  **[D-362](../decision-register.md)** amends D-361 only for Razorpay webhook acknowledgement /
+  post-payment Order recovery (Order materialization outside provider-ack path; missing-Order
+  recovery via existing `recoverMissingOrdersBatch`). **[D-363](../decision-register.md)** amends
+  D-362 only for webhook acknowledgement timing (HTTP 2xx after durable webhook inbox insert;
+  asynchronous Payment processing inside `customer-commerce`). D-361 remains CURRENT for provider
+  selection. D-362 remains CURRENT for Order materialization outside the provider-ack path,
+  missing-Order recovery, secondary reconciliation, and no new deployable service.
 - **Provider-neutral Payment domain**, webhook / query / provider-evidence principles, refund domain
   intent, and reconciliation requirements in this ADR **remain accepted** where aligned with
   accepted IMP-022 and later CURRENT decisions. They are not rewritten as though Razorpay was always

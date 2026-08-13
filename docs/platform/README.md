@@ -45,7 +45,7 @@ Machine check: `npm run project:consistency`.
 |---|---|---|
 | [`capabilities/IMP-024-customer-ordering-transport.md`](./capabilities/IMP-024-customer-ordering-transport.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-024 transport; implementation COMPLETE_AND_ACCEPTED |
 | [`capabilities/IMP-025-customer-ordering-ux.md`](./capabilities/IMP-025-customer-ordering-ux.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-025 Customer Ordering UX; COMPLETE_AND_ACCEPTED |
-| [`capabilities/IMP-026-razorpay-productionization.md`](./capabilities/IMP-026-razorpay-productionization.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-026 Razorpay productionization & Payment GTM readiness (D-361 provider / D-362 webhook ack & missing-Order recovery); implementation NOT_STARTED |
+| [`capabilities/IMP-026-razorpay-productionization.md`](./capabilities/IMP-026-razorpay-productionization.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-026 Razorpay productionization & Payment GTM readiness (D-361 provider / D-362 missing-Order recovery / D-363 durable webhook inbox); implementation NOT_STARTED |
 
 ## Supporting documents
 
@@ -79,8 +79,9 @@ supersession are owned by [`decision-register.md`](./decision-register.md). Nota
 - ADR-007 invoice intent remains CURRENT architecture intent; implementation = IMP-028
 - ADR-009 Cashfree V1 provider / Hosted Checkout selection → **SUPERSEDED for current provider
   authority** by D-361 (Razorpay / Razorpay Standard Checkout); webhook acknowledgement /
-  post-payment Order recovery refined by D-362; provider-neutral Payment remainder remains;
-  IMP-026 architecture locked / implementation not started
+  post-payment Order recovery refined by D-362; webhook acknowledgement timing / durable inbox
+  refined by D-363; provider-neutral Payment remainder remains; IMP-026 architecture locked /
+  implementation not started
 
 ## Documentation update protocol
 

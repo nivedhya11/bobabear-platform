@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R9",
+  "roadmapVersion": "GTM-R10",
   "acceptedThrough": "IMP-025",
   "currentProductSlice": "NONE",
   "nextProductSlice": "IMP-026",
   "gtmBoundary": "IMP-040",
   "lastReviewed": "2026-08-13",
-  "supersedes": "GTM-R8"
+  "supersedes": "GTM-R9"
 }
 -->
 
@@ -97,6 +97,8 @@ implementation is **COMPLETE_AND_ACCEPTED**. `acceptedThrough` is IMP-025. IMP-0
 this architecture lock. Current V1 payment provider is **Razorpay** (**D-361**), substituting the
 previously published Cashfree IMP-026 meaning without changing the slice number. Razorpay webhook
 acknowledgement / missing-Order recovery is **D-362** (amends D-361 ack/post-payment effect only).
+Webhook acknowledgement timing / durable inbox / asynchronous Payment processing is **D-363**
+(amends D-362 acknowledgement timing only).
 
 ## 3. Accepted Slices
 
@@ -224,6 +226,24 @@ Historical GTM-R1 meanings that are **not** current:
 Current public GTM boundary is **IMP-040**, not IMP-035.
 
 ## 9. Roadmap Change Log
+
+### GTM-R10 — 2026-08-13
+
+- Recorded **D-363**: Razorpay durable webhook inbox and asynchronous provider-event processing.
+  Amends D-362 only for webhook acknowledgement timing. D-362 remains CURRENT for Order
+  materialization outside the provider-ack path, missing-Order recovery, secondary reconciliation,
+  and no new deployable service. D-361 remains CURRENT for Razorpay provider selection / Standard
+  Checkout.
+- Updated locked IMP-026 capability architecture
+  ([`capabilities/IMP-026-razorpay-productionization.md`](./capabilities/IMP-026-razorpay-productionization.md))
+  for durable inbox insert before HTTP 2xx, asynchronous Payment processing inside
+  `customer-commerce`, one Attempt = one Razorpay Order, Checkout internal retry disabled, captured
+  required for success, automatic capture, and deterministic provider receipt /
+  recover-before-recreate.
+- IMP-026 lifecycle remains `ARCHITECTURE_LOCKED`. Implementation remains `NOT STARTED` and is
+  **not** authorized by this architecture lock.
+- `acceptedThrough` remains IMP-025; `currentProductSlice` remains `NONE`; `pendingAcceptance`
+  remains `NONE`; `nextProductSlice` remains IMP-026. Do not advance to IMP-027.
 
 ### GTM-R9 — 2026-08-13
 

@@ -24,8 +24,8 @@ This document is the **locked capability architecture** for IMP-024. Architectur
 > accepted `/api/v1/*` inventory are unchanged. IMP-026 adds provider webhook ingress
 > (`POST /api/integrations/payments/razorpay/webhook`) and provider-neutral client-evidence
 > (`POST /api/v1/payments/{paymentId}/client-evidence`) under D-361; webhook acknowledgement /
-> missing-Order recovery semantics are refined by **D-362**. Those routes are not retroactively part
-> of IMP-024 acceptance.
+> missing-Order recovery semantics are refined by **D-362**; acknowledgement timing / durable inbox
+> are refined by **D-363**. Those routes are not retroactively part of IMP-024 acceptance.
 
 ---
 

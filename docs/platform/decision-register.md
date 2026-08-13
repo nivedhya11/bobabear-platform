@@ -2,7 +2,7 @@
 {
   "status": "CURRENT",
   "authority": "DECISION_AUTHORITY",
-  "decisionRegisterVersion": "DR-4",
+  "decisionRegisterVersion": "DR-5",
   "lastReviewed": "2026-08-13"
 }
 -->
@@ -35,7 +35,7 @@ Only **CURRENT** decisions are fully binding. **AMENDED** decisions must identif
   [`decision-register-historical.md`](./decision-register-historical.md) (D-001–D-355) remain
   interpretable history under that **HISTORICAL** document. They are not independently CURRENT
   sequencing or transport authority.
-- New decisions continue after the highest CURRENT/AMENDED register ID: next ID **D-363**.
+- New decisions continue after the highest CURRENT/AMENDED register ID: next ID **D-364**.
 - ADR files keep `ADR-xxx` identities. This register references them in the Record column.
   Mapping ADR-014 ↔ D-014 is **not** used here because historical `decision-register-historical.md`
   already assigned D-014 to a different decision (Next.js evolution-in-place).
@@ -58,8 +58,9 @@ notices; keep history interpretable.
 | D-358 | Current accepted system-role inventory is owned by STATE/code (presently 7 roles); ADR-005/D-020 historical “six roles” prose is not a competing current-state authority | Access Control / Inventory | CURRENT | This register + ADR-005 historical body | Competing CURRENT-state reading of ADR-005 role count | — | STATE technical inventory |
 | D-359 | IMP-024 customer-commerce topology: one dedicated `customer-commerce` `node:http` thin transport façade behind Nginx `/api/v1/*` on internal port 8083; static Next export retained; `customer-auth` / `workforce-auth` remain separate; no Route Handlers; no per-domain microservices; no speculative infra/schema merely for transport | Global / Transport / IMP-024 | CURRENT | This register + [`capabilities/IMP-024-customer-ordering-transport.md`](./capabilities/IMP-024-customer-ordering-transport.md) | Undecided topology clause of D-356 | — | ARCH-G01, ARCH-G02, ARCH-G14, IMP-024 architecture |
 | D-360 | Customer commerce public API convention: `/api/v1/*` (not `/api/v1/customer/*`); auth prefixes `/api/customer-auth/*` and `/api/workforce-auth/*` unchanged; routes map accepted application operations outward without manufacturing domain authority; base error `{ ok:false, code, requestId }`; domain codes authoritative; no `PAYMENT_NOT_RETRYABLE`; Problem Details not selected for IMP-024; Payment idempotency is JSON `idempotencyKey` and Payment-specific | Transport / API / IMP-024 | CURRENT | This register + [`capabilities/IMP-024-customer-ordering-transport.md`](./capabilities/IMP-024-customer-ordering-transport.md) | Competing CURRENT readings that would restore Route-Handler host or Problem Details as IMP-024 commerce envelope | — | IMP-024 public contract |
-| D-361 | Razorpay is the V1 production payment provider and Razorpay Standard Checkout is the V1 customer payment collection surface; Razorpay operates behind the existing `PaymentProvider` port inside `customer-commerce` (no Razorpay-specific Payment domain, no new service, no second payment state machine, no new Order materialization); browser Checkout success is not independently authoritative financial truth; webhook ingress is `POST /api/integrations/payments/razorpay/webhook` on `customer-commerce` (not `/api/v1/*`, not a customer API, not a Next.js Route Handler); provider-neutral client evidence is `POST /api/v1/payments/{paymentId}/client-evidence`; `clientAction` kind `razorpay_standard_checkout` carries only browser-safe Checkout initialization; Refund remains IMP-027; webhook acknowledgement / post-payment Order effect semantics are refined by **D-362** without changing provider selection | Payment / Provider / IMP-026 | CURRENT | This register + [`capabilities/IMP-026-razorpay-productionization.md`](./capabilities/IMP-026-razorpay-productionization.md) | **D-161** (current V1 provider selection) and **D-162** (current V1 collection-surface selection); Cashfree-specific provider-selection / Hosted Checkout reading of ADR-009 | — (webhook acknowledgement / post-payment Order effect refined by **D-362**; D-361 remains CURRENT for provider selection) | ARCH-G06, ARCH-G10, ARCH-G11, accepted IMP-022 Payment domain, IMP-026 architecture |
-| D-362 | Razorpay webhook acknowledgement occurs only after verified Payment evidence is durably accepted/applied; `tryMaterializeOrderAfterPaymentCompletion` is not part of the provider-ack critical path; missing-Order after Payment success is an explicitly recoverable GTM state recovered via existing `recoverMissingOrdersBatch` (or exact current equivalent); no new Payment webhook inbox, deployable worker/service, queue/broker, or Payment schema; automatic scheduled recovery/reconciliation runners are not required by this decision; `queryExecution` / `reconcilePaymentAttempt` remain secondary provider-state recovery, not webhook replacement; duplicate delivery remains safe through existing first-success / provider-event / Order uniqueness authority | Payment / Webhook / Recovery / IMP-026 | CURRENT | This register + [`capabilities/IMP-026-razorpay-productionization.md`](./capabilities/IMP-026-razorpay-productionization.md) | — (amends **D-361** webhook acknowledgement / post-payment Order effect semantics only; does not supersede D-361) | — | ARCH-G06, ARCH-G07, ARCH-G14, accepted IMP-022/IMP-023, IMP-026 webhook/recovery |
+| D-361 | Razorpay is the V1 production payment provider and Razorpay Standard Checkout is the V1 customer payment collection surface; Razorpay operates behind the existing `PaymentProvider` port inside `customer-commerce` (no Razorpay-specific Payment domain, no new service, no second payment state machine, no new Order materialization); browser Checkout success is not independently authoritative financial truth; webhook ingress is `POST /api/integrations/payments/razorpay/webhook` on `customer-commerce` (not `/api/v1/*`, not a customer API, not a Next.js Route Handler); provider-neutral client evidence is `POST /api/v1/payments/{paymentId}/client-evidence`; `clientAction` kind `razorpay_standard_checkout` carries only browser-safe Checkout initialization; Refund remains IMP-027; webhook acknowledgement / post-payment Order effect semantics are refined by **D-362** / **D-363** without changing provider selection | Payment / Provider / IMP-026 | CURRENT | This register + [`capabilities/IMP-026-razorpay-productionization.md`](./capabilities/IMP-026-razorpay-productionization.md) | **D-161** (current V1 provider selection) and **D-162** (current V1 collection-surface selection); Cashfree-specific provider-selection / Hosted Checkout reading of ADR-009 | — (webhook acknowledgement / post-payment Order effect refined by **D-362**; acknowledgement timing / durable inbox further refined by **D-363**; D-361 remains CURRENT for provider selection) | ARCH-G06, ARCH-G10, ARCH-G11, accepted IMP-022 Payment domain, IMP-026 architecture |
+| D-362 | Razorpay Order materialization (`tryMaterializeOrderAfterPaymentCompletion`) stays outside the provider-ack critical path; missing-Order after Payment success is an explicitly recoverable GTM state recovered via existing `recoverMissingOrdersBatch` (or exact current equivalent); no new deployable worker/service, queue, or broker; automatic scheduled recovery/reconciliation runners are not required by this decision; `queryExecution` / `reconcilePaymentAttempt` remain secondary provider-state recovery, not webhook replacement; duplicate delivery remains safe through existing first-success / provider-event / Order uniqueness authority; webhook acknowledgement timing and durable inbox/schema are refined by **D-363** without superseding this decision wholesale | Payment / Webhook / Recovery / IMP-026 | CURRENT | This register + [`capabilities/IMP-026-razorpay-productionization.md`](./capabilities/IMP-026-razorpay-productionization.md) | — (amends **D-361** webhook acknowledgement / post-payment Order effect semantics only; does not supersede D-361) | — (webhook acknowledgement timing / durable inbox refined by **D-363**; D-362 remains CURRENT for Order materialization outside provider-ack path, missing-Order recovery, secondary reconciliation, and no new deployable service) | ARCH-G06, ARCH-G07, ARCH-G14, accepted IMP-022/IMP-023, IMP-026 webhook/recovery |
+| D-363 | Razorpay durable webhook inbox and asynchronous provider-event processing: verified webhook evidence is durably inserted into dedicated Postgres `payment_provider_event_inbox` (not `payment_provider_observations`) before HTTP 2xx; acknowledgement does not wait for `applyProviderEvidence`, Payment locking/transitions, provider reconciliation, or Order materialization; inbox is claimed/processed asynchronously by existing `customer-commerce` (no new deployable service, queue, or broker); one BOBA Bear Payment Attempt = one Razorpay Order; Razorpay Standard Checkout internal retry is disabled; BOBA `retryPayment` owns retry; only Razorpay captured financial state is authoritative Payment success (authorized remains non-success/pending); automatic capture is the IMP-026 collection model; deterministic unique provider receipt from Attempt/execution identity; uncertain Razorpay Order-create recovers existing provider Order before recreate; Refund remains IMP-027; Payment/provider ingress schema change required (one future migration) | Payment / Webhook / Inbox / IMP-026 | CURRENT | This register + [`capabilities/IMP-026-razorpay-productionization.md`](./capabilities/IMP-026-razorpay-productionization.md) | — (amends **D-362** webhook acknowledgement timing only; does not supersede D-362 wholesale) | — | ARCH-G06, ARCH-G07, ARCH-G13, ARCH-G14, accepted IMP-022/IMP-023, IMP-026 webhook durability |
 
 ## 3. Current Capability / Cross-Capability Decisions
 
@@ -68,8 +69,11 @@ transport CURRENT decisions (D-359, D-360) and amends D-356. DR-3 registers **D-
 the current V1 production payment provider / Standard Checkout surface, superseding D-161 / D-162
 for current provider authority while retaining provider-neutral Payment architecture. DR-4 registers
 **D-362**, which amends D-361 only for Razorpay webhook acknowledgement and post-payment Order
-recovery semantics; D-361 remains CURRENT for provider selection. ADR inventory status for CURRENT
-binding reads:
+recovery semantics; D-361 remains CURRENT for provider selection. DR-5 registers **D-363**, which
+amends D-362 only for Razorpay webhook acknowledgement timing / durable inbox / asynchronous
+Payment processing; D-362 remains CURRENT for Order materialization outside the provider-ack path,
+missing-Order recovery, secondary reconciliation, and no new deployable service. ADR inventory
+status for CURRENT binding reads:
 
 | ADR | Title | Register status | Notes |
 |---|---|---|---|
@@ -81,7 +85,7 @@ binding reads:
 | ADR-006 | Catalog / assortment / availability | CURRENT | Read with accepted IMP-012–014 separations |
 | ADR-007 | Pricing / tax / charges / promotions | CURRENT | Invoice/credit-note **intent** CURRENT; implementation = ROADMAP IMP-028 (not complete) |
 | ADR-008 | Serviceability / cart / checkout | AMENDED | Domain foundations CURRENT where aligned with accepted IMP-018–021; superseded details yield to STATE |
-| ADR-009 | Payments / webhooks / refunds | AMENDED | Provider-neutral Payment domain CURRENT via IMP-022; Cashfree V1 provider/Hosted Checkout selection superseded by **D-361** (Razorpay / Razorpay Standard Checkout); Razorpay webhook acknowledgement / post-payment Order recovery refined by **D-362**; Razorpay productionization = IMP-026; Refund implementation = IMP-027 |
+| ADR-009 | Payments / webhooks / refunds | AMENDED | Provider-neutral Payment domain CURRENT via IMP-022; Cashfree V1 provider/Hosted Checkout selection superseded by **D-361** (Razorpay / Razorpay Standard Checkout); Razorpay webhook acknowledgement / post-payment Order recovery refined by **D-362**; webhook acknowledgement timing / durable inbox refined by **D-363**; Razorpay productionization = IMP-026; Refund implementation = IMP-027 |
 | ADR-010 | Order lifecycle / operations console | AMENDED | High-level Order ownership CURRENT via D-357 + IMP-023; detailed kitchen workflow and Operations Console implementation are future / deferred |
 | ADR-011 | Delivery providers | HISTORICAL / future-binding intent | Not implemented; ROADMAP IMP-031+ |
 | ADR-012 | Notifications / WhatsApp | HISTORICAL / future-binding intent | Not implemented; ROADMAP IMP-033+ |
@@ -99,10 +103,11 @@ guessing, status is limited to the rows above rather than inventing a full taxon
 | ADR-003 | D-356 / D-359 | Modular monolith and module boundaries remain; Route Handler as product HTTP host does not; IMP-024 host is `customer-commerce` |
 | ADR-005 | D-358 | Scoped RBAC model remains; current role **count** is STATE/code. |
 | ADR-008 | Accepted IMP-018–021 | Prefer STATE/accepted code for cart/checkout/serviceability specifics that drifted from early ADR prose. |
-| ADR-009 | **D-361** + **D-362** + ROADMAP IMP-026/027 + accepted IMP-022 | Payment domain foundation accepted; Cashfree V1 provider/surface selection superseded for current authority; Razorpay GTM (IMP-026) architecture locked / not started; webhook acknowledgement / missing-Order recovery locked by D-362; Refund not accepted as done. |
+| ADR-009 | **D-361** + **D-362** + **D-363** + ROADMAP IMP-026/027 + accepted IMP-022 | Payment domain foundation accepted; Cashfree V1 provider/surface selection superseded for current authority; Razorpay GTM (IMP-026) architecture locked / not started; webhook acknowledgement / missing-Order recovery locked by D-362; durable webhook inbox / asynchronous Payment processing locked by D-363; Refund not accepted as done. |
 | ADR-010 | D-357 | Order post-purchase lifecycle ownership remains; detailed PREPARING/READY kitchen machine is not accepted current Order lifecycle. |
 | **D-356** | **D-359** | Static public Next.js export + dynamic transport outside dynamic Next.js remain binding. Exact IMP-024 topology (service/port/proxy) is decided by D-359, not left undecided. |
-| **D-361** webhook-ack / post-payment Order effect | **D-362** | D-361 remains CURRENT for Razorpay provider selection, Standard Checkout, `PaymentProvider` adapter, client evidence, webhook path/host, configuration boundary, and no new service. D-362 governs acknowledgement-after-durable-Payment-acceptance, Order materialization outside the provider-ack path, and missing-Order recovery via `recoverMissingOrdersBatch`. |
+| **D-361** webhook-ack / post-payment Order effect | **D-362** | D-361 remains CURRENT for Razorpay provider selection, Standard Checkout, `PaymentProvider` adapter, client evidence, webhook path/host, configuration boundary, and no new service. D-362 governs Order materialization outside the provider-ack path and missing-Order recovery via `recoverMissingOrdersBatch`. Webhook acknowledgement timing is further amended by **D-363**. |
+| **D-362** webhook acknowledgement timing | **D-363** | D-362 remains CURRENT for Order materialization outside the provider-ack path, missing-Order recovery via `recoverMissingOrdersBatch`, secondary reconciliation (`queryExecution` / `reconcilePaymentAttempt`), and no new deployable service. D-363 governs durable webhook inbox insert before HTTP 2xx and asynchronous Payment processing inside `customer-commerce`. |
 
 ## 5. Superseded Decisions
 
@@ -119,6 +124,26 @@ No new REJECTED entries are introduced by DR-2. Historical rejections inside ADR
 ADR bodies.
 
 ## 7. Decision Change Log
+
+### DR-5 — 2026-08-13
+
+- Registered **D-363**: Razorpay durable webhook inbox and asynchronous provider-event processing.
+- D-363 amends **D-362** only for webhook acknowledgement timing. D-362 remains CURRENT for Order
+  materialization outside the provider-ack path, missing-Order recovery via
+  `recoverMissingOrdersBatch`, secondary reconciliation, and no new deployable service. D-361
+  remains CURRENT for Razorpay provider selection. D-356–D-360 unchanged.
+- Locked: HTTP 2xx only after verified provider evidence is durably accepted into dedicated
+  Postgres `payment_provider_event_inbox` (or already known as a durable duplicate); acknowledgement
+  does not wait for Payment locking/transitions, `applyProviderEvidence`, reconciliation, or Order
+  materialization; inbox processing is a small claim/process loop inside existing
+  `customer-commerce`; one BOBA Attempt = one Razorpay Order; Razorpay Checkout internal retry
+  disabled; only captured financial state is authoritative success; automatic capture; deterministic
+  provider receipt with recover-before-recreate on uncertain Order create; Payment/provider ingress
+  schema change required (one future migration; not created by this decision).
+- Updated locked capability architecture
+  [`capabilities/IMP-026-razorpay-productionization.md`](./capabilities/IMP-026-razorpay-productionization.md).
+- Next free decision ID advanced to **D-364**.
+- Refund remains IMP-027. IMP-026 implementation is not authorized by this decision.
 
 ### DR-4 — 2026-08-13
 
