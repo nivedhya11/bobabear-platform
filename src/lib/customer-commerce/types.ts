@@ -1,0 +1,296 @@
+/**
+ * Browser-side wire types for customer-commerce (IMP-025).
+ *
+ * Revisions and money amounts arrive as decimal strings (D-360 bigint rule).
+ * Dates arrive as ISO strings. These types describe transport JSON only.
+ */
+
+export type CommerceCartLine = Readonly<{
+  id: string;
+  variantId: string;
+  quantity: number;
+  modifiers: readonly unknown[];
+  bundleSelections: readonly unknown[];
+}>;
+
+export type CommerceCart = Readonly<{
+  id: string;
+  brandId: string;
+  ownerMode: "guest" | "customer";
+  revision: string;
+  manualCouponCode: string | null;
+  expiresAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  lines: readonly CommerceCartLine[];
+}>;
+
+export type CommerceCartEvaluation = Readonly<{
+  cartId: string;
+  cartRevision: string;
+  evaluatedAt: string;
+  status: string;
+  selectedOutletId?: string;
+  problems?: readonly Readonly<{ cartLineId: string; code: string }>[];
+  quote?: unknown;
+  serviceabilityReason?: string;
+}>;
+
+export type CommerceAddress = Readonly<{
+  id: string;
+  recipientName: string;
+  recipientPhone: string;
+  addressLine1: string;
+  addressLine2: string | null;
+  landmark: string | null;
+  locality: string | null;
+  city: string;
+  stateCode: string;
+  postalCode: string;
+  coordinates: Readonly<{ latitude: string; longitude: string }> | null;
+  label: string | null;
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
+}>;
+
+export type CommerceAddressCreateInput = Readonly<{
+  recipientName: string;
+  recipientPhone: string;
+  addressLine1: string;
+  addressLine2?: string | null;
+  landmark?: string | null;
+  locality?: string | null;
+  city: string;
+  stateCode: string;
+  postalCode: string;
+  coordinates?: Readonly<{ latitude: string; longitude: string }> | null;
+  label?: string | null;
+  makeDefault?: boolean;
+}>;
+
+export type CommerceCheckoutDestination = Readonly<{
+  destinationKind: "SAVED_ADDRESS" | "ONE_TIME_ADDRESS";
+  sourceSavedAddressId: string | null;
+  recipientName: string;
+  recipientPhone: string;
+  addressLine1: string;
+  addressLine2: string | null;
+  landmark: string | null;
+  locality: string | null;
+  city: string;
+  stateCode: string;
+  postalCode: string;
+  coordinates: Readonly<{ latitude: string; longitude: string }> | null;
+  label: string | null;
+}>;
+
+export type CommerceCheckoutSnapshot = Readonly<{
+  id: string;
+  checkoutId: string;
+  checkoutRevision: string;
+  sourceCartRevision: string;
+  selectedOutletId: string;
+  evaluatedAt: string;
+  currency: string;
+  basePaise: string;
+  chargesPaise: string;
+  prePromotionSubtotalPaise: string;
+  promotionDiscountPaise: string;
+  taxablePaise: string;
+  taxPaise: string;
+  grandTotalPaise: string;
+  taxInclusionMode: string;
+  destination: CommerceCheckoutDestination;
+  lines: readonly unknown[];
+  charges: readonly unknown[];
+  promotionEffects: readonly unknown[];
+  taxComponents: readonly unknown[];
+}>;
+
+export type CommerceCheckout = Readonly<{
+  id: string;
+  customerAuthUserId: string;
+  brandId: string;
+  cartId: string;
+  sourceCartRevision: string;
+  revision: string;
+  status: string;
+  expiresAt: string;
+  activeSnapshotId: string | null;
+  createdAt: string;
+  updatedAt: string;
+  destination: CommerceCheckoutDestination | null;
+  activeSnapshot: CommerceCheckoutSnapshot | null;
+}>;
+
+export type SavedAddressDestinationInput = Readonly<{
+  kind: "SAVED_ADDRESS";
+  savedAddressId: string;
+}>;
+
+export type OneTimeAddressDestinationInput = Readonly<{
+  kind: "ONE_TIME_ADDRESS";
+  recipientName: string;
+  recipientPhone: string;
+  addressLine1: string;
+  addressLine2?: string | null;
+  landmark?: string | null;
+  locality?: string | null;
+  city: string;
+  stateCode: string;
+  postalCode: string;
+  coordinates?: Readonly<{ latitude: string; longitude: string }> | null;
+  label?: string | null;
+}>;
+
+export type CommerceDestinationInput =
+  | SavedAddressDestinationInput
+  | OneTimeAddressDestinationInput;
+
+export type CartReconciliationResolution = "KEEP_GUEST" | "KEEP_CUSTOMER";
+
+export type CommercePaymentMethodIntent = "upi" | "card" | "netbanking";
+
+export type CommercePaymentStatus =
+  | "OPEN"
+  | "PROCESSING"
+  | "SUCCEEDED"
+  | "SUPERSEDED"
+  | "CANCELLED"
+  | "EXPIRED"
+  | string;
+
+export type CommercePaymentAttemptStatus =
+  | "CREATED"
+  | "PENDING"
+  | "INDETERMINATE"
+  | "SUCCEEDED"
+  | "FAILED"
+  | "CANCELLED"
+  | string;
+
+export type CommerceClientAction = Readonly<{
+  kind: string;
+  payload: Readonly<Record<string, string>>;
+}>;
+
+export type CommercePayment = Readonly<{
+  id: string;
+  checkoutId: string;
+  checkoutSnapshotId: string;
+  expectedAmountPaise: string;
+  currency: string;
+  status: CommercePaymentStatus;
+  createdAt: string;
+  updatedAt: string;
+  succeededAt: string | null;
+  cancelledAt: string | null;
+  expiredAt: string | null;
+  supersededAt: string | null;
+}>;
+
+export type CommercePaymentAttempt = Readonly<{
+  id: string;
+  paymentId: string;
+  attemptOrdinal: string;
+  provider: string;
+  methodIntent: string;
+  providerExecutionIdentity: string;
+  status: CommercePaymentAttemptStatus;
+  createdAt: string;
+  updatedAt: string;
+  pendingAt: string | null;
+  indeterminateAt: string | null;
+  succeededAt: string | null;
+  failedAt: string | null;
+  cancelledAt: string | null;
+}>;
+
+export type CommercePaymentStartResult = Readonly<{
+  kind: "payment_started";
+  payment: CommercePayment;
+  attempt: CommercePaymentAttempt;
+  checkoutId: string;
+  checkoutRevision: string;
+  clientAction?: CommerceClientAction;
+}>;
+
+export type CommercePaymentState = Readonly<{
+  payment: CommercePayment | null;
+  attempt: CommercePaymentAttempt | null;
+  attempts: readonly CommercePaymentAttempt[];
+  checkoutId: string;
+  checkoutStatus: string;
+  checkoutRevision: string;
+  zeroPayableCompleted: boolean;
+  clientAction?: CommerceClientAction;
+}>;
+
+export type CommerceZeroPayableResult = Readonly<{
+  kind: "zero_payable_completed";
+  checkoutId: string;
+  checkoutRevision: string;
+  snapshotId: string;
+}>;
+
+export type CommerceOrderStatus = "PLACED" | "ACCEPTED" | "FULFILLED" | "CANCELLED";
+
+export type CommerceOrderMoney = Readonly<{
+  grandTotalMinor: string;
+  currency: string;
+}>;
+
+export type CommerceOrderOutlet = Readonly<{
+  outletId: string;
+  brandId: string;
+  code: string;
+  name: string;
+}>;
+
+export type CommerceOrderSummary = Readonly<{
+  orderId: string;
+  orderNumber: string;
+  status: string;
+  revision: string;
+  createdAt: string;
+  money: CommerceOrderMoney;
+  paymentSatisfaction: string;
+  outlet: CommerceOrderOutlet;
+}>;
+
+export type CommerceOrderDestination = Readonly<{
+  recipientName: string;
+  recipientPhone: string;
+  addressLine1: string;
+  addressLine2: string | null;
+  landmark: string | null;
+  locality: string | null;
+  city: string;
+  stateCode: string;
+  postalCode: string;
+  label: string | null;
+}>;
+
+export type CommerceOrderLine = Readonly<{
+  productName: string;
+  variantName: string;
+  quantity: number;
+  lineTotalMinor: string;
+  modifiers: readonly Readonly<{
+    groupName: string;
+    optionName: string;
+    quantity: number;
+  }>[];
+}>;
+
+export type CommerceOrderDetail = CommerceOrderSummary &
+  Readonly<{
+    updatedAt: string;
+    acceptedAt: string | null;
+    fulfilledAt: string | null;
+    cancelledAt: string | null;
+    cancellationReasonCode: string | null;
+    destination: CommerceOrderDestination;
+    lines: readonly CommerceOrderLine[];
+  }>;

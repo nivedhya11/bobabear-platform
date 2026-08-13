@@ -184,9 +184,9 @@ function checkRoadmapState(roadmap, state) {
   }
 
   const expected = {
-    acceptedThrough: "IMP-024",
+    acceptedThrough: "IMP-025",
     currentProductSlice: "NONE",
-    nextProductSlice: "IMP-025",
+    nextProductSlice: "IMP-026",
     gtmBoundary: "IMP-040",
   };
   for (const [key, expectedValue] of Object.entries(expected)) {
@@ -400,10 +400,21 @@ function checkImp024ArchitectureLock(roadmap, state, architecture) {
     } else {
       note("STATE records IMP-024 architecture locked / COMPLETE_AND_ACCEPTED");
     }
-    if (!/IMP-025[\s\S]{0,40}NOT STARTED/.test(state.text)) {
-      fail("IMP025_NOT_STARTED", "STATE must keep IMP-025 implementation NOT STARTED");
+    if (!/IMP-025 implementation:[\s\S]{0,40}COMPLETE_AND_ACCEPTED/.test(state.text)) {
+      fail(
+        "IMP025_STATE_IMPL",
+        "STATE must record IMP-025 implementation COMPLETE_AND_ACCEPTED",
+      );
     } else {
-      note("STATE keeps IMP-025 implementation NOT STARTED");
+      note("STATE records IMP-025 COMPLETE_AND_ACCEPTED");
+    }
+    if (state.meta.pendingAcceptance && state.meta.pendingAcceptance !== "NONE") {
+      fail(
+        "IMP025_PENDING_META",
+        `STATE pendingAcceptance must be NONE after IMP-025 acceptance, got ${JSON.stringify(state.meta.pendingAcceptance)}`,
+      );
+    } else {
+      note("STATE pendingAcceptance=NONE");
     }
   }
 
@@ -440,16 +451,10 @@ function checkImp025ArchitectureLock(roadmap, state, architecture) {
     if (!/ARCHITECTURE_LOCKED/.test(body)) {
       fail("IMP025_CAPABILITY_LOCK", "IMP-025 capability artifact must declare ARCHITECTURE_LOCKED");
     }
-    if (!/NOT_STARTED/.test(body) && !/NOT STARTED/.test(body)) {
+    if (!/COMPLETE_AND_ACCEPTED/.test(body)) {
       fail(
         "IMP025_CAPABILITY_IMPL",
-        "IMP-025 capability artifact must declare implementation NOT STARTED",
-      );
-    }
-    if (/COMPLETE_AND_ACCEPTED/.test(body)) {
-      fail(
-        "IMP025_CAPABILITY_PREMATURE_ACCEPTANCE",
-        "IMP-025 capability artifact must not claim COMPLETE_AND_ACCEPTED",
+        "IMP-025 capability artifact must declare COMPLETE_AND_ACCEPTED after independent acceptance",
       );
     }
     for (const id of ["D-356", "D-357", "D-359", "D-360"]) {
@@ -469,22 +474,32 @@ function checkImp025ArchitectureLock(roadmap, state, architecture) {
   }
 
   if (roadmap) {
+    const acceptedSection = roadmap.text.split("## 3. Accepted Slices")[1]?.split("## 4.")[0] || "";
     const futureSection = roadmap.text.split("## 5. Future GTM Slices")[1]?.split("## 6.")[0] || "";
+    const acceptedRow = [...acceptedSection.split("\n")].find((line) =>
+      /^\|\s*IMP-025\s*\|/.test(line),
+    );
     const futureRow = [...futureSection.split("\n")].find((line) =>
       /^\|\s*IMP-025\s*\|/.test(line),
     );
-    if (!futureRow || !futureRow.includes("ARCHITECTURE_LOCKED")) {
+    if (!acceptedRow || !acceptedRow.includes("COMPLETE_AND_ACCEPTED")) {
       fail(
         "IMP025_ROADMAP_LIFECYCLE",
-        "ROADMAP future ledger must list IMP-025 as ARCHITECTURE_LOCKED",
+        "ROADMAP accepted ledger must list IMP-025 as COMPLETE_AND_ACCEPTED",
       );
     } else {
-      note("IMP-025 ROADMAP lifecycle ARCHITECTURE_LOCKED");
+      note("IMP-025 ROADMAP lifecycle COMPLETE_AND_ACCEPTED");
+    }
+    if (futureRow) {
+      fail(
+        "IMP025_ROADMAP_FUTURE",
+        "ROADMAP future ledger must not retain IMP-025 after acceptance",
+      );
     }
     if (/IMP-025[\s\S]{0,80}IMPLEMENTATION_IN_PROGRESS/.test(roadmap.text)) {
       fail(
         "IMP025_ROADMAP_IMPL_STARTED",
-        "ROADMAP must not mark IMP-025 IMPLEMENTATION_IN_PROGRESS during architecture lock only",
+        "ROADMAP must not mark IMP-025 IMPLEMENTATION_IN_PROGRESS after acceptance",
       );
     }
   }
@@ -498,7 +513,7 @@ function checkImp025ArchitectureLock(roadmap, state, architecture) {
     if (/IMP-025[\s\S]{0,80}IMPLEMENTATION_IN_PROGRESS/.test(state.text)) {
       fail(
         "IMP025_STATE_IMPL_STARTED",
-        "STATE must not mark IMP-025 implementation in progress during architecture lock only",
+        "STATE must not mark IMP-025 IMPLEMENTATION_IN_PROGRESS after acceptance",
       );
     }
   }
@@ -714,17 +729,17 @@ export function runProjectConsistency() {
   if (vision && vision.meta.version !== "VISION-1") {
     fail("VISION_VERSION", `Expected VISION-1, got ${vision.meta.version}`);
   }
-  if (architecture && architecture.meta.architectureVersion !== "ARCH-R4") {
-    fail("ARCH_VERSION", `Expected ARCH-R4, got ${architecture.meta.architectureVersion}`);
+  if (architecture && architecture.meta.architectureVersion !== "ARCH-R5") {
+    fail("ARCH_VERSION", `Expected ARCH-R5, got ${architecture.meta.architectureVersion}`);
   }
   if (decision && decision.meta.decisionRegisterVersion !== "DR-2") {
     fail("DR_VERSION", `Expected DR-2, got ${decision.meta.decisionRegisterVersion}`);
   }
-  if (roadmap && roadmap.meta.roadmapVersion !== "GTM-R5") {
-    fail("ROADMAP_VERSION", `Expected GTM-R5, got ${roadmap.meta.roadmapVersion}`);
+  if (roadmap && roadmap.meta.roadmapVersion !== "GTM-R7") {
+    fail("ROADMAP_VERSION", `Expected GTM-R7, got ${roadmap.meta.roadmapVersion}`);
   }
-  if (state && state.meta.stateVersion !== "STATE-R4") {
-    fail("STATE_VERSION", `Expected STATE-R4, got ${state.meta.stateVersion}`);
+  if (state && state.meta.stateVersion !== "STATE-R6") {
+    fail("STATE_VERSION", `Expected STATE-R6, got ${state.meta.stateVersion}`);
   }
   if (state && state.meta.governanceHealth === "ALIGNED") {
     // During reconciliation install this may still be RECONCILIATION_REQUIRED;

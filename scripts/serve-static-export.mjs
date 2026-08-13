@@ -66,6 +66,24 @@ function contentTypeFor(filePath, buffer) {
   return sniffContentType(buffer);
 }
 
+/**
+ * D-356 `trailingSlash: true`: if the request is a page directory without a
+ * trailing slash, redirect to the slash form so Next.js hydration matches the
+ * exported route. Extensionless files (e.g. `/opengraph-image`) are unchanged.
+ */
+export function trailingSlashRedirectLocation(outDir, pathname, search = "") {
+  if (!pathname || pathname === "/" || pathname.endsWith("/")) return null;
+  if (path.extname(pathname) !== "") return null;
+  const relative = pathname.replace(/^\/+/, "");
+  const indexCandidate = path.join(outDir, relative, "index.html");
+  try {
+    if (!fs.statSync(indexCandidate).isFile()) return null;
+  } catch {
+    return null;
+  }
+  return `${pathname}/${search}`;
+}
+
 /** Resolve a request pathname to a file under OUT_DIR, or null. Handles:
  *    /                → out/index.html
  *    /dev, /dev/       → out/dev/index.html   (directory index)
@@ -138,6 +156,12 @@ export function createStaticExportHandler(outDir) {
     }
 
     const url = new URL(req.url ?? "/", "http://static-export.invalid");
+    const redirectTo = trailingSlashRedirectLocation(outDir, url.pathname, url.search);
+    if (redirectTo) {
+      res.writeHead(308, { Location: redirectTo });
+      res.end();
+      return;
+    }
     const filePath = resolveFile(outDir, url.pathname);
 
     if (!filePath) {

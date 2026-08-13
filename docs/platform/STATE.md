@@ -2,10 +2,10 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R4",
-  "acceptedThrough": "IMP-024",
+  "stateVersion": "STATE-R6",
+  "acceptedThrough": "IMP-025",
   "currentProductSlice": "NONE",
-  "nextProductSlice": "IMP-025",
+  "nextProductSlice": "IMP-026",
   "pendingAcceptance": "NONE",
   "governanceHealth": "ALIGNED",
   "lastReviewed": "2026-08-13"
@@ -20,9 +20,9 @@ current-reality authority.
 ## 1. Accepted Position
 
 ```text
-Accepted Through:          IMP-024 — Customer Ordering Transport / API
+Accepted Through:          IMP-025 — Customer Ordering UX
 Accepted Inserted Slice:   IMP-005A — Dockerized local application runtime
-Accepted Range:            IMP-001 → IMP-024 (including IMP-005A)
+Accepted Range:            IMP-001 → IMP-025 (including IMP-005A)
 ```
 
 ## 2. Current Work Position
@@ -30,8 +30,8 @@ Accepted Range:            IMP-001 → IMP-024 (including IMP-005A)
 ```text
 Current Product Implementation: NONE
 Pending Acceptance:             NONE
-Next Product Slice:             IMP-025 — Customer Ordering UX
-Current Governance Activity:    IMP-025 ARCHITECTURE_LOCKED (implementation NOT STARTED)
+Next Product Slice:             IMP-026 — Cashfree Productionization & Payment GTM Readiness
+Current Governance Activity:    IMP-025 COMPLETE_AND_ACCEPTED (reconciled)
 Governance Health:              ALIGNED
 ```
 
@@ -39,7 +39,7 @@ Governance Health:              ALIGNED
 IMP-024 architecture:     ARCHITECTURE_LOCKED
 IMP-024 implementation:   COMPLETE_AND_ACCEPTED
 IMP-025 architecture:     ARCHITECTURE_LOCKED
-IMP-025 implementation:   NOT STARTED
+IMP-025 implementation:   COMPLETE_AND_ACCEPTED
 ```
 
 Capability architecture:
@@ -48,11 +48,12 @@ Capability architecture:
 
 [`capabilities/IMP-025-customer-ordering-ux.md`](./capabilities/IMP-025-customer-ordering-ux.md)
 
-`acceptedThrough` remains IMP-024. IMP-025 architecture is locked; IMP-025 implementation is
-**NOT STARTED** and is **not** authorized by architecture lock alone.
+`acceptedThrough` is IMP-025. IMP-025 architecture remains locked; IMP-025 implementation is
+**COMPLETE_AND_ACCEPTED**. IMP-026 remains `PLANNED / NOT STARTED` and is **not** authorized
+by this reconciliation.
 
-`governanceHealth = ALIGNED` records independent acceptance. Implementation agents must not
-self-promote this field.
+`governanceHealth = ALIGNED` records independent acceptance through IMP-025.
+Implementation agents must not self-promote this field or start IMP-026.
 
 ## 3. Accepted Technical Inventory
 
@@ -74,6 +75,8 @@ Speculative values are forbidden here.
 | Public web mode | Next.js static export → Nginx | `next.config.ts` `output: "export"`; `docker/nginx/nginx.conf`; no production `src/app/api` commerce tree |
 | IMP-024 architecture artifact | present | `docs/platform/capabilities/IMP-024-customer-ordering-transport.md` |
 | IMP-024 runtime Compose service | present | `customer-commerce` internal `:8083`; Nginx `/api/v1/*` (D-359) |
+| IMP-025 architecture artifact | present | `docs/platform/capabilities/IMP-025-customer-ordering-ux.md` |
+| IMP-025 static ordering catalog | present | `src/data/ordering-catalog.json` deterministic projection from existing-menu-v1 |
 
 Default Docker topology (accepted runtime inventory):
 
@@ -133,6 +136,7 @@ Cart → Checkout → Payment → Order
 | IMP-022 | Payment | COMPLETE_AND_ACCEPTED |
 | IMP-023 | Order | COMPLETE_AND_ACCEPTED |
 | IMP-024 | Customer Ordering Transport / API | COMPLETE_AND_ACCEPTED |
+| IMP-025 | Customer Ordering UX | COMPLETE_AND_ACCEPTED |
 
 ## 5. Pending Acceptance
 
@@ -154,7 +158,10 @@ acceptance:
 - Historical role-count prose (six roles) vs accepted inventory (seven) — clarified by **D-358**;
   current inventory is owned by this STATE document and code.
 
-STATE-R4 records IMP-025 architecture lock (`ARCHITECTURE_LOCKED`) without starting IMP-025
+STATE-R6 records independent acceptance of IMP-025 (`COMPLETE_AND_ACCEPTED`).
+STATE-R5 recorded IMP-025 coding-agent implementation complete
+(`IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`) without independent acceptance.
+STATE-R4 recorded IMP-025 architecture lock (`ARCHITECTURE_LOCKED`) without starting IMP-025
 implementation. STATE-R3 recorded independent acceptance of IMP-024 (`COMPLETE_AND_ACCEPTED`)
 without activating IMP-025.
 
@@ -163,16 +170,16 @@ governance conflicts.
 
 ## 7. Acceptance Provenance
 
-Accepted product through IMP-024 is the independently accepted implementation baseline encoded by
+Accepted product through IMP-025 is the independently accepted implementation baseline encoded by
 this reconciliation. Detailed per-slice evidence remains in repository tests, audits, Docker
-runtime proof, and historical implementation artifacts. This STATE snapshot records IMP-024
-acceptance; it does not start IMP-025.
+runtime proof, and historical implementation artifacts. This STATE snapshot records independent
+acceptance of IMP-025 (`COMPLETE_AND_ACCEPTED`).
 
-Independent IMP-024 re-acceptance (COMPLETE_AND_ACCEPTED) on 2026-08-12. Pre-acceptance
+Independent IMP-025 acceptance (COMPLETE_AND_ACCEPTED) on 2026-08-13. Pre-acceptance
 governance fingerprint:
 
 ```text
-9df6fb70e0386ba5258aa0c6a73a83da4b42daef0fec9c780af6ac93fca346cb
+a1041d036d3636ab0cc64615805f02f6317838a545c8fbe463a0d7afac786e4e
 ```
 
 Post-acceptance fingerprint is regenerated by `npm run governance:fingerprint` after this STATE
@@ -182,7 +189,6 @@ update and supersedes the pre-acceptance value for ongoing governance identity.
 
 Supporting primitives do not equal capability completion. Not yet accepted as product capabilities:
 
-- Customer Ordering UX
 - Cashfree Productionization
 - Refund
 - Invoice / Tax Receipt / Credit Note
@@ -208,6 +214,7 @@ Supporting primitives do not equal capability completion. Not yet accepted as pr
 | Durable architecture | [`ARCHITECTURE.md`](./ARCHITECTURE.md) |
 | Binding decision status | [`decision-register.md`](./decision-register.md) |
 | IMP-024 locked capability architecture | [`capabilities/IMP-024-customer-ordering-transport.md`](./capabilities/IMP-024-customer-ordering-transport.md) |
+| IMP-025 locked capability architecture | [`capabilities/IMP-025-customer-ordering-ux.md`](./capabilities/IMP-025-customer-ordering-ux.md) |
 
 Agents may propose a STATE delta in their report. Only independent acceptance updates this file's
 accepted position and may promote `governanceHealth` to `ALIGNED`.

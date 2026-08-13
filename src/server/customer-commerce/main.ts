@@ -2,8 +2,8 @@
 /**
  * Customer-commerce HTTP service process entry point (IMP-024).
  *
- * Sole module under `src/server/customer-commerce/**` allowed to read
- * `process.env` directly.
+ * Production process entry. The only other module in this tree allowed to
+ * read `process.env` directly is `e2e-fake-main.ts` (E2E fake Payment).
  */
 import path from "node:path";
 import process from "node:process";

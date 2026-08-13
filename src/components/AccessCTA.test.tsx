@@ -7,8 +7,10 @@ import { AccessCTA } from "./AccessCTA";
 // uses) render their plain final-state markup — deterministic, no
 // animation/IntersectionObserver timing involved.
 describe("AccessCTA", () => {
-  it("renders the three ordering-platform wordmarks (user-visible content)", () => {
+  it("makes owned Boba Bear ordering the primary CTA and keeps aggregators secondary", () => {
     render(<AccessCTA />);
+    const owned = screen.getByRole("link", { name: /order with boba bear/i });
+    expect(owned).toHaveAttribute("href", "/order");
     expect(screen.getByText("Zomato")).toBeInTheDocument();
     expect(screen.getByText("Swiggy")).toBeInTheDocument();
     expect(screen.getByText("WhatsApp")).toBeInTheDocument();
@@ -36,9 +38,14 @@ describe("AccessCTA", () => {
     );
   });
 
-  it("opens every ordering link in a new tab without leaking a window.opener reference", () => {
+  it("opens aggregator links in a new tab without leaking a window.opener reference", () => {
     render(<AccessCTA />);
-    for (const link of screen.getAllByRole("link")) {
+    for (const name of [
+      /order boba bear on zomato/i,
+      /order boba bear on swiggy/i,
+      /message boba bear on whatsapp/i,
+    ]) {
+      const link = screen.getByRole("link", { name });
       expect(link).toHaveAttribute("target", "_blank");
       expect(link).toHaveAttribute("rel", "noopener");
     }

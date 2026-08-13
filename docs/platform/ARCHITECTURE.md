@@ -2,7 +2,7 @@
 {
   "status": "CURRENT",
   "authority": "GLOBAL_ARCHITECTURE",
-  "architectureVersion": "ARCH-R4",
+  "architectureVersion": "ARCH-R5",
   "lastReviewed": "2026-08-13"
 }
 -->
@@ -222,7 +222,7 @@ Dynamic commerce must remain outside dynamic Next.js execution unless superseded
 | Notification | FUTURE / NOT_IMPLEMENTED |
 | Invoice / Credit Note document engine | FUTURE / NOT_IMPLEMENTED |
 | Exact IMP-024 transport topology | DECIDED — D-359 (`customer-commerce:8083` behind `/api/v1/*`); capability architecture locked; Compose wiring accepted with IMP-024 |
-| IMP-025 Customer Ordering UX | ARCHITECTURE_LOCKED — capability architecture [`capabilities/IMP-025-customer-ordering-ux.md`](./capabilities/IMP-025-customer-ordering-ux.md); static export + `/api/v1/*` client UX; implementation NOT STARTED |
+| IMP-025 Customer Ordering UX | ARCHITECTURE_LOCKED — capability architecture [`capabilities/IMP-025-customer-ordering-ux.md`](./capabilities/IMP-025-customer-ordering-ux.md); static export + `/api/v1/*` client UX; implementation COMPLETE_AND_ACCEPTED |
 
 `NOT_DEFINED` / `NOT_IMPLEMENTED` ≠ `PROHIBITED_FOREVER`.
 
@@ -252,7 +252,7 @@ Dynamic commerce must remain outside dynamic Next.js execution unless superseded
 | Static frontend + external dynamic transport | [D-356](./decision-register.md) (AMENDED), supersedes ADR-014 Route-Handler-as-canonical HTTP |
 | IMP-024 customer-commerce topology | [D-359](./decision-register.md); capability lock [`capabilities/IMP-024-customer-ordering-transport.md`](./capabilities/IMP-024-customer-ordering-transport.md) |
 | IMP-024 `/api/v1/*` commerce API convention | [D-360](./decision-register.md) |
-| IMP-025 Customer Ordering UX | Capability lock [`capabilities/IMP-025-customer-ordering-ux.md`](./capabilities/IMP-025-customer-ordering-ux.md) (implementation NOT STARTED) |
+| IMP-025 Customer Ordering UX | Capability lock [`capabilities/IMP-025-customer-ordering-ux.md`](./capabilities/IMP-025-customer-ordering-ux.md) (COMPLETE_AND_ACCEPTED) |
 | Order high-level lifecycle vs deferred kitchen detail | [D-357](./decision-register.md), amends ADR-010 reading |
 | Role inventory ownership | [D-358](./decision-register.md); current count in STATE |
 | Invoice architecture intent | ADR-007 (implementation = IMP-028 on ROADMAP) |

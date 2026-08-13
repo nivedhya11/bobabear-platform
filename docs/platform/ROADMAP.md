@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R5",
-  "acceptedThrough": "IMP-024",
+  "roadmapVersion": "GTM-R7",
+  "acceptedThrough": "IMP-025",
   "currentProductSlice": "NONE",
-  "nextProductSlice": "IMP-025",
+  "nextProductSlice": "IMP-026",
   "gtmBoundary": "IMP-040",
   "lastReviewed": "2026-08-13",
-  "supersedes": "GTM-R4"
+  "supersedes": "GTM-R6"
 }
 -->
 
@@ -17,7 +17,7 @@
 ## 1. Roadmap Rules
 
 - Accepted IMP identity is **permanently immutable**. Do not reinterpret or renumber accepted
-  history (IMP-001 → IMP-024 and IMP-005A).
+  history (IMP-001 → IMP-025 and IMP-005A).
 - No other document may independently redefine IMP numbering.
 - Only one product slice is normally active.
 - A deferred capability cannot be assigned or promoted by an implementation agent.
@@ -80,15 +80,17 @@ IMP-025 locked artifact:
 ## 2. Current Position
 
 ```text
-Accepted Through:     IMP-024 — Customer Ordering Transport / API
+Accepted Through:     IMP-025 — Customer Ordering UX
 Current Product Slice: NONE
-Next Product Slice:    IMP-025 — Customer Ordering UX
+Next Product Slice:    IMP-026 — Cashfree Productionization & Payment GTM Readiness
 Public GTM Boundary:   IMP-040 — Launch Validation & Cutover
 ```
 
 IMP-024 architecture remains **ARCHITECTURE_LOCKED**. IMP-024 implementation is
-**COMPLETE_AND_ACCEPTED**. IMP-025 architecture is **ARCHITECTURE_LOCKED**. IMP-025
-implementation remains **NOT STARTED** and is **not** authorized by architecture lock alone.
+**COMPLETE_AND_ACCEPTED**. IMP-025 architecture remains **ARCHITECTURE_LOCKED**. IMP-025
+implementation is **COMPLETE_AND_ACCEPTED**. `acceptedThrough` is IMP-025. IMP-026 remains
+`PLANNED / NOT STARTED`. Implementation of IMP-026 is **not** authorized by this
+reconciliation.
 
 ## 3. Accepted Slices
 
@@ -119,6 +121,7 @@ implementation remains **NOT STARTED** and is **not** authorized by architecture
 | IMP-022 | Payment | COMPLETE_AND_ACCEPTED |
 | IMP-023 | Order | COMPLETE_AND_ACCEPTED |
 | IMP-024 | Customer Ordering Transport / API | COMPLETE_AND_ACCEPTED |
+| IMP-025 | Customer Ordering UX | COMPLETE_AND_ACCEPTED |
 
 ## 4. Current Product Slice
 
@@ -126,30 +129,29 @@ implementation remains **NOT STARTED** and is **not** authorized by architecture
 NONE
 ```
 
-No product slice is in implementation. Next product slice:
+Next product slice:
 
 ```text
-IMP-025 — Customer Ordering UX
-Lifecycle: ARCHITECTURE_LOCKED
-Implementation: NOT STARTED
+IMP-026 — Cashfree Productionization & Payment GTM Readiness
+Lifecycle: PLANNED / NOT STARTED
+Architecture: not locked
 ```
 
-IMP-025 implementation is **NOT STARTED**. Do not begin IMP-025 implementation until separately
-authorized and the accepted baseline is durable under the team Git workflow.
+Independent acceptance of IMP-025 is recorded. Do not start IMP-026. Implementation of
+IMP-026 is not authorized by this reconciliation.
 
 IMP-024 architecture remains locked at
 [`capabilities/IMP-024-customer-ordering-transport.md`](./capabilities/IMP-024-customer-ordering-transport.md).
 
-IMP-025 architecture is locked at
+IMP-025 architecture remains locked at
 [`capabilities/IMP-025-customer-ordering-ux.md`](./capabilities/IMP-025-customer-ordering-ux.md).
 
 ## 5. Future GTM Slices
 
-Remaining numbered product slices to public GTM: **16** (IMP-025 → IMP-040).
+Remaining numbered product slices to public GTM: **15** (IMP-026 → IMP-040).
 
 | IMP | Capability | Lifecycle |
 |---|---|---|
-| IMP-025 | Customer Ordering UX | ARCHITECTURE_LOCKED |
 | IMP-026 | Cashfree Productionization & Payment GTM Readiness | PLANNED |
 | IMP-027 | Refund Foundation | PLANNED |
 | IMP-028 | Invoice / Tax Receipt / Credit Note | PLANNED |
@@ -166,8 +168,8 @@ Remaining numbered product slices to public GTM: **16** (IMP-025 → IMP-040).
 | IMP-039 | Production Infrastructure & Release Pipeline | PLANNED |
 | IMP-040 | Launch Validation & Cutover | PLANNED |
 
-IMP-025 architecture is **ARCHITECTURE_LOCKED**. Implementation remains **NOT STARTED** and is
-not authorized by this roadmap revision alone.
+IMP-025 architecture remains **ARCHITECTURE_LOCKED**. Implementation is
+**COMPLETE_AND_ACCEPTED**. IMP-026 remains `PLANNED / NOT STARTED`.
 
 ## 6. Deferred / Unscheduled Capabilities
 
@@ -212,6 +214,24 @@ Historical GTM-R1 meanings that are **not** current:
 Current public GTM boundary is **IMP-040**, not IMP-035.
 
 ## 9. Roadmap Change Log
+
+### GTM-R7 — 2026-08-13
+
+- Independent acceptance of IMP-025 — Customer Ordering UX
+  (`COMPLETE_AND_ACCEPTED`). Architecture remains `ARCHITECTURE_LOCKED`.
+- Set `acceptedThrough = IMP-025`; `currentProductSlice = NONE`;
+  `nextProductSlice = IMP-026`.
+- IMP-026 remains `PLANNED / NOT STARTED`. Implementation of IMP-026 is not authorized
+  by this reconciliation.
+
+### GTM-R6 — 2026-08-13
+
+- Recorded IMP-025 coding-agent implementation complete
+  (`IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`). Architecture remains
+  `ARCHITECTURE_LOCKED`.
+- Set `currentProductSlice = IMP-025`; `nextProductSlice` remains IMP-025;
+  `acceptedThrough` remains IMP-024.
+- Independent acceptance of IMP-025 is **not** claimed. Do not start IMP-026.
 
 ### GTM-R5 — 2026-08-13
 

@@ -18,6 +18,7 @@
  */
 
 import { useEffect, useId, useState, type FormEvent } from "react";
+import { useSearchParams } from "next/navigation";
 
 import {
   fetchCustomerSession,
@@ -25,6 +26,7 @@ import {
   signOutCustomer,
   verifyCustomerOtp,
 } from "@/lib/customer-auth/client";
+import { parseSafeReturnPath } from "@/lib/customer-auth/return-to";
 import { normalizeIndianMobileNumber } from "@/shared/customer-auth/phone";
 import { cn } from "@/lib/utils";
 
@@ -119,6 +121,8 @@ function describeNotice(
 }
 
 export function CustomerLoginClient() {
+  const searchParams = useSearchParams();
+  const returnTo = parseSafeReturnPath(searchParams.get("returnTo"));
   const [screen, setScreen] = useState<Screen>("loading");
   const [phoneInput, setPhoneInput] = useState("");
   const [normalizedPhone, setNormalizedPhone] = useState<string | null>(null);
@@ -137,12 +141,20 @@ export function CustomerLoginClient() {
     void (async () => {
       const result = await fetchCustomerSession();
       if (cancelled) return;
-      setScreen(result.ok && result.data.authenticated ? "signed-in" : "phone");
+      if (result.ok && result.data.authenticated) {
+        if (returnTo) {
+          window.location.assign(returnTo);
+          return;
+        }
+        setScreen("signed-in");
+        return;
+      }
+      setScreen("phone");
     })();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [returnTo]);
 
   useEffect(() => {
     if (resendAvailableAt === null) return;
@@ -216,6 +228,10 @@ export function CustomerLoginClient() {
     const { data } = result;
     if (data.authenticated) {
       setCode("");
+      if (returnTo) {
+        window.location.assign(returnTo);
+        return;
+      }
       setScreen("signed-in");
       return;
     }

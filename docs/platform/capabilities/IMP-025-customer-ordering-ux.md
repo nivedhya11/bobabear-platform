@@ -5,8 +5,8 @@
   "capability": "IMP-025",
   "title": "Customer Ordering UX",
   "architectureLock": "ARCHITECTURE_LOCKED",
-  "implementation": "NOT_STARTED",
-  "implementationAuthorized": false,
+  "implementation": "COMPLETE_AND_ACCEPTED",
+  "implementationAuthorized": true,
   "lastReviewed": "2026-08-13",
   "bindingDecisions": ["D-356", "D-357", "D-358", "D-359", "D-360"],
   "dependsOn": ["IMP-024"]
@@ -22,13 +22,13 @@ This document is the **locked capability architecture** for IMP-025 — Customer
 | Field | Value |
 |---|---|
 | Architecture lock | `ARCHITECTURE_LOCKED` |
-| Implementation | `NOT_STARTED` |
-| Implementation authorized by this document | **NO** |
-| Acceptance | **not** claimed; **not** started |
-| Completion | **not** claimed |
+| Implementation | `COMPLETE_AND_ACCEPTED` |
+| Implementation authorized | **YES** (implementation complete and independently accepted) |
+| Acceptance | **COMPLETE_AND_ACCEPTED** |
+| Completion | independently accepted; `acceptedThrough = IMP-025` |
 
-This task locks architecture only. It does **not** authorize production implementation,
-generators, browser commerce clients, UI routes, or tests beyond governance verification.
+Architecture remains locked. Implementation is independently accepted
+(`COMPLETE_AND_ACCEPTED`). This document does **not** authorize IMP-026.
 
 ---
 
@@ -38,7 +38,11 @@ generators, browser commerce clients, UI routes, or tests beyond governance veri
 |---|---|
 | IMP | IMP-025 |
 | Capability | Customer Ordering UX |
-| Roadmap lifecycle | `ARCHITECTURE_LOCKED` |
+| Roadmap lifecycle | `COMPLETE_AND_ACCEPTED` |
+| Implementation | `COMPLETE_AND_ACCEPTED` |
+| Architecture lock | `ARCHITECTURE_LOCKED` |
+| Accepted product through | IMP-025 — Customer Ordering UX |
+| Current product slice | `NONE` |
 | Consumes | Accepted IMP-001→IMP-024 foundations, especially IMP-024 customer-commerce transport |
 | Next related slices | IMP-026 Cashfree productionization; later Refund / Invoice / Ops / Delivery / Notifications |
 
@@ -687,16 +691,12 @@ Reference accepted IMP-024 HTTP tests as transport evidence.
 
 ```text
 Architecture:     ARCHITECTURE_LOCKED
-Implementation:   NOT_STARTED
-Authorized now:   NO
+Implementation:   COMPLETE_AND_ACCEPTED
+Authorized now:   YES (accepted)
+Acceptance:       COMPLETE_AND_ACCEPTED
 ```
 
-IMP-025 production implementation remains blocked until:
-
-1. this architecture remains CURRENT, and
-2. a separate implementation authorization is granted, and
-3. the accepted baseline is durable under the team’s normal Git workflow (see Session Close /
-   durability gate — accepted IMP-017→024 work must not remain only in an unclean working tree).
+IMP-025 is independently accepted. Do not start IMP-026 from this artifact.
 
 ---
 

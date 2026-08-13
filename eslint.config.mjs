@@ -27,6 +27,12 @@ const eslintConfig = defineConfig([
     "dist-customer-commerce/**",
     // Local tooling caches (Playwright browsers, etc.) — never linted.
     ".cache/**",
+    // Playwright HTML reports / result dumps — not source.
+    "playwright-report/**",
+    "playwright-report-*/**",
+    "test-results/**",
+    "test-results-*/**",
+    "artifacts/**",
   ]),
   // Configuration-boundary enforcement (ADR-015 / IMP-003): application
   // source must go through the centralized, typed configuration module
@@ -52,8 +58,10 @@ const eslintConfig = defineConfig([
       "src/server/workforce-auth/main.ts",
       // The customer-commerce HTTP service (IMP-024) is a standalone Node
       // process — `main.ts` is its own narrow, documented executable
-      // boundary, matching customer-auth / workforce-auth.
+      // boundary, matching customer-auth / workforce-auth. `e2e-fake-main.ts`
+      // is the E2E-only fake Payment entry (same process-env boundary).
       "src/server/customer-commerce/main.ts",
+      "src/server/customer-commerce/e2e-fake-main.ts",
       "**/*.test.{ts,tsx}",
       // Pre-existing, out-of-scope legacy usage (NEXT_PUBLIC_SITE_URL /
       // NEXT_PUBLIC_GA_MEASUREMENT_ID) that predates IMP-003 and is wired

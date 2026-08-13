@@ -9,7 +9,21 @@ import { WORKFORCE_AUTH_PUBLIC_PATHS } from "../../src/shared/workforce-auth/con
  * that don't get page-content assertions — only a successful, correctly
  * typed response.
  */
-const HTML_ROUTES = ["/", "/dev", "/dev/icons", "/privacy", "/login", "/workforce/login"];
+const HTML_ROUTES = [
+  "/",
+  "/dev",
+  "/dev/icons",
+  "/privacy",
+  "/login",
+  "/workforce/login",
+  "/order",
+  "/order/cart",
+  "/order/checkout",
+  "/order/payment",
+  "/order/confirmation",
+  "/order/orders",
+  "/order/orders/detail",
+];
 
 /** Matches unauthenticated session responses from the shared contracts. */
 const STATIC_LOGIN_SESSION_STUB = Object.freeze({ authenticated: false as const });
@@ -64,6 +78,73 @@ test.describe("public routes — HTML pages", () => {
               headers: { "Cache-Control": "no-store" },
               body: JSON.stringify(STATIC_LOGIN_SESSION_STUB),
             });
+          },
+        );
+      }
+      if (
+        route === "/order" ||
+        route === "/order/cart" ||
+        route === "/order/checkout" ||
+        route === "/order/payment" ||
+        route === "/order/confirmation" ||
+        route === "/order/orders" ||
+        route === "/order/orders/detail"
+      ) {
+        await page.route(
+          (url) =>
+            url.pathname === "/api/v1/cart" ||
+            url.pathname.startsWith("/api/v1/") ||
+            url.pathname === CUSTOMER_AUTH_PUBLIC_PATHS.session,
+          async (routeHandler) => {
+            const request = routeHandler.request();
+            const pathname = new URL(request.url()).pathname;
+            if (request.method() === "GET" && pathname === "/api/v1/cart") {
+              await routeHandler.fulfill({
+                status: 200,
+                contentType: "application/json",
+                headers: { "Cache-Control": "no-store" },
+                body: JSON.stringify({ ok: true, cart: null }),
+              });
+              return;
+            }
+            if (request.method() === "GET" && pathname === "/api/v1/orders") {
+              await routeHandler.fulfill({
+                status: 200,
+                contentType: "application/json",
+                headers: { "Cache-Control": "no-store" },
+                body: JSON.stringify({ ok: true, items: [], nextCursor: null }),
+              });
+              return;
+            }
+            if (request.method() === "GET" && pathname.startsWith("/api/v1/orders/")) {
+              await routeHandler.fulfill({
+                status: 404,
+                contentType: "application/json",
+                headers: { "Cache-Control": "no-store" },
+                body: JSON.stringify({ ok: false, code: "ORDER_NOT_FOUND" }),
+              });
+              return;
+            }
+            if (request.method() === "GET" && pathname.startsWith("/api/v1/payments/")) {
+              await routeHandler.fulfill({
+                status: 404,
+                contentType: "application/json",
+                headers: { "Cache-Control": "no-store" },
+                body: JSON.stringify({ ok: false, code: "PAYMENT_NOT_FOUND" }),
+              });
+              return;
+            }
+            if (request.method() === "GET" && pathname === CUSTOMER_AUTH_PUBLIC_PATHS.session) {
+              interceptedSessionPaths.push(pathname);
+              await routeHandler.fulfill({
+                status: 200,
+                contentType: "application/json",
+                headers: { "Cache-Control": "no-store" },
+                body: JSON.stringify(STATIC_LOGIN_SESSION_STUB),
+              });
+              return;
+            }
+            await routeHandler.continue();
           },
         );
       }

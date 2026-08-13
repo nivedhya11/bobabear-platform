@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 // Customer-commerce service build (IMP-024).
 //
-// Compiles `src/server/customer-commerce/main.ts` (and everything it imports —
-// auth/customer, cart/checkout/payment/order domains, persistence, config)
+// Compiles `src/server/customer-commerce/main.ts` and the E2E-only
+// `e2e-fake-main.ts` (and everything they import — auth/customer,
+// cart/checkout/payment/order domains, persistence, config)
 // to plain ESM JavaScript under `dist-customer-commerce/`, then rewrites every
 // emitted `@/...` alias import to a relative specifier — `tsc` resolves
 // `paths` only for type-checking, never at emit time, so the compiled

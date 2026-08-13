@@ -62,6 +62,8 @@ export default defineConfig({
       "tests/promotion-coupons/**/*.test.ts",
       // IMP-016: zero-promotion pricing parity gate.
       "tests/promotion-pricing-parity/**/*.test.ts",
+      // IMP-025A: static ordering-catalog identity parity (no database).
+      "tests/ordering-catalog/**/*.test.ts",
     ],
     exclude: [
       "**/node_modules/**",

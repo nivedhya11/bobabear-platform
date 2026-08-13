@@ -31,7 +31,7 @@ const NAV_LINKS = [
   { label: "Menu",    href: "#bar",     id: "menu",    num: "02" },
   { label: "Merch",   href: "#merch",   id: "merch",   num: "03" },
   { label: "Artists", href: "#artists", id: "artists", num: "04" },
-  { label: "Order",   href: "#access",  id: "access",  num: "05" },
+  { label: "Order",   href: "/order",   id: "order",   num: "05" },
 ] as const;
 
 const SECTION_IDS = [
@@ -93,7 +93,10 @@ export function Nav() {
   // then scrolls to the section; the brand mark goes straight to "/".
   const pathname = usePathname();
   const onHome = pathname === "/";
-  const sectionHref = (hash: string) => (onHome ? hash : `/${hash}`);
+  const sectionHref = (href: string) => {
+    if (href.startsWith("/")) return href;
+    return onHome ? href : `/${href}`;
+  };
   const homeHref = onHome ? "#top" : "/";
 
   // ── Scrollspy ─────────────────────────────────────────────────────────────
@@ -262,6 +265,17 @@ export function Nav() {
             <div className="flex items-center gap-2 shrink-0">
               <CircleThemeButton isLight={isLight} onClick={toggleTheme} />
               <a
+                href="/order/orders/"
+                className={cn(
+                  "font-body font-semibold text-[14px] leading-none",
+                  "px-3 py-1 rounded-md inline-block",
+                  "text-[var(--text-primary)] hover:bg-[var(--interactive-ghost-hover)]",
+                  "transition-colors duration-[150ms] ease-out focus-ring",
+                )}
+              >
+                Orders
+              </a>
+              <a
                 href="/login"
                 className={cn(
                   "font-body font-semibold text-[14px] leading-none",
@@ -273,8 +287,8 @@ export function Nav() {
                 Sign in
               </a>
               <Button asChild variant="primary" size="md">
-                <a href={sectionHref("#access")}>
-                  Access Drop
+                <a href="/order">
+                  Order now
                   <ArrowUpRight size={16} strokeWidth={2} aria-hidden />
                 </a>
               </Button>
@@ -325,9 +339,9 @@ export function Nav() {
               />
             </a>
 
-            {/* Right — theme toggle + Access Drop CTA (both sm-scale, 32px) */}
+            {/* Right — theme toggle + owned-order CTA (both sm-scale, 32px) */}
               <Button asChild variant="primary" size="sm">
-                <a href={sectionHref("#access")}>Access Drop</a>
+                <a href="/order">Order now</a>
               </Button>
           </div>
         </div>
@@ -431,11 +445,22 @@ export function Nav() {
             size="lg"
             className="w-full justify-center"
           >
-            <a href={sectionHref("#access")} onClick={closeDrawer}>
-              Access Drop
+            <a href="/order" onClick={closeDrawer}>
+              Order now
               <ArrowUpRight size={18} strokeWidth={2} aria-hidden />
             </a>
           </Button>
+          <a
+            href="/order/orders/"
+            onClick={closeDrawer}
+            className={cn(
+              "font-body font-semibold text-[14px] text-center py-2 rounded-md",
+              "text-[var(--text-primary)] hover:text-[var(--text-label)]",
+              "transition-colors duration-[150ms] ease-out focus-ring",
+            )}
+          >
+            Orders
+          </a>
           <a
             href="/login"
             onClick={closeDrawer}

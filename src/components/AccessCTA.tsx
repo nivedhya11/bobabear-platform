@@ -223,12 +223,29 @@ export function AccessCTA() {
               "max-w-[520px] lg:max-w-[340px] lg:text-right lg:pb-3",
             ].join(" ")}
           >
-            Three ways in. Same bear, same boba. The bear doesn&rsquo;t care
-            which one — the cup arrives either way.
+            Order directly with Boba Bear. Aggregators stay available as a
+            secondary option — same bear, same boba.
           </RevealChild>
         </RevealStagger>
 
-        {/* ── 3-card grid ─────────────────────────────────────────── */}
+        <RevealChild className="mb-8 md:mb-10">
+          <a
+            href="/order"
+            className={[
+              "group inline-flex items-center gap-3 focus-ring",
+              "h-14 px-6 rounded-sm",
+              "bg-[var(--interactive-secondary)] text-[var(--text-on-secondary)]",
+              "font-mono text-[12px] font-bold uppercase tracking-[0.16em]",
+              "hover:bg-[var(--interactive-secondary-hover)]",
+              "transition-colors duration-[150ms] ease-out",
+            ].join(" ")}
+          >
+            Order with Boba Bear
+            <ArrowRight size={18} strokeWidth={2} aria-hidden />
+          </a>
+        </RevealChild>
+
+        {/* ── Aggregator alternatives ──────────────────────────────── */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5 lg:gap-6">
           {PLATFORMS.map((p, i) => (
             <AccessCard key={p.id} platform={p} index={i} />
