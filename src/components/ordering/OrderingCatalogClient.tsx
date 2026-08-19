@@ -3,29 +3,69 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
+import { DeliverToOrientation } from "@/components/ordering/DeliverToOrientation";
+import { StickyCartBar } from "@/components/ordering/StickyCartBar";
+import {
+  cartUnitCount,
+  estimateCartPresentationPaise,
+  formatPresentationEstimateLabel,
+} from "@/components/ordering/cart-presentation";
+import {
+  readDeliveryPinContext,
+  writeDeliveryPinContext,
+} from "@/components/ordering/delivery-pin-context";
+import { commerceErrorCopy } from "@/components/ordering/error-copy";
+import { formatRupees } from "@/components/ordering/format-money";
+import { cartEvaluationCustomerCopy } from "@/components/ordering/serviceability-copy";
 import {
   addCartLine,
+  evaluateCart,
   getActiveCart,
   removeCartLine,
   setCartLineQuantity,
   type CommerceCart,
+  type CommerceCartEvaluation,
 } from "@/lib/customer-commerce";
-import { commerceErrorCopy } from "@/components/ordering/error-copy";
-import { formatRupees } from "@/components/ordering/format-money";
 import type { OrderingCatalog, OrderingCatalogItem } from "@/shared/ordering-catalog";
+
+const QTY_BUTTON_CLASS = "min-h-[44px] min-w-[44px] md:min-h-8 md:min-w-8";
 
 export function OrderingCatalogClient(props: { catalog: OrderingCatalog }) {
   const { catalog } = props;
   const [cart, setCart] = useState<CommerceCart | null>(null);
+  const [evaluation, setEvaluation] = useState<CommerceCartEvaluation | null>(null);
+  const [deliveryPin, setDeliveryPin] = useState(() => readDeliveryPinContext());
   const [loading, setLoading] = useState(true);
   const [pendingKey, setPendingKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const itemByVariant = useMemo(
+    () => new Map(catalog.items.map((item) => [item.variantId, item])),
+    [catalog.items],
+  );
+
+  const refreshEvaluation = useCallback(
+    async (pin: string, currentCart: CommerceCart | null) => {
+      if (!currentCart || currentCart.lines.length === 0 || pin.length !== 6) {
+        setEvaluation(null);
+        return;
+      }
+      const evaluated = await evaluateCart({
+        brandId: catalog.brandId,
+        location: { postalCode: pin },
+      });
+      if (evaluated.ok) setEvaluation(evaluated.data);
+      else setEvaluation(null);
+    },
+    [catalog.brandId],
+  );
 
   const refreshCart = useCallback(async () => {
     const result = await getActiveCart(catalog.brandId, { guestToken: true });
     if (!result.ok) {
       if (result.code === "CART_EXPIRED" || result.code === "CART_NOT_FOUND") {
         setCart(null);
+        setEvaluation(null);
         setError(commerceErrorCopy(result.code));
         return;
       }
@@ -37,7 +77,9 @@ export function OrderingCatalogClient(props: { catalog: OrderingCatalog }) {
       return;
     }
     setCart(result.data.cart);
-  }, [catalog.brandId]);
+    setError(null);
+    await refreshEvaluation(deliveryPin, result.data.cart);
+  }, [catalog.brandId, deliveryPin, refreshEvaluation]);
 
   useEffect(() => {
     let cancelled = false;
@@ -50,6 +92,17 @@ export function OrderingCatalogClient(props: { catalog: OrderingCatalog }) {
     };
   }, [refreshCart]);
 
+  function handleDeliveryPinChange(value: string): void {
+    setDeliveryPin(value);
+    writeDeliveryPinContext(value);
+    void refreshEvaluation(value, cart);
+  }
+
+  async function updateCartFromMutation(nextCart: CommerceCart): Promise<void> {
+    setCart(nextCart);
+    await refreshEvaluation(deliveryPin, nextCart);
+  }
+
   const quantityByVariant = useMemo(() => {
     const map = new Map<string, { lineId: string; quantity: number }>();
     for (const line of cart?.lines ?? []) {
@@ -58,7 +111,10 @@ export function OrderingCatalogClient(props: { catalog: OrderingCatalog }) {
     return map;
   }, [cart]);
 
-  const lineCount = cart?.lines.reduce((sum, line) => sum + line.quantity, 0) ?? 0;
+  const lineCount = cartUnitCount(cart);
+  const presentationEstimate = estimateCartPresentationPaise(cart, itemByVariant);
+  const presentationLabel = formatPresentationEstimateLabel(presentationEstimate);
+  const serviceabilityNote = cartEvaluationCustomerCopy(evaluation, deliveryPin.length === 6);
 
   async function withPending(key: string, work: () => Promise<void>): Promise<void> {
     if (pendingKey) return;
@@ -85,7 +141,7 @@ export function OrderingCatalogClient(props: { catalog: OrderingCatalog }) {
           setError(commerceErrorCopy(result.code));
           return;
         }
-        setCart(result.data.cart);
+        await updateCartFromMutation(result.data.cart);
         return;
       }
       const result = await addCartLine({
@@ -98,7 +154,7 @@ export function OrderingCatalogClient(props: { catalog: OrderingCatalog }) {
         setError(commerceErrorCopy(result.code));
         return;
       }
-      setCart(result.data.cart);
+      await updateCartFromMutation(result.data.cart);
     });
   }
 
@@ -116,7 +172,7 @@ export function OrderingCatalogClient(props: { catalog: OrderingCatalog }) {
           setError(commerceErrorCopy(result.code));
           return;
         }
-        setCart(result.data.cart);
+        await updateCartFromMutation(result.data.cart);
         return;
       }
       const result = await setCartLineQuantity({
@@ -129,7 +185,7 @@ export function OrderingCatalogClient(props: { catalog: OrderingCatalog }) {
         setError(commerceErrorCopy(result.code));
         return;
       }
-      setCart(result.data.cart);
+      await updateCartFromMutation(result.data.cart);
     });
   }
 
@@ -167,7 +223,7 @@ export function OrderingCatalogClient(props: { catalog: OrderingCatalog }) {
 
   return (
     <main id="main-content" tabIndex={-1} className="bg-[var(--bg-page)] focus:outline-none">
-      <div className="mx-auto max-w-[1100px] px-5 py-12 md:py-16 flex flex-col gap-8">
+      <div className="mx-auto max-w-[1100px] px-5 py-12 md:py-16 flex flex-col gap-8 pb-28 md:pb-16">
         <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div className="flex flex-col gap-2">
             <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
@@ -177,14 +233,29 @@ export function OrderingCatalogClient(props: { catalog: OrderingCatalog }) {
               Order with Boba Bear
             </h1>
             <p className="font-body text-[15px] text-[var(--text-secondary)] max-w-[40rem]">
-              Add items to your cart. Prices below are for discovery — checkout uses the
-              server-authoritative total.
+              Add items to your cart. Prices below are menu prices for discovery — checkout uses
+              the server-authoritative total.
             </p>
           </div>
-          <Button asChild variant="primary" size="lg">
-            <a href="/order/cart/">Cart{loading ? "" : ` · ${lineCount}`}</a>
+          <Button asChild variant="primary" size="lg" className="hidden md:inline-flex min-h-[44px]">
+            <a
+              href="/order/cart/"
+              aria-label={
+                lineCount > 0
+                  ? `Cart, ${lineCount} item${lineCount === 1 ? "" : "s"}, ${presentationLabel}`
+                  : "Cart"
+              }
+            >
+              {lineCount > 0 ? `Cart · ${lineCount} · ${presentationLabel}` : "Cart"}
+            </a>
           </Button>
         </header>
+
+        <DeliverToOrientation
+          postalCode={deliveryPin}
+          onPostalCodeChange={handleDeliveryPinChange}
+          serviceabilityNote={serviceabilityNote}
+        />
 
         {error ? (
           <p role="status" className="font-body text-[14px] text-[var(--text-secondary)]">
@@ -231,21 +302,28 @@ export function OrderingCatalogClient(props: { catalog: OrderingCatalog }) {
                                 type="button"
                                 variant="outline"
                                 size="sm"
+                                className={QTY_BUTTON_CLASS}
                                 disabled={busy}
-                                aria-label={`Decrease ${item.name}`}
+                                aria-label={`Decrease ${item.name} quantity`}
                                 onClick={() => void decrementItem(item)}
                               >
                                 −
                               </Button>
-                              <span className="font-mono text-[13px] min-w-[1.5rem] text-center">
+                              <span
+                                className="font-mono text-[13px] min-w-[1.5rem] text-center"
+                                aria-live="polite"
+                                aria-atomic="true"
+                              >
                                 {inCart.quantity}
+                                <span className="sr-only"> {item.name} in cart</span>
                               </span>
                               <Button
                                 type="button"
                                 variant="primary"
                                 size="sm"
+                                className={QTY_BUTTON_CLASS}
                                 disabled={busy}
-                                aria-label={`Increase ${item.name}`}
+                                aria-label={`Increase ${item.name} quantity`}
                                 onClick={() => void addItem(item)}
                               >
                                 +
@@ -256,8 +334,9 @@ export function OrderingCatalogClient(props: { catalog: OrderingCatalog }) {
                               type="button"
                               variant="secondary"
                               size="sm"
-                              className="self-start mt-auto"
+                              className="self-start mt-auto min-h-[44px] md:min-h-8"
                               disabled={busy}
+                              aria-label={`Add ${item.name} to cart`}
                               onClick={() => void addItem(item)}
                             >
                               {busy ? "Adding…" : "Add to cart"}
@@ -273,6 +352,10 @@ export function OrderingCatalogClient(props: { catalog: OrderingCatalog }) {
           </section>
         ))}
       </div>
+
+      {!loading ? (
+        <StickyCartBar itemCount={lineCount} presentationEstimatePaise={presentationEstimate} />
+      ) : null}
     </main>
   );
 }

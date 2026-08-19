@@ -28,6 +28,9 @@ import {
   type ProcessKind,
 } from "./types";
 
+export const PAYMENT_PROVIDER_SELECTORS = ["disabled", "razorpay"] as const;
+export type PaymentProviderSelector = (typeof PAYMENT_PROVIDER_SELECTORS)[number];
+
 /** The complete, approved `BOBA_BEAR_*` variable catalogue for this slice. */
 export const APPROVED_BOBA_BEAR_KEYS: ReadonlySet<string> = new Set([
   "BOBA_BEAR_ENV",
@@ -38,6 +41,10 @@ export const APPROVED_BOBA_BEAR_KEYS: ReadonlySet<string> = new Set([
   "BOBA_BEAR_DATABASE_URL",
   "BOBA_BEAR_DATABASE_MIGRATION_URL",
   "BOBA_BEAR_DATABASE_SSL_MODE",
+  "BOBA_BEAR_PAYMENT_PROVIDER",
+  "BOBA_BEAR_RAZORPAY_KEY_ID",
+  "BOBA_BEAR_RAZORPAY_KEY_SECRET",
+  "BOBA_BEAR_RAZORPAY_WEBHOOK_SECRET",
 ]);
 
 const STAGING_OR_PRODUCTION: ReadonlySet<AppEnvironment> = new Set([
@@ -332,6 +339,30 @@ function validateDatabaseUrl(
 
 const PORT_PATTERN = /^\d+$/;
 
+function validatePaymentProviderSelector(
+  raw: string | undefined,
+): FieldResult<PaymentProviderSelector> {
+  if (raw === undefined || raw.length === 0) {
+    return ok("disabled");
+  }
+  if (!(PAYMENT_PROVIDER_SELECTORS as readonly string[]).includes(raw)) {
+    return fail('Must be exactly "disabled" or "razorpay". Fake is never a production selector.');
+  }
+  return ok(raw as PaymentProviderSelector);
+}
+
+function validateOptionalNonEmptySecret(
+  raw: string | undefined,
+): FieldResult<string | null> {
+  if (raw === undefined || raw.length === 0) {
+    return ok(null);
+  }
+  if (raw.trim() !== raw || /\s/.test(raw) || hasControlCharacter(raw)) {
+    return fail("Must not contain whitespace or control characters.");
+  }
+  return ok(raw);
+}
+
 function validatePort(raw: string | undefined): FieldResult<number> {
   if (raw === undefined || raw.length === 0) {
     return ok(3000);
@@ -428,6 +459,44 @@ export function validateSource({
     issues.push({
       key: "BOBA_BEAR_ALLOW_UNSAFE_ADAPTERS",
       message: allowUnsafeAdaptersResult.message,
+    });
+  }
+
+  const paymentProviderResult = validatePaymentProviderSelector(
+    source.BOBA_BEAR_PAYMENT_PROVIDER,
+  );
+  if (!paymentProviderResult.ok) {
+    issues.push({
+      key: "BOBA_BEAR_PAYMENT_PROVIDER",
+      message: paymentProviderResult.message,
+    });
+  }
+
+  const razorpayKeyIdResult = validateOptionalNonEmptySecret(
+    source.BOBA_BEAR_RAZORPAY_KEY_ID,
+  );
+  if (!razorpayKeyIdResult.ok) {
+    issues.push({
+      key: "BOBA_BEAR_RAZORPAY_KEY_ID",
+      message: razorpayKeyIdResult.message,
+    });
+  }
+  const razorpayKeySecretResult = validateOptionalNonEmptySecret(
+    source.BOBA_BEAR_RAZORPAY_KEY_SECRET,
+  );
+  if (!razorpayKeySecretResult.ok) {
+    issues.push({
+      key: "BOBA_BEAR_RAZORPAY_KEY_SECRET",
+      message: razorpayKeySecretResult.message,
+    });
+  }
+  const razorpayWebhookSecretResult = validateOptionalNonEmptySecret(
+    source.BOBA_BEAR_RAZORPAY_WEBHOOK_SECRET,
+  );
+  if (!razorpayWebhookSecretResult.ok) {
+    issues.push({
+      key: "BOBA_BEAR_RAZORPAY_WEBHOOK_SECRET",
+      message: razorpayWebhookSecretResult.message,
     });
   }
 

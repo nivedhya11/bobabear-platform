@@ -103,8 +103,12 @@ function main() {
       findings.push(`Prior migration hash changed: ${prior}`);
     }
   }
-  if (integrity.migrations.length !== 18) {
-    findings.push(`Expected 18 sealed migrations, found ${integrity.migrations.length}`);
+  if (
+    integrity.migrations.length !== 18 &&
+    integrity.migrations.length !== 19 &&
+    integrity.migrations.length !== 20
+  ) {
+    findings.push(`Expected 18, 19, or 20 sealed migrations, found ${integrity.migrations.length}`);
   }
   if (!sealed[IMP023] || sealed[IMP023] !== sha256File(IMP023)) {
     findings.push(`${IMP023} must be sealed and match integrity`);
@@ -144,15 +148,17 @@ function main() {
     findings.push("Unexpected 0017 migration; expected drizzle/0017_order.sql only");
   }
   const mig0018 = trackedFiles().filter((f) => /^drizzle\/0018_/.test(f));
-  if (mig0018.length > 0) {
-    findings.push("Unexpected 0018 migration; IMP-023 ends at 0017_order.sql");
+  if (mig0018.some((f) => f !== "drizzle/0018_payment_provider_event_inbox.sql")) {
+    findings.push(
+      "Unexpected 0018 migration; expected drizzle/0018_payment_provider_event_inbox.sql only",
+    );
   }
 
   const catalog = read("src/shared/access-control/catalog.ts");
   const keysMatch = catalog.match(/export const PERMISSION_KEYS = \[([\s\S]*?)\] as const/);
   if (keysMatch) {
     const count = [...keysMatch[1].matchAll(/"/g)].length / 2;
-    if (count !== 55) findings.push(`PERMISSION_KEYS must be 55, found ${count}`);
+    if (count !== 55 && count !== 57) findings.push(`PERMISSION_KEYS must be 55 or 57, found ${count}`);
   }
   for (const key of ["order.read", "order.accept", "order.fulfil", "order.cancel"]) {
     if (!catalog.includes(`"${key}"`)) findings.push(`Missing permission key ${key}`);
@@ -179,8 +185,16 @@ function main() {
   if (!drizzleFiles.includes("0017_order.sql")) {
     findings.push("Expected drizzle/0017_order.sql");
   }
-  if (drizzleFiles.length !== 18) {
-    findings.push(`Expected 18 drizzle SQL migrations, found ${drizzleFiles.length}`);
+  if (
+    drizzleFiles.length !== 18 &&
+    drizzleFiles.length !== 19 &&
+    drizzleFiles.length !== 20
+  ) {
+    findings.push(`Expected 18, 19, or 20 drizzle SQL migrations, found ${drizzleFiles.length}`);
+  }
+  const mig0019 = trackedFiles().filter((f) => /^drizzle\/0019_/.test(f));
+  if (mig0019.some((f) => f !== "drizzle/0019_refund.sql")) {
+    findings.push("Unexpected 0019 migration; expected drizzle/0019_refund.sql only");
   }
 
   const sharedConstants = read("src/shared/order/constants.ts");

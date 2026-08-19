@@ -141,6 +141,12 @@ export type ReconcilePaymentAttemptInput = Readonly<{
   attemptId: string;
 }>;
 
+export type SubmitPaymentClientEvidenceInput = Readonly<{
+  paymentId: string;
+  kind: string;
+  payload: Readonly<Record<string, string>>;
+}>;
+
 export type CompleteZeroPayableInput = Readonly<{
   checkoutId: string;
   expectedCheckoutRevision: bigint;

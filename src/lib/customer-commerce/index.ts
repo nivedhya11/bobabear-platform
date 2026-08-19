@@ -40,8 +40,14 @@ export {
   getPaymentState,
   retryPayment,
   startPayment,
+  submitPaymentClientEvidence,
 } from "./payment";
 export { getCustomerOrder, listCustomerOrders } from "./orders";
+export {
+  customerFinancialDocumentPdfPath,
+  downloadCustomerFinancialDocumentPdf,
+  listCustomerOrderFinancialDocuments,
+} from "./financial-documents";
 export {
   clearPaymentRecovery,
   clearStartIdempotencyKey,
@@ -64,6 +70,8 @@ export type {
   CommerceCheckoutSnapshot,
   CommerceClientAction,
   CommerceDestinationInput,
+  CommerceFinancialDocumentListItem,
+  CommerceFinancialDocumentStatutoryType,
   CommerceOrderDetail,
   CommerceOrderLine,
   CommerceOrderStatus,

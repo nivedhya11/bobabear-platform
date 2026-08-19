@@ -127,6 +127,90 @@
       "when": 1786376454707,
       "tag": "0017_order",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1786632847766,
+      "tag": "0018_payment_provider_event_inbox",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1786732289456,
+      "tag": "0019_refund",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1786771256230,
+      "tag": "0020_financial_document",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1786774234767,
+      "tag": "0021_financial_document_foundation_integrity",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1786894283884,
+      "tag": "0022_financial_document_non_signature_compliance",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1786950321484,
+      "tag": "0023_financial_document_signature_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1786954321484,
+      "tag": "0024_financial_document_signature_hash_integrity",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1786963132865,
+      "tag": "0025_financial_document_signed_artifact_storage",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1786975601254,
+      "tag": "0026_financial_document_operator_attestation",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1786978508279,
+      "tag": "0027_refund_statutory_decision",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1786987071587,
+      "tag": "0028_refund_statutory_decision_bounded_authority",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1786990526935,
+      "tag": "0029_refund_statutory_issuance_allocation",
+      "breakpoints": true
     }
   ]
 }

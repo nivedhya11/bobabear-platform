@@ -5,9 +5,9 @@
   "capability": "IMP-026",
   "title": "Razorpay Productionization & Payment GTM Readiness",
   "architectureLock": "ARCHITECTURE_LOCKED",
-  "implementation": "NOT_STARTED",
-  "implementationAuthorized": false,
-  "lastReviewed": "2026-08-13",
+  "implementation": "COMPLETE_AND_ACCEPTED",
+  "implementationAuthorized": true,
+  "lastReviewed": "2026-08-18",
   "bindingDecisions": ["D-356", "D-357", "D-358", "D-359", "D-360", "D-361", "D-362", "D-363"],
   "dependsOn": ["IMP-024", "IMP-025"],
   "supersedesProviderDecisions": ["D-161", "D-162"]
@@ -24,12 +24,15 @@ Payment GTM Readiness.
 | Field | Value |
 |---|---|
 | Architecture lock | `ARCHITECTURE_LOCKED` |
-| Implementation | `NOT_STARTED` |
-| Implementation authorized | **NO** |
-| Acceptance | not started; `acceptedThrough` remains IMP-025 |
-| Schema change required | **YES** (Payment/provider ingress; one future migration during implementation) |
+| Implementation | `COMPLETE_AND_ACCEPTED` |
+| Implementation authorized | **YES** (IMP-026A + IMP-026B coding-agent work complete; independently accepted) |
+| Acceptance | **COMPLETE_AND_ACCEPTED** |
+| Completion | independently accepted; `acceptedThrough = IMP-026` |
+| External webhook gate | `SATISFIED` (`IMP026_EXTERNAL_ACCEPTANCE_EVIDENCE: ACCEPTED`) |
+| Schema change required | **YES** (Payment/provider ingress; `payment_provider_event_inbox` during IMP-026A) |
 
-Architecture is locked. Implementation is **not** started and is **not** authorized by this lock.
+Architecture remains locked. IMP-026 is independently accepted (`COMPLETE_AND_ACCEPTED`). Do not
+start IMP-027 from this artifact without separate authorization consistent with ROADMAP/STATE.
 
 This is an explicit approved provider substitution: historical Cashfree V1 provider/surface
 selection (**D-161**, **D-162**) is superseded for current authority by **D-361**. **D-362** amends
@@ -47,14 +50,13 @@ Slice number **IMP-026** is unchanged.
 |---|---|
 | IMP | IMP-026 |
 | Capability | Razorpay Productionization & Payment GTM Readiness |
-| Roadmap lifecycle | `ARCHITECTURE_LOCKED` |
-| Implementation | `NOT_STARTED` |
+| Roadmap lifecycle | `COMPLETE_AND_ACCEPTED` |
+| Implementation | `COMPLETE_AND_ACCEPTED` |
 | Architecture lock | `ARCHITECTURE_LOCKED` |
-| Accepted product through | IMP-025 — Customer Ordering UX |
+| Accepted product through | IMP-026 — Razorpay Productionization & Payment GTM Readiness |
 | Current product slice | `NONE` |
-| Next product slice | IMP-026 |
 | Consumes | Accepted IMP-001→IMP-025 foundations, especially IMP-022 Payment, IMP-023 Order, IMP-024 transport, IMP-025 provider-neutral UX |
-| Next related slices | IMP-027 Refund; later Invoice / Ops / Delivery / Notifications |
+| Next related slices | IMP-026C pilot UX hardening; IMP-027 Refund; later Invoice / Ops / Delivery / Notifications |
 | Binding provider decision | **D-361** |
 | Binding webhook / recovery decision | **D-362** (amends D-361 post-payment Order effect / missing-Order recovery; acknowledgement timing further amended by D-363) |
 | Binding webhook durability decision | **D-363** (amends D-362 acknowledgement timing only; durable inbox + asynchronous Payment processing) |
@@ -1285,26 +1287,40 @@ Static Next.js export → Nginx
 
 ```text
 Architecture:     ARCHITECTURE_LOCKED
-Implementation:   NOT_STARTED
-Authorized now:   NO
+Implementation:   COMPLETE_AND_ACCEPTED
+Authorized now:   YES (accepted)
+Acceptance:       COMPLETE_AND_ACCEPTED
+External gate:    IMP-026_EXTERNAL_WEBHOOK_GATE: SATISFIED
 ```
 
-Implementation is authorized only when **all** are true:
-
-1. This capability architecture remains CURRENT and `ARCHITECTURE_LOCKED`
-2. D-361 remains CURRENT for provider selection; D-362 remains CURRENT for post-ack Order effect /
-   missing-Order recovery; D-363 remains CURRENT for webhook acknowledgement timing / durable inbox;
-   D-356–D-360 unchanged; D-161/D-162 remain superseded for current provider authority
-3. `ARCHITECTURE.md` / `ROADMAP.md` / `STATE.md` agree architecture is locked and a **separate**
-   coding-agent implementation authorization prompt has been issued
-4. `npm run project:consistency` passes
-
-This document remains the implementation contract. It does not self-accept the product and does not
-authorize Razorpay production code.
+IMP-026 is independently accepted. Do not start IMP-027 from this artifact.
 
 ---
 
-## 25. Authority Boundaries
+## 25. Independent Acceptance Evidence (IMP-026 external webhook gate)
+
+```text
+IMP026_EXTERNAL_WEBHOOK_GATE: SATISFIED
+IMP026_EXTERNAL_ACCEPTANCE_EVIDENCE: ACCEPTED
+Razorpay mode: TEST
+Public webhook endpoint: POST https://cradling-unenvied-sapling.ngrok-free.dev/api/integrations/payments/razorpay/webhook
+BOBA Checkout ID: 7f53816c-e72c-41b6-800f-fe38d97b1e1f
+BOBA Payment ID: 5c93bb80-5f52-458f-a8a1-eae356d28956
+BOBA Order: ORD-3ZGDJVFQRXHB
+Razorpay Order: order_TR8lqo2solrrHR
+Razorpay Payment: pay_TR8m5IrbnKkFN1
+Razorpay events (HTTP 200): TR8mAZTG4riBtP payment.authorized; TR8mBaitTRKpLl payment.captured; TR8mC6zOM2E2p2 order.paid
+Final BOBA state: Payment SUCCEEDED; Checkout COMPLETED; Order PLACED
+Signature validation: PASS
+Invalid-signature fail-closed: PASS (HTTP 400; no inbox/commercial side effect)
+Exact signed-event replay: PASS (one durable inbox identity; no duplicate Payment; no duplicate commercial effect)
+Automated tests: test:payment-razorpay 32/32 PASS; razorpay.http.integration 4/4 PASS
+No real money. No Live Mode. No public database exposure.
+```
+
+---
+
+## 26. Authority Boundaries
 
 | Question | Authority |
 |---|---|

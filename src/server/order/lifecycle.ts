@@ -26,6 +26,7 @@ import {
   mapOrderRow,
   updateOrderLifecycle,
 } from "./repository";
+import { tryIssueTaxInvoiceAfterOrderFulfilled } from "./tax-invoice-hook";
 
 export type OrderLifecycleOptions = Readonly<{
   clock?: OrderClock;
@@ -141,7 +142,9 @@ export async function fulfilOrder(
     authorizeOrderOutletAccess(ctx, workforce, outletId, "order.fulfil"),
   );
 
-  return persistence.transaction(async (tx) => {
+  // Durable Order FULFILLED authority commits first. Tax Invoice orchestration
+  // runs only after commit so FD failure cannot undo fulfillment truth.
+  const result = await persistence.transaction(async (tx) => {
     const row = await lockOrderForUpdate(tx, parsed.orderId);
     if (!row) {
       throw new OrderError("ORDER_NOT_FOUND", "Order not found.");
@@ -172,6 +175,12 @@ export async function fulfilOrder(
     });
     return toOrderMutationResult(mapOrderRow(updated));
   });
+
+  if (result.status === "FULFILLED") {
+    await tryIssueTaxInvoiceAfterOrderFulfilled(persistence, result.orderId);
+  }
+
+  return result;
 }
 
 export async function cancelOrder(

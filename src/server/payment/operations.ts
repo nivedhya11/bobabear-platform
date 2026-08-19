@@ -13,6 +13,7 @@ import {
   parseReconcilePaymentAttemptInput,
   parseRetryPaymentInput,
   parseStartPaymentInput,
+  parseSubmitPaymentClientEvidenceInput,
   requirePaymentPolicy,
   retryPaymentFingerprint,
   startPaymentFingerprint,
@@ -22,6 +23,7 @@ import {
   type Payment,
   type PaymentAttempt,
   type PaymentPolicy,
+  RAZORPAY_ORDER_REFERENCE_KIND,
   type PaymentStartResult,
   type PaymentStateView,
   type ZeroPayableResult,
@@ -43,6 +45,8 @@ import {
 import {
   findAttemptByExecutionIdentity,
   findAttemptById,
+  findAttemptByProviderReference,
+  listProviderReferencesForAttempt,
   findCheckoutAndSnapshotForPayment,
   findIdempotencyRecord,
   findPaymentById,
@@ -73,6 +77,7 @@ import {
   requireVerifiedProviderEvent,
 } from "./verified-event";
 import { tryMaterializeOrderAfterPaymentCompletion } from "./order-materialize-hook";
+import { afterPaymentSucceeded } from "./after-payment-succeeded";
 
 export type PaymentOperationOptions = Readonly<{
   clock?: PaymentClock;
@@ -264,10 +269,10 @@ async function executeProviderAfterCommit(
   );
 
   if (result.payment.status === "SUCCEEDED") {
-    await tryMaterializeOrderAfterPaymentCompletion(
-      persistence,
-      result.checkout.id,
-    );
+    await afterPaymentSucceeded(persistence, {
+      checkoutId: result.checkout.id,
+      paymentId: result.payment.id,
+    });
   }
 
   return {
@@ -1042,6 +1047,84 @@ export async function getPaymentState(
 }
 
 /**
+ * Authenticated customer client-evidence submission (IMP-026A).
+ * Browser payload is never Payment transition authority.
+ */
+export async function submitPaymentClientEvidence(
+  persistence: Persistence,
+  actor: unknown,
+  input: unknown,
+  options: PaymentOperationOptions = {},
+): Promise<PaymentStateView> {
+  const customer = requireCustomerActor(actor);
+  const clock = clockOf(options);
+  const provider = providerOf(options);
+  const parsed = parseSubmitPaymentClientEvidenceInput(input);
+
+  if (typeof provider.verifyClientEvidence !== "function") {
+    throw new PaymentError(
+      "PAYMENT_PROVIDER_INDETERMINATE",
+      "Configured payment provider does not support client evidence.",
+    );
+  }
+
+  const loaded = await persistence.withContext(async (ctx) => {
+    const payment = await findPaymentById(ctx, parsed.paymentId);
+    if (!payment) {
+      throw new PaymentError("PAYMENT_NOT_FOUND", "Payment not found.");
+    }
+    const linked = await findCheckoutAndSnapshotForPayment(ctx, payment);
+    if (!linked || linked.checkout.customerAuthUserId !== customer.authUserId) {
+      throw new PaymentError("PAYMENT_NOT_FOUND", "Payment not found.");
+    }
+    const attempts = await listAttemptsForPayment(ctx, payment.id);
+    const attempt = attempts[attempts.length - 1] ?? null;
+    if (!attempt) {
+      throw new PaymentError("PAYMENT_NOT_FOUND", "Payment not found.");
+    }
+    const providerReferences = await listProviderReferencesForAttempt(ctx, attempt.id);
+    return Object.freeze({ payment, attempt, linked, providerReferences });
+  });
+
+  const evidence = await provider.verifyClientEvidence({
+    paymentId: loaded.payment.id,
+    attemptId: loaded.attempt.id,
+    providerExecutionIdentity: loaded.attempt.providerExecutionIdentity,
+    kind: parsed.kind,
+    payload: parsed.payload,
+    providerReferences: loaded.providerReferences,
+  });
+
+  const now = clock.now();
+  await persistence.transaction((tx) =>
+    applyProviderEvidence(tx, {
+      paymentId: loaded.payment.id,
+      attemptId: loaded.attempt.id,
+      evidence,
+      observationSource: "sync",
+      now,
+    }),
+  );
+
+  const paymentAfter = await persistence.withContext((ctx) =>
+    findPaymentById(ctx, loaded.payment.id),
+  );
+  if (paymentAfter?.status === "SUCCEEDED") {
+    const linked = await persistence.withContext((ctx) =>
+      findCheckoutAndSnapshotForPayment(ctx, paymentAfter),
+    );
+    if (linked?.checkout.status === "COMPLETED") {
+      await afterPaymentSucceeded(persistence, {
+        checkoutId: linked.checkout.id,
+        paymentId: paymentAfter.id,
+      });
+    }
+  }
+
+  return getPaymentState(persistence, customer, { paymentId: parsed.paymentId });
+}
+
+/**
  * Query the provider outside the lock, then apply evidence.
  */
 export async function reconcilePaymentAttempt(
@@ -1092,10 +1175,10 @@ export async function reconcilePaymentAttempt(
       findCheckoutAndSnapshotForPayment(ctx, paymentAfter),
     );
     if (linked?.checkout.status === "COMPLETED") {
-      await tryMaterializeOrderAfterPaymentCompletion(
-        persistence,
-        linked.checkout.id,
-      );
+      await afterPaymentSucceeded(persistence, {
+        checkoutId: linked.checkout.id,
+        paymentId: paymentAfter.id,
+      });
     }
   }
 
@@ -1116,9 +1199,31 @@ export async function processVerifiedProviderEvent(
   const clock = clockOf(options);
   const evidence = sealed.evidence;
 
-  const attempt = await persistence.withContext((ctx) =>
-    findAttemptByExecutionIdentity(ctx, evidence.providerExecutionIdentity),
-  );
+  const attempt = await persistence.withContext(async (ctx) => {
+    if (evidence.providerExecutionIdentity) {
+      const byExecution = await findAttemptByExecutionIdentity(
+        ctx,
+        evidence.providerExecutionIdentity,
+      );
+      if (byExecution) return byExecution;
+      const byOrderId = await findAttemptByProviderReference(ctx, {
+        provider: evidence.provider,
+        referenceKind: RAZORPAY_ORDER_REFERENCE_KIND,
+        referenceValue: evidence.providerExecutionIdentity,
+      });
+      if (byOrderId) return byOrderId;
+    }
+    for (const reference of evidence.references ?? []) {
+      if (!reference.value) continue;
+      const byReference = await findAttemptByProviderReference(ctx, {
+        provider: evidence.provider,
+        referenceKind: reference.kind,
+        referenceValue: reference.value,
+      });
+      if (byReference) return byReference;
+    }
+    return null;
+  });
   if (!attempt) {
     return null;
   }
@@ -1128,7 +1233,10 @@ export async function processVerifiedProviderEvent(
     applyProviderEvidence(tx, {
       paymentId: attempt.paymentId,
       attemptId: attempt.id,
-      evidence,
+      evidence: {
+        ...evidence,
+        providerExecutionIdentity: attempt.providerExecutionIdentity,
+      },
       observationSource: "webhook",
       now,
     }),
@@ -1144,10 +1252,10 @@ export async function processVerifiedProviderEvent(
   if (!linked) return null;
 
   if (payment.status === "SUCCEEDED" && linked.checkout.status === "COMPLETED") {
-    await tryMaterializeOrderAfterPaymentCompletion(
-      persistence,
-      linked.checkout.id,
-    );
+    await afterPaymentSucceeded(persistence, {
+      checkoutId: linked.checkout.id,
+      paymentId: payment.id,
+    });
   }
 
   return buildPaymentStateView(

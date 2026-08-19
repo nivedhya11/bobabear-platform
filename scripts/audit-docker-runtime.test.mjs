@@ -16,6 +16,7 @@ import {
   checkAppDoesNotDependOnCustomerAuth,
   checkDockerignoreExcludesSecrets,
   checkNoNewApiOrBusinessTable,
+  checkNginxProxiesRazorpayWebhook,
   runAllChecks,
 } from "./audit-docker-runtime.mjs";
 
@@ -228,6 +229,27 @@ test("checkAppDoesNotDependOnCustomerAuth passes the valid fixture", () => {
   assert.equal(checkAppDoesNotDependOnCustomerAuth(VALID_COMPOSE).passed, true);
 });
 
+test("checkNginxProxiesRazorpayWebhook requires an exact webhook location", () => {
+  assert.equal(
+    checkNginxProxiesRazorpayWebhook(
+      "location ^~ /api/v1/ { set $customer_commerce_upstream http://customer-commerce:8083; }",
+    ).passed,
+    false,
+  );
+  assert.equal(
+    checkNginxProxiesRazorpayWebhook(
+      "location ^~ /api/integrations/ { set $customer_commerce_upstream http://customer-commerce:8083; }",
+    ).passed,
+    false,
+  );
+  assert.equal(
+    checkNginxProxiesRazorpayWebhook(
+      "location = /api/integrations/payments/razorpay/webhook { set $customer_commerce_upstream http://customer-commerce:8083; }",
+    ).passed,
+    true,
+  );
+});
+
 test("checkNoNewApiOrBusinessTable rejects a repository containing a Route Handler", () => {
   const dir = mkdtempSync(path.join(tmpdir(), "boba-bear-docker-audit-test-"));
   try {
@@ -258,7 +280,7 @@ test("runAllChecks passes every check against a fully valid fixture set", () => 
       dockerfileText: VALID_DOCKERFILE,
       composeText: VALID_COMPOSE,
       nginxConfText:
-        "server {\n  listen 8080;\n  location ^~ /api/v1/ {\n    set $customer_commerce_upstream http://customer-commerce:8083;\n    proxy_pass $customer_commerce_upstream;\n  }\n}\n",
+        "server {\n  listen 8080;\n  location = /api/integrations/payments/razorpay/webhook {\n    set $customer_commerce_upstream http://customer-commerce:8083;\n    proxy_pass $customer_commerce_upstream;\n  }\n  location ^~ /api/v1/ {\n    set $customer_commerce_upstream http://customer-commerce:8083;\n    proxy_pass $customer_commerce_upstream;\n  }\n}\n",
       nextConfigText: 'const nextConfig = { output: "export" };\n',
       gitignoreText: ".env*\n!.env.example\n",
       dockerignoreText: ".git\nnode_modules\n.env.*\n.env.docker.local\n.env.runtime.docker.local\n.env.migration.docker.local\n.env.customer-auth.docker.local\n.env.workforce-auth.docker.local\n.env.customer-commerce.docker.local\n",

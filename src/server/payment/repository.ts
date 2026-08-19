@@ -192,6 +192,48 @@ export async function findAttemptByExecutionIdentity(
   return rows[0] ?? null;
 }
 
+export async function listProviderReferencesForAttempt(
+  context: PersistenceQueryContext,
+  attemptId: string,
+): Promise<readonly Readonly<{ kind: string; value: string }>[]> {
+  assertApplicationRole(context, "listProviderReferencesForAttempt");
+  const rows = await context.db
+    .select({
+      kind: paymentProviderReferencesTable.referenceKind,
+      value: paymentProviderReferencesTable.referenceValue,
+    })
+    .from(paymentProviderReferencesTable)
+    .where(eq(paymentProviderReferencesTable.attemptId, attemptId));
+  return Object.freeze(
+    rows.map((row) => Object.freeze({ kind: row.kind, value: row.value })),
+  );
+}
+
+export async function findAttemptByProviderReference(
+  context: PersistenceQueryContext,
+  input: {
+    provider: string;
+    referenceKind: string;
+    referenceValue: string;
+  },
+): Promise<PaymentAttemptRow | null> {
+  assertApplicationRole(context, "findAttemptByProviderReference");
+  const refs = await context.db
+    .select()
+    .from(paymentProviderReferencesTable)
+    .where(
+      and(
+        eq(paymentProviderReferencesTable.provider, input.provider),
+        eq(paymentProviderReferencesTable.referenceKind, input.referenceKind),
+        eq(paymentProviderReferencesTable.referenceValue, input.referenceValue),
+      ),
+    )
+    .limit(1);
+  const ref = refs[0];
+  if (!ref?.attemptId) return null;
+  return findAttemptById(context, ref.attemptId);
+}
+
 export async function lockAttemptForUpdate(
   context: PersistenceTransactionContext,
   attemptId: string,
@@ -395,7 +437,13 @@ export async function insertProviderReferences(
         referenceValue: ref.value,
         createdAt: input.now,
       })
-      .onConflictDoNothing();
+      .onConflictDoNothing({
+        target: [
+          paymentProviderReferencesTable.provider,
+          paymentProviderReferencesTable.referenceKind,
+          paymentProviderReferencesTable.referenceValue,
+        ],
+      });
   }
 }
 

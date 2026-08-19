@@ -235,6 +235,21 @@ export function checkNginxProxiesCustomerCommerce(nginxConfText) {
   };
 }
 
+export function checkNginxProxiesRazorpayWebhook(nginxConfText) {
+  const hasExactLocation =
+    /location\s+=\s+\/api\/integrations\/payments\/razorpay\/webhook/.test(nginxConfText);
+  const hasUpstream = /customer-commerce:8083/.test(nginxConfText);
+  const hasGenericIntegrationsProxy = /location\s+\^~\s+\/api\/integrations\//.test(nginxConfText);
+  const passed = hasExactLocation && hasUpstream && !hasGenericIntegrationsProxy;
+  return {
+    name: "nginx.conf proxies exact Razorpay webhook path to customer-commerce:8083",
+    passed,
+    detail: !passed
+      ? `exact=${hasExactLocation} upstream=${hasUpstream} generic=${hasGenericIntegrationsProxy}`
+      : undefined,
+  };
+}
+
 export function checkNoDockerSocketOrPrivileged(composeText) {
   const hasSocket = /docker\.sock/.test(composeText);
   const isPrivileged = /privileged:\s*true/.test(composeText);
@@ -350,6 +365,7 @@ export function runAllChecks({ dockerfileText, composeText, nginxConfText, nextC
     checkCustomerCommerceServiceSecurityHardening(composeText),
     checkAppDoesNotDependOnCustomerCommerce(composeText),
     checkNginxProxiesCustomerCommerce(nginxConfText),
+    checkNginxProxiesRazorpayWebhook(nginxConfText),
     checkNoDockerSocketOrPrivileged(composeText),
     checkToolingServicesUseToolsProfile(composeText),
     checkMigrateDependsOnHealthyPostgres(composeText),

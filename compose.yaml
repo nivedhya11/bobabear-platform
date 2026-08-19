@@ -137,11 +137,12 @@ services:
       start_period: 15s
     restart: "no"
 
-  # Dedicated customer-commerce transport façade (IMP-024 / D-359). Reachable
-  # only through the `app` (Nginx) container's narrow `/api/v1/` reverse
-  # proxy — never a published host port. Receives application-role database
-  # env plus customer-auth secrets (session cookie validation) and commerce
-  # listen config. Never migration credentials.
+  # Dedicated customer-commerce transport façade (IMP-024 / D-359 / IMP-026A).
+  # Reachable only through the `app` (Nginx) container's narrow `/api/v1/`
+  # reverse proxy and the exact Razorpay webhook path — never a published host
+  # port. Receives application-role database env plus customer-auth secrets
+  # (session cookie validation) and commerce listen config. Never migration
+  # credentials.
   customer-commerce:
     build:
       context: .

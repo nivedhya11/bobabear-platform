@@ -8,6 +8,7 @@ import type { CommerceCheckout, CommerceCheckoutSnapshot } from "@/lib/customer-
 const startPayment = vi.fn<(...args: unknown[]) => unknown>();
 const retryPayment = vi.fn<(...args: unknown[]) => unknown>();
 const getPaymentState = vi.fn<(...args: unknown[]) => unknown>();
+const submitPaymentClientEvidence = vi.fn<(...args: unknown[]) => unknown>();
 const completeZeroPayableCheckout = vi.fn<(...args: unknown[]) => unknown>();
 const listCustomerOrders = vi.fn<(...args: unknown[]) => unknown>();
 const rememberPaymentRecovery = vi.fn<(...args: unknown[]) => unknown>();
@@ -15,6 +16,8 @@ const browserNavigate = vi.fn<(...args: unknown[]) => unknown>();
 const readOrCreateStartIdempotencyKey = vi.fn<(...args: unknown[]) => unknown>(() => "idem-start");
 const readOrCreateRetryIdempotencyKey = vi.fn<(...args: unknown[]) => unknown>(() => "idem-retry");
 const readOrCreateZeroPayableIdempotencyKey = vi.fn<(...args: unknown[]) => unknown>(() => "idem-zero");
+const loadRazorpayCheckoutScript = vi.fn<(...args: unknown[]) => unknown>();
+const openRazorpayStandardCheckout = vi.fn<(...args: unknown[]) => unknown>();
 
 vi.mock("@/components/ordering/browser-navigate", () => ({
   browserNavigate: (...args: unknown[]) => browserNavigate(...args),
@@ -29,6 +32,7 @@ vi.mock("@/lib/customer-commerce", async () => {
     startPayment: (...args: unknown[]) => startPayment(...args),
     retryPayment: (...args: unknown[]) => retryPayment(...args),
     getPaymentState: (...args: unknown[]) => getPaymentState(...args),
+    submitPaymentClientEvidence: (...args: unknown[]) => submitPaymentClientEvidence(...args),
     completeZeroPayableCheckout: (...args: unknown[]) => completeZeroPayableCheckout(...args),
     listCustomerOrders: (...args: unknown[]) => listCustomerOrders(...args),
     rememberPaymentRecovery: (...args: unknown[]) => rememberPaymentRecovery(...args),
@@ -36,6 +40,15 @@ vi.mock("@/lib/customer-commerce", async () => {
     readOrCreateRetryIdempotencyKey: (...args: unknown[]) => readOrCreateRetryIdempotencyKey(...args),
     readOrCreateZeroPayableIdempotencyKey: (...args: unknown[]) =>
       readOrCreateZeroPayableIdempotencyKey(...args),
+  };
+});
+
+vi.mock("@/lib/razorpay", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/razorpay")>("@/lib/razorpay");
+  return {
+    ...actual,
+    loadRazorpayCheckoutScript: (...args: unknown[]) => loadRazorpayCheckoutScript(...args),
+    openRazorpayStandardCheckout: (...args: unknown[]) => openRazorpayStandardCheckout(...args),
   };
 });
 
@@ -71,7 +84,10 @@ const snapshotBase: CommerceCheckoutSnapshot = {
     label: null,
   },
   lines: [],
-  charges: [],
+  charges: [
+    { chargeCode: "packaging", amountPaise: "2000", name: "Packaging" },
+    { chargeCode: "delivery", amountPaise: "4000", name: "Delivery" },
+  ],
   promotionEffects: [],
   taxComponents: [],
 };
@@ -124,17 +140,48 @@ const attempt = {
   cancelledAt: null,
 };
 
+const razorpayAction = {
+  kind: "razorpay_standard_checkout" as const,
+  payload: {
+    keyId: "rzp_test_key",
+    razorpayOrderId: "order_abc",
+    amountPaise: "27195",
+    currency: "INR",
+    paymentId: "pay-1",
+    attemptId: "att-1",
+  },
+};
+
 beforeEach(() => {
   startPayment.mockReset();
   retryPayment.mockReset();
   getPaymentState.mockReset();
+  submitPaymentClientEvidence.mockReset();
   completeZeroPayableCheckout.mockReset();
   listCustomerOrders.mockReset();
   rememberPaymentRecovery.mockReset();
   browserNavigate.mockReset();
+  loadRazorpayCheckoutScript.mockReset();
+  openRazorpayStandardCheckout.mockReset();
   readOrCreateStartIdempotencyKey.mockClear();
   readOrCreateRetryIdempotencyKey.mockClear();
   readOrCreateZeroPayableIdempotencyKey.mockClear();
+  loadRazorpayCheckoutScript.mockResolvedValue({});
+  getPaymentState.mockResolvedValue({
+    ok: true,
+    status: 200,
+    data: {
+      state: {
+        payment,
+        attempt,
+        attempts: [attempt],
+        checkoutId: "chk-1",
+        checkoutStatus: "PAYMENT_PENDING",
+        checkoutRevision: "4",
+        zeroPayableCompleted: false,
+      },
+    },
+  });
   listCustomerOrders.mockResolvedValue({
     ok: true,
     status: 200,
@@ -329,5 +376,493 @@ describe("PaymentPanel", () => {
       },
     });
     await waitFor(() => expect(readOrCreateStartIdempotencyKey).toHaveBeenCalledTimes(1));
+  });
+
+  it("opens Razorpay Checkout only after an explicit Pay click", async () => {
+    startPayment.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        kind: "payment_started",
+        payment,
+        attempt,
+        checkoutId: "chk-1",
+        checkoutRevision: "4",
+        clientAction: razorpayAction,
+      },
+    });
+    render(<PaymentPanel checkout={checkout} snapshot={snapshotBase} onOrderReady={vi.fn()} />);
+    expect(openRazorpayStandardCheckout).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByTestId("payment-start"));
+    await waitFor(() => expect(loadRazorpayCheckoutScript).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(openRazorpayStandardCheckout).toHaveBeenCalledTimes(1));
+    const opened = openRazorpayStandardCheckout.mock.calls[0]?.[0] as {
+      action: { keyId: string; razorpayOrderId: string; amountPaise: string };
+      onHandler: (evidence: unknown) => void;
+    };
+    expect(opened.action.keyId).toBe("rzp_test_key");
+    expect(opened.action.razorpayOrderId).toBe("order_abc");
+    expect(opened.action.amountPaise).toBe("27195");
+    expect(screen.getByTestId("payment-checkout-open")).toBeInTheDocument();
+  });
+
+  it("rejects malformed or secret-bearing Razorpay clientAction without opening Checkout", async () => {
+    startPayment.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        kind: "payment_started",
+        payment,
+        attempt,
+        checkoutId: "chk-1",
+        checkoutRevision: "4",
+        clientAction: {
+          kind: "razorpay_standard_checkout",
+          payload: { ...razorpayAction.payload, keySecret: "nope", amountPaise: "" },
+        },
+      },
+    });
+    render(<PaymentPanel checkout={checkout} snapshot={snapshotBase} onOrderReady={vi.fn()} />);
+    await userEvent.click(screen.getByTestId("payment-start"));
+    await waitFor(() => expect(screen.getByRole("alert")).toBeInTheDocument());
+    expect(openRazorpayStandardCheckout).not.toHaveBeenCalled();
+  });
+
+  it("surfaces script load failure without treating Payment as failed", async () => {
+    startPayment.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        kind: "payment_started",
+        payment,
+        attempt,
+        checkoutId: "chk-1",
+        checkoutRevision: "4",
+        clientAction: razorpayAction,
+      },
+    });
+    loadRazorpayCheckoutScript.mockRejectedValue(new Error("cdn down"));
+    render(<PaymentPanel checkout={checkout} snapshot={snapshotBase} onOrderReady={vi.fn()} />);
+    await userEvent.click(screen.getByTestId("payment-start"));
+    await waitFor(() =>
+      expect(screen.getByRole("alert")).toHaveTextContent(/couldn't load/i),
+    );
+    expect(screen.getByTestId("payment-reopen-checkout")).toBeInTheDocument();
+    expect(openRazorpayStandardCheckout).not.toHaveBeenCalled();
+    expect(submitPaymentClientEvidence).not.toHaveBeenCalled();
+  });
+
+  it("submits handler evidence, shows checking, and continues only after server success", async () => {
+    const onOrderReady = vi.fn();
+    startPayment.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        kind: "payment_started",
+        payment,
+        attempt,
+        checkoutId: "chk-1",
+        checkoutRevision: "4",
+        clientAction: razorpayAction,
+      },
+    });
+    submitPaymentClientEvidence.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        state: {
+          payment: { ...payment, status: "SUCCEEDED" },
+          attempt: { ...attempt, status: "SUCCEEDED" },
+          attempts: [{ ...attempt, status: "SUCCEEDED" }],
+          checkoutId: "chk-1",
+          checkoutStatus: "COMPLETED",
+          checkoutRevision: "5",
+          zeroPayableCompleted: false,
+        },
+      },
+    });
+    render(<PaymentPanel checkout={checkout} snapshot={snapshotBase} onOrderReady={onOrderReady} />);
+    await userEvent.click(screen.getByTestId("payment-start"));
+    await waitFor(() => expect(openRazorpayStandardCheckout).toHaveBeenCalledTimes(1));
+    const opened = openRazorpayStandardCheckout.mock.calls[0]?.[0] as {
+      action: { retry?: unknown };
+      onHandler: (evidence: {
+        razorpay_payment_id: string;
+        razorpay_order_id: string;
+        razorpay_signature: string;
+      }) => void;
+    };
+    opened.onHandler({
+      razorpay_payment_id: "pay_rzp_1",
+      razorpay_order_id: "order_abc",
+      razorpay_signature: "sig_rzp_1",
+    });
+    await waitFor(() => expect(screen.getByTestId("payment-checking")).toBeInTheDocument());
+    await waitFor(() => expect(onOrderReady).toHaveBeenCalledWith("ord-1"));
+    expect(submitPaymentClientEvidence).toHaveBeenCalledWith({
+      paymentId: "pay-1",
+      kind: "razorpay_standard_checkout",
+      payload: {
+        razorpay_payment_id: "pay_rzp_1",
+        razorpay_order_id: "order_abc",
+        razorpay_signature: "sig_rzp_1",
+      },
+    });
+  });
+
+  it("does not confirm an Order from the browser handler alone", async () => {
+    const onOrderReady = vi.fn();
+    startPayment.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        kind: "payment_started",
+        payment,
+        attempt,
+        checkoutId: "chk-1",
+        checkoutRevision: "4",
+        clientAction: razorpayAction,
+      },
+    });
+    submitPaymentClientEvidence.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        state: {
+          payment,
+          attempt,
+          attempts: [attempt],
+          checkoutId: "chk-1",
+          checkoutStatus: "PAYMENT_PENDING",
+          checkoutRevision: "4",
+          zeroPayableCompleted: false,
+        },
+      },
+    });
+    getPaymentState.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        state: {
+          payment,
+          attempt,
+          attempts: [attempt],
+          checkoutId: "chk-1",
+          checkoutStatus: "PAYMENT_PENDING",
+          checkoutRevision: "4",
+          zeroPayableCompleted: false,
+        },
+      },
+    });
+    render(<PaymentPanel checkout={checkout} snapshot={snapshotBase} onOrderReady={onOrderReady} />);
+    await userEvent.click(screen.getByTestId("payment-start"));
+    await waitFor(() => expect(openRazorpayStandardCheckout).toHaveBeenCalledTimes(1));
+    const opened = openRazorpayStandardCheckout.mock.calls[0]?.[0] as {
+      onHandler: (evidence: {
+        razorpay_payment_id: string;
+        razorpay_order_id: string;
+        razorpay_signature: string;
+      }) => void;
+    };
+    opened.onHandler({
+      razorpay_payment_id: "pay_rzp_1",
+      razorpay_order_id: "order_abc",
+      razorpay_signature: "sig_rzp_1",
+    });
+    await waitFor(() => expect(submitPaymentClientEvidence).toHaveBeenCalledTimes(1));
+    expect(onOrderReady).not.toHaveBeenCalled();
+    expect(screen.getByTestId("payment-checking")).toBeInTheDocument();
+  });
+
+  it("ignores duplicate handler invocation", async () => {
+    startPayment.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        kind: "payment_started",
+        payment,
+        attempt,
+        checkoutId: "chk-1",
+        checkoutRevision: "4",
+        clientAction: razorpayAction,
+      },
+    });
+    submitPaymentClientEvidence.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        state: {
+          payment,
+          attempt,
+          attempts: [attempt],
+          checkoutId: "chk-1",
+          checkoutStatus: "PAYMENT_PENDING",
+          checkoutRevision: "4",
+          zeroPayableCompleted: false,
+        },
+      },
+    });
+    render(<PaymentPanel checkout={checkout} snapshot={snapshotBase} onOrderReady={vi.fn()} />);
+    await userEvent.click(screen.getByTestId("payment-start"));
+    await waitFor(() => expect(openRazorpayStandardCheckout).toHaveBeenCalledTimes(1));
+    const opened = openRazorpayStandardCheckout.mock.calls[0]?.[0] as {
+      onHandler: (evidence: {
+        razorpay_payment_id: string;
+        razorpay_order_id: string;
+        razorpay_signature: string;
+      }) => void;
+    };
+    const evidence = {
+      razorpay_payment_id: "pay_rzp_1",
+      razorpay_order_id: "order_abc",
+      razorpay_signature: "sig_rzp_1",
+    };
+    opened.onHandler(evidence);
+    opened.onHandler(evidence);
+    await waitFor(() => expect(submitPaymentClientEvidence).toHaveBeenCalledTimes(1));
+  });
+
+  it("recovers via Payment state when client evidence is rejected or uncertain", async () => {
+    startPayment.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        kind: "payment_started",
+        payment,
+        attempt,
+        checkoutId: "chk-1",
+        checkoutRevision: "4",
+        clientAction: razorpayAction,
+      },
+    });
+    submitPaymentClientEvidence.mockResolvedValue({
+      ok: false,
+      code: "PAYMENT_PROVIDER_EVIDENCE_INVALID",
+      status: 400,
+    });
+    getPaymentState.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        state: {
+          payment,
+          attempt,
+          attempts: [attempt],
+          checkoutId: "chk-1",
+          checkoutStatus: "PAYMENT_PENDING",
+          checkoutRevision: "4",
+          zeroPayableCompleted: false,
+        },
+      },
+    });
+    render(<PaymentPanel checkout={checkout} snapshot={snapshotBase} onOrderReady={vi.fn()} />);
+    await userEvent.click(screen.getByTestId("payment-start"));
+    await waitFor(() => expect(openRazorpayStandardCheckout).toHaveBeenCalledTimes(1));
+    const opened = openRazorpayStandardCheckout.mock.calls[0]?.[0] as {
+      onHandler: (evidence: {
+        razorpay_payment_id: string;
+        razorpay_order_id: string;
+        razorpay_signature: string;
+      }) => void;
+    };
+    opened.onHandler({
+      razorpay_payment_id: "pay_rzp_1",
+      razorpay_order_id: "order_abc",
+      razorpay_signature: "bad",
+    });
+    await waitFor(() => expect(screen.getByTestId("payment-checking")).toBeInTheDocument());
+    expect(screen.getByRole("alert")).toHaveTextContent(/could not be verified/i);
+  });
+
+  it("treats dismissal as non-terminal and refreshes Payment state", async () => {
+    const onOrderReady = vi.fn();
+    startPayment.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        kind: "payment_started",
+        payment,
+        attempt,
+        checkoutId: "chk-1",
+        checkoutRevision: "4",
+        clientAction: razorpayAction,
+      },
+    });
+    getPaymentState.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        state: {
+          payment,
+          attempt,
+          attempts: [attempt],
+          checkoutId: "chk-1",
+          checkoutStatus: "PAYMENT_PENDING",
+          checkoutRevision: "4",
+          zeroPayableCompleted: false,
+        },
+      },
+    });
+    render(<PaymentPanel checkout={checkout} snapshot={snapshotBase} onOrderReady={onOrderReady} />);
+    await userEvent.click(screen.getByTestId("payment-start"));
+    await waitFor(() => expect(openRazorpayStandardCheckout).toHaveBeenCalledTimes(1));
+    const opened = openRazorpayStandardCheckout.mock.calls[0]?.[0] as {
+      onDismiss: () => void;
+    };
+    opened.onDismiss();
+    await waitFor(() => expect(getPaymentState).toHaveBeenCalledWith("pay-1"));
+    await waitFor(() => expect(screen.getByTestId("payment-start")).toBeEnabled());
+    expect(screen.getByRole("alert")).toHaveTextContent(/window closed/i);
+    expect(onOrderReady).not.toHaveBeenCalled();
+    expect(submitPaymentClientEvidence).not.toHaveBeenCalled();
+  });
+
+  it("shows a safe provider-failure message without browser-authoritative failure", async () => {
+    const onOrderReady = vi.fn();
+    startPayment.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        kind: "payment_started",
+        payment,
+        attempt,
+        checkoutId: "chk-1",
+        checkoutRevision: "4",
+        clientAction: razorpayAction,
+      },
+    });
+    getPaymentState.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        state: {
+          payment,
+          attempt,
+          attempts: [attempt],
+          checkoutId: "chk-1",
+          checkoutStatus: "PAYMENT_PENDING",
+          checkoutRevision: "4",
+          zeroPayableCompleted: false,
+        },
+      },
+    });
+    render(<PaymentPanel checkout={checkout} snapshot={snapshotBase} onOrderReady={onOrderReady} />);
+    await userEvent.click(screen.getByTestId("payment-start"));
+    await waitFor(() => expect(openRazorpayStandardCheckout).toHaveBeenCalledTimes(1));
+    const opened = openRazorpayStandardCheckout.mock.calls[0]?.[0] as {
+      onProviderFailure: () => void;
+    };
+    opened.onProviderFailure();
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent(/did not complete/i));
+    expect(onOrderReady).not.toHaveBeenCalled();
+    expect(screen.queryByTestId("payment-retry")).not.toBeInTheDocument();
+    expect(submitPaymentClientEvidence).not.toHaveBeenCalled();
+  });
+
+  it("offers BOBA retry only after server state allows it, with a new Checkout action", async () => {
+    const onOrderReady = vi.fn();
+    startPayment.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        kind: "payment_started",
+        payment: { ...payment, status: "OPEN" },
+        attempt: { ...attempt, status: "FAILED" },
+        checkoutId: "chk-1",
+        checkoutRevision: "4",
+      },
+    });
+    retryPayment.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        kind: "payment_started",
+        payment,
+        attempt: { ...attempt, id: "att-2", providerExecutionIdentity: "payexec_2" },
+        checkoutId: "chk-1",
+        checkoutRevision: "5",
+        clientAction: {
+          kind: "razorpay_standard_checkout",
+          payload: {
+            ...razorpayAction.payload,
+            razorpayOrderId: "order_new",
+            attemptId: "att-2",
+          },
+        },
+      },
+    });
+    render(<PaymentPanel checkout={checkout} snapshot={snapshotBase} onOrderReady={onOrderReady} />);
+    await userEvent.click(screen.getByTestId("payment-start"));
+    await waitFor(() => expect(screen.getByTestId("payment-retry")).toBeInTheDocument());
+    await userEvent.click(screen.getByTestId("payment-retry"));
+    await waitFor(() => expect(openRazorpayStandardCheckout).toHaveBeenCalledTimes(1));
+    const opened = openRazorpayStandardCheckout.mock.calls[0]?.[0] as {
+      action: { razorpayOrderId: string; attemptId: string };
+    };
+    expect(opened.action.razorpayOrderId).toBe("order_new");
+    expect(opened.action.attemptId).toBe("att-2");
+    expect(opened.action.razorpayOrderId).not.toBe("order_abc");
+  });
+
+  it("shows itemized snapshot charges and pay amount equal to grand total", () => {
+    render(<PaymentPanel checkout={checkout} snapshot={snapshotBase} onOrderReady={vi.fn()} />);
+    expect(screen.getByTestId("checkout-fee-breakdown")).toHaveTextContent("Packaging");
+    expect(screen.getByTestId("checkout-fee-breakdown")).toHaveTextContent("Delivery");
+    expect(screen.getByTestId("payment-start")).toHaveTextContent("Pay ₹271.95");
+  });
+
+  it("blocks a second pay while payment is processing", async () => {
+    startPayment.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        kind: "payment_started",
+        payment,
+        attempt,
+        checkoutId: "chk-1",
+        checkoutRevision: "4",
+      },
+    });
+    render(<PaymentPanel checkout={checkout} snapshot={snapshotBase} onOrderReady={vi.fn()} />);
+    const button = screen.getByTestId("payment-start");
+    await userEvent.click(button);
+    await waitFor(() => expect(screen.getByTestId("payment-checking")).toBeInTheDocument());
+    expect(button).toBeDisabled();
+    await userEvent.click(button);
+    expect(startPayment).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows explicit don't-pay-again copy for indeterminate attempts", async () => {
+    startPayment.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        kind: "payment_started",
+        payment,
+        attempt: { ...attempt, status: "INDETERMINATE" },
+        checkoutId: "chk-1",
+        checkoutRevision: "4",
+      },
+    });
+    getPaymentState.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        state: {
+          payment,
+          attempt: { ...attempt, status: "INDETERMINATE" },
+          attempts: [{ ...attempt, status: "INDETERMINATE" }],
+          checkoutId: "chk-1",
+          checkoutStatus: "PAYMENT_PENDING",
+          checkoutRevision: "4",
+          zeroPayableCompleted: false,
+        },
+      },
+    });
+    render(<PaymentPanel checkout={checkout} snapshot={snapshotBase} onOrderReady={vi.fn()} />);
+    await userEvent.click(screen.getByTestId("payment-start"));
+    await waitFor(() =>
+      expect(screen.getByTestId("payment-checking")).toHaveTextContent(/don't pay again yet/i),
+    );
   });
 });

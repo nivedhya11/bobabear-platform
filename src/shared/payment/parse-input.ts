@@ -21,6 +21,7 @@ import type {
   ReconcilePaymentAttemptInput,
   RetryPaymentInput,
   StartPaymentInput,
+  SubmitPaymentClientEvidenceInput,
 } from "./types";
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -212,6 +213,81 @@ export function parseReconcilePaymentAttemptInput(
   return Object.freeze({
     paymentId: requireUuid(input.paymentId, "paymentId"),
     attemptId: requireUuid(input.attemptId, "attemptId"),
+  });
+}
+
+const CLIENT_EVIDENCE_KIND_MAX = 64;
+const CLIENT_EVIDENCE_PAYLOAD_MAX_KEYS = 16;
+const CLIENT_EVIDENCE_KEY_MAX = 64;
+const CLIENT_EVIDENCE_VALUE_MAX = 512;
+
+export function parseSubmitPaymentClientEvidenceInput(
+  input: unknown,
+): SubmitPaymentClientEvidenceInput {
+  if (!isPlainObject(input)) {
+    throw new PaymentError(
+      "PAYMENT_INVALID_INPUT",
+      "submitPaymentClientEvidence input must be an object.",
+    );
+  }
+  rejectUnknownKeys(
+    input,
+    ["paymentId", "kind", "payload"],
+    "submitPaymentClientEvidence",
+  );
+  const kind = requireNonEmptyString(input.kind, "kind");
+  if (kind.length > CLIENT_EVIDENCE_KIND_MAX) {
+    throw new PaymentError(
+      "PAYMENT_INVALID_INPUT",
+      "kind exceeds maximum length.",
+      { field: "kind" },
+    );
+  }
+  if (!isPlainObject(input.payload)) {
+    throw new PaymentError(
+      "PAYMENT_INVALID_INPUT",
+      "payload must be an object of string values.",
+      { field: "payload" },
+    );
+  }
+  const payloadKeys = Object.keys(input.payload);
+  if (payloadKeys.length === 0 || payloadKeys.length > CLIENT_EVIDENCE_PAYLOAD_MAX_KEYS) {
+    throw new PaymentError(
+      "PAYMENT_INVALID_INPUT",
+      "payload key count is outside the allowed bound.",
+      { field: "payload" },
+    );
+  }
+  const payload: Record<string, string> = {};
+  for (const key of payloadKeys) {
+    if (key.length === 0 || key.length > CLIENT_EVIDENCE_KEY_MAX) {
+      throw new PaymentError(
+        "PAYMENT_INVALID_INPUT",
+        "payload key length is outside the allowed bound.",
+        { field: "payload" },
+      );
+    }
+    const value = input.payload[key];
+    if (typeof value !== "string") {
+      throw new PaymentError(
+        "PAYMENT_INVALID_INPUT",
+        "payload values must be strings.",
+        { field: "payload" },
+      );
+    }
+    if (value.length === 0 || value.length > CLIENT_EVIDENCE_VALUE_MAX) {
+      throw new PaymentError(
+        "PAYMENT_INVALID_INPUT",
+        "payload value length is outside the allowed bound.",
+        { field: "payload" },
+      );
+    }
+    payload[key] = value;
+  }
+  return Object.freeze({
+    paymentId: requireUuid(input.paymentId, "paymentId"),
+    kind,
+    payload: Object.freeze(payload),
   });
 }
 

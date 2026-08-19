@@ -23,6 +23,9 @@ void isProd; // referenced below for clarity; both branches are ""
 // Content-Security-Policy is intentionally NOT set here — Next.js emits inline
 // bootstrap scripts and the page uses inline <style>/JSON-LD, so a real CSP
 // needs per-request nonces (middleware). Add that as a dedicated follow-up.
+// IMP-026B: official Razorpay Checkout.js is https://checkout.razorpay.com/v1/checkout.js.
+// Documented origins for a future CSP are in src/lib/razorpay/types.ts. Do not add
+// wildcard script-src / frame-src / connect-src merely to allow Checkout.js.
 //
 // NOTE: headers() is a no-op in static export mode. Kept here so the same
 // config works on Vercel / self-hosted deployments without changes.

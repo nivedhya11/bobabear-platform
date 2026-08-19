@@ -2,8 +2,8 @@
 {
   "status": "CURRENT",
   "authority": "GLOBAL_ARCHITECTURE",
-  "architectureVersion": "ARCH-R8",
-  "lastReviewed": "2026-08-13"
+  "architectureVersion": "ARCH-R12",
+  "lastReviewed": "2026-08-18"
 }
 -->
 
@@ -76,7 +76,9 @@ materialization. Inbox processing is a small claim/process loop inside existing 
 Order materialization remains a post-ack effect ([D-362](./decision-register.md)). Missing-Order
 after Payment success is recovered via existing `recoverMissingOrdersBatch`. No new deployable
 service, queue, or broker. Payment/provider ingress schema change is required (one future
-migration).
+migration). Refund Foundation ([D-364](./decision-register.md)) reuses the same webhook endpoint and
+durable inbox for `refund.created` / `refund.processed` / `refund.failed` without a second public
+Razorpay webhook route; Refund implementation remains unauthorized until separately authorized.
 
 Local default runtime uses Docker Desktop Compose. Staging/production cloud topology remains governed
 by ADR-001 / ADR-002 and future production slices; those details must not contradict the static
@@ -114,12 +116,14 @@ Other domains may reference or project it but must not establish competing mutab
 |---|---|---|
 | Cart | Mutable shopping intent | Not commercial finality |
 | Checkout Snapshot | Immutable accepted commercial transaction | Historical purchased commerce derives from this |
-| Payment | Original financial collection truth | Provider observations are not automatic Payment truth |
+| Payment | Original financial collection truth | Provider observations are not automatic Payment truth; remains `SUCCEEDED` after Refund |
 | Order | Post-purchase business lifecycle | Accepted lifecycle: `PLACED` \| `ACCEPTED` \| `FULFILLED` \| `CANCELLED` |
-| Refund | FUTURE / NOT_IMPLEMENTED | Roadmapped as IMP-027 |
+| Refund | Financial reversal truth for returned funds | First-class aggregate (IMP-027 ARCHITECTURE_LOCKED; implementation COMPLETE_AND_ACCEPTED); does not rewrite Payment collection truth ([D-364](./decision-register.md)) |
+| RefundStatutoryDecision | Durable statutory-reversal classification for a PROCESSED Refund | First-class aggregate under IMP-028 ([D-366](./decision-register.md)); does not rewrite Refund money truth or mutate issued Financial Documents |
+| Financial Document | Immutable issued statutory / financial-document truth | First-class aggregate (IMP-028 ARCHITECTURE_LOCKED; implementation AUTHORIZED / STARTED / IMPLEMENTATION_IN_PROGRESS); consumes Checkout/Payment/Refund/Order/Issuer-Tax Profile without rewriting them ([D-365](./decision-register.md)) |
+| SignatureArtifact | Durable signature state and exact-byte signed statutory artifact authority | First-class aggregate under IMP-028 ([D-367](./decision-register.md)); exactly one authority per signing-required Financial Document; does not rewrite Financial Document sealed issuance facts or Payment/Order commercial truth |
 | Delivery | FUTURE / NOT_IMPLEMENTED | Roadmapped as IMP-031+ |
 | Notification | FUTURE / NOT_IMPLEMENTED | Roadmapped as IMP-033+ |
-| Invoice / Credit Note | FUTURE / NOT_IMPLEMENTED | Architectural intent in ADR-007; implementation IMP-028 |
 
 Accepted chain:
 
@@ -127,6 +131,48 @@ Accepted chain:
 Cart → Checkout → Payment → Order
 ```
 
+Refund relationship (independent reversal):
+
+```text
+Payment SUCCEEDED → zero or more Refunds
+```
+
+Financial Document relationship (issued statutory truth):
+
+```text
+Checkout Snapshot + Payment + Refund? + Order? + effective Issuer/Tax Profile
+→ Financial Document (immutable issued facts / number / issueAt)
+→ SignatureArtifact (when BOBA signing required: PENDING → SIGNED)
+→ Rendering (projection)
+→ Customer signed-PDF download (only after SignatureArtifact SIGNED)
+```
+
+Statutory signing (D-367; ATTENDED_ASYNC manual signed-PDF MVP documented in the capability
+artifact; unattended DSC/eSign/HSM deferred; formal IMP-028 remains IMPLEMENTATION_IN_PROGRESS /
+not accepted):
+
+```text
+Payment SUCCEEDED / Order FULFILLED / D-366 RFV|CN branch
+→ FinancialDocument ISSUED (facts + number + issueAt sealed)
+→ SignatureArtifact PENDING
+→ attended signing action
+→ durable exact-byte signed artifact + SIGNED
+→ STATUTORY_ARTIFACT_READY
+```
+
+Payment and Order truth must never roll back because signing is pending or fails.
+
+Refund statutory reversal decision (D-366; RefundStatutoryDecision / issuance-allocation / RFV-CN
+issuance documented in the capability artifact; formal IMP-028 remains IMPLEMENTATION_IN_PROGRESS /
+not accepted):
+
+```text
+Refund PROCESSED
+→ RefundStatutoryDecision (PENDING → BRANCH_FINALIZED → ISSUED?)
+→ REFUND_VOUCHER | CREDIT_NOTE | NO_STATUTORY_DOCUMENT
+```
+
+Refund money truth (D-364) and issued Financial Document immutability (D-365) remain unchanged.
 ## 6. Authentication and Trust
 
 - Raw user IDs are not authentication authority.
@@ -243,13 +289,15 @@ Dynamic commerce must remain outside dynamic Next.js execution unless superseded
 |---|---|
 | Quantitative Inventory Authority | DEFERRED / NOT_DEFINED |
 | Detailed Kitchen Fulfilment | DEFERRED / NOT_DEFINED |
-| Refund | FUTURE / NOT_IMPLEMENTED |
+| Refund | ARCHITECTURE_LOCKED — capability architecture [`capabilities/IMP-027-refund-foundation.md`](./capabilities/IMP-027-refund-foundation.md); binding **D-364**; implementation COMPLETE_AND_ACCEPTED |
 | Delivery | FUTURE / NOT_IMPLEMENTED |
 | Notification | FUTURE / NOT_IMPLEMENTED |
-| Invoice / Credit Note document engine | FUTURE / NOT_IMPLEMENTED |
+| Invoice / Credit Note / Financial Document | ARCHITECTURE_LOCKED — capability architecture [`capabilities/IMP-028-invoice-tax-receipt-credit-note.md`](./capabilities/IMP-028-invoice-tax-receipt-credit-note.md); binding **D-365** / **D-366** / **D-367**; Financial Document is immutable issued statutory authority; RefundStatutoryDecision governs refund statutory reversal; SignatureArtifact governs signed statutory artifact readiness; implementation AUTHORIZED / STARTED / IMPLEMENTATION_IN_PROGRESS (not complete; not accepted) |
 | Exact IMP-024 transport topology | DECIDED — D-359 (`customer-commerce:8083` behind `/api/v1/*`); capability architecture locked; Compose wiring accepted with IMP-024 |
 | IMP-025 Customer Ordering UX | ARCHITECTURE_LOCKED — capability architecture [`capabilities/IMP-025-customer-ordering-ux.md`](./capabilities/IMP-025-customer-ordering-ux.md); static export + `/api/v1/*` client UX; implementation COMPLETE_AND_ACCEPTED |
-| IMP-026 Razorpay productionization | ARCHITECTURE_LOCKED — capability architecture [`capabilities/IMP-026-razorpay-productionization.md`](./capabilities/IMP-026-razorpay-productionization.md); Razorpay behind existing `PaymentProvider` in `customer-commerce` (D-361); webhook ack after durable inbox (D-363); missing-Order recovery via `recoverMissingOrdersBatch` (D-362); implementation NOT_STARTED |
+| IMP-026 Razorpay productionization | ARCHITECTURE_LOCKED — capability architecture [`capabilities/IMP-026-razorpay-productionization.md`](./capabilities/IMP-026-razorpay-productionization.md); Razorpay behind existing `PaymentProvider` in `customer-commerce` (D-361); webhook ack after durable inbox (D-363); missing-Order recovery via `recoverMissingOrdersBatch` (D-362); implementation COMPLETE_AND_ACCEPTED |
+| IMP-027 Refund Foundation | ARCHITECTURE_LOCKED — capability architecture [`capabilities/IMP-027-refund-foundation.md`](./capabilities/IMP-027-refund-foundation.md); Refund aggregate independent of Payment status (D-364); implementation COMPLETE_AND_ACCEPTED |
+| IMP-028 Invoice / Tax Receipt / Credit Note | ARCHITECTURE_LOCKED — capability architecture [`capabilities/IMP-028-invoice-tax-receipt-credit-note.md`](./capabilities/IMP-028-invoice-tax-receipt-credit-note.md); Financial Document authority (D-365); RefundStatutoryDecision authority (D-366); SignatureArtifact / signed artifact authority (D-367); ARCH-G16 / ARCH-G17 / ARCH-G18; implementation AUTHORIZED / STARTED / IMPLEMENTATION_IN_PROGRESS |
 
 `NOT_DEFINED` / `NOT_IMPLEMENTED` ≠ `PROHIBITED_FOREVER`.
 
@@ -271,6 +319,10 @@ Dynamic commerce must remain outside dynamic Next.js execution unless superseded
 | ARCH-G12 | Deferred capabilities may not be introduced opportunistically. |
 | ARCH-G13 | PostgreSQL is the authoritative persistent store for platform business state. |
 | ARCH-G14 | Future possibility is not sufficient justification for present infrastructure (no speculative microservices, queues, workers, generic event buses, workflow engines, duplicate commercial snapshot hierarchies, or escape-hatch metadata stores). |
+| ARCH-G15 | Refund owns financial reversal truth for returned funds; it must not rewrite Payment original collection truth. |
+| ARCH-G16 | Once a statutory Financial Document is issued, its sealed commercial, tax, issuer, recipient, numbering, and authority-linkage facts are immutable historical document truth and must not be reconstructed from mutable current catalog, customer profile, tax configuration, legal-entity configuration, Payment state, Refund state, or Order state. |
+| ARCH-G17 | RefundStatutoryDecision owns durable statutory-reversal classification for a PROCESSED Refund; it must not rewrite Refund money/provider truth (ARCH-G15 / D-364) and must not mutate issued Financial Documents (ARCH-G16 / D-365). |
+| ARCH-G18 | SignatureArtifact owns durable signature state and exact-byte signed statutory artifact authority for Financial Documents requiring BOBA signing (D-367); it must not rewrite Financial Document sealed issuance facts (ARCH-G16 / D-365), RefundStatutoryDecision branch authority (ARCH-G17 / D-366), or Payment/Order commercial truth; `FinancialDocument.status=ISSUED` does not imply signed artifact readiness — **STATUTORY_ARTIFACT_READY** iff `SignatureArtifact.status=SIGNED`. |
 
 ## 15. Decision References
 
@@ -283,9 +335,13 @@ Dynamic commerce must remain outside dynamic Next.js execution unless superseded
 | V1 production payment provider / collection surface | [D-361](./decision-register.md) (Razorpay / Razorpay Standard Checkout); capability lock [`capabilities/IMP-026-razorpay-productionization.md`](./capabilities/IMP-026-razorpay-productionization.md) |
 | Razorpay webhook acknowledgement / post-payment Order recovery | [D-362](./decision-register.md) (amends D-361 ack/post-payment effect only; D-361 remains CURRENT for provider selection; acknowledgement timing further amended by D-363) |
 | Razorpay durable webhook inbox / asynchronous Payment processing | [D-363](./decision-register.md) (amends D-362 acknowledgement timing only; D-362 remains CURRENT for Order materialization outside provider-ack path, missing-Order recovery, secondary reconciliation, and no new deployable service) |
+| Refund Foundation | [D-364](./decision-register.md); capability lock [`capabilities/IMP-027-refund-foundation.md`](./capabilities/IMP-027-refund-foundation.md) (ARCHITECTURE_LOCKED; implementation COMPLETE_AND_ACCEPTED) |
+| Financial Document Authority | [D-365](./decision-register.md); capability lock [`capabilities/IMP-028-invoice-tax-receipt-credit-note.md`](./capabilities/IMP-028-invoice-tax-receipt-credit-note.md) (ARCHITECTURE_LOCKED; implementation AUTHORIZED / STARTED / IMPLEMENTATION_IN_PROGRESS) |
+| Refund Statutory Reversal Decision Authority | [D-366](./decision-register.md); capability lock [`capabilities/IMP-028-invoice-tax-receipt-credit-note.md`](./capabilities/IMP-028-invoice-tax-receipt-credit-note.md) (CURRENT binding; working-tree implementation documented in that artifact; formal IMP-028 not complete / not accepted) |
+| Statutory Financial Document Signing / Signed Artifact Authority | [D-367](./decision-register.md); capability lock [`capabilities/IMP-028-invoice-tax-receipt-credit-note.md`](./capabilities/IMP-028-invoice-tax-receipt-credit-note.md) (CURRENT binding; ATTENDED_ASYNC manual signed-PDF MVP documented in that artifact; formal IMP-028 not complete / not accepted) |
 | Order high-level lifecycle vs deferred kitchen detail | [D-357](./decision-register.md), amends ADR-010 reading |
 | Role inventory ownership | [D-358](./decision-register.md); current count in STATE |
-| Invoice architecture intent | ADR-007 (implementation = IMP-028 on ROADMAP) |
+| Invoice architecture intent | ADR-007 (implementation = IMP-028; authority locked by D-365 / D-366 / D-367) |
 | Persistence / outbox | ADR-013 |
 | Auth foundations | ADR-004; accepted implementation IMP-008–010 |
 | Modular monolith | ADR-003 (read with D-356 / D-359 transport amendment) |

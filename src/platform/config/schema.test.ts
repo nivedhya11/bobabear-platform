@@ -290,6 +290,60 @@ describe("loadConfig — BOBA_BEAR_RELEASE", () => {
   });
 });
 
+describe("loadConfig — BOBA_BEAR_PAYMENT_PROVIDER", () => {
+  it("defaults omitted selector to disabled without requiring Razorpay secrets", () => {
+    const config = loadConfig({
+      processKind: "web",
+      source: source(LOCAL_WEB_BASE),
+    });
+    expect(config.environment).toBe("local");
+  });
+
+  it("accepts disabled and razorpay selectors", () => {
+    for (const selector of ["disabled", "razorpay"] as const) {
+      const config = loadConfig({
+        processKind: "web",
+        source: source({
+          ...LOCAL_WEB_BASE,
+          BOBA_BEAR_PAYMENT_PROVIDER: selector,
+          ...(selector === "razorpay"
+            ? {
+                BOBA_BEAR_RAZORPAY_KEY_ID: "rzp_test_placeholder_key_id",
+                BOBA_BEAR_RAZORPAY_KEY_SECRET: "test_only_key_secret_value",
+                BOBA_BEAR_RAZORPAY_WEBHOOK_SECRET: "test_only_webhook_secret",
+              }
+            : {}),
+        }),
+      });
+      expect(config.environment).toBe("local");
+    }
+  });
+
+  it("rejects fake as a production selector", () => {
+    const issues = issuesOf(() =>
+      loadConfig({
+        processKind: "web",
+        source: source({ ...LOCAL_WEB_BASE, BOBA_BEAR_PAYMENT_PROVIDER: "fake" }),
+      }),
+    );
+    expect(issues.some((i) => i.key === "BOBA_BEAR_PAYMENT_PROVIDER")).toBe(true);
+  });
+
+  it("rejects whitespace in Razorpay secrets", () => {
+    const issues = issuesOf(() =>
+      loadConfig({
+        processKind: "web",
+        source: source({
+          ...LOCAL_WEB_BASE,
+          BOBA_BEAR_PAYMENT_PROVIDER: "razorpay",
+          BOBA_BEAR_RAZORPAY_KEY_ID: " rzp_test_spaced ",
+        }),
+      }),
+    );
+    expect(issues.some((i) => i.key === "BOBA_BEAR_RAZORPAY_KEY_ID")).toBe(true);
+  });
+});
+
 describe("loadConfig — BOBA_BEAR_ALLOW_UNSAFE_ADAPTERS", () => {
   it.each([
     ["local", true],

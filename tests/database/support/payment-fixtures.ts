@@ -198,6 +198,9 @@ export async function verifyAndProcessWebhook(
     [FAKE_PAYMENT_SIGNATURE_HEADER]: signature,
   });
   const evidence = await provider.verifyWebhook({ rawBody, headers });
+  if ("family" in evidence) {
+    throw new Error("Payment fixture received refund webhook evidence.");
+  }
   const { sealVerifiedProviderEvent } = await import(
     "../../../src/server/payment/verified-event"
   );

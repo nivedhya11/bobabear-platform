@@ -2,12 +2,19 @@ import { afterEach } from "vitest";
 import { cleanup } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 
+const hasDom =
+  typeof globalThis.window !== "undefined" &&
+  typeof globalThis.document !== "undefined";
+
 // `globals: false` (vitest.config.mts) means React Testing Library's
 // auto-cleanup — which detects a global `afterEach` — never registers.
 // Unmount every rendered tree after each test explicitly instead, so
 // component tests stay isolated regardless of run order.
+// Node-environment suites (e.g. Financial Document PDF artifact) skip DOM cleanup.
 afterEach(() => {
-  cleanup();
+  if (hasDom) {
+    cleanup();
+  }
 });
 
 /**
@@ -30,34 +37,35 @@ afterEach(() => {
  * vitest.config.mts) cannot reset them away between tests.
  */
 
-if (!window.matchMedia) {
-  window.matchMedia = () => {
-    return {
-      matches: true, // prefers-reduced-motion: reduce → deterministic renders
-      media: "",
-      onchange: null,
-      addListener: () => {},
-      removeListener: () => {},
-      addEventListener: () => {},
-      removeEventListener: () => {},
-      dispatchEvent: () => false,
-    } as unknown as MediaQueryList;
-  };
-}
-
-if (!("IntersectionObserver" in window)) {
-  class NoopIntersectionObserver implements IntersectionObserver {
-    readonly root: Element | Document | null = null;
-    readonly rootMargin: string = "";
-    readonly thresholds: ReadonlyArray<number> = [];
-    observe() {}
-    unobserve() {}
-    disconnect() {}
-    takeRecords(): IntersectionObserverEntry[] {
-      return [];
-    }
+if (hasDom) {
+  if (!window.matchMedia) {
+    window.matchMedia = () => {
+      return {
+        matches: true, // prefers-reduced-motion: reduce → deterministic renders
+        media: "",
+        onchange: null,
+        addListener: () => {},
+        removeListener: () => {},
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        dispatchEvent: () => false,
+      } as unknown as MediaQueryList;
+    };
   }
-  // @ts-expect-error - jsdom has no IntersectionObserver implementation
-  window.IntersectionObserver = NoopIntersectionObserver;
-}
 
+  if (!("IntersectionObserver" in window)) {
+    class NoopIntersectionObserver implements IntersectionObserver {
+      readonly root: Element | Document | null = null;
+      readonly rootMargin: string = "";
+      readonly thresholds: ReadonlyArray<number> = [];
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+      takeRecords(): IntersectionObserverEntry[] {
+        return [];
+      }
+    }
+    // @ts-expect-error - jsdom has no IntersectionObserver implementation
+    window.IntersectionObserver = NoopIntersectionObserver;
+  }
+}

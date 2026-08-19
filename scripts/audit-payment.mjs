@@ -146,10 +146,11 @@ function main() {
     integrity.migrations.length !== 16 &&
     integrity.migrations.length !== 17 &&
     integrity.migrations.length !== 18 &&
-    integrity.migrations.length !== 18
+    integrity.migrations.length !== 19 &&
+    integrity.migrations.length !== 20
   ) {
     findings.push(
-      `Expected 16, 17, or 18 sealed migrations, found ${integrity.migrations.length}`,
+      `Expected 16, 17, 18, 19, or 20 sealed migrations, found ${integrity.migrations.length}`,
     );
   }
   if (
@@ -201,10 +202,17 @@ function main() {
   const keysMatch = catalog.match(/export const PERMISSION_KEYS = \[([\s\S]*?)\] as const/);
   if (keysMatch) {
     const count = [...keysMatch[1].matchAll(/"/g)].length / 2;
-    if (count !== 51 && count !== 55) findings.push(`PERMISSION_KEYS must be 51 or 55, found ${count}`);
+    if (count !== 51 && count !== 55 && count !== 57) {
+      findings.push(`PERMISSION_KEYS must be 51, 55, or 57, found ${count}`);
+    }
   }
-  if (/payment\./i.test(catalog)) {
-    findings.push("No workforce payment.* permissions may be added");
+  const paymentPerms = new Set(
+    [...catalog.matchAll(/"(payment\.[^"]+)"/g)].map((match) => match[1]),
+  );
+  for (const key of paymentPerms) {
+    if (key !== "payment.refund" && key !== "payment.refund.read") {
+      findings.push(`Unexpected workforce payment.* permission: ${key}`);
+    }
   }
 
   const files = trackedFiles();
@@ -238,8 +246,25 @@ function main() {
   if (drizzleFiles.some((f) => f.startsWith("0017_") && f !== "0017_order.sql")) {
     findings.push("Unexpected 0017 migration; expected 0017_order.sql only");
   }
-  if (drizzleFiles.length !== 17 && drizzleFiles.length !== 18) {
-    findings.push(`Expected 17 or 18 drizzle SQL migrations, found ${drizzleFiles.length}`);
+  if (
+    drizzleFiles.length !== 17 &&
+    drizzleFiles.length !== 18 &&
+    drizzleFiles.length !== 19 &&
+    drizzleFiles.length !== 20
+  ) {
+    findings.push(`Expected 17, 18, 19, or 20 drizzle SQL migrations, found ${drizzleFiles.length}`);
+  }
+  const mig0018 = trackedFiles().filter((f) => /^drizzle\/0018_/.test(f));
+  if (
+    mig0018.some((f) => f !== "drizzle/0018_payment_provider_event_inbox.sql")
+  ) {
+    findings.push(
+      "Unexpected 0018 migration; expected drizzle/0018_payment_provider_event_inbox.sql only",
+    );
+  }
+  const mig0019 = trackedFiles().filter((f) => /^drizzle\/0019_/.test(f));
+  if (mig0019.some((f) => f !== "drizzle/0019_refund.sql")) {
+    findings.push("Unexpected 0019 migration; expected drizzle/0019_refund.sql only");
   }
 
   const sharedConstants = read("src/shared/payment/constants.ts");

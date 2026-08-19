@@ -460,7 +460,10 @@ function checkMigrationSurface(files) {
         rel !== "drizzle/0007_existing_menu_import.sql") ||
       (/^drizzle\/0017_.*\.sql$/.test(rel) &&
         rel !== "drizzle/0017_order.sql") ||
-      /^drizzle\/0018_.*\.sql$/.test(rel),
+      (/^drizzle\/0018_.*\.sql$/.test(rel) &&
+        rel !== "drizzle/0018_payment_provider_event_inbox.sql") ||
+      (/^drizzle\/0019_.*\.sql$/.test(rel) && rel !== "drizzle/0019_refund.sql") ||
+      /^drizzle\/0020_.*\.sql$/.test(rel),
   );
   if (later.length > 0) {
     findings.push(

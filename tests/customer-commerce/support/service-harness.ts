@@ -101,6 +101,7 @@ export async function mintCustomerSessionCookieHeader(
 
 export type WithCustomerCommerceHttpServiceOptions = Readonly<{
   paymentProvider?: PaymentProvider;
+  enablePaymentInboxProcessor?: boolean;
 }>;
 
 export async function withCustomerCommerceHttpService<T>(
@@ -121,6 +122,7 @@ export async function withCustomerCommerceHttpService<T>(
     port: 0,
     shutdownTimeoutMs: 2_000,
     paymentProvider: options.paymentProvider,
+    enablePaymentInboxProcessor: options.enablePaymentInboxProcessor,
   });
 
   await service.start();

@@ -111,6 +111,28 @@ export async function getPaymentState(
   return { ok: true, status: result.status, data: { state: result.data.state } };
 }
 
+export async function submitPaymentClientEvidence(input: {
+  paymentId: string;
+  kind: string;
+  payload: Readonly<Record<string, string>>;
+}): Promise<CommerceHttpResult<{ state: CommercePaymentState }>> {
+  const result = await commerceRequest<StateEnvelope>(
+    `/api/v1/payments/${input.paymentId}/client-evidence`,
+    {
+      method: "POST",
+      body: {
+        kind: input.kind,
+        payload: input.payload,
+      },
+    },
+  );
+  if (!result.ok) return result;
+  if (!result.data.state) {
+    return { ok: false, code: "INVALID_RESPONSE", status: result.status };
+  }
+  return { ok: true, status: result.status, data: { state: result.data.state } };
+}
+
 export async function completeZeroPayableCheckout(input: {
   checkoutId: string;
   expectedCheckoutRevision: string;

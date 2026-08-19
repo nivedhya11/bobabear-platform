@@ -110,8 +110,8 @@ function main() {
     findings.push(`${IMP018} must be sealed and match integrity`);
   }
   if (integrity.migrations.length !== 15 && integrity.migrations.length !== 16 && integrity.migrations.length !== 17 &&
-    integrity.migrations.length !== 18 && integrity.migrations.length !== 18) {
-    findings.push(`Expected 15, 16, 17, or 18 sealed migrations, found ${integrity.migrations.length}`);
+    integrity.migrations.length !== 18 && integrity.migrations.length !== 19 && integrity.migrations.length !== 20) {
+    findings.push(`Expected 15–20 sealed migrations, found ${integrity.migrations.length}`);
   }
   if (
     integrity.migrations.length === 16 &&
@@ -189,7 +189,7 @@ function main() {
   const keysMatch = catalog.match(/export const PERMISSION_KEYS = \[([\s\S]*?)\] as const/);
   if (keysMatch) {
     const count = [...keysMatch[1].matchAll(/"/g)].length / 2;
-    if (count !== 51 && count !== 55) findings.push(`PERMISSION_KEYS must be 51 or 55 (IMP-018 added no address perms), found ${count}`);
+    if (count !== 51 && count !== 55 && count !== 57) findings.push(`PERMISSION_KEYS must be 51, 55, or 57 (IMP-018 added no address perms), found ${count}`);
   }
   if (/customer_addresses\.|customers\.(read|manage)|addresses\.(read|manage)/i.test(catalog)) {
     findings.push("No new customer/address workforce permissions");
@@ -261,8 +261,14 @@ function main() {
   if (!drizzleFiles.includes("0013_serviceability.sql")) {
     findings.push("Expected drizzle/0013_serviceability.sql");
   }
-  if (drizzleFiles.length !== 16 && drizzleFiles.length !== 17 && drizzleFiles.length !== 18) {
-    findings.push(`Expected 16, 17, or 18 drizzle SQL migrations, found ${drizzleFiles.length}`);
+  if (
+    drizzleFiles.length !== 16 &&
+    drizzleFiles.length !== 17 &&
+    drizzleFiles.length !== 18 &&
+    drizzleFiles.length !== 19 &&
+    drizzleFiles.length !== 20
+  ) {
+    findings.push(`Expected 16–20 drizzle SQL migrations, found ${drizzleFiles.length}`);
   }
 
   if (findings.length) {

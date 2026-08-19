@@ -262,7 +262,7 @@ async function main(): Promise<void> {
       CUSTOMER_COMMERCE_SERVICE_HOST: HOST,
       CUSTOMER_COMMERCE_SERVICE_PORT: String(INNER_COMMERCE_PORT),
       CUSTOMER_COMMERCE_TRUST_PROXY_HOPS: "0",
-      CUSTOMER_COMMERCE_FAKE_PAYMENT_OUTCOME: "succeed",
+      CUSTOMER_COMMERCE_FAKE_PAYMENT_OUTCOME: "razorpay_standard_checkout",
     });
     customerCommerceProcess.once("exit", (code, signal) => {
       process.stderr.write(

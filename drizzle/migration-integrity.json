@@ -91,6 +91,66 @@
       "tag": "0017_order",
       "path": "drizzle/0017_order.sql",
       "sha256": "2177d283a4b3db57068baabf1b0c5a5323569cfec3f150074ee8deb803dfef6c"
+    },
+    {
+      "tag": "0018_payment_provider_event_inbox",
+      "path": "drizzle/0018_payment_provider_event_inbox.sql",
+      "sha256": "ab224b3068900f22625f180e8f901c3a452356cca8b11920770af5892359f22f"
+    },
+    {
+      "tag": "0019_refund",
+      "path": "drizzle/0019_refund.sql",
+      "sha256": "1a022bf01dfe58116fdfbc9a167b4a3393ec642fd09fd69988016c6f4032bed6"
+    },
+    {
+      "tag": "0020_financial_document",
+      "path": "drizzle/0020_financial_document.sql",
+      "sha256": "ed939273f676b1c68c3b83c19f36b7c560ce63115faa43d94a75f33b7a5082cb"
+    },
+    {
+      "tag": "0021_financial_document_foundation_integrity",
+      "path": "drizzle/0021_financial_document_foundation_integrity.sql",
+      "sha256": "2d81751c33df9c4472358a5b1419430a82e59b695739baeb257ca2c0b10a2d09"
+    },
+    {
+      "tag": "0022_financial_document_non_signature_compliance",
+      "path": "drizzle/0022_financial_document_non_signature_compliance.sql",
+      "sha256": "512c43c7ace8a33b40ed819ef806c20933b3d9ed20db4f4f6ca8344314c754c3"
+    },
+    {
+      "tag": "0023_financial_document_signature_foundation",
+      "path": "drizzle/0023_financial_document_signature_foundation.sql",
+      "sha256": "da19016f8552686786ba36cb4a0624d07e663e51cccedf10df6290025eea7c3a"
+    },
+    {
+      "tag": "0024_financial_document_signature_hash_integrity",
+      "path": "drizzle/0024_financial_document_signature_hash_integrity.sql",
+      "sha256": "9c5776e874859fa092293e6986c522e2f32ef8a11100868ac28f600129367b89"
+    },
+    {
+      "tag": "0025_financial_document_signed_artifact_storage",
+      "path": "drizzle/0025_financial_document_signed_artifact_storage.sql",
+      "sha256": "bf7d1d37abb4bdc8afc44a2a065c2373ca813be83571ffcde815cc80018b6288"
+    },
+    {
+      "tag": "0026_financial_document_operator_attestation",
+      "path": "drizzle/0026_financial_document_operator_attestation.sql",
+      "sha256": "f024c3a12acfc80846fc63429b26882a9261c9eb476601c6e6fdd4bcb8313df4"
+    },
+    {
+      "tag": "0027_refund_statutory_decision",
+      "path": "drizzle/0027_refund_statutory_decision.sql",
+      "sha256": "639e54b46e90b939d7cae75a2320eb37df998c00dc4b7f0cad2755c977a59888"
+    },
+    {
+      "tag": "0028_refund_statutory_decision_bounded_authority",
+      "path": "drizzle/0028_refund_statutory_decision_bounded_authority.sql",
+      "sha256": "8ce78cef34826678c0d2d7456dde5fca9035528c89f8a0e507be4ddf9512964c"
+    },
+    {
+      "tag": "0029_refund_statutory_issuance_allocation",
+      "path": "drizzle/0029_refund_statutory_issuance_allocation.sql",
+      "sha256": "b528a71a0555ef863f819cb6dcfb6e15a3b136b6d972ae13d0e7a9a7f83ccf14"
     }
   ]
 }

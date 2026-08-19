@@ -20,7 +20,9 @@ import type {
   CustomerTemporaryIdentityDeriver,
 } from "../customer-auth/pii";
 import type { CustomerOtpProvider } from "../customer-auth/provider/types";
+import { PaymentInboxProcessor } from "../payment/inbox";
 import type { PaymentProvider } from "../payment/provider";
+import { RefundReconciliationProcessor } from "../refund/reconciliation";
 import { createCustomerCommerceRequestListener, type CustomerCommerceRequestEvent } from "./http/app";
 import { createSessionOnlyOtpProvider } from "./session-otp-stub";
 
@@ -35,6 +37,8 @@ export type CustomerCommerceServiceOptions = Readonly<{
   shutdownTimeoutMs?: number;
   /** Optional Payment provider (tests). Production omits → disabled provider. */
   paymentProvider?: PaymentProvider;
+  /** Start Razorpay inbox processor only when explicitly enabled. */
+  enablePaymentInboxProcessor?: boolean;
 }>;
 
 const SAFE_LOG_FIELDS = [
@@ -60,6 +64,8 @@ export class CustomerCommerceService {
   private readonly runtime: CustomerAuthRuntime;
   private readonly otpProvider: CustomerOtpProvider;
   private readonly server: Server;
+  private readonly inboxProcessor: PaymentInboxProcessor | null;
+  private readonly refundReconciler: RefundReconciliationProcessor | null;
 
   private started = false;
   private closed = false;
@@ -104,6 +110,20 @@ export class CustomerCommerceService {
     );
 
     this.server = createServer(requestListener);
+
+    const enableInbox =
+      config.enablePaymentInboxProcessor === true &&
+      config.paymentProvider?.name === "razorpay";
+    this.inboxProcessor = enableInbox
+      ? new PaymentInboxProcessor({ persistence: this.persistence })
+      : null;
+    this.refundReconciler =
+      enableInbox && config.paymentProvider
+        ? new RefundReconciliationProcessor({
+            persistence: this.persistence,
+            provider: config.paymentProvider,
+          })
+        : null;
   }
 
   async start(): Promise<void> {
@@ -113,6 +133,8 @@ export class CustomerCommerceService {
       this.server.once("error", reject);
       this.server.listen(this.config.port, this.config.host, () => resolve());
     });
+    this.inboxProcessor?.start();
+    this.refundReconciler?.start();
   }
 
   get boundPort(): number | null {
@@ -134,6 +156,8 @@ export class CustomerCommerceService {
   async close(): Promise<void> {
     if (this.closed) return;
     this.closed = true;
+    await this.inboxProcessor?.stop();
+    await this.refundReconciler?.stop();
 
     const serverClosed = new Promise<void>((resolve) => {
       this.server.close(() => resolve());

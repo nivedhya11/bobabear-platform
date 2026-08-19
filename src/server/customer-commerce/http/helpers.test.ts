@@ -1,14 +1,19 @@
 /**
- * Unit tests for customer-commerce HTTP helpers (IMP-024).
+ * Unit tests for customer-commerce HTTP helpers (IMP-024 / IMP-028 Slice 6).
  */
 import { describe, expect, it } from "vitest";
 
 import { CartError } from "../../../shared/cart";
+import { FinancialDocumentError } from "../../../shared/financial-document";
 import { PaymentError } from "../../../shared/payment";
 import { mapCommerceError } from "./error-map";
 import { coerceRevisionFields } from "./revisions";
 import { extractGuestCartToken } from "./guest-token";
-import { sendJson } from "./response";
+import {
+  buildAttachmentContentDisposition,
+  sendJson,
+  sendPdf,
+} from "./response";
 
 describe("IMP-024 error-map", () => {
   it("maps CUSTOMER_AUTH_REQUIRED to 401 with envelope fields only", () => {
@@ -51,6 +56,46 @@ describe("IMP-024 error-map", () => {
       status: 500,
       body: { ok: false, code: "INTERNAL_ERROR", requestId: "req-4" },
     });
+  });
+
+  it("maps Financial Document DOCUMENT_NOT_FOUND to 404 without message", () => {
+    const mapped = mapCommerceError(
+      new FinancialDocumentError("DOCUMENT_NOT_FOUND", "secret prior id abc"),
+      "req-fd-1",
+    );
+    expect(mapped.status).toBe(404);
+    expect(mapped.body).toEqual({
+      ok: false,
+      code: "DOCUMENT_NOT_FOUND",
+      requestId: "req-fd-1",
+    });
+    expect(JSON.stringify(mapped.body)).not.toContain("secret prior id");
+  });
+
+  it("maps Financial Document AUTHORITY_INCONSISTENT to 500 without message", () => {
+    const mapped = mapCommerceError(
+      new FinancialDocumentError(
+        "AUTHORITY_INCONSISTENT",
+        "prior 00000000-0000-4000-8000-000000000001 leaked",
+      ),
+      "req-fd-2",
+    );
+    expect(mapped.status).toBe(500);
+    expect(mapped.body).toEqual({
+      ok: false,
+      code: "AUTHORITY_INCONSISTENT",
+      requestId: "req-fd-2",
+    });
+    expect(JSON.stringify(mapped.body)).not.toContain("00000000-0000-4000-8000");
+  });
+
+  it("maps Financial Document INVALID_ACCESS_INPUT to 400", () => {
+    const mapped = mapCommerceError(
+      new FinancialDocumentError("INVALID_ACCESS_INPUT", "bad uuid"),
+      "req-fd-3",
+    );
+    expect(mapped.status).toBe(400);
+    expect(mapped.body.code).toBe("INVALID_ACCESS_INPUT");
   });
 });
 
@@ -106,5 +151,68 @@ describe("IMP-024 JSON bigint serialization", () => {
     expect(typeof body.cart.revision).toBe("string");
     expect(headers.get("x-request-id")).toBe("r1");
     expect(headers.get("cache-control")).toBe("no-store");
+  });
+});
+
+describe("IMP-028 Content-Disposition safety", () => {
+  it("builds attachment header from safe Slice-4 filename", () => {
+    expect(
+      buildAttachmentContentDisposition("BOBA-Tax-Invoice-BB-TI-2526-000001.pdf"),
+    ).toBe('attachment; filename="BOBA-Tax-Invoice-BB-TI-2526-000001.pdf"');
+  });
+
+  it("rejects header injection via quotes / CR / LF / control chars", () => {
+    const malicious = [
+      'evil.pdf"\r\nX-Injected: yes',
+      "evil.pdf\r\nX-Injected: yes",
+      "evil.pdf\nX-Injected: yes",
+      'a"b.pdf',
+      "evil.pdf\0.pdf",
+      "../../../etc/passwd.pdf",
+      "BOBA Tax Invoice.pdf",
+      "",
+    ];
+    for (const filename of malicious) {
+      expect(() => buildAttachmentContentDisposition(filename)).toThrow(
+        "UNSAFE_CONTENT_DISPOSITION_FILENAME",
+      );
+    }
+  });
+
+  it("sendPdf sets private no-store PDF headers and safe disposition", () => {
+    const chunks: Buffer[] = [];
+    const headers = new Map<string, string>();
+    const res = {
+      writableEnded: false,
+      statusCode: 0,
+      setHeader(name: string, value: string) {
+        headers.set(name.toLowerCase(), value);
+      },
+      end(payload?: string | Buffer) {
+        if (payload) {
+          chunks.push(Buffer.isBuffer(payload) ? payload : Buffer.from(payload));
+        }
+        this.writableEnded = true;
+      },
+    };
+    const bytes = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d]);
+    sendPdf(
+      res as never,
+      {
+        bytes,
+        byteLength: bytes.byteLength,
+        suggestedFilename: "BOBA-Tax-Invoice-BB-TI-2526-000001.pdf",
+      },
+      { status: 200, requestId: "pdf-1" },
+    );
+    expect(res.statusCode).toBe(200);
+    expect(headers.get("content-type")).toBe("application/pdf");
+    expect(headers.get("content-length")).toBe("5");
+    expect(headers.get("content-disposition")).toBe(
+      'attachment; filename="BOBA-Tax-Invoice-BB-TI-2526-000001.pdf"',
+    );
+    expect(headers.get("cache-control")).toBe("no-store");
+    expect(headers.get("x-request-id")).toBe("pdf-1");
+    expect(Buffer.concat(chunks).equals(Buffer.from(bytes))).toBe(true);
   });
 });

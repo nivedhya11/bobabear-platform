@@ -4,7 +4,7 @@ Authority: Accepted foundation operating constraints (not roadmap/state)
 Canonical sequence: docs/platform/ROADMAP.md
 Canonical accepted state: docs/platform/STATE.md
 Canonical architecture: docs/platform/ARCHITECTURE.md
-Last updated: 2026-08-11
+Last updated: 2026-08-18
 ---
 
 # Accepted foundation operating constraints
@@ -953,3 +953,76 @@ remains unchanged. Public Order HTTP, Refunds, inventory, and notifications are 
   `test:order-security`, `test:order-auth-integration`, `test:order-concurrency`.
 - **Out of scope (IMP-024+):** Refunds; public Order HTTP/UI; inventory; kitchen workflow detail;
   notifications; new Docker service.
+
+## Razorpay productionization server foundation (IMP-026A / D-361–D-363)
+
+Server-only Razorpay adapter inside existing `customer-commerce`. No new deployable service.
+Fake provider is never a production fallback. Refund remains IMP-027. Browser Checkout.js is
+IMP-026B.
+
+- **Config:** `BOBA_BEAR_PAYMENT_PROVIDER=disabled|razorpay` plus server-only
+  `BOBA_BEAR_RAZORPAY_KEY_ID`, `BOBA_BEAR_RAZORPAY_KEY_SECRET`,
+  `BOBA_BEAR_RAZORPAY_WEBHOOK_SECRET`. Not `NEXT_PUBLIC_*`. Staging/production fail closed when
+  Razorpay is selected and any required secret is missing.
+- **Webhook:** `POST /api/integrations/payments/razorpay/webhook` — verify signature, durable
+  inbox insert, then 2xx. Payment transitions run asynchronously in-process.
+- **Inbox:** `app.payment_provider_event_inbox` (migration `drizzle/0018_payment_provider_event_inbox.sql`).
+- **Webhook age:** no hard five-minute rejection. `RAZORPAY_WEBHOOK_AGE_POLICY: GTM_PROVIDER_CONFIRMATION_REQUIRED`.
+- **Missing-Order recovery (D-362):** existing `recoverMissingOrdersBatch` only. Operator invocation:
+
+```text
+npm run order:recover-missing
+npm run order:recover-missing -- --cursor=<checkoutId>
+```
+
+Uses application-role `BOBA_BEAR_*` database config. Prints safe counts/identities (checkoutId,
+orderId, orderNumber). Repeated invocation is idempotent. Not scheduled automatically in IMP-026A.
+
+## Razorpay Standard Checkout browser integration (IMP-026B / D-361)
+
+Isolated browser adapter under `src/lib/razorpay/`. Generic Payment UX remains provider-neutral.
+Checkout.js is loaded from the official Razorpay CDN only (not vendored, not an npm SDK).
+`retry.enabled = false`. Client evidence is `POST /api/v1/payments/{paymentId}/client-evidence`.
+Browser handler success is not Payment success. Refund remains IMP-027.
+`RAZORPAY_WEBHOOK_AGE_POLICY: GTM_PROVIDER_CONFIRMATION_REQUIRED` — no hard five-minute rejection.
+Fake `razorpay_standard_checkout` E2E outcome exists only on `e2e-fake-main` and cannot activate in
+production composition.
+
+## Financial Document / refund statutory / signing operating constraints (IMP-028 / D-365–D-367)
+
+SUPPORTING operating facts for the locked IMP-028 capability. Binding architecture remains
+[`capabilities/IMP-028-invoice-tax-receipt-credit-note.md`](./capabilities/IMP-028-invoice-tax-receipt-credit-note.md)
+and **D-365** / **D-366** / **D-367**. Formal `acceptedThrough` is IMP-027. Formal
+`IMP-028_IMPLEMENTATION_COMPLETE` remains **NO**. Do not treat this section as acceptance.
+
+- **MVP posture:** compliance-correct, operationally manual, automation-ready. Operators may
+  classify refunds and sign PDFs at low volume; statutory immutability, numbering, and auditability
+  are not weakened.
+- **Current implemented issuance policy variant:** `uninvoiced_advance`. Payment `SUCCEEDED` →
+  `RECEIPT_VOUCHER` after the Payment commit; Order `FULFILLED` → `TAX_INVOICE` after the Order
+  commit. Statutory/signing failure never rolls back Payment/Order/Refund commercial truth.
+- **Money:** integer paise and integer basis points only. Nested `Persistence.transaction()` remains
+  unsupported. D-366 RFV/CN issuance composes D-365 via
+  `issueFinancialDocument(..., { transactionContext })` in one PostgreSQL transaction.
+- **Recovery (not scheduled):**
+
+```text
+npm run financial-document:recover-missing-receipt-vouchers
+npm run financial-document:recover-missing-tax-invoices
+npm run fd:signing -- pending
+npm run fd:signing -- export --financial-document-id <id> --out <path>
+npm run fd:signing -- upload --financial-document-id <id> --file <path> \
+  --signer-profile-id <id> --signed-at <ISO> --signature-profile <value> \
+  --attest-signed-artifact
+```
+
+- **Manual signing MVP:** BOBA does not cryptographically sign. Authorised humans sign externally.
+  PostgreSQL BYTEA stores exact signed bytes. SHA-256 integrity and PDF-container checks are not
+  cryptographic signature verification. Production signing provider is intentionally not configured.
+- **Deployment gates (not code defects):** production `AuthorisedSignerProfile`, issuer profile, and
+  statutory numbering must be supplied as explicit deployment inputs. Do not fabricate values to
+  make acceptance green.
+- **Customer access:** exact ownership proof; unknown/unauthorized converge to `DOCUMENT_NOT_FOUND`
+  (non-oracle). Required-document PDF is unavailable until `SignatureArtifact.status=SIGNED`.
+- **Out of scope here:** IMP-029; unattended DSC/eSign/HSM; ESP integration; automatic RFV/CN/NSD
+  classification; proportional partial allocator; scheduler/queue/worker for these flows.

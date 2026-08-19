@@ -64,6 +64,10 @@ export default defineConfig({
       "tests/promotion-pricing-parity/**/*.test.ts",
       // IMP-025A: static ordering-catalog identity parity (no database).
       "tests/ordering-catalog/**/*.test.ts",
+      // IMP-027: Refund architecture boundary audits (no database).
+      "tests/refund-architecture/**/*.test.ts",
+      // IMP-027: Razorpay Refund adapter uses mocked HTTP (no database).
+      "tests/payment-razorpay/refund.adapter.test.ts",
     ],
     exclude: [
       "**/node_modules/**",

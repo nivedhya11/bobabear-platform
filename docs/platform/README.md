@@ -1,6 +1,6 @@
 ---
 Status: Canonical index
-Last updated: 2026-08-13
+Last updated: 2026-08-18
 ---
 
 # BOBA Bear Platform Documentation
@@ -45,7 +45,10 @@ Machine check: `npm run project:consistency`.
 |---|---|---|
 | [`capabilities/IMP-024-customer-ordering-transport.md`](./capabilities/IMP-024-customer-ordering-transport.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-024 transport; implementation COMPLETE_AND_ACCEPTED |
 | [`capabilities/IMP-025-customer-ordering-ux.md`](./capabilities/IMP-025-customer-ordering-ux.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-025 Customer Ordering UX; COMPLETE_AND_ACCEPTED |
-| [`capabilities/IMP-026-razorpay-productionization.md`](./capabilities/IMP-026-razorpay-productionization.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-026 Razorpay productionization & Payment GTM readiness (D-361 provider / D-362 missing-Order recovery / D-363 durable webhook inbox); implementation NOT_STARTED |
+| [`capabilities/IMP-026-razorpay-productionization.md`](./capabilities/IMP-026-razorpay-productionization.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-026 Razorpay productionization & Payment GTM readiness (D-361 provider / D-362 missing-Order recovery / D-363 durable webhook inbox); COMPLETE_AND_ACCEPTED |
+| [`capabilities/IMP-026C-pilot-customer-commerce-ux-hardening.md`](./capabilities/IMP-026C-pilot-customer-commerce-ux-hardening.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-026C pilot UX hardening; IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE (`IMP-026C_ACCEPTED: NO`) |
+| [`capabilities/IMP-027-refund-foundation.md`](./capabilities/IMP-027-refund-foundation.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-027 Refund Foundation (D-364); COMPLETE_AND_ACCEPTED |
+| [`capabilities/IMP-028-invoice-tax-receipt-credit-note.md`](./capabilities/IMP-028-invoice-tax-receipt-credit-note.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-028 Invoice / Tax Receipt / Credit Note (D-365 Financial Document; D-366 RefundStatutoryDecision; D-367 statutory signing); ARCHITECTURE_LOCKED; implementation AUTHORIZED / STARTED / IMPLEMENTATION_IN_PROGRESS; working-tree `IMP-028_IMPLEMENTATION_COMPLETE: YES`; `IMP-028_ACCEPTED: NO` |
 
 ## Supporting documents
 
@@ -80,8 +83,7 @@ supersession are owned by [`decision-register.md`](./decision-register.md). Nota
 - ADR-009 Cashfree V1 provider / Hosted Checkout selection → **SUPERSEDED for current provider
   authority** by D-361 (Razorpay / Razorpay Standard Checkout); webhook acknowledgement /
   post-payment Order recovery refined by D-362; webhook acknowledgement timing / durable inbox
-  refined by D-363; provider-neutral Payment remainder remains; IMP-026 architecture locked /
-  implementation not started
+  refined by D-363; provider-neutral Payment remainder remains; IMP-026 COMPLETE_AND_ACCEPTED;
 
 ## Documentation update protocol
 

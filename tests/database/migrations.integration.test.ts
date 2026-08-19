@@ -41,7 +41,7 @@ describe("clean migration replay", () => {
         );
         expect(migrationTable.rows[0]?.exists).toBe(true);
 
-        const journalCount = 15; // drizzle/meta/_journal.json — kept in lockstep with the committed journal
+        const journalCount = 30; // drizzle/meta/_journal.json — kept in lockstep with the committed journal
         const historyRows = await client.pool.query<{ count: string }>(
           `SELECT COUNT(*) AS count FROM ${MIGRATIONS_SCHEMA}.${MIGRATIONS_TABLE}`,
         );
@@ -52,12 +52,8 @@ describe("clean migration replay", () => {
         );
         expect(appSchemaComment.rows[0]?.comment).toBe("BOBA Bear application schema");
 
-        // IMP-007 technical tables, IMP-008–010 auth tables, IMP-011
-        // organization / access-control tables, IMP-012 catalog tables,
-        // IMP-013 menu presentation tables, IMP-014 assortment /
-        // operational availability tables, IMP-015 pricing / charges / tax,
-        // IMP-016 promotions / coupons, IMP-017 customer profiles,
-        // IMP-018 customer addresses, IMP-019 serviceability, and IMP-020 cart.
+        // IMP-007 technical tables through IMP-028 Financial Document foundation
+        // (working-tree migrations 0018–0021 included; accepted inventory remains 0017).
         const tables = await client.pool.query<{ table_name: string }>(
           "SELECT table_name FROM information_schema.tables WHERE table_schema IN ('app', 'public') ORDER BY table_name",
         );
@@ -71,6 +67,7 @@ describe("clean migration replay", () => {
           "access_roles",
           "assortment_availability_audit_events",
           "assortment_rules",
+          "authorised_signer_profiles",
           "brand_promotion_policies",
           "brands",
           "cart_line_bundle_modifier_selections",
@@ -90,6 +87,16 @@ describe("clean migration replay", () => {
           "catalog_variant_modifier_groups",
           "catalog_variants",
           "charge_definitions",
+          "checkout_delivery_destinations",
+          "checkout_snapshot_charges",
+          "checkout_snapshot_line_bundle_modifier_selections",
+          "checkout_snapshot_line_bundle_selections",
+          "checkout_snapshot_line_modifier_selections",
+          "checkout_snapshot_lines",
+          "checkout_snapshot_promotion_effects",
+          "checkout_snapshot_tax_components",
+          "checkout_snapshots",
+          "checkouts",
           "customer_address_audit_events",
           "customer_addresses",
           "customer_auth_accounts",
@@ -99,12 +106,19 @@ describe("clean migration replay", () => {
           "customer_otp_rate_limits",
           "customer_profile_audit_events",
           "customer_profiles",
+          "financial_document_issuer_profiles",
+          "financial_document_line_tax_components",
+          "financial_document_lines",
+          "financial_document_numbering_series",
+          "financial_document_signed_artifact_objects",
+          "financial_documents",
           "idempotency_records",
           "legal_entities",
           "legal_entity_tax_profiles",
           "menu_entries",
           "menu_sections",
           "menus",
+          "orders",
           "organizations",
           "outbox_events",
           "outlet_modifier_option_availability",
@@ -116,6 +130,12 @@ describe("clean migration replay", () => {
           "outlet_tax_profiles",
           "outlet_variant_availability",
           "outlets",
+          "payment_attempts",
+          "payment_initiation_idempotency",
+          "payment_provider_event_inbox",
+          "payment_provider_observations",
+          "payment_provider_references",
+          "payments",
           "price_book_bundle_option_prices",
           "price_book_charge_prices",
           "price_book_modifier_prices",
@@ -125,8 +145,17 @@ describe("clean migration replay", () => {
           "promotion_audit_events",
           "promotion_benefits",
           "promotion_coupons",
+          "promotion_redemption_claims",
           "promotion_targets",
           "promotions",
+          "refund_provider_observations",
+          "refund_provider_references",
+          "refund_statutory_decisions",
+          "refund_statutory_issuance_allocation_lines",
+          "refund_statutory_issuance_allocation_tax_components",
+          "refund_statutory_issuance_allocations",
+          "refunds",
+          "signature_artifacts",
           "tax_categories",
           "tax_policies",
           "tax_policy_components",

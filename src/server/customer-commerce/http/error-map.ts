@@ -1,5 +1,5 @@
 /**
- * Domain error → HTTP status / commerce error envelope (IMP-024 / D-360).
+ * Domain error → HTTP status / commerce error envelope (IMP-024 / D-360 / IMP-028).
  *
  * Never invents business codes. Never emits message/stack/retryable.
  */
@@ -9,6 +9,7 @@ import { CartError } from "../../../shared/cart";
 import { CheckoutError } from "../../../shared/checkout";
 import { CustomerAddressError } from "../../../shared/customer-addresses";
 import { CustomerProfileError } from "../../../shared/customer-profiles";
+import { FinancialDocumentError } from "../../../shared/financial-document";
 import { OrderError } from "../../../shared/order";
 import { PaymentError } from "../../../shared/payment";
 
@@ -33,6 +34,7 @@ const STATUS_404 = new Set([
   "CHECKOUT_NOT_FOUND",
   "PAYMENT_NOT_FOUND",
   "ORDER_NOT_FOUND",
+  "DOCUMENT_NOT_FOUND",
   "CUSTOMER_ADDRESS_NOT_FOUND",
   "CUSTOMER_PROFILE_ACCESS_DENIED",
   "CUSTOMER_PROFILE_NOT_FOUND",
@@ -70,7 +72,15 @@ const STATUS_503 = new Set([
   "CHECKOUT_DEPENDENCY_INDETERMINATE",
 ]);
 
-const STATUS_500 = new Set(["CART_POLICY_INVALID", "PAYMENT_POLICY_INVALID", "INTERNAL_ERROR"]);
+const STATUS_500 = new Set([
+  "CART_POLICY_INVALID",
+  "PAYMENT_POLICY_INVALID",
+  "INTERNAL_ERROR",
+  "AUTHORITY_INCONSISTENT",
+  "ARTIFACT_GENERATION_FAILED",
+  "RENDERING_FAILED",
+  "RENDERING_AUTHORITY_GAP",
+]);
 
 function statusForCode(code: string): number {
   if (STATUS_401.has(code)) return 401;
@@ -110,6 +120,10 @@ function extractDomainError(error: unknown): {
   }
   if (error instanceof CustomerAddressError) {
     return { code: error.code, field: error.field };
+  }
+  if (error instanceof FinancialDocumentError) {
+    // Envelope carries code only — never message / prior ids / sealed PII.
+    return { code: error.code };
   }
   return null;
 }

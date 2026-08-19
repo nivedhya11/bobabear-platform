@@ -86,6 +86,11 @@ export default defineConfig({
       "tests/payment-provider/**/*.test.ts",
       "tests/payment-reconciliation/**/*.test.ts",
       "tests/payment-promotions/**/*.test.ts",
+      "tests/payment-razorpay/**/*.test.ts",
+      // IMP-027: Refund Foundation.
+      "tests/refund-application/**/*.test.ts",
+      "tests/refund-concurrency/**/*.test.ts",
+      "tests/refund-webhook/**/*.test.ts",
       // IMP-023: order domain / security / auth-integration / concurrency / crash.
       "tests/order/**/*.test.ts",
       "tests/order-security/**/*.test.ts",

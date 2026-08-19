@@ -132,7 +132,9 @@ function checkMigrations() {
       base !== "0014_cart.sql" &&
       base !== "0015_checkout.sql" &&
       base !== "0016_payment.sql" &&
-      base !== "0017_order.sql"
+      base !== "0017_order.sql" &&
+      base !== "0018_payment_provider_event_inbox.sql" &&
+      base !== "0019_refund.sql"
     );
   });
   if (extra.length > 0) {

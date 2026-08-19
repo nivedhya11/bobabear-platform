@@ -294,3 +294,24 @@ export type CommerceOrderDetail = CommerceOrderSummary &
     destination: CommerceOrderDestination;
     lines: readonly CommerceOrderLine[];
   }>;
+
+/**
+ * Wire projection for Slice-6 order Financial Document listing.
+ * Money remains a decimal string of integer paise (never Number).
+ */
+export type CommerceFinancialDocumentStatutoryType =
+  | "TAX_INVOICE"
+  | "BILL_OF_SUPPLY"
+  | "RECEIPT_VOUCHER"
+  | "REFUND_VOUCHER"
+  | "CREDIT_NOTE";
+
+export type CommerceFinancialDocumentListItem = Readonly<{
+  financialDocumentId: string;
+  documentType: CommerceFinancialDocumentStatutoryType | string;
+  statutoryDocumentNumber: string;
+  issueAt: string;
+  grandTotalPaise: string;
+  currency: "INR" | string;
+  orderId: string | null;
+}>;

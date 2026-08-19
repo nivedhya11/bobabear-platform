@@ -169,7 +169,7 @@ function main() {
   const keysMatch = catalog.match(/export const PERMISSION_KEYS = \[([\s\S]*?)\] as const/);
   if (keysMatch) {
     const count = [...keysMatch[1].matchAll(/"/g)].length / 2;
-    if (count !== 51 && count !== 55) findings.push(`PERMISSION_KEYS must be 51 or 55 (IMP-017 added no profile perms), found ${count}`);
+    if (count !== 51 && count !== 55 && count !== 57) findings.push(`PERMISSION_KEYS must be 51, 55, or 57 (IMP-017 added no profile perms), found ${count}`);
   }
   if (/customer_profiles\.|customers\.(read|manage)|customers\.pii/i.test(catalog)) {
     findings.push("No new customer/profile workforce permissions");

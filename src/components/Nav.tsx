@@ -34,6 +34,12 @@ const NAV_LINKS = [
   { label: "Order",   href: "/order",   id: "order",   num: "05" },
 ] as const;
 
+const COMMERCE_NAV_LINKS = [
+  { label: "Home", href: "/", id: "home" },
+  { label: "Menu", href: "/order", id: "menu" },
+  { label: "Orders", href: "/order/orders/", id: "orders" },
+] as const;
+
 const SECTION_IDS = [
   "top", "drops", "bar", "plates", "sweet", "merch", "artists", "access",
 ] as const;
@@ -93,11 +99,19 @@ export function Nav() {
   // then scrolls to the section; the brand mark goes straight to "/".
   const pathname = usePathname();
   const onHome = pathname === "/";
+  const onCommerceRoute = pathname.startsWith("/order");
   const sectionHref = (href: string) => {
     if (href.startsWith("/")) return href;
     return onHome ? href : `/${href}`;
   };
   const homeHref = onHome ? "#top" : "/";
+  const commerceActiveId = pathname === "/"
+    ? "home"
+    : pathname.startsWith("/order/orders")
+      ? "orders"
+      : pathname.startsWith("/order")
+        ? "menu"
+        : null;
 
   // ── Scrollspy ─────────────────────────────────────────────────────────────
 
@@ -238,26 +252,31 @@ export function Nav() {
             </a>
 
             {/* Centre links */}
-            <nav aria-label="Main navigation">
+            <nav aria-label={onCommerceRoute ? "Commerce navigation" : "Main navigation"}>
               <ul className="flex items-center gap-0.5" role="list">
-                {NAV_LINKS.map(({ label, href, id }) => (
-                  <li key={id}>
+                {(onCommerceRoute ? COMMERCE_NAV_LINKS : NAV_LINKS).map((link) => {
+                  const active = onCommerceRoute
+                    ? commerceActiveId === link.id
+                    : activeLinkId === link.id;
+                  return (
+                  <li key={link.id}>
                     <a
-                      href={sectionHref(href)}
-                      aria-current={activeLinkId === id ? "true" : undefined}
+                      href={onCommerceRoute ? link.href : sectionHref(link.href)}
+                      aria-current={active ? "page" : undefined}
                       className={cn(
                         "font-body font-semibold text-[14px] leading-none",
                         "px-3 py-1 rounded-md inline-block",
                         "transition-colors duration-[150ms] ease-out focus-ring",
-                        activeLinkId === id
+                        active
                           ? "text-[var(--text-label)]"
                           : "text-[var(--text-primary)] hover:bg-[var(--interactive-ghost-hover)]",
                       )}
                     >
-                      {label}
+                      {link.label}
                     </a>
                   </li>
-                ))}
+                  );
+                })}
               </ul>
             </nav>
 
@@ -407,32 +426,43 @@ export function Nav() {
 
         {/* Drawer link stack */}
         <nav
-          aria-label="Mobile navigation"
+          aria-label={onCommerceRoute ? "Mobile commerce navigation" : "Mobile navigation"}
           className="flex-1 overflow-y-auto px-6 pt-10"
         >
           <ul className="flex flex-col" role="list">
-            {NAV_LINKS.map(({ label, href, id, num }) => (
+            {(onCommerceRoute ? COMMERCE_NAV_LINKS : NAV_LINKS).map((link) => {
+              const id = link.id;
+              const href = link.href;
+              const label = link.label;
+              const num = "num" in link ? link.num : undefined;
+              const active = onCommerceRoute
+                ? commerceActiveId === id
+                : activeLinkId === id;
+              return (
               <li key={id}>
                 <a
-                  href={sectionHref(href)}
+                  href={onCommerceRoute ? href : sectionHref(href)}
                   onClick={closeDrawer}
-                  aria-current={activeLinkId === id ? "page" : undefined}
+                  aria-current={active ? "page" : undefined}
                   className={cn(
                     "flex items-baseline justify-between pb-3 mb-3",
                     "border-b border-[var(--border-subtle)]",
                     "transition-colors duration-[150ms] ease-out focus-ring rounded-sm",
-                    activeLinkId === id
+                    active
                       ? "text-[var(--text-label)]"
                       : "text-[var(--text-primary)] hover:text-[var(--text-label)]",
                   )}
                 >
                   <span className="font-display text-[30px] leading-tight">{label}</span>
-                  <span className="font-mono text-[11px] tracking-widest text-[var(--text-tertiary)] opacity-50 pb-1">
-                    {num}
-                  </span>
+                  {num ? (
+                    <span className="font-mono text-[11px] tracking-widest text-[var(--text-tertiary)] opacity-50 pb-1">
+                      {num}
+                    </span>
+                  ) : null}
                 </a>
               </li>
-            ))}
+              );
+            })}
           </ul>
         </nav>
 

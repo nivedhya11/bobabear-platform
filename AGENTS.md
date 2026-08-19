@@ -212,7 +212,30 @@ pre-governance accepted slices are historical gaps — they do not downgrade acc
   authority path for this governance baseline is `/mnt/c/repos/boba-bear-website` when that is the
   declared authority.
 - Coding-agent implementation prompts must remain below 50,000 characters; split slices if needed.
-- Only one product slice is normally active; never start a slice whose dependencies are unresolved.
+- Only one product slice is normally active; never start a slice whose dependencies are
+  unresolved, except the documented GTM-R15 founder exception in ROADMAP/STATE: IMP-026C
+  may proceed while IMP-026 remains `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`
+  with deferred public HTTPS webhook debt. GTM-R19/R20 extend that governed continuation for
+  IMP-027 architecture (`ARCHITECTURE_IN_PROGRESS` then `ARCHITECTURE_LOCKED`). GTM-R21 records
+  explicit founder authorization for IMP-027 implementation (`IMPLEMENTATION_IN_PROGRESS`) under
+  the locked capability artifact. GTM-R22 records IMP-027
+  `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` behind oldest pending acceptance IMP-026, while
+  IMP-026 / IMP-026C remain unaccepted. GTM-R23 records explicit founder authorization for
+  IMP-028 architecture activation (`ARCHITECTURE_IN_PROGRESS` only) while IMP-026 / IMP-026C /
+  IMP-027 remain unaccepted. GTM-R24 records IMP-028 architecture lock (`ARCHITECTURE_LOCKED`)
+  with implementation **NOT_AUTHORIZED**, binding **D-365**, while IMP-026 / IMP-026C / IMP-027
+  remain unaccepted. GTM-R25 records explicit founder authorization for IMP-028 implementation
+  (`IMP-028_IMPLEMENTATION_AUTHORIZED: YES`; `IMP-028_IMPLEMENTATION_STARTED: NO`) under that
+  locked artifact and **D-365** / ARCH-G16, while IMP-026 / IMP-026C / IMP-027 remain unaccepted.
+  GTM-R26 records IMP-028 implementation started (`IMP-028_IMPLEMENTATION_STARTED: YES`;
+  lifecycle `IMPLEMENTATION_IN_PROGRESS`) under that locked artifact and authorization, while
+  IMP-026 / IMP-026C / IMP-027 remain unaccepted.
+  `pendingAcceptance` identifies the oldest unresolved formal acceptance gate (currently
+  IMP-026); it does not mean a later authorized slice is still in progress. Formal acceptance
+  remains contiguous. The exception does not accept IMP-026, accept IMP-026C, accept IMP-027,
+  mark IMP-028 complete/accepted, activate
+  IMP-029, or apply
+  automatically to unrelated future slices.
 - Platform docs under `docs/platform/` are canonical for product/architecture; treat older wireframe
   folders as historical unless CURRENT authority says otherwise.
 
