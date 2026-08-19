@@ -52,6 +52,8 @@ export default defineConfig({
       "tests/pricing-tax/**/*.test.ts",
       // IMP-015: existing-menu pricing bootstrap tests.
       "tests/pricing-bootstrap/**/*.test.ts",
+      // IMP-028C Slice 4: canonical modifier content bootstrap tests.
+      "tests/catalog-imp028c-modifiers/**/*.test.{ts,tsx}",
       // IMP-017: customer profile domain / security / auth-integration tests.
       "tests/customer-profiles/**/*.test.ts",
       "tests/customer-profile-security/**/*.test.ts",
@@ -86,6 +88,11 @@ export default defineConfig({
       "tests/payment-provider/**/*.test.ts",
       "tests/payment-reconciliation/**/*.test.ts",
       "tests/payment-promotions/**/*.test.ts",
+      "tests/payment-razorpay/**/*.test.ts",
+      // IMP-027: Refund Foundation.
+      "tests/refund-application/**/*.test.ts",
+      "tests/refund-concurrency/**/*.test.ts",
+      "tests/refund-webhook/**/*.test.ts",
       // IMP-023: order domain / security / auth-integration / concurrency / crash.
       "tests/order/**/*.test.ts",
       "tests/order-security/**/*.test.ts",

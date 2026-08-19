@@ -9,12 +9,16 @@ import {
   FAKE_PAYMENT_WEBHOOK_SECRET,
   type FakePaymentOutcome,
   type FakePaymentProvider,
+  type FakeRefundOutcome,
 } from "./fake";
 import type {
   PaymentProvider,
   PaymentProviderCancelExecutionInput,
   PaymentProviderCreateExecutionInput,
+  PaymentProviderCreateRefundInput,
   PaymentProviderQueryExecutionInput,
+  PaymentProviderQueryRefundInput,
+  PaymentProviderVerifyClientEvidenceInput,
   PaymentProviderVerifyWebhookInput,
 } from "./types";
 
@@ -22,8 +26,12 @@ export type {
   PaymentProvider,
   PaymentProviderCancelExecutionInput,
   PaymentProviderCreateExecutionInput,
+  PaymentProviderCreateRefundInput,
   PaymentProviderQueryExecutionInput,
+  PaymentProviderQueryRefundInput,
+  PaymentProviderVerifyClientEvidenceInput,
   PaymentProviderVerifyWebhookInput,
+  PaymentProviderWebhookEvidence,
 } from "./types";
 
 export {
@@ -32,7 +40,14 @@ export {
   FAKE_PAYMENT_WEBHOOK_SECRET,
   type FakePaymentOutcome,
   type FakePaymentProvider,
+  type FakeRefundOutcome,
 };
+
+export {
+  createRazorpayPaymentProvider,
+  razorpayReceiptFromExecutionIdentity,
+  type RazorpayProviderConfig,
+} from "./razorpay";
 
 /**
  * Default provider when callers omit `options.provider`.
@@ -74,6 +89,33 @@ export const disabledPaymentProvider: PaymentProvider = Object.freeze({
     throw new PaymentError(
       "PAYMENT_PROVIDER_INDETERMINATE",
       "Payment provider is disabled; inject a test or configured provider.",
+    );
+  },
+
+  async verifyClientEvidence(
+    _input: PaymentProviderVerifyClientEvidenceInput,
+  ): Promise<never> {
+    throw new PaymentError(
+      "PAYMENT_PROVIDER_INDETERMINATE",
+      "Payment provider is disabled; inject a test or configured provider.",
+    );
+  },
+
+  async createRefund(
+    _input: PaymentProviderCreateRefundInput,
+  ): Promise<never> {
+    throw new PaymentError(
+      "PAYMENT_PROVIDER_INDETERMINATE",
+      "Refund provider is disabled; inject a test or configured provider.",
+    );
+  },
+
+  async queryRefund(
+    _input: PaymentProviderQueryRefundInput,
+  ): Promise<never> {
+    throw new PaymentError(
+      "PAYMENT_PROVIDER_INDETERMINATE",
+      "Refund provider is disabled; inject a test or configured provider.",
     );
   },
 });

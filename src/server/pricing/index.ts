@@ -41,10 +41,13 @@ export type {
 } from "./price-books";
 
 export {
+  resolveBrandVariantPrice,
   resolveBundleOptionPriceDelta,
+  resolveModifierDisplayPriceDeltas,
   resolveModifierPriceDelta,
   resolveOutletVariantPrice,
 } from "./resolve-price";
+export type { ModifierDisplayPriceKey } from "./resolve-price";
 
 export {
   allocateLargestRemainder,

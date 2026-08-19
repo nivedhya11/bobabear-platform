@@ -7,8 +7,8 @@
   "architectureLock": "ARCHITECTURE_LOCKED",
   "implementation": "COMPLETE_AND_ACCEPTED",
   "implementationAuthorized": true,
-  "lastReviewed": "2026-08-13",
-  "bindingDecisions": ["D-356", "D-357", "D-358", "D-359", "D-360"],
+  "lastReviewed": "2026-08-18",
+  "bindingDecisions": ["D-356", "D-357", "D-358", "D-359", "D-360", "D-368", "D-370"],
   "dependsOn": ["IMP-024"]
 }
 -->
@@ -37,6 +37,30 @@ Architecture remains locked. Implementation is independently accepted
 > only and does not change IMP-025 UX authority. **D-363** amends D-362 acknowledgement timing /
 > durable inbox only and does not change IMP-025 UX authority. Next free global decision ID after
 > D-363 is **D-364**.
+>
+> **Amendment (2026-08-18):** **[D-368](../decision-register.md)** establishes the long-term BOBA
+> Direct customer Menu serving TARGET as a server-backed customer-facing READ PROJECTION over
+> existing commerce authorities. D-368 supersedes **only** this capability’s future-facing exclusion
+> of a public Menu API and the lock of static `ordering-catalog.json` as long-term
+> storefront-delivery architecture. Accepted IMP-025 implementation remains valid CURRENT storefront
+> delivery (`src/data/ordering-catalog.json` is TRANSITIONAL CURRENT, not long-term customer Menu
+> authority) until an authorized future capability replaces it. D-368 does **not** invalidate
+> accepted IMP-025 parity evidence, catalog identity/import authority, catalog/menu schema, product
+> identity, pricing authority, Cart rules, Checkout Snapshot rules, or other accepted IMP-025
+> behavior unrelated to Menu read delivery. D-368 does **not** authorize implementation, create a
+> Menu endpoint, lock an HTTP payload, or activate IMP-029.
+>
+> **Amendment (2026-08-18):** **[D-370](../decision-register.md)** establishes binding Cart identity
+> transition policy: guest→customer compatible purchase-intent merge is required; silent whole-cart
+> winner selection is forbidden; sign-out must not delete the customer Cart but must end browser
+> authority over it. D-370 supersedes **only** this capability’s future-facing lock of guest→customer
+> claim/reconcile exclusively at Checkout and KEEP_GUEST / KEEP_CUSTOMER as a whole-cart silent
+> winner. Accepted IMP-025 / IMP-026C checkout claim/reconcile implementation remains CURRENT until
+> an authorized future capability implements D-370. Coupon-conflict KEEP_GUEST / KEEP_CUSTOMER as
+> coupon-resolution implementation, guest XOR customer ownership, configured-line identity, revision
+> concurrency, `sessionStorage` guest-token persistence for CURRENT delivery, Cart commercial
+> authority, and Checkout Snapshot authority are **not** invalidated. D-370 does **not** authorize
+> implementation, change authentication, change browser storage, or activate IMP-029.
 
 ---
 
@@ -150,7 +174,7 @@ Browse static ordering catalog
 - Multi-provider payment orchestration
 - International payments / EMI / BNPL / COD
 - PWA / service-worker / installability scope
-- Public DB-backed Menu API
+- Public DB-backed Menu API as CURRENT IMP-025 implementation (TARGET serving architecture is **D-368**; not implemented here)
 - Standalone Serviceability HTTP API
 - Speculative microservices / per-domain HTTP services
 - Next.js Route Handlers for commerce / `src/app/api` commerce implementation
@@ -186,10 +210,14 @@ Do not opportunistically include later capabilities because UI could theoretical
 | **D-358** | System-role inventory ownership (workforce; not customer UX authority) |
 | **D-359** | Commerce traffic through dedicated `customer-commerce` façade behind Nginx `/api/v1/*` |
 | **D-360** | `/api/v1/*` public contract, error envelope, Payment JSON `idempotencyKey` |
+| **D-368** | TARGET customer Menu serving architecture: server-backed READ PROJECTION; supersedes only this capability’s future-facing public-Menu-API exclusion / static-catalog long-term serving lock; accepted IMP-025 static catalog remains CURRENT delivery |
+| **D-370** | Cart identity transition: guest→customer compatible merge required; silent whole-cart winner forbidden; logout isolates browser from customer Cart; supersedes only this capability’s future-facing Checkout-only identity-transition lock; accepted checkout claim/reconcile implementation remains CURRENT until an authorized future capability implements D-370 |
 
-No new global `D-xxx` was required for this capability lock. Capability-local choices
+No new global `D-xxx` was required for the original IMP-025 capability lock. Capability-local choices
 (static ordering-catalog projection, `sessionStorage` guest-token persistence, CTA hierarchy)
-remain inside this document.
+remain inside this document for CURRENT accepted implementation. **D-368** later amends only the
+future-facing Menu serving/read-boundary. **D-370** later amends only the future-facing Checkout-only
+guest→customer identity-transition lock and whole-cart silent-winner policy.
 
 Next free global decision ID is **D-364**. **D-361** is CURRENT (Razorpay V1 provider / Standard
 Checkout) and does not change IMP-025 provider-neutral UX authority. **D-362** amends D-361 webhook
@@ -325,7 +353,7 @@ Runtime browser code must **not**:
 - invent UUIDs
 - match products by display name
 - derive identity from mutable labels
-- introduce a public Menu API
+- introduce a public Menu API as CURRENT IMP-025 implementation (TARGET serving architecture is **D-368**; not implemented by this capability)
 - query Postgres
 - duplicate independent catalog authority
 
@@ -339,7 +367,7 @@ Runtime browser code must **not**:
 | Generation responsibility | Build/tooling step (deterministic generator). **Not** manually maintained as an independent commerce-identity source. Generator is **not** implemented by this architecture lock. |
 | When generation occurs | Conceptually whenever the canonical import manifest / presentation inventory used for ordering changes; before shipping ordering UX that depends on those identities |
 | Drift / parity requirement | Generated artifact must deterministically correspond to import `brand.id` and each product `variant.id` for the same `source_key`. Detect missing/extra `source_key`s and ID mismatches in verification. Marketing `menu.json` remains presentation authority; commerce identity authority remains the import manifest. |
-| Public Menu API introduced | **NO** |
+| Public Menu API introduced | **NO** (CURRENT accepted implementation). TARGET serving architecture is **D-368** (server-backed READ PROJECTION); implementation not authorized by D-368. |
 
 `src/data/menu.json` continues to lack Cart commerce identifiers by design; IMP-025 must not treat it
 as Cart identity authority.

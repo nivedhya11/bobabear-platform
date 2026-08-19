@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 
 import { CUSTOMER_AUTH_PUBLIC_PATHS } from "../../src/shared/customer-auth/contracts";
 import { WORKFORCE_AUTH_PUBLIC_PATHS } from "../../src/shared/workforce-auth/contracts";
+import { stubAnonymousCustomerSession } from "./support/stub-customer-session";
 
 /**
  * Route inventory for the current static export (see `next build` output /
@@ -38,11 +39,20 @@ test.describe("public routes — HTML pages", () => {
       const pageErrors: Error[] = [];
       page.on("pageerror", (err) => pageErrors.push(err));
 
-      // The static export server has no auth APIs. Login clients probe their
-      // session façade on mount; stub only that one GET path per route so this
-      // suite can prove the static page loads. Real sign-in / MFA behaviour
-      // stays in dedicated auth E2E suites — do not mock those here.
+      // The static export server has no auth APIs. Login clients and global
+      // customer chrome probe session façades on mount; stub only those GET
+      // paths so this suite can prove the static page loads. Real sign-in /
+      // MFA behaviour stays in dedicated auth E2E suites — do not mock those
+      // here. /login may GET customer session twice (chrome + login client).
       const interceptedSessionPaths: string[] = [];
+      if (
+        route === "/" ||
+        route === "/dev" ||
+        route === "/dev/icons" ||
+        route === "/privacy"
+      ) {
+        await stubAnonymousCustomerSession(page);
+      }
       if (route === "/login") {
         await page.route(
           (url) => url.pathname === CUSTOMER_AUTH_PUBLIC_PATHS.session,
@@ -63,6 +73,8 @@ test.describe("public routes — HTML pages", () => {
         );
       }
       if (route === "/workforce/login") {
+        // Global customer chrome also probes IMP-009 session on this page.
+        await stubAnonymousCustomerSession(page);
         await page.route(
           (url) => url.pathname === WORKFORCE_AUTH_PUBLIC_PATHS.session,
           async (routeHandler) => {
@@ -161,9 +173,10 @@ test.describe("public routes — HTML pages", () => {
           page.getByRole("textbox", { name: "Mobile number", exact: true }),
         ).toBeVisible();
         expect(
-          interceptedSessionPaths,
+          new Set(interceptedSessionPaths),
           "static /login must stub only GET /api/customer-auth/session",
-        ).toEqual([CUSTOMER_AUTH_PUBLIC_PATHS.session]);
+        ).toEqual(new Set([CUSTOMER_AUTH_PUBLIC_PATHS.session]));
+        expect(interceptedSessionPaths.length).toBeGreaterThanOrEqual(1);
       }
 
       if (route === "/workforce/login") {
@@ -207,6 +220,7 @@ test.describe("public routes — non-HTML resources", () => {
 
 test.describe("public routes — 404 behaviour", () => {
   test("an unknown path returns a 404 with the site's not-found page", async ({ page }) => {
+    await stubAnonymousCustomerSession(page);
     const response = await page.goto("/this-route-does-not-exist");
     expect(response!.status()).toBe(404);
     // The exported 404.html renders the same shell/chrome as the rest of the

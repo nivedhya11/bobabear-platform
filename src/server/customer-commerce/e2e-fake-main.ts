@@ -2,9 +2,10 @@
 /**
  * E2E-only customer-commerce process with the accepted fake Payment provider.
  *
- * Not a production entrypoint. Production remains `main.ts` with the
- * disabled provider fail-closed. Used by the IMP-025 customer-ordering
- * Playwright harness so checkout can complete without Cashfree.
+ * Not a production entrypoint. Production remains `main.ts` with Razorpay or
+ * the disabled provider fail-closed. Used by the customer-ordering Playwright
+ * harness so checkout can complete without real Razorpay. Fake outcomes,
+ * including `razorpay_standard_checkout`, cannot activate in production.
  */
 import process from "node:process";
 
@@ -25,6 +26,7 @@ const FAKE_OUTCOMES: readonly FakePaymentOutcome[] = [
   "pending",
   "indeterminate",
   "client_action",
+  "razorpay_standard_checkout",
   "cancelled",
 ];
 

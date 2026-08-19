@@ -3,9 +3,10 @@
  *
  * Plain-language policy for the Boba Bear landing page. The only personal data
  * the site itself collects is the email/phone submitted to the community signup
- * form (POST /api/newsletter). Ordering happens off-site on Zomato / Swiggy /
- * WhatsApp, each under its own policy. Company + contact details are pulled from
- * lib/site.ts so they never drift from the footer and structured data.
+ * form (POST /api/newsletter) and information needed to operate BOBA Direct
+ * orders. Aggregator platforms remain secondary channels under their own
+ * policies. Company + contact details are pulled from lib/site.ts so they never
+ * drift from the footer and structured data.
  */
 
 import type { Metadata } from "next";
@@ -24,7 +25,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/privacy" },
 };
 
-const LAST_UPDATED = "23 May 2026";
+const LAST_UPDATED = "19 August 2026";
 
 function Section({
   heading,
@@ -110,13 +111,24 @@ export default function PrivacyPage() {
           </p>
         </Section>
 
-        <Section heading="Ordering on Zomato, Swiggy & WhatsApp">
+        <Section heading="Ordering on BOBA Direct">
           <p>
-            Placing an order happens off this website, on third-party platforms
-            (Zomato, Swiggy and WhatsApp / Meta). When you tap through to those
+            You can order Food directly on this website through BOBA Direct
+            (the Menu at{" "}
+            <Link href="/order" className="text-[var(--interactive-secondary)] hover:underline">
+              /order
+            </Link>
+            ). When you order here, we use the information needed to authenticate
+            you, take payment, and fulfil your order. That is the primary BOBA
+            Direct ordering path.
+          </p>
+          <p>
+            Aggregator platforms (Zomato and Swiggy) and WhatsApp remain
+            available as secondary channels. When you tap through to those
             services, the information you share there is governed by{" "}
-            <em>their</em> privacy policies, not ours. We receive order details
-            from these platforms only to prepare and fulfil your order.
+            <em>their</em> privacy policies, not ours. We may still receive
+            order details from those platforms only to prepare and fulfil those
+            orders.
           </p>
         </Section>
 

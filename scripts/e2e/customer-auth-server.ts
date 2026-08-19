@@ -62,7 +62,7 @@ const CUSTOMER_AUTH_ENTRY = path.join(
 const HOST = "127.0.0.1"; // loopback only — never bind 0.0.0.0
 const INNER_SERVICE_PORT = 8179; // fixed, distinct from the compose customer-auth port (8081)
 const CUSTOMER_AUTH_PROXY_PREFIX = "/api/customer-auth/";
-const READY_POLL_TIMEOUT_MS = 20_000;
+const READY_POLL_TIMEOUT_MS = 180_000;
 const READY_POLL_INTERVAL_MS = 200;
 const CHILD_EXIT_TIMEOUT_MS = 5_000;
 

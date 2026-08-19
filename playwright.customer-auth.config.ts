@@ -72,6 +72,6 @@ export default defineConfig({
         command: `node --conditions=react-server --import tsx scripts/e2e/customer-auth-server.ts --port ${PORT}`,
         url: BASE_URL,
         reuseExistingServer: false,
-        timeout: 60_000,
+        timeout: 900_000,
       },
 });

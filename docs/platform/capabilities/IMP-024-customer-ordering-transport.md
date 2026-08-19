@@ -26,6 +26,12 @@ This document is the **locked capability architecture** for IMP-024. Architectur
 > (`POST /api/v1/payments/{paymentId}/client-evidence`) under D-361; webhook acknowledgement /
 > missing-Order recovery semantics are refined by **D-362**; acknowledgement timing / durable inbox
 > are refined by **D-363**. Those routes are not retroactively part of IMP-024 acceptance.
+>
+> **Amendment (2026-08-18):** **[D-368](../decision-register.md)** is the TARGET architecture for a
+> future customer Menu READ PROJECTION exposed through the existing `customer-commerce` `/api/v1/*`
+> façade. Current IMP-024 “no public database-backed Menu transport” remains CURRENT implementation.
+> D-368 does not implement a Menu endpoint, lock `GET /api/v1/menu` payload, or authorize a product
+> slice. Future public Menu still requires an authorized future capability.
 
 ---
 
@@ -511,8 +517,12 @@ Initial IMP-024 has **no** public database-backed Menu transport.
 
 - `getMenuGraph` remains workforce-only (`menu.read`)
 - Internal `findMenu*` are not customer authority
-- Current customer Menu source remains `src/data/menu.json`
-- Future public DB Menu requires an accepted customer Menu application operation first
+- Current customer Menu source remains `src/data/menu.json` for this capability’s original lock;
+  accepted IMP-025 storefront delivery is `src/data/ordering-catalog.json`
+- **D-368** is the TARGET serving architecture for a future customer Menu read projection through
+  this same `/api/v1/*` façade; D-368 does not implement that projection or lock an HTTP payload
+- Future public DB Menu still requires an authorized future capability; D-368 is the architecture
+  decision, not implementation authorization
 
 ---
 

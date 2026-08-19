@@ -1,7 +1,10 @@
 import { test, expect } from "@playwright/test";
 
+import { stubAnonymousCustomerSession } from "./support/stub-customer-session";
+
 test.describe("home page", () => {
   test("renders principal content without browser/console errors", async ({ page }) => {
+    await stubAnonymousCustomerSession(page);
     const consoleErrors: string[] = [];
     page.on("console", (msg) => {
       if (msg.type() === "error") consoleErrors.push(msg.text());
@@ -40,6 +43,7 @@ test.describe("home page", () => {
   });
 
   test("principal menu imagery loads successfully", async ({ page }) => {
+    await stubAnonymousCustomerSession(page);
     await page.goto("/");
     const menuSection = page.locator("#bar");
     await menuSection.scrollIntoViewIfNeeded();
@@ -61,11 +65,12 @@ test.describe("home page", () => {
       testInfo.project.name !== "desktop-chromium",
       "desktop nav bar is hidden below the lg breakpoint",
     );
+    await stubAnonymousCustomerSession(page);
     await page.goto("/");
 
     const nav = page.getByRole("navigation", { name: "Main navigation" });
     await expect(nav).toBeVisible();
-    for (const label of ["Drops", "Menu", "Merch", "Artists", "Order"]) {
+    for (const label of ["Menu", "Drops", "Sign In", "Cart"]) {
       await expect(nav.getByRole("link", { name: label })).toBeVisible();
     }
   });
@@ -77,6 +82,7 @@ test.describe("home page", () => {
       testInfo.project.name !== "mobile-chromium",
       "hamburger drawer only renders below the lg breakpoint",
     );
+    await stubAnonymousCustomerSession(page);
     await page.goto("/");
 
     const opener = page.getByRole("button", { name: "Open navigation menu" });
@@ -86,8 +92,8 @@ test.describe("home page", () => {
     const drawer = page.getByRole("dialog", { name: "Navigation menu" });
     await expect(drawer).toBeVisible();
     const drawerNav = page.getByRole("navigation", { name: "Mobile navigation" });
-    for (const label of ["Drops", "Menu", "Merch", "Artists", "Order"]) {
-      await expect(drawerNav.getByRole("link", { name: new RegExp(label) })).toBeVisible();
+    for (const label of ["Menu", "Drops", "Cart", "Sign In"]) {
+      await expect(drawerNav.getByRole("link", { name: new RegExp(`^${label}$`) })).toBeVisible();
     }
 
     await page.getByRole("button", { name: "Close navigation menu" }).click();

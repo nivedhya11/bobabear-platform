@@ -1,17 +1,14 @@
 import type { Metadata } from "next";
 
 import { OrderingCatalogClient } from "@/components/ordering/OrderingCatalogClient";
-import orderingCatalogJson from "@/data/ordering-catalog.json";
-import type { OrderingCatalog } from "@/shared/ordering-catalog";
-
-const catalog = orderingCatalogJson as OrderingCatalog;
+import { DIRECT_ORDERING_BRAND_ID } from "@/shared/customer-menu/constants";
 
 export const metadata: Metadata = {
-  title: "Order",
-  description: "Order Boba Bear directly — browse the menu and add items to your cart.",
+  title: "Menu",
+  description: "Browse the Boba Bear menu and add items to your cart.",
   alternates: { canonical: "/order" },
 };
 
 export default function OrderPage() {
-  return <OrderingCatalogClient catalog={catalog} />;
+  return <OrderingCatalogClient brandId={DIRECT_ORDERING_BRAND_ID} />;
 }

@@ -78,8 +78,8 @@ function main() {
     findings.push(`${IMP019} must be sealed and match integrity`);
   }
   if (integrity.migrations.length !== 15 && integrity.migrations.length !== 16 && integrity.migrations.length !== 17 &&
-    integrity.migrations.length !== 18 && integrity.migrations.length !== 18) {
-    findings.push(`Expected 15, 16, 17, or 18 sealed migrations, found ${integrity.migrations.length}`);
+    integrity.migrations.length !== 18 && integrity.migrations.length !== 19 && integrity.migrations.length !== 20) {
+    findings.push(`Expected 15–20 sealed migrations, found ${integrity.migrations.length}`);
   }
   if (
     integrity.migrations.length === 16 &&
@@ -156,7 +156,7 @@ function main() {
   const keysMatch = catalog.match(/export const PERMISSION_KEYS = \[([\s\S]*?)\] as const/);
   if (keysMatch) {
     const count = [...keysMatch[1].matchAll(/"/g)].length / 2;
-    if (count !== 51 && count !== 55) findings.push(`PERMISSION_KEYS must be 51 or 55, found ${count}`);
+    if (count !== 51 && count !== 55 && count !== 57) findings.push(`PERMISSION_KEYS must be 51, 55, or 57, found ${count}`);
   }
 
   const files = trackedFiles();
@@ -233,8 +233,14 @@ function main() {
   if (drizzleFiles.some((f) => f.startsWith("0014_") && f !== "0014_cart.sql")) {
     findings.push("Unexpected 0014 migration; expected 0014_cart.sql only");
   }
-  if (drizzleFiles.length !== 16 && drizzleFiles.length !== 17 && drizzleFiles.length !== 18) {
-    findings.push(`Expected 16, 17, or 18 drizzle SQL migrations, found ${drizzleFiles.length}`);
+  if (
+    drizzleFiles.length !== 16 &&
+    drizzleFiles.length !== 17 &&
+    drizzleFiles.length !== 18 &&
+    drizzleFiles.length !== 19 &&
+    drizzleFiles.length !== 20
+  ) {
+    findings.push(`Expected 16–20 drizzle SQL migrations, found ${drizzleFiles.length}`);
   }
 
   if (findings.length) {

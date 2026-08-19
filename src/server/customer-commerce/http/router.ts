@@ -54,7 +54,12 @@ import {
   getPaymentState,
   retryPayment,
   startPayment,
+  submitPaymentClientEvidence,
 } from "../../payment";
+import {
+  generateCustomerFinancialDocumentArtifact,
+  listFinancialDocumentsForCustomerOrder,
+} from "../../financial-document";
 import type { CustomerAuthRuntime } from "../../auth/customer";
 import type { Persistence } from "../../persistence";
 import {
@@ -72,12 +77,15 @@ import {
 import { mapCommerceError, mapInvalidRequest } from "./error-map";
 import { extractGuestCartToken } from "./guest-token";
 import { readJsonObjectBody, readOptionalJsonObjectBody } from "./request";
+import { handleRazorpayWebhook, RAZORPAY_WEBHOOK_PATH } from "./razorpay-webhook";
 import { coerceRevisionFields } from "./revisions";
+import { projectCustomerMenu } from "../menu/project-customer-menu";
 import {
   sendJson,
   sendMethodNotAllowed,
   sendNoContent,
   sendNotFound,
+  sendPdf,
 } from "./response";
 
 export type CustomerCommerceRouteDependencies = Readonly<{
@@ -235,16 +243,46 @@ export async function routeCustomerCommerceRequest(
     sendNotFound(res, requestId);
     return outcome("forbidden_create_cart", 404, "NOT_FOUND");
   }
-  if (pathname === "/api/v1/menu" || pathname.startsWith("/api/v1/menu/")) {
+  if (pathname.startsWith("/api/v1/menu/")) {
     sendNotFound(res, requestId);
-    return outcome("forbidden_menu", 404, "NOT_FOUND");
+    return outcome("forbidden_menu_subpath", 404, "NOT_FOUND");
   }
   if (pathname.startsWith("/api/auth/")) {
     sendNotFound(res, requestId);
     return outcome("forbidden_api_auth", 404, "NOT_FOUND");
   }
 
+  if (pathname === RAZORPAY_WEBHOOK_PATH) {
+    if (method !== "POST") {
+      sendMethodNotAllowed(res, ["POST"], requestId);
+      return outcome("razorpay_webhook", 405, "METHOD_NOT_ALLOWED");
+    }
+    return handleRazorpayWebhook(req, res, deps, requestId);
+  }
+
   try {
+
+    if (pathname === "/api/v1/menu") {
+      if (method !== "GET") {
+        sendMethodNotAllowed(res, ["GET"], requestId);
+        return outcome("get_menu", 405, "METHOD_NOT_ALLOWED");
+      }
+      const brandId = url.searchParams.get("brandId");
+      if (!brandId) {
+        throw new CartError("CART_INVALID_INPUT", "brandId is required.", {
+          field: "brandId",
+        });
+      }
+      const outletId = url.searchParams.get("outletId");
+      const menu = await deps.persistence.withContext((context) =>
+        projectCustomerMenu(context, {
+          brandId,
+          outletId,
+        }),
+      );
+      sendJson(res, { ok: true, menu }, { status: 200, requestId });
+      return outcome("get_menu", 200, "OK");
+    }
 
     // Profile
     if (pathname === "/api/v1/me/profile") {
@@ -732,6 +770,34 @@ export async function routeCustomerCommerceRequest(
     }
 
     {
+      const evidenceParams = matchPath(
+        pathname,
+        "/api/v1/payments/{paymentId}/client-evidence",
+      );
+      if (evidenceParams && method === "POST") {
+        const body = await readBody(req, requestId, res, ["kind", "payload"]);
+        if (!body) return outcome("submit_payment_client_evidence", 400, "INVALID_REQUEST");
+        const identity = await requireTrustedIdentity(deps.runtime, req.headers);
+        const actor = toCartCustomerActor(identity);
+        const state = await submitPaymentClientEvidence(
+          deps.persistence,
+          actor,
+          { ...body, paymentId: evidenceParams.paymentId },
+          {
+            policy: {},
+            provider: deps.paymentProvider,
+          },
+        );
+        sendJson(res, { ok: true, state }, { status: 200, requestId });
+        return outcome("submit_payment_client_evidence", 200, "OK");
+      }
+      if (evidenceParams) {
+        sendMethodNotAllowed(res, ["POST"], requestId);
+        return outcome("submit_payment_client_evidence", 405, "METHOD_NOT_ALLOWED");
+      }
+    }
+
+    {
       const retryParams = matchPath(pathname, "/api/v1/payments/{paymentId}/retry");
       if (retryParams && method === "POST") {
         const body = await readBody(req, requestId, res, [
@@ -818,6 +884,33 @@ export async function routeCustomerCommerceRequest(
     }
 
     {
+      // IMP-028 Slice 6 — customer Financial Document listing (Slice-5 ownership).
+      const orderDocsParams = matchPath(
+        pathname,
+        "/api/v1/orders/{orderId}/financial-documents",
+      );
+      if (orderDocsParams && method === "GET") {
+        const identity = await requireTrustedIdentity(deps.runtime, req.headers);
+        const actor = toCartCustomerActor(identity);
+        const financialDocuments = await listFinancialDocumentsForCustomerOrder(
+          deps.persistence,
+          actor,
+          { orderId: orderDocsParams.orderId },
+        );
+        sendJson(
+          res,
+          { ok: true, financialDocuments },
+          { status: 200, requestId },
+        );
+        return outcome("list_order_financial_documents", 200, "OK");
+      }
+      if (orderDocsParams) {
+        sendMethodNotAllowed(res, ["GET"], requestId);
+        return outcome("list_order_financial_documents", 405, "METHOD_NOT_ALLOWED");
+      }
+    }
+
+    {
       const orderParams = matchPath(pathname, "/api/v1/orders/{orderId}");
       if (orderParams && method === "GET") {
         const identity = await requireTrustedIdentity(deps.runtime, req.headers);
@@ -831,6 +924,31 @@ export async function routeCustomerCommerceRequest(
       if (orderParams) {
         sendMethodNotAllowed(res, ["GET"], requestId);
         return outcome("get_order", 405, "METHOD_NOT_ALLOWED");
+      }
+    }
+
+    {
+      // IMP-028 Slice 6 — authorized customer PDF download (Slice-5 artifact path).
+      const pdfParams = matchPath(
+        pathname,
+        "/api/v1/financial-documents/{financialDocumentId}/pdf",
+      );
+      if (pdfParams && method === "GET") {
+        const identity = await requireTrustedIdentity(deps.runtime, req.headers);
+        const actor = toCartCustomerActor(identity);
+        // Only the route Financial Document id is accepted — no prior authority
+        // from query/body. Slice 5 resolves sealed priorFinancialDocumentId.
+        const artifact = await generateCustomerFinancialDocumentArtifact(
+          deps.persistence,
+          actor,
+          { financialDocumentId: pdfParams.financialDocumentId },
+        );
+        sendPdf(res, artifact, { status: 200, requestId });
+        return outcome("download_financial_document_pdf", 200, "OK");
+      }
+      if (pdfParams) {
+        sendMethodNotAllowed(res, ["GET"], requestId);
+        return outcome("download_financial_document_pdf", 405, "METHOD_NOT_ALLOWED");
       }
     }
 

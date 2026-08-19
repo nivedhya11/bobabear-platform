@@ -15,8 +15,10 @@ const { loadEnvConfig } = nextEnv;
 import { loadConfig } from "../../platform/config/load-config";
 import { ConfigurationError } from "../../platform/config/config-error";
 import { AuthFoundationConfigurationError } from "../auth/shared/errors";
+import { composeCustomerCommercePayment } from "./compose-payment";
 import { loadCustomerCommerceServiceConfig } from "./config";
 import { CustomerCommerceConfigurationError } from "./errors";
+import { loadCustomerCommercePaymentConfig } from "./payment-config";
 import { CustomerCommerceService } from "./service";
 
 const DEFAULT_SERVICE_HOST = "0.0.0.0";
@@ -34,6 +36,11 @@ async function main(): Promise<void> {
     process.env,
     workerConfig.environment,
   );
+  const paymentConfig = loadCustomerCommercePaymentConfig(
+    process.env,
+    workerConfig.environment,
+  );
+  const paymentRuntime = composeCustomerCommercePayment(paymentConfig);
 
   const service = new CustomerCommerceService({
     auth: serviceConfig.auth,
@@ -41,6 +48,8 @@ async function main(): Promise<void> {
     identityDeriver: serviceConfig.identityDeriver,
     host: serviceConfig.serviceHost || DEFAULT_SERVICE_HOST,
     port: serviceConfig.servicePort || DEFAULT_SERVICE_PORT,
+    paymentProvider: paymentRuntime.provider,
+    enablePaymentInboxProcessor: paymentRuntime.enableInboxProcessor,
   });
 
   await service.start();

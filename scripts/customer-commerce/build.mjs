@@ -13,7 +13,16 @@
 //
 // Usage: node scripts/customer-commerce/build.mjs
 import { execFileSync } from "node:child_process";
-import { readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
@@ -117,10 +126,35 @@ function writeEsmPackageMarker() {
   writeFileSync(path.join(outDir, "package.json"), `${JSON.stringify({ type: "module" }, null, 2)}\n`, "utf8");
 }
 
+/** Copy non-TS runtime assets required by compiled modules (e.g. FD PDF fonts). */
+function copyRuntimeAssets() {
+  const fontSrc = path.join(
+    projectRoot,
+    "src",
+    "shared",
+    "financial-document",
+    "assets",
+    "fonts",
+  );
+  const fontDest = path.join(
+    outDir,
+    "shared",
+    "financial-document",
+    "assets",
+    "fonts",
+  );
+  if (!existsSync(fontSrc)) {
+    return;
+  }
+  mkdirSync(fontDest, { recursive: true });
+  cpSync(fontSrc, fontDest, { recursive: true });
+}
+
 function main() {
   rmSync(outDir, { recursive: true, force: true });
   runTsc();
   const rewrittenCount = rewriteAllSpecifiers();
+  copyRuntimeAssets();
   writeEsmPackageMarker();
   console.log(`customer-commerce/build: compiled and rewrote ${rewrittenCount} file(s) into dist-customer-commerce/.`);
 }

@@ -20,7 +20,7 @@ export const SITE_LEGAL_NAME = "Nivedhya11 Hospitality Private Limited";
 /** Plain-language one-liner — leads with what & where for the user's mental
  *  model, carries the keywords search engines need. Kept under ~160 chars. */
 export const SITE_DESCRIPTION =
-  "Bubble tea, matcha, Korean street food, ramyun, momos, loaded fries and desserts in Dehradun. Order Boba Bear on Zomato, Swiggy or WhatsApp.";
+  "Bubble tea, matcha, Korean street food, ramyun, momos, loaded fries and desserts in Dehradun. Order directly with Boba Bear.";
 
 /** Brand tagline (accent line, Tier-2 voice) — used as a secondary signal. */
 export const SITE_TAGLINE = "S-Tier Sips · K-Street Drip";

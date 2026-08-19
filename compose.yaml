@@ -137,11 +137,12 @@ services:
       start_period: 15s
     restart: "no"
 
-  # Dedicated customer-commerce transport façade (IMP-024 / D-359). Reachable
-  # only through the `app` (Nginx) container's narrow `/api/v1/` reverse
-  # proxy — never a published host port. Receives application-role database
-  # env plus customer-auth secrets (session cookie validation) and commerce
-  # listen config. Never migration credentials.
+  # Dedicated customer-commerce transport façade (IMP-024 / D-359 / IMP-026A).
+  # Reachable only through the `app` (Nginx) container's narrow `/api/v1/`
+  # reverse proxy and the exact Razorpay webhook path — never a published host
+  # port. Receives application-role database env plus customer-auth secrets
+  # (session cookie validation) and commerce listen config. Never migration
+  # credentials.
   customer-commerce:
     build:
       context: .
@@ -376,6 +377,30 @@ services:
     env_file:
       - .env.runtime.docker.local
     command: ["npm", "run", "pricing:verify-existing-menu"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    restart: "no"
+
+  # One-shot IMP-028C Hong Kong Milk Tea modifier bootstrap (Slice 4).
+  # Default dry-run; pass --apply via `docker compose run ... -- --apply`.
+  catalog-bootstrap-imp028c-modifiers:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: tooling
+    image: boba-bear-tooling:local
+    profiles: ["tools"]
+    env_file:
+      - .env.runtime.docker.local
+    command: ["npm", "run", "catalog:bootstrap-imp028c-modifiers"]
     depends_on:
       postgres:
         condition: service_healthy

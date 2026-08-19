@@ -1,10 +1,7 @@
 import type { Metadata } from "next";
 
 import { CartClient } from "@/components/ordering/CartClient";
-import orderingCatalogJson from "@/data/ordering-catalog.json";
-import type { OrderingCatalog } from "@/shared/ordering-catalog";
-
-const catalog = orderingCatalogJson as OrderingCatalog;
+import { DIRECT_ORDERING_BRAND_ID } from "@/shared/customer-menu/constants";
 
 export const metadata: Metadata = {
   title: "Cart",
@@ -14,5 +11,5 @@ export const metadata: Metadata = {
 };
 
 export default function CartPage() {
-  return <CartClient catalog={catalog} />;
+  return <CartClient brandId={DIRECT_ORDERING_BRAND_ID} />;
 }

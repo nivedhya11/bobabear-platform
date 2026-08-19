@@ -156,6 +156,8 @@ function checkMigrations() {
     "0015_checkout.sql",
     "0016_payment.sql",
     "0017_order.sql",
+    "0018_payment_provider_event_inbox.sql",
+    "0019_refund.sql",
   ]);
   const extra = drizzleFiles.filter((rel) => !allowedBases.has(path.basename(rel)));
   if (extra.length > 0) {

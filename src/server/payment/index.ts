@@ -38,6 +38,7 @@ export {
   cancelPayment,
   getPayment,
   getPaymentState,
+  submitPaymentClientEvidence,
   reconcilePaymentAttempt,
   processVerifiedProviderEvent,
   supersedePayment,

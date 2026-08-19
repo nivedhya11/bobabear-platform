@@ -4,10 +4,10 @@ import { isCustomerOrderStatus, orderStatusLabel } from "./order-status";
 
 describe("D-357 order status presentation", () => {
   it("maps only authoritative Order states", () => {
-    expect(orderStatusLabel("PLACED")).toBe("Order placed");
+    expect(orderStatusLabel("PLACED")).toBe("Order received");
     expect(orderStatusLabel("ACCEPTED")).toBe("Order accepted");
-    expect(orderStatusLabel("FULFILLED")).toBe("Fulfilled");
-    expect(orderStatusLabel("CANCELLED")).toBe("Cancelled");
+    expect(orderStatusLabel("FULFILLED")).toBe("Order fulfilled");
+    expect(orderStatusLabel("CANCELLED")).toBe("Order cancelled");
   });
 
   it("does not invent kitchen or delivery states", () => {

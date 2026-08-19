@@ -3,12 +3,9 @@
 /**
  * AccessCTA — Chapter 05 · End of Issue · Start of Order
  *
- * Closing editorial chapter that converts. Three access channels
- * (Zomato, Swiggy, WhatsApp) rendered as quiet tap-targets — the
- * brand wordmark is the call-to-action; no button chrome.
- *
- * Platform URLs are the live ordering links (Zomato/Swiggy storefronts and
- * the WhatsApp deep link with a prefilled "Catch the Drop" message).
+ * Closing editorial chapter that converts. Primary CTA is BOBA Direct
+ * Order Now → /order. Aggregator channels (Zomato, Swiggy, WhatsApp) remain
+ * secondary tap-targets.
  */
 
 import { motion, useReducedMotion } from "framer-motion";
@@ -240,7 +237,7 @@ export function AccessCTA() {
               "transition-colors duration-[150ms] ease-out",
             ].join(" ")}
           >
-            Order with Boba Bear
+            Order Now
             <ArrowRight size={18} strokeWidth={2} aria-hidden />
           </a>
         </RevealChild>

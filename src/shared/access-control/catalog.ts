@@ -90,6 +90,8 @@ export const PERMISSION_KEYS = [
   "order.accept",
   "order.fulfil",
   "order.cancel",
+  "payment.refund",
+  "payment.refund.read",
 ] as const;
 
 export type PermissionKey = (typeof PERMISSION_KEYS)[number];
@@ -194,6 +196,8 @@ const BRAND_ADMIN_PERMISSIONS: RolePermissionMapping[] = (
     ["order.accept", "descendants"],
     ["order.fulfil", "descendants"],
     ["order.cancel", "descendants"],
+    ["payment.refund", "descendants"],
+    ["payment.refund.read", "descendants"],
   ] as const
 ).map(([permissionKey, inheritanceMode]) => ({
   roleKey: "brand_admin" as const,
@@ -300,6 +304,8 @@ const SUPPORT_PERMISSIONS: RolePermissionMapping[] = (
     "promotions.audit.read",
     "order.read",
     "order.cancel",
+    "payment.refund",
+    "payment.refund.read",
   ] as const
 ).map((permissionKey) => ({
   roleKey: "support_refund_operator" as const,
@@ -322,6 +328,7 @@ const FINANCE_PERMISSIONS: RolePermissionMapping[] = (
     "coupons.read",
     "promotions.audit.read",
     "order.read",
+    "payment.refund.read",
   ] as const
 ).map((permissionKey) => ({
   roleKey: "finance_viewer" as const,
@@ -398,6 +405,8 @@ export const PERMISSION_TARGET_KIND: Readonly<
   "order.accept": "outlet",
   "order.fulfil": "outlet",
   "order.cancel": "outlet",
+  "payment.refund": "outlet",
+  "payment.refund.read": "outlet",
 };
 
 export const SAFE_AUTHORIZATION_DECISION_CODES = ["AUTHORIZED", "DENIED"] as const;

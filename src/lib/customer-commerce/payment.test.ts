@@ -6,6 +6,7 @@ import {
   getPaymentState,
   retryPayment,
   startPayment,
+  submitPaymentClientEvidence,
 } from "./payment";
 
 function jsonResponse(body: unknown, status = 200): Response {
@@ -173,6 +174,71 @@ describe("payment client", () => {
       code: "PAYMENT_IDEMPOTENCY_CONFLICT",
       requestId: "req-p",
       status: 409,
+    });
+  });
+
+  it("submits Razorpay client evidence without treating the handler as success", async () => {
+    const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(
+      async () =>
+        jsonResponse({
+          ok: true,
+          state: {
+            payment: { ...payment, status: "PROCESSING" },
+            attempt,
+            attempts: [attempt],
+            checkoutId: payment.checkoutId,
+            checkoutStatus: "PAYMENT_PENDING",
+            checkoutRevision: "4",
+            zeroPayableCompleted: false,
+          },
+        }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const submitted = await submitPaymentClientEvidence({
+      paymentId: payment.id,
+      kind: "razorpay_standard_checkout",
+      payload: {
+        razorpay_payment_id: "pay_1",
+        razorpay_order_id: "order_1",
+        razorpay_signature: "sig_1",
+      },
+    });
+    expect(submitted.ok).toBe(true);
+    if (!submitted.ok) return;
+    expect(submitted.data.state.payment?.status).toBe("PROCESSING");
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(`/api/v1/payments/${payment.id}/client-evidence`);
+    expect(JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body))).toEqual({
+      kind: "razorpay_standard_checkout",
+      payload: {
+        razorpay_payment_id: "pay_1",
+        razorpay_order_id: "order_1",
+        razorpay_signature: "sig_1",
+      },
+    });
+  });
+
+  it("surfaces invalid client-evidence responses", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        jsonResponse({ ok: false, code: "PAYMENT_PROVIDER_EVIDENCE_INVALID", requestId: "req-e" }, 400),
+      ),
+    );
+    const rejected = await submitPaymentClientEvidence({
+      paymentId: payment.id,
+      kind: "razorpay_standard_checkout",
+      payload: {
+        razorpay_payment_id: "pay_1",
+        razorpay_order_id: "order_1",
+        razorpay_signature: "bad",
+      },
+    });
+    expect(rejected).toEqual({
+      ok: false,
+      code: "PAYMENT_PROVIDER_EVIDENCE_INVALID",
+      requestId: "req-e",
+      status: 400,
     });
   });
 

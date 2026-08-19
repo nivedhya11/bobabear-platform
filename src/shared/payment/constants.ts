@@ -94,6 +94,19 @@ export const PAYMENT_CURRENCY = "INR" as const;
 /** Built-in fake/test provider identity — never a production gateway. */
 export const PAYMENT_FAKE_PROVIDER = "fake" as const;
 
+/** V1 production payment provider identity (D-361). */
+export const PAYMENT_RAZORPAY_PROVIDER = "razorpay" as const;
+
+export const PAYMENT_PROVIDER_SELECTOR_VALUES = ["disabled", "razorpay"] as const;
+
+export type PaymentProviderSelector = (typeof PAYMENT_PROVIDER_SELECTOR_VALUES)[number];
+
+export const RAZORPAY_STANDARD_CHECKOUT_KIND = "razorpay_standard_checkout" as const;
+
+export const RAZORPAY_ORDER_REFERENCE_KIND = "razorpay_order_id" as const;
+export const RAZORPAY_PAYMENT_REFERENCE_KIND = "razorpay_payment_id" as const;
+export const RAZORPAY_RECEIPT_REFERENCE_KIND = "razorpay_receipt" as const;
+
 export const SUPPORTED_PAYMENT_METHOD_INTENTS = [
   "upi",
   "card",

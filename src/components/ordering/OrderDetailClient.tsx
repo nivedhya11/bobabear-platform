@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/Button";
+import { OrderFinancialDocuments } from "@/components/ordering/OrderFinancialDocuments";
+import { OrderSupportAction } from "@/components/ordering/OrderSupportAction";
 import { commerceErrorCopy } from "@/components/ordering/error-copy";
 import { formatPaise } from "@/components/ordering/format-money";
 import { orderStatusLabel } from "@/components/ordering/order-status";
@@ -102,7 +104,11 @@ export function OrderDetailClient() {
               </p>
             </div>
 
-            <Button asChild variant="outline">
+            <OrderFinancialDocuments orderId={order.orderId} />
+
+            <OrderSupportAction orderNumber={order.orderNumber} />
+
+            <Button asChild variant="outline" className="min-h-[44px]">
               <a href="/order/orders/">Back to orders</a>
             </Button>
           </div>

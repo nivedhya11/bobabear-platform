@@ -65,6 +65,8 @@ const ALLOWED_PROCESS_ENV_PREFIXES = [
   // The customer-commerce HTTP service (IMP-024) is a standalone Node process;
   // its `main.ts` is its own narrow, documented executable boundary.
   "src/server/customer-commerce/main.ts",
+  // E2E-only fake Payment entrypoint (IMP-025). Not production composition.
+  "src/server/customer-commerce/e2e-fake-main.ts",
 ];
 
 // Pre-existing NEXT_PUBLIC_* usage that predates IMP-003 (GA measurement ID
@@ -100,6 +102,10 @@ const APPROVED_ENV_FILE_KEYS = new Set([
   "BOBA_BEAR_DATABASE_URL",
   "BOBA_BEAR_DATABASE_MIGRATION_URL",
   "BOBA_BEAR_DATABASE_SSL_MODE",
+  "BOBA_BEAR_PAYMENT_PROVIDER",
+  "BOBA_BEAR_RAZORPAY_KEY_ID",
+  "BOBA_BEAR_RAZORPAY_KEY_SECRET",
+  "BOBA_BEAR_RAZORPAY_WEBHOOK_SECRET",
   "PORT",
   // Customer phone + OTP auth service (IMP-009) — a second, narrow config
   // boundary (src/server/auth/shared/config.ts), deliberately outside the
@@ -183,6 +189,11 @@ const APPROVED_WORKFORCE_AUTH_TEST_FIXTURE_SECRETS = new Set([
   "test-fixture-workforce-auth-pii-hash-secret-do-not-reuse",
 ]);
 
+const RAZORPAY_SECRET_KEYS = new Set([
+  "BOBA_BEAR_RAZORPAY_KEY_SECRET",
+  "BOBA_BEAR_RAZORPAY_WEBHOOK_SECRET",
+]);
+
 // Customer-auth (IMP-009) configuration keys that are not secrets but
 // happen to contain "AUTH" (one of SENSITIVE_KEY_PATTERNS below) purely as
 // part of their realm-scoped naming — a base URL, proxy-hop count, bind
@@ -244,6 +255,15 @@ function isApprovedSecretShapedPlaceholder(fileName, key, value) {
       return PLACEHOLDER_VALUE_PATTERN.test(value);
     }
     return APPROVED_WORKFORCE_AUTH_TEST_FIXTURE_SECRETS.has(value);
+  }
+  if (
+    (fileName === ".env.example" || fileName === ".env.test") &&
+    RAZORPAY_SECRET_KEYS.has(key)
+  ) {
+    if (fileName === ".env.example") {
+      return PLACEHOLDER_VALUE_PATTERN.test(value);
+    }
+    return false;
   }
   if (
     (fileName === ".env.example" || fileName === ".env.test") &&

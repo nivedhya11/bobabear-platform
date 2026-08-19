@@ -11,6 +11,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import { computeWorkingTreeFingerprint } from "./working-tree-fingerprint.mjs";
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -72,6 +73,970 @@ function resolveExactRelativeFile(relativePath) {
 
 /** Canonical Decision Register pathname (tracked + portable). */
 const DECISION_REGISTER_REL = "docs/platform/decision-register.md";
+
+/**
+ * Formal ROADMAP ledger IMP identifier: numeric id with optional single uppercase suffix.
+ * Examples: IMP-001, IMP-005A, IMP-026C. Rejects IMP-026AA, IMP-26a, IMP-026-C, IMP_026C.
+ */
+export const FORMAL_LEDGER_IMP_ID_RE = /^IMP-\d+[A-Z]?$/;
+
+/** Table-row capture for formal ledger IMP ids (see {@link FORMAL_LEDGER_IMP_ID_RE}). */
+export const LEDGER_ROW_IMP_RE = /\|\s*(IMP-\d+[A-Z]?)\s*\|\s*([^|]+)\|/g;
+
+/**
+ * Detect IMP-025 lifecycle claims without false positives from nearby IMP-026C text.
+ * @param {string} text
+ * @param {string} impId
+ */
+export function claimsImpLifecycleImplementationInProgress(text, impId) {
+  let searchFrom = 0;
+  while (searchFrom < text.length) {
+    const idx = text.indexOf(impId, searchFrom);
+    if (idx === -1) break;
+    const window = text.slice(idx, idx + 120);
+    const implIdx = window.indexOf("IMPLEMENTATION_IN_PROGRESS");
+    if (implIdx !== -1) {
+      const between = window.slice(0, implIdx);
+      const otherImp = between.match(/\bIMP-\d+[A-Z]?\b/g)?.filter((id) => id !== impId) ?? [];
+      if (otherImp.length === 0) {
+        return true;
+      }
+    }
+    searchFrom = idx + impId.length;
+  }
+  return false;
+}
+
+/**
+ * True when `slice` is IMP-026C or a later numeric IMP (IMP-027+).
+ * Used to keep pendingAcceptance on the oldest unresolved gate (IMP-026).
+ * @param {string | null | undefined} slice
+ */
+export function isLaterThanImp026(slice) {
+  if (slice === "IMP-026C") return true;
+  const match = /^IMP-(\d+)[A-Z]?$/.exec(String(slice ?? ""));
+  if (!match) return false;
+  return Number(match[1]) >= 27;
+}
+
+/**
+ * GTM-R15–R23 narrow founder exception: IMP-026C may be the current product slice while
+ * IMP-026 remains IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE with deferred public HTTPS
+ * webhook debt. GTM-R16 requires IMP-026C ARCHITECTURE_LOCKED. GTM-R17 may promote IMP-026C to
+ * IMPLEMENTATION_IN_PROGRESS under explicit founder implementation authorization. GTM-R18 may
+ * promote IMP-026C to IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE behind oldest pending
+ * acceptance IMP-026. GTM-R19 may set currentProductSlice=IMP-027 with ARCHITECTURE_IN_PROGRESS
+ * only (architecture not locked; implementation not authorized) while IMP-026 and IMP-026C
+ * remain unaccepted. GTM-R20 may promote IMP-027 to ARCHITECTURE_LOCKED with implementation
+ * still NOT_AUTHORIZED behind the same oldest pending gate. GTM-R21 may promote IMP-027 to
+ * IMPLEMENTATION_IN_PROGRESS under explicit founder implementation authorization, with
+ * architecture remaining LOCKED, behind the same oldest pending gate. GTM-R22 may promote
+ * IMP-027 to IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE behind the same oldest pending gate
+ * after complete implementation evidence and independent implementation review PASS. GTM-R23 may
+ * set currentProductSlice=IMP-028 with ARCHITECTURE_IN_PROGRESS only (architecture not locked;
+ * implementation not authorized) while IMP-026, IMP-026C, and IMP-027 remain unaccepted.
+ * GTM-R24 may promote IMP-028 to ARCHITECTURE_LOCKED with implementation still NOT_AUTHORIZED
+ * behind the same oldest pending gate. GTM-R25 may authorize IMP-028 implementation
+ * (IMP-028_IMPLEMENTATION_AUTHORIZED: YES) while architecture remains LOCKED and implementation
+ * remains NOT_STARTED (IMP-028_IMPLEMENTATION_STARTED: NO) behind the same oldest pending gate.
+ * GTM-R25 authorization does not auto-start implementation. GTM-R26 may promote IMP-028 to
+ * IMPLEMENTATION_IN_PROGRESS (IMP-028_IMPLEMENTATION_STARTED: YES) under that authorization
+ * behind the same oldest pending gate.
+ * pendingAcceptance identifies the oldest unresolved formal
+ * acceptance gate; it does not mean a later authorized slice remains in progress. Does not
+ * legalize arbitrary simultaneous active slices, predecessor formal acceptance, automatic IMP-028
+ * complete/acceptance, or automatic IMP-029 activation.
+ *
+ * @param {{
+ *   acceptedThrough: string,
+ *   currentProductSlice: string,
+ *   pendingAcceptance: string | null | undefined,
+ *   imp026Implementation: string,
+ *   imp026Accepted: boolean,
+ *   deferredExternalWebhookGate: string,
+ *   deferredExternalWebhookSatisfied: boolean,
+ *   imp026cLifecycle: string,
+ *   imp026cImplementationAuthorized: boolean,
+ *   imp026cAccepted?: boolean,
+ *   imp027Lifecycle?: string,
+ *   imp027ImplementationAuthorized?: boolean,
+ *   imp027Accepted?: boolean,
+ *   imp027CapabilityArtifactLocked?: boolean,
+ *   imp027IndependentImplementationReview?: string,
+ *   imp028Lifecycle?: string,
+ *   imp028ImplementationAuthorized?: boolean,
+ *   imp028ArchitectureLocked?: boolean,
+ *   imp028CapabilityArtifactLocked?: boolean,
+ *   imp028Accepted?: boolean,
+ *   imp028ImplementationStarted?: boolean,
+ *   imp028aImplementationAuthorized?: boolean,
+ *   imp028aImplementationStarted?: boolean,
+ *   imp028aArchitectureLocked?: boolean,
+ *   imp028aCapabilityArtifactLocked?: boolean,
+ *   imp028aAccepted?: boolean,
+ *   imp028bImplementationAuthorized?: boolean,
+ *   imp028bImplementationStarted?: boolean,
+ *   imp028bArchitectureLocked?: boolean,
+ *   imp028bAccepted?: boolean,
+ * }} position
+ * @returns {{ ok: true, kind: "aligned" | "imp028b_complete_and_accepted" | "imp028b_canonical_activation" | "imp028b_implementation_authorized" | "imp028a_canonical_activation" | "imp028a_implementation_authorized" | "imp028a_implementation_in_progress" | "imp028a_implementation_complete_pending_acceptance" | "imp028a_complete_and_accepted" | "imp026_deferred_external_gate" | "imp026_deferred_external_gate_impl_authorized" | "imp026_deferred_external_gate_impl_complete" | "imp026_deferred_external_gate_imp027_architecture" | "imp026_deferred_external_gate_imp027_architecture_locked" | "imp026_deferred_external_gate_imp027_implementation" | "imp026_deferred_external_gate_imp027_implementation_complete" | "imp026_deferred_external_gate_imp028_architecture" | "imp026_deferred_external_gate_imp028_architecture_locked" | "imp026_deferred_external_gate_imp028_implementation_authorized" | "imp026_deferred_external_gate_imp028_implementation" | "imp028c_authorized_not_started" | "imp028c_implementation_started" } | { ok: false, code: string, message: string }}
+ */
+export function evaluatePendingAcceptanceSplit(position) {
+  const pending = position.pendingAcceptance ?? "NONE";
+  const current = position.currentProductSlice;
+  const imp027Lifecycle = position.imp027Lifecycle ?? "UNKNOWN";
+  const imp027ImplementationAuthorized = position.imp027ImplementationAuthorized === true;
+  const imp028Lifecycle = position.imp028Lifecycle ?? "UNKNOWN";
+  const imp028ImplementationAuthorized = position.imp028ImplementationAuthorized === true;
+  const imp028ArchitectureLocked = position.imp028ArchitectureLocked === true;
+  const imp028ImplementationStarted = position.imp028ImplementationStarted === true;
+  const imp028aImplementationAuthorized = position.imp028aImplementationAuthorized === true;
+  const imp028aImplementationStarted = position.imp028aImplementationStarted === true;
+  const imp028aArchitectureLocked = position.imp028aArchitectureLocked === true;
+  const imp028aAccepted = position.imp028aAccepted === true;
+  const imp028bImplementationAuthorized = position.imp028bImplementationAuthorized === true;
+  const imp028bImplementationStarted = position.imp028bImplementationStarted === true;
+  const imp028bImplementationComplete = position.imp028bImplementationComplete === true;
+  const imp028bArchitectureLocked = position.imp028bArchitectureLocked === true;
+  const imp028bAccepted = position.imp028bAccepted === true;
+
+  if (position.acceptedThrough === "IMP-028B") {
+    const imp028bFullyAccepted =
+      pending === "NONE" &&
+      position.imp026Accepted === true &&
+      position.imp026cAccepted === true &&
+      position.imp027Accepted === true &&
+      position.imp028Accepted === true &&
+      imp028aAccepted &&
+      imp028bImplementationAuthorized &&
+      imp028bImplementationStarted &&
+      imp028bImplementationComplete &&
+      imp028bArchitectureLocked &&
+      imp028bAccepted;
+
+    if (current === "NONE" && imp028bFullyAccepted) {
+      return { ok: true, kind: "imp028b_complete_and_accepted" };
+    }
+    if (current === "IMP-028C" && imp028bFullyAccepted) {
+      if (!position.imp028cCanonicallyAssigned) {
+        return {
+          ok: false,
+          code: "PENDING_ACCEPTANCE_SPLIT",
+          message: "currentProductSlice=IMP-028C but IMP-028C is not canonically assigned in governance",
+        };
+      }
+      if (!position.imp028cArchitectureLocked) {
+        return {
+          ok: false,
+          code: "PENDING_ACCEPTANCE_SPLIT",
+          message: "currentProductSlice=IMP-028C but IMP-028C architecture is not locked",
+        };
+      }
+      if (!position.imp028cImplementationAuthorized) {
+        return {
+          ok: false,
+          code: "PENDING_ACCEPTANCE_SPLIT",
+          message: "currentProductSlice=IMP-028C but IMP-028C implementation is not authorized",
+        };
+      }
+      if (position.imp029ImplementationAuthorized === true) {
+        return {
+          ok: false,
+          code: "PENDING_ACCEPTANCE_SPLIT",
+          message:
+            "currentProductSlice=IMP-028C requires IMP-029 to remain NOT_AUTHORIZED (IMP-029_IMPLEMENTATION_AUTHORIZED: NO)",
+        };
+      }
+      if (position.imp029Started === true) {
+        return {
+          ok: false,
+          code: "PENDING_ACCEPTANCE_SPLIT",
+          message:
+            "currentProductSlice=IMP-028C requires IMP-029 to remain NOT_STARTED (IMP-029_STARTED: NO)",
+        };
+      }
+      if (position.imp028cAccepted) {
+        return {
+          ok: false,
+          code: "PENDING_ACCEPTANCE_SPLIT",
+          message: "IMP-028C cannot be accepted while acceptedThrough remains IMP-028B",
+        };
+      }
+      if (position.imp028cImplementationComplete) {
+        return {
+          ok: false,
+          code: "PENDING_ACCEPTANCE_SPLIT",
+          message:
+            "currentProductSlice=IMP-028C IMPLEMENTATION_IN_PROGRESS cannot claim IMP-028C_IMPLEMENTATION_COMPLETE=YES",
+        };
+      }
+      if (position.imp028cImplementationStarted) {
+        return { ok: true, kind: "imp028c_implementation_started" };
+      }
+      return { ok: true, kind: "imp028c_authorized_not_started" };
+    }
+    return {
+      ok: false,
+      code: "PENDING_ACCEPTANCE_SPLIT",
+      message:
+        "IMP-028B acceptance requires currentProductSlice=NONE or IMP-028C (authorized/not-started), pendingAcceptance=NONE, and complete accepted IMP-028B evidence",
+    };
+  }
+
+  if (position.acceptedThrough === "IMP-028A") {
+    if (pending === "IMP-028A") {
+      return {
+        ok: false,
+        code: "PENDING_ACCEPTANCE_SPLIT",
+        message:
+          "pendingAcceptance cannot remain IMP-028A after acceptedThrough advances to IMP-028A",
+      };
+    }
+    if (
+      current === "IMP-028B" &&
+      position.imp026Accepted === true &&
+      position.imp026cAccepted === true &&
+      position.imp027Accepted === true &&
+      position.imp028Accepted === true &&
+      imp028aAccepted
+    ) {
+      if (imp028bImplementationAuthorized && !imp028bArchitectureLocked) {
+        return {
+          ok: false,
+          code: "PENDING_ACCEPTANCE_SPLIT",
+          message: "IMP-028B implementation cannot be authorized unless architecture is locked",
+        };
+      }
+      if (imp028bImplementationStarted && !imp028bImplementationAuthorized) {
+        return {
+          ok: false,
+          code: "PENDING_ACCEPTANCE_SPLIT",
+          message: "IMP-028B implementation cannot start before founder implementation authorization",
+        };
+      }
+      if (imp028bAccepted) {
+        return {
+          ok: false,
+          code: "PENDING_ACCEPTANCE_SPLIT",
+          message: "IMP-028B cannot be marked accepted while acceptedThrough remains IMP-028A",
+        };
+      }
+      if (pending === "IMP-028B") {
+        if (!imp028bImplementationAuthorized || !imp028bArchitectureLocked) {
+          return {
+            ok: false,
+            code: "PENDING_ACCEPTANCE_SPLIT",
+            message:
+              "IMP-028B IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE requires authorization and locked architecture",
+          };
+        }
+        if (!imp028bImplementationStarted) {
+          return {
+            ok: false,
+            code: "PENDING_ACCEPTANCE_SPLIT",
+            message:
+              "IMP-028B IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE requires IMP-028B_IMPLEMENTATION_STARTED: YES",
+          };
+        }
+        if (!imp028bImplementationComplete) {
+          return {
+            ok: false,
+            code: "PENDING_ACCEPTANCE_SPLIT",
+            message:
+              "IMP-028B IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE requires IMP-028B_IMPLEMENTATION_COMPLETE: YES",
+          };
+        }
+        return { ok: true, kind: "imp028b_implementation_complete_pending_acceptance" };
+      }
+      if (pending === "NONE") {
+        if (imp028bImplementationStarted) {
+          if (imp028bImplementationComplete) {
+            return {
+              ok: false,
+              code: "PENDING_ACCEPTANCE_SPLIT",
+              message:
+                "IMP-028B implementation complete requires pendingAcceptance = IMP-028B",
+            };
+          }
+          if (!imp028bImplementationAuthorized || !imp028bArchitectureLocked) {
+            return {
+              ok: false,
+              code: "PENDING_ACCEPTANCE_SPLIT",
+              message:
+                "IMP-028B implementation cannot start before founder implementation authorization",
+            };
+          }
+          return { ok: true, kind: "imp028b_implementation_in_progress" };
+        }
+        if (imp028bImplementationAuthorized) {
+          if (position.imp028bCapabilityArtifactLocked === false) {
+            return {
+              ok: false,
+              code: "PENDING_ACCEPTANCE_SPLIT",
+              message: "IMP-028B implementation authorization requires locked capability architecture",
+            };
+          }
+          return { ok: true, kind: "imp028b_implementation_authorized" };
+        }
+        return { ok: true, kind: "imp028b_canonical_activation" };
+      }
+    }
+    if (
+      current === "NONE" &&
+      pending === "NONE" &&
+      position.imp026Accepted === true &&
+      position.imp026cAccepted === true &&
+      position.imp027Accepted === true &&
+      position.imp028Accepted === true &&
+      imp028aAccepted
+    ) {
+      return { ok: true, kind: "imp028a_complete_and_accepted" };
+    }
+    return {
+      ok: false,
+      code: "PENDING_ACCEPTANCE_SPLIT",
+      message:
+        "After IMP-028A acceptance, currentProductSlice must be NONE or IMP-028B with IMP-028A_ACCEPTED: YES",
+    };
+  }
+
+  if (position.imp026cAccepted === true && position.imp026Accepted === false) {
+    return {
+      ok: false,
+      code: "PENDING_ACCEPTANCE_SPLIT",
+      message: "IMP-026C cannot be accepted while IMP-026 remains unaccepted",
+    };
+  }
+
+  if (position.imp027Accepted === true && position.imp026Accepted === false) {
+    return {
+      ok: false,
+      code: "PENDING_ACCEPTANCE_SPLIT",
+      message: "IMP-027 cannot be accepted while IMP-026 remains unaccepted",
+    };
+  }
+
+  if (
+    position.imp027Accepted === true &&
+    position.imp026cAccepted === false &&
+    !(
+      position.acceptedThrough === "IMP-027" &&
+      pending === "IMP-026C" &&
+      current === "IMP-028"
+    )
+  ) {
+    return {
+      ok: false,
+      code: "PENDING_ACCEPTANCE_SPLIT",
+      message: "IMP-027 cannot be accepted while IMP-026C remains unaccepted",
+    };
+  }
+
+  if (position.imp028Accepted === true && position.imp026Accepted === false) {
+    return {
+      ok: false,
+      code: "PENDING_ACCEPTANCE_SPLIT",
+      message: "IMP-028 cannot be accepted while IMP-026 remains unaccepted",
+    };
+  }
+
+  if (
+    position.imp026Accepted === true &&
+    position.deferredExternalWebhookGate === "DEFERRED_NOT_SATISFIED"
+  ) {
+    return {
+      ok: false,
+      code: "PENDING_ACCEPTANCE_SPLIT",
+      message:
+        "IMP-026 cannot be marked accepted while IMP-026_EXTERNAL_WEBHOOK_GATE remains DEFERRED_NOT_SATISFIED",
+    };
+  }
+
+  if (position.imp026Accepted === false && isLaterThanImp026(position.acceptedThrough)) {
+    return {
+      ok: false,
+      code: "PENDING_ACCEPTANCE_SPLIT",
+      message: "acceptedThrough cannot skip unresolved IMP-026",
+    };
+  }
+
+  if (position.imp026Accepted === false && isLaterThanImp026(current) && pending !== "IMP-026") {
+    return {
+      ok: false,
+      code: "PENDING_ACCEPTANCE_SPLIT",
+      message:
+        "pendingAcceptance cannot skip IMP-026; pendingAcceptance identifies the oldest unresolved acceptance gate",
+    };
+  }
+
+  if (
+    current === "IMP-027" &&
+    imp027Lifecycle === "IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE"
+  ) {
+    if (position.imp027CapabilityArtifactLocked === false) {
+      return {
+        ok: false,
+        code: "PENDING_ACCEPTANCE_SPLIT",
+        message:
+          "IMP-027 IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE requires locked capability artifact",
+      };
+    }
+    if (
+      position.imp027IndependentImplementationReview !== undefined &&
+      position.imp027IndependentImplementationReview !== "PASS"
+    ) {
+      return {
+        ok: false,
+        code: "PENDING_ACCEPTANCE_SPLIT",
+        message:
+          "IMP-027 IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE requires IMP_027_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS",
+      };
+    }
+  }
+
+  if (current === "IMP-028" && imp028ImplementationAuthorized && !imp028ArchitectureLocked) {
+    return {
+      ok: false,
+      code: "PENDING_ACCEPTANCE_SPLIT",
+      message:
+        "IMP-028 implementation cannot be authorized unless architecture is locked",
+    };
+  }
+
+  if (
+    current === "IMP-028" &&
+    (imp028Lifecycle === "IMPLEMENTATION_IN_PROGRESS" ||
+      imp028Lifecycle === "IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE" ||
+      imp028ImplementationStarted) &&
+    !imp028ImplementationAuthorized
+  ) {
+    return {
+      ok: false,
+      code: "PENDING_ACCEPTANCE_SPLIT",
+      message: "IMP-028 implementation cannot start before founder implementation authorization",
+    };
+  }
+
+  if (
+    current === "IMP-028A" &&
+    imp028aImplementationAuthorized &&
+    !imp028aArchitectureLocked
+  ) {
+    return {
+      ok: false,
+      code: "PENDING_ACCEPTANCE_SPLIT",
+      message: "IMP-028A implementation cannot be authorized unless architecture is locked",
+    };
+  }
+
+  if (
+    current === "IMP-028A" &&
+    imp028aImplementationStarted &&
+    !imp028aImplementationAuthorized
+  ) {
+    return {
+      ok: false,
+      code: "PENDING_ACCEPTANCE_SPLIT",
+      message: "IMP-028A implementation cannot start before founder implementation authorization",
+    };
+  }
+
+  if (pending === "NONE" || pending === current) {
+    if (
+      current === "IMP-026C" &&
+      pending === "NONE" &&
+      position.imp026Accepted === false
+    ) {
+      return {
+        ok: false,
+        code: "PENDING_ACCEPTANCE_SPLIT",
+        message:
+          "pendingAcceptance=NONE cannot hide IMP-026 acceptance debt while currentProductSlice=IMP-026C",
+      };
+    }
+    if (
+      position.acceptedThrough === "IMP-028" &&
+      current === "IMP-028A" &&
+      position.imp026Accepted === true &&
+      position.imp026cAccepted === true &&
+      position.imp027Accepted === true &&
+      position.imp028Accepted === true
+    ) {
+      if (pending === "IMP-028A") {
+        if (!imp028aImplementationAuthorized || !imp028aArchitectureLocked) {
+          return {
+            ok: false,
+            code: "PENDING_ACCEPTANCE_SPLIT",
+            message:
+              "IMP-028A IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE requires authorization and locked architecture",
+          };
+        }
+        if (!imp028aImplementationStarted) {
+          return {
+            ok: false,
+            code: "PENDING_ACCEPTANCE_SPLIT",
+            message:
+              "IMP-028A IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE requires IMP-028A_IMPLEMENTATION_STARTED: YES",
+          };
+        }
+        return { ok: true, kind: "imp028a_implementation_complete_pending_acceptance" };
+      }
+      if (pending === "NONE") {
+        if (imp028aImplementationStarted) {
+          if (!imp028aImplementationAuthorized || !imp028aArchitectureLocked) {
+            return {
+              ok: false,
+              code: "PENDING_ACCEPTANCE_SPLIT",
+              message:
+                "IMP-028A implementation cannot start before founder implementation authorization",
+            };
+          }
+          return { ok: true, kind: "imp028a_implementation_in_progress" };
+        }
+        if (imp028aImplementationAuthorized) {
+          if (position.imp028aCapabilityArtifactLocked === false) {
+            return {
+              ok: false,
+              code: "PENDING_ACCEPTANCE_SPLIT",
+              message:
+                "IMP-028A implementation authorization requires locked capability architecture",
+            };
+          }
+          return { ok: true, kind: "imp028a_implementation_authorized" };
+        }
+        return { ok: true, kind: "imp028a_canonical_activation" };
+      }
+    }
+    if (
+      position.imp026Accepted === true &&
+      pending === "NONE" &&
+      isLaterThanImp026(current)
+    ) {
+      return {
+        ok: false,
+        code: "PENDING_ACCEPTANCE_SPLIT",
+        message:
+          "pendingAcceptance=NONE cannot hide unresolved acceptance while currentProductSlice is later than IMP-026",
+      };
+    }
+    return { ok: true, kind: "aligned" };
+  }
+
+  const imp026AcceptedCommon =
+    position.acceptedThrough === "IMP-026" &&
+    pending === "IMP-027" &&
+    position.imp026Implementation === "COMPLETE_AND_ACCEPTED" &&
+    position.imp026Accepted === true &&
+    position.deferredExternalWebhookGate === "SATISFIED" &&
+    position.deferredExternalWebhookSatisfied === true;
+
+  const imp026AcceptedImp028Implementation =
+    imp026AcceptedCommon &&
+    current === "IMP-028" &&
+    position.imp026cLifecycle === "IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE" &&
+    position.imp026cImplementationAuthorized === true &&
+    position.imp026cAccepted === false &&
+    imp027Lifecycle === "IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE" &&
+    imp027ImplementationAuthorized &&
+    position.imp027Accepted !== true &&
+    position.imp027CapabilityArtifactLocked !== false &&
+    (position.imp027IndependentImplementationReview === undefined ||
+      position.imp027IndependentImplementationReview === "PASS") &&
+    imp028Lifecycle === "IMPLEMENTATION_IN_PROGRESS" &&
+    imp028ImplementationAuthorized &&
+    imp028ArchitectureLocked &&
+    imp028ImplementationStarted &&
+    position.imp028Accepted !== true &&
+    position.imp028CapabilityArtifactLocked !== false;
+
+  if (imp026AcceptedImp028Implementation) {
+    return {
+      ok: true,
+      kind: "imp026_accepted_pending_imp027_imp028_implementation",
+    };
+  }
+
+  const imp027AcceptedImp028Implementation =
+    position.acceptedThrough === "IMP-027" &&
+    pending === "IMP-026C" &&
+    current === "IMP-028" &&
+    position.imp026Implementation === "COMPLETE_AND_ACCEPTED" &&
+    position.imp026Accepted === true &&
+    position.imp026cLifecycle === "IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE" &&
+    position.imp026cImplementationAuthorized === true &&
+    position.imp026cAccepted === false &&
+    imp027Lifecycle === "COMPLETE_AND_ACCEPTED" &&
+    imp027ImplementationAuthorized &&
+    position.imp027Accepted === true &&
+    position.imp027CapabilityArtifactLocked !== false &&
+    (position.imp027IndependentImplementationReview === undefined ||
+      position.imp027IndependentImplementationReview === "PASS") &&
+    imp028Lifecycle === "IMPLEMENTATION_IN_PROGRESS" &&
+    imp028ImplementationAuthorized &&
+    imp028ArchitectureLocked &&
+    imp028ImplementationStarted &&
+    position.imp028Accepted !== true &&
+    position.imp028CapabilityArtifactLocked !== false;
+
+  if (imp027AcceptedImp028Implementation) {
+    return {
+      ok: true,
+      kind: "imp027_accepted_pending_imp026c_imp028_implementation",
+    };
+  }
+
+  const deferredGateCommon =
+    position.acceptedThrough === "IMP-025" &&
+    pending === "IMP-026" &&
+    position.imp026Implementation === "IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE" &&
+    position.imp026Accepted === false &&
+    position.deferredExternalWebhookGate === "DEFERRED_NOT_SATISFIED" &&
+    position.deferredExternalWebhookSatisfied === false;
+
+  const deferredGateBase =
+    deferredGateCommon &&
+    current === "IMP-026C";
+
+  const architectureLockedNotAuthorized =
+    deferredGateBase &&
+    position.imp026cLifecycle === "ARCHITECTURE_LOCKED" &&
+    position.imp026cImplementationAuthorized === false;
+
+  const implementationInProgressAuthorized =
+    deferredGateBase &&
+    position.imp026cLifecycle === "IMPLEMENTATION_IN_PROGRESS" &&
+    position.imp026cImplementationAuthorized === true;
+
+  const implementationCompletePendingAcceptance =
+    deferredGateBase &&
+    position.imp026cLifecycle === "IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE" &&
+    position.imp026cImplementationAuthorized === true &&
+    position.imp026cAccepted === false;
+
+  const imp027ArchitectureInProgress =
+    deferredGateCommon &&
+    current === "IMP-027" &&
+    position.imp026cLifecycle === "IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE" &&
+    position.imp026cImplementationAuthorized === true &&
+    position.imp026cAccepted === false &&
+    imp027Lifecycle === "ARCHITECTURE_IN_PROGRESS" &&
+    !imp027ImplementationAuthorized;
+
+  const imp027ArchitectureLocked =
+    deferredGateCommon &&
+    current === "IMP-027" &&
+    position.imp026cLifecycle === "IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE" &&
+    position.imp026cImplementationAuthorized === true &&
+    position.imp026cAccepted === false &&
+    imp027Lifecycle === "ARCHITECTURE_LOCKED" &&
+    !imp027ImplementationAuthorized;
+
+  const imp027ImplementationInProgress =
+    deferredGateCommon &&
+    current === "IMP-027" &&
+    position.imp026cLifecycle === "IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE" &&
+    position.imp026cImplementationAuthorized === true &&
+    position.imp026cAccepted === false &&
+    imp027Lifecycle === "IMPLEMENTATION_IN_PROGRESS" &&
+    imp027ImplementationAuthorized;
+
+  const imp027ImplementationComplete =
+    deferredGateCommon &&
+    current === "IMP-027" &&
+    position.imp026cLifecycle === "IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE" &&
+    position.imp026cImplementationAuthorized === true &&
+    position.imp026cAccepted === false &&
+    imp027Lifecycle === "IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE" &&
+    imp027ImplementationAuthorized &&
+    position.imp027Accepted !== true &&
+    position.imp027CapabilityArtifactLocked !== false &&
+    (position.imp027IndependentImplementationReview === undefined ||
+      position.imp027IndependentImplementationReview === "PASS");
+
+  const imp028ArchitectureInProgress =
+    deferredGateCommon &&
+    current === "IMP-028" &&
+    position.imp026cLifecycle === "IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE" &&
+    position.imp026cImplementationAuthorized === true &&
+    position.imp026cAccepted === false &&
+    imp027Lifecycle === "IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE" &&
+    imp027ImplementationAuthorized &&
+    position.imp027Accepted !== true &&
+    position.imp027CapabilityArtifactLocked !== false &&
+    (position.imp027IndependentImplementationReview === undefined ||
+      position.imp027IndependentImplementationReview === "PASS") &&
+    imp028Lifecycle === "ARCHITECTURE_IN_PROGRESS" &&
+    !imp028ImplementationAuthorized &&
+    !imp028ArchitectureLocked &&
+    position.imp028Accepted !== true;
+
+  const imp028ArchitectureLockedKind =
+    deferredGateCommon &&
+    current === "IMP-028" &&
+    position.imp026cLifecycle === "IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE" &&
+    position.imp026cImplementationAuthorized === true &&
+    position.imp026cAccepted === false &&
+    imp027Lifecycle === "IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE" &&
+    imp027ImplementationAuthorized &&
+    position.imp027Accepted !== true &&
+    position.imp027CapabilityArtifactLocked !== false &&
+    (position.imp027IndependentImplementationReview === undefined ||
+      position.imp027IndependentImplementationReview === "PASS") &&
+    imp028Lifecycle === "ARCHITECTURE_LOCKED" &&
+    !imp028ImplementationAuthorized &&
+    imp028ArchitectureLocked &&
+    position.imp028Accepted !== true &&
+    position.imp028CapabilityArtifactLocked !== false;
+
+  const imp028ImplementationAuthorizedKind =
+    deferredGateCommon &&
+    current === "IMP-028" &&
+    position.imp026cLifecycle === "IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE" &&
+    position.imp026cImplementationAuthorized === true &&
+    position.imp026cAccepted === false &&
+    imp027Lifecycle === "IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE" &&
+    imp027ImplementationAuthorized &&
+    position.imp027Accepted !== true &&
+    position.imp027CapabilityArtifactLocked !== false &&
+    (position.imp027IndependentImplementationReview === undefined ||
+      position.imp027IndependentImplementationReview === "PASS") &&
+    (imp028Lifecycle === "ARCHITECTURE_LOCKED" ||
+      imp028Lifecycle === "IMPLEMENTATION_AUTHORIZED") &&
+    imp028ImplementationAuthorized &&
+    imp028ArchitectureLocked &&
+    !imp028ImplementationStarted &&
+    imp028Lifecycle !== "IMPLEMENTATION_IN_PROGRESS" &&
+    imp028Lifecycle !== "IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE" &&
+    position.imp028Accepted !== true &&
+    position.imp028CapabilityArtifactLocked !== false;
+
+  const imp028ImplementationInProgressKind =
+    deferredGateCommon &&
+    current === "IMP-028" &&
+    position.imp026cLifecycle === "IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE" &&
+    position.imp026cImplementationAuthorized === true &&
+    position.imp026cAccepted === false &&
+    imp027Lifecycle === "IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE" &&
+    imp027ImplementationAuthorized &&
+    position.imp027Accepted !== true &&
+    position.imp027CapabilityArtifactLocked !== false &&
+    (position.imp027IndependentImplementationReview === undefined ||
+      position.imp027IndependentImplementationReview === "PASS") &&
+    imp028Lifecycle === "IMPLEMENTATION_IN_PROGRESS" &&
+    imp028ImplementationAuthorized &&
+    imp028ArchitectureLocked &&
+    imp028ImplementationStarted &&
+    position.imp028Accepted !== true &&
+    position.imp028CapabilityArtifactLocked !== false;
+
+  if (architectureLockedNotAuthorized) {
+    return { ok: true, kind: "imp026_deferred_external_gate" };
+  }
+  if (implementationInProgressAuthorized) {
+    return { ok: true, kind: "imp026_deferred_external_gate_impl_authorized" };
+  }
+  if (implementationCompletePendingAcceptance) {
+    return { ok: true, kind: "imp026_deferred_external_gate_impl_complete" };
+  }
+  if (imp028ImplementationInProgressKind) {
+    return {
+      ok: true,
+      kind: "imp026_deferred_external_gate_imp028_implementation",
+    };
+  }
+  if (imp028ImplementationAuthorizedKind) {
+    return {
+      ok: true,
+      kind: "imp026_deferred_external_gate_imp028_implementation_authorized",
+    };
+  }
+  if (imp028ArchitectureLockedKind) {
+    return { ok: true, kind: "imp026_deferred_external_gate_imp028_architecture_locked" };
+  }
+  if (imp028ArchitectureInProgress) {
+    return { ok: true, kind: "imp026_deferred_external_gate_imp028_architecture" };
+  }
+  if (imp027ImplementationComplete) {
+    return { ok: true, kind: "imp026_deferred_external_gate_imp027_implementation_complete" };
+  }
+  if (imp027ImplementationInProgress) {
+    return { ok: true, kind: "imp026_deferred_external_gate_imp027_implementation" };
+  }
+  if (imp027ArchitectureLocked) {
+    return { ok: true, kind: "imp026_deferred_external_gate_imp027_architecture_locked" };
+  }
+  if (imp027ArchitectureInProgress) {
+    return { ok: true, kind: "imp026_deferred_external_gate_imp027_architecture" };
+  }
+
+  return {
+    ok: false,
+    code: "PENDING_ACCEPTANCE_SPLIT",
+    message:
+      `pendingAcceptance=${JSON.stringify(pending)} is not currentProductSlice=${JSON.stringify(current)} and is not the documented IMP-026 deferred-external-gate exception`,
+  };
+}
+
+/**
+ * @param {{ text: string, meta: Record<string, unknown> } | null} state
+ * @param {{ text: string, meta: Record<string, unknown> } | null} roadmap
+ */
+export function extractPendingAcceptanceSplitPosition(state, roadmap) {
+  const blob = `${state?.text ?? ""}\n${roadmap?.text ?? ""}`;
+  const hasSatisfiedGate = /IMP-026_EXTERNAL_WEBHOOK_GATE:\s*SATISFIED/.test(blob);
+  const hasDeferredGate =
+    !hasSatisfiedGate && /IMP-026_EXTERNAL_WEBHOOK_GATE:\s*DEFERRED_NOT_SATISFIED/.test(blob);
+  const imp026Implementation = /IMP-026 implementation:[\s\S]{0,40}COMPLETE_AND_ACCEPTED/.test(
+    state?.text ?? "",
+  )
+    ? "COMPLETE_AND_ACCEPTED"
+    : /IMP-026 implementation:[\s\S]{0,40}IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE/.test(
+          state?.text ?? "",
+        )
+      ? "IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE"
+      : "UNKNOWN";
+  return {
+    acceptedThrough: String(state?.meta.acceptedThrough ?? ""),
+    currentProductSlice: String(state?.meta.currentProductSlice ?? ""),
+    pendingAcceptance: String(state?.meta.pendingAcceptance ?? "NONE"),
+    imp026Implementation,
+    imp026Accepted: /IMP-026_ACCEPTED:\s*YES/.test(blob),
+    deferredExternalWebhookGate: hasDeferredGate
+      ? "DEFERRED_NOT_SATISFIED"
+      : hasSatisfiedGate
+        ? "SATISFIED"
+        : "UNKNOWN",
+    deferredExternalWebhookSatisfied: hasSatisfiedGate,
+    imp026cLifecycle: /IMP-026C:\s*COMPLETE_AND_ACCEPTED/.test(blob)
+      ? "COMPLETE_AND_ACCEPTED"
+      : /IMP-026C:\s*IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE/.test(blob)
+      ? "IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE"
+      : /IMP-026C:\s*IMPLEMENTATION_IN_PROGRESS/.test(blob)
+        ? "IMPLEMENTATION_IN_PROGRESS"
+        : /IMP-026C:\s*ARCHITECTURE_LOCKED/.test(blob) ||
+            /IMP-026C architecture:\s*ARCHITECTURE_LOCKED/.test(blob)
+          ? "ARCHITECTURE_LOCKED"
+          : /IMP-026C:\s*ARCHITECTURE_IN_PROGRESS/.test(blob)
+            ? "ARCHITECTURE_IN_PROGRESS"
+            : "UNKNOWN",
+    imp026cImplementationAuthorized: /IMP-026C_IMPLEMENTATION_AUTHORIZED:\s*YES/.test(blob),
+    imp026cAccepted: /IMP-026C_ACCEPTED:\s*YES/.test(blob),
+    imp027Lifecycle: /IMP-027:\s*COMPLETE_AND_ACCEPTED/.test(blob)
+      ? "COMPLETE_AND_ACCEPTED"
+      : /IMP-027:\s*IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE/.test(blob)
+        ? "IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE"
+        : /IMP-027:\s*IMPLEMENTATION_IN_PROGRESS/.test(blob)
+        ? "IMPLEMENTATION_IN_PROGRESS"
+        : /IMP-027:\s*ARCHITECTURE_LOCKED/.test(blob) ||
+            /IMP-027 architecture:\s*ARCHITECTURE_LOCKED/.test(blob)
+          ? "ARCHITECTURE_LOCKED"
+          : /IMP-027:\s*ARCHITECTURE_IN_PROGRESS/.test(blob)
+            ? "ARCHITECTURE_IN_PROGRESS"
+            : "UNKNOWN",
+    imp027ImplementationAuthorized:
+      /IMP-027_IMPLEMENTATION_AUTHORIZED:\s*YES/.test(blob) ||
+      /IMP-027_IMPLEMENTATION:\s*(?!NOT_)AUTHORIZED\b/.test(blob) ||
+      /IMP-027 implementation:\s*(?!NOT_)AUTHORIZED\b/.test(blob),
+    imp027Accepted: /IMP-027_ACCEPTED:\s*YES/.test(blob),
+    imp027CapabilityArtifactLocked: (() => {
+      const artifact = resolveExactRelativeFile(
+        "docs/platform/capabilities/IMP-027-refund-foundation.md",
+      );
+      if (!artifact) return false;
+      return /ARCHITECTURE_LOCKED/.test(readFileSync(artifact, "utf8"));
+    })(),
+    imp027IndependentImplementationReview: /IMP_027_INDEPENDENT_IMPLEMENTATION_REVIEW:\s*PASS/.test(
+      blob,
+    )
+      ? "PASS"
+      : /IMP_027_INDEPENDENT_IMPLEMENTATION_REVIEW:\s*\S+/.test(blob)
+        ? "NOT_PASS"
+        : undefined,
+    imp028Lifecycle: /IMP-028:\s*COMPLETE_AND_ACCEPTED/.test(blob)
+      ? "COMPLETE_AND_ACCEPTED"
+      : /IMP-028:\s*IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE/.test(blob)
+      ? "IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE"
+      : /IMP-028:\s*IMPLEMENTATION_IN_PROGRESS/.test(blob)
+        ? "IMPLEMENTATION_IN_PROGRESS"
+        : /IMP-028:\s*IMPLEMENTATION_AUTHORIZED\b/.test(blob)
+          ? "IMPLEMENTATION_AUTHORIZED"
+          : /IMP-028:\s*ARCHITECTURE_LOCKED/.test(blob) ||
+              /IMP-028 architecture:\s*ARCHITECTURE_LOCKED/.test(blob)
+            ? "ARCHITECTURE_LOCKED"
+            : /IMP-028:\s*ARCHITECTURE_IN_PROGRESS/.test(blob)
+              ? "ARCHITECTURE_IN_PROGRESS"
+              : "UNKNOWN",
+    imp028ImplementationAuthorized:
+      /IMP-028_IMPLEMENTATION_AUTHORIZED:\s*YES/.test(blob) ||
+      /IMP-028_IMPLEMENTATION:\s*(?!NOT_)AUTHORIZED\b/.test(blob) ||
+      /IMP-028 implementation:\s*(?!NOT_)AUTHORIZED\b/.test(blob),
+    imp028ImplementationStarted:
+      /IMP-028_IMPLEMENTATION_STARTED:\s*YES/.test(blob) ||
+      /IMP-028:\s*IMPLEMENTATION_IN_PROGRESS/.test(blob) ||
+      /IMP-028:\s*IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE/.test(blob) ||
+      /IMP-028_IMPLEMENTATION_COMPLETE:\s*YES/.test(blob),
+    imp028ArchitectureLocked:
+      /IMP-028_ARCHITECTURE_LOCKED:\s*YES/.test(blob) ||
+      /IMP-028_ARCHITECTURE:\s*LOCKED\b/.test(blob) ||
+      /IMP-028 architecture:\s*ARCHITECTURE_LOCKED/.test(blob),
+    imp028CapabilityArtifactLocked: (() => {
+      const artifact = resolveExactRelativeFile(
+        "docs/platform/capabilities/IMP-028-invoice-tax-receipt-credit-note.md",
+      );
+      if (!artifact) return false;
+      return /ARCHITECTURE_LOCKED/.test(readFileSync(artifact, "utf8"));
+    })(),
+    imp028Accepted: /IMP-028_ACCEPTED:\s*YES/.test(blob),
+    imp028aImplementationAuthorized: /IMP-028A_IMPLEMENTATION_AUTHORIZED:\s*YES/.test(blob),
+    imp028aImplementationStarted: /IMP-028A_IMPLEMENTATION_STARTED:\s*YES/.test(blob),
+    imp028aArchitectureLocked:
+      /IMP-028A_ARCHITECTURE_LOCKED:\s*YES/.test(blob) ||
+      /IMP-028A architecture:\s*ARCHITECTURE_LOCKED/.test(blob) ||
+      /IMP-028A:\s*IMPLEMENTATION_AUTHORIZED/.test(blob),
+    imp028aAccepted: /IMP-028A_ACCEPTED:\s*YES/.test(blob),
+    imp028aCapabilityArtifactLocked: (() => {
+      const artifact = resolveExactRelativeFile(
+        "docs/platform/capabilities/IMP-028A-food-direct-ux-foundation.md",
+      );
+      if (!artifact) return false;
+      return /"architectureLock":\s*"ARCHITECTURE_LOCKED"/.test(readFileSync(artifact, "utf8"));
+    })(),
+    imp028bImplementationAuthorized: /IMP-028B_IMPLEMENTATION_AUTHORIZED:\s*YES/.test(blob),
+    imp028bImplementationStarted: /IMP-028B_IMPLEMENTATION_STARTED:\s*YES/.test(blob),
+    imp028bImplementationComplete: /IMP-028B_IMPLEMENTATION_COMPLETE:\s*YES/.test(blob),
+    imp028bArchitectureLocked:
+      /IMP-028B_ARCHITECTURE_LOCKED:\s*YES/.test(blob) ||
+      /IMP-028B architecture:\s*ARCHITECTURE_LOCKED/.test(blob),
+    imp028bAccepted: /IMP-028B_ACCEPTED:\s*YES/.test(blob),
+    imp028bCapabilityArtifactLocked: (() => {
+      const artifact = resolveExactRelativeFile(
+        "docs/platform/capabilities/IMP-028B-customer-menu-projection-and-discovery.md",
+      );
+      if (!artifact) return false;
+      return /"architectureLock":\s*"ARCHITECTURE_LOCKED"/.test(readFileSync(artifact, "utf8"));
+    })(),
+    imp028cImplementationAuthorized: /IMP-028C_IMPLEMENTATION_AUTHORIZED:\s*YES/.test(blob),
+    imp028cImplementationStarted: /IMP-028C_IMPLEMENTATION_STARTED:\s*YES/.test(blob),
+    imp028cImplementationComplete: /IMP-028C_IMPLEMENTATION_COMPLETE:\s*YES/.test(blob),
+    imp029ImplementationAuthorized: /IMP-029_IMPLEMENTATION_AUTHORIZED:\s*YES/.test(blob),
+    imp029Started: /IMP-029_STARTED:\s*YES/.test(blob),
+    imp028cArchitectureLocked:
+      /IMP-028C_ARCHITECTURE_LOCKED:\s*YES/.test(blob) ||
+      /IMP-028C architecture:\s*ARCHITECTURE_LOCKED/.test(blob),
+    imp028cAccepted: /IMP-028C_ACCEPTED:\s*YES/.test(blob),
+    imp028cCanonicallyAssigned: /IMP-028C/.test(blob) && (
+      /currentProductSlice.*IMP-028C/.test(blob) ||
+      /IMP-028C_IMPLEMENTATION_AUTHORIZED/.test(blob) ||
+      /IMP-028C_ARCHITECTURE_LOCKED/.test(blob)
+    ),
+    imp028cCapabilityArtifactPresent: (() => {
+      const artifact = resolveExactRelativeFile(
+        "docs/platform/capabilities/IMP-028C-food-direct-customization.md",
+      );
+      return !!artifact;
+    })(),
+  };
+}
 
 /**
  * Confirm git tracks the exact relative pathname when a real HEAD exists.
@@ -184,14 +1149,15 @@ function checkRoadmapState(roadmap, state) {
   }
 
   const expected = {
-    acceptedThrough: "IMP-025",
-    currentProductSlice: "NONE",
-    nextProductSlice: "IMP-026",
+    acceptedThrough: "IMP-028B",
+    currentProductSlice: ["NONE", "IMP-028C"],
+    nextProductSlice: "IMP-029",
     gtmBoundary: "IMP-040",
   };
   for (const [key, expectedValue] of Object.entries(expected)) {
     const actual = key === "gtmBoundary" ? roadmap.meta.gtmBoundary : roadmap.meta[key];
-    if (!nullishEqual(actual, expectedValue)) {
+    const acceptable = Array.isArray(expectedValue) ? expectedValue : [expectedValue];
+    if (!acceptable.some((v) => nullishEqual(actual, v))) {
       fail(
         "POSITION_UNEXPECTED",
         `Expected ${key}=${JSON.stringify(expectedValue)}, got ${JSON.stringify(actual)}`,
@@ -204,12 +1170,16 @@ function checkRoadmapState(roadmap, state) {
   const futureSection = roadmap.text.split("## 5. Future GTM Slices")[1]?.split("## 6.")[0] || "";
   const ledgerText = `${acceptedSection}\n${futureSection}`;
   const idName = new Map();
-  const rowRe = /\|\s*(IMP-\d+A?)\s*\|\s*([^|]+)\|/g;
+  const rowRe = new RegExp(LEDGER_ROW_IMP_RE.source, LEDGER_ROW_IMP_RE.flags);
   let m;
   while ((m = rowRe.exec(ledgerText)) !== null) {
     const id = m[1];
     const name = m[2].trim();
     if (name.toLowerCase() === "capability") continue;
+    if (!FORMAL_LEDGER_IMP_ID_RE.test(id)) {
+      fail("IMP_LEDGER_GRAMMAR", `Ledger row id ${id} does not match IMP-\\d+[A-Z]?`);
+      continue;
+    }
     if (idName.has(id) && idName.get(id) !== name) {
       fail("IMP_IDENTITY_COLLISION", `${id} maps to both "${idName.get(id)}" and "${name}"`);
     }
@@ -219,6 +1189,16 @@ function checkRoadmapState(roadmap, state) {
     fail("ACCEPTED_THROUGH_MISSING", `acceptedThrough ${roadmap.meta.acceptedThrough} not in ROADMAP ledger`);
   } else {
     note(`acceptedThrough ${roadmap.meta.acceptedThrough} present in ledger`);
+  }
+  if (String(roadmap.meta.currentProductSlice) === "NONE") {
+    note("currentProductSlice NONE (no active product slice)");
+  } else if (!idName.has(String(roadmap.meta.currentProductSlice))) {
+    fail(
+      "CURRENT_SLICE_MISSING",
+      `currentProductSlice ${roadmap.meta.currentProductSlice} not in ROADMAP ledger`,
+    );
+  } else {
+    note(`currentProductSlice ${roadmap.meta.currentProductSlice} present in ledger`);
   }
   if (!idName.has(String(roadmap.meta.nextProductSlice))) {
     fail("NEXT_SLICE_MISSING", `nextProductSlice ${roadmap.meta.nextProductSlice} not in ROADMAP ledger`);
@@ -239,6 +1219,11 @@ function checkRoadmapState(roadmap, state) {
     "IMP-024": "Customer Ordering Transport",
     "IMP-025": "Customer Ordering UX",
     "IMP-026": "Razorpay",
+    "IMP-026C": "Pilot Customer-Commerce UX",
+    "IMP-027": "Refund",
+    "IMP-028": "Invoice",
+    "IMP-028A": "Food Direct UX Foundation",
+    "IMP-028B": "Customer Menu Projection",
     "IMP-035": "Initial Administration",
     "IMP-040": "Launch Validation",
   };
@@ -249,6 +1234,87 @@ function checkRoadmapState(roadmap, state) {
     } else {
       note(`${id} meaning OK (${name})`);
     }
+  }
+
+  const split = evaluatePendingAcceptanceSplit(extractPendingAcceptanceSplitPosition(state, roadmap));
+  if (!split.ok) {
+    fail(split.code, split.message);
+  } else if (split.kind === "imp028b_complete_and_accepted") {
+    note(
+      "GTM-R42 IMP-028B Customer Menu Projection + Discovery COMPLETE_AND_ACCEPTED; IMP-029 not started",
+    );
+  } else if (split.kind === "imp028c_authorized_not_started") {
+    note(
+      "IMP-028C authorized/not-started; acceptedThrough=IMP-028B; IMP-029 not started",
+    );
+  } else if (split.kind === "imp028c_implementation_started") {
+    note(
+      "IMP-028C implementation started; acceptedThrough=IMP-028B; pendingAcceptance=NONE; IMP-029 not started",
+    );
+  } else if (split.kind === "imp028b_implementation_complete_pending_acceptance") {
+    note(
+      "GTM-R41 historical IMP-028B implementation COMPLETE pending acceptance",
+    );
+  } else if (split.kind === "imp028b_implementation_in_progress") {
+    fail(
+      "IMP028B_COMPLETE_REQUIRED",
+      "GTM-R42 requires IMP-028B COMPLETE_AND_ACCEPTED (got kind=imp028b_implementation_in_progress)",
+    );
+  } else if (split.kind === "imp028b_implementation_authorized") {
+    fail(
+      "IMP028B_START_REQUIRED",
+      "GTM-R42 requires IMP-028B COMPLETE_AND_ACCEPTED (got kind=imp028b_implementation_authorized)",
+    );
+  } else if (split.kind === "imp028b_canonical_activation") {
+    fail(
+      "IMP028B_AUTHORIZATION_REQUIRED",
+      "GTM-R42 requires IMP-028B COMPLETE_AND_ACCEPTED (got kind=imp028b_canonical_activation)",
+    );
+  } else if (split.kind === "imp028a_complete_and_accepted") {
+    fail(
+      "IMP028B_ACTIVATION_REQUIRED",
+      "GTM-R38 requires IMP-028B canonical activation (got kind=imp028a_complete_and_accepted)",
+    );
+  } else if (split.kind === "imp028a_implementation_complete_pending_acceptance") {
+    fail(
+      "IMP028A_ACCEPTANCE_REQUIRED",
+      "GTM-R38 requires IMP-028A COMPLETE_AND_ACCEPTED before IMP-028B activation (got kind=imp028a_implementation_complete_pending_acceptance)",
+    );
+  } else if (split.kind === "imp028a_implementation_in_progress") {
+    fail(
+      "IMP028A_ACCEPTANCE_REQUIRED",
+      "GTM-R38 requires IMP-028A COMPLETE_AND_ACCEPTED before IMP-028B activation (got kind=imp028a_implementation_in_progress)",
+    );
+  } else if (split.kind === "imp028a_implementation_authorized") {
+    fail(
+      "IMP028A_ACCEPTANCE_REQUIRED",
+      "GTM-R38 requires IMP-028A COMPLETE_AND_ACCEPTED before IMP-028B activation (got kind=imp028a_implementation_authorized)",
+    );
+  } else if (split.kind === "imp028a_canonical_activation") {
+    fail(
+      "IMP028A_ACCEPTANCE_REQUIRED",
+      "GTM-R38 requires IMP-028A COMPLETE_AND_ACCEPTED before IMP-028B activation (got kind=imp028a_canonical_activation)",
+    );
+  } else if (split.kind !== "aligned") {
+    fail(
+      "DEFERRED_EXTERNAL_GATE_REQUIRED",
+      `GTM-R42 requires IMP-028B COMPLETE_AND_ACCEPTED with acceptedThrough=IMP-028B, pendingAcceptance=NONE, and currentProductSlice=NONE (got kind=${split.kind})`,
+    );
+  } else {
+    fail(
+      "IMP028B_ACTIVATION_REQUIRED",
+      "GTM-R42 requires kind=imp028b_complete_and_accepted (got kind=aligned)",
+    );
+  }
+
+  if (
+    roadmap.meta.currentProductSlice === "IMP-029" ||
+    state.meta.currentProductSlice === "IMP-029"
+  ) {
+    fail(
+      "IMP029_ACTIVATED",
+      "GTM-R30 must not activate IMP-029 as currentProductSlice; nextProductSlice=IMP-029 is planned bookkeeping only and does not authorize implementation",
+    );
   }
 }
 
@@ -309,7 +1375,7 @@ function checkDecisionRegister(decision) {
     }
   }
 
-  for (const id of ["D-356", "D-357", "D-358", "D-359", "D-360", "D-361", "D-362", "D-363"]) {
+  for (const id of ["D-356", "D-357", "D-358", "D-359", "D-360", "D-361", "D-362", "D-363", "D-364", "D-365", "D-366", "D-367", "D-368", "D-369", "D-370"]) {
     if (!seen.has(id)) {
       fail("DECISION_REQUIRED_IDS", `DECISION-REGISTER must register ${id}`);
     }
@@ -365,6 +1431,24 @@ function checkDecisionRegister(decision) {
       "D-363 must lock durable webhook inbox, customer-commerce processing, and Payment/provider ingress schema change",
     );
   }
+  const d364Row = [...globalSection.split("\n")].find((line) => /^\|\s*D-364\s*\|/.test(line));
+  if (d364Row && !/\|\s*CURRENT\s*\|/.test(d364Row)) {
+    fail("D364_STATUS", "D-364 must be CURRENT");
+  }
+  if (
+    d364Row &&
+    (!/Refund/.test(d364Row) || !/IMP-027/.test(d364Row) || !/SUCCEEDED/.test(d364Row))
+  ) {
+    fail(
+      "D364_CONTRACT",
+      "D-364 must lock Refund Foundation independent of Payment SUCCEEDED collection truth for IMP-027",
+    );
+  }
+  if (!/D-371/.test(text)) {
+    fail("NEXT_DECISION_ID", "Decision register must advance next free ID to D-371 after D-370");
+  } else {
+    note("Next free decision ID D-371 recorded");
+  }
   if (d359Row && d360Row) {
     note("D-359 and D-360 registered as CURRENT");
   }
@@ -385,6 +1469,129 @@ function checkDecisionRegister(decision) {
     /customer-commerce/.test(d363Row)
   ) {
     note("D-363 registered as CURRENT (durable webhook inbox / async Payment processing)");
+  }
+  if (d364Row && /\|\s*CURRENT\s*\|/.test(d364Row) && /Refund/.test(d364Row)) {
+    note("D-364 registered as CURRENT (Refund Foundation)");
+  }
+  const d365Row = [...globalSection.split("\n")].find((line) => /^\|\s*D-365\s*\|/.test(line));
+  if (d365Row && !/\|\s*CURRENT\s*\|/.test(d365Row)) {
+    fail("D365_STATUS", "D-365 must be CURRENT");
+  }
+  if (
+    d365Row &&
+    (!/Financial Document/.test(d365Row) ||
+      !/IMP-028/.test(d365Row) ||
+      !/TAX_INVOICE/.test(d365Row) ||
+      !/CREDIT_NOTE/.test(d365Row))
+  ) {
+    fail(
+      "D365_CONTRACT",
+      "D-365 must lock Financial Document authority and statutory classes for IMP-028",
+    );
+  }
+  if (d365Row && /\|\s*CURRENT\s*\|/.test(d365Row) && /Financial Document/.test(d365Row)) {
+    note("D-365 registered as CURRENT (Financial Document Authority)");
+  }
+  const d366Row = [...globalSection.split("\n")].find((line) => /^\|\s*D-366\s*\|/.test(line));
+  if (d366Row && !/\|\s*CURRENT\s*\|/.test(d366Row)) {
+    fail("D366_STATUS", "D-366 must be CURRENT");
+  }
+  if (
+    d366Row &&
+    (!/RefundStatutoryDecision/.test(d366Row) ||
+      !/IMP-028/.test(d366Row) ||
+      !/REFUND_VOUCHER/.test(d366Row) ||
+      !/CREDIT_NOTE/.test(d366Row) ||
+      !/NO_STATUTORY_DOCUMENT/.test(d366Row))
+  ) {
+    fail(
+      "D366_CONTRACT",
+      "D-366 must lock RefundStatutoryDecision and refund statutory dispositions for IMP-028",
+    );
+  }
+  if (d366Row && /\|\s*CURRENT\s*\|/.test(d366Row) && /RefundStatutoryDecision/.test(d366Row)) {
+    note("D-366 registered as CURRENT (Refund Statutory Reversal Decision Authority)");
+  }
+  const d367Row = [...globalSection.split("\n")].find((line) => /^\|\s*D-367\s*\|/.test(line));
+  if (d367Row && !/\|\s*CURRENT\s*\|/.test(d367Row)) {
+    fail("D367_STATUS", "D-367 must be CURRENT");
+  }
+  if (
+    d367Row &&
+    (!/SignatureArtifact/.test(d367Row) ||
+      !/IMP-028/.test(d367Row) ||
+      !/ATTENDED_ASYNC_SIGNING/.test(d367Row) ||
+      !/DOCUMENT_SIGNER_AS_SOLE_SIGNATURE_AUTHORITY:\s*PROHIBITED/.test(d367Row))
+  ) {
+    fail(
+      "D367_CONTRACT",
+      "D-367 must lock SignatureArtifact signing authority, ATTENDED_ASYNC_SIGNING, and Document Signer prohibition for IMP-028",
+    );
+  }
+  if (d367Row && /\|\s*CURRENT\s*\|/.test(d367Row) && /SignatureArtifact/.test(d367Row)) {
+    note("D-367 registered as CURRENT (Statutory Financial Document Signing and Signed Artifact Authority)");
+  }
+  const d368Row = [...globalSection.split("\n")].find((line) => /^\|\s*D-368\s*\|/.test(line));
+  if (d368Row && !/\|\s*CURRENT\s*\|/.test(d368Row)) {
+    fail("D368_STATUS", "D-368 must be CURRENT");
+  }
+  if (
+    d368Row &&
+    (!/READ PROJECTION/.test(d368Row) ||
+      !/IMP-025/.test(d368Row) ||
+      !/ordering-catalog/.test(d368Row) ||
+      !/Checkout Snapshot/.test(d368Row) ||
+      !/customer-commerce/.test(d368Row))
+  ) {
+    fail(
+      "D368_CONTRACT",
+      "D-368 must lock Customer Menu READ PROJECTION TARGET over existing authorities without replacing Checkout Snapshot or accepted IMP-025 current storefront delivery",
+    );
+  }
+  if (d368Row && /\|\s*CURRENT\s*\|/.test(d368Row) && /READ PROJECTION/.test(d368Row)) {
+    note("D-368 registered as CURRENT (Customer Menu Read Projection Authority)");
+  }
+  const d369Row = [...globalSection.split("\n")].find((line) => /^\|\s*D-369\s*\|/.test(line));
+  if (d369Row && !/\|\s*CURRENT\s*\|/.test(d369Row)) {
+    fail("D369_STATUS", "D-369 must be CURRENT");
+  }
+  if (
+    d369Row &&
+    (!/explicit/.test(d369Row) ||
+      !/purchase intent/.test(d369Row) ||
+      !/default_quantity/.test(d369Row) ||
+      !/price_delta/.test(d369Row) ||
+      !/Checkout Snapshot/.test(d369Row))
+  ) {
+    fail(
+      "D369_CONTRACT",
+      "D-369 must lock explicit current-interaction selection for positive-price modifiers entering purchase intent without making catalog default_quantity or Checkout Snapshot a silent paid-intent source",
+    );
+  }
+  if (d369Row && /\|\s*CURRENT\s*\|/.test(d369Row) && /purchase intent/.test(d369Row)) {
+    note("D-369 registered as CURRENT (Customer Paid Modifier Explicit Selection Authority)");
+  }
+  const d370Row = [...globalSection.split("\n")].find((line) => /^\|\s*D-370\s*\|/.test(line));
+  if (d370Row && !/\|\s*CURRENT\s*\|/.test(d370Row)) {
+    fail("D370_STATUS", "D-370 must be CURRENT");
+  }
+  if (
+    d370Row &&
+    (!/purchase intent/.test(d370Row) ||
+      !/silent/.test(d370Row) ||
+      !/CUSTOMER OWNED/.test(d370Row) ||
+      !/sign-out/.test(d370Row) ||
+      !/ANONYMOUS/.test(d370Row) ||
+      !/Checkout Snapshot/.test(d370Row) ||
+      !/KEEP_GUEST/.test(d370Row))
+  ) {
+    fail(
+      "D370_CONTRACT",
+      "D-370 must lock guest→customer compatible purchase-intent merge without silent whole-cart winner, customer-owned result, logout isolation, and Checkout Snapshot authority preservation",
+    );
+  }
+  if (d370Row && /\|\s*CURRENT\s*\|/.test(d370Row) && /purchase intent/.test(d370Row)) {
+    note("D-370 registered as CURRENT (Cart Identity Transition Authority)");
   }
 }
 
@@ -462,13 +1669,20 @@ function checkImp024ArchitectureLock(roadmap, state, architecture) {
     } else {
       note("STATE records IMP-025 COMPLETE_AND_ACCEPTED");
     }
-    if (state.meta.pendingAcceptance && state.meta.pendingAcceptance !== "NONE") {
+    if (
+      state.meta.pendingAcceptance !== "NONE" &&
+      !(
+        state.meta.pendingAcceptance === "IMP-028B" &&
+        state.meta.acceptedThrough === "IMP-028A" &&
+        state.meta.currentProductSlice === "IMP-028B"
+      )
+    ) {
       fail(
-        "IMP025_PENDING_META",
-        `STATE pendingAcceptance must be NONE after IMP-025 acceptance, got ${JSON.stringify(state.meta.pendingAcceptance)}`,
+        "IMP028A_PENDING_META",
+        `STATE pendingAcceptance must be NONE or IMP-028B complete pending after IMP-028A acceptance, got ${JSON.stringify(state.meta.pendingAcceptance)}`,
       );
     } else {
-      note("STATE pendingAcceptance=NONE");
+      note(`STATE pendingAcceptance=${state.meta.pendingAcceptance}`);
     }
   }
 
@@ -511,7 +1725,7 @@ function checkImp025ArchitectureLock(roadmap, state, architecture) {
         "IMP-025 capability artifact must declare COMPLETE_AND_ACCEPTED after independent acceptance",
       );
     }
-    for (const id of ["D-356", "D-357", "D-359", "D-360"]) {
+    for (const id of ["D-356", "D-357", "D-359", "D-360", "D-368", "D-370"]) {
       if (!body.includes(id)) {
         fail("IMP025_CAPABILITY_DECISIONS", `IMP-025 capability artifact must cite ${id}`);
       }
@@ -550,7 +1764,7 @@ function checkImp025ArchitectureLock(roadmap, state, architecture) {
         "ROADMAP future ledger must not retain IMP-025 after acceptance",
       );
     }
-    if (/IMP-025[\s\S]{0,80}IMPLEMENTATION_IN_PROGRESS/.test(roadmap.text)) {
+    if (claimsImpLifecycleImplementationInProgress(roadmap.text, "IMP-025")) {
       fail(
         "IMP025_ROADMAP_IMPL_STARTED",
         "ROADMAP must not mark IMP-025 IMPLEMENTATION_IN_PROGRESS after acceptance",
@@ -564,7 +1778,7 @@ function checkImp025ArchitectureLock(roadmap, state, architecture) {
     } else {
       note("STATE records IMP-025 architecture locked");
     }
-    if (/IMP-025[\s\S]{0,80}IMPLEMENTATION_IN_PROGRESS/.test(state.text)) {
+    if (claimsImpLifecycleImplementationInProgress(state.text, "IMP-025")) {
       fail(
         "IMP025_STATE_IMPL_STARTED",
         "STATE must not mark IMP-025 IMPLEMENTATION_IN_PROGRESS after acceptance",
@@ -595,16 +1809,22 @@ function checkImp026ArchitectureLock(roadmap, state, architecture, decision) {
     if (!/ARCHITECTURE_LOCKED/.test(body)) {
       fail("IMP026_CAPABILITY_LOCK", "IMP-026 capability artifact must declare ARCHITECTURE_LOCKED");
     }
-    if (!/NOT_STARTED/.test(body)) {
+    if (!/COMPLETE_AND_ACCEPTED/.test(body)) {
       fail(
         "IMP026_CAPABILITY_IMPL",
-        "IMP-026 capability artifact must declare implementation NOT_STARTED",
+        "IMP-026 capability artifact must declare COMPLETE_AND_ACCEPTED after independent acceptance",
       );
     }
-    if (/IMPLEMENTATION_IN_PROGRESS/.test(body)) {
+    if (!/IMP-026_EXTERNAL_WEBHOOK_GATE:\s*SATISFIED/.test(body)) {
       fail(
-        "IMP026_CAPABILITY_IMPL_STARTED",
-        "IMP-026 capability artifact must not mark IMPLEMENTATION_IN_PROGRESS after architecture lock only",
+        "IMP026_CAPABILITY_EXTERNAL_GATE",
+        "IMP-026 capability artifact must record IMP-026_EXTERNAL_WEBHOOK_GATE: SATISFIED after acceptance",
+      );
+    }
+    if (/implementationAuthorized": false/.test(body) || /Implementation authorized \| \*\*NO\*\*/.test(body)) {
+      fail(
+        "IMP026_CAPABILITY_AUTH",
+        "IMP-026 capability artifact must authorize IMP-026A implementation",
       );
     }
     for (const needle of [
@@ -644,29 +1864,35 @@ function checkImp026ArchitectureLock(roadmap, state, architecture, decision) {
   }
 
   if (roadmap) {
+    const acceptedSection = roadmap.text.split("## 3. Accepted Slices")[1]?.split("## 4.")[0] || "";
     const futureSection = roadmap.text.split("## 5. Future GTM Slices")[1]?.split("## 6.")[0] || "";
+    const acceptedRow = [...acceptedSection.split("\n")].find((line) =>
+      /^\|\s*IMP-026\s*\|/.test(line),
+    );
     const futureRow = [...futureSection.split("\n")].find((line) =>
       /^\|\s*IMP-026\s*\|/.test(line),
     );
-    if (!futureRow || !futureRow.includes("ARCHITECTURE_LOCKED")) {
+    if (!acceptedRow || !acceptedRow.includes("COMPLETE_AND_ACCEPTED")) {
       fail(
         "IMP026_ROADMAP_LIFECYCLE",
-        "ROADMAP future ledger must list IMP-026 as ARCHITECTURE_LOCKED",
+        "ROADMAP accepted ledger must list IMP-026 as COMPLETE_AND_ACCEPTED",
       );
     } else {
-      note("IMP-026 ROADMAP lifecycle ARCHITECTURE_LOCKED");
+      note("IMP-026 ROADMAP lifecycle COMPLETE_AND_ACCEPTED");
     }
-    if (futureRow && /Cashfree/.test(futureRow)) {
+    if (futureRow) {
       fail(
-        "IMP026_ROADMAP_STALE_PROVIDER",
-        "ROADMAP IMP-026 current meaning must not remain Cashfree",
+        "IMP026_ROADMAP_FUTURE",
+        "ROADMAP future ledger must not retain IMP-026 after acceptance",
       );
     }
-    if (/IMP-026[\s\S]{0,80}IMPLEMENTATION_IN_PROGRESS/.test(roadmap.text)) {
+    if (!/ARCHITECTURE_LOCKED/.test(roadmap.text)) {
       fail(
-        "IMP026_ROADMAP_IMPL_STARTED",
-        "ROADMAP must not mark IMP-026 IMPLEMENTATION_IN_PROGRESS after architecture lock only",
+        "IMP026_ARCH_LOCK_RETAINED",
+        "ROADMAP must retain ARCHITECTURE_LOCKED language for IMP-026 architecture",
       );
+    } else {
+      note("IMP-026 architecture lock retained in ROADMAP");
     }
   }
 
@@ -676,16 +1902,26 @@ function checkImp026ArchitectureLock(roadmap, state, architecture, decision) {
     } else {
       note("STATE records IMP-026 architecture locked");
     }
-    if (!/IMP-026 implementation:[\s\S]{0,40}NOT_STARTED/.test(state.text)) {
-      fail("IMP026_STATE_IMPL", "STATE must record IMP-026 implementation NOT_STARTED");
-    } else {
-      note("STATE records IMP-026 implementation NOT_STARTED");
-    }
-    if (/IMP-026[\s\S]{0,80}IMPLEMENTATION_IN_PROGRESS/.test(state.text)) {
+    if (!/IMP-026 implementation:[\s\S]{0,40}COMPLETE_AND_ACCEPTED/.test(state.text)) {
       fail(
-        "IMP026_STATE_IMPL_STARTED",
-        "STATE must not mark IMP-026 IMPLEMENTATION_IN_PROGRESS after architecture lock only",
+        "IMP026_STATE_IMPL",
+        "STATE must record IMP-026 implementation COMPLETE_AND_ACCEPTED",
       );
+    } else {
+      note("STATE records IMP-026 implementation COMPLETE_AND_ACCEPTED");
+    }
+    if (!/IMP-026_ACCEPTED:\s*YES/.test(state.text)) {
+      fail("IMP026_STATE_ACCEPTED", "STATE must record IMP-026_ACCEPTED: YES");
+    } else {
+      note("STATE records IMP-026_ACCEPTED: YES");
+    }
+    if (!/IMP-026_EXTERNAL_WEBHOOK_GATE:\s*SATISFIED/.test(state.text)) {
+      fail(
+        "IMP026_SATISFIED_GATE_TOKEN",
+        "STATE must record IMP-026_EXTERNAL_WEBHOOK_GATE: SATISFIED",
+      );
+    } else {
+      note("STATE records IMP-026_EXTERNAL_WEBHOOK_GATE SATISFIED");
     }
   }
 
@@ -720,12 +1956,1481 @@ function checkImp026ArchitectureLock(roadmap, state, architecture, decision) {
       note("ARCHITECTURE.md references D-363 / payment_provider_event_inbox");
     }
   }
+}
+
+function checkImp026cArchitectureLock(roadmap, state) {
+  const artifactRel = "docs/platform/capabilities/IMP-026C-pilot-customer-commerce-ux-hardening.md";
+  const artifact = resolveExactRelativeFile(artifactRel);
+  if (!artifact) {
+    fail("IMP026C_CAPABILITY_MISSING", `Missing locked capability architecture at ${artifactRel}`);
+  } else {
+    note(`IMP-026C capability architecture present (${artifactRel})`);
+    const body = readFileSync(artifact, "utf8");
+    if (!/ARCHITECTURE_LOCKED/.test(body)) {
+      fail("IMP026C_CAPABILITY_LOCK", "IMP-026C capability artifact must declare ARCHITECTURE_LOCKED");
+    }
+    const blob = `${roadmap?.text ?? ""}\n${state?.text ?? ""}`;
+    const claimsCompleteAndAccepted = /IMP-026C:\s*COMPLETE_AND_ACCEPTED/.test(blob);
+    const claimsImplementationComplete =
+      /IMP-026C:\s*IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE/.test(blob);
+    const claimsImplementationInProgress =
+      /IMP-026C:\s*IMPLEMENTATION_IN_PROGRESS/.test(blob);
+    const implementationAuthorizedInGovernance =
+      /IMP-026C_IMPLEMENTATION_AUTHORIZED:\s*YES/.test(blob);
+    if (claimsCompleteAndAccepted || claimsImplementationComplete || claimsImplementationInProgress) {
+      if (
+        !/"implementationAuthorized": true/.test(body) &&
+        !/implementationAuthorized": true/.test(body)
+      ) {
+        fail(
+          "IMP026C_CAPABILITY_AUTH",
+          "IMP-026C capability artifact must record implementationAuthorized: true when implementation is authorized",
+        );
+      }
+    } else if (implementationAuthorizedInGovernance) {
+      fail(
+        "IMP026C_CAPABILITY_AUTH",
+        "IMP-026C capability artifact must not authorize implementation before IMPLEMENTATION_IN_PROGRESS",
+      );
+    } else if (
+      !/"implementationAuthorized": false/.test(body) &&
+      !/Implementation authorized \| \*\*NO\*\*/.test(body)
+    ) {
+      fail(
+        "IMP026C_CAPABILITY_AUTH",
+        "IMP-026C capability artifact must not authorize implementation while architecture-only",
+      );
+    }
+    if (!/DOMAIN:\s*NONE/.test(body) || !/SERVER_API:\s*NONE/.test(body) || !/DATABASE:\s*NONE/.test(body)) {
+      fail(
+        "IMP026C_CAPABILITY_SCOPE",
+        "IMP-026C capability artifact must lock DOMAIN/SERVER_API/DATABASE as NONE",
+      );
+    }
+    if (/SCHEMA_CHANGE_REQUIRED:\s*YES/.test(body)) {
+      fail("IMP026C_CAPABILITY_SCHEMA", "IMP-026C must not require a schema change");
+    }
+  }
+
+  const blob = `${roadmap?.text ?? ""}\n${state?.text ?? ""}`;
+  const claimsCompleteAndAccepted = /IMP-026C:\s*COMPLETE_AND_ACCEPTED/.test(blob);
+  const claimsImplementationComplete =
+    /IMP-026C:\s*IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE/.test(blob);
+  const claimsImplementationInProgress =
+    /IMP-026C:\s*IMPLEMENTATION_IN_PROGRESS/.test(blob);
+  const implementationAuthorized = /IMP-026C_IMPLEMENTATION_AUTHORIZED:\s*YES/.test(blob);
+  if (claimsImplementationComplete && claimsImplementationInProgress) {
+    fail(
+      "IMP026C_LIFECYCLE_AMBIGUOUS",
+      "IMP-026C cannot claim both IMPLEMENTATION_IN_PROGRESS and IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE as current tokens",
+    );
+  }
+  if ((claimsImplementationComplete || claimsImplementationInProgress || claimsCompleteAndAccepted) && !artifact) {
+    fail(
+      "IMP026C_IMPL_WITHOUT_ARTIFACT",
+      "IMP-026C cannot be implementation-active unless its locked capability artifact exists",
+    );
+  }
+  if (claimsImplementationInProgress && !implementationAuthorized) {
+    fail(
+      "IMP026C_ROADMAP_IMPL_STARTED",
+      "IMP-026C IMPLEMENTATION_IN_PROGRESS requires IMP-026C_IMPLEMENTATION_AUTHORIZED: YES",
+    );
+  }
+  if (claimsImplementationComplete && !implementationAuthorized) {
+    fail(
+      "IMP026C_ROADMAP_IMPL_COMPLETE",
+      "IMP-026C IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE requires IMP-026C_IMPLEMENTATION_AUTHORIZED: YES",
+    );
+  }
+  if (claimsCompleteAndAccepted && implementationAuthorized) {
+    note("IMP-026C COMPLETE_AND_ACCEPTED as supplemental inserted gate");
+  } else if (claimsImplementationComplete && implementationAuthorized) {
+    note("IMP-026C IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE behind oldest pending acceptance IMP-026");
+  } else if (claimsImplementationInProgress && implementationAuthorized) {
+    note("IMP-026C IMPLEMENTATION_IN_PROGRESS authorized under locked capability artifact");
+  }
+
+  if (roadmap) {
+    const futureSection = roadmap.text.split("## 5. Future GTM Slices")[1]?.split("## 6.")[0] || "";
+    const futureRow = [...futureSection.split("\n")].find((line) =>
+      /^\|\s*IMP-026C\s*\|/.test(line),
+    );
+    const imp027Row = [...futureSection.split("\n")].find((line) =>
+      /^\|\s*IMP-027\s*\|/.test(line),
+    );
+    if (imp027Row && !/IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE/.test(imp027Row)) {
+      fail(
+        "IMP027_ROADMAP_LIFECYCLE",
+        "ROADMAP future ledger must list IMP-027 as IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE under GTM-R23",
+      );
+    } else if (imp027Row) {
+      note("IMP-027 ROADMAP lifecycle IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE");
+    }
+    const imp028Row = [...futureSection.split("\n")].find((line) =>
+      /^\|\s*IMP-028\s*\|/.test(line),
+    );
+    if (imp028Row) {
+      fail(
+        "IMP028_ROADMAP_FUTURE",
+        "ROADMAP future ledger must not retain IMP-028 after GTM-R30 acceptance",
+      );
+    }
+    const imp029Row = [...futureSection.split("\n")].find((line) =>
+      /^\|\s*IMP-029\s*\|/.test(line),
+    );
+    if (imp029Row && !imp029Row.includes("PLANNED")) {
+      fail(
+        "IMP029_ROADMAP_ACTIVATED",
+        "ROADMAP future ledger must keep IMP-029 PLANNED until separately authorized",
+      );
+    }
+    if (claimsCompleteAndAccepted) {
+      const acceptedSection = roadmap.text.split("## 3. Accepted Slices")[1]?.split("## 4.")[0] || "";
+      const acceptedRow = [...acceptedSection.split("\n")].find((line) =>
+        /^\|\s*IMP-026C\s*\|/.test(line),
+      );
+      if (futureRow) {
+        fail(
+          "IMP026C_ROADMAP_FUTURE",
+          "ROADMAP future ledger must not retain IMP-026C after acceptance",
+        );
+      }
+      if (!acceptedRow || !acceptedRow.includes("COMPLETE_AND_ACCEPTED")) {
+        fail(
+          "IMP026C_ROADMAP_LIFECYCLE",
+          "ROADMAP accepted ledger must list IMP-026C as COMPLETE_AND_ACCEPTED",
+        );
+      } else {
+        note("IMP-026C ROADMAP lifecycle COMPLETE_AND_ACCEPTED");
+      }
+      if (!/IMP-026C_IMPLEMENTATION_AUTHORIZED:\s*YES/.test(roadmap.text)) {
+        fail(
+          "IMP026C_ROADMAP_AUTHORIZED",
+          "ROADMAP must record IMP-026C_IMPLEMENTATION_AUTHORIZED: YES",
+        );
+      } else {
+        note("ROADMAP records IMP-026C implementation authorized");
+      }
+      if (!/IMP_026C_IMPLEMENTATION_EVIDENCE:\s*COMPLETE/.test(roadmap.text)) {
+        fail(
+          "IMP026C_ROADMAP_EVIDENCE",
+          "ROADMAP must record IMP_026C_IMPLEMENTATION_EVIDENCE: COMPLETE",
+        );
+      }
+      if (!/IMP_026C_INDEPENDENT_IMPLEMENTATION_REVIEW:\s*PASS/.test(roadmap.text)) {
+        fail(
+          "IMP026C_ROADMAP_REVIEW",
+          "ROADMAP must record IMP_026C_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS",
+        );
+      }
+      if (!/IMP-026C_ACCEPTED:\s*YES/.test(roadmap.text)) {
+        fail("IMP026C_ROADMAP_ACCEPTED", "ROADMAP must record IMP-026C_ACCEPTED: YES");
+      }
+    } else if (claimsImplementationComplete) {
+      if (!futureRow || !futureRow.includes("IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE")) {
+        fail(
+          "IMP026C_ROADMAP_LIFECYCLE",
+          "ROADMAP future ledger must list IMP-026C as IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE",
+        );
+      } else {
+        note("IMP-026C ROADMAP lifecycle IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE");
+      }
+      if (!/IMP-026C_IMPLEMENTATION_AUTHORIZED:\s*YES/.test(roadmap.text)) {
+        fail(
+          "IMP026C_ROADMAP_AUTHORIZED",
+          "ROADMAP must record IMP-026C_IMPLEMENTATION_AUTHORIZED: YES",
+        );
+      } else {
+        note("ROADMAP records IMP-026C implementation authorized");
+      }
+      if (!/IMP_026C_IMPLEMENTATION_EVIDENCE:\s*COMPLETE/.test(roadmap.text)) {
+        fail(
+          "IMP026C_ROADMAP_EVIDENCE",
+          "ROADMAP must record IMP_026C_IMPLEMENTATION_EVIDENCE: COMPLETE",
+        );
+      }
+      if (!/IMP_026C_INDEPENDENT_IMPLEMENTATION_REVIEW:\s*PASS/.test(roadmap.text)) {
+        fail(
+          "IMP026C_ROADMAP_REVIEW",
+          "ROADMAP must record IMP_026C_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS",
+        );
+      }
+      if (!/IMP-026C_ACCEPTED:\s*NO/.test(roadmap.text)) {
+        fail("IMP026C_ROADMAP_NOT_ACCEPTED", "ROADMAP must record IMP-026C_ACCEPTED: NO");
+      }
+    } else if (claimsImplementationInProgress) {
+      if (!futureRow || !futureRow.includes("IMPLEMENTATION_IN_PROGRESS")) {
+        fail(
+          "IMP026C_ROADMAP_LIFECYCLE",
+          "ROADMAP future ledger must list IMP-026C as IMPLEMENTATION_IN_PROGRESS when authorized",
+        );
+      } else {
+        note("IMP-026C ROADMAP lifecycle IMPLEMENTATION_IN_PROGRESS");
+      }
+      if (!/IMP-026C_IMPLEMENTATION_AUTHORIZED:\s*YES/.test(roadmap.text)) {
+        fail(
+          "IMP026C_ROADMAP_AUTHORIZED",
+          "ROADMAP must record IMP-026C_IMPLEMENTATION_AUTHORIZED: YES",
+        );
+      } else {
+        note("ROADMAP records IMP-026C implementation authorized");
+      }
+    } else {
+      if (!futureRow || !futureRow.includes("ARCHITECTURE_LOCKED")) {
+        fail(
+          "IMP026C_ROADMAP_LIFECYCLE",
+          "ROADMAP future ledger must list IMP-026C as ARCHITECTURE_LOCKED",
+        );
+      } else {
+        note("IMP-026C ROADMAP lifecycle ARCHITECTURE_LOCKED");
+      }
+      if (!/IMP-026C[\s\S]{0,200}NOT_AUTHORIZED/.test(roadmap.text)) {
+        fail(
+          "IMP026C_ROADMAP_NOT_AUTHORIZED",
+          "ROADMAP must record IMP-026C implementation NOT_AUTHORIZED",
+        );
+      }
+    }
+    if (!/production Razorpay launch/.test(roadmap.text) || !/Live Mode/.test(roadmap.text)) {
+      fail(
+        "IMP026_PRODUCTION_SAFETY",
+        "ROADMAP must record that deferred webhook proof does not authorize production Razorpay launch or Live Mode",
+      );
+    } else {
+      note("ROADMAP records production / Live Mode safety boundary for deferred IMP-026 webhook gate");
+    }
+    if (!/IMP-026C-pilot-customer-commerce-ux-hardening\.md/.test(roadmap.text)) {
+      fail(
+        "IMP026C_ROADMAP_ARTIFACT",
+        "ROADMAP must reference the IMP-026C locked capability architecture artifact",
+      );
+    }
+  }
+
+  if (state) {
+    if (!/IMP-026C architecture:\s*ARCHITECTURE_LOCKED/.test(state.text)) {
+      fail(
+        "IMP026C_STATE_ARCH",
+        "STATE must record IMP-026C architecture ARCHITECTURE_LOCKED",
+      );
+    } else {
+      note("STATE records IMP-026C architecture ARCHITECTURE_LOCKED");
+    }
+    if (claimsCompleteAndAccepted) {
+      if (!/IMP-026C:\s*COMPLETE_AND_ACCEPTED/.test(state.text)) {
+        fail(
+          "IMP026C_STATE_LIFECYCLE",
+          "STATE must record IMP-026C COMPLETE_AND_ACCEPTED",
+        );
+      } else {
+        note("STATE records IMP-026C COMPLETE_AND_ACCEPTED");
+      }
+      if (!/IMP-026C implementation:[\s\S]{0,40}AUTHORIZED/.test(state.text)) {
+        fail(
+          "IMP026C_STATE_AUTHORIZED",
+          "STATE must record IMP-026C implementation AUTHORIZED after acceptance",
+        );
+      } else {
+        note("STATE records IMP-026C implementation AUTHORIZED");
+      }
+      if (!/IMP-026C_IMPLEMENTATION_AUTHORIZED:\s*YES/.test(state.text)) {
+        fail(
+          "IMP026C_STATE_IMPL_FLAG",
+          "STATE must record IMP-026C_IMPLEMENTATION_AUTHORIZED: YES",
+        );
+      }
+      if (!/IMP_026C_IMPLEMENTATION_EVIDENCE:\s*COMPLETE/.test(state.text)) {
+        fail(
+          "IMP026C_STATE_EVIDENCE",
+          "STATE must record IMP_026C_IMPLEMENTATION_EVIDENCE: COMPLETE",
+        );
+      }
+      if (!/IMP_026C_INDEPENDENT_IMPLEMENTATION_REVIEW:\s*PASS/.test(state.text)) {
+        fail(
+          "IMP026C_STATE_REVIEW",
+          "STATE must record IMP_026C_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS",
+        );
+      }
+      if (!/IMP-026C_ACCEPTED:\s*YES/.test(state.text)) {
+        fail("IMP026C_STATE_ACCEPTED", "STATE must record IMP-026C_ACCEPTED: YES");
+      }
+      if (
+        !/pendingAcceptance=NONE/.test(state.text) &&
+        !/Pending Acceptance:\s+NONE/.test(state.text)
+      ) {
+        fail(
+          "IMP026C_STATE_OLDEST_PENDING",
+          "STATE must explain that pendingAcceptance=NONE after IMP-028 acceptance",
+        );
+      }
+    } else if (claimsImplementationComplete) {
+      if (!/IMP-026C:\s*IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE/.test(state.text)) {
+        fail(
+          "IMP026C_STATE_LIFECYCLE",
+          "STATE must record IMP-026C IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE",
+        );
+      } else {
+        note("STATE records IMP-026C IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE");
+      }
+      if (!/IMP-026C implementation:[\s\S]{0,40}AUTHORIZED/.test(state.text)) {
+        fail(
+          "IMP026C_STATE_AUTHORIZED",
+          "STATE must record IMP-026C implementation AUTHORIZED when complete pending acceptance",
+        );
+      } else {
+        note("STATE records IMP-026C implementation AUTHORIZED");
+      }
+      if (!/IMP-026C_IMPLEMENTATION_AUTHORIZED:\s*YES/.test(state.text)) {
+        fail(
+          "IMP026C_STATE_IMPL_FLAG",
+          "STATE must record IMP-026C_IMPLEMENTATION_AUTHORIZED: YES",
+        );
+      }
+      if (!/IMP_026C_IMPLEMENTATION_EVIDENCE:\s*COMPLETE/.test(state.text)) {
+        fail(
+          "IMP026C_STATE_EVIDENCE",
+          "STATE must record IMP_026C_IMPLEMENTATION_EVIDENCE: COMPLETE",
+        );
+      }
+      if (!/IMP_026C_INDEPENDENT_IMPLEMENTATION_REVIEW:\s*PASS/.test(state.text)) {
+        fail(
+          "IMP026C_STATE_REVIEW",
+          "STATE must record IMP_026C_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS",
+        );
+      }
+      if (!/IMP-026C_ACCEPTED:\s*NO/.test(state.text)) {
+        fail("IMP026C_STATE_NOT_ACCEPTED", "STATE must record IMP-026C_ACCEPTED: NO");
+      }
+      if (
+        !/pendingAcceptance=IMP-026C/.test(state.text) &&
+        !/Pending Acceptance:\s+IMP-026C/.test(state.text)
+      ) {
+        fail(
+          "IMP026C_STATE_OLDEST_PENDING",
+          "STATE must explain that pendingAcceptance=IMP-026C is the current remaining acceptance gate",
+        );
+      }
+    } else if (claimsImplementationInProgress) {
+      if (!/IMP-026C:\s*IMPLEMENTATION_IN_PROGRESS/.test(state.text)) {
+        fail("IMP026C_STATE_LIFECYCLE", "STATE must record IMP-026C IMPLEMENTATION_IN_PROGRESS");
+      } else {
+        note("STATE records IMP-026C IMPLEMENTATION_IN_PROGRESS");
+      }
+      if (!/IMP-026C implementation:[\s\S]{0,40}AUTHORIZED/.test(state.text)) {
+        fail(
+          "IMP026C_STATE_AUTHORIZED",
+          "STATE must record IMP-026C implementation AUTHORIZED when in progress",
+        );
+      } else {
+        note("STATE records IMP-026C implementation AUTHORIZED");
+      }
+      if (!/IMP-026C_IMPLEMENTATION_AUTHORIZED:\s*YES/.test(state.text)) {
+        fail(
+          "IMP026C_STATE_IMPL_FLAG",
+          "STATE must record IMP-026C_IMPLEMENTATION_AUTHORIZED: YES",
+        );
+      }
+    } else {
+      if (!/IMP-026C:\s*ARCHITECTURE_LOCKED/.test(state.text)) {
+        fail("IMP026C_STATE_LIFECYCLE", "STATE must record IMP-026C ARCHITECTURE_LOCKED");
+      }
+      if (!/IMP-026C implementation:[\s\S]{0,40}NOT_AUTHORIZED/.test(state.text)) {
+        fail(
+          "IMP026C_STATE_NOT_AUTHORIZED",
+          "STATE must record IMP-026C implementation NOT_AUTHORIZED",
+        );
+      } else {
+        note("STATE records IMP-026C implementation NOT_AUTHORIZED");
+      }
+    }
+    if (/IMP-026C architecture:\s*NOT_LOCKED/.test(state.text)) {
+      fail(
+        "IMP026C_STATE_ARCH_UNLOCKED",
+        "STATE must not leave IMP-026C architecture NOT_LOCKED after GTM-R16",
+      );
+    }
+    if (!/IMP-026_EXTERNAL_WEBHOOK_GATE:\s*SATISFIED/.test(state.text)) {
+      fail(
+        "IMP026_SATISFIED_GATE_TOKEN",
+        "STATE must record IMP-026_EXTERNAL_WEBHOOK_GATE: SATISFIED",
+      );
+    } else {
+      note("STATE records IMP-026_EXTERNAL_WEBHOOK_GATE SATISFIED");
+    }
+    if (!/production Razorpay launch/.test(state.text) || !/Live Mode/.test(state.text)) {
+      fail(
+        "IMP026_STATE_PRODUCTION_SAFETY",
+        "STATE must record that deferral does not authorize production Razorpay launch or Live Mode",
+      );
+    }
+    if (!/IMP-026C-pilot-customer-commerce-ux-hardening\.md/.test(state.text)) {
+      fail(
+        "IMP026C_STATE_ARTIFACT",
+        "STATE must reference the IMP-026C locked capability architecture artifact",
+      );
+    }
+  }
+}
+
+function checkImp027ArchitectureLock(roadmap, state, architecture) {
+  const blob = `${roadmap?.text ?? ""}\n${state?.text ?? ""}`;
+  const artifactRel = "docs/platform/capabilities/IMP-027-refund-foundation.md";
+  const artifact = resolveExactRelativeFile(artifactRel);
+  const artifactPresent = Boolean(artifact);
+
+  const claimsArchitectureLocked =
+    /IMP-027_ARCHITECTURE:\s*LOCKED/.test(blob) ||
+    /IMP-027 architecture:\s*ARCHITECTURE_LOCKED/.test(blob);
+  const claimsNotLocked =
+    /IMP-027_ARCHITECTURE:\s*NOT_LOCKED/.test(blob) ||
+    /IMP-027 architecture:\s*NOT_LOCKED/.test(blob);
+  const claimsImplementationInProgress = /IMP-027:\s*IMPLEMENTATION_IN_PROGRESS/.test(blob);
+  const claimsImplementationComplete =
+    /IMP-027:\s*IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE/.test(blob);
+  const claimsCompleteAndAccepted = /IMP-027:\s*COMPLETE_AND_ACCEPTED/.test(blob);
+  const implementationAuthorized = /IMP-027_IMPLEMENTATION_AUTHORIZED:\s*YES/.test(blob);
+  const implementationEvidenceComplete = /IMP_027_IMPLEMENTATION_EVIDENCE:\s*COMPLETE/.test(blob);
+  const independentReviewPass = /IMP_027_INDEPENDENT_IMPLEMENTATION_REVIEW:\s*PASS/.test(blob);
+  const acceptedNo = /IMP-027_ACCEPTED:\s*NO/.test(blob);
+  const acceptedYes = /IMP-027_ACCEPTED:\s*YES/.test(blob);
+
+  if (!claimsArchitectureLocked) {
+    fail(
+      "IMP027_STATE_ARCH_LOCK",
+      "GTM-R23 requires IMP-027 architecture LOCKED in ROADMAP/STATE",
+    );
+  } else {
+    note("IMP-027 architecture LOCKED recorded");
+  }
+
+  if (!claimsCompleteAndAccepted) {
+    fail(
+      "IMP027_STATE_LIFECYCLE",
+      "Current ROADMAP/STATE must record IMP-027: COMPLETE_AND_ACCEPTED",
+    );
+  } else {
+    note("IMP-027 COMPLETE_AND_ACCEPTED recorded");
+  }
+
+  if (claimsImplementationInProgress && claimsImplementationComplete) {
+    fail(
+      "IMP027_LIFECYCLE_AMBIGUOUS",
+      "IMP-027 cannot claim both IMPLEMENTATION_IN_PROGRESS and IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE as current tokens",
+    );
+  }
+
+  if (!artifactPresent) {
+    fail(
+      "IMP027_CAPABILITY_MISSING",
+      `Missing locked capability architecture at ${artifactRel}`,
+    );
+  } else {
+    note(`IMP-027 capability architecture present (${artifactRel})`);
+    const body = readFileSync(artifact, "utf8");
+    if (!/ARCHITECTURE_LOCKED/.test(body)) {
+      fail("IMP027_CAPABILITY_LOCK", "IMP-027 capability artifact must declare ARCHITECTURE_LOCKED");
+    }
+    if (!/"implementationAuthorized": true/.test(body) && !/implementationAuthorized": true/.test(body)) {
+      fail(
+        "IMP027_CAPABILITY_AUTH",
+        "IMP-027 capability artifact must record implementation authorization after acceptance",
+      );
+    }
+    if (!/D-364/.test(body)) {
+      fail("IMP027_CAPABILITY_DECISION", "IMP-027 capability artifact must cite D-364");
+    }
+    if (!/Open Questions[\s\S]{0,200}\(none\)/.test(body)) {
+      fail(
+        "IMP027_OPEN_QUESTIONS",
+        "IMP-027 capability artifact must lock with empty Open Questions",
+      );
+    }
+  }
+
+  if (claimsNotLocked) {
+    fail(
+      "IMP027_ARCHITECTURE_UNLOCKED",
+      "GTM-R23 must not leave IMP-027 architecture NOT_LOCKED after architecture lock",
+    );
+  }
+
+  if ((claimsImplementationComplete || claimsCompleteAndAccepted) && !artifactPresent) {
+    fail(
+      "IMP027_COMPLETE_WITHOUT_ARTIFACT",
+      "IMP-027 accepted/completed state requires locked capability artifact",
+    );
+  }
+
+  if (claimsImplementationComplete && !implementationAuthorized) {
+    fail(
+      "IMP027_IMPLEMENTATION_AUTH",
+      "GTM-R23 requires IMP-027_IMPLEMENTATION_AUTHORIZED: YES when implementation is complete pending acceptance",
+    );
+  } else if (implementationAuthorized) {
+    note("IMP-027 implementation AUTHORIZED");
+  }
+
+  if (claimsImplementationComplete && !implementationEvidenceComplete) {
+    fail(
+      "IMP027_IMPLEMENTATION_EVIDENCE",
+      "GTM-R23 requires IMP_027_IMPLEMENTATION_EVIDENCE: COMPLETE",
+    );
+  } else if (implementationEvidenceComplete) {
+    note("IMP-027 implementation evidence COMPLETE");
+  }
+
+  if (claimsImplementationComplete && !independentReviewPass) {
+    fail(
+      "IMP027_IMPLEMENTATION_REVIEW",
+      "GTM-R23 requires IMP_027_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS",
+    );
+  } else if (independentReviewPass) {
+    note("IMP-027 independent implementation review PASS");
+  }
+
+  if (!claimsCompleteAndAccepted) {
+    fail("IMP027_STATE_LIFECYCLE", "Current ROADMAP/STATE must record IMP-027: COMPLETE_AND_ACCEPTED");
+  } else {
+    note("IMP-027 COMPLETE_AND_ACCEPTED recorded");
+  }
+  if (!acceptedYes) {
+    fail("IMP027_ACCEPTED_MISSING", "Current ROADMAP/STATE must record IMP-027_ACCEPTED: YES");
+  } else {
+    note("IMP-027_ACCEPTED: YES");
+  }
+
+  if (roadmap) {
+    if (!/GTM-R23/.test(roadmap.text) && !/GTM-R24/.test(roadmap.text)) {
+      fail("IMP027_ROADMAP_VERSION_NOTE", "ROADMAP must retain GTM-R23/R24 continuation history for IMP-027/028");
+    }
+    if (!/Refund Foundation/.test(roadmap.text)) {
+      fail("IMP027_IDENTITY", "ROADMAP must preserve IMP-027 Refund Foundation identity");
+    }
+    if (!/IMP-027-refund-foundation\.md/.test(roadmap.text)) {
+      fail(
+        "IMP027_ROADMAP_ARTIFACT",
+        "ROADMAP must reference the IMP-027 locked capability architecture artifact",
+      );
+    }
+    if (!/IMP-027_IMPLEMENTATION_AUTHORIZED:\s*YES/.test(roadmap.text)) {
+      fail(
+        "IMP027_ROADMAP_AUTHORIZED",
+        "ROADMAP must record IMP-027_IMPLEMENTATION_AUTHORIZED: YES",
+      );
+    }
+    if (!/IMP_027_IMPLEMENTATION_EVIDENCE:\s*COMPLETE/.test(roadmap.text)) {
+      fail(
+        "IMP027_ROADMAP_EVIDENCE",
+        "ROADMAP must record IMP_027_IMPLEMENTATION_EVIDENCE: COMPLETE",
+      );
+    }
+    if (!/IMP_027_INDEPENDENT_IMPLEMENTATION_REVIEW:\s*PASS/.test(roadmap.text)) {
+      fail(
+        "IMP027_ROADMAP_REVIEW",
+        "ROADMAP must record IMP_027_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS",
+      );
+    }
+    if (!/IMP-027:\s*COMPLETE_AND_ACCEPTED/.test(roadmap.text)) {
+      fail("IMP027_ROADMAP_LIFECYCLE", "ROADMAP must record IMP-027 COMPLETE_AND_ACCEPTED");
+    }
+    if (!/IMP-027_ACCEPTED:\s*YES/.test(roadmap.text)) {
+      fail("IMP027_ROADMAP_ACCEPTED", "ROADMAP must record IMP-027_ACCEPTED: YES");
+    }
+  }
+
+  if (state) {
+    if (!/IMP-027:\s*COMPLETE_AND_ACCEPTED/.test(state.text)) {
+      fail(
+        "IMP027_STATE_POSITION",
+        "STATE must record IMP-027 COMPLETE_AND_ACCEPTED",
+      );
+    }
+    if (!/IMP-027_IMPLEMENTATION_AUTHORIZED:\s*YES/.test(state.text)) {
+      fail("IMP027_STATE_AUTHORIZED", "STATE must record IMP-027_IMPLEMENTATION_AUTHORIZED: YES");
+    }
+    if (!/IMP_027_IMPLEMENTATION_EVIDENCE:\s*COMPLETE/.test(state.text)) {
+      fail("IMP027_STATE_EVIDENCE", "STATE must record IMP_027_IMPLEMENTATION_EVIDENCE: COMPLETE");
+    }
+    if (!/IMP_027_INDEPENDENT_IMPLEMENTATION_REVIEW:\s*PASS/.test(state.text)) {
+      fail(
+        "IMP027_STATE_REVIEW",
+        "STATE must record IMP_027_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS",
+      );
+    }
+    if (!/IMP-027_ACCEPTED:\s*YES/.test(state.text)) {
+      fail("IMP027_STATE_ACCEPTED", "STATE must record IMP-027_ACCEPTED: YES");
+    }
+    if (!/IMP-027-refund-foundation\.md/.test(state.text)) {
+      fail(
+        "IMP027_STATE_ARTIFACT",
+        "STATE must reference the IMP-027 locked capability architecture artifact",
+      );
+    }
+    if (!/pendingAcceptance=NONE/.test(state.text) && !/Pending Acceptance:\s+NONE/.test(state.text)) {
+      fail(
+        "IMP026C_STATE_PENDING",
+        "STATE must explain that pendingAcceptance=NONE after IMP-028 acceptance",
+      );
+    }
+  }
+
+  if (architecture) {
+    if (!/IMP-027-refund-foundation\.md/.test(architecture.text)) {
+      fail(
+        "IMP027_ARCH_REFERENCE",
+        "ARCHITECTURE.md must reference IMP-027 capability architecture artifact",
+      );
+    } else {
+      note("ARCHITECTURE.md references IMP-027 capability artifact");
+    }
+    if (!/ARCH-G15/.test(architecture.text) || !/D-364/.test(architecture.text)) {
+      fail(
+        "IMP027_ARCH_INVARIANTS",
+        "ARCHITECTURE.md must record ARCH-G15 and D-364 for Refund Foundation",
+      );
+    } else {
+      note("ARCHITECTURE.md records ARCH-G15 / D-364");
+    }
+  }
+}
+
+function checkImp028ArchitectureLock(roadmap, state, architecture, decision) {
+  const blob = `${roadmap?.text ?? ""}\n${state?.text ?? ""}`;
+  const artifactRel = "docs/platform/capabilities/IMP-028-invoice-tax-receipt-credit-note.md";
+  const artifact = resolveExactRelativeFile(artifactRel);
+  const artifactPresent = Boolean(artifact);
+
+  const claimsArchitectureLocked =
+    /IMP-028_ARCHITECTURE_LOCKED:\s*YES/.test(blob) ||
+    /IMP-028_ARCHITECTURE:\s*LOCKED\b/.test(blob) ||
+    /IMP-028 architecture:\s*ARCHITECTURE_LOCKED/.test(blob);
+  const claimsNotLocked =
+    /IMP-028_ARCHITECTURE:\s*NOT_LOCKED/.test(blob) ||
+    /IMP-028 architecture:\s*NOT_LOCKED/.test(blob) ||
+    /IMP-028_ARCHITECTURE_LOCKED:\s*NO/.test(blob);
+  const claimsArchitectureInProgress = /IMP-028:\s*ARCHITECTURE_IN_PROGRESS/.test(blob);
+  const claimsImplementationInProgress = /IMP-028:\s*IMPLEMENTATION_IN_PROGRESS/.test(blob);
+  const claimsImplementationComplete =
+    /IMP-028:\s*IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE/.test(blob);
+  const implementationAuthorized = /IMP-028_IMPLEMENTATION_AUTHORIZED:\s*YES/.test(blob);
+  const implementationStartedYes = /IMP-028_IMPLEMENTATION_STARTED:\s*YES/.test(blob);
+  const implementationCompleteYes = /IMP-028_IMPLEMENTATION_COMPLETE:\s*YES/.test(blob);
+  const implementationCompleteNo = /IMP-028_IMPLEMENTATION_COMPLETE:\s*NO/.test(blob);
+  const acceptedYes = /IMP-028_ACCEPTED:\s*YES/.test(blob);
+  const acceptedNo = /IMP-028_ACCEPTED:\s*NO/.test(blob);
+
+  const claimsCompleteAndAccepted = /IMP-028:\s*COMPLETE_AND_ACCEPTED/.test(blob);
+
+  if (!claimsArchitectureLocked) {
+    fail(
+      "IMP028_STATE_ARCH_LOCK",
+      "GTM-R30 requires IMP-028 architecture LOCKED in ROADMAP/STATE",
+    );
+  } else {
+    note("IMP-028 architecture LOCKED recorded");
+  }
+
+  if (claimsNotLocked) {
+    fail(
+      "IMP028_ARCHITECTURE_UNLOCKED",
+      "GTM-R30 must not leave IMP-028 architecture NOT_LOCKED / IMP-028_ARCHITECTURE_LOCKED: NO after lock",
+    );
+  }
+
+  if (!implementationAuthorized) {
+    fail(
+      "IMP028_IMPLEMENTATION_AUTHORIZED",
+      "GTM-R30 requires IMP-028_IMPLEMENTATION_AUTHORIZED: YES",
+    );
+  } else {
+    note("IMP-028 implementation AUTHORIZED");
+  }
+
+  if (!claimsCompleteAndAccepted) {
+    fail(
+      "IMP028_LIFECYCLE_ACCEPTED",
+      "GTM-R30 requires IMP-028: COMPLETE_AND_ACCEPTED lifecycle token",
+    );
+  } else {
+    note("IMP-028 lifecycle COMPLETE_AND_ACCEPTED");
+  }
+
+  if (!implementationStartedYes) {
+    fail(
+      "IMP028_IMPLEMENTATION_STARTED",
+      "GTM-R30 requires IMP-028_IMPLEMENTATION_STARTED: YES",
+    );
+  } else {
+    note("IMP-028 implementation STARTED");
+  }
+
+  if (!implementationCompleteYes) {
+    fail(
+      "IMP028_IMPLEMENTATION_NOT_COMPLETE",
+      "GTM-R30 requires IMP-028_IMPLEMENTATION_COMPLETE: YES",
+    );
+  } else {
+    note("IMP-028 implementation COMPLETE");
+  }
+
+  if (!acceptedYes) {
+    fail("IMP028_ACCEPTED_MISSING", "GTM-R30 must record IMP-028_ACCEPTED: YES");
+  } else {
+    note("IMP-028_ACCEPTED: YES");
+  }
+
+  if (!artifactPresent) {
+    fail(
+      "IMP028_CAPABILITY_MISSING",
+      `Missing locked capability architecture at ${artifactRel}`,
+    );
+  } else {
+    note(`IMP-028 capability architecture present (${artifactRel})`);
+    const body = readFileSync(artifact, "utf8");
+    if (!/ARCHITECTURE_LOCKED/.test(body)) {
+      fail("IMP028_CAPABILITY_LOCK", "IMP-028 capability artifact must declare ARCHITECTURE_LOCKED");
+    }
+    if (
+      !/"implementationAuthorized": true/.test(body) &&
+      !/implementationAuthorized": true/.test(body)
+    ) {
+      fail(
+        "IMP028_CAPABILITY_AUTH",
+        "IMP-028 capability artifact must authorize implementation (implementationAuthorized: true)",
+      );
+    }
+    if (!/"implementation": "COMPLETE_AND_ACCEPTED"/.test(body)) {
+      fail(
+        "IMP028_CAPABILITY_AUTH_STATE",
+        "IMP-028 capability artifact must record implementation COMPLETE_AND_ACCEPTED",
+      );
+    } else {
+      note("IMP-028 capability artifact records implementation COMPLETE_AND_ACCEPTED");
+    }
+    if (!/D-365/.test(body) || !/D-366/.test(body) || !/D-367/.test(body)) {
+      fail("IMP028_CAPABILITY_DECISION", "IMP-028 capability artifact must cite D-365, D-366, and D-367");
+    }
+    if (/IMP-028_IMPLEMENTATION_COMPLETE\s*[=:]\s*NO/.test(body)) {
+      fail(
+        "IMP028_CAPABILITY_STILL_INCOMPLETE",
+        "IMP-028 capability artifact must not leave IMP-028_IMPLEMENTATION_COMPLETE = NO after working-tree completion",
+      );
+    }
+    if (!/IMP-028_IMPLEMENTATION_COMPLETE\s*[=:]\s*YES/.test(body)) {
+      fail(
+        "IMP028_CAPABILITY_IMPLEMENTATION_COMPLETE",
+        "IMP-028 capability artifact must record IMP-028_IMPLEMENTATION_COMPLETE = YES",
+      );
+    } else {
+      note("IMP-028 capability artifact records working-tree IMP-028_IMPLEMENTATION_COMPLETE = YES");
+    }
+    if (!/IMP-028_ACCEPTED\s*[=:]\s*YES/.test(body)) {
+      fail(
+        "IMP028_CAPABILITY_NOT_ACCEPTED",
+        "IMP-028 capability artifact must record IMP-028_ACCEPTED = YES",
+      );
+    } else {
+      note("IMP-028 capability artifact records IMP-028_ACCEPTED = YES");
+    }
+    if (!/Open Questions[\s\S]{0,200}\(none\)/.test(body)) {
+      fail(
+        "IMP028_OPEN_QUESTIONS",
+        "IMP-028 capability artifact must lock with empty Open Questions",
+      );
+    }
+    if (!/SECTION_34_CREDIT_NOTE_REQUIRES_PRIOR_TAX_INVOICE/.test(body)) {
+      fail(
+        "IMP028_SECTION34_INVARIANT",
+        "IMP-028 capability artifact must record Section 34 Credit Note requires prior Tax Invoice",
+      );
+    }
+    if (!/BILL_OF_SUPPLY_ONLY_CREDIT_NOTE_PROHIBITED/.test(body)) {
+      fail(
+        "IMP028_BOS_CREDIT_NOTE_BOUNDARY",
+        "IMP-028 capability artifact must prohibit BoS-only automatic Credit Note",
+      );
+    }
+    if (
+      !/TAX_RECEIPT/.test(body) ||
+      (!/Do \*\*NOT\*\*[^\n]{0,120}TAX_RECEIPT/.test(body) &&
+        !/Do NOT[^\n]{0,120}TAX_RECEIPT/i.test(body) &&
+        !/no statutory TAX_RECEIPT/i.test(body) &&
+        !/not.*statutory document type named TAX_RECEIPT/i.test(body))
+    ) {
+      fail(
+        "IMP028_TAX_RECEIPT_BOUNDARY",
+        "IMP-028 capability artifact must forbid TAX_RECEIPT as a statutory type",
+      );
+    }
+  }
+
+  if (roadmap) {
+    if (!/Invoice \/ Tax Receipt \/ Credit Note/.test(roadmap.text)) {
+      fail("IMP028_IDENTITY", "ROADMAP must preserve IMP-028 Invoice / Tax Receipt / Credit Note identity");
+    }
+    if (!/GTM-R27/.test(roadmap.text) && !/GTM-R26/.test(roadmap.text)) {
+      fail("IMP028_ROADMAP_VERSION_NOTE", "ROADMAP must retain GTM-R27/R26 continuation history for IMP-028");
+    }
+    if (!/IMP-028_ARCHITECTURE_LOCKED:\s*YES/.test(roadmap.text)) {
+      fail("IMP028_ROADMAP_LOCKED", "ROADMAP must record IMP-028_ARCHITECTURE_LOCKED: YES");
+    }
+    if (!/IMP-028_IMPLEMENTATION_AUTHORIZED:\s*YES/.test(roadmap.text)) {
+      fail(
+        "IMP028_ROADMAP_AUTHORIZED",
+        "ROADMAP must record IMP-028_IMPLEMENTATION_AUTHORIZED: YES",
+      );
+    }
+    if (!/IMP-028_IMPLEMENTATION_STARTED:\s*YES/.test(roadmap.text)) {
+      fail(
+        "IMP028_ROADMAP_STARTED",
+        "ROADMAP must record IMP-028_IMPLEMENTATION_STARTED: YES",
+      );
+    }
+    if (!/IMP-028-invoice-tax-receipt-credit-note\.md/.test(roadmap.text)) {
+      fail(
+        "IMP028_ROADMAP_ARTIFACT",
+        "ROADMAP must reference the IMP-028 locked capability architecture artifact",
+      );
+    }
+    if (!/D-365/.test(roadmap.text) || !/D-366/.test(roadmap.text) || !/D-367/.test(roadmap.text)) {
+      fail("IMP028_ROADMAP_DECISION", "ROADMAP must cite binding decisions D-365, D-366, and D-367");
+    }
+    const futureSection =
+      roadmap.text.split("## 5. Future GTM Slices")[1]?.split("## 6.")[0] || "";
+    const imp028Row = [...futureSection.split("\n")].find((line) =>
+      /^\|\s*IMP-028\s*\|/.test(line),
+    );
+    if (imp028Row) {
+      fail(
+        "IMP028_ROADMAP_FUTURE",
+        "ROADMAP future ledger must not retain IMP-028 after GTM-R30 acceptance",
+      );
+    } else {
+      note("IMP-028 removed from ROADMAP future ledger after acceptance");
+    }
+    const acceptedSection = roadmap.text.split("## 3. Accepted Slices")[1]?.split("## 4.")[0] || "";
+    const acceptedRow = [...acceptedSection.split("\n")].find((line) =>
+      /^\|\s*IMP-028\s*\|/.test(line),
+    );
+    if (!acceptedRow || !acceptedRow.includes("COMPLETE_AND_ACCEPTED")) {
+      fail(
+        "IMP028_ROADMAP_LEDGER",
+        "ROADMAP accepted ledger must list IMP-028 as COMPLETE_AND_ACCEPTED",
+      );
+    } else {
+      note("IMP-028 ROADMAP lifecycle COMPLETE_AND_ACCEPTED");
+    }
+    if (!/IMP-028_ACCEPTED:\s*YES/.test(roadmap.text)) {
+      fail("IMP028_ROADMAP_ACCEPTED", "ROADMAP must record IMP-028_ACCEPTED: YES");
+    }
+    if (!/IMP-029_IMPLEMENTATION_AUTHORIZED:\s*NO/.test(roadmap.text)) {
+      fail(
+        "IMP029_ROADMAP_NOT_AUTHORIZED",
+        "ROADMAP must record IMP-029_IMPLEMENTATION_AUTHORIZED: NO after IMP-028 acceptance",
+      );
+    }
+    if (!/IMP-029_STARTED:\s*NO/.test(roadmap.text)) {
+      fail("IMP029_ROADMAP_NOT_STARTED", "ROADMAP must record IMP-029_STARTED: NO");
+    }
+  }
+
+  if (state) {
+    if (!/IMP-028:\s*COMPLETE_AND_ACCEPTED/.test(state.text)) {
+      fail(
+        "IMP028_STATE_POSITION",
+        "STATE must record IMP-028 COMPLETE_AND_ACCEPTED",
+      );
+    }
+    if (!/IMP-028_ARCHITECTURE_LOCKED:\s*YES/.test(state.text)) {
+      fail("IMP028_STATE_LOCKED", "STATE must record IMP-028_ARCHITECTURE_LOCKED: YES");
+    }
+    if (!/IMP-028_IMPLEMENTATION_AUTHORIZED:\s*YES/.test(state.text)) {
+      fail(
+        "IMP028_STATE_AUTHORIZED",
+        "STATE must record IMP-028_IMPLEMENTATION_AUTHORIZED: YES",
+      );
+    }
+    if (!/IMP-028_IMPLEMENTATION_STARTED:\s*YES/.test(state.text)) {
+      fail(
+        "IMP028_STATE_STARTED",
+        "STATE must record IMP-028_IMPLEMENTATION_STARTED: YES",
+      );
+    }
+    if (!/IMP-028_IMPLEMENTATION_COMPLETE:\s*YES/.test(state.text)) {
+      fail(
+        "IMP028_STATE_COMPLETE",
+        "STATE must record IMP-028_IMPLEMENTATION_COMPLETE: YES (working-tree completion)",
+      );
+    } else {
+      note("STATE records IMP-028_IMPLEMENTATION_COMPLETE: YES");
+    }
+    if (!/IMP-028_ACCEPTED:\s*YES/.test(state.text)) {
+      fail("IMP028_STATE_NOT_ACCEPTED", "STATE must record IMP-028_ACCEPTED: YES");
+    }
+    if (!/IMP-029:\s*NOT_STARTED/.test(state.text) && !/IMP-029 remains not started/.test(state.text)) {
+      fail("IMP029_STATE_STARTED", "STATE must record IMP-029 NOT_STARTED");
+    } else {
+      note("IMP-029 remains NOT_STARTED");
+    }
+    if (!/IMP-029_IMPLEMENTATION_AUTHORIZED:\s*NO/.test(state.text)) {
+      fail(
+        "IMP029_STATE_NOT_AUTHORIZED",
+        "STATE must record IMP-029_IMPLEMENTATION_AUTHORIZED: NO",
+      );
+    }
+    if (!/pendingAcceptance=NONE/.test(state.text) && !/Pending Acceptance:\s+NONE/.test(state.text)) {
+      fail(
+        "IMP028_STATE_OLDEST_PENDING",
+        "STATE must explain that pendingAcceptance=NONE after IMP-028 acceptance",
+      );
+    }
+    const ati = state.text.split("## 3. Accepted Technical Inventory")[1]?.split("## 4.")[0] || "";
+    if (!/`0018_payment_provider_event_inbox`/.test(ati) && !/0018_payment_provider_event_inbox/.test(ati)) {
+      fail(
+        "IMP026_ATI_BOUNDED",
+        "Accepted Technical Inventory must include accepted IMP-026 migration 0018_payment_provider_event_inbox",
+      );
+    } else {
+      note("Accepted Technical Inventory includes IMP-026 migration 0018_payment_provider_event_inbox");
+    }
+    if (!/0019_refund/.test(ati)) {
+      fail(
+        "IMP027_ATI_MISSING",
+        "Accepted Technical Inventory must include accepted IMP-027 migration 0019_refund",
+      );
+    }
+    if (
+      !/0020_financial_document/.test(ati) ||
+      !/0029_refund_statutory_issuance_allocation/.test(ati)
+    ) {
+      fail(
+        "IMP028_ATI_MISSING",
+        "Accepted Technical Inventory must include accepted IMP-028 migrations 0020_financial_document through 0029_refund_statutory_issuance_allocation",
+      );
+    } else {
+      note("Accepted Technical Inventory includes accepted IMP-028 migrations through 0029");
+    }
+  }
+
+  if (architecture) {
+    if (!/IMP-028-invoice-tax-receipt-credit-note\.md/.test(architecture.text)) {
+      fail(
+        "IMP028_ARCH_ARTIFACT",
+        "ARCHITECTURE.md must reference IMP-028 capability architecture artifact",
+      );
+    } else {
+      note("ARCHITECTURE.md references IMP-028 capability artifact");
+    }
+    if (
+      !/ARCH-G16/.test(architecture.text) ||
+      !/ARCH-G17/.test(architecture.text) ||
+      !/ARCH-G18/.test(architecture.text) ||
+      !/D-365/.test(architecture.text) ||
+      !/D-366/.test(architecture.text) ||
+      !/D-367/.test(architecture.text)
+    ) {
+      fail(
+        "IMP028_ARCH_INVARIANTS",
+        "ARCHITECTURE.md must record ARCH-G16/ARCH-G17/ARCH-G18 and D-365/D-366/D-367 for Financial Document / refund statutory / signing authority",
+      );
+    } else {
+      note("ARCHITECTURE.md records ARCH-G16 / ARCH-G17 / ARCH-G18 / D-365 / D-366 / D-367");
+    }
+    if (architecture.meta.architectureVersion !== "ARCH-R15") {
+      fail(
+        "IMP028_ARCH_VERSION",
+        `ARCHITECTURE must be ARCH-R15 after D-370 Cart Identity Transition lock, got ${architecture.meta.architectureVersion}`,
+      );
+    }
+    if (!/ARCH-G19/.test(architecture.text) || !/D-368/.test(architecture.text)) {
+      fail(
+        "D368_ARCH_INVARIANTS",
+        "ARCHITECTURE.md must record ARCH-G19 and D-368 for Customer Menu Read Projection Authority",
+      );
+    } else {
+      note("ARCHITECTURE.md records ARCH-G19 / D-368");
+    }
+    if (!/ARCH-G20/.test(architecture.text) || !/D-369/.test(architecture.text)) {
+      fail(
+        "D369_ARCH_INVARIANTS",
+        "ARCHITECTURE.md must record ARCH-G20 and D-369 for Customer Paid Modifier Explicit Selection Authority",
+      );
+    } else {
+      note("ARCHITECTURE.md records ARCH-G20 / D-369");
+    }
+    if (!/ARCH-G21/.test(architecture.text) || !/D-370/.test(architecture.text)) {
+      fail(
+        "D370_ARCH_INVARIANTS",
+        "ARCHITECTURE.md must record ARCH-G21 and D-370 for Cart Identity Transition Authority",
+      );
+    } else {
+      note("ARCHITECTURE.md records ARCH-G21 / D-370");
+    }
+  }
 
   if (decision) {
-    if (!/D-364/.test(decision.text)) {
-      fail("NEXT_DECISION_ID", "Decision register must advance next free ID to D-364 after D-363");
+    if (decision.meta.decisionRegisterVersion !== "DR-12") {
+      fail(
+        "IMP028_DR_VERSION",
+        `Decision register must be DR-12 after D-370, got ${decision.meta.decisionRegisterVersion}`,
+      );
+    }
+  }
+}
+
+function checkImp028aImplementationAuthorization(roadmap, state) {
+  const blob = `${roadmap?.text ?? ""}\n${state?.text ?? ""}`;
+  const artifactRel = "docs/platform/capabilities/IMP-028A-food-direct-ux-foundation.md";
+  const artifact = resolveExactRelativeFile(artifactRel);
+  if (!artifact) {
+    fail("IMP028A_CAPABILITY_MISSING", `Missing canonical capability definition at ${artifactRel}`);
+    return;
+  }
+  const artifactText = readFileSync(artifact, "utf8");
+  note(`IMP-028A canonical capability present (${artifactRel})`);
+
+  if (!/"implementationAuthorized":\s*true/.test(artifactText)) {
+    fail(
+      "IMP028A_CAPABILITY_AUTHORIZED",
+      "IMP-028A capability artifact must record implementationAuthorized: true",
+    );
+  }
+  if (!/"architectureLock":\s*"ARCHITECTURE_LOCKED"/.test(artifactText)) {
+    fail(
+      "IMP028A_CAPABILITY_LOCK",
+      "IMP-028A capability artifact must declare architectureLock ARCHITECTURE_LOCKED",
+    );
+  }
+  if (!/"implementation":\s*"COMPLETE_AND_ACCEPTED"/.test(artifactText)) {
+    fail(
+      "IMP028A_CAPABILITY_ACCEPTED_IMPL",
+      "IMP-028A capability artifact must declare implementation COMPLETE_AND_ACCEPTED",
+    );
+  }
+  if (!/IMP-028A_IMPLEMENTATION_AUTHORIZED:\s*YES/.test(artifactText)) {
+    fail(
+      "IMP028A_CAPABILITY_AUTH_TOKEN",
+      "IMP-028A capability artifact must record IMP-028A_IMPLEMENTATION_AUTHORIZED: YES",
+    );
+  }
+  if (!/IMP-028A_IMPLEMENTATION_STARTED:\s*YES/.test(artifactText)) {
+    fail(
+      "IMP028A_CAPABILITY_STARTED_TOKEN",
+      "IMP-028A capability artifact must record IMP-028A_IMPLEMENTATION_STARTED: YES",
+    );
+  }
+  if (!/IMP-028A_IMPLEMENTATION_COMPLETE:\s*YES/.test(artifactText)) {
+    fail(
+      "IMP028A_CAPABILITY_COMPLETE_TOKEN",
+      "IMP-028A capability artifact must record IMP-028A_IMPLEMENTATION_COMPLETE: YES",
+    );
+  }
+  if (!/IMP-028A_ACCEPTED:\s*YES/.test(artifactText)) {
+    fail("IMP028A_CAPABILITY_ACCEPTED", "IMP-028A capability artifact must record IMP-028A_ACCEPTED: YES");
+  }
+  if (/D-371/.test(artifactText) && /NEW_DECISION:\s*D-371/.test(artifactText)) {
+    fail("IMP028A_D371", "IMP-028A must not create D-371");
+  }
+  if (!/Food Direct UX Foundation/.test(artifactText)) {
+    fail("IMP028A_TITLE", "IMP-028A capability artifact must use title Food Direct UX Foundation");
+  }
+  if (!/\*\*AC-01\*\*/.test(artifactText) || !/\*\*AC-12\*\*/.test(artifactText)) {
+    fail("IMP028A_AC_PRESERVED", "IMP-028A capability artifact must retain AC-01 through AC-12");
+  }
+  if (
+    !/TYPECHECK_STATUS = FAIL_PRE_EXISTING_UNRELATED/.test(artifactText) ||
+    !/CUSTOMER_ORDERING_E2E = BLOCKED_ENVIRONMENT/.test(artifactText)
+  ) {
+    fail(
+      "IMP028A_ACCEPTANCE_LIMITATIONS",
+      "IMP-028A capability artifact must preserve typecheck and customer-ordering environment limitations",
+    );
+  }
+
+  if (roadmap) {
+    if (!/IMP-028A-food-direct-ux-foundation\.md/.test(roadmap.text)) {
+      fail(
+        "IMP028A_ROADMAP_ARTIFACT",
+        "ROADMAP must reference the IMP-028A canonical capability artifact",
+      );
+    }
+    if (!/IMP-028A_IMPLEMENTATION_AUTHORIZED:\s*YES/.test(roadmap.text)) {
+      fail(
+        "IMP028A_ROADMAP_AUTHORIZED",
+        "ROADMAP must record IMP-028A_IMPLEMENTATION_AUTHORIZED: YES",
+      );
+    }
+    if (!/IMP-028A_IMPLEMENTATION_STARTED:\s*YES/.test(roadmap.text)) {
+      fail(
+        "IMP028A_ROADMAP_STARTED",
+        "ROADMAP must record IMP-028A_IMPLEMENTATION_STARTED: YES",
+      );
+    }
+    if (!/IMP-028A_IMPLEMENTATION_COMPLETE:\s*YES/.test(roadmap.text)) {
+      fail(
+        "IMP028A_ROADMAP_COMPLETE",
+        "ROADMAP must record IMP-028A_IMPLEMENTATION_COMPLETE: YES",
+      );
+    }
+    if (!/IMP-028A_ACCEPTED:\s*YES/.test(roadmap.text)) {
+      fail("IMP028A_ROADMAP_ACCEPTED_TOKEN", "ROADMAP must record IMP-028A_ACCEPTED: YES");
+    }
+    const futureSection = roadmap.text.split("## 5. Future GTM Slices")[1]?.split("## 6.")[0] || "";
+    const futureRow = [...futureSection.split("\n")].find((line) =>
+      /^\|\s*IMP-028A\s*\|/.test(line),
+    );
+    if (futureRow) {
+      fail(
+        "IMP028A_ROADMAP_FUTURE",
+        "ROADMAP future ledger must not retain IMP-028A after acceptance",
+      );
     } else {
-      note("Next free decision ID D-364 recorded");
+      note("IMP-028A removed from ROADMAP future ledger after acceptance");
+    }
+    const acceptedSection = roadmap.text.split("## 3. Accepted Slices")[1]?.split("## 4.")[0] || "";
+    const acceptedRow = [...acceptedSection.split("\n")].find((line) =>
+      /^\|\s*IMP-028A\s*\|/.test(line),
+    );
+    if (!acceptedRow || !acceptedRow.includes("COMPLETE_AND_ACCEPTED")) {
+      fail(
+        "IMP028A_ROADMAP_LIFECYCLE",
+        "ROADMAP accepted ledger must list IMP-028A as COMPLETE_AND_ACCEPTED",
+      );
+    } else {
+      note("IMP-028A ROADMAP lifecycle COMPLETE_AND_ACCEPTED");
+    }
+    const imp029Row = [...futureSection.split("\n")].find((line) =>
+      /^\|\s*IMP-029\s*\|/.test(line),
+    );
+    if (!imp029Row || !imp029Row.includes("Operations Console API") || !imp029Row.includes("PLANNED")) {
+      fail(
+        "IMP029_ROADMAP_PRESERVED",
+        "ROADMAP future ledger must keep IMP-029 Operations Console API PLANNED",
+      );
+    }
+  }
+
+  if (state) {
+    if (!/IMP-028A-food-direct-ux-foundation\.md/.test(state.text)) {
+      fail(
+        "IMP028A_STATE_ARTIFACT",
+        "STATE must reference the IMP-028A canonical capability artifact",
+      );
+    }
+    if (!/IMP-028A_IMPLEMENTATION_AUTHORIZED:\s*YES/.test(state.text)) {
+      fail(
+        "IMP028A_STATE_AUTHORIZED",
+        "STATE must record IMP-028A_IMPLEMENTATION_AUTHORIZED: YES",
+      );
+    }
+    if (!/IMP-028A_IMPLEMENTATION_STARTED:\s*YES/.test(state.text)) {
+      fail(
+        "IMP028A_STATE_STARTED",
+        "STATE must record IMP-028A_IMPLEMENTATION_STARTED: YES",
+      );
+    }
+    if (!/IMP-028A_IMPLEMENTATION_COMPLETE:\s*YES/.test(state.text)) {
+      fail(
+        "IMP028A_STATE_COMPLETE",
+        "STATE must record IMP-028A_IMPLEMENTATION_COMPLETE: YES",
+      );
+    }
+    if (state.meta.pendingAcceptance === "IMP-028A") {
+      fail(
+        "IMP028A_STATE_PENDING_CLEARED",
+        "STATE pendingAcceptance must not remain IMP-028A after independent acceptance",
+      );
+    }
+    if (
+      state.meta.pendingAcceptance !== "NONE" &&
+      state.meta.pendingAcceptance !== "IMP-028B"
+    ) {
+      fail(
+        "IMP028A_STATE_PENDING_META",
+        `STATE pendingAcceptance must be NONE or IMP-028B after IMP-028A acceptance, got ${JSON.stringify(state.meta.pendingAcceptance)}`,
+      );
+    }
+    if (state.meta.acceptedThrough !== "IMP-028A" && state.meta.acceptedThrough !== "IMP-028B") {
+      fail(
+        "IMP028A_STATE_ACCEPTED_THROUGH",
+        `STATE acceptedThrough must be IMP-028A or a later accepted slice, got ${JSON.stringify(state.meta.acceptedThrough)}`,
+      );
+    }
+    if (
+      !/IMP-028A:\s*COMPLETE_AND_ACCEPTED/.test(state.text) &&
+      !/IMP-028A:\s+COMPLETE_AND_ACCEPTED/.test(blob)
+    ) {
+      fail(
+        "IMP028A_STATE_LIFECYCLE",
+        "STATE must record IMP-028A COMPLETE_AND_ACCEPTED",
+      );
+    } else {
+      note("IMP-028A is COMPLETE_AND_ACCEPTED");
+    }
+    if (!/IMP-028A_ACCEPTED:\s*YES/.test(state.text)) {
+      fail("IMP028A_STATE_ACCEPTED", "STATE must mark IMP-028A accepted");
+    }
+    if (
+      !/TYPECHECK_STATUS:\s*FAIL_PRE_EXISTING_UNRELATED/.test(state.text) ||
+      !/CUSTOMER_ORDERING_E2E:\s*BLOCKED_ENVIRONMENT/.test(state.text)
+    ) {
+      fail(
+        "IMP028A_STATE_LIMITATIONS",
+        "STATE must preserve IMP-028A typecheck and customer-ordering environment limitations",
+      );
+    }
+  }
+}
+
+function checkImp028bCanonicalActivation(roadmap, state) {
+  const blob = `${roadmap?.text ?? ""}\n${state?.text ?? ""}`;
+  const artifactRel = "docs/platform/capabilities/IMP-028B-customer-menu-projection-and-discovery.md";
+  const artifact = resolveExactRelativeFile(artifactRel);
+  if (!artifact) {
+    fail("IMP028B_CAPABILITY_MISSING", `Missing canonical capability definition at ${artifactRel}`);
+    return;
+  }
+  const artifactText = readFileSync(artifact, "utf8");
+  note(`IMP-028B canonical capability present (${artifactRel})`);
+
+  if (!/"implementationAuthorized":\s*true/.test(artifactText)) {
+    fail(
+      "IMP028B_CAPABILITY_NOT_AUTHORIZED",
+      "IMP-028B capability artifact must record implementationAuthorized: true",
+    );
+  }
+  if (!/"architectureLock":\s*"ARCHITECTURE_LOCKED"/.test(artifactText)) {
+    fail(
+      "IMP028B_CAPABILITY_NOT_LOCKED",
+      "IMP-028B capability artifact must declare architectureLock ARCHITECTURE_LOCKED",
+    );
+  }
+  if (!/"implementation":\s*"COMPLETE_AND_ACCEPTED"/.test(artifactText)) {
+    fail(
+      "IMP028B_CAPABILITY_COMPLETE_META",
+      "IMP-028B capability artifact must declare implementation COMPLETE_AND_ACCEPTED",
+    );
+  }
+  if (!/IMP-028B_IMPLEMENTATION_AUTHORIZED:\s*YES/.test(artifactText)) {
+    fail(
+      "IMP028B_CAPABILITY_AUTH_TOKEN",
+      "IMP-028B capability artifact must record IMP-028B_IMPLEMENTATION_AUTHORIZED: YES",
+    );
+  }
+  if (!/IMP-028B_IMPLEMENTATION_STARTED:\s*YES/.test(artifactText)) {
+    fail(
+      "IMP028B_CAPABILITY_STARTED_TOKEN",
+      "IMP-028B capability artifact must record IMP-028B_IMPLEMENTATION_STARTED: YES",
+    );
+  }
+  if (!/IMP-028B_IMPLEMENTATION_COMPLETE:\s*YES/.test(artifactText)) {
+    fail(
+      "IMP028B_CAPABILITY_COMPLETE_TOKEN",
+      "IMP-028B capability artifact must record IMP-028B_IMPLEMENTATION_COMPLETE: YES",
+    );
+  }
+  if (!/IMP-028B_ACCEPTED:\s*YES/.test(artifactText)) {
+    fail("IMP028B_CAPABILITY_ACCEPTED", "IMP-028B capability artifact must record IMP-028B_ACCEPTED: YES");
+  }
+  if (!/FOUNDER_UAT_REQUIRED:\s*YES/.test(artifactText) || !/FOUNDER_UAT:\s*PASS/.test(artifactText)) {
+    fail("IMP028B_FOUNDER_UAT", "IMP-028B capability artifact must record required founder UAT PASS");
+  }
+  if (!/FOUNDER_UAT_CANDIDATE_HEAD:\s*ddca0c319a5e80b2cfe38a2c32481b636277010e/.test(artifactText)) {
+    fail("IMP028B_FOUNDER_UAT_HEAD", "IMP-028B founder UAT evidence must record the accepted HEAD");
+  }
+  if (!/FOUNDER_UAT_CANDIDATE_FINGERPRINT:\s*1b6be793b4825bb8bd8df57dd47164148b0e68df9a674b12f417e97b5497ecc7/.test(artifactText)) {
+    fail("IMP028B_FOUNDER_UAT_FINGERPRINT", "IMP-028B founder UAT evidence must record the accepted fingerprint");
+  }
+  if (/D-371/.test(artifactText) && /NEW_DECISION:\s*D-371/.test(artifactText)) {
+    fail("IMP028B_D371", "IMP-028B must not create D-371");
+  }
+  if (!/GET \/api\/v1\/menu/.test(artifactText)) {
+    fail("IMP028B_ROUTE", "IMP-028B capability artifact must lock GET /api/v1/menu");
+  }
+  if (!/Customer Menu Projection \+ Discovery/.test(artifactText)) {
+    fail("IMP028B_TITLE", "IMP-028B capability artifact must use title Customer Menu Projection + Discovery");
+  }
+  if (!/\*\*AC-01\*\*/.test(artifactText) || !/\*\*AC-12\*\*/.test(artifactText)) {
+    fail("IMP028B_AC_PRESERVED", "IMP-028B capability artifact must retain AC-01 through AC-12");
+  }
+  if (!/D-368/.test(artifactText) || !/ARCH-G19/.test(artifactText)) {
+    fail("IMP028B_D368", "IMP-028B capability artifact must preserve D-368 / ARCH-G19");
+  }
+
+  if (roadmap) {
+    if (!/IMP-028B-customer-menu-projection-and-discovery\.md/.test(roadmap.text)) {
+      fail(
+        "IMP028B_ROADMAP_ARTIFACT",
+        "ROADMAP must reference the IMP-028B canonical capability artifact",
+      );
+    }
+    if (!/IMP-028B_IMPLEMENTATION_AUTHORIZED:\s*YES/.test(roadmap.text)) {
+      fail(
+        "IMP028B_ROADMAP_AUTHORIZED",
+        "ROADMAP must record IMP-028B_IMPLEMENTATION_AUTHORIZED: YES",
+      );
+    }
+    if (!/IMP-028B_IMPLEMENTATION_STARTED:\s*YES/.test(roadmap.text)) {
+      fail(
+        "IMP028B_ROADMAP_STARTED",
+        "ROADMAP must record IMP-028B_IMPLEMENTATION_STARTED: YES",
+      );
+    }
+    if (!/IMP-028B_IMPLEMENTATION_COMPLETE:\s*YES/.test(roadmap.text)) {
+      fail(
+        "IMP028B_ROADMAP_COMPLETE",
+        "ROADMAP must record IMP-028B_IMPLEMENTATION_COMPLETE: YES",
+      );
+    }
+    if (!/IMP-028B_ACCEPTED:\s*YES/.test(roadmap.text)) {
+      fail("IMP028B_ROADMAP_ACCEPTED_TOKEN", "ROADMAP must record IMP-028B_ACCEPTED: YES");
+    }
+    if (!/IMP-028B_ARCHITECTURE_LOCKED:\s*YES/.test(roadmap.text)) {
+      fail(
+        "IMP028B_ROADMAP_LOCK",
+        "ROADMAP must record IMP-028B_ARCHITECTURE_LOCKED: YES",
+      );
+    }
+    if (roadmap.meta.acceptedThrough !== "IMP-028B") {
+      fail(
+        "IMP028B_ROADMAP_ACCEPTED_THROUGH",
+        `ROADMAP acceptedThrough must be IMP-028B, got ${JSON.stringify(roadmap.meta.acceptedThrough)}`,
+      );
+    }
+    if (roadmap.meta.currentProductSlice !== "NONE" && roadmap.meta.currentProductSlice !== "IMP-028C") {
+      fail(
+        "IMP028B_ROADMAP_CURRENT",
+        `ROADMAP currentProductSlice must be NONE or IMP-028C, got ${JSON.stringify(roadmap.meta.currentProductSlice)}`,
+      );
+    }
+    const futureSection = roadmap.text.split("## 5. Future GTM Slices")[1]?.split("## 6.")[0] || "";
+    const futureRow = [...futureSection.split("\n")].find((line) =>
+      /^\|\s*IMP-028B\s*\|/.test(line),
+    );
+    if (
+      futureRow
+    ) {
+      fail(
+        "IMP028B_ROADMAP_LIFECYCLE",
+        "ROADMAP future ledger must not list IMP-028B after acceptance",
+      );
+    } else {
+      note("IMP-028B removed from ROADMAP future ledger after acceptance");
+    }
+    const acceptedSection = roadmap.text.split("## 3. Accepted Slices")[1]?.split("## 4.")[0] || "";
+    const acceptedRow = [...acceptedSection.split("\n")].find((line) =>
+      /^\|\s*IMP-028B\s*\|/.test(line),
+    );
+    if (!acceptedRow || !acceptedRow.includes("Customer Menu Projection") || !acceptedRow.includes("COMPLETE_AND_ACCEPTED")) {
+      fail(
+        "IMP028B_ROADMAP_ACCEPTED_LEDGER",
+        "ROADMAP accepted ledger must list IMP-028B Customer Menu Projection + Discovery as COMPLETE_AND_ACCEPTED",
+      );
+    }
+    const imp029Row = [...futureSection.split("\n")].find((line) =>
+      /^\|\s*IMP-029\s*\|/.test(line),
+    );
+    if (!imp029Row || !imp029Row.includes("Operations Console API") || !imp029Row.includes("PLANNED")) {
+      fail(
+        "IMP029_ROADMAP_PRESERVED",
+        "ROADMAP future ledger must keep IMP-029 Operations Console API PLANNED",
+      );
+    }
+  }
+
+  if (state) {
+    if (!/IMP-028B-customer-menu-projection-and-discovery\.md/.test(state.text)) {
+      fail(
+        "IMP028B_STATE_ARTIFACT",
+        "STATE must reference the IMP-028B canonical capability artifact",
+      );
+    }
+    if (!/IMP-028B_IMPLEMENTATION_AUTHORIZED:\s*YES/.test(state.text)) {
+      fail(
+        "IMP028B_STATE_AUTHORIZED",
+        "STATE must record IMP-028B_IMPLEMENTATION_AUTHORIZED: YES",
+      );
+    }
+    if (!/IMP-028B_ARCHITECTURE_LOCKED:\s*YES/.test(state.text)) {
+      fail(
+        "IMP028B_STATE_LOCK",
+        "STATE must record IMP-028B_ARCHITECTURE_LOCKED: YES",
+      );
+    }
+    if (!/IMP-028B_IMPLEMENTATION_STARTED:\s*YES/.test(state.text)) {
+      fail(
+        "IMP028B_STATE_STARTED",
+        "STATE must record IMP-028B_IMPLEMENTATION_STARTED: YES",
+      );
+    }
+    if (!/IMP-028B_IMPLEMENTATION_COMPLETE:\s*YES/.test(state.text)) {
+      fail(
+        "IMP028B_STATE_COMPLETE",
+        "STATE must record IMP-028B_IMPLEMENTATION_COMPLETE: YES",
+      );
+    }
+    if (state.meta.pendingAcceptance !== "NONE") {
+      fail(
+        "IMP028B_STATE_PENDING",
+        `STATE pendingAcceptance must be NONE after IMP-028B acceptance, got ${JSON.stringify(state.meta.pendingAcceptance)}`,
+      );
+    }
+    if (state.meta.acceptedThrough !== "IMP-028B") {
+      fail(
+        "IMP028B_STATE_ACCEPTED_THROUGH",
+        `STATE acceptedThrough must be IMP-028B, got ${JSON.stringify(state.meta.acceptedThrough)}`,
+      );
+    }
+    if (state.meta.currentProductSlice !== "NONE" && state.meta.currentProductSlice !== "IMP-028C") {
+      fail(
+        "IMP028B_STATE_CURRENT",
+        `STATE currentProductSlice must be NONE or IMP-028C, got ${JSON.stringify(state.meta.currentProductSlice)}`,
+      );
+    }
+    if (
+      !/IMP-028B:\s*COMPLETE_AND_ACCEPTED/.test(state.text) &&
+      !/IMP-028B:\s+COMPLETE_AND_ACCEPTED/.test(blob)
+    ) {
+      fail(
+        "IMP028B_STATE_LIFECYCLE",
+        "STATE must record IMP-028B COMPLETE_AND_ACCEPTED",
+      );
+    } else {
+      note("IMP-028B is COMPLETE_AND_ACCEPTED");
+    }
+    if (!/IMP-028B_ACCEPTED:\s*YES/.test(state.text)) {
+      fail("IMP028B_STATE_ACCEPTED", "STATE must mark IMP-028B accepted");
+    }
+  }
+
+  const supportingRel =
+    "docs/platform/experience/slices/customer-menu-projection-and-discovery.md";
+  const supporting = resolveExactRelativeFile(supportingRel);
+  if (!supporting) {
+    fail("IMP028B_SUPPORTING_MISSING", `Missing supporting Capability B definition at ${supportingRel}`);
+  } else {
+    const supportingText = readFileSync(supporting, "utf8");
+    if (!/CANONICALIZED_AS\s*=\s*IMP-028B/.test(supportingText) && !/CANONICALIZED_AS:\s*IMP-028B/.test(supportingText)) {
+      fail(
+        "IMP028B_SUPPORTING_CANONICALIZED",
+        "Supporting Capability B definition must record CANONICALIZED_AS = IMP-028B",
+      );
+    }
+    if (!/IMP028B_IMPLEMENTATION_AUTHORIZED\s*=\s*YES/.test(supportingText) && !/IMPLEMENTATION_AUTHORIZED:\s*YES/.test(supportingText)) {
+      fail(
+        "IMP028B_SUPPORTING_AUTHORIZED",
+        "Supporting Capability B definition must record implementation authorized",
+      );
+    }
+    if (/IMP028B_IMPLEMENTATION_COMPLETE\s*=\s*NO/.test(supportingText)) {
+      fail(
+        "IMP028B_SUPPORTING_COMPLETE",
+        "Supporting Capability B definition must not claim implementation incomplete after GTM-R41",
+      );
+    }
+    if (!/IMP028B_IMPLEMENTATION_COMPLETE\s*=\s*YES/.test(supportingText)) {
+      note("Supporting Capability B definition may omit IMP028B_IMPLEMENTATION_COMPLETE token");
     }
   }
 }
@@ -739,19 +3444,22 @@ function checkTechnicalInventory() {
   const journal = JSON.parse(readFileSync(journalPath, "utf8"));
   const entries = journal.entries || [];
   const latest = entries[entries.length - 1];
-  if (!latest || latest.tag !== "0017_order") {
-    fail("LATEST_MIGRATION", `Expected latest migration tag 0017_order, got ${latest && latest.tag}`);
-  } else {
-    note("Latest migration tag 0017_order");
-  }
-  const sqlFiles = readdirSync(path.join(projectRoot, "drizzle")).filter((f) => f.endsWith(".sql"));
-  if (sqlFiles.length !== 18 || entries.length !== 18) {
+  if (!latest || latest.tag !== "0029_refund_statutory_issuance_allocation") {
     fail(
-      "MIGRATION_COUNT",
-      `Expected 18 migrations, got sql=${sqlFiles.length} journal=${entries.length}`,
+      "LATEST_MIGRATION",
+      `Expected latest migration tag 0029_refund_statutory_issuance_allocation, got ${latest && latest.tag}`,
     );
   } else {
-    note("Migration count 18");
+    note("Latest migration tag 0029_refund_statutory_issuance_allocation");
+  }
+  const sqlFiles = readdirSync(path.join(projectRoot, "drizzle")).filter((f) => f.endsWith(".sql"));
+  if (sqlFiles.length !== 30 || entries.length !== 30) {
+    fail(
+      "MIGRATION_COUNT",
+      `Expected 30 migrations, got sql=${sqlFiles.length} journal=${entries.length}`,
+    );
+  } else {
+    note("Migration count 30");
   }
 
   // Application tables
@@ -762,10 +3470,10 @@ function checkTechnicalInventory() {
     const t = readFileSync(path.join(schemaDir, name), "utf8");
     tableCount += [...t.matchAll(/appSchema\.table\(/g)].length;
   }
-  if (tableCount !== 92) {
-    fail("TABLE_COUNT", `Expected 92 appSchema.table declarations, got ${tableCount}`);
+  if (tableCount !== 108) {
+    fail("TABLE_COUNT", `Expected 108 appSchema.table declarations, got ${tableCount}`);
   } else {
-    note("Application table count 92");
+    note("Application table count 108");
   }
 
   const catalog = readFileSync(path.join(projectRoot, "src/shared/access-control/catalog.ts"), "utf8");
@@ -773,8 +3481,8 @@ function checkTechnicalInventory() {
   const roleMatch = catalog.match(/export const ROLE_KEYS = \[([\s\S]*?)\];/);
   const perms = permMatch ? [...permMatch[1].matchAll(/"([^"]+)"/g)].map((x) => x[1]) : [];
   const roles = roleMatch ? [...roleMatch[1].matchAll(/"([^"]+)"/g)].map((x) => x[1]) : [];
-  if (perms.length !== 55) fail("PERMISSION_COUNT", `Expected 55 permissions, got ${perms.length}`);
-  else note("Permission count 55");
+  if (perms.length !== 57) fail("PERMISSION_COUNT", `Expected 57 permissions, got ${perms.length}`);
+  else note("Permission count 57");
   if (roles.length !== 7) fail("ROLE_COUNT", `Expected 7 roles, got ${roles.length}`);
   else note("Role count 7");
 
@@ -929,17 +3637,17 @@ export function runProjectConsistency() {
   if (vision && vision.meta.version !== "VISION-1") {
     fail("VISION_VERSION", `Expected VISION-1, got ${vision.meta.version}`);
   }
-  if (architecture && architecture.meta.architectureVersion !== "ARCH-R8") {
-    fail("ARCH_VERSION", `Expected ARCH-R8, got ${architecture.meta.architectureVersion}`);
+  if (architecture && architecture.meta.architectureVersion !== "ARCH-R15") {
+    fail("ARCH_VERSION", `Expected ARCH-R15, got ${architecture.meta.architectureVersion}`);
   }
-  if (decision && decision.meta.decisionRegisterVersion !== "DR-5") {
-    fail("DR_VERSION", `Expected DR-5, got ${decision.meta.decisionRegisterVersion}`);
+  if (decision && decision.meta.decisionRegisterVersion !== "DR-12") {
+    fail("DR_VERSION", `Expected DR-12, got ${decision.meta.decisionRegisterVersion}`);
   }
-  if (roadmap && roadmap.meta.roadmapVersion !== "GTM-R10") {
-    fail("ROADMAP_VERSION", `Expected GTM-R10, got ${roadmap.meta.roadmapVersion}`);
+  if (roadmap && roadmap.meta.roadmapVersion !== "GTM-R46") {
+    fail("ROADMAP_VERSION", `Expected GTM-R46, got ${roadmap.meta.roadmapVersion}`);
   }
-  if (state && state.meta.stateVersion !== "STATE-R9") {
-    fail("STATE_VERSION", `Expected STATE-R9, got ${state.meta.stateVersion}`);
+  if (state && state.meta.stateVersion !== "STATE-R44") {
+    fail("STATE_VERSION", `Expected STATE-R44, got ${state.meta.stateVersion}`);
   }
   if (state && state.meta.governanceHealth === "ALIGNED") {
     // During reconciliation install this may still be RECONCILIATION_REQUIRED;
@@ -954,12 +3662,32 @@ export function runProjectConsistency() {
   checkImp024ArchitectureLock(roadmap, state, architecture);
   checkImp025ArchitectureLock(roadmap, state, architecture);
   checkImp026ArchitectureLock(roadmap, state, architecture, decision);
+  checkImp026cArchitectureLock(roadmap, state);
+  checkImp027ArchitectureLock(roadmap, state, architecture);
+  checkImp028ArchitectureLock(roadmap, state, architecture, decision);
+  checkImp028aImplementationAuthorization(roadmap, state);
+  checkImp028bCanonicalActivation(roadmap, state);
   checkTechnicalInventory();
   checkStaticWeb();
   checkAgentsPointer();
   checkSupersededRoadmap();
+  checkWorkingTreeFingerprint();
 
   return findings;
+}
+
+function checkWorkingTreeFingerprint() {
+  try {
+    const result = computeWorkingTreeFingerprint(projectRoot);
+    note(
+      `WORKING_TREE_FINGERPRINT ${result.digest} (${result.algorithm}; content-sensitive tracked + non-ignored untracked files)`,
+    );
+  } catch (err) {
+    fail(
+      "WORKING_TREE_FINGERPRINT",
+      `working-tree fingerprint failed: ${err instanceof Error ? err.message : String(err)}`,
+    );
+  }
 }
 
 function main() {

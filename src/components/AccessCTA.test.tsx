@@ -9,7 +9,7 @@ import { AccessCTA } from "./AccessCTA";
 describe("AccessCTA", () => {
   it("makes owned Boba Bear ordering the primary CTA and keeps aggregators secondary", () => {
     render(<AccessCTA />);
-    const owned = screen.getByRole("link", { name: /order with boba bear/i });
+    const owned = screen.getByRole("link", { name: /order now/i });
     expect(owned).toHaveAttribute("href", "/order");
     expect(screen.getByText("Zomato")).toBeInTheDocument();
     expect(screen.getByText("Swiggy")).toBeInTheDocument();

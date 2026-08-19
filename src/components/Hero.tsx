@@ -175,7 +175,8 @@ export function Hero() {
           <p className="sr-only">
             Boba tea and Korean street food in Dehradun. Bubble tea, matcha,
             milk tea, ramyun noodles, momos, loaded fries, corn dogs and
-            desserts. Order on Zomato, Swiggy or WhatsApp.
+            desserts. Order directly with Boba Bear. Aggregators remain a
+            secondary option.
           </p>
 
           {/* Desktop only: tagline + CTAs live in the left column.
@@ -202,10 +203,10 @@ export function Hero() {
               className="flex flex-row gap-4 flex-wrap mt-14"
             >
               <Button asChild variant="primary" size="lg">
-                <a href="#access">Access Drop</a>
+                <a href="/order">Order Now</a>
               </Button>
               <Button asChild variant="outline" size="lg">
-                <a href="#bar">Explore Menu</a>
+                <a href="#access">Access Drop</a>
               </Button>
             </motion.div>
           </div>
@@ -245,10 +246,10 @@ export function Hero() {
 
           <div className="flex flex-col gap-3">
             <Button asChild variant="primary" size="lg" className="w-full">
-              <a href="#access">Access Drop</a>
+              <a href="/order">Order Now</a>
             </Button>
             <Button asChild variant="outline" size="lg" className="w-full">
-              <a href="#bar">Explore Menu</a>
+              <a href="#access">Access Drop</a>
             </Button>
           </div>
         </Reveal>

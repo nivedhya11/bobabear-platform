@@ -10,6 +10,17 @@ Last updated: 2026-08-02
 
 Accepted
 
+**CURRENT read (2026-08-18):** ADR-008 remains AMENDED by accepted IMP-018–021 for cart, checkout,
+and serviceability specifics that drifted from early ADR prose (prefer STATE/accepted code).
+**[D-370](../decision-register.md)** binds guest→customer compatible purchase-intent merge and
+logout customer-cart isolation. D-370 supersedes only future-facing readings that would silently
+discard one Cart’s purchase intent solely because authentication changed, treat KEEP_GUEST /
+KEEP_CUSTOMER as a whole-cart silent winner, or lock identity transition exclusively to Checkout.
+Accepted Cart aggregate, guest XOR customer ownership, configured-line identity, revision
+concurrency, and coupon-conflict KEEP_GUEST / KEEP_CUSTOMER as coupon-resolution implementation
+remain. Cart remains purchase intent. Checkout Snapshot remains authoritative payable truth.
+D-370 does not authorize implementation.
+
 ## Decision Date
 
 2026-08-02

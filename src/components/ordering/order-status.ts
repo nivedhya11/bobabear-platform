@@ -8,10 +8,10 @@ export const CUSTOMER_ORDER_STATUSES = ["PLACED", "ACCEPTED", "FULFILLED", "CANC
 export type CustomerOrderStatus = (typeof CUSTOMER_ORDER_STATUSES)[number];
 
 const LABELS: Readonly<Record<CustomerOrderStatus, string>> = Object.freeze({
-  PLACED: "Order placed",
+  PLACED: "Order received",
   ACCEPTED: "Order accepted",
-  FULFILLED: "Fulfilled",
-  CANCELLED: "Cancelled",
+  FULFILLED: "Order fulfilled",
+  CANCELLED: "Order cancelled",
 });
 
 export function isCustomerOrderStatus(status: string): status is CustomerOrderStatus {

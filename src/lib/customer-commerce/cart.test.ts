@@ -7,6 +7,7 @@ import {
   reconcileGuestCart,
   removeCartLine,
   setCartLineQuantity,
+  updateCartLineConfiguration,
 } from "./cart";
 import { clearGuestCartCredential, readGuestCartCredential } from "./guest-token";
 
@@ -110,6 +111,65 @@ describe("cart client journey", () => {
     expect((addInit.headers as Record<string, string>)["X-Boba-Guest-Cart-Token"]).toBeUndefined();
     const qtyInit = fetchMock.mock.calls[1]![1] as RequestInit;
     expect((qtyInit.headers as Record<string, string>)["X-Boba-Guest-Cart-Token"]).toBe("tok-1");
+  });
+
+  it("forwards modifier purchase intent unchanged when adding a configured line", async () => {
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) =>
+      jsonResponse({ ok: true, cart: guestCart("1") }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const modifiers = [{ variantModifierGroupId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", modifierGroupOptionId: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee", quantity: 2 }];
+    await addCartLine({ brandId, variantId, quantity: 1, modifiers });
+    expect(JSON.parse(String((fetchMock.mock.calls[0]![1] as RequestInit).body))).toEqual({ brandId, variantId, quantity: 1, modifiers });
+  });
+});
+
+describe("updateCartLineConfiguration transport", () => {
+  it("serializes modifiers, bundleSelections, and expectedRevision without persisted bundle ids", async () => {
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) =>
+      jsonResponse({ ok: true, cart: guestCart("2") }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const modifiers = [
+      {
+        variantModifierGroupId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        modifierGroupOptionId: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+        quantity: 1,
+      },
+    ];
+    const bundleSelections = [
+      {
+        bundleGroupOptionId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+        quantity: 1,
+        modifiers: [
+          {
+            variantModifierGroupId: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+            modifierGroupOptionId: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+            quantity: 2,
+          },
+        ],
+      },
+    ];
+    await updateCartLineConfiguration({
+      brandId,
+      cartLineId: lineId,
+      variantId,
+      modifiers,
+      bundleSelections,
+      expectedRevision: "1",
+    });
+    const body = JSON.parse(String((fetchMock.mock.calls[0]![1] as RequestInit).body)) as Record<
+      string,
+      unknown
+    >;
+    expect(body.modifiers).toEqual(modifiers);
+    expect(body.bundleSelections).toEqual(bundleSelections);
+    expect(body.expectedRevision).toBe("1");
+    expect(body.variantId).toBe(variantId);
+    expect(JSON.stringify(body)).not.toContain("bundle-child-id");
+    for (const bundle of body.bundleSelections as Record<string, unknown>[]) {
+      expect(bundle).not.toHaveProperty("id");
+    }
   });
 });
 

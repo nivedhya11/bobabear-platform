@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/Button";
+import { OrderSupportAction } from "@/components/ordering/OrderSupportAction";
 import { commerceErrorCopy } from "@/components/ordering/error-copy";
 import { formatPaise } from "@/components/ordering/format-money";
 import { orderStatusLabel } from "@/components/ordering/order-status";
@@ -73,20 +74,39 @@ export function OrderConfirmationClient() {
         {order ? (
           <div className="flex flex-col gap-4" data-testid="order-confirmation">
             <p className="font-body text-[15px] text-[var(--text-secondary)]">
+              Thanks — your order is with Boba Bear.
+            </p>
+            <p className="font-body text-[15px] font-semibold" data-testid="order-number">
               {order.orderNumber}
             </p>
             <p data-testid="order-status" className="font-body text-[15px] text-[var(--text-primary)]">
               {orderStatusLabel(order.status)}
             </p>
+            <ul className="flex flex-col gap-2">
+              {order.lines.map((line, index) => (
+                <li key={`${line.productName}-${index}`} className="font-body text-[14px]">
+                  {line.quantity} × {line.productName}
+                  {line.variantName ? ` (${line.variantName})` : ""}
+                </li>
+              ))}
+            </ul>
             <p className="font-body text-[15px]">
               Total {formatPaise(order.money.grandTotalMinor)}
             </p>
-            <Button asChild variant="primary">
+            <div className="font-body text-[14px] text-[var(--text-secondary)]">
+              <p>{order.destination.recipientName}</p>
+              <p>{order.destination.addressLine1}</p>
+              <p>
+                {order.destination.city} {order.destination.postalCode}
+              </p>
+            </div>
+            <OrderSupportAction orderNumber={order.orderNumber} />
+            <Button asChild variant="primary" className="min-h-[44px]">
               <a href={`/order/orders/detail/?orderId=${encodeURIComponent(order.orderId)}`}>
                 View order
               </a>
             </Button>
-            <Button asChild variant="outline">
+            <Button asChild variant="outline" className="min-h-[44px]">
               <a href="/order/orders/">Order history</a>
             </Button>
           </div>

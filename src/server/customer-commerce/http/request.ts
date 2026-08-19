@@ -123,6 +123,57 @@ export function readJsonObjectBody(
   });
 }
 
+export type ReadRawBodyResult =
+  | Readonly<{ ok: true; value: Uint8Array }>
+  | Readonly<{ ok: false; reason: ReadJsonObjectBodyFailureReason }>;
+
+/**
+ * Read exact raw body bytes for provider signature verification.
+ * Does not parse JSON and does not alter bytes after read.
+ */
+export function readRawBody(
+  req: IncomingMessage,
+  maxBytes: number = MAX_JSON_BODY_BYTES,
+): Promise<ReadRawBodyResult> {
+  return new Promise<ReadRawBodyResult>((resolve) => {
+    const chunks: Buffer[] = [];
+    let totalBytes = 0;
+    let settled = false;
+
+    function finish(result: ReadRawBodyResult): void {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve(result);
+    }
+
+    const timer = setTimeout(() => {
+      req.destroy();
+      finish({ ok: false, reason: "timeout" });
+    }, BODY_READ_TIMEOUT_MS);
+
+    req.on("data", (chunk: Buffer) => {
+      if (settled) return;
+      totalBytes += chunk.length;
+      if (totalBytes > maxBytes) {
+        req.destroy();
+        finish({ ok: false, reason: "too_large" });
+        return;
+      }
+      chunks.push(chunk);
+    });
+
+    req.on("end", () => {
+      if (settled) return;
+      finish({ ok: true, value: new Uint8Array(Buffer.concat(chunks)) });
+    });
+
+    req.on("error", () => {
+      finish({ ok: false, reason: "malformed_json" });
+    });
+  });
+}
+
 export function readOptionalJsonObjectBody(
   req: IncomingMessage,
   allowedFields?: readonly string[],
