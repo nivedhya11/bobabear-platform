@@ -5,7 +5,7 @@
   "capability": "IMP-028D",
   "title": "Desktop Ordering Continuity",
   "architectureLock": "ARCHITECTURE_LOCKED",
-  "implementation": "IMPLEMENTATION_IN_PROGRESS",
+  "implementation": "IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE",
   "implementationAuthorized": true,
   "lastReviewed": "2026-08-20",
   "bindingDecisions": ["D-368", "D-369", "D-370"],
@@ -25,8 +25,8 @@ persistence, schema, migration, API, or runtime topology. D-371 remains unused.
 | Field | Value |
 |---|---|
 | Placement | After accepted IMP-028C and before planned IMP-029 |
-| Lifecycle | `ARCHITECTURE_LOCKED` / `IMPLEMENTATION_IN_PROGRESS` |
-| Implementation | `AUTHORIZED` / `STARTED` |
+| Lifecycle | `ARCHITECTURE_LOCKED` / `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` |
+| Implementation | `AUTHORIZED` / `STARTED` / `COMPLETE` |
 | Founder UAT required at acceptance | **YES** |
 | Schema / migration / new authority | **NO** / **NO** / **NO** |
 
@@ -34,8 +34,11 @@ persistence, schema, migration, API, or runtime topology. D-371 remains unused.
 IMP-028D_ARCHITECTURE_LOCKED: YES
 IMP-028D_IMPLEMENTATION_AUTHORIZED: YES
 IMP-028D_IMPLEMENTATION_STARTED: YES
-IMP-028D_IMPLEMENTATION_COMPLETE: NO
+IMP-028D_IMPLEMENTATION_COMPLETE: YES
 IMP-028D_ACCEPTED: NO
+IMP-028D_FOUNDER_UAT_REQUIRED: YES
+IMP-028D_FOUNDER_UAT: PENDING
+IMP-028D_FOUNDER_UAT_COMPLETE: NO
 NEW_SCHEMA_REQUIRED: NO
 NEW_MIGRATION_REQUIRED: NO
 NEW_PERSISTENCE_AUTHORITY: NO
@@ -111,3 +114,21 @@ architecture remains locked. PROCESS-HARDENING-A in the referenced supporting pl
 product implementation. Before founder UAT, PROCESS-HARDENING-B and the exact-candidate UAT
 requirements in `AGENTS.md` apply. A persistence, API, authority, or decision need is a
 `DECISION_REQUIRED` stop; D-371 must not be allocated.
+
+## Technical completion evidence
+
+IMP-028D implementation is complete pending independent acceptance and founder UAT; it is not
+accepted. The recorded implementation/promotion evidence is:
+
+```text
+IMPLEMENTATION_COMMIT: 795bb3151e3a24d5914160d232f099016d880a2b
+RECONCILED_CI_CANDIDATE: 499e9249e3c46d76e382c8c91740b49253b54a19
+GITHUB_PR: #1
+CI_RUN: 32395774250
+CI_RESULT: SUCCESS
+MERGE_COMMIT: ba1b0864fe39aefe3b20b0da1c2c039eff020998
+FOUNDER_UAT_REQUIRED: YES
+FOUNDER_UAT: PENDING
+```
+
+No UAT artifact identity is claimed before the required fresh UAT build and deployment.
