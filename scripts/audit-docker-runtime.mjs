@@ -94,10 +94,48 @@ export function checkFullyQualifiedExternalBaseImages(dockerfileText) {
   };
 }
 
-export function checkPinnedPostgresImage(composeText) {
-  const match = composeText.match(/postgres:\s*\n\s*image:\s*([^\s#]+)/);
-  const passed = !!match && match[1] === "postgres:18.4-trixie";
-  return { name: "PostgreSQL image is pinned to postgres:18.4-trixie", passed, detail: match?.[1] };
+export function checkComposeImageReferences(composeText) {
+  const imageRefs = [...composeText.matchAll(/^\s+image:\s*([^\s#]+)/gm)].map((match) => match[1]);
+  const isProjectLocal = (ref) => ref.split("/").at(-1).startsWith("boba-bear-");
+  const externalRefs = imageRefs.filter((ref) => !isProjectLocal(ref));
+  const projectLocalRefs = imageRefs.filter(isProjectLocal);
+  const unqualifiedExternal = externalRefs.filter((ref) => !isFullyQualifiedImageRef(ref));
+  const qualifiedProjectLocal = projectLocalRefs.filter(isFullyQualifiedImageRef);
+  const failures = [
+    ...unqualifiedExternal.map((ref) => `external image is not fully qualified: ${ref}`),
+    ...qualifiedProjectLocal.map((ref) => `project-local image is qualified: ${ref}`),
+  ];
+  return {
+    name: "External Compose images are fully qualified and project-local images remain local",
+    passed: failures.length === 0,
+    detail: failures.join("; "),
+  };
+}
+
+export function checkNodeServiceHealthchecks(composeText) {
+  const endpoints = new Map([
+    ["customer-auth", 8081],
+    ["workforce-auth", 8082],
+    ["customer-commerce", 8083],
+  ]);
+  const failures = [];
+  for (const [service, port] of endpoints) {
+    const block = extractServiceBlock(composeText, service);
+    const endpoint = `http://127.0.0.1:${port}/health/live`;
+    const hasCommand =
+      block.includes("node -e") &&
+      block.includes(endpoint) &&
+      block.includes("r=>process.exit(r.ok?0:1)") &&
+      block.includes("catch(()=>process.exit(1))");
+    if (!/"CMD-SHELL"/.test(block) || !hasCommand) {
+      failures.push(service);
+    }
+  }
+  return {
+    name: "Node Compose healthchecks use portable shell commands with exact live endpoints",
+    passed: failures.length === 0,
+    detail: failures.join(", "),
+  };
 }
 
 export function checkFinalStageIsWebRuntime(dockerfileText) {
@@ -394,7 +432,8 @@ export function runAllChecks({ dockerfileText, composeText, nginxConfText, nextC
     { name: "Multi-stage Dockerfile (base/dependencies/builder/tooling/web-runtime)", passed: [...dockerfileText.matchAll(/^FROM/gm)].length >= 5 },
     checkPinnedBaseImages(dockerfileText),
     checkFullyQualifiedExternalBaseImages(dockerfileText),
-    checkPinnedPostgresImage(composeText),
+    checkComposeImageReferences(composeText),
+    checkNodeServiceHealthchecks(composeText),
     checkNoFloatingImageTags(dockerfileText, composeText),
     checkFinalStageIsWebRuntime(dockerfileText),
     checkNoNodeServerAtRuntime(dockerfileText),
