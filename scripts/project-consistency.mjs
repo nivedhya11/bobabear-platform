@@ -15,37 +15,21 @@ import { computeWorkingTreeFingerprint } from "./working-tree-fingerprint.mjs";
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
-/** Current baseline plus the next mechanical revision bump for IMP-028C lifecycle transitions. */
-export const ALLOWED_ROADMAP_VERSIONS = new Set(["GTM-R46", "GTM-R47"]);
-/** Current baseline plus the next mechanical revision bump for IMP-028C lifecycle transitions. */
-export const ALLOWED_STATE_VERSIONS = new Set(["STATE-R44", "STATE-R45"]);
-
 /**
  * @param {"roadmap" | "state"} kind
  * @param {string} version
  */
 export function isAllowedGovernanceVersion(kind, version) {
-  if (kind === "roadmap") return ALLOWED_ROADMAP_VERSIONS.has(version);
-  if (kind === "state") return ALLOWED_STATE_VERSIONS.has(version);
+  if (kind === "roadmap") return /^GTM-R[1-9]\d*$/.test(version);
+  if (kind === "state") return /^STATE-R[1-9]\d*$/.test(version);
   return false;
 }
 
-/**
- * The only newer pending-acceptance marker permitted while checking the
- * accepted IMP-028A/IMP-028B foundation evidence.
- * @param {{ meta: Record<string, string>, text: string }} state
- */
-export function isImp028cCanonicalPendingAcceptance(state) {
-  return (
-    state.meta.acceptedThrough === "IMP-028B" &&
-    state.meta.currentProductSlice === "IMP-028C" &&
-    state.meta.pendingAcceptance === "IMP-028C" &&
-    /Current Governance Activity:\s*IMP-028C Food Customization IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE/.test(
-      state.text,
-    ) &&
-    /IMP-028C_IMPLEMENTATION_COMPLETE:\s*YES/.test(state.text) &&
-    /IMP-028C_ACCEPTED:\s*NO/.test(state.text)
-  );
+export function isValidCanonicalRevision(kind, version) {
+  if (kind === "vision") return /^VISION-[1-9]\d*$/.test(version);
+  if (kind === "architecture") return /^ARCH-R[1-9]\d*$/.test(version);
+  if (kind === "decision") return /^DR-[1-9]\d*$/.test(version);
+  return isAllowedGovernanceVersion(kind, version);
 }
 
 /** @typedef {{ ok: boolean, code?: string, message: string }} Finding */
@@ -115,6 +99,72 @@ export const FORMAL_LEDGER_IMP_ID_RE = /^IMP-\d+[A-Z]?$/;
 
 /** Table-row capture for formal ledger IMP ids (see {@link FORMAL_LEDGER_IMP_ID_RE}). */
 export const LEDGER_ROW_IMP_RE = /\|\s*(IMP-\d+[A-Z]?)\s*\|\s*([^|]+)\|/g;
+
+/**
+ * Validate lifecycle relationships from canonical capability facts rather than
+ * a historical lifecycle checkpoint.
+ * @param {{ acceptedThrough: string, currentProductSlice: string, pendingAcceptance: string, capabilities: Array<{ id: string, accepted?: boolean, implementationComplete?: boolean }> }} position
+ * @returns {{ ok: true } | { ok: false, code: string, message: string }}
+ */
+export function evaluateCapabilityLifecycle(position) {
+  const capabilities = new Map(position.capabilities.map((capability) => [capability.id, capability]));
+  const capabilityIndex = new Map(position.capabilities.map((capability, index) => [capability.id, index]));
+  const accepted = capabilities.get(position.acceptedThrough);
+  const current = position.currentProductSlice === "NONE" ? null : capabilities.get(position.currentProductSlice);
+  const pending = position.pendingAcceptance === "NONE" ? null : capabilities.get(position.pendingAcceptance);
+
+  if (!accepted) {
+    return { ok: false, code: "ACCEPTED_THROUGH_MISSING", message: `acceptedThrough ${position.acceptedThrough} is not in the capability ledger` };
+  }
+  if (!accepted.accepted) {
+    return { ok: false, code: "ACCEPTED_THROUGH_UNACCEPTED", message: `acceptedThrough ${position.acceptedThrough} is not marked accepted` };
+  }
+  if (!current && pending) {
+    return { ok: false, code: "PENDING_WITHOUT_CURRENT", message: `pendingAcceptance ${position.pendingAcceptance} requires a current product slice` };
+  }
+  if (position.currentProductSlice !== "NONE" && !current) {
+    return { ok: false, code: "CURRENT_SLICE_MISSING", message: `currentProductSlice ${position.currentProductSlice} is not in the capability ledger` };
+  }
+  if (position.pendingAcceptance !== "NONE" && !pending) {
+    return { ok: false, code: "PENDING_ACCEPTANCE_MISSING", message: `pendingAcceptance ${position.pendingAcceptance} is not in the capability ledger` };
+  }
+  if (current?.accepted) {
+    return { ok: false, code: "CURRENT_SLICE_ACCEPTED", message: `currentProductSlice ${current.id} is already accepted` };
+  }
+  if (pending?.accepted) {
+    return { ok: false, code: "PENDING_ACCEPTANCE_ACCEPTED", message: `pendingAcceptance ${pending.id} is already accepted` };
+  }
+  if (pending && pending.id !== current?.id) {
+    return { ok: false, code: "PENDING_ACCEPTANCE_NOT_CURRENT", message: `pendingAcceptance ${pending.id} must be the current product slice ${current?.id ?? "NONE"}` };
+  }
+  if (current && capabilityIndex.get(current.id) <= capabilityIndex.get(accepted.id)) {
+    return { ok: false, code: "CURRENT_SLICE_NOT_SUCCESSOR", message: `currentProductSlice ${current.id} must follow acceptedThrough ${accepted.id} in the capability ledger` };
+  }
+  if (pending && !pending.implementationComplete) {
+    return { ok: false, code: "PENDING_ACCEPTANCE_INCOMPLETE", message: `pendingAcceptance ${pending.id} is not implementation complete` };
+  }
+  if (current?.implementationComplete && !pending) {
+    return { ok: false, code: "COMPLETE_CURRENT_NOT_PENDING", message: `implementation-complete currentProductSlice ${current.id} must be pending acceptance` };
+  }
+  return { ok: true };
+}
+
+/**
+ * @param {{ acceptedThrough: string, currentProductSlice: string, nextProductSlice: string, pendingAcceptance: string }} roadmap
+ * @param {{ acceptedThrough: string, currentProductSlice: string, nextProductSlice: string, pendingAcceptance: string }} state
+ */
+export function evaluateLifecycleAuthorityAlignment(roadmap, state) {
+  for (const key of ["acceptedThrough", "currentProductSlice", "nextProductSlice", "pendingAcceptance"]) {
+    if (!nullishEqual(roadmap[key], state[key])) {
+      return {
+        ok: false,
+        code: "ROADMAP_STATE_MISMATCH",
+        message: `${key}: ROADMAP=${JSON.stringify(roadmap[key])} STATE=${JSON.stringify(state[key])}`,
+      };
+    }
+  }
+  return { ok: true };
+}
 
 /**
  * Detect IMP-025 lifecycle claims without false positives from nearby IMP-026C text.
@@ -1220,23 +1270,6 @@ function checkRoadmapState(roadmap, state) {
     }
   }
 
-  const expected = {
-    acceptedThrough: "IMP-028B",
-    currentProductSlice: ["NONE", "IMP-028C"],
-    nextProductSlice: "IMP-029",
-    gtmBoundary: "IMP-040",
-  };
-  for (const [key, expectedValue] of Object.entries(expected)) {
-    const actual = key === "gtmBoundary" ? roadmap.meta.gtmBoundary : roadmap.meta[key];
-    const acceptable = Array.isArray(expectedValue) ? expectedValue : [expectedValue];
-    if (!acceptable.some((v) => nullishEqual(actual, v))) {
-      fail(
-        "POSITION_UNEXPECTED",
-        `Expected ${key}=${JSON.stringify(expectedValue)}, got ${JSON.stringify(actual)}`,
-      );
-    }
-  }
-
   // Slice ledger uniqueness from CURRENT ROADMAP tables only (exclude historical notice).
   const acceptedSection = roadmap.text.split("## 3. Accepted Slices")[1]?.split("## 4.")[0] || "";
   const futureSection = roadmap.text.split("## 5. Future GTM Slices")[1]?.split("## 6.")[0] || "";
@@ -1308,89 +1341,40 @@ function checkRoadmapState(roadmap, state) {
     }
   }
 
-  const split = evaluatePendingAcceptanceSplit(extractPendingAcceptanceSplitPosition(state, roadmap));
-  if (!split.ok) {
-    fail(split.code, split.message);
-  } else if (split.kind === "imp028b_complete_and_accepted") {
-    note(
-      "GTM-R42 IMP-028B Customer Menu Projection + Discovery COMPLETE_AND_ACCEPTED; IMP-029 not started",
-    );
-  } else if (split.kind === "imp028c_authorized_not_started") {
-    note(
-      "IMP-028C authorized/not-started; acceptedThrough=IMP-028B; IMP-029 not started",
-    );
-  } else if (split.kind === "imp028c_implementation_started") {
-    note(
-      "IMP-028C implementation started; acceptedThrough=IMP-028B; pendingAcceptance=NONE; IMP-029 not started",
-    );
-  } else if (split.kind === "imp028c_implementation_complete_pending_acceptance") {
-    note(
-      "IMP-028C implementation COMPLETE pending acceptance; acceptedThrough=IMP-028B; pendingAcceptance=IMP-028C; IMP-029 not started",
-    );
-  } else if (split.kind === "imp028b_implementation_complete_pending_acceptance") {
-    note(
-      "GTM-R41 historical IMP-028B implementation COMPLETE pending acceptance",
-    );
-  } else if (split.kind === "imp028b_implementation_in_progress") {
-    fail(
-      "IMP028B_COMPLETE_REQUIRED",
-      "GTM-R42 requires IMP-028B COMPLETE_AND_ACCEPTED (got kind=imp028b_implementation_in_progress)",
-    );
-  } else if (split.kind === "imp028b_implementation_authorized") {
-    fail(
-      "IMP028B_START_REQUIRED",
-      "GTM-R42 requires IMP-028B COMPLETE_AND_ACCEPTED (got kind=imp028b_implementation_authorized)",
-    );
-  } else if (split.kind === "imp028b_canonical_activation") {
-    fail(
-      "IMP028B_AUTHORIZATION_REQUIRED",
-      "GTM-R42 requires IMP-028B COMPLETE_AND_ACCEPTED (got kind=imp028b_canonical_activation)",
-    );
-  } else if (split.kind === "imp028a_complete_and_accepted") {
-    fail(
-      "IMP028B_ACTIVATION_REQUIRED",
-      "GTM-R38 requires IMP-028B canonical activation (got kind=imp028a_complete_and_accepted)",
-    );
-  } else if (split.kind === "imp028a_implementation_complete_pending_acceptance") {
-    fail(
-      "IMP028A_ACCEPTANCE_REQUIRED",
-      "GTM-R38 requires IMP-028A COMPLETE_AND_ACCEPTED before IMP-028B activation (got kind=imp028a_implementation_complete_pending_acceptance)",
-    );
-  } else if (split.kind === "imp028a_implementation_in_progress") {
-    fail(
-      "IMP028A_ACCEPTANCE_REQUIRED",
-      "GTM-R38 requires IMP-028A COMPLETE_AND_ACCEPTED before IMP-028B activation (got kind=imp028a_implementation_in_progress)",
-    );
-  } else if (split.kind === "imp028a_implementation_authorized") {
-    fail(
-      "IMP028A_ACCEPTANCE_REQUIRED",
-      "GTM-R38 requires IMP-028A COMPLETE_AND_ACCEPTED before IMP-028B activation (got kind=imp028a_implementation_authorized)",
-    );
-  } else if (split.kind === "imp028a_canonical_activation") {
-    fail(
-      "IMP028A_ACCEPTANCE_REQUIRED",
-      "GTM-R38 requires IMP-028A COMPLETE_AND_ACCEPTED before IMP-028B activation (got kind=imp028a_canonical_activation)",
-    );
-  } else if (split.kind !== "aligned") {
-    fail(
-      "DEFERRED_EXTERNAL_GATE_REQUIRED",
-      `GTM-R42 requires IMP-028B COMPLETE_AND_ACCEPTED with acceptedThrough=IMP-028B, pendingAcceptance=NONE, and currentProductSlice=NONE (got kind=${split.kind})`,
-    );
+  const roadmapPending = roadmap.text.match(/## 2\. Current Position[\s\S]*?Pending Acceptance:\s+(\S+)/)?.[1];
+  if (!roadmapPending) {
+    fail("ROADMAP_PENDING_MISSING", "ROADMAP current position must state Pending Acceptance");
+    return;
+  }
+  const alignment = evaluateLifecycleAuthorityAlignment(
+    { ...roadmap.meta, pendingAcceptance: roadmapPending },
+    state.meta,
+  );
+  if (!alignment.ok) {
+    fail(alignment.code, alignment.message);
   } else {
-    fail(
-      "IMP028B_ACTIVATION_REQUIRED",
-      "GTM-R42 requires kind=imp028b_complete_and_accepted (got kind=aligned)",
-    );
+    note("ROADMAP↔STATE lifecycle metadata aligned");
   }
 
-  if (
-    roadmap.meta.currentProductSlice === "IMP-029" ||
-    state.meta.currentProductSlice === "IMP-029"
-  ) {
-    fail(
-      "IMP029_ACTIVATED",
-      "GTM-R30 must not activate IMP-029 as currentProductSlice; nextProductSlice=IMP-029 is planned bookkeeping only and does not authorize implementation",
-    );
+  const lifecycleFacts = [...idName.keys()].map((id) => ({
+    id,
+    accepted: new RegExp(`${id}_ACCEPTED:\\s*YES|${id}:\\s*COMPLETE_AND_ACCEPTED`).test(
+      `${roadmap.text}\n${state.text}`,
+    ),
+    implementationComplete: new RegExp(
+      `${id}_IMPLEMENTATION_COMPLETE:\\s*YES|${id}:\\s*COMPLETE_AND_ACCEPTED`,
+    ).test(`${roadmap.text}\n${state.text}`),
+  }));
+  const lifecycle = evaluateCapabilityLifecycle({
+    acceptedThrough: String(state.meta.acceptedThrough),
+    currentProductSlice: String(state.meta.currentProductSlice),
+    pendingAcceptance: String(state.meta.pendingAcceptance ?? "NONE"),
+    capabilities: lifecycleFacts,
+  });
+  if (!lifecycle.ok) {
+    fail(lifecycle.code, lifecycle.message);
+  } else {
+    note("capability lifecycle relationships valid");
   }
 }
 
@@ -1744,22 +1728,6 @@ function checkImp024ArchitectureLock(roadmap, state, architecture) {
       );
     } else {
       note("STATE records IMP-025 COMPLETE_AND_ACCEPTED");
-    }
-    if (
-      state.meta.pendingAcceptance !== "NONE" &&
-      !(
-        state.meta.pendingAcceptance === "IMP-028B" &&
-        state.meta.acceptedThrough === "IMP-028A" &&
-        state.meta.currentProductSlice === "IMP-028B"
-      ) &&
-      !isImp028cCanonicalPendingAcceptance(state)
-    ) {
-      fail(
-        "IMP028A_PENDING_META",
-        `STATE pendingAcceptance must be NONE or IMP-028B complete pending after IMP-028A acceptance, got ${JSON.stringify(state.meta.pendingAcceptance)}`,
-      );
-    } else {
-      note(`STATE pendingAcceptance=${state.meta.pendingAcceptance}`);
     }
   }
 
@@ -3213,28 +3181,6 @@ function checkImp028aImplementationAuthorization(roadmap, state) {
         "STATE must record IMP-028A_IMPLEMENTATION_COMPLETE: YES",
       );
     }
-    if (state.meta.pendingAcceptance === "IMP-028A") {
-      fail(
-        "IMP028A_STATE_PENDING_CLEARED",
-        "STATE pendingAcceptance must not remain IMP-028A after independent acceptance",
-      );
-    }
-    if (
-      state.meta.pendingAcceptance !== "NONE" &&
-      state.meta.pendingAcceptance !== "IMP-028B" &&
-      !isImp028cCanonicalPendingAcceptance(state)
-    ) {
-      fail(
-        "IMP028A_STATE_PENDING_META",
-        `STATE pendingAcceptance must be NONE or IMP-028B after IMP-028A acceptance, got ${JSON.stringify(state.meta.pendingAcceptance)}`,
-      );
-    }
-    if (state.meta.acceptedThrough !== "IMP-028A" && state.meta.acceptedThrough !== "IMP-028B") {
-      fail(
-        "IMP028A_STATE_ACCEPTED_THROUGH",
-        `STATE acceptedThrough must be IMP-028A or a later accepted slice, got ${JSON.stringify(state.meta.acceptedThrough)}`,
-      );
-    }
     if (
       !/IMP-028A:\s*COMPLETE_AND_ACCEPTED/.test(state.text) &&
       !/IMP-028A:\s+COMPLETE_AND_ACCEPTED/.test(blob)
@@ -3370,18 +3316,6 @@ function checkImp028bCanonicalActivation(roadmap, state) {
         "ROADMAP must record IMP-028B_ARCHITECTURE_LOCKED: YES",
       );
     }
-    if (roadmap.meta.acceptedThrough !== "IMP-028B") {
-      fail(
-        "IMP028B_ROADMAP_ACCEPTED_THROUGH",
-        `ROADMAP acceptedThrough must be IMP-028B, got ${JSON.stringify(roadmap.meta.acceptedThrough)}`,
-      );
-    }
-    if (roadmap.meta.currentProductSlice !== "NONE" && roadmap.meta.currentProductSlice !== "IMP-028C") {
-      fail(
-        "IMP028B_ROADMAP_CURRENT",
-        `ROADMAP currentProductSlice must be NONE or IMP-028C, got ${JSON.stringify(roadmap.meta.currentProductSlice)}`,
-      );
-    }
     const futureSection = roadmap.text.split("## 5. Future GTM Slices")[1]?.split("## 6.")[0] || "";
     const futureRow = [...futureSection.split("\n")].find((line) =>
       /^\|\s*IMP-028B\s*\|/.test(line),
@@ -3446,27 +3380,6 @@ function checkImp028bCanonicalActivation(roadmap, state) {
       fail(
         "IMP028B_STATE_COMPLETE",
         "STATE must record IMP-028B_IMPLEMENTATION_COMPLETE: YES",
-      );
-    }
-    if (
-      state.meta.pendingAcceptance !== "NONE" &&
-      !isImp028cCanonicalPendingAcceptance(state)
-    ) {
-      fail(
-        "IMP028B_STATE_PENDING",
-        `STATE pendingAcceptance must be NONE after IMP-028B acceptance, got ${JSON.stringify(state.meta.pendingAcceptance)}`,
-      );
-    }
-    if (state.meta.acceptedThrough !== "IMP-028B") {
-      fail(
-        "IMP028B_STATE_ACCEPTED_THROUGH",
-        `STATE acceptedThrough must be IMP-028B, got ${JSON.stringify(state.meta.acceptedThrough)}`,
-      );
-    }
-    if (state.meta.currentProductSlice !== "NONE" && state.meta.currentProductSlice !== "IMP-028C") {
-      fail(
-        "IMP028B_STATE_CURRENT",
-        `STATE currentProductSlice must be NONE or IMP-028C, got ${JSON.stringify(state.meta.currentProductSlice)}`,
       );
     }
     if (
@@ -3715,25 +3628,25 @@ export function runProjectConsistency() {
     "lastReviewed",
   ]);
 
-  if (vision && vision.meta.version !== "VISION-1") {
-    fail("VISION_VERSION", `Expected VISION-1, got ${vision.meta.version}`);
+  if (vision && !isValidCanonicalRevision("vision", vision.meta.version)) {
+    fail("VISION_VERSION", `version must match VISION-<positive integer>, got ${vision.meta.version}`);
   }
-  if (architecture && architecture.meta.architectureVersion !== "ARCH-R15") {
-    fail("ARCH_VERSION", `Expected ARCH-R15, got ${architecture.meta.architectureVersion}`);
+  if (architecture && !isValidCanonicalRevision("architecture", architecture.meta.architectureVersion)) {
+    fail("ARCH_VERSION", `architectureVersion must match ARCH-R<positive integer>, got ${architecture.meta.architectureVersion}`);
   }
-  if (decision && decision.meta.decisionRegisterVersion !== "DR-12") {
-    fail("DR_VERSION", `Expected DR-12, got ${decision.meta.decisionRegisterVersion}`);
+  if (decision && !isValidCanonicalRevision("decision", decision.meta.decisionRegisterVersion)) {
+    fail("DR_VERSION", `decisionRegisterVersion must match DR-<positive integer>, got ${decision.meta.decisionRegisterVersion}`);
   }
   if (roadmap && !isAllowedGovernanceVersion("roadmap", roadmap.meta.roadmapVersion)) {
     fail(
       "ROADMAP_VERSION",
-      `Expected one of ${[...ALLOWED_ROADMAP_VERSIONS].join(", ")}, got ${roadmap.meta.roadmapVersion}`,
+      `roadmapVersion must match GTM-R<positive integer>, got ${roadmap.meta.roadmapVersion}`,
     );
   }
   if (state && !isAllowedGovernanceVersion("state", state.meta.stateVersion)) {
     fail(
       "STATE_VERSION",
-      `Expected one of ${[...ALLOWED_STATE_VERSIONS].join(", ")}, got ${state.meta.stateVersion}`,
+      `stateVersion must match STATE-R<positive integer>, got ${state.meta.stateVersion}`,
     );
   }
   if (state && state.meta.governanceHealth === "ALIGNED") {

@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
-  ALLOWED_ROADMAP_VERSIONS,
-  ALLOWED_STATE_VERSIONS,
   FORMAL_LEDGER_IMP_ID_RE,
   LEDGER_ROW_IMP_RE,
+  evaluateCapabilityLifecycle,
+  evaluateLifecycleAuthorityAlignment,
   evaluatePendingAcceptanceSplit,
   isAllowedGovernanceVersion,
-  isImp028cCanonicalPendingAcceptance,
+  isValidCanonicalRevision,
   runProjectConsistency,
 } from "./project-consistency.mjs";
 
@@ -1296,74 +1296,115 @@ describe("GTM-R15–R28 pending-acceptance split", () => {
   });
 });
 
-describe("governance version allowlist", () => {
-  it("accepts current baseline ROADMAP and STATE versions", () => {
-    assert.equal(isAllowedGovernanceVersion("roadmap", "GTM-R46"), true);
-    assert.equal(isAllowedGovernanceVersion("state", "STATE-R44"), true);
+describe("governance version validation", () => {
+  it("permits the next legal ROADMAP and STATE revision without a source allowlist change", () => {
+    assert.equal(isAllowedGovernanceVersion("roadmap", "GTM-R48"), true);
+    assert.equal(isAllowedGovernanceVersion("state", "STATE-R46"), true);
   });
 
-  it("accepts next mechanical revision bump for IMP-028C lifecycle transition", () => {
-    assert.equal(isAllowedGovernanceVersion("roadmap", "GTM-R47"), true);
-    assert.equal(isAllowedGovernanceVersion("state", "STATE-R45"), true);
+  it("rejects malformed or wrong-family governance version tokens", () => {
+    assert.equal(isAllowedGovernanceVersion("roadmap", "GTM-R48A"), false);
+    assert.equal(isAllowedGovernanceVersion("roadmap", "STATE-R46"), false);
+    assert.equal(isAllowedGovernanceVersion("state", "STATE-R0"), false);
+    assert.equal(isAllowedGovernanceVersion("state", "GTM-R48"), false);
   });
 
-  it("rejects stale or speculative governance version tokens", () => {
-    assert.equal(isAllowedGovernanceVersion("roadmap", "GTM-R45"), false);
-    assert.equal(isAllowedGovernanceVersion("roadmap", "GTM-R48"), false);
-    assert.equal(isAllowedGovernanceVersion("state", "STATE-R43"), false);
-    assert.equal(isAllowedGovernanceVersion("state", "STATE-R46"), false);
-  });
-
-  it("preserves explicit allowlist membership for ROADMAP and STATE", () => {
-    assert.deepEqual([...ALLOWED_ROADMAP_VERSIONS], ["GTM-R46", "GTM-R47"]);
-    assert.deepEqual([...ALLOWED_STATE_VERSIONS], ["STATE-R44", "STATE-R45"]);
+  it("validates the other canonical revision families structurally", () => {
+    assert.equal(isValidCanonicalRevision("vision", "VISION-2"), true);
+    assert.equal(isValidCanonicalRevision("architecture", "ARCH-R16"), true);
+    assert.equal(isValidCanonicalRevision("decision", "DR-13"), true);
+    assert.equal(isValidCanonicalRevision("decision", "DR-0"), false);
   });
 });
 
-describe("IMP-028C post-transition foundation pending marker", () => {
-  const phaseBState = Object.freeze({
-    meta: {
-      acceptedThrough: "IMP-028B",
+describe("generic capability lifecycle validation", () => {
+  const capabilities = Object.freeze([
+    { id: "IMP-028B", accepted: true, implementationComplete: true },
+    { id: "IMP-028C", accepted: false, implementationComplete: true },
+    { id: "IMP-029", accepted: false, implementationComplete: false },
+  ]);
+
+  it("permits the current implementation-complete pending-acceptance state", () => {
+    assert.deepEqual(
+      evaluateCapabilityLifecycle({
+        acceptedThrough: "IMP-028B",
+        currentProductSlice: "IMP-028C",
+        pendingAcceptance: "IMP-028C",
+        capabilities,
+      }),
+      { ok: true },
+    );
+  });
+
+  it("permits IMP-028C accepted with no remaining pending acceptance", () => {
+    assert.deepEqual(
+      evaluateCapabilityLifecycle({
+        acceptedThrough: "IMP-028C",
+        currentProductSlice: "NONE",
+        pendingAcceptance: "NONE",
+        capabilities: capabilities.map((capability) =>
+          capability.id === "IMP-028C" ? { ...capability, accepted: true } : capability,
+        ),
+      }),
+      { ok: true },
+    );
+  });
+
+  it("permits a known planned successor after acceptance advances", () => {
+    assert.deepEqual(
+      evaluateCapabilityLifecycle({
+        acceptedThrough: "IMP-028C",
+        currentProductSlice: "IMP-029",
+        pendingAcceptance: "NONE",
+        capabilities: capabilities.map((capability) =>
+          capability.id === "IMP-028C" ? { ...capability, accepted: true } : capability,
+        ),
+      }),
+      { ok: true },
+    );
+  });
+
+  it("rejects ROADMAP and STATE accepted-through drift", () => {
+    const result = evaluateLifecycleAuthorityAlignment(
+      { acceptedThrough: "IMP-028B", currentProductSlice: "IMP-028C", nextProductSlice: "IMP-029", pendingAcceptance: "IMP-028C" },
+      { acceptedThrough: "IMP-028C", currentProductSlice: "IMP-028C", nextProductSlice: "IMP-029", pendingAcceptance: "IMP-028C" },
+    );
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "ROADMAP_STATE_MISMATCH");
+  });
+
+  it("rejects an accepted capability that remains pending", () => {
+    const result = evaluateCapabilityLifecycle({
+      acceptedThrough: "IMP-028C",
       currentProductSlice: "IMP-028C",
       pendingAcceptance: "IMP-028C",
-    },
-    text:
-      "Current Governance Activity: IMP-028C Food Customization IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE\n" +
-      "IMP-028C_IMPLEMENTATION_COMPLETE: YES\n" +
-      "IMP-028C_ACCEPTED: NO\n",
+      capabilities: capabilities.map((capability) =>
+        capability.id === "IMP-028C" ? { ...capability, accepted: true } : capability,
+      ),
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "CURRENT_SLICE_ACCEPTED");
   });
 
-  it("permits the proven IMP-028C Phase B marker without weakening foundation acceptance", () => {
-    assert.equal(isImp028cCanonicalPendingAcceptance(phaseBState), true);
+  it("rejects an unknown current capability reference", () => {
+    const result = evaluateCapabilityLifecycle({
+      acceptedThrough: "IMP-028B",
+      currentProductSlice: "IMP-999",
+      pendingAcceptance: "NONE",
+      capabilities,
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "CURRENT_SLICE_MISSING");
   });
 
-  it("rejects the IMP-028C marker without completion", () => {
-    assert.equal(
-      isImp028cCanonicalPendingAcceptance({
-        ...phaseBState,
-        text: phaseBState.text.replace("IMP-028C_IMPLEMENTATION_COMPLETE: YES", "IMP-028C_IMPLEMENTATION_COMPLETE: NO"),
-      }),
-      false,
-    );
-  });
-
-  it("rejects an IMP-028C marker for a different current slice", () => {
-    assert.equal(
-      isImp028cCanonicalPendingAcceptance({
-        ...phaseBState,
-        meta: { ...phaseBState.meta, currentProductSlice: "IMP-029" },
-      }),
-      false,
-    );
-  });
-
-  it("rejects an unrelated pending marker", () => {
-    assert.equal(
-      isImp028cCanonicalPendingAcceptance({
-        ...phaseBState,
-        meta: { ...phaseBState.meta, pendingAcceptance: "IMP-029" },
-      }),
-      false,
-    );
+  it("rejects an incomplete current capability presented as pending", () => {
+    const result = evaluateCapabilityLifecycle({
+      acceptedThrough: "IMP-028B",
+      currentProductSlice: "IMP-029",
+      pendingAcceptance: "IMP-029",
+      capabilities,
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "PENDING_ACCEPTANCE_INCOMPLETE");
   });
 });
