@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R48",
+  "roadmapVersion": "GTM-R49",
   "acceptedThrough": "IMP-028C",
-  "currentProductSlice": "NONE",
+  "currentProductSlice": "IMP-028D",
   "nextProductSlice": "IMP-029",
   "gtmBoundary": "IMP-040",
   "lastReviewed": "2026-08-20",
-  "supersedes": "GTM-R47"
+  "supersedes": "GTM-R48"
 }
 -->
 
@@ -254,11 +254,16 @@ IMP-028C locked capability architecture (architecture **ARCHITECTURE_LOCKED**; i
 
 [`capabilities/IMP-028C-food-customization.md`](./capabilities/IMP-028C-food-customization.md)
 
+IMP-028D locked capability architecture (architecture **ARCHITECTURE_LOCKED**; implementation
+**NOT_AUTHORIZED** / **NOT_STARTED**):
+
+[`capabilities/IMP-028D-desktop-ordering-continuity.md`](./capabilities/IMP-028D-desktop-ordering-continuity.md)
+
 ## 2. Current Position
 
 ```text
 Accepted Through:     IMP-028C — Food Customization
-Current Product Slice: NONE
+Current Product Slice: IMP-028D — Desktop Ordering Continuity
 Next Product Slice:    IMP-029 — Operations Console API
 Pending Acceptance:    NONE
 Public GTM Boundary:   IMP-040 — Launch Validation & Cutover
@@ -592,8 +597,13 @@ IMP-028C is the third Food Direct experience-programme capability. It was insert
 IMP-028B and before planned GTM IMP-029 using the established suffix convention. It does **not**
 consume or remap IMP-029 → IMP-040 identities and is `COMPLETE_AND_ACCEPTED`.
 
+IMP-028D is the fourth Food Direct experience-programme capability. It was inserted after accepted
+IMP-028C and before planned GTM IMP-029 using the established suffix convention. It does **not**
+consume or remap IMP-029 → IMP-040 identities.
+
 | IMP | Capability | Lifecycle |
 |---|---|---|
+| IMP-028D | Desktop Ordering Continuity | ARCHITECTURE_LOCKED |
 | IMP-029 | Operations Console API | PLANNED |
 | IMP-030 | Operations Console UI | PLANNED |
 | IMP-031 | Provider-Neutral Delivery Foundation | PLANNED |
@@ -972,6 +982,24 @@ Historical GTM-R1 meanings that are **not** current:
 Current public GTM boundary is **IMP-040**, not IMP-035.
 
 ## 9. Roadmap Change Log
+
+### GTM-R49 — 2026-08-20
+
+- Allocates and activates **IMP-028D — Desktop Ordering Continuity** after accepted IMP-028C and
+  before reserved IMP-029. The locked capability architecture is
+  [`capabilities/IMP-028D-desktop-ordering-continuity.md`](./capabilities/IMP-028D-desktop-ordering-continuity.md).
+- IMP-028D lifecycle = `ARCHITECTURE_LOCKED`. Implementation remains **NOT_AUTHORIZED** /
+  **NOT_STARTED** (`IMP-028D_IMPLEMENTATION_AUTHORIZED: NO`; `IMP-028D_IMPLEMENTATION_STARTED: NO`;
+  `IMP-028D_IMPLEMENTATION_COMPLETE: NO`; `IMP-028D_ACCEPTED: NO`).
+- `acceptedThrough` remains IMP-028C; `currentProductSlice` becomes IMP-028D;
+  `pendingAcceptance` remains NONE; `nextProductSlice` remains IMP-029.
+- This activation reuses D-368 Customer Menu projection, D-369 paid-modifier intent, D-370 Cart
+  identity-transition policy, existing Cart authority, and Checkout Snapshot final payable
+  authority. It creates no decision: D-371 remains unused.
+- Does not authorize or start IMP-028D implementation, authorize or start IMP-029, alter runtime,
+  API, schema, migration, pricing authority, decision register, or global architecture.
+- Supersedes GTM-R48 for the current product-slice position. Product acceptance through IMP-028C is
+  unchanged.
 
 ### GTM-R48 — 2026-08-20
 
