@@ -5,8 +5,8 @@
   "capability": "IMP-028D",
   "title": "Desktop Ordering Continuity",
   "architectureLock": "ARCHITECTURE_LOCKED",
-  "implementation": "NOT_STARTED",
-  "implementationAuthorized": false,
+  "implementation": "IMPLEMENTATION_IN_PROGRESS",
+  "implementationAuthorized": true,
   "lastReviewed": "2026-08-20",
   "bindingDecisions": ["D-368", "D-369", "D-370"],
   "dependsOn": ["IMP-025", "IMP-026C", "IMP-028A", "IMP-028B", "IMP-028C"]
@@ -25,15 +25,15 @@ persistence, schema, migration, API, or runtime topology. D-371 remains unused.
 | Field | Value |
 |---|---|
 | Placement | After accepted IMP-028C and before planned IMP-029 |
-| Lifecycle | `ARCHITECTURE_LOCKED` |
-| Implementation | `NOT_AUTHORIZED` / `NOT_STARTED` |
+| Lifecycle | `ARCHITECTURE_LOCKED` / `IMPLEMENTATION_IN_PROGRESS` |
+| Implementation | `AUTHORIZED` / `STARTED` |
 | Founder UAT required at acceptance | **YES** |
 | Schema / migration / new authority | **NO** / **NO** / **NO** |
 
 ```text
 IMP-028D_ARCHITECTURE_LOCKED: YES
-IMP-028D_IMPLEMENTATION_AUTHORIZED: NO
-IMP-028D_IMPLEMENTATION_STARTED: NO
+IMP-028D_IMPLEMENTATION_AUTHORIZED: YES
+IMP-028D_IMPLEMENTATION_STARTED: YES
 IMP-028D_IMPLEMENTATION_COMPLETE: NO
 IMP-028D_ACCEPTED: NO
 NEW_SCHEMA_REQUIRED: NO
@@ -106,7 +106,8 @@ migration, pricing authority, or geospatial Serviceability are out of scope.
 
 ## Implementation gates
 
-Implementation remains unauthorized. Before any application-source implementation begins,
-PROCESS-HARDENING-A in the referenced supporting plan must be completed. Before founder UAT,
-PROCESS-HARDENING-B and the exact-candidate UAT requirements in `AGENTS.md` apply. A persistence,
-API, authority, or decision need is a `DECISION_REQUIRED` stop; D-371 must not be allocated.
+Implementation is **authorized** and **started** under explicit founder/task authorization while
+architecture remains locked. PROCESS-HARDENING-A in the referenced supporting plan applies to this
+product implementation. Before founder UAT, PROCESS-HARDENING-B and the exact-candidate UAT
+requirements in `AGENTS.md` apply. A persistence, API, authority, or decision need is a
+`DECISION_REQUIRED` stop; D-371 must not be allocated.

@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R49",
+  "roadmapVersion": "GTM-R50",
   "acceptedThrough": "IMP-028C",
   "currentProductSlice": "IMP-028D",
   "nextProductSlice": "IMP-029",
   "gtmBoundary": "IMP-040",
   "lastReviewed": "2026-08-20",
-  "supersedes": "GTM-R48"
+  "supersedes": "GTM-R49"
 }
 -->
 
@@ -255,7 +255,7 @@ IMP-028C locked capability architecture (architecture **ARCHITECTURE_LOCKED**; i
 [`capabilities/IMP-028C-food-customization.md`](./capabilities/IMP-028C-food-customization.md)
 
 IMP-028D locked capability architecture (architecture **ARCHITECTURE_LOCKED**; implementation
-**NOT_AUTHORIZED** / **NOT_STARTED**):
+**AUTHORIZED** / **STARTED** / `IMPLEMENTATION_IN_PROGRESS`):
 
 [`capabilities/IMP-028D-desktop-ordering-continuity.md`](./capabilities/IMP-028D-desktop-ordering-continuity.md)
 
@@ -443,11 +443,16 @@ only). Webhook acknowledgement timing / durable inbox / asynchronous Payment pro
 ## 4. Current Product Slice
 
 ```text
-NONE
-Latest accepted slice: IMP-028C — Food Customization
-Lifecycle: COMPLETE_AND_ACCEPTED
+IMP-028D — Desktop Ordering Continuity
+Lifecycle: IMPLEMENTATION_IN_PROGRESS
 Architecture: ARCHITECTURE_LOCKED
-Implementation: AUTHORIZED / STARTED / COMPLETE
+Implementation: AUTHORIZED / STARTED
+IMP-028D_ARCHITECTURE_LOCKED: YES
+IMP-028D_IMPLEMENTATION_AUTHORIZED: YES
+IMP-028D_IMPLEMENTATION_STARTED: YES
+IMP-028D_IMPLEMENTATION_COMPLETE: NO
+IMP-028D_ACCEPTED: NO
+Latest accepted slice: IMP-028C — Food Customization
 IMP-028C_ARCHITECTURE_LOCKED: YES
 IMP-028C_IMPLEMENTATION_AUTHORIZED: YES
 IMP-028C_IMPLEMENTATION_STARTED: YES
@@ -603,7 +608,7 @@ consume or remap IMP-029 → IMP-040 identities.
 
 | IMP | Capability | Lifecycle |
 |---|---|---|
-| IMP-028D | Desktop Ordering Continuity | ARCHITECTURE_LOCKED |
+| IMP-028D | Desktop Ordering Continuity | IMPLEMENTATION_IN_PROGRESS |
 | IMP-029 | Operations Console API | PLANNED |
 | IMP-030 | Operations Console UI | PLANNED |
 | IMP-031 | Provider-Neutral Delivery Foundation | PLANNED |
@@ -982,6 +987,23 @@ Historical GTM-R1 meanings that are **not** current:
 Current public GTM boundary is **IMP-040**, not IMP-035.
 
 ## 9. Roadmap Change Log
+
+### GTM-R50 — 2026-08-20
+
+- Explicit founder/task authorization to implement **IMP-028D — Desktop Ordering Continuity** under
+  the locked capability architecture
+  ([`capabilities/IMP-028D-desktop-ordering-continuity.md`](./capabilities/IMP-028D-desktop-ordering-continuity.md)).
+- IMP-028D lifecycle = `IMPLEMENTATION_IN_PROGRESS`. Architecture remains `ARCHITECTURE_LOCKED`.
+  Implementation = `AUTHORIZED` / `STARTED`
+  (`IMP-028D_IMPLEMENTATION_AUTHORIZED: YES`; `IMP-028D_IMPLEMENTATION_STARTED: YES`;
+  `IMP-028D_IMPLEMENTATION_COMPLETE: NO`; `IMP-028D_ACCEPTED: NO`).
+- `acceptedThrough` remains IMP-028C; `currentProductSlice` remains IMP-028D;
+  `pendingAcceptance` remains NONE; `nextProductSlice` remains IMP-029.
+- Does not mark IMP-028D complete or accepted, authorize or start IMP-029, create D-371, or alter
+  runtime topology, API, schema, migration, pricing authority, decision register, or global
+  architecture.
+- Supersedes GTM-R49 for the current IMP-028D lifecycle position. Product acceptance through
+  IMP-028C is unchanged.
 
 ### GTM-R49 — 2026-08-20
 
