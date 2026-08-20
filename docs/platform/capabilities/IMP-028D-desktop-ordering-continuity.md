@@ -5,9 +5,9 @@
   "capability": "IMP-028D",
   "title": "Desktop Ordering Continuity",
   "architectureLock": "ARCHITECTURE_LOCKED",
-  "implementation": "IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE",
+  "implementation": "IMPLEMENTATION_IN_PROGRESS",
   "implementationAuthorized": true,
-  "lastReviewed": "2026-08-20",
+  "lastReviewed": "2026-08-21",
   "bindingDecisions": ["D-368", "D-369", "D-370"],
   "dependsOn": ["IMP-025", "IMP-026C", "IMP-028A", "IMP-028B", "IMP-028C"]
 }
@@ -25,8 +25,8 @@ persistence, schema, migration, API, or runtime topology. D-371 remains unused.
 | Field | Value |
 |---|---|
 | Placement | After accepted IMP-028C and before planned IMP-029 |
-| Lifecycle | `ARCHITECTURE_LOCKED` / `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` |
-| Implementation | `AUTHORIZED` / `STARTED` / `COMPLETE` |
+| Lifecycle | `ARCHITECTURE_LOCKED` / `IMPLEMENTATION_IN_PROGRESS` |
+| Implementation | `AUTHORIZED` / `STARTED` / `REWORK` |
 | Founder UAT required at acceptance | **YES** |
 | Schema / migration / new authority | **NO** / **NO** / **NO** |
 
@@ -34,10 +34,10 @@ persistence, schema, migration, API, or runtime topology. D-371 remains unused.
 IMP-028D_ARCHITECTURE_LOCKED: YES
 IMP-028D_IMPLEMENTATION_AUTHORIZED: YES
 IMP-028D_IMPLEMENTATION_STARTED: YES
-IMP-028D_IMPLEMENTATION_COMPLETE: YES
+IMP-028D_IMPLEMENTATION_COMPLETE: NO
 IMP-028D_ACCEPTED: NO
 IMP-028D_FOUNDER_UAT_REQUIRED: YES
-IMP-028D_FOUNDER_UAT: PENDING
+IMP-028D_FOUNDER_UAT: FAIL
 IMP-028D_FOUNDER_UAT_COMPLETE: NO
 NEW_SCHEMA_REQUIRED: NO
 NEW_MIGRATION_REQUIRED: NO
@@ -115,7 +115,28 @@ product implementation. Before founder UAT, PROCESS-HARDENING-B and the exact-ca
 requirements in `AGENTS.md` apply. A persistence, API, authority, or decision need is a
 `DECISION_REQUIRED` stop; D-371 must not be allocated.
 
-## Technical completion evidence
+## Founder UAT failure and rework evidence
+
+Founder UAT failed on 2026-08-21. The failed candidate remains reconstructible and is not claimed
+as passed:
+
+```text
+FOUNDER_UAT_REQUIRED: YES
+FOUNDER_UAT: FAIL
+FOUNDER_UAT_CANDIDATE_HEAD: 38fa04db9d81e47efeb0702037a0e7ee9371a28d
+FOUNDER_UAT_CANDIDATE_TREE: c91e51150461251470791f830293e49931f91cfa
+FOUNDER_UAT_PROJECT: boba-bear-imp028d-uat
+FOUNDER_UAT_URL: http://127.0.0.1:18084
+FOUNDER_UAT_FREEZE_TIMESTAMP: 2026-08-20T18:38:17Z
+FOUNDER_UAT_NGINX_OVERLAY_SHA256: 6d830835924027e719516de1d7aa41b7545965b8c7705298924b3bf3f3eb21ec
+```
+
+The failure concerns the XL ordering presentation: absent effective three-zone continuity, sparse
+product merchandising, dominant serviceability treatment, and customer-visible engineering copy.
+Implementation is reopened for the bounded rework authorized by this artifact. A future completion
+record must preserve this failure and identify the new, freshly built UAT candidate.
+
+## Prior technical completion evidence
 
 IMP-028D implementation is complete pending independent acceptance and founder UAT; it is not
 accepted. The recorded implementation/promotion evidence is:

@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R51",
+  "roadmapVersion": "GTM-R52",
   "acceptedThrough": "IMP-028C",
   "currentProductSlice": "IMP-028D",
   "nextProductSlice": "IMP-029",
   "gtmBoundary": "IMP-040",
-  "lastReviewed": "2026-08-20",
-  "supersedes": "GTM-R50"
+  "lastReviewed": "2026-08-21",
+  "supersedes": "GTM-R51"
 }
 -->
 
@@ -265,7 +265,7 @@ IMP-028D locked capability architecture (architecture **ARCHITECTURE_LOCKED**; i
 Accepted Through:     IMP-028C — Food Customization
 Current Product Slice: IMP-028D — Desktop Ordering Continuity
 Next Product Slice:    IMP-029 — Operations Console API
-Pending Acceptance:    IMP-028D
+Pending Acceptance:    NONE
 Public GTM Boundary:   IMP-040 — Launch Validation & Cutover
 ```
 
@@ -444,16 +444,16 @@ only). Webhook acknowledgement timing / durable inbox / asynchronous Payment pro
 
 ```text
 IMP-028D — Desktop Ordering Continuity
-Lifecycle: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
+Lifecycle: IMPLEMENTATION_IN_PROGRESS
 Architecture: ARCHITECTURE_LOCKED
-Implementation: AUTHORIZED / STARTED / COMPLETE
+Implementation: AUTHORIZED / STARTED / REWORK
 IMP-028D_ARCHITECTURE_LOCKED: YES
 IMP-028D_IMPLEMENTATION_AUTHORIZED: YES
 IMP-028D_IMPLEMENTATION_STARTED: YES
-IMP-028D_IMPLEMENTATION_COMPLETE: YES
+IMP-028D_IMPLEMENTATION_COMPLETE: NO
 IMP-028D_ACCEPTED: NO
 FOUNDER_UAT_REQUIRED: YES
-FOUNDER_UAT: PENDING
+FOUNDER_UAT: FAIL
 FOUNDER_UAT_COMPLETE: NO
 Latest accepted slice: IMP-028C — Food Customization
 IMP-028C_ARCHITECTURE_LOCKED: YES
@@ -470,7 +470,7 @@ IMP-028B_IMPLEMENTATION_STARTED: YES
 IMP-028B_IMPLEMENTATION_COMPLETE: YES
 IMP-028B_ACCEPTED: YES
 Next product slice: IMP-029 — Operations Console API (PLANNED / NOT_STARTED / NOT_AUTHORIZED)
-Pending acceptance: IMP-028D
+Pending acceptance: NONE
 acceptedThrough: IMP-028C
 IMP-026C: COMPLETE_AND_ACCEPTED
 IMP-027: COMPLETE_AND_ACCEPTED
@@ -611,7 +611,7 @@ consume or remap IMP-029 → IMP-040 identities.
 
 | IMP | Capability | Lifecycle |
 |---|---|---|
-| IMP-028D | Desktop Ordering Continuity | IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE |
+| IMP-028D | Desktop Ordering Continuity | IMPLEMENTATION_IN_PROGRESS |
 | IMP-029 | Operations Console API | PLANNED |
 | IMP-030 | Operations Console UI | PLANNED |
 | IMP-031 | Provider-Neutral Delivery Foundation | PLANNED |
@@ -991,14 +991,32 @@ Current public GTM boundary is **IMP-040**, not IMP-035.
 
 ## 9. Roadmap Change Log
 
+### GTM-R52 — 2026-08-21
+
+- Records the required founder UAT result for IMP-028D as **FAIL** against the frozen candidate
+  `38fa04db9d81e47efeb0702037a0e7ee9371a28d` / tree
+  `c91e51150461251470791f830293e49931f91cfa` (UAT project
+  `boba-bear-imp028d-uat`, URL `http://127.0.0.1:18084`, freeze
+  `2026-08-20T18:38:17Z`). The failure reopens the existing implementation for bounded rework;
+  it is not a new capability or acceptance.
+- IMP-028D lifecycle returns to `IMPLEMENTATION_IN_PROGRESS`. Architecture remains
+  `ARCHITECTURE_LOCKED`; implementation remains `AUTHORIZED` / `STARTED` with
+  `IMP-028D_IMPLEMENTATION_COMPLETE: NO`; `IMP-028D_ACCEPTED: NO`.
+- `acceptedThrough` remains IMP-028C; `currentProductSlice` remains IMP-028D;
+  `pendingAcceptance` returns to NONE; `nextProductSlice` remains IMP-029. A new founder UAT is
+  required after deterministic rework validation and a newly frozen exact candidate.
+- Does not accept IMP-028D, authorize or start IMP-029, create D-371, or alter runtime topology,
+  API, schema, migration, pricing authority, decision register, or global architecture.
+- Supersedes GTM-R51 for the current IMP-028D lifecycle position. Product acceptance through
+  IMP-028C is unchanged.
+
 ### GTM-R51 — 2026-08-20
 
 - IMP-028D — Desktop Ordering Continuity implementation is complete and awaits independent
   acceptance and required founder UAT. Lifecycle is `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`;
   architecture remains `ARCHITECTURE_LOCKED`; implementation remains `AUTHORIZED` / `STARTED` /
-  `COMPLETE` (`IMP-028D_IMPLEMENTATION_AUTHORIZED: YES`;
-  `IMP-028D_IMPLEMENTATION_STARTED: YES`; `IMP-028D_IMPLEMENTATION_COMPLETE: YES`;
-  `IMP-028D_ACCEPTED: NO`).
+  `COMPLETE` (implementation authorization and start were recorded; this historical completion was
+  superseded by the founder-UAT rework in GTM-R52; `IMP-028D_ACCEPTED: NO`).
 - `acceptedThrough` remains IMP-028C; `currentProductSlice` remains IMP-028D;
   `pendingAcceptance` becomes IMP-028D; and `nextProductSlice` remains IMP-029. Founder UAT is
   required and pending; no founder-UAT result or formal acceptance is claimed.
