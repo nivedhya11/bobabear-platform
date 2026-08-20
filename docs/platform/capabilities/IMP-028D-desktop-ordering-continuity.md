@@ -139,7 +139,7 @@ before Founder UAT can proceed.
 ## Rework technical completion evidence
 
 ```text
-REWORK_IMPLEMENTATION_COMMIT: 98ba4da
+REWORK_IMPLEMENTATION_COMMIT: 5327958
 REWORK_VALIDATION: OrderingCatalogClient, serviceability-copy, cart-presentation, Cart, and ordering component suites PASS (110 tests)
 REWORK_TYPECHECK: PASS
 REWORK_LINT: PASS_WITH_PRE_EXISTING_WARNINGS

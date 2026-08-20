@@ -2,7 +2,7 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R51",
+  "stateVersion": "STATE-R52",
   "acceptedThrough": "IMP-028C",
   "currentProductSlice": "IMP-028D",
   "nextProductSlice": "IMP-029",
@@ -187,6 +187,14 @@ independent acceptance without changing decision register or global architecture
 STATE-R36 record IMP-028B canonical activation without changing decision register or global
 architecture. GTM-R39 / STATE-R37 record IMP-028B architecture lock and implementation
 authorization without changing decision register or global architecture.
+
+STATE-R52 records the final customer-copy correction in the completed IMP-028D rework: delivery-PIN
+result copy no longer exposes checkout implementation wording. The exact updated rework tip was
+revalidated before the next UAT candidate is built. Current lifecycle remains
+`IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` with `pendingAcceptance = IMP-028D`; the prior UAT
+FAIL remains preserved and the new Founder UAT is PENDING. No acceptance is claimed. Supersedes
+STATE-R51 for the current IMP-028D implementation evidence only; product acceptance through
+IMP-028C, IMP-029 status, and D-371 remain unchanged.
 
 STATE-R51 records deterministic completion of the bounded IMP-028D Founder-UAT rework.
 Architecture remains `ARCHITECTURE_LOCKED`; implementation is `AUTHORIZED` / `STARTED` /

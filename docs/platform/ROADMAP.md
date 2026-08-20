@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R53",
+  "roadmapVersion": "GTM-R54",
   "acceptedThrough": "IMP-028C",
   "currentProductSlice": "IMP-028D",
   "nextProductSlice": "IMP-029",
   "gtmBoundary": "IMP-040",
   "lastReviewed": "2026-08-21",
-  "supersedes": "GTM-R52"
+  "supersedes": "GTM-R53"
 }
 -->
 
@@ -990,6 +990,17 @@ Historical GTM-R1 meanings that are **not** current:
 Current public GTM boundary is **IMP-040**, not IMP-035.
 
 ## 9. Roadmap Change Log
+
+### GTM-R54 — 2026-08-21
+
+- Records the final customer-copy correction in the completed IMP-028D rework: delivery-PIN result
+  copy no longer exposes checkout implementation wording. The exact updated rework tip was
+  revalidated before the next UAT candidate is built.
+- Current lifecycle remains `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` with
+  `pendingAcceptance = IMP-028D`; the prior UAT FAIL remains preserved and the new Founder UAT is
+  still PENDING. No acceptance is claimed.
+- Supersedes GTM-R53 for the current IMP-028D implementation evidence only; product acceptance
+  through IMP-028C, IMP-029 status, and D-371 remain unchanged.
 
 ### GTM-R53 — 2026-08-21
 
