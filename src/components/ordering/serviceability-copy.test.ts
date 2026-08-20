@@ -9,7 +9,8 @@ import {
 describe("serviceability copy", () => {
   it("shows operating area without claiming live serviceability", () => {
     expect(deliverToOperatingAreaLocality()).toBe("Dehradun");
-    expect(deliverToOrientationBody()).toMatch(/confirmed at checkout/i);
+    expect(deliverToOrientationBody()).toMatch(/check your PIN for delivery availability/i);
+    expect(deliverToOrientationBody()).not.toMatch(/checkout/i);
     expect(deliverToOrientationBody()).not.toMatch(/you're in the boba zone/i);
   });
 

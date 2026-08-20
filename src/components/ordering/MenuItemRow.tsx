@@ -37,7 +37,7 @@ export function MenuItemRow(props: MenuItemRowProps) {
       className={
         isRow
           ? "border-b border-[var(--border-default)] py-3 flex gap-4 items-start"
-          : "border border-[var(--border-default)] bg-[var(--bg-section)] p-4 flex gap-4"
+          : "border border-[var(--border-default)] bg-[var(--bg-section)] p-3 flex flex-col gap-3 h-full"
       }
     >
       {item.imagePath ? (
@@ -52,7 +52,7 @@ export function MenuItemRow(props: MenuItemRowProps) {
           className={
             isRow
               ? "h-16 w-16 object-cover shrink-0 aspect-square"
-              : "h-20 w-20 object-cover shrink-0 aspect-square"
+              : "w-full aspect-[4/3] object-cover shrink-0"
           }
         />
       ) : (
@@ -61,7 +61,7 @@ export function MenuItemRow(props: MenuItemRowProps) {
           className={
             isRow
               ? "h-16 w-16 shrink-0 aspect-square bg-[var(--bg-page)] border border-[var(--border-default)]"
-              : "h-20 w-20 shrink-0 aspect-square bg-[var(--bg-page)] border border-[var(--border-default)]"
+              : "w-full aspect-[4/3] shrink-0 bg-[var(--bg-page)] border border-[var(--border-default)]"
           }
         />
       )}

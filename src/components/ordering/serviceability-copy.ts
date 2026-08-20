@@ -14,11 +14,11 @@ export function deliverToOperatingAreaLocality(): string {
 }
 
 export function deliverToOrientationBody(): string {
-  return `We operate in ${BUSINESS.locality}. Your exact PIN is confirmed at checkout — we won't claim delivery until then.`;
+  return `Check your PIN for delivery availability in ${BUSINESS.locality}.`;
 }
 
 export function deliverToPinHint(): string {
-  return "Optional: enter your PIN to check if we might deliver there. Checkout still confirms.";
+  return "Enter your PIN to check delivery availability.";
 }
 
 export function cartEvaluationCustomerCopy(

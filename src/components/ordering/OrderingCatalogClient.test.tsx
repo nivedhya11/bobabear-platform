@@ -328,7 +328,9 @@ describe("OrderingCatalogClient IMP-028D", () => {
     await waitFor(() => expect(screen.getByTestId("desktop-ordering-shell")).toBeInTheDocument());
     expect(screen.getByTestId("desktop-category-rail")).toBeInTheDocument();
     expect(screen.getByTestId("desktop-live-cart")).toBeInTheDocument();
+    expect(screen.getByTestId("desktop-menu")).toBeInTheDocument();
     expect(screen.getByTestId("menu-category-nav")).toBeInTheDocument();
+    expect(screen.getByTestId("menu-category-nav").className).toMatch(/xl:hidden/);
   });
 
   it("applies aria-current from scroll-spy active category", async () => {
@@ -486,5 +488,20 @@ describe("OrderingCatalogClient IMP-028D", () => {
     expect(screen.getByTestId("desktop-live-cart").className).not.toMatch(
       /overflow-y-auto|overflow-auto/,
     );
+  });
+
+  it("keeps serviceability compact while retaining the delivery PIN control", async () => {
+    render(<OrderingCatalogClient brandId="brand-1" />);
+    const orientation = await screen.findByTestId("deliver-to-orientation");
+    expect(orientation.className).not.toMatch(/bg-\[var\(--bg-section\)\].*p-4/);
+    expect(within(orientation).getByText("Check delivery PIN")).toBeInTheDocument();
+    expect(within(orientation).getByLabelText("Delivery PIN")).toBeInTheDocument();
+  });
+
+  it("shows a live-cart empty state without leaving the Menu", async () => {
+    render(<OrderingCatalogClient brandId="brand-1" />);
+    const cart = await screen.findByTestId("desktop-live-cart");
+    expect(cart).toHaveTextContent("Your cart");
+    expect(cart).toHaveTextContent("Your cart is empty.");
   });
 });
