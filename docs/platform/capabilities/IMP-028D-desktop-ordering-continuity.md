@@ -5,7 +5,7 @@
   "capability": "IMP-028D",
   "title": "Desktop Ordering Continuity",
   "architectureLock": "ARCHITECTURE_LOCKED",
-  "implementation": "IMPLEMENTATION_IN_PROGRESS",
+  "implementation": "IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE",
   "implementationAuthorized": true,
   "lastReviewed": "2026-08-21",
   "bindingDecisions": ["D-368", "D-369", "D-370"],
@@ -25,8 +25,8 @@ persistence, schema, migration, API, or runtime topology. D-371 remains unused.
 | Field | Value |
 |---|---|
 | Placement | After accepted IMP-028C and before planned IMP-029 |
-| Lifecycle | `ARCHITECTURE_LOCKED` / `IMPLEMENTATION_IN_PROGRESS` |
-| Implementation | `AUTHORIZED` / `STARTED` / `REWORK` |
+| Lifecycle | `ARCHITECTURE_LOCKED` / `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` |
+| Implementation | `AUTHORIZED` / `STARTED` / `COMPLETE` |
 | Founder UAT required at acceptance | **YES** |
 | Schema / migration / new authority | **NO** / **NO** / **NO** |
 
@@ -34,10 +34,10 @@ persistence, schema, migration, API, or runtime topology. D-371 remains unused.
 IMP-028D_ARCHITECTURE_LOCKED: YES
 IMP-028D_IMPLEMENTATION_AUTHORIZED: YES
 IMP-028D_IMPLEMENTATION_STARTED: YES
-IMP-028D_IMPLEMENTATION_COMPLETE: NO
+IMP-028D_IMPLEMENTATION_COMPLETE: YES
 IMP-028D_ACCEPTED: NO
 IMP-028D_FOUNDER_UAT_REQUIRED: YES
-IMP-028D_FOUNDER_UAT: FAIL
+IMP-028D_FOUNDER_UAT: PENDING
 IMP-028D_FOUNDER_UAT_COMPLETE: NO
 NEW_SCHEMA_REQUIRED: NO
 NEW_MIGRATION_REQUIRED: NO
@@ -133,8 +133,25 @@ FOUNDER_UAT_NGINX_OVERLAY_SHA256: 6d830835924027e719516de1d7aa41b7545965b8c77052
 
 The failure concerns the XL ordering presentation: absent effective three-zone continuity, sparse
 product merchandising, dominant serviceability treatment, and customer-visible engineering copy.
-Implementation is reopened for the bounded rework authorized by this artifact. A future completion
-record must preserve this failure and identify the new, freshly built UAT candidate.
+The completed rework preserves this failure. A new, freshly built UAT candidate is still required
+before Founder UAT can proceed.
+
+## Rework technical completion evidence
+
+```text
+REWORK_IMPLEMENTATION_COMMIT: 98ba4da
+REWORK_VALIDATION: OrderingCatalogClient, serviceability-copy, cart-presentation, Cart, and ordering component suites PASS (110 tests)
+REWORK_TYPECHECK: PASS
+REWORK_LINT: PASS_WITH_PRE_EXISTING_WARNINGS
+REWORK_PRODUCTION_BUILD: PASS
+REWORK_PROJECT_CONSISTENCY: PASS
+REWORK_GOVERNANCE_FINGERPRINT: ad93d75341234a7cf6ee0c472f7e687d762535cec84ebc578a66c71a7f97490d
+FOUNDER_UAT_REQUIRED: YES
+FOUNDER_UAT: PENDING
+```
+
+The rework is implementation-complete pending independent technical acceptance, CI, a fresh exact
+candidate deployment, and Founder UAT. It is not accepted.
 
 ## Prior technical completion evidence
 

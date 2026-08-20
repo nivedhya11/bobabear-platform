@@ -2,11 +2,11 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R50",
+  "stateVersion": "STATE-R51",
   "acceptedThrough": "IMP-028C",
   "currentProductSlice": "IMP-028D",
   "nextProductSlice": "IMP-029",
-  "pendingAcceptance": "NONE",
+  "pendingAcceptance": "IMP-028D",
   "governanceHealth": "ALIGNED",
   "lastReviewed": "2026-08-21"
 }
@@ -29,9 +29,9 @@ Accepted Range:            IMP-001 → IMP-028C (including IMP-005A and IMP-026C
 
 ```text
 Current Product Implementation: IMP-028D — Desktop Ordering Continuity
-Pending Acceptance:             NONE
+Pending Acceptance:             IMP-028D
 Next Product Slice:             IMP-029 — Operations Console API
-Current Governance Activity:    IMP-028D Desktop Ordering Continuity ARCHITECTURE_LOCKED / AUTHORIZED / STARTED / REWORK / IMPLEMENTATION_IN_PROGRESS; founder UAT FAIL; IMP-028C remains COMPLETE_AND_ACCEPTED; IMP-029 PLANNED / NOT_STARTED / NOT_AUTHORIZED; D-371 UNUSED
+Current Governance Activity:    IMP-028D Desktop Ordering Continuity ARCHITECTURE_LOCKED / AUTHORIZED / STARTED / COMPLETE / IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE; prior founder UAT FAIL preserved; new founder UAT PENDING; IMP-028C remains COMPLETE_AND_ACCEPTED; IMP-029 PLANNED / NOT_STARTED / NOT_AUTHORIZED; D-371 UNUSED
 Governance Health:              ALIGNED
 ```
 
@@ -97,13 +97,13 @@ IMP-028C_ACCEPTED:        YES
 FOUNDER_UAT_REQUIRED:     YES
 FOUNDER_UAT:              PASS
 FOUNDER_UAT_COMPLETE:     YES
-IMP-028D:                 ARCHITECTURE_LOCKED / IMPLEMENTATION_IN_PROGRESS
+IMP-028D:                 ARCHITECTURE_LOCKED / IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
 IMP-028D_IMPLEMENTATION_AUTHORIZED: YES
 IMP-028D_IMPLEMENTATION_STARTED: YES
-IMP-028D_IMPLEMENTATION_COMPLETE: NO
+IMP-028D_IMPLEMENTATION_COMPLETE: YES
 IMP-028D_ACCEPTED:        NO
 IMP-028D_FOUNDER_UAT_REQUIRED: YES
-IMP-028D_FOUNDER_UAT:     FAIL
+IMP-028D_FOUNDER_UAT:     PENDING
 IMP-028D_FOUNDER_UAT_COMPLETE: NO
 IMP-029:                  NOT_STARTED
 IMP-029_IMPLEMENTATION_AUTHORIZED: NO
@@ -187,6 +187,16 @@ independent acceptance without changing decision register or global architecture
 STATE-R36 record IMP-028B canonical activation without changing decision register or global
 architecture. GTM-R39 / STATE-R37 record IMP-028B architecture lock and implementation
 authorization without changing decision register or global architecture.
+
+STATE-R51 records deterministic completion of the bounded IMP-028D Founder-UAT rework.
+Architecture remains `ARCHITECTURE_LOCKED`; implementation is `AUTHORIZED` / `STARTED` /
+`COMPLETE` (`IMP-028D_IMPLEMENTATION_COMPLETE: YES`; `IMP-028D_ACCEPTED: NO`); lifecycle is
+`IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`. `acceptedThrough` remains IMP-028C;
+`currentProductSlice` remains IMP-028D; `pendingAcceptance` becomes IMP-028D; and
+`nextProductSlice` remains IMP-029. The prior Founder UAT FAIL remains preserved; new founder UAT
+is PENDING and has not been performed or passed. D-371 remains unused; IMP-029 remains planned,
+not started, and not authorized. This record does not claim acceptance. Supersedes STATE-R50 for
+the current IMP-028D lifecycle position.
 
 STATE-R50 records the Founder UAT **FAIL** for IMP-028D against frozen candidate source
 `38fa04db9d81e47efeb0702037a0e7ee9371a28d` / tree
