@@ -84,9 +84,11 @@ COPY scripts/database ./scripts/database
 COPY scripts/menu ./scripts/menu
 COPY scripts/assortment ./scripts/assortment
 COPY scripts/pricing ./scripts/pricing
+COPY scripts/catalog ./scripts/catalog
 COPY scripts/check-config.ts ./scripts/check-config.ts
 COPY data/platform/imports ./data/platform/imports
 COPY data/platform/pricing ./data/platform/pricing
+COPY data/platform/catalog ./data/platform/catalog
 COPY public/assets/menu ./public/assets/menu
 USER node
 

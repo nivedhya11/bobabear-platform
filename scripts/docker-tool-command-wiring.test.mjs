@@ -27,6 +27,12 @@ const APPLY_FORWARDING_SCRIPTS = Object.freeze([
     innerScript: "assortment:bootstrap-existing-menu",
     importerProgram: "scripts/assortment/bootstrap-existing-menu.ts",
   },
+  {
+    name: "docker:catalog:bootstrap-imp028c-modifiers",
+    composeService: "catalog-bootstrap-imp028c-modifiers",
+    innerScript: "catalog:bootstrap-imp028c-modifiers",
+    importerProgram: "scripts/catalog/bootstrap-imp028c-modifiers.ts",
+  },
 ]);
 
 test("Docker apply-forwarding wrappers clear entrypoint and terminate with npm --", () => {
@@ -56,4 +62,18 @@ test("menu import inner script targets the existing-menu importer program", () =
   const inner = packageJson.scripts["menu:import-existing"];
   assert.match(inner, /scripts\/menu\/import-existing\.ts$/);
   assert.doesNotMatch(inner, /^node --apply$/);
+});
+
+test("tooling image packages IMP-028C modifier bootstrap script, artifact, and menu-manifest closure", () => {
+  const dockerfile = readFileSync(path.join(projectRoot, "Dockerfile"), "utf8");
+  const toolingStage = dockerfile.split("FROM base AS tooling")[1]?.split(/^FROM /m)[0] ?? "";
+  assert.ok(toolingStage.length > 0, "Dockerfile must declare a tooling stage");
+  assert.match(toolingStage, /^COPY scripts\/catalog \.\/scripts\/catalog$/m);
+  assert.match(toolingStage, /^COPY data\/platform\/catalog \.\/data\/platform\/catalog$/m);
+  assert.match(toolingStage, /^COPY data\/platform\/imports \.\/data\/platform\/imports$/m);
+  assert.match(toolingStage, /^COPY src \.\/src$/m);
+
+  const compose = readFileSync(path.join(projectRoot, "compose.yaml"), "utf8");
+  assert.match(compose, /^  catalog-bootstrap-imp028c-modifiers:$/m);
+  assert.match(compose, /target: tooling/);
 });
