@@ -21,8 +21,11 @@ unrelated files.
    a changed authority requires wider inspection. Ask: “Identify the three most plausible defects
    or invariant violations in this diff.”
 9. Merge only when separately authorized.
-10. When applicable, build and promote an immutable artifact, then obtain deployment authorization.
-11. Run founder UAT when required, then complete acceptance or rework.
+10. After merge, verify the exact task-branch tip is contained in `main`, then delete the completed
+    task branch locally and remotely. Do not delete a branch that still contains unique/unmerged
+    commits; preserve it until that work is reconciled.
+11. When applicable, build and promote an immutable artifact, then obtain deployment authorization.
+12. Run founder UAT when required, then complete acceptance or rework.
 
 Implementation complete does not mean accepted. Founder UAT is the product-acceptance authority;
 an implementation agent must not declare its outcome.
