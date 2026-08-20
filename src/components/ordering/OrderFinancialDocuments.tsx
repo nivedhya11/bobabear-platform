@@ -25,6 +25,10 @@ type DocsState =
  * Reflects Slice-6 list/PDF transport only — no client issuance or auth.
  */
 export function OrderFinancialDocuments(props: { orderId: string }) {
+  return <OrderFinancialDocumentsContents key={props.orderId} {...props} />;
+}
+
+function OrderFinancialDocumentsContents(props: { orderId: string }) {
   const { orderId } = props;
   const [state, setState] = useState<DocsState>({ status: "loading" });
   const [downloadError, setDownloadError] = useState<string | null>(null);
@@ -32,8 +36,6 @@ export function OrderFinancialDocuments(props: { orderId: string }) {
 
   useEffect(() => {
     let cancelled = false;
-    setState({ status: "loading" });
-    setDownloadError(null);
     void (async () => {
       const result = await listCustomerOrderFinancialDocuments(orderId);
       if (cancelled) return;

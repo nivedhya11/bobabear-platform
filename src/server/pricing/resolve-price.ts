@@ -394,7 +394,7 @@ export async function resolveModifierDisplayPriceDeltas(
   const modifierGroupOptionIds = [...new Set(dedupedKeys.map((key) => key.modifierGroupOptionId))];
 
   const bookIds = [brandBook.id];
-  let scopedBooks: Array<{
+  const scopedBooks: Array<{
     scopeType: PriceBookScopeType;
     bookId: string;
   }> = [];

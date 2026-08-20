@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { formatPaise } from "@/components/ordering/format-money";
@@ -82,7 +82,7 @@ function groupError(group: CustomerMenuModifierGroup, quantities: Quantities): s
     : null;
 }
 
-export function MenuItemCustomizationDialog(props: {
+type MenuItemCustomizationDialogProps = {
   item: CustomerMenuItem;
   mode?: CustomizationDialogMode;
   initialModifiers?: readonly CartModifierSelectionInput[];
@@ -91,16 +91,30 @@ export function MenuItemCustomizationDialog(props: {
   onClose: () => void;
   onAdd?: (modifiers: readonly CartModifierSelectionInput[]) => void;
   onSave?: (modifiers: readonly CartModifierSelectionInput[]) => void;
-}) {
+};
+
+export function MenuItemCustomizationDialog(props: MenuItemCustomizationDialogProps) {
+  const mode = props.mode ?? "add";
+  const initializationKey = JSON.stringify({
+    mode,
+    item: props.item,
+    initialModifiers: props.initialModifiers ?? [],
+  });
+
+  return (
+    <MenuItemCustomizationDialogContents
+      key={initializationKey}
+      {...props}
+    />
+  );
+}
+
+function MenuItemCustomizationDialogContents(props: MenuItemCustomizationDialogProps) {
   const mode = props.mode ?? "add";
   const { item } = props;
   const [quantities, setQuantities] = useState<Quantities>(() =>
     resolveInitialQuantities(mode, item, props.initialModifiers),
   );
-
-  useEffect(() => {
-    setQuantities(resolveInitialQuantities(mode, item, props.initialModifiers));
-  }, [item, mode, props.initialModifiers]);
 
   const groups = useMemo(
     () => [...(item.modifierGroups ?? [])].sort((a, b) => a.position - b.position),

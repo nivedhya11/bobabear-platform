@@ -45,7 +45,7 @@ export function OrderingCatalogClient(props: { brandId: string }) {
   const [loading, setLoading] = useState(true);
   const [pendingKey, setPendingKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [customizingItem, setCustomizingItem] = useState<CustomerMenuItem | null>(null);
 
   const itemByVariant = useMemo(
@@ -116,18 +116,13 @@ export function OrderingCatalogClient(props: { brandId: string }) {
     };
   }, [refreshCart, refreshMenu]);
 
-  useEffect(() => {
-    const rootSections = (menu?.sections ?? []).filter((section) => section.parentSectionId === null);
-    if (rootSections.length === 0) {
-      setActiveCategoryId(null);
-      return;
-    }
-    setActiveCategoryId((current) =>
-      current && rootSections.some((section) => section.id === current)
-        ? current
-        : rootSections[0]!.id,
-    );
-  }, [menu?.sections]);
+  const rootSections = (menu?.sections ?? []).filter(
+    (section) => section.parentSectionId === null,
+  );
+  const activeCategoryId =
+    selectedCategoryId && rootSections.some((section) => section.id === selectedCategoryId)
+      ? selectedCategoryId
+      : (rootSections[0]?.id ?? null);
 
   function handleDeliveryPinChange(value: string): void {
     setDeliveryPin(value);
@@ -361,7 +356,7 @@ export function OrderingCatalogClient(props: { brandId: string }) {
                           ? "border-[var(--interactive-primary)] bg-[var(--interactive-primary)] text-[var(--text-on-primary)]"
                           : "border-[var(--border-default)] bg-[var(--bg-section)] text-[var(--text-primary)]"
                       }`}
-                      onClick={() => setActiveCategoryId(category.id)}
+                      onClick={() => setSelectedCategoryId(category.id)}
                     >
                       {category.name}
                     </a>

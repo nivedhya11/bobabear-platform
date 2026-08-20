@@ -36,19 +36,18 @@ export function useCustomerChromeSession(): {
 } {
   const [session, setSession] = useState<CustomerChromeSession>("unknown");
 
-  const refresh = useCallback(async () => {
-    const result = await fetchCustomerSession();
-    setSession(mapSessionResult(result));
-  }, []);
-
   useEffect(() => {
-    void refresh();
+    void fetchCustomerSession().then((result) => {
+      setSession(mapSessionResult(result));
+    });
     const onChange = () => {
-      void refresh();
+      void fetchCustomerSession().then((result) => {
+        setSession(mapSessionResult(result));
+      });
     };
     window.addEventListener(CUSTOMER_CHROME_SESSION_EVENT, onChange);
     return () => window.removeEventListener(CUSTOMER_CHROME_SESSION_EVENT, onChange);
-  }, [refresh]);
+  }, []);
 
   const signOut = useCallback(async () => {
     const result = await signOutCustomer();
