@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R50",
+  "roadmapVersion": "GTM-R51",
   "acceptedThrough": "IMP-028C",
   "currentProductSlice": "IMP-028D",
   "nextProductSlice": "IMP-029",
   "gtmBoundary": "IMP-040",
   "lastReviewed": "2026-08-20",
-  "supersedes": "GTM-R49"
+  "supersedes": "GTM-R50"
 }
 -->
 
@@ -265,7 +265,7 @@ IMP-028D locked capability architecture (architecture **ARCHITECTURE_LOCKED**; i
 Accepted Through:     IMP-028C — Food Customization
 Current Product Slice: IMP-028D — Desktop Ordering Continuity
 Next Product Slice:    IMP-029 — Operations Console API
-Pending Acceptance:    NONE
+Pending Acceptance:    IMP-028D
 Public GTM Boundary:   IMP-040 — Launch Validation & Cutover
 ```
 
@@ -444,14 +444,17 @@ only). Webhook acknowledgement timing / durable inbox / asynchronous Payment pro
 
 ```text
 IMP-028D — Desktop Ordering Continuity
-Lifecycle: IMPLEMENTATION_IN_PROGRESS
+Lifecycle: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
 Architecture: ARCHITECTURE_LOCKED
-Implementation: AUTHORIZED / STARTED
+Implementation: AUTHORIZED / STARTED / COMPLETE
 IMP-028D_ARCHITECTURE_LOCKED: YES
 IMP-028D_IMPLEMENTATION_AUTHORIZED: YES
 IMP-028D_IMPLEMENTATION_STARTED: YES
-IMP-028D_IMPLEMENTATION_COMPLETE: NO
+IMP-028D_IMPLEMENTATION_COMPLETE: YES
 IMP-028D_ACCEPTED: NO
+FOUNDER_UAT_REQUIRED: YES
+FOUNDER_UAT: PENDING
+FOUNDER_UAT_COMPLETE: NO
 Latest accepted slice: IMP-028C — Food Customization
 IMP-028C_ARCHITECTURE_LOCKED: YES
 IMP-028C_IMPLEMENTATION_AUTHORIZED: YES
@@ -467,7 +470,7 @@ IMP-028B_IMPLEMENTATION_STARTED: YES
 IMP-028B_IMPLEMENTATION_COMPLETE: YES
 IMP-028B_ACCEPTED: YES
 Next product slice: IMP-029 — Operations Console API (PLANNED / NOT_STARTED / NOT_AUTHORIZED)
-Pending acceptance: NONE
+Pending acceptance: IMP-028D
 acceptedThrough: IMP-028C
 IMP-026C: COMPLETE_AND_ACCEPTED
 IMP-027: COMPLETE_AND_ACCEPTED
@@ -608,7 +611,7 @@ consume or remap IMP-029 → IMP-040 identities.
 
 | IMP | Capability | Lifecycle |
 |---|---|---|
-| IMP-028D | Desktop Ordering Continuity | IMPLEMENTATION_IN_PROGRESS |
+| IMP-028D | Desktop Ordering Continuity | IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE |
 | IMP-029 | Operations Console API | PLANNED |
 | IMP-030 | Operations Console UI | PLANNED |
 | IMP-031 | Provider-Neutral Delivery Foundation | PLANNED |
@@ -987,6 +990,25 @@ Historical GTM-R1 meanings that are **not** current:
 Current public GTM boundary is **IMP-040**, not IMP-035.
 
 ## 9. Roadmap Change Log
+
+### GTM-R51 — 2026-08-20
+
+- IMP-028D — Desktop Ordering Continuity implementation is complete and awaits independent
+  acceptance and required founder UAT. Lifecycle is `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`;
+  architecture remains `ARCHITECTURE_LOCKED`; implementation remains `AUTHORIZED` / `STARTED` /
+  `COMPLETE` (`IMP-028D_IMPLEMENTATION_AUTHORIZED: YES`;
+  `IMP-028D_IMPLEMENTATION_STARTED: YES`; `IMP-028D_IMPLEMENTATION_COMPLETE: YES`;
+  `IMP-028D_ACCEPTED: NO`).
+- `acceptedThrough` remains IMP-028C; `currentProductSlice` remains IMP-028D;
+  `pendingAcceptance` becomes IMP-028D; and `nextProductSlice` remains IMP-029. Founder UAT is
+  required and pending; no founder-UAT result or formal acceptance is claimed.
+- Records technical evidence for implementation commit `795bb3151e3a24d5914160d232f099016d880a2b`,
+  reconciled CI candidate `499e9249e3c46d76e382c8c91740b49253b54a19`, GitHub PR #1, CI run
+  `32395774250` (SUCCESS), and merge commit `ba1b0864fe39aefe3b20b0da1c2c039eff020998`.
+- Does not accept IMP-028D, authorize or start IMP-029, create D-371, or alter runtime topology,
+  API, schema, migration, pricing authority, decision register, or global architecture.
+- Supersedes GTM-R50 for the current IMP-028D lifecycle position. Product acceptance through
+  IMP-028C is unchanged.
 
 ### GTM-R50 — 2026-08-20
 
