@@ -1,12 +1,17 @@
 import { test, expect } from "@playwright/test";
 
+import { stubAnonymousCustomerSession } from "./support/stub-customer-session";
+
 /**
- * Validates the current external-ordering-link contract without triggering
+ * Validates the current secondary aggregator-link contract without triggering
  * any external transaction: no navigation into Zomato/Swiggy/WhatsApp, no
  * clicks that follow the link — only reading the rendered `href` and
  * accessible name, which is what the site actually ships.
  */
 test.describe("external ordering links", () => {
+  test.beforeEach(async ({ page }) => {
+    await stubAnonymousCustomerSession(page);
+  });
   test("Zomato link points at the current configured destination", async ({ page }) => {
     await page.goto("/");
     const link = page.getByRole("link", { name: /order boba bear on zomato/i });

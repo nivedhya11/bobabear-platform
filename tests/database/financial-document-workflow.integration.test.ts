@@ -142,7 +142,7 @@ describe("IMP-028 Slice 8 Payment → RECEIPT_VOUCHER workflow (FD-WP)", () => {
       expect(voucher!.financialYear).toBe("2026-27");
       expect(voucher!.statutoryDocumentNumber.startsWith("RV/2627/")).toBe(true);
       expect(voucher!.issueAt.getTime()).toBe(payment.succeededAt!.getTime());
-      expect(voucher!.taxableTotalPaise).toBeGreaterThan(0n);
+      expect(voucher!.taxableTotalPaise).toBeGreaterThan(BigInt(0));
       expect(voucher!.lines.length).toBe(1);
       expect(voucher!.lines[0]!.taxComponents.length).toBeGreaterThan(0);
       expect(await countReceiptVouchersForPayment(h.persistence, payment.id)).toBe(
@@ -334,7 +334,7 @@ describe("IMP-028 Slice 8 Payment → RECEIPT_VOUCHER workflow (FD-WP)", () => {
         cart.id,
         h.addressId,
       );
-      expect(ready.grandTotalPaise).toBe(0n);
+      expect(ready.grandTotalPaise).toBe(BigInt(0));
 
       const provider = createFakePaymentProvider({ defaultOutcome: "pending" });
       await completeZeroPayableCheckout(

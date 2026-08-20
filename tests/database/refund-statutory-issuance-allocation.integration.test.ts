@@ -71,8 +71,8 @@ function untaxedLines(grand: bigint) {
       description: "Sealed source line",
       quantity: 1,
       unitPaise: grand,
-      discountPaise: 0n,
-      chargePaise: 0n,
+      discountPaise: BigInt(0),
+      chargePaise: BigInt(0),
       taxableValuePaise: grand,
       sacCode: "9983",
       taxComponents: [] as const,
@@ -86,23 +86,23 @@ function taxedLines() {
       lineNumber: 1,
       description: "Sealed source line",
       quantity: 1,
-      unitPaise: 10000n,
-      discountPaise: 0n,
-      chargePaise: 0n,
-      taxableValuePaise: 10000n,
+      unitPaise: BigInt(10000),
+      discountPaise: BigInt(0),
+      chargePaise: BigInt(0),
+      taxableValuePaise: BigInt(10000),
       sacCode: "9983",
       taxComponents: [
         {
           taxType: "cgst" as const,
           rateBps: 250,
-          taxableAmountPaise: 10000n,
-          taxAmountPaise: 250n,
+          taxableAmountPaise: BigInt(10000),
+          taxAmountPaise: BigInt(250),
         },
         {
           taxType: "sgst" as const,
           rateBps: 250,
-          taxableAmountPaise: 10000n,
-          taxAmountPaise: 250n,
+          taxableAmountPaise: BigInt(10000),
+          taxAmountPaise: BigInt(250),
         },
       ],
     },
@@ -115,10 +115,10 @@ function twoLineCappedFirst() {
       lineNumber: 1,
       description: "Small first line",
       quantity: 1,
-      unitPaise: 100n,
-      discountPaise: 0n,
-      chargePaise: 0n,
-      taxableValuePaise: 100n,
+      unitPaise: BigInt(100),
+      discountPaise: BigInt(0),
+      chargePaise: BigInt(0),
+      taxableValuePaise: BigInt(100),
       sacCode: "9983",
       taxComponents: [] as const,
     },
@@ -126,23 +126,23 @@ function twoLineCappedFirst() {
       lineNumber: 2,
       description: "Second taxed line",
       quantity: 1,
-      unitPaise: 10000n,
-      discountPaise: 0n,
-      chargePaise: 0n,
-      taxableValuePaise: 10000n,
+      unitPaise: BigInt(10000),
+      discountPaise: BigInt(0),
+      chargePaise: BigInt(0),
+      taxableValuePaise: BigInt(10000),
       sacCode: "9983",
       taxComponents: [
         {
           taxType: "cgst" as const,
           rateBps: 250,
-          taxableAmountPaise: 10000n,
-          taxAmountPaise: 250n,
+          taxableAmountPaise: BigInt(10000),
+          taxAmountPaise: BigInt(250),
         },
         {
           taxType: "sgst" as const,
           rateBps: 250,
-          taxableAmountPaise: 10000n,
-          taxAmountPaise: 250n,
+          taxableAmountPaise: BigInt(10000),
+          taxAmountPaise: BigInt(250),
         },
       ],
     },
@@ -281,9 +281,9 @@ function balancedPartial(doc: FinancialDocument, amountPaise: bigint) {
   const line = doc.lines[0]!;
   const cgst = cgstOf(doc);
   const sgst = sgstOf(doc);
-  const taxEach = 10n;
+  const taxEach = BigInt(10);
   const base = amountPaise - taxEach - taxEach;
-  expect(base > 0n).toBe(true);
+  expect(base > BigInt(0)).toBe(true);
   return {
     lines: [
       {
@@ -383,17 +383,17 @@ describe("IMP-028 D-366 Slice 3A PARTIAL issuance allocation", () => {
 
   it("RSIA-02 PARTIAL RFV BRANCH_FINALIZED accepts allocation against exact prior RV", async () => {
     await withFinancialDocumentIssuanceHarness(async (h) => {
-      const { rv, decision } = await preparePartialRfv(h, 100n);
+      const { rv, decision } = await preparePartialRfv(h, BigInt(100));
       const beforeFd = await countTable(h, "financial_documents");
       const beforeSig = await countTable(h, "signature_artifacts");
       const allocation = await sealRefundStatutoryIssuanceAllocation(
         h.persistence,
-        { decisionId: decision.id, ...balancedPartial(rv, 100n) },
+        { decisionId: decision.id, ...balancedPartial(rv, BigInt(100)) },
       );
       expect(allocation.refundStatutoryDecisionId).toBe(decision.id);
       expect(allocation.sourceFinancialDocumentId).toBe(rv.id);
       expect(allocation.sourceDocumentType).toBe("RECEIPT_VOUCHER");
-      expect(allocation.sealedReversalAmountPaise).toBe(100n);
+      expect(allocation.sealedReversalAmountPaise).toBe(BigInt(100));
       expect(allocation.logicalIdempotencyKey).toBe(
         `refund-statutory-decision:${decision.id}:ISSUANCE_ALLOCATION`,
       );
@@ -411,10 +411,10 @@ describe("IMP-028 D-366 Slice 3A PARTIAL issuance allocation", () => {
 
   it("RSIA-03 PARTIAL CN BRANCH_FINALIZED accepts allocation against exact prior TI", async () => {
     await withFinancialDocumentIssuanceHarness(async (h) => {
-      const { ti, decision } = await preparePartialCn(h, 100n);
+      const { ti, decision } = await preparePartialCn(h, BigInt(100));
       const allocation = await sealRefundStatutoryIssuanceAllocation(
         h.persistence,
-        { decisionId: decision.id, ...balancedPartial(ti, 100n) },
+        { decisionId: decision.id, ...balancedPartial(ti, BigInt(100)) },
       );
       expect(allocation.sourceFinancialDocumentId).toBe(ti.id);
       expect(allocation.sourceDocumentType).toBe("TAX_INVOICE");
@@ -423,7 +423,7 @@ describe("IMP-028 D-366 Slice 3A PARTIAL issuance allocation", () => {
 
   it("RSIA-04 FULL RFV and FULL CN reject allocation", async () => {
     await withFinancialDocumentIssuanceHarness(async (h) => {
-      const rv = await issueTypedDocument(h, "RECEIPT_VOUCHER", untaxedLines(100n));
+      const rv = await issueTypedDocument(h, "RECEIPT_VOUCHER", untaxedLines(BigInt(100)));
       await cancelHarnessOrder(h);
       const refund = await createProcessedRefund(h, rv.grandTotalPaise);
       const pending = await ensurePending(h, refund.id);
@@ -441,7 +441,7 @@ describe("IMP-028 D-366 Slice 3A PARTIAL issuance allocation", () => {
           lines: [
             {
               sourceFinancialDocumentLineId: rv.lines[0]!.id,
-              allocatedTaxableOrBaseAmountPaise: 1n,
+              allocatedTaxableOrBaseAmountPaise: BigInt(1),
             },
           ],
         }),
@@ -451,7 +451,7 @@ describe("IMP-028 D-366 Slice 3A PARTIAL issuance allocation", () => {
       });
     });
     await withFinancialDocumentIssuanceHarness(async (h) => {
-      const ti = await issueTypedDocument(h, "TAX_INVOICE", untaxedLines(100n));
+      const ti = await issueTypedDocument(h, "TAX_INVOICE", untaxedLines(BigInt(100)));
       const refund = await createProcessedRefund(h, ti.grandTotalPaise);
       const pending = await ensurePending(h, refund.id);
       const full = await finalizeRefundStatutoryDecision(h.persistence, {
@@ -469,7 +469,7 @@ describe("IMP-028 D-366 Slice 3A PARTIAL issuance allocation", () => {
           lines: [
             {
               sourceFinancialDocumentLineId: ti.lines[0]!.id,
-              allocatedTaxableOrBaseAmountPaise: 1n,
+              allocatedTaxableOrBaseAmountPaise: BigInt(1),
             },
           ],
         }),
@@ -483,12 +483,12 @@ describe("IMP-028 D-366 Slice 3A PARTIAL issuance allocation", () => {
   it("RSIA-05 NSD and PENDING reject allocation", async () => {
     await withFinancialDocumentIssuanceHarness(async (h) => {
       const ti = await issueTypedDocument(h, "TAX_INVOICE");
-      const refund = await createProcessedRefund(h, 100n);
+      const refund = await createProcessedRefund(h, BigInt(100));
       const pending = await ensurePending(h, refund.id);
       await expect(
         sealRefundStatutoryIssuanceAllocation(h.persistence, {
           decisionId: pending.id,
-          ...balancedPartial(ti, 100n),
+          ...balancedPartial(ti, BigInt(100)),
         }),
       ).rejects.toMatchObject({
         code: "REFUND_STATUTORY_ISSUANCE_ALLOCATION_NOT_ELIGIBLE",
@@ -512,7 +512,7 @@ describe("IMP-028 D-366 Slice 3A PARTIAL issuance allocation", () => {
       await expect(
         sealRefundStatutoryIssuanceAllocation(h.persistence, {
           decisionId: nsd.id,
-          ...balancedPartial(ti, 100n),
+          ...balancedPartial(ti, BigInt(100)),
         }),
       ).rejects.toMatchObject({
         code: "REFUND_STATUTORY_ISSUANCE_ALLOCATION_NOT_ELIGIBLE",
@@ -523,16 +523,16 @@ describe("IMP-028 D-366 Slice 3A PARTIAL issuance allocation", () => {
 
   it("RSIA-06 foreign, arbitrary, swapped, and mismatched source references are rejected", async () => {
     await withFinancialDocumentIssuanceHarness(async (h) => {
-      const { rv, decision } = await preparePartialRfv(h, 100n);
+      const { rv, decision } = await preparePartialRfv(h, BigInt(100));
       const foreign = await issueTypedDocument(h, "TAX_INVOICE");
-      const command = balancedPartial(rv, 100n);
+      const command = balancedPartial(rv, BigInt(100));
       await expect(
         sealRefundStatutoryIssuanceAllocation(h.persistence, {
           decisionId: decision.id,
           lines: [
             {
               sourceFinancialDocumentLineId: foreign.lines[0]!.id,
-              allocatedTaxableOrBaseAmountPaise: 80n,
+              allocatedTaxableOrBaseAmountPaise: BigInt(80),
             },
           ],
           taxComponents: command.taxComponents,
@@ -547,7 +547,7 @@ describe("IMP-028 D-366 Slice 3A PARTIAL issuance allocation", () => {
           taxComponents: [
             {
               sourceFinancialDocumentTaxComponentId: cgstOf(foreign).id,
-              allocatedTaxAmountPaise: 10n,
+              allocatedTaxAmountPaise: BigInt(10),
             },
             command.taxComponents[1]!,
           ],
@@ -561,7 +561,7 @@ describe("IMP-028 D-366 Slice 3A PARTIAL issuance allocation", () => {
           lines: [
             {
               sourceFinancialDocumentLineId: randomUUID(),
-              allocatedTaxableOrBaseAmountPaise: 80n,
+              allocatedTaxableOrBaseAmountPaise: BigInt(80),
             },
           ],
           taxComponents: command.taxComponents,
@@ -588,9 +588,9 @@ describe("IMP-028 D-366 Slice 3A PARTIAL issuance allocation", () => {
     await withFinancialDocumentIssuanceHarness(async (h) => {
       const doc = await issueTypedDocument(h, "RECEIPT_VOUCHER", twoLineCappedFirst());
       await cancelHarnessOrder(h);
-      const refund = await createProcessedRefund(h, 100n);
+      const refund = await createProcessedRefund(h, BigInt(100));
       const pending = await ensurePending(h, refund.id);
-      const decision = await finalizePartialRfv(h, pending.id, doc.id, 100n);
+      const decision = await finalizePartialRfv(h, pending.id, doc.id, BigInt(100));
       const lineA = doc.lines[0]!;
       const lineB = doc.lines[1]!;
       const cgstB = lineB.taxComponents.find((row) => row.taxType === "cgst")!;
@@ -600,20 +600,20 @@ describe("IMP-028 D-366 Slice 3A PARTIAL issuance allocation", () => {
           lines: [
             {
               sourceFinancialDocumentLineId: lineA.id,
-              allocatedTaxableOrBaseAmountPaise: 80n,
+              allocatedTaxableOrBaseAmountPaise: BigInt(80),
             },
           ],
           taxComponents: [
             {
               sourceFinancialDocumentTaxComponentId: cgstB.id,
-              allocatedTaxAmountPaise: 10n,
+              allocatedTaxAmountPaise: BigInt(10),
               sourceFinancialDocumentLineId: lineA.id,
             },
             {
               sourceFinancialDocumentTaxComponentId: lineB.taxComponents.find(
                 (row) => row.taxType === "sgst",
               )!.id,
-              allocatedTaxAmountPaise: 10n,
+              allocatedTaxAmountPaise: BigInt(10),
             },
           ],
         }),
@@ -625,15 +625,15 @@ describe("IMP-028 D-366 Slice 3A PARTIAL issuance allocation", () => {
 
   it("RSIA-07 allocation totals must reconcile exactly; under, over, zero, and negative rejected", async () => {
     await withFinancialDocumentIssuanceHarness(async (h) => {
-      const { rv, decision } = await preparePartialRfv(h, 100n);
-      const command = balancedPartial(rv, 100n);
+      const { rv, decision } = await preparePartialRfv(h, BigInt(100));
+      const command = balancedPartial(rv, BigInt(100));
       await expect(
         sealRefundStatutoryIssuanceAllocation(h.persistence, {
           decisionId: decision.id,
           lines: [
             {
               sourceFinancialDocumentLineId: command.lines[0]!.sourceFinancialDocumentLineId,
-              allocatedTaxableOrBaseAmountPaise: 70n,
+              allocatedTaxableOrBaseAmountPaise: BigInt(70),
             },
           ],
           taxComponents: command.taxComponents,
@@ -647,7 +647,7 @@ describe("IMP-028 D-366 Slice 3A PARTIAL issuance allocation", () => {
           lines: [
             {
               sourceFinancialDocumentLineId: command.lines[0]!.sourceFinancialDocumentLineId,
-              allocatedTaxableOrBaseAmountPaise: 90n,
+              allocatedTaxableOrBaseAmountPaise: BigInt(90),
             },
           ],
           taxComponents: command.taxComponents,
@@ -661,7 +661,7 @@ describe("IMP-028 D-366 Slice 3A PARTIAL issuance allocation", () => {
           lines: [
             {
               sourceFinancialDocumentLineId: command.lines[0]!.sourceFinancialDocumentLineId,
-              allocatedTaxableOrBaseAmountPaise: 0n,
+              allocatedTaxableOrBaseAmountPaise: BigInt(0),
             },
           ],
         }),
@@ -672,7 +672,7 @@ describe("IMP-028 D-366 Slice 3A PARTIAL issuance allocation", () => {
           lines: [
             {
               sourceFinancialDocumentLineId: command.lines[0]!.sourceFinancialDocumentLineId,
-              allocatedTaxableOrBaseAmountPaise: -10n,
+              allocatedTaxableOrBaseAmountPaise: -BigInt(10),
             },
           ],
         }),
@@ -682,15 +682,15 @@ describe("IMP-028 D-366 Slice 3A PARTIAL issuance allocation", () => {
         ...command,
       });
       expect(
-        sealed.lines.reduce((sum, line) => sum + line.allocatedTaxableOrBaseAmountPaise, 0n) +
-          sealed.taxComponents.reduce((sum, tax) => sum + tax.allocatedTaxAmountPaise, 0n),
-      ).toBe(100n);
+        sealed.lines.reduce((sum, line) => sum + line.allocatedTaxableOrBaseAmountPaise, BigInt(0)) +
+          sealed.taxComponents.reduce((sum, tax) => sum + tax.allocatedTaxAmountPaise, BigInt(0)),
+      ).toBe(BigInt(100));
     });
   });
 
   it("RSIA-08 per-line and per-tax-component source caps are enforced", async () => {
     await withFinancialDocumentIssuanceHarness(async (h) => {
-      const { rv, decision } = await preparePartialRfv(h, 101n, twoLineCappedFirst());
+      const { rv, decision } = await preparePartialRfv(h, BigInt(101), twoLineCappedFirst());
       const small = rv.lines[0]!;
       await expect(
         sealRefundStatutoryIssuanceAllocation(h.persistence, {
@@ -698,7 +698,7 @@ describe("IMP-028 D-366 Slice 3A PARTIAL issuance allocation", () => {
           lines: [
             {
               sourceFinancialDocumentLineId: small.id,
-              allocatedTaxableOrBaseAmountPaise: 101n,
+              allocatedTaxableOrBaseAmountPaise: BigInt(101),
             },
           ],
         }),
@@ -707,14 +707,14 @@ describe("IMP-028 D-366 Slice 3A PARTIAL issuance allocation", () => {
       });
     });
     await withFinancialDocumentIssuanceHarness(async (h) => {
-      const { rv, decision } = await preparePartialRfv(h, 251n);
+      const { rv, decision } = await preparePartialRfv(h, BigInt(251));
       await expect(
         sealRefundStatutoryIssuanceAllocation(h.persistence, {
           decisionId: decision.id,
           taxComponents: [
             {
               sourceFinancialDocumentTaxComponentId: cgstOf(rv).id,
-              allocatedTaxAmountPaise: 251n,
+              allocatedTaxAmountPaise: BigInt(251),
             },
           ],
         }),
@@ -728,28 +728,28 @@ describe("IMP-028 D-366 Slice 3A PARTIAL issuance allocation", () => {
     await withFinancialDocumentIssuanceHarness(async (h) => {
       const rv = await issueTypedDocument(h, "RECEIPT_VOUCHER", twoLineCappedFirst());
       await cancelHarnessOrder(h);
-      const first = await createProcessedRefund(h, 80n);
+      const first = await createProcessedRefund(h, BigInt(80));
       const firstPending = await ensurePending(h, first.id);
-      const firstDecision = await finalizePartialRfv(h, firstPending.id, rv.id, 80n);
+      const firstDecision = await finalizePartialRfv(h, firstPending.id, rv.id, BigInt(80));
       await sealRefundStatutoryIssuanceAllocation(h.persistence, {
         decisionId: firstDecision.id,
         lines: [
           {
             sourceFinancialDocumentLineId: rv.lines[0]!.id,
-            allocatedTaxableOrBaseAmountPaise: 80n,
+            allocatedTaxableOrBaseAmountPaise: BigInt(80),
           },
         ],
       });
-      const second = await createProcessedRefund(h, 30n);
+      const second = await createProcessedRefund(h, BigInt(30));
       const secondPending = await ensurePending(h, second.id);
-      const secondDecision = await finalizePartialRfv(h, secondPending.id, rv.id, 30n);
+      const secondDecision = await finalizePartialRfv(h, secondPending.id, rv.id, BigInt(30));
       await expect(
         sealRefundStatutoryIssuanceAllocation(h.persistence, {
           decisionId: secondDecision.id,
           lines: [
             {
               sourceFinancialDocumentLineId: rv.lines[0]!.id,
-              allocatedTaxableOrBaseAmountPaise: 30n,
+              allocatedTaxableOrBaseAmountPaise: BigInt(30),
             },
           ],
         }),
@@ -758,26 +758,26 @@ describe("IMP-028 D-366 Slice 3A PARTIAL issuance allocation", () => {
       });
     });
     await withFinancialDocumentIssuanceHarness(async (h) => {
-      const { rv, decision } = await preparePartialRfv(h, 200n);
+      const { rv, decision } = await preparePartialRfv(h, BigInt(200));
       await sealRefundStatutoryIssuanceAllocation(h.persistence, {
         decisionId: decision.id,
         taxComponents: [
           {
             sourceFinancialDocumentTaxComponentId: cgstOf(rv).id,
-            allocatedTaxAmountPaise: 200n,
+            allocatedTaxAmountPaise: BigInt(200),
           },
         ],
       });
-      const second = await createProcessedRefund(h, 60n);
+      const second = await createProcessedRefund(h, BigInt(60));
       const secondPending = await ensurePending(h, second.id);
-      const secondDecision = await finalizePartialRfv(h, secondPending.id, rv.id, 60n);
+      const secondDecision = await finalizePartialRfv(h, secondPending.id, rv.id, BigInt(60));
       await expect(
         sealRefundStatutoryIssuanceAllocation(h.persistence, {
           decisionId: secondDecision.id,
           taxComponents: [
             {
               sourceFinancialDocumentTaxComponentId: cgstOf(rv).id,
-              allocatedTaxAmountPaise: 60n,
+              allocatedTaxAmountPaise: BigInt(60),
             },
           ],
         }),
@@ -789,8 +789,8 @@ describe("IMP-028 D-366 Slice 3A PARTIAL issuance allocation", () => {
 
   it("RSIA-10 exact retry and reordered equivalent input return the same allocation; material changes conflict", async () => {
     await withFinancialDocumentIssuanceHarness(async (h) => {
-      const { rv, decision } = await preparePartialRfv(h, 100n);
-      const command = balancedPartial(rv, 100n);
+      const { rv, decision } = await preparePartialRfv(h, BigInt(100));
+      const command = balancedPartial(rv, BigInt(100));
       const first = await sealRefundStatutoryIssuanceAllocation(h.persistence, {
         decisionId: decision.id,
         ...command,
@@ -813,7 +813,7 @@ describe("IMP-028 D-366 Slice 3A PARTIAL issuance allocation", () => {
           lines: [
             {
               sourceFinancialDocumentLineId: command.lines[0]!.sourceFinancialDocumentLineId,
-              allocatedTaxableOrBaseAmountPaise: 70n,
+              allocatedTaxableOrBaseAmountPaise: BigInt(70),
             },
           ],
           taxComponents: command.taxComponents,
@@ -828,11 +828,11 @@ describe("IMP-028 D-366 Slice 3A PARTIAL issuance allocation", () => {
           taxComponents: [
             {
               ...command.taxComponents[0]!,
-              allocatedTaxAmountPaise: 5n,
+              allocatedTaxAmountPaise: BigInt(5),
             },
             {
               ...command.taxComponents[1]!,
-              allocatedTaxAmountPaise: 15n,
+              allocatedTaxAmountPaise: BigInt(15),
             },
           ],
         }),
@@ -846,7 +846,7 @@ describe("IMP-028 D-366 Slice 3A PARTIAL issuance allocation", () => {
           lines: [
             {
               sourceFinancialDocumentLineId: foreign.lines[0]!.id,
-              allocatedTaxableOrBaseAmountPaise: 80n,
+              allocatedTaxableOrBaseAmountPaise: BigInt(80),
             },
           ],
           taxComponents: command.taxComponents,
@@ -859,8 +859,8 @@ describe("IMP-028 D-366 Slice 3A PARTIAL issuance allocation", () => {
 
   it("RSIA-11 equivalent concurrent allocation converges; conflicting concurrent permits at most one success", async () => {
     await withFinancialDocumentIssuanceHarness(async (h) => {
-      const { rv, decision } = await preparePartialRfv(h, 100n);
-      const command = balancedPartial(rv, 100n);
+      const { rv, decision } = await preparePartialRfv(h, BigInt(100));
+      const command = balancedPartial(rv, BigInt(100));
       const [a, b] = await Promise.all([
         sealRefundStatutoryIssuanceAllocation(h.persistence, {
           decisionId: decision.id,
@@ -883,8 +883,8 @@ describe("IMP-028 D-366 Slice 3A PARTIAL issuance allocation", () => {
       expect(count).toBe(1);
     });
     await withFinancialDocumentIssuanceHarness(async (h) => {
-      const { rv, decision } = await preparePartialRfv(h, 100n);
-      const command = balancedPartial(rv, 100n);
+      const { rv, decision } = await preparePartialRfv(h, BigInt(100));
+      const command = balancedPartial(rv, BigInt(100));
       const results = await Promise.allSettled([
         sealRefundStatutoryIssuanceAllocation(h.persistence, {
           decisionId: decision.id,
@@ -895,7 +895,7 @@ describe("IMP-028 D-366 Slice 3A PARTIAL issuance allocation", () => {
           lines: [
             {
               sourceFinancialDocumentLineId: command.lines[0]!.sourceFinancialDocumentLineId,
-              allocatedTaxableOrBaseAmountPaise: 70n,
+              allocatedTaxableOrBaseAmountPaise: BigInt(70),
             },
           ],
           taxComponents: command.taxComponents,
@@ -922,19 +922,19 @@ describe("IMP-028 D-366 Slice 3A PARTIAL issuance allocation", () => {
     await withFinancialDocumentIssuanceHarness(async (h) => {
       const rv = await issueTypedDocument(h, "RECEIPT_VOUCHER", twoLineCappedFirst());
       await cancelHarnessOrder(h);
-      const first = await createProcessedRefund(h, 80n);
-      const second = await createProcessedRefund(h, 80n);
+      const first = await createProcessedRefund(h, BigInt(80));
+      const second = await createProcessedRefund(h, BigInt(80));
       const firstPending = await ensurePending(h, first.id);
       const secondPending = await ensurePending(h, second.id);
-      const firstDecision = await finalizePartialRfv(h, firstPending.id, rv.id, 80n);
-      const secondDecision = await finalizePartialRfv(h, secondPending.id, rv.id, 80n);
+      const firstDecision = await finalizePartialRfv(h, firstPending.id, rv.id, BigInt(80));
+      const secondDecision = await finalizePartialRfv(h, secondPending.id, rv.id, BigInt(80));
       const results = await Promise.allSettled([
         sealRefundStatutoryIssuanceAllocation(h.persistence, {
           decisionId: firstDecision.id,
           lines: [
             {
               sourceFinancialDocumentLineId: rv.lines[0]!.id,
-              allocatedTaxableOrBaseAmountPaise: 80n,
+              allocatedTaxableOrBaseAmountPaise: BigInt(80),
             },
           ],
         }),
@@ -943,7 +943,7 @@ describe("IMP-028 D-366 Slice 3A PARTIAL issuance allocation", () => {
           lines: [
             {
               sourceFinancialDocumentLineId: rv.lines[0]!.id,
-              allocatedTaxableOrBaseAmountPaise: 80n,
+              allocatedTaxableOrBaseAmountPaise: BigInt(80),
             },
           ],
         }),
@@ -971,18 +971,18 @@ describe("IMP-028 D-366 Slice 3A PARTIAL issuance allocation", () => {
         `);
         return BigInt(String(rows.rows[0]!.used));
       });
-      expect(used).toBe(0n);
-      expect(used <= 100n).toBe(true);
+      expect(used).toBe(BigInt(0));
+      expect(used <= BigInt(100)).toBe(true);
     });
   });
 
   it("RSIA-13 forced failure after child inserts rolls back parent and children", async () => {
     await withFinancialDocumentIssuanceHarness(async (h) => {
-      const { rv, decision } = await preparePartialRfv(h, 100n);
+      const { rv, decision } = await preparePartialRfv(h, BigInt(100));
       await expect(
         sealRefundStatutoryIssuanceAllocation(
           h.persistence,
-          { decisionId: decision.id, ...balancedPartial(rv, 100n) },
+          { decisionId: decision.id, ...balancedPartial(rv, BigInt(100)) },
           {
             afterChildInserts: () => {
               throw new Error("forced Slice 3A persistence failure");
@@ -1012,10 +1012,10 @@ describe("IMP-028 D-366 Slice 3A PARTIAL issuance allocation", () => {
 
   it("RSIA-14 sealed allocation parent, lines, and tax components cannot mutate or delete", async () => {
     await withFinancialDocumentIssuanceHarness(async (h) => {
-      const { rv, decision } = await preparePartialRfv(h, 100n);
+      const { rv, decision } = await preparePartialRfv(h, BigInt(100));
       const sealed = await sealRefundStatutoryIssuanceAllocation(
         h.persistence,
-        { decisionId: decision.id, ...balancedPartial(rv, 100n) },
+        { decisionId: decision.id, ...balancedPartial(rv, BigInt(100)) },
       );
       await expectPostgresFailure(
         () =>
@@ -1075,13 +1075,13 @@ describe("IMP-028 D-366 Slice 3A PARTIAL issuance allocation", () => {
 
   it("RSIA-15 Slice 3A does not issue FinancialDocument, change decision/Refund/Payment/Order, or sign", async () => {
     await withFinancialDocumentIssuanceHarness(async (h) => {
-      const { rv, refund, decision } = await preparePartialRfv(h, 100n);
+      const { rv, refund, decision } = await preparePartialRfv(h, BigInt(100));
       const before = await commercialSnapshot(h, refund.id);
       const beforeFd = await countTable(h, "financial_documents");
       const beforeSig = await countTable(h, "signature_artifacts");
       await sealRefundStatutoryIssuanceAllocation(
         h.persistence,
-        { decisionId: decision.id, ...balancedPartial(rv, 100n) },
+        { decisionId: decision.id, ...balancedPartial(rv, BigInt(100)) },
       );
       expect(await commercialSnapshot(h, refund.id)).toEqual(before);
       expect(await countTable(h, "financial_documents")).toBe(beforeFd);
@@ -1096,18 +1096,18 @@ describe("IMP-028 D-366 Slice 3A PARTIAL issuance allocation", () => {
 
   it("RSIA-16 remainder amounts stay integer paise with no floating-point split", async () => {
     await withFinancialDocumentIssuanceHarness(async (h) => {
-      const { rv, decision } = await preparePartialRfv(h, 1n);
+      const { rv, decision } = await preparePartialRfv(h, BigInt(1));
       const sealed = await sealRefundStatutoryIssuanceAllocation(h.persistence, {
         decisionId: decision.id,
         lines: [
           {
             sourceFinancialDocumentLineId: rv.lines[0]!.id,
-            allocatedTaxableOrBaseAmountPaise: 1n,
+            allocatedTaxableOrBaseAmountPaise: BigInt(1),
           },
         ],
       });
-      expect(sealed.sealedReversalAmountPaise).toBe(1n);
-      expect(sealed.lines[0]?.allocatedTaxableOrBaseAmountPaise).toBe(1n);
+      expect(sealed.sealedReversalAmountPaise).toBe(BigInt(1));
+      expect(sealed.lines[0]?.allocatedTaxableOrBaseAmountPaise).toBe(BigInt(1));
       expect(typeof sealed.lines[0]?.allocatedTaxableOrBaseAmountPaise).toBe("bigint");
     });
   });
@@ -1116,18 +1116,18 @@ describe("IMP-028 D-366 Slice 3A PARTIAL issuance allocation", () => {
     await withFinancialDocumentIssuanceHarness(async (h) => {
       const rv = await issueTypedDocument(h, "RECEIPT_VOUCHER");
       await cancelHarnessOrder(h);
-      const first = await createProcessedRefund(h, 80n);
-      const second = await createProcessedRefund(h, 30n);
+      const first = await createProcessedRefund(h, BigInt(80));
+      const second = await createProcessedRefund(h, BigInt(30));
       const firstPending = await ensurePending(h, first.id);
       const secondPending = await ensurePending(h, second.id);
-      const firstDecision = await finalizePartialRfv(h, firstPending.id, rv.id, 80n);
-      const secondDecision = await finalizePartialRfv(h, secondPending.id, rv.id, 30n);
+      const firstDecision = await finalizePartialRfv(h, firstPending.id, rv.id, BigInt(80));
+      const secondDecision = await finalizePartialRfv(h, secondPending.id, rv.id, BigInt(30));
       const beforeFd = await countTable(h, "financial_documents");
       const beforeSig = await countTable(h, "signature_artifacts");
       await expect(
         sealRefundStatutoryIssuanceAllocation(h.persistence, {
           decisionId: secondDecision.id,
-          ...balancedPartial(rv, 30n),
+          ...balancedPartial(rv, BigInt(30)),
         }),
       ).rejects.toMatchObject({
         code: "CUMULATIVE_COMPONENT_AUTHORITY_INCOMPLETE",
@@ -1135,7 +1135,7 @@ describe("IMP-028 D-366 Slice 3A PARTIAL issuance allocation", () => {
       await expect(
         sealRefundStatutoryIssuanceAllocation(h.persistence, {
           decisionId: firstDecision.id,
-          ...balancedPartial(rv, 80n),
+          ...balancedPartial(rv, BigInt(80)),
         }),
       ).rejects.toMatchObject({
         code: "CUMULATIVE_COMPONENT_AUTHORITY_INCOMPLETE",
@@ -1156,18 +1156,18 @@ describe("IMP-028 D-366 Slice 3A PARTIAL issuance allocation", () => {
 
   it("RSIA-18 current decision may seal; remaining capacity uses actual line and tax consumption", async () => {
     await withFinancialDocumentIssuanceHarness(async (h) => {
-      const { rv, decision } = await preparePartialRfv(h, 80n);
+      const { rv, decision } = await preparePartialRfv(h, BigInt(80));
       const first = await sealRefundStatutoryIssuanceAllocation(h.persistence, {
         decisionId: decision.id,
-        ...balancedPartial(rv, 80n),
+        ...balancedPartial(rv, BigInt(80)),
       });
       expect(first.refundStatutoryDecisionId).toBe(decision.id);
-      const second = await createProcessedRefund(h, 100n);
+      const second = await createProcessedRefund(h, BigInt(100));
       const secondPending = await ensurePending(h, second.id);
-      const secondDecision = await finalizePartialRfv(h, secondPending.id, rv.id, 100n);
+      const secondDecision = await finalizePartialRfv(h, secondPending.id, rv.id, BigInt(100));
       const next = await sealRefundStatutoryIssuanceAllocation(h.persistence, {
         decisionId: secondDecision.id,
-        ...balancedPartial(rv, 100n),
+        ...balancedPartial(rv, BigInt(100)),
       });
       expect(next.refundStatutoryDecisionId).toBe(secondDecision.id);
       const lineUsed =
@@ -1178,62 +1178,62 @@ describe("IMP-028 D-366 Slice 3A PARTIAL issuance allocation", () => {
     await withFinancialDocumentIssuanceHarness(async (h) => {
       const rv = await issueTypedDocument(h, "RECEIPT_VOUCHER", twoLineCappedFirst());
       await cancelHarnessOrder(h);
-      const first = await createProcessedRefund(h, 80n);
+      const first = await createProcessedRefund(h, BigInt(80));
       const firstPending = await ensurePending(h, first.id);
-      const firstDecision = await finalizePartialRfv(h, firstPending.id, rv.id, 80n);
+      const firstDecision = await finalizePartialRfv(h, firstPending.id, rv.id, BigInt(80));
       await sealRefundStatutoryIssuanceAllocation(h.persistence, {
         decisionId: firstDecision.id,
         lines: [
           {
             sourceFinancialDocumentLineId: rv.lines[0]!.id,
-            allocatedTaxableOrBaseAmountPaise: 80n,
+            allocatedTaxableOrBaseAmountPaise: BigInt(80),
           },
         ],
       });
-      const second = await createProcessedRefund(h, 20n);
+      const second = await createProcessedRefund(h, BigInt(20));
       const secondPending = await ensurePending(h, second.id);
-      const secondDecision = await finalizePartialRfv(h, secondPending.id, rv.id, 20n);
+      const secondDecision = await finalizePartialRfv(h, secondPending.id, rv.id, BigInt(20));
       const remainder = await sealRefundStatutoryIssuanceAllocation(h.persistence, {
         decisionId: secondDecision.id,
         lines: [
           {
             sourceFinancialDocumentLineId: rv.lines[0]!.id,
-            allocatedTaxableOrBaseAmountPaise: 20n,
+            allocatedTaxableOrBaseAmountPaise: BigInt(20),
           },
         ],
       });
-      expect(remainder.lines[0]?.allocatedTaxableOrBaseAmountPaise).toBe(20n);
+      expect(remainder.lines[0]?.allocatedTaxableOrBaseAmountPaise).toBe(BigInt(20));
     });
     await withFinancialDocumentIssuanceHarness(async (h) => {
-      const { rv, decision } = await preparePartialRfv(h, 200n);
+      const { rv, decision } = await preparePartialRfv(h, BigInt(200));
       await sealRefundStatutoryIssuanceAllocation(h.persistence, {
         decisionId: decision.id,
         taxComponents: [
           {
             sourceFinancialDocumentTaxComponentId: cgstOf(rv).id,
-            allocatedTaxAmountPaise: 200n,
+            allocatedTaxAmountPaise: BigInt(200),
           },
         ],
       });
-      const second = await createProcessedRefund(h, 50n);
+      const second = await createProcessedRefund(h, BigInt(50));
       const secondPending = await ensurePending(h, second.id);
-      const secondDecision = await finalizePartialRfv(h, secondPending.id, rv.id, 50n);
+      const secondDecision = await finalizePartialRfv(h, secondPending.id, rv.id, BigInt(50));
       const remainder = await sealRefundStatutoryIssuanceAllocation(h.persistence, {
         decisionId: secondDecision.id,
         taxComponents: [
           {
             sourceFinancialDocumentTaxComponentId: cgstOf(rv).id,
-            allocatedTaxAmountPaise: 50n,
+            allocatedTaxAmountPaise: BigInt(50),
           },
         ],
       });
-      expect(remainder.taxComponents[0]?.allocatedTaxAmountPaise).toBe(50n);
+      expect(remainder.taxComponents[0]?.allocatedTaxAmountPaise).toBe(BigInt(50));
     });
   });
 
   it("RSIA-19 FULL reversal consumes complete source component authority", async () => {
     await withFinancialDocumentIssuanceHarness(async (h) => {
-      const rv = await issueTypedDocument(h, "RECEIPT_VOUCHER", untaxedLines(100n));
+      const rv = await issueTypedDocument(h, "RECEIPT_VOUCHER", untaxedLines(BigInt(100)));
       await cancelHarnessOrder(h);
       const fullRefund = await createProcessedRefund(h, rv.grandTotalPaise);
       const fullPending = await ensurePending(h, fullRefund.id);
@@ -1245,7 +1245,7 @@ describe("IMP-028 D-366 Slice 3A PARTIAL issuance allocation", () => {
         noSupplyAuthorityKind: "ORDER_CANCELLED",
         reversalScope: "FULL",
       });
-      const partialRefund = await createProcessedRefund(h, 30n);
+      const partialRefund = await createProcessedRefund(h, BigInt(30));
       const partialPending = await ensurePending(h, partialRefund.id);
       await h.persistence.transaction((tx) =>
         sealRefundStatutoryDecisionBranch(tx, {
@@ -1260,10 +1260,10 @@ describe("IMP-028 D-366 Slice 3A PARTIAL issuance allocation", () => {
             sealedSection34QualificationCode: null,
             sealedSection34QualificationFacts: null,
             sealedReversalScope: "PARTIAL",
-            sealedReversalAmountPaise: 30n,
+            sealedReversalAmountPaise: BigInt(30),
             sealedAllocationAuthority: canonicalAllocationAuthorityJson({
               sourceFinancialDocumentId: rv.id,
-              allocatedAmountPaise: 30n,
+              allocatedAmountPaise: BigInt(30),
             }),
             sealedNoSupplyAuthorityKind: "ORDER_CANCELLED",
             sealedNoStatutoryDocumentReasonCode: null,
@@ -1278,7 +1278,7 @@ describe("IMP-028 D-366 Slice 3A PARTIAL issuance allocation", () => {
           lines: [
             {
               sourceFinancialDocumentLineId: rv.lines[0]!.id,
-              allocatedTaxableOrBaseAmountPaise: 30n,
+              allocatedTaxableOrBaseAmountPaise: BigInt(30),
             },
           ],
         }),
@@ -1292,29 +1292,29 @@ describe("IMP-028 D-366 Slice 3A PARTIAL issuance allocation", () => {
     await withFinancialDocumentIssuanceHarness(async (h) => {
       const rv = await issueTypedDocument(h, "RECEIPT_VOUCHER", twoLineCappedFirst());
       await cancelHarnessOrder(h);
-      const first = await createProcessedRefund(h, 80n);
-      const second = await createProcessedRefund(h, 80n);
+      const first = await createProcessedRefund(h, BigInt(80));
+      const second = await createProcessedRefund(h, BigInt(80));
       const firstPending = await ensurePending(h, first.id);
       const secondPending = await ensurePending(h, second.id);
-      const firstDecision = await finalizePartialRfv(h, firstPending.id, rv.id, 80n);
+      const firstDecision = await finalizePartialRfv(h, firstPending.id, rv.id, BigInt(80));
       const results = await Promise.allSettled([
         sealRefundStatutoryIssuanceAllocation(h.persistence, {
           decisionId: firstDecision.id,
           lines: [
             {
               sourceFinancialDocumentLineId: rv.lines[0]!.id,
-              allocatedTaxableOrBaseAmountPaise: 80n,
+              allocatedTaxableOrBaseAmountPaise: BigInt(80),
             },
           ],
         }),
         (async () => {
-          await finalizePartialRfv(h, secondPending.id, rv.id, 80n);
+          await finalizePartialRfv(h, secondPending.id, rv.id, BigInt(80));
           return sealRefundStatutoryIssuanceAllocation(h.persistence, {
             decisionId: secondPending.id,
             lines: [
               {
                 sourceFinancialDocumentLineId: rv.lines[0]!.id,
-                allocatedTaxableOrBaseAmountPaise: 80n,
+                allocatedTaxableOrBaseAmountPaise: BigInt(80),
               },
             ],
           });
@@ -1330,7 +1330,7 @@ describe("IMP-028 D-366 Slice 3A PARTIAL issuance allocation", () => {
         `);
         return BigInt(String(rows.rows[0]!.used));
       });
-      expect(used <= 100n).toBe(true);
+      expect(used <= BigInt(100)).toBe(true);
     });
   });
 
@@ -1339,7 +1339,7 @@ describe("IMP-028 D-366 Slice 3A PARTIAL issuance allocation", () => {
       const ti = await issueTypedDocument(h, "TAX_INVOICE");
       expect(h.paymentId).toBeTruthy();
       const paymentId = h.paymentId!;
-      const nsdRefund = await createProcessedRefund(h, 50n);
+      const nsdRefund = await createProcessedRefund(h, BigInt(50));
       const nsdPending = await ensurePending(h, nsdRefund.id);
       await finalizeRefundStatutoryDecision(h.persistence, {
         ...actor(h),
@@ -1355,12 +1355,12 @@ describe("IMP-028 D-366 Slice 3A PARTIAL issuance allocation", () => {
           { kind: "financial_document", id: ti.id },
         ],
       });
-      const cnRefund = await createProcessedRefund(h, 100n);
+      const cnRefund = await createProcessedRefund(h, BigInt(100));
       const cnPending = await ensurePending(h, cnRefund.id);
-      const cnDecision = await finalizePartialCn(h, cnPending.id, ti.id, 100n);
+      const cnDecision = await finalizePartialCn(h, cnPending.id, ti.id, BigInt(100));
       const sealed = await sealRefundStatutoryIssuanceAllocation(h.persistence, {
         decisionId: cnDecision.id,
-        ...balancedPartial(ti, 100n),
+        ...balancedPartial(ti, BigInt(100)),
       });
       expect(sealed.sourceFinancialDocumentId).toBe(ti.id);
       expect(sealed.refundStatutoryDecisionId).toBe(cnDecision.id);

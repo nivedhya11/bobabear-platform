@@ -7,6 +7,9 @@ import path from "node:path";
 import {
   checkNoFloatingImageTags,
   checkPinnedBaseImages,
+  checkFullyQualifiedExternalBaseImages,
+  checkComposeImageReferences,
+  checkNodeServiceHealthchecks,
   checkFinalStageIsWebRuntime,
   checkNoNodeServerAtRuntime,
   checkAppServiceHasNoDatabaseAccess,
@@ -21,8 +24,8 @@ import {
 } from "./audit-docker-runtime.mjs";
 
 const VALID_DOCKERFILE = `
-ARG NODE_IMAGE=node:22.23.1-bookworm-slim
-ARG NGINX_IMAGE=nginx:1.30.4-alpine3.24
+ARG NODE_IMAGE=docker.io/library/node:22.23.1-bookworm-slim
+ARG NGINX_IMAGE=docker.io/library/nginx:1.30.4-alpine3.24
 FROM \${NODE_IMAGE} AS base
 FROM base AS dependencies
 FROM base AS builder
@@ -52,7 +55,7 @@ const VALID_COMPOSE = `
 name: boba-bear
 services:
   postgres:
-    image: postgres:18.4-trixie
+    image: docker.io/library/postgres:18.4-trixie
   app:
     image: boba-bear-app:local
     read_only: true
@@ -74,7 +77,7 @@ services:
     security_opt:
       - no-new-privileges:true
     healthcheck:
-      test: ["CMD", "true"]
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:8081/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
   workforce-auth:
     image: boba-bear-workforce-auth:local
     expose: ["8082"]
@@ -90,7 +93,7 @@ services:
     security_opt:
       - no-new-privileges:true
     healthcheck:
-      test: ["CMD", "true"]
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:8082/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
   customer-commerce:
     image: boba-bear-customer-commerce:local
     expose: ["8083"]
@@ -107,7 +110,7 @@ services:
     security_opt:
       - no-new-privileges:true
     healthcheck:
-      test: ["CMD", "true"]
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:8083/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
   migrate:
     profiles: ["tools"]
     depends_on:
@@ -130,8 +133,23 @@ test("checkPinnedBaseImages passes on the approved exact tags", () => {
 });
 
 test("checkPinnedBaseImages rejects a floating Node tag", () => {
-  const dockerfile = VALID_DOCKERFILE.replace("node:22.23.1-bookworm-slim", "node:latest");
+  const dockerfile = VALID_DOCKERFILE.replace(
+    "docker.io/library/node:22.23.1-bookworm-slim",
+    "docker.io/library/node:latest",
+  );
   assert.equal(checkPinnedBaseImages(dockerfile).passed, false);
+});
+
+test("checkFullyQualifiedExternalBaseImages passes qualified ARG defaults and stage self-refs", () => {
+  assert.equal(checkFullyQualifiedExternalBaseImages(VALID_DOCKERFILE).passed, true);
+});
+
+test("checkFullyQualifiedExternalBaseImages rejects short-name Node/Nginx ARG defaults", () => {
+  const dockerfile = VALID_DOCKERFILE.replaceAll("docker.io/library/", "");
+  const result = checkFullyQualifiedExternalBaseImages(dockerfile);
+  assert.equal(result.passed, false);
+  assert.match(result.detail, /node:22\.23\.1-bookworm-slim/);
+  assert.match(result.detail, /nginx:1\.30\.4-alpine3\.24/);
 });
 
 test("checkNoFloatingImageTags rejects an untagged image and accepts stage self-references", () => {
@@ -148,6 +166,18 @@ test("checkNoFloatingImageTags rejects a compose service pinned to :latest", () 
 
 test("checkNoFloatingImageTags passes the valid fixtures", () => {
   assert.equal(checkNoFloatingImageTags(VALID_DOCKERFILE, VALID_COMPOSE).passed, true);
+});
+
+test("checkComposeImageReferences requires qualified external images and local project images", () => {
+  assert.equal(checkComposeImageReferences(VALID_COMPOSE).passed, true);
+  assert.equal(checkComposeImageReferences(VALID_COMPOSE.replace("docker.io/library/postgres", "postgres")).passed, false);
+  assert.equal(checkComposeImageReferences(VALID_COMPOSE.replace("boba-bear-app:local", "docker.io/library/boba-bear-app:local")).passed, false);
+});
+
+test("checkNodeServiceHealthchecks requires portable shell commands and exact live endpoints", () => {
+  assert.equal(checkNodeServiceHealthchecks(VALID_COMPOSE).passed, true);
+  assert.equal(checkNodeServiceHealthchecks(VALID_COMPOSE.replace("CMD-SHELL", "CMD")).passed, false);
+  assert.equal(checkNodeServiceHealthchecks(VALID_COMPOSE.replace("8083/health/live", "8083/health/ready")).passed, false);
 });
 
 test("checkFinalStageIsWebRuntime rejects a Node runtime as the final stage", () => {

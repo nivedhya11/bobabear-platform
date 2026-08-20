@@ -5,7 +5,7 @@
  * RFV/CN FinancialDocument insertion lives in issueRefundStatutoryReversal.
  * No automatic classification. Never mutates Refund/Payment/Order.
  */
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 
 import { refundStatutoryDecisionsTable } from "../../platform/database/schema/refund-statutory-decision";
@@ -127,6 +127,35 @@ export async function loadRefundStatutoryDecisionById(
 ): Promise<RefundStatutoryDecision | null> {
   const row = await findRefundStatutoryDecisionById(context, decisionId);
   return row ? mapRefundStatutoryDecisionRow(row) : null;
+}
+
+/**
+ * Find PROCESSED Refund ids that lack any RefundStatutoryDecision for catch-up.
+ * Does not infer branch / disposition and does not scan non-PROCESSED refunds.
+ */
+export async function findProcessedRefundIdsMissingStatutoryDecision(
+  context: PersistenceQueryContext,
+  input: { limit: number; afterRefundId?: string },
+): Promise<readonly string[]> {
+  assertApplicationRole(context, "findProcessedRefundIdsMissingStatutoryDecision");
+  const limit = Math.max(1, Math.min(input.limit, 100));
+  const afterClause = input.afterRefundId
+    ? sql`AND r.id > ${input.afterRefundId}::uuid`
+    : sql``;
+  const rows = await context.db.execute<{ id: string }>(sql`
+    SELECT r.id
+    FROM app.refunds r
+    WHERE r.status = 'PROCESSED'
+      ${afterClause}
+      AND NOT EXISTS (
+        SELECT 1
+        FROM app.refund_statutory_decisions d
+        WHERE d.refund_id = r.id
+      )
+    ORDER BY r.id ASC
+    LIMIT ${limit}
+  `);
+  return Object.freeze(rows.rows.map((row) => row.id));
 }
 
 /**

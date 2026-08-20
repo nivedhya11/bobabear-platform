@@ -48,17 +48,11 @@ afterEach(async () => {
 });
 
 async function readSeriesNext(
-  persistence: {
-    withContext: <T>(
-      fn: (ctx: {
-        db: { execute: (q: unknown) => Promise<{ rows: { n?: string }[] }> };
-      }) => Promise<T>,
-    ) => Promise<T>;
-  },
+  persistence: import("../../src/server/persistence/types").Persistence,
   seriesId: string,
 ): Promise<bigint> {
   return persistence.withContext(async (ctx) => {
-    const rows = await ctx.db.execute(sql`
+    const rows = await ctx.db.execute<{ n?: string }>(sql`
       select next_sequence::text as n
       from app.financial_document_numbering_series
       where id = ${seriesId}::uuid
@@ -81,7 +75,7 @@ async function createProcessedRefundForHarness(
     h.workforce.support,
     {
       paymentId: h.paymentId!,
-      amountPaise: 100n,
+      amountPaise: BigInt(100),
       reason: "FD-CP refund foundation",
     },
     { provider: h.provider },
@@ -96,17 +90,17 @@ function pureIgstLines(description: string) {
       lineNumber: 1,
       description,
       quantity: 1,
-      unitPaise: 10000n,
-      discountPaise: 0n,
-      chargePaise: 0n,
-      taxableValuePaise: 10000n,
+      unitPaise: BigInt(10000),
+      discountPaise: BigInt(0),
+      chargePaise: BigInt(0),
+      taxableValuePaise: BigInt(10000),
       sacCode: "9983",
       taxComponents: [
         {
           taxType: "igst" as const,
           rateBps: 500,
-          taxableAmountPaise: 10000n,
-          taxAmountPaise: 500n,
+          taxableAmountPaise: BigInt(10000),
+          taxAmountPaise: BigInt(500),
         },
       ],
     },
@@ -161,11 +155,11 @@ describe("IMP-028 C1 non-signature statutory compliance (FD-CP01..FD-CP50)", () 
   });
 
   it("FD-CP02 17-character candidate fails closed", async () => {
-    expect(() => formatStatutoryDocumentNumber("BB/TI/2526/", 1n)).toThrow(
+    expect(() => formatStatutoryDocumentNumber("BB/TI/2526/", BigInt(1))).toThrow(
       FinancialDocumentError,
     );
     try {
-      formatStatutoryDocumentNumber("BB/TI/2526/", 1n);
+      formatStatutoryDocumentNumber("BB/TI/2526/", BigInt(1));
     } catch (error) {
       expect((error as FinancialDocumentError).code).toBe("STATUTORY_NUMBER_INVALID");
     }
@@ -219,7 +213,7 @@ describe("IMP-028 C1 non-signature statutory compliance (FD-CP01..FD-CP50)", () 
         `);
       });
       const before = await readSeriesNext(h.persistence, series.id);
-      expect(before).toBe(1000000n);
+      expect(before).toBe(BigInt(1000000));
       await expect(
         h.persistence.transaction((tx) =>
           allocateStatutoryNumber(tx, series.id, h.clock.now()),
@@ -771,17 +765,17 @@ describe("IMP-028 C1 non-signature statutory compliance (FD-CP01..FD-CP50)", () 
               lineNumber: 1,
               description: "Inter-state IGST line",
               quantity: 1,
-              unitPaise: 10000n,
-              discountPaise: 0n,
-              chargePaise: 0n,
-              taxableValuePaise: 10000n,
+              unitPaise: BigInt(10000),
+              discountPaise: BigInt(0),
+              chargePaise: BigInt(0),
+              taxableValuePaise: BigInt(10000),
               sacCode: "9983",
               taxComponents: [
                 {
                   taxType: "igst",
                   rateBps: 500,
-                  taxableAmountPaise: 10000n,
-                  taxAmountPaise: 500n,
+                  taxableAmountPaise: BigInt(10000),
+                  taxAmountPaise: BigInt(500),
                 },
               ],
             },
@@ -872,17 +866,17 @@ describe("IMP-028 C1 non-signature statutory compliance (FD-CP01..FD-CP50)", () 
               lineNumber: 1,
               description: "Pure IGST",
               quantity: 1,
-              unitPaise: 10000n,
-              discountPaise: 0n,
-              chargePaise: 0n,
-              taxableValuePaise: 10000n,
+              unitPaise: BigInt(10000),
+              discountPaise: BigInt(0),
+              chargePaise: BigInt(0),
+              taxableValuePaise: BigInt(10000),
               sacCode: "9983",
               taxComponents: [
                 {
                   taxType: "igst",
                   rateBps: 500,
-                  taxableAmountPaise: 10000n,
-                  taxAmountPaise: 500n,
+                  taxableAmountPaise: BigInt(10000),
+                  taxAmountPaise: BigInt(500),
                 },
               ],
             },
@@ -909,17 +903,17 @@ describe("IMP-028 C1 non-signature statutory compliance (FD-CP01..FD-CP50)", () 
               lineNumber: 1,
               description: "IGST Haryana",
               quantity: 1,
-              unitPaise: 10000n,
-              discountPaise: 0n,
-              chargePaise: 0n,
-              taxableValuePaise: 10000n,
+              unitPaise: BigInt(10000),
+              discountPaise: BigInt(0),
+              chargePaise: BigInt(0),
+              taxableValuePaise: BigInt(10000),
               sacCode: "9983",
               taxComponents: [
                 {
                   taxType: "igst",
                   rateBps: 500,
-                  taxableAmountPaise: 10000n,
-                  taxAmountPaise: 500n,
+                  taxableAmountPaise: BigInt(10000),
+                  taxAmountPaise: BigInt(500),
                 },
               ],
             },
@@ -946,17 +940,17 @@ describe("IMP-028 C1 non-signature statutory compliance (FD-CP01..FD-CP50)", () 
               lineNumber: 1,
               description: "IGST render",
               quantity: 1,
-              unitPaise: 10000n,
-              discountPaise: 0n,
-              chargePaise: 0n,
-              taxableValuePaise: 10000n,
+              unitPaise: BigInt(10000),
+              discountPaise: BigInt(0),
+              chargePaise: BigInt(0),
+              taxableValuePaise: BigInt(10000),
               sacCode: "9983",
               taxComponents: [
                 {
                   taxType: "igst",
                   rateBps: 500,
-                  taxableAmountPaise: 10000n,
-                  taxAmountPaise: 500n,
+                  taxableAmountPaise: BigInt(10000),
+                  taxAmountPaise: BigInt(500),
                 },
               ],
             },
@@ -987,17 +981,17 @@ describe("IMP-028 C1 non-signature statutory compliance (FD-CP01..FD-CP50)", () 
                 lineNumber: 1,
                 description: "Unmapped POS",
                 quantity: 1,
-                unitPaise: 10000n,
-                discountPaise: 0n,
-                chargePaise: 0n,
-                taxableValuePaise: 10000n,
+                unitPaise: BigInt(10000),
+                discountPaise: BigInt(0),
+                chargePaise: BigInt(0),
+                taxableValuePaise: BigInt(10000),
                 sacCode: "9983",
                 taxComponents: [
                   {
                     taxType: "igst",
                     rateBps: 500,
-                    taxableAmountPaise: 10000n,
-                    taxAmountPaise: 500n,
+                    taxableAmountPaise: BigInt(10000),
+                    taxAmountPaise: BigInt(500),
                   },
                 ],
               },
@@ -1018,17 +1012,17 @@ describe("IMP-028 C1 non-signature statutory compliance (FD-CP01..FD-CP50)", () 
                 lineNumber: 1,
                 description: "Missing POS",
                 quantity: 1,
-                unitPaise: 10000n,
-                discountPaise: 0n,
-                chargePaise: 0n,
-                taxableValuePaise: 10000n,
+                unitPaise: BigInt(10000),
+                discountPaise: BigInt(0),
+                chargePaise: BigInt(0),
+                taxableValuePaise: BigInt(10000),
                 sacCode: "9983",
                 taxComponents: [
                   {
                     taxType: "igst",
                     rateBps: 500,
-                    taxableAmountPaise: 10000n,
-                    taxAmountPaise: 500n,
+                    taxableAmountPaise: BigInt(10000),
+                    taxAmountPaise: BigInt(500),
                   },
                 ],
               },
@@ -1051,17 +1045,17 @@ describe("IMP-028 C1 non-signature statutory compliance (FD-CP01..FD-CP50)", () 
             lineNumber: 1,
             description: "Historical IGST",
             quantity: 1,
-            unitPaise: 10000n,
-            discountPaise: 0n,
-            chargePaise: 0n,
-            taxableValuePaise: 10000n,
+            unitPaise: BigInt(10000),
+            discountPaise: BigInt(0),
+            chargePaise: BigInt(0),
+            taxableValuePaise: BigInt(10000),
             sacCode: "9983",
             taxComponents: [
               {
                 taxType: "igst",
                 rateBps: 500,
-                taxableAmountPaise: 10000n,
-                taxAmountPaise: 500n,
+                taxableAmountPaise: BigInt(10000),
+                taxAmountPaise: BigInt(500),
               },
             ],
           },
@@ -1172,17 +1166,17 @@ describe("IMP-028 C1 non-signature statutory compliance (FD-CP01..FD-CP50)", () 
               lineNumber: 1,
               description: "Pure IGST",
               quantity: 1,
-              unitPaise: 10000n,
-              discountPaise: 0n,
-              chargePaise: 0n,
-              taxableValuePaise: 10000n,
+              unitPaise: BigInt(10000),
+              discountPaise: BigInt(0),
+              chargePaise: BigInt(0),
+              taxableValuePaise: BigInt(10000),
               sacCode: "9983",
               taxComponents: [
                 {
                   taxType: "igst",
                   rateBps: 500,
-                  taxableAmountPaise: 10000n,
-                  taxAmountPaise: 500n,
+                  taxableAmountPaise: BigInt(10000),
+                  taxAmountPaise: BigInt(500),
                 },
               ],
             },
@@ -1202,23 +1196,23 @@ describe("IMP-028 C1 non-signature statutory compliance (FD-CP01..FD-CP50)", () 
                 lineNumber: 1,
                 description: "Mixed illegal",
                 quantity: 1,
-                unitPaise: 10000n,
-                discountPaise: 0n,
-                chargePaise: 0n,
-                taxableValuePaise: 10000n,
+                unitPaise: BigInt(10000),
+                discountPaise: BigInt(0),
+                chargePaise: BigInt(0),
+                taxableValuePaise: BigInt(10000),
                 sacCode: "9983",
                 taxComponents: [
                   {
                     taxType: "cgst",
                     rateBps: 250,
-                    taxableAmountPaise: 10000n,
-                    taxAmountPaise: 250n,
+                    taxableAmountPaise: BigInt(10000),
+                    taxAmountPaise: BigInt(250),
                   },
                   {
                     taxType: "igst",
                     rateBps: 500,
-                    taxableAmountPaise: 10000n,
-                    taxAmountPaise: 500n,
+                    taxableAmountPaise: BigInt(10000),
+                    taxAmountPaise: BigInt(500),
                   },
                 ],
               },
@@ -1395,7 +1389,7 @@ describe("IMP-028 C1 non-signature statutory compliance (FD-CP01..FD-CP50)", () 
       expect(rfv.documentType).toBe("REFUND_VOUCHER");
       expect(rfv.placeOfSupplyStateCode).toBeNull();
       expect(await readSeriesNext(h.persistence, h.refundVoucherSeriesId)).toBe(
-        before + 1n,
+        before + BigInt(1),
       );
     });
   });
@@ -1424,7 +1418,7 @@ describe("IMP-028 C1 non-signature statutory compliance (FD-CP01..FD-CP50)", () 
       expect(cn.documentType).toBe("CREDIT_NOTE");
       expect(cn.placeOfSupplyStateCode).toBeNull();
       expect(await readSeriesNext(h.persistence, h.creditNoteSeriesId)).toBe(
-        before + 1n,
+        before + BigInt(1),
       );
     });
   });
@@ -1556,23 +1550,23 @@ describe("IMP-028 C1 non-signature statutory compliance (FD-CP01..FD-CP50)", () 
                 lineNumber: 1,
                 description: "Mixed illegal",
                 quantity: 1,
-                unitPaise: 10000n,
-                discountPaise: 0n,
-                chargePaise: 0n,
-                taxableValuePaise: 10000n,
+                unitPaise: BigInt(10000),
+                discountPaise: BigInt(0),
+                chargePaise: BigInt(0),
+                taxableValuePaise: BigInt(10000),
                 sacCode: "9983",
                 taxComponents: [
                   {
                     taxType: "cgst",
                     rateBps: 250,
-                    taxableAmountPaise: 10000n,
-                    taxAmountPaise: 250n,
+                    taxableAmountPaise: BigInt(10000),
+                    taxAmountPaise: BigInt(250),
                   },
                   {
                     taxType: "igst",
                     rateBps: 500,
-                    taxableAmountPaise: 10000n,
-                    taxAmountPaise: 500n,
+                    taxableAmountPaise: BigInt(10000),
+                    taxAmountPaise: BigInt(500),
                   },
                 ],
               },
@@ -1598,7 +1592,7 @@ describe("IMP-028 C1 non-signature statutory compliance (FD-CP01..FD-CP50)", () 
         "utf8",
       ),
     ).toMatch(
-      /INTERSTATE_STATE_NAME_REQUIRED_TYPES\s*=\s*\[[^\]]*TAX_INVOICE[^\]]*RECEIPT_VOUCHER[^\]]*\]/s,
+      new RegExp("INTERSTATE_STATE_NAME_REQUIRED_TYPES\\s*=\\s*\\[[^\\]]*TAX_INVOICE[^\\]]*RECEIPT_VOUCHER[^\\]]*\\]", "s"),
     );
     expect(
       readFileSync(
@@ -1606,7 +1600,7 @@ describe("IMP-028 C1 non-signature statutory compliance (FD-CP01..FD-CP50)", () 
         "utf8",
       ),
     ).not.toMatch(
-      /INTERSTATE_STATE_NAME_REQUIRED_TYPES\s*=\s*\[[^\]]*(REFUND_VOUCHER|CREDIT_NOTE)[^\]]*\]/s,
+      new RegExp("INTERSTATE_STATE_NAME_REQUIRED_TYPES\\s*=\\s*\\[[^\\]]*(REFUND_VOUCHER|CREDIT_NOTE)[^\\]]*\\]", "s"),
     );
     for (const file of sqlFiles.filter((f) => f.startsWith("0022"))) {
       const body = readFileSync(path.join(root, "drizzle", file), "utf8");

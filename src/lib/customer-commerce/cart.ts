@@ -8,6 +8,10 @@ import type {
   CommerceCart,
   CommerceCartEvaluation,
 } from "./types";
+import type {
+  CartBundleSelectionInput,
+  CartModifierSelectionInput,
+} from "@/shared/cart/types";
 
 type CartEnvelope = Readonly<{ ok: true; cart: CommerceCart | null; guestToken?: string }>;
 type EvaluationEnvelope = Readonly<{ ok: true }> & CommerceCartEvaluation;
@@ -55,6 +59,7 @@ export async function addCartLine(input: {
   brandId: string;
   variantId: string;
   quantity: number;
+  modifiers?: readonly CartModifierSelectionInput[];
   expectedRevision?: string;
 }): Promise<CommerceHttpResult<{ cart: CommerceCart; guestToken?: string }>> {
   const body: Record<string, unknown> = {
@@ -62,6 +67,7 @@ export async function addCartLine(input: {
     variantId: input.variantId,
     quantity: input.quantity,
   };
+  if (input.modifiers !== undefined) body.modifiers = input.modifiers;
   if (input.expectedRevision !== undefined) body.expectedRevision = input.expectedRevision;
   const result = await commerceRequest<CartEnvelope>("/api/v1/cart/lines", {
     method: "POST",
@@ -96,6 +102,8 @@ export async function updateCartLineConfiguration(input: {
   brandId: string;
   cartLineId: string;
   variantId: string;
+  modifiers: readonly CartModifierSelectionInput[];
+  bundleSelections: readonly CartBundleSelectionInput[];
   expectedRevision: string;
 }): Promise<CommerceHttpResult<{ cart: CommerceCart }>> {
   const result = await commerceRequest<CartEnvelope>(
@@ -105,6 +113,8 @@ export async function updateCartLineConfiguration(input: {
       body: {
         brandId: input.brandId,
         variantId: input.variantId,
+        modifiers: input.modifiers,
+        bundleSelections: input.bundleSelections,
         expectedRevision: input.expectedRevision,
       },
       guestToken: true,

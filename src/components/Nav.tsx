@@ -1,84 +1,80 @@
 "use client";
 
 /**
- * Nav — §9 Navigation · Boba Bear Design System
+ * Nav — unified BOBA Direct customer chrome (IMP-028A).
  *
- * Desktop (≥ 1024 px)
- *   Brand mark left · links centred · [circle theme toggle | Access the Drop] right
- *   Links: font-body 14 px / 600 · ghost-hover fill · active = text-label colour
- *   Scrollspy: IntersectionObserver on top→access section IDs.
+ * Primary destinations (same on Home, /login, /privacy, /order*):
+ *   Menu | Drops | Sign In or My BOBA | Cart
  *
- * Mobile (< 1024 px)
- *   Brand mark left · circle hamburger right
- *   Full-screen drawer slides in from top (translateY -100% → 0).
- *   Drawer links: font-display 42 px with mono number tags.
- *   Closes on link click, Escape key, or the back-arrow button.
- *
- * Theme: reads/writes `light` class on <html> via MutationObserver +
- *   useSyncExternalStore — no SSR mismatch, no setState-in-effect.
+ * Session mapping uses existing IMP-009 `fetchCustomerSession` /
+ * `signOutCustomer`. Pending chrome is anonymous-safe. My BOBA is a
+ * disclosure (My Orders, Sign Out), not a /my-boba route.
  */
 
-import { useState, useEffect, useRef, useSyncExternalStore } from "react";
+import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
-import { Menu, ArrowLeft, Sun, Moon, ArrowUpRight } from "@/components/icons";
-import { Button } from "@/components/ui/Button";
+import { Menu, ArrowLeft, Sun, Moon } from "@/components/icons";
 import { cn } from "@/lib/utils";
+import { useCustomerChromeSession } from "@/lib/customer-auth/chrome-session";
 
-// ── Data ─────────────────────────────────────────────────────────────────────
-
-const NAV_LINKS = [
-  { label: "Drops",   href: "#drops",   id: "drops",   num: "01" },
-  { label: "Menu",    href: "#bar",     id: "menu",    num: "02" },
-  { label: "Merch",   href: "#merch",   id: "merch",   num: "03" },
-  { label: "Artists", href: "#artists", id: "artists", num: "04" },
-  { label: "Order",   href: "/order",   id: "order",   num: "05" },
+const PRIMARY_NAV_LINKS = [
+  { label: "Menu", href: "/order", id: "menu", num: "01" },
+  { label: "Drops", href: "/#drops", id: "drops", num: "02" },
 ] as const;
 
-const COMMERCE_NAV_LINKS = [
-  { label: "Home", href: "/", id: "home" },
-  { label: "Menu", href: "/order", id: "menu" },
-  { label: "Orders", href: "/order/orders/", id: "orders" },
-] as const;
-
-const SECTION_IDS = [
-  "top", "drops", "bar", "plates", "sweet", "merch", "artists", "access",
-] as const;
-
-// Scrollspy mapping — sub-section id → nav link id used for highlight
-const SECTION_TO_LINK: Record<string, string> = {
-  bar:    "menu",
-  plates: "menu",
-  sweet:  "menu",
-};
-
-// ── Theme store ───────────────────────────────────────────────────────────────
-// Reads/subscribes to the `light` class on <html> via MutationObserver so
-// React never needs a setState-in-effect and SSR always defaults to dark.
+const CART_HREF = "/order/cart/";
+const MY_ORDERS_HREF = "/order/orders/";
+const SIGN_IN_HREF = "/login";
 
 function subscribeTheme(cb: () => void) {
   const obs = new MutationObserver(cb);
   obs.observe(document.documentElement, {
-    attributes:      true,
+    attributes: true,
     attributeFilter: ["class"],
   });
   return () => obs.disconnect();
 }
 
-const getThemeSnapshot  = () => document.documentElement.classList.contains("light");
-const getServerSnapshot = () => false; // SSR default — dark
+const getThemeSnapshot = () => document.documentElement.classList.contains("light");
+const getServerSnapshot = () => false;
 
-// ── Component ─────────────────────────────────────────────────────────────────
+function chromeLinkClass(active: boolean): string {
+  return cn(
+    "font-body font-semibold text-[14px] leading-none",
+    "px-3 py-1 rounded-md inline-block",
+    "transition-colors duration-[150ms] ease-out focus-ring",
+    active
+      ? "text-[var(--text-label)]"
+      : "text-[var(--text-primary)] hover:bg-[var(--interactive-ghost-hover)]",
+  );
+}
+
+function isMenuPath(pathname: string): boolean {
+  return pathname === "/order" || pathname === "/order/";
+}
+
+function isCartPath(pathname: string): boolean {
+  return pathname.startsWith("/order/cart");
+}
+
+function isOrdersPath(pathname: string): boolean {
+  return pathname.startsWith("/order/orders");
+}
+
+function isLoginPath(pathname: string): boolean {
+  return pathname === "/login" || pathname === "/login/";
+}
 
 export function Nav() {
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [activeId,   setActiveId]   = useState<string>("top");
+  const [myBobaOpen, setMyBobaOpen] = useState(false);
+  const { session, signOut } = useCustomerChromeSession();
+  const authenticated = session === "authenticated";
 
   const isLight = useSyncExternalStore(subscribeTheme, getThemeSnapshot, getServerSnapshot);
   const toggleTheme = () => {
     const next = !isLight;
     document.documentElement.classList.toggle("light", next);
-    // Persist so the choice survives reloads / route changes (read by the
-    // bootstrap script in app/layout.tsx).
     try {
       localStorage.setItem("theme", next ? "light" : "dark");
     } catch {
@@ -86,67 +82,18 @@ export function Nav() {
     }
   };
 
-  // Drawer focus management refs: the dialog element + the control to restore
-  // focus to when it closes.
   const drawerRef = useRef<HTMLDivElement>(null);
   const lastFocusedRef = useRef<HTMLElement | null>(null);
+  const myBobaRef = useRef<HTMLDivElement>(null);
+  const myBobaMenuId = useId();
 
-  // Resolved nav-link id for highlight (collapses bar/plates/sweet → "menu")
-  const activeLinkId = SECTION_TO_LINK[activeId] ?? activeId;
-
-  // The nav links are in-page hash anchors that only resolve on the homepage.
-  // On any other route (e.g. /privacy) prefix "/" so a click returns home and
-  // then scrolls to the section; the brand mark goes straight to "/".
   const pathname = usePathname();
   const onHome = pathname === "/";
-  const onCommerceRoute = pathname.startsWith("/order");
-  const sectionHref = (href: string) => {
-    if (href.startsWith("/")) return href;
-    return onHome ? href : `/${href}`;
-  };
   const homeHref = onHome ? "#top" : "/";
-  const commerceActiveId = pathname === "/"
-    ? "home"
-    : pathname.startsWith("/order/orders")
-      ? "orders"
-      : pathname.startsWith("/order")
-        ? "menu"
-        : null;
-
-  // ── Scrollspy ─────────────────────────────────────────────────────────────
-
-  useEffect(() => {
-    const visible = new Set<string>();
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) visible.add(entry.target.id);
-          else                      visible.delete(entry.target.id);
-        }
-        // Pick the LAST visible section in document order — i.e. the one
-        // furthest down that's currently crossing the detection band. Using
-        // the first match would lag a section behind (the previous section
-        // lingers in the band, so "Merch" would still read while you're in
-        // "Artists"). Scanning from the end fixes that off-by-one.
-        let next: string | undefined;
-        for (let i = SECTION_IDS.length - 1; i >= 0; i--) {
-          if (visible.has(SECTION_IDS[i])) { next = SECTION_IDS[i]; break; }
-        }
-        if (next) setActiveId(next);
-      },
-      { rootMargin: "0px 0px -70% 0px", threshold: 0 },
-    );
-
-    for (const id of SECTION_IDS) {
-      const el = document.getElementById(id);
-      if (el) observer.observe(el);
-    }
-    return () => observer.disconnect();
-  }, []);
-
-  // ── Drawer: focus management, focus trap, Escape, scroll lock ──────────────
-  // A modal dialog must (a) move focus inside on open, (b) keep Tab focus
-  // trapped within while open, and (c) restore focus to the trigger on close.
+  const menuActive = isMenuPath(pathname);
+  const cartActive = isCartPath(pathname);
+  const ordersActive = isOrdersPath(pathname);
+  const signInActive = isLoginPath(pathname);
 
   useEffect(() => {
     if (!drawerOpen) {
@@ -154,10 +101,7 @@ export function Nav() {
       return;
     }
 
-    // Lock background scroll while the drawer is open.
     document.documentElement.style.overflow = "hidden";
-
-    // Remember what had focus (the hamburger) so we can restore it on close.
     lastFocusedRef.current = document.activeElement as HTMLElement | null;
 
     const drawer = drawerRef.current;
@@ -168,7 +112,6 @@ export function Nav() {
         ) ?? [],
       );
 
-    // Move focus into the dialog.
     focusables()[0]?.focus();
 
     const onKey = (e: KeyboardEvent) => {
@@ -191,7 +134,6 @@ export function Nav() {
         e.preventDefault();
         first.focus();
       } else if (active instanceof HTMLElement && drawer && !drawer.contains(active)) {
-        // Focus escaped the dialog — pull it back in.
         e.preventDefault();
         first.focus();
       }
@@ -204,8 +146,6 @@ export function Nav() {
     };
   }, [drawerOpen]);
 
-  // Restore focus to the trigger when the drawer closes (skipped on first mount,
-  // where nothing was stored).
   useEffect(() => {
     if (!drawerOpen && lastFocusedRef.current) {
       lastFocusedRef.current.focus();
@@ -213,29 +153,97 @@ export function Nav() {
     }
   }, [drawerOpen]);
 
+  useEffect(() => {
+    if (!myBobaOpen) return;
+    const onPointer = (event: MouseEvent) => {
+      if (myBobaRef.current && !myBobaRef.current.contains(event.target as Node)) {
+        setMyBobaOpen(false);
+      }
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMyBobaOpen(false);
+    };
+    document.addEventListener("mousedown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [myBobaOpen]);
+
   const closeDrawer = () => setDrawerOpen(false);
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  async function handleChromeSignOut(): Promise<void> {
+    await signOut();
+    setMyBobaOpen(false);
+    closeDrawer();
+  }
+
+  const accountControl = authenticated ? (
+    <div className="relative" ref={myBobaRef}>
+      <button
+        type="button"
+        aria-expanded={myBobaOpen}
+        aria-controls={myBobaMenuId}
+        aria-haspopup="true"
+        onClick={() => setMyBobaOpen((open) => !open)}
+        className={chromeLinkClass(myBobaOpen || ordersActive)}
+      >
+        My BOBA
+      </button>
+      {myBobaOpen ? (
+        <div
+          id={myBobaMenuId}
+          role="menu"
+          aria-label="My BOBA"
+          className={cn(
+            "absolute right-0 top-full mt-2 z-50 min-w-[11rem]",
+            "rounded-md border border-[var(--border-subtle)]",
+            "bg-[var(--bg-page)] py-1 shadow-lg",
+          )}
+        >
+          <a
+            role="menuitem"
+            href={MY_ORDERS_HREF}
+            className={cn(
+              "block px-3 py-2 font-body font-semibold text-[14px] focus-ring rounded-sm",
+              "text-[var(--text-primary)] hover:bg-[var(--interactive-ghost-hover)]",
+            )}
+          >
+            My Orders
+          </a>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => void handleChromeSignOut()}
+            className={cn(
+              "block w-full text-left px-3 py-2 font-body font-semibold text-[14px] focus-ring rounded-sm",
+              "text-[var(--text-primary)] hover:bg-[var(--interactive-ghost-hover)] cursor-pointer",
+            )}
+          >
+            Sign Out
+          </button>
+        </div>
+      ) : null}
+    </div>
+  ) : (
+    <a href={SIGN_IN_HREF} className={chromeLinkClass(signInActive)}>
+      Sign In
+    </a>
+  );
 
   return (
     <>
-      {/* ── Sticky header bar ──────────────────────────────────────── */}
       <header
         className={cn(
           "sticky top-0 z-40",
           "h-14 lg:h-16",
-          // Frosted glass — 86 % opacity per spec; color-mix via Tailwind /opacity
           "bg-page/[0.86] backdrop-blur-[14px]",
           "border-b border-border-subtle",
         )}
       >
         <div className="mx-auto max-w-[1280px] h-full px-3 md:px-8 lg:px-12">
-
-          {/* ── Desktop layout (≥ lg) — LOCKED ──────────────────────────
-              Brand left · links centred · [theme | Access Drop] right. */}
           <div className="hidden lg:flex items-center justify-between gap-8 h-full">
-
-            {/* Brand mark — text-only logo */}
             <a
               href={homeHref}
               aria-label={onHome ? "Boba Bear — scroll to top" : "Boba Bear — home"}
@@ -251,95 +259,64 @@ export function Nav() {
               />
             </a>
 
-            {/* Centre links */}
-            <nav aria-label={onCommerceRoute ? "Commerce navigation" : "Main navigation"}>
+            <nav
+              aria-label="Main navigation"
+              className="flex flex-1 items-center justify-between gap-8 min-w-0"
+            >
               <ul className="flex items-center gap-0.5" role="list">
-                {(onCommerceRoute ? COMMERCE_NAV_LINKS : NAV_LINKS).map((link) => {
-                  const active = onCommerceRoute
-                    ? commerceActiveId === link.id
-                    : activeLinkId === link.id;
+                {PRIMARY_NAV_LINKS.map((link) => {
+                  const active = link.id === "menu" ? menuActive : false;
                   return (
-                  <li key={link.id}>
-                    <a
-                      href={onCommerceRoute ? link.href : sectionHref(link.href)}
-                      aria-current={active ? "page" : undefined}
-                      className={cn(
-                        "font-body font-semibold text-[14px] leading-none",
-                        "px-3 py-1 rounded-md inline-block",
-                        "transition-colors duration-[150ms] ease-out focus-ring",
-                        active
-                          ? "text-[var(--text-label)]"
-                          : "text-[var(--text-primary)] hover:bg-[var(--interactive-ghost-hover)]",
-                      )}
-                    >
-                      {link.label}
-                    </a>
-                  </li>
+                    <li key={link.id}>
+                      <a
+                        href={link.href}
+                        aria-current={active ? "page" : undefined}
+                        className={chromeLinkClass(active)}
+                      >
+                        {link.label}
+                      </a>
+                    </li>
                   );
                 })}
               </ul>
+              <ul className="flex items-center gap-0.5 shrink-0" role="list">
+                <li>{accountControl}</li>
+                <li>
+                  <a
+                    href={CART_HREF}
+                    aria-current={cartActive ? "page" : undefined}
+                    className={chromeLinkClass(cartActive)}
+                  >
+                    Cart
+                  </a>
+                </li>
+              </ul>
             </nav>
 
-            {/* Right slot — theme toggle + sign-in link + primary CTA */}
             <div className="flex items-center gap-2 shrink-0">
               <CircleThemeButton isLight={isLight} onClick={toggleTheme} />
-              <a
-                href="/order/orders/"
-                className={cn(
-                  "font-body font-semibold text-[14px] leading-none",
-                  "px-3 py-1 rounded-md inline-block",
-                  "text-[var(--text-primary)] hover:bg-[var(--interactive-ghost-hover)]",
-                  "transition-colors duration-[150ms] ease-out focus-ring",
-                )}
-              >
-                Orders
-              </a>
-              <a
-                href="/login"
-                className={cn(
-                  "font-body font-semibold text-[14px] leading-none",
-                  "px-3 py-1 rounded-md inline-block",
-                  "text-[var(--text-primary)] hover:bg-[var(--interactive-ghost-hover)]",
-                  "transition-colors duration-[150ms] ease-out focus-ring",
-                )}
-              >
-                Sign in
-              </a>
-              <Button asChild variant="primary" size="md">
-                <a href="/order">
-                  Order now
-                  <ArrowUpRight size={16} strokeWidth={2} aria-hidden />
-                </a>
-              </Button>
             </div>
           </div>
 
-          {/* ── Mobile layout (< lg) — hamburger · logo · [theme + CTA] ──
-              Hamburger left, text logo dead-centre (absolutely positioned so
-              the asymmetric side groups never knock it off-centre), theme
-              toggle + Access Drop CTA on the right. */}
           <div className="relative flex lg:hidden items-center justify-between h-full">
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                onClick={() => setDrawerOpen(true)}
+                aria-label="Open navigation menu"
+                aria-expanded={drawerOpen}
+                aria-controls="mobile-nav-drawer"
+                className={cn(
+                  "flex items-center justify-center shrink-0",
+                  "h-8 w-8 rounded-full border border-[var(--border-strong)]",
+                  "text-[var(--text-primary)] hover:border-[var(--border-focus)]",
+                  "transition-colors duration-[150ms] ease-out focus-ring cursor-pointer",
+                )}
+              >
+                <Menu size={16} strokeWidth={2} />
+              </button>
+              <CircleThemeButton isLight={isLight} onClick={toggleTheme} className="h-8 w-8" />
+            </div>
 
-            {/* Left — hamburger (sm-scale circle, 32px) */}
-	    <div className="flex items-center gap-1.5 shrink-0">
-            <button
-              onClick={() => setDrawerOpen(true)}
-              aria-label="Open navigation menu"
-              aria-expanded={drawerOpen}
-              aria-controls="mobile-nav-drawer"
-              className={cn(
-                "flex items-center justify-center shrink-0",
-                "h-8 w-8 rounded-full border border-[var(--border-strong)]",
-                "text-[var(--text-primary)] hover:border-[var(--border-focus)]",
-                "transition-colors duration-[150ms] ease-out focus-ring cursor-pointer",
-              )}
-            >
-              <Menu size={16} strokeWidth={2} />
-            </button>
-	    <CircleThemeButton isLight={isLight} onClick={toggleTheme} className="h-8 w-8" />
-	    </div>
-
-            {/* Centre — text logo, pinned to the dead centre of the bar */}
             <a
               href={homeHref}
               aria-label={onHome ? "Boba Bear — scroll to top" : "Boba Bear — home"}
@@ -358,16 +335,24 @@ export function Nav() {
               />
             </a>
 
-            {/* Right — theme toggle + owned-order CTA (both sm-scale, 32px) */}
-              <Button asChild variant="primary" size="sm">
-                <a href="/order">Order now</a>
-              </Button>
+            <a
+              href={CART_HREF}
+              aria-current={cartActive ? "page" : undefined}
+              className={cn(
+                "font-body font-semibold text-[14px] leading-none shrink-0",
+                "min-h-8 px-2 inline-flex items-center rounded-md",
+                "transition-colors duration-[150ms] ease-out focus-ring",
+                cartActive
+                  ? "text-[var(--text-label)]"
+                  : "text-[var(--text-primary)] hover:bg-[var(--interactive-ghost-hover)]",
+              )}
+            >
+              Cart
+            </a>
           </div>
         </div>
       </header>
 
-      {/* ── Mobile full-screen drawer ───────────────────────────────── */}
-      {/* Slides in from top: translateY(-100%) → translateY(0) over 400ms */}
       <div
         ref={drawerRef}
         id="mobile-nav-drawer"
@@ -378,18 +363,12 @@ export function Nav() {
         className={cn(
           "fixed inset-0 z-[60] lg:hidden flex flex-col",
           "bg-[var(--bg-surface-sunken)] backdrop-blur-[20px]",
-          // Slide from top — 400ms with specified cubic-bezier
           "transition-transform duration-[400ms]",
           "[transition-timing-function:cubic-bezier(0.7,0,0.2,1)]",
           drawerOpen ? "translate-y-0" : "-translate-y-full",
         )}
       >
-        {/* Drawer top row — mirrors the mobile header bar: a back-arrow button
-            on the left (same sm-scale circle as the hamburger it replaces) and
-            the text logo pinned dead-centre (same size + position as the bar). */}
         <div className="relative h-14 px-3 flex items-center border-b border-[var(--border-subtle)] shrink-0">
-
-          {/* Left — go-back arrow (closes the drawer); matches the hamburger */}
           <button
             onClick={closeDrawer}
             aria-label="Close navigation menu"
@@ -403,7 +382,6 @@ export function Nav() {
             <ArrowLeft size={16} strokeWidth={2} />
           </button>
 
-          {/* Centre — text logo, pinned to the dead centre of the row */}
           <a
             href={homeHref}
             onClick={closeDrawer}
@@ -424,91 +402,122 @@ export function Nav() {
           </a>
         </div>
 
-        {/* Drawer link stack */}
-        <nav
-          aria-label={onCommerceRoute ? "Mobile commerce navigation" : "Mobile navigation"}
-          className="flex-1 overflow-y-auto px-6 pt-10"
-        >
+        <nav aria-label="Mobile navigation" className="flex-1 overflow-y-auto px-6 pt-10">
           <ul className="flex flex-col" role="list">
-            {(onCommerceRoute ? COMMERCE_NAV_LINKS : NAV_LINKS).map((link) => {
-              const id = link.id;
-              const href = link.href;
-              const label = link.label;
-              const num = "num" in link ? link.num : undefined;
-              const active = onCommerceRoute
-                ? commerceActiveId === id
-                : activeLinkId === id;
+            {PRIMARY_NAV_LINKS.map((link) => {
+              const active = link.id === "menu" ? menuActive : false;
               return (
-              <li key={id}>
+                <li key={link.id}>
+                  <a
+                    href={link.href}
+                    onClick={closeDrawer}
+                    aria-current={active ? "page" : undefined}
+                    className={cn(
+                      "flex items-baseline justify-between pb-3 mb-3 min-h-11",
+                      "border-b border-[var(--border-subtle)]",
+                      "transition-colors duration-[150ms] ease-out focus-ring rounded-sm",
+                      active
+                        ? "text-[var(--text-label)]"
+                        : "text-[var(--text-primary)] hover:text-[var(--text-label)]",
+                    )}
+                  >
+                    <span className="font-display text-[30px] leading-tight">{link.label}</span>
+                    <span
+                      aria-hidden="true"
+                      className="font-mono text-[11px] tracking-widest text-[var(--text-tertiary)] opacity-50 pb-1"
+                    >
+                      {link.num}
+                    </span>
+                  </a>
+                </li>
+              );
+            })}
+            <li>
+              <a
+                href={CART_HREF}
+                onClick={closeDrawer}
+                aria-current={cartActive ? "page" : undefined}
+                className={cn(
+                  "flex items-baseline justify-between pb-3 mb-3 min-h-11",
+                  "border-b border-[var(--border-subtle)]",
+                  "transition-colors duration-[150ms] ease-out focus-ring rounded-sm",
+                  cartActive
+                    ? "text-[var(--text-label)]"
+                    : "text-[var(--text-primary)] hover:text-[var(--text-label)]",
+                )}
+              >
+                <span className="font-display text-[30px] leading-tight">Cart</span>
+                <span
+                  aria-hidden="true"
+                  className="font-mono text-[11px] tracking-widest text-[var(--text-tertiary)] opacity-50 pb-1"
+                >
+                  03
+                </span>
+              </a>
+            </li>
+            {authenticated ? (
+              <li className="pt-2">
+                <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--text-tertiary)] mb-3">
+                  My BOBA
+                </p>
                 <a
-                  href={onCommerceRoute ? href : sectionHref(href)}
+                  href={MY_ORDERS_HREF}
                   onClick={closeDrawer}
-                  aria-current={active ? "page" : undefined}
+                  aria-current={ordersActive ? "page" : undefined}
                   className={cn(
-                    "flex items-baseline justify-between pb-3 mb-3",
+                    "flex items-center min-h-11 pb-3 mb-3",
                     "border-b border-[var(--border-subtle)]",
-                    "transition-colors duration-[150ms] ease-out focus-ring rounded-sm",
-                    active
+                    "font-display text-[24px] leading-tight focus-ring rounded-sm",
+                    ordersActive
                       ? "text-[var(--text-label)]"
                       : "text-[var(--text-primary)] hover:text-[var(--text-label)]",
                   )}
                 >
-                  <span className="font-display text-[30px] leading-tight">{label}</span>
-                  {num ? (
-                    <span className="font-mono text-[11px] tracking-widest text-[var(--text-tertiary)] opacity-50 pb-1">
-                      {num}
-                    </span>
-                  ) : null}
+                  My Orders
+                </a>
+                <button
+                  type="button"
+                  onClick={() => void handleChromeSignOut()}
+                  className={cn(
+                    "flex items-center min-h-11 w-full text-left",
+                    "font-display text-[24px] leading-tight focus-ring rounded-sm cursor-pointer",
+                    "text-[var(--text-primary)] hover:text-[var(--text-label)]",
+                  )}
+                >
+                  Sign Out
+                </button>
+              </li>
+            ) : (
+              <li>
+                <a
+                  href={SIGN_IN_HREF}
+                  onClick={closeDrawer}
+                  aria-current={signInActive ? "page" : undefined}
+                  className={cn(
+                    "flex items-baseline justify-between pb-3 mb-3 min-h-11",
+                    "border-b border-[var(--border-subtle)]",
+                    "transition-colors duration-[150ms] ease-out focus-ring rounded-sm",
+                    signInActive
+                      ? "text-[var(--text-label)]"
+                      : "text-[var(--text-primary)] hover:text-[var(--text-label)]",
+                  )}
+                >
+                  <span className="font-display text-[30px] leading-tight">Sign In</span>
+                  <span
+                    aria-hidden="true"
+                    className="font-mono text-[11px] tracking-widest text-[var(--text-tertiary)] opacity-50 pb-1"
+                  >
+                    04
+                  </span>
                 </a>
               </li>
-              );
-            })}
+            )}
           </ul>
         </nav>
-
-        {/* Drawer bottom — full-width CTA + sign-in link (theme toggle now
-            lives in the bar) */}
-        <div className="shrink-0 px-6 pb-10 pt-4 border-t border-[var(--border-subtle)] flex flex-col gap-3">
-          <Button
-            asChild
-            variant="primary"
-            size="lg"
-            className="w-full justify-center"
-          >
-            <a href="/order" onClick={closeDrawer}>
-              Order now
-              <ArrowUpRight size={18} strokeWidth={2} aria-hidden />
-            </a>
-          </Button>
-          <a
-            href="/order/orders/"
-            onClick={closeDrawer}
-            className={cn(
-              "font-body font-semibold text-[14px] text-center py-2 rounded-md",
-              "text-[var(--text-primary)] hover:text-[var(--text-label)]",
-              "transition-colors duration-[150ms] ease-out focus-ring",
-            )}
-          >
-            Orders
-          </a>
-          <a
-            href="/login"
-            onClick={closeDrawer}
-            className={cn(
-              "font-body font-semibold text-[14px] text-center py-2 rounded-md",
-              "text-[var(--text-primary)] hover:text-[var(--text-label)]",
-              "transition-colors duration-[150ms] ease-out focus-ring",
-            )}
-          >
-            Sign in
-          </a>
-        </div>
       </div>
     </>
   );
 }
-
-// ── Sub-components ────────────────────────────────────────────────────────────
 
 function CircleThemeButton({
   isLight,
@@ -531,10 +540,7 @@ function CircleThemeButton({
         className,
       )}
     >
-      {isLight
-        ? <Moon size={16} strokeWidth={2} />
-        : <Sun  size={16} strokeWidth={2} />
-      }
+      {isLight ? <Moon size={16} strokeWidth={2} /> : <Sun size={16} strokeWidth={2} />}
     </button>
   );
 }

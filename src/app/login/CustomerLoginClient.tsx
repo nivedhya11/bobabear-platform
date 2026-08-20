@@ -26,6 +26,7 @@ import {
   signOutCustomer,
   verifyCustomerOtp,
 } from "@/lib/customer-auth/client";
+import { notifyCustomerChromeSessionChanged } from "@/lib/customer-auth/chrome-session";
 import { parseSafeReturnPath } from "@/lib/customer-auth/return-to";
 import { normalizeIndianMobileNumber } from "@/shared/customer-auth/phone";
 import { cn } from "@/lib/utils";
@@ -228,6 +229,7 @@ export function CustomerLoginClient() {
     const { data } = result;
     if (data.authenticated) {
       setCode("");
+      notifyCustomerChromeSessionChanged();
       if (returnTo) {
         window.location.assign(returnTo);
         return;
@@ -270,6 +272,7 @@ export function CustomerLoginClient() {
     if (pending) return;
     setPending(true);
     await signOutCustomer();
+    notifyCustomerChromeSessionChanged();
     setPending(false);
     setPhoneInput("");
     setNormalizedPhone(null);

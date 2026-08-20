@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R26",
-  "acceptedThrough": "IMP-027",
-  "currentProductSlice": "IMP-028",
-  "nextProductSlice": "IMP-028",
-  "pendingAcceptance": "IMP-026C",
+  "stateVersion": "STATE-R48",
+  "acceptedThrough": "IMP-028C",
+  "currentProductSlice": "IMP-028D",
+  "nextProductSlice": "IMP-029",
+  "pendingAcceptance": "NONE",
   "governanceHealth": "ALIGNED",
-  "lastReviewed": "2026-08-18"
+  "lastReviewed": "2026-08-20"
 }
 -->
 
@@ -20,18 +20,18 @@ current-reality authority.
 ## 1. Accepted Position
 
 ```text
-Accepted Through:          IMP-027 — Refund Foundation
-Accepted Inserted Slice:   IMP-005A — Dockerized local application runtime
-Accepted Range:            IMP-001 → IMP-027 (including IMP-005A)
+Accepted Through:          IMP-028C — Food Customization
+Accepted Inserted Slice:   IMP-005A — Dockerized local application runtime; IMP-026C — Pilot Customer-Commerce UX Hardening; IMP-028A — Food Direct UX Foundation; IMP-028B — Customer Menu Projection + Discovery; IMP-028C — Food Customization
+Accepted Range:            IMP-001 → IMP-028C (including IMP-005A and IMP-026C)
 ```
 
 ## 2. Current Work Position
 
 ```text
-Current Product Implementation: IMP-028 — Invoice / Tax Receipt / Credit Note
-Pending Acceptance:             IMP-026C
-Next Product Slice:             IMP-028 — Invoice / Tax Receipt / Credit Note
-Current Governance Activity:    IMP-028 IMPLEMENTATION_IN_PROGRESS (architecture LOCKED; implementation AUTHORIZED / STARTED; acceptance NO)
+Current Product Implementation: IMP-028D — Desktop Ordering Continuity
+Pending Acceptance:             NONE
+Next Product Slice:             IMP-029 — Operations Console API
+Current Governance Activity:    IMP-028D Desktop Ordering Continuity ARCHITECTURE_LOCKED / AUTHORIZED / STARTED / IMPLEMENTATION_IN_PROGRESS; IMP-028C remains COMPLETE_AND_ACCEPTED; IMP-029 PLANNED / NOT_STARTED / NOT_AUTHORIZED; D-371 UNUSED
 Governance Health:              ALIGNED
 ```
 
@@ -43,13 +43,15 @@ IMP-025 implementation:   COMPLETE_AND_ACCEPTED
 IMP-026 architecture:     ARCHITECTURE_LOCKED
 IMP-026 implementation:   COMPLETE_AND_ACCEPTED
 IMP-026_ACCEPTED:         YES
-IMP-026C:                 IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
+IMP-026C:                 COMPLETE_AND_ACCEPTED
 IMP-026C architecture:    ARCHITECTURE_LOCKED
 IMP-026C implementation:  AUTHORIZED / COMPLETE
 IMP-026C_IMPLEMENTATION_AUTHORIZED: YES
 IMP_026C_IMPLEMENTATION_EVIDENCE: COMPLETE
 IMP_026C_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
-IMP-026C_ACCEPTED:        NO
+IMP026C_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
+IMP026C_FORMAL_ACCEPTANCE: ACCEPTED
+IMP-026C_ACCEPTED:        YES
 IMP-027:                  COMPLETE_AND_ACCEPTED
 IMP-027 architecture:     ARCHITECTURE_LOCKED
 IMP-027 implementation:   AUTHORIZED / COMPLETE
@@ -62,17 +64,47 @@ IMP027_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
 IMP027_REFUND_FOUNDATION: ACCEPTED
 IMP027_FORMAL_ACCEPTANCE: ACCEPTED
 IMP-027_ACCEPTED:         YES
-IMP-028:                  IMPLEMENTATION_IN_PROGRESS
+IMP-028:                  COMPLETE_AND_ACCEPTED
 IMP-028 architecture:     ARCHITECTURE_LOCKED
-IMP-028 implementation:   AUTHORIZED / STARTED
+IMP-028 implementation:   AUTHORIZED / COMPLETE
 IMP-028_ARCHITECTURE:     LOCKED
-IMP-028_IMPLEMENTATION:   AUTHORIZED / STARTED
+IMP-028_IMPLEMENTATION:   AUTHORIZED / COMPLETE
 IMP-028_ARCHITECTURE_LOCKED: YES
 IMP-028_IMPLEMENTATION_AUTHORIZED: YES
 IMP-028_IMPLEMENTATION_STARTED: YES
 IMP-028_IMPLEMENTATION_COMPLETE: YES
-IMP-028_ACCEPTED:         NO
+IMP-028_ACCEPTED:         YES
+IMP-028A:                  COMPLETE_AND_ACCEPTED
+IMP-028A_ARCHITECTURE_LOCKED: YES
+IMP-028A_IMPLEMENTATION_AUTHORIZED: YES
+IMP-028A_IMPLEMENTATION_STARTED: YES
+IMP-028A_IMPLEMENTATION_COMPLETE: YES
+IMP-028A_ACCEPTED:        YES
+IMP028A_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
+IMP028A_FORMAL_ACCEPTANCE: ACCEPTED
+IMP-028B:                  COMPLETE_AND_ACCEPTED
+IMP-028B_ARCHITECTURE_LOCKED: YES
+IMP-028B_IMPLEMENTATION_AUTHORIZED: YES
+IMP-028B_IMPLEMENTATION_STARTED: YES
+IMP-028B_IMPLEMENTATION_COMPLETE: YES
+IMP-028B_ACCEPTED:        YES
+IMP-028C:                 COMPLETE_AND_ACCEPTED
+IMP-028C_ARCHITECTURE_LOCKED: YES
+IMP-028C_IMPLEMENTATION_AUTHORIZED: YES
+IMP-028C_IMPLEMENTATION_STARTED: YES
+IMP-028C_IMPLEMENTATION_COMPLETE: YES
+IMP-028C_ACCEPTED:        YES
+FOUNDER_UAT_REQUIRED:     YES
+FOUNDER_UAT:              PASS
+FOUNDER_UAT_COMPLETE:     YES
+IMP-028D:                 ARCHITECTURE_LOCKED / IMPLEMENTATION_IN_PROGRESS
+IMP-028D_IMPLEMENTATION_AUTHORIZED: YES
+IMP-028D_IMPLEMENTATION_STARTED: YES
+IMP-028D_IMPLEMENTATION_COMPLETE: NO
+IMP-028D_ACCEPTED:        NO
 IMP-029:                  NOT_STARTED
+IMP-029_IMPLEMENTATION_AUTHORIZED: NO
+IMP-029_STARTED:          NO
 ```
 
 Capability architecture:
@@ -89,30 +121,93 @@ Capability architecture:
 
 [`capabilities/IMP-028-invoice-tax-receipt-credit-note.md`](./capabilities/IMP-028-invoice-tax-receipt-credit-note.md)
 
-`acceptedThrough` is IMP-027. IMP-025 architecture remains locked; IMP-025 implementation is
+[`capabilities/IMP-028A-food-direct-ux-foundation.md`](./capabilities/IMP-028A-food-direct-ux-foundation.md)
+
+[`capabilities/IMP-028B-customer-menu-projection-and-discovery.md`](./capabilities/IMP-028B-customer-menu-projection-and-discovery.md)
+
+[`capabilities/IMP-028C-food-customization.md`](./capabilities/IMP-028C-food-customization.md)
+
+[`capabilities/IMP-028D-desktop-ordering-continuity.md`](./capabilities/IMP-028D-desktop-ordering-continuity.md)
+
+`acceptedThrough` is IMP-028C. IMP-025 architecture remains locked; IMP-025 implementation is
 **COMPLETE_AND_ACCEPTED**. IMP-026 architecture is **ARCHITECTURE_LOCKED**. IMP-026 implementation
 is **COMPLETE_AND_ACCEPTED** (`IMP-026_ACCEPTED: YES`). Independent acceptance of IMP-026 is
 recorded, including provider-originated Razorpay Test Mode webhook proof over public HTTPS.
-IMP-026C architecture is **ARCHITECTURE_LOCKED**. IMP-026C implementation is **authorized** and
-**implementation-complete pending acceptance**. Independent implementation review is **PASS**.
-Implementation evidence is **COMPLETE**. Formal acceptance of IMP-026C is **not** claimed.
-`pendingAcceptance=IMP-026C` identifies the next remaining unresolved formal acceptance gate.
+IMP-026C architecture is **ARCHITECTURE_LOCKED**. IMP-026C implementation is **authorized**,
+**implementation-complete**, and **COMPLETE_AND_ACCEPTED**. Independent implementation review is
+**PASS**. Implementation evidence is **COMPLETE**. Independent acceptance evidence is **ACCEPTED**.
+Formal acceptance of IMP-026C **is** claimed (`IMP-026C_ACCEPTED: YES`). `acceptedThrough` remains
+contiguous through IMP-028A; IMP-026C remains a supplemental inserted gate and does not itself move
+`acceptedThrough`. `pendingAcceptance=NONE` after GTM-R37 / STATE-R35 record independent acceptance
+of IMP-028A. Formal acceptance of IMP-028A **is** claimed (`IMP-028A_ACCEPTED: YES`).
 IMP-027 is `COMPLETE_AND_ACCEPTED` (architecture **LOCKED**; implementation evidence **COMPLETE**;
 independent implementation review **PASS**; `IMP-027_ACCEPTED: YES`; binding **D-364**).
-Refund architecture remains locked and accepted. GTM-R28 / STATE-R26 record IMP-028
-`IMPLEMENTATION_IN_PROGRESS` (architecture **LOCKED**;
-implementation **AUTHORIZED** / **STARTED**; binding **D-365** / **D-366** / **D-367**; capability
-artifact present). Invoice / tax-receipt / credit-note foundation implementation has **started**.
-Working-tree `IMP-028_IMPLEMENTATION_COMPLETE = YES` in the capability artifact does **not**
-accept IMP-028. Start is **not** acceptance. Refund statutory reversal remains
-**NOT_IMPLEMENTED_UNDER_D366**. Statutory signing architecture is locked under **D-367**; signing
-capability remains **NOT_IMPLEMENTED**. `PRE_EXISTING_IMP028_COMPLIANCE_DEFECT=YES` is recorded as
-a separate completion blocker. IMP-029 remains not started.
+Refund architecture remains locked and accepted. GTM-R30 / STATE-R28 record IMP-028
+`COMPLETE_AND_ACCEPTED` (architecture **LOCKED**; implementation **AUTHORIZED** / **COMPLETE**;
+binding **D-365** / **D-366** / **D-367**; capability artifact present). Formal acceptance of
+IMP-028 **is** claimed (`IMP-028_ACCEPTED: YES`; `IMP-028_IMPLEMENTATION_COMPLETE: YES`).
+GTM-R30 / STATE-R28 recorded `pendingAcceptance=NONE` immediately after that acceptance.
+IMP-029 remains not started and is **not** implementation-authorized
+(`IMP-029_IMPLEMENTATION_AUTHORIZED: NO`; `IMP-029_STARTED: NO`). GTM-R37 / STATE-R35 record
+IMP-028A `COMPLETE_AND_ACCEPTED` (`IMP-028A_IMPLEMENTATION_AUTHORIZED: YES`;
+`IMP-028A_IMPLEMENTATION_STARTED: YES`; `IMP-028A_IMPLEMENTATION_COMPLETE: YES`;
+`IMP-028A_ACCEPTED: YES`; architecture `ARCHITECTURE_LOCKED`). `currentProductSlice` is `NONE`.
+`nextProductSlice=IMP-029` remains next-planned GTM bookkeeping only. IMP-028A does **not**
+retarget IMP-029, implement D-368 / D-369 / D-370, or create `D-371`. Formal acceptance of
+IMP-028A does **not** authorize or start IMP-029. GTM-R38 / STATE-R36 historically record IMP-028B canonical
+activation (`PLANNED` / `NOT_STARTED` / `NOT_AUTHORIZED`; architecture `NOT_LOCKED`;
+`IMP-028B_IMPLEMENTATION_AUTHORIZED: NO`; `IMP-028B_IMPLEMENTATION_STARTED: NO`;
+`IMP-028B_IMPLEMENTATION_COMPLETE: NO`; `IMP-028B_ACCEPTED: NO`). GTM-R39 / STATE-R37 historically record
+IMP-028B architecture lock and implementation authorization (`IMPLEMENTATION_AUTHORIZED` /
+`NOT_STARTED`; architecture `ARCHITECTURE_LOCKED`; `IMP-028B_IMPLEMENTATION_AUTHORIZED: YES`;
+`IMP-028B_IMPLEMENTATION_STARTED: NO`; `IMP-028B_IMPLEMENTATION_COMPLETE: NO`;
+`IMP-028B_ACCEPTED: NO`). GTM-R40 / STATE-R38 and GTM-R41 / STATE-R39 record the subsequent
+historical implementation progression. STATE-R40 records IMP-028B `COMPLETE_AND_ACCEPTED`.
+`currentProductSlice` is now NONE; `pendingAcceptance` is NONE; `acceptedThrough` was IMP-028B at
+that historical acceptance point.
+Acceptance of IMP-028B did not implement D-369 / D-370, create `D-371`, or start IMP-029.
 
-Working-tree / current implementation note (not accepted inventory): migrations `0019`, `0020`,
-`0021`, `0022`, and `0029` are present in the working tree. Accepted Technical Inventory below
-remains bounded by `acceptedThrough=IMP-027` and must not be read as accepting IMP-026C / IMP-028
-schema or promoting working-tree migrations into accepted inventory.
+GTM-R31 / STATE-R29 historically record binding **D-368** (Customer Menu Read Projection Authority;
+DR-10; ARCH-R13 / ARCH-G19). IMP-028B subsequently implemented and accepted the server-backed READ
+PROJECTION; the IMP-025 static `ordering-catalog.json` is no longer the storefront runtime delivery.
+D-368 itself did not authorize Menu implementation, create a Menu endpoint, or activate IMP-029.
+GTM-R32 / STATE-R30
+record binding **D-369** (Customer Paid Modifier Explicit Selection Authority; DR-11; ARCH-R14 /
+ARCH-G20). A positive-price modifier must not become customer purchase intent solely because it is
+a catalog/default selection. D-369 does not authorize customization implementation, populate
+modifier data, or activate IMP-029. GTM-R33 / STATE-R31 record binding **D-370** (Cart Identity
+Transition Authority; DR-12; ARCH-R15 / ARCH-G21). Guest and customer purchase intent must be
+reconciled without silent winner selection; sign-out isolates the browser from the customer Cart
+without deleting it. D-370 does not authorize Cart-merge implementation, change authentication, or
+activate IMP-029. Next free decision is **D-371**. GTM-R37 / STATE-R35 record IMP-028A
+independent acceptance without changing decision register or global architecture. GTM-R38 /
+STATE-R36 record IMP-028B canonical activation without changing decision register or global
+architecture. GTM-R39 / STATE-R37 record IMP-028B architecture lock and implementation
+authorization without changing decision register or global architecture.
+
+STATE-R48 records explicit founder/task authorization to implement IMP-028D — Desktop Ordering
+Continuity under the locked capability architecture. Implementation is `AUTHORIZED` / `STARTED`
+(`IMP-028D_IMPLEMENTATION_AUTHORIZED: YES`; `IMP-028D_IMPLEMENTATION_STARTED: YES`;
+`IMP-028D_IMPLEMENTATION_COMPLETE: NO`; `IMP-028D_ACCEPTED: NO`; lifecycle
+`IMPLEMENTATION_IN_PROGRESS`). `acceptedThrough` remains IMP-028C; `currentProductSlice` remains
+IMP-028D; `pendingAcceptance` remains NONE; and `nextProductSlice` remains IMP-029. IMP-029 remains
+planned, not started, and not implementation-authorized. D-368 / D-369 / D-370 remain CURRENT
+existing authorities; D-371 remains unused. This authorization does not mark IMP-028D complete or
+accepted, and does not change decision register or global architecture.
+
+STATE-R47 records bounded canonical activation of IMP-028D — Desktop Ordering Continuity. Its
+capability architecture is `ARCHITECTURE_LOCKED`; implementation remains `NOT_AUTHORIZED` /
+`NOT_STARTED` (`IMP-028D_IMPLEMENTATION_AUTHORIZED: NO`; `IMP-028D_IMPLEMENTATION_STARTED: NO`;
+`IMP-028D_IMPLEMENTATION_COMPLETE: NO`; `IMP-028D_ACCEPTED: NO`). `acceptedThrough` remains
+IMP-028C; `currentProductSlice` is IMP-028D; `pendingAcceptance` is NONE; and
+`nextProductSlice` remains IMP-029. IMP-029 remains planned, not started, and not
+implementation-authorized. D-368 / D-369 / D-370 remain CURRENT existing authorities; D-371
+remains unused. This activation authorizes no application implementation and changes no runtime,
+API, schema, migration, pricing authority, decision register, or global architecture.
+
+Accepted Technical Inventory below is bounded by `acceptedThrough=IMP-028C` and includes accepted
+IMP-027 / IMP-028 schema through latest migration `0029_refund_statutory_issuance_allocation`.
+IMP-028A added no schema or migration.
 
 ```text
 LOCAL_RAZORPAY_GTM_VALIDATION: PASS
@@ -164,41 +259,53 @@ Current V1 payment provider is **Razorpay** (**D-361**). Razorpay webhook acknow
 recovery is **D-362**. Razorpay durable webhook inbox / asynchronous Payment processing is **D-363**.
 Refund Foundation architecture is **D-364**. Financial Document architecture is **D-365**.
 Refund statutory-reversal decision authority is **D-366** (CURRENT; refund statutory reversal
-workflow **NOT_IMPLEMENTED_UNDER_D366**). Statutory financial-document signing and signed-artifact
-authority is **D-367** (CURRENT; signing capability **NOT_IMPLEMENTED**).
+workflow accepted under the locked IMP-028 capability). Statutory financial-document signing and
+signed-artifact authority is **D-367** (CURRENT; attended-async manual signed-PDF MVP accepted;
+unattended DSC/eSign/HSM remains deferred and is not authorized by this acceptance). Customer Menu
+read-projection serving is **D-368** (CURRENT architecture; implemented and accepted under IMP-028B;
+the static `ordering-catalog.json` artifact is no longer the customer storefront runtime source).
+Customer paid-modifier
+explicit selection is **D-369** (CURRENT business-commerce policy; implementation not authorized;
+Cart/Checkout Snapshot/pricing authority unchanged). Cart identity transition is **D-370**
+(CURRENT purchase-intent and privacy policy; implementation not authorized; Cart/Checkout Snapshot
+authority unchanged).
 
 ```text
 PAYMENT_RECEIPT_VOUCHER_WORKFLOW: COMPLETE
 ORDER_TAX_INVOICE_WORKFLOW: COMPLETE
-REFUND_STATUTORY_REVERSAL_WORKFLOW: NOT_IMPLEMENTED_UNDER_D366
+REFUND_STATUTORY_REVERSAL_WORKFLOW: ACCEPTED
 FD_NON_SIGNATURE_COMPLIANCE_CORRECTION: COMPLETE
-SIGNATURE_COMPLIANCE: GAP
-PRE_EXISTING_IMP028_COMPLIANCE_DEFECT: YES
+SIGNATURE_COMPLIANCE: ATTENDED_ASYNC_MVP_ACCEPTED
+PRE_EXISTING_IMP028_COMPLIANCE_DEFECT: NO
+IMP-028_ACCEPTED: YES
 ```
 
-`PRE_EXISTING_IMP028_COMPLIANCE_DEFECT=YES` is an IMP-028 completion/acceptance blocker separate
-from D-366 refund branch authority. It does not accept or complete IMP-028.
+`PRE_EXISTING_IMP028_COMPLIANCE_DEFECT` is closed as an IMP-028 completion/acceptance blocker.
+Unattended signing and production GST/accountant configuration remain deferred deployment /
+later-slice matters, not reopenings of D-365 / D-366 / D-367.
 
 Binding payment semantics preserved for IMP-027: a Payment that reached BOBA success from provider
 `captured` remains successful original collection truth even if the provider later reports a
 refund. Refund must not rewrite that truth. Refund is now formally accepted under the locked
-capability artifact; it must not rewrite Payment collection truth.
+capability artifact; it must not rewrite Payment collection truth. IMP-028 Financial Document
+acceptance does not rewrite Payment, Refund, or Order authorities.
 
-`governanceHealth = ALIGNED` records independent acceptance through IMP-027.
+`governanceHealth = ALIGNED` records independent acceptance through IMP-028A.
 Implementation agents must not self-promote this field or mark later slices accepted.
 
 ## 3. Accepted Technical Inventory
 
 Independently verified from repository evidence on 2026-08-18 (authority path
-`/mnt/c/repos/boba-bear-website`), including IMP-026 independent acceptance.
+`/home/ajoshi/repos/boba-bear-website-acceptance`), including IMP-026, IMP-027, IMP-028, and
+IMP-028A independent acceptance.
 Speculative values are forbidden here.
 
 | Metric | Verified value | How verified |
 |---|---|---|
-| Latest migration | `0018_payment_provider_event_inbox` | `drizzle/meta/_journal.json` entry tag; `drizzle/0018_payment_provider_event_inbox.sql` present |
-| Migration count | `19` | Count of accepted migrations through IMP-026 (0000–0018) |
-| Application tables | `93` | Count of `appSchema.table(` declarations under `src/platform/database/schema/` bounded to accepted IMP-026 schema |
-| Workforce permissions | `55` | `PERMISSION_KEYS.length` in `src/shared/access-control/catalog.ts` |
+| Latest migration | `0029_refund_statutory_issuance_allocation` | `drizzle/meta/_journal.json` entry tag; `drizzle/0029_refund_statutory_issuance_allocation.sql` present |
+| Migration count | `30` | Count of accepted migrations through IMP-028 (0000–0029) |
+| Application tables | `108` | Count of `appSchema.table(` declarations under `src/platform/database/schema/` bounded to accepted IMP-028 schema |
+| Workforce permissions | `57` | `PERMISSION_KEYS.length` in `src/shared/access-control/catalog.ts` |
 | System roles | `7` | `ROLE_KEYS.length` in `src/shared/access-control/catalog.ts` |
 | Default Docker services | `5` | Compose services without `profiles: ["tools"]`: `postgres`, `app`, `customer-auth`, `workforce-auth`, `customer-commerce` |
 | Order-owned tables | `1` | `orders` in `src/platform/database/schema/order.ts` |
@@ -210,9 +317,16 @@ Speculative values are forbidden here.
 | IMP-024 architecture artifact | present | `docs/platform/capabilities/IMP-024-customer-ordering-transport.md` |
 | IMP-024 runtime Compose service | present | `customer-commerce` internal `:8083`; Nginx `/api/v1/*` (D-359) |
 | IMP-025 architecture artifact | present | `docs/platform/capabilities/IMP-025-customer-ordering-ux.md` |
-| IMP-025 static ordering catalog | present | `src/data/ordering-catalog.json` deterministic projection from existing-menu-v1 |
+| IMP-025 static ordering catalog | present | `src/data/ordering-catalog.json` deterministic projection from existing-menu-v1; retained for legitimate transitional/import/test purposes, not the customer storefront runtime source |
 | IMP-026 architecture artifact | present | `docs/platform/capabilities/IMP-026-razorpay-productionization.md` |
+| IMP-026 payment inbox migration | `0018_payment_provider_event_inbox` | `drizzle/0018_payment_provider_event_inbox.sql` present in accepted journal |
 | IMP-026C architecture artifact | present | `docs/platform/capabilities/IMP-026C-pilot-customer-commerce-ux-hardening.md` |
+| IMP-027 architecture artifact | present | `docs/platform/capabilities/IMP-027-refund-foundation.md` |
+| IMP-027 refund migration | `0019_refund` | `drizzle/0019_refund.sql` present in accepted journal |
+| IMP-028 architecture artifact | present | `docs/platform/capabilities/IMP-028-invoice-tax-receipt-credit-note.md` |
+| IMP-028 financial-document / statutory migrations | `0020`–`0029` | Journal tags `0020_financial_document` through `0029_refund_statutory_issuance_allocation` |
+| IMP-028A architecture artifact | present | `docs/platform/capabilities/IMP-028A-food-direct-ux-foundation.md` |
+| IMP-028B canonical capability artifact | present | `docs/platform/capabilities/IMP-028B-customer-menu-projection-and-discovery.md` |
 
 Default Docker topology (accepted runtime inventory):
 
@@ -234,6 +348,7 @@ Domain authority chain (accepted):
 
 ```text
 Cart → Checkout → Payment → Order
+(+ Refund; + Financial Document / RefundStatutoryDecision / SignatureArtifact)
 ```
 
 | Domain | Authority |
@@ -242,6 +357,13 @@ Cart → Checkout → Payment → Order
 | Checkout Snapshot | Immutable accepted commercial transaction |
 | Payment | Original financial collection truth |
 | Order | Post-purchase business lifecycle truth (`PLACED` \| `ACCEPTED` \| `FULFILLED` \| `CANCELLED`) |
+| Refund | Financial reversal truth for returned funds (D-364) |
+| Financial Document | Immutable issued statutory / financial-document truth (D-365) |
+| RefundStatutoryDecision | Durable statutory-reversal classification for a PROCESSED Refund (D-366) |
+| SignatureArtifact | Durable signature state and exact-byte signed statutory artifact (D-367) |
+| Customer Menu Projection | CURRENT storefront READ MODEL (D-368); implemented and accepted under IMP-028B; not a new commercial authority |
+| Customer paid-modifier purchase intent | CURRENT policy (D-369); positive-price modifier requires explicit current-interaction selection; implementation authorized only for IMP-028C; live import `modifier_groups: 0` |
+| Cart identity transition | CURRENT policy (D-370); guest→customer compatible merge and logout customer-cart isolation; implementation not authorized |
 
 ## 4. Accepted Capability Ledger
 
@@ -274,33 +396,158 @@ Cart → Checkout → Payment → Order
 | IMP-024 | Customer Ordering Transport / API | COMPLETE_AND_ACCEPTED |
 | IMP-025 | Customer Ordering UX | COMPLETE_AND_ACCEPTED |
 | IMP-026 | Razorpay Productionization & Payment GTM Readiness | COMPLETE_AND_ACCEPTED |
+| IMP-026C | Pilot Customer-Commerce UX Hardening | COMPLETE_AND_ACCEPTED |
 | IMP-027 | Refund Foundation | COMPLETE_AND_ACCEPTED |
+| IMP-028 | Invoice / Tax Receipt / Credit Note | COMPLETE_AND_ACCEPTED |
+| IMP-028A | Food Direct UX Foundation | COMPLETE_AND_ACCEPTED |
+| IMP-028B | Customer Menu Projection + Discovery | COMPLETE_AND_ACCEPTED |
+| IMP-028C | Food Customization | COMPLETE_AND_ACCEPTED |
 
-## 5. Pending Acceptance
+## 5. Acceptance Position
 
 ```text
-IMP-026C — Pilot Customer-Commerce UX Hardening
-Lifecycle: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
-IMP-026C_ACCEPTED: NO
-acceptedThrough: IMP-027
-pendingAcceptance: IMP-026C
+acceptedThrough: IMP-028C
+pendingAcceptance: NONE
+currentProductSlice: NONE
+nextProductSlice: IMP-029 — Operations Console API
+FOUNDER_UAT_STATUS: PASS
+FOUNDER_UAT_DECISION_DATE: 2026-08-20
+FOUNDER_UAT_ACCEPTANCE_AUTHORITY: Founder
+FOUNDER_UAT_CANDIDATE_BRANCH: imp-028c/uat-candidate
+FOUNDER_UAT_CANDIDATE_HEAD: 7f4149914c9abdb0fb6d80e64bbf21579fe790df
+FOUNDER_UAT_CANDIDATE_TREE: 2a49537394ee13b0af38b5fa535328e9808e00f3
+IMP-028: COMPLETE_AND_ACCEPTED
+IMP-028_ACCEPTED: YES
+IMP-028A: COMPLETE_AND_ACCEPTED
+IMP-028A_ARCHITECTURE_LOCKED: YES
+IMP-028A_IMPLEMENTATION_AUTHORIZED: YES
+IMP-028A_IMPLEMENTATION_STARTED: YES
+IMP-028A_IMPLEMENTATION_COMPLETE: YES
+IMP-028A_ACCEPTED: YES
+IMP028A_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
+IMP028A_FORMAL_ACCEPTANCE: ACCEPTED
+IMP-028B: COMPLETE_AND_ACCEPTED
+IMP-028B_ARCHITECTURE_LOCKED: YES
+IMP-028B_IMPLEMENTATION_AUTHORIZED: YES
+IMP-028B_IMPLEMENTATION_STARTED: YES
+IMP-028B_IMPLEMENTATION_COMPLETE: YES
+IMP-028B_ACCEPTED: YES
+IMP-028C: COMPLETE_AND_ACCEPTED
+IMP-028C_ARCHITECTURE_LOCKED: YES
+IMP-028C_IMPLEMENTATION_AUTHORIZED: YES
+IMP-028C_IMPLEMENTATION_STARTED: YES
+IMP-028C_IMPLEMENTATION_COMPLETE: YES
+IMP-028C_ACCEPTED: YES
+IMP-029: PLANNED / NOT_STARTED
+IMP-029_IMPLEMENTATION_AUTHORIZED: NO
+IMP-029_STARTED: NO
+TYPECHECK_STATUS: FAIL_PRE_EXISTING_UNRELATED
+CUSTOMER_ORDERING_E2E: BLOCKED_ENVIRONMENT
+CUSTOMER_ORDERING_ALTERNATIVE_REGRESSION_EVIDENCE_SUFFICIENT: YES
+RELEVANT_REGRESSION_TESTS: PASS_WITH_ENVIRONMENT_LIMITATION
 ```
 
-Independent acceptance of IMP-027 **is** claimed and formally reconciled. IMP-026C remains
-`IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` (architecture locked; implementation evidence COMPLETE;
-independent review PASS; `IMP-026C_ACCEPTED: NO`) and is now the next pending acceptance gate.
-Current product slice is IMP-028
-(`IMPLEMENTATION_IN_PROGRESS`; architecture LOCKED; implementation AUTHORIZED / STARTED;
-`IMP-028_ARCHITECTURE_LOCKED: YES`; `IMP-028_IMPLEMENTATION_AUTHORIZED: YES`;
-`IMP-028_IMPLEMENTATION_STARTED: YES`; working-tree capability artifact records
-`IMP-028_IMPLEMENTATION_COMPLETE: YES`; `IMP-028_ACCEPTED: NO`; binding **D-365** / **D-366**).
-`pendingAcceptance=IMP-026C` is the remaining formal acceptance gate; it does not mean IMP-028
-acceptance is complete. IMP-027 acceptance does not accept IMP-026C or IMP-028. D-366 is CURRENT
-for refund statutory-reversal decision authority; refund statutory reversal remains not
-implemented.
-`PRE_EXISTING_IMP028_COMPLIANCE_DEFECT=YES` remains a separate IMP-028 completion blocker.
+Independent acceptance of IMP-028A **is** claimed and formally reconciled
+(`COMPLETE_AND_ACCEPTED`; architecture locked; implementation AUTHORIZED / STARTED / COMPLETE;
+`IMP-028A_ARCHITECTURE_LOCKED: YES`; `IMP-028A_IMPLEMENTATION_AUTHORIZED: YES`;
+`IMP-028A_IMPLEMENTATION_STARTED: YES`; `IMP-028A_IMPLEMENTATION_COMPLETE: YES`;
+`IMP-028A_ACCEPTED: YES`). `acceptedThrough` advances to IMP-028A. After IMP-028A acceptance,
+`pendingAcceptance=NONE`. GTM-R38 / STATE-R36 later set `currentProductSlice=IMP-028B` without
+placing IMP-028B in pending acceptance. GTM-R39 / STATE-R37 lock IMP-028B architecture and
+authorize implementation without starting it or placing it in pending acceptance. `nextProductSlice=IMP-029` remains
+next-planned GTM bookkeeping only. IMP-029 remains not started and is **not**
+implementation-authorized. Formal acceptance of IMP-028A does not authorize IMP-029, implement
+D-368 / D-369 / D-370, create `D-371`, or implement Capability B. Canonical activation of
+IMP-028B does not start IMP-029. Architecture lock / implementation authorization of IMP-028B
+does not start product implementation.
+
+Independent IMP-028A acceptance preserved these non-blocking limitations (not IMP-028A defects;
+not rewritten as full-suite success): whole-repo TypeScript / Next typecheck remains blocked by
+pre-existing financial-document/refund BigInt + ES2017 issues; full customer-ordering E2E was
+blocked by occupied fixed port 8183; alternative regression evidence was independently judged
+sufficient.
+
+STATE-R37 records IMP-028B architecture lock and implementation authorization
+(`IMPLEMENTATION_AUTHORIZED` / `NOT_STARTED`; architecture `ARCHITECTURE_LOCKED`;
+`IMP-028B_IMPLEMENTATION_AUTHORIZED: YES`; `IMP-028B_IMPLEMENTATION_STARTED: NO`;
+`IMP-028B_IMPLEMENTATION_COMPLETE: NO`; `IMP-028B_ACCEPTED: NO`; `currentProductSlice = IMP-028B`).
+`acceptedThrough` remains IMP-028A. `pendingAcceptance` remains NONE. `nextProductSlice` remains
+IMP-029. IMP-029 remains not started and is not implementation-authorized. Decision register
+remains DR-12. Global architecture remains ARCH-R15. Next free decision remains **D-371**.
+Authorization does not start product implementation, implement D-369 / D-370, create `D-371`, or
+retarget IMP-029. Supersedes STATE-R36 for current IMP-028B lifecycle position. Product acceptance
+through IMP-028A is unchanged.
+
+STATE-R36 records canonical activation of IMP-028B — Customer Menu Projection + Discovery
+(`PLANNED` / `NOT_STARTED` / `NOT_AUTHORIZED`; architecture `NOT_LOCKED`;
+`IMP-028B_IMPLEMENTATION_AUTHORIZED: NO`; `IMP-028B_IMPLEMENTATION_STARTED: NO`;
+`IMP-028B_IMPLEMENTATION_COMPLETE: NO`; `IMP-028B_ACCEPTED: NO`; `currentProductSlice = IMP-028B`).
+`acceptedThrough` remains IMP-028A. `pendingAcceptance` remains NONE. `nextProductSlice` remains
+IMP-029. IMP-029 remains not started and is not implementation-authorized. Decision register
+remains DR-12. Global architecture remains ARCH-R15. Next free decision remains **D-371**.
+
+STATE-R35 records independent acceptance of IMP-028A (`COMPLETE_AND_ACCEPTED`;
+`IMP-028A_ACCEPTED: YES`; `acceptedThrough = IMP-028A`; `pendingAcceptance = NONE`;
+`currentProductSlice = NONE`). `nextProductSlice` remains IMP-029. IMP-029 remains not started
+and is not implementation-authorized. Decision register remains DR-12. Global architecture remains
+ARCH-R15. Next free decision remains **D-371**.
+
+STATE-R34 records IMP-028A implementation complete pending independent acceptance
+(`IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`; architecture `ARCHITECTURE_LOCKED`;
+`IMP-028A_IMPLEMENTATION_AUTHORIZED: YES`; `IMP-028A_IMPLEMENTATION_STARTED: YES`;
+`IMP-028A_IMPLEMENTATION_COMPLETE: YES`; `currentProductSlice = IMP-028A`;
+`pendingAcceptance = IMP-028A`). `acceptedThrough` remained IMP-028. `nextProductSlice` remains
+IMP-029. IMP-029 remains not started and is not implementation-authorized. Decision register
+remains DR-12. Global architecture remains ARCH-R15. Next free decision remains **D-371**.
+Product acceptance through IMP-028 was unchanged. Formal acceptance of IMP-028A was **not** then
+claimed.
+
+STATE-R33 records IMP-028A architecture lock and implementation authorization
+(`IMPLEMENTATION_AUTHORIZED` / `NOT_STARTED`; architecture `ARCHITECTURE_LOCKED`;
+`IMP-028A_IMPLEMENTATION_AUTHORIZED: YES`; `IMP-028A_IMPLEMENTATION_STARTED: NO`).
+`acceptedThrough` remains IMP-028. `pendingAcceptance` remains NONE. `currentProductSlice` is
+IMP-028A. `nextProductSlice` remains IMP-029. Decision register remains DR-12. Global architecture
+remains ARCH-R15. Next free decision remains **D-371**. Product acceptance through IMP-028 is
+unchanged.
+
+STATE-R32 records canonical activation of IMP-028A — Food Direct UX Foundation (`PLANNED` /
+`NOT_STARTED` / `NOT_AUTHORIZED`; architecture `NOT_LOCKED`). `acceptedThrough` remains IMP-028.
+`pendingAcceptance` remains NONE. `currentProductSlice` is IMP-028A. `nextProductSlice` remains
+IMP-029. Decision register remains DR-12. Global architecture remains ARCH-R15. Next free decision
+remains **D-371**. Product acceptance through IMP-028 is unchanged.
+
+STATE-R31 records binding **D-370** (Cart Identity Transition Authority). Decision register is
+DR-12. Global architecture is ARCH-R15. Next free decision is **D-371**. Product-slice position is
+unchanged.
+
+STATE-R30 records binding **D-369** (Customer Paid Modifier Explicit Selection Authority). Decision
+register is DR-11. Global architecture is ARCH-R14. Next free decision is **D-370**. Product-slice
+position is unchanged.
+
+STATE-R29 records binding **D-368** (Customer Menu Read Projection Authority). Decision register
+is DR-10. Global architecture is ARCH-R13. Next free decision is **D-369**. Product-slice position
+is unchanged.
 
 ## 6. Known Governance Conflicts
+
+STATE-R41 reconciles stale present-tense IMP-028B lifecycle assertions with the already-settled
+STATE-R40 acceptance record. It makes no new acceptance, architecture, product, or decision-register
+decision. IMP-028B remains `COMPLETE_AND_ACCEPTED` (`IMP-028B_ACCEPTED: YES`; `acceptedThrough =
+IMP-028B`; `pendingAcceptance = NONE`; `currentProductSlice = NONE`); IMP-029 remains planned, not
+started, and not implementation-authorized. D-368 / D-369 / D-370 remain CURRENT and D-371 remains
+unused.
+
+STATE-R40 records IMP-028B — Customer Menu Projection + Discovery `COMPLETE_AND_ACCEPTED` after
+the already-passing independent technical acceptance and founder UAT PASS for the exact candidate:
+`/home/ajoshi/repos/boba-bear-platform`; `main`; HEAD
+`ddca0c319a5e80b2cfe38a2c32481b636277010e`; working-tree fingerprint
+`1b6be793b4825bb8bd8df57dd47164148b0e68df9a674b12f417e97b5497ecc7`.
+Architecture remains `ARCHITECTURE_LOCKED`; implementation remains `AUTHORIZED` / `STARTED` /
+`COMPLETE`; `IMP-028B_ACCEPTED: YES`. `acceptedThrough` advances to IMP-028B;
+`pendingAcceptance=NONE`; `currentProductSlice=NONE`; `nextProductSlice=IMP-029`. IMP-029 remains
+planned, not started, and not implementation-authorized. D-369 / D-370 remain unimplemented;
+D-371 remains unused. Decision register remains DR-12 and global architecture remains ARCH-R15.
+Supersedes STATE-R39 for the current lifecycle position.
 
 Governance installation conflicts identified at STATE-R1 publication are closed by independent
 acceptance:
@@ -314,6 +561,96 @@ acceptance:
 - Historical role-count prose (six roles) vs accepted inventory (seven) — clarified by **D-358**;
   current inventory is owned by this STATE document and code.
 
+STATE-R37 records IMP-028B architecture lock and implementation authorization
+(`IMPLEMENTATION_AUTHORIZED` / `NOT_STARTED`; architecture `ARCHITECTURE_LOCKED`;
+`currentProductSlice = IMP-028B`). `acceptedThrough` remains IMP-028A. `pendingAcceptance` is NONE.
+`nextProductSlice` is IMP-029. IMP-029 remains not started and is not implementation-authorized.
+Decision register remains DR-12. Global architecture remains ARCH-R15. Next free decision remains
+**D-371**. Authorization does not start product implementation, implement D-369 / D-370, create
+`D-371`, or retarget IMP-029. Supersedes STATE-R36 for current IMP-028B lifecycle position. Product
+acceptance through IMP-028A is unchanged.
+STATE-R36 records canonical activation of **IMP-028B — Customer Menu Projection + Discovery**
+(`PLANNED` / `NOT_STARTED` / `NOT_AUTHORIZED`; architecture `NOT_LOCKED`;
+`currentProductSlice = IMP-028B`). `acceptedThrough` remains IMP-028A. `pendingAcceptance` is NONE.
+`nextProductSlice` is IMP-029. IMP-029 remains not started and is not implementation-authorized.
+Decision register remains DR-12. Global architecture remains ARCH-R15. Next free decision remains
+**D-371**. Canonical activation does not lock architecture, authorize implementation, implement
+D-368 / D-369 / D-370, create `D-371`, or retarget IMP-029. Supersedes STATE-R35 for current
+product-slice position. Product acceptance through IMP-028A is unchanged.
+STATE-R35 records independent acceptance of IMP-028A — Food Direct UX Foundation
+(`COMPLETE_AND_ACCEPTED`; `IMP-028A_ACCEPTED: YES`). Architecture remains `ARCHITECTURE_LOCKED`.
+`acceptedThrough` advances to IMP-028A. `pendingAcceptance` is NONE. `currentProductSlice` is
+NONE. `nextProductSlice` is IMP-029. IMP-029 remains not started and is not
+implementation-authorized. Decision register remains DR-12. Global architecture remains ARCH-R15.
+Next free decision remains **D-371**. Known typecheck and customer-ordering E2E limitations remain
+pre-existing / environment, not IMP-028A defects. Supersedes STATE-R34 for current accepted
+position.
+STATE-R34 records IMP-028A — Food Direct UX Foundation implementation complete pending independent
+acceptance (`IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`; architecture `ARCHITECTURE_LOCKED`;
+`IMP-028A_IMPLEMENTATION_AUTHORIZED: YES`; `IMP-028A_IMPLEMENTATION_STARTED: YES`;
+`IMP-028A_IMPLEMENTATION_COMPLETE: YES`; `currentProductSlice = IMP-028A`;
+`pendingAcceptance = IMP-028A`). Formal acceptance of IMP-028A was **not** then claimed.
+`acceptedThrough` remained IMP-028. `nextProductSlice` remains IMP-029. IMP-029 remains not started
+and is not implementation-authorized. Decision register remains DR-12. Global architecture remains
+ARCH-R15. Next free decision remains **D-371**. Supersedes STATE-R33 for then-current IMP-028A
+lifecycle position. Product acceptance through IMP-028 is unchanged.
+STATE-R33 records IMP-028A — Food Direct UX Foundation architecture lock and implementation
+authorization (`IMPLEMENTATION_AUTHORIZED` / `NOT_STARTED`; architecture `ARCHITECTURE_LOCKED`;
+`IMP-028A_IMPLEMENTATION_AUTHORIZED: YES`; `IMP-028A_IMPLEMENTATION_STARTED: NO`;
+`currentProductSlice = IMP-028A`). `acceptedThrough` remains IMP-028. `pendingAcceptance` remains
+NONE. `nextProductSlice` remains IMP-029. IMP-029 remains not started and is not
+implementation-authorized. Decision register remains DR-12. Global architecture remains ARCH-R15.
+Next free decision remains **D-371**. Supersedes STATE-R32 for then-current IMP-028A lifecycle
+position. Product acceptance through IMP-028 is unchanged.
+STATE-R32 records canonical activation of **IMP-028A — Food Direct UX Foundation** (`PLANNED` /
+`NOT_STARTED` / `NOT_AUTHORIZED`; architecture `NOT_LOCKED`; `currentProductSlice = IMP-028A`).
+`acceptedThrough` remains IMP-028. `pendingAcceptance` remains NONE. `nextProductSlice` remains
+IMP-029. IMP-029 remains not started and is not implementation-authorized. Decision register
+remains DR-12. Global architecture remains ARCH-R15. Next free decision remains **D-371**.
+Supersedes STATE-R31 for current product-slice position. Product acceptance through IMP-028 is
+unchanged.
+STATE-R31 records binding **D-370** — Cart Identity Transition Authority (`CURRENT`; guest→customer
+compatible purchase-intent merge required; silent whole-cart winner forbidden; logout isolates the
+browser from the customer Cart without deleting it; implementation NOT_AUTHORIZED). Cart remains
+purchase intent. Checkout Snapshot remains authoritative payable truth. `acceptedThrough` remains
+IMP-028. `pendingAcceptance` remains NONE. `currentProductSlice` remains NONE. `nextProductSlice`
+remains IMP-029. IMP-029 remains not started and is not implementation-authorized. Decision register
+is DR-12. Global architecture is ARCH-R15 (ARCH-G21). Next free decision is **D-371**. Supersedes
+STATE-R30 for current governance/architecture position. Product acceptance through IMP-028 is
+unchanged.
+STATE-R30 records binding **D-369** — Customer Paid Modifier Explicit Selection Authority
+(`CURRENT`; positive-price modifier requires explicit current-interaction selection before entering
+Cart purchase intent; implementation NOT_AUTHORIZED). Zero-price standard defaults MAY be visibly
+preselected. Cart remains purchase intent. Checkout Snapshot remains authoritative payable truth.
+Live import currently has `modifier_groups: 0`. `acceptedThrough` remains IMP-028.
+`pendingAcceptance` remains NONE. `currentProductSlice` remains NONE. `nextProductSlice` remains
+IMP-029. IMP-029 remains not started and is not implementation-authorized. Decision register is
+DR-11. Global architecture is ARCH-R14 (ARCH-G20). Next free decision is **D-370**. Supersedes
+STATE-R29 for current governance/architecture position. Product acceptance through IMP-028 is
+unchanged.
+STATE-R29 records binding **D-368** — Customer Menu Read Projection Authority (`CURRENT`; TARGET
+customer Menu serving architecture; implementation NOT_AUTHORIZED). Static `ordering-catalog.json`
+remains TRANSITIONAL CURRENT storefront delivery. Accepted IMP-025 implementation is not
+invalidated. `acceptedThrough` remains IMP-028. `pendingAcceptance` remains NONE.
+`currentProductSlice` remains NONE. `nextProductSlice` remains IMP-029. IMP-029 remains not started
+and is not implementation-authorized. Decision register is DR-10. Global architecture is ARCH-R13
+(ARCH-G19). Next free decision is **D-369**. Supersedes STATE-R28 for current
+governance/architecture position. Product acceptance through IMP-028 is unchanged.
+STATE-R28 records independent acceptance of IMP-028 — Invoice / Tax Receipt / Credit Note
+(`COMPLETE_AND_ACCEPTED`; `IMP-028_ACCEPTED: YES`). Financial-document acceptance evidence is
+recorded under binding **D-365** / **D-366** / **D-367**. Architecture remains
+`ARCHITECTURE_LOCKED`. `acceptedThrough` advances to IMP-028. `pendingAcceptance` is NONE.
+`currentProductSlice` is NONE. `nextProductSlice` is IMP-029. IMP-029 remains not started and is
+not implementation-authorized. Decision register remains DR-9. Global architecture remains
+ARCH-R12. Supersedes STATE-R27 for current accepted position.
+STATE-R27 records independent acceptance of IMP-026C — Pilot Customer-Commerce UX Hardening
+(`COMPLETE_AND_ACCEPTED`; `IMP-026C_ACCEPTED: YES`). Supplemental-inserted-gate acceptance evidence
+is recorded (`IMP026C_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED`;
+`IMP026C_FORMAL_ACCEPTANCE: ACCEPTED`). Architecture remains `ARCHITECTURE_LOCKED`.
+`acceptedThrough` remains IMP-027. `pendingAcceptance` advances to IMP-028. IMP-028 remains
+`IMPLEMENTATION_IN_PROGRESS` (`IMP-028_ACCEPTED: NO`; working-tree capability artifact may record
+`IMP-028_IMPLEMENTATION_COMPLETE: YES`). IMP-029 remains not started. Decision register remains
+DR-9. Global architecture remains ARCH-R12. Supersedes STATE-R26 for current accepted position.
 STATE-R26 records independent acceptance of IMP-027 — Refund Foundation
 (`COMPLETE_AND_ACCEPTED`; `IMP-027_ACCEPTED: YES`). Refund acceptance evidence is recorded
 (`IMP027_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED`;
@@ -472,10 +809,45 @@ governance conflicts.
 
 ## 7. Acceptance Provenance
 
-Accepted product through IMP-026 is the independently accepted implementation baseline encoded by
+Accepted product through IMP-028A is the independently accepted implementation baseline encoded by
 this reconciliation. Detailed per-slice evidence remains in repository tests, audits, Docker
 runtime proof, and historical implementation artifacts. This STATE snapshot records independent
-acceptance of IMP-026 (`COMPLETE_AND_ACCEPTED`) including external Razorpay webhook proof.
+acceptance of IMP-028A (`COMPLETE_AND_ACCEPTED`) as a customer-commerce shell over accepted
+IMP-009 / IMP-025 / IMP-026C, without implementing D-368 / D-369 / D-370. STATE-R28 recorded
+independent acceptance of IMP-028 (`COMPLETE_AND_ACCEPTED`) under locked **D-365** / **D-366** /
+**D-367**. STATE-R31 additionally records **D-370** as CURRENT Cart identity-transition policy
+without changing that accepted product inventory. STATE-R30 additionally records **D-369** as CURRENT paid-modifier explicit-selection policy without
+changing that accepted product inventory. STATE-R29 additionally records **D-368** as CURRENT TARGET
+Menu serving architecture without changing that accepted product inventory.
+
+Independent IMP-028A acceptance (COMPLETE_AND_ACCEPTED) on 2026-08-19. Pre-acceptance
+working-tree fingerprint:
+
+```text
+32f3bbeda6507e286ee9fe4cc93efa7c6c843ec81b4f4d54864eaf3e20a43f1a
+```
+
+Post-acceptance fingerprint is regenerated by `npm run working-tree:fingerprint` after this STATE
+update and supersedes the pre-acceptance value for ongoing governance identity.
+
+Independent IMP-028A acceptance preserved truthful limitations:
+
+```text
+TYPECHECK_STATUS = FAIL_PRE_EXISTING_UNRELATED
+CUSTOMER_ORDERING_E2E = BLOCKED_ENVIRONMENT
+CUSTOMER_ORDERING_ALTERNATIVE_REGRESSION_EVIDENCE_SUFFICIENT = YES
+RELEVANT_REGRESSION_TESTS = PASS_WITH_ENVIRONMENT_LIMITATION
+```
+
+Independent IMP-028 acceptance (COMPLETE_AND_ACCEPTED) on 2026-08-18. Pre-acceptance
+working-tree fingerprint:
+
+```text
+400f0ec388327c6c323eded33d8188428bb46cc031f7be92a9d62ea371c84467
+```
+
+Post-acceptance fingerprint is regenerated by `npm run governance:fingerprint` after this STATE
+update and supersedes the pre-acceptance value for ongoing governance identity.
 
 Independent IMP-026 acceptance (COMPLETE_AND_ACCEPTED) on 2026-08-18. Pre-acceptance
 governance fingerprint:
@@ -484,16 +856,49 @@ governance fingerprint:
 3234612aaefaf49bad0ee49b68419a91bfff36d1c25c7fec898287c8bf851fe1
 ```
 
-Post-acceptance fingerprint is regenerated by `npm run governance:fingerprint` after this STATE
-update and supersedes the pre-acceptance value for ongoing governance identity.
+STATE-R43 records IMP-028C — Food Customization implementation started under its existing
+architecture `ARCHITECTURE_LOCKED` and implementation authorization. `acceptedThrough` remains
+IMP-028B; `pendingAcceptance` remains NONE; `currentProductSlice` remains IMP-028C; and
+`nextProductSlice` remains IMP-029, which is planned, not started, and not authorized. D-369 is
+mandatory for this capability; D-368 remains the Customer Menu discovery authority; D-370 policy
+remains outside scope; D-371 remains unused. The capability retains the canonical-content
+founder-UAT stop gate. No acceptance, runtime, schema, migration, catalog-data, decision-register,
+or global-architecture change is recorded.
+
+STATE-R46 records IMP-028C — Food Customization `COMPLETE_AND_ACCEPTED` after the founder declared
+UAT PASS on 2026-08-20 for the frozen candidate `imp-028c/uat-candidate`, commit
+`7f4149914c9abdb0fb6d80e64bbf21579fe790df`, tree
+`2a49537394ee13b0af38b5fa535328e9808e00f3`. The record does not claim unsupplied scenario results,
+timestamps, screenshots, recordings, image digests, or deployment/container identity. Architecture
+remains `ARCHITECTURE_LOCKED`; implementation remains `AUTHORIZED` / `STARTED` / `COMPLETE`; and
+`IMP-028C_ACCEPTED: YES`. `acceptedThrough` advances to IMP-028C; `currentProductSlice` and
+`pendingAcceptance` are NONE. `nextProductSlice` remains IMP-029, planned, not started, and not
+authorized. Decision register remains DR-12, global architecture remains ARCH-R15, and D-371 remains
+unused. This does not authorize or start IMP-029.
+
+STATE-R45 records IMP-028C — Food Customization implementation complete pending independent
+acceptance (`IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`; architecture `ARCHITECTURE_LOCKED`;
+`IMP-028C_IMPLEMENTATION_AUTHORIZED: YES`; `IMP-028C_IMPLEMENTATION_STARTED: YES`;
+`IMP-028C_IMPLEMENTATION_COMPLETE: YES`; `currentProductSlice = IMP-028C`;
+`pendingAcceptance = IMP-028C`). Formal acceptance of IMP-028C was **not** claimed.
+`acceptedThrough` remains IMP-028B. `nextProductSlice` remains IMP-029. Founder UAT is
+**NOT_STARTED**; exact-candidate deployment is **PENDING**. IMP-029 remains planned, not started,
+and not authorized. Decision register remains DR-12. Global architecture remains ARCH-R15. Next
+free decision remains **D-371**. Supersedes STATE-R44 for current IMP-028C lifecycle position.
+Product acceptance through IMP-028B is unchanged.
+
+STATE-R44 records the IMP-028C business/domain model and remaining implementation-plan lock. The
+core model reuses Catalog Modifier Groups and Variant bindings; bundle components inherit their
+canonical Variant modifier authority; bundle/package pricing remains distinct from modifier pricing;
+and D-368 / D-369 / D-370 remain sufficient. Slice 1 and Slice 2 are `TECHNICALLY_ACCEPTED`; Slice
+3 and Slice 4 remain planned implementation work. IMP-028C remains `IMPLEMENTATION_IN_PROGRESS`,
+`IMP-028C_IMPLEMENTATION_COMPLETE: NO`, and `IMP-028C_ACCEPTED: NO`. No new decision is created:
+D-371 remains unused; ARCH-R15 and DR-12 remain current.
 
 ## 8. Explicitly Not Yet Accepted
 
 Supporting primitives do not equal capability completion. Not yet accepted as product capabilities:
 
-- Pilot Customer-Commerce UX Hardening (IMP-026C)
-- Refund
-- Invoice / Tax Receipt / Credit Note
 - Operations Console API
 - Operations Console UI
 - Delivery
@@ -505,6 +910,7 @@ Supporting primitives do not equal capability completion. Not yet accepted as pr
 - Security / Privacy final hardening
 - Production Infrastructure
 - Launch Validation
+- Food Customization (IMP-028C architecture locked; implementation complete pending acceptance; founder UAT not started)
 
 ## 9. Authority Boundaries
 
@@ -520,6 +926,9 @@ Supporting primitives do not equal capability completion. Not yet accepted as pr
 | IMP-026 locked capability architecture | [`capabilities/IMP-026-razorpay-productionization.md`](./capabilities/IMP-026-razorpay-productionization.md) |
 | IMP-026C locked capability architecture | [`capabilities/IMP-026C-pilot-customer-commerce-ux-hardening.md`](./capabilities/IMP-026C-pilot-customer-commerce-ux-hardening.md) |
 | IMP-027 locked capability architecture | [`capabilities/IMP-027-refund-foundation.md`](./capabilities/IMP-027-refund-foundation.md) |
+| IMP-028 locked capability architecture | [`capabilities/IMP-028-invoice-tax-receipt-credit-note.md`](./capabilities/IMP-028-invoice-tax-receipt-credit-note.md) |
+| IMP-028A locked capability architecture | [`capabilities/IMP-028A-food-direct-ux-foundation.md`](./capabilities/IMP-028A-food-direct-ux-foundation.md) |
+| IMP-028B canonical capability | [`capabilities/IMP-028B-customer-menu-projection-and-discovery.md`](./capabilities/IMP-028B-customer-menu-projection-and-discovery.md) |
 
 Agents may propose a STATE delta in their report. Only independent acceptance updates this file's
 accepted position and may promote `governanceHealth` to `ALIGNED`.

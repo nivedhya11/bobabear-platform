@@ -26,8 +26,8 @@
 # preserved end to end: `builder` only ever runs `next build`, never starts
 # a Next.js server, and never touches PostgreSQL.
 
-ARG NODE_IMAGE=node:22.23.1-bookworm-slim
-ARG NGINX_IMAGE=nginx:1.30.4-alpine3.24
+ARG NODE_IMAGE=docker.io/library/node:22.23.1-bookworm-slim
+ARG NGINX_IMAGE=docker.io/library/nginx:1.30.4-alpine3.24
 
 # ── base ─────────────────────────────────────────────────────────────────
 FROM ${NODE_IMAGE} AS base
@@ -84,9 +84,11 @@ COPY scripts/database ./scripts/database
 COPY scripts/menu ./scripts/menu
 COPY scripts/assortment ./scripts/assortment
 COPY scripts/pricing ./scripts/pricing
+COPY scripts/catalog ./scripts/catalog
 COPY scripts/check-config.ts ./scripts/check-config.ts
 COPY data/platform/imports ./data/platform/imports
 COPY data/platform/pricing ./data/platform/pricing
+COPY data/platform/catalog ./data/platform/catalog
 COPY public/assets/menu ./public/assets/menu
 USER node
 

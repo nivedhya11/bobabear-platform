@@ -15,6 +15,7 @@ export {
   type GuestCartCredential,
 } from "./guest-token";
 export { commerceRequest, type CommerceHttpResult, type CommerceRequestOptions } from "./http";
+export { getCustomerMenu } from "./menu";
 export {
   addCartLine,
   claimGuestCart,

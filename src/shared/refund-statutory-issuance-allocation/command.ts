@@ -220,15 +220,15 @@ export function parseSealRefundStatutoryIssuanceAllocationCommand(
           `taxComponents[${index}].allocatedTaxAmountPaise`,
         ),
         taxType: parseOptionalTaxType(
-          entry.taxType,
+          entry.taxType as string | null | undefined,
           `taxComponents[${index}].taxType`,
         ),
         taxRateBps: parseOptionalTaxRateBps(
-          entry.taxRateBps,
+          entry.taxRateBps as number | null | undefined,
           `taxComponents[${index}].taxRateBps`,
         ),
         sourceFinancialDocumentLineId: parseOptionalUuid(
-          entry.sourceFinancialDocumentLineId,
+          entry.sourceFinancialDocumentLineId as string | null | undefined,
           `taxComponents[${index}].sourceFinancialDocumentLineId`,
         ),
       }),

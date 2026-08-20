@@ -5,9 +5,9 @@
   "capability": "IMP-026C",
   "title": "Pilot Customer-Commerce UX Hardening",
   "architectureLock": "ARCHITECTURE_LOCKED",
-  "implementation": "IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE",
+  "implementation": "COMPLETE_AND_ACCEPTED",
   "implementationAuthorized": true,
-  "lastReviewed": "2026-08-14",
+  "lastReviewed": "2026-08-18",
   "bindingDecisions": ["D-356", "D-357", "D-358", "D-359", "D-360", "D-361", "D-362", "D-363"],
   "dependsOn": ["IMP-019", "IMP-020", "IMP-021", "IMP-022", "IMP-023", "IMP-024", "IMP-025", "IMP-026"]
 }
@@ -23,15 +23,23 @@ Hardening.
 | Field | Value |
 |---|---|
 | Architecture lock | `ARCHITECTURE_LOCKED` |
-| Implementation | `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` |
+| Implementation | `COMPLETE_AND_ACCEPTED` |
 | Implementation authorized | **YES** |
-| Acceptance | not claimed; `acceptedThrough` is IMP-027; `pendingAcceptance` = IMP-026C |
-| Pending acceptance (current formal gate) | IMP-026C (`IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`) |
+| Acceptance | **COMPLETE_AND_ACCEPTED**; `acceptedThrough` remains IMP-027; `pendingAcceptance` = IMP-028 |
+| Pending acceptance (current formal gate) | IMP-028 (`IMPLEMENTATION_IN_PROGRESS`; `IMP-028_ACCEPTED: NO`) |
 | Schema change required | **NO** |
 | New API / transport / domain | **NO** |
 
-Architecture remains locked. IMP-026C implementation is complete pending acceptance under current
-repository governance. Do not claim formal acceptance of IMP-026C. Do not activate IMP-029.
+Architecture remains locked. IMP-026C implementation is complete and independently accepted.
+`acceptedThrough` remains IMP-027 because IMP-026C is a supplemental inserted gate. Do not
+reinterpret this acceptance as acceptance of IMP-028. Do not activate IMP-029.
+
+> **Amendment (2026-08-18):** **[D-370](../decision-register.md)** supersedes only this capability’s
+> future-facing whole-cart silent-winner / Checkout-only identity-transition reading. Accepted
+> IMP-026C checkout claim/reconcile implementation remains CURRENT until an authorized future
+> capability implements D-370. D-370 does **not** invalidate guest-token `sessionStorage` CURRENT
+> delivery, coupon-conflict KEEP_GUEST / KEEP_CUSTOMER as coupon-resolution implementation, or
+> accepted UX-04 continuity evidence. D-370 does **not** authorize implementation.
 
 ```text
 DOMAIN: NONE
@@ -59,11 +67,11 @@ TEST_ONLY
 |---|---|
 | IMP | IMP-026C |
 | Capability | Pilot Customer-Commerce UX Hardening |
-| Roadmap lifecycle | `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` |
+| Roadmap lifecycle | `COMPLETE_AND_ACCEPTED` |
 | Implementation | `AUTHORIZED` / `COMPLETE` |
 | Accepted product through | IMP-027 — Refund Foundation |
 | Current product slice | IMP-028 |
-| Pending acceptance | IMP-026C — Pilot Customer-Commerce UX Hardening |
+| Pending acceptance | IMP-028 — Invoice / Tax Receipt / Credit Note |
 | Public GTM boundary | IMP-040 |
 | Binding decisions consumed | D-356, D-357, D-358, D-359, D-360, D-361, D-362, D-363 |
 | New decision | **NO** (current next free ID is `D-368`) |
@@ -825,7 +833,7 @@ Do not redundantly re-run full IMP-026 provider/webhook matrices as IMP-026C UX 
 11. No new API, schema, migration, service, or decision D-364.
 12. Static export + `customer-commerce` `/api/v1/*` topology unchanged.
 13. IMP-026 external webhook gate is SATISFIED under accepted IMP-026 authority.
-14. IMP-026C implementation is authorized and complete pending formal acceptance.
+14. IMP-026C implementation is authorized, complete, and formally accepted.
 
 ---
 
@@ -864,9 +872,9 @@ None. Architecture is locked.
 
 ```text
 Architecture:     ARCHITECTURE_LOCKED
-Implementation:   IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
+Implementation:   COMPLETE_AND_ACCEPTED
 Authorized now:   YES
 ```
 
 Implementation authorization and evidence are already recorded. Formal acceptance of IMP-026C is
-still not claimed.
+recorded (`IMP-026C_ACCEPTED: YES`).

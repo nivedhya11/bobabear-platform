@@ -31,6 +31,8 @@ import {
   withCustomerCommerceHttpService,
   type CustomerCommerceHttpTestHarness,
 } from "./support/service-harness";
+import { seedDirectMenuCatalog } from "./support/menu-fixtures";
+import { DIRECT_ORDERING_BRAND_ID } from "../../src/shared/customer-menu/constants";
 
 function adminConnectionInfo() {
   return {
@@ -131,9 +133,63 @@ describe("IMP-024 HTTP: trust and forbidden routes", () => {
     });
   });
 
-  it("GET /api/v1/menu is not found", async () => {
+  it("GET /api/v1/menu requires brandId", async () => {
     await withRunningService(async ({ baseUrl }) => {
       const response = await fetch(`${baseUrl}/api/v1/menu`);
+      expect(response.status).toBe(400);
+      const body = await response.json();
+      expect(body.code).toBe("CART_INVALID_INPUT");
+    });
+  });
+
+  it("GET /api/v1/menu returns projected menu from canonical authorities", async () => {
+    await withIsolatedTestDatabase(adminConnectionInfo(), async (database) => {
+      await applyMigrations(database.connectionString);
+      const persistence = (await import("../../src/server/persistence")).getApplicationPersistence({
+        environment: "test",
+        processKind: "web",
+        publicOrigin: "http://localhost:3100",
+        logLevel: "warn",
+        release: null,
+        allowUnsafeAdapters: true,
+        databaseSslMode: "disable",
+        port: 3000,
+        databaseUrl: database.connectionString,
+      });
+      try {
+        const brandId = await seedDirectMenuCatalog(persistence);
+        expect(brandId).toBe(DIRECT_ORDERING_BRAND_ID);
+      } finally {
+        await persistence.close();
+      }
+      await withCustomerCommerceHttpService(database.connectionString, async ({ baseUrl }) => {
+        const response = await fetch(
+          `${baseUrl}/api/v1/menu?brandId=${encodeURIComponent(DIRECT_ORDERING_BRAND_ID)}`,
+        );
+        expect(response.status).toBe(200);
+        const body = await response.json();
+        expect(body.ok).toBe(true);
+        expect(body.menu.brandId).toBe(DIRECT_ORDERING_BRAND_ID);
+        expect(body.menu.sections.length).toBeGreaterThan(0);
+        expect(body.menu.items.length).toBeGreaterThan(0);
+        const firstItem = body.menu.items[0];
+        expect(firstItem.productId).toMatch(
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+        );
+        expect(firstItem.variantId).toMatch(
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+        );
+        expect(typeof firstItem.displayPricePaise).toBe("number");
+        expect(firstItem.currency).toBe("INR");
+        expect(firstItem).not.toHaveProperty("availability");
+        assertNoStoreAndRequestId(response);
+      });
+    });
+  });
+
+  it("GET /api/v1/menu/subpath remains not found", async () => {
+    await withRunningService(async ({ baseUrl }) => {
+      const response = await fetch(`${baseUrl}/api/v1/menu/extra`);
       expect(response.status).toBe(404);
     });
   });

@@ -50,7 +50,7 @@ describe("IMP-028 Financial Document issuance operation (FD-I01..FD-I18)", () =>
       );
       expect(doc.issuerProfileId).toBe(h.activeIssuerProfileId);
       expect(doc.lines).toHaveLength(1);
-      expect(doc.grandTotalPaise).toBe(10500n);
+      expect(doc.grandTotalPaise).toBe(BigInt(10500));
 
       const after = await h.persistence.withContext(async (ctx) => {
         const rows = await ctx.db.execute(sql`
@@ -60,7 +60,7 @@ describe("IMP-028 Financial Document issuance operation (FD-I01..FD-I18)", () =>
         `);
         return BigInt(String(rows.rows[0]?.n));
       });
-      expect(after).toBe(before + 1n);
+      expect(after).toBe(before + BigInt(1));
     });
   });
 
@@ -140,7 +140,7 @@ describe("IMP-028 Financial Document issuance operation (FD-I01..FD-I18)", () =>
         };
       });
       expect(stats.docCount).toBe(1);
-      expect(stats.nextSequence).toBe(a.sequenceNumber + 1n);
+      expect(stats.nextSequence).toBe(a.sequenceNumber + BigInt(1));
     });
   });
 
@@ -369,7 +369,7 @@ describe("IMP-028 Financial Document issuance operation (FD-I01..FD-I18)", () =>
           other.workforce.support,
           {
             paymentId: other.paymentId,
-            amountPaise: 100n,
+            amountPaise: BigInt(100),
             reason: "unrelated refund",
           },
           { provider: other.provider },
@@ -405,23 +405,23 @@ describe("IMP-028 Financial Document issuance operation (FD-I01..FD-I18)", () =>
               lineNumber: 1,
               description: "Credit",
               quantity: 1,
-              unitPaise: 1000n,
-              discountPaise: 0n,
-              chargePaise: 0n,
-              taxableValuePaise: 1000n,
+              unitPaise: BigInt(1000),
+              discountPaise: BigInt(0),
+              chargePaise: BigInt(0),
+              taxableValuePaise: BigInt(1000),
               sacCode: "9983",
               taxComponents: [
                 {
                   taxType: "cgst",
                   rateBps: 250,
-                  taxableAmountPaise: 1000n,
-                  taxAmountPaise: 25n,
+                  taxableAmountPaise: BigInt(1000),
+                  taxAmountPaise: BigInt(25),
                 },
                 {
                   taxType: "sgst",
                   rateBps: 250,
-                  taxableAmountPaise: 1000n,
-                  taxAmountPaise: 25n,
+                  taxableAmountPaise: BigInt(1000),
+                  taxAmountPaise: BigInt(25),
                 },
               ],
             },
@@ -444,10 +444,10 @@ describe("IMP-028 Financial Document issuance operation (FD-I01..FD-I18)", () =>
               lineNumber: 1,
               description: "BoS",
               quantity: 1,
-              unitPaise: 1000n,
-              discountPaise: 0n,
-              chargePaise: 0n,
-              taxableValuePaise: 1000n,
+              unitPaise: BigInt(1000),
+              discountPaise: BigInt(0),
+              chargePaise: BigInt(0),
+              taxableValuePaise: BigInt(1000),
               sacCode: "9983",
               taxComponents: [],
             },
@@ -472,7 +472,7 @@ describe("IMP-028 Financial Document issuance operation (FD-I01..FD-I18)", () =>
         issueFinancialDocument(
           h.persistence,
           buildIssueCommand(h, {
-            grandTotalPaise: 1n,
+            grandTotalPaise: BigInt(1),
           }),
         ),
       ).rejects.toMatchObject({ code: "ARITHMETIC_INVALID" });
@@ -484,7 +484,7 @@ describe("IMP-028 Financial Document issuance operation (FD-I01..FD-I18)", () =>
             lines: [
               {
                 ...standardTaxInvoiceLines()[0]!,
-                taxableValuePaise: 9999n,
+                taxableValuePaise: BigInt(9999),
               },
             ],
           }),
@@ -506,14 +506,14 @@ describe("IMP-028 Financial Document issuance operation (FD-I01..FD-I18)", () =>
                   {
                     taxType: "cgst",
                     rateBps: 250,
-                    taxableAmountPaise: 10000n,
-                    taxAmountPaise: 250n,
+                    taxableAmountPaise: BigInt(10000),
+                    taxAmountPaise: BigInt(250),
                   },
                   {
                     taxType: "igst",
                     rateBps: 500,
-                    taxableAmountPaise: 10000n,
-                    taxAmountPaise: 500n,
+                    taxableAmountPaise: BigInt(10000),
+                    taxAmountPaise: BigInt(500),
                   },
                 ],
               },
@@ -599,26 +599,26 @@ describe("IMP-028 Financial Document issuance operation (FD-I01..FD-I18)", () =>
 describe("IMP-028 issuance arithmetic unit", () => {
   it("derives header totals from sealed lines", () => {
     const sealed = sealIssuanceArithmetic(standardTaxInvoiceLines());
-    expect(sealed.taxableTotalPaise).toBe(10000n);
-    expect(sealed.taxTotalPaise).toBe(500n);
-    expect(sealed.grandTotalPaise).toBe(10500n);
-    expect(sealed.lines[0]?.lineTotalPaise).toBe(10500n);
+    expect(sealed.taxableTotalPaise).toBe(BigInt(10000));
+    expect(sealed.taxTotalPaise).toBe(BigInt(500));
+    expect(sealed.grandTotalPaise).toBe(BigInt(10500));
+    expect(sealed.lines[0]?.lineTotalPaise).toBe(BigInt(10500));
   });
 
   it("FD-IC05 tax amount mathematically derived via taxExclusivePaise", async () => {
     const { taxExclusivePaise } = await import("../../src/shared/pricing/money");
-    const taxable = 333n;
+    const taxable = BigInt(333);
     const rateBps = 250;
     const expected = taxExclusivePaise(taxable, rateBps);
-    expect(expected).toBe(8n);
+    expect(expected).toBe(BigInt(8));
     const sealed = sealIssuanceArithmetic([
       {
         lineNumber: 1,
         description: "rounding",
         quantity: 1,
         unitPaise: taxable,
-        discountPaise: 0n,
-        chargePaise: 0n,
+        discountPaise: BigInt(0),
+        chargePaise: BigInt(0),
         taxableValuePaise: taxable,
         sacCode: "9983",
         taxComponents: [
@@ -637,7 +637,7 @@ describe("IMP-028 issuance arithmetic unit", () => {
     ]);
     expect(sealed.lines[0]?.taxComponents[0]?.taxAmountPaise).toBe(expected);
     expect(sealed.lines[0]?.taxComponents[1]?.taxAmountPaise).toBe(expected);
-    expect(sealed.taxTotalPaise).toBe(expected * 2n);
+    expect(sealed.taxTotalPaise).toBe(expected * BigInt(2));
   });
 
   it("FD-IC06 inconsistent caller tax amount is rejected", () => {
@@ -647,23 +647,23 @@ describe("IMP-028 issuance arithmetic unit", () => {
           lineNumber: 1,
           description: "bad tax",
           quantity: 1,
-          unitPaise: 10000n,
-          discountPaise: 0n,
-          chargePaise: 0n,
-          taxableValuePaise: 10000n,
+          unitPaise: BigInt(10000),
+          discountPaise: BigInt(0),
+          chargePaise: BigInt(0),
+          taxableValuePaise: BigInt(10000),
           sacCode: "9983",
           taxComponents: [
             {
               taxType: "cgst",
               rateBps: 250,
-              taxableAmountPaise: 10000n,
-              taxAmountPaise: 1n,
+              taxableAmountPaise: BigInt(10000),
+              taxAmountPaise: BigInt(1),
             },
             {
               taxType: "sgst",
               rateBps: 250,
-              taxableAmountPaise: 10000n,
-              taxAmountPaise: 250n,
+              taxableAmountPaise: BigInt(10000),
+              taxAmountPaise: BigInt(250),
             },
           ],
         },
@@ -899,7 +899,7 @@ describe("IMP-028 Slice 2 corrections (FD-IC01..FD-IC11)", () => {
   it("FD-IC07 persisted rate and amount are canonically coherent", async () => {
     await withFinancialDocumentIssuanceHarness(async (h) => {
       const { taxExclusivePaise } = await import("../../src/shared/pricing/money");
-      const taxable = 10000n;
+      const taxable = BigInt(10000);
       const rateBps = 250;
       const expected = taxExclusivePaise(taxable, rateBps);
       const doc = await issueFinancialDocument(
@@ -911,8 +911,8 @@ describe("IMP-028 Slice 2 corrections (FD-IC01..FD-IC11)", () => {
               description: "coherent",
               quantity: 1,
               unitPaise: taxable,
-              discountPaise: 0n,
-              chargePaise: 0n,
+              discountPaise: BigInt(0),
+              chargePaise: BigInt(0),
               taxableValuePaise: taxable,
               sacCode: "9983",
               taxComponents: [

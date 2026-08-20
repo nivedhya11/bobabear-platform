@@ -79,6 +79,7 @@ import { extractGuestCartToken } from "./guest-token";
 import { readJsonObjectBody, readOptionalJsonObjectBody } from "./request";
 import { handleRazorpayWebhook, RAZORPAY_WEBHOOK_PATH } from "./razorpay-webhook";
 import { coerceRevisionFields } from "./revisions";
+import { projectCustomerMenu } from "../menu/project-customer-menu";
 import {
   sendJson,
   sendMethodNotAllowed,
@@ -242,9 +243,9 @@ export async function routeCustomerCommerceRequest(
     sendNotFound(res, requestId);
     return outcome("forbidden_create_cart", 404, "NOT_FOUND");
   }
-  if (pathname === "/api/v1/menu" || pathname.startsWith("/api/v1/menu/")) {
+  if (pathname.startsWith("/api/v1/menu/")) {
     sendNotFound(res, requestId);
-    return outcome("forbidden_menu", 404, "NOT_FOUND");
+    return outcome("forbidden_menu_subpath", 404, "NOT_FOUND");
   }
   if (pathname.startsWith("/api/auth/")) {
     sendNotFound(res, requestId);
@@ -260,6 +261,28 @@ export async function routeCustomerCommerceRequest(
   }
 
   try {
+
+    if (pathname === "/api/v1/menu") {
+      if (method !== "GET") {
+        sendMethodNotAllowed(res, ["GET"], requestId);
+        return outcome("get_menu", 405, "METHOD_NOT_ALLOWED");
+      }
+      const brandId = url.searchParams.get("brandId");
+      if (!brandId) {
+        throw new CartError("CART_INVALID_INPUT", "brandId is required.", {
+          field: "brandId",
+        });
+      }
+      const outletId = url.searchParams.get("outletId");
+      const menu = await deps.persistence.withContext((context) =>
+        projectCustomerMenu(context, {
+          brandId,
+          outletId,
+        }),
+      );
+      sendJson(res, { ok: true, menu }, { status: 200, requestId });
+      return outcome("get_menu", 200, "OK");
+    }
 
     // Profile
     if (pathname === "/api/v1/me/profile") {

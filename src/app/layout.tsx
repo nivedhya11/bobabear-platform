@@ -136,7 +136,7 @@ const restaurantJsonLd = {
     opens: "11:00",
     closes: "24:00",
   },
-  hasMenu: `${SITE_URL}/#bar`,
+  hasMenu: `${SITE_URL}/order`,
   acceptsReservations: false,
   sameAs: [SOCIAL.instagram],
   potentialAction: [
@@ -144,9 +144,12 @@ const restaurantJsonLd = {
       "@type": "OrderAction",
       target: {
         "@type": "EntryPoint",
-        urlTemplate: CONTACT.whatsapp,
+        urlTemplate: `${SITE_URL}/order`,
         inLanguage: "en-IN",
-        actionPlatform: ["http://schema.org/MobileWebPlatform"],
+        actionPlatform: [
+          "http://schema.org/DesktopWebPlatform",
+          "http://schema.org/MobileWebPlatform",
+        ],
       },
     },
   ],

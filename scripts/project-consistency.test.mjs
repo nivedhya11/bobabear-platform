@@ -3,7 +3,11 @@ import { describe, it } from "node:test";
 import {
   FORMAL_LEDGER_IMP_ID_RE,
   LEDGER_ROW_IMP_RE,
+  evaluateCapabilityLifecycle,
+  evaluateLifecycleAuthorityAlignment,
   evaluatePendingAcceptanceSplit,
+  isAllowedGovernanceVersion,
+  isValidCanonicalRevision,
   runProjectConsistency,
 } from "./project-consistency.mjs";
 
@@ -241,6 +245,484 @@ describe("GTM-R15–R28 pending-acceptance split", () => {
       ok: true,
       kind: "imp027_accepted_pending_imp026c_imp028_implementation",
     });
+  });
+
+  it("permits aligned pendingAcceptance IMP-028 after IMP-026C is accepted", () => {
+    const result = evaluatePendingAcceptanceSplit({
+      ...deferredGate,
+      acceptedThrough: "IMP-027",
+      currentProductSlice: "IMP-028",
+      pendingAcceptance: "IMP-028",
+      imp026Implementation: "COMPLETE_AND_ACCEPTED",
+      imp026Accepted: true,
+      deferredExternalWebhookGate: "SATISFIED",
+      deferredExternalWebhookSatisfied: true,
+      imp026cLifecycle: "COMPLETE_AND_ACCEPTED",
+      imp026cImplementationAuthorized: true,
+      imp026cAccepted: true,
+      imp027Lifecycle: "COMPLETE_AND_ACCEPTED",
+      imp027ImplementationAuthorized: true,
+      imp027Accepted: true,
+      imp028Lifecycle: "IMPLEMENTATION_IN_PROGRESS",
+      imp028ImplementationAuthorized: true,
+      imp028ArchitectureLocked: true,
+      imp028ImplementationStarted: true,
+    });
+    assert.deepEqual(result, { ok: true, kind: "aligned" });
+  });
+
+  it("permits aligned pendingAcceptance NONE after IMP-028 is accepted", () => {
+    const result = evaluatePendingAcceptanceSplit({
+      ...deferredGate,
+      acceptedThrough: "IMP-028",
+      currentProductSlice: "NONE",
+      pendingAcceptance: "NONE",
+      imp026Implementation: "COMPLETE_AND_ACCEPTED",
+      imp026Accepted: true,
+      deferredExternalWebhookGate: "SATISFIED",
+      deferredExternalWebhookSatisfied: true,
+      imp026cLifecycle: "COMPLETE_AND_ACCEPTED",
+      imp026cImplementationAuthorized: true,
+      imp026cAccepted: true,
+      imp027Lifecycle: "COMPLETE_AND_ACCEPTED",
+      imp027ImplementationAuthorized: true,
+      imp027Accepted: true,
+      imp028Lifecycle: "COMPLETE_AND_ACCEPTED",
+      imp028ImplementationAuthorized: true,
+      imp028ArchitectureLocked: true,
+      imp028ImplementationStarted: true,
+      imp028Accepted: true,
+    });
+    assert.deepEqual(result, { ok: true, kind: "aligned" });
+  });
+
+  it("permits IMP-028A canonical activation after IMP-028 is accepted", () => {
+    const result = evaluatePendingAcceptanceSplit({
+      ...deferredGate,
+      acceptedThrough: "IMP-028",
+      currentProductSlice: "IMP-028A",
+      pendingAcceptance: "NONE",
+      imp026Implementation: "COMPLETE_AND_ACCEPTED",
+      imp026Accepted: true,
+      deferredExternalWebhookGate: "SATISFIED",
+      deferredExternalWebhookSatisfied: true,
+      imp026cLifecycle: "COMPLETE_AND_ACCEPTED",
+      imp026cImplementationAuthorized: true,
+      imp026cAccepted: true,
+      imp027Lifecycle: "COMPLETE_AND_ACCEPTED",
+      imp027ImplementationAuthorized: true,
+      imp027Accepted: true,
+      imp028Lifecycle: "COMPLETE_AND_ACCEPTED",
+      imp028ImplementationAuthorized: true,
+      imp028ArchitectureLocked: true,
+      imp028ImplementationStarted: true,
+      imp028Accepted: true,
+      imp028aImplementationAuthorized: false,
+      imp028aImplementationStarted: false,
+    });
+    assert.deepEqual(result, { ok: true, kind: "imp028a_canonical_activation" });
+  });
+
+  it("rejects IMP-028A implementation authorization unless architecture is locked", () => {
+    const result = evaluatePendingAcceptanceSplit({
+      ...deferredGate,
+      acceptedThrough: "IMP-028",
+      currentProductSlice: "IMP-028A",
+      pendingAcceptance: "NONE",
+      imp026Implementation: "COMPLETE_AND_ACCEPTED",
+      imp026Accepted: true,
+      deferredExternalWebhookGate: "SATISFIED",
+      deferredExternalWebhookSatisfied: true,
+      imp026cLifecycle: "COMPLETE_AND_ACCEPTED",
+      imp026cImplementationAuthorized: true,
+      imp026cAccepted: true,
+      imp027Lifecycle: "COMPLETE_AND_ACCEPTED",
+      imp027ImplementationAuthorized: true,
+      imp027Accepted: true,
+      imp028Lifecycle: "COMPLETE_AND_ACCEPTED",
+      imp028ImplementationAuthorized: true,
+      imp028ArchitectureLocked: true,
+      imp028ImplementationStarted: true,
+      imp028Accepted: true,
+      imp028aImplementationAuthorized: true,
+      imp028aImplementationStarted: false,
+      imp028aArchitectureLocked: false,
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "PENDING_ACCEPTANCE_SPLIT");
+  });
+
+  it("permits IMP-028A implementation authorization when architecture is locked and not started", () => {
+    const result = evaluatePendingAcceptanceSplit({
+      ...deferredGate,
+      acceptedThrough: "IMP-028",
+      currentProductSlice: "IMP-028A",
+      pendingAcceptance: "NONE",
+      imp026Implementation: "COMPLETE_AND_ACCEPTED",
+      imp026Accepted: true,
+      deferredExternalWebhookGate: "SATISFIED",
+      deferredExternalWebhookSatisfied: true,
+      imp026cLifecycle: "COMPLETE_AND_ACCEPTED",
+      imp026cImplementationAuthorized: true,
+      imp026cAccepted: true,
+      imp027Lifecycle: "COMPLETE_AND_ACCEPTED",
+      imp027ImplementationAuthorized: true,
+      imp027Accepted: true,
+      imp028Lifecycle: "COMPLETE_AND_ACCEPTED",
+      imp028ImplementationAuthorized: true,
+      imp028ArchitectureLocked: true,
+      imp028ImplementationStarted: true,
+      imp028Accepted: true,
+      imp028aImplementationAuthorized: true,
+      imp028aImplementationStarted: false,
+      imp028aArchitectureLocked: true,
+    });
+    assert.deepEqual(result, { ok: true, kind: "imp028a_implementation_authorized" });
+  });
+
+  it("permits IMP-028A implementation in progress when authorized and locked", () => {
+    const result = evaluatePendingAcceptanceSplit({
+      ...deferredGate,
+      acceptedThrough: "IMP-028",
+      currentProductSlice: "IMP-028A",
+      pendingAcceptance: "NONE",
+      imp026Implementation: "COMPLETE_AND_ACCEPTED",
+      imp026Accepted: true,
+      deferredExternalWebhookGate: "SATISFIED",
+      deferredExternalWebhookSatisfied: true,
+      imp026cLifecycle: "COMPLETE_AND_ACCEPTED",
+      imp026cImplementationAuthorized: true,
+      imp026cAccepted: true,
+      imp027Lifecycle: "COMPLETE_AND_ACCEPTED",
+      imp027ImplementationAuthorized: true,
+      imp027Accepted: true,
+      imp028Lifecycle: "COMPLETE_AND_ACCEPTED",
+      imp028ImplementationAuthorized: true,
+      imp028ArchitectureLocked: true,
+      imp028ImplementationStarted: true,
+      imp028Accepted: true,
+      imp028aImplementationAuthorized: true,
+      imp028aImplementationStarted: true,
+      imp028aArchitectureLocked: true,
+    });
+    assert.deepEqual(result, { ok: true, kind: "imp028a_implementation_in_progress" });
+  });
+
+  it("permits IMP-028A implementation complete pending acceptance", () => {
+    const result = evaluatePendingAcceptanceSplit({
+      ...deferredGate,
+      acceptedThrough: "IMP-028",
+      currentProductSlice: "IMP-028A",
+      pendingAcceptance: "IMP-028A",
+      imp026Implementation: "COMPLETE_AND_ACCEPTED",
+      imp026Accepted: true,
+      deferredExternalWebhookGate: "SATISFIED",
+      deferredExternalWebhookSatisfied: true,
+      imp026cLifecycle: "COMPLETE_AND_ACCEPTED",
+      imp026cImplementationAuthorized: true,
+      imp026cAccepted: true,
+      imp027Lifecycle: "COMPLETE_AND_ACCEPTED",
+      imp027ImplementationAuthorized: true,
+      imp027Accepted: true,
+      imp028Lifecycle: "COMPLETE_AND_ACCEPTED",
+      imp028ImplementationAuthorized: true,
+      imp028ArchitectureLocked: true,
+      imp028ImplementationStarted: true,
+      imp028Accepted: true,
+      imp028aImplementationAuthorized: true,
+      imp028aImplementationStarted: true,
+      imp028aArchitectureLocked: true,
+    });
+    assert.deepEqual(result, {
+      ok: true,
+      kind: "imp028a_implementation_complete_pending_acceptance",
+    });
+  });
+
+  it("permits IMP-028A COMPLETE_AND_ACCEPTED after independent acceptance", () => {
+    const result = evaluatePendingAcceptanceSplit({
+      ...deferredGate,
+      acceptedThrough: "IMP-028A",
+      currentProductSlice: "NONE",
+      pendingAcceptance: "NONE",
+      imp026Implementation: "COMPLETE_AND_ACCEPTED",
+      imp026Accepted: true,
+      deferredExternalWebhookGate: "SATISFIED",
+      deferredExternalWebhookSatisfied: true,
+      imp026cLifecycle: "COMPLETE_AND_ACCEPTED",
+      imp026cImplementationAuthorized: true,
+      imp026cAccepted: true,
+      imp027Lifecycle: "COMPLETE_AND_ACCEPTED",
+      imp027ImplementationAuthorized: true,
+      imp027Accepted: true,
+      imp028Lifecycle: "COMPLETE_AND_ACCEPTED",
+      imp028ImplementationAuthorized: true,
+      imp028ArchitectureLocked: true,
+      imp028ImplementationStarted: true,
+      imp028Accepted: true,
+      imp028aImplementationAuthorized: true,
+      imp028aImplementationStarted: true,
+      imp028aArchitectureLocked: true,
+      imp028aAccepted: true,
+    });
+    assert.deepEqual(result, { ok: true, kind: "imp028a_complete_and_accepted" });
+  });
+
+  it("permits IMP-028B canonical activation after IMP-028A is accepted", () => {
+    const result = evaluatePendingAcceptanceSplit({
+      ...deferredGate,
+      acceptedThrough: "IMP-028A",
+      currentProductSlice: "IMP-028B",
+      pendingAcceptance: "NONE",
+      imp026Implementation: "COMPLETE_AND_ACCEPTED",
+      imp026Accepted: true,
+      deferredExternalWebhookGate: "SATISFIED",
+      deferredExternalWebhookSatisfied: true,
+      imp026cLifecycle: "COMPLETE_AND_ACCEPTED",
+      imp026cImplementationAuthorized: true,
+      imp026cAccepted: true,
+      imp027Lifecycle: "COMPLETE_AND_ACCEPTED",
+      imp027ImplementationAuthorized: true,
+      imp027Accepted: true,
+      imp028Lifecycle: "COMPLETE_AND_ACCEPTED",
+      imp028ImplementationAuthorized: true,
+      imp028ArchitectureLocked: true,
+      imp028ImplementationStarted: true,
+      imp028Accepted: true,
+      imp028aImplementationAuthorized: true,
+      imp028aImplementationStarted: true,
+      imp028aArchitectureLocked: true,
+      imp028aAccepted: true,
+      imp028bImplementationAuthorized: false,
+      imp028bImplementationStarted: false,
+      imp028bArchitectureLocked: false,
+      imp028bAccepted: false,
+    });
+    assert.deepEqual(result, { ok: true, kind: "imp028b_canonical_activation" });
+  });
+
+  it("rejects IMP-028B implementation authorization during canonical activation", () => {
+    const result = evaluatePendingAcceptanceSplit({
+      ...deferredGate,
+      acceptedThrough: "IMP-028A",
+      currentProductSlice: "IMP-028B",
+      pendingAcceptance: "NONE",
+      imp026Implementation: "COMPLETE_AND_ACCEPTED",
+      imp026Accepted: true,
+      deferredExternalWebhookGate: "SATISFIED",
+      deferredExternalWebhookSatisfied: true,
+      imp026cLifecycle: "COMPLETE_AND_ACCEPTED",
+      imp026cImplementationAuthorized: true,
+      imp026cAccepted: true,
+      imp027Lifecycle: "COMPLETE_AND_ACCEPTED",
+      imp027ImplementationAuthorized: true,
+      imp027Accepted: true,
+      imp028Lifecycle: "COMPLETE_AND_ACCEPTED",
+      imp028ImplementationAuthorized: true,
+      imp028ArchitectureLocked: true,
+      imp028ImplementationStarted: true,
+      imp028Accepted: true,
+      imp028aImplementationAuthorized: true,
+      imp028aImplementationStarted: true,
+      imp028aArchitectureLocked: true,
+      imp028aAccepted: true,
+      imp028bImplementationAuthorized: true,
+      imp028bImplementationStarted: false,
+      imp028bArchitectureLocked: false,
+      imp028bAccepted: false,
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "PENDING_ACCEPTANCE_SPLIT");
+  });
+
+  it("permits IMP-028B implementation authorization when architecture is locked and not started", () => {
+    const result = evaluatePendingAcceptanceSplit({
+      ...deferredGate,
+      acceptedThrough: "IMP-028A",
+      currentProductSlice: "IMP-028B",
+      pendingAcceptance: "NONE",
+      imp026Implementation: "COMPLETE_AND_ACCEPTED",
+      imp026Accepted: true,
+      deferredExternalWebhookGate: "SATISFIED",
+      deferredExternalWebhookSatisfied: true,
+      imp026cLifecycle: "COMPLETE_AND_ACCEPTED",
+      imp026cImplementationAuthorized: true,
+      imp026cAccepted: true,
+      imp027Lifecycle: "COMPLETE_AND_ACCEPTED",
+      imp027ImplementationAuthorized: true,
+      imp027Accepted: true,
+      imp028Lifecycle: "COMPLETE_AND_ACCEPTED",
+      imp028ImplementationAuthorized: true,
+      imp028ArchitectureLocked: true,
+      imp028ImplementationStarted: true,
+      imp028Accepted: true,
+      imp028aImplementationAuthorized: true,
+      imp028aImplementationStarted: true,
+      imp028aArchitectureLocked: true,
+      imp028aAccepted: true,
+      imp028bImplementationAuthorized: true,
+      imp028bImplementationStarted: false,
+      imp028bArchitectureLocked: true,
+      imp028bAccepted: false,
+      imp028bCapabilityArtifactLocked: true,
+    });
+    assert.deepEqual(result, { ok: true, kind: "imp028b_implementation_authorized" });
+  });
+
+  it("permits IMP-028B implementation in progress when started and not complete", () => {
+    const result = evaluatePendingAcceptanceSplit({
+      ...deferredGate,
+      acceptedThrough: "IMP-028A",
+      currentProductSlice: "IMP-028B",
+      pendingAcceptance: "NONE",
+      imp026Implementation: "COMPLETE_AND_ACCEPTED",
+      imp026Accepted: true,
+      deferredExternalWebhookGate: "SATISFIED",
+      deferredExternalWebhookSatisfied: true,
+      imp026cLifecycle: "COMPLETE_AND_ACCEPTED",
+      imp026cImplementationAuthorized: true,
+      imp026cAccepted: true,
+      imp027Lifecycle: "COMPLETE_AND_ACCEPTED",
+      imp027ImplementationAuthorized: true,
+      imp027Accepted: true,
+      imp028Lifecycle: "COMPLETE_AND_ACCEPTED",
+      imp028ImplementationAuthorized: true,
+      imp028ArchitectureLocked: true,
+      imp028ImplementationStarted: true,
+      imp028Accepted: true,
+      imp028aImplementationAuthorized: true,
+      imp028aImplementationStarted: true,
+      imp028aArchitectureLocked: true,
+      imp028aAccepted: true,
+      imp028bImplementationAuthorized: true,
+      imp028bImplementationStarted: true,
+      imp028bImplementationComplete: false,
+      imp028bArchitectureLocked: true,
+      imp028bAccepted: false,
+      imp028bCapabilityArtifactLocked: true,
+    });
+    assert.deepEqual(result, { ok: true, kind: "imp028b_implementation_in_progress" });
+  });
+
+  it("permits IMP-028B implementation complete pending acceptance", () => {
+    const result = evaluatePendingAcceptanceSplit({
+      ...deferredGate,
+      acceptedThrough: "IMP-028A",
+      currentProductSlice: "IMP-028B",
+      pendingAcceptance: "IMP-028B",
+      imp026Implementation: "COMPLETE_AND_ACCEPTED",
+      imp026Accepted: true,
+      deferredExternalWebhookGate: "SATISFIED",
+      deferredExternalWebhookSatisfied: true,
+      imp026cLifecycle: "COMPLETE_AND_ACCEPTED",
+      imp026cImplementationAuthorized: true,
+      imp026cAccepted: true,
+      imp027Lifecycle: "COMPLETE_AND_ACCEPTED",
+      imp027ImplementationAuthorized: true,
+      imp027Accepted: true,
+      imp028Lifecycle: "COMPLETE_AND_ACCEPTED",
+      imp028ImplementationAuthorized: true,
+      imp028ArchitectureLocked: true,
+      imp028ImplementationStarted: true,
+      imp028Accepted: true,
+      imp028aImplementationAuthorized: true,
+      imp028aImplementationStarted: true,
+      imp028aArchitectureLocked: true,
+      imp028aAccepted: true,
+      imp028bImplementationAuthorized: true,
+      imp028bImplementationStarted: true,
+      imp028bImplementationComplete: true,
+      imp028bArchitectureLocked: true,
+      imp028bAccepted: false,
+      imp028bCapabilityArtifactLocked: true,
+    });
+    assert.deepEqual(result, { ok: true, kind: "imp028b_implementation_complete_pending_acceptance" });
+  });
+
+  it("permits IMP-028B COMPLETE_AND_ACCEPTED after founder UAT", () => {
+    const result = evaluatePendingAcceptanceSplit({
+      ...deferredGate,
+      acceptedThrough: "IMP-028B",
+      currentProductSlice: "NONE",
+      pendingAcceptance: "NONE",
+      imp026Accepted: true,
+      imp026cAccepted: true,
+      imp027Accepted: true,
+      imp028Accepted: true,
+      imp028aAccepted: true,
+      imp028bImplementationAuthorized: true,
+      imp028bImplementationStarted: true,
+      imp028bImplementationComplete: true,
+      imp028bArchitectureLocked: true,
+      imp028bAccepted: true,
+    });
+    assert.deepEqual(result, { ok: true, kind: "imp028b_complete_and_accepted" });
+  });
+
+  it("rejects IMP-028B complete without pendingAcceptance IMP-028B", () => {
+    const result = evaluatePendingAcceptanceSplit({
+      ...deferredGate,
+      acceptedThrough: "IMP-028A",
+      currentProductSlice: "IMP-028B",
+      pendingAcceptance: "NONE",
+      imp026Implementation: "COMPLETE_AND_ACCEPTED",
+      imp026Accepted: true,
+      deferredExternalWebhookGate: "SATISFIED",
+      deferredExternalWebhookSatisfied: true,
+      imp026cLifecycle: "COMPLETE_AND_ACCEPTED",
+      imp026cImplementationAuthorized: true,
+      imp026cAccepted: true,
+      imp027Lifecycle: "COMPLETE_AND_ACCEPTED",
+      imp027ImplementationAuthorized: true,
+      imp027Accepted: true,
+      imp028Lifecycle: "COMPLETE_AND_ACCEPTED",
+      imp028ImplementationAuthorized: true,
+      imp028ArchitectureLocked: true,
+      imp028ImplementationStarted: true,
+      imp028Accepted: true,
+      imp028aImplementationAuthorized: true,
+      imp028aImplementationStarted: true,
+      imp028aArchitectureLocked: true,
+      imp028aAccepted: true,
+      imp028bImplementationAuthorized: true,
+      imp028bImplementationStarted: true,
+      imp028bImplementationComplete: true,
+      imp028bArchitectureLocked: true,
+      imp028bAccepted: false,
+      imp028bCapabilityArtifactLocked: true,
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "PENDING_ACCEPTANCE_SPLIT");
+  });
+
+  it("rejects pendingAcceptance IMP-028A after acceptedThrough advances to IMP-028A", () => {
+    const result = evaluatePendingAcceptanceSplit({
+      ...deferredGate,
+      acceptedThrough: "IMP-028A",
+      currentProductSlice: "NONE",
+      pendingAcceptance: "IMP-028A",
+      imp026Implementation: "COMPLETE_AND_ACCEPTED",
+      imp026Accepted: true,
+      deferredExternalWebhookGate: "SATISFIED",
+      deferredExternalWebhookSatisfied: true,
+      imp026cLifecycle: "COMPLETE_AND_ACCEPTED",
+      imp026cImplementationAuthorized: true,
+      imp026cAccepted: true,
+      imp027Lifecycle: "COMPLETE_AND_ACCEPTED",
+      imp027ImplementationAuthorized: true,
+      imp027Accepted: true,
+      imp028Lifecycle: "COMPLETE_AND_ACCEPTED",
+      imp028ImplementationAuthorized: true,
+      imp028ArchitectureLocked: true,
+      imp028ImplementationStarted: true,
+      imp028Accepted: true,
+      imp028aImplementationAuthorized: true,
+      imp028aImplementationStarted: true,
+      imp028aArchitectureLocked: true,
+      imp028aAccepted: true,
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "PENDING_ACCEPTANCE_SPLIT");
   });
 
   it("rejects pendingAcceptance NONE after IMP-026 is accepted while a later slice remains active", () => {
@@ -617,5 +1099,312 @@ describe("GTM-R15–R28 pending-acceptance split", () => {
     });
     assert.equal(result.ok, false);
     assert.equal(result.code, "PENDING_ACCEPTANCE_SPLIT");
+  });
+
+  // IMP-028C authorized/not-started lifecycle validation
+  const imp028cBase = Object.freeze({
+    acceptedThrough: "IMP-028B",
+    currentProductSlice: "IMP-028C",
+    pendingAcceptance: "NONE",
+    imp026Accepted: true,
+    imp026cAccepted: true,
+    imp027Accepted: true,
+    imp028Accepted: true,
+    imp028aAccepted: true,
+    imp028bImplementationAuthorized: true,
+    imp028bImplementationStarted: true,
+    imp028bImplementationComplete: true,
+    imp028bArchitectureLocked: true,
+    imp028bAccepted: true,
+    imp028cCanonicallyAssigned: true,
+    imp028cArchitectureLocked: true,
+    imp028cImplementationAuthorized: true,
+    imp028cImplementationStarted: false,
+    imp028cImplementationComplete: false,
+    imp028cAccepted: false,
+  });
+
+  it("permits IMP-028C authorized/not-started with acceptedThrough=IMP-028B", () => {
+    const result = evaluatePendingAcceptanceSplit(imp028cBase);
+    assert.deepEqual(result, { ok: true, kind: "imp028c_authorized_not_started" });
+  });
+
+  const imp028cStartedBase = Object.freeze({
+    ...imp028cBase,
+    imp028cImplementationStarted: true,
+  });
+
+  it("permits IMP-028C implementation started with pendingAcceptance=NONE", () => {
+    const result = evaluatePendingAcceptanceSplit(imp028cStartedBase);
+    assert.deepEqual(result, { ok: true, kind: "imp028c_implementation_started" });
+  });
+
+  it("rejects IMP-028C started state if not canonically assigned", () => {
+    const result = evaluatePendingAcceptanceSplit({
+      ...imp028cStartedBase,
+      imp028cCanonicallyAssigned: false,
+    });
+    assert.equal(result.ok, false);
+    assert.match(result.message, /not canonically assigned/);
+  });
+
+  it("rejects IMP-028C started state if architecture not locked", () => {
+    const result = evaluatePendingAcceptanceSplit({
+      ...imp028cStartedBase,
+      imp028cArchitectureLocked: false,
+    });
+    assert.equal(result.ok, false);
+    assert.match(result.message, /architecture is not locked/);
+  });
+
+  it("rejects IMP-028C started state if implementation not authorized", () => {
+    const result = evaluatePendingAcceptanceSplit({
+      ...imp028cStartedBase,
+      imp028cImplementationAuthorized: false,
+    });
+    assert.equal(result.ok, false);
+    assert.match(result.message, /not authorized/);
+  });
+
+  it("rejects IMP-028C if not canonically assigned", () => {
+    const result = evaluatePendingAcceptanceSplit({
+      ...imp028cBase,
+      imp028cCanonicallyAssigned: false,
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "PENDING_ACCEPTANCE_SPLIT");
+    assert.match(result.message, /not canonically assigned/);
+  });
+
+  it("rejects IMP-028C if architecture not locked", () => {
+    const result = evaluatePendingAcceptanceSplit({
+      ...imp028cBase,
+      imp028cArchitectureLocked: false,
+    });
+    assert.equal(result.ok, false);
+    assert.match(result.message, /architecture is not locked/);
+  });
+
+  it("rejects IMP-028C if implementation not authorized", () => {
+    const result = evaluatePendingAcceptanceSplit({
+      ...imp028cBase,
+      imp028cImplementationAuthorized: false,
+    });
+    assert.equal(result.ok, false);
+    assert.match(result.message, /not authorized/);
+  });
+
+  it("classifies IMP-028C as authorized/not-started when started flag is false", () => {
+    const result = evaluatePendingAcceptanceSplit({
+      ...imp028cStartedBase,
+      imp028cImplementationStarted: false,
+    });
+    assert.deepEqual(result, { ok: true, kind: "imp028c_authorized_not_started" });
+  });
+
+  it("rejects IMP-028C started state if implementation complete without pendingAcceptance IMP-028C", () => {
+    const result = evaluatePendingAcceptanceSplit({
+      ...imp028cStartedBase,
+      imp028cImplementationComplete: true,
+    });
+    assert.equal(result.ok, false);
+    assert.match(result.message, /requires pendingAcceptance = IMP-028C/);
+  });
+
+  it("permits IMP-028C implementation complete pending acceptance", () => {
+    const result = evaluatePendingAcceptanceSplit({
+      ...imp028cStartedBase,
+      pendingAcceptance: "IMP-028C",
+      imp028cImplementationComplete: true,
+    });
+    assert.deepEqual(result, {
+      ok: true,
+      kind: "imp028c_implementation_complete_pending_acceptance",
+    });
+  });
+
+  it("rejects pendingAcceptance IMP-028C without implementation completion", () => {
+    const result = evaluatePendingAcceptanceSplit({
+      ...imp028cStartedBase,
+      pendingAcceptance: "IMP-028C",
+      imp028cImplementationComplete: false,
+    });
+    assert.equal(result.ok, false);
+    assert.match(result.message, /IMP-028C_IMPLEMENTATION_COMPLETE: YES/);
+  });
+
+  it("rejects premature acceptedThrough advancement to IMP-028C before acceptance", () => {
+    const result = evaluatePendingAcceptanceSplit({
+      ...imp028cStartedBase,
+      acceptedThrough: "IMP-028C",
+      imp028cAccepted: false,
+    });
+    assert.equal(result.ok, false);
+    assert.match(result.message, /cannot advance to IMP-028C/);
+  });
+
+  it("rejects IMP-028C started state if accepted is true", () => {
+    const result = evaluatePendingAcceptanceSplit({
+      ...imp028cStartedBase,
+      imp028cAccepted: true,
+    });
+    assert.equal(result.ok, false);
+    assert.match(result.message, /cannot be accepted/);
+  });
+
+  it("rejects IMP-028C started state when acceptedThrough advances prematurely", () => {
+    const result = evaluatePendingAcceptanceSplit({
+      ...imp028cStartedBase,
+      acceptedThrough: "IMP-028C",
+    });
+    assert.equal(result.ok, false);
+  });
+
+  it("rejects IMP-028C started state with pendingAcceptance set prematurely without completion", () => {
+    const result = evaluatePendingAcceptanceSplit({
+      ...imp028cStartedBase,
+      pendingAcceptance: "IMP-028C",
+    });
+    assert.equal(result.ok, false);
+    assert.match(result.message, /IMP-028C_IMPLEMENTATION_COMPLETE: YES/);
+  });
+
+  it("rejects IMP-028C started state when currentProductSlice is not IMP-028C", () => {
+    const result = evaluatePendingAcceptanceSplit({
+      ...imp028cStartedBase,
+      currentProductSlice: "IMP-029",
+    });
+    assert.equal(result.ok, false);
+  });
+
+  it("rejects IMP-028C started state when IMP-029 implementation is authorized", () => {
+    const result = evaluatePendingAcceptanceSplit({
+      ...imp028cStartedBase,
+      imp029ImplementationAuthorized: true,
+    });
+    assert.equal(result.ok, false);
+    assert.match(result.message, /IMP-029.*NOT_AUTHORIZED/);
+  });
+
+  it("rejects IMP-028C started state when IMP-029 is marked started", () => {
+    const result = evaluatePendingAcceptanceSplit({
+      ...imp028cStartedBase,
+      imp029Started: true,
+    });
+    assert.equal(result.ok, false);
+    assert.match(result.message, /IMP-029.*NOT_STARTED/);
+  });
+});
+
+describe("governance version validation", () => {
+  it("permits the next legal ROADMAP and STATE revision without a source allowlist change", () => {
+    assert.equal(isAllowedGovernanceVersion("roadmap", "GTM-R48"), true);
+    assert.equal(isAllowedGovernanceVersion("state", "STATE-R46"), true);
+  });
+
+  it("rejects malformed or wrong-family governance version tokens", () => {
+    assert.equal(isAllowedGovernanceVersion("roadmap", "GTM-R48A"), false);
+    assert.equal(isAllowedGovernanceVersion("roadmap", "STATE-R46"), false);
+    assert.equal(isAllowedGovernanceVersion("state", "STATE-R0"), false);
+    assert.equal(isAllowedGovernanceVersion("state", "GTM-R48"), false);
+  });
+
+  it("validates the other canonical revision families structurally", () => {
+    assert.equal(isValidCanonicalRevision("vision", "VISION-2"), true);
+    assert.equal(isValidCanonicalRevision("architecture", "ARCH-R16"), true);
+    assert.equal(isValidCanonicalRevision("decision", "DR-13"), true);
+    assert.equal(isValidCanonicalRevision("decision", "DR-0"), false);
+  });
+});
+
+describe("generic capability lifecycle validation", () => {
+  const capabilities = Object.freeze([
+    { id: "IMP-028B", accepted: true, implementationComplete: true },
+    { id: "IMP-028C", accepted: false, implementationComplete: true },
+    { id: "IMP-029", accepted: false, implementationComplete: false },
+  ]);
+
+  it("permits the current implementation-complete pending-acceptance state", () => {
+    assert.deepEqual(
+      evaluateCapabilityLifecycle({
+        acceptedThrough: "IMP-028B",
+        currentProductSlice: "IMP-028C",
+        pendingAcceptance: "IMP-028C",
+        capabilities,
+      }),
+      { ok: true },
+    );
+  });
+
+  it("permits IMP-028C accepted with no remaining pending acceptance", () => {
+    assert.deepEqual(
+      evaluateCapabilityLifecycle({
+        acceptedThrough: "IMP-028C",
+        currentProductSlice: "NONE",
+        pendingAcceptance: "NONE",
+        capabilities: capabilities.map((capability) =>
+          capability.id === "IMP-028C" ? { ...capability, accepted: true } : capability,
+        ),
+      }),
+      { ok: true },
+    );
+  });
+
+  it("permits a known planned successor after acceptance advances", () => {
+    assert.deepEqual(
+      evaluateCapabilityLifecycle({
+        acceptedThrough: "IMP-028C",
+        currentProductSlice: "IMP-029",
+        pendingAcceptance: "NONE",
+        capabilities: capabilities.map((capability) =>
+          capability.id === "IMP-028C" ? { ...capability, accepted: true } : capability,
+        ),
+      }),
+      { ok: true },
+    );
+  });
+
+  it("rejects ROADMAP and STATE accepted-through drift", () => {
+    const result = evaluateLifecycleAuthorityAlignment(
+      { acceptedThrough: "IMP-028B", currentProductSlice: "IMP-028C", nextProductSlice: "IMP-029", pendingAcceptance: "IMP-028C" },
+      { acceptedThrough: "IMP-028C", currentProductSlice: "IMP-028C", nextProductSlice: "IMP-029", pendingAcceptance: "IMP-028C" },
+    );
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "ROADMAP_STATE_MISMATCH");
+  });
+
+  it("rejects an accepted capability that remains pending", () => {
+    const result = evaluateCapabilityLifecycle({
+      acceptedThrough: "IMP-028C",
+      currentProductSlice: "IMP-028C",
+      pendingAcceptance: "IMP-028C",
+      capabilities: capabilities.map((capability) =>
+        capability.id === "IMP-028C" ? { ...capability, accepted: true } : capability,
+      ),
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "CURRENT_SLICE_ACCEPTED");
+  });
+
+  it("rejects an unknown current capability reference", () => {
+    const result = evaluateCapabilityLifecycle({
+      acceptedThrough: "IMP-028B",
+      currentProductSlice: "IMP-999",
+      pendingAcceptance: "NONE",
+      capabilities,
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "CURRENT_SLICE_MISSING");
+  });
+
+  it("rejects an incomplete current capability presented as pending", () => {
+    const result = evaluateCapabilityLifecycle({
+      acceptedThrough: "IMP-028B",
+      currentProductSlice: "IMP-029",
+      pendingAcceptance: "IMP-029",
+      capabilities,
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "PENDING_ACCEPTANCE_INCOMPLETE");
   });
 });

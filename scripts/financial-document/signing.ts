@@ -17,6 +17,7 @@ import { loadEnvConfig } from "@next/env";
 
 import { loadConfig } from "../../src/platform/config/load-config";
 import { ConfigurationError } from "../../src/platform/config/config-error";
+import type { EnvSource, WorkerConfig } from "../../src/platform/config/types";
 import {
   runSigningOperatorExport,
   runSigningOperatorPending,
@@ -147,6 +148,14 @@ function printSafeError(message: string): void {
   console.error(JSON.stringify({ ok: false, error: safe }));
 }
 
+/**
+ * Worker configuration contract for the documented `fd:signing` entrypoint.
+ * Callers must supply an explicit env source; `source` is never optional.
+ */
+export function loadSigningCliWorkerConfig(source: EnvSource): WorkerConfig {
+  return loadConfig({ processKind: "worker", source });
+}
+
 export async function executeSigningCli(input: {
   persistence: Persistence;
   argv: readonly string[];
@@ -227,7 +236,7 @@ async function main(): Promise<void> {
   loadEnvConfig(projectRoot);
   let workerConfig;
   try {
-    workerConfig = loadConfig({ processKind: "worker" });
+    workerConfig = loadSigningCliWorkerConfig(process.env);
   } catch (error) {
     if (error instanceof ConfigurationError) {
       printSafeError(error.message);

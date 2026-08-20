@@ -28,6 +28,10 @@ import {
   DEFAULT_SIGNED_PDF_MAX_BYTES,
 } from "../../src/shared/financial-document";
 import {
+  executeSigningCli,
+  loadSigningCliWorkerConfig,
+} from "../../scripts/financial-document/signing";
+import {
   applicationConfig,
   trackPersistenceHandle,
 } from "./support/cart-fixtures";
@@ -852,6 +856,57 @@ describe("IMP-028 D-367 Slice 2 — durable operator attestation authority", () 
           }),
         ),
       ).rejects.toMatchObject({ code: "SIGNATURE_ARTIFACT_CONFLICT" });
+    });
+  });
+});
+
+describe("IMP-028 D-367 fd:signing operator entrypoint", () => {
+  it("supplies worker source, loads CLI config, and reaches executeSigningCli", async () => {
+    const scriptSource = readFileSync(
+      path.join(process.cwd(), "scripts/financial-document/signing.ts"),
+      "utf8",
+    );
+    expect(scriptSource).toMatch(
+      /loadSigningCliWorkerConfig\(process\.env\)/,
+    );
+    expect(scriptSource).not.toMatch(
+      /loadConfig\(\{\s*processKind:\s*"worker"\s*\}\)/,
+    );
+
+    const config = loadSigningCliWorkerConfig({
+      BOBA_BEAR_ENV: "local",
+      BOBA_BEAR_PUBLIC_ORIGIN: "http://localhost:3000",
+      BOBA_BEAR_DATABASE_URL:
+        "postgresql://boba_bear_app@127.0.0.1:5433/boba_bear_local",
+      BOBA_BEAR_DATABASE_MIGRATION_URL:
+        "postgresql://boba_bear_migrator@127.0.0.1:5433/boba_bear_local",
+    });
+    expect(config.processKind).toBe("worker");
+    expect(config.databaseUrl).toContain("postgresql://");
+
+    await withFinancialDocumentReadyHarness(async (h) => {
+      const helpLines: string[] = [];
+      const helpCode = await executeSigningCli({
+        persistence: h.persistence,
+        argv: ["help"],
+        write: (line) => helpLines.push(line),
+      });
+      expect(helpCode).toBe(0);
+      expect(JSON.parse(helpLines[0]!).ok).toBe(true);
+
+      const pendingLines: string[] = [];
+      const pendingCode = await executeSigningCli({
+        persistence: h.persistence,
+        argv: ["pending", "--limit=5"],
+        write: (line) => pendingLines.push(line),
+      });
+      expect(pendingCode).toBe(0);
+      const pendingPayload = JSON.parse(pendingLines[0]!) as {
+        ok: boolean;
+        operation: string;
+      };
+      expect(pendingPayload.ok).toBe(true);
+      expect(pendingPayload.operation).toBe("pending");
     });
   });
 });

@@ -5,7 +5,7 @@
  * Most-specific permitted value wins. Missing lower scope = inherit.
  * Illegal configured overrides fail closed (never silently skipped).
  */
-import { and, eq, isNull, lte, or, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, lte, or, sql } from "drizzle-orm";
 
 import {
   priceBookModifierPricesTable,
@@ -259,6 +259,235 @@ export async function resolveOutletVariantPrice(
     overrideScope,
     decisionCode: "PRICE_RESOLVED",
   };
+}
+
+/**
+ * Brand-scope Direct INR baseline for a variant (IMP-015 inherit rule).
+ * Used when no outlet context exists for Menu display price.
+ */
+export async function resolveBrandVariantPrice(
+  context: PersistenceQueryContext,
+  input: {
+    readonly brandId: string;
+    readonly variantId: string;
+    readonly at: Date;
+  },
+): Promise<Readonly<{ amountPaise: bigint; currency: "INR" }>> {
+  assertApplicationRole(context, "resolveBrandVariantPrice");
+  const brandId = assertUuid(input.brandId, "brandId");
+  const variantId = assertUuid(input.variantId, "variantId");
+  const at = input.at;
+
+  const variantRows = await context.db
+    .select()
+    .from(catalogVariantsTable)
+    .where(eq(catalogVariantsTable.id, variantId))
+    .limit(1);
+  const variant = variantRows[0];
+  if (!variant || variant.brandId !== brandId) {
+    throw new PricingNotFoundError("variant");
+  }
+
+  const brandBook = await findActivePriceBook(context, {
+    brandId,
+    scopeType: "brand",
+    territoryId: null,
+    organizationId: null,
+    outletId: null,
+    at,
+  });
+  if (!brandBook) {
+    throw new PricingResolutionError("PRICE_MISSING", "No active Brand price book at the requested time.");
+  }
+
+  const brandPrice = await loadVariantPrice(context, brandBook.id, variantId);
+  if (!brandPrice) {
+    throw new PricingResolutionError("PRICE_MISSING", "Brand baseline variant price is missing.");
+  }
+
+  return { amountPaise: brandPrice.amountPaise, currency: "INR" };
+}
+
+export type ModifierDisplayPriceKey = Readonly<{
+  variantModifierGroupId: string;
+  modifierGroupOptionId: string;
+}>;
+
+function modifierDisplayPriceMapKey(key: ModifierDisplayPriceKey): string {
+  return `${key.variantModifierGroupId}:${key.modifierGroupOptionId}`;
+}
+
+type ModifierPriceRow = typeof priceBookModifierPricesTable.$inferSelect;
+
+function pickWinningModifierDelta(
+  brandDelta: ModifierPriceRow,
+  scopedRows: ReadonlyArray<{
+    scopeType: PriceBookScopeType;
+    row: ModifierPriceRow | null;
+  }>,
+): bigint {
+  let delta = brandDelta.priceDeltaPaise;
+  for (const scope of scopedRows) {
+    if (!scope.row) continue;
+    if (scope.scopeType === "territory" && !brandDelta.allowTerritoryOverride) {
+      throw new PricingResolutionError(
+        "OVERRIDE_NOT_PERMITTED",
+        "Territory modifier override is not permitted.",
+      );
+    }
+    if (scope.scopeType === "organization" && !brandDelta.allowOrganizationOverride) {
+      throw new PricingResolutionError(
+        "OVERRIDE_NOT_PERMITTED",
+        "Organization modifier override is not permitted.",
+      );
+    }
+    if (scope.scopeType === "outlet" && !brandDelta.allowOutletOverride) {
+      throw new PricingResolutionError(
+        "OVERRIDE_NOT_PERMITTED",
+        "Outlet modifier override is not permitted.",
+      );
+    }
+    delta = scope.row.priceDeltaPaise;
+  }
+  return delta;
+}
+
+/**
+ * Batch modifier display delta resolution for Customer Menu projection (IMP-028C).
+ * Brand-scope when outletId is absent; full hierarchy when outletId is present.
+ */
+export async function resolveModifierDisplayPriceDeltas(
+  context: PersistenceQueryContext,
+  input: {
+    readonly brandId: string;
+    readonly outletId?: string | null;
+    readonly keys: readonly ModifierDisplayPriceKey[];
+    readonly at: Date;
+  },
+): Promise<ReadonlyMap<string, bigint>> {
+  assertApplicationRole(context, "resolveModifierDisplayPriceDeltas");
+  if (input.keys.length === 0) {
+    return new Map();
+  }
+
+  const brandId = assertUuid(input.brandId, "brandId");
+  const at = input.at;
+  const dedupedKeys = [
+    ...new Map(input.keys.map((key) => [modifierDisplayPriceMapKey(key), key])).values(),
+  ];
+
+  const brandBook = await findActivePriceBook(context, {
+    brandId,
+    scopeType: "brand",
+    territoryId: null,
+    organizationId: null,
+    outletId: null,
+    at,
+  });
+  if (!brandBook) {
+    throw new PricingResolutionError("MODIFIER_PRICE_MISSING", "No active Brand price book.");
+  }
+
+  const variantModifierGroupIds = [
+    ...new Set(dedupedKeys.map((key) => key.variantModifierGroupId)),
+  ];
+  const modifierGroupOptionIds = [...new Set(dedupedKeys.map((key) => key.modifierGroupOptionId))];
+
+  const bookIds = [brandBook.id];
+  const scopedBooks: Array<{
+    scopeType: PriceBookScopeType;
+    bookId: string;
+  }> = [];
+
+  if (input.outletId && input.outletId.length > 0) {
+    const outlet = await loadOutlet(context, assertUuid(input.outletId, "outletId"));
+    if (outlet.brandId !== brandId) {
+      throw new PricingNotFoundError("outlet");
+    }
+    const scopeDefs: Array<{
+      scopeType: PriceBookScopeType;
+      territoryId: string | null;
+      organizationId: string | null;
+      outletId: string | null;
+    }> = [
+      {
+        scopeType: "territory",
+        territoryId: outlet.territoryId,
+        organizationId: null,
+        outletId: null,
+      },
+      {
+        scopeType: "organization",
+        territoryId: null,
+        organizationId: outlet.organizationId,
+        outletId: null,
+      },
+      {
+        scopeType: "outlet",
+        territoryId: outlet.territoryId,
+        organizationId: outlet.organizationId,
+        outletId: outlet.id,
+      },
+    ];
+    for (const scope of scopeDefs) {
+      const book = await findActivePriceBook(context, {
+        brandId,
+        scopeType: scope.scopeType,
+        territoryId: scope.territoryId,
+        organizationId: scope.organizationId,
+        outletId: scope.outletId,
+        at,
+      });
+      if (!book) continue;
+      bookIds.push(book.id);
+      scopedBooks.push({ scopeType: scope.scopeType, bookId: book.id });
+    }
+  }
+
+  const priceRows = await context.db
+    .select()
+    .from(priceBookModifierPricesTable)
+    .where(
+      and(
+        inArray(priceBookModifierPricesTable.priceBookId, bookIds),
+        inArray(priceBookModifierPricesTable.variantModifierGroupId, variantModifierGroupIds),
+        inArray(priceBookModifierPricesTable.modifierGroupOptionId, modifierGroupOptionIds),
+      ),
+    );
+
+  const rowsByBookAndKey = new Map<string, ModifierPriceRow>();
+  for (const row of priceRows) {
+    rowsByBookAndKey.set(
+      `${row.priceBookId}:${row.variantModifierGroupId}:${row.modifierGroupOptionId}`,
+      row,
+    );
+  }
+
+  const result = new Map<string, bigint>();
+  for (const key of dedupedKeys) {
+    const mapKey = modifierDisplayPriceMapKey(key);
+    const brandDelta = rowsByBookAndKey.get(
+      `${brandBook.id}:${key.variantModifierGroupId}:${key.modifierGroupOptionId}`,
+    );
+    if (!brandDelta) {
+      throw new PricingResolutionError(
+        "MODIFIER_PRICE_MISSING",
+        "Brand modifier price is missing (explicit zero required).",
+      );
+    }
+
+    const scopedRows = scopedBooks.map((scope) => ({
+      scopeType: scope.scopeType,
+      row:
+        rowsByBookAndKey.get(
+          `${scope.bookId}:${key.variantModifierGroupId}:${key.modifierGroupOptionId}`,
+        ) ?? null,
+    }));
+
+    result.set(mapKey, pickWinningModifierDelta(brandDelta, scopedRows));
+  }
+
+  return result;
 }
 
 export async function resolveModifierPriceDelta(

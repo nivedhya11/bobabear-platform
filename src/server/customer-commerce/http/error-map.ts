@@ -6,12 +6,14 @@
 import "server-only";
 
 import { CartError } from "../../../shared/cart";
+import { CustomerMenuError } from "../../../shared/customer-menu/errors";
 import { CheckoutError } from "../../../shared/checkout";
 import { CustomerAddressError } from "../../../shared/customer-addresses";
 import { CustomerProfileError } from "../../../shared/customer-profiles";
 import { FinancialDocumentError } from "../../../shared/financial-document";
 import { OrderError } from "../../../shared/order";
 import { PaymentError } from "../../../shared/payment";
+import { PricingResolutionError } from "../../pricing/errors";
 
 export type CommerceErrorBody = Readonly<{
   ok: false;
@@ -39,6 +41,8 @@ const STATUS_404 = new Set([
   "CUSTOMER_PROFILE_ACCESS_DENIED",
   "CUSTOMER_PROFILE_NOT_FOUND",
   "CART_COUPON_UNKNOWN",
+  "MENU_UNAVAILABLE",
+  "OUTLET_NOT_FOUND",
 ]);
 
 const STATUS_410 = new Set(["CART_EXPIRED", "CHECKOUT_EXPIRED", "PAYMENT_EXPIRED"]);
@@ -65,7 +69,7 @@ const STATUS_409 = new Set([
   "CUSTOMER_PROFILE_ALREADY_EXISTS",
 ]);
 
-const STATUS_422 = new Set(["CART_ITEM_NOT_ORDERABLE"]);
+const STATUS_422 = new Set(["CART_ITEM_NOT_ORDERABLE", "PRICE_MISSING"]);
 
 const STATUS_503 = new Set([
   "CART_DEPENDENCY_UNAVAILABLE",
@@ -124,6 +128,12 @@ function extractDomainError(error: unknown): {
   if (error instanceof FinancialDocumentError) {
     // Envelope carries code only — never message / prior ids / sealed PII.
     return { code: error.code };
+  }
+  if (error instanceof CustomerMenuError) {
+    return { code: error.code, field: error.field };
+  }
+  if (error instanceof PricingResolutionError) {
+    return { code: error.pricingErrorCode };
   }
   return null;
 }

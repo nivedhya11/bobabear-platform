@@ -27,6 +27,11 @@ ANCHOR → GATE → EXECUTE → PROVE → ACCEPT → RECONCILE → ADVANCE
 
 Machine check: `npm run project:consistency`.
 
+Working-tree integrity: `npm run working-tree:fingerprint`. `WORKING_TREE_FINGERPRINT` is
+content-sensitive across tracked and non-ignored untracked repository files (see `AGENTS.md`).
+Default `git status --porcelain` is not exact-content authority for files beneath an already-untracked
+directory.
+
 ## Recommended reading order
 
 1. [`VISION.md`](./VISION.md)
@@ -46,9 +51,11 @@ Machine check: `npm run project:consistency`.
 | [`capabilities/IMP-024-customer-ordering-transport.md`](./capabilities/IMP-024-customer-ordering-transport.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-024 transport; implementation COMPLETE_AND_ACCEPTED |
 | [`capabilities/IMP-025-customer-ordering-ux.md`](./capabilities/IMP-025-customer-ordering-ux.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-025 Customer Ordering UX; COMPLETE_AND_ACCEPTED |
 | [`capabilities/IMP-026-razorpay-productionization.md`](./capabilities/IMP-026-razorpay-productionization.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-026 Razorpay productionization & Payment GTM readiness (D-361 provider / D-362 missing-Order recovery / D-363 durable webhook inbox); COMPLETE_AND_ACCEPTED |
-| [`capabilities/IMP-026C-pilot-customer-commerce-ux-hardening.md`](./capabilities/IMP-026C-pilot-customer-commerce-ux-hardening.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-026C pilot UX hardening; IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE (`IMP-026C_ACCEPTED: NO`) |
+| [`capabilities/IMP-026C-pilot-customer-commerce-ux-hardening.md`](./capabilities/IMP-026C-pilot-customer-commerce-ux-hardening.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-026C pilot UX hardening; COMPLETE_AND_ACCEPTED (`IMP-026C_ACCEPTED: YES`) |
 | [`capabilities/IMP-027-refund-foundation.md`](./capabilities/IMP-027-refund-foundation.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-027 Refund Foundation (D-364); COMPLETE_AND_ACCEPTED |
-| [`capabilities/IMP-028-invoice-tax-receipt-credit-note.md`](./capabilities/IMP-028-invoice-tax-receipt-credit-note.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-028 Invoice / Tax Receipt / Credit Note (D-365 Financial Document; D-366 RefundStatutoryDecision; D-367 statutory signing); ARCHITECTURE_LOCKED; implementation AUTHORIZED / STARTED / IMPLEMENTATION_IN_PROGRESS; working-tree `IMP-028_IMPLEMENTATION_COMPLETE: YES`; `IMP-028_ACCEPTED: NO` |
+| [`capabilities/IMP-028-invoice-tax-receipt-credit-note.md`](./capabilities/IMP-028-invoice-tax-receipt-credit-note.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-028 Invoice / Tax Receipt / Credit Note (D-365 Financial Document; D-366 RefundStatutoryDecision; D-367 statutory signing); COMPLETE_AND_ACCEPTED (`IMP-028_ACCEPTED: YES`) |
+| [`capabilities/IMP-028A-food-direct-ux-foundation.md`](./capabilities/IMP-028A-food-direct-ux-foundation.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-028A Food Direct UX Foundation; COMPLETE_AND_ACCEPTED (`IMP-028A_ACCEPTED: YES`) |
+| [`capabilities/IMP-028B-customer-menu-projection-and-discovery.md`](./capabilities/IMP-028B-customer-menu-projection-and-discovery.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-028B Customer Menu Projection + Discovery; IMPLEMENTATION_AUTHORIZED / NOT_STARTED (`IMP-028B_ACCEPTED: NO`) |
 
 ## Supporting documents
 
@@ -64,6 +71,8 @@ Machine check: `npm run project:consistency`.
 | [`roadmap-and-open-decisions.md`](./roadmap-and-open-decisions.md) | SUPPORTING / HISTORICAL | Open-decision notes; current IMP sequence → `ROADMAP.md` only |
 | [`decision-register-historical.md`](./decision-register-historical.md) | HISTORICAL | D-001–D-355 inventory; CURRENT binding status → `decision-register.md` (canonical lowercase path; historical uppercase `DECISION-REGISTER.md` expectation retired for portability) |
 | [`accepted-foundation-operating-rules.md`](./accepted-foundation-operating-rules.md) | SUPPORTING | Migrated AGENTS foundation constraints |
+| [`engineering/change-workflow.md`](./engineering/change-workflow.md) | SUPPORTING | Bounded task, evidence, review, and promotion workflow; does not alter product acceptance authority |
+| [`experience/`](./experience/) | **SUPPORTING PRODUCT / EXPERIENCE MATERIAL** | Working BOBA Direct UX, brand, journey, gap map, and research preserved 2026-08-18. Food Direct product-architecture planning lock: [`experience/food-direct-product-architecture-lock.md`](./experience/food-direct-product-architecture-lock.md) (SUPPORTING rationale). Family A is canonicalized as **IMP-028A** ([`capabilities/IMP-028A-food-direct-ux-foundation.md`](./capabilities/IMP-028A-food-direct-ux-foundation.md)); supporting slice [`experience/slices/food-direct-ux-foundation.md`](./experience/slices/food-direct-ux-foundation.md) retains `FOUNDER_ACCEPTED` / `CANONICALIZED_AS = IMP-028A` / `INDEPENDENTLY_ACCEPTED`. Implementation of IMP-028A is **COMPLETE_AND_ACCEPTED**. Family B is canonicalized as **IMP-028B** ([`capabilities/IMP-028B-customer-menu-projection-and-discovery.md`](./capabilities/IMP-028B-customer-menu-projection-and-discovery.md)); supporting slice [`experience/slices/customer-menu-projection-and-discovery.md`](./experience/slices/customer-menu-projection-and-discovery.md) retains `CANONICALIZED_AS = IMP-028B`. Architecture of IMP-028B is **ARCHITECTURE_LOCKED**; implementation is **AUTHORIZED** / **NOT_STARTED**. **Not** CURRENT architecture except where a later CURRENT decision is cited. Customer Menu serving TARGET is binding via **D-368**. Customer paid-modifier explicit selection is binding via **D-369**. Cart identity transition is binding via **D-370**. Food / Wear / Culture, Offers auto-apply, Drop authority, Saved Configuration, Rewards, Culture, and Wear in that folder remain SUPPORTING / not independently CURRENT. Index: [`experience/README.md`](./experience/README.md) |
 
 ## Superseded sequencing authority
 
@@ -79,7 +88,7 @@ supersession are owned by [`decision-register.md`](./decision-register.md). Nota
 - ADR-014 Route-Handler-as-canonical HTTP host → **SUPERSEDED** by D-356
 - ADR-010 detailed kitchen workflow → **AMENDED** by D-357 (accepted Order lifecycle is IMP-023)
 - ADR-005 historical six-role prose → **AMENDED** by D-358 (inventory is STATE/code)
-- ADR-007 invoice intent remains CURRENT architecture intent; implementation = IMP-028
+- ADR-007 invoice intent remains CURRENT architecture intent; implementation = IMP-028 (`COMPLETE_AND_ACCEPTED`)
 - ADR-009 Cashfree V1 provider / Hosted Checkout selection → **SUPERSEDED for current provider
   authority** by D-361 (Razorpay / Razorpay Standard Checkout); webhook acknowledgement /
   post-payment Order recovery refined by D-362; webhook acknowledgement timing / durable inbox

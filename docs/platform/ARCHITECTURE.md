@@ -2,7 +2,7 @@
 {
   "status": "CURRENT",
   "authority": "GLOBAL_ARCHITECTURE",
-  "architectureVersion": "ARCH-R12",
+  "architectureVersion": "ARCH-R15",
   "lastReviewed": "2026-08-18"
 }
 -->
@@ -120,8 +120,9 @@ Other domains may reference or project it but must not establish competing mutab
 | Order | Post-purchase business lifecycle | Accepted lifecycle: `PLACED` \| `ACCEPTED` \| `FULFILLED` \| `CANCELLED` |
 | Refund | Financial reversal truth for returned funds | First-class aggregate (IMP-027 ARCHITECTURE_LOCKED; implementation COMPLETE_AND_ACCEPTED); does not rewrite Payment collection truth ([D-364](./decision-register.md)) |
 | RefundStatutoryDecision | Durable statutory-reversal classification for a PROCESSED Refund | First-class aggregate under IMP-028 ([D-366](./decision-register.md)); does not rewrite Refund money truth or mutate issued Financial Documents |
-| Financial Document | Immutable issued statutory / financial-document truth | First-class aggregate (IMP-028 ARCHITECTURE_LOCKED; implementation AUTHORIZED / STARTED / IMPLEMENTATION_IN_PROGRESS); consumes Checkout/Payment/Refund/Order/Issuer-Tax Profile without rewriting them ([D-365](./decision-register.md)) |
+| Financial Document | Immutable issued statutory / financial-document truth | First-class aggregate (IMP-028 ARCHITECTURE_LOCKED; implementation COMPLETE_AND_ACCEPTED); consumes Checkout/Payment/Refund/Order/Issuer-Tax Profile without rewriting them ([D-365](./decision-register.md)) |
 | SignatureArtifact | Durable signature state and exact-byte signed statutory artifact authority | First-class aggregate under IMP-028 ([D-367](./decision-register.md)); exactly one authority per signing-required Financial Document; does not rewrite Financial Document sealed issuance facts or Payment/Order commercial truth |
+| Customer Menu Projection | Customer-facing storefront **READ MODEL** composed from existing catalog/menu, pricing, assortment/availability, modifier, and bundle authorities | CURRENT serving architecture ([D-368](./decision-register.md)); implemented and accepted under IMP-028B; not a new commercial authority |
 | Delivery | FUTURE / NOT_IMPLEMENTED | Roadmapped as IMP-031+ |
 | Notification | FUTURE / NOT_IMPLEMENTED | Roadmapped as IMP-033+ |
 
@@ -148,8 +149,7 @@ Checkout Snapshot + Payment + Refund? + Order? + effective Issuer/Tax Profile
 ```
 
 Statutory signing (D-367; ATTENDED_ASYNC manual signed-PDF MVP documented in the capability
-artifact; unattended DSC/eSign/HSM deferred; formal IMP-028 remains IMPLEMENTATION_IN_PROGRESS /
-not accepted):
+artifact; unattended DSC/eSign/HSM deferred; formal IMP-028 is COMPLETE_AND_ACCEPTED):
 
 ```text
 Payment SUCCEEDED / Order FULFILLED / D-366 RFV|CN branch
@@ -163,8 +163,7 @@ Payment SUCCEEDED / Order FULFILLED / D-366 RFV|CN branch
 Payment and Order truth must never roll back because signing is pending or fails.
 
 Refund statutory reversal decision (D-366; RefundStatutoryDecision / issuance-allocation / RFV-CN
-issuance documented in the capability artifact; formal IMP-028 remains IMPLEMENTATION_IN_PROGRESS /
-not accepted):
+issuance documented in the capability artifact; formal IMP-028 is COMPLETE_AND_ACCEPTED):
 
 ```text
 Refund PROCESSED
@@ -269,6 +268,33 @@ Order domain ≠ Operations API ≠ Operations UI
 The browser must not become authoritative for pricing, tax, promotion eligibility, payment truth,
 authorization, or Order lifecycle.
 
+Customer Menu serving ([D-368](./decision-register.md)): IMP-028B serves the customer Menu from a
+server-backed read projection through the existing
+`customer-commerce` `/api/v1/*` façade. That projection may expose current/display price and
+availability for discovery. Display price is not the sealed payable amount. Display availability is
+not a new availability decision. Checkout Snapshot remains authoritative payable commercial truth
+after existing Checkout revalidation. D-368 does not lock an exact Menu HTTP payload. The accepted
+IMP-028B implementation provides `GET /api/v1/menu`; the IMP-025 generated static
+`ordering-catalog.json` artifact is no longer the customer storefront runtime source.
+
+Paid modifier purchase intent ([D-369](./decision-register.md)): a modifier option whose
+selection increases the current configured-item price (`price_delta_paise > 0` or equivalent)
+MUST NOT become customer purchase intent solely because catalog, import, or frontend metadata
+marks it as a default. Explicit customer selection in the current purchase interaction is
+required. Zero-price standard/preparation defaults MAY be visibly preselected. Recommendation is
+not selection. Cart remains purchase intent; Checkout Snapshot remains authoritative payable
+truth. D-369 does not change pricing formulas, modifier schema, or Checkout revalidation
+authority, and does not authorize customization implementation.
+
+Cart identity transition ([D-370](./decision-register.md)): when an active guest/anonymous Cart and
+an active customer-owned Cart both exist, BOBA must reconcile compatible purchase intent into a
+customer-owned Cart rather than silently discarding one set of intent. Failed reconciliation must
+not silently discard or partially destroy source intent. After success, the former guest credential
+is not authority over that customer Cart. Sign-out must not delete the customer Cart, but the
+browser must lose authority over it and become an anonymous commerce context. D-370 does not change
+Cart commercial authority, Checkout Snapshot, XOR ownership, configured-line identity, or revision
+concurrency, and does not authorize merge implementation.
+
 Current public site remains static. Customer/workforce auth already use standalone Node HTTP
 services proxied by Nginx for specific prefixes. Customer commerce transport is locked as the
 dedicated `customer-commerce` Node HTTP service behind `/api/v1/*` ([D-359](./decision-register.md),
@@ -292,12 +318,15 @@ Dynamic commerce must remain outside dynamic Next.js execution unless superseded
 | Refund | ARCHITECTURE_LOCKED — capability architecture [`capabilities/IMP-027-refund-foundation.md`](./capabilities/IMP-027-refund-foundation.md); binding **D-364**; implementation COMPLETE_AND_ACCEPTED |
 | Delivery | FUTURE / NOT_IMPLEMENTED |
 | Notification | FUTURE / NOT_IMPLEMENTED |
-| Invoice / Credit Note / Financial Document | ARCHITECTURE_LOCKED — capability architecture [`capabilities/IMP-028-invoice-tax-receipt-credit-note.md`](./capabilities/IMP-028-invoice-tax-receipt-credit-note.md); binding **D-365** / **D-366** / **D-367**; Financial Document is immutable issued statutory authority; RefundStatutoryDecision governs refund statutory reversal; SignatureArtifact governs signed statutory artifact readiness; implementation AUTHORIZED / STARTED / IMPLEMENTATION_IN_PROGRESS (not complete; not accepted) |
+| Invoice / Credit Note / Financial Document | ARCHITECTURE_LOCKED — capability architecture [`capabilities/IMP-028-invoice-tax-receipt-credit-note.md`](./capabilities/IMP-028-invoice-tax-receipt-credit-note.md); binding **D-365** / **D-366** / **D-367**; Financial Document is immutable issued statutory authority; RefundStatutoryDecision governs refund statutory reversal; SignatureArtifact governs signed statutory artifact readiness; implementation COMPLETE_AND_ACCEPTED |
 | Exact IMP-024 transport topology | DECIDED — D-359 (`customer-commerce:8083` behind `/api/v1/*`); capability architecture locked; Compose wiring accepted with IMP-024 |
-| IMP-025 Customer Ordering UX | ARCHITECTURE_LOCKED — capability architecture [`capabilities/IMP-025-customer-ordering-ux.md`](./capabilities/IMP-025-customer-ordering-ux.md); static export + `/api/v1/*` client UX; implementation COMPLETE_AND_ACCEPTED |
+| IMP-025 Customer Ordering UX | ARCHITECTURE_LOCKED — capability architecture [`capabilities/IMP-025-customer-ordering-ux.md`](./capabilities/IMP-025-customer-ordering-ux.md); static export + `/api/v1/*` client UX; implementation COMPLETE_AND_ACCEPTED; its former static `ordering-catalog.json` long-term Menu-serving lock was superseded by **D-368** and implemented by accepted IMP-028B |
 | IMP-026 Razorpay productionization | ARCHITECTURE_LOCKED — capability architecture [`capabilities/IMP-026-razorpay-productionization.md`](./capabilities/IMP-026-razorpay-productionization.md); Razorpay behind existing `PaymentProvider` in `customer-commerce` (D-361); webhook ack after durable inbox (D-363); missing-Order recovery via `recoverMissingOrdersBatch` (D-362); implementation COMPLETE_AND_ACCEPTED |
 | IMP-027 Refund Foundation | ARCHITECTURE_LOCKED — capability architecture [`capabilities/IMP-027-refund-foundation.md`](./capabilities/IMP-027-refund-foundation.md); Refund aggregate independent of Payment status (D-364); implementation COMPLETE_AND_ACCEPTED |
-| IMP-028 Invoice / Tax Receipt / Credit Note | ARCHITECTURE_LOCKED — capability architecture [`capabilities/IMP-028-invoice-tax-receipt-credit-note.md`](./capabilities/IMP-028-invoice-tax-receipt-credit-note.md); Financial Document authority (D-365); RefundStatutoryDecision authority (D-366); SignatureArtifact / signed artifact authority (D-367); ARCH-G16 / ARCH-G17 / ARCH-G18; implementation AUTHORIZED / STARTED / IMPLEMENTATION_IN_PROGRESS |
+| IMP-028 Invoice / Tax Receipt / Credit Note | ARCHITECTURE_LOCKED — capability architecture [`capabilities/IMP-028-invoice-tax-receipt-credit-note.md`](./capabilities/IMP-028-invoice-tax-receipt-credit-note.md); Financial Document authority (D-365); RefundStatutoryDecision authority (D-366); SignatureArtifact / signed artifact authority (D-367); ARCH-G16 / ARCH-G17 / ARCH-G18; implementation COMPLETE_AND_ACCEPTED |
+| Customer Menu storefront serving | CURRENT — **D-368** server-backed customer Menu READ PROJECTION through existing `customer-commerce` `/api/v1/*`; implemented and accepted under IMP-028B |
+| Customer paid-modifier purchase intent | CURRENT policy — **D-369** explicit customer selection required for positive-price modifier options entering Cart; zero-price standard defaults MAY be visibly preselected; implementation NOT_AUTHORIZED by D-369 |
+| Cart identity transition | CURRENT policy — **D-370** guest→customer compatible purchase-intent merge and authenticated→signed-out customer-cart isolation; silent whole-cart winner forbidden; implementation NOT_AUTHORIZED by D-370 |
 
 `NOT_DEFINED` / `NOT_IMPLEMENTED` ≠ `PROHIBITED_FOREVER`.
 
@@ -323,6 +352,9 @@ Dynamic commerce must remain outside dynamic Next.js execution unless superseded
 | ARCH-G16 | Once a statutory Financial Document is issued, its sealed commercial, tax, issuer, recipient, numbering, and authority-linkage facts are immutable historical document truth and must not be reconstructed from mutable current catalog, customer profile, tax configuration, legal-entity configuration, Payment state, Refund state, or Order state. |
 | ARCH-G17 | RefundStatutoryDecision owns durable statutory-reversal classification for a PROCESSED Refund; it must not rewrite Refund money/provider truth (ARCH-G15 / D-364) and must not mutate issued Financial Documents (ARCH-G16 / D-365). |
 | ARCH-G18 | SignatureArtifact owns durable signature state and exact-byte signed statutory artifact authority for Financial Documents requiring BOBA signing (D-367); it must not rewrite Financial Document sealed issuance facts (ARCH-G16 / D-365), RefundStatutoryDecision branch authority (ARCH-G17 / D-366), or Payment/Order commercial truth; `FinancialDocument.status=ISSUED` does not imply signed artifact readiness — **STATUTORY_ARTIFACT_READY** iff `SignatureArtifact.status=SIGNED`. |
+| ARCH-G19 | Customer Menu Projection is a storefront READ MODEL over existing catalog/menu, pricing, assortment/availability, modifier, and bundle authorities (D-368); it must not become Catalog identity, Product/MenuItem, Pricing, Availability, inventory, Promotion, Cart, Checkout Snapshot, Payment, or Order authority; Menu display price is not sealed payable truth; Menu display availability is not a new availability decision. |
+| ARCH-G20 | A modifier option whose selection increases the current configured-item price relative to the otherwise applicable base/standard configuration (positive `price_delta_paise` or equivalent) MUST NOT become customer purchase intent solely because catalog, import, or frontend metadata marks it as a default (D-369); explicit customer selection in the current purchase interaction is required; zero-price standard/preparation defaults MAY be visibly preselected; recommendation is not selection; Cart remains purchase intent; Checkout Snapshot remains authoritative payable truth. |
+| ARCH-G21 | Cart identity transition (D-370): an active guest Cart and an active customer Cart MUST be reconciled into customer-owned purchase intent without silent winner selection; failed reconciliation MUST NOT silently discard or partially destroy source intent; after success the former guest credential is not authority over that customer Cart; sign-out MUST NOT delete the customer Cart but MUST end browser authority over it; post-logout browser context is anonymous and MUST NOT expose or copy the previous customer’s Cart; Customer B on the same browser MUST NOT receive Customer A’s Cart; Cart remains purchase intent; Checkout Snapshot remains authoritative payable truth. |
 
 ## 15. Decision References
 
@@ -331,14 +363,17 @@ Dynamic commerce must remain outside dynamic Next.js execution unless superseded
 | Static frontend + external dynamic transport | [D-356](./decision-register.md) (AMENDED), supersedes ADR-014 Route-Handler-as-canonical HTTP |
 | IMP-024 customer-commerce topology | [D-359](./decision-register.md); capability lock [`capabilities/IMP-024-customer-ordering-transport.md`](./capabilities/IMP-024-customer-ordering-transport.md) |
 | IMP-024 `/api/v1/*` commerce API convention | [D-360](./decision-register.md) |
-| IMP-025 Customer Ordering UX | Capability lock [`capabilities/IMP-025-customer-ordering-ux.md`](./capabilities/IMP-025-customer-ordering-ux.md) (COMPLETE_AND_ACCEPTED) |
+| IMP-025 Customer Ordering UX | Capability lock [`capabilities/IMP-025-customer-ordering-ux.md`](./capabilities/IMP-025-customer-ordering-ux.md) (COMPLETE_AND_ACCEPTED); long-term Menu serving TARGET [D-368](./decision-register.md) |
+| Customer Menu Read Projection Authority | [D-368](./decision-register.md) (CURRENT serving architecture; implemented and accepted under IMP-028B) |
+| Customer Paid Modifier Explicit Selection Authority | [D-369](./decision-register.md) (CURRENT business-commerce policy; positive-price modifier requires explicit current-interaction selection before entering Cart purchase intent; zero-price standard defaults MAY be visibly preselected; Cart/Checkout Snapshot/pricing authority unchanged; implementation not authorized by this decision) |
+| Cart Identity Transition Authority | [D-370](./decision-register.md) (CURRENT purchase-intent and privacy policy; guest→customer compatible merge required; silent whole-cart winner forbidden; logout isolates the browser from the customer Cart without deleting it; Cart/Checkout Snapshot/pricing/Payment authority unchanged; implementation not authorized by this decision) |
 | V1 production payment provider / collection surface | [D-361](./decision-register.md) (Razorpay / Razorpay Standard Checkout); capability lock [`capabilities/IMP-026-razorpay-productionization.md`](./capabilities/IMP-026-razorpay-productionization.md) |
 | Razorpay webhook acknowledgement / post-payment Order recovery | [D-362](./decision-register.md) (amends D-361 ack/post-payment effect only; D-361 remains CURRENT for provider selection; acknowledgement timing further amended by D-363) |
 | Razorpay durable webhook inbox / asynchronous Payment processing | [D-363](./decision-register.md) (amends D-362 acknowledgement timing only; D-362 remains CURRENT for Order materialization outside provider-ack path, missing-Order recovery, secondary reconciliation, and no new deployable service) |
 | Refund Foundation | [D-364](./decision-register.md); capability lock [`capabilities/IMP-027-refund-foundation.md`](./capabilities/IMP-027-refund-foundation.md) (ARCHITECTURE_LOCKED; implementation COMPLETE_AND_ACCEPTED) |
-| Financial Document Authority | [D-365](./decision-register.md); capability lock [`capabilities/IMP-028-invoice-tax-receipt-credit-note.md`](./capabilities/IMP-028-invoice-tax-receipt-credit-note.md) (ARCHITECTURE_LOCKED; implementation AUTHORIZED / STARTED / IMPLEMENTATION_IN_PROGRESS) |
-| Refund Statutory Reversal Decision Authority | [D-366](./decision-register.md); capability lock [`capabilities/IMP-028-invoice-tax-receipt-credit-note.md`](./capabilities/IMP-028-invoice-tax-receipt-credit-note.md) (CURRENT binding; working-tree implementation documented in that artifact; formal IMP-028 not complete / not accepted) |
-| Statutory Financial Document Signing / Signed Artifact Authority | [D-367](./decision-register.md); capability lock [`capabilities/IMP-028-invoice-tax-receipt-credit-note.md`](./capabilities/IMP-028-invoice-tax-receipt-credit-note.md) (CURRENT binding; ATTENDED_ASYNC manual signed-PDF MVP documented in that artifact; formal IMP-028 not complete / not accepted) |
+| Financial Document Authority | [D-365](./decision-register.md); capability lock [`capabilities/IMP-028-invoice-tax-receipt-credit-note.md`](./capabilities/IMP-028-invoice-tax-receipt-credit-note.md) (ARCHITECTURE_LOCKED; implementation COMPLETE_AND_ACCEPTED) |
+| Refund Statutory Reversal Decision Authority | [D-366](./decision-register.md); capability lock [`capabilities/IMP-028-invoice-tax-receipt-credit-note.md`](./capabilities/IMP-028-invoice-tax-receipt-credit-note.md) (CURRENT binding; refund statutory reversal accepted under the locked IMP-028 capability) |
+| Statutory Financial Document Signing / Signed Artifact Authority | [D-367](./decision-register.md); capability lock [`capabilities/IMP-028-invoice-tax-receipt-credit-note.md`](./capabilities/IMP-028-invoice-tax-receipt-credit-note.md) (CURRENT binding; ATTENDED_ASYNC manual signed-PDF MVP accepted; unattended signing remains deferred) |
 | Order high-level lifecycle vs deferred kitchen detail | [D-357](./decision-register.md), amends ADR-010 reading |
 | Role inventory ownership | [D-358](./decision-register.md); current count in STATE |
 | Invoice architecture intent | ADR-007 (implementation = IMP-028; authority locked by D-365 / D-366 / D-367) |

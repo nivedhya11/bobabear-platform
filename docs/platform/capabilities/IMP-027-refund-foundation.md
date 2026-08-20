@@ -25,13 +25,13 @@ This document is the **locked capability architecture** for IMP-027 — Refund F
 | Architecture lock | `ARCHITECTURE_LOCKED` |
 | Implementation | `COMPLETE_AND_ACCEPTED` |
 | Implementation authorized | **YES** |
-| Acceptance | **COMPLETE_AND_ACCEPTED**; `acceptedThrough = IMP-027`; `pendingAcceptance = IMP-026C` |
+| Acceptance | **COMPLETE_AND_ACCEPTED**; `acceptedThrough = IMP-027`; `pendingAcceptance = IMP-028` |
 | Schema change required | **YES** (Refund persistence; permission catalog; provider adapter extension) |
 | Binding decision | **D-364** |
 
 Architecture remains locked. Implementation is complete and independently accepted. Refund scope
 remains bounded by this artifact and **D-364**. Do not reinterpret this acceptance as acceptance of
-IMP-026C, IMP-028, or later slices.
+IMP-028 or later slices.
 
 ---
 
@@ -46,7 +46,7 @@ IMP-026C, IMP-028, or later slices.
 | Architecture lock | `ARCHITECTURE_LOCKED` |
 | Accepted product through | IMP-027 — Refund Foundation |
 | Current product slice | IMP-028 |
-| Pending acceptance | IMP-026C |
+| Pending acceptance | IMP-028 |
 | Next related slices | IMP-028 Invoice / Tax Receipt / Credit Note; IMP-029 Operations Console API; IMP-030 Operations Console UI |
 | Consumes | Accepted IMP-022 Payment, IMP-023 Order, IMP-024 transport; IMP-026 Razorpay adapter + durable webhook inbox (pending acceptance) |
 | Binding decisions | D-361 (provider), D-362 (Order recovery), D-363 (durable inbox), **D-364** (Refund foundation) |

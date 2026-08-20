@@ -59,17 +59,17 @@ export function formatRegistrationSchemeLabel(
  * Example: 10500n → "₹105.00"; 123456789n → "₹12,34,567.89"
  */
 export function formatInrPaise(paise: bigint): string {
-  const negative = paise < 0n;
+  const negative = paise < BigInt(0);
   const abs = negative ? -paise : paise;
-  const rupees = abs / 100n;
-  const fraction = abs % 100n;
+  const rupees = abs / BigInt(100);
+  const fraction = abs % BigInt(100);
   const grouped = formatIndianIntegerGrouping(rupees);
   return `${negative ? "-" : ""}₹${grouped}.${fraction.toString().padStart(2, "0")}`;
 }
 
 /** Indian digit grouping for the integer rupee portion (deterministic). */
 export function formatIndianIntegerGrouping(value: bigint): string {
-  if (value < 0n) {
+  if (value < BigInt(0)) {
     throw new RangeError("formatIndianIntegerGrouping expects a non-negative value");
   }
   const digits = value.toString();

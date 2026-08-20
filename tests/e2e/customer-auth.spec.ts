@@ -99,6 +99,10 @@ test.describe("customer login — send/verify OTP flow", () => {
     await submitCode(page, FIXED_OTP_CODE!);
 
     await expect(page.getByText(/signed in\./i)).toBeVisible();
+    await expect(page.getByRole("button", { name: "My BOBA" })).toBeVisible();
+    await expect(
+      page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "Sign In" }),
+    ).toHaveCount(0);
     await expect(page.getByRole("button", { name: /sign out/i })).toBeVisible();
   });
 
@@ -173,5 +177,26 @@ test.describe("customer login — no OTP/phone leakage into browser-visible stat
       expect(cookie.value).not.toContain(PHONE_NUMBERS.storageCheck);
       expect(cookie.value).not.toContain(FIXED_OTP_CODE!);
     }
+  });
+});
+
+test.describe("IMP-028A — authenticated chrome Sign Out", () => {
+  test("global chrome Sign Out returns the header to anonymous Sign In", async ({ page }) => {
+    await page.goto("/login");
+    await submitPhone(page, "9876543215");
+    await submitCode(page, FIXED_OTP_CODE!);
+    await expect(page.getByText(/signed in\./i)).toBeVisible();
+
+    const chrome = page.getByRole("navigation", { name: "Main navigation" });
+    await expect(chrome.getByRole("button", { name: "My BOBA" })).toBeVisible();
+    await chrome.getByRole("button", { name: "My BOBA" }).click();
+    await expect(page.getByRole("menuitem", { name: "My Orders" })).toHaveAttribute(
+      "href",
+      "/order/orders/",
+    );
+    await page.getByRole("menuitem", { name: "Sign Out" }).click();
+
+    await expect(chrome.getByRole("link", { name: "Sign In" })).toBeVisible();
+    await expect(chrome.getByRole("button", { name: "My BOBA" })).toHaveCount(0);
   });
 });

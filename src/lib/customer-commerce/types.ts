@@ -5,12 +5,14 @@
  * Dates arrive as ISO strings. These types describe transport JSON only.
  */
 
+import type { CartBundleSelection, CartModifierSelection } from "@/shared/cart/types";
+
 export type CommerceCartLine = Readonly<{
   id: string;
   variantId: string;
   quantity: number;
-  modifiers: readonly unknown[];
-  bundleSelections: readonly unknown[];
+  modifiers: readonly CartModifierSelection[];
+  bundleSelections: readonly CartBundleSelection[];
 }>;
 
 export type CommerceCart = Readonly<{

@@ -301,7 +301,7 @@ export function formatStatutoryDocumentNumber(
       "Numbering series prefix must be a non-empty string.",
     );
   }
-  if (sequenceNumber < 1n) {
+  if (sequenceNumber < BigInt(1)) {
     throw new FinancialDocumentError(
       "STATUTORY_NUMBER_INVALID",
       `Sequence number must be >= 1 (got ${sequenceNumber.toString()}).`,

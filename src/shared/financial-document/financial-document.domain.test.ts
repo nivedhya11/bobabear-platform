@@ -88,17 +88,17 @@ describe("IMP-028 Financial Document domain", () => {
   });
 
   it("formats statutory numbers from series prefix + sequence (not ORD-* / provider ids)", () => {
-    expect(formatStatutoryDocumentNumber("TI/2526/", 1n)).toBe("TI/2526/000001");
-    expect(formatStatutoryDocumentNumber("TI/2526/", 42n)).not.toMatch(/^ORD-/);
-    expect(formatStatutoryDocumentNumber("TI/2526/", 1n).length).toBeLessThanOrEqual(16);
+    expect(formatStatutoryDocumentNumber("TI/2526/", BigInt(1))).toBe("TI/2526/000001");
+    expect(formatStatutoryDocumentNumber("TI/2526/", BigInt(42))).not.toMatch(/^ORD-/);
+    expect(formatStatutoryDocumentNumber("TI/2526/", BigInt(1)).length).toBeLessThanOrEqual(16);
   });
 
   it("rejects statutory numbers exceeding 16 characters without truncation", () => {
-    expect(() => formatStatutoryDocumentNumber("BB/TI/2526/", 1n)).toThrow(
+    expect(() => formatStatutoryDocumentNumber("BB/TI/2526/", BigInt(1))).toThrow(
       FinancialDocumentError,
     );
     try {
-      formatStatutoryDocumentNumber("TOOLONGPRE/", 1n);
+      formatStatutoryDocumentNumber("TOOLONGPRE/", BigInt(1));
       expect.unreachable("expected length rejection");
     } catch (error) {
       expect(error).toBeInstanceOf(FinancialDocumentError);

@@ -67,7 +67,7 @@ export async function resolveUpstreamAuthoritiesForIssuance(
   let checkoutId = input.checkoutId ?? null;
   let checkoutSnapshotId = input.checkoutSnapshotId ?? null;
   let paymentId = input.paymentId ?? null;
-  let refundId = input.refundId ?? null;
+  const refundId = input.refundId ?? null;
   let orderId = input.orderId ?? null;
 
   if (

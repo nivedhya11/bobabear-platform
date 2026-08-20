@@ -445,7 +445,7 @@ export async function insertNumberingSeries(
       "Numbering series prefix must not use ORD-* order numbers as statutory document numbers.",
     );
   }
-  const nextSequence = input.nextSequence ?? 1n;
+  const nextSequence = input.nextSequence ?? BigInt(1);
   // Fail closed at series configuration when the next candidate number already
   // exceeds the statutory length budget (prefix + padded/grown sequence).
   assertNumberingSeriesProducesValidStatutoryNumber(input.prefix, nextSequence);
@@ -508,7 +508,7 @@ export async function allocateStatutoryNumber(
   await context.db
     .update(financialDocumentNumberingSeriesTable)
     .set({
-      nextSequence: sequenceNumber + 1n,
+      nextSequence: sequenceNumber + BigInt(1),
       updatedAt: now,
     })
     .where(eq(financialDocumentNumberingSeriesTable.id, numberingSeriesId));

@@ -49,7 +49,7 @@ function baseDocument(
     currency: "INR",
     logicalIssuanceKey: "fd-key-1",
     numberingSeriesId: UUID_B,
-    sequenceNumber: 1n,
+    sequenceNumber: BigInt(1),
     legalEntityId: UUID_C,
     issuerProfileId: UUID_B,
     issuerProfileVersion: 1,
@@ -61,11 +61,11 @@ function baseDocument(
     recipientDisplayName: "Asha Customer",
     recipientPhoneE164: "+919876543210",
     recipientAddress: "45 Residency Road, Bengaluru",
-    taxableTotalPaise: 10000n,
-    taxTotalPaise: 500n,
-    discountTotalPaise: 0n,
-    chargeTotalPaise: 0n,
-    grandTotalPaise: 10500n,
+    taxableTotalPaise: BigInt(10000),
+    taxTotalPaise: BigInt(500),
+    discountTotalPaise: BigInt(0),
+    chargeTotalPaise: BigInt(0),
+    grandTotalPaise: BigInt(10500),
     placeOfSupplyStateCode: "29",
     reverseChargeApplicable: false,
     checkoutId: UUID_C,
@@ -83,11 +83,11 @@ function baseDocument(
         lineNumber: 1,
         description: "Classic Milk Tea",
         quantity: 2,
-        unitPaise: 5000n,
-        discountPaise: 0n,
-        chargePaise: 0n,
-        taxableValuePaise: 10000n,
-        lineTotalPaise: 10500n,
+        unitPaise: BigInt(5000),
+        discountPaise: BigInt(0),
+        chargePaise: BigInt(0),
+        taxableValuePaise: BigInt(10000),
+        lineTotalPaise: BigInt(10500),
         sacCode: "996331",
         hsnCode: null,
         historicalCatalogItemId: "catalog-item-historical-1",
@@ -97,16 +97,16 @@ function baseDocument(
             financialDocumentLineId: UUID_LINE,
             taxType: "cgst",
             rateBps: 250,
-            taxableAmountPaise: 10000n,
-            taxAmountPaise: 250n,
+            taxableAmountPaise: BigInt(10000),
+            taxAmountPaise: BigInt(250),
           },
           {
             id: UUID_C,
             financialDocumentLineId: UUID_LINE,
             taxType: "sgst",
             rateBps: 250,
-            taxableAmountPaise: 10000n,
-            taxAmountPaise: 250n,
+            taxableAmountPaise: BigInt(10000),
+            taxAmountPaise: BigInt(250),
           },
         ],
       },
@@ -183,12 +183,12 @@ describe("IMP-028 Financial Document rendering foundation", () => {
     const doc = baseDocument({
       documentType: "BILL_OF_SUPPLY",
       statutoryDocumentNumber: "BOS/2526/000001",
-      taxTotalPaise: 0n,
-      grandTotalPaise: 10000n,
+      taxTotalPaise: BigInt(0),
+      grandTotalPaise: BigInt(10000),
       lines: [
         {
           ...baseDocument().lines[0]!,
-          lineTotalPaise: 10000n,
+          lineTotalPaise: BigInt(10000),
           taxComponents: [],
         },
       ],
@@ -263,13 +263,13 @@ describe("IMP-028 Financial Document rendering foundation", () => {
   });
 
   it("FD-R07 Money formatting uses exact integer paise", () => {
-    expect(formatInrPaise(10500n)).toBe("₹105.00");
-    expect(formatInrPaise(0n)).toBe("₹0.00");
-    expect(formatInrPaise(123456789n)).toBe("₹12,34,567.89");
-    expect(formatInrPaise(99n)).toBe("₹0.99");
+    expect(formatInrPaise(BigInt(10500))).toBe("₹105.00");
+    expect(formatInrPaise(BigInt(0))).toBe("₹0.00");
+    expect(formatInrPaise(BigInt(123456789))).toBe("₹12,34,567.89");
+    expect(formatInrPaise(BigInt(99))).toBe("₹0.99");
     const { model } = renderFinancialDocument(baseDocument());
     expect(model.totals.grandTotalDisplay).toBe("₹105.00");
-    expect(model.totals.grandTotalPaise).toBe(10500n);
+    expect(model.totals.grandTotalPaise).toBe(BigInt(10500));
   });
 
   it("FD-R08 Tax components/rates/amounts reflect sealed data exactly", () => {
@@ -279,7 +279,7 @@ describe("IMP-028 Financial Document rendering foundation", () => {
     expect(line.taxComponents).toHaveLength(2);
     expect(line.taxComponents[0]!.taxType).toBe("cgst");
     expect(line.taxComponents[0]!.rateBps).toBe(250);
-    expect(line.taxComponents[0]!.taxAmountPaise).toBe(250n);
+    expect(line.taxComponents[0]!.taxAmountPaise).toBe(BigInt(250));
     expect(line.taxComponents[0]!.taxAmountDisplay).toBe("₹2.50");
     expect(html).toContain("CGST");
     expect(html).toContain("2.50%");
@@ -290,14 +290,14 @@ describe("IMP-028 Financial Document rendering foundation", () => {
     // Intentionally inconsistent sealed line vs header to prove rendering
     // displays header totals as sealed — it does not recompute from lines.
     const doc = baseDocument({
-      taxableTotalPaise: 99999n,
-      taxTotalPaise: 1n,
-      grandTotalPaise: 100000n,
+      taxableTotalPaise: BigInt(99999),
+      taxTotalPaise: BigInt(1),
+      grandTotalPaise: BigInt(100000),
     });
     const { model, html } = renderFinancialDocument(doc);
-    expect(model.totals.taxableTotalPaise).toBe(99999n);
-    expect(model.totals.taxTotalPaise).toBe(1n);
-    expect(model.totals.grandTotalPaise).toBe(100000n);
+    expect(model.totals.taxableTotalPaise).toBe(BigInt(99999));
+    expect(model.totals.taxTotalPaise).toBe(BigInt(1));
+    expect(model.totals.grandTotalPaise).toBe(BigInt(100000));
     expect(html).toContain("₹999.99");
     expect(html).toContain("₹1,000.00");
   });
@@ -442,7 +442,7 @@ describe("IMP-028 Financial Document rendering foundation", () => {
     expect(doc.status).toBe("ISSUED");
     expect(doc.logicalIssuanceKey).toBe("fd-key-1");
     expect(doc.issuerProfileVersion).toBe(1);
-    expect(doc.lines[0]!.taxableValuePaise).toBe(10000n);
+    expect(doc.lines[0]!.taxableValuePaise).toBe(BigInt(10000));
   });
 });
 

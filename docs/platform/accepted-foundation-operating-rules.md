@@ -55,7 +55,7 @@ wired into Next.js via `src/instrumentation.ts`.
 - **Do not weaken production safeguards.** `staging`/`production` require HTTPS + non-loopback
   `BOBA_BEAR_PUBLIC_ORIGIN`, a `BOBA_BEAR_RELEASE`, and `BOBA_BEAR_ALLOW_UNSAFE_ADAPTERS=false`. Do
   not add a bypass, default-to-permissive fallback, or environment alias that weakens these.
-- **Work from the WSL Linux filesystem** (`/home/.../repos/boba-bear-website`, not a `/mnt/c/...`
+- **Work from the WSL Linux filesystem** (`/home/.../repos/boba-bear-platform`, not a `/mnt/c/...`
   mount) — Turbopack/webpack module resolution and file-watching are unreliable across the WSL/NTFS
   boundary.
 
@@ -768,6 +768,27 @@ unchanged. Promotions (IMP-016), cart/checkout, invoices, and aggregator pricing
   serviceability; aggregator pricing; provider delivery cost; public pricing HTTP/UI; new Docker
   service.
 
+## IMP-028C canonical modifier content bootstrap (Slice 4)
+
+Fixed checked-in artifact `data/platform/catalog/imp028c-hong-kong-modifiers-v1.json` binds one
+representative modifier group to **Hong Kong Milk Tea Boba** / `default` through the Catalog service
+lifecycle. Modifier price rows on `direct-primary-v1` are seeded by the same bootstrap (explicit
+₹0 required for free options). `docker:up` does **not** install business content automatically.
+
+Fresh UAT / local commerce content order after migrations:
+
+1. `npm run docker:up`
+2. `npm run docker:menu:import-existing -- --apply`
+3. `npm run docker:assortment:bootstrap-existing-menu -- --apply`
+4. `npm run docker:pricing:bootstrap-existing-menu -- --apply`
+5. `npm run docker:catalog:bootstrap-imp028c-modifiers -- --apply`
+
+CLI: `npm run catalog:bootstrap-imp028c-modifiers` (dry-run default; `--apply` writes). Docker
+wrapper: `docker:catalog:bootstrap-imp028c-modifiers`. Validation:
+`npm run test:catalog-imp028c-modifiers`. Bootstrap owns only artifact-declared modifier records;
+second identical apply is a no-op; unknown unrelated rows are preserved; menu re-import does not
+delete additive modifier content.
+
 ## Promotions, coupons, allocation and pricing integration (IMP-016)
 
 `src/server/promotions/` and `src/shared/promotions/` implement framework-independent Promotion and
@@ -992,8 +1013,9 @@ production composition.
 
 SUPPORTING operating facts for the locked IMP-028 capability. Binding architecture remains
 [`capabilities/IMP-028-invoice-tax-receipt-credit-note.md`](./capabilities/IMP-028-invoice-tax-receipt-credit-note.md)
-and **D-365** / **D-366** / **D-367**. Formal `acceptedThrough` is IMP-027. Formal
-`IMP-028_IMPLEMENTATION_COMPLETE` remains **NO**. Do not treat this section as acceptance.
+and **D-365** / **D-366** / **D-367**. Formal `acceptedThrough` is IMP-028. Formal
+`IMP-028_IMPLEMENTATION_COMPLETE` is **YES**. Formal `IMP-028_ACCEPTED` is **YES**. Do not treat
+this section as authorization to start IMP-029.
 
 - **MVP posture:** compliance-correct, operationally manual, automation-ready. Operators may
   classify refunds and sign PDFs at low volume; statutory immutability, numbering, and auditability
@@ -1026,3 +1048,111 @@ npm run fd:signing -- upload --financial-document-id <id> --file <path> \
   (non-oracle). Required-document PDF is unavailable until `SignatureArtifact.status=SIGNED`.
 - **Out of scope here:** IMP-029; unattended DSC/eSign/HSM; ESP integration; automatic RFV/CN/NSD
   classification; proportional partial allocator; scheduler/queue/worker for these flows.
+
+## Founder UAT and Docker Desktop exact-candidate deployment gate
+
+SUPPORTING operational rule for future capability acceptance where interactive founder UAT is
+required. Canonical IMP sequence and accepted state remain owned by `ROADMAP.md` and `STATE.md`.
+This section does not itself mark any capability accepted.
+
+- **Applicability rule:** record `FOUNDER_UAT_REQUIRED = YES | NO` for the relevant capability
+  acceptance gate. Docker/founder UAT is mandatory when the capability materially changes
+  customer-visible behavior, materially changes operator-visible behavior requiring interactive
+  validation, the acceptance plan explicitly marks UAT required, or the founder requests UAT.
+  Governance-only, documentation-only, architecture-definition, repository-maintenance, and internal
+  tooling tasks with no interactive acceptance surface do not automatically require Docker UAT.
+- **Separate gate:** independent technical acceptance and founder UAT are distinct gates. For
+  `FOUNDER_UAT_REQUIRED = YES`, final lifecycle is:
+
+```text
+IMPLEMENTATION_COMPLETE
+→ INDEPENDENT_TECHNICAL_ACCEPTANCE
+→ UAT_DEPLOYMENT
+→ FOUNDER_UAT
+→ ACCEPTANCE_RECONCILIATION
+```
+
+  `COMPLETE_AND_ACCEPTED` must not be claimed, and `acceptedThrough` must not advance through that
+  capability, until all required UAT gates pass and reconciliation records them.
+- **Exact candidate identity:** founder UAT must validate the exact implementation candidate that
+  passed independent technical acceptance. Minimum required candidate identity:
+
+```text
+CANONICAL_REPOSITORY_PATH
+BRANCH
+HEAD
+WORKING_TREE_FINGERPRINT
+```
+
+  `WORKING_TREE_FINGERPRINT` is mandatory because BOBA validation may intentionally include
+  authorized uncommitted working-tree content. `HEAD` alone is insufficient provenance.
+- **Pre-deployment verification:** before UAT deployment verify canonical repository,
+  `main`, exact `HEAD`, and exact content-sensitive working-tree fingerprint; confirm they match the
+  independently accepted candidate. If fingerprint or relevant source differs, UAT deployment must
+  stop. The modified candidate must return through the applicable validation / technical-acceptance
+  gates before founder UAT.
+- **Docker Desktop deployment surface:** when founder UAT is required, use the repository's existing
+  Docker Desktop / Compose architecture from `/home/ajoshi/repos/boba-bear-platform`. Build from the
+  exact accepted working tree, including authorized uncommitted changes. Do not deploy from an older
+  clone, from `/mnt/c`, from remote Git `HEAD` alone, or from a stale already-running image as UAT
+  evidence.
+- **Fresh build rule:** do not treat a plain `docker compose up` against an unknown pre-existing
+  image as sufficient UAT evidence. Rebuild the required image from current source during the UAT
+  deployment operation, using the repository's actual Docker/Compose commands. Where provenance
+  would otherwise be ambiguous, prefer the repository-supported equivalent of a fresh/no-cache
+  rebuild for UAT. Do not destroy persistent application data unless the UAT plan explicitly
+  requires a fresh database, and do not destroy unrelated Docker resources.
+- **Image and container provenance:** each UAT deployment return must record as much provenance as
+  current tooling allows:
+
+```text
+UAT_SOURCE_REPOSITORY
+UAT_SOURCE_BRANCH
+UAT_SOURCE_HEAD
+UAT_SOURCE_FINGERPRINT
+UAT_IMAGE
+UAT_IMAGE_ID
+UAT_IMAGE_DIGEST
+UAT_CONTAINER
+UAT_DEPLOYMENT_STATUS
+UAT_URL
+```
+
+  If the image does not embed Git/fingerprint metadata, recording the exact source fingerprint plus
+  the resulting image ID is sufficient initial evidence. Do not introduce runtime changes solely to
+  embed provenance unless a later capability authorizes that work.
+- **Deployed-candidate verification:** after deployment, verify the running service is using the
+  newly built image rather than a previous image/container. Return:
+
+```text
+EXPECTED_SOURCE_FINGERPRINT
+ACTUAL_DEPLOYED_IMAGE_ID
+RUNNING_CONTAINER_IMAGE_ID
+MATCH = YES | NO
+```
+
+  If the new image is not actually running, classify deployment as `FAIL_STALE_CONTAINER` and do
+  not invite founder UAT.
+- **Founder handoff:** when deployment succeeds, provide the founder a concise manual UAT handoff
+  containing the exact URL, prerequisite login/state if any, the exact customer/operator journey to
+  test, expected visible behavior, known accepted limitations, and how to report `PASS`, `FAIL`, or
+  defects. Do not bury founder UAT in internal implementation detail.
+- **Founder verdict boundary:** only the founder/user may provide the final interactive UAT verdict.
+  Allowed outcomes are `UAT = PASS | FAIL | BLOCKED`. An implementation agent must never
+  self-declare `FOUNDER_UAT = PASS`.
+- **Failure and retest loop:** if founder UAT fails, preserve the failed UAT evidence, classify the
+  defects, reopen the bounded capability, fix the defects, rerun applicable tests, generate a new
+  working-tree fingerprint, obtain/reconfirm technical acceptance for the new candidate,
+  rebuild/redeploy, and repeat founder UAT. Never treat UAT of an older image as validation of a
+  newer fingerprint.
+- **IMP-028B applicability (historical):** `IMP-028B — Customer Menu Projection + Discovery` was
+  `FOUNDER_UAT_REQUIRED = YES` before `COMPLETE_AND_ACCEPTED` because it materially changes customer
+  `/order`, Menu serving, category navigation, product-card/display-price presentation, and the Add
+  / Cart flow. The required sequence was completed before its accepted lifecycle was reconciled:
+
+```text
+1. independent technical acceptance of AC-01–AC-12
+2. Docker Desktop UAT deployment of that exact accepted fingerprint
+3. founder manual UAT
+4. acceptance reconciliation only after UAT PASS
+```

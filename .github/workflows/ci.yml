@@ -1,0 +1,77 @@
+# Minimal deterministic validation CI for BOBA Bear Platform.
+# Does not deploy, release, or mutate product lifecycle state.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - "imp-**"
+
+jobs:
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          # Dockerfile / accepted-foundation pin: node:22.23.1-bookworm-slim
+          node-version: "22.23.1"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: IMP-028C modifier / bootstrap tests
+        run: npm run test:catalog-imp028c-modifiers
+
+      - name: Catalog tests
+        run: npm run test:catalog
+
+      - name: Cart tests
+        run: npm run test:cart
+
+      - name: Customer-commerce HTTP tests
+        run: npm run test:customer-commerce:http
+
+      - name: Customer Menu projection unit tests
+        run: node scripts/run-vitest.mjs run src/server/customer-commerce/menu/project-customer-menu.test.ts
+
+      - name: Customer Menu modifier projection integration tests
+        run: >-
+          node scripts/run-vitest.mjs run
+          --config vitest.database.config.mts
+          tests/database/customer-menu-modifier-projection.integration.test.ts
+
+      - name: Docker tooling command wiring
+        run: node --test scripts/docker-tool-command-wiring.test.mjs
+
+      - name: Project-consistency unit suite
+        run: node --test scripts/project-consistency.test.mjs
+
+      - name: Project consistency
+        run: npm run project:consistency
+
+      - name: Governance fingerprint
+        run: npm run governance:fingerprint
+
+      - name: Build tooling image
+        run: docker build --target tooling -t boba-bear-tooling:ci .
+
+      - name: Production build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SITE_URL: https://thebobabear.in

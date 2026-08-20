@@ -122,13 +122,13 @@ async function resolveActiveIssuerProfileForLegalEntity(
 export function buildTaxInvoiceLinesFromSnapshot(
   snapshot: CheckoutSnapshot,
 ): IssueFinancialDocumentLineCommand[] {
-  if (snapshot.taxablePaise < 0n || snapshot.taxPaise < 0n) {
+  if (snapshot.taxablePaise < BigInt(0) || snapshot.taxPaise < BigInt(0)) {
     throw new FinancialDocumentError(
       "ARITHMETIC_INVALID",
       "Checkout Snapshot taxable/tax totals must be non-negative for Tax Invoice issuance.",
     );
   }
-  if (snapshot.taxComponents.length === 0 && snapshot.taxPaise > 0n) {
+  if (snapshot.taxComponents.length === 0 && snapshot.taxPaise > BigInt(0)) {
     throw new FinancialDocumentError(
       "INVALID_ISSUANCE_INPUT",
       "Checkout Snapshot lacks sealed tax components required for Tax Invoice issuance.",
@@ -161,8 +161,8 @@ export function buildTaxInvoiceLinesFromSnapshot(
       description,
       quantity: 1,
       unitPaise: snapshot.taxablePaise,
-      discountPaise: 0n,
-      chargePaise: 0n,
+      discountPaise: BigInt(0),
+      chargePaise: BigInt(0),
       taxableValuePaise: snapshot.taxablePaise,
       historicalCatalogItemId: snapshot.id,
       taxComponents,

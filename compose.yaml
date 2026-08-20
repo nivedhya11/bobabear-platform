@@ -2,7 +2,7 @@ name: boba-bear
 
 services:
   postgres:
-    image: postgres:18.4-trixie
+    image: docker.io/library/postgres:18.4-trixie
     env_file:
       - .env.docker.local
     ports:
@@ -85,10 +85,8 @@ services:
     healthcheck:
       test:
         [
-          "CMD",
-          "node",
-          "-e",
-          "fetch('http://127.0.0.1:8081/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:8081/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\"",
         ]
       interval: 5s
       timeout: 3s
@@ -126,10 +124,8 @@ services:
     healthcheck:
       test:
         [
-          "CMD",
-          "node",
-          "-e",
-          "fetch('http://127.0.0.1:8082/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:8082/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\"",
         ]
       interval: 5s
       timeout: 3s
@@ -167,10 +163,8 @@ services:
     healthcheck:
       test:
         [
-          "CMD",
-          "node",
-          "-e",
-          "fetch('http://127.0.0.1:8083/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:8083/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\"",
         ]
       interval: 5s
       timeout: 3s
@@ -377,6 +371,30 @@ services:
     env_file:
       - .env.runtime.docker.local
     command: ["npm", "run", "pricing:verify-existing-menu"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    restart: "no"
+
+  # One-shot IMP-028C Hong Kong Milk Tea modifier bootstrap (Slice 4).
+  # Default dry-run; pass --apply via `docker compose run ... -- --apply`.
+  catalog-bootstrap-imp028c-modifiers:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: tooling
+    image: boba-bear-tooling:local
+    profiles: ["tools"]
+    env_file:
+      - .env.runtime.docker.local
+    command: ["npm", "run", "catalog:bootstrap-imp028c-modifiers"]
     depends_on:
       postgres:
         condition: service_healthy

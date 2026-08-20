@@ -63,7 +63,7 @@ export type SealedIssuanceTotals = Readonly<{
 }>;
 
 function assertNonNegativePaise(value: bigint, field: string): void {
-  if (value < 0n) {
+  if (value < BigInt(0)) {
     throw new FinancialDocumentError(
       "ARITHMETIC_INVALID",
       `${field} must be non-negative paise.`,
@@ -157,10 +157,10 @@ export function sealIssuanceArithmetic(
   const lineNumbers = new Set<number>();
   const sealedLines: SealedIssuanceLine[] = [];
 
-  let taxableTotalPaise = 0n;
-  let taxTotalPaise = 0n;
-  let discountTotalPaise = 0n;
-  let chargeTotalPaise = 0n;
+  let taxableTotalPaise = BigInt(0);
+  let taxTotalPaise = BigInt(0);
+  let discountTotalPaise = BigInt(0);
+  let chargeTotalPaise = BigInt(0);
 
   for (const line of lines) {
     if (!Number.isInteger(line.lineNumber) || line.lineNumber <= 0) {
@@ -206,7 +206,7 @@ export function sealIssuanceArithmetic(
         `Line ${line.lineNumber}: taxableValuePaise must equal quantity*unitPaise - discountPaise + chargePaise.`,
       );
     }
-    if (expectedTaxable < 0n) {
+    if (expectedTaxable < BigInt(0)) {
       throw new FinancialDocumentError(
         "ARITHMETIC_INVALID",
         `Line ${line.lineNumber}: taxable value would be negative.`,
@@ -215,7 +215,7 @@ export function sealIssuanceArithmetic(
 
     const taxTypes: FinancialDocumentTaxType[] = [];
     const seenTypes = new Set<string>();
-    let lineTaxPaise = 0n;
+    let lineTaxPaise = BigInt(0);
     const sealedTaxes: SealedIssuanceLine["taxComponents"][number][] = [];
 
     for (const tax of line.taxComponents ?? []) {

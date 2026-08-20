@@ -1,0 +1,75 @@
+{
+  "import_id": "imp028c-hong-kong-modifiers-v1",
+  "version": 1,
+  "source_menu_import_id": "existing-menu-v1",
+  "source_menu_import_version": 1,
+  "source_inventory_sha256": "0a263d9e514d1d5c05bba7de421812c9a197f85a004c0bdb1ed171712abddaa4",
+  "brand": {
+    "code": "boba-bear"
+  },
+  "target": {
+    "product_code": "hong-kong-milk-tea-boba",
+    "product_name": "Hong Kong Milk Tea Boba",
+    "variant_code": "default"
+  },
+  "price_book": {
+    "code": "direct-primary-v1",
+    "scope_type": "brand"
+  },
+  "modifier_group": {
+    "code": "imp028c-toppings-extras",
+    "name": "Toppings & Extras"
+  },
+  "modifier_options": [
+    {
+      "option": {
+        "code": "imp028c-classic-boba",
+        "name": "Classic Boba"
+      },
+      "binding": {
+        "min_quantity": 0,
+        "max_quantity": 1,
+        "default_quantity": 1,
+        "position": 0
+      },
+      "price": {
+        "price_delta_paise": 0
+      }
+    },
+    {
+      "option": {
+        "code": "imp028c-extra-boba",
+        "name": "Extra Boba"
+      },
+      "binding": {
+        "min_quantity": 0,
+        "max_quantity": 1,
+        "default_quantity": 1,
+        "position": 1
+      },
+      "price": {
+        "price_delta_paise": 3000
+      }
+    },
+    {
+      "option": {
+        "code": "imp028c-grass-jelly",
+        "name": "Grass Jelly"
+      },
+      "binding": {
+        "min_quantity": 0,
+        "max_quantity": 1,
+        "default_quantity": 0,
+        "position": 2
+      },
+      "price": {
+        "price_delta_paise": 4000
+      }
+    }
+  ],
+  "variant_modifier_group": {
+    "min_total_quantity": 0,
+    "max_total_quantity": 3,
+    "position": 0
+  }
+}

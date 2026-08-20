@@ -10,6 +10,15 @@ Last updated: 2026-08-02
 
 Accepted
 
+**CURRENT read (2026-08-18):** ADR-006 remains CURRENT for catalog, menu identity, assortment, and
+availability domain model. **[D-368](../decision-register.md)** is the TARGET customer Menu
+storefront READ PROJECTION serving architecture. D-368 consumes this ADR’s authorities; it does not
+create a new catalog, pricing, or availability authority. **[D-369](../decision-register.md)** binds
+explicit customer selection for positive-price modifier options entering customer purchase intent.
+ADR-006 remains CURRENT for modifier structure, min/max, `default_quantity` as catalog metadata,
+pricing-reference ownership, checkout revalidation, and no silent substitution. D-369 does not
+change schema and does not duplicate the silent-substitution rule.
+
 ## Decision Date
 
 2026-08-02

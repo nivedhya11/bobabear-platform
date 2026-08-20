@@ -194,8 +194,8 @@ function linesFromSealedAllocation(
       description: sourceLine.description,
       quantity: 1,
       unitPaise: allocated.allocatedTaxableOrBaseAmountPaise,
-      discountPaise: 0n,
-      chargePaise: 0n,
+      discountPaise: BigInt(0),
+      chargePaise: BigInt(0),
       taxableValuePaise: allocated.allocatedTaxableOrBaseAmountPaise,
       sacCode: sourceLine.sacCode,
       hsnCode: sourceLine.hsnCode,
@@ -318,7 +318,7 @@ async function issueRefundStatutoryReversalInTransaction(
   if (reversalScope !== "FULL" && reversalScope !== "PARTIAL") {
     invalid("RefundStatutoryDecision is missing sealed reversal scope.", "reversalScope");
   }
-  if (sealedReversalAmountPaise == null || sealedReversalAmountPaise <= 0n) {
+  if (sealedReversalAmountPaise == null || sealedReversalAmountPaise <= BigInt(0)) {
     invalid(
       "RefundStatutoryDecision is missing sealed reversal amount.",
       "sealedReversalAmountPaise",

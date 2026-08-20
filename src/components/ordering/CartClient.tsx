@@ -3,44 +3,68 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
+import { CartLineList } from "@/components/ordering/CartLineList";
+import { CartSummary } from "@/components/ordering/CartSummary";
 import {
+  buildCartLinePresentations,
+  buildCustomerMenuLookups,
+  cartBundleSelectionsToInput,
+  cartModifiersToInput,
   cartUnitCount,
-  estimateCartPresentationPaise,
-  formatPresentationEstimateLabel,
+  formatCartEstimatePrimaryLabel,
+  resolveCartPresentationEstimate,
 } from "@/components/ordering/cart-presentation";
-import {
-  readDeliveryPinContext,
-} from "@/components/ordering/delivery-pin-context";
+import { readDeliveryPinContext } from "@/components/ordering/delivery-pin-context";
 import { commerceErrorCopy } from "@/components/ordering/error-copy";
-import { formatRupees } from "@/components/ordering/format-money";
+import { MenuItemCustomizationDialog } from "@/components/ordering/MenuItemCustomizationDialog";
 import { cartEvaluationCustomerCopy } from "@/components/ordering/serviceability-copy";
 import {
   clearCart,
   evaluateCart,
   getActiveCart,
+  getCustomerMenu,
   removeCartLine,
   setCartLineQuantity,
+  updateCartLineConfiguration,
   type CommerceCart,
   type CommerceCartEvaluation,
+  type CommerceCartLine,
 } from "@/lib/customer-commerce";
 import { loginUrlWithReturn } from "@/lib/customer-auth/return-to";
 import { fetchCustomerSession } from "@/lib/customer-auth/client";
-import type { OrderingCatalog } from "@/shared/ordering-catalog";
+import type { CartModifierSelectionInput } from "@/shared/cart/types";
+import type { CustomerMenuItem, CustomerMenuProjection } from "@/shared/customer-menu/types";
 
-const QTY_BUTTON_CLASS = "min-h-[44px] min-w-[44px] md:min-h-8 md:min-w-8";
+type EditTarget = Readonly<{
+  line: CommerceCartLine;
+  item: CustomerMenuItem;
+}>;
 
-export function CartClient(props: { catalog: OrderingCatalog }) {
-  const { catalog } = props;
+export function CartClient(props: { brandId: string }) {
+  const { brandId } = props;
+  const [menu, setMenu] = useState<CustomerMenuProjection | null>(null);
   const [cart, setCart] = useState<CommerceCart | null>(null);
   const [evaluation, setEvaluation] = useState<CommerceCartEvaluation | null>(null);
   const [deliveryPin, setDeliveryPin] = useState(() => readDeliveryPinContext());
   const [loading, setLoading] = useState(true);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [editTarget, setEditTarget] = useState<EditTarget | null>(null);
+  const [dialogError, setDialogError] = useState<string | null>(null);
 
-  const itemByVariant = useMemo(() => {
-    return new Map(catalog.items.map((item) => [item.variantId, item]));
-  }, [catalog.items]);
+  const menuLookups = useMemo(
+    () => (menu ? buildCustomerMenuLookups(menu) : null),
+    [menu],
+  );
+
+  const linePresentations = useMemo(
+    () =>
+      buildCartLinePresentations(
+        cart,
+        menuLookups ?? buildCustomerMenuLookups(emptyMenu(brandId)),
+      ),
+    [cart, menuLookups, brandId],
+  );
 
   const refreshEvaluation = useCallback(
     async (pin: string, currentCart: CommerceCart | null) => {
@@ -49,26 +73,36 @@ export function CartClient(props: { catalog: OrderingCatalog }) {
         return;
       }
       const evaluated = await evaluateCart(
-        pin.length === 6 ? { brandId: catalog.brandId, location: { postalCode: pin } } : { brandId: catalog.brandId },
+        pin.length === 6
+          ? { brandId, location: { postalCode: pin } }
+          : { brandId },
       );
       if (evaluated.ok) setEvaluation(evaluated.data);
       else setEvaluation(null);
     },
-    [catalog.brandId],
+    [brandId],
   );
 
   const load = useCallback(async () => {
-    const result = await getActiveCart(catalog.brandId, { guestToken: true });
-    if (!result.ok) {
-      setError(commerceErrorCopy(result.code));
+    const menuResult = await getCustomerMenu({ brandId });
+    if (!menuResult.ok) {
+      setMenu(null);
+      setError(commerceErrorCopy(menuResult.code));
+    } else {
+      setMenu(menuResult.data.menu);
+    }
+
+    const cartResult = await getActiveCart(brandId, { guestToken: true });
+    if (!cartResult.ok) {
+      setError(commerceErrorCopy(cartResult.code));
       setCart(null);
       return;
     }
-    setCart(result.data.cart);
+    setCart(cartResult.data.cart);
     const pin = readDeliveryPinContext();
     setDeliveryPin(pin);
-    await refreshEvaluation(pin, result.data.cart);
-  }, [catalog.brandId, refreshEvaluation]);
+    await refreshEvaluation(pin, cartResult.data.cart);
+  }, [brandId, refreshEvaluation]);
 
   useEffect(() => {
     let cancelled = false;
@@ -102,7 +136,7 @@ export function CartClient(props: { catalog: OrderingCatalog }) {
     await withPending(async () => {
       if (quantity < 1) {
         const result = await removeCartLine({
-          brandId: catalog.brandId,
+          brandId,
           cartLineId: lineId,
           expectedRevision: cart.revision,
         });
@@ -114,7 +148,7 @@ export function CartClient(props: { catalog: OrderingCatalog }) {
         return;
       }
       const result = await setCartLineQuantity({
-        brandId: catalog.brandId,
+        brandId,
         cartLineId: lineId,
         quantity,
         expectedRevision: cart.revision,
@@ -131,7 +165,7 @@ export function CartClient(props: { catalog: OrderingCatalog }) {
     if (!cart) return;
     await withPending(async () => {
       const result = await clearCart({
-        brandId: catalog.brandId,
+        brandId,
         expectedRevision: cart.revision,
       });
       if (!result.ok) {
@@ -155,11 +189,74 @@ export function CartClient(props: { catalog: OrderingCatalog }) {
     window.location.assign("/order/checkout/");
   }
 
+  function openEdit(lineId: string): void {
+    if (!menuLookups || !cart) return;
+    const line = cart.lines.find((entry) => entry.id === lineId);
+    if (!line) return;
+    const item = menuLookups.itemByVariant.get(line.variantId);
+    if (!item) return;
+    const presentation = linePresentations.find((entry) => entry.lineId === line.id);
+    if (!presentation?.editEligible) return;
+    setDialogError(null);
+    setEditTarget({ line, item });
+  }
+
+  async function saveEditConfiguration(
+    modifiers: readonly CartModifierSelectionInput[],
+  ): Promise<void> {
+    if (!editTarget || !cart || pending) return;
+    setPending(true);
+    setDialogError(null);
+    try {
+      const result = await updateCartLineConfiguration({
+        brandId,
+        cartLineId: editTarget.line.id,
+        variantId: editTarget.line.variantId,
+        modifiers,
+        bundleSelections: cartBundleSelectionsToInput(editTarget.line.bundleSelections),
+        expectedRevision: cart.revision,
+      });
+      if (!result.ok) {
+        setDialogError(commerceErrorCopy(result.code));
+        return;
+      }
+      await applyCartMutation(result.data.cart);
+      setEditTarget(null);
+      setDialogError(null);
+    } finally {
+      setPending(false);
+    }
+  }
+
   const empty = !loading && (!cart || cart.lines.length === 0);
   const lineCount = cartUnitCount(cart);
-  const presentationEstimate = estimateCartPresentationPaise(cart, itemByVariant);
-  const presentationLabel = formatPresentationEstimateLabel(presentationEstimate);
+  const presentationEstimate = menuLookups
+    ? resolveCartPresentationEstimate(cart, menuLookups)
+    : { complete: false as const, totalPaise: BigInt(0) };
+  const presentationLabel = formatCartEstimatePrimaryLabel(presentationEstimate);
   const serviceabilityNote = cartEvaluationCustomerCopy(evaluation, deliveryPin.length === 6);
+
+  if (loading) {
+    return (
+      <main id="main-content" tabIndex={-1} className="bg-[var(--bg-page)] focus:outline-none">
+        <div className="mx-auto max-w-[720px] px-5 py-12 md:py-16">
+          <p className="font-body text-[15px] text-[var(--text-secondary)]">Loading cart…</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (!menu) {
+    return (
+      <main id="main-content" tabIndex={-1} className="bg-[var(--bg-page)] focus:outline-none">
+        <div className="mx-auto max-w-[720px] px-5 py-12 md:py-16">
+          <p role="status" className="font-body text-[15px] text-[var(--text-secondary)]">
+            {error ?? "Menu is unavailable right now."}
+          </p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main id="main-content" tabIndex={-1} className="bg-[var(--bg-page)] focus:outline-none">
@@ -177,10 +274,6 @@ export function CartClient(props: { catalog: OrderingCatalog }) {
             </p>
           ) : null}
         </header>
-
-        {loading ? (
-          <p className="font-body text-[15px] text-[var(--text-secondary)]">Loading cart…</p>
-        ) : null}
 
         {error ? (
           <p role="alert" className="font-body text-[14px] text-[var(--text-secondary)]">
@@ -200,80 +293,17 @@ export function CartClient(props: { catalog: OrderingCatalog }) {
         ) : null}
 
         {cart && cart.lines.length > 0 ? (
-          <ul className="flex flex-col gap-3" role="list">
-            {cart.lines.map((line) => {
-              const item = itemByVariant.get(line.variantId);
-              return (
-                <li
-                  key={line.id}
-                  className="border border-[var(--border-default)] bg-[var(--bg-section)] p-4 flex items-center justify-between gap-4"
-                >
-                  <div className="min-w-0">
-                    <p className="font-display text-[20px] text-[var(--text-primary)]">
-                      {item?.name ?? "Item"}
-                    </p>
-                    {item ? (
-                      <p className="font-body text-[13px] text-[var(--text-tertiary)]">
-                        {formatRupees(item.presentationPriceRupees)} each (menu price)
-                      </p>
-                    ) : null}
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className={QTY_BUTTON_CLASS}
-                      disabled={pending}
-                      aria-label={`Decrease ${item?.name ?? "item"} quantity`}
-                      onClick={() => void changeQuantity(line.id, line.quantity - 1)}
-                    >
-                      −
-                    </Button>
-                    <span
-                      className="font-mono text-[13px] min-w-[1.5rem] text-center"
-                      aria-live="polite"
-                    >
-                      {line.quantity}
-                    </span>
-                    <Button
-                      type="button"
-                      variant="primary"
-                      size="sm"
-                      className={QTY_BUTTON_CLASS}
-                      disabled={pending}
-                      aria-label={`Increase ${item?.name ?? "item"} quantity`}
-                      onClick={() => void changeQuantity(line.id, line.quantity + 1)}
-                    >
-                      +
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="min-h-[44px]"
-                      disabled={pending}
-                      aria-label={`Remove ${item?.name ?? "item"} from cart`}
-                      onClick={() => void changeQuantity(line.id, 0)}
-                    >
-                      Remove
-                    </Button>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+          <CartLineList
+            lines={linePresentations}
+            pending={pending}
+            onChangeQuantity={(lineId, quantity) => void changeQuantity(lineId, quantity)}
+            onEdit={openEdit}
+            onRemove={(lineId) => void changeQuantity(lineId, 0)}
+          />
         ) : null}
 
         {cart && cart.lines.length > 0 ? (
-          <div className="flex flex-col gap-2 border-t border-[var(--border-default)] pt-4">
-            <p className="font-body text-[15px] font-semibold">
-              Cart total (menu prices): {presentationLabel}
-            </p>
-            <p className="font-body text-[13px] text-[var(--text-tertiary)]">
-              Packaging, delivery, tax, and your payable total appear at checkout.
-            </p>
-          </div>
+          <CartSummary estimate={presentationEstimate} itemCount={lineCount} />
         ) : null}
 
         {serviceabilityNote ? (
@@ -303,6 +333,33 @@ export function CartClient(props: { catalog: OrderingCatalog }) {
           </div>
         ) : null}
       </div>
+
+      {editTarget ? (
+        <MenuItemCustomizationDialog
+          item={editTarget.item}
+          mode="edit"
+          initialModifiers={cartModifiersToInput(editTarget.line.modifiers)}
+          pending={pending}
+          error={dialogError}
+          onClose={() => {
+            if (!pending) {
+              setEditTarget(null);
+              setDialogError(null);
+            }
+          }}
+          onSave={(modifiers) => void saveEditConfiguration(modifiers)}
+        />
+      ) : null}
     </main>
   );
+}
+
+function emptyMenu(brandId: string): CustomerMenuProjection {
+  return {
+    brandId,
+    menuId: "empty",
+    name: "Empty",
+    sections: [],
+    items: [],
+  };
 }

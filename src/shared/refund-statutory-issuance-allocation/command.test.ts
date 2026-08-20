@@ -63,7 +63,7 @@ describe("D-366 Slice 3A issuance-allocation command parsing", () => {
     expect(() => parsePositivePaise(-1, "amount")).toThrow(
       RefundStatutoryIssuanceAllocationError,
     );
-    expect(() => parsePositivePaise(-1n, "amount")).toThrow(
+    expect(() => parsePositivePaise(-BigInt(1), "amount")).toThrow(
       RefundStatutoryIssuanceAllocationError,
     );
     expect(() => parsePositivePaise(1.5, "amount")).toThrow(
@@ -72,8 +72,8 @@ describe("D-366 Slice 3A issuance-allocation command parsing", () => {
     expect(() => parsePositivePaise("01", "amount")).toThrow(
       RefundStatutoryIssuanceAllocationError,
     );
-    expect(parsePositivePaise(1, "amount")).toBe(1n);
-    expect(1n + 2n).toBe(3n);
+    expect(parsePositivePaise(1, "amount")).toBe(BigInt(1));
+    expect(BigInt(1) + BigInt(2)).toBe(BigInt(3));
   });
 
   it("rejects duplicate source line and tax-component references", () => {
@@ -141,15 +141,15 @@ describe("canonical issuance-allocation equality", () => {
       refundStatutoryDecisionId: DECISION_ID,
       sourceFinancialDocumentId: SOURCE_ID,
       sourceDocumentType: "RECEIPT_VOUCHER",
-      sealedReversalAmountPaise: 100n,
+      sealedReversalAmountPaise: BigInt(100),
       lines: [
         {
           sourceFinancialDocumentLineId: LINE_B,
-          allocatedTaxableOrBaseAmountPaise: 80n,
+          allocatedTaxableOrBaseAmountPaise: BigInt(80),
         },
         {
           sourceFinancialDocumentLineId: LINE_A,
-          allocatedTaxableOrBaseAmountPaise: 10n,
+          allocatedTaxableOrBaseAmountPaise: BigInt(10),
         },
       ],
       taxComponents: [
@@ -158,14 +158,14 @@ describe("canonical issuance-allocation equality", () => {
           sourceFinancialDocumentLineId: LINE_A,
           taxType: "sgst",
           taxRateBps: 250,
-          allocatedTaxAmountPaise: 5n,
+          allocatedTaxAmountPaise: BigInt(5),
         },
         {
           sourceFinancialDocumentTaxComponentId: TAX_A,
           sourceFinancialDocumentLineId: LINE_A,
           taxType: "cgst",
           taxRateBps: 250,
-          allocatedTaxAmountPaise: 5n,
+          allocatedTaxAmountPaise: BigInt(5),
         },
       ],
     });
@@ -173,15 +173,15 @@ describe("canonical issuance-allocation equality", () => {
       refundStatutoryDecisionId: DECISION_ID,
       sourceFinancialDocumentId: SOURCE_ID,
       sourceDocumentType: "RECEIPT_VOUCHER",
-      sealedReversalAmountPaise: 100n,
+      sealedReversalAmountPaise: BigInt(100),
       lines: [
         {
           sourceFinancialDocumentLineId: LINE_A,
-          allocatedTaxableOrBaseAmountPaise: 10n,
+          allocatedTaxableOrBaseAmountPaise: BigInt(10),
         },
         {
           sourceFinancialDocumentLineId: LINE_B,
-          allocatedTaxableOrBaseAmountPaise: 80n,
+          allocatedTaxableOrBaseAmountPaise: BigInt(80),
         },
       ],
       taxComponents: [
@@ -190,14 +190,14 @@ describe("canonical issuance-allocation equality", () => {
           sourceFinancialDocumentLineId: LINE_A,
           taxType: "cgst",
           taxRateBps: 250,
-          allocatedTaxAmountPaise: 5n,
+          allocatedTaxAmountPaise: BigInt(5),
         },
         {
           sourceFinancialDocumentTaxComponentId: TAX_B,
           sourceFinancialDocumentLineId: LINE_A,
           taxType: "sgst",
           taxRateBps: 250,
-          allocatedTaxAmountPaise: 5n,
+          allocatedTaxAmountPaise: BigInt(5),
         },
       ],
     });
@@ -209,11 +209,11 @@ describe("canonical issuance-allocation equality", () => {
       refundStatutoryDecisionId: DECISION_ID,
       sourceFinancialDocumentId: SOURCE_ID,
       sourceDocumentType: "TAX_INVOICE" as const,
-      sealedReversalAmountPaise: 100n,
+      sealedReversalAmountPaise: BigInt(100),
       lines: [
         {
           sourceFinancialDocumentLineId: LINE_A,
-          allocatedTaxableOrBaseAmountPaise: 80n,
+          allocatedTaxableOrBaseAmountPaise: BigInt(80),
         },
       ],
       taxComponents: [
@@ -222,7 +222,7 @@ describe("canonical issuance-allocation equality", () => {
           sourceFinancialDocumentLineId: LINE_A,
           taxType: "cgst",
           taxRateBps: 250,
-          allocatedTaxAmountPaise: 20n,
+          allocatedTaxAmountPaise: BigInt(20),
         },
       ],
     };
@@ -232,7 +232,7 @@ describe("canonical issuance-allocation equality", () => {
         lines: [
           {
             sourceFinancialDocumentLineId: LINE_A,
-            allocatedTaxableOrBaseAmountPaise: 70n,
+            allocatedTaxableOrBaseAmountPaise: BigInt(70),
           },
         ],
       }),
@@ -246,7 +246,7 @@ describe("canonical issuance-allocation equality", () => {
             sourceFinancialDocumentLineId: LINE_A,
             taxType: "cgst",
             taxRateBps: 250,
-            allocatedTaxAmountPaise: 10n,
+            allocatedTaxAmountPaise: BigInt(10),
           },
         ],
       }),

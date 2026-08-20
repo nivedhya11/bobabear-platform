@@ -40,18 +40,102 @@ export function checkNoFloatingImageTags(dockerfileText, composeText) {
 }
 
 export function checkPinnedBaseImages(dockerfileText) {
-  const hasNode = /ARG\s+NODE_IMAGE\s*=\s*node:22\.23\.1-bookworm-slim\b/.test(dockerfileText);
-  const hasNginx = /ARG\s+NGINX_IMAGE\s*=\s*nginx:1\.30\.4-alpine3\.24\b/.test(dockerfileText);
+  const hasNode =
+    /ARG\s+NODE_IMAGE\s*=\s*docker\.io\/library\/node:22\.23\.1-bookworm-slim\b/.test(
+      dockerfileText,
+    );
+  const hasNginx =
+    /ARG\s+NGINX_IMAGE\s*=\s*docker\.io\/library\/nginx:1\.30\.4-alpine3\.24\b/.test(
+      dockerfileText,
+    );
   return {
     name: "Node and Nginx base images are pinned to the approved exact tags",
     passed: hasNode && hasNginx,
   };
 }
 
-export function checkPinnedPostgresImage(composeText) {
-  const match = composeText.match(/postgres:\s*\n\s*image:\s*([^\s#]+)/);
-  const passed = !!match && match[1] === "postgres:18.4-trixie";
-  return { name: "PostgreSQL image is pinned to postgres:18.4-trixie", passed, detail: match?.[1] };
+/** True when `ref` includes an explicit registry host (e.g. docker.io/...). */
+export function isFullyQualifiedImageRef(ref) {
+  const slash = ref.indexOf("/");
+  if (slash <= 0) return false;
+  const registry = ref.slice(0, slash);
+  return registry === "localhost" || registry.includes(".") || registry.includes(":");
+}
+
+/**
+ * Every external Dockerfile base image must be a fully-qualified OCI reference.
+ * Internal named-stage references (FROM base AS …) remain unqualified by design.
+ */
+export function checkFullyQualifiedExternalBaseImages(dockerfileText) {
+  const argDefaults = new Map(
+    [...dockerfileText.matchAll(/^ARG\s+(\w+)=(\S+)/gm)].map((m) => [m[1], m[2]]),
+  );
+  const stageNames = new Set(
+    [...dockerfileText.matchAll(/\bAS\s+(\S+)/gi)].map((m) => m[1]),
+  );
+  const unresolved = [];
+  for (const match of dockerfileText.matchAll(/^FROM\s+(\S+)/gm)) {
+    let resolved = match[1];
+    const argMatch = resolved.match(/^\$\{(\w+)\}$/);
+    if (argMatch) {
+      resolved = argDefaults.get(argMatch[1]);
+      if (!resolved) {
+        unresolved.push(match[1]);
+        continue;
+      }
+    }
+    if (stageNames.has(resolved)) continue;
+    if (!isFullyQualifiedImageRef(resolved)) unresolved.push(resolved);
+  }
+  return {
+    name: "External Dockerfile FROM references are fully-qualified OCI image refs",
+    passed: unresolved.length === 0,
+    detail: unresolved.join(", "),
+  };
+}
+
+export function checkComposeImageReferences(composeText) {
+  const imageRefs = [...composeText.matchAll(/^\s+image:\s*([^\s#]+)/gm)].map((match) => match[1]);
+  const isProjectLocal = (ref) => ref.split("/").at(-1).startsWith("boba-bear-");
+  const externalRefs = imageRefs.filter((ref) => !isProjectLocal(ref));
+  const projectLocalRefs = imageRefs.filter(isProjectLocal);
+  const unqualifiedExternal = externalRefs.filter((ref) => !isFullyQualifiedImageRef(ref));
+  const qualifiedProjectLocal = projectLocalRefs.filter(isFullyQualifiedImageRef);
+  const failures = [
+    ...unqualifiedExternal.map((ref) => `external image is not fully qualified: ${ref}`),
+    ...qualifiedProjectLocal.map((ref) => `project-local image is qualified: ${ref}`),
+  ];
+  return {
+    name: "External Compose images are fully qualified and project-local images remain local",
+    passed: failures.length === 0,
+    detail: failures.join("; "),
+  };
+}
+
+export function checkNodeServiceHealthchecks(composeText) {
+  const endpoints = new Map([
+    ["customer-auth", 8081],
+    ["workforce-auth", 8082],
+    ["customer-commerce", 8083],
+  ]);
+  const failures = [];
+  for (const [service, port] of endpoints) {
+    const block = extractServiceBlock(composeText, service);
+    const endpoint = `http://127.0.0.1:${port}/health/live`;
+    const hasCommand =
+      block.includes("node -e") &&
+      block.includes(endpoint) &&
+      block.includes("r=>process.exit(r.ok?0:1)") &&
+      block.includes("catch(()=>process.exit(1))");
+    if (!/"CMD-SHELL"/.test(block) || !hasCommand) {
+      failures.push(service);
+    }
+  }
+  return {
+    name: "Node Compose healthchecks use portable shell commands with exact live endpoints",
+    passed: failures.length === 0,
+    detail: failures.join(", "),
+  };
 }
 
 export function checkFinalStageIsWebRuntime(dockerfileText) {
@@ -347,7 +431,9 @@ export function runAllChecks({ dockerfileText, composeText, nginxConfText, nextC
     { name: "Dockerfile exists", passed: dockerfileText.length > 0 },
     { name: "Multi-stage Dockerfile (base/dependencies/builder/tooling/web-runtime)", passed: [...dockerfileText.matchAll(/^FROM/gm)].length >= 5 },
     checkPinnedBaseImages(dockerfileText),
-    checkPinnedPostgresImage(composeText),
+    checkFullyQualifiedExternalBaseImages(dockerfileText),
+    checkComposeImageReferences(composeText),
+    checkNodeServiceHealthchecks(composeText),
     checkNoFloatingImageTags(dockerfileText, composeText),
     checkFinalStageIsWebRuntime(dockerfileText),
     checkNoNodeServerAtRuntime(dockerfileText),

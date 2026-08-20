@@ -101,7 +101,7 @@ async function reloadOrder(
   return mapOrderRow(row);
 }
 
-async function seedTiConfig(h: CompletedOrderHarness, overrides: Parameters<typeof seedTaxInvoiceWorkflowConfig>[1] = {}) {
+async function seedTiConfig(h: CompletedOrderHarness, overrides: Partial<Parameters<typeof seedTaxInvoiceWorkflowConfig>[1]> = {}) {
   return seedTaxInvoiceWorkflowConfig(h.persistence, {
     brandId: h.brandId,
     organizationId: h.tree.orgA.id,
@@ -163,7 +163,7 @@ describe("IMP-028 Slice 9 Order FULFILLED → TAX_INVOICE workflow (FD-WO)", () 
       expect(invoice!.statutoryDocumentNumber.startsWith("TI/2627/")).toBe(true);
       expect(invoice!.issueAt.getTime()).toBe(order.fulfilledAt!.getTime());
       expect(invoice!.issueAt.getTime()).toBe(fulfilled.fulfilledAt!.getTime());
-      expect(invoice!.taxableTotalPaise).toBeGreaterThanOrEqual(0n);
+      expect(invoice!.taxableTotalPaise).toBeGreaterThanOrEqual(BigInt(0));
       expect(invoice!.lines.length).toBe(1);
       expect(invoice!.lines[0]!.taxComponents.length).toBeGreaterThan(0);
       expect(await countTaxInvoicesForOrder(h.persistence, h.order.id)).toBe(1);

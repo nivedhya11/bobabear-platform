@@ -67,7 +67,7 @@ async function extractPdfText(bytes: Uint8Array): Promise<string> {
   const data = bytes.buffer.slice(
     bytes.byteOffset,
     bytes.byteOffset + bytes.byteLength,
-  );
+  ) as ArrayBuffer;
   const doc = await getDocument({ data, useSystemFonts: true }).promise;
   let text = "";
   for (let i = 1; i <= doc.numPages; i += 1) {

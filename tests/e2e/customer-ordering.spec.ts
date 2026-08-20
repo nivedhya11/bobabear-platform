@@ -39,7 +39,7 @@ function codeField(page: Page) {
 
 async function reachReadyForPayment(page: Page, phoneNumber: string): Promise<void> {
   await page.goto("/order/");
-  await expect(page.getByRole("heading", { name: /order with boba bear/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /^menu$/i })).toBeVisible();
   await expect(page.getByTestId("deliver-to-orientation")).toBeVisible();
   await expect(page.getByTestId("deliver-to-orientation")).toContainText("Dehradun");
   await expect(page.locator("#main-content")).not.toContainText(/serviceable/i);

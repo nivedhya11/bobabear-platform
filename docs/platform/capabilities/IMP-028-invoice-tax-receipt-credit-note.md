@@ -5,7 +5,7 @@
   "capability": "IMP-028",
   "title": "Invoice / Tax Receipt / Credit Note",
   "architectureLock": "ARCHITECTURE_LOCKED",
-  "implementation": "IN_PROGRESS",
+  "implementation": "COMPLETE_AND_ACCEPTED",
   "implementationAuthorized": true,
   "lastReviewed": "2026-08-18",
   "bindingDecisions": ["D-356", "D-357", "D-358", "D-359", "D-360", "D-361", "D-362", "D-363", "D-364", "D-365", "D-366", "D-367"],
@@ -24,48 +24,48 @@ Credit Note.
 | Field | Value |
 |---|---|
 | Architecture lock | `ARCHITECTURE_LOCKED` |
-| Implementation | `AUTHORIZED` / `IN_PROGRESS` |
+| Implementation | `COMPLETE_AND_ACCEPTED` |
 | Implementation authorized | **YES** |
 | Implementation started | **YES** |
-| Implementation complete | **YES** (working-tree; not formal sequential acceptance) |
-| Acceptance | **NO**; `acceptedThrough` is IMP-027; `pendingAcceptance` = IMP-026C |
-| Schema change required | **YES** (Financial Document; numbering; issuer/tax profile; RefundStatutoryDecision; RefundStatutoryIssuanceAllocation; SignatureArtifact / AuthorisedSignerProfile / signed-artifact storage; latest working-tree migration `0029_refund_statutory_issuance_allocation`) |
+| Implementation complete | **YES** |
+| Acceptance | **COMPLETE_AND_ACCEPTED**; `acceptedThrough = IMP-028`; `pendingAcceptance = NONE` |
+| Schema change required | **YES** (Financial Document; numbering; issuer/tax profile; RefundStatutoryDecision; RefundStatutoryIssuanceAllocation; SignatureArtifact / AuthorisedSignerProfile / signed-artifact storage; latest accepted migration `0029_refund_statutory_issuance_allocation`) |
 | Binding decisions | **D-365** (Financial Document Authority); **D-366** (Refund Statutory Reversal Decision Authority); **D-367** (Statutory Financial Document Signing and Signed Artifact Authority) |
 
-Architecture is locked. Implementation is **authorized**, **started**, and **working-tree complete**
-(`IN_PROGRESS` ROADMAP lifecycle under GTM-R26; `IMP-028_IMPLEMENTATION_COMPLETE = YES` here).
-Product implementation must remain strictly within **D-365**, **D-366**, **D-367**, **ARCH-G16**,
-**ARCH-G17**, **ARCH-G18**, and this locked capability artifact. Do not claim formal sequential
-acceptance. Do not accept IMP-026, IMP-026C, or IMP-027. Do not start IMP-029.
-
-Formal sequential acceptance remains blocked. STATE-R24 / GTM-R26 stay the formal snapshot
-authorities and are not rewritten by this working-tree completion marker:
+Architecture remains locked. Implementation is complete and independently accepted.
+Product implementation remains strictly within **D-365**, **D-366**, **D-367**, **ARCH-G16**,
+**ARCH-G17**, **ARCH-G18**, and this locked capability artifact. Do not start IMP-029. Formal
+acceptance of IMP-028 does **not** authorize IMP-029 implementation.
 
 ```text
-acceptedThrough = IMP-027
-pendingAcceptance = IMP-026C
-currentProductSlice = IMP-028
+acceptedThrough = IMP-028
+pendingAcceptance = NONE
+currentProductSlice = NONE
+nextProductSlice = IMP-029
 IMP-028_IMPLEMENTATION_COMPLETE = YES
-IMP-028_ACCEPTED = NO
+IMP-028_ACCEPTED = YES
 IMP-029 = NOT_STARTED
+IMP-029_IMPLEMENTATION_AUTHORIZED = NO
+IMP-029_STARTED = NO
 ```
 
-Working-tree implementation completion (this artifact; not STATE-R24 formal acceptance):
+Formal acceptance (this artifact; STATE-R28 / GTM-R30):
 
 ```text
 IMP-028_IMPLEMENTATION_COMPLETE = YES
-IMP-028_ACCEPTED = NO
+IMP-028_ACCEPTED = YES
 D366_FINAL_ISSUANCE = ACCEPTED
 IMP028_CODE_COMPLETE = YES
 IMP028_STATUTORY_PATH_COMPLETE = YES
 IMP028_TESTS_COMPLETE = YES
 IMP028_DOCUMENTATION_COMPLETE = YES
+IMP028_FORMAL_ACCEPTANCE = ACCEPTED
 ```
 
 Independent final closure audit: `IMP028_FINAL_CLOSURE_EVIDENCE = SUFFICIENT`;
-`D366_FINAL_ISSUANCE_INDEPENDENT_ACCEPTANCE_EVIDENCE = SUFFICIENT`. Working-tree completion is
-**not** formal `acceptedThrough` advancement. Formal acceptance must later reconcile the remaining
-IMP-026C gate before IMP-028 acceptance.
+`D366_FINAL_ISSUANCE_INDEPENDENT_ACCEPTANCE_EVIDENCE = SUFFICIENT`. GTM-R30 records formal
+`acceptedThrough` advancement to IMP-028. IMP-029 remains `PLANNED` / `NOT_STARTED` /
+`NOT_AUTHORIZED`.
 
 ---
 
@@ -1542,10 +1542,10 @@ Global architecture additions:
 
 All material questions required for architecture lock are resolved. Production GST values and
 final production tax-policy selection remain explicit configuration / accountant gates (not open
-architecture questions). Implementation is **AUTHORIZED** / **STARTED** / `IMPLEMENTATION_IN_PROGRESS`
-under GTM-R26. Working-tree `IMP-028_IMPLEMENTATION_COMPLETE` is **YES**. Formal `acceptedThrough`
-remains IMP-025. `IMP-028_ACCEPTED` remains **NO**. Completion does not resolve production
-GST/accountant gates and does not imply sequential acceptance.
+architecture questions). Implementation is `COMPLETE_AND_ACCEPTED` under GTM-R30. Working-tree
+`IMP-028_IMPLEMENTATION_COMPLETE` is **YES**. Formal `acceptedThrough` is IMP-028.
+`IMP-028_ACCEPTED` is **YES**. Formal acceptance does not resolve production GST/accountant gates
+and does not authorize IMP-029.
 
 ---
 
@@ -1657,12 +1657,15 @@ formal acceptedThrough advancement
 Working-tree completion vs formal sequential acceptance:
 
 ```text
-acceptedThrough = IMP-027
-pendingAcceptance = IMP-026C
-currentProductSlice = IMP-028
+acceptedThrough = IMP-028
+pendingAcceptance = NONE
+currentProductSlice = NONE
+nextProductSlice = IMP-029
 IMP-028_IMPLEMENTATION_COMPLETE = YES
-IMP-028_ACCEPTED = NO
+IMP-028_ACCEPTED = YES
 IMP-029 = NOT_STARTED
+IMP-029_IMPLEMENTATION_AUTHORIZED = NO
+IMP-029_STARTED = NO
 D366_FINAL_ISSUANCE = ACCEPTED
 IMP028_CODE_COMPLETE = YES
 IMP028_STATUTORY_PATH_COMPLETE = YES
@@ -1670,10 +1673,9 @@ IMP028_TESTS_COMPLETE = YES
 IMP028_DOCUMENTATION_COMPLETE = YES
 ```
 
-IMP-026C acceptance is the remaining formal sequential gate before IMP-028 acceptance.
-
-Working-tree `IMP-028_IMPLEMENTATION_COMPLETE = YES` does not pretend formal `acceptedThrough`
-has advanced for IMP-028. IMP-026C remains the outstanding prior acceptance gate.
+IMP-028 is formally accepted. `acceptedThrough` has advanced to IMP-028. IMP-029 remains
+`PLANNED` / `NOT_STARTED` / `NOT_AUTHORIZED`. Formal acceptance of IMP-028 does not authorize
+IMP-029.
 
 ---
 

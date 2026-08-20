@@ -117,7 +117,7 @@ export async function issueTaxInvoiceForHarness(
     const documentType = overrides.documentType ?? "TAX_INVOICE";
     const statutoryDocumentNumber =
       allocated?.statutoryDocumentNumber ?? "TI/2526/MANUAL";
-    const sequenceNumber = allocated?.sequenceNumber ?? 1n;
+    const sequenceNumber = allocated?.sequenceNumber ?? BigInt(1);
 
     return insertIssuedFinancialDocument(tx, {
       documentType,
@@ -133,11 +133,11 @@ export async function issueTaxInvoiceForHarness(
       issuerProfileVersion: harness.issuerProfileVersion,
       supplierGstLegalName: null,
       supplierGstin: null,
-      taxableTotalPaise: 10000n,
-      taxTotalPaise: 500n,
-      discountTotalPaise: 0n,
-      chargeTotalPaise: 0n,
-      grandTotalPaise: 10500n,
+      taxableTotalPaise: BigInt(10000),
+      taxTotalPaise: BigInt(500),
+      discountTotalPaise: BigInt(0),
+      chargeTotalPaise: BigInt(0),
+      grandTotalPaise: BigInt(10500),
       checkoutId: harness.checkoutId,
       checkoutSnapshotId: harness.checkoutSnapshotId,
       paymentId: harness.paymentId,
@@ -149,25 +149,25 @@ export async function issueTaxInvoiceForHarness(
           lineNumber: 1,
           description: overrides.description ?? "Sealed historical line",
           quantity: 1,
-          unitPaise: 10000n,
-          discountPaise: 0n,
-          chargePaise: 0n,
-          taxableValuePaise: 10000n,
-          lineTotalPaise: 10500n,
+          unitPaise: BigInt(10000),
+          discountPaise: BigInt(0),
+          chargePaise: BigInt(0),
+          taxableValuePaise: BigInt(10000),
+          lineTotalPaise: BigInt(10500),
           sacCode: "9983",
           historicalCatalogItemId: "hist-item-1",
           taxComponents: [
             {
               taxType: "cgst",
               rateBps: 250,
-              taxableAmountPaise: 10000n,
-              taxAmountPaise: 250n,
+              taxableAmountPaise: BigInt(10000),
+              taxAmountPaise: BigInt(250),
             },
             {
               taxType: "sgst",
               rateBps: 250,
-              taxableAmountPaise: 10000n,
-              taxAmountPaise: 250n,
+              taxableAmountPaise: BigInt(10000),
+              taxAmountPaise: BigInt(250),
             },
           ],
         },

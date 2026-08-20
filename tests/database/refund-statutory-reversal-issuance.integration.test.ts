@@ -47,8 +47,8 @@ function untaxedLines(grand: bigint) {
       description: "Sealed source line",
       quantity: 1,
       unitPaise: grand,
-      discountPaise: 0n,
-      chargePaise: 0n,
+      discountPaise: BigInt(0),
+      chargePaise: BigInt(0),
       taxableValuePaise: grand,
       sacCode: "9983",
       taxComponents: [] as const,
@@ -62,23 +62,23 @@ function taxedLines() {
       lineNumber: 1,
       description: "Sealed source line",
       quantity: 1,
-      unitPaise: 10000n,
-      discountPaise: 0n,
-      chargePaise: 0n,
-      taxableValuePaise: 10000n,
+      unitPaise: BigInt(10000),
+      discountPaise: BigInt(0),
+      chargePaise: BigInt(0),
+      taxableValuePaise: BigInt(10000),
       sacCode: "9983",
       taxComponents: [
         {
           taxType: "cgst" as const,
           rateBps: 250,
-          taxableAmountPaise: 10000n,
-          taxAmountPaise: 250n,
+          taxableAmountPaise: BigInt(10000),
+          taxAmountPaise: BigInt(250),
         },
         {
           taxType: "sgst" as const,
           rateBps: 250,
-          taxableAmountPaise: 10000n,
-          taxAmountPaise: 250n,
+          taxableAmountPaise: BigInt(10000),
+          taxAmountPaise: BigInt(250),
         },
       ],
     },
@@ -103,7 +103,7 @@ async function createProcessedRefund(
       amountPaise,
       reason: "d366 final issuance fixture refund",
     },
-    { provider: h.provider },
+    { provider: h.provider, clock: h.clock },
   );
   expect(result.refund.status).toBe("PROCESSED");
   return result.refund;
@@ -185,14 +185,14 @@ async function seedReversalNumbering(h: FinancialDocumentIssuanceHarness) {
 
 function gstCoherentPartial(doc: FinancialDocument, taxablePaise: bigint) {
   const line = doc.lines[0]!;
-  expect(taxablePaise > 0n && taxablePaise < line.taxableValuePaise).toBe(true);
+  expect(taxablePaise > BigInt(0) && taxablePaise < line.taxableValuePaise).toBe(true);
   const taxComponents = line.taxComponents.map((tax) => ({
     sourceFinancialDocumentTaxComponentId: tax.id,
     allocatedTaxAmountPaise: taxExclusivePaise(taxablePaise, tax.rateBps),
   }));
   const reversalAmountPaise =
     taxablePaise +
-    taxComponents.reduce((sum, tax) => sum + tax.allocatedTaxAmountPaise, 0n);
+    taxComponents.reduce((sum, tax) => sum + tax.allocatedTaxAmountPaise, BigInt(0));
   return {
     lines: [
       {
@@ -324,7 +324,7 @@ function expectCopiedAllocationArithmetic(
   expect(line.unitPaise).toBe(taxablePaise);
   expect(line.taxableValuePaise).toBe(taxablePaise);
   expect(line.taxComponents).toHaveLength(sourceLine.taxComponents.length);
-  let taxTotal = 0n;
+  let taxTotal = BigInt(0);
   for (const sourceTax of sourceLine.taxComponents) {
     const issuedTax = line.taxComponents.find(
       (row) => row.taxType === sourceTax.taxType,
@@ -398,7 +398,7 @@ describe("IMP-028 D-366 final atomic RFV/CN issuance", () => {
       await seedReversalNumbering(h);
       const rv = await issueTypedDocument(h, "RECEIPT_VOUCHER", taxedLines());
       await cancelHarnessOrder(h);
-      const partial = gstCoherentPartial(rv, 4000n);
+      const partial = gstCoherentPartial(rv, BigInt(4000));
       const refund = await createProcessedRefund(h, partial.reversalAmountPaise);
       const pending = await ensurePending(h, refund.id);
       const finalized = await finalizeRefundStatutoryDecision(h.persistence, {
@@ -425,7 +425,7 @@ describe("IMP-028 D-366 final atomic RFV/CN issuance", () => {
       });
 
       expect(result.financialDocument.documentType).toBe("REFUND_VOUCHER");
-      expectCopiedAllocationArithmetic(result.financialDocument, rv, 4000n);
+      expectCopiedAllocationArithmetic(result.financialDocument, rv, BigInt(4000));
       expect(result.financialDocument.grandTotalPaise).toBe(
         partial.reversalAmountPaise,
       );
@@ -476,7 +476,7 @@ describe("IMP-028 D-366 final atomic RFV/CN issuance", () => {
     await withFinancialDocumentIssuanceHarness(async (h) => {
       await seedReversalNumbering(h);
       const ti = await issueTypedDocument(h, "TAX_INVOICE", taxedLines());
-      const partial = gstCoherentPartial(ti, 4000n);
+      const partial = gstCoherentPartial(ti, BigInt(4000));
       const refund = await createProcessedRefund(h, partial.reversalAmountPaise);
       const pending = await ensurePending(h, refund.id);
       const finalized = await finalizeRefundStatutoryDecision(h.persistence, {
@@ -504,7 +504,7 @@ describe("IMP-028 D-366 final atomic RFV/CN issuance", () => {
       });
 
       expect(result.financialDocument.documentType).toBe("CREDIT_NOTE");
-      expectCopiedAllocationArithmetic(result.financialDocument, ti, 4000n);
+      expectCopiedAllocationArithmetic(result.financialDocument, ti, BigInt(4000));
       expect(result.financialDocument.priorFinancialDocumentId).toBe(ti.id);
     });
   });
@@ -514,7 +514,7 @@ describe("IMP-028 D-366 final atomic RFV/CN issuance", () => {
       await seedReversalNumbering(h);
       const rv = await issueTypedDocument(h, "RECEIPT_VOUCHER", taxedLines());
       await cancelHarnessOrder(h);
-      const refund = await createProcessedRefund(h, 4200n);
+      const refund = await createProcessedRefund(h, BigInt(4200));
       const pending = await ensurePending(h, refund.id);
       const finalized = await finalizeRefundStatutoryDecision(h.persistence, {
         ...actor(h),
@@ -525,7 +525,7 @@ describe("IMP-028 D-366 final atomic RFV/CN issuance", () => {
         reversalScope: "PARTIAL",
         allocationAuthority: {
           sourceFinancialDocumentId: rv.id,
-          allocatedAmountPaise: 4200n,
+          allocatedAmountPaise: BigInt(4200),
         },
       });
       const beforeFd = await countTable(h, "financial_documents");
@@ -549,10 +549,10 @@ describe("IMP-028 D-366 final atomic RFV/CN issuance", () => {
   it("RSI-06 RFV/CN prior types are the sealed RV/TI; NSD and PENDING cannot issue", async () => {
     await withFinancialDocumentIssuanceHarness(async (h) => {
       await seedReversalNumbering(h);
-      const rv = await issueTypedDocument(h, "RECEIPT_VOUCHER", untaxedLines(100n));
+      const rv = await issueTypedDocument(h, "RECEIPT_VOUCHER", untaxedLines(BigInt(100)));
       await cancelHarnessOrder(h);
 
-      const rfvRefund = await createProcessedRefund(h, 100n);
+      const rfvRefund = await createProcessedRefund(h, BigInt(100));
       const rfvPending = await ensurePending(h, rfvRefund.id);
       await expect(
         issueRefundStatutoryReversal(h.persistence, {
@@ -578,10 +578,10 @@ describe("IMP-028 D-366 final atomic RFV/CN issuance", () => {
       expect(rfv.financialDocument.priorFinancialDocumentId).toBe(rv.id);
       expect(rfv.financialDocument.priorDocumentType).toBe("RECEIPT_VOUCHER");
 
-      const ti = await issueTypedDocument(h, "TAX_INVOICE", untaxedLines(100n));
+      const ti = await issueTypedDocument(h, "TAX_INVOICE", untaxedLines(BigInt(100)));
       expect(rfv.financialDocument.priorFinancialDocumentId).not.toBe(ti.id);
 
-      const cnRefund = await createProcessedRefund(h, 100n);
+      const cnRefund = await createProcessedRefund(h, BigInt(100));
       const cnPending = await ensurePending(h, cnRefund.id);
       const cnFinal = await finalizeRefundStatutoryDecision(h.persistence, {
         ...actor(h),
@@ -600,7 +600,7 @@ describe("IMP-028 D-366 final atomic RFV/CN issuance", () => {
       expect(cn.financialDocument.priorDocumentType).toBe("TAX_INVOICE");
       expect(cn.financialDocument.priorFinancialDocumentId).not.toBe(rv.id);
 
-      const nsdRefund = await createProcessedRefund(h, 50n);
+      const nsdRefund = await createProcessedRefund(h, BigInt(50));
       const nsdPending = await ensurePending(h, nsdRefund.id);
       const nsd = await finalizeRefundStatutoryDecision(h.persistence, {
         ...actor(h),
@@ -640,9 +640,9 @@ describe("IMP-028 D-366 final atomic RFV/CN issuance", () => {
   it("RSI-07 exact retry is idempotent; concurrent equivalent issuance creates one FD/number", async () => {
     await withFinancialDocumentIssuanceHarness(async (h) => {
       const series = await seedReversalNumbering(h);
-      const rv = await issueTypedDocument(h, "RECEIPT_VOUCHER", untaxedLines(100n));
+      const rv = await issueTypedDocument(h, "RECEIPT_VOUCHER", untaxedLines(BigInt(100)));
       await cancelHarnessOrder(h);
-      const refund = await createProcessedRefund(h, 100n);
+      const refund = await createProcessedRefund(h, BigInt(100));
       const pending = await ensurePending(h, refund.id);
       const finalized = await finalizeRefundStatutoryDecision(h.persistence, {
         ...actor(h),
@@ -694,7 +694,7 @@ describe("IMP-028 D-366 final atomic RFV/CN issuance", () => {
       expect(stats.docs).toBe(1);
       expect(stats.issued).toBe(1);
       expect(await seriesNextSequence(h, series.refundVoucher.id)).toBe(
-        a.financialDocument.sequenceNumber + 1n,
+        a.financialDocument.sequenceNumber + BigInt(1),
       );
 
       await expect(
@@ -703,7 +703,7 @@ describe("IMP-028 D-366 final atomic RFV/CN issuance", () => {
           buildIssueCommand(h, {
             documentType: "TAX_INVOICE",
             logicalIssuanceKey: `refund:${refund.id}:STATUTORY_REVERSAL`,
-            lines: untaxedLines(100n),
+            lines: untaxedLines(BigInt(100)),
           }),
         ),
       ).rejects.toMatchObject({ code: "ISSUANCE_IDEMPOTENCY_CONFLICT" });

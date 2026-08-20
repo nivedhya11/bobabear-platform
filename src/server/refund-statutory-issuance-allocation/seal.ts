@@ -481,7 +481,7 @@ function projectCanonicalAuthority(
   const lines = command.lines.map((line, index) => {
     const source = linesById.get(line.sourceFinancialDocumentLineId);
     if (!source || source.financialDocumentId !== sourceFinancialDocumentId) {
-      fail(
+      return fail(
         "Allocation source line does not belong to the sealed source FinancialDocument.",
         `lines[${index}].sourceFinancialDocumentLineId`,
       );
@@ -495,26 +495,26 @@ function projectCanonicalAuthority(
   const taxComponents = command.taxComponents.map((tax, index) => {
     const source = taxesById.get(tax.sourceFinancialDocumentTaxComponentId);
     if (!source) {
-      fail(
+      return fail(
         "Allocation source tax component does not belong to the sealed source FinancialDocument.",
         `taxComponents[${index}].sourceFinancialDocumentTaxComponentId`,
       );
     }
     const parentLine = linesById.get(source.financialDocumentLineId);
     if (!parentLine || parentLine.financialDocumentId !== sourceFinancialDocumentId) {
-      fail(
+      return fail(
         "Allocation source tax component does not belong to the sealed source FinancialDocument.",
         `taxComponents[${index}].sourceFinancialDocumentTaxComponentId`,
       );
     }
     if (tax.taxType != null && tax.taxType !== source.taxType) {
-      fail(
+      return fail(
         "Caller cannot override sealed source tax type.",
         `taxComponents[${index}].taxType`,
       );
     }
     if (tax.taxRateBps != null && tax.taxRateBps !== source.rateBps) {
-      fail(
+      return fail(
         "Caller cannot override sealed source tax rate.",
         `taxComponents[${index}].taxRateBps`,
       );
@@ -523,7 +523,7 @@ function projectCanonicalAuthority(
       tax.sourceFinancialDocumentLineId != null &&
       tax.sourceFinancialDocumentLineId !== source.financialDocumentLineId
     ) {
-      fail(
+      return fail(
         "Tax-component allocation must preserve the sealed source line relationship.",
         `taxComponents[${index}].sourceFinancialDocumentLineId`,
       );

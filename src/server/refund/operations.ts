@@ -34,6 +34,7 @@ import {
   requireRefundWorkforceActor,
 } from "./authorize";
 import { systemRefundClock, type RefundClock } from "./clock";
+import { tryEnsureRefundStatutoryDecisionPendingAfterProcessed } from "./refund-statutory-decision-hook";
 import {
   balanceFromRefundRows,
   findNonTerminalRefundsByProviderPaymentId,
@@ -310,6 +311,30 @@ async function applyEvidenceInTransaction(
   });
 }
 
+async function applyEvidenceThenEnsureStatutoryPending(
+  persistence: Persistence,
+  refundId: string,
+  evidence: NormalizedRefundEvidence,
+  observationSource: RefundObservationSource,
+  now: Date,
+): Promise<RefundRow | null> {
+  const row = await applyEvidenceInTransaction(
+    persistence,
+    refundId,
+    evidence,
+    observationSource,
+    now,
+  );
+  if (row?.status === "PROCESSED") {
+    await tryEnsureRefundStatutoryDecisionPendingAfterProcessed(
+      persistence,
+      row.id,
+      now,
+    );
+  }
+  return row;
+}
+
 /**
  * Authorize, reserve, commit, then call provider outside the lock.
  */
@@ -415,7 +440,13 @@ export async function requestRefund(
     });
   }
 
-  await applyEvidenceInTransaction(persistence, reserved.id, evidence, "sync", clock.now());
+  await applyEvidenceThenEnsureStatutoryPending(
+    persistence,
+    reserved.id,
+    evidence,
+    "sync",
+    clock.now(),
+  );
   return buildRefundResult(persistence, reserved.id);
 }
 
@@ -484,7 +515,13 @@ async function reconcileRefundRow(
       amountPaise: refund.amountPaise,
       idempotencyKey: refund.providerIdempotencyKey,
     });
-    await applyEvidenceInTransaction(persistence, refund.id, evidence, "reconciliation", now);
+    await applyEvidenceThenEnsureStatutoryPending(
+      persistence,
+      refund.id,
+      evidence,
+      "reconciliation",
+      now,
+    );
     return;
   }
   if (refund.providerRefundId) {
@@ -494,7 +531,13 @@ async function reconcileRefundRow(
       amountPaise: refund.amountPaise,
       idempotencyKey: refund.providerIdempotencyKey,
     });
-    await applyEvidenceInTransaction(persistence, refund.id, evidence, "query", now);
+    await applyEvidenceThenEnsureStatutoryPending(
+      persistence,
+      refund.id,
+      evidence,
+      "query",
+      now,
+    );
     return;
   }
   let evidence: NormalizedRefundEvidence;
@@ -513,7 +556,13 @@ async function reconcileRefundRow(
       idempotencyKey: refund.providerIdempotencyKey,
     });
   }
-  await applyEvidenceInTransaction(persistence, refund.id, evidence, "reconciliation", now);
+  await applyEvidenceThenEnsureStatutoryPending(
+    persistence,
+    refund.id,
+    evidence,
+    "reconciliation",
+    now,
+  );
 }
 
 /**
@@ -549,7 +598,13 @@ export async function applyRefundProviderEvidence(
     return null;
   });
   if (!correlated) return false;
-  await applyEvidenceInTransaction(persistence, correlated.id, evidence, "webhook", now);
+  await applyEvidenceThenEnsureStatutoryPending(
+    persistence,
+    correlated.id,
+    evidence,
+    "webhook",
+    now,
+  );
   return true;
 }
 
