@@ -16,8 +16,10 @@ describe("serviceability copy", () => {
 
   it("does not overclaim before evaluation", () => {
     expect(cartEvaluationCustomerCopy(null, false)).toBeNull();
-    expect(cartEvaluationCustomerCopy(null, true)).toMatch(/confirm this PIN at checkout/i);
-    expect(cartEvaluationCustomerCopy({ status: "COMPLETE" } as never, true)).toMatch(/checkout will confirm/i);
+    expect(cartEvaluationCustomerCopy(null, true)).toMatch(/check this PIN before you pay/i);
+    expect(cartEvaluationCustomerCopy({ status: "COMPLETE" } as never, true)).toBe(
+      "This PIN looks deliverable.",
+    );
     expect(cartEvaluationCustomerCopy({ status: "SERVICEABILITY_NOT_SERVICEABLE" } as never, true)).toMatch(
       /don't deliver/i,
     );
