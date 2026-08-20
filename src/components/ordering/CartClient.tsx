@@ -3,20 +3,19 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
+import { CartLineList } from "@/components/ordering/CartLineList";
+import { CartSummary } from "@/components/ordering/CartSummary";
 import {
   buildCartLinePresentations,
   buildCustomerMenuLookups,
   cartBundleSelectionsToInput,
   cartModifiersToInput,
   cartUnitCount,
-  estimateCartPresentationPaise,
-  formatModifierPriceDelta,
-  formatPresentationEstimateLabel,
-  STALE_MODIFIER_OPTION_LABEL,
+  formatCartEstimatePrimaryLabel,
+  resolveCartPresentationEstimate,
 } from "@/components/ordering/cart-presentation";
 import { readDeliveryPinContext } from "@/components/ordering/delivery-pin-context";
 import { commerceErrorCopy } from "@/components/ordering/error-copy";
-import { formatPaise } from "@/components/ordering/format-money";
 import { MenuItemCustomizationDialog } from "@/components/ordering/MenuItemCustomizationDialog";
 import { cartEvaluationCustomerCopy } from "@/components/ordering/serviceability-copy";
 import {
@@ -35,8 +34,6 @@ import { loginUrlWithReturn } from "@/lib/customer-auth/return-to";
 import { fetchCustomerSession } from "@/lib/customer-auth/client";
 import type { CartModifierSelectionInput } from "@/shared/cart/types";
 import type { CustomerMenuItem, CustomerMenuProjection } from "@/shared/customer-menu/types";
-
-const QTY_BUTTON_CLASS = "min-h-[44px] min-w-[44px] md:min-h-8 md:min-w-8";
 
 type EditTarget = Readonly<{
   line: CommerceCartLine;
@@ -61,7 +58,11 @@ export function CartClient(props: { brandId: string }) {
   );
 
   const linePresentations = useMemo(
-    () => buildCartLinePresentations(cart, menuLookups ?? buildCustomerMenuLookups(emptyMenu(brandId))),
+    () =>
+      buildCartLinePresentations(
+        cart,
+        menuLookups ?? buildCustomerMenuLookups(emptyMenu(brandId)),
+      ),
     [cart, menuLookups, brandId],
   );
 
@@ -188,8 +189,10 @@ export function CartClient(props: { brandId: string }) {
     window.location.assign("/order/checkout/");
   }
 
-  function openEdit(line: CommerceCartLine): void {
-    if (!menuLookups) return;
+  function openEdit(lineId: string): void {
+    if (!menuLookups || !cart) return;
+    const line = cart.lines.find((entry) => entry.id === lineId);
+    if (!line) return;
     const item = menuLookups.itemByVariant.get(line.variantId);
     if (!item) return;
     const presentation = linePresentations.find((entry) => entry.lineId === line.id);
@@ -198,7 +201,9 @@ export function CartClient(props: { brandId: string }) {
     setEditTarget({ line, item });
   }
 
-  async function saveEditConfiguration(modifiers: readonly CartModifierSelectionInput[]): Promise<void> {
+  async function saveEditConfiguration(
+    modifiers: readonly CartModifierSelectionInput[],
+  ): Promise<void> {
     if (!editTarget || !cart || pending) return;
     setPending(true);
     setDialogError(null);
@@ -226,9 +231,9 @@ export function CartClient(props: { brandId: string }) {
   const empty = !loading && (!cart || cart.lines.length === 0);
   const lineCount = cartUnitCount(cart);
   const presentationEstimate = menuLookups
-    ? estimateCartPresentationPaise(cart, menuLookups)
-    : BigInt(0);
-  const presentationLabel = formatPresentationEstimateLabel(presentationEstimate);
+    ? resolveCartPresentationEstimate(cart, menuLookups)
+    : { complete: false as const, totalPaise: BigInt(0) };
+  const presentationLabel = formatCartEstimatePrimaryLabel(presentationEstimate);
   const serviceabilityNote = cartEvaluationCustomerCopy(evaluation, deliveryPin.length === 6);
 
   if (loading) {
@@ -288,147 +293,17 @@ export function CartClient(props: { brandId: string }) {
         ) : null}
 
         {cart && cart.lines.length > 0 ? (
-          <ul className="flex flex-col gap-3" role="list">
-            {cart.lines.map((line) => {
-              const presentation = linePresentations.find((entry) => entry.lineId === line.id);
-              const itemName = presentation?.itemName ?? "Item";
-              return (
-                <li
-                  key={line.id}
-                  className="border border-[var(--border-default)] bg-[var(--bg-section)] p-4 flex flex-col gap-3"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0 flex-1">
-                      <p className="font-display text-[20px] text-[var(--text-primary)]">
-                        {itemName}
-                      </p>
-                      {presentation ? (
-                        <p className="font-body text-[13px] text-[var(--text-tertiary)]">
-                          {formatPaise(presentation.unitPricePaise)} each (menu price)
-                        </p>
-                      ) : null}
-                      {presentation && presentation.modifiers.length > 0 ? (
-                        <ul className="mt-2 flex flex-col gap-2" role="list">
-                          {presentation.modifiers.map((modifier) => (
-                            <li
-                              key={`${modifier.variantModifierGroupId}:${modifier.modifierGroupOptionId}`}
-                              className="font-body text-[13px] text-[var(--text-secondary)]"
-                            >
-                              {modifier.stale ? (
-                                <span>
-                                  {STALE_MODIFIER_OPTION_LABEL}
-                                  {modifier.quantity > 1 ? ` × ${modifier.quantity}` : ""}
-                                </span>
-                              ) : (
-                                <>
-                                  {modifier.groupName ? (
-                                    <span className="block text-[var(--text-tertiary)]">
-                                      {modifier.groupName}
-                                    </span>
-                                  ) : null}
-                                  <span className="flex items-center justify-between gap-3">
-                                    <span>
-                                      {modifier.optionName}
-                                      {modifier.quantity > 1 ? ` × ${modifier.quantity}` : ""}
-                                    </span>
-                                    {modifier.displayPriceDeltaPaise !== null &&
-                                    modifier.displayPriceDeltaPaise !== 0 ? (
-                                      <span>
-                                        {formatModifierPriceDelta(
-                                          modifier.displayPriceDeltaPaise * modifier.quantity,
-                                        )}
-                                      </span>
-                                    ) : null}
-                                  </span>
-                                </>
-                              )}
-                            </li>
-                          ))}
-                        </ul>
-                      ) : null}
-                      {presentation?.hasBundleSelections ? (
-                        <p className="mt-2 font-body text-[13px] text-[var(--text-tertiary)]">
-                          Bundle configuration preserved — component details appear at checkout.
-                        </p>
-                      ) : null}
-                    </div>
-                    <div className="flex flex-col items-end gap-2 shrink-0">
-                      {presentation ? (
-                        <p className="font-body text-[14px] font-semibold text-[var(--text-primary)]">
-                          {formatPaise(presentation.lineTotalPaise)}
-                        </p>
-                      ) : null}
-                      <div className="flex items-center gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className={QTY_BUTTON_CLASS}
-                          disabled={pending}
-                          aria-label={`Decrease ${itemName} quantity`}
-                          onClick={() => void changeQuantity(line.id, line.quantity - 1)}
-                        >
-                          −
-                        </Button>
-                        <span
-                          className="font-mono text-[13px] min-w-[1.5rem] text-center"
-                          aria-live="polite"
-                        >
-                          {line.quantity}
-                        </span>
-                        <Button
-                          type="button"
-                          variant="primary"
-                          size="sm"
-                          className={QTY_BUTTON_CLASS}
-                          disabled={pending}
-                          aria-label={`Increase ${itemName} quantity`}
-                          onClick={() => void changeQuantity(line.id, line.quantity + 1)}
-                        >
-                          +
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="min-h-[44px]"
-                          disabled={pending}
-                          aria-label={`Remove ${itemName} from cart`}
-                          onClick={() => void changeQuantity(line.id, 0)}
-                        >
-                          Remove
-                        </Button>
-                      </div>
-                      {presentation?.editEligible ? (
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          size="sm"
-                          className="min-h-[44px]"
-                          disabled={pending}
-                          aria-label={`Edit customization for ${itemName}`}
-                          onClick={() => openEdit(line)}
-                        >
-                          Edit
-                        </Button>
-                      ) : null}
-                    </div>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+          <CartLineList
+            lines={linePresentations}
+            pending={pending}
+            onChangeQuantity={(lineId, quantity) => void changeQuantity(lineId, quantity)}
+            onEdit={openEdit}
+            onRemove={(lineId) => void changeQuantity(lineId, 0)}
+          />
         ) : null}
 
         {cart && cart.lines.length > 0 ? (
-          <div className="flex flex-col gap-2 border-t border-[var(--border-default)] pt-4">
-            <p className="font-body text-[15px] font-semibold">
-              Cart total (menu prices): {presentationLabel}
-            </p>
-            <p className="font-body text-[13px] text-[var(--text-tertiary)]">
-              Packaging, delivery, tax, and your payable total appear at checkout.
-            </p>
-          </div>
+          <CartSummary estimate={presentationEstimate} itemCount={lineCount} />
         ) : null}
 
         {serviceabilityNote ? (

@@ -174,7 +174,8 @@ describe("CartClient", () => {
     render(<CartClient brandId={brandId} />);
     await waitFor(() => expect(getCustomerMenu).toHaveBeenCalledWith({ brandId }));
     expect(screen.getByText("Classic Milk Tea")).toBeInTheDocument();
-    expect(screen.getByText(/₹199\.00 each \(menu price\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/₹199\.00 each/i)).toBeInTheDocument();
+    expect(screen.queryByText(/menu price/i)).not.toBeInTheDocument();
   });
 
   it("renders plain non-customizable cart item from Customer Menu", async () => {
@@ -186,7 +187,22 @@ describe("CartClient", () => {
     render(<CartClient brandId={brandId} />);
     await waitFor(() => expect(screen.getByText("Classic Milk Tea")).toBeInTheDocument());
     expect(screen.getByText("2")).toBeInTheDocument();
-    expect(screen.getAllByText(/₹398\.00 \(menu prices\)/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Estimated subtotal ₹398\.00/i).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/menu prices/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Cart total \(menu prices\)/i)).not.toBeInTheDocument();
+  });
+
+  it("shows Total shown at checkout when base menu item is missing", async () => {
+    getActiveCart.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        cart: guestCart("1", [{ id: "line-1", variantId: "missing-variant", quantity: 1 }]),
+      },
+    });
+    render(<CartClient brandId={brandId} />);
+    await waitFor(() => expect(screen.getByText("Total shown at checkout")).toBeInTheDocument());
+    expect(screen.queryByText(/Estimated subtotal/i)).not.toBeInTheDocument();
   });
 
   it("renders configured modifier group and option with quantity and price delta", async () => {

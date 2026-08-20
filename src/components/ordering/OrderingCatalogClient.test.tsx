@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -11,6 +11,16 @@ const addCartLine = vi.fn<(...args: unknown[]) => unknown>();
 const setCartLineQuantity = vi.fn<(...args: unknown[]) => unknown>();
 const removeCartLine = vi.fn<(...args: unknown[]) => unknown>();
 const evaluateCart = vi.fn<(...args: unknown[]) => unknown>();
+
+const scrollSpyState = vi.hoisted(() => ({
+  activeSectionId: null as string | null,
+}));
+
+vi.mock("./useCategoryScrollSpy", () => ({
+  useCategoryScrollSpy: () => ({
+    activeSectionId: scrollSpyState.activeSectionId,
+  }),
+}));
 
 vi.mock("@/lib/customer-commerce", async () => {
   const actual = await vi.importActual<typeof import("@/lib/customer-commerce")>(
@@ -59,7 +69,66 @@ const menu: CustomerMenuProjection = {
   ],
 };
 
+const multiCategoryMenu: CustomerMenuProjection = {
+  brandId: "brand-1",
+  menuId: "menu-1",
+  name: "Primary Menu",
+  sections: [
+    { id: "sec-1", parentSectionId: null, name: "Drinks", position: 1 },
+    { id: "sec-2", parentSectionId: null, name: "Snacks", position: 2 },
+    { id: "sec-1-child", parentSectionId: "sec-1", name: "Milk tea", position: 0 },
+    { id: "sec-2-child", parentSectionId: "sec-2", name: "Bites", position: 0 },
+  ],
+  items: [
+    {
+      productId: "prod-1",
+      variantId: "var-1",
+      sectionId: "sec-1-child",
+      name: "Classic Milk Tea",
+      description: "Smooth milk tea",
+      imagePath: "/img.png",
+      displayPricePaise: 19900,
+      currency: "INR",
+    },
+    {
+      productId: "prod-2",
+      variantId: "var-2",
+      sectionId: "sec-2-child",
+      name: "Fish Balls",
+      description: "Crispy",
+      imagePath: null,
+      displayPricePaise: 14900,
+      currency: "INR",
+      modifierGroups: [
+        {
+          modifierGroupId: "group-1",
+          variantModifierGroupId: "binding-1",
+          name: "Sauce",
+          required: false,
+          minTotalQuantity: 0,
+          maxTotalQuantity: 1,
+          position: 0,
+          options: [
+            {
+              modifierOptionId: "opt-1",
+              modifierGroupOptionId: "option-1",
+              name: "Chili",
+              minQuantity: 0,
+              maxQuantity: 1,
+              defaultQuantity: 0,
+              position: 0,
+              displayPriceDeltaPaise: 1000,
+              currency: "INR",
+            },
+          ],
+        },
+      ],
+    },
+  ],
+};
+
 beforeEach(() => {
+  scrollSpyState.activeSectionId = null;
   getActiveCart.mockReset();
   getCustomerMenu.mockReset();
   addCartLine.mockReset();
@@ -83,7 +152,9 @@ describe("OrderingCatalogClient", () => {
     render(<OrderingCatalogClient brandId="brand-1" />);
     await waitFor(() => expect(screen.getByTestId("menu-category-nav")).toBeInTheDocument());
     expect(getCustomerMenu).toHaveBeenCalledWith({ brandId: "brand-1" });
-    expect(screen.getByRole("link", { name: "Drinks" })).toHaveAttribute("href", "#cat-sec-1");
+    expect(
+      within(screen.getByTestId("menu-category-nav")).getByRole("link", { name: "Drinks" }),
+    ).toHaveAttribute("href", "#cat-sec-1");
     expect(screen.getByRole("heading", { name: "Classic Milk Tea" })).toBeInTheDocument();
     expect(screen.getByText("₹199.00")).toBeInTheDocument();
   });
@@ -131,7 +202,9 @@ describe("OrderingCatalogClient", () => {
     await waitFor(() => expect(screen.getByTestId("sticky-cart")).toBeInTheDocument());
     expect(screen.getByTestId("sticky-cart")).toHaveTextContent(/1 item/i);
 
-    await userEvent.click(screen.getByRole("button", { name: /decrease classic milk tea quantity/i }));
+    await userEvent.click(
+      screen.getAllByRole("button", { name: /decrease classic milk tea quantity/i })[0]!,
+    );
     await waitFor(() => expect(screen.queryByTestId("sticky-cart")).not.toBeInTheDocument());
   });
 
@@ -210,5 +283,208 @@ describe("OrderingCatalogClient", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("Size requires at least 1 selection");
     await userEvent.click(screen.getByRole("checkbox", { name: /large/i }));
     expect(screen.getByRole("button", { name: "Add to cart" })).toBeEnabled();
+  });
+});
+
+describe("OrderingCatalogClient IMP-028D", () => {
+  it("exposes desktop ordering shell landmarks for category rail and live cart", async () => {
+    getCustomerMenu.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { menu: multiCategoryMenu },
+    });
+    getActiveCart.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        cart: {
+          id: "cart-1",
+          brandId: "brand-1",
+          ownerMode: "guest",
+          revision: "1",
+          manualCouponCode: null,
+          expiresAt: null,
+          createdAt: "2026-08-13T00:00:00.000Z",
+          updatedAt: "2026-08-13T00:00:00.000Z",
+          lines: [
+            {
+              id: "line-1",
+              variantId: "var-2",
+              quantity: 1,
+              modifiers: [
+                {
+                  variantModifierGroupId: "binding-1",
+                  modifierGroupOptionId: "option-1",
+                  quantity: 1,
+                },
+              ],
+              bundleSelections: [],
+            },
+          ],
+        },
+      },
+    });
+    render(<OrderingCatalogClient brandId="brand-1" />);
+    await waitFor(() => expect(screen.getByTestId("desktop-ordering-shell")).toBeInTheDocument());
+    expect(screen.getByTestId("desktop-category-rail")).toBeInTheDocument();
+    expect(screen.getByTestId("desktop-live-cart")).toBeInTheDocument();
+    expect(screen.getByTestId("menu-category-nav")).toBeInTheDocument();
+  });
+
+  it("applies aria-current from scroll-spy active category", async () => {
+    scrollSpyState.activeSectionId = "cat-sec-2";
+    getCustomerMenu.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { menu: multiCategoryMenu },
+    });
+    render(<OrderingCatalogClient brandId="brand-1" />);
+    await waitFor(() => expect(screen.getByTestId("menu-category-nav")).toBeInTheDocument());
+    const horizontal = screen.getByTestId("menu-category-nav");
+    expect(within(horizontal).getByRole("link", { name: "Snacks" })).toHaveAttribute(
+      "aria-current",
+      "location",
+    );
+    expect(within(horizontal).getByRole("link", { name: "Drinks" })).not.toHaveAttribute(
+      "aria-current",
+    );
+  });
+
+  it("keeps category anchors usable for click navigation", async () => {
+    getCustomerMenu.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { menu: multiCategoryMenu },
+    });
+    render(<OrderingCatalogClient brandId="brand-1" />);
+    const horizontal = await screen.findByTestId("menu-category-nav");
+    const drinks = within(horizontal).getByRole("link", { name: "Drinks" });
+    expect(drinks).toHaveAttribute("href", "#cat-sec-1");
+    await userEvent.click(drinks);
+    expect(drinks).toHaveAttribute("href", "#cat-sec-1");
+  });
+
+  it("renders configured cart lines in the desktop live cart", async () => {
+    getCustomerMenu.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { menu: multiCategoryMenu },
+    });
+    getActiveCart.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        cart: {
+          id: "cart-1",
+          brandId: "brand-1",
+          ownerMode: "guest",
+          revision: "1",
+          manualCouponCode: null,
+          expiresAt: null,
+          createdAt: "2026-08-13T00:00:00.000Z",
+          updatedAt: "2026-08-13T00:00:00.000Z",
+          lines: [
+            {
+              id: "line-1",
+              variantId: "var-2",
+              quantity: 1,
+              modifiers: [
+                {
+                  variantModifierGroupId: "binding-1",
+                  modifierGroupOptionId: "option-1",
+                  quantity: 1,
+                },
+              ],
+              bundleSelections: [],
+            },
+          ],
+        },
+      },
+    });
+    render(<OrderingCatalogClient brandId="brand-1" />);
+    await waitFor(() => expect(screen.getByTestId("desktop-live-cart")).toBeInTheDocument());
+    expect(screen.getByTestId("desktop-live-cart")).toHaveTextContent("Fish Balls");
+    expect(screen.getByTestId("desktop-live-cart")).toHaveTextContent(/Chili/i);
+    expect(
+      within(screen.getByTestId("desktop-live-cart")).getByRole("link", { name: /checkout/i }),
+    ).toHaveAttribute("href", "/order/checkout/");
+  });
+
+  it("shows Estimated subtotal only for complete presentation and never engineering copy", async () => {
+    getActiveCart.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        cart: {
+          id: "cart-1",
+          brandId: "brand-1",
+          ownerMode: "guest",
+          revision: "1",
+          manualCouponCode: null,
+          expiresAt: null,
+          createdAt: "2026-08-13T00:00:00.000Z",
+          updatedAt: "2026-08-13T00:00:00.000Z",
+          lines: [
+            {
+              id: "line-plain",
+              variantId: "var-1",
+              quantity: 2,
+              modifiers: [],
+              bundleSelections: [],
+            },
+          ],
+        },
+      },
+    });
+    render(<OrderingCatalogClient brandId="brand-1" />);
+    await waitFor(() => expect(screen.getByTestId("desktop-live-cart")).toBeInTheDocument());
+    expect(screen.getByTestId("desktop-live-cart")).toHaveTextContent(/Estimated subtotal ₹398\.00/);
+    expect(screen.queryByText(/menu prices/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/server-authoritative/i)).not.toBeInTheDocument();
+  });
+
+  it("falls back to Total shown at checkout when a cart line cannot resolve display price", async () => {
+    getActiveCart.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        cart: {
+          id: "cart-1",
+          brandId: "brand-1",
+          ownerMode: "guest",
+          revision: "1",
+          manualCouponCode: null,
+          expiresAt: null,
+          createdAt: "2026-08-13T00:00:00.000Z",
+          updatedAt: "2026-08-13T00:00:00.000Z",
+          lines: [
+            {
+              id: "line-missing",
+              variantId: "gone-variant",
+              quantity: 1,
+              modifiers: [],
+              bundleSelections: [],
+            },
+          ],
+        },
+      },
+    });
+    render(<OrderingCatalogClient brandId="brand-1" />);
+    await waitFor(() => expect(screen.getByTestId("desktop-live-cart")).toBeInTheDocument());
+    expect(screen.getByTestId("desktop-live-cart")).toHaveTextContent("Total shown at checkout");
+    expect(screen.getByTestId("desktop-live-cart")).not.toHaveTextContent(/Estimated subtotal/);
+  });
+
+  it("does not create nested independently scrolling panes in the ordering shell", async () => {
+    render(<OrderingCatalogClient brandId="brand-1" />);
+    await waitFor(() => expect(screen.getByTestId("desktop-ordering-shell")).toBeInTheDocument());
+    const shell = screen.getByTestId("desktop-ordering-shell");
+    expect(shell.className).not.toMatch(/overflow-y-auto|overflow-auto/);
+    expect(screen.getByTestId("desktop-category-rail").className).not.toMatch(
+      /overflow-y-auto|overflow-auto/,
+    );
+    expect(screen.getByTestId("desktop-live-cart").className).not.toMatch(
+      /overflow-y-auto|overflow-auto/,
+    );
   });
 });

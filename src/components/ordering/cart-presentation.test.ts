@@ -7,9 +7,11 @@ import {
   cartPresentationItemsFromMenu,
   cartUnitCount,
   estimateCartPresentationPaise,
+  formatCartEstimatePrimaryLabel,
   formatModifierPriceDelta,
   formatPresentationEstimateLabel,
   resolveCartLinePresentation,
+  resolveCartPresentationEstimate,
   STALE_MODIFIER_OPTION_LABEL,
 } from "./cart-presentation";
 import type { CommerceCart } from "@/lib/customer-commerce";
@@ -92,7 +94,75 @@ describe("cart presentation", () => {
     const lookups = buildCustomerMenuLookups(menu);
     expect(cartUnitCount(cart)).toBe(2);
     expect(estimateCartPresentationPaise(cart, lookups)).toBe(BigInt(39800));
-    expect(formatPresentationEstimateLabel(BigInt(39800))).toBe("₹398.00 (menu prices)");
+    const estimate = resolveCartPresentationEstimate(cart, lookups);
+    expect(estimate.complete).toBe(true);
+    expect(estimate.totalPaise).toBe(BigInt(39800));
+    expect(formatCartEstimatePrimaryLabel(estimate)).toBe("Estimated subtotal ₹398.00");
+    expect(formatPresentationEstimateLabel(BigInt(39800))).toBe("₹398.00");
+  });
+
+  it("marks missing base product as not fully resolvable and withholds numeric aggregate", () => {
+    const lookups = buildCustomerMenuLookups(menu);
+    const orphanLine = {
+      id: "line-orphan",
+      variantId: "missing-variant",
+      quantity: 1,
+      modifiers: [] as const,
+      bundleSelections: [] as const,
+    };
+    const presentation = resolveCartLinePresentation(orphanLine, lookups);
+    expect(presentation.fullyResolvable).toBe(false);
+    expect(presentation.unitPricePaise).toBe(0);
+    const estimate = resolveCartPresentationEstimate(
+      { ...cart, lines: [orphanLine] },
+      lookups,
+    );
+    expect(estimate.complete).toBe(false);
+    expect(formatCartEstimatePrimaryLabel(estimate)).toBe("Total shown at checkout");
+    expect(formatCartEstimatePrimaryLabel(estimate)).not.toMatch(/₹/);
+  });
+
+  it("withholds numeric aggregate when a modifier is missing or stale", () => {
+    const lookups = buildCustomerMenuLookups(menu);
+    const line = {
+      id: "line-stale-price",
+      variantId,
+      quantity: 1,
+      modifiers: [
+        {
+          variantModifierGroupId: "00000000-0000-4000-8000-000000000001",
+          modifierGroupOptionId: "00000000-0000-4000-8000-000000000002",
+          quantity: 1,
+        },
+      ],
+      bundleSelections: [],
+    };
+    expect(resolveCartLinePresentation(line, lookups).fullyResolvable).toBe(false);
+    const estimate = resolveCartPresentationEstimate({ ...cart, lines: [line] }, lookups);
+    expect(estimate.complete).toBe(false);
+    expect(formatCartEstimatePrimaryLabel(estimate)).toBe("Total shown at checkout");
+  });
+
+  it("withholds numeric aggregate for bundle configuration that cannot prove display pricing", () => {
+    const lookups = buildCustomerMenuLookups(menu);
+    const line = {
+      id: "line-bundle",
+      variantId,
+      quantity: 1,
+      modifiers: [],
+      bundleSelections: [
+        {
+          id: "bundle-child",
+          bundleGroupOptionId: "bundle-opt-1",
+          quantity: 1,
+          modifiers: [],
+        },
+      ],
+    };
+    expect(resolveCartLinePresentation(line, lookups).fullyResolvable).toBe(false);
+    const estimate = resolveCartPresentationEstimate({ ...cart, lines: [line] }, lookups);
+    expect(estimate.complete).toBe(false);
+    expect(formatCartEstimatePrimaryLabel(estimate)).toBe("Total shown at checkout");
   });
 
   it("builds presentation items from Customer Menu without legacy catalog", () => {

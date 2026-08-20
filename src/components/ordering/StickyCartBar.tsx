@@ -1,16 +1,19 @@
 "use client";
 
 import { Button } from "@/components/ui/Button";
-import { formatPresentationEstimateLabel } from "@/components/ordering/cart-presentation";
+import {
+  formatCartEstimatePrimaryLabel,
+  type CartPresentationEstimate,
+} from "@/components/ordering/cart-presentation";
 
 export function StickyCartBar(props: {
   itemCount: number;
-  presentationEstimatePaise: bigint;
+  estimate: CartPresentationEstimate;
 }) {
-  const { itemCount, presentationEstimatePaise } = props;
+  const { itemCount, estimate } = props;
   if (itemCount <= 0) return null;
 
-  const estimate = formatPresentationEstimateLabel(presentationEstimatePaise);
+  const label = formatCartEstimatePrimaryLabel(estimate);
 
   return (
     <div
@@ -25,12 +28,12 @@ export function StickyCartBar(props: {
       >
         <a
           href="/order/cart/"
-          aria-label={`Cart, ${itemCount} item${itemCount === 1 ? "" : "s"}, ${estimate}`}
+          aria-label={`Cart, ${itemCount} item${itemCount === 1 ? "" : "s"}, ${label}`}
         >
           <span>
             View cart · {itemCount} item{itemCount === 1 ? "" : "s"}
           </span>
-          <span className="font-mono text-[13px] opacity-90">{estimate}</span>
+          <span className="font-mono text-[13px] opacity-90">{label}</span>
         </a>
       </Button>
     </div>

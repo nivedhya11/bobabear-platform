@@ -144,7 +144,11 @@ export function resolveCartLinePresentation(
     resolveModifierPresentation(modifier, lookups),
   );
   const hasBundleSelections = line.bundleSelections.length > 0;
-  const fullyResolvable = modifiers.every((modifier) => !modifier.stale);
+  const baseResolved = item !== undefined;
+  const modifiersComplete = modifiers.every(
+    (modifier) => !modifier.stale && modifier.displayPriceDeltaPaise !== null,
+  );
+  const fullyResolvable = baseResolved && modifiersComplete && !hasBundleSelections;
   const customizable = (item?.modifierGroups?.length ?? 0) > 0;
   const basePricePaise = item?.displayPricePaise ?? 0;
   const unitPricePaise = hasBundleSelections
@@ -217,12 +221,8 @@ export function estimateCartPresentationPaise(
   if (!cart) return BigInt(0);
 
   if ("itemByVariant" in lookupsOrItems) {
-    let total = BigInt(0);
-    for (const line of cart.lines) {
-      const presentation = resolveCartLinePresentation(line, lookupsOrItems);
-      total += BigInt(presentation.lineTotalPaise);
-    }
-    return total;
+    const estimate = resolveCartPresentationEstimate(cart, lookupsOrItems);
+    return estimate.complete ? estimate.totalPaise : BigInt(0);
   }
 
   let total = BigInt(0);
@@ -234,12 +234,54 @@ export function estimateCartPresentationPaise(
   return total;
 }
 
-export function formatPresentationEstimateLabel(paise: bigint): string {
-  if (paise <= BigInt(0)) return "Menu prices";
+export type CartPresentationEstimate = Readonly<{
+  complete: boolean;
+  totalPaise: bigint;
+}>;
+
+export const CART_ESTIMATE_CHECKOUT_FALLBACK = "Total shown at checkout";
+
+export const CART_ESTIMATE_SUPPORTING_COPY =
+  "Taxes, delivery, and any packaging charges are calculated at checkout. You’ll see the final total before payment.";
+
+export function resolveCartPresentationEstimate(
+  cart: CommerceCart | null | undefined,
+  lookups: CustomerMenuLookups,
+): CartPresentationEstimate {
+  if (!cart || cart.lines.length === 0) {
+    return { complete: true, totalPaise: BigInt(0) };
+  }
+
+  let total = BigInt(0);
+  for (const line of cart.lines) {
+    const presentation = resolveCartLinePresentation(line, lookups);
+    if (!presentation.fullyResolvable) {
+      return { complete: false, totalPaise: BigInt(0) };
+    }
+    total += BigInt(presentation.lineTotalPaise);
+  }
+  return { complete: true, totalPaise: total };
+}
+
+function formatPaiseAmount(paise: bigint): string {
   const hundred = BigInt(100);
   const rupees = paise / hundred;
   const fraction = paise % hundred;
-  return `₹${rupees.toString()}.${fraction.toString().padStart(2, "0")} (menu prices)`;
+  return `₹${rupees.toString()}.${fraction.toString().padStart(2, "0")}`;
+}
+
+export function formatCartEstimatePrimaryLabel(
+  estimate: CartPresentationEstimate,
+): string {
+  if (!estimate.complete) return CART_ESTIMATE_CHECKOUT_FALLBACK;
+  if (estimate.totalPaise <= BigInt(0)) return CART_ESTIMATE_CHECKOUT_FALLBACK;
+  return `Estimated subtotal ${formatPaiseAmount(estimate.totalPaise)}`;
+}
+
+/** Display amount only — never append engineering authority language. */
+export function formatPresentationEstimateLabel(paise: bigint): string {
+  if (paise <= BigInt(0)) return CART_ESTIMATE_CHECKOUT_FALLBACK;
+  return formatPaiseAmount(paise);
 }
 
 export function formatModifierPriceDelta(deltaPaise: number): string | null {

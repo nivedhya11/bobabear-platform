@@ -3,21 +3,28 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
+import { CartLineList } from "@/components/ordering/CartLineList";
+import { CartSummary } from "@/components/ordering/CartSummary";
 import { DeliverToOrientation } from "@/components/ordering/DeliverToOrientation";
 import { MenuItemCustomizationDialog } from "@/components/ordering/MenuItemCustomizationDialog";
+import { MenuItemRow } from "@/components/ordering/MenuItemRow";
 import { StickyCartBar } from "@/components/ordering/StickyCartBar";
 import {
+  buildCartLinePresentations,
+  buildCustomerMenuLookups,
+  cartBundleSelectionsToInput,
+  cartModifiersToInput,
   cartUnitCount,
-  estimateCartPresentationPaise,
-  formatPresentationEstimateLabel,
+  formatCartEstimatePrimaryLabel,
+  resolveCartPresentationEstimate,
 } from "@/components/ordering/cart-presentation";
 import {
   readDeliveryPinContext,
   writeDeliveryPinContext,
 } from "@/components/ordering/delivery-pin-context";
 import { commerceErrorCopy } from "@/components/ordering/error-copy";
-import { formatPaise } from "@/components/ordering/format-money";
 import { cartEvaluationCustomerCopy } from "@/components/ordering/serviceability-copy";
+import { useCategoryScrollSpy } from "@/components/ordering/useCategoryScrollSpy";
 import {
   addCartLine,
   evaluateCart,
@@ -25,16 +32,22 @@ import {
   getCustomerMenu,
   removeCartLine,
   setCartLineQuantity,
+  updateCartLineConfiguration,
   type CommerceCart,
   type CommerceCartEvaluation,
+  type CommerceCartLine,
 } from "@/lib/customer-commerce";
+import type { CartModifierSelectionInput } from "@/shared/cart/types";
 import type { CustomerMenuItem, CustomerMenuProjection } from "@/shared/customer-menu/types";
-
-const QTY_BUTTON_CLASS = "min-h-[44px] min-w-[44px] md:min-h-8 md:min-w-8";
 
 function sectionAnchorId(sectionId: string): string {
   return `cat-${sectionId}`;
 }
+
+type EditTarget = Readonly<{
+  line: CommerceCartLine;
+  item: CustomerMenuItem;
+}>;
 
 export function OrderingCatalogClient(props: { brandId: string }) {
   const { brandId } = props;
@@ -45,15 +58,13 @@ export function OrderingCatalogClient(props: { brandId: string }) {
   const [loading, setLoading] = useState(true);
   const [pendingKey, setPendingKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [customizingItem, setCustomizingItem] = useState<CustomerMenuItem | null>(null);
+  const [editTarget, setEditTarget] = useState<EditTarget | null>(null);
+  const [dialogError, setDialogError] = useState<string | null>(null);
 
-  const itemByVariant = useMemo(
-    () => new Map((menu?.items ?? []).map((item) => [item.variantId, {
-      ...item,
-      presentationPricePaise: item.displayPricePaise,
-    }])),
-    [menu?.items],
+  const menuLookups = useMemo(
+    () => (menu ? buildCustomerMenuLookups(menu) : null),
+    [menu],
   );
 
   const refreshEvaluation = useCallback(
@@ -116,13 +127,77 @@ export function OrderingCatalogClient(props: { brandId: string }) {
     };
   }, [refreshCart, refreshMenu]);
 
-  const rootSections = (menu?.sections ?? []).filter(
-    (section) => section.parentSectionId === null,
+  const groups = useMemo(() => {
+    if (!menu) return [];
+    const sectionsById = new Map(menu.sections.map((section) => [section.id, section]));
+    const itemsBySection = new Map<string, CustomerMenuItem[]>();
+    for (const item of menu.items) {
+      const list = itemsBySection.get(item.sectionId) ?? [];
+      list.push(item);
+      itemsBySection.set(item.sectionId, list);
+    }
+
+    return menu.sections
+      .filter((section) => section.parentSectionId === null)
+      .sort((a, b) => a.position - b.position)
+      .map((root) => {
+        const childSections = menu.sections
+          .filter((section) => section.parentSectionId === root.id)
+          .sort((a, b) => a.position - b.position);
+        const subcategories =
+          childSections.length > 0
+            ? childSections.map((child) => ({
+                id: child.id,
+                name: child.name,
+                items: [...(itemsBySection.get(child.id) ?? [])],
+              }))
+            : [
+                {
+                  id: root.id,
+                  name: sectionsById.get(root.id)?.name ?? root.name,
+                  items: [...(itemsBySection.get(root.id) ?? [])],
+                },
+              ];
+        return {
+          id: root.id,
+          name: root.name,
+          subcategories: subcategories.filter((sub) => sub.items.length > 0),
+        };
+      })
+      .filter((group) => group.subcategories.length > 0);
+  }, [menu]);
+
+  const categoryNav = useMemo(
+    () =>
+      groups.map((group) => ({
+        id: group.id,
+        name: group.name,
+        href: `#${sectionAnchorId(group.id)}`,
+        sectionDomId: sectionAnchorId(group.id),
+      })),
+    [groups],
   );
+
+  const sectionDomIds = useMemo(
+    () => categoryNav.map((category) => category.sectionDomId),
+    [categoryNav],
+  );
+
+  const { activeSectionId: spyActiveSectionId } = useCategoryScrollSpy({
+    sectionIds: sectionDomIds,
+    enabled: sectionDomIds.length > 0,
+    // Sticky Nav (~3.5–4rem) + tablet/mobile sticky category bar (~3.5rem).
+    rootMargin: "-7rem 0px -55% 0px",
+  });
+
+  const spyCategoryId = spyActiveSectionId?.startsWith("cat-")
+    ? spyActiveSectionId.slice(4)
+    : spyActiveSectionId;
+
   const activeCategoryId =
-    selectedCategoryId && rootSections.some((section) => section.id === selectedCategoryId)
-      ? selectedCategoryId
-      : (rootSections[0]?.id ?? null);
+    spyCategoryId && categoryNav.some((category) => category.id === spyCategoryId)
+      ? spyCategoryId
+      : (categoryNav[0]?.id ?? null);
 
   function handleDeliveryPinChange(value: string): void {
     setDeliveryPin(value);
@@ -138,14 +213,33 @@ export function OrderingCatalogClient(props: { brandId: string }) {
   const quantityByVariant = useMemo(() => {
     const map = new Map<string, { lineId: string; quantity: number }>();
     for (const line of cart?.lines ?? []) {
+      // Simple quantity controls only for non-configured lines.
+      if (line.modifiers.length > 0 || line.bundleSelections.length > 0) continue;
       map.set(line.variantId, { lineId: line.id, quantity: line.quantity });
     }
     return map;
   }, [cart]);
 
+  const linePresentations = useMemo(
+    () =>
+      buildCartLinePresentations(
+        cart,
+        menuLookups ?? buildCustomerMenuLookups(emptyMenu(brandId)),
+      ),
+    [cart, menuLookups, brandId],
+  );
+
+  const presentationEstimate = useMemo(
+    () =>
+      resolveCartPresentationEstimate(
+        cart,
+        menuLookups ?? buildCustomerMenuLookups(emptyMenu(brandId)),
+      ),
+    [cart, menuLookups, brandId],
+  );
+
   const lineCount = cartUnitCount(cart);
-  const presentationEstimate = estimateCartPresentationPaise(cart, itemByVariant);
-  const presentationLabel = formatPresentationEstimateLabel(presentationEstimate);
+  const presentationLabel = formatCartEstimatePrimaryLabel(presentationEstimate);
   const serviceabilityNote = cartEvaluationCustomerCopy(evaluation, deliveryPin.length === 6);
 
   async function withPending(key: string, work: () => Promise<void>): Promise<void> {
@@ -221,14 +315,55 @@ export function OrderingCatalogClient(props: { brandId: string }) {
     });
   }
 
-  async function addConfiguredItem(modifiers: Parameters<typeof addCartLine>[0]["modifiers"]): Promise<void> {
+  async function changeLiveCartQuantity(lineId: string, quantity: number): Promise<void> {
+    if (!cart) return;
+    await withPending(`line:${lineId}`, async () => {
+      if (quantity < 1) {
+        const result = await removeCartLine({
+          brandId,
+          cartLineId: lineId,
+          expectedRevision: cart.revision,
+        });
+        if (!result.ok) {
+          setError(commerceErrorCopy(result.code));
+          return;
+        }
+        await updateCartFromMutation(result.data.cart);
+        return;
+      }
+      const result = await setCartLineQuantity({
+        brandId,
+        cartLineId: lineId,
+        quantity,
+        expectedRevision: cart.revision,
+      });
+      if (!result.ok) {
+        setError(commerceErrorCopy(result.code));
+        return;
+      }
+      await updateCartFromMutation(result.data.cart);
+    });
+  }
+
+  async function addConfiguredItem(
+    modifiers: Parameters<typeof addCartLine>[0]["modifiers"],
+  ): Promise<void> {
     if (!customizingItem || pendingKey) return;
     const item = customizingItem;
     setPendingKey(`customize:${item.variantId}`);
     setError(null);
     try {
-      const result = await addCartLine({ brandId, variantId: item.variantId, quantity: 1, modifiers, expectedRevision: cart?.revision });
-      if (!result.ok) { setError(commerceErrorCopy(result.code)); return; }
+      const result = await addCartLine({
+        brandId,
+        variantId: item.variantId,
+        quantity: 1,
+        modifiers,
+        expectedRevision: cart?.revision,
+      });
+      if (!result.ok) {
+        setError(commerceErrorCopy(result.code));
+        return;
+      }
       await updateCartFromMutation(result.data.cart);
       setCustomizingItem(null);
     } finally {
@@ -236,55 +371,95 @@ export function OrderingCatalogClient(props: { brandId: string }) {
     }
   }
 
-  const groups = useMemo(() => {
-    if (!menu) return [];
-    const sectionsById = new Map(menu.sections.map((section) => [section.id, section]));
-    const itemsBySection = new Map<string, CustomerMenuItem[]>();
-    for (const item of menu.items) {
-      const list = itemsBySection.get(item.sectionId) ?? [];
-      list.push(item);
-      itemsBySection.set(item.sectionId, list);
+  function openLiveCartEdit(lineId: string): void {
+    if (!menuLookups || !cart) return;
+    const line = cart.lines.find((entry) => entry.id === lineId);
+    if (!line) return;
+    const item = menuLookups.itemByVariant.get(line.variantId);
+    if (!item) return;
+    const presentation = linePresentations.find((entry) => entry.lineId === line.id);
+    if (!presentation?.editEligible) return;
+    setDialogError(null);
+    setEditTarget({ line, item });
+  }
+
+  async function saveLiveCartEdit(
+    modifiers: readonly CartModifierSelectionInput[],
+  ): Promise<void> {
+    if (!editTarget || !cart || pendingKey) return;
+    setPendingKey(`edit:${editTarget.line.id}`);
+    setDialogError(null);
+    try {
+      const result = await updateCartLineConfiguration({
+        brandId,
+        cartLineId: editTarget.line.id,
+        variantId: editTarget.line.variantId,
+        modifiers,
+        bundleSelections: cartBundleSelectionsToInput(editTarget.line.bundleSelections),
+        expectedRevision: cart.revision,
+      });
+      if (!result.ok) {
+        setDialogError(commerceErrorCopy(result.code));
+        return;
+      }
+      await updateCartFromMutation(result.data.cart);
+      setEditTarget(null);
+    } finally {
+      setPendingKey(null);
     }
+  }
 
-    return menu.sections
-      .filter((section) => section.parentSectionId === null)
-      .sort((a, b) => a.position - b.position)
-      .map((root) => {
-        const childSections = menu.sections
-          .filter((section) => section.parentSectionId === root.id)
-          .sort((a, b) => a.position - b.position);
-        const subcategories =
-          childSections.length > 0
-            ? childSections.map((child) => ({
-                id: child.id,
-                name: child.name,
-                items: [...(itemsBySection.get(child.id) ?? [])],
-              }))
-            : [
-                {
-                  id: root.id,
-                  name: sectionsById.get(root.id)?.name ?? root.name,
-                  items: [...(itemsBySection.get(root.id) ?? [])],
-                },
-              ];
-        return {
-          id: root.id,
-          name: root.name,
-          subcategories: subcategories.filter((sub) => sub.items.length > 0),
-        };
-      })
-      .filter((group) => group.subcategories.length > 0);
-  }, [menu]);
-
-  const categoryNav = useMemo(
-    () =>
-      groups.map((group) => ({
-        id: group.id,
-        name: group.name,
-        href: `#${sectionAnchorId(group.id)}`,
-      })),
-    [groups],
-  );
+  function renderCategoryNav(variant: "horizontal" | "vertical") {
+    if (categoryNav.length === 0) return null;
+    const isVertical = variant === "vertical";
+    return (
+      <nav
+        aria-label="Menu categories"
+        data-testid={isVertical ? "desktop-category-rail" : "menu-category-nav"}
+        className={
+          isVertical
+            ? "sticky top-20 self-start"
+            : "sticky top-14 z-20 -mx-5 px-5 py-2 bg-[var(--bg-page)]/95 backdrop-blur-[10px] border-b border-[var(--border-default)] xl:hidden"
+        }
+      >
+        <ul
+          className={
+            isVertical
+              ? "flex flex-col gap-1"
+              : "flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 snap-x snap-mandatory"
+          }
+          role="list"
+        >
+          {categoryNav.map((category) => {
+            const isActive = activeCategoryId === category.id;
+            return (
+              <li key={category.id} className={isVertical ? undefined : "shrink-0 snap-start"}>
+                <a
+                  href={category.href}
+                  aria-current={isActive ? "location" : undefined}
+                  className={
+                    isVertical
+                      ? `block rounded-md px-3 py-2 font-body text-[13px] ${
+                          isActive
+                            ? "bg-[var(--interactive-primary)] text-[var(--text-on-primary)]"
+                            : "text-[var(--text-primary)] hover:bg-[var(--interactive-ghost-hover)]"
+                        }`
+                      : `inline-flex min-h-[44px] items-center rounded-full border px-4 font-body text-[13px] whitespace-nowrap ${
+                          isActive
+                            ? "border-[var(--interactive-primary)] bg-[var(--interactive-primary)] text-[var(--text-on-primary)]"
+                            : "border-[var(--border-default)] bg-[var(--bg-section)] text-[var(--text-primary)]"
+                        }`
+                  }
+                >
+                  {category.name}
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+    );
+  }
 
   if (loading) {
     return (
@@ -310,8 +485,11 @@ export function OrderingCatalogClient(props: { brandId: string }) {
 
   return (
     <main id="main-content" tabIndex={-1} className="bg-[var(--bg-page)] focus:outline-none">
-      <div className="mx-auto max-w-[1100px] px-5 py-12 md:py-16 flex flex-col gap-8 pb-28 md:pb-16">
-        <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+      <div
+        data-testid="desktop-ordering-shell"
+        className="mx-auto max-w-[1280px] px-5 py-12 md:py-16 flex flex-col gap-6 pb-28 md:pb-16 xl:pb-16"
+      >
+        <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between xl:col-span-3">
           <div className="flex flex-col gap-2">
             <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
               Boba Bear · Owned ordering
@@ -320,11 +498,15 @@ export function OrderingCatalogClient(props: { brandId: string }) {
               Menu
             </h1>
             <p className="font-body text-[15px] text-[var(--text-secondary)] max-w-[40rem]">
-              Add items to your cart. Prices below are menu prices for discovery — checkout uses
-              the server-authoritative total.
+              Add items to your cart. You’ll see the final total at checkout before payment.
             </p>
           </div>
-          <Button asChild variant="primary" size="lg" className="hidden md:inline-flex min-h-[44px]">
+          <Button
+            asChild
+            variant="primary"
+            size="lg"
+            className="hidden md:inline-flex xl:hidden min-h-[44px]"
+          >
             <a
               href="/order/cart/"
               aria-label={
@@ -338,34 +520,7 @@ export function OrderingCatalogClient(props: { brandId: string }) {
           </Button>
         </header>
 
-        {categoryNav.length > 0 ? (
-          <nav aria-label="Menu categories" data-testid="menu-category-nav">
-            <ul
-              className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 snap-x snap-mandatory"
-              role="list"
-            >
-              {categoryNav.map((category) => {
-                const isActive = activeCategoryId === category.id;
-                return (
-                  <li key={category.id} className="shrink-0 snap-start">
-                    <a
-                      href={category.href}
-                      aria-current={isActive ? "location" : undefined}
-                      className={`inline-flex min-h-[44px] items-center rounded-full border px-4 font-body text-[13px] whitespace-nowrap ${
-                        isActive
-                          ? "border-[var(--interactive-primary)] bg-[var(--interactive-primary)] text-[var(--text-on-primary)]"
-                          : "border-[var(--border-default)] bg-[var(--bg-section)] text-[var(--text-primary)]"
-                      }`}
-                      onClick={() => setSelectedCategoryId(category.id)}
-                    >
-                      {category.name}
-                    </a>
-                  </li>
-                );
-              })}
-            </ul>
-          </nav>
-        ) : null}
+        {renderCategoryNav("horizontal")}
 
         <DeliverToOrientation
           postalCode={deliveryPin}
@@ -379,122 +534,142 @@ export function OrderingCatalogClient(props: { brandId: string }) {
           </p>
         ) : null}
 
-        {groups.map((group) => (
-          <section
-            key={group.id}
-            id={sectionAnchorId(group.id)}
-            aria-labelledby={`cat-heading-${group.id}`}
-            className="flex flex-col gap-5 scroll-mt-28"
-          >
-            <h2
-              id={`cat-heading-${group.id}`}
-              className="font-display text-[32px] text-[var(--text-primary)]"
-            >
-              {group.name}
-            </h2>
-            {group.subcategories.map((sub) => (
-              <div key={sub.id} className="flex flex-col gap-3">
-                <h3 className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--text-tertiary)]">
-                  {sub.name}
-                </h3>
-                <ul className="grid grid-cols-1 md:grid-cols-2 gap-3" role="list">
-                  {sub.items.map((item) => {
-                    const customizable = (item.modifierGroups?.length ?? 0) > 0;
-                    const inCart = quantityByVariant.get(item.variantId);
-                    const busy = pendingKey === item.variantId;
-                    return (
-                      <li
-                        key={`${item.productId}-${item.variantId}`}
-                        className="border border-[var(--border-default)] bg-[var(--bg-section)] p-4 flex gap-4"
-                      >
-                        {item.imagePath ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={item.imagePath}
-                            alt=""
-                            className="h-20 w-20 object-cover shrink-0"
+        <div className="xl:grid xl:grid-cols-[12rem_minmax(0,1fr)_18rem] xl:gap-8 xl:items-start">
+          <aside className="hidden xl:block">{renderCategoryNav("vertical")}</aside>
+
+          <div className="flex flex-col gap-8 min-w-0">
+            {groups.map((group) => (
+              <section
+                key={group.id}
+                id={sectionAnchorId(group.id)}
+                aria-labelledby={`cat-heading-${group.id}`}
+                className="flex flex-col gap-5 scroll-mt-32 md:scroll-mt-28 xl:scroll-mt-24"
+              >
+                <h2
+                  id={`cat-heading-${group.id}`}
+                  className="font-display text-[32px] text-[var(--text-primary)]"
+                >
+                  {group.name}
+                </h2>
+                {group.subcategories.map((sub) => (
+                  <div key={sub.id} className="flex flex-col gap-3">
+                    <h3 className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--text-tertiary)]">
+                      {sub.name}
+                    </h3>
+                    <ul
+                      className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1 gap-0 xl:gap-0 md:gap-3"
+                      role="list"
+                    >
+                      {sub.items.map((item) => {
+                        const inCart = quantityByVariant.get(item.variantId);
+                        const busy = pendingKey === item.variantId;
+                        return (
+                          <MenuItemRow
+                            key={`${item.productId}-${item.variantId}`}
+                            item={item}
+                            layout="row"
+                            quantityInCart={inCart?.quantity}
+                            busy={busy}
+                            onAdd={(next) => void addItem(next)}
+                            onDecrement={(next) => void decrementItem(next)}
+                            onCustomize={setCustomizingItem}
                           />
-                        ) : (
-                          <div
-                            aria-hidden="true"
-                            className="h-20 w-20 shrink-0 bg-[var(--bg-page)] border border-[var(--border-default)]"
-                          />
-                        )}
-                        <div className="flex flex-col gap-2 min-w-0 flex-1">
-                          <div className="flex items-start justify-between gap-3">
-                            <h4 className="font-display text-[20px] leading-tight text-[var(--text-primary)]">
-                              {item.name}
-                            </h4>
-                            <span className="font-body font-bold text-[14px] text-[var(--interactive-secondary)] shrink-0">
-                              {formatPaise(item.displayPricePaise)}
-                            </span>
-                          </div>
-                          {item.description ? (
-                            <p className="font-heading text-[13px] text-[var(--text-secondary)] line-clamp-2">
-                              {item.description}
-                            </p>
-                          ) : null}
-                          {customizable ? (
-                            <Button type="button" variant="secondary" size="sm" className="self-start mt-auto min-h-[44px] md:min-h-8" disabled={busy} aria-label={`Customize ${item.name}`} onClick={() => setCustomizingItem(item)}>Customize</Button>
-                          ) : inCart ? (
-                            <div className="flex items-center gap-2 mt-auto">
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                className={QTY_BUTTON_CLASS}
-                                disabled={busy}
-                                aria-label={`Decrease ${item.name} quantity`}
-                                onClick={() => void decrementItem(item)}
-                              >
-                                −
-                              </Button>
-                              <span
-                                className="font-mono text-[13px] min-w-[1.5rem] text-center"
-                                aria-live="polite"
-                                aria-atomic="true"
-                              >
-                                {inCart.quantity}
-                                <span className="sr-only"> {item.name} in cart</span>
-                              </span>
-                              <Button
-                                type="button"
-                                variant="primary"
-                                size="sm"
-                                className={QTY_BUTTON_CLASS}
-                                disabled={busy}
-                                aria-label={`Increase ${item.name} quantity`}
-                                onClick={() => void addItem(item)}
-                              >
-                                +
-                              </Button>
-                            </div>
-                          ) : (
-                            <Button
-                              type="button"
-                              variant="secondary"
-                              size="sm"
-                              className="self-start mt-auto min-h-[44px] md:min-h-8"
-                              disabled={busy}
-                              aria-label={`Add ${item.name} to cart`}
-                              onClick={() => void addItem(item)}
-                            >
-                              {busy ? "Adding…" : "Add to cart"}
-                            </Button>
-                          )}
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                ))}
+              </section>
             ))}
-          </section>
-        ))}
+          </div>
+
+          <aside
+            data-testid="desktop-live-cart"
+            className="hidden xl:block sticky top-20 self-start border border-[var(--border-default)] bg-[var(--bg-section)] p-4"
+          >
+            <div className="flex flex-col gap-3">
+              <div className="flex items-baseline justify-between gap-2">
+                <h2 className="font-display text-[22px] text-[var(--text-primary)]">Cart</h2>
+                <a
+                  href="/order/cart/"
+                  className="font-body text-[12px] text-[var(--interactive-secondary)] underline-offset-2 hover:underline"
+                >
+                  Full cart
+                </a>
+              </div>
+              {lineCount === 0 ? (
+                <p className="font-body text-[14px] text-[var(--text-secondary)]">
+                  Add something from the menu.
+                </p>
+              ) : (
+                <>
+                  <CartLineList
+                    lines={linePresentations}
+                    pending={pendingKey !== null}
+                    compact
+                    onChangeQuantity={(lineId, quantity) =>
+                      void changeLiveCartQuantity(lineId, quantity)
+                    }
+                    onEdit={openLiveCartEdit}
+                    onRemove={(lineId) => void changeLiveCartQuantity(lineId, 0)}
+                  />
+                  <CartSummary
+                    estimate={presentationEstimate}
+                    itemCount={lineCount}
+                    showCheckoutLink
+                    compact
+                  />
+                </>
+              )}
+            </div>
+          </aside>
+        </div>
       </div>
 
-      <StickyCartBar itemCount={lineCount} presentationEstimatePaise={presentationEstimate} />
-      {customizingItem ? <MenuItemCustomizationDialog item={customizingItem} pending={pendingKey !== null} error={error} onClose={() => { if (!pendingKey) { setCustomizingItem(null); setError(null); } }} onAdd={(modifiers) => void addConfiguredItem(modifiers)} /> : null}
+      <StickyCartBar
+        itemCount={lineCount}
+        estimate={presentationEstimate}
+      />
+      {customizingItem ? (
+        <MenuItemCustomizationDialog
+          item={customizingItem}
+          pending={pendingKey !== null}
+          error={error}
+          onClose={() => {
+            if (!pendingKey) {
+              setCustomizingItem(null);
+              setError(null);
+            }
+          }}
+          onAdd={(modifiers) => void addConfiguredItem(modifiers)}
+        />
+      ) : null}
+      {editTarget ? (
+        <MenuItemCustomizationDialog
+          item={editTarget.item}
+          mode="edit"
+          initialModifiers={cartModifiersToInput(editTarget.line.modifiers)}
+          pending={pendingKey !== null}
+          error={dialogError}
+          onClose={() => {
+            if (!pendingKey) {
+              setEditTarget(null);
+              setDialogError(null);
+            }
+          }}
+          onSave={(modifiers) => void saveLiveCartEdit(modifiers)}
+        />
+      ) : null}
     </main>
   );
+}
+
+function emptyMenu(brandId: string): CustomerMenuProjection {
+  return {
+    brandId,
+    menuId: "empty",
+    name: "Empty",
+    sections: [],
+    items: [],
+  };
 }
