@@ -15,6 +15,39 @@ import { computeWorkingTreeFingerprint } from "./working-tree-fingerprint.mjs";
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
+/** Current baseline plus the next mechanical revision bump for IMP-028C lifecycle transitions. */
+export const ALLOWED_ROADMAP_VERSIONS = new Set(["GTM-R46", "GTM-R47"]);
+/** Current baseline plus the next mechanical revision bump for IMP-028C lifecycle transitions. */
+export const ALLOWED_STATE_VERSIONS = new Set(["STATE-R44", "STATE-R45"]);
+
+/**
+ * @param {"roadmap" | "state"} kind
+ * @param {string} version
+ */
+export function isAllowedGovernanceVersion(kind, version) {
+  if (kind === "roadmap") return ALLOWED_ROADMAP_VERSIONS.has(version);
+  if (kind === "state") return ALLOWED_STATE_VERSIONS.has(version);
+  return false;
+}
+
+/**
+ * The only newer pending-acceptance marker permitted while checking the
+ * accepted IMP-028A/IMP-028B foundation evidence.
+ * @param {{ meta: Record<string, string>, text: string }} state
+ */
+export function isImp028cCanonicalPendingAcceptance(state) {
+  return (
+    state.meta.acceptedThrough === "IMP-028B" &&
+    state.meta.currentProductSlice === "IMP-028C" &&
+    state.meta.pendingAcceptance === "IMP-028C" &&
+    /Current Governance Activity:\s*IMP-028C Food Customization IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE/.test(
+      state.text,
+    ) &&
+    /IMP-028C_IMPLEMENTATION_COMPLETE:\s*YES/.test(state.text) &&
+    /IMP-028C_ACCEPTED:\s*NO/.test(state.text)
+  );
+}
+
 /** @typedef {{ ok: boolean, code?: string, message: string }} Finding */
 
 /** @type {Finding[]} */
@@ -179,11 +212,24 @@ export function isLaterThanImp026(slice) {
  *   imp028bArchitectureLocked?: boolean,
  *   imp028bAccepted?: boolean,
  * }} position
- * @returns {{ ok: true, kind: "aligned" | "imp028b_complete_and_accepted" | "imp028b_canonical_activation" | "imp028b_implementation_authorized" | "imp028a_canonical_activation" | "imp028a_implementation_authorized" | "imp028a_implementation_in_progress" | "imp028a_implementation_complete_pending_acceptance" | "imp028a_complete_and_accepted" | "imp026_deferred_external_gate" | "imp026_deferred_external_gate_impl_authorized" | "imp026_deferred_external_gate_impl_complete" | "imp026_deferred_external_gate_imp027_architecture" | "imp026_deferred_external_gate_imp027_architecture_locked" | "imp026_deferred_external_gate_imp027_implementation" | "imp026_deferred_external_gate_imp027_implementation_complete" | "imp026_deferred_external_gate_imp028_architecture" | "imp026_deferred_external_gate_imp028_architecture_locked" | "imp026_deferred_external_gate_imp028_implementation_authorized" | "imp026_deferred_external_gate_imp028_implementation" | "imp028c_authorized_not_started" | "imp028c_implementation_started" } | { ok: false, code: string, message: string }}
+ * @returns {{ ok: true, kind: "aligned" | "imp028b_complete_and_accepted" | "imp028b_canonical_activation" | "imp028b_implementation_authorized" | "imp028a_canonical_activation" | "imp028a_implementation_authorized" | "imp028a_implementation_in_progress" | "imp028a_implementation_complete_pending_acceptance" | "imp028a_complete_and_accepted" | "imp026_deferred_external_gate" | "imp026_deferred_external_gate_impl_authorized" | "imp026_deferred_external_gate_impl_complete" | "imp026_deferred_external_gate_imp027_architecture" | "imp026_deferred_external_gate_imp027_architecture_locked" | "imp026_deferred_external_gate_imp027_implementation" | "imp026_deferred_external_gate_imp027_implementation_complete" | "imp026_deferred_external_gate_imp028_architecture" | "imp026_deferred_external_gate_imp028_architecture_locked" | "imp026_deferred_external_gate_imp028_implementation_authorized" | "imp026_deferred_external_gate_imp028_implementation" | "imp028c_authorized_not_started" | "imp028c_implementation_started" | "imp028c_implementation_complete_pending_acceptance" } | { ok: false, code: string, message: string }}
  */
 export function evaluatePendingAcceptanceSplit(position) {
   const pending = position.pendingAcceptance ?? "NONE";
   const current = position.currentProductSlice;
+  const imp028cImplementationAuthorized = position.imp028cImplementationAuthorized === true;
+  const imp028cImplementationStarted = position.imp028cImplementationStarted === true;
+  const imp028cImplementationComplete = position.imp028cImplementationComplete === true;
+  const imp028cArchitectureLocked = position.imp028cArchitectureLocked === true;
+
+  if (position.acceptedThrough === "IMP-028C" && position.imp028cAccepted !== true) {
+    return {
+      ok: false,
+      code: "PENDING_ACCEPTANCE_SPLIT",
+      message:
+        "acceptedThrough cannot advance to IMP-028C before IMP-028C is formally accepted (IMP-028C_ACCEPTED: YES)",
+    };
+  }
   const imp027Lifecycle = position.imp027Lifecycle ?? "UNKNOWN";
   const imp027ImplementationAuthorized = position.imp027ImplementationAuthorized === true;
   const imp028Lifecycle = position.imp028Lifecycle ?? "UNKNOWN";
@@ -201,8 +247,7 @@ export function evaluatePendingAcceptanceSplit(position) {
   const imp028bAccepted = position.imp028bAccepted === true;
 
   if (position.acceptedThrough === "IMP-028B") {
-    const imp028bFullyAccepted =
-      pending === "NONE" &&
+    const imp028bAcceptedEvidence =
       position.imp026Accepted === true &&
       position.imp026cAccepted === true &&
       position.imp027Accepted === true &&
@@ -213,11 +258,12 @@ export function evaluatePendingAcceptanceSplit(position) {
       imp028bImplementationComplete &&
       imp028bArchitectureLocked &&
       imp028bAccepted;
+    const imp028bFullyAccepted = pending === "NONE" && imp028bAcceptedEvidence;
 
     if (current === "NONE" && imp028bFullyAccepted) {
       return { ok: true, kind: "imp028b_complete_and_accepted" };
     }
-    if (current === "IMP-028C" && imp028bFullyAccepted) {
+    if (current === "IMP-028C" && imp028bAcceptedEvidence) {
       if (!position.imp028cCanonicallyAssigned) {
         return {
           ok: false,
@@ -225,14 +271,14 @@ export function evaluatePendingAcceptanceSplit(position) {
           message: "currentProductSlice=IMP-028C but IMP-028C is not canonically assigned in governance",
         };
       }
-      if (!position.imp028cArchitectureLocked) {
+      if (!imp028cArchitectureLocked) {
         return {
           ok: false,
           code: "PENDING_ACCEPTANCE_SPLIT",
           message: "currentProductSlice=IMP-028C but IMP-028C architecture is not locked",
         };
       }
-      if (!position.imp028cImplementationAuthorized) {
+      if (!imp028cImplementationAuthorized) {
         return {
           ok: false,
           code: "PENDING_ACCEPTANCE_SPLIT",
@@ -262,24 +308,50 @@ export function evaluatePendingAcceptanceSplit(position) {
           message: "IMP-028C cannot be accepted while acceptedThrough remains IMP-028B",
         };
       }
-      if (position.imp028cImplementationComplete) {
-        return {
-          ok: false,
-          code: "PENDING_ACCEPTANCE_SPLIT",
-          message:
-            "currentProductSlice=IMP-028C IMPLEMENTATION_IN_PROGRESS cannot claim IMP-028C_IMPLEMENTATION_COMPLETE=YES",
-        };
+      if (pending === "IMP-028C") {
+        if (!imp028cImplementationStarted) {
+          return {
+            ok: false,
+            code: "PENDING_ACCEPTANCE_SPLIT",
+            message:
+              "IMP-028C IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE requires IMP-028C_IMPLEMENTATION_STARTED: YES",
+          };
+        }
+        if (!imp028cImplementationComplete) {
+          return {
+            ok: false,
+            code: "PENDING_ACCEPTANCE_SPLIT",
+            message:
+              "pendingAcceptance=IMP-028C requires IMP-028C_IMPLEMENTATION_COMPLETE: YES",
+          };
+        }
+        return { ok: true, kind: "imp028c_implementation_complete_pending_acceptance" };
       }
-      if (position.imp028cImplementationStarted) {
-        return { ok: true, kind: "imp028c_implementation_started" };
+      if (pending === "NONE") {
+        if (imp028cImplementationComplete) {
+          return {
+            ok: false,
+            code: "PENDING_ACCEPTANCE_SPLIT",
+            message: "IMP-028C implementation complete requires pendingAcceptance = IMP-028C",
+          };
+        }
+        if (imp028cImplementationStarted) {
+          return { ok: true, kind: "imp028c_implementation_started" };
+        }
+        return { ok: true, kind: "imp028c_authorized_not_started" };
       }
-      return { ok: true, kind: "imp028c_authorized_not_started" };
+      return {
+        ok: false,
+        code: "PENDING_ACCEPTANCE_SPLIT",
+        message:
+          `acceptedThrough=IMP-028B with currentProductSlice=IMP-028C requires pendingAcceptance=NONE or IMP-028C, got ${JSON.stringify(pending)}`,
+      };
     }
     return {
       ok: false,
       code: "PENDING_ACCEPTANCE_SPLIT",
       message:
-        "IMP-028B acceptance requires currentProductSlice=NONE or IMP-028C (authorized/not-started), pendingAcceptance=NONE, and complete accepted IMP-028B evidence",
+        "IMP-028B acceptance requires currentProductSlice=NONE or IMP-028C with complete accepted IMP-028B evidence",
     };
   }
 
@@ -1251,6 +1323,10 @@ function checkRoadmapState(roadmap, state) {
     note(
       "IMP-028C implementation started; acceptedThrough=IMP-028B; pendingAcceptance=NONE; IMP-029 not started",
     );
+  } else if (split.kind === "imp028c_implementation_complete_pending_acceptance") {
+    note(
+      "IMP-028C implementation COMPLETE pending acceptance; acceptedThrough=IMP-028B; pendingAcceptance=IMP-028C; IMP-029 not started",
+    );
   } else if (split.kind === "imp028b_implementation_complete_pending_acceptance") {
     note(
       "GTM-R41 historical IMP-028B implementation COMPLETE pending acceptance",
@@ -1675,7 +1751,8 @@ function checkImp024ArchitectureLock(roadmap, state, architecture) {
         state.meta.pendingAcceptance === "IMP-028B" &&
         state.meta.acceptedThrough === "IMP-028A" &&
         state.meta.currentProductSlice === "IMP-028B"
-      )
+      ) &&
+      !isImp028cCanonicalPendingAcceptance(state)
     ) {
       fail(
         "IMP028A_PENDING_META",
@@ -3144,7 +3221,8 @@ function checkImp028aImplementationAuthorization(roadmap, state) {
     }
     if (
       state.meta.pendingAcceptance !== "NONE" &&
-      state.meta.pendingAcceptance !== "IMP-028B"
+      state.meta.pendingAcceptance !== "IMP-028B" &&
+      !isImp028cCanonicalPendingAcceptance(state)
     ) {
       fail(
         "IMP028A_STATE_PENDING_META",
@@ -3370,7 +3448,10 @@ function checkImp028bCanonicalActivation(roadmap, state) {
         "STATE must record IMP-028B_IMPLEMENTATION_COMPLETE: YES",
       );
     }
-    if (state.meta.pendingAcceptance !== "NONE") {
+    if (
+      state.meta.pendingAcceptance !== "NONE" &&
+      !isImp028cCanonicalPendingAcceptance(state)
+    ) {
       fail(
         "IMP028B_STATE_PENDING",
         `STATE pendingAcceptance must be NONE after IMP-028B acceptance, got ${JSON.stringify(state.meta.pendingAcceptance)}`,
@@ -3643,11 +3724,17 @@ export function runProjectConsistency() {
   if (decision && decision.meta.decisionRegisterVersion !== "DR-12") {
     fail("DR_VERSION", `Expected DR-12, got ${decision.meta.decisionRegisterVersion}`);
   }
-  if (roadmap && roadmap.meta.roadmapVersion !== "GTM-R46") {
-    fail("ROADMAP_VERSION", `Expected GTM-R46, got ${roadmap.meta.roadmapVersion}`);
+  if (roadmap && !isAllowedGovernanceVersion("roadmap", roadmap.meta.roadmapVersion)) {
+    fail(
+      "ROADMAP_VERSION",
+      `Expected one of ${[...ALLOWED_ROADMAP_VERSIONS].join(", ")}, got ${roadmap.meta.roadmapVersion}`,
+    );
   }
-  if (state && state.meta.stateVersion !== "STATE-R44") {
-    fail("STATE_VERSION", `Expected STATE-R44, got ${state.meta.stateVersion}`);
+  if (state && !isAllowedGovernanceVersion("state", state.meta.stateVersion)) {
+    fail(
+      "STATE_VERSION",
+      `Expected one of ${[...ALLOWED_STATE_VERSIONS].join(", ")}, got ${state.meta.stateVersion}`,
+    );
   }
   if (state && state.meta.governanceHealth === "ALIGNED") {
     // During reconciliation install this may still be RECONCILIATION_REQUIRED;
