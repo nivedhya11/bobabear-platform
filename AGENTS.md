@@ -204,7 +204,9 @@ pre-governance accepted slices are historical gaps — they do not downgrade acc
 
 ## Repository safety
 
-- Do not commit, amend, or push unless the founder explicitly instructs that action.
+- For an authorized bounded task, local commits are permitted and should be small and
+  reconstructible. Do not rewrite published history. Push remains a separate founder/user
+  authorization gate.
 - Do not run destructive Git operations (`reset`, `restore`, `clean`, `stash`, force checkout) unless
   explicitly instructed.
 - Never destroy `boba-bear_postgres-data` or run `docker compose down --volumes`.
@@ -277,7 +279,8 @@ DEFAULT_DEVELOPMENT_BRANCH = main
 - Keep development in the WSL/Linux filesystem under `/home/ajoshi/repos`.
 - Preserve intentional dirty-tree work according to existing repository rules.
 - Never reset, stash, or clean unrelated work.
-- Do not commit or push without explicit authorization.
+- Local commits for an authorized bounded task are permitted. Push, merge, tag/release, and
+  deployment each require separate explicit authorization.
 
 ## Working-tree fingerprint
 
