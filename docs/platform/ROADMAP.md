@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R46",
+  "roadmapVersion": "GTM-R47",
   "acceptedThrough": "IMP-028B",
   "currentProductSlice": "IMP-028C",
   "nextProductSlice": "IMP-029",
   "gtmBoundary": "IMP-040",
-  "lastReviewed": "2026-08-19",
-  "supersedes": "GTM-R45"
+  "lastReviewed": "2026-08-20",
+  "supersedes": "GTM-R46"
 }
 -->
 
@@ -250,7 +250,7 @@ IMP-028B locked capability architecture (architecture **ARCHITECTURE_LOCKED**; i
 [`capabilities/IMP-028B-customer-menu-projection-and-discovery.md`](./capabilities/IMP-028B-customer-menu-projection-and-discovery.md)
 
 IMP-028C locked capability architecture (architecture **ARCHITECTURE_LOCKED**; implementation
-**AUTHORIZED** / **STARTED**):
+**AUTHORIZED** / **STARTED** / **COMPLETE**):
 
 [`capabilities/IMP-028C-food-customization.md`](./capabilities/IMP-028C-food-customization.md)
 
@@ -260,7 +260,7 @@ IMP-028C locked capability architecture (architecture **ARCHITECTURE_LOCKED**; i
 Accepted Through:     IMP-028B — Customer Menu Projection + Discovery
 Current Product Slice: IMP-028C — Food Customization
 Next Product Slice:    IMP-029 — Operations Console API
-Pending Acceptance:    NONE
+Pending Acceptance:    IMP-028C
 Public GTM Boundary:   IMP-040 — Launch Validation & Cutover
 ```
 
@@ -438,13 +438,13 @@ only). Webhook acknowledgement timing / durable inbox / asynchronous Payment pro
 
 ```text
 IMP-028C — Food Customization
-Lifecycle: IMPLEMENTATION_IN_PROGRESS
+Lifecycle: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
 Architecture: ARCHITECTURE_LOCKED
-Implementation: AUTHORIZED / STARTED
+Implementation: AUTHORIZED / STARTED / COMPLETE
 IMP-028C_ARCHITECTURE_LOCKED: YES
 IMP-028C_IMPLEMENTATION_AUTHORIZED: YES
 IMP-028C_IMPLEMENTATION_STARTED: YES
-IMP-028C_IMPLEMENTATION_COMPLETE: NO
+IMP-028C_IMPLEMENTATION_COMPLETE: YES
 IMP-028C_ACCEPTED: NO
 IMP-028B_ARCHITECTURE_LOCKED: YES
 IMP-028B_IMPLEMENTATION_AUTHORIZED: YES
@@ -452,7 +452,7 @@ IMP-028B_IMPLEMENTATION_STARTED: YES
 IMP-028B_IMPLEMENTATION_COMPLETE: YES
 IMP-028B_ACCEPTED: YES
 Next product slice: IMP-029 — Operations Console API (PLANNED / NOT_STARTED / NOT_AUTHORIZED)
-Pending acceptance: NONE
+Pending acceptance: IMP-028C
 acceptedThrough: IMP-028B
 IMP-026C: COMPLETE_AND_ACCEPTED
 IMP-027: COMPLETE_AND_ACCEPTED
@@ -565,8 +565,9 @@ Architecture is **ARCHITECTURE_LOCKED**. Implementation is **AUTHORIZED** / **CO
 
 IMP-028C locked capability architecture is at
 [`capabilities/IMP-028C-food-customization.md`](./capabilities/IMP-028C-food-customization.md).
-Architecture is **ARCHITECTURE_LOCKED**. Implementation is **AUTHORIZED** / **STARTED**;
-acceptance is not claimed. D-369 governs paid-modifier explicit intent. D-371 remains unused.
+Architecture is **ARCHITECTURE_LOCKED**. Implementation is **AUTHORIZED** / **STARTED** /
+**COMPLETE**; formal acceptance is **not** claimed (`IMP-028C_ACCEPTED: NO`;
+`pendingAcceptance = IMP-028C`). D-369 governs paid-modifier explicit intent. D-371 remains unused.
 
 ## 5. Future GTM Slices
 
@@ -967,6 +968,29 @@ Historical GTM-R1 meanings that are **not** current:
 Current public GTM boundary is **IMP-040**, not IMP-035.
 
 ## 9. Roadmap Change Log
+
+### GTM-R47 — 2026-08-20
+
+- Records **IMP-028C — Food Customization** implementation **COMPLETE** under prior GTM-R44/GTM-R45
+  authorization and the locked capability architecture
+  ([`capabilities/IMP-028C-food-customization.md`](./capabilities/IMP-028C-food-customization.md))
+  after independent technical acceptance of all implementation slices, including Slice 4 canonical
+  modifier content readiness.
+- IMP-028C lifecycle = `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`. Architecture remains
+  `ARCHITECTURE_LOCKED`. Implementation = `AUTHORIZED` / `STARTED` / `COMPLETE`
+  (`IMP-028C_IMPLEMENTATION_AUTHORIZED: YES`; `IMP-028C_IMPLEMENTATION_STARTED: YES`;
+  `IMP-028C_IMPLEMENTATION_COMPLETE: YES`). Formal acceptance of IMP-028C is **not** claimed.
+- Sets `pendingAcceptance = IMP-028C`. `acceptedThrough` remains IMP-028B. `currentProductSlice`
+  remains IMP-028C. `nextProductSlice` remains IMP-029.
+- Founder UAT, exact-candidate deployment, and final canonical acceptance remain **pending** /
+  **not started**. This reconciliation does not deploy, run founder UAT, or advance
+  `acceptedThrough`.
+- IMP-029 remains `PLANNED / NOT_STARTED / NOT_AUTHORIZED`
+  (`IMP-029_IMPLEMENTATION_AUTHORIZED: NO`; `IMP-029_STARTED: NO`).
+- Does not change product scope, AC01–AC14, D-368 / D-369 / D-370, runtime, schema, migration,
+  catalog content, the decision register, or global architecture. D-371 remains unused.
+- Supersedes GTM-R46 for the current IMP-028C lifecycle position. Product acceptance through
+  IMP-028B is unchanged.
 
 ### GTM-R46 — 2026-08-19
 

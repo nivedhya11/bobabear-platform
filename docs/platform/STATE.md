@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R44",
+  "stateVersion": "STATE-R45",
   "acceptedThrough": "IMP-028B",
   "currentProductSlice": "IMP-028C",
   "nextProductSlice": "IMP-029",
-  "pendingAcceptance": "NONE",
+  "pendingAcceptance": "IMP-028C",
   "governanceHealth": "ALIGNED",
-  "lastReviewed": "2026-08-19"
+  "lastReviewed": "2026-08-20"
 }
 -->
 
@@ -28,10 +28,10 @@ Accepted Range:            IMP-001 → IMP-028B (including IMP-005A and IMP-026C
 ## 2. Current Work Position
 
 ```text
-Current Product Implementation: IMP-028C — Food Customization (ARCHITECTURE_LOCKED; AUTHORIZED / STARTED)
-Pending Acceptance:             NONE
+Current Product Implementation: IMP-028C — Food Customization (ARCHITECTURE_LOCKED; AUTHORIZED / STARTED / COMPLETE)
+Pending Acceptance:             IMP-028C
 Next Product Slice:             IMP-029 — Operations Console API
-Current Governance Activity:    IMP-028C Food Customization IMPLEMENTATION_IN_PROGRESS; architecture ARCHITECTURE_LOCKED; implementation AUTHORIZED / STARTED; IMP-028B COMPLETE_AND_ACCEPTED; D-368 CURRENT (Customer Menu Read Projection); D-369 CURRENT and mandatory for IMP-028C paid-modifier intent; D-370 CURRENT and out of scope; IMP-029 PLANNED / NOT_STARTED / NOT_AUTHORIZED; D-371 UNUSED
+Current Governance Activity:    IMP-028C Food Customization IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE; architecture ARCHITECTURE_LOCKED; implementation AUTHORIZED / STARTED / COMPLETE; founder UAT NOT_STARTED; exact-candidate deployment PENDING; IMP-028B COMPLETE_AND_ACCEPTED; D-368 CURRENT (Customer Menu Read Projection); D-369 CURRENT and mandatory for IMP-028C paid-modifier intent; D-370 CURRENT and out of scope; IMP-029 PLANNED / NOT_STARTED / NOT_AUTHORIZED; D-371 UNUSED
 Governance Health:              ALIGNED
 ```
 
@@ -92,7 +92,7 @@ IMP-028C:                 ARCHITECTURE_LOCKED
 IMP-028C_ARCHITECTURE_LOCKED: YES
 IMP-028C_IMPLEMENTATION_AUTHORIZED: YES
 IMP-028C_IMPLEMENTATION_STARTED: YES
-IMP-028C_IMPLEMENTATION_COMPLETE: NO
+IMP-028C_IMPLEMENTATION_COMPLETE: YES
 IMP-028C_ACCEPTED:        NO
 IMP-029:                  NOT_STARTED
 IMP-029_IMPLEMENTATION_AUTHORIZED: NO
@@ -374,11 +374,13 @@ Cart → Checkout → Payment → Order
 ## 5. Pending Acceptance
 
 ```text
-NONE
+IMP-028C
 acceptedThrough: IMP-028B
-pendingAcceptance: NONE
+pendingAcceptance: IMP-028C
 currentProductSlice: IMP-028C — Food Customization
 nextProductSlice: IMP-029 — Operations Console API
+FOUNDER_UAT_STATUS: NOT_STARTED
+DEPLOYMENT_STATUS: PENDING
 IMP-028: COMPLETE_AND_ACCEPTED
 IMP-028_ACCEPTED: YES
 IMP-028A: COMPLETE_AND_ACCEPTED
@@ -399,7 +401,7 @@ IMP-028C: ARCHITECTURE_LOCKED
 IMP-028C_ARCHITECTURE_LOCKED: YES
 IMP-028C_IMPLEMENTATION_AUTHORIZED: YES
 IMP-028C_IMPLEMENTATION_STARTED: YES
-IMP-028C_IMPLEMENTATION_COMPLETE: NO
+IMP-028C_IMPLEMENTATION_COMPLETE: YES
 IMP-028C_ACCEPTED: NO
 IMP-029: PLANNED / NOT_STARTED
 IMP-029_IMPLEMENTATION_AUTHORIZED: NO
@@ -828,6 +830,17 @@ remains outside scope; D-371 remains unused. The capability retains the canonica
 founder-UAT stop gate. No acceptance, runtime, schema, migration, catalog-data, decision-register,
 or global-architecture change is recorded.
 
+STATE-R45 records IMP-028C — Food Customization implementation complete pending independent
+acceptance (`IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`; architecture `ARCHITECTURE_LOCKED`;
+`IMP-028C_IMPLEMENTATION_AUTHORIZED: YES`; `IMP-028C_IMPLEMENTATION_STARTED: YES`;
+`IMP-028C_IMPLEMENTATION_COMPLETE: YES`; `currentProductSlice = IMP-028C`;
+`pendingAcceptance = IMP-028C`). Formal acceptance of IMP-028C was **not** claimed.
+`acceptedThrough` remains IMP-028B. `nextProductSlice` remains IMP-029. Founder UAT is
+**NOT_STARTED**; exact-candidate deployment is **PENDING**. IMP-029 remains planned, not started,
+and not authorized. Decision register remains DR-12. Global architecture remains ARCH-R15. Next
+free decision remains **D-371**. Supersedes STATE-R44 for current IMP-028C lifecycle position.
+Product acceptance through IMP-028B is unchanged.
+
 STATE-R44 records the IMP-028C business/domain model and remaining implementation-plan lock. The
 core model reuses Catalog Modifier Groups and Variant bindings; bundle components inherit their
 canonical Variant modifier authority; bundle/package pricing remains distinct from modifier pricing;
@@ -851,7 +864,7 @@ Supporting primitives do not equal capability completion. Not yet accepted as pr
 - Security / Privacy final hardening
 - Production Infrastructure
 - Launch Validation
-- Food Customization (IMP-028C architecture locked; implementation authorized and started; not complete or accepted)
+- Food Customization (IMP-028C architecture locked; implementation complete pending acceptance; founder UAT not started)
 
 ## 9. Authority Boundaries
 

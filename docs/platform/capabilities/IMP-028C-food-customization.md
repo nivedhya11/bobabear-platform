@@ -5,9 +5,9 @@
   "capability": "IMP-028C",
   "title": "Food Customization",
   "architectureLock": "ARCHITECTURE_LOCKED",
-  "implementation": "IMPLEMENTATION_IN_PROGRESS",
+  "implementation": "IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE",
   "implementationAuthorized": true,
-  "lastReviewed": "2026-08-19",
+  "lastReviewed": "2026-08-20",
   "bindingDecisions": ["D-368", "D-369", "D-370"],
   "dependsOn": ["IMP-012", "IMP-013", "IMP-014", "IMP-015", "IMP-020", "IMP-021", "IMP-024", "IMP-025", "IMP-026C", "IMP-028A", "IMP-028B"]
 }
@@ -25,9 +25,9 @@ D-371 remains unused.
 | Field | Value |
 |---|---|
 | Architecture lock | `ARCHITECTURE_LOCKED` |
-| Implementation | `AUTHORIZED` / `STARTED` |
+| Implementation | `AUTHORIZED` / `STARTED` / `COMPLETE` |
 | Implementation authorized | **YES** |
-| Implementation started / complete / accepted | **NO** / **NO** / **NO** |
+| Implementation started / complete / accepted | **YES** / **YES** / **NO** |
 | Schema / migration / new authority | **NO** / **NO** / **NO** |
 | Founder UAT required at acceptance | **YES** |
 
@@ -35,7 +35,7 @@ D-371 remains unused.
 IMP-028C_ARCHITECTURE_LOCKED: YES
 IMP-028C_IMPLEMENTATION_AUTHORIZED: YES
 IMP-028C_IMPLEMENTATION_STARTED: YES
-IMP-028C_IMPLEMENTATION_COMPLETE: NO
+IMP-028C_IMPLEMENTATION_COMPLETE: YES
 IMP-028C_ACCEPTED: NO
 NEW_SCHEMA_REQUIRED: NO
 NEW_MIGRATION_REQUIRED: NO
@@ -51,7 +51,7 @@ IMP029_RETARGETED: NO
 |---|---|
 | IMP / placement | IMP-028C; after accepted IMP-028B and before planned IMP-029 |
 | Current / next slice | IMP-028C / IMP-029 — Operations Console API (unchanged and unauthorized) |
-| Acceptance position | `acceptedThrough = IMP-028B`; `pendingAcceptance = NONE` |
+| Acceptance position | `acceptedThrough = IMP-028B`; `pendingAcceptance = IMP-028C` |
 | Binding decisions | D-368, **D-369**, D-370 |
 | Global architecture / decision register | ARCH-R15 / DR-12 unchanged |
 
@@ -294,8 +294,8 @@ Cart evaluation, and Checkout evaluation. This lock creates no new policy or imp
 |---|---|
 | Slice 1 — Customer Menu Modifier Projection | `TECHNICALLY_ACCEPTED`: canonical group/option identities, constraints, display pricing, and D-369 discovery boundary. |
 | Slice 2 — Customer Customization Interaction + Configured Add-to-Cart | `TECHNICALLY_ACCEPTED`: semantic independent-acceptance checks, focused test/build/typecheck, and database Cart/HTTP/Menu suites passed for the same candidate; a later Testcontainers hang had no candidate change or defect evidence. |
-| Slice 3 — Configured Cart Presentation + Edit Configuration | One atomic implementation slice: use D-368 Menu presentation instead of static `ordering-catalog.json`; show modifiers and configured totals; retain concrete `cartLineId`; type client customization from canonical shared Cart types; forward modifiers and preserved `bundleSelections` through existing update transport; reuse edit interaction; restore persisted paid choices; preserve full configuration. |
-| Slice 4 — Canonical modifier content / content-authoring readiness | Before founder UAT, at least one representative product must receive modifiers through a legitimate Catalog/content authority—never frontend-only demo authority. |
+| Slice 3 — Configured Cart Presentation + Edit Configuration | `TECHNICALLY_ACCEPTED`: D-368 Menu presentation, configured totals, retained `cartLineId`, canonical shared Cart types, full-replacement-safe modifier/bundle forwarding, edit interaction reuse, and persisted paid-choice restoration. |
+| Slice 4 — Canonical modifier content / content-authoring readiness | `TECHNICALLY_ACCEPTED`: representative product receives modifiers through legitimate Catalog/content authority for founder UAT readiness. |
 
 Slice 3 safety rule: Cart-line configuration `PUT` has full-replacement semantics. Omitting
 `bundleSelections` clears them, so a modifier-only edit must preserve and forward existing
@@ -316,5 +316,5 @@ Remaining separation:
 - Deferred pending a new product requirement: Combo-context modifier pricing or constraint
   overrides.
 
-AC01–AC14 remain unchanged. IMP-028C remains `IMPLEMENTATION_IN_PROGRESS`, incomplete, and
-unaccepted.
+AC01–AC14 remain unchanged. IMP-028C is `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`,
+implementation-complete, and unaccepted. Founder UAT and exact-candidate deployment remain pending.
