@@ -40,11 +40,57 @@ export function checkNoFloatingImageTags(dockerfileText, composeText) {
 }
 
 export function checkPinnedBaseImages(dockerfileText) {
-  const hasNode = /ARG\s+NODE_IMAGE\s*=\s*node:22\.23\.1-bookworm-slim\b/.test(dockerfileText);
-  const hasNginx = /ARG\s+NGINX_IMAGE\s*=\s*nginx:1\.30\.4-alpine3\.24\b/.test(dockerfileText);
+  const hasNode =
+    /ARG\s+NODE_IMAGE\s*=\s*docker\.io\/library\/node:22\.23\.1-bookworm-slim\b/.test(
+      dockerfileText,
+    );
+  const hasNginx =
+    /ARG\s+NGINX_IMAGE\s*=\s*docker\.io\/library\/nginx:1\.30\.4-alpine3\.24\b/.test(
+      dockerfileText,
+    );
   return {
     name: "Node and Nginx base images are pinned to the approved exact tags",
     passed: hasNode && hasNginx,
+  };
+}
+
+/** True when `ref` includes an explicit registry host (e.g. docker.io/...). */
+export function isFullyQualifiedImageRef(ref) {
+  const slash = ref.indexOf("/");
+  if (slash <= 0) return false;
+  const registry = ref.slice(0, slash);
+  return registry === "localhost" || registry.includes(".") || registry.includes(":");
+}
+
+/**
+ * Every external Dockerfile base image must be a fully-qualified OCI reference.
+ * Internal named-stage references (FROM base AS …) remain unqualified by design.
+ */
+export function checkFullyQualifiedExternalBaseImages(dockerfileText) {
+  const argDefaults = new Map(
+    [...dockerfileText.matchAll(/^ARG\s+(\w+)=(\S+)/gm)].map((m) => [m[1], m[2]]),
+  );
+  const stageNames = new Set(
+    [...dockerfileText.matchAll(/\bAS\s+(\S+)/gi)].map((m) => m[1]),
+  );
+  const unresolved = [];
+  for (const match of dockerfileText.matchAll(/^FROM\s+(\S+)/gm)) {
+    let resolved = match[1];
+    const argMatch = resolved.match(/^\$\{(\w+)\}$/);
+    if (argMatch) {
+      resolved = argDefaults.get(argMatch[1]);
+      if (!resolved) {
+        unresolved.push(match[1]);
+        continue;
+      }
+    }
+    if (stageNames.has(resolved)) continue;
+    if (!isFullyQualifiedImageRef(resolved)) unresolved.push(resolved);
+  }
+  return {
+    name: "External Dockerfile FROM references are fully-qualified OCI image refs",
+    passed: unresolved.length === 0,
+    detail: unresolved.join(", "),
   };
 }
 
@@ -347,6 +393,7 @@ export function runAllChecks({ dockerfileText, composeText, nginxConfText, nextC
     { name: "Dockerfile exists", passed: dockerfileText.length > 0 },
     { name: "Multi-stage Dockerfile (base/dependencies/builder/tooling/web-runtime)", passed: [...dockerfileText.matchAll(/^FROM/gm)].length >= 5 },
     checkPinnedBaseImages(dockerfileText),
+    checkFullyQualifiedExternalBaseImages(dockerfileText),
     checkPinnedPostgresImage(composeText),
     checkNoFloatingImageTags(dockerfileText, composeText),
     checkFinalStageIsWebRuntime(dockerfileText),

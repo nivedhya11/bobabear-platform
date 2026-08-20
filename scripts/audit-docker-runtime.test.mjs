@@ -7,6 +7,7 @@ import path from "node:path";
 import {
   checkNoFloatingImageTags,
   checkPinnedBaseImages,
+  checkFullyQualifiedExternalBaseImages,
   checkFinalStageIsWebRuntime,
   checkNoNodeServerAtRuntime,
   checkAppServiceHasNoDatabaseAccess,
@@ -21,8 +22,8 @@ import {
 } from "./audit-docker-runtime.mjs";
 
 const VALID_DOCKERFILE = `
-ARG NODE_IMAGE=node:22.23.1-bookworm-slim
-ARG NGINX_IMAGE=nginx:1.30.4-alpine3.24
+ARG NODE_IMAGE=docker.io/library/node:22.23.1-bookworm-slim
+ARG NGINX_IMAGE=docker.io/library/nginx:1.30.4-alpine3.24
 FROM \${NODE_IMAGE} AS base
 FROM base AS dependencies
 FROM base AS builder
@@ -130,8 +131,23 @@ test("checkPinnedBaseImages passes on the approved exact tags", () => {
 });
 
 test("checkPinnedBaseImages rejects a floating Node tag", () => {
-  const dockerfile = VALID_DOCKERFILE.replace("node:22.23.1-bookworm-slim", "node:latest");
+  const dockerfile = VALID_DOCKERFILE.replace(
+    "docker.io/library/node:22.23.1-bookworm-slim",
+    "docker.io/library/node:latest",
+  );
   assert.equal(checkPinnedBaseImages(dockerfile).passed, false);
+});
+
+test("checkFullyQualifiedExternalBaseImages passes qualified ARG defaults and stage self-refs", () => {
+  assert.equal(checkFullyQualifiedExternalBaseImages(VALID_DOCKERFILE).passed, true);
+});
+
+test("checkFullyQualifiedExternalBaseImages rejects short-name Node/Nginx ARG defaults", () => {
+  const dockerfile = VALID_DOCKERFILE.replaceAll("docker.io/library/", "");
+  const result = checkFullyQualifiedExternalBaseImages(dockerfile);
+  assert.equal(result.passed, false);
+  assert.match(result.detail, /node:22\.23\.1-bookworm-slim/);
+  assert.match(result.detail, /nginx:1\.30\.4-alpine3\.24/);
 });
 
 test("checkNoFloatingImageTags rejects an untagged image and accepts stage self-references", () => {
