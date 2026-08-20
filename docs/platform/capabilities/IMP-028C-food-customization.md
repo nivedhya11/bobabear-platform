@@ -5,7 +5,7 @@
   "capability": "IMP-028C",
   "title": "Food Customization",
   "architectureLock": "ARCHITECTURE_LOCKED",
-  "implementation": "IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE",
+  "implementation": "COMPLETE_AND_ACCEPTED",
   "implementationAuthorized": true,
   "lastReviewed": "2026-08-20",
   "bindingDecisions": ["D-368", "D-369", "D-370"],
@@ -25,9 +25,9 @@ D-371 remains unused.
 | Field | Value |
 |---|---|
 | Architecture lock | `ARCHITECTURE_LOCKED` |
-| Implementation | `AUTHORIZED` / `STARTED` / `COMPLETE` |
+| Implementation | `COMPLETE_AND_ACCEPTED` |
 | Implementation authorized | **YES** |
-| Implementation started / complete / accepted | **YES** / **YES** / **NO** |
+| Implementation started / complete / accepted | **YES** / **YES** / **YES** |
 | Schema / migration / new authority | **NO** / **NO** / **NO** |
 | Founder UAT required at acceptance | **YES** |
 
@@ -36,7 +36,7 @@ IMP-028C_ARCHITECTURE_LOCKED: YES
 IMP-028C_IMPLEMENTATION_AUTHORIZED: YES
 IMP-028C_IMPLEMENTATION_STARTED: YES
 IMP-028C_IMPLEMENTATION_COMPLETE: YES
-IMP-028C_ACCEPTED: NO
+IMP-028C_ACCEPTED: YES
 NEW_SCHEMA_REQUIRED: NO
 NEW_MIGRATION_REQUIRED: NO
 NEW_PERSISTENCE_AUTHORITY: NO
@@ -50,8 +50,8 @@ IMP029_RETARGETED: NO
 | Field | Value |
 |---|---|
 | IMP / placement | IMP-028C; after accepted IMP-028B and before planned IMP-029 |
-| Current / next slice | IMP-028C / IMP-029 — Operations Console API (unchanged and unauthorized) |
-| Acceptance position | `acceptedThrough = IMP-028B`; `pendingAcceptance = IMP-028C` |
+| Current / next slice | NONE / IMP-029 — Operations Console API (unchanged and unauthorized) |
+| Acceptance position | `acceptedThrough = IMP-028C`; `pendingAcceptance = NONE` |
 | Binding decisions | D-368, **D-369**, D-370 |
 | Global architecture / decision register | ARCH-R15 / DR-12 unchanged |
 
@@ -316,5 +316,24 @@ Remaining separation:
 - Deferred pending a new product requirement: Combo-context modifier pricing or constraint
   overrides.
 
-AC01–AC14 remain unchanged. IMP-028C is `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`,
-implementation-complete, and unaccepted. Founder UAT and exact-candidate deployment remain pending.
+## Formal Acceptance
+
+IMP-028C is `COMPLETE_AND_ACCEPTED` after the founder declared UAT PASS on 2026-08-20.
+
+```text
+IMP-028C_ACCEPTED: YES
+FOUNDER_UAT_REQUIRED: YES
+FOUNDER_UAT: PASS
+FOUNDER_UAT_COMPLETE: YES
+FOUNDER_UAT_DECISION_DATE: 2026-08-20
+FOUNDER_UAT_ACCEPTANCE_AUTHORITY: Founder
+FOUNDER_UAT_CANDIDATE_BRANCH: imp-028c/uat-candidate
+FOUNDER_UAT_CANDIDATE_HEAD: 7f4149914c9abdb0fb6d80e64bbf21579fe790df
+FOUNDER_UAT_CANDIDATE_TREE: 2a49537394ee13b0af38b5fa535328e9808e00f3
+```
+
+Evidence limitations: the supplied founder decision did not include scenario-level results,
+timestamps, screenshots, screen recordings, image digests, or deployment/container identity; none
+are asserted here. This acceptance does not authorize or start IMP-029, create D-371, or alter
+D-368 / D-369 / D-370, runtime, schema, migration, catalog, Pricing, Cart, Checkout, or auth
+authority.

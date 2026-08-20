@@ -2,11 +2,11 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R45",
-  "acceptedThrough": "IMP-028B",
-  "currentProductSlice": "IMP-028C",
+  "stateVersion": "STATE-R46",
+  "acceptedThrough": "IMP-028C",
+  "currentProductSlice": "NONE",
   "nextProductSlice": "IMP-029",
-  "pendingAcceptance": "IMP-028C",
+  "pendingAcceptance": "NONE",
   "governanceHealth": "ALIGNED",
   "lastReviewed": "2026-08-20"
 }
@@ -20,18 +20,18 @@ current-reality authority.
 ## 1. Accepted Position
 
 ```text
-Accepted Through:          IMP-028B — Customer Menu Projection + Discovery
-Accepted Inserted Slice:   IMP-005A — Dockerized local application runtime; IMP-026C — Pilot Customer-Commerce UX Hardening; IMP-028A — Food Direct UX Foundation; IMP-028B — Customer Menu Projection + Discovery
-Accepted Range:            IMP-001 → IMP-028B (including IMP-005A and IMP-026C)
+Accepted Through:          IMP-028C — Food Customization
+Accepted Inserted Slice:   IMP-005A — Dockerized local application runtime; IMP-026C — Pilot Customer-Commerce UX Hardening; IMP-028A — Food Direct UX Foundation; IMP-028B — Customer Menu Projection + Discovery; IMP-028C — Food Customization
+Accepted Range:            IMP-001 → IMP-028C (including IMP-005A and IMP-026C)
 ```
 
 ## 2. Current Work Position
 
 ```text
-Current Product Implementation: IMP-028C — Food Customization (ARCHITECTURE_LOCKED; AUTHORIZED / STARTED / COMPLETE)
-Pending Acceptance:             IMP-028C
+Current Product Implementation: NONE
+Pending Acceptance:             NONE
 Next Product Slice:             IMP-029 — Operations Console API
-Current Governance Activity:    IMP-028C Food Customization IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE; architecture ARCHITECTURE_LOCKED; implementation AUTHORIZED / STARTED / COMPLETE; founder UAT NOT_STARTED; exact-candidate deployment PENDING; IMP-028B COMPLETE_AND_ACCEPTED; D-368 CURRENT (Customer Menu Read Projection); D-369 CURRENT and mandatory for IMP-028C paid-modifier intent; D-370 CURRENT and out of scope; IMP-029 PLANNED / NOT_STARTED / NOT_AUTHORIZED; D-371 UNUSED
+Current Governance Activity:    IMP-028C Food Customization COMPLETE_AND_ACCEPTED after founder UAT PASS for the frozen candidate; IMP-029 PLANNED / NOT_STARTED / NOT_AUTHORIZED; D-371 UNUSED
 Governance Health:              ALIGNED
 ```
 
@@ -88,12 +88,15 @@ IMP-028B_IMPLEMENTATION_AUTHORIZED: YES
 IMP-028B_IMPLEMENTATION_STARTED: YES
 IMP-028B_IMPLEMENTATION_COMPLETE: YES
 IMP-028B_ACCEPTED:        YES
-IMP-028C:                 ARCHITECTURE_LOCKED
+IMP-028C:                 COMPLETE_AND_ACCEPTED
 IMP-028C_ARCHITECTURE_LOCKED: YES
 IMP-028C_IMPLEMENTATION_AUTHORIZED: YES
 IMP-028C_IMPLEMENTATION_STARTED: YES
 IMP-028C_IMPLEMENTATION_COMPLETE: YES
-IMP-028C_ACCEPTED:        NO
+IMP-028C_ACCEPTED:        YES
+FOUNDER_UAT_REQUIRED:     YES
+FOUNDER_UAT:              PASS
+FOUNDER_UAT_COMPLETE:     YES
 IMP-029:                  NOT_STARTED
 IMP-029_IMPLEMENTATION_AUTHORIZED: NO
 IMP-029_STARTED:          NO
@@ -119,7 +122,7 @@ Capability architecture:
 
 [`capabilities/IMP-028C-food-customization.md`](./capabilities/IMP-028C-food-customization.md)
 
-`acceptedThrough` is IMP-028B. IMP-025 architecture remains locked; IMP-025 implementation is
+`acceptedThrough` is IMP-028C. IMP-025 architecture remains locked; IMP-025 implementation is
 **COMPLETE_AND_ACCEPTED**. IMP-026 architecture is **ARCHITECTURE_LOCKED**. IMP-026 implementation
 is **COMPLETE_AND_ACCEPTED** (`IMP-026_ACCEPTED: YES`). Independent acceptance of IMP-026 is
 recorded, including provider-originated Razorpay Test Mode webhook proof over public HTTPS.
@@ -153,7 +156,8 @@ IMP-028B architecture lock and implementation authorization (`IMPLEMENTATION_AUT
 `IMP-028B_IMPLEMENTATION_STARTED: NO`; `IMP-028B_IMPLEMENTATION_COMPLETE: NO`;
 `IMP-028B_ACCEPTED: NO`). GTM-R40 / STATE-R38 and GTM-R41 / STATE-R39 record the subsequent
 historical implementation progression. STATE-R40 records IMP-028B `COMPLETE_AND_ACCEPTED`.
-`currentProductSlice` is now NONE; `pendingAcceptance` is NONE; `acceptedThrough` is IMP-028B.
+`currentProductSlice` is now NONE; `pendingAcceptance` is NONE; `acceptedThrough` was IMP-028B at
+that historical acceptance point.
 Acceptance of IMP-028B did not implement D-369 / D-370, create `D-371`, or start IMP-029.
 
 GTM-R31 / STATE-R29 historically record binding **D-368** (Customer Menu Read Projection Authority;
@@ -174,7 +178,7 @@ STATE-R36 record IMP-028B canonical activation without changing decision registe
 architecture. GTM-R39 / STATE-R37 record IMP-028B architecture lock and implementation
 authorization without changing decision register or global architecture.
 
-Accepted Technical Inventory below is bounded by `acceptedThrough=IMP-028B` and includes accepted
+Accepted Technical Inventory below is bounded by `acceptedThrough=IMP-028C` and includes accepted
 IMP-027 / IMP-028 schema through latest migration `0029_refund_statutory_issuance_allocation`.
 IMP-028A added no schema or migration.
 
@@ -370,17 +374,21 @@ Cart → Checkout → Payment → Order
 | IMP-028 | Invoice / Tax Receipt / Credit Note | COMPLETE_AND_ACCEPTED |
 | IMP-028A | Food Direct UX Foundation | COMPLETE_AND_ACCEPTED |
 | IMP-028B | Customer Menu Projection + Discovery | COMPLETE_AND_ACCEPTED |
+| IMP-028C | Food Customization | COMPLETE_AND_ACCEPTED |
 
-## 5. Pending Acceptance
+## 5. Acceptance Position
 
 ```text
-IMP-028C
-acceptedThrough: IMP-028B
-pendingAcceptance: IMP-028C
-currentProductSlice: IMP-028C — Food Customization
+acceptedThrough: IMP-028C
+pendingAcceptance: NONE
+currentProductSlice: NONE
 nextProductSlice: IMP-029 — Operations Console API
-FOUNDER_UAT_STATUS: NOT_STARTED
-DEPLOYMENT_STATUS: PENDING
+FOUNDER_UAT_STATUS: PASS
+FOUNDER_UAT_DECISION_DATE: 2026-08-20
+FOUNDER_UAT_ACCEPTANCE_AUTHORITY: Founder
+FOUNDER_UAT_CANDIDATE_BRANCH: imp-028c/uat-candidate
+FOUNDER_UAT_CANDIDATE_HEAD: 7f4149914c9abdb0fb6d80e64bbf21579fe790df
+FOUNDER_UAT_CANDIDATE_TREE: 2a49537394ee13b0af38b5fa535328e9808e00f3
 IMP-028: COMPLETE_AND_ACCEPTED
 IMP-028_ACCEPTED: YES
 IMP-028A: COMPLETE_AND_ACCEPTED
@@ -397,12 +405,12 @@ IMP-028B_IMPLEMENTATION_AUTHORIZED: YES
 IMP-028B_IMPLEMENTATION_STARTED: YES
 IMP-028B_IMPLEMENTATION_COMPLETE: YES
 IMP-028B_ACCEPTED: YES
-IMP-028C: ARCHITECTURE_LOCKED
+IMP-028C: COMPLETE_AND_ACCEPTED
 IMP-028C_ARCHITECTURE_LOCKED: YES
 IMP-028C_IMPLEMENTATION_AUTHORIZED: YES
 IMP-028C_IMPLEMENTATION_STARTED: YES
 IMP-028C_IMPLEMENTATION_COMPLETE: YES
-IMP-028C_ACCEPTED: NO
+IMP-028C_ACCEPTED: YES
 IMP-029: PLANNED / NOT_STARTED
 IMP-029_IMPLEMENTATION_AUTHORIZED: NO
 IMP-029_STARTED: NO
@@ -829,6 +837,17 @@ mandatory for this capability; D-368 remains the Customer Menu discovery authori
 remains outside scope; D-371 remains unused. The capability retains the canonical-content
 founder-UAT stop gate. No acceptance, runtime, schema, migration, catalog-data, decision-register,
 or global-architecture change is recorded.
+
+STATE-R46 records IMP-028C — Food Customization `COMPLETE_AND_ACCEPTED` after the founder declared
+UAT PASS on 2026-08-20 for the frozen candidate `imp-028c/uat-candidate`, commit
+`7f4149914c9abdb0fb6d80e64bbf21579fe790df`, tree
+`2a49537394ee13b0af38b5fa535328e9808e00f3`. The record does not claim unsupplied scenario results,
+timestamps, screenshots, recordings, image digests, or deployment/container identity. Architecture
+remains `ARCHITECTURE_LOCKED`; implementation remains `AUTHORIZED` / `STARTED` / `COMPLETE`; and
+`IMP-028C_ACCEPTED: YES`. `acceptedThrough` advances to IMP-028C; `currentProductSlice` and
+`pendingAcceptance` are NONE. `nextProductSlice` remains IMP-029, planned, not started, and not
+authorized. Decision register remains DR-12, global architecture remains ARCH-R15, and D-371 remains
+unused. This does not authorize or start IMP-029.
 
 STATE-R45 records IMP-028C — Food Customization implementation complete pending independent
 acceptance (`IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`; architecture `ARCHITECTURE_LOCKED`;

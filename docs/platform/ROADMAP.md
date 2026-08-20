@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R47",
-  "acceptedThrough": "IMP-028B",
-  "currentProductSlice": "IMP-028C",
+  "roadmapVersion": "GTM-R48",
+  "acceptedThrough": "IMP-028C",
+  "currentProductSlice": "NONE",
   "nextProductSlice": "IMP-029",
   "gtmBoundary": "IMP-040",
   "lastReviewed": "2026-08-20",
-  "supersedes": "GTM-R46"
+  "supersedes": "GTM-R47"
 }
 -->
 
@@ -250,17 +250,17 @@ IMP-028B locked capability architecture (architecture **ARCHITECTURE_LOCKED**; i
 [`capabilities/IMP-028B-customer-menu-projection-and-discovery.md`](./capabilities/IMP-028B-customer-menu-projection-and-discovery.md)
 
 IMP-028C locked capability architecture (architecture **ARCHITECTURE_LOCKED**; implementation
-**AUTHORIZED** / **STARTED** / **COMPLETE**):
+**COMPLETE_AND_ACCEPTED**):
 
 [`capabilities/IMP-028C-food-customization.md`](./capabilities/IMP-028C-food-customization.md)
 
 ## 2. Current Position
 
 ```text
-Accepted Through:     IMP-028B — Customer Menu Projection + Discovery
-Current Product Slice: IMP-028C — Food Customization
+Accepted Through:     IMP-028C — Food Customization
+Current Product Slice: NONE
 Next Product Slice:    IMP-029 — Operations Console API
-Pending Acceptance:    IMP-028C
+Pending Acceptance:    NONE
 Public GTM Boundary:   IMP-040 — Launch Validation & Cutover
 ```
 
@@ -433,27 +433,32 @@ only). Webhook acknowledgement timing / durable inbox / asynchronous Payment pro
 | IMP-028 | Invoice / Tax Receipt / Credit Note | COMPLETE_AND_ACCEPTED |
 | IMP-028A | Food Direct UX Foundation | COMPLETE_AND_ACCEPTED |
 | IMP-028B | Customer Menu Projection + Discovery | COMPLETE_AND_ACCEPTED |
+| IMP-028C | Food Customization | COMPLETE_AND_ACCEPTED |
 
 ## 4. Current Product Slice
 
 ```text
-IMP-028C — Food Customization
-Lifecycle: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
+NONE
+Latest accepted slice: IMP-028C — Food Customization
+Lifecycle: COMPLETE_AND_ACCEPTED
 Architecture: ARCHITECTURE_LOCKED
 Implementation: AUTHORIZED / STARTED / COMPLETE
 IMP-028C_ARCHITECTURE_LOCKED: YES
 IMP-028C_IMPLEMENTATION_AUTHORIZED: YES
 IMP-028C_IMPLEMENTATION_STARTED: YES
 IMP-028C_IMPLEMENTATION_COMPLETE: YES
-IMP-028C_ACCEPTED: NO
+IMP-028C_ACCEPTED: YES
+FOUNDER_UAT_REQUIRED: YES
+FOUNDER_UAT: PASS
+FOUNDER_UAT_COMPLETE: YES
 IMP-028B_ARCHITECTURE_LOCKED: YES
 IMP-028B_IMPLEMENTATION_AUTHORIZED: YES
 IMP-028B_IMPLEMENTATION_STARTED: YES
 IMP-028B_IMPLEMENTATION_COMPLETE: YES
 IMP-028B_ACCEPTED: YES
 Next product slice: IMP-029 — Operations Console API (PLANNED / NOT_STARTED / NOT_AUTHORIZED)
-Pending acceptance: IMP-028C
-acceptedThrough: IMP-028B
+Pending acceptance: NONE
+acceptedThrough: IMP-028C
 IMP-026C: COMPLETE_AND_ACCEPTED
 IMP-027: COMPLETE_AND_ACCEPTED
 IMP-027_ARCHITECTURE: LOCKED
@@ -566,14 +571,14 @@ Architecture is **ARCHITECTURE_LOCKED**. Implementation is **AUTHORIZED** / **CO
 IMP-028C locked capability architecture is at
 [`capabilities/IMP-028C-food-customization.md`](./capabilities/IMP-028C-food-customization.md).
 Architecture is **ARCHITECTURE_LOCKED**. Implementation is **AUTHORIZED** / **STARTED** /
-**COMPLETE**; formal acceptance is **not** claimed (`IMP-028C_ACCEPTED: NO`;
-`pendingAcceptance = IMP-028C`). D-369 governs paid-modifier explicit intent. D-371 remains unused.
+**COMPLETE_AND_ACCEPTED**; formal acceptance is claimed (`IMP-028C_ACCEPTED: YES`;
+`pendingAcceptance = NONE`). D-369 governs paid-modifier explicit intent. D-371 remains unused.
 
 ## 5. Future GTM Slices
 
 Remaining numeric GTM range IMP-029 → IMP-040: **12** IMP numbers.
-Accepted inserted slices IMP-026C, IMP-028A, and IMP-028B remain in the accepted ledger and are not future
-identities.
+Accepted inserted slices IMP-026C, IMP-028A, IMP-028B, and IMP-028C remain in the accepted ledger
+and are not future identities.
 
 IMP-028A is the first Food Direct experience-programme capability. It was inserted after accepted
 IMP-028 and before planned GTM IMP-029. It does **not** consume or remap IMP-029 → IMP-040
@@ -583,13 +588,12 @@ IMP-028B is the second Food Direct experience-programme capability. It was inser
 IMP-028A and before planned GTM IMP-029 using suffix convention. It does **not** consume or remap
 IMP-029 → IMP-040 identities. IMP-028B is `COMPLETE_AND_ACCEPTED` and is not a remaining future slice.
 
-IMP-028C is the third Food Direct experience-programme capability. It is inserted after accepted
+IMP-028C is the third Food Direct experience-programme capability. It was inserted after accepted
 IMP-028B and before planned GTM IMP-029 using the established suffix convention. It does **not**
-consume or remap IMP-029 → IMP-040 identities.
+consume or remap IMP-029 → IMP-040 identities and is `COMPLETE_AND_ACCEPTED`.
 
 | IMP | Capability | Lifecycle |
 |---|---|---|
-| IMP-028C | Food Customization | ARCHITECTURE_LOCKED |
 | IMP-029 | Operations Console API | PLANNED |
 | IMP-030 | Operations Console UI | PLANNED |
 | IMP-031 | Provider-Neutral Delivery Foundation | PLANNED |
@@ -968,6 +972,22 @@ Historical GTM-R1 meanings that are **not** current:
 Current public GTM boundary is **IMP-040**, not IMP-035.
 
 ## 9. Roadmap Change Log
+
+### GTM-R48 — 2026-08-20
+
+- Records formal acceptance of **IMP-028C — Food Customization** after founder UAT PASS for the
+  frozen product candidate recorded in
+  [`capabilities/IMP-028C-food-customization.md`](./capabilities/IMP-028C-food-customization.md).
+- IMP-028C lifecycle = `COMPLETE_AND_ACCEPTED`; architecture remains `ARCHITECTURE_LOCKED` and
+  implementation remains `AUTHORIZED` / `STARTED` / `COMPLETE`
+  (`IMP-028C_IMPLEMENTATION_AUTHORIZED: YES`; `IMP-028C_IMPLEMENTATION_STARTED: YES`;
+  `IMP-028C_IMPLEMENTATION_COMPLETE: YES`; `IMP-028C_ACCEPTED: YES`).
+- Advances `acceptedThrough = IMP-028C`; sets `currentProductSlice = NONE` and
+  `pendingAcceptance = NONE`. `nextProductSlice` remains IMP-029, planned, not started, and not
+  implementation-authorized.
+- Does not authorize or start IMP-029, change D-368 / D-369 / D-370, create D-371, alter runtime,
+  schema, migration, catalog content, the decision register, or global architecture.
+- Supersedes GTM-R47 for the current IMP-028C lifecycle position.
 
 ### GTM-R47 — 2026-08-20
 
