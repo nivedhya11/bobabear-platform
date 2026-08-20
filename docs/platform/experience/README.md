@@ -12,6 +12,13 @@ Source checkpoint: HEAD ddca0c319a5e80b2cfe38a2c32481b636277010e
 
 # BOBA Direct — Supporting Product / Experience Material
 
+## Current supporting plans
+
+- [`d2c-ux-and-process-hardening-plan.md`](./d2c-ux-and-process-hardening-plan.md) — repository-
+  reconciled D2C UX sequencing, process-review remediation register, and descriptive first-slice
+  specification. It is supporting planning only and does not activate an IMP, allocate D-371, or
+  alter IMP-028C acceptance.
+
 ## Authority boundary (read this first)
 
 This directory is **SUPPORTING PRODUCT / EXPERIENCE MATERIAL**.
