@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R49",
+  "stateVersion": "STATE-R52",
   "acceptedThrough": "IMP-028C",
   "currentProductSlice": "IMP-028D",
   "nextProductSlice": "IMP-029",
   "pendingAcceptance": "IMP-028D",
   "governanceHealth": "ALIGNED",
-  "lastReviewed": "2026-08-20"
+  "lastReviewed": "2026-08-21"
 }
 -->
 
@@ -31,7 +31,7 @@ Accepted Range:            IMP-001 → IMP-028C (including IMP-005A and IMP-026C
 Current Product Implementation: IMP-028D — Desktop Ordering Continuity
 Pending Acceptance:             IMP-028D
 Next Product Slice:             IMP-029 — Operations Console API
-Current Governance Activity:    IMP-028D Desktop Ordering Continuity ARCHITECTURE_LOCKED / AUTHORIZED / STARTED / COMPLETE / IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE; founder UAT PENDING; IMP-028C remains COMPLETE_AND_ACCEPTED; IMP-029 PLANNED / NOT_STARTED / NOT_AUTHORIZED; D-371 UNUSED
+Current Governance Activity:    IMP-028D Desktop Ordering Continuity ARCHITECTURE_LOCKED / AUTHORIZED / STARTED / COMPLETE / IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE; prior founder UAT FAIL preserved; new founder UAT PENDING; IMP-028C remains COMPLETE_AND_ACCEPTED; IMP-029 PLANNED / NOT_STARTED / NOT_AUTHORIZED; D-371 UNUSED
 Governance Health:              ALIGNED
 ```
 
@@ -188,11 +188,41 @@ STATE-R36 record IMP-028B canonical activation without changing decision registe
 architecture. GTM-R39 / STATE-R37 record IMP-028B architecture lock and implementation
 authorization without changing decision register or global architecture.
 
+STATE-R52 records the final customer-copy correction in the completed IMP-028D rework: delivery-PIN
+result copy no longer exposes checkout implementation wording. The exact updated rework tip was
+revalidated before the next UAT candidate is built. Current lifecycle remains
+`IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` with `pendingAcceptance = IMP-028D`; the prior UAT
+FAIL remains preserved and the new Founder UAT is PENDING. No acceptance is claimed. Supersedes
+STATE-R51 for the current IMP-028D implementation evidence only; product acceptance through
+IMP-028C, IMP-029 status, and D-371 remain unchanged.
+
+STATE-R51 records deterministic completion of the bounded IMP-028D Founder-UAT rework.
+Architecture remains `ARCHITECTURE_LOCKED`; implementation is `AUTHORIZED` / `STARTED` /
+`COMPLETE` (`IMP-028D_IMPLEMENTATION_COMPLETE: YES`; `IMP-028D_ACCEPTED: NO`); lifecycle is
+`IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`. `acceptedThrough` remains IMP-028C;
+`currentProductSlice` remains IMP-028D; `pendingAcceptance` becomes IMP-028D; and
+`nextProductSlice` remains IMP-029. The prior Founder UAT FAIL remains preserved; new founder UAT
+is PENDING and has not been performed or passed. D-371 remains unused; IMP-029 remains planned,
+not started, and not authorized. This record does not claim acceptance. Supersedes STATE-R50 for
+the current IMP-028D lifecycle position.
+
+STATE-R50 records the Founder UAT **FAIL** for IMP-028D against frozen candidate source
+`38fa04db9d81e47efeb0702037a0e7ee9371a28d` / tree
+`c91e51150461251470791f830293e49931f91cfa` (UAT project `boba-bear-imp028d-uat`, URL
+`http://127.0.0.1:18084`, freeze `2026-08-20T18:38:17Z`, Podman runtime overlay SHA256
+`6d830835924027e719516de1d7aa41b7545965b8c7705298924b3bf3f3eb21ec). The failure is factual
+rework evidence, not acceptance. IMP-028D returns to `IMPLEMENTATION_IN_PROGRESS`; architecture
+remains `ARCHITECTURE_LOCKED`; implementation remains `AUTHORIZED` / `STARTED` with
+`IMP-028D_IMPLEMENTATION_COMPLETE: NO`; `IMP-028D_ACCEPTED: NO`. `acceptedThrough` remains
+IMP-028C; `currentProductSlice` remains IMP-028D; `pendingAcceptance` is NONE; and
+`nextProductSlice` remains IMP-029. A new exact candidate and founder UAT are required before any
+acceptance reconciliation. D-371 remains unused; IMP-029 remains planned, not started, and not
+authorized. Supersedes STATE-R49 for the current IMP-028D lifecycle position.
+
 STATE-R49 records IMP-028D — Desktop Ordering Continuity implementation complete pending
 independent acceptance and required founder UAT. Architecture remains `ARCHITECTURE_LOCKED`;
-implementation is `AUTHORIZED` / `STARTED` / `COMPLETE`
-(`IMP-028D_IMPLEMENTATION_AUTHORIZED: YES`; `IMP-028D_IMPLEMENTATION_STARTED: YES`;
-`IMP-028D_IMPLEMENTATION_COMPLETE: YES`; `IMP-028D_ACCEPTED: NO`); lifecycle is
+implementation was recorded as `AUTHORIZED` / `STARTED` / `COMPLETE` before the founder-UAT
+rework (the completion is superseded by STATE-R50; `IMP-028D_ACCEPTED: NO`); lifecycle was
 `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`. `acceptedThrough` remains IMP-028C;
 `currentProductSlice` remains IMP-028D; `pendingAcceptance` becomes IMP-028D; and
 `nextProductSlice` remains IMP-029. `IMP-028D_FOUNDER_UAT_REQUIRED: YES`; founder UAT is

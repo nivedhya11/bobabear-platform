@@ -487,18 +487,15 @@ export function OrderingCatalogClient(props: { brandId: string }) {
     <main id="main-content" tabIndex={-1} className="bg-[var(--bg-page)] focus:outline-none">
       <div
         data-testid="desktop-ordering-shell"
-        className="mx-auto max-w-[1280px] px-5 py-12 md:py-16 flex flex-col gap-6 pb-28 md:pb-16 xl:pb-16"
+        className="mx-auto max-w-[1440px] px-5 py-6 md:py-8 flex flex-col gap-5 pb-28 md:pb-12 xl:pb-12"
       >
-        <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between xl:col-span-3">
+        <header className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between xl:col-span-3">
           <div className="flex flex-col gap-2">
-            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
-              Boba Bear · Owned ordering
-            </p>
-            <h1 className="font-display text-[clamp(36px,8vw,64px)] leading-[0.95] text-[var(--text-primary)]">
+            <h1 className="font-display text-[clamp(36px,5vw,52px)] leading-[0.95] text-[var(--text-primary)]">
               Menu
             </h1>
-            <p className="font-body text-[15px] text-[var(--text-secondary)] max-w-[40rem]">
-              Add items to your cart. You’ll see the final total at checkout before payment.
+            <p className="font-body text-[15px] text-[var(--text-secondary)]">
+              Pick your favourites.
             </p>
           </div>
           <Button
@@ -534,10 +531,10 @@ export function OrderingCatalogClient(props: { brandId: string }) {
           </p>
         ) : null}
 
-        <div className="xl:grid xl:grid-cols-[12rem_minmax(0,1fr)_18rem] xl:gap-8 xl:items-start">
+        <div className="xl:grid xl:grid-cols-[13rem_minmax(0,1fr)_22rem] xl:gap-6 xl:items-start">
           <aside className="hidden xl:block">{renderCategoryNav("vertical")}</aside>
 
-          <div className="flex flex-col gap-8 min-w-0">
+          <div data-testid="desktop-menu" className="flex flex-col gap-8 min-w-0">
             {groups.map((group) => (
               <section
                 key={group.id}
@@ -557,7 +554,7 @@ export function OrderingCatalogClient(props: { brandId: string }) {
                       {sub.name}
                     </h3>
                     <ul
-                      className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1 gap-0 xl:gap-0 md:gap-3"
+                      className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"
                       role="list"
                     >
                       {sub.items.map((item) => {
@@ -567,7 +564,7 @@ export function OrderingCatalogClient(props: { brandId: string }) {
                           <MenuItemRow
                             key={`${item.productId}-${item.variantId}`}
                             item={item}
-                            layout="row"
+                            layout="card"
                             quantityInCart={inCart?.quantity}
                             busy={busy}
                             onAdd={(next) => void addItem(next)}
@@ -589,7 +586,7 @@ export function OrderingCatalogClient(props: { brandId: string }) {
           >
             <div className="flex flex-col gap-3">
               <div className="flex items-baseline justify-between gap-2">
-                <h2 className="font-display text-[22px] text-[var(--text-primary)]">Cart</h2>
+                <h2 className="font-display text-[22px] text-[var(--text-primary)]">Your cart</h2>
                 <a
                   href="/order/cart/"
                   className="font-body text-[12px] text-[var(--interactive-secondary)] underline-offset-2 hover:underline"
@@ -599,7 +596,7 @@ export function OrderingCatalogClient(props: { brandId: string }) {
               </div>
               {lineCount === 0 ? (
                 <p className="font-body text-[14px] text-[var(--text-secondary)]">
-                  Add something from the menu.
+                  Your cart is empty. Add something from the menu.
                 </p>
               ) : (
                 <>

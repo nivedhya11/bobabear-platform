@@ -14,11 +14,11 @@ export function deliverToOperatingAreaLocality(): string {
 }
 
 export function deliverToOrientationBody(): string {
-  return `We operate in ${BUSINESS.locality}. Your exact PIN is confirmed at checkout — we won't claim delivery until then.`;
+  return `Check your PIN for delivery availability in ${BUSINESS.locality}.`;
 }
 
 export function deliverToPinHint(): string {
-  return "Optional: enter your PIN to check if we might deliver there. Checkout still confirms.";
+  return "Enter your PIN to check delivery availability.";
 }
 
 export function cartEvaluationCustomerCopy(
@@ -27,15 +27,15 @@ export function cartEvaluationCustomerCopy(
 ): string | null {
   if (!evaluation) {
     return hasPin
-      ? "We'll confirm this PIN at checkout before you pay."
+      ? "We’ll check this PIN before you pay."
       : null;
   }
 
   switch (evaluation.status) {
     case "COMPLETE":
-      return "This PIN looks deliverable. Checkout will confirm before you pay.";
+      return "This PIN looks deliverable.";
     case "REQUIRES_FULFILMENT_CONTEXT":
-      return "Add your PIN at checkout to confirm delivery.";
+      return "Add your PIN to check delivery availability.";
     case "SERVICEABILITY_NOT_SERVICEABLE":
       return "We don't deliver to that PIN yet. You can still browse and update your PIN.";
     case "SERVICEABILITY_TEMPORARILY_UNAVAILABLE":
@@ -44,6 +44,6 @@ export function cartEvaluationCustomerCopy(
     case "EVALUATION_INDETERMINATE":
       return "We couldn't confirm delivery for that PIN. Try again shortly.";
     default:
-      return "Delivery is confirmed at checkout.";
+      return "Please check this PIN again.";
   }
 }

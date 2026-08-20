@@ -7,7 +7,7 @@
   "architectureLock": "ARCHITECTURE_LOCKED",
   "implementation": "IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE",
   "implementationAuthorized": true,
-  "lastReviewed": "2026-08-20",
+  "lastReviewed": "2026-08-21",
   "bindingDecisions": ["D-368", "D-369", "D-370"],
   "dependsOn": ["IMP-025", "IMP-026C", "IMP-028A", "IMP-028B", "IMP-028C"]
 }
@@ -115,7 +115,45 @@ product implementation. Before founder UAT, PROCESS-HARDENING-B and the exact-ca
 requirements in `AGENTS.md` apply. A persistence, API, authority, or decision need is a
 `DECISION_REQUIRED` stop; D-371 must not be allocated.
 
-## Technical completion evidence
+## Founder UAT failure and rework evidence
+
+Founder UAT failed on 2026-08-21. The failed candidate remains reconstructible and is not claimed
+as passed:
+
+```text
+FOUNDER_UAT_REQUIRED: YES
+FOUNDER_UAT: FAIL
+FOUNDER_UAT_CANDIDATE_HEAD: 38fa04db9d81e47efeb0702037a0e7ee9371a28d
+FOUNDER_UAT_CANDIDATE_TREE: c91e51150461251470791f830293e49931f91cfa
+FOUNDER_UAT_PROJECT: boba-bear-imp028d-uat
+FOUNDER_UAT_URL: http://127.0.0.1:18084
+FOUNDER_UAT_FREEZE_TIMESTAMP: 2026-08-20T18:38:17Z
+FOUNDER_UAT_NGINX_OVERLAY_SHA256: 6d830835924027e719516de1d7aa41b7545965b8c7705298924b3bf3f3eb21ec
+```
+
+The failure concerns the XL ordering presentation: absent effective three-zone continuity, sparse
+product merchandising, dominant serviceability treatment, and customer-visible engineering copy.
+The completed rework preserves this failure. A new, freshly built UAT candidate is still required
+before Founder UAT can proceed.
+
+## Rework technical completion evidence
+
+```text
+REWORK_IMPLEMENTATION_COMMIT: 5327958
+REWORK_VALIDATION: OrderingCatalogClient, serviceability-copy, cart-presentation, Cart, and ordering component suites PASS (110 tests)
+REWORK_TYPECHECK: PASS
+REWORK_LINT: PASS_WITH_PRE_EXISTING_WARNINGS
+REWORK_PRODUCTION_BUILD: PASS
+REWORK_PROJECT_CONSISTENCY: PASS
+REWORK_GOVERNANCE_FINGERPRINT: ad93d75341234a7cf6ee0c472f7e687d762535cec84ebc578a66c71a7f97490d
+FOUNDER_UAT_REQUIRED: YES
+FOUNDER_UAT: PENDING
+```
+
+The rework is implementation-complete pending independent technical acceptance, CI, a fresh exact
+candidate deployment, and Founder UAT. It is not accepted.
+
+## Prior technical completion evidence
 
 IMP-028D implementation is complete pending independent acceptance and founder UAT; it is not
 accepted. The recorded implementation/promotion evidence is:

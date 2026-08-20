@@ -6,7 +6,6 @@ import {
   deliverToOrientationBody,
   deliverToPinHint,
 } from "@/components/ordering/serviceability-copy";
-import { BUSINESS } from "@/lib/site";
 
 export function DeliverToOrientation(props: {
   postalCode: string;
@@ -18,41 +17,44 @@ export function DeliverToOrientation(props: {
   return (
     <section
       aria-labelledby="deliver-to-heading"
-      className="border border-[var(--border-default)] bg-[var(--bg-section)] p-4 flex flex-col gap-3"
+      className="flex flex-wrap items-center gap-x-3 gap-y-2 border-y border-[var(--border-default)] py-3"
       data-testid="deliver-to-orientation"
     >
-      <div className="flex flex-col gap-1">
+      <div className="flex items-baseline gap-2">
         <p
           id="deliver-to-heading"
-          className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--text-tertiary)]"
+          className="font-body text-[14px] text-[var(--text-secondary)]"
         >
           {deliverToOperatingAreaHeading()}
         </p>
-        <p className="font-display text-[28px] leading-none text-[var(--text-primary)]">
+        <p className="font-display text-[20px] leading-none text-[var(--text-primary)]">
           {deliverToOperatingAreaLocality()}
         </p>
-        <p className="font-body text-[14px] text-[var(--text-secondary)]">
-          {deliverToOrientationBody()} Open {BUSINESS.hoursDisplay}, every day.
+      </div>
+      <details className="font-body text-[13px] text-[var(--text-secondary)]">
+        <summary className="cursor-pointer text-[var(--interactive-secondary)] underline-offset-2 hover:underline">
+          Check delivery PIN
+        </summary>
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+          <label htmlFor="menu-delivery-pin" className="font-body text-[13px] font-semibold">
+            Delivery PIN
+          </label>
+          <input
+            id="menu-delivery-pin"
+            type="text"
+            inputMode="numeric"
+            autoComplete="postal-code"
+            maxLength={6}
+            placeholder="6-digit PIN"
+            value={postalCode}
+            onChange={(event) => onPostalCodeChange(event.target.value.replace(/\D/g, "").slice(0, 6))}
+            className="font-body text-[15px] border border-[var(--border-default)] bg-[var(--bg-page)] px-3 py-2 min-h-[44px] rounded-md"
+          />
+        </div>
+        <p className="mt-2 font-body text-[12px] text-[var(--text-tertiary)]">
+          {deliverToOrientationBody()} {deliverToPinHint()}
         </p>
-      </div>
-
-      <div className="flex flex-col gap-1">
-        <label htmlFor="menu-delivery-pin" className="font-body text-[13px] font-semibold">
-          Delivery PIN (optional)
-        </label>
-        <input
-          id="menu-delivery-pin"
-          type="text"
-          inputMode="numeric"
-          autoComplete="postal-code"
-          maxLength={6}
-          placeholder="6-digit PIN"
-          value={postalCode}
-          onChange={(event) => onPostalCodeChange(event.target.value.replace(/\D/g, "").slice(0, 6))}
-          className="font-body text-[15px] border border-[var(--border-default)] bg-[var(--bg-page)] px-3 py-2 min-h-[44px] rounded-md"
-        />
-        <p className="font-body text-[12px] text-[var(--text-tertiary)]">{deliverToPinHint()}</p>
-      </div>
+      </details>
 
       {serviceabilityNote ? (
         <p role="status" className="font-body text-[13px] text-[var(--text-secondary)]">
