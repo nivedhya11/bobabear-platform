@@ -5,7 +5,7 @@
   "capability": "IMP-028D",
   "title": "Desktop Ordering Continuity",
   "architectureLock": "ARCHITECTURE_LOCKED",
-  "implementation": "IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE",
+  "implementation": "IMPLEMENTATION_IN_PROGRESS",
   "implementationAuthorized": true,
   "lastReviewed": "2026-08-21",
   "bindingDecisions": ["D-368", "D-369", "D-370"],
@@ -25,8 +25,8 @@ persistence, schema, migration, API, or runtime topology. D-371 remains unused.
 | Field | Value |
 |---|---|
 | Placement | After accepted IMP-028C and before planned IMP-029 |
-| Lifecycle | `ARCHITECTURE_LOCKED` / `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` |
-| Implementation | `AUTHORIZED` / `STARTED` / `COMPLETE` |
+| Lifecycle | `ARCHITECTURE_LOCKED` / `IMPLEMENTATION_IN_PROGRESS` |
+| Implementation | `AUTHORIZED` / `STARTED` / `IN_PROGRESS` |
 | Founder UAT required at acceptance | **YES** |
 | Schema / migration / new authority | **NO** / **NO** / **NO** |
 
@@ -34,7 +34,7 @@ persistence, schema, migration, API, or runtime topology. D-371 remains unused.
 IMP-028D_ARCHITECTURE_LOCKED: YES
 IMP-028D_IMPLEMENTATION_AUTHORIZED: YES
 IMP-028D_IMPLEMENTATION_STARTED: YES
-IMP-028D_IMPLEMENTATION_COMPLETE: YES
+IMP-028D_IMPLEMENTATION_COMPLETE: NO
 IMP-028D_ACCEPTED: NO
 IMP-028D_FOUNDER_UAT_REQUIRED: YES
 IMP-028D_FOUNDER_UAT: PENDING
@@ -70,19 +70,28 @@ an IMP or authorize implementation.
 
 When separately authorized, IMP-028D may implement only:
 
-1. An XL desktop three-zone ordering shell: sticky category rail, normal document-scrolling Menu,
-   and sticky live Cart.
-2. Exactly one natural document scroll; no independently scrolling category, Menu, or Cart pane.
-3. IntersectionObserver category scroll spy and accessible category navigation to Menu sections.
-4. Compact, scannable desktop Menu presentation while preserving existing Add and Customize flows.
+1. An XL desktop three-zone ordering shell: selected-category rail, selected-category Menu, and
+   sticky live Cart.
+2. A center catalogue that renders only the explicitly selected root category.
+3. Accessible root-category navigation driven by explicit selection state, without a root-category
+   `IntersectionObserver` scroll-spy requirement.
+4. Compact, scannable Menu cards with a consistent `Add +` primary action and a secondary
+   `Customisable` label for configurable products; `Add +` opens the existing configurator when
+   configuration is supported or required.
 5. A desktop live Cart that reuses existing Cart authority and mutations, including configured
    modifier visibility.
-6. Safe Cart display-price copy: `Estimated subtotal` only when the presentation is fully
+6. A bounded desktop Cart whose item list may independently scroll when required while its header,
+   safe subtotal presentation, and Checkout action remain visible. This Cart item list is the sole
+   permitted nested vertical scroll region; category rail and Menu remain in normal document flow.
+7. Tablet and mobile horizontal selected-category navigation with the existing persistent/bottom
+   Cart continuity pattern and without the XL side rails.
+8. Safe Cart display-price copy: `Estimated subtotal` only when the presentation is fully
    resolvable; otherwise `Total shown at checkout`.
-7. Consumer-copy cleanup only on affected Menu and Cart surfaces, responsive tablet behavior, and
-   retention of the existing mobile sticky Cart pattern.
-8. Accessibility and modest image/performance improvements directly required by the changed
-   ordering presentation.
+9. Accessibility, responsive layout, and visual presentation governed by
+   [`../experience/IMP-028D-ordering-ui-design-lock-RC1.md`](../experience/IMP-028D-ordering-ui-design-lock-RC1.md)
+   and its approved composite reference.
+10. Consumer-copy cleanup and modest image/performance improvements directly required by the
+    changed ordering presentation.
 
 ## Explicit non-goals
 
@@ -95,15 +104,15 @@ migration, pricing authority, or geospatial Serviceability are out of scope.
 
 | ID | Requirement |
 |---|---|
-| AC01 | At XL, the category rail and live Cart remain visible while the central Menu uses one browser document scroll. |
-| AC02 | The slice adds no nested independently scrolling category, Menu, or Cart pane. |
-| AC03 | Active category follows the Menu section in view; category activation reaches its associated section without a motion-only dependency. |
+| AC01 | At XL, the category rail and live Cart remain available while the center catalogue shows the selected root category. |
+| AC02 | Category rail and center Menu do not create nested independent vertical scroll panes. The bounded Cart item list is the sole permitted nested vertical scroll region; Cart header and summary/Checkout remain visible. |
+| AC03 | The active category is the explicitly selected root category. Activating a category replaces the center catalogue with that category's items and does not depend on motion or scroll position. |
 | AC04 | Keyboard users can reach categories, products, Cart actions, and any Cart overlay logically, with visible focus and no focus loss/trap. |
-| AC05 | Add, quantity, Customize, configured-line, and Cart navigation behavior continue through existing Cart paths and submit no client price or new commercial field. |
-| AC06 | Tablet retains usable category and Cart access; mobile retains the persistent bottom-Cart pattern and does not render the XL shell. |
+| AC05 | Existing Cart paths remain authoritative. Menu product cards use `Add +`; configurable items open the existing customization flow. No client price or new commercial field is introduced. |
+| AC06 | Tablet and mobile retain usable horizontal selected-category navigation and persistent/bottom Cart continuity without rendering the XL side rails. |
 | AC07 | A numeric Cart presentation is labelled `Estimated subtotal` only when fully resolvable; unresolved presentation uses `Total shown at checkout` and never implies final payable truth. |
 | AC08 | Changed layouts have no horizontal page overflow at tested desktop/tablet/mobile viewports and retain usable targets and contrast. |
-| AC09 | Scroll-spy work is bounded to visible Menu sections, does not add a Menu authority or blocking full-menu refetch, and does not observably slow focused Cart mutation or initial Menu load. |
+| AC09 | Selected-category switching uses the already-loaded D-368 Menu projection where possible, does not add a Menu authority or blocking full-menu refetch on every selection, and does not observably slow Cart mutations or initial Menu load. |
 | AC10 | D-368, D-369, D-370, existing Cart authority, Checkout authority, and all explicit non-goals remain preserved. |
 | AC11 | Acceptance follows implementation, independent technical acceptance, exact-candidate fresh Docker deployment, and founder UAT PASS before canonical reconciliation. |
 
@@ -116,6 +125,18 @@ requirements in `AGENTS.md` apply. A persistence, API, authority, or decision ne
 `DECISION_REQUIRED` stop; D-371 must not be allocated.
 
 ## Founder UAT failure and rework evidence
+
+## RC1 capability amendment and implementation reopening
+
+Founder authorization on 2026-08-21 supersedes the prior IMP-028D all-sections/root-category
+scroll-spy presentation model with the explicit selected-category model documented above. It also
+authorizes the bounded Cart item-list scroll exception and the consistent `Add +` product-card
+contract. Global architecture remains ARCH-R15, the decision register remains DR-12, and D-371
+remains unused. Prior implementation and UAT evidence below is preserved as history.
+
+The RC1 material rework is `IMPLEMENTATION_IN_PROGRESS`: implementation remains authorized and
+started, `IMP-028D_IMPLEMENTATION_COMPLETE: NO`, `IMP-028D_ACCEPTED: NO`, and Founder UAT is
+PENDING / NOT RUN for RC1. Visual review is required before implementation completion is recorded.
 
 ## Technical pre-UAT blocker
 
