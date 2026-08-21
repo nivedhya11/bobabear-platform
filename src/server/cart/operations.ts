@@ -17,6 +17,7 @@ import {
   parseClearCartInput,
   parseRemoveCartCouponInput,
   parseRemoveCartLineInput,
+  parseExpectedRevision,
   parseSetCartLineQuantityInput,
   parseUpdateCartLineConfigurationInput,
   requireGuestCartTtlMs,
@@ -36,6 +37,9 @@ import {
 } from "./guest-credential";
 import {
   deleteAllCartLines,
+  appendCartLineUnits,
+  deleteNewestUnitForLine,
+  deleteNewestUnitForVariant,
   deleteCartLines,
   findCustomerCartRow,
   findGuestCartRowByVerifier,
@@ -46,6 +50,7 @@ import {
   lockCartForUpdate,
   lockCartLinesAscending,
   lockCustomerAuthUserForUpdate,
+  moveCartLineUnits,
   replaceCartLineConfiguration,
   setCartLineQuantityRow,
   updateCartHeader,
@@ -246,12 +251,14 @@ export async function addCartLine(
         );
       }
       await setCartLineQuantityRow(tx, equivalent.id, nextQty);
+      await appendCartLineUnits(tx, { cartId: row.id, cartLineId: equivalent.id, quantity: parsed.quantity });
     } else {
-      await insertCartLineWithConfiguration(tx, {
+      const lineId = await insertCartLineWithConfiguration(tx, {
         cartId: row.id,
         configuration: parsed.configuration,
         quantity: parsed.quantity,
       });
+      await appendCartLineUnits(tx, { cartId: row.id, cartLineId: lineId, quantity: parsed.quantity });
     }
 
     // Lazy create + first line is one logical mutation: revision stays at 1.
@@ -304,7 +311,46 @@ export async function setCartLineQuantity(
     if (line.quantity === parsed.quantity) {
       return cart; // no-op
     }
+    if (parsed.quantity > line.quantity) {
+      await appendCartLineUnits(tx, { cartId: row.id, cartLineId: line.id, quantity: parsed.quantity - line.quantity });
+    } else {
+      for (let i = parsed.quantity; i < line.quantity; i += 1) await deleteNewestUnitForLine(tx, line.id);
+    }
     await setCartLineQuantityRow(tx, line.id, parsed.quantity);
+    await bumpMaterialMutation(tx, row, access, now, options.policy);
+    const refreshed = await lockCartForUpdate(tx, row.id);
+    return loadCartAggregate(tx, refreshed!);
+  });
+}
+
+export async function decrementLatestCartVariant(
+  persistence: Persistence,
+  access: CartAccess,
+  input: unknown,
+  options: CartOperationOptions = {},
+): Promise<Cart> {
+  const clock = options.clock ?? systemCartClock;
+  const now = clock.now();
+  assertBrandId(access.brandId);
+  if (typeof input !== "object" || input === null || Array.isArray(input)) {
+    throw new CartError("CART_INVALID_INPUT", "decrementLatestCartVariant input invalid.");
+  }
+  const value = input as Record<string, unknown>;
+  if (Object.keys(value).some((key) => key !== "variantId" && key !== "expectedRevision")) {
+    throw new CartError("CART_INVALID_INPUT", "Unknown decrementLatestCartVariant field.");
+  }
+  const variantId = assertUuid(value.variantId, "variantId");
+  const expectedRevision = parseExpectedRevision(value.expectedRevision);
+  return persistence.transaction(async (tx) => {
+    const row = await lockAuthorizedCart(tx, access, now, expectedRevision);
+    await lockCartLinesAscending(tx, row.id);
+    const cart = await loadCartAggregate(tx, row);
+    const lineId = await deleteNewestUnitForVariant(tx, row.id, variantId);
+    if (!lineId) throw new CartError("CART_LINE_NOT_FOUND", "Cart item not found.");
+    const line = cart.lines.find((entry) => entry.id === lineId);
+    if (!line) throw new Error("D-371 invariant violation: unit references missing Cart line.");
+    if (line.quantity === 1) await deleteCartLines(tx, [line.id]);
+    else await setCartLineQuantityRow(tx, line.id, line.quantity - 1);
     await bumpMaterialMutation(tx, row, access, now, options.policy);
     const refreshed = await lockCartForUpdate(tx, row.id);
     return loadCartAggregate(tx, refreshed!);
@@ -357,6 +403,7 @@ export async function updateCartLineConfiguration(
         );
       }
       await setCartLineQuantityRow(tx, equivalent.id, nextQty);
+      await moveCartLineUnits(tx, { fromCartId: row.id, fromLineId: line.id, toCartId: row.id, toLineId: equivalent.id });
       await deleteCartLines(tx, [line.id]);
     } else {
       await replaceCartLineConfiguration(tx, line.id, parsed.configuration);

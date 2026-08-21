@@ -20,6 +20,7 @@ export {
   addCartLine,
   claimGuestCart,
   clearCart,
+  decrementLatestCartVariant,
   evaluateCart,
   getActiveCart,
   reconcileGuestCart,

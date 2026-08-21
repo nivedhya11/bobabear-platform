@@ -151,6 +151,11 @@
       "tag": "0029_refund_statutory_issuance_allocation",
       "path": "drizzle/0029_refund_statutory_issuance_allocation.sql",
       "sha256": "b528a71a0555ef863f819cb6dcfb6e15a3b136b6d972ae13d0e7a9a7f83ccf14"
+    },
+    {
+      "tag": "0030_cart_unit_sequence",
+      "path": "drizzle/0030_cart_unit_sequence.sql",
+      "sha256": "ed3416cf5756f9afd92bc03566be5f9b499e74ba68e33330a4ef699ecc013828"
     }
   ]
 }

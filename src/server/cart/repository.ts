@@ -5,7 +5,7 @@
  * Ownership ops: lock customer_auth_users FOR UPDATE first, then carts by id ASC.
  */
 
-import { and, asc, eq, inArray, isNotNull, lt } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNotNull, lt } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 
 import { customerAuthUsers } from "../../platform/database/schema/customer-auth";
@@ -14,6 +14,7 @@ import {
   cartLineBundleSelectionsTable,
   cartLineModifierSelectionsTable,
   cartLinesTable,
+  cartLineUnitsTable,
   cartsTable,
 } from "../../platform/database/schema/cart";
 import type {
@@ -391,6 +392,66 @@ export async function setCartLineQuantityRow(
     .update(cartLinesTable)
     .set({ quantity })
     .where(eq(cartLinesTable.id, lineId));
+}
+
+export async function appendCartLineUnits(
+  context: PersistenceTransactionContext,
+  input: { cartId: string; cartLineId: string; quantity: number },
+): Promise<void> {
+  assertTransactionContext(context, "appendCartLineUnits");
+  if (input.quantity === 0) return;
+  await context.db.insert(cartLineUnitsTable).values(
+    Array.from({ length: input.quantity }, () => ({
+      cartId: input.cartId,
+      cartLineId: input.cartLineId,
+    })),
+  );
+}
+
+export async function deleteNewestUnitForLine(
+  context: PersistenceTransactionContext,
+  lineId: string,
+): Promise<void> {
+  assertTransactionContext(context, "deleteNewestUnitForLine");
+  const [unit] = await context.db
+    .select({ ordinal: cartLineUnitsTable.ordinal })
+    .from(cartLineUnitsTable)
+    .where(eq(cartLineUnitsTable.cartLineId, lineId))
+    .orderBy(desc(cartLineUnitsTable.ordinal))
+    .limit(1)
+    .for("update");
+  if (!unit) throw new Error("D-371 invariant violation: Cart line has no active unit.");
+  await context.db.delete(cartLineUnitsTable).where(eq(cartLineUnitsTable.ordinal, unit.ordinal));
+}
+
+export async function deleteNewestUnitForVariant(
+  context: PersistenceTransactionContext,
+  cartId: string,
+  variantId: string,
+): Promise<string | null> {
+  assertTransactionContext(context, "deleteNewestUnitForVariant");
+  const [unit] = await context.db
+    .select({ ordinal: cartLineUnitsTable.ordinal, cartLineId: cartLineUnitsTable.cartLineId })
+    .from(cartLineUnitsTable)
+    .innerJoin(cartLinesTable, eq(cartLineUnitsTable.cartLineId, cartLinesTable.id))
+    .where(and(eq(cartLineUnitsTable.cartId, cartId), eq(cartLinesTable.variantId, variantId)))
+    .orderBy(desc(cartLineUnitsTable.ordinal))
+    .limit(1)
+    .for("update");
+  if (!unit) return null;
+  await context.db.delete(cartLineUnitsTable).where(eq(cartLineUnitsTable.ordinal, unit.ordinal));
+  return unit.cartLineId;
+}
+
+export async function moveCartLineUnits(
+  context: PersistenceTransactionContext,
+  input: { fromCartId: string; fromLineId: string; toCartId: string; toLineId: string },
+): Promise<void> {
+  assertTransactionContext(context, "moveCartLineUnits");
+  await context.db
+    .update(cartLineUnitsTable)
+    .set({ cartId: input.toCartId, cartLineId: input.toLineId })
+    .where(and(eq(cartLineUnitsTable.cartId, input.fromCartId), eq(cartLineUnitsTable.cartLineId, input.fromLineId)));
 }
 
 export async function deleteCartLines(
