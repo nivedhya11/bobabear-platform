@@ -1443,7 +1443,7 @@ function checkDecisionRegister(decision) {
     }
   }
 
-  for (const id of ["D-356", "D-357", "D-358", "D-359", "D-360", "D-361", "D-362", "D-363", "D-364", "D-365", "D-366", "D-367", "D-368", "D-369", "D-370"]) {
+  for (const id of ["D-356", "D-357", "D-358", "D-359", "D-360", "D-361", "D-362", "D-363", "D-364", "D-365", "D-366", "D-367", "D-368", "D-369", "D-370", "D-371"]) {
     if (!seen.has(id)) {
       fail("DECISION_REQUIRED_IDS", `DECISION-REGISTER must register ${id}`);
     }
@@ -1512,10 +1512,10 @@ function checkDecisionRegister(decision) {
       "D-364 must lock Refund Foundation independent of Payment SUCCEEDED collection truth for IMP-027",
     );
   }
-  if (!/D-371/.test(text)) {
-    fail("NEXT_DECISION_ID", "Decision register must advance next free ID to D-371 after D-370");
+  if (!/D-372/.test(text)) {
+    fail("NEXT_DECISION_ID", "Decision register must advance next free ID to D-372 after D-371");
   } else {
-    note("Next free decision ID D-371 recorded");
+    note("Next free decision ID D-372 recorded");
   }
   if (d359Row && d360Row) {
     note("D-359 and D-360 registered as CURRENT");
@@ -1660,6 +1660,12 @@ function checkDecisionRegister(decision) {
   }
   if (d370Row && /\|\s*CURRENT\s*\|/.test(d370Row) && /purchase intent/.test(d370Row)) {
     note("D-370 registered as CURRENT (Cart Identity Transition Authority)");
+  }
+  const d371Row = [...globalSection.split("\n")].find((line) => /^\|\s*D-371\s*\|/.test(line));
+  if (!d371Row || !/\|\s*CURRENT\s*\|/.test(d371Row) || !/unit-sequence/.test(d371Row) || !/D-370/.test(d371Row)) {
+    fail("D371_CONTRACT", "D-371 must be CURRENT and lock durable unit-sequence authority composed with D-370");
+  } else {
+    note("D-371 registered as CURRENT (Durable Cart Unit Sequence Authority)");
   }
 }
 
@@ -2990,10 +2996,10 @@ function checkImp028ArchitectureLock(roadmap, state, architecture, decision) {
     } else {
       note("ARCHITECTURE.md records ARCH-G16 / ARCH-G17 / ARCH-G18 / D-365 / D-366 / D-367");
     }
-    if (architecture.meta.architectureVersion !== "ARCH-R15") {
+    if (architecture.meta.architectureVersion !== "ARCH-R16") {
       fail(
         "IMP028_ARCH_VERSION",
-        `ARCHITECTURE must be ARCH-R15 after D-370 Cart Identity Transition lock, got ${architecture.meta.architectureVersion}`,
+        `ARCHITECTURE must be ARCH-R16 after D-371 Durable Cart Unit Sequence lock, got ${architecture.meta.architectureVersion}`,
       );
     }
     if (!/ARCH-G19/.test(architecture.text) || !/D-368/.test(architecture.text)) {
@@ -3020,13 +3026,18 @@ function checkImp028ArchitectureLock(roadmap, state, architecture, decision) {
     } else {
       note("ARCHITECTURE.md records ARCH-G21 / D-370");
     }
+    if (!/ARCH-G22/.test(architecture.text) || !/D-371/.test(architecture.text)) {
+      fail("D371_ARCH_INVARIANTS", "ARCHITECTURE.md must record ARCH-G22 and D-371 for Durable Cart Unit Sequence Authority");
+    } else {
+      note("ARCHITECTURE.md records ARCH-G22 / D-371");
+    }
   }
 
   if (decision) {
-    if (decision.meta.decisionRegisterVersion !== "DR-12") {
+    if (decision.meta.decisionRegisterVersion !== "DR-13") {
       fail(
         "IMP028_DR_VERSION",
-        `Decision register must be DR-12 after D-370, got ${decision.meta.decisionRegisterVersion}`,
+        `Decision register must be DR-13 after D-371, got ${decision.meta.decisionRegisterVersion}`,
       );
     }
   }

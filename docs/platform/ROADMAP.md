@@ -2,7 +2,7 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R58",
+  "roadmapVersion": "GTM-R59",
   "acceptedThrough": "IMP-028C",
   "currentProductSlice": "IMP-028D",
   "nextProductSlice": "IMP-029",
@@ -990,6 +990,18 @@ Historical GTM-R1 meanings that are **not** current:
 Current public GTM boundary is **IMP-040**, not IMP-035.
 
 ## 9. Roadmap Change Log
+
+### GTM-R59 — 2026-08-21
+
+- Registers D-371 Durable Cart Unit Sequence Authority and the bounded IMP-028D RC3 contract
+  amendment. It authorizes future durable internal per-unit Cart ordering, a forward-only migration,
+  and the minimum existing customer-commerce product-level decrement command/transport only.
+- RC3 implementation is **NOT_STARTED**. This governance decision does not alter the recorded RC1
+  implementation-complete-pending-acceptance evidence, accept IMP-028D, claim Founder UAT, start
+  IMP-029, or change pricing, Checkout, Payment, Order, Refund, auth, catalog, modifier semantics,
+  or topology.
+- Decision register becomes DR-13; global architecture becomes ARCH-R16 / ARCH-G22; next decision
+  ID is D-372. Supersedes GTM-R58 only for current decision/architecture references.
 
 ### GTM-R58 — 2026-08-21
 
