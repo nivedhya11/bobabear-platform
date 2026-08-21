@@ -2,7 +2,7 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R54",
+  "roadmapVersion": "GTM-R55",
   "acceptedThrough": "IMP-028C",
   "currentProductSlice": "IMP-028D",
   "nextProductSlice": "IMP-029",
@@ -265,7 +265,7 @@ IMP-028D locked capability architecture (architecture **ARCHITECTURE_LOCKED**; i
 Accepted Through:     IMP-028C — Food Customization
 Current Product Slice: IMP-028D — Desktop Ordering Continuity
 Next Product Slice:    IMP-029 — Operations Console API
-Pending Acceptance:    IMP-028D
+Pending Acceptance:    NONE
 Public GTM Boundary:   IMP-040 — Launch Validation & Cutover
 ```
 
@@ -444,13 +444,13 @@ only). Webhook acknowledgement timing / durable inbox / asynchronous Payment pro
 
 ```text
 IMP-028D — Desktop Ordering Continuity
-Lifecycle: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
+Lifecycle: IMPLEMENTATION_IN_PROGRESS
 Architecture: ARCHITECTURE_LOCKED
-Implementation: AUTHORIZED / STARTED / COMPLETE
+Implementation: AUTHORIZED / STARTED
 IMP-028D_ARCHITECTURE_LOCKED: YES
 IMP-028D_IMPLEMENTATION_AUTHORIZED: YES
 IMP-028D_IMPLEMENTATION_STARTED: YES
-IMP-028D_IMPLEMENTATION_COMPLETE: YES
+IMP-028D_IMPLEMENTATION_COMPLETE: NO
 IMP-028D_ACCEPTED: NO
 FOUNDER_UAT_REQUIRED: YES
 FOUNDER_UAT: PENDING
@@ -470,7 +470,7 @@ IMP-028B_IMPLEMENTATION_STARTED: YES
 IMP-028B_IMPLEMENTATION_COMPLETE: YES
 IMP-028B_ACCEPTED: YES
 Next product slice: IMP-029 — Operations Console API (PLANNED / NOT_STARTED / NOT_AUTHORIZED)
-Pending acceptance: IMP-028D
+Pending acceptance: NONE
 acceptedThrough: IMP-028C
 IMP-026C: COMPLETE_AND_ACCEPTED
 IMP-027: COMPLETE_AND_ACCEPTED
@@ -611,7 +611,7 @@ consume or remap IMP-029 → IMP-040 identities.
 
 | IMP | Capability | Lifecycle |
 |---|---|---|
-| IMP-028D | Desktop Ordering Continuity | IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE |
+| IMP-028D | Desktop Ordering Continuity | IMPLEMENTATION_IN_PROGRESS |
 | IMP-029 | Operations Console API | PLANNED |
 | IMP-030 | Operations Console UI | PLANNED |
 | IMP-031 | Provider-Neutral Delivery Foundation | PLANNED |
@@ -990,6 +990,22 @@ Historical GTM-R1 meanings that are **not** current:
 Current public GTM boundary is **IMP-040**, not IMP-035.
 
 ## 9. Roadmap Change Log
+
+### GTM-R55 — 2026-08-21
+
+- Reopens IMP-028D for an authorized, bounded technical correction after the UAT deployment at
+  `365019e0e64e2d855298c714d3c65671183303b1` reached healthy APIs but browser rendering failed
+  before freeze. The browser rejected `IntersectionObserver` `rootMargin: "-7rem 0px -55% 0px"`;
+  Founder UAT did not occur and this is not a Founder UAT failure.
+- Lifecycle returns to `IMPLEMENTATION_IN_PROGRESS`; architecture remains `ARCHITECTURE_LOCKED`;
+  implementation remains `AUTHORIZED` / `STARTED` with
+  `IMP-028D_IMPLEMENTATION_COMPLETE: NO`; `IMP-028D_ACCEPTED: NO`.
+- `acceptedThrough` remains IMP-028C; `currentProductSlice` remains IMP-028D;
+  `pendingAcceptance` returns to NONE; `nextProductSlice` remains IMP-029. No acceptance is claimed.
+- Does not authorize or start IMP-029, create D-371, or alter runtime topology, API, schema,
+  migration, pricing authority, decision register, or global architecture.
+- Supersedes GTM-R54 for the current IMP-028D lifecycle position. Product acceptance through
+  IMP-028C is unchanged.
 
 ### GTM-R54 — 2026-08-21
 

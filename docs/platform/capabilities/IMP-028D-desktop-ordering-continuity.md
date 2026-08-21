@@ -5,7 +5,7 @@
   "capability": "IMP-028D",
   "title": "Desktop Ordering Continuity",
   "architectureLock": "ARCHITECTURE_LOCKED",
-  "implementation": "IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE",
+  "implementation": "IMPLEMENTATION_IN_PROGRESS",
   "implementationAuthorized": true,
   "lastReviewed": "2026-08-21",
   "bindingDecisions": ["D-368", "D-369", "D-370"],
@@ -25,8 +25,8 @@ persistence, schema, migration, API, or runtime topology. D-371 remains unused.
 | Field | Value |
 |---|---|
 | Placement | After accepted IMP-028C and before planned IMP-029 |
-| Lifecycle | `ARCHITECTURE_LOCKED` / `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` |
-| Implementation | `AUTHORIZED` / `STARTED` / `COMPLETE` |
+| Lifecycle | `ARCHITECTURE_LOCKED` / `IMPLEMENTATION_IN_PROGRESS` |
+| Implementation | `AUTHORIZED` / `STARTED` |
 | Founder UAT required at acceptance | **YES** |
 | Schema / migration / new authority | **NO** / **NO** / **NO** |
 
@@ -34,7 +34,7 @@ persistence, schema, migration, API, or runtime topology. D-371 remains unused.
 IMP-028D_ARCHITECTURE_LOCKED: YES
 IMP-028D_IMPLEMENTATION_AUTHORIZED: YES
 IMP-028D_IMPLEMENTATION_STARTED: YES
-IMP-028D_IMPLEMENTATION_COMPLETE: YES
+IMP-028D_IMPLEMENTATION_COMPLETE: NO
 IMP-028D_ACCEPTED: NO
 IMP-028D_FOUNDER_UAT_REQUIRED: YES
 IMP-028D_FOUNDER_UAT: PENDING
@@ -116,6 +116,15 @@ requirements in `AGENTS.md` apply. A persistence, API, authority, or decision ne
 `DECISION_REQUIRED` stop; D-371 must not be allocated.
 
 ## Founder UAT failure and rework evidence
+
+## Technical pre-UAT blocker
+
+The UAT deployment from `365019e0e64e2d855298c714d3c65671183303b1` reached healthy APIs, but
+browser rendering failed before freeze because `IntersectionObserver` rejected
+`rootMargin: "-7rem 0px -55% 0px"`. Founder UAT did not occur; this is a technical pre-UAT blocker,
+not a Founder UAT failure. The bounded correction is to use browser-valid pixel/percent margin
+syntax while preserving the intended sticky-header offset. Implementation is reopened; no new
+authority, API, schema, migration, or UX capability is authorized.
 
 Founder UAT failed on 2026-08-21. The failed candidate remains reconstructible and is not claimed
 as passed:

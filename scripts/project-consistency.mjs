@@ -1356,14 +1356,22 @@ function checkRoadmapState(roadmap, state) {
     note("ROADMAP↔STATE lifecycle metadata aligned");
   }
 
+  const currentId = String(state.meta.currentProductSlice);
+  const currentImplementationComplete = new RegExp(
+    `^${currentId}_IMPLEMENTATION_COMPLETE:\\s*(YES|NO)\\s*$`,
+    "m",
+  ).exec(state.text)?.[1];
   const lifecycleFacts = [...idName.keys()].map((id) => ({
     id,
     accepted: new RegExp(`${id}_ACCEPTED:\\s*YES|${id}:\\s*COMPLETE_AND_ACCEPTED`).test(
       `${roadmap.text}\n${state.text}`,
     ),
-    implementationComplete: new RegExp(
-      `${id}_IMPLEMENTATION_COMPLETE:\\s*YES|${id}:\\s*COMPLETE_AND_ACCEPTED`,
-    ).test(`${roadmap.text}\n${state.text}`),
+    implementationComplete:
+      id === currentId && currentImplementationComplete
+        ? currentImplementationComplete === "YES"
+        : new RegExp(`${id}_IMPLEMENTATION_COMPLETE:\\s*YES|${id}:\\s*COMPLETE_AND_ACCEPTED`).test(
+            `${roadmap.text}\n${state.text}`,
+          ),
   }));
   const lifecycle = evaluateCapabilityLifecycle({
     acceptedThrough: String(state.meta.acceptedThrough),
