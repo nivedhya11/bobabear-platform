@@ -5,7 +5,7 @@
   "capability": "IMP-028D",
   "title": "Desktop Ordering Continuity",
   "architectureLock": "ARCHITECTURE_LOCKED",
-  "implementation": "IMPLEMENTATION_IN_PROGRESS",
+  "implementation": "IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE",
   "implementationAuthorized": true,
   "lastReviewed": "2026-08-21",
   "bindingDecisions": ["D-368", "D-369", "D-370"],
@@ -25,8 +25,8 @@ persistence, schema, migration, API, or runtime topology. D-371 remains unused.
 | Field | Value |
 |---|---|
 | Placement | After accepted IMP-028C and before planned IMP-029 |
-| Lifecycle | `ARCHITECTURE_LOCKED` / `IMPLEMENTATION_IN_PROGRESS` |
-| Implementation | `AUTHORIZED` / `STARTED` / `IN_PROGRESS` |
+| Lifecycle | `ARCHITECTURE_LOCKED` / `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` |
+| Implementation | `AUTHORIZED` / `STARTED` / `COMPLETE` |
 | Founder UAT required at acceptance | **YES** |
 | Schema / migration / new authority | **NO** / **NO** / **NO** |
 
@@ -34,7 +34,7 @@ persistence, schema, migration, API, or runtime topology. D-371 remains unused.
 IMP-028D_ARCHITECTURE_LOCKED: YES
 IMP-028D_IMPLEMENTATION_AUTHORIZED: YES
 IMP-028D_IMPLEMENTATION_STARTED: YES
-IMP-028D_IMPLEMENTATION_COMPLETE: NO
+IMP-028D_IMPLEMENTATION_COMPLETE: YES
 IMP-028D_ACCEPTED: NO
 IMP-028D_FOUNDER_UAT_REQUIRED: YES
 IMP-028D_FOUNDER_UAT: PENDING
@@ -134,9 +134,28 @@ authorizes the bounded Cart item-list scroll exception and the consistent `Add +
 contract. Global architecture remains ARCH-R15, the decision register remains DR-12, and D-371
 remains unused. Prior implementation and UAT evidence below is preserved as history.
 
-The RC1 material rework is `IMPLEMENTATION_IN_PROGRESS`: implementation remains authorized and
-started, `IMP-028D_IMPLEMENTATION_COMPLETE: NO`, `IMP-028D_ACCEPTED: NO`, and Founder UAT is
-PENDING / NOT RUN for RC1. Visual review is required before implementation completion is recorded.
+The RC1 material rework is `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`: implementation remains
+authorized, started, and complete, `IMP-028D_IMPLEMENTATION_COMPLETE: YES`,
+`IMP-028D_ACCEPTED: NO`, and Founder UAT is PENDING / NOT RUN for RC1. Visual review has passed;
+Founder UAT remains required before acceptance.
+
+## RC1 promotion evidence
+
+```text
+RC1_VISUAL_REVIEW: PASS
+RC1_FEATURE_COMMIT: 2a48e16fabc4b1fe9e86d23c6a3aad6d726b7e6e
+RC1_CI_RUN: 32458495599
+RC1_CI_RESULT: SUCCESS
+RC1_PR: #3
+RC1_MERGE_COMMIT: c4d262b78f3a7f65808155634cc2745236c38b7c
+FOUNDER_UAT_REQUIRED: YES
+FOUNDER_UAT: PENDING
+FOUNDER_UAT_COMPLETE: NO
+```
+
+RC1 implementation is complete and merged to `main`. This evidence does not claim a UAT build,
+deployment, Founder UAT result, or formal acceptance; the prior Founder UAT FAIL, technical pre-UAT
+blocker, and RC1 amendment history below remain preserved.
 
 ## Technical pre-UAT blocker
 
