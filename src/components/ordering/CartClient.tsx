@@ -287,7 +287,7 @@ export function CartClient(props: { brandId: string }) {
               Your cart is empty. Browse the menu to add something.
             </p>
             <Button asChild variant="primary">
-              <a href="/order">Back to menu</a>
+              <a href="/order/">Back to menu</a>
             </Button>
           </div>
         ) : null}
@@ -328,7 +328,7 @@ export function CartClient(props: { brandId: string }) {
               Clear cart
             </Button>
             <Button asChild variant="ghost">
-              <a href="/order">Keep browsing</a>
+              <a href="/order/">Keep browsing</a>
             </Button>
           </div>
         ) : null}

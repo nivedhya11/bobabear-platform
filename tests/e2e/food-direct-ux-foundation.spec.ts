@@ -16,9 +16,9 @@ test.describe("IMP-028A Food Direct UX Foundation chrome", () => {
     );
     await page.goto("/");
     const nav = page.getByRole("navigation", { name: "Main navigation" });
-    await expect(nav.getByRole("link", { name: "Menu" })).toHaveAttribute("href", "/order");
+    await expect(nav.getByRole("link", { name: "Menu" })).toHaveAttribute("href", "/order/");
     await expect(nav.getByRole("link", { name: "Drops" })).toHaveAttribute("href", "/#drops");
-    await expect(nav.getByRole("link", { name: "Sign In" })).toHaveAttribute("href", "/login");
+    await expect(nav.getByRole("link", { name: "Sign In" })).toHaveAttribute("href", "/login/");
     await expect(nav.getByRole("link", { name: "Cart" })).toHaveAttribute("href", "/order/cart/");
     await expect(nav.getByRole("link", { name: "Offers" })).toHaveCount(0);
     await expect(nav.getByRole("link", { name: "Merch" })).toHaveCount(0);
@@ -29,7 +29,7 @@ test.describe("IMP-028A Food Direct UX Foundation chrome", () => {
   test("Home Order Now is the primary commerce CTA to Menu", async ({ page }) => {
     await page.goto("/");
     const orderNow = page.locator("#top").getByRole("link", { name: "Order Now" }).first();
-    await expect(orderNow).toHaveAttribute("href", "/order");
+    await expect(orderNow).toHaveAttribute("href", "/order/");
   });
 
   test("Cart remains reachable when empty from Home, login, and Menu", async ({ page }) => {

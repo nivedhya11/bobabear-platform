@@ -59,9 +59,9 @@ describe("Nav — IMP-028A Food Direct chrome", () => {
     await waitFor(() => {
       expect(within(nav).getByRole("link", { name: "Sign In" })).toBeInTheDocument();
     });
-    expect(within(nav).getByRole("link", { name: "Menu" })).toHaveAttribute("href", "/order");
+    expect(within(nav).getByRole("link", { name: "Menu" })).toHaveAttribute("href", "/order/");
     expect(within(nav).getByRole("link", { name: "Drops" })).toHaveAttribute("href", "/#drops");
-    expect(within(nav).getByRole("link", { name: "Sign In" })).toHaveAttribute("href", "/login");
+    expect(within(nav).getByRole("link", { name: "Sign In" })).toHaveAttribute("href", "/login/");
     expect(within(nav).getByRole("link", { name: "Cart" })).toHaveAttribute("href", "/order/cart/");
     expect(within(nav).queryByRole("button", { name: "My BOBA" })).not.toBeInTheDocument();
     expect(within(nav).queryByRole("link", { name: "Offers" })).not.toBeInTheDocument();
@@ -167,10 +167,10 @@ describe("Nav — IMP-028A Food Direct chrome", () => {
     await user.click(screen.getByRole("button", { name: "Open navigation menu" }));
     const drawer = screen.getByRole("dialog", { name: "Navigation menu" });
     const nav = within(drawer).getByRole("navigation", { name: "Mobile navigation" });
-    expect(within(nav).getByRole("link", { name: "Menu" })).toHaveAttribute("href", "/order");
+    expect(within(nav).getByRole("link", { name: "Menu" })).toHaveAttribute("href", "/order/");
     expect(within(nav).getByRole("link", { name: "Drops" })).toHaveAttribute("href", "/#drops");
     expect(within(nav).getByRole("link", { name: "Cart" })).toHaveAttribute("href", "/order/cart/");
-    expect(within(nav).getByRole("link", { name: "Sign In" })).toHaveAttribute("href", "/login");
+    expect(within(nav).getByRole("link", { name: "Sign In" })).toHaveAttribute("href", "/login/");
     expect(within(nav).queryByRole("link", { name: "Offers" })).not.toBeInTheDocument();
     expect(within(nav).queryByRole("link", { name: "Merch" })).not.toBeInTheDocument();
     expect(within(nav).queryByRole("link", { name: "Artists" })).not.toBeInTheDocument();

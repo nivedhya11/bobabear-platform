@@ -126,12 +126,12 @@ export default function DevPage() {
             <RowLabel>asChild — anchor styled as button</RowLabel>
             <div className="flex flex-wrap items-center gap-3">
               <Button asChild variant="primary">
-                <a href="/dev">{/* ← anchor renders as primary button */}
+                <a href="/dev/">{/* ← anchor renders as primary button */}
                   Access the Drop
                 </a>
               </Button>
               <Button asChild variant="outline">
-                <a href="/dev">View Current Drop</a>
+                <a href="/dev/">View Current Drop</a>
               </Button>
             </div>
           </div>

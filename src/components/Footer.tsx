@@ -43,7 +43,7 @@ const BEAR_LINKS = [
 ] as const;
 
 const LEGAL_LINKS = [
-  { label: "Privacy",       href: "/privacy",       disabled: false },
+  { label: "Privacy",       href: "/privacy/",      disabled: false },
   { label: "Terms",         href: "/terms",         disabled: true  },
   { label: "Accessibility", href: "/accessibility", disabled: true  },
 ] as const;

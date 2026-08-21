@@ -67,7 +67,7 @@ export function OrderHistoryClient() {
               You don’t have any orders yet.
             </p>
             <Button asChild variant="primary">
-              <a href="/order">Order Now</a>
+              <a href="/order/">Order Now</a>
             </Button>
           </div>
         ) : null}

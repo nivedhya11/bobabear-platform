@@ -18,13 +18,13 @@ import { cn } from "@/lib/utils";
 import { useCustomerChromeSession } from "@/lib/customer-auth/chrome-session";
 
 const PRIMARY_NAV_LINKS = [
-  { label: "Menu", href: "/order", id: "menu", num: "01" },
+  { label: "Menu", href: "/order/", id: "menu", num: "01" },
   { label: "Drops", href: "/#drops", id: "drops", num: "02" },
 ] as const;
 
 const CART_HREF = "/order/cart/";
 const MY_ORDERS_HREF = "/order/orders/";
-const SIGN_IN_HREF = "/login";
+const SIGN_IN_HREF = "/login/";
 
 function subscribeTheme(cb: () => void) {
   const obs = new MutationObserver(cb);
