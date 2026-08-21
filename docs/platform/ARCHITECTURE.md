@@ -2,8 +2,8 @@
 {
   "status": "CURRENT",
   "authority": "GLOBAL_ARCHITECTURE",
-  "architectureVersion": "ARCH-R15",
-  "lastReviewed": "2026-08-18"
+  "architectureVersion": "ARCH-R16",
+  "lastReviewed": "2026-08-21"
 }
 -->
 
@@ -295,6 +295,15 @@ browser must lose authority over it and become an anonymous commerce context. D-
 Cart commercial authority, Checkout Snapshot, XOR ownership, configured-line identity, or revision
 concurrency, and does not authorize merge implementation.
 
+Cart unit sequence ([D-371](./decision-register.md)): the Cart remains a coalesced configured-line
+aggregate. A durable internal active unit-sequence record exists for every represented unit and has
+an immutable server-issued order. The record is removal-order authority only; Cart lines remain
+customer/business quantity representation and product-card counts remain their projection. Under
+the existing Cart transaction, the server selects the latest active record for a requested
+`variantId` when product-level decrement is requested. The sequence is not public browser state and
+does not change Cart configuration identity, D-369 intent, D-370 transition, or Checkout Snapshot
+authority.
+
 Current public site remains static. Customer/workforce auth already use standalone Node HTTP
 services proxied by Nginx for specific prefixes. Customer commerce transport is locked as the
 dedicated `customer-commerce` Node HTTP service behind `/api/v1/*` ([D-359](./decision-register.md),
@@ -327,6 +336,7 @@ Dynamic commerce must remain outside dynamic Next.js execution unless superseded
 | Customer Menu storefront serving | CURRENT — **D-368** server-backed customer Menu READ PROJECTION through existing `customer-commerce` `/api/v1/*`; implemented and accepted under IMP-028B |
 | Customer paid-modifier purchase intent | CURRENT policy — **D-369** explicit customer selection required for positive-price modifier options entering Cart; zero-price standard defaults MAY be visibly preselected; implementation NOT_AUTHORIZED by D-369 |
 | Cart identity transition | CURRENT policy — **D-370** guest→customer compatible purchase-intent merge and authenticated→signed-out customer-cart isolation; silent whole-cart winner forbidden; implementation NOT_AUTHORIZED by D-370 |
+| Durable Cart unit sequence | CURRENT policy — **D-371** durable internal per-unit add ordering for server-owned product-level decrement; implementation bounded by IMP-028D RC3 |
 
 `NOT_DEFINED` / `NOT_IMPLEMENTED` ≠ `PROHIBITED_FOREVER`.
 
@@ -355,6 +365,7 @@ Dynamic commerce must remain outside dynamic Next.js execution unless superseded
 | ARCH-G19 | Customer Menu Projection is a storefront READ MODEL over existing catalog/menu, pricing, assortment/availability, modifier, and bundle authorities (D-368); it must not become Catalog identity, Product/MenuItem, Pricing, Availability, inventory, Promotion, Cart, Checkout Snapshot, Payment, or Order authority; Menu display price is not sealed payable truth; Menu display availability is not a new availability decision. |
 | ARCH-G20 | A modifier option whose selection increases the current configured-item price relative to the otherwise applicable base/standard configuration (positive `price_delta_paise` or equivalent) MUST NOT become customer purchase intent solely because catalog, import, or frontend metadata marks it as a default (D-369); explicit customer selection in the current purchase interaction is required; zero-price standard/preparation defaults MAY be visibly preselected; recommendation is not selection; Cart remains purchase intent; Checkout Snapshot remains authoritative payable truth. |
 | ARCH-G21 | Cart identity transition (D-370): an active guest Cart and an active customer Cart MUST be reconciled into customer-owned purchase intent without silent winner selection; failed reconciliation MUST NOT silently discard or partially destroy source intent; after success the former guest credential is not authority over that customer Cart; sign-out MUST NOT delete the customer Cart but MUST end browser authority over it; post-logout browser context is anonymous and MUST NOT expose or copy the previous customer’s Cart; Customer B on the same browser MUST NOT receive Customer A’s Cart; Cart remains purchase intent; Checkout Snapshot remains authoritative payable truth. |
+| ARCH-G22 | Durable Cart unit sequence (D-371): every active coalesced Cart-line unit MUST have exactly one durable server-authoritative unit-sequence record, so active-record count per line equals line quantity transactionally. Product-level decrement MUST atomically select and consume the latest active record for the requested base product and decrement that record’s line under existing Cart concurrency authority; browser/client order is never removal authority. During D-370 identity transition, immutable ordinals and their line relationship MUST move/reconcile atomically without renumbering history. |
 
 ## 15. Decision References
 
@@ -367,6 +378,7 @@ Dynamic commerce must remain outside dynamic Next.js execution unless superseded
 | Customer Menu Read Projection Authority | [D-368](./decision-register.md) (CURRENT serving architecture; implemented and accepted under IMP-028B) |
 | Customer Paid Modifier Explicit Selection Authority | [D-369](./decision-register.md) (CURRENT business-commerce policy; positive-price modifier requires explicit current-interaction selection before entering Cart purchase intent; zero-price standard defaults MAY be visibly preselected; Cart/Checkout Snapshot/pricing authority unchanged; implementation not authorized by this decision) |
 | Cart Identity Transition Authority | [D-370](./decision-register.md) (CURRENT purchase-intent and privacy policy; guest→customer compatible merge required; silent whole-cart winner forbidden; logout isolates the browser from the customer Cart without deleting it; Cart/Checkout Snapshot/pricing/Payment authority unchanged; implementation not authorized by this decision) |
+| Durable Cart Unit Sequence Authority | [D-371](./decision-register.md) (CURRENT internal Cart removal-order authority; coalesced lines and Cart quantity remain authoritative customer purchase intent) |
 | V1 production payment provider / collection surface | [D-361](./decision-register.md) (Razorpay / Razorpay Standard Checkout); capability lock [`capabilities/IMP-026-razorpay-productionization.md`](./capabilities/IMP-026-razorpay-productionization.md) |
 | Razorpay webhook acknowledgement / post-payment Order recovery | [D-362](./decision-register.md) (amends D-361 ack/post-payment effect only; D-361 remains CURRENT for provider selection; acknowledgement timing further amended by D-363) |
 | Razorpay durable webhook inbox / asynchronous Payment processing | [D-363](./decision-register.md) (amends D-362 acknowledgement timing only; D-362 remains CURRENT for Order materialization outside provider-ack path, missing-Order recovery, secondary reconciliation, and no new deployable service) |

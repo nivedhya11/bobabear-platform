@@ -2,7 +2,7 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R56",
+  "stateVersion": "STATE-R57",
   "acceptedThrough": "IMP-028C",
   "currentProductSlice": "IMP-028D",
   "nextProductSlice": "IMP-029",
@@ -31,7 +31,7 @@ Accepted Range:            IMP-001 → IMP-028C (including IMP-005A and IMP-026C
 Current Product Implementation: IMP-028D — Desktop Ordering Continuity
 Pending Acceptance:             IMP-028D
 Next Product Slice:             IMP-029 — Operations Console API
-Current Governance Activity:    IMP-028D RC1 Desktop Ordering Continuity ARCHITECTURE_LOCKED / AUTHORIZED / STARTED / IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE; RC1 visual review PASS, exact-SHA CI PASS, and main merge recorded; prior founder UAT FAIL and technical preview evidence preserved; Founder UAT PENDING / NOT RUN for RC1; IMP-028C remains COMPLETE_AND_ACCEPTED; IMP-029 PLANNED / NOT_STARTED / NOT_AUTHORIZED; D-371 UNUSED
+Current Governance Activity:    IMP-028D RC1 implementation evidence remains IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE; D-371 / RC3 Durable Cart Unit Sequence Authority is ARCHITECTURE_LOCKED with RC3 IMPLEMENTATION NOT_STARTED; Founder UAT PENDING / NOT RUN; IMP-029 PLANNED / NOT_STARTED / NOT_AUTHORIZED
 Governance Health:              ALIGNED
 ```
 
@@ -187,6 +187,16 @@ independent acceptance without changing decision register or global architecture
 STATE-R36 record IMP-028B canonical activation without changing decision register or global
 architecture. GTM-R39 / STATE-R37 record IMP-028B architecture lock and implementation
 authorization without changing decision register or global architecture.
+
+STATE-R57 records D-371 Durable Cart Unit Sequence Authority (DR-13 / ARCH-R16 / ARCH-G22) and
+the bounded IMP-028D RC3 capability amendment. D-371 preserves coalesced Cart-line identity and
+adds future durable per-unit ordering for server-owned product-level decrement. RC3 implementation
+is NOT_STARTED; no application source, schema, migration, transport, or UAT result is claimed by
+this governance record. Pre-D-371 active-Cart order is not reconstructed; this pre-production
+rollout may expire/rebuild those Carts at migration. D-369 and D-370 remain CURRENT and are not
+superseded. IMP-028D remains unaccepted, Founder UAT remains PENDING / NOT RUN, and IMP-029 remains
+NOT_STARTED / NOT_AUTHORIZED. Supersedes STATE-R56 only for current decision/architecture
+references.
 
 STATE-R56 records IMP-028D RC1 implementation completion and promotion evidence: visual review
 PASS; feature commit `2a48e16fabc4b1fe9e86d23c6a3aad6d726b7e6e`; exact-SHA CI run `32458495599`

@@ -8,7 +8,7 @@
   "implementation": "IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE",
   "implementationAuthorized": true,
   "lastReviewed": "2026-08-21",
-  "bindingDecisions": ["D-368", "D-369", "D-370"],
+  "bindingDecisions": ["D-368", "D-369", "D-370", "D-371"],
   "dependsOn": ["IMP-025", "IMP-026C", "IMP-028A", "IMP-028B", "IMP-028C"]
 }
 -->
@@ -18,9 +18,10 @@
 ## Capability Architecture (ARCHITECTURE_LOCKED)
 
 This is the locked capability architecture for the desktop continuation of accepted customer
-ordering. It changes only ordering-surface presentation while reusing the accepted Customer Menu
-projection, Cart mutations, and Checkout authority. It creates no new decision, domain authority,
-persistence, schema, migration, API, or runtime topology. D-371 remains unused.
+ordering. RC1/RC2 changed only ordering-surface presentation. The Founder-approved RC3 amendment
+adds the minimum D-371 durable Cart unit-sequence authority needed for true product-level LIFO
+decrement while retaining the accepted Customer Menu projection, Cart aggregate, and Checkout
+authority.
 
 | Field | Value |
 |---|---|
@@ -28,7 +29,7 @@ persistence, schema, migration, API, or runtime topology. D-371 remains unused.
 | Lifecycle | `ARCHITECTURE_LOCKED` / `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` |
 | Implementation | `AUTHORIZED` / `STARTED` / `COMPLETE` |
 | Founder UAT required at acceptance | **YES** |
-| Schema / migration / new authority | **NO** / **NO** / **NO** |
+| RC3 schema / migration / new authority | **YES** / **YES** / **D-371 only** |
 
 ```text
 IMP-028D_ARCHITECTURE_LOCKED: YES
@@ -39,12 +40,13 @@ IMP-028D_ACCEPTED: NO
 IMP-028D_FOUNDER_UAT_REQUIRED: YES
 IMP-028D_FOUNDER_UAT: PENDING
 IMP-028D_FOUNDER_UAT_COMPLETE: NO
-NEW_SCHEMA_REQUIRED: NO
-NEW_MIGRATION_REQUIRED: NO
-NEW_PERSISTENCE_AUTHORITY: NO
-NEW_API_REQUIRED: NO
-NEW_DECISION: NO
-D-371: UNUSED
+RC3_IMPLEMENTATION_STARTED: NO
+RC3_NEW_SCHEMA_REQUIRED: YES
+RC3_NEW_MIGRATION_REQUIRED: YES
+RC3_NEW_PERSISTENCE_AUTHORITY: D-371 ONLY
+RC3_NEW_API_REQUIRED: YES
+RC3_NEW_DECISION: D-371
+D-371: CURRENT
 IMP-029: PLANNED / NOT_AUTHORIZED / NOT_STARTED
 ```
 
@@ -59,6 +61,10 @@ an IMP or authorize implementation.
 - D-369 remains mandatory: a paid modifier requires explicit customer selection and must not enter
   Cart intent solely from a catalog/default presentation.
 - D-370 Cart identity-transition policy is not reopened or redesigned.
+- D-371 layers durable active unit ordering onto the existing coalesced Cart-line model. For each
+  active line, active unit-record count equals line quantity transactionally; the server selects
+  the newest active `variantId` unit for product-card decrement. D-370 transition moves/reconciles
+  those immutable records atomically without renumbering them.
 - Existing Cart authority and mutations remain the sole Cart purchase-intent authority.
 - Checkout Snapshot remains final payable commercial truth. Display prices and Cart presentation
   must never imply final payable authority.
@@ -92,6 +98,9 @@ When separately authorized, IMP-028D may implement only:
    and its approved composite reference.
 10. Consumer-copy cleanup and modest image/performance improvements directly required by the
     changed ordering presentation.
+11. **RC3 only:** D-371 internal unit-sequence persistence, forward-only migration, and minimal
+    existing customer-commerce Cart command/transport for server-owned product-level latest-unit
+    decrement; no public unit-sequence projection is authorized.
 
 ## Explicit non-goals
 
@@ -108,7 +117,7 @@ migration, pricing authority, or geospatial Serviceability are out of scope.
 | AC02 | Category rail and center Menu do not create nested independent vertical scroll panes. The bounded Cart item list is the sole permitted nested vertical scroll region; Cart header and summary/Checkout remain visible. |
 | AC03 | The active category is the explicitly selected root category. Activating a category replaces the center catalogue with that category's items and does not depend on motion or scroll position. |
 | AC04 | Keyboard users can reach categories, products, Cart actions, and any Cart overlay logically, with visible focus and no focus loss/trap. |
-| AC05 | Existing Cart paths remain authoritative. Menu product cards use `Add +`; configurable items open the existing customization flow. No client price or new commercial field is introduced. |
+| AC05 | RC1/RC2 historical behavior used `Add +`. Under RC3, a base product with aggregate Cart quantity zero shows `Add +`; positive aggregate quantity shows `− n +`, where `n` is the authoritative sum of all its configured Cart-line quantities. Configurable `+` continues through the existing configurator; card `−` invokes D-371 server selection and never chooses a configuration line in the browser. |
 | AC06 | Tablet and mobile retain usable horizontal selected-category navigation and persistent/bottom Cart continuity without rendering the XL side rails. |
 | AC07 | A numeric Cart presentation is labelled `Estimated subtotal` only when fully resolvable; unresolved presentation uses `Total shown at checkout` and never implies final payable truth. |
 | AC08 | Changed layouts have no horizontal page overflow at tested desktop/tablet/mobile viewports and retain usable targets and contrast. |
@@ -118,11 +127,39 @@ migration, pricing authority, or geospatial Serviceability are out of scope.
 
 ## Implementation gates
 
-Implementation is **authorized** and **started** under explicit founder/task authorization while
+RC1 implementation is **authorized** and **started** under explicit founder/task authorization while
 architecture remains locked. PROCESS-HARDENING-A in the referenced supporting plan applies to this
 product implementation. Before founder UAT, PROCESS-HARDENING-B and the exact-candidate UAT
-requirements in `AGENTS.md` apply. A persistence, API, authority, or decision need is a
-`DECISION_REQUIRED` stop; D-371 must not be allocated.
+requirements in `AGENTS.md` apply. RC3 implementation is **not started**. D-371 now authorizes
+only its bounded persistence/API need; all other authority needs remain a `DECISION_REQUIRED` stop.
+
+## RC3 durable Cart sequence amendment
+
+Founder authorization resolves the prior `LIFO_AUTHORITY_GAP`. RC3 preserves coalesced Cart lines:
+same configured-line identity increments quantity and different configurations remain distinct.
+It adds one internal durable active unit record per unit, with a strictly orderable immutable
+server-issued add ordinal. The invariant is `COUNT(active records for line) = line.quantity`.
+
+Every single-unit add atomically resolves D-369/current configuration authority, resolves or
+creates the matching line, increments its quantity, appends one record, and uses existing Cart
+locking/revision authority. Product-card decrement submits Cart authority, `variantId`, and normal
+concurrency input. The server atomically finds the latest active `variantId` record, decrements its
+line, consumes that record, removes a zero line, advances normal Cart state, and returns the normal
+Cart projection. Specific-line increase appends a record; decrement consumes that line's newest
+record; line removal consumes all its records; clear/expiry/deletion remove their records.
+
+For D-370 claim, the Cart ID survives and its records remain attached. For D-370 reconciliation,
+the customer Cart survives, equivalent lines may coalesce, and all guest records atomically move to
+the surviving Cart/matching line while preserving immutable ordinals. This has no unresolved
+D-370 sequence-composition gap.
+
+A forward-only migration is required. Pre-D-371 active-Cart unit order cannot be recovered and is
+not fabricated; authoritative LIFO begins only for Cart state established under the new invariant.
+This repository is pre-production/non-customer for this RC3 rollout, so active pre-D-371 Carts may
+be expired/rebuilt at the migration boundary. No legacy synthetic ordering baseline is authorized.
+
+The current interaction authority is
+[`../experience/IMP-028D-ordering-ui-design-lock-RC3.md`](../experience/IMP-028D-ordering-ui-design-lock-RC3.md).
 
 ## Founder UAT failure and rework evidence
 
