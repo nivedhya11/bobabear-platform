@@ -186,8 +186,8 @@ export function OrderingCatalogClient(props: { brandId: string }) {
   const { activeSectionId: spyActiveSectionId } = useCategoryScrollSpy({
     sectionIds: sectionDomIds,
     enabled: sectionDomIds.length > 0,
-    // Sticky Nav (~3.5–4rem) + tablet/mobile sticky category bar (~3.5rem).
-    rootMargin: "-7rem 0px -55% 0px",
+    // Sticky Nav + tablet/mobile sticky category bar (7rem at the 16px root size).
+    rootMargin: "-112px 0px -55% 0px",
   });
 
   const spyCategoryId = spyActiveSectionId?.startsWith("cat-")

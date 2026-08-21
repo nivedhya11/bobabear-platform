@@ -14,12 +14,20 @@ const evaluateCart = vi.fn<(...args: unknown[]) => unknown>();
 
 const scrollSpyState = vi.hoisted(() => ({
   activeSectionId: null as string | null,
+  lastRootMargin: null as string | null,
 }));
 
 vi.mock("./useCategoryScrollSpy", () => ({
-  useCategoryScrollSpy: () => ({
-    activeSectionId: scrollSpyState.activeSectionId,
-  }),
+  useCategoryScrollSpy: ({ rootMargin }: { rootMargin?: string }) => {
+    const tokens = rootMargin?.trim().split(/\s+/) ?? [];
+    const validRootMarginToken =
+      /^[+-]?(?:(?:\d+(?:\.\d*)?|\.\d+)(?:px|%)|0(?:\.0*)?)$/;
+    if (tokens.length < 1 || tokens.length > 4 || !tokens.every((token) => validRootMarginToken.test(token))) {
+      throw new TypeError("rootMargin must be specified in pixels or percent.");
+    }
+    scrollSpyState.lastRootMargin = rootMargin ?? null;
+    return { activeSectionId: scrollSpyState.activeSectionId };
+  },
 }));
 
 vi.mock("@/lib/customer-commerce", async () => {
@@ -129,6 +137,7 @@ const multiCategoryMenu: CustomerMenuProjection = {
 
 beforeEach(() => {
   scrollSpyState.activeSectionId = null;
+  scrollSpyState.lastRootMargin = null;
   getActiveCart.mockReset();
   getCustomerMenu.mockReset();
   addCartLine.mockReset();
@@ -148,6 +157,12 @@ beforeEach(() => {
 });
 
 describe("OrderingCatalogClient", () => {
+  it("uses a browser-valid root margin for the sticky header offset", async () => {
+    render(<OrderingCatalogClient brandId="brand-1" />);
+    await waitFor(() => expect(screen.getByTestId("menu-category-nav")).toBeInTheDocument());
+    expect(scrollSpyState.lastRootMargin).toBe("-112px 0px -55% 0px");
+  });
+
   it("loads menu from customer-commerce and renders category navigation", async () => {
     render(<OrderingCatalogClient brandId="brand-1" />);
     await waitFor(() => expect(screen.getByTestId("menu-category-nav")).toBeInTheDocument());
