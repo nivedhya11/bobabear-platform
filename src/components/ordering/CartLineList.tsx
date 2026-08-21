@@ -48,7 +48,7 @@ export function CartLineList(props: CartLineListProps) {
               <p
                 className={
                   compact
-                    ? "font-display text-[16px] leading-tight text-[var(--text-primary)]"
+                    ? "font-body font-bold text-[14px] leading-tight text-[var(--text-primary)]"
                     : "font-display text-[20px] text-[var(--text-primary)]"
                 }
               >

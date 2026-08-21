@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { Button } from "@/components/ui/Button";
 import { CartLineList } from "@/components/ordering/CartLineList";
 import { CartSummary } from "@/components/ordering/CartSummary";
 import { DeliverToOrientation } from "@/components/ordering/DeliverToOrientation";
@@ -15,7 +14,6 @@ import {
   cartBundleSelectionsToInput,
   cartModifiersToInput,
   cartUnitCount,
-  formatCartEstimatePrimaryLabel,
   resolveCartPresentationEstimate,
 } from "@/components/ordering/cart-presentation";
 import {
@@ -24,7 +22,6 @@ import {
 } from "@/components/ordering/delivery-pin-context";
 import { commerceErrorCopy } from "@/components/ordering/error-copy";
 import { cartEvaluationCustomerCopy } from "@/components/ordering/serviceability-copy";
-import { useCategoryScrollSpy } from "@/components/ordering/useCategoryScrollSpy";
 import {
   addCartLine,
   evaluateCart,
@@ -39,10 +36,6 @@ import {
 } from "@/lib/customer-commerce";
 import type { CartModifierSelectionInput } from "@/shared/cart/types";
 import type { CustomerMenuItem, CustomerMenuProjection } from "@/shared/customer-menu/types";
-
-function sectionAnchorId(sectionId: string): string {
-  return `cat-${sectionId}`;
-}
 
 type EditTarget = Readonly<{
   line: CommerceCartLine;
@@ -61,6 +54,7 @@ export function OrderingCatalogClient(props: { brandId: string }) {
   const [customizingItem, setCustomizingItem] = useState<CustomerMenuItem | null>(null);
   const [editTarget, setEditTarget] = useState<EditTarget | null>(null);
   const [dialogError, setDialogError] = useState<string | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
 
   const menuLookups = useMemo(
     () => (menu ? buildCustomerMenuLookups(menu) : null),
@@ -172,32 +166,15 @@ export function OrderingCatalogClient(props: { brandId: string }) {
       groups.map((group) => ({
         id: group.id,
         name: group.name,
-        href: `#${sectionAnchorId(group.id)}`,
-        sectionDomId: sectionAnchorId(group.id),
       })),
     [groups],
   );
 
-  const sectionDomIds = useMemo(
-    () => categoryNav.map((category) => category.sectionDomId),
-    [categoryNav],
-  );
-
-  const { activeSectionId: spyActiveSectionId } = useCategoryScrollSpy({
-    sectionIds: sectionDomIds,
-    enabled: sectionDomIds.length > 0,
-    // Sticky Nav + tablet/mobile sticky category bar (7rem at the 16px root size).
-    rootMargin: "-112px 0px -55% 0px",
-  });
-
-  const spyCategoryId = spyActiveSectionId?.startsWith("cat-")
-    ? spyActiveSectionId.slice(4)
-    : spyActiveSectionId;
-
   const activeCategoryId =
-    spyCategoryId && categoryNav.some((category) => category.id === spyCategoryId)
-      ? spyCategoryId
+    selectedCategoryId && categoryNav.some((category) => category.id === selectedCategoryId)
+      ? selectedCategoryId
       : (categoryNav[0]?.id ?? null);
+  const selectedGroup = groups.find((group) => group.id === activeCategoryId) ?? null;
 
   function handleDeliveryPinChange(value: string): void {
     setDeliveryPin(value);
@@ -239,7 +216,6 @@ export function OrderingCatalogClient(props: { brandId: string }) {
   );
 
   const lineCount = cartUnitCount(cart);
-  const presentationLabel = formatCartEstimatePrimaryLabel(presentationEstimate);
   const serviceabilityNote = cartEvaluationCustomerCopy(evaluation, deliveryPin.length === 6);
 
   async function withPending(key: string, work: () => Promise<void>): Promise<void> {
@@ -275,37 +251,6 @@ export function OrderingCatalogClient(props: { brandId: string }) {
         variantId: item.variantId,
         quantity: 1,
         expectedRevision: cart?.revision,
-      });
-      if (!result.ok) {
-        setError(commerceErrorCopy(result.code));
-        return;
-      }
-      await updateCartFromMutation(result.data.cart);
-    });
-  }
-
-  async function decrementItem(item: CustomerMenuItem): Promise<void> {
-    const existing = quantityByVariant.get(item.variantId);
-    if (!existing || !cart) return;
-    await withPending(item.variantId, async () => {
-      if (existing.quantity <= 1) {
-        const result = await removeCartLine({
-          brandId,
-          cartLineId: existing.lineId,
-          expectedRevision: cart.revision,
-        });
-        if (!result.ok) {
-          setError(commerceErrorCopy(result.code));
-          return;
-        }
-        await updateCartFromMutation(result.data.cart);
-        return;
-      }
-      const result = await setCartLineQuantity({
-        brandId,
-        cartLineId: existing.lineId,
-        quantity: existing.quantity - 1,
-        expectedRevision: cart.revision,
       });
       if (!result.ok) {
         setError(commerceErrorCopy(result.code));
@@ -434,12 +379,13 @@ export function OrderingCatalogClient(props: { brandId: string }) {
             const isActive = activeCategoryId === category.id;
             return (
               <li key={category.id} className={isVertical ? undefined : "shrink-0 snap-start"}>
-                <a
-                  href={category.href}
-                  aria-current={isActive ? "location" : undefined}
+                <button
+                  type="button"
+                  aria-current={isActive ? "true" : undefined}
+                  onClick={() => setSelectedCategoryId(category.id)}
                   className={
                     isVertical
-                      ? `block rounded-md px-3 py-2 font-body text-[13px] ${
+                      ? `block w-full rounded-md px-3 py-2 text-left font-body text-[13px] ${
                           isActive
                             ? "bg-[var(--interactive-primary)] text-[var(--text-on-primary)]"
                             : "text-[var(--text-primary)] hover:bg-[var(--interactive-ghost-hover)]"
@@ -452,7 +398,7 @@ export function OrderingCatalogClient(props: { brandId: string }) {
                   }
                 >
                   {category.name}
-                </a>
+                </button>
               </li>
             );
           })}
@@ -487,7 +433,7 @@ export function OrderingCatalogClient(props: { brandId: string }) {
     <main id="main-content" tabIndex={-1} className="bg-[var(--bg-page)] focus:outline-none">
       <div
         data-testid="desktop-ordering-shell"
-        className="mx-auto max-w-[1440px] px-5 py-6 md:py-8 flex flex-col gap-5 pb-28 md:pb-12 xl:pb-12"
+        className="mx-auto max-w-[1620px] px-5 md:px-8 py-6 md:py-8 flex flex-col gap-5 pb-[calc(7rem+env(safe-area-inset-bottom))] xl:pb-12"
       >
         <header className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between xl:col-span-3">
           <div className="flex flex-col gap-2">
@@ -498,23 +444,6 @@ export function OrderingCatalogClient(props: { brandId: string }) {
               Pick your favourites.
             </p>
           </div>
-          <Button
-            asChild
-            variant="primary"
-            size="lg"
-            className="hidden md:inline-flex xl:hidden min-h-[44px]"
-          >
-            <a
-              href="/order/cart/"
-              aria-label={
-                lineCount > 0
-                  ? `Cart, ${lineCount} item${lineCount === 1 ? "" : "s"}, ${presentationLabel}`
-                  : "Cart"
-              }
-            >
-              {lineCount > 0 ? `Cart · ${lineCount} · ${presentationLabel}` : "Cart"}
-            </a>
-          </Button>
         </header>
 
         {renderCategoryNav("horizontal")}
@@ -531,24 +460,23 @@ export function OrderingCatalogClient(props: { brandId: string }) {
           </p>
         ) : null}
 
-        <div className="xl:grid xl:grid-cols-[13rem_minmax(0,1fr)_22rem] xl:gap-6 xl:items-start">
+        <div className="xl:grid xl:grid-cols-[11.5rem_minmax(0,1fr)_21.5rem] xl:gap-6 xl:items-start">
           <aside className="hidden xl:block">{renderCategoryNav("vertical")}</aside>
 
           <div data-testid="desktop-menu" className="flex flex-col gap-8 min-w-0">
-            {groups.map((group) => (
+            {selectedGroup ? (
               <section
-                key={group.id}
-                id={sectionAnchorId(group.id)}
-                aria-labelledby={`cat-heading-${group.id}`}
-                className="flex flex-col gap-5 scroll-mt-32 md:scroll-mt-28 xl:scroll-mt-24"
+                key={selectedGroup.id}
+                aria-labelledby={`cat-heading-${selectedGroup.id}`}
+                className="flex flex-col gap-5"
               >
                 <h2
-                  id={`cat-heading-${group.id}`}
+                  id={`cat-heading-${selectedGroup.id}`}
                   className="font-display text-[32px] text-[var(--text-primary)]"
                 >
-                  {group.name}
+                  {selectedGroup.name}
                 </h2>
-                {group.subcategories.map((sub) => (
+                {selectedGroup.subcategories.map((sub) => (
                   <div key={sub.id} className="flex flex-col gap-3">
                     <h3 className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--text-tertiary)]">
                       {sub.name}
@@ -558,17 +486,14 @@ export function OrderingCatalogClient(props: { brandId: string }) {
                       role="list"
                     >
                       {sub.items.map((item) => {
-                        const inCart = quantityByVariant.get(item.variantId);
                         const busy = pendingKey === item.variantId;
                         return (
                           <MenuItemRow
                             key={`${item.productId}-${item.variantId}`}
                             item={item}
                             layout="card"
-                            quantityInCart={inCart?.quantity}
                             busy={busy}
                             onAdd={(next) => void addItem(next)}
-                            onDecrement={(next) => void decrementItem(next)}
                             onCustomize={setCustomizingItem}
                           />
                         );
@@ -577,15 +502,15 @@ export function OrderingCatalogClient(props: { brandId: string }) {
                   </div>
                 ))}
               </section>
-            ))}
+            ) : null}
           </div>
 
           <aside
             data-testid="desktop-live-cart"
-            className="hidden xl:block sticky top-20 self-start border border-[var(--border-default)] bg-[var(--bg-section)] p-4"
+            className="hidden xl:flex sticky top-20 self-start h-[calc(100vh-20rem)] min-h-[32rem] max-h-[calc(100vh-6rem)] flex-col overflow-hidden rounded-lg border border-[var(--border-default)] bg-[var(--bg-section)]"
           >
-            <div className="flex flex-col gap-3">
-              <div className="flex items-baseline justify-between gap-2">
+            <div className="flex min-h-0 flex-1 flex-col">
+              <div className="flex items-baseline justify-between gap-2 border-b border-[var(--border-default)] p-4">
                 <h2 className="font-display text-[22px] text-[var(--text-primary)]">Your cart</h2>
                 <a
                   href="/order/cart/"
@@ -595,27 +520,19 @@ export function OrderingCatalogClient(props: { brandId: string }) {
                 </a>
               </div>
               {lineCount === 0 ? (
-                <p className="font-body text-[14px] text-[var(--text-secondary)]">
-                  Your cart is empty. Add something from the menu.
-                </p>
+                <div className="flex flex-1 flex-col items-center justify-center gap-3 px-8 py-12 text-center">
+                  <span aria-hidden="true" className="text-[44px] opacity-40">♧</span>
+                  <p className="font-body text-[15px] font-semibold text-[var(--text-secondary)]">Your cart is empty</p>
+                  <p className="font-body text-[13px] text-[var(--text-tertiary)]">Add something from the menu.</p>
+                </div>
               ) : (
                 <>
-                  <CartLineList
-                    lines={linePresentations}
-                    pending={pendingKey !== null}
-                    compact
-                    onChangeQuantity={(lineId, quantity) =>
-                      void changeLiveCartQuantity(lineId, quantity)
-                    }
-                    onEdit={openLiveCartEdit}
-                    onRemove={(lineId) => void changeLiveCartQuantity(lineId, 0)}
-                  />
-                  <CartSummary
-                    estimate={presentationEstimate}
-                    itemCount={lineCount}
-                    showCheckoutLink
-                    compact
-                  />
+                  <div data-testid="desktop-cart-items" className="min-h-0 flex-1 overflow-y-auto p-4">
+                    <CartLineList lines={linePresentations} pending={pendingKey !== null} compact onChangeQuantity={(lineId, quantity) => void changeLiveCartQuantity(lineId, quantity)} onEdit={openLiveCartEdit} onRemove={(lineId) => void changeLiveCartQuantity(lineId, 0)} />
+                  </div>
+                  <div data-testid="desktop-cart-footer" className="shrink-0 bg-[var(--bg-section)] p-4 pt-0">
+                    <CartSummary estimate={presentationEstimate} itemCount={lineCount} showCheckoutLink compact />
+                  </div>
                 </>
               )}
             </div>

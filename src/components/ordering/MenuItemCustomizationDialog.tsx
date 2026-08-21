@@ -167,10 +167,19 @@ function MenuItemCustomizationDialogContents(props: MenuItemCustomizationDialogP
         : [];
     }),
   );
+  const itemTotalPaise = item.displayPricePaise + groups.reduce(
+    (groupSum, group) => groupSum + group.options.reduce(
+      (optionSum, option) => optionSum +
+        (quantities[selectionKey(group.variantModifierGroupId, option.modifierGroupOptionId)] ?? 0) *
+          option.displayPriceDeltaPaise,
+      0,
+    ),
+    0,
+  );
 
   const dialogTitle =
     mode === "edit" ? `Edit customization for ${item.name}` : `Customize ${item.name}`;
-  const submitLabel = mode === "edit" ? "Save changes" : "Add to cart";
+  const submitLabel = mode === "edit" ? "Save changes" : `Add to cart · ${formatPaise(itemTotalPaise)}`;
   const pendingLabel = mode === "edit" ? "Saving…" : "Adding…";
 
   function handleSubmit(): void {
@@ -186,11 +195,17 @@ function MenuItemCustomizationDialogContents(props: MenuItemCustomizationDialogP
       role="dialog"
       aria-modal="true"
       aria-labelledby="customization-title"
-      className="fixed inset-0 z-50 overflow-y-auto bg-black/60 px-4 py-6"
+      className="fixed inset-0 z-50 overflow-y-auto bg-black/70 px-4 py-6 md:py-10"
     >
-      <div className="mx-auto flex w-full max-w-lg flex-col gap-5 rounded-sm border border-[var(--border-strong)] bg-[var(--bg-page)] p-5 md:p-6">
+      <div className="mx-auto flex max-h-[calc(100vh-3rem)] w-full max-w-[640px] flex-col overflow-hidden rounded-xl border border-[var(--border-strong)] bg-[var(--bg-page)] shadow-xl">
+        <div className="min-h-0 overflow-y-auto p-5 md:p-6">
         <div className="flex items-start justify-between gap-4">
-          <div>
+          <div className="flex min-w-0 gap-4">
+            {item.imagePath ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={item.imagePath} alt="" width={112} height={112} className="hidden h-28 w-28 shrink-0 rounded-lg object-cover sm:block" />
+            ) : null}
+            <div>
             <h2
               id="customization-title"
               className="font-display text-[28px] text-[var(--text-primary)]"
@@ -200,6 +215,7 @@ function MenuItemCustomizationDialogContents(props: MenuItemCustomizationDialogP
             <p className="font-body text-[14px] text-[var(--text-secondary)]">
               Base price {formatPaise(item.displayPricePaise)}
             </p>
+            </div>
           </div>
           <Button
             type="button"
@@ -244,11 +260,12 @@ function MenuItemCustomizationDialogContents(props: MenuItemCustomizationDialogP
                     return (
                       <label
                         key={option.modifierGroupOptionId}
-                        className="flex min-h-[44px] items-center justify-between gap-3"
+                        className={`flex min-h-[52px] cursor-pointer items-center justify-between gap-3 rounded-lg border px-3 transition-colors ${quantity > 0 ? "border-[var(--interactive-primary)] bg-[var(--interactive-ghost-hover)]" : "border-[var(--border-default)] bg-[var(--bg-section)]"}`}
                       >
-                        <span>
+                        <span className="flex items-center gap-3">
                           <input
                             type="checkbox"
+                            className="sr-only"
                             checked={quantity > 0}
                             disabled={
                               props.pending || (quantity === 0 && total >= group.maxTotalQuantity)
@@ -260,10 +277,12 @@ function MenuItemCustomizationDialogContents(props: MenuItemCustomizationDialogP
                                 event.target.checked ? 1 : 0,
                               )
                             }
-                          />{" "}
+                          />
+                          <span aria-hidden="true" className={`flex h-5 w-5 items-center justify-center rounded-full border text-[12px] ${quantity > 0 ? "border-[var(--interactive-primary)] bg-[var(--interactive-primary)] text-[var(--text-on-primary)]" : "border-[var(--border-strong)]"}`}>{quantity > 0 ? "✓" : ""}</span>
                           <span className="font-body text-[15px] text-[var(--text-primary)]">
                             {option.name}
                           </span>
+                          {quantity > 0 && option.displayPriceDeltaPaise === 0 ? <span className="font-body text-[12px] font-semibold text-[var(--interactive-primary-pressed)]">Included</span> : null}
                         </span>
                         {option.displayPriceDeltaPaise !== 0 ? (
                           <span className="font-body text-[14px] text-[var(--text-secondary)]">
@@ -334,13 +353,16 @@ function MenuItemCustomizationDialogContents(props: MenuItemCustomizationDialogP
             {props.error}
           </p>
         ) : null}
-        <div className="flex gap-3">
-          <Button type="button" variant="outline" onClick={props.onClose} disabled={props.pending}>
-            Cancel
-          </Button>
+        </div>
+        <div className="flex shrink-0 items-center justify-between gap-4 border-t border-[var(--border-default)] bg-[var(--bg-section)] p-4 md:px-6">
+          <div>
+            <span className="block font-body text-[12px] text-[var(--text-secondary)]">Item total</span>
+            <strong className="font-body text-[20px] text-[var(--text-primary)]">{formatPaise(itemTotalPaise)}</strong>
+          </div>
           <Button
             type="button"
             variant="secondary"
+            className="min-h-[48px] min-w-[13rem]"
             disabled={!valid || props.pending}
             onClick={handleSubmit}
           >

@@ -4,15 +4,11 @@ import { Button } from "@/components/ui/Button";
 import { formatPaise } from "@/components/ordering/format-money";
 import type { CustomerMenuItem } from "@/shared/customer-menu/types";
 
-const QTY_BUTTON_CLASS = "min-h-[44px] min-w-[44px] xl:min-h-8 xl:min-w-8";
-
 export type MenuItemRowProps = Readonly<{
   item: CustomerMenuItem;
   layout?: "card" | "row";
-  quantityInCart?: number;
   busy?: boolean;
   onAdd: (item: CustomerMenuItem) => void;
-  onDecrement: (item: CustomerMenuItem) => void;
   onCustomize: (item: CustomerMenuItem) => void;
 }>;
 
@@ -20,15 +16,7 @@ export type MenuItemRowProps = Readonly<{
  * Presentation-only Menu item. Does not fetch Menu or mutate Cart.
  */
 export function MenuItemRow(props: MenuItemRowProps) {
-  const {
-    item,
-    layout = "card",
-    quantityInCart,
-    busy = false,
-    onAdd,
-    onDecrement,
-    onCustomize,
-  } = props;
+  const { item, layout = "card", busy = false, onAdd, onCustomize } = props;
   const customizable = (item.modifierGroups?.length ?? 0) > 0;
   const isRow = layout === "row";
 
@@ -37,7 +25,7 @@ export function MenuItemRow(props: MenuItemRowProps) {
       className={
         isRow
           ? "border-b border-[var(--border-default)] py-3 flex gap-4 items-start"
-          : "border border-[var(--border-default)] bg-[var(--bg-section)] p-3 flex flex-col gap-3 h-full"
+          : "overflow-hidden rounded-lg border border-[var(--border-default)] bg-[var(--bg-section)] p-3 flex flex-col gap-3 h-full"
       }
     >
       {item.imagePath ? (
@@ -52,7 +40,7 @@ export function MenuItemRow(props: MenuItemRowProps) {
           className={
             isRow
               ? "h-16 w-16 object-cover shrink-0 aspect-square"
-              : "w-full aspect-[4/3] object-cover shrink-0"
+              : "w-full aspect-[4/3] md:max-xl:aspect-[5/3] object-cover shrink-0"
           }
         />
       ) : (
@@ -61,7 +49,7 @@ export function MenuItemRow(props: MenuItemRowProps) {
           className={
             isRow
               ? "h-16 w-16 shrink-0 aspect-square bg-[var(--bg-page)] border border-[var(--border-default)]"
-              : "w-full aspect-[4/3] shrink-0 bg-[var(--bg-page)] border border-[var(--border-default)]"
+              : "w-full aspect-[4/3] md:max-xl:aspect-[5/3] shrink-0 bg-[var(--bg-page)] border border-[var(--border-default)]"
           }
         />
       )}
@@ -70,8 +58,8 @@ export function MenuItemRow(props: MenuItemRowProps) {
           <h4
             className={
               isRow
-                ? "font-display text-[18px] leading-tight text-[var(--text-primary)]"
-                : "font-display text-[20px] leading-tight text-[var(--text-primary)]"
+                ? "font-body font-bold text-[16px] leading-tight text-[var(--text-primary)]"
+                : "font-body font-bold text-[16px] leading-tight text-[var(--text-primary)] line-clamp-2"
             }
           >
             {item.name}
@@ -85,70 +73,26 @@ export function MenuItemRow(props: MenuItemRowProps) {
             className={
               isRow
                 ? "font-heading text-[12px] text-[var(--text-secondary)] line-clamp-1"
-                : "font-heading text-[13px] text-[var(--text-secondary)] line-clamp-2"
+                : "font-body text-[13px] text-[var(--text-secondary)] line-clamp-2"
             }
           >
             {item.description}
           </p>
         ) : null}
-        {customizable ? (
+        <div className="mt-auto flex flex-col gap-1.5">
           <Button
             type="button"
             variant="secondary"
             size="sm"
-            className="self-start mt-auto min-h-[44px] xl:min-h-8"
+            className="min-h-[44px] w-full"
             disabled={busy}
-            aria-label={`Customize ${item.name}`}
-            onClick={() => onCustomize(item)}
+            aria-label={`Add ${item.name}`}
+            onClick={() => (customizable ? onCustomize(item) : onAdd(item))}
           >
-            Customize
+            {busy ? "Adding…" : "Add +"}
           </Button>
-        ) : quantityInCart ? (
-          <div className="flex items-center gap-2 mt-auto">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className={QTY_BUTTON_CLASS}
-              disabled={busy}
-              aria-label={`Decrease ${item.name} quantity`}
-              onClick={() => onDecrement(item)}
-            >
-              −
-            </Button>
-            <span
-              className="font-mono text-[13px] min-w-[1.5rem] text-center"
-              aria-live="polite"
-              aria-atomic="true"
-            >
-              {quantityInCart}
-              <span className="sr-only"> {item.name} in cart</span>
-            </span>
-            <Button
-              type="button"
-              variant="primary"
-              size="sm"
-              className={QTY_BUTTON_CLASS}
-              disabled={busy}
-              aria-label={`Increase ${item.name} quantity`}
-              onClick={() => onAdd(item)}
-            >
-              +
-            </Button>
-          </div>
-        ) : (
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            className="self-start mt-auto min-h-[44px] xl:min-h-8"
-            disabled={busy}
-            aria-label={`Add ${item.name} to cart`}
-            onClick={() => onAdd(item)}
-          >
-            {busy ? "Adding…" : "Add to cart"}
-          </Button>
-        )}
+          {customizable ? <span className="text-center font-body text-[12px] font-semibold text-[var(--interactive-primary-pressed)]">Customisable</span> : null}
+        </div>
       </div>
     </li>
   );
