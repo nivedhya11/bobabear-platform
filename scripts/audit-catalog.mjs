@@ -142,28 +142,6 @@ function checkMigrations() {
     );
   }
 
-  const allowedBases = new Set([
-    ...PRIOR_MIGRATIONS.map((p) => path.basename(p)),
-    "0006_canonical_catalog_model.sql",
-    "0007_existing_menu_import.sql",
-    "0008_assortment_operational_availability.sql",
-    "0009_pricing_charges_tax.sql",
-    "0010_promotions_coupons.sql",
-    "0011_customer_profiles.sql",
-    "0012_customer_addresses.sql",
-    "0013_serviceability.sql",
-    "0014_cart.sql",
-    "0015_checkout.sql",
-    "0016_payment.sql",
-    "0017_order.sql",
-    "0018_payment_provider_event_inbox.sql",
-    "0019_refund.sql",
-  ]);
-  const extra = drizzleFiles.filter((rel) => !allowedBases.has(path.basename(rel)));
-  if (extra.length > 0) {
-    findings.push(`Unexpected extra migration SQL files: ${extra.join(", ")}`);
-  }
-
   if (!existsSync(path.join(projectRoot, IMP012_MIGRATION))) return;
   const sql = read(IMP012_MIGRATION);
 

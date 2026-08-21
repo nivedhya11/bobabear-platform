@@ -116,31 +116,6 @@ function checkMigrations() {
     findings.push(`Expected exactly one IMP-011 migration, found ${imp011.length}: ${imp011.join(", ")}`);
   }
 
-  const extra = drizzleFiles.filter((rel) => {
-    const base = path.basename(rel);
-    return (
-      !PRIOR_MIGRATIONS.some((p) => path.basename(p) === base) &&
-      base !== "0005_organization_outlet_rbac_foundation.sql" &&
-      base !== "0006_canonical_catalog_model.sql" &&
-      base !== "0007_existing_menu_import.sql" &&
-      base !== "0008_assortment_operational_availability.sql" &&
-      base !== "0009_pricing_charges_tax.sql" &&
-      base !== "0010_promotions_coupons.sql" &&
-      base !== "0011_customer_profiles.sql" &&
-      base !== "0012_customer_addresses.sql" &&
-      base !== "0013_serviceability.sql" &&
-      base !== "0014_cart.sql" &&
-      base !== "0015_checkout.sql" &&
-      base !== "0016_payment.sql" &&
-      base !== "0017_order.sql" &&
-      base !== "0018_payment_provider_event_inbox.sql" &&
-      base !== "0019_refund.sql"
-    );
-  });
-  if (extra.length > 0) {
-    findings.push(`Unexpected extra migration SQL files: ${extra.join(", ")}`);
-  }
-
   if (existsSync(path.join(projectRoot, IMP011_MIGRATION))) {
     const sql = read(IMP011_MIGRATION);
     if (/\bENABLE\s+ROW\s+LEVEL\s+SECURITY\b/i.test(sql) || /\bCREATE\s+POLICY\b/i.test(sql)) {

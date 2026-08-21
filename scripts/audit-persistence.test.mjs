@@ -75,6 +75,49 @@ test("isAllowedPersistenceImportPath allows the persistence boundary, db tooling
   );
 });
 
+test("isAllowedPersistenceImportPath allows the exact additional script consumers", () => {
+  const allowedScriptPaths = [
+    "scripts/catalog/bootstrap-imp028c-modifiers.ts",
+    "scripts/e2e/seed-customer-ordering.ts",
+    "scripts/financial-document/recover-missing-receipt-vouchers.ts",
+    "scripts/financial-document/recover-missing-tax-invoices.ts",
+    "scripts/financial-document/signing.ts",
+    "scripts/order/recover-missing-orders.ts",
+    "scripts/refund/recover-missing-statutory-decisions.ts",
+  ];
+
+  for (const path of allowedScriptPaths) {
+    assert.equal(isAllowedPersistenceImportPath(path), true, path);
+  }
+});
+
+test("isAllowedPersistenceImportPath allows the exact modifier-bootstrap integration test", () => {
+  assert.equal(
+    isAllowedPersistenceImportPath(
+      "tests/catalog-imp028c-modifiers/bootstrap.integration.test.tsx",
+    ),
+    true,
+  );
+});
+
+test("isAllowedPersistenceImportPath rejects financial-document and E2E siblings", () => {
+  assert.equal(
+    isAllowedPersistenceImportPath("scripts/financial-document/not-authorized.ts"),
+    false,
+  );
+  assert.equal(isAllowedPersistenceImportPath("scripts/e2e/not-authorized.ts"), false);
+});
+
+test("isAllowedPersistenceImportPath rejects other exact-allowlist siblings", () => {
+  assert.equal(isAllowedPersistenceImportPath("scripts/catalog/not-authorized.ts"), false);
+  assert.equal(isAllowedPersistenceImportPath("scripts/order/not-authorized.ts"), false);
+  assert.equal(isAllowedPersistenceImportPath("scripts/refund/not-authorized.ts"), false);
+  assert.equal(
+    isAllowedPersistenceImportPath("tests/catalog-imp028c-modifiers/not-authorized.test.tsx"),
+    false,
+  );
+});
+
 test("isAllowedPersistenceImportPath rejects the public app tree and arbitrary server code", () => {
   assert.equal(isAllowedPersistenceImportPath("src/app/page.tsx"), false);
   assert.equal(isAllowedPersistenceImportPath("src/components/Nav.tsx"), false);

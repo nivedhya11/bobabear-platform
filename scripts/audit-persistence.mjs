@@ -82,12 +82,26 @@ const ALLOWED_PERSISTENCE_IMPORT_PREFIXES = [
   "tests/serviceability-concurrency/",
 ];
 
+const ALLOWED_PERSISTENCE_IMPORT_PATHS = new Set([
+  "scripts/catalog/bootstrap-imp028c-modifiers.ts",
+  "scripts/e2e/seed-customer-ordering.ts",
+  "scripts/financial-document/recover-missing-receipt-vouchers.ts",
+  "scripts/financial-document/recover-missing-tax-invoices.ts",
+  "scripts/financial-document/signing.ts",
+  "scripts/order/recover-missing-orders.ts",
+  "scripts/refund/recover-missing-statutory-decisions.ts",
+  "tests/catalog-imp028c-modifiers/bootstrap.integration.test.tsx",
+]);
+
 /** Paths allowed to import the persistence boundary at all (the boundary
  * itself, organization/access-control/catalog/assortment/pricing/promotions/
  * customer-profiles/customer-addresses/serviceability application modules, one-shot database/access/menu/
  * assortment/pricing tooling, and the integration-test trees). */
 export function isAllowedPersistenceImportPath(relativePath) {
-  return ALLOWED_PERSISTENCE_IMPORT_PREFIXES.some((prefix) => relativePath.startsWith(prefix));
+  return (
+    ALLOWED_PERSISTENCE_IMPORT_PATHS.has(relativePath) ||
+    ALLOWED_PERSISTENCE_IMPORT_PREFIXES.some((prefix) => relativePath.startsWith(prefix))
+  );
 }
 
 const ALLOWED_MIGRATION_FACTORY_IMPORT_PREFIXES = [
