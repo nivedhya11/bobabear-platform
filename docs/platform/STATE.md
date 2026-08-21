@@ -2,11 +2,11 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R53",
+  "stateVersion": "STATE-R54",
   "acceptedThrough": "IMP-028C",
   "currentProductSlice": "IMP-028D",
   "nextProductSlice": "IMP-029",
-  "pendingAcceptance": "NONE",
+  "pendingAcceptance": "IMP-028D",
   "governanceHealth": "ALIGNED",
   "lastReviewed": "2026-08-21"
 }
@@ -29,9 +29,9 @@ Accepted Range:            IMP-001 → IMP-028C (including IMP-005A and IMP-026C
 
 ```text
 Current Product Implementation: IMP-028D — Desktop Ordering Continuity
-Pending Acceptance:             NONE
+Pending Acceptance:             IMP-028D
 Next Product Slice:             IMP-029 — Operations Console API
-Current Governance Activity:    IMP-028D Desktop Ordering Continuity ARCHITECTURE_LOCKED / AUTHORIZED / STARTED / IMPLEMENTATION_IN_PROGRESS; prior founder UAT FAIL preserved; technical pre-UAT browser failure recorded; Founder UAT PENDING / NOT RUN; IMP-028C remains COMPLETE_AND_ACCEPTED; IMP-029 PLANNED / NOT_STARTED / NOT_AUTHORIZED; D-371 UNUSED
+Current Governance Activity:    IMP-028D Desktop Ordering Continuity ARCHITECTURE_LOCKED / AUTHORIZED / STARTED / COMPLETE / IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE; prior founder UAT FAIL preserved; technical pre-UAT browser failure corrected; Founder UAT PENDING / NOT RUN; IMP-028C remains COMPLETE_AND_ACCEPTED; IMP-029 PLANNED / NOT_STARTED / NOT_AUTHORIZED; D-371 UNUSED
 Governance Health:              ALIGNED
 ```
 
@@ -97,10 +97,10 @@ IMP-028C_ACCEPTED:        YES
 FOUNDER_UAT_REQUIRED:     YES
 FOUNDER_UAT:              PASS
 FOUNDER_UAT_COMPLETE:     YES
-IMP-028D:                 ARCHITECTURE_LOCKED / IMPLEMENTATION_IN_PROGRESS
+IMP-028D:                 ARCHITECTURE_LOCKED / IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
 IMP-028D_IMPLEMENTATION_AUTHORIZED: YES
 IMP-028D_IMPLEMENTATION_STARTED: YES
-IMP-028D_IMPLEMENTATION_COMPLETE: NO
+IMP-028D_IMPLEMENTATION_COMPLETE: YES
 IMP-028D_ACCEPTED:        NO
 IMP-028D_FOUNDER_UAT_REQUIRED: YES
 IMP-028D_FOUNDER_UAT:     PENDING
@@ -187,6 +187,18 @@ independent acceptance without changing decision register or global architecture
 STATE-R36 record IMP-028B canonical activation without changing decision register or global
 architecture. GTM-R39 / STATE-R37 record IMP-028B architecture lock and implementation
 authorization without changing decision register or global architecture.
+
+STATE-R54 records completion of the bounded IMP-028D `IntersectionObserver` root-margin correction.
+The unsupported `-7rem 0px -55% 0px` is now `-112px 0px -55% 0px`, preserving the intended 7rem
+sticky-header offset at the standard 16px root size. Regression and deterministic validation pass;
+source implementation commit is `259d27d`. Architecture remains `ARCHITECTURE_LOCKED`;
+implementation is `AUTHORIZED` / `STARTED` / `COMPLETE` with
+`IMP-028D_IMPLEMENTATION_COMPLETE: YES`; lifecycle is
+`IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`. `acceptedThrough` remains IMP-028C;
+`currentProductSlice` remains IMP-028D; `pendingAcceptance` becomes IMP-028D;
+`nextProductSlice` remains IMP-029; `IMP-028D_ACCEPTED: NO`; and Founder UAT remains PENDING / NOT
+RUN. D-371 remains unused; IMP-029 remains planned, not started, and not authorized. Supersedes
+STATE-R53 for the current IMP-028D lifecycle position.
 
 STATE-R53 reopens IMP-028D for an authorized, bounded technical correction after the UAT deployment
 at `365019e0e64e2d855298c714d3c65671183303b1` reached healthy APIs but browser rendering failed
