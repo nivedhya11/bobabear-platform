@@ -328,7 +328,7 @@ export function CheckoutClient(props: { catalog: OrderingCatalog }) {
               Your cart is empty. Add something before checkout.
             </p>
             <Button asChild variant="primary">
-              <a href="/order">Back to menu</a>
+              <a href="/order/">Back to menu</a>
             </Button>
           </div>
         ) : null}

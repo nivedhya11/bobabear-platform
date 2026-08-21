@@ -115,7 +115,7 @@ export default function PrivacyPage() {
           <p>
             You can order Food directly on this website through BOBA Direct
             (the Menu at{" "}
-            <Link href="/order" className="text-[var(--interactive-secondary)] hover:underline">
+            <Link href="/order/" className="text-[var(--interactive-secondary)] hover:underline">
               /order
             </Link>
             ). When you order here, we use the information needed to authenticate

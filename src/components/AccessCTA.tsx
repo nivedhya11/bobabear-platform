@@ -227,7 +227,7 @@ export function AccessCTA() {
 
         <RevealChild className="mb-8 md:mb-10">
           <a
-            href="/order"
+            href="/order/"
             className={[
               "group inline-flex items-center gap-3 focus-ring",
               "h-14 px-6 rounded-sm",

@@ -203,7 +203,7 @@ export function Hero() {
               className="flex flex-row gap-4 flex-wrap mt-14"
             >
               <Button asChild variant="primary" size="lg">
-                <a href="/order">Order Now</a>
+                <a href="/order/">Order Now</a>
               </Button>
               <Button asChild variant="outline" size="lg">
                 <a href="#access">Access Drop</a>
@@ -246,7 +246,7 @@ export function Hero() {
 
           <div className="flex flex-col gap-3">
             <Button asChild variant="primary" size="lg" className="w-full">
-              <a href="/order">Order Now</a>
+              <a href="/order/">Order Now</a>
             </Button>
             <Button asChild variant="outline" size="lg" className="w-full">
               <a href="#access">Access Drop</a>
