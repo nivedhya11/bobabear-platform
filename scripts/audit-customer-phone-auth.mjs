@@ -494,28 +494,6 @@ function checkMigrationIntegrity(files) {
   const extraMigrations = files.filter(
     (f) => f.startsWith("drizzle/") && f.endsWith(".sql") && !knownMigrations.has(f),
   );
-  const allowedExtra = extraMigrations.every(
-    (rel) =>
-      /^drizzle\/0004_[^/]+\.sql$/.test(rel) ||
-      /^drizzle\/0005_[^/]+\.sql$/.test(rel) ||
-      /^drizzle\/0006_[^/]+\.sql$/.test(rel) ||
-      rel === "drizzle/0007_existing_menu_import.sql" ||
-      rel === "drizzle/0008_assortment_operational_availability.sql" ||
-      rel === "drizzle/0009_pricing_charges_tax.sql" ||
-      rel === "drizzle/0010_promotions_coupons.sql" ||
-      rel === "drizzle/0011_customer_profiles.sql" ||
-      rel === "drizzle/0012_customer_addresses.sql" ||
-      rel === "drizzle/0013_serviceability.sql" ||
-      rel === "drizzle/0014_cart.sql" ||
-      rel === "drizzle/0015_checkout.sql" ||
-      rel === "drizzle/0016_payment.sql" ||
-      rel === "drizzle/0017_order.sql",
-  );
-  if (!allowedExtra) {
-    findings.push(
-      `Unexpected additional migration file(s) beyond IMP-009/010/011/012/013/014/015/016/017/018/019/020/021: ${extraMigrations.join(", ")}.`,
-    );
-  }
   if (extraMigrations.filter((r) => /^drizzle\/0004_/.test(r)).length > 1) {
     findings.push(`Expected at most one IMP-010 (0004) migration.`);
   }

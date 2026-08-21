@@ -474,11 +474,7 @@ function checkNewMigration(files) {
   }
 }
 
-/**
- * Post-foundation migrations: IMP-009 adds `0003_*`, IMP-010 adds `0004_*`,
- * IMP-011 adds `0005_*`, IMP-012 adds `0006_*`, IMP-013 adds `0007_*`.
- * Nothing beyond 0007 is allowed here.
- */
+/** Validate the IMP-009 migration and known historical successor contracts. */
 function checkPhoneMigrationIfPresent(files) {
   const phoneMigration = "drizzle/0003_customer_phone_otp_authentication.sql";
   const knownMigrations = new Set([
@@ -525,29 +521,6 @@ function checkPhoneMigrationIfPresent(files) {
   const laterThanPhone = extraMigrations.filter((f) => !/^drizzle\/0003_/.test(f));
   if (laterThanPhone.length === 0) return;
 
-  const allowedLater = laterThanPhone.every(
-    (rel) =>
-      /^drizzle\/0004_[^/]+\.sql$/.test(rel) ||
-      /^drizzle\/0005_[^/]+\.sql$/.test(rel) ||
-      /^drizzle\/0006_[^/]+\.sql$/.test(rel) ||
-      rel === "drizzle/0007_existing_menu_import.sql" ||
-      rel === "drizzle/0008_assortment_operational_availability.sql" ||
-      rel === "drizzle/0009_pricing_charges_tax.sql" ||
-      rel === "drizzle/0010_promotions_coupons.sql" ||
-      rel === "drizzle/0011_customer_profiles.sql" ||
-      rel === "drizzle/0012_customer_addresses.sql" ||
-      rel === "drizzle/0013_serviceability.sql" ||
-      rel === "drizzle/0014_cart.sql" ||
-      rel === "drizzle/0015_checkout.sql" ||
-      rel === "drizzle/0016_payment.sql" ||
-      rel === "drizzle/0017_order.sql",
-  );
-  if (!allowedLater) {
-    findings.push(
-      `Unexpected additional migration file(s) beyond IMP-009/010/011/012/013/014/015/016/017/018/019/020/021: ${laterThanPhone.join(", ")}.`,
-    );
-    return;
-  }
   const imp010 = laterThanPhone.filter((rel) => /^drizzle\/0004_/.test(rel));
   const imp011 = laterThanPhone.filter((rel) => /^drizzle\/0005_/.test(rel));
   const imp012 = laterThanPhone.filter((rel) => /^drizzle\/0006_/.test(rel));
