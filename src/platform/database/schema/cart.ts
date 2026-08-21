@@ -9,6 +9,7 @@
 import { sql } from "drizzle-orm";
 import {
   bigint,
+  bigserial,
   check,
   foreignKey,
   index,
@@ -123,6 +124,29 @@ export const cartLinesTable = appSchema.table(
     }).onDelete("restrict"),
     check("cart_lines_quantity_positive_check", sql`${table.quantity} > 0`),
     index("cart_lines_cart_id_idx").on(table.cartId),
+  ],
+);
+
+/** Internal D-371 removal-order authority; Cart lines remain coalesced. */
+export const cartLineUnitsTable = appSchema.table(
+  "cart_line_units",
+  {
+    ordinal: bigserial("ordinal", { mode: "bigint" }).primaryKey(),
+    cartId: uuid("cart_id").notNull(),
+    cartLineId: uuid("cart_line_id").notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "cart_line_units_cart_fk",
+      columns: [table.cartId],
+      foreignColumns: [cartsTable.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "cart_line_units_line_fk",
+      columns: [table.cartLineId],
+      foreignColumns: [cartLinesTable.id],
+    }).onDelete("cascade"),
+    index("cart_line_units_cart_line_idx").on(table.cartId, table.cartLineId),
   ],
 );
 

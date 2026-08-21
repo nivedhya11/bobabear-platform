@@ -8,7 +8,9 @@ export type MenuItemRowProps = Readonly<{
   item: CustomerMenuItem;
   layout?: "card" | "row";
   busy?: boolean;
+  quantity?: number;
   onAdd: (item: CustomerMenuItem) => void;
+  onDecrement?: (item: CustomerMenuItem) => void;
   onCustomize: (item: CustomerMenuItem) => void;
 }>;
 
@@ -16,7 +18,7 @@ export type MenuItemRowProps = Readonly<{
  * Presentation-only Menu item. Does not fetch Menu or mutate Cart.
  */
 export function MenuItemRow(props: MenuItemRowProps) {
-  const { item, layout = "card", busy = false, onAdd, onCustomize } = props;
+  const { item, layout = "card", busy = false, quantity = 0, onAdd, onCustomize, onDecrement } = props;
   const customizable = (item.modifierGroups?.length ?? 0) > 0;
   const isRow = layout === "row";
 
@@ -80,7 +82,13 @@ export function MenuItemRow(props: MenuItemRowProps) {
           </p>
         ) : null}
         <div className="mt-auto flex flex-col gap-1.5">
-          <Button
+          {quantity > 0 ? (
+            <div className="flex min-h-[44px] items-center justify-between rounded-md border border-[var(--border-default)] px-2 font-body font-bold" aria-label={`${item.name} quantity ${quantity}`}>
+              <button type="button" disabled={busy} aria-label={`Remove one ${item.name}`} onClick={() => onDecrement?.(item)}>−</button>
+              <span aria-live="polite">{quantity}</span>
+              <button type="button" disabled={busy} aria-label={`Add one ${item.name}`} onClick={() => (customizable ? onCustomize(item) : onAdd(item))}>+</button>
+            </div>
+          ) : <Button
             type="button"
             variant="secondary"
             size="sm"
@@ -90,7 +98,7 @@ export function MenuItemRow(props: MenuItemRowProps) {
             onClick={() => (customizable ? onCustomize(item) : onAdd(item))}
           >
             {busy ? "Adding…" : "Add +"}
-          </Button>
+          </Button>}
           {customizable ? <span className="text-center font-body text-[12px] font-semibold text-[var(--interactive-primary-pressed)]">Customisable</span> : null}
         </div>
       </div>

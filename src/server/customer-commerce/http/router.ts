@@ -13,6 +13,7 @@ import {
   applyCartCoupon,
   claimGuestCart,
   clearCart,
+  decrementLatestCartVariant,
   evaluateCart,
   getActiveCart,
   reconcileGuestCartWithCustomer,
@@ -434,6 +435,26 @@ export async function routeCustomerCommerceRequest(
         { status: 200, requestId },
       );
       return outcome("add_cart_line", 200, "OK");
+    }
+
+    {
+      const variantParams = matchPath(pathname, "/api/v1/cart/variants/{variantId}/decrement");
+      if (variantParams && method === "POST") {
+        const body = await readBody(req, requestId, res);
+        if (!body) return outcome("decrement_latest_cart_variant", 400, "INVALID_REQUEST");
+        const brandId = requireBrandId(body.brandId);
+        const access = await buildCartAccess(deps, req, brandId);
+        const cart = await decrementLatestCartVariant(deps.persistence, access, {
+          ...withoutKeys(body, ["brandId"]),
+          variantId: variantParams.variantId,
+        }, { policy: CUSTOMER_COMMERCE_CART_POLICY });
+        sendJson(res, { ok: true, cart }, { status: 200, requestId });
+        return outcome("decrement_latest_cart_variant", 200, "OK");
+      }
+      if (variantParams) {
+        sendMethodNotAllowed(res, ["POST"], requestId);
+        return outcome("decrement_latest_cart_variant", 405, "METHOD_NOT_ALLOWED");
+      }
     }
 
     {

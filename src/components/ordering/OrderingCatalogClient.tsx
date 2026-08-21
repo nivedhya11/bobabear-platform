@@ -24,6 +24,7 @@ import { commerceErrorCopy } from "@/components/ordering/error-copy";
 import { cartEvaluationCustomerCopy } from "@/components/ordering/serviceability-copy";
 import {
   addCartLine,
+  decrementLatestCartVariant,
   evaluateCart,
   getActiveCart,
   getCustomerMenu,
@@ -197,6 +198,14 @@ export function OrderingCatalogClient(props: { brandId: string }) {
     return map;
   }, [cart]);
 
+  const aggregateQuantityByVariant = useMemo(() => {
+    const quantities = new Map<string, number>();
+    for (const line of cart?.lines ?? []) {
+      quantities.set(line.variantId, (quantities.get(line.variantId) ?? 0) + line.quantity);
+    }
+    return quantities;
+  }, [cart]);
+
   const linePresentations = useMemo(
     () =>
       buildCartLinePresentations(
@@ -280,6 +289,22 @@ export function OrderingCatalogClient(props: { brandId: string }) {
         brandId,
         cartLineId: lineId,
         quantity,
+        expectedRevision: cart.revision,
+      });
+      if (!result.ok) {
+        setError(commerceErrorCopy(result.code));
+        return;
+      }
+      await updateCartFromMutation(result.data.cart);
+    });
+  }
+
+  async function decrementItem(item: CustomerMenuItem): Promise<void> {
+    if (!cart) return;
+    await withPending(`decrement:${item.variantId}`, async () => {
+      const result = await decrementLatestCartVariant({
+        brandId,
+        variantId: item.variantId,
         expectedRevision: cart.revision,
       });
       if (!result.ok) {
@@ -486,14 +511,16 @@ export function OrderingCatalogClient(props: { brandId: string }) {
                       role="list"
                     >
                       {sub.items.map((item) => {
-                        const busy = pendingKey === item.variantId;
+                        const busy = pendingKey === item.variantId || pendingKey === `decrement:${item.variantId}`;
                         return (
                           <MenuItemRow
                             key={`${item.productId}-${item.variantId}`}
                             item={item}
                             layout="card"
                             busy={busy}
+                            quantity={aggregateQuantityByVariant.get(item.variantId) ?? 0}
                             onAdd={(next) => void addItem(next)}
+                            onDecrement={(next) => void decrementItem(next)}
                             onCustomize={setCustomizingItem}
                           />
                         );

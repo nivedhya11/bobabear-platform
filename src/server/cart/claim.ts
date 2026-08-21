@@ -28,6 +28,7 @@ import {
   findCustomerCartRow,
   findGuestCartRowByVerifier,
   insertCartLineWithConfiguration,
+  moveCartLineUnits,
   loadCartAggregate,
   lockCartLinesAscending,
   lockCartsByIdsAscending,
@@ -322,12 +323,14 @@ export async function reconcileGuestCartWithCustomer(
           );
         }
         await setCartLineQuantityRow(tx, match.id, nextQty);
+        await moveCartLineUnits(tx, { fromCartId: lockedGuest.id, fromLineId: guestLine.id, toCartId: lockedCustomer.id, toLineId: match.id });
       } else {
-        await insertCartLineWithConfiguration(tx, {
+        const lineId = await insertCartLineWithConfiguration(tx, {
           cartId: lockedCustomer.id,
           configuration: guestConfig,
           quantity: guestLine.quantity,
         });
+        await moveCartLineUnits(tx, { fromCartId: lockedGuest.id, fromLineId: guestLine.id, toCartId: lockedCustomer.id, toLineId: lineId });
       }
     }
 

@@ -98,6 +98,18 @@ export async function setCartLineQuantity(input: {
   return rememberFromCartResult(input.brandId, result);
 }
 
+export async function decrementLatestCartVariant(input: {
+  brandId: string;
+  variantId: string;
+  expectedRevision: string;
+}): Promise<CommerceHttpResult<{ cart: CommerceCart }>> {
+  const result = await commerceRequest<CartEnvelope>(
+    `/api/v1/cart/variants/${input.variantId}/decrement`,
+    { method: "POST", body: { brandId: input.brandId, expectedRevision: input.expectedRevision }, guestToken: true },
+  );
+  return rememberFromCartResult(input.brandId, result);
+}
+
 export async function updateCartLineConfiguration(input: {
   brandId: string;
   cartLineId: string;

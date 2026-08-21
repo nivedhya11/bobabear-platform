@@ -40,6 +40,7 @@ export {
   updateCartLineConfiguration,
   removeCartLine,
   clearCart,
+  decrementLatestCartVariant,
   applyCartCoupon,
   removeCartCoupon,
   type CartAccess,
