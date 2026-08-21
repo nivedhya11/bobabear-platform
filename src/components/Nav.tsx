@@ -94,6 +94,7 @@ export function Nav() {
   const cartActive = isCartPath(pathname);
   const ordersActive = isOrdersPath(pathname);
   const signInActive = isLoginPath(pathname);
+  const orderingChrome = pathname.startsWith("/order");
 
   useEffect(() => {
     if (!drawerOpen) {
@@ -242,7 +243,7 @@ export function Nav() {
           "border-b border-border-subtle",
         )}
       >
-        <div className="mx-auto max-w-[1280px] h-full px-3 md:px-8 lg:px-12">
+        <div className={cn("mx-auto h-full px-3 md:px-8", orderingChrome ? "max-w-[1620px]" : "max-w-[1280px] lg:px-12")}>
           <div className="hidden lg:flex items-center justify-between gap-8 h-full">
             <a
               href={homeHref}

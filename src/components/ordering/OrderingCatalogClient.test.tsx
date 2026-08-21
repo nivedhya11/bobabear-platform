@@ -12,16 +12,6 @@ const setCartLineQuantity = vi.fn<(...args: unknown[]) => unknown>();
 const removeCartLine = vi.fn<(...args: unknown[]) => unknown>();
 const evaluateCart = vi.fn<(...args: unknown[]) => unknown>();
 
-const scrollSpyState = vi.hoisted(() => ({
-  activeSectionId: null as string | null,
-}));
-
-vi.mock("./useCategoryScrollSpy", () => ({
-  useCategoryScrollSpy: () => ({
-    activeSectionId: scrollSpyState.activeSectionId,
-  }),
-}));
-
 vi.mock("@/lib/customer-commerce", async () => {
   const actual = await vi.importActual<typeof import("@/lib/customer-commerce")>(
     "@/lib/customer-commerce",
@@ -128,7 +118,6 @@ const multiCategoryMenu: CustomerMenuProjection = {
 };
 
 beforeEach(() => {
-  scrollSpyState.activeSectionId = null;
   getActiveCart.mockReset();
   getCustomerMenu.mockReset();
   addCartLine.mockReset();
@@ -153,10 +142,11 @@ describe("OrderingCatalogClient", () => {
     await waitFor(() => expect(screen.getByTestId("menu-category-nav")).toBeInTheDocument());
     expect(getCustomerMenu).toHaveBeenCalledWith({ brandId: "brand-1" });
     expect(
-      within(screen.getByTestId("menu-category-nav")).getByRole("link", { name: "Drinks" }),
-    ).toHaveAttribute("href", "#cat-sec-1");
+      within(screen.getByTestId("menu-category-nav")).getByRole("button", { name: "Drinks" }),
+    ).toHaveAttribute("aria-current", "true");
     expect(screen.getByRole("heading", { name: "Classic Milk Tea" })).toBeInTheDocument();
     expect(screen.getByText("₹199.00")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Add Classic Milk Tea" })).toHaveTextContent("Add +");
   });
 
   it("shows sticky cart after add and hides when cart empties", async () => {
@@ -198,9 +188,14 @@ describe("OrderingCatalogClient", () => {
     render(<OrderingCatalogClient brandId="brand-1" />);
     await waitFor(() => expect(screen.queryByTestId("sticky-cart")).not.toBeInTheDocument());
 
-    await userEvent.click(screen.getByRole("button", { name: /add classic milk tea to cart/i }));
+    await userEvent.click(screen.getByRole("button", { name: "Add Classic Milk Tea" }));
     await waitFor(() => expect(screen.getByTestId("sticky-cart")).toBeInTheDocument());
-    expect(screen.getByTestId("sticky-cart")).toHaveTextContent(/1 item/i);
+    const stickyCart = screen.getByTestId("sticky-cart");
+    const mobileContent = within(stickyCart).getByTestId("mobile-sticky-cart-content");
+    expect(mobileContent).toHaveTextContent("1 item · ₹199.00");
+    expect(mobileContent).not.toHaveTextContent("Estimated subtotal");
+    expect(stickyCart).toHaveTextContent("View Cart →");
+    expect(screen.queryByText("Cart · 1 · Estimated subtotal ₹199.00")).not.toBeInTheDocument();
 
     await userEvent.click(
       screen.getAllByRole("button", { name: /decrease classic milk tea quantity/i })[0]!,
@@ -248,12 +243,13 @@ describe("OrderingCatalogClient", () => {
       ok: true, status: 200, data: { cart: { id: "cart-1", brandId: "brand-1", ownerMode: "guest", revision: "1", manualCouponCode: null, expiresAt: null, createdAt: "2026-08-13T00:00:00.000Z", updatedAt: "2026-08-13T00:00:00.000Z", lines: [] } },
     });
     render(<OrderingCatalogClient brandId="brand-1" />);
-    await userEvent.click(await screen.findByRole("button", { name: "Customize Classic Milk Tea" }));
+    expect(await screen.findByText("Customisable")).toBeInTheDocument();
+    await userEvent.click(await screen.findByRole("button", { name: "Add Classic Milk Tea" }));
     expect(screen.getByRole("dialog", { name: "Customize Classic Milk Tea" })).toBeInTheDocument();
     expect(screen.getByRole("checkbox", { name: /pearls/i })).not.toBeChecked();
     expect(screen.getByRole("checkbox", { name: /regular ice/i })).toBeChecked();
     await userEvent.click(screen.getByRole("checkbox", { name: /pearls/i }));
-    await userEvent.click(screen.getByRole("button", { name: "Add to cart" }));
+    await userEvent.click(screen.getByRole("button", { name: /Add to cart/ }));
     await waitFor(() => expect(addCartLine).toHaveBeenCalledWith({
       brandId: "brand-1", variantId: "var-1", quantity: 1, expectedRevision: undefined,
       modifiers: [
@@ -278,11 +274,11 @@ describe("OrderingCatalogClient", () => {
     };
     getCustomerMenu.mockResolvedValueOnce({ ok: true, status: 200, data: { menu: customizedMenu } });
     render(<OrderingCatalogClient brandId="brand-1" />);
-    await userEvent.click(await screen.findByRole("button", { name: "Customize Classic Milk Tea" }));
-    expect(screen.getByRole("button", { name: "Add to cart" })).toBeDisabled();
+    await userEvent.click(await screen.findByRole("button", { name: "Add Classic Milk Tea" }));
+    expect(screen.getByRole("button", { name: /Add to cart/ })).toBeDisabled();
     expect(screen.getByRole("alert")).toHaveTextContent("Size requires at least 1 selection");
     await userEvent.click(screen.getByRole("checkbox", { name: /large/i }));
-    expect(screen.getByRole("button", { name: "Add to cart" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: /Add to cart/ })).toBeEnabled();
   });
 });
 
@@ -333,8 +329,7 @@ describe("OrderingCatalogClient IMP-028D", () => {
     expect(screen.getByTestId("menu-category-nav").className).toMatch(/xl:hidden/);
   });
 
-  it("applies aria-current from scroll-spy active category", async () => {
-    scrollSpyState.activeSectionId = "cat-sec-2";
+  it("renders only the selected category and switches explicitly", async () => {
     getCustomerMenu.mockResolvedValue({
       ok: true,
       status: 200,
@@ -343,27 +338,15 @@ describe("OrderingCatalogClient IMP-028D", () => {
     render(<OrderingCatalogClient brandId="brand-1" />);
     await waitFor(() => expect(screen.getByTestId("menu-category-nav")).toBeInTheDocument());
     const horizontal = screen.getByTestId("menu-category-nav");
-    expect(within(horizontal).getByRole("link", { name: "Snacks" })).toHaveAttribute(
-      "aria-current",
-      "location",
-    );
-    expect(within(horizontal).getByRole("link", { name: "Drinks" })).not.toHaveAttribute(
-      "aria-current",
-    );
-  });
-
-  it("keeps category anchors usable for click navigation", async () => {
-    getCustomerMenu.mockResolvedValue({
-      ok: true,
-      status: 200,
-      data: { menu: multiCategoryMenu },
-    });
-    render(<OrderingCatalogClient brandId="brand-1" />);
-    const horizontal = await screen.findByTestId("menu-category-nav");
-    const drinks = within(horizontal).getByRole("link", { name: "Drinks" });
-    expect(drinks).toHaveAttribute("href", "#cat-sec-1");
-    await userEvent.click(drinks);
-    expect(drinks).toHaveAttribute("href", "#cat-sec-1");
+    const drinks = within(horizontal).getByRole("button", { name: "Drinks" });
+    const snacks = within(horizontal).getByRole("button", { name: "Snacks" });
+    expect(drinks).toHaveAttribute("aria-current", "true");
+    expect(screen.getByRole("heading", { name: "Classic Milk Tea" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Fish Balls" })).not.toBeInTheDocument();
+    await userEvent.click(snacks);
+    expect(snacks).toHaveAttribute("aria-current", "true");
+    expect(screen.getByRole("heading", { name: "Fish Balls" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Classic Milk Tea" })).not.toBeInTheDocument();
   });
 
   it("renders configured cart lines in the desktop live cart", async () => {
@@ -477,7 +460,8 @@ describe("OrderingCatalogClient IMP-028D", () => {
     expect(screen.getByTestId("desktop-live-cart")).not.toHaveTextContent(/Estimated subtotal/);
   });
 
-  it("does not create nested independently scrolling panes in the ordering shell", async () => {
+  it("makes the Cart item list the sole nested vertical scroll region", async () => {
+    getActiveCart.mockResolvedValue({ ok: true, status: 200, data: { cart: { id: "cart-1", brandId: "brand-1", ownerMode: "guest", revision: "1", manualCouponCode: null, expiresAt: null, createdAt: "2026-08-13T00:00:00.000Z", updatedAt: "2026-08-13T00:00:00.000Z", lines: [{ id: "line-1", variantId: "var-1", quantity: 1, modifiers: [], bundleSelections: [] }] } } });
     render(<OrderingCatalogClient brandId="brand-1" />);
     await waitFor(() => expect(screen.getByTestId("desktop-ordering-shell")).toBeInTheDocument());
     const shell = screen.getByTestId("desktop-ordering-shell");
@@ -485,9 +469,8 @@ describe("OrderingCatalogClient IMP-028D", () => {
     expect(screen.getByTestId("desktop-category-rail").className).not.toMatch(
       /overflow-y-auto|overflow-auto/,
     );
-    expect(screen.getByTestId("desktop-live-cart").className).not.toMatch(
-      /overflow-y-auto|overflow-auto/,
-    );
+    expect(screen.getByTestId("desktop-cart-items").className).toMatch(/overflow-y-auto/);
+    expect(screen.getByTestId("desktop-cart-footer")).not.toBe(screen.getByTestId("desktop-cart-items"));
   });
 
   it("keeps serviceability compact while retaining the delivery PIN control", async () => {
@@ -502,6 +485,6 @@ describe("OrderingCatalogClient IMP-028D", () => {
     render(<OrderingCatalogClient brandId="brand-1" />);
     const cart = await screen.findByTestId("desktop-live-cart");
     expect(cart).toHaveTextContent("Your cart");
-    expect(cart).toHaveTextContent("Your cart is empty.");
+    expect(cart).toHaveTextContent("Your cart is empty");
   });
 });
