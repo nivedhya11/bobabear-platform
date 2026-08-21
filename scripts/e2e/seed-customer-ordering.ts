@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 
 import { sql } from "drizzle-orm";
 
-import type { WebConfig } from "../../src/platform/config";
+import { loadConfig, type WorkerConfig } from "../../src/platform/config";
 import { bootstrapPlatformSuperAdmin } from "../../src/server/access-control";
 import {
   configureOutletOperatingProfile,
@@ -125,26 +125,12 @@ async function seedChargePricesOnBook(
   });
 }
 
-function applicationConfig(databaseUrl: string): WebConfig {
-  return {
-    environment: "test",
-    processKind: "web",
-    publicOrigin: "http://127.0.0.1:4175",
-    logLevel: "warn",
-    release: null,
-    allowUnsafeAdapters: true,
-    databaseSslMode: "disable",
-    port: 3000,
-    databaseUrl,
-  };
-}
-
-export async function seedCustomerOrderingCommerce(databaseUrl: string): Promise<{
+export async function seedCustomerOrderingCommerce(workerConfig: WorkerConfig): Promise<{
   brandId: string;
   outletId: string;
 }> {
   const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
-  const persistence = getApplicationPersistence(applicationConfig(databaseUrl));
+  const persistence = getApplicationPersistence(workerConfig);
   try {
     const imported = await runExistingMenuImport({
       projectRoot,
@@ -238,11 +224,8 @@ export async function seedCustomerOrderingCommerce(databaseUrl: string): Promise
 }
 
 async function main(): Promise<void> {
-  const databaseUrl = process.env.BOBA_BEAR_DATABASE_URL;
-  if (!databaseUrl) {
-    throw new Error("BOBA_BEAR_DATABASE_URL is required to seed customer-ordering E2E.");
-  }
-  const seeded = await seedCustomerOrderingCommerce(databaseUrl);
+  const workerConfig = loadConfig({ processKind: "worker", source: process.env });
+  const seeded = await seedCustomerOrderingCommerce(workerConfig);
   process.stdout.write(`${JSON.stringify({ ok: true, ...seeded })}\n`);
 }
 
