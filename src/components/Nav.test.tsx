@@ -6,6 +6,7 @@ import { CUSTOMER_AUTH_PUBLIC_PATHS } from "@/shared/customer-auth/contracts";
 
 import { Nav } from "./Nav";
 import { publishCartCount } from "./ordering/cart-count-sync";
+import { writeDeliveryPinContext } from "./ordering/delivery-pin-context";
 
 const usePathname = vi.fn<() => string>();
 const getActiveCart = vi.fn<(...args: unknown[]) => unknown>();
@@ -35,6 +36,7 @@ function desktopNav() {
 describe("Nav — IMP-028A Food Direct chrome", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+    window.sessionStorage.clear();
   });
 
   beforeEach(() => {
@@ -168,6 +170,22 @@ describe("Nav — IMP-028A Food Direct chrome", () => {
       expect(within(desktopNav()).getByRole("link", { name: "Drops" })).toHaveAttribute(
         "href",
         "/#drops",
+      );
+    });
+  });
+
+  it("shows a delivery PIN in ordering chrome only when the existing presentation context has one", async () => {
+    usePathname.mockReturnValue("/order/");
+    render(<Nav />);
+
+    expect(screen.getByTestId("deliver-to-header-orientation")).toHaveTextContent("Dehradun");
+    expect(screen.getByTestId("deliver-to-header-orientation")).not.toHaveTextContent("248001");
+
+    writeDeliveryPinContext("248001");
+
+    await waitFor(() => {
+      expect(screen.getByTestId("deliver-to-header-orientation")).toHaveTextContent(
+        "Dehradun · 248001",
       );
     });
   });

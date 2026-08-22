@@ -16,7 +16,10 @@ import {
   resolveCartPresentationEstimate,
 } from "@/components/ordering/cart-presentation";
 import { publishCartCount } from "@/components/ordering/cart-count-sync";
-import { readDeliveryPinContext } from "@/components/ordering/delivery-pin-context";
+import {
+  readDeliveryPinContext,
+  subscribeToDeliveryPinContext,
+} from "@/components/ordering/delivery-pin-context";
 import { commerceErrorCopy } from "@/components/ordering/error-copy";
 import { MenuItemCustomizationDialog } from "@/components/ordering/MenuItemCustomizationDialog";
 import { cartEvaluationCustomerCopy } from "@/components/ordering/serviceability-copy";
@@ -116,6 +119,13 @@ export function CartClient(props: { brandId: string }) {
       cancelled = true;
     };
   }, [load]);
+
+  useEffect(() => {
+    return subscribeToDeliveryPinContext((pin) => {
+      setDeliveryPin(pin);
+      void refreshEvaluation(pin, cart);
+    });
+  }, [cart, refreshEvaluation]);
 
   async function applyCartMutation(nextCart: CommerceCart): Promise<void> {
     setCart(nextCart);

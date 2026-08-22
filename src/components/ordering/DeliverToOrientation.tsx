@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 
-import { BUSINESS } from "@/lib/site";
 import {
   deliverToOperatingAreaHeading,
   deliverToOperatingAreaLocality,
@@ -28,8 +27,6 @@ export function DeliverToOrientation(props: {
     serviceabilityNote,
   } = props;
   const isHeaderPill = variant === "header-pill";
-  const pinLabel = postalCode.length === 6 ? postalCode : BUSINESS.postalCode;
-
   if (isHeaderPill) {
     return (
       <div
@@ -41,7 +38,8 @@ export function DeliverToOrientation(props: {
             {deliverToOperatingAreaHeading()}
           </p>
           <p className="font-body text-[13px] font-bold text-[var(--text-primary)]">
-            {deliverToOperatingAreaLocality()} · {pinLabel}
+            {deliverToOperatingAreaLocality()}
+            {postalCode.length === 6 ? ` · ${postalCode}` : null}
           </p>
         </div>
         <details className="ml-3 font-body text-[12px] text-[var(--text-secondary)]">

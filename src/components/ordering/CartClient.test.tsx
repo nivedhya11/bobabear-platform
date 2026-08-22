@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CartClient } from "./CartClient";
+import { writeDeliveryPinContext } from "./delivery-pin-context";
 import {
   STALE_MODIFIER_OPTION_LABEL,
 } from "./cart-presentation";
@@ -141,6 +142,7 @@ function guestCart(
 }
 
 beforeEach(() => {
+  window.sessionStorage.clear();
   getActiveCart.mockReset();
   getCustomerMenu.mockReset();
   setCartLineQuantity.mockReset();
@@ -163,6 +165,49 @@ beforeEach(() => {
 });
 
 describe("CartClient", () => {
+  it("keeps its delivery result synchronized with the existing PIN presentation context", async () => {
+    getActiveCart.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { cart: guestCart("1", [{ id: "line-1", variantId, quantity: 1 }]) },
+    });
+    evaluateCart
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        data: {
+          cartId: "cart-1",
+          cartRevision: "1",
+          evaluatedAt: "2026-08-13T00:00:00.000Z",
+          status: "REQUIRES_FULFILMENT_CONTEXT",
+        },
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        data: {
+          cartId: "cart-1",
+          cartRevision: "1",
+          evaluatedAt: "2026-08-13T00:00:00.000Z",
+          status: "COMPLETE",
+        },
+      });
+
+    render(<CartClient brandId={brandId} />);
+    await screen.findByText("Add your PIN to check delivery availability.");
+
+    writeDeliveryPinContext("248001");
+
+    await waitFor(() => {
+      expect(evaluateCart).toHaveBeenLastCalledWith({
+        brandId,
+        location: { postalCode: "248001" },
+      });
+      expect(screen.queryByText("Add your PIN to check delivery availability.")).not.toBeInTheDocument();
+      expect(screen.getByText("This PIN looks deliverable.")).toBeInTheDocument();
+    });
+  });
+
   it("loads Customer Menu instead of static ordering catalog for presentation", async () => {
     getActiveCart.mockResolvedValue({
       ok: true,
