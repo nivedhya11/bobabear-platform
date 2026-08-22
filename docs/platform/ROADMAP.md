@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R60",
+  "roadmapVersion": "GTM-R61",
   "acceptedThrough": "IMP-028D",
-  "currentProductSlice": "NONE",
-  "nextProductSlice": "IMP-029",
+  "currentProductSlice": "IMP-029",
+  "nextProductSlice": "IMP-030",
   "gtmBoundary": "IMP-040",
   "lastReviewed": "2026-08-22",
-  "supersedes": "GTM-R59"
+  "supersedes": "GTM-R60"
 }
 -->
 
@@ -263,8 +263,8 @@ IMP-028D locked capability architecture (architecture **ARCHITECTURE_LOCKED**; i
 
 ```text
 Accepted Through:     IMP-028D — Desktop Ordering Continuity
-Current Product Slice: NONE
-Next Product Slice:    IMP-029 — Operations Console API
+Current Product Slice: IMP-029 — Operations Console API
+Next Product Slice:    IMP-030 — Operations Console UI
 Pending Acceptance:    NONE
 Public GTM Boundary:   IMP-040 — Launch Validation & Cutover
 ```
@@ -300,8 +300,8 @@ IMP-028 is **COMPLETE_AND_ACCEPTED** under GTM-R30. Architecture remains **LOCKE
 Implementation is **AUTHORIZED** and **COMPLETE**. Locked capability artifact:
 [`capabilities/IMP-028-invoice-tax-receipt-credit-note.md`](./capabilities/IMP-028-invoice-tax-receipt-credit-note.md).
 Binding decisions **D-365** / **D-366** / **D-367**. Financial Document is the sole issued
-statutory/financial-document authority. Formal acceptance of IMP-028 does **not** authorize or
-start IMP-029. IMP-029 remains `PLANNED` / `NOT_STARTED` / `NOT_AUTHORIZED`. GTM-R34 records
+statutory/financial-document authority. Formal acceptance of IMP-028 did not itself authorize or
+start IMP-029. GTM-R34 records
 canonical activation of **IMP-028A — Food Direct UX Foundation** as `currentProductSlice`.
 GTM-R35 records IMP-028A capability-local architecture lock and implementation authorization.
 IMP-028A is `COMPLETE_AND_ACCEPTED`. Architecture is **ARCHITECTURE_LOCKED**.
@@ -313,9 +313,9 @@ implementation start, and implementation-complete-pending-acceptance progression
 IMP-028B `COMPLETE_AND_ACCEPTED`. Architecture is `ARCHITECTURE_LOCKED`; implementation is
 **AUTHORIZED** / **STARTED** / **COMPLETE**; formal acceptance is recorded
 (`IMP-028B_ACCEPTED: YES`; `acceptedThrough = IMP-028B`; `pendingAcceptance = NONE`;
-`currentProductSlice = NONE`). `nextProductSlice` remains IMP-029 as next-planned GTM bookkeeping
-only. Food Direct families C–J are not activated. `D-371` is unused. Acceptance of IMP-028B does
-not start IMP-029.
+`currentProductSlice = NONE`). GTM-R61 subsequently activates IMP-029 for architecture work only;
+`nextProductSlice` is now IMP-030. Food Direct families C–J are not activated. `D-371` is unused.
+Acceptance of IMP-028B did not itself start IMP-029.
 
 GTM-R31 records binding **D-368** (Customer Menu Read Projection Authority). Customer Menu serving
 is a server-backed READ PROJECTION over existing commerce authorities, implemented and accepted
@@ -378,9 +378,13 @@ IMP-028B_IMPLEMENTATION_AUTHORIZED: YES
 IMP-028B_IMPLEMENTATION_STARTED: YES
 IMP-028B_IMPLEMENTATION_COMPLETE: YES
 IMP-028B_ACCEPTED: YES
-IMP-029: PLANNED / NOT_STARTED
+IMP-029: ARCHITECTURE_IN_PROGRESS
+IMP-029_ARCHITECTURE: NOT_LOCKED
+IMP-029_ARCHITECTURE_LOCKED: NO
 IMP-029_IMPLEMENTATION_AUTHORIZED: NO
 IMP-029_STARTED: NO
+IMP-029_IMPLEMENTATION_COMPLETE: NO
+IMP-029_ACCEPTED: NO
 PROVIDER_ORIGINATED_WEBHOOK: VALIDATED_PUBLIC_HTTPS_TEST_MODE
 ```
 
@@ -443,8 +447,8 @@ only). Webhook acknowledgement timing / durable inbox / asynchronous Payment pro
 
 ## 4. Current Product Slice
 
-No product slice is currently active. IMP-028D is accepted; IMP-029 remains planned, not started,
-and not authorized.
+IMP-029 — Operations Console API is the current product slice for architecture work only.
+Architecture is not locked. Implementation is not authorized and has not started.
 
 ```text
 IMP-028D — Desktop Ordering Continuity
@@ -479,7 +483,16 @@ IMP-028B_IMPLEMENTATION_AUTHORIZED: YES
 IMP-028B_IMPLEMENTATION_STARTED: YES
 IMP-028B_IMPLEMENTATION_COMPLETE: YES
 IMP-028B_ACCEPTED: YES
-Next product slice: IMP-029 — Operations Console API (PLANNED / NOT_STARTED / NOT_AUTHORIZED)
+Capability: IMP-029 — Operations Console API
+Lifecycle: ARCHITECTURE_IN_PROGRESS
+Architecture: NOT_LOCKED
+Implementation: NOT_AUTHORIZED / NOT_STARTED
+IMP-029_ARCHITECTURE_LOCKED: NO
+IMP-029_IMPLEMENTATION_AUTHORIZED: NO
+IMP-029_STARTED: NO
+IMP-029_IMPLEMENTATION_COMPLETE: NO
+IMP-029_ACCEPTED: NO
+Next product slice: IMP-030 — Operations Console UI
 Pending acceptance: NONE
 acceptedThrough: IMP-028D
 IMP-026C: COMPLETE_AND_ACCEPTED
@@ -513,9 +526,6 @@ IMP-028B_IMPLEMENTATION_AUTHORIZED: YES
 IMP-028B_IMPLEMENTATION_STARTED: YES
 IMP-028B_IMPLEMENTATION_COMPLETE: YES
 IMP-028B_ACCEPTED: YES
-IMP-029: PLANNED / NOT_STARTED / NOT_AUTHORIZED
-IMP-029_IMPLEMENTATION_AUTHORIZED: NO
-IMP-029_STARTED: NO
 ```
 
 Independent acceptance of IMP-026 is recorded. IMP-027 remains independently and formally accepted
@@ -605,8 +615,8 @@ Architecture is **ARCHITECTURE_LOCKED**. Implementation is **AUTHORIZED** / **ST
 (`IMP-028D_ACCEPTED: YES`; `acceptedThrough = IMP-028D`; `pendingAcceptance = NONE`;
 `currentProductSlice = NONE`). Founder UAT is **PASS** for the exact merged-main candidate
 `166aec4efd1c55a9e14ab7216a2b1af71fb3b2c7` / tree
-`eba5f3f7fc25b07581801b53a130fb9547abc459`. IMP-029 remains planned, not started, and not
-authorized.
+`eba5f3f7fc25b07581801b53a130fb9547abc459`. GTM-R61 subsequently activates IMP-029 for
+architecture work only; implementation remains not authorized and not started.
 
 ## 5. Future GTM Slices
 
@@ -1010,6 +1020,18 @@ Historical GTM-R1 meanings that are **not** current:
 Current public GTM boundary is **IMP-040**, not IMP-035.
 
 ## 9. Roadmap Change Log
+
+### GTM-R61 — 2026-08-22
+
+- Records explicit Founder authorization and canonical activation of **IMP-029 — Operations Console
+  API** as `currentProductSlice` for architecture work only.
+- IMP-029 lifecycle becomes `ARCHITECTURE_IN_PROGRESS`; architecture is `NOT_LOCKED`; implementation
+  is `NOT_AUTHORIZED` / `NOT_STARTED`.
+- `acceptedThrough` remains IMP-028D; `pendingAcceptance` remains NONE; `nextProductSlice` becomes
+  IMP-030 — Operations Console UI.
+- Does **not** lock IMP-029 architecture, authorize or start IMP-029 implementation, create D-372,
+  modify ARCH-R16 or DR-13, implement Operations Console API or UI, implement delivery or
+  notifications, activate IMP-030, change `acceptedThrough`, or create pending acceptance.
 
 ### GTM-R60 — 2026-08-22
 
