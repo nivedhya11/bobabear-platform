@@ -127,7 +127,7 @@ export function CartLineList(props: CartLineListProps) {
                 alt=""
                 width={compact ? 56 : 72}
                 height={compact ? 56 : 72}
-                loading="lazy"
+                loading={compact ? "lazy" : "eager"}
                 decoding="async"
                 className={
                   compact
@@ -186,49 +186,66 @@ export function CartLineList(props: CartLineListProps) {
                 </button>
               ) : null}
 
-              <div
-                className={
-                  compact
-                    ? "mt-1 flex items-end justify-between gap-2"
-                    : "mt-1.5 flex items-center justify-between gap-3 sm:mt-1"
-                }
-              >
-                <div className="min-w-0 flex items-center gap-2">
-                  {compact && presentation.editEligible && onEdit ? (
-                    <button
-                      type="button"
-                      disabled={pending}
-                      aria-label={`Edit customization for ${presentation.itemName}`}
-                      onClick={() => onEdit(presentation.lineId)}
-                      className={ORANGE_LINK}
-                    >
-                      Edit
-                    </button>
-                  ) : null}
-                  {!compact && onRemove ? (
-                    <RemoveButton
-                      itemName={presentation.itemName}
-                      pending={pending}
-                      onRemove={() => onRemove(presentation.lineId)}
-                    />
-                  ) : null}
+              {compact ? (
+                <div className="mt-1 flex items-end justify-between gap-2">
+                  <div className="min-w-0 flex items-center gap-2">
+                    {presentation.editEligible && onEdit ? (
+                      <button
+                        type="button"
+                        disabled={pending}
+                        aria-label={`Edit customization for ${presentation.itemName}`}
+                        onClick={() => onEdit(presentation.lineId)}
+                        className={ORANGE_LINK}
+                      >
+                        Edit
+                      </button>
+                    ) : null}
+                  </div>
+                  <QuantityStepper
+                    quantity={presentation.quantity}
+                    disabled={pending}
+                    ariaLabel={`${presentation.itemName} quantity ${presentation.quantity}`}
+                    decrementLabel={`Decrease ${presentation.itemName} quantity`}
+                    incrementLabel={`Increase ${presentation.itemName} quantity`}
+                    onDecrement={() =>
+                      onChangeQuantity(presentation.lineId, presentation.quantity - 1)
+                    }
+                    onIncrement={() =>
+                      onChangeQuantity(presentation.lineId, presentation.quantity + 1)
+                    }
+                  />
                 </div>
-                <QuantityStepper
-                  quantity={presentation.quantity}
-                  disabled={pending}
-                  ariaLabel={`${presentation.itemName} quantity ${presentation.quantity}`}
-                  decrementLabel={`Decrease ${presentation.itemName} quantity`}
-                  incrementLabel={`Increase ${presentation.itemName} quantity`}
-                  onDecrement={() =>
-                    onChangeQuantity(presentation.lineId, presentation.quantity - 1)
-                  }
-                  onIncrement={() =>
-                    onChangeQuantity(presentation.lineId, presentation.quantity + 1)
-                  }
-                />
-              </div>
+              ) : null}
             </div>
           </div>
+
+          {!compact ? (
+            <div className="mt-1.5 flex items-center justify-between gap-3 border-t border-[var(--border-default)] pt-3 sm:mt-2">
+              {onRemove ? (
+                <RemoveButton
+                  itemName={presentation.itemName}
+                  pending={pending}
+                  onRemove={() => onRemove(presentation.lineId)}
+                />
+              ) : (
+                <span aria-hidden="true" className="h-10 w-10 shrink-0" />
+              )}
+              <QuantityStepper
+                quantity={presentation.quantity}
+                disabled={pending}
+                ariaLabel={`${presentation.itemName} quantity ${presentation.quantity}`}
+                decrementLabel={`Decrease ${presentation.itemName} quantity`}
+                incrementLabel={`Increase ${presentation.itemName} quantity`}
+                onDecrement={() =>
+                  onChangeQuantity(presentation.lineId, presentation.quantity - 1)
+                }
+                onIncrement={() =>
+                  onChangeQuantity(presentation.lineId, presentation.quantity + 1)
+                }
+                className="ml-auto shrink-0"
+              />
+            </div>
+          ) : null}
         </li>
       ))}
     </ul>

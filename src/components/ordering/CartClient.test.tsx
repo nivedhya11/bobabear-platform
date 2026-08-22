@@ -195,6 +195,21 @@ describe("CartClient", () => {
     expect(document.querySelector('img[src="/items/milk-tea.jpg"]')).not.toBeInTheDocument();
   });
 
+  it("shows one Estimated subtotal label in the mobile sticky checkout region", async () => {
+    getActiveCart.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { cart: guestCart("1", [{ id: "line-1", variantId, quantity: 2 }]) },
+    });
+    render(<CartClient brandId={brandId} />);
+    await waitFor(() => expect(screen.getByText("Classic Milk Tea")).toBeInTheDocument());
+
+    const mobileCheckout = screen.getByTestId("cart-mobile-checkout");
+    expect(within(mobileCheckout).getAllByText(/^Estimated subtotal$/i)).toHaveLength(1);
+    expect(within(mobileCheckout).getByText("₹398.00")).toBeInTheDocument();
+    expect(within(mobileCheckout).queryByText(/Estimated subtotal ₹398\.00/i)).not.toBeInTheDocument();
+  });
+
   it("renders plain non-customizable cart item from Customer Menu", async () => {
     getActiveCart.mockResolvedValue({
       ok: true,

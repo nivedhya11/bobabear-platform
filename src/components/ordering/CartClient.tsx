@@ -12,6 +12,7 @@ import {
   cartModifiersToInput,
   cartUnitCount,
   formatCartEstimatePrimaryLabel,
+  formatPresentationEstimateLabel,
   resolveCartPresentationEstimate,
 } from "@/components/ordering/cart-presentation";
 import { publishCartCount } from "@/components/ordering/cart-count-sync";
@@ -236,6 +237,9 @@ export function CartClient(props: { brandId: string }) {
     ? resolveCartPresentationEstimate(cart, menuLookups)
     : { complete: false as const, totalPaise: BigInt(0) };
   const presentationLabel = formatCartEstimatePrimaryLabel(presentationEstimate);
+  const presentationAmount = presentationEstimate.complete
+    ? formatPresentationEstimateLabel(presentationEstimate.totalPaise)
+    : presentationLabel;
   const serviceabilityNote = cartEvaluationCustomerCopy(evaluation, deliveryPin.length === 6);
 
   if (loading) {
@@ -346,7 +350,12 @@ export function CartClient(props: { brandId: string }) {
             >
               {pending ? "Continuing…" : "Checkout"}
             </Button>
-            <Button asChild variant="ghost" className="mt-2 w-full">
+            <Button
+              asChild
+              variant="outline"
+              size="lg"
+              className="mt-2 min-h-[44px] w-full rounded-lg border-[var(--interactive-primary)] text-[var(--interactive-primary)] hover:text-[var(--interactive-primary)]"
+            >
               <a href="/order/">Keep browsing</a>
             </Button>
           </aside>
@@ -364,7 +373,7 @@ export function CartClient(props: { brandId: string }) {
                 <p className="font-body text-[11px] text-[var(--text-tertiary)]">Estimated subtotal</p>
               ) : null}
               <p className="font-body text-[18px] font-bold text-[var(--text-primary)]">
-                {presentationLabel}
+                {presentationAmount}
               </p>
             </div>
             <Button
