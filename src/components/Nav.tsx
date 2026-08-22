@@ -13,9 +13,14 @@
 
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
-import { Menu, ArrowLeft, Sun, Moon } from "@/components/icons";
+import { Menu, ArrowLeft, Sun, Moon, Bag } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { useCustomerChromeSession } from "@/lib/customer-auth/chrome-session";
+import { getActiveCart } from "@/lib/customer-commerce";
+import { cartUnitCount } from "@/components/ordering/cart-presentation";
+import { subscribeToCartCount } from "@/components/ordering/cart-count-sync";
+import { NavDeliverToOrientation } from "@/components/ordering/DeliverToOrientation";
+import { DIRECT_ORDERING_BRAND_ID } from "@/shared/customer-menu/constants";
 
 const PRIMARY_NAV_LINKS = [
   { label: "Menu", href: "/order/", id: "menu", num: "01" },
@@ -70,6 +75,7 @@ export function Nav() {
   const [myBobaOpen, setMyBobaOpen] = useState(false);
   const { session, signOut } = useCustomerChromeSession();
   const authenticated = session === "authenticated";
+  const [cartCount, setCartCount] = useState(0);
 
   const isLight = useSyncExternalStore(subscribeTheme, getThemeSnapshot, getServerSnapshot);
   const toggleTheme = () => {
@@ -95,6 +101,16 @@ export function Nav() {
   const ordersActive = isOrdersPath(pathname);
   const signInActive = isLoginPath(pathname);
   const orderingChrome = pathname.startsWith("/order");
+
+  useEffect(() => {
+    const cancelled = false;
+    void getActiveCart(DIRECT_ORDERING_BRAND_ID, { guestToken: true }).then((result) => {
+      if (!cancelled && result.ok) setCartCount(cartUnitCount(result.data.cart));
+    });
+    return subscribeToCartCount(setCartCount);
+  }, []);
+
+  const cartLabel = `Cart (${cartCount})`;
 
   useEffect(() => {
     if (!drawerOpen) {
@@ -244,7 +260,7 @@ export function Nav() {
         )}
       >
         <div className={cn("mx-auto h-full px-3 md:px-8", orderingChrome ? "max-w-[1620px]" : "max-w-[1280px] lg:px-12")}>
-          <div className="hidden lg:flex items-center justify-between gap-8 h-full">
+          <div className="hidden lg:flex items-center gap-5 xl:gap-6 h-full min-w-0 flex-1">
             <a
               href={homeHref}
               aria-label={onHome ? "Boba Bear — scroll to top" : "Boba Bear — home"}
@@ -262,9 +278,9 @@ export function Nav() {
 
             <nav
               aria-label="Main navigation"
-              className="flex flex-1 items-center justify-between gap-8 min-w-0"
+              className="flex min-w-0 flex-1 items-center justify-between gap-5"
             >
-              <ul className="flex items-center gap-0.5" role="list">
+              <ul className="flex items-center gap-0.5 shrink-0" role="list">
                 {PRIMARY_NAV_LINKS.map((link) => {
                   const active = link.id === "menu" ? menuActive : false;
                   return (
@@ -280,23 +296,26 @@ export function Nav() {
                   );
                 })}
               </ul>
+
+              {orderingChrome ? <NavDeliverToOrientation /> : null}
+
               <ul className="flex items-center gap-0.5 shrink-0" role="list">
                 <li>{accountControl}</li>
                 <li>
                   <a
                     href={CART_HREF}
                     aria-current={cartActive ? "page" : undefined}
-                    className={chromeLinkClass(cartActive)}
+                    className={cn(chromeLinkClass(cartActive), "relative inline-flex min-h-10 items-center gap-2 border border-[var(--border-strong)] px-3")}
                   >
-                    Cart
+                    <Bag aria-hidden="true" size={18} strokeWidth={1.8} />
+                    <span className="sr-only">{cartLabel}</span>
+                    <span aria-hidden="true" className="inline-flex min-w-5 items-center justify-center rounded-full bg-[var(--interactive-secondary)] px-1 text-[11px] font-bold text-[var(--text-on-secondary)]">{cartCount}</span>
                   </a>
                 </li>
               </ul>
             </nav>
 
-            <div className="flex items-center gap-2 shrink-0">
-              <CircleThemeButton isLight={isLight} onClick={toggleTheme} />
-            </div>
+            <CircleThemeButton isLight={isLight} onClick={toggleTheme} />
           </div>
 
           <div className="relative flex lg:hidden items-center justify-between h-full">
@@ -341,14 +360,15 @@ export function Nav() {
               aria-current={cartActive ? "page" : undefined}
               className={cn(
                 "font-body font-semibold text-[14px] leading-none shrink-0",
-                "min-h-8 px-2 inline-flex items-center rounded-md",
+                "min-h-10 px-3 inline-flex items-center gap-1.5 rounded-full border border-[var(--border-strong)]",
                 "transition-colors duration-[150ms] ease-out focus-ring",
                 cartActive
                   ? "text-[var(--text-label)]"
                   : "text-[var(--text-primary)] hover:bg-[var(--interactive-ghost-hover)]",
               )}
             >
-              Cart
+              <Bag aria-hidden="true" size={18} strokeWidth={1.8} />
+              <span aria-hidden="true" className="inline-flex min-w-5 items-center justify-center rounded-full bg-[var(--interactive-secondary)] px-1 text-[11px] font-bold text-[var(--text-on-secondary)]">{cartCount}</span>
             </a>
           </div>
         </div>
@@ -447,12 +467,12 @@ export function Nav() {
                     : "text-[var(--text-primary)] hover:text-[var(--text-label)]",
                 )}
               >
-                <span className="font-display text-[30px] leading-tight">Cart</span>
+                <span className="font-display text-[30px] leading-tight">{cartLabel}</span>
                 <span
                   aria-hidden="true"
                   className="font-mono text-[11px] tracking-widest text-[var(--text-tertiary)] opacity-50 pb-1"
                 >
-                  03
+                  {String(cartCount).padStart(2, "0")}
                 </span>
               </a>
             </li>

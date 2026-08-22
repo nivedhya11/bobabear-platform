@@ -3,6 +3,18 @@
  */
 
 const STORAGE_KEY = "boba.delivery-pin.v1";
+const PIN_EVENT = "boba-bear:delivery-pin";
+
+export function publishDeliveryPinContext(postalCode: string): void {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent<string>(PIN_EVENT, { detail: postalCode }));
+}
+
+export function subscribeToDeliveryPinContext(onChange: (postalCode: string) => void): () => void {
+  const listener = (event: Event) => onChange((event as CustomEvent<string>).detail);
+  window.addEventListener(PIN_EVENT, listener);
+  return () => window.removeEventListener(PIN_EVENT, listener);
+}
 
 function canUseSessionStorage(): boolean {
   return typeof window !== "undefined" && typeof window.sessionStorage !== "undefined";
@@ -26,6 +38,7 @@ export function writeDeliveryPinContext(postalCode: string): void {
     } else if (postalCode.length === 0) {
       window.sessionStorage.removeItem(STORAGE_KEY);
     }
+    publishDeliveryPinContext(readDeliveryPinContext());
   } catch {
     /* sessionStorage may be blocked */
   }

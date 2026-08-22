@@ -11,6 +11,7 @@ const addCartLine = vi.fn<(...args: unknown[]) => unknown>();
 const setCartLineQuantity = vi.fn<(...args: unknown[]) => unknown>();
 const removeCartLine = vi.fn<(...args: unknown[]) => unknown>();
 const evaluateCart = vi.fn<(...args: unknown[]) => unknown>();
+const clearCart = vi.fn<(...args: unknown[]) => unknown>();
 
 vi.mock("@/lib/customer-commerce", async () => {
   const actual = await vi.importActual<typeof import("@/lib/customer-commerce")>(
@@ -24,6 +25,7 @@ vi.mock("@/lib/customer-commerce", async () => {
     setCartLineQuantity: (...args: unknown[]) => setCartLineQuantity(...args),
     removeCartLine: (...args: unknown[]) => removeCartLine(...args),
     evaluateCart: (...args: unknown[]) => evaluateCart(...args),
+    clearCart: (...args: unknown[]) => clearCart(...args),
   };
 });
 
@@ -124,6 +126,7 @@ beforeEach(() => {
   setCartLineQuantity.mockReset();
   removeCartLine.mockReset();
   evaluateCart.mockReset();
+  clearCart.mockReset();
   getCustomerMenu.mockResolvedValue({
     ok: true,
     status: 200,
@@ -193,8 +196,9 @@ describe("OrderingCatalogClient", () => {
     const stickyCart = screen.getByTestId("sticky-cart");
     const mobileContent = within(stickyCart).getByTestId("mobile-sticky-cart-content");
     expect(mobileContent).toHaveTextContent("1 item · ₹199.00");
-    expect(mobileContent).not.toHaveTextContent("Estimated subtotal");
-    expect(stickyCart).toHaveTextContent("View Cart →");
+    expect(mobileContent).toHaveTextContent("Estimated subtotal");
+    expect(stickyCart).toHaveTextContent("View cart");
+    expect(stickyCart).toHaveTextContent("Checkout");
     expect(screen.queryByText("Cart · 1 · Estimated subtotal ₹199.00")).not.toBeInTheDocument();
 
     await userEvent.click(
@@ -210,9 +214,18 @@ describe("OrderingCatalogClient", () => {
     expect(screen.queryByText(/serviceable/i)).not.toBeInTheDocument();
   });
 
+  it("renders delivery orientation before the category heading on mobile page strip", async () => {
+    render(<OrderingCatalogClient brandId="brand-1" />);
+    const orientation = await screen.findByTestId("deliver-to-orientation");
+    const heading = screen.getByRole("heading", { name: /drinks/i, level: 1 });
+    expect(
+      orientation.compareDocumentPosition(heading) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
   it("does not render search, filter, or ranking controls", async () => {
     render(<OrderingCatalogClient brandId="brand-1" />);
-    await waitFor(() => expect(screen.getByRole("heading", { name: "Menu" })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole("heading", { name: /drinks/i, level: 1 })).toBeInTheDocument());
     expect(screen.queryByPlaceholderText(/search/i)).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /filter/i })).not.toBeInTheDocument();
     expect(screen.queryByText(/most ordered/i)).not.toBeInTheDocument();
@@ -283,6 +296,21 @@ describe("OrderingCatalogClient", () => {
 });
 
 describe("OrderingCatalogClient IMP-028D", () => {
+  it("clears the live cart through the existing clearCart mutation", async () => {
+    const activeCart = {
+      id: "cart-1", brandId: "brand-1", ownerMode: "guest" as const, revision: "1",
+      manualCouponCode: null, expiresAt: null, createdAt: "2026-08-13T00:00:00.000Z",
+      updatedAt: "2026-08-13T00:00:00.000Z",
+      lines: [{ id: "line-1", variantId: "var-1", quantity: 1, modifiers: [], bundleSelections: [] }],
+    };
+    getActiveCart.mockResolvedValue({ ok: true, status: 200, data: { cart: activeCart } });
+    clearCart.mockResolvedValue({ ok: true, status: 200, data: { cart: { ...activeCart, revision: "2", lines: [] } } });
+    render(<OrderingCatalogClient brandId="brand-1" />);
+    await userEvent.click(await screen.findByRole("button", { name: "Clear cart" }));
+    await waitFor(() => expect(clearCart).toHaveBeenCalledWith({ brandId: "brand-1", expectedRevision: "1" }));
+    expect(screen.getByTestId("desktop-live-cart")).toHaveTextContent("Your cart is empty");
+  });
+
   it("exposes desktop ordering shell landmarks for category rail and live cart", async () => {
     getCustomerMenu.mockResolvedValue({
       ok: true,

@@ -5,12 +5,22 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CUSTOMER_AUTH_PUBLIC_PATHS } from "@/shared/customer-auth/contracts";
 
 import { Nav } from "./Nav";
+import { publishCartCount } from "./ordering/cart-count-sync";
+import { writeDeliveryPinContext } from "./ordering/delivery-pin-context";
 
 const usePathname = vi.fn<() => string>();
+const getActiveCart = vi.fn<(...args: unknown[]) => unknown>();
 
 vi.mock("next/navigation", () => ({
   usePathname: () => usePathname(),
 }));
+
+vi.mock("@/lib/customer-commerce", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/customer-commerce")>(
+    "@/lib/customer-commerce",
+  );
+  return { ...actual, getActiveCart: (...args: unknown[]) => getActiveCart(...args) };
+});
 
 function jsonResponse(body: unknown): Response {
   return new Response(JSON.stringify(body), {
@@ -26,10 +36,13 @@ function desktopNav() {
 describe("Nav — IMP-028A Food Direct chrome", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+    window.sessionStorage.clear();
   });
 
   beforeEach(() => {
     usePathname.mockReturnValue("/");
+    getActiveCart.mockReset();
+    getActiveCart.mockResolvedValue({ ok: true, status: 200, data: { cart: null } });
     vi.stubGlobal(
       "fetch",
       vi.fn(async (input: RequestInfo | URL) => {
@@ -62,7 +75,7 @@ describe("Nav — IMP-028A Food Direct chrome", () => {
     expect(within(nav).getByRole("link", { name: "Menu" })).toHaveAttribute("href", "/order/");
     expect(within(nav).getByRole("link", { name: "Drops" })).toHaveAttribute("href", "/#drops");
     expect(within(nav).getByRole("link", { name: "Sign In" })).toHaveAttribute("href", "/login/");
-    expect(within(nav).getByRole("link", { name: "Cart" })).toHaveAttribute("href", "/order/cart/");
+    expect(within(nav).getByRole("link", { name: "Cart (0)" })).toHaveAttribute("href", "/order/cart/");
     expect(within(nav).queryByRole("button", { name: "My BOBA" })).not.toBeInTheDocument();
     expect(within(nav).queryByRole("link", { name: "Offers" })).not.toBeInTheDocument();
     expect(within(nav).queryByRole("link", { name: "Merch" })).not.toBeInTheDocument();
@@ -161,6 +174,22 @@ describe("Nav — IMP-028A Food Direct chrome", () => {
     });
   });
 
+  it("shows a delivery PIN in ordering chrome only when the existing presentation context has one", async () => {
+    usePathname.mockReturnValue("/order/");
+    render(<Nav />);
+
+    expect(screen.getByTestId("deliver-to-header-orientation")).toHaveTextContent("Dehradun");
+    expect(screen.getByTestId("deliver-to-header-orientation")).not.toHaveTextContent("248001");
+
+    writeDeliveryPinContext("248001");
+
+    await waitFor(() => {
+      expect(screen.getByTestId("deliver-to-header-orientation")).toHaveTextContent(
+        "Dehradun · 248001",
+      );
+    });
+  });
+
   it("includes Cart in the mobile drawer and omits dead Offers/Merch/Artists destinations", async () => {
     const user = userEvent.setup();
     render(<Nav />);
@@ -169,10 +198,32 @@ describe("Nav — IMP-028A Food Direct chrome", () => {
     const nav = within(drawer).getByRole("navigation", { name: "Mobile navigation" });
     expect(within(nav).getByRole("link", { name: "Menu" })).toHaveAttribute("href", "/order/");
     expect(within(nav).getByRole("link", { name: "Drops" })).toHaveAttribute("href", "/#drops");
-    expect(within(nav).getByRole("link", { name: "Cart" })).toHaveAttribute("href", "/order/cart/");
+    expect(within(nav).getByRole("link", { name: "Cart (0)" })).toHaveAttribute("href", "/order/cart/");
     expect(within(nav).getByRole("link", { name: "Sign In" })).toHaveAttribute("href", "/login/");
     expect(within(nav).queryByRole("link", { name: "Offers" })).not.toBeInTheDocument();
     expect(within(nav).queryByRole("link", { name: "Merch" })).not.toBeInTheDocument();
     expect(within(nav).queryByRole("link", { name: "Artists" })).not.toBeInTheDocument();
+  });
+
+  it("loads the active cart count and synchronizes successful mutations without reload", async () => {
+    getActiveCart.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        cart: {
+          id: "cart-1", brandId: "56ff7724-d511-5ef4-b5d5-d629cbfb2388", ownerMode: "guest",
+          revision: "1", manualCouponCode: null, expiresAt: null,
+          createdAt: "2026-08-22T00:00:00.000Z", updatedAt: "2026-08-22T00:00:00.000Z",
+          lines: [{ id: "line-1", variantId: "variant-1", quantity: 3, modifiers: [], bundleSelections: [] }],
+        },
+      },
+    });
+    const user = userEvent.setup();
+    render(<Nav />);
+    await waitFor(() => expect(within(desktopNav()).getByRole("link", { name: "Cart (3)" })).toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: "Open navigation menu" }));
+    expect(within(screen.getByRole("dialog", { name: "Navigation menu" })).getByRole("link", { name: "Cart (3)" })).toBeInTheDocument();
+    publishCartCount(0);
+    await waitFor(() => expect(within(desktopNav()).getByRole("link", { name: "Cart (0)" })).toBeInTheDocument());
   });
 });

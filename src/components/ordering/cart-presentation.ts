@@ -41,6 +41,7 @@ export type CartLinePresentation = Readonly<{
   variantId: string;
   quantity: number;
   itemName: string;
+  imagePath: string | null;
   modifiers: readonly ResolvedCartModifierPresentation[];
   unitPricePaise: number;
   lineTotalPaise: number;
@@ -163,6 +164,7 @@ export function resolveCartLinePresentation(
     variantId: line.variantId,
     quantity: line.quantity,
     itemName,
+    imagePath: item?.imagePath ?? null,
     modifiers,
     unitPricePaise,
     lineTotalPaise,

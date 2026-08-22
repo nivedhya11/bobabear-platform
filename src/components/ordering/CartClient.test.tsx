@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CartClient } from "./CartClient";
+import { writeDeliveryPinContext } from "./delivery-pin-context";
 import {
   STALE_MODIFIER_OPTION_LABEL,
 } from "./cart-presentation";
@@ -141,6 +142,7 @@ function guestCart(
 }
 
 beforeEach(() => {
+  window.sessionStorage.clear();
   getActiveCart.mockReset();
   getCustomerMenu.mockReset();
   setCartLineQuantity.mockReset();
@@ -163,6 +165,49 @@ beforeEach(() => {
 });
 
 describe("CartClient", () => {
+  it("keeps its delivery result synchronized with the existing PIN presentation context", async () => {
+    getActiveCart.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { cart: guestCart("1", [{ id: "line-1", variantId, quantity: 1 }]) },
+    });
+    evaluateCart
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        data: {
+          cartId: "cart-1",
+          cartRevision: "1",
+          evaluatedAt: "2026-08-13T00:00:00.000Z",
+          status: "REQUIRES_FULFILMENT_CONTEXT",
+        },
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        data: {
+          cartId: "cart-1",
+          cartRevision: "1",
+          evaluatedAt: "2026-08-13T00:00:00.000Z",
+          status: "COMPLETE",
+        },
+      });
+
+    render(<CartClient brandId={brandId} />);
+    await screen.findByText("Add your PIN to check delivery availability.");
+
+    writeDeliveryPinContext("248001");
+
+    await waitFor(() => {
+      expect(evaluateCart).toHaveBeenLastCalledWith({
+        brandId,
+        location: { postalCode: "248001" },
+      });
+      expect(screen.queryByText("Add your PIN to check delivery availability.")).not.toBeInTheDocument();
+      expect(screen.getByText("This PIN looks deliverable.")).toBeInTheDocument();
+    });
+  });
+
   it("loads Customer Menu instead of static ordering catalog for presentation", async () => {
     getActiveCart.mockResolvedValue({
       ok: true,
@@ -178,6 +223,38 @@ describe("CartClient", () => {
     expect(screen.queryByText(/menu price/i)).not.toBeInTheDocument();
   });
 
+  it("renders the Customer Menu thumbnail when present and safely retains a placeholder when absent", async () => {
+    getCustomerMenu.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { menu: { ...baseMenu, items: [{ ...baseMenu.items[0]!, imagePath: "/items/milk-tea.jpg" }] } },
+    });
+    getActiveCart.mockResolvedValue({
+      ok: true, status: 200, data: { cart: guestCart("1", [{ id: "line-1", variantId, quantity: 1 }]) },
+    });
+    const { rerender } = render(<CartClient brandId={brandId} />);
+    await waitFor(() => expect(document.querySelector('img[src="/items/milk-tea.jpg"]')).toBeInTheDocument());
+    getCustomerMenu.mockResolvedValue({ ok: true, status: 200, data: { menu: baseMenu } });
+    rerender(<CartClient brandId={`${brandId}-other`} />);
+    await waitFor(() => expect(screen.getByText("Classic Milk Tea")).toBeInTheDocument());
+    expect(document.querySelector('img[src="/items/milk-tea.jpg"]')).not.toBeInTheDocument();
+  });
+
+  it("shows one Estimated subtotal label in the mobile sticky checkout region", async () => {
+    getActiveCart.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { cart: guestCart("1", [{ id: "line-1", variantId, quantity: 2 }]) },
+    });
+    render(<CartClient brandId={brandId} />);
+    await waitFor(() => expect(screen.getByText("Classic Milk Tea")).toBeInTheDocument());
+
+    const mobileCheckout = screen.getByTestId("cart-mobile-checkout");
+    expect(within(mobileCheckout).getAllByText(/^Estimated subtotal$/i)).toHaveLength(1);
+    expect(within(mobileCheckout).getByText("₹398.00")).toBeInTheDocument();
+    expect(within(mobileCheckout).queryByText(/Estimated subtotal ₹398\.00/i)).not.toBeInTheDocument();
+  });
+
   it("renders plain non-customizable cart item from Customer Menu", async () => {
     getActiveCart.mockResolvedValue({
       ok: true,
@@ -186,10 +263,23 @@ describe("CartClient", () => {
     });
     render(<CartClient brandId={brandId} />);
     await waitFor(() => expect(screen.getByText("Classic Milk Tea")).toBeInTheDocument());
+    expect(screen.getByTestId("cart-item-count")).toHaveTextContent("2 items");
     expect(screen.getByText("2")).toBeInTheDocument();
     expect(screen.getAllByText(/Estimated subtotal ₹398\.00/i).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/2 items · Estimated subtotal/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/menu prices/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Cart total \(menu prices\)/i)).not.toBeInTheDocument();
+  });
+
+  it("clears the full cart from its header through the existing clearCart mutation", async () => {
+    getActiveCart.mockResolvedValue({
+      ok: true, status: 200, data: { cart: guestCart("1", [{ id: "line-1", variantId, quantity: 1 }]) },
+    });
+    clearCart.mockResolvedValue({ ok: true, status: 200, data: { cart: guestCart("2", []) } });
+    render(<CartClient brandId={brandId} />);
+    await userEvent.click(await screen.findByRole("button", { name: "Clear cart" }));
+    await waitFor(() => expect(clearCart).toHaveBeenCalledWith({ brandId, expectedRevision: "1" }));
+    expect(screen.getByText("Your cart is empty. Browse the menu to add something.")).toBeInTheDocument();
   });
 
   it("shows Total shown at checkout when base menu item is missing", async () => {
@@ -201,7 +291,11 @@ describe("CartClient", () => {
       },
     });
     render(<CartClient brandId={brandId} />);
-    await waitFor(() => expect(screen.getByText("Total shown at checkout")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(
+        within(screen.getByTestId("cart-order-summary")).getByText("Total shown at checkout"),
+      ).toBeInTheDocument(),
+    );
     expect(screen.queryByText(/Estimated subtotal/i)).not.toBeInTheDocument();
   });
 
