@@ -203,8 +203,10 @@ describe("CartClient", () => {
     });
     render(<CartClient brandId={brandId} />);
     await waitFor(() => expect(screen.getByText("Classic Milk Tea")).toBeInTheDocument());
+    expect(screen.getByTestId("cart-item-count")).toHaveTextContent("2 items");
     expect(screen.getByText("2")).toBeInTheDocument();
     expect(screen.getAllByText(/Estimated subtotal ₹398\.00/i).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/2 items · Estimated subtotal/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/menu prices/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Cart total \(menu prices\)/i)).not.toBeInTheDocument();
   });

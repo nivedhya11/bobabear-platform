@@ -19,6 +19,7 @@ import {
 import { publishCartCount } from "@/components/ordering/cart-count-sync";
 import {
   readDeliveryPinContext,
+  subscribeToDeliveryPinContext,
   writeDeliveryPinContext,
 } from "@/components/ordering/delivery-pin-context";
 import { commerceErrorCopy } from "@/components/ordering/error-copy";
@@ -178,6 +179,13 @@ export function OrderingCatalogClient(props: { brandId: string }) {
       ? selectedCategoryId
       : (categoryNav[0]?.id ?? null);
   const selectedGroup = groups.find((group) => group.id === activeCategoryId) ?? null;
+
+  useEffect(() => {
+    return subscribeToDeliveryPinContext((pin) => {
+      setDeliveryPin(pin);
+      void refreshEvaluation(pin, cart);
+    });
+  }, [cart, refreshEvaluation]);
 
   function handleDeliveryPinChange(value: string): void {
     setDeliveryPin(value);
@@ -477,8 +485,14 @@ export function OrderingCatalogClient(props: { brandId: string }) {
     <main id="main-content" tabIndex={-1} className="bg-[var(--bg-page)] focus:outline-none">
       <div
         data-testid="desktop-ordering-shell"
-        className="mx-auto max-w-[1620px] px-5 md:px-8 py-6 md:py-8 flex flex-col gap-5 pb-[calc(7rem+env(safe-area-inset-bottom))] xl:pb-12"
+        className="mx-auto max-w-[1620px] px-5 md:px-8 py-6 md:py-8 flex flex-col gap-4 pb-[calc(7rem+env(safe-area-inset-bottom))] xl:pb-12"
       >
+        <DeliverToOrientation
+          postalCode={deliveryPin}
+          onPostalCodeChange={handleDeliveryPinChange}
+          serviceabilityNote={serviceabilityNote}
+        />
+
         <header className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between xl:col-span-3">
           <div className="flex flex-col gap-2">
             <h1 className="font-display text-[clamp(40px,5vw,58px)] uppercase leading-[0.9] tracking-wide text-[var(--text-primary)]">
@@ -489,12 +503,6 @@ export function OrderingCatalogClient(props: { brandId: string }) {
             </p>
           </div>
         </header>
-
-        <DeliverToOrientation
-          postalCode={deliveryPin}
-          onPostalCodeChange={handleDeliveryPinChange}
-          serviceabilityNote={serviceabilityNote}
-        />
 
         {renderCategoryNav("horizontal")}
 
@@ -552,10 +560,10 @@ export function OrderingCatalogClient(props: { brandId: string }) {
 
           <aside
             data-testid="desktop-live-cart"
-            className="hidden xl:flex sticky top-20 self-start h-[calc(100vh-20rem)] min-h-[32rem] max-h-[calc(100vh-6rem)] flex-col overflow-hidden rounded-xl border border-[var(--border-strong)] bg-[var(--bg-section)] shadow-[0_14px_36px_rgba(0,0,0,0.2)]"
+            className="hidden xl:flex sticky top-20 self-start h-[calc(100vh-20rem)] min-h-[28rem] max-h-[calc(100vh-6rem)] flex-col overflow-hidden rounded-xl border border-[var(--border-strong)] bg-[var(--bg-section)] shadow-[0_14px_36px_rgba(0,0,0,0.2)]"
           >
             <div className="flex min-h-0 flex-1 flex-col">
-              <div className="flex items-baseline justify-between gap-2 border-b border-[var(--border-strong)] p-5">
+              <div className="flex items-baseline justify-between gap-2 border-b border-[var(--border-default)] px-4 py-3">
                 <h2 className="font-display text-[24px] uppercase tracking-wide text-[var(--text-primary)]">
                   Your cart
                 </h2>
@@ -578,7 +586,7 @@ export function OrderingCatalogClient(props: { brandId: string }) {
                 </div>
               ) : (
                 <>
-                  <div data-testid="desktop-cart-items" className="min-h-0 flex-1 overflow-y-auto p-4">
+                  <div data-testid="desktop-cart-items" className="min-h-0 flex-1 overflow-y-auto px-3 py-2">
                     <CartLineList
                       lines={linePresentations}
                       pending={pendingKey !== null}
@@ -589,7 +597,10 @@ export function OrderingCatalogClient(props: { brandId: string }) {
                       onEdit={openLiveCartEdit}
                     />
                   </div>
-                  <div data-testid="desktop-cart-footer" className="shrink-0 border-t border-[var(--border-strong)] bg-[var(--bg-surface-sunken)] p-5">
+                  <div
+                    data-testid="desktop-cart-footer"
+                    className="shrink-0 border-t border-[var(--border-default)] bg-[var(--bg-section)] px-4 py-3"
+                  >
                     <CartSummary
                       estimate={presentationEstimate}
                       itemCount={lineCount}

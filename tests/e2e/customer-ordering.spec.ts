@@ -40,8 +40,8 @@ function codeField(page: Page) {
 async function reachReadyForPayment(page: Page, phoneNumber: string): Promise<void> {
   await page.goto("/order/");
   await expect(page.getByRole("heading", { name: /^the bar$/i, level: 1 })).toBeVisible();
-  await expect(page.getByTestId("deliver-to-orientation")).toBeVisible();
-  await expect(page.getByTestId("deliver-to-orientation")).toContainText("Dehradun");
+  await expect(page.getByTestId("deliver-to-header-orientation")).toBeVisible();
+  await expect(page.getByTestId("deliver-to-header-orientation")).toContainText("Dehradun");
   await expect(page.locator("#main-content")).not.toContainText(/serviceable/i);
 
   const addButtons = page.locator("#main-content").getByRole("button", { name: /^add .+/i });

@@ -19,6 +19,7 @@ import { useCustomerChromeSession } from "@/lib/customer-auth/chrome-session";
 import { getActiveCart } from "@/lib/customer-commerce";
 import { cartUnitCount } from "@/components/ordering/cart-presentation";
 import { subscribeToCartCount } from "@/components/ordering/cart-count-sync";
+import { NavDeliverToOrientation } from "@/components/ordering/DeliverToOrientation";
 import { DIRECT_ORDERING_BRAND_ID } from "@/shared/customer-menu/constants";
 
 const PRIMARY_NAV_LINKS = [
@@ -259,7 +260,7 @@ export function Nav() {
         )}
       >
         <div className={cn("mx-auto h-full px-3 md:px-8", orderingChrome ? "max-w-[1620px]" : "max-w-[1280px] lg:px-12")}>
-          <div className="hidden lg:flex items-center justify-between gap-8 h-full">
+          <div className="hidden lg:flex items-center gap-5 xl:gap-6 h-full min-w-0 flex-1">
             <a
               href={homeHref}
               aria-label={onHome ? "Boba Bear — scroll to top" : "Boba Bear — home"}
@@ -277,9 +278,9 @@ export function Nav() {
 
             <nav
               aria-label="Main navigation"
-              className="flex flex-1 items-center justify-between gap-8 min-w-0"
+              className="flex min-w-0 flex-1 items-center justify-between gap-5"
             >
-              <ul className="flex items-center gap-0.5" role="list">
+              <ul className="flex items-center gap-0.5 shrink-0" role="list">
                 {PRIMARY_NAV_LINKS.map((link) => {
                   const active = link.id === "menu" ? menuActive : false;
                   return (
@@ -295,6 +296,9 @@ export function Nav() {
                   );
                 })}
               </ul>
+
+              {orderingChrome ? <NavDeliverToOrientation /> : null}
+
               <ul className="flex items-center gap-0.5 shrink-0" role="list">
                 <li>{accountControl}</li>
                 <li>
@@ -311,9 +315,7 @@ export function Nav() {
               </ul>
             </nav>
 
-            <div className="flex items-center gap-2 shrink-0">
-              <CircleThemeButton isLight={isLight} onClick={toggleTheme} />
-            </div>
+            <CircleThemeButton isLight={isLight} onClick={toggleTheme} />
           </div>
 
           <div className="relative flex lg:hidden items-center justify-between h-full">

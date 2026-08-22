@@ -45,11 +45,18 @@ export function CartSummary(props: CartSummaryProps) {
       }
     >
       {compact ? (
-        <div className="flex items-baseline justify-between gap-3">
+        <div className="flex items-start justify-between gap-3">
           <p className="font-body text-[13px] text-[var(--text-secondary)]">
             {itemCount} item{itemCount === 1 ? "" : "s"}
           </p>
-          <p className="font-body text-[17px] font-bold text-[var(--text-primary)]">{primary}</p>
+          <div className="text-right">
+            {estimate.complete ? (
+              <p className="font-body text-[11px] text-[var(--text-tertiary)]">Estimated subtotal</p>
+            ) : null}
+            <p className="font-body text-[17px] font-bold leading-tight text-[var(--text-primary)]">
+              {primary}
+            </p>
+          </div>
         </div>
       ) : (
         <p className="font-body text-[17px] font-bold text-[var(--text-primary)]">{primary}</p>
@@ -58,7 +65,7 @@ export function CartSummary(props: CartSummaryProps) {
         {CART_ESTIMATE_SUPPORTING_COPY}
       </p>
       {showViewCartLink || showCheckoutLink ? (
-        <div className="mt-1 flex gap-3">
+        <div className="mt-2 flex gap-2">
           {showViewCartLink ? (
             <Button
               asChild

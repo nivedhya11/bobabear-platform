@@ -264,26 +264,26 @@ export function CartClient(props: { brandId: string }) {
     <main id="main-content" tabIndex={-1} className="bg-[var(--bg-page)] focus:outline-none">
       <div className="mx-auto grid max-w-[1440px] gap-8 px-5 py-8 pb-[calc(6.5rem+env(safe-area-inset-bottom))] md:px-8 md:py-10 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start lg:pb-10">
         <section className="flex min-w-0 flex-col gap-6">
-        <header className="flex gap-2 justify-between items-start">
-          <div className="flex flex-col gap-2">
-          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
-            Boba Bear · Cart
-          </p>
-          <h1 className="font-display text-[clamp(36px,8vw,56px)] leading-[0.95] text-[var(--text-primary)]">
-            YOUR CART
-          </h1>
-          {!empty ? (
-            <p className="font-body text-[15px] text-[var(--text-secondary)]">
-              {lineCount} item{lineCount === 1 ? "" : "s"} · {presentationLabel}
-            </p>
-          ) : null}
+        <header className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-baseline sm:gap-x-3 sm:gap-y-1">
+            <h1 className="font-display text-[clamp(36px,8vw,56px)] leading-[0.95] text-[var(--text-primary)]">
+              YOUR CART
+            </h1>
+            {!empty ? (
+              <p
+                data-testid="cart-item-count"
+                className="font-body text-[15px] text-[var(--interactive-primary)] sm:text-[var(--text-secondary)]"
+              >
+                {lineCount} item{lineCount === 1 ? "" : "s"}
+              </p>
+            ) : null}
           </div>
           {!empty ? (
             <button
               type="button"
               disabled={pending}
               onClick={() => void handleClear()}
-              className="font-body text-[13px] font-semibold text-[var(--interactive-secondary)] underline-offset-2 hover:underline focus-ring"
+              className="shrink-0 font-body text-[13px] font-semibold text-[var(--interactive-secondary)] underline-offset-2 hover:underline focus-ring"
             >
               Clear cart
             </button>

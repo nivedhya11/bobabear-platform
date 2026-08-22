@@ -214,6 +214,15 @@ describe("OrderingCatalogClient", () => {
     expect(screen.queryByText(/serviceable/i)).not.toBeInTheDocument();
   });
 
+  it("renders delivery orientation before the category heading on mobile page strip", async () => {
+    render(<OrderingCatalogClient brandId="brand-1" />);
+    const orientation = await screen.findByTestId("deliver-to-orientation");
+    const heading = screen.getByRole("heading", { name: /drinks/i, level: 1 });
+    expect(
+      orientation.compareDocumentPosition(heading) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
   it("does not render search, filter, or ranking controls", async () => {
     render(<OrderingCatalogClient brandId="brand-1" />);
     await waitFor(() => expect(screen.getByRole("heading", { name: /drinks/i, level: 1 })).toBeInTheDocument());
