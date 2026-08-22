@@ -1,5 +1,6 @@
 "use client";
 
+import { Bag } from "@/components/icons";
 import { Button } from "@/components/ui/Button";
 import {
   formatCartEstimatePrimaryLabel,
@@ -21,36 +22,48 @@ export function StickyCartBar(props: {
 
   return (
     <div
-      className="fixed inset-x-0 bottom-0 z-30 xl:hidden border-t border-[var(--border-default)] bg-[var(--bg-page)]/95 backdrop-blur-[12px] px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+      className="fixed inset-x-0 bottom-0 z-30 border-t border-[var(--border-strong)] bg-[var(--bg-surface-sunken)]/95 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-10px_28px_rgba(0,0,0,0.24)] backdrop-blur-[12px] xl:hidden"
       data-testid="sticky-cart"
     >
-      <Button
-        asChild
-        variant="primary"
-        size="lg"
-        className="w-full min-h-[44px] justify-between"
-      >
+      <div className="flex items-center gap-3">
+        <div className="flex min-w-0 flex-1 items-center gap-2.5">
+          <span
+            aria-hidden="true"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[var(--interactive-primary)]/45 text-[var(--interactive-primary)]"
+          >
+            <Bag size={18} strokeWidth={1.8} />
+          </span>
+          <div
+            data-testid="mobile-sticky-cart-content"
+            className="min-w-0 flex flex-col leading-tight"
+          >
+            <span className="truncate font-body text-[14px] font-bold text-[var(--text-primary)]">
+              {itemCount} item{itemCount === 1 ? "" : "s"}
+              {compactAmount ? ` · ${compactAmount}` : ""}
+            </span>
+            <span className="font-body text-[11px] text-[var(--text-tertiary)]">
+              Estimated subtotal
+            </span>
+          </div>
+        </div>
+
         <a
           href="/order/cart/"
-          aria-label={
-            compactAmount
-              ? `Cart, ${itemCount} item${itemCount === 1 ? "" : "s"}, ${compactAmount}`
-              : `Cart, ${itemCount} item${itemCount === 1 ? "" : "s"}`
-          }
+          className="shrink-0 font-body text-[13px] font-bold text-[var(--interactive-primary)] underline-offset-2 hover:underline focus-ring"
         >
-          <span data-testid="mobile-sticky-cart-content" className="md:hidden">
-            {itemCount} item{itemCount === 1 ? "" : "s"}
-            {compactAmount ? ` · ${compactAmount}` : ""}
-          </span>
-          <span className="hidden md:inline">
-            View cart · {itemCount} item{itemCount === 1 ? "" : "s"}
-          </span>
-          <span className="font-mono text-[13px] opacity-90">
-            <span className="md:hidden">View Cart →</span>
-            <span className="hidden md:inline">{label}</span>
-          </span>
+          View cart
         </a>
-      </Button>
+
+        <Button asChild variant="primary" size="lg" className="min-h-[48px] shrink-0 rounded-lg px-5">
+          <a href="/order/checkout/">Checkout</a>
+        </Button>
+      </div>
+
+      <span className="sr-only">
+        {compactAmount
+          ? `Cart, ${itemCount} item${itemCount === 1 ? "" : "s"}, ${compactAmount}, ${label}`
+          : `Cart, ${itemCount} item${itemCount === 1 ? "" : "s"}, ${label}`}
+      </span>
     </div>
   );
 }

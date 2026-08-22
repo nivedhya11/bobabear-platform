@@ -1,12 +1,13 @@
 "use client";
 
 import { Button } from "@/components/ui/Button";
+import { QuantityStepper } from "@/components/ordering/QuantityStepper";
 import { formatPaise } from "@/components/ordering/format-money";
 import type { CustomerMenuItem } from "@/shared/customer-menu/types";
 
 export type MenuItemRowProps = Readonly<{
   item: CustomerMenuItem;
-  layout?: "card" | "row";
+  layout?: "card" | "row" | "responsive";
   busy?: boolean;
   quantity?: number;
   onAdd: (item: CustomerMenuItem) => void;
@@ -18,16 +19,20 @@ export type MenuItemRowProps = Readonly<{
  * Presentation-only Menu item. Does not fetch Menu or mutate Cart.
  */
 export function MenuItemRow(props: MenuItemRowProps) {
-  const { item, layout = "card", busy = false, quantity = 0, onAdd, onCustomize, onDecrement } = props;
+  const { item, layout = "responsive", busy = false, quantity = 0, onAdd, onCustomize, onDecrement } =
+    props;
   const customizable = (item.modifierGroups?.length ?? 0) > 0;
   const isRow = layout === "row";
+  const isResponsive = layout === "responsive";
 
   return (
     <li
       className={
         isRow
-          ? "border-b border-[var(--border-default)] py-3 flex gap-4 items-start"
-          : "overflow-hidden rounded-lg border border-[var(--border-default)] bg-[var(--bg-section)] p-3 flex flex-col gap-3 h-full"
+          ? "flex items-start gap-3 border-b border-[var(--border-default)] py-3"
+          : isResponsive
+            ? "flex items-start gap-3 overflow-hidden rounded-xl border border-[var(--border-strong)] bg-[var(--bg-section)] p-3 shadow-[0_10px_28px_rgba(0,0,0,0.16)] xl:flex-col xl:gap-3 xl:h-full"
+            : "flex h-full flex-col gap-3 overflow-hidden rounded-xl border border-[var(--border-strong)] bg-[var(--bg-section)] p-3 shadow-[0_10px_28px_rgba(0,0,0,0.16)]"
       }
     >
       {item.imagePath ? (
@@ -35,14 +40,16 @@ export function MenuItemRow(props: MenuItemRowProps) {
         <img
           src={item.imagePath}
           alt=""
-          width={80}
-          height={80}
+          width={112}
+          height={112}
           loading="lazy"
           decoding="async"
           className={
             isRow
-              ? "h-16 w-16 object-cover shrink-0 aspect-square"
-              : "w-full aspect-[4/3] md:max-xl:aspect-[5/3] object-cover shrink-0"
+              ? "h-[104px] w-[104px] shrink-0 rounded-lg object-cover aspect-square bg-[var(--bg-surface-sunken)]"
+              : isResponsive
+                ? "h-[104px] w-[104px] shrink-0 rounded-lg object-cover aspect-square bg-[var(--bg-surface-sunken)] xl:h-auto xl:w-full xl:aspect-[4/3]"
+                : "w-full aspect-[4/3] shrink-0 rounded-lg object-cover bg-[var(--bg-surface-sunken)]"
           }
         />
       ) : (
@@ -50,56 +57,56 @@ export function MenuItemRow(props: MenuItemRowProps) {
           aria-hidden="true"
           className={
             isRow
-              ? "h-16 w-16 shrink-0 aspect-square bg-[var(--bg-page)] border border-[var(--border-default)]"
-              : "w-full aspect-[4/3] md:max-xl:aspect-[5/3] shrink-0 bg-[var(--bg-page)] border border-[var(--border-default)]"
+              ? "h-[104px] w-[104px] shrink-0 rounded-lg aspect-square border border-[var(--border-default)] bg-[var(--bg-surface-sunken)]"
+              : isResponsive
+                ? "h-[104px] w-[104px] shrink-0 rounded-lg aspect-square border border-[var(--border-default)] bg-[var(--bg-surface-sunken)] xl:h-auto xl:w-full xl:aspect-[4/3]"
+                : "w-full aspect-[4/3] shrink-0 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface-sunken)]"
           }
         />
       )}
-      <div className="flex flex-col gap-2 min-w-0 flex-1">
+      <div className="flex min-w-0 flex-1 flex-col gap-2">
         <div className="flex items-start justify-between gap-3">
-          <h4
-            className={
-              isRow
-                ? "font-body font-bold text-[16px] leading-tight text-[var(--text-primary)]"
-                : "font-body font-bold text-[16px] leading-tight text-[var(--text-primary)] line-clamp-2"
-            }
-          >
+          <h4 className="font-body text-[16px] font-bold leading-tight text-[var(--text-primary)] line-clamp-2">
             {item.name}
           </h4>
-          <span className="font-body font-bold text-[14px] text-[var(--interactive-secondary)] shrink-0">
+          <span className="shrink-0 font-body text-[14px] font-bold text-[var(--interactive-secondary)]">
             {formatPaise(item.displayPricePaise)}
           </span>
         </div>
         {item.description ? (
-          <p
-            className={
-              isRow
-                ? "font-heading text-[12px] text-[var(--text-secondary)] line-clamp-1"
-                : "font-body text-[13px] text-[var(--text-secondary)] line-clamp-2"
-            }
-          >
+          <p className="font-body text-[13px] text-[var(--text-secondary)] line-clamp-2">
             {item.description}
           </p>
         ) : null}
-        <div className="mt-auto flex flex-col gap-1.5">
+        <div className="mt-auto flex items-end justify-end gap-2 xl:justify-between">
           {quantity > 0 ? (
-            <div className="inline-flex self-start min-h-[44px] items-stretch overflow-hidden rounded-md border border-[var(--border-default)] font-body font-bold" aria-label={`${item.name} quantity ${quantity}`}>
-              <button className="min-h-[44px] min-w-[44px] text-[var(--text-secondary)] focus-ring" type="button" disabled={busy} aria-label={`Remove one ${item.name}`} onClick={() => onDecrement?.(item)}>−</button>
-              <span className="flex min-w-10 items-center justify-center border-x border-[var(--border-default)] px-2" aria-live="polite">{quantity}</span>
-              <button className="min-h-[44px] min-w-[44px] bg-[var(--interactive-secondary)] text-[var(--text-on-secondary)] focus-ring" type="button" disabled={busy} aria-label={`Add one ${item.name}`} onClick={() => (customizable ? onCustomize(item) : onAdd(item))}>+</button>
-            </div>
-          ) : <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            className="min-h-[44px] w-full"
-            disabled={busy}
-            aria-label={`Add ${item.name}`}
-            onClick={() => (customizable ? onCustomize(item) : onAdd(item))}
-          >
-            {busy ? "Adding…" : "Add +"}
-          </Button>}
-          {customizable ? <span className="text-center font-body text-[12px] font-semibold text-[var(--interactive-primary-pressed)]">Customisable</span> : null}
+            <QuantityStepper
+              quantity={quantity}
+              disabled={busy}
+              ariaLabel={`${item.name} quantity ${quantity}`}
+              decrementLabel={`Remove one ${item.name}`}
+              incrementLabel={`Add one ${item.name}`}
+              onDecrement={() => onDecrement?.(item)}
+              onIncrement={() => (customizable ? onCustomize(item) : onAdd(item))}
+            />
+          ) : (
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              className="min-h-[44px] min-w-[7.5rem] rounded-lg"
+              disabled={busy}
+              aria-label={`Add ${item.name}`}
+              onClick={() => (customizable ? onCustomize(item) : onAdd(item))}
+            >
+              {busy ? "Adding…" : "Add +"}
+            </Button>
+          )}
+          {customizable ? (
+            <span className="hidden font-body text-[12px] font-semibold text-[var(--interactive-primary)] xl:inline">
+              Customisable
+            </span>
+          ) : null}
         </div>
       </div>
     </li>

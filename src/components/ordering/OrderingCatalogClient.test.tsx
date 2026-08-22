@@ -196,8 +196,9 @@ describe("OrderingCatalogClient", () => {
     const stickyCart = screen.getByTestId("sticky-cart");
     const mobileContent = within(stickyCart).getByTestId("mobile-sticky-cart-content");
     expect(mobileContent).toHaveTextContent("1 item · ₹199.00");
-    expect(mobileContent).not.toHaveTextContent("Estimated subtotal");
-    expect(stickyCart).toHaveTextContent("View Cart →");
+    expect(mobileContent).toHaveTextContent("Estimated subtotal");
+    expect(stickyCart).toHaveTextContent("View cart");
+    expect(stickyCart).toHaveTextContent("Checkout");
     expect(screen.queryByText("Cart · 1 · Estimated subtotal ₹199.00")).not.toBeInTheDocument();
 
     await userEvent.click(
@@ -215,7 +216,7 @@ describe("OrderingCatalogClient", () => {
 
   it("does not render search, filter, or ranking controls", async () => {
     render(<OrderingCatalogClient brandId="brand-1" />);
-    await waitFor(() => expect(screen.getByRole("heading", { name: "Menu" })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole("heading", { name: /drinks/i, level: 1 })).toBeInTheDocument());
     expect(screen.queryByPlaceholderText(/search/i)).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /filter/i })).not.toBeInTheDocument();
     expect(screen.queryByText(/most ordered/i)).not.toBeInTheDocument();
@@ -296,7 +297,7 @@ describe("OrderingCatalogClient IMP-028D", () => {
     getActiveCart.mockResolvedValue({ ok: true, status: 200, data: { cart: activeCart } });
     clearCart.mockResolvedValue({ ok: true, status: 200, data: { cart: { ...activeCart, revision: "2", lines: [] } } });
     render(<OrderingCatalogClient brandId="brand-1" />);
-    await userEvent.click(await screen.findByRole("button", { name: "Clear all" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Clear cart" }));
     await waitFor(() => expect(clearCart).toHaveBeenCalledWith({ brandId: "brand-1", expectedRevision: "1" }));
     expect(screen.getByTestId("desktop-live-cart")).toHaveTextContent("Your cart is empty");
   });

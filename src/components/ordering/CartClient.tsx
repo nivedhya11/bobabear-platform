@@ -262,14 +262,15 @@ export function CartClient(props: { brandId: string }) {
 
   return (
     <main id="main-content" tabIndex={-1} className="bg-[var(--bg-page)] focus:outline-none">
-      <div className="mx-auto max-w-[720px] px-5 py-12 md:py-16 flex flex-col gap-8">
+      <div className="mx-auto grid max-w-[1440px] gap-8 px-5 py-8 pb-[calc(6.5rem+env(safe-area-inset-bottom))] md:px-8 md:py-10 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start lg:pb-10">
+        <section className="flex min-w-0 flex-col gap-6">
         <header className="flex gap-2 justify-between items-start">
           <div className="flex flex-col gap-2">
           <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
             Boba Bear · Cart
           </p>
           <h1 className="font-display text-[clamp(36px,8vw,56px)] leading-[0.95] text-[var(--text-primary)]">
-            Your cart
+            YOUR CART
           </h1>
           {!empty ? (
             <p className="font-body text-[15px] text-[var(--text-secondary)]">
@@ -278,9 +279,14 @@ export function CartClient(props: { brandId: string }) {
           ) : null}
           </div>
           {!empty ? (
-            <Button type="button" variant="ghost" size="sm" disabled={pending} onClick={() => void handleClear()}>
-              Clear all
-            </Button>
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() => void handleClear()}
+              className="font-body text-[13px] font-semibold text-[var(--interactive-secondary)] underline-offset-2 hover:underline focus-ring"
+            >
+              Clear cart
+            </button>
           ) : null}
         </header>
 
@@ -311,34 +317,69 @@ export function CartClient(props: { brandId: string }) {
           />
         ) : null}
 
-        {cart && cart.lines.length > 0 ? (
-          <CartSummary estimate={presentationEstimate} itemCount={lineCount} />
-        ) : null}
-
         {serviceabilityNote ? (
           <p role="status" className="font-body text-[13px] text-[var(--text-secondary)]">
             {serviceabilityNote}
           </p>
         ) : null}
 
+        </section>
+
         {cart && cart.lines.length > 0 ? (
-          <div className="flex flex-wrap gap-3">
+          <aside
+            data-testid="cart-order-summary"
+            className="hidden lg:block lg:sticky lg:top-20 rounded-xl border border-[var(--border-strong)] bg-[var(--bg-section)] p-5 shadow-[0_14px_36px_rgba(0,0,0,0.18)]"
+          >
+            <h2 className="font-display text-[24px] uppercase tracking-wide text-[var(--text-primary)]">
+              Order summary
+            </h2>
+            <div className="mt-5">
+              <CartSummary estimate={presentationEstimate} itemCount={lineCount} />
+            </div>
             <Button
               type="button"
               variant="primary"
               size="lg"
-              className="min-h-[44px]"
+              className="mt-6 min-h-[52px] w-full rounded-lg"
               disabled={pending}
               onClick={() => void handleCheckout()}
             >
               {pending ? "Continuing…" : "Checkout"}
             </Button>
-            <Button asChild variant="ghost">
+            <Button asChild variant="ghost" className="mt-2 w-full">
               <a href="/order/">Keep browsing</a>
             </Button>
-          </div>
+          </aside>
         ) : null}
       </div>
+
+      {cart && cart.lines.length > 0 ? (
+        <div
+          data-testid="cart-mobile-checkout"
+          className="fixed inset-x-0 bottom-0 z-30 border-t border-[var(--border-strong)] bg-[var(--bg-surface-sunken)]/95 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-10px_28px_rgba(0,0,0,0.24)] backdrop-blur-[12px] lg:hidden"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              {presentationEstimate.complete ? (
+                <p className="font-body text-[11px] text-[var(--text-tertiary)]">Estimated subtotal</p>
+              ) : null}
+              <p className="font-body text-[18px] font-bold text-[var(--text-primary)]">
+                {presentationLabel}
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="primary"
+              size="lg"
+              className="min-h-[48px] shrink-0 rounded-lg px-6"
+              disabled={pending}
+              onClick={() => void handleCheckout()}
+            >
+              {pending ? "Continuing…" : "Checkout"}
+            </Button>
+          </div>
+        </div>
+      ) : null}
 
       {editTarget ? (
         <MenuItemCustomizationDialog

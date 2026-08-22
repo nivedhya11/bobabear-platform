@@ -407,7 +407,7 @@ export function OrderingCatalogClient(props: { brandId: string }) {
         data-testid={isVertical ? "desktop-category-rail" : "menu-category-nav"}
         className={
           isVertical
-            ? "sticky top-20 self-start"
+            ? "sticky top-20 self-start rounded-xl border border-[var(--border-strong)] bg-[var(--bg-section)] p-2 shadow-[0_10px_28px_rgba(0,0,0,0.12)]"
             : "sticky top-14 z-20 -mx-5 px-5 py-2 bg-[var(--bg-page)]/95 backdrop-blur-[10px] border-b border-[var(--border-default)] xl:hidden"
         }
       >
@@ -429,7 +429,7 @@ export function OrderingCatalogClient(props: { brandId: string }) {
                   onClick={() => setSelectedCategoryId(category.id)}
                   className={
                     isVertical
-                      ? `block w-full rounded-md px-3 py-2 text-left font-body text-[13px] ${
+                      ? `block w-full rounded-lg px-3 py-2.5 text-left font-body font-semibold text-[13px] ${
                           isActive
                             ? "bg-[var(--interactive-primary)] text-[var(--text-on-primary)]"
                             : "text-[var(--text-primary)] hover:bg-[var(--interactive-ghost-hover)]"
@@ -481,16 +481,14 @@ export function OrderingCatalogClient(props: { brandId: string }) {
       >
         <header className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between xl:col-span-3">
           <div className="flex flex-col gap-2">
-            <h1 className="font-display text-[clamp(36px,5vw,52px)] leading-[0.95] text-[var(--text-primary)]">
-              Menu
+            <h1 className="font-display text-[clamp(40px,5vw,58px)] uppercase leading-[0.9] tracking-wide text-[var(--text-primary)]">
+              {selectedGroup?.name ?? "Menu"}
             </h1>
             <p className="font-body text-[15px] text-[var(--text-secondary)]">
-              Pick your favourites.
+              Crafted fresh and ready when you are.
             </p>
           </div>
         </header>
-
-        {renderCategoryNav("horizontal")}
 
         <DeliverToOrientation
           postalCode={deliveryPin}
@@ -498,44 +496,45 @@ export function OrderingCatalogClient(props: { brandId: string }) {
           serviceabilityNote={serviceabilityNote}
         />
 
+        {renderCategoryNav("horizontal")}
+
         {error ? (
           <p role="status" className="font-body text-[14px] text-[var(--text-secondary)]">
             {error}
           </p>
         ) : null}
 
-        <div className="xl:grid xl:grid-cols-[11.5rem_minmax(0,1fr)_21.5rem] xl:gap-6 xl:items-start">
+        <div className="xl:grid xl:grid-cols-[12rem_minmax(0,1fr)_25rem] xl:gap-6 xl:items-start">
           <aside className="hidden xl:block">{renderCategoryNav("vertical")}</aside>
 
-          <div data-testid="desktop-menu" className="flex flex-col gap-8 min-w-0">
+          <div data-testid="desktop-menu" className="flex flex-col gap-6 min-w-0">
             {selectedGroup ? (
               <section
                 key={selectedGroup.id}
-                aria-labelledby={`cat-heading-${selectedGroup.id}`}
-                className="flex flex-col gap-5"
+                aria-label={selectedGroup.name}
+                className="flex flex-col gap-4"
               >
-                <h2
-                  id={`cat-heading-${selectedGroup.id}`}
-                  className="font-display text-[32px] text-[var(--text-primary)]"
-                >
-                  {selectedGroup.name}
-                </h2>
                 {selectedGroup.subcategories.map((sub) => (
                   <div key={sub.id} className="flex flex-col gap-3">
-                    <h3 className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--text-tertiary)]">
-                      {sub.name}
-                    </h3>
+                    {selectedGroup.subcategories.length > 1 ||
+                    sub.name !== selectedGroup.name ? (
+                      <h2 className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--text-tertiary)]">
+                        {sub.name}
+                      </h2>
+                    ) : null}
                     <ul
-                      className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"
+                      className="flex flex-col gap-3 xl:grid xl:grid-cols-3 xl:gap-3"
                       role="list"
                     >
                       {sub.items.map((item) => {
-                        const busy = pendingKey === item.variantId || pendingKey === `decrement:${item.variantId}`;
+                        const busy =
+                          pendingKey === item.variantId ||
+                          pendingKey === `decrement:${item.variantId}`;
                         return (
                           <MenuItemRow
                             key={`${item.productId}-${item.variantId}`}
                             item={item}
-                            layout="card"
+                            layout="responsive"
                             busy={busy}
                             quantity={aggregateQuantityByVariant.get(item.variantId) ?? 0}
                             onAdd={(next) => void addItem(next)}
@@ -553,29 +552,23 @@ export function OrderingCatalogClient(props: { brandId: string }) {
 
           <aside
             data-testid="desktop-live-cart"
-            className="hidden xl:flex sticky top-20 self-start h-[calc(100vh-20rem)] min-h-[32rem] max-h-[calc(100vh-6rem)] flex-col overflow-hidden rounded-lg border border-[var(--border-default)] bg-[var(--bg-section)]"
+            className="hidden xl:flex sticky top-20 self-start h-[calc(100vh-20rem)] min-h-[32rem] max-h-[calc(100vh-6rem)] flex-col overflow-hidden rounded-xl border border-[var(--border-strong)] bg-[var(--bg-section)] shadow-[0_14px_36px_rgba(0,0,0,0.2)]"
           >
             <div className="flex min-h-0 flex-1 flex-col">
-              <div className="flex items-baseline justify-between gap-2 border-b border-[var(--border-default)] p-4">
-                <h2 className="font-display text-[22px] text-[var(--text-primary)]">Your cart</h2>
-                <div className="flex items-center gap-3">
-                  {lineCount > 0 ? (
-                    <button
-                      type="button"
-                      disabled={pendingKey !== null}
-                      onClick={() => void handleClearLiveCart()}
-                      className="font-body text-[12px] text-[var(--text-secondary)] underline-offset-2 hover:underline focus-ring"
-                    >
-                      Clear all
-                    </button>
-                  ) : null}
-                  <a
-                    href="/order/cart/"
-                    className="font-body text-[12px] text-[var(--interactive-secondary)] underline-offset-2 hover:underline"
+              <div className="flex items-baseline justify-between gap-2 border-b border-[var(--border-strong)] p-5">
+                <h2 className="font-display text-[24px] uppercase tracking-wide text-[var(--text-primary)]">
+                  Your cart
+                </h2>
+                {lineCount > 0 ? (
+                  <button
+                    type="button"
+                    disabled={pendingKey !== null}
+                    onClick={() => void handleClearLiveCart()}
+                    className="font-body text-[13px] font-semibold text-[var(--interactive-secondary)] underline-offset-2 hover:underline focus-ring"
                   >
-                    Full cart
-                  </a>
-                </div>
+                    Clear cart
+                  </button>
+                ) : null}
               </div>
               {lineCount === 0 ? (
                 <div className="flex flex-1 flex-col items-center justify-center gap-3 px-8 py-12 text-center">
@@ -586,10 +579,24 @@ export function OrderingCatalogClient(props: { brandId: string }) {
               ) : (
                 <>
                   <div data-testid="desktop-cart-items" className="min-h-0 flex-1 overflow-y-auto p-4">
-                    <CartLineList lines={linePresentations} pending={pendingKey !== null} compact onChangeQuantity={(lineId, quantity) => void changeLiveCartQuantity(lineId, quantity)} onEdit={openLiveCartEdit} onRemove={(lineId) => void changeLiveCartQuantity(lineId, 0)} />
+                    <CartLineList
+                      lines={linePresentations}
+                      pending={pendingKey !== null}
+                      compact
+                      onChangeQuantity={(lineId, quantity) =>
+                        void changeLiveCartQuantity(lineId, quantity)
+                      }
+                      onEdit={openLiveCartEdit}
+                    />
                   </div>
-                  <div data-testid="desktop-cart-footer" className="shrink-0 bg-[var(--bg-section)] p-4 pt-0">
-                    <CartSummary estimate={presentationEstimate} itemCount={lineCount} showCheckoutLink compact />
+                  <div data-testid="desktop-cart-footer" className="shrink-0 border-t border-[var(--border-strong)] bg-[var(--bg-surface-sunken)] p-5">
+                    <CartSummary
+                      estimate={presentationEstimate}
+                      itemCount={lineCount}
+                      showCheckoutLink
+                      showViewCartLink
+                      compact
+                    />
                   </div>
                 </>
               )}

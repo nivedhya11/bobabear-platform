@@ -215,7 +215,7 @@ describe("CartClient", () => {
     });
     clearCart.mockResolvedValue({ ok: true, status: 200, data: { cart: guestCart("2", []) } });
     render(<CartClient brandId={brandId} />);
-    await userEvent.click(await screen.findByRole("button", { name: "Clear all" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Clear cart" }));
     await waitFor(() => expect(clearCart).toHaveBeenCalledWith({ brandId, expectedRevision: "1" }));
     expect(screen.getByText("Your cart is empty. Browse the menu to add something.")).toBeInTheDocument();
   });
@@ -229,7 +229,11 @@ describe("CartClient", () => {
       },
     });
     render(<CartClient brandId={brandId} />);
-    await waitFor(() => expect(screen.getByText("Total shown at checkout")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(
+        within(screen.getByTestId("cart-order-summary")).getByText("Total shown at checkout"),
+      ).toBeInTheDocument(),
+    );
     expect(screen.queryByText(/Estimated subtotal/i)).not.toBeInTheDocument();
   });
 

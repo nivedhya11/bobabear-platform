@@ -1,6 +1,7 @@
 "use client";
 
-import { Button } from "@/components/ui/Button";
+import { Trash } from "@/components/icons";
+import { QuantityStepper } from "@/components/ordering/QuantityStepper";
 import {
   formatModifierPriceDelta,
   STALE_MODIFIER_OPTION_LABEL,
@@ -8,7 +9,8 @@ import {
 } from "@/components/ordering/cart-presentation";
 import { formatPaise } from "@/components/ordering/format-money";
 
-const QTY_BUTTON_CLASS = "min-h-[44px] min-w-[44px]";
+const ORANGE_LINK =
+  "font-body text-[13px] font-semibold text-[var(--interactive-secondary)] underline-offset-2 hover:underline focus-ring";
 
 export type CartLineListProps = Readonly<{
   lines: readonly CartLinePresentation[];
@@ -19,12 +21,62 @@ export type CartLineListProps = Readonly<{
   onRemove?: (lineId: string) => void;
 }>;
 
+function ModifierSummary(props: { presentation: CartLinePresentation }) {
+  const { presentation } = props;
+
+  return (
+    <>
+      {presentation.modifiers.length > 0 ? (
+        <ul className="mt-1 flex flex-col gap-1" role="list">
+          {presentation.modifiers.map((modifier) => (
+            <li
+              key={`${modifier.variantModifierGroupId}:${modifier.modifierGroupOptionId}`}
+              className="font-body text-[12px] text-[var(--text-secondary)]"
+            >
+              {modifier.stale ? (
+                <span>
+                  {STALE_MODIFIER_OPTION_LABEL}
+                  {modifier.quantity > 1 ? ` × ${modifier.quantity}` : ""}
+                </span>
+              ) : (
+                <>
+                  {modifier.groupName ? (
+                    <span className="block text-[var(--text-tertiary)]">{modifier.groupName}</span>
+                  ) : null}
+                  <span className="flex items-center justify-between gap-2">
+                    <span>
+                      {modifier.optionName}
+                      {modifier.quantity > 1 ? ` × ${modifier.quantity}` : ""}
+                    </span>
+                    {modifier.displayPriceDeltaPaise !== null &&
+                    modifier.displayPriceDeltaPaise !== 0 ? (
+                      <span>
+                        {formatModifierPriceDelta(
+                          modifier.displayPriceDeltaPaise * modifier.quantity,
+                        )}
+                      </span>
+                    ) : null}
+                  </span>
+                </>
+              )}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {presentation.hasBundleSelections ? (
+        <p className="mt-2 font-body text-[12px] text-[var(--text-tertiary)]">
+          Bundle configuration preserved — component details appear at checkout.
+        </p>
+      ) : null}
+    </>
+  );
+}
+
 /**
  * Presentation-only Cart line list. Mutations stay with the parent controller.
  */
 export function CartLineList(props: CartLineListProps) {
-  const { lines, pending = false, compact = false, onChangeQuantity, onEdit, onRemove } =
-    props;
+  const { lines, pending = false, compact = false, onChangeQuantity, onEdit, onRemove } = props;
 
   if (lines.length === 0) {
     return (
@@ -39,8 +91,8 @@ export function CartLineList(props: CartLineListProps) {
           key={presentation.lineId}
           className={
             compact
-              ? "border-b border-[var(--border-default)] pb-3 last:border-b-0 last:pb-0"
-              : "border border-[var(--border-default)] bg-[var(--bg-section)] p-4 flex flex-col gap-3"
+              ? "border-b border-[var(--border-default)] pb-4 last:border-b-0 last:pb-0"
+              : "flex flex-col gap-3 rounded-xl border border-[var(--border-strong)] bg-[var(--bg-section)] p-4 shadow-[0_10px_28px_rgba(0,0,0,0.14)]"
           }
         >
           <div className="flex items-start gap-3">
@@ -49,138 +101,93 @@ export function CartLineList(props: CartLineListProps) {
               <img
                 src={presentation.imagePath}
                 alt=""
-                width={64}
-                height={64}
+                width={72}
+                height={72}
                 loading="lazy"
                 decoding="async"
-                className="h-16 w-16 shrink-0 object-cover"
+                className="h-[72px] w-[72px] shrink-0 rounded-lg object-cover bg-[var(--bg-surface-sunken)] sm:h-16 sm:w-16"
               />
             ) : (
-              <div aria-hidden="true" className="h-16 w-16 shrink-0 bg-[var(--bg-page)] border border-[var(--border-default)]" />
+              <div
+                aria-hidden="true"
+                className="h-[72px] w-[72px] shrink-0 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface-sunken)] sm:h-16 sm:w-16"
+              />
             )}
+
             <div className="min-w-0 flex-1">
-              <p
-                className={
-                  compact
-                    ? "font-body font-bold text-[14px] leading-tight text-[var(--text-primary)]"
-                    : "font-display text-[20px] text-[var(--text-primary)]"
-                }
-              >
-                {presentation.itemName}
-              </p>
-              {presentation.fullyResolvable ? (
-                <p className="font-body text-[13px] text-[var(--text-tertiary)]">
+              <div className="flex items-start justify-between gap-3">
+                <p
+                  className={
+                    compact
+                      ? "font-body text-[14px] font-bold leading-tight text-[var(--text-primary)]"
+                      : "font-body text-[16px] font-bold leading-tight text-[var(--text-primary)]"
+                  }
+                >
+                  {presentation.itemName}
+                </p>
+                <div className="flex shrink-0 items-start gap-2">
+                  {presentation.fullyResolvable ? (
+                    <p className="font-body text-[14px] font-semibold text-[var(--text-primary)]">
+                      {formatPaise(presentation.lineTotalPaise)}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+
+              {!compact && presentation.fullyResolvable ? (
+                <p className="mt-0.5 font-body text-[12px] text-[var(--text-tertiary)]">
                   {formatPaise(presentation.unitPricePaise)} each
                 </p>
               ) : null}
-              {presentation.modifiers.length > 0 ? (
-                <ul className="mt-2 flex flex-col gap-1.5" role="list">
-                  {presentation.modifiers.map((modifier) => (
-                    <li
-                      key={`${modifier.variantModifierGroupId}:${modifier.modifierGroupOptionId}`}
-                      className="font-body text-[12px] text-[var(--text-secondary)]"
-                    >
-                      {modifier.stale ? (
-                        <span>
-                          {STALE_MODIFIER_OPTION_LABEL}
-                          {modifier.quantity > 1 ? ` × ${modifier.quantity}` : ""}
-                        </span>
-                      ) : (
-                        <>
-                          {modifier.groupName ? (
-                            <span className="block text-[var(--text-tertiary)]">
-                              {modifier.groupName}
-                            </span>
-                          ) : null}
-                          <span className="flex items-center justify-between gap-2">
-                            <span>
-                              {modifier.optionName}
-                              {modifier.quantity > 1 ? ` × ${modifier.quantity}` : ""}
-                            </span>
-                            {modifier.displayPriceDeltaPaise !== null &&
-                            modifier.displayPriceDeltaPaise !== 0 ? (
-                              <span>
-                                {formatModifierPriceDelta(
-                                  modifier.displayPriceDeltaPaise * modifier.quantity,
-                                )}
-                              </span>
-                            ) : null}
-                          </span>
-                        </>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-              {presentation.hasBundleSelections ? (
-                <p className="mt-2 font-body text-[12px] text-[var(--text-tertiary)]">
-                  Bundle configuration preserved — component details appear at checkout.
-                </p>
-              ) : null}
-            </div>
-            <div className="flex flex-col items-end gap-2 shrink-0">
-              {presentation.fullyResolvable ? (
-                <p className="font-body text-[14px] font-semibold text-[var(--text-primary)]">
-                  {formatPaise(presentation.lineTotalPaise)}
-                </p>
-              ) : null}
-              <div className="inline-flex items-stretch overflow-hidden rounded-md border border-[var(--border-default)]">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className={`${QTY_BUTTON_CLASS} rounded-none border-0 text-[var(--text-secondary)]`}
-                  disabled={pending}
-                  aria-label={`Decrease ${presentation.itemName} quantity`}
-                  onClick={() => onChangeQuantity(presentation.lineId, presentation.quantity - 1)}
-                >
-                  −
-                </Button>
-                <span
-                  className="flex min-w-[2.5rem] items-center justify-center border-x border-[var(--border-default)] px-2 font-mono text-[13px] text-center"
-                  aria-live="polite"
-                >
-                  {presentation.quantity}
-                </span>
-                <Button
-                  type="button"
-                  variant="primary"
-                  size="sm"
-                  className={`${QTY_BUTTON_CLASS} rounded-none border-0`}
-                  disabled={pending}
-                  aria-label={`Increase ${presentation.itemName} quantity`}
-                  onClick={() => onChangeQuantity(presentation.lineId, presentation.quantity + 1)}
-                >
-                  +
-                </Button>
-                {onRemove ? (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="min-h-[44px]"
-                    disabled={pending}
-                    aria-label={`Remove ${presentation.itemName} from cart`}
-                    onClick={() => onRemove(presentation.lineId)}
-                  >
-                    Remove
-                  </Button>
-                ) : null}
-              </div>
+
+              <ModifierSummary presentation={presentation} />
+
               {presentation.editEligible && onEdit ? (
-                <Button
+                <button
                   type="button"
-                  variant="secondary"
-                  size="sm"
-                  className="min-h-[44px]"
                   disabled={pending}
                   aria-label={`Edit customization for ${presentation.itemName}`}
                   onClick={() => onEdit(presentation.lineId)}
+                  className={`${ORANGE_LINK} mt-2`}
                 >
                   Edit
-                </Button>
+                </button>
               ) : null}
             </div>
+          </div>
+
+          <div
+            className={
+              compact
+                ? "flex justify-end pt-1"
+                : "flex items-center justify-between gap-3 border-t border-[var(--border-default)] pt-3"
+            }
+          >
+            {!compact && onRemove ? (
+              <button
+                type="button"
+                disabled={pending}
+                aria-label={`Remove ${presentation.itemName} from cart`}
+                onClick={() => onRemove(presentation.lineId)}
+                className="flex h-10 w-10 items-center justify-center rounded-md text-[var(--text-secondary)] hover:text-[var(--text-primary)] focus-ring"
+              >
+                <Trash size={18} strokeWidth={1.8} aria-hidden="true" />
+              </button>
+            ) : null}
+            <QuantityStepper
+              quantity={presentation.quantity}
+              disabled={pending}
+              ariaLabel={`${presentation.itemName} quantity ${presentation.quantity}`}
+              decrementLabel={`Decrease ${presentation.itemName} quantity`}
+              incrementLabel={`Increase ${presentation.itemName} quantity`}
+              onDecrement={() =>
+                onChangeQuantity(presentation.lineId, presentation.quantity - 1)
+              }
+              onIncrement={() =>
+                onChangeQuantity(presentation.lineId, presentation.quantity + 1)
+              }
+              className={compact ? undefined : "ml-auto"}
+            />
           </div>
         </li>
       ))}

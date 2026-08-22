@@ -13,7 +13,7 @@
 
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
-import { Menu, ArrowLeft, Sun, Moon } from "@/components/icons";
+import { Menu, ArrowLeft, Sun, Moon, Bag } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { useCustomerChromeSession } from "@/lib/customer-auth/chrome-session";
 import { getActiveCart } from "@/lib/customer-commerce";
@@ -301,9 +301,11 @@ export function Nav() {
                   <a
                     href={CART_HREF}
                     aria-current={cartActive ? "page" : undefined}
-                    className={chromeLinkClass(cartActive)}
+                    className={cn(chromeLinkClass(cartActive), "relative inline-flex min-h-10 items-center gap-2 border border-[var(--border-strong)] px-3")}
                   >
-                    {cartLabel}
+                    <Bag aria-hidden="true" size={18} strokeWidth={1.8} />
+                    <span className="sr-only">{cartLabel}</span>
+                    <span aria-hidden="true" className="inline-flex min-w-5 items-center justify-center rounded-full bg-[var(--interactive-secondary)] px-1 text-[11px] font-bold text-[var(--text-on-secondary)]">{cartCount}</span>
                   </a>
                 </li>
               </ul>
@@ -356,14 +358,15 @@ export function Nav() {
               aria-current={cartActive ? "page" : undefined}
               className={cn(
                 "font-body font-semibold text-[14px] leading-none shrink-0",
-                "min-h-8 px-2 inline-flex items-center rounded-md",
+                "min-h-10 px-3 inline-flex items-center gap-1.5 rounded-full border border-[var(--border-strong)]",
                 "transition-colors duration-[150ms] ease-out focus-ring",
                 cartActive
                   ? "text-[var(--text-label)]"
                   : "text-[var(--text-primary)] hover:bg-[var(--interactive-ghost-hover)]",
               )}
             >
-              {cartLabel}
+              <Bag aria-hidden="true" size={18} strokeWidth={1.8} />
+              <span aria-hidden="true" className="inline-flex min-w-5 items-center justify-center rounded-full bg-[var(--interactive-secondary)] px-1 text-[11px] font-bold text-[var(--text-on-secondary)]">{cartCount}</span>
             </a>
           </div>
         </div>
