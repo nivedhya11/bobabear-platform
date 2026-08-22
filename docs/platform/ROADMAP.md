@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R59",
-  "acceptedThrough": "IMP-028C",
-  "currentProductSlice": "IMP-028D",
+  "roadmapVersion": "GTM-R60",
+  "acceptedThrough": "IMP-028D",
+  "currentProductSlice": "NONE",
   "nextProductSlice": "IMP-029",
   "gtmBoundary": "IMP-040",
-  "lastReviewed": "2026-08-21",
-  "supersedes": "GTM-R57"
+  "lastReviewed": "2026-08-22",
+  "supersedes": "GTM-R59"
 }
 -->
 
@@ -255,17 +255,17 @@ IMP-028C locked capability architecture (architecture **ARCHITECTURE_LOCKED**; i
 [`capabilities/IMP-028C-food-customization.md`](./capabilities/IMP-028C-food-customization.md)
 
 IMP-028D locked capability architecture (architecture **ARCHITECTURE_LOCKED**; implementation
-**AUTHORIZED** / **STARTED** / `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`):
+**AUTHORIZED** / **STARTED** / **COMPLETE** / `COMPLETE_AND_ACCEPTED`):
 
 [`capabilities/IMP-028D-desktop-ordering-continuity.md`](./capabilities/IMP-028D-desktop-ordering-continuity.md)
 
 ## 2. Current Position
 
 ```text
-Accepted Through:     IMP-028C — Food Customization
-Current Product Slice: IMP-028D — Desktop Ordering Continuity
+Accepted Through:     IMP-028D — Desktop Ordering Continuity
+Current Product Slice: NONE
 Next Product Slice:    IMP-029 — Operations Console API
-Pending Acceptance:    IMP-028D
+Pending Acceptance:    NONE
 Public GTM Boundary:   IMP-040 — Launch Validation & Cutover
 ```
 
@@ -330,8 +330,8 @@ authorize customization implementation, populate modifier data, activate IMP-029
 (Cart Identity Transition Authority). Guest and customer purchase intent must be reconciled without
 silent winner selection; sign-out isolates the browser from the customer Cart without deleting it.
 D-370 does **not** authorize Cart-merge implementation, change authentication, activate IMP-029, or
-change `acceptedThrough` / `pendingAcceptance` / `currentProductSlice`. Next free decision is
-**D-371**.
+change `acceptedThrough` / `pendingAcceptance` / `currentProductSlice`. GTM-R59 later records
+binding **D-371**; the next free decision is **D-372**.
 
 ```text
 LOCAL_RAZORPAY_GTM_VALIDATION: PASS
@@ -439,31 +439,41 @@ only). Webhook acknowledgement timing / durable inbox / asynchronous Payment pro
 | IMP-028A | Food Direct UX Foundation | COMPLETE_AND_ACCEPTED |
 | IMP-028B | Customer Menu Projection + Discovery | COMPLETE_AND_ACCEPTED |
 | IMP-028C | Food Customization | COMPLETE_AND_ACCEPTED |
+| IMP-028D | Desktop Ordering Continuity | COMPLETE_AND_ACCEPTED |
 
 ## 4. Current Product Slice
 
+No product slice is currently active. IMP-028D is accepted; IMP-029 remains planned, not started,
+and not authorized.
+
 ```text
 IMP-028D — Desktop Ordering Continuity
-Lifecycle: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
+Lifecycle: COMPLETE_AND_ACCEPTED
 Architecture: ARCHITECTURE_LOCKED
 Implementation: AUTHORIZED / STARTED / COMPLETE
 IMP-028D_ARCHITECTURE_LOCKED: YES
 IMP-028D_IMPLEMENTATION_AUTHORIZED: YES
 IMP-028D_IMPLEMENTATION_STARTED: YES
 IMP-028D_IMPLEMENTATION_COMPLETE: YES
-IMP-028D_ACCEPTED: NO
+IMP-028D_ACCEPTED: YES
 FOUNDER_UAT_REQUIRED: YES
-FOUNDER_UAT: PENDING
-FOUNDER_UAT_COMPLETE: NO
-Latest accepted slice: IMP-028C — Food Customization
+FOUNDER_UAT: PASS
+FOUNDER_UAT_COMPLETE: YES
+FOUNDER_UAT_DECISION_DATE: 2026-08-22
+FOUNDER_UAT_ACCEPTANCE_AUTHORITY: Founder
+FOUNDER_UAT_CANDIDATE_REF: main
+FOUNDER_UAT_CANDIDATE_HEAD: 166aec4efd1c55a9e14ab7216a2b1af71fb3b2c7
+FOUNDER_UAT_CANDIDATE_TREE: eba5f3f7fc25b07581801b53a130fb9547abc459
+FOUNDER_UAT_EVIDENCE_SHA256: 715519d51801a10913a71a891af74c68aac1f493088adda43ecbc6a9c8bd5572
+Latest accepted slice: IMP-028D — Desktop Ordering Continuity
 IMP-028C_ARCHITECTURE_LOCKED: YES
 IMP-028C_IMPLEMENTATION_AUTHORIZED: YES
 IMP-028C_IMPLEMENTATION_STARTED: YES
 IMP-028C_IMPLEMENTATION_COMPLETE: YES
 IMP-028C_ACCEPTED: YES
-FOUNDER_UAT_REQUIRED: YES
-FOUNDER_UAT: PASS
-FOUNDER_UAT_COMPLETE: YES
+IMP-028C_FOUNDER_UAT_REQUIRED: YES
+IMP-028C_FOUNDER_UAT: PASS
+IMP-028C_FOUNDER_UAT_COMPLETE: YES
 IMP-028B_ARCHITECTURE_LOCKED: YES
 IMP-028B_IMPLEMENTATION_AUTHORIZED: YES
 IMP-028B_IMPLEMENTATION_STARTED: YES
@@ -471,7 +481,7 @@ IMP-028B_IMPLEMENTATION_COMPLETE: YES
 IMP-028B_ACCEPTED: YES
 Next product slice: IMP-029 — Operations Console API (PLANNED / NOT_STARTED / NOT_AUTHORIZED)
 Pending acceptance: NONE
-acceptedThrough: IMP-028C
+acceptedThrough: IMP-028D
 IMP-026C: COMPLETE_AND_ACCEPTED
 IMP-027: COMPLETE_AND_ACCEPTED
 IMP-027_ARCHITECTURE: LOCKED
@@ -503,7 +513,7 @@ IMP-028B_IMPLEMENTATION_AUTHORIZED: YES
 IMP-028B_IMPLEMENTATION_STARTED: YES
 IMP-028B_IMPLEMENTATION_COMPLETE: YES
 IMP-028B_ACCEPTED: YES
-IMP-029: PLANNED / NOT_STARTED
+IMP-029: PLANNED / NOT_STARTED / NOT_AUTHORIZED
 IMP-029_IMPLEMENTATION_AUTHORIZED: NO
 IMP-029_STARTED: NO
 ```
@@ -585,13 +595,24 @@ IMP-028C locked capability architecture is at
 [`capabilities/IMP-028C-food-customization.md`](./capabilities/IMP-028C-food-customization.md).
 Architecture is **ARCHITECTURE_LOCKED**. Implementation is **AUTHORIZED** / **STARTED** /
 **COMPLETE_AND_ACCEPTED**; formal acceptance is claimed (`IMP-028C_ACCEPTED: YES`;
-`pendingAcceptance = NONE`). D-369 governs paid-modifier explicit intent. D-371 remains unused.
+`pendingAcceptance = NONE`). D-369 governs paid-modifier explicit intent. D-371 was unused at
+IMP-028C acceptance and is now binding for IMP-028D RC3.
+
+IMP-028D locked capability architecture is at
+[`capabilities/IMP-028D-desktop-ordering-continuity.md`](./capabilities/IMP-028D-desktop-ordering-continuity.md).
+Architecture is **ARCHITECTURE_LOCKED**. Implementation is **AUTHORIZED** / **STARTED** /
+**COMPLETE** / `COMPLETE_AND_ACCEPTED`; formal acceptance is recorded
+(`IMP-028D_ACCEPTED: YES`; `acceptedThrough = IMP-028D`; `pendingAcceptance = NONE`;
+`currentProductSlice = NONE`). Founder UAT is **PASS** for the exact merged-main candidate
+`166aec4efd1c55a9e14ab7216a2b1af71fb3b2c7` / tree
+`eba5f3f7fc25b07581801b53a130fb9547abc459`. IMP-029 remains planned, not started, and not
+authorized.
 
 ## 5. Future GTM Slices
 
 Remaining numeric GTM range IMP-029 → IMP-040: **12** IMP numbers.
-Accepted inserted slices IMP-026C, IMP-028A, IMP-028B, and IMP-028C remain in the accepted ledger
-and are not future identities.
+Accepted inserted slices IMP-026C, IMP-028A, IMP-028B, IMP-028C, and IMP-028D remain in the
+accepted ledger and are not future identities.
 
 IMP-028A is the first Food Direct experience-programme capability. It was inserted after accepted
 IMP-028 and before planned GTM IMP-029. It does **not** consume or remap IMP-029 → IMP-040
@@ -607,11 +628,10 @@ consume or remap IMP-029 → IMP-040 identities and is `COMPLETE_AND_ACCEPTED`.
 
 IMP-028D is the fourth Food Direct experience-programme capability. It was inserted after accepted
 IMP-028C and before planned GTM IMP-029 using the established suffix convention. It does **not**
-consume or remap IMP-029 → IMP-040 identities.
+consume or remap IMP-029 → IMP-040 identities and is `COMPLETE_AND_ACCEPTED`.
 
 | IMP | Capability | Lifecycle |
 |---|---|---|
-| IMP-028D | Desktop Ordering Continuity | IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE |
 | IMP-029 | Operations Console API | PLANNED |
 | IMP-030 | Operations Console UI | PLANNED |
 | IMP-031 | Provider-Neutral Delivery Foundation | PLANNED |
@@ -954,7 +974,7 @@ such as search, categories, Bestsellers, Fresh Drops, and recommendation/cross-s
 `PRODUCT_STRATEGY_INPUTS` / `NOT_IMPLEMENTATION_AUTHORIZATION` unless a later roadmap entry
 assigns them. IMP-026C does not reopen accepted IMP-025 and is not assigned to IMP-027. IMP-026C
 is independently and formally accepted as a supplemental inserted gate (`IMP-026C_ACCEPTED: YES`).
-`acceptedThrough` is IMP-028A. `pendingAcceptance` is NONE. IMP-027 architecture was locked
+`acceptedThrough` is IMP-028D. `pendingAcceptance` is NONE. IMP-027 architecture was locked
 by GTM-R20. GTM-R21 authorized IMP-027 implementation under that lock. GTM-R28 records IMP-027
 `COMPLETE_AND_ACCEPTED`. GTM-R30 records IMP-028 `COMPLETE_AND_ACCEPTED`. GTM-R31 records **D-368**
 without activating IMP-029. GTM-R32 records **D-369** without activating IMP-029. GTM-R33 records
@@ -990,6 +1010,22 @@ Historical GTM-R1 meanings that are **not** current:
 Current public GTM boundary is **IMP-040**, not IMP-035.
 
 ## 9. Roadmap Change Log
+
+### GTM-R60 — 2026-08-22
+
+- Records formal acceptance of **IMP-028D — Desktop Ordering Continuity** after Founder UAT
+  **PASS** for the exact merged-main candidate
+  `166aec4efd1c55a9e14ab7216a2b1af71fb3b2c7` / tree
+  `eba5f3f7fc25b07581801b53a130fb9547abc459`.
+- IMP-028D lifecycle becomes `COMPLETE_AND_ACCEPTED`; architecture remains
+  `ARCHITECTURE_LOCKED`; implementation remains `AUTHORIZED` / `STARTED` / `COMPLETE`.
+- Advances `acceptedThrough = IMP-028D`; sets `currentProductSlice = NONE` and
+  `pendingAcceptance = NONE`; `nextProductSlice` remains IMP-029.
+- IMP-029 remains `PLANNED` / `NOT_STARTED` / `NOT_AUTHORIZED`. This reconciliation does not
+  authorize or start IMP-029.
+- D-368 / D-369 / D-370 / D-371 remain unchanged and binding. Global architecture remains
+  ARCH-R16 and the decision register remains DR-13.
+- This reconciliation introduces no runtime, schema, migration, or product mutation.
 
 ### GTM-R59 — 2026-08-21
 

@@ -5,9 +5,9 @@
   "capability": "IMP-028D",
   "title": "Desktop Ordering Continuity",
   "architectureLock": "ARCHITECTURE_LOCKED",
-  "implementation": "IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE",
+  "implementation": "COMPLETE_AND_ACCEPTED",
   "implementationAuthorized": true,
-  "lastReviewed": "2026-08-21",
+  "lastReviewed": "2026-08-22",
   "bindingDecisions": ["D-368", "D-369", "D-370", "D-371"],
   "dependsOn": ["IMP-025", "IMP-026C", "IMP-028A", "IMP-028B", "IMP-028C"]
 }
@@ -26,7 +26,7 @@ authority.
 | Field | Value |
 |---|---|
 | Placement | After accepted IMP-028C and before planned IMP-029 |
-| Lifecycle | `ARCHITECTURE_LOCKED` / `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` |
+| Lifecycle | `ARCHITECTURE_LOCKED` / `COMPLETE_AND_ACCEPTED` |
 | Implementation | `AUTHORIZED` / `STARTED` / `COMPLETE` |
 | Founder UAT required at acceptance | **YES** |
 | RC3 schema / migration / new authority | **YES** / **YES** / **D-371 only** |
@@ -36,11 +36,12 @@ IMP-028D_ARCHITECTURE_LOCKED: YES
 IMP-028D_IMPLEMENTATION_AUTHORIZED: YES
 IMP-028D_IMPLEMENTATION_STARTED: YES
 IMP-028D_IMPLEMENTATION_COMPLETE: YES
-IMP-028D_ACCEPTED: NO
+IMP-028D_ACCEPTED: YES
 IMP-028D_FOUNDER_UAT_REQUIRED: YES
-IMP-028D_FOUNDER_UAT: PENDING
-IMP-028D_FOUNDER_UAT_COMPLETE: NO
-RC3_IMPLEMENTATION_STARTED: NO
+IMP-028D_FOUNDER_UAT: PASS
+IMP-028D_FOUNDER_UAT_COMPLETE: YES
+RC3_IMPLEMENTATION_STARTED: YES
+RC3_IMPLEMENTATION_COMPLETE: YES
 RC3_NEW_SCHEMA_REQUIRED: YES
 RC3_NEW_MIGRATION_REQUIRED: YES
 RC3_NEW_PERSISTENCE_AUTHORITY: D-371 ONLY
@@ -127,11 +128,11 @@ migration, pricing authority, or geospatial Serviceability are out of scope.
 
 ## Implementation gates
 
-RC1 implementation is **authorized** and **started** under explicit founder/task authorization while
-architecture remains locked. PROCESS-HARDENING-A in the referenced supporting plan applies to this
-product implementation. Before founder UAT, PROCESS-HARDENING-B and the exact-candidate UAT
-requirements in `AGENTS.md` apply. RC3 implementation is **not started**. D-371 now authorizes
-only its bounded persistence/API need; all other authority needs remain a `DECISION_REQUIRED` stop.
+RC1 and RC3 implementation are **authorized**, **started**, and **complete** while architecture
+remains locked. PROCESS-HARDENING-A in the referenced supporting plan applied to this product
+implementation. PROCESS-HARDENING-B and the exact-candidate UAT requirements in `AGENTS.md` were
+satisfied before the accepted Founder UAT. D-371 authorizes only its bounded persistence/API need;
+all other authority needs remain a `DECISION_REQUIRED` stop.
 
 ## RC3 durable Cart sequence amendment
 
@@ -161,9 +162,28 @@ be expired/rebuilt at the migration boundary. No legacy synthetic ordering basel
 The current interaction authority is
 [`../experience/IMP-028D-ordering-ui-design-lock-RC3.md`](../experience/IMP-028D-ordering-ui-design-lock-RC3.md).
 
-## Founder UAT failure and rework evidence
+## Formal Acceptance
 
-## RC1 capability amendment and implementation reopening
+```text
+IMP-028D_ACCEPTED: YES
+FOUNDER_UAT_REQUIRED: YES
+FOUNDER_UAT: PASS
+FOUNDER_UAT_COMPLETE: YES
+FOUNDER_UAT_DECISION_DATE: 2026-08-22
+FOUNDER_UAT_ACCEPTANCE_AUTHORITY: Founder
+FOUNDER_UAT_CANDIDATE_REF: main
+FOUNDER_UAT_CANDIDATE_HEAD: 166aec4efd1c55a9e14ab7216a2b1af71fb3b2c7
+FOUNDER_UAT_CANDIDATE_TREE: eba5f3f7fc25b07581801b53a130fb9547abc459
+FOUNDER_UAT_EVIDENCE_SHA256: 715519d51801a10913a71a891af74c68aac1f493088adda43ecbc6a9c8bd5572
+```
+
+D-368 / D-369 / D-370 / D-371 remain binding, and architecture remains
+`ARCHITECTURE_LOCKED`. Acceptance creates no new schema, migration, or API authority and does not
+authorize or start IMP-029.
+
+## Historical Founder UAT failure and rework evidence
+
+## Historical RC1 capability amendment and implementation reopening
 
 Founder authorization on 2026-08-21 supersedes the prior IMP-028D all-sections/root-category
 scroll-spy presentation model with the explicit selected-category model documented above. It also
@@ -171,10 +191,11 @@ authorizes the bounded Cart item-list scroll exception and the consistent `Add +
 contract. Global architecture remains ARCH-R15, the decision register remains DR-12, and D-371
 remains unused. Prior implementation and UAT evidence below is preserved as history.
 
-The RC1 material rework is `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`: implementation remains
-authorized, started, and complete, `IMP-028D_IMPLEMENTATION_COMPLETE: YES`,
-`IMP-028D_ACCEPTED: NO`, and Founder UAT is PENDING / NOT RUN for RC1. Visual review has passed;
-Founder UAT remains required before acceptance.
+At that historical gate, the RC1 material rework was
+`IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`: implementation was authorized, started, and
+complete, `IMP-028D_IMPLEMENTATION_COMPLETE: YES`, `IMP-028D_ACCEPTED: NO`, and Founder UAT was
+PENDING / NOT RUN for RC1. Visual review had passed; Founder UAT was still required before
+acceptance.
 
 ## RC1 promotion evidence
 
@@ -221,8 +242,8 @@ FOUNDER_UAT_NGINX_OVERLAY_SHA256: 6d830835924027e719516de1d7aa41b7545965b8c77052
 
 The failure concerns the XL ordering presentation: absent effective three-zone continuity, sparse
 product merchandising, dominant serviceability treatment, and customer-visible engineering copy.
-The completed rework preserves this failure. A new, freshly built UAT candidate is still required
-before Founder UAT can proceed.
+The completed rework preserved this failure as historical evidence. A new, freshly built UAT
+candidate was still required before the later Founder UAT could proceed.
 
 ## Rework technical completion evidence
 
@@ -238,13 +259,13 @@ FOUNDER_UAT_REQUIRED: YES
 FOUNDER_UAT: PENDING
 ```
 
-The rework is implementation-complete pending independent technical acceptance, CI, a fresh exact
-candidate deployment, and Founder UAT. It is not accepted.
+At that historical gate, the rework was implementation-complete pending independent technical
+acceptance, CI, a fresh exact-candidate deployment, and Founder UAT. It was not yet accepted.
 
 ## Prior technical completion evidence
 
-IMP-028D implementation is complete pending independent acceptance and founder UAT; it is not
-accepted. The recorded implementation/promotion evidence is:
+At that historical gate, IMP-028D implementation was complete pending independent acceptance and
+Founder UAT; it was not yet accepted. The recorded implementation/promotion evidence is:
 
 ```text
 IMPLEMENTATION_COMMIT: 795bb3151e3a24d5914160d232f099016d880a2b
