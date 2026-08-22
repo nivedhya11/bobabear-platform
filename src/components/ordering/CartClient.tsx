@@ -14,6 +14,7 @@ import {
   formatCartEstimatePrimaryLabel,
   resolveCartPresentationEstimate,
 } from "@/components/ordering/cart-presentation";
+import { publishCartCount } from "@/components/ordering/cart-count-sync";
 import { readDeliveryPinContext } from "@/components/ordering/delivery-pin-context";
 import { commerceErrorCopy } from "@/components/ordering/error-copy";
 import { MenuItemCustomizationDialog } from "@/components/ordering/MenuItemCustomizationDialog";
@@ -117,6 +118,7 @@ export function CartClient(props: { brandId: string }) {
 
   async function applyCartMutation(nextCart: CommerceCart): Promise<void> {
     setCart(nextCart);
+    publishCartCount(cartUnitCount(nextCart));
     await refreshEvaluation(deliveryPin, nextCart);
   }
 
@@ -261,7 +263,8 @@ export function CartClient(props: { brandId: string }) {
   return (
     <main id="main-content" tabIndex={-1} className="bg-[var(--bg-page)] focus:outline-none">
       <div className="mx-auto max-w-[720px] px-5 py-12 md:py-16 flex flex-col gap-8">
-        <header className="flex flex-col gap-2">
+        <header className="flex gap-2 justify-between items-start">
+          <div className="flex flex-col gap-2">
           <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
             Boba Bear · Cart
           </p>
@@ -272,6 +275,12 @@ export function CartClient(props: { brandId: string }) {
             <p className="font-body text-[15px] text-[var(--text-secondary)]">
               {lineCount} item{lineCount === 1 ? "" : "s"} · {presentationLabel}
             </p>
+          ) : null}
+          </div>
+          {!empty ? (
+            <Button type="button" variant="ghost" size="sm" disabled={pending} onClick={() => void handleClear()}>
+              Clear all
+            </Button>
           ) : null}
         </header>
 
@@ -323,9 +332,6 @@ export function CartClient(props: { brandId: string }) {
               onClick={() => void handleCheckout()}
             >
               {pending ? "Continuing…" : "Checkout"}
-            </Button>
-            <Button type="button" variant="outline" disabled={pending} onClick={() => void handleClear()}>
-              Clear cart
             </Button>
             <Button asChild variant="ghost">
               <a href="/order/">Keep browsing</a>

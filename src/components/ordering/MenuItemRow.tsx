@@ -83,10 +83,10 @@ export function MenuItemRow(props: MenuItemRowProps) {
         ) : null}
         <div className="mt-auto flex flex-col gap-1.5">
           {quantity > 0 ? (
-            <div className="flex min-h-[44px] items-center justify-between rounded-md border border-[var(--border-default)] px-2 font-body font-bold" aria-label={`${item.name} quantity ${quantity}`}>
-              <button type="button" disabled={busy} aria-label={`Remove one ${item.name}`} onClick={() => onDecrement?.(item)}>−</button>
-              <span aria-live="polite">{quantity}</span>
-              <button type="button" disabled={busy} aria-label={`Add one ${item.name}`} onClick={() => (customizable ? onCustomize(item) : onAdd(item))}>+</button>
+            <div className="inline-flex self-start min-h-[44px] items-stretch overflow-hidden rounded-md border border-[var(--border-default)] font-body font-bold" aria-label={`${item.name} quantity ${quantity}`}>
+              <button className="min-h-[44px] min-w-[44px] text-[var(--text-secondary)] focus-ring" type="button" disabled={busy} aria-label={`Remove one ${item.name}`} onClick={() => onDecrement?.(item)}>−</button>
+              <span className="flex min-w-10 items-center justify-center border-x border-[var(--border-default)] px-2" aria-live="polite">{quantity}</span>
+              <button className="min-h-[44px] min-w-[44px] bg-[var(--interactive-secondary)] text-[var(--text-on-secondary)] focus-ring" type="button" disabled={busy} aria-label={`Add one ${item.name}`} onClick={() => (customizable ? onCustomize(item) : onAdd(item))}>+</button>
             </div>
           ) : <Button
             type="button"

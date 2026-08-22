@@ -16,6 +16,10 @@ import { usePathname } from "next/navigation";
 import { Menu, ArrowLeft, Sun, Moon } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { useCustomerChromeSession } from "@/lib/customer-auth/chrome-session";
+import { getActiveCart } from "@/lib/customer-commerce";
+import { cartUnitCount } from "@/components/ordering/cart-presentation";
+import { subscribeToCartCount } from "@/components/ordering/cart-count-sync";
+import { DIRECT_ORDERING_BRAND_ID } from "@/shared/customer-menu/constants";
 
 const PRIMARY_NAV_LINKS = [
   { label: "Menu", href: "/order/", id: "menu", num: "01" },
@@ -70,6 +74,7 @@ export function Nav() {
   const [myBobaOpen, setMyBobaOpen] = useState(false);
   const { session, signOut } = useCustomerChromeSession();
   const authenticated = session === "authenticated";
+  const [cartCount, setCartCount] = useState(0);
 
   const isLight = useSyncExternalStore(subscribeTheme, getThemeSnapshot, getServerSnapshot);
   const toggleTheme = () => {
@@ -95,6 +100,16 @@ export function Nav() {
   const ordersActive = isOrdersPath(pathname);
   const signInActive = isLoginPath(pathname);
   const orderingChrome = pathname.startsWith("/order");
+
+  useEffect(() => {
+    const cancelled = false;
+    void getActiveCart(DIRECT_ORDERING_BRAND_ID, { guestToken: true }).then((result) => {
+      if (!cancelled && result.ok) setCartCount(cartUnitCount(result.data.cart));
+    });
+    return subscribeToCartCount(setCartCount);
+  }, []);
+
+  const cartLabel = `Cart (${cartCount})`;
 
   useEffect(() => {
     if (!drawerOpen) {
@@ -288,7 +303,7 @@ export function Nav() {
                     aria-current={cartActive ? "page" : undefined}
                     className={chromeLinkClass(cartActive)}
                   >
-                    Cart
+                    {cartLabel}
                   </a>
                 </li>
               </ul>
@@ -348,7 +363,7 @@ export function Nav() {
                   : "text-[var(--text-primary)] hover:bg-[var(--interactive-ghost-hover)]",
               )}
             >
-              Cart
+              {cartLabel}
             </a>
           </div>
         </div>
@@ -447,12 +462,12 @@ export function Nav() {
                     : "text-[var(--text-primary)] hover:text-[var(--text-label)]",
                 )}
               >
-                <span className="font-display text-[30px] leading-tight">Cart</span>
+                <span className="font-display text-[30px] leading-tight">{cartLabel}</span>
                 <span
                   aria-hidden="true"
                   className="font-mono text-[11px] tracking-widest text-[var(--text-tertiary)] opacity-50 pb-1"
                 >
-                  03
+                  {String(cartCount).padStart(2, "0")}
                 </span>
               </a>
             </li>

@@ -101,6 +101,14 @@ describe("cart presentation", () => {
     expect(formatPresentationEstimateLabel(BigInt(39800))).toBe("₹398.00");
   });
 
+  it("includes the nullable Customer Menu image path in cart-line presentation", () => {
+    const imageMenu = { ...menu, items: [{ ...menu.items[0]!, imagePath: "/items/milk-tea.jpg" }] };
+    expect(resolveCartLinePresentation(cart.lines[0]!, buildCustomerMenuLookups(imageMenu)).imagePath).toBe(
+      "/items/milk-tea.jpg",
+    );
+    expect(resolveCartLinePresentation(cart.lines[0]!, buildCustomerMenuLookups(menu)).imagePath).toBeNull();
+  });
+
   it("marks missing base product as not fully resolvable and withholds numeric aggregate", () => {
     const lookups = buildCustomerMenuLookups(menu);
     const orphanLine = {

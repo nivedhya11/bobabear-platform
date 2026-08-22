@@ -178,6 +178,23 @@ describe("CartClient", () => {
     expect(screen.queryByText(/menu price/i)).not.toBeInTheDocument();
   });
 
+  it("renders the Customer Menu thumbnail when present and safely retains a placeholder when absent", async () => {
+    getCustomerMenu.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { menu: { ...baseMenu, items: [{ ...baseMenu.items[0]!, imagePath: "/items/milk-tea.jpg" }] } },
+    });
+    getActiveCart.mockResolvedValue({
+      ok: true, status: 200, data: { cart: guestCart("1", [{ id: "line-1", variantId, quantity: 1 }]) },
+    });
+    const { rerender } = render(<CartClient brandId={brandId} />);
+    await waitFor(() => expect(document.querySelector('img[src="/items/milk-tea.jpg"]')).toBeInTheDocument());
+    getCustomerMenu.mockResolvedValue({ ok: true, status: 200, data: { menu: baseMenu } });
+    rerender(<CartClient brandId={`${brandId}-other`} />);
+    await waitFor(() => expect(screen.getByText("Classic Milk Tea")).toBeInTheDocument());
+    expect(document.querySelector('img[src="/items/milk-tea.jpg"]')).not.toBeInTheDocument();
+  });
+
   it("renders plain non-customizable cart item from Customer Menu", async () => {
     getActiveCart.mockResolvedValue({
       ok: true,
@@ -190,6 +207,17 @@ describe("CartClient", () => {
     expect(screen.getAllByText(/Estimated subtotal ₹398\.00/i).length).toBeGreaterThan(0);
     expect(screen.queryByText(/menu prices/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Cart total \(menu prices\)/i)).not.toBeInTheDocument();
+  });
+
+  it("clears the full cart from its header through the existing clearCart mutation", async () => {
+    getActiveCart.mockResolvedValue({
+      ok: true, status: 200, data: { cart: guestCart("1", [{ id: "line-1", variantId, quantity: 1 }]) },
+    });
+    clearCart.mockResolvedValue({ ok: true, status: 200, data: { cart: guestCart("2", []) } });
+    render(<CartClient brandId={brandId} />);
+    await userEvent.click(await screen.findByRole("button", { name: "Clear all" }));
+    await waitFor(() => expect(clearCart).toHaveBeenCalledWith({ brandId, expectedRevision: "1" }));
+    expect(screen.getByText("Your cart is empty. Browse the menu to add something.")).toBeInTheDocument();
   });
 
   it("shows Total shown at checkout when base menu item is missing", async () => {

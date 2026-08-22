@@ -8,7 +8,7 @@ import {
 } from "@/components/ordering/cart-presentation";
 import { formatPaise } from "@/components/ordering/format-money";
 
-const QTY_BUTTON_CLASS = "min-h-[44px] min-w-[44px] md:min-h-8 md:min-w-8";
+const QTY_BUTTON_CLASS = "min-h-[44px] min-w-[44px]";
 
 export type CartLineListProps = Readonly<{
   lines: readonly CartLinePresentation[];
@@ -43,7 +43,21 @@ export function CartLineList(props: CartLineListProps) {
               : "border border-[var(--border-default)] bg-[var(--bg-section)] p-4 flex flex-col gap-3"
           }
         >
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start gap-3">
+            {presentation.imagePath ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={presentation.imagePath}
+                alt=""
+                width={64}
+                height={64}
+                loading="lazy"
+                decoding="async"
+                className="h-16 w-16 shrink-0 object-cover"
+              />
+            ) : (
+              <div aria-hidden="true" className="h-16 w-16 shrink-0 bg-[var(--bg-page)] border border-[var(--border-default)]" />
+            )}
             <div className="min-w-0 flex-1">
               <p
                 className={
@@ -110,12 +124,12 @@ export function CartLineList(props: CartLineListProps) {
                   {formatPaise(presentation.lineTotalPaise)}
                 </p>
               ) : null}
-              <div className="flex items-center gap-1.5">
+              <div className="inline-flex items-stretch overflow-hidden rounded-md border border-[var(--border-default)]">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  className={QTY_BUTTON_CLASS}
+                  className={`${QTY_BUTTON_CLASS} rounded-none border-0 text-[var(--text-secondary)]`}
                   disabled={pending}
                   aria-label={`Decrease ${presentation.itemName} quantity`}
                   onClick={() => onChangeQuantity(presentation.lineId, presentation.quantity - 1)}
@@ -123,7 +137,7 @@ export function CartLineList(props: CartLineListProps) {
                   −
                 </Button>
                 <span
-                  className="font-mono text-[13px] min-w-[1.5rem] text-center"
+                  className="flex min-w-[2.5rem] items-center justify-center border-x border-[var(--border-default)] px-2 font-mono text-[13px] text-center"
                   aria-live="polite"
                 >
                   {presentation.quantity}
@@ -132,7 +146,7 @@ export function CartLineList(props: CartLineListProps) {
                   type="button"
                   variant="primary"
                   size="sm"
-                  className={QTY_BUTTON_CLASS}
+                  className={`${QTY_BUTTON_CLASS} rounded-none border-0`}
                   disabled={pending}
                   aria-label={`Increase ${presentation.itemName} quantity`}
                   onClick={() => onChangeQuantity(presentation.lineId, presentation.quantity + 1)}

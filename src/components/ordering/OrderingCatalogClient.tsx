@@ -16,6 +16,7 @@ import {
   cartUnitCount,
   resolveCartPresentationEstimate,
 } from "@/components/ordering/cart-presentation";
+import { publishCartCount } from "@/components/ordering/cart-count-sync";
 import {
   readDeliveryPinContext,
   writeDeliveryPinContext,
@@ -24,6 +25,7 @@ import { commerceErrorCopy } from "@/components/ordering/error-copy";
 import { cartEvaluationCustomerCopy } from "@/components/ordering/serviceability-copy";
 import {
   addCartLine,
+  clearCart,
   decrementLatestCartVariant,
   evaluateCart,
   getActiveCart,
@@ -185,6 +187,7 @@ export function OrderingCatalogClient(props: { brandId: string }) {
 
   async function updateCartFromMutation(nextCart: CommerceCart): Promise<void> {
     setCart(nextCart);
+    publishCartCount(cartUnitCount(nextCart));
     await refreshEvaluation(deliveryPin, nextCart);
   }
 
@@ -312,6 +315,22 @@ export function OrderingCatalogClient(props: { brandId: string }) {
         return;
       }
       await updateCartFromMutation(result.data.cart);
+    });
+  }
+
+  async function handleClearLiveCart(): Promise<void> {
+    if (!cart) return;
+    await withPending("clear", async () => {
+      const result = await clearCart({
+        brandId,
+        expectedRevision: cart.revision,
+      });
+      if (!result.ok) {
+        setError(commerceErrorCopy(result.code));
+        return;
+      }
+      await updateCartFromMutation(result.data.cart);
+      setEvaluation(null);
     });
   }
 
@@ -539,12 +558,24 @@ export function OrderingCatalogClient(props: { brandId: string }) {
             <div className="flex min-h-0 flex-1 flex-col">
               <div className="flex items-baseline justify-between gap-2 border-b border-[var(--border-default)] p-4">
                 <h2 className="font-display text-[22px] text-[var(--text-primary)]">Your cart</h2>
-                <a
-                  href="/order/cart/"
-                  className="font-body text-[12px] text-[var(--interactive-secondary)] underline-offset-2 hover:underline"
-                >
-                  Full cart
-                </a>
+                <div className="flex items-center gap-3">
+                  {lineCount > 0 ? (
+                    <button
+                      type="button"
+                      disabled={pendingKey !== null}
+                      onClick={() => void handleClearLiveCart()}
+                      className="font-body text-[12px] text-[var(--text-secondary)] underline-offset-2 hover:underline focus-ring"
+                    >
+                      Clear all
+                    </button>
+                  ) : null}
+                  <a
+                    href="/order/cart/"
+                    className="font-body text-[12px] text-[var(--interactive-secondary)] underline-offset-2 hover:underline"
+                  >
+                    Full cart
+                  </a>
+                </div>
               </div>
               {lineCount === 0 ? (
                 <div className="flex flex-1 flex-col items-center justify-center gap-3 px-8 py-12 text-center">

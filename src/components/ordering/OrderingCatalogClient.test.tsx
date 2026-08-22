@@ -11,6 +11,7 @@ const addCartLine = vi.fn<(...args: unknown[]) => unknown>();
 const setCartLineQuantity = vi.fn<(...args: unknown[]) => unknown>();
 const removeCartLine = vi.fn<(...args: unknown[]) => unknown>();
 const evaluateCart = vi.fn<(...args: unknown[]) => unknown>();
+const clearCart = vi.fn<(...args: unknown[]) => unknown>();
 
 vi.mock("@/lib/customer-commerce", async () => {
   const actual = await vi.importActual<typeof import("@/lib/customer-commerce")>(
@@ -24,6 +25,7 @@ vi.mock("@/lib/customer-commerce", async () => {
     setCartLineQuantity: (...args: unknown[]) => setCartLineQuantity(...args),
     removeCartLine: (...args: unknown[]) => removeCartLine(...args),
     evaluateCart: (...args: unknown[]) => evaluateCart(...args),
+    clearCart: (...args: unknown[]) => clearCart(...args),
   };
 });
 
@@ -124,6 +126,7 @@ beforeEach(() => {
   setCartLineQuantity.mockReset();
   removeCartLine.mockReset();
   evaluateCart.mockReset();
+  clearCart.mockReset();
   getCustomerMenu.mockResolvedValue({
     ok: true,
     status: 200,
@@ -283,6 +286,21 @@ describe("OrderingCatalogClient", () => {
 });
 
 describe("OrderingCatalogClient IMP-028D", () => {
+  it("clears the live cart through the existing clearCart mutation", async () => {
+    const activeCart = {
+      id: "cart-1", brandId: "brand-1", ownerMode: "guest" as const, revision: "1",
+      manualCouponCode: null, expiresAt: null, createdAt: "2026-08-13T00:00:00.000Z",
+      updatedAt: "2026-08-13T00:00:00.000Z",
+      lines: [{ id: "line-1", variantId: "var-1", quantity: 1, modifiers: [], bundleSelections: [] }],
+    };
+    getActiveCart.mockResolvedValue({ ok: true, status: 200, data: { cart: activeCart } });
+    clearCart.mockResolvedValue({ ok: true, status: 200, data: { cart: { ...activeCart, revision: "2", lines: [] } } });
+    render(<OrderingCatalogClient brandId="brand-1" />);
+    await userEvent.click(await screen.findByRole("button", { name: "Clear all" }));
+    await waitFor(() => expect(clearCart).toHaveBeenCalledWith({ brandId: "brand-1", expectedRevision: "1" }));
+    expect(screen.getByTestId("desktop-live-cart")).toHaveTextContent("Your cart is empty");
+  });
+
   it("exposes desktop ordering shell landmarks for category rail and live cart", async () => {
     getCustomerMenu.mockResolvedValue({
       ok: true,

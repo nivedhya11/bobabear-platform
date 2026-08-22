@@ -39,6 +39,11 @@ export function CartSummary(props: CartSummaryProps) {
           : "flex flex-col gap-2 border-t border-[var(--border-default)] pt-4"
       }
     >
+      {compact ? (
+        <p className="font-body text-[13px] text-[var(--text-secondary)]">
+          {itemCount} item{itemCount === 1 ? "" : "s"}
+        </p>
+      ) : null}
       <p className="font-body text-[15px] font-semibold text-[var(--text-primary)]">{primary}</p>
       <p className="font-body text-[12px] text-[var(--text-tertiary)]">
         {CART_ESTIMATE_SUPPORTING_COPY}

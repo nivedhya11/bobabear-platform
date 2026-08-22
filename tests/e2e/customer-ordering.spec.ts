@@ -44,12 +44,16 @@ async function reachReadyForPayment(page: Page, phoneNumber: string): Promise<vo
   await expect(page.getByTestId("deliver-to-orientation")).toContainText("Dehradun");
   await expect(page.locator("#main-content")).not.toContainText(/serviceable/i);
 
-  const addButtons = page.getByRole("button", { name: /add .* to cart/i });
+  const addButtons = page.locator("#main-content").getByRole("button", { name: /^add .+/i });
   await expect(addButtons.first()).toBeVisible();
+  await expect(addButtons.first()).toContainText("Add +");
   await addButtons.first().click();
-  await expect(page.getByRole("link", { name: /cart, 1 item/i })).toBeVisible({ timeout: 15_000 });
+  const headerCartLink = page
+    .locator("header")
+    .getByRole("link", { name: /^cart \(1\)$/i });
+  await expect(headerCartLink).toBeVisible({ timeout: 15_000 });
 
-  await page.getByRole("link", { name: /cart/i }).first().click();
+  await headerCartLink.click();
   await expect(page.getByRole("heading", { name: /your cart/i })).toBeVisible();
   await expect(page.getByRole("button", { name: /checkout/i })).toBeVisible();
   await page.getByRole("button", { name: /checkout/i }).click();
