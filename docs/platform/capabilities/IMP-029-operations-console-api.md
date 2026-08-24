@@ -5,8 +5,8 @@
   "capability": "IMP-029",
   "title": "Operations Console API",
   "architectureLock": "ARCHITECTURE_LOCKED",
-  "implementation": "NOT_AUTHORIZED / NOT_STARTED",
-  "implementationAuthorized": false,
+  "implementation": "AUTHORIZED / NOT_STARTED",
+  "implementationAuthorized": true,
   "lastReviewed": "2026-08-24",
   "bindingDecisions": ["D-357", "D-358", "D-372"],
   "dependsOn": ["IMP-023"]
@@ -22,15 +22,15 @@ This document is the locked capability architecture for IMP-029 — Operations C
 | Field | Value |
 |---|---|
 | Architecture lock | `ARCHITECTURE_LOCKED` |
-| Implementation | `NOT_AUTHORIZED` / `NOT_STARTED` |
-| Implementation authorized | **NO** |
+| Implementation | `AUTHORIZED` / `NOT_STARTED` |
+| Implementation authorized | **YES** |
 | Accepted product through | IMP-028D |
 | Current product slice | IMP-029 |
 | Next product slice | IMP-030 — Operations Console UI |
 | Binding decision | **D-372** |
 
-This lock does not authorize implementation. It creates no route, process, container, schema,
-migration, permission catalog, cookie, deployment, or UI change.
+Implementation is authorized but has not started. This authorization creates no route, process,
+container, schema, migration, permission catalog, cookie, deployment, or UI change.
 
 ## 1. Objective and scope
 
@@ -147,8 +147,15 @@ transport/log correlation only. A broader generic workforce-business audit autho
 
 ## 8. Implementation constraints and verification
 
-Future authorized implementation must preserve D-372 and ARCH-G23, reuse the established session,
+Future implementation must preserve D-372 and ARCH-G23, reuse the established session,
 principal, authorization, scope, and Order authorities, and prove non-disclosing access control,
 same-origin protection, revision conflicts, and existing replay/attribution semantics. It must not
-add routes for deferred domains or activate IMP-030. This architecture lock is not implementation,
-acceptance, or implementation authorization.
+add routes for deferred domains or activate IMP-030. Implementation authorization is not
+implementation start or acceptance.
+
+```text
+IMP-029_IMPLEMENTATION_AUTHORIZED: YES
+IMP-029_STARTED: NO
+IMP-029_IMPLEMENTATION_COMPLETE: NO
+IMP-029_ACCEPTED: NO
+```
