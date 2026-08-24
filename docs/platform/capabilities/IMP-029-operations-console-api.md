@@ -5,7 +5,7 @@
   "capability": "IMP-029",
   "title": "Operations Console API",
   "architectureLock": "ARCHITECTURE_LOCKED",
-  "implementation": "AUTHORIZED / NOT_STARTED",
+  "implementation": "AUTHORIZED / STARTED",
   "implementationAuthorized": true,
   "lastReviewed": "2026-08-24",
   "bindingDecisions": ["D-357", "D-358", "D-372"],
@@ -22,14 +22,14 @@ This document is the locked capability architecture for IMP-029 — Operations C
 | Field | Value |
 |---|---|
 | Architecture lock | `ARCHITECTURE_LOCKED` |
-| Implementation | `AUTHORIZED` / `NOT_STARTED` |
+| Implementation | `AUTHORIZED` / `STARTED` |
 | Implementation authorized | **YES** |
 | Accepted product through | IMP-028D |
 | Current product slice | IMP-029 |
 | Next product slice | IMP-030 — Operations Console UI |
 | Binding decision | **D-372** |
 
-Implementation is authorized but has not started. This authorization creates no route, process,
+Implementation is authorized and started. This start transition creates no route, process,
 container, schema, migration, permission catalog, cookie, deployment, or UI change.
 
 ## 1. Objective and scope
@@ -150,12 +150,11 @@ transport/log correlation only. A broader generic workforce-business audit autho
 Future implementation must preserve D-372 and ARCH-G23, reuse the established session,
 principal, authorization, scope, and Order authorities, and prove non-disclosing access control,
 same-origin protection, revision conflicts, and existing replay/attribution semantics. It must not
-add routes for deferred domains or activate IMP-030. Implementation authorization is not
-implementation start or acceptance.
+add routes for deferred domains or activate IMP-030. Implementation start is not acceptance.
 
 ```text
 IMP-029_IMPLEMENTATION_AUTHORIZED: YES
-IMP-029_STARTED: NO
+IMP-029_STARTED: YES
 IMP-029_IMPLEMENTATION_COMPLETE: NO
 IMP-029_ACCEPTED: NO
 ```

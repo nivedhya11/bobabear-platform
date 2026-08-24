@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R63",
+  "roadmapVersion": "GTM-R64",
   "acceptedThrough": "IMP-028D",
   "currentProductSlice": "IMP-029",
   "nextProductSlice": "IMP-030",
   "gtmBoundary": "IMP-040",
   "lastReviewed": "2026-08-24",
-  "supersedes": "GTM-R62"
+  "supersedes": "GTM-R63"
 }
 -->
 
@@ -260,7 +260,7 @@ IMP-028D locked capability architecture (architecture **ARCHITECTURE_LOCKED**; i
 [`capabilities/IMP-028D-desktop-ordering-continuity.md`](./capabilities/IMP-028D-desktop-ordering-continuity.md)
 
 IMP-029 locked capability architecture (architecture **ARCHITECTURE_LOCKED**; implementation
-**AUTHORIZED** / **NOT_STARTED**):
+**AUTHORIZED** / **STARTED** / `IMPLEMENTATION_IN_PROGRESS`):
 
 [`capabilities/IMP-029-operations-console-api.md`](./capabilities/IMP-029-operations-console-api.md)
 
@@ -383,11 +383,11 @@ IMP-028B_IMPLEMENTATION_AUTHORIZED: YES
 IMP-028B_IMPLEMENTATION_STARTED: YES
 IMP-028B_IMPLEMENTATION_COMPLETE: YES
 IMP-028B_ACCEPTED: YES
-IMP-029: IMPLEMENTATION_AUTHORIZED
+IMP-029: IMPLEMENTATION_IN_PROGRESS
 IMP-029_ARCHITECTURE: LOCKED
 IMP-029_ARCHITECTURE_LOCKED: YES
 IMP-029_IMPLEMENTATION_AUTHORIZED: YES
-IMP-029_STARTED: NO
+IMP-029_STARTED: YES
 IMP-029_IMPLEMENTATION_COMPLETE: NO
 IMP-029_ACCEPTED: NO
 PROVIDER_ORIGINATED_WEBHOOK: VALIDATED_PUBLIC_HTTPS_TEST_MODE
@@ -453,7 +453,7 @@ only). Webhook acknowledgement timing / durable inbox / asynchronous Payment pro
 ## 4. Current Product Slice
 
 IMP-029 — Operations Console API is the current product slice. Architecture is locked.
-Implementation is authorized and has not started.
+Implementation is authorized and started.
 
 ```text
 IMP-028D — Desktop Ordering Continuity
@@ -489,12 +489,12 @@ IMP-028B_IMPLEMENTATION_STARTED: YES
 IMP-028B_IMPLEMENTATION_COMPLETE: YES
 IMP-028B_ACCEPTED: YES
 Capability: IMP-029 — Operations Console API
-Lifecycle: IMPLEMENTATION_AUTHORIZED
+Lifecycle: IMPLEMENTATION_IN_PROGRESS
 Architecture: LOCKED
-Implementation: AUTHORIZED / NOT_STARTED
+Implementation: AUTHORIZED / STARTED
 IMP-029_ARCHITECTURE_LOCKED: YES
 IMP-029_IMPLEMENTATION_AUTHORIZED: YES
-IMP-029_STARTED: NO
+IMP-029_STARTED: YES
 IMP-029_IMPLEMENTATION_COMPLETE: NO
 IMP-029_ACCEPTED: NO
 Next product slice: IMP-030 — Operations Console UI
@@ -647,7 +647,7 @@ consume or remap IMP-029 → IMP-040 identities and is `COMPLETE_AND_ACCEPTED`.
 
 | IMP | Capability | Lifecycle |
 |---|---|---|
-| IMP-029 | Operations Console API | IMPLEMENTATION_AUTHORIZED |
+| IMP-029 | Operations Console API | IMPLEMENTATION_IN_PROGRESS |
 | IMP-030 | Operations Console UI | PLANNED |
 | IMP-031 | Provider-Neutral Delivery Foundation | PLANNED |
 | IMP-032 | Dehradun Delivery Operating Mode | PLANNED |
@@ -1025,6 +1025,24 @@ Historical GTM-R1 meanings that are **not** current:
 Current public GTM boundary is **IMP-040**, not IMP-035.
 
 ## 9. Roadmap Change Log
+
+### GTM-R64 — 2026-08-24
+
+- Records **IMP-029 — Operations Console API** implementation **STARTED** under prior GTM-R63
+  authorization and its locked capability architecture
+  ([`capabilities/IMP-029-operations-console-api.md`](./capabilities/IMP-029-operations-console-api.md)).
+- IMP-029 lifecycle = `IMPLEMENTATION_IN_PROGRESS`. Architecture remains `ARCHITECTURE_LOCKED`.
+  Implementation = `AUTHORIZED` / `STARTED`
+  (`IMP-029_ARCHITECTURE_LOCKED: YES`; `IMP-029_IMPLEMENTATION_AUTHORIZED: YES`;
+  `IMP-029_STARTED: YES`; `IMP-029_IMPLEMENTATION_COMPLETE: NO`; `IMP-029_ACCEPTED: NO`).
+- `acceptedThrough` remains IMP-028D; `pendingAcceptance` remains NONE; `currentProductSlice`
+  remains IMP-029; `nextProductSlice` remains IMP-030. IMP-030 remains `PLANNED` /
+  `NOT_ACTIVATED`.
+- This governance transition records implementation start only. It introduces no product code, no
+  runtime route, no schema change, no migration, no deployment, and no IMP-030 activation.
+- Decision register remains DR-14. Global architecture remains ARCH-R17. D-372 remains CURRENT.
+- Supersedes GTM-R63 for the current IMP-029 lifecycle position. Product acceptance through
+  IMP-028D is unchanged.
 
 ### GTM-R63 — 2026-08-24
 

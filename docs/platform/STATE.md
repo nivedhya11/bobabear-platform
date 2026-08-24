@@ -2,7 +2,7 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R61",
+  "stateVersion": "STATE-R62",
   "acceptedThrough": "IMP-028D",
   "currentProductSlice": "IMP-029",
   "nextProductSlice": "IMP-030",
@@ -31,7 +31,7 @@ Accepted Range:            IMP-001 → IMP-028D (including IMP-005A and IMP-026C
 Current Product Implementation: IMP-029 — Operations Console API
 Pending Acceptance:             NONE
 Next Product Slice:             IMP-030 — Operations Console UI
-Current Governance Activity:    IMP-029 architecture locked; implementation AUTHORIZED / NOT_STARTED.
+Current Governance Activity:    IMP-029 architecture locked; implementation AUTHORIZED / STARTED / IMPLEMENTATION_IN_PROGRESS.
 Governance Health:              ALIGNED
 ```
 
@@ -112,12 +112,12 @@ FOUNDER_UAT_CANDIDATE_REF: main
 FOUNDER_UAT_CANDIDATE_HEAD: 166aec4efd1c55a9e14ab7216a2b1af71fb3b2c7
 FOUNDER_UAT_CANDIDATE_TREE: eba5f3f7fc25b07581801b53a130fb9547abc459
 FOUNDER_UAT_EVIDENCE_SHA256: 715519d51801a10913a71a891af74c68aac1f493088adda43ecbc6a9c8bd5572
-IMP-029:                  IMPLEMENTATION_AUTHORIZED
+IMP-029:                  IMPLEMENTATION_IN_PROGRESS
 IMP-029_ARCHITECTURE:     LOCKED
 IMP-029_ARCHITECTURE_LOCKED: YES
-IMP-029_IMPLEMENTATION:   AUTHORIZED / NOT_STARTED
+IMP-029_IMPLEMENTATION:   AUTHORIZED / STARTED
 IMP-029_IMPLEMENTATION_AUTHORIZED: YES
-IMP-029_STARTED:          NO
+IMP-029_STARTED:          YES
 IMP-029_IMPLEMENTATION_COMPLETE: NO
 IMP-029_ACCEPTED:         NO
 ```
@@ -205,6 +205,18 @@ independent acceptance without changing decision register or global architecture
 STATE-R36 record IMP-028B canonical activation without changing decision register or global
 architecture. GTM-R39 / STATE-R37 record IMP-028B architecture lock and implementation
 authorization without changing decision register or global architecture.
+
+STATE-R62 records **IMP-029 — Operations Console API** implementation **STARTED** under prior
+STATE-R61 authorization and its locked capability architecture. IMP-029 lifecycle is
+`IMPLEMENTATION_IN_PROGRESS`; architecture remains `LOCKED`; implementation is `AUTHORIZED` /
+`STARTED` (`IMP-029_IMPLEMENTATION_AUTHORIZED: YES`; `IMP-029_STARTED: YES`; complete/accepted:
+NO). `acceptedThrough` remains IMP-028D; `pendingAcceptance` remains NONE;
+`currentProductSlice` remains IMP-029; `nextProductSlice` remains IMP-030; and IMP-030 remains
+`PLANNED` / `NOT_ACTIVATED`. This governance-only lifecycle transition records implementation
+start only and introduces no product source, runtime, schema, migration, permission catalog,
+configuration, deployment, decision-register, or global-architecture mutation. D-372 remains
+CURRENT; ARCH-R17 and DR-14 remain unchanged. Supersedes STATE-R61 only for the current IMP-029
+lifecycle position.
 
 STATE-R61 records explicit Founder authorization for **IMP-029 — Operations Console API**
 implementation under its locked capability architecture. IMP-029 lifecycle is
@@ -574,8 +586,8 @@ Cart → Checkout → Payment → Order
 ```text
 acceptedThrough: IMP-028D
 pendingAcceptance: NONE
-currentProductSlice: NONE
-nextProductSlice: IMP-029 — Operations Console API
+currentProductSlice: IMP-029
+nextProductSlice: IMP-030 — Operations Console UI
 FOUNDER_UAT: PASS
 FOUNDER_UAT_REQUIRED: YES
 FOUNDER_UAT_COMPLETE: YES
@@ -613,9 +625,13 @@ IMP-028D_IMPLEMENTATION_AUTHORIZED: YES
 IMP-028D_IMPLEMENTATION_STARTED: YES
 IMP-028D_IMPLEMENTATION_COMPLETE: YES
 IMP-028D_ACCEPTED: YES
-IMP-029: PLANNED / NOT_STARTED / NOT_AUTHORIZED
-IMP-029_IMPLEMENTATION_AUTHORIZED: NO
-IMP-029_STARTED: NO
+IMP-029: IMPLEMENTATION_IN_PROGRESS
+IMP-029_ARCHITECTURE: LOCKED
+IMP-029_IMPLEMENTATION: AUTHORIZED / STARTED
+IMP-029_IMPLEMENTATION_AUTHORIZED: YES
+IMP-029_STARTED: YES
+IMP-029_IMPLEMENTATION_COMPLETE: NO
+IMP-029_ACCEPTED: NO
 TYPECHECK_STATUS: FAIL_PRE_EXISTING_UNRELATED
 CUSTOMER_ORDERING_E2E: BLOCKED_ENVIRONMENT
 CUSTOMER_ORDERING_ALTERNATIVE_REGRESSION_EVIDENCE_SUFFICIENT: YES
