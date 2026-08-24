@@ -35,6 +35,11 @@ import {
 import { normalizeWorkforceEmail } from "../../../shared/workforce-auth/email";
 import type { Persistence } from "../../persistence";
 import {
+  loadWorkforceLifecycleUser,
+  resolveWorkforceSessionFromHeaders,
+  type WorkforceAuthSessionAuthority,
+} from "../../auth/workforce/trusted-identity";
+import {
   isFullyAuthenticated,
   resolveWorkforceAuthLifecycle,
   type WorkforceAuthLifecycleUser,
@@ -70,8 +75,8 @@ type BetterAuthReturnHeadersResult<T> = {
  * and session revocation (returned:false additional fields are omitted from
  * session.user payloads).
  */
-export interface WorkforceAuthHandle {
-  api: {
+export interface WorkforceAuthHandle extends WorkforceAuthSessionAuthority {
+  api: WorkforceAuthSessionAuthority["api"] & {
     signInEmail(input: {
       body: Readonly<{ email: string; password: string }>;
       headers: Headers;
@@ -126,11 +131,6 @@ export interface WorkforceAuthHandle {
       }>
     >;
 
-    getSession(input: { headers: Headers; returnHeaders: true }): Promise<{
-      headers: Headers;
-      response: { session: { token?: string }; user: { id: string } } | null;
-    }>;
-
     signOut(input: { headers: Headers; returnHeaders: true }): Promise<{
       headers: Headers;
       response: { success: boolean };
@@ -140,6 +140,9 @@ export interface WorkforceAuthHandle {
   $context: Promise<{
     internalAdapter: {
       findUserById: (userId: string) => Promise<WorkforceUserRow | null>;
+      findSession: (
+        token: string,
+      ) => Promise<{ session: { token: string }; user: { id: string } } | null>;
       updateUser: (
         userId: string,
         data: Record<string, unknown>,
@@ -242,21 +245,6 @@ function mergeUniqueCookies(
     }
   }
   return out;
-}
-
-async function loadLifecycleUser(
-  auth: WorkforceAuthHandle,
-  userId: string,
-): Promise<WorkforceAuthLifecycleUser | null> {
-  const context = await auth.$context;
-  const user = await context.internalAdapter.findUserById(userId);
-  if (!user) return null;
-  return {
-    id: user.id,
-    disabledAt: user.disabledAt ?? null,
-    passwordChangeRequired: Boolean(user.passwordChangeRequired),
-    twoFactorEnabled: Boolean(user.twoFactorEnabled),
-  };
 }
 
 async function revokeUserAndClearCookies(
@@ -465,7 +453,7 @@ async function handleSignIn(
     return { operation, safeOutcomeCode: "AUTHENTICATION_FAILED", httpStatus: 401 };
   }
 
-  const lifecycleUser = await loadLifecycleUser(auth, userId);
+  const lifecycleUser = await loadWorkforceLifecycleUser(auth, userId);
   const state = resolveWorkforceAuthLifecycle({
     sessionPresent: true,
     user: lifecycleUser,
@@ -536,21 +524,17 @@ async function requireLimitedSession(
     }>
   | Readonly<{ ok: false; reason: "unauthenticated" | "disabled" }>
 > {
-  const { headers: sessionHeaders, response } = await auth.api.getSession({
-    headers: requestHeaders,
+  const session = await resolveWorkforceSessionFromHeaders(auth, requestHeaders, {
     returnHeaders: true,
   });
-  if (!response?.user?.id) {
+  if (!session.userId || !session.lifecycleUser) {
     return { ok: false, reason: "unauthenticated" };
   }
-  const user = await loadLifecycleUser(auth, response.user.id);
-  if (!user || user.disabledAt) {
-    if (user) {
-      await revokeUserAndClearCookies(auth, user.id, requestHeaders);
-    }
+  if (session.lifecycleUser.disabledAt) {
+    await revokeUserAndClearCookies(auth, session.lifecycleUser.id, requestHeaders);
     return { ok: false, reason: "disabled" };
   }
-  return { ok: true, user, sessionHeaders };
+  return { ok: true, user: session.lifecycleUser, sessionHeaders: session.headers };
 }
 
 async function consumeSecurityChangeRateLimit(
@@ -1112,7 +1096,7 @@ async function handleMfaVerify(
         : null;
 
     if (userId) {
-      const lifecycleUser = await loadLifecycleUser(auth, userId);
+      const lifecycleUser = await loadWorkforceLifecycleUser(auth, userId);
       if (!lifecycleUser || lifecycleUser.disabledAt) {
         const clearCookies = await revokeUserAndClearCookies(
           auth,
@@ -1167,27 +1151,22 @@ async function handleSession(
 
   const requestHeaders = buildBetterAuthRequestHeaders(req.headers);
   const auth = await deps.getAuth();
-  const { headers: responseHeaders, response } = await auth.api.getSession({
-    headers: requestHeaders,
+  const session = await resolveWorkforceSessionFromHeaders(auth, requestHeaders, {
     returnHeaders: true,
   });
 
-  if (!response?.user?.id) {
+  if (!session.userId) {
     const body: WorkforceAuthSessionUnauthenticated = { authenticated: false };
     sendJson(res, body, {
       status: 200,
       requestId,
       varyCookie: true,
-      setCookies: responseHeaders.getSetCookie(),
+      setCookies: session.headers.getSetCookie(),
     });
     return { operation, safeOutcomeCode: "UNAUTHENTICATED", httpStatus: 200 };
   }
 
-  const lifecycleUser = await loadLifecycleUser(auth, response.user.id);
-  const state = resolveWorkforceAuthLifecycle({
-    sessionPresent: true,
-    user: lifecycleUser,
-  });
+  const { lifecycleUser, lifecycleState: state } = session;
 
   if (state === "UNAUTHENTICATED" || !lifecycleUser) {
     const clearCookies = lifecycleUser
@@ -1195,9 +1174,9 @@ async function handleSession(
           auth,
           lifecycleUser.id,
           requestHeaders,
-          responseHeaders.getSetCookie(),
+          session.headers.getSetCookie(),
         )
-      : expireSetCookieValues(responseHeaders.getSetCookie());
+      : expireSetCookieValues(session.headers.getSetCookie());
     const body: WorkforceAuthSessionUnauthenticated = { authenticated: false };
     sendJson(res, body, {
       status: 200,
@@ -1213,7 +1192,7 @@ async function handleSession(
     status: 200,
     requestId,
     varyCookie: true,
-    setCookies: responseHeaders.getSetCookie(),
+    setCookies: session.headers.getSetCookie(),
   });
   return {
     operation,
