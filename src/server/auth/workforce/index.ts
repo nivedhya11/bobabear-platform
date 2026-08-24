@@ -6,3 +6,18 @@ import "server-only";
 
 export { getWorkforceAuthRuntime } from "./runtime";
 export type { WorkforceAuthRuntime, WorkforceBetterAuthInstance } from "./runtime";
+
+export {
+  WORKFORCE_AUTH_SESSION_COOKIE_NAME,
+  isTrustedWorkforceAuthIdentity,
+  loadWorkforceLifecycleUser,
+  resolveTrustedWorkforceAuthIdentity,
+  resolveWorkforceSession,
+  resolveWorkforceSessionFromHeaders,
+} from "./trusted-identity";
+export type {
+  ResolvedWorkforceSession,
+  TrustedWorkforceAuthCredentials,
+  TrustedWorkforceAuthIdentity,
+  WorkforceAuthSessionAuthority,
+} from "./trusted-identity";
