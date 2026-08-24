@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R59",
+  "stateVersion": "STATE-R60",
   "acceptedThrough": "IMP-028D",
   "currentProductSlice": "IMP-029",
   "nextProductSlice": "IMP-030",
   "pendingAcceptance": "NONE",
   "governanceHealth": "ALIGNED",
-  "lastReviewed": "2026-08-22"
+  "lastReviewed": "2026-08-24"
 }
 -->
 
@@ -31,7 +31,7 @@ Accepted Range:            IMP-001 → IMP-028D (including IMP-005A and IMP-026C
 Current Product Implementation: IMP-029 — Operations Console API
 Pending Acceptance:             NONE
 Next Product Slice:             IMP-030 — Operations Console UI
-Current Governance Activity:    IMP-029 architecture activation authorized by Founder; architecture NOT_LOCKED; implementation NOT_AUTHORIZED / NOT_STARTED.
+Current Governance Activity:    IMP-029 architecture locked; implementation NOT_AUTHORIZED / NOT_STARTED.
 Governance Health:              ALIGNED
 ```
 
@@ -112,9 +112,9 @@ FOUNDER_UAT_CANDIDATE_REF: main
 FOUNDER_UAT_CANDIDATE_HEAD: 166aec4efd1c55a9e14ab7216a2b1af71fb3b2c7
 FOUNDER_UAT_CANDIDATE_TREE: eba5f3f7fc25b07581801b53a130fb9547abc459
 FOUNDER_UAT_EVIDENCE_SHA256: 715519d51801a10913a71a891af74c68aac1f493088adda43ecbc6a9c8bd5572
-IMP-029:                  ARCHITECTURE_IN_PROGRESS
-IMP-029_ARCHITECTURE:     NOT_LOCKED
-IMP-029_ARCHITECTURE_LOCKED: NO
+IMP-029:                  ARCHITECTURE_LOCKED
+IMP-029_ARCHITECTURE:     LOCKED
+IMP-029_ARCHITECTURE_LOCKED: YES
 IMP-029_IMPLEMENTATION:   NOT_AUTHORIZED / NOT_STARTED
 IMP-029_IMPLEMENTATION_AUTHORIZED: NO
 IMP-029_STARTED:          NO
@@ -144,6 +144,8 @@ Capability architecture:
 
 [`capabilities/IMP-028D-desktop-ordering-continuity.md`](./capabilities/IMP-028D-desktop-ordering-continuity.md)
 
+[`capabilities/IMP-029-operations-console-api.md`](./capabilities/IMP-029-operations-console-api.md)
+
 `acceptedThrough` is IMP-028D. IMP-025 architecture remains locked; IMP-025 implementation is
 **COMPLETE_AND_ACCEPTED**. IMP-026 architecture is **ARCHITECTURE_LOCKED**. IMP-026 implementation
 is **COMPLETE_AND_ACCEPTED** (`IMP-026_ACCEPTED: YES`). Independent acceptance of IMP-026 is
@@ -162,8 +164,11 @@ Refund architecture remains locked and accepted. GTM-R30 / STATE-R28 record IMP-
 binding **D-365** / **D-366** / **D-367**; capability artifact present). Formal acceptance of
 IMP-028 **is** claimed (`IMP-028_ACCEPTED: YES`; `IMP-028_IMPLEMENTATION_COMPLETE: YES`).
 GTM-R30 / STATE-R28 recorded `pendingAcceptance=NONE` immediately after that acceptance.
-IMP-029 is `ARCHITECTURE_IN_PROGRESS`; architecture is `NOT_LOCKED`; implementation is
-**not** authorized and has not started (`IMP-029_IMPLEMENTATION_AUTHORIZED: NO`; `IMP-029_STARTED: NO`). GTM-R37 / STATE-R35 record
+IMP-029 is `ARCHITECTURE_LOCKED`; architecture is `LOCKED`; implementation is **not** authorized
+and has not started (`IMP-029_IMPLEMENTATION_AUTHORIZED: NO`; `IMP-029_STARTED: NO`). Its locked
+capability architecture is [`capabilities/IMP-029-operations-console-api.md`](./capabilities/IMP-029-operations-console-api.md);
+binding decision **D-372** establishes a separate workforce business transport while retaining the
+existing workforce session/principal and Order authorities. GTM-R37 / STATE-R35 record
 IMP-028A `COMPLETE_AND_ACCEPTED` (`IMP-028A_IMPLEMENTATION_AUTHORIZED: YES`;
 `IMP-028A_IMPLEMENTATION_STARTED: YES`; `IMP-028A_IMPLEMENTATION_COMPLETE: YES`;
 `IMP-028A_ACCEPTED: YES`; architecture `ARCHITECTURE_LOCKED`). At that historical acceptance,
@@ -200,6 +205,15 @@ independent acceptance without changing decision register or global architecture
 STATE-R36 record IMP-028B canonical activation without changing decision register or global
 architecture. GTM-R39 / STATE-R37 record IMP-028B architecture lock and implementation
 authorization without changing decision register or global architecture.
+
+STATE-R60 locks the approved architecture for **IMP-029 — Operations Console API**. It establishes
+`ARCHITECTURE_LOCKED`; architecture = `LOCKED`; capability artifact
+`capabilities/IMP-029-operations-console-api.md`; and binding **D-372** / **ARCH-R17** / **DR-14**.
+Implementation remains `NOT_AUTHORIZED` / `NOT_STARTED`; `acceptedThrough` remains IMP-028D;
+`pendingAcceptance` remains NONE; `currentProductSlice` remains IMP-029; `nextProductSlice` remains
+IMP-030; and IMP-030 remains `PLANNED` / `NOT_ACTIVATED`. It creates no implementation, runtime,
+schema, migration, permission catalog, cookie, or deployment mutation. Supersedes STATE-R59 only
+for current IMP-029 architecture position.
 
 STATE-R59 records explicit Founder authorization to activate **IMP-029 — Operations Console API**
 for architecture work only. It establishes `currentProductSlice = IMP-029`; lifecycle =

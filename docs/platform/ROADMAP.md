@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R61",
+  "roadmapVersion": "GTM-R62",
   "acceptedThrough": "IMP-028D",
   "currentProductSlice": "IMP-029",
   "nextProductSlice": "IMP-030",
   "gtmBoundary": "IMP-040",
-  "lastReviewed": "2026-08-22",
-  "supersedes": "GTM-R60"
+  "lastReviewed": "2026-08-24",
+  "supersedes": "GTM-R61"
 }
 -->
 
@@ -259,6 +259,11 @@ IMP-028D locked capability architecture (architecture **ARCHITECTURE_LOCKED**; i
 
 [`capabilities/IMP-028D-desktop-ordering-continuity.md`](./capabilities/IMP-028D-desktop-ordering-continuity.md)
 
+IMP-029 locked capability architecture (architecture **ARCHITECTURE_LOCKED**; implementation
+**NOT_AUTHORIZED** / **NOT_STARTED**):
+
+[`capabilities/IMP-029-operations-console-api.md`](./capabilities/IMP-029-operations-console-api.md)
+
 ## 2. Current Position
 
 ```text
@@ -378,9 +383,9 @@ IMP-028B_IMPLEMENTATION_AUTHORIZED: YES
 IMP-028B_IMPLEMENTATION_STARTED: YES
 IMP-028B_IMPLEMENTATION_COMPLETE: YES
 IMP-028B_ACCEPTED: YES
-IMP-029: ARCHITECTURE_IN_PROGRESS
-IMP-029_ARCHITECTURE: NOT_LOCKED
-IMP-029_ARCHITECTURE_LOCKED: NO
+IMP-029: ARCHITECTURE_LOCKED
+IMP-029_ARCHITECTURE: LOCKED
+IMP-029_ARCHITECTURE_LOCKED: YES
 IMP-029_IMPLEMENTATION_AUTHORIZED: NO
 IMP-029_STARTED: NO
 IMP-029_IMPLEMENTATION_COMPLETE: NO
@@ -448,7 +453,7 @@ only). Webhook acknowledgement timing / durable inbox / asynchronous Payment pro
 ## 4. Current Product Slice
 
 IMP-029 — Operations Console API is the current product slice for architecture work only.
-Architecture is not locked. Implementation is not authorized and has not started.
+Architecture is locked. Implementation is not authorized and has not started.
 
 ```text
 IMP-028D — Desktop Ordering Continuity
@@ -484,10 +489,10 @@ IMP-028B_IMPLEMENTATION_STARTED: YES
 IMP-028B_IMPLEMENTATION_COMPLETE: YES
 IMP-028B_ACCEPTED: YES
 Capability: IMP-029 — Operations Console API
-Lifecycle: ARCHITECTURE_IN_PROGRESS
-Architecture: NOT_LOCKED
+Lifecycle: ARCHITECTURE_LOCKED
+Architecture: LOCKED
 Implementation: NOT_AUTHORIZED / NOT_STARTED
-IMP-029_ARCHITECTURE_LOCKED: NO
+IMP-029_ARCHITECTURE_LOCKED: YES
 IMP-029_IMPLEMENTATION_AUTHORIZED: NO
 IMP-029_STARTED: NO
 IMP-029_IMPLEMENTATION_COMPLETE: NO
@@ -642,7 +647,7 @@ consume or remap IMP-029 → IMP-040 identities and is `COMPLETE_AND_ACCEPTED`.
 
 | IMP | Capability | Lifecycle |
 |---|---|---|
-| IMP-029 | Operations Console API | PLANNED |
+| IMP-029 | Operations Console API | ARCHITECTURE_LOCKED |
 | IMP-030 | Operations Console UI | PLANNED |
 | IMP-031 | Provider-Neutral Delivery Foundation | PLANNED |
 | IMP-032 | Dehradun Delivery Operating Mode | PLANNED |
@@ -1020,6 +1025,22 @@ Historical GTM-R1 meanings that are **not** current:
 Current public GTM boundary is **IMP-040**, not IMP-035.
 
 ## 9. Roadmap Change Log
+
+### GTM-R62 — 2026-08-24
+
+- Locks the approved capability architecture for **IMP-029 — Operations Console API** at
+  [`capabilities/IMP-029-operations-console-api.md`](./capabilities/IMP-029-operations-console-api.md).
+- IMP-029 lifecycle becomes `ARCHITECTURE_LOCKED`; implementation remains `NOT_AUTHORIZED` /
+  `NOT_STARTED` (`IMP-029_IMPLEMENTATION_AUTHORIZED: NO`; `IMP-029_STARTED: NO`).
+- Registers binding **D-372** and advances global architecture to **ARCH-R17** and the decision
+  register to **DR-14**. D-372 establishes the dedicated `/api/operations/v1/*` workforce business
+  transport, backed by the existing trusted workforce-session authority and existing Order authority.
+- `acceptedThrough` remains IMP-028D; `pendingAcceptance` remains NONE;
+  `currentProductSlice` remains IMP-029; `nextProductSlice` remains IMP-030. IMP-030 remains
+  `PLANNED` / `NOT_ACTIVATED`.
+- Does **not** authorize or start implementation, create runtime/container/router code, alter
+  Nginx, Compose, cookies, permissions, schemas, migrations, Refund/Financial Document workforce
+  transport, or activate IMP-030.
 
 ### GTM-R61 — 2026-08-22
 

@@ -1386,7 +1386,14 @@ function checkRoadmapState(roadmap, state) {
   }
 }
 
-function checkDecisionRegister(decision) {
+function isImp029ArchitectureLockCheckpoint(roadmap, state) {
+  return (
+    roadmap?.meta.roadmapVersion === "GTM-R62" &&
+    state?.meta.stateVersion === "STATE-R60"
+  );
+}
+
+function checkDecisionRegister(decision, roadmap, state) {
   if (!decision) return;
   const text = decision.text;
   // Unique decision IDs from the Current Global Decisions table only.
@@ -1443,7 +1450,9 @@ function checkDecisionRegister(decision) {
     }
   }
 
-  for (const id of ["D-356", "D-357", "D-358", "D-359", "D-360", "D-361", "D-362", "D-363", "D-364", "D-365", "D-366", "D-367", "D-368", "D-369", "D-370", "D-371"]) {
+  const requiredIds = ["D-356", "D-357", "D-358", "D-359", "D-360", "D-361", "D-362", "D-363", "D-364", "D-365", "D-366", "D-367", "D-368", "D-369", "D-370", "D-371"];
+  if (isImp029ArchitectureLockCheckpoint(roadmap, state)) requiredIds.push("D-372");
+  for (const id of requiredIds) {
     if (!seen.has(id)) {
       fail("DECISION_REQUIRED_IDS", `DECISION-REGISTER must register ${id}`);
     }
@@ -1512,7 +1521,28 @@ function checkDecisionRegister(decision) {
       "D-364 must lock Refund Foundation independent of Payment SUCCEEDED collection truth for IMP-027",
     );
   }
-  if (!/D-372/.test(text)) {
+  if (isImp029ArchitectureLockCheckpoint(roadmap, state)) {
+    const d372Row = [...globalSection.split("\n")].find((line) => /^\|\s*D-372\s*\|/.test(line));
+    if (
+      !d372Row ||
+      !/\|\s*CURRENT\s*\|/.test(d372Row) ||
+      !/Operations Console API/.test(d372Row) ||
+      !/\/api\/operations\/v1\/\*/.test(d372Row) ||
+      !/IMP-029/.test(d372Row)
+    ) {
+      fail(
+        "D372_CONTRACT",
+        "D-372 must be CURRENT and lock the IMP-029 Operations Console API /api/operations/v1/* boundary",
+      );
+    } else {
+      note("D-372 registered as CURRENT (Operations Console API Authority)");
+    }
+    if (!/Next free decision ID advanced to \*\*D-373\*\*/.test(text)) {
+      fail("NEXT_DECISION_ID", "Decision register must advance next free ID to D-373 after D-372");
+    } else {
+      note("Next free decision ID D-373 recorded");
+    }
+  } else if (!/Next free decision ID advanced to \*\*D-372\*\*/.test(text)) {
     fail("NEXT_DECISION_ID", "Decision register must advance next free ID to D-372 after D-371");
   } else {
     note("Next free decision ID D-372 recorded");
@@ -2138,7 +2168,7 @@ function checkImp026cArchitectureLock(roadmap, state) {
     const imp029Row = [...futureSection.split("\n")].find((line) =>
       /^\|\s*IMP-029\s*\|/.test(line),
     );
-    if (imp029Row && !imp029Row.includes("PLANNED")) {
+    if (!isImp029ArchitectureLockCheckpoint(roadmap, state) && imp029Row && !imp029Row.includes("PLANNED")) {
       fail(
         "IMP029_ROADMAP_ACTIVATED",
         "ROADMAP future ledger must keep IMP-029 PLANNED until separately authorized",
@@ -2996,10 +3026,13 @@ function checkImp028ArchitectureLock(roadmap, state, architecture, decision) {
     } else {
       note("ARCHITECTURE.md records ARCH-G16 / ARCH-G17 / ARCH-G18 / D-365 / D-366 / D-367");
     }
-    if (architecture.meta.architectureVersion !== "ARCH-R16") {
+    const expectedArchitectureVersion = isImp029ArchitectureLockCheckpoint(roadmap, state)
+      ? "ARCH-R17"
+      : "ARCH-R16";
+    if (architecture.meta.architectureVersion !== expectedArchitectureVersion) {
       fail(
         "IMP028_ARCH_VERSION",
-        `ARCHITECTURE must be ARCH-R16 after D-371 Durable Cart Unit Sequence lock, got ${architecture.meta.architectureVersion}`,
+        `ARCHITECTURE must be ${expectedArchitectureVersion} for the current architecture checkpoint, got ${architecture.meta.architectureVersion}`,
       );
     }
     if (!/ARCH-G19/.test(architecture.text) || !/D-368/.test(architecture.text)) {
@@ -3034,10 +3067,13 @@ function checkImp028ArchitectureLock(roadmap, state, architecture, decision) {
   }
 
   if (decision) {
-    if (decision.meta.decisionRegisterVersion !== "DR-13") {
+    const expectedDecisionRegisterVersion = isImp029ArchitectureLockCheckpoint(roadmap, state)
+      ? "DR-14"
+      : "DR-13";
+    if (decision.meta.decisionRegisterVersion !== expectedDecisionRegisterVersion) {
       fail(
         "IMP028_DR_VERSION",
-        `Decision register must be DR-13 after D-371, got ${decision.meta.decisionRegisterVersion}`,
+        `Decision register must be ${expectedDecisionRegisterVersion} for the current architecture checkpoint, got ${decision.meta.decisionRegisterVersion}`,
       );
     }
   }
@@ -3167,7 +3203,10 @@ function checkImp028aImplementationAuthorization(roadmap, state) {
     const imp029Row = [...futureSection.split("\n")].find((line) =>
       /^\|\s*IMP-029\s*\|/.test(line),
     );
-    if (!imp029Row || !imp029Row.includes("Operations Console API") || !imp029Row.includes("PLANNED")) {
+    if (
+      !isImp029ArchitectureLockCheckpoint(roadmap, state) &&
+      (!imp029Row || !imp029Row.includes("Operations Console API") || !imp029Row.includes("PLANNED"))
+    ) {
       fail(
         "IMP029_ROADMAP_PRESERVED",
         "ROADMAP future ledger must keep IMP-029 Operations Console API PLANNED",
@@ -3362,7 +3401,10 @@ function checkImp028bCanonicalActivation(roadmap, state) {
     const imp029Row = [...futureSection.split("\n")].find((line) =>
       /^\|\s*IMP-029\s*\|/.test(line),
     );
-    if (!imp029Row || !imp029Row.includes("Operations Console API") || !imp029Row.includes("PLANNED")) {
+    if (
+      !isImp029ArchitectureLockCheckpoint(roadmap, state) &&
+      (!imp029Row || !imp029Row.includes("Operations Console API") || !imp029Row.includes("PLANNED"))
+    ) {
       fail(
         "IMP029_ROADMAP_PRESERVED",
         "ROADMAP future ledger must keep IMP-029 Operations Console API PLANNED",
@@ -3445,6 +3487,78 @@ function checkImp028bCanonicalActivation(roadmap, state) {
     if (!/IMP028B_IMPLEMENTATION_COMPLETE\s*=\s*YES/.test(supportingText)) {
       note("Supporting Capability B definition may omit IMP028B_IMPLEMENTATION_COMPLETE token");
     }
+  }
+}
+
+function checkImp029ArchitectureLock(roadmap, state, architecture, decision) {
+  if (!isImp029ArchitectureLockCheckpoint(roadmap, state)) return;
+
+  const artifactRel = "docs/platform/capabilities/IMP-029-operations-console-api.md";
+  const artifact = resolveExactRelativeFile(artifactRel);
+  if (!artifact) {
+    fail("IMP029_CAPABILITY_MISSING", `Missing locked capability architecture at ${artifactRel}`);
+  } else {
+    const body = readFileSync(artifact, "utf8");
+    if (
+      !/"capability":\s*"IMP-029"/.test(body) ||
+      !/"architectureLock":\s*"ARCHITECTURE_LOCKED"/.test(body) ||
+      !/"implementation":\s*"NOT_AUTHORIZED \/ NOT_STARTED"/.test(body) ||
+      !/"implementationAuthorized":\s*false/.test(body) ||
+      !/D-372/.test(body)
+    ) {
+      fail(
+        "IMP029_CAPABILITY_LOCK",
+        "IMP-029 capability artifact must record the locked D-372 architecture with implementation NOT_AUTHORIZED / NOT_STARTED",
+      );
+    } else {
+      note(`IMP-029 capability architecture locked (${artifactRel})`);
+    }
+  }
+
+  const blob = `${roadmap?.text ?? ""}\n${state?.text ?? ""}`;
+  const requiredTokens = [
+    ["IMP029_ARCHITECTURE_LOCKED", /IMP-029_ARCHITECTURE_LOCKED:\s*YES/, "IMP-029 architecture must be locked"],
+    ["IMP029_NOT_AUTHORIZED", /IMP-029_IMPLEMENTATION_AUTHORIZED:\s*NO/, "IMP-029 implementation must remain NOT_AUTHORIZED"],
+    ["IMP029_NOT_STARTED", /IMP-029_STARTED:\s*NO/, "IMP-029 implementation must remain NOT_STARTED"],
+    ["IMP029_NOT_ACCEPTED", /IMP-029_ACCEPTED:\s*NO/, "IMP-029 must remain unaccepted"],
+  ];
+  for (const [code, pattern, message] of requiredTokens) {
+    if (!pattern.test(blob)) fail(code, message);
+  }
+
+  if (roadmap) {
+    const futureSection = roadmap.text.split("## 5. Future GTM Slices")[1]?.split("## 6.")[0] || "";
+    const imp029Row = [...futureSection.split("\n")].find((line) => /^\|\s*IMP-029\s*\|/.test(line));
+    const imp030Row = [...futureSection.split("\n")].find((line) => /^\|\s*IMP-030\s*\|/.test(line));
+    if (!imp029Row || !/Operations Console API/.test(imp029Row) || !/ARCHITECTURE_LOCKED/.test(imp029Row)) {
+      fail("IMP029_ROADMAP_LIFECYCLE", "ROADMAP future ledger must list IMP-029 Operations Console API as ARCHITECTURE_LOCKED");
+    }
+    if (!imp030Row || !/Operations Console UI/.test(imp030Row) || !/PLANNED/.test(imp030Row)) {
+      fail("IMP030_ROADMAP_NOT_ACTIVATED", "ROADMAP future ledger must keep IMP-030 Operations Console UI PLANNED");
+    }
+  }
+
+  if (state) {
+    if (!/IMP-029:\s*ARCHITECTURE_LOCKED/.test(state.text) || !/IMP-029_ARCHITECTURE:\s*LOCKED/.test(state.text)) {
+      fail("IMP029_STATE_LIFECYCLE", "STATE must record IMP-029 ARCHITECTURE_LOCKED with architecture LOCKED");
+    }
+    if (state.meta.acceptedThrough !== "IMP-028D" || state.meta.pendingAcceptance !== "NONE") {
+      fail("IMP029_STATE_POSITION", "STATE must retain acceptedThrough IMP-028D and pendingAcceptance NONE");
+    }
+  }
+
+  if (architecture) {
+    if (
+      architecture.meta.architectureVersion !== "ARCH-R17" ||
+      !/ARCH-G23/.test(architecture.text) ||
+      !/D-372/.test(architecture.text)
+    ) {
+      fail("IMP029_ARCHITECTURE_LOCK", "ARCH-R17 must record ARCH-G23 and D-372");
+    }
+  }
+
+  if (decision && decision.meta.decisionRegisterVersion !== "DR-14") {
+    fail("IMP029_DECISION_VERSION", "IMP-029 architecture lock requires decision register DR-14");
   }
 }
 
@@ -3677,7 +3791,7 @@ export function runProjectConsistency() {
   }
 
   checkRoadmapState(roadmap, state);
-  checkDecisionRegister(decision);
+  checkDecisionRegister(decision, roadmap, state);
   checkImp024ArchitectureLock(roadmap, state, architecture);
   checkImp025ArchitectureLock(roadmap, state, architecture);
   checkImp026ArchitectureLock(roadmap, state, architecture, decision);
@@ -3686,6 +3800,7 @@ export function runProjectConsistency() {
   checkImp028ArchitectureLock(roadmap, state, architecture, decision);
   checkImp028aImplementationAuthorization(roadmap, state);
   checkImp028bCanonicalActivation(roadmap, state);
+  checkImp029ArchitectureLock(roadmap, state, architecture, decision);
   checkTechnicalInventory();
   checkStaticWeb();
   checkAgentsPointer();
