@@ -2,10 +2,10 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R58",
+  "stateVersion": "STATE-R59",
   "acceptedThrough": "IMP-028D",
-  "currentProductSlice": "NONE",
-  "nextProductSlice": "IMP-029",
+  "currentProductSlice": "IMP-029",
+  "nextProductSlice": "IMP-030",
   "pendingAcceptance": "NONE",
   "governanceHealth": "ALIGNED",
   "lastReviewed": "2026-08-22"
@@ -28,10 +28,10 @@ Accepted Range:            IMP-001 → IMP-028D (including IMP-005A and IMP-026C
 ## 2. Current Work Position
 
 ```text
-Current Product Implementation: NONE
+Current Product Implementation: IMP-029 — Operations Console API
 Pending Acceptance:             NONE
-Next Product Slice:             IMP-029 — Operations Console API
-Current Governance Activity:    IMP-028D COMPLETE_AND_ACCEPTED after Founder UAT PASS on the exact merged-main candidate; IMP-029 PLANNED / NOT_STARTED / NOT_AUTHORIZED
+Next Product Slice:             IMP-030 — Operations Console UI
+Current Governance Activity:    IMP-029 architecture activation authorized by Founder; architecture NOT_LOCKED; implementation NOT_AUTHORIZED / NOT_STARTED.
 Governance Health:              ALIGNED
 ```
 
@@ -112,9 +112,14 @@ FOUNDER_UAT_CANDIDATE_REF: main
 FOUNDER_UAT_CANDIDATE_HEAD: 166aec4efd1c55a9e14ab7216a2b1af71fb3b2c7
 FOUNDER_UAT_CANDIDATE_TREE: eba5f3f7fc25b07581801b53a130fb9547abc459
 FOUNDER_UAT_EVIDENCE_SHA256: 715519d51801a10913a71a891af74c68aac1f493088adda43ecbc6a9c8bd5572
-IMP-029:                  PLANNED / NOT_STARTED / NOT_AUTHORIZED
+IMP-029:                  ARCHITECTURE_IN_PROGRESS
+IMP-029_ARCHITECTURE:     NOT_LOCKED
+IMP-029_ARCHITECTURE_LOCKED: NO
+IMP-029_IMPLEMENTATION:   NOT_AUTHORIZED / NOT_STARTED
 IMP-029_IMPLEMENTATION_AUTHORIZED: NO
 IMP-029_STARTED:          NO
+IMP-029_IMPLEMENTATION_COMPLETE: NO
+IMP-029_ACCEPTED:         NO
 ```
 
 Capability architecture:
@@ -157,12 +162,13 @@ Refund architecture remains locked and accepted. GTM-R30 / STATE-R28 record IMP-
 binding **D-365** / **D-366** / **D-367**; capability artifact present). Formal acceptance of
 IMP-028 **is** claimed (`IMP-028_ACCEPTED: YES`; `IMP-028_IMPLEMENTATION_COMPLETE: YES`).
 GTM-R30 / STATE-R28 recorded `pendingAcceptance=NONE` immediately after that acceptance.
-IMP-029 remains not started and is **not** implementation-authorized
-(`IMP-029_IMPLEMENTATION_AUTHORIZED: NO`; `IMP-029_STARTED: NO`). GTM-R37 / STATE-R35 record
+IMP-029 is `ARCHITECTURE_IN_PROGRESS`; architecture is `NOT_LOCKED`; implementation is
+**not** authorized and has not started (`IMP-029_IMPLEMENTATION_AUTHORIZED: NO`; `IMP-029_STARTED: NO`). GTM-R37 / STATE-R35 record
 IMP-028A `COMPLETE_AND_ACCEPTED` (`IMP-028A_IMPLEMENTATION_AUTHORIZED: YES`;
 `IMP-028A_IMPLEMENTATION_STARTED: YES`; `IMP-028A_IMPLEMENTATION_COMPLETE: YES`;
-`IMP-028A_ACCEPTED: YES`; architecture `ARCHITECTURE_LOCKED`). `currentProductSlice` is `NONE`.
-`nextProductSlice=IMP-029` remains next-planned GTM bookkeeping only. IMP-028A does **not**
+`IMP-028A_ACCEPTED: YES`; architecture `ARCHITECTURE_LOCKED`). At that historical acceptance,
+`currentProductSlice` was `NONE` and `nextProductSlice=IMP-029` was next-planned GTM bookkeeping.
+IMP-028A does **not**
 retarget IMP-029, implement D-368 / D-369 / D-370, or create `D-371`. Formal acceptance of
 IMP-028A does **not** authorize or start IMP-029. GTM-R38 / STATE-R36 historically record IMP-028B canonical
 activation (`PLANNED` / `NOT_STARTED` / `NOT_AUTHORIZED`; architecture `NOT_LOCKED`;
@@ -194,6 +200,14 @@ independent acceptance without changing decision register or global architecture
 STATE-R36 record IMP-028B canonical activation without changing decision register or global
 architecture. GTM-R39 / STATE-R37 record IMP-028B architecture lock and implementation
 authorization without changing decision register or global architecture.
+
+STATE-R59 records explicit Founder authorization to activate **IMP-029 — Operations Console API**
+for architecture work only. It establishes `currentProductSlice = IMP-029`; lifecycle =
+`ARCHITECTURE_IN_PROGRESS`; architecture = `NOT_LOCKED`; implementation = `NOT_AUTHORIZED` /
+`NOT_STARTED`; and `nextProductSlice = IMP-030`. It does **not** claim architecture lock,
+authorize implementation, claim implementation start, create capability implementation, create
+D-372, change ARCH-R16 or DR-13, change `acceptedThrough`, or create `pendingAcceptance`.
+Supersedes STATE-R58 only for current work-position bookkeeping.
 
 STATE-R58 records formal acceptance of IMP-028D — Desktop Ordering Continuity after Founder UAT
 PASS on 2026-08-22 for the exact merged-main candidate
