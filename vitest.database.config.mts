@@ -100,6 +100,8 @@ export default defineConfig({
       "tests/order-concurrency/**/*.test.ts",
       "tests/order-crash/**/*.test.ts",
       "tests/database/order/**/*.test.ts",
+      // IMP-029: Operations Order read HTTP transport integration.
+      "tests/operations/orders-read-http.integration.test.ts",
     ],
     exclude: ["**/node_modules/**", "**/.next/**", "**/out/**", "**/coverage/**"],
     globalSetup: ["./tests/database/global-setup.ts"],
