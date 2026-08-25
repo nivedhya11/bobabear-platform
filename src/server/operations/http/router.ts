@@ -8,7 +8,7 @@ import "server-only";
 import type { IncomingMessage, ServerResponse } from "node:http";
 
 import type { WorkforceAuthRuntime } from "../../auth/workforce";
-import { getWorkforceOrder, searchWorkforceOrders } from "../../order";
+import { OrderError, getWorkforceOrder, searchWorkforceOrders } from "../../order";
 import type { Persistence } from "../../persistence";
 import { resolveOperationsWorkforcePrincipal } from "./auth";
 import { mapOperationsError } from "./error-map";
@@ -25,7 +25,16 @@ function parseUrl(req: IncomingMessage): URL {
 
 function searchInput(url: URL): Record<string, string> {
   const input: Record<string, string> = {};
-  for (const [key, value] of url.searchParams) input[key] = value;
+  for (const [key, value] of url.searchParams) {
+    if (key in input) {
+      throw new OrderError(
+        "ORDER_REQUEST_INVALID",
+        "Repeated query parameters are not supported.",
+        { field: key },
+      );
+    }
+    input[key] = value;
+  }
   return input;
 }
 

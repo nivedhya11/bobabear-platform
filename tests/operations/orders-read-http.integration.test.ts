@@ -10,8 +10,9 @@ import {
   WORKFORCE_AUTH_SESSION_COOKIE_NAME,
 } from "../../src/server/auth/workforce";
 import { loadAuthFoundationConfig } from "../../src/server/auth/shared/config";
-import { listCustomerOrders } from "../../src/server/order";
+import { getWorkforceOrder, listCustomerOrders } from "../../src/server/order";
 import { startPayment } from "../../src/server/payment";
+import { resolveOperationsWorkforcePrincipal } from "../../src/server/operations/http/auth";
 import { routeOperationsRequest } from "../../src/server/operations/http/router";
 import { applicationConfig } from "../database/support/cart-fixtures";
 import { createEligibleWorkforceUser } from "../database/support/access-control-fixtures";
@@ -29,6 +30,12 @@ type InternalAdapter = {
 };
 
 const MISSING_ORDER_ID = "00000000-0000-4000-8000-000000000099";
+
+function jsonTransportValue(value: unknown): unknown {
+  return JSON.parse(JSON.stringify(value, (_key, entry: unknown) => (
+    typeof entry === "bigint" ? entry.toString(10) : entry
+  )));
+}
 
 function workforceAuthConfig() {
   return loadAuthFoundationConfig(
@@ -175,11 +182,21 @@ describe("IMP-029 Operations Order read HTTP", () => {
         expect(response.status).toBe(404);
         expect(await response.json()).toMatchObject({ code: "ORDER_NOT_FOUND" });
 
+        const scopedCookie = await signedWorkforceSessionCookie(scopedSession.token);
         response = await request(`/api/operations/v1/orders/${order.orderId}`, {
-          headers: await workforceHeaders(scopedSession.token),
+          headers: { cookie: scopedCookie },
         });
         expect(response.status).toBe(200);
-        expect((await response.json()).order).toMatchObject({ orderId: order.orderId });
+        const detailBody = await response.json();
+        const principal = await resolveOperationsWorkforcePrincipal(
+          runtime,
+          { cookie: scopedCookie },
+        );
+        if (!principal) throw new Error("Expected trusted workforce principal");
+        const directOrder = await getWorkforceOrder(h.persistence, principal, {
+          orderId: order.orderId,
+        });
+        expect(detailBody.order).toEqual(jsonTransportValue(directOrder));
 
         const outside = await request(`/api/operations/v1/orders/${order.orderId}`, {
           headers: await workforceHeaders(outsideSession.token),
@@ -198,6 +215,18 @@ describe("IMP-029 Operations Order read HTTP", () => {
         response = await request("/api/operations/v1/orders?unknown=value", {
           headers: await workforceHeaders(scopedSession.token),
         });
+        expect([response.status, (await response.json()).code]).toEqual([400, "ORDER_REQUEST_INVALID"]);
+
+        response = await request(
+          `/api/operations/v1/orders?outletId=${h.actors.tree.outletA.id}&outletId=${h.actors.tree.outletB.id}`,
+          { headers: await workforceHeaders(scopedSession.token) },
+        );
+        expect([response.status, (await response.json()).code]).toEqual([400, "ORDER_REQUEST_INVALID"]);
+
+        response = await request(
+          `/api/operations/v1/orders?outletId=${h.actors.tree.outletA.id}&outletId=${h.actors.tree.outletA.id}`,
+          { headers: await workforceHeaders(scopedSession.token) },
+        );
         expect([response.status, (await response.json()).code]).toEqual([400, "ORDER_REQUEST_INVALID"]);
 
         response = await request("/api/operations/v1/orders?cursor=malformed", {
