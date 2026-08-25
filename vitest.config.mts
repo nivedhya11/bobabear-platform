@@ -68,6 +68,8 @@ export default defineConfig({
       "tests/refund-architecture/**/*.test.ts",
       // IMP-027: Razorpay Refund adapter uses mocked HTTP (no database).
       "tests/payment-razorpay/refund.adapter.test.ts",
+      // IMP-029: DB-free Operations workforce-principal trust adapter test.
+      "tests/operations/workforce-principal-adapter.test.ts",
     ],
     exclude: [
       "**/node_modules/**",
