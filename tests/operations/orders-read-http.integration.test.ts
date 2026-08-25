@@ -132,7 +132,11 @@ describe("IMP-029 Operations Order read HTTP", () => {
       const noPermissionSession = await adapter.createSession(noPermissionUser.id);
 
       const server = createServer((req, res) => {
-        void routeOperationsRequest(req, res, { runtime, persistence: h.persistence }, "operations-test-request");
+        void routeOperationsRequest(req, res, {
+          runtime,
+          persistence: h.persistence,
+          trustedOrigin: workforceAuthConfig().workforce.baseURL.origin,
+        }, "operations-test-request");
       });
       await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
       const address = server.address();

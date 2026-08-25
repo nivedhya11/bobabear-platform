@@ -29,8 +29,9 @@ export function sendJson(
 export function sendMethodNotAllowed(
   res: ServerResponse,
   requestId: string,
+  allowedMethods: string,
 ): void {
-  res.setHeader("Allow", "GET");
+  res.setHeader("Allow", allowedMethods);
   sendJson(
     res,
     { ok: false, code: "METHOD_NOT_ALLOWED", requestId },
