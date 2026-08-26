@@ -131,7 +131,7 @@
     "operations:start": "node --conditions=react-server dist-operations/server/operations/main.js",
     "docker:env:init": "node scripts/docker/init-local-env.mjs",
     "docker:config": "docker compose config --quiet",
-    "docker:build": "docker compose --profile tools build app migrate customer-auth workforce-auth customer-commerce",
+    "docker:build": "docker compose --profile tools build app migrate customer-auth workforce-auth customer-commerce operations",
     "docker:up": "node scripts/docker/stack-up.mjs",
     "docker:status": "docker compose ps",
     "docker:logs": "docker compose logs --tail=200 app",
@@ -195,7 +195,8 @@
     "customer-commerce:build": "node scripts/customer-commerce/build.mjs",
     "customer-commerce:start": "node --conditions=react-server dist-customer-commerce/server/customer-commerce/main.js",
     "test:customer-commerce:http": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/customer-commerce/http.integration.test.ts",
-    "docker:customer-commerce:logs": "docker compose logs --tail=200 customer-commerce"
+    "docker:customer-commerce:logs": "docker compose logs --tail=200 customer-commerce",
+    "docker:operations:logs": "docker compose logs --tail=200 operations"
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "1.6.25",

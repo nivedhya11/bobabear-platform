@@ -62,3 +62,6 @@ next-env.d.ts
 # workforce-auth service build output (IMP-010 — scripts/workforce-auth/build.mjs)
 /dist-workforce-auth
 /dist-customer-commerce
+
+# operations service build output (IMP-029 — scripts/operations/build.mjs)
+/dist-operations

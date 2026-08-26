@@ -51,15 +51,16 @@ function step(title, command, args) {
 
 const STEPS = [
   { title: "Generate local PostgreSQL bootstrap env (npm run db:env:init)", command: "npm", args: ["run", "db:env:init"] },
-  { title: "Generate Docker runtime/migration/customer-auth/workforce-auth/customer-commerce env (npm run docker:env:init)", command: "npm", args: ["run", "docker:env:init"] },
+  { title: "Generate Docker runtime/migration/customer-auth/workforce-auth/customer-commerce/operations env (npm run docker:env:init)", command: "npm", args: ["run", "docker:env:init"] },
   { title: "Validate Compose configuration", command: "docker", args: ["compose", "config", "--quiet"] },
   { title: "Start PostgreSQL and wait for healthy", command: "docker", args: ["compose", "up", "-d", "--wait", "postgres"] },
-  { title: "Build the app, customer-auth, workforce-auth, customer-commerce, and tooling images", command: "docker", args: ["compose", "--profile", "tools", "build", "app", "migrate", "customer-auth", "workforce-auth", "customer-commerce"] },
+  { title: "Build the app, customer-auth, workforce-auth, customer-commerce, operations, and tooling images", command: "docker", args: ["compose", "--profile", "tools", "build", "app", "migrate", "customer-auth", "workforce-auth", "customer-commerce", "operations"] },
   { title: "Run database migrations (one-off)", command: "docker", args: ["compose", "run", "--rm", "migrate"] },
   { title: "Start the app container and wait for healthy", command: "docker", args: ["compose", "up", "-d", "--wait", "app"] },
   { title: "Start the customer-auth container and wait for healthy", command: "docker", args: ["compose", "up", "-d", "--wait", "customer-auth"] },
   { title: "Start the workforce-auth container and wait for healthy", command: "docker", args: ["compose", "up", "-d", "--wait", "workforce-auth"] },
   { title: "Start the customer-commerce container and wait for healthy", command: "docker", args: ["compose", "up", "-d", "--wait", "customer-commerce"] },
+  { title: "Start the operations container and wait for healthy", command: "docker", args: ["compose", "up", "-d", "--wait", "operations"] },
   { title: "Check application-role database connectivity (one-off)", command: "docker", args: ["compose", "run", "--rm", "db-check"] },
   { title: "Check migration-role database connectivity (one-off)", command: "docker", args: ["compose", "run", "--rm", "db-check-migration"] },
   { title: "Run HTTP smoke validation against the app container", command: "node", args: ["scripts/docker/smoke.mjs"] },

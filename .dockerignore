@@ -11,6 +11,7 @@ out
 dist-customer-auth
 dist-workforce-auth
 dist-customer-commerce
+dist-operations
 coverage
 playwright-report
 test-results
@@ -33,6 +34,7 @@ blob-report
 .env.customer-auth.docker.local
 .env.workforce-auth.docker.local
 .env.customer-commerce.docker.local
+.env.operations.docker.local
 
 # figma-sync reference screenshots — large, not needed for the app image.
 figma-sync/*.png
