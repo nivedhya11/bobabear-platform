@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R64",
-  "acceptedThrough": "IMP-028D",
-  "currentProductSlice": "IMP-029",
+  "roadmapVersion": "GTM-R65",
+  "acceptedThrough": "IMP-029",
+  "currentProductSlice": "NONE",
   "nextProductSlice": "IMP-030",
   "gtmBoundary": "IMP-040",
-  "lastReviewed": "2026-08-24",
-  "supersedes": "GTM-R63"
+  "lastReviewed": "2026-08-26",
+  "supersedes": "GTM-R64"
 }
 -->
 
@@ -260,15 +260,15 @@ IMP-028D locked capability architecture (architecture **ARCHITECTURE_LOCKED**; i
 [`capabilities/IMP-028D-desktop-ordering-continuity.md`](./capabilities/IMP-028D-desktop-ordering-continuity.md)
 
 IMP-029 locked capability architecture (architecture **ARCHITECTURE_LOCKED**; implementation
-**AUTHORIZED** / **STARTED** / `IMPLEMENTATION_IN_PROGRESS`):
+**AUTHORIZED** / **STARTED** / **COMPLETE** / `COMPLETE_AND_ACCEPTED`):
 
 [`capabilities/IMP-029-operations-console-api.md`](./capabilities/IMP-029-operations-console-api.md)
 
 ## 2. Current Position
 
 ```text
-Accepted Through:     IMP-028D — Desktop Ordering Continuity
-Current Product Slice: IMP-029 — Operations Console API
+Accepted Through:     IMP-029 — Operations Console API
+Current Product Slice: NONE
 Next Product Slice:    IMP-030 — Operations Console UI
 Pending Acceptance:    NONE
 Public GTM Boundary:   IMP-040 — Launch Validation & Cutover
@@ -383,13 +383,13 @@ IMP-028B_IMPLEMENTATION_AUTHORIZED: YES
 IMP-028B_IMPLEMENTATION_STARTED: YES
 IMP-028B_IMPLEMENTATION_COMPLETE: YES
 IMP-028B_ACCEPTED: YES
-IMP-029: IMPLEMENTATION_IN_PROGRESS
+IMP-029: COMPLETE_AND_ACCEPTED
 IMP-029_ARCHITECTURE: LOCKED
 IMP-029_ARCHITECTURE_LOCKED: YES
 IMP-029_IMPLEMENTATION_AUTHORIZED: YES
 IMP-029_STARTED: YES
-IMP-029_IMPLEMENTATION_COMPLETE: NO
-IMP-029_ACCEPTED: NO
+IMP-029_IMPLEMENTATION_COMPLETE: YES
+IMP-029_ACCEPTED: YES
 PROVIDER_ORIGINATED_WEBHOOK: VALIDATED_PUBLIC_HTTPS_TEST_MODE
 ```
 
@@ -449,11 +449,13 @@ only). Webhook acknowledgement timing / durable inbox / asynchronous Payment pro
 | IMP-028B | Customer Menu Projection + Discovery | COMPLETE_AND_ACCEPTED |
 | IMP-028C | Food Customization | COMPLETE_AND_ACCEPTED |
 | IMP-028D | Desktop Ordering Continuity | COMPLETE_AND_ACCEPTED |
+| IMP-029 | Operations Console API | COMPLETE_AND_ACCEPTED |
 
 ## 4. Current Product Slice
 
-IMP-029 — Operations Console API is the current product slice. Architecture is locked.
-Implementation is authorized and started.
+No product slice is currently active. IMP-029 — Operations Console API is
+`COMPLETE_AND_ACCEPTED`; architecture remains locked and implementation is authorized, started,
+and complete.
 
 ```text
 IMP-028D — Desktop Ordering Continuity
@@ -489,17 +491,17 @@ IMP-028B_IMPLEMENTATION_STARTED: YES
 IMP-028B_IMPLEMENTATION_COMPLETE: YES
 IMP-028B_ACCEPTED: YES
 Capability: IMP-029 — Operations Console API
-Lifecycle: IMPLEMENTATION_IN_PROGRESS
+Lifecycle: COMPLETE_AND_ACCEPTED
 Architecture: LOCKED
-Implementation: AUTHORIZED / STARTED
+Implementation: AUTHORIZED / STARTED / COMPLETE
 IMP-029_ARCHITECTURE_LOCKED: YES
 IMP-029_IMPLEMENTATION_AUTHORIZED: YES
 IMP-029_STARTED: YES
-IMP-029_IMPLEMENTATION_COMPLETE: NO
-IMP-029_ACCEPTED: NO
+IMP-029_IMPLEMENTATION_COMPLETE: YES
+IMP-029_ACCEPTED: YES
 Next product slice: IMP-030 — Operations Console UI
 Pending acceptance: NONE
-acceptedThrough: IMP-028D
+acceptedThrough: IMP-029
 IMP-026C: COMPLETE_AND_ACCEPTED
 IMP-027: COMPLETE_AND_ACCEPTED
 IMP-027_ARCHITECTURE: LOCKED
@@ -625,7 +627,7 @@ architecture work only; implementation remains not authorized and not started.
 
 ## 5. Future GTM Slices
 
-Remaining numeric GTM range IMP-029 → IMP-040: **12** IMP numbers.
+Remaining numeric GTM range IMP-030 → IMP-040: **11** IMP numbers.
 Accepted inserted slices IMP-026C, IMP-028A, IMP-028B, IMP-028C, and IMP-028D remain in the
 accepted ledger and are not future identities.
 
@@ -647,7 +649,6 @@ consume or remap IMP-029 → IMP-040 identities and is `COMPLETE_AND_ACCEPTED`.
 
 | IMP | Capability | Lifecycle |
 |---|---|---|
-| IMP-029 | Operations Console API | IMPLEMENTATION_IN_PROGRESS |
 | IMP-030 | Operations Console UI | PLANNED |
 | IMP-031 | Provider-Neutral Delivery Foundation | PLANNED |
 | IMP-032 | Dehradun Delivery Operating Mode | PLANNED |
@@ -1025,6 +1026,22 @@ Historical GTM-R1 meanings that are **not** current:
 Current public GTM boundary is **IMP-040**, not IMP-035.
 
 ## 9. Roadmap Change Log
+
+### GTM-R65 — 2026-08-26
+
+- Records formal acceptance of **IMP-029 — Operations Console API** for independently accepted
+  `main` SHA `0490a393666a87f5f99cc6d90c99bef18d09c097` and tree
+  `4d376d296bd8596c4809fc91331659a2f52e53e6`. Implementation evidence is **COMPLETE**;
+  independent implementation review is **PASS**; independent acceptance evidence is **ACCEPTED**.
+- IMP-029 lifecycle becomes `COMPLETE_AND_ACCEPTED`. Architecture remains
+  `ARCHITECTURE_LOCKED`; implementation remains `AUTHORIZED` / `STARTED` / `COMPLETE`
+  (`IMP-029_IMPLEMENTATION_COMPLETE: YES`; `IMP-029_ACCEPTED: YES`). D-372 remains CURRENT.
+- Advances `acceptedThrough = IMP-029`; sets `currentProductSlice = NONE`; preserves
+  `pendingAcceptance = NONE` and `nextProductSlice = IMP-030`. IMP-030 remains `PLANNED` /
+  `NOT_STARTED` / `NOT_AUTHORIZED`.
+- This reconciliation introduces no runtime, schema, migration, or deployment mutation. Remote
+  Operations deployment is not claimed. ARCH-R17 and DR-14 remain unchanged.
+- Supersedes GTM-R64 for the current IMP-029 lifecycle and acceptance position.
 
 ### GTM-R64 — 2026-08-24
 

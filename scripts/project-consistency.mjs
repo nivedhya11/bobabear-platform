@@ -1393,7 +1393,16 @@ function isImp029ArchitectureLockCheckpoint(roadmap, state) {
     (roadmap?.meta.roadmapVersion === "GTM-R63" &&
       state?.meta.stateVersion === "STATE-R61") ||
     (roadmap?.meta.roadmapVersion === "GTM-R64" &&
-      state?.meta.stateVersion === "STATE-R62")
+      state?.meta.stateVersion === "STATE-R62") ||
+    (roadmap?.meta.roadmapVersion === "GTM-R65" &&
+      state?.meta.stateVersion === "STATE-R63")
+  );
+}
+
+function isImp029AcceptanceCheckpoint(roadmap, state) {
+  return (
+    roadmap?.meta.roadmapVersion === "GTM-R65" &&
+    state?.meta.stateVersion === "STATE-R63"
   );
 }
 
@@ -2931,7 +2940,9 @@ function checkImp028ArchitectureLock(roadmap, state, architecture, decision) {
     if (!/IMP-028_ACCEPTED:\s*YES/.test(roadmap.text)) {
       fail("IMP028_ROADMAP_ACCEPTED", "ROADMAP must record IMP-028_ACCEPTED: YES");
     }
-    const imp029Started = isImp029ImplementationStartCheckpoint(roadmap, state);
+    const imp029Accepted = isImp029AcceptanceCheckpoint(roadmap, state);
+    const imp029Started =
+      isImp029ImplementationStartCheckpoint(roadmap, state) || imp029Accepted;
     const imp029Authorized =
       isImp029ImplementationAuthorizationCheckpoint(roadmap, state) || imp029Started;
     if (!new RegExp(`IMP-029_IMPLEMENTATION_AUTHORIZED:\\s*${imp029Authorized ? "YES" : "NO"}`).test(roadmap.text)) {
@@ -2940,7 +2951,13 @@ function checkImp028ArchitectureLock(roadmap, state, architecture, decision) {
         `ROADMAP must record IMP-029_IMPLEMENTATION_AUTHORIZED: ${imp029Authorized ? "YES" : "NO"}`,
       );
     }
-    if (imp029Started) {
+    if (imp029Accepted) {
+      if (!/IMP-029:\s*COMPLETE_AND_ACCEPTED/.test(state.text)) {
+        fail("IMP029_STATE_ACCEPTED", "STATE must record IMP-029 COMPLETE_AND_ACCEPTED");
+      } else {
+        note("IMP-029 COMPLETE_AND_ACCEPTED");
+      }
+    } else if (imp029Started) {
       if (!/IMP-029_STARTED:\s*YES/.test(roadmap.text)) {
         fail("IMP029_ROADMAP_STARTED", "ROADMAP must record IMP-029_STARTED: YES");
       } else {
@@ -2984,8 +3001,16 @@ function checkImp028ArchitectureLock(roadmap, state, architecture, decision) {
     if (!/IMP-028_ACCEPTED:\s*YES/.test(state.text)) {
       fail("IMP028_STATE_NOT_ACCEPTED", "STATE must record IMP-028_ACCEPTED: YES");
     }
-    const imp029Started = isImp029ImplementationStartCheckpoint(roadmap, state);
-    if (imp029Started) {
+    const imp029Accepted = isImp029AcceptanceCheckpoint(roadmap, state);
+    const imp029Started =
+      isImp029ImplementationStartCheckpoint(roadmap, state) || imp029Accepted;
+    if (imp029Accepted) {
+      if (!/IMP-029:\s*COMPLETE_AND_ACCEPTED/.test(state.text)) {
+        fail("IMP029_STATE_ACCEPTED", "STATE must record IMP-029 COMPLETE_AND_ACCEPTED");
+      } else {
+        note("IMP-029 COMPLETE_AND_ACCEPTED");
+      }
+    } else if (imp029Started) {
       if (!/IMP-029:\s*IMPLEMENTATION_IN_PROGRESS/.test(state.text)) {
         fail("IMP029_STATE_IN_PROGRESS", "STATE must record IMP-029 IMPLEMENTATION_IN_PROGRESS");
       } else {
@@ -3529,7 +3554,8 @@ function checkImp028bCanonicalActivation(roadmap, state) {
 function checkImp029ArchitectureLock(roadmap, state, architecture, decision) {
   if (!isImp029ArchitectureLockCheckpoint(roadmap, state)) return;
 
-  const started = isImp029ImplementationStartCheckpoint(roadmap, state);
+  const accepted = isImp029AcceptanceCheckpoint(roadmap, state);
+  const started = isImp029ImplementationStartCheckpoint(roadmap, state) || accepted;
   const authorized =
     started || isImp029ImplementationAuthorizationCheckpoint(roadmap, state);
 
@@ -3539,7 +3565,9 @@ function checkImp029ArchitectureLock(roadmap, state, architecture, decision) {
     fail("IMP029_CAPABILITY_MISSING", `Missing locked capability architecture at ${artifactRel}`);
   } else {
     const body = readFileSync(artifact, "utf8");
-    const expectedImplementation = started
+    const expectedImplementation = accepted
+      ? "COMPLETE_AND_ACCEPTED"
+      : started
       ? "AUTHORIZED / STARTED"
       : authorized
         ? "AUTHORIZED / NOT_STARTED"
@@ -3571,7 +3599,12 @@ function checkImp029ArchitectureLock(roadmap, state, architecture, decision) {
         ? "IMP-029 implementation must be STARTED"
         : "IMP-029 implementation must remain NOT_STARTED",
     ],
-    ["IMP029_NOT_ACCEPTED", /IMP-029_ACCEPTED:\s*NO/, "IMP-029 must remain unaccepted"],
+    accepted
+      ? ["IMP029_ACCEPTED", /IMP-029_ACCEPTED:\s*YES/, "IMP-029 must be accepted"]
+      : ["IMP029_NOT_ACCEPTED", /IMP-029_ACCEPTED:\s*NO/, "IMP-029 must remain unaccepted"],
+    ...(accepted
+      ? [["IMP029_COMPLETE", /IMP-029_IMPLEMENTATION_COMPLETE:\s*YES/, "IMP-029 implementation must be complete"]]
+      : []),
   ];
   for (const [code, pattern, message] of requiredTokens) {
     if (!pattern.test(blob)) fail(code, message);
@@ -3595,7 +3628,23 @@ function checkImp029ArchitectureLock(roadmap, state, architecture, decision) {
     }
   }
 
-  if (started && roadmap && state) {
+  if (accepted && roadmap && state) {
+    const requiredAcceptedTokens = [
+      [roadmap.text, /IMP-029:\s*COMPLETE_AND_ACCEPTED/, "ROADMAP must record current IMP-029 lifecycle COMPLETE_AND_ACCEPTED"],
+      [roadmap.text, /IMP-029_IMPLEMENTATION_AUTHORIZED:\s*YES/, "ROADMAP must record current IMP-029 authorization"],
+      [roadmap.text, /IMP-029_STARTED:\s*YES/, "ROADMAP must record current IMP-029 started"],
+      [roadmap.text, /IMP-029_IMPLEMENTATION_COMPLETE:\s*YES/, "ROADMAP must record current IMP-029 complete"],
+      [roadmap.text, /IMP-029_ACCEPTED:\s*YES/, "ROADMAP must record current IMP-029 accepted"],
+      [state.text, /IMP-029:\s*COMPLETE_AND_ACCEPTED/, "STATE must record current IMP-029 lifecycle COMPLETE_AND_ACCEPTED"],
+      [state.text, /IMP-029_IMPLEMENTATION_AUTHORIZED:\s*YES/, "STATE must record current IMP-029 authorization"],
+      [state.text, /IMP-029_STARTED:\s*YES/, "STATE must record current IMP-029 started"],
+      [state.text, /IMP-029_IMPLEMENTATION_COMPLETE:\s*YES/, "STATE must record current IMP-029 complete"],
+      [state.text, /IMP-029_ACCEPTED:\s*YES/, "STATE must record current IMP-029 accepted"],
+    ];
+    for (const [text, pattern, message] of requiredAcceptedTokens) {
+      if (!pattern.test(text)) fail("IMP029_ACCEPTANCE_CHECKPOINT", message);
+    }
+  } else if (started && roadmap && state) {
     const requiredStartTokens = [
       [roadmap.text, /IMP-029:\s*IMPLEMENTATION_IN_PROGRESS/, "ROADMAP must record current IMP-029 lifecycle IMPLEMENTATION_IN_PROGRESS"],
       [roadmap.text, /IMP-029_IMPLEMENTATION_AUTHORIZED:\s*YES/, "ROADMAP must record current IMP-029 authorization"],
@@ -3617,21 +3666,28 @@ function checkImp029ArchitectureLock(roadmap, state, architecture, decision) {
     const futureSection = roadmap.text.split("## 5. Future GTM Slices")[1]?.split("## 6.")[0] || "";
     const imp029Row = [...futureSection.split("\n")].find((line) => /^\|\s*IMP-029\s*\|/.test(line));
     const imp030Row = [...futureSection.split("\n")].find((line) => /^\|\s*IMP-030\s*\|/.test(line));
-    const expectedLifecycle = started
+    const expectedLifecycle = accepted
+      ? "COMPLETE_AND_ACCEPTED"
+      : started
       ? "IMPLEMENTATION_IN_PROGRESS"
       : authorized
         ? "IMPLEMENTATION_AUTHORIZED"
         : "ARCHITECTURE_LOCKED";
-    if (!imp029Row || !/Operations Console API/.test(imp029Row) || !imp029Row.includes(expectedLifecycle)) {
+    if (accepted && imp029Row) {
+      fail("IMP029_ROADMAP_FUTURE", "ROADMAP future ledger must not retain IMP-029 after acceptance");
+    } else if (!accepted && (!imp029Row || !/Operations Console API/.test(imp029Row) || !imp029Row.includes(expectedLifecycle))) {
       fail("IMP029_ROADMAP_LIFECYCLE", `ROADMAP future ledger must list IMP-029 Operations Console API as ${expectedLifecycle}`);
     }
-    if (!imp030Row || !/Operations Console UI/.test(imp030Row) || !/PLANNED/.test(imp030Row)) {
+    if (!imp030Row || !/Operations Console UI/.test(imp030Row) || !/PLANNED/.test(imp030Row) ||
+      /IMP-030_(?:IMPLEMENTATION_AUTHORIZED|STARTED):\s*YES/.test(roadmap.text)) {
       fail("IMP030_ROADMAP_NOT_ACTIVATED", "ROADMAP future ledger must keep IMP-030 Operations Console UI PLANNED");
     }
   }
 
   if (state) {
-    const expectedLifecycle = started
+    const expectedLifecycle = accepted
+      ? "COMPLETE_AND_ACCEPTED"
+      : started
       ? "IMPLEMENTATION_IN_PROGRESS"
       : authorized
         ? "IMPLEMENTATION_AUTHORIZED"
@@ -3639,8 +3695,13 @@ function checkImp029ArchitectureLock(roadmap, state, architecture, decision) {
     if (!new RegExp(`IMP-029:\\s*${expectedLifecycle}`).test(state.text) || !/IMP-029_ARCHITECTURE:\s*LOCKED/.test(state.text)) {
       fail("IMP029_STATE_LIFECYCLE", `STATE must record IMP-029 ${expectedLifecycle} with architecture LOCKED`);
     }
-    if (state.meta.acceptedThrough !== "IMP-028D" || state.meta.pendingAcceptance !== "NONE") {
-      fail("IMP029_STATE_POSITION", "STATE must retain acceptedThrough IMP-028D and pendingAcceptance NONE");
+    if (
+      (accepted && (state.meta.acceptedThrough !== "IMP-029" || state.meta.currentProductSlice !== "NONE" || state.meta.pendingAcceptance !== "NONE" || state.meta.nextProductSlice !== "IMP-030")) ||
+      (!accepted && (state.meta.acceptedThrough !== "IMP-028D" || state.meta.pendingAcceptance !== "NONE"))
+    ) {
+      fail("IMP029_STATE_POSITION", accepted
+        ? "STATE must record acceptedThrough IMP-029, currentProductSlice NONE, nextProductSlice IMP-030, and pendingAcceptance NONE"
+        : "STATE must retain acceptedThrough IMP-028D and pendingAcceptance NONE");
     }
   }
 

@@ -5,9 +5,9 @@
   "capability": "IMP-029",
   "title": "Operations Console API",
   "architectureLock": "ARCHITECTURE_LOCKED",
-  "implementation": "AUTHORIZED / STARTED",
+  "implementation": "COMPLETE_AND_ACCEPTED",
   "implementationAuthorized": true,
-  "lastReviewed": "2026-08-24",
+  "lastReviewed": "2026-08-26",
   "bindingDecisions": ["D-357", "D-358", "D-372"],
   "dependsOn": ["IMP-023"]
 }
@@ -22,15 +22,17 @@ This document is the locked capability architecture for IMP-029 — Operations C
 | Field | Value |
 |---|---|
 | Architecture lock | `ARCHITECTURE_LOCKED` |
-| Implementation | `AUTHORIZED` / `STARTED` |
+| Lifecycle | `COMPLETE_AND_ACCEPTED` |
+| Implementation | `AUTHORIZED` / `STARTED` / `COMPLETE` |
 | Implementation authorized | **YES** |
-| Accepted product through | IMP-028D |
-| Current product slice | IMP-029 |
+| Accepted product through | IMP-029 |
+| Current product slice | NONE |
 | Next product slice | IMP-030 — Operations Console UI |
 | Binding decision | **D-372** |
 
-Implementation is authorized and started. This start transition creates no route, process,
-container, schema, migration, permission catalog, cookie, deployment, or UI change.
+Formal acceptance does not change the locked architecture or create new authority. D-372 remains
+CURRENT. Acceptance does not activate IMP-030 and creates no route, process, container, schema,
+migration, permission catalog, cookie, deployment, or UI change.
 
 ## 1. Objective and scope
 
@@ -147,14 +149,22 @@ transport/log correlation only. A broader generic workforce-business audit autho
 
 ## 8. Implementation constraints and verification
 
-Future implementation must preserve D-372 and ARCH-G23, reuse the established session,
-principal, authorization, scope, and Order authorities, and prove non-disclosing access control,
-same-origin protection, revision conflicts, and existing replay/attribution semantics. It must not
-add routes for deferred domains or activate IMP-030. Implementation start is not acceptance.
+Implementation preserves D-372 and ARCH-G23, reuses the established session, principal,
+authorization, scope, and Order authorities, and proves non-disclosing access control, same-origin
+protection, revision conflicts, and existing replay/attribution semantics. It does not add routes
+for deferred domains or activate IMP-030.
 
 ```text
+IMP-029_ARCHITECTURE_LOCKED: YES
 IMP-029_IMPLEMENTATION_AUTHORIZED: YES
 IMP-029_STARTED: YES
-IMP-029_IMPLEMENTATION_COMPLETE: NO
-IMP-029_ACCEPTED: NO
+IMP-029_IMPLEMENTATION_COMPLETE: YES
+IMP-029_ACCEPTED: YES
+IMP029_IMPLEMENTATION_EVIDENCE: COMPLETE
+IMP029_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
+IMP029_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
+IMP029_FORMAL_ACCEPTANCE: ACCEPTED
+IMP029_ACCEPTED_MAIN_SHA: 0490a393666a87f5f99cc6d90c99bef18d09c097
+IMP029_ACCEPTED_TREE: 4d376d296bd8596c4809fc91331659a2f52e53e6
+REMOTE_OPERATIONS_DEPLOYMENT_PROVEN: NO
 ```
