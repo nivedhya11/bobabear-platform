@@ -103,6 +103,7 @@ export default defineConfig({
       // IMP-029: Operations Order read HTTP transport integration.
       "tests/operations/orders-read-http.integration.test.ts",
       "tests/operations/orders-mutation-http.integration.test.ts",
+      "tests/operations/runtime-service.integration.test.ts",
     ],
     exclude: ["**/node_modules/**", "**/.next/**", "**/out/**", "**/coverage/**"],
     globalSetup: ["./tests/database/global-setup.ts"],

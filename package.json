@@ -127,6 +127,8 @@
     "fd:signing": "node --conditions=react-server --import tsx scripts/financial-document/signing.ts",
     "workforce-auth:build": "node scripts/workforce-auth/build.mjs",
     "workforce-auth:start": "node --conditions=react-server dist-workforce-auth/server/workforce-auth/main.js",
+    "operations:build": "node scripts/operations/build.mjs",
+    "operations:start": "node --conditions=react-server dist-operations/server/operations/main.js",
     "docker:env:init": "node scripts/docker/init-local-env.mjs",
     "docker:config": "docker compose config --quiet",
     "docker:build": "docker compose --profile tools build app migrate customer-auth workforce-auth customer-commerce",

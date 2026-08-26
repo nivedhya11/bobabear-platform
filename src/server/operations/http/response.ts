@@ -1,12 +1,18 @@
 /** Operations HTTP response helpers (IMP-029). */
 import "server-only";
 
+import { randomUUID } from "node:crypto";
 import type { ServerResponse } from "node:http";
 
 export type SendJsonOptions = Readonly<{
   status: number;
   requestId: string;
 }>;
+
+/** A fresh server-issued correlation ID; caller-supplied IDs are never trusted. */
+export function generateRequestId(): string {
+  return randomUUID();
+}
 
 function jsonReplacer(_key: string, value: unknown): unknown {
   return typeof value === "bigint" ? value.toString(10) : value;

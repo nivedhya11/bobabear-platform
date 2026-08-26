@@ -67,6 +67,9 @@ const ALLOWED_PROCESS_ENV_PREFIXES = [
   "src/server/customer-commerce/main.ts",
   // E2E-only fake Payment entrypoint (IMP-025). Not production composition.
   "src/server/customer-commerce/e2e-fake-main.ts",
+  // The Operations HTTP service (IMP-029) is a standalone Node process;
+  // its main entry is the sole Operations environment-reading boundary.
+  "src/server/operations/main.ts",
 ];
 
 // Pre-existing NEXT_PUBLIC_* usage that predates IMP-003 (GA measurement ID
@@ -134,6 +137,9 @@ const APPROVED_ENV_FILE_KEYS = new Set([
   "CUSTOMER_COMMERCE_SERVICE_HOST",
   "CUSTOMER_COMMERCE_SERVICE_PORT",
   "CUSTOMER_COMMERCE_TRUST_PROXY_HOPS",
+  // Operations HTTP service (IMP-029).
+  "OPERATIONS_SERVICE_HOST",
+  "OPERATIONS_SERVICE_PORT",
 ]);
 
 // .env.docker.example (IMP-004) uses a completely different key catalogue —
@@ -218,6 +224,11 @@ const CUSTOMER_COMMERCE_NON_SECRET_CONFIG_KEYS = new Set([
   "CUSTOMER_COMMERCE_TRUST_PROXY_HOPS",
 ]);
 
+const OPERATIONS_NON_SECRET_CONFIG_KEYS = new Set([
+  "OPERATIONS_SERVICE_HOST",
+  "OPERATIONS_SERVICE_PORT",
+]);
+
 function isApprovedSecretShapedPlaceholder(fileName, key, value) {
   if (
     fileName === ".env.docker.example" &&
@@ -269,7 +280,8 @@ function isApprovedSecretShapedPlaceholder(fileName, key, value) {
     (fileName === ".env.example" || fileName === ".env.test") &&
     (CUSTOMER_AUTH_NON_SECRET_CONFIG_KEYS.has(key) ||
       WORKFORCE_AUTH_NON_SECRET_CONFIG_KEYS.has(key) ||
-      CUSTOMER_COMMERCE_NON_SECRET_CONFIG_KEYS.has(key))
+      CUSTOMER_COMMERCE_NON_SECRET_CONFIG_KEYS.has(key) ||
+      OPERATIONS_NON_SECRET_CONFIG_KEYS.has(key))
   ) {
     return true;
   }
