@@ -4,9 +4,11 @@ import {
   FORMAL_LEDGER_IMP_ID_RE,
   LEDGER_ROW_IMP_RE,
   evaluateCapabilityLifecycle,
+  evaluateImp030ArchitectureLockCheckpoint,
   evaluateLifecycleAuthorityAlignment,
   evaluatePendingAcceptanceSplit,
   isAllowedGovernanceVersion,
+  isSupportedImp030GovernanceCheckpoint,
   isValidCanonicalRevision,
   runProjectConsistency,
 } from "./project-consistency.mjs";
@@ -1314,6 +1316,38 @@ describe("governance version validation", () => {
     assert.equal(isValidCanonicalRevision("architecture", "ARCH-R16"), true);
     assert.equal(isValidCanonicalRevision("decision", "DR-13"), true);
     assert.equal(isValidCanonicalRevision("decision", "DR-0"), false);
+  });
+});
+
+describe("IMP-030 architecture lock checkpoint", () => {
+  const lock = Object.freeze({
+    roadmapVersion: "GTM-R67", stateVersion: "STATE-R65", acceptedThrough: "IMP-029",
+    currentProductSlice: "IMP-030", nextProductSlice: "IMP-031", pendingAcceptance: "NONE",
+    imp029: "COMPLETE_AND_ACCEPTED", imp030: "ARCHITECTURE_LOCKED", architecture: "LOCKED",
+    architectureLocked: "YES", implementationAuthorized: "NO", started: "NO",
+    implementationComplete: "NO", accepted: "NO", imp031: "PLANNED",
+    architectureVersion: "ARCH-R17", decisionRegisterVersion: "DR-14", d372Current: true,
+    d373Exists: false, artifact: true,
+  });
+
+  it("preserves the R66/S64 activation checkpoint and supports R67/S65 only", () => {
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R66", "STATE-R64"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R67", "STATE-R65"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R68", "STATE-R66"), false);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R68", "STATE-R65"), false);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R67", "STATE-R66"), false);
+  });
+
+  it("accepts only the architecture-locked, implementation-unstarted IMP-030 checkpoint", () => {
+    assert.deepEqual(evaluateImp030ArchitectureLockCheckpoint(lock), { ok: true });
+    for (const [key, value] of [
+      ["architectureLocked", "NO"], ["implementationAuthorized", "YES"], ["started", "YES"],
+      ["implementationComplete", "YES"], ["accepted", "YES"], ["currentProductSlice", "IMP-031"],
+      ["acceptedThrough", "IMP-030"], ["pendingAcceptance", "IMP-030"], ["imp031", "ACTIVATED"],
+      ["d373Exists", true], ["artifact", false],
+    ]) {
+      assert.equal(evaluateImp030ArchitectureLockCheckpoint({ ...lock, [key]: value }).ok, false, key);
+    }
   });
 });
 
