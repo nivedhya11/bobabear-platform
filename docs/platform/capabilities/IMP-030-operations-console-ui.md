@@ -5,8 +5,8 @@
   "capability": "IMP-030",
   "title": "Operations Console UI",
   "architectureLock": "ARCHITECTURE_LOCKED",
-  "implementation": "NOT_AUTHORIZED / NOT_STARTED",
-  "implementationAuthorized": false,
+  "implementation": "AUTHORIZED / NOT_STARTED",
+  "implementationAuthorized": true,
   "lastReviewed": "2026-08-26",
   "bindingDecisions": ["D-372"],
   "dependsOn": ["IMP-029"]
@@ -25,8 +25,8 @@ this UI owns presentation and interaction only.
 | Field | Value |
 |---|---|
 | Architecture lock | `ARCHITECTURE_LOCKED` |
-| Implementation | `NOT_AUTHORIZED` / `NOT_STARTED` |
-| Implementation authorized | **NO** |
+| Implementation | `AUTHORIZED` / `NOT_STARTED` |
+| Implementation authorized | **YES** |
 | Depends on | IMP-029 — Operations Console API |
 | Binding decision | D-372 — CURRENT |
 
@@ -142,6 +142,14 @@ Deferred: polling/realtime, custom sorting, reverse pagination, customer list su
 delivery provider detail/tracking, new Operations actions, refund, financial/statutory documents,
 generic audit, delivery/notification/administration management, new lifecycle states, and new public
 Operations routes.
+
+```text
+IMP-030_IMPLEMENTATION_AUTHORIZED: YES
+IMP-030_STARTED: NO
+IMP-030_IMPLEMENTATION_COMPLETE: NO
+IMP-030_ACCEPTED: NO
+AUTHORIZATION IS NOT IMPLEMENTATION START: YES
+```
 
 ```text
 DEDICATED WORKFORCE-BUSINESS TRANSPORT: PRESERVED

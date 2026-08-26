@@ -2,7 +2,7 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R65",
+  "stateVersion": "STATE-R66",
   "acceptedThrough": "IMP-029",
   "currentProductSlice": "IMP-030",
   "nextProductSlice": "IMP-031",
@@ -32,16 +32,16 @@ Current Product Implementation: IMP-030 — Operations Console UI
 Pending Acceptance:             NONE
 Next Product Slice:             IMP-031 — Provider-Neutral Delivery Foundation
 Current Governance Activity:    IMP-030 capability architecture LOCKED;
-                              implementation NOT_AUTHORIZED / NOT_STARTED.
+                              implementation AUTHORIZED / NOT_STARTED.
 Governance Health:              ALIGNED
 ```
 
 ```text
-IMP-030: ARCHITECTURE_LOCKED
+IMP-030: IMPLEMENTATION_AUTHORIZED
 IMP-030_ARCHITECTURE: LOCKED
 IMP-030_ARCHITECTURE_LOCKED: YES
-IMP-030_IMPLEMENTATION: NOT_AUTHORIZED / NOT_STARTED
-IMP-030_IMPLEMENTATION_AUTHORIZED: NO
+IMP-030_IMPLEMENTATION: AUTHORIZED / NOT_STARTED
+IMP-030_IMPLEMENTATION_AUTHORIZED: YES
 IMP-030_STARTED: NO
 IMP-030_IMPLEMENTATION_COMPLETE: NO
 IMP-030_ACCEPTED: NO
@@ -227,6 +227,19 @@ independent acceptance without changing decision register or global architecture
 STATE-R36 record IMP-028B canonical activation without changing decision register or global
 architecture. GTM-R39 / STATE-R37 record IMP-028B architecture lock and implementation
 authorization without changing decision register or global architecture.
+
+STATE-R66 records explicit implementation authorization for **IMP-030 — Operations Console UI**
+under the locked capability architecture at
+[`capabilities/IMP-030-operations-console-ui.md`](./capabilities/IMP-030-operations-console-ui.md).
+IMP-030 is `IMPLEMENTATION_AUTHORIZED`; architecture remains `LOCKED`; implementation is
+`AUTHORIZED` / `NOT_STARTED` (`IMP-030_ARCHITECTURE_LOCKED: YES`;
+`IMP-030_IMPLEMENTATION_AUTHORIZED: YES`; `IMP-030_STARTED: NO`;
+`IMP-030_IMPLEMENTATION_COMPLETE: NO`; `IMP-030_ACCEPTED: NO`). This is authorization only;
+implementation is not started. `acceptedThrough` remains IMP-029; `pendingAcceptance` remains NONE;
+`currentProductSlice` remains IMP-030; and `nextProductSlice` remains IMP-031, `PLANNED` /
+`NOT_ACTIVATED`. D-372 remains CURRENT; ARCH-R17 and DR-14 remain unchanged; D-373 is absent. No
+product, runtime, schema, migration, or deployment mutation is introduced. Supersedes STATE-R65 for
+the current product-slice position.
 
 STATE-R65 locks the capability architecture for **IMP-030 — Operations Console UI** at
 [`capabilities/IMP-030-operations-console-ui.md`](./capabilities/IMP-030-operations-console-ui.md).

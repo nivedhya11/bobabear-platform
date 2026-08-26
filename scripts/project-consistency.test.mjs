@@ -5,8 +5,11 @@ import {
   FORMAL_LEDGER_IMP_ID_RE,
   LEDGER_ROW_IMP_RE,
   evaluateCapabilityLifecycle,
+  evaluateImp030ArchitectureActivationCheckpoint,
   evaluateImp030ArchitectureLockCheckpoint,
   evaluateImp030ArchitectureLockDocuments,
+  evaluateImp030ImplementationAuthorizationCheckpoint,
+  evaluateImp030ImplementationAuthorizationDocuments,
   evaluateLifecycleAuthorityAlignment,
   evaluatePendingAcceptanceSplit,
   isAllowedGovernanceVersion,
@@ -1332,12 +1335,32 @@ describe("IMP-030 architecture lock checkpoint", () => {
     d373Exists: false, artifact: true,
   });
 
-  it("preserves the R66/S64 activation checkpoint and supports R67/S65 only", () => {
-    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R66", "STATE-R64"), true);
-    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R67", "STATE-R65"), true);
-    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R68", "STATE-R66"), false);
-    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R68", "STATE-R65"), false);
+  const activation = Object.freeze({
+    ...lock,
+    roadmapVersion: "GTM-R66", stateVersion: "STATE-R64",
+    imp030: "ARCHITECTURE_IN_PROGRESS", architecture: "NOT_LOCKED", architectureLocked: "NO",
+    d372Current: true, d373Exists: false, artifact: false,
+  });
+
+  it("preserves the R66/S64 activation checkpoint and supports R67/S65 lock only", () => {
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R66", "STATE-R64", "activation"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R67", "STATE-R65", "lock"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R68", "STATE-R66", "authorization"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R68", "STATE-R66"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R69", "STATE-R67"), false);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R69", "STATE-R66"), false);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R68", "STATE-R67"), false);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R67", "STATE-R66"), false);
+  });
+
+  it("accepts only the R66/S64 architecture-activation checkpoint", () => {
+    assert.deepEqual(evaluateImp030ArchitectureActivationCheckpoint(activation), { ok: true });
+    for (const [key, value] of [
+      ["architectureLocked", "YES"], ["implementationAuthorized", "YES"], ["started", "YES"],
+      ["imp030", "ARCHITECTURE_LOCKED"], ["imp031", "ACTIVATED"], ["d373Exists", true],
+    ]) {
+      assert.equal(evaluateImp030ArchitectureActivationCheckpoint({ ...activation, [key]: value }).ok, false, key);
+    }
   });
 
   it("accepts only the architecture-locked, implementation-unstarted IMP-030 checkpoint", () => {
@@ -1356,6 +1379,7 @@ describe("IMP-030 architecture lock checkpoint", () => {
   const stateText = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
   const decisionText = readFileSync(new URL("../docs/platform/decision-register.md", import.meta.url), "utf8");
   const architectureText = readFileSync(new URL("../docs/platform/ARCHITECTURE.md", import.meta.url), "utf8");
+  const capabilityText = readFileSync(new URL("../docs/platform/capabilities/IMP-030-operations-console-ui.md", import.meta.url), "utf8");
   const currentSectionEnd = "## 3.";
 
   function replaceCurrentFact(text, key, value) {
@@ -1369,10 +1393,51 @@ describe("IMP-030 architecture lock checkpoint", () => {
     return `${text.slice(0, start)}${updated}${text.slice(end)}`;
   }
 
+  function applyLifecycleFacts(text, facts) {
+    let updated = text;
+    for (const [key, value] of facts) {
+      const start = updated.indexOf("## 2.");
+      const end = updated.indexOf(currentSectionEnd, start);
+      assert.notEqual(start, -1);
+      assert.notEqual(end, -1);
+      const current = updated.slice(start, end);
+      updated = `${updated.slice(0, start)}${current.replace(new RegExp(`^${key}:.*$`, "m"), `${key}: ${value}`)}${updated.slice(end)}`;
+    }
+    return updated;
+  }
+
+  const lockRoadmapText = applyLifecycleFacts(
+    roadmapText.replace(/"roadmapVersion": "GTM-R68"/, '"roadmapVersion": "GTM-R67"')
+      .replace("| IMP-030 | Operations Console UI | IMPLEMENTATION_AUTHORIZED |", "| IMP-030 | Operations Console UI | ARCHITECTURE_LOCKED |"),
+    [
+      ["IMP-030", "ARCHITECTURE_LOCKED"],
+      ["IMP-030_ARCHITECTURE", "LOCKED"],
+      ["IMP-030_ARCHITECTURE_LOCKED", "YES"],
+      ["IMP-030_IMPLEMENTATION", "NOT_AUTHORIZED / NOT_STARTED"],
+      ["IMP-030_IMPLEMENTATION_AUTHORIZED", "NO"],
+      ["IMP-030_STARTED", "NO"],
+      ["IMP-030_IMPLEMENTATION_COMPLETE", "NO"],
+      ["IMP-030_ACCEPTED", "NO"],
+    ],
+  );
+  const lockStateText = applyLifecycleFacts(
+    stateText.replace(/"stateVersion": "STATE-R66"/, '"stateVersion": "STATE-R65"'),
+    [
+      ["IMP-030", "ARCHITECTURE_LOCKED"],
+      ["IMP-030_ARCHITECTURE", "LOCKED"],
+      ["IMP-030_ARCHITECTURE_LOCKED", "YES"],
+      ["IMP-030_IMPLEMENTATION", "NOT_AUTHORIZED / NOT_STARTED"],
+      ["IMP-030_IMPLEMENTATION_AUTHORIZED", "NO"],
+      ["IMP-030_STARTED", "NO"],
+      ["IMP-030_IMPLEMENTATION_COMPLETE", "NO"],
+      ["IMP-030_ACCEPTED", "NO"],
+    ],
+  );
+
   function currentDocuments(overrides = {}) {
     return {
       roadmap: {
-        text: overrides.roadmapText ?? roadmapText,
+        text: overrides.roadmapText ?? lockRoadmapText,
         meta: {
           roadmapVersion: overrides.roadmapVersion ?? "GTM-R67",
           acceptedThrough: overrides.acceptedThrough ?? "IMP-029",
@@ -1382,7 +1447,7 @@ describe("IMP-030 architecture lock checkpoint", () => {
         },
       },
       state: {
-        text: overrides.stateText ?? stateText,
+        text: overrides.stateText ?? lockStateText,
         meta: {
           stateVersion: overrides.stateVersion ?? "STATE-R65",
           acceptedThrough: overrides.acceptedThrough ?? "IMP-029",
@@ -1405,10 +1470,10 @@ describe("IMP-030 architecture lock checkpoint", () => {
       ["IMP-030_IMPLEMENTATION_COMPLETE", "YES"], ["IMP-030_ACCEPTED", "YES"],
       ["IMP-030_IMPLEMENTATION", "AUTHORIZED / NOT_STARTED"], ["IMP-031", "ACTIVATED"],
     ]) {
-      const source = key === "IMP-031" ? roadmapText : stateText;
+      const source = key === "IMP-031" ? lockRoadmapText : lockStateText;
       const fixture = replaceCurrentFact(source, key, value);
       assert.match(fixture, new RegExp(`${key}: ${value}`));
-      assert.match(stateText, /IMP-030_IMPLEMENTATION_AUTHORIZED: NO/);
+      assert.match(lockStateText, /IMP-030_IMPLEMENTATION_AUTHORIZED: NO/);
       assert.equal(evaluateImp030ArchitectureLockDocuments(currentDocuments(key === "IMP-031" ? { roadmapText: fixture } : { stateText: fixture })).ok, false, key);
     }
   });
@@ -1420,6 +1485,140 @@ describe("IMP-030 architecture lock checkpoint", () => {
       { decisionText: `${decisionText}\n| D-373 | created | CURRENT |` }, { artifact: false },
     ]) {
       assert.equal(evaluateImp030ArchitectureLockDocuments(currentDocuments(overrides)).ok, false);
+    }
+  });
+
+  it("rejects premature IMPLEMENTATION_AUTHORIZED at the R67/S65 lock checkpoint", () => {
+    assert.equal(
+      evaluateImp030ArchitectureLockCheckpoint({ ...lock, imp030: "IMPLEMENTATION_AUTHORIZED", implementationAuthorized: "YES" }).ok,
+      false,
+    );
+  });
+});
+
+describe("IMP-030 implementation authorization checkpoint", () => {
+  const authorization = Object.freeze({
+    roadmapVersion: "GTM-R68", stateVersion: "STATE-R66", acceptedThrough: "IMP-029",
+    currentProductSlice: "IMP-030", nextProductSlice: "IMP-031", pendingAcceptance: "NONE",
+    imp029: "COMPLETE_AND_ACCEPTED", imp030: "IMPLEMENTATION_AUTHORIZED", architecture: "LOCKED",
+    architectureLocked: "YES", implementationAuthorized: "YES", started: "NO",
+    implementationComplete: "NO", accepted: "NO", imp031: "PLANNED",
+    architectureVersion: "ARCH-R17", decisionRegisterVersion: "DR-14", d372Current: true,
+    d373Exists: false, artifact: true,
+  });
+
+  const roadmapText = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
+  const stateText = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
+  const decisionText = readFileSync(new URL("../docs/platform/decision-register.md", import.meta.url), "utf8");
+  const architectureText = readFileSync(new URL("../docs/platform/ARCHITECTURE.md", import.meta.url), "utf8");
+  const capabilityText = readFileSync(new URL("../docs/platform/capabilities/IMP-030-operations-console-ui.md", import.meta.url), "utf8");
+  const currentSectionEnd = "## 3.";
+
+  function replaceCurrentFact(text, key, value) {
+    const start = text.indexOf("## 2.");
+    const end = text.indexOf(currentSectionEnd, start);
+    assert.notEqual(start, -1);
+    assert.notEqual(end, -1);
+    const current = text.slice(start, end);
+    const updated = current.replace(new RegExp(`^${key}:.*$`, "m"), `${key}: ${value}`);
+    assert.notEqual(updated, current, `current ${key} must exist`);
+    return `${text.slice(0, start)}${updated}${text.slice(end)}`;
+  }
+
+  function authorizationDocuments(overrides = {}) {
+    return {
+      roadmap: {
+        text: overrides.roadmapText ?? roadmapText,
+        meta: {
+          roadmapVersion: overrides.roadmapVersion ?? "GTM-R68",
+          acceptedThrough: overrides.acceptedThrough ?? "IMP-029",
+          currentProductSlice: overrides.currentProductSlice ?? "IMP-030",
+          nextProductSlice: overrides.nextProductSlice ?? "IMP-031",
+          pendingAcceptance: overrides.pendingAcceptance ?? "NONE",
+        },
+      },
+      state: {
+        text: overrides.stateText ?? stateText,
+        meta: {
+          stateVersion: overrides.stateVersion ?? "STATE-R66",
+          acceptedThrough: overrides.acceptedThrough ?? "IMP-029",
+          currentProductSlice: overrides.currentProductSlice ?? "IMP-030",
+          nextProductSlice: overrides.nextProductSlice ?? "IMP-031",
+          pendingAcceptance: overrides.pendingAcceptance ?? "NONE",
+        },
+      },
+      architecture: { meta: { architectureVersion: "ARCH-R17" }, text: architectureText },
+      decision: { meta: { decisionRegisterVersion: "DR-14" }, text: overrides.decisionText ?? decisionText },
+      artifact: overrides.artifact ?? true,
+      artifactText: overrides.artifactText ?? capabilityText,
+    };
+  }
+
+  it("accepts only the R68/S66 implementation-authorized / not-started checkpoint", () => {
+    assert.deepEqual(evaluateImp030ImplementationAuthorizationCheckpoint(authorization), { ok: true });
+    assert.deepEqual(evaluateImp030ImplementationAuthorizationDocuments(authorizationDocuments()), { ok: true });
+    const artifactMeta = capabilityText.match(/"implementation":\s*"AUTHORIZED \/ NOT_STARTED"/);
+    assert.ok(artifactMeta);
+    assert.match(capabilityText, /"implementationAuthorized":\s*true/);
+  });
+
+  it("passes when current authorization YES coexists with historical architecture-lock NO", () => {
+    assert.match(roadmapText, /IMP-030_IMPLEMENTATION_AUTHORIZED: YES/);
+    assert.match(roadmapText, /GTM-R67[\s\S]*IMP-030 implementation remains `NOT_AUTHORIZED`/);
+    assert.deepEqual(evaluateImp030ImplementationAuthorizationDocuments(authorizationDocuments()), { ok: true });
+  });
+
+  it("rejects current authorization NO even when historical authorization YES appears elsewhere", () => {
+    const fixture = replaceCurrentFact(stateText, "IMP-030_IMPLEMENTATION_AUTHORIZED", "NO");
+    assert.match(roadmapText, /IMP-030_IMPLEMENTATION_AUTHORIZED: YES/);
+    assert.equal(evaluateImp030ImplementationAuthorizationDocuments(authorizationDocuments({ stateText: fixture })).ok, false);
+  });
+
+  for (const [field, rejectValue, passValue] of [
+    ["IMP-030_STARTED", "YES", "NO"],
+    ["IMP-030_IMPLEMENTATION_COMPLETE", "YES", "NO"],
+    ["IMP-030_ACCEPTED", "YES", "NO"],
+  ]) {
+    it(`rejects current ${field}:${rejectValue} with historical ${field}:${passValue}`, () => {
+      const fixture = replaceCurrentFact(stateText, field, rejectValue);
+      assert.match(roadmapText, new RegExp(`${field}: ${passValue}`));
+      assert.equal(evaluateImp030ImplementationAuthorizationDocuments(authorizationDocuments({ stateText: fixture })).ok, false, field);
+    });
+  }
+
+  it("rejects future governance frontiers independently", () => {
+    for (const [roadmapVersion, stateVersion] of [
+      ["GTM-R69", "STATE-R67"],
+      ["GTM-R69", "STATE-R66"],
+      ["GTM-R68", "STATE-R67"],
+    ]) {
+      assert.equal(isSupportedImp030GovernanceCheckpoint(roadmapVersion, stateVersion), false, `${roadmapVersion}/${stateVersion}`);
+    }
+  });
+
+  it("rejects adversarial R68/S66 lifecycle and artifact mutations independently", () => {
+    for (const [key, value] of [
+      ["imp030", "ARCHITECTURE_LOCKED"], ["architecture", "NOT_LOCKED"], ["architectureLocked", "NO"],
+      ["implementationAuthorized", "NO"], ["started", "YES"], ["implementationComplete", "YES"],
+      ["accepted", "YES"], ["acceptedThrough", "IMP-030"], ["currentProductSlice", "IMP-031"],
+      ["nextProductSlice", "IMP-032"], ["pendingAcceptance", "IMP-030"], ["imp031", "ACTIVATED"],
+      ["d373Exists", true], ["artifact", false],
+    ]) {
+      assert.equal(evaluateImp030ImplementationAuthorizationCheckpoint({ ...authorization, [key]: value }).ok, false, key);
+    }
+    for (const overrides of [
+      { roadmapText: replaceCurrentFact(roadmapText, "IMP-030", "ARCHITECTURE_LOCKED") },
+      { roadmapText: replaceCurrentFact(roadmapText, "IMP-030_IMPLEMENTATION", "NOT_AUTHORIZED / NOT_STARTED") },
+      { stateText: replaceCurrentFact(stateText, "IMP-030_ARCHITECTURE_LOCKED", "NO") },
+      { stateText: replaceCurrentFact(stateText, "IMP-030_IMPLEMENTATION_AUTHORIZED", "NO") },
+      { artifactText: capabilityText.replace(/"implementationAuthorized":\s*true/, '"implementationAuthorized": false') },
+      { artifactText: capabilityText.replace(/"implementation":\s*"AUTHORIZED \/ NOT_STARTED"/, '"implementation": "NOT_AUTHORIZED / NOT_STARTED"') },
+      { artifactText: capabilityText.replace(/"bindingDecisions":\s*\["D-372"\]/, '"bindingDecisions": []') },
+      { artifactText: capabilityText.replace(/"bindingDecisions":\s*\["D-372"\]/, '"bindingDecisions": ["D-372", "D-373"]') },
+      { artifactText: capabilityText.replace(/"dependsOn":\s*\["IMP-029"\]/, '"dependsOn": []') },
+      { artifact: false },
+    ]) {
+      assert.equal(evaluateImp030ImplementationAuthorizationDocuments(authorizationDocuments(overrides)).ok, false);
     }
   });
 });
