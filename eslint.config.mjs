@@ -62,6 +62,9 @@ const eslintConfig = defineConfig([
       // is the E2E-only fake Payment entry (same process-env boundary).
       "src/server/customer-commerce/main.ts",
       "src/server/customer-commerce/e2e-fake-main.ts",
+      // The Operations HTTP service (IMP-029) is likewise a standalone
+      // Node process; only this executable entry may read process.env.
+      "src/server/operations/main.ts",
       "**/*.test.{ts,tsx}",
       // Pre-existing, out-of-scope legacy usage (NEXT_PUBLIC_SITE_URL /
       // NEXT_PUBLIC_GA_MEASUREMENT_ID) that predates IMP-003 and is wired

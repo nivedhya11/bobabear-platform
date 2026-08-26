@@ -34,6 +34,12 @@ export type OperationsRouteDependencies = Readonly<{
   trustedOrigin: string;
 }>;
 
+export type OperationsRouteOutcome = Readonly<{
+  operation: string;
+  safeOutcomeCode: string;
+  httpStatus: number;
+}>;
+
 type OperationsRoute =
   | Readonly<{ kind: "collection" }>
   | Readonly<{ kind: "detail"; orderId: string }>
@@ -81,19 +87,47 @@ export async function routeOperationsRequest(
   res: ServerResponse,
   deps: OperationsRouteDependencies,
   requestId: string,
-): Promise<void> {
+): Promise<OperationsRouteOutcome> {
   const method = (req.method ?? "GET").toUpperCase();
   const url = parseUrl(req);
+
+  if (url.pathname === "/health/live") {
+    if (method !== "GET") {
+      sendMethodNotAllowed(res, requestId, "GET");
+      return { operation: "health_live", safeOutcomeCode: "METHOD_NOT_ALLOWED", httpStatus: 405 };
+    }
+    sendJson(res, { ok: true }, { status: 200, requestId });
+    return { operation: "health_live", safeOutcomeCode: "OK", httpStatus: 200 };
+  }
+  if (url.pathname === "/health/ready") {
+    if (method !== "GET") {
+      sendMethodNotAllowed(res, requestId, "GET");
+      return { operation: "health_ready", safeOutcomeCode: "METHOD_NOT_ALLOWED", httpStatus: 405 };
+    }
+    try {
+      const availability = await deps.persistence.checkAvailability();
+      if (!availability.ok) {
+        sendJson(res, { ok: false }, { status: 503, requestId });
+        return { operation: "health_ready", safeOutcomeCode: "INTERNAL_ERROR", httpStatus: 503 };
+      }
+      sendJson(res, { ok: true }, { status: 200, requestId });
+      return { operation: "health_ready", safeOutcomeCode: "OK", httpStatus: 200 };
+    } catch {
+      sendJson(res, { ok: false }, { status: 503, requestId });
+      return { operation: "health_ready", safeOutcomeCode: "INTERNAL_ERROR", httpStatus: 503 };
+    }
+  }
   const route = classifyRoute(url.pathname);
 
   if (!route) {
     sendNotFound(res, requestId);
-    return;
+    return { operation: "unknown", safeOutcomeCode: "NOT_FOUND", httpStatus: 404 };
   }
+  const operation = route.kind === "collection" ? "list_orders" : route.kind === "detail" ? "get_order" : `${route.kind}_order`;
   const allowedMethod = isMutationRoute(route) ? "POST" : "GET";
   if (method !== allowedMethod) {
     sendMethodNotAllowed(res, requestId, allowedMethod);
-    return;
+    return { operation, safeOutcomeCode: "METHOD_NOT_ALLOWED", httpStatus: 405 };
   }
 
   try {
@@ -103,7 +137,7 @@ export async function routeOperationsRequest(
       }
       if (!checkTrustedOrigin(req.headers, deps.trustedOrigin).ok) {
         sendJson(res, { ok: false, code: "ORDER_REQUEST_INVALID", requestId }, { status: 403, requestId });
-        return;
+        return { operation, safeOutcomeCode: "ORDER_REQUEST_INVALID", httpStatus: 403 };
       }
     }
     const principal = await resolveOperationsWorkforcePrincipal(
@@ -121,19 +155,19 @@ export async function routeOperationsRequest(
         { ok: true, items: result.items, nextCursor: result.nextCursor },
         { status: 200, requestId },
       );
-      return;
+      return { operation, safeOutcomeCode: "OK", httpStatus: 200 };
     }
 
     if (route.kind === "detail") {
       const order = await getWorkforceOrder(deps.persistence, principal, { orderId: route.orderId });
       sendJson(res, { ok: true, order }, { status: 200, requestId });
-      return;
+      return { operation, safeOutcomeCode: "OK", httpStatus: 200 };
     }
 
     const body = await readOperationsJsonObjectBody(req);
     if (!body.ok) {
       sendJson(res, { ok: false, code: "ORDER_REQUEST_INVALID", requestId }, { status: 400, requestId });
-      return;
+      return { operation, safeOutcomeCode: "ORDER_REQUEST_INVALID", httpStatus: 400 };
     }
     const result = route.kind === "accept"
       ? await acceptOrder(deps.persistence, principal, parseAcceptOrderInput(route.orderId, body.value))
@@ -141,8 +175,10 @@ export async function routeOperationsRequest(
         ? await fulfilOrder(deps.persistence, principal, parseFulfilOrderInput(route.orderId, body.value))
         : await cancelOrder(deps.persistence, principal, parseCancelOrderInput(route.orderId, body.value));
     sendJson(res, { ok: true, order: result }, { status: 200, requestId });
+    return { operation, safeOutcomeCode: "OK", httpStatus: 200 };
   } catch (error) {
     const mapped = mapOperationsError(error, requestId);
     sendJson(res, mapped.body, { status: mapped.status, requestId });
+    return { operation, safeOutcomeCode: mapped.body.code, httpStatus: mapped.status };
   }
 }

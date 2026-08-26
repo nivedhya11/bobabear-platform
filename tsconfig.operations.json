@@ -1,0 +1,18 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "noEmit": false,
+    "declaration": false,
+    "sourceMap": false,
+    "incremental": false,
+    "isolatedModules": true,
+    "outDir": "dist-operations",
+    "rootDir": "src",
+    "types": ["node"]
+  },
+  "include": ["src/server/operations/main.ts"],
+  "exclude": ["**/*.test.ts", "**/*.test.tsx"]
+}
