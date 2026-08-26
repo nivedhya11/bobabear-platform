@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R62",
-  "acceptedThrough": "IMP-028D",
-  "currentProductSlice": "IMP-029",
+  "stateVersion": "STATE-R63",
+  "acceptedThrough": "IMP-029",
+  "currentProductSlice": "NONE",
   "nextProductSlice": "IMP-030",
   "pendingAcceptance": "NONE",
   "governanceHealth": "ALIGNED",
-  "lastReviewed": "2026-08-24"
+  "lastReviewed": "2026-08-26"
 }
 -->
 
@@ -20,18 +20,18 @@ current-reality authority.
 ## 1. Accepted Position
 
 ```text
-Accepted Through:          IMP-028D — Desktop Ordering Continuity
+Accepted Through:          IMP-029 — Operations Console API
 Accepted Inserted Slice:   IMP-005A — Dockerized local application runtime; IMP-026C — Pilot Customer-Commerce UX Hardening; IMP-028A — Food Direct UX Foundation; IMP-028B — Customer Menu Projection + Discovery; IMP-028C — Food Customization; IMP-028D — Desktop Ordering Continuity
-Accepted Range:            IMP-001 → IMP-028D (including IMP-005A and IMP-026C)
+Accepted Range:            IMP-001 → IMP-029 (including IMP-005A and IMP-026C)
 ```
 
 ## 2. Current Work Position
 
 ```text
-Current Product Implementation: IMP-029 — Operations Console API
+Current Product Implementation: NONE
 Pending Acceptance:             NONE
 Next Product Slice:             IMP-030 — Operations Console UI
-Current Governance Activity:    IMP-029 architecture locked; implementation AUTHORIZED / STARTED / IMPLEMENTATION_IN_PROGRESS.
+Current Governance Activity:    IMP-029 COMPLETE_AND_ACCEPTED; no product slice is active.
 Governance Health:              ALIGNED
 ```
 
@@ -112,14 +112,21 @@ FOUNDER_UAT_CANDIDATE_REF: main
 FOUNDER_UAT_CANDIDATE_HEAD: 166aec4efd1c55a9e14ab7216a2b1af71fb3b2c7
 FOUNDER_UAT_CANDIDATE_TREE: eba5f3f7fc25b07581801b53a130fb9547abc459
 FOUNDER_UAT_EVIDENCE_SHA256: 715519d51801a10913a71a891af74c68aac1f493088adda43ecbc6a9c8bd5572
-IMP-029:                  IMPLEMENTATION_IN_PROGRESS
+IMP-029:                  COMPLETE_AND_ACCEPTED
 IMP-029_ARCHITECTURE:     LOCKED
 IMP-029_ARCHITECTURE_LOCKED: YES
-IMP-029_IMPLEMENTATION:   AUTHORIZED / STARTED
+IMP-029_IMPLEMENTATION:   AUTHORIZED / STARTED / COMPLETE
 IMP-029_IMPLEMENTATION_AUTHORIZED: YES
 IMP-029_STARTED:          YES
-IMP-029_IMPLEMENTATION_COMPLETE: NO
-IMP-029_ACCEPTED:         NO
+IMP-029_IMPLEMENTATION_COMPLETE: YES
+IMP-029_ACCEPTED:         YES
+IMP029_IMPLEMENTATION_EVIDENCE: COMPLETE
+IMP029_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
+IMP029_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
+IMP029_FORMAL_ACCEPTANCE: ACCEPTED
+IMP029_ACCEPTED_MAIN_SHA: 0490a393666a87f5f99cc6d90c99bef18d09c097
+IMP029_ACCEPTED_TREE:     4d376d296bd8596c4809fc91331659a2f52e53e6
+REMOTE_OPERATIONS_DEPLOYMENT_PROVEN: NO
 ```
 
 Capability architecture:
@@ -146,7 +153,7 @@ Capability architecture:
 
 [`capabilities/IMP-029-operations-console-api.md`](./capabilities/IMP-029-operations-console-api.md)
 
-`acceptedThrough` is IMP-028D. IMP-025 architecture remains locked; IMP-025 implementation is
+`acceptedThrough` is IMP-029. IMP-025 architecture remains locked; IMP-025 implementation is
 **COMPLETE_AND_ACCEPTED**. IMP-026 architecture is **ARCHITECTURE_LOCKED**. IMP-026 implementation
 is **COMPLETE_AND_ACCEPTED** (`IMP-026_ACCEPTED: YES`). Independent acceptance of IMP-026 is
 recorded, including provider-originated Razorpay Test Mode webhook proof over public HTTPS.
@@ -164,11 +171,12 @@ Refund architecture remains locked and accepted. GTM-R30 / STATE-R28 record IMP-
 binding **D-365** / **D-366** / **D-367**; capability artifact present). Formal acceptance of
 IMP-028 **is** claimed (`IMP-028_ACCEPTED: YES`; `IMP-028_IMPLEMENTATION_COMPLETE: YES`).
 GTM-R30 / STATE-R28 recorded `pendingAcceptance=NONE` immediately after that acceptance.
-IMP-029 is `IMPLEMENTATION_AUTHORIZED`; architecture is `LOCKED`; implementation is **authorized**
-and has not started (`IMP-029_IMPLEMENTATION_AUTHORIZED: YES`; `IMP-029_STARTED: NO`). Its locked
-capability architecture is [`capabilities/IMP-029-operations-console-api.md`](./capabilities/IMP-029-operations-console-api.md);
-binding decision **D-372** establishes a separate workforce business transport while retaining the
-existing workforce session/principal and Order authorities. GTM-R37 / STATE-R35 record
+IMP-029 is `COMPLETE_AND_ACCEPTED`; architecture remains `LOCKED`; implementation is **authorized**,
+**started**, and **complete** (`IMP-029_IMPLEMENTATION_AUTHORIZED: YES`; `IMP-029_STARTED: YES`;
+`IMP-029_IMPLEMENTATION_COMPLETE: YES`; `IMP-029_ACCEPTED: YES`). Its locked capability architecture
+is [`capabilities/IMP-029-operations-console-api.md`](./capabilities/IMP-029-operations-console-api.md);
+binding decision **D-372** remains CURRENT and establishes a separate workforce business transport
+while retaining the existing workforce session/principal and Order authorities. GTM-R37 / STATE-R35 record
 IMP-028A `COMPLETE_AND_ACCEPTED` (`IMP-028A_IMPLEMENTATION_AUTHORIZED: YES`;
 `IMP-028A_IMPLEMENTATION_STARTED: YES`; `IMP-028A_IMPLEMENTATION_COMPLETE: YES`;
 `IMP-028A_ACCEPTED: YES`; architecture `ARCHITECTURE_LOCKED`). At that historical acceptance,
@@ -205,6 +213,20 @@ independent acceptance without changing decision register or global architecture
 STATE-R36 record IMP-028B canonical activation without changing decision register or global
 architecture. GTM-R39 / STATE-R37 record IMP-028B architecture lock and implementation
 authorization without changing decision register or global architecture.
+
+STATE-R63 records formal acceptance of **IMP-029 — Operations Console API** for independently
+accepted `main` SHA `0490a393666a87f5f99cc6d90c99bef18d09c097` and tree
+`4d376d296bd8596c4809fc91331659a2f52e53e6`. Implementation evidence is **COMPLETE**;
+independent implementation review is **PASS**; independent acceptance evidence is **ACCEPTED**.
+IMP-029 is `COMPLETE_AND_ACCEPTED`; architecture remains `ARCHITECTURE_LOCKED`; implementation is
+`AUTHORIZED` / `STARTED` / `COMPLETE` (`IMP-029_ARCHITECTURE_LOCKED: YES`;
+`IMP-029_IMPLEMENTATION_AUTHORIZED: YES`; `IMP-029_STARTED: YES`;
+`IMP-029_IMPLEMENTATION_COMPLETE: YES`; `IMP-029_ACCEPTED: YES`). `acceptedThrough` advances to
+IMP-029; `currentProductSlice` and `pendingAcceptance` are NONE; `nextProductSlice` remains
+IMP-030, `PLANNED` / `NOT_STARTED` / `NOT_AUTHORIZED`. D-372 remains CURRENT; ARCH-R17 and DR-14
+remain unchanged. Remote Operations deployment is not proven or claimed. This reconciliation
+introduces no runtime, schema, migration, or deployment mutation. Supersedes STATE-R62 for the
+current IMP-029 lifecycle and acceptance position.
 
 STATE-R62 records **IMP-029 — Operations Console API** implementation **STARTED** under prior
 STATE-R61 authorization and its locked capability architecture. IMP-029 lifecycle is
@@ -580,13 +602,14 @@ Cart → Checkout → Payment → Order
 | IMP-028B | Customer Menu Projection + Discovery | COMPLETE_AND_ACCEPTED |
 | IMP-028C | Food Customization | COMPLETE_AND_ACCEPTED |
 | IMP-028D | Desktop Ordering Continuity | COMPLETE_AND_ACCEPTED |
+| IMP-029 | Operations Console API | COMPLETE_AND_ACCEPTED |
 
 ## 5. Acceptance Position
 
 ```text
-acceptedThrough: IMP-028D
+acceptedThrough: IMP-029
 pendingAcceptance: NONE
-currentProductSlice: IMP-029
+currentProductSlice: NONE
 nextProductSlice: IMP-030 — Operations Console UI
 FOUNDER_UAT: PASS
 FOUNDER_UAT_REQUIRED: YES
@@ -625,13 +648,20 @@ IMP-028D_IMPLEMENTATION_AUTHORIZED: YES
 IMP-028D_IMPLEMENTATION_STARTED: YES
 IMP-028D_IMPLEMENTATION_COMPLETE: YES
 IMP-028D_ACCEPTED: YES
-IMP-029: IMPLEMENTATION_IN_PROGRESS
+IMP-029: COMPLETE_AND_ACCEPTED
 IMP-029_ARCHITECTURE: LOCKED
-IMP-029_IMPLEMENTATION: AUTHORIZED / STARTED
+IMP-029_IMPLEMENTATION: AUTHORIZED / STARTED / COMPLETE
 IMP-029_IMPLEMENTATION_AUTHORIZED: YES
 IMP-029_STARTED: YES
-IMP-029_IMPLEMENTATION_COMPLETE: NO
-IMP-029_ACCEPTED: NO
+IMP-029_IMPLEMENTATION_COMPLETE: YES
+IMP-029_ACCEPTED: YES
+IMP029_IMPLEMENTATION_EVIDENCE: COMPLETE
+IMP029_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
+IMP029_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
+IMP029_FORMAL_ACCEPTANCE: ACCEPTED
+IMP029_ACCEPTED_MAIN_SHA: 0490a393666a87f5f99cc6d90c99bef18d09c097
+IMP029_ACCEPTED_TREE: 4d376d296bd8596c4809fc91331659a2f52e53e6
+REMOTE_OPERATIONS_DEPLOYMENT_PROVEN: NO
 TYPECHECK_STATUS: FAIL_PRE_EXISTING_UNRELATED
 CUSTOMER_ORDERING_E2E: BLOCKED_ENVIRONMENT
 CUSTOMER_ORDERING_ALTERNATIVE_REGRESSION_EVIDENCE_SUFFICIENT: YES
