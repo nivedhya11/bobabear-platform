@@ -1420,15 +1420,21 @@ function isImp030ImplementationAuthorizationCheckpoint(roadmap, state) {
   return isSupportedImp030GovernanceCheckpoint(roadmap?.meta.roadmapVersion, state?.meta.stateVersion, "authorization");
 }
 
-/** @param {string} roadmapVersion @param {string} stateVersion @param {"activation" | "lock" | "authorization"} [kind] */
+function isImp030ImplementationStartCheckpoint(roadmap, state) {
+  return isSupportedImp030GovernanceCheckpoint(roadmap?.meta.roadmapVersion, state?.meta.stateVersion, "start");
+}
+
+/** @param {string} roadmapVersion @param {string} stateVersion @param {"activation" | "lock" | "authorization" | "start"} [kind] */
 export function isSupportedImp030GovernanceCheckpoint(roadmapVersion, stateVersion, kind) {
   const activation = roadmapVersion === "GTM-R66" && stateVersion === "STATE-R64";
   const lock = roadmapVersion === "GTM-R67" && stateVersion === "STATE-R65";
   const authorization = roadmapVersion === "GTM-R68" && stateVersion === "STATE-R66";
+  const start = roadmapVersion === "GTM-R69" && stateVersion === "STATE-R67";
   if (kind === "activation") return activation;
   if (kind === "lock") return lock;
   if (kind === "authorization") return authorization;
-  return activation || lock || authorization;
+  if (kind === "start") return start;
+  return activation || lock || authorization || start;
 }
 
 function isImp030ArchitectureCheckpoint(roadmap, state) {
@@ -1439,12 +1445,17 @@ function isImp030GovernanceCheckpoint(roadmap, state) {
   return (
     isImp030ArchitectureActivationCheckpoint(roadmap, state) ||
     isImp030ArchitectureLockCheckpoint(roadmap, state) ||
-    isImp030ImplementationAuthorizationCheckpoint(roadmap, state)
+    isImp030ImplementationAuthorizationCheckpoint(roadmap, state) ||
+    isImp030ImplementationStartCheckpoint(roadmap, state)
   );
 }
 
 function isArchR17GovernanceCheckpoint(roadmap, state) {
-  return isImp029ArchitectureLockCheckpoint(roadmap, state) || isImp030ImplementationAuthorizationCheckpoint(roadmap, state);
+  return (
+    isImp029ArchitectureLockCheckpoint(roadmap, state) ||
+    isImp030ImplementationAuthorizationCheckpoint(roadmap, state) ||
+    isImp030ImplementationStartCheckpoint(roadmap, state)
+  );
 }
 
 /**
@@ -1498,6 +1509,28 @@ export function evaluateImp030ImplementationAuthorizationCheckpoint(checkpoint) 
   };
   for (const [key, value] of Object.entries(expected)) {
     if (checkpoint[key] !== value) return { ok: false, code: "IMP030_IMPLEMENTATION_AUTHORIZATION", message: `${key} must be ${value}` };
+  }
+  if (!checkpoint.d372Current) return { ok: false, code: "IMP030_D372", message: "D-372 must remain CURRENT" };
+  if (checkpoint.d373Exists) return { ok: false, code: "IMP030_D373", message: "D-373 must not be created" };
+  if (!checkpoint.artifact) return { ok: false, code: "IMP030_CAPABILITY_MISSING", message: "IMP-030 capability artifact must exist" };
+  return { ok: true };
+}
+
+/**
+ * Validate the exact IMP-030 implementation-start lifecycle facts.
+ * @param {Record<string, unknown>} checkpoint
+ */
+export function evaluateImp030ImplementationStartCheckpoint(checkpoint) {
+  const expected = {
+    roadmapVersion: "GTM-R69", stateVersion: "STATE-R67", acceptedThrough: "IMP-029",
+    currentProductSlice: "IMP-030", nextProductSlice: "IMP-031", pendingAcceptance: "NONE",
+    imp029: "COMPLETE_AND_ACCEPTED", imp030: "IMPLEMENTATION_IN_PROGRESS", architecture: "LOCKED",
+    architectureLocked: "YES", implementationAuthorized: "YES", started: "YES",
+    implementationComplete: "NO", accepted: "NO", imp031: "PLANNED",
+    architectureVersion: "ARCH-R17", decisionRegisterVersion: "DR-14",
+  };
+  for (const [key, value] of Object.entries(expected)) {
+    if (checkpoint[key] !== value) return { ok: false, code: "IMP030_IMPLEMENTATION_START", message: `${key} must be ${value}` };
   }
   if (!checkpoint.d372Current) return { ok: false, code: "IMP030_D372", message: "D-372 must remain CURRENT" };
   if (checkpoint.d373Exists) return { ok: false, code: "IMP030_D373", message: "D-373 must not be created" };
@@ -1639,6 +1672,70 @@ export function evaluateImp030ImplementationAuthorizationDocuments(documents) {
 
   const d372Row = documents.decision.text.split("\n").find((line) => /^\|\s*D-372\s*\|/.test(line));
   return evaluateImp030ImplementationAuthorizationCheckpoint({
+    roadmapVersion: documents.roadmap.meta.roadmapVersion, stateVersion: documents.state.meta.stateVersion,
+    acceptedThrough: documents.state.meta.acceptedThrough, currentProductSlice: documents.state.meta.currentProductSlice,
+    nextProductSlice: documents.state.meta.nextProductSlice, pendingAcceptance: documents.state.meta.pendingAcceptance,
+    imp029: /IMP-029:\s*COMPLETE_AND_ACCEPTED/.test(`${documents.roadmap.text}\n${documents.state.text}`) ? "COMPLETE_AND_ACCEPTED" : "",
+    imp030: stateLifecycle.facts["IMP-030"], architecture: stateLifecycle.facts["IMP-030_ARCHITECTURE"],
+    architectureLocked: stateLifecycle.facts["IMP-030_ARCHITECTURE_LOCKED"],
+    implementationAuthorized: stateLifecycle.facts["IMP-030_IMPLEMENTATION_AUTHORIZED"],
+    started: stateLifecycle.facts["IMP-030_STARTED"], implementationComplete: stateLifecycle.facts["IMP-030_IMPLEMENTATION_COMPLETE"],
+    accepted: stateLifecycle.facts["IMP-030_ACCEPTED"],
+    imp031: /^IMP-031:\s*PLANNED \/ NOT_ACTIVATED$/m.test(documents.roadmap.text.slice(documents.roadmap.text.indexOf("## 2."), documents.roadmap.text.indexOf("## 3."))) && /IMP-031\s*\|\s*Provider-Neutral Delivery Foundation\s*\|\s*PLANNED/.test(futureSection) ? "PLANNED" : "",
+    architectureVersion: documents.architecture.meta.architectureVersion, decisionRegisterVersion: documents.decision.meta.decisionRegisterVersion,
+    d372Current: Boolean(d372Row && /\|\s*CURRENT\s*\|/.test(d372Row)),
+    d373Exists: /\|\s*D-373\s*\|/.test(documents.decision.text), artifact: documents.artifact,
+  });
+}
+
+/**
+ * Validate the R69/S67 checkpoint from the current canonical document blocks.
+ * @param {{ roadmap: { text: string, meta: Record<string, string> }, state: { text: string, meta: Record<string, string> }, architecture: { meta: Record<string, string> }, decision: { text: string, meta: Record<string, string> }, artifact: boolean, artifactText?: string }} documents
+ */
+export function evaluateImp030ImplementationStartDocuments(documents) {
+  const roadmapLifecycle = extractCurrentImp030Lifecycle(documents.roadmap.text);
+  const stateLifecycle = extractCurrentImp030Lifecycle(documents.state.text);
+  if (!roadmapLifecycle.ok) return { ok: false, code: "IMP030_CURRENT_ROADMAP", message: roadmapLifecycle.message };
+  if (!stateLifecycle.ok) return { ok: false, code: "IMP030_CURRENT_STATE", message: stateLifecycle.message };
+
+  const expectedFacts = {
+    "IMP-030": "IMPLEMENTATION_IN_PROGRESS",
+    "IMP-030_ARCHITECTURE": "LOCKED",
+    "IMP-030_ARCHITECTURE_LOCKED": "YES",
+    "IMP-030_IMPLEMENTATION": "AUTHORIZED / STARTED",
+    "IMP-030_IMPLEMENTATION_AUTHORIZED": "YES",
+    "IMP-030_STARTED": "YES",
+    "IMP-030_IMPLEMENTATION_COMPLETE": "NO",
+    "IMP-030_ACCEPTED": "NO",
+  };
+  for (const [field, expected] of Object.entries(expectedFacts)) {
+    if (roadmapLifecycle.facts[field] !== expected || stateLifecycle.facts[field] !== expected) {
+      return { ok: false, code: "IMP030_CURRENT_LIFECYCLE", message: `${field} must be ${expected} in both current lifecycle blocks` };
+    }
+  }
+
+  const futureSection = documents.roadmap.text.split("## 5. Future GTM Slices")[1]?.split("## 6.")[0] || "";
+  const imp030Row = [...futureSection.split("\n")].find((line) => /^\|\s*IMP-030\s*\|/.test(line));
+  if (!imp030Row || !/Operations Console UI/.test(imp030Row) || !/IMPLEMENTATION_IN_PROGRESS/.test(imp030Row)) {
+    return { ok: false, code: "IMP030_ROADMAP_LIFECYCLE", message: "ROADMAP future ledger must list IMP-030 Operations Console UI as IMPLEMENTATION_IN_PROGRESS" };
+  }
+
+  const artifactText = documents.artifactText ?? "";
+  if (
+    documents.artifact &&
+    (
+      !/"architectureLock":\s*"ARCHITECTURE_LOCKED"/.test(artifactText) ||
+      !/"implementation":\s*"AUTHORIZED \/ STARTED"/.test(artifactText) ||
+      !/"implementationAuthorized":\s*true/.test(artifactText) ||
+      !/"bindingDecisions":\s*\["D-372"\]/.test(artifactText) ||
+      !/"dependsOn":\s*\["IMP-029"\]/.test(artifactText)
+    )
+  ) {
+    return { ok: false, code: "IMP030_CAPABILITY_START", message: "IMP-030 capability artifact must record authorized-started implementation" };
+  }
+
+  const d372Row = documents.decision.text.split("\n").find((line) => /^\|\s*D-372\s*\|/.test(line));
+  return evaluateImp030ImplementationStartCheckpoint({
     roadmapVersion: documents.roadmap.meta.roadmapVersion, stateVersion: documents.state.meta.stateVersion,
     acceptedThrough: documents.state.meta.acceptedThrough, currentProductSlice: documents.state.meta.currentProductSlice,
     nextProductSlice: documents.state.meta.nextProductSlice, pendingAcceptance: documents.state.meta.pendingAcceptance,
@@ -4065,6 +4162,33 @@ function checkImp030ImplementationAuthorization(roadmap, state, architecture, de
   else note(`IMP-030 implementation authorized (${artifactRel})`);
 }
 
+function checkImp030ImplementationStart(roadmap, state, architecture, decision) {
+  if (!isImp030ImplementationStartCheckpoint(roadmap, state)) return;
+
+  const artifactRel = "docs/platform/capabilities/IMP-030-operations-console-ui.md";
+  const artifact = resolveExactRelativeFile(artifactRel);
+  const artifactText = artifact ? readFileSync(artifact, "utf8") : "";
+  const artifactValid = artifact !== null &&
+    /"authority":\s*"CAPABILITY_ARCHITECTURE"/.test(artifactText) &&
+    /"capability":\s*"IMP-030"/.test(artifactText) &&
+    /"architectureLock":\s*"ARCHITECTURE_LOCKED"/.test(artifactText) &&
+    /"implementation":\s*"AUTHORIZED \/ STARTED"/.test(artifactText) &&
+    /"implementationAuthorized":\s*true/.test(artifactText) &&
+    /"bindingDecisions":\s*\["D-372"\]/.test(artifactText) &&
+    /"dependsOn":\s*\["IMP-029"\]/.test(artifactText) &&
+    !/"bindingDecisions":\s*\[[^\]]*D-373/.test(artifactText);
+  const checkpoint = evaluateImp030ImplementationStartDocuments({
+    roadmap,
+    state,
+    architecture,
+    decision,
+    artifact: artifactValid,
+    artifactText,
+  });
+  if (!checkpoint.ok) fail(checkpoint.code, checkpoint.message);
+  else note(`IMP-030 implementation started (${artifactRel})`);
+}
+
 function checkTechnicalInventory() {
   const journalPath = path.join(projectRoot, "drizzle/meta/_journal.json");
   if (!existsSync(journalPath)) {
@@ -4299,7 +4423,8 @@ export function runProjectConsistency() {
       (roadmapRevision >= 66 || stateRevision >= 64) &&
       !isImp030ArchitectureActivationCheckpoint(roadmap, state) &&
       !isImp030ArchitectureLockCheckpoint(roadmap, state) &&
-      !isImp030ImplementationAuthorizationCheckpoint(roadmap, state)
+      !isImp030ImplementationAuthorizationCheckpoint(roadmap, state) &&
+      !isImp030ImplementationStartCheckpoint(roadmap, state)
     ) {
       fail("UNSUPPORTED_GOVERNANCE_CHECKPOINT", "Governance revisions at or beyond GTM-R66 / STATE-R64 require an exact supported canonical checkpoint");
     }
@@ -4325,6 +4450,7 @@ export function runProjectConsistency() {
   checkImp029ArchitectureLock(roadmap, state, architecture, decision);
   checkImp030ArchitectureLock(roadmap, state, architecture, decision);
   checkImp030ImplementationAuthorization(roadmap, state, architecture, decision);
+  checkImp030ImplementationStart(roadmap, state, architecture, decision);
   checkTechnicalInventory();
   checkStaticWeb();
   checkAgentsPointer();
