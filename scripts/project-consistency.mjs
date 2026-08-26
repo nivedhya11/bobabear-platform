@@ -1395,14 +1395,23 @@ function isImp029ArchitectureLockCheckpoint(roadmap, state) {
     (roadmap?.meta.roadmapVersion === "GTM-R64" &&
       state?.meta.stateVersion === "STATE-R62") ||
     (roadmap?.meta.roadmapVersion === "GTM-R65" &&
-      state?.meta.stateVersion === "STATE-R63")
+      state?.meta.stateVersion === "STATE-R63") ||
+    isImp030ArchitectureActivationCheckpoint(roadmap, state)
   );
 }
 
 function isImp029AcceptanceCheckpoint(roadmap, state) {
   return (
-    roadmap?.meta.roadmapVersion === "GTM-R65" &&
-    state?.meta.stateVersion === "STATE-R63"
+    (roadmap?.meta.roadmapVersion === "GTM-R65" &&
+      state?.meta.stateVersion === "STATE-R63") ||
+    isImp030ArchitectureActivationCheckpoint(roadmap, state)
+  );
+}
+
+function isImp030ArchitectureActivationCheckpoint(roadmap, state) {
+  return (
+    roadmap?.meta.roadmapVersion === "GTM-R66" &&
+    state?.meta.stateVersion === "STATE-R64"
   );
 }
 
@@ -3558,6 +3567,7 @@ function checkImp029ArchitectureLock(roadmap, state, architecture, decision) {
   const started = isImp029ImplementationStartCheckpoint(roadmap, state) || accepted;
   const authorized =
     started || isImp029ImplementationAuthorizationCheckpoint(roadmap, state);
+  const imp030Activated = isImp030ArchitectureActivationCheckpoint(roadmap, state);
 
   const artifactRel = "docs/platform/capabilities/IMP-029-operations-console-api.md";
   const artifact = resolveExactRelativeFile(artifactRel);
@@ -3678,7 +3688,48 @@ function checkImp029ArchitectureLock(roadmap, state, architecture, decision) {
     } else if (!accepted && (!imp029Row || !/Operations Console API/.test(imp029Row) || !imp029Row.includes(expectedLifecycle))) {
       fail("IMP029_ROADMAP_LIFECYCLE", `ROADMAP future ledger must list IMP-029 Operations Console API as ${expectedLifecycle}`);
     }
-    if (!imp030Row || !/Operations Console UI/.test(imp030Row) || !/PLANNED/.test(imp030Row) ||
+    if (imp030Activated) {
+      const requiredImp030Tokens = [
+        [roadmap.text, /IMP-030:\s*ARCHITECTURE_IN_PROGRESS/, "ROADMAP must record IMP-030 architecture in progress"],
+        [roadmap.text, /IMP-030_ARCHITECTURE:\s*NOT_LOCKED/, "ROADMAP must record IMP-030 architecture not locked"],
+        [roadmap.text, /IMP-030_ARCHITECTURE_LOCKED:\s*NO/, "ROADMAP must record IMP-030 architecture lock NO"],
+        [roadmap.text, /IMP-030_IMPLEMENTATION_AUTHORIZED:\s*NO/, "ROADMAP must record IMP-030 implementation not authorized"],
+        [roadmap.text, /IMP-030_STARTED:\s*NO/, "ROADMAP must record IMP-030 not started"],
+        [roadmap.text, /IMP-030_IMPLEMENTATION_COMPLETE:\s*NO/, "ROADMAP must record IMP-030 incomplete"],
+        [roadmap.text, /IMP-030_ACCEPTED:\s*NO/, "ROADMAP must record IMP-030 unaccepted"],
+        [state.text, /IMP-030:\s*ARCHITECTURE_IN_PROGRESS/, "STATE must record IMP-030 architecture in progress"],
+        [state.text, /IMP-030_ARCHITECTURE:\s*NOT_LOCKED/, "STATE must record IMP-030 architecture not locked"],
+        [state.text, /IMP-030_ARCHITECTURE_LOCKED:\s*NO/, "STATE must record IMP-030 architecture lock NO"],
+        [state.text, /IMP-030_IMPLEMENTATION_AUTHORIZED:\s*NO/, "STATE must record IMP-030 implementation not authorized"],
+        [state.text, /IMP-030_STARTED:\s*NO/, "STATE must record IMP-030 not started"],
+        [state.text, /IMP-030_IMPLEMENTATION_COMPLETE:\s*NO/, "STATE must record IMP-030 incomplete"],
+        [state.text, /IMP-030_ACCEPTED:\s*NO/, "STATE must record IMP-030 unaccepted"],
+      ];
+      for (const [text, pattern, message] of requiredImp030Tokens) {
+        if (!pattern.test(text)) fail("IMP030_ARCHITECTURE_ACTIVATION", message);
+      }
+      const prematureImp030Patterns = [
+        /IMP-030_ARCHITECTURE_LOCKED:\s*YES/,
+        /IMP-030_IMPLEMENTATION_AUTHORIZED:\s*YES/,
+        /IMP-030_STARTED:\s*YES/,
+        /IMP-030_IMPLEMENTATION_COMPLETE:\s*YES/,
+        /IMP-030_ACCEPTED:\s*YES/,
+      ];
+      for (const text of [roadmap.text, state.text]) {
+        if (prematureImp030Patterns.some((pattern) => pattern.test(text))) {
+          fail("IMP030_PREMATURE_PROGRESSION", "IMP-030 must not progress beyond architecture activation");
+        }
+      }
+      if (!imp030Row || !/Operations Console UI/.test(imp030Row) || !/ARCHITECTURE_IN_PROGRESS/.test(imp030Row)) {
+        fail("IMP030_ROADMAP_LIFECYCLE", "ROADMAP future ledger must list IMP-030 Operations Console UI as ARCHITECTURE_IN_PROGRESS");
+      }
+      if (!/IMP-031\s*\|\s*Provider-Neutral Delivery Foundation\s*\|\s*PLANNED/.test(futureSection)) {
+        fail("IMP031_ROADMAP_NOT_PLANNED", "ROADMAP future ledger must keep IMP-031 Provider-Neutral Delivery Foundation PLANNED");
+      }
+      if (/\|\s*D-373\s*\|/.test(decision?.text ?? "")) {
+        fail("IMP030_D373_CREATED", "D-373 must not be created during IMP-030 architecture activation");
+      }
+    } else if (!imp030Row || !/Operations Console UI/.test(imp030Row) || !/PLANNED/.test(imp030Row) ||
       /IMP-030_(?:IMPLEMENTATION_AUTHORIZED|STARTED):\s*YES/.test(roadmap.text)) {
       fail("IMP030_ROADMAP_NOT_ACTIVATED", "ROADMAP future ledger must keep IMP-030 Operations Console UI PLANNED");
     }
@@ -3696,11 +3747,11 @@ function checkImp029ArchitectureLock(roadmap, state, architecture, decision) {
       fail("IMP029_STATE_LIFECYCLE", `STATE must record IMP-029 ${expectedLifecycle} with architecture LOCKED`);
     }
     if (
-      (accepted && (state.meta.acceptedThrough !== "IMP-029" || state.meta.currentProductSlice !== "NONE" || state.meta.pendingAcceptance !== "NONE" || state.meta.nextProductSlice !== "IMP-030")) ||
+      (accepted && (state.meta.acceptedThrough !== "IMP-029" || state.meta.currentProductSlice !== (imp030Activated ? "IMP-030" : "NONE") || state.meta.pendingAcceptance !== "NONE" || state.meta.nextProductSlice !== (imp030Activated ? "IMP-031" : "IMP-030"))) ||
       (!accepted && (state.meta.acceptedThrough !== "IMP-028D" || state.meta.pendingAcceptance !== "NONE"))
     ) {
       fail("IMP029_STATE_POSITION", accepted
-        ? "STATE must record acceptedThrough IMP-029, currentProductSlice NONE, nextProductSlice IMP-030, and pendingAcceptance NONE"
+        ? `STATE must record acceptedThrough IMP-029, currentProductSlice ${imp030Activated ? "IMP-030" : "NONE"}, nextProductSlice ${imp030Activated ? "IMP-031" : "IMP-030"}, and pendingAcceptance NONE`
         : "STATE must retain acceptedThrough IMP-028D and pendingAcceptance NONE");
     }
   }

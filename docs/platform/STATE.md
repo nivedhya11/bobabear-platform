@@ -2,10 +2,10 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R63",
+  "stateVersion": "STATE-R64",
   "acceptedThrough": "IMP-029",
-  "currentProductSlice": "NONE",
-  "nextProductSlice": "IMP-030",
+  "currentProductSlice": "IMP-030",
+  "nextProductSlice": "IMP-031",
   "pendingAcceptance": "NONE",
   "governanceHealth": "ALIGNED",
   "lastReviewed": "2026-08-26"
@@ -28,11 +28,24 @@ Accepted Range:            IMP-001 → IMP-029 (including IMP-005A and IMP-026C)
 ## 2. Current Work Position
 
 ```text
-Current Product Implementation: NONE
+Current Product Implementation: IMP-030 — Operations Console UI
 Pending Acceptance:             NONE
-Next Product Slice:             IMP-030 — Operations Console UI
-Current Governance Activity:    IMP-029 COMPLETE_AND_ACCEPTED; no product slice is active.
+Next Product Slice:             IMP-031 — Provider-Neutral Delivery Foundation
+Current Governance Activity:    IMP-030 architecture activation authorized by Founder;
+                              architecture NOT_LOCKED;
+                              implementation NOT_AUTHORIZED / NOT_STARTED.
 Governance Health:              ALIGNED
+```
+
+```text
+IMP-030: ARCHITECTURE_IN_PROGRESS
+IMP-030_ARCHITECTURE: NOT_LOCKED
+IMP-030_ARCHITECTURE_LOCKED: NO
+IMP-030_IMPLEMENTATION: NOT_AUTHORIZED / NOT_STARTED
+IMP-030_IMPLEMENTATION_AUTHORIZED: NO
+IMP-030_STARTED: NO
+IMP-030_IMPLEMENTATION_COMPLETE: NO
+IMP-030_ACCEPTED: NO
 ```
 
 ```text
@@ -213,6 +226,17 @@ independent acceptance without changing decision register or global architecture
 STATE-R36 record IMP-028B canonical activation without changing decision register or global
 architecture. GTM-R39 / STATE-R37 record IMP-028B architecture lock and implementation
 authorization without changing decision register or global architecture.
+
+STATE-R64 records explicit Founder authorization to activate **IMP-030 — Operations Console UI**
+for architecture work only. IMP-030 is `ARCHITECTURE_IN_PROGRESS`; architecture remains
+`NOT_LOCKED` and implementation remains `NOT_AUTHORIZED` / `NOT_STARTED`
+(`IMP-030_ARCHITECTURE_LOCKED: NO`; `IMP-030_IMPLEMENTATION_AUTHORIZED: NO`;
+`IMP-030_STARTED: NO`; `IMP-030_IMPLEMENTATION_COMPLETE: NO`; `IMP-030_ACCEPTED: NO`).
+`acceptedThrough` remains IMP-029; `pendingAcceptance` remains NONE; `currentProductSlice` becomes
+IMP-030; and `nextProductSlice` becomes IMP-031, which remains `PLANNED` / `NOT_ACTIVATED`. No
+capability architecture artifact, D-373, runtime, schema, migration, product, deployment,
+decision-register, or global-architecture change is introduced. ARCH-R17, DR-14, and D-372 remain
+unchanged. Supersedes STATE-R63 for the current product-slice position.
 
 STATE-R63 records formal acceptance of **IMP-029 — Operations Console API** for independently
 accepted `main` SHA `0490a393666a87f5f99cc6d90c99bef18d09c097` and tree
@@ -609,8 +633,8 @@ Cart → Checkout → Payment → Order
 ```text
 acceptedThrough: IMP-029
 pendingAcceptance: NONE
-currentProductSlice: NONE
-nextProductSlice: IMP-030 — Operations Console UI
+currentProductSlice: IMP-030
+nextProductSlice: IMP-031 — Provider-Neutral Delivery Foundation
 FOUNDER_UAT: PASS
 FOUNDER_UAT_REQUIRED: YES
 FOUNDER_UAT_COMPLETE: YES
@@ -666,6 +690,14 @@ TYPECHECK_STATUS: FAIL_PRE_EXISTING_UNRELATED
 CUSTOMER_ORDERING_E2E: BLOCKED_ENVIRONMENT
 CUSTOMER_ORDERING_ALTERNATIVE_REGRESSION_EVIDENCE_SUFFICIENT: YES
 RELEVANT_REGRESSION_TESTS: PASS_WITH_ENVIRONMENT_LIMITATION
+IMP-030: ARCHITECTURE_IN_PROGRESS
+IMP-030_ARCHITECTURE: NOT_LOCKED
+IMP-030_ARCHITECTURE_LOCKED: NO
+IMP-030_IMPLEMENTATION: NOT_AUTHORIZED / NOT_STARTED
+IMP-030_IMPLEMENTATION_AUTHORIZED: NO
+IMP-030_STARTED: NO
+IMP-030_IMPLEMENTATION_COMPLETE: NO
+IMP-030_ACCEPTED: NO
 ```
 
 Independent acceptance of IMP-028A **is** claimed and formally reconciled
