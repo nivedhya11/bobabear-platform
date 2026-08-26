@@ -1442,6 +1442,92 @@ export function evaluateImp030ArchitectureLockCheckpoint(checkpoint) {
   return { ok: true };
 }
 
+const IMP030_LIFECYCLE_FIELDS = [
+  "IMP-030",
+  "IMP-030_ARCHITECTURE",
+  "IMP-030_ARCHITECTURE_LOCKED",
+  "IMP-030_IMPLEMENTATION",
+  "IMP-030_IMPLEMENTATION_AUTHORIZED",
+  "IMP-030_STARTED",
+  "IMP-030_IMPLEMENTATION_COMPLETE",
+  "IMP-030_ACCEPTED",
+];
+
+/**
+ * Extract the one authoritative current IMP-030 lifecycle block, excluding
+ * changelog checkpoints that may legitimately contain earlier lifecycle facts.
+ * @param {string} text
+ * @returns {{ ok: true, facts: Record<string, string> } | { ok: false, message: string }}
+ */
+export function extractCurrentImp030Lifecycle(text) {
+  const currentStart = text.indexOf("## 2.");
+  const currentEnd = currentStart === -1 ? -1 : text.indexOf("## 3.", currentStart);
+  if (currentStart === -1 || currentEnd === -1) {
+    return { ok: false, message: "current position section is missing" };
+  }
+  const currentSection = text.slice(currentStart, currentEnd);
+  const blocks = [...currentSection.matchAll(/```text\n([\s\S]*?)```/g)]
+    .map((match) => match[1])
+    .filter((block) => /^IMP-030:\s*/m.test(block));
+  if (blocks.length !== 1) {
+    return { ok: false, message: "current IMP-030 lifecycle block must be present exactly once" };
+  }
+  const facts = {};
+  for (const field of IMP030_LIFECYCLE_FIELDS) {
+    const matches = [...blocks[0].matchAll(new RegExp(`^${field}:\\s*(.+)$`, "gm"))];
+    if (matches.length !== 1) {
+      return { ok: false, message: `current IMP-030 lifecycle field ${field} must be present exactly once` };
+    }
+    facts[field] = matches[0][1].trim();
+  }
+  return { ok: true, facts };
+}
+
+/**
+ * Validate the R67/S65 checkpoint from the current canonical document blocks.
+ * @param {{ roadmap: { text: string, meta: Record<string, string> }, state: { text: string, meta: Record<string, string> }, architecture: { meta: Record<string, string> }, decision: { text: string, meta: Record<string, string> }, artifact: boolean }} documents
+ */
+export function evaluateImp030ArchitectureLockDocuments(documents) {
+  const roadmapLifecycle = extractCurrentImp030Lifecycle(documents.roadmap.text);
+  const stateLifecycle = extractCurrentImp030Lifecycle(documents.state.text);
+  if (!roadmapLifecycle.ok) return { ok: false, code: "IMP030_CURRENT_ROADMAP", message: roadmapLifecycle.message };
+  if (!stateLifecycle.ok) return { ok: false, code: "IMP030_CURRENT_STATE", message: stateLifecycle.message };
+
+  const expectedFacts = {
+    "IMP-030": "ARCHITECTURE_LOCKED",
+    "IMP-030_ARCHITECTURE": "LOCKED",
+    "IMP-030_ARCHITECTURE_LOCKED": "YES",
+    "IMP-030_IMPLEMENTATION": "NOT_AUTHORIZED / NOT_STARTED",
+    "IMP-030_IMPLEMENTATION_AUTHORIZED": "NO",
+    "IMP-030_STARTED": "NO",
+    "IMP-030_IMPLEMENTATION_COMPLETE": "NO",
+    "IMP-030_ACCEPTED": "NO",
+  };
+  for (const [field, expected] of Object.entries(expectedFacts)) {
+    if (roadmapLifecycle.facts[field] !== expected || stateLifecycle.facts[field] !== expected) {
+      return { ok: false, code: "IMP030_CURRENT_LIFECYCLE", message: `${field} must be ${expected} in both current lifecycle blocks` };
+    }
+  }
+
+  const futureSection = documents.roadmap.text.split("## 5. Future GTM Slices")[1]?.split("## 6.")[0] || "";
+  const d372Row = documents.decision.text.split("\n").find((line) => /^\|\s*D-372\s*\|/.test(line));
+  return evaluateImp030ArchitectureLockCheckpoint({
+    roadmapVersion: documents.roadmap.meta.roadmapVersion, stateVersion: documents.state.meta.stateVersion,
+    acceptedThrough: documents.state.meta.acceptedThrough, currentProductSlice: documents.state.meta.currentProductSlice,
+    nextProductSlice: documents.state.meta.nextProductSlice, pendingAcceptance: documents.state.meta.pendingAcceptance,
+    imp029: /IMP-029:\s*COMPLETE_AND_ACCEPTED/.test(`${documents.roadmap.text}\n${documents.state.text}`) ? "COMPLETE_AND_ACCEPTED" : "",
+    imp030: stateLifecycle.facts["IMP-030"], architecture: stateLifecycle.facts["IMP-030_ARCHITECTURE"],
+    architectureLocked: stateLifecycle.facts["IMP-030_ARCHITECTURE_LOCKED"],
+    implementationAuthorized: stateLifecycle.facts["IMP-030_IMPLEMENTATION_AUTHORIZED"],
+    started: stateLifecycle.facts["IMP-030_STARTED"], implementationComplete: stateLifecycle.facts["IMP-030_IMPLEMENTATION_COMPLETE"],
+    accepted: stateLifecycle.facts["IMP-030_ACCEPTED"],
+    imp031: /^IMP-031:\s*PLANNED \/ NOT_ACTIVATED$/m.test(documents.roadmap.text.slice(documents.roadmap.text.indexOf("## 2."), documents.roadmap.text.indexOf("## 3."))) && /IMP-031\s*\|\s*Provider-Neutral Delivery Foundation\s*\|\s*PLANNED/.test(futureSection) ? "PLANNED" : "",
+    architectureVersion: documents.architecture.meta.architectureVersion, decisionRegisterVersion: documents.decision.meta.decisionRegisterVersion,
+    d372Current: Boolean(d372Row && /\|\s*CURRENT\s*\|/.test(d372Row)),
+    d373Exists: /\|\s*D-373\s*\|/.test(documents.decision.text), artifact: documents.artifact,
+  });
+}
+
 function isImp029ImplementationAuthorizationCheckpoint(roadmap, state) {
   return (
     roadmap?.meta.roadmapVersion === "GTM-R63" &&
@@ -3812,25 +3898,12 @@ function checkImp030ArchitectureLock(roadmap, state, architecture, decision) {
     /"implementationAuthorized":\s*false/.test(artifactText) &&
     /"bindingDecisions":\s*\["D-372"\]/.test(artifactText) &&
     /"dependsOn":\s*\["IMP-029"\]/.test(artifactText);
-  const blob = `${roadmap?.text}\n${state?.text}`;
-  const futureSection = roadmap?.text.split("## 5. Future GTM Slices")[1]?.split("## 6.")[0] || "";
-  const d372Row = [...(decision?.text ?? "").split("\n")].find((line) => /^\|\s*D-372\s*\|/.test(line));
-  const checkpoint = evaluateImp030ArchitectureLockCheckpoint({
-    roadmapVersion: roadmap?.meta.roadmapVersion, stateVersion: state?.meta.stateVersion,
-    acceptedThrough: state?.meta.acceptedThrough, currentProductSlice: state?.meta.currentProductSlice,
-    nextProductSlice: state?.meta.nextProductSlice, pendingAcceptance: state?.meta.pendingAcceptance,
-    imp029: /IMP-029:\s*COMPLETE_AND_ACCEPTED/.test(blob) ? "COMPLETE_AND_ACCEPTED" : "",
-    imp030: /IMP-030:\s*ARCHITECTURE_LOCKED/.test(blob) ? "ARCHITECTURE_LOCKED" : "",
-    architecture: /IMP-030_ARCHITECTURE:\s*LOCKED/.test(blob) ? "LOCKED" : "",
-    architectureLocked: /IMP-030_ARCHITECTURE_LOCKED:\s*YES/.test(blob) ? "YES" : "",
-    implementationAuthorized: /IMP-030_IMPLEMENTATION_AUTHORIZED:\s*NO/.test(blob) ? "NO" : "",
-    started: /IMP-030_STARTED:\s*NO/.test(blob) ? "NO" : "",
-    implementationComplete: /IMP-030_IMPLEMENTATION_COMPLETE:\s*NO/.test(blob) ? "NO" : "",
-    accepted: /IMP-030_ACCEPTED:\s*NO/.test(blob) ? "NO" : "",
-    imp031: /IMP-031\s*\|\s*Provider-Neutral Delivery Foundation\s*\|\s*PLANNED/.test(futureSection) ? "PLANNED" : "",
-    architectureVersion: architecture?.meta.architectureVersion, decisionRegisterVersion: decision?.meta.decisionRegisterVersion,
-    d372Current: Boolean(d372Row && /\|\s*CURRENT\s*\|/.test(d372Row)),
-    d373Exists: /\|\s*D-373\s*\|/.test(decision?.text ?? ""), artifact: artifactValid,
+  const checkpoint = evaluateImp030ArchitectureLockDocuments({
+    roadmap,
+    state,
+    architecture,
+    decision,
+    artifact: artifactValid,
   });
   if (!checkpoint.ok) fail(checkpoint.code, checkpoint.message);
   else note(`IMP-030 capability architecture locked (${artifactRel})`);
