@@ -20,6 +20,10 @@ import {
   checkDockerignoreExcludesSecrets,
   checkNoNewApiOrBusinessTable,
   checkNginxProxiesRazorpayWebhook,
+  checkOperationsDockerTargetExists,
+  checkOperationsServiceHasNoHostPort,
+  checkOperationsDoesNotDependOnWorkforceAuthService,
+  checkNginxProxiesOperations,
   runAllChecks,
 } from "./audit-docker-runtime.mjs";
 
@@ -47,6 +51,14 @@ FROM base AS customer-commerce-dependencies
 FROM base AS customer-commerce-runtime
 EXPOSE 8083
 CMD ["node", "--conditions=react-server", "dist-customer-commerce/server/customer-commerce/main.js"]
+FROM dependencies AS operations-builder
+RUN npm run operations:build
+FROM base AS operations-dependencies
+FROM base AS operations-runtime
+COPY --from=operations-builder --chown=node:node /app/dist-operations ./dist-operations
+USER node
+EXPOSE 8084
+CMD ["node", "--conditions=react-server", "dist-operations/server/operations/main.js"]
 FROM \${NGINX_IMAGE} AS web-runtime
 CMD ["nginx", "-g", "daemon off;"]
 `;
@@ -111,6 +123,23 @@ services:
       - no-new-privileges:true
     healthcheck:
       test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:8083/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+  operations:
+    image: boba-bear-operations:local
+    expose: ["8084"]
+    env_file:
+      - .env.runtime.docker.local
+      - .env.workforce-auth.docker.local
+      - .env.operations.docker.local
+    depends_on:
+      postgres:
+        condition: service_healthy
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:8084/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
   migrate:
     profiles: ["tools"]
     depends_on:
@@ -221,9 +250,54 @@ test("checkDockerignoreExcludesSecrets rejects a fixture missing a generated sec
 
 test("checkDockerignoreExcludesSecrets passes a fixture listing every required pattern", () => {
   const result = checkDockerignoreExcludesSecrets(
-    ".git\nnode_modules\n.env.*\n.env.docker.local\n.env.runtime.docker.local\n.env.migration.docker.local\n.env.customer-auth.docker.local\n.env.workforce-auth.docker.local\n.env.customer-commerce.docker.local\n",
+    ".git\nnode_modules\n.env.*\n.env.docker.local\n.env.runtime.docker.local\n.env.migration.docker.local\n.env.customer-auth.docker.local\n.env.workforce-auth.docker.local\n.env.customer-commerce.docker.local\n.env.operations.docker.local\ndist-operations\n",
   );
   assert.equal(result.passed, true);
+});
+
+test("checkOperationsDockerTargetExists requires non-root compiled 8084 runtime", () => {
+  assert.equal(checkOperationsDockerTargetExists(VALID_DOCKERFILE).passed, true);
+  assert.equal(
+    checkOperationsDockerTargetExists(VALID_DOCKERFILE.replace("USER node", "USER root")).passed,
+    false,
+  );
+});
+
+test("checkOperationsServiceHasNoHostPort rejects a ports: mapping", () => {
+  const compose = VALID_COMPOSE.replace(
+    '    expose: ["8084"]',
+    '    ports:\n      - "8084:8084"\n    expose: ["8084"]',
+  );
+  assert.equal(checkOperationsServiceHasNoHostPort(compose).passed, false);
+  assert.equal(checkOperationsServiceHasNoHostPort(VALID_COMPOSE).passed, true);
+});
+
+test("checkOperationsDoesNotDependOnWorkforceAuthService rejects a workforce-auth depends_on", () => {
+  const compose = VALID_COMPOSE.replace(
+    "  operations:\n    image: boba-bear-operations:local\n",
+    "  operations:\n    image: boba-bear-operations:local\n    depends_on:\n      workforce-auth:\n        condition: service_healthy\n",
+  );
+  assert.equal(checkOperationsDoesNotDependOnWorkforceAuthService(compose).passed, false);
+  assert.equal(checkOperationsDoesNotDependOnWorkforceAuthService(VALID_COMPOSE).passed, true);
+});
+
+test("checkNginxProxiesOperations requires exact path without Origin rewrite or health proxy", () => {
+  assert.equal(
+    checkNginxProxiesOperations(
+      "location ^~ /api/operations/v1/ { set $operations_upstream http://operations:8084; }",
+    ).passed,
+    true,
+  );
+  assert.equal(
+    checkNginxProxiesOperations(
+      "location ^~ /api/operations/v1/ { set $operations_upstream http://operations:8084; proxy_set_header Origin http://localhost:8080; }",
+    ).passed,
+    false,
+  );
+  assert.equal(
+    checkNginxProxiesOperations("location ^~ /api/v1/ { set $customer_commerce_upstream http://customer-commerce:8083; }").passed,
+    false,
+  );
 });
 
 test("checkCustomerAuthServiceHasNoHostPort rejects a ports: mapping", () => {
@@ -310,10 +384,10 @@ test("runAllChecks passes every check against a fully valid fixture set", () => 
       dockerfileText: VALID_DOCKERFILE,
       composeText: VALID_COMPOSE,
       nginxConfText:
-        "server {\n  listen 8080;\n  location = /api/integrations/payments/razorpay/webhook {\n    set $customer_commerce_upstream http://customer-commerce:8083;\n    proxy_pass $customer_commerce_upstream;\n  }\n  location ^~ /api/v1/ {\n    set $customer_commerce_upstream http://customer-commerce:8083;\n    proxy_pass $customer_commerce_upstream;\n  }\n}\n",
+        "server {\n  listen 8080;\n  location = /api/integrations/payments/razorpay/webhook {\n    set $customer_commerce_upstream http://customer-commerce:8083;\n    proxy_pass $customer_commerce_upstream;\n  }\n  location ^~ /api/v1/ {\n    set $customer_commerce_upstream http://customer-commerce:8083;\n    proxy_pass $customer_commerce_upstream;\n  }\n  location ^~ /api/operations/v1/ {\n    set $operations_upstream http://operations:8084;\n    proxy_pass $operations_upstream;\n  }\n}\n",
       nextConfigText: 'const nextConfig = { output: "export" };\n',
-      gitignoreText: ".env*\n!.env.example\n",
-      dockerignoreText: ".git\nnode_modules\n.env.*\n.env.docker.local\n.env.runtime.docker.local\n.env.migration.docker.local\n.env.customer-auth.docker.local\n.env.workforce-auth.docker.local\n.env.customer-commerce.docker.local\n",
+      gitignoreText: ".env*\n!.env.example\ndist-operations\n",
+      dockerignoreText: ".git\nnode_modules\n.env.*\n.env.docker.local\n.env.runtime.docker.local\n.env.migration.docker.local\n.env.customer-auth.docker.local\n.env.workforce-auth.docker.local\n.env.customer-commerce.docker.local\n.env.operations.docker.local\ndist-operations\n",
       projectRootDir: dir,
     });
     const failed = results.filter((r) => !r.passed);

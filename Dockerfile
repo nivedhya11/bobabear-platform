@@ -1,7 +1,8 @@
 # BOBA Bear local Docker runtime (IMP-005A, customer-auth stages IMP-009,
-# workforce-auth stages IMP-010, customer-commerce stages IMP-024).
+# workforce-auth stages IMP-010, customer-commerce stages IMP-024,
+# operations stages IMP-029).
 #
-# Produces four independent images from one file:
+# Produces independent images from one file:
 #   - `tooling`                — Node + repo scripts + Drizzle migrations,
 #                                 used only by one-shot Compose services
 #                                 (migrate/db-check/*).
@@ -17,6 +18,12 @@
 #                                 production-only constraints as
 #                                 `customer-auth-runtime`; never receives
 #                                 customer-auth or migration credentials.
+#   - `customer-commerce-runtime` — compiled customer-commerce façade
+#                                 (IMP-024).
+#   - `operations-runtime`     — compiled Operations Console API façade
+#                                 (IMP-029). Same production-only constraints;
+#                                 authenticates via in-process WorkforceAuthRuntime
+#                                 (no workforce-auth HTTP hop).
 #   - `web-runtime`            — the final default target: static Nginx
 #                                 serving the Next.js `output: "export"`
 #                                 bundle. No Node, no npm, no source, no
@@ -205,6 +212,37 @@ USER node
 EXPOSE 8083
 
 CMD ["node", "--conditions=react-server", "dist-customer-commerce/server/customer-commerce/main.js"]
+
+# ── operations-builder ───────────────────────────────────────────────────
+# Compiles `src/server/operations/main.ts` and everything it imports to
+# plain ESM JavaScript (`scripts/operations/build.mjs`).
+FROM dependencies AS operations-builder
+COPY tsconfig.json tsconfig.operations.json ./
+COPY scripts/operations ./scripts/operations
+COPY src ./src
+RUN npm run operations:build
+
+# ── operations-dependencies ──────────────────────────────────────────────
+FROM base AS operations-dependencies
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+
+# ── operations-runtime ───────────────────────────────────────────────────
+# Thin Operations Console API façade (IMP-029 / D-372). Internal port 8084
+# only — Nginx `/api/operations/v1/` proxy reaches it; never a published host
+# port. Auth is in-process via shared WorkforceAuthRuntime (no Compose
+# dependency on workforce-auth).
+FROM base AS operations-runtime
+ENV NODE_ENV=production
+COPY --from=operations-dependencies --chown=node:node /app/node_modules ./node_modules
+COPY --from=operations-builder --chown=node:node /app/dist-operations ./dist-operations
+
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
+
+USER node
+EXPOSE 8084
+
+CMD ["node", "--conditions=react-server", "dist-operations/server/operations/main.js"]
 
 # ── web-runtime ──────────────────────────────────────────────────────────
 # Final default target. Static Nginx only — no Node, npm, or application

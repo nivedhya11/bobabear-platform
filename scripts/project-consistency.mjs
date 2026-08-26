@@ -3728,15 +3728,22 @@ function checkTechnicalInventory() {
   }
   if (current && !currentHasProfile) services.push(current);
   const defaultServices = services.filter((s) =>
-    ["postgres", "app", "customer-auth", "workforce-auth", "customer-commerce"].includes(s),
+    [
+      "postgres",
+      "app",
+      "customer-auth",
+      "workforce-auth",
+      "customer-commerce",
+      "operations",
+    ].includes(s),
   );
-  if (defaultServices.length !== 5 || services.length !== 5) {
+  if (defaultServices.length !== 6 || services.length !== 6) {
     fail(
       "DOCKER_DEFAULT_COUNT",
-      `Expected exactly 5 default services [postgres, app, customer-auth, workforce-auth, customer-commerce], found [${services.join(", ")}]`,
+      `Expected exactly 6 default services [postgres, app, customer-auth, workforce-auth, customer-commerce, operations], found [${services.join(", ")}]`,
     );
   } else {
-    note("Default Docker service count 5");
+    note("Default Docker service count 6");
   }
 }
 

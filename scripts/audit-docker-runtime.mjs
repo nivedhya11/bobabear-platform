@@ -117,6 +117,7 @@ export function checkNodeServiceHealthchecks(composeText) {
     ["customer-auth", 8081],
     ["workforce-auth", 8082],
     ["customer-commerce", 8083],
+    ["operations", 8084],
   ]);
   const failures = [];
   for (const [service, port] of endpoints) {
@@ -308,6 +309,139 @@ export function checkAppDoesNotDependOnCustomerCommerce(composeText) {
   };
 }
 
+export function checkOperationsDockerTargetExists(dockerfileText) {
+  const hasBuilder = /FROM\s+\S+\s+AS\s+operations-builder/i.test(dockerfileText);
+  const hasDeps = /FROM\s+\S+\s+AS\s+operations-dependencies/i.test(dockerfileText);
+  const hasRuntime = /FROM\s+\S+\s+AS\s+operations-runtime/i.test(dockerfileText);
+  const builds = /npm run operations:build/.test(dockerfileText);
+  const copiesDist = /dist-operations/.test(dockerfileText);
+  const userNode = /AS\s+operations-runtime[\s\S]*?\bUSER\s+node\b/i.test(dockerfileText);
+  const exposes = /AS\s+operations-runtime[\s\S]*?\bEXPOSE\s+8084\b/i.test(dockerfileText);
+  const cmd =
+    /AS\s+operations-runtime[\s\S]*?CMD\s*\[\s*"node"[\s\S]*?dist-operations\/server\/operations\/main\.js/i.test(
+      dockerfileText,
+    );
+  const noSrcInRuntime = (() => {
+    const section =
+      dockerfileText.split(/FROM\s+\S+\s+AS\s+operations-runtime/i)[1]?.split(/FROM\s+\S+\s+AS\s+/i)[0] ??
+      "";
+    return !/\bCOPY\b[\s\S]*\bsrc\b/.test(section);
+  })();
+  const failures = [];
+  if (!hasBuilder) failures.push("missing operations-builder");
+  if (!hasDeps) failures.push("missing operations-dependencies");
+  if (!hasRuntime) failures.push("missing operations-runtime");
+  if (!builds) failures.push("missing operations:build");
+  if (!copiesDist) failures.push("missing dist-operations copy");
+  if (!userNode) failures.push("operations-runtime is not USER node");
+  if (!exposes) failures.push("operations-runtime does not EXPOSE 8084");
+  if (!cmd) failures.push("operations-runtime CMD is not compiled operations entrypoint");
+  if (!noSrcInRuntime) failures.push("operations-runtime copies TypeScript src");
+  return {
+    name: "Operations Docker target builds non-root compiled runtime on 8084",
+    passed: failures.length === 0,
+    detail: failures.join("; "),
+  };
+}
+
+export function checkOperationsServiceHasNoHostPort(composeText) {
+  const block = extractServiceBlock(composeText, "operations");
+  const failures = [];
+  if (/^\s*ports:/m.test(block)) failures.push("operations service declares a ports: (host-published) mapping");
+  if (!/expose:\s*\[\s*"?8084"?\s*\]|expose:\s*\n\s*-\s*"?8084"?/.test(block)) {
+    failures.push('operations service does not expose "8084" container-only');
+  }
+  return {
+    name: "operations service exposes 8084 container-only, never a published host port",
+    passed: failures.length === 0,
+    detail: failures.join("; "),
+  };
+}
+
+export function checkOperationsServiceSecurityHardening(composeText) {
+  const block = extractServiceBlock(composeText, "operations");
+  const checks = {
+    "read_only: true": /read_only:\s*true/.test(block),
+    "cap_drop: ALL": /cap_drop:\s*\n\s*-\s*ALL/.test(block),
+    "no-new-privileges": /no-new-privileges:true/.test(block),
+    "healthcheck": /healthcheck:/.test(block),
+    "depends on healthy postgres": /depends_on:\s*\n\s*postgres:\s*\n\s*condition:\s*service_healthy/.test(block),
+    "live healthcheck on 8084": /127\.0\.0\.1:8084\/health\/live/.test(block),
+  };
+  const failed = Object.entries(checks).filter(([, ok]) => !ok).map(([name]) => name);
+  return {
+    name: "operations service is read-only, drops all capabilities, enables no-new-privileges, has a live health check, and depends on a healthy postgres",
+    passed: failed.length === 0,
+    detail: failed.join(", "),
+  };
+}
+
+export function checkOperationsEnvFilesAreIsolated(composeText) {
+  const block = extractServiceBlock(composeText, "operations");
+  const failures = [];
+  if (/\.env\.migration\.docker\.local/.test(block)) {
+    failures.push("operations env_file includes .env.migration.docker.local");
+  }
+  if (/\.env\.customer-auth\.docker\.local/.test(block)) {
+    failures.push("operations env_file includes .env.customer-auth.docker.local");
+  }
+  if (
+    !/\.env\.runtime\.docker\.local/.test(block) ||
+    !/\.env\.workforce-auth\.docker\.local/.test(block) ||
+    !/\.env\.operations\.docker\.local/.test(block)
+  ) {
+    failures.push(
+      "operations must use .env.runtime.docker.local, .env.workforce-auth.docker.local, and .env.operations.docker.local",
+    );
+  }
+  return {
+    name: "operations receives runtime + workforce-auth + operations env files only (never migration or customer-auth)",
+    passed: failures.length === 0,
+    detail: failures.join("; "),
+  };
+}
+
+export function checkOperationsDoesNotDependOnWorkforceAuthService(composeText) {
+  const block = extractServiceBlock(composeText, "operations");
+  const dependsOnWorkforceAuth =
+    /depends_on:[\s\S]*workforce-auth/.test(block) ||
+    /^\s*workforce-auth:\s*$/m.test(block);
+  return {
+    name: "operations Compose service does not depend_on workforce-auth",
+    passed: !dependsOnWorkforceAuth,
+  };
+}
+
+export function checkAppDoesNotDependOnOperations(composeText) {
+  const appBlock = extractServiceBlock(composeText, "app");
+  const passed = !/operations/.test(appBlock);
+  return {
+    name: "app service's own health/startup does not depend on the operations service",
+    passed,
+  };
+}
+
+export function checkNginxProxiesOperations(nginxConfText) {
+  const hasLocation = /location\s+\^~\s+\/api\/operations\/v1\//.test(nginxConfText);
+  const hasUpstream = /operations:8084/.test(nginxConfText);
+  const hasHealthProxy =
+    /location[^{]*\/health\/(?:live|ready)/.test(nginxConfText) ||
+    /proxy_pass[^\n]*operations[^\n]*health/.test(nginxConfText);
+  const synthesizesOrigin =
+    /proxy_set_header\s+Origin\s+/i.test(nginxConfText) ||
+    /proxy_set_header\s+origin\s+/i.test(nginxConfText);
+  const failures = [];
+  if (!hasLocation) failures.push("missing /api/operations/v1/ location");
+  if (!hasUpstream) failures.push("missing operations:8084 upstream");
+  if (hasHealthProxy) failures.push("operations health endpoints appear publicly proxied");
+  if (synthesizesOrigin) failures.push("nginx synthesizes/overwrites Origin");
+  return {
+    name: "nginx.conf proxies /api/operations/v1/ to operations:8084 without public health or Origin rewrite",
+    passed: failures.length === 0,
+    detail: failures.join("; "),
+  };
+}
+
 export function checkNginxProxiesCustomerCommerce(nginxConfText) {
   const hasLocation = /location\s+\^~\s+\/api\/v1\//.test(nginxConfText);
   const hasUpstream = /customer-commerce:8083/.test(nginxConfText);
@@ -382,10 +516,26 @@ export function checkGeneratedEnvFilesAreIgnored(gitignoreText) {
   return { name: "Generated Docker env files remain git-ignored (no explicit !exception)", passed };
 }
 
+export function checkOperationsBuildArtifactsIgnored(gitignoreText, dockerignoreText) {
+  const gitIgnores =
+    /(?:^|\/)dist-operations\b/m.test(gitignoreText) || /dist-operations/.test(gitignoreText);
+  const dockerIgnores = /dist-operations/.test(dockerignoreText);
+  const envCoveredByWildcard = /^\.env\*/m.test(gitignoreText) || /\.env\.operations\.docker\.local/.test(gitignoreText);
+  const failures = [];
+  if (!gitIgnores) failures.push("gitignore missing dist-operations");
+  if (!dockerIgnores) failures.push("dockerignore missing dist-operations");
+  if (!envCoveredByWildcard) failures.push("operations env file not git-ignored");
+  return {
+    name: "Operations dist and local Docker env are ignored from git and Docker build context",
+    passed: failures.length === 0,
+    detail: failures.join("; "),
+  };
+}
+
 export function checkDockerignoreExcludesSecrets(dockerignoreText) {
-  const required = [".git", "node_modules", ".env.*", ".env.docker.local", ".env.runtime.docker.local", ".env.migration.docker.local", ".env.customer-auth.docker.local", ".env.workforce-auth.docker.local", ".env.customer-commerce.docker.local"];
+  const required = [".git", "node_modules", ".env.*", ".env.docker.local", ".env.runtime.docker.local", ".env.migration.docker.local", ".env.customer-auth.docker.local", ".env.workforce-auth.docker.local", ".env.customer-commerce.docker.local", ".env.operations.docker.local", "dist-operations"];
   const missing = required.filter((pattern) => !dockerignoreText.includes(pattern));
-  return { name: ".dockerignore excludes .git, node_modules, and every generated secret env file", passed: missing.length === 0, detail: missing.join(", ") };
+  return { name: ".dockerignore excludes .git, node_modules, generated secret env files, and dist-operations", passed: missing.length === 0, detail: missing.join(", ") };
 }
 
 export function checkNoUnapprovedPublicBuildArgs(dockerfileText) {
@@ -450,6 +600,13 @@ export function runAllChecks({ dockerfileText, composeText, nginxConfText, nextC
     checkCustomerCommerceServiceHasNoHostPort(composeText),
     checkCustomerCommerceServiceSecurityHardening(composeText),
     checkAppDoesNotDependOnCustomerCommerce(composeText),
+    checkOperationsDockerTargetExists(dockerfileText),
+    checkOperationsServiceHasNoHostPort(composeText),
+    checkOperationsServiceSecurityHardening(composeText),
+    checkOperationsEnvFilesAreIsolated(composeText),
+    checkOperationsDoesNotDependOnWorkforceAuthService(composeText),
+    checkAppDoesNotDependOnOperations(composeText),
+    checkNginxProxiesOperations(nginxConfText),
     checkNginxProxiesCustomerCommerce(nginxConfText),
     checkNginxProxiesRazorpayWebhook(nginxConfText),
     checkNoDockerSocketOrPrivileged(composeText),
@@ -457,6 +614,7 @@ export function runAllChecks({ dockerfileText, composeText, nginxConfText, nextC
     checkMigrateDependsOnHealthyPostgres(composeText),
     checkNoCredentialsInTrackedFiles({ "Dockerfile": dockerfileText, "compose.yaml": composeText, "docker/nginx/nginx.conf": nginxConfText }),
     checkGeneratedEnvFilesAreIgnored(gitignoreText),
+    checkOperationsBuildArtifactsIgnored(gitignoreText, dockerignoreText),
     checkDockerignoreExcludesSecrets(dockerignoreText),
     checkNoUnapprovedPublicBuildArgs(dockerfileText),
     checkNoDatabaseUrlBuildArg(dockerfileText),

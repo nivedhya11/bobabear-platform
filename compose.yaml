@@ -172,6 +172,45 @@ services:
       start_period: 15s
     restart: "no"
 
+  # Dedicated Operations Console API façade (IMP-029 / D-372). Reachable only
+  # through the `app` (Nginx) container's narrow `/api/operations/v1/` reverse
+  # proxy — never a published host port. Receives application-role database
+  # env, workforce-auth secrets (in-process session validation via shared
+  # WorkforceAuthRuntime — no Compose dependency on the workforce-auth
+  # service), and Operations listen config. Never migration credentials.
+  operations:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: operations-runtime
+    image: boba-bear-operations:local
+    expose: ["8084"]
+    env_file:
+      - .env.runtime.docker.local
+      - .env.workforce-auth.docker.local
+      - .env.operations.docker.local
+    depends_on:
+      postgres:
+        condition: service_healthy
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:8084/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\"",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 15s
+    restart: "no"
+
   # One-shot migration runner (IMP-005A). Never starts automatically with
   # `docker compose up` — the `tools` profile excludes it unless explicitly
   # invoked via `docker compose run --rm migrate` (`npm run docker:migrate`).
