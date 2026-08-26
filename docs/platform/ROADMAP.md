@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R68",
+  "roadmapVersion": "GTM-R69",
   "acceptedThrough": "IMP-029",
   "currentProductSlice": "IMP-030",
   "nextProductSlice": "IMP-031",
   "gtmBoundary": "IMP-040",
   "lastReviewed": "2026-08-26",
-  "supersedes": "GTM-R67"
+  "supersedes": "GTM-R68"
 }
 -->
 
@@ -274,17 +274,17 @@ Pending Acceptance:    NONE
 Public GTM Boundary:   IMP-040 — Launch Validation & Cutover
 ```
 
-IMP-030 is `IMPLEMENTATION_AUTHORIZED`. Its capability architecture remains locked in
+IMP-030 is `IMPLEMENTATION_IN_PROGRESS`. Its capability architecture remains locked in
 [`capabilities/IMP-030-operations-console-ui.md`](./capabilities/IMP-030-operations-console-ui.md).
-Implementation is `AUTHORIZED` / `NOT_STARTED`; authorization does not start implementation.
+Implementation is `AUTHORIZED` / `STARTED`; start does not complete or accept implementation.
 
 ```text
-IMP-030: IMPLEMENTATION_AUTHORIZED
+IMP-030: IMPLEMENTATION_IN_PROGRESS
 IMP-030_ARCHITECTURE: LOCKED
 IMP-030_ARCHITECTURE_LOCKED: YES
-IMP-030_IMPLEMENTATION: AUTHORIZED / NOT_STARTED
+IMP-030_IMPLEMENTATION: AUTHORIZED / STARTED
 IMP-030_IMPLEMENTATION_AUTHORIZED: YES
-IMP-030_STARTED: NO
+IMP-030_STARTED: YES
 IMP-030_IMPLEMENTATION_COMPLETE: NO
 IMP-030_ACCEPTED: NO
 IMP-031: PLANNED / NOT_ACTIVATED
@@ -666,7 +666,7 @@ consume or remap IMP-029 → IMP-040 identities and is `COMPLETE_AND_ACCEPTED`.
 
 | IMP | Capability | Lifecycle |
 |---|---|---|
-| IMP-030 | Operations Console UI | IMPLEMENTATION_AUTHORIZED |
+| IMP-030 | Operations Console UI | IMPLEMENTATION_IN_PROGRESS |
 | IMP-031 | Provider-Neutral Delivery Foundation | PLANNED |
 | IMP-032 | Dehradun Delivery Operating Mode | PLANNED |
 | IMP-033 | Notification Foundation | PLANNED |
@@ -1043,6 +1043,19 @@ Historical GTM-R1 meanings that are **not** current:
 Current public GTM boundary is **IMP-040**, not IMP-035.
 
 ## 9. Roadmap Change Log
+
+### GTM-R69 — 2026-08-26
+
+- Records implementation **START** for **IMP-030 — Operations Console UI** under prior GTM-R68
+  authorization and the locked capability architecture at
+  [`capabilities/IMP-030-operations-console-ui.md`](./capabilities/IMP-030-operations-console-ui.md).
+  Architecture remains `ARCHITECTURE_LOCKED`; D-372 remains binding and CURRENT; ARCH-R17 and DR-14
+  remain unchanged; D-373 is not created.
+- IMP-030 implementation becomes `AUTHORIZED` / `STARTED` / `IMPLEMENTATION_IN_PROGRESS`; start does
+  not complete or accept implementation. No product source, runtime, schema, migration, or deployment
+  mutation is introduced. IMP-031 remains `PLANNED` / `NOT_ACTIVATED`.
+- Preserves `acceptedThrough = IMP-029` and `pendingAcceptance = NONE`.
+- Supersedes GTM-R68 for the current lifecycle position.
 
 ### GTM-R68 — 2026-08-26
 

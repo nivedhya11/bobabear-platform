@@ -5,7 +5,7 @@
   "capability": "IMP-030",
   "title": "Operations Console UI",
   "architectureLock": "ARCHITECTURE_LOCKED",
-  "implementation": "AUTHORIZED / NOT_STARTED",
+  "implementation": "AUTHORIZED / STARTED",
   "implementationAuthorized": true,
   "lastReviewed": "2026-08-26",
   "bindingDecisions": ["D-372"],
@@ -25,7 +25,7 @@ this UI owns presentation and interaction only.
 | Field | Value |
 |---|---|
 | Architecture lock | `ARCHITECTURE_LOCKED` |
-| Implementation | `AUTHORIZED` / `NOT_STARTED` |
+| Implementation | `AUTHORIZED` / `STARTED` |
 | Implementation authorized | **YES** |
 | Depends on | IMP-029 — Operations Console API |
 | Binding decision | D-372 — CURRENT |
@@ -145,10 +145,10 @@ Operations routes.
 
 ```text
 IMP-030_IMPLEMENTATION_AUTHORIZED: YES
-IMP-030_STARTED: NO
+IMP-030_STARTED: YES
 IMP-030_IMPLEMENTATION_COMPLETE: NO
 IMP-030_ACCEPTED: NO
-AUTHORIZATION IS NOT IMPLEMENTATION START: YES
+IMPLEMENTATION START IS NOT COMPLETION OR ACCEPTANCE: YES
 ```
 
 ```text
