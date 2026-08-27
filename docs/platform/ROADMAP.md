@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R69",
+  "roadmapVersion": "GTM-R70",
   "acceptedThrough": "IMP-029",
   "currentProductSlice": "IMP-030",
   "nextProductSlice": "IMP-031",
   "gtmBoundary": "IMP-040",
-  "lastReviewed": "2026-08-26",
-  "supersedes": "GTM-R68"
+  "lastReviewed": "2026-08-27",
+  "supersedes": "GTM-R69"
 }
 -->
 
@@ -275,8 +275,10 @@ Public GTM Boundary:   IMP-040 — Launch Validation & Cutover
 ```
 
 IMP-030 is `IMPLEMENTATION_IN_PROGRESS`. Its capability architecture remains locked in
-[`capabilities/IMP-030-operations-console-ui.md`](./capabilities/IMP-030-operations-console-ui.md).
-Implementation is `AUTHORIZED` / `STARTED`; start does not complete or accept implementation.
+[`capabilities/IMP-030-operations-console-ui.md`](./capabilities/IMP-030-operations-console-ui.md)
+and was formally amended on 2026-08-27 for static detail-route realization while implementation
+remains started. Implementation is `AUTHORIZED` / `STARTED`; start does not complete or accept
+implementation.
 
 ```text
 IMP-030: IMPLEMENTATION_IN_PROGRESS
@@ -1043,6 +1045,24 @@ Historical GTM-R1 meanings that are **not** current:
 Current public GTM boundary is **IMP-040**, not IMP-035.
 
 ## 9. Roadmap Change Log
+
+### GTM-R70 — 2026-08-27
+
+- Records a capability-local **detail route architecture amendment** for **IMP-030 — Operations
+  Console UI** while implementation remains `AUTHORIZED` / `STARTED` /
+  `IMPLEMENTATION_IN_PROGRESS` under the locked capability architecture at
+  [`capabilities/IMP-030-operations-console-ui.md`](./capabilities/IMP-030-operations-console-ui.md).
+- During implementation, the prior pretty dynamic UI route
+  `/workforce/operations/orders/{orderId}/` proved incompatible with binding static export
+  (`output: "export"`, `trailingSlash: true`). The amended architecture uses the fixed static detail
+  shell `/workforce/operations/orders/detail/` with `orderId` carried via query parameter. The
+  Operations API surface, static-export topology, D-372, ARCH-R17, and DR-14 remain unchanged; D-373
+  is not created.
+- Prior read-only list implementation remains valid. No product source is included in this governance
+  transition. Architecture remains `ARCHITECTURE_LOCKED`; implementation is not completed or
+  accepted. IMP-031 remains `PLANNED` / `NOT_ACTIVATED`.
+- Preserves `acceptedThrough = IMP-029` and `pendingAcceptance = NONE`.
+- Supersedes GTM-R69 for the current lifecycle position.
 
 ### GTM-R69 — 2026-08-26
 

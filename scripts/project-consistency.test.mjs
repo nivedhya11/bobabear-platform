@@ -12,6 +12,10 @@ import {
   evaluateImp030ImplementationAuthorizationDocuments,
   evaluateImp030ImplementationStartCheckpoint,
   evaluateImp030ImplementationStartDocuments,
+  evaluateImp030DetailRouteAmendmentCheckpoint,
+  evaluateImp030DetailRouteAmendmentDocuments,
+  evaluateImp030CurrentRouteFacts,
+  extractCurrentImp030RouteFacts,
   evaluateLifecycleAuthorityAlignment,
   evaluatePendingAcceptanceSplit,
   isAllowedGovernanceVersion,
@@ -1349,14 +1353,18 @@ describe("IMP-030 architecture lock checkpoint", () => {
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R67", "STATE-R65", "lock"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R68", "STATE-R66", "authorization"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R69", "STATE-R67", "start"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R70", "STATE-R68", "routeAmendment"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R68", "STATE-R66"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R69", "STATE-R67"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R70", "STATE-R68"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R69", "STATE-R66"), false);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R68", "STATE-R67"), false);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R67", "STATE-R66"), false);
-    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R70", "STATE-R68"), false);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R70", "STATE-R67"), false);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R69", "STATE-R68"), false);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R71", "STATE-R69"), false);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R71", "STATE-R68"), false);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R70", "STATE-R69"), false);
   });
 
   it("accepts only the R66/S64 architecture-activation checkpoint", () => {
@@ -1774,6 +1782,9 @@ describe("IMP-030 implementation start checkpoint", () => {
       ["GTM-R70", "STATE-R68"],
       ["GTM-R70", "STATE-R67"],
       ["GTM-R69", "STATE-R68"],
+      ["GTM-R71", "STATE-R69"],
+      ["GTM-R71", "STATE-R68"],
+      ["GTM-R70", "STATE-R69"],
     ]) {
       assert.equal(isSupportedImp030GovernanceCheckpoint(roadmapVersion, stateVersion, "start"), false, `${roadmapVersion}/${stateVersion}`);
     }
@@ -1803,6 +1814,216 @@ describe("IMP-030 implementation start checkpoint", () => {
       { artifact: false },
     ]) {
       assert.equal(evaluateImp030ImplementationStartDocuments(startDocuments(overrides)).ok, false);
+    }
+  });
+});
+
+describe("IMP-030 detail route architecture amendment checkpoint", () => {
+  const routeAmendment = Object.freeze({
+    roadmapVersion: "GTM-R70", stateVersion: "STATE-R68", acceptedThrough: "IMP-029",
+    currentProductSlice: "IMP-030", nextProductSlice: "IMP-031", pendingAcceptance: "NONE",
+    imp029: "COMPLETE_AND_ACCEPTED", imp030: "IMPLEMENTATION_IN_PROGRESS", architecture: "LOCKED",
+    architectureLocked: "YES", implementationAuthorized: "YES", started: "YES",
+    implementationComplete: "NO", accepted: "NO", imp031: "PLANNED",
+    architectureVersion: "ARCH-R17", decisionRegisterVersion: "DR-14", d372Current: true,
+    d373Exists: false, artifact: true,
+    detailUiRoute: "/workforce/operations/orders/detail/",
+    detailIdTransport: "QUERY_PARAMETER_ORDER_ID",
+    dynamicDetailRoute: "NO",
+    staticExportDetailShell: "YES",
+    apiDetailRoute: "GET /api/operations/v1/orders/{orderId}",
+  });
+
+  const CURRENT_ROUTE_FACTS_BLOCK = `\`\`\`text
+IMP-030_DETAIL_UI_ROUTE: /workforce/operations/orders/detail/
+IMP-030_DETAIL_ID_TRANSPORT: QUERY_PARAMETER_ORDER_ID
+IMP-030_DYNAMIC_DETAIL_ROUTE: NO
+IMP-030_STATIC_EXPORT_DETAIL_SHELL: YES
+IMP-030_API_DETAIL_ROUTE: GET /api/operations/v1/orders/{orderId}
+\`\`\``;
+
+  const SUPERSEDED_ROUTE = "/workforce/operations/orders/{orderId}/";
+
+  const roadmapText = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
+  const stateText = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
+  const decisionText = readFileSync(new URL("../docs/platform/decision-register.md", import.meta.url), "utf8");
+  const architectureText = readFileSync(new URL("../docs/platform/ARCHITECTURE.md", import.meta.url), "utf8");
+  const capabilityText = readFileSync(new URL("../docs/platform/capabilities/IMP-030-operations-console-ui.md", import.meta.url), "utf8");
+  const currentSectionEnd = "## 3.";
+
+  function replaceCurrentFact(text, key, value) {
+    const startIdx = text.indexOf("## 2.");
+    const end = text.indexOf(currentSectionEnd, startIdx);
+    assert.notEqual(startIdx, -1);
+    assert.notEqual(end, -1);
+    const current = text.slice(startIdx, end);
+    const updated = current.replace(new RegExp(`^${key}:.*$`, "m"), `${key}: ${value}`);
+    assert.notEqual(updated, current, `current ${key} must exist`);
+    return `${text.slice(0, startIdx)}${updated}${text.slice(end)}`;
+  }
+
+  function routeAmendmentDocuments(overrides = {}) {
+    return {
+      roadmap: {
+        text: overrides.roadmapText ?? roadmapText,
+        meta: {
+          roadmapVersion: overrides.roadmapVersion ?? "GTM-R70",
+          acceptedThrough: overrides.acceptedThrough ?? "IMP-029",
+          currentProductSlice: overrides.currentProductSlice ?? "IMP-030",
+          nextProductSlice: overrides.nextProductSlice ?? "IMP-031",
+          pendingAcceptance: overrides.pendingAcceptance ?? "NONE",
+        },
+      },
+      state: {
+        text: overrides.stateText ?? stateText,
+        meta: {
+          stateVersion: overrides.stateVersion ?? "STATE-R68",
+          acceptedThrough: overrides.acceptedThrough ?? "IMP-029",
+          currentProductSlice: overrides.currentProductSlice ?? "IMP-030",
+          nextProductSlice: overrides.nextProductSlice ?? "IMP-031",
+          pendingAcceptance: overrides.pendingAcceptance ?? "NONE",
+        },
+      },
+      architecture: {
+        meta: { architectureVersion: overrides.architectureVersion ?? "ARCH-R17" },
+        text: architectureText,
+      },
+      decision: {
+        meta: { decisionRegisterVersion: overrides.decisionRegisterVersion ?? "DR-14" },
+        text: overrides.decisionText ?? decisionText,
+      },
+      artifact: overrides.artifact ?? true,
+      artifactText: overrides.artifactText ?? capabilityText,
+    };
+  }
+
+  it("accepts only the R70/S68 detail-route amendment checkpoint", () => {
+    assert.deepEqual(evaluateImp030DetailRouteAmendmentCheckpoint(routeAmendment), { ok: true });
+    assert.deepEqual(evaluateImp030DetailRouteAmendmentDocuments(routeAmendmentDocuments()), { ok: true });
+    assert.deepEqual(evaluateImp030CurrentRouteFacts(extractCurrentImp030RouteFacts(capabilityText).facts), { ok: true });
+  });
+
+  it("passes when current fixed shell coexists with historical pretty dynamic route", () => {
+    assert.match(capabilityText, new RegExp(SUPERSEDED_ROUTE.replace(/[{}]/g, "\\$&")));
+    assert.deepEqual(evaluateImp030DetailRouteAmendmentDocuments(routeAmendmentDocuments()), { ok: true });
+  });
+
+  it("rejects current pretty dynamic route even when historical fixed shell appears elsewhere", () => {
+    const artifactText = capabilityText.replace(
+      "IMP-030_DETAIL_UI_ROUTE: /workforce/operations/orders/detail/",
+      `IMP-030_DETAIL_UI_ROUTE: ${SUPERSEDED_ROUTE}`,
+    );
+    assert.match(artifactText, /\/workforce\/operations\/orders\/detail\//);
+    assert.deepEqual(
+      evaluateImp030DetailRouteAmendmentDocuments(routeAmendmentDocuments({ artifactText })).ok,
+      false,
+    );
+  });
+
+  it("rejects missing current route facts even when historical fixed shell appears elsewhere", () => {
+    const artifactText = capabilityText.replace(
+      /```text\nIMP-030_DETAIL_UI_ROUTE:[\s\S]*?```/,
+      "",
+    );
+    assert.match(artifactText, /\/workforce\/operations\/orders\/detail\//);
+    assert.deepEqual(evaluateImp030DetailRouteAmendmentDocuments(routeAmendmentDocuments({ artifactText })).ok, false);
+  });
+
+  it("passes when current fixed shell coexists with multiple superseded old routes in history", () => {
+    const artifactText = capabilityText.replace(
+      "### Route realization amendment (2026-08-27)",
+      "### Route realization amendment (2026-08-27)\nAlso superseded: `/workforce/operations/orders/{legacyId}/`.",
+    );
+    assert.deepEqual(evaluateImp030DetailRouteAmendmentDocuments(routeAmendmentDocuments({ artifactText })), { ok: true });
+  });
+
+  it("rejects future governance frontiers independently", () => {
+    for (const [roadmapVersion, stateVersion] of [
+      ["GTM-R71", "STATE-R69"],
+      ["GTM-R71", "STATE-R68"],
+      ["GTM-R70", "STATE-R69"],
+      ["GTM-R69", "STATE-R67"],
+    ]) {
+      assert.equal(isSupportedImp030GovernanceCheckpoint(roadmapVersion, stateVersion, "routeAmendment"), false, `${roadmapVersion}/${stateVersion}`);
+    }
+  });
+
+  it("rejects adversarial R70/S68 lifecycle, route, and artifact mutations independently", () => {
+    for (const [key, value] of [
+      ["detailUiRoute", "/workforce/operations/orders/{orderId}/"],
+      ["detailIdTransport", "PATH_SEGMENT"],
+      ["dynamicDetailRoute", "YES"],
+      ["staticExportDetailShell", "NO"],
+      ["apiDetailRoute", "GET /api/operations/v1/orders"],
+      ["imp030", "IMPLEMENTATION_AUTHORIZED"],
+      ["architecture", "NOT_LOCKED"],
+      ["architectureLocked", "NO"],
+      ["implementationAuthorized", "NO"],
+      ["started", "NO"],
+      ["implementationComplete", "YES"],
+      ["accepted", "YES"],
+      ["acceptedThrough", "IMP-030"],
+      ["currentProductSlice", "IMP-031"],
+      ["nextProductSlice", "IMP-032"],
+      ["pendingAcceptance", "IMP-030"],
+      ["imp031", "ACTIVATED"],
+      ["architectureVersion", "ARCH-R18"],
+      ["decisionRegisterVersion", "DR-15"],
+      ["d373Exists", true],
+      ["artifact", false],
+    ]) {
+      assert.equal(evaluateImp030DetailRouteAmendmentCheckpoint({ ...routeAmendment, [key]: value }).ok, false, key);
+    }
+
+    for (const overrides of [
+      { roadmapText: replaceCurrentFact(roadmapText, "IMP-030", "IMPLEMENTATION_AUTHORIZED") },
+      { roadmapText: replaceCurrentFact(roadmapText, "IMP-030_IMPLEMENTATION", "AUTHORIZED / NOT_STARTED") },
+      { stateText: replaceCurrentFact(stateText, "IMP-030_ARCHITECTURE_LOCKED", "NO") },
+      { stateText: replaceCurrentFact(stateText, "IMP-030_IMPLEMENTATION_AUTHORIZED", "NO") },
+      { stateText: replaceCurrentFact(stateText, "IMP-030_STARTED", "NO") },
+      { stateText: replaceCurrentFact(stateText, "IMP-030_IMPLEMENTATION_COMPLETE", "YES") },
+      { stateText: replaceCurrentFact(stateText, "IMP-030_ACCEPTED", "YES") },
+      { acceptedThrough: "IMP-030" },
+      { pendingAcceptance: "IMP-030" },
+      { currentProductSlice: "IMP-031" },
+      { architectureVersion: "ARCH-R18" },
+      { decisionRegisterVersion: "DR-15" },
+      { decisionText: `${decisionText}\n| D-373 | created | CURRENT |` },
+      { artifact: false },
+      {
+        artifactText: capabilityText.replace(
+          /```text\nIMP-030_DETAIL_UI_ROUTE:[\s\S]*?```/,
+          CURRENT_ROUTE_FACTS_BLOCK.replace("/workforce/operations/orders/detail/", SUPERSEDED_ROUTE),
+        ),
+      },
+      {
+        artifactText: capabilityText.replace(
+          /```text\nIMP-030_DETAIL_UI_ROUTE:[\s\S]*?```/,
+          "",
+        ),
+      },
+      {
+        artifactText: capabilityText.replace("## 2.", `${CURRENT_ROUTE_FACTS_BLOCK}\n\n## 2.`),
+      },
+      {
+        artifactText: capabilityText.replace(/IMP-030_DYNAMIC_DETAIL_ROUTE: NO/, "IMP-030_DYNAMIC_DETAIL_ROUTE: YES"),
+      },
+      {
+        artifactText: capabilityText.replace(/IMP-030_STATIC_EXPORT_DETAIL_SHELL: YES/, "IMP-030_STATIC_EXPORT_DETAIL_SHELL: NO"),
+      },
+      {
+        artifactText: capabilityText.replace(
+          "IMP-030_API_DETAIL_ROUTE: GET /api/operations/v1/orders/{orderId}",
+          "IMP-030_API_DETAIL_ROUTE: GET /api/operations/v1/orders",
+        ),
+      },
+      { artifactText: capabilityText.replace(/"bindingDecisions":\s*\["D-372"\]/, '"bindingDecisions": []') },
+      { artifactText: capabilityText.replace(/"bindingDecisions":\s*\["D-372"\]/, '"bindingDecisions": ["D-372", "D-373"]') },
+      { artifactText: capabilityText.replace(/"dependsOn":\s*\["IMP-029"\]/, '"dependsOn": []') },
+      { artifactText: capabilityText.replace(/"implementationAuthorized":\s*true/, '"implementationAuthorized": false') },
+      { artifactText: capabilityText.replace(/"implementation":\s*"AUTHORIZED \/ STARTED"/, '"implementation": "AUTHORIZED / NOT_STARTED"') },
+    ]) {
+      assert.equal(evaluateImp030DetailRouteAmendmentDocuments(routeAmendmentDocuments(overrides)).ok, false);
     }
   });
 });
