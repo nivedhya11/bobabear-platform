@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R67",
+  "stateVersion": "STATE-R68",
   "acceptedThrough": "IMP-029",
   "currentProductSlice": "IMP-030",
   "nextProductSlice": "IMP-031",
   "pendingAcceptance": "NONE",
   "governanceHealth": "ALIGNED",
-  "lastReviewed": "2026-08-26"
+  "lastReviewed": "2026-08-27"
 }
 -->
 
@@ -31,8 +31,9 @@ Accepted Range:            IMP-001 → IMP-029 (including IMP-005A and IMP-026C)
 Current Product Implementation: IMP-030 — Operations Console UI
 Pending Acceptance:             NONE
 Next Product Slice:             IMP-031 — Provider-Neutral Delivery Foundation
-Current Governance Activity:    IMP-030 capability architecture LOCKED;
-                              implementation AUTHORIZED / STARTED / IMPLEMENTATION_IN_PROGRESS.
+Current Governance Activity:    IMP-030 capability architecture LOCKED and formally amended/re-locked
+                              for static detail-route realization; implementation AUTHORIZED /
+                              STARTED / IMPLEMENTATION_IN_PROGRESS.
 Governance Health:              ALIGNED
 ```
 
@@ -227,6 +228,23 @@ independent acceptance without changing decision register or global architecture
 STATE-R36 record IMP-028B canonical activation without changing decision register or global
 architecture. GTM-R39 / STATE-R37 record IMP-028B architecture lock and implementation
 authorization without changing decision register or global architecture.
+
+STATE-R68 records a capability-local **detail route architecture amendment** for **IMP-030 —
+Operations Console UI** while implementation remains started under the locked capability
+architecture at
+[`capabilities/IMP-030-operations-console-ui.md`](./capabilities/IMP-030-operations-console-ui.md).
+The prior pretty dynamic UI route `/workforce/operations/orders/{orderId}/` was incompatible with
+binding static export; the amended architecture uses the fixed static detail shell
+`/workforce/operations/orders/detail/` with `orderId` carried via query parameter. IMP-030 remains
+`IMPLEMENTATION_IN_PROGRESS`; architecture remains `LOCKED` and re-locked (`IMP-030_ARCHITECTURE_LOCKED:
+YES`; `IMP-030_IMPLEMENTATION_AUTHORIZED: YES`; `IMP-030_STARTED: YES`;
+`IMP-030_IMPLEMENTATION_COMPLETE: NO`; `IMP-030_ACCEPTED: NO`). This amendment does not undo
+implementation start, create a second implementation authorization, complete implementation, or
+accept IMP-030. `acceptedThrough` remains IMP-029; `pendingAcceptance` remains NONE;
+`currentProductSlice` remains IMP-030; and `nextProductSlice` remains IMP-031, `PLANNED` /
+`NOT_ACTIVATED`. D-372 remains CURRENT; ARCH-R17 and DR-14 remain unchanged; D-373 is absent. No
+product, runtime, schema, migration, or deployment mutation is introduced. Supersedes STATE-R67 for
+the current product-slice position.
 
 STATE-R67 records implementation start for **IMP-030 — Operations Console UI** under prior
 implementation authorization and the locked capability architecture at

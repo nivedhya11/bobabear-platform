@@ -7,7 +7,7 @@
   "architectureLock": "ARCHITECTURE_LOCKED",
   "implementation": "AUTHORIZED / STARTED",
   "implementationAuthorized": true,
-  "lastReviewed": "2026-08-26",
+  "lastReviewed": "2026-08-27",
   "bindingDecisions": ["D-372"],
   "dependsOn": ["IMP-029"]
 }
@@ -32,14 +32,65 @@ this UI owns presentation and interaction only.
 
 ## 1. Routes and Next.js boundary
 
-The UI routes are `/workforce/operations/` and `/workforce/operations/orders/{orderId}/`, continuing
-the established `/workforce/login/` namespace. No `/admin`, `/console`, Next-owned `/api` route,
-dynamic Route Handler, or Server Action business authority is created.
+The UI routes continue the established `/workforce/login/` namespace:
+
+| Route role | Path |
+|---|---|
+| List | `/workforce/operations/` |
+| Detail static shell | `/workforce/operations/orders/detail/` |
+
+Order detail identity is carried only as the query parameter `orderId`. Canonical list → detail
+navigation shape:
+
+```text
+/workforce/operations/orders/detail/?orderId=<percent-encoded-order-id>
+```
+
+Example:
+
+```text
+/workforce/operations/orders/detail/?orderId=550e8400-e29b-41d4-a716-446655440000
+```
+
+```text
+IMP-030_DETAIL_UI_ROUTE: /workforce/operations/orders/detail/
+IMP-030_DETAIL_ID_TRANSPORT: QUERY_PARAMETER_ORDER_ID
+IMP-030_DYNAMIC_DETAIL_ROUTE: NO
+IMP-030_STATIC_EXPORT_DETAIL_SHELL: YES
+IMP-030_API_DETAIL_ROUTE: GET /api/operations/v1/orders/{orderId}
+```
+
+The query parameter is a client-side resource locator only. It is not authorization, scope,
+identity authority, or trusted caller data. Operations runtime remains authoritative for access.
+
+### Route realization amendment (2026-08-27)
+
+During implementation, the prior locked pretty-path detail route
+`/workforce/operations/orders/{orderId}/` proved incompatible with binding static export
+(`output: "export"`, `trailingSlash: true`): arbitrary future Order IDs cannot be enumerated by
+`generateStaticParams()`, GitHub Pages provides no arbitrary pretty-path rewrite, and current
+Operations/Nginx UI serving provides no SPA/static-shell fallback. The amended architecture uses one
+build-known static App Router detail shell; `orderId` is read client-side from the URL query. No
+`[orderId]` App Router dynamic route, `generateStaticParams()`, SPA fallback, host rewrite, Nginx
+change, or Next config change is required.
+
+No `/admin`, `/console`, Next-owned `/api` route, dynamic Route Handler, or Server Action business
+authority is created.
 
 Implementation is static Next App Router page shells plus client-side Operations feature components.
 Reads and mutations use browser fetch; SSR business reads, dynamic Next execution, Route Handler
-proxies, Server Action mutation authority, and Next API routes are excluded. `output: export`
-remains binding unless later architecture supersedes it.
+proxies, Server Action mutation authority, and Next API routes are excluded. `output: export` and
+`trailingSlash: true` remain binding unless later architecture supersedes them.
+
+### List → detail navigation contract
+
+A list Order may navigate via a native link to
+`/workforce/operations/orders/detail/?orderId=<percent-encoded-order-id>`. The Order identifier MUST
+be percent-encoded. Navigation is presentation only; the detail API performs the authenticated and
+authorized lookup.
+
+Browser detail transport remains `GET /api/operations/v1/orders/{orderId}` with
+`credentials: "same-origin"`. The Order ID placed into the API URL must be percent-encoded.
 
 ## 2. Transport, session, and authority
 
