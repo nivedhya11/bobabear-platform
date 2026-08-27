@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R70",
+  "roadmapVersion": "GTM-R71",
   "acceptedThrough": "IMP-029",
   "currentProductSlice": "IMP-030",
   "nextProductSlice": "IMP-031",
   "gtmBoundary": "IMP-040",
   "lastReviewed": "2026-08-27",
-  "supersedes": "GTM-R69"
+  "supersedes": "GTM-R70"
 }
 -->
 
@@ -471,10 +471,12 @@ only). Webhook acknowledgement timing / durable inbox / asynchronous Payment pro
 
 ## 4. Current Product Slice
 
-IMP-030 — Operations Console UI is the current product slice for architecture work only.
+IMP-030 — Operations Console UI is the current product slice.
+IMP-030 is `IMPLEMENTATION_IN_PROGRESS`. Architecture is `LOCKED`. Implementation is
+`AUTHORIZED` / `STARTED`. Implementation is not complete and not accepted. IMP-031 remains
+`PLANNED` / `NOT_ACTIVATED` as the next product slice.
 IMP-029 — Operations Console API remains `COMPLETE_AND_ACCEPTED`; architecture remains locked and
-implementation is authorized, started, and complete. IMP-030 architecture is not locked and its
-implementation is not authorized or started.
+implementation is authorized, started, and complete.
 
 ```text
 IMP-028D — Desktop Ordering Continuity
@@ -518,7 +520,7 @@ IMP-029_IMPLEMENTATION_AUTHORIZED: YES
 IMP-029_STARTED: YES
 IMP-029_IMPLEMENTATION_COMPLETE: YES
 IMP-029_ACCEPTED: YES
-Next product slice: IMP-030 — Operations Console UI
+Next product slice: IMP-031 — Provider-Neutral Delivery Foundation
 Pending acceptance: NONE
 acceptedThrough: IMP-029
 IMP-026C: COMPLETE_AND_ACCEPTED
@@ -1045,6 +1047,25 @@ Historical GTM-R1 meanings that are **not** current:
 Current public GTM boundary is **IMP-040**, not IMP-035.
 
 ## 9. Roadmap Change Log
+
+### GTM-R71 — 2026-08-27
+
+- **CANONICAL_CONSISTENCY_ONLY** repair. Reconciles stale present-tense IMP-030 lifecycle /
+  current-slice prose with the already-established GTM-R70 / STATE-R68 authoritative state.
+- Corrects ROADMAP §4 live current-product-slice prose that still described architecture-only /
+  not-locked / not-authorized / not-started status, and corrects the stale
+  `Next product slice: IMP-030` line while `currentProductSlice = IMP-030` and
+  `nextProductSlice = IMP-031`.
+- Reconciles STATE §5 Acceptance Position stale lifecycle prose that still asserted
+  `ARCHITECTURE_IN_PROGRESS` / `NOT_LOCKED` / `NOT_AUTHORIZED` / `NOT_STARTED`.
+- Hardens `project:consistency` so the same live ROADMAP §4 / STATE §5 contradiction class is
+  detectable without treating historical GTM-R66 / STATE-R64 records as current prose.
+- Does **not** create a lifecycle advance, architecture change, implementation authorization or
+  start event, completion decision, acceptance decision, IMP-031 activation, D-372 change, or
+  D-373 creation. IMP-030 remains `IMPLEMENTATION_IN_PROGRESS` / `LOCKED` / `AUTHORIZED` /
+  `STARTED`; `acceptedThrough` remains IMP-029; IMP-031 remains `PLANNED` / `NOT_ACTIVATED`.
+  ARCH-R17 and DR-14 remain unchanged.
+- Supersedes GTM-R70 for the current consistency position only.
 
 ### GTM-R70 — 2026-08-27
 
