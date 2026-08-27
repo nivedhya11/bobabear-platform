@@ -38,6 +38,42 @@ export type OperationsOrderSummary = Readonly<{
   outlet: OperationsOutletSummary;
 }>;
 
+export type OperationsOrderDestination = Readonly<{
+  recipientName: string;
+  recipientPhone: string;
+  addressLine1: string;
+  addressLine2: string | null;
+  landmark: string | null;
+  locality: string | null;
+  city: string;
+  stateCode: string;
+  postalCode: string;
+  label: string | null;
+}>;
+
+export type OperationsOrderLine = Readonly<{
+  productName: string;
+  variantName: string;
+  quantity: number;
+  lineTotalMinor: string;
+  modifiers: readonly Readonly<{
+    groupName: string;
+    optionName: string;
+    quantity: number;
+  }>[];
+}>;
+
+export type OperationsOrderDetail = OperationsOrderSummary & Readonly<{
+  updatedAt: string;
+  paymentProvenanceKind: string;
+  acceptedByWorkforceUserId: string | null;
+  fulfilledByWorkforceUserId: string | null;
+  cancelledByWorkforceUserId: string | null;
+  cancellationReasonCode: string | null;
+  destination: OperationsOrderDestination;
+  lines: readonly OperationsOrderLine[];
+}>;
+
 export type ListWorkforceOrdersInput = Readonly<{
   orderNumber?: string;
   status?: string;
