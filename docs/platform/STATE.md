@@ -2,7 +2,7 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R68",
+  "stateVersion": "STATE-R69",
   "acceptedThrough": "IMP-029",
   "currentProductSlice": "IMP-030",
   "nextProductSlice": "IMP-031",
@@ -228,6 +228,18 @@ independent acceptance without changing decision register or global architecture
 STATE-R36 record IMP-028B canonical activation without changing decision register or global
 architecture. GTM-R39 / STATE-R37 record IMP-028B architecture lock and implementation
 authorization without changing decision register or global architecture.
+
+STATE-R69 supersedes STATE-R68 only to repair stale current-state prose in Acceptance Position.
+No lifecycle, architecture, decision, completion, acceptance, or activation delta occurred.
+IMP-030 remains `IMPLEMENTATION_IN_PROGRESS` / `LOCKED` / `AUTHORIZED` / `STARTED`
+(`IMP-030_ARCHITECTURE_LOCKED: YES`; `IMP-030_IMPLEMENTATION_AUTHORIZED: YES`;
+`IMP-030_STARTED: YES`; `IMP-030_IMPLEMENTATION_COMPLETE: NO`; `IMP-030_ACCEPTED: NO`).
+`acceptedThrough` remains IMP-029; `pendingAcceptance` remains NONE; `currentProductSlice`
+remains IMP-030; and `nextProductSlice` remains IMP-031, `PLANNED` / `NOT_ACTIVATED`.
+D-372 remains CURRENT; ARCH-R17 and DR-14 remain unchanged; D-373 is absent. This is
+`CANONICAL_CONSISTENCY_ONLY` — not a lifecycle advance, architecture change, implementation
+authorization/start event, completion, or acceptance. Supersedes STATE-R68 for the current
+consistency position only.
 
 STATE-R68 records a capability-local **detail route architecture amendment** for **IMP-030 —
 Operations Console UI** while implementation remains started under the locked capability
@@ -747,12 +759,12 @@ TYPECHECK_STATUS: FAIL_PRE_EXISTING_UNRELATED
 CUSTOMER_ORDERING_E2E: BLOCKED_ENVIRONMENT
 CUSTOMER_ORDERING_ALTERNATIVE_REGRESSION_EVIDENCE_SUFFICIENT: YES
 RELEVANT_REGRESSION_TESTS: PASS_WITH_ENVIRONMENT_LIMITATION
-IMP-030: ARCHITECTURE_IN_PROGRESS
-IMP-030_ARCHITECTURE: NOT_LOCKED
-IMP-030_ARCHITECTURE_LOCKED: NO
-IMP-030_IMPLEMENTATION: NOT_AUTHORIZED / NOT_STARTED
-IMP-030_IMPLEMENTATION_AUTHORIZED: NO
-IMP-030_STARTED: NO
+IMP-030: IMPLEMENTATION_IN_PROGRESS
+IMP-030_ARCHITECTURE: LOCKED
+IMP-030_ARCHITECTURE_LOCKED: YES
+IMP-030_IMPLEMENTATION: AUTHORIZED / STARTED
+IMP-030_IMPLEMENTATION_AUTHORIZED: YES
+IMP-030_STARTED: YES
 IMP-030_IMPLEMENTATION_COMPLETE: NO
 IMP-030_ACCEPTED: NO
 ```

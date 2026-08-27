@@ -14,6 +14,9 @@ import {
   evaluateImp030ImplementationStartDocuments,
   evaluateImp030DetailRouteAmendmentCheckpoint,
   evaluateImp030DetailRouteAmendmentDocuments,
+  evaluateImp030CanonicalConsistencyCheckpoint,
+  evaluateImp030CanonicalConsistencyDocuments,
+  evaluateImp030LiveInProgressProseConsistency,
   evaluateImp030CurrentRouteFacts,
   extractCurrentImp030RouteFacts,
   evaluateLifecycleAuthorityAlignment,
@@ -1354,17 +1357,20 @@ describe("IMP-030 architecture lock checkpoint", () => {
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R68", "STATE-R66", "authorization"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R69", "STATE-R67", "start"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R70", "STATE-R68", "routeAmendment"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R71", "STATE-R69", "consistencyRepair"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R68", "STATE-R66"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R69", "STATE-R67"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R70", "STATE-R68"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R71", "STATE-R69"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R69", "STATE-R66"), false);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R68", "STATE-R67"), false);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R67", "STATE-R66"), false);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R70", "STATE-R67"), false);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R69", "STATE-R68"), false);
-    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R71", "STATE-R69"), false);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R71", "STATE-R68"), false);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R70", "STATE-R69"), false);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R71", "STATE-R69", "routeAmendment"), false);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R70", "STATE-R68", "consistencyRepair"), false);
   });
 
   it("accepts only the R66/S64 architecture-activation checkpoint", () => {
@@ -1939,13 +1945,14 @@ IMP-030_API_DETAIL_ROUTE: GET /api/operations/v1/orders/{orderId}
 
   it("rejects future governance frontiers independently", () => {
     for (const [roadmapVersion, stateVersion] of [
-      ["GTM-R71", "STATE-R69"],
+      ["GTM-R72", "STATE-R70"],
       ["GTM-R71", "STATE-R68"],
       ["GTM-R70", "STATE-R69"],
       ["GTM-R69", "STATE-R67"],
     ]) {
       assert.equal(isSupportedImp030GovernanceCheckpoint(roadmapVersion, stateVersion, "routeAmendment"), false, `${roadmapVersion}/${stateVersion}`);
     }
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R71", "STATE-R69", "routeAmendment"), false);
   });
 
   it("rejects adversarial R70/S68 lifecycle, route, and artifact mutations independently", () => {
@@ -2024,6 +2031,192 @@ IMP-030_API_DETAIL_ROUTE: GET /api/operations/v1/orders/{orderId}
       { artifactText: capabilityText.replace(/"implementation":\s*"AUTHORIZED \/ STARTED"/, '"implementation": "AUTHORIZED / NOT_STARTED"') },
     ]) {
       assert.equal(evaluateImp030DetailRouteAmendmentDocuments(routeAmendmentDocuments(overrides)).ok, false);
+    }
+  });
+});
+
+describe("IMP-030 canonical consistency repair checkpoint", () => {
+  const consistency = Object.freeze({
+    roadmapVersion: "GTM-R71", stateVersion: "STATE-R69", acceptedThrough: "IMP-029",
+    currentProductSlice: "IMP-030", nextProductSlice: "IMP-031", pendingAcceptance: "NONE",
+    imp029: "COMPLETE_AND_ACCEPTED", imp030: "IMPLEMENTATION_IN_PROGRESS", architecture: "LOCKED",
+    architectureLocked: "YES", implementationAuthorized: "YES", started: "YES",
+    implementationComplete: "NO", accepted: "NO", imp031: "PLANNED",
+    architectureVersion: "ARCH-R17", decisionRegisterVersion: "DR-14", d372Current: true,
+    d373Exists: false, artifact: true,
+    detailUiRoute: "/workforce/operations/orders/detail/",
+    detailIdTransport: "QUERY_PARAMETER_ORDER_ID",
+    dynamicDetailRoute: "NO",
+    staticExportDetailShell: "YES",
+    apiDetailRoute: "GET /api/operations/v1/orders/{orderId}",
+  });
+
+  const roadmapText = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
+  const stateText = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
+  const decisionText = readFileSync(new URL("../docs/platform/decision-register.md", import.meta.url), "utf8");
+  const architectureText = readFileSync(new URL("../docs/platform/ARCHITECTURE.md", import.meta.url), "utf8");
+  const capabilityText = readFileSync(new URL("../docs/platform/capabilities/IMP-030-operations-console-ui.md", import.meta.url), "utf8");
+
+  function replaceLiveRoadmapSection(text, mutator) {
+    const start = text.indexOf("## 4. Current Product Slice");
+    const end = text.indexOf("\n## ", start + 1);
+    assert.notEqual(start, -1);
+    assert.notEqual(end, -1);
+    const section = text.slice(start, end);
+    const updated = mutator(section);
+    assert.notEqual(updated, section);
+    return `${text.slice(0, start)}${updated}${text.slice(end)}`;
+  }
+
+  function replaceLiveStateAcceptanceBlock(text, mutator) {
+    const start = text.indexOf("## 5. Acceptance Position");
+    const end = text.indexOf("\n## ", start + 1);
+    assert.notEqual(start, -1);
+    assert.notEqual(end, -1);
+    const section = text.slice(start, end);
+    const updated = mutator(section);
+    assert.notEqual(updated, section);
+    return `${text.slice(0, start)}${updated}${text.slice(end)}`;
+  }
+
+  function consistencyDocuments(overrides = {}) {
+    return {
+      roadmap: {
+        text: overrides.roadmapText ?? roadmapText,
+        meta: {
+          roadmapVersion: overrides.roadmapVersion ?? "GTM-R71",
+          acceptedThrough: overrides.acceptedThrough ?? "IMP-029",
+          currentProductSlice: overrides.currentProductSlice ?? "IMP-030",
+          nextProductSlice: overrides.nextProductSlice ?? "IMP-031",
+          pendingAcceptance: overrides.pendingAcceptance ?? "NONE",
+        },
+      },
+      state: {
+        text: overrides.stateText ?? stateText,
+        meta: {
+          stateVersion: overrides.stateVersion ?? "STATE-R69",
+          acceptedThrough: overrides.acceptedThrough ?? "IMP-029",
+          currentProductSlice: overrides.currentProductSlice ?? "IMP-030",
+          nextProductSlice: overrides.nextProductSlice ?? "IMP-031",
+          pendingAcceptance: overrides.pendingAcceptance ?? "NONE",
+        },
+      },
+      architecture: {
+        meta: { architectureVersion: overrides.architectureVersion ?? "ARCH-R17" },
+        text: architectureText,
+      },
+      decision: {
+        meta: { decisionRegisterVersion: overrides.decisionRegisterVersion ?? "DR-14" },
+        text: overrides.decisionText ?? decisionText,
+      },
+      artifact: overrides.artifact ?? true,
+      artifactText: overrides.artifactText ?? capabilityText,
+    };
+  }
+
+  it("accepts only the R71/S69 canonical-consistency checkpoint", () => {
+    assert.deepEqual(evaluateImp030CanonicalConsistencyCheckpoint(consistency), { ok: true });
+    assert.deepEqual(evaluateImp030CanonicalConsistencyDocuments(consistencyDocuments()), { ok: true });
+  });
+
+  it("preserves predecessor R70/S68 support and rejects unsupported cross-pairs", () => {
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R70", "STATE-R68", "routeAmendment"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R70", "STATE-R68"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R71", "STATE-R69", "consistencyRepair"), true);
+    for (const [roadmapVersion, stateVersion] of [
+      ["GTM-R71", "STATE-R68"],
+      ["GTM-R70", "STATE-R69"],
+      ["GTM-R71", "STATE-R67"],
+      ["GTM-R69", "STATE-R69"],
+      ["GTM-R72", "STATE-R70"],
+    ]) {
+      assert.equal(isSupportedImp030GovernanceCheckpoint(roadmapVersion, stateVersion), false, `${roadmapVersion}/${stateVersion}`);
+      assert.equal(isSupportedImp030GovernanceCheckpoint(roadmapVersion, stateVersion, "consistencyRepair"), false, `${roadmapVersion}/${stateVersion}`);
+    }
+  });
+
+  it("rejects ROADMAP §4 stale NOT_LOCKED while current lifecycle is LOCKED", () => {
+    const roadmapTextStale = replaceLiveRoadmapSection(roadmapText, (section) =>
+      section.replace(
+        /IMP-030 — Operations Console UI is the current product slice[\s\S]*?IMP-031 remains/,
+        "IMP-030 — Operations Console UI is the current product slice for architecture work only.\nIMP-030 architecture is not locked and IMP-031 remains",
+      ));
+    assert.equal(
+      evaluateImp030LiveInProgressProseConsistency(consistencyDocuments({ roadmapText: roadmapTextStale })).ok,
+      false,
+    );
+    assert.equal(
+      evaluateImp030CanonicalConsistencyDocuments(consistencyDocuments({ roadmapText: roadmapTextStale })).ok,
+      false,
+    );
+  });
+
+  it("rejects ROADMAP §4 stale NOT_AUTHORIZED / NOT_STARTED while current lifecycle is AUTHORIZED / STARTED", () => {
+    const roadmapTextStale = replaceLiveRoadmapSection(roadmapText, (section) =>
+      section.replace(
+        /Implementation is\s*`AUTHORIZED` \/ `STARTED`\./,
+        "IMP-030 architecture is locked but its implementation is not authorized or started.",
+      ));
+    const result = evaluateImp030LiveInProgressProseConsistency(consistencyDocuments({ roadmapText: roadmapTextStale }));
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP030_LIVE_ROADMAP_STALE_AUTHORIZATION");
+  });
+
+  it("rejects ROADMAP §4 stale Next product slice: IMP-030", () => {
+    const roadmapTextStale = replaceLiveRoadmapSection(roadmapText, (section) =>
+      section.replace(/^Next product slice:\s*IMP-031\b.*$/m, "Next product slice: IMP-030 — Operations Console UI"));
+    const result = evaluateImp030LiveInProgressProseConsistency(consistencyDocuments({ roadmapText: roadmapTextStale }));
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP030_LIVE_ROADMAP_STALE_NEXT_SLICE");
+  });
+
+  it("rejects STATE §5 stale ARCHITECTURE_IN_PROGRESS", () => {
+    const stateTextStale = replaceLiveStateAcceptanceBlock(stateText, (section) =>
+      section.replace(/^IMP-030:\s*IMPLEMENTATION_IN_PROGRESS$/m, "IMP-030: ARCHITECTURE_IN_PROGRESS"));
+    const result = evaluateImp030LiveInProgressProseConsistency(consistencyDocuments({ stateText: stateTextStale }));
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP030_LIVE_STATE_STALE_STATUS");
+  });
+
+  it("rejects STATE §5 stale NOT_LOCKED", () => {
+    const stateTextStale = replaceLiveStateAcceptanceBlock(stateText, (section) =>
+      section
+        .replace(/^IMP-030_ARCHITECTURE:\s*LOCKED$/m, "IMP-030_ARCHITECTURE: NOT_LOCKED")
+        .replace(/^IMP-030_ARCHITECTURE_LOCKED:\s*YES$/m, "IMP-030_ARCHITECTURE_LOCKED: NO"));
+    const result = evaluateImp030LiveInProgressProseConsistency(consistencyDocuments({ stateText: stateTextStale }));
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP030_LIVE_STATE_STALE_LOCK");
+  });
+
+  it("rejects STATE §5 stale NOT_AUTHORIZED / NOT_STARTED", () => {
+    const stateTextStale = replaceLiveStateAcceptanceBlock(stateText, (section) =>
+      section
+        .replace(/^IMP-030_IMPLEMENTATION:\s*AUTHORIZED \/ STARTED$/m, "IMP-030_IMPLEMENTATION: NOT_AUTHORIZED / NOT_STARTED")
+        .replace(/^IMP-030_IMPLEMENTATION_AUTHORIZED:\s*YES$/m, "IMP-030_IMPLEMENTATION_AUTHORIZED: NO")
+        .replace(/^IMP-030_STARTED:\s*YES$/m, "IMP-030_STARTED: NO"));
+    const result = evaluateImp030LiveInProgressProseConsistency(consistencyDocuments({ stateText: stateTextStale }));
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP030_LIVE_STATE_STALE_AUTHORIZATION");
+  });
+
+  it("does not false-fail on historical GTM-R66 / STATE-R64 activation prose outside live sections", () => {
+    assert.match(roadmapText, /### GTM-R66[\s\S]*architecture work only/);
+    assert.match(stateText, /STATE-R64[\s\S]*ARCHITECTURE_IN_PROGRESS[\s\S]*NOT_LOCKED/);
+    assert.deepEqual(evaluateImp030LiveInProgressProseConsistency(consistencyDocuments()), { ok: true });
+    assert.deepEqual(evaluateImp030CanonicalConsistencyDocuments(consistencyDocuments()), { ok: true });
+  });
+
+  it("rejects adversarial R71/S69 lifecycle mutations independently", () => {
+    for (const [key, value] of [
+      ["imp030", "IMPLEMENTATION_AUTHORIZED"], ["architecture", "NOT_LOCKED"], ["architectureLocked", "NO"],
+      ["implementationAuthorized", "NO"], ["started", "NO"], ["implementationComplete", "YES"],
+      ["accepted", "YES"], ["acceptedThrough", "IMP-030"], ["currentProductSlice", "IMP-031"],
+      ["nextProductSlice", "IMP-032"], ["pendingAcceptance", "IMP-030"], ["imp031", "ACTIVATED"],
+      ["architectureVersion", "ARCH-R18"], ["decisionRegisterVersion", "DR-15"],
+      ["d373Exists", true], ["artifact", false],
+      ["roadmapVersion", "GTM-R70"], ["stateVersion", "STATE-R68"],
+    ]) {
+      assert.equal(evaluateImp030CanonicalConsistencyCheckpoint({ ...consistency, [key]: value }).ok, false, key);
     }
   });
 });
