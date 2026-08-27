@@ -39,6 +39,9 @@ describe("OperationsOrderListClient", () => {
     await waitFor(() => expect(screen.getByTestId("operations-table")).toBeInTheDocument());
     expect(screen.getByTestId("operations-table")).toHaveTextContent("ORD-0123456789AB");
     expect(screen.getByTestId("order-status-ord-1")).toHaveTextContent("Order received");
+    for (const link of screen.getAllByRole("link", { name: /view details for order ord-0123456789ab/i })) {
+      expect(link).toHaveAttribute("href", "/workforce/operations/orders/detail/?orderId=ord-1");
+    }
   });
 
   it("renders an empty state", async () => {
@@ -119,5 +122,24 @@ describe("OperationsOrderListClient", () => {
     await waitFor(() => expect(screen.getByTestId("operations-table")).toHaveTextContent("ORD-0123456789CD"));
     expect(listWorkforceOrders.mock.calls[1]?.[0]).toEqual({ cursor: "cursor-2" });
     await waitFor(() => expect(screen.queryByTestId("operations-load-more")).not.toBeInTheDocument());
+  });
+
+  it("encodes special characters in detail list-link query identifiers", async () => {
+    const specialId = "order/id ?#";
+    listWorkforceOrders.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      data: {
+        items: [{ ...summary, orderId: specialId }],
+        nextCursor: null,
+      },
+    });
+    render(<OperationsOrderListClient />);
+    await waitFor(() => expect(screen.getByTestId("operations-table")).toBeInTheDocument());
+    const expectedHref =
+      `/workforce/operations/orders/detail/?orderId=${encodeURIComponent(specialId)}`;
+    for (const link of screen.getAllByRole("link", { name: /view details for order/i })) {
+      expect(link).toHaveAttribute("href", expectedHref);
+    }
   });
 });

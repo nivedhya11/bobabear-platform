@@ -294,7 +294,15 @@ export function OperationsOrderListClient() {
                 <tbody>
                   {items.map((order) => (
                     <tr key={order.orderId} className="border-b border-[var(--border-subtle)]">
-                      <td className="py-3 pr-4 text-[var(--text-primary)]">{order.orderNumber}</td>
+                      <td className="py-3 pr-4 text-[var(--text-primary)]">
+                        <a
+                          href={`/workforce/operations/orders/detail/?orderId=${encodeURIComponent(order.orderId)}`}
+                          className="focus:outline-none focus:shadow-[0_0_0_3px_var(--focus-ring)]"
+                          aria-label={`View details for order ${order.orderNumber}`}
+                        >
+                          {order.orderNumber}
+                        </a>
+                      </td>
                       <td className="py-3 pr-4" data-testid={`order-status-${order.orderId}`}>
                         {orderStatusLabel(order.status)}
                       </td>
@@ -315,9 +323,13 @@ export function OperationsOrderListClient() {
                   key={order.orderId}
                   className="border border-[var(--border-subtle)] p-4 flex flex-col gap-2"
                 >
-                  <p className="font-body text-[15px] font-semibold text-[var(--text-primary)]">
+                  <a
+                    href={`/workforce/operations/orders/detail/?orderId=${encodeURIComponent(order.orderId)}`}
+                    className="font-body text-[15px] font-semibold text-[var(--text-primary)] focus:outline-none focus:shadow-[0_0_0_3px_var(--focus-ring)]"
+                    aria-label={`View details for order ${order.orderNumber}`}
+                  >
                     {order.orderNumber}
-                  </p>
+                  </a>
                   <p className="font-body text-[13px] text-[var(--text-secondary)]">
                     {order.outlet.name}
                   </p>

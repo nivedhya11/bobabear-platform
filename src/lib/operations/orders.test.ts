@@ -1,6 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { listWorkforceOrders, SUPPORTED_QUERY_KEYS } from "./orders";
+import {
+  getWorkforceOrder,
+  isOperationsOrderUuid,
+  listWorkforceOrders,
+  parseOperationsOrderDetail,
+  SUPPORTED_QUERY_KEYS,
+} from "./orders";
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -30,6 +36,37 @@ const summary = {
     code: "e2e-outlet",
     name: "E2E Outlet",
   },
+};
+
+const detail = {
+  ...summary,
+  updatedAt: "2026-08-13T00:25:00.000Z",
+  paymentProvenanceKind: "PAYMENT",
+  acceptedByWorkforceUserId: null,
+  fulfilledByWorkforceUserId: null,
+  cancelledByWorkforceUserId: null,
+  cancellationReasonCode: null,
+  destination: {
+    recipientName: "E2E Guest",
+    recipientPhone: "+919876500251",
+    addressLine1: "12 Mall Road",
+    addressLine2: null,
+    landmark: null,
+    locality: null,
+    city: "Dehradun",
+    stateCode: "IN-UT",
+    postalCode: "248001",
+    label: null,
+  },
+  lines: [
+    {
+      productName: "Classic Milk Tea",
+      variantName: "Regular",
+      quantity: 1,
+      lineTotalMinor: "27195",
+      modifiers: [{ groupName: "Sweetness", optionName: "Less sugar", quantity: 1 }],
+    },
+  ],
 };
 
 describe("operations order list client", () => {
@@ -85,5 +122,92 @@ describe("operations order list client", () => {
       requestId: "req-1",
       status: 401,
     });
+  });
+});
+
+describe("operations order detail client adapter", () => {
+  it("gets a detail resource through the encoded same-origin Operations path", async () => {
+    const orderId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    const fetchMock = vi.fn(async (_url: string, init?: RequestInit) => {
+      expect(init).toEqual(expect.objectContaining({ method: "GET", credentials: "same-origin" }));
+      return jsonResponse({ ok: true, order: detail });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await getWorkforceOrder(orderId);
+
+    expect(result.ok).toBe(true);
+    expect(fetchMock).toHaveBeenCalledWith(
+      `/api/operations/v1/orders/${encodeURIComponent(orderId)}`,
+      expect.objectContaining({ method: "GET", credentials: "same-origin" }),
+    );
+    if (!result.ok) return;
+    expect(result.data.order.orderId).toBe(orderId);
+    expect(result.data.order.destination.recipientName).toBe("E2E Guest");
+  });
+
+  it("rejects a summary-shaped HTTP 200 detail payload as INVALID_RESPONSE", async () => {
+    const fetchMock = vi.fn(async () => jsonResponse({ ok: true, order: summary }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await getWorkforceOrder("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa");
+
+    expect(result).toEqual({ ok: false, code: "INVALID_RESPONSE", status: 200 });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects a nested malformed destination on HTTP 200", async () => {
+    const malformed = {
+      ...detail,
+      destination: {
+        recipientName: "E2E Guest",
+        // missing recipientPhone and remaining required destination fields
+      },
+    };
+    vi.stubGlobal("fetch", vi.fn(async () => jsonResponse({ ok: true, order: malformed })));
+
+    const result = await getWorkforceOrder("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa");
+    expect(result).toEqual({ ok: false, code: "INVALID_RESPONSE", status: 200 });
+  });
+
+  it("rejects a nested malformed line modifier on HTTP 200", async () => {
+    const malformed = {
+      ...detail,
+      lines: [
+        {
+          productName: "Classic Milk Tea",
+          variantName: "Regular",
+          quantity: 1,
+          lineTotalMinor: "27195",
+          modifiers: [{ groupName: "Sweetness" }],
+        },
+      ],
+    };
+    vi.stubGlobal("fetch", vi.fn(async () => jsonResponse({ ok: true, order: malformed })));
+
+    const result = await getWorkforceOrder("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa");
+    expect(result).toEqual({ ok: false, code: "INVALID_RESPONSE", status: 200 });
+  });
+});
+
+describe("parseOperationsOrderDetail", () => {
+  it("accepts a complete detail projection", () => {
+    expect(parseOperationsOrderDetail(detail)?.orderNumber).toBe("ORD-0123456789AB");
+  });
+
+  it("rejects incomplete summary-like objects", () => {
+    expect(parseOperationsOrderDetail(summary)).toBeNull();
+  });
+});
+
+describe("isOperationsOrderUuid", () => {
+  it("accepts the Operations UUID resource shape", () => {
+    expect(isOperationsOrderUuid("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa")).toBe(true);
+  });
+
+  it("rejects non-UUID and empty values", () => {
+    expect(isOperationsOrderUuid("")).toBe(false);
+    expect(isOperationsOrderUuid("not-a-uuid")).toBe(false);
+    expect(isOperationsOrderUuid("ord-1")).toBe(false);
   });
 });
