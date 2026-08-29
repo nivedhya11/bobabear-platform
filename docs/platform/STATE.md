@@ -2,7 +2,7 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R73",
+  "stateVersion": "STATE-R74",
   "acceptedThrough": "IMP-030",
   "currentProductSlice": "IMP-031",
   "nextProductSlice": "IMP-032",
@@ -32,7 +32,7 @@ Current Product Implementation: IMP-031 — Provider-Neutral Delivery Foundation
 Pending Acceptance:             NONE
 Next Product Slice:             IMP-032 — Dehradun Delivery Operating Mode
 Current Governance Activity:    IMP-031 capability architecture LOCKED under ARCH-R18;
-                              implementation NOT_AUTHORIZED / NOT_STARTED.
+                              implementation AUTHORIZED / NOT_STARTED.
 Governance Health:              ALIGNED
 ```
 
@@ -170,7 +170,8 @@ Capability architecture:
 
 [`capabilities/IMP-030-operations-console-ui.md`](./capabilities/IMP-030-operations-console-ui.md)
 
-IMP-031 locked capability architecture (architecture LOCKED; implementation not authorized):
+IMP-031 locked capability architecture (architecture LOCKED; implementation AUTHORIZED /
+NOT_STARTED):
 
 [`capabilities/IMP-031-provider-neutral-delivery-foundation.md`](./capabilities/IMP-031-provider-neutral-delivery-foundation.md)
 
@@ -239,6 +240,21 @@ independent acceptance without changing decision register or global architecture
 STATE-R36 record IMP-028B canonical activation without changing decision register or global
 architecture. GTM-R39 / STATE-R37 record IMP-028B architecture lock and implementation
 authorization without changing decision register or global architecture.
+
+STATE-R74 records explicit implementation authorization for **IMP-031 — Provider-Neutral Delivery
+Foundation** under the locked capability architecture at
+[`capabilities/IMP-031-provider-neutral-delivery-foundation.md`](./capabilities/IMP-031-provider-neutral-delivery-foundation.md).
+Authorization applies only to locked Boundary C. ARCH-R18 / ARCH-G24 remain binding. IMP-031 is
+`IMPLEMENTATION_AUTHORIZED`; architecture remains `LOCKED` (`IMP-031_ARCHITECTURE_LOCKED: YES`);
+implementation is `AUTHORIZED` / `NOT_STARTED` (`IMP-031_IMPLEMENTATION_AUTHORIZED: YES`;
+`IMP-031_STARTED: NO`). This is authorization only; implementation is not started.
+`acceptedThrough` remains IMP-030; `pendingAcceptance` remains NONE; `currentProductSlice` remains
+IMP-031; and `nextProductSlice` remains IMP-032. DR-14 is unchanged; D-373 is absent. Concrete
+provider adapters, provider selection/accounts/credentials, Dehradun operating mode, provider
+payload/status mapping, concrete callback/webhook API, workers/queues/new services, retry
+timings/operating thresholds, Operations UI, Notifications/WhatsApp, and infrastructure expansion
+remain deferred. No product, runtime, schema, migration, dependency, or deployment mutation is
+introduced. Supersedes STATE-R73 for the current IMP-031 implementation-authorization position.
 
 STATE-R73 locks the capability architecture for **IMP-031 — Provider-Neutral Delivery Foundation**
 at
@@ -837,11 +853,11 @@ IMP030_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
 IMP030_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
 IMP030_FORMAL_ACCEPTANCE: ACCEPTED
 IMP030_ACCEPTED_MAIN_SHA: 4bcf0fa0a659202c29be03e9b1b0cefbacf484fb
-IMP-031: ARCHITECTURE_LOCKED
+IMP-031: IMPLEMENTATION_AUTHORIZED
 IMP-031_ARCHITECTURE: LOCKED
 IMP-031_ARCHITECTURE_LOCKED: YES
-IMP-031_IMPLEMENTATION: NOT_AUTHORIZED / NOT_STARTED
-IMP-031_IMPLEMENTATION_AUTHORIZED: NO
+IMP-031_IMPLEMENTATION: AUTHORIZED / NOT_STARTED
+IMP-031_IMPLEMENTATION_AUTHORIZED: YES
 IMP-031_STARTED: NO
 IMP030_ACCEPTED_TREE: 048b3ac4e1ba5b3519fa5665f0f4de151068fb59
 ```
