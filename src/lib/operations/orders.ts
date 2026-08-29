@@ -1,13 +1,15 @@
 /**
- * Workforce Operations Order list/detail client (IMP-030).
+ * Workforce Operations Order list/detail/mutation client (IMP-030).
  */
 import { operationsRequest, type OperationsHttpResult } from "./http";
 import type {
   ListWorkforceOrdersInput,
+  OperationsCancellationReasonCode,
   OperationsOrderDetail,
   OperationsOrderDestination,
   OperationsOrderLine,
   OperationsOrderMoney,
+  OperationsOrderMutationResult,
   OperationsOrderSummary,
   OperationsOutletSummary,
 } from "./types";
@@ -19,6 +21,11 @@ type ListEnvelope = Readonly<{
 }>;
 
 type DetailEnvelope = Readonly<{
+  ok: true;
+  order: unknown;
+}>;
+
+type MutationEnvelope = Readonly<{
   ok: true;
   order: unknown;
 }>;
@@ -212,6 +219,63 @@ export function parseOperationsOrderDetail(value: unknown): OperationsOrderDetai
   };
 }
 
+/**
+ * Runtime guard for the accepted Operations mutation success projection.
+ * Does not invent defaults; returns null when the value is unsafe to use.
+ */
+export function parseOperationsOrderMutationResult(
+  value: unknown,
+): OperationsOrderMutationResult | null {
+  if (!isPlainObject(value)) return null;
+  if (
+    typeof value.orderId !== "string" ||
+    typeof value.orderNumber !== "string" ||
+    typeof value.status !== "string" ||
+    typeof value.revision !== "string" ||
+    typeof value.updatedAt !== "string"
+  ) {
+    return null;
+  }
+  if (value.revision.length === 0) return null;
+
+  const result: {
+    orderId: string;
+    orderNumber: string;
+    status: string;
+    revision: string;
+    updatedAt: string;
+    acceptedAt?: string | null;
+    fulfilledAt?: string | null;
+    cancelledAt?: string | null;
+    cancellationReasonCode?: string | null;
+  } = {
+    orderId: value.orderId,
+    orderNumber: value.orderNumber,
+    status: value.status,
+    revision: value.revision,
+    updatedAt: value.updatedAt,
+  };
+
+  if ("acceptedAt" in value) {
+    if (!isNullableString(value.acceptedAt)) return null;
+    result.acceptedAt = value.acceptedAt;
+  }
+  if ("fulfilledAt" in value) {
+    if (!isNullableString(value.fulfilledAt)) return null;
+    result.fulfilledAt = value.fulfilledAt;
+  }
+  if ("cancelledAt" in value) {
+    if (!isNullableString(value.cancelledAt)) return null;
+    result.cancelledAt = value.cancelledAt;
+  }
+  if ("cancellationReasonCode" in value) {
+    if (!isNullableString(value.cancellationReasonCode)) return null;
+    result.cancellationReasonCode = value.cancellationReasonCode;
+  }
+
+  return result;
+}
+
 function buildListQuery(input: ListWorkforceOrdersInput): Record<string, string | undefined> {
   const query: Record<string, string | undefined> = {};
   for (const key of SUPPORTED_QUERY_KEYS) {
@@ -263,6 +327,48 @@ export async function getWorkforceOrder(
     return { ok: false, code: "INVALID_RESPONSE", status: result.status };
   }
   return { ok: true, status: result.status, data: { order } };
+}
+
+async function postLifecycleMutation(
+  orderId: string,
+  action: "accept" | "fulfil" | "cancel",
+  body: Readonly<Record<string, string>>,
+): Promise<OperationsHttpResult<{ order: OperationsOrderMutationResult }>> {
+  const result = await operationsRequest<MutationEnvelope>(
+    `/api/operations/v1/orders/${encodeURIComponent(orderId)}/${action}`,
+    { method: "POST", body },
+  );
+  if (!result.ok) return result;
+  const order = parseOperationsOrderMutationResult(result.data.order);
+  if (!order) {
+    return { ok: false, code: "INVALID_RESPONSE", status: result.status };
+  }
+  return { ok: true, status: result.status, data: { order } };
+}
+
+export async function acceptWorkforceOrder(
+  orderId: string,
+  expectedOrderRevision: string,
+): Promise<OperationsHttpResult<{ order: OperationsOrderMutationResult }>> {
+  return postLifecycleMutation(orderId, "accept", { expectedOrderRevision });
+}
+
+export async function fulfilWorkforceOrder(
+  orderId: string,
+  expectedOrderRevision: string,
+): Promise<OperationsHttpResult<{ order: OperationsOrderMutationResult }>> {
+  return postLifecycleMutation(orderId, "fulfil", { expectedOrderRevision });
+}
+
+export async function cancelWorkforceOrder(
+  orderId: string,
+  expectedOrderRevision: string,
+  cancellationReasonCode: OperationsCancellationReasonCode,
+): Promise<OperationsHttpResult<{ order: OperationsOrderMutationResult }>> {
+  return postLifecycleMutation(orderId, "cancel", {
+    expectedOrderRevision,
+    cancellationReasonCode,
+  });
 }
 
 export { SUPPORTED_QUERY_KEYS };

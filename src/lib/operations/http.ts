@@ -8,8 +8,9 @@ import { parseOperationsErrorBody, type OperationsFailure } from "./errors";
 const JSON_CONTENT_TYPE = "application/json";
 
 export type OperationsRequestOptions = Readonly<{
-  method?: "GET";
+  method?: "GET" | "POST";
   query?: Readonly<Record<string, string | undefined>>;
+  body?: Readonly<Record<string, string>>;
 }>;
 
 export type OperationsHttpResult<T> =
@@ -43,12 +44,19 @@ export async function operationsRequest<T>(
   path: string,
   options: OperationsRequestOptions = {},
 ): Promise<OperationsHttpResult<T>> {
+  const method = options.method ?? "GET";
+  const init: RequestInit = {
+    method,
+    credentials: "same-origin",
+  };
+  if (method === "POST" && options.body !== undefined) {
+    init.headers = { "Content-Type": JSON_CONTENT_TYPE };
+    init.body = JSON.stringify(options.body);
+  }
+
   let response: Response;
   try {
-    response = await fetch(buildUrl(path, options.query), {
-      method: options.method ?? "GET",
-      credentials: "same-origin",
-    });
+    response = await fetch(buildUrl(path, options.query), init);
   } catch {
     return { ok: false, code: "NETWORK_ERROR", status: 0 };
   }

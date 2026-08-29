@@ -30,6 +30,7 @@
     "test:e2e:customer-auth": "npm run build && npm run customer-auth:build && node scripts/e2e/run-customer-auth-e2e.mjs",
     "test:e2e:customer-ordering": "npm run build && npm run customer-auth:build && npm run customer-commerce:build && node scripts/e2e/run-customer-ordering-e2e.mjs",
     "test:e2e:workforce-auth": "npm run build && npm run workforce-auth:build && node scripts/e2e/run-workforce-auth-e2e.mjs",
+    "test:e2e:operations-lifecycle": "node scripts/e2e/run-operations-lifecycle-e2e.mjs",
     "auth:schema:generate": "tsx scripts/auth-schema-generate.ts",
     "auth:schema:check": "tsx scripts/auth-schema-check.ts",
     "audit:auth-foundation": "node scripts/audit-auth-foundation.mjs",

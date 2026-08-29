@@ -84,3 +84,42 @@ export type ListWorkforceOrdersInput = Readonly<{
   cursor?: string;
   limit?: number;
 }>;
+
+export const OPERATIONS_LIFECYCLE_ACTIONS = ["ACCEPT", "FULFIL", "CANCEL"] as const;
+
+export type OperationsLifecycleAction = (typeof OPERATIONS_LIFECYCLE_ACTIONS)[number];
+
+/** Exact accepted Operations cancellation reason codes (presentation labels are separate). */
+export const OPERATIONS_CANCELLATION_REASON_CODES = [
+  "CUSTOMER_REQUESTED",
+  "ITEM_UNAVAILABLE",
+  "OUTLET_UNABLE_TO_FULFIL",
+  "OPERATIONAL_DISRUPTION",
+  "BUSINESS_DECISION",
+] as const;
+
+export type OperationsCancellationReasonCode =
+  (typeof OPERATIONS_CANCELLATION_REASON_CODES)[number];
+
+export const OPERATIONS_CANCELLATION_REASON_LABELS: Readonly<
+  Record<OperationsCancellationReasonCode, string>
+> = {
+  CUSTOMER_REQUESTED: "Customer requested",
+  ITEM_UNAVAILABLE: "Item unavailable",
+  OUTLET_UNABLE_TO_FULFIL: "Outlet unable to fulfil",
+  OPERATIONAL_DISRUPTION: "Operational disruption",
+  BUSINESS_DECISION: "Business decision",
+};
+
+/** Server-confirmed mutation projection (slim; dates are ISO strings over HTTP). */
+export type OperationsOrderMutationResult = Readonly<{
+  orderId: string;
+  orderNumber: string;
+  status: string;
+  revision: string;
+  updatedAt: string;
+  acceptedAt?: string | null;
+  fulfilledAt?: string | null;
+  cancelledAt?: string | null;
+  cancellationReasonCode?: string | null;
+}>;
