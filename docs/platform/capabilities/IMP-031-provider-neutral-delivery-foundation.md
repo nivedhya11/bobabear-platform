@@ -5,8 +5,8 @@
   "capability": "IMP-031",
   "title": "Provider-Neutral Delivery Foundation",
   "architectureLock": "ARCHITECTURE_LOCKED",
-  "implementation": "NOT_AUTHORIZED / NOT_STARTED",
-  "implementationAuthorized": false,
+  "implementation": "AUTHORIZED / NOT_STARTED",
+  "implementationAuthorized": true,
   "lastReviewed": "2026-08-29",
   "bindingDecisions": ["D-357", "D-372"],
   "dependsOn": ["IMP-019", "IMP-021", "IMP-022", "IMP-023", "IMP-029", "IMP-030"]
@@ -17,15 +17,15 @@
 
 ## Capability Architecture (ARCHITECTURE_LOCKED)
 
-This document locks the provider-neutral Delivery foundation for IMP-031. Architecture lock does not
-authorize or start implementation.
+This document locks the provider-neutral Delivery foundation for IMP-031. Implementation is
+`AUTHORIZED` / `NOT_STARTED`; authorization does not start implementation.
 
 | Field | Value |
 |---|---|
 | Architecture lock | `ARCHITECTURE_LOCKED` |
-| Lifecycle | `ARCHITECTURE_LOCKED` |
-| Implementation | `NOT_AUTHORIZED` / `NOT_STARTED` |
-| Implementation authorized | **NO** |
+| Lifecycle | `IMPLEMENTATION_AUTHORIZED` |
+| Implementation | `AUTHORIZED` / `NOT_STARTED` |
+| Implementation authorized | **YES** |
 | Accepted product through | IMP-030 |
 | Current product slice | IMP-031 — Provider-Neutral Delivery Foundation |
 | Next product slice | IMP-032 — Dehradun Delivery Operating Mode |
@@ -33,12 +33,18 @@ authorize or start implementation.
 | New CURRENT decision | **NONE** |
 
 ```text
-IMP-031: ARCHITECTURE_LOCKED
+IMP-031: IMPLEMENTATION_AUTHORIZED
 IMP-031_ARCHITECTURE: LOCKED
 IMP-031_ARCHITECTURE_LOCKED: YES
-IMP-031_IMPLEMENTATION: NOT_AUTHORIZED / NOT_STARTED
-IMP-031_IMPLEMENTATION_AUTHORIZED: NO
+IMP-031_IMPLEMENTATION: AUTHORIZED / NOT_STARTED
+IMP-031_IMPLEMENTATION_AUTHORIZED: YES
 IMP-031_STARTED: NO
+```
+
+```text
+IMP-031_IMPLEMENTATION_AUTHORIZED: YES
+IMP-031_STARTED: NO
+AUTHORIZATION IS NOT IMPLEMENTATION START: YES
 ```
 
 ## 1. Purpose
@@ -306,15 +312,16 @@ The approved bounded implementation foundation is:
 C. domain model + persistence foundation + provider-neutral ports/interfaces
 ```
 
-If separately authorized after this architecture lock, IMP-031 may implement only:
+Authorized Boundary C implementation may include only:
 
 - the provider-neutral Delivery domain model;
 - persistence required for its authoritative neutral state;
 - provider-neutral application and adapter ports/interfaces; and
 - deterministic domain, idempotency, concurrency, and recovery behavior with focused tests.
 
-Human adjudication approved boundary C with the lifecycle amendment in section 4. Architecture is
-now locked; this does not authorize or start implementation.
+Human adjudication approved boundary C with the lifecycle amendment in section 4. Architecture
+remains locked. Implementation is authorized for Boundary C only; authorization does not start
+implementation.
 
 IMP-031 must not implement concrete provider adapters; provider API/webhook payloads; provider
 selection; the Dehradun operating mode; provider credentials/accounts; HTTP route topology unless a
@@ -348,10 +355,11 @@ Architecture lock requires review evidence that:
 - repository project consistency passes; and
 - implementation remains unauthorized until a separate gate.
 
-These are architecture-lock criteria, not implementation acceptance results. This capability now
-satisfies the architecture-lock criteria; implementation remains unauthorized.
+These are architecture-lock criteria, not implementation acceptance results. This capability
+satisfies the architecture-lock criteria. Implementation is now `AUTHORIZED` / `NOT_STARTED` for
+Boundary C only; start remains a separate gate.
 
 ## 11. Open questions for architecture review
 
 None recorded. Boundary C is approved with this lifecycle amendment. Architecture is
-`ARCHITECTURE_LOCKED`; implementation remains `NOT_AUTHORIZED` / `NOT_STARTED`.
+`ARCHITECTURE_LOCKED`; implementation is `AUTHORIZED` / `NOT_STARTED`.

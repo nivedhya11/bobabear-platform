@@ -11,6 +11,10 @@ import {
   evaluateImp031ArchitectureDraftCheckpoint,
   evaluateImp031ArchitectureLockArtifact,
   evaluateImp031ArchitectureLockCheckpoint,
+  evaluateImp031ImplementationAuthorizationArtifact,
+  evaluateImp031ImplementationAuthorizationCheckpoint,
+  evaluateImp031CurrentArchitectureStatus,
+  evaluateImp031ImplementationAuthorizationCrossDocumentAlignment,
   evaluateImp030ArchitectureLockCheckpoint,
   evaluateImp030ArchitectureLockDocuments,
   evaluateImp030ImplementationAuthorizationCheckpoint,
@@ -2365,10 +2369,15 @@ describe("IMP-031 architecture lock checkpoint", () => {
   it("preserves R74/S72 draft and supports only R75/S73 lock", () => {
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R74", "STATE-R72", "imp031Draft"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R75", "STATE-R73", "imp031Lock"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R76", "STATE-R74", "imp031Authorization"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R75", "STATE-R73"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R76", "STATE-R74"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R75", "STATE-R72"), false);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R74", "STATE-R73"), false);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R75", "STATE-R73", "imp031Draft"), false);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R76", "STATE-R74", "imp031Lock"), false);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R76", "STATE-R73"), false);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R75", "STATE-R74"), false);
   });
 
   it("accepts only the architecture-locked, implementation-unauthorized IMP-031 checkpoint", () => {
@@ -2386,7 +2395,21 @@ describe("IMP-031 architecture lock checkpoint", () => {
   });
 
   it("rejects locked ROADMAP vs unlocked capability and premature authorization", () => {
-    const artifact = readFileSync(new URL("../docs/platform/capabilities/IMP-031-provider-neutral-delivery-foundation.md", import.meta.url), "utf8");
+    const authorizedArtifact = readFileSync(new URL("../docs/platform/capabilities/IMP-031-provider-neutral-delivery-foundation.md", import.meta.url), "utf8");
+    const artifact = authorizedArtifact
+      .replace(/"implementation": "AUTHORIZED \/ NOT_STARTED"/, '"implementation": "NOT_AUTHORIZED / NOT_STARTED"')
+      .replace(/"implementationAuthorized": true/, '"implementationAuthorized": false')
+      .replace("| Lifecycle | `IMPLEMENTATION_AUTHORIZED` |", "| Lifecycle | `ARCHITECTURE_LOCKED` |")
+      .replace("| Implementation | `AUTHORIZED` / `NOT_STARTED` |", "| Implementation | `NOT_AUTHORIZED` / `NOT_STARTED` |")
+      .replace("| Implementation authorized | **YES** |", "| Implementation authorized | **NO** |")
+      .replace("IMP-031: IMPLEMENTATION_AUTHORIZED", "IMP-031: ARCHITECTURE_LOCKED")
+      .replace("IMP-031_IMPLEMENTATION: AUTHORIZED / NOT_STARTED", "IMP-031_IMPLEMENTATION: NOT_AUTHORIZED / NOT_STARTED")
+      .replace(/IMP-031_IMPLEMENTATION_AUTHORIZED: YES/g, "IMP-031_IMPLEMENTATION_AUTHORIZED: NO")
+      .replace(/AUTHORIZATION IS NOT IMPLEMENTATION START: YES\n/, "")
+      .replace(
+        "This document locks the provider-neutral Delivery foundation for IMP-031. Implementation is\n`AUTHORIZED` / `NOT_STARTED`; authorization does not start implementation.",
+        "This document locks the provider-neutral Delivery foundation for IMP-031. Architecture lock does not\nauthorize or start implementation.",
+      );
     assert.deepEqual(evaluateImp031ArchitectureLockArtifact(artifact), { ok: true });
     for (const mutation of [
       artifact.replace('"architectureLock": "ARCHITECTURE_LOCKED"', '"architectureLock": "NOT_LOCKED"'),
@@ -2399,6 +2422,157 @@ describe("IMP-031 architecture lock checkpoint", () => {
     ]) {
       assert.equal(evaluateImp031ArchitectureLockArtifact(mutation).ok, false);
     }
+  });
+});
+
+describe("IMP-031 implementation authorization checkpoint", () => {
+  const authorization = Object.freeze({
+    roadmapVersion: "GTM-R76", stateVersion: "STATE-R74", acceptedThrough: "IMP-030",
+    currentProductSlice: "IMP-031", nextProductSlice: "IMP-032", pendingAcceptance: "NONE",
+    imp031: "IMPLEMENTATION_AUTHORIZED", architecture: "LOCKED", architectureLocked: "YES",
+    implementation: "AUTHORIZED / NOT_STARTED", implementationAuthorized: "YES", started: "NO",
+    architectureVersion: "ARCH-R18", decisionRegisterVersion: "DR-14",
+    artifact: true, archG24: true, d373Exists: false, boundaryC: true,
+  });
+
+  it("supports only the R76/S74 authorization checkpoint", () => {
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R76", "STATE-R74", "imp031Authorization"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R75", "STATE-R73", "imp031Authorization"), false);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R76", "STATE-R73", "imp031Authorization"), false);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R75", "STATE-R74", "imp031Authorization"), false);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R77", "STATE-R75", "imp031Authorization"), false);
+  });
+
+  it("accepts only the authorized / not-started IMP-031 checkpoint", () => {
+    assert.deepEqual(evaluateImp031ImplementationAuthorizationCheckpoint(authorization), { ok: true });
+    for (const [key, value] of [
+      ["imp031", "ARCHITECTURE_LOCKED"], ["architecture", "NOT_LOCKED"], ["architectureLocked", "NO"],
+      ["implementationAuthorized", "NO"], ["started", "YES"],
+      ["implementation", "NOT_AUTHORIZED / NOT_STARTED"],
+      ["acceptedThrough", "IMP-031"], ["currentProductSlice", "IMP-032"], ["nextProductSlice", "IMP-031"],
+      ["pendingAcceptance", "IMP-031"],
+      ["architectureVersion", "ARCH-R17"], ["decisionRegisterVersion", "DR-15"],
+      ["artifact", false], ["archG24", false], ["d373Exists", true], ["boundaryC", false],
+      ["roadmapVersion", "GTM-R75"], ["stateVersion", "STATE-R73"],
+    ]) {
+      assert.equal(evaluateImp031ImplementationAuthorizationCheckpoint({ ...authorization, [key]: value }).ok, false, key);
+    }
+  });
+
+  it("rejects unauthorized architecture, started markers, and marker disagreement", () => {
+    const artifact = readFileSync(new URL("../docs/platform/capabilities/IMP-031-provider-neutral-delivery-foundation.md", import.meta.url), "utf8");
+    assert.deepEqual(evaluateImp031ImplementationAuthorizationArtifact(artifact), { ok: true });
+    assert.match(artifact, /AUTHORIZATION IS NOT IMPLEMENTATION START:\s*YES/);
+    assert.match(artifact, /C\. domain model \+ persistence foundation \+ provider-neutral ports\/interfaces/);
+    for (const mutation of [
+      artifact.replace('"architectureLock": "ARCHITECTURE_LOCKED"', '"architectureLock": "NOT_LOCKED"'),
+      artifact.replace('"implementationAuthorized": true', '"implementationAuthorized": false'),
+      artifact.replace('"implementation": "AUTHORIZED / NOT_STARTED"', '"implementation": "NOT_AUTHORIZED / NOT_STARTED"'),
+      artifact.replace("IMP-031_IMPLEMENTATION_AUTHORIZED: YES", "IMP-031_IMPLEMENTATION_AUTHORIZED: NO"),
+      artifact.replace("IMP-031_STARTED: NO", "IMP-031_STARTED: YES"),
+      artifact.replace("IMP-031: IMPLEMENTATION_AUTHORIZED", "IMP-031: ARCHITECTURE_LOCKED"),
+      artifact.replace(/AUTHORIZATION IS NOT IMPLEMENTATION START: YES\n/, ""),
+      artifact.replace(/\| Implementation boundary \| \*\*C — APPROVED WITH THIS LIFECYCLE AMENDMENT\*\* \|/, "| Implementation boundary | **A** |"),
+      `${artifact}\nD-373`,
+    ]) {
+      assert.equal(evaluateImp031ImplementationAuthorizationArtifact(mutation).ok, false);
+    }
+  });
+
+  it("rejects authorized-while-unlocked and started-while-unauthorized combinations", () => {
+    assert.equal(
+      evaluateImp031ImplementationAuthorizationCheckpoint({
+        ...authorization,
+        architectureLocked: "NO",
+        architecture: "NOT_LOCKED",
+        implementationAuthorized: "YES",
+      }).ok,
+      false,
+    );
+    assert.equal(
+      evaluateImp031ImplementationAuthorizationCheckpoint({
+        ...authorization,
+        implementationAuthorized: "NO",
+        started: "YES",
+        implementation: "AUTHORIZED / STARTED",
+      }).ok,
+      false,
+    );
+    assert.equal(
+      evaluateImp031ArchitectureLockCheckpoint({
+        roadmapVersion: "GTM-R75", stateVersion: "STATE-R73", acceptedThrough: "IMP-030",
+        currentProductSlice: "IMP-031", nextProductSlice: "IMP-032", pendingAcceptance: "NONE",
+        imp031: "ARCHITECTURE_LOCKED", architecture: "LOCKED", architectureLocked: "YES",
+        implementation: "NOT_AUTHORIZED / NOT_STARTED", implementationAuthorized: "YES", started: "NO",
+        architectureVersion: "ARCH-R18", decisionRegisterVersion: "DR-14",
+        artifact: true, archG24: true, d373Exists: false,
+      }).ok,
+      false,
+    );
+  });
+
+  it("requires CURRENT ARCHITECTURE Delivery / IMP-031 AUTHORIZED / NOT_STARTED wording", () => {
+    const architectureText = readFileSync(new URL("../docs/platform/ARCHITECTURE.md", import.meta.url), "utf8");
+    assert.deepEqual(evaluateImp031CurrentArchitectureStatus(architectureText), { ok: true });
+    const stale = architectureText
+      .replaceAll("implementation AUTHORIZED / NOT_STARTED", "implementation NOT_AUTHORIZED / NOT_STARTED");
+    const result = evaluateImp031CurrentArchitectureStatus(stale);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP031_ARCH_STATUS_STALE");
+    assert.match(result.message, /NOT_AUTHORIZED/);
+  });
+
+  it("rejects authorization YES elsewhere while CURRENT ARCHITECTURE says NOT_AUTHORIZED", () => {
+    const roadmapText = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
+    const stateText = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
+    const capabilityText = readFileSync(new URL("../docs/platform/capabilities/IMP-031-provider-neutral-delivery-foundation.md", import.meta.url), "utf8");
+    const architectureText = readFileSync(new URL("../docs/platform/ARCHITECTURE.md", import.meta.url), "utf8");
+    assert.deepEqual(
+      evaluateImp031ImplementationAuthorizationCrossDocumentAlignment({
+        architectureText, capabilityText, roadmapText, stateText,
+      }),
+      { ok: true },
+    );
+    const staleArchitecture = architectureText.replaceAll(
+      "implementation AUTHORIZED / NOT_STARTED",
+      "implementation NOT_AUTHORIZED / NOT_STARTED",
+    );
+    const stale = evaluateImp031ImplementationAuthorizationCrossDocumentAlignment({
+      architectureText: staleArchitecture, capabilityText, roadmapText, stateText,
+    });
+    assert.equal(stale.ok, false);
+    assert.equal(stale.code, "IMP031_ARCH_STATUS_STALE");
+  });
+
+  it("rejects started=YES while authorization=NO across current markers", () => {
+    const roadmapText = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
+    const stateText = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
+    const capabilityText = readFileSync(new URL("../docs/platform/capabilities/IMP-031-provider-neutral-delivery-foundation.md", import.meta.url), "utf8");
+    const architectureText = readFileSync(new URL("../docs/platform/ARCHITECTURE.md", import.meta.url), "utf8");
+    const currentRoadmap = roadmapText.slice(roadmapText.indexOf("## 2."), roadmapText.indexOf("## 3."));
+    const mutatedRoadmap = roadmapText.replace(
+      currentRoadmap,
+      currentRoadmap
+        .replace(/IMP-031_IMPLEMENTATION_AUTHORIZED:\s*YES/, "IMP-031_IMPLEMENTATION_AUTHORIZED: NO")
+        .replace(/IMP-031_STARTED:\s*NO/, "IMP-031_STARTED: YES"),
+    );
+    const stateAcceptanceStart = stateText.indexOf("## 5. Acceptance Position");
+    const stateAcceptanceEnd = stateText.indexOf("\n## ", stateAcceptanceStart + 1);
+    const currentStateAcceptance = stateText.slice(stateAcceptanceStart, stateAcceptanceEnd === -1 ? undefined : stateAcceptanceEnd);
+    const mutatedState = stateText.replace(
+      currentStateAcceptance,
+      currentStateAcceptance
+        .replace(/IMP-031_IMPLEMENTATION_AUTHORIZED:\s*YES/, "IMP-031_IMPLEMENTATION_AUTHORIZED: NO")
+        .replace(/IMP-031_STARTED:\s*NO/, "IMP-031_STARTED: YES"),
+    );
+    const result = evaluateImp031ImplementationAuthorizationCrossDocumentAlignment({
+      architectureText,
+      capabilityText,
+      roadmapText: mutatedRoadmap,
+      stateText: mutatedState,
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP031_STARTED_WITHOUT_AUTHORIZATION");
   });
 });
 
