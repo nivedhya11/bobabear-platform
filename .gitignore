@@ -16,6 +16,7 @@
 /playwright-report-customer-auth
 /test-results
 /test-results-customer-auth
+/test-results-operations-lifecycle
 /blob-report
 
 # next.js

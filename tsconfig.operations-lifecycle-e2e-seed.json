@@ -1,0 +1,18 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "noEmit": false,
+    "declaration": false,
+    "sourceMap": false,
+    "incremental": false,
+    "isolatedModules": true,
+    "allowJs": false,
+    "rootDir": ".",
+    "types": ["node"]
+  },
+  "files": ["scripts/e2e/seed-operations-lifecycle.ts"],
+  "include": []
+}
