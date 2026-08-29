@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R69",
-  "acceptedThrough": "IMP-029",
-  "currentProductSlice": "IMP-030",
+  "stateVersion": "STATE-R70",
+  "acceptedThrough": "IMP-030",
+  "currentProductSlice": "NONE",
   "nextProductSlice": "IMP-031",
   "pendingAcceptance": "NONE",
   "governanceHealth": "ALIGNED",
-  "lastReviewed": "2026-08-27"
+  "lastReviewed": "2026-08-29"
 }
 -->
 
@@ -20,32 +20,19 @@ current-reality authority.
 ## 1. Accepted Position
 
 ```text
-Accepted Through:          IMP-029 — Operations Console API
+Accepted Through:          IMP-030 — Operations Console UI
 Accepted Inserted Slice:   IMP-005A — Dockerized local application runtime; IMP-026C — Pilot Customer-Commerce UX Hardening; IMP-028A — Food Direct UX Foundation; IMP-028B — Customer Menu Projection + Discovery; IMP-028C — Food Customization; IMP-028D — Desktop Ordering Continuity
-Accepted Range:            IMP-001 → IMP-029 (including IMP-005A and IMP-026C)
+Accepted Range:            IMP-001 → IMP-030 (including IMP-005A and IMP-026C)
 ```
 
 ## 2. Current Work Position
 
 ```text
-Current Product Implementation: IMP-030 — Operations Console UI
+Current Product Implementation: NONE
 Pending Acceptance:             NONE
 Next Product Slice:             IMP-031 — Provider-Neutral Delivery Foundation
-Current Governance Activity:    IMP-030 capability architecture LOCKED and formally amended/re-locked
-                              for static detail-route realization; implementation AUTHORIZED /
-                              STARTED / IMPLEMENTATION_IN_PROGRESS.
+Current Governance Activity:    IMP-030 COMPLETE_AND_ACCEPTED; no product slice is active.
 Governance Health:              ALIGNED
-```
-
-```text
-IMP-030: IMPLEMENTATION_IN_PROGRESS
-IMP-030_ARCHITECTURE: LOCKED
-IMP-030_ARCHITECTURE_LOCKED: YES
-IMP-030_IMPLEMENTATION: AUTHORIZED / STARTED
-IMP-030_IMPLEMENTATION_AUTHORIZED: YES
-IMP-030_STARTED: YES
-IMP-030_IMPLEMENTATION_COMPLETE: NO
-IMP-030_ACCEPTED: NO
 ```
 
 ```text
@@ -140,6 +127,20 @@ IMP029_FORMAL_ACCEPTANCE: ACCEPTED
 IMP029_ACCEPTED_MAIN_SHA: 0490a393666a87f5f99cc6d90c99bef18d09c097
 IMP029_ACCEPTED_TREE:     4d376d296bd8596c4809fc91331659a2f52e53e6
 REMOTE_OPERATIONS_DEPLOYMENT_PROVEN: NO
+IMP-030:                  COMPLETE_AND_ACCEPTED
+IMP-030_ARCHITECTURE:     LOCKED
+IMP-030_ARCHITECTURE_LOCKED: YES
+IMP-030_IMPLEMENTATION:   AUTHORIZED / STARTED / COMPLETE
+IMP-030_IMPLEMENTATION_AUTHORIZED: YES
+IMP-030_STARTED:          YES
+IMP-030_IMPLEMENTATION_COMPLETE: YES
+IMP-030_ACCEPTED:         YES
+IMP030_IMPLEMENTATION_EVIDENCE: COMPLETE
+IMP030_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
+IMP030_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
+IMP030_FORMAL_ACCEPTANCE: ACCEPTED
+IMP030_ACCEPTED_MAIN_SHA: 4bcf0fa0a659202c29be03e9b1b0cefbacf484fb
+IMP030_ACCEPTED_TREE:     048b3ac4e1ba5b3519fa5665f0f4de151068fb59
 ```
 
 Capability architecture:
@@ -168,7 +169,7 @@ Capability architecture:
 
 [`capabilities/IMP-030-operations-console-ui.md`](./capabilities/IMP-030-operations-console-ui.md)
 
-`acceptedThrough` is IMP-029. IMP-025 architecture remains locked; IMP-025 implementation is
+`acceptedThrough` is IMP-030. IMP-025 architecture remains locked; IMP-025 implementation is
 **COMPLETE_AND_ACCEPTED**. IMP-026 architecture is **ARCHITECTURE_LOCKED**. IMP-026 implementation
 is **COMPLETE_AND_ACCEPTED** (`IMP-026_ACCEPTED: YES`). Independent acceptance of IMP-026 is
 recorded, including provider-originated Razorpay Test Mode webhook proof over public HTTPS.
@@ -191,7 +192,12 @@ IMP-029 is `COMPLETE_AND_ACCEPTED`; architecture remains `LOCKED`; implementatio
 `IMP-029_IMPLEMENTATION_COMPLETE: YES`; `IMP-029_ACCEPTED: YES`). Its locked capability architecture
 is [`capabilities/IMP-029-operations-console-api.md`](./capabilities/IMP-029-operations-console-api.md);
 binding decision **D-372** remains CURRENT and establishes a separate workforce business transport
-while retaining the existing workforce session/principal and Order authorities. GTM-R37 / STATE-R35 record
+while retaining the existing workforce session/principal and Order authorities. IMP-030 is
+`COMPLETE_AND_ACCEPTED`; architecture remains `LOCKED`; implementation is **authorized**,
+**started**, and **complete** (`IMP-030_IMPLEMENTATION_AUTHORIZED: YES`; `IMP-030_STARTED: YES`;
+`IMP-030_IMPLEMENTATION_COMPLETE: YES`; `IMP-030_ACCEPTED: YES`). Its locked capability architecture
+is [`capabilities/IMP-030-operations-console-ui.md`](./capabilities/IMP-030-operations-console-ui.md).
+GTM-R37 / STATE-R35 record
 IMP-028A `COMPLETE_AND_ACCEPTED` (`IMP-028A_IMPLEMENTATION_AUTHORIZED: YES`;
 `IMP-028A_IMPLEMENTATION_STARTED: YES`; `IMP-028A_IMPLEMENTATION_COMPLETE: YES`;
 `IMP-028A_ACCEPTED: YES`; architecture `ARCHITECTURE_LOCKED`). At that historical acceptance,
@@ -228,6 +234,20 @@ independent acceptance without changing decision register or global architecture
 STATE-R36 record IMP-028B canonical activation without changing decision register or global
 architecture. GTM-R39 / STATE-R37 record IMP-028B architecture lock and implementation
 authorization without changing decision register or global architecture.
+
+STATE-R70 records formal acceptance of **IMP-030 — Operations Console UI** for independently
+accepted `main` merge SHA `4bcf0fa0a659202c29be03e9b1b0cefbacf484fb` and tree
+`048b3ac4e1ba5b3519fa5665f0f4de151068fb59`. Implementation evidence is **COMPLETE**;
+independent implementation review is **PASS**; independent acceptance evidence is **ACCEPTED**.
+IMP-030 is `COMPLETE_AND_ACCEPTED`; architecture remains `ARCHITECTURE_LOCKED`; implementation is
+`AUTHORIZED` / `STARTED` / `COMPLETE` (`IMP-030_ARCHITECTURE_LOCKED: YES`;
+`IMP-030_IMPLEMENTATION_AUTHORIZED: YES`; `IMP-030_STARTED: YES`;
+`IMP-030_IMPLEMENTATION_COMPLETE: YES`; `IMP-030_ACCEPTED: YES`). `acceptedThrough` advances to
+IMP-030; `currentProductSlice` and `pendingAcceptance` are NONE; `nextProductSlice` remains
+IMP-031, `PLANNED` / `NOT_ACTIVATED`. D-372 remains CURRENT; ARCH-R17 and DR-14 remain unchanged;
+D-373 is absent. This reconciliation introduces no runtime, schema, migration, or deployment
+mutation beyond the already-promoted implementation. Supersedes STATE-R69 for the current IMP-030
+lifecycle and acceptance position.
 
 STATE-R69 supersedes STATE-R68 only to repair stale current-state prose in Acceptance Position.
 No lifecycle, architecture, decision, completion, acceptance, or activation delta occurred.
@@ -696,13 +716,14 @@ Cart → Checkout → Payment → Order
 | IMP-028C | Food Customization | COMPLETE_AND_ACCEPTED |
 | IMP-028D | Desktop Ordering Continuity | COMPLETE_AND_ACCEPTED |
 | IMP-029 | Operations Console API | COMPLETE_AND_ACCEPTED |
+| IMP-030 | Operations Console UI | COMPLETE_AND_ACCEPTED |
 
 ## 5. Acceptance Position
 
 ```text
-acceptedThrough: IMP-029
+acceptedThrough: IMP-030
 pendingAcceptance: NONE
-currentProductSlice: IMP-030
+currentProductSlice: NONE
 nextProductSlice: IMP-031 — Provider-Neutral Delivery Foundation
 FOUNDER_UAT: PASS
 FOUNDER_UAT_REQUIRED: YES
@@ -759,14 +780,20 @@ TYPECHECK_STATUS: FAIL_PRE_EXISTING_UNRELATED
 CUSTOMER_ORDERING_E2E: BLOCKED_ENVIRONMENT
 CUSTOMER_ORDERING_ALTERNATIVE_REGRESSION_EVIDENCE_SUFFICIENT: YES
 RELEVANT_REGRESSION_TESTS: PASS_WITH_ENVIRONMENT_LIMITATION
-IMP-030: IMPLEMENTATION_IN_PROGRESS
+IMP-030: COMPLETE_AND_ACCEPTED
 IMP-030_ARCHITECTURE: LOCKED
 IMP-030_ARCHITECTURE_LOCKED: YES
-IMP-030_IMPLEMENTATION: AUTHORIZED / STARTED
+IMP-030_IMPLEMENTATION: AUTHORIZED / STARTED / COMPLETE
 IMP-030_IMPLEMENTATION_AUTHORIZED: YES
 IMP-030_STARTED: YES
-IMP-030_IMPLEMENTATION_COMPLETE: NO
-IMP-030_ACCEPTED: NO
+IMP-030_IMPLEMENTATION_COMPLETE: YES
+IMP-030_ACCEPTED: YES
+IMP030_IMPLEMENTATION_EVIDENCE: COMPLETE
+IMP030_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
+IMP030_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
+IMP030_FORMAL_ACCEPTANCE: ACCEPTED
+IMP030_ACCEPTED_MAIN_SHA: 4bcf0fa0a659202c29be03e9b1b0cefbacf484fb
+IMP030_ACCEPTED_TREE: 048b3ac4e1ba5b3519fa5665f0f4de151068fb59
 ```
 
 Independent acceptance of IMP-028A **is** claimed and formally reconciled

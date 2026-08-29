@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 import {
@@ -16,9 +17,12 @@ import {
   evaluateImp030DetailRouteAmendmentDocuments,
   evaluateImp030CanonicalConsistencyCheckpoint,
   evaluateImp030CanonicalConsistencyDocuments,
+  evaluateImp030AcceptanceCheckpoint,
+  evaluateImp030AcceptanceDocuments,
   evaluateImp030LiveInProgressProseConsistency,
   evaluateImp030CurrentRouteFacts,
   extractCurrentImp030RouteFacts,
+  extractCurrentImp030Lifecycle,
   evaluateLifecycleAuthorityAlignment,
   evaluatePendingAcceptanceSplit,
   isAllowedGovernanceVersion,
@@ -26,6 +30,15 @@ import {
   isValidCanonicalRevision,
   runProjectConsistency,
 } from "./project-consistency.mjs";
+
+/** Immutable pre-acceptance governance baseline (R71/S69 IMPLEMENTATION_IN_PROGRESS). */
+const IMP030_IN_PROGRESS_BASE = "4bcf0fa0a659202c29be03e9b1b0cefbacf484fb";
+function readInProgressGovernance(relPath) {
+  return execFileSync("git", ["show", `${IMP030_IN_PROGRESS_BASE}:${relPath}`], {
+    encoding: "utf8",
+    cwd: new URL("..", import.meta.url).pathname,
+  });
+}
 
 describe("project:consistency", () => {
   it("passes against the repository governance baseline", () => {
@@ -1358,10 +1371,12 @@ describe("IMP-030 architecture lock checkpoint", () => {
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R69", "STATE-R67", "start"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R70", "STATE-R68", "routeAmendment"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R71", "STATE-R69", "consistencyRepair"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R72", "STATE-R70", "acceptance"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R68", "STATE-R66"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R69", "STATE-R67"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R70", "STATE-R68"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R71", "STATE-R69"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R72", "STATE-R70"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R69", "STATE-R66"), false);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R68", "STATE-R67"), false);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R67", "STATE-R66"), false);
@@ -1369,8 +1384,12 @@ describe("IMP-030 architecture lock checkpoint", () => {
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R69", "STATE-R68"), false);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R71", "STATE-R68"), false);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R70", "STATE-R69"), false);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R72", "STATE-R69"), false);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R71", "STATE-R70"), false);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R71", "STATE-R69", "routeAmendment"), false);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R70", "STATE-R68", "consistencyRepair"), false);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R72", "STATE-R70", "consistencyRepair"), false);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R71", "STATE-R69", "acceptance"), false);
   });
 
   it("accepts only the R66/S64 architecture-activation checkpoint", () => {
@@ -1395,11 +1414,11 @@ describe("IMP-030 architecture lock checkpoint", () => {
     }
   });
 
-  const roadmapText = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
-  const stateText = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
+  const roadmapText = readInProgressGovernance("docs/platform/ROADMAP.md");
+  const stateText = readInProgressGovernance("docs/platform/STATE.md");
   const decisionText = readFileSync(new URL("../docs/platform/decision-register.md", import.meta.url), "utf8");
   const architectureText = readFileSync(new URL("../docs/platform/ARCHITECTURE.md", import.meta.url), "utf8");
-  const capabilityText = readFileSync(new URL("../docs/platform/capabilities/IMP-030-operations-console-ui.md", import.meta.url), "utf8");
+  const capabilityText = readInProgressGovernance("docs/platform/capabilities/IMP-030-operations-console-ui.md");
   const currentSectionEnd = "## 3.";
 
   function replaceCurrentFact(text, key, value) {
@@ -1527,12 +1546,12 @@ describe("IMP-030 implementation authorization checkpoint", () => {
     d373Exists: false, artifact: true,
   });
 
-  const authorizationRoadmapText = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8")
+  const authorizationRoadmapText = readInProgressGovernance("docs/platform/ROADMAP.md")
     .replace(/"roadmapVersion": "GTM-R69"/, '"roadmapVersion": "GTM-R68"')
     .replace("| IMP-030 | Operations Console UI | IMPLEMENTATION_IN_PROGRESS |", "| IMP-030 | Operations Console UI | IMPLEMENTATION_AUTHORIZED |");
-  const authorizationStateText = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8")
+  const authorizationStateText = readInProgressGovernance("docs/platform/STATE.md")
     .replace(/"stateVersion": "STATE-R67"/, '"stateVersion": "STATE-R66"');
-  const authorizationCapabilityText = readFileSync(new URL("../docs/platform/capabilities/IMP-030-operations-console-ui.md", import.meta.url), "utf8")
+  const authorizationCapabilityText = readInProgressGovernance("docs/platform/capabilities/IMP-030-operations-console-ui.md")
     .replace(/"implementation": "AUTHORIZED \/ STARTED"/, '"implementation": "AUTHORIZED / NOT_STARTED"')
     .replace("| Implementation | `AUTHORIZED` / `STARTED` |", "| Implementation | `AUTHORIZED` / `NOT_STARTED` |")
     .replace("IMP-030_STARTED: YES", "IMP-030_STARTED: NO")
@@ -1700,11 +1719,11 @@ describe("IMP-030 implementation start checkpoint", () => {
     d373Exists: false, artifact: true,
   });
 
-  const roadmapText = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
-  const stateText = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
+  const roadmapText = readInProgressGovernance("docs/platform/ROADMAP.md");
+  const stateText = readInProgressGovernance("docs/platform/STATE.md");
   const decisionText = readFileSync(new URL("../docs/platform/decision-register.md", import.meta.url), "utf8");
   const architectureText = readFileSync(new URL("../docs/platform/ARCHITECTURE.md", import.meta.url), "utf8");
-  const capabilityText = readFileSync(new URL("../docs/platform/capabilities/IMP-030-operations-console-ui.md", import.meta.url), "utf8");
+  const capabilityText = readInProgressGovernance("docs/platform/capabilities/IMP-030-operations-console-ui.md");
   const currentSectionEnd = "## 3.";
 
   function replaceCurrentFact(text, key, value) {
@@ -1850,11 +1869,11 @@ IMP-030_API_DETAIL_ROUTE: GET /api/operations/v1/orders/{orderId}
 
   const SUPERSEDED_ROUTE = "/workforce/operations/orders/{orderId}/";
 
-  const roadmapText = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
-  const stateText = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
+  const roadmapText = readInProgressGovernance("docs/platform/ROADMAP.md");
+  const stateText = readInProgressGovernance("docs/platform/STATE.md");
   const decisionText = readFileSync(new URL("../docs/platform/decision-register.md", import.meta.url), "utf8");
   const architectureText = readFileSync(new URL("../docs/platform/ARCHITECTURE.md", import.meta.url), "utf8");
-  const capabilityText = readFileSync(new URL("../docs/platform/capabilities/IMP-030-operations-console-ui.md", import.meta.url), "utf8");
+  const capabilityText = readInProgressGovernance("docs/platform/capabilities/IMP-030-operations-console-ui.md");
   const currentSectionEnd = "## 3.";
 
   function replaceCurrentFact(text, key, value) {
@@ -2051,11 +2070,11 @@ describe("IMP-030 canonical consistency repair checkpoint", () => {
     apiDetailRoute: "GET /api/operations/v1/orders/{orderId}",
   });
 
-  const roadmapText = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
-  const stateText = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
+  const roadmapText = readInProgressGovernance("docs/platform/ROADMAP.md");
+  const stateText = readInProgressGovernance("docs/platform/STATE.md");
   const decisionText = readFileSync(new URL("../docs/platform/decision-register.md", import.meta.url), "utf8");
   const architectureText = readFileSync(new URL("../docs/platform/ARCHITECTURE.md", import.meta.url), "utf8");
-  const capabilityText = readFileSync(new URL("../docs/platform/capabilities/IMP-030-operations-console-ui.md", import.meta.url), "utf8");
+  const capabilityText = readInProgressGovernance("docs/platform/capabilities/IMP-030-operations-console-ui.md");
 
   function replaceLiveRoadmapSection(text, mutator) {
     const start = text.indexOf("## 4. Current Product Slice");
@@ -2128,11 +2147,13 @@ describe("IMP-030 canonical consistency repair checkpoint", () => {
       ["GTM-R70", "STATE-R69"],
       ["GTM-R71", "STATE-R67"],
       ["GTM-R69", "STATE-R69"],
-      ["GTM-R72", "STATE-R70"],
     ]) {
       assert.equal(isSupportedImp030GovernanceCheckpoint(roadmapVersion, stateVersion), false, `${roadmapVersion}/${stateVersion}`);
       assert.equal(isSupportedImp030GovernanceCheckpoint(roadmapVersion, stateVersion, "consistencyRepair"), false, `${roadmapVersion}/${stateVersion}`);
     }
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R72", "STATE-R70"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R72", "STATE-R70", "consistencyRepair"), false);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R72", "STATE-R70", "acceptance"), true);
   });
 
   it("rejects ROADMAP §4 stale NOT_LOCKED while current lifecycle is LOCKED", () => {
@@ -2217,6 +2238,139 @@ describe("IMP-030 canonical consistency repair checkpoint", () => {
       ["roadmapVersion", "GTM-R70"], ["stateVersion", "STATE-R68"],
     ]) {
       assert.equal(evaluateImp030CanonicalConsistencyCheckpoint({ ...consistency, [key]: value }).ok, false, key);
+    }
+  });
+});
+
+describe("IMP-030 formal acceptance checkpoint", () => {
+  const acceptance = Object.freeze({
+    roadmapVersion: "GTM-R72", stateVersion: "STATE-R70", acceptedThrough: "IMP-030",
+    currentProductSlice: "NONE", nextProductSlice: "IMP-031", pendingAcceptance: "NONE",
+    imp029: "COMPLETE_AND_ACCEPTED", imp030: "COMPLETE_AND_ACCEPTED", architecture: "LOCKED",
+    architectureLocked: "YES", implementationAuthorized: "YES", started: "YES",
+    implementationComplete: "YES", accepted: "YES", imp031: "PLANNED",
+    architectureVersion: "ARCH-R17", decisionRegisterVersion: "DR-14", d372Current: true,
+    d373Exists: false, artifact: true,
+  });
+
+  const roadmapText = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
+  const stateText = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
+  const decisionText = readFileSync(new URL("../docs/platform/decision-register.md", import.meta.url), "utf8");
+  const architectureText = readFileSync(new URL("../docs/platform/ARCHITECTURE.md", import.meta.url), "utf8");
+  const capabilityText = readFileSync(new URL("../docs/platform/capabilities/IMP-030-operations-console-ui.md", import.meta.url), "utf8");
+
+  function acceptanceDocuments(overrides = {}) {
+    return {
+      roadmap: {
+        text: overrides.roadmapText ?? roadmapText,
+        meta: {
+          roadmapVersion: overrides.roadmapVersion ?? "GTM-R72",
+          acceptedThrough: overrides.acceptedThrough ?? "IMP-030",
+          currentProductSlice: overrides.currentProductSlice ?? "NONE",
+          nextProductSlice: overrides.nextProductSlice ?? "IMP-031",
+          pendingAcceptance: overrides.pendingAcceptance ?? "NONE",
+        },
+      },
+      state: {
+        text: overrides.stateText ?? stateText,
+        meta: {
+          stateVersion: overrides.stateVersion ?? "STATE-R70",
+          acceptedThrough: overrides.acceptedThrough ?? "IMP-030",
+          currentProductSlice: overrides.currentProductSlice ?? "NONE",
+          nextProductSlice: overrides.nextProductSlice ?? "IMP-031",
+          pendingAcceptance: overrides.pendingAcceptance ?? "NONE",
+        },
+      },
+      architecture: {
+        meta: { architectureVersion: overrides.architectureVersion ?? "ARCH-R17" },
+        text: architectureText,
+      },
+      decision: {
+        meta: { decisionRegisterVersion: overrides.decisionRegisterVersion ?? "DR-14" },
+        text: overrides.decisionText ?? decisionText,
+      },
+      artifact: overrides.artifact ?? true,
+      artifactText: overrides.artifactText ?? capabilityText,
+    };
+  }
+
+  function replaceCurrentFact(text, key, value) {
+    const start = text.indexOf("## 2.");
+    const end = text.indexOf("## 3.", start);
+    assert.notEqual(start, -1);
+    assert.notEqual(end, -1);
+    const current = text.slice(start, end);
+    const updated = current.replace(new RegExp(`^${key}:.*$`, "m"), `${key}: ${value}`);
+    assert.notEqual(updated, current, `current ${key} must exist`);
+    return `${text.slice(0, start)}${updated}${text.slice(end)}`;
+  }
+
+  it("accepts only the R72/S70 formal-acceptance checkpoint", () => {
+    assert.deepEqual(evaluateImp030AcceptanceCheckpoint(acceptance), { ok: true });
+    assert.deepEqual(evaluateImp030AcceptanceDocuments(acceptanceDocuments()), { ok: true });
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R72", "STATE-R70", "acceptance"), true);
+    assert.match(capabilityText, /"implementation":\s*"COMPLETE_AND_ACCEPTED"/);
+    assert.match(capabilityText, /IMP-030_ACCEPTED:\s*YES/);
+    assert.match(capabilityText, /D-373:\s*NOT_CREATED/);
+    assert.match(stateText, /acceptedThrough: IMP-030/);
+    assert.match(stateText, /currentProductSlice: NONE/);
+    assert.match(roadmapText, /IMP-031:\s*PLANNED \/ NOT_ACTIVATED/);
+    assert.doesNotMatch(roadmapText.split("## 5. Future GTM Slices")[1]?.split("## 6.")[0] || "", /^\|\s*IMP-030\s*\|/m);
+  });
+
+  it("preserves predecessor checkpoints and rejects unsupported cross-pairs", () => {
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R71", "STATE-R69", "consistencyRepair"), true);
+    for (const [roadmapVersion, stateVersion] of [
+      ["GTM-R72", "STATE-R69"],
+      ["GTM-R71", "STATE-R70"],
+      ["GTM-R72", "STATE-R68"],
+      ["GTM-R70", "STATE-R70"],
+    ]) {
+      assert.equal(isSupportedImp030GovernanceCheckpoint(roadmapVersion, stateVersion, "acceptance"), false);
+      assert.equal(isSupportedImp030GovernanceCheckpoint(roadmapVersion, stateVersion), false);
+    }
+  });
+
+  it("rejects activation of IMP-031 or creation of D-373", () => {
+    assert.equal(evaluateImp030AcceptanceCheckpoint({ ...acceptance, imp031: "ACTIVATED" }).ok, false);
+    assert.equal(evaluateImp030AcceptanceCheckpoint({ ...acceptance, d373Exists: true }).ok, false);
+    assert.equal(
+      evaluateImp030AcceptanceDocuments(acceptanceDocuments({
+        decisionText: decisionText.replace("| D-372 |", "| D-373 |\n| D-372 |"),
+      })).ok,
+      false,
+    );
+  });
+
+  it("rejects drift away from acceptedThrough IMP-030 / currentProductSlice NONE", () => {
+    for (const [key, value] of [
+      ["acceptedThrough", "IMP-029"],
+      ["currentProductSlice", "IMP-030"],
+      ["currentProductSlice", "IMP-031"],
+      ["pendingAcceptance", "IMP-030"],
+      ["nextProductSlice", "IMP-032"],
+      ["imp030", "IMPLEMENTATION_IN_PROGRESS"],
+      ["implementationComplete", "NO"],
+      ["accepted", "NO"],
+      ["architectureVersion", "ARCH-R18"],
+      ["decisionRegisterVersion", "DR-15"],
+      ["artifact", false],
+      ["roadmapVersion", "GTM-R71"],
+      ["stateVersion", "STATE-R69"],
+    ]) {
+      assert.equal(evaluateImp030AcceptanceCheckpoint({ ...acceptance, [key]: value }).ok, false, key);
+    }
+  });
+
+  it("rejects incomplete or unaccepted current lifecycle facts", () => {
+    for (const [field, value] of [
+      ["IMP-030", "IMPLEMENTATION_IN_PROGRESS"],
+      ["IMP-030_IMPLEMENTATION_COMPLETE", "NO"],
+      ["IMP-030_ACCEPTED", "NO"],
+      ["IMP-030_IMPLEMENTATION", "AUTHORIZED / STARTED"],
+    ]) {
+      const fixture = replaceCurrentFact(stateText, field, value);
+      assert.equal(evaluateImp030AcceptanceDocuments(acceptanceDocuments({ stateText: fixture })).ok, false, field);
     }
   });
 });
