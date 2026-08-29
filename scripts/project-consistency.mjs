@@ -1436,7 +1436,7 @@ function isImp030AcceptanceCheckpoint(roadmap, state) {
   return isSupportedImp030GovernanceCheckpoint(roadmap?.meta.roadmapVersion, state?.meta.stateVersion, "acceptance");
 }
 
-/** @param {string} roadmapVersion @param {string} stateVersion @param {"activation" | "lock" | "authorization" | "start" | "routeAmendment" | "consistencyRepair" | "acceptance"} [kind] */
+/** @param {string} roadmapVersion @param {string} stateVersion @param {"activation" | "lock" | "authorization" | "start" | "routeAmendment" | "consistencyRepair" | "acceptance" | "imp031Activation"} [kind] */
 export function isSupportedImp030GovernanceCheckpoint(roadmapVersion, stateVersion, kind) {
   const activation = roadmapVersion === "GTM-R66" && stateVersion === "STATE-R64";
   const lock = roadmapVersion === "GTM-R67" && stateVersion === "STATE-R65";
@@ -1445,6 +1445,7 @@ export function isSupportedImp030GovernanceCheckpoint(roadmapVersion, stateVersi
   const routeAmendment = roadmapVersion === "GTM-R70" && stateVersion === "STATE-R68";
   const consistencyRepair = roadmapVersion === "GTM-R71" && stateVersion === "STATE-R69";
   const acceptance = roadmapVersion === "GTM-R72" && stateVersion === "STATE-R70";
+  const imp031Activation = roadmapVersion === "GTM-R73" && stateVersion === "STATE-R71";
   if (kind === "activation") return activation;
   if (kind === "lock") return lock;
   if (kind === "authorization") return authorization;
@@ -1452,7 +1453,8 @@ export function isSupportedImp030GovernanceCheckpoint(roadmapVersion, stateVersi
   if (kind === "routeAmendment") return routeAmendment;
   if (kind === "consistencyRepair") return consistencyRepair;
   if (kind === "acceptance") return acceptance;
-  return activation || lock || authorization || start || routeAmendment || consistencyRepair || acceptance;
+  if (kind === "imp031Activation") return imp031Activation;
+  return activation || lock || authorization || start || routeAmendment || consistencyRepair || acceptance || imp031Activation;
 }
 
 function isImp030ArchitectureCheckpoint(roadmap, state) {
@@ -1467,7 +1469,8 @@ function isImp030GovernanceCheckpoint(roadmap, state) {
     isImp030ImplementationStartCheckpoint(roadmap, state) ||
     isImp030DetailRouteAmendmentCheckpoint(roadmap, state) ||
     isImp030CanonicalConsistencyCheckpoint(roadmap, state) ||
-    isImp030AcceptanceCheckpoint(roadmap, state)
+    isImp030AcceptanceCheckpoint(roadmap, state) ||
+    isSupportedImp030GovernanceCheckpoint(roadmap?.meta.roadmapVersion, state?.meta.stateVersion, "imp031Activation")
   );
 }
 
@@ -1478,8 +1481,27 @@ function isArchR17GovernanceCheckpoint(roadmap, state) {
     isImp030ImplementationStartCheckpoint(roadmap, state) ||
     isImp030DetailRouteAmendmentCheckpoint(roadmap, state) ||
     isImp030CanonicalConsistencyCheckpoint(roadmap, state) ||
-    isImp030AcceptanceCheckpoint(roadmap, state)
+    isImp030AcceptanceCheckpoint(roadmap, state) ||
+    isSupportedImp030GovernanceCheckpoint(roadmap?.meta.roadmapVersion, state?.meta.stateVersion, "imp031Activation")
   );
+}
+
+/**
+ * Validate the exact IMP-031 architecture-activation lifecycle facts.
+ * @param {Record<string, unknown>} checkpoint
+ */
+export function evaluateImp031ArchitectureActivationCheckpoint(checkpoint) {
+  const expected = {
+    roadmapVersion: "GTM-R73", stateVersion: "STATE-R71", acceptedThrough: "IMP-030",
+    currentProductSlice: "IMP-031", nextProductSlice: "IMP-032", pendingAcceptance: "NONE",
+    imp031: "ARCHITECTURE_IN_PROGRESS", architecture: "NOT_LOCKED",
+    implementation: "NOT_AUTHORIZED / NOT_STARTED", implementationAuthorized: "NO", started: "NO",
+    roadmapLifecycle: "ARCHITECTURE_IN_PROGRESS", stateLifecycle: "ARCHITECTURE_IN_PROGRESS",
+  };
+  for (const [key, value] of Object.entries(expected)) {
+    if (checkpoint[key] !== value) return { ok: false, code: "IMP031_ARCHITECTURE_ACTIVATION", message: `${key} must be ${value}` };
+  }
+  return { ok: true };
 }
 
 /**
@@ -4802,6 +4824,28 @@ function checkImp030Acceptance(roadmap, state, architecture, decision) {
   else note(`IMP-030 COMPLETE_AND_ACCEPTED (${artifactRel})`);
 }
 
+function checkImp031ArchitectureActivation(roadmap, state) {
+  if (!isSupportedImp030GovernanceCheckpoint(roadmap?.meta.roadmapVersion, state?.meta.stateVersion, "imp031Activation")) return;
+  const lifecycleText = `${roadmap.text}\n${state.text}`;
+  const checkpoint = evaluateImp031ArchitectureActivationCheckpoint({
+    roadmapVersion: roadmap.meta.roadmapVersion,
+    stateVersion: state.meta.stateVersion,
+    acceptedThrough: state.meta.acceptedThrough,
+    currentProductSlice: state.meta.currentProductSlice,
+    nextProductSlice: state.meta.nextProductSlice,
+    pendingAcceptance: state.meta.pendingAcceptance,
+    imp031: /IMP-031:\s*ARCHITECTURE_IN_PROGRESS/.test(lifecycleText) ? "ARCHITECTURE_IN_PROGRESS" : "",
+    roadmapLifecycle: /IMP-031:\s*ARCHITECTURE_IN_PROGRESS/.test(roadmap.text) ? "ARCHITECTURE_IN_PROGRESS" : "",
+    stateLifecycle: /IMP-031:\s*ARCHITECTURE_IN_PROGRESS/.test(state.text) ? "ARCHITECTURE_IN_PROGRESS" : "",
+    architecture: /IMP-031_ARCHITECTURE:\s*NOT_LOCKED/.test(lifecycleText) ? "NOT_LOCKED" : "",
+    implementation: /IMP-031_IMPLEMENTATION:\s*NOT_AUTHORIZED \/ NOT_STARTED/.test(lifecycleText) ? "NOT_AUTHORIZED / NOT_STARTED" : "",
+    implementationAuthorized: /IMP-031_IMPLEMENTATION_AUTHORIZED:\s*NO/.test(lifecycleText) ? "NO" : "",
+    started: /IMP-031_STARTED:\s*NO/.test(lifecycleText) ? "NO" : "",
+  });
+  if (!checkpoint.ok) fail(checkpoint.code, checkpoint.message);
+  else note("IMP-031 architecture activation lifecycle valid");
+}
+
 function checkTechnicalInventory() {
   const journalPath = path.join(projectRoot, "drizzle/meta/_journal.json");
   if (!existsSync(journalPath)) {
@@ -5040,7 +5084,8 @@ export function runProjectConsistency() {
       !isImp030ImplementationStartCheckpoint(roadmap, state) &&
       !isImp030DetailRouteAmendmentCheckpoint(roadmap, state) &&
       !isImp030CanonicalConsistencyCheckpoint(roadmap, state) &&
-      !isImp030AcceptanceCheckpoint(roadmap, state)
+      !isImp030AcceptanceCheckpoint(roadmap, state) &&
+      !isSupportedImp030GovernanceCheckpoint(roadmap.meta.roadmapVersion, state.meta.stateVersion, "imp031Activation")
     ) {
       fail("UNSUPPORTED_GOVERNANCE_CHECKPOINT", "Governance revisions at or beyond GTM-R66 / STATE-R64 require an exact supported canonical checkpoint");
     }
@@ -5070,6 +5115,7 @@ export function runProjectConsistency() {
   checkImp030DetailRouteAmendment(roadmap, state, architecture, decision);
   checkImp030CanonicalConsistency(roadmap, state, architecture, decision);
   checkImp030Acceptance(roadmap, state, architecture, decision);
+  checkImp031ArchitectureActivation(roadmap, state);
   checkTechnicalInventory();
   checkStaticWeb();
   checkAgentsPointer();
