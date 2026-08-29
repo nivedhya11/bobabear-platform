@@ -2,8 +2,8 @@
 {
   "status": "CURRENT",
   "authority": "GLOBAL_ARCHITECTURE",
-  "architectureVersion": "ARCH-R17",
-  "lastReviewed": "2026-08-24"
+  "architectureVersion": "ARCH-R18",
+  "lastReviewed": "2026-08-29"
 }
 -->
 
@@ -127,7 +127,8 @@ Other domains may reference or project it but must not establish competing mutab
 | Financial Document | Immutable issued statutory / financial-document truth | First-class aggregate (IMP-028 ARCHITECTURE_LOCKED; implementation COMPLETE_AND_ACCEPTED); consumes Checkout/Payment/Refund/Order/Issuer-Tax Profile without rewriting them ([D-365](./decision-register.md)) |
 | SignatureArtifact | Durable signature state and exact-byte signed statutory artifact authority | First-class aggregate under IMP-028 ([D-367](./decision-register.md)); exactly one authority per signing-required Financial Document; does not rewrite Financial Document sealed issuance facts or Payment/Order commercial truth |
 | Customer Menu Projection | Customer-facing storefront **READ MODEL** composed from existing catalog/menu, pricing, assortment/availability, modifier, and bundle authorities | CURRENT serving architecture ([D-368](./decision-register.md)); implemented and accepted under IMP-028B; not a new commercial authority |
-| Delivery | FUTURE / NOT_IMPLEMENTED | Roadmapped as IMP-031+ |
+| Operations | Preparation, readiness, workforce action, and operational handoff facts | Delivery references confirmed Operations facts; it does not replace their authority |
+| Delivery | Provider-neutral dispatch and delivery-execution truth, including delivery proof, failure/return, and provider-cost reconciliation facts | First-class domain; capability architecture LOCKED under IMP-031; implementation NOT_AUTHORIZED / NOT_STARTED; does not rewrite Order lifecycle or historical customer delivery charge |
 | Notification | FUTURE / NOT_IMPLEMENTED | Roadmapped as IMP-033+ |
 
 Accepted chain:
@@ -176,6 +177,23 @@ Refund PROCESSED
 ```
 
 Refund money truth (D-364) and issued Financial Document immutability (D-365) remain unchanged.
+
+Delivery relationship (ARCH-R18; capability architecture `ARCHITECTURE_LOCKED`):
+
+```text
+Payment / Order / Serviceability / Operations prerequisites
+→ Delivery request
+→ provider-neutral booking and execution truth
+→ proof, failure/return, and provider-cost reconciliation facts
+→ authorized downstream Order/Refund/Operations workflows (never direct authority rewrite)
+```
+
+Order remains sole commercial lifecycle authority. Operations remains preparation/readiness and
+operational-handoff authority. Delivery references those confirmed facts and owns only neutral
+dispatch/delivery-execution truth. The historical customer delivery charge sealed by
+Pricing/Checkout remains separate from estimated, booked, final, cancellation, return, or adjusted
+provider delivery cost.
+
 ## 6. Authentication and Trust
 
 - Raw user IDs are not authentication authority.
@@ -238,13 +256,22 @@ durable inbox insert; Payment transition is asynchronous from the webhook HTTP r
 materialization stays outside that ack path ([D-362](./decision-register.md)); missing-Order gaps
 are recovered via existing `recoverMissingOrdersBatch`.
 
+Delivery request/booking identity must suppress duplicate logical dispatch and prevent more than one
+active booking unless a prior booking has been explicitly reconciled inactive. An ambiguous external
+booking result requires recovery by stable identity before replacement; it must not trigger a blind
+duplicate request. Repeated, delayed, or out-of-order provider observations must be processed safely.
+
 ## 10. External Integration Principles
 
 - Provider observations do not automatically become core domain authority.
 - Payment-provider state does not automatically define Payment truth. Current V1 production
   provider is **Razorpay** ([D-361](./decision-register.md)); historical Cashfree selection
   (D-161 / D-162) is not current provider authority.
-- Delivery provider state does not automatically redefine Order truth.
+- Delivery provider state does not automatically redefine Delivery or Order truth. Provider
+  observations require normalization, validation, idempotent processing, and recoverable handling
+  before they may affect provider-neutral Delivery truth.
+- Provider-specific contracts remain inside adapters and evidence boundaries; they must not leak into
+  provider-neutral Delivery business authority.
 - WhatsApp delivery state does not become Order truth.
 - Keep business-domain authority provider-neutral where the business concept exists independently.
 - Do not invent abstraction layers where unnecessary.
@@ -339,7 +366,7 @@ Dynamic commerce must remain outside dynamic Next.js execution unless superseded
 | Quantitative Inventory Authority | DEFERRED / NOT_DEFINED |
 | Detailed Kitchen Fulfilment | DEFERRED / NOT_DEFINED |
 | Refund | ARCHITECTURE_LOCKED — capability architecture [`capabilities/IMP-027-refund-foundation.md`](./capabilities/IMP-027-refund-foundation.md); binding **D-364**; implementation COMPLETE_AND_ACCEPTED |
-| Delivery | FUTURE / NOT_IMPLEMENTED |
+| Delivery | ARCHITECTURE_LOCKED — durable provider-neutral authority established by ARCH-R18; capability architecture [`capabilities/IMP-031-provider-neutral-delivery-foundation.md`](./capabilities/IMP-031-provider-neutral-delivery-foundation.md) is `ARCHITECTURE_LOCKED`; implementation NOT_AUTHORIZED / NOT_STARTED; provider/operating-mode choices deferred to IMP-032+ |
 | Notification | FUTURE / NOT_IMPLEMENTED |
 | Invoice / Credit Note / Financial Document | ARCHITECTURE_LOCKED — capability architecture [`capabilities/IMP-028-invoice-tax-receipt-credit-note.md`](./capabilities/IMP-028-invoice-tax-receipt-credit-note.md); binding **D-365** / **D-366** / **D-367**; Financial Document is immutable issued statutory authority; RefundStatutoryDecision governs refund statutory reversal; SignatureArtifact governs signed statutory artifact readiness; implementation COMPLETE_AND_ACCEPTED |
 | Exact IMP-024 transport topology | DECIDED — D-359 (`customer-commerce:8083` behind `/api/v1/*`); capability architecture locked; Compose wiring accepted with IMP-024 |
@@ -381,6 +408,7 @@ Dynamic commerce must remain outside dynamic Next.js execution unless superseded
 | ARCH-G21 | Cart identity transition (D-370): an active guest Cart and an active customer Cart MUST be reconciled into customer-owned purchase intent without silent winner selection; failed reconciliation MUST NOT silently discard or partially destroy source intent; after success the former guest credential is not authority over that customer Cart; sign-out MUST NOT delete the customer Cart but MUST end browser authority over it; post-logout browser context is anonymous and MUST NOT expose or copy the previous customer’s Cart; Customer B on the same browser MUST NOT receive Customer A’s Cart; Cart remains purchase intent; Checkout Snapshot remains authoritative payable truth. |
 | ARCH-G22 | Durable Cart unit sequence (D-371): every active coalesced Cart-line unit MUST have exactly one durable server-authoritative unit-sequence record, so active-record count per line equals line quantity transactionally. Product-level decrement MUST atomically select and consume the latest active record for the requested base product and decrement that record’s line under existing Cart concurrency authority; browser/client order is never removal authority. During D-370 identity transition, immutable ordinals and their line relationship MUST move/reconcile atomically without renumbering history. |
 | ARCH-G23 | Operations Console API (D-372): workforce business operations MUST use the dedicated `/api/operations/v1/*` trust surface, never customer `/api/v1/*` or the public workforce-auth router. A workforce principal MUST be constructed only from a server-validated workforce session and server-loaded eligible identity; caller-supplied roles, permissions, memberships, scopes, organization/outlet/territory authority, pre-authorized flags, or principal-shaped objects are not authority. Existing permission-and-server-derived-scope authorization and existing Order application/domain authority remain binding. |
+| ARCH-G24 | Delivery is the first-class provider-neutral authority for dispatch and delivery-execution truth. Order remains sole commercial lifecycle authority; Operations retains preparation/readiness and operational-handoff authority; Pricing/Checkout historical customer delivery charge remains distinct from Delivery provider cost. Provider observations are evidence, not automatic Delivery or Order truth, and must be normalized, validated, processed idempotently, and handled recoverably. Stable Delivery request/booking identity MUST suppress duplicate logical dispatch, ambiguous external booking outcomes MUST be reconciled before replacement rather than blindly retried, and at most one active booking may exist unless the prior booking has been explicitly reconciled inactive. Provider-specific contracts MUST remain in adapters/evidence boundaries. |
 
 ## 15. Decision References
 
@@ -395,6 +423,7 @@ Dynamic commerce must remain outside dynamic Next.js execution unless superseded
 | Cart Identity Transition Authority | [D-370](./decision-register.md) (CURRENT purchase-intent and privacy policy; guest→customer compatible merge required; silent whole-cart winner forbidden; logout isolates the browser from the customer Cart without deleting it; Cart/Checkout Snapshot/pricing/Payment authority unchanged; implementation not authorized by this decision) |
 | Durable Cart Unit Sequence Authority | [D-371](./decision-register.md) (CURRENT internal Cart removal-order authority; coalesced lines and Cart quantity remain authoritative customer purchase intent) |
 | Operations Console API workforce-business transport | [D-372](./decision-register.md) (CURRENT architecture lock for dedicated `/api/operations/v1/*`; existing workforce session/principal, permission/scope, and Order authorities remain binding; IMP-029 implementation is not authorized) |
+| Provider-Neutral Delivery Foundation | ARCH-R18 / ARCH-G24; capability architecture [`capabilities/IMP-031-provider-neutral-delivery-foundation.md`](./capabilities/IMP-031-provider-neutral-delivery-foundation.md) (`ARCHITECTURE_LOCKED`; implementation NOT_AUTHORIZED / NOT_STARTED); no new CURRENT decision |
 | V1 production payment provider / collection surface | [D-361](./decision-register.md) (Razorpay / Razorpay Standard Checkout); capability lock [`capabilities/IMP-026-razorpay-productionization.md`](./capabilities/IMP-026-razorpay-productionization.md) |
 | Razorpay webhook acknowledgement / post-payment Order recovery | [D-362](./decision-register.md) (amends D-361 ack/post-payment effect only; D-361 remains CURRENT for provider selection; acknowledgement timing further amended by D-363) |
 | Razorpay durable webhook inbox / asynchronous Payment processing | [D-363](./decision-register.md) (amends D-362 acknowledgement timing only; D-362 remains CURRENT for Order materialization outside provider-ack path, missing-Order recovery, secondary reconciliation, and no new deployable service) |
