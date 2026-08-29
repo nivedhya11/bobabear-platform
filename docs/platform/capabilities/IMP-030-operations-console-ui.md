@@ -5,9 +5,9 @@
   "capability": "IMP-030",
   "title": "Operations Console UI",
   "architectureLock": "ARCHITECTURE_LOCKED",
-  "implementation": "AUTHORIZED / STARTED",
+  "implementation": "COMPLETE_AND_ACCEPTED",
   "implementationAuthorized": true,
-  "lastReviewed": "2026-08-27",
+  "lastReviewed": "2026-08-29",
   "bindingDecisions": ["D-372"],
   "dependsOn": ["IMP-029"]
 }
@@ -25,10 +25,19 @@ this UI owns presentation and interaction only.
 | Field | Value |
 |---|---|
 | Architecture lock | `ARCHITECTURE_LOCKED` |
-| Implementation | `AUTHORIZED` / `STARTED` |
+| Lifecycle | `COMPLETE_AND_ACCEPTED` |
+| Implementation | `AUTHORIZED` / `STARTED` / `COMPLETE` |
 | Implementation authorized | **YES** |
+| Accepted product through | IMP-030 |
+| Current product slice | NONE |
+| Next product slice | IMP-031 — Provider-Neutral Delivery Foundation |
 | Depends on | IMP-029 — Operations Console API |
 | Binding decision | D-372 — CURRENT |
+
+Formal acceptance does not change the locked architecture or create new authority. D-372 remains
+CURRENT. Acceptance does not activate IMP-031 and creates no route, process, container, schema,
+migration, permission catalog, cookie, deployment, or decision-register change beyond the already
+promoted implementation.
 
 ## 1. Routes and Next.js boundary
 
@@ -195,11 +204,17 @@ generic audit, delivery/notification/administration management, new lifecycle st
 Operations routes.
 
 ```text
+IMP-030_ARCHITECTURE_LOCKED: YES
 IMP-030_IMPLEMENTATION_AUTHORIZED: YES
 IMP-030_STARTED: YES
-IMP-030_IMPLEMENTATION_COMPLETE: NO
-IMP-030_ACCEPTED: NO
-IMPLEMENTATION START IS NOT COMPLETION OR ACCEPTANCE: YES
+IMP-030_IMPLEMENTATION_COMPLETE: YES
+IMP-030_ACCEPTED: YES
+IMP030_IMPLEMENTATION_EVIDENCE: COMPLETE
+IMP030_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
+IMP030_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
+IMP030_FORMAL_ACCEPTANCE: ACCEPTED
+IMP030_ACCEPTED_MAIN_SHA: 4bcf0fa0a659202c29be03e9b1b0cefbacf484fb
+IMP030_ACCEPTED_TREE: 048b3ac4e1ba5b3519fa5665f0f4de151068fb59
 ```
 
 ```text
