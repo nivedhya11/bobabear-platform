@@ -2,10 +2,10 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R70",
+  "stateVersion": "STATE-R71",
   "acceptedThrough": "IMP-030",
-  "currentProductSlice": "NONE",
-  "nextProductSlice": "IMP-031",
+  "currentProductSlice": "IMP-031",
+  "nextProductSlice": "IMP-032",
   "pendingAcceptance": "NONE",
   "governanceHealth": "ALIGNED",
   "lastReviewed": "2026-08-29"
@@ -28,10 +28,10 @@ Accepted Range:            IMP-001 → IMP-030 (including IMP-005A and IMP-026C)
 ## 2. Current Work Position
 
 ```text
-Current Product Implementation: NONE
+Current Product Implementation: IMP-031 — Provider-Neutral Delivery Foundation (architecture work only)
 Pending Acceptance:             NONE
-Next Product Slice:             IMP-031 — Provider-Neutral Delivery Foundation
-Current Governance Activity:    IMP-030 COMPLETE_AND_ACCEPTED; no product slice is active.
+Next Product Slice:             IMP-032 — Dehradun Delivery Operating Mode
+Current Governance Activity:    IMP-031 ARCHITECTURE_IN_PROGRESS; architecture is not locked and implementation is not authorized or started.
 Governance Health:              ALIGNED
 ```
 
@@ -234,6 +234,18 @@ independent acceptance without changing decision register or global architecture
 STATE-R36 record IMP-028B canonical activation without changing decision register or global
 architecture. GTM-R39 / STATE-R37 record IMP-028B architecture lock and implementation
 authorization without changing decision register or global architecture.
+
+STATE-R71 records explicit authorization and canonical activation of **IMP-031 — Provider-Neutral
+Delivery Foundation** for architecture work only. IMP-031 is `ARCHITECTURE_IN_PROGRESS`;
+architecture is `NOT_LOCKED`; implementation is `NOT_AUTHORIZED` / `NOT_STARTED`
+(`IMP-031_IMPLEMENTATION_AUTHORIZED: NO`; `IMP-031_STARTED: NO`). `acceptedThrough` remains
+IMP-030; `pendingAcceptance` remains NONE; `currentProductSlice` becomes IMP-031; and
+`nextProductSlice` becomes IMP-032 — Dehradun Delivery Operating Mode, which remains `PLANNED` /
+`NOT_ACTIVATED`. No capability architecture artifact is created, implementation is not authorized
+or started, no provider is selected or integrated, and no runtime, schema, migration, dependency,
+deployment, decision-register, or global-architecture mutation is introduced. ARCH-R17 and DR-14
+remain unchanged; D-373 is absent; provider-specific choices remain deferred. Supersedes STATE-R70
+for the current product-slice position.
 
 STATE-R70 records formal acceptance of **IMP-030 — Operations Console UI** for independently
 accepted `main` merge SHA `4bcf0fa0a659202c29be03e9b1b0cefbacf484fb` and tree
@@ -723,8 +735,8 @@ Cart → Checkout → Payment → Order
 ```text
 acceptedThrough: IMP-030
 pendingAcceptance: NONE
-currentProductSlice: NONE
-nextProductSlice: IMP-031 — Provider-Neutral Delivery Foundation
+currentProductSlice: IMP-031
+nextProductSlice: IMP-032 — Dehradun Delivery Operating Mode
 FOUNDER_UAT: PASS
 FOUNDER_UAT_REQUIRED: YES
 FOUNDER_UAT_COMPLETE: YES
@@ -793,6 +805,11 @@ IMP030_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
 IMP030_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
 IMP030_FORMAL_ACCEPTANCE: ACCEPTED
 IMP030_ACCEPTED_MAIN_SHA: 4bcf0fa0a659202c29be03e9b1b0cefbacf484fb
+IMP-031: ARCHITECTURE_IN_PROGRESS
+IMP-031_ARCHITECTURE: NOT_LOCKED
+IMP-031_IMPLEMENTATION: NOT_AUTHORIZED / NOT_STARTED
+IMP-031_IMPLEMENTATION_AUTHORIZED: NO
+IMP-031_STARTED: NO
 IMP030_ACCEPTED_TREE: 048b3ac4e1ba5b3519fa5665f0f4de151068fb59
 ```
 

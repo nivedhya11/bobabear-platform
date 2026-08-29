@@ -6,6 +6,7 @@ import {
   LEDGER_ROW_IMP_RE,
   evaluateCapabilityLifecycle,
   evaluateImp030ArchitectureActivationCheckpoint,
+  evaluateImp031ArchitectureActivationCheckpoint,
   evaluateImp030ArchitectureLockCheckpoint,
   evaluateImp030ArchitectureLockDocuments,
   evaluateImp030ImplementationAuthorizationCheckpoint,
@@ -2247,6 +2248,31 @@ describe("IMP-030 canonical consistency repair checkpoint", () => {
   });
 });
 
+describe("IMP-031 architecture activation checkpoint", () => {
+  const activation = Object.freeze({
+    roadmapVersion: "GTM-R73", stateVersion: "STATE-R71", acceptedThrough: "IMP-030",
+    currentProductSlice: "IMP-031", nextProductSlice: "IMP-032", pendingAcceptance: "NONE",
+    imp031: "ARCHITECTURE_IN_PROGRESS", architecture: "NOT_LOCKED",
+    implementation: "NOT_AUTHORIZED / NOT_STARTED", implementationAuthorized: "NO", started: "NO",
+    roadmapLifecycle: "ARCHITECTURE_IN_PROGRESS", stateLifecycle: "ARCHITECTURE_IN_PROGRESS",
+  });
+
+  it("accepts only the R73/S71 architecture-only activation checkpoint", () => {
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R73", "STATE-R71", "imp031Activation"), true);
+    assert.deepEqual(evaluateImp031ArchitectureActivationCheckpoint(activation), { ok: true });
+  });
+
+  it("rejects invalid activation lifecycle combinations", () => {
+    for (const [key, value] of [
+      ["imp031", "PLANNED"], ["architecture", "LOCKED"], ["implementationAuthorized", "YES"],
+      ["started", "YES"], ["acceptedThrough", "IMP-029"], ["nextProductSlice", "IMP-031"],
+      ["stateVersion", "STATE-R70"], ["stateLifecycle", "PLANNED"],
+    ]) {
+      assert.equal(evaluateImp031ArchitectureActivationCheckpoint({ ...activation, [key]: value }).ok, false, key);
+    }
+  });
+});
+
 describe("IMP-030 formal acceptance checkpoint", () => {
   const acceptance = Object.freeze({
     roadmapVersion: "GTM-R72", stateVersion: "STATE-R70", acceptedThrough: "IMP-030",
@@ -2312,15 +2338,10 @@ describe("IMP-030 formal acceptance checkpoint", () => {
 
   it("accepts only the R72/S70 formal-acceptance checkpoint", () => {
     assert.deepEqual(evaluateImp030AcceptanceCheckpoint(acceptance), { ok: true });
-    assert.deepEqual(evaluateImp030AcceptanceDocuments(acceptanceDocuments()), { ok: true });
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R72", "STATE-R70", "acceptance"), true);
     assert.match(capabilityText, /"implementation":\s*"COMPLETE_AND_ACCEPTED"/);
     assert.match(capabilityText, /IMP-030_ACCEPTED:\s*YES/);
     assert.match(capabilityText, /D-373:\s*NOT_CREATED/);
-    assert.match(stateText, /acceptedThrough: IMP-030/);
-    assert.match(stateText, /currentProductSlice: NONE/);
-    assert.match(roadmapText, /IMP-031:\s*PLANNED \/ NOT_ACTIVATED/);
-    assert.doesNotMatch(roadmapText.split("## 5. Future GTM Slices")[1]?.split("## 6.")[0] || "", /^\|\s*IMP-030\s*\|/m);
   });
 
   it("preserves predecessor checkpoints and rejects unsupported cross-pairs", () => {
