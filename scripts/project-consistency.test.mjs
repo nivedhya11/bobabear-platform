@@ -20,6 +20,10 @@ import {
   evaluateImp031ImplementationStartCheckpoint,
   evaluateImp031ImplementationStartCurrentArchitectureStatus,
   evaluateImp031ImplementationStartCrossDocumentAlignment,
+  evaluateImp031AcceptanceArtifact,
+  evaluateImp031AcceptanceCheckpoint,
+  evaluateImp031AcceptanceCurrentArchitectureStatus,
+  evaluateImp031AcceptanceCrossDocumentAlignment,
   evaluateImp031ImplementationCompletionArtifact,
   evaluateImp031ImplementationCompletionCapabilityCurrentStatus,
   evaluateImp031ImplementationCompletionCheckpoint,
@@ -2367,10 +2371,115 @@ IMP-031_ARCHITECTURE_LOCKED: NO
 });
 
 /**
- * Live CURRENT IMP-031 docs are IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE.
- * Historical start/authorization/lock evaluators derive fixtures from that live state.
+ * Live CURRENT IMP-031 docs are COMPLETE_AND_ACCEPTED.
+ * Historical completion/start/authorization/lock evaluators derive fixtures from that live state.
  */
-function deriveImp031StartArtifact(completeArtifact) {
+function deriveImp031CompletionArtifact(acceptedArtifact) {
+  let text = acceptedArtifact;
+  if (!/IMP-031:\s*COMPLETE_AND_ACCEPTED/.test(text) && /IMP-031:\s*IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE/.test(text)) {
+    return text;
+  }
+  return text
+    .replace(/"implementation": "COMPLETE_AND_ACCEPTED"/, '"implementation": "AUTHORIZED / STARTED / COMPLETE"')
+    .replace("| Lifecycle | `COMPLETE_AND_ACCEPTED` |", "| Lifecycle | `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` |")
+    .replace("| Accepted | **YES** |", "| Accepted | **NO** |")
+    .replace("| Accepted product through | IMP-031 |", "| Accepted product through | IMP-030 |")
+    .replace("| Current product slice | NONE |", "| Current product slice | IMP-031 — Provider-Neutral Delivery Foundation |")
+    .replace("| Pending acceptance | NONE |", "| Pending acceptance | IMP-031 |")
+    .replace("IMP-031: COMPLETE_AND_ACCEPTED", "IMP-031: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE")
+    .replace(/IMP-031_ACCEPTED: YES/, "IMP-031_ACCEPTED: NO")
+    .replace(
+      "Formal acceptance does not expand beyond locked Boundary C, authorize IMP-032, select a provider,\nor define Dehradun operating mode.",
+      "Completion does not accept\nimplementation and does not expand beyond locked Boundary C.",
+    )
+    .replace(
+      "This document locks the provider-neutral Delivery foundation for IMP-031. Implementation is\n`AUTHORIZED` / `STARTED` / `COMPLETE` under Boundary C and is formally `COMPLETE_AND_ACCEPTED`.",
+      "This document locks the provider-neutral Delivery foundation for IMP-031. Implementation is\n`AUTHORIZED` / `STARTED` / `COMPLETE` under Boundary C only.",
+    )
+    .replace(
+      /```text\nIMP-031: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE\nIMP-031_ARCHITECTURE: LOCKED\nIMP-031_ARCHITECTURE_LOCKED: YES\nIMP-031_IMPLEMENTATION: AUTHORIZED \/ STARTED \/ COMPLETE\nIMP-031_IMPLEMENTATION_AUTHORIZED: YES\nIMP-031_STARTED: YES\nIMP-031_IMPLEMENTATION_COMPLETE: YES\nIMP-031_ACCEPTED: NO\n```/,
+      "```text\nIMP-031: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE\nIMP-031_ARCHITECTURE: LOCKED\nIMP-031_ARCHITECTURE_LOCKED: YES\nIMP-031_IMPLEMENTATION: AUTHORIZED / STARTED / COMPLETE\nIMP-031_IMPLEMENTATION_AUTHORIZED: YES\nIMP-031_STARTED: YES\nIMP-031_IMPLEMENTATION_COMPLETE: YES\nIMP-031_ACCEPTED: NO\nCOMPLETION IS NOT ACCEPTANCE: YES\n```",
+    )
+    .replace(
+      /IMP031_IMPLEMENTATION_EVIDENCE: COMPLETE\nIMP_031_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS\nIMP031_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED\nIMP031_FORMAL_ACCEPTANCE: ACCEPTED\nIMP031_ACCEPTED_MAIN_SHA: c3d499b0b8df2a8c7ae9297ab870f6286f81b848\nIMP031_ACCEPTED_TREE: dd42ea992c8866ff8cfbc0ac09e781eb6fcfa099\nIMP-031_FOUNDER_UAT_REQUIRED: NO/,
+      "IMP_031_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS\nIMP031_INDEPENDENT_ACCEPTANCE: NOT_PERFORMED",
+    )
+    .replace(
+      /\n\nKnown LOW independent-acceptance notes \(NON_BLOCKING_LOW; preserved historical\):\n1\. no explicit dual-cancel concurrency test\n2\. UNKNOWN-specific ambiguous-cancel test uses shared cancel path/,
+      "",
+    )
+    .replace(
+      /Those architecture-lock\s+criteria were satisfied\. Implementation is now `AUTHORIZED` \/ `STARTED` \/ `COMPLETE` under Boundary C\nand formally `COMPLETE_AND_ACCEPTED`\./,
+      "Those architecture-lock criteria were satisfied. Implementation is now `AUTHORIZED` / `STARTED` / `COMPLETE` under Boundary C;\ncompletion is not independent or formal acceptance.",
+    )
+    .replace(
+      /Architecture is\s+`ARCHITECTURE_LOCKED`; implementation is `AUTHORIZED` \/ `STARTED` \/ `COMPLETE` \/\n`COMPLETE_AND_ACCEPTED`\./,
+      "Architecture is\n`ARCHITECTURE_LOCKED`; implementation is `AUTHORIZED` / `STARTED` / `COMPLETE`.",
+    );
+}
+
+function deriveImp031CompletionArchitecture(acceptedArchitecture) {
+  return acceptedArchitecture.replaceAll(
+    "implementation AUTHORIZED / STARTED / COMPLETE / COMPLETE_AND_ACCEPTED",
+    "implementation AUTHORIZED / STARTED / COMPLETE",
+  );
+}
+
+function deriveImp031CompletionLifecycleDocs(acceptedRoadmap, acceptedState) {
+  const rewriteCurrent = (docText, sectionStart, sectionEndMarker) => {
+    const start = docText.indexOf(sectionStart);
+    const end = docText.indexOf(sectionEndMarker, start + 1);
+    assert.notEqual(start, -1);
+    assert.notEqual(end, -1);
+    const current = docText.slice(start, end);
+    const updated = current
+      .replace(/Accepted Through:\s*IMP-031[^\n]*/g, "Accepted Through:     IMP-030 — Operations Console UI")
+      .replace(/acceptedThrough:\s*IMP-031\b/g, "acceptedThrough: IMP-030")
+      .replace(/Current Product Slice:\s*NONE\b/g, "Current Product Slice: IMP-031 — Provider-Neutral Delivery Foundation")
+      .replace(/Current Product Implementation:\s*NONE\b/g, "Current Product Implementation: IMP-031 — Provider-Neutral Delivery Foundation")
+      .replace(/currentProductSlice:\s*NONE\b/g, "currentProductSlice: IMP-031")
+      .replace(/Pending Acceptance:\s*NONE\b/g, "Pending Acceptance:    IMP-031")
+      .replace(/pendingAcceptance:\s*NONE\b/g, "pendingAcceptance: IMP-031")
+      .replace(/IMP-031:\s*COMPLETE_AND_ACCEPTED/g, "IMP-031: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE")
+      .replace(/IMP-031_ACCEPTED:\s*YES/g, "IMP-031_ACCEPTED: NO")
+      .replace(/IMP031_INDEPENDENT_ACCEPTANCE_EVIDENCE:\s*ACCEPTED\n/g, "IMP031_INDEPENDENT_ACCEPTANCE: NOT_PERFORMED\n")
+      .replace(/IMP031_FORMAL_ACCEPTANCE:\s*ACCEPTED\n/g, "")
+      .replace(/IMP031_ACCEPTED_MAIN_SHA:[^\n]*\n/g, "")
+      .replace(/IMP031_ACCEPTED_TREE:[^\n]*\n/g, "")
+      .replace(/IMP-031_FOUNDER_UAT_REQUIRED:\s*NO\n/g, "")
+      .replace(/IMP-032:\s*PLANNED \/ NOT_ACTIVATED\n/g, "")
+      .replace(/IMP-031 COMPLETE_AND_ACCEPTED;\n\s*IMP-032 PLANNED \/ NOT_ACTIVATED\./g,
+        "IMP-031 capability architecture LOCKED under ARCH-R18;\n                              implementation AUTHORIZED / STARTED / COMPLETE;\n                              IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE.")
+      .replace(/COMPLETE_AND_ACCEPTED/g, (m, offset, s) => {
+        // Only rewrite IMP-031 context already handled; leave IMP-030 alone.
+        return m;
+      });
+    return `${docText.slice(0, start)}${updated}${docText.slice(end)}`;
+  };
+  let roadmapText = rewriteCurrent(acceptedRoadmap, "## 2.", "## 3.");
+  // Restore accepted ledger vs future: put IMP-031 back into future as pending.
+  roadmapText = roadmapText
+    .replace(
+      "| IMP-031 | Provider-Neutral Delivery Foundation | COMPLETE_AND_ACCEPTED |\n",
+      "",
+    )
+    .replace(
+      "| IMP-032 | Dehradun Delivery Operating Mode | PLANNED |",
+      "| IMP-031 | Provider-Neutral Delivery Foundation | IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE |\n| IMP-032 | Dehradun Delivery Operating Mode | PLANNED |",
+    );
+  const stateText = rewriteCurrent(
+    rewriteCurrent(acceptedState, "## 2. Current Work Position", "\n## "),
+    "## 5. Acceptance Position",
+    "\n## ",
+  ).replace(
+    "| IMP-031 | Provider-Neutral Delivery Foundation | COMPLETE_AND_ACCEPTED |\n",
+    "",
+  );
+  return { roadmapText, stateText };
+}
+
+function deriveImp031StartArtifact(liveArtifact) {
+  const completeArtifact = deriveImp031CompletionArtifact(liveArtifact);
   return completeArtifact
     .replace(/"implementation": "AUTHORIZED \/ STARTED \/ COMPLETE"/, '"implementation": "AUTHORIZED / STARTED"')
     .replace("| Lifecycle | `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` |", "| Lifecycle | `IMPLEMENTATION_IN_PROGRESS` |")
@@ -2400,20 +2509,21 @@ function deriveImp031StartArtifact(completeArtifact) {
     );
 }
 
-function deriveImp031StartArchitecture(completeArchitecture) {
-  return completeArchitecture.replaceAll(
+function deriveImp031StartArchitecture(liveArchitecture) {
+  return deriveImp031CompletionArchitecture(liveArchitecture).replaceAll(
     "implementation AUTHORIZED / STARTED / COMPLETE",
     "implementation AUTHORIZED / STARTED",
   );
 }
 
-function deriveImp031StartLifecycleDocs(completeRoadmap, completeState) {
-  const rewriteCurrent = (text, sectionStart, sectionEndMarker) => {
-    const start = text.indexOf(sectionStart);
-    const end = text.indexOf(sectionEndMarker, start + 1);
+function deriveImp031StartLifecycleDocs(liveRoadmap, liveState) {
+  const complete = deriveImp031CompletionLifecycleDocs(liveRoadmap, liveState);
+  const rewriteCurrent = (docText, sectionStart, sectionEndMarker) => {
+    const start = docText.indexOf(sectionStart);
+    const end = docText.indexOf(sectionEndMarker, start + 1);
     assert.notEqual(start, -1);
     assert.notEqual(end, -1);
-    const current = text.slice(start, end);
+    const current = docText.slice(start, end);
     const updated = current
       .replace(/IMP-031:\s*IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE/g, "IMP-031: IMPLEMENTATION_IN_PROGRESS")
       .replace(/IMP-031_IMPLEMENTATION:\s*AUTHORIZED \/ STARTED \/ COMPLETE/g, "IMP-031_IMPLEMENTATION: AUTHORIZED / STARTED")
@@ -2424,16 +2534,16 @@ function deriveImp031StartLifecycleDocs(completeRoadmap, completeState) {
       .replace(/implementation AUTHORIZED \/ STARTED \/ COMPLETE/g, "implementation AUTHORIZED / STARTED")
       .replace(/`AUTHORIZED` \/ `STARTED` \/ `COMPLETE`/g, "`AUTHORIZED` / `STARTED`")
       .replace(/\*\*AUTHORIZED\*\* \/ \*\*STARTED\*\* \/ \*\*COMPLETE\*\*/g, "**AUTHORIZED** / **STARTED**");
-    return `${text.slice(0, start)}${updated}${text.slice(end)}`;
+    return `${docText.slice(0, start)}${updated}${docText.slice(end)}`;
   };
   return {
-    roadmapText: rewriteCurrent(completeRoadmap, "## 2.", "## 3.")
+    roadmapText: rewriteCurrent(complete.roadmapText, "## 2.", "## 3.")
       .replace(
         "| IMP-031 | Provider-Neutral Delivery Foundation | IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE |",
         "| IMP-031 | Provider-Neutral Delivery Foundation | IMPLEMENTATION_IN_PROGRESS |",
       ),
     stateText: rewriteCurrent(
-      rewriteCurrent(completeState, "## 2. Current Work Position", "\n## "),
+      rewriteCurrent(complete.stateText, "## 2. Current Work Position", "\n## "),
       "## 5. Acceptance Position",
       "\n## ",
     ),
@@ -2456,10 +2566,12 @@ describe("IMP-031 architecture lock checkpoint", () => {
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R76", "STATE-R74", "imp031Authorization"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R77", "STATE-R75", "imp031Start"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R78", "STATE-R76", "imp031Completion"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R79", "STATE-R77", "imp031Acceptance"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R75", "STATE-R73"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R76", "STATE-R74"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R77", "STATE-R75"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R78", "STATE-R76"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R79", "STATE-R77"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R75", "STATE-R72"), false);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R74", "STATE-R73"), false);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R75", "STATE-R73", "imp031Draft"), false);
@@ -2996,13 +3108,25 @@ describe("IMP-031 implementation completion checkpoint", () => {
     implementationEvidence: true, independentReviewPass: true,
   });
 
-  it("supports only the R78/S76 completion checkpoint", () => {
+  const liveCapability = readFileSync(new URL("../docs/platform/capabilities/IMP-031-provider-neutral-delivery-foundation.md", import.meta.url), "utf8");
+  const liveArchitecture = readFileSync(new URL("../docs/platform/ARCHITECTURE.md", import.meta.url), "utf8");
+  const liveRoadmap = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
+  const liveState = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
+  const capabilityText = deriveImp031CompletionArtifact(liveCapability);
+  const architectureText = deriveImp031CompletionArchitecture(liveArchitecture);
+  const completionDocs = deriveImp031CompletionLifecycleDocs(liveRoadmap, liveState);
+  const roadmapText = completionDocs.roadmapText;
+  const stateText = completionDocs.stateText;
+
+  it("supports only the R78/S76 completion checkpoint and preserves R79/S77 acceptance separately", () => {
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R78", "STATE-R76", "imp031Completion"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R77", "STATE-R75", "imp031Completion"), false);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R78", "STATE-R75", "imp031Completion"), false);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R77", "STATE-R76", "imp031Completion"), false);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R78", "STATE-R76", "imp031Start"), false);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R79", "STATE-R77", "imp031Completion"), false);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R78", "STATE-R76"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R79", "STATE-R77", "imp031Acceptance"), true);
   });
 
   it("accepts only the complete-pending-acceptance IMP-031 checkpoint", () => {
@@ -3021,29 +3145,24 @@ describe("IMP-031 implementation completion checkpoint", () => {
     }
   });
 
-  it("accepts live CURRENT completion artifact and rejects incomplete / accepted progression", () => {
-    const artifact = readFileSync(new URL("../docs/platform/capabilities/IMP-031-provider-neutral-delivery-foundation.md", import.meta.url), "utf8");
-    assert.deepEqual(evaluateImp031ImplementationCompletionArtifact(artifact), { ok: true });
-    assert.match(artifact, /COMPLETION IS NOT ACCEPTANCE:\s*YES/);
-    assert.match(artifact, /IMPLEMENTATION_SOURCE_SHA:\s*66e2783afa4e9eef35c4ec208b25af9d9450f83d/);
+  it("accepts derived completion artifact and rejects incomplete / accepted progression", () => {
+    assert.deepEqual(evaluateImp031ImplementationCompletionArtifact(capabilityText), { ok: true });
+    assert.match(capabilityText, /COMPLETION IS NOT ACCEPTANCE:\s*YES/);
+    assert.match(capabilityText, /IMPLEMENTATION_SOURCE_SHA:\s*66e2783afa4e9eef35c4ec208b25af9d9450f83d/);
     for (const mutation of [
-      artifact.replace('"implementation": "AUTHORIZED / STARTED / COMPLETE"', '"implementation": "AUTHORIZED / STARTED"'),
-      artifact.replace("IMP-031: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE", "IMP-031: IMPLEMENTATION_IN_PROGRESS"),
-      artifact.replace("IMP-031_IMPLEMENTATION_COMPLETE: YES", "IMP-031_IMPLEMENTATION_COMPLETE: NO"),
-      artifact.replace("IMP-031_ACCEPTED: NO", "IMP-031_ACCEPTED: YES"),
-      artifact.replace("IMP-031_STARTED: YES", "IMP-031_STARTED: NO"),
-      artifact.replace(/COMPLETION IS NOT ACCEPTANCE: YES\n/, ""),
-      `${artifact}\nD-373`,
+      capabilityText.replace('"implementation": "AUTHORIZED / STARTED / COMPLETE"', '"implementation": "AUTHORIZED / STARTED"'),
+      capabilityText.replace("IMP-031: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE", "IMP-031: IMPLEMENTATION_IN_PROGRESS"),
+      capabilityText.replace("IMP-031_IMPLEMENTATION_COMPLETE: YES", "IMP-031_IMPLEMENTATION_COMPLETE: NO"),
+      capabilityText.replace("IMP-031_ACCEPTED: NO", "IMP-031_ACCEPTED: YES"),
+      capabilityText.replace("IMP-031_STARTED: YES", "IMP-031_STARTED: NO"),
+      capabilityText.replace(/COMPLETION IS NOT ACCEPTANCE: YES\n/, ""),
+      `${capabilityText}\nD-373`,
     ]) {
       assert.equal(evaluateImp031ImplementationCompletionArtifact(mutation).ok, false);
     }
   });
 
   it("rejects COMPLETE YES while STARTED NO", () => {
-    const roadmapText = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
-    const stateText = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
-    const capabilityText = readFileSync(new URL("../docs/platform/capabilities/IMP-031-provider-neutral-delivery-foundation.md", import.meta.url), "utf8");
-    const architectureText = readFileSync(new URL("../docs/platform/ARCHITECTURE.md", import.meta.url), "utf8");
     const currentRoadmap = roadmapText.slice(roadmapText.indexOf("## 2."), roadmapText.indexOf("## 3."));
     const mutatedRoadmap = roadmapText.replace(
       currentRoadmap,
@@ -3067,10 +3186,6 @@ describe("IMP-031 implementation completion checkpoint", () => {
   });
 
   it("rejects COMPLETE_PENDING_ACCEPTANCE while complete marker NO", () => {
-    const roadmapText = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
-    const stateText = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
-    const capabilityText = readFileSync(new URL("../docs/platform/capabilities/IMP-031-provider-neutral-delivery-foundation.md", import.meta.url), "utf8");
-    const architectureText = readFileSync(new URL("../docs/platform/ARCHITECTURE.md", import.meta.url), "utf8");
     const currentRoadmap = roadmapText.slice(roadmapText.indexOf("## 2."), roadmapText.indexOf("## 3."));
     const mutatedRoadmap = roadmapText.replace(
       currentRoadmap,
@@ -3094,10 +3209,6 @@ describe("IMP-031 implementation completion checkpoint", () => {
   });
 
   it("rejects completion with accepted YES", () => {
-    const roadmapText = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
-    const stateText = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
-    const capabilityText = readFileSync(new URL("../docs/platform/capabilities/IMP-031-provider-neutral-delivery-foundation.md", import.meta.url), "utf8");
-    const architectureText = readFileSync(new URL("../docs/platform/ARCHITECTURE.md", import.meta.url), "utf8");
     const currentRoadmap = roadmapText.slice(roadmapText.indexOf("## 2."), roadmapText.indexOf("## 3."));
     const mutatedRoadmap = roadmapText.replace(
       currentRoadmap,
@@ -3118,10 +3229,6 @@ describe("IMP-031 implementation completion checkpoint", () => {
   });
 
   it("rejects completion with acceptedThrough advanced to IMP-031", () => {
-    const roadmapText = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
-    const stateText = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
-    const capabilityText = readFileSync(new URL("../docs/platform/capabilities/IMP-031-provider-neutral-delivery-foundation.md", import.meta.url), "utf8");
-    const architectureText = readFileSync(new URL("../docs/platform/ARCHITECTURE.md", import.meta.url), "utf8");
     const currentRoadmap = roadmapText.slice(roadmapText.indexOf("## 2."), roadmapText.indexOf("## 3."));
     const mutatedRoadmap = roadmapText.replace(
       currentRoadmap,
@@ -3142,10 +3249,6 @@ describe("IMP-031 implementation completion checkpoint", () => {
   });
 
   it("rejects completion with pendingAcceptance NONE", () => {
-    const roadmapText = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
-    const stateText = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
-    const capabilityText = readFileSync(new URL("../docs/platform/capabilities/IMP-031-provider-neutral-delivery-foundation.md", import.meta.url), "utf8");
-    const architectureText = readFileSync(new URL("../docs/platform/ARCHITECTURE.md", import.meta.url), "utf8");
     const currentRoadmap = roadmapText.slice(roadmapText.indexOf("## 2."), roadmapText.indexOf("## 3."));
     const mutatedRoadmap = roadmapText.replace(
       currentRoadmap,
@@ -3166,10 +3269,6 @@ describe("IMP-031 implementation completion checkpoint", () => {
   });
 
   it("rejects completion with currentProductSlice NONE", () => {
-    const roadmapText = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
-    const stateText = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
-    const capabilityText = readFileSync(new URL("../docs/platform/capabilities/IMP-031-provider-neutral-delivery-foundation.md", import.meta.url), "utf8");
-    const architectureText = readFileSync(new URL("../docs/platform/ARCHITECTURE.md", import.meta.url), "utf8");
     const currentRoadmap = roadmapText.slice(roadmapText.indexOf("## 2."), roadmapText.indexOf("## 3."));
     const mutatedRoadmap = roadmapText.replace(
       currentRoadmap,
@@ -3190,10 +3289,6 @@ describe("IMP-031 implementation completion checkpoint", () => {
   });
 
   it("rejects IMP-032 activated before IMP-031 acceptance", () => {
-    const roadmapText = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
-    const stateText = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
-    const capabilityText = readFileSync(new URL("../docs/platform/capabilities/IMP-031-provider-neutral-delivery-foundation.md", import.meta.url), "utf8");
-    const architectureText = readFileSync(new URL("../docs/platform/ARCHITECTURE.md", import.meta.url), "utf8");
     const currentRoadmap = roadmapText.slice(roadmapText.indexOf("## 2."), roadmapText.indexOf("## 3."));
     const mutatedRoadmap = roadmapText.replace(
       currentRoadmap,
@@ -3207,23 +3302,16 @@ describe("IMP-031 implementation completion checkpoint", () => {
   });
 
   it("rejects CURRENT ARCH STARTED-only while canonical completion says STARTED/COMPLETE", () => {
-    const roadmapText = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
-    const stateText = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
-    const capabilityText = readFileSync(new URL("../docs/platform/capabilities/IMP-031-provider-neutral-delivery-foundation.md", import.meta.url), "utf8");
-    const architectureText = readFileSync(new URL("../docs/platform/ARCHITECTURE.md", import.meta.url), "utf8")
+    const staleArchitecture = architectureText
       .replaceAll("implementation AUTHORIZED / STARTED / COMPLETE", "implementation AUTHORIZED / STARTED");
     const result = evaluateImp031ImplementationCompletionCrossDocumentAlignment({
-      architectureText, capabilityText, roadmapText, stateText,
+      architectureText: staleArchitecture, capabilityText, roadmapText, stateText,
     });
     assert.equal(result.ok, false);
     assert.equal(result.code, "IMP031_ARCH_STATUS_STALE");
   });
 
-  it("aligns live CURRENT completion documents", () => {
-    const roadmapText = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
-    const stateText = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
-    const capabilityText = readFileSync(new URL("../docs/platform/capabilities/IMP-031-provider-neutral-delivery-foundation.md", import.meta.url), "utf8");
-    const architectureText = readFileSync(new URL("../docs/platform/ARCHITECTURE.md", import.meta.url), "utf8");
+  it("aligns derived completion documents and rejects live accepted docs as completion", () => {
     assert.deepEqual(
       evaluateImp031ImplementationCompletionCrossDocumentAlignment({
         architectureText, capabilityText, roadmapText, stateText,
@@ -3231,6 +3319,13 @@ describe("IMP-031 implementation completion checkpoint", () => {
       { ok: true },
     );
     assert.deepEqual(evaluateImp031ImplementationCompletionCurrentArchitectureStatus(architectureText), { ok: true });
+    const liveAccepted = evaluateImp031ImplementationCompletionCrossDocumentAlignment({
+      architectureText: liveArchitecture,
+      capabilityText: liveCapability,
+      roadmapText: liveRoadmap,
+      stateText: liveState,
+    });
+    assert.equal(liveAccepted.ok, false);
   });
 });
 
@@ -3359,6 +3454,218 @@ describe("IMP-030 formal acceptance checkpoint", () => {
       const fixture = replaceCurrentFact(stateText, field, value);
       assert.equal(evaluateImp030AcceptanceDocuments(acceptanceDocuments({ stateText: fixture })).ok, false, field);
     }
+  });
+});
+
+describe("IMP-031 formal acceptance checkpoint", () => {
+  const acceptance = Object.freeze({
+    roadmapVersion: "GTM-R79", stateVersion: "STATE-R77", acceptedThrough: "IMP-031",
+    currentProductSlice: "NONE", nextProductSlice: "IMP-032", pendingAcceptance: "NONE",
+    imp030: "COMPLETE_AND_ACCEPTED", imp031: "COMPLETE_AND_ACCEPTED", architecture: "LOCKED",
+    architectureLocked: "YES", implementationAuthorized: "YES", started: "YES",
+    implementationComplete: "YES", accepted: "YES", imp032: "PLANNED",
+    architectureVersion: "ARCH-R18", decisionRegisterVersion: "DR-14",
+    artifact: true, archG24: true, d373Exists: false, boundaryC: true,
+    implementationEvidenceComplete: true, independentReviewPass: true,
+    independentAcceptanceAccepted: true, formalAcceptanceAccepted: true,
+    acceptedMainSha: "c3d499b0b8df2a8c7ae9297ab870f6286f81b848",
+    acceptedTree: "dd42ea992c8866ff8cfbc0ac09e781eb6fcfa099",
+  });
+
+  const roadmapText = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
+  const stateText = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
+  const architectureText = readFileSync(new URL("../docs/platform/ARCHITECTURE.md", import.meta.url), "utf8");
+  const capabilityText = readFileSync(new URL("../docs/platform/capabilities/IMP-031-provider-neutral-delivery-foundation.md", import.meta.url), "utf8");
+
+  it("supports only the R79/S77 formal-acceptance checkpoint and preserves R78/S76 completion", () => {
+    assert.deepEqual(evaluateImp031AcceptanceCheckpoint(acceptance), { ok: true });
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R79", "STATE-R77", "imp031Acceptance"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R78", "STATE-R76", "imp031Completion"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R79", "STATE-R76", "imp031Acceptance"), false);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R78", "STATE-R77", "imp031Acceptance"), false);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R79", "STATE-R77", "imp031Completion"), false);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R79", "STATE-R77"), true);
+  });
+
+  it("accepts live CURRENT formal-acceptance artifact and documents", () => {
+    assert.deepEqual(evaluateImp031AcceptanceArtifact(capabilityText), { ok: true });
+    assert.deepEqual(evaluateImp031AcceptanceCurrentArchitectureStatus(architectureText), { ok: true });
+    assert.deepEqual(
+      evaluateImp031AcceptanceCrossDocumentAlignment({
+        architectureText, capabilityText, roadmapText, stateText,
+      }),
+      { ok: true },
+    );
+    assert.match(capabilityText, /IMP031_ACCEPTED_MAIN_SHA:\s*c3d499b0b8df2a8c7ae9297ab870f6286f81b848/);
+    assert.match(capabilityText, /IMP031_ACCEPTED_TREE:\s*dd42ea992c8866ff8cfbc0ac09e781eb6fcfa099/);
+    assert.doesNotMatch(capabilityText, /IMP031_ACCEPTED_MAIN_SHA:\s*64d1cc987120302e12497311b486ba122c1047b0/);
+  });
+
+  it("rejects accepted YES while complete NO", () => {
+    const currentRoadmap = roadmapText.slice(roadmapText.indexOf("## 2."), roadmapText.indexOf("## 3."));
+    const mutatedRoadmap = roadmapText.replace(
+      currentRoadmap,
+      currentRoadmap.replace(/IMP-031_IMPLEMENTATION_COMPLETE:\s*YES/, "IMP-031_IMPLEMENTATION_COMPLETE: NO"),
+    );
+    const stateAcceptanceStart = stateText.indexOf("## 5. Acceptance Position");
+    const stateAcceptanceEnd = stateText.indexOf("\n## ", stateAcceptanceStart + 1);
+    const currentStateAcceptance = stateText.slice(stateAcceptanceStart, stateAcceptanceEnd === -1 ? undefined : stateAcceptanceEnd);
+    const mutatedState = stateText.replace(
+      currentStateAcceptance,
+      currentStateAcceptance.replace(/IMP-031_IMPLEMENTATION_COMPLETE:\s*YES/, "IMP-031_IMPLEMENTATION_COMPLETE: NO"),
+    );
+    const result = evaluateImp031AcceptanceCrossDocumentAlignment({
+      architectureText, capabilityText, roadmapText: mutatedRoadmap, stateText: mutatedState,
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP031_ACCEPTED_WITHOUT_COMPLETE");
+  });
+
+  it("rejects COMPLETE_AND_ACCEPTED while independent acceptance is not ACCEPTED", () => {
+    const currentRoadmap = roadmapText.slice(roadmapText.indexOf("## 2."), roadmapText.indexOf("## 3."));
+    const mutatedRoadmap = roadmapText.replace(
+      currentRoadmap,
+      currentRoadmap.replace(/IMP031_INDEPENDENT_ACCEPTANCE_EVIDENCE:\s*ACCEPTED/, "IMP031_INDEPENDENT_ACCEPTANCE_EVIDENCE: NOT_PERFORMED"),
+    );
+    const stateAcceptanceStart = stateText.indexOf("## 5. Acceptance Position");
+    const stateAcceptanceEnd = stateText.indexOf("\n## ", stateAcceptanceStart + 1);
+    const currentStateAcceptance = stateText.slice(stateAcceptanceStart, stateAcceptanceEnd === -1 ? undefined : stateAcceptanceEnd);
+    const mutatedState = stateText.replace(
+      currentStateAcceptance,
+      currentStateAcceptance.replace(/IMP031_INDEPENDENT_ACCEPTANCE_EVIDENCE:\s*ACCEPTED/, "IMP031_INDEPENDENT_ACCEPTANCE_EVIDENCE: NOT_PERFORMED"),
+    );
+    const result = evaluateImp031AcceptanceCrossDocumentAlignment({
+      architectureText, capabilityText, roadmapText: mutatedRoadmap, stateText: mutatedState,
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP031_ACCEPTED_WITHOUT_INDEPENDENT_ACCEPTANCE");
+  });
+
+  it("rejects formal acceptance ACCEPTED while IMP-031_ACCEPTED != YES", () => {
+    const currentRoadmap = roadmapText.slice(roadmapText.indexOf("## 2."), roadmapText.indexOf("## 3."));
+    const mutatedRoadmap = roadmapText.replace(
+      currentRoadmap,
+      currentRoadmap.replace(/IMP-031_ACCEPTED:\s*YES/, "IMP-031_ACCEPTED: NO"),
+    );
+    const stateAcceptanceStart = stateText.indexOf("## 5. Acceptance Position");
+    const stateAcceptanceEnd = stateText.indexOf("\n## ", stateAcceptanceStart + 1);
+    const currentStateAcceptance = stateText.slice(stateAcceptanceStart, stateAcceptanceEnd === -1 ? undefined : stateAcceptanceEnd);
+    const mutatedState = stateText.replace(
+      currentStateAcceptance,
+      currentStateAcceptance.replace(/IMP-031_ACCEPTED:\s*YES/, "IMP-031_ACCEPTED: NO"),
+    );
+    const result = evaluateImp031AcceptanceCrossDocumentAlignment({
+      architectureText, capabilityText, roadmapText: mutatedRoadmap, stateText: mutatedState,
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP031_FORMAL_WITHOUT_ACCEPTED_MARKER");
+  });
+
+  it("rejects acceptedThrough still IMP-030 after acceptance", () => {
+    const currentRoadmap = roadmapText.slice(roadmapText.indexOf("## 2."), roadmapText.indexOf("## 3."));
+    const mutatedRoadmap = roadmapText.replace(
+      currentRoadmap,
+      currentRoadmap.replace(/Accepted Through:\s*IMP-031[^\n]*/, "Accepted Through:     IMP-030 — Operations Console UI"),
+    );
+    const stateAcceptanceStart = stateText.indexOf("## 5. Acceptance Position");
+    const stateAcceptanceEnd = stateText.indexOf("\n## ", stateAcceptanceStart + 1);
+    const currentStateAcceptance = stateText.slice(stateAcceptanceStart, stateAcceptanceEnd === -1 ? undefined : stateAcceptanceEnd);
+    const mutatedState = stateText.replace(
+      currentStateAcceptance,
+      currentStateAcceptance.replace(/acceptedThrough:\s*IMP-031/, "acceptedThrough: IMP-030"),
+    );
+    const result = evaluateImp031AcceptanceCrossDocumentAlignment({
+      architectureText, capabilityText, roadmapText: mutatedRoadmap, stateText: mutatedState,
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP031_ACCEPTED_THROUGH");
+  });
+
+  it("rejects pendingAcceptance still IMP-031 after acceptance", () => {
+    const currentRoadmap = roadmapText.slice(roadmapText.indexOf("## 2."), roadmapText.indexOf("## 3."));
+    const mutatedRoadmap = roadmapText.replace(
+      currentRoadmap,
+      currentRoadmap.replace(/Pending Acceptance:\s*NONE\b/, "Pending Acceptance:    IMP-031"),
+    );
+    const stateAcceptanceStart = stateText.indexOf("## 5. Acceptance Position");
+    const stateAcceptanceEnd = stateText.indexOf("\n## ", stateAcceptanceStart + 1);
+    const currentStateAcceptance = stateText.slice(stateAcceptanceStart, stateAcceptanceEnd === -1 ? undefined : stateAcceptanceEnd);
+    const mutatedState = stateText.replace(
+      currentStateAcceptance,
+      currentStateAcceptance.replace(/pendingAcceptance:\s*NONE\b/, "pendingAcceptance: IMP-031"),
+    );
+    const result = evaluateImp031AcceptanceCrossDocumentAlignment({
+      architectureText, capabilityText, roadmapText: mutatedRoadmap, stateText: mutatedState,
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP031_PENDING_ACCEPTANCE");
+  });
+
+  it("rejects currentProductSlice still IMP-031 after acceptance", () => {
+    const currentRoadmap = roadmapText.slice(roadmapText.indexOf("## 2."), roadmapText.indexOf("## 3."));
+    const mutatedRoadmap = roadmapText.replace(
+      currentRoadmap,
+      currentRoadmap.replace(/Current Product Slice:\s*NONE\b/, "Current Product Slice: IMP-031 — Provider-Neutral Delivery Foundation"),
+    );
+    const stateAcceptanceStart = stateText.indexOf("## 5. Acceptance Position");
+    const stateAcceptanceEnd = stateText.indexOf("\n## ", stateAcceptanceStart + 1);
+    const currentStateAcceptance = stateText.slice(stateAcceptanceStart, stateAcceptanceEnd === -1 ? undefined : stateAcceptanceEnd);
+    const mutatedState = stateText.replace(
+      currentStateAcceptance,
+      currentStateAcceptance.replace(/currentProductSlice:\s*NONE\b/, "currentProductSlice: IMP-031"),
+    );
+    const result = evaluateImp031AcceptanceCrossDocumentAlignment({
+      architectureText, capabilityText, roadmapText: mutatedRoadmap, stateText: mutatedState,
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP031_CURRENT_SLICE");
+  });
+
+  it("rejects nextProductSlice changed away from IMP-032", () => {
+    assert.equal(evaluateImp031AcceptanceCheckpoint({ ...acceptance, nextProductSlice: "IMP-033" }).ok, false);
+  });
+
+  it("rejects IMP-032 activated/authorized/started by acceptance", () => {
+    assert.equal(evaluateImp031AcceptanceCheckpoint({ ...acceptance, imp032: "ACTIVATED" }).ok, false);
+    const currentRoadmap = roadmapText.slice(roadmapText.indexOf("## 2."), roadmapText.indexOf("## 3."));
+    const mutatedRoadmap = roadmapText.replace(
+      currentRoadmap,
+      currentRoadmap.replace(/IMP-032:\s*PLANNED \/ NOT_ACTIVATED/, "IMP-032: ARCHITECTURE_IN_PROGRESS\nIMP-032_IMPLEMENTATION_AUTHORIZED: YES\nIMP-032_STARTED: YES"),
+    );
+    const result = evaluateImp031AcceptanceCrossDocumentAlignment({
+      architectureText, capabilityText, roadmapText: mutatedRoadmap, stateText,
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP031_IMP032_ACTIVATED");
+  });
+
+  it("rejects accepted SHA/tree replaced with completion-governance SHA/tree", () => {
+    assert.equal(
+      evaluateImp031AcceptanceCheckpoint({
+        ...acceptance,
+        acceptedMainSha: "64d1cc987120302e12497311b486ba122c1047b0",
+        acceptedTree: "a3ab9266df709b146a49d4324aa3027fa49ac43c",
+      }).ok,
+      false,
+    );
+    const mutatedCapability = capabilityText
+      .replace(/IMP031_ACCEPTED_MAIN_SHA:\s*c3d499b0b8df2a8c7ae9297ab870f6286f81b848/, "IMP031_ACCEPTED_MAIN_SHA: 64d1cc987120302e12497311b486ba122c1047b0")
+      .replace(/IMP031_ACCEPTED_TREE:\s*dd42ea992c8866ff8cfbc0ac09e781eb6fcfa099/, "IMP031_ACCEPTED_TREE: a3ab9266df709b146a49d4324aa3027fa49ac43c");
+    const result = evaluateImp031AcceptanceArtifact(mutatedCapability);
+    assert.equal(result.ok, false);
+    assert.ok(["IMP031_CAPABILITY_ACCEPTANCE", "IMP031_CAPABILITY_PROGRESSION"].includes(result.code));
+  });
+
+  it("rejects CURRENT ARCH/capability pending-acceptance wording after formal acceptance", () => {
+    const staleArchitecture = architectureText.replaceAll(
+      "AUTHORIZED / STARTED / COMPLETE / COMPLETE_AND_ACCEPTED",
+      "AUTHORIZED / STARTED / COMPLETE",
+    );
+    const archResult = evaluateImp031AcceptanceCurrentArchitectureStatus(staleArchitecture);
+    assert.equal(archResult.ok, false);
+    assert.equal(archResult.code, "IMP031_ARCH_STATUS_STALE");
+    const pendingCapability = deriveImp031CompletionArtifact(capabilityText);
+    assert.equal(evaluateImp031AcceptanceArtifact(pendingCapability).ok, false);
   });
 });
 

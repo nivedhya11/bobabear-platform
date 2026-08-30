@@ -2,11 +2,11 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R76",
-  "acceptedThrough": "IMP-030",
-  "currentProductSlice": "IMP-031",
+  "stateVersion": "STATE-R77",
+  "acceptedThrough": "IMP-031",
+  "currentProductSlice": "NONE",
   "nextProductSlice": "IMP-032",
-  "pendingAcceptance": "IMP-031",
+  "pendingAcceptance": "NONE",
   "governanceHealth": "ALIGNED",
   "lastReviewed": "2026-08-30"
 }
@@ -20,20 +20,19 @@ current-reality authority.
 ## 1. Accepted Position
 
 ```text
-Accepted Through:          IMP-030 — Operations Console UI
+Accepted Through:          IMP-031 — Provider-Neutral Delivery Foundation
 Accepted Inserted Slice:   IMP-005A — Dockerized local application runtime; IMP-026C — Pilot Customer-Commerce UX Hardening; IMP-028A — Food Direct UX Foundation; IMP-028B — Customer Menu Projection + Discovery; IMP-028C — Food Customization; IMP-028D — Desktop Ordering Continuity
-Accepted Range:            IMP-001 → IMP-030 (including IMP-005A and IMP-026C)
+Accepted Range:            IMP-001 → IMP-031 (including IMP-005A and IMP-026C)
 ```
 
 ## 2. Current Work Position
 
 ```text
-Current Product Implementation: IMP-031 — Provider-Neutral Delivery Foundation
-Pending Acceptance:             IMP-031
+Current Product Implementation: NONE
+Pending Acceptance:             NONE
 Next Product Slice:             IMP-032 — Dehradun Delivery Operating Mode
-Current Governance Activity:    IMP-031 capability architecture LOCKED under ARCH-R18;
-                              implementation AUTHORIZED / STARTED / COMPLETE;
-                              IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE.
+Current Governance Activity:    IMP-031 COMPLETE_AND_ACCEPTED;
+                              IMP-032 PLANNED / NOT_ACTIVATED.
 Governance Health:              ALIGNED
 ```
 
@@ -143,6 +142,22 @@ IMP030_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
 IMP030_FORMAL_ACCEPTANCE: ACCEPTED
 IMP030_ACCEPTED_MAIN_SHA: 4bcf0fa0a659202c29be03e9b1b0cefbacf484fb
 IMP030_ACCEPTED_TREE:     048b3ac4e1ba5b3519fa5665f0f4de151068fb59
+IMP-031:                  COMPLETE_AND_ACCEPTED
+IMP-031_ARCHITECTURE:     LOCKED
+IMP-031_ARCHITECTURE_LOCKED: YES
+IMP-031_IMPLEMENTATION:   AUTHORIZED / STARTED / COMPLETE
+IMP-031_IMPLEMENTATION_AUTHORIZED: YES
+IMP-031_STARTED:          YES
+IMP-031_IMPLEMENTATION_COMPLETE: YES
+IMP-031_ACCEPTED:         YES
+IMP031_IMPLEMENTATION_EVIDENCE: COMPLETE
+IMP_031_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
+IMP031_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
+IMP031_FORMAL_ACCEPTANCE: ACCEPTED
+IMP031_ACCEPTED_MAIN_SHA: c3d499b0b8df2a8c7ae9297ab870f6286f81b848
+IMP031_ACCEPTED_TREE:     dd42ea992c8866ff8cfbc0ac09e781eb6fcfa099
+IMP-031_FOUNDER_UAT_REQUIRED: NO
+IMP-032:                  PLANNED / NOT_ACTIVATED
 ```
 
 Capability architecture:
@@ -172,11 +187,11 @@ Capability architecture:
 [`capabilities/IMP-030-operations-console-ui.md`](./capabilities/IMP-030-operations-console-ui.md)
 
 IMP-031 locked capability architecture (architecture LOCKED; implementation AUTHORIZED /
-STARTED / COMPLETE; IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE):
+STARTED / COMPLETE; COMPLETE_AND_ACCEPTED):
 
 [`capabilities/IMP-031-provider-neutral-delivery-foundation.md`](./capabilities/IMP-031-provider-neutral-delivery-foundation.md)
 
-`acceptedThrough` is IMP-030. IMP-025 architecture remains locked; IMP-025 implementation is
+`acceptedThrough` is IMP-031. IMP-025 architecture remains locked; IMP-025 implementation is
 **COMPLETE_AND_ACCEPTED**. IMP-026 architecture is **ARCHITECTURE_LOCKED**. IMP-026 implementation
 is **COMPLETE_AND_ACCEPTED** (`IMP-026_ACCEPTED: YES`). Independent acceptance of IMP-026 is
 recorded, including provider-originated Razorpay Test Mode webhook proof over public HTTPS.
@@ -241,6 +256,23 @@ independent acceptance without changing decision register or global architecture
 STATE-R36 record IMP-028B canonical activation without changing decision register or global
 architecture. GTM-R39 / STATE-R37 record IMP-028B architecture lock and implementation
 authorization without changing decision register or global architecture.
+
+STATE-R77 records formal acceptance of **IMP-031 — Provider-Neutral Delivery Foundation** for
+independently accepted product `main` merge SHA `c3d499b0b8df2a8c7ae9297ab870f6286f81b848` and tree
+`dd42ea992c8866ff8cfbc0ac09e781eb6fcfa099`. Implementation evidence is **COMPLETE**; independent
+implementation review is **PASS**; independent acceptance evidence is **ACCEPTED**; formal
+acceptance is recorded (`IMP031_FORMAL_ACCEPTANCE: ACCEPTED`; `IMP-031_ACCEPTED: YES`). IMP-031 is
+`COMPLETE_AND_ACCEPTED`; architecture remains `LOCKED` (`IMP-031_ARCHITECTURE_LOCKED: YES`);
+implementation remains `AUTHORIZED` / `STARTED` / `COMPLETE` (`IMP-031_IMPLEMENTATION_AUTHORIZED:
+YES`; `IMP-031_STARTED: YES`; `IMP-031_IMPLEMENTATION_COMPLETE: YES`). Boundary C remains the
+implementation boundary. `acceptedThrough` advances to IMP-031; `currentProductSlice` and
+`pendingAcceptance` are NONE; `nextProductSlice` remains IMP-032, `PLANNED` / `NOT_ACTIVATED` /
+`NOT_AUTHORIZED` / `NOT_STARTED`. Formal acceptance does **not** authorize, start, or activate
+IMP-032. Founder UAT is not required for Boundary C (`IMP-031_FOUNDER_UAT_REQUIRED: NO`) and is
+not claimed as PASS. ARCH-R18 / ARCH-G24 and DR-14 remain unchanged; D-373 is absent. Provider
+selection and Dehradun operating mode remain deferred. This reconciliation introduces no product
+source, schema, migration, decision-register, or ARCH-G24 substance mutation. Supersedes STATE-R76
+for the current IMP-031 lifecycle and acceptance position.
 
 STATE-R76 records implementation **COMPLETE** pending independent acceptance for **IMP-031 —
 Provider-Neutral Delivery Foundation** under prior STATE-R74/STATE-R75 authorization and start and
@@ -819,13 +851,14 @@ Cart → Checkout → Payment → Order
 | IMP-028D | Desktop Ordering Continuity | COMPLETE_AND_ACCEPTED |
 | IMP-029 | Operations Console API | COMPLETE_AND_ACCEPTED |
 | IMP-030 | Operations Console UI | COMPLETE_AND_ACCEPTED |
+| IMP-031 | Provider-Neutral Delivery Foundation | COMPLETE_AND_ACCEPTED |
 
 ## 5. Acceptance Position
 
 ```text
-acceptedThrough: IMP-030
-pendingAcceptance: IMP-031
-currentProductSlice: IMP-031
+acceptedThrough: IMP-031
+pendingAcceptance: NONE
+currentProductSlice: NONE
 nextProductSlice: IMP-032 — Dehradun Delivery Operating Mode
 FOUNDER_UAT: PASS
 FOUNDER_UAT_REQUIRED: YES
@@ -895,22 +928,27 @@ IMP030_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
 IMP030_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
 IMP030_FORMAL_ACCEPTANCE: ACCEPTED
 IMP030_ACCEPTED_MAIN_SHA: 4bcf0fa0a659202c29be03e9b1b0cefbacf484fb
-IMP-031: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
+IMP030_ACCEPTED_TREE: 048b3ac4e1ba5b3519fa5665f0f4de151068fb59
+IMP-031: COMPLETE_AND_ACCEPTED
 IMP-031_ARCHITECTURE: LOCKED
 IMP-031_ARCHITECTURE_LOCKED: YES
 IMP-031_IMPLEMENTATION: AUTHORIZED / STARTED / COMPLETE
 IMP-031_IMPLEMENTATION_AUTHORIZED: YES
 IMP-031_STARTED: YES
 IMP-031_IMPLEMENTATION_COMPLETE: YES
-IMP-031_ACCEPTED: NO
+IMP-031_ACCEPTED: YES
 IMP031_IMPLEMENTATION_EVIDENCE: COMPLETE
 IMP_031_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
-IMP031_INDEPENDENT_ACCEPTANCE: NOT_PERFORMED
+IMP031_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
+IMP031_FORMAL_ACCEPTANCE: ACCEPTED
+IMP031_ACCEPTED_MAIN_SHA: c3d499b0b8df2a8c7ae9297ab870f6286f81b848
+IMP031_ACCEPTED_TREE: dd42ea992c8866ff8cfbc0ac09e781eb6fcfa099
+IMP-031_FOUNDER_UAT_REQUIRED: NO
 IMPLEMENTATION_SOURCE_SHA: 66e2783afa4e9eef35c4ec208b25af9d9450f83d
 IMPLEMENTATION_SOURCE_TREE: dd42ea992c8866ff8cfbc0ac09e781eb6fcfa099
 MERGED_MAIN_SHA: c3d499b0b8df2a8c7ae9297ab870f6286f81b848
 MERGED_MAIN_TREE: dd42ea992c8866ff8cfbc0ac09e781eb6fcfa099
-IMP030_ACCEPTED_TREE: 048b3ac4e1ba5b3519fa5665f0f4de151068fb59
+IMP-032: PLANNED / NOT_ACTIVATED
 ```
 
 Independent acceptance of IMP-028A **is** claimed and formally reconciled

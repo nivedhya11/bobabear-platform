@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R78",
-  "acceptedThrough": "IMP-030",
-  "currentProductSlice": "IMP-031",
+  "roadmapVersion": "GTM-R79",
+  "acceptedThrough": "IMP-031",
+  "currentProductSlice": "NONE",
   "nextProductSlice": "IMP-032",
   "gtmBoundary": "IMP-040",
   "lastReviewed": "2026-08-30",
-  "supersedes": "GTM-R77"
+  "supersedes": "GTM-R78"
 }
 -->
 
@@ -270,31 +270,33 @@ IMP-030 locked capability architecture (architecture **ARCHITECTURE_LOCKED**; im
 [`capabilities/IMP-030-operations-console-ui.md`](./capabilities/IMP-030-operations-console-ui.md)
 
 IMP-031 locked capability architecture (architecture **ARCHITECTURE_LOCKED**; implementation
-**AUTHORIZED** / **STARTED** / **COMPLETE** / `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`):
+**AUTHORIZED** / **STARTED** / **COMPLETE** / `COMPLETE_AND_ACCEPTED`):
 
 [`capabilities/IMP-031-provider-neutral-delivery-foundation.md`](./capabilities/IMP-031-provider-neutral-delivery-foundation.md)
 
 ## 2. Current Position
 
 ```text
-Accepted Through:     IMP-030 — Operations Console UI
-Current Product Slice: IMP-031 — Provider-Neutral Delivery Foundation
+Accepted Through:     IMP-031 — Provider-Neutral Delivery Foundation
+Current Product Slice: NONE
 Next Product Slice:    IMP-032 — Dehradun Delivery Operating Mode
-Pending Acceptance:    IMP-031
+Pending Acceptance:    NONE
 Public GTM Boundary:   IMP-040 — Launch Validation & Cutover
 ```
 
-IMP-030 is `COMPLETE_AND_ACCEPTED`. Its capability architecture remains locked in
-[`capabilities/IMP-030-operations-console-ui.md`](./capabilities/IMP-030-operations-console-ui.md)
-and was formally amended on 2026-08-27 for static detail-route realization. Implementation is
-`AUTHORIZED` / `STARTED` / `COMPLETE`; formal acceptance is recorded. IMP-031 is
-`IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`. Its capability architecture remains locked at
+IMP-031 is `COMPLETE_AND_ACCEPTED`. Its capability architecture remains locked at
 [`capabilities/IMP-031-provider-neutral-delivery-foundation.md`](./capabilities/IMP-031-provider-neutral-delivery-foundation.md);
 ARCH-R18 records the minimal durable provider-neutral Delivery authority. Implementation boundary C
 is approved with the capability-local Delivery lifecycle amendment. Implementation is `AUTHORIZED` /
-`STARTED` / `COMPLETE` under prior GTM-R76/GTM-R77 authorization and start; completion does not
-accept implementation. Independent acceptance of IMP-031 is **not** claimed. DR-14 remains unchanged
-and D-373 is not created.
+`STARTED` / `COMPLETE`; independent acceptance evidence is **ACCEPTED**; formal acceptance is
+recorded (`IMP-031_ACCEPTED: YES`). Accepted product identity remains immutable merge SHA
+`c3d499b0b8df2a8c7ae9297ab870f6286f81b848` / tree `dd42ea992c8866ff8cfbc0ac09e781eb6fcfa099`.
+IMP-030 remains `COMPLETE_AND_ACCEPTED`. Its capability architecture remains locked in
+[`capabilities/IMP-030-operations-console-ui.md`](./capabilities/IMP-030-operations-console-ui.md)
+and was formally amended on 2026-08-27 for static detail-route realization. IMP-032 remains
+`PLANNED` / `NOT_ACTIVATED` / `NOT_AUTHORIZED` / `NOT_STARTED`. Formal acceptance of IMP-031 does
+**not** authorize, start, or activate IMP-032. DR-14 and ARCH-R18 remain unchanged and D-373 is not
+created. Provider selection and Dehradun operating mode remain deferred.
 
 ```text
 IMP-030: COMPLETE_AND_ACCEPTED
@@ -305,14 +307,21 @@ IMP-030_IMPLEMENTATION_AUTHORIZED: YES
 IMP-030_STARTED: YES
 IMP-030_IMPLEMENTATION_COMPLETE: YES
 IMP-030_ACCEPTED: YES
-IMP-031: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
+IMP-031: COMPLETE_AND_ACCEPTED
 IMP-031_ARCHITECTURE: LOCKED
 IMP-031_ARCHITECTURE_LOCKED: YES
 IMP-031_IMPLEMENTATION: AUTHORIZED / STARTED / COMPLETE
 IMP-031_IMPLEMENTATION_AUTHORIZED: YES
 IMP-031_STARTED: YES
 IMP-031_IMPLEMENTATION_COMPLETE: YES
-IMP-031_ACCEPTED: NO
+IMP-031_ACCEPTED: YES
+IMP031_IMPLEMENTATION_EVIDENCE: COMPLETE
+IMP_031_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
+IMP031_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
+IMP031_FORMAL_ACCEPTANCE: ACCEPTED
+IMP031_ACCEPTED_MAIN_SHA: c3d499b0b8df2a8c7ae9297ab870f6286f81b848
+IMP031_ACCEPTED_TREE: dd42ea992c8866ff8cfbc0ac09e781eb6fcfa099
+IMP-032: PLANNED / NOT_ACTIVATED
 ```
 
 IMP-024 architecture remains **ARCHITECTURE_LOCKED**. IMP-024 implementation is
@@ -492,21 +501,23 @@ only). Webhook acknowledgement timing / durable inbox / asynchronous Payment pro
 | IMP-028D | Desktop Ordering Continuity | COMPLETE_AND_ACCEPTED |
 | IMP-029 | Operations Console API | COMPLETE_AND_ACCEPTED |
 | IMP-030 | Operations Console UI | COMPLETE_AND_ACCEPTED |
+| IMP-031 | Provider-Neutral Delivery Foundation | COMPLETE_AND_ACCEPTED |
 
 ## 4. Current Product Slice
 
-IMP-031 — Provider-Neutral Delivery Foundation is the current product slice. Its locked capability
-architecture is at
+NONE. IMP-031 — Provider-Neutral Delivery Foundation is `COMPLETE_AND_ACCEPTED`. Its locked capability
+architecture remains at
 [`capabilities/IMP-031-provider-neutral-delivery-foundation.md`](./capabilities/IMP-031-provider-neutral-delivery-foundation.md).
-Its architecture remains `ARCHITECTURE_LOCKED`; implementation boundary C is approved with the
+Architecture remains `ARCHITECTURE_LOCKED`; implementation boundary C remains approved with the
 capability-local Delivery lifecycle amendment; implementation is `AUTHORIZED` / `STARTED` /
-`COMPLETE` and lifecycle is `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`. Completion does not accept
-implementation and does not expand beyond Boundary C. Formal acceptance of IMP-031 is **not**
-claimed.
+`COMPLETE`; independent acceptance evidence is **ACCEPTED**; formal acceptance is recorded
+(`IMP-031_ACCEPTED: YES`). Accepted product identity remains immutable merge SHA
+`c3d499b0b8df2a8c7ae9297ab870f6286f81b848` / tree `dd42ea992c8866ff8cfbc0ac09e781eb6fcfa099`.
 IMP-030 — Operations Console UI remains
 `COMPLETE_AND_ACCEPTED`; architecture remains locked and implementation is authorized, started, and
 complete. IMP-032 remains `PLANNED` / `NOT_ACTIVATED` as the next product slice and is **not**
-authorized or started.
+authorized or started. Formal acceptance of IMP-031 does **not** authorize, start, or activate
+IMP-032.
 IMP-029 — Operations Console API remains `COMPLETE_AND_ACCEPTED`; architecture remains locked and
 implementation is authorized, started, and complete.
 
@@ -562,16 +573,23 @@ IMP-029_STARTED: YES
 IMP-029_IMPLEMENTATION_COMPLETE: YES
 IMP-029_ACCEPTED: YES
 Next product slice: IMP-032 — Dehradun Delivery Operating Mode
-Pending acceptance: IMP-031
-acceptedThrough: IMP-030
-IMP-031: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
+Pending acceptance: NONE
+acceptedThrough: IMP-031
+IMP-031: COMPLETE_AND_ACCEPTED
 IMP-031_ARCHITECTURE: LOCKED
 IMP-031_ARCHITECTURE_LOCKED: YES
 IMP-031_IMPLEMENTATION: AUTHORIZED / STARTED / COMPLETE
 IMP-031_IMPLEMENTATION_AUTHORIZED: YES
 IMP-031_STARTED: YES
 IMP-031_IMPLEMENTATION_COMPLETE: YES
-IMP-031_ACCEPTED: NO
+IMP-031_ACCEPTED: YES
+IMP031_IMPLEMENTATION_EVIDENCE: COMPLETE
+IMP_031_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
+IMP031_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
+IMP031_FORMAL_ACCEPTANCE: ACCEPTED
+IMP031_ACCEPTED_MAIN_SHA: c3d499b0b8df2a8c7ae9297ab870f6286f81b848
+IMP031_ACCEPTED_TREE: dd42ea992c8866ff8cfbc0ac09e781eb6fcfa099
+IMP-032: PLANNED / NOT_ACTIVATED
 IMP-026C: COMPLETE_AND_ACCEPTED
 IMP-027: COMPLETE_AND_ACCEPTED
 IMP-027_ARCHITECTURE: LOCKED
@@ -697,7 +715,7 @@ architecture work only; implementation remains not authorized and not started.
 
 ## 5. Future GTM Slices
 
-Remaining numeric GTM range IMP-031 → IMP-040: **10** IMP numbers.
+Remaining numeric GTM range IMP-032 → IMP-040: **9** IMP numbers.
 Accepted inserted slices IMP-026C, IMP-028A, IMP-028B, IMP-028C, and IMP-028D remain in the
 accepted ledger and are not future identities.
 
@@ -719,7 +737,6 @@ consume or remap IMP-029 → IMP-040 identities and is `COMPLETE_AND_ACCEPTED`.
 
 | IMP | Capability | Lifecycle |
 |---|---|---|
-| IMP-031 | Provider-Neutral Delivery Foundation | IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE |
 | IMP-032 | Dehradun Delivery Operating Mode | PLANNED |
 | IMP-033 | Notification Foundation | PLANNED |
 | IMP-034 | Meta WhatsApp Cloud API Adapter | PLANNED |
@@ -1095,6 +1112,26 @@ Historical GTM-R1 meanings that are **not** current:
 Current public GTM boundary is **IMP-040**, not IMP-035.
 
 ## 9. Roadmap Change Log
+
+### GTM-R79 — 2026-08-30
+
+- Records formal acceptance of **IMP-031 — Provider-Neutral Delivery Foundation** for independently
+  accepted product `main` merge SHA `c3d499b0b8df2a8c7ae9297ab870f6286f81b848` and tree
+  `dd42ea992c8866ff8cfbc0ac09e781eb6fcfa099`. Implementation evidence is **COMPLETE**; independent
+  implementation review is **PASS**; independent acceptance evidence is **ACCEPTED**; formal
+  acceptance is recorded (`IMP031_FORMAL_ACCEPTANCE: ACCEPTED`; `IMP-031_ACCEPTED: YES`).
+- IMP-031 lifecycle becomes `COMPLETE_AND_ACCEPTED`. Architecture remains `LOCKED`
+  (`IMP-031_ARCHITECTURE_LOCKED: YES`). Implementation remains `AUTHORIZED` / `STARTED` /
+  `COMPLETE` (`IMP-031_IMPLEMENTATION_AUTHORIZED: YES`; `IMP-031_STARTED: YES`;
+  `IMP-031_IMPLEMENTATION_COMPLETE: YES`). Boundary C remains the implementation boundary.
+- Advances `acceptedThrough = IMP-031`; sets `currentProductSlice = NONE` and
+  `pendingAcceptance = NONE`; preserves `nextProductSlice = IMP-032`. IMP-032 remains `PLANNED` /
+  `NOT_ACTIVATED` / `NOT_AUTHORIZED` / `NOT_STARTED`. Formal acceptance does **not** authorize,
+  start, or activate IMP-032.
+- ARCH-R18 / ARCH-G24 and DR-14 remain unchanged; D-373 is not created. Provider selection and
+  Dehradun operating mode remain deferred. This reconciliation introduces no product source, schema,
+  migration, decision-register, or ARCH-G24 substance mutation.
+- Supersedes GTM-R78 for the current IMP-031 lifecycle and acceptance position.
 
 ### GTM-R78 — 2026-08-30
 
