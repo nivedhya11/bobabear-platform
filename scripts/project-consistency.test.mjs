@@ -20,6 +20,11 @@ import {
   evaluateImp031ImplementationStartCheckpoint,
   evaluateImp031ImplementationStartCurrentArchitectureStatus,
   evaluateImp031ImplementationStartCrossDocumentAlignment,
+  evaluateImp031ImplementationCompletionArtifact,
+  evaluateImp031ImplementationCompletionCapabilityCurrentStatus,
+  evaluateImp031ImplementationCompletionCheckpoint,
+  evaluateImp031ImplementationCompletionCurrentArchitectureStatus,
+  evaluateImp031ImplementationCompletionCrossDocumentAlignment,
   evaluateImp030ArchitectureLockCheckpoint,
   evaluateImp030ArchitectureLockDocuments,
   evaluateImp030ImplementationAuthorizationCheckpoint,
@@ -2361,6 +2366,80 @@ IMP-031_ARCHITECTURE_LOCKED: NO
   });
 });
 
+/**
+ * Live CURRENT IMP-031 docs are IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE.
+ * Historical start/authorization/lock evaluators derive fixtures from that live state.
+ */
+function deriveImp031StartArtifact(completeArtifact) {
+  return completeArtifact
+    .replace(/"implementation": "AUTHORIZED \/ STARTED \/ COMPLETE"/, '"implementation": "AUTHORIZED / STARTED"')
+    .replace("| Lifecycle | `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` |", "| Lifecycle | `IMPLEMENTATION_IN_PROGRESS` |")
+    .replace("| Implementation | `AUTHORIZED` / `STARTED` / `COMPLETE` |", "| Implementation | `AUTHORIZED` / `STARTED` |")
+    .replace("| Implementation complete | **YES** |\n| Accepted | **NO** |\n", "")
+    .replace("| Pending acceptance | IMP-031 |\n", "")
+    .replace("IMP-031: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE", "IMP-031: IMPLEMENTATION_IN_PROGRESS")
+    .replace("IMP-031_IMPLEMENTATION: AUTHORIZED / STARTED / COMPLETE", "IMP-031_IMPLEMENTATION: AUTHORIZED / STARTED")
+    .replace(/IMP-031_IMPLEMENTATION_COMPLETE: YES\n/, "")
+    .replace(/IMP-031_ACCEPTED: NO\n/, "")
+    .replace(/COMPLETION IS NOT ACCEPTANCE: YES\n/, "START IS NOT COMPLETION OR ACCEPTANCE: YES\n")
+    .replace(
+      /```text\nIMPLEMENTATION_SOURCE_SHA:[\s\S]*?IMP031_INDEPENDENT_ACCEPTANCE: NOT_PERFORMED\n```\n\n/,
+      "",
+    )
+    .replace(
+      "This document locks the provider-neutral Delivery foundation for IMP-031. Implementation is\n`AUTHORIZED` / `STARTED` / `COMPLETE` under Boundary C only. Completion does not accept\nimplementation and does not expand beyond locked Boundary C.",
+      "This document locks the provider-neutral Delivery foundation for IMP-031. Implementation is\n`AUTHORIZED` / `STARTED` under Boundary C only. Start does not complete or accept implementation\nand does not expand beyond locked Boundary C.",
+    )
+    .replace(
+      /Those architecture-lock\s+criteria were satisfied\. Implementation is now `AUTHORIZED` \/ `STARTED` \/ `COMPLETE` under Boundary C;\s+completion is not independent or formal acceptance\./,
+      "Those architecture-lock criteria were satisfied. Implementation is now `AUTHORIZED` / `STARTED` under Boundary C; start is\nnot completion or acceptance.",
+    )
+    .replace(
+      /Architecture is\s+`ARCHITECTURE_LOCKED`; implementation is `AUTHORIZED` \/ `STARTED` \/ `COMPLETE`\./,
+      "Architecture is\n`ARCHITECTURE_LOCKED`; implementation is `AUTHORIZED` / `STARTED`.",
+    );
+}
+
+function deriveImp031StartArchitecture(completeArchitecture) {
+  return completeArchitecture.replaceAll(
+    "implementation AUTHORIZED / STARTED / COMPLETE",
+    "implementation AUTHORIZED / STARTED",
+  );
+}
+
+function deriveImp031StartLifecycleDocs(completeRoadmap, completeState) {
+  const rewriteCurrent = (text, sectionStart, sectionEndMarker) => {
+    const start = text.indexOf(sectionStart);
+    const end = text.indexOf(sectionEndMarker, start + 1);
+    assert.notEqual(start, -1);
+    assert.notEqual(end, -1);
+    const current = text.slice(start, end);
+    const updated = current
+      .replace(/IMP-031:\s*IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE/g, "IMP-031: IMPLEMENTATION_IN_PROGRESS")
+      .replace(/IMP-031_IMPLEMENTATION:\s*AUTHORIZED \/ STARTED \/ COMPLETE/g, "IMP-031_IMPLEMENTATION: AUTHORIZED / STARTED")
+      .replace(/IMP-031_IMPLEMENTATION_COMPLETE:\s*YES\n/g, "")
+      .replace(/IMP-031_ACCEPTED:\s*NO\n/g, "")
+      .replace(/Pending Acceptance:\s*IMP-031\b/g, "Pending Acceptance:    NONE")
+      .replace(/pendingAcceptance:\s*IMP-031\b/g, "pendingAcceptance: NONE")
+      .replace(/implementation AUTHORIZED \/ STARTED \/ COMPLETE/g, "implementation AUTHORIZED / STARTED")
+      .replace(/`AUTHORIZED` \/ `STARTED` \/ `COMPLETE`/g, "`AUTHORIZED` / `STARTED`")
+      .replace(/\*\*AUTHORIZED\*\* \/ \*\*STARTED\*\* \/ \*\*COMPLETE\*\*/g, "**AUTHORIZED** / **STARTED**");
+    return `${text.slice(0, start)}${updated}${text.slice(end)}`;
+  };
+  return {
+    roadmapText: rewriteCurrent(completeRoadmap, "## 2.", "## 3.")
+      .replace(
+        "| IMP-031 | Provider-Neutral Delivery Foundation | IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE |",
+        "| IMP-031 | Provider-Neutral Delivery Foundation | IMPLEMENTATION_IN_PROGRESS |",
+      ),
+    stateText: rewriteCurrent(
+      rewriteCurrent(completeState, "## 2. Current Work Position", "\n## "),
+      "## 5. Acceptance Position",
+      "\n## ",
+    ),
+  };
+}
+
 describe("IMP-031 architecture lock checkpoint", () => {
   const lock = Object.freeze({
     roadmapVersion: "GTM-R75", stateVersion: "STATE-R73", acceptedThrough: "IMP-030",
@@ -2376,14 +2455,17 @@ describe("IMP-031 architecture lock checkpoint", () => {
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R75", "STATE-R73", "imp031Lock"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R76", "STATE-R74", "imp031Authorization"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R77", "STATE-R75", "imp031Start"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R78", "STATE-R76", "imp031Completion"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R75", "STATE-R73"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R76", "STATE-R74"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R77", "STATE-R75"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R78", "STATE-R76"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R75", "STATE-R72"), false);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R74", "STATE-R73"), false);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R75", "STATE-R73", "imp031Draft"), false);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R76", "STATE-R74", "imp031Lock"), false);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R77", "STATE-R75", "imp031Authorization"), false);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R78", "STATE-R76", "imp031Start"), false);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R76", "STATE-R73"), false);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R75", "STATE-R74"), false);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R77", "STATE-R74"), false);
@@ -2405,7 +2487,9 @@ describe("IMP-031 architecture lock checkpoint", () => {
   });
 
   it("rejects locked ROADMAP vs unlocked capability and premature authorization", () => {
-    const startedArtifact = readFileSync(new URL("../docs/platform/capabilities/IMP-031-provider-neutral-delivery-foundation.md", import.meta.url), "utf8");
+    const startedArtifact = deriveImp031StartArtifact(
+      readFileSync(new URL("../docs/platform/capabilities/IMP-031-provider-neutral-delivery-foundation.md", import.meta.url), "utf8"),
+    );
     const artifact = startedArtifact
       .replace(/"implementation": "AUTHORIZED \/ STARTED"/, '"implementation": "NOT_AUTHORIZED / NOT_STARTED"')
       .replace(/"implementationAuthorized": true/, '"implementationAuthorized": false')
@@ -2446,8 +2530,8 @@ describe("IMP-031 implementation authorization checkpoint", () => {
     artifact: true, archG24: true, d373Exists: false, boundaryC: true,
   });
 
-  function toAuthorizationArtifact(startedArtifact) {
-    return startedArtifact
+  function toAuthorizationArtifact(completeArtifact) {
+    return deriveImp031StartArtifact(completeArtifact)
       .replace(/"implementation": "AUTHORIZED \/ STARTED"/, '"implementation": "AUTHORIZED / NOT_STARTED"')
       .replace("| Lifecycle | `IMPLEMENTATION_IN_PROGRESS` |", "| Lifecycle | `IMPLEMENTATION_AUTHORIZED` |")
       .replace("| Implementation | `AUTHORIZED` / `STARTED` |", "| Implementation | `AUTHORIZED` / `NOT_STARTED` |")
@@ -2461,14 +2545,15 @@ describe("IMP-031 implementation authorization checkpoint", () => {
       );
   }
 
-  function toAuthorizationArchitecture(startedArchitecture) {
-    return startedArchitecture.replaceAll(
+  function toAuthorizationArchitecture(completeArchitecture) {
+    return deriveImp031StartArchitecture(completeArchitecture).replaceAll(
       "implementation AUTHORIZED / STARTED",
       "implementation AUTHORIZED / NOT_STARTED",
     );
   }
 
-  function toAuthorizationLifecycleDocs(startedRoadmap, startedState) {
+  function toAuthorizationLifecycleDocs(completeRoadmap, completeState) {
+    const started = deriveImp031StartLifecycleDocs(completeRoadmap, completeState);
     const rewriteCurrent = (text, sectionStart, sectionEndMarker) => {
       const start = text.indexOf(sectionStart);
       const end = text.indexOf(sectionEndMarker, start + 1);
@@ -2485,13 +2570,13 @@ describe("IMP-031 implementation authorization checkpoint", () => {
       return `${text.slice(0, start)}${updated}${text.slice(end)}`;
     };
     return {
-      roadmapText: rewriteCurrent(startedRoadmap, "## 2.", "## 3.")
+      roadmapText: rewriteCurrent(started.roadmapText, "## 2.", "## 3.")
         .replace(
           "| IMP-031 | Provider-Neutral Delivery Foundation | IMPLEMENTATION_IN_PROGRESS |",
           "| IMP-031 | Provider-Neutral Delivery Foundation | IMPLEMENTATION_AUTHORIZED |",
         ),
       stateText: rewriteCurrent(
-        rewriteCurrent(startedState, "## 2. Current Work Position", "\n## "),
+        rewriteCurrent(started.stateText, "## 2. Current Work Position", "\n## "),
         "## 5. Acceptance Position",
         "\n## ",
       ),
@@ -2663,6 +2748,14 @@ describe("IMP-031 implementation start checkpoint", () => {
     artifact: true, archG24: true, d373Exists: false, boundaryC: true,
   });
 
+  const completeCapability = readFileSync(new URL("../docs/platform/capabilities/IMP-031-provider-neutral-delivery-foundation.md", import.meta.url), "utf8");
+  const completeArchitecture = readFileSync(new URL("../docs/platform/ARCHITECTURE.md", import.meta.url), "utf8");
+  const completeRoadmap = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
+  const completeState = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
+  const startCapability = deriveImp031StartArtifact(completeCapability);
+  const startArchitecture = deriveImp031StartArchitecture(completeArchitecture);
+  const startDocs = deriveImp031StartLifecycleDocs(completeRoadmap, completeState);
+
   it("supports only the R77/S75 start checkpoint", () => {
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R77", "STATE-R75", "imp031Start"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R76", "STATE-R74", "imp031Start"), false);
@@ -2690,7 +2783,7 @@ describe("IMP-031 implementation start checkpoint", () => {
   });
 
   it("rejects unauthorized start, unstarted in-progress, unlocked start, and D-373", () => {
-    const artifact = readFileSync(new URL("../docs/platform/capabilities/IMP-031-provider-neutral-delivery-foundation.md", import.meta.url), "utf8");
+    const artifact = startCapability;
     assert.deepEqual(evaluateImp031ImplementationStartArtifact(artifact), { ok: true });
     assert.match(artifact, /START IS NOT COMPLETION OR ACCEPTANCE:\s*YES/);
     assert.match(artifact, /C\. domain model \+ persistence foundation \+ provider-neutral ports\/interfaces/);
@@ -2710,7 +2803,7 @@ describe("IMP-031 implementation start checkpoint", () => {
   });
 
   it("rejects stale present-tense AUTHORIZED / NOT_STARTED in capability §§10–11 while STARTED=YES", () => {
-    const artifact = readFileSync(new URL("../docs/platform/capabilities/IMP-031-provider-neutral-delivery-foundation.md", import.meta.url), "utf8");
+    const artifact = startCapability;
     assert.deepEqual(evaluateImp031ImplementationStartCapabilityCurrentStatus(artifact), { ok: true });
     assert.match(artifact, /implementation remains unauthorized until a separate gate/);
     assert.match(artifact, /authorization does not start\s+implementation/);
@@ -2735,8 +2828,7 @@ describe("IMP-031 implementation start checkpoint", () => {
   });
 
   it("preserves historical architecture-lock NOT_STARTED records outside STARTED current-status checks", () => {
-    const startedArtifact = readFileSync(new URL("../docs/platform/capabilities/IMP-031-provider-neutral-delivery-foundation.md", import.meta.url), "utf8");
-    const lockArtifact = startedArtifact
+    const lockArtifact = startCapability
       .replace(/"implementation": "AUTHORIZED \/ STARTED"/, '"implementation": "NOT_AUTHORIZED / NOT_STARTED"')
       .replace(/"implementationAuthorized": true/, '"implementationAuthorized": false')
       .replace("| Lifecycle | `IMPLEMENTATION_IN_PROGRESS` |", "| Lifecycle | `ARCHITECTURE_LOCKED` |")
@@ -2766,7 +2858,7 @@ describe("IMP-031 implementation start checkpoint", () => {
   });
 
   it("requires CURRENT ARCHITECTURE Delivery / IMP-031 AUTHORIZED / STARTED wording", () => {
-    const architectureText = readFileSync(new URL("../docs/platform/ARCHITECTURE.md", import.meta.url), "utf8");
+    const architectureText = startArchitecture;
     assert.deepEqual(evaluateImp031ImplementationStartCurrentArchitectureStatus(architectureText), { ok: true });
     const stale = architectureText.replaceAll(
       "implementation AUTHORIZED / STARTED",
@@ -2778,10 +2870,10 @@ describe("IMP-031 implementation start checkpoint", () => {
   });
 
   it("rejects started=YES while authorization=NO", () => {
-    const roadmapText = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
-    const stateText = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
-    const capabilityText = readFileSync(new URL("../docs/platform/capabilities/IMP-031-provider-neutral-delivery-foundation.md", import.meta.url), "utf8");
-    const architectureText = readFileSync(new URL("../docs/platform/ARCHITECTURE.md", import.meta.url), "utf8");
+    const roadmapText = startDocs.roadmapText;
+    const stateText = startDocs.stateText;
+    const capabilityText = startCapability;
+    const architectureText = startArchitecture;
     assert.deepEqual(
       evaluateImp031ImplementationStartCrossDocumentAlignment({
         architectureText, capabilityText, roadmapText, stateText,
@@ -2811,10 +2903,10 @@ describe("IMP-031 implementation start checkpoint", () => {
   });
 
   it("rejects IMPLEMENTATION_IN_PROGRESS while STARTED=NO", () => {
-    const roadmapText = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
-    const stateText = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
-    const capabilityText = readFileSync(new URL("../docs/platform/capabilities/IMP-031-provider-neutral-delivery-foundation.md", import.meta.url), "utf8");
-    const architectureText = readFileSync(new URL("../docs/platform/ARCHITECTURE.md", import.meta.url), "utf8");
+    const roadmapText = startDocs.roadmapText;
+    const stateText = startDocs.stateText;
+    const capabilityText = startCapability;
+    const architectureText = startArchitecture;
     const currentRoadmap = roadmapText.slice(roadmapText.indexOf("## 2."), roadmapText.indexOf("## 3."));
     const mutatedRoadmap = roadmapText.replace(
       currentRoadmap,
@@ -2838,10 +2930,10 @@ describe("IMP-031 implementation start checkpoint", () => {
   });
 
   it("rejects CURRENT ARCH still NOT_STARTED while canonical docs say STARTED", () => {
-    const roadmapText = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
-    const stateText = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
-    const capabilityText = readFileSync(new URL("../docs/platform/capabilities/IMP-031-provider-neutral-delivery-foundation.md", import.meta.url), "utf8");
-    const architectureText = readFileSync(new URL("../docs/platform/ARCHITECTURE.md", import.meta.url), "utf8")
+    const roadmapText = startDocs.roadmapText;
+    const stateText = startDocs.stateText;
+    const capabilityText = startCapability;
+    const architectureText = startArchitecture
       .replaceAll("implementation AUTHORIZED / STARTED", "implementation AUTHORIZED / NOT_STARTED");
     const result = evaluateImp031ImplementationStartCrossDocumentAlignment({
       architectureText, capabilityText, roadmapText, stateText,
@@ -2851,10 +2943,10 @@ describe("IMP-031 implementation start checkpoint", () => {
   });
 
   it("rejects unlocked architecture with implementation started", () => {
-    const roadmapText = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
-    const stateText = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
-    const capabilityText = readFileSync(new URL("../docs/platform/capabilities/IMP-031-provider-neutral-delivery-foundation.md", import.meta.url), "utf8");
-    const architectureText = readFileSync(new URL("../docs/platform/ARCHITECTURE.md", import.meta.url), "utf8");
+    const roadmapText = startDocs.roadmapText;
+    const stateText = startDocs.stateText;
+    const capabilityText = startCapability;
+    const architectureText = startArchitecture;
     const currentRoadmap = roadmapText.slice(roadmapText.indexOf("## 2."), roadmapText.indexOf("## 3."));
     const mutatedRoadmap = roadmapText.replace(
       currentRoadmap,
@@ -2875,10 +2967,10 @@ describe("IMP-031 implementation start checkpoint", () => {
   });
 
   it("rejects ROADMAP/STATE/capability disagreement on current markers", () => {
-    const roadmapText = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
-    const stateText = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
-    const capabilityText = readFileSync(new URL("../docs/platform/capabilities/IMP-031-provider-neutral-delivery-foundation.md", import.meta.url), "utf8");
-    const architectureText = readFileSync(new URL("../docs/platform/ARCHITECTURE.md", import.meta.url), "utf8");
+    const roadmapText = startDocs.roadmapText;
+    const stateText = startDocs.stateText;
+    const capabilityText = startCapability;
+    const architectureText = startArchitecture;
     const currentRoadmap = roadmapText.slice(roadmapText.indexOf("## 2."), roadmapText.indexOf("## 3."));
     const mutatedRoadmap = roadmapText.replace(
       currentRoadmap,
@@ -2889,6 +2981,256 @@ describe("IMP-031 implementation start checkpoint", () => {
     });
     assert.equal(result.ok, false);
     assert.equal(result.code, "IMP031_CURRENT_LIFECYCLE");
+  });
+});
+
+describe("IMP-031 implementation completion checkpoint", () => {
+  const completion = Object.freeze({
+    roadmapVersion: "GTM-R78", stateVersion: "STATE-R76", acceptedThrough: "IMP-030",
+    currentProductSlice: "IMP-031", nextProductSlice: "IMP-032", pendingAcceptance: "IMP-031",
+    imp031: "IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE", architecture: "LOCKED", architectureLocked: "YES",
+    implementation: "AUTHORIZED / STARTED / COMPLETE", implementationAuthorized: "YES", started: "YES",
+    implementationComplete: "YES", accepted: "NO",
+    architectureVersion: "ARCH-R18", decisionRegisterVersion: "DR-14",
+    artifact: true, archG24: true, d373Exists: false, boundaryC: true,
+    implementationEvidence: true, independentReviewPass: true,
+  });
+
+  it("supports only the R78/S76 completion checkpoint", () => {
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R78", "STATE-R76", "imp031Completion"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R77", "STATE-R75", "imp031Completion"), false);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R78", "STATE-R75", "imp031Completion"), false);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R77", "STATE-R76", "imp031Completion"), false);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R78", "STATE-R76", "imp031Start"), false);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R78", "STATE-R76"), true);
+  });
+
+  it("accepts only the complete-pending-acceptance IMP-031 checkpoint", () => {
+    assert.deepEqual(evaluateImp031ImplementationCompletionCheckpoint(completion), { ok: true });
+    for (const [key, value] of [
+      ["imp031", "IMPLEMENTATION_IN_PROGRESS"], ["implementationComplete", "NO"], ["accepted", "YES"],
+      ["started", "NO"], ["implementationAuthorized", "NO"],
+      ["acceptedThrough", "IMP-031"], ["currentProductSlice", "NONE"], ["pendingAcceptance", "NONE"],
+      ["nextProductSlice", "IMP-031"],
+      ["architectureVersion", "ARCH-R17"], ["decisionRegisterVersion", "DR-15"],
+      ["artifact", false], ["archG24", false], ["d373Exists", true], ["boundaryC", false],
+      ["implementationEvidence", false], ["independentReviewPass", false],
+      ["roadmapVersion", "GTM-R77"], ["stateVersion", "STATE-R75"],
+    ]) {
+      assert.equal(evaluateImp031ImplementationCompletionCheckpoint({ ...completion, [key]: value }).ok, false, key);
+    }
+  });
+
+  it("accepts live CURRENT completion artifact and rejects incomplete / accepted progression", () => {
+    const artifact = readFileSync(new URL("../docs/platform/capabilities/IMP-031-provider-neutral-delivery-foundation.md", import.meta.url), "utf8");
+    assert.deepEqual(evaluateImp031ImplementationCompletionArtifact(artifact), { ok: true });
+    assert.match(artifact, /COMPLETION IS NOT ACCEPTANCE:\s*YES/);
+    assert.match(artifact, /IMPLEMENTATION_SOURCE_SHA:\s*66e2783afa4e9eef35c4ec208b25af9d9450f83d/);
+    for (const mutation of [
+      artifact.replace('"implementation": "AUTHORIZED / STARTED / COMPLETE"', '"implementation": "AUTHORIZED / STARTED"'),
+      artifact.replace("IMP-031: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE", "IMP-031: IMPLEMENTATION_IN_PROGRESS"),
+      artifact.replace("IMP-031_IMPLEMENTATION_COMPLETE: YES", "IMP-031_IMPLEMENTATION_COMPLETE: NO"),
+      artifact.replace("IMP-031_ACCEPTED: NO", "IMP-031_ACCEPTED: YES"),
+      artifact.replace("IMP-031_STARTED: YES", "IMP-031_STARTED: NO"),
+      artifact.replace(/COMPLETION IS NOT ACCEPTANCE: YES\n/, ""),
+      `${artifact}\nD-373`,
+    ]) {
+      assert.equal(evaluateImp031ImplementationCompletionArtifact(mutation).ok, false);
+    }
+  });
+
+  it("rejects COMPLETE YES while STARTED NO", () => {
+    const roadmapText = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
+    const stateText = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
+    const capabilityText = readFileSync(new URL("../docs/platform/capabilities/IMP-031-provider-neutral-delivery-foundation.md", import.meta.url), "utf8");
+    const architectureText = readFileSync(new URL("../docs/platform/ARCHITECTURE.md", import.meta.url), "utf8");
+    const currentRoadmap = roadmapText.slice(roadmapText.indexOf("## 2."), roadmapText.indexOf("## 3."));
+    const mutatedRoadmap = roadmapText.replace(
+      currentRoadmap,
+      currentRoadmap.replace(/IMP-031_STARTED:\s*YES/, "IMP-031_STARTED: NO"),
+    );
+    const stateAcceptanceStart = stateText.indexOf("## 5. Acceptance Position");
+    const stateAcceptanceEnd = stateText.indexOf("\n## ", stateAcceptanceStart + 1);
+    const currentStateAcceptance = stateText.slice(stateAcceptanceStart, stateAcceptanceEnd === -1 ? undefined : stateAcceptanceEnd);
+    const mutatedState = stateText.replace(
+      currentStateAcceptance,
+      currentStateAcceptance.replace(/IMP-031_STARTED:\s*YES/, "IMP-031_STARTED: NO"),
+    );
+    const result = evaluateImp031ImplementationCompletionCrossDocumentAlignment({
+      architectureText,
+      capabilityText,
+      roadmapText: mutatedRoadmap,
+      stateText: mutatedState,
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP031_COMPLETE_WITHOUT_START");
+  });
+
+  it("rejects COMPLETE_PENDING_ACCEPTANCE while complete marker NO", () => {
+    const roadmapText = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
+    const stateText = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
+    const capabilityText = readFileSync(new URL("../docs/platform/capabilities/IMP-031-provider-neutral-delivery-foundation.md", import.meta.url), "utf8");
+    const architectureText = readFileSync(new URL("../docs/platform/ARCHITECTURE.md", import.meta.url), "utf8");
+    const currentRoadmap = roadmapText.slice(roadmapText.indexOf("## 2."), roadmapText.indexOf("## 3."));
+    const mutatedRoadmap = roadmapText.replace(
+      currentRoadmap,
+      currentRoadmap.replace(/IMP-031_IMPLEMENTATION_COMPLETE:\s*YES/, "IMP-031_IMPLEMENTATION_COMPLETE: NO"),
+    );
+    const stateAcceptanceStart = stateText.indexOf("## 5. Acceptance Position");
+    const stateAcceptanceEnd = stateText.indexOf("\n## ", stateAcceptanceStart + 1);
+    const currentStateAcceptance = stateText.slice(stateAcceptanceStart, stateAcceptanceEnd === -1 ? undefined : stateAcceptanceEnd);
+    const mutatedState = stateText.replace(
+      currentStateAcceptance,
+      currentStateAcceptance.replace(/IMP-031_IMPLEMENTATION_COMPLETE:\s*YES/, "IMP-031_IMPLEMENTATION_COMPLETE: NO"),
+    );
+    const result = evaluateImp031ImplementationCompletionCrossDocumentAlignment({
+      architectureText,
+      capabilityText,
+      roadmapText: mutatedRoadmap,
+      stateText: mutatedState,
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP031_PENDING_WITHOUT_COMPLETE");
+  });
+
+  it("rejects completion with accepted YES", () => {
+    const roadmapText = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
+    const stateText = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
+    const capabilityText = readFileSync(new URL("../docs/platform/capabilities/IMP-031-provider-neutral-delivery-foundation.md", import.meta.url), "utf8");
+    const architectureText = readFileSync(new URL("../docs/platform/ARCHITECTURE.md", import.meta.url), "utf8");
+    const currentRoadmap = roadmapText.slice(roadmapText.indexOf("## 2."), roadmapText.indexOf("## 3."));
+    const mutatedRoadmap = roadmapText.replace(
+      currentRoadmap,
+      currentRoadmap.replace(/IMP-031_ACCEPTED:\s*NO/, "IMP-031_ACCEPTED: YES"),
+    );
+    const stateAcceptanceStart = stateText.indexOf("## 5. Acceptance Position");
+    const stateAcceptanceEnd = stateText.indexOf("\n## ", stateAcceptanceStart + 1);
+    const currentStateAcceptance = stateText.slice(stateAcceptanceStart, stateAcceptanceEnd === -1 ? undefined : stateAcceptanceEnd);
+    const mutatedState = stateText.replace(
+      currentStateAcceptance,
+      currentStateAcceptance.replace(/IMP-031_ACCEPTED:\s*NO/, "IMP-031_ACCEPTED: YES"),
+    );
+    const result = evaluateImp031ImplementationCompletionCrossDocumentAlignment({
+      architectureText, capabilityText, roadmapText: mutatedRoadmap, stateText: mutatedState,
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP031_COMPLETION_ACCEPTED");
+  });
+
+  it("rejects completion with acceptedThrough advanced to IMP-031", () => {
+    const roadmapText = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
+    const stateText = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
+    const capabilityText = readFileSync(new URL("../docs/platform/capabilities/IMP-031-provider-neutral-delivery-foundation.md", import.meta.url), "utf8");
+    const architectureText = readFileSync(new URL("../docs/platform/ARCHITECTURE.md", import.meta.url), "utf8");
+    const currentRoadmap = roadmapText.slice(roadmapText.indexOf("## 2."), roadmapText.indexOf("## 3."));
+    const mutatedRoadmap = roadmapText.replace(
+      currentRoadmap,
+      currentRoadmap.replace(/Accepted Through:\s*IMP-030[^\n]*/, "Accepted Through:     IMP-031 — Provider-Neutral Delivery Foundation"),
+    );
+    const stateAcceptanceStart = stateText.indexOf("## 5. Acceptance Position");
+    const stateAcceptanceEnd = stateText.indexOf("\n## ", stateAcceptanceStart + 1);
+    const currentStateAcceptance = stateText.slice(stateAcceptanceStart, stateAcceptanceEnd === -1 ? undefined : stateAcceptanceEnd);
+    const mutatedState = stateText.replace(
+      currentStateAcceptance,
+      currentStateAcceptance.replace(/acceptedThrough:\s*IMP-030/, "acceptedThrough: IMP-031"),
+    );
+    const result = evaluateImp031ImplementationCompletionCrossDocumentAlignment({
+      architectureText, capabilityText, roadmapText: mutatedRoadmap, stateText: mutatedState,
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP031_ACCEPTED_THROUGH_ADVANCED");
+  });
+
+  it("rejects completion with pendingAcceptance NONE", () => {
+    const roadmapText = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
+    const stateText = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
+    const capabilityText = readFileSync(new URL("../docs/platform/capabilities/IMP-031-provider-neutral-delivery-foundation.md", import.meta.url), "utf8");
+    const architectureText = readFileSync(new URL("../docs/platform/ARCHITECTURE.md", import.meta.url), "utf8");
+    const currentRoadmap = roadmapText.slice(roadmapText.indexOf("## 2."), roadmapText.indexOf("## 3."));
+    const mutatedRoadmap = roadmapText.replace(
+      currentRoadmap,
+      currentRoadmap.replace(/Pending Acceptance:\s*IMP-031\b/, "Pending Acceptance:    NONE"),
+    );
+    const stateAcceptanceStart = stateText.indexOf("## 5. Acceptance Position");
+    const stateAcceptanceEnd = stateText.indexOf("\n## ", stateAcceptanceStart + 1);
+    const currentStateAcceptance = stateText.slice(stateAcceptanceStart, stateAcceptanceEnd === -1 ? undefined : stateAcceptanceEnd);
+    const mutatedState = stateText.replace(
+      currentStateAcceptance,
+      currentStateAcceptance.replace(/pendingAcceptance:\s*IMP-031\b/, "pendingAcceptance: NONE"),
+    );
+    const result = evaluateImp031ImplementationCompletionCrossDocumentAlignment({
+      architectureText, capabilityText, roadmapText: mutatedRoadmap, stateText: mutatedState,
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP031_PENDING_ACCEPTANCE");
+  });
+
+  it("rejects completion with currentProductSlice NONE", () => {
+    const roadmapText = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
+    const stateText = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
+    const capabilityText = readFileSync(new URL("../docs/platform/capabilities/IMP-031-provider-neutral-delivery-foundation.md", import.meta.url), "utf8");
+    const architectureText = readFileSync(new URL("../docs/platform/ARCHITECTURE.md", import.meta.url), "utf8");
+    const currentRoadmap = roadmapText.slice(roadmapText.indexOf("## 2."), roadmapText.indexOf("## 3."));
+    const mutatedRoadmap = roadmapText.replace(
+      currentRoadmap,
+      currentRoadmap.replace(/Current Product Slice:\s*IMP-031[^\n]*/, "Current Product Slice: NONE"),
+    );
+    const stateAcceptanceStart = stateText.indexOf("## 5. Acceptance Position");
+    const stateAcceptanceEnd = stateText.indexOf("\n## ", stateAcceptanceStart + 1);
+    const currentStateAcceptance = stateText.slice(stateAcceptanceStart, stateAcceptanceEnd === -1 ? undefined : stateAcceptanceEnd);
+    const mutatedState = stateText.replace(
+      currentStateAcceptance,
+      currentStateAcceptance.replace(/currentProductSlice:\s*IMP-031\b/, "currentProductSlice: NONE"),
+    );
+    const result = evaluateImp031ImplementationCompletionCrossDocumentAlignment({
+      architectureText, capabilityText, roadmapText: mutatedRoadmap, stateText: mutatedState,
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP031_CURRENT_SLICE_CLEARED");
+  });
+
+  it("rejects IMP-032 activated before IMP-031 acceptance", () => {
+    const roadmapText = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
+    const stateText = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
+    const capabilityText = readFileSync(new URL("../docs/platform/capabilities/IMP-031-provider-neutral-delivery-foundation.md", import.meta.url), "utf8");
+    const architectureText = readFileSync(new URL("../docs/platform/ARCHITECTURE.md", import.meta.url), "utf8");
+    const currentRoadmap = roadmapText.slice(roadmapText.indexOf("## 2."), roadmapText.indexOf("## 3."));
+    const mutatedRoadmap = roadmapText.replace(
+      currentRoadmap,
+      `${currentRoadmap}\nIMP-032: ARCHITECTURE_IN_PROGRESS\nIMP-032_IMPLEMENTATION_AUTHORIZED: YES\n`,
+    );
+    const result = evaluateImp031ImplementationCompletionCrossDocumentAlignment({
+      architectureText, capabilityText, roadmapText: mutatedRoadmap, stateText,
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP031_IMP032_ACTIVATED");
+  });
+
+  it("rejects CURRENT ARCH STARTED-only while canonical completion says STARTED/COMPLETE", () => {
+    const roadmapText = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
+    const stateText = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
+    const capabilityText = readFileSync(new URL("../docs/platform/capabilities/IMP-031-provider-neutral-delivery-foundation.md", import.meta.url), "utf8");
+    const architectureText = readFileSync(new URL("../docs/platform/ARCHITECTURE.md", import.meta.url), "utf8")
+      .replaceAll("implementation AUTHORIZED / STARTED / COMPLETE", "implementation AUTHORIZED / STARTED");
+    const result = evaluateImp031ImplementationCompletionCrossDocumentAlignment({
+      architectureText, capabilityText, roadmapText, stateText,
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP031_ARCH_STATUS_STALE");
+  });
+
+  it("aligns live CURRENT completion documents", () => {
+    const roadmapText = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
+    const stateText = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
+    const capabilityText = readFileSync(new URL("../docs/platform/capabilities/IMP-031-provider-neutral-delivery-foundation.md", import.meta.url), "utf8");
+    const architectureText = readFileSync(new URL("../docs/platform/ARCHITECTURE.md", import.meta.url), "utf8");
+    assert.deepEqual(
+      evaluateImp031ImplementationCompletionCrossDocumentAlignment({
+        architectureText, capabilityText, roadmapText, stateText,
+      }),
+      { ok: true },
+    );
+    assert.deepEqual(evaluateImp031ImplementationCompletionCurrentArchitectureStatus(architectureText), { ok: true });
   });
 });
 
