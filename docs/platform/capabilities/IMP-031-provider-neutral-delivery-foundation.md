@@ -5,7 +5,7 @@
   "capability": "IMP-031",
   "title": "Provider-Neutral Delivery Foundation",
   "architectureLock": "ARCHITECTURE_LOCKED",
-  "implementation": "AUTHORIZED / STARTED",
+  "implementation": "AUTHORIZED / STARTED / COMPLETE",
   "implementationAuthorized": true,
   "lastReviewed": "2026-08-30",
   "bindingDecisions": ["D-357", "D-372"],
@@ -18,34 +18,47 @@
 ## Capability Architecture (ARCHITECTURE_LOCKED)
 
 This document locks the provider-neutral Delivery foundation for IMP-031. Implementation is
-`AUTHORIZED` / `STARTED` under Boundary C only. Start does not complete or accept implementation
-and does not expand beyond locked Boundary C.
+`AUTHORIZED` / `STARTED` / `COMPLETE` under Boundary C only. Completion does not accept
+implementation and does not expand beyond locked Boundary C.
 
 | Field | Value |
 |---|---|
 | Architecture lock | `ARCHITECTURE_LOCKED` |
-| Lifecycle | `IMPLEMENTATION_IN_PROGRESS` |
-| Implementation | `AUTHORIZED` / `STARTED` |
+| Lifecycle | `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` |
+| Implementation | `AUTHORIZED` / `STARTED` / `COMPLETE` |
 | Implementation authorized | **YES** |
+| Implementation complete | **YES** |
+| Accepted | **NO** |
 | Accepted product through | IMP-030 |
 | Current product slice | IMP-031 — Provider-Neutral Delivery Foundation |
+| Pending acceptance | IMP-031 |
 | Next product slice | IMP-032 — Dehradun Delivery Operating Mode |
 | Implementation boundary | **C — APPROVED WITH THIS LIFECYCLE AMENDMENT** |
 | New CURRENT decision | **NONE** |
 
 ```text
-IMP-031: IMPLEMENTATION_IN_PROGRESS
+IMP-031: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
 IMP-031_ARCHITECTURE: LOCKED
 IMP-031_ARCHITECTURE_LOCKED: YES
-IMP-031_IMPLEMENTATION: AUTHORIZED / STARTED
+IMP-031_IMPLEMENTATION: AUTHORIZED / STARTED / COMPLETE
 IMP-031_IMPLEMENTATION_AUTHORIZED: YES
 IMP-031_STARTED: YES
+IMP-031_IMPLEMENTATION_COMPLETE: YES
+IMP-031_ACCEPTED: NO
+COMPLETION IS NOT ACCEPTANCE: YES
 ```
 
 ```text
-IMP-031_IMPLEMENTATION_AUTHORIZED: YES
-IMP-031_STARTED: YES
-START IS NOT COMPLETION OR ACCEPTANCE: YES
+IMPLEMENTATION_SOURCE_SHA: 66e2783afa4e9eef35c4ec208b25af9d9450f83d
+IMPLEMENTATION_SOURCE_TREE: dd42ea992c8866ff8cfbc0ac09e781eb6fcfa099
+MERGED_MAIN_SHA: c3d499b0b8df2a8c7ae9297ab870f6286f81b848
+MERGED_MAIN_TREE: dd42ea992c8866ff8cfbc0ac09e781eb6fcfa099
+PR: 37
+PR_CI: 33317358990 SUCCESS
+MAIN_CI: 33317603325 SUCCESS
+DEPLOY: 33317603348 SUCCESS
+IMP_031_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
+IMP031_INDEPENDENT_ACCEPTANCE: NOT_PERFORMED
 ```
 
 ## 1. Purpose
@@ -357,10 +370,10 @@ Architecture lock requires review evidence that:
 - implementation remains unauthorized until a separate gate.
 
 These are architecture-lock criteria, not implementation acceptance results. Those architecture-lock
-criteria were satisfied. Implementation is now `AUTHORIZED` / `STARTED` under Boundary C; start is
-not completion or acceptance.
+criteria were satisfied. Implementation is now `AUTHORIZED` / `STARTED` / `COMPLETE` under Boundary C;
+completion is not independent or formal acceptance.
 
 ## 11. Open questions for architecture review
 
 None recorded. Boundary C is approved with this lifecycle amendment. Architecture is
-`ARCHITECTURE_LOCKED`; implementation is `AUTHORIZED` / `STARTED`.
+`ARCHITECTURE_LOCKED`; implementation is `AUTHORIZED` / `STARTED` / `COMPLETE`.

@@ -2,11 +2,11 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R75",
+  "stateVersion": "STATE-R76",
   "acceptedThrough": "IMP-030",
   "currentProductSlice": "IMP-031",
   "nextProductSlice": "IMP-032",
-  "pendingAcceptance": "NONE",
+  "pendingAcceptance": "IMP-031",
   "governanceHealth": "ALIGNED",
   "lastReviewed": "2026-08-30"
 }
@@ -29,10 +29,11 @@ Accepted Range:            IMP-001 → IMP-030 (including IMP-005A and IMP-026C)
 
 ```text
 Current Product Implementation: IMP-031 — Provider-Neutral Delivery Foundation
-Pending Acceptance:             NONE
+Pending Acceptance:             IMP-031
 Next Product Slice:             IMP-032 — Dehradun Delivery Operating Mode
 Current Governance Activity:    IMP-031 capability architecture LOCKED under ARCH-R18;
-                              implementation AUTHORIZED / STARTED.
+                              implementation AUTHORIZED / STARTED / COMPLETE;
+                              IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE.
 Governance Health:              ALIGNED
 ```
 
@@ -171,7 +172,7 @@ Capability architecture:
 [`capabilities/IMP-030-operations-console-ui.md`](./capabilities/IMP-030-operations-console-ui.md)
 
 IMP-031 locked capability architecture (architecture LOCKED; implementation AUTHORIZED /
-STARTED):
+STARTED / COMPLETE; IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE):
 
 [`capabilities/IMP-031-provider-neutral-delivery-foundation.md`](./capabilities/IMP-031-provider-neutral-delivery-foundation.md)
 
@@ -240,6 +241,31 @@ independent acceptance without changing decision register or global architecture
 STATE-R36 record IMP-028B canonical activation without changing decision register or global
 architecture. GTM-R39 / STATE-R37 record IMP-028B architecture lock and implementation
 authorization without changing decision register or global architecture.
+
+STATE-R76 records implementation **COMPLETE** pending independent acceptance for **IMP-031 —
+Provider-Neutral Delivery Foundation** under prior STATE-R74/STATE-R75 authorization and start and
+the locked capability architecture at
+[`capabilities/IMP-031-provider-neutral-delivery-foundation.md`](./capabilities/IMP-031-provider-neutral-delivery-foundation.md).
+Authorization scope remains locked Boundary C only. ARCH-R18 / ARCH-G24 remain binding. IMP-031 is
+`IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`; architecture remains `LOCKED`
+(`IMP-031_ARCHITECTURE_LOCKED: YES`); implementation is `AUTHORIZED` / `STARTED` / `COMPLETE`
+(`IMP-031_IMPLEMENTATION_AUTHORIZED: YES`; `IMP-031_STARTED: YES`;
+`IMP-031_IMPLEMENTATION_COMPLETE: YES`; `IMP-031_ACCEPTED: NO`). Formal acceptance is **not**
+claimed. Exact implementation identity: source SHA
+`66e2783afa4e9eef35c4ec208b25af9d9450f83d` / tree `dd42ea992c8866ff8cfbc0ac09e781eb6fcfa099`;
+merged main SHA `c3d499b0b8df2a8c7ae9297ab870f6286f81b848` / tree
+`dd42ea992c8866ff8cfbc0ac09e781eb6fcfa099`; PR #37; PR CI `33317358990` SUCCESS; main CI
+`33317603325` SUCCESS; deploy `33317603348` SUCCESS; independent implementation review **PASS**
+after bounded safety repair and focused re-review (`IMP_031_INDEPENDENT_IMPLEMENTATION_REVIEW:
+PASS`). `acceptedThrough` remains IMP-030; `pendingAcceptance` becomes IMP-031;
+`currentProductSlice` remains IMP-031; and `nextProductSlice` remains IMP-032. IMP-032 remains
+`PLANNED` / `NOT_ACTIVATED` / `NOT_AUTHORIZED` / `NOT_STARTED`. DR-14 is unchanged; D-373 is
+absent. Concrete provider adapters, provider selection/accounts/credentials, Dehradun operating
+mode, provider payload/status mapping, concrete callback/webhook API, workers/queues/new services,
+retry timings/operating thresholds, Operations UI, Notifications/WhatsApp, and infrastructure
+expansion remain deferred. This completion gate does not mutate product source, schema, migration,
+decision register, or ARCH-G24 substance. Supersedes STATE-R75 for the current IMP-031
+implementation-completion position.
 
 STATE-R75 records implementation start for **IMP-031 — Provider-Neutral Delivery Foundation**
 under prior STATE-R74 authorization and the locked capability architecture at
@@ -798,7 +824,7 @@ Cart → Checkout → Payment → Order
 
 ```text
 acceptedThrough: IMP-030
-pendingAcceptance: NONE
+pendingAcceptance: IMP-031
 currentProductSlice: IMP-031
 nextProductSlice: IMP-032 — Dehradun Delivery Operating Mode
 FOUNDER_UAT: PASS
@@ -869,12 +895,21 @@ IMP030_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
 IMP030_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
 IMP030_FORMAL_ACCEPTANCE: ACCEPTED
 IMP030_ACCEPTED_MAIN_SHA: 4bcf0fa0a659202c29be03e9b1b0cefbacf484fb
-IMP-031: IMPLEMENTATION_IN_PROGRESS
+IMP-031: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
 IMP-031_ARCHITECTURE: LOCKED
 IMP-031_ARCHITECTURE_LOCKED: YES
-IMP-031_IMPLEMENTATION: AUTHORIZED / STARTED
+IMP-031_IMPLEMENTATION: AUTHORIZED / STARTED / COMPLETE
 IMP-031_IMPLEMENTATION_AUTHORIZED: YES
 IMP-031_STARTED: YES
+IMP-031_IMPLEMENTATION_COMPLETE: YES
+IMP-031_ACCEPTED: NO
+IMP031_IMPLEMENTATION_EVIDENCE: COMPLETE
+IMP_031_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
+IMP031_INDEPENDENT_ACCEPTANCE: NOT_PERFORMED
+IMPLEMENTATION_SOURCE_SHA: 66e2783afa4e9eef35c4ec208b25af9d9450f83d
+IMPLEMENTATION_SOURCE_TREE: dd42ea992c8866ff8cfbc0ac09e781eb6fcfa099
+MERGED_MAIN_SHA: c3d499b0b8df2a8c7ae9297ab870f6286f81b848
+MERGED_MAIN_TREE: dd42ea992c8866ff8cfbc0ac09e781eb6fcfa099
 IMP030_ACCEPTED_TREE: 048b3ac4e1ba5b3519fa5665f0f4de151068fb59
 ```
 
