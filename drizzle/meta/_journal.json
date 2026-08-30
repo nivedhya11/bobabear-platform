@@ -218,6 +218,13 @@
       "when": 1787331400796,
       "tag": "0030_cart_unit_sequence",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1788076872917,
+      "tag": "0031_delivery",
+      "breakpoints": true
     }
   ]
 }

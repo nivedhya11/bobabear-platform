@@ -116,7 +116,7 @@ async function insertAttempt(
 }
 
 describe("IMP-022 payment migration inventory", () => {
-  it("creates exactly 6 payment tables; prior migrations sealed; 101 app tables", async () => {
+  it("creates exactly 6 payment tables; prior migrations sealed; 115 app tables", async () => {
     const integrity = JSON.parse(
       readFileSync(path.join(process.cwd(), "drizzle/migration-integrity.json"), "utf8"),
     ) as { migrations: Array<{ path: string; sha256: string }> };
@@ -142,7 +142,7 @@ describe("IMP-022 payment migration inventory", () => {
     );
     if (sealedPayment) {
       expect(sealedPayment.sha256).toBe(sha256File("drizzle/0016_payment.sql"));
-      expect(integrity.migrations).toHaveLength(22);
+      expect(integrity.migrations).toHaveLength(32);
     } else {
       expect(integrity.migrations).toHaveLength(16);
     }
@@ -169,7 +169,7 @@ describe("IMP-022 payment migration inventory", () => {
           from information_schema.tables
           where table_schema = 'app' and table_type = 'BASE TABLE'
         `);
-        expect(appTables.rows[0]?.count).toBe("101");
+        expect(appTables.rows[0]?.count).toBe("115");
       });
     });
   });

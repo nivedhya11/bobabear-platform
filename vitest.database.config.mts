@@ -104,6 +104,9 @@ export default defineConfig({
       "tests/operations/orders-read-http.integration.test.ts",
       "tests/operations/orders-mutation-http.integration.test.ts",
       "tests/operations/runtime-service.integration.test.ts",
+      // IMP-031: Provider-neutral Delivery foundation (Boundary C).
+      "tests/delivery-application/**/*.test.ts",
+      "tests/delivery-concurrency/**/*.test.ts",
     ],
     exclude: ["**/node_modules/**", "**/.next/**", "**/out/**", "**/coverage/**"],
     globalSetup: ["./tests/database/global-setup.ts"],

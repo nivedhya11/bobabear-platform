@@ -41,7 +41,7 @@ describe("clean migration replay", () => {
         );
         expect(migrationTable.rows[0]?.exists).toBe(true);
 
-        const journalCount = 30; // drizzle/meta/_journal.json — kept in lockstep with the committed journal
+        const journalCount = 32; // drizzle/meta/_journal.json — kept in lockstep with the committed journal
         const historyRows = await client.pool.query<{ count: string }>(
           `SELECT COUNT(*) AS count FROM ${MIGRATIONS_SCHEMA}.${MIGRATIONS_TABLE}`,
         );
@@ -73,6 +73,7 @@ describe("clean migration replay", () => {
           "cart_line_bundle_modifier_selections",
           "cart_line_bundle_selections",
           "cart_line_modifier_selections",
+          "cart_line_units",
           "cart_lines",
           "carts",
           "catalog_bundle_group_options",
@@ -106,6 +107,12 @@ describe("clean migration replay", () => {
           "customer_otp_rate_limits",
           "customer_profile_audit_events",
           "customer_profiles",
+          "deliveries",
+          "delivery_assignments",
+          "delivery_provider_costs",
+          "delivery_provider_observations",
+          "delivery_provider_references",
+          "delivery_returns",
           "financial_document_issuer_profiles",
           "financial_document_line_tax_components",
           "financial_document_lines",
