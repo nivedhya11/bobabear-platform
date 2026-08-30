@@ -5,9 +5,9 @@
   "capability": "IMP-031",
   "title": "Provider-Neutral Delivery Foundation",
   "architectureLock": "ARCHITECTURE_LOCKED",
-  "implementation": "AUTHORIZED / NOT_STARTED",
+  "implementation": "AUTHORIZED / STARTED",
   "implementationAuthorized": true,
-  "lastReviewed": "2026-08-29",
+  "lastReviewed": "2026-08-30",
   "bindingDecisions": ["D-357", "D-372"],
   "dependsOn": ["IMP-019", "IMP-021", "IMP-022", "IMP-023", "IMP-029", "IMP-030"]
 }
@@ -18,13 +18,14 @@
 ## Capability Architecture (ARCHITECTURE_LOCKED)
 
 This document locks the provider-neutral Delivery foundation for IMP-031. Implementation is
-`AUTHORIZED` / `NOT_STARTED`; authorization does not start implementation.
+`AUTHORIZED` / `STARTED` under Boundary C only. Start does not complete or accept implementation
+and does not expand beyond locked Boundary C.
 
 | Field | Value |
 |---|---|
 | Architecture lock | `ARCHITECTURE_LOCKED` |
-| Lifecycle | `IMPLEMENTATION_AUTHORIZED` |
-| Implementation | `AUTHORIZED` / `NOT_STARTED` |
+| Lifecycle | `IMPLEMENTATION_IN_PROGRESS` |
+| Implementation | `AUTHORIZED` / `STARTED` |
 | Implementation authorized | **YES** |
 | Accepted product through | IMP-030 |
 | Current product slice | IMP-031 — Provider-Neutral Delivery Foundation |
@@ -33,18 +34,18 @@ This document locks the provider-neutral Delivery foundation for IMP-031. Implem
 | New CURRENT decision | **NONE** |
 
 ```text
-IMP-031: IMPLEMENTATION_AUTHORIZED
+IMP-031: IMPLEMENTATION_IN_PROGRESS
 IMP-031_ARCHITECTURE: LOCKED
 IMP-031_ARCHITECTURE_LOCKED: YES
-IMP-031_IMPLEMENTATION: AUTHORIZED / NOT_STARTED
+IMP-031_IMPLEMENTATION: AUTHORIZED / STARTED
 IMP-031_IMPLEMENTATION_AUTHORIZED: YES
-IMP-031_STARTED: NO
+IMP-031_STARTED: YES
 ```
 
 ```text
 IMP-031_IMPLEMENTATION_AUTHORIZED: YES
-IMP-031_STARTED: NO
-AUTHORIZATION IS NOT IMPLEMENTATION START: YES
+IMP-031_STARTED: YES
+START IS NOT COMPLETION OR ACCEPTANCE: YES
 ```
 
 ## 1. Purpose

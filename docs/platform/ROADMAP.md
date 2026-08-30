@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R76",
+  "roadmapVersion": "GTM-R77",
   "acceptedThrough": "IMP-030",
   "currentProductSlice": "IMP-031",
   "nextProductSlice": "IMP-032",
   "gtmBoundary": "IMP-040",
-  "lastReviewed": "2026-08-29",
-  "supersedes": "GTM-R75"
+  "lastReviewed": "2026-08-30",
+  "supersedes": "GTM-R76"
 }
 -->
 
@@ -270,7 +270,7 @@ IMP-030 locked capability architecture (architecture **ARCHITECTURE_LOCKED**; im
 [`capabilities/IMP-030-operations-console-ui.md`](./capabilities/IMP-030-operations-console-ui.md)
 
 IMP-031 locked capability architecture (architecture **ARCHITECTURE_LOCKED**; implementation
-**AUTHORIZED** / **NOT_STARTED**):
+**AUTHORIZED** / **STARTED**):
 
 [`capabilities/IMP-031-provider-neutral-delivery-foundation.md`](./capabilities/IMP-031-provider-neutral-delivery-foundation.md)
 
@@ -288,12 +288,12 @@ IMP-030 is `COMPLETE_AND_ACCEPTED`. Its capability architecture remains locked i
 [`capabilities/IMP-030-operations-console-ui.md`](./capabilities/IMP-030-operations-console-ui.md)
 and was formally amended on 2026-08-27 for static detail-route realization. Implementation is
 `AUTHORIZED` / `STARTED` / `COMPLETE`; formal acceptance is recorded. IMP-031 is
-`IMPLEMENTATION_AUTHORIZED`. Its capability architecture remains locked at
+`IMPLEMENTATION_IN_PROGRESS`. Its capability architecture remains locked at
 [`capabilities/IMP-031-provider-neutral-delivery-foundation.md`](./capabilities/IMP-031-provider-neutral-delivery-foundation.md);
 ARCH-R18 records the minimal durable provider-neutral Delivery authority. Implementation boundary C
 is approved with the capability-local Delivery lifecycle amendment. Implementation is `AUTHORIZED` /
-`NOT_STARTED`; authorization does not start implementation. DR-14 remains unchanged and D-373 is not
-created.
+`STARTED` under prior GTM-R76 authorization; start does not complete or accept implementation.
+DR-14 remains unchanged and D-373 is not created.
 
 ```text
 IMP-030: COMPLETE_AND_ACCEPTED
@@ -304,12 +304,12 @@ IMP-030_IMPLEMENTATION_AUTHORIZED: YES
 IMP-030_STARTED: YES
 IMP-030_IMPLEMENTATION_COMPLETE: YES
 IMP-030_ACCEPTED: YES
-IMP-031: IMPLEMENTATION_AUTHORIZED
+IMP-031: IMPLEMENTATION_IN_PROGRESS
 IMP-031_ARCHITECTURE: LOCKED
 IMP-031_ARCHITECTURE_LOCKED: YES
-IMP-031_IMPLEMENTATION: AUTHORIZED / NOT_STARTED
+IMP-031_IMPLEMENTATION: AUTHORIZED / STARTED
 IMP-031_IMPLEMENTATION_AUTHORIZED: YES
-IMP-031_STARTED: NO
+IMP-031_STARTED: YES
 ```
 
 IMP-024 architecture remains **ARCHITECTURE_LOCKED**. IMP-024 implementation is
@@ -496,8 +496,9 @@ IMP-031 — Provider-Neutral Delivery Foundation is the current product slice. I
 architecture is at
 [`capabilities/IMP-031-provider-neutral-delivery-foundation.md`](./capabilities/IMP-031-provider-neutral-delivery-foundation.md).
 Its architecture remains `ARCHITECTURE_LOCKED`; implementation boundary C is approved with the
-capability-local Delivery lifecycle amendment; implementation is `AUTHORIZED` / `NOT_STARTED`.
-Authorization does not start implementation. IMP-030 — Operations Console UI remains
+capability-local Delivery lifecycle amendment; implementation is `AUTHORIZED` / `STARTED`.
+Start does not complete or accept implementation and does not expand beyond Boundary C.
+IMP-030 — Operations Console UI remains
 `COMPLETE_AND_ACCEPTED`; architecture remains locked and implementation is authorized, started, and
 complete. IMP-032 remains `PLANNED` / `NOT_ACTIVATED` as the next product slice.
 IMP-029 — Operations Console API remains `COMPLETE_AND_ACCEPTED`; architecture remains locked and
@@ -557,12 +558,12 @@ IMP-029_ACCEPTED: YES
 Next product slice: IMP-032 — Dehradun Delivery Operating Mode
 Pending acceptance: NONE
 acceptedThrough: IMP-030
-IMP-031: IMPLEMENTATION_AUTHORIZED
+IMP-031: IMPLEMENTATION_IN_PROGRESS
 IMP-031_ARCHITECTURE: LOCKED
 IMP-031_ARCHITECTURE_LOCKED: YES
-IMP-031_IMPLEMENTATION: AUTHORIZED / NOT_STARTED
+IMP-031_IMPLEMENTATION: AUTHORIZED / STARTED
 IMP-031_IMPLEMENTATION_AUTHORIZED: YES
-IMP-031_STARTED: NO
+IMP-031_STARTED: YES
 IMP-026C: COMPLETE_AND_ACCEPTED
 IMP-027: COMPLETE_AND_ACCEPTED
 IMP-027_ARCHITECTURE: LOCKED
@@ -710,7 +711,7 @@ consume or remap IMP-029 → IMP-040 identities and is `COMPLETE_AND_ACCEPTED`.
 
 | IMP | Capability | Lifecycle |
 |---|---|---|
-| IMP-031 | Provider-Neutral Delivery Foundation | IMPLEMENTATION_AUTHORIZED |
+| IMP-031 | Provider-Neutral Delivery Foundation | IMPLEMENTATION_IN_PROGRESS |
 | IMP-032 | Dehradun Delivery Operating Mode | PLANNED |
 | IMP-033 | Notification Foundation | PLANNED |
 | IMP-034 | Meta WhatsApp Cloud API Adapter | PLANNED |
@@ -1086,6 +1087,25 @@ Historical GTM-R1 meanings that are **not** current:
 Current public GTM boundary is **IMP-040**, not IMP-035.
 
 ## 9. Roadmap Change Log
+
+### GTM-R77 — 2026-08-30
+
+- Records implementation **START** for **IMP-031 — Provider-Neutral Delivery Foundation** under prior
+  GTM-R76 authorization and the locked capability architecture at
+  [`capabilities/IMP-031-provider-neutral-delivery-foundation.md`](./capabilities/IMP-031-provider-neutral-delivery-foundation.md).
+  Authorization scope remains locked Boundary C only. ARCH-R18 / ARCH-G24 and DR-14 remain unchanged;
+  D-373 is not created.
+- IMP-031 implementation becomes `AUTHORIZED` / `STARTED` / `IMPLEMENTATION_IN_PROGRESS`; start does
+  not complete or accept implementation (`IMP-031_IMPLEMENTATION_AUTHORIZED: YES`;
+  `IMP-031_STARTED: YES`). Architecture remains `LOCKED` (`IMP-031_ARCHITECTURE_LOCKED: YES`).
+- Preserves `acceptedThrough = IMP-030`, `pendingAcceptance = NONE`, `currentProductSlice = IMP-031`,
+  and `nextProductSlice = IMP-032`. IMP-032 remains `PLANNED` / `NOT_ACTIVATED`.
+- Concrete provider adapters, provider selection/accounts/credentials, Dehradun operating mode,
+  provider payload/status mapping, concrete callback/webhook API, workers/queues/new services,
+  retry timings/operating thresholds, Operations UI, Notifications/WhatsApp, and infrastructure
+  expansion remain deferred. No product source, runtime, schema, migration, dependency, or
+  deployment mutation is introduced by this governance START gate.
+- Supersedes GTM-R76 for the current IMP-031 implementation-start position.
 
 ### GTM-R76 — 2026-08-29
 
