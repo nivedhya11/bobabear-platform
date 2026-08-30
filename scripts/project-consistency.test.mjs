@@ -16,6 +16,7 @@ import {
   evaluateImp031CurrentArchitectureStatus,
   evaluateImp031ImplementationAuthorizationCrossDocumentAlignment,
   evaluateImp031ImplementationStartArtifact,
+  evaluateImp031ImplementationStartCapabilityCurrentStatus,
   evaluateImp031ImplementationStartCheckpoint,
   evaluateImp031ImplementationStartCurrentArchitectureStatus,
   evaluateImp031ImplementationStartCrossDocumentAlignment,
@@ -2706,6 +2707,62 @@ describe("IMP-031 implementation start checkpoint", () => {
     ]) {
       assert.equal(evaluateImp031ImplementationStartArtifact(mutation).ok, false);
     }
+  });
+
+  it("rejects stale present-tense AUTHORIZED / NOT_STARTED in capability §§10–11 while STARTED=YES", () => {
+    const artifact = readFileSync(new URL("../docs/platform/capabilities/IMP-031-provider-neutral-delivery-foundation.md", import.meta.url), "utf8");
+    assert.deepEqual(evaluateImp031ImplementationStartCapabilityCurrentStatus(artifact), { ok: true });
+    assert.match(artifact, /implementation remains unauthorized until a separate gate/);
+    assert.match(artifact, /authorization does not start\s+implementation/);
+
+    const staleSection10 = artifact.replace(
+      /Those architecture-lock\s+criteria were satisfied\. Implementation is now `AUTHORIZED` \/ `STARTED` under Boundary C; start is\s+not completion or acceptance\./,
+      "This capability satisfies the architecture-lock criteria. Implementation is now `AUTHORIZED` / `NOT_STARTED` for\nBoundary C only; start remains a separate gate.",
+    );
+    const stale10 = evaluateImp031ImplementationStartCapabilityCurrentStatus(staleSection10);
+    assert.equal(stale10.ok, false);
+    assert.equal(stale10.code, "IMP031_CAPABILITY_STATUS_STALE");
+    assert.equal(evaluateImp031ImplementationStartArtifact(staleSection10).ok, false);
+
+    const staleSection11 = artifact.replace(
+      /Architecture is\s+`ARCHITECTURE_LOCKED`; implementation is `AUTHORIZED` \/ `STARTED`\./,
+      "Architecture is\n`ARCHITECTURE_LOCKED`; implementation is `AUTHORIZED` / `NOT_STARTED`.",
+    );
+    const stale11 = evaluateImp031ImplementationStartCapabilityCurrentStatus(staleSection11);
+    assert.equal(stale11.ok, false);
+    assert.equal(stale11.code, "IMP031_CAPABILITY_STATUS_STALE");
+    assert.equal(evaluateImp031ImplementationStartArtifact(staleSection11).ok, false);
+  });
+
+  it("preserves historical architecture-lock NOT_STARTED records outside STARTED current-status checks", () => {
+    const startedArtifact = readFileSync(new URL("../docs/platform/capabilities/IMP-031-provider-neutral-delivery-foundation.md", import.meta.url), "utf8");
+    const lockArtifact = startedArtifact
+      .replace(/"implementation": "AUTHORIZED \/ STARTED"/, '"implementation": "NOT_AUTHORIZED / NOT_STARTED"')
+      .replace(/"implementationAuthorized": true/, '"implementationAuthorized": false')
+      .replace("| Lifecycle | `IMPLEMENTATION_IN_PROGRESS` |", "| Lifecycle | `ARCHITECTURE_LOCKED` |")
+      .replace("| Implementation | `AUTHORIZED` / `STARTED` |", "| Implementation | `NOT_AUTHORIZED` / `NOT_STARTED` |")
+      .replace("| Implementation authorized | **YES** |", "| Implementation authorized | **NO** |")
+      .replace("IMP-031: IMPLEMENTATION_IN_PROGRESS", "IMP-031: ARCHITECTURE_LOCKED")
+      .replace("IMP-031_IMPLEMENTATION: AUTHORIZED / STARTED", "IMP-031_IMPLEMENTATION: NOT_AUTHORIZED / NOT_STARTED")
+      .replace(/IMP-031_IMPLEMENTATION_AUTHORIZED: YES/g, "IMP-031_IMPLEMENTATION_AUTHORIZED: NO")
+      .replace(/IMP-031_STARTED: YES/g, "IMP-031_STARTED: NO")
+      .replace(/START IS NOT COMPLETION OR ACCEPTANCE: YES\n/, "")
+      .replace(
+        "This document locks the provider-neutral Delivery foundation for IMP-031. Implementation is\n`AUTHORIZED` / `STARTED` under Boundary C only. Start does not complete or accept implementation\nand does not expand beyond locked Boundary C.",
+        "This document locks the provider-neutral Delivery foundation for IMP-031. Architecture lock does not\nauthorize or start implementation.",
+      )
+      .replace(
+        /Those architecture-lock\s+criteria were satisfied\. Implementation is now `AUTHORIZED` \/ `STARTED` under Boundary C; start is\s+not completion or acceptance\./,
+        "This capability satisfies the architecture-lock criteria. Implementation is now `AUTHORIZED` / `NOT_STARTED` for\nBoundary C only; start remains a separate gate.",
+      )
+      .replace(
+        /Architecture is\s+`ARCHITECTURE_LOCKED`; implementation is `AUTHORIZED` \/ `STARTED`\./,
+        "Architecture is\n`ARCHITECTURE_LOCKED`; implementation is `AUTHORIZED` / `NOT_STARTED`.",
+      );
+    assert.match(lockArtifact, /implementation remains unauthorized until a separate gate/);
+    assert.match(lockArtifact, /AUTHORIZED` \/ `NOT_STARTED/);
+    assert.deepEqual(evaluateImp031ArchitectureLockArtifact(lockArtifact), { ok: true });
+    assert.equal(evaluateImp031ImplementationStartArtifact(lockArtifact).ok, false);
   });
 
   it("requires CURRENT ARCHITECTURE Delivery / IMP-031 AUTHORIZED / STARTED wording", () => {

@@ -356,11 +356,11 @@ Architecture lock requires review evidence that:
 - repository project consistency passes; and
 - implementation remains unauthorized until a separate gate.
 
-These are architecture-lock criteria, not implementation acceptance results. This capability
-satisfies the architecture-lock criteria. Implementation is now `AUTHORIZED` / `NOT_STARTED` for
-Boundary C only; start remains a separate gate.
+These are architecture-lock criteria, not implementation acceptance results. Those architecture-lock
+criteria were satisfied. Implementation is now `AUTHORIZED` / `STARTED` under Boundary C; start is
+not completion or acceptance.
 
 ## 11. Open questions for architecture review
 
 None recorded. Boundary C is approved with this lifecycle amendment. Architecture is
-`ARCHITECTURE_LOCKED`; implementation is `AUTHORIZED` / `NOT_STARTED`.
+`ARCHITECTURE_LOCKED`; implementation is `AUTHORIZED` / `STARTED`.

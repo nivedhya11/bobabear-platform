@@ -1871,6 +1871,68 @@ export function evaluateImp031ImplementationStartCheckpoint(checkpoint) {
 }
 
 /**
+ * Detect stale present-tense AUTHORIZED / NOT_STARTED status in CURRENT IMP-031 capability §§10–11
+ * while the STARTED checkpoint requires AUTHORIZED / STARTED.
+ * Historical architecture-lock criteria (e.g. "implementation remains unauthorized until a separate
+ * gate") outside those current-status sentences are ignored by scoping to §§10–11 conclusions and
+ * not banning NOT_STARTED globally.
+ * @param {string} text
+ */
+export function evaluateImp031ImplementationStartCapabilityCurrentStatus(text) {
+  const section10 = extractLiveCanonicalSection(text, "## 10. Architecture-lock acceptance criteria");
+  if (!section10.ok) {
+    return { ok: false, code: "IMP031_CAPABILITY_SECTION_10", message: section10.message };
+  }
+  const section11 = extractLiveCanonicalSection(text, "## 11. Open questions for architecture review");
+  if (!section11.ok) {
+    return { ok: false, code: "IMP031_CAPABILITY_SECTION_11", message: section11.message };
+  }
+
+  const staleAuthorizedNotStarted =
+    /`AUTHORIZED`\s*\/\s*`NOT_STARTED`|AUTHORIZED\s*\/\s*NOT_STARTED/;
+  const staleStartGate = /start remains a separate gate/i;
+
+  // §10: keep historical lock-criteria bullets; reject only stale current-status conclusion.
+  const section10AfterCriteria = section10.section.slice(
+    Math.max(0, section10.section.search(/These are architecture-lock criteria/)),
+  );
+  if (
+    staleAuthorizedNotStarted.test(section10AfterCriteria) ||
+    staleStartGate.test(section10AfterCriteria)
+  ) {
+    return {
+      ok: false,
+      code: "IMP031_CAPABILITY_STATUS_STALE",
+      message: "IMP-031 capability §10 current status must not claim AUTHORIZED / NOT_STARTED while STARTED=YES",
+    };
+  }
+  if (!/`AUTHORIZED`\s*\/\s*`STARTED`|AUTHORIZED\s*\/\s*STARTED/.test(section10AfterCriteria)) {
+    return {
+      ok: false,
+      code: "IMP031_CAPABILITY_STATUS",
+      message: "IMP-031 capability §10 current status must record AUTHORIZED / STARTED",
+    };
+  }
+
+  if (staleAuthorizedNotStarted.test(section11.section)) {
+    return {
+      ok: false,
+      code: "IMP031_CAPABILITY_STATUS_STALE",
+      message: "IMP-031 capability §11 current status must not claim AUTHORIZED / NOT_STARTED while STARTED=YES",
+    };
+  }
+  if (!/`AUTHORIZED`\s*\/\s*`STARTED`|AUTHORIZED\s*\/\s*STARTED/.test(section11.section)) {
+    return {
+      ok: false,
+      code: "IMP031_CAPABILITY_STATUS",
+      message: "IMP-031 capability §11 current status must record AUTHORIZED / STARTED",
+    };
+  }
+
+  return { ok: true };
+}
+
+/**
  * Validate the authorized-started IMP-031 capability artifact without accepting completion progression.
  * @param {string} text
  */
@@ -1925,6 +1987,8 @@ export function evaluateImp031ImplementationStartArtifact(text) {
   if (forbidden.some((pattern) => pattern.test(text))) {
     return { ok: false, code: "IMP031_CAPABILITY_PROGRESSION", message: "IMP-031 start must not claim unstarted, unlocked, unauthorized, or D-373" };
   }
+  const currentStatus = evaluateImp031ImplementationStartCapabilityCurrentStatus(text);
+  if (!currentStatus.ok) return currentStatus;
   return { ok: true };
 }
 
@@ -2518,8 +2582,8 @@ export function extractLiveCanonicalSection(text, heading) {
   if (start === -1) return { ok: false, message: `${heading} section is missing` };
   const afterHeading = start + heading.length;
   const next = text.indexOf("\n## ", afterHeading);
-  if (next === -1) return { ok: false, message: `${heading} section end is missing` };
-  return { ok: true, section: text.slice(start, next) };
+  // Last section may end at EOF (e.g. capability §11).
+  return { ok: true, section: text.slice(start, next === -1 ? undefined : next) };
 }
 
 /**
