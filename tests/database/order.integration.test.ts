@@ -144,7 +144,7 @@ describe("IMP-023 order migration inventory", () => {
     );
     if (sealed) {
       expect(sealed.sha256).toBe(sha256File("drizzle/0017_order.sql"));
-      expect(integrity.migrations).toHaveLength(22);
+      expect(integrity.migrations).toHaveLength(32);
     }
 
     await withPaymentReadyHarness(async ({ persistence }) => {
@@ -161,7 +161,7 @@ describe("IMP-023 order migration inventory", () => {
           from information_schema.tables
           where table_schema = 'app' and table_type = 'BASE TABLE'
         `);
-        expect(appTables.rows[0]?.count).toBe("101");
+        expect(appTables.rows[0]?.count).toBe("115");
 
         const perms = await ctx.db.execute(sql`
           select count(*)::text as count from app.access_permissions

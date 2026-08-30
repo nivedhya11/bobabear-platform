@@ -156,6 +156,11 @@
       "tag": "0030_cart_unit_sequence",
       "path": "drizzle/0030_cart_unit_sequence.sql",
       "sha256": "ed3416cf5756f9afd92bc03566be5f9b499e74ba68e33330a4ef699ecc013828"
+    },
+    {
+      "tag": "0031_delivery",
+      "path": "drizzle/0031_delivery.sql",
+      "sha256": "324dbf5f7937666964ee9bcd2843a18465a66941a75836dde60dbbf65fdb07ce"
     }
   ]
 }
