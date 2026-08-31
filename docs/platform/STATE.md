@@ -2,11 +2,11 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R86",
-  "acceptedThrough": "IMP-032",
-  "currentProductSlice": "IMP-033",
+  "stateVersion": "STATE-R87",
+  "acceptedThrough": "IMP-033",
+  "currentProductSlice": "NONE",
   "nextProductSlice": "IMP-034",
-  "pendingAcceptance": "IMP-033",
+  "pendingAcceptance": "NONE",
   "governanceHealth": "ALIGNED",
   "lastReviewed": "2026-08-31"
 }
@@ -20,18 +20,19 @@ current-reality authority.
 ## 1. Accepted Position
 
 ```text
-Accepted Through:          IMP-032 — Dehradun Delivery Operating Mode
+Accepted Through:          IMP-033 — Notification Foundation
 Accepted Inserted Slice:   IMP-005A — Dockerized local application runtime; IMP-026C — Pilot Customer-Commerce UX Hardening; IMP-028A — Food Direct UX Foundation; IMP-028B — Customer Menu Projection + Discovery; IMP-028C — Food Customization; IMP-028D — Desktop Ordering Continuity
-Accepted Range:            IMP-001 → IMP-032 (including IMP-005A and IMP-026C)
+Accepted Range:            IMP-001 → IMP-033 (including IMP-005A and IMP-026C)
 ```
 
 ## 2. Current Work Position
 
 ```text
-Current Product Implementation: IMP-033 — Notification Foundation (implementation complete pending acceptance)
-Pending Acceptance:             IMP-033
+Current Product Implementation: NONE
+Pending Acceptance:             NONE
 Next Product Slice:             IMP-034 — Meta WhatsApp Cloud API Adapter
-Current Governance Activity:    IMP-033 IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE; architecture LOCKED; implementation AUTHORIZED / STARTED / COMPLETE; Founder UAT not required; GTM-R88 / STATE-R86 record the combined IMP-033 architecture lock, authorization, start, and implementation completion.
+Current Governance Activity:    IMP-033 COMPLETE_AND_ACCEPTED;
+                              IMP-034 PLANNED / NOT_ACTIVATED.
 Governance Health:              ALIGNED
 ```
 
@@ -166,22 +167,27 @@ IMP-032_IMPLEMENTATION_COMPLETE: YES
 IMP-032_ACCEPTED:         YES
 IMP-032_FOUNDER_UAT_REQUIRED: YES
 IMP-032_FOUNDER_UAT:      PASS
-IMP-033:                  IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
+IMP-033:                  COMPLETE_AND_ACCEPTED
 IMP-033_ARCHITECTURE:     LOCKED
 IMP-033_ARCHITECTURE_LOCKED: YES
 IMP-033_IMPLEMENTATION:   AUTHORIZED / STARTED / COMPLETE
 IMP-033_IMPLEMENTATION_AUTHORIZED: YES
 IMP-033_STARTED:          YES
 IMP-033_IMPLEMENTATION_COMPLETE: YES
-IMP-033_ACCEPTED:         NO
+IMP-033_ACCEPTED:         YES
 IMP-033_FOUNDER_UAT_REQUIRED: NO
+IMP-033_FOUNDER_UAT:      NOT_APPLICABLE
 IMP-033_SCHEMA_CHANGE:    YES
 IMP-033_PROVIDER_IO:      NO
 IMP-033_NEW_SERVICE:      NO
 IMP-033_ASYNC_TOPOLOGY:   POSTGRESQL_TRANSACTIONAL_OUTBOX_IN_PROCESS_WORKER
 IMP033_IMPLEMENTATION_EVIDENCE: COMPLETE
 IMP_033_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
-COMPLETION IS NOT ACCEPTANCE: YES
+IMP033_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
+IMP033_FORMAL_ACCEPTANCE: ACCEPTED
+IMP033_ACCEPTED_MAIN_SHA: 5150d70b4683f7abec1e0652bf53e7986efcf622
+IMP033_ACCEPTED_TREE:     715ff386e672fd276a0b2e888aa2ebeaab3dda8c
+IMP-034:                  PLANNED / NOT_ACTIVATED
 D-373_CREATED:            NO
 ARCH_R19_REQUIRED:        NO
 NO_NEW_CURRENT_DECISION_IN_THIS_GATE: YES
@@ -224,7 +230,7 @@ STARTED / COMPLETE; COMPLETE_AND_ACCEPTED):
 [`capabilities/IMP-032-dehradun-delivery-operating-mode.md`](./capabilities/IMP-032-dehradun-delivery-operating-mode.md)
 
 IMP-033 locked capability architecture (architecture LOCKED; implementation AUTHORIZED /
-STARTED / COMPLETE; pending acceptance):
+STARTED / COMPLETE; COMPLETE_AND_ACCEPTED):
 
 [`capabilities/IMP-033-notification-foundation.md`](./capabilities/IMP-033-notification-foundation.md)
 
@@ -293,6 +299,28 @@ independent acceptance without changing decision register or global architecture
 STATE-R36 record IMP-028B canonical activation without changing decision register or global
 architecture. GTM-R39 / STATE-R37 record IMP-028B architecture lock and implementation
 authorization without changing decision register or global architecture.
+
+STATE-R87 records formal acceptance of **IMP-033 — Notification Foundation** for independently
+accepted product `main` merge SHA `5150d70b4683f7abec1e0652bf53e7986efcf622` and tree
+`715ff386e672fd276a0b2e888aa2ebeaab3dda8c` (PR 48; PR CI run 33417506582 SUCCESS; main CI run
+33418061603 SUCCESS; Deploy run 33418062095 SUCCESS). Implementation evidence is **COMPLETE**;
+independent implementation review is **PASS**; independent acceptance evidence is **ACCEPTED**;
+formal acceptance is recorded (`IMP033_FORMAL_ACCEPTANCE: ACCEPTED`; `IMP-033_ACCEPTED: YES`).
+IMP-033 is `COMPLETE_AND_ACCEPTED`; architecture remains `LOCKED`
+(`IMP-033_ARCHITECTURE_LOCKED: YES`); implementation remains `AUTHORIZED` / `STARTED` / `COMPLETE`
+(`IMP-033_IMPLEMENTATION_AUTHORIZED: YES`; `IMP-033_STARTED: YES`;
+`IMP-033_IMPLEMENTATION_COMPLETE: YES`). Locked boundary facts remain unchanged: `schema_change: YES`
+bounded to Notifications-owned tables and migrations, `provider_IO: NO`, `new_service: NO`, and
+`async_topology: POSTGRESQL_TRANSACTIONAL_OUTBOX_IN_PROCESS_WORKER`. `acceptedThrough` advances to
+IMP-033; `currentProductSlice` and `pendingAcceptance` are NONE; `nextProductSlice` remains IMP-034 —
+Meta WhatsApp Cloud API Adapter, `PLANNED` / `NOT_ACTIVATED` / `NOT_AUTHORIZED` / `NOT_STARTED`.
+Formal acceptance does **not** authorize, start, or activate IMP-034, select a WhatsApp BSP, perform
+Meta production onboarding, or add provider webhook routes. Founder UAT is not required for this
+foundation-only slice (`IMP-033_FOUNDER_UAT_REQUIRED: NO`; `IMP-033_FOUNDER_UAT: NOT_APPLICABLE`) and
+is not claimed as PASS; independent technical acceptance was the applicable gate. ARCH-R18 /
+ARCH-G24 and DR-14 remain unchanged; `D-373` is absent. This reconciliation introduces no product
+source, schema, migration, decision-register, or global-architecture substance mutation. Supersedes
+STATE-R86 for the current IMP-033 lifecycle and acceptance position.
 
 STATE-R86 records a single founder-authorized **combined** gate for **IMP-033 — Notification
 Foundation**: capability-local architecture lock, implementation authorization, implementation start,
@@ -1069,13 +1097,14 @@ Cart → Checkout → Payment → Order
 | IMP-030 | Operations Console UI | COMPLETE_AND_ACCEPTED |
 | IMP-031 | Provider-Neutral Delivery Foundation | COMPLETE_AND_ACCEPTED |
 | IMP-032 | Dehradun Delivery Operating Mode | COMPLETE_AND_ACCEPTED |
+| IMP-033 | Notification Foundation | COMPLETE_AND_ACCEPTED |
 
 ## 5. Acceptance Position
 
 ```text
-acceptedThrough: IMP-032
-pendingAcceptance: IMP-033
-currentProductSlice: IMP-033
+acceptedThrough: IMP-033
+pendingAcceptance: NONE
+currentProductSlice: NONE
 nextProductSlice: IMP-034 — Meta WhatsApp Cloud API Adapter
 IMP-028: COMPLETE_AND_ACCEPTED
 IMP-028_ACCEPTED: YES
@@ -1176,22 +1205,27 @@ FOUNDER_UAT_CANDIDATE_REPOSITORY: /home/ajoshi/repos/boba-bear-platform
 FOUNDER_UAT_CANDIDATE_BRANCH: main
 FOUNDER_UAT_CANDIDATE_HEAD: 078ae39109a748174c429ac40381e038ab21d3c1
 FOUNDER_UAT_CANDIDATE_FINGERPRINT: 251c0589f8f17a1acf289d2798a671cea8eaba9ebd604edc0e5a933dc711223c
-IMP-033: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
+IMP-033: COMPLETE_AND_ACCEPTED
 IMP-033_ARCHITECTURE: LOCKED
 IMP-033_ARCHITECTURE_LOCKED: YES
 IMP-033_IMPLEMENTATION: AUTHORIZED / STARTED / COMPLETE
 IMP-033_IMPLEMENTATION_AUTHORIZED: YES
 IMP-033_STARTED: YES
 IMP-033_IMPLEMENTATION_COMPLETE: YES
-IMP-033_ACCEPTED: NO
+IMP-033_ACCEPTED: YES
 IMP-033_FOUNDER_UAT_REQUIRED: NO
+IMP-033_FOUNDER_UAT: NOT_APPLICABLE
 IMP-033_SCHEMA_CHANGE: YES
 IMP-033_PROVIDER_IO: NO
 IMP-033_NEW_SERVICE: NO
 IMP-033_ASYNC_TOPOLOGY: POSTGRESQL_TRANSACTIONAL_OUTBOX_IN_PROCESS_WORKER
 IMP033_IMPLEMENTATION_EVIDENCE: COMPLETE
 IMP_033_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
-COMPLETION IS NOT ACCEPTANCE: YES
+IMP033_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
+IMP033_FORMAL_ACCEPTANCE: ACCEPTED
+IMP033_ACCEPTED_MAIN_SHA: 5150d70b4683f7abec1e0652bf53e7986efcf622
+IMP033_ACCEPTED_TREE: 715ff386e672fd276a0b2e888aa2ebeaab3dda8c
+IMP-034: PLANNED / NOT_ACTIVATED
 D-373_CREATED: NO
 ARCH_R19_REQUIRED: NO
 NO_NEW_CURRENT_DECISION_IN_THIS_GATE: YES
