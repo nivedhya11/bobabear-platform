@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R85",
-  "acceptedThrough": "IMP-031",
-  "currentProductSlice": "IMP-032",
-  "nextProductSlice": "IMP-033",
+  "roadmapVersion": "GTM-R87",
+  "acceptedThrough": "IMP-032",
+  "currentProductSlice": "IMP-033",
+  "nextProductSlice": "IMP-034",
   "gtmBoundary": "IMP-040",
   "lastReviewed": "2026-08-31",
-  "supersedes": "GTM-R84"
+  "supersedes": "GTM-R86"
 }
 -->
 
@@ -282,13 +282,24 @@ IMP-032 locked capability architecture (architecture **ARCHITECTURE_LOCKED**; im
 ## 2. Current Position
 
 ```text
-Accepted Through:     IMP-031 — Provider-Neutral Delivery Foundation
-Current Product Slice: IMP-032 — Dehradun Delivery Operating Mode
-Next Product Slice:    IMP-033 — Notification Foundation
-Pending Acceptance:    IMP-032
+Accepted Through:     IMP-032 — Dehradun Delivery Operating Mode
+Current Product Slice: IMP-033 — Notification Foundation
+Next Product Slice:    IMP-034 — Meta WhatsApp Cloud API Adapter
+Pending Acceptance:    NONE
 Public GTM Boundary:   IMP-040 — Launch Validation & Cutover
 ```
 
+IMP-032 is `COMPLETE_AND_ACCEPTED`. Architecture remains **ARCHITECTURE_LOCKED** at
+[`capabilities/IMP-032-dehradun-delivery-operating-mode.md`](./capabilities/IMP-032-dehradun-delivery-operating-mode.md)
+(operating mode **MANUAL_PROVIDER_NEUTRAL_DEHRADUN_DELIVERY**). Implementation is `AUTHORIZED` /
+`STARTED` / `COMPLETE`; independent acceptance evidence is **ACCEPTED**; Founder UAT is **PASS**;
+formal acceptance is recorded (`IMP-032_ACCEPTED: YES`; `IMP032_FORMAL_ACCEPTANCE: ACCEPTED`).
+Accepted product identity remains immutable merge SHA
+`078ae39109a748174c429ac40381e038ab21d3c1` / tree `973153488a4e32e06a6da1e1e7d41072ebca9376`.
+GTM-R87 activates **IMP-033 — Notification Foundation** as `currentProductSlice` for architecture
+work. IMP-033 is `ARCHITECTURE_IN_PROGRESS`; architecture is `NOT_LOCKED`; implementation remains
+`NOT_AUTHORIZED` / `NOT_STARTED`. Draft capability architecture is at
+[`capabilities/IMP-033-notification-foundation.md`](./capabilities/IMP-033-notification-foundation.md).
 IMP-031 remains `COMPLETE_AND_ACCEPTED`. Its capability architecture remains locked at
 [`capabilities/IMP-031-provider-neutral-delivery-foundation.md`](./capabilities/IMP-031-provider-neutral-delivery-foundation.md);
 ARCH-R18 / ARCH-G24 records the minimal durable provider-neutral Delivery authority. Implementation
@@ -298,16 +309,9 @@ acceptance is recorded (`IMP-031_ACCEPTED: YES`). Accepted product identity rema
 SHA `c3d499b0b8df2a8c7ae9297ab870f6286f81b848` / tree `dd42ea992c8866ff8cfbc0ac09e781eb6fcfa099`.
 IMP-030 remains `COMPLETE_AND_ACCEPTED`. Its capability architecture remains locked in
 [`capabilities/IMP-030-operations-console-ui.md`](./capabilities/IMP-030-operations-console-ui.md)
-and was formally amended on 2026-08-27 for static detail-route realization. IMP-032 is `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`. Architecture remains **ARCHITECTURE_LOCKED** at
-[`capabilities/IMP-032-dehradun-delivery-operating-mode.md`](./capabilities/IMP-032-dehradun-delivery-operating-mode.md)
-(operating mode **MANUAL_PROVIDER_NEUTRAL_DEHRADUN_DELIVERY**). Implementation is `AUTHORIZED` / `STARTED` /
-`COMPLETE` under prior GTM-R82/GTM-R83 authorization and start (`IMP-032_IMPLEMENTATION_AUTHORIZED: YES`;
-`IMP-032_STARTED: YES`; `IMP-032_IMPLEMENTATION_COMPLETE: YES`; `IMP-032_ACCEPTED: NO`). GTM-R85 records
-implementation completion pending independent technical acceptance and required Founder UAT. Formal
-acceptance is **not** claimed. GTM-R84 clarified the locked §23.3 data-only access-control seed migration
-as **PERMITTED_IF_REQUIRED**; that migration is now present as `0032_delivery_permissions` (data-only).
-IMP-033 remains `PLANNED` / `NOT_ACTIVATED`. DR-14 and ARCH-R18 remain unchanged; D-373 is not created.
-No named provider is canonical; no provider API/webhook/worker/queue topology is introduced.
+and was formally amended on 2026-08-27 for static detail-route realization. DR-14 and ARCH-R18 remain
+unchanged; D-373 is not created. No named provider is canonical; no provider API/webhook/worker/queue
+topology is introduced by this governance gate.
 
 ```text
 IMP-030: COMPLETE_AND_ACCEPTED
@@ -332,20 +336,30 @@ IMP031_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
 IMP031_FORMAL_ACCEPTANCE: ACCEPTED
 IMP031_ACCEPTED_MAIN_SHA: c3d499b0b8df2a8c7ae9297ab870f6286f81b848
 IMP031_ACCEPTED_TREE: dd42ea992c8866ff8cfbc0ac09e781eb6fcfa099
-IMP-032: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
+IMP-032: COMPLETE_AND_ACCEPTED
 IMP-032_ARCHITECTURE: LOCKED
 IMP-032_ARCHITECTURE_LOCKED: YES
 IMP-032_IMPLEMENTATION: AUTHORIZED / STARTED / COMPLETE
 IMP-032_IMPLEMENTATION_AUTHORIZED: YES
 IMP-032_STARTED: YES
 IMP-032_IMPLEMENTATION_COMPLETE: YES
-IMP-032_ACCEPTED: NO
+IMP-032_ACCEPTED: YES
 IMP-032_FOUNDER_UAT_REQUIRED: YES
-IMP-032_FOUNDER_UAT: NOT_STARTED
-IMP-032_ACCESS_CONTROL_DATA_SEED_MIGRATION: APPLIED
-IMP-032_BOUNDARY_CLARIFICATION: GTM-R84
-IMP-032_COMPLETION: GTM-R85
-IMP-033: PLANNED / NOT_ACTIVATED
+IMP-032_FOUNDER_UAT: PASS
+IMP032_IMPLEMENTATION_EVIDENCE: COMPLETE
+IMP_032_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
+IMP032_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
+IMP032_FORMAL_ACCEPTANCE: ACCEPTED
+IMP032_ACCEPTED_MAIN_SHA: 078ae39109a748174c429ac40381e038ab21d3c1
+IMP032_ACCEPTED_TREE: 973153488a4e32e06a6da1e1e7d41072ebca9376
+IMP-033: ARCHITECTURE_IN_PROGRESS
+IMP-033_ARCHITECTURE: NOT_LOCKED
+IMP-033_ARCHITECTURE_LOCKED: NO
+IMP-033_IMPLEMENTATION: NOT_AUTHORIZED / NOT_STARTED
+IMP-033_IMPLEMENTATION_AUTHORIZED: NO
+IMP-033_STARTED: NO
+IMP-033_IMPLEMENTATION_COMPLETE: NO
+IMP-033_ACCEPTED: NO
 D-373_CREATED: NO
 NO_NEW_CURRENT_DECISION_IN_THIS_ACTIVATION_GATE: YES
 ```
@@ -528,20 +542,24 @@ only). Webhook acknowledgement timing / durable inbox / asynchronous Payment pro
 | IMP-029 | Operations Console API | COMPLETE_AND_ACCEPTED |
 | IMP-030 | Operations Console UI | COMPLETE_AND_ACCEPTED |
 | IMP-031 | Provider-Neutral Delivery Foundation | COMPLETE_AND_ACCEPTED |
+| IMP-032 | Dehradun Delivery Operating Mode | COMPLETE_AND_ACCEPTED |
 
 ## 4. Current Product Slice
 
-IMP-032 — Dehradun Delivery Operating Mode is the current product slice with architecture
-**ARCHITECTURE_LOCKED** at
+IMP-033 — Notification Foundation is the current product slice with architecture
+**ARCHITECTURE_IN_PROGRESS** at
+[`capabilities/IMP-033-notification-foundation.md`](./capabilities/IMP-033-notification-foundation.md).
+Architecture is **NOT_LOCKED** (`IMP-033_ARCHITECTURE_LOCKED: NO`). Implementation is
+`NOT_AUTHORIZED` / `NOT_STARTED` (`IMP-033_IMPLEMENTATION_AUTHORIZED: NO`; `IMP-033_STARTED: NO`;
+`IMP-033_IMPLEMENTATION_COMPLETE: NO`; `IMP-033_ACCEPTED: NO`). GTM-R87 records canonical activation
+for architecture work only. IMP-032 — Dehradun Delivery Operating Mode remains
+`COMPLETE_AND_ACCEPTED`. Its locked capability architecture remains at
 [`capabilities/IMP-032-dehradun-delivery-operating-mode.md`](./capabilities/IMP-032-dehradun-delivery-operating-mode.md).
-Operating mode is **MANUAL_PROVIDER_NEUTRAL_DEHRADUN_DELIVERY**. Lifecycle is
-`IMPLEMENTATION_IN_PROGRESS`. Implementation is `AUTHORIZED` / `STARTED` under prior GTM-R82
-authorization (`IMP-032_IMPLEMENTATION_AUTHORIZED: YES`; `IMP-032_STARTED: YES`;
-`IMP-032_IMPLEMENTATION_COMPLETE: NO`; `IMP-032_ACCEPTED: NO`). GTM-R84 clarifies the locked §23.3
-implementation boundary only: a repository-native data-only access-control seed migration is
-**PERMITTED_IF_REQUIRED** under explicit no-DDL / no-Delivery-table-mutation constraints. That
-clarification is not architecture expansion and not implementation completion. Start does **not**
-complete or accept implementation. IMP-031 — Provider-Neutral Delivery Foundation remains
+Operating mode is **MANUAL_PROVIDER_NEUTRAL_DEHRADUN_DELIVERY**. Architecture remains
+`ARCHITECTURE_LOCKED`; implementation is `AUTHORIZED` / `STARTED` / `COMPLETE`; Founder UAT is **PASS**;
+formal acceptance is recorded (`IMP-032_ACCEPTED: YES`). Accepted product identity remains immutable
+merge SHA `078ae39109a748174c429ac40381e038ab21d3c1` / tree
+`973153488a4e32e06a6da1e1e7d41072ebca9376`. IMP-031 — Provider-Neutral Delivery Foundation remains
 `COMPLETE_AND_ACCEPTED`. Its locked capability architecture remains at
 [`capabilities/IMP-031-provider-neutral-delivery-foundation.md`](./capabilities/IMP-031-provider-neutral-delivery-foundation.md).
 Architecture remains `ARCHITECTURE_LOCKED`; implementation boundary C remains approved with the
@@ -551,10 +569,10 @@ capability-local Delivery lifecycle amendment; implementation is `AUTHORIZED` / 
 `c3d499b0b8df2a8c7ae9297ab870f6286f81b848` / tree `dd42ea992c8866ff8cfbc0ac09e781eb6fcfa099`.
 IMP-030 — Operations Console UI remains
 `COMPLETE_AND_ACCEPTED`; architecture remains locked and implementation is authorized, started, and
-complete. IMP-033 remains `PLANNED` / `NOT_ACTIVATED` as the next product slice and is **not**
-authorized or started. This boundary-clarification gate does **not** complete or accept IMP-032,
-select a named provider, integrate an external API, create D-373, create ARCH-R19, or mutate
-Delivery schema/runtime/product surfaces beyond the explicitly constrained access-control data seed.
+complete. IMP-034 remains `PLANNED` / `NOT_ACTIVATED` as the next product slice and is **not**
+authorized or started. This activation gate does **not** lock IMP-033 architecture, authorize IMP-033
+implementation, select a WhatsApp BSP, create D-373, create ARCH-R19, or mutate product runtime beyond
+governance and draft capability architecture.
 IMP-029 —
 Operations Console API remains `COMPLETE_AND_ACCEPTED`; architecture remains locked and
 implementation is authorized, started, and complete.
@@ -790,8 +808,7 @@ consume or remap IMP-029 → IMP-040 identities and is `COMPLETE_AND_ACCEPTED`.
 
 | IMP | Capability | Lifecycle |
 |---|---|---|
-| IMP-032 | Dehradun Delivery Operating Mode | IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE |
-| IMP-033 | Notification Foundation | PLANNED |
+| IMP-033 | Notification Foundation | ARCHITECTURE_IN_PROGRESS |
 | IMP-034 | Meta WhatsApp Cloud API Adapter | PLANNED |
 | IMP-035 | Initial Administration Capabilities | PLANNED |
 | IMP-036 | Observability & Operational Controls | PLANNED |
@@ -1165,6 +1182,49 @@ Historical GTM-R1 meanings that are **not** current:
 Current public GTM boundary is **IMP-040**, not IMP-035.
 
 ## 9. Roadmap Change Log
+
+### GTM-R87 — 2026-08-31
+
+- Records explicit authorization and canonical activation of **IMP-033 — Notification Foundation**
+  as `currentProductSlice` for architecture work only, under accepted IMP-032 and binding ADR-012
+  intent.
+- IMP-033 lifecycle becomes `ARCHITECTURE_IN_PROGRESS`; architecture is `NOT_LOCKED`
+  (`IMP-033_ARCHITECTURE_LOCKED: NO`); implementation remains `NOT_AUTHORIZED` / `NOT_STARTED`
+  (`IMP-033_IMPLEMENTATION_AUTHORIZED: NO`; `IMP-033_STARTED: NO`;
+  `IMP-033_IMPLEMENTATION_COMPLETE: NO`; `IMP-033_ACCEPTED: NO`).
+- Draft capability architecture is commenced at
+  [`capabilities/IMP-033-notification-foundation.md`](./capabilities/IMP-033-notification-foundation.md)
+  (`NOT_LOCKED`; provider-neutral Notifications module; transactional outbox; consent/template/
+  notification lifecycle; WhatsApp adapter deferred to IMP-034).
+- Preserves `acceptedThrough = IMP-032` and `pendingAcceptance = NONE`; `nextProductSlice` becomes
+  IMP-034 — Meta WhatsApp Cloud API Adapter, which remains `PLANNED` / `NOT_ACTIVATED`.
+- IMP-032 remains `COMPLETE_AND_ACCEPTED` under ARCH-R18 / ARCH-G24. No WhatsApp BSP is selected;
+  no Meta production onboarding, webhook routes, notification schema migration, worker/queue/new-service
+  topology, D-373, or ARCH-R19 is introduced. DR-14 and ARCH-R18 remain unchanged;
+  `D-373_CREATED: NO`; `ARCH_R19_REQUIRED: NO`.
+- Supersedes GTM-R86 for the current product-slice position.
+
+### GTM-R86 — 2026-08-31
+
+- Records formal acceptance of **IMP-032 — Dehradun Delivery Operating Mode** after independent
+  technical acceptance and Founder UAT PASS for the exact accepted candidate: repository
+  `/home/ajoshi/repos/boba-bear-platform`; branch `main`; HEAD
+  `078ae39109a748174c429ac40381e038ab21d3c1`; tree `973153488a4e32e06a6da1e1e7d41072ebca9376`;
+  working-tree fingerprint `251c0589f8f17a1acf289d2798a671cea8eaba9ebd604edc0e5a933dc711223c`.
+  Implementation evidence is **COMPLETE**; independent implementation review is **PASS**; independent
+  acceptance evidence is **ACCEPTED**; Founder UAT is **PASS**; formal acceptance is recorded
+  (`IMP032_FORMAL_ACCEPTANCE: ACCEPTED`; `IMP-032_ACCEPTED: YES`).
+- IMP-032 lifecycle becomes `COMPLETE_AND_ACCEPTED`. Architecture remains `LOCKED`
+  (`IMP-032_ARCHITECTURE_LOCKED: YES`). Operating mode remains **MANUAL_PROVIDER_NEUTRAL_DEHRADUN_DELIVERY**.
+- Advances `acceptedThrough = IMP-032`; sets `currentProductSlice = NONE` and
+  `pendingAcceptance = NONE`; preserves `nextProductSlice = IMP-033`. IMP-033 remains `PLANNED` /
+  `NOT_ACTIVATED` / `NOT_AUTHORIZED` / `NOT_STARTED`. Formal acceptance does **not** authorize,
+  start, or activate IMP-033.
+- ARCH-R18 / ARCH-G24 and DR-14 remain unchanged; D-373 is not created. Provider API automation,
+  webhooks, workers, queues, and notifications remain deferred. This reconciliation introduces no
+  product source, schema, migration, decision-register, or ARCH-G24 substance mutation beyond
+  governance records.
+- Supersedes GTM-R85 for the current IMP-032 lifecycle and acceptance position.
 
 ### GTM-R85 — 2026-08-31
 
