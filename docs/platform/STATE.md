@@ -2,10 +2,10 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R77",
+  "stateVersion": "STATE-R78",
   "acceptedThrough": "IMP-031",
-  "currentProductSlice": "NONE",
-  "nextProductSlice": "IMP-032",
+  "currentProductSlice": "IMP-032",
+  "nextProductSlice": "IMP-033",
   "pendingAcceptance": "NONE",
   "governanceHealth": "ALIGNED",
   "lastReviewed": "2026-08-30"
@@ -28,11 +28,11 @@ Accepted Range:            IMP-001 → IMP-031 (including IMP-005A and IMP-026C)
 ## 2. Current Work Position
 
 ```text
-Current Product Implementation: NONE
+Current Product Implementation: IMP-032 — Dehradun Delivery Operating Mode (architecture work only)
 Pending Acceptance:             NONE
-Next Product Slice:             IMP-032 — Dehradun Delivery Operating Mode
-Current Governance Activity:    IMP-031 COMPLETE_AND_ACCEPTED;
-                              IMP-032 PLANNED / NOT_ACTIVATED.
+Next Product Slice:             IMP-033 — Notification Foundation
+Current Governance Activity:    IMP-032 ARCHITECTURE_IN_PROGRESS; architecture is not locked and
+                              implementation is not authorized or started.
 Governance Health:              ALIGNED
 ```
 
@@ -157,7 +157,17 @@ IMP031_FORMAL_ACCEPTANCE: ACCEPTED
 IMP031_ACCEPTED_MAIN_SHA: c3d499b0b8df2a8c7ae9297ab870f6286f81b848
 IMP031_ACCEPTED_TREE:     dd42ea992c8866ff8cfbc0ac09e781eb6fcfa099
 IMP-031_FOUNDER_UAT_REQUIRED: NO
-IMP-032:                  PLANNED / NOT_ACTIVATED
+IMP-032:                  ARCHITECTURE_IN_PROGRESS
+IMP-032_ARCHITECTURE:     NOT_LOCKED
+IMP-032_ARCHITECTURE_LOCKED: NO
+IMP-032_IMPLEMENTATION:   NOT_AUTHORIZED / NOT_STARTED
+IMP-032_IMPLEMENTATION_AUTHORIZED: NO
+IMP-032_STARTED:          NO
+IMP-032_IMPLEMENTATION_COMPLETE: NO
+IMP-032_ACCEPTED:         NO
+IMP-033:                  PLANNED / NOT_ACTIVATED
+D-373_CREATED:            NO
+NO_NEW_CURRENT_DECISION_IN_THIS_ACTIVATION_GATE: YES
 ```
 
 Capability architecture:
@@ -256,6 +266,26 @@ independent acceptance without changing decision register or global architecture
 STATE-R36 record IMP-028B canonical activation without changing decision register or global
 architecture. GTM-R39 / STATE-R37 record IMP-028B architecture lock and implementation
 authorization without changing decision register or global architecture.
+
+STATE-R78 records explicit authorization and canonical activation of **IMP-032 — Dehradun Delivery
+Operating Mode** for architecture work only. IMP-032 is `ARCHITECTURE_IN_PROGRESS`; architecture is
+`NOT_LOCKED` (`IMP-032_ARCHITECTURE_LOCKED: NO`); implementation is `NOT_AUTHORIZED` / `NOT_STARTED`
+(`IMP-032_IMPLEMENTATION_AUTHORIZED: NO`; `IMP-032_STARTED: NO`;
+`IMP-032_IMPLEMENTATION_COMPLETE: NO`; `IMP-032_ACCEPTED: NO`). `acceptedThrough` remains IMP-031;
+`pendingAcceptance` remains NONE; `currentProductSlice` becomes IMP-032; and `nextProductSlice`
+becomes IMP-033 — Notification Foundation, which remains `PLANNED` / `NOT_ACTIVATED`. IMP-031 remains
+`COMPLETE_AND_ACCEPTED` under ARCH-R18 / ARCH-G24 and the locked capability artifact at
+[`capabilities/IMP-031-provider-neutral-delivery-foundation.md`](./capabilities/IMP-031-provider-neutral-delivery-foundation.md).
+Provider-neutral Delivery authority, Order lifecycle separation, provider-observation evidence
+semantics, one-active Delivery/booking safety, `BOOKING_OUTCOME_UNKNOWN` semantics, customer delivery
+charge versus provider cost separation, and deferral of provider-specific choices remain binding and
+are not amended. No capability architecture artifact is created, architecture is not locked,
+implementation is not authorized or started, no provider or aggregator is selected, no Dehradun
+operating mode is chosen, and no runtime, schema, migration, dependency, deployment,
+decision-register, or global-architecture substance mutation is introduced. ARCH-R18 and DR-14 remain
+unchanged; `D-373_CREATED: NO`; `NO_NEW_CURRENT_DECISION_IN_THIS_ACTIVATION_GATE: YES`. Subsequent
+architecture discovery may investigate operating-model and provider-strategy questions without this
+gate answering them. Supersedes STATE-R77 for the current product-slice position.
 
 STATE-R77 records formal acceptance of **IMP-031 — Provider-Neutral Delivery Foundation** for
 independently accepted product `main` merge SHA `c3d499b0b8df2a8c7ae9297ab870f6286f81b848` and tree
@@ -858,8 +888,8 @@ Cart → Checkout → Payment → Order
 ```text
 acceptedThrough: IMP-031
 pendingAcceptance: NONE
-currentProductSlice: NONE
-nextProductSlice: IMP-032 — Dehradun Delivery Operating Mode
+currentProductSlice: IMP-032
+nextProductSlice: IMP-033 — Notification Foundation
 FOUNDER_UAT: PASS
 FOUNDER_UAT_REQUIRED: YES
 FOUNDER_UAT_COMPLETE: YES
@@ -948,7 +978,17 @@ IMPLEMENTATION_SOURCE_SHA: 66e2783afa4e9eef35c4ec208b25af9d9450f83d
 IMPLEMENTATION_SOURCE_TREE: dd42ea992c8866ff8cfbc0ac09e781eb6fcfa099
 MERGED_MAIN_SHA: c3d499b0b8df2a8c7ae9297ab870f6286f81b848
 MERGED_MAIN_TREE: dd42ea992c8866ff8cfbc0ac09e781eb6fcfa099
-IMP-032: PLANNED / NOT_ACTIVATED
+IMP-032: ARCHITECTURE_IN_PROGRESS
+IMP-032_ARCHITECTURE: NOT_LOCKED
+IMP-032_ARCHITECTURE_LOCKED: NO
+IMP-032_IMPLEMENTATION: NOT_AUTHORIZED / NOT_STARTED
+IMP-032_IMPLEMENTATION_AUTHORIZED: NO
+IMP-032_STARTED: NO
+IMP-032_IMPLEMENTATION_COMPLETE: NO
+IMP-032_ACCEPTED: NO
+IMP-033: PLANNED / NOT_ACTIVATED
+D-373_CREATED: NO
+NO_NEW_CURRENT_DECISION_IN_THIS_ACTIVATION_GATE: YES
 ```
 
 Independent acceptance of IMP-028A **is** claimed and formally reconciled
