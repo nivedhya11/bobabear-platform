@@ -5,7 +5,7 @@
   "capability": "IMP-033",
   "title": "Notification Foundation",
   "architectureLock": "ARCHITECTURE_LOCKED",
-  "implementation": "AUTHORIZED / STARTED / COMPLETE",
+  "implementation": "COMPLETE_AND_ACCEPTED",
   "implementationAuthorized": true,
   "lastReviewed": "2026-08-31",
   "bindingDecisions": ["ADR-012"],
@@ -15,14 +15,15 @@
 
 # IMP-033 — Notification Foundation
 
-## Capability Architecture (ARCHITECTURE_LOCKED — implementation complete pending acceptance)
+## Capability Architecture (ARCHITECTURE_LOCKED — COMPLETE_AND_ACCEPTED)
 
 This document is the locked capability architecture for **IMP-033 — Notification Foundation**.
 Architecture authority derives from accepted [ADR-012](../decisions/ADR-012-notifications-whatsapp-assisted-commerce.md)
 and existing transactional-outbox / modular-monolith conventions. Architecture is **LOCKED**.
-Implementation is **AUTHORIZED**, **STARTED**, and **COMPLETE** pending independent acceptance.
+Implementation is **AUTHORIZED**, **STARTED**, **COMPLETE**, and formally **COMPLETE_AND_ACCEPTED**.
 
-Completion does **not** equal acceptance. Formal acceptance is not claimed here.
+Formal acceptance does not expand the locked boundary, authorize or start IMP-034, select a WhatsApp
+BSP, perform Meta production onboarding, add provider webhook routes, or create `D-373`.
 
 WhatsApp adapter implementation, Meta production onboarding, inbound webhook routes, and
 conversation-console UI remain deferred to **IMP-034 — Meta WhatsApp Cloud API Adapter** and later
@@ -31,30 +32,30 @@ slices.
 | Field | Value |
 |---|---|
 | Architecture lock | `ARCHITECTURE_LOCKED` |
-| Lifecycle | `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` |
+| Lifecycle | `COMPLETE_AND_ACCEPTED` |
 | Implementation | `AUTHORIZED` / `STARTED` / `COMPLETE` |
 | Implementation authorized | **YES** |
-| Accepted | **NO** |
-| Accepted product through | IMP-032 |
-| Current product slice | IMP-033 |
-| Pending acceptance | IMP-033 |
+| Implementation complete | **YES** |
+| Accepted | **YES** |
+| Accepted product through | IMP-033 |
+| Current product slice | NONE |
+| Pending acceptance | NONE |
 | Next product slice | IMP-034 — Meta WhatsApp Cloud API Adapter |
-| Governance checkpoint | GTM-R88 / STATE-R86 |
+| Governance checkpoint | GTM-R89 / STATE-R87 |
 | New CURRENT decision | **NONE** (`D-373` absent) |
 | Global architecture revision | **NONE** (`ARCH-R18` remains current; no ARCH-R19) |
 | Decision register | **DR-14** unchanged |
 | Founder UAT required for acceptance | **NO** |
 
 ```text
-IMP-033: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
+IMP-033: COMPLETE_AND_ACCEPTED
 IMP-033_ARCHITECTURE: LOCKED
 IMP-033_ARCHITECTURE_LOCKED: YES
 IMP-033_IMPLEMENTATION: AUTHORIZED / STARTED / COMPLETE
 IMP-033_IMPLEMENTATION_AUTHORIZED: YES
 IMP-033_STARTED: YES
 IMP-033_IMPLEMENTATION_COMPLETE: YES
-IMP-033_ACCEPTED: NO
-COMPLETION IS NOT ACCEPTANCE: YES
+IMP-033_ACCEPTED: YES
 FOUNDER_UAT_REQUIRED: NO
 FOUNDER_UAT_REQUIRED_FOR_ACCEPTANCE: NO
 D373_REQUIRED_FOR_LOCK: NO
@@ -352,7 +353,8 @@ role, actor model, or permission model is invented.
 
 ## 15. Implementation delivered
 
-Implementation is **AUTHORIZED** / **STARTED** / **COMPLETE** within the boundary above.
+Implementation is **AUTHORIZED** / **STARTED** / **COMPLETE** within the boundary above and is
+formally **COMPLETE_AND_ACCEPTED**.
 
 1. **Provider-neutral domain** (`src/shared/notifications/`): channels, semantic types, purposes,
    request/attempt lifecycles, template lifecycle, deduplication key derivation, retry
@@ -389,16 +391,29 @@ Reviewed before lock:
 - No new CURRENT decision is required beyond ADR-012 binding intent (`D-373` not created).
 - No global architecture substance change (`ARCH-R19` not required).
 
-## 17. Implementation evidence
+## 17. Implementation and acceptance evidence
 
 ```text
+IMPLEMENTATION_SOURCE_SHA: b91f92b46f8b9fe4e0b716f920babc56864fd342
+IMPLEMENTATION_SOURCE_TREE: 715ff386e672fd276a0b2e888aa2ebeaab3dda8c
+MERGED_MAIN_SHA: 5150d70b4683f7abec1e0652bf53e7986efcf622
+MERGED_MAIN_TREE: 715ff386e672fd276a0b2e888aa2ebeaab3dda8c
+PR: 48
+PR_CI: 33417506582 SUCCESS
+MAIN_CI: 33418061603 SUCCESS
+DEPLOY: 33418062095 SUCCESS
 IMP033_IMPLEMENTATION_EVIDENCE: COMPLETE
 IMP_033_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
-IMP033_INDEPENDENT_ACCEPTANCE_EVIDENCE: NOT_CLAIMED
-IMP033_FORMAL_ACCEPTANCE: NOT_CLAIMED
-IMP-033_ACCEPTED: NO
-COMPLETION IS NOT ACCEPTANCE: YES
+IMP033_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
+IMP033_FORMAL_ACCEPTANCE: ACCEPTED
+IMP033_ACCEPTED_MAIN_SHA: 5150d70b4683f7abec1e0652bf53e7986efcf622
+IMP033_ACCEPTED_TREE: 715ff386e672fd276a0b2e888aa2ebeaab3dda8c
+IMP-033_FOUNDER_UAT_REQUIRED: NO
+IMP-033_FOUNDER_UAT: NOT_APPLICABLE
 ```
 
-Formal acceptance SHA / tree provenance is deliberately absent and is recorded only by a later
-dedicated acceptance reconciliation.
+Accepted product identity is the immutable `main` merge SHA
+`5150d70b4683f7abec1e0652bf53e7986efcf622` and tree
+`715ff386e672fd276a0b2e888aa2ebeaab3dda8c`. Founder UAT is not applicable to this foundation-only
+slice (§14.4); independent technical acceptance is the applicable gate. Acceptance does not authorize
+or start IMP-034.
