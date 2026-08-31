@@ -2,11 +2,11 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R89",
-  "acceptedThrough": "IMP-034",
-  "currentProductSlice": "NONE",
+  "stateVersion": "STATE-R88",
+  "acceptedThrough": "IMP-033",
+  "currentProductSlice": "IMP-034",
   "nextProductSlice": "IMP-035",
-  "pendingAcceptance": "NONE",
+  "pendingAcceptance": "IMP-034",
   "governanceHealth": "ALIGNED",
   "lastReviewed": "2026-08-31"
 }
@@ -20,19 +20,21 @@ current-reality authority.
 ## 1. Accepted Position
 
 ```text
-Accepted Through:          IMP-034 — Meta WhatsApp Cloud API Adapter
+Accepted Through:          IMP-033 — Notification Foundation
 Accepted Inserted Slice:   IMP-005A — Dockerized local application runtime; IMP-026C — Pilot Customer-Commerce UX Hardening; IMP-028A — Food Direct UX Foundation; IMP-028B — Customer Menu Projection + Discovery; IMP-028C — Food Customization; IMP-028D — Desktop Ordering Continuity
-Accepted Range:            IMP-001 → IMP-034 (including IMP-005A and IMP-026C)
+Accepted Range:            IMP-001 → IMP-033 (including IMP-005A and IMP-026C)
 ```
 
 ## 2. Current Work Position
 
 ```text
-Current Product Implementation: NONE
-Pending Acceptance:             NONE
+Current Product Implementation: IMP-034 — Meta WhatsApp Cloud API Adapter (implementation complete pending acceptance)
+Pending Acceptance:             IMP-034
 Next Product Slice:             IMP-035 — Initial Administration Capabilities
-Current Governance Activity:    IMP-034 COMPLETE_AND_ACCEPTED;
-                              IMP-035 PLANNED / NOT_ACTIVATED.
+Current Governance Activity:    IMP-034 IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE;
+                              architecture LOCKED; implementation AUTHORIZED / STARTED / COMPLETE;
+                              Founder UAT not required; provider_IO YES; DIRECT_META_CLOUD_API_V1;
+                              IMP-033 remains COMPLETE_AND_ACCEPTED.
 Governance Health:              ALIGNED
 ```
 
@@ -187,14 +189,14 @@ IMP033_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
 IMP033_FORMAL_ACCEPTANCE: ACCEPTED
 IMP033_ACCEPTED_MAIN_SHA: 5150d70b4683f7abec1e0652bf53e7986efcf622
 IMP033_ACCEPTED_TREE:     715ff386e672fd276a0b2e888aa2ebeaab3dda8c
-IMP-034:                  COMPLETE_AND_ACCEPTED
+IMP-034:                  IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
 IMP-034_ARCHITECTURE:     LOCKED
 IMP-034_ARCHITECTURE_LOCKED: YES
 IMP-034_IMPLEMENTATION:   AUTHORIZED / STARTED / COMPLETE
 IMP-034_IMPLEMENTATION_AUTHORIZED: YES
 IMP-034_STARTED:          YES
 IMP-034_IMPLEMENTATION_COMPLETE: YES
-IMP-034_ACCEPTED:         YES
+IMP-034_ACCEPTED:         NO
 IMP-034_FOUNDER_UAT_REQUIRED: NO
 IMP-034_FOUNDER_UAT:      NOT_APPLICABLE
 IMP-034_SCHEMA_CHANGE:    YES
@@ -203,12 +205,7 @@ IMP-034_NEW_SERVICE:      NO
 IMP-034_ASYNC_TOPOLOGY:   POSTGRESQL_TRANSACTIONAL_OUTBOX_IN_PROCESS_WORKER
 IMP-034_PROVIDER_STRATEGY: DIRECT_META_CLOUD_API_V1
 IMP-034_BSP:              NO
-IMP034_IMPLEMENTATION_EVIDENCE: COMPLETE
-IMP_034_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
-IMP034_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
-IMP034_FORMAL_ACCEPTANCE: ACCEPTED
-IMP034_ACCEPTED_MAIN_SHA: 7e92d1a1ca02ad825229b64f308a8fc555956d25
-IMP034_ACCEPTED_TREE: 772c585e93c78285e5b972d8b8a58c83507e01f8
+COMPLETION IS NOT ACCEPTANCE: YES
 IMP-035:                  PLANNED / NOT_ACTIVATED
 D-373_CREATED:            NO
 ARCH_R19_REQUIRED:        NO
@@ -257,7 +254,7 @@ STARTED / COMPLETE; COMPLETE_AND_ACCEPTED):
 [`capabilities/IMP-033-notification-foundation.md`](./capabilities/IMP-033-notification-foundation.md)
 
 IMP-034 locked capability architecture (architecture LOCKED; implementation AUTHORIZED /
-STARTED / COMPLETE; COMPLETE_AND_ACCEPTED):
+STARTED / COMPLETE; pending acceptance):
 
 [`capabilities/IMP-034-meta-whatsapp-cloud-api-adapter.md`](./capabilities/IMP-034-meta-whatsapp-cloud-api-adapter.md)
 
@@ -326,29 +323,6 @@ independent acceptance without changing decision register or global architecture
 STATE-R36 record IMP-028B canonical activation without changing decision register or global
 architecture. GTM-R39 / STATE-R37 record IMP-028B architecture lock and implementation
 authorization without changing decision register or global architecture.
-
-STATE-R89 records formal acceptance of **IMP-034 — Meta WhatsApp Cloud API Adapter** for independently
-accepted product `main` merge SHA `7e92d1a1ca02ad825229b64f308a8fc555956d25` and tree
-`772c585e93c78285e5b972d8b8a58c83507e01f8` (PR 50; PR CI run 33424475222 SUCCESS; main CI run
-33424999014 SUCCESS; Deploy run 33424998996 SUCCESS). Implementation evidence is **COMPLETE**;
-independent implementation review is **PASS**; independent acceptance evidence is **ACCEPTED**;
-formal acceptance is recorded (`IMP034_FORMAL_ACCEPTANCE: ACCEPTED`; `IMP-034_ACCEPTED: YES`).
-IMP-034 is `COMPLETE_AND_ACCEPTED`; architecture remains `LOCKED`
-(`IMP-034_ARCHITECTURE_LOCKED: YES`); implementation remains `AUTHORIZED` / `STARTED` / `COMPLETE`
-(`IMP-034_IMPLEMENTATION_AUTHORIZED: YES`; `IMP-034_STARTED: YES`;
-`IMP-034_IMPLEMENTATION_COMPLETE: YES`). Locked boundary facts remain unchanged: `schema_change: YES`
-(Notifications-owned additive migration `0034_meta_whatsapp_adapter`), `provider_IO: YES`,
-`new_service: NO`, `async_topology: POSTGRESQL_TRANSACTIONAL_OUTBOX_IN_PROCESS_WORKER`,
-`provider_strategy: DIRECT_META_CLOUD_API_V1`, and `BSP: NO`. `acceptedThrough` advances to
-IMP-034; `currentProductSlice` and `pendingAcceptance` are NONE; `nextProductSlice` remains IMP-035 —
-Initial Administration Capabilities, `PLANNED` / `NOT_ACTIVATED` / `NOT_AUTHORIZED` / `NOT_STARTED`.
-Formal acceptance does **not** authorize, start, or activate IMP-035, create `D-373`, create
-`ARCH-R19`, or adopt a BSP. Founder UAT is not required (`IMP-034_FOUNDER_UAT_REQUIRED: NO`;
-`IMP-034_FOUNDER_UAT: NOT_APPLICABLE`) and is not claimed as PASS; independent technical acceptance
-with mocked Meta fixtures was the applicable gate. Meta production onboarding remains external launch
-validation. ARCH-R18 and DR-14 remain unchanged; `D-373` is absent. This reconciliation introduces no
-product source, schema, migration, decision-register, or global-architecture substance mutation.
-Supersedes STATE-R88 for the current IMP-034 lifecycle and acceptance position.
 
 STATE-R88 records a single founder-authorized **combined** gate for **IMP-034 — Meta WhatsApp Cloud
 API Adapter**: capability-local architecture lock, implementation authorization, implementation start,
@@ -1171,14 +1145,13 @@ Cart → Checkout → Payment → Order
 | IMP-031 | Provider-Neutral Delivery Foundation | COMPLETE_AND_ACCEPTED |
 | IMP-032 | Dehradun Delivery Operating Mode | COMPLETE_AND_ACCEPTED |
 | IMP-033 | Notification Foundation | COMPLETE_AND_ACCEPTED |
-| IMP-034 | Meta WhatsApp Cloud API Adapter | COMPLETE_AND_ACCEPTED |
 
 ## 5. Acceptance Position
 
 ```text
-acceptedThrough: IMP-034
-pendingAcceptance: NONE
-currentProductSlice: NONE
+acceptedThrough: IMP-033
+pendingAcceptance: IMP-034
+currentProductSlice: IMP-034
 nextProductSlice: IMP-035 — Initial Administration Capabilities
 IMP-028: COMPLETE_AND_ACCEPTED
 IMP-028_ACCEPTED: YES
@@ -1299,14 +1272,14 @@ IMP033_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
 IMP033_FORMAL_ACCEPTANCE: ACCEPTED
 IMP033_ACCEPTED_MAIN_SHA: 5150d70b4683f7abec1e0652bf53e7986efcf622
 IMP033_ACCEPTED_TREE: 715ff386e672fd276a0b2e888aa2ebeaab3dda8c
-IMP-034: COMPLETE_AND_ACCEPTED
+IMP-034: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
 IMP-034_ARCHITECTURE: LOCKED
 IMP-034_ARCHITECTURE_LOCKED: YES
 IMP-034_IMPLEMENTATION: AUTHORIZED / STARTED / COMPLETE
 IMP-034_IMPLEMENTATION_AUTHORIZED: YES
 IMP-034_STARTED: YES
 IMP-034_IMPLEMENTATION_COMPLETE: YES
-IMP-034_ACCEPTED: YES
+IMP-034_ACCEPTED: NO
 IMP-034_FOUNDER_UAT_REQUIRED: NO
 IMP-034_FOUNDER_UAT: NOT_APPLICABLE
 IMP-034_SCHEMA_CHANGE: YES
@@ -1315,12 +1288,7 @@ IMP-034_NEW_SERVICE: NO
 IMP-034_ASYNC_TOPOLOGY: POSTGRESQL_TRANSACTIONAL_OUTBOX_IN_PROCESS_WORKER
 IMP-034_PROVIDER_STRATEGY: DIRECT_META_CLOUD_API_V1
 IMP-034_BSP: NO
-IMP034_IMPLEMENTATION_EVIDENCE: COMPLETE
-IMP_034_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
-IMP034_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
-IMP034_FORMAL_ACCEPTANCE: ACCEPTED
-IMP034_ACCEPTED_MAIN_SHA: 7e92d1a1ca02ad825229b64f308a8fc555956d25
-IMP034_ACCEPTED_TREE: 772c585e93c78285e5b972d8b8a58c83507e01f8
+COMPLETION IS NOT ACCEPTANCE: YES
 IMP-035: PLANNED / NOT_ACTIVATED
 D-373_CREATED: NO
 ARCH_R19_REQUIRED: NO
