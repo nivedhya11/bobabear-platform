@@ -5,7 +5,7 @@
   "capability": "IMP-032",
   "title": "Dehradun Delivery Operating Mode",
   "architectureLock": "ARCHITECTURE_LOCKED",
-  "implementation": "AUTHORIZED / NOT_STARTED",
+  "implementation": "AUTHORIZED / STARTED",
   "implementationAuthorized": true,
   "lastReviewed": "2026-08-31",
   "bindingDecisions": ["D-357", "D-372"],
@@ -21,15 +21,14 @@ This document is the locked capability architecture for **IMP-032 — Manual Pro
 Dehradun Delivery Operating Mode** over the accepted IMP-031 foundation. It defines how BOBA makes
 delivery operational without provider API automation.
 
-Architecture is canonically locked. Implementation authorization/start remain separate governance
-gates. Implementation is now `AUTHORIZED` / `NOT_STARTED`. Authorization does **not** start
-implementation.
+Architecture remains canonically locked. Implementation is authorized and `STARTED`.
+Start does not complete or accept implementation.
 
 | Field | Value |
 |---|---|
 | Architecture lock | `ARCHITECTURE_LOCKED` |
-| Lifecycle | `IMPLEMENTATION_AUTHORIZED` |
-| Implementation | `AUTHORIZED` / `NOT_STARTED` |
+| Lifecycle | `IMPLEMENTATION_IN_PROGRESS` |
+| Implementation | `AUTHORIZED` / `STARTED` |
 | Implementation authorized | **YES** |
 | Accepted | **NO** |
 | Accepted product through | IMP-031 |
@@ -41,16 +40,16 @@ implementation.
 | Global architecture revision | **NONE** (`ARCH-R18` remains current; no ARCH-R19) |
 
 ```text
-IMP-032: IMPLEMENTATION_AUTHORIZED
+IMP-032: IMPLEMENTATION_IN_PROGRESS
 IMP-032_ARCHITECTURE: LOCKED
 IMP-032_ARCHITECTURE_LOCKED: YES
-IMP-032_IMPLEMENTATION: AUTHORIZED / NOT_STARTED
+IMP-032_IMPLEMENTATION: AUTHORIZED / STARTED
 IMP-032_IMPLEMENTATION_AUTHORIZED: YES
-IMP-032_STARTED: NO
+IMP-032_STARTED: YES
 IMP-032_IMPLEMENTATION_COMPLETE: NO
 IMP-032_ACCEPTED: NO
 IMP-032_OPERATING_MODE: MANUAL_PROVIDER_NEUTRAL_DEHRADUN_DELIVERY
-AUTHORIZATION IS NOT IMPLEMENTATION START: YES
+START IS NOT COMPLETION OR ACCEPTANCE: YES
 D373_REQUIRED_FOR_LOCK: NO
 ARCH_R19_REQUIRED: NO
 FOUNDER_UAT_EXPECTED_FOR_IMPLEMENTATION_ACCEPTANCE: YES
@@ -523,10 +522,11 @@ ARCH remains ARCH-R18. DR remains DR-14.
 
 ## 23. Implementation boundary
 
-Implementation is **AUTHORIZED** for the locked manual-mode boundary below. Authorization does
-**not** start implementation (`IMP-032_STARTED: NO`).
+Implementation is **AUTHORIZED** / **STARTED** for the locked manual-mode boundary below. Start does
+**not** complete or accept implementation (`IMP-032_IMPLEMENTATION_COMPLETE: NO`;
+`IMP-032_ACCEPTED: NO`).
 
-### 23.1 Included (authorized; not started)
+### 23.1 Included (authorized; started)
 
 ```text
 A. manual dispatch orchestration (prerequisite validation + createDelivery)
@@ -609,21 +609,22 @@ This lock requires and records:
 - implementation boundary unambiguous;
 - D-373 absent; ARCH-R19 not required; ARCH-R18 and DR-14 remain current.
 
-## 25. Implementation-authorization status
+## 25. Implementation-start status
 
 ```text
-IMP-032: IMPLEMENTATION_AUTHORIZED
+IMP-032: IMPLEMENTATION_IN_PROGRESS
 IMP-032_ARCHITECTURE: LOCKED
 IMP-032_ARCHITECTURE_LOCKED: YES
-IMP-032_IMPLEMENTATION: AUTHORIZED / NOT_STARTED
+IMP-032_IMPLEMENTATION: AUTHORIZED / STARTED
 IMP-032_IMPLEMENTATION_AUTHORIZED: YES
-IMP-032_STARTED: NO
+IMP-032_STARTED: YES
 IMP-032_IMPLEMENTATION_COMPLETE: NO
 IMP-032_ACCEPTED: NO
-AUTHORIZATION IS NOT IMPLEMENTATION START: YES
+START IS NOT COMPLETION OR ACCEPTANCE: YES
 FOUNDER_UAT_REQUIRED_FOR_ACCEPTANCE: YES
 ```
 
-Authorization covers only §23.1 under the locked operating mode. It does **not** authorize provider
-API automation, webhooks, workers, queues, notifications/WhatsApp, schema/migration for Delivery
-tables, D-373, ARCH-R19, IMP-033, or IMP-034. Start remains a separate governance gate.
+Start covers only §23.1 under the locked operating mode and prior GTM-R82 authorization. It does
+**not** complete or accept implementation, and does **not** authorize provider API automation,
+webhooks, workers, queues, notifications/WhatsApp, schema/migration for Delivery tables, D-373,
+ARCH-R19, IMP-033, or IMP-034.

@@ -15,6 +15,9 @@ import {
   evaluateImp032ImplementationAuthorizationArtifact,
   evaluateImp032ImplementationAuthorizationCheckpoint,
   evaluateImp032ImplementationAuthorizationCrossDocumentAlignment,
+  evaluateImp032ImplementationStartArtifact,
+  evaluateImp032ImplementationStartCheckpoint,
+  evaluateImp032ImplementationStartCrossDocumentAlignment,
   evaluateImp031ArchitectureDraftArtifact,
   evaluateImp031ArchitectureDraftCheckpoint,
   evaluateImp031ArchitectureLockArtifact,
@@ -2431,33 +2434,34 @@ describe("IMP-032 architecture lock checkpoint", () => {
     providerSelected: false, manualModeDefined: true, imp031Accepted: true,
   });
 
-  /** Historical R81/S79 lock artifact derived from the live AUTHORIZED capability doc. */
-  function toLockArtifact(authorizedArtifact) {
-    return authorizedArtifact
-      .replace(/"implementation": "AUTHORIZED \/ NOT_STARTED"/, '"implementation": "NOT_AUTHORIZED / NOT_STARTED"')
+  /** Historical R81/S79 lock artifact derived from the live STARTED capability doc. */
+  function toLockArtifact(startedArtifact) {
+    return startedArtifact
+      .replace(/"implementation": "AUTHORIZED \/ STARTED"/, '"implementation": "NOT_AUTHORIZED / NOT_STARTED"')
       .replace(/"implementationAuthorized": true/, '"implementationAuthorized": false')
-      .replace("| Lifecycle | `IMPLEMENTATION_AUTHORIZED` |", "| Lifecycle | `ARCHITECTURE_LOCKED` |")
-      .replace("| Implementation | `AUTHORIZED` / `NOT_STARTED` |", "| Implementation | `NOT_AUTHORIZED` / `NOT_STARTED` |")
+      .replace("| Lifecycle | `IMPLEMENTATION_IN_PROGRESS` |", "| Lifecycle | `ARCHITECTURE_LOCKED` |")
+      .replace("| Implementation | `AUTHORIZED` / `STARTED` |", "| Implementation | `NOT_AUTHORIZED` / `NOT_STARTED` |")
       .replace("| Implementation authorized | **YES** |", "| Implementation authorized | **NO** |")
       .replace(
-        /Architecture is canonically locked\. Implementation authorization\/start remain separate governance\ngates\. Implementation is now `AUTHORIZED` \/ `NOT_STARTED`\. Authorization does \*\*not\*\* start\nimplementation\./,
+        /Architecture remains canonically locked\. Implementation is authorized and `STARTED`\.\nStart does not complete or accept implementation\./,
         "**Architecture lock does not authorize implementation.** Implementation remains\n`NOT_AUTHORIZED` / `NOT_STARTED`. Architecture is canonically locked. Implementation authorization/start remain\nseparate governance gates.",
       )
-      .replace("IMP-032: IMPLEMENTATION_AUTHORIZED", "IMP-032: ARCHITECTURE_LOCKED")
-      .replace("IMP-032_IMPLEMENTATION: AUTHORIZED / NOT_STARTED", "IMP-032_IMPLEMENTATION: NOT_AUTHORIZED / NOT_STARTED")
+      .replace(/IMP-032: IMPLEMENTATION_IN_PROGRESS/g, "IMP-032: ARCHITECTURE_LOCKED")
+      .replace(/IMP-032_IMPLEMENTATION: AUTHORIZED \/ STARTED/g, "IMP-032_IMPLEMENTATION: NOT_AUTHORIZED / NOT_STARTED")
       .replace(/IMP-032_IMPLEMENTATION_AUTHORIZED: YES/g, "IMP-032_IMPLEMENTATION_AUTHORIZED: NO")
-      .replace(/AUTHORIZATION IS NOT IMPLEMENTATION START: YES\n/, "")
+      .replace(/IMP-032_STARTED: YES/g, "IMP-032_STARTED: NO")
+      .replace(/START IS NOT COMPLETION OR ACCEPTANCE: YES\n/g, "")
       .replace(
-        "Implementation is **AUTHORIZED** for the locked manual-mode boundary below. Authorization does\n**not** start implementation (`IMP-032_STARTED: NO`).",
+        /Implementation is \*\*AUTHORIZED\*\* \/ \*\*STARTED\*\* for the locked manual-mode boundary below\. Start does\n\*\*not\*\* complete or accept implementation \(`IMP-032_IMPLEMENTATION_COMPLETE: NO`;\n`IMP-032_ACCEPTED: NO`\)\./,
         "Architecture lock **does not** authorize implementation.",
       )
-      .replace("### 23.1 Included (authorized; not started)", "### 23.1 Included (when later authorized)")
+      .replace("### 23.1 Included (authorized; started)", "### 23.1 Included (when later authorized)")
       .replace(
         /N\. Delivery permission-catalog extension under existing access-control conventions\n/,
         "",
       )
       .replace(
-        /## 25\. Implementation-authorization status[\s\S]*$/,
+        /## 25\. Implementation-start status[\s\S]*$/,
         "",
       )
       .replace(
@@ -2530,12 +2534,79 @@ describe("IMP-032 implementation authorization checkpoint", () => {
     providerSelected: false, manualModeDefined: true, imp031Accepted: true,
   });
 
-  const authorizedArtifact = readFileSync(
+  const liveStartedArtifact = readFileSync(
     "docs/platform/capabilities/IMP-032-dehradun-delivery-operating-mode.md",
     "utf8",
   );
-  const roadmapText = readFileSync("docs/platform/ROADMAP.md", "utf8");
-  const stateText = readFileSync("docs/platform/STATE.md", "utf8");
+  const authorizedArtifact = liveStartedArtifact
+    .replace(/"implementation": "AUTHORIZED \/ STARTED"/, '"implementation": "AUTHORIZED / NOT_STARTED"')
+    .replace(/\| Lifecycle \| `IMPLEMENTATION_IN_PROGRESS` \|/, "| Lifecycle | `IMPLEMENTATION_AUTHORIZED` |")
+    .replace(/\| Implementation \| `AUTHORIZED` \/ `STARTED` \|/, "| Implementation | `AUTHORIZED` / `NOT_STARTED` |")
+    .replace(
+      /Architecture remains canonically locked\. Implementation is authorized and `STARTED`\.\nStart does not complete or accept implementation\./,
+      "Architecture is canonically locked. Implementation authorization/start remain separate governance\ngates. Implementation is now `AUTHORIZED` / `NOT_STARTED`. Authorization does **not** start\nimplementation.",
+    )
+    .replace(/IMP-032: IMPLEMENTATION_IN_PROGRESS/g, "IMP-032: IMPLEMENTATION_AUTHORIZED")
+    .replace(/IMP-032_IMPLEMENTATION: AUTHORIZED \/ STARTED/g, "IMP-032_IMPLEMENTATION: AUTHORIZED / NOT_STARTED")
+    .replace(/IMP-032_STARTED: YES/g, "IMP-032_STARTED: NO")
+    .replace(/START IS NOT COMPLETION OR ACCEPTANCE: YES/g, "AUTHORIZATION IS NOT IMPLEMENTATION START: YES")
+    .replace(
+      /## 23\. Implementation boundary\n\nImplementation is \*\*AUTHORIZED\*\* \/ \*\*STARTED\*\* for the locked manual-mode boundary below\. Start does\n\*\*not\*\* complete or accept implementation \(`IMP-032_IMPLEMENTATION_COMPLETE: NO`;\n`IMP-032_ACCEPTED: NO`\)\.\n\n### 23\.1 Included \(authorized; started\)/,
+      "## 23. Implementation boundary\n\nImplementation is **AUTHORIZED** for the locked manual-mode boundary below. Authorization does\n**not** start implementation (`IMP-032_STARTED: NO`).\n\n### 23.1 Included (authorized; not started)",
+    )
+    .replace(/## 25\. Implementation-start status/, "## 25. Implementation-authorization status")
+    .replace(
+      /Start covers only §23\.1 under the locked operating mode and prior GTM-R82 authorization\. It does\n\*\*not\*\* complete or accept implementation, and does \*\*not\*\* authorize provider API automation,\nwebhooks, workers, queues, notifications\/WhatsApp, schema\/migration for Delivery tables, D-373,\nARCH-R19, IMP-033, or IMP-034\./,
+      "Authorization covers only §23.1 under the locked operating mode. It does **not** authorize provider\nAPI automation, webhooks, workers, queues, notifications/WhatsApp, schema/migration for Delivery\ntables, D-373, ARCH-R19, IMP-033, or IMP-034. Start remains a separate governance gate.",
+    );
+  const liveRoadmapText = readFileSync("docs/platform/ROADMAP.md", "utf8");
+  const liveStateText = readFileSync("docs/platform/STATE.md", "utf8");
+  const rewriteAuthorizationSection = (docText, sectionStart, sectionEndMarker) => {
+    const start = docText.indexOf(sectionStart);
+    const end = docText.indexOf(sectionEndMarker, start + 1);
+    assert.notEqual(start, -1);
+    assert.notEqual(end, -1);
+    const current = docText.slice(start, end)
+      .replace(/implementation authorized \/ started/g, "implementation authorized / not started")
+      .replace(
+        /IMP-032 IMPLEMENTATION_IN_PROGRESS; architecture remains LOCKED; implementation AUTHORIZED \/ STARTED\./g,
+        "IMP-032 IMPLEMENTATION_AUTHORIZED; architecture remains LOCKED; implementation AUTHORIZED / NOT_STARTED.",
+      )
+      .replace(/IMP-032:\s*IMPLEMENTATION_IN_PROGRESS/g, "IMP-032: IMPLEMENTATION_AUTHORIZED")
+      .replace(/IMP-032_IMPLEMENTATION:\s*AUTHORIZED \/ STARTED/g, "IMP-032_IMPLEMENTATION: AUTHORIZED / NOT_STARTED")
+      .replace(/IMP-032_STARTED:\s*YES/g, "IMP-032_STARTED: NO")
+      .replace(
+        /Lifecycle is\n`IMPLEMENTATION_IN_PROGRESS`\. Implementation is `AUTHORIZED` \/ `STARTED` under prior GTM-R82\nauthorization/g,
+        "Implementation is\n`AUTHORIZED` / `NOT_STARTED`",
+      )
+      .replace(
+        /`AUTHORIZED` \/ `STARTED` under prior GTM-R82 authorization \(`IMP-032_IMPLEMENTATION_AUTHORIZED: YES`;\n`IMP-032_STARTED: YES`\)\. Start does \*\*not\*\* complete or accept implementation\./g,
+        "`AUTHORIZED` / `NOT_STARTED` (`IMP-032_IMPLEMENTATION_AUTHORIZED: YES`; `IMP-032_STARTED: NO`).\nAuthorization does **not** start implementation.",
+      )
+      .replace(
+        /Lifecycle is `IMPLEMENTATION_IN_PROGRESS`\. Implementation is `AUTHORIZED` \/ `STARTED` under prior GTM-R82\nauthorization/g,
+        "Implementation is `AUTHORIZED` / `NOT_STARTED`",
+      )
+      .replace(
+        /Start does \*\*not\*\* complete or\naccept implementation\./g,
+        "Authorization does **not** start\nimplementation.",
+      )
+      .replace(
+        /This start gate does \*\*not\*\* complete or accept IMP-032, select a named\nprovider/g,
+        "This authorization gate does **not** start IMP-032 implementation, select\na named provider",
+      );
+    return `${docText.slice(0, start)}${current}${docText.slice(end)}`;
+  };
+  const roadmapText = rewriteAuthorizationSection(liveRoadmapText, "## 2.", "## 3.")
+    .replace(
+      "| IMP-032 | Dehradun Delivery Operating Mode | IMPLEMENTATION_IN_PROGRESS |",
+      "| IMP-032 | Dehradun Delivery Operating Mode | IMPLEMENTATION_AUTHORIZED |",
+    );
+  const stateText = rewriteAuthorizationSection(
+    rewriteAuthorizationSection(liveStateText, "## 2. Current Work Position", "\n## "),
+    "## 5. Acceptance Position",
+    "\n## ",
+  );
 
   it("supports only the R82/S80 authorization checkpoint", () => {
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R82", "STATE-R80", "imp032Authorization"), true);
@@ -2544,6 +2615,7 @@ describe("IMP-032 implementation authorization checkpoint", () => {
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R81", "STATE-R80", "imp032Authorization"), false);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R81", "STATE-R79", "imp032Lock"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R82", "STATE-R80"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R83", "STATE-R81", "imp032Authorization"), false);
   });
 
   it("accepts only the authorized / not-started IMP-032 checkpoint", () => {
@@ -2576,7 +2648,7 @@ describe("IMP-032 implementation authorization checkpoint", () => {
     }
   });
 
-  it("validates the live authorized artifact and rejects unsafe/premature mutations", () => {
+  it("validates the derived authorized artifact and rejects unsafe/premature mutations", () => {
     assert.deepEqual(evaluateImp032ImplementationAuthorizationArtifact(authorizedArtifact), { ok: true });
     assert.match(authorizedArtifact, /AUTHORIZATION IS NOT IMPLEMENTATION START:\s*YES/);
     assert.match(authorizedArtifact, /Architecture is canonically locked/);
@@ -2599,7 +2671,7 @@ describe("IMP-032 implementation authorization checkpoint", () => {
     }
   });
 
-  it("aligns live ROADMAP/STATE/capability AUTHORIZED / NOT_STARTED markers", () => {
+  it("aligns derived ROADMAP/STATE/capability AUTHORIZED / NOT_STARTED markers", () => {
     assert.deepEqual(
       evaluateImp032ImplementationAuthorizationCrossDocumentAlignment({
         capabilityText: authorizedArtifact,
@@ -2616,6 +2688,111 @@ describe("IMP-032 implementation authorization checkpoint", () => {
     assert.equal(started.ok, false);
     const unauthorized = evaluateImp032ImplementationAuthorizationCrossDocumentAlignment({
       capabilityText: authorizedArtifact.replace("IMP-032_IMPLEMENTATION_AUTHORIZED: YES", "IMP-032_IMPLEMENTATION_AUTHORIZED: NO"),
+      roadmapText,
+      stateText,
+    });
+    assert.equal(unauthorized.ok, false);
+  });
+});
+
+describe("IMP-032 implementation start checkpoint", () => {
+  const start = Object.freeze({
+    roadmapVersion: "GTM-R83", stateVersion: "STATE-R81", acceptedThrough: "IMP-031",
+    currentProductSlice: "IMP-032", nextProductSlice: "IMP-033", pendingAcceptance: "NONE",
+    imp031: "COMPLETE_AND_ACCEPTED", imp032: "IMPLEMENTATION_IN_PROGRESS", architecture: "LOCKED",
+    architectureLocked: "YES", implementation: "AUTHORIZED / STARTED",
+    implementationAuthorized: "YES", started: "YES", implementationComplete: "NO", accepted: "NO",
+    imp033: "PLANNED", architectureVersion: "ARCH-R18",
+    decisionRegisterVersion: "DR-14", artifact: true, archG24: true, d373Exists: false,
+    providerSelected: false, manualModeDefined: true, imp031Accepted: true,
+  });
+
+  const startedArtifact = readFileSync(
+    "docs/platform/capabilities/IMP-032-dehradun-delivery-operating-mode.md",
+    "utf8",
+  );
+  const roadmapText = readFileSync("docs/platform/ROADMAP.md", "utf8");
+  const stateText = readFileSync("docs/platform/STATE.md", "utf8");
+
+  it("supports only the R83/S81 start checkpoint", () => {
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R83", "STATE-R81", "imp032Start"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R82", "STATE-R80", "imp032Start"), false);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R83", "STATE-R80", "imp032Start"), false);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R82", "STATE-R81", "imp032Start"), false);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R82", "STATE-R80", "imp032Authorization"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R83", "STATE-R81"), true);
+  });
+
+  it("accepts only the authorized / started / in-progress IMP-032 checkpoint", () => {
+    assert.deepEqual(evaluateImp032ImplementationStartCheckpoint(start), { ok: true });
+    for (const [key, value] of [
+      ["roadmapVersion", "GTM-R82"],
+      ["stateVersion", "STATE-R80"],
+      ["imp032", "IMPLEMENTATION_AUTHORIZED"],
+      ["architectureLocked", "NO"],
+      ["implementationAuthorized", "NO"],
+      ["started", "NO"],
+      ["implementationComplete", "YES"],
+      ["accepted", "YES"],
+      ["implementation", "AUTHORIZED / NOT_STARTED"],
+      ["imp033", "ARCHITECTURE_IN_PROGRESS"],
+      ["d373Exists", true],
+      ["artifact", false],
+      ["manualModeDefined", false],
+      ["imp031Accepted", false],
+      ["providerSelected", true],
+      ["pendingAcceptance", "IMP-032"],
+      ["architectureVersion", "ARCH-R19"],
+      ["decisionRegisterVersion", "DR-15"],
+    ]) {
+      assert.equal(
+        evaluateImp032ImplementationStartCheckpoint({ ...start, [key]: value }).ok,
+        false,
+        `${key}=${value}`,
+      );
+    }
+  });
+
+  it("validates the live started artifact and rejects unsafe/premature mutations", () => {
+    assert.deepEqual(evaluateImp032ImplementationStartArtifact(startedArtifact), { ok: true });
+    assert.match(startedArtifact, /START IS NOT COMPLETION OR ACCEPTANCE:\s*YES/);
+    assert.match(startedArtifact, /Architecture remains canonically locked/);
+    assert.doesNotMatch(startedArtifact, /AUTHORIZATION IS NOT IMPLEMENTATION START:\s*YES/);
+    for (const mutation of [
+      startedArtifact.replace('"architectureLock": "ARCHITECTURE_LOCKED"', '"architectureLock": "NOT_LOCKED"'),
+      startedArtifact.replace('"implementationAuthorized": true', '"implementationAuthorized": false'),
+      startedArtifact.replace('"implementation": "AUTHORIZED / STARTED"', '"implementation": "AUTHORIZED / NOT_STARTED"'),
+      startedArtifact.replaceAll("IMP-032_IMPLEMENTATION_AUTHORIZED: YES", "IMP-032_IMPLEMENTATION_AUTHORIZED: NO"),
+      startedArtifact.replaceAll("IMP-032_STARTED: YES", "IMP-032_STARTED: NO"),
+      startedArtifact.replaceAll("IMP-032: IMPLEMENTATION_IN_PROGRESS", "IMP-032: IMPLEMENTATION_AUTHORIZED"),
+      startedArtifact.replaceAll("START IS NOT COMPLETION OR ACCEPTANCE: YES\n", ""),
+      startedArtifact.replace(
+        '"bindingDecisions": ["D-357", "D-372"]',
+        '"bindingDecisions": ["D-357", "D-372", "D-373"]',
+      ),
+      `${startedArtifact}\nexternal booking/reference **OR** explicit \`no_reference_issued\`\n`,
+    ]) {
+      assert.equal(evaluateImp032ImplementationStartArtifact(mutation).ok, false);
+    }
+  });
+
+  it("aligns live ROADMAP/STATE/capability AUTHORIZED / STARTED markers", () => {
+    assert.deepEqual(
+      evaluateImp032ImplementationStartCrossDocumentAlignment({
+        capabilityText: startedArtifact,
+        roadmapText,
+        stateText,
+      }),
+      { ok: true },
+    );
+    const unstarted = evaluateImp032ImplementationStartCrossDocumentAlignment({
+      capabilityText: startedArtifact.replace("IMP-032_STARTED: YES", "IMP-032_STARTED: NO"),
+      roadmapText,
+      stateText,
+    });
+    assert.equal(unstarted.ok, false);
+    const unauthorized = evaluateImp032ImplementationStartCrossDocumentAlignment({
+      capabilityText: startedArtifact.replace("IMP-032_IMPLEMENTATION_AUTHORIZED: YES", "IMP-032_IMPLEMENTATION_AUTHORIZED: NO"),
       roadmapText,
       stateText,
     });
@@ -2699,7 +2876,7 @@ IMP-031_ARCHITECTURE_LOCKED: NO
 });
 
 /**
- * Live CURRENT docs are IMP-032 implementation authorization (GTM-R82 / STATE-R80).
+ * Live CURRENT docs are IMP-032 implementation start (GTM-R83 / STATE-R81).
  * Historical IMP-031 evaluators first normalize back to the R79/S77 acceptance position.
  */
 function normalizeImp031AcceptedLifecycleDocs(activatedRoadmap, activatedState) {
@@ -2716,6 +2893,10 @@ function normalizeImp031AcceptedLifecycleDocs(activatedRoadmap, activatedState) 
       .replace(/Next Product Slice:\s*IMP-033[^\n]*/g, "Next Product Slice:    IMP-032 — Dehradun Delivery Operating Mode")
       .replace(/nextProductSlice:\s*IMP-033[^\n]*/g, "nextProductSlice: IMP-032 — Dehradun Delivery Operating Mode")
       .replace(
+        /IMP-032:\s*IMPLEMENTATION_IN_PROGRESS\nIMP-032_ARCHITECTURE:\s*LOCKED\nIMP-032_ARCHITECTURE_LOCKED:\s*YES\nIMP-032_IMPLEMENTATION:\s*AUTHORIZED \/ STARTED\nIMP-032_IMPLEMENTATION_AUTHORIZED:\s*YES\nIMP-032_STARTED:\s*YES\nIMP-032_IMPLEMENTATION_COMPLETE:\s*NO\nIMP-032_ACCEPTED:\s*NO\nIMP-033:\s*PLANNED \/ NOT_ACTIVATED\nD-373_CREATED:\s*NO\nNO_NEW_CURRENT_DECISION_IN_THIS_ACTIVATION_GATE:\s*YES\n/g,
+        "IMP-032: PLANNED / NOT_ACTIVATED\n",
+      )
+      .replace(
         /IMP-032:\s*IMPLEMENTATION_AUTHORIZED\nIMP-032_ARCHITECTURE:\s*LOCKED\nIMP-032_ARCHITECTURE_LOCKED:\s*YES\nIMP-032_IMPLEMENTATION:\s*AUTHORIZED \/ NOT_STARTED\nIMP-032_IMPLEMENTATION_AUTHORIZED:\s*YES\nIMP-032_STARTED:\s*NO\nIMP-032_IMPLEMENTATION_COMPLETE:\s*NO\nIMP-032_ACCEPTED:\s*NO\nIMP-033:\s*PLANNED \/ NOT_ACTIVATED\nD-373_CREATED:\s*NO\nNO_NEW_CURRENT_DECISION_IN_THIS_ACTIVATION_GATE:\s*YES\n/g,
         "IMP-032: PLANNED / NOT_ACTIVATED\n",
       )
@@ -2729,9 +2910,14 @@ function normalizeImp031AcceptedLifecycleDocs(activatedRoadmap, activatedState) 
       )
       .replace(/IMP-032_IMPLEMENTATION_AUTHORIZED:\s*YES/g, "IMP-032_IMPLEMENTATION_AUTHORIZED: NO")
       .replace(/IMP-032_STARTED:\s*YES/g, "IMP-032_STARTED: NO")
+      .replace(/IMP-032:\s*IMPLEMENTATION_IN_PROGRESS\b/g, "IMP-032: PLANNED / NOT_ACTIVATED")
       .replace(/IMP-032:\s*IMPLEMENTATION_AUTHORIZED\b/g, "IMP-032: PLANNED / NOT_ACTIVATED")
       .replace(/IMP-032:\s*ARCHITECTURE_LOCKED\b/g, "IMP-032: PLANNED / NOT_ACTIVATED")
       .replace(/IMP-032:\s*ARCHITECTURE_IN_PROGRESS\b/g, "IMP-032: PLANNED / NOT_ACTIVATED")
+      .replace(
+        /IMP-032 IMPLEMENTATION_IN_PROGRESS; architecture remains LOCKED; implementation AUTHORIZED \/ STARTED\./g,
+        "IMP-031 COMPLETE_AND_ACCEPTED;\n                              IMP-032 PLANNED / NOT_ACTIVATED.",
+      )
       .replace(
         /IMP-032 IMPLEMENTATION_AUTHORIZED; architecture remains LOCKED; implementation AUTHORIZED \/ NOT_STARTED\./g,
         "IMP-031 COMPLETE_AND_ACCEPTED;\n                              IMP-032 PLANNED / NOT_ACTIVATED.",
@@ -2748,6 +2934,10 @@ function normalizeImp031AcceptedLifecycleDocs(activatedRoadmap, activatedState) 
   };
   let roadmapText = rewriteCurrent(activatedRoadmap, "## 2.", "## 3.");
   roadmapText = roadmapText
+    .replace(
+      "| IMP-032 | Dehradun Delivery Operating Mode | IMPLEMENTATION_IN_PROGRESS |",
+      "| IMP-032 | Dehradun Delivery Operating Mode | PLANNED |",
+    )
     .replace(
       "| IMP-032 | Dehradun Delivery Operating Mode | IMPLEMENTATION_AUTHORIZED |",
       "| IMP-032 | Dehradun Delivery Operating Mode | PLANNED |",
