@@ -5,7 +5,7 @@
   "capability": "IMP-034",
   "title": "Meta WhatsApp Cloud API Adapter",
   "architectureLock": "ARCHITECTURE_LOCKED",
-  "implementation": "COMPLETE_AND_ACCEPTED",
+  "implementation": "IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE",
   "implementationAuthorized": true,
   "lastReviewed": "2026-08-31",
   "bindingDecisions": ["ADR-012", "ADR-013", "ADR-014", "ADR-015"],
@@ -15,7 +15,7 @@
 
 # IMP-034 — Meta WhatsApp Cloud API Adapter
 
-## Capability Architecture (ARCHITECTURE_LOCKED — COMPLETE_AND_ACCEPTED)
+## Capability Architecture (ARCHITECTURE_LOCKED — IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE)
 
 This document is the locked capability architecture for **IMP-034 — Meta WhatsApp Cloud API
 Adapter**. Architecture authority derives from accepted
@@ -24,10 +24,7 @@ Adapter**. Architecture authority derives from accepted
 [ADR-014](../decisions/ADR-014-http-api-route-handlers-contracts.md),
 [ADR-015](../decisions/ADR-015-configuration-secrets-feature-flags.md), and the accepted
 [IMP-033 Notification Foundation](./IMP-033-notification-foundation.md). Architecture is **LOCKED**.
-Implementation is **AUTHORIZED**, **STARTED**, **COMPLETE**, and formally **COMPLETE_AND_ACCEPTED**.
-
-Formal acceptance does not expand the locked boundary, authorize or start IMP-035, create `D-373`,
-create `ARCH-R19`, adopt a BSP, or complete Meta production onboarding.
+Implementation is **AUTHORIZED**, **STARTED**, and **COMPLETE** pending independent acceptance.
 
 Capability-local provider choice (no new CURRENT decision / no `D-373` / no `ARCH-R19`):
 
@@ -44,30 +41,31 @@ abstraction beyond the existing port.
 | Field | Value |
 |---|---|
 | Architecture lock | `ARCHITECTURE_LOCKED` |
-| Lifecycle | `COMPLETE_AND_ACCEPTED` |
+| Lifecycle | `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` |
 | Implementation | `AUTHORIZED` / `STARTED` / `COMPLETE` |
 | Implementation authorized | **YES** |
 | Implementation complete | **YES** |
-| Accepted | **YES** |
-| Accepted product through | IMP-034 |
-| Current product slice | NONE |
-| Pending acceptance | NONE |
+| Accepted | **NO** |
+| Accepted product through | IMP-033 (unchanged until formal acceptance) |
+| Current product slice | IMP-034 |
+| Pending acceptance | IMP-034 |
 | Next product slice | IMP-035 — Initial Administration Capabilities |
-| Governance checkpoint | GTM-R91 / STATE-R89 |
+| Governance checkpoint | GTM-R90 / STATE-R88 |
 | New CURRENT decision | **NONE** (`D-373` absent) |
 | Global architecture revision | **NONE** (`ARCH-R18` remains current; no ARCH-R19) |
 | Decision register | **DR-14** unchanged |
 | Founder UAT required for acceptance | **NO** |
 
 ```text
-IMP-034: COMPLETE_AND_ACCEPTED
+IMP-034: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
 IMP-034_ARCHITECTURE: LOCKED
 IMP-034_ARCHITECTURE_LOCKED: YES
 IMP-034_IMPLEMENTATION: AUTHORIZED / STARTED / COMPLETE
 IMP-034_IMPLEMENTATION_AUTHORIZED: YES
 IMP-034_STARTED: YES
 IMP-034_IMPLEMENTATION_COMPLETE: YES
-IMP-034_ACCEPTED: YES
+IMP-034_ACCEPTED: NO
+COMPLETION IS NOT ACCEPTANCE: YES
 FOUNDER_UAT_REQUIRED: NO
 FOUNDER_UAT_REQUIRED_FOR_ACCEPTANCE: NO
 IMP-034_FOUNDER_UAT_REQUIRED: NO
@@ -81,6 +79,8 @@ provider_strategy: DIRECT_META_CLOUD_API_V1
 BSP: NO
 graph_api_version_pin: CONFIG_PINNED (default v23.0; re-verify against Meta docs)
 ```
+
+COMPLETION IS NOT ACCEPTANCE: YES. Formal acceptance is a separate gate.
 
 ## 1. Purpose
 
@@ -280,30 +280,24 @@ block technical acceptance of this adapter slice.
 6. Additive Notifications migration `0034_meta_whatsapp_adapter`.
 7. Unit + database integration tests with mocked Meta I/O (no production Meta calls in CI).
 
-## 15. Implementation and acceptance evidence
+## 15. Implementation evidence (filled at merge/acceptance)
 
 ```text
-IMPLEMENTATION_SOURCE_SHA: 9508db83bb82bc3a23f16ab570c4dd0924d7703a
-IMPLEMENTATION_SOURCE_TREE: 772c585e93c78285e5b972d8b8a58c83507e01f8
-MERGED_MAIN_SHA: 7e92d1a1ca02ad825229b64f308a8fc555956d25
-MERGED_MAIN_TREE: 772c585e93c78285e5b972d8b8a58c83507e01f8
-PR: 50
-PR_CI: 33424475222 SUCCESS
-MAIN_CI: 33424999014 SUCCESS
-DEPLOY: 33424998996 SUCCESS
+IMPLEMENTATION_SOURCE_SHA: PENDING
+IMPLEMENTATION_SOURCE_TREE: PENDING
+MERGED_MAIN_SHA: PENDING
+MERGED_MAIN_TREE: PENDING
+PR: PENDING
+PR_CI: PENDING
+MAIN_CI: PENDING
+DEPLOY: PENDING
 IMP034_IMPLEMENTATION_EVIDENCE: COMPLETE
-IMP_034_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
-IMP034_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
-IMP034_FORMAL_ACCEPTANCE: ACCEPTED
-IMP034_ACCEPTED_MAIN_SHA: 7e92d1a1ca02ad825229b64f308a8fc555956d25
-IMP034_ACCEPTED_TREE: 772c585e93c78285e5b972d8b8a58c83507e01f8
+IMP_034_INDEPENDENT_IMPLEMENTATION_REVIEW: PENDING
+IMP034_INDEPENDENT_ACCEPTANCE_EVIDENCE: PENDING
+IMP034_FORMAL_ACCEPTANCE: PENDING
 IMP-034_FOUNDER_UAT_REQUIRED: NO
 IMP-034_FOUNDER_UAT: NOT_APPLICABLE
 ```
 
-Accepted product identity is the immutable `main` merge SHA
-`7e92d1a1ca02ad825229b64f308a8fc555956d25` and tree
-`772c585e93c78285e5b972d8b8a58c83507e01f8`. Founder UAT is not applicable (`FOUNDER_UAT_REQUIRED: NO`);
-independent technical acceptance with mocked Meta fixtures was the applicable gate. Meta production
-onboarding remains external launch validation. Acceptance does not authorize or start IMP-035,
-create `D-373`, create `ARCH-R19`, adopt a BSP, or declare founder UAT PASS.
+Implementation completion does **not** authorize or start IMP-035, create `D-373`, create
+`ARCH-R19`, complete Meta production onboarding, or declare founder UAT PASS.

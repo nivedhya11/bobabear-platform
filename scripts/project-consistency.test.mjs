@@ -38,6 +38,9 @@ import {
   evaluateImp034ImplementationCompletionArtifact,
   evaluateImp034ImplementationCompletionCheckpoint,
   evaluateImp034ImplementationCompletionCrossDocumentAlignment,
+  evaluateImp034AcceptanceArtifact,
+  evaluateImp034AcceptanceCheckpoint,
+  evaluateImp034AcceptanceCrossDocumentAlignment,
   evaluateImp031ArchitectureDraftArtifact,
   evaluateImp031ArchitectureDraftCheckpoint,
   evaluateImp031ArchitectureLockArtifact,
@@ -5223,9 +5226,10 @@ describe("IMP-034 implementation completion checkpoint", () => {
     artifact: true, d373Exists: false, imp033Accepted: true, founderUatRequired: false,
   });
 
-  const capabilityText = readFileSync("docs/platform/capabilities/IMP-034-meta-whatsapp-cloud-api-adapter.md", "utf8");
-  const roadmapText = readFileSync("docs/platform/ROADMAP.md", "utf8");
-  const stateText = readFileSync("docs/platform/STATE.md", "utf8");
+  const completionDocs = deriveImp034CompletionDocs();
+  const capabilityText = completionDocs.capabilityText;
+  const roadmapText = completionDocs.roadmapText;
+  const stateText = completionDocs.stateText;
 
   it("supports only the R90/S88 combined completion checkpoint", () => {
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R90", "STATE-R88", "imp034Completion"), true);
@@ -5234,6 +5238,8 @@ describe("IMP-034 implementation completion checkpoint", () => {
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R89", "STATE-R88", "imp034Completion"), false);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R90", "STATE-R88"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R90", "STATE-R88", "imp033Acceptance"), false);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R91", "STATE-R89", "imp034Acceptance"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R91", "STATE-R89", "imp034Completion"), false);
   });
 
   it("accepts only the complete-pending-acceptance IMP-034 checkpoint", () => {
@@ -5291,7 +5297,7 @@ describe("IMP-034 implementation completion checkpoint", () => {
     }
   });
 
-  it("aligns live ROADMAP/STATE/capability completion markers", () => {
+  it("aligns fixture ROADMAP/STATE/capability completion markers", () => {
     assert.deepEqual(
       evaluateImp034ImplementationCompletionCrossDocumentAlignment({ capabilityText, roadmapText, stateText }),
       { ok: true },
@@ -5322,6 +5328,148 @@ describe("IMP-034 implementation completion checkpoint", () => {
     assert.equal(unlocked.code, "IMP034_CURRENT_LIFECYCLE");
   });
 });
+
+describe("IMP-034 formal acceptance checkpoint", () => {
+  const acceptance = Object.freeze({
+    roadmapVersion: "GTM-R91", stateVersion: "STATE-R89", acceptedThrough: "IMP-034",
+    currentProductSlice: "NONE", nextProductSlice: "IMP-035", pendingAcceptance: "NONE",
+    imp033: "COMPLETE_AND_ACCEPTED", imp034: "COMPLETE_AND_ACCEPTED", architecture: "LOCKED",
+    architectureLocked: "YES", implementationAuthorized: "YES", started: "YES",
+    implementationComplete: "YES", accepted: "YES", imp035: "PLANNED",
+    architectureVersion: "ARCH-R18", decisionRegisterVersion: "DR-14",
+    acceptedMainSha: "7e92d1a1ca02ad825229b64f308a8fc555956d25",
+    acceptedTree: "772c585e93c78285e5b972d8b8a58c83507e01f8",
+    artifact: true, d373Exists: false, founderUatRequired: false,
+    implementationEvidenceComplete: true, independentReviewPass: true,
+    independentAcceptanceAccepted: true, formalAcceptanceAccepted: true,
+    providerIoYes: true, asyncTopologyLocked: true, directMetaStrategy: true,
+  });
+
+  const capabilityText = readFileSync("docs/platform/capabilities/IMP-034-meta-whatsapp-cloud-api-adapter.md", "utf8");
+  const roadmapText = readFileSync("docs/platform/ROADMAP.md", "utf8");
+  const stateText = readFileSync("docs/platform/STATE.md", "utf8");
+
+  it("supports only the R91/S89 acceptance checkpoint and preserves R90/S88 completion", () => {
+    assert.deepEqual(evaluateImp034AcceptanceCheckpoint(acceptance), { ok: true });
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R91", "STATE-R89", "imp034Acceptance"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R90", "STATE-R88", "imp034Completion"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R91", "STATE-R88", "imp034Acceptance"), false);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R90", "STATE-R89", "imp034Acceptance"), false);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R91", "STATE-R89", "imp034Completion"), false);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R91", "STATE-R89"), true);
+  });
+
+  it("rejects acceptance lifecycle drift", () => {
+    for (const [key, value] of [
+      ["roadmapVersion", "GTM-R90"],
+      ["stateVersion", "STATE-R88"],
+      ["acceptedThrough", "IMP-033"],
+      ["currentProductSlice", "IMP-034"],
+      ["pendingAcceptance", "IMP-034"],
+      ["nextProductSlice", "IMP-034"],
+      ["imp034", "IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE"],
+      ["architectureLocked", "NO"],
+      ["implementationAuthorized", "NO"],
+      ["started", "NO"],
+      ["implementationComplete", "NO"],
+      ["accepted", "NO"],
+      ["imp035", "ARCHITECTURE_IN_PROGRESS"],
+      ["architectureVersion", "ARCH-R19"],
+      ["decisionRegisterVersion", "DR-15"],
+      ["acceptedMainSha", "9508db83bb82bc3a23f16ab570c4dd0924d7703a"],
+      ["acceptedTree", "715ff386e672fd276a0b2e888aa2ebeaab3dda8c"],
+      ["artifact", false],
+      ["d373Exists", true],
+      ["founderUatRequired", true],
+      ["implementationEvidenceComplete", false],
+      ["independentReviewPass", false],
+      ["independentAcceptanceAccepted", false],
+      ["formalAcceptanceAccepted", false],
+      ["providerIoYes", false],
+      ["asyncTopologyLocked", false],
+      ["directMetaStrategy", false],
+    ]) {
+      assert.equal(
+        evaluateImp034AcceptanceCheckpoint({ ...acceptance, [key]: value }).ok,
+        false,
+        `${key}=${value}`,
+      );
+    }
+  });
+
+  it("validates the live accepted artifact and rejects pending-acceptance or Founder UAT claims", () => {
+    assert.deepEqual(evaluateImp034AcceptanceArtifact(capabilityText), { ok: true });
+    for (const mutation of [
+      capabilityText.replace('"implementation": "COMPLETE_AND_ACCEPTED"', '"implementation": "AUTHORIZED / STARTED / COMPLETE"'),
+      capabilityText.replace("IMP-034: COMPLETE_AND_ACCEPTED", "IMP-034: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE"),
+      capabilityText.replace("IMP-034_ACCEPTED: YES", "IMP-034_ACCEPTED: NO"),
+      capabilityText.replace("IMP034_FORMAL_ACCEPTANCE: ACCEPTED", "IMP034_FORMAL_ACCEPTANCE: NOT_CLAIMED"),
+      capabilityText.replace("IMP034_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED", "IMP034_INDEPENDENT_ACCEPTANCE_EVIDENCE: NOT_CLAIMED"),
+      capabilityText.replace(/IMP034_ACCEPTED_MAIN_SHA:[^\n]*\n/, ""),
+      capabilityText.replace(/IMP034_ACCEPTED_TREE:[^\n]*\n/, ""),
+      capabilityText.replace("FOUNDER_UAT_REQUIRED: NO", "FOUNDER_UAT_REQUIRED: YES"),
+      capabilityText.replace("IMP-034_FOUNDER_UAT: NOT_APPLICABLE", "IMP-034_FOUNDER_UAT: PASS"),
+      capabilityText.replace("provider_IO: YES", "provider_IO: NO"),
+      capabilityText.replace("new_service: NO", "new_service: YES"),
+      capabilityText.replace("BSP: NO", "BSP: YES"),
+      capabilityText.replace(/POSTGRESQL_TRANSACTIONAL_OUTBOX_IN_PROCESS_WORKER/g, "REDIS_STREAM_WORKER"),
+      `${capabilityText}\n| D-373 |\n`,
+    ]) {
+      assert.equal(evaluateImp034AcceptanceArtifact(mutation).ok, false);
+    }
+  });
+
+  it("aligns live ROADMAP/STATE/capability acceptance markers", () => {
+    assert.deepEqual(
+      evaluateImp034AcceptanceCrossDocumentAlignment({ capabilityText, roadmapText, stateText }),
+      { ok: true },
+    );
+    const completionDocs = deriveImp034CompletionDocs();
+    assert.equal(
+      evaluateImp034AcceptanceCrossDocumentAlignment({
+        capabilityText: completionDocs.capabilityText,
+        roadmapText: completionDocs.roadmapText,
+        stateText: completionDocs.stateText,
+      }).ok,
+      false,
+    );
+  });
+
+  it("rejects cross-document alignment that keeps IMP-034 pending or authorizes IMP-035", () => {
+    const currentRoadmap = roadmapText.slice(roadmapText.indexOf("## 2."), roadmapText.indexOf("## 3."));
+    const pendingRoadmap = roadmapText.replace(
+      currentRoadmap,
+      currentRoadmap.replaceAll("IMP-034_ACCEPTED: YES", "IMP-034_ACCEPTED: NO"),
+    );
+    const pending = evaluateImp034AcceptanceCrossDocumentAlignment({
+      capabilityText, roadmapText: pendingRoadmap, stateText,
+    });
+    assert.equal(pending.ok, false);
+    assert.equal(pending.code, "IMP034_CURRENT_LIFECYCLE");
+
+    const authorizedRoadmap = roadmapText.replace(
+      currentRoadmap,
+      currentRoadmap.replace(
+        "IMP-035: PLANNED / NOT_ACTIVATED",
+        "IMP-035: PLANNED / NOT_ACTIVATED\nIMP-035_IMPLEMENTATION_AUTHORIZED: YES",
+      ),
+    );
+    const authorized = evaluateImp034AcceptanceCrossDocumentAlignment({
+      capabilityText, roadmapText: authorizedRoadmap, stateText,
+    });
+    assert.equal(authorized.ok, false);
+    assert.equal(authorized.code, "IMP034_ACCEPTANCE_RESIDUE");
+  });
+});
+
+/** Historical GTM-R90 / STATE-R88 IMP-034 completion fixtures captured before GTM-R91 acceptance. */
+function deriveImp034CompletionDocs() {
+  return {
+    roadmapText: readFileSync(new URL("./fixtures/imp034-completion-roadmap.md", import.meta.url), "utf8"),
+    stateText: readFileSync(new URL("./fixtures/imp034-completion-state.md", import.meta.url), "utf8"),
+    capabilityText: readFileSync(new URL("./fixtures/imp034-completion-capability.md", import.meta.url), "utf8"),
+  };
+}
 
 /** Project live GTM-R90 / STATE-R88 documents back to the historical R89 / S87 acceptance position. */
 function deriveImp033AcceptanceDocs(liveRoadmap, liveState) {
