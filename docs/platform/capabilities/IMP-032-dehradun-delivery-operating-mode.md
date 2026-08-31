@@ -5,7 +5,7 @@
   "capability": "IMP-032",
   "title": "Dehradun Delivery Operating Mode",
   "architectureLock": "ARCHITECTURE_LOCKED",
-  "implementation": "AUTHORIZED / STARTED / COMPLETE",
+  "implementation": "COMPLETE_AND_ACCEPTED",
   "implementationAuthorized": true,
   "lastReviewed": "2026-08-31",
   "bindingDecisions": ["D-357", "D-372"],
@@ -21,44 +21,58 @@ This document is the locked capability architecture for **IMP-032 — Manual Pro
 Dehradun Delivery Operating Mode** over the accepted IMP-031 foundation. It defines how BOBA makes
 delivery operational without provider API automation.
 
-Architecture remains canonically locked. Implementation is authorized, started, and complete pending acceptance.
-Completion does not equal acceptance.
+Architecture remains canonically locked. Implementation is authorized, started, complete, and formally
+accepted after independent technical acceptance and Founder UAT PASS.
 
 | Field | Value |
 |---|---|
 | Architecture lock | `ARCHITECTURE_LOCKED` |
-| Lifecycle | `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` |
+| Lifecycle | `COMPLETE_AND_ACCEPTED` |
 | Implementation | `AUTHORIZED` / `STARTED` / `COMPLETE` |
 | Implementation authorized | **YES** |
-| Accepted | **NO** |
-| Accepted product through | IMP-031 |
-| Current product slice | IMP-032 |
-| Pending acceptance | IMP-032 |
+| Accepted | **YES** |
+| Accepted product through | IMP-032 |
+| Current product slice | NONE |
+| Pending acceptance | NONE |
 | Next product slice | IMP-033 — Notification Foundation |
 | Operating mode | **MANUAL_PROVIDER_NEUTRAL_DEHRADUN_DELIVERY** |
 | New CURRENT decision | **NONE** (`D-373` absent) |
 | Global architecture revision | **NONE** (`ARCH-R18` remains current; no ARCH-R19) |
 
 ```text
-IMP-032: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
+IMP-032: COMPLETE_AND_ACCEPTED
 IMP-032_ARCHITECTURE: LOCKED
 IMP-032_ARCHITECTURE_LOCKED: YES
 IMP-032_IMPLEMENTATION: AUTHORIZED / STARTED / COMPLETE
 IMP-032_IMPLEMENTATION_AUTHORIZED: YES
 IMP-032_STARTED: YES
 IMP-032_IMPLEMENTATION_COMPLETE: YES
-IMP-032_ACCEPTED: NO
+IMP-032_ACCEPTED: YES
 IMP-032_OPERATING_MODE: MANUAL_PROVIDER_NEUTRAL_DEHRADUN_DELIVERY
-COMPLETION IS NOT ACCEPTANCE: YES
 FOUNDER_UAT_REQUIRED_FOR_ACCEPTANCE: YES
-FOUNDER_UAT: NOT_STARTED
+FOUNDER_UAT: PASS
+FOUNDER_UAT_COMPLETE: YES
 D373_REQUIRED_FOR_LOCK: NO
 ARCH_R19_REQUIRED: NO
-FOUNDER_UAT_EXPECTED_FOR_IMPLEMENTATION_ACCEPTANCE: YES
 schema_change: NO
 delivery_schema_migration: NO
 new_service: NO
 access_control_data_seed_migration: APPLIED
+IMP032_IMPLEMENTATION_EVIDENCE: COMPLETE
+IMP_032_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
+IMP032_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
+IMP032_FORMAL_ACCEPTANCE: ACCEPTED
+IMP032_ACCEPTED_MAIN_SHA: 078ae39109a748174c429ac40381e038ab21d3c1
+IMP032_ACCEPTED_TREE: 973153488a4e32e06a6da1e1e7d41072ebca9376
+FOUNDER_UAT_CANDIDATE_REPOSITORY: /home/ajoshi/repos/boba-bear-platform
+FOUNDER_UAT_CANDIDATE_BRANCH: main
+FOUNDER_UAT_CANDIDATE_HEAD: 078ae39109a748174c429ac40381e038ab21d3c1
+FOUNDER_UAT_CANDIDATE_FINGERPRINT: 251c0589f8f17a1acf289d2798a671cea8eaba9ebd604edc0e5a933dc711223c
+FOUNDER_UAT_DECISION_DATE: 2026-08-31
+FOUNDER_UAT_ACCEPTANCE_AUTHORITY: Founder
+PR: 45, 46
+MAIN_CI: 33401465855 SUCCESS
+DEPLOY: 33401465854 SUCCESS
 ```
 
 ## 1. Purpose
@@ -525,9 +539,9 @@ ARCH remains ARCH-R18. DR remains DR-14.
 
 ## 23. Implementation boundary
 
-Implementation is **AUTHORIZED** / **STARTED** / **COMPLETE** for the locked manual-mode boundary
-below. Completion does **not** accept implementation (`IMP-032_IMPLEMENTATION_COMPLETE: YES`;
-`IMP-032_ACCEPTED: NO`; Founder UAT required).
+Implementation is **AUTHORIZED** / **STARTED** / **COMPLETE** and **formally accepted** for the
+locked manual-mode boundary below (`IMP-032_IMPLEMENTATION_COMPLETE: YES`; `IMP-032_ACCEPTED: YES`;
+Founder UAT **PASS**).
 
 ### 23.1 Included (authorized; started)
 
@@ -633,25 +647,28 @@ This lock requires and records:
 - implementation boundary unambiguous;
 - D-373 absent; ARCH-R19 not required; ARCH-R18 and DR-14 remain current.
 
-## 25. Implementation completion status
+## 25. Formal acceptance
+
+GTM-R86 records formal acceptance after independent technical acceptance and Founder UAT PASS for the
+exact accepted candidate on `main`.
 
 ```text
-IMP-032: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
-IMP-032_ARCHITECTURE: LOCKED
-IMP-032_ARCHITECTURE_LOCKED: YES
-IMP-032_IMPLEMENTATION: AUTHORIZED / STARTED / COMPLETE
-IMP-032_IMPLEMENTATION_AUTHORIZED: YES
-IMP-032_STARTED: YES
-IMP-032_IMPLEMENTATION_COMPLETE: YES
-IMP-032_ACCEPTED: NO
-COMPLETION IS NOT ACCEPTANCE: YES
-FOUNDER_UAT_REQUIRED_FOR_ACCEPTANCE: YES
-FOUNDER_UAT: NOT_STARTED
-IMP-032_ACCESS_CONTROL_DATA_SEED_MIGRATION: APPLIED
+Architecture:     ARCHITECTURE_LOCKED
+Authorized:       YES
+Started:          YES
+Complete:         YES
+Accepted:         YES
 ```
 
-Implementation covers §23.1–§23.4 under the locked manual operating mode. GTM-R84 / STATE-R82 clarified
-§23.3 data-only access-control seed as **PERMITTED_IF_REQUIRED**; migration `0032_delivery_permissions`
-is applied (data-only; no Delivery schema change). Completion does **not** accept implementation and
-does **not** authorize provider API automation, webhooks, workers, queues, notifications/WhatsApp,
-D-373, ARCH-R19, IMP-033, or IMP-034.
+```text
+FOUNDER_UAT_REQUIRED: YES
+FOUNDER_UAT: PASS
+FOUNDER_UAT_COMPLETE: YES
+FOUNDER_UAT_CANDIDATE_REPOSITORY: /home/ajoshi/repos/boba-bear-platform
+FOUNDER_UAT_CANDIDATE_BRANCH: main
+FOUNDER_UAT_CANDIDATE_HEAD: 078ae39109a748174c429ac40381e038ab21d3c1
+FOUNDER_UAT_CANDIDATE_FINGERPRINT: 251c0589f8f17a1acf289d2798a671cea8eaba9ebd604edc0e5a933dc711223c
+```
+
+Acceptance does **not** authorize or start IMP-033 implementation, create D-373, or create ARCH-R19.
+GTM-R87 subsequently activates IMP-033 for architecture work only.

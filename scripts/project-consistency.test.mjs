@@ -24,6 +24,11 @@ import {
   evaluateImp032ImplementationCompletionArtifact,
   evaluateImp032ImplementationCompletionCheckpoint,
   evaluateImp032ImplementationCompletionCrossDocumentAlignment,
+  evaluateImp032AcceptanceArtifact,
+  evaluateImp032AcceptanceCheckpoint,
+  evaluateImp032AcceptanceCrossDocumentAlignment,
+  evaluateImp033ArchitectureActivationCheckpoint,
+  evaluateImp033ArchitectureDraftArtifact,
   evaluateImp031ArchitectureDraftArtifact,
   evaluateImp031ArchitectureDraftCheckpoint,
   evaluateImp031ArchitectureLockArtifact,
@@ -2428,6 +2433,169 @@ ARCH_R19_REQUIRED: NO
   });
 });
 
+/** Derive historical IMP-032 completion-pending artifact from the live accepted artifact. */
+function toImp032CompletionPendingArtifact(acceptedArtifact) {
+  return acceptedArtifact
+    .replace(/"implementation": "COMPLETE_AND_ACCEPTED"/, '"implementation": "AUTHORIZED / STARTED / COMPLETE"')
+    .replace("| Lifecycle | `COMPLETE_AND_ACCEPTED` |", "| Lifecycle | `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` |")
+    .replace("| Accepted | **YES** |", "| Accepted | **NO** |")
+    .replace("| Accepted product through | IMP-032 |", "| Accepted product through | IMP-031 |")
+    .replace("| Current product slice | NONE |", "| Current product slice | IMP-032 |")
+    .replace("| Pending acceptance | NONE |", "| Pending acceptance | IMP-032 |")
+    .replace("| Next product slice | IMP-033 — Notification Foundation |", "| Next product slice | IMP-033 — Notification Foundation |")
+    .replace(/IMP-032: COMPLETE_AND_ACCEPTED/g, "IMP-032: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE")
+    .replace(/IMP-032_ACCEPTED: YES/g, "IMP-032_ACCEPTED: NO")
+    .replace(/FOUNDER_UAT: PASS/g, "FOUNDER_UAT: NOT_STARTED")
+    .replace(/FOUNDER_UAT_COMPLETE: YES\n/g, "")
+    .replace(
+      /Architecture remains canonically locked\. Implementation is authorized, started, complete, and formally\naccepted after independent technical acceptance and Founder UAT PASS\./,
+      "Architecture remains canonically locked. Implementation is authorized, started, and complete pending acceptance.\nCompletion does not equal acceptance.",
+    )
+    .replace(
+      /IMP032_IMPLEMENTATION_EVIDENCE: COMPLETE\nIMP_032_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS\nIMP032_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED\nIMP032_FORMAL_ACCEPTANCE: ACCEPTED\nIMP032_ACCEPTED_MAIN_SHA:[^\n]*\nIMP032_ACCEPTED_TREE:[^\n]*\nFOUNDER_UAT_CANDIDATE_REPOSITORY:[^\n]*\nFOUNDER_UAT_CANDIDATE_BRANCH:[^\n]*\nFOUNDER_UAT_CANDIDATE_HEAD:[^\n]*\nFOUNDER_UAT_CANDIDATE_FINGERPRINT:[^\n]*\nFOUNDER_UAT_DECISION_DATE:[^\n]*\nFOUNDER_UAT_ACCEPTANCE_AUTHORITY:[^\n]*\nPR:[^\n]*\nMAIN_CI:[^\n]*\nDEPLOY:[^\n]*\n/g,
+      "",
+    )
+    .replace(
+      /Implementation is \*\*AUTHORIZED\*\* \/ \*\*STARTED\*\* \/ \*\*COMPLETE\*\* and \*\*formally accepted\*\* for the\nlocked manual-mode boundary below \(`IMP-032_IMPLEMENTATION_COMPLETE: YES`; `IMP-032_ACCEPTED: YES`;\nFounder UAT \*\*PASS\*\*\)\./,
+      "Implementation is **AUTHORIZED** / **STARTED** / **COMPLETE** for the locked manual-mode boundary\nbelow. Completion does **not** accept implementation (`IMP-032_IMPLEMENTATION_COMPLETE: YES`;\n`IMP-032_ACCEPTED: NO`; Founder UAT required).",
+    )
+    .replace(
+      /## 25\. Formal acceptance[\s\S]*$/,
+      `## 25. Implementation completion status
+
+\`\`\`text
+IMP-032: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
+IMP-032_ARCHITECTURE: LOCKED
+IMP-032_ARCHITECTURE_LOCKED: YES
+IMP-032_IMPLEMENTATION: AUTHORIZED / STARTED / COMPLETE
+IMP-032_IMPLEMENTATION_AUTHORIZED: YES
+IMP-032_STARTED: YES
+IMP-032_IMPLEMENTATION_COMPLETE: YES
+IMP-032_ACCEPTED: NO
+COMPLETION IS NOT ACCEPTANCE: YES
+FOUNDER_UAT_REQUIRED_FOR_ACCEPTANCE: YES
+FOUNDER_UAT: NOT_STARTED
+IMP-032_ACCESS_CONTROL_DATA_SEED_MIGRATION: APPLIED
+access_control_data_seed_migration: APPLIED
+\`\`\`
+
+Implementation covers §23.1–§23.4 under the locked manual operating mode. Completion does **not** accept implementation.
+`,
+    );
+}
+
+const IMP032_033_FACTS_RE = /IMP-032:[^\n]*\n(?:(?:IMP-032_|IMP032_|IMP_032_|FOUNDER_UAT)[^\n]*\n)*IMP-033:[^\n]*\n(?:IMP-033_[^\n]*\n)*/;
+
+function rewriteDocSection(docText, sectionStart, sectionEndMarker, rewriter) {
+  const start = docText.indexOf(sectionStart);
+  const end = docText.indexOf(sectionEndMarker, start + 1);
+  if (start === -1 || end === -1) return docText;
+  return `${docText.slice(0, start)}${rewriter(docText.slice(start, end))}${docText.slice(end)}`;
+}
+
+function rewriteCurrentIdentityAndFacts(section, {
+  acceptedThrough,
+  currentSlice,
+  nextSlice,
+  pendingAcceptance,
+  facts,
+  stateActivity,
+  permittedIfRequired = false,
+  scrubImp032AcceptedYes = false,
+  blurb,
+}) {
+  let updated = section
+    .replace(/Accepted Through:\s*IMP-03[12][^\n]*/g, `Accepted Through:     ${acceptedThrough}`)
+    .replace(/Accepted Through:\s+IMP-03[12][^\n]*/g, `Accepted Through:          ${acceptedThrough}`)
+    .replace(/Current Product Slice:\s*IMP-03[123][^\n]*/g, `Current Product Slice: ${currentSlice}`)
+    .replace(/Current Product Implementation:\s*IMP-03[123][^\n]*/g, `Current Product Implementation: ${currentSlice}`)
+    .replace(/Next Product Slice:\s*IMP-03[234][^\n]*/g, `Next Product Slice:    ${nextSlice}`)
+    .replace(/Next Product Slice:\s+IMP-03[234][^\n]*/g, `Next Product Slice:             ${nextSlice}`)
+    .replace(/Pending Acceptance:\s*(?:NONE|IMP-032)[^\n]*/g, `Pending Acceptance:    ${pendingAcceptance}`)
+    .replace(/Pending Acceptance:\s+(?:NONE|IMP-032)[^\n]*/g, `Pending Acceptance:             ${pendingAcceptance}`)
+    .replace(/acceptedThrough:\s*IMP-03[12]\b/g, `acceptedThrough: ${acceptedThrough.split(" — ")[0]}`)
+    .replace(/currentProductSlice:\s*IMP-03[123]\b/g, `currentProductSlice: ${currentSlice.split(" — ")[0]}`)
+    .replace(/nextProductSlice:\s*IMP-03[234][^\n]*/g, `nextProductSlice: ${nextSlice}`)
+    .replace(/pendingAcceptance:\s*(?:NONE|IMP-032)\b/g, `pendingAcceptance: ${pendingAcceptance}`);
+  if (stateActivity) {
+    updated = updated.replace(/Current Governance Activity:\s*[^\n]*/g, `Current Governance Activity:    ${stateActivity}`);
+  }
+  updated = updated.replace(IMP032_033_FACTS_RE, facts);
+  if (section.includes("## 2. Current Position")) {
+    updated = updated
+      .replace(/IMP-032 is `COMPLETE_AND_ACCEPTED`[\s\S]*?(?=```text\nIMP-030:)/, `${blurb ?? "Historical IMP-032 checkpoint fixture."}\n\n`)
+      .replaceAll("`IMP-032_ACCEPTED: YES`", "`IMP-032_ACCEPTED: NO`");
+  }
+  updated = updated.replace(/IMP-033 is `ARCHITECTURE_IN_PROGRESS`[^\n]*/g, "IMP-033 remains `PLANNED / NOT_ACTIVATED`.");
+  if (scrubImp032AcceptedYes) {
+    updated = updated
+      .replaceAll("IMP-032_ACCEPTED: YES", "IMP-032_ACCEPTED: NO")
+      .replaceAll("IMP-032_ACCEPTED:         YES", "IMP-032_ACCEPTED:         NO");
+  }
+  if (permittedIfRequired && !/PERMITTED_IF_REQUIRED/.test(updated)) {
+    updated += "IMP-032_ACCESS_CONTROL_DATA_SEED_MIGRATION: PERMITTED_IF_REQUIRED\n";
+  }
+  return updated;
+}
+
+const IMP032_IN_PROGRESS_FACTS = `IMP-032: IMPLEMENTATION_IN_PROGRESS
+IMP-032_ARCHITECTURE: LOCKED
+IMP-032_ARCHITECTURE_LOCKED: YES
+IMP-032_IMPLEMENTATION: AUTHORIZED / STARTED
+IMP-032_IMPLEMENTATION_AUTHORIZED: YES
+IMP-032_STARTED: YES
+IMP-032_IMPLEMENTATION_COMPLETE: NO
+IMP-032_ACCEPTED: NO
+IMP-033: PLANNED / NOT_ACTIVATED
+`;
+
+const IMP032_COMPLETION_FACTS = `IMP-032: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
+IMP-032_ARCHITECTURE: LOCKED
+IMP-032_ARCHITECTURE_LOCKED: YES
+IMP-032_IMPLEMENTATION: AUTHORIZED / STARTED / COMPLETE
+IMP-032_IMPLEMENTATION_AUTHORIZED: YES
+IMP-032_STARTED: YES
+IMP-032_IMPLEMENTATION_COMPLETE: YES
+IMP-032_ACCEPTED: NO
+IMP-032_FOUNDER_UAT_REQUIRED: YES
+IMP-032_FOUNDER_UAT: NOT_STARTED
+IMP-033: PLANNED / NOT_ACTIVATED
+`;
+
+const IMP032_PLANNED_FACTS = `IMP-032: PLANNED / NOT_ACTIVATED
+`;
+
+function projectLiveDocsToHistoricalCurrent(roadmapText, stateText, spec) {
+  const rewrite = (section) => rewriteCurrentIdentityAndFacts(section, spec);
+  let roadmap = rewriteDocSection(roadmapText, "## 2.", "## 3.", rewrite);
+  let state = rewriteDocSection(stateText, "## 2. Current Work Position", "\n## ", rewrite);
+  state = rewriteDocSection(state, "## 5. Acceptance Position", "\n## ", rewrite);
+  if (spec.roadmapVersion) {
+    roadmap = roadmap.replace(/"roadmapVersion": "GTM-R\d+"/, `"roadmapVersion": "${spec.roadmapVersion}"`);
+  }
+  if (spec.stateVersion) {
+    state = state.replace(/"stateVersion": "STATE-R\d+"/, `"stateVersion": "${spec.stateVersion}"`);
+  }
+  return { roadmapText: roadmap, stateText: state };
+}
+
+/** Map live GTM-R87 docs back to IMP-032 IMPLEMENTATION_IN_PROGRESS for historical checkpoint tests. */
+function normalizeLiveDocsToImp032InProgress(roadmapText, stateText, extras = {}) {
+  return projectLiveDocsToHistoricalCurrent(roadmapText, stateText, {
+    acceptedThrough: "IMP-031 — Provider-Neutral Delivery Foundation",
+    currentSlice: "IMP-032 — Dehradun Delivery Operating Mode",
+    nextSlice: "IMP-033 — Notification Foundation",
+    pendingAcceptance: "NONE",
+    facts: IMP032_IN_PROGRESS_FACTS,
+    stateActivity: extras.stateActivity
+      ?? "IMP-032 IMPLEMENTATION_IN_PROGRESS; architecture remains LOCKED; implementation AUTHORIZED / STARTED.",
+    permittedIfRequired: extras.permittedIfRequired === true,
+    scrubImp032AcceptedYes: true,
+    roadmapVersion: extras.roadmapVersion ?? "GTM-R83",
+    stateVersion: extras.stateVersion ?? "STATE-R81",
+  });
+}
+
 /** Derive historical IMP-032 STARTED artifact from the live completion artifact. */
 function toImp032StartedArtifact(completedArtifact) {
   return completedArtifact
@@ -2530,7 +2698,9 @@ describe("IMP-032 architecture lock checkpoint", () => {
 
   const lockArtifactFixture = toLockArtifact(
     toImp032StartedArtifact(
-      readFileSync("docs/platform/capabilities/IMP-032-dehradun-delivery-operating-mode.md", "utf8"),
+      toImp032CompletionPendingArtifact(
+        readFileSync("docs/platform/capabilities/IMP-032-dehradun-delivery-operating-mode.md", "utf8"),
+      ),
     ),
   );
 
@@ -2595,9 +2765,11 @@ describe("IMP-032 implementation authorization checkpoint", () => {
   });
 
   const liveStartedArtifact = toImp032StartedArtifact(
-    readFileSync(
-      "docs/platform/capabilities/IMP-032-dehradun-delivery-operating-mode.md",
-      "utf8",
+    toImp032CompletionPendingArtifact(
+      readFileSync(
+        "docs/platform/capabilities/IMP-032-dehradun-delivery-operating-mode.md",
+        "utf8",
+      ),
     ),
   );
   const authorizedArtifact = liveStartedArtifact
@@ -2621,19 +2793,14 @@ describe("IMP-032 implementation authorization checkpoint", () => {
       /Start covers only §23\.1 under the locked operating mode and prior GTM-R82 authorization\. It does\n\*\*not\*\* complete or accept implementation, and does \*\*not\*\* authorize provider API automation,\nwebhooks, workers, queues, notifications\/WhatsApp, schema\/migration for Delivery tables, D-373,\nARCH-R19, IMP-033, or IMP-034\./,
       "Authorization covers only §23.1 under the locked operating mode. It does **not** authorize provider\nAPI automation, webhooks, workers, queues, notifications/WhatsApp, schema/migration for Delivery\ntables, D-373, ARCH-R19, IMP-033, or IMP-034. Start remains a separate governance gate.",
     );
-  const liveRoadmapText = readFileSync("docs/platform/ROADMAP.md", "utf8")
-    .replaceAll("GTM-R85", "GTM-R83")
-    .replaceAll("IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE", "IMPLEMENTATION_IN_PROGRESS")
-    .replaceAll("AUTHORIZED / STARTED / COMPLETE", "AUTHORIZED / STARTED")
-    .replaceAll("Pending Acceptance:    IMP-032", "Pending Acceptance:    NONE")
-    .replaceAll("IMP-032_IMPLEMENTATION_COMPLETE: YES", "IMP-032_IMPLEMENTATION_COMPLETE: NO");
-  const liveStateText = readFileSync("docs/platform/STATE.md", "utf8")
-    .replaceAll("STATE-R83", "STATE-R81")
-    .replaceAll('"pendingAcceptance": "IMP-032"', '"pendingAcceptance": "NONE"')
-    .replaceAll("IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE", "IMPLEMENTATION_IN_PROGRESS")
-    .replaceAll("AUTHORIZED / STARTED / COMPLETE", "AUTHORIZED / STARTED")
-    .replaceAll("Pending Acceptance:             IMP-032", "Pending Acceptance:             NONE")
-    .replaceAll("IMP-032_IMPLEMENTATION_COMPLETE: YES", "IMP-032_IMPLEMENTATION_COMPLETE: NO");
+  const liveRoadmapText = normalizeLiveDocsToImp032InProgress(
+    readFileSync("docs/platform/ROADMAP.md", "utf8"),
+    readFileSync("docs/platform/STATE.md", "utf8"),
+  ).roadmapText;
+  const liveStateText = normalizeLiveDocsToImp032InProgress(
+    readFileSync("docs/platform/ROADMAP.md", "utf8"),
+    readFileSync("docs/platform/STATE.md", "utf8"),
+  ).stateText;
   const rewriteAuthorizationSection = (docText, sectionStart, sectionEndMarker) => {
     const start = docText.indexOf(sectionStart);
     const end = docText.indexOf(sectionEndMarker, start + 1);
@@ -2781,24 +2948,19 @@ describe("IMP-032 implementation start checkpoint", () => {
   });
 
   const startedArtifact = toImp032StartedArtifact(
-    readFileSync(
-      "docs/platform/capabilities/IMP-032-dehradun-delivery-operating-mode.md",
-      "utf8",
+    toImp032CompletionPendingArtifact(
+      readFileSync(
+        "docs/platform/capabilities/IMP-032-dehradun-delivery-operating-mode.md",
+        "utf8",
+      ),
     ),
   );
-  const roadmapText = readFileSync("docs/platform/ROADMAP.md", "utf8")
-    .replaceAll("GTM-R85", "GTM-R83")
-    .replaceAll("IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE", "IMPLEMENTATION_IN_PROGRESS")
-    .replaceAll("AUTHORIZED / STARTED / COMPLETE", "AUTHORIZED / STARTED")
-    .replaceAll("Pending Acceptance:    IMP-032", "Pending Acceptance:    NONE")
-    .replaceAll("IMP-032_IMPLEMENTATION_COMPLETE: YES", "IMP-032_IMPLEMENTATION_COMPLETE: NO");
-  const stateText = readFileSync("docs/platform/STATE.md", "utf8")
-    .replaceAll("STATE-R83", "STATE-R81")
-    .replaceAll('"pendingAcceptance": "IMP-032"', '"pendingAcceptance": "NONE"')
-    .replaceAll("IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE", "IMPLEMENTATION_IN_PROGRESS")
-    .replaceAll("AUTHORIZED / STARTED / COMPLETE", "AUTHORIZED / STARTED")
-    .replaceAll("Pending Acceptance:             IMP-032", "Pending Acceptance:             NONE")
-    .replaceAll("IMP-032_IMPLEMENTATION_COMPLETE: YES", "IMP-032_IMPLEMENTATION_COMPLETE: NO");
+  const startedDocs = normalizeLiveDocsToImp032InProgress(
+    readFileSync("docs/platform/ROADMAP.md", "utf8"),
+    readFileSync("docs/platform/STATE.md", "utf8"),
+  );
+  const roadmapText = startedDocs.roadmapText;
+  const stateText = startedDocs.stateText;
 
   it("supports only the R83/S81 start checkpoint", () => {
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R83", "STATE-R81", "imp032Start"), true);
@@ -2899,10 +3061,22 @@ describe("IMP-032 permission bootstrap boundary clarification checkpoint", () =>
   });
 
   const clarifiedArtifactFixture = toImp032StartedArtifact(
-    readFileSync("docs/platform/capabilities/IMP-032-dehradun-delivery-operating-mode.md", "utf8"),
+    toImp032CompletionPendingArtifact(
+      readFileSync("docs/platform/capabilities/IMP-032-dehradun-delivery-operating-mode.md", "utf8"),
+    ),
   );
-  const roadmapText = readFileSync("docs/platform/ROADMAP.md", "utf8");
-  const stateText = readFileSync("docs/platform/STATE.md", "utf8");
+  const clarifiedDocs = normalizeLiveDocsToImp032InProgress(
+    readFileSync("docs/platform/ROADMAP.md", "utf8"),
+    readFileSync("docs/platform/STATE.md", "utf8"),
+    {
+      permittedIfRequired: true,
+      roadmapVersion: "GTM-R84",
+      stateVersion: "STATE-R82",
+      stateActivity: "IMP-032 IMPLEMENTATION_IN_PROGRESS; architecture remains LOCKED; implementation AUTHORIZED / STARTED; GTM-R84 / STATE-R82 record implementation-boundary clarification for access-control data seed only.",
+    },
+  );
+  const roadmapText = clarifiedDocs.roadmapText;
+  const stateText = clarifiedDocs.stateText;
 
   it("supports only the R84/S82 boundary-clarification checkpoint", () => {
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R84", "STATE-R82", "imp032BoundaryClarification"), true);
@@ -2960,25 +3134,8 @@ describe("IMP-032 permission bootstrap boundary clarification checkpoint", () =>
   });
 
   it("aligns historical boundary-clarification markers via fixture capability text", () => {
-    const roadmapFixture = roadmapText
-      .replaceAll("GTM-R85", "GTM-R84")
-      .replaceAll("IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE", "IMPLEMENTATION_IN_PROGRESS")
-      .replaceAll("AUTHORIZED / STARTED / COMPLETE", "AUTHORIZED / STARTED")
-      .replaceAll("Pending Acceptance:    IMP-032", "Pending Acceptance:    NONE")
-      .replaceAll("IMP-032_IMPLEMENTATION_COMPLETE: YES", "IMP-032_IMPLEMENTATION_COMPLETE: NO")
-      .replaceAll("IMP-032_ACCESS_CONTROL_DATA_SEED_MIGRATION: APPLIED", "IMP-032_ACCESS_CONTROL_DATA_SEED_MIGRATION: PERMITTED_IF_REQUIRED");
-    const stateFixture = stateText
-      .replaceAll("STATE-R83", "STATE-R82")
-      .replaceAll('"pendingAcceptance": "IMP-032"', '"pendingAcceptance": "NONE"')
-      .replaceAll("IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE", "IMPLEMENTATION_IN_PROGRESS")
-      .replaceAll("AUTHORIZED / STARTED / COMPLETE", "AUTHORIZED / STARTED")
-      .replaceAll("Pending Acceptance:             IMP-032", "Pending Acceptance:             NONE")
-      .replaceAll("IMP-032_IMPLEMENTATION_COMPLETE: YES", "IMP-032_IMPLEMENTATION_COMPLETE: NO")
-      .replaceAll("IMP-032_ACCESS_CONTROL_DATA_SEED_MIGRATION: APPLIED", "IMP-032_ACCESS_CONTROL_DATA_SEED_MIGRATION: PERMITTED_IF_REQUIRED")
-      .replaceAll(
-        "IMP-032 IMPLEMENTATION_IN_PROGRESS; architecture remains LOCKED; implementation AUTHORIZED / STARTED; Founder UAT required before formal acceptance; GTM-R85 / STATE-R82 record implementation completion.",
-        "IMP-032 IMPLEMENTATION_IN_PROGRESS; architecture remains LOCKED; implementation AUTHORIZED / STARTED; GTM-R84 / STATE-R82 record implementation-boundary clarification for access-control data seed only.",
-      );
+    const roadmapFixture = `${roadmapText}\nGTM-R84\n`;
+    const stateFixture = `${stateText}\nSTATE-R82\n`;
     assert.deepEqual(
       evaluateImp032PermissionBootstrapClarificationCrossDocumentAlignment({
         capabilityText: clarifiedArtifactFixture,
@@ -3009,12 +3166,29 @@ describe("IMP-032 implementation completion checkpoint", () => {
     manualModeDefined: true, imp031Accepted: true, founderUatRequired: true,
   });
 
-  const completedArtifact = readFileSync(
-    "docs/platform/capabilities/IMP-032-dehradun-delivery-operating-mode.md",
-    "utf8",
+  const completedArtifact = toImp032CompletionPendingArtifact(
+    readFileSync(
+      "docs/platform/capabilities/IMP-032-dehradun-delivery-operating-mode.md",
+      "utf8",
+    ),
   );
-  const roadmapText = readFileSync("docs/platform/ROADMAP.md", "utf8");
-  const stateText = readFileSync("docs/platform/STATE.md", "utf8");
+  const completionDocs = projectLiveDocsToHistoricalCurrent(
+    readFileSync("docs/platform/ROADMAP.md", "utf8"),
+    readFileSync("docs/platform/STATE.md", "utf8"),
+    {
+      acceptedThrough: "IMP-031 — Provider-Neutral Delivery Foundation",
+      currentSlice: "IMP-032 — Dehradun Delivery Operating Mode",
+      nextSlice: "IMP-033 — Notification Foundation",
+      pendingAcceptance: "IMP-032",
+      facts: IMP032_COMPLETION_FACTS,
+      scrubImp032AcceptedYes: true,
+      stateActivity: "IMP-032 IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE; architecture remains LOCKED; implementation AUTHORIZED / STARTED / COMPLETE; Founder UAT required before formal acceptance; GTM-R85 / STATE-R83 record implementation completion.",
+      roadmapVersion: "GTM-R85",
+      stateVersion: "STATE-R83",
+    },
+  );
+  const roadmapText = completionDocs.roadmapText;
+  const stateText = completionDocs.stateText;
 
   it("supports only the R85/S83 completion checkpoint", () => {
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R85", "STATE-R83", "imp032Completion"), true);
@@ -3147,6 +3321,16 @@ IMP-031_ARCHITECTURE_LOCKED: NO
  * Historical IMP-031 evaluators first normalize back to the R79/S77 acceptance position.
  */
 function normalizeImp031AcceptedLifecycleDocs(activatedRoadmap, activatedState) {
+  const projected = projectLiveDocsToHistoricalCurrent(activatedRoadmap, activatedState, {
+    acceptedThrough: "IMP-031 — Provider-Neutral Delivery Foundation",
+    currentSlice: "NONE",
+    nextSlice: "IMP-032 — Dehradun Delivery Operating Mode",
+    pendingAcceptance: "NONE",
+    facts: IMP032_PLANNED_FACTS,
+    stateActivity: "IMP-031 COMPLETE_AND_ACCEPTED; IMP-032 PLANNED / NOT_ACTIVATED.",
+    roadmapVersion: "GTM-R79",
+    stateVersion: "STATE-R77",
+  });
   const rewriteCurrent = (docText, sectionStart, sectionEndMarker) => {
     const start = docText.indexOf(sectionStart);
     const end = docText.indexOf(sectionEndMarker, start + 1);
@@ -3154,6 +3338,21 @@ function normalizeImp031AcceptedLifecycleDocs(activatedRoadmap, activatedState) 
     assert.notEqual(end, -1);
     const current = docText.slice(start, end);
     const updated = current
+      .replace(/Accepted Through:\s*IMP-032[^\n]*/g, "Accepted Through:     IMP-031 — Provider-Neutral Delivery Foundation")
+      .replace(/acceptedThrough:\s*IMP-032\b/g, "acceptedThrough: IMP-031")
+      .replace(/Current Product Slice:\s*IMP-033[^\n]*/g, "Current Product Slice: NONE")
+      .replace(/Current Product Implementation:\s*IMP-033[^\n]*/g, "Current Product Implementation: NONE")
+      .replace(/currentProductSlice:\s*IMP-033\b/g, "currentProductSlice: NONE")
+      .replace(/Next Product Slice:\s*IMP-034[^\n]*/g, "Next Product Slice:    IMP-032 — Dehradun Delivery Operating Mode")
+      .replace(/nextProductSlice:\s*IMP-034[^\n]*/g, "nextProductSlice: IMP-032 — Dehradun Delivery Operating Mode")
+      .replace(
+        /IMP-033:\s*ARCHITECTURE_IN_PROGRESS\nIMP-033_ARCHITECTURE:\s*NOT_LOCKED\nIMP-033_ARCHITECTURE_LOCKED:\s*NO\nIMP-033_IMPLEMENTATION:\s*NOT_AUTHORIZED \/ NOT_STARTED\nIMP-033_IMPLEMENTATION_AUTHORIZED:\s*NO\nIMP-033_STARTED:\s*NO\nIMP-033_IMPLEMENTATION_COMPLETE:\s*NO\nIMP-033_ACCEPTED:\s*NO\n/g,
+        "IMP-033: PLANNED / NOT_ACTIVATED\n",
+      )
+      .replace(
+        /IMP-032:\s*COMPLETE_AND_ACCEPTED\nIMP-032_ARCHITECTURE:\s*LOCKED\nIMP-032_ARCHITECTURE_LOCKED:\s*YES\nIMP-032_IMPLEMENTATION:\s*AUTHORIZED \/ STARTED \/ COMPLETE\nIMP-032_IMPLEMENTATION_AUTHORIZED:\s*YES\nIMP-032_STARTED:\s*YES\nIMP-032_IMPLEMENTATION_COMPLETE:\s*YES\nIMP-032_ACCEPTED:\s*YES\n(?:IMP-032_FOUNDER_UAT_REQUIRED:\s*YES\nIMP-032_FOUNDER_UAT:\s*PASS\n)?(?:IMP032_[^\n]*\n)*?(?:FOUNDER_UAT_CANDIDATE_[^\n]*\n)*?IMP-033:\s*PLANNED \/ NOT_ACTIVATED\nD-373_CREATED:\s*NO\nNO_NEW_CURRENT_DECISION_IN_THIS_ACTIVATION_GATE:\s*YES\n/g,
+        "IMP-032: PLANNED / NOT_ACTIVATED\n",
+      )
       .replace(/Current Product Slice:\s*IMP-032[^\n]*/g, "Current Product Slice: NONE")
       .replace(/Current Product Implementation:\s*IMP-032[^\n]*/g, "Current Product Implementation: NONE")
       .replace(/currentProductSlice:\s*IMP-032\b/g, "currentProductSlice: NONE")
@@ -3206,11 +3405,23 @@ function normalizeImp031AcceptedLifecycleDocs(activatedRoadmap, activatedState) 
       .replace(
         /IMP-032 ARCHITECTURE_IN_PROGRESS; architecture is not locked and\n\s*implementation is not authorized or started\./g,
         "IMP-031 COMPLETE_AND_ACCEPTED;\n                              IMP-032 PLANNED / NOT_ACTIVATED.",
+      )
+      .replace(
+        /IMP-033 ARCHITECTURE_IN_PROGRESS; architecture NOT_LOCKED; implementation NOT_AUTHORIZED \/ NOT_STARTED; GTM-R87 \/ STATE-R85 record IMP-033 activation and draft capability architecture\./g,
+        "IMP-031 COMPLETE_AND_ACCEPTED;\n                              IMP-032 PLANNED / NOT_ACTIVATED.",
       );
     return `${docText.slice(0, start)}${updated}${docText.slice(end)}`;
   };
-  let roadmapText = rewriteCurrent(activatedRoadmap, "## 2.", "## 3.");
+  let roadmapText = rewriteCurrent(projected.roadmapText, "## 2.", "## 3.");
   roadmapText = roadmapText
+    .replace(
+      "| IMP-032 | Dehradun Delivery Operating Mode | COMPLETE_AND_ACCEPTED |",
+      "| IMP-032 | Dehradun Delivery Operating Mode | PLANNED |",
+    )
+    .replace(
+      "| IMP-033 | Notification Foundation | ARCHITECTURE_IN_PROGRESS |",
+      "| IMP-033 | Notification Foundation | PLANNED |",
+    )
     .replace(
       "| IMP-032 | Dehradun Delivery Operating Mode | IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE |",
       "| IMP-032 | Dehradun Delivery Operating Mode | PLANNED |",
@@ -3232,7 +3443,7 @@ function normalizeImp031AcceptedLifecycleDocs(activatedRoadmap, activatedState) 
       "| IMP-032 | Dehradun Delivery Operating Mode | PLANNED |",
     );
   const stateText = rewriteCurrent(
-    rewriteCurrent(activatedState, "## 2. Current Work Position", "\n## "),
+    rewriteCurrent(projected.stateText, "## 2. Current Work Position", "\n## "),
     "## 5. Acceptance Position",
     "\n## ",
   );
@@ -4642,5 +4853,76 @@ describe("generic capability lifecycle validation", () => {
     });
     assert.equal(result.ok, false);
     assert.equal(result.code, "PENDING_ACCEPTANCE_INCOMPLETE");
+  });
+});
+
+describe("IMP-032 formal acceptance checkpoint", () => {
+  const acceptance = Object.freeze({
+    roadmapVersion: "GTM-R86", stateVersion: "STATE-R84", acceptedThrough: "IMP-032",
+    currentProductSlice: "NONE", nextProductSlice: "IMP-033", pendingAcceptance: "NONE",
+    imp031: "COMPLETE_AND_ACCEPTED", imp032: "COMPLETE_AND_ACCEPTED", architecture: "LOCKED",
+    architectureLocked: "YES", implementationAuthorized: "YES", started: "YES",
+    implementationComplete: "YES", accepted: "YES", imp033: "PLANNED",
+    architectureVersion: "ARCH-R18", decisionRegisterVersion: "DR-14",
+    acceptedMainSha: "078ae39109a748174c429ac40381e038ab21d3c1",
+    acceptedTree: "973153488a4e32e06a6da1e1e7d41072ebca9376",
+    founderUatPass: true, artifact: true, archG24: true, d373Exists: false,
+    manualModeDefined: true, implementationEvidenceComplete: true,
+    independentReviewPass: true, independentAcceptanceAccepted: true, formalAcceptanceAccepted: true,
+  });
+
+  const capabilityText = readFileSync("docs/platform/capabilities/IMP-032-dehradun-delivery-operating-mode.md", "utf8");
+  const roadmapText = readFileSync("docs/platform/ROADMAP.md", "utf8")
+    .replaceAll("GTM-R87", "GTM-R86")
+    .replaceAll("STATE-R85", "STATE-R84")
+    .replaceAll("Current Product Slice: IMP-033", "Current Product Slice: NONE")
+    .replaceAll("currentProductSlice: IMP-033", "currentProductSlice: NONE")
+    .replaceAll("IMP-033: ARCHITECTURE_IN_PROGRESS", "IMP-033: PLANNED / NOT_ACTIVATED")
+    .replaceAll("| IMP-033 | Notification Foundation | ARCHITECTURE_IN_PROGRESS |", "| IMP-033 | Notification Foundation | PLANNED |");
+  const stateText = readFileSync("docs/platform/STATE.md", "utf8")
+    .replaceAll("STATE-R85", "STATE-R84")
+    .replaceAll("currentProductSlice: IMP-033", "currentProductSlice: NONE")
+    .replaceAll("IMP-033:                  ARCHITECTURE_IN_PROGRESS", "IMP-033:                  PLANNED / NOT_ACTIVATED");
+
+  it("supports only the R86/S84 formal-acceptance checkpoint", () => {
+    assert.deepEqual(evaluateImp032AcceptanceCheckpoint(acceptance), { ok: true });
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R86", "STATE-R84", "imp032Acceptance"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R87", "STATE-R85", "imp033Activation"), true);
+  });
+
+  it("accepts live accepted artifact and normalized documents", () => {
+    assert.deepEqual(evaluateImp032AcceptanceArtifact(capabilityText), { ok: true });
+    assert.deepEqual(
+      evaluateImp032AcceptanceCrossDocumentAlignment({ capabilityText, roadmapText, stateText }),
+      { ok: true },
+    );
+  });
+});
+
+describe("IMP-033 architecture activation checkpoint", () => {
+  const activation = Object.freeze({
+    roadmapVersion: "GTM-R87", stateVersion: "STATE-R85", acceptedThrough: "IMP-032",
+    currentProductSlice: "IMP-033", nextProductSlice: "IMP-034", pendingAcceptance: "NONE",
+    imp032: "COMPLETE_AND_ACCEPTED", imp033: "ARCHITECTURE_IN_PROGRESS", architecture: "NOT_LOCKED",
+    architectureLocked: "NO", implementation: "NOT_AUTHORIZED / NOT_STARTED",
+    implementationAuthorized: "NO", started: "NO", implementationComplete: "NO", accepted: "NO",
+    imp034: "PLANNED", roadmapLifecycle: "ARCHITECTURE_IN_PROGRESS", stateLifecycle: "ARCHITECTURE_IN_PROGRESS",
+    architectureVersion: "ARCH-R18", decisionRegisterVersion: "DR-14",
+    artifact: true, d373Exists: false, imp032Accepted: true,
+  });
+
+  const capabilityText = readFileSync("docs/platform/capabilities/IMP-033-notification-foundation.md", "utf8");
+  const roadmapText = readFileSync("docs/platform/ROADMAP.md", "utf8");
+  const stateText = readFileSync("docs/platform/STATE.md", "utf8");
+
+  it("supports only the R87/S85 activation checkpoint", () => {
+    assert.deepEqual(evaluateImp033ArchitectureActivationCheckpoint(activation), { ok: true });
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R87", "STATE-R85", "imp033Activation"), true);
+  });
+
+  it("accepts live draft artifact and current documents", () => {
+    assert.deepEqual(evaluateImp033ArchitectureDraftArtifact(capabilityText), { ok: true });
+    assert.match(roadmapText, /IMP-033:\s*ARCHITECTURE_IN_PROGRESS/);
+    assert.match(stateText, /IMP-033:\s*ARCHITECTURE_IN_PROGRESS/);
   });
 });

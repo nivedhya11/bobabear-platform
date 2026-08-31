@@ -129,7 +129,7 @@ Other domains may reference or project it but must not establish competing mutab
 | Customer Menu Projection | Customer-facing storefront **READ MODEL** composed from existing catalog/menu, pricing, assortment/availability, modifier, and bundle authorities | CURRENT serving architecture ([D-368](./decision-register.md)); implemented and accepted under IMP-028B; not a new commercial authority |
 | Operations | Preparation, readiness, workforce action, and operational handoff facts | Delivery references confirmed Operations facts; it does not replace their authority |
 | Delivery | Provider-neutral dispatch and delivery-execution truth, including delivery proof, failure/return, and provider-cost reconciliation facts | First-class domain; capability architecture LOCKED under IMP-031; implementation AUTHORIZED / STARTED / COMPLETE / COMPLETE_AND_ACCEPTED; does not rewrite Order lifecycle or historical customer delivery charge |
-| Notification | FUTURE / NOT_IMPLEMENTED | Roadmapped as IMP-033+ |
+| Notification | FUTURE / NOT_IMPLEMENTED | IMP-033 architecture in progress; roadmapped foundation at [`capabilities/IMP-033-notification-foundation.md`](./capabilities/IMP-033-notification-foundation.md) |
 
 Accepted chain:
 
