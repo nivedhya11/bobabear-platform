@@ -212,8 +212,8 @@ function checkPermissions() {
   const keysMatch = catalog.match(/export const PERMISSION_KEYS = \[([\s\S]*?)\] as const/);
   if (keysMatch) {
     const count = (keysMatch[1].match(/"/g) || []).length / 2;
-    if (count !== 51 && count !== 55 && count !== 57) {
-      findings.push(`PERMISSION_KEYS must contain 51, 55, or 57 entries, found ${count}`);
+    if (count !== 51 && count !== 55 && count !== 57 && count !== 68) {
+      findings.push(`PERMISSION_KEYS must contain 51, 55, 57, or 68 entries, found ${count}`);
     }
   }
 }

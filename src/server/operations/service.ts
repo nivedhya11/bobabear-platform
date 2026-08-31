@@ -6,6 +6,7 @@ import { createServer, type Server } from "node:http";
 import { getWorkforceAuthRuntime, type WorkforceAuthRuntime } from "../auth/workforce";
 import type { WorkforceAuthConfig } from "../auth/shared/types";
 import type { WebConfig, WorkerConfig } from "../../platform/config";
+import { NotificationOutboxProcessor } from "../notifications";
 import { getApplicationPersistence, type Persistence } from "../persistence";
 import { createOperationsRequestListener, type OperationsRequestEvent } from "./http/app";
 
@@ -19,6 +20,10 @@ export type OperationsServiceOptions = Readonly<{
   host: string;
   port: number;
   shutdownTimeoutMs?: number;
+  /** Notification outbox processor (IMP-033). Order and Delivery mutations
+   * originate here, so this host polls too; SKIP LOCKED keeps it safe to run
+   * concurrently with the same processor in customer-commerce. */
+  enableNotificationOutboxProcessor?: boolean;
 }>;
 
 function logSafeEvent(event: OperationsRequestEvent): void {
@@ -32,6 +37,7 @@ export class OperationsService {
   private readonly persistence: Persistence;
   private readonly runtime: WorkforceAuthRuntime;
   private readonly server: Server;
+  private readonly notificationProcessor: NotificationOutboxProcessor | null;
   private started = false;
   private closed = false;
   private inFlightCount = 0;
@@ -56,6 +62,10 @@ export class OperationsService {
         },
       },
     ));
+    this.notificationProcessor =
+      config.enableNotificationOutboxProcessor === false
+        ? null
+        : new NotificationOutboxProcessor({ persistence: this.persistence });
   }
 
   async start(): Promise<void> {
@@ -65,6 +75,7 @@ export class OperationsService {
       this.server.once("error", reject);
       this.server.listen(this.config.port, this.config.host, () => resolve());
     });
+    this.notificationProcessor?.start();
   }
 
   get boundPort(): number | null {
@@ -83,6 +94,7 @@ export class OperationsService {
   async close(): Promise<void> {
     if (this.closed) return;
     this.closed = true;
+    await this.notificationProcessor?.stop();
     const serverClosed = new Promise<void>((resolve) => { this.server.close(() => resolve()); });
     await this.waitForInFlightRequests(this.config.shutdownTimeoutMs ?? DEFAULT_SHUTDOWN_TIMEOUT_MS);
     await this.runtime.close();

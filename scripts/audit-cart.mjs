@@ -269,7 +269,7 @@ function main() {
   const keysMatch = catalog.match(/export const PERMISSION_KEYS = \[([\s\S]*?)\] as const/);
   if (keysMatch) {
     const count = [...keysMatch[1].matchAll(/"/g)].length / 2;
-    if (count !== 51 && count !== 55 && count !== 57) findings.push(`PERMISSION_KEYS must be 51, 55, or 57, found ${count}`);
+    if (count !== 51 && count !== 55 && count !== 57 && count !== 68) findings.push(`PERMISSION_KEYS must be 51, 55, 57, or 68, found ${count}`);
   }
   if (/cart\./i.test(catalog)) {
     findings.push("No workforce cart.* permissions may be added");

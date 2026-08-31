@@ -16,10 +16,10 @@ import {
 } from "../../src/shared/access-control";
 
 describe("access-control catalog", () => {
-  it("declares exactly 67 permissions and 7 roles", () => {
-    expect(PERMISSION_KEYS).toHaveLength(67);
+  it("declares exactly 68 permissions and 7 roles", () => {
+    expect(PERMISSION_KEYS).toHaveLength(68);
     expect(ROLE_KEYS).toHaveLength(7);
-    expect(new Set(PERMISSION_KEYS).size).toBe(67);
+    expect(new Set(PERMISSION_KEYS).size).toBe(68);
     expect(new Set(ROLE_KEYS).size).toBe(7);
   });
 
@@ -44,7 +44,7 @@ describe("access-control catalog", () => {
     }
 
     const platformPerms = permissionsForRole("platform_super_admin");
-    expect(platformPerms).toHaveLength(67);
+    expect(platformPerms).toHaveLength(68);
     expect(new Set(platformPerms)).toEqual(new Set(PERMISSION_KEYS));
 
     expect(permissionsForRole("kitchen_operator")).toEqual([
@@ -127,6 +127,11 @@ describe("access-control catalog", () => {
     expect(permissionsForRole("support_refund_operator")).toContain("order.cancel");
     expect(permissionsForRole("support_refund_operator")).toContain("payment.refund");
     expect(permissionsForRole("support_refund_operator")).toContain("payment.refund.read");
+    expect(permissionsForRole("support_refund_operator")).toContain("notification.resend");
+    expect(permissionsForRole("platform_super_admin")).toContain("notification.resend");
+    expect(permissionsForRole("finance_viewer")).not.toContain("notification.resend");
+    expect(permissionsForRole("outlet_manager")).not.toContain("notification.resend");
+    expect(permissionsForRole("delivery_coordinator")).not.toContain("notification.resend");
     expect(permissionsForRole("finance_viewer")).toContain("payment.refund.read");
     expect(permissionsForRole("finance_viewer")).not.toContain("payment.refund");
     expect(permissionsForRole("outlet_manager")).not.toContain("payment.refund");
@@ -166,6 +171,7 @@ describe("access-control catalog", () => {
     expect(PERMISSION_KEYS).toContain("pricing.audit.read");
     expect(PERMISSION_KEYS).toContain("payment.refund");
     expect(PERMISSION_KEYS).toContain("payment.refund.read");
+    expect(PERMISSION_KEYS).toContain("notification.resend");
   });
 
   it("locks platform_super_admin to platform scope only", () => {

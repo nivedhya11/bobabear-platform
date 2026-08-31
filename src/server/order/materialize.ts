@@ -14,6 +14,7 @@ import {
   type OrderMaterializationResult,
   type OrderPolicy,
 } from "../../shared/order";
+import { enqueueOrderReceivedNotification } from "../notifications/enqueue";
 import type { Persistence } from "../persistence/types";
 import {
   finalizeCartForOrder,
@@ -220,6 +221,15 @@ export async function materializeOrderForCompletedCheckout(
           "Unable to allocate a unique Order number.",
         );
       }
+
+      // Notification intent commits atomically with the Order it describes
+      // (IMP-033). Never a notification without a placed Order, never a placed
+      // Order without its queued notification.
+      await enqueueOrderReceivedNotification(tx, {
+        customerId: checkout.customerAuthUserId,
+        orderId: inserted.id,
+        occurredAt: now,
+      });
 
       let cartFinalization: OrderCartFinalizationDisposition =
         "PRESERVED_UNAVAILABLE";

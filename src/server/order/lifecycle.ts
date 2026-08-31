@@ -12,6 +12,7 @@ import {
   type OrderMutationResult,
   type OrderPolicy,
 } from "../../shared/order";
+import { enqueueOrderLifecycleNotification } from "../notifications/enqueue";
 import type { Persistence } from "../persistence/types";
 import { loadSnapshotRowForOrder } from "./adapters/checkout";
 import {
@@ -107,6 +108,13 @@ export async function acceptOrder(
       updatedAt: now,
       acceptedAt: now,
       acceptedByWorkforceUserId: workforce.workforceUserId,
+    });
+    // IMP-033: notification intent commits with the acceptance it describes.
+    await enqueueOrderLifecycleNotification(tx, {
+      orderId: updated.id,
+      semanticType: "ORDER_ACCEPTED",
+      revision: updated.revision,
+      occurredAt: now,
     });
     return toOrderMutationResult(mapOrderRow(updated));
   });
@@ -249,6 +257,13 @@ export async function cancelOrder(
       cancelledByWorkforceUserId: workforce.workforceUserId,
       cancellationReasonCode: parsed.cancellationReasonCode,
       // Preserve acceptance provenance when cancelling after ACCEPTED.
+    });
+    // IMP-033: notification intent commits with the cancellation it describes.
+    await enqueueOrderLifecycleNotification(tx, {
+      orderId: updated.id,
+      semanticType: "ORDER_CANCELLED",
+      revision: updated.revision,
+      occurredAt: now,
     });
     return toOrderMutationResult(mapOrderRow(updated));
   });
