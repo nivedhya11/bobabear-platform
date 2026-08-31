@@ -2589,7 +2589,8 @@ export function evaluateImp032AcceptanceArtifact(text) {
     /IMP-032:\s*IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE/,
     /IMP-032_ACCEPTED:\s*NO/,
     /FOUNDER_UAT:\s*NOT_STARTED/,
-    /\bD-373\b/,
+    /\|\s*D-373\s*\|/,
+    /D-373_CREATED:\s*YES/,
   ];
   if (forbidden.some((pattern) => pattern.test(text))) {
     return { ok: false, code: "IMP032_CAPABILITY_PROGRESSION", message: "IMP-032 acceptance must not retain pending-acceptance or missing Founder UAT PASS" };

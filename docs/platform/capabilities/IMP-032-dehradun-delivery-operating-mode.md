@@ -539,9 +539,9 @@ ARCH remains ARCH-R18. DR remains DR-14.
 
 ## 23. Implementation boundary
 
-Implementation is **AUTHORIZED** / **STARTED** / **COMPLETE** for the locked manual-mode boundary
-below. Completion does **not** accept implementation (`IMP-032_IMPLEMENTATION_COMPLETE: YES`;
-`IMP-032_ACCEPTED: NO`; Founder UAT required).
+Implementation is **AUTHORIZED** / **STARTED** / **COMPLETE** and **formally accepted** for the
+locked manual-mode boundary below (`IMP-032_IMPLEMENTATION_COMPLETE: YES`; `IMP-032_ACCEPTED: YES`;
+Founder UAT **PASS**).
 
 ### 23.1 Included (authorized; started)
 
