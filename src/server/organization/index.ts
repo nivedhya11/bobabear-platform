@@ -46,3 +46,10 @@ export {
   updateLegalEntity,
 } from "./legal-entities";
 export { createOutlet, findOutletById, updateOutlet } from "./outlets";
+export {
+  listBrands,
+  listLegalEntities,
+  listOrganizations,
+  listOutlets,
+  listTerritories,
+} from "./queries";

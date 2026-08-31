@@ -26,6 +26,7 @@ import { checkTrustedOrigin } from "../../workforce-auth/http/origin";
 import { resolveOperationsWorkforcePrincipal } from "./auth";
 import { readOperationsJsonObjectBody } from "./body";
 import { classifyDeliveryRoute, handleDeliveryRoute } from "./delivery-routes";
+import { classifyAdminRoute, routeAdminRequest } from "./admin-routes";
 import { mapOperationsError } from "./error-map";
 import { sendJson, sendMethodNotAllowed, sendNotFound } from "./response";
 
@@ -120,6 +121,11 @@ export async function routeOperationsRequest(
   }
   const route = classifyRoute(url.pathname);
   const deliveryRoute = classifyDeliveryRoute(url.pathname);
+  const adminRoute = classifyAdminRoute(url.pathname);
+
+  if (adminRoute) {
+    return routeAdminRequest(req, res, deps, requestId);
+  }
 
   if (deliveryRoute) {
     if (url.search !== "" && deliveryRoute.kind !== "get_delivery") {

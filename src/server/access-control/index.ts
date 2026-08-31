@@ -58,6 +58,13 @@ export { insertAccessAuditEvent } from "./audit";
 export type { InsertAccessAuditEventInput } from "./audit";
 
 export {
+  listAccessAuditEvents,
+  listMemberships,
+  listRoleAssignmentsForMembership,
+} from "./queries";
+export type { AccessAuditEvent } from "./queries";
+
+export {
   createMembership,
   findMembershipById,
   transitionMembership,

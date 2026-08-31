@@ -58,6 +58,7 @@ directory.
 | [`capabilities/IMP-028B-customer-menu-projection-and-discovery.md`](./capabilities/IMP-028B-customer-menu-projection-and-discovery.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-028B Customer Menu Projection + Discovery; COMPLETE_AND_ACCEPTED (`IMP-028B_ACCEPTED: YES`) |
 | [`capabilities/IMP-033-notification-foundation.md`](./capabilities/IMP-033-notification-foundation.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-033 Notification Foundation; COMPLETE_AND_ACCEPTED (`IMP-033_ACCEPTED: YES`) |
 | [`capabilities/IMP-034-meta-whatsapp-cloud-api-adapter.md`](./capabilities/IMP-034-meta-whatsapp-cloud-api-adapter.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-034 Meta WhatsApp Cloud API Adapter; COMPLETE_AND_ACCEPTED (`IMP-034_ACCEPTED: YES`) |
+| [`capabilities/IMP-035-initial-administration-capabilities.md`](./capabilities/IMP-035-initial-administration-capabilities.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-035 Initial Administration Capabilities; IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE (`IMP-035_ACCEPTED: NO`; Founder UAT required; D-373 / ARCH-R19) |
 
 ## Supporting documents
 

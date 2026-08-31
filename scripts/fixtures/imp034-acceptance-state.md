@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R90",
+  "stateVersion": "STATE-R89",
   "acceptedThrough": "IMP-034",
-  "currentProductSlice": "IMP-035",
-  "nextProductSlice": "IMP-036",
-  "pendingAcceptance": "IMP-035",
+  "currentProductSlice": "NONE",
+  "nextProductSlice": "IMP-035",
+  "pendingAcceptance": "NONE",
   "governanceHealth": "ALIGNED",
-  "lastReviewed": "2026-09-01"
+  "lastReviewed": "2026-08-31"
 }
 -->
 
@@ -28,14 +28,11 @@ Accepted Range:            IMP-001 → IMP-034 (including IMP-005A and IMP-026C)
 ## 2. Current Work Position
 
 ```text
-Current Product Implementation: IMP-035 — Initial Administration Capabilities
-Pending Acceptance:             IMP-035
-Next Product Slice:             IMP-036 — Observability & Operational Controls
-Current Governance Activity:    IMP-035 IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
-                              (architecture LOCKED; implementation AUTHORIZED /
-                              STARTED / COMPLETE under D-373 / ARCH-R19 / DR-15);
-                              IMP-034 remains COMPLETE_AND_ACCEPTED;
-                              IMP-036 PLANNED / NOT_ACTIVATED.
+Current Product Implementation: NONE
+Pending Acceptance:             NONE
+Next Product Slice:             IMP-035 — Initial Administration Capabilities
+Current Governance Activity:    IMP-034 COMPLETE_AND_ACCEPTED;
+                              IMP-035 PLANNED / NOT_ACTIVATED.
 Governance Health:              ALIGNED
 ```
 
@@ -212,26 +209,10 @@ IMP034_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
 IMP034_FORMAL_ACCEPTANCE: ACCEPTED
 IMP034_ACCEPTED_MAIN_SHA: 7e92d1a1ca02ad825229b64f308a8fc555956d25
 IMP034_ACCEPTED_TREE: 772c585e93c78285e5b972d8b8a58c83507e01f8
-IMP-035:                  IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
-IMP-035_ARCHITECTURE:     LOCKED
-IMP-035_ARCHITECTURE_LOCKED: YES
-IMP-035_IMPLEMENTATION:   AUTHORIZED / STARTED / COMPLETE
-IMP-035_IMPLEMENTATION_AUTHORIZED: YES
-IMP-035_STARTED:          YES
-IMP-035_IMPLEMENTATION_COMPLETE: YES
-IMP-035_ACCEPTED:         NO
-IMP-035_FOUNDER_UAT_REQUIRED: YES
-IMP-035_FOUNDER_UAT:      NOT_CLAIMED
-IMP-035_SCHEMA_CHANGE:    NO
-IMP-035_PROVIDER_IO:      NO
-IMP-035_NEW_SERVICE:      NO
-IMP-035_NEW_PERMISSIONS:  NO
-IMP-035_NEW_ROLES:        NO
-D-373_CREATED:            YES
-ARCH_R19_REQUIRED:        YES
-ARCH-R19:                 CURRENT
-DR-15:                    CURRENT
-COMPLETION_IS_NOT_ACCEPTANCE: YES
+IMP-035:                  PLANNED / NOT_ACTIVATED
+D-373_CREATED:            NO
+ARCH_R19_REQUIRED:        NO
+NO_NEW_CURRENT_DECISION_IN_THIS_GATE: YES
 ```
 
 Capability architecture:
@@ -279,11 +260,6 @@ IMP-034 locked capability architecture (architecture LOCKED; implementation AUTH
 STARTED / COMPLETE; COMPLETE_AND_ACCEPTED):
 
 [`capabilities/IMP-034-meta-whatsapp-cloud-api-adapter.md`](./capabilities/IMP-034-meta-whatsapp-cloud-api-adapter.md)
-
-IMP-035 locked capability architecture (architecture LOCKED; implementation AUTHORIZED /
-STARTED / COMPLETE; IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE):
-
-[`capabilities/IMP-035-initial-administration-capabilities.md`](./capabilities/IMP-035-initial-administration-capabilities.md)
 
 `acceptedThrough` is IMP-031. IMP-025 architecture remains locked; IMP-025 implementation is
 **COMPLETE_AND_ACCEPTED**. IMP-026 architecture is **ARCHITECTURE_LOCKED**. IMP-026 implementation
@@ -350,18 +326,6 @@ independent acceptance without changing decision register or global architecture
 STATE-R36 record IMP-028B canonical activation without changing decision register or global
 architecture. GTM-R39 / STATE-R37 record IMP-028B architecture lock and implementation
 authorization without changing decision register or global architecture.
-
-
-STATE-R90 records a single founder-authorized **combined** gate for **IMP-035 — Initial
-Administration Capabilities**: capability architecture LOCKED at
-[`capabilities/IMP-035-initial-administration-capabilities.md`](./capabilities/IMP-035-initial-administration-capabilities.md);
-implementation AUTHORIZED / STARTED / COMPLETE; lifecycle
-`IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` (`IMP-035_ACCEPTED: NO`). Binding **D-373** is
-CURRENT; decision register **DR-15**; global architecture **ARCH-R19** / **ARCH-G25**.
-`acceptedThrough` remains IMP-034; `currentProductSlice` and `pendingAcceptance` become IMP-035;
-`nextProductSlice` becomes IMP-036, which remains `PLANNED` / `NOT_ACTIVATED`. Founder UAT is
-**required** and is not claimed PASS. Completion is not acceptance and does not authorize IMP-036.
-Supersedes STATE-R89 for the current IMP-035 lifecycle position.
 
 STATE-R89 records formal acceptance of **IMP-034 — Meta WhatsApp Cloud API Adapter** for independently
 accepted product `main` merge SHA `7e92d1a1ca02ad825229b64f308a8fc555956d25` and tree
@@ -1213,9 +1177,9 @@ Cart → Checkout → Payment → Order
 
 ```text
 acceptedThrough: IMP-034
-pendingAcceptance: IMP-035
-currentProductSlice: IMP-035
-nextProductSlice: IMP-036 — Observability & Operational Controls
+pendingAcceptance: NONE
+currentProductSlice: NONE
+nextProductSlice: IMP-035 — Initial Administration Capabilities
 IMP-028: COMPLETE_AND_ACCEPTED
 IMP-028_ACCEPTED: YES
 IMP-028A: COMPLETE_AND_ACCEPTED
@@ -1357,26 +1321,10 @@ IMP034_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
 IMP034_FORMAL_ACCEPTANCE: ACCEPTED
 IMP034_ACCEPTED_MAIN_SHA: 7e92d1a1ca02ad825229b64f308a8fc555956d25
 IMP034_ACCEPTED_TREE: 772c585e93c78285e5b972d8b8a58c83507e01f8
-IMP-035: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
-IMP-035_ARCHITECTURE: LOCKED
-IMP-035_ARCHITECTURE_LOCKED: YES
-IMP-035_IMPLEMENTATION: AUTHORIZED / STARTED / COMPLETE
-IMP-035_IMPLEMENTATION_AUTHORIZED: YES
-IMP-035_STARTED: YES
-IMP-035_IMPLEMENTATION_COMPLETE: YES
-IMP-035_ACCEPTED: NO
-IMP-035_FOUNDER_UAT_REQUIRED: YES
-IMP-035_FOUNDER_UAT: NOT_CLAIMED
-IMP-035_SCHEMA_CHANGE: NO
-IMP-035_PROVIDER_IO: NO
-IMP-035_NEW_SERVICE: NO
-IMP-035_NEW_PERMISSIONS: NO
-IMP-035_NEW_ROLES: NO
-D-373_CREATED: YES
-ARCH_R19_REQUIRED: YES
-ARCH-R19: CURRENT
-DR-15: CURRENT
-COMPLETION_IS_NOT_ACCEPTANCE: YES
+IMP-035: PLANNED / NOT_ACTIVATED
+D-373_CREATED: NO
+ARCH_R19_REQUIRED: NO
+NO_NEW_CURRENT_DECISION_IN_THIS_GATE: YES
 ```
 
 Independent acceptance of IMP-028A **is** claimed and formally reconciled
