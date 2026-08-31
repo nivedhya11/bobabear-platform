@@ -93,6 +93,7 @@ export function toCustomerOrderDetail(
   order: Order,
   outlet: OrderOutletSummary,
   snapshot: CheckoutSnapshot,
+  delivery: CustomerOrderDetail["delivery"] = null,
 ): CustomerOrderDetail {
   return Object.freeze({
     ...toCustomerOrderSummary(order, outlet, snapshot),
@@ -103,6 +104,7 @@ export function toCustomerOrderDetail(
     cancellationReasonCode: order.cancellationReasonCode,
     destination: destinationFromSnapshot(snapshot),
     lines: linesFromSnapshot(snapshot),
+    delivery,
   });
 }
 

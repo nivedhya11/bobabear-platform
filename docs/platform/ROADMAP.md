@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R84",
+  "roadmapVersion": "GTM-R85",
   "acceptedThrough": "IMP-031",
   "currentProductSlice": "IMP-032",
   "nextProductSlice": "IMP-033",
   "gtmBoundary": "IMP-040",
   "lastReviewed": "2026-08-31",
-  "supersedes": "GTM-R83"
+  "supersedes": "GTM-R84"
 }
 -->
 
@@ -275,7 +275,7 @@ IMP-031 locked capability architecture (architecture **ARCHITECTURE_LOCKED**; im
 [`capabilities/IMP-031-provider-neutral-delivery-foundation.md`](./capabilities/IMP-031-provider-neutral-delivery-foundation.md)
 
 IMP-032 locked capability architecture (architecture **ARCHITECTURE_LOCKED**; implementation
-**AUTHORIZED** / **STARTED**):
+**AUTHORIZED** / **STARTED** / **COMPLETE**; pending acceptance):
 
 [`capabilities/IMP-032-dehradun-delivery-operating-mode.md`](./capabilities/IMP-032-dehradun-delivery-operating-mode.md)
 
@@ -285,7 +285,7 @@ IMP-032 locked capability architecture (architecture **ARCHITECTURE_LOCKED**; im
 Accepted Through:     IMP-031 — Provider-Neutral Delivery Foundation
 Current Product Slice: IMP-032 — Dehradun Delivery Operating Mode
 Next Product Slice:    IMP-033 — Notification Foundation
-Pending Acceptance:    NONE
+Pending Acceptance:    IMP-032
 Public GTM Boundary:   IMP-040 — Launch Validation & Cutover
 ```
 
@@ -298,19 +298,16 @@ acceptance is recorded (`IMP-031_ACCEPTED: YES`). Accepted product identity rema
 SHA `c3d499b0b8df2a8c7ae9297ab870f6286f81b848` / tree `dd42ea992c8866ff8cfbc0ac09e781eb6fcfa099`.
 IMP-030 remains `COMPLETE_AND_ACCEPTED`. Its capability architecture remains locked in
 [`capabilities/IMP-030-operations-console-ui.md`](./capabilities/IMP-030-operations-console-ui.md)
-and was formally amended on 2026-08-27 for static detail-route realization. IMP-032 is
-`IMPLEMENTATION_IN_PROGRESS`. Architecture remains **ARCHITECTURE_LOCKED** at
+and was formally amended on 2026-08-27 for static detail-route realization. IMP-032 is `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`. Architecture remains **ARCHITECTURE_LOCKED** at
 [`capabilities/IMP-032-dehradun-delivery-operating-mode.md`](./capabilities/IMP-032-dehradun-delivery-operating-mode.md)
-(operating mode **MANUAL_PROVIDER_NEUTRAL_DEHRADUN_DELIVERY**). Implementation is
-`AUTHORIZED` / `STARTED` under prior GTM-R82 authorization (`IMP-032_IMPLEMENTATION_AUTHORIZED: YES`;
-`IMP-032_STARTED: YES`). GTM-R84 clarifies the locked §23.3 implementation boundary only: a
-repository-native data-only access-control seed migration is **PERMITTED_IF_REQUIRED** to install
-the already-locked ten `delivery.*` permission keys and repository-approved role mappings into
-already-initialized environments under explicit no-DDL / no-Delivery-table-mutation constraints.
-That clarification is not architecture expansion and not implementation completion. Start does
-**not** complete or accept implementation. IMP-033 remains `PLANNED` / `NOT_ACTIVATED`. DR-14 and
-ARCH-R18 remain unchanged; D-373 is not created. No named provider is canonical; no provider
-API/webhook/worker/queue topology is introduced.
+(operating mode **MANUAL_PROVIDER_NEUTRAL_DEHRADUN_DELIVERY**). Implementation is `AUTHORIZED` / `STARTED` /
+`COMPLETE` under prior GTM-R82/GTM-R83 authorization and start (`IMP-032_IMPLEMENTATION_AUTHORIZED: YES`;
+`IMP-032_STARTED: YES`; `IMP-032_IMPLEMENTATION_COMPLETE: YES`; `IMP-032_ACCEPTED: NO`). GTM-R85 records
+implementation completion pending independent technical acceptance and required Founder UAT. Formal
+acceptance is **not** claimed. GTM-R84 clarified the locked §23.3 data-only access-control seed migration
+as **PERMITTED_IF_REQUIRED**; that migration is now present as `0032_delivery_permissions` (data-only).
+IMP-033 remains `PLANNED` / `NOT_ACTIVATED`. DR-14 and ARCH-R18 remain unchanged; D-373 is not created.
+No named provider is canonical; no provider API/webhook/worker/queue topology is introduced.
 
 ```text
 IMP-030: COMPLETE_AND_ACCEPTED
@@ -335,16 +332,19 @@ IMP031_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
 IMP031_FORMAL_ACCEPTANCE: ACCEPTED
 IMP031_ACCEPTED_MAIN_SHA: c3d499b0b8df2a8c7ae9297ab870f6286f81b848
 IMP031_ACCEPTED_TREE: dd42ea992c8866ff8cfbc0ac09e781eb6fcfa099
-IMP-032: IMPLEMENTATION_IN_PROGRESS
+IMP-032: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
 IMP-032_ARCHITECTURE: LOCKED
 IMP-032_ARCHITECTURE_LOCKED: YES
-IMP-032_IMPLEMENTATION: AUTHORIZED / STARTED
+IMP-032_IMPLEMENTATION: AUTHORIZED / STARTED / COMPLETE
 IMP-032_IMPLEMENTATION_AUTHORIZED: YES
 IMP-032_STARTED: YES
-IMP-032_IMPLEMENTATION_COMPLETE: NO
+IMP-032_IMPLEMENTATION_COMPLETE: YES
 IMP-032_ACCEPTED: NO
-IMP-032_ACCESS_CONTROL_DATA_SEED_MIGRATION: PERMITTED_IF_REQUIRED
+IMP-032_FOUNDER_UAT_REQUIRED: YES
+IMP-032_FOUNDER_UAT: NOT_STARTED
+IMP-032_ACCESS_CONTROL_DATA_SEED_MIGRATION: APPLIED
 IMP-032_BOUNDARY_CLARIFICATION: GTM-R84
+IMP-032_COMPLETION: GTM-R85
 IMP-033: PLANNED / NOT_ACTIVATED
 D-373_CREATED: NO
 NO_NEW_CURRENT_DECISION_IN_THIS_ACTIVATION_GATE: YES
@@ -627,16 +627,19 @@ IMP031_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
 IMP031_FORMAL_ACCEPTANCE: ACCEPTED
 IMP031_ACCEPTED_MAIN_SHA: c3d499b0b8df2a8c7ae9297ab870f6286f81b848
 IMP031_ACCEPTED_TREE: dd42ea992c8866ff8cfbc0ac09e781eb6fcfa099
-IMP-032: IMPLEMENTATION_IN_PROGRESS
+IMP-032: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
 IMP-032_ARCHITECTURE: LOCKED
 IMP-032_ARCHITECTURE_LOCKED: YES
-IMP-032_IMPLEMENTATION: AUTHORIZED / STARTED
+IMP-032_IMPLEMENTATION: AUTHORIZED / STARTED / COMPLETE
 IMP-032_IMPLEMENTATION_AUTHORIZED: YES
 IMP-032_STARTED: YES
-IMP-032_IMPLEMENTATION_COMPLETE: NO
+IMP-032_IMPLEMENTATION_COMPLETE: YES
 IMP-032_ACCEPTED: NO
-IMP-032_ACCESS_CONTROL_DATA_SEED_MIGRATION: PERMITTED_IF_REQUIRED
+IMP-032_FOUNDER_UAT_REQUIRED: YES
+IMP-032_FOUNDER_UAT: NOT_STARTED
+IMP-032_ACCESS_CONTROL_DATA_SEED_MIGRATION: APPLIED
 IMP-032_BOUNDARY_CLARIFICATION: GTM-R84
+IMP-032_COMPLETION: GTM-R85
 IMP-033: PLANNED / NOT_ACTIVATED
 D-373_CREATED: NO
 NO_NEW_CURRENT_DECISION_IN_THIS_ACTIVATION_GATE: YES
@@ -787,7 +790,7 @@ consume or remap IMP-029 → IMP-040 identities and is `COMPLETE_AND_ACCEPTED`.
 
 | IMP | Capability | Lifecycle |
 |---|---|---|
-| IMP-032 | Dehradun Delivery Operating Mode | IMPLEMENTATION_IN_PROGRESS |
+| IMP-032 | Dehradun Delivery Operating Mode | IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE |
 | IMP-033 | Notification Foundation | PLANNED |
 | IMP-034 | Meta WhatsApp Cloud API Adapter | PLANNED |
 | IMP-035 | Initial Administration Capabilities | PLANNED |
@@ -1162,6 +1165,29 @@ Historical GTM-R1 meanings that are **not** current:
 Current public GTM boundary is **IMP-040**, not IMP-035.
 
 ## 9. Roadmap Change Log
+
+### GTM-R85 — 2026-08-31
+
+- Records implementation **COMPLETE** pending independent acceptance and required Founder UAT for
+  **IMP-032 — Dehradun Delivery Operating Mode** under prior GTM-R82/GTM-R83/GTM-R84 authorization,
+  start, and boundary clarification and the locked capability architecture at
+  [`capabilities/IMP-032-dehradun-delivery-operating-mode.md`](./capabilities/IMP-032-dehradun-delivery-operating-mode.md).
+  Operating mode remains **MANUAL_PROVIDER_NEUTRAL_DEHRADUN_DELIVERY**. ARCH-R18 / ARCH-G24 and DR-14
+  remain unchanged; D-373 is not created.
+- IMP-032 lifecycle becomes `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`. Architecture remains
+  `LOCKED` (`IMP-032_ARCHITECTURE_LOCKED: YES`). Implementation is `AUTHORIZED` / `STARTED` /
+  `COMPLETE` (`IMP-032_IMPLEMENTATION_AUTHORIZED: YES`; `IMP-032_STARTED: YES`;
+  `IMP-032_IMPLEMENTATION_COMPLETE: YES`; `IMP-032_ACCEPTED: NO`). Formal acceptance is **not**
+  claimed. Founder UAT is **REQUIRED** and **NOT_STARTED** (`IMP-032_FOUNDER_UAT_REQUIRED: YES`).
+- Sets `pendingAcceptance = IMP-032`. Preserves `acceptedThrough = IMP-031`,
+  `currentProductSlice = IMP-032`, and `nextProductSlice = IMP-033`. IMP-033 remains `PLANNED` /
+  `NOT_ACTIVATED` / `NOT_AUTHORIZED` / `NOT_STARTED`.
+- Records data-only access-control seed migration `0032_delivery_permissions` applied under the
+  GTM-R84 boundary (no Delivery schema change; no provider I/O). Manual booking safety, RBAC,
+  Operations API/UI, customer projection, and fulfil coordination are implemented within the locked
+  architecture. Provider API automation, webhooks, workers, queues, and notifications remain deferred.
+- Supersedes GTM-R84 for the current IMP-032 implementation-completion position. Product acceptance
+  through IMP-031 is unchanged.
 
 ### GTM-R84 — 2026-08-31
 

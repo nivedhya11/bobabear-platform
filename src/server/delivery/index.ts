@@ -22,6 +22,11 @@ export { systemDeliveryClock, fixedDeliveryClock, type DeliveryClock } from "./c
 export {
   createDelivery,
   beginBooking,
+  beginManualBooking,
+  confirmManualBooking,
+  resolveManualBookingFailure,
+  resolveManualBookingCancellation,
+  updateTrackingReference,
   recordBookingOutcome,
   reconcileAmbiguousBooking,
   recordProviderObservation,
@@ -38,6 +43,31 @@ export {
   allocateBookingCorrelationId,
   type DeliveryOperationOptions,
 } from "./operations";
+
+export {
+  confirmDeliveryWithFulfilCoordination,
+  retryFulfilForDeliveredDelivery,
+} from "./fulfil-coordination";
+
+export {
+  getWorkforceDeliveryForOrder,
+  toWorkforceDeliveryTransport,
+  arrangeDelivery,
+  workforceBeginManualBooking,
+  workforceConfirmManualBooking,
+  workforceResolveManualBookingFailure,
+  workforceResolveManualBookingCancellation,
+  workforceUpdateTrackingReference,
+  workforceRecordAssignment,
+  workforceConfirmPickup,
+  workforceConfirmDelivery,
+  workforceReportDeliveryFailure,
+  workforceCancelDelivery,
+  workforceBeginReturn,
+  workforceAdvanceReturn,
+  workforceRecordProviderCost,
+  actorCanReadDeliveryCosts,
+} from "./workforce";
 
 export {
   createFakeDeliveryProvider,

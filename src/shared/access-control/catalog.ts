@@ -92,6 +92,16 @@ export const PERMISSION_KEYS = [
   "order.cancel",
   "payment.refund",
   "payment.refund.read",
+  "delivery.read",
+  "delivery.dispatch",
+  "delivery.book",
+  "delivery.assign",
+  "delivery.pickup",
+  "delivery.complete",
+  "delivery.cancel",
+  "delivery.fail",
+  "delivery.return",
+  "delivery.cost.record",
 ] as const;
 
 export type PermissionKey = (typeof PERMISSION_KEYS)[number];
@@ -242,6 +252,7 @@ const OUTLET_MANAGER_PERMISSIONS: RolePermissionMapping[] = (
     "order.accept",
     "order.fulfil",
     "order.cancel",
+    "delivery.read",
   ] as const
 ).map((permissionKey) => ({
   roleKey: "outlet_manager" as const,
@@ -277,6 +288,16 @@ const DELIVERY_COORDINATOR_PERMISSIONS: RolePermissionMapping[] = (
     "charges.read",
     "order.read",
     "order.fulfil",
+    "delivery.read",
+    "delivery.dispatch",
+    "delivery.book",
+    "delivery.assign",
+    "delivery.pickup",
+    "delivery.complete",
+    "delivery.cancel",
+    "delivery.fail",
+    "delivery.return",
+    "delivery.cost.record",
   ] as const
 ).map((permissionKey) => ({
   roleKey: "delivery_coordinator" as const,
@@ -407,6 +428,16 @@ export const PERMISSION_TARGET_KIND: Readonly<
   "order.cancel": "outlet",
   "payment.refund": "outlet",
   "payment.refund.read": "outlet",
+  "delivery.read": "outlet",
+  "delivery.dispatch": "outlet",
+  "delivery.book": "outlet",
+  "delivery.assign": "outlet",
+  "delivery.pickup": "outlet",
+  "delivery.complete": "outlet",
+  "delivery.cancel": "outlet",
+  "delivery.fail": "outlet",
+  "delivery.return": "outlet",
+  "delivery.cost.record": "outlet",
 };
 
 export const SAFE_AUTHORIZATION_DECISION_CODES = ["AUTHORIZED", "DENIED"] as const;

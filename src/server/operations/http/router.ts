@@ -25,6 +25,7 @@ import type { Persistence } from "../../persistence";
 import { checkTrustedOrigin } from "../../workforce-auth/http/origin";
 import { resolveOperationsWorkforcePrincipal } from "./auth";
 import { readOperationsJsonObjectBody } from "./body";
+import { classifyDeliveryRoute, handleDeliveryRoute } from "./delivery-routes";
 import { mapOperationsError } from "./error-map";
 import { sendJson, sendMethodNotAllowed, sendNotFound } from "./response";
 
@@ -118,6 +119,27 @@ export async function routeOperationsRequest(
     }
   }
   const route = classifyRoute(url.pathname);
+  const deliveryRoute = classifyDeliveryRoute(url.pathname);
+
+  if (deliveryRoute) {
+    if (url.search !== "" && deliveryRoute.kind !== "get_delivery") {
+      sendJson(res, { ok: false, code: "DELIVERY_REQUEST_INVALID", requestId }, { status: 400, requestId });
+      return { operation: deliveryRoute.kind, safeOutcomeCode: "DELIVERY_REQUEST_INVALID", httpStatus: 400 };
+    }
+    if (deliveryRoute.kind !== "get_delivery") {
+      if (!checkTrustedOrigin(req.headers, deps.trustedOrigin).ok) {
+        sendJson(res, { ok: false, code: "DELIVERY_REQUEST_INVALID", requestId }, { status: 403, requestId });
+        return { operation: deliveryRoute.kind, safeOutcomeCode: "DELIVERY_REQUEST_INVALID", httpStatus: 403 };
+      }
+    }
+    const outcome = await handleDeliveryRoute(req, deliveryRoute, deps, requestId);
+    sendJson(res, outcome.body, { status: outcome.status, requestId });
+    return {
+      operation: outcome.operation,
+      safeOutcomeCode: outcome.code,
+      httpStatus: outcome.status,
+    };
+  }
 
   if (!route) {
     sendNotFound(res, requestId);

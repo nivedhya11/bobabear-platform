@@ -17,11 +17,15 @@ import {
   type DeliveryReturnStatus,
 } from "./constants";
 import { DeliveryError } from "./errors";
+import { validateHttpsTrackingUrl } from "./tracking-url";
 import type {
   AdvanceReturnInput,
+  ArrangeDeliveryInput,
   BeginBookingInput,
   BeginReturnInput,
   CancelDeliveryInput,
+  ConfirmDeliveryWithFulfilInput,
+  ConfirmManualBookingInput,
   ConfirmPickupInput,
   CreateDeliveryInput,
   FailDeliveryInput,
@@ -31,6 +35,10 @@ import type {
   RecordProviderCostFactInput,
   RecordProviderObservationInput,
   ReconcileAmbiguousBookingInput,
+  ResolveManualBookingCancellationInput,
+  ResolveManualBookingFailureInput,
+  RetryFulfilForDeliveredInput,
+  UpdateTrackingReferenceInput,
 } from "./types";
 
 const UUID_RE =
@@ -509,5 +517,126 @@ export function parseRecordProviderCostFactInput(
       DELIVERY_REFERENCE_MAX_LENGTH,
     ),
     note: optionalNonEmpty(record.note, "note", DELIVERY_REASON_MAX_LENGTH),
+  });
+}
+
+export function parseConfirmManualBookingInput(
+  input: unknown,
+): ConfirmManualBookingInput {
+  const record = requireObject(input, "Confirm manual booking request");
+  return Object.freeze({
+    deliveryId: requireUuid(record.deliveryId, "deliveryId"),
+    expectedRevision: requireRevision(record.expectedRevision),
+    externalBookingReference:
+      optionalNonEmpty(
+        record.externalBookingReference,
+        "externalBookingReference",
+        DELIVERY_REFERENCE_MAX_LENGTH,
+      ) ?? null,
+    trackingUrl:
+      record.trackingUrl === undefined || record.trackingUrl === null
+        ? null
+        : validateHttpsTrackingUrl(
+            requireNonEmpty(record.trackingUrl, "trackingUrl", DELIVERY_REFERENCE_MAX_LENGTH),
+          ),
+  });
+}
+
+export function parseResolveManualBookingFailureInput(
+  input: unknown,
+): ResolveManualBookingFailureInput {
+  const record = requireObject(input, "Resolve manual booking failure request");
+  if (record.inactiveBookingConfirmed !== true) {
+    throw new DeliveryError(
+      "DELIVERY_INVALID_INPUT",
+      "inactiveBookingConfirmed must be true for manual failure resolution.",
+      { field: "inactiveBookingConfirmed" },
+    );
+  }
+  return Object.freeze({
+    deliveryId: requireUuid(record.deliveryId, "deliveryId"),
+    expectedRevision: requireRevision(record.expectedRevision),
+    failureCode: requireNonEmpty(
+      record.failureCode,
+      "failureCode",
+      DELIVERY_REFERENCE_MAX_LENGTH,
+    ),
+    failureReason: requireNonEmpty(
+      record.failureReason,
+      "failureReason",
+      DELIVERY_REASON_MAX_LENGTH,
+    ),
+    inactiveBookingConfirmed: true,
+  });
+}
+
+export function parseResolveManualBookingCancellationInput(
+  input: unknown,
+): ResolveManualBookingCancellationInput {
+  const record = requireObject(input, "Resolve manual booking cancellation request");
+  if (record.inactiveBookingConfirmed !== true) {
+    throw new DeliveryError(
+      "DELIVERY_INVALID_INPUT",
+      "inactiveBookingConfirmed must be true for manual cancellation resolution.",
+      { field: "inactiveBookingConfirmed" },
+    );
+  }
+  return Object.freeze({
+    deliveryId: requireUuid(record.deliveryId, "deliveryId"),
+    expectedRevision: requireRevision(record.expectedRevision),
+    cancellationCode: requireNonEmpty(
+      record.cancellationCode,
+      "cancellationCode",
+      DELIVERY_REFERENCE_MAX_LENGTH,
+    ),
+    cancellationReason: requireNonEmpty(
+      record.cancellationReason,
+      "cancellationReason",
+      DELIVERY_REASON_MAX_LENGTH,
+    ),
+    inactiveBookingConfirmed: true,
+  });
+}
+
+export function parseUpdateTrackingReferenceInput(
+  input: unknown,
+): UpdateTrackingReferenceInput {
+  const record = requireObject(input, "Update tracking reference request");
+  return Object.freeze({
+    deliveryId: requireUuid(record.deliveryId, "deliveryId"),
+    expectedRevision: requireRevision(record.expectedRevision),
+    trackingUrl: validateHttpsTrackingUrl(
+      requireNonEmpty(record.trackingUrl, "trackingUrl", DELIVERY_REFERENCE_MAX_LENGTH),
+    ),
+  });
+}
+
+export function parseArrangeDeliveryInput(input: unknown): ArrangeDeliveryInput {
+  const record = requireObject(input, "Arrange delivery request");
+  const prior = requireOptionalUuid(record.priorDeliveryId, "priorDeliveryId");
+  return Object.freeze({
+    orderId: requireUuid(record.orderId, "orderId"),
+    requestFingerprint: requireNonEmpty(
+      record.requestFingerprint,
+      "requestFingerprint",
+      DELIVERY_REQUEST_FINGERPRINT_MAX_LENGTH,
+    ),
+    ...(prior !== undefined ? { priorDeliveryId: prior } : {}),
+  });
+}
+
+export function parseConfirmDeliveryWithFulfilInput(
+  input: unknown,
+): ConfirmDeliveryWithFulfilInput {
+  return parseRecordProofAndDeliverInput(input);
+}
+
+export function parseRetryFulfilForDeliveredInput(
+  input: unknown,
+): RetryFulfilForDeliveredInput {
+  const record = requireObject(input, "Retry fulfil for delivered request");
+  return Object.freeze({
+    deliveryId: requireUuid(record.deliveryId, "deliveryId"),
+    expectedOrderRevision: requireRevision(record.expectedOrderRevision, "expectedOrderRevision"),
   });
 }

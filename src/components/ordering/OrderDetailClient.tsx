@@ -83,6 +83,30 @@ export function OrderDetailClient() {
               </p>
             </div>
 
+            {order.delivery ? (
+              <section className="rounded-md border border-[var(--border-subtle)] p-4" data-testid="order-delivery">
+                <h2 className="font-body text-[15px] font-semibold">Delivery</h2>
+                <p data-testid="order-delivery-status">{order.delivery.statusLabel}</p>
+                {order.delivery.providerDisplayName ? (
+                  <p className="text-[13px] text-[var(--text-secondary)]">
+                    via {order.delivery.providerDisplayName}
+                  </p>
+                ) : null}
+                {order.delivery.trackingUrl ? (
+                  <p className="mt-2">
+                    <a
+                      href={order.delivery.trackingUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      data-testid="order-delivery-track"
+                    >
+                      Track delivery
+                    </a>
+                  </p>
+                ) : null}
+              </section>
+            ) : null}
+
             <ul className="flex flex-col gap-3">
               {order.lines.map((line, index) => (
                 <li key={`${line.productName}-${index}`} className="font-body text-[14px]">

@@ -129,7 +129,7 @@ describe("IMP-013 migration replay and seal", () => {
           sql`select count(*)::text as count from app.access_permissions`,
         );
         expect(permissions.rows[0]?.count).toBe("51");
-        expect(PERMISSION_KEYS.length).toBe(51);
+        expect(PERMISSION_KEYS.length).toBe(67);
 
         const roles = await ctx.db.execute<{ count: string }>(
           sql`select count(*)::text as count from app.access_roles`,

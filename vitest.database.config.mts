@@ -107,6 +107,7 @@ export default defineConfig({
       // IMP-031: Provider-neutral Delivery foundation (Boundary C).
       "tests/delivery-application/**/*.test.ts",
       "tests/delivery-concurrency/**/*.test.ts",
+      "tests/delivery-manual/**/*.test.ts",
     ],
     exclude: ["**/node_modules/**", "**/.next/**", "**/out/**", "**/coverage/**"],
     globalSetup: ["./tests/database/global-setup.ts"],

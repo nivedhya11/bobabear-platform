@@ -21,6 +21,9 @@ import {
   evaluateImp032PermissionBootstrapClarificationArtifact,
   evaluateImp032PermissionBootstrapClarificationCheckpoint,
   evaluateImp032PermissionBootstrapClarificationCrossDocumentAlignment,
+  evaluateImp032ImplementationCompletionArtifact,
+  evaluateImp032ImplementationCompletionCheckpoint,
+  evaluateImp032ImplementationCompletionCrossDocumentAlignment,
   evaluateImp031ArchitectureDraftArtifact,
   evaluateImp031ArchitectureDraftCheckpoint,
   evaluateImp031ArchitectureLockArtifact,
@@ -2815,10 +2818,18 @@ describe("IMP-032 permission bootstrap boundary clarification checkpoint", () =>
     providerSelected: false, manualModeDefined: true, imp031Accepted: true,
   });
 
-  const clarifiedArtifact = readFileSync(
+  const clarifiedArtifactFixture = readFileSync(
     "docs/platform/capabilities/IMP-032-dehradun-delivery-operating-mode.md",
     "utf8",
-  );
+  )
+    .replaceAll("IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE", "IMPLEMENTATION_IN_PROGRESS")
+    .replaceAll("AUTHORIZED / STARTED / COMPLETE", "AUTHORIZED / STARTED")
+    .replaceAll("COMPLETION IS NOT ACCEPTANCE: YES", "START IS NOT COMPLETION OR ACCEPTANCE: YES")
+    .replaceAll("access_control_data_seed_migration: APPLIED", "access_control_data_seed_migration: PERMITTED_IF_REQUIRED")
+    .replaceAll("Pending acceptance | IMP-032", "Pending acceptance | NONE")
+    .replaceAll("Pending acceptance: IMP-032", "Pending acceptance: NONE")
+    .replaceAll("FOUNDER_UAT: NOT_STARTED\n", "")
+    .replaceAll("IMP-032_IMPLEMENTATION_COMPLETE: YES", "IMP-032_IMPLEMENTATION_COMPLETE: NO");
   const roadmapText = readFileSync("docs/platform/ROADMAP.md", "utf8");
   const stateText = readFileSync("docs/platform/STATE.md", "utf8");
 
@@ -2860,15 +2871,15 @@ describe("IMP-032 permission bootstrap boundary clarification checkpoint", () =>
     }
   });
 
-  it("validates the live clarified artifact and rejects unsafe/premature mutations", () => {
-    assert.deepEqual(evaluateImp032PermissionBootstrapClarificationArtifact(clarifiedArtifact), { ok: true });
-    assert.match(clarifiedArtifact, /access_control_data_seed_migration:\s*PERMITTED_IF_REQUIRED/);
-    assert.match(clarifiedArtifact, /delivery_schema_migration:\s*NO/);
+  it("validates the historical clarified artifact fixture and rejects unsafe/premature mutations", () => {
+    assert.deepEqual(evaluateImp032PermissionBootstrapClarificationArtifact(clarifiedArtifactFixture), { ok: true });
+    assert.match(clarifiedArtifactFixture, /access_control_data_seed_migration:\s*PERMITTED_IF_REQUIRED/);
+    assert.match(clarifiedArtifactFixture, /delivery_schema_migration:\s*NO/);
     for (const mutation of [
-      clarifiedArtifact.replaceAll("access_control_data_seed_migration: PERMITTED_IF_REQUIRED", "access_control_data_seed_migration: PROHIBITED"),
-      clarifiedArtifact.replaceAll("delivery_schema_migration: NO", "delivery_schema_migration: YES"),
-      clarifiedArtifact.replaceAll("IMP-032_IMPLEMENTATION_COMPLETE: NO", "IMP-032_IMPLEMENTATION_COMPLETE: YES"),
-      clarifiedArtifact.replace(
+      clarifiedArtifactFixture.replaceAll("access_control_data_seed_migration: PERMITTED_IF_REQUIRED", "access_control_data_seed_migration: PROHIBITED"),
+      clarifiedArtifactFixture.replaceAll("delivery_schema_migration: NO", "delivery_schema_migration: YES"),
+      clarifiedArtifactFixture.replaceAll("IMP-032_IMPLEMENTATION_COMPLETE: NO", "IMP-032_IMPLEMENTATION_COMPLETE: YES"),
+      clarifiedArtifactFixture.replace(
         /already-initialized environments do not automatically receive newly locked permission-catalog entries/,
         "automatic runtime permission sync",
       ),
@@ -2877,21 +2888,105 @@ describe("IMP-032 permission bootstrap boundary clarification checkpoint", () =>
     }
   });
 
-  it("aligns live ROADMAP/STATE/capability boundary-clarification markers", () => {
+  it("aligns historical boundary-clarification markers via fixture capability text", () => {
+    const roadmapFixture = roadmapText
+      .replaceAll("GTM-R85", "GTM-R84")
+      .replaceAll("IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE", "IMPLEMENTATION_IN_PROGRESS")
+      .replaceAll("AUTHORIZED / STARTED / COMPLETE", "AUTHORIZED / STARTED")
+      .replaceAll("Pending Acceptance:    IMP-032", "Pending Acceptance:    NONE")
+      .replaceAll("IMP-032_IMPLEMENTATION_COMPLETE: YES", "IMP-032_IMPLEMENTATION_COMPLETE: NO");
+    const stateFixture = stateText
+      .replaceAll("STATE-R83", "STATE-R82")
+      .replaceAll('"pendingAcceptance": "IMP-032"', '"pendingAcceptance": "NONE"')
+      .replaceAll("IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE", "IMPLEMENTATION_IN_PROGRESS")
+      .replaceAll("AUTHORIZED / STARTED / COMPLETE", "AUTHORIZED / STARTED")
+      .replaceAll("Pending Acceptance:             IMP-032", "Pending Acceptance:             NONE")
+      .replaceAll("IMP-032_IMPLEMENTATION_COMPLETE: YES", "IMP-032_IMPLEMENTATION_COMPLETE: NO");
     assert.deepEqual(
       evaluateImp032PermissionBootstrapClarificationCrossDocumentAlignment({
-        capabilityText: clarifiedArtifact,
+        capabilityText: clarifiedArtifactFixture,
+        roadmapText: roadmapFixture,
+        stateText: stateFixture,
+      }),
+      { ok: true },
+    );
+    const missingClarification = evaluateImp032PermissionBootstrapClarificationCrossDocumentAlignment({
+      capabilityText: clarifiedArtifactFixture.replace("GTM-R84 / STATE-R82", "GTM-R83 / STATE-R81"),
+      roadmapText: roadmapFixture,
+      stateText: stateFixture,
+    });
+    assert.equal(missingClarification.ok, false);
+  });
+});
+
+describe("IMP-032 implementation completion checkpoint", () => {
+  const completion = Object.freeze({
+    roadmapVersion: "GTM-R85", stateVersion: "STATE-R83", acceptedThrough: "IMP-031",
+    currentProductSlice: "IMP-032", nextProductSlice: "IMP-033", pendingAcceptance: "IMP-032",
+    imp031: "COMPLETE_AND_ACCEPTED", imp032: "IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE",
+    architecture: "LOCKED", architectureLocked: "YES",
+    implementation: "AUTHORIZED / STARTED / COMPLETE",
+    implementationAuthorized: "YES", started: "YES", implementationComplete: "YES", accepted: "NO",
+    imp033: "PLANNED", architectureVersion: "ARCH-R18",
+    decisionRegisterVersion: "DR-14", artifact: true, archG24: true, d373Exists: false,
+    manualModeDefined: true, imp031Accepted: true, founderUatRequired: true,
+  });
+
+  const completedArtifact = readFileSync(
+    "docs/platform/capabilities/IMP-032-dehradun-delivery-operating-mode.md",
+    "utf8",
+  );
+  const roadmapText = readFileSync("docs/platform/ROADMAP.md", "utf8");
+  const stateText = readFileSync("docs/platform/STATE.md", "utf8");
+
+  it("supports only the R85/S83 completion checkpoint", () => {
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R85", "STATE-R83", "imp032Completion"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R84", "STATE-R82", "imp032Completion"), false);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R85", "STATE-R82", "imp032Completion"), false);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R84", "STATE-R83", "imp032Completion"), false);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R85", "STATE-R83"), true);
+  });
+
+  it("accepts only the complete-pending-acceptance IMP-032 checkpoint", () => {
+    assert.deepEqual(evaluateImp032ImplementationCompletionCheckpoint(completion), { ok: true });
+    for (const [key, value] of [
+      ["roadmapVersion", "GTM-R84"],
+      ["stateVersion", "STATE-R82"],
+      ["pendingAcceptance", "NONE"],
+      ["imp032", "IMPLEMENTATION_IN_PROGRESS"],
+      ["implementationComplete", "NO"],
+      ["accepted", "YES"],
+      ["founderUatRequired", false],
+      ["d373Exists", true],
+      ["artifact", false],
+    ]) {
+      assert.equal(
+        evaluateImp032ImplementationCompletionCheckpoint({ ...completion, [key]: value }).ok,
+        false,
+        `${key}=${value}`,
+      );
+    }
+  });
+
+  it("validates the live completed artifact and rejects premature acceptance", () => {
+    assert.deepEqual(evaluateImp032ImplementationCompletionArtifact(completedArtifact), { ok: true });
+    assert.equal(
+      evaluateImp032ImplementationCompletionArtifact(
+        completedArtifact.replace("IMP-032_ACCEPTED: NO", "IMP-032_ACCEPTED: YES"),
+      ).ok,
+      false,
+    );
+  });
+
+  it("aligns live ROADMAP/STATE/capability completion markers", () => {
+    assert.deepEqual(
+      evaluateImp032ImplementationCompletionCrossDocumentAlignment({
+        capabilityText: completedArtifact,
         roadmapText,
         stateText,
       }),
       { ok: true },
     );
-    const missingClarification = evaluateImp032PermissionBootstrapClarificationCrossDocumentAlignment({
-      capabilityText: clarifiedArtifact.replace("GTM-R84 / STATE-R82", "GTM-R83 / STATE-R81"),
-      roadmapText,
-      stateText,
-    });
-    assert.equal(missingClarification.ok, false);
   });
 });
 

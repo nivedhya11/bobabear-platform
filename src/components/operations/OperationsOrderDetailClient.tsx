@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
+import { OperationsDeliveryPanel } from "@/components/operations/OperationsDeliveryPanel";
 import { OperationsLifecycleConfirmationDialog } from "@/components/operations/OperationsLifecycleConfirmationDialog";
 import { formatPaise } from "@/components/ordering/format-money";
 import { orderStatusLabel } from "@/components/ordering/order-status";
@@ -513,6 +514,8 @@ function OrderDetail({
           </div>
         </dl>
       </section>
+
+      <OperationsDeliveryPanel orderId={order.orderId} />
 
       <section aria-labelledby="operations-items">
         <h2 id="operations-items" className="font-body text-[18px] font-semibold">

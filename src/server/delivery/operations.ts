@@ -20,6 +20,7 @@ import {
   parseBeginBookingInput,
   parseBeginReturnInput,
   parseCancelDeliveryInput,
+  parseConfirmManualBookingInput,
   parseConfirmPickupInput,
   parseCreateDeliveryInput,
   parseFailDeliveryInput,
@@ -29,6 +30,9 @@ import {
   parseRecordProviderCostFactInput,
   parseRecordProviderObservationInput,
   parseReconcileAmbiguousBookingInput,
+  parseResolveManualBookingCancellationInput,
+  parseResolveManualBookingFailureInput,
+  parseUpdateTrackingReferenceInput,
   type Delivery,
   type DeliveryExecutionStatus,
   type DeliveryObservationDisposition,
@@ -70,6 +74,7 @@ import {
   updateDeliveryRow,
   updateObservationDisposition,
   updateReturnRow,
+  upsertTrackingReference,
   type DeliveryRow,
 } from "./repository";
 
@@ -1095,4 +1100,262 @@ export async function getOrderLifecycleSnapshot(
 /** Test helper: allocate a correlation id without importing crypto in callers. */
 export function allocateBookingCorrelationId(): string {
   return randomUUID();
+}
+
+/**
+ * IMP-032 manual mode: REQUESTED → BOOKING_OUTCOME_UNKNOWN with stable
+ * correlation identity. Performs NO provider I/O — external booking may
+ * only be attempted after this transaction commits.
+ */
+export async function beginManualBooking(
+  persistence: Persistence,
+  input: unknown,
+  options: DeliveryOperationOptions = {},
+): Promise<Delivery> {
+  const parsed = parseBeginBookingInput(input);
+  const now = clockOf(options).now();
+
+  return persistence.transaction(async (tx) => {
+    const row = await lockDeliveryForUpdate(tx, parsed.deliveryId);
+    if (!row) {
+      throw new DeliveryError("DELIVERY_NOT_FOUND", "Delivery not found.");
+    }
+    requireRevisionMatch(row, parsed.expectedRevision);
+    if (row.status !== "REQUESTED") {
+      throw new DeliveryError(
+        "DELIVERY_STATE_CONFLICT",
+        "beginManualBooking requires REQUESTED status.",
+      );
+    }
+    requireTransition("REQUESTED", "BOOKING_OUTCOME_UNKNOWN");
+
+    const bookingCorrelationId =
+      parsed.bookingCorrelationId ?? newBookingCorrelationId();
+    const updated = await updateDeliveryRow(tx, row.id, {
+      status: "BOOKING_OUTCOME_UNKNOWN",
+      revision: nextRevision(row),
+      bookingCorrelationId,
+      provider: parsed.provider,
+      bookingOutcomeUnknownAt: now,
+      updatedAt: now,
+    });
+    return mapDeliveryRow(updated);
+  });
+}
+
+/**
+ * IMP-032: UNKNOWN → BOOKED from operator-attested evidence. No provider I/O.
+ */
+export async function confirmManualBooking(
+  persistence: Persistence,
+  input: unknown,
+  options: DeliveryOperationOptions = {},
+): Promise<Delivery> {
+  const parsed = parseConfirmManualBookingInput(input);
+
+  const current = await persistence.withContext(async (ctx) => {
+    const row = await findDeliveryById(ctx, parsed.deliveryId);
+    if (!row) {
+      throw new DeliveryError("DELIVERY_NOT_FOUND", "Delivery not found.");
+    }
+    if (row.status !== "BOOKING_OUTCOME_UNKNOWN") {
+      throw new DeliveryError(
+        "DELIVERY_STATE_CONFLICT",
+        "confirmManualBooking requires BOOKING_OUTCOME_UNKNOWN.",
+      );
+    }
+    if (!row.bookingCorrelationId || !row.provider) {
+      throw new DeliveryError(
+        "DELIVERY_STATE_CONFLICT",
+        "Manual booking confirmation requires durable correlation identity.",
+      );
+    }
+    return mapDeliveryRow(row);
+  });
+
+  const references = parsed.trackingUrl
+    ? [{ kind: "tracking_url" as const, value: parsed.trackingUrl }]
+    : undefined;
+
+  return recordBookingOutcome(
+    persistence,
+    {
+      deliveryId: parsed.deliveryId,
+      expectedRevision: parsed.expectedRevision,
+      evidence: {
+        outcome: "BOOKED",
+        provider: current.provider!,
+        bookingCorrelationId: current.bookingCorrelationId!,
+        externalBookingReference: parsed.externalBookingReference,
+        providerStatusCode: null,
+        providerTimestamp: clockOf(options).now(),
+        references,
+      },
+    },
+    options,
+  );
+}
+
+/**
+ * IMP-032: UNKNOWN → FAILED with definitive inactive-booking attestation.
+ * No provider I/O.
+ */
+export async function resolveManualBookingFailure(
+  persistence: Persistence,
+  input: unknown,
+  options: DeliveryOperationOptions = {},
+): Promise<Delivery> {
+  const parsed = parseResolveManualBookingFailureInput(input);
+
+  const current = await persistence.withContext(async (ctx) => {
+    const row = await findDeliveryById(ctx, parsed.deliveryId);
+    if (!row) {
+      throw new DeliveryError("DELIVERY_NOT_FOUND", "Delivery not found.");
+    }
+    if (row.status !== "BOOKING_OUTCOME_UNKNOWN") {
+      throw new DeliveryError(
+        "DELIVERY_STATE_CONFLICT",
+        "resolveManualBookingFailure requires BOOKING_OUTCOME_UNKNOWN.",
+      );
+    }
+    if (!row.bookingCorrelationId || !row.provider) {
+      throw new DeliveryError(
+        "DELIVERY_STATE_CONFLICT",
+        "Manual failure resolution requires durable correlation identity.",
+      );
+    }
+    return mapDeliveryRow(row);
+  });
+
+  return recordBookingOutcome(
+    persistence,
+    {
+      deliveryId: parsed.deliveryId,
+      expectedRevision: parsed.expectedRevision,
+      evidence: {
+        outcome: "FAILED",
+        provider: current.provider!,
+        bookingCorrelationId: current.bookingCorrelationId!,
+        externalBookingReference: current.externalBookingReference,
+        providerStatusCode: null,
+        providerTimestamp: clockOf(options).now(),
+        failureCode: parsed.failureCode,
+        failureReason: parsed.failureReason,
+      },
+    },
+    options,
+  );
+}
+
+/**
+ * IMP-032: UNKNOWN/BOOKED → CANCELLED after operator confirms external
+ * booking is inactive. No provider I/O.
+ */
+export async function resolveManualBookingCancellation(
+  persistence: Persistence,
+  input: unknown,
+  options: DeliveryOperationOptions = {},
+): Promise<Delivery> {
+  const parsed = parseResolveManualBookingCancellationInput(input);
+  const now = clockOf(options).now();
+
+  const current = await persistence.withContext(async (ctx) => {
+    const row = await findDeliveryById(ctx, parsed.deliveryId);
+    if (!row) {
+      throw new DeliveryError("DELIVERY_NOT_FOUND", "Delivery not found.");
+    }
+    const status = row.status as DeliveryExecutionStatus;
+    if (status === "REQUESTED") {
+      throw new DeliveryError(
+        "DELIVERY_STATE_CONFLICT",
+        "Use cancelDelivery for REQUESTED cancellation.",
+      );
+    }
+    if (status !== "BOOKING_OUTCOME_UNKNOWN" && status !== "BOOKED") {
+      throw new DeliveryError(
+        "DELIVERY_TRANSITION_NOT_ALLOWED",
+        "Manual booking cancellation is not allowed from the current status.",
+      );
+    }
+    if (!row.bookingCorrelationId || !row.provider) {
+      throw new DeliveryError(
+        "DELIVERY_STATE_CONFLICT",
+        "Manual cancellation requires durable booking correlation identity.",
+      );
+    }
+    return mapDeliveryRow(row);
+  });
+
+  if (current.status === "BOOKING_OUTCOME_UNKNOWN") {
+    return recordBookingOutcome(
+      persistence,
+      {
+        deliveryId: parsed.deliveryId,
+        expectedRevision: parsed.expectedRevision,
+        evidence: {
+          outcome: "CANCELLED",
+          provider: current.provider!,
+          bookingCorrelationId: current.bookingCorrelationId!,
+          externalBookingReference: current.externalBookingReference,
+          providerStatusCode: null,
+          providerTimestamp: now,
+          failureReason: parsed.cancellationReason,
+        },
+      },
+      options,
+    );
+  }
+
+  return persistence.transaction(async (tx) => {
+    const row = await lockDeliveryForUpdate(tx, parsed.deliveryId);
+    if (!row) {
+      throw new DeliveryError("DELIVERY_NOT_FOUND", "Delivery not found.");
+    }
+    requireRevisionMatch(row, parsed.expectedRevision);
+    requireTransition(row.status as DeliveryExecutionStatus, "CANCELLED");
+    const updated = await updateDeliveryRow(tx, row.id, {
+      status: "CANCELLED",
+      revision: nextRevision(row),
+      cancellationCode: parsed.cancellationCode,
+      cancellationReason: parsed.cancellationReason,
+      cancelledAt: now,
+      updatedAt: now,
+    });
+    return mapDeliveryRow(updated);
+  });
+}
+
+/**
+ * IMP-032: update validated tracking URL without lifecycle mutation.
+ */
+export async function updateTrackingReference(
+  persistence: Persistence,
+  input: unknown,
+  options: DeliveryOperationOptions = {},
+): Promise<Delivery> {
+  const parsed = parseUpdateTrackingReferenceInput(input);
+  const now = clockOf(options).now();
+
+  return persistence.transaction(async (tx) => {
+    const row = await lockDeliveryForUpdate(tx, parsed.deliveryId);
+    if (!row) {
+      throw new DeliveryError("DELIVERY_NOT_FOUND", "Delivery not found.");
+    }
+    requireRevisionMatch(row, parsed.expectedRevision);
+    if (!row.provider) {
+      throw new DeliveryError(
+        "DELIVERY_STATE_CONFLICT",
+        "Tracking reference requires a provider label on the Delivery.",
+      );
+    }
+    await upsertTrackingReference(
+      tx,
+      row.id,
+      row.provider,
+      parsed.trackingUrl,
+      now,
+    );
+    // Tracking URL is evidence only — revision unchanged.
+    return mapDeliveryRow(row);
+  });
 }

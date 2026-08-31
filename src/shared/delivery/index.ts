@@ -7,3 +7,5 @@ export * from "./errors";
 export * from "./types";
 export * from "./parse-input";
 export * from "./lifecycle";
+export * from "./tracking-url";
+export * from "./customer-projection";

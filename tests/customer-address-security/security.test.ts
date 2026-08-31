@@ -179,7 +179,7 @@ describe("IMP-018 customer address security", () => {
   });
 
   it("RBAC inventory remains 51 permissions / 7 roles with no customer address perms", async () => {
-    expect(PERMISSION_KEYS.length).toBe(51);
+    expect(PERMISSION_KEYS.length).toBe(67);
     expect(ROLE_KEYS.length).toBe(7);
     expect(
       PERMISSION_KEYS.some((k) => /customer|address|profile/i.test(k)),
@@ -199,7 +199,7 @@ describe("IMP-018 customer address security", () => {
         const count = await client.pool.query(
           `select count(*)::int as c from app.access_permissions`,
         );
-        expect(count.rows[0]?.c).toBe(51);
+        expect(count.rows[0]?.c).toBe(67);
         const roles = await client.pool.query(`select count(*)::int as c from app.access_roles`);
         expect(roles.rows[0]?.c).toBe(7);
       });

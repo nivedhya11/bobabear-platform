@@ -2,11 +2,11 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R82",
+  "stateVersion": "STATE-R83",
   "acceptedThrough": "IMP-031",
   "currentProductSlice": "IMP-032",
   "nextProductSlice": "IMP-033",
-  "pendingAcceptance": "NONE",
+  "pendingAcceptance": "IMP-032",
   "governanceHealth": "ALIGNED",
   "lastReviewed": "2026-08-31"
 }
@@ -28,10 +28,10 @@ Accepted Range:            IMP-001 → IMP-031 (including IMP-005A and IMP-026C)
 ## 2. Current Work Position
 
 ```text
-Current Product Implementation: IMP-032 — Dehradun Delivery Operating Mode (architecture locked; implementation authorized / started)
-Pending Acceptance:             NONE
+Current Product Implementation: IMP-032 — Dehradun Delivery Operating Mode (architecture locked; implementation complete pending acceptance)
+Pending Acceptance:             IMP-032
 Next Product Slice:             IMP-033 — Notification Foundation
-Current Governance Activity:    IMP-032 IMPLEMENTATION_IN_PROGRESS; architecture remains LOCKED; implementation AUTHORIZED / STARTED; GTM-R84 / STATE-R82 record implementation-boundary clarification for access-control data seed only.
+Current Governance Activity:    IMP-032 IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE; architecture remains LOCKED; implementation AUTHORIZED / STARTED / COMPLETE; Founder UAT required before formal acceptance; GTM-R85 / STATE-R83 record implementation completion.
 Governance Health:              ALIGNED
 ```
 
@@ -156,14 +156,16 @@ IMP031_FORMAL_ACCEPTANCE: ACCEPTED
 IMP031_ACCEPTED_MAIN_SHA: c3d499b0b8df2a8c7ae9297ab870f6286f81b848
 IMP031_ACCEPTED_TREE:     dd42ea992c8866ff8cfbc0ac09e781eb6fcfa099
 IMP-031_FOUNDER_UAT_REQUIRED: NO
-IMP-032:                  IMPLEMENTATION_IN_PROGRESS
+IMP-032:                  IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
 IMP-032_ARCHITECTURE:     LOCKED
 IMP-032_ARCHITECTURE_LOCKED: YES
-IMP-032_IMPLEMENTATION:   AUTHORIZED / STARTED
+IMP-032_IMPLEMENTATION:   AUTHORIZED / STARTED / COMPLETE
 IMP-032_IMPLEMENTATION_AUTHORIZED: YES
 IMP-032_STARTED:          YES
-IMP-032_IMPLEMENTATION_COMPLETE: NO
+IMP-032_IMPLEMENTATION_COMPLETE: YES
 IMP-032_ACCEPTED:         NO
+IMP-032_FOUNDER_UAT_REQUIRED: YES
+IMP-032_FOUNDER_UAT:      NOT_STARTED
 IMP-033:                  PLANNED / NOT_ACTIVATED
 D-373_CREATED:            NO
 NO_NEW_CURRENT_DECISION_IN_THIS_ACTIVATION_GATE: YES
@@ -201,7 +203,7 @@ STARTED / COMPLETE; COMPLETE_AND_ACCEPTED):
 [`capabilities/IMP-031-provider-neutral-delivery-foundation.md`](./capabilities/IMP-031-provider-neutral-delivery-foundation.md)
 
 IMP-032 locked capability architecture (architecture LOCKED; implementation AUTHORIZED /
-STARTED):
+STARTED / COMPLETE; pending acceptance):
 
 [`capabilities/IMP-032-dehradun-delivery-operating-mode.md`](./capabilities/IMP-032-dehradun-delivery-operating-mode.md)
 
@@ -270,6 +272,26 @@ independent acceptance without changing decision register or global architecture
 STATE-R36 record IMP-028B canonical activation without changing decision register or global
 architecture. GTM-R39 / STATE-R37 record IMP-028B architecture lock and implementation
 authorization without changing decision register or global architecture.
+
+STATE-R83 records implementation **COMPLETE** pending independent acceptance and required Founder UAT
+for **IMP-032 — Dehradun Delivery Operating Mode** under prior STATE-R80/STATE-R81/STATE-R82
+authorization, start, and boundary clarification and the locked capability architecture at
+[`capabilities/IMP-032-dehradun-delivery-operating-mode.md`](./capabilities/IMP-032-dehradun-delivery-operating-mode.md)
+(`ARCHITECTURE_LOCKED`; `IMP-032_ARCHITECTURE_LOCKED: YES`). Operating mode remains
+**MANUAL_PROVIDER_NEUTRAL_DEHRADUN_DELIVERY**. Lifecycle becomes
+`IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`. Implementation is `AUTHORIZED` / `STARTED` / `COMPLETE`
+(`IMP-032_IMPLEMENTATION_AUTHORIZED: YES`; `IMP-032_STARTED: YES`;
+`IMP-032_IMPLEMENTATION_COMPLETE: YES`; `IMP-032_ACCEPTED: NO`). Formal acceptance is **not**
+claimed. Founder UAT is **REQUIRED** and **NOT_STARTED** (`IMP-032_FOUNDER_UAT_REQUIRED: YES`).
+`acceptedThrough` remains IMP-031; `pendingAcceptance` becomes IMP-032; `currentProductSlice`
+remains IMP-032; and `nextProductSlice` remains IMP-033 — Notification Foundation, which remains
+`PLANNED` / `NOT_ACTIVATED`. Data-only access-control seed migration `0032_delivery_permissions`
+is applied under the GTM-R84 boundary. Manual booking safety, RBAC, Operations API/UI, customer
+projection, and fulfil coordination are implemented within the locked architecture. No provider API,
+webhook, queue, worker, notification topology, Delivery schema migration, D-373, or ARCH-R19 is
+introduced. ARCH-R18 and DR-14 remain unchanged. Supersedes STATE-R82 for the current IMP-032
+implementation-completion position. Historical STATE-R82 boundary-clarification checkpoint remains
+preserved as prior authority.
 
 STATE-R82 records an **implementation-boundary clarification** for IMP-032 §23.3 only under prior
 STATE-R81 implementation-start authority and the locked capability architecture at
@@ -1061,16 +1083,19 @@ IMPLEMENTATION_SOURCE_SHA: 66e2783afa4e9eef35c4ec208b25af9d9450f83d
 IMPLEMENTATION_SOURCE_TREE: dd42ea992c8866ff8cfbc0ac09e781eb6fcfa099
 MERGED_MAIN_SHA: c3d499b0b8df2a8c7ae9297ab870f6286f81b848
 MERGED_MAIN_TREE: dd42ea992c8866ff8cfbc0ac09e781eb6fcfa099
-IMP-032: IMPLEMENTATION_IN_PROGRESS
+IMP-032: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
 IMP-032_ARCHITECTURE: LOCKED
 IMP-032_ARCHITECTURE_LOCKED: YES
-IMP-032_IMPLEMENTATION: AUTHORIZED / STARTED
+IMP-032_IMPLEMENTATION: AUTHORIZED / STARTED / COMPLETE
 IMP-032_IMPLEMENTATION_AUTHORIZED: YES
 IMP-032_STARTED: YES
-IMP-032_IMPLEMENTATION_COMPLETE: NO
+IMP-032_IMPLEMENTATION_COMPLETE: YES
 IMP-032_ACCEPTED: NO
-IMP-032_ACCESS_CONTROL_DATA_SEED_MIGRATION: PERMITTED_IF_REQUIRED
+IMP-032_FOUNDER_UAT_REQUIRED: YES
+IMP-032_FOUNDER_UAT: NOT_STARTED
+IMP-032_ACCESS_CONTROL_DATA_SEED_MIGRATION: APPLIED
 IMP-032_BOUNDARY_CLARIFICATION: GTM-R84 / STATE-R82
+IMP-032_COMPLETION: GTM-R85 / STATE-R83
 IMP-033: PLANNED / NOT_ACTIVATED
 D-373_CREATED: NO
 NO_NEW_CURRENT_DECISION_IN_THIS_ACTIVATION_GATE: YES

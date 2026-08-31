@@ -223,3 +223,63 @@ export type RecordProviderObservationResult = Readonly<{
   observation: DeliveryProviderObservation;
   transitionApplied: boolean;
 }>;
+
+export type BeginManualBookingInput = BeginBookingInput;
+
+export type ConfirmManualBookingInput = Readonly<{
+  deliveryId: string;
+  expectedRevision: bigint;
+  externalBookingReference?: string | null;
+  trackingUrl?: string | null;
+}>;
+
+export type ResolveManualBookingFailureInput = Readonly<{
+  deliveryId: string;
+  expectedRevision: bigint;
+  failureCode: string;
+  failureReason: string;
+  inactiveBookingConfirmed: boolean;
+}>;
+
+export type ResolveManualBookingCancellationInput = Readonly<{
+  deliveryId: string;
+  expectedRevision: bigint;
+  cancellationCode: string;
+  cancellationReason: string;
+  inactiveBookingConfirmed: boolean;
+}>;
+
+export type UpdateTrackingReferenceInput = Readonly<{
+  deliveryId: string;
+  expectedRevision: bigint;
+  trackingUrl: string;
+}>;
+
+export type ArrangeDeliveryInput = Readonly<{
+  orderId: string;
+  requestFingerprint: string;
+  priorDeliveryId?: string | null;
+}>;
+
+export type ConfirmDeliveryWithFulfilInput = RecordProofAndDeliverInput;
+
+export type RetryFulfilForDeliveredInput = Readonly<{
+  deliveryId: string;
+  expectedOrderRevision: bigint;
+}>;
+
+export type WorkforceDeliveryDetail = Readonly<{
+  delivery: Delivery;
+  activeAssignment: DeliveryAssignment | null;
+  trackingUrl: string | null;
+  providerCosts: readonly DeliveryProviderCost[];
+  activeReturn: DeliveryReturn | null;
+  permittedCommands: readonly string[];
+}>;
+
+export type ConfirmDeliveryWithFulfilResult = Readonly<{
+  delivery: Delivery;
+  fulfilAttempted: boolean;
+  fulfilSucceeded: boolean;
+  orderStatus: string | null;
+}>;
