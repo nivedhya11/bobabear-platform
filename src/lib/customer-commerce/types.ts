@@ -295,6 +295,12 @@ export type CommerceOrderDetail = CommerceOrderSummary &
     cancellationReasonCode: string | null;
     destination: CommerceOrderDestination;
     lines: readonly CommerceOrderLine[];
+    delivery: Readonly<{
+      statusLabel: string;
+      providerDisplayName: string | null;
+      trackingUrl: string | null;
+      lastUpdatedAt: string;
+    }> | null;
   }>;
 
 /**

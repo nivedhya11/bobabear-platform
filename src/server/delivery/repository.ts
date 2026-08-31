@@ -665,3 +665,80 @@ export async function updateObservationDisposition(
     .returning();
   return rows[0]!;
 }
+
+export async function findLatestDeliveryForOrder(
+  context: PersistenceQueryContext,
+  orderId: string,
+): Promise<DeliveryRow | null> {
+  assertApplicationRole(context, "findLatestDeliveryForOrder");
+  const rows = await context.db
+    .select()
+    .from(deliveriesTable)
+    .where(eq(deliveriesTable.orderId, orderId))
+    .orderBy(desc(deliveriesTable.updatedAt))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+export async function findActiveAssignmentForDelivery(
+  context: PersistenceQueryContext,
+  deliveryId: string,
+): Promise<DeliveryAssignmentRow | null> {
+  assertApplicationRole(context, "findActiveAssignmentForDelivery");
+  const rows = await context.db
+    .select()
+    .from(deliveryAssignmentsTable)
+    .where(
+      and(
+        eq(deliveryAssignmentsTable.deliveryId, deliveryId),
+        isNull(deliveryAssignmentsTable.supersededAt),
+      ),
+    )
+    .orderBy(desc(deliveryAssignmentsTable.createdAt))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+export async function findTrackingUrlForDelivery(
+  context: PersistenceQueryContext,
+  deliveryId: string,
+): Promise<string | null> {
+  assertApplicationRole(context, "findTrackingUrlForDelivery");
+  const rows = await context.db
+    .select()
+    .from(deliveryProviderReferencesTable)
+    .where(
+      and(
+        eq(deliveryProviderReferencesTable.deliveryId, deliveryId),
+        eq(deliveryProviderReferencesTable.referenceKind, "tracking_url"),
+      ),
+    )
+    .orderBy(desc(deliveryProviderReferencesTable.createdAt))
+    .limit(1);
+  return rows[0]?.referenceValue ?? null;
+}
+
+export async function upsertTrackingReference(
+  context: PersistenceTransactionContext,
+  deliveryId: string,
+  provider: string,
+  trackingUrl: string,
+  createdAt: Date,
+): Promise<void> {
+  assertTransactionContext(context, "upsertTrackingReference");
+  await context.db
+    .delete(deliveryProviderReferencesTable)
+    .where(
+      and(
+        eq(deliveryProviderReferencesTable.deliveryId, deliveryId),
+        eq(deliveryProviderReferencesTable.referenceKind, "tracking_url"),
+      ),
+    );
+  await insertProviderReferences(
+    context,
+    deliveryId,
+    provider,
+    [{ kind: "tracking_url", value: trackingUrl }],
+    createdAt,
+  );
+}

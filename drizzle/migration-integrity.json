@@ -161,6 +161,11 @@
       "tag": "0031_delivery",
       "path": "drizzle/0031_delivery.sql",
       "sha256": "324dbf5f7937666964ee9bcd2843a18465a66941a75836dde60dbbf65fdb07ce"
+    },
+    {
+      "tag": "0032_delivery_permissions",
+      "path": "drizzle/0032_delivery_permissions.sql",
+      "sha256": "c3938d1d2e965c2c5b35fbd46737cb7568d792450a4964dead1c44a37b2cbd01"
     }
   ]
 }

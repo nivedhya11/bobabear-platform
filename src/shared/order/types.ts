@@ -102,6 +102,12 @@ export type CustomerOrderDetail = CustomerOrderSummary &
     cancellationReasonCode: OrderCancellationReasonCode | null;
     destination: OrderDestinationProjection;
     lines: readonly OrderLineProjection[];
+    delivery: Readonly<{
+      statusLabel: string;
+      providerDisplayName: string | null;
+      trackingUrl: string | null;
+      lastUpdatedAt: Date;
+    }> | null;
   }>;
 
 export type WorkforceOrderSummary = Readonly<{

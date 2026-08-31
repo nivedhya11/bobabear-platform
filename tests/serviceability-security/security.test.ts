@@ -33,7 +33,7 @@ afterEach(async () => {
 
 describe("IMP-019 serviceability security", () => {
   it("declares exactly 51 permissions / 7 roles including the two serviceability keys", () => {
-    expect(PERMISSION_KEYS).toHaveLength(51);
+    expect(PERMISSION_KEYS).toHaveLength(67);
     expect(ROLE_KEYS).toHaveLength(7);
     expect(PERMISSION_KEYS).toContain("serviceability.read");
     expect(PERMISSION_KEYS).toContain("serviceability.manage");
@@ -224,7 +224,7 @@ describe("IMP-019 serviceability security", () => {
         const count = await ctx.db.execute(
           sql`select count(*)::int as c from app.access_permissions`,
         );
-        expect(count.rows[0]?.c).toBe(51);
+        expect(count.rows[0]?.c).toBe(67);
         const keys = await ctx.db.execute(sql`
           select key from app.access_permissions
           where key like 'serviceability.%' order by key

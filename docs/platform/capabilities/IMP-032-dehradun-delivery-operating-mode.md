@@ -5,7 +5,7 @@
   "capability": "IMP-032",
   "title": "Dehradun Delivery Operating Mode",
   "architectureLock": "ARCHITECTURE_LOCKED",
-  "implementation": "AUTHORIZED / STARTED",
+  "implementation": "AUTHORIZED / STARTED / COMPLETE",
   "implementationAuthorized": true,
   "lastReviewed": "2026-08-31",
   "bindingDecisions": ["D-357", "D-372"],
@@ -21,42 +21,44 @@ This document is the locked capability architecture for **IMP-032 — Manual Pro
 Dehradun Delivery Operating Mode** over the accepted IMP-031 foundation. It defines how BOBA makes
 delivery operational without provider API automation.
 
-Architecture remains canonically locked. Implementation is authorized and `STARTED`.
-Start does not complete or accept implementation.
+Architecture remains canonically locked. Implementation is authorized, started, and complete pending acceptance.
+Completion does not equal acceptance.
 
 | Field | Value |
 |---|---|
 | Architecture lock | `ARCHITECTURE_LOCKED` |
-| Lifecycle | `IMPLEMENTATION_IN_PROGRESS` |
-| Implementation | `AUTHORIZED` / `STARTED` |
+| Lifecycle | `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` |
+| Implementation | `AUTHORIZED` / `STARTED` / `COMPLETE` |
 | Implementation authorized | **YES** |
 | Accepted | **NO** |
 | Accepted product through | IMP-031 |
 | Current product slice | IMP-032 |
-| Pending acceptance | NONE |
+| Pending acceptance | IMP-032 |
 | Next product slice | IMP-033 — Notification Foundation |
 | Operating mode | **MANUAL_PROVIDER_NEUTRAL_DEHRADUN_DELIVERY** |
 | New CURRENT decision | **NONE** (`D-373` absent) |
 | Global architecture revision | **NONE** (`ARCH-R18` remains current; no ARCH-R19) |
 
 ```text
-IMP-032: IMPLEMENTATION_IN_PROGRESS
+IMP-032: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
 IMP-032_ARCHITECTURE: LOCKED
 IMP-032_ARCHITECTURE_LOCKED: YES
-IMP-032_IMPLEMENTATION: AUTHORIZED / STARTED
+IMP-032_IMPLEMENTATION: AUTHORIZED / STARTED / COMPLETE
 IMP-032_IMPLEMENTATION_AUTHORIZED: YES
 IMP-032_STARTED: YES
-IMP-032_IMPLEMENTATION_COMPLETE: NO
+IMP-032_IMPLEMENTATION_COMPLETE: YES
 IMP-032_ACCEPTED: NO
 IMP-032_OPERATING_MODE: MANUAL_PROVIDER_NEUTRAL_DEHRADUN_DELIVERY
-START IS NOT COMPLETION OR ACCEPTANCE: YES
+COMPLETION IS NOT ACCEPTANCE: YES
+FOUNDER_UAT_REQUIRED_FOR_ACCEPTANCE: YES
+FOUNDER_UAT: NOT_STARTED
 D373_REQUIRED_FOR_LOCK: NO
 ARCH_R19_REQUIRED: NO
 FOUNDER_UAT_EXPECTED_FOR_IMPLEMENTATION_ACCEPTANCE: YES
 schema_change: NO
 delivery_schema_migration: NO
 new_service: NO
-access_control_data_seed_migration: PERMITTED_IF_REQUIRED
+access_control_data_seed_migration: APPLIED
 ```
 
 ## 1. Purpose
@@ -523,9 +525,9 @@ ARCH remains ARCH-R18. DR remains DR-14.
 
 ## 23. Implementation boundary
 
-Implementation is **AUTHORIZED** / **STARTED** for the locked manual-mode boundary below. Start does
-**not** complete or accept implementation (`IMP-032_IMPLEMENTATION_COMPLETE: NO`;
-`IMP-032_ACCEPTED: NO`).
+Implementation is **AUTHORIZED** / **STARTED** / **COMPLETE** for the locked manual-mode boundary
+below. Completion does **not** accept implementation (`IMP-032_IMPLEMENTATION_COMPLETE: YES`;
+`IMP-032_ACCEPTED: NO`; Founder UAT required).
 
 ### 23.1 Included (authorized; started)
 
@@ -631,25 +633,25 @@ This lock requires and records:
 - implementation boundary unambiguous;
 - D-373 absent; ARCH-R19 not required; ARCH-R18 and DR-14 remain current.
 
-## 25. Implementation-start status
+## 25. Implementation completion status
 
 ```text
-IMP-032: IMPLEMENTATION_IN_PROGRESS
+IMP-032: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
 IMP-032_ARCHITECTURE: LOCKED
 IMP-032_ARCHITECTURE_LOCKED: YES
-IMP-032_IMPLEMENTATION: AUTHORIZED / STARTED
+IMP-032_IMPLEMENTATION: AUTHORIZED / STARTED / COMPLETE
 IMP-032_IMPLEMENTATION_AUTHORIZED: YES
 IMP-032_STARTED: YES
-IMP-032_IMPLEMENTATION_COMPLETE: NO
+IMP-032_IMPLEMENTATION_COMPLETE: YES
 IMP-032_ACCEPTED: NO
-START IS NOT COMPLETION OR ACCEPTANCE: YES
+COMPLETION IS NOT ACCEPTANCE: YES
 FOUNDER_UAT_REQUIRED_FOR_ACCEPTANCE: YES
+FOUNDER_UAT: NOT_STARTED
+IMP-032_ACCESS_CONTROL_DATA_SEED_MIGRATION: APPLIED
 ```
 
-Start covers only §23.1 under the locked operating mode and prior GTM-R82 authorization. GTM-R84 / STATE-R82 clarify §23.3 only: a repository-native data-only access-control seed migration is
-**PERMITTED_IF_REQUIRED** to install the already-locked `delivery.*` catalog and role mappings into
-already-initialized environments under the constraints above. That clarification is
-implementation-boundary only; it is not architecture expansion and not implementation completion.
-Start does **not** complete or accept implementation, and does **not** authorize provider API
-automation, webhooks, workers, queues, notifications/WhatsApp, Delivery schema/table migration,
+Implementation covers §23.1–§23.4 under the locked manual operating mode. GTM-R84 / STATE-R82 clarified
+§23.3 data-only access-control seed as **PERMITTED_IF_REQUIRED**; migration `0032_delivery_permissions`
+is applied (data-only; no Delivery schema change). Completion does **not** accept implementation and
+does **not** authorize provider API automation, webhooks, workers, queues, notifications/WhatsApp,
 D-373, ARCH-R19, IMP-033, or IMP-034.

@@ -116,7 +116,7 @@ describe("IMP-016 promotions migration", () => {
           sql`select count(*)::text as count from app.access_permissions`,
         );
         expect(permissions.rows[0]?.count).toBe("51");
-        expect(PERMISSION_KEYS.length).toBe(51);
+        expect(PERMISSION_KEYS.length).toBe(67);
         expect(ROLE_KEYS.length).toBe(7);
 
         const empty = await ctx.db.execute(sql`

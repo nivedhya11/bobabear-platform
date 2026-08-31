@@ -16,10 +16,10 @@ import {
 } from "../../src/shared/access-control";
 
 describe("access-control catalog", () => {
-  it("declares exactly 57 permissions and 7 roles", () => {
-    expect(PERMISSION_KEYS).toHaveLength(57);
+  it("declares exactly 67 permissions and 7 roles", () => {
+    expect(PERMISSION_KEYS).toHaveLength(67);
     expect(ROLE_KEYS).toHaveLength(7);
-    expect(new Set(PERMISSION_KEYS).size).toBe(57);
+    expect(new Set(PERMISSION_KEYS).size).toBe(67);
     expect(new Set(ROLE_KEYS).size).toBe(7);
   });
 
@@ -44,7 +44,7 @@ describe("access-control catalog", () => {
     }
 
     const platformPerms = permissionsForRole("platform_super_admin");
-    expect(platformPerms).toHaveLength(57);
+    expect(platformPerms).toHaveLength(67);
     expect(new Set(platformPerms)).toEqual(new Set(PERMISSION_KEYS));
 
     expect(permissionsForRole("kitchen_operator")).toEqual([
@@ -67,6 +67,16 @@ describe("access-control catalog", () => {
       "charges.read",
       "order.read",
       "order.fulfil",
+      "delivery.read",
+      "delivery.dispatch",
+      "delivery.book",
+      "delivery.assign",
+      "delivery.pickup",
+      "delivery.complete",
+      "delivery.cancel",
+      "delivery.fail",
+      "delivery.return",
+      "delivery.cost.record",
     ]);
     expect(permissionsForRole("outlet_manager")).not.toContain("brand.create");
     expect(permissionsForRole("outlet_manager")).not.toContain("catalog.manage");
@@ -97,6 +107,8 @@ describe("access-control catalog", () => {
     expect(permissionsForRole("brand_admin")).toContain("order.accept");
     expect(permissionsForRole("brand_admin")).toContain("order.fulfil");
     expect(permissionsForRole("brand_admin")).toContain("order.cancel");
+    expect(permissionsForRole("outlet_manager")).toContain("delivery.read");
+    expect(permissionsForRole("outlet_manager")).not.toContain("delivery.book");
     expect(permissionsForRole("outlet_manager")).toContain("order.read");
     expect(permissionsForRole("outlet_manager")).toContain("order.accept");
     expect(permissionsForRole("outlet_manager")).toContain("order.fulfil");
