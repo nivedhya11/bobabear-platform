@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R81",
+  "roadmapVersion": "GTM-R82",
   "acceptedThrough": "IMP-031",
   "currentProductSlice": "IMP-032",
   "nextProductSlice": "IMP-033",
   "gtmBoundary": "IMP-040",
   "lastReviewed": "2026-08-31",
-  "supersedes": "GTM-R80"
+  "supersedes": "GTM-R81"
 }
 -->
 
@@ -275,7 +275,7 @@ IMP-031 locked capability architecture (architecture **ARCHITECTURE_LOCKED**; im
 [`capabilities/IMP-031-provider-neutral-delivery-foundation.md`](./capabilities/IMP-031-provider-neutral-delivery-foundation.md)
 
 IMP-032 locked capability architecture (architecture **ARCHITECTURE_LOCKED**; implementation
-**NOT_AUTHORIZED** / **NOT_STARTED**):
+**AUTHORIZED** / **NOT_STARTED**):
 
 [`capabilities/IMP-032-dehradun-delivery-operating-mode.md`](./capabilities/IMP-032-dehradun-delivery-operating-mode.md)
 
@@ -301,10 +301,11 @@ IMP-030 remains `COMPLETE_AND_ACCEPTED`. Its capability architecture remains loc
 and was formally amended on 2026-08-27 for static detail-route realization. IMP-032 architecture is
 **ARCHITECTURE_LOCKED** at
 [`capabilities/IMP-032-dehradun-delivery-operating-mode.md`](./capabilities/IMP-032-dehradun-delivery-operating-mode.md)
-(operating mode **MANUAL_PROVIDER_NEUTRAL_DEHRADUN_DELIVERY**). Architecture lock does **not**
-authorize or start implementation (`IMP-032_IMPLEMENTATION_AUTHORIZED: NO`; `IMP-032_STARTED: NO`).
-IMP-033 remains `PLANNED` / `NOT_ACTIVATED`. DR-14 and ARCH-R18 remain unchanged; D-373 is not
-created. No named provider is canonical; no provider API/webhook/worker/queue topology is introduced.
+(operating mode **MANUAL_PROVIDER_NEUTRAL_DEHRADUN_DELIVERY**). Implementation is
+`AUTHORIZED` / `NOT_STARTED` (`IMP-032_IMPLEMENTATION_AUTHORIZED: YES`; `IMP-032_STARTED: NO`).
+Authorization does **not** start implementation. IMP-033 remains `PLANNED` / `NOT_ACTIVATED`. DR-14
+and ARCH-R18 remain unchanged; D-373 is not created. No named provider is canonical; no provider
+API/webhook/worker/queue topology is introduced.
 
 ```text
 IMP-030: COMPLETE_AND_ACCEPTED
@@ -329,11 +330,11 @@ IMP031_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
 IMP031_FORMAL_ACCEPTANCE: ACCEPTED
 IMP031_ACCEPTED_MAIN_SHA: c3d499b0b8df2a8c7ae9297ab870f6286f81b848
 IMP031_ACCEPTED_TREE: dd42ea992c8866ff8cfbc0ac09e781eb6fcfa099
-IMP-032: ARCHITECTURE_LOCKED
+IMP-032: IMPLEMENTATION_AUTHORIZED
 IMP-032_ARCHITECTURE: LOCKED
 IMP-032_ARCHITECTURE_LOCKED: YES
-IMP-032_IMPLEMENTATION: NOT_AUTHORIZED / NOT_STARTED
-IMP-032_IMPLEMENTATION_AUTHORIZED: NO
+IMP-032_IMPLEMENTATION: AUTHORIZED / NOT_STARTED
+IMP-032_IMPLEMENTATION_AUTHORIZED: YES
 IMP-032_STARTED: NO
 IMP-032_IMPLEMENTATION_COMPLETE: NO
 IMP-032_ACCEPTED: NO
@@ -526,10 +527,10 @@ only). Webhook acknowledgement timing / durable inbox / asynchronous Payment pro
 IMP-032 — Dehradun Delivery Operating Mode is the current product slice with architecture
 **ARCHITECTURE_LOCKED** at
 [`capabilities/IMP-032-dehradun-delivery-operating-mode.md`](./capabilities/IMP-032-dehradun-delivery-operating-mode.md).
-Operating mode is **MANUAL_PROVIDER_NEUTRAL_DEHRADUN_DELIVERY**. Implementation remains
-`NOT_AUTHORIZED` / `NOT_STARTED` (`IMP-032_IMPLEMENTATION_AUTHORIZED: NO`; `IMP-032_STARTED: NO`;
-`IMP-032_IMPLEMENTATION_COMPLETE: NO`; `IMP-032_ACCEPTED: NO`). Architecture lock does **not**
-authorize implementation. IMP-031 — Provider-Neutral Delivery Foundation remains
+Operating mode is **MANUAL_PROVIDER_NEUTRAL_DEHRADUN_DELIVERY**. Implementation is
+`AUTHORIZED` / `NOT_STARTED` (`IMP-032_IMPLEMENTATION_AUTHORIZED: YES`; `IMP-032_STARTED: NO`;
+`IMP-032_IMPLEMENTATION_COMPLETE: NO`; `IMP-032_ACCEPTED: NO`). Authorization does **not** start
+implementation. IMP-031 — Provider-Neutral Delivery Foundation remains
 `COMPLETE_AND_ACCEPTED`. Its locked capability architecture remains at
 [`capabilities/IMP-031-provider-neutral-delivery-foundation.md`](./capabilities/IMP-031-provider-neutral-delivery-foundation.md).
 Architecture remains `ARCHITECTURE_LOCKED`; implementation boundary C remains approved with the
@@ -540,9 +541,9 @@ capability-local Delivery lifecycle amendment; implementation is `AUTHORIZED` / 
 IMP-030 — Operations Console UI remains
 `COMPLETE_AND_ACCEPTED`; architecture remains locked and implementation is authorized, started, and
 complete. IMP-033 remains `PLANNED` / `NOT_ACTIVATED` as the next product slice and is **not**
-authorized or started. This lock gate does **not** authorize or start IMP-032 implementation, select
+authorized or started. This authorization gate does **not** start IMP-032 implementation, select
 a named provider, integrate an external API, create D-373, create ARCH-R19, or mutate
-runtime/schema/product surfaces beyond the locked capability architecture artifact. IMP-029 —
+runtime/schema/product surfaces. IMP-029 —
 Operations Console API remains `COMPLETE_AND_ACCEPTED`; architecture remains locked and
 implementation is authorized, started, and complete.
 
@@ -614,11 +615,11 @@ IMP031_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
 IMP031_FORMAL_ACCEPTANCE: ACCEPTED
 IMP031_ACCEPTED_MAIN_SHA: c3d499b0b8df2a8c7ae9297ab870f6286f81b848
 IMP031_ACCEPTED_TREE: dd42ea992c8866ff8cfbc0ac09e781eb6fcfa099
-IMP-032: ARCHITECTURE_LOCKED
+IMP-032: IMPLEMENTATION_AUTHORIZED
 IMP-032_ARCHITECTURE: LOCKED
 IMP-032_ARCHITECTURE_LOCKED: YES
-IMP-032_IMPLEMENTATION: NOT_AUTHORIZED / NOT_STARTED
-IMP-032_IMPLEMENTATION_AUTHORIZED: NO
+IMP-032_IMPLEMENTATION: AUTHORIZED / NOT_STARTED
+IMP-032_IMPLEMENTATION_AUTHORIZED: YES
 IMP-032_STARTED: NO
 IMP-032_IMPLEMENTATION_COMPLETE: NO
 IMP-032_ACCEPTED: NO
@@ -772,7 +773,7 @@ consume or remap IMP-029 → IMP-040 identities and is `COMPLETE_AND_ACCEPTED`.
 
 | IMP | Capability | Lifecycle |
 |---|---|---|
-| IMP-032 | Dehradun Delivery Operating Mode | ARCHITECTURE_LOCKED |
+| IMP-032 | Dehradun Delivery Operating Mode | IMPLEMENTATION_AUTHORIZED |
 | IMP-033 | Notification Foundation | PLANNED |
 | IMP-034 | Meta WhatsApp Cloud API Adapter | PLANNED |
 | IMP-035 | Initial Administration Capabilities | PLANNED |
@@ -1147,6 +1148,28 @@ Historical GTM-R1 meanings that are **not** current:
 Current public GTM boundary is **IMP-040**, not IMP-035.
 
 ## 9. Roadmap Change Log
+
+### GTM-R82 — 2026-08-31
+
+- Authorizes implementation of **IMP-032 — Dehradun Delivery Operating Mode** under the locked
+  capability architecture at
+  [`capabilities/IMP-032-dehradun-delivery-operating-mode.md`](./capabilities/IMP-032-dehradun-delivery-operating-mode.md)
+  (`ARCHITECTURE_LOCKED`; `IMP-032_ARCHITECTURE_LOCKED: YES`).
+- IMP-032 lifecycle becomes `IMPLEMENTATION_AUTHORIZED`; implementation is
+  `AUTHORIZED` / `NOT_STARTED` (`IMP-032_IMPLEMENTATION_AUTHORIZED: YES`; `IMP-032_STARTED: NO`;
+  `IMP-032_IMPLEMENTATION_COMPLETE: NO`; `IMP-032_ACCEPTED: NO`). Authorization does **not** start
+  implementation.
+- Preserves operating mode **MANUAL_PROVIDER_NEUTRAL_DEHRADUN_DELIVERY** and the locked manual
+  booking safety boundary (pre-external-attempt `REQUESTED` → `BOOKING_OUTCOME_UNKNOWN`; stable
+  `bookingCorrelationId`; manual resolution without provider I/O).
+- Preserves `acceptedThrough = IMP-031`, `pendingAcceptance = NONE`, `currentProductSlice = IMP-032`,
+  and `nextProductSlice = IMP-033` (remains `PLANNED` / `NOT_ACTIVATED`).
+- IMP-031 remains `COMPLETE_AND_ACCEPTED` under ARCH-R18 / ARCH-G24. No named provider is canonical;
+  no provider API integration, webhook, queue, worker, notification, Delivery schema migration,
+  runtime topology, D-373, or ARCH-R19 is introduced. DR-14 and ARCH-R18 remain unchanged;
+  `D-373_CREATED: NO`; `ARCH_R19_REQUIRED: NO`. Founder UAT remains required for later acceptance.
+- Supersedes GTM-R81 for the current IMP-032 implementation-authorization position. Historical
+  GTM-R81 / STATE-R79 architecture-lock checkpoint remains preserved as prior authority.
 
 ### GTM-R81 — 2026-08-31
 

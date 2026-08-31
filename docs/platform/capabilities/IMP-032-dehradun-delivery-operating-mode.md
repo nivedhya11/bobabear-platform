@@ -5,8 +5,8 @@
   "capability": "IMP-032",
   "title": "Dehradun Delivery Operating Mode",
   "architectureLock": "ARCHITECTURE_LOCKED",
-  "implementation": "NOT_AUTHORIZED / NOT_STARTED",
-  "implementationAuthorized": false,
+  "implementation": "AUTHORIZED / NOT_STARTED",
+  "implementationAuthorized": true,
   "lastReviewed": "2026-08-31",
   "bindingDecisions": ["D-357", "D-372"],
   "dependsOn": ["IMP-029", "IMP-030", "IMP-031"]
@@ -21,16 +21,16 @@ This document is the locked capability architecture for **IMP-032 — Manual Pro
 Dehradun Delivery Operating Mode** over the accepted IMP-031 foundation. It defines how BOBA makes
 delivery operational without provider API automation.
 
-**Architecture lock does not authorize implementation.** Implementation remains
-`NOT_AUTHORIZED` / `NOT_STARTED`. This file is an uncommitted lock candidate until governance
-promotion and acceptance gates say otherwise.
+Architecture is canonically locked. Implementation authorization/start remain separate governance
+gates. Implementation is now `AUTHORIZED` / `NOT_STARTED`. Authorization does **not** start
+implementation.
 
 | Field | Value |
 |---|---|
 | Architecture lock | `ARCHITECTURE_LOCKED` |
-| Lifecycle | `ARCHITECTURE_LOCKED` |
-| Implementation | `NOT_AUTHORIZED` / `NOT_STARTED` |
-| Implementation authorized | **NO** |
+| Lifecycle | `IMPLEMENTATION_AUTHORIZED` |
+| Implementation | `AUTHORIZED` / `NOT_STARTED` |
+| Implementation authorized | **YES** |
 | Accepted | **NO** |
 | Accepted product through | IMP-031 |
 | Current product slice | IMP-032 |
@@ -41,15 +41,16 @@ promotion and acceptance gates say otherwise.
 | Global architecture revision | **NONE** (`ARCH-R18` remains current; no ARCH-R19) |
 
 ```text
-IMP-032: ARCHITECTURE_LOCKED
+IMP-032: IMPLEMENTATION_AUTHORIZED
 IMP-032_ARCHITECTURE: LOCKED
 IMP-032_ARCHITECTURE_LOCKED: YES
-IMP-032_IMPLEMENTATION: NOT_AUTHORIZED / NOT_STARTED
-IMP-032_IMPLEMENTATION_AUTHORIZED: NO
+IMP-032_IMPLEMENTATION: AUTHORIZED / NOT_STARTED
+IMP-032_IMPLEMENTATION_AUTHORIZED: YES
 IMP-032_STARTED: NO
 IMP-032_IMPLEMENTATION_COMPLETE: NO
 IMP-032_ACCEPTED: NO
 IMP-032_OPERATING_MODE: MANUAL_PROVIDER_NEUTRAL_DEHRADUN_DELIVERY
+AUTHORIZATION IS NOT IMPLEMENTATION START: YES
 D373_REQUIRED_FOR_LOCK: NO
 ARCH_R19_REQUIRED: NO
 FOUNDER_UAT_EXPECTED_FOR_IMPLEMENTATION_ACCEPTANCE: YES
@@ -522,9 +523,10 @@ ARCH remains ARCH-R18. DR remains DR-14.
 
 ## 23. Implementation boundary
 
-Architecture lock **does not** authorize implementation.
+Implementation is **AUTHORIZED** for the locked manual-mode boundary below. Authorization does
+**not** start implementation (`IMP-032_STARTED: NO`).
 
-### 23.1 Included (when later authorized)
+### 23.1 Included (authorized; not started)
 
 ```text
 A. manual dispatch orchestration (prerequisite validation + createDelivery)
@@ -540,6 +542,7 @@ J. Operations UI extension on order detail
 K. customer Delivery projection on existing order detail
 L. DELIVERED → existing Order fulfil coordination
 M. authorization / concurrency / lifecycle / customer-ACL tests
+N. Delivery permission-catalog extension under existing access-control conventions
 ```
 
 ### 23.2 Excluded
@@ -588,7 +591,7 @@ FOUNDER_UAT_EXPECTED_FOR_IMPLEMENTATION_ACCEPTANCE: YES
 Workforce and customer-visible surfaces change materially. UAT is not performed in this architecture
 lock gate.
 
-## 24. Architecture-lock acceptance criteria (satisfied by this candidate)
+## 24. Architecture-lock acceptance criteria (satisfied)
 
 This lock requires and records:
 
@@ -603,5 +606,24 @@ This lock requires and records:
 - customer charge ≠ provider cost;
 - customer projection uses existing states only;
 - WhatsApp/notifications deferred to IMP-033 / IMP-034;
-- implementation boundary unambiguous and **not authorized**;
+- implementation boundary unambiguous;
 - D-373 absent; ARCH-R19 not required; ARCH-R18 and DR-14 remain current.
+
+## 25. Implementation-authorization status
+
+```text
+IMP-032: IMPLEMENTATION_AUTHORIZED
+IMP-032_ARCHITECTURE: LOCKED
+IMP-032_ARCHITECTURE_LOCKED: YES
+IMP-032_IMPLEMENTATION: AUTHORIZED / NOT_STARTED
+IMP-032_IMPLEMENTATION_AUTHORIZED: YES
+IMP-032_STARTED: NO
+IMP-032_IMPLEMENTATION_COMPLETE: NO
+IMP-032_ACCEPTED: NO
+AUTHORIZATION IS NOT IMPLEMENTATION START: YES
+FOUNDER_UAT_REQUIRED_FOR_ACCEPTANCE: YES
+```
+
+Authorization covers only §23.1 under the locked operating mode. It does **not** authorize provider
+API automation, webhooks, workers, queues, notifications/WhatsApp, schema/migration for Delivery
+tables, D-373, ARCH-R19, IMP-033, or IMP-034. Start remains a separate governance gate.
