@@ -2,5 +2,5 @@
 2:I[5618,["409","static/chunks/409-cd751991469f6862.js","31","static/chunks/app/workforce/login/page-8f415a5619759aab.js"],"WorkforceLoginClient"]
 3:I[484,[],"OutletBoundary"]
 4:"$Sreact.suspense"
-0:{"rsc":["$","$1","c",{"children":[["$","$L2",null,{}],null,["$","$L3",null,{"children":["$","$4",null,{"name":"Next.MetadataOutlet","children":"$@5"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"TmD2lvctNH6zZ-hFxr8mT"}
+0:{"rsc":["$","$1","c",{"children":[["$","$L2",null,{}],null,["$","$L3",null,{"children":["$","$4",null,{"name":"Next.MetadataOutlet","children":"$@5"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"_CxW_E7qU7lLoQP6eyJXn"}
 5:null
