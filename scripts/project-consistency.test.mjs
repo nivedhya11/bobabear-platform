@@ -7,6 +7,7 @@ import {
   evaluateCapabilityLifecycle,
   evaluateImp030ArchitectureActivationCheckpoint,
   evaluateImp031ArchitectureActivationCheckpoint,
+  evaluateImp032ArchitectureActivationCheckpoint,
   evaluateImp031ArchitectureDraftArtifact,
   evaluateImp031ArchitectureDraftCheckpoint,
   evaluateImp031ArchitectureLockArtifact,
@@ -2295,6 +2296,59 @@ describe("IMP-031 architecture activation checkpoint", () => {
   });
 });
 
+describe("IMP-032 architecture activation checkpoint", () => {
+  const activation = Object.freeze({
+    roadmapVersion: "GTM-R80", stateVersion: "STATE-R78", acceptedThrough: "IMP-031",
+    currentProductSlice: "IMP-032", nextProductSlice: "IMP-033", pendingAcceptance: "NONE",
+    imp031: "COMPLETE_AND_ACCEPTED", imp032: "ARCHITECTURE_IN_PROGRESS", architecture: "NOT_LOCKED",
+    architectureLocked: "NO", implementation: "NOT_AUTHORIZED / NOT_STARTED",
+    implementationAuthorized: "NO", started: "NO", implementationComplete: "NO", accepted: "NO",
+    imp033: "PLANNED", roadmapLifecycle: "ARCHITECTURE_IN_PROGRESS", stateLifecycle: "ARCHITECTURE_IN_PROGRESS",
+    architectureVersion: "ARCH-R18", decisionRegisterVersion: "DR-14",
+    d373Exists: false, capabilityArtifactExists: false, providerSelected: false,
+    dehradunModeDefined: false, imp031Accepted: true,
+  });
+
+  it("accepts only the R80/S78 architecture-only activation checkpoint", () => {
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R80", "STATE-R78", "imp032Activation"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R79", "STATE-R77", "imp031Acceptance"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R80", "STATE-R78"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R80", "STATE-R77", "imp032Activation"), false);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R79", "STATE-R78", "imp032Activation"), false);
+    assert.deepEqual(evaluateImp032ArchitectureActivationCheckpoint(activation), { ok: true });
+  });
+
+  it("rejects invalid activation lifecycle combinations", () => {
+    for (const [key, value] of [
+      ["acceptedThrough", "IMP-030"],
+      ["currentProductSlice", "NONE"],
+      ["currentProductSlice", "IMP-031"],
+      ["pendingAcceptance", "IMP-032"],
+      ["nextProductSlice", "IMP-032"],
+      ["architecture", "LOCKED"],
+      ["architectureLocked", "YES"],
+      ["implementationAuthorized", "YES"],
+      ["started", "YES"],
+      ["implementationComplete", "YES"],
+      ["accepted", "YES"],
+      ["imp032", "PLANNED"],
+      ["imp033", "ARCHITECTURE_IN_PROGRESS"],
+      ["d373Exists", true],
+      ["capabilityArtifactExists", true],
+      ["providerSelected", true],
+      ["dehradunModeDefined", true],
+      ["imp031Accepted", false],
+      ["imp031", "IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE"],
+      ["roadmapVersion", "GTM-R79"],
+      ["stateVersion", "STATE-R77"],
+      ["architectureVersion", "ARCH-R19"],
+      ["decisionRegisterVersion", "DR-15"],
+    ]) {
+      assert.equal(evaluateImp032ArchitectureActivationCheckpoint({ ...activation, [key]: value }).ok, false, `${key}=${value}`);
+    }
+  });
+});
+
 describe("IMP-031 architecture draft checkpoint", () => {
   const draft = Object.freeze({
     roadmapVersion: "GTM-R74", stateVersion: "STATE-R72", acceptedThrough: "IMP-030",
@@ -2371,7 +2425,47 @@ IMP-031_ARCHITECTURE_LOCKED: NO
 });
 
 /**
- * Live CURRENT IMP-031 docs are COMPLETE_AND_ACCEPTED.
+ * Live CURRENT docs are IMP-032 architecture activation (GTM-R80 / STATE-R78).
+ * Historical IMP-031 evaluators first normalize back to the R79/S77 acceptance position.
+ */
+function normalizeImp031AcceptedLifecycleDocs(activatedRoadmap, activatedState) {
+  const rewriteCurrent = (docText, sectionStart, sectionEndMarker) => {
+    const start = docText.indexOf(sectionStart);
+    const end = docText.indexOf(sectionEndMarker, start + 1);
+    assert.notEqual(start, -1);
+    assert.notEqual(end, -1);
+    const current = docText.slice(start, end);
+    const updated = current
+      .replace(/Current Product Slice:\s*IMP-032[^\n]*/g, "Current Product Slice: NONE")
+      .replace(/Current Product Implementation:\s*IMP-032[^\n]*/g, "Current Product Implementation: NONE")
+      .replace(/currentProductSlice:\s*IMP-032\b/g, "currentProductSlice: NONE")
+      .replace(/Next Product Slice:\s*IMP-033[^\n]*/g, "Next Product Slice:    IMP-032 — Dehradun Delivery Operating Mode")
+      .replace(/nextProductSlice:\s*IMP-033[^\n]*/g, "nextProductSlice: IMP-032 — Dehradun Delivery Operating Mode")
+      .replace(
+        /IMP-032:\s*ARCHITECTURE_IN_PROGRESS\nIMP-032_ARCHITECTURE:\s*NOT_LOCKED\nIMP-032_ARCHITECTURE_LOCKED:\s*NO\nIMP-032_IMPLEMENTATION:\s*NOT_AUTHORIZED \/ NOT_STARTED\nIMP-032_IMPLEMENTATION_AUTHORIZED:\s*NO\nIMP-032_STARTED:\s*NO\nIMP-032_IMPLEMENTATION_COMPLETE:\s*NO\nIMP-032_ACCEPTED:\s*NO\nIMP-033:\s*PLANNED \/ NOT_ACTIVATED\nD-373_CREATED:\s*NO\nNO_NEW_CURRENT_DECISION_IN_THIS_ACTIVATION_GATE:\s*YES\n/g,
+        "IMP-032: PLANNED / NOT_ACTIVATED\n",
+      )
+      .replace(
+        /IMP-032 ARCHITECTURE_IN_PROGRESS; architecture is not locked and\n\s*implementation is not authorized or started\./g,
+        "IMP-031 COMPLETE_AND_ACCEPTED;\n                              IMP-032 PLANNED / NOT_ACTIVATED.",
+      );
+    return `${docText.slice(0, start)}${updated}${docText.slice(end)}`;
+  };
+  let roadmapText = rewriteCurrent(activatedRoadmap, "## 2.", "## 3.");
+  roadmapText = roadmapText.replace(
+    "| IMP-032 | Dehradun Delivery Operating Mode | ARCHITECTURE_IN_PROGRESS |",
+    "| IMP-032 | Dehradun Delivery Operating Mode | PLANNED |",
+  );
+  const stateText = rewriteCurrent(
+    rewriteCurrent(activatedState, "## 2. Current Work Position", "\n## "),
+    "## 5. Acceptance Position",
+    "\n## ",
+  );
+  return { roadmapText, stateText };
+}
+
+/**
+ * Live CURRENT IMP-031 capability/architecture docs remain COMPLETE_AND_ACCEPTED.
  * Historical completion/start/authorization/lock evaluators derive fixtures from that live state.
  */
 function deriveImp031CompletionArtifact(acceptedArtifact) {
@@ -2425,7 +2519,10 @@ function deriveImp031CompletionArchitecture(acceptedArchitecture) {
   );
 }
 
-function deriveImp031CompletionLifecycleDocs(acceptedRoadmap, acceptedState) {
+function deriveImp031CompletionLifecycleDocs(activatedRoadmap, activatedState) {
+  const accepted = normalizeImp031AcceptedLifecycleDocs(activatedRoadmap, activatedState);
+  const acceptedRoadmap = accepted.roadmapText;
+  const acceptedState = accepted.stateText;
   const rewriteCurrent = (docText, sectionStart, sectionEndMarker) => {
     const start = docText.indexOf(sectionStart);
     const end = docText.indexOf(sectionEndMarker, start + 1);
@@ -2567,11 +2664,13 @@ describe("IMP-031 architecture lock checkpoint", () => {
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R77", "STATE-R75", "imp031Start"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R78", "STATE-R76", "imp031Completion"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R79", "STATE-R77", "imp031Acceptance"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R80", "STATE-R78", "imp032Activation"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R75", "STATE-R73"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R76", "STATE-R74"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R77", "STATE-R75"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R78", "STATE-R76"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R79", "STATE-R77"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R80", "STATE-R78"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R75", "STATE-R72"), false);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R74", "STATE-R73"), false);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R75", "STATE-R73", "imp031Draft"), false);
@@ -3472,8 +3571,11 @@ describe("IMP-031 formal acceptance checkpoint", () => {
     acceptedTree: "dd42ea992c8866ff8cfbc0ac09e781eb6fcfa099",
   });
 
-  const roadmapText = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
-  const stateText = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
+  const liveRoadmapText = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
+  const liveStateText = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
+  const acceptedDocs = normalizeImp031AcceptedLifecycleDocs(liveRoadmapText, liveStateText);
+  const roadmapText = acceptedDocs.roadmapText;
+  const stateText = acceptedDocs.stateText;
   const architectureText = readFileSync(new URL("../docs/platform/ARCHITECTURE.md", import.meta.url), "utf8");
   const capabilityText = readFileSync(new URL("../docs/platform/capabilities/IMP-031-provider-neutral-delivery-foundation.md", import.meta.url), "utf8");
 
@@ -3485,9 +3587,10 @@ describe("IMP-031 formal acceptance checkpoint", () => {
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R78", "STATE-R77", "imp031Acceptance"), false);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R79", "STATE-R77", "imp031Completion"), false);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R79", "STATE-R77"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R80", "STATE-R78", "imp032Activation"), true);
   });
 
-  it("accepts live CURRENT formal-acceptance artifact and documents", () => {
+  it("accepts normalized R79/S77 formal-acceptance artifact and documents", () => {
     assert.deepEqual(evaluateImp031AcceptanceArtifact(capabilityText), { ok: true });
     assert.deepEqual(evaluateImp031AcceptanceCurrentArchitectureStatus(architectureText), { ok: true });
     assert.deepEqual(
@@ -3499,6 +3602,12 @@ describe("IMP-031 formal acceptance checkpoint", () => {
     assert.match(capabilityText, /IMP031_ACCEPTED_MAIN_SHA:\s*c3d499b0b8df2a8c7ae9297ab870f6286f81b848/);
     assert.match(capabilityText, /IMP031_ACCEPTED_TREE:\s*dd42ea992c8866ff8cfbc0ac09e781eb6fcfa099/);
     assert.doesNotMatch(capabilityText, /IMP031_ACCEPTED_MAIN_SHA:\s*64d1cc987120302e12497311b486ba122c1047b0/);
+    assert.equal(
+      evaluateImp031AcceptanceCrossDocumentAlignment({
+        architectureText, capabilityText, roadmapText: liveRoadmapText, stateText: liveStateText,
+      }).ok,
+      false,
+    );
   });
 
   it("rejects accepted YES while complete NO", () => {
