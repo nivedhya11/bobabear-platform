@@ -361,7 +361,23 @@ WORKING_TREE_FINGERPRINT
   `FOUNDER_UAT_REQUIRED = YES` before `COMPLETE_AND_ACCEPTED` because it materially changes customer
   `/order`, Menu serving, category navigation, product-card/display-price presentation, and the Add
   / Cart customer flow. Independent technical acceptance alone is insufficient for final acceptance
-  of IMP-028B.
+  of IMP-028B. **IMP-035 — Initial Administration Capabilities** is likewise
+  `FOUNDER_UAT_REQUIRED = YES` before `COMPLETE_AND_ACCEPTED` because it creates operator-visible
+  administration behavior.
+
+## Autonomous coding-agent execution (stable policy)
+
+Repository and canonical docs under `docs/platform/` are the source of truth. For an authorized
+product slice, coding agents may autonomously perform routine implementation, ordinary bug/test
+fixes, capability-local governance updates, Git commits, PR creation, CI repair, and merge when
+explicitly tasked to do so. Escalate only genuine architecture, product, or security decisions that
+would change binding authority (RBAC/trust model, new roles/permissions with semantic effect, tenant
+hierarchy, new identity semantics, privilege-delegation expansion, new deployable service/domain
+ownership). Founder UAT cannot be self-declared. Prefer Podman for local DB/container runtime when
+Compose/container work is required. Preserve protected evidence directories (including
+`test-results-customer-ordering/**`). Do not run destructive Git operations (`reset`, `restore`,
+`clean`, `stash`, force push) unless explicitly instructed. Prefer compact completion reporting over
+restating capability history in this file.
 
 ## Foundation operating constraints
 

@@ -2,8 +2,8 @@
 {
   "status": "CURRENT",
   "authority": "GLOBAL_ARCHITECTURE",
-  "architectureVersion": "ARCH-R18",
-  "lastReviewed": "2026-08-29"
+  "architectureVersion": "ARCH-R19",
+  "lastReviewed": "2026-09-01"
 }
 -->
 
@@ -51,10 +51,12 @@ Static Next.js export → Nginx
   /api/workforce-auth/* → workforce-auth:8082
   /api/v1/*             → customer-commerce:8083  (thin node:http façade)
   /api/operations/v1/*  → Operations Console API (dedicated workforce-business façade; D-372)
+  /api/admin/v1/*       → Administration API (dedicated workforce-admin façade on same operations process; D-373)
 ```
 
-The Operations Console API boundary is architecture-locked for IMP-029 but is not implemented or
-deployed. Its port/process/container details remain unselected and are not implied by this topology.
+The Operations Console API boundary is architecture-locked for IMP-029 (D-372) and is implemented
+in the accepted `operations` process. The Administration API boundary is architecture-locked for
+IMP-035 (D-373) on the **same** `operations` process / port — no additional deployable service.
 
 Full route/error/operability contracts live in
 [`capabilities/IMP-024-customer-ordering-transport.md`](./capabilities/IMP-024-customer-ordering-transport.md)
@@ -409,6 +411,7 @@ Dynamic commerce must remain outside dynamic Next.js execution unless superseded
 | ARCH-G22 | Durable Cart unit sequence (D-371): every active coalesced Cart-line unit MUST have exactly one durable server-authoritative unit-sequence record, so active-record count per line equals line quantity transactionally. Product-level decrement MUST atomically select and consume the latest active record for the requested base product and decrement that record’s line under existing Cart concurrency authority; browser/client order is never removal authority. During D-370 identity transition, immutable ordinals and their line relationship MUST move/reconcile atomically without renumbering history. |
 | ARCH-G23 | Operations Console API (D-372): workforce business operations MUST use the dedicated `/api/operations/v1/*` trust surface, never customer `/api/v1/*` or the public workforce-auth router. A workforce principal MUST be constructed only from a server-validated workforce session and server-loaded eligible identity; caller-supplied roles, permissions, memberships, scopes, organization/outlet/territory authority, pre-authorized flags, or principal-shaped objects are not authority. Existing permission-and-server-derived-scope authorization and existing Order application/domain authority remain binding. |
 | ARCH-G24 | Delivery is the first-class provider-neutral authority for dispatch and delivery-execution truth. Order remains sole commercial lifecycle authority; Operations retains preparation/readiness and operational-handoff authority; Pricing/Checkout historical customer delivery charge remains distinct from Delivery provider cost. Provider observations are evidence, not automatic Delivery or Order truth, and must be normalized, validated, processed idempotently, and handled recoverably. Stable Delivery request/booking identity MUST suppress duplicate logical dispatch, ambiguous external booking outcomes MUST be reconciled before replacement rather than blindly retried, and at most one active booking may exist unless the prior booking has been explicitly reconciled inactive. Provider-specific contracts MUST remain in adapters/evidence boundaries. |
+| ARCH-G25 | Initial Administration API (D-373): workforce administration MUST use the dedicated `/api/admin/v1/*` trust surface hosted on the existing operations process, never customer `/api/v1/*`, the public workforce-auth router, or Operations Console `/api/operations/v1/*` Order routes. A workforce principal MUST be constructed only from a server-validated workforce session and server-loaded eligible identity; caller-supplied roles, permissions, memberships, scopes, organization/outlet/territory authority, pre-authorized flags, or principal-shaped objects are not authority. Existing Access Control and Organization application/domain authorities remain binding; no new permissions/roles and no new deployable admin service are introduced by this invariant. |
 
 ## 15. Decision References
 
@@ -423,6 +426,7 @@ Dynamic commerce must remain outside dynamic Next.js execution unless superseded
 | Cart Identity Transition Authority | [D-370](./decision-register.md) (CURRENT purchase-intent and privacy policy; guest→customer compatible merge required; silent whole-cart winner forbidden; logout isolates the browser from the customer Cart without deleting it; Cart/Checkout Snapshot/pricing/Payment authority unchanged; implementation not authorized by this decision) |
 | Durable Cart Unit Sequence Authority | [D-371](./decision-register.md) (CURRENT internal Cart removal-order authority; coalesced lines and Cart quantity remain authoritative customer purchase intent) |
 | Operations Console API workforce-business transport | [D-372](./decision-register.md) (CURRENT architecture lock for dedicated `/api/operations/v1/*`; existing workforce session/principal, permission/scope, and Order authorities remain binding; IMP-029 implementation is not authorized) |
+| Initial Administration API workforce-admin transport | [D-373](./decision-register.md) (CURRENT architecture lock for dedicated `/api/admin/v1/*` on existing operations process; existing workforce session/principal and Access Control / Organization authorities remain binding; no new deployable service) |
 | Provider-Neutral Delivery Foundation | ARCH-R18 / ARCH-G24; capability architecture [`capabilities/IMP-031-provider-neutral-delivery-foundation.md`](./capabilities/IMP-031-provider-neutral-delivery-foundation.md) (`ARCHITECTURE_LOCKED`; implementation AUTHORIZED / STARTED / COMPLETE / COMPLETE_AND_ACCEPTED); no new CURRENT decision |
 | V1 production payment provider / collection surface | [D-361](./decision-register.md) (Razorpay / Razorpay Standard Checkout); capability lock [`capabilities/IMP-026-razorpay-productionization.md`](./capabilities/IMP-026-razorpay-productionization.md) |
 | Razorpay webhook acknowledgement / post-payment Order recovery | [D-362](./decision-register.md) (amends D-361 ack/post-payment effect only; D-361 remains CURRENT for provider selection; acknowledgement timing further amended by D-363) |

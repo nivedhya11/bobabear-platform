@@ -23,6 +23,8 @@
     "test:database:access-control": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/database/access-control.integration.test.ts",
     "test:database:catalog": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/database/catalog.integration.test.ts",
     "test:access-control": "node scripts/run-vitest.mjs run tests/access-control",
+    "test:administration": "node scripts/run-vitest.mjs run tests/administration && npm run test:database:administration",
+    "test:database:administration": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/administration/admin-http.integration.test.ts",
     "test:access-control:cli": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/access-control/cli",
     "test:catalog": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/catalog",
     "test:customer-auth:http": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/customer-auth/http.integration.test.ts",

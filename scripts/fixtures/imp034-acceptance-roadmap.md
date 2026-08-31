@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R92",
+  "roadmapVersion": "GTM-R91",
   "acceptedThrough": "IMP-034",
-  "currentProductSlice": "IMP-035",
-  "nextProductSlice": "IMP-036",
+  "currentProductSlice": "NONE",
+  "nextProductSlice": "IMP-035",
   "gtmBoundary": "IMP-040",
-  "lastReviewed": "2026-09-01",
-  "supersedes": "GTM-R91"
+  "lastReviewed": "2026-08-31",
+  "supersedes": "GTM-R90"
 }
 -->
 
@@ -289,18 +289,13 @@ IMP-034 locked capability architecture (architecture **ARCHITECTURE_LOCKED**; im
 
 [`capabilities/IMP-034-meta-whatsapp-cloud-api-adapter.md`](./capabilities/IMP-034-meta-whatsapp-cloud-api-adapter.md)
 
-IMP-035 locked capability architecture (architecture **ARCHITECTURE_LOCKED**; implementation
-**AUTHORIZED** / **STARTED** / **COMPLETE** / `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`):
-
-[`capabilities/IMP-035-initial-administration-capabilities.md`](./capabilities/IMP-035-initial-administration-capabilities.md)
-
 ## 2. Current Position
 
 ```text
 Accepted Through:     IMP-034 — Meta WhatsApp Cloud API Adapter
-Current Product Slice: IMP-035 — Initial Administration Capabilities
-Next Product Slice:    IMP-036 — Observability & Operational Controls
-Pending Acceptance:    IMP-035
+Current Product Slice: NONE
+Next Product Slice:    IMP-035 — Initial Administration Capabilities
+Pending Acceptance:    NONE
 Public GTM Boundary:   IMP-040 — Launch Validation & Cutover
 ```
 
@@ -317,11 +312,9 @@ boundary facts remain: `schema_change: YES` (Notifications-owned additive migrat
 `async_topology: POSTGRESQL_TRANSACTIONAL_OUTBOX_IN_PROCESS_WORKER`. Founder UAT remains **not
 required** (`IMP-034_FOUNDER_UAT_REQUIRED: NO`); independent technical acceptance with mocked
 provider fixtures was the applicable gate. Meta production onboarding remains external launch
-validation and does **not** block this technical acceptance. **GTM-R92** is a single founder-authorized **combined** gate for IMP-035 that records capability
-architecture lock, implementation **AUTHORIZED** / **STARTED** / **COMPLETE**, and lifecycle
-`IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` under binding **D-373** / ARCH-R19 / ARCH-G25 /
-DR-15. Completion is **not** acceptance. Founder UAT is **required** (`IMP-035_FOUNDER_UAT_REQUIRED:
-YES`). IMP-034 remains `COMPLETE_AND_ACCEPTED`; `acceptedThrough` remains IMP-034.
+validation and does **not** block this technical acceptance. IMP-035 — Initial Administration
+Capabilities remains `PLANNED` / `NOT_ACTIVATED` / `NOT_AUTHORIZED` / `NOT_STARTED`; acceptance of
+IMP-034 does **not** authorize, start, or activate IMP-035.
 IMP-033 remains `COMPLETE_AND_ACCEPTED`. Architecture remains **ARCHITECTURE_LOCKED**; implementation
 is `AUTHORIZED` / `STARTED` / `COMPLETE`; implementation evidence is **COMPLETE**; independent
 implementation review is **PASS**; independent acceptance evidence is **ACCEPTED**; formal acceptance
@@ -433,26 +426,10 @@ IMP034_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
 IMP034_FORMAL_ACCEPTANCE: ACCEPTED
 IMP034_ACCEPTED_MAIN_SHA: 7e92d1a1ca02ad825229b64f308a8fc555956d25
 IMP034_ACCEPTED_TREE: 772c585e93c78285e5b972d8b8a58c83507e01f8
-IMP-035: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
-IMP-035_ARCHITECTURE: LOCKED
-IMP-035_ARCHITECTURE_LOCKED: YES
-IMP-035_IMPLEMENTATION: AUTHORIZED / STARTED / COMPLETE
-IMP-035_IMPLEMENTATION_AUTHORIZED: YES
-IMP-035_STARTED: YES
-IMP-035_IMPLEMENTATION_COMPLETE: YES
-IMP-035_ACCEPTED: NO
-IMP-035_FOUNDER_UAT_REQUIRED: YES
-IMP-035_FOUNDER_UAT: NOT_CLAIMED
-IMP-035_SCHEMA_CHANGE: NO
-IMP-035_PROVIDER_IO: NO
-IMP-035_NEW_SERVICE: NO
-IMP-035_NEW_PERMISSIONS: NO
-IMP-035_NEW_ROLES: NO
-D-373_CREATED: YES
-ARCH_R19_REQUIRED: YES
-ARCH-R19: CURRENT
-DR-15: CURRENT
-COMPLETION_IS_NOT_ACCEPTANCE: YES
+IMP-035: PLANNED / NOT_ACTIVATED
+D-373_CREATED: NO
+ARCH_R19_REQUIRED: NO
+NO_NEW_CURRENT_DECISION_IN_THIS_GATE: YES
 ```
 
 IMP-024 architecture remains **ARCHITECTURE_LOCKED**. IMP-024 implementation is
@@ -964,7 +941,7 @@ consume or remap IMP-029 → IMP-040 identities and is `COMPLETE_AND_ACCEPTED`.
 
 | IMP | Capability | Lifecycle |
 |---|---|---|
-| IMP-035 | Initial Administration Capabilities | IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE |
+| IMP-035 | Initial Administration Capabilities | PLANNED |
 | IMP-036 | Observability & Operational Controls | PLANNED |
 | IMP-037 | Backup, Restore & Migration Readiness | PLANNED |
 | IMP-038 | Security & Privacy Hardening | PLANNED |
@@ -1336,23 +1313,6 @@ Historical GTM-R1 meanings that are **not** current:
 Current public GTM boundary is **IMP-040**, not IMP-035.
 
 ## 9. Roadmap Change Log
-
-### GTM-R92 — 2026-09-01
-
-- Single founder-authorized **combined** gate for **IMP-035 — Initial Administration Capabilities**:
-  architecture **ARCHITECTURE_LOCKED**, implementation **AUTHORIZED** / **STARTED** / **COMPLETE**,
-  lifecycle `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`.
-- Registers binding **D-373** (admin transport `/api/admin/v1/*` on existing operations process),
-  advances decision register to **DR-15**, and advances global architecture to **ARCH-R19** /
-  **ARCH-G25**.
-- Sets `currentProductSlice = IMP-035`, `pendingAcceptance = IMP-035`, `nextProductSlice = IMP-036`.
-  `acceptedThrough` remains IMP-034. Completion is **not** acceptance.
-- Founder UAT **required**. Does **not** authorize or start IMP-036. `schema_change: NO`;
-  `new_service: NO`; `new_permissions: NO`; `new_roles: NO`.
-- Locked capability architecture:
-  [`capabilities/IMP-035-initial-administration-capabilities.md`](./capabilities/IMP-035-initial-administration-capabilities.md).
-- Supersedes GTM-R91 for the current IMP-035 lifecycle position. Product acceptance through IMP-034
-  is unchanged.
 
 ### GTM-R91 — 2026-08-31
 

@@ -70,6 +70,8 @@ export default defineConfig({
       "tests/payment-razorpay/refund.adapter.test.ts",
       // IMP-029: DB-free Operations workforce-principal trust adapter test.
       "tests/operations/workforce-principal-adapter.test.ts",
+      // IMP-035: DB-free Administration transport and UI security tests.
+      "tests/administration/**/*.test.{ts,tsx}",
     ],
     exclude: [
       "**/node_modules/**",
@@ -78,6 +80,7 @@ export default defineConfig({
       "**/coverage/**",
       "tests/e2e/**",
       "tests/access-control/cli/**",
+      "tests/administration/**/*.integration.test.ts",
       "**/playwright-report/**",
       "**/test-results/**",
     ],
