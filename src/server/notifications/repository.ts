@@ -8,10 +8,12 @@
 import { and, asc, eq, sql } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 
+import { customerAuthUsers } from "../../platform/database/schema/customer-auth";
 import { checkoutSnapshotsTable, checkoutsTable } from "../../platform/database/schema/checkout";
 import {
   notificationCommunicationPreferencesTable,
   notificationConsentsTable,
+  notificationInboundMessagesTable,
   notificationMessageAttemptsTable,
   notificationProviderEventsTable,
   notificationRequestsTable,
@@ -701,4 +703,249 @@ export async function findCustomerIdForOrder(
     .where(eq(ordersTable.id, orderId))
     .limit(1);
   return rows[0]?.customerId ?? null;
+}
+
+/**
+ * Read-only customer phone lookup for WhatsApp addressing (IMP-034).
+ * Never writes customer-auth rows.
+ */
+export async function findCustomerPhoneE164(
+  context: PersistenceQueryContext,
+  customerId: string,
+): Promise<string | null> {
+  assertApplicationRole(context, "findCustomerPhoneE164");
+  const rows = await context.db
+    .select({ phoneNumber: customerAuthUsers.phoneNumber })
+    .from(customerAuthUsers)
+    .where(eq(customerAuthUsers.id, customerId))
+    .limit(1);
+  const phone = rows[0]?.phoneNumber;
+  return typeof phone === "string" && phone.trim().length > 0 ? phone.trim() : null;
+}
+
+export async function findCustomerIdByPhoneE164(
+  context: PersistenceQueryContext,
+  phoneE164: string,
+): Promise<string | null> {
+  assertApplicationRole(context, "findCustomerIdByPhoneE164");
+  const normalized = phoneE164.trim();
+  if (normalized.length === 0) return null;
+  const rows = await context.db
+    .select({ id: customerAuthUsers.id })
+    .from(customerAuthUsers)
+    .where(eq(customerAuthUsers.phoneNumber, normalized))
+    .limit(1);
+  return rows[0]?.id ?? null;
+}
+
+export async function findAttemptByProviderMessageId(
+  context: PersistenceQueryContext,
+  providerOrInput: string | Readonly<{ provider: string; providerMessageId: string }>,
+  providerMessageIdArg?: string,
+): Promise<NotificationMessageAttempt | null> {
+  assertApplicationRole(context, "findAttemptByProviderMessageId");
+  const provider =
+    typeof providerOrInput === "string"
+      ? providerOrInput
+      : providerOrInput.provider;
+  const providerMessageId =
+    typeof providerOrInput === "string"
+      ? (providerMessageIdArg ?? "")
+      : providerOrInput.providerMessageId;
+  if (providerMessageId.length === 0) return null;
+  const rows = await context.db
+    .select()
+    .from(notificationMessageAttemptsTable)
+    .where(
+      and(
+        eq(notificationMessageAttemptsTable.provider, provider),
+        eq(notificationMessageAttemptsTable.providerMessageId, providerMessageId),
+      ),
+    )
+    .orderBy(asc(notificationMessageAttemptsTable.attemptSequence))
+    .limit(1);
+  const row = rows[0];
+  return row ? mapNotificationAttemptRow(row) : null;
+}
+
+const PROVIDER_STATUS_RANK: Readonly<Record<string, number>> = Object.freeze({
+  PROVIDER_ACCEPTED: 1,
+  DELIVERED: 2,
+  READ: 3,
+});
+
+function mayApplyProviderStatus(
+  current: NotificationStatus,
+  next: NotificationStatus,
+): boolean {
+  if (next === "FAILED") {
+    return (
+      current === "PROVIDER_ACCEPTED" ||
+      current === "DELIVERED" ||
+      current === "SENDING"
+    );
+  }
+  const currentRank = PROVIDER_STATUS_RANK[current];
+  const nextRank = PROVIDER_STATUS_RANK[next];
+  if (currentRank === undefined || nextRank === undefined) return false;
+  return nextRank >= currentRank;
+}
+
+/**
+ * Apply provider delivery/read/fail telemetry to attempt + request only.
+ * Never mutates Order/Payment/Delivery/Refund. Rejects lifecycle regressions.
+ */
+export async function applyProviderStatusToAttemptAndRequest(
+  context: PersistenceTransactionContext,
+  input: Readonly<{
+    attemptId: string;
+    notificationRequestId: string;
+    nextStatus: NotificationStatus;
+    now: Date;
+    failureCode?: string | null;
+    failureDetail?: string | null;
+  }>,
+): Promise<boolean> {
+  assertTransactionContext(context, "applyProviderStatusToAttemptAndRequest");
+  const attemptRows = await context.db
+    .select()
+    .from(notificationMessageAttemptsTable)
+    .where(eq(notificationMessageAttemptsTable.id, input.attemptId))
+    .limit(1);
+  const attemptRow = attemptRows[0];
+  if (!attemptRow) return false;
+  const attempt = mapNotificationAttemptRow(attemptRow);
+  if (!mayApplyProviderStatus(attempt.status, input.nextStatus)) return false;
+  if (attempt.status === input.nextStatus) return true;
+
+  const failed = input.nextStatus === "FAILED";
+  await context.db
+    .update(notificationMessageAttemptsTable)
+    .set({
+      status: input.nextStatus,
+      ...(failed
+        ? {
+            failureCategory: "PERMANENT_FAILURE" as const,
+            failureCode: input.failureCode ?? "META_STATUS_FAILED",
+            failureDetail: input.failureDetail ?? null,
+          }
+        : {}),
+    })
+    .where(eq(notificationMessageAttemptsTable.id, attempt.id));
+
+  const request = await findNotificationRequestById(context, input.notificationRequestId);
+  if (!request) return true;
+  if (!mayApplyProviderStatus(request.status, input.nextStatus)) return true;
+  if (request.status === input.nextStatus) return true;
+
+  await updateNotificationRequest(context, request.id, {
+    status: input.nextStatus,
+    nextAttemptAt: null,
+    terminalAt:
+      input.nextStatus === "FAILED" || input.nextStatus === "READ"
+        ? input.now
+        : request.terminalAt,
+    now: input.now,
+  });
+  return true;
+}
+
+/** @deprecated Prefer applyProviderStatusToAttemptAndRequest */
+export async function applyProviderDeliveryStatus(
+  context: PersistenceTransactionContext,
+  input: Readonly<{
+    provider: string;
+    providerMessageId: string;
+    status: "PROVIDER_ACCEPTED" | "DELIVERED" | "READ" | "FAILED";
+    now: Date;
+    failureCode?: string | null;
+    failureDetail?: string | null;
+  }>,
+): Promise<boolean> {
+  const attempt = await findAttemptByProviderMessageId(context, {
+    provider: input.provider,
+    providerMessageId: input.providerMessageId,
+  });
+  if (!attempt) return false;
+  return applyProviderStatusToAttemptAndRequest(context, {
+    attemptId: attempt.id,
+    notificationRequestId: attempt.notificationRequestId,
+    nextStatus: input.status,
+    now: input.now,
+    failureCode: input.failureCode,
+    failureDetail: input.failureDetail,
+  });
+}
+
+export async function markProviderEventProcessed(
+  context: PersistenceTransactionContext,
+  dedupKey: string,
+  update:
+    | Date
+    | Readonly<{
+        processingStatus: NotificationProviderEventProcessingStatus;
+        processedAt: Date;
+      }>,
+  processingStatusArg?: NotificationProviderEventProcessingStatus,
+): Promise<void> {
+  assertTransactionContext(context, "markProviderEventProcessed");
+  const processingStatus =
+    update instanceof Date
+      ? (processingStatusArg ?? "PROCESSED")
+      : update.processingStatus;
+  const processedAt = update instanceof Date ? update : update.processedAt;
+  await context.db
+    .update(notificationProviderEventsTable)
+    .set({
+      processingStatus,
+      processedAt:
+        processingStatus === "PROCESSED" || processingStatus === "IGNORED"
+          ? processedAt
+          : null,
+    })
+    .where(eq(notificationProviderEventsTable.dedupKey, dedupKey));
+}
+
+export type InsertInboundMessageInput = Readonly<{
+  provider: string;
+  providerMessageId: string;
+  waFromE164: string | null;
+  customerId: string | null;
+  messageType: string | null;
+  bodyPreview: string | null;
+  classification: string;
+  providerEventDedupKey: string | null;
+  receivedAt: Date;
+  now?: Date;
+}>;
+
+export async function insertInboundMessageIfAbsent(
+  context: PersistenceTransactionContext,
+  input: InsertInboundMessageInput,
+): Promise<boolean> {
+  assertTransactionContext(context, "insertInboundMessageIfAbsent");
+  const createdAt = input.now ?? input.receivedAt;
+  const rows = await context.db
+    .insert(notificationInboundMessagesTable)
+    .values({
+      id: randomUUID(),
+      provider: input.provider,
+      providerMessageId: input.providerMessageId,
+      waFromE164: input.waFromE164,
+      customerId: input.customerId,
+      messageType: input.messageType,
+      bodyPreview: input.bodyPreview,
+      classification: input.classification,
+      providerEventDedupKey: input.providerEventDedupKey,
+      receivedAt: input.receivedAt,
+      createdAt,
+    })
+    .onConflictDoNothing({
+      target: [
+        notificationInboundMessagesTable.provider,
+        notificationInboundMessagesTable.providerMessageId,
+      ],
+    })
+    .returning({ id: notificationInboundMessagesTable.id });
+  return rows.length > 0;
 }

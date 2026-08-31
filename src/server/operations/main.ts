@@ -11,6 +11,7 @@ import { loadConfig } from "../../platform/config/load-config";
 import { ConfigurationError } from "../../platform/config/config-error";
 import { AuthFoundationConfigurationError } from "../auth/shared/errors";
 import { loadOperationsConfig, OperationsConfigurationError } from "./config";
+import { loadMetaWhatsAppProviderConfig } from "../notifications/provider/meta-whatsapp";
 import { OperationsService } from "./service";
 
 const SHUTDOWN_SIGNALS = ["SIGTERM", "SIGINT"] as const;
@@ -21,12 +22,18 @@ async function main(): Promise<void> {
   loadEnvConfig(projectRoot, true);
   const workerConfig = loadConfig({ processKind: "worker", source: process.env });
   const config = loadOperationsConfig(process.env, workerConfig.environment);
+  const whatsappConfig = loadMetaWhatsAppProviderConfig(
+    process.env,
+    workerConfig.environment,
+  );
   const service = new OperationsService({
     auth: config.auth,
     persistenceConfig: workerConfig,
     trustedOrigin: config.trustedOrigin,
     host: config.serviceHost,
     port: config.servicePort,
+    metaWhatsApp:
+      whatsappConfig.selector === "meta_cloud_api" ? whatsappConfig.meta : null,
   });
   await service.start();
   console.log(JSON.stringify({ operation: "service_start", safeOutcomeCode: "LISTENING", httpStatus: 0, durationMs: 0 }));

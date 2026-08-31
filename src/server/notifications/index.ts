@@ -1,8 +1,8 @@
 /**
- * Server-only Notification boundary (IMP-033).
+ * Server-only Notification boundary (IMP-033 / IMP-034).
  *
- * No HTTP routes, no webhook inbox, no provider SDK, no credentials, and no
- * external messaging transport — a real provider adapter arrives in IMP-034.
+ * Provider-neutral foundation plus optional Meta WhatsApp Cloud API adapter
+ * registration and webhook processing. Domain modules never call Meta directly.
  */
 import "server-only";
 
@@ -36,6 +36,7 @@ export type {
 
 export {
   createInAppChannelAdapter,
+  createNotificationChannelRegistry,
   createNonSendingChannelRegistry,
   createNoopChannelAdapter,
   IN_APP_FAILURE_CODE,

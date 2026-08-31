@@ -28,10 +28,6 @@ import {
   type ProcessKind,
 } from "./types";
 
-export const PAYMENT_PROVIDER_SELECTORS = ["disabled", "razorpay"] as const;
-export type PaymentProviderSelector = (typeof PAYMENT_PROVIDER_SELECTORS)[number];
-
-/** The complete, approved `BOBA_BEAR_*` variable catalogue for this slice. */
 export const APPROVED_BOBA_BEAR_KEYS: ReadonlySet<string> = new Set([
   "BOBA_BEAR_ENV",
   "BOBA_BEAR_PUBLIC_ORIGIN",
@@ -45,7 +41,22 @@ export const APPROVED_BOBA_BEAR_KEYS: ReadonlySet<string> = new Set([
   "BOBA_BEAR_RAZORPAY_KEY_ID",
   "BOBA_BEAR_RAZORPAY_KEY_SECRET",
   "BOBA_BEAR_RAZORPAY_WEBHOOK_SECRET",
+  "BOBA_BEAR_WHATSAPP_PROVIDER",
+  "BOBA_BEAR_META_WHATSAPP_GRAPH_API_VERSION",
+  "BOBA_BEAR_META_WHATSAPP_GRAPH_API_BASE_URL",
+  "BOBA_BEAR_META_WHATSAPP_PHONE_NUMBER_ID",
+  "BOBA_BEAR_META_WHATSAPP_WABA_ID",
+  "BOBA_BEAR_META_WHATSAPP_ACCESS_TOKEN",
+  "BOBA_BEAR_META_WHATSAPP_APP_SECRET",
+  "BOBA_BEAR_META_WHATSAPP_WEBHOOK_VERIFY_TOKEN",
+  "BOBA_BEAR_WHATSAPP_SEND_NEW_MESSAGES",
 ]);
+
+export const PAYMENT_PROVIDER_SELECTORS = ["disabled", "razorpay"] as const;
+export type PaymentProviderSelector = (typeof PAYMENT_PROVIDER_SELECTORS)[number];
+
+export const WHATSAPP_PROVIDER_SELECTORS = ["disabled", "meta_cloud_api"] as const;
+export type WhatsAppProviderSelector = (typeof WHATSAPP_PROVIDER_SELECTORS)[number];
 
 const STAGING_OR_PRODUCTION: ReadonlySet<AppEnvironment> = new Set([
   "staging",
@@ -351,6 +362,29 @@ function validatePaymentProviderSelector(
   return ok(raw as PaymentProviderSelector);
 }
 
+function validateWhatsAppProviderSelector(
+  raw: string | undefined,
+): FieldResult<WhatsAppProviderSelector> {
+  if (raw === undefined || raw.length === 0) {
+    return ok("disabled");
+  }
+  if (!(WHATSAPP_PROVIDER_SELECTORS as readonly string[]).includes(raw)) {
+    return fail('Must be exactly "disabled" or "meta_cloud_api".');
+  }
+  return ok(raw as WhatsAppProviderSelector);
+}
+
+function validateOptionalBooleanFlag(
+  raw: string | undefined,
+): FieldResult<boolean | null> {
+  if (raw === undefined || raw.length === 0) {
+    return ok(null);
+  }
+  if (raw === "true") return ok(true);
+  if (raw === "false") return ok(false);
+  return fail('Must be exactly "true" or "false" when set.');
+}
+
 function validateOptionalNonEmptySecret(
   raw: string | undefined,
 ): FieldResult<string | null> {
@@ -497,6 +531,41 @@ export function validateSource({
     issues.push({
       key: "BOBA_BEAR_RAZORPAY_WEBHOOK_SECRET",
       message: razorpayWebhookSecretResult.message,
+    });
+  }
+
+  const whatsappProviderResult = validateWhatsAppProviderSelector(
+    source.BOBA_BEAR_WHATSAPP_PROVIDER,
+  );
+  if (!whatsappProviderResult.ok) {
+    issues.push({
+      key: "BOBA_BEAR_WHATSAPP_PROVIDER",
+      message: whatsappProviderResult.message,
+    });
+  }
+
+  for (const key of [
+    "BOBA_BEAR_META_WHATSAPP_GRAPH_API_VERSION",
+    "BOBA_BEAR_META_WHATSAPP_GRAPH_API_BASE_URL",
+    "BOBA_BEAR_META_WHATSAPP_PHONE_NUMBER_ID",
+    "BOBA_BEAR_META_WHATSAPP_WABA_ID",
+    "BOBA_BEAR_META_WHATSAPP_ACCESS_TOKEN",
+    "BOBA_BEAR_META_WHATSAPP_APP_SECRET",
+    "BOBA_BEAR_META_WHATSAPP_WEBHOOK_VERIFY_TOKEN",
+  ] as const) {
+    const result = validateOptionalNonEmptySecret(source[key]);
+    if (!result.ok) {
+      issues.push({ key, message: result.message });
+    }
+  }
+
+  const sendNewMessagesResult = validateOptionalBooleanFlag(
+    source.BOBA_BEAR_WHATSAPP_SEND_NEW_MESSAGES,
+  );
+  if (!sendNewMessagesResult.ok) {
+    issues.push({
+      key: "BOBA_BEAR_WHATSAPP_SEND_NEW_MESSAGES",
+      message: sendNewMessagesResult.message,
     });
   }
 

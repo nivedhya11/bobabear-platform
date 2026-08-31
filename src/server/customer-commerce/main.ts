@@ -19,6 +19,7 @@ import { composeCustomerCommercePayment } from "./compose-payment";
 import { loadCustomerCommerceServiceConfig } from "./config";
 import { CustomerCommerceConfigurationError } from "./errors";
 import { loadCustomerCommercePaymentConfig } from "./payment-config";
+import { loadMetaWhatsAppProviderConfig } from "../notifications/provider/meta-whatsapp";
 import { CustomerCommerceService } from "./service";
 
 const DEFAULT_SERVICE_HOST = "0.0.0.0";
@@ -41,6 +42,10 @@ async function main(): Promise<void> {
     workerConfig.environment,
   );
   const paymentRuntime = composeCustomerCommercePayment(paymentConfig);
+  const whatsappConfig = loadMetaWhatsAppProviderConfig(
+    process.env,
+    workerConfig.environment,
+  );
 
   const service = new CustomerCommerceService({
     auth: serviceConfig.auth,
@@ -50,6 +55,8 @@ async function main(): Promise<void> {
     port: serviceConfig.servicePort || DEFAULT_SERVICE_PORT,
     paymentProvider: paymentRuntime.provider,
     enablePaymentInboxProcessor: paymentRuntime.enableInboxProcessor,
+    metaWhatsApp:
+      whatsappConfig.selector === "meta_cloud_api" ? whatsappConfig.meta : null,
   });
 
   await service.start();

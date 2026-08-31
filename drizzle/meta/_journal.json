@@ -239,6 +239,13 @@
       "when": 1788192278989,
       "tag": "0033_notifications",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1788200000000,
+      "tag": "0034_meta_whatsapp_adapter",
+      "breakpoints": true
     }
   ]
 }

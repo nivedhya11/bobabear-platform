@@ -7,6 +7,11 @@ import { getWorkforceAuthRuntime, type WorkforceAuthRuntime } from "../auth/work
 import type { WorkforceAuthConfig } from "../auth/shared/types";
 import type { WebConfig, WorkerConfig } from "../../platform/config";
 import { NotificationOutboxProcessor } from "../notifications";
+import { createNotificationChannelRegistry } from "../notifications/channels";
+import {
+  createMetaWhatsAppChannelAdapter,
+  type MetaWhatsAppRuntimeSecrets,
+} from "../notifications/provider/meta-whatsapp";
 import { getApplicationPersistence, type Persistence } from "../persistence";
 import { createOperationsRequestListener, type OperationsRequestEvent } from "./http/app";
 
@@ -24,6 +29,8 @@ export type OperationsServiceOptions = Readonly<{
    * originate here, so this host polls too; SKIP LOCKED keeps it safe to run
    * concurrently with the same processor in customer-commerce. */
   enableNotificationOutboxProcessor?: boolean;
+  /** Meta WhatsApp secrets when enabled (IMP-034). */
+  metaWhatsApp?: MetaWhatsAppRuntimeSecrets | null;
 }>;
 
 function logSafeEvent(event: OperationsRequestEvent): void {
@@ -62,10 +69,18 @@ export class OperationsService {
         },
       },
     ));
+    const notificationChannels = createNotificationChannelRegistry({
+      whatsapp: config.metaWhatsApp
+        ? createMetaWhatsAppChannelAdapter({ secrets: config.metaWhatsApp })
+        : undefined,
+    });
     this.notificationProcessor =
       config.enableNotificationOutboxProcessor === false
         ? null
-        : new NotificationOutboxProcessor({ persistence: this.persistence });
+        : new NotificationOutboxProcessor({
+            persistence: this.persistence,
+            operationOptions: { channels: notificationChannels },
+          });
   }
 
   async start(): Promise<void> {

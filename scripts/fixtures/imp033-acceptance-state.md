@@ -2,11 +2,11 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R88",
+  "stateVersion": "STATE-R87",
   "acceptedThrough": "IMP-033",
-  "currentProductSlice": "IMP-034",
-  "nextProductSlice": "IMP-035",
-  "pendingAcceptance": "IMP-034",
+  "currentProductSlice": "NONE",
+  "nextProductSlice": "IMP-034",
+  "pendingAcceptance": "NONE",
   "governanceHealth": "ALIGNED",
   "lastReviewed": "2026-08-31"
 }
@@ -28,13 +28,11 @@ Accepted Range:            IMP-001 → IMP-033 (including IMP-005A and IMP-026C)
 ## 2. Current Work Position
 
 ```text
-Current Product Implementation: IMP-034 — Meta WhatsApp Cloud API Adapter (implementation complete pending acceptance)
-Pending Acceptance:             IMP-034
-Next Product Slice:             IMP-035 — Initial Administration Capabilities
-Current Governance Activity:    IMP-034 IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE;
-                              architecture LOCKED; implementation AUTHORIZED / STARTED / COMPLETE;
-                              Founder UAT not required; provider_IO YES; DIRECT_META_CLOUD_API_V1;
-                              IMP-033 remains COMPLETE_AND_ACCEPTED.
+Current Product Implementation: NONE
+Pending Acceptance:             NONE
+Next Product Slice:             IMP-034 — Meta WhatsApp Cloud API Adapter
+Current Governance Activity:    IMP-033 COMPLETE_AND_ACCEPTED;
+                              IMP-034 PLANNED / NOT_ACTIVATED.
 Governance Health:              ALIGNED
 ```
 
@@ -189,24 +187,7 @@ IMP033_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
 IMP033_FORMAL_ACCEPTANCE: ACCEPTED
 IMP033_ACCEPTED_MAIN_SHA: 5150d70b4683f7abec1e0652bf53e7986efcf622
 IMP033_ACCEPTED_TREE:     715ff386e672fd276a0b2e888aa2ebeaab3dda8c
-IMP-034:                  IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
-IMP-034_ARCHITECTURE:     LOCKED
-IMP-034_ARCHITECTURE_LOCKED: YES
-IMP-034_IMPLEMENTATION:   AUTHORIZED / STARTED / COMPLETE
-IMP-034_IMPLEMENTATION_AUTHORIZED: YES
-IMP-034_STARTED:          YES
-IMP-034_IMPLEMENTATION_COMPLETE: YES
-IMP-034_ACCEPTED:         NO
-IMP-034_FOUNDER_UAT_REQUIRED: NO
-IMP-034_FOUNDER_UAT:      NOT_APPLICABLE
-IMP-034_SCHEMA_CHANGE:    YES
-IMP-034_PROVIDER_IO:      YES
-IMP-034_NEW_SERVICE:      NO
-IMP-034_ASYNC_TOPOLOGY:   POSTGRESQL_TRANSACTIONAL_OUTBOX_IN_PROCESS_WORKER
-IMP-034_PROVIDER_STRATEGY: DIRECT_META_CLOUD_API_V1
-IMP-034_BSP:              NO
-COMPLETION IS NOT ACCEPTANCE: YES
-IMP-035:                  PLANNED / NOT_ACTIVATED
+IMP-034:                  PLANNED / NOT_ACTIVATED
 D-373_CREATED:            NO
 ARCH_R19_REQUIRED:        NO
 NO_NEW_CURRENT_DECISION_IN_THIS_GATE: YES
@@ -252,11 +233,6 @@ IMP-033 locked capability architecture (architecture LOCKED; implementation AUTH
 STARTED / COMPLETE; COMPLETE_AND_ACCEPTED):
 
 [`capabilities/IMP-033-notification-foundation.md`](./capabilities/IMP-033-notification-foundation.md)
-
-IMP-034 locked capability architecture (architecture LOCKED; implementation AUTHORIZED /
-STARTED / COMPLETE; pending acceptance):
-
-[`capabilities/IMP-034-meta-whatsapp-cloud-api-adapter.md`](./capabilities/IMP-034-meta-whatsapp-cloud-api-adapter.md)
 
 `acceptedThrough` is IMP-031. IMP-025 architecture remains locked; IMP-025 implementation is
 **COMPLETE_AND_ACCEPTED**. IMP-026 architecture is **ARCHITECTURE_LOCKED**. IMP-026 implementation
@@ -323,29 +299,6 @@ independent acceptance without changing decision register or global architecture
 STATE-R36 record IMP-028B canonical activation without changing decision register or global
 architecture. GTM-R39 / STATE-R37 record IMP-028B architecture lock and implementation
 authorization without changing decision register or global architecture.
-
-STATE-R88 records a single founder-authorized **combined** gate for **IMP-034 — Meta WhatsApp Cloud
-API Adapter**: capability-local architecture lock, implementation authorization, implementation start,
-and implementation completion, with formal acceptance **not** claimed. Locked capability
-architecture is persisted at
-[`capabilities/IMP-034-meta-whatsapp-cloud-api-adapter.md`](./capabilities/IMP-034-meta-whatsapp-cloud-api-adapter.md)
-under binding ADR-012 / ADR-013 / ADR-014 / ADR-015 and accepted IMP-033. Lifecycle becomes
-`IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`; architecture is `ARCHITECTURE_LOCKED`
-(`IMP-034_ARCHITECTURE_LOCKED: YES`); implementation is `AUTHORIZED` / `STARTED` / `COMPLETE`
-(`IMP-034_IMPLEMENTATION_AUTHORIZED: YES`; `IMP-034_STARTED: YES`;
-`IMP-034_IMPLEMENTATION_COMPLETE: YES`; `IMP-034_ACCEPTED: NO`). `acceptedThrough` remains IMP-033;
-`pendingAcceptance` becomes IMP-034; `currentProductSlice` becomes IMP-034; and `nextProductSlice`
-becomes IMP-035 — Initial Administration Capabilities, which remains `PLANNED` / `NOT_ACTIVATED`.
-Founder UAT is **not required** (`IMP-034_FOUNDER_UAT_REQUIRED: NO`); IMP-034 adds server-side
-provider I/O and an integration webhook route with no customer-visible or operator-visible
-interactive product surface. Locked boundary facts: `provider_strategy: DIRECT_META_CLOUD_API_V1`
-(`BSP: NO`); `schema_change: YES` bounded to Notifications-owned additive migration
-`0034_meta_whatsapp_adapter`; `provider_IO: YES`; `new_service: NO`; and
-`async_topology: POSTGRESQL_TRANSACTIONAL_OUTBOX_IN_PROCESS_WORKER` reusing IMP-033
-`NotificationOutboxProcessor`. `D-373` is not created; `ARCH_R19_REQUIRED: NO`; ARCH-R18 and DR-14
-remain unchanged. Completion does **not** equal acceptance and does **not** authorize or start
-IMP-035. Supersedes STATE-R87 for the current IMP-034 lifecycle position. Product acceptance through
-IMP-033 is unchanged.
 
 STATE-R87 records formal acceptance of **IMP-033 — Notification Foundation** for independently
 accepted product `main` merge SHA `5150d70b4683f7abec1e0652bf53e7986efcf622` and tree
@@ -1150,9 +1103,9 @@ Cart → Checkout → Payment → Order
 
 ```text
 acceptedThrough: IMP-033
-pendingAcceptance: IMP-034
-currentProductSlice: IMP-034
-nextProductSlice: IMP-035 — Initial Administration Capabilities
+pendingAcceptance: NONE
+currentProductSlice: NONE
+nextProductSlice: IMP-034 — Meta WhatsApp Cloud API Adapter
 IMP-028: COMPLETE_AND_ACCEPTED
 IMP-028_ACCEPTED: YES
 IMP-028A: COMPLETE_AND_ACCEPTED
@@ -1272,24 +1225,7 @@ IMP033_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
 IMP033_FORMAL_ACCEPTANCE: ACCEPTED
 IMP033_ACCEPTED_MAIN_SHA: 5150d70b4683f7abec1e0652bf53e7986efcf622
 IMP033_ACCEPTED_TREE: 715ff386e672fd276a0b2e888aa2ebeaab3dda8c
-IMP-034: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
-IMP-034_ARCHITECTURE: LOCKED
-IMP-034_ARCHITECTURE_LOCKED: YES
-IMP-034_IMPLEMENTATION: AUTHORIZED / STARTED / COMPLETE
-IMP-034_IMPLEMENTATION_AUTHORIZED: YES
-IMP-034_STARTED: YES
-IMP-034_IMPLEMENTATION_COMPLETE: YES
-IMP-034_ACCEPTED: NO
-IMP-034_FOUNDER_UAT_REQUIRED: NO
-IMP-034_FOUNDER_UAT: NOT_APPLICABLE
-IMP-034_SCHEMA_CHANGE: YES
-IMP-034_PROVIDER_IO: YES
-IMP-034_NEW_SERVICE: NO
-IMP-034_ASYNC_TOPOLOGY: POSTGRESQL_TRANSACTIONAL_OUTBOX_IN_PROCESS_WORKER
-IMP-034_PROVIDER_STRATEGY: DIRECT_META_CLOUD_API_V1
-IMP-034_BSP: NO
-COMPLETION IS NOT ACCEPTANCE: YES
-IMP-035: PLANNED / NOT_ACTIVATED
+IMP-034: PLANNED / NOT_ACTIVATED
 D-373_CREATED: NO
 ARCH_R19_REQUIRED: NO
 NO_NEW_CURRENT_DECISION_IN_THIS_GATE: YES

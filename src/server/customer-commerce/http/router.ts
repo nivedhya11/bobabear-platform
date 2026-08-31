@@ -79,6 +79,10 @@ import { mapCommerceError, mapInvalidRequest } from "./error-map";
 import { extractGuestCartToken } from "./guest-token";
 import { readJsonObjectBody, readOptionalJsonObjectBody } from "./request";
 import { handleRazorpayWebhook, RAZORPAY_WEBHOOK_PATH } from "./razorpay-webhook";
+import {
+  handleMetaWhatsAppWebhook,
+  META_WHATSAPP_WEBHOOK_PATH,
+} from "./meta-whatsapp-webhook";
 import { coerceRevisionFields } from "./revisions";
 import { projectCustomerMenu } from "../menu/project-customer-menu";
 import {
@@ -94,6 +98,9 @@ export type CustomerCommerceRouteDependencies = Readonly<{
   persistence: Persistence;
   /** Test/runtime override — production omits this (disabled provider). */
   paymentProvider?: import("../../payment/provider").PaymentProvider;
+  /** Meta WhatsApp secrets when BOBA_BEAR_WHATSAPP_PROVIDER=meta_cloud_api. */
+  metaWhatsApp?: import("../../notifications/provider/meta-whatsapp").MetaWhatsAppRuntimeSecrets | null;
+  environment?: import("../../../platform/config").AppEnvironment;
 }>;
 
 export type CustomerCommerceRouteOutcome = Readonly<{
@@ -259,6 +266,23 @@ export async function routeCustomerCommerceRequest(
       return outcome("razorpay_webhook", 405, "METHOD_NOT_ALLOWED");
     }
     return handleRazorpayWebhook(req, res, deps, requestId);
+  }
+
+  if (pathname === META_WHATSAPP_WEBHOOK_PATH) {
+    if (method !== "GET" && method !== "POST") {
+      sendMethodNotAllowed(res, ["GET", "POST"], requestId);
+      return outcome("meta_whatsapp_webhook", 405, "METHOD_NOT_ALLOWED");
+    }
+    return handleMetaWhatsAppWebhook(
+      req,
+      res,
+      {
+        persistence: deps.persistence,
+        environment: deps.environment ?? "local",
+        metaWhatsApp: deps.metaWhatsApp,
+      },
+      requestId,
+    );
   }
 
   try {
