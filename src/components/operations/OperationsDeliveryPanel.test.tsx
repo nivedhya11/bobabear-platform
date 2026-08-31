@@ -12,9 +12,13 @@ describe("OperationsDeliveryPanel source invariants", () => {
     expect(source).toContain("External booking may now be attempted");
   });
 
-  it("blocks second begin while UNKNOWN via permitted commands gating", () => {
-    expect(source).toContain('detail.permittedCommands.includes("BEGIN_MANUAL_BOOKING")');
-    expect(source).toContain('detail.permittedCommands.includes("CONFIRM_MANUAL_BOOKING")');
+  it("gates lifecycle commands via permittedCommands", () => {
+    expect(source).toContain('has("BEGIN_MANUAL_BOOKING")');
+    expect(source).toContain('has("CONFIRM_MANUAL_BOOKING")');
+    expect(source).toContain('has("RECORD_ASSIGNMENT")');
+    expect(source).toContain('has("CONFIRM_PICKUP")');
+    expect(source).toContain('has("CONFIRM_DELIVERY")');
+    expect(source).toContain('has("RESOLVE_MANUAL_BOOKING_FAILURE")');
   });
 
   it("surfaces revision conflict refresh handling", () => {
