@@ -54,8 +54,9 @@ D373_REQUIRED_FOR_LOCK: NO
 ARCH_R19_REQUIRED: NO
 FOUNDER_UAT_EXPECTED_FOR_IMPLEMENTATION_ACCEPTANCE: YES
 schema_change: NO
-migration: NO
+delivery_schema_migration: NO
 new_service: NO
+access_control_data_seed_migration: PERMITTED_IF_REQUIRED
 ```
 
 ## 1. Purpose
@@ -565,11 +566,32 @@ N. Delivery permission-catalog extension under existing access-control conventio
 
 ### 23.3 Schema / runtime
 
+Implementation inspection established that already-initialized environments do not automatically receive newly locked permission-catalog entries from typed `catalog.ts` alone. Persisted
+`app.access_permissions` / `app.access_role_permissions` remain effective authorization authority.
+Repository-native precedent installs later permission keys through committed SQL data seeds aligned
+with the typed catalog (`payment.refund` in migration `0019_refund.sql`). No existing non-migration
+permission-sync/bootstrap mechanism was found.
+
 ```text
 schema_change: NO
-migration: NO
+delivery_schema_migration: NO
 new_service: NO
+
+access_control_data_seed_migration: PERMITTED_IF_REQUIRED
 ```
+
+**Access-control data seed constraints (when required):**
+
+- data-only INSERT into existing access-control tables only;
+- **NO** CREATE / ALTER / DROP (no access-control schema change);
+- **NO** Delivery-table DDL or DML;
+- only the already-locked ten `delivery.*` permission keys and repository-approved role mappings;
+- **NO** new auth/session/scope model;
+- permission + trusted scope remains authority; role name never bypasses authorization;
+- additive/idempotent according to repository migration convention.
+
+Delivery/domain schema change remains **NO**. Delivery table migration remains **NO**. New deployable
+service remains **NO**.
 
 Existing IMP-031 tables remain sufficient (`deliveries`, `delivery_provider_references`,
 `delivery_assignments`, `delivery_provider_observations`, `delivery_provider_costs`,
@@ -624,7 +646,10 @@ START IS NOT COMPLETION OR ACCEPTANCE: YES
 FOUNDER_UAT_REQUIRED_FOR_ACCEPTANCE: YES
 ```
 
-Start covers only §23.1 under the locked operating mode and prior GTM-R82 authorization. It does
-**not** complete or accept implementation, and does **not** authorize provider API automation,
-webhooks, workers, queues, notifications/WhatsApp, schema/migration for Delivery tables, D-373,
-ARCH-R19, IMP-033, or IMP-034.
+Start covers only §23.1 under the locked operating mode and prior GTM-R82 authorization. GTM-R84 / STATE-R82 clarify §23.3 only: a repository-native data-only access-control seed migration is
+**PERMITTED_IF_REQUIRED** to install the already-locked `delivery.*` catalog and role mappings into
+already-initialized environments under the constraints above. That clarification is
+implementation-boundary only; it is not architecture expansion and not implementation completion.
+Start does **not** complete or accept implementation, and does **not** authorize provider API
+automation, webhooks, workers, queues, notifications/WhatsApp, Delivery schema/table migration,
+D-373, ARCH-R19, IMP-033, or IMP-034.
