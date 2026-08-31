@@ -17,6 +17,7 @@ import {
   lockCheckoutForUpdate,
   type CheckoutRow,
 } from "../checkout/repository";
+import { enqueuePaymentConfirmedNotification } from "../notifications/enqueue";
 import type { PersistenceTransactionContext } from "../persistence/types";
 import { assertTransactionContext } from "./assert-role";
 import {
@@ -215,6 +216,15 @@ async function applySuccess(
   });
 
   await consumeClaimsForAttempt(context, attempt.id, now);
+
+  // IMP-033: notification intent commits with Payment SUCCEEDED authority.
+  // Only on the real transition — the duplicate/contradictory paths above
+  // return before here, so redelivery never queues a second confirmation.
+  await enqueuePaymentConfirmedNotification(context, {
+    customerId: checkout.customerAuthUserId,
+    paymentId: updatedPayment.id,
+    occurredAt: now,
+  });
 
   let updatedCheckout = checkout;
   if (checkout.status === "PAYMENT_PENDING") {

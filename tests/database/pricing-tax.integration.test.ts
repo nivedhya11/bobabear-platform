@@ -114,7 +114,7 @@ describe("IMP-015 pricing migration", () => {
           sql`select count(*)::text as count from app.access_permissions`,
         );
         expect(permissions.rows[0]?.count).toBe("51");
-        expect(PERMISSION_KEYS.length).toBe(67);
+        expect(PERMISSION_KEYS.length).toBe(68);
         expect(ROLE_KEYS.length).toBe(7);
 
         const roleMaps = await ctx.db.execute(sql`

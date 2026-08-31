@@ -20,6 +20,7 @@ import type {
   CustomerTemporaryIdentityDeriver,
 } from "../customer-auth/pii";
 import type { CustomerOtpProvider } from "../customer-auth/provider/types";
+import { NotificationOutboxProcessor } from "../notifications";
 import { PaymentInboxProcessor } from "../payment/inbox";
 import type { PaymentProvider } from "../payment/provider";
 import { RefundReconciliationProcessor } from "../refund/reconciliation";
@@ -39,6 +40,10 @@ export type CustomerCommerceServiceOptions = Readonly<{
   paymentProvider?: PaymentProvider;
   /** Start Razorpay inbox processor only when explicitly enabled. */
   enablePaymentInboxProcessor?: boolean;
+  /** Notification outbox processor (IMP-033). In-process, no new deployable
+   * worker. Defaults to enabled; SKIP LOCKED makes it safe to run alongside
+   * the same processor in Operations. */
+  enableNotificationOutboxProcessor?: boolean;
 }>;
 
 const SAFE_LOG_FIELDS = [
@@ -66,6 +71,7 @@ export class CustomerCommerceService {
   private readonly server: Server;
   private readonly inboxProcessor: PaymentInboxProcessor | null;
   private readonly refundReconciler: RefundReconciliationProcessor | null;
+  private readonly notificationProcessor: NotificationOutboxProcessor | null;
 
   private started = false;
   private closed = false;
@@ -124,6 +130,10 @@ export class CustomerCommerceService {
             provider: config.paymentProvider,
           })
         : null;
+    this.notificationProcessor =
+      config.enableNotificationOutboxProcessor === false
+        ? null
+        : new NotificationOutboxProcessor({ persistence: this.persistence });
   }
 
   async start(): Promise<void> {
@@ -135,6 +145,7 @@ export class CustomerCommerceService {
     });
     this.inboxProcessor?.start();
     this.refundReconciler?.start();
+    this.notificationProcessor?.start();
   }
 
   get boundPort(): number | null {
@@ -158,6 +169,7 @@ export class CustomerCommerceService {
     this.closed = true;
     await this.inboxProcessor?.stop();
     await this.refundReconciler?.stop();
+    await this.notificationProcessor?.stop();
 
     const serverClosed = new Promise<void>((resolve) => {
       this.server.close(() => resolve());

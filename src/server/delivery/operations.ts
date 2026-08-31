@@ -41,6 +41,7 @@ import {
   type NormalizedDeliveryBookingEvidence,
   type RecordProviderObservationResult,
 } from "../../shared/delivery";
+import { enqueueDeliveryProgressNotification } from "../notifications/enqueue";
 import type { Persistence } from "../persistence/types";
 import { systemDeliveryClock, type DeliveryClock } from "./clock";
 import {
@@ -733,6 +734,13 @@ export async function confirmPickup(
       pickedUpAt: now,
       updatedAt: now,
     });
+    // IMP-033: notification intent commits with the pickup it describes.
+    await enqueueDeliveryProgressNotification(tx, {
+      deliveryId: updated.id,
+      orderId: updated.orderId,
+      semanticType: "OUT_FOR_DELIVERY",
+      occurredAt: now,
+    });
     return mapDeliveryRow(updated);
   });
 }
@@ -759,6 +767,13 @@ export async function recordProofAndDeliver(
       proofReference: parsed.proofReference,
       deliveredAt: now,
       updatedAt: now,
+    });
+    // IMP-033: notification intent commits with Delivery DELIVERED authority.
+    await enqueueDeliveryProgressNotification(tx, {
+      deliveryId: updated.id,
+      orderId: updated.orderId,
+      semanticType: "DELIVERED",
+      occurredAt: now,
     });
     return mapDeliveryRow(updated);
   });

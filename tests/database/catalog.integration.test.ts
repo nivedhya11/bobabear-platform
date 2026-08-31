@@ -141,7 +141,7 @@ describe("IMP-012 migration replay and seal", () => {
         );
         // IMP-012 seeded 24; IMP-013 adds menu.*; IMP-014 adds assortment/availability/operating → 43.
         expect(permissions.rows[0]?.count).toBe("51");
-        expect(PERMISSION_KEYS.length).toBe(67);
+        expect(PERMISSION_KEYS.length).toBe(68);
 
         const roles = await ctx.db.execute<{ count: string }>(
           sql`select count(*)::text as count from app.access_roles`,

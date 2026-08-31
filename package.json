@@ -193,6 +193,7 @@
     "test:order-concurrency": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/order-concurrency",
     "test:order-crash": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/order-crash",
     "test:database:order": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/database/order.integration.test.ts",
+    "test:database:notifications": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/database/notifications.integration.test.ts",
     "customer-commerce:build": "node scripts/customer-commerce/build.mjs",
     "customer-commerce:start": "node --conditions=react-server dist-customer-commerce/server/customer-commerce/main.js",
     "test:customer-commerce:http": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/customer-commerce/http.integration.test.ts",

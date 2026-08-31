@@ -102,6 +102,7 @@ export const PERMISSION_KEYS = [
   "delivery.fail",
   "delivery.return",
   "delivery.cost.record",
+  "notification.resend",
 ] as const;
 
 export type PermissionKey = (typeof PERMISSION_KEYS)[number];
@@ -327,6 +328,7 @@ const SUPPORT_PERMISSIONS: RolePermissionMapping[] = (
     "order.cancel",
     "payment.refund",
     "payment.refund.read",
+    "notification.resend",
   ] as const
 ).map((permissionKey) => ({
   roleKey: "support_refund_operator" as const,
@@ -438,6 +440,7 @@ export const PERMISSION_TARGET_KIND: Readonly<
   "delivery.fail": "outlet",
   "delivery.return": "outlet",
   "delivery.cost.record": "outlet",
+  "notification.resend": "outlet",
 };
 
 export const SAFE_AUTHORIZATION_DECISION_CODES = ["AUTHORIZED", "DENIED"] as const;
