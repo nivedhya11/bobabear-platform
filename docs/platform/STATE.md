@@ -2,7 +2,7 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R81",
+  "stateVersion": "STATE-R82",
   "acceptedThrough": "IMP-031",
   "currentProductSlice": "IMP-032",
   "nextProductSlice": "IMP-033",
@@ -31,7 +31,7 @@ Accepted Range:            IMP-001 → IMP-031 (including IMP-005A and IMP-026C)
 Current Product Implementation: IMP-032 — Dehradun Delivery Operating Mode (architecture locked; implementation authorized / started)
 Pending Acceptance:             NONE
 Next Product Slice:             IMP-033 — Notification Foundation
-Current Governance Activity:    IMP-032 IMPLEMENTATION_IN_PROGRESS; architecture remains LOCKED; implementation AUTHORIZED / STARTED.
+Current Governance Activity:    IMP-032 IMPLEMENTATION_IN_PROGRESS; architecture remains LOCKED; implementation AUTHORIZED / STARTED; GTM-R84 / STATE-R82 record implementation-boundary clarification for access-control data seed only.
 Governance Health:              ALIGNED
 ```
 
@@ -270,6 +270,32 @@ independent acceptance without changing decision register or global architecture
 STATE-R36 record IMP-028B canonical activation without changing decision register or global
 architecture. GTM-R39 / STATE-R37 record IMP-028B architecture lock and implementation
 authorization without changing decision register or global architecture.
+
+STATE-R82 records an **implementation-boundary clarification** for IMP-032 §23.3 only under prior
+STATE-R81 implementation-start authority and the locked capability architecture at
+[`capabilities/IMP-032-dehradun-delivery-operating-mode.md`](./capabilities/IMP-032-dehradun-delivery-operating-mode.md)
+(`ARCHITECTURE_LOCKED`; `IMP-032_ARCHITECTURE_LOCKED: YES`). Operating mode remains
+**MANUAL_PROVIDER_NEUTRAL_DEHRADUN_DELIVERY**. Lifecycle remains `IMPLEMENTATION_IN_PROGRESS`.
+Implementation remains `AUTHORIZED` / `STARTED` (`IMP-032_IMPLEMENTATION_AUTHORIZED: YES`;
+`IMP-032_STARTED: YES`; `IMP-032_IMPLEMENTATION_COMPLETE: NO`; `IMP-032_ACCEPTED: NO`). The
+clarification resolves an implementation-discovered ambiguity: already-initialized environments do
+not automatically receive newly locked permission-catalog entries from typed `catalog.ts` alone;
+persisted `app.access_permissions` / `app.access_role_permissions` remain effective authorization
+authority; repository-native precedent uses committed SQL data seeds aligned with the typed catalog.
+Under the locked manual-mode architecture, Delivery/domain `schema_change: NO`;
+`delivery_schema_migration: NO`; access-control schema change **NO**; a repository-native **data-only**
+access-control seed migration is **PERMITTED_IF_REQUIRED** only to install the already-locked ten
+`delivery.*` permission keys and repository-approved role mappings, with **NO** DDL and **NO**
+Delivery-table mutation, and with permission + trusted scope remaining authority. This gate does
+**not** complete or accept implementation. `acceptedThrough` remains IMP-031; `pendingAcceptance`
+remains NONE; `currentProductSlice` remains IMP-032; and `nextProductSlice` remains IMP-033 —
+Notification Foundation, which remains `PLANNED` / `NOT_ACTIVATED`. IMP-031 remains
+`COMPLETE_AND_ACCEPTED` under ARCH-R18 / ARCH-G24. No named provider is canonical; no provider API,
+webhook, queue, worker, notification, Delivery schema migration, runtime topology, D-373, or
+ARCH-R19 is introduced. ARCH-R18 and DR-14 remain unchanged; `D-373_CREATED: NO`;
+`ARCH_R19_REQUIRED: NO`. Founder UAT remains required for later acceptance. Supersedes STATE-R81
+for the current IMP-032 implementation-boundary position. Historical STATE-R81 implementation-start
+checkpoint remains preserved as prior authority.
 
 STATE-R81 records IMP-032 implementation **STARTED** under prior STATE-R80 authorization and the
 locked capability architecture at
@@ -1043,6 +1069,8 @@ IMP-032_IMPLEMENTATION_AUTHORIZED: YES
 IMP-032_STARTED: YES
 IMP-032_IMPLEMENTATION_COMPLETE: NO
 IMP-032_ACCEPTED: NO
+IMP-032_ACCESS_CONTROL_DATA_SEED_MIGRATION: PERMITTED_IF_REQUIRED
+IMP-032_BOUNDARY_CLARIFICATION: GTM-R84 / STATE-R82
 IMP-033: PLANNED / NOT_ACTIVATED
 D-373_CREATED: NO
 NO_NEW_CURRENT_DECISION_IN_THIS_ACTIVATION_GATE: YES

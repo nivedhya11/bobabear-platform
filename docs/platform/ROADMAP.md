@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R83",
+  "roadmapVersion": "GTM-R84",
   "acceptedThrough": "IMP-031",
   "currentProductSlice": "IMP-032",
   "nextProductSlice": "IMP-033",
   "gtmBoundary": "IMP-040",
   "lastReviewed": "2026-08-31",
-  "supersedes": "GTM-R82"
+  "supersedes": "GTM-R83"
 }
 -->
 
@@ -303,9 +303,14 @@ and was formally amended on 2026-08-27 for static detail-route realization. IMP-
 [`capabilities/IMP-032-dehradun-delivery-operating-mode.md`](./capabilities/IMP-032-dehradun-delivery-operating-mode.md)
 (operating mode **MANUAL_PROVIDER_NEUTRAL_DEHRADUN_DELIVERY**). Implementation is
 `AUTHORIZED` / `STARTED` under prior GTM-R82 authorization (`IMP-032_IMPLEMENTATION_AUTHORIZED: YES`;
-`IMP-032_STARTED: YES`). Start does **not** complete or accept implementation. IMP-033 remains
-`PLANNED` / `NOT_ACTIVATED`. DR-14 and ARCH-R18 remain unchanged; D-373 is not created. No named
-provider is canonical; no provider API/webhook/worker/queue topology is introduced.
+`IMP-032_STARTED: YES`). GTM-R84 clarifies the locked §23.3 implementation boundary only: a
+repository-native data-only access-control seed migration is **PERMITTED_IF_REQUIRED** to install
+the already-locked ten `delivery.*` permission keys and repository-approved role mappings into
+already-initialized environments under explicit no-DDL / no-Delivery-table-mutation constraints.
+That clarification is not architecture expansion and not implementation completion. Start does
+**not** complete or accept implementation. IMP-033 remains `PLANNED` / `NOT_ACTIVATED`. DR-14 and
+ARCH-R18 remain unchanged; D-373 is not created. No named provider is canonical; no provider
+API/webhook/worker/queue topology is introduced.
 
 ```text
 IMP-030: COMPLETE_AND_ACCEPTED
@@ -338,6 +343,8 @@ IMP-032_IMPLEMENTATION_AUTHORIZED: YES
 IMP-032_STARTED: YES
 IMP-032_IMPLEMENTATION_COMPLETE: NO
 IMP-032_ACCEPTED: NO
+IMP-032_ACCESS_CONTROL_DATA_SEED_MIGRATION: PERMITTED_IF_REQUIRED
+IMP-032_BOUNDARY_CLARIFICATION: GTM-R84
 IMP-033: PLANNED / NOT_ACTIVATED
 D-373_CREATED: NO
 NO_NEW_CURRENT_DECISION_IN_THIS_ACTIVATION_GATE: YES
@@ -530,8 +537,11 @@ IMP-032 — Dehradun Delivery Operating Mode is the current product slice with a
 Operating mode is **MANUAL_PROVIDER_NEUTRAL_DEHRADUN_DELIVERY**. Lifecycle is
 `IMPLEMENTATION_IN_PROGRESS`. Implementation is `AUTHORIZED` / `STARTED` under prior GTM-R82
 authorization (`IMP-032_IMPLEMENTATION_AUTHORIZED: YES`; `IMP-032_STARTED: YES`;
-`IMP-032_IMPLEMENTATION_COMPLETE: NO`; `IMP-032_ACCEPTED: NO`). Start does **not** complete or
-accept implementation. IMP-031 — Provider-Neutral Delivery Foundation remains
+`IMP-032_IMPLEMENTATION_COMPLETE: NO`; `IMP-032_ACCEPTED: NO`). GTM-R84 clarifies the locked §23.3
+implementation boundary only: a repository-native data-only access-control seed migration is
+**PERMITTED_IF_REQUIRED** under explicit no-DDL / no-Delivery-table-mutation constraints. That
+clarification is not architecture expansion and not implementation completion. Start does **not**
+complete or accept implementation. IMP-031 — Provider-Neutral Delivery Foundation remains
 `COMPLETE_AND_ACCEPTED`. Its locked capability architecture remains at
 [`capabilities/IMP-031-provider-neutral-delivery-foundation.md`](./capabilities/IMP-031-provider-neutral-delivery-foundation.md).
 Architecture remains `ARCHITECTURE_LOCKED`; implementation boundary C remains approved with the
@@ -542,9 +552,10 @@ capability-local Delivery lifecycle amendment; implementation is `AUTHORIZED` / 
 IMP-030 — Operations Console UI remains
 `COMPLETE_AND_ACCEPTED`; architecture remains locked and implementation is authorized, started, and
 complete. IMP-033 remains `PLANNED` / `NOT_ACTIVATED` as the next product slice and is **not**
-authorized or started. This start gate does **not** complete or accept IMP-032, select a named
-provider, integrate an external API, create D-373, create ARCH-R19, or mutate
-runtime/schema/product surfaces. IMP-029 —
+authorized or started. This boundary-clarification gate does **not** complete or accept IMP-032,
+select a named provider, integrate an external API, create D-373, create ARCH-R19, or mutate
+Delivery schema/runtime/product surfaces beyond the explicitly constrained access-control data seed.
+IMP-029 —
 Operations Console API remains `COMPLETE_AND_ACCEPTED`; architecture remains locked and
 implementation is authorized, started, and complete.
 
@@ -624,6 +635,8 @@ IMP-032_IMPLEMENTATION_AUTHORIZED: YES
 IMP-032_STARTED: YES
 IMP-032_IMPLEMENTATION_COMPLETE: NO
 IMP-032_ACCEPTED: NO
+IMP-032_ACCESS_CONTROL_DATA_SEED_MIGRATION: PERMITTED_IF_REQUIRED
+IMP-032_BOUNDARY_CLARIFICATION: GTM-R84
 IMP-033: PLANNED / NOT_ACTIVATED
 D-373_CREATED: NO
 NO_NEW_CURRENT_DECISION_IN_THIS_ACTIVATION_GATE: YES
@@ -1149,6 +1162,32 @@ Historical GTM-R1 meanings that are **not** current:
 Current public GTM boundary is **IMP-040**, not IMP-035.
 
 ## 9. Roadmap Change Log
+
+### GTM-R84 — 2026-08-31
+
+- Records an **implementation-boundary clarification** for IMP-032 §23.3 only. Implementation
+  inspection established that already-initialized environments do not automatically receive newly
+  locked permission-catalog entries from typed `catalog.ts` alone; persisted
+  `app.access_permissions` / `app.access_role_permissions` remain effective authorization authority;
+  repository-native precedent uses committed SQL data seeds aligned with the typed catalog
+  (`payment.refund` in migration `0019_refund.sql`).
+- Clarifies under the locked manual-mode architecture: Delivery/domain `schema_change: NO`;
+  `delivery_schema_migration: NO`; `new_service: NO`; access-control schema change **NO**; a
+  repository-native **data-only** access-control seed migration is **PERMITTED_IF_REQUIRED** only
+  to install the already-locked ten `delivery.*` permission keys and repository-approved role
+  mappings into already-initialized environments, with **NO** DDL and **NO** Delivery-table mutation,
+  and with permission + trusted scope remaining authority.
+- IMP-032 lifecycle remains `IMPLEMENTATION_IN_PROGRESS`; implementation remains
+  `AUTHORIZED` / `STARTED` (`IMP-032_IMPLEMENTATION_AUTHORIZED: YES`; `IMP-032_STARTED: YES`;
+  `IMP-032_IMPLEMENTATION_COMPLETE: NO`; `IMP-032_ACCEPTED: NO`). This gate does **not** complete
+  or accept implementation, create D-373, create ARCH-R19, activate IMP-033 / IMP-034, or authorize
+  provider API / webhook / worker / queue / notification integration.
+- Preserves operating mode **MANUAL_PROVIDER_NEUTRAL_DEHRADUN_DELIVERY**, `acceptedThrough = IMP-031`,
+  `pendingAcceptance = NONE`, `currentProductSlice = IMP-032`, and `nextProductSlice = IMP-033`
+  (remains `PLANNED` / `NOT_ACTIVATED`). ARCH-R18 and DR-14 remain unchanged;
+  `D-373_CREATED: NO`; `ARCH_R19_REQUIRED: NO`.
+- Supersedes GTM-R83 for the current IMP-032 implementation-boundary position. Historical GTM-R83 /
+  STATE-R81 implementation-start checkpoint remains preserved as prior authority.
 
 ### GTM-R83 — 2026-08-31
 
