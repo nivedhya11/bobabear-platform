@@ -211,11 +211,12 @@ export type NotificationProviderEventProcessingStatus =
 
 /**
  * Provider identifiers for the IMP-033 non-sending adapters. Both are
- * explicitly incapable of external transmission; a real provider identifier
- * arrives with its adapter in IMP-034.
+ * explicitly incapable of external transmission. The Meta WhatsApp adapter
+ * (IMP-034) uses `NOTIFICATION_META_WHATSAPP_PROVIDER` and is not non-sending.
  */
 export const NOTIFICATION_NOOP_PROVIDER = "noop" as const;
 export const NOTIFICATION_IN_APP_PROVIDER = "in_app" as const;
+export const NOTIFICATION_META_WHATSAPP_PROVIDER = "meta_whatsapp" as const;
 
 export const NOTIFICATION_NON_SENDING_PROVIDERS = [
   NOTIFICATION_NOOP_PROVIDER,

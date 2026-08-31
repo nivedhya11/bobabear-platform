@@ -118,6 +118,23 @@ export type NotificationProviderEvent = Readonly<{
   processingStatus: NotificationProviderEventProcessingStatus;
 }>;
 
+/** Inbound message classification (IMP-034). Full classifier is deferred. */
+export type NotificationInboundClassification = "UNCLASSIFIED";
+
+export type NotificationInboundMessage = Readonly<{
+  id: string;
+  provider: string;
+  providerMessageId: string;
+  waFromE164: string | null;
+  customerId: string | null;
+  messageType: string | null;
+  bodyPreview: string | null;
+  classification: NotificationInboundClassification;
+  providerEventDedupKey: string | null;
+  receivedAt: Date;
+  createdAt: Date;
+}>;
+
 /** Consent + preference evaluation outcome. `SEND` never implies a provider
  * is available — only that policy does not block the attempt. */
 export type NotificationPolicyDecision =

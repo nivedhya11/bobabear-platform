@@ -21,6 +21,11 @@ import type {
 } from "../customer-auth/pii";
 import type { CustomerOtpProvider } from "../customer-auth/provider/types";
 import { NotificationOutboxProcessor } from "../notifications";
+import {
+  createMetaWhatsAppChannelAdapter,
+  type MetaWhatsAppRuntimeSecrets,
+} from "../notifications/provider/meta-whatsapp";
+import { createNotificationChannelRegistry } from "../notifications/channels";
 import { PaymentInboxProcessor } from "../payment/inbox";
 import type { PaymentProvider } from "../payment/provider";
 import { RefundReconciliationProcessor } from "../refund/reconciliation";
@@ -44,6 +49,8 @@ export type CustomerCommerceServiceOptions = Readonly<{
    * worker. Defaults to enabled; SKIP LOCKED makes it safe to run alongside
    * the same processor in Operations. */
   enableNotificationOutboxProcessor?: boolean;
+  /** Optional Meta WhatsApp secrets override for tests. */
+  metaWhatsApp?: MetaWhatsAppRuntimeSecrets | null;
 }>;
 
 const SAFE_LOG_FIELDS = [
@@ -93,11 +100,27 @@ export class CustomerCommerceService {
       phoneDependencies,
     );
 
+    const whatsappConfig =
+      config.metaWhatsApp !== undefined
+        ? config.metaWhatsApp
+          ? Object.freeze({ selector: "meta_cloud_api" as const, meta: config.metaWhatsApp })
+          : Object.freeze({ selector: "disabled" as const })
+        : Object.freeze({ selector: "disabled" as const });
+    const metaWhatsApp =
+      whatsappConfig.selector === "meta_cloud_api" ? whatsappConfig.meta : null;
+    const notificationChannels = createNotificationChannelRegistry({
+      whatsapp: metaWhatsApp
+        ? createMetaWhatsAppChannelAdapter({ secrets: metaWhatsApp })
+        : undefined,
+    });
+
     const requestListener = createCustomerCommerceRequestListener(
       {
         runtime: this.runtime,
         persistence: this.persistence,
         paymentProvider: config.paymentProvider,
+        metaWhatsApp,
+        environment: config.persistenceConfig.environment,
       },
       {
         onRequestStart: () => {
@@ -133,7 +156,10 @@ export class CustomerCommerceService {
     this.notificationProcessor =
       config.enableNotificationOutboxProcessor === false
         ? null
-        : new NotificationOutboxProcessor({ persistence: this.persistence });
+        : new NotificationOutboxProcessor({
+            persistence: this.persistence,
+            operationOptions: { channels: notificationChannels },
+          });
   }
 
   async start(): Promise<void> {

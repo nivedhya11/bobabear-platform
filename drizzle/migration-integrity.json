@@ -171,6 +171,11 @@
       "tag": "0033_notifications",
       "path": "drizzle/0033_notifications.sql",
       "sha256": "02ead184750f8ccb53a1411bf7eceaa32873405196e5a0fac473021c98ef34bf"
+    },
+    {
+      "tag": "0034_meta_whatsapp_adapter",
+      "path": "drizzle/0034_meta_whatsapp_adapter.sql",
+      "sha256": "e077c98246f19f6233276197b3fc30764b7d4efd4981ef60d7cd75bc582f25b1"
     }
   ]
 }

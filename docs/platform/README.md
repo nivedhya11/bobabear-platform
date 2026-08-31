@@ -55,7 +55,9 @@ directory.
 | [`capabilities/IMP-027-refund-foundation.md`](./capabilities/IMP-027-refund-foundation.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-027 Refund Foundation (D-364); COMPLETE_AND_ACCEPTED |
 | [`capabilities/IMP-028-invoice-tax-receipt-credit-note.md`](./capabilities/IMP-028-invoice-tax-receipt-credit-note.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-028 Invoice / Tax Receipt / Credit Note (D-365 Financial Document; D-366 RefundStatutoryDecision; D-367 statutory signing); COMPLETE_AND_ACCEPTED (`IMP-028_ACCEPTED: YES`) |
 | [`capabilities/IMP-028A-food-direct-ux-foundation.md`](./capabilities/IMP-028A-food-direct-ux-foundation.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-028A Food Direct UX Foundation; COMPLETE_AND_ACCEPTED (`IMP-028A_ACCEPTED: YES`) |
-| [`capabilities/IMP-028B-customer-menu-projection-and-discovery.md`](./capabilities/IMP-028B-customer-menu-projection-and-discovery.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-028B Customer Menu Projection + Discovery; IMPLEMENTATION_AUTHORIZED / NOT_STARTED (`IMP-028B_ACCEPTED: NO`) |
+| [`capabilities/IMP-028B-customer-menu-projection-and-discovery.md`](./capabilities/IMP-028B-customer-menu-projection-and-discovery.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-028B Customer Menu Projection + Discovery; COMPLETE_AND_ACCEPTED (`IMP-028B_ACCEPTED: YES`) |
+| [`capabilities/IMP-033-notification-foundation.md`](./capabilities/IMP-033-notification-foundation.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-033 Notification Foundation; COMPLETE_AND_ACCEPTED (`IMP-033_ACCEPTED: YES`) |
+| [`capabilities/IMP-034-meta-whatsapp-cloud-api-adapter.md`](./capabilities/IMP-034-meta-whatsapp-cloud-api-adapter.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-034 Meta WhatsApp Cloud API Adapter; IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE (`IMP-034_ACCEPTED: NO`) |
 
 ## Supporting documents
 

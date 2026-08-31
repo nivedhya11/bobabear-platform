@@ -231,6 +231,10 @@ export const notificationMessageAttemptsTable = appSchema.table(
       table.provider,
       table.providerMessageId,
     ),
+    // IMP-034: partial lookup by provider_message_id alone for webhook status.
+    index("notification_message_attempts_provider_message_id_partial_idx")
+      .on(table.providerMessageId)
+      .where(sql`${table.providerMessageId} is not null`),
     check(
       "notification_message_attempts_channel_check",
       sql`${table.channel} in ${channelValues()}`,
@@ -498,6 +502,59 @@ export const notificationProviderEventsTable = appSchema.table(
     check(
       "notification_provider_events_processed_provenance_check",
       sql`${table.processingStatus} <> 'PROCESSED' or ${table.processedAt} is not null`,
+    ),
+  ],
+);
+
+/**
+ * Minimized inbound WhatsApp (or other provider) messages (IMP-034).
+ * Classification stays UNCLASSIFIED in this slice — no conversation UI and
+ * no autonomous cancellation/refund from inbound content.
+ */
+export const notificationInboundMessagesTable = appSchema.table(
+  "notification_inbound_messages",
+  {
+    id: uuid("id").primaryKey(),
+    provider: text("provider").notNull(),
+    providerMessageId: text("provider_message_id").notNull(),
+    waFromE164: text("wa_from_e164"),
+    customerId: text("customer_id"),
+    messageType: text("message_type"),
+    bodyPreview: text("body_preview"),
+    classification: text("classification").notNull().default("UNCLASSIFIED"),
+    providerEventDedupKey: text("provider_event_dedup_key"),
+    receivedAt: timestamp("received_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+  },
+  (table) => [
+    uniqueIndex("notification_inbound_messages_provider_message_uidx").on(
+      table.provider,
+      table.providerMessageId,
+    ),
+    index("notification_inbound_messages_received_at_idx").on(table.receivedAt),
+    check(
+      "notification_inbound_messages_provider_nonempty_check",
+      sql`char_length(trim(${table.provider})) between 1 and 64`,
+    ),
+    check(
+      "notification_inbound_messages_provider_message_id_length_check",
+      sql`char_length(trim(${table.providerMessageId})) between 1 and 256`,
+    ),
+    check(
+      "notification_inbound_messages_classification_check",
+      sql`${table.classification} in ('UNCLASSIFIED')`,
+    ),
+    check(
+      "notification_inbound_messages_body_preview_length_check",
+      sql`${table.bodyPreview} is null or char_length(${table.bodyPreview}) <= 280`,
+    ),
+    check(
+      "notification_inbound_messages_wa_from_length_check",
+      sql`${table.waFromE164} is null or char_length(trim(${table.waFromE164})) between 1 and 32`,
+    ),
+    check(
+      "notification_inbound_messages_customer_id_length_check",
+      sql`${table.customerId} is null or char_length(trim(${table.customerId})) between 1 and 255`,
     ),
   ],
 );

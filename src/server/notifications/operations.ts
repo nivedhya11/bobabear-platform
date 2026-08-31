@@ -29,6 +29,7 @@ import { systemNotificationClock, type NotificationClock } from "./clock";
 import type { NotificationOutboxPayload } from "./outbox-events";
 import { evaluateNotificationSendPolicy } from "./policy";
 import {
+  findCustomerPhoneE164,
   findNotificationRequestById,
   insertConsentIfAbsent,
   insertNotificationAttempt,
@@ -130,6 +131,7 @@ type SendPreparation =
       attemptId: string;
       correlationId: string;
       templateKey: string;
+      providerTemplateRef: string | null;
       variables: Readonly<Record<string, string>>;
     }>;
 
@@ -251,6 +253,7 @@ async function prepareSend(
       attemptId,
       correlationId,
       templateKey: template.templateKey,
+      providerTemplateRef: template.providerTemplateRef,
       variables,
     });
   });
@@ -267,14 +270,18 @@ async function executeSend(
 ): Promise<NotificationRequest> {
   const request = prepared.request;
   const adapter = registry.adapterFor(request.channel);
+  const phoneE164 = await persistence.transaction((tx) =>
+    findCustomerPhoneE164(tx, request.customerId),
+  );
   const result = await adapter.send({
     notificationRequestId: request.id,
     attemptId: prepared.attemptId,
     channel: request.channel,
     templateKey: prepared.templateKey,
+    providerTemplateRef: prepared.providerTemplateRef,
     locale: request.locale,
     variables: prepared.variables,
-    recipient: { customerId: request.customerId },
+    recipient: { customerId: request.customerId, phoneE164 },
     correlationId: prepared.correlationId,
   });
 

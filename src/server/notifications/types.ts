@@ -18,6 +18,8 @@ export type ChannelSendInput = Readonly<{
   channel: NotificationChannel;
   templateKey: string;
   locale: string;
+  /** Meta / provider template name. Null until resolved from the registry. */
+  providerTemplateRef?: string | null;
   variables: Readonly<Record<string, string>>;
   recipient: Readonly<{ customerId: string; phoneE164?: string | null }>;
   correlationId: string;
