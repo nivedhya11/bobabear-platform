@@ -8,6 +8,10 @@ import {
   evaluateImp030ArchitectureActivationCheckpoint,
   evaluateImp031ArchitectureActivationCheckpoint,
   evaluateImp032ArchitectureActivationCheckpoint,
+  evaluateImp032ArchitectureDraftArtifact,
+  evaluateImp032ArchitectureDraftCheckpoint,
+  evaluateImp032ArchitectureLockArtifact,
+  evaluateImp032ArchitectureLockCheckpoint,
   evaluateImp031ArchitectureDraftArtifact,
   evaluateImp031ArchitectureDraftCheckpoint,
   evaluateImp031ArchitectureLockArtifact,
@@ -2349,6 +2353,134 @@ describe("IMP-032 architecture activation checkpoint", () => {
   });
 });
 
+describe("IMP-032 architecture draft checkpoint", () => {
+  const draft = Object.freeze({
+    acceptedThrough: "IMP-031",
+    currentProductSlice: "IMP-032", nextProductSlice: "IMP-033", pendingAcceptance: "NONE",
+    imp031: "COMPLETE_AND_ACCEPTED", imp032: "ARCHITECTURE_IN_PROGRESS", architecture: "NOT_LOCKED",
+    architectureLocked: "NO", implementation: "NOT_AUTHORIZED / NOT_STARTED",
+    implementationAuthorized: "NO", started: "NO", architectureVersion: "ARCH-R18",
+    decisionRegisterVersion: "DR-14", artifact: true, archG24: true, d373Exists: false,
+    providerSelected: false, manualModeDefined: true, imp031Accepted: true,
+  });
+
+  const draftArtifactFixture = `<!-- governance-meta
+{
+  "status": "DRAFT",
+  "authority": "CAPABILITY_ARCHITECTURE",
+  "capability": "IMP-032",
+  "architectureLock": "NOT_LOCKED",
+  "implementation": "NOT_AUTHORIZED / NOT_STARTED",
+  "implementationAuthorized": false,
+  "bindingDecisions": ["D-357", "D-372"]
+}
+-->
+MANUAL_PROVIDER_NEUTRAL_DEHRADUN_DELIVERY
+IMP-032_ARCHITECTURE_LOCKED: NO
+D373_REQUIRED_FOR_LOCK: NO
+ARCH_R19_REQUIRED: NO
+\`BOOKING_OUTCOME_UNKNOWN\`
+`;
+
+  it("keeps draft evaluators for fixtures without a live R81/S79 draft version pair", () => {
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R81", "STATE-R79", "imp032Draft"), false);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R81", "STATE-R79", "imp032Lock"), true);
+    assert.deepEqual(evaluateImp032ArchitectureDraftCheckpoint(draft), { ok: true });
+  });
+
+  it("rejects premature progression and missing draft evidence", () => {
+    for (const [key, value] of [
+      ["architecture", "LOCKED"], ["architectureLocked", "YES"],
+      ["implementationAuthorized", "YES"], ["started", "YES"],
+      ["artifact", false], ["archG24", false], ["d373Exists", true],
+      ["providerSelected", true], ["manualModeDefined", false], ["imp031Accepted", false],
+      ["acceptedThrough", "IMP-030"],
+    ]) {
+      assert.equal(evaluateImp032ArchitectureDraftCheckpoint({ ...draft, [key]: value }).ok, false, key);
+    }
+  });
+
+  it("accepts a synthetic draft artifact fixture and rejects premature progression mutations", () => {
+    assert.deepEqual(evaluateImp032ArchitectureDraftArtifact(draftArtifactFixture), { ok: true });
+    for (const mutation of [
+      draftArtifactFixture.replace('"architectureLock": "NOT_LOCKED"', '"architectureLock": "ARCHITECTURE_LOCKED"'),
+      draftArtifactFixture.replace("IMP-032_ARCHITECTURE_LOCKED: NO", "IMP-032_ARCHITECTURE_LOCKED: YES"),
+      draftArtifactFixture.replace('"implementationAuthorized": false', '"implementationAuthorized": true'),
+      draftArtifactFixture.replace(
+        '"bindingDecisions": ["D-357", "D-372"]',
+        '"bindingDecisions": ["D-357", "D-372", "D-373"]',
+      ),
+    ]) {
+      assert.equal(evaluateImp032ArchitectureDraftArtifact(mutation).ok, false);
+    }
+  });
+});
+
+describe("IMP-032 architecture lock checkpoint", () => {
+  const lock = Object.freeze({
+    roadmapVersion: "GTM-R81", stateVersion: "STATE-R79", acceptedThrough: "IMP-031",
+    currentProductSlice: "IMP-032", nextProductSlice: "IMP-033", pendingAcceptance: "NONE",
+    imp031: "COMPLETE_AND_ACCEPTED", imp032: "ARCHITECTURE_LOCKED", architecture: "LOCKED",
+    architectureLocked: "YES", implementation: "NOT_AUTHORIZED / NOT_STARTED",
+    implementationAuthorized: "NO", started: "NO", implementationComplete: "NO", accepted: "NO",
+    imp033: "PLANNED", architectureVersion: "ARCH-R18",
+    decisionRegisterVersion: "DR-14", artifact: true, archG24: true, d373Exists: false,
+    providerSelected: false, manualModeDefined: true, imp031Accepted: true,
+  });
+
+  const lockArtifactFixture = readFileSync(
+    "docs/platform/capabilities/IMP-032-dehradun-delivery-operating-mode.md",
+    "utf8",
+  );
+
+  it("accepts the R81/S79 lock without implementation authorization", () => {
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R81", "STATE-R79", "imp032Lock"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R82", "STATE-R80", "imp032Lock"), false);
+    assert.deepEqual(evaluateImp032ArchitectureLockCheckpoint(lock), { ok: true });
+  });
+
+  it("rejects invalid lock lifecycle combinations", () => {
+    for (const [key, value] of [
+      ["roadmapVersion", "GTM-R82"],
+      ["stateVersion", "STATE-R80"],
+      ["architectureLocked", "NO"],
+      ["implementationAuthorized", "YES"],
+      ["started", "YES"],
+      ["implementationComplete", "YES"],
+      ["accepted", "YES"],
+      ["imp033", "ARCHITECTURE_IN_PROGRESS"],
+      ["d373Exists", true],
+      ["artifact", false],
+      ["manualModeDefined", false],
+      ["imp031Accepted", false],
+      ["providerSelected", true],
+      ["pendingAcceptance", "IMP-032"],
+      ["architectureVersion", "ARCH-R19"],
+      ["decisionRegisterVersion", "DR-15"],
+    ]) {
+      assert.equal(evaluateImp032ArchitectureLockCheckpoint({ ...lock, [key]: value }).ok, false, `${key}=${value}`);
+    }
+  });
+
+  it("validates the live locked artifact and rejects unsafe/premature mutations", () => {
+    assert.deepEqual(evaluateImp032ArchitectureLockArtifact(lockArtifactFixture), { ok: true });
+    for (const mutation of [
+      lockArtifactFixture.replace('"architectureLock": "ARCHITECTURE_LOCKED"', '"architectureLock": "NOT_LOCKED"'),
+      lockArtifactFixture.replace("IMP-032_ARCHITECTURE_LOCKED: YES", "IMP-032_ARCHITECTURE_LOCKED: NO"),
+      lockArtifactFixture.replace('"implementationAuthorized": false', '"implementationAuthorized": true'),
+      lockArtifactFixture.replace("IMP-032_IMPLEMENTATION_AUTHORIZED: NO", "IMP-032_IMPLEMENTATION_AUTHORIZED: YES"),
+      lockArtifactFixture.replace("IMP-032_STARTED: NO", "IMP-032_STARTED: YES"),
+      lockArtifactFixture.replace(
+        '"bindingDecisions": ["D-357", "D-372"]',
+        '"bindingDecisions": ["D-357", "D-372", "D-373"]',
+      ),
+      `${lockArtifactFixture}\nexternal booking/reference **OR** explicit \`no_reference_issued\`\n`,
+    ]) {
+      assert.equal(evaluateImp032ArchitectureLockArtifact(mutation).ok, false);
+    }
+  });
+});
+
 describe("IMP-031 architecture draft checkpoint", () => {
   const draft = Object.freeze({
     roadmapVersion: "GTM-R74", stateVersion: "STATE-R72", acceptedThrough: "IMP-030",
@@ -2425,7 +2557,7 @@ IMP-031_ARCHITECTURE_LOCKED: NO
 });
 
 /**
- * Live CURRENT docs are IMP-032 architecture activation (GTM-R80 / STATE-R78).
+ * Live CURRENT docs are IMP-032 architecture lock (GTM-R81 / STATE-R79).
  * Historical IMP-031 evaluators first normalize back to the R79/S77 acceptance position.
  */
 function normalizeImp031AcceptedLifecycleDocs(activatedRoadmap, activatedState) {
@@ -2442,8 +2574,16 @@ function normalizeImp031AcceptedLifecycleDocs(activatedRoadmap, activatedState) 
       .replace(/Next Product Slice:\s*IMP-033[^\n]*/g, "Next Product Slice:    IMP-032 — Dehradun Delivery Operating Mode")
       .replace(/nextProductSlice:\s*IMP-033[^\n]*/g, "nextProductSlice: IMP-032 — Dehradun Delivery Operating Mode")
       .replace(
+        /IMP-032:\s*ARCHITECTURE_LOCKED\nIMP-032_ARCHITECTURE:\s*LOCKED\nIMP-032_ARCHITECTURE_LOCKED:\s*YES\nIMP-032_IMPLEMENTATION:\s*NOT_AUTHORIZED \/ NOT_STARTED\nIMP-032_IMPLEMENTATION_AUTHORIZED:\s*NO\nIMP-032_STARTED:\s*NO\nIMP-032_IMPLEMENTATION_COMPLETE:\s*NO\nIMP-032_ACCEPTED:\s*NO\nIMP-033:\s*PLANNED \/ NOT_ACTIVATED\nD-373_CREATED:\s*NO\nNO_NEW_CURRENT_DECISION_IN_THIS_ACTIVATION_GATE:\s*YES\n/g,
+        "IMP-032: PLANNED / NOT_ACTIVATED\n",
+      )
+      .replace(
         /IMP-032:\s*ARCHITECTURE_IN_PROGRESS\nIMP-032_ARCHITECTURE:\s*NOT_LOCKED\nIMP-032_ARCHITECTURE_LOCKED:\s*NO\nIMP-032_IMPLEMENTATION:\s*NOT_AUTHORIZED \/ NOT_STARTED\nIMP-032_IMPLEMENTATION_AUTHORIZED:\s*NO\nIMP-032_STARTED:\s*NO\nIMP-032_IMPLEMENTATION_COMPLETE:\s*NO\nIMP-032_ACCEPTED:\s*NO\nIMP-033:\s*PLANNED \/ NOT_ACTIVATED\nD-373_CREATED:\s*NO\nNO_NEW_CURRENT_DECISION_IN_THIS_ACTIVATION_GATE:\s*YES\n/g,
         "IMP-032: PLANNED / NOT_ACTIVATED\n",
+      )
+      .replace(
+        /IMP-032 ARCHITECTURE_LOCKED; locked capability architecture recorded; implementation is not authorized or started\./g,
+        "IMP-031 COMPLETE_AND_ACCEPTED;\n                              IMP-032 PLANNED / NOT_ACTIVATED.",
       )
       .replace(
         /IMP-032 ARCHITECTURE_IN_PROGRESS; architecture is not locked and\n\s*implementation is not authorized or started\./g,
@@ -2452,10 +2592,15 @@ function normalizeImp031AcceptedLifecycleDocs(activatedRoadmap, activatedState) 
     return `${docText.slice(0, start)}${updated}${docText.slice(end)}`;
   };
   let roadmapText = rewriteCurrent(activatedRoadmap, "## 2.", "## 3.");
-  roadmapText = roadmapText.replace(
-    "| IMP-032 | Dehradun Delivery Operating Mode | ARCHITECTURE_IN_PROGRESS |",
-    "| IMP-032 | Dehradun Delivery Operating Mode | PLANNED |",
-  );
+  roadmapText = roadmapText
+    .replace(
+      "| IMP-032 | Dehradun Delivery Operating Mode | ARCHITECTURE_LOCKED |",
+      "| IMP-032 | Dehradun Delivery Operating Mode | PLANNED |",
+    )
+    .replace(
+      "| IMP-032 | Dehradun Delivery Operating Mode | ARCHITECTURE_IN_PROGRESS |",
+      "| IMP-032 | Dehradun Delivery Operating Mode | PLANNED |",
+    );
   const stateText = rewriteCurrent(
     rewriteCurrent(activatedState, "## 2. Current Work Position", "\n## "),
     "## 5. Acceptance Position",
