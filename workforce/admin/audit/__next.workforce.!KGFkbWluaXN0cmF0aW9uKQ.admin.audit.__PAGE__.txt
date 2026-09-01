@@ -1,0 +1,6 @@
+1:"$Sreact.fragment"
+2:I[2651,["8409","static/chunks/8409-b37ea358ba142cea.js","5195","static/chunks/app/workforce/(administration)/admin/audit/page-9ca0c2ae4a7d8d36.js"],"AdministrationAuditClient"]
+3:I[484,[],"OutletBoundary"]
+4:"$Sreact.suspense"
+0:{"rsc":["$","$1","c",{"children":[[["$","header",null,{"className":"mb-6 space-y-3","children":[null,["$","div",null,{"className":"flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between","children":[["$","div",null,{"className":"space-y-1","children":[["$","h1",null,{"className":"text-2xl font-semibold tracking-tight text-[var(--enterprise-text-primary,#1a2210)]","children":"Access audit"}],["$","p",null,{"className":"max-w-3xl text-sm leading-relaxed text-[var(--enterprise-text-secondary,#4b5542)]","children":"Read-only visibility into access-control audit events."}]]}],null]}]]}],["$","$L2",null,{}]],null,["$","$L3",null,{"children":["$","$4",null,{"name":"Next.MetadataOutlet","children":"$@5"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"TcH1mBezj2UBVrFmo89t1"}
+5:null

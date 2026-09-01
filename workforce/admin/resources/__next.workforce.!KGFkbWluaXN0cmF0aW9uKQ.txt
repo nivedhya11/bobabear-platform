@@ -1,0 +1,5 @@
+1:"$Sreact.fragment"
+2:I[9676,["8409","static/chunks/8409-b37ea358ba142cea.js","206","static/chunks/206-1ed818806c411656.js","7472","static/chunks/app/workforce/(administration)/layout-9ec2bde5102b7fb5.js"],"AdministrationAppShell"]
+3:I[7121,[],""]
+4:I[4581,[],""]
+0:{"rsc":["$","$1","c",{"children":[null,["$","$L2",null,{"children":["$","$L3",null,{"parallelRouterKey":"children","template":["$","$L4",null,{}]}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"TcH1mBezj2UBVrFmo89t1"}

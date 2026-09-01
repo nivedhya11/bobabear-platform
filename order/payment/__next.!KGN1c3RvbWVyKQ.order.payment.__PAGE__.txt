@@ -1,0 +1,6 @@
+1:"$Sreact.fragment"
+2:"$Sreact.suspense"
+3:I[6730,["8409","static/chunks/8409-b37ea358ba142cea.js","3520","static/chunks/3520-5794ecfe8c3a7b74.js","4602","static/chunks/app/(customer)/order/payment/page-fe79b3cd6e6d6b55.js"],"PaymentReturnClient"]
+4:I[484,[],"OutletBoundary"]
+0:{"rsc":["$","$1","c",{"children":[["$","$2",null,{"fallback":["$","main",null,{"id":"main-content","tabIndex":-1,"className":"bg-[var(--bg-page)] focus:outline-none","children":["$","div",null,{"className":"mx-auto max-w-[640px] px-5 py-12","children":["$","p",null,{"className":"font-body text-[15px] text-[var(--text-secondary)]","children":"Checking payment…"}]}]}],"children":["$","$L3",null,{}]}],null,["$","$L4",null,{"children":["$","$2",null,{"name":"Next.MetadataOutlet","children":"$@5"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"TcH1mBezj2UBVrFmo89t1"}
+5:null
