@@ -2,5 +2,5 @@
 2:I[2651,["409","static/chunks/409-cd751991469f6862.js","681","static/chunks/app/workforce/admin/audit/page-af5b70b6a4d6c899.js"],"AdministrationAuditClient"]
 3:I[484,[],"OutletBoundary"]
 4:"$Sreact.suspense"
-0:{"rsc":["$","$1","c",{"children":[["$","main",null,{"className":"mx-auto max-w-3xl px-4 py-10","children":[["$","h1",null,{"className":"mb-6 text-2xl font-semibold tracking-tight","children":"Access audit"}],["$","$L2",null,{}]]}],null,["$","$L3",null,{"children":["$","$4",null,{"name":"Next.MetadataOutlet","children":"$@5"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"ulCq-3eptKdBQsQrFq61u"}
+0:{"rsc":["$","$1","c",{"children":[["$","main",null,{"className":"mx-auto max-w-3xl px-4 py-10","children":[["$","h1",null,{"className":"mb-6 text-2xl font-semibold tracking-tight","children":"Access audit"}],["$","$L2",null,{}]]}],null,["$","$L3",null,{"children":["$","$4",null,{"name":"Next.MetadataOutlet","children":"$@5"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"jGYE5cUQvN0ctYQNjknSW"}
 5:null
