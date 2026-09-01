@@ -2,11 +2,11 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R95",
-  "acceptedThrough": "IMP-036",
-  "currentProductSlice": "IMP-036A",
+  "stateVersion": "STATE-R96",
+  "acceptedThrough": "IMP-036A",
+  "currentProductSlice": "NONE",
   "nextProductSlice": "IMP-036B",
-  "pendingAcceptance": "IMP-036A",
+  "pendingAcceptance": "NONE",
   "governanceHealth": "ALIGNED",
   "lastReviewed": "2026-09-01"
 }
@@ -20,18 +20,18 @@ current-reality authority.
 ## 1. Accepted Position
 
 ```text
-Accepted Through:          IMP-036 — Observability & Operational Controls
+Accepted Through:          IMP-036A — Multi-Portal Experience Foundation
 Accepted Inserted Slice:   IMP-005A — Dockerized local application runtime; IMP-026C — Pilot Customer-Commerce UX Hardening; IMP-028A — Food Direct UX Foundation; IMP-028B — Customer Menu Projection + Discovery; IMP-028C — Food Customization; IMP-028D — Desktop Ordering Continuity
-Accepted Range:            IMP-001 → IMP-036 (including IMP-005A and IMP-026C)
+Accepted Range:            IMP-001 → IMP-036A (including IMP-005A and IMP-026C)
 ```
 
 ## 2. Current Work Position
 
 ```text
-Current Product Implementation: IMP-036A — Multi-Portal Experience Foundation
-Pending Acceptance:             IMP-036A
+Current Product Implementation: NONE
+Pending Acceptance:             NONE
 Next Product Slice:             IMP-036B — Customer Account, Onboarding, Address & Location Experience
-Current Governance Activity:    IMP-036A IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE;
+Current Governance Activity:    IMP-036A COMPLETE_AND_ACCEPTED;
                               IMP-036B–G and IMP-037 PLANNED / NOT_ACTIVATED /
                               NOT_AUTHORIZED / NOT_STARTED.
 Governance Health:              ALIGNED
@@ -354,6 +354,24 @@ STATE-R36 record IMP-028B canonical activation without changing decision registe
 architecture. GTM-R39 / STATE-R37 record IMP-028B architecture lock and implementation
 authorization without changing decision register or global architecture.
 
+
+STATE-R96 records formal acceptance of **IMP-036A — Multi-Portal Experience Foundation** after
+independent technical acceptance and Founder UAT PASS for the exact accepted candidate: repository
+`/home/ajoshi/repos/boba-bear-platform`; branch `main`; HEAD
+`ee4926709ba6082ff6c24aabc2ea7d88d9bc1d6f`; tree
+`4fd243f5923565deceeb6c3f461e0d8a2f5a1eec` (PR 59 merge
+`ee4926709ba6082ff6c24aabc2ea7d88d9bc1d6f`). Implementation evidence is **COMPLETE**;
+independent implementation review is **PASS**; independent acceptance evidence is **ACCEPTED**;
+Founder UAT is **PASS**; formal acceptance is recorded (`IMP036A_FORMAL_ACCEPTANCE: ACCEPTED`;
+`IMP-036A_ACCEPTED: YES`). IMP-036A is `COMPLETE_AND_ACCEPTED`; architecture remains `LOCKED`
+(`IMP-036A_ARCHITECTURE_LOCKED: YES`); implementation remains `AUTHORIZED` / `STARTED` / `COMPLETE`.
+Locked boundary facts remain unchanged: `schema_change: NO`, `provider_IO: NO`, `new_service: NO`,
+`new_auth_model: NO`, `new_roles: NO`, `new_permissions: NO`, `microfrontend: NO`; no new CURRENT
+decision. `acceptedThrough` advances to IMP-036A; `currentProductSlice` and `pendingAcceptance` are
+NONE; `nextProductSlice` remains IMP-036B — Customer Account, Onboarding, Address & Location
+Experience, which remains `PLANNED` / `NOT_ACTIVATED` / `NOT_AUTHORIZED` / `NOT_STARTED`. Formal
+acceptance does **not** authorize, start, or activate IMP-036B. Supersedes STATE-R95 for the current
+IMP-036A lifecycle and acceptance position.
 
 STATE-R94 records the planning-only insertion of the **Enterprise Experience Programme** as
 IMP-036A–G between accepted IMP-036 and existing IMP-037. Accepted reality is unchanged:
@@ -1281,13 +1299,14 @@ Cart → Checkout → Payment → Order
 | IMP-034 | Meta WhatsApp Cloud API Adapter | COMPLETE_AND_ACCEPTED |
 | IMP-035 | Initial Administration Capabilities | COMPLETE_AND_ACCEPTED |
 | IMP-036 | Observability & Operational Controls | COMPLETE_AND_ACCEPTED |
+| IMP-036A | Multi-Portal Experience Foundation | COMPLETE_AND_ACCEPTED |
 
 ## 5. Acceptance Position
 
 ```text
-acceptedThrough: IMP-036
-pendingAcceptance: IMP-036A
-currentProductSlice: IMP-036A — Multi-Portal Experience Foundation
+acceptedThrough: IMP-036A
+pendingAcceptance: NONE
+currentProductSlice: NONE
 nextProductSlice: IMP-036B — Customer Account, Onboarding, Address & Location Experience
 IMP-028: COMPLETE_AND_ACCEPTED
 IMP-028_ACCEPTED: YES
@@ -1479,13 +1498,25 @@ IMP036_ACCEPTED_TREE: 9b5c3193bf74d75a820b16976e894ec2dffafa13
 D-374_CREATED: NO
 IMP036_IMPLEMENTATION_EVIDENCE: COMPLETE
 IMP_036_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
-IMP-036A: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
+IMP036A_IMPLEMENTATION_EVIDENCE: COMPLETE
+IMP036A_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
+IMP036A_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
+IMP036A_FORMAL_ACCEPTANCE: ACCEPTED
+IMP-036A_FOUNDER_UAT: PASS
+IMP-036A: COMPLETE_AND_ACCEPTED
+IMP-036A_ACCEPTED: YES
 IMP-036A_ARCHITECTURE_LOCKED: YES
 IMP-036A_IMPLEMENTATION_AUTHORIZED: YES
 IMP-036A_STARTED: YES
 IMP-036A_IMPLEMENTATION_COMPLETE: YES
-IMP-036A_ACCEPTED: NO
+IMP-036A_ACCEPTED: YES
 IMP-036A_FOUNDER_UAT_REQUIRED: YES
+IMP-036A_FOUNDER_UAT: PASS
+IMP036A_FORMAL_ACCEPTANCE: ACCEPTED
+IMP036A_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
+IMP036A_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
+IMP036A_ACCEPTED_MAIN_SHA: ee4926709ba6082ff6c24aabc2ea7d88d9bc1d6f
+IMP036A_ACCEPTED_TREE: 4fd243f5923565deceeb6c3f461e0d8a2f5a1eec
 IMP-036B: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
 IMP-036C: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
 IMP-036D: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED

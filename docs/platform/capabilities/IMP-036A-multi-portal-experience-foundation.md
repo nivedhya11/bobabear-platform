@@ -5,7 +5,7 @@
   "capability": "IMP-036A",
   "title": "Multi-Portal Experience Foundation",
   "architectureLock": "ARCHITECTURE_LOCKED",
-  "implementation": "IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE",
+  "implementation": "COMPLETE_AND_ACCEPTED",
   "implementationAuthorized": true,
   "lastReviewed": "2026-09-01",
   "bindingDecisions": ["D-372", "D-373"],
@@ -15,7 +15,7 @@
 
 # IMP-036A — Multi-Portal Experience Foundation
 
-## Capability Architecture (ARCHITECTURE_LOCKED — IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE)
+## Capability Architecture (ARCHITECTURE_LOCKED — COMPLETE_AND_ACCEPTED)
 
 This document is the locked capability architecture for **IMP-036A — Multi-Portal Experience
 Foundation**. It separates Customer, Workforce, and Administration presentation shells over the
@@ -25,30 +25,33 @@ and accepted Operations/Administration transports.
 | Field | Value |
 |---|---|
 | Architecture lock | `ARCHITECTURE_LOCKED` |
-| Lifecycle | `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` |
+| Lifecycle | `COMPLETE_AND_ACCEPTED` |
 | Implementation | `AUTHORIZED` / `STARTED` / `COMPLETE` |
 | Implementation authorized | **YES** |
 | Implementation complete | **YES** |
-| Accepted | **NO** |
-| Accepted product through | IMP-036 |
-| Current product slice | IMP-036A |
-| Pending acceptance | IMP-036A |
+| Accepted | **YES** |
+| Accepted product through | IMP-036A |
+| Current product slice | NONE |
+| Pending acceptance | NONE |
 | Next product slice | IMP-036B |
-| Governance checkpoint | GTM-R97 / STATE-R95 |
+| Governance checkpoint | GTM-R98 / STATE-R96 |
 | Founder UAT required for acceptance | **YES** |
+| Founder UAT | **PASS** |
 
 ```text
-IMP-036A: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
+IMP-036A: COMPLETE_AND_ACCEPTED
 IMP-036A_ARCHITECTURE: LOCKED
 IMP-036A_ARCHITECTURE_LOCKED: YES
 IMP-036A_IMPLEMENTATION: AUTHORIZED / STARTED / COMPLETE
 IMP-036A_IMPLEMENTATION_AUTHORIZED: YES
 IMP-036A_STARTED: YES
 IMP-036A_IMPLEMENTATION_COMPLETE: YES
-IMP-036A_ACCEPTED: NO
+IMP-036A_ACCEPTED: YES
 FOUNDER_UAT_REQUIRED: YES
 FOUNDER_UAT_REQUIRED_FOR_ACCEPTANCE: YES
 IMP-036A_FOUNDER_UAT_REQUIRED: YES
+IMP-036A_FOUNDER_UAT: PASS
+IMP036A_FORMAL_ACCEPTANCE: ACCEPTED
 schema_change: NO
 provider_IO: NO
 new_service: NO
@@ -57,7 +60,17 @@ new_roles: NO
 new_permissions: NO
 microfrontend: NO
 IMP036A_IMPLEMENTATION_EVIDENCE: COMPLETE
-COMPLETION IS NOT ACCEPTANCE: YES
+IMP036A_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
+IMP036A_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
+IMP036A_FORMAL_ACCEPTANCE: ACCEPTED
+IMP036A_ACCEPTED_MAIN_SHA: ee4926709ba6082ff6c24aabc2ea7d88d9bc1d6f
+IMP036A_ACCEPTED_TREE: 4fd243f5923565deceeb6c3f461e0d8a2f5a1eec
+FOUNDER_UAT: PASS
+IMP-036A_FOUNDER_UAT: PASS
+FOUNDER_UAT_CANDIDATE_HEAD: ee4926709ba6082ff6c24aabc2ea7d88d9bc1d6f
+FOUNDER_UAT_CANDIDATE_TREE: 4fd243f5923565deceeb6c3f461e0d8a2f5a1eec
+FOUNDER_UAT_CANDIDATE_REPOSITORY: /home/ajoshi/repos/boba-bear-platform
+FOUNDER_UAT_CANDIDATE_BRANCH: main
 ```
 
 ## 1. Purpose

@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R97",
-  "acceptedThrough": "IMP-036",
-  "currentProductSlice": "IMP-036A",
+  "roadmapVersion": "GTM-R98",
+  "acceptedThrough": "IMP-036A",
+  "currentProductSlice": "NONE",
   "nextProductSlice": "IMP-036B",
   "gtmBoundary": "IMP-040",
   "lastReviewed": "2026-09-01",
-  "supersedes": "GTM-R96"
+  "supersedes": "GTM-R97"
 }
 -->
 
@@ -302,24 +302,31 @@ IMP-036 locked capability architecture (architecture **ARCHITECTURE_LOCKED**; im
 ## 2. Current Position
 
 ```text
-Accepted Through:     IMP-036 — Observability & Operational Controls
-Current Product Slice: IMP-036A — Multi-Portal Experience Foundation
+Accepted Through:     IMP-036A — Multi-Portal Experience Foundation
+Current Product Slice: NONE
 Next Product Slice:    IMP-036B — Customer Account, Onboarding, Address & Location Experience
-Pending Acceptance:    IMP-036A
+Pending Acceptance:    NONE
 Public GTM Boundary:   IMP-040 — Launch Validation & Cutover
 ```
 
-IMP-036A is `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`. Architecture is **ARCHITECTURE_LOCKED**
+IMP-036A is `COMPLETE_AND_ACCEPTED`. Architecture remains **ARCHITECTURE_LOCKED**
 (`IMP-036A_ARCHITECTURE_LOCKED: YES`). Implementation is `AUTHORIZED` / `STARTED` / `COMPLETE`
 (`IMP-036A_IMPLEMENTATION_AUTHORIZED: YES`; `IMP-036A_STARTED: YES`;
-`IMP-036A_IMPLEMENTATION_COMPLETE: YES`; `IMP-036A_ACCEPTED: NO`). Locked boundary facts:
+`IMP-036A_IMPLEMENTATION_COMPLETE: YES`; `IMP-036A_ACCEPTED: YES`). Locked boundary facts:
 `schema_change: NO`, `provider_IO: NO`, `new_service: NO`, `new_auth_model: NO`,
-`new_roles: NO`, `new_permissions: NO`, `microfrontend: NO`. Founder UAT is **required**
-(`IMP-036A_FOUNDER_UAT_REQUIRED: YES`). **GTM-R97** records the combined IMP-036A activation /
-architecture lock / implementation authorize / start / complete gate while `acceptedThrough`
-remains IMP-036. Locked capability architecture:
+`new_roles: NO`, `new_permissions: NO`, `microfrontend: NO`. Founder UAT is **PASS**
+(`IMP-036A_FOUNDER_UAT_REQUIRED: YES`; `IMP-036A_FOUNDER_UAT: PASS`). Implementation evidence is
+**COMPLETE**; independent implementation review is **PASS**; independent acceptance evidence is
+**ACCEPTED**; formal acceptance is recorded (`IMP036A_FORMAL_ACCEPTANCE: ACCEPTED`;
+`IMP-036A_ACCEPTED: YES`; `IMP036A_IMPLEMENTATION_EVIDENCE: COMPLETE`). **GTM-R98** records formal
+acceptance for the exact accepted candidate: repository
+`/home/ajoshi/repos/boba-bear-platform`; branch `main`; HEAD
+`ee4926709ba6082ff6c24aabc2ea7d88d9bc1d6f`; tree
+`4fd243f5923565deceeb6c3f461e0d8a2f5a1eec` (PR 59 merge). Locked capability architecture:
 [`capabilities/IMP-036A-multi-portal-experience-foundation.md`](./capabilities/IMP-036A-multi-portal-experience-foundation.md).
-Completion is **not** acceptance. IMP-036B remains `PLANNED` / `NOT_ACTIVATED` / `NOT_AUTHORIZED` /
+Advances `acceptedThrough = IMP-036A`; sets `currentProductSlice = NONE` and
+`pendingAcceptance = NONE`; preserves `nextProductSlice = IMP-036B`. Formal acceptance does **not**
+authorize or start IMP-036B. IMP-036B remains `PLANNED` / `NOT_ACTIVATED` / `NOT_AUTHORIZED` /
 `NOT_STARTED`.
 
 IMP-036 is `COMPLETE_AND_ACCEPTED`. Architecture remains **ARCHITECTURE_LOCKED**
@@ -512,13 +519,19 @@ IMP036_FORMAL_ACCEPTANCE: ACCEPTED
 IMP036_ACCEPTED_MAIN_SHA: 68b46a53dc5d1ff84a8493899e713d3ef43db3aa
 IMP036_ACCEPTED_TREE: 9b5c3193bf74d75a820b16976e894ec2dffafa13
 D-374_CREATED: NO
-IMP-036A: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
+IMP-036A: COMPLETE_AND_ACCEPTED
 IMP-036A_ARCHITECTURE_LOCKED: YES
 IMP-036A_IMPLEMENTATION_AUTHORIZED: YES
 IMP-036A_STARTED: YES
 IMP-036A_IMPLEMENTATION_COMPLETE: YES
-IMP-036A_ACCEPTED: NO
+IMP-036A_ACCEPTED: YES
 IMP-036A_FOUNDER_UAT_REQUIRED: YES
+IMP-036A_FOUNDER_UAT: PASS
+IMP036A_FORMAL_ACCEPTANCE: ACCEPTED
+IMP036A_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
+IMP036A_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
+IMP036A_ACCEPTED_MAIN_SHA: ee4926709ba6082ff6c24aabc2ea7d88d9bc1d6f
+IMP036A_ACCEPTED_TREE: 4fd243f5923565deceeb6c3f461e0d8a2f5a1eec
 IMP-036B: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
 IMP-036C: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
 IMP-036D: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
@@ -711,12 +724,13 @@ only). Webhook acknowledgement timing / durable inbox / asynchronous Payment pro
 | IMP-034 | Meta WhatsApp Cloud API Adapter | COMPLETE_AND_ACCEPTED |
 | IMP-035 | Initial Administration Capabilities | COMPLETE_AND_ACCEPTED |
 | IMP-036 | Observability & Operational Controls | COMPLETE_AND_ACCEPTED |
+| IMP-036A | Multi-Portal Experience Foundation | COMPLETE_AND_ACCEPTED |
 
 ## 4. Current Product Slice
 
-NONE. IMP-036 — Observability & Operational Controls is `COMPLETE_AND_ACCEPTED` with locked capability
+NONE. IMP-036A — Multi-Portal Experience Foundation is `COMPLETE_AND_ACCEPTED` with locked capability
 architecture at
-[`capabilities/IMP-036-observability-operational-controls.md`](./capabilities/IMP-036-observability-operational-controls.md).
+[`capabilities/IMP-036A-multi-portal-experience-foundation.md`](./capabilities/IMP-036A-multi-portal-experience-foundation.md).
 Architecture remains **ARCHITECTURE_LOCKED** (`IMP-036_ARCHITECTURE_LOCKED: YES`). Implementation is
 `AUTHORIZED` / `STARTED` / `COMPLETE` (`IMP-036_IMPLEMENTATION_AUTHORIZED: YES`;
 `IMP-036_STARTED: YES`; `IMP-036_IMPLEMENTATION_COMPLETE: YES`; `IMP-036_ACCEPTED: YES`).
@@ -1076,7 +1090,7 @@ consume or remap IMP-029 → IMP-040 identities and is `COMPLETE_AND_ACCEPTED`.
 
 | IMP | Capability | Lifecycle |
 |---|---|---|
-| IMP-036A | Multi-Portal Experience Foundation | IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE |
+| IMP-036A | Multi-Portal Experience Foundation | COMPLETE_AND_ACCEPTED |
 | IMP-036B | Customer Account, Onboarding, Address & Location Experience | PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED |
 | IMP-036C | Customer Commerce Experience V2 | PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED |
 | IMP-036D | Workforce & Franchise Operations Portal V2 | PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED |
@@ -1484,6 +1498,28 @@ Historical GTM-R1 meanings that are **not** current:
 Current public GTM boundary is **IMP-040**, not IMP-035.
 
 ## 9. Roadmap Change Log
+
+### GTM-R98 — 2026-09-01
+
+- Records formal acceptance of **IMP-036A — Multi-Portal Experience Foundation** after independent
+  technical acceptance and Founder UAT PASS for the exact accepted candidate: repository
+  `/home/ajoshi/repos/boba-bear-platform`; branch `main`; HEAD
+  `ee4926709ba6082ff6c24aabc2ea7d88d9bc1d6f`; tree
+  `4fd243f5923565deceeb6c3f461e0d8a2f5a1eec` (PR 59 merge
+  `ee4926709ba6082ff6c24aabc2ea7d88d9bc1d6f`). Implementation evidence is **COMPLETE**;
+  independent implementation review is **PASS**; independent acceptance evidence is **ACCEPTED**;
+  Founder UAT is **PASS**; formal acceptance is recorded (`IMP036A_FORMAL_ACCEPTANCE: ACCEPTED`;
+  `IMP-036A_ACCEPTED: YES`).
+- IMP-036A lifecycle becomes `COMPLETE_AND_ACCEPTED`. Architecture remains `LOCKED`
+  (`IMP-036A_ARCHITECTURE_LOCKED: YES`). Locked boundary facts remain unchanged: `schema_change: NO`,
+  `provider_IO: NO`, `new_service: NO`, `new_auth_model: NO`, `new_roles: NO`,
+  `new_permissions: NO`, `microfrontend: NO`; no new CURRENT decision.
+- Advances `acceptedThrough = IMP-036A`; sets `currentProductSlice = NONE` and
+  `pendingAcceptance = NONE`; preserves `nextProductSlice = IMP-036B`. IMP-036B remains `PLANNED` /
+  `NOT_ACTIVATED` / `NOT_AUTHORIZED` / `NOT_STARTED`. Formal acceptance does **not** authorize,
+  start, or activate IMP-036B.
+- Supersedes GTM-R97 for the current IMP-036A lifecycle and acceptance position. Product acceptance
+  through IMP-036 is unchanged.
 
 ### GTM-R97 — 2026-09-01
 

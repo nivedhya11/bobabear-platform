@@ -57,6 +57,9 @@ import {
   evaluateImp036aImplementationCompletionArtifact,
   evaluateImp036aImplementationCompletionCheckpoint,
   evaluateImp036aImplementationCompletionCrossDocumentAlignment,
+  evaluateImp036aAcceptanceArtifact,
+  evaluateImp036aAcceptanceCheckpoint,
+  evaluateImp036aAcceptanceCrossDocumentAlignment,
   evaluateEnterpriseExperiencePlanningCheckpoint,
   evaluateImp031ArchitectureDraftArtifact,
   evaluateImp031ArchitectureDraftCheckpoint,
@@ -5986,7 +5989,7 @@ function deriveImp036AcceptanceDocs(liveRoadmap, liveState, liveCapability) {
   };
 }
 
-/** Live docs on R97/S95 or reconstruct from current working tree when already at completion. */
+/** Live docs on R97/S95 or reconstruct from pre-acceptance merge when already at R98/S96. */
 function deriveImp036aCompletionDocs(liveRoadmap, liveState, liveCapability) {
   if (
     /"roadmapVersion": "GTM-R97"/.test(liveRoadmap) &&
@@ -5994,10 +5997,30 @@ function deriveImp036aCompletionDocs(liveRoadmap, liveState, liveCapability) {
   ) {
     return { capabilityText: liveCapability, roadmapText: liveRoadmap, stateText: liveState };
   }
+  const base = "ee4926709ba6082ff6c24aabc2ea7d88d9bc1d6f";
+  return {
+    capabilityText: execSync(
+      `git show ${base}:docs/platform/capabilities/IMP-036A-multi-portal-experience-foundation.md`,
+      { encoding: "utf8" },
+    ),
+    roadmapText: execSync(`git show ${base}:docs/platform/ROADMAP.md`, { encoding: "utf8" }),
+    stateText: execSync(`git show ${base}:docs/platform/STATE.md`, { encoding: "utf8" }),
+  };
+}
+
+/** Use live docs on R98/S96; otherwise reconstruct the accepted R98/S96 governance snapshot. */
+function deriveImp036aAcceptanceDocs(liveRoadmap, liveState, liveCapability) {
+  if (
+    /"roadmapVersion": "GTM-R98"/.test(liveRoadmap) &&
+    /"stateVersion": "STATE-R96"/.test(liveState)
+  ) {
+    return { capabilityText: liveCapability, roadmapText: liveRoadmap, stateText: liveState };
+  }
+  const base = "2f62507";
   return {
     capabilityText: liveCapability,
-    roadmapText: liveRoadmap,
-    stateText: liveState,
+    roadmapText: execSync(`git show ${base}:docs/platform/ROADMAP.md`, { encoding: "utf8" }),
+    stateText: execSync(`git show ${base}:docs/platform/STATE.md`, { encoding: "utf8" }),
   };
 }
 
@@ -6150,7 +6173,8 @@ describe("IMP-036A implementation completion checkpoint", () => {
   );
   const liveRoadmapText = readFileSync("docs/platform/ROADMAP.md", "utf8");
   const liveStateText = readFileSync("docs/platform/STATE.md", "utf8");
-  const { roadmapText, stateText } = deriveImp036aCompletionDocs(liveRoadmapText, liveStateText, capabilityText);
+  const { capabilityText: completionCapabilityText, roadmapText, stateText } =
+    deriveImp036aCompletionDocs(liveRoadmapText, liveStateText, capabilityText);
 
   it("supports only the R97/S95 completion checkpoint", () => {
     assert.deepEqual(evaluateImp036aImplementationCompletionCheckpoint(completion), { ok: true });
@@ -6158,13 +6182,64 @@ describe("IMP-036A implementation completion checkpoint", () => {
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R96", "STATE-R94", "imp036aCompletion"), false);
   });
 
-  it("validates the live completion artifact", () => {
-    assert.deepEqual(evaluateImp036aImplementationCompletionArtifact(capabilityText), { ok: true });
+  it("validates the completion artifact snapshot", () => {
+    assert.deepEqual(evaluateImp036aImplementationCompletionArtifact(completionCapabilityText), { ok: true });
   });
 
-  it("aligns live ROADMAP/STATE/capability completion markers", () => {
+  it("aligns completion ROADMAP/STATE/capability markers", () => {
     assert.deepEqual(
-      evaluateImp036aImplementationCompletionCrossDocumentAlignment({ capabilityText, roadmapText, stateText }),
+      evaluateImp036aImplementationCompletionCrossDocumentAlignment({
+        capabilityText: completionCapabilityText,
+        roadmapText,
+        stateText,
+      }),
+      { ok: true },
+    );
+  });
+});
+
+describe("IMP-036A formal acceptance checkpoint", () => {
+  const acceptance = Object.freeze({
+    roadmapVersion: "GTM-R98", stateVersion: "STATE-R96", acceptedThrough: "IMP-036A",
+    currentProductSlice: "NONE", nextProductSlice: "IMP-036B", pendingAcceptance: "NONE",
+    imp036: "COMPLETE_AND_ACCEPTED", imp036a: "COMPLETE_AND_ACCEPTED", architecture: "LOCKED",
+    architectureLocked: "YES", implementationAuthorized: "YES", started: "YES",
+    implementationComplete: "YES", accepted: "YES", imp036b: "PLANNED",
+    architectureVersion: "ARCH-R19", decisionRegisterVersion: "DR-15",
+    acceptedMainSha: "ee4926709ba6082ff6c24aabc2ea7d88d9bc1d6f",
+    acceptedTree: "4fd243f5923565deceeb6c3f461e0d8a2f5a1eec",
+    artifact: true, founderUatPass: true,
+    implementationEvidenceComplete: true, independentReviewPass: true,
+    independentAcceptanceAccepted: true, formalAcceptanceAccepted: true,
+    schemaChangeNo: true, providerIoNo: true, newServiceNo: true,
+    newPermissionsNo: true, newRolesNo: true,
+  });
+
+  const capabilityText = readFileSync(
+    "docs/platform/capabilities/IMP-036A-multi-portal-experience-foundation.md",
+    "utf8",
+  );
+  const liveRoadmapText = readFileSync("docs/platform/ROADMAP.md", "utf8");
+  const liveStateText = readFileSync("docs/platform/STATE.md", "utf8");
+  const { roadmapText, stateText } = deriveImp036aAcceptanceDocs(liveRoadmapText, liveStateText, capabilityText);
+
+  it("supports only the R98/S96 acceptance checkpoint and preserves R97/S95 completion", () => {
+    assert.deepEqual(evaluateImp036aAcceptanceCheckpoint(acceptance), { ok: true });
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R98", "STATE-R96", "imp036aAcceptance"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R97", "STATE-R95", "imp036aCompletion"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R98", "STATE-R95", "imp036aAcceptance"), false);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R97", "STATE-R96", "imp036aAcceptance"), false);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R98", "STATE-R96", "imp036aCompletion"), false);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R98", "STATE-R96"), true);
+  });
+
+  it("validates the live acceptance artifact", () => {
+    assert.deepEqual(evaluateImp036aAcceptanceArtifact(capabilityText), { ok: true });
+  });
+
+  it("aligns live ROADMAP/STATE/capability acceptance markers", () => {
+    assert.deepEqual(
+      evaluateImp036aAcceptanceCrossDocumentAlignment({ capabilityText, roadmapText, stateText }),
       { ok: true },
     );
   });
