@@ -20,6 +20,11 @@ import { loadCustomerCommerceServiceConfig } from "./config";
 import { CustomerCommerceConfigurationError } from "./errors";
 import { loadCustomerCommercePaymentConfig } from "./payment-config";
 import { loadMetaWhatsAppProviderConfig } from "../notifications/provider/meta-whatsapp";
+import {
+  loadCustomerCommerceLocationConfig,
+  locationProviderDiagnosticStatus,
+} from "./location/config";
+import { createLocationSearchProviderFromConfig } from "./location/google-maps-provider";
 import { CustomerCommerceService } from "./service";
 
 const DEFAULT_SERVICE_HOST = "0.0.0.0";
@@ -46,6 +51,11 @@ async function main(): Promise<void> {
     process.env,
     workerConfig.environment,
   );
+  const locationConfig = loadCustomerCommerceLocationConfig(
+    process.env,
+    workerConfig.environment,
+  );
+  const locationProvider = createLocationSearchProviderFromConfig(locationConfig);
 
   const service = new CustomerCommerceService({
     auth: serviceConfig.auth,
@@ -57,6 +67,7 @@ async function main(): Promise<void> {
     enablePaymentInboxProcessor: paymentRuntime.enableInboxProcessor,
     metaWhatsApp:
       whatsappConfig.selector === "meta_cloud_api" ? whatsappConfig.meta : null,
+    locationProvider,
   });
 
   await service.start();
@@ -66,6 +77,7 @@ async function main(): Promise<void> {
       safeOutcomeCode: "LISTENING",
       httpStatus: 0,
       durationMs: 0,
+      googleMapsLocation: locationProviderDiagnosticStatus(locationConfig),
     }),
   );
 

@@ -16,6 +16,14 @@ export function serviceabilityStatusCopy(status: CommerceServiceabilityStatus): 
   }
 }
 
+export function locationProviderUnavailableCopy(): string {
+  return "Location search isn't available right now. Enter your PIN instead.";
+}
+
+export function missingPinCopy(): string {
+  return "We found the location but couldn't confirm its PIN code. Enter the PIN to check delivery.";
+}
+
 export function geolocationFailureCopy(
   reason: "unsupported" | "permission_denied" | "unavailable" | "timeout",
 ): string {

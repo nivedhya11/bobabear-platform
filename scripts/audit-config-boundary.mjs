@@ -140,6 +140,9 @@ const APPROVED_ENV_FILE_KEYS = new Set([
   // Operations HTTP service (IMP-029).
   "OPERATIONS_SERVICE_HOST",
   "OPERATIONS_SERVICE_PORT",
+  // Location provider (IMP-036B Google Maps Platform V1) — server-only.
+  "BOBA_BEAR_LOCATION_PROVIDER",
+  "BOBA_BEAR_GOOGLE_MAPS_API_KEY",
 ]);
 
 // .env.docker.example (IMP-004) uses a completely different key catalogue —
@@ -198,6 +201,10 @@ const APPROVED_WORKFORCE_AUTH_TEST_FIXTURE_SECRETS = new Set([
 const RAZORPAY_SECRET_KEYS = new Set([
   "BOBA_BEAR_RAZORPAY_KEY_SECRET",
   "BOBA_BEAR_RAZORPAY_WEBHOOK_SECRET",
+]);
+
+const GOOGLE_MAPS_SECRET_KEYS = new Set([
+  "BOBA_BEAR_GOOGLE_MAPS_API_KEY",
 ]);
 
 // Customer-auth (IMP-009) configuration keys that are not secrets but
@@ -270,6 +277,15 @@ function isApprovedSecretShapedPlaceholder(fileName, key, value) {
   if (
     (fileName === ".env.example" || fileName === ".env.test") &&
     RAZORPAY_SECRET_KEYS.has(key)
+  ) {
+    if (fileName === ".env.example") {
+      return PLACEHOLDER_VALUE_PATTERN.test(value);
+    }
+    return false;
+  }
+  if (
+    (fileName === ".env.example" || fileName === ".env.test") &&
+    GOOGLE_MAPS_SECRET_KEYS.has(key)
   ) {
     if (fileName === ".env.example") {
       return PLACEHOLDER_VALUE_PATTERN.test(value);

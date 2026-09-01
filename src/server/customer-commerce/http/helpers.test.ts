@@ -7,6 +7,7 @@ import { CartError } from "../../../shared/cart";
 import { FinancialDocumentError } from "../../../shared/financial-document";
 import { PaymentError } from "../../../shared/payment";
 import { mapCommerceError } from "./error-map";
+import { LocationError } from "../location/errors";
 import { coerceRevisionFields } from "./revisions";
 import { extractGuestCartToken } from "./guest-token";
 import {
@@ -56,6 +57,21 @@ describe("IMP-024 error-map", () => {
       status: 500,
       body: { ok: false, code: "INTERNAL_ERROR", requestId: "req-4" },
     });
+  });
+
+  it("maps LOCATION_PROVIDER_UNAVAILABLE to 503 without provider details", () => {
+    const mapped = mapCommerceError(
+      new LocationError("LOCATION_PROVIDER_UNAVAILABLE", "Places API 429 RESOURCE_EXHAUSTED"),
+      "req-loc-1",
+    );
+    expect(mapped.status).toBe(503);
+    expect(mapped.body).toEqual({
+      ok: false,
+      code: "LOCATION_PROVIDER_UNAVAILABLE",
+      requestId: "req-loc-1",
+    });
+    expect(JSON.stringify(mapped.body)).not.toContain("Places");
+    expect(JSON.stringify(mapped.body)).not.toContain("429");
   });
 
   it("maps Financial Document DOCUMENT_NOT_FOUND to 404 without message", () => {

@@ -24,6 +24,7 @@ import {
   updateOwnAddress,
   type CommerceAddress,
 } from "@/lib/customer-commerce";
+import { consumeAddressPrefillDraft } from "@/lib/customer-location/address-prefill";
 
 type Screen = "list" | "add" | "edit";
 
@@ -55,6 +56,20 @@ export function AddressesClient() {
         return;
       }
       await reload();
+      if (cancelled) return;
+      const prefill = consumeAddressPrefillDraft();
+      if (prefill) {
+        setEditingId(null);
+        setForm({
+          ...EMPTY_ADDRESS_FORM,
+          addressLine1: prefill.addressLine1,
+          locality: prefill.locality,
+          city: prefill.city || prefill.locality,
+          stateCode: prefill.stateCode,
+          postalCode: prefill.postalCode,
+        });
+        setScreen("add");
+      }
       if (!cancelled) setLoading(false);
     })();
     return () => {

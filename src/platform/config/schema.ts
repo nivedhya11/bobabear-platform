@@ -50,6 +50,8 @@ export const APPROVED_BOBA_BEAR_KEYS: ReadonlySet<string> = new Set([
   "BOBA_BEAR_META_WHATSAPP_APP_SECRET",
   "BOBA_BEAR_META_WHATSAPP_WEBHOOK_VERIFY_TOKEN",
   "BOBA_BEAR_WHATSAPP_SEND_NEW_MESSAGES",
+  "BOBA_BEAR_LOCATION_PROVIDER",
+  "BOBA_BEAR_GOOGLE_MAPS_API_KEY",
 ]);
 
 export const PAYMENT_PROVIDER_SELECTORS = ["disabled", "razorpay"] as const;
@@ -57,6 +59,9 @@ export type PaymentProviderSelector = (typeof PAYMENT_PROVIDER_SELECTORS)[number
 
 export const WHATSAPP_PROVIDER_SELECTORS = ["disabled", "meta_cloud_api"] as const;
 export type WhatsAppProviderSelector = (typeof WHATSAPP_PROVIDER_SELECTORS)[number];
+
+export const LOCATION_PROVIDER_SELECTORS = ["disabled", "google_maps_platform"] as const;
+export type LocationProviderSelector = (typeof LOCATION_PROVIDER_SELECTORS)[number];
 
 const STAGING_OR_PRODUCTION: ReadonlySet<AppEnvironment> = new Set([
   "staging",
@@ -374,6 +379,18 @@ function validateWhatsAppProviderSelector(
   return ok(raw as WhatsAppProviderSelector);
 }
 
+function validateLocationProviderSelector(
+  raw: string | undefined,
+): FieldResult<LocationProviderSelector> {
+  if (raw === undefined || raw.length === 0) {
+    return ok("google_maps_platform");
+  }
+  if (!(LOCATION_PROVIDER_SELECTORS as readonly string[]).includes(raw)) {
+    return fail('Must be exactly "disabled" or "google_maps_platform".');
+  }
+  return ok(raw as LocationProviderSelector);
+}
+
 function validateOptionalBooleanFlag(
   raw: string | undefined,
 ): FieldResult<boolean | null> {
@@ -566,6 +583,26 @@ export function validateSource({
     issues.push({
       key: "BOBA_BEAR_WHATSAPP_SEND_NEW_MESSAGES",
       message: sendNewMessagesResult.message,
+    });
+  }
+
+  const locationProviderResult = validateLocationProviderSelector(
+    source.BOBA_BEAR_LOCATION_PROVIDER,
+  );
+  if (!locationProviderResult.ok) {
+    issues.push({
+      key: "BOBA_BEAR_LOCATION_PROVIDER",
+      message: locationProviderResult.message,
+    });
+  }
+
+  const googleMapsApiKeyResult = validateOptionalNonEmptySecret(
+    source.BOBA_BEAR_GOOGLE_MAPS_API_KEY,
+  );
+  if (!googleMapsApiKeyResult.ok) {
+    issues.push({
+      key: "BOBA_BEAR_GOOGLE_MAPS_API_KEY",
+      message: googleMapsApiKeyResult.message,
     });
   }
 

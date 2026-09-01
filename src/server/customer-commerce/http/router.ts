@@ -90,6 +90,15 @@ import { coerceRevisionFields } from "./revisions";
 import { evaluateServiceability } from "../../serviceability";
 import type { ServiceabilityDecision } from "../../../shared/serviceability";
 import { projectCustomerMenu } from "../menu/project-customer-menu";
+import type { LocationSearchProvider } from "../location/google-maps-provider";
+import type { LocationRateLimiter } from "../location/rate-limit";
+import {
+  handleLocationAutocomplete,
+  handleLocationPlace,
+  handleLocationReverseGeocode,
+  handleLocationStatus,
+} from "../location/http";
+
 import {
   sendJson,
   sendMethodNotAllowed,
@@ -107,6 +116,8 @@ export type CustomerCommerceRouteDependencies = Readonly<{
   metaWhatsApp?: import("../../notifications/provider/meta-whatsapp").MetaWhatsAppRuntimeSecrets | null;
   environment?: import("../../../platform/config").AppEnvironment;
   workers?: readonly WorkerHealthReporter[];
+  locationProvider?: LocationSearchProvider | null;
+  locationRateLimiter?: LocationRateLimiter;
 }>;
 
 export type CustomerCommerceRouteOutcome = Readonly<{
@@ -327,6 +338,19 @@ export async function routeCustomerCommerceRequest(
       );
       sendJson(res, { ok: true, menu }, { status: 200, requestId });
       return outcome("get_menu", 200, "OK");
+    }
+
+    if (pathname === "/api/v1/location/status") {
+      return handleLocationStatus(req, res, deps, requestId);
+    }
+    if (pathname === "/api/v1/location/autocomplete") {
+      return handleLocationAutocomplete(req, res, deps, requestId);
+    }
+    if (pathname === "/api/v1/location/place") {
+      return handleLocationPlace(req, res, deps, requestId);
+    }
+    if (pathname === "/api/v1/location/reverse-geocode") {
+      return handleLocationReverseGeocode(req, res, deps, requestId);
     }
 
     if (pathname === "/api/v1/serviceability/evaluate") {

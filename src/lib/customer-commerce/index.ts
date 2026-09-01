@@ -44,6 +44,12 @@ export {
 } from "./profile";
 export { evaluateDeliveryServiceability } from "./serviceability";
 export {
+  autocompleteLocation,
+  getLocationProviderStatus,
+  resolveLocationPlace,
+  reverseGeocodeLocation,
+} from "./location";
+export {
   clearCheckoutDestination,
   evaluateCheckout,
   getActiveCheckout,

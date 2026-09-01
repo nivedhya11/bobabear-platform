@@ -51,13 +51,15 @@ FOUNDER_UAT_REQUIRED: YES
 FOUNDER_UAT_REQUIRED_FOR_ACCEPTANCE: YES
 IMP-036B_FOUNDER_UAT_REQUIRED: YES
 schema_change: NO
-provider_IO: NO
+provider_IO: YES
 new_service: NO
 new_auth_model: NO
 new_roles: NO
 new_permissions: NO
-LOCATION_PROVIDER: MANUAL_PIN_AND_SAVED_ADDRESS_V1
-provider_external_IO: DEFERRED
+LOCATION_PROVIDER: GOOGLE_MAPS_PLATFORM_V1
+provider: GOOGLE_MAPS_PLATFORM
+approved_services: PLACES_API_NEW, GEOCODING_API
+provider_external_IO: YES
 IMP036B_IMPLEMENTATION_EVIDENCE: COMPLETE
 COMPLETION IS NOT ACCEPTANCE: YES
 ```
@@ -71,6 +73,8 @@ IMP-036B delivers a coherent signed-in customer account and delivery-location fo
 - **Saved addresses** — list/add/edit/default/delete over IMP-018 authority
 - **Location selector** — saved addresses, manual PIN, optional device coordinates as evidence only
 - **Serviceability UX** — BOBA Serviceability remains authoritative; four honest customer states
+
+## 2. Preserved authorities
 
 ## 2. Preserved authorities
 
@@ -100,18 +104,49 @@ src/lib/customer-commerce/welcome-flow.ts
 src/lib/customer-location/delivery-context.ts
 src/lib/customer-location/geolocation.ts
 src/lib/customer-location/location-provider.ts
+src/server/customer-commerce/location/
 src/server/customer-commerce/http/router.ts   POST /api/v1/serviceability/evaluate
+                                              GET  /api/v1/location/status
+                                              POST /api/v1/location/autocomplete
+                                              POST /api/v1/location/place
+                                              POST /api/v1/location/reverse-geocode
 ```
 
-## 4. Location provider boundary (V1)
+## 4. Location provider boundary (GOOGLE_MAPS_PLATFORM_V1)
 
-No external location provider is selected. V1 uses:
+Founder-approved provider amendment (capability-local; no new global ADR):
 
-- **ManualPinLocationProvider** — local saved-address text filter + manual PIN entry
-- **Device geolocation** — explicit user action; coordinates are evidence only; reverse geocoding deferred
-- **LocationSearchProvider interface** — reserved for a future bounded provider adapter; not a multi-provider framework
+```text
+LOCATION_PROVIDER = GOOGLE_MAPS_PLATFORM_V1
+provider = GOOGLE_MAPS_PLATFORM
+approved_services = PLACES_API_NEW + GEOCODING_API
+```
 
-External autocomplete/geocoding remains **DECISION_REQUIRED** before provider I/O.
+- **GoogleMapsLocationProvider** — server-side Places Autocomplete (New), Place Details (New),
+  and Geocoding reverse geocode through existing customer-commerce `/api/v1/location/*`.
+- **Manual PIN and saved addresses** remain mandatory fallbacks when Google is unconfigured,
+  timed out, rate-limited, or returns no PIN.
+- **Device geolocation** remains explicit user action; coordinates are reverse-geocoded server-side
+  and are never independent Serviceability authority.
+- Session tokens (UUID v4) group Autocomplete → selected Place Details; they are not credentials.
+
+```text
+Google Places / browser GPS
+        ↓
+location evidence
+        ↓
+BOBA normalized address/PIN/coordinates
+        ↓
+BOBA Serviceability
+        ↓
+authoritative delivery result
+```
+
+Google MUST NOT determine serviceable / not serviceable / delivery outlet / fee / radius / coverage.
+Coordinates NEVER upgrade or downgrade BOBA PIN-authoritative coverage independently.
+
+Server credential: `BOBA_BEAR_GOOGLE_MAPS_API_KEY` (never `NEXT_PUBLIC_*`). Missing key is
+`NOT_CONFIGURED`, not process failure.
 
 ## 5. Delivery context persistence
 
@@ -119,7 +154,7 @@ Selected delivery context uses bounded `sessionStorage` via `delivery-context.ts
 
 - postalCode (required for Serviceability)
 - displayLabel for customer chrome
-- source: saved_address | manual_pin | device
+- source: saved_address | manual_pin | device_location | location_search
 - optional savedAddressId when applicable
 
 No durable database state is invented for temporary anonymous location. Device coordinates are not persisted indefinitely.
@@ -128,7 +163,7 @@ No durable database state is invented for temporary anonymous location. Device c
 
 | Deferred | Owner |
 |---|---|
-| External location provider I/O | Future decision + bounded adapter |
+| External location marketplace / Routes / Distance Matrix / Address Validation / maps tiles | Out of scope |
 | Full commerce V2 redesign | IMP-036C |
 | Account erasure / privacy deletion semantics | IMP-038 adjacency |
 | onboarding_complete persistence flag | Out of scope |

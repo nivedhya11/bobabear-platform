@@ -37,6 +37,11 @@ import type { PaymentProvider } from "../payment/provider";
 import { RefundReconciliationProcessor } from "../refund/reconciliation";
 import { createCustomerCommerceRequestListener } from "./http/app";
 import { createSessionOnlyOtpProvider } from "./session-otp-stub";
+import type { LocationSearchProvider } from "./location/google-maps-provider";
+import {
+  createLocationRateLimiter,
+  type LocationRateLimiter,
+} from "./location/rate-limit";
 
 const DEFAULT_SHUTDOWN_TIMEOUT_MS = 10_000;
 
@@ -57,6 +62,9 @@ export type CustomerCommerceServiceOptions = Readonly<{
   enableNotificationOutboxProcessor?: boolean;
   /** Optional Meta WhatsApp secrets override for tests. */
   metaWhatsApp?: MetaWhatsAppRuntimeSecrets | null;
+  /** Google Maps location provider (unconfigured is a valid runtime). */
+  locationProvider?: LocationSearchProvider | null;
+  locationRateLimiter?: LocationRateLimiter;
 }>;
 
 const CUSTOMER_COMMERCE_SERVICE_NAME = "customer-commerce";
@@ -146,6 +154,8 @@ export class CustomerCommerceService {
         metaWhatsApp,
         environment: config.persistenceConfig.environment,
         workers,
+        locationProvider: config.locationProvider ?? null,
+        locationRateLimiter: config.locationRateLimiter ?? createLocationRateLimiter(),
       },
       {
         onRequestStart: () => {

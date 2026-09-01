@@ -24,6 +24,18 @@ vi.mock("@/lib/customer-commerce", async () => {
   };
 });
 
+const getLocationProviderStatus = vi.fn<(...args: unknown[]) => unknown>();
+const autocompleteLocation = vi.fn<(...args: unknown[]) => unknown>();
+const resolveLocationPlace = vi.fn<(...args: unknown[]) => unknown>();
+const reverseGeocodeLocation = vi.fn<(...args: unknown[]) => unknown>();
+
+vi.mock("@/lib/customer-commerce/location", () => ({
+  getLocationProviderStatus: (...args: unknown[]) => getLocationProviderStatus(...args),
+  autocompleteLocation: (...args: unknown[]) => autocompleteLocation(...args),
+  resolveLocationPlace: (...args: unknown[]) => resolveLocationPlace(...args),
+  reverseGeocodeLocation: (...args: unknown[]) => reverseGeocodeLocation(...args),
+}));
+
 beforeEach(() => {
   window.sessionStorage.clear();
   fetchCustomerSession.mockResolvedValue({ ok: true, data: { authenticated: false } });
@@ -32,6 +44,11 @@ beforeEach(() => {
     ok: true,
     status: 200,
     data: { decision: { status: "SERVICEABLE", evaluatedAt: "2026-08-13T00:00:00.000Z" } },
+  });
+  getLocationProviderStatus.mockResolvedValue({
+    ok: true,
+    status: 200,
+    data: { configured: false, provider: "google_maps", status: "NOT_CONFIGURED" },
   });
 });
 
@@ -48,6 +65,8 @@ describe("LocationSelector", () => {
     render(<LocationSelector />);
     await user.click(screen.getByTestId("deliver-to-orientation"));
     expect(screen.getByTestId("location-selector-dialog")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Where should we deliver/i })).toBeInTheDocument();
+    expect(screen.getByText(/Location search isn't available right now/i)).toBeInTheDocument();
     await user.clear(screen.getByLabelText(/Enter PIN manually/i));
     await user.type(screen.getByLabelText(/Enter PIN manually/i), "248001");
     await user.click(screen.getByRole("button", { name: "Use this PIN" }));
