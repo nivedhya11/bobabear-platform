@@ -51,7 +51,7 @@ FOUNDER_UAT_REQUIRED: YES
 FOUNDER_UAT_REQUIRED_FOR_ACCEPTANCE: YES
 IMP-036B_FOUNDER_UAT_REQUIRED: YES
 schema_change: YES
-serviceability_model: HYBRID_PIN_AND_OUTLET_DISTANCE_V1
+serviceability_model: OUTLET_DISTANCE_SERVICEABILITY_V1
 provider_IO: YES
 new_service: NO
 new_auth_model: NO
@@ -72,8 +72,8 @@ IMP-036B delivers a coherent signed-in customer account and delivery-location fo
 - **My BOBA** — `/account/profile/`, `/account/addresses/`, existing `/order/orders/`, sign out
 - **Progressive profile** — optional welcome step after first OTP; does not block ordering
 - **Saved addresses** — list/add/edit/default/delete over IMP-018 authority
-- **Location selector** — saved addresses, manual PIN, optional device coordinates as evidence only
-- **Serviceability UX** — BOBA Serviceability remains authoritative; four honest customer states
+- **Location selector** — saved addresses, Google search, device location, map confirmation
+- **Serviceability UX** — coordinate-authoritative outlet-distance model; four honest customer states
 
 ## 2. Preserved authorities
 
@@ -83,7 +83,7 @@ IMP-036B delivers a coherent signed-in customer account and delivery-location fo
 |---|---|
 | IMP-017 Customer Profile | Reused; no schema change |
 | IMP-018 Customer Addresses | Reused; no schema change |
-| IMP-019 Serviceability | Hybrid PIN + optional outlet-distance V1; coordinates never create PIN coverage |
+| IMP-019 Serviceability | OUTLET_DISTANCE_SERVICEABILITY_V1; coordinates authoritative; PIN tables deprecated at runtime |
 | IMP-009 Customer auth | Single OTP/session model; returnTo preserved |
 | IMP-036A customer shell | Customer chrome preserved; no workforce/admin leakage |
 | Static export | `output: "export"`, `trailingSlash: true` preserved |
@@ -131,10 +131,8 @@ approved_services = PLACES_API_NEW + GEOCODING_API + MAPS_JAVASCRIPT_API
   and Geocoding reverse geocode through existing customer-commerce `/api/v1/location/*`.
 - **Maps JavaScript API** — browser-only visual map confirmation (pan/zoom/center pin). Does not
   perform Serviceability, replace server Places, or expose the server key.
-- **Manual PIN and saved addresses** remain mandatory fallbacks when Google is unconfigured,
-  timed out, rate-limited, or returns no PIN.
-- **Device geolocation** remains explicit user action; coordinates are reverse-geocoded server-side
-  and are never independent Serviceability authority.
+- **Manual PIN entry removed** from customer delivery selector (IMP-036B founder correction).
+- **Device geolocation** remains explicit user action; coordinates reverse-geocoded server-side for display.
 - Session tokens (UUID v4) group Autocomplete → selected Place Details; they are not credentials.
 
 ```text
@@ -142,33 +140,34 @@ Google Places / browser GPS
         ↓
 location evidence
         ↓
-BOBA normalized address/PIN/coordinates
+BOBA normalized address/coordinates (postalCode optional metadata)
         ↓
-BOBA Serviceability
+BOBA coordinate Serviceability (server Haversine)
         ↓
 authoritative delivery result
 ```
 
 Google MUST NOT determine serviceable / not serviceable / delivery outlet / fee / radius / coverage.
-Coordinates NEVER upgrade or downgrade BOBA PIN-authoritative coverage independently.
+Postal/PIN codes MUST NOT determine runtime Serviceability. Coordinates are the geographic authority.
 
-## 4.1 Hybrid Serviceability V1 (IMP-036B UAT correction)
+## 4.1 Outlet-distance Serviceability V1 (IMP-036B founder correction)
 
 ```text
-HYBRID_PIN_AND_OUTLET_DISTANCE_V1
+OUTLET_DISTANCE_SERVICEABILITY_V1
+SUPERSEDES: HYBRID_PIN_AND_OUTLET_DISTANCE_V1
 ```
 
 Geographic eligibility:
 
-1. PIN must map to an existing Brand/outlet Serviceability candidate.
-2. Coordinates never create a candidate for an unsupported PIN.
-3. When customer coordinates and a complete distance policy exist on a candidate, the server
-   computes geodesic (Haversine) distance from the configured service origin.
-4. Candidates outside configured max distance are geographically ineligible.
-5. Candidates within max distance proceed to existing Operational Availability evaluation.
-6. Candidates without complete distance configuration retain PIN-only evaluation.
-7. Partial distance configuration must not fail open.
-8. Google/Routes/PostGIS do not decide Serviceability.
+1. Runtime evaluation requires precise customer coordinates.
+2. Postal/PIN codes are address metadata only — never geographic authority.
+3. Brand outlets with complete distance policy (origin + max distance) are geographic candidates.
+4. Server computes geodesic (Haversine) distance from configured service origin.
+5. Candidates outside configured max distance are geographically ineligible.
+6. Candidates within max distance proceed to existing Operational Availability evaluation.
+7. Outlets without complete distance configuration are NOT geographic candidates.
+8. Legacy PIN tables remain for administration/history but are not read at runtime.
+9. Google/Routes/PostGIS do not decide Serviceability.
 
 Distance policy is stored on `app.outlet_serviceability_configs` as:
 
@@ -189,15 +188,17 @@ Server credential: `BOBA_BEAR_GOOGLE_MAPS_API_KEY` (never `NEXT_PUBLIC_*`). Miss
 `NOT_CONFIGURED`, not process failure.
 
 Browser credential: `NEXT_PUBLIC_BOBA_BEAR_GOOGLE_MAPS_BROWSER_KEY` — Maps JavaScript API only,
-HTTP-referrer restricted, intentionally browser-visible. Missing key gracefully degrades map
-confirmation; search, manual PIN, and saved addresses remain available.
+HTTP-referrer restricted, intentionally browser-visible. Must be referenced statically in client
+code for build-time inlining. Missing key gracefully degrades map confirmation; search and saved
+addresses remain available where configured.
 
 ## 5. Delivery context persistence
 
 Selected delivery context uses bounded `sessionStorage` via `delivery-context.ts`:
 
-- postalCode (required for Serviceability)
+- coordinates (required for Serviceability)
 - displayLabel for customer chrome
+- postalCode optional address metadata
 - source: saved_address | manual_pin | device_location | location_search
 - optional savedAddressId when applicable
 

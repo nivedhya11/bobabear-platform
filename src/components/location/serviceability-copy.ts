@@ -19,22 +19,18 @@ export function serviceabilityStatusCopy(status: CommerceServiceabilityStatus): 
 export function serviceabilityRecoveryHint(status: CommerceServiceabilityStatus): string | null {
   switch (status) {
     case "NOT_SERVICEABLE":
-      return "Choose another location or enter a PIN manually.";
+      return "Choose another location.";
     case "TEMPORARILY_UNAVAILABLE":
       return "Try again later or choose another location.";
     case "INDETERMINATE":
-      return "Retry, choose another location, or enter a PIN manually.";
+      return "Retry or choose another location.";
     default:
       return null;
   }
 }
 
 export function locationProviderUnavailableCopy(): string {
-  return "Location search isn't available right now. Enter your PIN instead.";
-}
-
-export function missingPinCopy(): string {
-  return "We found the location but couldn't confirm its PIN code. Enter the PIN to check delivery.";
+  return "Location search isn't available right now. Try again later.";
 }
 
 export function geolocationFailureCopy(
@@ -44,10 +40,14 @@ export function geolocationFailureCopy(
     case "unsupported":
       return "This browser doesn't support device location.";
     case "permission_denied":
-      return "Location access was denied. Enter a PIN or choose a saved address instead.";
+      return "Location access was denied. Search for your area or choose a saved address.";
     case "unavailable":
-      return "We couldn't read your location. Enter a PIN or choose a saved address instead.";
+      return "We couldn't read your location. Search for your area or choose a saved address.";
     case "timeout":
-      return "Location took too long. Enter a PIN or choose a saved address instead.";
+      return "Location took too long. Search for your area or choose a saved address.";
   }
+}
+
+export function savedAddressReconfirmationCopy(): string {
+  return "We need to confirm this address on the map before checking delivery.";
 }

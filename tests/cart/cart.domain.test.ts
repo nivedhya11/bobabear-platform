@@ -22,12 +22,13 @@ import {
   type CustomerActor,
 } from "../../src/server/cart";
 import {
-  addOutletServiceabilityPins,
   setOutletServiceabilityRoutingPriority,
 } from "../../src/server/serviceability";
 import {
   configureAlwaysAcceptingOutlet,
   pauseOutletIndefinitely,
+  seedOutletDistanceServiceability,
+  TEST_INSIDE_COORDS,
 } from "../database/support/serviceability-fixtures";
 import { resumeOutlet } from "../../src/server/assortment";
 import {
@@ -774,31 +775,22 @@ describe("IMP-020 cart domain — evaluation", () => {
       expect(missing.status).toBe("REQUIRES_FULFILMENT_CONTEXT");
       expect(missing).not.toHaveProperty("quote");
 
-      // No pins → NOT_SERVICEABLE
+      // No distance policy → INDETERMINATE at serviceability layer
       const notSvc = await evaluateCart(persistence, access, {
-        location: { postalCode: "248001" },
+        location: { coordinates: TEST_INSIDE_COORDS },
       });
-      expect(notSvc.status).toBe("SERVICEABILITY_NOT_SERVICEABLE");
+      expect(notSvc.status).toBe("SERVICEABILITY_INDETERMINATE");
 
       await configureAlwaysAcceptingOutlet(
         persistence,
         actors.brandAdminActor,
         actors.tree.outletA.id,
       );
-      await setOutletServiceabilityRoutingPriority(
+      await seedOutletDistanceServiceability(
         persistence,
         actors.brandAdminActor,
-        {
-          outletId: actors.tree.outletA.id,
-          routingPriority: 1,
-          expectedRevision: null,
-        },
+        actors.tree.outletA.id,
       );
-      await addOutletServiceabilityPins(persistence, actors.brandAdminActor, {
-        outletId: actors.tree.outletA.id,
-        postalCodes: ["248001"],
-        expectedRevision: BigInt(1),
-      });
 
       await pauseOutletIndefinitely(
         persistence,
@@ -806,7 +798,7 @@ describe("IMP-020 cart domain — evaluation", () => {
         actors.tree.outletA.id,
       );
       const paused = await evaluateCart(persistence, access, {
-        location: { postalCode: "248001" },
+        location: { coordinates: TEST_INSIDE_COORDS },
       });
       expect(paused.status).toBe("SERVICEABILITY_TEMPORARILY_UNAVAILABLE");
 
@@ -819,7 +811,7 @@ describe("IMP-020 cart domain — evaluation", () => {
 
       const before = await getActiveCart(persistence, access);
       const afterSvc = await evaluateCart(persistence, access, {
-        location: { postalCode: "248001" },
+        location: { coordinates: TEST_INSIDE_COORDS },
       });
       // Without assortment/pricing may be CART_INVALID or EVALUATION_INDETERMINATE
       expect([

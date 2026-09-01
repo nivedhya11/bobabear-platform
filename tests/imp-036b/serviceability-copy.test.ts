@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import {
   geolocationFailureCopy,
   locationProviderUnavailableCopy,
-  missingPinCopy,
   serviceabilityStatusCopy,
 } from "@/components/location/serviceability-copy";
 
@@ -16,14 +15,14 @@ describe("location serviceability copy", () => {
     expect(serviceabilityStatusCopy("SERVICEABLE")).not.toMatch(/SERVICEABLE/);
   });
 
-  it("maps geolocation failures", () => {
+  it("maps geolocation failures without PIN fallback language", () => {
     expect(geolocationFailureCopy("permission_denied")).toMatch(/denied/i);
     expect(geolocationFailureCopy("timeout")).toMatch(/too long/i);
+    expect(geolocationFailureCopy("permission_denied")).not.toMatch(/enter a PIN/i);
   });
 
   it("does not name Google APIs in customer fallback copy", () => {
-    expect(locationProviderUnavailableCopy()).toMatch(/PIN/i);
     expect(locationProviderUnavailableCopy()).not.toMatch(/Google|Places|Geocoding/i);
-    expect(missingPinCopy()).toMatch(/PIN/i);
+    expect(locationProviderUnavailableCopy()).not.toMatch(/PIN/i);
   });
 });

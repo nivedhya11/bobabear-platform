@@ -1,9 +1,9 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { LocationSelector } from "@/components/location/LocationSelector";
-import { writeDeliveryContextPin } from "@/lib/customer-location/delivery-context";
+import { writeDeliveryContext } from "@/lib/customer-location/delivery-context";
 
 const fetchCustomerSession = vi.fn<(...args: unknown[]) => unknown>();
 const listOwnAddresses = vi.fn<(...args: unknown[]) => unknown>();
@@ -59,17 +59,18 @@ describe("LocationSelector", () => {
     expect(screen.getByTestId("deliver-to-orientation")).toHaveTextContent("Dehradun");
   });
 
-  it("opens the selector dialog and applies a manual PIN", async () => {
+  it("opens the selector dialog without manual PIN entry", async () => {
     const user = userEvent.setup();
-    writeDeliveryContextPin("248001");
+    writeDeliveryContext({
+      displayLabel: "Rajpur Road, Dehradun",
+      coordinates: { latitude: "30.3256000", longitude: "78.0436000" },
+      source: "location_search",
+    });
     render(<LocationSelector />);
     await user.click(screen.getByTestId("deliver-to-orientation"));
     expect(screen.getByTestId("location-selector-dialog")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /Select delivery location/i })).toBeInTheDocument();
-    expect(screen.getByText(/Location search isn't available right now/i)).toBeInTheDocument();
-    await user.clear(screen.getByLabelText(/PIN code/i));
-    await user.type(screen.getByLabelText(/PIN code/i), "248001");
-    await user.click(screen.getByRole("button", { name: "Check delivery" }));
-    await waitFor(() => expect(evaluateDeliveryServiceability).toHaveBeenCalled());
+    expect(screen.queryByText("Enter PIN manually")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/PIN code/i)).not.toBeInTheDocument();
   });
 });

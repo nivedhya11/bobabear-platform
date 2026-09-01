@@ -12,7 +12,6 @@ import {
 import { createWorkforcePrincipalFromTrustedIdentity } from "../../src/server/access-control/principal";
 import { getApplicationPersistence } from "../../src/server/persistence";
 import {
-  addOutletServiceabilityPins,
   evaluateServiceability,
   getOutletServiceabilityConfiguration,
   setOutletServiceabilityRoutingPriority,
@@ -22,6 +21,8 @@ import {
   adminConnectionInfo,
   applicationConfig,
   closeTrackedPersistenceHandles,
+  seedOutletDistanceServiceability,
+  TEST_INSIDE_COORDS,
   trackPersistenceHandle,
   withServiceabilityHarness,
 } from "../database/support/serviceability-fixtures";
@@ -139,36 +140,18 @@ describe("IMP-019 serviceability security", () => {
     await withServiceabilityHarness(async ({ persistence, actors }) => {
       const { tree, otherTree, brandAdminActor, otherBrandAdminActor } = actors;
 
-      await setOutletServiceabilityRoutingPriority(persistence, otherBrandAdminActor, {
-        outletId: otherTree.outletA.id,
-        routingPriority: 1,
-        expectedRevision: null,
-      });
-      await addOutletServiceabilityPins(persistence, otherBrandAdminActor, {
-        outletId: otherTree.outletA.id,
-        postalCodes: ["248001"],
-        expectedRevision: BigInt(1),
-      });
+      await seedOutletDistanceServiceability(persistence, otherBrandAdminActor, otherTree.outletA.id);
 
       const decision = await evaluateServiceability(persistence, {
         brandId: tree.brand.id,
-        location: { postalCode: "248001" },
+        location: { coordinates: TEST_INSIDE_COORDS },
       });
-      expect(decision.status).toBe("NOT_SERVICEABLE");
+      expect(decision.status).toBe("INDETERMINATE");
 
-      await setOutletServiceabilityRoutingPriority(persistence, brandAdminActor, {
-        outletId: tree.outletA.id,
-        routingPriority: 1,
-        expectedRevision: null,
-      });
-      await addOutletServiceabilityPins(persistence, brandAdminActor, {
-        outletId: tree.outletA.id,
-        postalCodes: ["248001"],
-        expectedRevision: BigInt(1),
-      });
+      await seedOutletDistanceServiceability(persistence, brandAdminActor, tree.outletA.id);
       const own = await evaluateServiceability(persistence, {
         brandId: tree.brand.id,
-        location: { postalCode: "248001" },
+        location: { coordinates: TEST_INSIDE_COORDS },
       });
       expect(own).toMatchObject({
         status: "SERVICEABLE",

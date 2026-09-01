@@ -12,13 +12,15 @@ import {
   getOutletServiceabilityConfiguration,
   removeOutletServiceabilityPins,
   replaceOutletServiceabilityPins,
-  setOutletServiceabilityDistancePolicy,
   setOutletServiceabilityRoutingPriority,
   ServiceabilityError,
 } from "../../src/server/serviceability";
 import {
   closeTrackedPersistenceHandles,
   pauseOutletIndefinitely,
+  seedOutletDistanceServiceability,
+  TEST_INSIDE_COORDS,
+  TEST_OUTSIDE_COORDS,
   withServiceabilityHarness,
 } from "../database/support/serviceability-fixtures";
 
@@ -31,13 +33,94 @@ const PIN_B = "110001";
 const PIN_UNCOVERED = "560001";
 const FIXED_NOW = new Date("2026-08-08T12:00:00.000Z");
 
-describe("IMP-019 serviceability evaluation", () => {
-  it("returns NOT_SERVICEABLE for uncovered PIN and SERVICEABLE for covered accepting outlet", async () => {
+describe("IMP-036B outlet-distance serviceability evaluation", () => {
+  it("returns SERVICEABLE inside configured radius and NOT_SERVICEABLE outside", async () => {
+    await withServiceabilityHarness(async ({ persistence, actors }) => {
+      const { tree, brandAdminActor } = actors;
+      await seedOutletDistanceServiceability(persistence, brandAdminActor, tree.outletA.id);
+      const clock = fixedServiceabilityClock(FIXED_NOW);
+
+      const inside = await evaluateServiceability(
+        persistence,
+        {
+          brandId: tree.brand.id,
+          location: { coordinates: TEST_INSIDE_COORDS },
+        },
+        { clock },
+      );
+      expect(inside).toEqual({
+        status: "SERVICEABLE",
+        evaluatedAt: FIXED_NOW,
+        selectedOutletId: tree.outletA.id,
+      });
+
+      const outside = await evaluateServiceability(
+        persistence,
+        {
+          brandId: tree.brand.id,
+          location: { coordinates: TEST_OUTSIDE_COORDS },
+        },
+        { clock },
+      );
+      expect(outside).toEqual({
+        status: "NOT_SERVICEABLE",
+        evaluatedAt: FIXED_NOW,
+      });
+    });
+  });
+
+  it("ignores postalCode for geographic authority", async () => {
+    await withServiceabilityHarness(async ({ persistence, actors }) => {
+      const { tree, brandAdminActor } = actors;
+      await seedOutletDistanceServiceability(persistence, brandAdminActor, tree.outletA.id);
+      const clock = fixedServiceabilityClock(FIXED_NOW);
+
+      const withoutPin = await evaluateServiceability(
+        persistence,
+        { brandId: tree.brand.id, location: { coordinates: TEST_INSIDE_COORDS } },
+        { clock },
+      );
+      const withPin = await evaluateServiceability(
+        persistence,
+        {
+          brandId: tree.brand.id,
+          location: { coordinates: TEST_INSIDE_COORDS, postalCode: PIN_UNCOVERED },
+        },
+        { clock },
+      );
+      expect(withoutPin).toEqual(withPin);
+
+      const outsideWithPin = await evaluateServiceability(
+        persistence,
+        {
+          brandId: tree.brand.id,
+          location: { coordinates: TEST_OUTSIDE_COORDS, postalCode: PIN_A },
+        },
+        { clock },
+      );
+      expect(outsideWithPin.status).toBe("NOT_SERVICEABLE");
+    });
+  });
+
+  it("returns INDETERMINATE when coordinates are missing", async () => {
+    await withServiceabilityHarness(async ({ persistence, actors }) => {
+      const decision = await evaluateServiceability(persistence, {
+        brandId: actors.tree.brand.id,
+        location: { postalCode: PIN_A },
+      });
+      expect(decision).toMatchObject({
+        status: "INDETERMINATE",
+        reason: "LOCATION_COORDINATES_REQUIRED",
+      });
+    });
+  });
+
+  it("does not treat legacy PIN configuration as a geographic candidate", async () => {
     await withServiceabilityHarness(async ({ persistence, actors }) => {
       const { tree, brandAdminActor } = actors;
       await setOutletServiceabilityRoutingPriority(persistence, brandAdminActor, {
         outletId: tree.outletA.id,
-        routingPriority: 10,
+        routingPriority: 1,
         expectedRevision: null,
       });
       await addOutletServiceabilityPins(persistence, brandAdminActor, {
@@ -46,26 +129,13 @@ describe("IMP-019 serviceability evaluation", () => {
         expectedRevision: BigInt(1),
       });
 
-      const clock = fixedServiceabilityClock(FIXED_NOW);
-      const uncovered = await evaluateServiceability(
-        persistence,
-        { brandId: tree.brand.id, location: { postalCode: PIN_UNCOVERED } },
-        { clock },
-      );
-      expect(uncovered).toEqual({
-        status: "NOT_SERVICEABLE",
-        evaluatedAt: FIXED_NOW,
+      const decision = await evaluateServiceability(persistence, {
+        brandId: tree.brand.id,
+        location: { coordinates: TEST_INSIDE_COORDS, postalCode: PIN_A },
       });
-
-      const covered = await evaluateServiceability(
-        persistence,
-        { brandId: tree.brand.id, location: { postalCode: PIN_A } },
-        { clock },
-      );
-      expect(covered).toEqual({
-        status: "SERVICEABLE",
-        evaluatedAt: FIXED_NOW,
-        selectedOutletId: tree.outletA.id,
+      expect(decision).toMatchObject({
+        status: "INDETERMINATE",
+        reason: "CONFIGURATION_INCONSISTENT",
       });
     });
   });
@@ -75,95 +145,65 @@ describe("IMP-019 serviceability evaluation", () => {
       const { tree, brandAdminActor, psaActor } = actors;
       const clock = fixedServiceabilityClock(FIXED_NOW);
 
-      // NOT_SERVICEABLE — no coverage
-      const notSvc = await evaluateServiceability(
+      const noConfig = await evaluateServiceability(
         persistence,
-        { brandId: tree.brand.id, location: { postalCode: PIN_A } },
+        { brandId: tree.brand.id, location: { coordinates: TEST_INSIDE_COORDS } },
         { clock },
       );
-      expect(notSvc.status).toBe("NOT_SERVICEABLE");
-      expect(notSvc.evaluatedAt).toEqual(FIXED_NOW);
-      expect(notSvc).not.toHaveProperty("selectedOutletId");
-
-      await setOutletServiceabilityRoutingPriority(persistence, brandAdminActor, {
-        outletId: tree.outletA.id,
-        routingPriority: 1,
-        expectedRevision: null,
-      });
-      await addOutletServiceabilityPins(persistence, brandAdminActor, {
-        outletId: tree.outletA.id,
-        postalCodes: [PIN_A],
-        expectedRevision: BigInt(1),
+      expect(noConfig).toMatchObject({
+        status: "INDETERMINATE",
+        reason: "CONFIGURATION_INCONSISTENT",
       });
 
-      // SERVICEABLE
+      await seedOutletDistanceServiceability(persistence, brandAdminActor, tree.outletA.id);
+
       const svc = await evaluateServiceability(
         persistence,
-        { brandId: tree.brand.id, location: { postalCode: PIN_A } },
+        { brandId: tree.brand.id, location: { coordinates: TEST_INSIDE_COORDS } },
         { clock },
       );
       expect(svc.status).toBe("SERVICEABLE");
       if (svc.status === "SERVICEABLE") {
         expect(svc.selectedOutletId).toBe(tree.outletA.id);
       }
-      expect(svc.evaluatedAt).toEqual(FIXED_NOW);
 
-      // TEMPORARILY_UNAVAILABLE — pause preferred (only) outlet
       await pauseOutletIndefinitely(persistence, psaActor, tree.outletA.id);
       const temp = await evaluateServiceability(
         persistence,
-        { brandId: tree.brand.id, location: { postalCode: PIN_A } },
+        { brandId: tree.brand.id, location: { coordinates: TEST_INSIDE_COORDS } },
         { clock },
       );
       expect(temp).toEqual({
         status: "TEMPORARILY_UNAVAILABLE",
         evaluatedAt: FIXED_NOW,
       });
-      expect(temp).not.toHaveProperty("selectedOutletId");
     });
   });
 
   it("orders candidates by routing_priority ASC then outlet_id ASC", async () => {
     await withServiceabilityHarness(async ({ persistence, actors }) => {
       const { tree, brandAdminActor } = actors;
-      // Ensure deterministic tie-break: configure both with same priority.
       const [firstId, secondId] =
         tree.outletA.id < tree.outletB.id
           ? [tree.outletA.id, tree.outletB.id]
           : [tree.outletB.id, tree.outletA.id];
 
-      await setOutletServiceabilityRoutingPriority(persistence, brandAdminActor, {
-        outletId: firstId,
+      await seedOutletDistanceServiceability(persistence, brandAdminActor, firstId, {
         routingPriority: 5,
-        expectedRevision: null,
       });
-      await setOutletServiceabilityRoutingPriority(persistence, brandAdminActor, {
-        outletId: secondId,
+      await seedOutletDistanceServiceability(persistence, brandAdminActor, secondId, {
         routingPriority: 5,
-        expectedRevision: null,
-      });
-      await addOutletServiceabilityPins(persistence, brandAdminActor, {
-        outletId: firstId,
-        postalCodes: [PIN_A],
-        expectedRevision: BigInt(1),
-      });
-      await addOutletServiceabilityPins(persistence, brandAdminActor, {
-        outletId: secondId,
-        postalCodes: [PIN_A],
-        expectedRevision: BigInt(1),
+        routingExpectedRevision: BigInt(2),
       });
 
       const candidates = await persistence.withContext((ctx) =>
-        findServiceabilityCandidates(ctx, {
-          brandId: tree.brand.id,
-          postalCode: PIN_A,
-        }),
+        findServiceabilityCandidates(ctx, { brandId: tree.brand.id }),
       );
       expect(candidates.map((c) => c.outletId)).toEqual([firstId, secondId]);
 
       const decision = await evaluateServiceability(
         persistence,
-        { brandId: tree.brand.id, location: { postalCode: PIN_A } },
+        { brandId: tree.brand.id, location: { coordinates: TEST_INSIDE_COORDS } },
         { clock: fixedServiceabilityClock(FIXED_NOW) },
       );
       expect(decision).toMatchObject({
@@ -171,15 +211,14 @@ describe("IMP-019 serviceability evaluation", () => {
         selectedOutletId: firstId,
       });
 
-      // Lower priority number wins over higher.
       await setOutletServiceabilityRoutingPriority(persistence, brandAdminActor, {
         outletId: secondId,
         routingPriority: 1,
-        expectedRevision: BigInt(2),
+        expectedRevision: BigInt(4),
       });
       const preferLower = await evaluateServiceability(
         persistence,
-        { brandId: tree.brand.id, location: { postalCode: PIN_A } },
+        { brandId: tree.brand.id, location: { coordinates: TEST_INSIDE_COORDS } },
         { clock: fixedServiceabilityClock(FIXED_NOW) },
       );
       expect(preferLower).toMatchObject({
@@ -189,37 +228,24 @@ describe("IMP-019 serviceability evaluation", () => {
     });
   });
 
-  it("fails over when preferred is unavailable; INDETERMINATE on preferred ERROR", async () => {
+  it("fails over when preferred outlet is unavailable", async () => {
     await withServiceabilityHarness(async ({ persistence, actors }) => {
       const { tree, brandAdminActor, psaActor } = actors;
       const clock = fixedServiceabilityClock(FIXED_NOW);
 
-      await setOutletServiceabilityRoutingPriority(persistence, brandAdminActor, {
-        outletId: tree.outletA.id,
+      await seedOutletDistanceServiceability(persistence, brandAdminActor, tree.outletA.id, {
         routingPriority: 1,
-        expectedRevision: null,
       });
-      await setOutletServiceabilityRoutingPriority(persistence, brandAdminActor, {
-        outletId: tree.outletB.id,
+      await seedOutletDistanceServiceability(persistence, brandAdminActor, tree.outletB.id, {
         routingPriority: 2,
-        expectedRevision: null,
-      });
-      await addOutletServiceabilityPins(persistence, brandAdminActor, {
-        outletId: tree.outletA.id,
-        postalCodes: [PIN_A],
-        expectedRevision: BigInt(1),
-      });
-      await addOutletServiceabilityPins(persistence, brandAdminActor, {
-        outletId: tree.outletB.id,
-        postalCodes: [PIN_A],
-        expectedRevision: BigInt(1),
+        routingExpectedRevision: BigInt(2),
       });
 
       await pauseOutletIndefinitely(persistence, psaActor, tree.outletA.id);
 
       const failover = await evaluateServiceability(
         persistence,
-        { brandId: tree.brand.id, location: { postalCode: PIN_A } },
+        { brandId: tree.brand.id, location: { coordinates: TEST_INSIDE_COORDS } },
         { clock },
       );
       expect(failover).toEqual({
@@ -227,160 +253,15 @@ describe("IMP-019 serviceability evaluation", () => {
         evaluatedAt: FIXED_NOW,
         selectedOutletId: tree.outletB.id,
       });
-
-      // Preferred ERROR: remove operating profile for highest-priority outlet B
-      // after making B preferred — missing config → OPERATING_CONFIGURATION_MISSING
-      // which is authoritative unavailable, not ERROR. To force ERROR path we
-      // corrupt timezone via raw SQL to an invalid IANA zone if the resolver
-      // maps that to ERROR; otherwise skip by deleting profile entirely and
-      // verifying TEMPORARILY_UNAVAILABLE when all unavailable.
-      await persistence.withContext(async (ctx) => {
-        await ctx.db.execute(sql`
-          delete from app.outlet_operating_intervals
-          where outlet_id = ${tree.outletA.id}::uuid
-        `);
-        await ctx.db.execute(sql`
-          delete from app.outlet_operating_profiles
-          where outlet_id = ${tree.outletA.id}::uuid
-        `);
-      });
-      // Re-accept B as only remaining — A missing config is authoritative unavailable.
-      // Make A priority 1 again (already), B still accepting.
-      // After delete, A is OPERATING_CONFIGURATION_MISSING → skip to B.
-      // Already proven failover. For INDETERMINATE, set invalid timezone:
-      await persistence.withContext(async (ctx) => {
-        await ctx.db.execute(sql`
-          insert into app.outlet_operating_profiles (
-            id, brand_id, organization_id, territory_id, outlet_id, timezone,
-            control_state, paused_until, updated_by_workforce_user_id, created_at, updated_at
-          ) values (
-            gen_random_uuid(), ${tree.brand.id}::uuid, ${tree.orgA.id}::uuid,
-            ${tree.terrA.id}::uuid, ${tree.outletA.id}::uuid, 'Not/A_Real_Zone',
-            'accepting', null, ${actors.psa.id}, now(), now()
-          )
-        `);
-      });
-
-      // If resolve throws or returns ERROR for bad timezone → INDETERMINATE.
-      const indeterminate = await evaluateServiceability(
-        persistence,
-        { brandId: tree.brand.id, location: { postalCode: PIN_A } },
-        { clock },
-      );
-      expect(["INDETERMINATE", "SERVICEABLE", "TEMPORARILY_UNAVAILABLE"]).toContain(
-        indeterminate.status,
-      );
-      if (indeterminate.status === "INDETERMINATE") {
-        expect(indeterminate.reason).toMatch(
-          /OPERATIONAL_EVALUATION_FAILED|DEPENDENCY_FAILURE|CONFIGURATION_INCONSISTENT/,
-        );
-        expect(indeterminate.evaluatedAt).toEqual(FIXED_NOW);
-        expect(indeterminate).not.toHaveProperty("selectedOutletId");
-      }
     });
   });
 
-  it("lower-priority failure after a winning outlet does not invalidate the winner", async () => {
-    await withServiceabilityHarness(async ({ persistence, actors }) => {
-      const { tree, brandAdminActor, psaActor } = actors;
-      await setOutletServiceabilityRoutingPriority(persistence, brandAdminActor, {
-        outletId: tree.outletA.id,
-        routingPriority: 1,
-        expectedRevision: null,
-      });
-      await setOutletServiceabilityRoutingPriority(persistence, brandAdminActor, {
-        outletId: tree.outletB.id,
-        routingPriority: 99,
-        expectedRevision: null,
-      });
-      await addOutletServiceabilityPins(persistence, brandAdminActor, {
-        outletId: tree.outletA.id,
-        postalCodes: [PIN_A],
-        expectedRevision: BigInt(1),
-      });
-      await addOutletServiceabilityPins(persistence, brandAdminActor, {
-        outletId: tree.outletB.id,
-        postalCodes: [PIN_A],
-        expectedRevision: BigInt(1),
-      });
-      // Pause the lower-priority outlet — winner A remains accepting.
-      await pauseOutletIndefinitely(persistence, psaActor, tree.outletB.id);
-
-      const decision = await evaluateServiceability(
-        persistence,
-        { brandId: tree.brand.id, location: { postalCode: PIN_A } },
-        { clock: fixedServiceabilityClock(FIXED_NOW) },
-      );
-      expect(decision).toEqual({
-        status: "SERVICEABLE",
-        evaluatedAt: FIXED_NOW,
-        selectedOutletId: tree.outletA.id,
-      });
-    });
-  });
-
-  it("coordinates do not change geographic outcome", async () => {
-    await withServiceabilityHarness(async ({ persistence, actors }) => {
-      const { tree, brandAdminActor } = actors;
-      await setOutletServiceabilityRoutingPriority(persistence, brandAdminActor, {
-        outletId: tree.outletA.id,
-        routingPriority: 1,
-        expectedRevision: null,
-      });
-      await addOutletServiceabilityPins(persistence, brandAdminActor, {
-        outletId: tree.outletA.id,
-        postalCodes: [PIN_A],
-        expectedRevision: BigInt(1),
-      });
-      const clock = fixedServiceabilityClock(FIXED_NOW);
-
-      const without = await evaluateServiceability(
-        persistence,
-        { brandId: tree.brand.id, location: { postalCode: PIN_A } },
-        { clock },
-      );
-      const withCoords = await evaluateServiceability(
-        persistence,
-        {
-          brandId: tree.brand.id,
-          location: {
-            postalCode: PIN_A,
-            coordinates: { latitude: "28.6139000", longitude: "77.2090000" },
-          },
-        },
-        { clock },
-      );
-      expect(without).toEqual(withCoords);
-
-      const uncoveredCoords = await evaluateServiceability(
-        persistence,
-        {
-          brandId: tree.brand.id,
-          location: {
-            postalCode: PIN_UNCOVERED,
-            coordinates: { latitude: "30.3165000", longitude: "78.0322000" },
-          },
-        },
-        { clock },
-      );
-      expect(uncoveredCoords.status).toBe("NOT_SERVICEABLE");
-    });
-  });
-
-  it("validation errors for bad PIN/coords are thrown, not returned as statuses", async () => {
+  it("validation errors for bad coordinates are thrown, not returned as statuses", async () => {
     await withServiceabilityHarness(async ({ persistence, actors }) => {
       await expect(
         evaluateServiceability(persistence, {
           brandId: actors.tree.brand.id,
-          location: { postalCode: "048001" },
-        }),
-      ).rejects.toMatchObject({ code: "SERVICEABILITY_POSTAL_CODE_INVALID" });
-
-      await expect(
-        evaluateServiceability(persistence, {
-          brandId: actors.tree.brand.id,
           location: {
-            postalCode: PIN_A,
             coordinates: { latitude: "91.0", longitude: "78.0" },
           },
         }),
@@ -389,9 +270,36 @@ describe("IMP-019 serviceability evaluation", () => {
       await expect(
         evaluateServiceability(persistence, {
           brandId: "not-a-uuid",
-          location: { postalCode: PIN_A },
+          location: { coordinates: TEST_INSIDE_COORDS },
         }),
       ).rejects.toBeInstanceOf(ServiceabilityError);
+    });
+  });
+});
+
+describe("IMP-019 serviceability evaluation (legacy admin PIN tables remain non-authoritative)", () => {
+  it("lower-priority failure after a winning outlet does not invalidate the winner", async () => {
+    await withServiceabilityHarness(async ({ persistence, actors }) => {
+      const { tree, brandAdminActor, psaActor } = actors;
+      await seedOutletDistanceServiceability(persistence, brandAdminActor, tree.outletA.id, {
+        routingPriority: 1,
+      });
+      await seedOutletDistanceServiceability(persistence, brandAdminActor, tree.outletB.id, {
+        routingPriority: 99,
+        routingExpectedRevision: BigInt(2),
+      });
+      await pauseOutletIndefinitely(persistence, psaActor, tree.outletB.id);
+
+      const decision = await evaluateServiceability(
+        persistence,
+        { brandId: tree.brand.id, location: { coordinates: TEST_INSIDE_COORDS } },
+        { clock: fixedServiceabilityClock(FIXED_NOW) },
+      );
+      expect(decision).toEqual({
+        status: "SERVICEABLE",
+        evaluatedAt: FIXED_NOW,
+        selectedOutletId: tree.outletA.id,
+      });
     });
   });
 });
@@ -604,129 +512,6 @@ describe("IMP-019 serviceability administration", () => {
       expect([...((audits[3]!.removed_postal_codes as string[]) ?? [])].sort()).toEqual(
         [],
       );
-    });
-  });
-});
-
-describe("IMP-036B hybrid PIN + outlet-distance serviceability", () => {
-  const ORIGIN = Object.freeze({
-    latitude: "30.3164945",
-    longitude: "78.0321918",
-  });
-  const NEARBY = Object.freeze({
-    latitude: "30.3170000",
-    longitude: "78.0330000",
-  });
-  const FAR = Object.freeze({
-    latitude: "30.5000000",
-    longitude: "78.2000000",
-  });
-
-  async function seedDistancePolicy(
-    persistence: Parameters<typeof setOutletServiceabilityDistancePolicy>[0],
-    actor: unknown,
-    outletId: string,
-    revision: bigint,
-  ): Promise<void> {
-    await setOutletServiceabilityDistancePolicy(persistence, actor, {
-      outletId,
-      expectedRevision: revision,
-      serviceOriginLatitude: ORIGIN.latitude,
-      serviceOriginLongitude: ORIGIN.longitude,
-      maxServiceDistanceMeters: 5_000,
-    });
-  }
-
-  it("keeps PIN-only behavior when distance policy is not configured", async () => {
-    await withServiceabilityHarness(async ({ persistence, actors }) => {
-      const { tree, brandAdminActor } = actors;
-      await setOutletServiceabilityRoutingPriority(persistence, brandAdminActor, {
-        outletId: tree.outletA.id,
-        routingPriority: 1,
-        expectedRevision: null,
-      });
-      await addOutletServiceabilityPins(persistence, brandAdminActor, {
-        outletId: tree.outletA.id,
-        postalCodes: [PIN_A],
-        expectedRevision: BigInt(1),
-      });
-
-      const decision = await evaluateServiceability(persistence, {
-        brandId: tree.brand.id,
-        location: { postalCode: PIN_A, coordinates: FAR },
-      });
-      expect(decision.status).toBe("SERVICEABLE");
-    });
-  });
-
-  it("rejects a supported PIN when precise coordinates are outside max distance", async () => {
-    await withServiceabilityHarness(async ({ persistence, actors }) => {
-      const { tree, brandAdminActor } = actors;
-      await setOutletServiceabilityRoutingPriority(persistence, brandAdminActor, {
-        outletId: tree.outletA.id,
-        routingPriority: 1,
-        expectedRevision: null,
-      });
-      await addOutletServiceabilityPins(persistence, brandAdminActor, {
-        outletId: tree.outletA.id,
-        postalCodes: [PIN_A],
-        expectedRevision: BigInt(1),
-      });
-      await seedDistancePolicy(persistence, brandAdminActor, tree.outletA.id, BigInt(2));
-
-      const outside = await evaluateServiceability(persistence, {
-        brandId: tree.brand.id,
-        location: { postalCode: PIN_A, coordinates: FAR },
-      });
-      expect(outside.status).toBe("NOT_SERVICEABLE");
-
-      const inside = await evaluateServiceability(persistence, {
-        brandId: tree.brand.id,
-        location: { postalCode: PIN_A, coordinates: NEARBY },
-      });
-      expect(inside.status).toBe("SERVICEABLE");
-    });
-  });
-
-  it("does not upgrade an unsupported PIN using nearby coordinates", async () => {
-    await withServiceabilityHarness(async ({ persistence, actors }) => {
-      const { tree, brandAdminActor } = actors;
-      await setOutletServiceabilityRoutingPriority(persistence, brandAdminActor, {
-        outletId: tree.outletA.id,
-        routingPriority: 1,
-        expectedRevision: null,
-      });
-      await addOutletServiceabilityPins(persistence, brandAdminActor, {
-        outletId: tree.outletA.id,
-        postalCodes: [PIN_A],
-        expectedRevision: BigInt(1),
-      });
-      await seedDistancePolicy(persistence, brandAdminActor, tree.outletA.id, BigInt(2));
-
-      const unsupportedPin = await evaluateServiceability(persistence, {
-        brandId: tree.brand.id,
-        location: { postalCode: PIN_UNCOVERED, coordinates: NEARBY },
-      });
-      expect(unsupportedPin.status).toBe("NOT_SERVICEABLE");
-    });
-  });
-
-  it("exposes distance policy through administration readback", async () => {
-    await withServiceabilityHarness(async ({ persistence, actors }) => {
-      const { tree, brandAdminActor } = actors;
-      await setOutletServiceabilityRoutingPriority(persistence, brandAdminActor, {
-        outletId: tree.outletA.id,
-        routingPriority: 1,
-        expectedRevision: null,
-      });
-      await seedDistancePolicy(persistence, brandAdminActor, tree.outletA.id, BigInt(1));
-
-      const config = await getOutletServiceabilityConfiguration(persistence, brandAdminActor, {
-        outletId: tree.outletA.id,
-      });
-      expect(config.serviceOriginLatitude).toBe(ORIGIN.latitude);
-      expect(config.serviceOriginLongitude).toBe(ORIGIN.longitude);
-      expect(config.maxServiceDistanceMeters).toBe(5_000);
     });
   });
 });

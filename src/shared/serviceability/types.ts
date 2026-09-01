@@ -19,7 +19,8 @@ export type ServiceabilityCoordinates = Readonly<{
 
 /** Minimal location evidence for runtime evaluation. */
 export type ServiceabilityLocationEvidence = Readonly<{
-  postalCode: string;
+  /** Address metadata only — never used for geographic Serviceability authority. */
+  postalCode?: string | null;
   coordinates?: ServiceabilityCoordinates | null;
 }>;
 

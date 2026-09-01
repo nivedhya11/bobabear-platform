@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CartClient } from "./CartClient";
-import { writeDeliveryPinContext } from "./delivery-pin-context";
+import { writeDeliveryContext } from "@/lib/customer-location/delivery-context";
 import {
   STALE_MODIFIER_OPTION_LABEL,
 } from "./cart-presentation";
@@ -165,7 +165,7 @@ beforeEach(() => {
 });
 
 describe("CartClient", () => {
-  it("keeps its delivery result synchronized with the existing PIN presentation context", async () => {
+  it("keeps its delivery result synchronized with delivery location context", async () => {
     getActiveCart.mockResolvedValue({
       ok: true,
       status: 200,
@@ -194,17 +194,23 @@ describe("CartClient", () => {
       });
 
     render(<CartClient brandId={brandId} />);
-    await screen.findByText("Add your PIN to check delivery availability.");
+    await screen.findByText("Choose your delivery location to check availability.");
 
-    writeDeliveryPinContext("248001");
+    writeDeliveryContext({
+      displayLabel: "Rajpur Road, Dehradun",
+      coordinates: { latitude: "30.3256000", longitude: "78.0436000" },
+      source: "location_search",
+    });
 
     await waitFor(() => {
       expect(evaluateCart).toHaveBeenLastCalledWith({
         brandId,
-        location: { postalCode: "248001" },
+        location: {
+          coordinates: { latitude: "30.3256000", longitude: "78.0436000" },
+        },
       });
-      expect(screen.queryByText("Add your PIN to check delivery availability.")).not.toBeInTheDocument();
-      expect(screen.getByText("This PIN looks deliverable.")).toBeInTheDocument();
+      expect(screen.queryByText("Choose your delivery location to check availability.")).not.toBeInTheDocument();
+      expect(screen.getByText("This location looks deliverable.")).toBeInTheDocument();
     });
   });
 

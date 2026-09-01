@@ -4591,7 +4591,7 @@ export function evaluateImp036bImplementationCompletionArtifact(text) {
     /provider_external_IO:\s*YES/,
     /IMP036B_IMPLEMENTATION_EVIDENCE:\s*COMPLETE/,
     /COMPLETION IS NOT ACCEPTANCE:\s*YES/,
-    /serviceability_model:\s*HYBRID_PIN_AND_OUTLET_DISTANCE_V1/,
+    /serviceability_model:\s*OUTLET_DISTANCE_SERVICEABILITY_V1/,
   ];
   if (required.some((pattern) => !pattern.test(text))) {
     return { ok: false, code: "IMP036B_CAPABILITY_COMPLETION", message: "IMP-036B artifact must record the complete locked IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE checkpoint" };

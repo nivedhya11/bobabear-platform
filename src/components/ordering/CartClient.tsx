@@ -17,9 +17,10 @@ import {
 } from "@/components/ordering/cart-presentation";
 import { publishCartCount } from "@/components/ordering/cart-count-sync";
 import {
-  readDeliveryPinContext,
-  subscribeToDeliveryPinContext,
-} from "@/components/ordering/delivery-pin-context";
+  readDeliveryContext,
+  subscribeToDeliveryContext,
+  type DeliveryContext,
+} from "@/lib/customer-location/delivery-context";
 import { commerceErrorCopy } from "@/components/ordering/error-copy";
 import { MenuItemCustomizationDialog } from "@/components/ordering/MenuItemCustomizationDialog";
 import { cartEvaluationCustomerCopy } from "@/components/ordering/serviceability-copy";
@@ -50,7 +51,7 @@ export function CartClient(props: { brandId: string }) {
   const [menu, setMenu] = useState<CustomerMenuProjection | null>(null);
   const [cart, setCart] = useState<CommerceCart | null>(null);
   const [evaluation, setEvaluation] = useState<CommerceCartEvaluation | null>(null);
-  const [deliveryPin, setDeliveryPin] = useState(() => readDeliveryPinContext());
+  const [deliveryContext, setDeliveryContext] = useState<DeliveryContext>(() => readDeliveryContext());
   const [loading, setLoading] = useState(true);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -72,14 +73,20 @@ export function CartClient(props: { brandId: string }) {
   );
 
   const refreshEvaluation = useCallback(
-    async (pin: string, currentCart: CommerceCart | null) => {
+    async (context: DeliveryContext, currentCart: CommerceCart | null) => {
       if (!currentCart || currentCart.lines.length === 0) {
         setEvaluation(null);
         return;
       }
       const evaluated = await evaluateCart(
-        pin.length === 6
-          ? { brandId, location: { postalCode: pin } }
+        context.coordinates
+          ? {
+              brandId,
+              location: {
+                coordinates: context.coordinates,
+                ...(context.postalCode.length === 6 ? { postalCode: context.postalCode } : {}),
+              },
+            }
           : { brandId },
       );
       if (evaluated.ok) setEvaluation(evaluated.data);
@@ -104,9 +111,9 @@ export function CartClient(props: { brandId: string }) {
       return;
     }
     setCart(cartResult.data.cart);
-    const pin = readDeliveryPinContext();
-    setDeliveryPin(pin);
-    await refreshEvaluation(pin, cartResult.data.cart);
+    const context = readDeliveryContext();
+    setDeliveryContext(context);
+    await refreshEvaluation(context, cartResult.data.cart);
   }, [brandId, refreshEvaluation]);
 
   useEffect(() => {
@@ -121,16 +128,16 @@ export function CartClient(props: { brandId: string }) {
   }, [load]);
 
   useEffect(() => {
-    return subscribeToDeliveryPinContext((pin) => {
-      setDeliveryPin(pin);
-      void refreshEvaluation(pin, cart);
+    return subscribeToDeliveryContext((nextContext) => {
+      setDeliveryContext(nextContext);
+      void refreshEvaluation(nextContext, cart);
     });
   }, [cart, refreshEvaluation]);
 
   async function applyCartMutation(nextCart: CommerceCart): Promise<void> {
     setCart(nextCart);
     publishCartCount(cartUnitCount(nextCart));
-    await refreshEvaluation(deliveryPin, nextCart);
+    await refreshEvaluation(deliveryContext, nextCart);
   }
 
   async function withPending(work: () => Promise<void>): Promise<void> {
@@ -250,7 +257,7 @@ export function CartClient(props: { brandId: string }) {
   const presentationAmount = presentationEstimate.complete
     ? formatPresentationEstimateLabel(presentationEstimate.totalPaise)
     : presentationLabel;
-  const serviceabilityNote = cartEvaluationCustomerCopy(evaluation, deliveryPin.length === 6);
+  const serviceabilityNote = cartEvaluationCustomerCopy(evaluation, Boolean(deliveryContext.coordinates));
 
   if (loading) {
     return (

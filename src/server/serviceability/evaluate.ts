@@ -1,12 +1,11 @@
 /**
- * Runtime Serviceability evaluation (IMP-019 + IMP-036B hybrid distance V1).
+ * Runtime Serviceability evaluation (IMP-019 + IMP-036B outlet-distance V1).
  *
- * Read-only. PIN-required geographic model with optional outlet-distance policy.
- * Coordinates never upgrade an unsupported PIN.
+ * Read-only. Coordinate-authoritative geographic model with server-side Haversine.
+ * Postal/PIN codes are address metadata only — never geographic authority.
  */
 import {
   geodesicDistanceMeters,
-  isDistancePolicyConfigured,
   parseServiceabilityCoordinate,
   parseEvaluateServiceabilityInput,
   ServiceabilityError,
@@ -43,21 +42,10 @@ function isAuthoritativelyUnavailable(code: string): boolean {
 
 function isGeographicallyEligible(
   candidate: Awaited<ReturnType<typeof findServiceabilityCandidates>>[number],
-  coordinates: Readonly<{ latitude: string; longitude: string }> | undefined,
+  coordinates: Readonly<{ latitude: string; longitude: string }>,
 ): boolean {
-  if (!coordinates || candidate.distancePolicy === null) {
-    return true;
-  }
   const policy = candidate.distancePolicy;
-  if (
-    !isDistancePolicyConfigured({
-      serviceOriginLatitude: policy.serviceOriginLatitude,
-      serviceOriginLongitude: policy.serviceOriginLongitude,
-      maxServiceDistanceMeters: policy.maxServiceDistanceMeters,
-    })
-  ) {
-    return true;
-  }
+  if (policy === null) return false;
   const originLat = parseServiceabilityCoordinate(policy.serviceOriginLatitude);
   const originLng = parseServiceabilityCoordinate(policy.serviceOriginLongitude);
   const pointLat = parseServiceabilityCoordinate(coordinates.latitude);
@@ -68,7 +56,7 @@ function isGeographicallyEligible(
     pointLat === null ||
     pointLng === null
   ) {
-    return true;
+    return false;
   }
   const distanceMeters = geodesicDistanceMeters({
     originLatitude: originLat,
@@ -98,20 +86,27 @@ export async function evaluateServiceability(
     );
   }
 
+  const coordinates = parsed.location.coordinates ?? undefined;
+  if (!coordinates) {
+    return Object.freeze({
+      status: "INDETERMINATE" as const,
+      evaluatedAt,
+      reason: "LOCATION_COORDINATES_REQUIRED" as const,
+    });
+  }
+
   return persistence.withContext(async (ctx) => {
     assertApplicationRole(ctx, "evaluateServiceability");
 
     const candidates = await findServiceabilityCandidates(ctx, {
       brandId: parsed.brandId,
-      postalCode: parsed.location.postalCode,
     });
-
-    const coordinates = parsed.location.coordinates ?? undefined;
 
     if (candidates.length === 0) {
       return Object.freeze({
-        status: "NOT_SERVICEABLE" as const,
+        status: "INDETERMINATE" as const,
         evaluatedAt,
+        reason: "CONFIGURATION_INCONSISTENT" as const,
       });
     }
 

@@ -22,7 +22,7 @@ async function assertSelectorShell(page: Page): Promise<void> {
   await expect(page.getByRole("heading", { name: /Select delivery location/i })).toBeVisible();
   await expect(page.getByPlaceholder("Search area, street or landmark")).toBeVisible();
   await expect(page.getByRole("button", { name: "Use current location" })).toBeVisible();
-  await expect(page.getByText("Enter PIN manually")).toBeVisible();
+  await expect(page.getByText("Enter PIN manually")).toHaveCount(0);
 
   const metrics = await page.evaluate(() => {
     const dialogEl = document.querySelector('[data-testid="location-selector-dialog"]');

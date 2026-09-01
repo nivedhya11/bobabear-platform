@@ -172,8 +172,8 @@ export async function clearCart(input: {
 export async function evaluateCart(input: {
   brandId: string;
   location?: Readonly<{
-    postalCode: string;
-    coordinates?: Readonly<{ latitude: string; longitude: string }> | null;
+    postalCode?: string;
+    coordinates: Readonly<{ latitude: string; longitude: string }>;
   }>;
 }): Promise<CommerceHttpResult<CommerceCartEvaluation>> {
   const body: Record<string, unknown> = { brandId: input.brandId };

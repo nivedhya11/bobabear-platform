@@ -242,57 +242,52 @@ export async function deleteAllServiceabilityPins(
 }
 
 /**
- * Brand-scoped geographic candidates for a PIN, ordered by
+ * Brand-scoped geographic candidates with complete distance policy, ordered by
  * routing_priority ASC, outlet_id ASC.
+ *
+ * PIN/postal-code tables are deprecated for runtime geographic authority
+ * (OUTLET_DISTANCE_SERVICEABILITY_V1).
  */
 export async function findServiceabilityCandidates(
   context: PersistenceQueryContext,
-  input: { brandId: string; postalCode: string },
+  input: { brandId: string },
 ): Promise<readonly ServiceabilityCandidate[]> {
   assertApplicationRole(context, "findServiceabilityCandidates");
   const rows = await context.db
     .select({
-      outletId: outletServiceabilityPinsTable.outletId,
+      outletId: outletServiceabilityConfigsTable.outletId,
       routingPriority: outletServiceabilityConfigsTable.routingPriority,
       serviceOriginLatitude: outletServiceabilityConfigsTable.serviceOriginLatitude,
       serviceOriginLongitude: outletServiceabilityConfigsTable.serviceOriginLongitude,
       maxServiceDistanceMeters: outletServiceabilityConfigsTable.maxServiceDistanceMeters,
     })
-    .from(outletServiceabilityPinsTable)
-    .innerJoin(
-      outletServiceabilityConfigsTable,
-      eq(
-        outletServiceabilityPinsTable.outletId,
-        outletServiceabilityConfigsTable.outletId,
-      ),
-    )
+    .from(outletServiceabilityConfigsTable)
     .innerJoin(
       outletsTable,
-      eq(outletServiceabilityPinsTable.outletId, outletsTable.id),
+      eq(outletServiceabilityConfigsTable.outletId, outletsTable.id),
     )
-    .where(
-      and(
-        eq(outletServiceabilityPinsTable.postalCode, input.postalCode),
-        eq(outletsTable.brandId, input.brandId),
-      ),
-    )
+    .where(eq(outletsTable.brandId, input.brandId))
     .orderBy(
       asc(outletServiceabilityConfigsTable.routingPriority),
-      asc(outletServiceabilityPinsTable.outletId),
+      asc(outletServiceabilityConfigsTable.outletId),
     );
 
   return Object.freeze(
-    rows.map((row) =>
-      Object.freeze({
-        outletId: row.outletId,
-        routingPriority: row.routingPriority,
-        distancePolicy: readDistancePolicy({
-          serviceOriginLatitude: row.serviceOriginLatitude,
-          serviceOriginLongitude: row.serviceOriginLongitude,
-          maxServiceDistanceMeters: row.maxServiceDistanceMeters,
+    rows.flatMap((row) => {
+      const distancePolicy = readDistancePolicy({
+        serviceOriginLatitude: row.serviceOriginLatitude,
+        serviceOriginLongitude: row.serviceOriginLongitude,
+        maxServiceDistanceMeters: row.maxServiceDistanceMeters,
+      });
+      if (distancePolicy === null) return [];
+      return [
+        Object.freeze({
+          outletId: row.outletId,
+          routingPriority: row.routingPriority,
+          distancePolicy,
         }),
-      }),
-    ),
+      ];
+    }),
   );
 }
 
