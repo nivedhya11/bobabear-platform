@@ -168,7 +168,10 @@ export function DeliveryLocationMapConfirmation(props: {
 
   useEffect(() => {
     if (initialLat === null || initialLng === null) return;
-    void evaluateForLocation(initialLocation);
+    const timer = window.setTimeout(() => {
+      void evaluateForLocation(initialLocation);
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [initialLat, initialLng, initialLocation, evaluateForLocation]);
 
   useEffect(() => {
@@ -405,10 +408,10 @@ export function DeliveryLocationMapConfirmation(props: {
             Finding address…
           </p>
         ) : null}
-        {mapInitError && process.env.NODE_ENV !== "production" ? (
+        {mapInitError ? (
           <p
             role="status"
-            className="absolute bottom-3 left-3 z-20 rounded-md bg-[var(--bg-page)]/95 px-3 py-1 font-mono text-[11px] text-[var(--text-secondary)]"
+            className="sr-only"
             data-testid="delivery-map-init-error"
           >
             {mapInitError}

@@ -140,9 +140,6 @@ export function LocationSelector(props: {
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
-    setProviderStatusLoaded(false);
-    providerConfiguredRef.current = false;
-    setProviderConfigured(false);
 
     void (async () => {
       const status = await getLocationProviderStatus();
@@ -181,7 +178,7 @@ export function LocationSelector(props: {
     if (trimmed.length >= SEARCH_MIN_CHARS) {
       scheduleAutocomplete(trimmed);
     }
-  }, [open, providerConfigured]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [open, providerConfigured]);
 
   useEffect(() => {
     if (!open) return;
