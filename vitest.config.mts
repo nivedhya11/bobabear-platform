@@ -72,6 +72,9 @@ export default defineConfig({
       "tests/operations/workforce-principal-adapter.test.ts",
       // IMP-035: DB-free Administration transport and UI security tests.
       "tests/administration/**/*.test.{ts,tsx}",
+      // IMP-036A: multi-portal experience foundation unit tests.
+      "tests/workforce-hub/**/*.test.{ts,tsx}",
+      "tests/enterprise/**/*.test.ts",
     ],
     exclude: [
       "**/node_modules/**",

@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R96",
+  "roadmapVersion": "GTM-R97",
   "acceptedThrough": "IMP-036",
-  "currentProductSlice": "NONE",
-  "nextProductSlice": "IMP-036A",
+  "currentProductSlice": "IMP-036A",
+  "nextProductSlice": "IMP-036B",
   "gtmBoundary": "IMP-040",
   "lastReviewed": "2026-09-01",
-  "supersedes": "GTM-R95"
+  "supersedes": "GTM-R96"
 }
 -->
 
@@ -303,11 +303,24 @@ IMP-036 locked capability architecture (architecture **ARCHITECTURE_LOCKED**; im
 
 ```text
 Accepted Through:     IMP-036 — Observability & Operational Controls
-Current Product Slice: NONE
-Next Product Slice:    IMP-036A — Multi-Portal Experience Foundation
-Pending Acceptance:    NONE
+Current Product Slice: IMP-036A — Multi-Portal Experience Foundation
+Next Product Slice:    IMP-036B — Customer Account, Onboarding, Address & Location Experience
+Pending Acceptance:    IMP-036A
 Public GTM Boundary:   IMP-040 — Launch Validation & Cutover
 ```
+
+IMP-036A is `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`. Architecture is **ARCHITECTURE_LOCKED**
+(`IMP-036A_ARCHITECTURE_LOCKED: YES`). Implementation is `AUTHORIZED` / `STARTED` / `COMPLETE`
+(`IMP-036A_IMPLEMENTATION_AUTHORIZED: YES`; `IMP-036A_STARTED: YES`;
+`IMP-036A_IMPLEMENTATION_COMPLETE: YES`; `IMP-036A_ACCEPTED: NO`). Locked boundary facts:
+`schema_change: NO`, `provider_IO: NO`, `new_service: NO`, `new_auth_model: NO`,
+`new_roles: NO`, `new_permissions: NO`, `microfrontend: NO`. Founder UAT is **required**
+(`IMP-036A_FOUNDER_UAT_REQUIRED: YES`). **GTM-R97** records the combined IMP-036A activation /
+architecture lock / implementation authorize / start / complete gate while `acceptedThrough`
+remains IMP-036. Locked capability architecture:
+[`capabilities/IMP-036A-multi-portal-experience-foundation.md`](./capabilities/IMP-036A-multi-portal-experience-foundation.md).
+Completion is **not** acceptance. IMP-036B remains `PLANNED` / `NOT_ACTIVATED` / `NOT_AUTHORIZED` /
+`NOT_STARTED`.
 
 IMP-036 is `COMPLETE_AND_ACCEPTED`. Architecture remains **ARCHITECTURE_LOCKED**
 (`IMP-036_ARCHITECTURE_LOCKED: YES`). Implementation is `AUTHORIZED` / `STARTED` / `COMPLETE`
@@ -499,7 +512,13 @@ IMP036_FORMAL_ACCEPTANCE: ACCEPTED
 IMP036_ACCEPTED_MAIN_SHA: 68b46a53dc5d1ff84a8493899e713d3ef43db3aa
 IMP036_ACCEPTED_TREE: 9b5c3193bf74d75a820b16976e894ec2dffafa13
 D-374_CREATED: NO
-IMP-036A: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
+IMP-036A: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
+IMP-036A_ARCHITECTURE_LOCKED: YES
+IMP-036A_IMPLEMENTATION_AUTHORIZED: YES
+IMP-036A_STARTED: YES
+IMP-036A_IMPLEMENTATION_COMPLETE: YES
+IMP-036A_ACCEPTED: NO
+IMP-036A_FOUNDER_UAT_REQUIRED: YES
 IMP-036B: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
 IMP-036C: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
 IMP-036D: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
@@ -1057,7 +1076,7 @@ consume or remap IMP-029 → IMP-040 identities and is `COMPLETE_AND_ACCEPTED`.
 
 | IMP | Capability | Lifecycle |
 |---|---|---|
-| IMP-036A | Multi-Portal Experience Foundation | PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED |
+| IMP-036A | Multi-Portal Experience Foundation | IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE |
 | IMP-036B | Customer Account, Onboarding, Address & Location Experience | PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED |
 | IMP-036C | Customer Commerce Experience V2 | PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED |
 | IMP-036D | Workforce & Franchise Operations Portal V2 | PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED |
@@ -1465,6 +1484,24 @@ Historical GTM-R1 meanings that are **not** current:
 Current public GTM boundary is **IMP-040**, not IMP-035.
 
 ## 9. Roadmap Change Log
+
+### GTM-R97 — 2026-09-01
+
+- Single founder-authorized **combined** gate for **IMP-036A — Multi-Portal Experience Foundation**:
+  canonical activation, capability architecture **ARCHITECTURE_LOCKED**, implementation
+  **AUTHORIZED** / **STARTED** / **COMPLETE**, lifecycle
+  `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`.
+- Sets `currentProductSlice = IMP-036A`, `pendingAcceptance = IMP-036A`, `nextProductSlice = IMP-036B`.
+  `acceptedThrough` remains IMP-036. Completion is **not** acceptance.
+- Locked boundary facts: `schema_change: NO`; `provider_IO: NO`; `new_service: NO`;
+  `new_auth_model: NO`; `new_roles: NO`; `new_permissions: NO`; `microfrontend: NO`; no new CURRENT
+  decision. Customer, Workforce, and Administration shells are separated via Next.js route groups
+  under static export; workforce hub navigation is permission-driven over existing session projection.
+- Locked capability architecture:
+  [`capabilities/IMP-036A-multi-portal-experience-foundation.md`](./capabilities/IMP-036A-multi-portal-experience-foundation.md).
+- Founder UAT **required** (`IMP-036A_FOUNDER_UAT_REQUIRED: YES`). Does **not** authorize or start
+  IMP-036B. Supersedes GTM-R96 for the current IMP-036A lifecycle position. Product acceptance
+  through IMP-036 is unchanged.
 
 ### GTM-R96 — 2026-09-01
 

@@ -3,7 +3,11 @@
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
+import { PageHeader } from "@/components/enterprise/PageHeader";
+import { LoadingState } from "@/components/enterprise/LoadingState";
+import { Alert } from "@/components/enterprise/Alert";
 import { fetchAdminSession } from "@/lib/administration/api";
+import { enterprisePanelClass } from "@/components/enterprise/enterprise-tokens";
 import { cn } from "@/lib/utils";
 
 type ViewState =
@@ -44,12 +48,14 @@ export function AdministrationHubClient() {
   }, []);
 
   if (view.kind === "loading") {
-    return <p data-testid="admin-loading">Loading administration…</p>;
+    return <LoadingState label="Loading administration…" />;
   }
   if (view.kind === "unauthorized") {
     return (
       <div data-testid="admin-unauthorized" className="space-y-3">
-        <p>Workforce sign-in is required for administration.</p>
+        <Alert tone="warning" title="Sign-in required">
+          Workforce sign-in is required for administration.
+        </Alert>
         <Button asChild>
           <a href="/workforce/login/">Workforce sign in</a>
         </Button>
@@ -57,7 +63,7 @@ export function AdministrationHubClient() {
     );
   }
   if (view.kind === "error") {
-    return <p data-testid="admin-error">{view.message}</p>;
+    return <Alert tone="danger">{view.message}</Alert>;
   }
 
   const links = [
@@ -76,20 +82,31 @@ export function AdministrationHubClient() {
 
   return (
     <div data-testid="admin-hub" className="space-y-6">
-      <p className="text-sm text-neutral-600">Signed in as {view.workforceUserId}</p>
-      <ul className="space-y-2">
+      <PageHeader
+        title="Administration overview"
+        description="Manage organization resources, memberships, and access audit from this workspace."
+      />
+      <p className="text-sm text-[var(--enterprise-text-secondary,#4b5542)]">
+        Signed in as <span className="font-medium">{view.workforceUserId}</span>
+      </p>
+      <ul className="grid gap-3 sm:grid-cols-2">
         {links
           .filter((link) => link.show)
           .map((link) => (
             <li key={link.href}>
-              <a className={cn("underline underline-offset-4")} href={link.href}>
+              <a
+                className={cn(enterprisePanelClass, "block px-4 py-3 text-sm font-semibold hover:shadow-sm focus-ring")}
+                href={link.href}
+              >
                 {link.label}
               </a>
             </li>
           ))}
       </ul>
       {!view.capabilities["access.membership.read"] && !view.capabilities["access.audit.read"] ? (
-        <p data-testid="admin-limited">No administration read capabilities on platform scope.</p>
+        <Alert tone="info" title="Limited administration scope">
+          No membership or audit read capabilities are currently granted on your platform scope.
+        </Alert>
       ) : null}
     </div>
   );

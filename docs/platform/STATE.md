@@ -2,11 +2,11 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R94",
+  "stateVersion": "STATE-R95",
   "acceptedThrough": "IMP-036",
-  "currentProductSlice": "NONE",
-  "nextProductSlice": "IMP-036A",
-  "pendingAcceptance": "NONE",
+  "currentProductSlice": "IMP-036A",
+  "nextProductSlice": "IMP-036B",
+  "pendingAcceptance": "IMP-036A",
   "governanceHealth": "ALIGNED",
   "lastReviewed": "2026-09-01"
 }
@@ -28,11 +28,11 @@ Accepted Range:            IMP-001 → IMP-036 (including IMP-005A and IMP-026C)
 ## 2. Current Work Position
 
 ```text
-Current Product Implementation: NONE
-Pending Acceptance:             NONE
-Next Product Slice:             IMP-036A — Multi-Portal Experience Foundation
-Current Governance Activity:    IMP-036 COMPLETE_AND_ACCEPTED;
-                              IMP-036A–G and IMP-037 PLANNED / NOT_ACTIVATED /
+Current Product Implementation: IMP-036A — Multi-Portal Experience Foundation
+Pending Acceptance:             IMP-036A
+Next Product Slice:             IMP-036B — Customer Account, Onboarding, Address & Location Experience
+Current Governance Activity:    IMP-036A IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE;
+                              IMP-036B–G and IMP-037 PLANNED / NOT_ACTIVATED /
                               NOT_AUTHORIZED / NOT_STARTED.
 Governance Health:              ALIGNED
 ```
@@ -1286,9 +1286,9 @@ Cart → Checkout → Payment → Order
 
 ```text
 acceptedThrough: IMP-036
-pendingAcceptance: NONE
-currentProductSlice: NONE
-nextProductSlice: IMP-036A — Multi-Portal Experience Foundation
+pendingAcceptance: IMP-036A
+currentProductSlice: IMP-036A — Multi-Portal Experience Foundation
+nextProductSlice: IMP-036B — Customer Account, Onboarding, Address & Location Experience
 IMP-028: COMPLETE_AND_ACCEPTED
 IMP-028_ACCEPTED: YES
 IMP-028A: COMPLETE_AND_ACCEPTED
@@ -1479,7 +1479,13 @@ IMP036_ACCEPTED_TREE: 9b5c3193bf74d75a820b16976e894ec2dffafa13
 D-374_CREATED: NO
 IMP036_IMPLEMENTATION_EVIDENCE: COMPLETE
 IMP_036_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
-IMP-036A: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
+IMP-036A: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
+IMP-036A_ARCHITECTURE_LOCKED: YES
+IMP-036A_IMPLEMENTATION_AUTHORIZED: YES
+IMP-036A_STARTED: YES
+IMP-036A_IMPLEMENTATION_COMPLETE: YES
+IMP-036A_ACCEPTED: NO
+IMP-036A_FOUNDER_UAT_REQUIRED: YES
 IMP-036B: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
 IMP-036C: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
 IMP-036D: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED

@@ -54,6 +54,9 @@ import {
   evaluateImp036AcceptanceArtifact,
   evaluateImp036AcceptanceCheckpoint,
   evaluateImp036AcceptanceCrossDocumentAlignment,
+  evaluateImp036aImplementationCompletionArtifact,
+  evaluateImp036aImplementationCompletionCheckpoint,
+  evaluateImp036aImplementationCompletionCrossDocumentAlignment,
   evaluateEnterpriseExperiencePlanningCheckpoint,
   evaluateImp031ArchitectureDraftArtifact,
   evaluateImp031ArchitectureDraftCheckpoint,
@@ -5967,19 +5970,34 @@ function deriveImp036CompletionDocs() {
   };
 }
 
-/** Use compatible live docs on R95/S93 or the planned R96/S94 successor; otherwise reconstruct R95/S93. */
+/** Use compatible live docs on R95/S93; otherwise reconstruct from pre-IMP-036A main. */
 function deriveImp036AcceptanceDocs(liveRoadmap, liveState, liveCapability) {
   if (
-    /"roadmapVersion": "GTM-R9[56]"/.test(liveRoadmap) &&
-    /"stateVersion": "STATE-R9[34]"/.test(liveState)
+    /"roadmapVersion": "GTM-R95"/.test(liveRoadmap) &&
+    /"stateVersion": "STATE-R93"/.test(liveState)
   ) {
     return { capabilityText: liveCapability, roadmapText: liveRoadmap, stateText: liveState };
   }
-  const base = "68b46a53dc5d1ff84a8493899e713d3ef43db3aa";
+  const base = "aa54094b57806acb6aba13e5fff4a8c8a5adf32e";
   return {
     capabilityText: liveCapability,
     roadmapText: execSync(`git show ${base}:docs/platform/ROADMAP.md`, { encoding: "utf8" }),
     stateText: execSync(`git show ${base}:docs/platform/STATE.md`, { encoding: "utf8" }),
+  };
+}
+
+/** Live docs on R97/S95 or reconstruct from current working tree when already at completion. */
+function deriveImp036aCompletionDocs(liveRoadmap, liveState, liveCapability) {
+  if (
+    /"roadmapVersion": "GTM-R97"/.test(liveRoadmap) &&
+    /"stateVersion": "STATE-R95"/.test(liveState)
+  ) {
+    return { capabilityText: liveCapability, roadmapText: liveRoadmap, stateText: liveState };
+  }
+  return {
+    capabilityText: liveCapability,
+    roadmapText: liveRoadmap,
+    stateText: liveState,
   };
 }
 
@@ -6112,6 +6130,43 @@ describe("IMP-036 formal acceptance checkpoint", () => {
     });
     assert.equal(authorized.ok, false);
     assert.equal(authorized.code, "IMP036_ACCEPTANCE_RESIDUE");
+  });
+});
+
+describe("IMP-036A implementation completion checkpoint", () => {
+  const completion = Object.freeze({
+    roadmapVersion: "GTM-R97", stateVersion: "STATE-R95", acceptedThrough: "IMP-036",
+    currentProductSlice: "IMP-036A", nextProductSlice: "IMP-036B", pendingAcceptance: "IMP-036A",
+    imp036: "COMPLETE_AND_ACCEPTED", imp036a: "IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE",
+    architecture: "LOCKED", architectureLocked: "YES", implementationAuthorized: "YES",
+    started: "YES", implementationComplete: "YES", accepted: "NO",
+    architectureVersion: "ARCH-R19", decisionRegisterVersion: "DR-15",
+    artifact: true, founderUatRequired: true,
+  });
+
+  const capabilityText = readFileSync(
+    "docs/platform/capabilities/IMP-036A-multi-portal-experience-foundation.md",
+    "utf8",
+  );
+  const liveRoadmapText = readFileSync("docs/platform/ROADMAP.md", "utf8");
+  const liveStateText = readFileSync("docs/platform/STATE.md", "utf8");
+  const { roadmapText, stateText } = deriveImp036aCompletionDocs(liveRoadmapText, liveStateText, capabilityText);
+
+  it("supports only the R97/S95 completion checkpoint", () => {
+    assert.deepEqual(evaluateImp036aImplementationCompletionCheckpoint(completion), { ok: true });
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R97", "STATE-R95", "imp036aCompletion"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R96", "STATE-R94", "imp036aCompletion"), false);
+  });
+
+  it("validates the live completion artifact", () => {
+    assert.deepEqual(evaluateImp036aImplementationCompletionArtifact(capabilityText), { ok: true });
+  });
+
+  it("aligns live ROADMAP/STATE/capability completion markers", () => {
+    assert.deepEqual(
+      evaluateImp036aImplementationCompletionCrossDocumentAlignment({ capabilityText, roadmapText, stateText }),
+      { ok: true },
+    );
   });
 });
 

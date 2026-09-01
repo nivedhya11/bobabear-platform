@@ -1,9 +1,9 @@
 ---
-Status: PLANNED CAPABILITY CONTRACT
+Status: CURRENT CAPABILITY CONTRACT
 Capability: IMP-036A — Multi-Portal Experience Foundation
-Lifecycle: PLANNED / NOT_ACTIVATED
-Architecture: NOT_LOCKED
-Implementation: NOT_AUTHORIZED / NOT_STARTED
+Lifecycle: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
+Architecture: ARCHITECTURE_LOCKED
+Implementation: AUTHORIZED / STARTED / COMPLETE
 Founder UAT required: YES
 ---
 
