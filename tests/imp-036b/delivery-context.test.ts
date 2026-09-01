@@ -20,16 +20,21 @@ describe("delivery-context", () => {
     expect(readDeliveryContext()).toEqual({
       postalCode: "",
       displayLabel: "",
-      source: "manual_pin",
+      source: "location_search",
+      coordinates: null,
     });
   });
 
-  it("persists manual PIN context", () => {
-    writeDeliveryContextPin("248001");
+  it("persists coordinate-backed location context", () => {
+    writeDeliveryContext({
+      displayLabel: "Rajpur Road, Dehradun",
+      coordinates: { latitude: "30.3256000", longitude: "78.0436000" },
+      source: "location_search",
+    });
     expect(readDeliveryContext()).toMatchObject({
-      postalCode: "248001",
-      displayLabel: "248001",
-      source: "manual_pin",
+      displayLabel: "Rajpur Road, Dehradun",
+      source: "location_search",
+      coordinates: { latitude: "30.3256000", longitude: "78.0436000" },
     });
   });
 

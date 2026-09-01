@@ -14,36 +14,36 @@ export function deliverToOperatingAreaLocality(): string {
 }
 
 export function deliverToOrientationBody(): string {
-  return `Check your PIN for delivery availability in ${BUSINESS.locality}.`;
+  return `Choose your delivery location in ${BUSINESS.locality}.`;
 }
 
 export function deliverToPinHint(): string {
-  return "Enter your PIN to check delivery availability.";
+  return "Choose your delivery location to check availability.";
 }
 
 export function cartEvaluationCustomerCopy(
   evaluation: CommerceCartEvaluation | null,
-  hasPin: boolean,
+  hasLocation: boolean,
 ): string | null {
   if (!evaluation) {
-    return hasPin
-      ? "We’ll check this PIN before you pay."
+    return hasLocation
+      ? "We'll check this location before you pay."
       : null;
   }
 
   switch (evaluation.status) {
     case "COMPLETE":
-      return "This PIN looks deliverable.";
+      return "This location looks deliverable.";
     case "REQUIRES_FULFILMENT_CONTEXT":
-      return "Add your PIN to check delivery availability.";
+      return "Choose your delivery location to check availability.";
     case "SERVICEABILITY_NOT_SERVICEABLE":
-      return "We don't deliver to that PIN yet. You can still browse and update your PIN.";
+      return "We don't deliver to that location yet. You can still browse and choose another.";
     case "SERVICEABILITY_TEMPORARILY_UNAVAILABLE":
-      return "Delivery isn't available right now for that PIN. Try again later.";
+      return "Delivery isn't available right now for that location. Try again later.";
     case "SERVICEABILITY_INDETERMINATE":
     case "EVALUATION_INDETERMINATE":
-      return "We couldn't confirm delivery for that PIN. Try again shortly.";
+      return "We couldn't confirm delivery for that location. Try again shortly.";
     default:
-      return "Please check this PIN again.";
+      return "Please check this location again.";
   }
 }

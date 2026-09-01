@@ -4,8 +4,6 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 import {
   geolocationFailureCopy,
-  locationProviderUnavailableCopy,
-  missingPinCopy,
   serviceabilityRecoveryHint,
   serviceabilityStatusCopy,
 } from "@/components/location/serviceability-copy";
@@ -33,20 +31,37 @@ function parseCoordinate(value: string | null): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function hasCoordinates(location: NormalizedCommerceLocation): boolean {
+  return parseCoordinate(location.latitude) !== null && parseCoordinate(location.longitude) !== null;
+}
+
+function locationCoordinates(
+  location: NormalizedCommerceLocation,
+): Readonly<{ latitude: string; longitude: string }> | null {
+  if (!hasCoordinates(location)) return null;
+  return Object.freeze({
+    latitude: location.latitude!,
+    longitude: location.longitude!,
+  });
+}
+
 function formatAddressCard(location: NormalizedCommerceLocation): Readonly<{
   primary: string;
   secondary: string;
 }> {
   const parts = location.displayAddress.split(",").map((part) => part.trim()).filter(Boolean);
   const primary = parts[0] ?? location.locality ?? "Selected location";
+  const city = location.locality;
   const secondaryParts = [
-    location.locality && location.locality !== primary ? location.locality : null,
-    location.administrativeArea,
-    location.postalCode,
+    city && city !== primary ? city : null,
+    location.administrativeArea && location.administrativeArea !== city ? null : null,
   ].filter((part): part is string => typeof part === "string" && part.length > 0);
+  if (city && city !== primary && !secondaryParts.includes(city)) {
+    secondaryParts.unshift(city);
+  }
   return Object.freeze({
     primary,
-    secondary: secondaryParts.join(", "),
+    secondary: secondaryParts.length > 0 ? secondaryParts.join(", ") : (city ?? ""),
   });
 }
 
@@ -73,28 +88,28 @@ export function DeliveryLocationMapConfirmation(props: {
   const mapsConfigured = isMapsJsConfigured();
 
   const [mapsLoading, setMapsLoading] = useState(hasInitialCoordinates && mapsConfigured);
-  const [mapsAvailable, setMapsAvailable] = useState(hasInitialCoordinates && mapsConfigured);
+  const [mapsAvailable, setMapsAvailable] = useState(false);
   const [location, setLocation] = useState(initialLocation);
   const [resolvingAddress, setResolvingAddress] = useState(false);
   const [checkingServiceability, setCheckingServiceability] = useState(false);
   const [decision, setDecision] = useState<CommerceServiceabilityDecision | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [manualPin, setManualPin] = useState(initialLocation.postalCode ?? "");
 
   const addressCard = formatAddressCard(location);
   const recoveryHint = decision ? serviceabilityRecoveryHint(decision.status) : null;
+  const coordinates = locationCoordinates(location);
   const confirmEnabled =
     !pending &&
     !checkingServiceability &&
     !resolvingAddress &&
     decision?.status === "SERVICEABLE" &&
-    location.pinConfirmed &&
-    Boolean(location.postalCode);
+    coordinates !== null;
 
   const evaluateForLocation = useCallback(async (next: NormalizedCommerceLocation) => {
-    if (!next.postalCode || !/^\d{6}$/.test(next.postalCode)) {
+    const nextCoordinates = locationCoordinates(next);
+    if (!nextCoordinates) {
       setDecision(null);
-      setStatusMessage(missingPinCopy());
+      setStatusMessage("We couldn't confirm this location. Try another search.");
       return;
     }
     const seq = ++serviceabilitySeqRef.current;
@@ -103,10 +118,8 @@ export function DeliveryLocationMapConfirmation(props: {
     setDecision(null);
     const evaluated = await evaluateDeliveryServiceability(
       DIRECT_ORDERING_BRAND_ID,
+      nextCoordinates,
       next.postalCode,
-      next.latitude && next.longitude
-        ? { latitude: next.latitude, longitude: next.longitude }
-        : null,
     );
     if (seq !== serviceabilitySeqRef.current) return;
     setCheckingServiceability(false);
@@ -135,19 +148,19 @@ export function DeliveryLocationMapConfirmation(props: {
     if (controller.signal.aborted) return;
     setResolvingAddress(false);
     if (!result.ok) {
-      setStatusMessage("We couldn't update the address for this spot.");
+      const fallback = Object.freeze({
+        ...location,
+        latitude: center.lat().toFixed(7),
+        longitude: center.lng().toFixed(7),
+      });
+      setLocation(fallback);
+      await evaluateForLocation(fallback);
       return;
     }
     const next = result.data.location;
     setLocation(next);
-    if (!next.pinConfirmed || !next.postalCode) {
-      setDecision(null);
-      setStatusMessage(missingPinCopy());
-      return;
-    }
-    setManualPin(next.postalCode);
     await evaluateForLocation(next);
-  }, [evaluateForLocation]);
+  }, [evaluateForLocation, location]);
 
   const scheduleReverseGeocode = useCallback(() => {
     if (idleTimerRef.current !== null) window.clearTimeout(idleTimerRef.current);
@@ -166,6 +179,13 @@ export function DeliveryLocationMapConfirmation(props: {
     }
 
     if (initialLat === null || initialLng === null) {
+      runInitialServiceability();
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    if (!mapsConfigured) {
       runInitialServiceability();
       return () => {
         cancelled = true;
@@ -205,7 +225,7 @@ export function DeliveryLocationMapConfirmation(props: {
       if (idleTimerRef.current !== null) window.clearTimeout(idleTimerRef.current);
       reverseAbortRef.current?.abort();
     };
-  }, [initialLocation, initialLat, initialLng, evaluateForLocation, scheduleReverseGeocode]);
+  }, [initialLocation, initialLat, initialLng, evaluateForLocation, scheduleReverseGeocode, mapsConfigured]);
 
   async function handleUseCurrentLocation(): Promise<void> {
     setStatusMessage(null);
@@ -218,43 +238,31 @@ export function DeliveryLocationMapConfirmation(props: {
       latitude: Number.parseFloat(geo.coordinates.latitude),
       longitude: Number.parseFloat(geo.coordinates.longitude),
     });
-    if (!reverse.ok) {
-      setStatusMessage(locationProviderUnavailableCopy());
-      return;
-    }
-    const next = reverse.data.location;
+    const next = reverse.ok
+      ? reverse.data.location
+      : Object.freeze({
+          displayAddress: "Current location",
+          postalCode: null,
+          pinConfirmed: false,
+          locality: null,
+          administrativeArea: null,
+          stateCode: null,
+          country: "India" as const,
+          countryCode: "IN" as const,
+          latitude: geo.coordinates.latitude,
+          longitude: geo.coordinates.longitude,
+        });
     setLocation(next);
     const lat = parseCoordinate(next.latitude);
     const lng = parseCoordinate(next.longitude);
     if (mapRef.current && lat !== null && lng !== null) {
       mapRef.current.setCenter({ lat, lng });
     }
-    if (!next.pinConfirmed || !next.postalCode) {
-      setDecision(null);
-      setStatusMessage(missingPinCopy());
-      return;
-    }
-    setManualPin(next.postalCode);
     await evaluateForLocation(next);
   }
 
-  async function handleManualPinSubmit(event: React.FormEvent): Promise<void> {
-    event.preventDefault();
-    if (!/^\d{6}$/.test(manualPin)) {
-      setStatusMessage("Enter a valid 6-digit PIN.");
-      return;
-    }
-    const patched = Object.freeze({
-      ...location,
-      postalCode: manualPin,
-      pinConfirmed: true,
-    });
-    setLocation(patched);
-    await evaluateForLocation(patched);
-  }
-
   function handleConfirm(): void {
-    if (!confirmEnabled || !decision || !location.postalCode) return;
+    if (!confirmEnabled || !decision || !coordinates) return;
     onConfirm(location, decision);
   }
 
@@ -334,26 +342,6 @@ export function DeliveryLocationMapConfirmation(props: {
           <Button type="button" variant="outline" size="sm" disabled={pending} onClick={() => void handleUseCurrentLocation()}>
             Use current location
           </Button>
-        ) : null}
-
-        {!location.pinConfirmed ? (
-          <form onSubmit={(event) => void handleManualPinSubmit(event)} className="flex flex-col gap-2">
-            <label className="font-body text-[13px] font-semibold">
-              PIN code
-              <input
-                className="mt-1 h-11 w-full border border-[var(--border-strong)] bg-transparent px-3"
-                inputMode="numeric"
-                autoComplete="postal-code"
-                maxLength={6}
-                value={manualPin}
-                disabled={pending || checkingServiceability}
-                onChange={(event) => setManualPin(event.target.value.replace(/\D/g, "").slice(0, 6))}
-              />
-            </label>
-            <Button type="submit" variant="outline" size="sm" disabled={pending || manualPin.length !== 6}>
-              Check delivery
-            </Button>
-          </form>
         ) : null}
 
         {checkingServiceability ? (

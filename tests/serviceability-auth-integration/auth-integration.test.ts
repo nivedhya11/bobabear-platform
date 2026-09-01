@@ -5,13 +5,14 @@ import { afterEach, describe, expect, it } from "vitest";
 import { sql } from "drizzle-orm";
 
 import {
-  addOutletServiceabilityPins,
   evaluateServiceability,
   setOutletServiceabilityRoutingPriority,
 } from "../../src/server/serviceability";
 import { requireServiceabilityWorkforceActor } from "../../src/server/serviceability/authorize";
 import {
   closeTrackedPersistenceHandles,
+  seedOutletDistanceServiceability,
+  TEST_INSIDE_COORDS,
   withServiceabilityHarness,
 } from "../database/support/serviceability-fixtures";
 
@@ -76,20 +77,11 @@ describe("IMP-019 serviceability auth integration", () => {
 
   it("evaluateServiceability works without a workforce session", async () => {
     await withServiceabilityHarness(async ({ persistence, actors }) => {
-      await setOutletServiceabilityRoutingPriority(persistence, actors.psaActor, {
-        outletId: actors.tree.outletA.id,
-        routingPriority: 1,
-        expectedRevision: null,
-      });
-      await addOutletServiceabilityPins(persistence, actors.psaActor, {
-        outletId: actors.tree.outletA.id,
-        postalCodes: ["248001"],
-        expectedRevision: BigInt(1),
-      });
+      await seedOutletDistanceServiceability(persistence, actors.psaActor, actors.tree.outletA.id);
 
       const decision = await evaluateServiceability(persistence, {
         brandId: actors.tree.brand.id,
-        location: { postalCode: "248001" },
+        location: { coordinates: TEST_INSIDE_COORDS },
       });
       expect(decision.status).toBe("SERVICEABLE");
       if (decision.status === "SERVICEABLE") {

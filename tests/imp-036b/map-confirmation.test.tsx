@@ -29,9 +29,9 @@ vi.mock("@/lib/customer-location/maps-js-loader", () => ({
 }));
 
 const baseLocation = {
-  displayAddress: "Clock Tower, Dehradun, Uttarakhand 248001, India",
-  postalCode: "248001",
-  pinConfirmed: true,
+  displayAddress: "Rajpur Road, Dehradun, Uttarakhand, India",
+  postalCode: null,
+  pinConfirmed: false,
   locality: "Dehradun",
   administrativeArea: "Uttarakhand",
   stateCode: "IN-UT",
@@ -69,11 +69,12 @@ describe("DeliveryLocationMapConfirmation", () => {
     await waitFor(() =>
       expect(evaluateDeliveryServiceability).toHaveBeenCalledWith(
         expect.anything(),
-        "248001",
         { latitude: "30.3256000", longitude: "78.0436000" },
+        null,
       ),
     );
     expect(screen.getByRole("button", { name: "Confirm location" })).toBeEnabled();
+    expect(screen.queryByLabelText(/PIN code/i)).not.toBeInTheDocument();
   });
 
   it("does not expose raw serviceability enum text", async () => {
@@ -95,18 +96,16 @@ describe("DeliveryLocationMapConfirmation", () => {
     expect(screen.getByRole("button", { name: "Choose another location" })).toBeInTheDocument();
   });
 
-  it("shows missing PIN fallback copy", async () => {
+  it("evaluates serviceability without requiring postal code", async () => {
     render(
       <DeliveryLocationMapConfirmation
-        initialLocation={{ ...baseLocation, postalCode: null, pinConfirmed: false }}
+        initialLocation={baseLocation}
         onConfirm={vi.fn()}
         onBack={vi.fn()}
         onChooseAnother={vi.fn()}
       />,
     );
-    await waitFor(() =>
-      expect(screen.getByText(/couldn't confirm its PIN/i)).toBeInTheDocument(),
-    );
-    expect(screen.getByLabelText(/PIN code/i)).toBeInTheDocument();
+    await waitFor(() => expect(evaluateDeliveryServiceability).toHaveBeenCalled());
+    expect(screen.queryByText(/couldn't confirm its PIN/i)).not.toBeInTheDocument();
   });
 });

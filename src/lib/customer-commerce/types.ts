@@ -122,8 +122,8 @@ export type CommerceServiceabilityDecision = Readonly<{
 export type CommerceServiceabilityEvaluateInput = Readonly<{
   brandId: string;
   location: Readonly<{
-    postalCode: string;
-    coordinates?: Readonly<{ latitude: string; longitude: string }> | null;
+    postalCode?: string;
+    coordinates: Readonly<{ latitude: string; longitude: string }>;
   }>;
 }>;
 

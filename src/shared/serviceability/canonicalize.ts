@@ -27,6 +27,14 @@ if (
   );
 }
 
+/** Optional postal metadata — validates when present; null/undefined allowed. */
+export function canonicalizeOptionalServiceabilityPostalCode(
+  raw: unknown,
+): string | null {
+  if (raw === undefined || raw === null) return null;
+  return canonicalizeServiceabilityPostalCode(raw);
+}
+
 export function canonicalizeServiceabilityPostalCode(raw: unknown): string {
   if (raw === undefined || raw === null) {
     throw new ServiceabilityError(

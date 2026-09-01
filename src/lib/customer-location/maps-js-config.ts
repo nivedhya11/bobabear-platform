@@ -3,11 +3,11 @@
  *
  * Intentionally browser-visible and restricted to Maps JavaScript API only.
  * Never use the server Places/Geocoding key here.
+ *
+ * NEXT_PUBLIC values must be referenced statically for build-time inlining.
  */
-const MAPS_BROWSER_KEY_ENV = "NEXT_PUBLIC_BOBA_BEAR_GOOGLE_MAPS_BROWSER_KEY";
-
 export function getMapsBrowserKey(): string | null {
-  const raw = process.env[MAPS_BROWSER_KEY_ENV]?.trim();
+  const raw = process.env.NEXT_PUBLIC_BOBA_BEAR_GOOGLE_MAPS_BROWSER_KEY?.trim();
   if (!raw || raw.length === 0) return null;
   if (raw.startsWith("replace-with")) return null;
   return raw;
@@ -21,6 +21,6 @@ export function isMapsJsConfigured(): boolean {
 export function mapsJsConfigStatus(): Readonly<{ configured: boolean; envKey: string }> {
   return Object.freeze({
     configured: isMapsJsConfigured(),
-    envKey: MAPS_BROWSER_KEY_ENV,
+    envKey: "NEXT_PUBLIC_BOBA_BEAR_GOOGLE_MAPS_BROWSER_KEY",
   });
 }

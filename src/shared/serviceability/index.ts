@@ -40,6 +40,7 @@ export {
   assertUuid,
   canonicalizeDistancePolicyFields,
   canonicalizePostalCodeSet,
+  canonicalizeOptionalServiceabilityPostalCode,
   canonicalizeServiceabilityCoordinates,
   canonicalizeServiceabilityPostalCode,
   parseExpectedRevision,

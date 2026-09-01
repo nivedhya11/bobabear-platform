@@ -7,6 +7,7 @@ import {
   canonicalizeDistancePolicyFields,
   canonicalizePostalCodeSet,
   canonicalizeServiceabilityCoordinates,
+  canonicalizeOptionalServiceabilityPostalCode,
   canonicalizeServiceabilityPostalCode,
   parseExpectedRevision,
 } from "./canonicalize";
@@ -255,7 +256,7 @@ export function parseEvaluateServiceabilityInput(
     }
   }
 
-  const postalCode = canonicalizeServiceabilityPostalCode(
+  const postalCode = canonicalizeOptionalServiceabilityPostalCode(
     locationObj.postalCode,
   );
   const coordinates: ServiceabilityCoordinates | null =
@@ -264,7 +265,7 @@ export function parseEvaluateServiceabilityInput(
   return Object.freeze({
     brandId,
     location: Object.freeze({
-      postalCode,
+      ...(postalCode !== null ? { postalCode } : {}),
       ...(coordinates !== null ? { coordinates } : {}),
     }),
   });

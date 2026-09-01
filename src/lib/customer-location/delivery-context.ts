@@ -1,8 +1,7 @@
 /**
  * Unified delivery location context — sessionStorage (IMP-036B).
  *
- * Extends the delivery-pin presentation pattern with display label, source,
- * and optional saved-address reference. PIN remains the serviceability key.
+ * Coordinates are the Serviceability authority; postalCode is optional address metadata.
  */
 import { BUSINESS } from "@/lib/site";
 
@@ -18,17 +17,24 @@ export type DeliveryContextSource =
   | "device_location"
   | "location_search";
 
+export type DeliveryCoordinates = Readonly<{
+  latitude: string;
+  longitude: string;
+}>;
+
 export type DeliveryContext = Readonly<{
   postalCode: string;
   displayLabel: string;
   source: DeliveryContextSource;
   savedAddressId?: string;
+  coordinates?: DeliveryCoordinates | null;
 }>;
 
 const EMPTY_CONTEXT: DeliveryContext = Object.freeze({
   postalCode: "",
   displayLabel: "",
-  source: "manual_pin",
+  source: "location_search",
+  coordinates: null,
 });
 
 function canUseSessionStorage(): boolean {
@@ -37,6 +43,16 @@ function canUseSessionStorage(): boolean {
 
 function isValidPin(value: string): boolean {
   return /^\d{6}$/.test(value);
+}
+
+function parseCoordinates(raw: unknown): DeliveryCoordinates | null {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return null;
+  const obj = raw as Record<string, unknown>;
+  if (typeof obj.latitude !== "string" || typeof obj.longitude !== "string") return null;
+  const lat = Number.parseFloat(obj.latitude);
+  const lng = Number.parseFloat(obj.longitude);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  return Object.freeze({ latitude: obj.latitude, longitude: obj.longitude });
 }
 
 function normalizeContext(raw: unknown): DeliveryContext {
@@ -50,12 +66,13 @@ function normalizeContext(raw: unknown): DeliveryContext {
     obj.source === "manual_pin" ||
     obj.source === "location_search"
       ? obj.source
-      : "manual_pin";
+      : "location_search";
   const savedAddressId =
     typeof obj.savedAddressId === "string" && obj.savedAddressId.length > 0
       ? obj.savedAddressId
       : undefined;
-  return Object.freeze({ postalCode, displayLabel, source, savedAddressId });
+  const coordinates = parseCoordinates(obj.coordinates);
+  return Object.freeze({ postalCode, displayLabel, source, savedAddressId, coordinates });
 }
 
 function readStoredContext(): DeliveryContext {
@@ -80,7 +97,11 @@ function readStoredContext(): DeliveryContext {
 function persistContext(context: DeliveryContext): void {
   if (!canUseSessionStorage()) return;
   try {
-    if (context.postalCode.length === 0 && context.displayLabel.length === 0) {
+    if (
+      context.postalCode.length === 0 &&
+      context.displayLabel.length === 0 &&
+      !context.coordinates
+    ) {
       window.sessionStorage.removeItem(STORAGE_KEY);
       window.sessionStorage.removeItem(LEGACY_PIN_KEY);
     } else {
@@ -113,14 +134,18 @@ export function readDeliveryContext(): DeliveryContext {
 
 export function writeDeliveryContext(
   patch: Readonly<{
-    postalCode: string;
+    postalCode?: string;
     displayLabel?: string;
     source?: DeliveryContextSource;
     savedAddressId?: string;
+    coordinates?: DeliveryCoordinates | null;
   }>,
 ): DeliveryContext {
   const current = readStoredContext();
-  const postalCode = isValidPin(patch.postalCode) ? patch.postalCode : "";
+  const postalCode =
+    patch.postalCode !== undefined
+      ? isValidPin(patch.postalCode) ? patch.postalCode : ""
+      : current.postalCode;
   const displayLabel =
     patch.displayLabel !== undefined
       ? patch.displayLabel
@@ -129,10 +154,16 @@ export function writeDeliveryContext(
         : current.displayLabel;
   const source = patch.source ?? current.source;
   const savedAddressId = patch.savedAddressId ?? current.savedAddressId;
-  const next = Object.freeze({ postalCode, displayLabel, source, savedAddressId });
+  const coordinates =
+    patch.coordinates !== undefined ? patch.coordinates : current.coordinates ?? null;
+  const next = Object.freeze({ postalCode, displayLabel, source, savedAddressId, coordinates });
   persistContext(next);
   publishDeliveryContext(next);
   return next;
+}
+
+export function readDeliveryContextCoordinates(): DeliveryCoordinates | null {
+  return readStoredContext().coordinates ?? null;
 }
 
 /** PIN-only accessor for legacy consumers. */

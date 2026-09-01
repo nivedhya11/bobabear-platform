@@ -17,6 +17,10 @@ import {
 import { getApplicationPersistence } from "../../../src/server/persistence";
 import type { Persistence } from "../../../src/server/persistence/types";
 import {
+  setOutletServiceabilityDistancePolicy,
+  setOutletServiceabilityRoutingPriority,
+} from "../../../src/server/serviceability";
+import {
   createEligibleWorkforceUser,
   principalFor,
   seedBrandTree,
@@ -89,6 +93,49 @@ export async function pauseOutletIndefinitely(
 ): Promise<void> {
   await persistence.transaction(async (tx) => {
     await pauseOutlet(tx, { actor, outletId, pausedUntil: null });
+  });
+}
+
+/** BOBA-Dehradun-aligned test origin for OUTLET_DISTANCE_SERVICEABILITY_V1. */
+export const TEST_SERVICE_ORIGIN = Object.freeze({
+  latitude: "30.2868286",
+  longitude: "77.9991566",
+});
+
+export const TEST_INSIDE_COORDS = Object.freeze({
+  latitude: "30.3256000",
+  longitude: "78.0436000",
+});
+
+export const TEST_OUTSIDE_COORDS = Object.freeze({
+  latitude: "30.5000000",
+  longitude: "78.2000000",
+});
+
+/** Seeds routing priority + complete distance policy for coordinate Serviceability tests. */
+export async function seedOutletDistanceServiceability(
+  persistence: Persistence,
+  actor: unknown,
+  outletId: string,
+  input: Readonly<{
+    routingPriority?: number;
+    routingExpectedRevision?: bigint | null;
+    maxServiceDistanceMeters?: number;
+  }> = {},
+): Promise<void> {
+  const routingPriority = input.routingPriority ?? 1;
+  const routingExpectedRevision = input.routingExpectedRevision ?? null;
+  const created = await setOutletServiceabilityRoutingPriority(persistence, actor, {
+    outletId,
+    routingPriority,
+    expectedRevision: routingExpectedRevision,
+  });
+  await setOutletServiceabilityDistancePolicy(persistence, actor, {
+    outletId,
+    expectedRevision: created.revision,
+    serviceOriginLatitude: TEST_SERVICE_ORIGIN.latitude,
+    serviceOriginLongitude: TEST_SERVICE_ORIGIN.longitude,
+    maxServiceDistanceMeters: input.maxServiceDistanceMeters ?? 9_000,
   });
 }
 

@@ -18,9 +18,10 @@ import {
 } from "@/components/ordering/cart-presentation";
 import { publishCartCount } from "@/components/ordering/cart-count-sync";
 import {
-  readDeliveryPinContext,
-  subscribeToDeliveryPinContext,
-} from "@/components/ordering/delivery-pin-context";
+  readDeliveryContext,
+  subscribeToDeliveryContext,
+  type DeliveryContext,
+} from "@/lib/customer-location/delivery-context";
 import { commerceErrorCopy } from "@/components/ordering/error-copy";
 import { cartEvaluationCustomerCopy } from "@/components/ordering/serviceability-copy";
 import {
@@ -50,7 +51,7 @@ export function OrderingCatalogClient(props: { brandId: string }) {
   const [menu, setMenu] = useState<CustomerMenuProjection | null>(null);
   const [cart, setCart] = useState<CommerceCart | null>(null);
   const [evaluation, setEvaluation] = useState<CommerceCartEvaluation | null>(null);
-  const [deliveryPin, setDeliveryPin] = useState(() => readDeliveryPinContext());
+  const [deliveryContext, setDeliveryContext] = useState<DeliveryContext>(() => readDeliveryContext());
   const [loading, setLoading] = useState(true);
   const [pendingKey, setPendingKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -65,14 +66,17 @@ export function OrderingCatalogClient(props: { brandId: string }) {
   );
 
   const refreshEvaluation = useCallback(
-    async (pin: string, currentCart: CommerceCart | null) => {
-      if (!currentCart || currentCart.lines.length === 0 || pin.length !== 6) {
+    async (context: DeliveryContext, currentCart: CommerceCart | null) => {
+      if (!currentCart || currentCart.lines.length === 0 || !context.coordinates) {
         setEvaluation(null);
         return;
       }
       const evaluated = await evaluateCart({
         brandId,
-        location: { postalCode: pin },
+        location: {
+          coordinates: context.coordinates,
+          ...(context.postalCode.length === 6 ? { postalCode: context.postalCode } : {}),
+        },
       });
       if (evaluated.ok) setEvaluation(evaluated.data);
       else setEvaluation(null);
@@ -98,8 +102,8 @@ export function OrderingCatalogClient(props: { brandId: string }) {
     }
     setCart(result.data.cart);
     setError(null);
-    await refreshEvaluation(deliveryPin, result.data.cart);
-  }, [brandId, deliveryPin, refreshEvaluation]);
+    await refreshEvaluation(deliveryContext, result.data.cart);
+  }, [brandId, deliveryContext, refreshEvaluation]);
 
   const refreshMenu = useCallback(async () => {
     const result = await getCustomerMenu({ brandId });
@@ -180,16 +184,16 @@ export function OrderingCatalogClient(props: { brandId: string }) {
   const selectedGroup = groups.find((group) => group.id === activeCategoryId) ?? null;
 
   useEffect(() => {
-    return subscribeToDeliveryPinContext((pin) => {
-      setDeliveryPin(pin);
-      void refreshEvaluation(pin, cart);
+    return subscribeToDeliveryContext((nextContext) => {
+      setDeliveryContext(nextContext);
+      void refreshEvaluation(nextContext, cart);
     });
   }, [cart, refreshEvaluation]);
 
   async function updateCartFromMutation(nextCart: CommerceCart): Promise<void> {
     setCart(nextCart);
     publishCartCount(cartUnitCount(nextCart));
-    await refreshEvaluation(deliveryPin, nextCart);
+    await refreshEvaluation(deliveryContext, nextCart);
   }
 
   const quantityByVariant = useMemo(() => {
@@ -229,7 +233,7 @@ export function OrderingCatalogClient(props: { brandId: string }) {
   );
 
   const lineCount = cartUnitCount(cart);
-  const serviceabilityNote = cartEvaluationCustomerCopy(evaluation, deliveryPin.length === 6);
+  const serviceabilityNote = cartEvaluationCustomerCopy(evaluation, Boolean(deliveryContext.coordinates));
 
   async function withPending(key: string, work: () => Promise<void>): Promise<void> {
     if (pendingKey) return;

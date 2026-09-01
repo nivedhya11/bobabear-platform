@@ -29,8 +29,8 @@ import { eq } from "drizzle-orm";
 
 export type EvaluateCartInput = Readonly<{
   location?: Readonly<{
-    postalCode: string;
-    coordinates?: Readonly<{ latitude: string; longitude: string }> | null;
+    postalCode?: string;
+    coordinates: Readonly<{ latitude: string; longitude: string }>;
   }> | null;
 }>;
 
@@ -72,42 +72,37 @@ function parseEvaluateInput(raw: unknown): EvaluateCartInput {
       );
     }
   }
-  if (typeof loc.postalCode !== "string") {
+  if (loc.coordinates === undefined || loc.coordinates === null) {
     throw new CartError(
       "CART_INVALID_INPUT",
-      "postalCode must be a string.",
-      { field: "postalCode" },
+      "coordinates are required when location is provided.",
+      { field: "coordinates" },
     );
   }
-  let coordinates:
-    | Readonly<{ latitude: string; longitude: string }>
-    | null
-    | undefined;
-  if (loc.coordinates !== undefined && loc.coordinates !== null) {
-    if (typeof loc.coordinates !== "object" || Array.isArray(loc.coordinates)) {
-      throw new CartError(
-        "CART_INVALID_INPUT",
-        "coordinates must be an object.",
-        { field: "coordinates" },
-      );
-    }
-    const c = loc.coordinates as Record<string, unknown>;
-    if (typeof c.latitude !== "string" || typeof c.longitude !== "string") {
-      throw new CartError(
-        "CART_INVALID_INPUT",
-        "coordinates require latitude and longitude strings.",
-        { field: "coordinates" },
-      );
-    }
-    coordinates = Object.freeze({
-      latitude: c.latitude,
-      longitude: c.longitude,
-    });
+  if (typeof loc.coordinates !== "object" || Array.isArray(loc.coordinates)) {
+    throw new CartError(
+      "CART_INVALID_INPUT",
+      "coordinates must be an object.",
+      { field: "coordinates" },
+    );
   }
+  const c = loc.coordinates as Record<string, unknown>;
+  if (typeof c.latitude !== "string" || typeof c.longitude !== "string") {
+    throw new CartError(
+      "CART_INVALID_INPUT",
+      "coordinates require latitude and longitude strings.",
+      { field: "coordinates" },
+    );
+  }
+  const coordinates = Object.freeze({
+    latitude: c.latitude,
+    longitude: c.longitude,
+  });
+  const postalCode = typeof loc.postalCode === "string" ? loc.postalCode : undefined;
   return Object.freeze({
     location: Object.freeze({
-      postalCode: loc.postalCode,
-      coordinates: coordinates ?? null,
+      coordinates,
+      ...(postalCode !== undefined ? { postalCode } : {}),
     }),
   });
 }

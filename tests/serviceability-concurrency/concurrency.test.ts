@@ -19,6 +19,8 @@ import { getApplicationPersistence } from "../../src/server/persistence";
 import {
   applicationConfig,
   closeTrackedPersistenceHandles,
+  seedOutletDistanceServiceability,
+  TEST_INSIDE_COORDS,
   trackPersistenceHandle,
   withServiceabilityHarness,
 } from "../database/support/serviceability-fixtures";
@@ -386,16 +388,7 @@ describe("IMP-019 serviceability concurrency", () => {
       const outletId = tree.outletA.id;
       const { a, b } = dualPersistence(database.connectionString);
 
-      await setOutletServiceabilityRoutingPriority(persistence, brandAdminActor, {
-        outletId,
-        routingPriority: 1,
-        expectedRevision: null,
-      });
-      await addOutletServiceabilityPins(persistence, brandAdminActor, {
-        outletId,
-        postalCodes: ["248001"],
-        expectedRevision: BigInt(1),
-      });
+      await seedOutletDistanceServiceability(persistence, brandAdminActor, outletId);
 
       const results = await Promise.all([
         (async () => {
@@ -404,7 +397,7 @@ describe("IMP-019 serviceability concurrency", () => {
             decisions.push(
               await evaluateServiceability(a, {
                 brandId: tree.brand.id,
-                location: { postalCode: "248001" },
+                location: { coordinates: TEST_INSIDE_COORDS },
               }),
             );
           }
