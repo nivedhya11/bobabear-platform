@@ -23,6 +23,10 @@ async function installMockGoogleMaps(page: Page): Promise<void> {
       event: {
         trigger: () => undefined,
       },
+      importLibrary: async (name: string) => {
+        if (name === "maps") return { Map: MapMock };
+        throw new Error(`Unsupported library: ${name}`);
+      },
     };
     (window as unknown as { google: { maps: typeof mapsMock } }).google = { maps: mapsMock };
   });
