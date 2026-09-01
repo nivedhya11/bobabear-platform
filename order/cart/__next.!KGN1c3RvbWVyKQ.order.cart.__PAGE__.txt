@@ -2,5 +2,5 @@
 2:I[1878,["8409","static/chunks/8409-b37ea358ba142cea.js","3520","static/chunks/3520-5794ecfe8c3a7b74.js","5144","static/chunks/5144-6ab7af5f82fc70cd.js","8574","static/chunks/8574-a545630603a254ec.js","5498","static/chunks/app/(customer)/order/cart/page-8814d2a1624d44cf.js"],"CartClient"]
 3:I[484,[],"OutletBoundary"]
 4:"$Sreact.suspense"
-0:{"rsc":["$","$1","c",{"children":[["$","$L2",null,{"brandId":"56ff7724-d511-5ef4-b5d5-d629cbfb2388"}],null,["$","$L3",null,{"children":["$","$4",null,{"name":"Next.MetadataOutlet","children":"$@5"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"TcH1mBezj2UBVrFmo89t1"}
+0:{"rsc":["$","$1","c",{"children":[["$","$L2",null,{"brandId":"56ff7724-d511-5ef4-b5d5-d629cbfb2388"}],null,["$","$L3",null,{"children":["$","$4",null,{"name":"Next.MetadataOutlet","children":"$@5"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"rM-UOXnY-1boC_ax9iNUq"}
 5:null

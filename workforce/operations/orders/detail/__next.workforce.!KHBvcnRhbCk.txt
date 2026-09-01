@@ -1,5 +1,5 @@
 1:"$Sreact.fragment"
-2:I[9610,["8409","static/chunks/8409-b37ea358ba142cea.js","206","static/chunks/206-1ed818806c411656.js","1456","static/chunks/app/workforce/(portal)/layout-9ef26a095a03683c.js"],"WorkforceAppShell"]
+2:I[9610,["8409","static/chunks/8409-b37ea358ba142cea.js","8455","static/chunks/8455-a4bb2441c1e77e21.js","282","static/chunks/282-ae78becc44cc3133.js","1456","static/chunks/app/workforce/(portal)/layout-01770feed916ea89.js"],"WorkforceAppShell"]
 3:I[7121,[],""]
 4:I[4581,[],""]
-0:{"rsc":["$","$1","c",{"children":[null,["$","$L2",null,{"children":["$","$L3",null,{"parallelRouterKey":"children","template":["$","$L4",null,{}]}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"TcH1mBezj2UBVrFmo89t1"}
+0:{"rsc":["$","$1","c",{"children":[null,["$","$L2",null,{"children":["$","$L3",null,{"parallelRouterKey":"children","template":["$","$L4",null,{}]}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"rM-UOXnY-1boC_ax9iNUq"}
