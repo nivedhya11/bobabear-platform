@@ -78,6 +78,19 @@ Cover loading, empty hierarchy/membership/audit, errors/retry, session expiry, s
 unavailable actions, and explicit confirmation for privilege/lifecycle consequences. Use safe
 IMP-036 correlation without disclosing system secrets.
 
+## Enterprise UX comprehension (PLANNED)
+
+```text
+ENTERPRISE_UX_IS_TASK_ORIENTED = YES
+```
+
+Organization hierarchy, Resources, Memberships, Roles, Effective Permissions, and Audit require
+understandable terminology, hierarchy context, and safe guided workflows. Users must not need domain
+or API architecture knowledge. Require plain-language purpose, a clear primary task, human-readable
+names/context rather than opaque IDs, understandable Brand/Outlet/Scope, progressive disclosure,
+useful empty states with a next action, explained privilege/lifecycle consequences, and no raw JSON
+as normal UX. This amendment does not activate IMP-036G.
+
 ## Major acceptance criteria
 
 - Administration has a distinct shell and IA with no customer presentation.

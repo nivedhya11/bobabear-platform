@@ -1,5 +1,7 @@
 "use client";
 
+import type { Ref } from "react";
+
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 
@@ -8,18 +10,24 @@ import { enterpriseFocusRingClass } from "./enterprise-tokens";
 export function TopBar({
   productLabel,
   contextLabel,
-  workforceUserId,
+  signedInLabel,
   onSignOut,
   onOpenNavigation,
   showMenuButton,
+  navigationExpanded,
+  navigationId,
+  menuButtonRef,
   secondaryAction,
 }: Readonly<{
   productLabel: string;
   contextLabel?: string;
-  workforceUserId?: string;
+  signedInLabel?: string;
   onSignOut?: () => void;
   onOpenNavigation?: () => void;
   showMenuButton?: boolean;
+  navigationExpanded?: boolean;
+  navigationId?: string;
+  menuButtonRef?: Ref<HTMLButtonElement>;
   secondaryAction?: React.ReactNode;
 }>) {
   return (
@@ -27,12 +35,15 @@ export function TopBar({
       <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4 sm:px-6">
         {showMenuButton ? (
           <button
+            ref={menuButtonRef}
             type="button"
             className={cn(
               "inline-flex h-10 w-10 items-center justify-center rounded-md border border-[var(--enterprise-border,#d8ddd0)] lg:hidden",
               enterpriseFocusRingClass,
             )}
-            aria-label="Open navigation"
+            aria-label={navigationExpanded ? "Close navigation" : "Open navigation"}
+            aria-expanded={navigationExpanded === true}
+            aria-controls={navigationId}
             onClick={onOpenNavigation}
           >
             <span aria-hidden="true" className="text-lg leading-none">
@@ -49,9 +60,13 @@ export function TopBar({
           ) : null}
         </div>
         {secondaryAction}
-        {workforceUserId ? (
-          <p className="hidden text-xs text-[var(--enterprise-text-secondary,#4b5542)] sm:block" title={workforceUserId}>
-            {workforceUserId}
+        {signedInLabel ? (
+          <p
+            className="hidden max-w-[12rem] truncate text-xs text-[var(--enterprise-text-secondary,#4b5542)] sm:block"
+            data-testid="enterprise-signed-in-label"
+            title={signedInLabel}
+          >
+            {signedInLabel}
           </p>
         ) : null}
         {onSignOut ? (

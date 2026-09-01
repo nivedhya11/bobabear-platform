@@ -139,3 +139,37 @@ entries are created.
 - Lower-authority principals do not receive unauthorized Administration navigation.
 - Static export/build succeeds.
 - Founder UAT required before `COMPLETE_AND_ACCEPTED`.
+
+## 9. Founder UAT correction — cross-application navigation and foundation UX
+
+IMP-036A owns coherent switching among real authorized applications. `WORKFORCE_DESTINATIONS` is the
+canonical presentation registry. Current real applications are Operations and Administration only.
+
+- Workforce hub `/workforce/` is the application chooser when a principal has more than one authorized
+  destination.
+- Neutral login (no `returnTo`): 0 destinations → `/workforce/` empty/no-access state; 1 destination →
+  that destination; 2+ destinations → `/workforce/`.
+- Explicit safe `returnTo` may return the user to that route after server-side authorization; shell
+  navigation must still allow switching to other authorized applications.
+- Administration shell must permanently expose Applications and Operations (when `order.read` is
+  effective) in primary navigation. Do not rely solely on a TopBar secondary action.
+- Operations/workforce shell exposes Administration only when an administration entry permission is
+  effective.
+- Direct URL/API authorization remains authoritative. Destination visibility is permission-derived,
+  not role-name hard-coding.
+- Human-facing shells must not present opaque `workforceUserId` as primary identity. Prefer the
+  authenticated user's email from the existing workforce-auth user row as `signedInLabel`, or a
+  neutral “Signed in” treatment.
+- Administration chrome uses scope-neutral language (“Access & organization”), not an implication of
+  platform-wide authority for every administrator.
+- Customer GA Analytics belongs only on the customer surface. Workforce/admin layouts must not inherit
+  it from the root layout.
+- Session/capability service failure must surface as retryable error, not as empty capabilities or
+  “you do not have access”.
+- Mobile side navigation must have a complete baseline keyboard/focus relationship (open/close,
+  Escape, backdrop, focus return, unique desktop vs mobile nav ids).
+
+`outlet_manager` retains canonical outlet-scoped access permissions. Kitchen `outlet.read` may also
+qualify Administration entry; that is permission projection, not a RBAC change.
+
+This correction does not accept IMP-036A, activate IMP-036B, or implement IMP-036D–G.

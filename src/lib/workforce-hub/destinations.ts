@@ -71,3 +71,46 @@ export function resolveDefaultDestinationHref(
   if (destinations.length > 1) return "/workforce/";
   return null;
 }
+
+/** Neutral login (no returnTo): 0 apps → hub empty state; 1 → that app; 2+ → hub chooser. */
+export function resolveNeutralPostLoginHref(
+  capabilities: Readonly<Record<string, boolean>>,
+): string {
+  return resolveDefaultDestinationHref(capabilities) ?? "/workforce/";
+}
+
+export type ApplicationNavItem = Readonly<{
+  href: string;
+  label: string;
+  current?: boolean;
+}>;
+
+export function normalizeWorkforcePath(pathname: string): string {
+  if (!pathname) return "/workforce/";
+  return pathname.endsWith("/") ? pathname : `${pathname}/`;
+}
+
+/**
+ * Cross-application items derived from {@link WORKFORCE_DESTINATIONS}.
+ * Administration already has in-surface Overview; do not duplicate that destination there.
+ */
+export function applicationNavItems(
+  pathname: string,
+  capabilities: Readonly<Record<string, boolean>>,
+  surface: "workforce" | "administration",
+): readonly ApplicationNavItem[] {
+  const normalized = normalizeWorkforcePath(pathname);
+  const destinations = resolveAuthorizedDestinations(capabilities);
+  const items: ApplicationNavItem[] = [
+    { href: "/workforce/", label: "Applications", current: normalized === "/workforce/" },
+  ];
+  for (const destination of destinations) {
+    if (surface === "administration" && destination.id === "administration") continue;
+    items.push({
+      href: destination.href,
+      label: destination.label,
+      current: normalized.startsWith(destination.href),
+    });
+  }
+  return items;
+}

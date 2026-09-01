@@ -175,7 +175,28 @@ Accessibility target = WCAG 2.2 AA where reasonably applicable
 Customer responsive priority = MOBILE_FIRST
 Workforce responsive priority = DESKTOP_TABLET_FIRST_WITH_SENSIBLE_MOBILE_USE
 Administration responsive priority = DESKTOP_FIRST_WITH_GRACEFUL_FALLBACK
+ENTERPRISE_UX_IS_TASK_ORIENTED = YES
 ```
+
+Users must not need domain/API architecture knowledge to operate the product. IMP-036D–G must
+require, where applicable:
+
+- plain-language page purpose;
+- a clear primary task/action;
+- contextual descriptions for non-obvious concepts;
+- human-readable names/context rather than opaque IDs;
+- current Brand/Outlet/Scope made understandable;
+- progressive disclosure;
+- useful empty-state explanation plus next action;
+- consequences explained for important mutations;
+- task-oriented navigation;
+- clear terminology;
+- sensible filtering/search;
+- loading/error/recovery states in user language;
+- no raw internal lifecycle/provider terminology unless operationally needed;
+- no raw JSON/debug-oriented presentation as normal UX.
+
+This programme-level comprehension requirement does **not** activate IMP-036D–G.
 
 ## 7. Persona, role, and scope plan
 

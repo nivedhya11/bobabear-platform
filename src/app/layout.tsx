@@ -6,7 +6,6 @@ import {
   JetBrains_Mono,
 } from "next/font/google";
 import "./globals.css";
-import { Analytics } from "@/components/Analytics";
 
 const luckiestGuy = Luckiest_Guy({
   weight: "400",
@@ -78,7 +77,6 @@ export default function RootLayout({
         >
           Skip to content
         </a>
-        <Analytics />
         {children}
       </body>
     </html>

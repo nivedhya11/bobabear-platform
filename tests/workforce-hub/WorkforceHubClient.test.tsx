@@ -50,6 +50,7 @@ describe("WorkforceHubClient", () => {
       data: {
         session: {
           workforceUserId: "wf-admin",
+          signedInLabel: "ops@example.test",
           capabilities: { "order.read": true, "access.membership.read": true },
         },
       },
@@ -59,5 +60,18 @@ describe("WorkforceHubClient", () => {
     expect(screen.getByRole("link", { name: /operations/i })).toHaveAttribute("href", "/workforce/operations/");
     expect(screen.getByRole("link", { name: /administration/i })).toHaveAttribute("href", "/workforce/admin/");
     expect(screen.queryByRole("link", { name: /store management/i })).not.toBeInTheDocument();
+    expect(screen.getByTestId("workforce-hub-identity")).toHaveTextContent("Signed in as ops@example.test");
+    expect(screen.getByTestId("workforce-hub-identity")).not.toHaveTextContent("wf-admin");
+  });
+
+  it("does not treat a session failure as an empty destination set", async () => {
+    fetchAdminSession.mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      code: "INVALID_RESPONSE",
+    });
+    render(<WorkforceHubClient />);
+    await waitFor(() => expect(screen.getByTestId("enterprise-error-state")).toBeInTheDocument());
+    expect(screen.queryByText(/no applications available/i)).not.toBeInTheDocument();
   });
 });

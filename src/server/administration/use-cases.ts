@@ -6,12 +6,16 @@
  */
 import "server-only";
 
+import { eq } from "drizzle-orm";
+
 import {
   isRoleKey,
   ROLE_ALLOWED_SCOPES,
   type PermissionKey,
   type RoleKey,
 } from "../../shared/access-control";
+import { workforceAuthUsers } from "../../platform/database/schema/workforce-auth";
+import { resolveSignedInLabel } from "../../lib/workforce-hub/identity";
 import type { Persistence, PersistenceQueryContext } from "../persistence/types";
 import {
   accessScopeToProtectedResource,
@@ -173,6 +177,7 @@ export async function getAdminSession(
   actor: WorkforcePrincipal | null,
 ): Promise<{
   workforceUserId: string;
+  signedInLabel: string;
   capabilities: Record<(typeof PORTAL_SESSION_CAPS)[number], boolean>;
 }> {
   const principal = requirePrincipal(actor);
@@ -182,7 +187,19 @@ export async function getAdminSession(
     for (const permission of PORTAL_SESSION_CAPS) {
       capabilities[permission] = effective.has(permission);
     }
-    return { workforceUserId: principal.workforceUserId, capabilities };
+    const rows = await context.db
+      .select({ email: workforceAuthUsers.email })
+      .from(workforceAuthUsers)
+      .where(eq(workforceAuthUsers.id, principal.workforceUserId))
+      .limit(1);
+    return {
+      workforceUserId: principal.workforceUserId,
+      signedInLabel: resolveSignedInLabel({
+        email: rows[0]?.email,
+        workforceUserId: principal.workforceUserId,
+      }),
+      capabilities,
+    };
   });
 }
 

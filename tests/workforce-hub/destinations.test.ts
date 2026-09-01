@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import {
   ADMINISTRATION_ENTRY_PERMISSIONS,
+  applicationNavItems,
   resolveAuthorizedDestinations,
   resolveDefaultDestinationHref,
+  resolveNeutralPostLoginHref,
   WORKFORCE_DESTINATIONS,
 } from "../../src/lib/workforce-hub/destinations";
 
@@ -43,5 +45,18 @@ describe("workforce hub destinations", () => {
     expect(
       resolveDefaultDestinationHref({ "order.read": true, "access.audit.read": true }),
     ).toBe("/workforce/");
+  });
+
+  it("treats zero destinations as the workforce hub landing", () => {
+    expect(resolveNeutralPostLoginHref({})).toBe("/workforce/");
+  });
+
+  it("builds cross-application nav from the destination registry", () => {
+    const capabilities = { "order.read": true, "access.membership.read": true };
+    const workforce = applicationNavItems("/workforce/operations/", capabilities, "workforce");
+    expect(workforce.map((item) => item.label)).toEqual(["Applications", "Operations", "Administration"]);
+    const administration = applicationNavItems("/workforce/admin/", capabilities, "administration");
+    expect(administration.map((item) => item.label)).toEqual(["Applications", "Operations"]);
+    expect(administration.some((item) => item.href === "/workforce/operations/")).toBe(true);
   });
 });

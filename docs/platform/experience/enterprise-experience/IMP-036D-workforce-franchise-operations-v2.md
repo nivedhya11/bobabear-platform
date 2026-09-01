@@ -84,6 +84,19 @@ Cover loading, no work, errors/retry, session expiry, denied/non-disclosing abse
 Order/Delivery state, concurrent command conflict, pending/success/failure, unavailable actions,
 destructive or high-risk confirmation, and safe IMP-036 correlation.
 
+## Enterprise UX comprehension (PLANNED)
+
+```text
+ENTERPRISE_UX_IS_TASK_ORIENTED = YES
+```
+
+Operations, order, delivery, support, and refund workflows must be comprehensible without domain or
+API architecture knowledge. Require plain-language page purpose, a clear primary task, human-readable
+names/context rather than opaque IDs, understandable Brand/Outlet/Scope, progressive disclosure,
+useful empty states with a next action, explained mutation consequences, task-oriented navigation,
+user-language loading/error/recovery, and no raw JSON or internal lifecycle/provider terminology as
+normal UX. This amendment does not activate IMP-036D.
+
 ## Major acceptance criteria
 
 - Workforce pages contain no customer promotional chrome or customer SEO presentation.

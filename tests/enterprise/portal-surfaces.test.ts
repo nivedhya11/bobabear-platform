@@ -45,4 +45,17 @@ describe("portal surface isolation", () => {
     expect(destinations).toContain('id: "administration"');
     expect(destinations).not.toMatch(/store management|commercial|menu management/i);
   });
+
+  it("keeps customer Analytics off the root and workforce/admin layouts", () => {
+    const rootLayout = read("src/app/layout.tsx");
+    const customerLayout = read("src/app/(customer)/layout.tsx");
+    const workforcePortalLayout = read("src/app/workforce/(portal)/layout.tsx");
+    const administrationLayout = read("src/app/workforce/(administration)/layout.tsx");
+
+    expect(customerLayout).toContain('from "@/components/Analytics"');
+    expect(customerLayout).toContain("<Analytics />");
+    expect(rootLayout).not.toContain("Analytics");
+    expect(workforcePortalLayout).not.toContain("Analytics");
+    expect(administrationLayout).not.toContain("Analytics");
+  });
 });

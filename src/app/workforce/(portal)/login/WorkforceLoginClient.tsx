@@ -33,7 +33,7 @@ import {
   verifyWorkforceMfaEnrollment,
 } from "@/lib/workforce-auth/client";
 import { fetchAdminSession } from "@/lib/administration/api";
-import { resolveDefaultDestinationHref } from "@/lib/workforce-hub/destinations";
+import { resolvePostLoginLocation } from "@/lib/workforce-hub/post-login";
 import { parseSafeWorkforceReturnPath } from "@/lib/workforce-hub/return-to";
 import { normalizeWorkforceEmail } from "@/shared/workforce-auth/email";
 import { cn } from "@/lib/utils";
@@ -205,17 +205,23 @@ export function WorkforceLoginClient() {
 
   async function redirectAfterAuthentication(): Promise<void> {
     setScreen("loading");
-    if (returnTo) {
-      window.location.assign(returnTo);
-      return;
-    }
     const session = await fetchAdminSession();
-    if (session.ok) {
-      const destination = resolveDefaultDestinationHref(session.data.session.capabilities);
-      window.location.assign(destination ?? "/workforce/");
+    const resolution = resolvePostLoginLocation({
+      returnTo,
+      session: session.ok
+        ? { ok: true, capabilities: session.data.session.capabilities }
+        : { ok: false, status: session.status, code: session.code },
+    });
+    if (resolution.kind === "authentication_required") {
+      goToSignIn();
       return;
     }
-    window.location.assign("/workforce/");
+    if (resolution.kind === "service_failure") {
+      setNotice({ kind: "service-unavailable" });
+      window.location.assign("/workforce/");
+      return;
+    }
+    window.location.assign(resolution.href);
   }
 
   useEffect(() => {

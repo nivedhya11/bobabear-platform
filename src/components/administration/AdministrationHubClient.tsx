@@ -6,7 +6,10 @@ import { Button } from "@/components/ui/Button";
 import { PageHeader } from "@/components/enterprise/PageHeader";
 import { LoadingState } from "@/components/enterprise/LoadingState";
 import { Alert } from "@/components/enterprise/Alert";
+import { ErrorState } from "@/components/enterprise/ErrorState";
 import { fetchAdminSession } from "@/lib/administration/api";
+import { resolveSignedInLabel } from "@/lib/workforce-hub/identity";
+import { classifyPortalSessionResult } from "@/lib/workforce-hub/session-result";
 import { enterprisePanelClass } from "@/components/enterprise/enterprise-tokens";
 import { cn } from "@/lib/utils";
 
@@ -16,7 +19,7 @@ type ViewState =
   | Readonly<{ kind: "error"; message: string }>
   | Readonly<{
       kind: "ready";
-      workforceUserId: string;
+      signedInLabel: string;
       capabilities: Record<string, boolean>;
     }>;
 
@@ -28,17 +31,22 @@ export function AdministrationHubClient() {
     void (async () => {
       const result = await fetchAdminSession();
       if (cancelled) return;
-      if (!result.ok) {
-        if (result.status === 401 || result.code === "WORKFORCE_AUTH_REQUIRED") {
-          setView({ kind: "unauthorized" });
-          return;
-        }
+      const outcome = classifyPortalSessionResult(result);
+      if (outcome === "authentication_required") {
+        setView({ kind: "unauthorized" });
+        return;
+      }
+      if (outcome === "service_failure" || !result.ok) {
         setView({ kind: "error", message: "Administration session could not be loaded." });
         return;
       }
+      const projectedLabel = result.data.session.signedInLabel?.trim() ?? "";
       setView({
         kind: "ready",
-        workforceUserId: result.data.session.workforceUserId,
+        signedInLabel: resolveSignedInLabel({
+          email: projectedLabel.includes("@") ? projectedLabel : undefined,
+          workforceUserId: result.data.session.workforceUserId,
+        }),
         capabilities: result.data.session.capabilities,
       });
     })();
@@ -63,7 +71,7 @@ export function AdministrationHubClient() {
     );
   }
   if (view.kind === "error") {
-    return <Alert tone="danger">{view.message}</Alert>;
+    return <ErrorState message={view.message} />;
   }
 
   const links = [
@@ -86,8 +94,8 @@ export function AdministrationHubClient() {
         title="Administration overview"
         description="Manage organization resources, memberships, and access audit from this workspace."
       />
-      <p className="text-sm text-[var(--enterprise-text-secondary,#4b5542)]">
-        Signed in as <span className="font-medium">{view.workforceUserId}</span>
+      <p className="text-sm text-[var(--enterprise-text-secondary,#4b5542)]" data-testid="admin-hub-identity">
+        {view.signedInLabel === "Signed in" ? "Signed in" : `Signed in as ${view.signedInLabel}`}
       </p>
       <ul className="grid gap-3 sm:grid-cols-2">
         {links
@@ -105,7 +113,7 @@ export function AdministrationHubClient() {
       </ul>
       {!view.capabilities["access.membership.read"] && !view.capabilities["access.audit.read"] ? (
         <Alert tone="info" title="Limited administration scope">
-          No membership or audit read capabilities are currently granted on your platform scope.
+          No membership or audit read capabilities are currently granted for your authorized scope.
         </Alert>
       ) : null}
     </div>

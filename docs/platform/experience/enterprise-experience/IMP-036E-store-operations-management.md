@@ -79,6 +79,18 @@ Cover loading, no assortment/coverage, errors/retry, 401, scope-safe 403/404, st
 concurrent schedule/availability/status changes, pending/success/failure, unavailable transitions,
 and destructive/high-impact confirmation. Use safe IMP-036 correlation where applicable.
 
+## Enterprise UX comprehension (PLANNED)
+
+```text
+ENTERPRISE_UX_IS_TASK_ORIENTED = YES
+```
+
+Store operations plus outlet Team and Access must be comprehensible without domain or API
+architecture knowledge. Require plain-language purpose, a clear primary task, human-readable
+names/context rather than opaque IDs, understandable outlet/scope, progressive disclosure, useful
+empty states with a next action, explained mutation consequences, task-oriented navigation, and
+user-language loading/error/recovery. This amendment does not activate IMP-036E.
+
 ## Major acceptance criteria
 
 - Outlet context and permission/scope are always visible and server-enforced.
