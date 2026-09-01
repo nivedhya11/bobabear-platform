@@ -17,7 +17,10 @@ if (!isDocker) {
 
 export default defineConfig({
   testDir: "./tests/e2e",
-  testMatch: ["**/location-selector-layout.spec.ts"],
+  testMatch: [
+    "**/location-selector-layout.spec.ts",
+    "**/location-selector-search-map.spec.ts",
+  ],
   fullyParallel: false,
   workers: 1,
   forbidOnly: isCI,

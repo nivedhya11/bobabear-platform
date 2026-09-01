@@ -32,6 +32,10 @@ declare namespace google.maps {
   interface MapsEventListener {
     remove(): void;
   }
+
+  namespace event {
+    function trigger(instance: object, eventName: string): void;
+  }
 }
 
 interface Window {

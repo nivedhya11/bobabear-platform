@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   compactDeliveryDisplayLabel,
+  compactNormalizedLocationLabel,
   deliveryHeaderContext,
 } from "@/lib/customer-location/display-label";
 
@@ -22,6 +23,25 @@ describe("compactDeliveryDisplayLabel", () => {
     expect(label).toContain("Home");
     expect(label).toContain("Rajpur");
     expect(label).not.toContain("248001");
+  });
+
+  it("prefers city over state when compacting geographic labels", () => {
+    expect(compactDeliveryDisplayLabel("ISBT, Uttarakhand")).toBe("ISBT");
+    expect(compactDeliveryDisplayLabel("Clock Tower, Dehradun, Uttarakhand, India")).toBe(
+      "Clock Tower, Dehradun",
+    );
+  });
+});
+
+describe("compactNormalizedLocationLabel", () => {
+  it("uses structured locality instead of administrative area", () => {
+    expect(
+      compactNormalizedLocationLabel({
+        displayAddress: "ISBT, Uttarakhand, India",
+        locality: "Dehradun",
+        administrativeArea: "Uttarakhand",
+      }),
+    ).toBe("ISBT, Dehradun");
   });
 });
 

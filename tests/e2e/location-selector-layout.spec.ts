@@ -75,6 +75,7 @@ test("location selector layout desktop with mocked Maps capability", async ({ pa
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({
+        ok: true,
         configured: true,
         provider: "google_maps",
         status: "CONFIGURED",

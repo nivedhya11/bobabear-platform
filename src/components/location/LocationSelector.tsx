@@ -43,7 +43,10 @@ import {
   writeDeliveryContext,
   type DeliveryContext,
 } from "@/lib/customer-location/delivery-context";
-import { deliveryHeaderContext } from "@/lib/customer-location/display-label";
+import {
+  compactNormalizedLocationLabel,
+  deliveryHeaderContext,
+} from "@/lib/customer-location/display-label";
 import { getDeviceCoordinates } from "@/lib/customer-location/geolocation";
 import { isMapsJsConfigured } from "@/lib/customer-location/maps-js-config";
 import { savedAddressResults } from "@/lib/customer-location/location-provider";
@@ -115,6 +118,7 @@ export function LocationSelector(props: {
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [decision, setDecision] = useState<CommerceServiceabilityDecision | null>(null);
   const [providerConfigured, setProviderConfigured] = useState(false);
+  const [providerStatusLoaded, setProviderStatusLoaded] = useState(false);
   const [suggestions, setSuggestions] = useState<readonly LocationSuggestion[]>([]);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [pendingLocation, setPendingLocation] = useState<NormalizedCommerceLocation | null>(null);
@@ -125,6 +129,7 @@ export function LocationSelector(props: {
   const searchSessionRef = useRef<LocationSearchSession | null>(null);
   const debounceTimerRef = useRef<number | null>(null);
   const providerConfiguredRef = useRef(false);
+  const queryRef = useRef("");
   const titleId = useId();
   const listboxId = useId();
   const comboboxId = useId();
@@ -135,28 +140,48 @@ export function LocationSelector(props: {
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
+    setProviderStatusLoaded(false);
+    providerConfiguredRef.current = false;
+    setProviderConfigured(false);
+
+    void (async () => {
+      const status = await getLocationProviderStatus();
+      if (cancelled) return;
+      const configured = status.ok && status.data.configured === true;
+      providerConfiguredRef.current = configured;
+      setProviderConfigured(configured);
+      setProviderStatusLoaded(true);
+      if (!configured) {
+        setStatusMessage(locationProviderUnavailableCopy());
+      }
+    })();
+
     void (async () => {
       const session = await fetchCustomerSession();
       if (cancelled) return;
       if (!session.ok || !session.data.authenticated) {
         setAuthenticated(false);
         setSavedAddresses([]);
-      } else {
-        setAuthenticated(true);
-        const listed = await listOwnAddresses();
-        if (cancelled) return;
-        if (listed.ok) setSavedAddresses(listed.data.addresses);
+        return;
       }
-      const status = await getLocationProviderStatus();
+      setAuthenticated(true);
+      const listed = await listOwnAddresses();
       if (cancelled) return;
-      const configured = status.ok && status.data.configured === true;
-      providerConfiguredRef.current = configured;
-      setProviderConfigured(configured);
+      if (listed.ok) setSavedAddresses(listed.data.addresses);
     })();
+
     return () => {
       cancelled = true;
     };
   }, [open]);
+
+  useEffect(() => {
+    if (!open || !providerConfigured) return;
+    const trimmed = queryRef.current.trim();
+    if (trimmed.length >= SEARCH_MIN_CHARS) {
+      scheduleAutocomplete(trimmed);
+    }
+  }, [open, providerConfigured]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!open) return;
@@ -193,6 +218,11 @@ export function LocationSelector(props: {
     setDecision(null);
     setStatusMessage(null);
     setAddressForm(EMPTY_ADDRESS_FORM);
+    setProviderStatusLoaded(false);
+    providerConfiguredRef.current = false;
+    setProviderConfigured(false);
+    queryRef.current = "";
+    setQuery("");
   }
 
   function closeDialog(): void {
@@ -282,7 +312,7 @@ export function LocationSelector(props: {
 
     writeDeliveryContext({
       postalCode: location.postalCode ?? undefined,
-      displayLabel: location.displayAddress || location.locality || "Selected location",
+      displayLabel: compactNormalizedLocationLabel(location),
       source: "location_search",
       coordinates,
     });
@@ -415,7 +445,7 @@ export function LocationSelector(props: {
     }
     writeDeliveryContext({
       postalCode: location.postalCode ?? undefined,
-      displayLabel: location.displayAddress || location.locality || "Selected location",
+      displayLabel: compactNormalizedLocationLabel(location),
       source: "location_search",
       coordinates,
     });
@@ -441,7 +471,9 @@ export function LocationSelector(props: {
     if (coordinates) {
       writeDeliveryContext({
         postalCode: pendingLocation?.postalCode ?? undefined,
-        displayLabel: pendingLocation?.displayAddress || "Selected location",
+        displayLabel: pendingLocation
+          ? compactNormalizedLocationLabel(pendingLocation)
+          : "Selected location",
         source: "saved_address",
         savedAddressId: created.data.address.id,
         coordinates,
@@ -457,7 +489,16 @@ export function LocationSelector(props: {
   }
 
   const header = deliveryHeaderContext(deliveryContextTriggerLabel(context), "Dehradun");
-  const searchUnavailable = !providerConfigured;
+  const searchUnavailable = providerStatusLoaded && !providerConfigured;
+  const trimmedQuery = query.trim();
+  const showSearchSearching =
+    searching && trimmedQuery.length >= SEARCH_MIN_CHARS && providerConfigured;
+  const showSearchNoResults =
+    !searching &&
+    providerConfigured &&
+    trimmedQuery.length >= SEARCH_MIN_CHARS &&
+    suggestions.length === 0 &&
+    statusMessage === "No matching places. Try another search.";
   const recoveryHint = decision ? serviceabilityRecoveryHint(decision.status) : null;
 
   return (
@@ -504,7 +545,7 @@ export function LocationSelector(props: {
                 className={cn(
                   "w-full bg-[var(--bg-page)] flex flex-col min-h-0 overflow-hidden",
                   step === "map"
-                    ? "h-[100dvh] sm:h-full sm:max-w-none"
+                    ? "h-[100dvh] sm:h-full sm:max-w-xl sm:border-l sm:border-[var(--border-strong)]"
                     : "h-[95dvh] sm:h-full sm:max-w-md sm:border-l sm:border-[var(--border-strong)] rounded-t-xl sm:rounded-none",
                 )}
                 data-testid="location-selector-panel"
@@ -593,10 +634,11 @@ export function LocationSelector(props: {
                             className="mt-1 h-11 w-full border border-[var(--border-strong)] bg-transparent px-3 rounded-md"
                             value={query}
                             placeholder="Search area, street or landmark"
-                            disabled={pending || searchUnavailable}
+                            disabled={pending}
                             autoComplete="off"
                             onChange={(event) => {
                               const value = event.target.value;
+                              queryRef.current = value;
                               setQuery(value);
                               scheduleAutocomplete(value);
                             }}
@@ -619,9 +661,14 @@ export function LocationSelector(props: {
                             {locationProviderUnavailableCopy()}
                           </p>
                         ) : null}
-                        {searching ? (
+                        {showSearchSearching ? (
                           <p role="status" className="font-body text-[13px] text-[var(--text-secondary)]">
-                            Searching…
+                            Finding locations…
+                          </p>
+                        ) : null}
+                        {showSearchNoResults ? (
+                          <p role="status" className="font-body text-[13px] text-[var(--text-secondary)]">
+                            No matching places. Try another search.
                           </p>
                         ) : null}
                         {suggestions.length > 0 ? (

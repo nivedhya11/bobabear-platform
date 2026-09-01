@@ -2,9 +2,11 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DeliveryLocationMapConfirmation } from "@/components/location/DeliveryLocationMapConfirmation";
+import { isMapsJsConfigured } from "@/lib/customer-location/maps-js-config";
 
 const evaluateDeliveryServiceability = vi.fn<(...args: unknown[]) => unknown>();
 const reverseGeocodeLocation = vi.fn<(...args: unknown[]) => unknown>();
+const loadGoogleMapsJs = vi.fn<() => Promise<typeof google.maps | null>>();
 
 vi.mock("@/lib/customer-commerce", async () => {
   const actual = await vi.importActual<typeof import("@/lib/customer-commerce")>(
@@ -21,11 +23,15 @@ vi.mock("@/lib/customer-commerce/location", () => ({
 }));
 
 vi.mock("@/lib/customer-location/maps-js-config", () => ({
-  isMapsJsConfigured: () => false,
+  isMapsJsConfigured: vi.fn(() => true),
+}));
+
+vi.mock("@/lib/customer-location/map-container-ready", () => ({
+  waitForMapContainerReady: vi.fn(async () => true),
 }));
 
 vi.mock("@/lib/customer-location/maps-js-loader", () => ({
-  loadGoogleMapsJs: vi.fn(async () => null),
+  loadGoogleMapsJs: () => loadGoogleMapsJs(),
 }));
 
 const baseLocation = {
@@ -42,20 +48,90 @@ const baseLocation = {
 };
 
 beforeEach(() => {
+  vi.mocked(isMapsJsConfigured).mockReturnValue(true);
   evaluateDeliveryServiceability.mockResolvedValue({
     ok: true,
     status: 200,
     data: { decision: { status: "SERVICEABLE", evaluatedAt: "2026-08-13T00:00:00.000Z" } },
   });
+  loadGoogleMapsJs.mockResolvedValue(null);
 });
 
 afterEach(() => {
   evaluateDeliveryServiceability.mockClear();
   reverseGeocodeLocation.mockClear();
+  loadGoogleMapsJs.mockClear();
 });
 
 describe("DeliveryLocationMapConfirmation", () => {
+  it("initializes Google Map against the mounted container when Maps JS is configured", async () => {
+    const mapInstances: Array<{ container: HTMLElement; center: google.maps.LatLngLiteral }> = [];
+    const listeners: Record<string, Array<() => void>> = {};
+    loadGoogleMapsJs.mockResolvedValue({
+      Map: vi.fn(function MapMock(
+        this: google.maps.Map,
+        container: HTMLElement,
+        options: google.maps.MapOptions,
+      ) {
+        mapInstances.push({
+          container,
+          center: options.center as google.maps.LatLngLiteral,
+        });
+        const inner = document.createElement("div");
+        inner.className = "gm-style";
+        container.appendChild(inner);
+        Object.defineProperty(container, "getBoundingClientRect", {
+          configurable: true,
+          value: () => ({
+            width: 480,
+            height: 320,
+            top: 0,
+            left: 0,
+            right: 480,
+            bottom: 320,
+            x: 0,
+            y: 0,
+            toJSON: () => ({}),
+          }),
+        });
+        return {
+          getCenter: () => ({
+            lat: () => (options.center as google.maps.LatLngLiteral).lat,
+            lng: () => (options.center as google.maps.LatLngLiteral).lng,
+          }),
+          setCenter: vi.fn(),
+          addListener: vi.fn((event: string, handler: () => void) => {
+            listeners[event] = listeners[event] ?? [];
+            listeners[event]!.push(handler);
+          }),
+        } as unknown as google.maps.Map;
+      }),
+      event: {
+        trigger: vi.fn(),
+      },
+    } as unknown as typeof google.maps);
+
+    render(
+      <DeliveryLocationMapConfirmation
+        initialLocation={baseLocation}
+        onConfirm={vi.fn()}
+        onBack={vi.fn()}
+        onChooseAnother={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => expect(mapInstances.length).toBe(1));
+    expect(mapInstances[0]?.container).toHaveAttribute("data-testid", "delivery-map-container");
+    expect(mapInstances[0]?.center).toEqual({ lat: 30.3256, lng: 78.0436 });
+    await waitFor(
+      () => expect(screen.getByTestId("delivery-map-center-pin")).toBeInTheDocument(),
+      { timeout: 3_000 },
+    );
+  });
+
   it("falls back to text confirmation when maps JS is unavailable", async () => {
+    vi.mocked(isMapsJsConfigured).mockReturnValue(false);
+    loadGoogleMapsJs.mockResolvedValue(null);
     render(
       <DeliveryLocationMapConfirmation
         initialLocation={baseLocation}

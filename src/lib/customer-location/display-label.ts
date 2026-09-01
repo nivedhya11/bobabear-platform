@@ -4,9 +4,14 @@
  * Full geographic context belongs in selector/detail screens; the global header
  * shows a short, deduplicated label such as "Ghanta Ghar, Dehradun".
  */
+import { INDIA_SUBDIVISIONS } from "@/shared/customer-addresses/india-states";
+
 const INDIA_PATTERN = /^india$/i;
 const PIN_ONLY_PATTERN = /^\d{6}$/;
 const STATE_WITH_PIN_PATTERN = /^(.+?)\s+\d{6}$/;
+const ADMINISTRATIVE_AREA_NAMES = new Set(
+  INDIA_SUBDIVISIONS.flatMap((entry) => [entry.name.toLowerCase(), entry.code.toLowerCase()]),
+);
 
 function dedupeParts(parts: readonly string[]): string[] {
   const seen = new Set<string>();
@@ -40,9 +45,18 @@ function splitAddressParts(input: string): string[] {
   );
 }
 
+function isAdministrativeAreaName(part: string): boolean {
+  const normalized = part.trim().toLowerCase();
+  if (normalized.length === 0) return false;
+  return ADMINISTRATIVE_AREA_NAMES.has(normalized);
+}
+
 function pickCityPart(parts: readonly string[]): string | null {
   if (parts.length === 0) return null;
-  if (parts.length === 1) return parts[0] ?? null;
+  for (let index = parts.length - 1; index >= 0; index -= 1) {
+    const part = parts[index]!;
+    if (!isAdministrativeAreaName(part)) return part;
+  }
   return parts[parts.length - 1] ?? null;
 }
 
@@ -66,6 +80,28 @@ function compactSavedAddressLabel(input: string): string {
   const compactMiddle = middle.length > 0 ? compactGeographicParts(splitAddressParts(middle)) : pin;
   if (compactMiddle === pin) return `${label} · ${pin}`;
   return `${label} · ${compactMiddle}`;
+}
+
+export type CompactLocationInput = Readonly<{
+  displayAddress: string;
+  locality: string | null;
+  administrativeArea?: string | null;
+}>;
+
+/** Compact customer-facing label from normalized provider evidence. */
+export function compactNormalizedLocationLabel(input: CompactLocationInput): string {
+  const parts = splitAddressParts(input.displayAddress);
+  const meaningful = stripAdministrativeTail(parts);
+  const primary =
+    meaningful.find((part) => !isAdministrativeAreaName(part)) ??
+    meaningful[0] ??
+    input.displayAddress.split(",")[0]?.trim() ??
+    "Selected location";
+  const city =
+    input.locality?.trim() ||
+    pickCityPart(meaningful.filter((part) => part.toLowerCase() !== primary.toLowerCase()));
+  if (!city || primary.toLowerCase() === city.toLowerCase()) return primary;
+  return `${primary}, ${city}`;
 }
 
 /** Compact header label from a full display string or saved-address label. */
