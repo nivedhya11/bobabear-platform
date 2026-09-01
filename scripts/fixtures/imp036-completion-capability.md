@@ -5,7 +5,7 @@
   "capability": "IMP-036",
   "title": "Observability & Operational Controls",
   "architectureLock": "ARCHITECTURE_LOCKED",
-  "implementation": "COMPLETE_AND_ACCEPTED",
+  "implementation": "AUTHORIZED / STARTED / COMPLETE",
   "implementationAuthorized": true,
   "lastReviewed": "2026-09-01",
   "bindingDecisions": ["D-373"],
@@ -15,47 +15,47 @@
 
 # IMP-036 — Observability & Operational Controls
 
-## Capability Architecture (ARCHITECTURE_LOCKED — COMPLETE_AND_ACCEPTED)
+## Capability Architecture (ARCHITECTURE_LOCKED — IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE)
 
 This document is the locked capability architecture for **IMP-036 — Observability & Operational
 Controls**. Architecture authority reuses accepted workforce authentication (**D-372** / IMP-010),
 operations transport (**IMP-029**), notification outbox visibility (**IMP-033**), and administration
 trust boundaries (**D-373** / IMP-035). Architecture is **LOCKED**. Implementation is
-**AUTHORIZED**, **STARTED**, **COMPLETE**, and formally **COMPLETE_AND_ACCEPTED**.
+**AUTHORIZED**, **STARTED**, and **COMPLETE** pending independent acceptance.
 
-Formal acceptance does not expand the locked boundary, authorize or start IMP-037, create `D-374`,
-or adopt an external observability vendor.
+Provider-neutral structured logging, in-process metrics, readiness checks, and a read-only
+operational status API are in scope. No external observability vendor, no new deployable service, no
+schema migration, and no new permissions or roles are introduced.
 
 | Field | Value |
 |---|---|
 | Architecture lock | `ARCHITECTURE_LOCKED` |
-| Lifecycle | `COMPLETE_AND_ACCEPTED` |
+| Lifecycle | `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` |
 | Implementation | `AUTHORIZED` / `STARTED` / `COMPLETE` |
 | Implementation authorized | **YES** |
 | Implementation complete | **YES** |
-| Accepted | **YES** |
-| Accepted product through | IMP-036 |
-| Current product slice | NONE |
-| Pending acceptance | NONE |
+| Accepted | **NO** |
+| Accepted product through | IMP-035 |
+| Current product slice | IMP-036 |
+| Pending acceptance | IMP-036 |
 | Next product slice | IMP-037 — Backup, Restore & Migration Readiness |
-| Governance checkpoint | GTM-R95 / STATE-R93 |
+| Governance checkpoint | GTM-R94 / STATE-R92 |
 | New CURRENT decision | **NONE** (`D-374` not required) |
 | Global architecture revision | **NONE** (`ARCH-R19` / **DR-15** unchanged) |
 | Founder UAT required for acceptance | **NO** |
 
 ```text
-IMP-036: COMPLETE_AND_ACCEPTED
+IMP-036: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
 IMP-036_ARCHITECTURE: LOCKED
 IMP-036_ARCHITECTURE_LOCKED: YES
 IMP-036_IMPLEMENTATION: AUTHORIZED / STARTED / COMPLETE
 IMP-036_IMPLEMENTATION_AUTHORIZED: YES
 IMP-036_STARTED: YES
 IMP-036_IMPLEMENTATION_COMPLETE: YES
-IMP-036_ACCEPTED: YES
+IMP-036_ACCEPTED: NO
+COMPLETION IS NOT ACCEPTANCE: YES
 FOUNDER_UAT_REQUIRED: NO
 FOUNDER_UAT_REQUIRED_FOR_ACCEPTANCE: NO
-IMP-036_FOUNDER_UAT_REQUIRED: NO
-IMP-036_FOUNDER_UAT: NOT_APPLICABLE
 D374_REQUIRED_FOR_LOCK: NO
 D-374_CREATED: NO
 ARCH_R20_REQUIRED: NO
@@ -112,33 +112,12 @@ Worker health covers in-process processors already hosted in operations / custom
 - Schema migrations or new RBAC permissions / roles
 - Domain-state mutation from observability endpoints
 
-## 6. Founder UAT
-
-`FOUNDER_UAT_REQUIRED: NO`. IMP-036 adds provider-neutral logging, readiness checks, and a
-workforce-gated read-only operational status API with no customer-visible product surface change.
-Independent technical acceptance is the applicable gate.
-
-## 7. Implementation and acceptance evidence
+## 6. Implementation evidence
 
 ```text
-IMPLEMENTATION_SOURCE_SHA: 90593ab846992ca963bf5ae5edc3d0b6a5281d4b
-IMPLEMENTATION_SOURCE_TREE: 9b5c3193bf74d75a820b16976e894ec2dffafa13
-MERGED_MAIN_SHA: 68b46a53dc5d1ff84a8493899e713d3ef43db3aa
-MERGED_MAIN_TREE: 9b5c3193bf74d75a820b16976e894ec2dffafa13
-PR: 55
-PR_CI: 33470441914 SUCCESS
 IMP036_IMPLEMENTATION_EVIDENCE: COMPLETE
 IMP_036_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
-IMP036_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
-IMP036_FORMAL_ACCEPTANCE: ACCEPTED
-IMP036_ACCEPTED_MAIN_SHA: 68b46a53dc5d1ff84a8493899e713d3ef43db3aa
-IMP036_ACCEPTED_TREE: 9b5c3193bf74d75a820b16976e894ec2dffafa13
-IMP-036_FOUNDER_UAT_REQUIRED: NO
-IMP-036_FOUNDER_UAT: NOT_APPLICABLE
 ```
 
-Accepted product identity is the immutable `main` merge SHA
-`68b46a53dc5d1ff84a8493899e713d3ef43db3aa` and tree
-`9b5c3193bf74d75a820b16976e894ec2dffafa13`. Founder UAT is not applicable
-(`FOUNDER_UAT_REQUIRED: NO`); independent technical acceptance was the applicable gate. Acceptance
-does not authorize or start IMP-037 or create `D-374`.
+Formal acceptance remains a separate reconciliation gate. Do not activate IMP-037 from this
+completion.

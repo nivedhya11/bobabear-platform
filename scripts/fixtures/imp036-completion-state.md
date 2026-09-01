@@ -2,11 +2,11 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R93",
-  "acceptedThrough": "IMP-036",
-  "currentProductSlice": "NONE",
+  "stateVersion": "STATE-R92",
+  "acceptedThrough": "IMP-035",
+  "currentProductSlice": "IMP-036",
   "nextProductSlice": "IMP-037",
-  "pendingAcceptance": "NONE",
+  "pendingAcceptance": "IMP-036",
   "governanceHealth": "ALIGNED",
   "lastReviewed": "2026-09-01"
 }
@@ -20,18 +20,22 @@ current-reality authority.
 ## 1. Accepted Position
 
 ```text
-Accepted Through:          IMP-036 — Observability & Operational Controls
+Accepted Through:          IMP-035 — Initial Administration Capabilities
 Accepted Inserted Slice:   IMP-005A — Dockerized local application runtime; IMP-026C — Pilot Customer-Commerce UX Hardening; IMP-028A — Food Direct UX Foundation; IMP-028B — Customer Menu Projection + Discovery; IMP-028C — Food Customization; IMP-028D — Desktop Ordering Continuity
-Accepted Range:            IMP-001 → IMP-036 (including IMP-005A and IMP-026C)
+Accepted Range:            IMP-001 → IMP-035 (including IMP-005A and IMP-026C)
 ```
 
 ## 2. Current Work Position
 
 ```text
-Current Product Implementation: NONE
-Pending Acceptance:             NONE
+Current Product Implementation: IMP-036 — Observability & Operational Controls
+Pending Acceptance:             IMP-036
 Next Product Slice:             IMP-037 — Backup, Restore & Migration Readiness
-Current Governance Activity:    IMP-036 COMPLETE_AND_ACCEPTED;
+Current Governance Activity:    IMP-036 IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
+                              (architecture LOCKED; implementation AUTHORIZED /
+                              STARTED / COMPLETE; provider-neutral observability;
+                              no schema_change / new_service / new_permissions /
+                              new_roles; `D-374` not created);
                               IMP-037 PLANNED / NOT_ACTIVATED.
 Governance Health:              ALIGNED
 ```
@@ -353,24 +357,6 @@ STATE-R36 record IMP-028B canonical activation without changing decision registe
 architecture. GTM-R39 / STATE-R37 record IMP-028B architecture lock and implementation
 authorization without changing decision register or global architecture.
 
-
-STATE-R93 records formal acceptance of **IMP-036 — Observability & Operational Controls** for
-independently accepted product `main` merge SHA `68b46a53dc5d1ff84a8493899e713d3ef43db3aa` and tree
-`9b5c3193bf74d75a820b16976e894ec2dffafa13` (repository
-`/home/ajoshi/repos/boba-bear-platform`; branch `main`; working-tree fingerprint
-`bc872e19e46d178c9145f743a78a655fa849d145ebadf6c6c2d768768975e915`; PR 55 merge
-`90593ab846992ca963bf5ae5edc3d0b6a5281d4b`; PR CI run 33470441914 SUCCESS). Implementation
-evidence is **COMPLETE**; independent implementation review is **PASS**; independent acceptance
-evidence is **ACCEPTED**; formal acceptance is recorded (`IMP036_FORMAL_ACCEPTANCE: ACCEPTED`;
-`IMP-036_ACCEPTED: YES`). IMP-036 is `COMPLETE_AND_ACCEPTED`; architecture remains `LOCKED`
-(`IMP-036_ARCHITECTURE_LOCKED: YES`); implementation remains `AUTHORIZED` / `STARTED` / `COMPLETE`.
-Locked boundary facts remain unchanged: `schema_change: NO`, `provider_IO: NO`, `new_service: NO`,
-`new_permissions: NO`, `new_roles: NO`; no `D-374`. Founder UAT remains **not required**
-(`IMP-036_FOUNDER_UAT_REQUIRED: NO`; `IMP-036_FOUNDER_UAT: NOT_APPLICABLE`). `acceptedThrough`
-advances to IMP-036; `currentProductSlice` and `pendingAcceptance` are NONE; `nextProductSlice`
-remains IMP-037 — Backup, Restore & Migration Readiness, which remains `PLANNED` / `NOT_ACTIVATED` /
-`NOT_AUTHORIZED` / `NOT_STARTED`. Formal acceptance does **not** authorize, start, or activate
-IMP-037. Supersedes STATE-R92 for the current IMP-036 lifecycle and acceptance position.
 
 STATE-R92 records a single founder-authorized **combined** gate for **IMP-036 — Observability &
 Operational Controls**: canonical activation, capability architecture LOCKED at
@@ -1262,14 +1248,13 @@ Cart → Checkout → Payment → Order
 | IMP-033 | Notification Foundation | COMPLETE_AND_ACCEPTED |
 | IMP-034 | Meta WhatsApp Cloud API Adapter | COMPLETE_AND_ACCEPTED |
 | IMP-035 | Initial Administration Capabilities | COMPLETE_AND_ACCEPTED |
-| IMP-036 | Observability & Operational Controls | COMPLETE_AND_ACCEPTED |
 
 ## 5. Acceptance Position
 
 ```text
-acceptedThrough: IMP-036
-pendingAcceptance: NONE
-currentProductSlice: NONE
+acceptedThrough: IMP-035
+pendingAcceptance: IMP-036
+currentProductSlice: IMP-036
 nextProductSlice: IMP-037 — Backup, Restore & Migration Readiness
 IMP-028: COMPLETE_AND_ACCEPTED
 IMP-028_ACCEPTED: YES
@@ -1437,27 +1422,20 @@ D-373_CREATED: YES
 ARCH_R19_REQUIRED: YES
 ARCH-R19: CURRENT
 DR-15: CURRENT
-IMP-036: COMPLETE_AND_ACCEPTED
+IMP-036: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
 IMP-036_ARCHITECTURE: LOCKED
 IMP-036_ARCHITECTURE_LOCKED: YES
 IMP-036_IMPLEMENTATION: AUTHORIZED / STARTED / COMPLETE
 IMP-036_IMPLEMENTATION_AUTHORIZED: YES
 IMP-036_STARTED: YES
 IMP-036_IMPLEMENTATION_COMPLETE: YES
-IMP-036_ACCEPTED: YES
+IMP-036_ACCEPTED: NO
 IMP-036_SCHEMA_CHANGE: NO
 IMP-036_PROVIDER_IO: NO
 IMP-036_NEW_SERVICE: NO
 IMP-036_NEW_PERMISSIONS: NO
 IMP-036_NEW_ROLES: NO
 IMP-036_FOUNDER_UAT_REQUIRED: NO
-IMP-036_FOUNDER_UAT: NOT_APPLICABLE
-IMP036_IMPLEMENTATION_EVIDENCE: COMPLETE
-IMP_036_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
-IMP036_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
-IMP036_FORMAL_ACCEPTANCE: ACCEPTED
-IMP036_ACCEPTED_MAIN_SHA: 68b46a53dc5d1ff84a8493899e713d3ef43db3aa
-IMP036_ACCEPTED_TREE: 9b5c3193bf74d75a820b16976e894ec2dffafa13
 D-374_CREATED: NO
 IMP036_IMPLEMENTATION_EVIDENCE: COMPLETE
 IMP_036_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS

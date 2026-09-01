@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R95",
-  "acceptedThrough": "IMP-036",
-  "currentProductSlice": "NONE",
+  "roadmapVersion": "GTM-R94",
+  "acceptedThrough": "IMP-035",
+  "currentProductSlice": "IMP-036",
   "nextProductSlice": "IMP-037",
   "gtmBoundary": "IMP-040",
   "lastReviewed": "2026-09-01",
-  "supersedes": "GTM-R94"
+  "supersedes": "GTM-R93"
 }
 -->
 
@@ -295,37 +295,29 @@ IMP-035 locked capability architecture (architecture **ARCHITECTURE_LOCKED**; im
 [`capabilities/IMP-035-initial-administration-capabilities.md`](./capabilities/IMP-035-initial-administration-capabilities.md)
 
 IMP-036 locked capability architecture (architecture **ARCHITECTURE_LOCKED**; implementation
-**AUTHORIZED** / **STARTED** / **COMPLETE** / `COMPLETE_AND_ACCEPTED`):
+**AUTHORIZED** / **STARTED** / **COMPLETE** / `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`):
 
 [`capabilities/IMP-036-observability-operational-controls.md`](./capabilities/IMP-036-observability-operational-controls.md)
 
 ## 2. Current Position
 
 ```text
-Accepted Through:     IMP-036 — Observability & Operational Controls
-Current Product Slice: NONE
+Accepted Through:     IMP-035 — Initial Administration Capabilities
+Current Product Slice: IMP-036 — Observability & Operational Controls
 Next Product Slice:    IMP-037 — Backup, Restore & Migration Readiness
-Pending Acceptance:    NONE
+Pending Acceptance:    IMP-036
 Public GTM Boundary:   IMP-040 — Launch Validation & Cutover
 ```
 
-IMP-036 is `COMPLETE_AND_ACCEPTED`. Architecture remains **ARCHITECTURE_LOCKED**
+IMP-036 is `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`. Architecture is **ARCHITECTURE_LOCKED**
 (`IMP-036_ARCHITECTURE_LOCKED: YES`). Implementation is `AUTHORIZED` / `STARTED` / `COMPLETE`
 (`IMP-036_IMPLEMENTATION_AUTHORIZED: YES`; `IMP-036_STARTED: YES`;
-`IMP-036_IMPLEMENTATION_COMPLETE: YES`; `IMP-036_ACCEPTED: YES`). Locked boundary facts:
+`IMP-036_IMPLEMENTATION_COMPLETE: YES`; `IMP-036_ACCEPTED: NO`). Locked boundary facts:
 `schema_change: NO`, `provider_IO: NO`, `new_service: NO`, `new_permissions: NO`,
 `new_roles: NO`; no new CURRENT decision (`D-374` not created). Operational read API reuses
 existing workforce auth and existing `order.read` permission. Provider-neutral structured logging
-and in-process metrics only — no external observability vendor. Implementation evidence is
-**COMPLETE**; independent implementation review is **PASS**; independent acceptance evidence is
-**ACCEPTED**; formal acceptance is recorded (`IMP-036_ACCEPTED: YES`;
-`IMP036_FORMAL_ACCEPTANCE: ACCEPTED`). Accepted product identity is the immutable merge SHA
-`68b46a53dc5d1ff84a8493899e713d3ef43db3aa` / tree
-`9b5c3193bf74d75a820b16976e894ec2dffafa13`. **GTM-R95** advances `acceptedThrough` to IMP-036 and
-sets `currentProductSlice = NONE` and `pendingAcceptance = NONE`. Founder UAT remains **not
-required** (`IMP-036_FOUNDER_UAT_REQUIRED: NO`; `IMP-036_FOUNDER_UAT: NOT_APPLICABLE`).
-IMP-037 remains `PLANNED` / `NOT_ACTIVATED` / `NOT_AUTHORIZED` / `NOT_STARTED`; acceptance of
-IMP-036 does **not** authorize, start, or activate IMP-037.
+and in-process metrics only — no external observability vendor. Completion is **not** acceptance.
+IMP-037 remains `PLANNED` / `NOT_ACTIVATED` / `NOT_AUTHORIZED` / `NOT_STARTED`.
 
 IMP-035 is `COMPLETE_AND_ACCEPTED`. Architecture remains **ARCHITECTURE_LOCKED**; implementation is
 `AUTHORIZED` / `STARTED` / `COMPLETE`; implementation evidence is **COMPLETE**; independent
@@ -474,27 +466,20 @@ D-373_CREATED: YES
 ARCH_R19_REQUIRED: YES
 ARCH-R19: CURRENT
 DR-15: CURRENT
-IMP-036: COMPLETE_AND_ACCEPTED
+IMP-036: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
 IMP-036_ARCHITECTURE: LOCKED
 IMP-036_ARCHITECTURE_LOCKED: YES
 IMP-036_IMPLEMENTATION: AUTHORIZED / STARTED / COMPLETE
 IMP-036_IMPLEMENTATION_AUTHORIZED: YES
 IMP-036_STARTED: YES
 IMP-036_IMPLEMENTATION_COMPLETE: YES
-IMP-036_ACCEPTED: YES
+IMP-036_ACCEPTED: NO
 IMP-036_SCHEMA_CHANGE: NO
 IMP-036_PROVIDER_IO: NO
 IMP-036_NEW_SERVICE: NO
 IMP-036_NEW_PERMISSIONS: NO
 IMP-036_NEW_ROLES: NO
 IMP-036_FOUNDER_UAT_REQUIRED: NO
-IMP-036_FOUNDER_UAT: NOT_APPLICABLE
-IMP036_IMPLEMENTATION_EVIDENCE: COMPLETE
-IMP_036_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
-IMP036_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
-IMP036_FORMAL_ACCEPTANCE: ACCEPTED
-IMP036_ACCEPTED_MAIN_SHA: 68b46a53dc5d1ff84a8493899e713d3ef43db3aa
-IMP036_ACCEPTED_TREE: 9b5c3193bf74d75a820b16976e894ec2dffafa13
 D-374_CREATED: NO
 IMP-037: PLANNED / NOT_ACTIVATED
 ```
@@ -681,28 +666,10 @@ only). Webhook acknowledgement timing / durable inbox / asynchronous Payment pro
 | IMP-033 | Notification Foundation | COMPLETE_AND_ACCEPTED |
 | IMP-034 | Meta WhatsApp Cloud API Adapter | COMPLETE_AND_ACCEPTED |
 | IMP-035 | Initial Administration Capabilities | COMPLETE_AND_ACCEPTED |
-| IMP-036 | Observability & Operational Controls | COMPLETE_AND_ACCEPTED |
 
 ## 4. Current Product Slice
 
-NONE. IMP-036 — Observability & Operational Controls is `COMPLETE_AND_ACCEPTED` with locked capability
-architecture at
-[`capabilities/IMP-036-observability-operational-controls.md`](./capabilities/IMP-036-observability-operational-controls.md).
-Architecture remains **ARCHITECTURE_LOCKED** (`IMP-036_ARCHITECTURE_LOCKED: YES`). Implementation is
-`AUTHORIZED` / `STARTED` / `COMPLETE` (`IMP-036_IMPLEMENTATION_AUTHORIZED: YES`;
-`IMP-036_STARTED: YES`; `IMP-036_IMPLEMENTATION_COMPLETE: YES`; `IMP-036_ACCEPTED: YES`).
-Independent acceptance evidence is **ACCEPTED** and formal acceptance is recorded
-(`IMP036_FORMAL_ACCEPTANCE: ACCEPTED`) for immutable merge SHA
-`68b46a53dc5d1ff84a8493899e713d3ef43db3aa` / tree
-`9b5c3193bf74d75a820b16976e894ec2dffafa13`. Founder UAT is **not required**
-(`IMP-036_FOUNDER_UAT_REQUIRED: NO`; `IMP-036_FOUNDER_UAT: NOT_APPLICABLE`).
-`pendingAcceptance` is NONE. GTM-R94 recorded the combined founder-authorized architecture lock,
-implementation authorization, implementation start, and implementation completion in one gate;
-GTM-R95 records formal acceptance. Locked boundary facts remain: `schema_change: NO`, `provider_IO: NO`,
-`new_service: NO`, `new_permissions: NO`, `new_roles: NO`; no `D-374`. `acceptedThrough` is IMP-036.
-`nextProductSlice` is IMP-037 — Backup, Restore & Migration Readiness, which remains `PLANNED` /
-`NOT_ACTIVATED`. Formal acceptance of IMP-036 does **not** authorize, start, or activate IMP-037.
-IMP-035 — Initial Administration Capabilities remains `COMPLETE_AND_ACCEPTED` with locked capability
+NONE. IMP-035 — Initial Administration Capabilities is `COMPLETE_AND_ACCEPTED` with locked capability
 architecture at
 [`capabilities/IMP-035-initial-administration-capabilities.md`](./capabilities/IMP-035-initial-administration-capabilities.md).
 Architecture remains **ARCHITECTURE_LOCKED** (`IMP-035_ARCHITECTURE_LOCKED: YES`). Implementation is
@@ -1044,6 +1011,7 @@ consume or remap IMP-029 → IMP-040 identities and is `COMPLETE_AND_ACCEPTED`.
 
 | IMP | Capability | Lifecycle |
 |---|---|---|
+| IMP-036 | Observability & Operational Controls | IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE |
 | IMP-037 | Backup, Restore & Migration Readiness | PLANNED |
 | IMP-038 | Security & Privacy Hardening | PLANNED |
 | IMP-039 | Production Infrastructure & Release Pipeline | PLANNED |
@@ -1414,29 +1382,6 @@ Historical GTM-R1 meanings that are **not** current:
 Current public GTM boundary is **IMP-040**, not IMP-035.
 
 ## 9. Roadmap Change Log
-
-### GTM-R95 — 2026-09-01
-
-- Records formal acceptance of **IMP-036 — Observability & Operational Controls** for independently
-  accepted product `main` merge SHA `68b46a53dc5d1ff84a8493899e713d3ef43db3aa` and tree
-  `9b5c3193bf74d75a820b16976e894ec2dffafa13` (repository
-  `/home/ajoshi/repos/boba-bear-platform`; branch `main`; working-tree fingerprint
-  `bc872e19e46d178c9145f743a78a655fa849d145ebadf6c6c2d768768975e915`; PR 55 merge
-  `90593ab846992ca963bf5ae5edc3d0b6a5281d4b`; PR CI run 33470441914 SUCCESS). Implementation
-  evidence is **COMPLETE**; independent implementation review is **PASS**; independent acceptance
-  evidence is **ACCEPTED**; formal acceptance is recorded (`IMP036_FORMAL_ACCEPTANCE: ACCEPTED`;
-  `IMP-036_ACCEPTED: YES`).
-- IMP-036 lifecycle becomes `COMPLETE_AND_ACCEPTED`. Architecture remains `LOCKED`
-  (`IMP-036_ARCHITECTURE_LOCKED: YES`). Locked boundary facts remain unchanged: `schema_change: NO`,
-  `provider_IO: NO`, `new_service: NO`, `new_permissions: NO`, `new_roles: NO`; no `D-374`.
-- Founder UAT remains **not required** (`IMP-036_FOUNDER_UAT_REQUIRED: NO`;
-  `IMP-036_FOUNDER_UAT: NOT_APPLICABLE`). Independent technical acceptance was the applicable gate.
-- Advances `acceptedThrough = IMP-036`; sets `currentProductSlice = NONE` and
-  `pendingAcceptance = NONE`; preserves `nextProductSlice = IMP-037`. IMP-037 remains `PLANNED` /
-  `NOT_ACTIVATED` / `NOT_AUTHORIZED` / `NOT_STARTED`. Formal acceptance does **not** authorize,
-  start, or activate IMP-037.
-- Supersedes GTM-R94 for the current IMP-036 lifecycle and acceptance position. Product acceptance
-  through IMP-035 is unchanged.
 
 ### GTM-R94 — 2026-09-01
 
