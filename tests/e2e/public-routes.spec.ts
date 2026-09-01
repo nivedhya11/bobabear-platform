@@ -16,6 +16,7 @@ const HTML_ROUTES = [
   "/dev/icons",
   "/privacy",
   "/login",
+  "/workforce/",
   "/workforce/login",
   "/order",
   "/order/cart",

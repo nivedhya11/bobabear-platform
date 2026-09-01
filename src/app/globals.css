@@ -307,6 +307,18 @@ html {
   }
 }
 
+/* ─── Enterprise workforce/admin surfaces (IMP-036A) ─────────────────────── */
+:root {
+  --enterprise-bg-page: #f4f5f2;
+  --enterprise-bg-panel: #ffffff;
+  --enterprise-text-primary: #1a2210;
+  --enterprise-text-secondary: #4b5542;
+  --enterprise-border: #d8ddd0;
+  --enterprise-focus: #4a6741;
+  --enterprise-nav-active-bg: #e8efe2;
+  --enterprise-nav-hover-bg: #eef2ea;
+}
+
 body {
   background-color: var(--bg-page);
   color: var(--text-primary);

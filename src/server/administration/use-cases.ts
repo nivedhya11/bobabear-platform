@@ -104,6 +104,9 @@ const ACCESS_CAPS = [
   "access.audit.read",
 ] as const satisfies readonly PermissionKey[];
 
+/** Portal session projection includes operations permissions for workforce hub navigation. */
+const PORTAL_SESSION_CAPS = ["order.read", ...ACCESS_CAPS] as const satisfies readonly PermissionKey[];
+
 const LIST_LIMIT = 200;
 
 export function rejectForgedAuthorityFields(body: Readonly<Record<string, unknown>>): void {
@@ -170,13 +173,13 @@ export async function getAdminSession(
   actor: WorkforcePrincipal | null,
 ): Promise<{
   workforceUserId: string;
-  capabilities: Record<(typeof ACCESS_CAPS)[number], boolean>;
+  capabilities: Record<(typeof PORTAL_SESSION_CAPS)[number], boolean>;
 }> {
   const principal = requirePrincipal(actor);
   return persistence.withContext(async (context) => {
     const effective = new Set(await getEffectivePermissions(context, { actor: principal }));
-    const capabilities = {} as Record<(typeof ACCESS_CAPS)[number], boolean>;
-    for (const permission of ACCESS_CAPS) {
+    const capabilities = {} as Record<(typeof PORTAL_SESSION_CAPS)[number], boolean>;
+    for (const permission of PORTAL_SESSION_CAPS) {
       capabilities[permission] = effective.has(permission);
     }
     return { workforceUserId: principal.workforceUserId, capabilities };

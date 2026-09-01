@@ -20,6 +20,7 @@
  */
 
 import { useEffect, useId, useState, type FormEvent } from "react";
+import { useSearchParams } from "next/navigation";
 
 import {
   changeWorkforcePassword,
@@ -31,6 +32,9 @@ import {
   verifyWorkforceMfaBackupCode,
   verifyWorkforceMfaEnrollment,
 } from "@/lib/workforce-auth/client";
+import { fetchAdminSession } from "@/lib/administration/api";
+import { resolveDefaultDestinationHref } from "@/lib/workforce-hub/destinations";
+import { parseSafeWorkforceReturnPath } from "@/lib/workforce-hub/return-to";
 import { normalizeWorkforceEmail } from "@/shared/workforce-auth/email";
 import { cn } from "@/lib/utils";
 
@@ -152,6 +156,8 @@ function describeNotice(screen: Screen, notice: Notice): string {
 }
 
 export function WorkforceLoginClient() {
+  const searchParams = useSearchParams();
+  const returnTo = parseSafeWorkforceReturnPath(searchParams.get("returnTo"));
   const [screen, setScreen] = useState<Screen>("loading");
   const [emailInput, setEmailInput] = useState("");
   const [password, setPassword] = useState("");
@@ -197,6 +203,21 @@ export function WorkforceLoginClient() {
     setScreen("sign-in");
   }
 
+  async function redirectAfterAuthentication(): Promise<void> {
+    setScreen("loading");
+    if (returnTo) {
+      window.location.assign(returnTo);
+      return;
+    }
+    const session = await fetchAdminSession();
+    if (session.ok) {
+      const destination = resolveDefaultDestinationHref(session.data.session.capabilities);
+      window.location.assign(destination ?? "/workforce/");
+      return;
+    }
+    window.location.assign("/workforce/");
+  }
+
   useEffect(() => {
     let cancelled = false;
     void (async () => {
@@ -209,7 +230,7 @@ export function WorkforceLoginClient() {
       }
       const { data } = result;
       if (data.authenticated) {
-        setScreen("signed-in");
+        void redirectAfterAuthentication();
         return;
       }
       if (data.next === "change_password") {
@@ -276,6 +297,10 @@ export function WorkforceLoginClient() {
     }
 
     const { data } = result;
+    if ("authenticated" in data && data.authenticated) {
+      void redirectAfterAuthentication();
+      return;
+    }
     if ("next" in data) {
       clearPasswordFields();
       if (data.next === "change_password") {
@@ -455,7 +480,7 @@ export function WorkforceLoginClient() {
     if (data.authenticated) {
       setTotpCode("");
       setBackupCode("");
-      setScreen("signed-in");
+      void redirectAfterAuthentication();
       return;
     }
 
@@ -497,7 +522,7 @@ export function WorkforceLoginClient() {
     if (data.authenticated) {
       setTotpCode("");
       setBackupCode("");
-      setScreen("signed-in");
+      void redirectAfterAuthentication();
       return;
     }
 
@@ -571,17 +596,7 @@ export function WorkforceLoginClient() {
 
         {screen === "signed-in" && (
           <div className="flex flex-col gap-5">
-            <p className="font-body text-[15px] text-[var(--text-secondary)]">
-              You&rsquo;re signed in.
-            </p>
-            <button
-              type="button"
-              onClick={() => void handleSignOut()}
-              disabled={pending}
-              className={BUTTON_SECONDARY_CLASS}
-            >
-              {pending ? "Signing out…" : "Sign out"}
-            </button>
+            <p className="font-body text-[15px] text-[var(--text-secondary)]">Redirecting to your workforce application…</p>
           </div>
         )}
 

@@ -11,6 +11,8 @@
  */
 import type { Metadata } from "next";
 
+import { Suspense } from "react";
+
 import { WorkforceLoginClient } from "./WorkforceLoginClient";
 
 export const metadata: Metadata = {
@@ -24,5 +26,9 @@ export const metadata: Metadata = {
 };
 
 export default function WorkforceLoginPage() {
-  return <WorkforceLoginClient />;
+  return (
+    <Suspense fallback={<p className="font-body text-[15px] text-[var(--text-secondary)]">Loading sign-in…</p>}>
+      <WorkforceLoginClient />
+    </Suspense>
+  );
 }

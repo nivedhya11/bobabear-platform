@@ -14,6 +14,12 @@ beforeEach(() => {
 });
 
 describe("AdministrationHubClient", () => {
+  it("renders loading state", () => {
+    fetchAdminSession.mockReturnValue(new Promise(() => {}));
+    render(<AdministrationHubClient />);
+    expect(screen.getByTestId("enterprise-loading-state")).toBeInTheDocument();
+  });
+
   it("renders unauthorized state with sign-in link", async () => {
     fetchAdminSession.mockResolvedValueOnce({
       ok: false,
@@ -55,6 +61,6 @@ describe("AdministrationHubClient", () => {
       status: 0,
     });
     render(<AdministrationHubClient />);
-    await waitFor(() => expect(screen.getByTestId("admin-error")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole("alert")).toBeInTheDocument());
   });
 });

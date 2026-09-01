@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { AdministrationMembershipDetailClient } from "@/components/administration/AdministrationMembershipDetailClient";
+import { PageHeader } from "@/components/enterprise/PageHeader";
 
 export const metadata: Metadata = {
   title: "Admin Membership Detail",
@@ -11,9 +12,9 @@ export const metadata: Metadata = {
 
 export default function WorkforceAdminMembershipDetailPage() {
   return (
-    <main className="mx-auto max-w-3xl px-4 py-10">
-      <h1 className="mb-6 text-2xl font-semibold tracking-tight">Membership</h1>
+    <>
+      <PageHeader title="Membership detail" description="Role assignments and membership lifecycle for the selected workforce user." />
       <AdministrationMembershipDetailClient />
-    </main>
+    </>
   );
 }

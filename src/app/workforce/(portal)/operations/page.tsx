@@ -7,6 +7,7 @@
 import type { Metadata } from "next";
 
 import { OperationsOrderListClient } from "@/components/operations/OperationsOrderListClient";
+import { PageHeader } from "@/components/enterprise/PageHeader";
 
 export const metadata: Metadata = {
   title: "Operations Orders",
@@ -19,5 +20,17 @@ export const metadata: Metadata = {
 };
 
 export default function WorkforceOperationsPage() {
-  return <OperationsOrderListClient />;
+  return (
+    <>
+      <PageHeader
+        title="Operations orders"
+        description="Search, review, and action the live order queue."
+        breadcrumbs={[
+          { label: "Workforce", href: "/workforce/" },
+          { label: "Operations" },
+        ]}
+      />
+      <OperationsOrderListClient />
+    </>
+  );
 }
