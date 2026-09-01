@@ -3,6 +3,8 @@
  *
  * Coordinates are the Serviceability authority; postalCode is optional address metadata.
  */
+import { useSyncExternalStore } from "react";
+
 import { BUSINESS } from "@/lib/site";
 
 import { compactDeliveryDisplayLabel } from "./display-label";
@@ -30,12 +32,30 @@ export type DeliveryContext = Readonly<{
   coordinates?: DeliveryCoordinates | null;
 }>;
 
-const EMPTY_CONTEXT: DeliveryContext = Object.freeze({
+export const DEFAULT_DELIVERY_CONTEXT: DeliveryContext = Object.freeze({
   postalCode: "",
   displayLabel: "",
   source: "location_search",
   coordinates: null,
 });
+
+const EMPTY_CONTEXT = DEFAULT_DELIVERY_CONTEXT;
+
+let cachedSnapshot: DeliveryContext = DEFAULT_DELIVERY_CONTEXT;
+let cachedSnapshotKey = "";
+
+function invalidateDeliveryContextSnapshot(): void {
+  cachedSnapshotKey = "";
+}
+
+function deliveryContextSnapshot(): DeliveryContext {
+  const next = readStoredContext();
+  const nextKey = JSON.stringify(next);
+  if (nextKey === cachedSnapshotKey) return cachedSnapshot;
+  cachedSnapshotKey = nextKey;
+  cachedSnapshot = next;
+  return cachedSnapshot;
+}
 
 function canUseSessionStorage(): boolean {
   return typeof window !== "undefined" && typeof window.sessionStorage !== "undefined";
@@ -132,6 +152,15 @@ export function readDeliveryContext(): DeliveryContext {
   return readStoredContext();
 }
 
+/** Hydration-safe delivery context for client components. */
+export function useDeliveryContext(): DeliveryContext {
+  return useSyncExternalStore(
+    subscribeToDeliveryContext,
+    deliveryContextSnapshot,
+    () => DEFAULT_DELIVERY_CONTEXT,
+  );
+}
+
 export function writeDeliveryContext(
   patch: Readonly<{
     postalCode?: string;
@@ -157,6 +186,7 @@ export function writeDeliveryContext(
   const coordinates =
     patch.coordinates !== undefined ? patch.coordinates : current.coordinates ?? null;
   const next = Object.freeze({ postalCode, displayLabel, source, savedAddressId, coordinates });
+  invalidateDeliveryContextSnapshot();
   persistContext(next);
   publishDeliveryContext(next);
   return next;
@@ -193,4 +223,9 @@ export function deliveryContextDetailLabel(context: DeliveryContext): string {
   if (context.displayLabel.trim().length > 0) return context.displayLabel.trim();
   if (context.postalCode.length === 6) return context.postalCode;
   return BUSINESS.locality;
+}
+
+export function resetDeliveryContextSnapshotForTests(): void {
+  cachedSnapshot = DEFAULT_DELIVERY_CONTEXT;
+  cachedSnapshotKey = "";
 }

@@ -1,7 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { getMapsBrowserKey, isMapsJsConfigured, mapsJsConfigStatus } from "@/lib/customer-location/maps-js-config";
-import { loadGoogleMapsJs, resetMapsJsLoaderForTests } from "@/lib/customer-location/maps-js-loader";
+import {
+  getMapsLoaderFailureReason,
+  loadGoogleMapsJs,
+  resetMapsJsLoaderForTests,
+} from "@/lib/customer-location/maps-js-loader";
 
 describe("maps-js-config", () => {
   const original = process.env.NEXT_PUBLIC_BOBA_BEAR_GOOGLE_MAPS_BROWSER_KEY;
@@ -43,19 +47,104 @@ describe("maps-js-loader", () => {
     await expect(loadGoogleMapsJs()).resolves.toBeNull();
   });
 
-  it("loads maps script lazily when key is present", async () => {
+  it("does not resolve until importLibrary yields a Map constructor", async () => {
     process.env.NEXT_PUBLIC_BOBA_BEAR_GOOGLE_MAPS_BROWSER_KEY = "browser-key-fixture";
     const appendSpy = vi.spyOn(document.head, "appendChild");
     const promise = loadGoogleMapsJs();
     const script = appendSpy.mock.calls.find(
       (call) => (call[0] as HTMLElement).id === "boba-google-maps-js",
     )?.[0] as HTMLScriptElement | undefined;
-    expect(script?.src).toContain("maps.googleapis.com/maps/api/js");
-    expect(script?.src).toContain("browser-key-fixture");
-    (window as { google?: { maps: typeof google.maps } }).google = {
-      maps: {} as typeof google.maps,
+
+    (window as unknown as { google?: { maps: { importLibrary?: unknown; event: typeof google.maps.event } } }).google = {
+      maps: {
+        event: { trigger: vi.fn() },
+      },
     };
-    script?.onload?.(new Event("load"));
-    await expect(promise).resolves.toBe(window.google!.maps);
+    script?.dispatchEvent(new Event("load"));
+    await expect(promise).resolves.toBeNull();
+    expect(getMapsLoaderFailureReason()).toBe("MAP_LIBRARY_NOT_READY");
+  });
+
+  it("resolves only after importLibrary yields a Map constructor", async () => {
+    process.env.NEXT_PUBLIC_BOBA_BEAR_GOOGLE_MAPS_BROWSER_KEY = "browser-key-fixture";
+    const MapCtor = vi.fn(function MapMock() {
+      return {};
+    });
+    const importLibrary = vi.fn(async () => ({ Map: MapCtor }));
+    (window as unknown as { google?: { maps: { importLibrary: typeof importLibrary; event: typeof google.maps.event } } }).google = {
+      maps: {
+        importLibrary,
+        event: { trigger: vi.fn() },
+      },
+    };
+
+    const library = await loadGoogleMapsJs();
+    expect(importLibrary).toHaveBeenCalledWith("maps");
+    expect(library?.Map).toBe(MapCtor);
+    expect(typeof library?.Map).toBe("function");
+  });
+
+  it("shares one bootstrap request across concurrent callers", async () => {
+    process.env.NEXT_PUBLIC_BOBA_BEAR_GOOGLE_MAPS_BROWSER_KEY = "browser-key-fixture";
+    const MapCtor = vi.fn(function MapMock() {
+      return {};
+    });
+    const importLibrary = vi.fn(async () => ({ Map: MapCtor }));
+    (window as unknown as { google?: { maps: { importLibrary: typeof importLibrary; event: typeof google.maps.event } } }).google = {
+      maps: {
+        importLibrary,
+        event: { trigger: vi.fn() },
+      },
+    };
+
+    const appendSpy = vi.spyOn(document.head, "appendChild");
+    const first = loadGoogleMapsJs();
+    const second = loadGoogleMapsJs();
+    const scriptCalls = appendSpy.mock.calls.filter(
+      (call) => (call[0] as HTMLElement).id === "boba-google-maps-js",
+    );
+    expect(scriptCalls).toHaveLength(0);
+    const [a, b] = await Promise.all([first, second]);
+    expect(a).toBe(b);
+    expect(importLibrary).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not treat bare window.google.maps object presence as readiness", async () => {
+    process.env.NEXT_PUBLIC_BOBA_BEAR_GOOGLE_MAPS_BROWSER_KEY = "browser-key-fixture";
+    const appendSpy = vi.spyOn(document.head, "appendChild");
+    (window as unknown as { google?: { maps: Record<string, never> } }).google = {
+      maps: {},
+    };
+
+    const promise = loadGoogleMapsJs();
+    const script = appendSpy.mock.calls.find(
+      (call) => (call[0] as HTMLElement).id === "boba-google-maps-js",
+    )?.[0] as HTMLScriptElement | undefined;
+    script?.dispatchEvent(new Event("load"));
+    await expect(promise).resolves.toBeNull();
+    expect(getMapsLoaderFailureReason()).toBe("MAP_LIBRARY_NOT_READY");
+  });
+
+  it("allows retry after a failed load", async () => {
+    process.env.NEXT_PUBLIC_BOBA_BEAR_GOOGLE_MAPS_BROWSER_KEY = "browser-key-fixture";
+    const MapCtor = vi.fn(function MapMock() {
+      return {};
+    });
+    const importLibrary = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("network"))
+      .mockResolvedValueOnce({ Map: MapCtor });
+
+    (window as unknown as { google?: { maps: { importLibrary: typeof importLibrary; event: typeof google.maps.event } } }).google = {
+      maps: {
+        importLibrary,
+        event: { trigger: vi.fn() },
+      },
+    };
+
+    await expect(loadGoogleMapsJs()).resolves.toBeNull();
+    const library = await loadGoogleMapsJs();
+    expect(library?.Map).toBe(MapCtor);
+    expect(importLibrary).toHaveBeenCalledTimes(2);
   });
 });

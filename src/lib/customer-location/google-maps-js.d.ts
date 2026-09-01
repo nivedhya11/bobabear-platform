@@ -1,5 +1,7 @@
 /** Minimal Maps JavaScript API surface for lazy-loaded confirmation UI. */
 declare namespace google.maps {
+  function importLibrary(name: "maps"): Promise<{ Map: typeof google.maps.Map }>;
+
   class Map {
     constructor(element: HTMLElement, opts?: MapOptions);
     getCenter(): LatLng | null | undefined;

@@ -38,10 +38,8 @@ import {
 } from "@/lib/customer-commerce/location";
 import {
   deliveryContextTriggerLabel,
-  readDeliveryContext,
-  subscribeToDeliveryContext,
+  useDeliveryContext,
   writeDeliveryContext,
-  type DeliveryContext,
 } from "@/lib/customer-location/delivery-context";
 import {
   compactNormalizedLocationLabel,
@@ -109,7 +107,7 @@ export function LocationSelector(props: {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<SelectorStep>("select");
   const [intent, setIntent] = useState<JourneyIntent>("set-context");
-  const [context, setContext] = useState<DeliveryContext>(() => readDeliveryContext());
+  const context = useDeliveryContext();
   const [query, setQuery] = useState("");
   const [savedAddresses, setSavedAddresses] = useState<readonly CommerceAddress[]>([]);
   const [authenticated, setAuthenticated] = useState(false);
@@ -134,8 +132,6 @@ export function LocationSelector(props: {
   const listboxId = useId();
   const comboboxId = useId();
   const isHeaderPill = variant === "header-pill";
-
-  useEffect(() => subscribeToDeliveryContext(setContext), []);
 
   useEffect(() => {
     if (!open) return;
