@@ -5,6 +5,7 @@
  */
 import type { Persistence } from "../persistence/types";
 import type { PaymentProvider } from "../payment/provider";
+import type { WorkerHealthSnapshot } from "../../platform/observability/worker-health";
 import { reconcileNonTerminalRefundsBatch } from "./operations";
 import { systemRefundClock, type RefundClock } from "./clock";
 
@@ -18,6 +19,7 @@ export class RefundReconciliationProcessor {
   private timer: ReturnType<typeof setInterval> | null = null;
   private stopped = false;
   private running = false;
+  private lastTickAt: Date | null = null;
 
   constructor(options: {
     persistence: Persistence;
@@ -51,6 +53,15 @@ export class RefundReconciliationProcessor {
     }
   }
 
+  getHealthSnapshot(): WorkerHealthSnapshot {
+    return {
+      name: "refund_reconciliation",
+      running: this.running,
+      stopped: this.stopped,
+      ...(this.lastTickAt ? { lastTickAt: this.lastTickAt.toISOString() } : {}),
+    };
+  }
+
   async tick(): Promise<void> {
     if (this.stopped || this.running) return;
     this.running = true;
@@ -63,6 +74,7 @@ export class RefundReconciliationProcessor {
       // Processor must not crash customer-commerce.
     } finally {
       this.running = false;
+      this.lastTickAt = new Date();
     }
   }
 }

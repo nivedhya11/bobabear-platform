@@ -6,11 +6,11 @@
  */
 import "server-only";
 
-import { randomUUID } from "node:crypto";
+import { generateRequestId as createRequestId } from "../../../platform/observability/request-id";
 import type { ServerResponse } from "node:http";
 
 export function generateRequestId(): string {
-  return randomUUID();
+  return createRequestId();
 }
 
 export type SendJsonOptions = Readonly<{
@@ -59,6 +59,7 @@ export function sendJson(res: ServerResponse, body: unknown, options: SendJsonOp
   res.setHeader("Content-Type", "application/json; charset=utf-8");
   res.setHeader("Cache-Control", "no-store");
   res.setHeader("X-Request-ID", options.requestId);
+  res.setHeader("X-Correlation-ID", options.requestId);
   res.end(JSON.stringify(body, jsonReplacer));
 }
 
@@ -80,6 +81,7 @@ export function sendPdf(
   res.setHeader("Content-Disposition", disposition);
   res.setHeader("Cache-Control", "no-store");
   res.setHeader("X-Request-ID", options.requestId);
+  res.setHeader("X-Correlation-ID", options.requestId);
   res.end(Buffer.from(artifact.bytes));
 }
 
@@ -88,6 +90,7 @@ export function sendNoContent(res: ServerResponse, requestId: string): void {
   res.statusCode = 204;
   res.setHeader("Cache-Control", "no-store");
   res.setHeader("X-Request-ID", requestId);
+  res.setHeader("X-Correlation-ID", requestId);
   res.end();
 }
 

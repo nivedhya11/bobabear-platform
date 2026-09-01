@@ -3,6 +3,12 @@ import "server-only";
 
 import { createServer, type Server } from "node:http";
 
+import {
+  createStructuredLogger,
+  incrementCounter,
+  STANDARD_HTTP_LOG_FIELDS,
+  type StructuredLogger,
+} from "../../platform/observability";
 import { getWorkforceAuthRuntime, type WorkforceAuthRuntime } from "../auth/workforce";
 import type { WorkforceAuthConfig } from "../auth/shared/types";
 import type { WebConfig, WorkerConfig } from "../../platform/config";
@@ -16,7 +22,7 @@ import { getApplicationPersistence, type Persistence } from "../persistence";
 import { createOperationsRequestListener, type OperationsRequestEvent } from "./http/app";
 
 const DEFAULT_SHUTDOWN_TIMEOUT_MS = 10_000;
-const SAFE_LOG_FIELDS = ["requestId", "operation", "safeOutcomeCode", "httpStatus", "durationMs"] as const;
+const OPERATIONS_SERVICE_NAME = "operations";
 
 export type OperationsServiceOptions = Readonly<{
   auth: WorkforceAuthConfig;
@@ -33,18 +39,14 @@ export type OperationsServiceOptions = Readonly<{
   metaWhatsApp?: MetaWhatsAppRuntimeSecrets | null;
 }>;
 
-function logSafeEvent(event: OperationsRequestEvent): void {
-  const safe: Record<string, unknown> = {};
-  for (const field of SAFE_LOG_FIELDS) safe[field] = event[field];
-  console.log(JSON.stringify(safe));
-}
-
 export class OperationsService {
   private readonly config: OperationsServiceOptions;
   private readonly persistence: Persistence;
   private readonly runtime: WorkforceAuthRuntime;
   private readonly server: Server;
   private readonly notificationProcessor: NotificationOutboxProcessor | null;
+  private readonly startedAt = new Date();
+  private readonly logger: StructuredLogger;
   private started = false;
   private closed = false;
   private inFlightCount = 0;
@@ -54,21 +56,11 @@ export class OperationsService {
     this.config = config;
     this.persistence = getApplicationPersistence(config.persistenceConfig);
     this.runtime = getWorkforceAuthRuntime({ auth: config.auth, persistence: config.persistenceConfig });
-    this.server = createServer(createOperationsRequestListener(
-      { runtime: this.runtime, persistence: this.persistence, trustedOrigin: config.trustedOrigin },
-      {
-        onRequestStart: () => { this.inFlightCount += 1; },
-        onRequestComplete: (event) => {
-          this.inFlightCount = Math.max(0, this.inFlightCount - 1);
-          if (this.inFlightCount === 0) {
-            const waiters = this.inFlightWaiters;
-            this.inFlightWaiters = [];
-            for (const waiter of waiters) waiter();
-          }
-          logSafeEvent(event);
-        },
-      },
-    ));
+    this.logger = createStructuredLogger({
+      logLevel: config.persistenceConfig.logLevel,
+      allowFields: STANDARD_HTTP_LOG_FIELDS,
+      service: OPERATIONS_SERVICE_NAME,
+    });
     const notificationChannels = createNotificationChannelRegistry({
       whatsapp: config.metaWhatsApp
         ? createMetaWhatsAppChannelAdapter({ secrets: config.metaWhatsApp })
@@ -81,6 +73,33 @@ export class OperationsService {
             persistence: this.persistence,
             operationOptions: { channels: notificationChannels },
           });
+    this.server = createServer(createOperationsRequestListener(
+      {
+        runtime: this.runtime,
+        persistence: this.persistence,
+        trustedOrigin: config.trustedOrigin,
+        startedAt: this.startedAt,
+        serviceName: OPERATIONS_SERVICE_NAME,
+        workers: this.notificationProcessor ? [this.notificationProcessor] : [],
+      },
+      {
+        onRequestStart: () => { this.inFlightCount += 1; },
+        onRequestComplete: (event) => {
+          this.inFlightCount = Math.max(0, this.inFlightCount - 1);
+          if (this.inFlightCount === 0) {
+            const waiters = this.inFlightWaiters;
+            this.inFlightWaiters = [];
+            for (const waiter of waiters) waiter();
+          }
+          incrementCounter("http.requests.total");
+          this.logSafeEvent(event);
+        },
+      },
+    ));
+  }
+
+  private logSafeEvent(event: OperationsRequestEvent): void {
+    this.logger.info(event);
   }
 
   async start(): Promise<void> {

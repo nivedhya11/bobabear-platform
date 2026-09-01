@@ -28,6 +28,12 @@ import {
 } from "../auth/customer";
 import type { CustomerAuthConfig } from "../auth/shared/types";
 import type { WebConfig, WorkerConfig } from "../../platform/config";
+import {
+  createStructuredLogger,
+  incrementCounter,
+  STANDARD_HTTP_LOG_FIELDS,
+  type StructuredLogger,
+} from "../../platform/observability";
 import { getApplicationPersistence, type Persistence } from "../persistence";
 import { createCustomerAuthRequestListener, type CustomerAuthRequestEvent } from "./http/app";
 import type { CustomerAuthApi } from "./http/router";
@@ -35,6 +41,8 @@ import type { CustomerPiiHashSecret, CustomerTemporaryIdentityDeriver } from "./
 import type { CustomerOtpProvider } from "./provider";
 
 const DEFAULT_SHUTDOWN_TIMEOUT_MS = 10_000;
+
+const CUSTOMER_AUTH_SERVICE_NAME = "customer-auth";
 
 export type CustomerAuthServiceOptions = Readonly<{
   auth: CustomerAuthConfig;
@@ -50,32 +58,14 @@ export type CustomerAuthServiceOptions = Readonly<{
   shutdownTimeoutMs?: number;
 }>;
 
-const SAFE_LOG_FIELDS = [
-  "requestId",
-  "operation",
-  "safeOutcomeCode",
-  "httpStatus",
-  "durationMs",
-  "providerKind",
-  "rateLimitScope",
-] as const;
-
-type SafeLogEvent = CustomerAuthRequestEvent & Readonly<{ providerKind?: string }>;
-
-function logSafeEvent(event: SafeLogEvent): void {
-  const safe: Record<string, unknown> = {};
-  for (const field of SAFE_LOG_FIELDS) {
-    const value = event[field];
-    if (value !== undefined) safe[field] = value;
-  }
-  console.log(JSON.stringify(safe));
-}
+const EXTRA_LOG_FIELDS = ["providerKind", "rateLimitScope"] as const;
 
 export class CustomerAuthService {
   private readonly config: CustomerAuthServiceOptions;
   private readonly persistence: Persistence;
   private readonly runtime: CustomerAuthRuntime;
   private readonly server: Server;
+  private readonly logger: StructuredLogger;
 
   private started = false;
   private closed = false;
@@ -85,6 +75,11 @@ export class CustomerAuthService {
   constructor(config: CustomerAuthServiceOptions) {
     this.config = config;
     this.persistence = getApplicationPersistence(config.persistenceConfig);
+    this.logger = createStructuredLogger({
+      logLevel: config.persistenceConfig.logLevel,
+      allowFields: [...STANDARD_HTTP_LOG_FIELDS, ...EXTRA_LOG_FIELDS],
+      service: CUSTOMER_AUTH_SERVICE_NAME,
+    });
 
     const phoneDependencies: CustomerPhoneAuthRuntimeDependencies = {
       otpProvider: config.otpProvider,
@@ -119,7 +114,8 @@ export class CustomerAuthService {
             this.inFlightWaiters = [];
             for (const waiter of waiters) waiter();
           }
-          logSafeEvent({ ...event, providerKind: config.otpProvider.kind });
+          incrementCounter("http.requests.total");
+          this.logger.info({ ...event, providerKind: config.otpProvider.kind });
         },
       },
     );

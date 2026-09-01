@@ -8,6 +8,9 @@ import "server-only";
 
 import type { IncomingMessage, ServerResponse } from "node:http";
 
+import { evaluateReadiness } from "../../../platform/observability/health";
+import type { WorkerHealthReporter } from "../../../platform/observability/worker-health";
+
 import {
   addCartLine,
   applyCartCoupon,
@@ -101,6 +104,7 @@ export type CustomerCommerceRouteDependencies = Readonly<{
   /** Meta WhatsApp secrets when BOBA_BEAR_WHATSAPP_PROVIDER=meta_cloud_api. */
   metaWhatsApp?: import("../../notifications/provider/meta-whatsapp").MetaWhatsAppRuntimeSecrets | null;
   environment?: import("../../../platform/config").AppEnvironment;
+  workers?: readonly WorkerHealthReporter[];
 }>;
 
 export type CustomerCommerceRouteOutcome = Readonly<{
@@ -233,18 +237,16 @@ export async function routeCustomerCommerceRequest(
       sendMethodNotAllowed(res, ["GET"], requestId);
       return outcome("health_ready", 405, "METHOD_NOT_ALLOWED");
     }
-    try {
-      const availability = await deps.persistence.checkAvailability();
-      if (!availability.ok) {
-        sendJson(res, { ok: false }, { status: 503, requestId });
-        return outcome("health_ready", 503, "NOT_READY");
-      }
-      sendJson(res, { ok: true }, { status: 200, requestId });
-      return outcome("health_ready", 200, "OK");
-    } catch {
-      sendJson(res, { ok: false }, { status: 503, requestId });
-      return outcome("health_ready", 503, "NOT_READY");
-    }
+    const readiness = await evaluateReadiness({
+      persistence: deps.persistence,
+      workers: deps.workers,
+    });
+    sendJson(
+      res,
+      { ok: readiness.ok, checks: readiness.checks },
+      { status: readiness.ok ? 200 : 503, requestId },
+    );
+    return outcome("health_ready", readiness.ok ? 200 : 503, readiness.ok ? "OK" : "NOT_READY");
   }
 
   if (pathname === "/api/v1/cart" && method === "POST") {

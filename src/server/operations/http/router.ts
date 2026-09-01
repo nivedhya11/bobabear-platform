@@ -7,6 +7,9 @@ import "server-only";
 
 import type { IncomingMessage, ServerResponse } from "node:http";
 
+import { evaluateReadiness } from "../../../platform/observability/health";
+import type { WorkerHealthReporter } from "../../../platform/observability/worker-health";
+
 import type { WorkforceAuthRuntime } from "../../auth/workforce";
 import {
   acceptOrder,
@@ -27,6 +30,7 @@ import { resolveOperationsWorkforcePrincipal } from "./auth";
 import { readOperationsJsonObjectBody } from "./body";
 import { classifyDeliveryRoute, handleDeliveryRoute } from "./delivery-routes";
 import { classifyAdminRoute, routeAdminRequest } from "./admin-routes";
+import { handleOperationalStatusRequest } from "./operational-status-routes";
 import { mapOperationsError } from "./error-map";
 import { sendJson, sendMethodNotAllowed, sendNotFound } from "./response";
 
@@ -34,6 +38,9 @@ export type OperationsRouteDependencies = Readonly<{
   runtime: WorkforceAuthRuntime;
   persistence: Persistence;
   trustedOrigin: string;
+  startedAt?: Date;
+  serviceName?: string;
+  workers?: readonly WorkerHealthReporter[];
 }>;
 
 export type OperationsRouteOutcome = Readonly<{
@@ -106,18 +113,34 @@ export async function routeOperationsRequest(
       sendMethodNotAllowed(res, requestId, "GET");
       return { operation: "health_ready", safeOutcomeCode: "METHOD_NOT_ALLOWED", httpStatus: 405 };
     }
-    try {
-      const availability = await deps.persistence.checkAvailability();
-      if (!availability.ok) {
-        sendJson(res, { ok: false }, { status: 503, requestId });
-        return { operation: "health_ready", safeOutcomeCode: "INTERNAL_ERROR", httpStatus: 503 };
-      }
-      sendJson(res, { ok: true }, { status: 200, requestId });
-      return { operation: "health_ready", safeOutcomeCode: "OK", httpStatus: 200 };
-    } catch {
-      sendJson(res, { ok: false }, { status: 503, requestId });
-      return { operation: "health_ready", safeOutcomeCode: "INTERNAL_ERROR", httpStatus: 503 };
-    }
+    const readiness = await evaluateReadiness({
+      persistence: deps.persistence,
+      workers: deps.workers,
+    });
+    sendJson(
+      res,
+      { ok: readiness.ok, checks: readiness.checks },
+      { status: readiness.ok ? 200 : 503, requestId },
+    );
+    return {
+      operation: "health_ready",
+      safeOutcomeCode: readiness.ok ? "OK" : "INTERNAL_ERROR",
+      httpStatus: readiness.ok ? 200 : 503,
+    };
+  }
+  if (url.pathname === "/api/operations/v1/operational-status") {
+    return handleOperationalStatusRequest(
+      req,
+      res,
+      {
+        runtime: deps.runtime,
+        persistence: deps.persistence,
+        serviceName: deps.serviceName,
+        startedAt: deps.startedAt,
+        workers: deps.workers,
+      },
+      requestId,
+    );
   }
   const route = classifyRoute(url.pathname);
   const deliveryRoute = classifyDeliveryRoute(url.pathname);
