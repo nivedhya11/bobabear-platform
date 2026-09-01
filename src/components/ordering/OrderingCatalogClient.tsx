@@ -20,6 +20,7 @@ import { publishCartCount } from "@/components/ordering/cart-count-sync";
 import {
   readDeliveryContext,
   subscribeToDeliveryContext,
+  useDeliveryContext,
   type DeliveryContext,
 } from "@/lib/customer-location/delivery-context";
 import { commerceErrorCopy } from "@/components/ordering/error-copy";
@@ -51,7 +52,7 @@ export function OrderingCatalogClient(props: { brandId: string }) {
   const [menu, setMenu] = useState<CustomerMenuProjection | null>(null);
   const [cart, setCart] = useState<CommerceCart | null>(null);
   const [evaluation, setEvaluation] = useState<CommerceCartEvaluation | null>(null);
-  const [deliveryContext, setDeliveryContext] = useState<DeliveryContext>(() => readDeliveryContext());
+  const deliveryContext = useDeliveryContext();
   const [loading, setLoading] = useState(true);
   const [pendingKey, setPendingKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -185,7 +186,6 @@ export function OrderingCatalogClient(props: { brandId: string }) {
 
   useEffect(() => {
     return subscribeToDeliveryContext((nextContext) => {
-      setDeliveryContext(nextContext);
       void refreshEvaluation(nextContext, cart);
     });
   }, [cart, refreshEvaluation]);

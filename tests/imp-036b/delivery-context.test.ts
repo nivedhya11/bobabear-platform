@@ -2,6 +2,7 @@ import { describe, expect, it, beforeEach, afterEach } from "vitest";
 
 import {
   readDeliveryContext,
+  resetDeliveryContextSnapshotForTests,
   writeDeliveryContext,
   writeDeliveryContextPin,
   deliveryContextTriggerLabel,
@@ -10,10 +11,12 @@ import {
 describe("delivery-context", () => {
   beforeEach(() => {
     window.sessionStorage.clear();
+    resetDeliveryContextSnapshotForTests();
   });
 
   afterEach(() => {
     window.sessionStorage.clear();
+    resetDeliveryContextSnapshotForTests();
   });
 
   it("starts empty", () => {

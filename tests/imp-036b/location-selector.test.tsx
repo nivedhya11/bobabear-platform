@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { LocationSelector } from "@/components/location/LocationSelector";
-import { writeDeliveryContext } from "@/lib/customer-location/delivery-context";
+import { writeDeliveryContext, resetDeliveryContextSnapshotForTests } from "@/lib/customer-location/delivery-context";
 
 const fetchCustomerSession = vi.fn<(...args: unknown[]) => unknown>();
 const listOwnAddresses = vi.fn<(...args: unknown[]) => unknown>();
@@ -38,6 +38,7 @@ vi.mock("@/lib/customer-commerce/location", () => ({
 
 beforeEach(() => {
   window.sessionStorage.clear();
+  resetDeliveryContextSnapshotForTests();
   fetchCustomerSession.mockResolvedValue({ ok: true, data: { authenticated: false } });
   listOwnAddresses.mockResolvedValue({ ok: true, status: 200, data: { addresses: [] } });
   evaluateDeliveryServiceability.mockResolvedValue({

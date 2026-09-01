@@ -19,13 +19,23 @@ import {
 import { getDeviceCoordinates } from "@/lib/customer-location/geolocation";
 import { compactNormalizedLocationLabel } from "@/lib/customer-location/display-label";
 import { isMapsJsConfigured } from "@/lib/customer-location/maps-js-config";
-import { loadGoogleMapsJs } from "@/lib/customer-location/maps-js-loader";
+import {
+  getMapsLoaderFailureReason,
+  loadGoogleMapsJs,
+  type LoadedGoogleMapsLibrary,
+} from "@/lib/customer-location/maps-js-loader";
 import { waitForMapContainerReady } from "@/lib/customer-location/map-container-ready";
 import { DIRECT_ORDERING_BRAND_ID } from "@/shared/customer-menu/constants";
 import { cn } from "@/lib/utils";
 
 const REVERSE_GEOCODE_DEBOUNCE_MS = 450;
 const DEFAULT_ZOOM = 17;
+
+type MapInitErrorCode =
+  | "MAP_LIBRARY_NOT_READY"
+  | "MAP_CONSTRUCTOR_FAILED"
+  | "MAP_AUTHORIZATION_FAILED"
+  | "MAP_CONTAINER_NOT_READY";
 
 function parseCoordinate(value: string | null): number | null {
   if (!value) return null;
@@ -70,10 +80,12 @@ export function DeliveryLocationMapConfirmation(props: {
   const { initialLocation, onConfirm, onBack, onChooseAnother, pending = false } = props;
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
-  const mapInitRef = useRef(false);
+  const mapsLibraryRef = useRef<LoadedGoogleMapsLibrary | null>(null);
   const idleTimerRef = useRef<number | null>(null);
   const reverseAbortRef = useRef<AbortController | null>(null);
   const serviceabilitySeqRef = useRef(0);
+  const locationRef = useRef(initialLocation);
+  const userInteractedWithMapRef = useRef(false);
   const titleId = useId();
   const statusId = useId();
 
@@ -85,7 +97,7 @@ export function DeliveryLocationMapConfirmation(props: {
 
   const [mapsLoading, setMapsLoading] = useState(hasInitialCoordinates && mapsConfigured);
   const [mapsAvailable, setMapsAvailable] = useState(false);
-  const [mapInitError, setMapInitError] = useState<string | null>(null);
+  const [mapInitError, setMapInitError] = useState<MapInitErrorCode | null>(null);
   const [location, setLocation] = useState(initialLocation);
   const [resolvingAddress, setResolvingAddress] = useState(false);
   const [checkingServiceability, setCheckingServiceability] = useState(false);
@@ -129,56 +141,70 @@ export function DeliveryLocationMapConfirmation(props: {
     setStatusMessage(serviceabilityStatusCopy(nextDecision.status));
   }, []);
 
-  const reverseGeocodeCenter = useCallback(async () => {
-    const map = mapRef.current;
-    if (!map) return;
-    const center = map.getCenter();
-    if (!center) return;
-    reverseAbortRef.current?.abort();
-    const controller = new AbortController();
-    reverseAbortRef.current = controller;
-    setResolvingAddress(true);
-    const result = await reverseGeocodeLocation(
-      { latitude: center.lat(), longitude: center.lng() },
-      controller.signal,
-    );
-    if (controller.signal.aborted) return;
-    setResolvingAddress(false);
-    if (!result.ok) {
-      const fallback = Object.freeze({
-        ...location,
-        latitude: center.lat().toFixed(7),
-        longitude: center.lng().toFixed(7),
-      });
-      setLocation(fallback);
-      await evaluateForLocation(fallback);
-      return;
-    }
-    const next = result.data.location;
-    setLocation(next);
-    await evaluateForLocation(next);
+  const evaluateForLocationRef = useRef(evaluateForLocation);
+  const reverseGeocodeCenterRef = useRef<() => Promise<void>>(async () => {});
+
+  useEffect(() => {
+    locationRef.current = location;
+    evaluateForLocationRef.current = evaluateForLocation;
+    reverseGeocodeCenterRef.current = async () => {
+      const map = mapRef.current;
+      if (!map) return;
+      const center = map.getCenter();
+      if (!center) return;
+      reverseAbortRef.current?.abort();
+      const controller = new AbortController();
+      reverseAbortRef.current = controller;
+      setResolvingAddress(true);
+      const result = await reverseGeocodeLocation(
+        { latitude: center.lat(), longitude: center.lng() },
+        controller.signal,
+      );
+      if (controller.signal.aborted) return;
+      setResolvingAddress(false);
+      if (!result.ok) {
+        const fallback = Object.freeze({
+          ...locationRef.current,
+          latitude: center.lat().toFixed(7),
+          longitude: center.lng().toFixed(7),
+        });
+        setLocation(fallback);
+        await evaluateForLocationRef.current(fallback);
+        return;
+      }
+      const next = result.data.location;
+      setLocation(next);
+      await evaluateForLocationRef.current(next);
+    };
   }, [evaluateForLocation, location]);
 
   const scheduleReverseGeocode = useCallback(() => {
+    if (!userInteractedWithMapRef.current) return;
     if (idleTimerRef.current !== null) window.clearTimeout(idleTimerRef.current);
     idleTimerRef.current = window.setTimeout(() => {
-      void reverseGeocodeCenter();
+      void reverseGeocodeCenterRef.current();
     }, REVERSE_GEOCODE_DEBOUNCE_MS);
-  }, [reverseGeocodeCenter]);
+  }, []);
 
   useEffect(() => {
     if (initialLat === null || initialLng === null) return;
     const timer = window.setTimeout(() => {
-      void evaluateForLocation(initialLocation);
+      void evaluateForLocationRef.current(initialLocation);
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [initialLat, initialLng, initialLocation, evaluateForLocation]);
+  }, [initialLat, initialLng, initialLocation]);
+
+  useEffect(() => {
+    userInteractedWithMapRef.current = false;
+  }, [initialLat, initialLng]);
 
   useEffect(() => {
     if (!wantsMap) return;
 
     let cancelled = false;
     let resizeObserver: ResizeObserver | null = null;
+    let idleListener: google.maps.MapsEventListener | null = null;
+    let dragListener: google.maps.MapsEventListener | null = null;
     const abortController = new AbortController();
 
     void (async () => {
@@ -186,6 +212,7 @@ export function DeliveryLocationMapConfirmation(props: {
       if (!container) {
         setMapsLoading(false);
         setMapsAvailable(false);
+        setMapInitError("MAP_CONTAINER_NOT_READY");
         return;
       }
 
@@ -194,62 +221,62 @@ export function DeliveryLocationMapConfirmation(props: {
         setMapsLoading(false);
         setMapsAvailable(false);
         if (!ready && !cancelled) {
-          setMapInitError("Map container did not become visible.");
+          setMapInitError("MAP_CONTAINER_NOT_READY");
         }
         return;
       }
 
-      const maps = await loadGoogleMapsJs();
-      if (cancelled || !maps || !mapContainerRef.current) {
+      const mapsLibrary = await loadGoogleMapsJs();
+      if (cancelled || !mapsLibrary || !mapContainerRef.current) {
         setMapsLoading(false);
         setMapsAvailable(false);
-        if (!maps && !cancelled) {
-          setMapInitError("Maps JavaScript API did not load.");
+        if (!mapsLibrary && !cancelled) {
+          setMapInitError(getMapsLoaderFailureReason() ?? "MAP_LIBRARY_NOT_READY");
         }
         return;
       }
 
-      if (mapInitRef.current && mapRef.current) {
+      mapsLibraryRef.current = mapsLibrary;
+
+      let map: google.maps.Map;
+      try {
+        map = new mapsLibrary.Map(mapContainerRef.current, {
+          center: { lat: initialLat!, lng: initialLng! },
+          zoom: DEFAULT_ZOOM,
+          disableDefaultUI: false,
+          zoomControl: true,
+          mapTypeControl: false,
+          streetViewControl: false,
+          fullscreenControl: false,
+          gestureHandling: "greedy",
+        });
+      } catch {
         setMapsLoading(false);
-        setMapsAvailable(true);
+        setMapsAvailable(false);
+        setMapInitError("MAP_CONSTRUCTOR_FAILED");
         return;
       }
 
-      const map = new maps.Map(mapContainerRef.current, {
-        center: { lat: initialLat!, lng: initialLng! },
-        zoom: DEFAULT_ZOOM,
-        disableDefaultUI: false,
-        zoomControl: true,
-        mapTypeControl: false,
-        streetViewControl: false,
-        fullscreenControl: false,
-        gestureHandling: "greedy",
-      });
-      mapInitRef.current = true;
       mapRef.current = map;
 
-      const triggerResize = (): void => {
-        maps.event.trigger(map, "resize");
-        map.setCenter({ lat: initialLat!, lng: initialLng! });
-      };
-
       window.requestAnimationFrame(() => {
-        if (cancelled) return;
-        triggerResize();
+        if (cancelled || !mapRef.current || !mapsLibraryRef.current) return;
+        mapsLibraryRef.current.event.trigger(mapRef.current, "resize");
       });
 
       if (typeof ResizeObserver !== "undefined" && mapContainerRef.current) {
         resizeObserver = new ResizeObserver(() => {
-          if (cancelled || !mapRef.current) return;
-          maps.event.trigger(mapRef.current, "resize");
+          if (cancelled || !mapRef.current || !mapsLibraryRef.current) return;
+          mapsLibraryRef.current.event.trigger(mapRef.current, "resize");
         });
         resizeObserver.observe(mapContainerRef.current);
       }
 
-      map.addListener("dragstart", () => {
+      dragListener = map.addListener("dragstart", () => {
+        userInteractedWithMapRef.current = true;
         setResolvingAddress(true);
       });
-      map.addListener("idle", scheduleReverseGeocode);
+      idleListener = map.addListener("idle", scheduleReverseGeocode);
 
       window.setTimeout(() => {
         if (cancelled || !mapContainerRef.current) return;
@@ -260,7 +287,7 @@ export function DeliveryLocationMapConfirmation(props: {
           const hasGmStyle = mapContainerRef.current.querySelector(".gm-style") !== null;
           const hasAuthError = mapContainerRef.current.querySelector(".gm-err-container") !== null;
           if (hasAuthError) {
-            setMapInitError("Google Maps authorization failed.");
+            setMapInitError("MAP_AUTHORIZATION_FAILED");
             setMapsAvailable(false);
             setMapsLoading(false);
             return;
@@ -271,7 +298,7 @@ export function DeliveryLocationMapConfirmation(props: {
             return;
           }
           if (Date.now() - startedAt > 8_000) {
-            setMapInitError("Google map canvas did not initialize.");
+            setMapInitError("MAP_LIBRARY_NOT_READY");
             setMapsAvailable(false);
             setMapsLoading(false);
             return;
@@ -286,12 +313,14 @@ export function DeliveryLocationMapConfirmation(props: {
       cancelled = true;
       abortController.abort();
       resizeObserver?.disconnect();
+      idleListener?.remove();
+      dragListener?.remove();
       if (idleTimerRef.current !== null) window.clearTimeout(idleTimerRef.current);
       reverseAbortRef.current?.abort();
-      mapInitRef.current = false;
       mapRef.current = null;
+      mapsLibraryRef.current = null;
     };
-  }, [initialLat, initialLng, scheduleReverseGeocode, wantsMap]);
+  }, [initialLat, initialLng, wantsMap, scheduleReverseGeocode]);
 
   async function handleUseCurrentLocation(): Promise<void> {
     setStatusMessage(null);
@@ -322,6 +351,7 @@ export function DeliveryLocationMapConfirmation(props: {
     const lat = parseCoordinate(next.latitude);
     const lng = parseCoordinate(next.longitude);
     if (mapRef.current && lat !== null && lng !== null) {
+      userInteractedWithMapRef.current = false;
       mapRef.current.setCenter({ lat, lng });
     }
     await evaluateForLocation(next);
@@ -331,6 +361,8 @@ export function DeliveryLocationMapConfirmation(props: {
     if (!confirmEnabled || !decision || !coordinates) return;
     onConfirm(location, decision);
   }
+
+  const mapLoadFailed = Boolean(mapInitError);
 
   return (
     <div
@@ -389,12 +421,14 @@ export function DeliveryLocationMapConfirmation(props: {
             ) : null}
           </>
         ) : null}
-        {!wantsMap || (!mapsAvailable && !mapsLoading) ? (
+        {!wantsMap || mapLoadFailed || (!mapsAvailable && !mapsLoading) ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-6 text-center">
             <p className="font-body text-[15px] text-[var(--text-primary)]">{addressCard.primary}</p>
             <p className="font-body text-[14px] text-[var(--text-secondary)]">{addressCard.secondary}</p>
             <p className="font-body text-[13px] text-[var(--text-secondary)]">
-              Map preview isn&apos;t available. You can still confirm using the address below.
+              {mapLoadFailed
+                ? "We couldn't load the map right now."
+                : "Map preview isn't available. You can still confirm using the address below."}
             </p>
           </div>
         ) : null}
@@ -413,6 +447,7 @@ export function DeliveryLocationMapConfirmation(props: {
             role="status"
             className="sr-only"
             data-testid="delivery-map-init-error"
+            data-map-error-code={mapInitError}
           >
             {mapInitError}
           </p>

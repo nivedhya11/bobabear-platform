@@ -1,38 +1,12 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DeliveryLocationMapConfirmation } from "@/components/location/DeliveryLocationMapConfirmation";
-import { isMapsJsConfigured } from "@/lib/customer-location/maps-js-config";
-
-const evaluateDeliveryServiceability = vi.fn<(...args: unknown[]) => unknown>();
-const reverseGeocodeLocation = vi.fn<(...args: unknown[]) => unknown>();
-const loadGoogleMapsJs = vi.fn<() => Promise<typeof google.maps | null>>();
-
-vi.mock("@/lib/customer-commerce", async () => {
-  const actual = await vi.importActual<typeof import("@/lib/customer-commerce")>(
-    "@/lib/customer-commerce",
-  );
-  return {
-    ...actual,
-    evaluateDeliveryServiceability: (...args: unknown[]) => evaluateDeliveryServiceability(...args),
-  };
-});
-
-vi.mock("@/lib/customer-commerce/location", () => ({
-  reverseGeocodeLocation: (...args: unknown[]) => reverseGeocodeLocation(...args),
-}));
-
-vi.mock("@/lib/customer-location/maps-js-config", () => ({
-  isMapsJsConfigured: vi.fn(() => true),
-}));
-
-vi.mock("@/lib/customer-location/map-container-ready", () => ({
-  waitForMapContainerReady: vi.fn(async () => true),
-}));
-
-vi.mock("@/lib/customer-location/maps-js-loader", () => ({
-  loadGoogleMapsJs: () => loadGoogleMapsJs(),
-}));
+import * as customerCommerce from "@/lib/customer-commerce";
+import * as customerLocation from "@/lib/customer-commerce/location";
+import * as mapsJsConfig from "@/lib/customer-location/maps-js-config";
+import * as mapsJsLoader from "@/lib/customer-location/maps-js-loader";
+import * as mapContainerReady from "@/lib/customer-location/map-container-ready";
 
 const baseLocation = {
   displayAddress: "Rajpur Road, Dehradun, Uttarakhand, India",
@@ -47,35 +21,22 @@ const baseLocation = {
   longitude: "78.0436000",
 };
 
-beforeEach(() => {
-  vi.mocked(isMapsJsConfigured).mockReturnValue(true);
-  evaluateDeliveryServiceability.mockResolvedValue({
-    ok: true,
-    status: 200,
-    data: { decision: { status: "SERVICEABLE", evaluatedAt: "2026-08-13T00:00:00.000Z" } },
-  });
-  loadGoogleMapsJs.mockResolvedValue(null);
-});
+function createMapsLibraryMock(config?: { trackListeners?: boolean }) {
+  const mapInstances: Array<{ container: HTMLElement; center: google.maps.LatLngLiteral }> = [];
+  const listeners: Record<string, Array<() => void>> = {};
 
-afterEach(() => {
-  evaluateDeliveryServiceability.mockClear();
-  reverseGeocodeLocation.mockClear();
-  loadGoogleMapsJs.mockClear();
-});
-
-describe("DeliveryLocationMapConfirmation", () => {
-  it("initializes Google Map against the mounted container when Maps JS is configured", async () => {
-    const mapInstances: Array<{ container: HTMLElement; center: google.maps.LatLngLiteral }> = [];
-    const listeners: Record<string, Array<() => void>> = {};
-    loadGoogleMapsJs.mockResolvedValue({
+  return {
+    mapInstances,
+    listeners,
+    library: {
       Map: vi.fn(function MapMock(
         this: google.maps.Map,
         container: HTMLElement,
-        options: google.maps.MapOptions,
+        mapOptions: google.maps.MapOptions,
       ) {
         mapInstances.push({
           container,
-          center: options.center as google.maps.LatLngLiteral,
+          center: mapOptions.center as google.maps.LatLngLiteral,
         });
         const inner = document.createElement("div");
         inner.className = "gm-style";
@@ -96,20 +57,61 @@ describe("DeliveryLocationMapConfirmation", () => {
         });
         return {
           getCenter: () => ({
-            lat: () => (options.center as google.maps.LatLngLiteral).lat,
-            lng: () => (options.center as google.maps.LatLngLiteral).lng,
+            lat: () =>
+              (mapOptions.center as google.maps.LatLngLiteral).lat + (config?.trackListeners ? 0.001 : 0),
+            lng: () =>
+              (mapOptions.center as google.maps.LatLngLiteral).lng + (config?.trackListeners ? 0.001 : 0),
           }),
           setCenter: vi.fn(),
           addListener: vi.fn((event: string, handler: () => void) => {
-            listeners[event] = listeners[event] ?? [];
-            listeners[event]!.push(handler);
+            if (config?.trackListeners) {
+              listeners[event] = listeners[event] ?? [];
+              listeners[event]!.push(handler);
+            }
+            return { remove: vi.fn() };
           }),
         } as unknown as google.maps.Map;
       }),
       event: {
         trigger: vi.fn(),
       },
-    } as unknown as typeof google.maps);
+    },
+  };
+}
+
+beforeEach(() => {
+  vi.spyOn(mapsJsConfig, "isMapsJsConfigured").mockReturnValue(true);
+  vi.spyOn(mapContainerReady, "waitForMapContainerReady").mockResolvedValue(true);
+  vi.spyOn(mapsJsLoader, "getMapsLoaderFailureReason").mockReturnValue("MAP_LIBRARY_NOT_READY");
+  vi.spyOn(mapsJsLoader, "loadGoogleMapsJs").mockResolvedValue(null);
+  vi.spyOn(customerCommerce, "evaluateDeliveryServiceability").mockResolvedValue({
+    ok: true,
+    status: 200,
+    data: { decision: { status: "SERVICEABLE", evaluatedAt: "2026-08-13T00:00:00.000Z" } },
+  });
+  vi.spyOn(customerLocation, "reverseGeocodeLocation").mockResolvedValue({
+    ok: true,
+    status: 200,
+    data: {
+      location: {
+        ...baseLocation,
+        displayAddress: "Updated Street, Dehradun, Uttarakhand, India",
+        latitude: "30.3266000",
+        longitude: "78.0446000",
+      },
+    },
+  });
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.useRealTimers();
+});
+
+describe("DeliveryLocationMapConfirmation", () => {
+  it("initializes Google Map against the mounted container when Maps JS is configured", async () => {
+    const { library, mapInstances } = createMapsLibraryMock();
+    vi.mocked(mapsJsLoader.loadGoogleMapsJs).mockResolvedValue(library);
 
     render(
       <DeliveryLocationMapConfirmation
@@ -130,8 +132,7 @@ describe("DeliveryLocationMapConfirmation", () => {
   });
 
   it("falls back to text confirmation when maps JS is unavailable", async () => {
-    vi.mocked(isMapsJsConfigured).mockReturnValue(false);
-    loadGoogleMapsJs.mockResolvedValue(null);
+    vi.mocked(mapsJsConfig.isMapsJsConfigured).mockReturnValue(false);
     render(
       <DeliveryLocationMapConfirmation
         initialLocation={baseLocation}
@@ -143,7 +144,7 @@ describe("DeliveryLocationMapConfirmation", () => {
     expect(screen.getByTestId("delivery-location-map-confirmation")).toBeInTheDocument();
     expect(screen.getByText(/Map preview isn't available/i)).toBeInTheDocument();
     await waitFor(() =>
-      expect(evaluateDeliveryServiceability).toHaveBeenCalledWith(
+      expect(customerCommerce.evaluateDeliveryServiceability).toHaveBeenCalledWith(
         expect.anything(),
         { latitude: "30.3256000", longitude: "78.0436000" },
         null,
@@ -154,7 +155,7 @@ describe("DeliveryLocationMapConfirmation", () => {
   });
 
   it("does not expose raw serviceability enum text", async () => {
-    evaluateDeliveryServiceability.mockResolvedValue({
+    vi.mocked(customerCommerce.evaluateDeliveryServiceability).mockResolvedValue({
       ok: true,
       status: 200,
       data: { decision: { status: "NOT_SERVICEABLE", evaluatedAt: "2026-08-13T00:00:00.000Z" } },
@@ -181,7 +182,91 @@ describe("DeliveryLocationMapConfirmation", () => {
         onChooseAnother={vi.fn()}
       />,
     );
-    await waitFor(() => expect(evaluateDeliveryServiceability).toHaveBeenCalled());
+    await waitFor(() => expect(customerCommerce.evaluateDeliveryServiceability).toHaveBeenCalled());
     expect(screen.queryByText(/couldn't confirm its PIN/i)).not.toBeInTheDocument();
+  });
+
+  it("constructs Map once through serviceability and reverse-geocode location updates", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const { library, mapInstances, listeners } = createMapsLibraryMock({ trackListeners: true });
+    vi.mocked(mapsJsLoader.loadGoogleMapsJs).mockResolvedValue(library);
+
+    render(
+      <DeliveryLocationMapConfirmation
+        initialLocation={baseLocation}
+        onConfirm={vi.fn()}
+        onBack={vi.fn()}
+        onChooseAnother={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => expect(mapInstances.length).toBe(1));
+    await waitFor(() => expect(customerCommerce.evaluateDeliveryServiceability).toHaveBeenCalledTimes(1));
+
+    await act(async () => {
+      listeners.dragstart?.[0]?.();
+      listeners.idle?.[0]?.();
+      await vi.advanceTimersByTimeAsync(500);
+    });
+
+    await waitFor(() => expect(customerLocation.reverseGeocodeLocation).toHaveBeenCalled());
+    await waitFor(() =>
+      expect(vi.mocked(customerCommerce.evaluateDeliveryServiceability).mock.calls.length).toBeGreaterThan(1),
+    );
+    expect(mapInstances.length).toBe(1);
+  });
+
+  it("does not reverse-geocode on the initial programmatic idle", async () => {
+    const { library, listeners } = createMapsLibraryMock({ trackListeners: true });
+    vi.mocked(mapsJsLoader.loadGoogleMapsJs).mockResolvedValue(library);
+
+    render(
+      <DeliveryLocationMapConfirmation
+        initialLocation={baseLocation}
+        onConfirm={vi.fn()}
+        onBack={vi.fn()}
+        onChooseAnother={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => expect(mapsJsLoader.loadGoogleMapsJs).toHaveBeenCalled());
+
+    await act(async () => {
+      listeners.idle?.[0]?.();
+      await new Promise((resolve) => window.setTimeout(resolve, 500));
+    });
+
+    expect(customerLocation.reverseGeocodeLocation).not.toHaveBeenCalled();
+  });
+
+  it("creates a new Map only when the map session coordinates change", async () => {
+    const { library, mapInstances } = createMapsLibraryMock();
+    vi.mocked(mapsJsLoader.loadGoogleMapsJs).mockResolvedValue(library);
+
+    const { rerender } = render(
+      <DeliveryLocationMapConfirmation
+        initialLocation={baseLocation}
+        onConfirm={vi.fn()}
+        onBack={vi.fn()}
+        onChooseAnother={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => expect(mapInstances.length).toBe(1));
+
+    rerender(
+      <DeliveryLocationMapConfirmation
+        initialLocation={{
+          ...baseLocation,
+          latitude: "30.4000000",
+          longitude: "78.1000000",
+        }}
+        onConfirm={vi.fn()}
+        onBack={vi.fn()}
+        onChooseAnother={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => expect(mapInstances.length).toBe(2));
   });
 });

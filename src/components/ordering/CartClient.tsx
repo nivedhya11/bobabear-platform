@@ -19,6 +19,7 @@ import { publishCartCount } from "@/components/ordering/cart-count-sync";
 import {
   readDeliveryContext,
   subscribeToDeliveryContext,
+  useDeliveryContext,
   type DeliveryContext,
 } from "@/lib/customer-location/delivery-context";
 import { commerceErrorCopy } from "@/components/ordering/error-copy";
@@ -51,7 +52,7 @@ export function CartClient(props: { brandId: string }) {
   const [menu, setMenu] = useState<CustomerMenuProjection | null>(null);
   const [cart, setCart] = useState<CommerceCart | null>(null);
   const [evaluation, setEvaluation] = useState<CommerceCartEvaluation | null>(null);
-  const [deliveryContext, setDeliveryContext] = useState<DeliveryContext>(() => readDeliveryContext());
+  const deliveryContext = useDeliveryContext();
   const [loading, setLoading] = useState(true);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -111,9 +112,7 @@ export function CartClient(props: { brandId: string }) {
       return;
     }
     setCart(cartResult.data.cart);
-    const context = readDeliveryContext();
-    setDeliveryContext(context);
-    await refreshEvaluation(context, cartResult.data.cart);
+    await refreshEvaluation(readDeliveryContext(), cartResult.data.cart);
   }, [brandId, refreshEvaluation]);
 
   useEffect(() => {
@@ -129,7 +128,6 @@ export function CartClient(props: { brandId: string }) {
 
   useEffect(() => {
     return subscribeToDeliveryContext((nextContext) => {
-      setDeliveryContext(nextContext);
       void refreshEvaluation(nextContext, cart);
     });
   }, [cart, refreshEvaluation]);
