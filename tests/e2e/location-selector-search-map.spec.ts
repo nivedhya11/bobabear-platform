@@ -1,35 +1,67 @@
 import { test, expect, type Page } from "@playwright/test";
 
-async function installMockGoogleMaps(page: Page): Promise<void> {
-  await page.addInitScript(() => {
-    const MapMock = function MapMock(
-      container: HTMLElement,
-      options: { center: { lat: number; lng: number } },
-    ) {
-      const inner = document.createElement("div");
-      inner.className = "gm-style";
-      container.appendChild(inner);
-      return {
-        getCenter: () => ({
-          lat: () => options.center.lat,
-          lng: () => options.center.lng,
-        }),
-        setCenter: () => undefined,
-        addListener: () => undefined,
+type MockGoogleMapsOptions = Readonly<{
+  /** Milliseconds before importLibrary becomes available (simulates Google bootstrap race). */
+  importLibraryDelayMs?: number;
+  /** When true, importLibrary never becomes available. */
+  permanentFailure?: boolean;
+}>;
+
+async function installMockGoogleMaps(page: Page, options: MockGoogleMapsOptions = {}): Promise<void> {
+  const { importLibraryDelayMs = 0, permanentFailure = false } = options;
+  await page.addInitScript(
+    ({ delayMs, failPermanently }) => {
+      const MapMock = function MapMock(
+        container: HTMLElement,
+        options: { center: { lat: number; lng: number } },
+      ) {
+        const inner = document.createElement("div");
+        inner.className = "gm-style";
+        container.appendChild(inner);
+        return {
+          getCenter: () => ({
+            lat: () => options.center.lat,
+            lng: () => options.center.lng,
+          }),
+          setCenter: () => undefined,
+          addListener: () => ({ remove: () => undefined }),
+        };
       };
-    };
-    const mapsMock = {
-      Map: MapMock,
-      event: {
-        trigger: () => undefined,
-      },
-      importLibrary: async (name: string) => {
-        if (name === "maps") return { Map: MapMock };
-        throw new Error(`Unsupported library: ${name}`);
-      },
-    };
-    (window as unknown as { google: { maps: typeof mapsMock } }).google = { maps: mapsMock };
-  });
+
+      let importLibraryReady = delayMs <= 0 && !failPermanently;
+      if (delayMs > 0 && !failPermanently) {
+        window.setTimeout(() => {
+          importLibraryReady = true;
+        }, delayMs);
+      }
+
+      const mapsMock: Record<string, unknown> = {
+        event: {
+          trigger: () => undefined,
+        },
+      };
+
+      Object.defineProperty(mapsMock, "importLibrary", {
+        configurable: true,
+        get() {
+          if (failPermanently) return undefined;
+          if (!importLibraryReady) return undefined;
+          return async (name: string) => {
+            if (name === "maps") return { Map: MapMock };
+            throw new Error(`Unsupported library: ${name}`);
+          };
+        },
+      });
+
+      (window as unknown as { google: { maps: typeof mapsMock } }).google = { maps: mapsMock };
+
+      const prior = (window as Window & { bobaGoogleMapsBootstrapReady?: () => void }).bobaGoogleMapsBootstrapReady;
+      (window as Window & { bobaGoogleMapsBootstrapReady?: () => void }).bobaGoogleMapsBootstrapReady = () => {
+        prior?.();
+      };
+    },
+    { delayMs: importLibraryDelayMs, failPermanently: permanentFailure },
+  );
 }
 
 async function openSelector(page: Page): Promise<void> {
@@ -212,4 +244,159 @@ test("current location enters map confirmation on mobile viewport", async ({ pag
   await openSelector(page);
   await page.getByRole("button", { name: "Use current location" }).click();
   await expect(page.getByTestId("delivery-location-map-confirmation")).toBeVisible({ timeout: 15_000 });
+});
+
+test("delayed Google bootstrap readiness: ISBT map renders without fallback", async ({ page }) => {
+  await installMockGoogleMaps(page, { importLibraryDelayMs: 150 });
+  await page.route("**/maps.googleapis.com/**", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/javascript",
+      body: "window.bobaGoogleMapsBootstrapReady && window.bobaGoogleMapsBootstrapReady();",
+    });
+  });
+  await page.addInitScript(() => {
+    (window as Window & { __BOBA_MAPS_JS_CONFIGURED__?: boolean }).__BOBA_MAPS_JS_CONFIGURED__ = true;
+  });
+
+  await page.route("**/api/v1/location/status", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ ok: true, configured: true, provider: "google_maps", status: "CONFIGURED" }),
+    });
+  });
+
+  await page.route("**/api/v1/location/autocomplete", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ok: true,
+        suggestions: [{ placeId: "place-isbt", label: "ISBT, Dehradun, Uttarakhand, India" }],
+      }),
+    });
+  });
+
+  await page.route("**/api/v1/location/place", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ok: true,
+        location: {
+          displayAddress: "ISBT, Dehradun, Uttarakhand, India",
+          postalCode: null,
+          pinConfirmed: false,
+          locality: "Dehradun",
+          administrativeArea: "Uttarakhand",
+          stateCode: "IN-UT",
+          country: "India",
+          countryCode: "IN",
+          latitude: "30.3256000",
+          longitude: "78.0436000",
+        },
+      }),
+    });
+  });
+
+  await page.route("**/api/v1/serviceability/evaluate", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ok: true,
+        decision: { status: "SERVICEABLE", evaluatedAt: "2026-09-01T00:00:00.000Z" },
+      }),
+    });
+  });
+
+  await openSelector(page);
+  await page.getByPlaceholder("Search area, street or landmark").fill("ISBT");
+  await expect(page.getByTestId("location-search-results")).toBeVisible();
+  await page.getByRole("option", { name: /ISBT/i }).click();
+  await expect(page.getByTestId("delivery-location-map-confirmation")).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText(/Map preview isn't available/i)).toHaveCount(0);
+
+  await expect
+    .poll(async () =>
+      page.evaluate(() => {
+        const container = document.querySelector('[data-testid="delivery-map-container"]');
+        return container?.querySelector(".gm-style") !== null;
+      }),
+    )
+    .toBe(true);
+});
+
+test("permanent Maps readiness failure shows safe fallback", async ({ page }) => {
+  await installMockGoogleMaps(page, { permanentFailure: true });
+  await page.route("**/maps.googleapis.com/**", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/javascript",
+      body: "window.bobaGoogleMapsBootstrapReady && window.bobaGoogleMapsBootstrapReady();",
+    });
+  });
+  await page.addInitScript(() => {
+    (window as Window & { __BOBA_MAPS_JS_CONFIGURED__?: boolean }).__BOBA_MAPS_JS_CONFIGURED__ = true;
+  });
+
+  await page.route("**/api/v1/location/status", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ ok: true, configured: true, provider: "google_maps", status: "CONFIGURED" }),
+    });
+  });
+
+  await page.route("**/api/v1/location/autocomplete", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ok: true,
+        suggestions: [{ placeId: "place-isbt", label: "ISBT, Dehradun, Uttarakhand, India" }],
+      }),
+    });
+  });
+
+  await page.route("**/api/v1/location/place", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ok: true,
+        location: {
+          displayAddress: "ISBT, Dehradun, Uttarakhand, India",
+          postalCode: null,
+          pinConfirmed: false,
+          locality: "Dehradun",
+          administrativeArea: "Uttarakhand",
+          stateCode: "IN-UT",
+          country: "India",
+          countryCode: "IN",
+          latitude: "30.3256000",
+          longitude: "78.0436000",
+        },
+      }),
+    });
+  });
+
+  await page.route("**/api/v1/serviceability/evaluate", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ok: true,
+        decision: { status: "SERVICEABLE", evaluatedAt: "2026-09-01T00:00:00.000Z" },
+      }),
+    });
+  });
+
+  await openSelector(page);
+  await page.getByPlaceholder("Search area, street or landmark").fill("ISBT");
+  await page.getByRole("option", { name: /ISBT/i }).click();
+  await expect(page.getByTestId("delivery-location-map-confirmation")).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText(/We couldn't load the map right now/i)).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByTestId("delivery-map-init-error")).toHaveText("MAP_LIBRARY_NOT_READY");
 });
