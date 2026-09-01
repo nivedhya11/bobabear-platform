@@ -72,6 +72,7 @@ const eslintConfig = defineConfig([
       // known limitation rather than migrated — see AGENTS.md section 29.
       "src/lib/site.ts",
       "src/components/Analytics.tsx",
+      "src/lib/customer-location/maps-js-config.ts",
     ],
     rules: {
       "no-restricted-properties": [

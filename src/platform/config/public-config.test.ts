@@ -28,13 +28,23 @@ describe("resolvePublicConfig", () => {
     }
   });
 
-  it("rejects an undeclared NEXT_PUBLIC_GOOGLE_MAPS_API_KEY", () => {
+  it("rejects NEXT_PUBLIC_GOOGLE_MAPS_API_KEY (server key must never be public)", () => {
     const result = resolvePublicConfig({
       NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: "must-never-be-public",
     });
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.issues[0]?.key).toBe("NEXT_PUBLIC_GOOGLE_MAPS_API_KEY");
+    }
+  });
+
+  it("allows the legacy browser Maps JS key without surfacing it through PublicConfig", () => {
+    const result = resolvePublicConfig({
+      NEXT_PUBLIC_BOBA_BEAR_GOOGLE_MAPS_BROWSER_KEY: "browser-key-fixture",
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.config).toEqual({});
     }
   });
 

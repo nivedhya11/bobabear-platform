@@ -8,11 +8,12 @@ import {
 } from "@/components/location/serviceability-copy";
 
 describe("location serviceability copy", () => {
-  it("maps all serviceability statuses", () => {
-    expect(serviceabilityStatusCopy("SERVICEABLE")).toMatch(/available/i);
+  it("maps all serviceability statuses with customer-safe copy", () => {
+    expect(serviceabilityStatusCopy("SERVICEABLE")).toMatch(/deliver here/i);
     expect(serviceabilityStatusCopy("NOT_SERVICEABLE")).toMatch(/don't deliver/i);
-    expect(serviceabilityStatusCopy("TEMPORARILY_UNAVAILABLE")).toMatch(/right now/i);
+    expect(serviceabilityStatusCopy("TEMPORARILY_UNAVAILABLE")).toMatch(/temporarily unavailable/i);
     expect(serviceabilityStatusCopy("INDETERMINATE")).toMatch(/couldn't confirm/i);
+    expect(serviceabilityStatusCopy("SERVICEABLE")).not.toMatch(/SERVICEABLE/);
   });
 
   it("maps geolocation failures", () => {

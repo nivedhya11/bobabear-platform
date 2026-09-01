@@ -30,6 +30,7 @@ export const PUBLIC_ALLOWLIST: ReadonlySet<string> = new Set([]);
 const LEGACY_NEXT_PUBLIC_KEYS: ReadonlySet<string> = new Set([
   "NEXT_PUBLIC_SITE_URL",
   "NEXT_PUBLIC_GA_MEASUREMENT_ID",
+  "NEXT_PUBLIC_BOBA_BEAR_GOOGLE_MAPS_BROWSER_KEY",
 ]);
 
 /** The shape of the browser-public runtime configuration. Empty in this

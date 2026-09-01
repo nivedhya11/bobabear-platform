@@ -65,11 +65,11 @@ describe("LocationSelector", () => {
     render(<LocationSelector />);
     await user.click(screen.getByTestId("deliver-to-orientation"));
     expect(screen.getByTestId("location-selector-dialog")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /Where should we deliver/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Select delivery location/i })).toBeInTheDocument();
     expect(screen.getByText(/Location search isn't available right now/i)).toBeInTheDocument();
-    await user.clear(screen.getByLabelText(/Enter PIN manually/i));
-    await user.type(screen.getByLabelText(/Enter PIN manually/i), "248001");
-    await user.click(screen.getByRole("button", { name: "Use this PIN" }));
+    await user.clear(screen.getByLabelText(/PIN code/i));
+    await user.type(screen.getByLabelText(/PIN code/i), "248001");
+    await user.click(screen.getByRole("button", { name: "Check delivery" }));
     await waitFor(() => expect(evaluateDeliveryServiceability).toHaveBeenCalled());
   });
 });

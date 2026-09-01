@@ -6,13 +6,26 @@ import type { CommerceServiceabilityStatus } from "@/lib/customer-commerce";
 export function serviceabilityStatusCopy(status: CommerceServiceabilityStatus): string {
   switch (status) {
     case "SERVICEABLE":
-      return "Delivery is available for this PIN.";
+      return "Great — we deliver here.";
     case "NOT_SERVICEABLE":
-      return "We don't deliver to that PIN yet. You can still browse and try another location.";
+      return "We don't deliver to this location yet.";
     case "TEMPORARILY_UNAVAILABLE":
-      return "Delivery isn't available right now for that PIN. Try again later.";
+      return "Delivery is temporarily unavailable here.";
     case "INDETERMINATE":
-      return "We couldn't confirm delivery for that PIN. Try again shortly.";
+      return "We couldn't confirm delivery right now.";
+  }
+}
+
+export function serviceabilityRecoveryHint(status: CommerceServiceabilityStatus): string | null {
+  switch (status) {
+    case "NOT_SERVICEABLE":
+      return "Choose another location or enter a PIN manually.";
+    case "TEMPORARILY_UNAVAILABLE":
+      return "Try again later or choose another location.";
+    case "INDETERMINATE":
+      return "Retry, choose another location, or enter a PIN manually.";
+    default:
+      return null;
   }
 }
 
