@@ -23,6 +23,7 @@ export type {
   ServiceabilityCandidate,
   ServiceabilityCoordinates,
   ServiceabilityDecision,
+  ServiceabilityDistancePolicy,
   ServiceabilityLocationEvidence,
   ServiceabilityStatusValue,
 } from "./types";
@@ -30,16 +31,19 @@ export type {
 export type {
   EvaluateServiceabilityInput,
   PinMutationInput,
+  SetDistancePolicyInput,
   SetRoutingPriorityInput,
 } from "./parse-input";
 
 export {
   assertPositiveRoutingPriority,
   assertUuid,
+  canonicalizeDistancePolicyFields,
   canonicalizePostalCodeSet,
   canonicalizeServiceabilityCoordinates,
   canonicalizeServiceabilityPostalCode,
   parseExpectedRevision,
+  type CanonicalDistancePolicyInput,
 } from "./canonicalize";
 
 export {
@@ -48,5 +52,12 @@ export {
   parseGetConfigurationInput,
   parseRemovePinsInput,
   parseReplacePinsInput,
+  parseSetDistancePolicyInput,
   parseSetRoutingPriorityInput,
 } from "./parse-input";
+
+export {
+  geodesicDistanceMeters,
+  isDistancePolicyConfigured,
+  parseServiceabilityCoordinate,
+} from "./geodesic";

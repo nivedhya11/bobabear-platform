@@ -50,7 +50,8 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  vi.clearAllMocks();
+  evaluateDeliveryServiceability.mockClear();
+  reverseGeocodeLocation.mockClear();
 });
 
 describe("DeliveryLocationMapConfirmation", () => {
@@ -65,7 +66,13 @@ describe("DeliveryLocationMapConfirmation", () => {
     );
     expect(screen.getByTestId("delivery-location-map-confirmation")).toBeInTheDocument();
     expect(screen.getByText(/Map preview isn't available/i)).toBeInTheDocument();
-    await waitFor(() => expect(evaluateDeliveryServiceability).toHaveBeenCalledWith(expect.anything(), "248001"));
+    await waitFor(() =>
+      expect(evaluateDeliveryServiceability).toHaveBeenCalledWith(
+        expect.anything(),
+        "248001",
+        { latitude: "30.3256000", longitude: "78.0436000" },
+      ),
+    );
     expect(screen.getByRole("button", { name: "Confirm location" })).toBeEnabled();
   });
 

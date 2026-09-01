@@ -101,7 +101,13 @@ export function DeliveryLocationMapConfirmation(props: {
     setCheckingServiceability(true);
     setStatusMessage(null);
     setDecision(null);
-    const evaluated = await evaluateDeliveryServiceability(DIRECT_ORDERING_BRAND_ID, next.postalCode);
+    const evaluated = await evaluateDeliveryServiceability(
+      DIRECT_ORDERING_BRAND_ID,
+      next.postalCode,
+      next.latitude && next.longitude
+        ? { latitude: next.latitude, longitude: next.longitude }
+        : null,
+    );
     if (seq !== serviceabilitySeqRef.current) return;
     setCheckingServiceability(false);
     if (!evaluated.ok) {

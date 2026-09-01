@@ -16,6 +16,7 @@ export const SERVICEABILITY_AUDIT_ACTIONS = [
   "serviceability_pins_added",
   "serviceability_pins_removed",
   "serviceability_pins_replaced",
+  "serviceability_distance_policy_set",
 ] as const;
 
 export type ServiceabilityAuditAction =

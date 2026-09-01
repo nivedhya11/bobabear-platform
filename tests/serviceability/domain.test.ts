@@ -12,6 +12,7 @@ import {
   getOutletServiceabilityConfiguration,
   removeOutletServiceabilityPins,
   replaceOutletServiceabilityPins,
+  setOutletServiceabilityDistancePolicy,
   setOutletServiceabilityRoutingPriority,
   ServiceabilityError,
 } from "../../src/server/serviceability";
@@ -411,6 +412,9 @@ describe("IMP-019 serviceability administration", () => {
         routingPriority: null,
         postalCodes: [],
         revision: null,
+        serviceOriginLatitude: null,
+        serviceOriginLongitude: null,
+        maxServiceDistanceMeters: null,
       });
 
       // Empty add/remove/replace with no config are no-ops.
@@ -600,6 +604,129 @@ describe("IMP-019 serviceability administration", () => {
       expect([...((audits[3]!.removed_postal_codes as string[]) ?? [])].sort()).toEqual(
         [],
       );
+    });
+  });
+});
+
+describe("IMP-036B hybrid PIN + outlet-distance serviceability", () => {
+  const ORIGIN = Object.freeze({
+    latitude: "30.3164945",
+    longitude: "78.0321918",
+  });
+  const NEARBY = Object.freeze({
+    latitude: "30.3170000",
+    longitude: "78.0330000",
+  });
+  const FAR = Object.freeze({
+    latitude: "30.5000000",
+    longitude: "78.2000000",
+  });
+
+  async function seedDistancePolicy(
+    persistence: Parameters<typeof setOutletServiceabilityDistancePolicy>[0],
+    actor: unknown,
+    outletId: string,
+    revision: bigint,
+  ): Promise<void> {
+    await setOutletServiceabilityDistancePolicy(persistence, actor, {
+      outletId,
+      expectedRevision: revision,
+      serviceOriginLatitude: ORIGIN.latitude,
+      serviceOriginLongitude: ORIGIN.longitude,
+      maxServiceDistanceMeters: 5_000,
+    });
+  }
+
+  it("keeps PIN-only behavior when distance policy is not configured", async () => {
+    await withServiceabilityHarness(async ({ persistence, actors }) => {
+      const { tree, brandAdminActor } = actors;
+      await setOutletServiceabilityRoutingPriority(persistence, brandAdminActor, {
+        outletId: tree.outletA.id,
+        routingPriority: 1,
+        expectedRevision: null,
+      });
+      await addOutletServiceabilityPins(persistence, brandAdminActor, {
+        outletId: tree.outletA.id,
+        postalCodes: [PIN_A],
+        expectedRevision: BigInt(1),
+      });
+
+      const decision = await evaluateServiceability(persistence, {
+        brandId: tree.brand.id,
+        location: { postalCode: PIN_A, coordinates: FAR },
+      });
+      expect(decision.status).toBe("SERVICEABLE");
+    });
+  });
+
+  it("rejects a supported PIN when precise coordinates are outside max distance", async () => {
+    await withServiceabilityHarness(async ({ persistence, actors }) => {
+      const { tree, brandAdminActor } = actors;
+      await setOutletServiceabilityRoutingPriority(persistence, brandAdminActor, {
+        outletId: tree.outletA.id,
+        routingPriority: 1,
+        expectedRevision: null,
+      });
+      await addOutletServiceabilityPins(persistence, brandAdminActor, {
+        outletId: tree.outletA.id,
+        postalCodes: [PIN_A],
+        expectedRevision: BigInt(1),
+      });
+      await seedDistancePolicy(persistence, brandAdminActor, tree.outletA.id, BigInt(2));
+
+      const outside = await evaluateServiceability(persistence, {
+        brandId: tree.brand.id,
+        location: { postalCode: PIN_A, coordinates: FAR },
+      });
+      expect(outside.status).toBe("NOT_SERVICEABLE");
+
+      const inside = await evaluateServiceability(persistence, {
+        brandId: tree.brand.id,
+        location: { postalCode: PIN_A, coordinates: NEARBY },
+      });
+      expect(inside.status).toBe("SERVICEABLE");
+    });
+  });
+
+  it("does not upgrade an unsupported PIN using nearby coordinates", async () => {
+    await withServiceabilityHarness(async ({ persistence, actors }) => {
+      const { tree, brandAdminActor } = actors;
+      await setOutletServiceabilityRoutingPriority(persistence, brandAdminActor, {
+        outletId: tree.outletA.id,
+        routingPriority: 1,
+        expectedRevision: null,
+      });
+      await addOutletServiceabilityPins(persistence, brandAdminActor, {
+        outletId: tree.outletA.id,
+        postalCodes: [PIN_A],
+        expectedRevision: BigInt(1),
+      });
+      await seedDistancePolicy(persistence, brandAdminActor, tree.outletA.id, BigInt(2));
+
+      const unsupportedPin = await evaluateServiceability(persistence, {
+        brandId: tree.brand.id,
+        location: { postalCode: PIN_UNCOVERED, coordinates: NEARBY },
+      });
+      expect(unsupportedPin.status).toBe("NOT_SERVICEABLE");
+    });
+  });
+
+  it("exposes distance policy through administration readback", async () => {
+    await withServiceabilityHarness(async ({ persistence, actors }) => {
+      const { tree, brandAdminActor } = actors;
+      await setOutletServiceabilityRoutingPriority(persistence, brandAdminActor, {
+        outletId: tree.outletA.id,
+        routingPriority: 1,
+        expectedRevision: null,
+      });
+      await seedDistancePolicy(persistence, brandAdminActor, tree.outletA.id, BigInt(1));
+
+      const config = await getOutletServiceabilityConfiguration(persistence, brandAdminActor, {
+        outletId: tree.outletA.id,
+      });
+      expect(config.serviceOriginLatitude).toBe(ORIGIN.latitude);
+      expect(config.serviceOriginLongitude).toBe(ORIGIN.longitude);
+      expect(config.maxServiceDistanceMeters).toBe(5_000);
     });
   });
 });

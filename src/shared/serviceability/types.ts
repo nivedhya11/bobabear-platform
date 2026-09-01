@@ -28,6 +28,15 @@ export type OutletServiceabilityConfiguration = Readonly<{
   routingPriority: number | null;
   postalCodes: readonly string[];
   revision: bigint | null;
+  serviceOriginLatitude: string | null;
+  serviceOriginLongitude: string | null;
+  maxServiceDistanceMeters: number | null;
+}>;
+
+export type ServiceabilityDistancePolicy = Readonly<{
+  serviceOriginLatitude: string;
+  serviceOriginLongitude: string;
+  maxServiceDistanceMeters: number;
 }>;
 
 export type ServiceabilityDecision =
@@ -53,6 +62,7 @@ export type ServiceabilityDecision =
 export type ServiceabilityCandidate = Readonly<{
   outletId: string;
   routingPriority: number;
+  distancePolicy: ServiceabilityDistancePolicy | null;
 }>;
 
 export type ServiceabilityAuditEvent = Readonly<{

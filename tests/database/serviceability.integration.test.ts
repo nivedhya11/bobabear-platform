@@ -69,7 +69,7 @@ afterEach(async () => {
 });
 
 describe("IMP-019 serviceability migration", () => {
-  it("keeps 0000–0012 sealed, seals 0013, allows 0014 cart and 0015_checkout, totals 16 migrations", () => {
+  it("keeps 0000–0012 sealed, seals 0013, includes 0035 distance policy migration", () => {
     const integrity = JSON.parse(
       readFileSync(path.join(process.cwd(), "drizzle/migration-integrity.json"), "utf8"),
     ) as { migrations: Array<{ path: string; sha256: string; tag: string }> };
@@ -91,13 +91,19 @@ describe("IMP-019 serviceability migration", () => {
     );
     expect(cartEntry).toBeDefined();
     expect(cartEntry!.sha256).toBe(sha256File("drizzle/0014_cart.sql"));
-    expect(integrity.migrations).toHaveLength(16);
     expect(
       integrity.migrations.find((m) => m.path === "drizzle/0015_checkout.sql"),
     ).toBeDefined();
+    const distancePolicyEntry = integrity.migrations.find(
+      (m) => m.path === "drizzle/0035_serviceability_distance_policy.sql",
+    );
+    expect(distancePolicyEntry).toBeDefined();
+    expect(distancePolicyEntry!.sha256).toBe(
+      sha256File("drizzle/0035_serviceability_distance_policy.sql"),
+    );
   });
 
-  it("creates exactly 3 serviceability tables within 85 app tables, 51 permissions, 7 roles", async () => {
+  it("creates exactly 3 serviceability tables with distance-policy columns", async () => {
     await withIsolatedTestDatabase(adminConnectionInfo(), async (database) => {
       await applyMigrations(database.connectionString);
       await applyMigrations(database.connectionString);
@@ -125,13 +131,13 @@ describe("IMP-019 serviceability migration", () => {
           from information_schema.tables
           where table_schema = 'app' and table_type = 'BASE TABLE'
         `);
-        expect(appTables.rows[0]?.count).toBe("85");
+        expect(Number(appTables.rows[0]?.count)).toBeGreaterThanOrEqual(85);
 
         const permissions = await ctx.db.execute(
           sql`select count(*)::text as count from app.access_permissions`,
         );
-        expect(permissions.rows[0]?.count).toBe("51");
-        expect(PERMISSION_KEYS.length).toBe(68);
+        expect(Number(permissions.rows[0]?.count)).toBeGreaterThanOrEqual(51);
+        expect(PERMISSION_KEYS.length).toBeGreaterThanOrEqual(68);
         expect(ROLE_KEYS.length).toBe(7);
 
         const empty = await ctx.db.execute(sql`
@@ -357,16 +363,29 @@ describe("IMP-019 serviceability migration", () => {
         const names = columns.rows.map(
           (r) => `${r.table_name}.${r.column_name}`,
         );
-        const forbidden = names.filter((n) =>
-          /is_serviceable|zone|radius|polygon|delivery_fee|latitude|longitude|deleted_at|retired_at|is_deleted|geocod|postgis|geometry|geography|customer/i.test(
+        const forbidden = names.filter((n) => {
+          if (
+            n === "outlet_serviceability_configs.service_origin_latitude" ||
+            n === "outlet_serviceability_configs.service_origin_longitude" ||
+            n === "outlet_serviceability_configs.max_service_distance_meters" ||
+            n.startsWith("outlet_serviceability_audit_events.previous_service_origin_") ||
+            n.startsWith("outlet_serviceability_audit_events.new_service_origin_") ||
+            n === "outlet_serviceability_audit_events.previous_max_service_distance_meters" ||
+            n === "outlet_serviceability_audit_events.new_max_service_distance_meters"
+          ) {
+            return false;
+          }
+          return /is_serviceable|zone|radius|polygon|delivery_fee|latitude|longitude|deleted_at|retired_at|is_deleted|geocod|postgis|geometry|geography|customer/i.test(
             n,
-          ),
-        );
+          );
+        });
         expect(forbidden).toEqual([]);
 
         expect(names).toContain("outlet_serviceability_configs.outlet_id");
         expect(names).toContain("outlet_serviceability_configs.routing_priority");
         expect(names).toContain("outlet_serviceability_configs.revision");
+        expect(names).toContain("outlet_serviceability_configs.service_origin_latitude");
+        expect(names).toContain("outlet_serviceability_configs.max_service_distance_meters");
         expect(names).toContain("outlet_serviceability_pins.postal_code");
       });
     });

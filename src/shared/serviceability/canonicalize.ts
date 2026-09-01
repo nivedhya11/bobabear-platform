@@ -163,3 +163,57 @@ export function assertUuid(value: unknown, field: string): string {
   }
   return value.toLowerCase();
 }
+
+export function assertPositiveMaxServiceDistance(raw: unknown): number {
+  if (
+    typeof raw !== "number" ||
+    !Number.isInteger(raw) ||
+    raw <= 0 ||
+    !Number.isSafeInteger(raw)
+  ) {
+    throw new ServiceabilityError(
+      "SERVICEABILITY_VALIDATION_ERROR",
+      "maxServiceDistanceMeters must be a positive integer.",
+      "maxServiceDistanceMeters",
+    );
+  }
+  return raw;
+}
+
+export type CanonicalDistancePolicyInput = Readonly<{
+  serviceOriginLatitude: string;
+  serviceOriginLongitude: string;
+  maxServiceDistanceMeters: number;
+}>;
+
+export function canonicalizeDistancePolicyFields(raw: Readonly<{
+  serviceOriginLatitude: unknown;
+  serviceOriginLongitude: unknown;
+  maxServiceDistanceMeters: unknown;
+}>): CanonicalDistancePolicyInput | null {
+  const allNull =
+    (raw.serviceOriginLatitude === undefined || raw.serviceOriginLatitude === null) &&
+    (raw.serviceOriginLongitude === undefined || raw.serviceOriginLongitude === null) &&
+    (raw.maxServiceDistanceMeters === undefined || raw.maxServiceDistanceMeters === null);
+  if (allNull) return null;
+
+  const latitude = canonicalizeServiceabilityCoordinates({
+    latitude: raw.serviceOriginLatitude,
+    longitude: raw.serviceOriginLongitude,
+  });
+  if (latitude === null) {
+    throw new ServiceabilityError(
+      "SERVICEABILITY_VALIDATION_ERROR",
+      "service origin latitude and longitude must be configured together.",
+      "serviceOriginLatitude",
+    );
+  }
+  const maxServiceDistanceMeters = assertPositiveMaxServiceDistance(
+    raw.maxServiceDistanceMeters,
+  );
+  return Object.freeze({
+    serviceOriginLatitude: latitude.latitude,
+    serviceOriginLongitude: latitude.longitude,
+    maxServiceDistanceMeters,
+  });
+}

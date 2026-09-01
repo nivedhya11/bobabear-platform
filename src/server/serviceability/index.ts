@@ -29,6 +29,7 @@ export {
   removeOutletServiceabilityPins,
   replaceOutletServiceabilityPins,
   setOutletServiceabilityRoutingPriority,
+  setOutletServiceabilityDistancePolicy,
 } from "./administration";
 
 export {

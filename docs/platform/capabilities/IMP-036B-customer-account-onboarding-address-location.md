@@ -50,7 +50,8 @@ IMP-036B_ACCEPTED: NO
 FOUNDER_UAT_REQUIRED: YES
 FOUNDER_UAT_REQUIRED_FOR_ACCEPTANCE: YES
 IMP-036B_FOUNDER_UAT_REQUIRED: YES
-schema_change: NO
+schema_change: YES
+serviceability_model: HYBRID_PIN_AND_OUTLET_DISTANCE_V1
 provider_IO: YES
 new_service: NO
 new_auth_model: NO
@@ -82,7 +83,7 @@ IMP-036B delivers a coherent signed-in customer account and delivery-location fo
 |---|---|
 | IMP-017 Customer Profile | Reused; no schema change |
 | IMP-018 Customer Addresses | Reused; no schema change |
-| IMP-019 Serviceability | PIN-authoritative; coordinates never override coverage |
+| IMP-019 Serviceability | Hybrid PIN + optional outlet-distance V1; coordinates never create PIN coverage |
 | IMP-009 Customer auth | Single OTP/session model; returnTo preserved |
 | IMP-036A customer shell | Customer chrome preserved; no workforce/admin leakage |
 | Static export | `output: "export"`, `trailingSlash: true` preserved |
@@ -150,6 +151,39 @@ authoritative delivery result
 
 Google MUST NOT determine serviceable / not serviceable / delivery outlet / fee / radius / coverage.
 Coordinates NEVER upgrade or downgrade BOBA PIN-authoritative coverage independently.
+
+## 4.1 Hybrid Serviceability V1 (IMP-036B UAT correction)
+
+```text
+HYBRID_PIN_AND_OUTLET_DISTANCE_V1
+```
+
+Geographic eligibility:
+
+1. PIN must map to an existing Brand/outlet Serviceability candidate.
+2. Coordinates never create a candidate for an unsupported PIN.
+3. When customer coordinates and a complete distance policy exist on a candidate, the server
+   computes geodesic (Haversine) distance from the configured service origin.
+4. Candidates outside configured max distance are geographically ineligible.
+5. Candidates within max distance proceed to existing Operational Availability evaluation.
+6. Candidates without complete distance configuration retain PIN-only evaluation.
+7. Partial distance configuration must not fail open.
+8. Google/Routes/PostGIS do not decide Serviceability.
+
+Distance policy is stored on `app.outlet_serviceability_configs` as:
+
+- `service_origin_latitude`
+- `service_origin_longitude`
+- `max_service_distance_meters`
+
+Administration uses existing Serviceability manage authority via
+`setOutletServiceabilityDistancePolicy` and `npm run serviceability:set-distance-policy`.
+
+Customer delivery fee, provider cost, and Serviceability remain separate authorities. Customer
+delivery-fee calculation is deferred to IMP-036C.
+
+Location selector dialogs portal to `document.body` so header `backdrop-filter` cannot clip the
+delivery selector shell.
 
 Server credential: `BOBA_BEAR_GOOGLE_MAPS_API_KEY` (never `NEXT_PUBLIC_*`). Missing key is
 `NOT_CONFIGURED`, not process failure.

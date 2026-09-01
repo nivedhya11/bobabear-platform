@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 import {
   AddressForm,
@@ -156,12 +157,17 @@ export function LocationSelector(props: {
 
   useEffect(() => {
     if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") closeDialog();
     };
     document.addEventListener("keydown", onKey);
     dialogRef.current?.focus();
-    return () => document.removeEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", onKey);
+    };
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function resetSearchState(): void {
@@ -251,6 +257,9 @@ export function LocationSelector(props: {
     const evaluated = await evaluateDeliveryServiceability(
       DIRECT_ORDERING_BRAND_ID,
       location.postalCode,
+      location.latitude && location.longitude
+        ? { latitude: location.latitude, longitude: location.longitude }
+        : null,
     );
     setPending(false);
     if (!evaluated.ok) {
@@ -282,6 +291,7 @@ export function LocationSelector(props: {
     displayLabel: string;
     source: DeliveryContext["source"];
     savedAddressId?: string;
+    coordinates?: Readonly<{ latitude: string; longitude: string }> | null;
   }>): Promise<void> {
     if (!/^\d{6}$/.test(input.postalCode)) {
       setStatusMessage("Enter a valid 6-digit PIN.");
@@ -294,6 +304,7 @@ export function LocationSelector(props: {
     const evaluated = await evaluateDeliveryServiceability(
       DIRECT_ORDERING_BRAND_ID,
       input.postalCode,
+      input.coordinates ?? null,
     );
     setPending(false);
     if (!evaluated.ok) {
@@ -472,89 +483,96 @@ export function LocationSelector(props: {
         </p>
       ) : null}
 
-      {open ? (
-        <div
-          ref={dialogRef}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby={titleId}
-          tabIndex={-1}
-          className="fixed inset-0 z-[70] flex items-end sm:items-stretch sm:justify-end bg-black/60"
-          data-testid="location-selector-dialog"
-        >
-          <div
-            className={cn(
-              "w-full bg-[var(--bg-page)] flex flex-col overflow-hidden",
-              step === "map"
-                ? "h-full sm:h-full sm:max-w-none"
-                : "max-h-[95vh] sm:h-full sm:max-w-md sm:border-l sm:border-[var(--border-strong)] rounded-t-xl sm:rounded-none",
-            )}
-          >
-            {step === "map" && pendingLocation ? (
-              <DeliveryLocationMapConfirmation
-                initialLocation={pendingLocation}
-                pending={pending}
-                onBack={() => setStep("select")}
-                onChooseAnother={() => {
-                  setStep("select");
-                  setPendingLocation(null);
-                  setDecision(null);
-                  setStatusMessage(null);
-                }}
-                onConfirm={(location, mapDecision) => void handleMapConfirm(location, mapDecision)}
-              />
-            ) : step === "address" ? (
-              <div className="flex flex-col gap-4 p-5 overflow-y-auto">
-                <div className="flex items-start justify-between gap-3">
-                  <h2 id={titleId} className="font-display text-[28px] text-[var(--text-primary)]">
-                    Complete delivery address
-                  </h2>
-                  <button
-                    type="button"
-                    aria-label="Close"
-                    className="font-body text-[14px] text-[var(--text-secondary)] focus-ring rounded-sm px-2 py-1"
-                    onClick={() => closeDialog()}
-                  >
-                    Close
-                  </button>
-                </div>
-                {pendingLocation ? (
-                  <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-section)] p-3">
-                    <p className="font-body text-[13px] text-[var(--text-secondary)]">Confirmed location</p>
-                    <p className="font-body text-[15px] font-semibold text-[var(--text-primary)]">
-                      {pendingLocation.displayAddress}
-                    </p>
-                  </div>
-                ) : null}
-                <form onSubmit={(event) => void handleSaveAddress(event)} className="flex flex-col gap-4">
-                  <AddressForm values={addressForm} onChange={setAddressForm} disabled={pending} idPrefix="delivery" />
-                  <Button type="submit" variant="primary" disabled={pending}>
-                    Save address
-                  </Button>
-                </form>
-                {statusMessage ? (
-                  <p role="status" className="font-body text-[13px] text-[var(--text-secondary)]">
-                    {statusMessage}
-                  </p>
-                ) : null}
-              </div>
-            ) : (
-              <div className="flex flex-col gap-4 p-5 overflow-y-auto max-h-[95vh]">
-                <div className="flex items-start justify-between gap-3">
-                  <h2 id={titleId} className="font-display text-[28px] text-[var(--text-primary)]">
-                    Select delivery location
-                  </h2>
-                  <button
-                    type="button"
-                    aria-label="Close"
-                    className="font-body text-[14px] text-[var(--text-secondary)] focus-ring rounded-sm px-2 py-1"
-                    onClick={() => closeDialog()}
-                  >
-                    Close
-                  </button>
-                </div>
-
-                <div className="flex flex-col gap-2">
+      {open && typeof document !== "undefined"
+        ? createPortal(
+            <div
+              ref={dialogRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={titleId}
+              tabIndex={-1}
+              className="fixed inset-0 z-[70] flex items-end sm:items-stretch sm:justify-end bg-black/60"
+              data-testid="location-selector-dialog"
+            >
+              <div
+                className={cn(
+                  "w-full bg-[var(--bg-page)] flex flex-col min-h-0 overflow-hidden",
+                  step === "map"
+                    ? "h-[100dvh] sm:h-full sm:max-w-none"
+                    : "h-[95dvh] sm:h-full sm:max-w-md sm:border-l sm:border-[var(--border-strong)] rounded-t-xl sm:rounded-none",
+                )}
+                data-testid="location-selector-panel"
+              >
+                {step === "map" && pendingLocation ? (
+                  <DeliveryLocationMapConfirmation
+                    initialLocation={pendingLocation}
+                    pending={pending}
+                    onBack={() => setStep("select")}
+                    onChooseAnother={() => {
+                      setStep("select");
+                      setPendingLocation(null);
+                      setDecision(null);
+                      setStatusMessage(null);
+                    }}
+                    onConfirm={(location, mapDecision) => void handleMapConfirm(location, mapDecision)}
+                  />
+                ) : step === "address" ? (
+                  <>
+                    <div className="flex shrink-0 items-start justify-between gap-3 border-b border-[var(--border-subtle)] p-5">
+                      <h2 id={titleId} className="font-display text-[28px] text-[var(--text-primary)]">
+                        Complete delivery address
+                      </h2>
+                      <button
+                        type="button"
+                        aria-label="Close"
+                        className="font-body text-[14px] text-[var(--text-secondary)] focus-ring rounded-sm px-2 py-1"
+                        onClick={() => closeDialog()}
+                      >
+                        Close
+                      </button>
+                    </div>
+                    <div className="flex flex-1 min-h-0 flex-col gap-4 overflow-y-auto p-5">
+                      {pendingLocation ? (
+                        <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-section)] p-3">
+                          <p className="font-body text-[13px] text-[var(--text-secondary)]">Confirmed location</p>
+                          <p className="font-body text-[15px] font-semibold text-[var(--text-primary)]">
+                            {pendingLocation.displayAddress}
+                          </p>
+                        </div>
+                      ) : null}
+                      <form onSubmit={(event) => void handleSaveAddress(event)} className="flex flex-col gap-4">
+                        <AddressForm values={addressForm} onChange={setAddressForm} disabled={pending} idPrefix="delivery" />
+                        <Button type="submit" variant="primary" disabled={pending}>
+                          Save address
+                        </Button>
+                      </form>
+                      {statusMessage ? (
+                        <p role="status" className="font-body text-[13px] text-[var(--text-secondary)]">
+                          {statusMessage}
+                        </p>
+                      ) : null}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex shrink-0 items-start justify-between gap-3 border-b border-[var(--border-subtle)] p-5">
+                      <h2 id={titleId} className="font-display text-[28px] text-[var(--text-primary)]">
+                        Select delivery location
+                      </h2>
+                      <button
+                        type="button"
+                        aria-label="Close"
+                        className="font-body text-[14px] text-[var(--text-secondary)] focus-ring rounded-sm px-2 py-1"
+                        onClick={() => closeDialog()}
+                      >
+                        Close
+                      </button>
+                    </div>
+                    <div
+                      className="flex flex-1 min-h-0 flex-col gap-4 overflow-y-auto p-5"
+                      data-testid="location-selector-body"
+                    >
+                      <div className="flex flex-col gap-2">
                   <label className="font-body text-[13px] font-semibold" htmlFor={comboboxId}>
                     Search area, street or landmark
                     <input
@@ -630,7 +648,7 @@ export function LocationSelector(props: {
                     </ul>
                   ) : null}
                   {suggestions.length > 0 ? <GoogleMapsAttribution /> : null}
-                </div>
+                      </div>
 
                 <Button
                   type="button"
@@ -674,6 +692,7 @@ export function LocationSelector(props: {
                                     displayLabel: result.displayLabel,
                                     source: "saved_address",
                                     savedAddressId: address.id,
+                                    coordinates: address.coordinates,
                                   })
                                 }
                               >
@@ -736,11 +755,14 @@ export function LocationSelector(props: {
                 {recoveryHint ? (
                   <p className="font-body text-[13px] text-[var(--text-secondary)]">{recoveryHint}</p>
                 ) : null}
+                    </div>
+                  </>
+                )}
               </div>
-            )}
-          </div>
-        </div>
-      ) : null}
+            </div>,
+            document.body,
+          )
+        : null}
     </>
   );
 }

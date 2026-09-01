@@ -4585,12 +4585,13 @@ export function evaluateImp036bImplementationCompletionArtifact(text) {
     /IMP-036B_IMPLEMENTATION_COMPLETE:\s*YES/,
     /IMP-036B_ACCEPTED:\s*NO/,
     /FOUNDER_UAT_REQUIRED:\s*YES/,
-    /schema_change:\s*NO/,
+    /schema_change:\s*YES/,
     /provider_IO:\s*YES/,
     /LOCATION_PROVIDER:\s*GOOGLE_MAPS_PLATFORM_V1/,
     /provider_external_IO:\s*YES/,
     /IMP036B_IMPLEMENTATION_EVIDENCE:\s*COMPLETE/,
     /COMPLETION IS NOT ACCEPTANCE:\s*YES/,
+    /serviceability_model:\s*HYBRID_PIN_AND_OUTLET_DISTANCE_V1/,
   ];
   if (required.some((pattern) => !pattern.test(text))) {
     return { ok: false, code: "IMP036B_CAPABILITY_COMPLETION", message: "IMP-036B artifact must record the complete locked IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE checkpoint" };
@@ -12105,22 +12106,22 @@ function checkTechnicalInventory() {
   const journal = JSON.parse(readFileSync(journalPath, "utf8"));
   const entries = journal.entries || [];
   const latest = entries[entries.length - 1];
-  if (!latest || latest.tag !== "0034_meta_whatsapp_adapter") {
+  if (!latest || latest.tag !== "0035_serviceability_distance_policy") {
     fail(
       "LATEST_MIGRATION",
-      `Expected latest migration tag 0034_meta_whatsapp_adapter, got ${latest && latest.tag}`,
+      `Expected latest migration tag 0035_serviceability_distance_policy, got ${latest && latest.tag}`,
     );
   } else {
-    note("Latest migration tag 0034_meta_whatsapp_adapter");
+    note("Latest migration tag 0035_serviceability_distance_policy");
   }
   const sqlFiles = readdirSync(path.join(projectRoot, "drizzle")).filter((f) => f.endsWith(".sql"));
-  if (sqlFiles.length !== 35 || entries.length !== 35) {
+  if (sqlFiles.length !== 36 || entries.length !== 36) {
     fail(
       "MIGRATION_COUNT",
-      `Expected 35 migrations, got sql=${sqlFiles.length} journal=${entries.length}`,
+      `Expected 36 migrations, got sql=${sqlFiles.length} journal=${entries.length}`,
     );
   } else {
-    note("Migration count 35");
+    note("Migration count 36");
   }
 
   // Application tables

@@ -4,6 +4,7 @@
 import {
   assertPositiveRoutingPriority,
   assertUuid,
+  canonicalizeDistancePolicyFields,
   canonicalizePostalCodeSet,
   canonicalizeServiceabilityCoordinates,
   canonicalizeServiceabilityPostalCode,
@@ -48,6 +49,14 @@ export type SetRoutingPriorityInput = Readonly<{
   outletId: string;
   routingPriority: number;
   expectedRevision: bigint | null;
+}>;
+
+export type SetDistancePolicyInput = Readonly<{
+  outletId: string;
+  expectedRevision: bigint | null;
+  serviceOriginLatitude: string | null;
+  serviceOriginLongitude: string | null;
+  maxServiceDistanceMeters: number | null;
 }>;
 
 export type PinMutationInput = Readonly<{
@@ -116,6 +125,47 @@ function parsePinMutationInput(raw: unknown): PinMutationInput {
     outletId: assertUuid(obj.outletId, "outletId"),
     postalCodes: canonicalizePostalCodeSet(obj.postalCodes),
     expectedRevision: parseExpectedRevision(obj.expectedRevision),
+  });
+}
+
+export function parseSetDistancePolicyInput(raw: unknown): SetDistancePolicyInput {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+    throw new ServiceabilityError(
+      "SERVICEABILITY_VALIDATION_ERROR",
+      "Input must be an object.",
+    );
+  }
+  const obj = raw as Record<string, unknown>;
+  rejectUnknownFields(
+    obj,
+    new Set([
+      "outletId",
+      "expectedRevision",
+      "serviceOriginLatitude",
+      "serviceOriginLongitude",
+      "maxServiceDistanceMeters",
+    ]),
+  );
+  for (const key of Object.keys(obj)) {
+    if (ADMIN_BASE_FORBIDDEN.has(key)) {
+      throw new ServiceabilityError(
+        "SERVICEABILITY_FORBIDDEN_FIELD",
+        `Forbidden field: ${key}.`,
+        key,
+      );
+    }
+  }
+  const policy = canonicalizeDistancePolicyFields({
+    serviceOriginLatitude: obj.serviceOriginLatitude,
+    serviceOriginLongitude: obj.serviceOriginLongitude,
+    maxServiceDistanceMeters: obj.maxServiceDistanceMeters,
+  });
+  return Object.freeze({
+    outletId: assertUuid(obj.outletId, "outletId"),
+    expectedRevision: parseExpectedRevision(obj.expectedRevision),
+    serviceOriginLatitude: policy?.serviceOriginLatitude ?? null,
+    serviceOriginLongitude: policy?.serviceOriginLongitude ?? null,
+    maxServiceDistanceMeters: policy?.maxServiceDistanceMeters ?? null,
   });
 }
 

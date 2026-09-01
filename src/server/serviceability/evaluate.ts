@@ -1,10 +1,13 @@
 /**
- * Runtime Serviceability evaluation (IMP-019).
+ * Runtime Serviceability evaluation (IMP-019 + IMP-036B hybrid distance V1).
  *
- * Read-only. PIN-only geographic model. Reuses Operational Availability.
- * Coordinates never upgrade/downgrade coverage.
+ * Read-only. PIN-required geographic model with optional outlet-distance policy.
+ * Coordinates never upgrade an unsupported PIN.
  */
 import {
+  geodesicDistanceMeters,
+  isDistancePolicyConfigured,
+  parseServiceabilityCoordinate,
   parseEvaluateServiceabilityInput,
   ServiceabilityError,
   type ServiceabilityDecision,
@@ -38,6 +41,44 @@ function isAuthoritativelyUnavailable(code: string): boolean {
   );
 }
 
+function isGeographicallyEligible(
+  candidate: Awaited<ReturnType<typeof findServiceabilityCandidates>>[number],
+  coordinates: Readonly<{ latitude: string; longitude: string }> | undefined,
+): boolean {
+  if (!coordinates || candidate.distancePolicy === null) {
+    return true;
+  }
+  const policy = candidate.distancePolicy;
+  if (
+    !isDistancePolicyConfigured({
+      serviceOriginLatitude: policy.serviceOriginLatitude,
+      serviceOriginLongitude: policy.serviceOriginLongitude,
+      maxServiceDistanceMeters: policy.maxServiceDistanceMeters,
+    })
+  ) {
+    return true;
+  }
+  const originLat = parseServiceabilityCoordinate(policy.serviceOriginLatitude);
+  const originLng = parseServiceabilityCoordinate(policy.serviceOriginLongitude);
+  const pointLat = parseServiceabilityCoordinate(coordinates.latitude);
+  const pointLng = parseServiceabilityCoordinate(coordinates.longitude);
+  if (
+    originLat === null ||
+    originLng === null ||
+    pointLat === null ||
+    pointLng === null
+  ) {
+    return true;
+  }
+  const distanceMeters = geodesicDistanceMeters({
+    originLatitude: originLat,
+    originLongitude: originLng,
+    pointLatitude: pointLat,
+    pointLongitude: pointLng,
+  });
+  return distanceMeters <= policy.maxServiceDistanceMeters;
+}
+
 /**
  * Evaluate current Serviceability for trusted Brand + location evidence.
  * Does not require a workforce session. Never writes.
@@ -65,8 +106,7 @@ export async function evaluateServiceability(
       postalCode: parsed.location.postalCode,
     });
 
-    // Coordinates are accepted/validated above but never affect geography.
-    void parsed.location.coordinates;
+    const coordinates = parsed.location.coordinates ?? undefined;
 
     if (candidates.length === 0) {
       return Object.freeze({
@@ -76,8 +116,14 @@ export async function evaluateServiceability(
     }
 
     let sawAuthoritativeUnavailable = false;
+    let sawGeographicallyIneligible = false;
 
     for (const candidate of candidates) {
+      if (!isGeographicallyEligible(candidate, coordinates)) {
+        sawGeographicallyIneligible = true;
+        continue;
+      }
+
       let operating;
       try {
         operating = await resolveOutletOperatingState(ctx, {
@@ -93,8 +139,6 @@ export async function evaluateServiceability(
       }
 
       if (operating.code === "ERROR") {
-        // Higher-preference candidate cannot be safely evaluated → INDETERMINATE.
-        // Do not skip to a lower-priority outlet.
         return Object.freeze({
           status: "INDETERMINATE" as const,
           evaluatedAt,
@@ -115,7 +159,6 @@ export async function evaluateServiceability(
         continue;
       }
 
-      // Unknown / unexpected code from operational domain → fail closed.
       return Object.freeze({
         status: "INDETERMINATE" as const,
         evaluatedAt,
@@ -126,6 +169,13 @@ export async function evaluateServiceability(
     if (sawAuthoritativeUnavailable) {
       return Object.freeze({
         status: "TEMPORARILY_UNAVAILABLE" as const,
+        evaluatedAt,
+      });
+    }
+
+    if (sawGeographicallyIneligible) {
+      return Object.freeze({
+        status: "NOT_SERVICEABLE" as const,
         evaluatedAt,
       });
     }

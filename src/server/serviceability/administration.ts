@@ -8,6 +8,7 @@ import {
   parseGetConfigurationInput,
   parseRemovePinsInput,
   parseReplacePinsInput,
+  parseSetDistancePolicyInput,
   parseSetRoutingPriorityInput,
   ServiceabilityError,
   type OutletServiceabilityConfiguration,
@@ -29,6 +30,7 @@ import {
   lockOutletForServiceabilityMutation,
   lockServiceabilityConfigForUpdate,
   updateServiceabilityConfig,
+  type ServiceabilityConfigRow,
 } from "./repository";
 
 function mapConcurrentConflict(error: unknown): never {
@@ -65,7 +67,7 @@ function assertExpectedRevision(
 
 function toConfiguration(
   outletId: string,
-  config: { routingPriority: number; revision: bigint } | null,
+  config: ServiceabilityConfigRow | null,
   postalCodes: readonly string[],
 ): OutletServiceabilityConfiguration {
   if (!config) {
@@ -74,6 +76,9 @@ function toConfiguration(
       routingPriority: null,
       postalCodes: Object.freeze([...postalCodes]),
       revision: null,
+      serviceOriginLatitude: null,
+      serviceOriginLongitude: null,
+      maxServiceDistanceMeters: null,
     });
   }
   return Object.freeze({
@@ -81,6 +86,9 @@ function toConfiguration(
     routingPriority: config.routingPriority,
     postalCodes: Object.freeze([...postalCodes]),
     revision: config.revision,
+    serviceOriginLatitude: config.serviceOriginLatitude,
+    serviceOriginLongitude: config.serviceOriginLongitude,
+    maxServiceDistanceMeters: config.maxServiceDistanceMeters,
   });
 }
 
@@ -154,7 +162,14 @@ export async function setOutletServiceabilityRoutingPriority(
         });
         return toConfiguration(
           parsed.outletId,
-          { routingPriority: parsed.routingPriority, revision: BigInt(1) },
+          {
+            outletId: parsed.outletId,
+            routingPriority: parsed.routingPriority,
+            revision: BigInt(1),
+            serviceOriginLatitude: null,
+            serviceOriginLongitude: null,
+            maxServiceDistanceMeters: null,
+          },
           postalCodes,
         );
       });
@@ -186,7 +201,7 @@ export async function setOutletServiceabilityRoutingPriority(
       });
       return toConfiguration(
         parsed.outletId,
-        { routingPriority: parsed.routingPriority, revision: newRevision },
+        { ...config, routingPriority: parsed.routingPriority, revision: newRevision },
         postalCodes,
       );
     });
@@ -253,7 +268,7 @@ export async function addOutletServiceabilityPins(
       );
       return toConfiguration(
         parsed.outletId,
-        { routingPriority: config.routingPriority, revision: newRevision },
+        { ...config, revision: newRevision },
         nextPins,
       );
     });
@@ -317,7 +332,7 @@ export async function removeOutletServiceabilityPins(
       );
       return toConfiguration(
         parsed.outletId,
-        { routingPriority: config.routingPriority, revision: newRevision },
+        { ...config, revision: newRevision },
         nextPins,
       );
     });
@@ -388,8 +403,90 @@ export async function replaceOutletServiceabilityPins(
 
       return toConfiguration(
         parsed.outletId,
-        { routingPriority: config.routingPriority, revision: newRevision },
+        { ...config, revision: newRevision },
         parsed.postalCodes,
+      );
+    });
+  });
+}
+
+export async function setOutletServiceabilityDistancePolicy(
+  persistence: Persistence,
+  actor: unknown,
+  input: unknown,
+): Promise<OutletServiceabilityConfiguration> {
+  const principal = requireServiceabilityWorkforceActor(actor);
+  const parsed = parseSetDistancePolicyInput(input);
+
+  return persistence.transaction(async (tx) => {
+    await lockOutletForServiceabilityMutation(tx, parsed.outletId);
+    await requireServiceabilityManage(tx, principal, parsed.outletId);
+
+    const config = await lockServiceabilityConfigForUpdate(tx, parsed.outletId);
+    assertExpectedRevision(config?.revision ?? null, parsed.expectedRevision);
+
+    if (!config) {
+      if (parsed.maxServiceDistanceMeters === null) {
+        return toConfiguration(parsed.outletId, null, []);
+      }
+      throw new ServiceabilityError(
+        "SERVICEABILITY_ROUTING_PRIORITY_REQUIRED",
+        "Routing priority must be configured before setting distance policy.",
+      );
+    }
+
+    const postalCodes = await listServiceabilityPins(tx, parsed.outletId);
+    const nextOriginLat = parsed.serviceOriginLatitude;
+    const nextOriginLng = parsed.serviceOriginLongitude;
+    const nextMaxDistance = parsed.maxServiceDistanceMeters;
+
+    const unchanged =
+      config.serviceOriginLatitude === nextOriginLat &&
+      config.serviceOriginLongitude === nextOriginLng &&
+      config.maxServiceDistanceMeters === nextMaxDistance;
+    if (unchanged) {
+      return toConfiguration(parsed.outletId, config, postalCodes);
+    }
+
+    const newRevision = config.revision + BigInt(1);
+    return withConflictMapping(async () => {
+      await updateServiceabilityConfig(tx, {
+        outletId: parsed.outletId,
+        routingPriority: config.routingPriority,
+        revision: newRevision,
+        serviceOriginLatitude: nextOriginLat,
+        serviceOriginLongitude: nextOriginLng,
+        maxServiceDistanceMeters: nextMaxDistance,
+      });
+      await insertServiceabilityAuditEvent(tx, {
+        actorId: principal.workforceUserId,
+        outletId: parsed.outletId,
+        action: "serviceability_distance_policy_set",
+        previousRevision: config.revision,
+        newRevision,
+        previousRoutingPriority: null,
+        newRoutingPriority: null,
+        addedPostalCodes: [],
+        removedPostalCodes: [],
+        previousServiceOriginLatitude: config.serviceOriginLatitude,
+        newServiceOriginLatitude: nextOriginLat,
+        previousServiceOriginLongitude: config.serviceOriginLongitude,
+        newServiceOriginLongitude: nextOriginLng,
+        previousMaxServiceDistanceMeters: config.maxServiceDistanceMeters,
+        newMaxServiceDistanceMeters: nextMaxDistance,
+        occurredAt: new Date(),
+      });
+      return toConfiguration(
+        parsed.outletId,
+        {
+          outletId: parsed.outletId,
+          routingPriority: config.routingPriority,
+          revision: newRevision,
+          serviceOriginLatitude: nextOriginLat,
+          serviceOriginLongitude: nextOriginLng,
+          maxServiceDistanceMeters: nextMaxDistance,
+        },
+        postalCodes,
       );
     });
   });

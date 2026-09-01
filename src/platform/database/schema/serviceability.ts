@@ -12,6 +12,7 @@ import {
   foreignKey,
   index,
   integer,
+  numeric,
   primaryKey,
   text,
   timestamp,
@@ -28,6 +29,9 @@ export const outletServiceabilityConfigsTable = appSchema.table(
     outletId: uuid("outlet_id").primaryKey(),
     routingPriority: integer("routing_priority").notNull(),
     revision: bigint("revision", { mode: "bigint" }).notNull(),
+    serviceOriginLatitude: numeric("service_origin_latitude", { precision: 10, scale: 7 }),
+    serviceOriginLongitude: numeric("service_origin_longitude", { precision: 10, scale: 7 }),
+    maxServiceDistanceMeters: integer("max_service_distance_meters"),
   },
   (table) => [
     foreignKey({
@@ -42,6 +46,26 @@ export const outletServiceabilityConfigsTable = appSchema.table(
     check(
       "outlet_serviceability_configs_revision_positive_check",
       sql`${table.revision} > 0`,
+    ),
+    check(
+      "outlet_serviceability_configs_origin_pair_check",
+      sql`(${table.serviceOriginLatitude} is null) = (${table.serviceOriginLongitude} is null)`,
+    ),
+    check(
+      "outlet_serviceability_configs_origin_latitude_range_check",
+      sql`${table.serviceOriginLatitude} is null or (${table.serviceOriginLatitude} >= -90 and ${table.serviceOriginLatitude} <= 90)`,
+    ),
+    check(
+      "outlet_serviceability_configs_origin_longitude_range_check",
+      sql`${table.serviceOriginLongitude} is null or (${table.serviceOriginLongitude} >= -180 and ${table.serviceOriginLongitude} <= 180)`,
+    ),
+    check(
+      "outlet_serviceability_configs_max_distance_positive_check",
+      sql`${table.maxServiceDistanceMeters} is null or ${table.maxServiceDistanceMeters} > 0`,
+    ),
+    check(
+      "outlet_serviceability_configs_distance_requires_origin_check",
+      sql`${table.maxServiceDistanceMeters} is null or (${table.serviceOriginLatitude} is not null and ${table.serviceOriginLongitude} is not null)`,
     ),
   ],
 );
@@ -89,6 +113,24 @@ export const outletServiceabilityAuditEventsTable = appSchema.table(
     newRoutingPriority: integer("new_routing_priority"),
     addedPostalCodes: text("added_postal_codes").array().notNull(),
     removedPostalCodes: text("removed_postal_codes").array().notNull(),
+    previousServiceOriginLatitude: numeric("previous_service_origin_latitude", {
+      precision: 10,
+      scale: 7,
+    }),
+    newServiceOriginLatitude: numeric("new_service_origin_latitude", {
+      precision: 10,
+      scale: 7,
+    }),
+    previousServiceOriginLongitude: numeric("previous_service_origin_longitude", {
+      precision: 10,
+      scale: 7,
+    }),
+    newServiceOriginLongitude: numeric("new_service_origin_longitude", {
+      precision: 10,
+      scale: 7,
+    }),
+    previousMaxServiceDistanceMeters: integer("previous_max_service_distance_meters"),
+    newMaxServiceDistanceMeters: integer("new_max_service_distance_meters"),
   },
   (table) => [
     // No FK to current config — history must survive later state changes.
@@ -108,7 +150,7 @@ export const outletServiceabilityAuditEventsTable = appSchema.table(
     ),
     check(
       "outlet_serviceability_audit_events_action_check",
-      sql`${table.action} in ('serviceability_routing_priority_set', 'serviceability_pins_added', 'serviceability_pins_removed', 'serviceability_pins_replaced')`,
+      sql`${table.action} in ('serviceability_routing_priority_set', 'serviceability_pins_added', 'serviceability_pins_removed', 'serviceability_pins_replaced', 'serviceability_distance_policy_set')`,
     ),
     check(
       "outlet_serviceability_audit_events_new_revision_positive_check",
