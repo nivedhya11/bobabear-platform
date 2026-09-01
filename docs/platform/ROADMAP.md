@@ -313,9 +313,9 @@ IMP-036B is `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`. Architecture is **ARCH
 (`IMP-036B_ARCHITECTURE_LOCKED: YES`). Implementation is `AUTHORIZED` / `STARTED` / `COMPLETE`
 (`IMP-036B_IMPLEMENTATION_AUTHORIZED: YES`; `IMP-036B_STARTED: YES`;
 `IMP-036B_IMPLEMENTATION_COMPLETE: YES`; `IMP-036B_ACCEPTED: NO`). Locked boundary facts:
-`schema_change: NO`, `provider_IO: NO`, `new_service: NO`, `new_auth_model: NO`,
-`new_roles: NO`, `new_permissions: NO`; location provider external I/O **deferred**
-(`LOCATION_PROVIDER: MANUAL_PIN_AND_SAVED_ADDRESS_V1`; `provider_external_IO: DEFERRED`).
+`schema_change: NO`, `provider_IO: YES`, `new_service: NO`, `new_auth_model: NO`,
+`new_roles: NO`, `new_permissions: NO`; location provider
+(`LOCATION_PROVIDER: GOOGLE_MAPS_PLATFORM_V1`; `provider_external_IO: YES`).
 Founder UAT is **required** (`IMP-036B_FOUNDER_UAT_REQUIRED: YES`). **GTM-R99** records the combined
 IMP-036B activation / architecture lock / implementation authorize / start / complete gate while
 `acceptedThrough` remains IMP-036A. Locked capability architecture:

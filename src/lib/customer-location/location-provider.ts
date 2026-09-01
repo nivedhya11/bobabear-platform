@@ -1,8 +1,6 @@
 /**
- * Location provider abstraction — manual-only for IMP-036B.
- *
- * Saved addresses are filtered locally when the customer is authenticated.
- * No external autocomplete/geocoding API.
+ * Location provider abstraction — Google Maps Platform V1 (IMP-036B amendment)
+ * with mandatory saved-address and manual PIN fallbacks.
  */
 import type { CommerceAddress } from "@/lib/customer-commerce";
 
@@ -44,7 +42,7 @@ function addressMatchesQuery(address: CommerceAddress, query: string): boolean {
   return haystack.includes(query);
 }
 
-function savedAddressResults(addresses: readonly CommerceAddress[]): readonly LocationSearchResult[] {
+export function savedAddressResults(addresses: readonly CommerceAddress[]): readonly LocationSearchResult[] {
   return addresses.map((address) =>
     Object.freeze({
       id: `saved:${address.id}`,

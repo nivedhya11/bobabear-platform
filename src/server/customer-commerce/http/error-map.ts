@@ -15,6 +15,7 @@ import { FinancialDocumentError } from "../../../shared/financial-document";
 import { OrderError } from "../../../shared/order";
 import { PaymentError } from "../../../shared/payment";
 import { PricingResolutionError } from "../../pricing/errors";
+import { LocationError } from "../location/errors";
 
 export type CommerceErrorBody = Readonly<{
   ok: false;
@@ -75,6 +76,7 @@ const STATUS_422 = new Set(["CART_ITEM_NOT_ORDERABLE", "PRICE_MISSING"]);
 const STATUS_503 = new Set([
   "CART_DEPENDENCY_UNAVAILABLE",
   "CHECKOUT_DEPENDENCY_INDETERMINATE",
+  "LOCATION_PROVIDER_UNAVAILABLE",
 ]);
 
 const STATUS_500 = new Set([
@@ -89,10 +91,11 @@ const STATUS_500 = new Set([
 
 function statusForCode(code: string): number {
   if (STATUS_401.has(code)) return 401;
-  if (STATUS_404.has(code)) return 404;
+  if (STATUS_404.has(code) || code === "LOCATION_NO_RESULTS") return 404;
   if (STATUS_410.has(code)) return 410;
   if (STATUS_409.has(code)) return 409;
   if (STATUS_422.has(code)) return 422;
+  if (code === "LOCATION_RATE_LIMITED") return 429;
   if (STATUS_503.has(code)) return 503;
   if (STATUS_500.has(code)) return 500;
   // Default remaining accepted invalid-input / validation codes to 400.
@@ -138,6 +141,9 @@ function extractDomainError(error: unknown): {
   }
   if (error instanceof PricingResolutionError) {
     return { code: error.pricingErrorCode };
+  }
+  if (error instanceof LocationError) {
+    return { code: error.code, field: error.field };
   }
   return null;
 }

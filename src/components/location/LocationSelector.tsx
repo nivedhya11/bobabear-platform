@@ -2,8 +2,11 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 
+import { GoogleMapsAttribution } from "@/components/location/GoogleMapsAttribution";
 import {
   geolocationFailureCopy,
+  locationProviderUnavailableCopy,
+  missingPinCopy,
   serviceabilityStatusCopy,
 } from "@/components/location/serviceability-copy";
 import { Button } from "@/components/ui/Button";
@@ -15,6 +18,15 @@ import {
   type CommerceServiceabilityDecision,
 } from "@/lib/customer-commerce";
 import {
+  autocompleteLocation,
+  getLocationProviderStatus,
+  resolveLocationPlace,
+  reverseGeocodeLocation,
+  type LocationSuggestion,
+  type NormalizedCommerceLocation,
+} from "@/lib/customer-commerce/location";
+import { writeAddressPrefillDraft } from "@/lib/customer-location/address-prefill";
+import {
   deliveryContextTriggerLabel,
   readDeliveryContext,
   subscribeToDeliveryContext,
@@ -22,9 +34,17 @@ import {
   type DeliveryContext,
 } from "@/lib/customer-location/delivery-context";
 import { getDeviceCoordinates } from "@/lib/customer-location/geolocation";
-import { manualOnlyProvider } from "@/lib/customer-location/location-provider";
+import { savedAddressResults } from "@/lib/customer-location/location-provider";
+import {
+  completeLocationSearchSession,
+  startLocationSearchSession,
+  type LocationSearchSession,
+} from "@/lib/customer-location/search-session";
 import { DIRECT_ORDERING_BRAND_ID } from "@/shared/customer-menu/constants";
 import { cn } from "@/lib/utils";
+
+const SEARCH_DEBOUNCE_MS = 300;
+const SEARCH_MIN_CHARS = 3;
 
 export function LocationSelector(props: {
   variant?: "page-strip" | "header-pill";
@@ -38,11 +58,25 @@ export function LocationSelector(props: {
   const [savedAddresses, setSavedAddresses] = useState<readonly CommerceAddress[]>([]);
   const [authenticated, setAuthenticated] = useState(false);
   const [pending, setPending] = useState(false);
+  const [searching, setSearching] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [decision, setDecision] = useState<CommerceServiceabilityDecision | null>(null);
+  const [providerConfigured, setProviderConfigured] = useState(false);
+  const [suggestions, setSuggestions] = useState<readonly LocationSuggestion[]>([]);
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const [pendingEvidence, setPendingEvidence] = useState<NormalizedCommerceLocation | null>(null);
+  const [lastSelectedLocation, setLastSelectedLocation] = useState<NormalizedCommerceLocation | null>(
+    null,
+  );
   const dialogRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const searchAbortRef = useRef<AbortController | null>(null);
+  const searchSessionRef = useRef<LocationSearchSession | null>(null);
+  const debounceTimerRef = useRef<number | null>(null);
+  const providerConfiguredRef = useRef(false);
   const titleId = useId();
+  const listboxId = useId();
+  const comboboxId = useId();
   const isHeaderPill = variant === "header-pill";
 
   useEffect(() => subscribeToDeliveryContext(setContext), []);
@@ -56,12 +90,17 @@ export function LocationSelector(props: {
       if (!session.ok || !session.data.authenticated) {
         setAuthenticated(false);
         setSavedAddresses([]);
-        return;
+      } else {
+        setAuthenticated(true);
+        const listed = await listOwnAddresses();
+        if (cancelled) return;
+        if (listed.ok) setSavedAddresses(listed.data.addresses);
       }
-      setAuthenticated(true);
-      const listed = await listOwnAddresses();
+      const status = await getLocationProviderStatus();
       if (cancelled) return;
-      if (listed.ok) setSavedAddresses(listed.data.addresses);
+      const configured = status.ok && status.data.configured === true;
+      providerConfiguredRef.current = configured;
+      setProviderConfigured(configured);
     })();
     return () => {
       cancelled = true;
@@ -71,19 +110,90 @@ export function LocationSelector(props: {
   useEffect(() => {
     if (!open) return;
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
+      if (event.key === "Escape") closeDialog();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [open]);
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps -- closeDialog is event-stable for this dialog
 
-  useEffect(() => {
-    if (!open) {
-      triggerRef.current?.focus();
+  function resetSearchState(): void {
+    searchAbortRef.current?.abort();
+    if (debounceTimerRef.current !== null) {
+      window.clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
     }
-  }, [open]);
+    searchSessionRef.current = null;
+    setSuggestions([]);
+    setSearching(false);
+    setActiveIndex(-1);
+  }
 
-  const searchResults = manualOnlyProvider.search(query, authenticated ? savedAddresses : []);
+  function closeDialog(): void {
+    resetSearchState();
+    setPendingEvidence(null);
+    setOpen(false);
+    window.setTimeout(() => triggerRef.current?.focus(), 0);
+  }
+
+  function scheduleAutocomplete(nextQuery: string): void {
+    const trimmed = nextQuery.trim();
+    if (debounceTimerRef.current !== null) {
+      window.clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+    if (!providerConfiguredRef.current || trimmed.length < SEARCH_MIN_CHARS) {
+      searchAbortRef.current?.abort();
+      setSuggestions([]);
+      setSearching(false);
+      return;
+    }
+    const existing = searchSessionRef.current;
+    const session =
+      existing && !existing.completed ? existing : startLocationSearchSession();
+    searchSessionRef.current = session;
+    debounceTimerRef.current = window.setTimeout(() => {
+      const controller = new AbortController();
+      searchAbortRef.current?.abort();
+      searchAbortRef.current = controller;
+      setSearching(true);
+      void autocompleteLocation(
+        { query: trimmed, sessionToken: session.token },
+        controller.signal,
+      ).then((result) => {
+        if (controller.signal.aborted) return;
+        setSearching(false);
+        if (!result.ok) {
+          setSuggestions([]);
+          setStatusMessage(locationProviderUnavailableCopy());
+          return;
+        }
+        setSuggestions(result.data.suggestions);
+        setActiveIndex(-1);
+        if (result.data.suggestions.length === 0) {
+          setStatusMessage("No matching places. Try another search or enter a PIN.");
+        } else {
+          setStatusMessage(null);
+        }
+      });
+    }, SEARCH_DEBOUNCE_MS);
+  }
+
+  const savedOnly = authenticated
+    ? savedAddresses.filter((address) => {
+        if (query.trim().length === 0) return true;
+        const haystack = [
+          address.label,
+          address.addressLine1,
+          address.locality,
+          address.city,
+          address.postalCode,
+        ]
+          .filter((value): value is string => typeof value === "string")
+          .join(" ")
+          .toLowerCase();
+        return haystack.includes(query.trim().toLowerCase());
+      })
+    : [];
 
   async function applySelection(input: Readonly<{
     postalCode: string;
@@ -118,19 +228,69 @@ export function LocationSelector(props: {
       savedAddressId: input.savedAddressId,
     });
     if (nextDecision.status === "SERVICEABLE" || nextDecision.status === "NOT_SERVICEABLE") {
-      setOpen(false);
       setQuery("");
       setManualPin("");
+      closeDialog();
     }
+  }
+
+  async function applyNormalizedLocation(
+    location: NormalizedCommerceLocation,
+    source: DeliveryContext["source"],
+  ): Promise<void> {
+    setLastSelectedLocation(location);
+    if (!location.pinConfirmed || !location.postalCode) {
+      setPendingEvidence(location);
+      setManualPin("");
+      setStatusMessage(missingPinCopy());
+      setDecision(null);
+      return;
+    }
+    setPendingEvidence(null);
+    await applySelection({
+      postalCode: location.postalCode,
+      displayLabel: location.displayAddress || location.postalCode,
+      source,
+    });
   }
 
   async function handleManualPinSubmit(event: React.FormEvent): Promise<void> {
     event.preventDefault();
+    const displayLabel =
+      pendingEvidence?.displayAddress && pendingEvidence.displayAddress.length > 0
+        ? pendingEvidence.displayAddress
+        : manualPin;
+    const source: DeliveryContext["source"] = pendingEvidence
+      ? pendingEvidence.latitude
+        ? "device_location"
+        : "location_search"
+      : "manual_pin";
     await applySelection({
       postalCode: manualPin,
-      displayLabel: manualPin,
-      source: "manual_pin",
+      displayLabel,
+      source,
     });
+  }
+
+  async function handleSelectSuggestion(suggestion: LocationSuggestion): Promise<void> {
+    const token = searchSessionRef.current && !searchSessionRef.current.completed
+      ? searchSessionRef.current.token
+      : null;
+    if (!token) return;
+    setPending(true);
+    setStatusMessage(null);
+    const resolved = await resolveLocationPlace({
+      placeId: suggestion.placeId,
+      sessionToken: token,
+    });
+    const completed = completeLocationSearchSession(searchSessionRef.current!);
+    searchSessionRef.current = completed;
+    setPending(false);
+    if (!resolved.ok) {
+      setStatusMessage(locationProviderUnavailableCopy());
+      return;
+    }
+    await applyNormalizedLocation(resolved.data.location, "location_search");
   }
 
   async function handleDeviceLocation(): Promise<void> {
@@ -142,21 +302,38 @@ export function LocationSelector(props: {
       setStatusMessage(geolocationFailureCopy(geo.reason));
       return;
     }
-    const pin = context.postalCode.length === 6 ? context.postalCode : manualPin;
-    if (!/^\d{6}$/.test(pin)) {
+    if (!providerConfigured) {
       setPending(false);
-      setStatusMessage("Enter your PIN to check delivery for your current location.");
+      setStatusMessage(locationProviderUnavailableCopy());
       return;
     }
-    setPending(false);
-    await applySelection({
-      postalCode: pin,
-      displayLabel: "Current location",
-      source: "device_location",
+    const reverse = await reverseGeocodeLocation({
+      latitude: Number.parseFloat(geo.coordinates.latitude),
+      longitude: Number.parseFloat(geo.coordinates.longitude),
     });
+    setPending(false);
+    if (!reverse.ok) {
+      setStatusMessage(locationProviderUnavailableCopy());
+      return;
+    }
+    await applyNormalizedLocation(reverse.data.location, "device_location");
+  }
+
+  function saveSelectedAsAddress(): void {
+    const location = lastSelectedLocation ?? pendingEvidence;
+    if (!location) return;
+    writeAddressPrefillDraft({
+      addressLine1: location.displayAddress,
+      locality: location.locality ?? "",
+      city: location.locality ?? "",
+      stateCode: location.stateCode ?? "",
+      postalCode: location.postalCode ?? "",
+    });
+    window.location.assign("/account/addresses/");
   }
 
   const triggerLabel = deliveryContextTriggerLabel(context);
+  const searchUnavailable = !providerConfigured;
 
   return (
     <>
@@ -197,51 +374,133 @@ export function LocationSelector(props: {
           <div className="w-full max-w-lg rounded-t-xl sm:rounded-xl border border-[var(--border-strong)] bg-[var(--bg-page)] p-5 flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-start justify-between gap-3">
               <h2 id={titleId} className="font-display text-[28px] text-[var(--text-primary)]">
-                Delivery location
+                Where should we deliver?
               </h2>
               <button
                 type="button"
                 aria-label="Close"
                 className="font-body text-[14px] text-[var(--text-secondary)] focus-ring rounded-sm px-2 py-1"
-                onClick={() => setOpen(false)}
+                onClick={() => closeDialog()}
               >
                 Close
               </button>
             </div>
 
-            <label className="font-body text-[13px] font-semibold">
-              Search saved addresses
-              <input
-                className="mt-1 h-11 w-full border border-[var(--border-strong)] bg-transparent px-3"
-                value={query}
-                placeholder={authenticated ? "Search by name, area, or PIN" : "Sign in to search saved addresses"}
-                disabled={!authenticated || pending}
-                onChange={(event) => setQuery(event.target.value)}
-              />
-            </label>
+            <div className="flex flex-col gap-2">
+              <label className="font-body text-[13px] font-semibold" htmlFor={comboboxId}>
+                Search area, street or landmark
+                <input
+                  id={comboboxId}
+                  role="combobox"
+                  aria-autocomplete="list"
+                  aria-expanded={suggestions.length > 0}
+                  aria-controls={listboxId}
+                  aria-activedescendant={
+                    activeIndex >= 0 ? `${listboxId}-opt-${activeIndex}` : undefined
+                  }
+                  className="mt-1 h-11 w-full border border-[var(--border-strong)] bg-transparent px-3"
+                  value={query}
+                  placeholder="Search area, street or landmark"
+                  disabled={pending || searchUnavailable}
+                  autoComplete="off"
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setQuery(value);
+                    scheduleAutocomplete(value);
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === "ArrowDown") {
+                      event.preventDefault();
+                      setActiveIndex((index) => Math.min(index + 1, suggestions.length - 1));
+                    } else if (event.key === "ArrowUp") {
+                      event.preventDefault();
+                      setActiveIndex((index) => Math.max(index - 1, 0));
+                    } else if (event.key === "Enter" && activeIndex >= 0 && suggestions[activeIndex]) {
+                      event.preventDefault();
+                      void handleSelectSuggestion(suggestions[activeIndex]!);
+                    }
+                  }}
+                />
+              </label>
+              {searchUnavailable ? (
+                <p className="font-body text-[13px] text-[var(--text-secondary)]">
+                  {locationProviderUnavailableCopy()}
+                </p>
+              ) : null}
+              {searching ? (
+                <p role="status" className="font-body text-[13px] text-[var(--text-secondary)]">
+                  Searching…
+                </p>
+              ) : null}
+              {suggestions.length > 0 ? (
+                <ul
+                  id={listboxId}
+                  role="listbox"
+                  className="flex flex-col gap-1 border border-[var(--border-subtle)] bg-[var(--bg-section)] p-1"
+                  data-testid="location-search-results"
+                >
+                  {suggestions.map((suggestion, index) => (
+                    <li key={suggestion.placeId} role="presentation">
+                      <button
+                        type="button"
+                        role="option"
+                        id={`${listboxId}-opt-${index}`}
+                        aria-selected={index === activeIndex}
+                        disabled={pending}
+                        className={cn(
+                          "w-full text-left px-3 py-2 font-body text-[14px] focus-ring rounded-sm",
+                          index === activeIndex
+                            ? "bg-[var(--interactive-ghost-hover)]"
+                            : "hover:bg-[var(--interactive-ghost-hover)]",
+                        )}
+                        onClick={() => void handleSelectSuggestion(suggestion)}
+                      >
+                        {suggestion.label}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              {suggestions.length > 0 ? <GoogleMapsAttribution /> : null}
+            </div>
 
-            {authenticated && searchResults.length > 0 ? (
-              <ul className="flex flex-col gap-2" data-testid="location-saved-results">
-                {searchResults.map((result) => (
-                  <li key={result.id}>
-                    <button
-                      type="button"
-                      disabled={pending}
-                      className="w-full text-left border border-[var(--border-subtle)] px-3 py-2 font-body text-[14px] hover:bg-[var(--interactive-ghost-hover)] focus-ring rounded-sm"
-                      onClick={() =>
-                        void applySelection({
-                          postalCode: result.postalCode,
-                          displayLabel: result.displayLabel,
-                          source: "saved_address",
-                          savedAddressId: result.savedAddressId,
-                        })
-                      }
-                    >
-                      {result.label}
-                    </button>
-                  </li>
-                ))}
-              </ul>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={pending}
+              onClick={() => void handleDeviceLocation()}
+            >
+              Use current location
+            </Button>
+
+            {authenticated && savedOnly.length > 0 ? (
+              <div className="flex flex-col gap-2">
+                <p className="font-body text-[13px] font-semibold">Saved addresses</p>
+                <ul className="flex flex-col gap-2" data-testid="location-saved-results">
+                  {savedOnly.map((address) => {
+                    const result = savedAddressResults([address])[0]!;
+                    return (
+                      <li key={address.id}>
+                        <button
+                          type="button"
+                          disabled={pending}
+                          className="w-full text-left border border-[var(--border-subtle)] px-3 py-2 font-body text-[14px] hover:bg-[var(--interactive-ghost-hover)] focus-ring rounded-sm"
+                          onClick={() =>
+                            void applySelection({
+                              postalCode: address.postalCode,
+                              displayLabel: result.displayLabel,
+                              source: "saved_address",
+                              savedAddressId: address.id,
+                            })
+                          }
+                        >
+                          {result.label}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
             ) : null}
 
             <form onSubmit={(event) => void handleManualPinSubmit(event)} className="flex flex-col gap-3">
@@ -264,9 +523,11 @@ export function LocationSelector(props: {
               </Button>
             </form>
 
-            <Button type="button" variant="outline" disabled={pending} onClick={() => void handleDeviceLocation()}>
-              Use current device location
-            </Button>
+            {authenticated && (lastSelectedLocation || pendingEvidence) ? (
+              <Button type="button" variant="outline" disabled={pending} onClick={saveSelectedAsAddress}>
+                Save this location as an address
+              </Button>
+            ) : null}
 
             {statusMessage ? (
               <p role="status" className="font-body text-[13px] text-[var(--text-secondary)]">

@@ -360,9 +360,9 @@ Onboarding, Address & Location Experience**: canonical activation, capability ar
 [`capabilities/IMP-036B-customer-account-onboarding-address-location.md`](./capabilities/IMP-036B-customer-account-onboarding-address-location.md);
 implementation AUTHORIZED / STARTED / COMPLETE; lifecycle
 `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` (`IMP-036B_ACCEPTED: NO`). Locked boundary facts:
-`schema_change: NO`, `provider_IO: NO`, `new_service: NO`, `new_auth_model: NO`,
-`new_roles: NO`, `new_permissions: NO`; external location provider I/O deferred
-(`LOCATION_PROVIDER: MANUAL_PIN_AND_SAVED_ADDRESS_V1`). `acceptedThrough` remains IMP-036A;
+`schema_change: NO`, `provider_IO: YES`, `new_service: NO`, `new_auth_model: NO`,
+`new_roles: NO`, `new_permissions: NO`; location provider
+(`LOCATION_PROVIDER: GOOGLE_MAPS_PLATFORM_V1`; `provider_external_IO: YES`). `acceptedThrough` remains IMP-036A;
 `currentProductSlice` and `pendingAcceptance` become IMP-036B; `nextProductSlice` becomes IMP-036C,
 which remains `PLANNED` / `NOT_ACTIVATED`. Founder UAT is **required**
 (`IMP-036B_FOUNDER_UAT_REQUIRED: YES`). Completion is not acceptance and does not authorize IMP-036C.

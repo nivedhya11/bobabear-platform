@@ -4586,8 +4586,9 @@ export function evaluateImp036bImplementationCompletionArtifact(text) {
     /IMP-036B_ACCEPTED:\s*NO/,
     /FOUNDER_UAT_REQUIRED:\s*YES/,
     /schema_change:\s*NO/,
-    /provider_IO:\s*NO/,
-    /LOCATION_PROVIDER:\s*MANUAL_PIN_AND_SAVED_ADDRESS_V1/,
+    /provider_IO:\s*YES/,
+    /LOCATION_PROVIDER:\s*GOOGLE_MAPS_PLATFORM_V1/,
+    /provider_external_IO:\s*YES/,
     /IMP036B_IMPLEMENTATION_EVIDENCE:\s*COMPLETE/,
     /COMPLETION IS NOT ACCEPTANCE:\s*YES/,
   ];

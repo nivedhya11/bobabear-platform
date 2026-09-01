@@ -69,10 +69,9 @@ Reuse accepted Customer Identity, Profile, Address, Serviceability, Orders, and 
 authority. Existing Profile/Address schema is expected to suffice; schema/API changes are not
 authorized. Authentication and customer ownership checks remain server-authoritative.
 
-No location provider is selected. IMP-036B architecture must deliberately decide autocomplete,
-geocoding/reverse-geocoding/place details, India/PIN quality, browser/server responsibility,
-billing/quotas/key restrictions, privacy, fallback, and a minimal search abstraction—without a
-speculative provider framework.
+No location marketplace. IMP-036B uses Google Maps Platform V1 (Places Autocomplete/Details
+New + Geocoding reverse geocode) as a bounded enhancement. BOBA Serviceability remains
+authoritative. Manual PIN and saved addresses remain mandatory fallbacks.
 
 ## Responsive, accessibility, and state requirements
 

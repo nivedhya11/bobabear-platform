@@ -10,7 +10,11 @@ const STORAGE_KEY = "boba.delivery-context.v1";
 const LEGACY_PIN_KEY = "boba.delivery-pin.v1";
 const CONTEXT_EVENT = "boba-bear:delivery-context";
 
-export type DeliveryContextSource = "manual_pin" | "saved_address" | "device_location";
+export type DeliveryContextSource =
+  | "manual_pin"
+  | "saved_address"
+  | "device_location"
+  | "location_search";
 
 export type DeliveryContext = Readonly<{
   postalCode: string;
@@ -39,7 +43,10 @@ function normalizeContext(raw: unknown): DeliveryContext {
   const postalCode = typeof obj.postalCode === "string" && isValidPin(obj.postalCode) ? obj.postalCode : "";
   const displayLabel = typeof obj.displayLabel === "string" ? obj.displayLabel : "";
   const source =
-    obj.source === "saved_address" || obj.source === "device_location" || obj.source === "manual_pin"
+    obj.source === "saved_address" ||
+    obj.source === "device_location" ||
+    obj.source === "manual_pin" ||
+    obj.source === "location_search"
       ? obj.source
       : "manual_pin";
   const savedAddressId =

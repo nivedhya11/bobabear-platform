@@ -344,6 +344,29 @@ describe("loadConfig — BOBA_BEAR_PAYMENT_PROVIDER", () => {
   });
 });
 
+describe("loadConfig — BOBA_BEAR_LOCATION_PROVIDER", () => {
+  it("accepts omitted selector and optional Google Maps key", () => {
+    const config = loadConfig({
+      processKind: "web",
+      source: source({
+        ...LOCAL_WEB_BASE,
+        BOBA_BEAR_GOOGLE_MAPS_API_KEY: "test-google-maps-server-key",
+      }),
+    });
+    expect(config.environment).toBe("local");
+  });
+
+  it("rejects an unknown location provider selector", () => {
+    const issues = issuesOf(() =>
+      loadConfig({
+        processKind: "web",
+        source: source({ ...LOCAL_WEB_BASE, BOBA_BEAR_LOCATION_PROVIDER: "mapbox" }),
+      }),
+    );
+    expect(issues.some((i) => i.key === "BOBA_BEAR_LOCATION_PROVIDER")).toBe(true);
+  });
+});
+
 describe("loadConfig — BOBA_BEAR_ALLOW_UNSAFE_ADAPTERS", () => {
   it.each([
     ["local", true],

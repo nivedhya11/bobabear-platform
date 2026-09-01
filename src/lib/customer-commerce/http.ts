@@ -14,6 +14,7 @@ export type CommerceRequestOptions = Readonly<{
   query?: Readonly<Record<string, string | undefined>>;
   /** Attach guest cart token when the operation accepts it. */
   guestToken?: boolean;
+  signal?: AbortSignal;
 }>;
 
 export type CommerceHttpResult<T> =
@@ -62,6 +63,7 @@ export async function commerceRequest<T>(
       credentials: "same-origin",
       headers,
       body: options.body === undefined ? undefined : JSON.stringify(options.body),
+      signal: options.signal,
     });
   } catch {
     return { ok: false, code: "NETWORK_ERROR", status: 0 };
