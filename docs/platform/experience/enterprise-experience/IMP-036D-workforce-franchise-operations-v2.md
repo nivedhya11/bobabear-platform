@@ -30,8 +30,12 @@ accepted orders, delivery actions, and operational issues. It does not invent an
 
 **Orders** provides an actionable queue with useful filters/groupings, order age, amount,
 fulfilment/delivery type, detail, and existing lifecycle commands. Order detail organizes order
-identity, customer fulfilment/delivery details, line items, payment context, Delivery, and allowed
-actions/recovery around operator work.
+identity, customer fulfilment/delivery details, line items, payment/refund status, Delivery, relevant
+financial-document/read context, and allowed actions/recovery around operator work. Where accepted
+authority and effective permissions permit, that includes refund action/recovery, existing Order
+cancellation, notification resend, and relevant Delivery recovery. Planning does not invent the API
+or transport; the IMP-036D architecture gate must map each control to accepted commands/transports
+and may propose only a properly authorized bounded workforce transport gap.
 
 **Delivery** integrates accepted booking/coordination/recovery projections. **Operational Status**
 uses the accepted IMP-036 workforce-safe projection and excludes engineering secrets.
@@ -42,7 +46,9 @@ uses the accepted IMP-036 workforce-safe projection and excludes engineering sec
 2. Identify and open work needing attention from Today or the Orders queue.
 3. Inspect an Order and execute only accepted lifecycle commands.
 4. Coordinate or recover Delivery through accepted states and commands.
-5. Inspect safe operational health and use correlation identifiers for support escalation.
+5. Perform permitted support recovery—refund, cancellation, notification resend, and relevant
+   financial-document review—without creating a second lifecycle or authority.
+6. Inspect safe operational health and use correlation identifiers for support escalation.
 
 ## Reused authority and implications
 
@@ -51,6 +57,18 @@ Reuse accepted workforce session/principal, existing roles, effective permission
 Delivery authority, and IMP-036 operational-status projection. Navigation derives from effective
 permissions, never hard-coded role names. Existing operations APIs are expected to be composed rather
 than replaced; no transport/schema/provider change is authorized by this plan.
+
+Existing permission gates include `order.read`, `order.cancel`, `payment.refund`,
+`payment.refund.read`, `notification.resend`, and applicable `delivery.*` keys. Their current
+server-derived scope remains authoritative; this plan creates no permission or role.
+
+IMP-036D architecture must assess whether accepted Order and Delivery authority can truthfully
+support the required kitchen/store operating workflow. It must not fabricate UI-only
+`PREPARING`, `READY`, or equivalent states and must not silently extend Order. If enterprise
+workflow requires preparation/readiness state that is not canonically represented, the architecture
+status is `DECISION_REQUIRED` and must determine whether that truth belongs in the existing Order
+lifecycle, a separate preparation/fulfilment authority, or is unnecessary for BOBA V1. This is a
+deferred product/domain architecture assessment, not implementation authorization.
 
 Direct URL/API authorization remains authoritative. Customer and payment data is minimized by task
 and permission. Arbitrary multi-outlet franchise administration without brand-wide authority is a
@@ -71,16 +89,21 @@ destructive or high-risk confirmation, and safe IMP-036 correlation.
 - Workforce pages contain no customer promotional chrome or customer SEO presentation.
 - Today and queues show only accepted operational truth, not fabricated KPIs.
 - Order/Delivery actions preserve lifecycle, permission, scope, idempotency, and concurrency rules.
+- Existing support/refund/cancellation/notification/financial-document capabilities appear only
+  when accepted authority, permission, and scope permit them.
+- Architecture records a truthful preparation/readiness assessment and raises `DECISION_REQUIRED`
+  if current authority cannot support the required workflow.
 - Each persona receives a coherent permission-driven workspace and direct URLs remain secure.
 - Operational Status is useful without leaking secret engineering diagnostics.
 - Responsive/accessibility/recovery and exact-candidate Founder UAT checks pass.
 
 ## Dependencies, non-goals, and deferred decisions
 
-Depends on IMP-036A, accepted IMP-029/030/031/032/036, and precedes IMP-036E/F. Non-goals: new Order
-states such as PREPARING/READY, new Delivery lifecycle, invented analytics, new RBAC, arbitrary
-multi-outlet scope, provider integration, schema, service, or final design. Any proven projection gap
-is deferred to architecture lock.
+Depends on IMP-036A, accepted IMP-027–036 support/financial/operations/delivery/notification
+capabilities, and precedes IMP-036E/F. Non-goals: implementing a new Order, preparation, or Delivery
+lifecycle in planning; invented analytics; new RBAC; arbitrary multi-outlet scope; provider
+integration; schema; service; or final design. Any proven projection or domain-authority gap is
+deferred to architecture lock and the required preparation/readiness assessment.
 
 Figma is not required initially; later visual amendments cannot redefine lifecycle, permission,
 scope, or operational truth.

@@ -1663,6 +1663,9 @@ export function evaluateEnterpriseExperiencePlanningCheckpoint(checkpoint) {
     figmaRequiredNow: false, programmeArtifact: true, sliceArtifactCount: 7,
     allPlanned: true, allNotActivated: true, allNotAuthorized: true, allNotStarted: true,
     allArchitectureNotLocked: true, allFounderUatRequired: true,
+    customerSliceOrderCorrect: true, workforceHubPlanned: true,
+    teamAdministrationPlanned: true, supportRefundPlanned: true,
+    preparationAssessmentPlanned: true, navigationAvailabilityRule: true,
   };
   for (const [key, value] of Object.entries(expected)) {
     if (checkpoint[key] !== value) {
@@ -10795,8 +10798,8 @@ function checkEnterpriseExperiencePlanning(roadmap, state, architecture, decisio
   const programmeRel = "docs/platform/experience/enterprise-experience/README.md";
   const sliceRels = [
     "IMP-036A-multi-portal-experience-foundation.md",
-    "IMP-036B-customer-commerce-experience-v2.md",
-    "IMP-036C-customer-account-onboarding-address-location.md",
+    "IMP-036B-customer-account-onboarding-address-location.md",
+    "IMP-036C-customer-commerce-experience-v2.md",
     "IMP-036D-workforce-franchise-operations-v2.md",
     "IMP-036E-store-operations-management.md",
     "IMP-036F-catalog-menu-pricing-promotions.md",
@@ -10804,6 +10807,7 @@ function checkEnterpriseExperiencePlanning(roadmap, state, architecture, decisio
   ].map((name) => `docs/platform/experience/enterprise-experience/${name}`);
   const programme = resolveExactRelativeFile(programmeRel);
   const slices = sliceRels.map((relative) => resolveExactRelativeFile(relative));
+  const programmeText = programme ? readFileSync(programme, "utf8") : "";
   const sliceTexts = slices.filter(Boolean).map((absolute) => readFileSync(absolute, "utf8"));
   const stateLifecyclePattern = (id) => new RegExp(`${id}:\\s*PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED`);
   const roadmapLifecyclePattern = (id) => new RegExp(`\\|\\s*${id}\\s*\\|[^\\n]+\\|\\s*PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED\\s*\\|`);
@@ -10821,7 +10825,7 @@ function checkEnterpriseExperiencePlanning(roadmap, state, architecture, decisio
     imp037: /IMP-037\s*\|\s*Backup, Restore & Migration Readiness\s*\|\s*PLANNED/.test(futureSection) ? "PLANNED" : "",
     architectureVersion: architecture?.meta.architectureVersion,
     decisionRegisterVersion: decision?.meta.decisionRegisterVersion,
-    figmaRequiredNow: programme ? !/FIGMA_REQUIRED_FOR_INITIAL_IMPLEMENTATION\s*=\s*NO/.test(readFileSync(programme, "utf8")) : true,
+    figmaRequiredNow: programme ? !/FIGMA_REQUIRED_FOR_INITIAL_IMPLEMENTATION\s*=\s*NO/.test(programmeText) : true,
     programmeArtifact: programme !== null,
     sliceArtifactCount: slices.filter(Boolean).length,
     allPlanned: sliceIds.every((id) => roadmapLifecyclePattern(id).test(futureSection) && stateLifecyclePattern(id).test(stateAcceptance)),
@@ -10830,6 +10834,34 @@ function checkEnterpriseExperiencePlanning(roadmap, state, architecture, decisio
     allNotStarted: sliceTexts.every((text) => /Implementation:\s*NOT_AUTHORIZED \/ NOT_STARTED/.test(text)),
     allArchitectureNotLocked: sliceTexts.every((text) => /Architecture:\s*NOT_LOCKED/.test(text)),
     allFounderUatRequired: sliceTexts.every((text) => /Founder UAT required:\s*YES/.test(text)),
+    customerSliceOrderCorrect:
+      /\|\s*IMP-036B\s*\|\s*Customer Account, Onboarding, Address & Location Experience\s*\|/.test(futureSection) &&
+      /\|\s*IMP-036C\s*\|\s*Customer Commerce Experience V2\s*\|/.test(futureSection) &&
+      /Capability:\s*IMP-036B — Customer Account, Onboarding, Address & Location Experience/.test(sliceTexts[1] ?? "") &&
+      /Capability:\s*IMP-036C — Customer Commerce Experience V2/.test(sliceTexts[2] ?? "") &&
+      /IMP-036B\s+Customer Account, Onboarding, Address & Location Experience\s*\n→ IMP-036C\s+Customer Commerce Experience V2/.test(programmeText),
+    workforceHubPlanned:
+      /\/workforce\/.*landing\/application-selection hub/s.test(sliceTexts[0] ?? "") &&
+      /currently\s+implemented\/authorized destinations derived from effective permissions and scope/s.test(sliceTexts[0] ?? "") &&
+      /one existing canonical workforce authentication\/session authority/.test(sliceTexts[0] ?? ""),
+    teamAdministrationPlanned:
+      ["access.membership.*", "access.role_assignment.*", "access.effective_permissions.*", "access.audit.read"]
+        .every((token) => (sliceTexts[4] ?? "").includes(token)) &&
+      /Team\s*\n\s*├── Members\s*\n\s*└── Access/.test(sliceTexts[4] ?? ""),
+    supportRefundPlanned:
+      /refund action\/recovery/.test(sliceTexts[3] ?? "") &&
+      /existing Order\s+cancellation/s.test(sliceTexts[3] ?? "") &&
+      /notification resend/.test(sliceTexts[3] ?? "") &&
+      /Delivery recovery/.test(sliceTexts[3] ?? "") &&
+      /financial-document\/read context/.test(sliceTexts[3] ?? ""),
+    preparationAssessmentPlanned:
+      /DECISION_REQUIRED/.test(sliceTexts[3] ?? "") &&
+      /`PREPARING`, `READY`/.test(sliceTexts[3] ?? "") &&
+      /separate preparation\/fulfilment authority/.test(sliceTexts[3] ?? "") &&
+      /unnecessary for BOBA V1/.test(sliceTexts[3] ?? ""),
+    navigationAvailabilityRule:
+      /NAVIGATION_MUST_NOT_ADVERTISE_UNIMPLEMENTED_CAPABILITIES/.test(programmeText) &&
+      /must not show dead links for IMP-036D\/E\/F\/G/.test(programmeText),
     d374Exists: /\|\s*D-374\s*\|/.test(decision?.text ?? ""),
   });
   if (!checkpoint.ok) fail(checkpoint.code, checkpoint.message);

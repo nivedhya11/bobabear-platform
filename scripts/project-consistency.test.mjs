@@ -6123,7 +6123,11 @@ describe("Enterprise Experience planning checkpoint", () => {
     architectureVersion: "ARCH-R19", decisionRegisterVersion: "DR-15",
     figmaRequiredNow: false, programmeArtifact: true, sliceArtifactCount: 7,
     allPlanned: true, allNotActivated: true, allNotAuthorized: true, allNotStarted: true,
-    allArchitectureNotLocked: true, allFounderUatRequired: true, d374Exists: false,
+    allArchitectureNotLocked: true, allFounderUatRequired: true,
+    customerSliceOrderCorrect: true, workforceHubPlanned: true,
+    teamAdministrationPlanned: true, supportRefundPlanned: true,
+    preparationAssessmentPlanned: true, navigationAvailabilityRule: true,
+    d374Exists: false,
   });
 
   it("supports only the R96/S94 planning-only checkpoint", () => {
@@ -6144,6 +6148,12 @@ describe("Enterprise Experience planning checkpoint", () => {
       ["allNotStarted", false],
       ["sliceArtifactCount", 6],
       ["figmaRequiredNow", true],
+      ["customerSliceOrderCorrect", false],
+      ["workforceHubPlanned", false],
+      ["teamAdministrationPlanned", false],
+      ["supportRefundPlanned", false],
+      ["preparationAssessmentPlanned", false],
+      ["navigationAvailabilityRule", false],
       ["d374Exists", true],
     ]) {
       assert.equal(

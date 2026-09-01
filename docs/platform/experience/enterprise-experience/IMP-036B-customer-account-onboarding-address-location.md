@@ -1,13 +1,13 @@
 ---
 Status: PLANNED CAPABILITY CONTRACT
-Capability: IMP-036C — Customer Account, Onboarding, Address & Location Experience
+Capability: IMP-036B — Customer Account, Onboarding, Address & Location Experience
 Lifecycle: PLANNED / NOT_ACTIVATED
 Architecture: NOT_LOCKED
 Implementation: NOT_AUTHORIZED / NOT_STARTED
 Founder UAT required: YES
 ---
 
-# IMP-036C — Customer Account, Onboarding, Address & Location Experience
+# IMP-036B — Customer Account, Onboarding, Address & Location Experience
 
 ## Purpose, users, and problem
 
@@ -69,7 +69,7 @@ Reuse accepted Customer Identity, Profile, Address, Serviceability, Orders, and 
 authority. Existing Profile/Address schema is expected to suffice; schema/API changes are not
 authorized. Authentication and customer ownership checks remain server-authoritative.
 
-No location provider is selected. IMP-036C architecture must deliberately decide autocomplete,
+No location provider is selected. IMP-036B architecture must deliberately decide autocomplete,
 geocoding/reverse-geocoding/place details, India/PIN quality, browser/server responsibility,
 billing/quotas/key restrictions, privacy, fallback, and a minimal search abstraction—without a
 speculative provider framework.
@@ -95,7 +95,7 @@ concurrent edits, pending/success/failure, and destructive address deletion conf
 
 ## Dependencies, non-goals, and deferred decisions
 
-Depends on IMP-036A/B and accepted Profile/Address/Serviceability. Non-goals: provider selection,
+Depends on IMP-036A and accepted Profile/Address/Serviceability. Non-goals: provider selection,
 geospatial coverage authority, account-erasure semantics, forced onboarding completion, new auth,
 or speculative schema/API additions. Location provider policy is an explicit architecture decision
 at activation.

@@ -20,8 +20,12 @@ without creating a new deployable topology.
 
 - **Customer shell:** customer navigation; customer ticker/footer only where appropriate;
   customer restaurant/SEO metadata; landing, order, and account destinations.
-- **Workforce shell:** operational identity/navigation, dense task layout, and reserved destinations
-  for IMP-036D/E/F; no customer promotion, ticker/footer, or customer SEO metadata.
+- **Workforce shell:** operational identity/navigation, dense task layout, and a coherent
+  `/workforce/` landing/application-selection hub or architecture-equivalent outcome; no customer
+  promotion, ticker/footer, or customer SEO metadata. The hub exposes only real, currently
+  implemented/authorized destinations derived from effective permissions and scope. Future
+  destinations may include Operations, Store Management, Commercial/Menu Management, and
+  Administration, but they must not appear as dead links before their owning capabilities exist.
 - **Administration shell:** distinct administration identity, navigation, and hierarchy; may reuse
   enterprise primitives with Workforce without becoming the same experience.
 - **Root:** sufficiently neutral to select or enter the appropriate surface without customer chrome
@@ -37,16 +41,20 @@ constraints.
 
 1. A user enters a known Customer, Workforce, or Administration URL and receives only that
    surface's identity and navigation.
-2. An authenticated enterprise principal sees destinations/actions derived from effective
-   permissions and scope, including an authorized context switcher when needed.
-3. Direct navigation to a denied or absent resource returns the accepted 401/403/non-disclosing-404
+2. After workforce authentication, an enterprise principal reaches a coherent authorized
+   destination or hub without needing to know a deep URL. Exact route/redirect realization is
+   deferred to the IMP-036A architecture gate.
+3. An authenticated enterprise principal sees only available destinations/actions derived from
+   effective permissions and scope, including an authorized context switcher when needed.
+4. Direct navigation to a denied or absent resource returns the accepted 401/403/non-disclosing-404
    behavior, independent of menu visibility.
-4. Responsive navigation preserves current task context and safe back/close behavior.
+5. Responsive navigation preserves current task context and safe back/close behavior.
 
 ## Reused authority and implications
 
-Reuse existing authentication/session authority, RBAC/effective-permission authority, static Next
-export constraints, design tokens/assets, operations/admin transports, and current runtime topology.
+Reuse the one existing canonical workforce authentication/session authority,
+RBAC/effective-permission authority, static Next export constraints, design tokens/assets,
+operations/admin transports, and current runtime topology.
 
 ```text
 expected_schema_change = NO
@@ -77,6 +85,10 @@ Failures should expose safe correlation support from IMP-036 without leaking dia
 - Three recognizable application boundaries exist without a micro-frontend or new service.
 - Shared primitives behave consistently while preserving surface-specific information hierarchy.
 - Menus and context selection are permission/scope aware; direct URLs remain independently secure.
+- Successful workforce login leads to a coherent authorized destination/hub without customer chrome
+  or knowledge of a deep URL.
+- Navigation contains no destination for an unimplemented capability, even when a future shell slot
+  or configuration point exists.
 - Existing authorized workflows and practical URLs remain reachable.
 - Focus, keyboard, screen-reader, responsive, and recovery behavior pass focused checks.
 - Exact-candidate independent technical acceptance and Founder UAT pass.

@@ -106,7 +106,10 @@ BOBA Operations
 │   ├── Assortment
 │   ├── Operating Status
 │   ├── Hours
-│   └── Serviceability
+│   ├── Serviceability
+│   └── Team
+│       ├── Members
+│       └── Access
 ├── Menu & Products
 ├── Pricing & Promotions
 └── Operational Status
@@ -130,6 +133,16 @@ BOBA Administration
 ```
 
 These are navigation and workflow targets, not authorization bypasses or new domain truth.
+
+```text
+NAVIGATION_MUST_NOT_ADVERTISE_UNIMPLEMENTED_CAPABILITIES
+```
+
+The information architecture describes the programme's planned end state. At every intermediate
+slice, user navigation exposes only real, currently available destinations that the principal is
+authorized to access. Shells may reserve architecture slots or configuration for future slices, but
+must not show dead links for IMP-036D/E/F/G before those capabilities exist. Direct URL/API
+authorization remains authoritative.
 
 ## 5. Shared experience foundation
 
@@ -188,8 +201,8 @@ does not create `franchise_owner`, roles, permissions, or new scope semantics.
 
 ```text
 IMP-036A  Multi-Portal Experience Foundation
-→ IMP-036B  Customer Commerce Experience V2
-→ IMP-036C  Customer Account, Onboarding, Address & Location Experience
+→ IMP-036B  Customer Account, Onboarding, Address & Location Experience
+→ IMP-036C  Customer Commerce Experience V2
 → IMP-036D  Workforce & Franchise Operations Portal V2
 → IMP-036E  Store Operations Management
 → IMP-036F  Catalog, Menu, Pricing & Promotions Management
@@ -200,8 +213,9 @@ IMP-036A  Multi-Portal Experience Foundation
 → IMP-040  Launch Validation & Cutover
 ```
 
-IMP-036A establishes shell separation and primitives. IMP-036B matures customer commerce; IMP-036C
-adds coherent account/location experience; IMP-036D creates the daily operations workspace;
+IMP-036A establishes shell separation and primitives. IMP-036B establishes coherent account,
+address, location, and Serviceability experience; IMP-036C matures customer commerce on that
+foundation; IMP-036D creates the daily operations workspace;
 IMP-036E adds outlet management; IMP-036F adds commercial configuration; IMP-036G matures
 administration. Repository policy remains one active product slice; this sequence does not permit
 concurrent activation.
@@ -219,13 +233,15 @@ refinements may receive bounded Founder visual review.
 Deferred until the relevant slice architecture gate:
 
 - location-search/map provider, browser/server responsibility, privacy, quotas, fallbacks, and PIN
-  evidence quality for IMP-036C;
+  evidence quality for IMP-036B;
 - arbitrary multi-outlet franchise administration without brand-wide authority;
 - media/object-storage architecture if true media management is required;
 - exact route, API, or schema changes where accepted authority does not already provide the needed
   behavior.
 
-The programme plan does not authorize new Order or Delivery lifecycles; loyalty/rewards;
+The programme plan does not authorize new Order, preparation, or Delivery lifecycles; IMP-036D
+architecture must assess preparation/readiness needs and raise `DECISION_REQUIRED` if accepted
+authority cannot truthfully support the required workflow. Other non-goals remain loyalty/rewards;
 subscriptions; customer chat; autonomous AI ordering; arbitrary permission editing; new franchise
 RBAC; geospatial Serviceability authority; provider selection; media/object-storage platform;
 micro-frontends; deployable services; major analytics/reporting; an external observability vendor;
@@ -234,8 +250,8 @@ production infrastructure work; or activation of IMP-037–040.
 ## 11. Slice contracts
 
 - [IMP-036A — Multi-Portal Experience Foundation](./IMP-036A-multi-portal-experience-foundation.md)
-- [IMP-036B — Customer Commerce Experience V2](./IMP-036B-customer-commerce-experience-v2.md)
-- [IMP-036C — Customer Account, Onboarding, Address & Location Experience](./IMP-036C-customer-account-onboarding-address-location.md)
+- [IMP-036B — Customer Account, Onboarding, Address & Location Experience](./IMP-036B-customer-account-onboarding-address-location.md)
+- [IMP-036C — Customer Commerce Experience V2](./IMP-036C-customer-commerce-experience-v2.md)
 - [IMP-036D — Workforce & Franchise Operations Portal V2](./IMP-036D-workforce-franchise-operations-v2.md)
 - [IMP-036E — Store Operations Management](./IMP-036E-store-operations-management.md)
 - [IMP-036F — Catalog, Menu, Pricing & Promotions Management](./IMP-036F-catalog-menu-pricing-promotions.md)

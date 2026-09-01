@@ -1058,8 +1058,8 @@ consume or remap IMP-029 → IMP-040 identities and is `COMPLETE_AND_ACCEPTED`.
 | IMP | Capability | Lifecycle |
 |---|---|---|
 | IMP-036A | Multi-Portal Experience Foundation | PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED |
-| IMP-036B | Customer Commerce Experience V2 | PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED |
-| IMP-036C | Customer Account, Onboarding, Address & Location Experience | PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED |
+| IMP-036B | Customer Account, Onboarding, Address & Location Experience | PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED |
+| IMP-036C | Customer Commerce Experience V2 | PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED |
 | IMP-036D | Workforce & Franchise Operations Portal V2 | PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED |
 | IMP-036E | Store Operations Management | PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED |
 | IMP-036F | Catalog, Menu, Pricing & Promotions Management | PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED |
@@ -1077,8 +1077,8 @@ Administration applications. Its seven slice contracts are supporting planning a
 locked capability architecture:
 
 1. [IMP-036A — Multi-Portal Experience Foundation](./experience/enterprise-experience/IMP-036A-multi-portal-experience-foundation.md)
-2. [IMP-036B — Customer Commerce Experience V2](./experience/enterprise-experience/IMP-036B-customer-commerce-experience-v2.md)
-3. [IMP-036C — Customer Account, Onboarding, Address & Location Experience](./experience/enterprise-experience/IMP-036C-customer-account-onboarding-address-location.md)
+2. [IMP-036B — Customer Account, Onboarding, Address & Location Experience](./experience/enterprise-experience/IMP-036B-customer-account-onboarding-address-location.md)
+3. [IMP-036C — Customer Commerce Experience V2](./experience/enterprise-experience/IMP-036C-customer-commerce-experience-v2.md)
 4. [IMP-036D — Workforce & Franchise Operations Portal V2](./experience/enterprise-experience/IMP-036D-workforce-franchise-operations-v2.md)
 5. [IMP-036E — Store Operations Management](./experience/enterprise-experience/IMP-036E-store-operations-management.md)
 6. [IMP-036F — Catalog, Menu, Pricing & Promotions Management](./experience/enterprise-experience/IMP-036F-catalog-menu-pricing-promotions.md)
@@ -1092,10 +1092,13 @@ IMPLEMENTATION_AUTHORIZED: NO
 FOUNDER_UAT_REQUIRED: YES for each slice
 ```
 
-The required order is IMP-036A → B → C → D → E → F → G → IMP-037. Provider selection for
-location, arbitrary multi-outlet franchise RBAC, and media/object-storage architecture remain
-deferred decisions. No new domain lifecycle, API, schema, provider, role, permission, service,
-micro-frontend, or application implementation is authorized by GTM-R96.
+The required order is IMP-036A → IMP-036B Account/Location → IMP-036C Commerce V2 → IMP-036D → E
+→ F → G → IMP-037. Account/location/serviceability experience therefore precedes the mature
+commerce flow that depends on it. Provider selection for location, arbitrary multi-outlet franchise
+RBAC, media/object-storage architecture, and any preparation/readiness domain change remain deferred
+decisions. Navigation must not advertise unimplemented capabilities. No new domain lifecycle, API,
+schema, provider, role, permission, service, micro-frontend, or application implementation is
+authorized by GTM-R96.
 
 ### 5.0 IMP-028A — Food Direct UX Foundation (COMPLETE_AND_ACCEPTED)
 
@@ -1477,6 +1480,14 @@ Current public GTM boundary is **IMP-040**, not IMP-035.
   [`experience/enterprise-experience/`](./experience/enterprise-experience/README.md). Initial
   implementation does not require Figma; later visual amendments cannot silently redefine product,
   domain, API, provider, or authorization semantics.
+- Orders IMP-036B Account/Location before IMP-036C Commerce V2 so mature commerce can depend on
+  canonical customer location and Serviceability experience.
+- Plans permission/scope-derived workforce entry, outlet-scoped Team administration over existing
+  IMP-035 authority, existing support/refund workflows in IMP-036D, and an IMP-036D architecture
+  assessment of preparation/readiness needs without creating a lifecycle state or implementation.
+- Records `NAVIGATION_MUST_NOT_ADVERTISE_UNIMPLEMENTED_CAPABILITIES`: navigation may expose only
+  real, available destinations authorized for the principal; direct URL/API authorization remains
+  authoritative.
 - Defers location-provider selection, arbitrary multi-outlet franchise RBAC, and media/object-storage
   architecture. Creates no D-374 and leaves ARCH-R19 / DR-15 unchanged.
 - Supersedes GTM-R95 for current next-slice planning only; accepted history remains unchanged.

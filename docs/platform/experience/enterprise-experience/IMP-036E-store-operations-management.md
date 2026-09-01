@@ -24,7 +24,10 @@ Store
 ├── Assortment
 ├── Operating Status
 ├── Hours
-└── Serviceability
+├── Serviceability
+└── Team
+    ├── Members
+    └── Access
 ```
 
 - **Overview:** selected outlet identity/context, operating state, next opening when existing data
@@ -38,6 +41,11 @@ Store
   authority.
 - **Serviceability:** manage accepted PIN/postal-code coverage; any future map is a projection, never
   polygon/geospatial authority.
+- **Team:** outlet-scoped membership, access, effective-permission, and audit workflows only where
+  existing IMP-035/RBAC authority permits. Reuse `access.membership.*`,
+  `access.role_assignment.*`, `access.effective_permissions.*`, and `access.audit.read` with current
+  trusted scope, delegation-ceiling, and privilege-escalation protections. This is a focused Store
+  experience over canonical Access Control authority, not a second access-control domain.
 
 ## Primary workflows
 
@@ -47,6 +55,8 @@ Store
 4. Execute a permitted operating-status transition with consequence confirmation.
 5. Edit/validate weekly hours and closed days.
 6. Inspect/manage PIN-authoritative Serviceability within permission and scope.
+7. Review outlet Team members and administer permitted membership/access changes within the
+   manager's effective outlet scope and delegation ceiling.
 
 ## Reused authority and implications
 
@@ -55,6 +65,9 @@ assortment/availability, outlet operating state, schedules, and Serviceability. 
 and schemas are expected to remain authoritative; a future architecture gate must inventory actual
 commands/projections before promising UI. This plan adds no endpoints, bulk semantics, persistence,
 geospatial policy, roles, or permissions.
+
+IMP-036G may expose the same canonical access authority through richer hierarchy-wide governance
+workflows; IMP-036E does not duplicate or supersede it.
 
 ## Responsive, accessibility, and state requirements
 
@@ -73,13 +86,16 @@ and destructive/high-impact confirmation. Use safe IMP-036 correlation where app
   presented as distinct accepted concepts.
 - Mutations preserve accepted validation/concurrency/audit behavior and recover from stale state.
 - Serviceability stays PIN-authoritative; no map implies coverage truth.
+- Authorized outlet/franchise managers can administer only their outlet workforce through existing
+  membership, assignment, effective-permission, and audit authority.
 - Responsive/accessibility/recovery and exact-candidate Founder UAT checks pass.
 
 ## Dependencies, non-goals, and deferred decisions
 
-Depends on IMP-036A/D and accepted outlet/commerce/serviceability authority. Non-goals: new outlet
-lifecycle, bulk mutation without existing authority, geospatial polygons, provider choice, schema,
-new permissions/roles, or analytics. Exact commands and any transport gaps are deferred to the
+Depends on IMP-036A/D and accepted outlet/commerce/serviceability/IMP-035 access authority.
+Non-goals: new outlet lifecycle, bulk mutation without existing authority, geospatial polygons,
+provider choice, schema, new permissions/roles, a duplicate access-control domain, hierarchy-wide
+Admin replacement, or analytics. Exact commands and any transport gaps are deferred to the
 architecture gate.
 
 Figma is not required initially; visual refinements may not change outlet, permission, mutation, or

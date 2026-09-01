@@ -360,13 +360,17 @@ IMP-036A–G between accepted IMP-036 and existing IMP-037. Accepted reality is 
 `acceptedThrough = IMP-036`, `currentProductSlice = NONE`, and `pendingAcceptance = NONE`.
 `nextProductSlice` becomes IMP-036A — Multi-Portal Experience Foundation, but IMP-036A is not
 activated. IMP-036A–G and IMP-037 remain `PLANNED` / `NOT_ACTIVATED` / `NOT_AUTHORIZED` /
-`NOT_STARTED`; no capability architecture is locked. The supporting programme and seven planned
-slice contracts are indexed at
+`NOT_STARTED`; no capability architecture is locked. Planned sequence is IMP-036A → IMP-036B
+Customer Account, Onboarding, Address & Location Experience → IMP-036C Customer Commerce
+Experience V2 → IMP-036D → E → F → G → IMP-037. The supporting programme and seven planned slice
+contracts are indexed at
 [`experience/enterprise-experience/`](./experience/enterprise-experience/README.md). Initial
 implementation does not require Figma. Location-provider selection, arbitrary multi-outlet
-franchise RBAC, and media/object-storage architecture remain deferred. No D-374 is created;
-ARCH-R19 and DR-15 remain current. Public GTM boundary remains IMP-040. Supersedes STATE-R93 for
-current next-slice planning only; accepted history is unchanged.
+franchise RBAC, media/object-storage architecture, and any preparation/readiness domain change remain
+deferred. Planning also requires permission-derived workforce entry, outlet-scoped Team workflows
+over existing access authority, existing support/refund capability exposure, and no dead navigation.
+No D-374 is created; ARCH-R19 and DR-15 remain current. Public GTM boundary remains IMP-040.
+Supersedes STATE-R93 for current next-slice planning only; accepted history is unchanged.
 
 STATE-R93 records formal acceptance of **IMP-036 — Observability & Operational Controls** for
 independently accepted product `main` merge SHA `68b46a53dc5d1ff84a8493899e713d3ef43db3aa` and tree

@@ -1,13 +1,13 @@
 ---
 Status: PLANNED CAPABILITY CONTRACT
-Capability: IMP-036B — Customer Commerce Experience V2
+Capability: IMP-036C — Customer Commerce Experience V2
 Lifecycle: PLANNED / NOT_ACTIVATED
 Architecture: NOT_LOCKED
 Implementation: NOT_AUTHORIZED / NOT_STARTED
 Founder UAT required: YES
 ---
 
-# IMP-036B — Customer Commerce Experience V2
+# IMP-036C — Customer Commerce Experience V2
 
 ## Purpose, users, and problem
 
@@ -76,7 +76,9 @@ network recovery. Correlation support may use accepted IMP-036 mechanisms withou
 
 ## Dependencies, non-goals, and deferred decisions
 
-Depends on IMP-036A and accepted Direct capabilities. Non-goals: loyalty, rewards, subscriptions,
+Depends on IMP-036A/B and accepted Direct capabilities. IMP-036B supplies the coherent customer
+account, address, location-evidence, and Serviceability experience on which this mature commerce
+flow depends. Non-goals: loyalty, rewards, subscriptions,
 favorites, AI recommendations, autonomous reorder semantics, marketing personalization, chat, new
 provider selection, new lifecycle states, or invented analytics. Route/component composition and
 any proven transport gap are deferred to architecture lock.
