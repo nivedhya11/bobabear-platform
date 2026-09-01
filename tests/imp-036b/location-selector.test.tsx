@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -72,5 +72,44 @@ describe("LocationSelector", () => {
     expect(screen.getByRole("heading", { name: /Select delivery location/i })).toBeInTheDocument();
     expect(screen.queryByText("Enter PIN manually")).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/PIN code/i)).not.toBeInTheDocument();
+  });
+
+  it("re-runs autocomplete when provider status resolves after early typing", async () => {
+    const user = userEvent.setup();
+    let resolveStatus: (value: unknown) => void = () => {};
+    getLocationProviderStatus.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveStatus = resolve;
+        }),
+    );
+    autocompleteLocation.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        suggestions: [{ placeId: "place-isbt", label: "ISBT, Dehradun, Uttarakhand, India" }],
+      },
+    });
+
+    render(<LocationSelector />);
+    await user.click(screen.getByTestId("deliver-to-orientation"));
+    const input = screen.getByPlaceholderText("Search area, street or landmark");
+    await user.type(input, "ISBT");
+    expect(autocompleteLocation).not.toHaveBeenCalled();
+
+    resolveStatus({
+      ok: true,
+      status: 200,
+      data: { configured: true, provider: "google_maps", status: "CONFIGURED" },
+    });
+
+    await waitFor(() =>
+      expect(autocompleteLocation).toHaveBeenCalledWith(
+        expect.objectContaining({ query: "ISBT" }),
+        expect.any(AbortSignal),
+      ),
+    );
+    expect(await screen.findByTestId("location-search-results")).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: /ISBT/i })).toBeInTheDocument();
   });
 });

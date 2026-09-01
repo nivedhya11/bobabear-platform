@@ -1,12 +1,46 @@
 import { test, expect, type Page } from "@playwright/test";
 
+async function installMockGoogleMaps(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    const MapMock = function MapMock(
+      container: HTMLElement,
+      options: { center: { lat: number; lng: number } },
+    ) {
+      const inner = document.createElement("div");
+      inner.className = "gm-style";
+      container.appendChild(inner);
+      return {
+        getCenter: () => ({
+          lat: () => options.center.lat,
+          lng: () => options.center.lng,
+        }),
+        setCenter: () => undefined,
+        addListener: () => undefined,
+      };
+    };
+    const mapsMock = {
+      Map: MapMock,
+      event: {
+        trigger: () => undefined,
+      },
+    };
+    (window as unknown as { google: { maps: typeof mapsMock } }).google = { maps: mapsMock };
+  });
+}
+
 async function openSelector(page: Page): Promise<void> {
   await page.goto("/order/");
-  await page.getByTestId("deliver-to-orientation").click();
+  const viewport = page.viewportSize();
+  const trigger =
+    viewport && viewport.width >= 1024
+      ? "deliver-to-header-orientation"
+      : "deliver-to-orientation";
+  await page.getByTestId(trigger).click();
   await expect(page.getByTestId("location-selector-dialog")).toBeVisible();
 }
 
 test("search selection enters map confirmation when Maps JS is configured", async ({ page }) => {
+  await installMockGoogleMaps(page);
   await page.addInitScript(() => {
     (window as Window & { __BOBA_MAPS_JS_CONFIGURED__?: boolean }).__BOBA_MAPS_JS_CONFIGURED__ = true;
   });
@@ -15,7 +49,7 @@ test("search selection enters map confirmation when Maps JS is configured", asyn
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify({ configured: true, provider: "google_maps", status: "CONFIGURED" }),
+      body: JSON.stringify({ ok: true, configured: true, provider: "google_maps", status: "CONFIGURED" }),
     });
   });
 
@@ -24,6 +58,7 @@ test("search selection enters map confirmation when Maps JS is configured", asyn
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({
+        ok: true,
         suggestions: [{ placeId: "place-rajpur", label: "Rajpur Road, Dehradun" }],
       }),
     });
@@ -34,6 +69,7 @@ test("search selection enters map confirmation when Maps JS is configured", asyn
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({
+        ok: true,
         location: {
           displayAddress: "Rajpur Road, Dehradun, Uttarakhand, India",
           postalCode: null,
@@ -55,6 +91,7 @@ test("search selection enters map confirmation when Maps JS is configured", asyn
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({
+        ok: true,
         decision: {
           status: "SERVICEABLE",
           evaluatedAt: "2026-09-01T00:00:00.000Z",
@@ -70,6 +107,52 @@ test("search selection enters map confirmation when Maps JS is configured", asyn
   await page.getByRole("option", { name: "Rajpur Road, Dehradun" }).click();
   await expect(page.getByTestId("delivery-location-map-confirmation")).toBeVisible({ timeout: 15_000 });
   await expect(page.getByText("Enter PIN manually")).toHaveCount(0);
+
+  await expect
+    .poll(async () =>
+      page.evaluate(() => {
+        const container = document.querySelector('[data-testid="delivery-map-container"]');
+        return container?.querySelector(".gm-style") !== null;
+      }),
+    )
+    .toBe(true);
+});
+
+test("provider readiness race: early ISBT query auto-searches once status resolves", async ({ page }) => {
+  await page.addInitScript(() => {
+    (window as Window & { __BOBA_MAPS_JS_CONFIGURED__?: boolean }).__BOBA_MAPS_JS_CONFIGURED__ = true;
+  });
+
+  let releaseStatus: () => void = () => {};
+  const statusGate = new Promise<void>((resolve) => {
+    releaseStatus = resolve;
+  });
+
+  await page.route("**/api/v1/location/status", async (route) => {
+    await statusGate;
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ ok: true, configured: true, provider: "google_maps", status: "CONFIGURED" }),
+    });
+  });
+
+  await page.route("**/api/v1/location/autocomplete", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ok: true,
+        suggestions: [{ placeId: "place-isbt", label: "ISBT, Dehradun, Uttarakhand, India" }],
+      }),
+    });
+  });
+
+  await openSelector(page);
+  await page.getByPlaceholder("Search area, street or landmark").fill("ISBT");
+  releaseStatus();
+  await expect(page.getByTestId("location-search-results")).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole("option", { name: /ISBT/i })).toBeVisible();
 });
 
 test("current location enters map confirmation on mobile viewport", async ({ page, context }) => {
@@ -84,7 +167,7 @@ test("current location enters map confirmation on mobile viewport", async ({ pag
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify({ configured: true, provider: "google_maps", status: "CONFIGURED" }),
+      body: JSON.stringify({ ok: true, configured: true, provider: "google_maps", status: "CONFIGURED" }),
     });
   });
 
@@ -93,6 +176,7 @@ test("current location enters map confirmation on mobile viewport", async ({ pag
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({
+        ok: true,
         location: {
           displayAddress: "Rajpur Road, Dehradun, Uttarakhand, India",
           postalCode: null,
@@ -114,6 +198,7 @@ test("current location enters map confirmation on mobile viewport", async ({ pag
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({
+        ok: true,
         decision: { status: "SERVICEABLE", evaluatedAt: "2026-09-01T00:00:00.000Z" },
       }),
     });
