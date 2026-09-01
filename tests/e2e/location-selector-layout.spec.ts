@@ -52,7 +52,7 @@ async function assertSelectorShell(page: Page): Promise<void> {
   expect(metrics.horizontalOverflow).toBe(false);
 
   await page.getByPlaceholder("Search area, street or landmark").click();
-  await page.getByRole("button", { name: "Close" }).click();
+  await page.getByTestId("location-selector-panel").getByRole("button", { name: "Close", exact: true }).click();
   await expect(dialog).toBeHidden();
 }
 
