@@ -2,11 +2,11 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R91",
-  "acceptedThrough": "IMP-035",
-  "currentProductSlice": "NONE",
+  "stateVersion": "STATE-R90",
+  "acceptedThrough": "IMP-034",
+  "currentProductSlice": "IMP-035",
   "nextProductSlice": "IMP-036",
-  "pendingAcceptance": "NONE",
+  "pendingAcceptance": "IMP-035",
   "governanceHealth": "ALIGNED",
   "lastReviewed": "2026-09-01"
 }
@@ -20,21 +20,21 @@ current-reality authority.
 ## 1. Accepted Position
 
 ```text
-Accepted Through:          IMP-035 — Initial Administration Capabilities
+Accepted Through:          IMP-034 — Meta WhatsApp Cloud API Adapter
 Accepted Inserted Slice:   IMP-005A — Dockerized local application runtime; IMP-026C — Pilot Customer-Commerce UX Hardening; IMP-028A — Food Direct UX Foundation; IMP-028B — Customer Menu Projection + Discovery; IMP-028C — Food Customization; IMP-028D — Desktop Ordering Continuity
-Accepted Range:            IMP-001 → IMP-035 (including IMP-005A and IMP-026C)
+Accepted Range:            IMP-001 → IMP-034 (including IMP-005A and IMP-026C)
 ```
 
 ## 2. Current Work Position
 
 ```text
-Current Product Implementation: NONE
-Pending Acceptance:             NONE
+Current Product Implementation: IMP-035 — Initial Administration Capabilities
+Pending Acceptance:             IMP-035
 Next Product Slice:             IMP-036 — Observability & Operational Controls
-Current Governance Activity:    IMP-035 COMPLETE_AND_ACCEPTED
+Current Governance Activity:    IMP-035 IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
                               (architecture LOCKED; implementation AUTHORIZED /
-                              STARTED / COMPLETE under D-373 / ARCH-R19 / DR-15;
-                              Founder UAT PASS);
+                              STARTED / COMPLETE under D-373 / ARCH-R19 / DR-15);
+                              IMP-034 remains COMPLETE_AND_ACCEPTED;
                               IMP-036 PLANNED / NOT_ACTIVATED.
 Governance Health:              ALIGNED
 ```
@@ -212,31 +212,26 @@ IMP034_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
 IMP034_FORMAL_ACCEPTANCE: ACCEPTED
 IMP034_ACCEPTED_MAIN_SHA: 7e92d1a1ca02ad825229b64f308a8fc555956d25
 IMP034_ACCEPTED_TREE: 772c585e93c78285e5b972d8b8a58c83507e01f8
-IMP-035:                  COMPLETE_AND_ACCEPTED
+IMP-035:                  IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
 IMP-035_ARCHITECTURE:     LOCKED
 IMP-035_ARCHITECTURE_LOCKED: YES
 IMP-035_IMPLEMENTATION:   AUTHORIZED / STARTED / COMPLETE
 IMP-035_IMPLEMENTATION_AUTHORIZED: YES
 IMP-035_STARTED:          YES
 IMP-035_IMPLEMENTATION_COMPLETE: YES
-IMP-035_ACCEPTED:         YES
+IMP-035_ACCEPTED:         NO
 IMP-035_FOUNDER_UAT_REQUIRED: YES
-IMP-035_FOUNDER_UAT:      PASS
+IMP-035_FOUNDER_UAT:      NOT_CLAIMED
 IMP-035_SCHEMA_CHANGE:    NO
 IMP-035_PROVIDER_IO:      NO
 IMP-035_NEW_SERVICE:      NO
 IMP-035_NEW_PERMISSIONS:  NO
 IMP-035_NEW_ROLES:        NO
-IMP035_IMPLEMENTATION_EVIDENCE: COMPLETE
-IMP_035_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
-IMP035_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
-IMP035_FORMAL_ACCEPTANCE: ACCEPTED
-IMP035_ACCEPTED_MAIN_SHA: 7e83d5486665ed1a3847f8484d73deb825946501
-IMP035_ACCEPTED_TREE: 83c318ecd9a4cff86e19f9d35ca5ad42bcff357a
 D-373_CREATED:            YES
 ARCH_R19_REQUIRED:        YES
 ARCH-R19:                 CURRENT
 DR-15:                    CURRENT
+COMPLETION_IS_NOT_ACCEPTANCE: YES
 ```
 
 Capability architecture:
@@ -356,26 +351,6 @@ STATE-R36 record IMP-028B canonical activation without changing decision registe
 architecture. GTM-R39 / STATE-R37 record IMP-028B architecture lock and implementation
 authorization without changing decision register or global architecture.
 
-
-STATE-R91 records formal acceptance of **IMP-035 — Initial Administration Capabilities** after
-independent technical acceptance and Founder UAT PASS for the exact accepted candidate: repository
-`/home/ajoshi/repos/boba-bear-platform`; branch `main`; HEAD
-`7e83d5486665ed1a3847f8484d73deb825946501`; tree `83c318ecd9a4cff86e19f9d35ca5ad42bcff357a`;
-working-tree fingerprint `6f7d01304bbd66835e8dec18ed8c29b87d2c5513d2b23799b53b6bf1c6f88d13`
-(PR 52 merge `642cf7193a8b8419e8abec3bc24b5a76df9c182a`; PR 53 merge
-`7e83d5486665ed1a3847f8484d73deb825946501`; PR CI run 33432064507 SUCCESS; main CI run
-33432564817 SUCCESS; Deploy run 33432564832 SUCCESS). Implementation evidence is **COMPLETE**;
-independent implementation review is **PASS**; independent acceptance evidence is **ACCEPTED**;
-Founder UAT is **PASS**; formal acceptance is recorded (`IMP035_FORMAL_ACCEPTANCE: ACCEPTED`;
-`IMP-035_ACCEPTED: YES`). IMP-035 is `COMPLETE_AND_ACCEPTED`; architecture remains `LOCKED`
-(`IMP-035_ARCHITECTURE_LOCKED: YES`); implementation remains `AUTHORIZED` / `STARTED` / `COMPLETE`.
-Locked boundary facts remain unchanged: `schema_change: NO`, `provider_IO: NO`, `new_service: NO`,
-`new_permissions: NO`, `new_roles: NO`; binding **D-373** / **ARCH-R19** / **ARCH-G25** / **DR-15**
-preserved. `acceptedThrough` advances to IMP-035; `currentProductSlice` and `pendingAcceptance` are
-NONE; `nextProductSlice` remains IMP-036 — Observability & Operational Controls, which remains
-`PLANNED` / `NOT_ACTIVATED` / `NOT_AUTHORIZED` / `NOT_STARTED`. Formal acceptance does **not**
-authorize, start, or activate IMP-036. Supersedes STATE-R90 for the current IMP-035 lifecycle and
-acceptance position.
 
 STATE-R90 records a single founder-authorized **combined** gate for **IMP-035 — Initial
 Administration Capabilities**: capability architecture LOCKED at
@@ -1233,14 +1208,13 @@ Cart → Checkout → Payment → Order
 | IMP-032 | Dehradun Delivery Operating Mode | COMPLETE_AND_ACCEPTED |
 | IMP-033 | Notification Foundation | COMPLETE_AND_ACCEPTED |
 | IMP-034 | Meta WhatsApp Cloud API Adapter | COMPLETE_AND_ACCEPTED |
-| IMP-035 | Initial Administration Capabilities | COMPLETE_AND_ACCEPTED |
 
 ## 5. Acceptance Position
 
 ```text
-acceptedThrough: IMP-035
-pendingAcceptance: NONE
-currentProductSlice: NONE
+acceptedThrough: IMP-034
+pendingAcceptance: IMP-035
+currentProductSlice: IMP-035
 nextProductSlice: IMP-036 — Observability & Operational Controls
 IMP-028: COMPLETE_AND_ACCEPTED
 IMP-028_ACCEPTED: YES
@@ -1383,32 +1357,26 @@ IMP034_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
 IMP034_FORMAL_ACCEPTANCE: ACCEPTED
 IMP034_ACCEPTED_MAIN_SHA: 7e92d1a1ca02ad825229b64f308a8fc555956d25
 IMP034_ACCEPTED_TREE: 772c585e93c78285e5b972d8b8a58c83507e01f8
-IMP-035: COMPLETE_AND_ACCEPTED
+IMP-035: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
 IMP-035_ARCHITECTURE: LOCKED
 IMP-035_ARCHITECTURE_LOCKED: YES
 IMP-035_IMPLEMENTATION: AUTHORIZED / STARTED / COMPLETE
 IMP-035_IMPLEMENTATION_AUTHORIZED: YES
 IMP-035_STARTED: YES
 IMP-035_IMPLEMENTATION_COMPLETE: YES
-IMP-035_ACCEPTED: YES
+IMP-035_ACCEPTED: NO
 IMP-035_FOUNDER_UAT_REQUIRED: YES
-IMP-035_FOUNDER_UAT: PASS
+IMP-035_FOUNDER_UAT: NOT_CLAIMED
 IMP-035_SCHEMA_CHANGE: NO
 IMP-035_PROVIDER_IO: NO
 IMP-035_NEW_SERVICE: NO
 IMP-035_NEW_PERMISSIONS: NO
 IMP-035_NEW_ROLES: NO
-IMP035_IMPLEMENTATION_EVIDENCE: COMPLETE
-IMP_035_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
-IMP035_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
-IMP035_FORMAL_ACCEPTANCE: ACCEPTED
-IMP035_ACCEPTED_MAIN_SHA: 7e83d5486665ed1a3847f8484d73deb825946501
-IMP035_ACCEPTED_TREE: 83c318ecd9a4cff86e19f9d35ca5ad42bcff357a
 D-373_CREATED: YES
 ARCH_R19_REQUIRED: YES
 ARCH-R19: CURRENT
 DR-15: CURRENT
-IMP-036: PLANNED / NOT_ACTIVATED
+COMPLETION_IS_NOT_ACCEPTANCE: YES
 ```
 
 Independent acceptance of IMP-028A **is** claimed and formally reconciled

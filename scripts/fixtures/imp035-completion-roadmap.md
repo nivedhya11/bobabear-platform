@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R93",
-  "acceptedThrough": "IMP-035",
-  "currentProductSlice": "NONE",
+  "roadmapVersion": "GTM-R92",
+  "acceptedThrough": "IMP-034",
+  "currentProductSlice": "IMP-035",
   "nextProductSlice": "IMP-036",
   "gtmBoundary": "IMP-040",
   "lastReviewed": "2026-09-01",
-  "supersedes": "GTM-R92"
+  "supersedes": "GTM-R91"
 }
 -->
 
@@ -290,32 +290,38 @@ IMP-034 locked capability architecture (architecture **ARCHITECTURE_LOCKED**; im
 [`capabilities/IMP-034-meta-whatsapp-cloud-api-adapter.md`](./capabilities/IMP-034-meta-whatsapp-cloud-api-adapter.md)
 
 IMP-035 locked capability architecture (architecture **ARCHITECTURE_LOCKED**; implementation
-**AUTHORIZED** / **STARTED** / **COMPLETE** / `COMPLETE_AND_ACCEPTED`):
+**AUTHORIZED** / **STARTED** / **COMPLETE** / `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`):
 
 [`capabilities/IMP-035-initial-administration-capabilities.md`](./capabilities/IMP-035-initial-administration-capabilities.md)
 
 ## 2. Current Position
 
 ```text
-Accepted Through:     IMP-035 — Initial Administration Capabilities
-Current Product Slice: NONE
+Accepted Through:     IMP-034 — Meta WhatsApp Cloud API Adapter
+Current Product Slice: IMP-035 — Initial Administration Capabilities
 Next Product Slice:    IMP-036 — Observability & Operational Controls
-Pending Acceptance:    NONE
+Pending Acceptance:    IMP-035
 Public GTM Boundary:   IMP-040 — Launch Validation & Cutover
 ```
 
-IMP-035 is `COMPLETE_AND_ACCEPTED`. Architecture remains **ARCHITECTURE_LOCKED**; implementation is
+IMP-034 is `COMPLETE_AND_ACCEPTED`. Architecture remains **ARCHITECTURE_LOCKED**; implementation is
 `AUTHORIZED` / `STARTED` / `COMPLETE`; implementation evidence is **COMPLETE**; independent
-implementation review is **PASS**; independent acceptance evidence is **ACCEPTED**; Founder UAT is
-**PASS**; formal acceptance is recorded (`IMP-035_ACCEPTED: YES`; `IMP035_FORMAL_ACCEPTANCE: ACCEPTED`).
-Accepted product identity is the immutable merge SHA `7e83d5486665ed1a3847f8484d73deb825946501` / tree
-`83c318ecd9a4cff86e19f9d35ca5ad42bcff357a`. **GTM-R93** advances `acceptedThrough` to IMP-035 and
-sets `currentProductSlice = NONE` and `pendingAcceptance = NONE`. Locked boundary facts remain:
-`schema_change: NO`, `provider_IO: NO`, `new_service: NO`, `new_permissions: NO`, `new_roles: NO`;
-binding **D-373** / **ARCH-R19** / **ARCH-G25** / **DR-15** preserved. Founder UAT was **required**
-and is **PASS** (`IMP-035_FOUNDER_UAT_REQUIRED: YES`; `IMP-035_FOUNDER_UAT: PASS`). IMP-036 —
-Observability & Operational Controls remains `PLANNED` / `NOT_ACTIVATED` / `NOT_AUTHORIZED` /
-`NOT_STARTED`; acceptance of IMP-035 does **not** authorize, start, or activate IMP-036.
+implementation review is **PASS**; independent acceptance evidence is **ACCEPTED**; formal acceptance
+is recorded (`IMP-034_ACCEPTED: YES`; `IMP034_FORMAL_ACCEPTANCE: ACCEPTED`). Accepted product
+identity is the immutable merge SHA `7e92d1a1ca02ad825229b64f308a8fc555956d25` / tree
+`772c585e93c78285e5b972d8b8a58c83507e01f8`. **GTM-R91** advances `acceptedThrough` to IMP-034 and
+sets `currentProductSlice = NONE` and `pendingAcceptance = NONE`. Provider strategy remains
+capability-local `DIRECT_META_CLOUD_API_V1` (`BSP: NO`); no `D-373` and no `ARCH-R19`. Locked
+boundary facts remain: `schema_change: YES` (Notifications-owned additive migration
+`0034_meta_whatsapp_adapter` only), `provider_IO: YES`, `new_service: NO`, and
+`async_topology: POSTGRESQL_TRANSACTIONAL_OUTBOX_IN_PROCESS_WORKER`. Founder UAT remains **not
+required** (`IMP-034_FOUNDER_UAT_REQUIRED: NO`); independent technical acceptance with mocked
+provider fixtures was the applicable gate. Meta production onboarding remains external launch
+validation and does **not** block this technical acceptance. **GTM-R92** is a single founder-authorized **combined** gate for IMP-035 that records capability
+architecture lock, implementation **AUTHORIZED** / **STARTED** / **COMPLETE**, and lifecycle
+`IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` under binding **D-373** / ARCH-R19 / ARCH-G25 /
+DR-15. Completion is **not** acceptance. Founder UAT is **required** (`IMP-035_FOUNDER_UAT_REQUIRED:
+YES`). IMP-034 remains `COMPLETE_AND_ACCEPTED`; `acceptedThrough` remains IMP-034.
 IMP-033 remains `COMPLETE_AND_ACCEPTED`. Architecture remains **ARCHITECTURE_LOCKED**; implementation
 is `AUTHORIZED` / `STARTED` / `COMPLETE`; implementation evidence is **COMPLETE**; independent
 implementation review is **PASS**; independent acceptance evidence is **ACCEPTED**; formal acceptance
@@ -427,32 +433,26 @@ IMP034_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
 IMP034_FORMAL_ACCEPTANCE: ACCEPTED
 IMP034_ACCEPTED_MAIN_SHA: 7e92d1a1ca02ad825229b64f308a8fc555956d25
 IMP034_ACCEPTED_TREE: 772c585e93c78285e5b972d8b8a58c83507e01f8
-IMP-035: COMPLETE_AND_ACCEPTED
+IMP-035: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
 IMP-035_ARCHITECTURE: LOCKED
 IMP-035_ARCHITECTURE_LOCKED: YES
 IMP-035_IMPLEMENTATION: AUTHORIZED / STARTED / COMPLETE
 IMP-035_IMPLEMENTATION_AUTHORIZED: YES
 IMP-035_STARTED: YES
 IMP-035_IMPLEMENTATION_COMPLETE: YES
-IMP-035_ACCEPTED: YES
+IMP-035_ACCEPTED: NO
 IMP-035_FOUNDER_UAT_REQUIRED: YES
-IMP-035_FOUNDER_UAT: PASS
+IMP-035_FOUNDER_UAT: NOT_CLAIMED
 IMP-035_SCHEMA_CHANGE: NO
 IMP-035_PROVIDER_IO: NO
 IMP-035_NEW_SERVICE: NO
 IMP-035_NEW_PERMISSIONS: NO
 IMP-035_NEW_ROLES: NO
-IMP035_IMPLEMENTATION_EVIDENCE: COMPLETE
-IMP_035_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
-IMP035_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
-IMP035_FORMAL_ACCEPTANCE: ACCEPTED
-IMP035_ACCEPTED_MAIN_SHA: 7e83d5486665ed1a3847f8484d73deb825946501
-IMP035_ACCEPTED_TREE: 83c318ecd9a4cff86e19f9d35ca5ad42bcff357a
 D-373_CREATED: YES
 ARCH_R19_REQUIRED: YES
 ARCH-R19: CURRENT
 DR-15: CURRENT
-IMP-036: PLANNED / NOT_ACTIVATED
+COMPLETION_IS_NOT_ACCEPTANCE: YES
 ```
 
 IMP-024 architecture remains **ARCHITECTURE_LOCKED**. IMP-024 implementation is
@@ -636,28 +636,10 @@ only). Webhook acknowledgement timing / durable inbox / asynchronous Payment pro
 | IMP-032 | Dehradun Delivery Operating Mode | COMPLETE_AND_ACCEPTED |
 | IMP-033 | Notification Foundation | COMPLETE_AND_ACCEPTED |
 | IMP-034 | Meta WhatsApp Cloud API Adapter | COMPLETE_AND_ACCEPTED |
-| IMP-035 | Initial Administration Capabilities | COMPLETE_AND_ACCEPTED |
 
 ## 4. Current Product Slice
 
-NONE. IMP-035 — Initial Administration Capabilities is `COMPLETE_AND_ACCEPTED` with locked capability
-architecture at
-[`capabilities/IMP-035-initial-administration-capabilities.md`](./capabilities/IMP-035-initial-administration-capabilities.md).
-Architecture remains **ARCHITECTURE_LOCKED** (`IMP-035_ARCHITECTURE_LOCKED: YES`). Implementation is
-`AUTHORIZED` / `STARTED` / `COMPLETE` (`IMP-035_IMPLEMENTATION_AUTHORIZED: YES`;
-`IMP-035_STARTED: YES`; `IMP-035_IMPLEMENTATION_COMPLETE: YES`; `IMP-035_ACCEPTED: YES`).
-Independent acceptance evidence is **ACCEPTED** and formal acceptance is recorded
-(`IMP035_FORMAL_ACCEPTANCE: ACCEPTED`) for immutable merge SHA
-`7e83d5486665ed1a3847f8484d73deb825946501` / tree `83c318ecd9a4cff86e19f9d35ca5ad42bcff357a`.
-Founder UAT is **PASS** (`IMP-035_FOUNDER_UAT_REQUIRED: YES`; `IMP-035_FOUNDER_UAT: PASS`).
-`pendingAcceptance` is NONE. GTM-R92 recorded the combined founder-authorized architecture lock,
-implementation authorization, implementation start, and implementation completion in one gate;
-GTM-R93 records formal acceptance. Locked boundary facts remain: `schema_change: NO`, `provider_IO: NO`,
-`new_service: NO`, `new_permissions: NO`, `new_roles: NO`; binding **D-373** / **ARCH-R19** /
-**ARCH-G25** / **DR-15** preserved. `acceptedThrough` is IMP-035. `nextProductSlice` is IMP-036 —
-Observability & Operational Controls, which remains `PLANNED` / `NOT_ACTIVATED`. Formal acceptance
-of IMP-035 does **not** authorize, start, or activate IMP-036. IMP-034 — Meta WhatsApp Cloud API
-Adapter remains `COMPLETE_AND_ACCEPTED` with locked capability
+NONE. IMP-034 — Meta WhatsApp Cloud API Adapter is `COMPLETE_AND_ACCEPTED` with locked capability
 architecture at
 [`capabilities/IMP-034-meta-whatsapp-cloud-api-adapter.md`](./capabilities/IMP-034-meta-whatsapp-cloud-api-adapter.md).
 Architecture remains **ARCHITECTURE_LOCKED** (`IMP-034_ARCHITECTURE_LOCKED: YES`). Implementation is
@@ -982,6 +964,7 @@ consume or remap IMP-029 → IMP-040 identities and is `COMPLETE_AND_ACCEPTED`.
 
 | IMP | Capability | Lifecycle |
 |---|---|---|
+| IMP-035 | Initial Administration Capabilities | IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE |
 | IMP-036 | Observability & Operational Controls | PLANNED |
 | IMP-037 | Backup, Restore & Migration Readiness | PLANNED |
 | IMP-038 | Security & Privacy Hardening | PLANNED |
@@ -1353,30 +1336,6 @@ Historical GTM-R1 meanings that are **not** current:
 Current public GTM boundary is **IMP-040**, not IMP-035.
 
 ## 9. Roadmap Change Log
-
-### GTM-R93 — 2026-09-01
-
-- Records formal acceptance of **IMP-035 — Initial Administration Capabilities** after independent
-  technical acceptance and Founder UAT PASS for the exact accepted candidate: repository
-  `/home/ajoshi/repos/boba-bear-platform`; branch `main`; HEAD
-  `7e83d5486665ed1a3847f8484d73deb825946501`; tree `83c318ecd9a4cff86e19f9d35ca5ad42bcff357a`;
-  working-tree fingerprint `6f7d01304bbd66835e8dec18ed8c29b87d2c5513d2b23799b53b6bf1c6f88d13`
-  (PR 52 merge `642cf7193a8b8419e8abec3bc24b5a76df9c182a`; PR 53 merge
-  `7e83d5486665ed1a3847f8484d73deb825946501`; PR CI run 33432064507 SUCCESS; main CI run
-  33432564817 SUCCESS; Deploy run 33432564832 SUCCESS). Implementation evidence is **COMPLETE**;
-  independent implementation review is **PASS**; independent acceptance evidence is **ACCEPTED**;
-  Founder UAT is **PASS**; formal acceptance is recorded (`IMP035_FORMAL_ACCEPTANCE: ACCEPTED`;
-  `IMP-035_ACCEPTED: YES`).
-- IMP-035 lifecycle becomes `COMPLETE_AND_ACCEPTED`. Architecture remains `LOCKED`
-  (`IMP-035_ARCHITECTURE_LOCKED: YES`). Locked boundary facts remain unchanged: `schema_change: NO`,
-  `provider_IO: NO`, `new_service: NO`, `new_permissions: NO`, `new_roles: NO`; binding **D-373** /
-  **ARCH-R19** / **ARCH-G25** / **DR-15** preserved.
-- Advances `acceptedThrough = IMP-035`; sets `currentProductSlice = NONE` and
-  `pendingAcceptance = NONE`; preserves `nextProductSlice = IMP-036`. IMP-036 remains `PLANNED` /
-  `NOT_ACTIVATED` / `NOT_AUTHORIZED` / `NOT_STARTED`. Formal acceptance does **not** authorize,
-  start, or activate IMP-036.
-- Supersedes GTM-R92 for the current IMP-035 lifecycle and acceptance position. Product acceptance
-  through IMP-034 is unchanged.
 
 ### GTM-R92 — 2026-09-01
 
