@@ -14,6 +14,8 @@ import "server-only";
 
 import type { IncomingMessage, ServerResponse } from "node:http";
 
+import { evaluateReadiness } from "../../../platform/observability/health";
+
 import { APIError } from "better-auth";
 
 import {
@@ -1267,15 +1269,17 @@ async function handleHealthReady(
     return { operation, safeOutcomeCode: "METHOD_NOT_ALLOWED", httpStatus: 405 };
   }
 
-  try {
-    await deps.persistence.checkAvailability();
-  } catch {
-    sendJson(res, { ok: false }, { status: 503, requestId });
-    return { operation, safeOutcomeCode: "NOT_READY", httpStatus: 503 };
-  }
-
-  sendJson(res, { ok: true }, { status: 200, requestId });
-  return { operation, safeOutcomeCode: "OK", httpStatus: 200 };
+  const readiness = await evaluateReadiness({ persistence: deps.persistence });
+  sendJson(
+    res,
+    { ok: readiness.ok, checks: readiness.checks },
+    { status: readiness.ok ? 200 : 503, requestId },
+  );
+  return {
+    operation,
+    safeOutcomeCode: readiness.ok ? "OK" : "NOT_READY",
+    httpStatus: readiness.ok ? 200 : 503,
+  };
 }
 
 /**

@@ -11,6 +11,8 @@ import "server-only";
 import { randomInt } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
 
+import { evaluateReadiness } from "../../../platform/observability/health";
+
 import { APIError } from "better-auth";
 
 import {
@@ -512,15 +514,21 @@ async function handleHealthReady(
   }
 
   try {
-    await deps.persistence.checkAvailability();
-    await deps.otpProvider.checkReadiness();
+    const readiness = await evaluateReadiness({ persistence: deps.persistence });
+    const checks: Record<string, "ok" | "failed" | "stopped"> = { ...readiness.checks };
+    try {
+      await deps.otpProvider.checkReadiness();
+      checks.otpProvider = "ok";
+    } catch {
+      checks.otpProvider = "failed";
+    }
+    const ok = Object.values(checks).every((status) => status === "ok");
+    sendJson(res, { ok, checks }, { status: ok ? 200 : 503, requestId });
+    return { operation, safeOutcomeCode: ok ? "OK" : "NOT_READY", httpStatus: ok ? 200 : 503 };
   } catch {
-    sendJson(res, { ok: false }, { status: 503, requestId });
+    sendJson(res, { ok: false, checks: { database: "failed" } }, { status: 503, requestId });
     return { operation, safeOutcomeCode: "NOT_READY", httpStatus: 503 };
   }
-
-  sendJson(res, { ok: true }, { status: 200, requestId });
-  return { operation, safeOutcomeCode: "OK", httpStatus: 200 };
 }
 
 /**

@@ -23,12 +23,21 @@ import {
 } from "../auth/workforce";
 import type { WorkforceAuthConfig } from "../auth/shared/types";
 import type { WebConfig, WorkerConfig } from "../../platform/config";
+import {
+  createStructuredLogger,
+  incrementCounter,
+  STANDARD_HTTP_LOG_FIELDS,
+  type StructuredLogger,
+} from "../../platform/observability";
 import { getApplicationPersistence, type Persistence } from "../persistence";
 import { createWorkforceAuthRequestListener, type WorkforceAuthRequestEvent } from "./http/app";
 import type { WorkforceAuthHandle } from "./http/router";
 import type { WorkforcePiiHashSecret } from "./pii";
 
 const DEFAULT_SHUTDOWN_TIMEOUT_MS = 10_000;
+
+const WORKFORCE_AUTH_SERVICE_NAME = "workforce-auth";
+const EXTRA_LOG_FIELDS = ["rateLimitScope"] as const;
 
 export type WorkforceAuthServiceOptions = Readonly<{
   auth: WorkforceAuthConfig;
@@ -42,29 +51,12 @@ export type WorkforceAuthServiceOptions = Readonly<{
   shutdownTimeoutMs?: number;
 }>;
 
-const SAFE_LOG_FIELDS = [
-  "requestId",
-  "operation",
-  "safeOutcomeCode",
-  "httpStatus",
-  "durationMs",
-  "rateLimitScope",
-] as const;
-
-function logSafeEvent(event: WorkforceAuthRequestEvent): void {
-  const safe: Record<string, unknown> = {};
-  for (const field of SAFE_LOG_FIELDS) {
-    const value = event[field];
-    if (value !== undefined) safe[field] = value;
-  }
-  console.log(JSON.stringify(safe));
-}
-
 export class WorkforceAuthService {
   private readonly config: WorkforceAuthServiceOptions;
   private readonly persistence: Persistence;
   private readonly runtime: WorkforceAuthRuntime;
   private readonly server: Server;
+  private readonly logger: StructuredLogger;
 
   private started = false;
   private closed = false;
@@ -74,6 +66,11 @@ export class WorkforceAuthService {
   constructor(config: WorkforceAuthServiceOptions) {
     this.config = config;
     this.persistence = getApplicationPersistence(config.persistenceConfig);
+    this.logger = createStructuredLogger({
+      logLevel: config.persistenceConfig.logLevel,
+      allowFields: [...STANDARD_HTTP_LOG_FIELDS, ...EXTRA_LOG_FIELDS],
+      service: WORKFORCE_AUTH_SERVICE_NAME,
+    });
 
     this.runtime = getWorkforceAuthRuntime({
       auth: config.auth,
@@ -103,7 +100,8 @@ export class WorkforceAuthService {
             this.inFlightWaiters = [];
             for (const waiter of waiters) waiter();
           }
-          logSafeEvent(event);
+          incrementCounter("http.requests.total");
+          this.logger.info(event);
         },
       },
     );

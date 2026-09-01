@@ -15,6 +15,12 @@ import {
 } from "../auth/customer";
 import type { CustomerAuthConfig } from "../auth/shared/types";
 import type { WebConfig, WorkerConfig } from "../../platform/config";
+import {
+  createStructuredLogger,
+  incrementCounter,
+  STANDARD_HTTP_LOG_FIELDS,
+  type StructuredLogger,
+} from "../../platform/observability";
 import { getApplicationPersistence, type Persistence } from "../persistence";
 import type {
   CustomerTemporaryIdentityDeriver,
@@ -29,7 +35,7 @@ import { createNotificationChannelRegistry } from "../notifications/channels";
 import { PaymentInboxProcessor } from "../payment/inbox";
 import type { PaymentProvider } from "../payment/provider";
 import { RefundReconciliationProcessor } from "../refund/reconciliation";
-import { createCustomerCommerceRequestListener, type CustomerCommerceRequestEvent } from "./http/app";
+import { createCustomerCommerceRequestListener } from "./http/app";
 import { createSessionOnlyOtpProvider } from "./session-otp-stub";
 
 const DEFAULT_SHUTDOWN_TIMEOUT_MS = 10_000;
@@ -53,22 +59,7 @@ export type CustomerCommerceServiceOptions = Readonly<{
   metaWhatsApp?: MetaWhatsAppRuntimeSecrets | null;
 }>;
 
-const SAFE_LOG_FIELDS = [
-  "requestId",
-  "operation",
-  "safeOutcomeCode",
-  "httpStatus",
-  "durationMs",
-] as const;
-
-function logSafeEvent(event: CustomerCommerceRequestEvent): void {
-  const safe: Record<string, unknown> = {};
-  for (const field of SAFE_LOG_FIELDS) {
-    const value = event[field];
-    if (value !== undefined) safe[field] = value;
-  }
-  console.log(JSON.stringify(safe));
-}
+const CUSTOMER_COMMERCE_SERVICE_NAME = "customer-commerce";
 
 export class CustomerCommerceService {
   private readonly config: CustomerCommerceServiceOptions;
@@ -79,6 +70,7 @@ export class CustomerCommerceService {
   private readonly inboxProcessor: PaymentInboxProcessor | null;
   private readonly refundReconciler: RefundReconciliationProcessor | null;
   private readonly notificationProcessor: NotificationOutboxProcessor | null;
+  private readonly logger: StructuredLogger;
 
   private started = false;
   private closed = false;
@@ -88,6 +80,11 @@ export class CustomerCommerceService {
   constructor(config: CustomerCommerceServiceOptions) {
     this.config = config;
     this.persistence = getApplicationPersistence(config.persistenceConfig);
+    this.logger = createStructuredLogger({
+      logLevel: config.persistenceConfig.logLevel,
+      allowFields: STANDARD_HTTP_LOG_FIELDS,
+      service: CUSTOMER_COMMERCE_SERVICE_NAME,
+    });
 
     this.otpProvider = createSessionOnlyOtpProvider();
 
@@ -114,32 +111,6 @@ export class CustomerCommerceService {
         : undefined,
     });
 
-    const requestListener = createCustomerCommerceRequestListener(
-      {
-        runtime: this.runtime,
-        persistence: this.persistence,
-        paymentProvider: config.paymentProvider,
-        metaWhatsApp,
-        environment: config.persistenceConfig.environment,
-      },
-      {
-        onRequestStart: () => {
-          this.inFlightCount += 1;
-        },
-        onRequestComplete: (event) => {
-          this.inFlightCount = Math.max(0, this.inFlightCount - 1);
-          if (this.inFlightCount === 0) {
-            const waiters = this.inFlightWaiters;
-            this.inFlightWaiters = [];
-            for (const waiter of waiters) waiter();
-          }
-          logSafeEvent(event);
-        },
-      },
-    );
-
-    this.server = createServer(requestListener);
-
     const enableInbox =
       config.enablePaymentInboxProcessor === true &&
       config.paymentProvider?.name === "razorpay";
@@ -160,6 +131,40 @@ export class CustomerCommerceService {
             persistence: this.persistence,
             operationOptions: { channels: notificationChannels },
           });
+
+    const workers = [
+      this.inboxProcessor,
+      this.refundReconciler,
+      this.notificationProcessor,
+    ].filter((worker): worker is NonNullable<typeof worker> => worker !== null);
+
+    const requestListener = createCustomerCommerceRequestListener(
+      {
+        runtime: this.runtime,
+        persistence: this.persistence,
+        paymentProvider: config.paymentProvider,
+        metaWhatsApp,
+        environment: config.persistenceConfig.environment,
+        workers,
+      },
+      {
+        onRequestStart: () => {
+          this.inFlightCount += 1;
+        },
+        onRequestComplete: (event) => {
+          this.inFlightCount = Math.max(0, this.inFlightCount - 1);
+          if (this.inFlightCount === 0) {
+            const waiters = this.inFlightWaiters;
+            this.inFlightWaiters = [];
+            for (const waiter of waiters) waiter();
+          }
+          incrementCounter("http.requests.total");
+          this.logger.info(event);
+        },
+      },
+    );
+
+    this.server = createServer(requestListener);
   }
 
   async start(): Promise<void> {

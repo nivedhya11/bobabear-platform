@@ -85,7 +85,9 @@ describe("IMP-024 HTTP: health", () => {
     await withRunningService(async ({ baseUrl }) => {
       const response = await fetch(`${baseUrl}/health/ready`);
       expect(response.status).toBe(200);
-      expect(await response.json()).toEqual({ ok: true });
+      const body = await response.json() as { ok: boolean; checks: Record<string, string> };
+      expect(body.ok).toBe(true);
+      expect(body.checks.database).toBe("ok");
     });
   });
 });

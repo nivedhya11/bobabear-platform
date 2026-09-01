@@ -2,11 +2,11 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R91",
+  "stateVersion": "STATE-R92",
   "acceptedThrough": "IMP-035",
-  "currentProductSlice": "NONE",
-  "nextProductSlice": "IMP-036",
-  "pendingAcceptance": "NONE",
+  "currentProductSlice": "IMP-036",
+  "nextProductSlice": "IMP-037",
+  "pendingAcceptance": "IMP-036",
   "governanceHealth": "ALIGNED",
   "lastReviewed": "2026-09-01"
 }
@@ -28,14 +28,15 @@ Accepted Range:            IMP-001 → IMP-035 (including IMP-005A and IMP-026C)
 ## 2. Current Work Position
 
 ```text
-Current Product Implementation: NONE
-Pending Acceptance:             NONE
-Next Product Slice:             IMP-036 — Observability & Operational Controls
-Current Governance Activity:    IMP-035 COMPLETE_AND_ACCEPTED
+Current Product Implementation: IMP-036 — Observability & Operational Controls
+Pending Acceptance:             IMP-036
+Next Product Slice:             IMP-037 — Backup, Restore & Migration Readiness
+Current Governance Activity:    IMP-036 IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
                               (architecture LOCKED; implementation AUTHORIZED /
-                              STARTED / COMPLETE under D-373 / ARCH-R19 / DR-15;
-                              Founder UAT PASS);
-                              IMP-036 PLANNED / NOT_ACTIVATED.
+                              STARTED / COMPLETE; provider-neutral observability;
+                              no schema_change / new_service / new_permissions /
+                              new_roles; `D-374` not created);
+                              IMP-037 PLANNED / NOT_ACTIVATED.
 Governance Health:              ALIGNED
 ```
 
@@ -356,6 +357,19 @@ STATE-R36 record IMP-028B canonical activation without changing decision registe
 architecture. GTM-R39 / STATE-R37 record IMP-028B architecture lock and implementation
 authorization without changing decision register or global architecture.
 
+
+STATE-R92 records a single founder-authorized **combined** gate for **IMP-036 — Observability &
+Operational Controls**: canonical activation, capability architecture LOCKED at
+[`capabilities/IMP-036-observability-operational-controls.md`](./capabilities/IMP-036-observability-operational-controls.md);
+implementation AUTHORIZED / STARTED / COMPLETE; lifecycle
+`IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` (`IMP-036_ACCEPTED: NO`). Locked boundary facts:
+`schema_change: NO`, `provider_IO: NO`, `new_service: NO`, `new_permissions: NO`,
+`new_roles: NO`; no new CURRENT decision (`D-374` not created). Operational status API reuses
+existing workforce auth and existing `order.read`. `acceptedThrough` remains IMP-035;
+`currentProductSlice` and `pendingAcceptance` become IMP-036; `nextProductSlice` becomes IMP-037,
+which remains `PLANNED` / `NOT_ACTIVATED`. Founder UAT is **not required**
+(`IMP-036_FOUNDER_UAT_REQUIRED: NO`). Completion is not acceptance and does not authorize IMP-037.
+Supersedes STATE-R91 for the current IMP-036 lifecycle position.
 
 STATE-R91 records formal acceptance of **IMP-035 — Initial Administration Capabilities** after
 independent technical acceptance and Founder UAT PASS for the exact accepted candidate: repository
@@ -1239,9 +1253,9 @@ Cart → Checkout → Payment → Order
 
 ```text
 acceptedThrough: IMP-035
-pendingAcceptance: NONE
-currentProductSlice: NONE
-nextProductSlice: IMP-036 — Observability & Operational Controls
+pendingAcceptance: IMP-036
+currentProductSlice: IMP-036
+nextProductSlice: IMP-037 — Backup, Restore & Migration Readiness
 IMP-028: COMPLETE_AND_ACCEPTED
 IMP-028_ACCEPTED: YES
 IMP-028A: COMPLETE_AND_ACCEPTED
@@ -1408,7 +1422,24 @@ D-373_CREATED: YES
 ARCH_R19_REQUIRED: YES
 ARCH-R19: CURRENT
 DR-15: CURRENT
-IMP-036: PLANNED / NOT_ACTIVATED
+IMP-036: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
+IMP-036_ARCHITECTURE: LOCKED
+IMP-036_ARCHITECTURE_LOCKED: YES
+IMP-036_IMPLEMENTATION: AUTHORIZED / STARTED / COMPLETE
+IMP-036_IMPLEMENTATION_AUTHORIZED: YES
+IMP-036_STARTED: YES
+IMP-036_IMPLEMENTATION_COMPLETE: YES
+IMP-036_ACCEPTED: NO
+IMP-036_SCHEMA_CHANGE: NO
+IMP-036_PROVIDER_IO: NO
+IMP-036_NEW_SERVICE: NO
+IMP-036_NEW_PERMISSIONS: NO
+IMP-036_NEW_ROLES: NO
+IMP-036_FOUNDER_UAT_REQUIRED: NO
+D-374_CREATED: NO
+IMP036_IMPLEMENTATION_EVIDENCE: COMPLETE
+IMP_036_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
+IMP-037: PLANNED / NOT_ACTIVATED
 ```
 
 Independent acceptance of IMP-028A **is** claimed and formally reconciled

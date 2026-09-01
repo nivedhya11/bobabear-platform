@@ -8,11 +8,11 @@
  */
 import "server-only";
 
-import { randomUUID } from "node:crypto";
+import { generateRequestId as createRequestId } from "../../../platform/observability/request-id";
 import type { ServerResponse } from "node:http";
 
 export function generateRequestId(): string {
-  return randomUUID();
+  return createRequestId();
 }
 
 export type SendJsonOptions = Readonly<{
@@ -30,6 +30,7 @@ export function sendJson(res: ServerResponse, body: unknown, options: SendJsonOp
   res.setHeader("Content-Type", "application/json; charset=utf-8");
   res.setHeader("Cache-Control", "no-store");
   res.setHeader("X-Request-ID", options.requestId);
+  res.setHeader("X-Correlation-ID", options.requestId);
 
   if (options.varyCookie) {
     res.setHeader("Vary", "Cookie");

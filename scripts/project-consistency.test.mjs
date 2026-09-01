@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 import {
@@ -47,6 +48,9 @@ import {
   evaluateImp035AcceptanceArtifact,
   evaluateImp035AcceptanceCheckpoint,
   evaluateImp035AcceptanceCrossDocumentAlignment,
+  evaluateImp036ImplementationCompletionArtifact,
+  evaluateImp036ImplementationCompletionCheckpoint,
+  evaluateImp036ImplementationCompletionCrossDocumentAlignment,
   evaluateImp031ArchitectureDraftArtifact,
   evaluateImp031ArchitectureDraftCheckpoint,
   evaluateImp031ArchitectureLockArtifact,
@@ -5602,6 +5606,19 @@ function deriveImp035CompletionDocs() {
   };
 }
 
+/** Use live docs on R93/S91; otherwise reconstruct the accepted R93/S91 governance snapshot. */
+function deriveImp035AcceptanceDocs(liveRoadmap, liveState, liveCapability) {
+  if (/"roadmapVersion": "GTM-R93"/.test(liveRoadmap) && /"stateVersion": "STATE-R91"/.test(liveState)) {
+    return { capabilityText: liveCapability, roadmapText: liveRoadmap, stateText: liveState };
+  }
+  const base = "c0b6436fcf20553b87afa27d71a74f8bbf94a3aa";
+  return {
+    capabilityText: liveCapability,
+    roadmapText: execSync(`git show ${base}:docs/platform/ROADMAP.md`, { encoding: "utf8" }),
+    stateText: execSync(`git show ${base}:docs/platform/STATE.md`, { encoding: "utf8" }),
+  };
+}
+
 describe("IMP-035 formal acceptance checkpoint", () => {
   const acceptance = Object.freeze({
     roadmapVersion: "GTM-R93", stateVersion: "STATE-R91", acceptedThrough: "IMP-035",
@@ -5620,8 +5637,9 @@ describe("IMP-035 formal acceptance checkpoint", () => {
   });
 
   const capabilityText = readFileSync("docs/platform/capabilities/IMP-035-initial-administration-capabilities.md", "utf8");
-  const roadmapText = readFileSync("docs/platform/ROADMAP.md", "utf8");
-  const stateText = readFileSync("docs/platform/STATE.md", "utf8");
+  const liveRoadmapText = readFileSync("docs/platform/ROADMAP.md", "utf8");
+  const liveStateText = readFileSync("docs/platform/STATE.md", "utf8");
+  const { roadmapText, stateText } = deriveImp035AcceptanceDocs(liveRoadmapText, liveStateText, capabilityText);
 
   it("supports only the R93/S91 acceptance checkpoint and preserves R92/S90 completion", () => {
     assert.deepEqual(evaluateImp035AcceptanceCheckpoint(acceptance), { ok: true });
@@ -5898,3 +5916,40 @@ function deriveImp033DraftArtifact(lockedArtifact) {
     .replaceAll("IMP-033_STARTED: YES", "IMP-033_STARTED: NO")
     .replaceAll("IMP-033_IMPLEMENTATION_COMPLETE: YES", "IMP-033_IMPLEMENTATION_COMPLETE: NO");
 }
+
+describe("IMP-036 implementation completion checkpoint", () => {
+  const completion = Object.freeze({
+    roadmapVersion: "GTM-R94", stateVersion: "STATE-R92", acceptedThrough: "IMP-035",
+    currentProductSlice: "IMP-036", nextProductSlice: "IMP-037", pendingAcceptance: "IMP-036",
+    imp035: "COMPLETE_AND_ACCEPTED", imp036: "IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE",
+    architecture: "LOCKED", architectureLocked: "YES", implementationAuthorized: "YES",
+    started: "YES", implementationComplete: "YES", accepted: "NO",
+    architectureVersion: "ARCH-R19", decisionRegisterVersion: "DR-15",
+    artifact: true, d374Exists: false, founderUatNotRequired: true,
+  });
+
+  const capabilityText = readFileSync(
+    "docs/platform/capabilities/IMP-036-observability-operational-controls.md",
+    "utf8",
+  );
+  const roadmapText = readFileSync("docs/platform/ROADMAP.md", "utf8");
+  const stateText = readFileSync("docs/platform/STATE.md", "utf8");
+
+  it("supports only the R94/S92 completion checkpoint", () => {
+    assert.deepEqual(evaluateImp036ImplementationCompletionCheckpoint(completion), { ok: true });
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R94", "STATE-R92", "imp036Completion"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R93", "STATE-R91", "imp036Completion"), false);
+  });
+
+  it("validates the live capability artifact and cross-document alignment", () => {
+    assert.deepEqual(evaluateImp036ImplementationCompletionArtifact(capabilityText), { ok: true });
+    assert.deepEqual(
+      evaluateImp036ImplementationCompletionCrossDocumentAlignment({
+        capabilityText,
+        roadmapText,
+        stateText,
+      }),
+      { ok: true },
+    );
+  });
+});

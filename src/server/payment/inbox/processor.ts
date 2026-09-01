@@ -5,6 +5,8 @@
  */
 import { randomUUID } from "node:crypto";
 
+import type { WorkerHealthSnapshot } from "../../../platform/observability/worker-health";
+
 import type { Persistence } from "../../persistence/types";
 import { applyRefundProviderEvidence } from "../../refund/operations";
 import { processVerifiedProviderEvent } from "../operations";
@@ -60,6 +62,7 @@ export class PaymentInboxProcessor {
   private timer: ReturnType<typeof setInterval> | null = null;
   private stopped = false;
   private running = false;
+  private lastTickAt: Date | null = null;
 
   constructor(options: PaymentInboxProcessorOptions) {
     this.persistence = options.persistence;
@@ -91,6 +94,15 @@ export class PaymentInboxProcessor {
     }
   }
 
+  getHealthSnapshot(): WorkerHealthSnapshot {
+    return {
+      name: "payment_inbox",
+      running: this.running,
+      stopped: this.stopped,
+      ...(this.lastTickAt ? { lastTickAt: this.lastTickAt.toISOString() } : {}),
+    };
+  }
+
   async tick(): Promise<void> {
     if (this.stopped || this.running) return;
     this.running = true;
@@ -113,6 +125,7 @@ export class PaymentInboxProcessor {
       // Processor must not crash customer-commerce. Next tick retries.
     } finally {
       this.running = false;
+      this.lastTickAt = new Date();
     }
   }
 

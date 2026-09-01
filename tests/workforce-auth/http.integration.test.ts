@@ -158,7 +158,7 @@ describe("IMP-010 HTTP: health endpoints", () => {
     await withRunningService(async ({ baseUrl }) => {
       const response = await fetch(`${baseUrl}/health/ready`);
       expect(response.status).toBe(200);
-      expect(await response.json()).toEqual({ ok: true });
+      expect(await response.json()).toEqual({ ok: true, checks: { database: "ok" } });
     });
   });
 

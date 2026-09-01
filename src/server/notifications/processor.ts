@@ -14,6 +14,8 @@ import "server-only";
 
 import { randomUUID } from "node:crypto";
 
+import type { WorkerHealthSnapshot } from "../../platform/observability/worker-health";
+
 import {
   claimOutboxBatch,
   markOutboxDeadLetter,
@@ -62,6 +64,7 @@ export class NotificationOutboxProcessor {
   private timer: ReturnType<typeof setInterval> | null = null;
   private stopped = false;
   private running = false;
+  private lastTickAt: Date | null = null;
 
   constructor(options: NotificationOutboxProcessorOptions) {
     this.persistence = options.persistence;
@@ -94,6 +97,15 @@ export class NotificationOutboxProcessor {
     }
   }
 
+  getHealthSnapshot(): WorkerHealthSnapshot {
+    return {
+      name: "notification_outbox",
+      running: this.running,
+      stopped: this.stopped,
+      ...(this.lastTickAt ? { lastTickAt: this.lastTickAt.toISOString() } : {}),
+    };
+  }
+
   async tick(): Promise<void> {
     if (this.stopped || this.running) return;
     this.running = true;
@@ -117,6 +129,7 @@ export class NotificationOutboxProcessor {
       // and an unreleased lease expires and becomes reclaimable.
     } finally {
       this.running = false;
+      this.lastTickAt = new Date();
     }
   }
 

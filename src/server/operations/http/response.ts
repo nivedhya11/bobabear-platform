@@ -1,18 +1,16 @@
 /** Operations HTTP response helpers (IMP-029). */
 import "server-only";
 
-import { randomUUID } from "node:crypto";
 import type { ServerResponse } from "node:http";
+
+import { generateRequestId } from "../../../platform/observability/request-id";
+
+export { generateRequestId };
 
 export type SendJsonOptions = Readonly<{
   status: number;
   requestId: string;
 }>;
-
-/** A fresh server-issued correlation ID; caller-supplied IDs are never trusted. */
-export function generateRequestId(): string {
-  return randomUUID();
-}
 
 function jsonReplacer(_key: string, value: unknown): unknown {
   return typeof value === "bigint" ? value.toString(10) : value;
@@ -29,6 +27,7 @@ export function sendJson(
   res.setHeader("Content-Type", "application/json; charset=utf-8");
   res.setHeader("Cache-Control", "no-store");
   res.setHeader("X-Request-ID", options.requestId);
+  res.setHeader("X-Correlation-ID", options.requestId);
   res.end(JSON.stringify(body, jsonReplacer));
 }
 
