@@ -15,10 +15,6 @@ import {
 import { createOwnAddress } from "../../../src/server/customer-addresses";
 import { addCartLine, type CustomerActor } from "../../../src/server/cart";
 import {
-  addOutletServiceabilityPins,
-  setOutletServiceabilityRoutingPriority,
-} from "../../../src/server/serviceability";
-import {
   CHARGE_DEFINITION_DELIVERY_ID,
   CHARGE_DEFINITION_PACKAGING_ID,
   TAX_CATEGORY_RESTAURANT_SERVICE_ID,
@@ -27,6 +23,8 @@ import type { Persistence } from "../../../src/server/persistence/types";
 import { includeVariantAtBrand } from "../../assortment-availability/support";
 import {
   configureAlwaysAcceptingOutlet,
+  seedOutletDistanceServiceability,
+  TEST_INSIDE_COORDS,
 } from "./serviceability-fixtures";
 import {
   FIXED_NOW,
@@ -252,19 +250,10 @@ export async function seedServiceableOutlet(
   persistence: Persistence,
   actor: unknown,
   outletId: string,
-  postalCode: string = CHECKOUT_PIN,
+  _postalCode: string = CHECKOUT_PIN,
 ): Promise<void> {
   await configureAlwaysAcceptingOutlet(persistence, actor, outletId);
-  await setOutletServiceabilityRoutingPriority(persistence, actor, {
-    outletId,
-    routingPriority: 1,
-    expectedRevision: null,
-  });
-  await addOutletServiceabilityPins(persistence, actor, {
-    outletId,
-    postalCodes: [postalCode],
-    expectedRevision: BigInt(1),
-  });
+  await seedOutletDistanceServiceability(persistence, actor, outletId);
 }
 
 export async function createSavedAddressForCustomer(
@@ -277,6 +266,7 @@ export async function createSavedAddressForCustomer(
     addressCustomerActor(customerAuthUserId),
     minimalAddressCreateInput({
       postalCode: CHECKOUT_PIN,
+      coordinates: TEST_INSIDE_COORDS,
       ...overrides,
     }),
   );
@@ -357,6 +347,7 @@ export async function withCheckoutReadyHarness<T>(
         city: "Dehradun",
         stateCode: "IN-UT",
         postalCode: CHECKOUT_PIN,
+        coordinates: TEST_INSIDE_COORDS,
       }),
     });
   });
