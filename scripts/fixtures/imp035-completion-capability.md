@@ -5,7 +5,7 @@
   "capability": "IMP-035",
   "title": "Initial Administration Capabilities",
   "architectureLock": "ARCHITECTURE_LOCKED",
-  "implementation": "COMPLETE_AND_ACCEPTED",
+  "implementation": "AUTHORIZED / STARTED / COMPLETE",
   "implementationAuthorized": true,
   "lastReviewed": "2026-09-01",
   "bindingDecisions": ["ADR-005", "D-358", "D-372", "D-373"],
@@ -15,48 +15,48 @@
 
 # IMP-035 — Initial Administration Capabilities
 
-## Capability Architecture (ARCHITECTURE_LOCKED — COMPLETE_AND_ACCEPTED)
+## Capability Architecture (ARCHITECTURE_LOCKED — IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE)
 
 This document is the locked capability architecture for **IMP-035 — Initial Administration
 Capabilities**. Architecture authority derives from accepted
 [ADR-005](../decisions/ADR-005-organization-outlet-authorization.md), **D-358**, **D-372**, and
-binding **D-373**. Architecture is **LOCKED**. Implementation is **AUTHORIZED**, **STARTED**,
-**COMPLETE**, and formally **COMPLETE_AND_ACCEPTED**.
+binding **D-373**. Architecture is **LOCKED**. Implementation is **AUTHORIZED**, **STARTED**, and
+**COMPLETE**. Formal acceptance is **not** claimed.
 
-Formal acceptance does not expand the locked boundary, authorize or start IMP-036, invent custom
-roles, or redesign access control.
+Completion is **not** acceptance. Founder UAT is **required** before `COMPLETE_AND_ACCEPTED`.
+This gate does **not** authorize or start IMP-036, invent custom roles, or redesign access control.
 
 | Field | Value |
 |---|---|
 | Architecture lock | `ARCHITECTURE_LOCKED` |
-| Lifecycle | `COMPLETE_AND_ACCEPTED` |
+| Lifecycle | `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` |
 | Implementation | `AUTHORIZED` / `STARTED` / `COMPLETE` |
 | Implementation authorized | **YES** |
 | Implementation complete | **YES** |
-| Accepted | **YES** |
-| Accepted product through | IMP-035 |
-| Current product slice | NONE |
-| Pending acceptance | NONE |
+| Accepted | **NO** |
+| Accepted product through | IMP-034 |
+| Current product slice | IMP-035 |
+| Pending acceptance | IMP-035 |
 | Next product slice | IMP-036 — Observability & Operational Controls |
-| Governance checkpoint | GTM-R93 / STATE-R91 |
+| Governance checkpoint | GTM-R92 / STATE-R90 |
 | Binding decision | **D-373** |
 | Global architecture revision | **ARCH-R19** / **ARCH-G25** |
 | Decision register | **DR-15** |
 | Founder UAT required for acceptance | **YES** |
 
 ```text
-IMP-035: COMPLETE_AND_ACCEPTED
+IMP-035: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
 IMP-035_ARCHITECTURE: LOCKED
 IMP-035_ARCHITECTURE_LOCKED: YES
 IMP-035_IMPLEMENTATION: AUTHORIZED / STARTED / COMPLETE
 IMP-035_IMPLEMENTATION_AUTHORIZED: YES
 IMP-035_STARTED: YES
 IMP-035_IMPLEMENTATION_COMPLETE: YES
-IMP-035_ACCEPTED: YES
+IMP-035_ACCEPTED: NO
 FOUNDER_UAT_REQUIRED: YES
 FOUNDER_UAT_REQUIRED_FOR_ACCEPTANCE: YES
 IMP-035_FOUNDER_UAT_REQUIRED: YES
-IMP-035_FOUNDER_UAT: PASS
+IMP-035_FOUNDER_UAT: NOT_CLAIMED
 D373_REQUIRED_FOR_LOCK: YES
 D-373_CREATED: YES
 ARCH_R19_REQUIRED: YES
@@ -65,6 +65,7 @@ provider_IO: NO
 new_service: NO
 new_permissions: NO
 new_roles: NO
+COMPLETION_IS_NOT_ACCEPTANCE: YES
 ```
 
 ## 1. Purpose
@@ -180,33 +181,21 @@ fingerprint, and `git diff --check`.
 
 ```text
 IMP-035_FOUNDER_UAT_REQUIRED: YES
-IMP-035_FOUNDER_UAT: PASS
-FOUNDER_UAT_REQUIRED: YES
-FOUNDER_UAT: PASS
-FOUNDER_UAT_COMPLETE: YES
-FOUNDER_UAT_DECISION_DATE: 2026-09-01
-FOUNDER_UAT_ACCEPTANCE_AUTHORITY: Founder
-FOUNDER_UAT_CANDIDATE_REPOSITORY: /home/ajoshi/repos/boba-bear-platform
-FOUNDER_UAT_CANDIDATE_BRANCH: main
-FOUNDER_UAT_CANDIDATE_HEAD: 7e83d5486665ed1a3847f8484d73deb825946501
-FOUNDER_UAT_CANDIDATE_TREE: 83c318ecd9a4cff86e19f9d35ca5ad42bcff357a
-FOUNDER_UAT_CANDIDATE_FINGERPRINT: 6f7d01304bbd66835e8dec18ed8c29b87d2c5513d2b23799b53b6bf1c6f88d13
+IMP-035_FOUNDER_UAT: NOT_CLAIMED
 ```
 
-Founder UAT exercised the exact merged candidate on the local Compose/Podman deployment.
+Founder UAT must exercise the exact merged candidate (path, branch, HEAD, working-tree fingerprint)
+on the local Compose/Podman deployment. Agents must not self-declare UAT PASS.
 
 ## 10. Acceptance posture
 
 ```text
 IMP035_IMPLEMENTATION_EVIDENCE: COMPLETE
-IMP_035_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
-IMP035_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
-IMP035_FORMAL_ACCEPTANCE: ACCEPTED
-IMP035_ACCEPTED_MAIN_SHA: 7e83d5486665ed1a3847f8484d73deb825946501
-IMP035_ACCEPTED_TREE: 83c318ecd9a4cff86e19f9d35ca5ad42bcff357a
-IMPLEMENTATION_SOURCE_SHA: 642cf7193a8b8419e8abec3bc24b5a76df9c182a
-MERGED_MAIN_SHA: 7e83d5486665ed1a3847f8484d73deb825946501
+IMP_035_INDEPENDENT_IMPLEMENTATION_REVIEW: NOT_CLAIMED
+IMP035_INDEPENDENT_ACCEPTANCE_EVIDENCE: NOT_CLAIMED
+IMP035_FORMAL_ACCEPTANCE: NOT_CLAIMED
+COMPLETION_IS_NOT_ACCEPTANCE: YES
 ```
 
-Formal acceptance required independent technical acceptance **and** Founder UAT PASS. Acceptance
-does **not** authorize or start IMP-036.
+Formal acceptance requires independent technical acceptance **and** Founder UAT PASS, then a
+separate reconciliation gate. Do not activate IMP-036 from this completion.

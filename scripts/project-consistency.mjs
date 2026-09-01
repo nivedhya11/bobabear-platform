@@ -1460,7 +1460,7 @@ function isImp031AcceptanceCheckpoint(roadmap, state) {
   return isSupportedImp030GovernanceCheckpoint(roadmap?.meta.roadmapVersion, state?.meta.stateVersion, "imp031Acceptance");
 }
 
-/** @param {string} roadmapVersion @param {string} stateVersion @param {"activation" | "lock" | "authorization" | "start" | "routeAmendment" | "consistencyRepair" | "acceptance" | "imp031Activation" | "imp031Draft" | "imp031Lock" | "imp031Authorization" | "imp031Start" | "imp031Completion" | "imp031Acceptance" | "imp032Activation" | "imp032Draft" | "imp032Lock" | "imp032Authorization" | "imp032Start" | "imp032BoundaryClarification" | "imp032Completion" | "imp032Acceptance" | "imp033Activation" | "imp033Completion" | "imp033Acceptance" | "imp034Completion" | "imp034Acceptance" | "imp035Completion"} [kind] */
+/** @param {string} roadmapVersion @param {string} stateVersion @param {"activation" | "lock" | "authorization" | "start" | "routeAmendment" | "consistencyRepair" | "acceptance" | "imp031Activation" | "imp031Draft" | "imp031Lock" | "imp031Authorization" | "imp031Start" | "imp031Completion" | "imp031Acceptance" | "imp032Activation" | "imp032Draft" | "imp032Lock" | "imp032Authorization" | "imp032Start" | "imp032BoundaryClarification" | "imp032Completion" | "imp032Acceptance" | "imp033Activation" | "imp033Completion" | "imp033Acceptance" | "imp034Completion" | "imp034Acceptance" | "imp035Completion" | "imp035Acceptance"} [kind] */
 export function isSupportedImp030GovernanceCheckpoint(roadmapVersion, stateVersion, kind) {
   const activation = roadmapVersion === "GTM-R66" && stateVersion === "STATE-R64";
   const lock = roadmapVersion === "GTM-R67" && stateVersion === "STATE-R65";
@@ -1497,6 +1497,7 @@ export function isSupportedImp030GovernanceCheckpoint(roadmapVersion, stateVersi
   // GTM-R92 / STATE-R90 is a single combined lock + authorize + start + complete gate; no
   // intermediate lifecycle-only version pair exists for IMP-035.
   const imp035Completion = roadmapVersion === "GTM-R92" && stateVersion === "STATE-R90";
+  const imp035Acceptance = roadmapVersion === "GTM-R93" && stateVersion === "STATE-R91";
   if (kind === "activation") return activation;
   if (kind === "lock") return lock;
   if (kind === "authorization") return authorization;
@@ -1525,7 +1526,8 @@ export function isSupportedImp030GovernanceCheckpoint(roadmapVersion, stateVersi
   if (kind === "imp034Completion") return imp034Completion;
   if (kind === "imp034Acceptance") return imp034Acceptance;
   if (kind === "imp035Completion") return imp035Completion;
-  return activation || lock || authorization || start || routeAmendment || consistencyRepair || acceptance || imp031Activation || imp031Draft || imp031Lock || imp031Authorization || imp031Start || imp031Completion || imp031Acceptance || imp032Activation || imp032Draft || imp032Lock || imp032Authorization || imp032Start || imp032BoundaryClarification || imp032Completion || imp032Acceptance || imp033Activation || imp033Completion || imp033Acceptance || imp034Completion || imp034Acceptance || imp035Completion;
+  if (kind === "imp035Acceptance") return imp035Acceptance;
+  return activation || lock || authorization || start || routeAmendment || consistencyRepair || acceptance || imp031Activation || imp031Draft || imp031Lock || imp031Authorization || imp031Start || imp031Completion || imp031Acceptance || imp032Activation || imp032Draft || imp032Lock || imp032Authorization || imp032Start || imp032BoundaryClarification || imp032Completion || imp032Acceptance || imp033Activation || imp033Completion || imp033Acceptance || imp034Completion || imp034Acceptance || imp035Completion || imp035Acceptance;
 }
 
 function isImp032ArchitectureActivationCheckpoint(roadmap, state) {
@@ -1584,6 +1586,10 @@ function isImp035ImplementationCompletionCheckpoint(roadmap, state) {
   return isSupportedImp030GovernanceCheckpoint(roadmap?.meta.roadmapVersion, state?.meta.stateVersion, "imp035Completion");
 }
 
+function isImp035AcceptanceCheckpoint(roadmap, state) {
+  return isSupportedImp030GovernanceCheckpoint(roadmap?.meta.roadmapVersion, state?.meta.stateVersion, "imp035Acceptance");
+}
+
 function isImp030ArchitectureCheckpoint(roadmap, state) {
   return isImp030ArchitectureActivationCheckpoint(roadmap, state) || isImp030ArchitectureLockCheckpoint(roadmap, state);
 }
@@ -1617,7 +1623,8 @@ function isImp030GovernanceCheckpoint(roadmap, state) {
     isImp033AcceptanceCheckpoint(roadmap, state) ||
     isImp034ImplementationCompletionCheckpoint(roadmap, state) ||
     isImp034AcceptanceCheckpoint(roadmap, state) ||
-    isImp035ImplementationCompletionCheckpoint(roadmap, state)
+    isImp035ImplementationCompletionCheckpoint(roadmap, state) ||
+    isImp035AcceptanceCheckpoint(roadmap, state)
   );
 }
 
@@ -3673,6 +3680,221 @@ export function evaluateImp035ImplementationCompletionCrossDocumentAlignment(doc
       ok: false,
       code: "IMP035_COMPLETION_RESIDUE",
       message: "completion must keep IMP-035 unaccepted and must not authorize IMP-036 or claim Founder UAT PASS",
+    };
+  }
+  return { ok: true };
+}
+
+/**
+ * Validate the exact IMP-035 COMPLETE_AND_ACCEPTED checkpoint (R93/S91).
+ * @param {Record<string, unknown>} checkpoint
+ */
+export function evaluateImp035AcceptanceCheckpoint(checkpoint) {
+  const expected = {
+    roadmapVersion: "GTM-R93", stateVersion: "STATE-R91", acceptedThrough: "IMP-035",
+    currentProductSlice: "NONE", nextProductSlice: "IMP-036", pendingAcceptance: "NONE",
+    imp034: "COMPLETE_AND_ACCEPTED", imp035: "COMPLETE_AND_ACCEPTED", architecture: "LOCKED",
+    architectureLocked: "YES", implementationAuthorized: "YES", started: "YES",
+    implementationComplete: "YES", accepted: "YES", imp036: "PLANNED",
+    architectureVersion: "ARCH-R19", decisionRegisterVersion: "DR-15",
+    acceptedMainSha: "7e83d5486665ed1a3847f8484d73deb825946501",
+    acceptedTree: "83c318ecd9a4cff86e19f9d35ca5ad42bcff357a",
+    founderUatPass: true,
+  };
+  for (const [key, value] of Object.entries(expected)) {
+    if (checkpoint[key] !== value) return { ok: false, code: "IMP035_ACCEPTANCE", message: `${key} must be ${value}` };
+  }
+  if (!checkpoint.artifact) return { ok: false, code: "IMP035_CAPABILITY_MISSING", message: "IMP-035 locked capability artifact must exist" };
+  if (!checkpoint.d373Exists) return { ok: false, code: "IMP035_D373", message: "D-373 must exist for IMP-035 acceptance" };
+  if (!checkpoint.archG25) return { ok: false, code: "IMP035_ARCH_G25", message: "ARCH-R19 must record ARCH-G25" };
+  if (!checkpoint.implementationEvidenceComplete) {
+    return { ok: false, code: "IMP035_IMPLEMENTATION_EVIDENCE", message: "IMP-035 acceptance requires implementation evidence COMPLETE" };
+  }
+  if (!checkpoint.independentReviewPass) {
+    return { ok: false, code: "IMP035_INDEPENDENT_REVIEW", message: "IMP-035 acceptance requires independent implementation review PASS" };
+  }
+  if (!checkpoint.independentAcceptanceAccepted) {
+    return { ok: false, code: "IMP035_INDEPENDENT_ACCEPTANCE", message: "IMP-035 acceptance requires independent acceptance ACCEPTED" };
+  }
+  if (!checkpoint.formalAcceptanceAccepted) {
+    return { ok: false, code: "IMP035_FORMAL_ACCEPTANCE", message: "IMP-035 acceptance requires formal acceptance ACCEPTED" };
+  }
+  if (!checkpoint.founderUatPass) {
+    return { ok: false, code: "IMP035_FOUNDER_UAT", message: "IMP-035 acceptance requires Founder UAT PASS" };
+  }
+  if (!checkpoint.schemaChangeNo) {
+    return { ok: false, code: "IMP035_SCHEMA_CHANGE", message: "IMP-035 acceptance must preserve schema_change: NO" };
+  }
+  if (!checkpoint.providerIoNo) {
+    return { ok: false, code: "IMP035_PROVIDER_IO", message: "IMP-035 acceptance must preserve provider_IO: NO" };
+  }
+  if (!checkpoint.newServiceNo) {
+    return { ok: false, code: "IMP035_NEW_SERVICE", message: "IMP-035 acceptance must preserve new_service: NO" };
+  }
+  if (!checkpoint.newPermissionsNo) {
+    return { ok: false, code: "IMP035_NEW_PERMISSIONS", message: "IMP-035 acceptance must preserve new_permissions: NO" };
+  }
+  if (!checkpoint.newRolesNo) {
+    return { ok: false, code: "IMP035_NEW_ROLES", message: "IMP-035 acceptance must preserve new_roles: NO" };
+  }
+  return { ok: true };
+}
+
+/**
+ * Validate the formally accepted IMP-035 capability artifact.
+ * @param {string} text
+ */
+export function evaluateImp035AcceptanceArtifact(text) {
+  const required = [
+    /"status":\s*"CURRENT"/,
+    /"authority":\s*"CAPABILITY_ARCHITECTURE"/,
+    /"capability":\s*"IMP-035"/,
+    /"architectureLock":\s*"ARCHITECTURE_LOCKED"/,
+    /"implementation":\s*"COMPLETE_AND_ACCEPTED"/,
+    /"implementationAuthorized":\s*true/,
+    /IMP-035:\s*COMPLETE_AND_ACCEPTED/,
+    /IMP-035_ARCHITECTURE:\s*LOCKED/,
+    /IMP-035_ARCHITECTURE_LOCKED:\s*YES/,
+    /IMP-035_IMPLEMENTATION:\s*AUTHORIZED \/ STARTED \/ COMPLETE/,
+    /IMP-035_IMPLEMENTATION_AUTHORIZED:\s*YES/,
+    /IMP-035_STARTED:\s*YES/,
+    /IMP-035_IMPLEMENTATION_COMPLETE:\s*YES/,
+    /IMP-035_ACCEPTED:\s*YES/,
+    /FOUNDER_UAT_REQUIRED:\s*YES/,
+    /FOUNDER_UAT_REQUIRED_FOR_ACCEPTANCE:\s*YES/,
+    /IMP-035_FOUNDER_UAT_REQUIRED:\s*YES/,
+    /IMP-035_FOUNDER_UAT:\s*PASS/,
+    /FOUNDER_UAT:\s*PASS/,
+    /schema_change:\s*NO/,
+    /provider_IO:\s*NO/,
+    /new_service:\s*NO/,
+    /new_permissions:\s*NO/,
+    /new_roles:\s*NO/,
+    /D-373/,
+    /ARCH-G25/,
+    /\/api\/admin\/v1\//,
+    /IMP-036/,
+    /IMP035_IMPLEMENTATION_EVIDENCE:\s*COMPLETE/,
+    /IMP_035_INDEPENDENT_IMPLEMENTATION_REVIEW:\s*PASS/,
+    /IMP035_INDEPENDENT_ACCEPTANCE_EVIDENCE:\s*ACCEPTED/,
+    /IMP035_FORMAL_ACCEPTANCE:\s*ACCEPTED/,
+    /IMP035_ACCEPTED_MAIN_SHA:\s*7e83d5486665ed1a3847f8484d73deb825946501/,
+    /IMP035_ACCEPTED_TREE:\s*83c318ecd9a4cff86e19f9d35ca5ad42bcff357a/,
+    /IMPLEMENTATION_SOURCE_SHA:\s*642cf7193a8b8419e8abec3bc24b5a76df9c182a/,
+    /MERGED_MAIN_SHA:\s*7e83d5486665ed1a3847f8484d73deb825946501/,
+  ];
+  if (required.some((pattern) => !pattern.test(text))) {
+    return { ok: false, code: "IMP035_CAPABILITY_ACCEPTANCE", message: "IMP-035 artifact must record the complete COMPLETE_AND_ACCEPTED checkpoint" };
+  }
+  const forbidden = [
+    /"status":\s*"DRAFT"/,
+    /"architectureLock":\s*"NOT_LOCKED"/,
+    /"implementationAuthorized":\s*false/,
+    /IMP-035_ARCHITECTURE_LOCKED:\s*NO/,
+    /IMP-035_IMPLEMENTATION_AUTHORIZED:\s*NO/,
+    /IMP-035_STARTED:\s*NO/,
+    /IMP-035_IMPLEMENTATION_COMPLETE:\s*NO/,
+    /IMP-035_ACCEPTED:\s*NO/,
+    /IMP-035:\s*IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE/,
+    /IMP-035:\s*ARCHITECTURE_IN_PROGRESS/,
+    /IMP035_INDEPENDENT_ACCEPTANCE_EVIDENCE:\s*NOT_CLAIMED/,
+    /IMP035_FORMAL_ACCEPTANCE:\s*NOT_CLAIMED/,
+    /IMP035_FORMAL_ACCEPTANCE:\s*PENDING/,
+    /FOUNDER_UAT:\s*NOT_STARTED/,
+    /IMP-035_FOUNDER_UAT:\s*NOT_CLAIMED/,
+    /schema_change:\s*YES/,
+    /provider_IO:\s*YES/,
+    /new_service:\s*YES/,
+    /new_permissions:\s*YES/,
+    /new_roles:\s*YES/,
+    /COMPLETION_IS_NOT_ACCEPTANCE:\s*YES/,
+  ];
+  if (forbidden.some((pattern) => pattern.test(text))) {
+    return { ok: false, code: "IMP035_CAPABILITY_PROGRESSION", message: "IMP-035 acceptance must not retain pending acceptance, completion-only markers, or boundary drift" };
+  }
+  return { ok: true };
+}
+
+/**
+ * Cross-document alignment for IMP-035 COMPLETE_AND_ACCEPTED.
+ * @param {{ capabilityText: string, roadmapText: string, stateText: string }} documents
+ */
+export function evaluateImp035AcceptanceCrossDocumentAlignment(documents) {
+  const artifact = evaluateImp035AcceptanceArtifact(documents.capabilityText);
+  if (!artifact.ok) return artifact;
+
+  const currentRoadmapSection = documents.roadmapText.slice(
+    documents.roadmapText.indexOf("## 2."),
+    documents.roadmapText.indexOf("## 3."),
+  );
+  const stateAcceptanceStart = documents.stateText.indexOf("## 5. Acceptance Position");
+  const stateAcceptanceEnd = documents.stateText.indexOf("\n## ", stateAcceptanceStart + 1);
+  const currentStateAcceptance = stateAcceptanceStart === -1
+    ? ""
+    : documents.stateText.slice(stateAcceptanceStart, stateAcceptanceEnd === -1 ? undefined : stateAcceptanceEnd);
+  const stateActivityStart = documents.stateText.indexOf("## 2. Current Work Position");
+  const stateActivityEnd = documents.stateText.indexOf("\n## ", stateActivityStart + 1);
+  const currentStateActivity = stateActivityStart === -1
+    ? ""
+    : documents.stateText.slice(stateActivityStart, stateActivityEnd === -1 ? undefined : stateActivityEnd);
+
+  const completeAndAccepted =
+    /IMP-035:\s*COMPLETE_AND_ACCEPTED/.test(currentRoadmapSection) &&
+    /IMP-035:\s*COMPLETE_AND_ACCEPTED/.test(currentStateAcceptance) &&
+    /IMP-035:\s*COMPLETE_AND_ACCEPTED/.test(documents.capabilityText);
+  const architectureLocked =
+    /IMP-035_ARCHITECTURE_LOCKED:\s*YES/.test(currentRoadmapSection) &&
+    /IMP-035_ARCHITECTURE_LOCKED:\s*YES/.test(currentStateAcceptance) &&
+    /IMP-035_ARCHITECTURE_LOCKED:\s*YES/.test(documents.capabilityText);
+  const acceptedYes =
+    /IMP-035_ACCEPTED:\s*YES/.test(currentRoadmapSection) &&
+    /IMP-035_ACCEPTED:\s*YES/.test(currentStateAcceptance) &&
+    /IMP-035_ACCEPTED:\s*YES/.test(documents.capabilityText);
+  const independentAccepted =
+    /IMP035_INDEPENDENT_ACCEPTANCE_EVIDENCE:\s*ACCEPTED/.test(currentRoadmapSection) &&
+    /IMP035_INDEPENDENT_ACCEPTANCE_EVIDENCE:\s*ACCEPTED/.test(currentStateAcceptance) &&
+    /IMP035_INDEPENDENT_ACCEPTANCE_EVIDENCE:\s*ACCEPTED/.test(documents.capabilityText);
+  const formalAccepted =
+    /IMP035_FORMAL_ACCEPTANCE:\s*ACCEPTED/.test(currentRoadmapSection) &&
+    /IMP035_FORMAL_ACCEPTANCE:\s*ACCEPTED/.test(currentStateAcceptance) &&
+    /IMP035_FORMAL_ACCEPTANCE:\s*ACCEPTED/.test(documents.capabilityText);
+  const acceptedThroughImp035 =
+    /Accepted Through:\s*IMP-035\b/.test(currentRoadmapSection) &&
+    /acceptedThrough:\s*IMP-035\b/.test(currentStateAcceptance);
+  const pendingNone =
+    /Pending Acceptance:\s*NONE\b/.test(currentRoadmapSection) &&
+    /pendingAcceptance:\s*NONE\b/.test(currentStateAcceptance);
+  const founderUatPass =
+    /IMP-035_FOUNDER_UAT:\s*PASS/.test(currentRoadmapSection) &&
+    /IMP-035_FOUNDER_UAT:\s*PASS/.test(currentStateAcceptance);
+  const imp036Planned =
+    /IMP-036:\s*PLANNED \/ NOT_ACTIVATED/.test(currentRoadmapSection) &&
+    /IMP-036:\s*PLANNED \/ NOT_ACTIVATED/.test(currentStateAcceptance);
+
+  if (
+    !completeAndAccepted || !architectureLocked || !acceptedYes || !independentAccepted ||
+    !formalAccepted || !acceptedThroughImp035 || !pendingNone || !founderUatPass || !imp036Planned
+  ) {
+    return {
+      ok: false,
+      code: "IMP035_CURRENT_LIFECYCLE",
+      message: "current ROADMAP/STATE/capability markers must record IMP-035 COMPLETE_AND_ACCEPTED with cleared current/pending position, Founder UAT PASS, and IMP-036 PLANNED / NOT_ACTIVATED",
+    };
+  }
+  if (
+    /IMP-035_ACCEPTED:\s*NO/.test(currentRoadmapSection) ||
+    /IMP-035_ACCEPTED:\s*NO/.test(currentStateAcceptance) ||
+    /IMP-035:\s*IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE/.test(currentRoadmapSection) ||
+    /IMP-035:\s*IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE/.test(currentStateAcceptance) ||
+    /Pending Acceptance:\s*IMP-035\b/.test(currentRoadmapSection) ||
+    /Pending Acceptance:\s*IMP-035\b/.test(currentStateActivity) ||
+    /IMP-036_IMPLEMENTATION_AUTHORIZED:\s*YES/.test(currentRoadmapSection) ||
+    /IMP-036_IMPLEMENTATION_AUTHORIZED:\s*YES/.test(currentStateAcceptance)
+  ) {
+    return {
+      ok: false,
+      code: "IMP035_ACCEPTANCE_RESIDUE",
+      message: "IMP-035 acceptance must not retain pending-acceptance markers or authorize IMP-036",
     };
   }
   return { ok: true };
@@ -7425,7 +7647,8 @@ function checkImp028ArchitectureLock(roadmap, state, architecture, decision) {
       isImp034ImplementationCompletionCheckpoint(roadmap, state) ||
       isImp034AcceptanceCheckpoint(roadmap, state)
       ? "ARCH-R18"
-      : isImp035ImplementationCompletionCheckpoint(roadmap, state)
+      : isImp035ImplementationCompletionCheckpoint(roadmap, state) ||
+        isImp035AcceptanceCheckpoint(roadmap, state)
         ? "ARCH-R19"
       : isArchR17GovernanceCheckpoint(roadmap, state)
         ? "ARCH-R17"
@@ -7489,7 +7712,8 @@ function checkImp028ArchitectureLock(roadmap, state, architecture, decision) {
       isImp034ImplementationCompletionCheckpoint(roadmap, state) ||
       isImp034AcceptanceCheckpoint(roadmap, state)
       ? "DR-14"
-      : isImp035ImplementationCompletionCheckpoint(roadmap, state)
+      : isImp035ImplementationCompletionCheckpoint(roadmap, state) ||
+        isImp035AcceptanceCheckpoint(roadmap, state)
         ? "DR-15"
       : "DR-13";
     if (decision.meta.decisionRegisterVersion !== expectedDecisionRegisterVersion) {
@@ -9709,26 +9933,38 @@ function checkImp034ImplementationCompletion(roadmap, state, architecture, decis
 }
 
 
+function loadImp035CompletionFixture(suffix) {
+  return readFileSync(
+    path.join(path.dirname(fileURLToPath(import.meta.url)), `fixtures/imp035-completion-${suffix}.md`),
+    "utf8",
+  );
+}
+
 function checkImp035ImplementationCompletion(roadmap, state, architecture, decision) {
   if (!isImp035ImplementationCompletionCheckpoint(roadmap, state)) return;
 
-  const currentRoadmapSection = roadmap.text.slice(roadmap.text.indexOf("## 2."), roadmap.text.indexOf("## 3."));
+  const completionCapabilityText = loadImp035CompletionFixture("capability");
+  const completionRoadmapText = loadImp035CompletionFixture("roadmap");
+  const completionStateText = loadImp035CompletionFixture("state");
+  const currentRoadmapSection = completionRoadmapText.slice(
+    completionRoadmapText.indexOf("## 2."),
+    completionRoadmapText.indexOf("## 3."),
+  );
   const currentStateAcceptance = (() => {
-    const start = state.text.indexOf("## 5. Acceptance Position");
-    const end = state.text.indexOf("\n## ", start + 1);
-    return start === -1 ? "" : state.text.slice(start, end === -1 ? undefined : end);
+    const start = completionStateText.indexOf("## 5. Acceptance Position");
+    const end = completionStateText.indexOf("\n## ", start + 1);
+    return start === -1 ? "" : completionStateText.slice(start, end === -1 ? undefined : end);
   })();
   const currentStateActivity = (() => {
-    const start = state.text.indexOf("## 2. Current Work Position");
-    const end = state.text.indexOf("\n## ", start + 1);
-    return start === -1 ? "" : state.text.slice(start, end === -1 ? undefined : end);
+    const start = completionStateText.indexOf("## 2. Current Work Position");
+    const end = completionStateText.indexOf("\n## ", start + 1);
+    return start === -1 ? "" : completionStateText.slice(start, end === -1 ? undefined : end);
   })();
   const currentLifecycleText = `${currentRoadmapSection}\n${currentStateAcceptance}\n${currentStateActivity}`;
-  const futureSection = roadmap.text.split("## 5. Future GTM Slices")[1]?.split("## 6.")[0] || "";
+  const futureSection = completionRoadmapText.split("## 5. Future GTM Slices")[1]?.split("## 6.")[0] || "";
   const artifactRel = "docs/platform/capabilities/IMP-035-initial-administration-capabilities.md";
   const artifact = resolveExactRelativeFile(artifactRel);
-  const artifactText = artifact ? readFileSync(artifact, "utf8") : "";
-  const artifactValidation = evaluateImp035ImplementationCompletionArtifact(artifactText);
+  const artifactValidation = evaluateImp035ImplementationCompletionArtifact(completionCapabilityText);
   const artifactValid = artifact !== null && artifactValidation.ok;
   if (artifact !== null && !artifactValidation.ok) {
     fail(artifactValidation.code, artifactValidation.message);
@@ -9784,9 +10020,9 @@ function checkImp035ImplementationCompletion(roadmap, state, architecture, decis
   }
 
   const crossDocument = evaluateImp035ImplementationCompletionCrossDocumentAlignment({
-    capabilityText: artifactText,
-    roadmapText: roadmap.text,
-    stateText: state.text,
+    capabilityText: completionCapabilityText,
+    roadmapText: completionRoadmapText,
+    stateText: completionStateText,
   });
   if (!crossDocument.ok) fail(crossDocument.code, crossDocument.message);
 
@@ -9823,10 +10059,151 @@ function checkImp035ImplementationCompletion(roadmap, state, architecture, decis
     d373Exists: /\|\s*D-373\s*\|/.test(decision?.text ?? ""),
     archG25: Boolean(architecture && /\| ARCH-G25 \|/.test(architecture.text)),
     founderUatRequired: /IMP-035_FOUNDER_UAT_REQUIRED:\s*YES/.test(currentLifecycleText) ||
-      /FOUNDER_UAT_REQUIRED:\s*YES/.test(artifactText),
+      /FOUNDER_UAT_REQUIRED:\s*YES/.test(completionCapabilityText),
   });
   if (!checkpoint.ok) fail(checkpoint.code, checkpoint.message);
   else note(`IMP-035 implementation complete pending acceptance (${artifactRel})`);
+}
+
+function checkImp035Acceptance(roadmap, state, architecture, decision) {
+  if (!isImp035AcceptanceCheckpoint(roadmap, state)) return;
+
+  const currentRoadmapSection = roadmap.text.slice(roadmap.text.indexOf("## 2."), roadmap.text.indexOf("## 3."));
+  const currentStateAcceptance = (() => {
+    const start = state.text.indexOf("## 5. Acceptance Position");
+    const end = state.text.indexOf("\n## ", start + 1);
+    return start === -1 ? "" : state.text.slice(start, end === -1 ? undefined : end);
+  })();
+  const currentStateActivity = (() => {
+    const start = state.text.indexOf("## 2. Current Work Position");
+    const end = state.text.indexOf("\n## ", start + 1);
+    return start === -1 ? "" : state.text.slice(start, end === -1 ? undefined : end);
+  })();
+  const currentLifecycleText = `${currentRoadmapSection}\n${currentStateAcceptance}\n${currentStateActivity}`;
+  const futureSection = roadmap.text.split("## 5. Future GTM Slices")[1]?.split("## 6.")[0] || "";
+  const acceptedSection = roadmap.text.split("## 3. Accepted Slices")[1]?.split("## 4.")[0] || "";
+  const artifactRel = "docs/platform/capabilities/IMP-035-initial-administration-capabilities.md";
+  const artifact = resolveExactRelativeFile(artifactRel);
+  const artifactText = artifact ? readFileSync(artifact, "utf8") : "";
+  const artifactValidation = evaluateImp035AcceptanceArtifact(artifactText);
+  const artifactValid = artifact !== null && artifactValidation.ok;
+  if (artifact !== null && !artifactValidation.ok) {
+    fail(artifactValidation.code, artifactValidation.message);
+  }
+
+  if (/IMP-035\s*\|\s*Initial Administration Capabilities\s*\|/.test(futureSection)) {
+    fail("IMP035_ROADMAP_FUTURE", "ROADMAP future ledger must not retain IMP-035 after acceptance");
+  }
+  if (!/IMP-035\s*\|\s*Initial Administration Capabilities\s*\|\s*COMPLETE_AND_ACCEPTED/.test(acceptedSection)) {
+    fail("IMP035_ROADMAP_LIFECYCLE", "ROADMAP accepted ledger must list IMP-035 Initial Administration Capabilities as COMPLETE_AND_ACCEPTED");
+  }
+  if (!/IMP-036\s*\|\s*Observability & Operational Controls\s*\|\s*PLANNED/.test(futureSection)) {
+    fail("IMP036_ROADMAP_NOT_PLANNED", "ROADMAP future ledger must keep IMP-036 Observability & Operational Controls PLANNED");
+  }
+
+  const requiredTokens = [
+    [currentRoadmapSection, /IMP-035:\s*COMPLETE_AND_ACCEPTED/, "ROADMAP must record IMP-035 COMPLETE_AND_ACCEPTED"],
+    [currentRoadmapSection, /IMP-035_ACCEPTED:\s*YES/, "ROADMAP must record IMP-035 accepted"],
+    [currentRoadmapSection, /IMP035_INDEPENDENT_ACCEPTANCE_EVIDENCE:\s*ACCEPTED/, "ROADMAP must record IMP-035 independent acceptance evidence ACCEPTED"],
+    [currentRoadmapSection, /IMP035_FORMAL_ACCEPTANCE:\s*ACCEPTED/, "ROADMAP must record IMP-035 formal acceptance ACCEPTED"],
+    [currentRoadmapSection, /IMP-035_FOUNDER_UAT:\s*PASS/, "ROADMAP must record IMP-035 Founder UAT PASS"],
+    [currentRoadmapSection, /IMP-034:\s*COMPLETE_AND_ACCEPTED/, "ROADMAP must preserve IMP-034 COMPLETE_AND_ACCEPTED"],
+    [currentStateAcceptance, /IMP-035:\s*COMPLETE_AND_ACCEPTED/, "STATE must record IMP-035 COMPLETE_AND_ACCEPTED"],
+    [currentStateAcceptance, /IMP-035_ACCEPTED:\s*YES/, "STATE must record IMP-035 accepted"],
+    [currentStateAcceptance, /IMP035_FORMAL_ACCEPTANCE:\s*ACCEPTED/, "STATE must record IMP-035 formal acceptance ACCEPTED"],
+    [currentStateAcceptance, /IMP-035_FOUNDER_UAT:\s*PASS/, "STATE must record IMP-035 Founder UAT PASS"],
+    [currentStateAcceptance, /IMP-034:\s*COMPLETE_AND_ACCEPTED/, "STATE must preserve IMP-034 COMPLETE_AND_ACCEPTED"],
+  ];
+  for (const [text, pattern, message] of requiredTokens) {
+    if (!pattern.test(text)) fail("IMP035_ACCEPTANCE", message);
+  }
+
+  if (
+    state.meta.acceptedThrough !== "IMP-035" ||
+    state.meta.currentProductSlice !== "NONE" ||
+    state.meta.pendingAcceptance !== "NONE" ||
+    state.meta.nextProductSlice !== "IMP-036"
+  ) {
+    fail("IMP035_STATE_POSITION", "STATE must record acceptedThrough IMP-035, currentProductSlice NONE, nextProductSlice IMP-036, pendingAcceptance NONE");
+  }
+  if (!/IMP-035 COMPLETE_AND_ACCEPTED/.test(currentStateActivity) || !/IMP-036 PLANNED \/ NOT_ACTIVATED/.test(currentStateActivity)) {
+    fail("IMP035_STATE_ACTIVITY", "STATE current governance activity must record IMP-035 COMPLETE_AND_ACCEPTED and IMP-036 PLANNED / NOT_ACTIVATED");
+  }
+  if (!/\|\s*D-373\s*\|/.test(decision?.text ?? "")) {
+    fail("IMP035_D373_MISSING", "D-373 must exist during IMP-035 acceptance");
+  }
+  if (architecture?.meta.architectureVersion !== "ARCH-R19") {
+    fail("IMP035_ARCH_VERSION", "ARCHITECTURE must be ARCH-R19 during IMP-035 acceptance");
+  }
+  if (decision?.meta.decisionRegisterVersion !== "DR-15") {
+    fail("IMP035_DR_VERSION", "decision register must be DR-15 during IMP-035 acceptance");
+  }
+  if (!architecture || !/\| ARCH-G25 \|/.test(architecture.text)) {
+    fail("IMP035_ARCH_G25", "ARCHITECTURE must record ARCH-G25");
+  }
+
+  const crossDocument = evaluateImp035AcceptanceCrossDocumentAlignment({
+    capabilityText: artifactText,
+    roadmapText: roadmap.text,
+    stateText: state.text,
+  });
+  if (!crossDocument.ok) fail(crossDocument.code, crossDocument.message);
+
+  const checkpoint = evaluateImp035AcceptanceCheckpoint({
+    roadmapVersion: roadmap.meta.roadmapVersion,
+    stateVersion: state.meta.stateVersion,
+    acceptedThrough: state.meta.acceptedThrough,
+    currentProductSlice: state.meta.currentProductSlice,
+    nextProductSlice: state.meta.nextProductSlice,
+    pendingAcceptance: state.meta.pendingAcceptance,
+    imp034: /IMP-034:\s*COMPLETE_AND_ACCEPTED/.test(currentLifecycleText) ? "COMPLETE_AND_ACCEPTED" : "",
+    imp035: /IMP-035:\s*COMPLETE_AND_ACCEPTED/.test(currentLifecycleText) ? "COMPLETE_AND_ACCEPTED" : "",
+    architecture: /IMP-035_ARCHITECTURE:\s*LOCKED/.test(currentLifecycleText) ? "LOCKED" : "",
+    architectureLocked: /IMP-035_ARCHITECTURE_LOCKED:\s*YES/.test(currentLifecycleText) ? "YES" : "",
+    implementationAuthorized: /IMP-035_IMPLEMENTATION_AUTHORIZED:\s*YES/.test(currentRoadmapSection) &&
+      /IMP-035_IMPLEMENTATION_AUTHORIZED:\s*YES/.test(currentStateAcceptance)
+      ? "YES"
+      : "",
+    started: /IMP-035_STARTED:\s*YES/.test(currentRoadmapSection) &&
+      /IMP-035_STARTED:\s*YES/.test(currentStateAcceptance)
+      ? "YES"
+      : "",
+    implementationComplete: /IMP-035_IMPLEMENTATION_COMPLETE:\s*YES/.test(currentRoadmapSection) &&
+      /IMP-035_IMPLEMENTATION_COMPLETE:\s*YES/.test(currentStateAcceptance)
+      ? "YES"
+      : "",
+    accepted: /IMP-035_ACCEPTED:\s*YES/.test(currentRoadmapSection) &&
+      /IMP-035_ACCEPTED:\s*YES/.test(currentStateAcceptance)
+      ? "YES"
+      : "",
+    imp036: /IMP-036:\s*PLANNED \/ NOT_ACTIVATED/.test(currentLifecycleText) &&
+      /Observability & Operational Controls\s*\|\s*PLANNED/.test(futureSection)
+      ? "PLANNED"
+      : "",
+    architectureVersion: architecture?.meta.architectureVersion,
+    decisionRegisterVersion: decision?.meta.decisionRegisterVersion,
+    artifact: artifactValid,
+    d373Exists: /\|\s*D-373\s*\|/.test(decision?.text ?? ""),
+    archG25: Boolean(architecture && /\| ARCH-G25 \|/.test(architecture.text)),
+    implementationEvidenceComplete: /IMP035_IMPLEMENTATION_EVIDENCE:\s*COMPLETE/.test(artifactText) &&
+      /IMP035_IMPLEMENTATION_EVIDENCE:\s*COMPLETE/.test(currentLifecycleText),
+    independentReviewPass: /IMP_035_INDEPENDENT_IMPLEMENTATION_REVIEW:\s*PASS/.test(artifactText) &&
+      /IMP_035_INDEPENDENT_IMPLEMENTATION_REVIEW:\s*PASS/.test(currentLifecycleText),
+    independentAcceptanceAccepted: /IMP035_INDEPENDENT_ACCEPTANCE_EVIDENCE:\s*ACCEPTED/.test(artifactText) &&
+      /IMP035_INDEPENDENT_ACCEPTANCE_EVIDENCE:\s*ACCEPTED/.test(currentLifecycleText),
+    formalAcceptanceAccepted: /IMP035_FORMAL_ACCEPTANCE:\s*ACCEPTED/.test(artifactText) &&
+      /IMP035_FORMAL_ACCEPTANCE:\s*ACCEPTED/.test(currentLifecycleText),
+    founderUatPass: /FOUNDER_UAT:\s*PASS/.test(artifactText) && /IMP-035_FOUNDER_UAT:\s*PASS/.test(currentLifecycleText),
+    schemaChangeNo: /schema_change:\s*NO/.test(artifactText) && /IMP-035_SCHEMA_CHANGE:\s*NO/.test(currentLifecycleText),
+    providerIoNo: /provider_IO:\s*NO/.test(artifactText) && /IMP-035_PROVIDER_IO:\s*NO/.test(currentLifecycleText),
+    newServiceNo: /new_service:\s*NO/.test(artifactText) && /IMP-035_NEW_SERVICE:\s*NO/.test(currentLifecycleText),
+    newPermissionsNo: /new_permissions:\s*NO/.test(artifactText) && /IMP-035_NEW_PERMISSIONS:\s*NO/.test(currentLifecycleText),
+    newRolesNo: /new_roles:\s*NO/.test(artifactText) && /IMP-035_NEW_ROLES:\s*NO/.test(currentLifecycleText),
+    acceptedMainSha: (artifactText.match(/IMP035_ACCEPTED_MAIN_SHA:\s*([0-9a-f]{40})/) || [])[1] || "",
+    acceptedTree: (artifactText.match(/IMP035_ACCEPTED_TREE:\s*([0-9a-f]{40})/) || [])[1] || "",
+  });
+  if (!checkpoint.ok) fail(checkpoint.code, checkpoint.message);
+  else note(`IMP-035 COMPLETE_AND_ACCEPTED (${artifactRel})`);
 }
 
 function checkImp034Acceptance(roadmap, state, architecture, decision) {
@@ -10712,7 +11089,8 @@ export function runProjectConsistency() {
       !isImp033AcceptanceCheckpoint(roadmap, state) &&
       !isImp034ImplementationCompletionCheckpoint(roadmap, state) &&
       !isImp034AcceptanceCheckpoint(roadmap, state) &&
-      !isImp035ImplementationCompletionCheckpoint(roadmap, state)
+      !isImp035ImplementationCompletionCheckpoint(roadmap, state) &&
+      !isImp035AcceptanceCheckpoint(roadmap, state)
     ) {
       fail("UNSUPPORTED_GOVERNANCE_CHECKPOINT", "Governance revisions at or beyond GTM-R66 / STATE-R64 require an exact supported canonical checkpoint");
     }
@@ -10763,6 +11141,7 @@ export function runProjectConsistency() {
   checkImp034ImplementationCompletion(roadmap, state, architecture, decision);
   checkImp034Acceptance(roadmap, state, architecture, decision);
   checkImp035ImplementationCompletion(roadmap, state, architecture, decision);
+  checkImp035Acceptance(roadmap, state, architecture, decision);
   checkTechnicalInventory();
   checkStaticWeb();
   checkAgentsPointer();
