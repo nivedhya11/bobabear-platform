@@ -14,6 +14,10 @@ Source checkpoint: HEAD ddca0c319a5e80b2cfe38a2c32481b636277010e
 
 ## Current supporting plans
 
+- [`enterprise-experience/`](./enterprise-experience/) — Enterprise Experience Programme and seven
+  detailed planned contracts for IMP-036A–G. ROADMAP GTM-R96 owns their identity and sequence; all
+  remain `PLANNED` / `NOT_ACTIVATED` / `NOT_AUTHORIZED` / `NOT_STARTED`, with architecture
+  `NOT_LOCKED`.
 - [`d2c-ux-and-process-hardening-plan.md`](./d2c-ux-and-process-hardening-plan.md) — repository-
   reconciled D2C UX sequencing, process-review remediation register, and descriptive first-slice
   specification. It is supporting planning only and does not activate an IMP, allocate D-371, or
@@ -55,6 +59,7 @@ MAY BE USED FOR
 
 MUST NOT BE USED FOR
   activating a currentProductSlice
+  treating an IMP-036A–G planning contract as locked capability architecture
   authorizing or starting IMP-029
   creating further D-xxx identities from this pack
   rewriting accepted architecture

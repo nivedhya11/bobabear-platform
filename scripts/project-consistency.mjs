@@ -1461,7 +1461,7 @@ function isImp031AcceptanceCheckpoint(roadmap, state) {
   return isSupportedImp030GovernanceCheckpoint(roadmap?.meta.roadmapVersion, state?.meta.stateVersion, "imp031Acceptance");
 }
 
-/** @param {string} roadmapVersion @param {string} stateVersion @param {"activation" | "lock" | "authorization" | "start" | "routeAmendment" | "consistencyRepair" | "acceptance" | "imp031Activation" | "imp031Draft" | "imp031Lock" | "imp031Authorization" | "imp031Start" | "imp031Completion" | "imp031Acceptance" | "imp032Activation" | "imp032Draft" | "imp032Lock" | "imp032Authorization" | "imp032Start" | "imp032BoundaryClarification" | "imp032Completion" | "imp032Acceptance" | "imp033Activation" | "imp033Completion" | "imp033Acceptance" | "imp034Completion" | "imp034Acceptance" | "imp035Completion" | "imp035Acceptance" | "imp036Completion" | "imp036Acceptance"} [kind] */
+/** @param {string} roadmapVersion @param {string} stateVersion @param {"activation" | "lock" | "authorization" | "start" | "routeAmendment" | "consistencyRepair" | "acceptance" | "imp031Activation" | "imp031Draft" | "imp031Lock" | "imp031Authorization" | "imp031Start" | "imp031Completion" | "imp031Acceptance" | "imp032Activation" | "imp032Draft" | "imp032Lock" | "imp032Authorization" | "imp032Start" | "imp032BoundaryClarification" | "imp032Completion" | "imp032Acceptance" | "imp033Activation" | "imp033Completion" | "imp033Acceptance" | "imp034Completion" | "imp034Acceptance" | "imp035Completion" | "imp035Acceptance" | "imp036Completion" | "imp036Acceptance" | "enterpriseExperiencePlan"} [kind] */
 export function isSupportedImp030GovernanceCheckpoint(roadmapVersion, stateVersion, kind) {
   const activation = roadmapVersion === "GTM-R66" && stateVersion === "STATE-R64";
   const lock = roadmapVersion === "GTM-R67" && stateVersion === "STATE-R65";
@@ -1501,6 +1501,7 @@ export function isSupportedImp030GovernanceCheckpoint(roadmapVersion, stateVersi
   const imp035Acceptance = roadmapVersion === "GTM-R93" && stateVersion === "STATE-R91";
   const imp036Completion = roadmapVersion === "GTM-R94" && stateVersion === "STATE-R92";
   const imp036Acceptance = roadmapVersion === "GTM-R95" && stateVersion === "STATE-R93";
+  const enterpriseExperiencePlan = roadmapVersion === "GTM-R96" && stateVersion === "STATE-R94";
   if (kind === "activation") return activation;
   if (kind === "lock") return lock;
   if (kind === "authorization") return authorization;
@@ -1532,7 +1533,8 @@ export function isSupportedImp030GovernanceCheckpoint(roadmapVersion, stateVersi
   if (kind === "imp035Acceptance") return imp035Acceptance;
   if (kind === "imp036Completion") return imp036Completion;
   if (kind === "imp036Acceptance") return imp036Acceptance;
-  return activation || lock || authorization || start || routeAmendment || consistencyRepair || acceptance || imp031Activation || imp031Draft || imp031Lock || imp031Authorization || imp031Start || imp031Completion || imp031Acceptance || imp032Activation || imp032Draft || imp032Lock || imp032Authorization || imp032Start || imp032BoundaryClarification || imp032Completion || imp032Acceptance || imp033Activation || imp033Completion || imp033Acceptance || imp034Completion || imp034Acceptance || imp035Completion || imp035Acceptance || imp036Completion || imp036Acceptance;
+  if (kind === "enterpriseExperiencePlan") return enterpriseExperiencePlan;
+  return activation || lock || authorization || start || routeAmendment || consistencyRepair || acceptance || imp031Activation || imp031Draft || imp031Lock || imp031Authorization || imp031Start || imp031Completion || imp031Acceptance || imp032Activation || imp032Draft || imp032Lock || imp032Authorization || imp032Start || imp032BoundaryClarification || imp032Completion || imp032Acceptance || imp033Activation || imp033Completion || imp033Acceptance || imp034Completion || imp034Acceptance || imp035Completion || imp035Acceptance || imp036Completion || imp036Acceptance || enterpriseExperiencePlan;
 }
 
 function isImp032ArchitectureActivationCheckpoint(roadmap, state) {
@@ -1603,6 +1605,10 @@ function isImp036AcceptanceCheckpoint(roadmap, state) {
   return isSupportedImp030GovernanceCheckpoint(roadmap?.meta.roadmapVersion, state?.meta.stateVersion, "imp036Acceptance");
 }
 
+function isEnterpriseExperiencePlanningCheckpoint(roadmap, state) {
+  return isSupportedImp030GovernanceCheckpoint(roadmap?.meta.roadmapVersion, state?.meta.stateVersion, "enterpriseExperiencePlan");
+}
+
 function isImp030ArchitectureCheckpoint(roadmap, state) {
   return isImp030ArchitectureActivationCheckpoint(roadmap, state) || isImp030ArchitectureLockCheckpoint(roadmap, state);
 }
@@ -1639,8 +1645,37 @@ function isImp030GovernanceCheckpoint(roadmap, state) {
     isImp035ImplementationCompletionCheckpoint(roadmap, state) ||
     isImp035AcceptanceCheckpoint(roadmap, state) ||
     isImp036ImplementationCompletionCheckpoint(roadmap, state) ||
-    isImp036AcceptanceCheckpoint(roadmap, state)
+    isImp036AcceptanceCheckpoint(roadmap, state) ||
+    isEnterpriseExperiencePlanningCheckpoint(roadmap, state)
   );
+}
+
+/**
+ * Validate the planning-only Enterprise Experience programme checkpoint.
+ * @param {Record<string, unknown>} checkpoint
+ */
+export function evaluateEnterpriseExperiencePlanningCheckpoint(checkpoint) {
+  const expected = {
+    roadmapVersion: "GTM-R96", stateVersion: "STATE-R94", acceptedThrough: "IMP-036",
+    currentProductSlice: "NONE", nextProductSlice: "IMP-036A", pendingAcceptance: "NONE",
+    gtmBoundary: "IMP-040", imp036: "COMPLETE_AND_ACCEPTED", imp037: "PLANNED",
+    architectureVersion: "ARCH-R19", decisionRegisterVersion: "DR-15",
+    figmaRequiredNow: false, programmeArtifact: true, sliceArtifactCount: 7,
+    allPlanned: true, allNotActivated: true, allNotAuthorized: true, allNotStarted: true,
+    allArchitectureNotLocked: true, allFounderUatRequired: true,
+    customerSliceOrderCorrect: true, workforceHubPlanned: true,
+    teamAdministrationPlanned: true, supportRefundPlanned: true,
+    preparationAssessmentPlanned: true, navigationAvailabilityRule: true,
+  };
+  for (const [key, value] of Object.entries(expected)) {
+    if (checkpoint[key] !== value) {
+      return { ok: false, code: "ENTERPRISE_EXPERIENCE_PLAN", message: `${key} must be ${value}` };
+    }
+  }
+  if (checkpoint.d374Exists) {
+    return { ok: false, code: "ENTERPRISE_EXPERIENCE_D374", message: "planning must not create D-374" };
+  }
+  return { ok: true };
 }
 
 function isArchR17GovernanceCheckpoint(roadmap, state) {
@@ -7991,7 +8026,8 @@ function checkImp028ArchitectureLock(roadmap, state, architecture, decision) {
       : isImp035ImplementationCompletionCheckpoint(roadmap, state) ||
         isImp035AcceptanceCheckpoint(roadmap, state) ||
         isImp036ImplementationCompletionCheckpoint(roadmap, state) ||
-        isImp036AcceptanceCheckpoint(roadmap, state)
+        isImp036AcceptanceCheckpoint(roadmap, state) ||
+        isEnterpriseExperiencePlanningCheckpoint(roadmap, state)
         ? "ARCH-R19"
       : isArchR17GovernanceCheckpoint(roadmap, state)
         ? "ARCH-R17"
@@ -8058,7 +8094,8 @@ function checkImp028ArchitectureLock(roadmap, state, architecture, decision) {
       : isImp035ImplementationCompletionCheckpoint(roadmap, state) ||
         isImp035AcceptanceCheckpoint(roadmap, state) ||
         isImp036ImplementationCompletionCheckpoint(roadmap, state) ||
-        isImp036AcceptanceCheckpoint(roadmap, state)
+        isImp036AcceptanceCheckpoint(roadmap, state) ||
+        isEnterpriseExperiencePlanningCheckpoint(roadmap, state)
         ? "DR-15"
       : "DR-13";
     if (decision.meta.decisionRegisterVersion !== expectedDecisionRegisterVersion) {
@@ -10748,6 +10785,89 @@ function checkImp036Acceptance(roadmap, state, architecture, decision) {
   else note(`IMP-036 COMPLETE_AND_ACCEPTED (${artifactRel})`);
 }
 
+function checkEnterpriseExperiencePlanning(roadmap, state, architecture, decision) {
+  if (!isEnterpriseExperiencePlanningCheckpoint(roadmap, state)) return;
+
+  const futureSection = roadmap.text.split("## 5. Future GTM Slices")[1]?.split("## 6.")[0] || "";
+  const currentRoadmapSection = roadmap.text.slice(roadmap.text.indexOf("## 2."), roadmap.text.indexOf("## 3."));
+  const stateAcceptanceStart = state.text.indexOf("## 5. Acceptance Position");
+  const stateAcceptanceEnd = state.text.indexOf("\n## ", stateAcceptanceStart + 1);
+  const stateAcceptance = stateAcceptanceStart === -1
+    ? ""
+    : state.text.slice(stateAcceptanceStart, stateAcceptanceEnd === -1 ? undefined : stateAcceptanceEnd);
+  const programmeRel = "docs/platform/experience/enterprise-experience/README.md";
+  const sliceRels = [
+    "IMP-036A-multi-portal-experience-foundation.md",
+    "IMP-036B-customer-account-onboarding-address-location.md",
+    "IMP-036C-customer-commerce-experience-v2.md",
+    "IMP-036D-workforce-franchise-operations-v2.md",
+    "IMP-036E-store-operations-management.md",
+    "IMP-036F-catalog-menu-pricing-promotions.md",
+    "IMP-036G-administration-console-v2.md",
+  ].map((name) => `docs/platform/experience/enterprise-experience/${name}`);
+  const programme = resolveExactRelativeFile(programmeRel);
+  const slices = sliceRels.map((relative) => resolveExactRelativeFile(relative));
+  const programmeText = programme ? readFileSync(programme, "utf8") : "";
+  const sliceTexts = slices.filter(Boolean).map((absolute) => readFileSync(absolute, "utf8"));
+  const stateLifecyclePattern = (id) => new RegExp(`${id}:\\s*PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED`);
+  const roadmapLifecyclePattern = (id) => new RegExp(`\\|\\s*${id}\\s*\\|[^\\n]+\\|\\s*PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED\\s*\\|`);
+  const sliceIds = ["IMP-036A", "IMP-036B", "IMP-036C", "IMP-036D", "IMP-036E", "IMP-036F", "IMP-036G"];
+
+  const checkpoint = evaluateEnterpriseExperiencePlanningCheckpoint({
+    roadmapVersion: roadmap.meta.roadmapVersion,
+    stateVersion: state.meta.stateVersion,
+    acceptedThrough: state.meta.acceptedThrough,
+    currentProductSlice: state.meta.currentProductSlice,
+    nextProductSlice: state.meta.nextProductSlice,
+    pendingAcceptance: state.meta.pendingAcceptance,
+    gtmBoundary: roadmap.meta.gtmBoundary,
+    imp036: /IMP-036:\s*COMPLETE_AND_ACCEPTED/.test(currentRoadmapSection) ? "COMPLETE_AND_ACCEPTED" : "",
+    imp037: /IMP-037\s*\|\s*Backup, Restore & Migration Readiness\s*\|\s*PLANNED/.test(futureSection) ? "PLANNED" : "",
+    architectureVersion: architecture?.meta.architectureVersion,
+    decisionRegisterVersion: decision?.meta.decisionRegisterVersion,
+    figmaRequiredNow: programme ? !/FIGMA_REQUIRED_FOR_INITIAL_IMPLEMENTATION\s*=\s*NO/.test(programmeText) : true,
+    programmeArtifact: programme !== null,
+    sliceArtifactCount: slices.filter(Boolean).length,
+    allPlanned: sliceIds.every((id) => roadmapLifecyclePattern(id).test(futureSection) && stateLifecyclePattern(id).test(stateAcceptance)),
+    allNotActivated: sliceTexts.every((text) => /Lifecycle:\s*PLANNED \/ NOT_ACTIVATED/.test(text)),
+    allNotAuthorized: sliceTexts.every((text) => /Implementation:\s*NOT_AUTHORIZED \/ NOT_STARTED/.test(text)),
+    allNotStarted: sliceTexts.every((text) => /Implementation:\s*NOT_AUTHORIZED \/ NOT_STARTED/.test(text)),
+    allArchitectureNotLocked: sliceTexts.every((text) => /Architecture:\s*NOT_LOCKED/.test(text)),
+    allFounderUatRequired: sliceTexts.every((text) => /Founder UAT required:\s*YES/.test(text)),
+    customerSliceOrderCorrect:
+      /\|\s*IMP-036B\s*\|\s*Customer Account, Onboarding, Address & Location Experience\s*\|/.test(futureSection) &&
+      /\|\s*IMP-036C\s*\|\s*Customer Commerce Experience V2\s*\|/.test(futureSection) &&
+      /Capability:\s*IMP-036B — Customer Account, Onboarding, Address & Location Experience/.test(sliceTexts[1] ?? "") &&
+      /Capability:\s*IMP-036C — Customer Commerce Experience V2/.test(sliceTexts[2] ?? "") &&
+      /IMP-036B\s+Customer Account, Onboarding, Address & Location Experience\s*\n→ IMP-036C\s+Customer Commerce Experience V2/.test(programmeText),
+    workforceHubPlanned:
+      /\/workforce\/.*landing\/application-selection hub/s.test(sliceTexts[0] ?? "") &&
+      /currently\s+implemented\/authorized destinations derived from effective permissions and scope/s.test(sliceTexts[0] ?? "") &&
+      /one existing canonical workforce authentication\/session authority/.test(sliceTexts[0] ?? ""),
+    teamAdministrationPlanned:
+      ["access.membership.*", "access.role_assignment.*", "access.effective_permissions.*", "access.audit.read"]
+        .every((token) => (sliceTexts[4] ?? "").includes(token)) &&
+      /Team\s*\n\s*├── Members\s*\n\s*└── Access/.test(sliceTexts[4] ?? ""),
+    supportRefundPlanned:
+      /refund action\/recovery/.test(sliceTexts[3] ?? "") &&
+      /existing Order\s+cancellation/s.test(sliceTexts[3] ?? "") &&
+      /notification resend/.test(sliceTexts[3] ?? "") &&
+      /Delivery recovery/.test(sliceTexts[3] ?? "") &&
+      /financial-document\/read context/.test(sliceTexts[3] ?? ""),
+    preparationAssessmentPlanned:
+      /DECISION_REQUIRED/.test(sliceTexts[3] ?? "") &&
+      /`PREPARING`, `READY`/.test(sliceTexts[3] ?? "") &&
+      /separate preparation\/fulfilment authority/.test(sliceTexts[3] ?? "") &&
+      /unnecessary for BOBA V1/.test(sliceTexts[3] ?? ""),
+    navigationAvailabilityRule:
+      /NAVIGATION_MUST_NOT_ADVERTISE_UNIMPLEMENTED_CAPABILITIES/.test(programmeText) &&
+      /must not show dead links for IMP-036D\/E\/F\/G/.test(programmeText),
+    d374Exists: /\|\s*D-374\s*\|/.test(decision?.text ?? ""),
+  });
+  if (!checkpoint.ok) fail(checkpoint.code, checkpoint.message);
+  else note(`Enterprise Experience Programme planned only (${programmeRel}; 7 slice contracts)`);
+}
+
 function checkImp034Acceptance(roadmap, state, architecture, decision) {
   if (!isImp034AcceptanceCheckpoint(roadmap, state)) return;
 
@@ -11634,7 +11754,8 @@ export function runProjectConsistency() {
       !isImp035ImplementationCompletionCheckpoint(roadmap, state) &&
       !isImp035AcceptanceCheckpoint(roadmap, state) &&
       !isImp036ImplementationCompletionCheckpoint(roadmap, state) &&
-      !isImp036AcceptanceCheckpoint(roadmap, state)
+      !isImp036AcceptanceCheckpoint(roadmap, state) &&
+      !isEnterpriseExperiencePlanningCheckpoint(roadmap, state)
     ) {
       fail("UNSUPPORTED_GOVERNANCE_CHECKPOINT", "Governance revisions at or beyond GTM-R66 / STATE-R64 require an exact supported canonical checkpoint");
     }
@@ -11688,6 +11809,7 @@ export function runProjectConsistency() {
   checkImp035Acceptance(roadmap, state, architecture, decision);
   checkImp036ImplementationCompletion(roadmap, state, architecture, decision);
   checkImp036Acceptance(roadmap, state, architecture, decision);
+  checkEnterpriseExperiencePlanning(roadmap, state, architecture, decision);
   checkTechnicalInventory();
   checkStaticWeb();
   checkAgentsPointer();

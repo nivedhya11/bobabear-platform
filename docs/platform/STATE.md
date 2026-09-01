@@ -2,10 +2,10 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R93",
+  "stateVersion": "STATE-R94",
   "acceptedThrough": "IMP-036",
   "currentProductSlice": "NONE",
-  "nextProductSlice": "IMP-037",
+  "nextProductSlice": "IMP-036A",
   "pendingAcceptance": "NONE",
   "governanceHealth": "ALIGNED",
   "lastReviewed": "2026-09-01"
@@ -30,9 +30,10 @@ Accepted Range:            IMP-001 → IMP-036 (including IMP-005A and IMP-026C)
 ```text
 Current Product Implementation: NONE
 Pending Acceptance:             NONE
-Next Product Slice:             IMP-037 — Backup, Restore & Migration Readiness
+Next Product Slice:             IMP-036A — Multi-Portal Experience Foundation
 Current Governance Activity:    IMP-036 COMPLETE_AND_ACCEPTED;
-                              IMP-037 PLANNED / NOT_ACTIVATED.
+                              IMP-036A–G and IMP-037 PLANNED / NOT_ACTIVATED /
+                              NOT_AUTHORIZED / NOT_STARTED.
 Governance Health:              ALIGNED
 ```
 
@@ -353,6 +354,23 @@ STATE-R36 record IMP-028B canonical activation without changing decision registe
 architecture. GTM-R39 / STATE-R37 record IMP-028B architecture lock and implementation
 authorization without changing decision register or global architecture.
 
+
+STATE-R94 records the planning-only insertion of the **Enterprise Experience Programme** as
+IMP-036A–G between accepted IMP-036 and existing IMP-037. Accepted reality is unchanged:
+`acceptedThrough = IMP-036`, `currentProductSlice = NONE`, and `pendingAcceptance = NONE`.
+`nextProductSlice` becomes IMP-036A — Multi-Portal Experience Foundation, but IMP-036A is not
+activated. IMP-036A–G and IMP-037 remain `PLANNED` / `NOT_ACTIVATED` / `NOT_AUTHORIZED` /
+`NOT_STARTED`; no capability architecture is locked. Planned sequence is IMP-036A → IMP-036B
+Customer Account, Onboarding, Address & Location Experience → IMP-036C Customer Commerce
+Experience V2 → IMP-036D → E → F → G → IMP-037. The supporting programme and seven planned slice
+contracts are indexed at
+[`experience/enterprise-experience/`](./experience/enterprise-experience/README.md). Initial
+implementation does not require Figma. Location-provider selection, arbitrary multi-outlet
+franchise RBAC, media/object-storage architecture, and any preparation/readiness domain change remain
+deferred. Planning also requires permission-derived workforce entry, outlet-scoped Team workflows
+over existing access authority, existing support/refund capability exposure, and no dead navigation.
+No D-374 is created; ARCH-R19 and DR-15 remain current. Public GTM boundary remains IMP-040.
+Supersedes STATE-R93 for current next-slice planning only; accepted history is unchanged.
 
 STATE-R93 records formal acceptance of **IMP-036 — Observability & Operational Controls** for
 independently accepted product `main` merge SHA `68b46a53dc5d1ff84a8493899e713d3ef43db3aa` and tree
@@ -1270,7 +1288,7 @@ Cart → Checkout → Payment → Order
 acceptedThrough: IMP-036
 pendingAcceptance: NONE
 currentProductSlice: NONE
-nextProductSlice: IMP-037 — Backup, Restore & Migration Readiness
+nextProductSlice: IMP-036A — Multi-Portal Experience Foundation
 IMP-028: COMPLETE_AND_ACCEPTED
 IMP-028_ACCEPTED: YES
 IMP-028A: COMPLETE_AND_ACCEPTED
@@ -1461,7 +1479,14 @@ IMP036_ACCEPTED_TREE: 9b5c3193bf74d75a820b16976e894ec2dffafa13
 D-374_CREATED: NO
 IMP036_IMPLEMENTATION_EVIDENCE: COMPLETE
 IMP_036_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
-IMP-037: PLANNED / NOT_ACTIVATED
+IMP-036A: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
+IMP-036B: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
+IMP-036C: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
+IMP-036D: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
+IMP-036E: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
+IMP-036F: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
+IMP-036G: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
+IMP-037: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
 ```
 
 Independent acceptance of IMP-028A **is** claimed and formally reconciled
@@ -1915,6 +1940,8 @@ D-371 remains unused; ARCH-R15 and DR-12 remain current.
 ## 8. Explicitly Not Yet Accepted
 
 Supporting primitives do not equal capability completion. Not yet accepted as product capabilities:
+
+- Enterprise Experience IMP-036A–G (all planned, not activated, not authorized, and not started)
 
 - Operations Console API
 - Operations Console UI
