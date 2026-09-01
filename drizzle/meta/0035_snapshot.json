@@ -1,6 +1,6 @@
 {
-  "id": "066372dd-3f14-428b-8cb3-138d29550d4d",
-  "prevId": "c427fed9-cac1-4a7f-93cd-ef09b6d3d968",
+  "id": "a2299adb-5c7a-49cc-a235-19d5b5d99b3c",
+  "prevId": "a2eea586-7dab-4d3b-a519-4008be5e81da",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -11789,6 +11789,148 @@
       },
       "isRLSEnabled": false
     },
+    "app.notification_inbound_messages": {
+      "name": "notification_inbound_messages",
+      "schema": "app",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "provider": {
+          "name": "provider",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "provider_message_id": {
+          "name": "provider_message_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "wa_from_e164": {
+          "name": "wa_from_e164",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "customer_id": {
+          "name": "customer_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "message_type": {
+          "name": "message_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "body_preview": {
+          "name": "body_preview",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "classification": {
+          "name": "classification",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'UNCLASSIFIED'"
+        },
+        "provider_event_dedup_key": {
+          "name": "provider_event_dedup_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "received_at": {
+          "name": "received_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "notification_inbound_messages_provider_message_uidx": {
+          "name": "notification_inbound_messages_provider_message_uidx",
+          "columns": [
+            {
+              "expression": "provider",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "provider_message_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "notification_inbound_messages_received_at_idx": {
+          "name": "notification_inbound_messages_received_at_idx",
+          "columns": [
+            {
+              "expression": "received_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "notification_inbound_messages_provider_nonempty_check": {
+          "name": "notification_inbound_messages_provider_nonempty_check",
+          "value": "char_length(trim(\"app\".\"notification_inbound_messages\".\"provider\")) between 1 and 64"
+        },
+        "notification_inbound_messages_provider_message_id_length_check": {
+          "name": "notification_inbound_messages_provider_message_id_length_check",
+          "value": "char_length(trim(\"app\".\"notification_inbound_messages\".\"provider_message_id\")) between 1 and 256"
+        },
+        "notification_inbound_messages_classification_check": {
+          "name": "notification_inbound_messages_classification_check",
+          "value": "\"app\".\"notification_inbound_messages\".\"classification\" in ('UNCLASSIFIED')"
+        },
+        "notification_inbound_messages_body_preview_length_check": {
+          "name": "notification_inbound_messages_body_preview_length_check",
+          "value": "\"app\".\"notification_inbound_messages\".\"body_preview\" is null or char_length(\"app\".\"notification_inbound_messages\".\"body_preview\") <= 280"
+        },
+        "notification_inbound_messages_wa_from_length_check": {
+          "name": "notification_inbound_messages_wa_from_length_check",
+          "value": "\"app\".\"notification_inbound_messages\".\"wa_from_e164\" is null or char_length(trim(\"app\".\"notification_inbound_messages\".\"wa_from_e164\")) between 1 and 32"
+        },
+        "notification_inbound_messages_customer_id_length_check": {
+          "name": "notification_inbound_messages_customer_id_length_check",
+          "value": "\"app\".\"notification_inbound_messages\".\"customer_id\" is null or char_length(trim(\"app\".\"notification_inbound_messages\".\"customer_id\")) between 1 and 255"
+        }
+      },
+      "isRLSEnabled": false
+    },
     "app.notification_message_attempts": {
       "name": "notification_message_attempts",
       "schema": "app",
@@ -11944,6 +12086,22 @@
             }
           ],
           "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "notification_message_attempts_provider_message_id_partial_idx": {
+          "name": "notification_message_attempts_provider_message_id_partial_idx",
+          "columns": [
+            {
+              "expression": "provider_message_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"app\".\"notification_message_attempts\".\"provider_message_id\" is not null",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -20186,6 +20344,42 @@
           "type": "text[]",
           "primaryKey": false,
           "notNull": true
+        },
+        "previous_service_origin_latitude": {
+          "name": "previous_service_origin_latitude",
+          "type": "numeric(10, 7)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "new_service_origin_latitude": {
+          "name": "new_service_origin_latitude",
+          "type": "numeric(10, 7)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "previous_service_origin_longitude": {
+          "name": "previous_service_origin_longitude",
+          "type": "numeric(10, 7)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "new_service_origin_longitude": {
+          "name": "new_service_origin_longitude",
+          "type": "numeric(10, 7)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "previous_max_service_distance_meters": {
+          "name": "previous_max_service_distance_meters",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "new_max_service_distance_meters": {
+          "name": "new_max_service_distance_meters",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -20271,7 +20465,7 @@
         },
         "outlet_serviceability_audit_events_action_check": {
           "name": "outlet_serviceability_audit_events_action_check",
-          "value": "\"app\".\"outlet_serviceability_audit_events\".\"action\" in ('serviceability_routing_priority_set', 'serviceability_pins_added', 'serviceability_pins_removed', 'serviceability_pins_replaced')"
+          "value": "\"app\".\"outlet_serviceability_audit_events\".\"action\" in ('serviceability_routing_priority_set', 'serviceability_pins_added', 'serviceability_pins_removed', 'serviceability_pins_replaced', 'serviceability_distance_policy_set')"
         },
         "outlet_serviceability_audit_events_new_revision_positive_check": {
           "name": "outlet_serviceability_audit_events_new_revision_positive_check",
@@ -20305,6 +20499,24 @@
           "type": "bigint",
           "primaryKey": false,
           "notNull": true
+        },
+        "service_origin_latitude": {
+          "name": "service_origin_latitude",
+          "type": "numeric(10, 7)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "service_origin_longitude": {
+          "name": "service_origin_longitude",
+          "type": "numeric(10, 7)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "max_service_distance_meters": {
+          "name": "max_service_distance_meters",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
@@ -20335,6 +20547,26 @@
         "outlet_serviceability_configs_revision_positive_check": {
           "name": "outlet_serviceability_configs_revision_positive_check",
           "value": "\"app\".\"outlet_serviceability_configs\".\"revision\" > 0"
+        },
+        "outlet_serviceability_configs_origin_pair_check": {
+          "name": "outlet_serviceability_configs_origin_pair_check",
+          "value": "(\"app\".\"outlet_serviceability_configs\".\"service_origin_latitude\" is null) = (\"app\".\"outlet_serviceability_configs\".\"service_origin_longitude\" is null)"
+        },
+        "outlet_serviceability_configs_origin_latitude_range_check": {
+          "name": "outlet_serviceability_configs_origin_latitude_range_check",
+          "value": "\"app\".\"outlet_serviceability_configs\".\"service_origin_latitude\" is null or (\"app\".\"outlet_serviceability_configs\".\"service_origin_latitude\" >= -90 and \"app\".\"outlet_serviceability_configs\".\"service_origin_latitude\" <= 90)"
+        },
+        "outlet_serviceability_configs_origin_longitude_range_check": {
+          "name": "outlet_serviceability_configs_origin_longitude_range_check",
+          "value": "\"app\".\"outlet_serviceability_configs\".\"service_origin_longitude\" is null or (\"app\".\"outlet_serviceability_configs\".\"service_origin_longitude\" >= -180 and \"app\".\"outlet_serviceability_configs\".\"service_origin_longitude\" <= 180)"
+        },
+        "outlet_serviceability_configs_max_distance_positive_check": {
+          "name": "outlet_serviceability_configs_max_distance_positive_check",
+          "value": "\"app\".\"outlet_serviceability_configs\".\"max_service_distance_meters\" is null or \"app\".\"outlet_serviceability_configs\".\"max_service_distance_meters\" > 0"
+        },
+        "outlet_serviceability_configs_distance_requires_origin_check": {
+          "name": "outlet_serviceability_configs_distance_requires_origin_check",
+          "value": "\"app\".\"outlet_serviceability_configs\".\"max_service_distance_meters\" is null or (\"app\".\"outlet_serviceability_configs\".\"service_origin_latitude\" is not null and \"app\".\"outlet_serviceability_configs\".\"service_origin_longitude\" is not null)"
         }
       },
       "isRLSEnabled": false
