@@ -74,6 +74,24 @@ Direct URL/API authorization remains authoritative. Customer and payment data is
 and permission. Arbitrary multi-outlet franchise administration without brand-wide authority is a
 deferred RBAC question; this slice creates no `franchise_owner`, role, permission, or scope model.
 
+## Delivery economics visibility (planned amendment — IMP-036B correction)
+
+Workforce operations must keep three authorities separate:
+
+| Authority | Question |
+|---|---|
+| Serviceability | Can BOBA deliver here? |
+| Customer delivery fee | What BOBA charged the customer |
+| Provider cost | What courier execution actually cost BOBA |
+
+IMP-036D will surface, for authorized workforce users only:
+
+- customer delivery charge
+- estimated / booked / final provider cost
+- delivery subsidy/contribution variance
+
+Provider cost must never be exposed to customers. This amendment does not activate IMP-036D.
+
 ## Responsive, accessibility, and state requirements
 
 Desktop/tablet-first, dense but scannable, with mobile support for operationally sensible urgent

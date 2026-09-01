@@ -69,6 +69,19 @@ geospatial policy, roles, or permissions.
 IMP-036G may expose the same canonical access authority through richer hierarchy-wide governance
 workflows; IMP-036E does not duplicate or supersede it.
 
+## Delivery settings ownership (planned amendment — IMP-036B correction)
+
+IMP-036E will provide task-oriented Store Operations UI for delivery configuration using the same
+Serviceability authority created in IMP-036B:
+
+- outlet delivery enabled/disabled (via existing operating/Serviceability authorities)
+- service origin coordinates
+- maximum service distance
+- temporary delivery controls where accepted authority supports them
+
+Repository-native administration exists before IMP-036E UI (`setOutletServiceabilityDistancePolicy`,
+`npm run serviceability:set-distance-policy`). This amendment does not activate IMP-036E.
+
 ## Responsive, accessibility, and state requirements
 
 Desktop/tablet-first with mobile usability for status and availability tasks. Target WCAG 2.2 AA:

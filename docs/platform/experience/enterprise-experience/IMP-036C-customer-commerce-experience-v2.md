@@ -85,3 +85,22 @@ any proven transport gap are deferred to architecture lock.
 
 Figma is not required initially. Later approved visual refinements remain bounded unless they add
 business, API, provider, authorization, or lifecycle semantics.
+
+## Customer delivery fee ownership (planned amendment — IMP-036B correction)
+
+```text
+STANDARDIZED_CUSTOMER_DELIVERY_FEE = YES
+```
+
+IMP-036C explicitly owns BOBA-standardized customer-facing delivery pricing:
+
+- Customer sees a predictable BOBA-owned delivery charge before payment.
+- Fee is computed server-authoritatively from configured BOBA policy (may use distance bands).
+- Fee participates in canonical cart/checkout totals and is snapshotted into commercial order truth.
+- Customer pays BOBA once, including delivery charge.
+- Provider execution cost remains internal and never rewrites historical customer delivery charge.
+- BOBA may absorb provider-cost variance (subsidy/contribution reporting only).
+- Live/dynamic courier quote pass-through is forbidden as customer pricing.
+
+Exact distance bands, ₹ values, and free-delivery thresholds remain business configuration, not
+code constants. This amendment does not activate IMP-036C.

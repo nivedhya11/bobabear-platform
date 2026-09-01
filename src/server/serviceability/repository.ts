@@ -9,7 +9,13 @@ import {
   outletServiceabilityConfigsTable,
   outletServiceabilityPinsTable,
 } from "../../platform/database/schema/serviceability";
-import type { ServiceabilityCandidate } from "../../shared/serviceability";
+import type {
+  ServiceabilityCandidate,
+  ServiceabilityDistancePolicy,
+} from "../../shared/serviceability";
+import {
+  isDistancePolicyConfigured,
+} from "../../shared/serviceability";
 import type {
   PersistenceQueryContext,
   PersistenceTransactionContext,
@@ -20,7 +26,49 @@ export type ServiceabilityConfigRow = Readonly<{
   outletId: string;
   routingPriority: number;
   revision: bigint;
+  serviceOriginLatitude: string | null;
+  serviceOriginLongitude: string | null;
+  maxServiceDistanceMeters: number | null;
 }>;
+
+function readDistancePolicy(row: Readonly<{
+  serviceOriginLatitude: string | null;
+  serviceOriginLongitude: string | null;
+  maxServiceDistanceMeters: number | null;
+}>): ServiceabilityDistancePolicy | null {
+  if (
+    !isDistancePolicyConfigured({
+      serviceOriginLatitude: row.serviceOriginLatitude,
+      serviceOriginLongitude: row.serviceOriginLongitude,
+      maxServiceDistanceMeters: row.maxServiceDistanceMeters,
+    })
+  ) {
+    return null;
+  }
+  return Object.freeze({
+    serviceOriginLatitude: row.serviceOriginLatitude!,
+    serviceOriginLongitude: row.serviceOriginLongitude!,
+    maxServiceDistanceMeters: row.maxServiceDistanceMeters!,
+  });
+}
+
+function mapConfigRow(row: Readonly<{
+  outletId: string;
+  routingPriority: number;
+  revision: bigint;
+  serviceOriginLatitude: string | null;
+  serviceOriginLongitude: string | null;
+  maxServiceDistanceMeters: number | null;
+}>): ServiceabilityConfigRow {
+  return Object.freeze({
+    outletId: row.outletId,
+    routingPriority: row.routingPriority,
+    revision: row.revision,
+    serviceOriginLatitude: row.serviceOriginLatitude,
+    serviceOriginLongitude: row.serviceOriginLongitude,
+    maxServiceDistanceMeters: row.maxServiceDistanceMeters,
+  });
+}
 
 export async function lockOutletForServiceabilityMutation(
   context: PersistenceTransactionContext,
@@ -44,16 +92,22 @@ export async function findServiceabilityConfig(
       outletId: outletServiceabilityConfigsTable.outletId,
       routingPriority: outletServiceabilityConfigsTable.routingPriority,
       revision: outletServiceabilityConfigsTable.revision,
+      serviceOriginLatitude: outletServiceabilityConfigsTable.serviceOriginLatitude,
+      serviceOriginLongitude: outletServiceabilityConfigsTable.serviceOriginLongitude,
+      maxServiceDistanceMeters: outletServiceabilityConfigsTable.maxServiceDistanceMeters,
     })
     .from(outletServiceabilityConfigsTable)
     .where(eq(outletServiceabilityConfigsTable.outletId, outletId))
     .limit(1);
   const row = rows[0];
   if (!row) return null;
-  return Object.freeze({
+  return mapConfigRow({
     outletId: row.outletId,
     routingPriority: row.routingPriority,
     revision: row.revision,
+    serviceOriginLatitude: row.serviceOriginLatitude,
+    serviceOriginLongitude: row.serviceOriginLongitude,
+    maxServiceDistanceMeters: row.maxServiceDistanceMeters,
   });
 }
 
@@ -67,16 +121,22 @@ export async function lockServiceabilityConfigForUpdate(
       outletId: outletServiceabilityConfigsTable.outletId,
       routingPriority: outletServiceabilityConfigsTable.routingPriority,
       revision: outletServiceabilityConfigsTable.revision,
+      serviceOriginLatitude: outletServiceabilityConfigsTable.serviceOriginLatitude,
+      serviceOriginLongitude: outletServiceabilityConfigsTable.serviceOriginLongitude,
+      maxServiceDistanceMeters: outletServiceabilityConfigsTable.maxServiceDistanceMeters,
     })
     .from(outletServiceabilityConfigsTable)
     .where(eq(outletServiceabilityConfigsTable.outletId, outletId))
     .for("update");
   const row = rows[0];
   if (!row) return null;
-  return Object.freeze({
+  return mapConfigRow({
     outletId: row.outletId,
     routingPriority: row.routingPriority,
     revision: row.revision,
+    serviceOriginLatitude: row.serviceOriginLatitude,
+    serviceOriginLongitude: row.serviceOriginLongitude,
+    maxServiceDistanceMeters: row.maxServiceDistanceMeters,
   });
 }
 
@@ -115,6 +175,9 @@ export async function updateServiceabilityConfig(
     outletId: string;
     routingPriority: number;
     revision: bigint;
+    serviceOriginLatitude?: string | null;
+    serviceOriginLongitude?: string | null;
+    maxServiceDistanceMeters?: number | null;
   },
 ): Promise<void> {
   assertTransactionContext(context, "updateServiceabilityConfig");
@@ -123,6 +186,15 @@ export async function updateServiceabilityConfig(
     .set({
       routingPriority: input.routingPriority,
       revision: input.revision,
+      ...(input.serviceOriginLatitude !== undefined
+        ? { serviceOriginLatitude: input.serviceOriginLatitude }
+        : {}),
+      ...(input.serviceOriginLongitude !== undefined
+        ? { serviceOriginLongitude: input.serviceOriginLongitude }
+        : {}),
+      ...(input.maxServiceDistanceMeters !== undefined
+        ? { maxServiceDistanceMeters: input.maxServiceDistanceMeters }
+        : {}),
     })
     .where(eq(outletServiceabilityConfigsTable.outletId, input.outletId));
 }
@@ -182,6 +254,9 @@ export async function findServiceabilityCandidates(
     .select({
       outletId: outletServiceabilityPinsTable.outletId,
       routingPriority: outletServiceabilityConfigsTable.routingPriority,
+      serviceOriginLatitude: outletServiceabilityConfigsTable.serviceOriginLatitude,
+      serviceOriginLongitude: outletServiceabilityConfigsTable.serviceOriginLongitude,
+      maxServiceDistanceMeters: outletServiceabilityConfigsTable.maxServiceDistanceMeters,
     })
     .from(outletServiceabilityPinsTable)
     .innerJoin(
@@ -211,6 +286,11 @@ export async function findServiceabilityCandidates(
       Object.freeze({
         outletId: row.outletId,
         routingPriority: row.routingPriority,
+        distancePolicy: readDistancePolicy({
+          serviceOriginLatitude: row.serviceOriginLatitude,
+          serviceOriginLongitude: row.serviceOriginLongitude,
+          maxServiceDistanceMeters: row.maxServiceDistanceMeters,
+        }),
       }),
     ),
   );

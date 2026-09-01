@@ -24,6 +24,12 @@ export type InsertServiceabilityAuditEventInput = Readonly<{
   addedPostalCodes: readonly string[];
   removedPostalCodes: readonly string[];
   occurredAt: Date;
+  previousServiceOriginLatitude?: string | null;
+  newServiceOriginLatitude?: string | null;
+  previousServiceOriginLongitude?: string | null;
+  newServiceOriginLongitude?: string | null;
+  previousMaxServiceDistanceMeters?: number | null;
+  newMaxServiceDistanceMeters?: number | null;
 }>;
 
 function assertCanonicalPostalArray(
@@ -139,6 +145,12 @@ export async function insertServiceabilityAuditEvent(
       newRoutingPriority: input.newRoutingPriority,
       addedPostalCodes: added,
       removedPostalCodes: removed,
+      previousServiceOriginLatitude: input.previousServiceOriginLatitude ?? null,
+      newServiceOriginLatitude: input.newServiceOriginLatitude ?? null,
+      previousServiceOriginLongitude: input.previousServiceOriginLongitude ?? null,
+      newServiceOriginLongitude: input.newServiceOriginLongitude ?? null,
+      previousMaxServiceDistanceMeters: input.previousMaxServiceDistanceMeters ?? null,
+      newMaxServiceDistanceMeters: input.newMaxServiceDistanceMeters ?? null,
     });
   } catch (error) {
     // Concurrent material mutations racing on (outlet_id, new_revision) must

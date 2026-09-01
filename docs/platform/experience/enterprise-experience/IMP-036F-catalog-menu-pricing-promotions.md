@@ -56,6 +56,19 @@ Media/reference display may use existing semantics. Do not assume upload or obje
 If true media management requires storage, retention, delivery, scanning, or access policy, that is
 `DECISION_REQUIRED` in a later architecture gate.
 
+## Customer delivery tariff ownership (planned amendment — IMP-036B correction)
+
+IMP-036F will own configurable customer delivery tariff policy separate from Serviceability and
+provider cost:
+
+- distance bands and fee values
+- free-delivery thresholds/rules
+- promotional delivery-fee overrides with audit/revision semantics
+
+Customer delivery fee is BOBA-owned standardized pricing (see IMP-036C). Provider cost remains
+internal. Exact commercial values are business configuration, not code constants. This amendment
+does not activate IMP-036F.
+
 ## Responsive, accessibility, and state requirements
 
 Desktop/tablet-first with graceful mobile fallback for inspection and suitably bounded actions.

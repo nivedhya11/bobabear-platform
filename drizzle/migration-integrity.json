@@ -176,6 +176,11 @@
       "tag": "0034_meta_whatsapp_adapter",
       "path": "drizzle/0034_meta_whatsapp_adapter.sql",
       "sha256": "e077c98246f19f6233276197b3fc30764b7d4efd4981ef60d7cd75bc582f25b1"
+    },
+    {
+      "tag": "0035_serviceability_distance_policy",
+      "path": "drizzle/0035_serviceability_distance_policy.sql",
+      "sha256": "0ba2c03cd816f4d9816e656554307c52f2632cbf60230a1dc7e50ea546b87166"
     }
   ]
 }
