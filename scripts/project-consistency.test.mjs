@@ -54,6 +54,7 @@ import {
   evaluateImp036AcceptanceArtifact,
   evaluateImp036AcceptanceCheckpoint,
   evaluateImp036AcceptanceCrossDocumentAlignment,
+  evaluateEnterpriseExperiencePlanningCheckpoint,
   evaluateImp031ArchitectureDraftArtifact,
   evaluateImp031ArchitectureDraftCheckpoint,
   evaluateImp031ArchitectureLockArtifact,
@@ -5966,9 +5967,12 @@ function deriveImp036CompletionDocs() {
   };
 }
 
-/** Use live docs on R95/S93; otherwise reconstruct the accepted R95/S93 governance snapshot. */
+/** Use compatible live docs on R95/S93 or the planned R96/S94 successor; otherwise reconstruct R95/S93. */
 function deriveImp036AcceptanceDocs(liveRoadmap, liveState, liveCapability) {
-  if (/"roadmapVersion": "GTM-R95"/.test(liveRoadmap) && /"stateVersion": "STATE-R93"/.test(liveState)) {
+  if (
+    /"roadmapVersion": "GTM-R9[56]"/.test(liveRoadmap) &&
+    /"stateVersion": "STATE-R9[34]"/.test(liveState)
+  ) {
     return { capabilityText: liveCapability, roadmapText: liveRoadmap, stateText: liveState };
   }
   const base = "68b46a53dc5d1ff84a8493899e713d3ef43db3aa";
@@ -6108,5 +6112,45 @@ describe("IMP-036 formal acceptance checkpoint", () => {
     });
     assert.equal(authorized.ok, false);
     assert.equal(authorized.code, "IMP036_ACCEPTANCE_RESIDUE");
+  });
+});
+
+describe("Enterprise Experience planning checkpoint", () => {
+  const planning = Object.freeze({
+    roadmapVersion: "GTM-R96", stateVersion: "STATE-R94", acceptedThrough: "IMP-036",
+    currentProductSlice: "NONE", nextProductSlice: "IMP-036A", pendingAcceptance: "NONE",
+    gtmBoundary: "IMP-040", imp036: "COMPLETE_AND_ACCEPTED", imp037: "PLANNED",
+    architectureVersion: "ARCH-R19", decisionRegisterVersion: "DR-15",
+    figmaRequiredNow: false, programmeArtifact: true, sliceArtifactCount: 7,
+    allPlanned: true, allNotActivated: true, allNotAuthorized: true, allNotStarted: true,
+    allArchitectureNotLocked: true, allFounderUatRequired: true, d374Exists: false,
+  });
+
+  it("supports only the R96/S94 planning-only checkpoint", () => {
+    assert.deepEqual(evaluateEnterpriseExperiencePlanningCheckpoint(planning), { ok: true });
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R96", "STATE-R94", "enterpriseExperiencePlan"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R96", "STATE-R93", "enterpriseExperiencePlan"), false);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R95", "STATE-R94", "enterpriseExperiencePlan"), false);
+  });
+
+  it("rejects lifecycle progression or planning-artifact gaps", () => {
+    for (const [key, value] of [
+      ["currentProductSlice", "IMP-036A"],
+      ["nextProductSlice", "IMP-037"],
+      ["pendingAcceptance", "IMP-036A"],
+      ["allNotActivated", false],
+      ["allArchitectureNotLocked", false],
+      ["allNotAuthorized", false],
+      ["allNotStarted", false],
+      ["sliceArtifactCount", 6],
+      ["figmaRequiredNow", true],
+      ["d374Exists", true],
+    ]) {
+      assert.equal(
+        evaluateEnterpriseExperiencePlanningCheckpoint({ ...planning, [key]: value }).ok,
+        false,
+        `${key}=${value}`,
+      );
+    }
   });
 });

@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R95",
+  "roadmapVersion": "GTM-R96",
   "acceptedThrough": "IMP-036",
   "currentProductSlice": "NONE",
-  "nextProductSlice": "IMP-037",
+  "nextProductSlice": "IMP-036A",
   "gtmBoundary": "IMP-040",
   "lastReviewed": "2026-09-01",
-  "supersedes": "GTM-R94"
+  "supersedes": "GTM-R95"
 }
 -->
 
@@ -304,7 +304,7 @@ IMP-036 locked capability architecture (architecture **ARCHITECTURE_LOCKED**; im
 ```text
 Accepted Through:     IMP-036 — Observability & Operational Controls
 Current Product Slice: NONE
-Next Product Slice:    IMP-037 — Backup, Restore & Migration Readiness
+Next Product Slice:    IMP-036A — Multi-Portal Experience Foundation
 Pending Acceptance:    NONE
 Public GTM Boundary:   IMP-040 — Launch Validation & Cutover
 ```
@@ -324,8 +324,11 @@ and in-process metrics only — no external observability vendor. Implementation
 `9b5c3193bf74d75a820b16976e894ec2dffafa13`. **GTM-R95** advances `acceptedThrough` to IMP-036 and
 sets `currentProductSlice = NONE` and `pendingAcceptance = NONE`. Founder UAT remains **not
 required** (`IMP-036_FOUNDER_UAT_REQUIRED: NO`; `IMP-036_FOUNDER_UAT: NOT_APPLICABLE`).
-IMP-037 remains `PLANNED` / `NOT_ACTIVATED` / `NOT_AUTHORIZED` / `NOT_STARTED`; acceptance of
-IMP-036 does **not** authorize, start, or activate IMP-037.
+**GTM-R96** inserts the planned Enterprise Experience Programme after accepted IMP-036 and before
+existing IMP-037. IMP-036A–G and IMP-037 all remain `PLANNED` / `NOT_ACTIVATED` /
+`NOT_AUTHORIZED` / `NOT_STARTED`; no capability architecture is locked. This planning checkpoint
+changes `nextProductSlice` to IMP-036A without activating it. See the supporting
+[programme contract](./experience/enterprise-experience/README.md).
 
 IMP-035 is `COMPLETE_AND_ACCEPTED`. Architecture remains **ARCHITECTURE_LOCKED**; implementation is
 `AUTHORIZED` / `STARTED` / `COMPLETE`; implementation evidence is **COMPLETE**; independent
@@ -496,7 +499,14 @@ IMP036_FORMAL_ACCEPTANCE: ACCEPTED
 IMP036_ACCEPTED_MAIN_SHA: 68b46a53dc5d1ff84a8493899e713d3ef43db3aa
 IMP036_ACCEPTED_TREE: 9b5c3193bf74d75a820b16976e894ec2dffafa13
 D-374_CREATED: NO
-IMP-037: PLANNED / NOT_ACTIVATED
+IMP-036A: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
+IMP-036B: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
+IMP-036C: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
+IMP-036D: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
+IMP-036E: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
+IMP-036F: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
+IMP-036G: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
+IMP-037: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
 ```
 
 IMP-024 architecture remains **ARCHITECTURE_LOCKED**. IMP-024 implementation is
@@ -700,8 +710,9 @@ Independent acceptance evidence is **ACCEPTED** and formal acceptance is recorde
 implementation authorization, implementation start, and implementation completion in one gate;
 GTM-R95 records formal acceptance. Locked boundary facts remain: `schema_change: NO`, `provider_IO: NO`,
 `new_service: NO`, `new_permissions: NO`, `new_roles: NO`; no `D-374`. `acceptedThrough` is IMP-036.
-`nextProductSlice` is IMP-037 — Backup, Restore & Migration Readiness, which remains `PLANNED` /
-`NOT_ACTIVATED`. Formal acceptance of IMP-036 does **not** authorize, start, or activate IMP-037.
+`nextProductSlice` is now IMP-036A — Multi-Portal Experience Foundation, which remains `PLANNED` /
+`NOT_ACTIVATED` / `NOT_AUTHORIZED` / `NOT_STARTED`. GTM-R96 inserts planned IMP-036A–G before
+IMP-037 without changing IMP-036 acceptance or activating any slice.
 IMP-035 — Initial Administration Capabilities remains `COMPLETE_AND_ACCEPTED` with locked capability
 architecture at
 [`capabilities/IMP-035-initial-administration-capabilities.md`](./capabilities/IMP-035-initial-administration-capabilities.md).
@@ -1022,7 +1033,9 @@ architecture work only; implementation remains not authorized and not started.
 
 ## 5. Future GTM Slices
 
-Remaining numeric GTM range IMP-035 → IMP-040: **6** IMP numbers.
+Remaining numeric GTM range IMP-037 → IMP-040: **4** IMP numbers. The seven planned
+Enterprise Experience suffix slices IMP-036A–G are inserted before IMP-037 without consuming or
+renaming existing numeric identities.
 Accepted inserted slices IMP-026C, IMP-028A, IMP-028B, IMP-028C, and IMP-028D remain in the
 accepted ledger and are not future identities.
 
@@ -1044,10 +1057,45 @@ consume or remap IMP-029 → IMP-040 identities and is `COMPLETE_AND_ACCEPTED`.
 
 | IMP | Capability | Lifecycle |
 |---|---|---|
+| IMP-036A | Multi-Portal Experience Foundation | PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED |
+| IMP-036B | Customer Commerce Experience V2 | PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED |
+| IMP-036C | Customer Account, Onboarding, Address & Location Experience | PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED |
+| IMP-036D | Workforce & Franchise Operations Portal V2 | PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED |
+| IMP-036E | Store Operations Management | PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED |
+| IMP-036F | Catalog, Menu, Pricing & Promotions Management | PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED |
+| IMP-036G | Administration Console V2 | PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED |
 | IMP-037 | Backup, Restore & Migration Readiness | PLANNED |
 | IMP-038 | Security & Privacy Hardening | PLANNED |
 | IMP-039 | Production Infrastructure & Release Pipeline | PLANNED |
 | IMP-040 | Launch Validation & Cutover | PLANNED |
+
+### 5.0E Enterprise Experience Programme — IMP-036A → IMP-036G (PLANNED)
+
+The [Enterprise Experience Programme](./experience/enterprise-experience/README.md) defines the
+reviewable no-Figma-first UX/workflow contract for three distinct Customer, Workforce, and
+Administration applications. Its seven slice contracts are supporting planning artifacts, not
+locked capability architecture:
+
+1. [IMP-036A — Multi-Portal Experience Foundation](./experience/enterprise-experience/IMP-036A-multi-portal-experience-foundation.md)
+2. [IMP-036B — Customer Commerce Experience V2](./experience/enterprise-experience/IMP-036B-customer-commerce-experience-v2.md)
+3. [IMP-036C — Customer Account, Onboarding, Address & Location Experience](./experience/enterprise-experience/IMP-036C-customer-account-onboarding-address-location.md)
+4. [IMP-036D — Workforce & Franchise Operations Portal V2](./experience/enterprise-experience/IMP-036D-workforce-franchise-operations-v2.md)
+5. [IMP-036E — Store Operations Management](./experience/enterprise-experience/IMP-036E-store-operations-management.md)
+6. [IMP-036F — Catalog, Menu, Pricing & Promotions Management](./experience/enterprise-experience/IMP-036F-catalog-menu-pricing-promotions.md)
+7. [IMP-036G — Administration Console V2](./experience/enterprise-experience/IMP-036G-administration-console-v2.md)
+
+```text
+FIGMA_REQUIRED_FOR_INITIAL_IMPLEMENTATION: NO
+IMP-036A → IMP-036G: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
+ARCHITECTURE_LOCKED: NO
+IMPLEMENTATION_AUTHORIZED: NO
+FOUNDER_UAT_REQUIRED: YES for each slice
+```
+
+The required order is IMP-036A → B → C → D → E → F → G → IMP-037. Provider selection for
+location, arbitrary multi-outlet franchise RBAC, and media/object-storage architecture remain
+deferred decisions. No new domain lifecycle, API, schema, provider, role, permission, service,
+micro-frontend, or application implementation is authorized by GTM-R96.
 
 ### 5.0 IMP-028A — Food Direct UX Foundation (COMPLETE_AND_ACCEPTED)
 
@@ -1414,6 +1462,24 @@ Historical GTM-R1 meanings that are **not** current:
 Current public GTM boundary is **IMP-040**, not IMP-035.
 
 ## 9. Roadmap Change Log
+
+### GTM-R96 — 2026-09-01
+
+- Inserts the planned **Enterprise Experience Programme** as IMP-036A–G between accepted IMP-036
+  and existing IMP-037 using the repository-supported single-letter suffix convention.
+- Preserves `acceptedThrough = IMP-036`, `currentProductSlice = NONE`, and
+  `pendingAcceptance = NONE`; changes `nextProductSlice` from IMP-037 to IMP-036A.
+- Records all IMP-036A–G and IMP-037 as `PLANNED` / `NOT_ACTIVATED` / `NOT_AUTHORIZED` /
+  `NOT_STARTED`. No capability architecture is locked and no implementation is authorized.
+- Preserves IMP-037–040 identities and the public GTM boundary at IMP-040. Sequence becomes
+  IMP-036A → B → C → D → E → F → G → IMP-037 → IMP-038 → IMP-039 → IMP-040.
+- Indexes one programme contract and seven detailed planned slice contracts under
+  [`experience/enterprise-experience/`](./experience/enterprise-experience/README.md). Initial
+  implementation does not require Figma; later visual amendments cannot silently redefine product,
+  domain, API, provider, or authorization semantics.
+- Defers location-provider selection, arbitrary multi-outlet franchise RBAC, and media/object-storage
+  architecture. Creates no D-374 and leaves ARCH-R19 / DR-15 unchanged.
+- Supersedes GTM-R95 for current next-slice planning only; accepted history remains unchanged.
 
 ### GTM-R95 — 2026-09-01
 
