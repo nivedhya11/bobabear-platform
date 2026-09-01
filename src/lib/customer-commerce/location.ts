@@ -57,9 +57,11 @@ export async function resolveLocationPlace(
 
 export async function reverseGeocodeLocation(
   input: Readonly<{ latitude: number; longitude: number }>,
+  signal?: AbortSignal,
 ): Promise<CommerceHttpResult<{ location: NormalizedCommerceLocation }>> {
   return commerceRequest("/api/v1/location/reverse-geocode", {
     method: "POST",
     body: { latitude: input.latitude, longitude: input.longitude },
+    signal,
   });
 }

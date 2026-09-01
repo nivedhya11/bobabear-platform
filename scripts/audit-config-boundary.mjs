@@ -83,6 +83,7 @@ const ALLOWED_PROCESS_ENV_PREFIXES = [
 const LEGACY_NEXT_PUBLIC_FILES = new Set([
   "src/lib/site.ts",
   "src/components/Analytics.tsx",
+  "src/lib/customer-location/maps-js-config.ts",
 ]);
 
 // Same two files also predate the process.env restriction for the same
@@ -207,6 +208,10 @@ const GOOGLE_MAPS_SECRET_KEYS = new Set([
   "BOBA_BEAR_GOOGLE_MAPS_API_KEY",
 ]);
 
+const GOOGLE_MAPS_PUBLIC_BROWSER_KEYS = new Set([
+  "NEXT_PUBLIC_BOBA_BEAR_GOOGLE_MAPS_BROWSER_KEY",
+]);
+
 // Customer-auth (IMP-009) configuration keys that are not secrets but
 // happen to contain "AUTH" (one of SENSITIVE_KEY_PATTERNS below) purely as
 // part of their realm-scoped naming — a base URL, proxy-hop count, bind
@@ -294,6 +299,15 @@ function isApprovedSecretShapedPlaceholder(fileName, key, value) {
   }
   if (
     (fileName === ".env.example" || fileName === ".env.test") &&
+    GOOGLE_MAPS_PUBLIC_BROWSER_KEYS.has(key)
+  ) {
+    if (fileName === ".env.example") {
+      return PLACEHOLDER_VALUE_PATTERN.test(value);
+    }
+    return false;
+  }
+  if (
+    (fileName === ".env.example" || fileName === ".env.test") &&
     (CUSTOMER_AUTH_NON_SECRET_CONFIG_KEYS.has(key) ||
       WORKFORCE_AUTH_NON_SECRET_CONFIG_KEYS.has(key) ||
       CUSTOMER_COMMERCE_NON_SECRET_CONFIG_KEYS.has(key) ||
@@ -313,6 +327,7 @@ function isApprovedSecretShapedPlaceholder(fileName, key, value) {
 const LEGACY_ENV_EXAMPLE_KEYS = new Set([
   "NEXT_PUBLIC_SITE_URL",
   "NEXT_PUBLIC_GA_MEASUREMENT_ID",
+  "NEXT_PUBLIC_BOBA_BEAR_GOOGLE_MAPS_BROWSER_KEY",
 ]);
 
 const SENSITIVE_KEY_PATTERNS = [

@@ -6,6 +6,8 @@
  */
 import { BUSINESS } from "@/lib/site";
 
+import { compactDeliveryDisplayLabel } from "./display-label";
+
 const STORAGE_KEY = "boba.delivery-context.v1";
 const LEGACY_PIN_KEY = "boba.delivery-pin.v1";
 const CONTEXT_EVENT = "boba-bear:delivery-context";
@@ -148,6 +150,15 @@ export function writeDeliveryContextPin(postalCode: string): DeliveryContext {
 }
 
 export function deliveryContextTriggerLabel(context: DeliveryContext): string {
+  if (context.displayLabel.trim().length > 0) {
+    return compactDeliveryDisplayLabel(context.displayLabel);
+  }
+  if (context.postalCode.length === 6) return context.postalCode;
+  return BUSINESS.locality;
+}
+
+/** Full geographic label for selector/detail surfaces (not header chrome). */
+export function deliveryContextDetailLabel(context: DeliveryContext): string {
   if (context.displayLabel.trim().length > 0) return context.displayLabel.trim();
   if (context.postalCode.length === 6) return context.postalCode;
   return BUSINESS.locality;

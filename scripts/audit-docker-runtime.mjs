@@ -540,7 +540,7 @@ export function checkDockerignoreExcludesSecrets(dockerignoreText) {
 
 export function checkNoUnapprovedPublicBuildArgs(dockerfileText) {
   const declared = [...dockerfileText.matchAll(/ARG\s+(NEXT_PUBLIC_\w+)/g)].map((m) => m[1]);
-  const approved = new Set(["NEXT_PUBLIC_SITE_URL", "NEXT_PUBLIC_GA_MEASUREMENT_ID"]);
+  const approved = new Set(["NEXT_PUBLIC_SITE_URL", "NEXT_PUBLIC_GA_MEASUREMENT_ID", "NEXT_PUBLIC_BOBA_BEAR_GOOGLE_MAPS_BROWSER_KEY"]);
   const unapproved = declared.filter((name) => !approved.has(name));
   return { name: "Only the two approved NEXT_PUBLIC_* build args are declared", passed: unapproved.length === 0, detail: unapproved.join(", ") };
 }

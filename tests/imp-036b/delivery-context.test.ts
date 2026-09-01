@@ -48,14 +48,13 @@ describe("delivery-context", () => {
     });
   });
 
-  it("uses display label for trigger copy", () => {
+  it("uses compact display label for trigger copy", () => {
     const label = deliveryContextTriggerLabel({
       postalCode: "248001",
-      displayLabel: "Home · Rajpur Road · 248001",
-      source: "saved_address",
-      savedAddressId: "addr-1",
+      displayLabel: "Ghanta Ghar, Ghanta Ghar, Chukkuwala, Dehradun, Uttarakhand 248001, India",
+      source: "location_search",
     });
-    expect(label).toBe("Home · Rajpur Road · 248001");
+    expect(label).toBe("Ghanta Ghar, Dehradun");
   });
 
   it("migrates legacy PIN storage", () => {

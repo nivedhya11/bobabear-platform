@@ -58,7 +58,7 @@ new_roles: NO
 new_permissions: NO
 LOCATION_PROVIDER: GOOGLE_MAPS_PLATFORM_V1
 provider: GOOGLE_MAPS_PLATFORM
-approved_services: PLACES_API_NEW, GEOCODING_API
+approved_services: PLACES_API_NEW, GEOCODING_API, MAPS_JAVASCRIPT_API
 provider_external_IO: YES
 IMP036B_IMPLEMENTATION_EVIDENCE: COMPLETE
 COMPLETION IS NOT ACCEPTANCE: YES
@@ -98,12 +98,16 @@ src/components/account/ProfileClient.tsx
 src/components/account/ProfileWelcomeClient.tsx
 src/components/account/AddressesClient.tsx
 src/components/location/LocationSelector.tsx
+src/components/location/DeliveryLocationMapConfirmation.tsx
 src/lib/customer-commerce/profile.ts
 src/lib/customer-commerce/serviceability.ts
 src/lib/customer-commerce/welcome-flow.ts
 src/lib/customer-location/delivery-context.ts
+src/lib/customer-location/display-label.ts
 src/lib/customer-location/geolocation.ts
 src/lib/customer-location/location-provider.ts
+src/lib/customer-location/maps-js-config.ts
+src/lib/customer-location/maps-js-loader.ts
 src/server/customer-commerce/location/
 src/server/customer-commerce/http/router.ts   POST /api/v1/serviceability/evaluate
                                               GET  /api/v1/location/status
@@ -119,11 +123,13 @@ Founder-approved provider amendment (capability-local; no new global ADR):
 ```text
 LOCATION_PROVIDER = GOOGLE_MAPS_PLATFORM_V1
 provider = GOOGLE_MAPS_PLATFORM
-approved_services = PLACES_API_NEW + GEOCODING_API
+approved_services = PLACES_API_NEW + GEOCODING_API + MAPS_JAVASCRIPT_API
 ```
 
 - **GoogleMapsLocationProvider** — server-side Places Autocomplete (New), Place Details (New),
   and Geocoding reverse geocode through existing customer-commerce `/api/v1/location/*`.
+- **Maps JavaScript API** — browser-only visual map confirmation (pan/zoom/center pin). Does not
+  perform Serviceability, replace server Places, or expose the server key.
 - **Manual PIN and saved addresses** remain mandatory fallbacks when Google is unconfigured,
   timed out, rate-limited, or returns no PIN.
 - **Device geolocation** remains explicit user action; coordinates are reverse-geocoded server-side
@@ -147,6 +153,10 @@ Coordinates NEVER upgrade or downgrade BOBA PIN-authoritative coverage independe
 
 Server credential: `BOBA_BEAR_GOOGLE_MAPS_API_KEY` (never `NEXT_PUBLIC_*`). Missing key is
 `NOT_CONFIGURED`, not process failure.
+
+Browser credential: `NEXT_PUBLIC_BOBA_BEAR_GOOGLE_MAPS_BROWSER_KEY` — Maps JavaScript API only,
+HTTP-referrer restricted, intentionally browser-visible. Missing key gracefully degrades map
+confirmation; search, manual PIN, and saved addresses remain available.
 
 ## 5. Delivery context persistence
 
