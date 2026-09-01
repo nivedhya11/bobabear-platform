@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { Analytics } from "@/components/Analytics";
 import { Nav } from "@/components/Nav";
 import { Ticker } from "@/components/Ticker";
 import { Footer } from "@/components/Footer";
@@ -116,6 +117,7 @@ export default function CustomerLayout({
 }>) {
   return (
     <div data-surface="customer" className="flex min-h-full flex-col">
+      <Analytics />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{

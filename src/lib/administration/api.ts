@@ -1,9 +1,14 @@
 import { adminRequest } from "./http";
 
 export function fetchAdminSession() {
-  return adminRequest<{ ok: true; session: { workforceUserId: string; capabilities: Record<string, boolean> } }>(
-    "/api/admin/v1/session",
-  );
+  return adminRequest<{
+    ok: true;
+    session: {
+      workforceUserId: string;
+      signedInLabel?: string;
+      capabilities: Record<string, boolean>;
+    };
+  }>("/api/admin/v1/session");
 }
 
 export function listAdminMemberships() {
@@ -59,6 +64,7 @@ export function fetchEffectivePermissions(query: Record<string, string>) {
 
 export type AdministrationSession = Readonly<{
   workforceUserId: string;
+  signedInLabel?: string;
   permissions: readonly string[];
 }>;
 
@@ -92,6 +98,7 @@ export async function getAdministrationSession() {
       ok: true as const,
       session: {
         workforceUserId: result.data.session.workforceUserId,
+        signedInLabel: result.data.session.signedInLabel,
         permissions: Object.entries(result.data.session.capabilities)
           .filter(([, allowed]) => allowed)
           .map(([permission]) => permission),

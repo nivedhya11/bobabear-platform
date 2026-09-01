@@ -66,6 +66,18 @@ Cover loading, empty Catalog/Menu/Promotion sets, errors/retry, 401, permission/
 stale/concurrent edits, pending/success/failure, disabled/unsupported actions, destructive or
 commercially consequential confirmation, and safe IMP-036 correlation.
 
+## Enterprise UX comprehension (PLANNED)
+
+```text
+ENTERPRISE_UX_IS_TASK_ORIENTED = YES
+```
+
+Catalog vs Menu vs Assortment vs Availability vs Pricing vs Promotions must be explained through UX
+rather than assuming user domain knowledge. Require plain-language purpose, a clear primary task,
+human-readable names/context rather than opaque IDs, progressive disclosure, useful empty states with
+a next action, explained commercially consequential mutations, and no raw JSON/debug presentation as
+normal UX. This amendment does not activate IMP-036F.
+
 ## Major acceptance criteria
 
 - The six concepts remain visibly and behaviorally distinct.

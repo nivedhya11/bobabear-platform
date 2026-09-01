@@ -7,7 +7,9 @@ import {
   resolveAuthorizedDestinations,
   type WorkforceDestination,
 } from "@/lib/workforce-hub/destinations";
+import { resolveSignedInLabel } from "@/lib/workforce-hub/identity";
 import { workforceLoginUrlWithReturn } from "@/lib/workforce-hub/return-to";
+import { classifyPortalSessionResult } from "@/lib/workforce-hub/session-result";
 
 import { AccessDenied } from "@/components/enterprise/AccessDenied";
 import { EmptyState } from "@/components/enterprise/EmptyState";
@@ -22,7 +24,7 @@ type ViewState =
   | Readonly<{ kind: "error"; message: string }>
   | Readonly<{
       kind: "ready";
-      workforceUserId: string;
+      signedInLabel: string;
       destinations: readonly WorkforceDestination[];
     }>;
 
@@ -42,11 +44,12 @@ function DestinationCard({ destination }: Readonly<{ destination: WorkforceDesti
 
 async function resolveHubView(): Promise<ViewState> {
   const result = await fetchAdminSession();
-  if (!result.ok) {
-    if (result.status === 401 || result.code === "WORKFORCE_AUTH_REQUIRED") {
-      window.location.assign(workforceLoginUrlWithReturn("/workforce/"));
-      return { kind: "loading" };
-    }
+  const outcome = classifyPortalSessionResult(result);
+  if (outcome === "authentication_required") {
+    window.location.assign(workforceLoginUrlWithReturn("/workforce/"));
+    return { kind: "loading" };
+  }
+  if (outcome === "service_failure" || !result.ok) {
     return { kind: "error", message: "Workforce session could not be loaded." };
   }
   const destinations = resolveAuthorizedDestinations(result.data.session.capabilities);
@@ -54,9 +57,13 @@ async function resolveHubView(): Promise<ViewState> {
     window.location.assign(destinations[0]!.href);
     return { kind: "loading" };
   }
+  const projectedLabel = result.data.session.signedInLabel?.trim() ?? "";
   return {
     kind: "ready",
-    workforceUserId: result.data.session.workforceUserId,
+    signedInLabel: resolveSignedInLabel({
+      email: projectedLabel.includes("@") ? projectedLabel : undefined,
+      workforceUserId: result.data.session.workforceUserId,
+    }),
     destinations,
   };
 }
@@ -98,8 +105,8 @@ export function WorkforceHubClient() {
         title="Workforce"
         description="Choose an application based on your authorized scope."
       />
-      <p className="text-sm text-[var(--enterprise-text-secondary,#4b5542)]">
-        Signed in as <span className="font-medium">{view.workforceUserId}</span>
+      <p className="text-sm text-[var(--enterprise-text-secondary,#4b5542)]" data-testid="workforce-hub-identity">
+        {view.signedInLabel === "Signed in" ? "Signed in" : `Signed in as ${view.signedInLabel}`}
       </p>
       {view.destinations.length > 0 ? (
         <ul className="grid gap-4 sm:grid-cols-2">
