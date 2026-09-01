@@ -10,6 +10,7 @@ import { CustomerMenuError } from "../../../shared/customer-menu/errors";
 import { CheckoutError } from "../../../shared/checkout";
 import { CustomerAddressError } from "../../../shared/customer-addresses";
 import { CustomerProfileError } from "../../../shared/customer-profiles";
+import { ServiceabilityError } from "../../../shared/serviceability";
 import { FinancialDocumentError } from "../../../shared/financial-document";
 import { OrderError } from "../../../shared/order";
 import { PaymentError } from "../../../shared/payment";
@@ -123,6 +124,9 @@ function extractDomainError(error: unknown): {
     return { code: error.code, field: error.field };
   }
   if (error instanceof CustomerAddressError) {
+    return { code: error.code, field: error.field };
+  }
+  if (error instanceof ServiceabilityError) {
     return { code: error.code, field: error.field };
   }
   if (error instanceof FinancialDocumentError) {

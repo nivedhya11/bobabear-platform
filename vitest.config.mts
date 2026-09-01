@@ -75,6 +75,8 @@ export default defineConfig({
       // IMP-036A: multi-portal experience foundation unit tests.
       "tests/workforce-hub/**/*.test.{ts,tsx}",
       "tests/enterprise/**/*.test.ts",
+      // IMP-036B: customer account, address, and location experience tests.
+      "tests/imp-036b/**/*.test.{ts,tsx}",
     ],
     exclude: [
       "**/node_modules/**",

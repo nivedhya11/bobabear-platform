@@ -87,6 +87,8 @@ import {
   META_WHATSAPP_WEBHOOK_PATH,
 } from "./meta-whatsapp-webhook";
 import { coerceRevisionFields } from "./revisions";
+import { evaluateServiceability } from "../../serviceability";
+import type { ServiceabilityDecision } from "../../../shared/serviceability";
 import { projectCustomerMenu } from "../menu/project-customer-menu";
 import {
   sendJson,
@@ -199,6 +201,22 @@ function outcome(
   return { operation, safeOutcomeCode, httpStatus };
 }
 
+function projectServiceabilityDecision(
+  decision: ServiceabilityDecision,
+): Readonly<Record<string, unknown>> {
+  const base = {
+    status: decision.status,
+    evaluatedAt: decision.evaluatedAt.toISOString(),
+  };
+  if (decision.status === "SERVICEABLE") {
+    return { ...base, selectedOutletId: decision.selectedOutletId };
+  }
+  if (decision.status === "INDETERMINATE") {
+    return { ...base, reason: decision.reason };
+  }
+  return base;
+}
+
 async function handleCaught(
   error: unknown,
   res: ServerResponse,
@@ -309,6 +327,22 @@ export async function routeCustomerCommerceRequest(
       );
       sendJson(res, { ok: true, menu }, { status: 200, requestId });
       return outcome("get_menu", 200, "OK");
+    }
+
+    if (pathname === "/api/v1/serviceability/evaluate") {
+      if (method !== "POST") {
+        sendMethodNotAllowed(res, ["POST"], requestId);
+        return outcome("evaluate_serviceability", 405, "METHOD_NOT_ALLOWED");
+      }
+      const body = await readBody(req, requestId, res, ["brandId", "location"]);
+      if (!body) return outcome("evaluate_serviceability", 400, "INVALID_REQUEST");
+      const decision = await evaluateServiceability(deps.persistence, body);
+      sendJson(
+        res,
+        { ok: true, decision: projectServiceabilityDecision(decision) },
+        { status: 200, requestId },
+      );
+      return outcome("evaluate_serviceability", 200, "OK");
     }
 
     // Profile

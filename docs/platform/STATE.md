@@ -2,11 +2,11 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R96",
+  "stateVersion": "STATE-R97",
   "acceptedThrough": "IMP-036A",
-  "currentProductSlice": "NONE",
-  "nextProductSlice": "IMP-036B",
-  "pendingAcceptance": "NONE",
+  "currentProductSlice": "IMP-036B",
+  "nextProductSlice": "IMP-036C",
+  "pendingAcceptance": "IMP-036B",
   "governanceHealth": "ALIGNED",
   "lastReviewed": "2026-09-01"
 }
@@ -28,11 +28,11 @@ Accepted Range:            IMP-001 → IMP-036A (including IMP-005A and IMP-026C
 ## 2. Current Work Position
 
 ```text
-Current Product Implementation: NONE
-Pending Acceptance:             NONE
-Next Product Slice:             IMP-036B — Customer Account, Onboarding, Address & Location Experience
-Current Governance Activity:    IMP-036A COMPLETE_AND_ACCEPTED;
-                              IMP-036B–G and IMP-037 PLANNED / NOT_ACTIVATED /
+Current Product Implementation: IMP-036B — Customer Account, Onboarding, Address & Location Experience
+Pending Acceptance:             IMP-036B
+Next Product Slice:             IMP-036C — Customer Commerce Experience V2
+Current Governance Activity:    IMP-036B IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE;
+                              IMP-036C–G and IMP-037 PLANNED / NOT_ACTIVATED /
                               NOT_AUTHORIZED / NOT_STARTED.
 Governance Health:              ALIGNED
 ```
@@ -354,6 +354,19 @@ STATE-R36 record IMP-028B canonical activation without changing decision registe
 architecture. GTM-R39 / STATE-R37 record IMP-028B architecture lock and implementation
 authorization without changing decision register or global architecture.
 
+
+STATE-R97 records a single founder-authorized **combined** gate for **IMP-036B — Customer Account,
+Onboarding, Address & Location Experience**: canonical activation, capability architecture LOCKED at
+[`capabilities/IMP-036B-customer-account-onboarding-address-location.md`](./capabilities/IMP-036B-customer-account-onboarding-address-location.md);
+implementation AUTHORIZED / STARTED / COMPLETE; lifecycle
+`IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` (`IMP-036B_ACCEPTED: NO`). Locked boundary facts:
+`schema_change: NO`, `provider_IO: NO`, `new_service: NO`, `new_auth_model: NO`,
+`new_roles: NO`, `new_permissions: NO`; external location provider I/O deferred
+(`LOCATION_PROVIDER: MANUAL_PIN_AND_SAVED_ADDRESS_V1`). `acceptedThrough` remains IMP-036A;
+`currentProductSlice` and `pendingAcceptance` become IMP-036B; `nextProductSlice` becomes IMP-036C,
+which remains `PLANNED` / `NOT_ACTIVATED`. Founder UAT is **required**
+(`IMP-036B_FOUNDER_UAT_REQUIRED: YES`). Completion is not acceptance and does not authorize IMP-036C.
+Supersedes STATE-R96 for the current IMP-036B lifecycle position.
 
 STATE-R96 records formal acceptance of **IMP-036A — Multi-Portal Experience Foundation** after
 independent technical acceptance and Founder UAT PASS for the exact accepted candidate: repository
@@ -1305,9 +1318,9 @@ Cart → Checkout → Payment → Order
 
 ```text
 acceptedThrough: IMP-036A
-pendingAcceptance: NONE
-currentProductSlice: NONE
-nextProductSlice: IMP-036B — Customer Account, Onboarding, Address & Location Experience
+pendingAcceptance: IMP-036B
+currentProductSlice: IMP-036B — Customer Account, Onboarding, Address & Location Experience
+nextProductSlice: IMP-036C — Customer Commerce Experience V2
 IMP-028: COMPLETE_AND_ACCEPTED
 IMP-028_ACCEPTED: YES
 IMP-028A: COMPLETE_AND_ACCEPTED
@@ -1517,7 +1530,14 @@ IMP036A_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
 IMP036A_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
 IMP036A_ACCEPTED_MAIN_SHA: ee4926709ba6082ff6c24aabc2ea7d88d9bc1d6f
 IMP036A_ACCEPTED_TREE: 4fd243f5923565deceeb6c3f461e0d8a2f5a1eec
-IMP-036B: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
+IMP-036B: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
+IMP-036B_ARCHITECTURE_LOCKED: YES
+IMP-036B_IMPLEMENTATION_AUTHORIZED: YES
+IMP-036B_STARTED: YES
+IMP-036B_IMPLEMENTATION_COMPLETE: YES
+IMP-036B_ACCEPTED: NO
+IMP-036B_FOUNDER_UAT_REQUIRED: YES
+IMP036B_IMPLEMENTATION_EVIDENCE: COMPLETE
 IMP-036C: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
 IMP-036D: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
 IMP-036E: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED

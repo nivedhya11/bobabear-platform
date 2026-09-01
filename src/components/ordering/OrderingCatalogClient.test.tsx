@@ -210,6 +210,7 @@ describe("OrderingCatalogClient", () => {
   it("shows deliver-to orientation without serviceable badge", async () => {
     render(<OrderingCatalogClient brandId="brand-1" />);
     await waitFor(() => expect(screen.getByTestId("deliver-to-orientation")).toBeInTheDocument());
+    expect(screen.getByText(/Delivering to/i)).toBeInTheDocument();
     expect(screen.getByText("Dehradun")).toBeInTheDocument();
     expect(screen.queryByText(/serviceable/i)).not.toBeInTheDocument();
   });
@@ -501,12 +502,11 @@ describe("OrderingCatalogClient IMP-028D", () => {
     expect(screen.getByTestId("desktop-cart-footer")).not.toBe(screen.getByTestId("desktop-cart-items"));
   });
 
-  it("keeps serviceability compact while retaining the delivery PIN control", async () => {
+  it("keeps delivery location compact while exposing the selector trigger", async () => {
     render(<OrderingCatalogClient brandId="brand-1" />);
     const orientation = await screen.findByTestId("deliver-to-orientation");
     expect(orientation.className).not.toMatch(/bg-\[var\(--bg-section\)\].*p-4/);
-    expect(within(orientation).getByText("Check delivery PIN")).toBeInTheDocument();
-    expect(within(orientation).getByLabelText("Delivery PIN")).toBeInTheDocument();
+    expect(within(orientation).getByText(/Delivering to/i)).toBeInTheDocument();
   });
 
   it("shows a live-cart empty state without leaving the Menu", async () => {

@@ -20,7 +20,6 @@ import { publishCartCount } from "@/components/ordering/cart-count-sync";
 import {
   readDeliveryPinContext,
   subscribeToDeliveryPinContext,
-  writeDeliveryPinContext,
 } from "@/components/ordering/delivery-pin-context";
 import { commerceErrorCopy } from "@/components/ordering/error-copy";
 import { cartEvaluationCustomerCopy } from "@/components/ordering/serviceability-copy";
@@ -186,12 +185,6 @@ export function OrderingCatalogClient(props: { brandId: string }) {
       void refreshEvaluation(pin, cart);
     });
   }, [cart, refreshEvaluation]);
-
-  function handleDeliveryPinChange(value: string): void {
-    setDeliveryPin(value);
-    writeDeliveryPinContext(value);
-    void refreshEvaluation(value, cart);
-  }
 
   async function updateCartFromMutation(nextCart: CommerceCart): Promise<void> {
     setCart(nextCart);
@@ -487,11 +480,7 @@ export function OrderingCatalogClient(props: { brandId: string }) {
         data-testid="desktop-ordering-shell"
         className="mx-auto max-w-[1620px] px-5 md:px-8 py-6 md:py-8 flex flex-col gap-4 pb-[calc(7rem+env(safe-area-inset-bottom))] xl:pb-12"
       >
-        <DeliverToOrientation
-          postalCode={deliveryPin}
-          onPostalCodeChange={handleDeliveryPinChange}
-          serviceabilityNote={serviceabilityNote}
-        />
+        <DeliverToOrientation serviceabilityNote={serviceabilityNote} />
 
         <header className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between xl:col-span-3">
           <div className="flex flex-col gap-2">

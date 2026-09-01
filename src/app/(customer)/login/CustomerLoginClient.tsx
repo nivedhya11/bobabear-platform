@@ -28,6 +28,8 @@ import {
 } from "@/lib/customer-auth/client";
 import { notifyCustomerChromeSessionChanged } from "@/lib/customer-auth/chrome-session";
 import { parseSafeReturnPath } from "@/lib/customer-auth/return-to";
+import { getOwnProfile } from "@/lib/customer-commerce";
+import { shouldOfferWelcome, welcomeUrlWithReturn } from "@/lib/customer-commerce/welcome-flow";
 import { normalizeIndianMobileNumber } from "@/shared/customer-auth/phone";
 import { cn } from "@/lib/utils";
 
@@ -230,6 +232,12 @@ export function CustomerLoginClient() {
     if (data.authenticated) {
       setCode("");
       notifyCustomerChromeSessionChanged();
+      const profile = await getOwnProfile();
+      const hasProfile = profile.ok && profile.data.profile !== null;
+      if (!hasProfile && shouldOfferWelcome(returnTo)) {
+        window.location.assign(welcomeUrlWithReturn(returnTo));
+        return;
+      }
       if (returnTo) {
         window.location.assign(returnTo);
         return;

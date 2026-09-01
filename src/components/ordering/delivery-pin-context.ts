@@ -1,8 +1,14 @@
 /**
  * Optional menu/cart PIN context — presentation helper only, not Cart/Checkout persistence.
+ *
+ * Delegates to unified delivery context (IMP-036B).
  */
+import {
+  readDeliveryContextPin,
+  subscribeToDeliveryContext,
+  writeDeliveryContextPin,
+} from "@/lib/customer-location/delivery-context";
 
-const STORAGE_KEY = "boba.delivery-pin.v1";
 const PIN_EVENT = "boba-bear:delivery-pin";
 
 export function publishDeliveryPinContext(postalCode: string): void {
@@ -11,35 +17,22 @@ export function publishDeliveryPinContext(postalCode: string): void {
 }
 
 export function subscribeToDeliveryPinContext(onChange: (postalCode: string) => void): () => void {
-  const listener = (event: Event) => onChange((event as CustomEvent<string>).detail);
-  window.addEventListener(PIN_EVENT, listener);
-  return () => window.removeEventListener(PIN_EVENT, listener);
-}
-
-function canUseSessionStorage(): boolean {
-  return typeof window !== "undefined" && typeof window.sessionStorage !== "undefined";
+  const pinListener = (event: Event) => onChange((event as CustomEvent<string>).detail);
+  window.addEventListener(PIN_EVENT, pinListener);
+  const contextUnsub = subscribeToDeliveryContext((context) => {
+    onChange(context.postalCode);
+  });
+  return () => {
+    window.removeEventListener(PIN_EVENT, pinListener);
+    contextUnsub();
+  };
 }
 
 export function readDeliveryPinContext(): string {
-  if (!canUseSessionStorage()) return "";
-  try {
-    const raw = window.sessionStorage.getItem(STORAGE_KEY);
-    return raw && /^\d{6}$/.test(raw) ? raw : "";
-  } catch {
-    return "";
-  }
+  return readDeliveryContextPin();
 }
 
 export function writeDeliveryPinContext(postalCode: string): void {
-  if (!canUseSessionStorage()) return;
-  try {
-    if (/^\d{6}$/.test(postalCode)) {
-      window.sessionStorage.setItem(STORAGE_KEY, postalCode);
-    } else if (postalCode.length === 0) {
-      window.sessionStorage.removeItem(STORAGE_KEY);
-    }
-    publishDeliveryPinContext(readDeliveryPinContext());
-  } catch {
-    /* sessionStorage may be blocked */
-  }
+  const context = writeDeliveryContextPin(postalCode);
+  publishDeliveryPinContext(context.postalCode);
 }
