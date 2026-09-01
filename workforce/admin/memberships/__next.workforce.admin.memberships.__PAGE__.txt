@@ -2,5 +2,5 @@
 2:I[1877,["409","static/chunks/409-cd751991469f6862.js","987","static/chunks/app/workforce/admin/memberships/page-94f9312e3e39623d.js"],"AdministrationMembershipsClient"]
 3:I[484,[],"OutletBoundary"]
 4:"$Sreact.suspense"
-0:{"rsc":["$","$1","c",{"children":[["$","main",null,{"className":"mx-auto max-w-3xl px-4 py-10","children":[["$","h1",null,{"className":"mb-6 text-2xl font-semibold tracking-tight","children":"Memberships"}],["$","$L2",null,{}]]}],null,["$","$L3",null,{"children":["$","$4",null,{"name":"Next.MetadataOutlet","children":"$@5"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"zsnGGMWzWIaGMWrLcGunK"}
+0:{"rsc":["$","$1","c",{"children":[["$","main",null,{"className":"mx-auto max-w-3xl px-4 py-10","children":[["$","h1",null,{"className":"mb-6 text-2xl font-semibold tracking-tight","children":"Memberships"}],["$","$L2",null,{}]]}],null,["$","$L3",null,{"children":["$","$4",null,{"name":"Next.MetadataOutlet","children":"$@5"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"buksgVv-AQxnfJ35-V1sX"}
 5:null
