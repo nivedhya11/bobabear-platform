@@ -71,6 +71,62 @@ export type CommerceAddressCreateInput = Readonly<{
   makeDefault?: boolean;
 }>;
 
+export type CommerceAddressUpdateInput = Readonly<{
+  recipientName?: string;
+  recipientPhone?: string;
+  addressLine1?: string;
+  addressLine2?: string | null;
+  landmark?: string | null;
+  locality?: string | null;
+  city?: string;
+  stateCode?: string;
+  postalCode?: string;
+  coordinates?: Readonly<{ latitude: string; longitude: string }> | null;
+  label?: string | null;
+}>;
+
+export type CommerceProfile = Readonly<{
+  id: string;
+  givenName: string;
+  familyName: string | null;
+  email: string | null;
+  createdAt: string;
+  updatedAt: string;
+}>;
+
+export type CommerceProfileCreateInput = Readonly<{
+  givenName: string;
+  familyName?: string | null;
+  email?: string | null;
+}>;
+
+export type CommerceProfileUpdateInput = Readonly<{
+  givenName?: string | null;
+  familyName?: string | null;
+  email?: string | null;
+}>;
+
+export type CommerceServiceabilityStatus =
+  | "SERVICEABLE"
+  | "NOT_SERVICEABLE"
+  | "TEMPORARILY_UNAVAILABLE"
+  | "INDETERMINATE";
+
+export type CommerceServiceabilityDecision = Readonly<{
+  status: CommerceServiceabilityStatus;
+  evaluatedAt: string;
+  selectedOutletId?: string;
+  reason?: string;
+}>;
+
+export type CommerceServiceabilityEvaluateInput = Readonly<{
+  brandId: string;
+  location: Readonly<{
+    postalCode: string;
+    coordinates?: Readonly<{ latitude: string; longitude: string }> | null;
+  }>;
+}>;
+
 export type CommerceCheckoutDestination = Readonly<{
   destinationKind: "SAVED_ADDRESS" | "ONE_TIME_ADDRESS";
   sourceSavedAddressId: string | null;

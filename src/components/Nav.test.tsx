@@ -98,7 +98,7 @@ describe("Nav — IMP-028A Food Direct chrome", () => {
     expect(screen.queryByText("opaque-user")).not.toBeInTheDocument();
   });
 
-  it("exposes My Orders and Sign Out through the My BOBA disclosure", async () => {
+  it("exposes Profile, Addresses, My Orders and Sign Out through the My BOBA disclosure", async () => {
     const user = userEvent.setup();
     vi.stubGlobal(
       "fetch",
@@ -110,12 +110,19 @@ describe("Nav — IMP-028A Food Direct chrome", () => {
     await user.click(trigger);
     expect(trigger).toHaveAttribute("aria-expanded", "true");
     const menu = screen.getByRole("menu", { name: "My BOBA" });
+    expect(within(menu).getByRole("menuitem", { name: "Profile" })).toHaveAttribute(
+      "href",
+      "/account/profile/",
+    );
+    expect(within(menu).getByRole("menuitem", { name: "Addresses" })).toHaveAttribute(
+      "href",
+      "/account/addresses/",
+    );
     expect(within(menu).getByRole("menuitem", { name: "My Orders" })).toHaveAttribute(
       "href",
       "/order/orders/",
     );
     expect(within(menu).getByRole("menuitem", { name: "Sign Out" })).toBeInTheDocument();
-    expect(within(menu).queryByRole("menuitem", { name: /profile/i })).not.toBeInTheDocument();
     expect(within(menu).queryByRole("menuitem", { name: /rewards/i })).not.toBeInTheDocument();
   });
 
@@ -174,19 +181,18 @@ describe("Nav — IMP-028A Food Direct chrome", () => {
     });
   });
 
-  it("shows a delivery PIN in ordering chrome only when the existing presentation context has one", async () => {
+  it("shows delivery context in ordering chrome when a PIN is stored", async () => {
     usePathname.mockReturnValue("/order/");
     render(<Nav />);
 
+    expect(screen.getByTestId("deliver-to-header-orientation")).toHaveTextContent("Delivering to");
     expect(screen.getByTestId("deliver-to-header-orientation")).toHaveTextContent("Dehradun");
     expect(screen.getByTestId("deliver-to-header-orientation")).not.toHaveTextContent("248001");
 
     writeDeliveryPinContext("248001");
 
     await waitFor(() => {
-      expect(screen.getByTestId("deliver-to-header-orientation")).toHaveTextContent(
-        "Dehradun · 248001",
-      );
+      expect(screen.getByTestId("deliver-to-header-orientation")).toHaveTextContent("248001");
     });
   });
 

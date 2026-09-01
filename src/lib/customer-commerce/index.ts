@@ -28,7 +28,21 @@ export {
   setCartLineQuantity,
   updateCartLineConfiguration,
 } from "./cart";
-export { createOwnAddress, listOwnAddresses } from "./addresses";
+export {
+  createOwnAddress,
+  deleteOwnAddress,
+  getOwnAddress,
+  listOwnAddresses,
+  setDefaultOwnAddress,
+  updateOwnAddress,
+} from "./addresses";
+export {
+  createOwnProfile,
+  deleteOwnProfile,
+  getOwnProfile,
+  updateOwnProfile,
+} from "./profile";
+export { evaluateDeliveryServiceability } from "./serviceability";
 export {
   clearCheckoutDestination,
   evaluateCheckout,
@@ -65,6 +79,13 @@ export type {
   CartReconciliationResolution,
   CommerceAddress,
   CommerceAddressCreateInput,
+  CommerceAddressUpdateInput,
+  CommerceProfile,
+  CommerceProfileCreateInput,
+  CommerceProfileUpdateInput,
+  CommerceServiceabilityDecision,
+  CommerceServiceabilityEvaluateInput,
+  CommerceServiceabilityStatus,
   CommerceCart,
   CommerceCartEvaluation,
   CommerceCartLine,

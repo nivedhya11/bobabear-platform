@@ -29,6 +29,8 @@ const PRIMARY_NAV_LINKS = [
 
 const CART_HREF = "/order/cart/";
 const MY_ORDERS_HREF = "/order/orders/";
+const PROFILE_HREF = "/account/profile/";
+const ADDRESSES_HREF = "/account/addresses/";
 const SIGN_IN_HREF = "/login/";
 
 function subscribeTheme(cb: () => void) {
@@ -66,6 +68,14 @@ function isOrdersPath(pathname: string): boolean {
   return pathname.startsWith("/order/orders");
 }
 
+function isProfilePath(pathname: string): boolean {
+  return pathname.startsWith("/account/profile");
+}
+
+function isAddressesPath(pathname: string): boolean {
+  return pathname.startsWith("/account/addresses");
+}
+
 function isLoginPath(pathname: string): boolean {
   return pathname === "/login" || pathname === "/login/";
 }
@@ -99,6 +109,8 @@ export function Nav() {
   const menuActive = isMenuPath(pathname);
   const cartActive = isCartPath(pathname);
   const ordersActive = isOrdersPath(pathname);
+  const profileActive = isProfilePath(pathname);
+  const addressesActive = isAddressesPath(pathname);
   const signInActive = isLoginPath(pathname);
   const orderingChrome = pathname.startsWith("/order");
 
@@ -204,7 +216,7 @@ export function Nav() {
         aria-controls={myBobaMenuId}
         aria-haspopup="true"
         onClick={() => setMyBobaOpen((open) => !open)}
-        className={chromeLinkClass(myBobaOpen || ordersActive)}
+        className={chromeLinkClass(myBobaOpen || ordersActive || profileActive || addressesActive)}
       >
         My BOBA
       </button>
@@ -219,6 +231,26 @@ export function Nav() {
             "bg-[var(--bg-page)] py-1 shadow-lg",
           )}
         >
+          <a
+            role="menuitem"
+            href={PROFILE_HREF}
+            className={cn(
+              "block px-3 py-2 font-body font-semibold text-[14px] focus-ring rounded-sm",
+              "text-[var(--text-primary)] hover:bg-[var(--interactive-ghost-hover)]",
+            )}
+          >
+            Profile
+          </a>
+          <a
+            role="menuitem"
+            href={ADDRESSES_HREF}
+            className={cn(
+              "block px-3 py-2 font-body font-semibold text-[14px] focus-ring rounded-sm",
+              "text-[var(--text-primary)] hover:bg-[var(--interactive-ghost-hover)]",
+            )}
+          >
+            Addresses
+          </a>
           <a
             role="menuitem"
             href={MY_ORDERS_HREF}
@@ -481,6 +513,36 @@ export function Nav() {
                 <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--text-tertiary)] mb-3">
                   My BOBA
                 </p>
+                <a
+                  href={PROFILE_HREF}
+                  onClick={closeDrawer}
+                  aria-current={profileActive ? "page" : undefined}
+                  className={cn(
+                    "flex items-center min-h-11 pb-3 mb-3",
+                    "border-b border-[var(--border-subtle)]",
+                    "font-display text-[24px] leading-tight focus-ring rounded-sm",
+                    profileActive
+                      ? "text-[var(--text-label)]"
+                      : "text-[var(--text-primary)] hover:text-[var(--text-label)]",
+                  )}
+                >
+                  Profile
+                </a>
+                <a
+                  href={ADDRESSES_HREF}
+                  onClick={closeDrawer}
+                  aria-current={addressesActive ? "page" : undefined}
+                  className={cn(
+                    "flex items-center min-h-11 pb-3 mb-3",
+                    "border-b border-[var(--border-subtle)]",
+                    "font-display text-[24px] leading-tight focus-ring rounded-sm",
+                    addressesActive
+                      ? "text-[var(--text-label)]"
+                      : "text-[var(--text-primary)] hover:text-[var(--text-label)]",
+                  )}
+                >
+                  Addresses
+                </a>
                 <a
                   href={MY_ORDERS_HREF}
                   onClick={closeDrawer}
