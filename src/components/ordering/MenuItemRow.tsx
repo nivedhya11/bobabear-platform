@@ -134,7 +134,7 @@ export function MenuItemRow(props: MenuItemRowProps) {
             </Button>
           )}
           {customizable ? (
-            <span className="hidden font-body text-[12px] font-semibold text-[var(--interactive-primary)] xl:inline">
+            <span className="font-body text-[12px] font-semibold text-[var(--interactive-primary)]">
               Customisable
             </span>
           ) : null}
