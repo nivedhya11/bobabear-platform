@@ -214,7 +214,19 @@ function deploy(candidate) {
     upAndWait(buildDir, ["app", "customer-auth", "workforce-auth", "customer-commerce", "operations"]);
     for (const step of [
       { title: "app smoke", command: "node", args: ["scripts/docker/smoke.mjs"] },
-      { title: "customer-auth smoke", command: "node", args: ["scripts/docker/customer-auth-smoke.mjs"] },
+      {
+        title: "customer-auth smoke",
+        command: "node",
+        args: [
+          "scripts/docker/customer-auth-smoke.mjs",
+          "--compose-provider",
+          "podman-compose",
+          "--compose-project",
+          STAGING_PROJECT,
+          "--compose-file",
+          "compose.yaml",
+        ],
+      },
     ]) {
       const result = spawnSync(step.command, step.args, {
         cwd: buildDir,
