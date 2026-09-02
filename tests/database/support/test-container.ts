@@ -41,6 +41,10 @@ function toPostgresqlScheme(connectionUri: string): string {
  * failure).
  */
 export async function startPostgresTestContainer(): Promise<TestContainerHandle> {
+  // Rootless Podman is the supported local runtime. Ryuk is deliberately not
+  // relied on there: every caller owns explicit, idempotent teardown.
+  process.env.DOCKER_HOST = `unix:///run/user/${process.getuid?.() ?? 1000}/podman/podman.sock`;
+  process.env.TESTCONTAINERS_RYUK_DISABLED ??= "true";
   const password = randomBytes(24).toString("hex");
 
   let container: StartedPostgreSqlContainer;
@@ -49,10 +53,14 @@ export async function startPostgresTestContainer(): Promise<TestContainerHandle>
       .withUsername(TEST_ADMIN_USERNAME)
       .withPassword(password)
       .withDatabase(TEST_ADMIN_DATABASE)
+      .withLabels({
+        "com.bobabear.environment": "test",
+        "com.bobabear.lifecycle": "ephemeral",
+      })
       .start();
   } catch (error) {
     throw new Error(
-      "Could not start the PostgreSQL Testcontainers container. Docker must be running and " +
+      "Could not start the PostgreSQL Testcontainers container. Rootless Podman WSL must be running and " +
         "reachable to run database integration tests.",
       { cause: error },
     );
