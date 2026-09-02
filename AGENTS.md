@@ -282,6 +282,16 @@ DEFAULT_DEVELOPMENT_BRANCH = main
 - Local commits for an authorized bounded task are permitted. Push, merge, tag/release, and
   deployment each require separate explicit authorization.
 
+## Branch lifecycle
+
+- `main` is permanent. Explicitly required deployment branches may remain only while actively used.
+- Normal task, feature, fix, chore, and governance branches are short-lived and their remote head
+  must be deleted after merge; GitHub automatic head-branch deletion must remain enabled.
+- Close and delete stale, abandoned, or superseded unmerged branches after verifying their unique
+  work is not required. Retain a non-main branch only for a concrete active or future purpose.
+- Git history and merged pull requests are the historical archive. Never delete genuinely required
+  unique unmerged work without first explicitly resolving it.
+
 ## Working-tree fingerprint
 
 Canonical command: `npm run working-tree:fingerprint` (`scripts/working-tree-fingerprint.mjs`).

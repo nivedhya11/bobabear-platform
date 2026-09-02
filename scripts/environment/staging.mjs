@@ -399,6 +399,20 @@ function assertLegacyPostgresRecoveryTarget() {
   return { container, volume, database };
 }
 
+export function stopAndRemoveLegacyPostgres(legacy, inspect = inspectJson, run = runPodman) {
+  const state = legacy.database.State.Status;
+  if (state === "running") {
+    run(["stop", "-t", "30", legacy.container]);
+    const stoppedState = inspect(legacy.container).State.Status;
+    if (stoppedState === "running" || !["exited", "stopped"].includes(stoppedState)) {
+      throw new Error("PostgreSQL did not stop cleanly; refusing to remove the container.");
+    }
+  } else if (!["exited", "stopped"].includes(state)) {
+    throw new Error(`PostgreSQL recovery target is not safely removable from state: ${state}.`);
+  }
+  run(["rm", legacy.container]);
+}
+
 function recoverPostgres(candidate) {
   assertDeployPreconditions(candidate);
   const buildDir = materializeExactGitTree(candidate.head);
@@ -412,7 +426,7 @@ function recoverPostgres(candidate) {
       const container = `${STAGING_PROJECT}_${service}_1`;
       try { runPodman(["stop", container]); runPodman(["rm", container]); } catch { /* absent containers are permitted */ }
     }
-    runPodman(["rm", legacy.container]);
+    stopAndRemoveLegacyPostgres(legacy);
     podmanCompose(buildDir, ["up", "-d", "postgres"], { BOBA_POSTGRES_INIT_DIR: initDir });
     waitForHealthy(`${STAGING_PROJECT}_postgres_1`);
     upAndWait(buildDir, BOBA_RUNTIME_SERVICES, { BOBA_POSTGRES_INIT_DIR: initDir });

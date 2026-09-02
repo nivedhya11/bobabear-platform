@@ -10,6 +10,7 @@ import {
   assertRunningProvenance,
   assertServiceabilitySmokeResponse,
   isFullGitSha,
+  stopAndRemoveLegacyPostgres,
 } from "./staging.mjs";
 
 const candidateSha = "6d925496deebcf19e5a82659e3e33dc81faccac3";
@@ -101,8 +102,51 @@ test("staging recovery is limited to the known legacy PostgreSQL bind-mount defe
   assert.match(source, /assertLegacyPostgresRecoveryTarget/);
   assert.match(source, /startsWith\("\/tmp\/boba-staging-build-"\)/);
   assert.match(source, /mount\.Name === volume && mount\.Destination === "\/var\/lib\/postgresql"/);
-  assert.match(source, /runPodman\(\["rm", legacy\.container\]\)/);
+  assert.match(source, /stopAndRemoveLegacyPostgres\(legacy\)/);
   assert.doesNotMatch(source, /volume", "rm"/);
+});
+
+test("staging recovery tolerates absent dependent runtimes and recreates only with the durable init path", () => {
+  const source = readFileSync(path.resolve("scripts/environment/staging.mjs"), "utf8");
+  const recovery = source.match(/function recoverPostgres\(candidate\) \{([\s\S]*?)\n\}/)?.[1] ?? "";
+  assert.match(recovery, /catch \{ \/\* absent containers are permitted \*\//);
+  assert.match(recovery, /podmanCompose\(buildDir, \["up", "-d", "postgres"\], \{ BOBA_POSTGRES_INIT_DIR: initDir \}\)/);
+  assert.match(recovery, /upAndWait\(buildDir, BOBA_RUNTIME_SERVICES, \{ BOBA_POSTGRES_INIT_DIR: initDir \}\)/);
+  assert.doesNotMatch(recovery, /"postgres".*BOBA_RUNTIME_SERVICES/);
+});
+
+test("staging recovery stops a running PostgreSQL container before removing it", () => {
+  const commands = [];
+  const legacy = { container: "boba-staging_postgres_1", database: { State: { Status: "running" } } };
+  stopAndRemoveLegacyPostgres(legacy, () => ({ State: { Status: "exited" } }), (args) => commands.push(args));
+  assert.deepEqual(commands, [["stop", "-t", "30", "boba-staging_postgres_1"], ["rm", "boba-staging_postgres_1"]]);
+});
+
+test("staging recovery removes an already stopped PostgreSQL container without stopping it again", () => {
+  const commands = [];
+  const legacy = { container: "boba-staging_postgres_1", database: { State: { Status: "exited" } } };
+  stopAndRemoveLegacyPostgres(legacy, () => { throw new Error("not inspected"); }, (args) => commands.push(args));
+  assert.deepEqual(commands, [["rm", "boba-staging_postgres_1"]]);
+});
+
+test("staging recovery refuses PostgreSQL removal until a running target has stopped", () => {
+  const commands = [];
+  const legacy = { container: "boba-staging_postgres_1", database: { State: { Status: "running" } } };
+  assert.throws(
+    () => stopAndRemoveLegacyPostgres(legacy, () => ({ State: { Status: "running" } }), (args) => commands.push(args)),
+    /did not stop cleanly/,
+  );
+  assert.deepEqual(commands, [["stop", "-t", "30", "boba-staging_postgres_1"]]);
+});
+
+test("staging recovery fails closed for an unexpected PostgreSQL state", () => {
+  const commands = [];
+  const legacy = { container: "boba-staging_postgres_1", database: { State: { Status: "paused" } } };
+  assert.throws(
+    () => stopAndRemoveLegacyPostgres(legacy, () => ({ State: { Status: "paused" } }), (args) => commands.push(args)),
+    /not safely removable/,
+  );
+  assert.deepEqual(commands, []);
 });
 
 test("staging workforce operator uses direct Podman without Compose dependency reconciliation", () => {
