@@ -65,6 +65,24 @@ const FULL_WEEK_INTERVALS = ([0, 1, 2, 3, 4, 5, 6] as const).map((dayOfWeek) => 
   endMinute: 1440,
 }));
 
+export function isExpectedUatOperatingConfiguration(
+  profile: Awaited<ReturnType<typeof findOutletOperatingProfile>>,
+  intervals: Awaited<ReturnType<typeof listOutletOperatingIntervals>>,
+): boolean {
+  return (
+    profile?.timezone === "Asia/Kolkata" &&
+    intervals.length === FULL_WEEK_INTERVALS.length &&
+    FULL_WEEK_INTERVALS.every((expected) =>
+      intervals.some(
+        (actual) =>
+          actual.dayOfWeek === expected.dayOfWeek &&
+          actual.startMinute === expected.startMinute &&
+          actual.endMinute === expected.endMinute,
+      ),
+    )
+  );
+}
+
 async function main(): Promise<void> {
   const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
   loadEnvConfig(projectRoot, true);
@@ -80,30 +98,6 @@ async function main(): Promise<void> {
     const existingIntervals = existingProfile
       ? await persistence.withContext((ctx) => listOutletOperatingIntervals(ctx, args.outletId))
       : [];
-
-    if (existingProfile && existingIntervals.length > 0) {
-      const resolver = await persistence.withContext((ctx) =>
-        resolveOutletOperatingState(ctx, {
-          outletId: args.outletId,
-          context: { now: new Date() },
-        }),
-      );
-      process.stdout.write(
-        `${JSON.stringify(
-          {
-            action: "SKIP",
-            reason: "existing_schedule_present",
-            profile: existingProfile,
-            intervalCount: existingIntervals.length,
-            intervals: existingIntervals,
-            resolver,
-          },
-          null,
-          2,
-        )}\n`,
-      );
-      return;
-    }
 
     if (args.dryRun) {
       process.stdout.write(
@@ -124,7 +118,7 @@ async function main(): Promise<void> {
       return;
     }
 
-    let profile;
+    let profile: Awaited<ReturnType<typeof configureOutletOperatingProfile>> | null = null;
     let intervals: Awaited<ReturnType<typeof replaceOutletOperatingSchedule>> = [];
     await persistence.transaction(async (tx) => {
       profile = await configureOutletOperatingProfile(tx, {
@@ -146,6 +140,10 @@ async function main(): Promise<void> {
       }),
     );
 
+    if (!isExpectedUatOperatingConfiguration(profile, intervals) || resolver.code !== "AVAILABLE") {
+      throw new Error("UAT operating configuration did not converge to the required 24x7 AVAILABLE state.");
+    }
+
     process.stdout.write(
       `${JSON.stringify(
         {
@@ -163,7 +161,9 @@ async function main(): Promise<void> {
   }
 }
 
-void main().catch((error: unknown) => {
-  process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
-  process.exit(1);
-});
+if (process.argv[1] && process.argv[1].includes("configure-outlet-operating-uat")) {
+  void main().catch((error: unknown) => {
+    process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
+    process.exit(1);
+  });
+}

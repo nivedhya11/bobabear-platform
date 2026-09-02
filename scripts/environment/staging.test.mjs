@@ -8,6 +8,7 @@ import {
   BOBA_RUNTIME_SERVICES,
   assertImageRevisions,
   assertRunningProvenance,
+  assertServiceabilitySmokeResponse,
   isFullGitSha,
 } from "./staging.mjs";
 
@@ -22,6 +23,24 @@ test("staging status declares an exact merged Git-tree artifact source", () => {
   );
   assert.match(source, /console\.log\("LIVE_UNTRACKED_CONTENT_CAN_AFFECT_STAGING_ARTIFACT NO"\)/);
   assert.match(source, /git -C .* archive .* \| tar -x -C/);
+});
+
+test("staging serviceability smoke fails closed for indeterminate or unexpected responses", () => {
+  assert.doesNotThrow(() =>
+    assertServiceabilitySmokeResponse("origin", "SERVICEABLE", {
+      httpStatus: 200,
+      decisionStatus: "SERVICEABLE",
+    }),
+  );
+  assert.throws(
+    () =>
+      assertServiceabilitySmokeResponse("origin", "SERVICEABLE", {
+        httpStatus: 200,
+        decisionStatus: "INDETERMINATE",
+        reason: "CONFIGURATION_INCONSISTENT",
+      }),
+    /CONFIGURATION_INCONSISTENT/,
+  );
 });
 
 test("staging deploy passes the rootless Podman project to the customer-auth smoke", () => {

@@ -40,6 +40,12 @@ const BOBA_BUILD_IMAGES = {
   tooling: "boba-bear-tooling:local",
 };
 const BOBA_RUNTIME_SERVICES = Object.keys(BOBA_BUILD_IMAGES).filter((service) => service !== "tooling");
+const DIRECT_ORDERING_BRAND_ID = "56ff7724-d511-5ef4-b5d5-d629cbfb2388";
+const UAT_SERVICEABILITY_CASES = [
+  { name: "origin", latitude: "30.2868286", longitude: "77.9991566", expectedStatus: "SERVICEABLE" },
+  { name: "nearby", latitude: "30.2877280", longitude: "77.9991566", expectedStatus: "SERVICEABLE" },
+  { name: "outside", latitude: "30.3680000", longitude: "77.9991566", expectedStatus: "NOT_SERVICEABLE" },
+];
 
 const command = process.argv[2];
 const isCli = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
@@ -308,6 +314,57 @@ function runBootstrapApply(buildDir, service, npmArgs) {
   ], { COMPOSE_PROFILES: "tools" });
 }
 
+export function assertServiceabilitySmokeResponse(caseName, expectedStatus, response) {
+  if (response.httpStatus !== 200 || response.decisionStatus !== expectedStatus) {
+    throw new Error(
+      `Serviceability UAT smoke failed for ${caseName}: expected HTTP 200 / ${expectedStatus}, found HTTP ${response.httpStatus} / ${response.decisionStatus ?? "MISSING"}${response.reason ? ` (${response.reason})` : ""}.`,
+    );
+  }
+}
+
+function runServiceabilityUatSmoke() {
+  for (const testCase of UAT_SERVICEABILITY_CASES) {
+    const body = JSON.stringify({
+      brandId: DIRECT_ORDERING_BRAND_ID,
+      location: { coordinates: { latitude: testCase.latitude, longitude: testCase.longitude } },
+    });
+    const result = spawnSync(
+      "curl",
+      [
+        "--silent",
+        "--show-error",
+        "--request",
+        "POST",
+        "http://127.0.0.1:8080/api/v1/serviceability/evaluate",
+        "--header",
+        "content-type: application/json",
+        "--data",
+        body,
+        "--write-out",
+        "\n%{http_code}",
+      ],
+      { encoding: "utf8" },
+    );
+    if (result.error || result.status !== 0) {
+      throw new Error(`Serviceability UAT smoke request failed for ${testCase.name}.`);
+    }
+    const [rawBody, rawStatus] = result.stdout.trimEnd().split(/\n(?=\d{3}$)/);
+    let parsed;
+    try {
+      parsed = JSON.parse(rawBody);
+    } catch {
+      throw new Error(`Serviceability UAT smoke returned an invalid response for ${testCase.name}.`);
+    }
+    const response = {
+      httpStatus: Number(rawStatus),
+      decisionStatus: parsed?.decision?.status,
+      reason: parsed?.decision?.reason,
+    };
+    assertServiceabilitySmokeResponse(testCase.name, testCase.expectedStatus, response);
+    console.log(`SERVICEABILITY_UAT_${testCase.name.toUpperCase()} ${response.decisionStatus}`);
+  }
+}
+
 function deploy(candidate) {
   assertDeployPreconditions(candidate);
   stopLegacyRuntimeIfNeeded();
@@ -354,6 +411,7 @@ function deploy(candidate) {
       });
       if (result.status !== 0) process.exit(result.status ?? 1);
     }
+    runServiceabilityUatSmoke();
     if (!reportRunningProvenance(candidate.head)) {
       throw new Error("Running staging images do not match the merged Git candidate.");
     }
