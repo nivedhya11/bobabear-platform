@@ -59,6 +59,9 @@ jobs:
       - name: Docker tooling command wiring
         run: node --test scripts/docker-tool-command-wiring.test.mjs
 
+      - name: Staging runtime provenance
+        run: node --test scripts/environment/staging.test.mjs
+
       - name: Project-consistency unit suite
         run: node --test scripts/project-consistency.test.mjs
 
