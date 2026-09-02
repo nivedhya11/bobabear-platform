@@ -181,6 +181,11 @@
       "tag": "0035_serviceability_distance_policy",
       "path": "drizzle/0035_serviceability_distance_policy.sql",
       "sha256": "0ba2c03cd816f4d9816e656554307c52f2632cbf60230a1dc7e50ea546b87166"
+    },
+    {
+      "tag": "0036_outlet_delivery_fee_policy",
+      "path": "drizzle/0036_outlet_delivery_fee_policy.sql",
+      "sha256": "e7538981e656ff54e883d0ab57ae967dc5b7401d693a3b47ada6473f45eb93c5"
     }
   ]
 }

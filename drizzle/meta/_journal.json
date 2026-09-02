@@ -253,6 +253,13 @@
       "when": 1788300000000,
       "tag": "0035_serviceability_distance_policy",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1788400000000,
+      "tag": "0036_outlet_delivery_fee_policy",
+      "breakpoints": true
     }
   ]
 }

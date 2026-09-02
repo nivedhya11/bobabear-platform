@@ -15,6 +15,7 @@ import {
   type WorkforceOrderDetail,
   type WorkforceOrderSummary,
 } from "../../shared/order";
+import { moneySummaryFromSnapshot } from "../../shared/order/money-summary";
 
 function paymentSatisfaction(order: Order) {
   return order.paymentProvenanceKind === "PAYMENT"
@@ -104,6 +105,7 @@ export function toCustomerOrderDetail(
     cancellationReasonCode: order.cancellationReasonCode,
     destination: destinationFromSnapshot(snapshot),
     lines: linesFromSnapshot(snapshot),
+    moneySummary: moneySummaryFromSnapshot(snapshot),
     delivery,
   });
 }

@@ -12,6 +12,7 @@ import {
   foreignKey,
   index,
   integer,
+  jsonb,
   numeric,
   primaryKey,
   text,
@@ -32,6 +33,10 @@ export const outletServiceabilityConfigsTable = appSchema.table(
     serviceOriginLatitude: numeric("service_origin_latitude", { precision: 10, scale: 7 }),
     serviceOriginLongitude: numeric("service_origin_longitude", { precision: 10, scale: 7 }),
     maxServiceDistanceMeters: integer("max_service_distance_meters"),
+    deliveryFeeBands: jsonb("delivery_fee_bands"),
+    freeDeliverySubtotalThresholdPaise: bigint("free_delivery_subtotal_threshold_paise", {
+      mode: "bigint",
+    }),
   },
   (table) => [
     foreignKey({

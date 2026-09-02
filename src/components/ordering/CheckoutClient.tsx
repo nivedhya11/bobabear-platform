@@ -25,6 +25,12 @@ import {
 } from "@/lib/customer-commerce";
 import { INDIA_SUBDIVISIONS } from "@/shared/customer-addresses";
 import { ReconcileConflictDialog } from "@/components/ordering/ReconcileConflictDialog";
+import {
+  CheckoutSnapshotLineList,
+  CheckoutStepIndicator,
+} from "@/components/ordering/CheckoutReviewSections";
+import { OrderMoneySummaryPanel } from "@/components/ordering/OrderMoneySummaryPanel";
+import { narrowCheckoutSnapshotLines } from "@/components/ordering/checkout-line-presentation";
 import { PaymentPanel } from "@/components/ordering/PaymentPanel";
 import { commerceErrorCopy } from "@/components/ordering/error-copy";
 import type { OrderingCatalog } from "@/shared/ordering-catalog";
@@ -303,13 +309,18 @@ export function CheckoutClient(props: { catalog: OrderingCatalog }) {
       ) : null}
 
       <div className="mx-auto max-w-[640px] px-5 py-12 md:py-16 flex flex-col gap-8">
-        <header className="flex flex-col gap-2">
+        <header className="flex flex-col gap-3">
           <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
             Boba Bear · Checkout
           </p>
           <h1 className="font-display text-[clamp(36px,8vw,56px)] leading-[0.95] text-[var(--text-primary)]">
             Checkout
           </h1>
+          <CheckoutStepIndicator
+            activeStep={
+              screen === "destination" ? "delivery" : screen === "ready" ? "payment" : "delivery"
+            }
+          />
         </header>
 
         {screen === "loading" ? (
@@ -448,16 +459,18 @@ export function CheckoutClient(props: { catalog: OrderingCatalog }) {
             )}
 
             <Button type="submit" variant="primary" size="lg" disabled={pending}>
-              {pending ? "Evaluating…" : "Evaluate checkout"}
+              {pending ? "Checking delivery…" : "Continue to payment"}
             </Button>
           </form>
         ) : null}
 
         {screen === "ready" && snapshot && checkout ? (
           <div className="flex flex-col gap-4" data-testid="checkout-ready">
-            <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--interactive-secondary)]">
-              Ready for payment
-            </p>
+            <CheckoutSnapshotLineList
+              title="Your items"
+              lines={narrowCheckoutSnapshotLines(snapshot.lines)}
+            />
+            <OrderMoneySummaryPanel snapshot={snapshot} title="Price summary" />
             <PaymentPanel
               checkout={checkout}
               snapshot={snapshot}

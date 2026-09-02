@@ -342,6 +342,20 @@ export function CartClient(props: { brandId: string }) {
           </p>
         ) : null}
 
+        {evaluation?.problems && evaluation.problems.length > 0 ? (
+          <ul
+            className="flex flex-col gap-2 rounded-lg border border-[var(--border-warning)] bg-[var(--bg-section)] p-3"
+            data-testid="cart-evaluation-problems"
+            role="alert"
+          >
+            {evaluation.problems.map((problem) => (
+              <li key={`${problem.cartLineId}-${problem.code}`} className="font-body text-[13px] text-[var(--text-secondary)]">
+                {commerceErrorCopy(problem.code as never) ?? problem.code}
+              </li>
+            ))}
+          </ul>
+        ) : null}
+
         </section>
 
         {cart && cart.lines.length > 0 ? (

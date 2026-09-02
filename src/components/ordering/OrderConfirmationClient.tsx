@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/Button";
+import { OrderMoneySummaryPanel } from "@/components/ordering/OrderMoneySummaryPanel";
 import { OrderSupportAction } from "@/components/ordering/OrderSupportAction";
 import { commerceErrorCopy } from "@/components/ordering/error-copy";
 import { formatPaise } from "@/components/ordering/format-money";
@@ -90,9 +91,7 @@ export function OrderConfirmationClient() {
                 </li>
               ))}
             </ul>
-            <p className="font-body text-[15px]">
-              Total {formatPaise(order.money.grandTotalMinor)}
-            </p>
+            <OrderMoneySummaryPanel moneySummary={order.moneySummary} title="Payment summary" />
             <div className="font-body text-[14px] text-[var(--text-secondary)]">
               <p>{order.destination.recipientName}</p>
               <p>{order.destination.addressLine1}</p>

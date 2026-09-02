@@ -19,9 +19,11 @@ import type {
   PromotionDefinition,
 } from "../../../shared/promotions";
 import type { Cart } from "../../../shared/cart";
+import type { CheckoutDestination } from "../../../shared/checkout";
 import { CheckoutError } from "../../../shared/checkout";
 import type { PersistenceQueryContext } from "../../persistence/types";
 import { buildDirectPricingQuote } from "../../pricing/quote";
+import { resolveCustomerDeliveryCharge } from "../../pricing/resolve-delivery-charge";
 import {
   resolveBundleOptionPriceDelta,
   resolveModifierPriceDelta,
@@ -237,6 +239,7 @@ export async function buildCheckoutCommercialResult(
     cart: Cart;
     customerAuthUserId: string;
     labels: ReadonlyMap<string, CatalogLineLabels>;
+    destination?: CheckoutDestination;
   },
 ): Promise<CheckoutCommercialResult> {
   assertApplicationRole(context, "buildCheckoutCommercialResult");
@@ -257,12 +260,75 @@ export async function buildCheckoutCommercialResult(
 
   let quote: DirectPricingQuote;
   try {
+    const packagingDefs = chargeDefs.filter((c) => c.code === "packaging");
+    const deliveryDef = chargeDefs.find((c) => c.code === "delivery");
+
+    const preliminaryQuote = await buildDirectPricingQuote(context, {
+      outletId: input.outletId,
+      at: input.at,
+      customerId: input.customerAuthUserId,
+      submittedCouponCode: input.cart.manualCouponCode,
+      charges: packagingDefs.map((c) => ({
+        chargeDefinitionId: c.chargeDefinitionId,
+        calculationMode: c.calculationMode,
+        amountPaise: c.amountPaise,
+        taxCategoryId: c.taxCategoryId,
+      })),
+      lines: input.cart.lines.map((line) => ({
+        lineId: line.id,
+        variantId: line.variantId,
+        quantity: line.quantity,
+        productId: input.labels.get(line.id)?.productId,
+        modifiers: line.modifiers.map((m) => ({
+          variantModifierGroupId: m.variantModifierGroupId,
+          modifierGroupOptionId: m.modifierGroupOptionId,
+          quantity: m.quantity,
+        })),
+        bundleOptions: line.bundleSelections.map((b) => ({
+          bundleGroupOptionId: b.bundleGroupOptionId,
+          quantity: b.quantity,
+          modifiers: b.modifiers.map((m) => ({
+            variantModifierGroupId: m.variantModifierGroupId,
+            modifierGroupOptionId: m.modifierGroupOptionId,
+            quantity: m.quantity,
+          })),
+        })),
+      })),
+    });
+
+    const itemsSubtotalPaise =
+      preliminaryQuote.basePaise +
+      preliminaryQuote.modifierAdjustmentsPaise +
+      preliminaryQuote.bundleAdjustmentsPaise;
+
+    let resolvedDeliveryPaise: bigint | null = null;
+    if (deliveryDef && input.destination) {
+      const resolved = await resolveCustomerDeliveryCharge(context, {
+        brandId: input.brandId,
+        outletId: input.outletId,
+        destination: input.destination,
+        at: input.at,
+        prePromotionSubtotalPaise: itemsSubtotalPaise,
+      });
+      resolvedDeliveryPaise = resolved?.amountPaise ?? deliveryDef.amountPaise;
+    } else if (deliveryDef) {
+      resolvedDeliveryPaise = deliveryDef.amountPaise;
+    }
+
+    const finalCharges = [...packagingDefs];
+    if (deliveryDef && resolvedDeliveryPaise !== null) {
+      finalCharges.push({
+        ...deliveryDef,
+        amountPaise: resolvedDeliveryPaise,
+      });
+    }
+
     quote = await buildDirectPricingQuote(context, {
       outletId: input.outletId,
       at: input.at,
       customerId: input.customerAuthUserId,
       submittedCouponCode: input.cart.manualCouponCode,
-      charges: chargeDefs.map((c) => ({
+      charges: finalCharges.map((c) => ({
         chargeDefinitionId: c.chargeDefinitionId,
         calculationMode: c.calculationMode,
         amountPaise: c.amountPaise,

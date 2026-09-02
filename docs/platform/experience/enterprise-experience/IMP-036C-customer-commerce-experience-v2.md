@@ -1,9 +1,9 @@
 ---
-Status: PLANNED CAPABILITY CONTRACT
+Status: ACTIVE CAPABILITY CONTRACT
 Capability: IMP-036C — Customer Commerce Experience V2
-Lifecycle: PLANNED / NOT_ACTIVATED
-Architecture: NOT_LOCKED
-Implementation: NOT_AUTHORIZED / NOT_STARTED
+Lifecycle: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
+Architecture: ARCHITECTURE_LOCKED
+Implementation: AUTHORIZED / COMPLETE
 Founder UAT required: YES
 ---
 

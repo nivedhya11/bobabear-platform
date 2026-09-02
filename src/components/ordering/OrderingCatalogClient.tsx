@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { CartLineList } from "@/components/ordering/CartLineList";
 import { CartSummary } from "@/components/ordering/CartSummary";
 import { DeliverToOrientation } from "@/components/ordering/DeliverToOrientation";
+import { CommerceLoadingPanel, CommerceRetryPanel } from "@/components/ordering/CommerceStatePanels";
 import { MenuItemCustomizationDialog } from "@/components/ordering/MenuItemCustomizationDialog";
 import { MenuItemRow } from "@/components/ordering/MenuItemRow";
 import { StickyCartBar } from "@/components/ordering/StickyCartBar";
@@ -60,6 +61,7 @@ export function OrderingCatalogClient(props: { brandId: string }) {
   const [editTarget, setEditTarget] = useState<EditTarget | null>(null);
   const [dialogError, setDialogError] = useState<string | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const menuLookups = useMemo(
     () => (menu ? buildCustomerMenuLookups(menu) : null),
@@ -183,6 +185,25 @@ export function OrderingCatalogClient(props: { brandId: string }) {
       ? selectedCategoryId
       : (categoryNav[0]?.id ?? null);
   const selectedGroup = groups.find((group) => group.id === activeCategoryId) ?? null;
+
+  const normalizedSearch = searchQuery.trim().toLowerCase();
+  const filteredGroup = useMemo(() => {
+    if (!selectedGroup || !normalizedSearch) return selectedGroup;
+    return {
+      ...selectedGroup,
+      subcategories: selectedGroup.subcategories
+        .map((sub) => ({
+          ...sub,
+          items: sub.items.filter((item) => {
+            const haystack = `${item.name} ${item.description ?? ""}`.toLowerCase();
+            return haystack.includes(normalizedSearch);
+          }),
+        }))
+        .filter((sub) => sub.items.length > 0),
+    };
+  }, [selectedGroup, normalizedSearch]);
+
+  const displayGroup = filteredGroup ?? selectedGroup;
 
   useEffect(() => {
     return subscribeToDeliveryContext((nextContext) => {
@@ -460,7 +481,7 @@ export function OrderingCatalogClient(props: { brandId: string }) {
     return (
       <main id="main-content" tabIndex={-1} className="bg-[var(--bg-page)] focus:outline-none">
         <div className="mx-auto max-w-[1100px] px-5 py-12 md:py-16">
-          <p className="font-body text-[15px] text-[var(--text-secondary)]">Loading menu…</p>
+          <CommerceLoadingPanel message="Loading menu…" />
         </div>
       </main>
     );
@@ -470,9 +491,15 @@ export function OrderingCatalogClient(props: { brandId: string }) {
     return (
       <main id="main-content" tabIndex={-1} className="bg-[var(--bg-page)] focus:outline-none">
         <div className="mx-auto max-w-[1100px] px-5 py-12 md:py-16">
-          <p role="status" className="font-body text-[15px] text-[var(--text-secondary)]">
-            {error ?? "Menu is unavailable right now."}
-          </p>
+          <CommerceRetryPanel
+            message={error ?? "Menu is unavailable right now."}
+            onRetry={() => {
+              void refreshMenu().then((ok) => {
+                if (ok) void refreshCart();
+              });
+            }}
+            retryLabel="Reload menu"
+          />
         </div>
       </main>
     );
@@ -489,13 +516,26 @@ export function OrderingCatalogClient(props: { brandId: string }) {
         <header className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between xl:col-span-3">
           <div className="flex flex-col gap-2">
             <h1 className="font-display text-[clamp(40px,5vw,58px)] uppercase leading-[0.9] tracking-wide text-[var(--text-primary)]">
-              {selectedGroup?.name ?? "Menu"}
+              {displayGroup?.name ?? "Menu"}
             </h1>
             <p className="font-body text-[15px] text-[var(--text-secondary)]">
               Crafted fresh and ready when you are.
             </p>
           </div>
         </header>
+
+        <label className="flex flex-col gap-1 font-body text-[13px] font-semibold text-[var(--text-primary)]">
+          Search menu
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            placeholder="Search dishes and drinks"
+            className="min-h-[44px] w-full rounded-lg border border-[var(--border-strong)] bg-[var(--bg-section)] px-3 text-[15px] text-[var(--text-primary)]"
+            data-testid="menu-search-input"
+            aria-label="Search menu"
+          />
+        </label>
 
         {renderCategoryNav("horizontal")}
 
@@ -509,16 +549,16 @@ export function OrderingCatalogClient(props: { brandId: string }) {
           <aside className="hidden xl:block">{renderCategoryNav("vertical")}</aside>
 
           <div data-testid="desktop-menu" className="flex flex-col gap-6 min-w-0">
-            {selectedGroup ? (
+            {displayGroup ? (
               <section
-                key={selectedGroup.id}
-                aria-label={selectedGroup.name}
+                key={displayGroup.id}
+                aria-label={displayGroup.name}
                 className="flex flex-col gap-4"
               >
-                {selectedGroup.subcategories.map((sub) => (
+                {displayGroup.subcategories.map((sub) => (
                   <div key={sub.id} className="flex flex-col gap-3">
-                    {selectedGroup.subcategories.length > 1 ||
-                    sub.name !== selectedGroup.name ? (
+                    {displayGroup.subcategories.length > 1 ||
+                    sub.name !== displayGroup.name ? (
                       <h2 className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--text-tertiary)]">
                         {sub.name}
                       </h2>

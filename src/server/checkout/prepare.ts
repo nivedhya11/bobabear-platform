@@ -166,6 +166,7 @@ export async function prepareCheckoutForPayment(
       cart: preload.cart,
       customerAuthUserId: customer.authUserId,
       labels,
+      destination: preload.destination,
     }),
   );
 
