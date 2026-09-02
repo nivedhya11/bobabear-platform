@@ -9,8 +9,15 @@ import {
   assertImageRevisions,
   assertRunningProvenance,
   assertServiceabilitySmokeResponse,
+  closedStdinInherit,
+  createStagingWorkforceUser,
   isFullGitSha,
+  readSecretStdinBuffer,
+  runPodmanWithSecretStdin,
+  spawnIgnoringStdin,
+  spawnWithStdinBuffer,
   stopAndRemoveLegacyPostgres,
+  zeroSecretBuffer,
 } from "./staging.mjs";
 
 const candidateSha = "6d925496deebcf19e5a82659e3e33dc81faccac3";
@@ -153,12 +160,12 @@ test("staging workforce operator uses direct Podman without Compose dependency r
   const source = readFileSync(path.resolve("scripts/environment/staging.mjs"), "utf8");
   const compose = readFileSync(path.resolve("compose.yaml"), "utf8");
   assert.match(source, /const image = `boba-bear-staging-workforce-operator:\$\{candidate\.head\}`/);
-  assert.match(source, /runPodman\(\["build", "--file", "Dockerfile", "--target", "tooling"/);
-  assert.match(source, /runPodman\(\["run", "--rm", "--network", network/);
+  assert.match(source, /buildPodman\(\s*\n\s*\["build", "--file", "Dockerfile", "--target", "tooling"/);
+  assert.match(source, /runOperator\(runArgs, secretBuffer/);
   assert.match(source, /--env-file/);
   assert.match(source, /POSTGRES_RUNNING YES/);
   assert.match(source, /POSTGRES_HEALTHY YES/);
-  const operator = source.match(/function createStagingWorkforceUser\(args\) \{([\s\S]*?)\n\}/)?.[1] ?? "";
+  const operator = source.match(/function createStagingWorkforceUser\(args, deps = \{\}\) \{([\s\S]*?)\n\}/)?.[1] ?? "";
   assert.doesNotMatch(operator, /podmanCompose/);
   assert.doesNotMatch(operator, /boba-bear-tooling:local/);
   assert.doesNotMatch(compose, /  workforce-user-create:/);
@@ -192,4 +199,164 @@ test("staging status reports inspected image IDs and labels instead of a Git-onl
   assert.match(source, /const revision = imageRevision\(imageId\)/);
   assert.match(source, /CURRENT_MAIN_SHA \$\{candidate\.originMain\}/);
   assert.match(source, /CANDIDATE_MATCH YES/);
+});
+
+test("closedStdinInherit ignores stdin for preflight children", () => {
+  assert.deepEqual(closedStdinInherit(), ["ignore", "inherit", "inherit"]);
+});
+
+test("spawnIgnoringStdin never inherits parent stdin", () => {
+  const calls = [];
+  spawnIgnoringStdin("true", [], { cwd: "/" }, (command, args, options) => {
+    calls.push({ command, args, options });
+    return { status: 0 };
+  });
+  assert.equal(calls.length, 1);
+  assert.deepEqual(calls[0].options.stdio, ["ignore", "inherit", "inherit"]);
+});
+
+test("spawnWithStdinBuffer feeds password bytes only through stdin pipe", () => {
+  const secret = Buffer.from("founder-temporary-password");
+  const calls = [];
+  spawnWithStdinBuffer("podman", ["run", "image"], secret, { env: { PATH: "/usr/bin" } }, (command, args, options) => {
+    calls.push({ command, args, options });
+    return { status: 0 };
+  });
+  assert.equal(calls.length, 1);
+  assert.deepEqual(calls[0].options.stdio, ["pipe", "inherit", "inherit"]);
+  assert.equal(calls[0].options.input, secret);
+  assert.equal(JSON.stringify(calls[0].args).includes("founder-temporary-password"), false);
+  assert.equal(JSON.stringify(calls[0].options.env).includes("founder-temporary-password"), false);
+});
+
+test("zeroSecretBuffer clears in-memory password bytes", () => {
+  const secret = Buffer.from("founder-temporary-password");
+  zeroSecretBuffer(secret);
+  assert.equal(secret.equals(Buffer.alloc(secret.length, 0)), true);
+});
+
+test("readSecretStdinBuffer reads fd 0 once without encoding to string logs", () => {
+  const expected = Buffer.from("stdin-password-bytes");
+  const actual = readSecretStdinBuffer(() => expected);
+  assert.equal(actual, expected);
+});
+
+test("runPodmanWithSecretStdin propagates non-zero operator exit", () => {
+  const secret = Buffer.from("x".repeat(16));
+  assert.throws(
+    () =>
+      runPodmanWithSecretStdin(["run", "img"], secret, {}, () => ({
+        status: 7,
+        error: undefined,
+      })),
+    /podman run failed/,
+  );
+});
+
+test("createStagingWorkforceUser delivers password to final podman run only", () => {
+  const secret = Buffer.from("exact-founder-password-bytes");
+  const events = [];
+  let stdinConsumed = false;
+  let bufferZeroed = false;
+
+  createStagingWorkforceUser(
+    ["--email=ops@example.test", "--name=Ops", "--password-stdin"],
+    {
+      assertTarget: () => {
+        events.push("assertTarget");
+        return { network: "boba-staging_default" };
+      },
+      readCandidateFn: () => {
+        events.push("readCandidate");
+        return {
+          branch: "main",
+          head: candidateSha,
+          originMain: candidateSha,
+          trackedDirty: "",
+          fingerprint: "abc",
+        };
+      },
+      assertPreconditions: () => {
+        events.push("assertPreconditions");
+      },
+      materializeTree: () => {
+        events.push("materializeTree");
+        return "/tmp/boba-staging-build-test";
+      },
+      ensureEnv: () => {
+        events.push("ensureEnv");
+      },
+      buildPodman: (args) => {
+        events.push({ phase: "build", args: [...args], stdinConsumed });
+        assert.equal(stdinConsumed, false);
+        assert.match(args.join(" "), /build .*--target tooling/);
+      },
+      revisionOf: () => candidateSha,
+      readStdin: () => {
+        assert.equal(stdinConsumed, false);
+        stdinConsumed = true;
+        events.push("readStdin");
+        return secret;
+      },
+      runOperator: (args, buffer, options) => {
+        events.push({
+          phase: "run",
+          args: [...args],
+          buffer,
+          options,
+          stdinConsumed,
+        });
+        assert.equal(stdinConsumed, true);
+        assert.equal(buffer, secret);
+        assert.equal(args.includes("run"), true);
+        assert.equal(args.join(" ").includes("workforce:user:create"), true);
+        assert.equal(args.join(" ").includes("exact-founder-password-bytes"), false);
+        assert.equal(JSON.stringify(options ?? {}).includes("exact-founder-password-bytes"), false);
+      },
+      zeroBuffer: (buffer) => {
+        bufferZeroed = true;
+        zeroSecretBuffer(buffer);
+        events.push("zeroBuffer");
+      },
+      exists: () => true,
+      removeDir: () => {
+        events.push("removeDir");
+      },
+      envDir: "/tmp/env-dir",
+    },
+  );
+
+  assert.deepEqual(
+    events.map((event) => (typeof event === "string" ? event : event.phase)),
+    [
+      "assertTarget",
+      "readCandidate",
+      "assertPreconditions",
+      "materializeTree",
+      "ensureEnv",
+      "build",
+      "readStdin",
+      "run",
+      "zeroBuffer",
+      "removeDir",
+    ],
+  );
+  assert.equal(stdinConsumed, true);
+  assert.equal(bufferZeroed, true);
+  assert.equal(secret.equals(Buffer.alloc(secret.length, 0)), true);
+
+  const source = readFileSync(path.resolve("scripts/environment/staging.mjs"), "utf8");
+  assert.match(source, /spawnIgnoringStdin\(\s*"bash"/);
+  assert.match(source, /spawnIgnoringStdin\("npm", step\.args/);
+  assert.match(source, /function runPodman\(args, options = \{\}\) \{\n  const result = spawnIgnoringStdin\("podman"/);
+  assert.match(source, /secretBuffer = readStdin\(\)/);
+  assert.doesNotMatch(source, /runPodman\(\["run", "--rm"/);
+});
+
+test("createStagingWorkforceUser does not mutate persistent staging services", () => {
+  const source = readFileSync(path.resolve("scripts/environment/staging.mjs"), "utf8");
+  const operator = source.match(/function createStagingWorkforceUser\(args, deps = \{\}\) \{([\s\S]*?)\n\}/)?.[1] ?? "";
+  assert.doesNotMatch(operator, /podmanCompose|upAndWait|force-recreate|recover-postgres|volume", "rm"|compose down/);
+  assert.match(operator, /--read-only/);
+  assert.match(operator, /no-new-privileges:true/);
 });

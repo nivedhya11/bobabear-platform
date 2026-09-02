@@ -17,6 +17,7 @@ import { AuthFoundationConfigurationError } from "../../src/server/auth/shared/e
 import { createWorkforceOperatorUser } from "../../src/server/auth/workforce/operator";
 import { WorkforceAuthConfigurationError } from "../../src/server/workforce-auth/errors";
 import {
+  WORKFORCE_OPERATOR_SAFE_ERROR_CODES,
   openWorkforceOperatorCredentialRuntime,
   parseWorkforceCliArgs,
   printSafeError,
@@ -68,11 +69,18 @@ main().catch((error: unknown) => {
     error instanceof AuthFoundationConfigurationError ||
     error instanceof WorkforceAuthConfigurationError
   ) {
-    printSafeError(error.message);
+    printSafeError(WORKFORCE_OPERATOR_SAFE_ERROR_CODES.CONFIGURATION_ERROR);
   } else if (error instanceof Error) {
-    printSafeError(error.message);
+    if (error.message === "A workforce user with that email already exists.") {
+      printSafeError(WORKFORCE_OPERATOR_SAFE_ERROR_CODES.USER_ALREADY_EXISTS);
+    } else if (error.message === WORKFORCE_OPERATOR_SAFE_ERROR_CODES.INVALID_PASSWORD_INPUT) {
+      printSafeError(WORKFORCE_OPERATOR_SAFE_ERROR_CODES.INVALID_PASSWORD_INPUT);
+    } else {
+      // Auth/DB/driver failures may embed SQL, params, or connection details.
+      printSafeError(WORKFORCE_OPERATOR_SAFE_ERROR_CODES.PERSISTENCE_OR_AUTH_OPERATION_FAILED);
+    }
   } else {
-    printSafeError("workforce:user:create failed.");
+    printSafeError(WORKFORCE_OPERATOR_SAFE_ERROR_CODES.PERSISTENCE_OR_AUTH_OPERATION_FAILED);
   }
   process.exitCode = 1;
 });
