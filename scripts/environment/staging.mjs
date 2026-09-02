@@ -134,6 +134,48 @@ function ensureStagingEnvFiles(buildDir) {
   }
 }
 
+function podmanInspect(name, format) {
+  return execFileSync("podman", ["inspect", name, "--format", format], { encoding: "utf8" }).trim();
+}
+
+function waitForHealthy(containerName, timeoutMs = 180_000) {
+  const started = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    try {
+      const status = podmanInspect(containerName, "{{.State.Health.Status}}");
+      if (status === "healthy") {
+        console.log(`HEALTHY ${containerName}`);
+        return;
+      }
+    } catch {
+      // Container may not exist yet.
+    }
+    spawnSync("sleep", ["2"]);
+  }
+  console.error(`Timed out waiting for healthy container: ${containerName}`);
+  process.exit(1);
+}
+
+function stopLegacyRuntimeIfNeeded() {
+  for (const name of [
+    "boba-bear_app_1",
+    "boba-bear_customer-commerce_1",
+    "boba-bear_customer-auth_1",
+    "boba-bear_workforce-auth_1",
+    "boba-bear_operations_1",
+    "boba-bear_postgres_1",
+  ]) {
+    spawnSync("podman", ["stop", name], { stdio: "inherit" });
+  }
+}
+
+function upAndWait(buildDir, services) {
+  podmanCompose(buildDir, ["up", "-d", ...services]);
+  for (const service of services) {
+    waitForHealthy(`${STAGING_PROJECT}_${service}_1`);
+  }
+}
+
 function runBootstrapApply(buildDir, service, npmArgs) {
   podmanCompose(buildDir, [
     "run",
@@ -146,11 +188,12 @@ function runBootstrapApply(buildDir, service, npmArgs) {
     ...npmArgs,
     "--",
     "--apply",
-  ]);
+  ], { COMPOSE_PROFILES: "tools" });
 }
 
 function deploy(candidate) {
   assertDeployPreconditions(candidate);
+  stopLegacyRuntimeIfNeeded();
   const buildDir = materializeExactGitTree(candidate.head);
   console.log(`STAGING_BUILD_DIR ${buildDir}`);
   console.log(`MERGED_GIT_SHA ${candidate.head}`);
@@ -161,14 +204,14 @@ function deploy(candidate) {
       ["build", "app", "migrate", "customer-auth", "workforce-auth", "customer-commerce", "operations"],
       { BOBA_BUILD_SHA: candidate.head, COMPOSE_PROFILES: "tools" },
     );
-    podmanCompose(buildDir, ["up", "-d", "--wait", "postgres"]);
-    podmanCompose(buildDir, ["run", "--rm", "migrate"]);
+    upAndWait(buildDir, ["postgres"]);
+    podmanCompose(buildDir, ["run", "--rm", "migrate"], { COMPOSE_PROFILES: "tools" });
     runBootstrapApply(buildDir, "menu-import-existing", ["menu:import-existing"]);
     runBootstrapApply(buildDir, "assortment-bootstrap-existing-menu", ["assortment:bootstrap-existing-menu"]);
     runBootstrapApply(buildDir, "pricing-bootstrap-existing-menu", ["pricing:bootstrap-existing-menu"]);
     runBootstrapApply(buildDir, "catalog-bootstrap-imp028c-modifiers", ["catalog:bootstrap-imp028c-modifiers"]);
     runBootstrapApply(buildDir, "catalog-bootstrap-imp036c-required-topping", ["catalog:bootstrap-imp036c-required-topping"]);
-    podmanCompose(buildDir, ["up", "-d", "--wait", "app", "customer-auth", "workforce-auth", "customer-commerce", "operations"]);
+    upAndWait(buildDir, ["app", "customer-auth", "workforce-auth", "customer-commerce", "operations"]);
     for (const step of [
       { title: "app smoke", command: "node", args: ["scripts/docker/smoke.mjs"] },
       { title: "customer-auth smoke", command: "node", args: ["scripts/docker/customer-auth-smoke.mjs"] },
