@@ -56,6 +56,7 @@ test("staging deploy retains the current-main Podman hardening safeguards", () =
   assert.match(source, /podman-compose", \["-f", "compose\.yaml", "-p", STAGING_PROJECT/);
   assert.match(source, /\["up", "-d", "--force-recreate", "--no-deps", \.\.\.services\]/);
   assert.match(source, /ensurePersistentPostgres\(buildDir, initDir\)/);
+  assert.match(source, /upAndWait\(buildDir, BOBA_RUNTIME_SERVICES, \{ BOBA_POSTGRES_INIT_DIR: initDir \}\)/);
   assert.doesNotMatch(source, /upAndWait\(buildDir, \["postgres"\]\)/);
   assert.doesNotMatch(source, /--wait/);
   assert.match(source, /State\.Health\.Status/);

@@ -366,8 +366,8 @@ function createStagingWorkforceUser(args) {
   }
 }
 
-function upAndWait(buildDir, services) {
-  podmanCompose(buildDir, ["up", "-d", "--force-recreate", "--no-deps", ...services]);
+function upAndWait(buildDir, services, extraEnv = {}) {
+  podmanCompose(buildDir, ["up", "-d", "--force-recreate", "--no-deps", ...services], extraEnv);
   for (const service of services) {
     waitForHealthy(`${STAGING_PROJECT}_${service}_1`);
   }
@@ -415,7 +415,7 @@ function recoverPostgres(candidate) {
     runPodman(["rm", legacy.container]);
     podmanCompose(buildDir, ["up", "-d", "postgres"], { BOBA_POSTGRES_INIT_DIR: initDir });
     waitForHealthy(`${STAGING_PROJECT}_postgres_1`);
-    upAndWait(buildDir, BOBA_RUNTIME_SERVICES);
+    upAndWait(buildDir, BOBA_RUNTIME_SERVICES, { BOBA_POSTGRES_INIT_DIR: initDir });
     console.log("POSTGRES_VOLUME_PRESERVED YES");
     console.log("POSTGRES_REPLACEMENT_CREATED YES");
   } finally {
@@ -512,7 +512,7 @@ function deploy(candidate) {
     runBootstrapApply(buildDir, "pricing-bootstrap-existing-menu", ["pricing:bootstrap-existing-menu"]);
     runBootstrapApply(buildDir, "catalog-bootstrap-imp028c-modifiers", ["catalog:bootstrap-imp028c-modifiers"]);
     runBootstrapApply(buildDir, "catalog-bootstrap-imp036c-required-topping", ["catalog:bootstrap-imp036c-required-topping"]);
-    upAndWait(buildDir, ["app", "customer-auth", "workforce-auth", "customer-commerce", "operations"]);
+    upAndWait(buildDir, ["app", "customer-auth", "workforce-auth", "customer-commerce", "operations"], { BOBA_POSTGRES_INIT_DIR: initDir });
     for (const step of [
       { title: "app smoke", command: "node", args: ["scripts/docker/smoke.mjs"] },
       {
