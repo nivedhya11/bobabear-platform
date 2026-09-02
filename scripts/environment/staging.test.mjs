@@ -25,6 +25,7 @@ test("staging deploy retains the current-main Podman hardening safeguards", () =
   const source = readFileSync(path.resolve("scripts/environment/staging.mjs"), "utf8");
   assert.match(source, /git -C .* archive .* \| tar -x -C/);
   assert.match(source, /podman-compose", \["-f", "compose\.yaml", "-p", STAGING_PROJECT/);
+  assert.match(source, /\["up", "-d", "--force-recreate", \.\.\.services\]/);
   assert.doesNotMatch(source, /--wait/);
   assert.match(source, /State\.Health\.Status/);
   assert.match(source, /boba-bear_app_1/);
