@@ -56,13 +56,73 @@ if (isCli && !["status", "deploy-dry-run", "deploy", "recover-postgres", "workfo
   process.exit(1);
 }
 
+/** Preflight/build children must never inherit founder password stdin. */
+function closedStdinInherit() {
+  return ["ignore", "inherit", "inherit"];
+}
+
+function closedStdinPipes() {
+  return ["ignore", "pipe", "pipe"];
+}
+
 function git(args) {
-  return execFileSync("git", args, { cwd: repositoryRoot, encoding: "utf8" }).trim();
+  return execFileSync("git", args, {
+    cwd: repositoryRoot,
+    encoding: "utf8",
+    stdio: closedStdinPipes(),
+  }).trim();
 }
 
 function fingerprint() {
-  return execFileSync("npm", ["run", "working-tree:fingerprint"], { cwd: repositoryRoot, encoding: "utf8" })
+  return execFileSync("npm", ["run", "working-tree:fingerprint"], {
+    cwd: repositoryRoot,
+    encoding: "utf8",
+    stdio: closedStdinPipes(),
+  })
     .match(/WORKING_TREE_FINGERPRINT\s+([a-f0-9]+)/)?.[1] ?? "UNAVAILABLE";
+}
+
+/** Consume outer wrapper stdin once into memory. Never argv/env/file. */
+function readSecretStdinBuffer(readSync = readFileSync) {
+  return readSync(0);
+}
+
+function zeroSecretBuffer(buffer) {
+  if (buffer && typeof buffer.fill === "function") buffer.fill(0);
+}
+
+/**
+ * Spawn a child with stdin ignored so password bytes cannot be drained by
+ * preflight/build helpers (git/bash/npm/podman build).
+ */
+function spawnIgnoringStdin(command, args, options = {}, spawn = spawnSync) {
+  const stdio = options.encoding ? ["ignore", "pipe", "pipe"] : closedStdinInherit();
+  return spawn(command, args, { ...options, stdio });
+}
+
+function execIgnoringStdin(command, args, options = {}, exec = execFileSync) {
+  const { stdio, ...rest } = options;
+  let resolved;
+  if (stdio === "ignore") {
+    resolved = "ignore";
+  } else if (Array.isArray(stdio)) {
+    resolved = ["ignore", stdio[1] ?? "pipe", stdio[2] ?? "pipe"];
+  } else {
+    resolved = rest.encoding ? closedStdinPipes() : ["ignore", "pipe", "pipe"];
+  }
+  return exec(command, args, { ...rest, stdio: resolved });
+}
+
+/**
+ * Final operator only: feed in-memory password bytes through a stdin pipe.
+ * stdout/stderr remain inherited. Does not place secrets in argv or env.
+ */
+function spawnWithStdinBuffer(command, args, stdinBuffer, options = {}, spawn = spawnSync) {
+  return spawn(command, args, {
+    ...options,
+    stdio: ["pipe", "inherit", "inherit"],
+    input: stdinBuffer,
+  });
 }
 
 function readCandidate() {
@@ -107,9 +167,8 @@ function readRepositoryPublicBuildEnv() {
 
 function podmanCompose(buildDir, args, extraEnv = {}) {
   const publicBuildEnv = readRepositoryPublicBuildEnv();
-  const result = spawnSync("podman-compose", ["-f", "compose.yaml", "-p", STAGING_PROJECT, ...args], {
+  const result = spawnIgnoringStdin("podman-compose", ["-f", "compose.yaml", "-p", STAGING_PROJECT, ...args], {
     cwd: buildDir,
-    stdio: "inherit",
     env: {
       ...process.env,
       ...publicBuildEnv,
@@ -130,10 +189,9 @@ function podmanCompose(buildDir, args, extraEnv = {}) {
 
 function materializeExactGitTree(sha) {
   const buildDir = mkdtempSync(path.join(os.tmpdir(), "boba-staging-build-"));
-  const result = spawnSync(
+  const result = spawnIgnoringStdin(
     "bash",
     ["-lc", `git -C "${repositoryRoot}" archive "${sha}" | tar -x -C "${buildDir}"`],
-    { stdio: "inherit" },
   );
   if (result.status !== 0) {
     rmSync(buildDir, { recursive: true, force: true });
@@ -152,7 +210,7 @@ function ensureStagingEnvFiles(buildDir) {
       { title: "db:env:init", args: ["run", "db:env:init"] },
       { title: "docker:env:init", args: ["run", "docker:env:init"] },
     ]) {
-      const result = spawnSync("npm", step.args, { cwd: buildDir, stdio: "inherit" });
+      const result = spawnIgnoringStdin("npm", step.args, { cwd: buildDir });
       if (result.status !== 0) process.exit(result.status ?? 1);
     }
   }
@@ -191,7 +249,7 @@ function materializeStagingPostgresInit(buildDir, sha) {
 }
 
 function podmanInspect(name, format) {
-  return execFileSync("podman", ["inspect", name, "--format", format], { encoding: "utf8" }).trim();
+  return execIgnoringStdin("podman", ["inspect", name, "--format", format], { encoding: "utf8" }).trim();
 }
 
 function imageRevision(image) {
@@ -288,7 +346,7 @@ function waitForHealthy(containerName, timeoutMs = 180_000) {
     } catch {
       // Container may not exist yet.
     }
-    spawnSync("sleep", ["2"]);
+    spawnIgnoringStdin("sleep", ["2"]);
   }
   console.error(`Timed out waiting for healthy container: ${containerName}`);
   process.exit(1);
@@ -303,24 +361,35 @@ function stopLegacyRuntimeIfNeeded() {
     "boba-bear_operations_1",
     "boba-bear_postgres_1",
   ]) {
-    spawnSync("podman", ["stop", name], { stdio: "inherit" });
+    spawnIgnoringStdin("podman", ["stop", name]);
   }
 }
 
 function runPodman(args, options = {}) {
-  const result = spawnSync("podman", args, { stdio: "inherit", ...options });
+  const result = spawnIgnoringStdin("podman", args, options);
   if (result.error) throw result.error;
   if (result.status !== 0) throw new Error(`podman ${args[0]} failed.`);
 }
 
+function runPodmanWithSecretStdin(args, stdinBuffer, options = {}, spawn = spawnSync) {
+  const result = spawnWithStdinBuffer("podman", args, stdinBuffer, options, spawn);
+  if (result.error) throw result.error;
+  if (result.status !== 0) throw new Error(`podman ${args[0]} failed.`);
+  return result;
+}
+
 function inspectJson(name) {
-  return JSON.parse(execFileSync("podman", ["inspect", name], { encoding: "utf8" }))[0];
+  return JSON.parse(execIgnoringStdin("podman", ["inspect", name], { encoding: "utf8" }))[0];
 }
 
 function stagingNetworkForPostgres(database) {
   const names = Object.keys(database.NetworkSettings.Networks ?? {});
   const network = names.find((name) => {
-    const labels = JSON.parse(execFileSync("podman", ["network", "inspect", name, "--format", "{{json .Labels}}"], { encoding: "utf8" }));
+    const labels = JSON.parse(
+      execIgnoringStdin("podman", ["network", "inspect", name, "--format", "{{json .Labels}}"], {
+        encoding: "utf8",
+      }),
+    );
     return labels["io.podman.compose.project"] === STAGING_PROJECT;
   });
   if (!network) throw new Error("No boba-staging Podman network is attached to PostgreSQL.");
@@ -336,7 +405,7 @@ function assertStagingWorkforceOperatorTarget() {
   if (project !== STAGING_PROJECT || database.State.Status !== "running" || database.State.Health?.Status !== "healthy" || dataMounts.length !== 1) {
     throw new Error("Founder staging workforce operator target is unavailable or ambiguous.");
   }
-  execFileSync("podman", ["volume", "inspect", volume], { stdio: "ignore" });
+  execIgnoringStdin("podman", ["volume", "inspect", volume], { stdio: "ignore" });
   const network = stagingNetworkForPostgres(database);
   console.log(`STAGING_OPERATOR_PROJECT ${STAGING_PROJECT}`);
   console.log(`STAGING_OPERATOR_DATABASE_CONTAINER ${databaseContainer}`);
@@ -348,21 +417,78 @@ function assertStagingWorkforceOperatorTarget() {
   return { databaseContainer, network };
 }
 
-function createStagingWorkforceUser(args) {
-  const { network } = assertStagingWorkforceOperatorTarget();
-  const candidate = readCandidate();
-  assertDeployPreconditions(candidate);
-  const buildDir = materializeExactGitTree(candidate.head);
+/**
+ * Staging workforce user create.
+ *
+ * Security invariant: founder password bytes are delivered to exactly one
+ * process — the final isolated `podman run` workforce operator CLI. All
+ * preflight/materialize/env-init/build children use closed stdin.
+ */
+function createStagingWorkforceUser(args, deps = {}) {
+  const {
+    assertTarget = assertStagingWorkforceOperatorTarget,
+    readCandidateFn = readCandidate,
+    assertPreconditions = assertDeployPreconditions,
+    materializeTree = materializeExactGitTree,
+    ensureEnv = ensureStagingEnvFiles,
+    buildPodman = runPodman,
+    revisionOf = imageRevision,
+    readStdin = readSecretStdinBuffer,
+    runOperator = runPodmanWithSecretStdin,
+    zeroBuffer = zeroSecretBuffer,
+    exists = existsSync,
+    removeDir = rmSync,
+    envDir = STAGING_ENV_DIR,
+  } = deps;
+
+  const { network } = assertTarget();
+  const candidate = readCandidateFn();
+  assertPreconditions(candidate);
+  const buildDir = materializeTree(candidate.head);
   const image = `boba-bear-staging-workforce-operator:${candidate.head}`;
+  let secretBuffer;
   try {
-    ensureStagingEnvFiles(buildDir);
-    runPodman(["build", "--file", "Dockerfile", "--target", "tooling", "--build-arg", `BOBA_BUILD_SHA=${candidate.head}`, "--tag", image, "."], { cwd: buildDir });
-    if (imageRevision(image) !== candidate.head) throw new Error("Dedicated workforce operator image lacks exact merged-main provenance.");
-    const envFiles = [".env.runtime.docker.local", ".env.workforce-auth.docker.local"].map((file) => path.join(STAGING_ENV_DIR, file));
-    if (envFiles.some((file) => !existsSync(file))) throw new Error("Required staging workforce operator environment is missing.");
-    runPodman(["run", "--rm", "--network", network, "--read-only", "--tmpfs", "/tmp", "--cap-drop", "ALL", "--security-opt", "no-new-privileges:true", ...envFiles.flatMap((file) => ["--env-file", file]), image, "npm", "run", "workforce:user:create", "--", ...args]);
+    ensureEnv(buildDir);
+    buildPodman(
+      ["build", "--file", "Dockerfile", "--target", "tooling", "--build-arg", `BOBA_BUILD_SHA=${candidate.head}`, "--tag", image, "."],
+      { cwd: buildDir },
+    );
+    if (revisionOf(image) !== candidate.head) {
+      throw new Error("Dedicated workforce operator image lacks exact merged-main provenance.");
+    }
+    const envFiles = [".env.runtime.docker.local", ".env.workforce-auth.docker.local"].map((file) =>
+      path.join(envDir, file),
+    );
+    if (envFiles.some((file) => !exists(file))) {
+      throw new Error("Required staging workforce operator environment is missing.");
+    }
+
+    // Consume outer stdin only after all non-secret setup is complete.
+    secretBuffer = readStdin();
+    const runArgs = [
+      "run",
+      "--rm",
+      "--network",
+      network,
+      "--read-only",
+      "--tmpfs",
+      "/tmp",
+      "--cap-drop",
+      "ALL",
+      "--security-opt",
+      "no-new-privileges:true",
+      ...envFiles.flatMap((file) => ["--env-file", file]),
+      image,
+      "npm",
+      "run",
+      "workforce:user:create",
+      "--",
+      ...args,
+    ];
+    runOperator(runArgs, secretBuffer, {});
   } finally {
-    rmSync(buildDir, { recursive: true, force: true });
+    zeroBuffer(secretBuffer);
+    removeDir(buildDir, { recursive: true, force: true });
   }
 }
 
@@ -466,7 +592,7 @@ function runServiceabilityUatSmoke() {
       brandId: DIRECT_ORDERING_BRAND_ID,
       location: { coordinates: { latitude: testCase.latitude, longitude: testCase.longitude } },
     });
-    const result = spawnSync(
+    const result = spawnIgnoringStdin(
       "curl",
       [
         "--silent",
@@ -543,9 +669,8 @@ function deploy(candidate) {
         ],
       },
     ]) {
-      const result = spawnSync(step.command, step.args, {
+      const result = spawnIgnoringStdin(step.command, step.args, {
         cwd: buildDir,
-        stdio: "inherit",
         env: { ...process.env, DOCKER_HOST: SOCKET, COMPOSE_PROJECT_NAME: STAGING_PROJECT },
       });
       if (result.status !== 0) process.exit(result.status ?? 1);
@@ -591,4 +716,18 @@ if (isCli) {
   if (command === "workforce-user-create") createStagingWorkforceUser(process.argv.slice(3));
 }
 
-export { BOBA_BUILD_IMAGES, BOBA_RUNTIME_SERVICES, assertImageRevisions, assertRunningProvenance, assertLegacyPostgresRecoveryTarget, isFullGitSha };
+export {
+  BOBA_BUILD_IMAGES,
+  BOBA_RUNTIME_SERVICES,
+  assertImageRevisions,
+  assertRunningProvenance,
+  assertLegacyPostgresRecoveryTarget,
+  isFullGitSha,
+  closedStdinInherit,
+  readSecretStdinBuffer,
+  zeroSecretBuffer,
+  spawnIgnoringStdin,
+  spawnWithStdinBuffer,
+  runPodmanWithSecretStdin,
+  createStagingWorkforceUser,
+};

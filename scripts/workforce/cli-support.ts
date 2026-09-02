@@ -27,6 +27,12 @@ import { normalizeWorkforceEmail } from "../../src/shared/workforce-auth/email";
 import { validateWorkforcePassword } from "../../src/server/workforce-auth/password-policy";
 import type { WorkerConfig } from "../../src/platform/config";
 import type { WorkforceAuthServiceConfig } from "../../src/server/workforce-auth/config";
+import {
+  WORKFORCE_OPERATOR_SAFE_ERROR_CODES,
+  classifyWorkforceOperatorSafeError,
+} from "./safe-operator-error.mjs";
+
+export { WORKFORCE_OPERATOR_SAFE_ERROR_CODES, classifyWorkforceOperatorSafeError };
 
 export type WorkforceCliArgs = Readonly<Record<string, string | undefined>>;
 
@@ -71,7 +77,7 @@ export function requireNormalizedEmail(raw: string): string {
 export function requireValidPassword(raw: string): string {
   const result = validateWorkforcePassword(raw);
   if (!result.ok) {
-    throw new Error("Invalid --password value (must be 15–128 characters).");
+    throw new Error(WORKFORCE_OPERATOR_SAFE_ERROR_CODES.INVALID_PASSWORD_INPUT);
   }
   return raw;
 }
@@ -80,7 +86,7 @@ export function requireValidPassword(raw: string): string {
 export function requirePasswordFromStdin(): string {
   const value = readFileSync(0, "utf8").replace(/\r?\n$/, "");
   if (value.includes("\n") || value.includes("\r")) {
-    throw new Error("Invalid password input.");
+    throw new Error(WORKFORCE_OPERATOR_SAFE_ERROR_CODES.INVALID_PASSWORD_INPUT);
   }
   return requireValidPassword(value);
 }
@@ -167,11 +173,9 @@ export function printSafeOk(payload: Record<string, unknown>): void {
 }
 
 export function printSafeError(message: string): void {
-  // Never echo driver/query text — Better Auth / Drizzle failures can include
-  // SQL, params, or connection details that must not reach operator stdout.
-  const safe =
-    /failed query|password|secret|postgresql:\/\//i.test(message)
-      ? "workforce operator command failed."
-      : message;
+  // Never echo driver/query/secret text. Prefer stable classifications so
+  // safe input failures (e.g. INVALID_PASSWORD_INPUT) are not collapsed into
+  // an opaque generic failure merely because the word "password" appears.
+  const safe = classifyWorkforceOperatorSafeError(message);
   console.error(JSON.stringify({ ok: false, error: safe }));
 }
