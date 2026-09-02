@@ -170,7 +170,7 @@ function stopLegacyRuntimeIfNeeded() {
 }
 
 function upAndWait(buildDir, services) {
-  podmanCompose(buildDir, ["up", "-d", ...services]);
+  podmanCompose(buildDir, ["up", "-d", "--force-recreate", ...services]);
   for (const service of services) {
     waitForHealthy(`${STAGING_PROJECT}_${service}_1`);
   }
