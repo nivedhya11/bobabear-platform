@@ -73,10 +73,10 @@ async function reachReadyForPayment(page: Page, phoneNumber: string): Promise<vo
   await checkout.getByLabel("City", { exact: true }).fill("Dehradun");
   await checkout.getByRole("combobox", { name: /^State$/i }).selectOption({ label: "Uttarakhand" });
   await checkout.getByLabel("PIN code", { exact: true }).fill("248001");
-  await checkout.getByRole("button", { name: /evaluate checkout/i }).click();
+  await checkout.getByRole("button", { name: /continue to payment/i }).click();
 
   await expect(page.getByTestId("checkout-ready")).toBeVisible({ timeout: 20_000 });
-  await expect(page.getByText(/ready for payment/i)).toBeVisible();
+  await expect(page.getByTestId("checkout-line-review")).toBeVisible();
   await expect(page.getByText(/total payable/i)).toBeVisible();
   await expect(page.getByTestId("payment-start")).toBeVisible();
 }

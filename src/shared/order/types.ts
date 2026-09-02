@@ -11,6 +11,7 @@ import type {
   OrderRecoveryDisposition,
   OrderStatus,
 } from "./constants";
+import type { OrderMoneySummary } from "./money-summary";
 
 export type OrderPolicy = Readonly<{
   /** Bounded Order-number collision retries before fail-closed. */
@@ -102,6 +103,7 @@ export type CustomerOrderDetail = CustomerOrderSummary &
     cancellationReasonCode: OrderCancellationReasonCode | null;
     destination: OrderDestinationProjection;
     lines: readonly OrderLineProjection[];
+    moneySummary: OrderMoneySummary;
     delivery: Readonly<{
       statusLabel: string;
       providerDisplayName: string | null;

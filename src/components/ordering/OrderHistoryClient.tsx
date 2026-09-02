@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { commerceErrorCopy } from "@/components/ordering/error-copy";
@@ -9,6 +9,10 @@ import { orderStatusLabel } from "@/components/ordering/order-status";
 import { fetchCustomerSession } from "@/lib/customer-auth/client";
 import { loginUrlWithReturn } from "@/lib/customer-auth/return-to";
 import { listCustomerOrders, type CommerceOrderSummary } from "@/lib/customer-commerce";
+
+function isCurrentOrder(status: string): boolean {
+  return status === "PLACED" || status === "ACCEPTED";
+}
 
 export function OrderHistoryClient() {
   const [items, setItems] = useState<readonly CommerceOrderSummary[] | null>(null);
@@ -38,6 +42,35 @@ export function OrderHistoryClient() {
       cancelled = true;
     };
   }, []);
+
+  const grouped = useMemo(() => {
+    if (!items) return { current: [], past: [] };
+    const current = items.filter((order) => isCurrentOrder(order.status));
+    const past = items.filter((order) => !isCurrentOrder(order.status));
+    return { current, past };
+  }, [items]);
+
+  function renderOrder(order: CommerceOrderSummary) {
+    return (
+      <li
+        key={order.orderId}
+        className="rounded-xl border border-[var(--border-strong)] bg-[var(--bg-section)] p-4 flex flex-col gap-2"
+        data-testid="order-history-item"
+      >
+        <a
+          href={`/order/orders/detail/?orderId=${encodeURIComponent(order.orderId)}`}
+          className="font-body text-[15px] font-semibold text-[var(--text-primary)]"
+        >
+          {order.orderNumber}
+        </a>
+        <p className="font-body text-[13px] text-[var(--text-secondary)]">
+          {order.createdAt ? new Date(order.createdAt).toLocaleString() : ""}
+        </p>
+        <p className="font-body text-[14px]">{formatPaise(order.money.grandTotalMinor)}</p>
+        <p data-testid="order-status">{orderStatusLabel(order.status)}</p>
+      </li>
+    );
+  }
 
   return (
     <main id="main-content" tabIndex={-1} className="bg-[var(--bg-page)] focus:outline-none">
@@ -72,24 +105,22 @@ export function OrderHistoryClient() {
           </div>
         ) : null}
 
-        {items && items.length > 0 ? (
-          <ul className="flex flex-col gap-4" data-testid="orders-list">
-            {items.map((order) => (
-              <li key={order.orderId} className="border border-[var(--border-subtle)] p-4 flex flex-col gap-2">
-                <a
-                  href={`/order/orders/detail/?orderId=${encodeURIComponent(order.orderId)}`}
-                  className="font-body text-[15px] font-semibold text-[var(--text-primary)]"
-                >
-                  {order.orderNumber}
-                </a>
-                <p className="font-body text-[13px] text-[var(--text-secondary)]">
-                  {order.createdAt ? new Date(order.createdAt).toLocaleString() : ""}
-                </p>
-                <p className="font-body text-[14px]">{formatPaise(order.money.grandTotalMinor)}</p>
-                <p data-testid="order-status">{orderStatusLabel(order.status)}</p>
-              </li>
-            ))}
-          </ul>
+        {grouped.current.length > 0 ? (
+          <section data-testid="orders-current" className="flex flex-col gap-3">
+            <h2 className="font-body text-[15px] font-semibold text-[var(--text-primary)]">
+              Current orders
+            </h2>
+            <ul className="flex flex-col gap-4">{grouped.current.map(renderOrder)}</ul>
+          </section>
+        ) : null}
+
+        {grouped.past.length > 0 ? (
+          <section data-testid="orders-past" className="flex flex-col gap-3">
+            <h2 className="font-body text-[15px] font-semibold text-[var(--text-primary)]">
+              Past orders
+            </h2>
+            <ul className="flex flex-col gap-4">{grouped.past.map(renderOrder)}</ul>
+          </section>
         ) : null}
       </div>
     </main>

@@ -5,9 +5,9 @@
   "capability": "IMP-036B",
   "title": "Customer Account, Onboarding, Address & Location Experience",
   "architectureLock": "ARCHITECTURE_LOCKED",
-  "implementation": "IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE",
+  "implementation": "COMPLETE_AND_ACCEPTED",
   "implementationAuthorized": true,
-  "lastReviewed": "2026-09-01",
+  "lastReviewed": "2026-09-02",
   "bindingDecisions": [],
   "dependsOn": ["IMP-036A", "IMP-017", "IMP-018", "IMP-019", "IMP-025"]
 }
@@ -15,7 +15,7 @@
 
 # IMP-036B — Customer Account, Onboarding, Address & Location Experience
 
-## Capability Architecture (ARCHITECTURE_LOCKED — IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE)
+## Capability Architecture (ARCHITECTURE_LOCKED — COMPLETE_AND_ACCEPTED)
 
 This document is the locked capability architecture for **IMP-036B — Customer Account,
 Onboarding, Address & Location Experience**. It delivers My BOBA account routes, progressive
@@ -26,30 +26,35 @@ Serviceability authorities.
 | Field | Value |
 |---|---|
 | Architecture lock | `ARCHITECTURE_LOCKED` |
-| Lifecycle | `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` |
+| Lifecycle | `COMPLETE_AND_ACCEPTED` |
 | Implementation | `AUTHORIZED` / `STARTED` / `COMPLETE` |
 | Implementation authorized | **YES** |
 | Implementation complete | **YES** |
-| Accepted | **NO** |
-| Accepted product through | IMP-036A |
-| Current product slice | IMP-036B |
-| Pending acceptance | IMP-036B |
+| Accepted | **YES** |
+| Accepted product through | IMP-036B |
+| Current product slice | NONE |
+| Pending acceptance | NONE |
 | Next product slice | IMP-036C |
-| Governance checkpoint | GTM-R99 / STATE-R97 |
+| Governance checkpoint | GTM-R100 / STATE-R98 |
 | Founder UAT required for acceptance | **YES** |
+| Founder UAT | **PASS** |
 
 ```text
-IMP-036B: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
+IMP-036B: COMPLETE_AND_ACCEPTED
 IMP-036B_ARCHITECTURE: LOCKED
 IMP-036B_ARCHITECTURE_LOCKED: YES
 IMP-036B_IMPLEMENTATION: AUTHORIZED / STARTED / COMPLETE
 IMP-036B_IMPLEMENTATION_AUTHORIZED: YES
 IMP-036B_STARTED: YES
 IMP-036B_IMPLEMENTATION_COMPLETE: YES
-IMP-036B_ACCEPTED: NO
+IMP-036B_ACCEPTED: YES
 FOUNDER_UAT_REQUIRED: YES
 FOUNDER_UAT_REQUIRED_FOR_ACCEPTANCE: YES
 IMP-036B_FOUNDER_UAT_REQUIRED: YES
+IMP-036B_FOUNDER_UAT: PASS
+IMP036B_FORMAL_ACCEPTANCE: ACCEPTED
+FOUNDER_UAT: PASS
+IMP-036B_ACCEPTED_MAIN_SHA: 4c4fcf1887fa6d8386575c77d5da22bb11e79059
 schema_change: YES
 serviceability_model: OUTLET_DISTANCE_SERVICEABILITY_V1
 provider_IO: YES

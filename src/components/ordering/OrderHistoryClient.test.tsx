@@ -47,7 +47,7 @@ describe("OrderHistoryClient", () => {
       },
     });
     render(<OrderHistoryClient />);
-    await waitFor(() => expect(screen.getByTestId("orders-list")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByTestId("orders-current")).toBeInTheDocument());
     expect(screen.getByText("ORD-0123456789AB")).toBeInTheDocument();
     expect(screen.getByTestId("order-status")).toHaveTextContent("Order received");
   });

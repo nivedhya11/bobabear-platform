@@ -69,7 +69,7 @@ afterEach(async () => {
 });
 
 describe("IMP-019 serviceability migration", () => {
-  it("keeps 0000–0012 sealed, seals 0013, includes 0035 distance policy migration", () => {
+  it("keeps 0000–0012 sealed, seals 0013, includes 0035 distance policy and 0036 delivery fee policy migrations", () => {
     const integrity = JSON.parse(
       readFileSync(path.join(process.cwd(), "drizzle/migration-integrity.json"), "utf8"),
     ) as { migrations: Array<{ path: string; sha256: string; tag: string }> };
@@ -100,6 +100,13 @@ describe("IMP-019 serviceability migration", () => {
     expect(distancePolicyEntry).toBeDefined();
     expect(distancePolicyEntry!.sha256).toBe(
       sha256File("drizzle/0035_serviceability_distance_policy.sql"),
+    );
+    const deliveryFeePolicyEntry = integrity.migrations.find(
+      (m) => m.path === "drizzle/0036_outlet_delivery_fee_policy.sql",
+    );
+    expect(deliveryFeePolicyEntry).toBeDefined();
+    expect(deliveryFeePolicyEntry!.sha256).toBe(
+      sha256File("drizzle/0036_outlet_delivery_fee_policy.sql"),
     );
   });
 

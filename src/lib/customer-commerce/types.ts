@@ -351,6 +351,18 @@ export type CommerceOrderDetail = CommerceOrderSummary &
     cancellationReasonCode: string | null;
     destination: CommerceOrderDestination;
     lines: readonly CommerceOrderLine[];
+    moneySummary: Readonly<{
+      prePromotionSubtotalMinor: string;
+      promotionDiscountMinor: string;
+      charges: readonly Readonly<{
+        chargeCode: string;
+        name: string;
+        amountMinor: string;
+      }>[];
+      taxMinor: string;
+      grandTotalMinor: string;
+      currency: "INR";
+    }>;
     delivery: Readonly<{
       statusLabel: string;
       providerDisplayName: string | null;

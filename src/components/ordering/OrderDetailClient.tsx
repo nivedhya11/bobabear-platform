@@ -5,6 +5,8 @@ import { useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/Button";
 import { OrderFinancialDocuments } from "@/components/ordering/OrderFinancialDocuments";
+import { OrderMoneySummaryPanel } from "@/components/ordering/OrderMoneySummaryPanel";
+import { buildOrderTimeline, OrderTimelinePanel } from "@/components/ordering/OrderTimelinePanel";
 import { OrderSupportAction } from "@/components/ordering/OrderSupportAction";
 import { commerceErrorCopy } from "@/components/ordering/error-copy";
 import { formatPaise } from "@/components/ordering/format-money";
@@ -83,6 +85,16 @@ export function OrderDetailClient() {
               </p>
             </div>
 
+            <OrderTimelinePanel
+              milestones={buildOrderTimeline({
+                status: order.status,
+                createdAt: order.createdAt,
+                acceptedAt: order.acceptedAt,
+                fulfilledAt: order.fulfilledAt,
+                cancelledAt: order.cancelledAt,
+              })}
+            />
+
             {order.delivery ? (
               <section className="rounded-md border border-[var(--border-subtle)] p-4" data-testid="order-delivery">
                 <h2 className="font-body text-[15px] font-semibold">Delivery</h2>
@@ -116,9 +128,7 @@ export function OrderDetailClient() {
               ))}
             </ul>
 
-            <p className="font-body text-[15px] font-semibold">
-              Total {formatPaise(order.money.grandTotalMinor)}
-            </p>
+            <OrderMoneySummaryPanel moneySummary={order.moneySummary} title="Payment summary" />
 
             <div className="font-body text-[14px] text-[var(--text-secondary)]">
               <p>{order.destination.recipientName}</p>

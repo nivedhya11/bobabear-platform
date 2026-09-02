@@ -1,9 +1,13 @@
 "use client";
 
 import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
 import { QuantityStepper } from "@/components/ordering/QuantityStepper";
 import { formatPaise } from "@/components/ordering/format-money";
-import type { CustomerMenuItem } from "@/shared/customer-menu/types";
+import type {
+  CustomerMenuAvailability,
+  CustomerMenuItem,
+} from "@/shared/customer-menu/types";
 
 export type MenuItemRowProps = Readonly<{
   item: CustomerMenuItem;
@@ -15,6 +19,17 @@ export type MenuItemRowProps = Readonly<{
   onCustomize: (item: CustomerMenuItem) => void;
 }>;
 
+function availabilityBadge(availability: CustomerMenuAvailability | undefined): {
+  label: string;
+  variant: "warning" | "error" | "success";
+} | null {
+  if (!availability || availability === "available") return null;
+  if (availability === "sold_out") {
+    return { label: "Sold out", variant: "error" };
+  }
+  return { label: "Unavailable", variant: "warning" };
+}
+
 /**
  * Presentation-only Menu item. Does not fetch Menu or mutate Cart.
  */
@@ -24,6 +39,9 @@ export function MenuItemRow(props: MenuItemRowProps) {
   const customizable = (item.modifierGroups?.length ?? 0) > 0;
   const isRow = layout === "row";
   const isResponsive = layout === "responsive";
+  const availability = availabilityBadge(item.availability);
+  const unavailable = item.availability && item.availability !== "available";
+  const actionDisabled = busy || unavailable;
 
   return (
     <li
@@ -34,6 +52,8 @@ export function MenuItemRow(props: MenuItemRowProps) {
             ? "flex items-start gap-3 overflow-hidden rounded-xl border border-[var(--border-strong)] bg-[var(--bg-section)] p-3 shadow-[0_10px_28px_rgba(0,0,0,0.16)] xl:flex-col xl:gap-3 xl:h-full"
             : "flex h-full flex-col gap-3 overflow-hidden rounded-xl border border-[var(--border-strong)] bg-[var(--bg-section)] p-3 shadow-[0_10px_28px_rgba(0,0,0,0.16)]"
       }
+      data-testid={`menu-item-${item.variantId}`}
+      data-availability={item.availability ?? "available"}
     >
       {item.imagePath ? (
         // eslint-disable-next-line @next/next/no-img-element
@@ -66,9 +86,16 @@ export function MenuItemRow(props: MenuItemRowProps) {
       )}
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         <div className="flex items-start justify-between gap-3">
-          <h4 className="font-body text-[16px] font-bold leading-tight text-[var(--text-primary)] line-clamp-2">
-            {item.name}
-          </h4>
+          <div className="flex min-w-0 flex-col gap-1">
+            <h4 className="font-body text-[16px] font-bold leading-tight text-[var(--text-primary)] line-clamp-2">
+              {item.name}
+            </h4>
+            {availability ? (
+              <Badge variant={availability.variant} data-testid="menu-item-availability">
+                {availability.label}
+              </Badge>
+            ) : null}
+          </div>
           <span className="shrink-0 font-body text-[14px] font-bold text-[var(--interactive-secondary)]">
             {formatPaise(item.displayPricePaise)}
           </span>
@@ -79,10 +106,14 @@ export function MenuItemRow(props: MenuItemRowProps) {
           </p>
         ) : null}
         <div className="mt-auto flex items-end justify-end gap-2 xl:justify-between">
-          {quantity > 0 ? (
+          {unavailable ? (
+            <span className="font-body text-[13px] text-[var(--text-secondary)]">
+              {availability?.label ?? "Not available"}
+            </span>
+          ) : quantity > 0 ? (
             <QuantityStepper
               quantity={quantity}
-              disabled={busy}
+              disabled={actionDisabled}
               ariaLabel={`${item.name} quantity ${quantity}`}
               decrementLabel={`Remove one ${item.name}`}
               incrementLabel={`Add one ${item.name}`}
@@ -95,7 +126,7 @@ export function MenuItemRow(props: MenuItemRowProps) {
               variant="secondary"
               size="sm"
               className="min-h-[44px] min-w-[7.5rem] rounded-lg"
-              disabled={busy}
+              disabled={actionDisabled}
               aria-label={`Add ${item.name}`}
               onClick={() => (customizable ? onCustomize(item) : onAdd(item))}
             >

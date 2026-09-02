@@ -224,10 +224,10 @@ describe("OrderingCatalogClient", () => {
     ).toBeTruthy();
   });
 
-  it("does not render search, filter, or ranking controls", async () => {
+  it("renders menu search without filter or ranking controls", async () => {
     render(<OrderingCatalogClient brandId="brand-1" />);
     await waitFor(() => expect(screen.getByRole("heading", { name: /drinks/i, level: 1 })).toBeInTheDocument());
-    expect(screen.queryByPlaceholderText(/search/i)).not.toBeInTheDocument();
+    expect(screen.getByTestId("menu-search-input")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /filter/i })).not.toBeInTheDocument();
     expect(screen.queryByText(/most ordered/i)).not.toBeInTheDocument();
   });

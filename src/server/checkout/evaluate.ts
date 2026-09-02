@@ -181,6 +181,7 @@ export async function evaluateCheckout(
       cart: preload.cart,
       customerAuthUserId: customer.authUserId,
       labels,
+      destination: preload.destination,
     }),
   );
 
