@@ -3,6 +3,7 @@
 import { execFileSync, spawnSync } from "node:child_process";
 import {
   copyFileSync,
+  cpSync,
   existsSync,
   mkdtempSync,
   mkdirSync,
@@ -20,6 +21,7 @@ const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = path.resolve(scriptDir, "..", "..");
 const STAGING_PROJECT = "boba-staging";
 const STAGING_ENV_DIR = path.join(repositoryRoot, ".env.staging");
+const STAGING_RUNTIME_ASSETS_DIR = path.join(STAGING_ENV_DIR, "runtime-assets");
 const STAGING_ENV_FILES = [
   ".env.docker.local",
   ".env.runtime.docker.local",
@@ -49,8 +51,8 @@ const UAT_SERVICEABILITY_CASES = [
 
 const command = process.argv[2];
 const isCli = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
-if (isCli && !["status", "deploy-dry-run", "deploy"].includes(command)) {
-  console.error("Usage: npm run env:staging:status | npm run env:staging:deploy:dry-run | npm run env:staging:deploy");
+if (isCli && !["status", "deploy-dry-run", "deploy", "recover-postgres", "workforce-user-create"].includes(command)) {
+  console.error("Usage: npm run env:staging:status | npm run env:staging:deploy:dry-run | npm run env:staging:deploy | npm run env:staging:recover-postgres | npm run env:staging:workforce:user:create -- [workforce:user:create arguments]");
   process.exit(1);
 }
 
@@ -116,6 +118,7 @@ function podmanCompose(buildDir, args, extraEnv = {}) {
       COMPOSE_PROFILES: extraEnv.COMPOSE_PROFILES ?? process.env.COMPOSE_PROFILES ?? "",
       BOBA_BUILD_SHA: extraEnv.BOBA_BUILD_SHA ?? "",
       BOBA_BEAR_IMAGE_RELEASE: extraEnv.BOBA_BUILD_SHA ?? "staging-local",
+      BOBA_POSTGRES_INIT_DIR: extraEnv.BOBA_POSTGRES_INIT_DIR ?? "",
     },
   });
   if (result.error) {
@@ -173,6 +176,18 @@ function ensureStagingEnvFiles(buildDir) {
       writeFileSync(persistent, normalized, { mode: 0o600 });
     }
   }
+}
+
+function materializeStagingPostgresInit(buildDir, sha) {
+  const source = path.join(buildDir, "docker", "postgres", "init");
+  const destination = path.join(STAGING_RUNTIME_ASSETS_DIR, "postgres-init", sha);
+  if (!existsSync(source)) throw new Error("Exact staging candidate does not contain docker/postgres/init.");
+  rmSync(destination, { recursive: true, force: true });
+  mkdirSync(path.dirname(destination), { recursive: true, mode: 0o700 });
+  cpSync(source, destination, { recursive: true, mode: "preserve" });
+  console.log(`STAGING_POSTGRES_INIT_DIR ${destination}`);
+  console.log(`STAGING_POSTGRES_INIT_SOURCE_GIT_SHA ${sha}`);
+  return destination;
 }
 
 function podmanInspect(name, format) {
@@ -292,10 +307,119 @@ function stopLegacyRuntimeIfNeeded() {
   }
 }
 
+function runPodman(args, options = {}) {
+  const result = spawnSync("podman", args, { stdio: "inherit", ...options });
+  if (result.error) throw result.error;
+  if (result.status !== 0) throw new Error(`podman ${args[0]} failed.`);
+}
+
+function inspectJson(name) {
+  return JSON.parse(execFileSync("podman", ["inspect", name], { encoding: "utf8" }))[0];
+}
+
+function stagingNetworkForPostgres(database) {
+  const names = Object.keys(database.NetworkSettings.Networks ?? {});
+  const network = names.find((name) => {
+    const labels = JSON.parse(execFileSync("podman", ["network", "inspect", name, "--format", "{{json .Labels}}"], { encoding: "utf8" }));
+    return labels["io.podman.compose.project"] === STAGING_PROJECT;
+  });
+  if (!network) throw new Error("No boba-staging Podman network is attached to PostgreSQL.");
+  return network;
+}
+
+function assertStagingWorkforceOperatorTarget() {
+  const databaseContainer = `${STAGING_PROJECT}_postgres_1`;
+  const volume = `${STAGING_PROJECT}_postgres-data`;
+  const database = inspectJson(databaseContainer);
+  const project = database.Config.Labels?.["io.podman.compose.project"];
+  const dataMounts = database.Mounts.filter((mount) => mount.Name === volume && mount.Destination === "/var/lib/postgresql");
+  if (project !== STAGING_PROJECT || database.State.Status !== "running" || database.State.Health?.Status !== "healthy" || dataMounts.length !== 1) {
+    throw new Error("Founder staging workforce operator target is unavailable or ambiguous.");
+  }
+  execFileSync("podman", ["volume", "inspect", volume], { stdio: "ignore" });
+  const network = stagingNetworkForPostgres(database);
+  console.log(`STAGING_OPERATOR_PROJECT ${STAGING_PROJECT}`);
+  console.log(`STAGING_OPERATOR_DATABASE_CONTAINER ${databaseContainer}`);
+  console.log("POSTGRES_RUNNING YES");
+  console.log("POSTGRES_HEALTHY YES");
+  console.log(`STAGING_OPERATOR_PERSISTENT_VOLUME ${volume}`);
+  console.log("NETWORK_PROJECT_MATCH YES");
+  console.log("STAGING_OPERATOR_TARGET_PROVEN YES");
+  return { databaseContainer, network };
+}
+
+function createStagingWorkforceUser(args) {
+  const { network } = assertStagingWorkforceOperatorTarget();
+  const candidate = readCandidate();
+  assertDeployPreconditions(candidate);
+  const buildDir = materializeExactGitTree(candidate.head);
+  const image = `boba-bear-staging-workforce-operator:${candidate.head}`;
+  try {
+    ensureStagingEnvFiles(buildDir);
+    runPodman(["build", "--file", "Dockerfile", "--target", "tooling", "--build-arg", `BOBA_BUILD_SHA=${candidate.head}`, "--tag", image, "."], { cwd: buildDir });
+    if (imageRevision(image) !== candidate.head) throw new Error("Dedicated workforce operator image lacks exact merged-main provenance.");
+    const envFiles = [".env.runtime.docker.local", ".env.workforce-auth.docker.local"].map((file) => path.join(STAGING_ENV_DIR, file));
+    if (envFiles.some((file) => !existsSync(file))) throw new Error("Required staging workforce operator environment is missing.");
+    runPodman(["run", "--rm", "--network", network, "--read-only", "--tmpfs", "/tmp", "--cap-drop", "ALL", "--security-opt", "no-new-privileges:true", ...envFiles.flatMap((file) => ["--env-file", file]), image, "npm", "run", "workforce:user:create", "--", ...args]);
+  } finally {
+    rmSync(buildDir, { recursive: true, force: true });
+  }
+}
+
 function upAndWait(buildDir, services) {
-  podmanCompose(buildDir, ["up", "-d", "--force-recreate", ...services]);
+  podmanCompose(buildDir, ["up", "-d", "--force-recreate", "--no-deps", ...services]);
   for (const service of services) {
     waitForHealthy(`${STAGING_PROJECT}_${service}_1`);
+  }
+}
+
+function ensurePersistentPostgres(buildDir, initDir) {
+  const container = `${STAGING_PROJECT}_postgres_1`;
+  try {
+    const database = inspectJson(container);
+    const initMount = database.Mounts.find((mount) => mount.Destination === "/docker-entrypoint-initdb.d");
+    if (initMount?.Source !== initDir) throw new Error("Persistent PostgreSQL has an obsolete runtime init mount; run env:staging:recover-postgres.");
+    if (database.State.Status !== "running") runPodman(["start", container]);
+  } catch (error) {
+    if (!String(error.message).includes("no such object")) throw error;
+    podmanCompose(buildDir, ["up", "-d", "postgres"], { BOBA_POSTGRES_INIT_DIR: initDir });
+  }
+  waitForHealthy(container);
+}
+
+function assertLegacyPostgresRecoveryTarget() {
+  const container = `${STAGING_PROJECT}_postgres_1`;
+  const volume = `${STAGING_PROJECT}_postgres-data`;
+  const database = inspectJson(container);
+  const dataMount = database.Mounts.filter((mount) => mount.Name === volume && mount.Destination === "/var/lib/postgresql");
+  const brokenMount = database.Mounts.find((mount) => mount.Destination === "/docker-entrypoint-initdb.d");
+  if (database.Config.Labels?.["io.podman.compose.project"] !== STAGING_PROJECT || dataMount.length !== 1 || !brokenMount?.Source.startsWith("/tmp/boba-staging-build-") || existsSync(brokenMount.Source)) {
+    throw new Error("PostgreSQL recovery target is ambiguous or is not the known legacy staging bind-mount defect.");
+  }
+  return { container, volume, database };
+}
+
+function recoverPostgres(candidate) {
+  assertDeployPreconditions(candidate);
+  const buildDir = materializeExactGitTree(candidate.head);
+  try {
+    ensureStagingEnvFiles(buildDir);
+    const initDir = materializeStagingPostgresInit(buildDir, candidate.head);
+    const legacy = assertLegacyPostgresRecoveryTarget();
+    console.log(`POSTGRES_OLD_CONTAINER_ID ${legacy.database.Id}`);
+    console.log(`POSTGRES_PERSISTENT_VOLUME ${legacy.volume}`);
+    for (const service of BOBA_RUNTIME_SERVICES) {
+      const container = `${STAGING_PROJECT}_${service}_1`;
+      try { runPodman(["stop", container]); runPodman(["rm", container]); } catch { /* absent containers are permitted */ }
+    }
+    runPodman(["rm", legacy.container]);
+    podmanCompose(buildDir, ["up", "-d", "postgres"], { BOBA_POSTGRES_INIT_DIR: initDir });
+    waitForHealthy(`${STAGING_PROJECT}_postgres_1`);
+    upAndWait(buildDir, BOBA_RUNTIME_SERVICES);
+    console.log("POSTGRES_VOLUME_PRESERVED YES");
+    console.log("POSTGRES_REPLACEMENT_CREATED YES");
+  } finally {
+    rmSync(buildDir, { recursive: true, force: true });
   }
 }
 
@@ -380,7 +504,8 @@ function deploy(candidate) {
     );
     assertImageRevisions(candidate.head);
     console.log("BUILT_IMAGE_CANDIDATE_MATCH YES");
-    upAndWait(buildDir, ["postgres"]);
+    const initDir = materializeStagingPostgresInit(buildDir, candidate.head);
+    ensurePersistentPostgres(buildDir, initDir);
     podmanCompose(buildDir, ["run", "--rm", "migrate"], { COMPOSE_PROFILES: "tools" });
     runBootstrapApply(buildDir, "menu-import-existing", ["menu:import-existing"]);
     runBootstrapApply(buildDir, "assortment-bootstrap-existing-menu", ["assortment:bootstrap-existing-menu"]);
@@ -447,7 +572,9 @@ if (isCli) {
   }
 
   if (command === "deploy") deploy(candidate);
+  if (command === "recover-postgres") recoverPostgres(candidate);
   if (command === "status") reportRunningProvenance(candidate.originMain);
+  if (command === "workforce-user-create") createStagingWorkforceUser(process.argv.slice(3));
 }
 
-export { BOBA_BUILD_IMAGES, BOBA_RUNTIME_SERVICES, assertImageRevisions, assertRunningProvenance, isFullGitSha };
+export { BOBA_BUILD_IMAGES, BOBA_RUNTIME_SERVICES, assertImageRevisions, assertRunningProvenance, assertLegacyPostgresRecoveryTarget, isFullGitSha };

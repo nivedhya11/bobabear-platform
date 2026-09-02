@@ -54,7 +54,9 @@ test("staging deploy retains the current-main Podman hardening safeguards", () =
   const source = readFileSync(path.resolve("scripts/environment/staging.mjs"), "utf8");
   assert.match(source, /git -C .* archive .* \| tar -x -C/);
   assert.match(source, /podman-compose", \["-f", "compose\.yaml", "-p", STAGING_PROJECT/);
-  assert.match(source, /\["up", "-d", "--force-recreate", \.\.\.services\]/);
+  assert.match(source, /\["up", "-d", "--force-recreate", "--no-deps", \.\.\.services\]/);
+  assert.match(source, /ensurePersistentPostgres\(buildDir, initDir\)/);
+  assert.doesNotMatch(source, /upAndWait\(buildDir, \["postgres"\]\)/);
   assert.doesNotMatch(source, /--wait/);
   assert.match(source, /State\.Health\.Status/);
   assert.match(source, /boba-bear_app_1/);
@@ -78,6 +80,43 @@ test("Compose forwards BOBA_BUILD_SHA to every BOBA build, never PostgreSQL", ()
   }
   const postgres = source.match(/  postgres:\n([\s\S]*?)(?=\n  [a-z-]+:)/)?.[1] ?? "";
   assert.doesNotMatch(postgres, /BOBA_BUILD_SHA|org\.opencontainers\.image\.revision/);
+});
+
+test("staging PostgreSQL uses a durable configurable init mount", () => {
+  const compose = readFileSync(path.resolve("compose.yaml"), "utf8");
+  const source = readFileSync(path.resolve("scripts/environment/staging.mjs"), "utf8");
+  const postgres = compose.match(/  postgres:\n([\s\S]*?)(?=\n  [a-z-]+:)/)?.[1] ?? "";
+  assert.match(postgres, /\$\{BOBA_POSTGRES_INIT_DIR:-\.\/docker\/postgres\/init\}/);
+  assert.match(source, /STAGING_RUNTIME_ASSETS_DIR/);
+  assert.match(source, /materializeStagingPostgresInit\(buildDir, sha\)/);
+  assert.match(source, /cpSync\(source, destination/);
+  assert.match(source, /rmSync\(buildDir, \{ recursive: true, force: true \}\)/);
+  assert.match(source, /BOBA_POSTGRES_INIT_DIR: initDir/);
+});
+
+test("staging recovery is limited to the known legacy PostgreSQL bind-mount defect", () => {
+  const source = readFileSync(path.resolve("scripts/environment/staging.mjs"), "utf8");
+  assert.match(source, /recover-postgres/);
+  assert.match(source, /assertLegacyPostgresRecoveryTarget/);
+  assert.match(source, /startsWith\("\/tmp\/boba-staging-build-"\)/);
+  assert.match(source, /mount\.Name === volume && mount\.Destination === "\/var\/lib\/postgresql"/);
+  assert.match(source, /runPodman\(\["rm", legacy\.container\]\)/);
+  assert.doesNotMatch(source, /volume", "rm"/);
+});
+
+test("staging workforce operator uses direct Podman without Compose dependency reconciliation", () => {
+  const source = readFileSync(path.resolve("scripts/environment/staging.mjs"), "utf8");
+  const compose = readFileSync(path.resolve("compose.yaml"), "utf8");
+  assert.match(source, /const image = `boba-bear-staging-workforce-operator:\$\{candidate\.head\}`/);
+  assert.match(source, /runPodman\(\["build", "--file", "Dockerfile", "--target", "tooling"/);
+  assert.match(source, /runPodman\(\["run", "--rm", "--network", network/);
+  assert.match(source, /--env-file/);
+  assert.match(source, /POSTGRES_RUNNING YES/);
+  assert.match(source, /POSTGRES_HEALTHY YES/);
+  const operator = source.match(/function createStagingWorkforceUser\(args\) \{([\s\S]*?)\n\}/)?.[1] ?? "";
+  assert.doesNotMatch(operator, /podmanCompose/);
+  assert.doesNotMatch(operator, /boba-bear-tooling:local/);
+  assert.doesNotMatch(compose, /  workforce-user-create:/);
 });
 
 test("staging requires a full Git SHA for deployment provenance", () => {

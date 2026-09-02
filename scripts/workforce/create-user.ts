@@ -23,6 +23,7 @@ import {
   printSafeOk,
   requireArg,
   requireNormalizedEmail,
+  requirePasswordFromStdin,
   requireValidPassword,
 } from "./cli-support";
 
@@ -33,7 +34,14 @@ async function main(): Promise<void> {
   if (name.length === 0) {
     throw new Error("Missing required --name argument.");
   }
-  const password = requireValidPassword(requireArg(args, "password"));
+  const hasPassword = args.password !== undefined;
+  const readsPasswordFromStdin = args["password-stdin"] === "true";
+  if (hasPassword === readsPasswordFromStdin) {
+    throw new Error("Provide exactly one of --password or --password-stdin.");
+  }
+  const password = readsPasswordFromStdin
+    ? requirePasswordFromStdin()
+    : requireValidPassword(requireArg(args, "password"));
 
   const { runtime } = openWorkforceOperatorCredentialRuntime();
   try {

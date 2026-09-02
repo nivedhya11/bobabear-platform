@@ -39,6 +39,8 @@
     "env:staging:status": "node scripts/environment/staging.mjs status",
     "env:staging:deploy:dry-run": "node scripts/environment/staging.mjs deploy-dry-run",
     "env:staging:deploy": "node scripts/environment/staging.mjs deploy",
+    "env:staging:recover-postgres": "node scripts/environment/staging.mjs recover-postgres",
+    "env:staging:workforce:user:create": "node scripts/environment/staging.mjs workforce-user-create",
     "auth:schema:generate": "tsx scripts/auth-schema-generate.ts",
     "auth:schema:check": "tsx scripts/auth-schema-check.ts",
     "audit:auth-foundation": "node scripts/audit-auth-foundation.mjs",
