@@ -14,6 +14,7 @@ import os from "node:os";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import { extractValues, parseEnvFile } from "../database/lib/env-file.mjs";
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = path.resolve(scriptDir, "..", "..");
@@ -85,12 +86,25 @@ function assertDeployPreconditions(candidate) {
   }
 }
 
+function readRepositoryPublicBuildEnv() {
+  const envPath = path.join(repositoryRoot, ".env");
+  if (!existsSync(envPath)) return {};
+  const parsed = parseEnvFile(readFileSync(envPath, "utf8"));
+  const extracted = extractValues(parsed);
+  if (!extracted.ok) return {};
+  const browserKey = extracted.values.NEXT_PUBLIC_BOBA_BEAR_GOOGLE_MAPS_BROWSER_KEY?.trim();
+  if (!browserKey || browserKey.startsWith("replace-with")) return {};
+  return { NEXT_PUBLIC_BOBA_BEAR_GOOGLE_MAPS_BROWSER_KEY: browserKey };
+}
+
 function podmanCompose(buildDir, args, extraEnv = {}) {
+  const publicBuildEnv = readRepositoryPublicBuildEnv();
   const result = spawnSync("podman-compose", ["-f", "compose.yaml", "-p", STAGING_PROJECT, ...args], {
     cwd: buildDir,
     stdio: "inherit",
     env: {
       ...process.env,
+      ...publicBuildEnv,
       DOCKER_HOST: SOCKET,
       COMPOSE_PROJECT_NAME: STAGING_PROJECT,
       COMPOSE_PROFILES: extraEnv.COMPOSE_PROFILES ?? process.env.COMPOSE_PROFILES ?? "",
