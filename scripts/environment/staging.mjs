@@ -65,13 +65,14 @@ function assertDeployPreconditions(candidate) {
 }
 
 function podmanCompose(buildDir, args, extraEnv = {}) {
-  const result = spawnSync("podman-compose", ["-p", STAGING_PROJECT, ...args], {
+  const result = spawnSync("podman-compose", ["-f", "compose.yaml", "-p", STAGING_PROJECT, ...args], {
     cwd: buildDir,
     stdio: "inherit",
     env: {
       ...process.env,
       DOCKER_HOST: SOCKET,
       COMPOSE_PROJECT_NAME: STAGING_PROJECT,
+      COMPOSE_PROFILES: extraEnv.COMPOSE_PROFILES ?? process.env.COMPOSE_PROFILES ?? "",
       BOBA_BUILD_SHA: extraEnv.BOBA_BUILD_SHA ?? "",
       BOBA_BEAR_IMAGE_RELEASE: extraEnv.BOBA_BUILD_SHA ?? "staging-local",
     },
@@ -157,8 +158,8 @@ function deploy(candidate) {
     ensureStagingEnvFiles(buildDir);
     podmanCompose(
       buildDir,
-      ["--profile", "tools", "build", "app", "migrate", "customer-auth", "workforce-auth", "customer-commerce", "operations"],
-      { BOBA_BUILD_SHA: candidate.head },
+      ["build", "app", "migrate", "customer-auth", "workforce-auth", "customer-commerce", "operations"],
+      { BOBA_BUILD_SHA: candidate.head, COMPOSE_PROFILES: "tools" },
     );
     podmanCompose(buildDir, ["up", "-d", "--wait", "postgres"]);
     podmanCompose(buildDir, ["run", "--rm", "migrate"]);
