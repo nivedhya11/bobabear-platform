@@ -400,3 +400,97 @@ test("permanent Maps readiness failure shows safe fallback", async ({ page }) =>
   await expect(page.getByText(/We couldn't load the map right now/i)).toBeVisible({ timeout: 15_000 });
   await expect(page.getByTestId("delivery-map-init-error")).toHaveText("MAP_LIBRARY_NOT_READY");
 });
+
+test("Back from map refreshes autocomplete with a new session token", async ({ page }) => {
+  await installMockGoogleMaps(page);
+  await page.addInitScript(() => {
+    (window as Window & { __BOBA_MAPS_JS_CONFIGURED__?: boolean }).__BOBA_MAPS_JS_CONFIGURED__ = true;
+  });
+
+  const autocompleteTokens: string[] = [];
+  const placeTokens: string[] = [];
+
+  await page.route("**/api/v1/location/status", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ ok: true, configured: true, provider: "google_maps", status: "CONFIGURED" }),
+    });
+  });
+
+  await page.route("**/api/v1/location/autocomplete", async (route) => {
+    const body = route.request().postDataJSON() as { sessionToken: string };
+    autocompleteTokens.push(body.sessionToken);
+    const suggestions =
+      autocompleteTokens.length === 1
+        ? [{ placeId: "place-delhi-a", label: "Delhi, India A" }]
+        : [{ placeId: "place-delhi-b", label: "Delhi, India B" }];
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ ok: true, suggestions }),
+    });
+  });
+
+  await page.route("**/api/v1/location/place", async (route) => {
+    const body = route.request().postDataJSON() as { placeId: string; sessionToken: string };
+    placeTokens.push(body.sessionToken);
+    const label = body.placeId === "place-delhi-a" ? "Delhi, India A" : "Delhi, India B";
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ok: true,
+        location: {
+          displayAddress: `${label}, India`,
+          postalCode: null,
+          pinConfirmed: false,
+          locality: "Delhi",
+          administrativeArea: "Delhi",
+          stateCode: "IN-DL",
+          country: "India",
+          countryCode: "IN",
+          latitude: "28.6139000",
+          longitude: "77.2090000",
+        },
+      }),
+    });
+  });
+
+  await page.route("**/api/v1/serviceability/evaluate", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ok: true,
+        decision: { status: "SERVICEABLE", evaluatedAt: "2026-09-01T00:00:00.000Z" },
+      }),
+    });
+  });
+
+  await openSelector(page);
+  const searchInput = page.getByPlaceholder("Search area, street or landmark");
+  await searchInput.fill("delhi");
+  await expect(page.getByTestId("location-search-results")).toBeVisible();
+  await expect(page.getByRole("option", { name: "Delhi, India A" })).toBeVisible();
+  expect(autocompleteTokens).toHaveLength(1);
+  const firstToken = autocompleteTokens[0]!;
+
+  await page.getByRole("option", { name: "Delhi, India A" }).click();
+  await expect(page.getByTestId("delivery-location-map-confirmation")).toBeVisible({ timeout: 15_000 });
+  expect(placeTokens).toEqual([firstToken]);
+
+  await page.getByRole("button", { name: "Back" }).click();
+  await expect(searchInput).toHaveValue("delhi");
+  await expect(page.getByRole("option", { name: "Delhi, India A" })).toHaveCount(0);
+  await expect(page.getByText("Finding locations…")).toBeVisible();
+
+  await expect.poll(() => autocompleteTokens.length).toBe(2);
+  const secondToken = autocompleteTokens[1]!;
+  expect(secondToken).not.toBe(firstToken);
+
+  await expect(page.getByRole("option", { name: "Delhi, India B" })).toBeVisible();
+  await page.getByRole("option", { name: "Delhi, India B" }).click();
+  await expect(page.getByTestId("delivery-location-map-confirmation")).toBeVisible({ timeout: 15_000 });
+  expect(placeTokens).toEqual([firstToken, secondToken]);
+});

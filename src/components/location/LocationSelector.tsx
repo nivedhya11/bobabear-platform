@@ -224,6 +224,19 @@ export function LocationSelector(props: {
     window.setTimeout(() => triggerRef.current?.focus(), 0);
   }
 
+  function returnToSearch(): void {
+    setStep("select");
+    setPendingLocation(null);
+    setDecision(null);
+    setStatusMessage(null);
+    resetSearchState();
+    const trimmed = queryRef.current.trim();
+    if (providerConfiguredRef.current && trimmed.length >= SEARCH_MIN_CHARS) {
+      setSearching(true);
+      scheduleAutocomplete(trimmed);
+    }
+  }
+
   function scheduleAutocomplete(nextQuery: string): void {
     const trimmed = nextQuery.trim();
     if (debounceTimerRef.current !== null) {
@@ -547,13 +560,8 @@ export function LocationSelector(props: {
                   <DeliveryLocationMapConfirmation
                     initialLocation={pendingLocation}
                     pending={pending}
-                    onBack={() => setStep("select")}
-                    onChooseAnother={() => {
-                      setStep("select");
-                      setPendingLocation(null);
-                      setDecision(null);
-                      setStatusMessage(null);
-                    }}
+                    onBack={returnToSearch}
+                    onChooseAnother={returnToSearch}
                     onConfirm={(location, mapDecision) => void handleMapConfirm(location, mapDecision)}
                   />
                 ) : step === "address" ? (
