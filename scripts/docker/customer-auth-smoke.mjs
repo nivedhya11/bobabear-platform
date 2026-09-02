@@ -9,7 +9,7 @@
 // container's published port and its `/api/customer-auth/` proxy
 // (docker/nginx/nginx.conf). The two internal-only `/health/*` endpoints
 // are deliberately never proxied, so those two checks instead run *inside*
-// the running `customer-auth` container via `docker compose exec`.
+// the running `customer-auth` container via the selected Compose provider.
 //
 // Usage: node scripts/docker/customer-auth-smoke.mjs [--base-url http://127.0.0.1:8080] [--origin http://localhost:8080]
 import { execFileSync } from "node:child_process";
@@ -77,7 +77,21 @@ function parseJsonBody(response) {
  * never-proxied `/health/*` endpoints can be reached over its own loopback
  * interface. Requires no third-party HTTP client inside the container
  * either — the service image ships Node 22, which has a global `fetch`. */
-function dockerExecFetch(healthPath) {
+export function composeExecCommand({ provider = "docker", project, composeFile } = {}) {
+  if (provider === "podman-compose") {
+    return {
+      command: "podman-compose",
+      args: ["-f", composeFile ?? "compose.yaml", "-p", project ?? "boba-staging", "exec", "-T"],
+    };
+  }
+  if (provider === "docker") {
+    return { command: "docker", args: ["compose", "exec", "-T"] };
+  }
+  throw new Error(`Unsupported compose provider: ${provider}`);
+}
+
+/** Execute an internal health request through the selected Compose runtime. */
+export function composeExecFetch(healthPath, composeOptions, exec = execFileSync) {
   const script =
     "(async () => {" +
     `  try { const r = await fetch('http://127.0.0.1:8081${healthPath}');` +
@@ -87,9 +101,10 @@ function dockerExecFetch(healthPath) {
     "    process.stdout.write(JSON.stringify({ status: 0, body: '', error: String(error && error.message || error) }));" +
     "  }" +
     "})();";
-  const output = execFileSync(
-    "docker",
-    ["compose", "exec", "-T", "customer-auth", "node", "-e", script],
+  const compose = composeExecCommand(composeOptions);
+  const output = exec(
+    compose.command,
+    [...compose.args, "customer-auth", "node", "-e", script],
     { encoding: "utf8" },
   );
   return JSON.parse(output.trim());
@@ -117,10 +132,10 @@ function readLocalFixedOtpCode() {
   return resolveFixedOtpCode(extracted.values);
 }
 
-async function checkHealthLive() {
+export async function checkHealthLive(composeOptions, exec) {
   const name = "health/live (in-container)";
   try {
-    const result = dockerExecFetch("/health/live");
+    const result = composeExecFetch("/health/live", composeOptions, exec);
     const body = result.body ? JSON.parse(result.body) : null;
     if (result.status !== 200 || !body || body.ok !== true) {
       return { name, ok: false, failures: [`expected {status:200, ok:true}, got ${JSON.stringify(result)}`] };
@@ -131,10 +146,10 @@ async function checkHealthLive() {
   }
 }
 
-async function checkHealthReady() {
+export async function checkHealthReady(composeOptions, exec) {
   const name = "health/ready (in-container)";
   try {
-    const result = dockerExecFetch("/health/ready");
+    const result = composeExecFetch("/health/ready", composeOptions, exec);
     const body = result.body ? JSON.parse(result.body) : null;
     if (result.status !== 200 || !body || body.ok !== true) {
       return { name, ok: false, failures: [`expected {status:200, ok:true}, got ${JSON.stringify(result)}`] };
@@ -300,11 +315,16 @@ async function main() {
   const argv = process.argv.slice(2);
   const baseUrl = parseArg(argv, "--base-url", "BOBA_BEAR_CUSTOMER_AUTH_SMOKE_BASE_URL", DEFAULT_BASE_URL);
   const trustedOrigin = parseArg(argv, "--origin", "BOBA_BEAR_CUSTOMER_AUTH_SMOKE_ORIGIN", DEFAULT_TRUSTED_ORIGIN);
+  const composeOptions = {
+    provider: parseArg(argv, "--compose-provider", "BOBA_BEAR_CUSTOMER_AUTH_SMOKE_COMPOSE_PROVIDER", "docker"),
+    project: parseArg(argv, "--compose-project", "BOBA_BEAR_CUSTOMER_AUTH_SMOKE_COMPOSE_PROJECT", undefined),
+    composeFile: parseArg(argv, "--compose-file", "BOBA_BEAR_CUSTOMER_AUTH_SMOKE_COMPOSE_FILE", undefined),
+  };
   console.log(`docker:customer-auth:smoke — checking ${baseUrl} (trusted origin: ${trustedOrigin})`);
 
   const checks = [
-    await checkHealthLive(),
-    await checkHealthReady(),
+    await checkHealthLive(composeOptions),
+    await checkHealthReady(composeOptions),
     await checkSessionUnauthenticated(baseUrl),
     await checkUnknownPathNotFound(baseUrl),
     await checkMethodNotAllowed(baseUrl),
