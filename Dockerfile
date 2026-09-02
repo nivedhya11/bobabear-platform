@@ -35,6 +35,7 @@
 
 ARG NODE_IMAGE=docker.io/library/node:22.23.1-bookworm-slim
 ARG NGINX_IMAGE=docker.io/library/nginx:1.30.4-alpine3.24
+ARG BOBA_BUILD_SHA=unversioned-local
 
 # ── base ─────────────────────────────────────────────────────────────────
 FROM ${NODE_IMAGE} AS base
@@ -84,6 +85,8 @@ RUN npm run build \
 # database credentials only via ignored env files passed at `docker compose
 # run` time — none are baked into this image.
 FROM base AS tooling
+ARG BOBA_BUILD_SHA
+LABEL org.opencontainers.image.revision=${BOBA_BUILD_SHA}
 ENV NODE_ENV=production
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY package.json package-lock.json tsconfig.json drizzle.config.ts ./
@@ -130,6 +133,8 @@ RUN npm ci --omit=dev
 # only Nginx's `/api/customer-auth/` proxy (docker/nginx/nginx.conf) reaches
 # this service, over the Compose-internal network on port 8081.
 FROM base AS customer-auth-runtime
+ARG BOBA_BUILD_SHA
+LABEL org.opencontainers.image.revision=${BOBA_BUILD_SHA}
 ENV NODE_ENV=production
 COPY --from=customer-auth-dependencies --chown=node:node /app/node_modules ./node_modules
 COPY --from=customer-auth-builder --chown=node:node /app/dist-customer-auth ./dist-customer-auth
@@ -173,6 +178,8 @@ RUN npm ci --omit=dev
 # (docker/nginx/nginx.conf) reaches this service, over the Compose-internal
 # network on port 8082.
 FROM base AS workforce-auth-runtime
+ARG BOBA_BUILD_SHA
+LABEL org.opencontainers.image.revision=${BOBA_BUILD_SHA}
 ENV NODE_ENV=production
 COPY --from=workforce-auth-dependencies --chown=node:node /app/node_modules ./node_modules
 COPY --from=workforce-auth-builder --chown=node:node /app/dist-workforce-auth ./dist-workforce-auth
@@ -204,6 +211,8 @@ RUN npm ci --omit=dev
 # Thin customer ordering transport façade (IMP-024 / D-359). Internal port
 # 8083 only — Nginx `/api/v1/` proxy reaches it; never a published host port.
 FROM base AS customer-commerce-runtime
+ARG BOBA_BUILD_SHA
+LABEL org.opencontainers.image.revision=${BOBA_BUILD_SHA}
 ENV NODE_ENV=production
 COPY --from=customer-commerce-dependencies --chown=node:node /app/node_modules ./node_modules
 COPY --from=customer-commerce-builder --chown=node:node /app/dist-customer-commerce ./dist-customer-commerce
@@ -235,6 +244,8 @@ RUN npm ci --omit=dev
 # port. Auth is in-process via shared WorkforceAuthRuntime (no Compose
 # dependency on workforce-auth).
 FROM base AS operations-runtime
+ARG BOBA_BUILD_SHA
+LABEL org.opencontainers.image.revision=${BOBA_BUILD_SHA}
 ENV NODE_ENV=production
 COPY --from=operations-dependencies --chown=node:node /app/node_modules ./node_modules
 COPY --from=operations-builder --chown=node:node /app/dist-operations ./dist-operations
@@ -252,6 +263,8 @@ CMD ["node", "--conditions=react-server", "dist-operations/server/operations/mai
 # connectivity is proven separately, from the `tooling` image, by the
 # db-check / db-check-migration Compose services.
 FROM ${NGINX_IMAGE} AS web-runtime
+ARG BOBA_BUILD_SHA
+LABEL org.opencontainers.image.revision=${BOBA_BUILD_SHA}
 
 RUN rm -f /etc/nginx/conf.d/default.conf
 COPY docker/nginx/nginx.conf /etc/nginx/nginx.conf

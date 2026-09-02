@@ -36,6 +36,7 @@ services:
         NEXT_PUBLIC_GA_MEASUREMENT_ID: "${NEXT_PUBLIC_GA_MEASUREMENT_ID:-}"
         NEXT_PUBLIC_BOBA_BEAR_GOOGLE_MAPS_BROWSER_KEY: "${NEXT_PUBLIC_BOBA_BEAR_GOOGLE_MAPS_BROWSER_KEY:-}"
         BOBA_BEAR_IMAGE_RELEASE: "${BOBA_BEAR_IMAGE_RELEASE:-local-docker}"
+        BOBA_BUILD_SHA: "${BOBA_BUILD_SHA:-unversioned-local}"
     image: boba-bear-app:local
     ports:
       - "${BOBA_BEAR_APP_HOST_PORT:-8080}:8080"
@@ -68,6 +69,8 @@ services:
       context: .
       dockerfile: Dockerfile
       target: customer-auth-runtime
+      args:
+        BOBA_BUILD_SHA: "${BOBA_BUILD_SHA:-unversioned-local}"
     image: boba-bear-customer-auth:local
     expose: ["8081"]
     env_file:
@@ -107,6 +110,8 @@ services:
       context: .
       dockerfile: Dockerfile
       target: workforce-auth-runtime
+      args:
+        BOBA_BUILD_SHA: "${BOBA_BUILD_SHA:-unversioned-local}"
     image: boba-bear-workforce-auth:local
     expose: ["8082"]
     env_file:
@@ -145,6 +150,8 @@ services:
       context: .
       dockerfile: Dockerfile
       target: customer-commerce-runtime
+      args:
+        BOBA_BUILD_SHA: "${BOBA_BUILD_SHA:-unversioned-local}"
     image: boba-bear-customer-commerce:local
     expose: ["8083"]
     env_file:
@@ -184,6 +191,8 @@ services:
       context: .
       dockerfile: Dockerfile
       target: operations-runtime
+      args:
+        BOBA_BUILD_SHA: "${BOBA_BUILD_SHA:-unversioned-local}"
     image: boba-bear-operations:local
     expose: ["8084"]
     env_file:
@@ -220,6 +229,8 @@ services:
       context: .
       dockerfile: Dockerfile
       target: tooling
+      args:
+        BOBA_BUILD_SHA: "${BOBA_BUILD_SHA:-unversioned-local}"
     image: boba-bear-tooling:local
     profiles: ["tools"]
     env_file:
@@ -244,6 +255,8 @@ services:
       context: .
       dockerfile: Dockerfile
       target: tooling
+      args:
+        BOBA_BUILD_SHA: "${BOBA_BUILD_SHA:-unversioned-local}"
     image: boba-bear-tooling:local
     profiles: ["tools"]
     env_file:
@@ -268,6 +281,8 @@ services:
       context: .
       dockerfile: Dockerfile
       target: tooling
+      args:
+        BOBA_BUILD_SHA: "${BOBA_BUILD_SHA:-unversioned-local}"
     image: boba-bear-tooling:local
     profiles: ["tools"]
     env_file:
@@ -292,6 +307,8 @@ services:
       context: .
       dockerfile: Dockerfile
       target: tooling
+      args:
+        BOBA_BUILD_SHA: "${BOBA_BUILD_SHA:-unversioned-local}"
     image: boba-bear-tooling:local
     profiles: ["tools"]
     env_file:
@@ -314,6 +331,8 @@ services:
       context: .
       dockerfile: Dockerfile
       target: tooling
+      args:
+        BOBA_BUILD_SHA: "${BOBA_BUILD_SHA:-unversioned-local}"
     image: boba-bear-tooling:local
     profiles: ["tools"]
     env_file:
@@ -338,6 +357,8 @@ services:
       context: .
       dockerfile: Dockerfile
       target: tooling
+      args:
+        BOBA_BUILD_SHA: "${BOBA_BUILD_SHA:-unversioned-local}"
     image: boba-bear-tooling:local
     profiles: ["tools"]
     env_file:
@@ -360,6 +381,8 @@ services:
       context: .
       dockerfile: Dockerfile
       target: tooling
+      args:
+        BOBA_BUILD_SHA: "${BOBA_BUILD_SHA:-unversioned-local}"
     image: boba-bear-tooling:local
     profiles: ["tools"]
     env_file:
@@ -384,6 +407,8 @@ services:
       context: .
       dockerfile: Dockerfile
       target: tooling
+      args:
+        BOBA_BUILD_SHA: "${BOBA_BUILD_SHA:-unversioned-local}"
     image: boba-bear-tooling:local
     profiles: ["tools"]
     env_file:
@@ -406,6 +431,8 @@ services:
       context: .
       dockerfile: Dockerfile
       target: tooling
+      args:
+        BOBA_BUILD_SHA: "${BOBA_BUILD_SHA:-unversioned-local}"
     image: boba-bear-tooling:local
     profiles: ["tools"]
     env_file:
@@ -430,6 +457,8 @@ services:
       context: .
       dockerfile: Dockerfile
       target: tooling
+      args:
+        BOBA_BUILD_SHA: "${BOBA_BUILD_SHA:-unversioned-local}"
     image: boba-bear-tooling:local
     profiles: ["tools"]
     env_file:
@@ -454,6 +483,8 @@ services:
       context: .
       dockerfile: Dockerfile
       target: tooling
+      args:
+        BOBA_BUILD_SHA: "${BOBA_BUILD_SHA:-unversioned-local}"
     image: boba-bear-tooling:local
     profiles: ["tools"]
     env_file:
