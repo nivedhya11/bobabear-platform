@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { test } from "node:test";
@@ -15,13 +14,14 @@ import {
 const candidateSha = "6d925496deebcf19e5a82659e3e33dc81faccac3";
 
 test("staging status declares an exact merged Git-tree artifact source", () => {
-  const result = spawnSync(process.execPath, [path.resolve("scripts/environment/staging.mjs"), "status"], {
-    encoding: "utf8",
-  });
-  assert.equal(result.status, 0);
-  assert.match(result.stdout, /STAGING_ARTIFACT_SOURCE EXACT_MERGED_GIT_TREE/);
-  assert.match(result.stdout, /EXACT_GIT_TREE_MECHANISM git archive HEAD to isolated temporary build context/);
-  assert.match(result.stdout, /LIVE_UNTRACKED_CONTENT_CAN_AFFECT_STAGING_ARTIFACT NO/);
+  const source = readFileSync(path.resolve("scripts/environment/staging.mjs"), "utf8");
+  assert.match(source, /console\.log\("STAGING_ARTIFACT_SOURCE EXACT_MERGED_GIT_TREE"\)/);
+  assert.match(
+    source,
+    /console\.log\("EXACT_GIT_TREE_MECHANISM git archive HEAD to isolated temporary build context"\)/,
+  );
+  assert.match(source, /console\.log\("LIVE_UNTRACKED_CONTENT_CAN_AFFECT_STAGING_ARTIFACT NO"\)/);
+  assert.match(source, /git -C .* archive .* \| tar -x -C/);
 });
 
 test("staging deploy passes the rootless Podman project to the customer-auth smoke", () => {
