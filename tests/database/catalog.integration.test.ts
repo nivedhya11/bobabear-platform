@@ -139,8 +139,8 @@ describe("IMP-012 migration replay and seal", () => {
         const permissions = await ctx.db.execute<{ count: string }>(
           sql`select count(*)::text as count from app.access_permissions`,
         );
-        // IMP-012 seeded 24; IMP-013 adds menu.*; IMP-014 adds assortment/availability/operating → 43.
-        expect(permissions.rows[0]?.count).toBe("51");
+        // Full migration replay seeds every permission declared in PERMISSION_KEYS.
+        expect(permissions.rows[0]?.count).toBe(String(PERMISSION_KEYS.length));
         expect(PERMISSION_KEYS.length).toBe(68);
 
         const roles = await ctx.db.execute<{ count: string }>(

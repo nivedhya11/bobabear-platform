@@ -54,6 +54,8 @@ export default defineConfig({
       "tests/pricing-bootstrap/**/*.test.ts",
       // IMP-028C Slice 4: canonical modifier content bootstrap tests.
       "tests/catalog-imp028c-modifiers/**/*.test.{ts,tsx}",
+      // IMP-036C Founder-UAT required Topping bootstrap + customization tests.
+      "tests/catalog-imp036c-required-topping/**/*.test.{ts,tsx}",
       // IMP-017: customer profile domain / security / auth-integration tests.
       "tests/customer-profiles/**/*.test.ts",
       "tests/customer-profile-security/**/*.test.ts",

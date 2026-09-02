@@ -709,8 +709,10 @@ export async function bootstrapImp028cModifiers(options: {
   readonly projectRoot: string;
   readonly persistence: Persistence;
   readonly apply: boolean;
+  /** A checked-in, prevalidated artifact for a bounded follow-on bootstrap. */
+  readonly artifact?: Imp028cModifiersArtifact;
 }): Promise<Imp028cModifiersBootstrapResult> {
-  const artifact = loadImp028cModifiersArtifact(options.projectRoot);
+  const artifact = options.artifact ?? loadImp028cModifiersArtifact(options.projectRoot);
   validateImp028cModifiersArtifactAgainstMenu(options.projectRoot, artifact);
 
   const mode = options.apply ? "apply" : "dry-run";

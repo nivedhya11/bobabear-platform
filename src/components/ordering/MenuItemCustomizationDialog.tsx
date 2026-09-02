@@ -132,6 +132,13 @@ function MenuItemCustomizationDialogContents(props: MenuItemCustomizationDialogP
   ): void {
     setQuantities((current) => {
       const key = selectionKey(group.variantModifierGroupId, optionId);
+      const option = group.options.find((candidate) => candidate.modifierGroupOptionId === optionId)!;
+      if (nextQuantity > 0 && group.maxTotalQuantity === 1 && option.maxQuantity === 1) {
+        const withoutGroup = Object.fromEntries(
+          Object.entries(current).filter(([entry]) => !entry.startsWith(`${group.variantModifierGroupId}:`)),
+        );
+        return { ...withoutGroup, [key]: 1 };
+      }
       const otherTotal = group.options.reduce(
         (sum, option) =>
           option.modifierGroupOptionId === optionId
@@ -141,7 +148,6 @@ function MenuItemCustomizationDialogContents(props: MenuItemCustomizationDialogP
                 0),
         0,
       );
-      const option = group.options.find((candidate) => candidate.modifierGroupOptionId === optionId)!;
       const quantity = Math.max(
         0,
         Math.min(nextQuantity, option.maxQuantity, group.maxTotalQuantity - otherTotal),
@@ -256,6 +262,9 @@ function MenuItemCustomizationDialogContents(props: MenuItemCustomizationDialogP
                     quantities[
                       selectionKey(group.variantModifierGroupId, option.modifierGroupOptionId)
                     ] ?? 0;
+                  const singleSelectReplace =
+                    group.maxTotalQuantity === 1 &&
+                    group.options.every((candidate) => candidate.maxQuantity === 1);
                   if (option.maxQuantity <= 1) {
                     return (
                       <label
@@ -268,7 +277,10 @@ function MenuItemCustomizationDialogContents(props: MenuItemCustomizationDialogP
                             className="sr-only"
                             checked={quantity > 0}
                             disabled={
-                              props.pending || (quantity === 0 && total >= group.maxTotalQuantity)
+                              props.pending ||
+                              (!singleSelectReplace &&
+                                quantity === 0 &&
+                                total >= group.maxTotalQuantity)
                             }
                             onChange={(event) =>
                               setQuantity(

@@ -447,5 +447,29 @@ services:
       - no-new-privileges:true
     restart: "no"
 
+  # One-shot IMP-036C Hong Kong Milk Tea required Topping bootstrap.
+  # Default dry-run; pass --apply via `docker compose run ... -- --apply`.
+  catalog-bootstrap-imp036c-required-topping:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: tooling
+    image: boba-bear-tooling:local
+    profiles: ["tools"]
+    env_file:
+      - .env.runtime.docker.local
+    command: ["npm", "run", "catalog:bootstrap-imp036c-required-topping"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    restart: "no"
+
 volumes:
   postgres-data:

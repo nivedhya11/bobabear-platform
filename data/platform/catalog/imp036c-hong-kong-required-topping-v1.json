@@ -1,0 +1,33 @@
+{
+  "import_id": "imp036c-hong-kong-required-topping-v1",
+  "version": 1,
+  "source_menu_import_id": "existing-menu-v1",
+  "source_menu_import_version": 1,
+  "source_inventory_sha256": "0a263d9e514d1d5c05bba7de421812c9a197f85a004c0bdb1ed171712abddaa4",
+  "brand": { "code": "boba-bear" },
+  "target": {
+    "product_code": "hong-kong-milk-tea-boba",
+    "product_name": "Hong Kong Milk Tea Boba",
+    "variant_code": "default"
+  },
+  "price_book": { "code": "direct-primary-v1", "scope_type": "brand" },
+  "modifier_group": { "code": "imp036c-required-topping", "name": "Topping" },
+  "modifier_options": [
+    {
+      "option": { "code": "imp036c-extra-ice", "name": "Extra Ice" },
+      "binding": { "min_quantity": 0, "max_quantity": 1, "default_quantity": 1, "position": 0 },
+      "price": { "price_delta_paise": 0 }
+    },
+    {
+      "option": { "code": "imp036c-cheese-foam", "name": "Cheese Foam" },
+      "binding": { "min_quantity": 0, "max_quantity": 1, "default_quantity": 0, "position": 1 },
+      "price": { "price_delta_paise": 2000 }
+    },
+    {
+      "option": { "code": "imp036c-expresso-shot", "name": "Expresso Shot" },
+      "binding": { "min_quantity": 0, "max_quantity": 1, "default_quantity": 0, "position": 2 },
+      "price": { "price_delta_paise": 2000 }
+    }
+  ],
+  "variant_modifier_group": { "min_total_quantity": 1, "max_total_quantity": 1, "position": 1 }
+}
