@@ -77,6 +77,8 @@ export default defineConfig({
       "tests/enterprise/**/*.test.ts",
       // IMP-036B: customer account, address, and location experience tests.
       "tests/imp-036b/**/*.test.{ts,tsx}",
+      // IMP-036C: unified map-first customer delivery address flow tests.
+      "tests/imp-036c/**/*.test.{ts,tsx}",
     ],
     exclude: [
       "**/node_modules/**",

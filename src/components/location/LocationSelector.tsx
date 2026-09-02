@@ -558,6 +558,7 @@ export function LocationSelector(props: {
               >
                 {step === "map" && pendingLocation ? (
                   <DeliveryLocationMapConfirmation
+                    brandId={DIRECT_ORDERING_BRAND_ID}
                     initialLocation={pendingLocation}
                     pending={pending}
                     onBack={returnToSearch}

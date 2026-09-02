@@ -8,6 +8,8 @@ import * as mapsJsConfig from "@/lib/customer-location/maps-js-config";
 import * as mapsJsLoader from "@/lib/customer-location/maps-js-loader";
 import * as mapContainerReady from "@/lib/customer-location/map-container-ready";
 
+import { DIRECT_ORDERING_BRAND_ID } from "@/shared/customer-menu/constants";
+
 const baseLocation = {
   displayAddress: "Rajpur Road, Dehradun, Uttarakhand, India",
   postalCode: null,
@@ -115,6 +117,7 @@ describe("DeliveryLocationMapConfirmation", () => {
 
     render(
       <DeliveryLocationMapConfirmation
+        brandId={DIRECT_ORDERING_BRAND_ID}
         initialLocation={baseLocation}
         onConfirm={vi.fn()}
         onBack={vi.fn()}
@@ -135,6 +138,7 @@ describe("DeliveryLocationMapConfirmation", () => {
     vi.mocked(mapsJsConfig.isMapsJsConfigured).mockReturnValue(false);
     render(
       <DeliveryLocationMapConfirmation
+        brandId={DIRECT_ORDERING_BRAND_ID}
         initialLocation={baseLocation}
         onConfirm={vi.fn()}
         onBack={vi.fn()}
@@ -162,6 +166,7 @@ describe("DeliveryLocationMapConfirmation", () => {
     });
     render(
       <DeliveryLocationMapConfirmation
+        brandId={DIRECT_ORDERING_BRAND_ID}
         initialLocation={baseLocation}
         onConfirm={vi.fn()}
         onBack={vi.fn()}
@@ -176,6 +181,7 @@ describe("DeliveryLocationMapConfirmation", () => {
   it("evaluates serviceability without requiring postal code", async () => {
     render(
       <DeliveryLocationMapConfirmation
+        brandId={DIRECT_ORDERING_BRAND_ID}
         initialLocation={baseLocation}
         onConfirm={vi.fn()}
         onBack={vi.fn()}
@@ -193,6 +199,7 @@ describe("DeliveryLocationMapConfirmation", () => {
 
     render(
       <DeliveryLocationMapConfirmation
+        brandId={DIRECT_ORDERING_BRAND_ID}
         initialLocation={baseLocation}
         onConfirm={vi.fn()}
         onBack={vi.fn()}
@@ -222,6 +229,7 @@ describe("DeliveryLocationMapConfirmation", () => {
 
     render(
       <DeliveryLocationMapConfirmation
+        brandId={DIRECT_ORDERING_BRAND_ID}
         initialLocation={baseLocation}
         onConfirm={vi.fn()}
         onBack={vi.fn()}
@@ -239,12 +247,31 @@ describe("DeliveryLocationMapConfirmation", () => {
     expect(customerLocation.reverseGeocodeLocation).not.toHaveBeenCalled();
   });
 
+  it("blocks text-only confirmation when configured map load fails", async () => {
+    vi.mocked(mapsJsLoader.loadGoogleMapsJs).mockResolvedValue(null);
+    render(
+      <DeliveryLocationMapConfirmation
+        brandId={DIRECT_ORDERING_BRAND_ID}
+        initialLocation={baseLocation}
+        onConfirm={vi.fn()}
+        onBack={vi.fn()}
+        onChooseAnother={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => expect(screen.getByText(/We couldn't load the map/i)).toBeInTheDocument());
+    expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Choose another location" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Confirm location" })).not.toBeInTheDocument();
+  });
+
   it("creates a new Map only when the map session coordinates change", async () => {
     const { library, mapInstances } = createMapsLibraryMock();
     vi.mocked(mapsJsLoader.loadGoogleMapsJs).mockResolvedValue(library);
 
     const { rerender } = render(
       <DeliveryLocationMapConfirmation
+        brandId={DIRECT_ORDERING_BRAND_ID}
         initialLocation={baseLocation}
         onConfirm={vi.fn()}
         onBack={vi.fn()}
@@ -256,6 +283,7 @@ describe("DeliveryLocationMapConfirmation", () => {
 
     rerender(
       <DeliveryLocationMapConfirmation
+        brandId={DIRECT_ORDERING_BRAND_ID}
         initialLocation={{
           ...baseLocation,
           latitude: "30.4000000",

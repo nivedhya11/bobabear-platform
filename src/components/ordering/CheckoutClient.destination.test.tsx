@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { CheckoutClient } from "./CheckoutClient";
+import { CheckoutClient } from "@/components/ordering/CheckoutClient";
 import type { OrderingCatalog } from "@/shared/ordering-catalog";
 
 const fetchCustomerSession = vi.fn<(...args: unknown[]) => unknown>();
@@ -16,7 +16,12 @@ vi.mock("@/lib/customer-auth/client", () => ({
 }));
 
 vi.mock("@/components/ordering/CheckoutDestinationFlow", () => ({
-  CheckoutDestinationFlow: () => <div data-testid="checkout-destination-select">Map-first destination</div>,
+  CheckoutDestinationFlow: () => (
+    <div data-testid="checkout-destination-select">
+      <h2>Choose a delivery address</h2>
+      <button type="button">Add new address</button>
+    </div>
+  ),
 }));
 
 vi.mock("@/lib/customer-commerce", async () => {
@@ -93,9 +98,10 @@ beforeEach(() => {
 });
 
 describe("map-first checkout destination", () => {
-  it("renders the map-first destination flow instead of manual City/State/PIN fields", async () => {
+  it("renders the saved-address-first checkout destination flow", async () => {
     render(<CheckoutClient catalog={catalog} />);
     await waitFor(() => expect(screen.getByTestId("checkout-destination-select")).toBeInTheDocument());
+    expect(screen.getByText("Choose a delivery address")).toBeInTheDocument();
     expect(screen.queryByLabelText(/PIN code/i)).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/^City$/i)).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/^State$/i)).not.toBeInTheDocument();

@@ -2,6 +2,7 @@ import type { AddressFormValues } from "@/components/account/AddressForm";
 import { EMPTY_ADDRESS_FORM } from "@/components/account/AddressForm";
 import type { CommerceAddress } from "@/lib/customer-commerce";
 import type { NormalizedCommerceLocation } from "@/lib/customer-commerce/location";
+import { getIndiaSubdivisionName } from "@/shared/customer-addresses";
 
 export function hasMapCoordinates(location: NormalizedCommerceLocation): boolean {
   if (!location.latitude || !location.longitude) return false;
@@ -21,11 +22,12 @@ export function locationCoordinates(
 }
 
 export function locationToAddressForm(location: NormalizedCommerceLocation): AddressFormValues {
+  const cityName = location.administrativeArea ?? location.locality ?? "";
   return {
     ...EMPTY_ADDRESS_FORM,
-    addressLine1: location.displayAddress.split(",")[0]?.trim() ?? location.displayAddress,
+    addressLine1: "",
     locality: location.locality ?? "",
-    city: location.locality ?? "",
+    city: cityName,
     stateCode: location.stateCode ?? "",
     postalCode: location.postalCode ?? "",
   };
@@ -33,13 +35,15 @@ export function locationToAddressForm(location: NormalizedCommerceLocation): Add
 
 export function savedAddressCardCopy(
   address: CommerceAddress,
-): Readonly<{ title: string; line: string; pinLine: string }> {
-  const label = address.label?.trim() || "Address";
-  const line = [address.addressLine1, address.addressLine2, address.locality]
+): Readonly<{ title: string; line1: string; line2: string; locationLine: string }> {
+  const label = (address.label?.trim() || "Address").toUpperCase();
+  const line1 = [address.addressLine1, address.addressLine2].filter(Boolean).join(", ");
+  const line2 = [address.landmark, address.locality]
     .filter((part): part is string => typeof part === "string" && part.trim().length > 0)
     .join(", ");
-  const pinLine = [address.city, address.postalCode].filter(Boolean).join(" · ");
-  return Object.freeze({ title: label, line, pinLine });
+  const stateName = getIndiaSubdivisionName(address.stateCode) ?? address.stateCode;
+  const locationLine = [address.city, stateName, address.postalCode].filter(Boolean).join(", ");
+  return Object.freeze({ title: label, line1, line2, locationLine });
 }
 
 export function commerceAddressToNormalizedLocation(address: CommerceAddress): NormalizedCommerceLocation {
@@ -50,7 +54,7 @@ export function commerceAddressToNormalizedLocation(address: CommerceAddress): N
     postalCode: address.postalCode,
     pinConfirmed: Boolean(address.postalCode),
     locality: address.locality ?? address.city,
-    administrativeArea: null,
+    administrativeArea: address.city,
     stateCode: address.stateCode,
     country: "India",
     countryCode: "IN",
