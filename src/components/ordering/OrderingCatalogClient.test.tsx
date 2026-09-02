@@ -1,9 +1,14 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { OrderingCatalogClient } from "./OrderingCatalogClient";
 import type { CustomerMenuProjection } from "@/shared/customer-menu/types";
+import {
+  clearGuestCartCredential,
+  readGuestCartCredential,
+  writeGuestCartCredential,
+} from "@/lib/customer-commerce/guest-token";
 
 const getActiveCart = vi.fn<(...args: unknown[]) => unknown>();
 const getCustomerMenu = vi.fn<(...args: unknown[]) => unknown>();
@@ -127,6 +132,7 @@ beforeEach(() => {
   removeCartLine.mockReset();
   evaluateCart.mockReset();
   clearCart.mockReset();
+  clearGuestCartCredential();
   getCustomerMenu.mockResolvedValue({
     ok: true,
     status: 200,
@@ -516,5 +522,280 @@ describe("OrderingCatalogClient IMP-028D", () => {
     const cart = await screen.findByTestId("desktop-live-cart");
     expect(cart).toHaveTextContent("Your cart");
     expect(cart).toHaveTextContent("Your cart is empty");
+  });
+});
+
+describe("OrderingCatalogClient IMP-036C global search", () => {
+  const globalSearchMenu: CustomerMenuProjection = {
+    brandId: "brand-1",
+    menuId: "menu-1",
+    name: "Primary Menu",
+    sections: [
+      { id: "sec-bar", parentSectionId: null, name: "The Bar", position: 1 },
+      { id: "sec-burger", parentSectionId: null, name: "Burger", position: 2 },
+      { id: "sec-bar-child", parentSectionId: "sec-bar", name: "Boba", position: 0 },
+      { id: "sec-burger-child", parentSectionId: "sec-burger", name: "Burgers", position: 0 },
+    ],
+    items: [
+      {
+        productId: "prod-taro",
+        variantId: "var-taro",
+        sectionId: "sec-bar-child",
+        name: "Taro Boba",
+        description: "Sweet taro milk tea",
+        imagePath: null,
+        displayPricePaise: 24900,
+        currency: "INR",
+      },
+      {
+        productId: "prod-burger",
+        variantId: "var-burger",
+        sectionId: "sec-burger-child",
+        name: "Classic Burger",
+        description: "Beef patty with cheese",
+        imagePath: null,
+        displayPricePaise: 34900,
+        currency: "INR",
+      },
+      {
+        productId: "prod-fish",
+        variantId: "var-fish",
+        sectionId: "sec-bar-child",
+        name: "Fish Balls",
+        description: "Crispy snack",
+        imagePath: null,
+        displayPricePaise: 14900,
+        currency: "INR",
+      },
+    ],
+  };
+
+  beforeEach(() => {
+    getCustomerMenu.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { menu: globalSearchMenu },
+    });
+  });
+
+  it("shows only the selected category when search is empty", async () => {
+    render(<OrderingCatalogClient brandId="brand-1" />);
+    await waitFor(() => expect(screen.getByRole("heading", { name: "The Bar", level: 1 })).toBeInTheDocument());
+    expect(screen.getByRole("heading", { name: "Taro Boba" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Classic Burger" })).not.toBeInTheDocument();
+  });
+
+  it("finds items in the selected category when searching", async () => {
+    render(<OrderingCatalogClient brandId="brand-1" />);
+    await waitFor(() => expect(screen.getByTestId("menu-search-input")).toBeInTheDocument());
+    await userEvent.type(screen.getByTestId("menu-search-input"), "taro");
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Search results", level: 1 })).toBeInTheDocument());
+    expect(screen.getByRole("heading", { name: "Taro Boba" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Classic Burger" })).not.toBeInTheDocument();
+  });
+
+  it("searches globally across categories regardless of selected category", async () => {
+    render(<OrderingCatalogClient brandId="brand-1" />);
+    await waitFor(() => expect(screen.getByTestId("menu-category-nav")).toBeInTheDocument());
+    await userEvent.click(within(screen.getByTestId("menu-category-nav")).getByRole("button", { name: "Burger" }));
+    await userEvent.type(screen.getByTestId("menu-search-input"), "taro");
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Taro Boba" })).toBeInTheDocument());
+    expect(within(screen.getByTestId("desktop-menu")).getByRole("heading", { name: "The Bar", level: 2 })).toBeInTheDocument();
+  });
+
+  it("returns matching products from multiple categories", async () => {
+    render(<OrderingCatalogClient brandId="brand-1" />);
+    await waitFor(() => expect(screen.getByTestId("menu-search-input")).toBeInTheDocument());
+    await userEvent.type(screen.getByTestId("menu-search-input"), "crispy");
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Fish Balls" })).toBeInTheDocument());
+    expect(screen.queryByRole("heading", { name: "Classic Burger" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Taro Boba" })).not.toBeInTheDocument();
+  });
+
+  it("excludes nonmatching products from global search", async () => {
+    render(<OrderingCatalogClient brandId="brand-1" />);
+    await waitFor(() => expect(screen.getByTestId("menu-search-input")).toBeInTheDocument());
+    await userEvent.type(screen.getByTestId("menu-search-input"), "burger");
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Classic Burger" })).toBeInTheDocument());
+    expect(screen.queryByRole("heading", { name: "Taro Boba" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Fish Balls" })).not.toBeInTheDocument();
+  });
+
+  it("restores the previously selected category when search is cleared", async () => {
+    render(<OrderingCatalogClient brandId="brand-1" />);
+    await waitFor(() => expect(screen.getByTestId("menu-category-nav")).toBeInTheDocument());
+    await userEvent.click(within(screen.getByTestId("menu-category-nav")).getByRole("button", { name: "Burger" }));
+    const search = screen.getByTestId("menu-search-input");
+    await userEvent.type(search, "taro");
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Taro Boba" })).toBeInTheDocument());
+    await userEvent.clear(search);
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Burger", level: 1 })).toBeInTheDocument());
+    expect(within(screen.getByTestId("menu-category-nav")).getByRole("button", { name: "Burger" })).toHaveAttribute(
+      "aria-current",
+      "true",
+    );
+    expect(screen.getByRole("heading", { name: "Classic Burger" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Taro Boba" })).not.toBeInTheDocument();
+  });
+
+  it("shows a global no-results message when nothing matches", async () => {
+    render(<OrderingCatalogClient brandId="brand-1" />);
+    await waitFor(() => expect(screen.getByTestId("menu-search-input")).toBeInTheDocument());
+    await userEvent.type(screen.getByTestId("menu-search-input"), "unicorn");
+    await waitFor(() =>
+      expect(screen.getByText("Nothing in the menu matched your search.")).toBeInTheDocument(),
+    );
+  });
+
+  it("matches item descriptions during global search", async () => {
+    render(<OrderingCatalogClient brandId="brand-1" />);
+    await waitFor(() => expect(screen.getByTestId("menu-search-input")).toBeInTheDocument());
+    await userEvent.type(screen.getByTestId("menu-search-input"), "beef patty");
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Classic Burger" })).toBeInTheDocument());
+  });
+});
+
+describe("OrderingCatalogClient IMP-036C stale guest cart recovery", () => {
+  const guestCredential = {
+    token: "stale-guest-token",
+    brandId: "brand-1",
+    cartId: "cart-stale",
+    revision: "7",
+  } as const;
+
+  beforeEach(() => {
+    writeGuestCartCredential(guestCredential);
+  });
+
+  afterEach(() => {
+    clearGuestCartCredential();
+  });
+
+  it("recovers transparently from an expired guest cart on initial load", async () => {
+    getActiveCart.mockResolvedValue({ ok: false, code: "CART_EXPIRED", status: 410 });
+    render(<OrderingCatalogClient brandId="brand-1" />);
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Classic Milk Tea" })).toBeInTheDocument());
+    expect(screen.queryByText("Your guest cart expired. Add your items again.")).not.toBeInTheDocument();
+    expect(readGuestCartCredential()).toBeNull();
+    expect(screen.getByTestId("desktop-live-cart")).toHaveTextContent("Your cart is empty");
+  });
+
+  it("recovers transparently from a missing guest cart on initial load", async () => {
+    getActiveCart.mockResolvedValue({ ok: false, code: "CART_NOT_FOUND", status: 404 });
+    render(<OrderingCatalogClient brandId="brand-1" />);
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Classic Milk Tea" })).toBeInTheDocument());
+    expect(screen.queryByText(/couldn't find that cart/i)).not.toBeInTheDocument();
+    expect(readGuestCartCredential()).toBeNull();
+  });
+
+  it("creates a fresh cart after stale recovery on add without sending the stale token", async () => {
+    getActiveCart.mockResolvedValue({ ok: false, code: "CART_EXPIRED", status: 410 });
+    addCartLine
+      .mockResolvedValueOnce({ ok: false, code: "CART_EXPIRED", status: 410 })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        data: {
+          cart: {
+            id: "cart-fresh",
+            brandId: "brand-1",
+            ownerMode: "guest",
+            revision: "1",
+            manualCouponCode: null,
+            expiresAt: null,
+            createdAt: "2026-08-13T00:00:00.000Z",
+            updatedAt: "2026-08-13T00:00:00.000Z",
+            lines: [{ id: "line-1", variantId: "var-1", quantity: 1, modifiers: [], bundleSelections: [] }],
+          },
+          guestToken: "fresh-token",
+        },
+      });
+    render(<OrderingCatalogClient brandId="brand-1" />);
+    await waitFor(() => expect(screen.getByRole("button", { name: "Add Classic Milk Tea" })).toBeInTheDocument());
+    await userEvent.click(screen.getByRole("button", { name: "Add Classic Milk Tea" }));
+    await waitFor(() => expect(addCartLine).toHaveBeenCalledTimes(2));
+    expect(addCartLine.mock.calls[1]?.[0]).not.toHaveProperty("expectedRevision");
+    expect(screen.getByTestId("sticky-cart")).toBeInTheDocument();
+  });
+
+  it("retries configured add once after stale cart expiry during mutation", async () => {
+    getActiveCart.mockResolvedValue({ ok: true, status: 200, data: { cart: null } });
+    const customizedMenu: CustomerMenuProjection = {
+      ...menu,
+      items: [{
+        ...menu.items[0]!,
+        modifierGroups: [{
+          modifierGroupId: "group-1",
+          variantModifierGroupId: "binding-1",
+          name: "Toppings",
+          required: false,
+          minTotalQuantity: 0,
+          maxTotalQuantity: 1,
+          position: 0,
+          options: [
+            { modifierOptionId: "paid", modifierGroupOptionId: "option-paid", name: "Pearls", minQuantity: 0, maxQuantity: 1, defaultQuantity: 0, position: 0, displayPriceDeltaPaise: 3000, currency: "INR" },
+          ],
+        }],
+      }],
+    };
+    getCustomerMenu.mockResolvedValue({ ok: true, status: 200, data: { menu: customizedMenu } });
+    addCartLine
+      .mockResolvedValueOnce({ ok: false, code: "CART_EXPIRED", status: 410 })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        data: {
+          cart: {
+            id: "cart-fresh",
+            brandId: "brand-1",
+            ownerMode: "guest",
+            revision: "1",
+            manualCouponCode: null,
+            expiresAt: null,
+            createdAt: "2026-08-13T00:00:00.000Z",
+            updatedAt: "2026-08-13T00:00:00.000Z",
+            lines: [{ id: "line-1", variantId: "var-1", quantity: 1, modifiers: [], bundleSelections: [] }],
+          },
+          guestToken: "fresh-token",
+        },
+      });
+    render(<OrderingCatalogClient brandId="brand-1" />);
+    await userEvent.click(await screen.findByRole("button", { name: "Add Classic Milk Tea" }));
+    await userEvent.click(screen.getByRole("checkbox", { name: /pearls/i }));
+    await userEvent.click(screen.getByRole("button", { name: /Add to cart/ }));
+    await waitFor(() => expect(addCartLine).toHaveBeenCalledTimes(2));
+    expect(screen.queryByText("Your guest cart expired. Add your items again.")).not.toBeInTheDocument();
+  });
+
+  it("does not retry quantity changes against a new cart after expiry", async () => {
+    const activeCart = {
+      id: "cart-1",
+      brandId: "brand-1",
+      ownerMode: "guest" as const,
+      revision: "1",
+      manualCouponCode: null,
+      expiresAt: null,
+      createdAt: "2026-08-13T00:00:00.000Z",
+      updatedAt: "2026-08-13T00:00:00.000Z",
+      lines: [{ id: "line-1", variantId: "var-1", quantity: 1, modifiers: [], bundleSelections: [] }],
+    };
+    getActiveCart.mockResolvedValue({ ok: true, status: 200, data: { cart: activeCart } });
+    setCartLineQuantity.mockResolvedValue({ ok: false, code: "CART_EXPIRED", status: 410 });
+    render(<OrderingCatalogClient brandId="brand-1" />);
+    await userEvent.click(await screen.findByRole("button", { name: /increase classic milk tea quantity/i }));
+    await waitFor(() => expect(setCartLineQuantity).toHaveBeenCalledTimes(1));
+    expect(setCartLineQuantity).not.toHaveBeenCalledTimes(2);
+    expect(readGuestCartCredential()).toBeNull();
+    expect(screen.getByTestId("desktop-live-cart")).toHaveTextContent("Your cart is empty");
+  });
+
+  it("still surfaces ordinary non-stale cart errors", async () => {
+    getActiveCart.mockResolvedValue({ ok: true, status: 200, data: { cart: null } });
+    addCartLine.mockResolvedValue({ ok: false, code: "CART_ITEM_NOT_ORDERABLE", status: 409 });
+    render(<OrderingCatalogClient brandId="brand-1" />);
+    await userEvent.click(await screen.findByRole("button", { name: "Add Classic Milk Tea" }));
+    await waitFor(() =>
+      expect(screen.getByText("That item can't be ordered right now.")).toBeInTheDocument(),
+    );
   });
 });

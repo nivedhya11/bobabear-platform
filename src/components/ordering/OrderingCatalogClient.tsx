@@ -29,6 +29,7 @@ import { cartEvaluationCustomerCopy } from "@/components/ordering/serviceability
 import {
   addCartLine,
   clearCart,
+  clearGuestCartCredential,
   decrementLatestCartVariant,
   evaluateCart,
   getActiveCart,
@@ -91,9 +92,7 @@ export function OrderingCatalogClient(props: { brandId: string }) {
     const result = await getActiveCart(brandId, { guestToken: true });
     if (!result.ok) {
       if (result.code === "CART_EXPIRED" || result.code === "CART_NOT_FOUND") {
-        setCart(null);
-        setEvaluation(null);
-        setError(commerceErrorCopy(result.code));
+        recoverStaleGuestCart();
         return;
       }
       if (result.code === "NETWORK_ERROR") {
@@ -104,9 +103,32 @@ export function OrderingCatalogClient(props: { brandId: string }) {
       return;
     }
     setCart(result.data.cart);
+    publishCartCount(cartUnitCount(result.data.cart));
     setError(null);
     await refreshEvaluation(deliveryContext, result.data.cart);
   }, [brandId, deliveryContext, refreshEvaluation]);
+
+  function recoverStaleGuestCart(): void {
+    clearGuestCartCredential();
+    setCart(null);
+    setEvaluation(null);
+    publishCartCount(0);
+    setError(null);
+    setDialogError(null);
+  }
+
+  async function addWithStaleCartRecovery(
+    input: Parameters<typeof addCartLine>[0],
+  ): Promise<Awaited<ReturnType<typeof addCartLine>>> {
+    const result = await addCartLine(input);
+    if (result.ok || (result.code !== "CART_EXPIRED" && result.code !== "CART_NOT_FOUND")) {
+      return result;
+    }
+    recoverStaleGuestCart();
+    const freshCartInput = { ...input };
+    delete freshCartInput.expectedRevision;
+    return addCartLine(freshCartInput);
+  }
 
   const refreshMenu = useCallback(async () => {
     const result = await getCustomerMenu({ brandId });
@@ -187,23 +209,23 @@ export function OrderingCatalogClient(props: { brandId: string }) {
   const selectedGroup = groups.find((group) => group.id === activeCategoryId) ?? null;
 
   const normalizedSearch = searchQuery.trim().toLowerCase();
-  const filteredGroup = useMemo(() => {
-    if (!selectedGroup || !normalizedSearch) return selectedGroup;
-    return {
-      ...selectedGroup,
-      subcategories: selectedGroup.subcategories
-        .map((sub) => ({
-          ...sub,
-          items: sub.items.filter((item) => {
-            const haystack = `${item.name} ${item.description ?? ""}`.toLowerCase();
-            return haystack.includes(normalizedSearch);
-          }),
-        }))
-        .filter((sub) => sub.items.length > 0),
-    };
-  }, [selectedGroup, normalizedSearch]);
-
-  const displayGroup = filteredGroup ?? selectedGroup;
+  const displayGroups = useMemo(() => {
+    if (!normalizedSearch) return selectedGroup ? [selectedGroup] : [];
+    return groups
+      .map((group) => ({
+        ...group,
+        subcategories: group.subcategories
+          .map((sub) => ({
+            ...sub,
+            items: sub.items.filter((item) => {
+              const haystack = `${item.name} ${item.description ?? ""}`.toLowerCase();
+              return haystack.includes(normalizedSearch);
+            }),
+          }))
+          .filter((sub) => sub.items.length > 0),
+      }))
+      .filter((group) => group.subcategories.length > 0);
+  }, [groups, normalizedSearch, selectedGroup]);
 
   useEffect(() => {
     return subscribeToDeliveryContext((nextContext) => {
@@ -278,19 +300,27 @@ export function OrderingCatalogClient(props: { brandId: string }) {
           expectedRevision: cart.revision,
         });
         if (!result.ok) {
+          if (result.code === "CART_EXPIRED" || result.code === "CART_NOT_FOUND") {
+            recoverStaleGuestCart();
+            return;
+          }
           setError(commerceErrorCopy(result.code));
           return;
         }
         await updateCartFromMutation(result.data.cart);
         return;
       }
-      const result = await addCartLine({
+      const result = await addWithStaleCartRecovery({
         brandId,
         variantId: item.variantId,
         quantity: 1,
         expectedRevision: cart?.revision,
       });
       if (!result.ok) {
+        if (result.code === "CART_EXPIRED" || result.code === "CART_NOT_FOUND") {
+          recoverStaleGuestCart();
+          return;
+        }
         setError(commerceErrorCopy(result.code));
         return;
       }
@@ -308,6 +338,10 @@ export function OrderingCatalogClient(props: { brandId: string }) {
           expectedRevision: cart.revision,
         });
         if (!result.ok) {
+          if (result.code === "CART_EXPIRED" || result.code === "CART_NOT_FOUND") {
+            recoverStaleGuestCart();
+            return;
+          }
           setError(commerceErrorCopy(result.code));
           return;
         }
@@ -321,6 +355,10 @@ export function OrderingCatalogClient(props: { brandId: string }) {
         expectedRevision: cart.revision,
       });
       if (!result.ok) {
+        if (result.code === "CART_EXPIRED" || result.code === "CART_NOT_FOUND") {
+          recoverStaleGuestCart();
+          return;
+        }
         setError(commerceErrorCopy(result.code));
         return;
       }
@@ -337,6 +375,10 @@ export function OrderingCatalogClient(props: { brandId: string }) {
         expectedRevision: cart.revision,
       });
       if (!result.ok) {
+        if (result.code === "CART_EXPIRED" || result.code === "CART_NOT_FOUND") {
+          recoverStaleGuestCart();
+          return;
+        }
         setError(commerceErrorCopy(result.code));
         return;
       }
@@ -352,6 +394,10 @@ export function OrderingCatalogClient(props: { brandId: string }) {
         expectedRevision: cart.revision,
       });
       if (!result.ok) {
+        if (result.code === "CART_EXPIRED" || result.code === "CART_NOT_FOUND") {
+          recoverStaleGuestCart();
+          return;
+        }
         setError(commerceErrorCopy(result.code));
         return;
       }
@@ -368,7 +414,7 @@ export function OrderingCatalogClient(props: { brandId: string }) {
     setPendingKey(`customize:${item.variantId}`);
     setError(null);
     try {
-      const result = await addCartLine({
+      const result = await addWithStaleCartRecovery({
         brandId,
         variantId: item.variantId,
         quantity: 1,
@@ -376,6 +422,11 @@ export function OrderingCatalogClient(props: { brandId: string }) {
         expectedRevision: cart?.revision,
       });
       if (!result.ok) {
+        if (result.code === "CART_EXPIRED" || result.code === "CART_NOT_FOUND") {
+          recoverStaleGuestCart();
+          setCustomizingItem(null);
+          return;
+        }
         setError(commerceErrorCopy(result.code));
         return;
       }
@@ -414,6 +465,11 @@ export function OrderingCatalogClient(props: { brandId: string }) {
         expectedRevision: cart.revision,
       });
       if (!result.ok) {
+        if (result.code === "CART_EXPIRED" || result.code === "CART_NOT_FOUND") {
+          recoverStaleGuestCart();
+          setEditTarget(null);
+          return;
+        }
         setDialogError(commerceErrorCopy(result.code));
         return;
       }
@@ -516,7 +572,7 @@ export function OrderingCatalogClient(props: { brandId: string }) {
         <header className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between xl:col-span-3">
           <div className="flex flex-col gap-2">
             <h1 className="font-display text-[clamp(40px,5vw,58px)] uppercase leading-[0.9] tracking-wide text-[var(--text-primary)]">
-              {displayGroup?.name ?? "Menu"}
+              {normalizedSearch ? "Search results" : (selectedGroup?.name ?? "Menu")}
             </h1>
             <p className="font-body text-[15px] text-[var(--text-secondary)]">
               Crafted fresh and ready when you are.
@@ -549,16 +605,16 @@ export function OrderingCatalogClient(props: { brandId: string }) {
           <aside className="hidden xl:block">{renderCategoryNav("vertical")}</aside>
 
           <div data-testid="desktop-menu" className="flex flex-col gap-6 min-w-0">
-            {displayGroup ? (
-              <section
-                key={displayGroup.id}
-                aria-label={displayGroup.name}
-                className="flex flex-col gap-4"
-              >
-                {displayGroup.subcategories.map((sub) => (
+            {displayGroups.map((group) => (
+              <section key={group.id} aria-label={group.name} className="flex flex-col gap-4">
+                {normalizedSearch ? (
+                  <h2 className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--text-tertiary)]">
+                    {group.name}
+                  </h2>
+                ) : null}
+                {group.subcategories.map((sub) => (
                   <div key={sub.id} className="flex flex-col gap-3">
-                    {displayGroup.subcategories.length > 1 ||
-                    sub.name !== displayGroup.name ? (
+                    {group.subcategories.length > 1 || sub.name !== group.name ? (
                       <h2 className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--text-tertiary)]">
                         {sub.name}
                       </h2>
@@ -588,6 +644,11 @@ export function OrderingCatalogClient(props: { brandId: string }) {
                   </div>
                 ))}
               </section>
+            ))}
+            {normalizedSearch && displayGroups.length === 0 ? (
+              <p className="font-body text-[15px] text-[var(--text-secondary)]">
+                Nothing in the menu matched your search.
+              </p>
             ) : null}
           </div>
 

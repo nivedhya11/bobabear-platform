@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   addCartLine,
@@ -49,6 +49,10 @@ afterEach(() => {
   clearGuestCartCredential();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
+});
+
+beforeEach(() => {
+  clearGuestCartCredential();
 });
 
 describe("cart client journey", () => {
@@ -111,6 +115,21 @@ describe("cart client journey", () => {
     expect((addInit.headers as Record<string, string>)["X-Boba-Guest-Cart-Token"]).toBeUndefined();
     const qtyInit = fetchMock.mock.calls[1]![1] as RequestInit;
     expect((qtyInit.headers as Record<string, string>)["X-Boba-Guest-Cart-Token"]).toBe("tok-1");
+  });
+
+  it("persists a newly issued guest token when adding without a stored credential", async () => {
+    const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(
+      async () => jsonResponse({ ok: true, cart: guestCart("1"), guestToken: "tok-fresh" }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    clearGuestCartCredential();
+
+    const added = await addCartLine({ brandId, variantId, quantity: 1 });
+    expect(added.ok).toBe(true);
+    if (!added.ok) return;
+    expect(readGuestCartCredential()?.token).toBe("tok-fresh");
+    const addInit = fetchMock.mock.calls[0]![1];
+    expect((addInit?.headers as Record<string, string> | undefined)?.["X-Boba-Guest-Cart-Token"]).toBeUndefined();
   });
 
   it("forwards modifier purchase intent unchanged when adding a configured line", async () => {
