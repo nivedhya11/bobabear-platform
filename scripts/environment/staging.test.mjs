@@ -9,6 +9,6 @@ test("staging status declares an exact merged Git-tree artifact source", () => {
   });
   assert.equal(result.status, 0);
   assert.match(result.stdout, /STAGING_ARTIFACT_SOURCE EXACT_MERGED_GIT_TREE/);
-  assert.match(result.stdout, /FUTURE_EXACT_GIT_TREE_MECHANISM git archive HEAD to isolated temporary build context/);
+  assert.match(result.stdout, /EXACT_GIT_TREE_MECHANISM git archive HEAD to isolated temporary build context/);
   assert.match(result.stdout, /LIVE_UNTRACKED_CONTENT_CAN_AFFECT_STAGING_ARTIFACT NO/);
 });
