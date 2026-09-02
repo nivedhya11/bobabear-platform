@@ -85,8 +85,15 @@ function podmanCompose(buildDir, args, extraEnv = {}) {
 
 function materializeExactGitTree(sha) {
   const buildDir = mkdtempSync(path.join(os.tmpdir(), "boba-staging-build-"));
-  const archive = execFileSync("git", ["archive", sha], { cwd: repositoryRoot });
-  spawnSync("tar", ["-x", "-C", buildDir], { input: archive, stdio: ["pipe", "inherit", "inherit"] });
+  const result = spawnSync(
+    "bash",
+    ["-lc", `git -C "${repositoryRoot}" archive "${sha}" | tar -x -C "${buildDir}"`],
+    { stdio: "inherit" },
+  );
+  if (result.status !== 0) {
+    rmSync(buildDir, { recursive: true, force: true });
+    process.exit(result.status ?? 1);
+  }
   return buildDir;
 }
 
