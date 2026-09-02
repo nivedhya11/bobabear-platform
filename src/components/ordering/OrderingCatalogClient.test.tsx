@@ -257,7 +257,9 @@ describe("OrderingCatalogClient", () => {
       ok: true, status: 200, data: { cart: { id: "cart-1", brandId: "brand-1", ownerMode: "guest", revision: "1", manualCouponCode: null, expiresAt: null, createdAt: "2026-08-13T00:00:00.000Z", updatedAt: "2026-08-13T00:00:00.000Z", lines: [] } },
     });
     render(<OrderingCatalogClient brandId="brand-1" />);
-    expect(await screen.findByText("Customisable")).toBeInTheDocument();
+    const customizableCue = await screen.findByText("Customisable");
+    expect(customizableCue).toBeInTheDocument();
+    expect(customizableCue).not.toHaveClass("hidden");
     await userEvent.click(await screen.findByRole("button", { name: "Add Classic Milk Tea" }));
     expect(screen.getByRole("dialog", { name: "Customize Classic Milk Tea" })).toBeInTheDocument();
     expect(screen.getByRole("checkbox", { name: /pearls/i })).not.toBeChecked();
