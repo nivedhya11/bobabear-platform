@@ -468,6 +468,7 @@ function createStagingWorkforceUser(args, deps = {}) {
     const runArgs = [
       "run",
       "--rm",
+      "--interactive",
       "--network",
       network,
       "--read-only",

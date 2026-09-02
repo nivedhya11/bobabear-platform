@@ -309,6 +309,10 @@ test("createStagingWorkforceUser delivers password to final podman run only", ()
         assert.equal(stdinConsumed, true);
         assert.equal(buffer, secret);
         assert.equal(args.includes("run"), true);
+        assert.equal(args.filter((arg) => arg === "--interactive").length, 1);
+        assert.equal(args.includes("--tty"), false);
+        assert.equal(args.includes("-t"), false);
+        assert.ok(args.indexOf("--interactive") < args.indexOf(`boba-bear-staging-workforce-operator:${candidateSha}`));
         assert.equal(args.join(" ").includes("workforce:user:create"), true);
         assert.equal(args.join(" ").includes("exact-founder-password-bytes"), false);
         assert.equal(JSON.stringify(options ?? {}).includes("exact-founder-password-bytes"), false);
