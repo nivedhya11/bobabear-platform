@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { fetchCustomerSession } from "@/lib/customer-auth/client";
@@ -17,14 +17,18 @@ import {
   reconcileGuestCart,
   setCheckoutDestination,
   startCheckout,
+  updateOwnAddress,
   type CartReconciliationResolution,
   type CommerceAddress,
   type CommerceCart,
   type CommerceCheckout,
   type CommerceCheckoutSnapshot,
 } from "@/lib/customer-commerce";
-import { INDIA_SUBDIVISIONS } from "@/shared/customer-addresses";
 import { ReconcileConflictDialog } from "@/components/ordering/ReconcileConflictDialog";
+import {
+  CheckoutDestinationFlow,
+  type CheckoutDestinationDraft,
+} from "@/components/ordering/CheckoutDestinationFlow";
 import {
   CheckoutSnapshotLineList,
   CheckoutStepIndicator,
@@ -40,18 +44,17 @@ type Screen =
   | "empty"
   | "conflict"
   | "destination"
-  | "ready"
+  | "review"
+  | "payment"
   | "error";
 
-/** One-time destination fields start empty. PIN/state are not implied. */
-export const EMPTY_ONE_TIME_ADDRESS = {
-  recipientName: "",
-  recipientPhone: "",
-  addressLine1: "",
-  city: "",
-  stateCode: "",
-  postalCode: "",
-};
+function destinationSummary(snapshot: CommerceCheckoutSnapshot | null): string | null {
+  const destination = snapshot?.destination;
+  if (!destination) return null;
+  return [destination.recipientName, destination.addressLine1, destination.city, destination.postalCode]
+    .filter(Boolean)
+    .join(" · ");
+}
 
 export function CheckoutClient(props: { catalog: OrderingCatalog }) {
   const brandId = props.catalog.brandId;
@@ -62,8 +65,6 @@ export function CheckoutClient(props: { catalog: OrderingCatalog }) {
   const [checkout, setCheckout] = useState<CommerceCheckout | null>(null);
   const [snapshot, setSnapshot] = useState<CommerceCheckoutSnapshot | null>(null);
   const [addresses, setAddresses] = useState<readonly CommerceAddress[]>([]);
-  const [selectedAddressId, setSelectedAddressId] = useState<string | "new" | "one-time">("new");
-  const [form, setForm] = useState(EMPTY_ONE_TIME_ADDRESS);
   const [guestRevision, setGuestRevision] = useState<string | null>(null);
   const [customerRevision, setCustomerRevision] = useState<string | null>(null);
 
@@ -185,19 +186,11 @@ export function CheckoutClient(props: { catalog: OrderingCatalog }) {
     setCheckout(current);
 
     const listed = await listOwnAddresses();
-    if (listed.ok) {
-      setAddresses(listed.data.addresses);
-      const defaultAddress = listed.data.addresses.find((address) => address.isDefault);
-      if (defaultAddress) setSelectedAddressId(defaultAddress.id);
-      else if (listed.data.addresses[0]) setSelectedAddressId(listed.data.addresses[0].id);
-      else setSelectedAddressId("one-time");
-    } else {
-      setSelectedAddressId("one-time");
-    }
+    if (listed.ok) setAddresses(listed.data.addresses);
 
     if (current.status === "READY_FOR_PAYMENT" && current.activeSnapshot) {
       setSnapshot(current.activeSnapshot);
-      setScreen("ready");
+      setScreen("payment");
       return;
     }
     setScreen("destination");
@@ -223,18 +216,58 @@ export function CheckoutClient(props: { catalog: OrderingCatalog }) {
     await continueWithCart(reconciled.data.cart);
   }
 
-  async function handleDestination(event: FormEvent): Promise<void> {
-    event.preventDefault();
-    if (pending || !checkout || !cart) return;
+  async function applyDestinationDraft(draft: CheckoutDestinationDraft): Promise<void> {
+    if (pending || !checkout) return;
     setPending(true);
     setError(null);
 
     let destinationCheckout = checkout;
-    if (selectedAddressId !== "one-time" && selectedAddressId !== "new") {
+
+    if (draft.kind === "UPDATE_SAVED_COORDINATES") {
+      const updated = await updateOwnAddress(draft.savedAddressId, { coordinates: draft.coordinates });
+      if (!updated.ok) {
+        setPending(false);
+        setError(commerceErrorCopy(updated.code));
+        return;
+      }
       const dest = await setCheckoutDestination({
         checkoutId: checkout.id,
         expectedCheckoutRevision: checkout.revision,
-        destination: { kind: "SAVED_ADDRESS", savedAddressId: selectedAddressId },
+        destination: { kind: "SAVED_ADDRESS", savedAddressId: draft.savedAddressId },
+      });
+      if (!dest.ok) {
+        setPending(false);
+        setError(commerceErrorCopy(dest.code));
+        return;
+      }
+      destinationCheckout = dest.data.checkout;
+    } else if (draft.kind === "SAVED_ADDRESS") {
+      const dest = await setCheckoutDestination({
+        checkoutId: checkout.id,
+        expectedCheckoutRevision: checkout.revision,
+        destination: { kind: "SAVED_ADDRESS", savedAddressId: draft.savedAddressId },
+      });
+      if (!dest.ok) {
+        setPending(false);
+        setError(commerceErrorCopy(dest.code));
+        return;
+      }
+      destinationCheckout = dest.data.checkout;
+    } else if (draft.kind === "NEW_SAVED_ADDRESS") {
+      const created = await createOwnAddress({
+        ...draft.createInput,
+        makeDefault: addresses.length === 0,
+      });
+      if (!created.ok) {
+        setPending(false);
+        setError(commerceErrorCopy(created.code));
+        return;
+      }
+      setAddresses((current) => [...current, created.data.address]);
+      const dest = await setCheckoutDestination({
+        checkoutId: checkout.id,
+        expectedCheckoutRevision: checkout.revision,
+        destination: { kind: "SAVED_ADDRESS", savedAddressId: created.data.address.id },
       });
       if (!dest.ok) {
         setPending(false);
@@ -243,48 +276,30 @@ export function CheckoutClient(props: { catalog: OrderingCatalog }) {
       }
       destinationCheckout = dest.data.checkout;
     } else {
-      if (selectedAddressId === "new") {
-        const created = await createOwnAddress({
-          ...form,
-          makeDefault: addresses.length === 0,
-        });
-        if (!created.ok) {
-          setPending(false);
-          setError(commerceErrorCopy(created.code));
-          return;
-        }
-        const dest = await setCheckoutDestination({
-          checkoutId: checkout.id,
-          expectedCheckoutRevision: checkout.revision,
-          destination: { kind: "SAVED_ADDRESS", savedAddressId: created.data.address.id },
-        });
-        if (!dest.ok) {
-          setPending(false);
-          setError(commerceErrorCopy(dest.code));
-          return;
-        }
-        destinationCheckout = dest.data.checkout;
-      } else {
-        const dest = await setCheckoutDestination({
-          checkoutId: checkout.id,
-          expectedCheckoutRevision: checkout.revision,
-          destination: {
-            kind: "ONE_TIME_ADDRESS",
-            recipientName: form.recipientName,
-            recipientPhone: form.recipientPhone,
-            addressLine1: form.addressLine1,
-            city: form.city,
-            stateCode: form.stateCode,
-            postalCode: form.postalCode,
-          },
-        });
-        if (!dest.ok) {
-          setPending(false);
-          setError(commerceErrorCopy(dest.code));
-          return;
-        }
-        destinationCheckout = dest.data.checkout;
+      const dest = await setCheckoutDestination({
+        checkoutId: checkout.id,
+        expectedCheckoutRevision: checkout.revision,
+        destination: {
+          kind: "ONE_TIME_ADDRESS",
+          recipientName: draft.recipientName,
+          recipientPhone: draft.recipientPhone,
+          addressLine1: draft.addressLine1,
+          addressLine2: draft.addressLine2,
+          landmark: draft.landmark,
+          locality: draft.locality,
+          city: draft.city,
+          stateCode: draft.stateCode,
+          postalCode: draft.postalCode,
+          coordinates: draft.coordinates,
+          label: draft.label,
+        },
+      });
+      if (!dest.ok) {
+        setPending(false);
+        setError(commerceErrorCopy(dest.code));
+        return;
       }
+      destinationCheckout = dest.data.checkout;
     }
 
     setCheckout(destinationCheckout);
@@ -299,8 +314,11 @@ export function CheckoutClient(props: { catalog: OrderingCatalog }) {
     }
     setCheckout(evaluated.data.checkout);
     setSnapshot(evaluated.data.snapshot);
-    setScreen("ready");
+    setScreen("review");
   }
+
+  const activeStep =
+    screen === "destination" ? "delivery" : screen === "review" ? "review" : "payment";
 
   return (
     <main id="main-content" tabIndex={-1} className="bg-[var(--bg-page)] focus:outline-none">
@@ -316,11 +334,7 @@ export function CheckoutClient(props: { catalog: OrderingCatalog }) {
           <h1 className="font-display text-[clamp(36px,8vw,56px)] leading-[0.95] text-[var(--text-primary)]">
             Checkout
           </h1>
-          <CheckoutStepIndicator
-            activeStep={
-              screen === "destination" ? "delivery" : screen === "ready" ? "payment" : "delivery"
-            }
-          />
+          <CheckoutStepIndicator activeStep={activeStep} />
         </header>
 
         {screen === "loading" ? (
@@ -345,126 +359,36 @@ export function CheckoutClient(props: { catalog: OrderingCatalog }) {
         ) : null}
 
         {screen === "destination" && checkout ? (
-          <form onSubmit={(event) => void handleDestination(event)} className="flex flex-col gap-4">
-            <p className="font-body text-[15px] text-[var(--text-secondary)]">
-              Choose where this order should be delivered.
-            </p>
-
-            {addresses.length > 0 ? (
-              <fieldset className="flex flex-col gap-2">
-                <legend className="font-body text-[13px] font-semibold text-[var(--text-primary)]">
-                  Saved addresses
-                </legend>
-                {addresses.map((address) => (
-                  <label key={address.id} className="flex items-start gap-2 font-body text-[14px]">
-                    <input
-                      type="radio"
-                      name="destination"
-                      checked={selectedAddressId === address.id}
-                      onChange={() => setSelectedAddressId(address.id)}
-                    />
-                    <span>
-                      {address.recipientName} · {address.addressLine1}, {address.city} {address.postalCode}
-                    </span>
-                  </label>
-                ))}
-                <label className="flex items-start gap-2 font-body text-[14px]">
-                  <input
-                    type="radio"
-                    name="destination"
-                    checked={selectedAddressId === "new"}
-                    onChange={() => setSelectedAddressId("new")}
-                  />
-                  <span>Save a new address</span>
-                </label>
-                <label className="flex items-start gap-2 font-body text-[14px]">
-                  <input
-                    type="radio"
-                    name="destination"
-                    checked={selectedAddressId === "one-time"}
-                    onChange={() => setSelectedAddressId("one-time")}
-                  />
-                  <span>Use a one-time destination</span>
-                </label>
-              </fieldset>
-            ) : null}
-
-            {(selectedAddressId === "new" || selectedAddressId === "one-time" || addresses.length === 0) && (
-              <div className="flex flex-col gap-3">
-                <label className="font-body text-[13px] font-semibold">
-                  Recipient name
-                  <input
-                    required
-                    className="mt-1 h-11 w-full border border-[var(--border-strong)] bg-transparent px-3"
-                    value={form.recipientName}
-                    onChange={(event) => setForm((prev) => ({ ...prev, recipientName: event.target.value }))}
-                  />
-                </label>
-                <label className="font-body text-[13px] font-semibold">
-                  Mobile number
-                  <input
-                    required
-                    className="mt-1 h-11 w-full border border-[var(--border-strong)] bg-transparent px-3"
-                    value={form.recipientPhone}
-                    onChange={(event) => setForm((prev) => ({ ...prev, recipientPhone: event.target.value }))}
-                  />
-                </label>
-                <label className="font-body text-[13px] font-semibold">
-                  Address line 1
-                  <input
-                    required
-                    className="mt-1 h-11 w-full border border-[var(--border-strong)] bg-transparent px-3"
-                    value={form.addressLine1}
-                    onChange={(event) => setForm((prev) => ({ ...prev, addressLine1: event.target.value }))}
-                  />
-                </label>
-                <label className="font-body text-[13px] font-semibold">
-                  City
-                  <input
-                    required
-                    className="mt-1 h-11 w-full border border-[var(--border-strong)] bg-transparent px-3"
-                    value={form.city}
-                    onChange={(event) => setForm((prev) => ({ ...prev, city: event.target.value }))}
-                  />
-                </label>
-                <div className="flex flex-col">
-                  <label htmlFor="checkout-state" className="font-body text-[13px] font-semibold">
-                    State
-                  </label>
-                  <select
-                    id="checkout-state"
-                    required
-                    className="mt-1 h-11 w-full border border-[var(--border-strong)] bg-[var(--bg-page)] px-3"
-                    value={form.stateCode}
-                    onChange={(event) => setForm((prev) => ({ ...prev, stateCode: event.target.value }))}
-                  >
-                    <option value="">Select state</option>
-                    {INDIA_SUBDIVISIONS.map((state) => (
-                      <option key={state.code} value={state.code}>
-                        {state.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <label className="font-body text-[13px] font-semibold">
-                  PIN code
-                  <input
-                    required
-                    className="mt-1 h-11 w-full border border-[var(--border-strong)] bg-transparent px-3"
-                    value={form.postalCode}
-                    onChange={(event) => setForm((prev) => ({ ...prev, postalCode: event.target.value }))}
-                  />
-                </label>
-              </div>
-            )}
-
-            <Button type="submit" variant="primary" size="lg" disabled={pending}>
-              {pending ? "Checking delivery…" : "Continue to payment"}
-            </Button>
-          </form>
+          <CheckoutDestinationFlow
+            brandId={brandId}
+            addresses={addresses}
+            pending={pending}
+            onComplete={(draft) => void applyDestinationDraft(draft)}
+          />
         ) : null}
 
-        {screen === "ready" && snapshot && checkout ? (
+        {screen === "review" && snapshot && checkout ? (
+          <div className="flex flex-col gap-4" data-testid="checkout-review">
+            <section className="rounded-xl border border-[var(--border-strong)] bg-[var(--bg-section)] p-4">
+              <h2 className="mb-2 font-body text-[15px] font-semibold text-[var(--text-primary)]">
+                Delivery destination
+              </h2>
+              <p className="font-body text-[14px] text-[var(--text-secondary)]">
+                {destinationSummary(snapshot) ?? "Delivery destination confirmed"}
+              </p>
+            </section>
+            <CheckoutSnapshotLineList
+              title="Your items"
+              lines={narrowCheckoutSnapshotLines(snapshot.lines)}
+            />
+            <OrderMoneySummaryPanel snapshot={snapshot} title="Price summary" />
+            <Button type="button" variant="primary" size="lg" onClick={() => setScreen("payment")}>
+              Continue to payment
+            </Button>
+          </div>
+        ) : null}
+
+        {screen === "payment" && snapshot && checkout ? (
           <div className="flex flex-col gap-4" data-testid="checkout-ready">
             <CheckoutSnapshotLineList
               title="Your items"

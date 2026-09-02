@@ -38,9 +38,11 @@ export function AddressForm(props: {
   onChange: (values: AddressFormValues) => void;
   idPrefix?: string;
   disabled?: boolean;
+  /** Map-first flows supply city/state/PIN from reverse geocode; hide manual entry. */
+  hideAdministrativeFields?: boolean;
 }) {
   const prefix = props.idPrefix ?? "address";
-  const { values, onChange, disabled = false } = props;
+  const { values, onChange, disabled = false, hideAdministrativeFields = false } = props;
 
   function patch(field: keyof AddressFormValues, value: string): void {
     onChange({ ...values, [field]: value });
@@ -110,53 +112,65 @@ export function AddressForm(props: {
           onChange={(event) => patch("locality", event.target.value)}
         />
       </label>
-      <label className="font-body text-[13px] font-semibold">
-        City
-        <input
-          required
-          disabled={disabled}
-          className={FIELD_CLASS}
-          value={values.city}
-          autoComplete="address-level2"
-          onChange={(event) => patch("city", event.target.value)}
-        />
-      </label>
-      <div className="flex flex-col">
-        <label htmlFor={`${prefix}-state`} className="font-body text-[13px] font-semibold">
-          State
-        </label>
-        <select
-          id={`${prefix}-state`}
-          required
-          disabled={disabled}
-          className={`${FIELD_CLASS} bg-[var(--bg-page)]`}
-          value={values.stateCode}
-          autoComplete="address-level1"
-          onChange={(event) => patch("stateCode", event.target.value)}
-        >
-          <option value="">Select state</option>
-          {INDIA_SUBDIVISIONS.map((state) => (
-            <option key={state.code} value={state.code}>
-              {state.name}
-            </option>
-          ))}
-        </select>
-      </div>
-      <label className="font-body text-[13px] font-semibold">
-        PIN code
-        <input
-          required
-          disabled={disabled}
-          className={FIELD_CLASS}
-          value={values.postalCode}
-          autoComplete="postal-code"
-          inputMode="numeric"
-          maxLength={6}
-          onChange={(event) =>
-            patch("postalCode", event.target.value.replace(/\D/g, "").slice(0, 6))
-          }
-        />
-      </label>
+      {hideAdministrativeFields ? (
+        <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-section)] p-3 font-body text-[13px] text-[var(--text-secondary)]">
+          <p className="font-semibold text-[var(--text-primary)]">Area details from map</p>
+          <p>
+            {[values.locality, values.city, values.postalCode].filter(Boolean).join(" · ") ||
+              "Confirmed from your map selection"}
+          </p>
+        </div>
+      ) : (
+        <>
+          <label className="font-body text-[13px] font-semibold">
+            City
+            <input
+              required
+              disabled={disabled}
+              className={FIELD_CLASS}
+              value={values.city}
+              autoComplete="address-level2"
+              onChange={(event) => patch("city", event.target.value)}
+            />
+          </label>
+          <div className="flex flex-col">
+            <label htmlFor={`${prefix}-state`} className="font-body text-[13px] font-semibold">
+              State
+            </label>
+            <select
+              id={`${prefix}-state`}
+              required
+              disabled={disabled}
+              className={`${FIELD_CLASS} bg-[var(--bg-page)]`}
+              value={values.stateCode}
+              autoComplete="address-level1"
+              onChange={(event) => patch("stateCode", event.target.value)}
+            >
+              <option value="">Select state</option>
+              {INDIA_SUBDIVISIONS.map((state) => (
+                <option key={state.code} value={state.code}>
+                  {state.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <label className="font-body text-[13px] font-semibold">
+            PIN code
+            <input
+              required
+              disabled={disabled}
+              className={FIELD_CLASS}
+              value={values.postalCode}
+              autoComplete="postal-code"
+              inputMode="numeric"
+              maxLength={6}
+              onChange={(event) =>
+                patch("postalCode", event.target.value.replace(/\D/g, "").slice(0, 6))
+              }
+            />
+          </label>
+        </>
+      )}
       <div className="flex flex-col">
         <label htmlFor={`${prefix}-label`} className="font-body text-[13px] font-semibold">
           Label
