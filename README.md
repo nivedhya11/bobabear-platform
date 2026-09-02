@@ -90,13 +90,13 @@ npx playwright install chromium
 `coverage/`, `playwright-report/`, and `test-results/` are generated output — gitignored, safe to
 delete, regenerated on the next test run.
 
-## Local Docker runtime
+## Local Podman WSL runtime
 
-Runs the static site and PostgreSQL together through **Docker Desktop**, exactly as a second,
+Runs the static site and PostgreSQL together through rootless **Podman WSL**, exactly as a second,
 containerized way to validate the site — the site itself is unchanged: still `output: "export"`,
 still no database access from any page or build step. This section requires a **native WSL2
-repository checkout** and a running Docker Desktop; none of it is required for ordinary
-development (`npm run dev`, `npm run check`, `npm run verify` all work without Docker).
+repository checkout** and rootless Podman; none of it is required for ordinary
+development (`npm run dev`, `npm run check`, `npm run verify` all work without Podman).
 
 **Why the app container has no database credentials.** The `app` service is Nginx serving the
 static export (`out/`) — it never runs Node, never imports `pg`/Drizzle, and never opens a database
@@ -107,6 +107,15 @@ never holds a secret it doesn't need.
 
 **Ports**: app on `8080` (host, overridable via `BOBA_BEAR_APP_HOST_PORT`), PostgreSQL on `5433`
 (unchanged from IMP-004).
+
+Use `npm run env:compose -- <compose arguments>` for repository-standard Compose execution. It
+uses `podman-compose`, not the host's broken `podman compose` provider. `npm run env:hygiene` is an
+audit-only report; pass `-- --apply` only to remove label-proven disposable Testcontainers resources.
+
+Founder staging is reserved as the future single `boba-staging` project. It is not deployed by this
+tooling phase. `npm run env:staging:status` reports candidate provenance, and
+`npm run env:staging:deploy:dry-run` verifies the merged-main/clean-tracked-source requirement
+without changing Podman state.
 
 ### One-time setup
 

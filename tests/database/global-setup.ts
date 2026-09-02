@@ -22,6 +22,19 @@ interface GlobalSetupContext {
 
 export default async function setup({ provide }: GlobalSetupContext): Promise<() => Promise<void>> {
   const handle = await startPostgresTestContainer();
+  let stopped = false;
+  const stop = async (): Promise<void> => {
+    if (stopped) return;
+    stopped = true;
+    await handle.stop();
+  };
+  const terminate = (signal: NodeJS.Signals): void => {
+    void stop().finally(() => process.exit(signal === "SIGINT" ? 130 : 143));
+  };
+  const onSigint = () => terminate("SIGINT");
+  const onSigterm = () => terminate("SIGTERM");
+  process.once("SIGINT", onSigint);
+  process.once("SIGTERM", onSigterm);
 
   const verifyClient = createDatabaseClient({
     connectionString: handle.adminConnectionInfo.connectionString,
@@ -46,6 +59,8 @@ export default async function setup({ provide }: GlobalSetupContext): Promise<()
   provide("bobaBearTestAdminPort", handle.adminConnectionInfo.port);
 
   return async () => {
-    await handle.stop();
+    process.off("SIGINT", onSigint);
+    process.off("SIGTERM", onSigterm);
+    await stop();
   };
 }

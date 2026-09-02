@@ -210,7 +210,7 @@ pre-governance accepted slices are historical gaps — they do not downgrade acc
 - Do not run destructive Git operations (`reset`, `restore`, `clean`, `stash`, force checkout) unless
   explicitly instructed.
 - Never destroy `boba-bear_postgres-data` or run `docker compose down --volumes`.
-- Work from the WSL Linux filesystem for Turbopack/Docker reliability when developing.
+- Work from the WSL Linux filesystem for Turbopack/Podman reliability when developing.
 - Coding-agent implementation prompts must remain below 50,000 characters; split slices if needed.
 - Only one product slice is normally active; never start a slice whose dependencies are
   unresolved, except the documented GTM-R15 founder exception in ROADMAP/STATE: IMP-026C
@@ -339,22 +339,23 @@ WORKING_TREE_FINGERPRINT
   working-tree fingerprint, and confirm they exactly match the independently accepted candidate. If
   any of those differ, UAT deployment must stop and the modified candidate must return through the
   applicable validation and technical-acceptance gates before founder UAT.
-- When founder UAT is required, the current approved interactive deployment surface is the existing
-  Docker Desktop / Compose runtime from the canonical repository. Build from the exact accepted
-  working tree, including authorized uncommitted changes. Do not deploy from an older clone, from
-  `/mnt/c`, from remote `HEAD` alone, or from a stale already-running image as evidence.
+- Founder UAT runtime is rootless **PODMAN_WSL**. The sole persistent Founder project is
+  `boba-staging`. Founder staging must be built from an exact merged-main candidate: canonical
+  repository, `branch=main`, `HEAD=origin/main`, and clean tracked source. Untracked evidence may
+  remain only when excluded from the build context. Do not deploy an unmerged branch, dirty tracked
+  source, an older clone, `/mnt/c`, or a stale image as Founder-UAT evidence.
 - UAT deployment evidence must identify the source candidate and the deployed artifact as far as
   current tooling allows, including source repository, branch, `HEAD`, fingerprint, image name,
   image ID/digest when available, container identity, deployment health, and the exact UAT URL.
-- The UAT image used for founder validation must be freshly built during the UAT deployment
-  operation using the repository's actual Docker/Compose architecture. A stale pre-existing image is
-  not sufficient UAT evidence.
+- The UAT image used for founder validation must be freshly built by repository-owned Podman WSL
+  tooling and record the merged SHA (for example `BOBA_BUILD_SHA` and OCI revision metadata).
+  A stale pre-existing image is not sufficient UAT evidence.
 - After deployment, verify the running service is actually using the newly built image. If the
   deployed image ID does not match the running container image ID, founder UAT must not proceed.
 - Only the founder/user may provide the final interactive UAT verdict. Implementation agents must
   never self-declare `FOUNDER_UAT = PASS`.
 - Governance-only, documentation-only, architecture-definition, repository-maintenance, and internal
-  tooling tasks with no interactive acceptance surface do not automatically require Docker/founder
+  tooling tasks with no interactive acceptance surface do not automatically require Podman/founder
   UAT. Record applicability explicitly as `FOUNDER_UAT_REQUIRED = YES | NO` in the relevant future
   acceptance evidence.
 - Current applicability: **IMP-028B — Customer Menu Projection + Discovery** is

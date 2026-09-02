@@ -57,6 +57,9 @@ compose.yaml
 # application assets under public/assets/**.
 Boba Bear Landing Page Wireframe Updated
 Boba_Bear_Design_System_Updated
+test-results*
+playwright-report*
+scripts/assortment/configure-outlet-operating-uat.ts
 /*.png
 /*.jpeg
 /*.jpg
