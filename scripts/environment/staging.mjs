@@ -29,9 +29,20 @@ const STAGING_ENV_FILES = [
   ".env.operations.docker.local",
 ];
 const SOCKET = `unix:///run/user/${process.getuid?.() ?? 1000}/podman/podman.sock`;
+const OCI_REVISION_LABEL = "org.opencontainers.image.revision";
+const BOBA_BUILD_IMAGES = {
+  app: "boba-bear-app:local",
+  "customer-auth": "boba-bear-customer-auth:local",
+  "workforce-auth": "boba-bear-workforce-auth:local",
+  "customer-commerce": "boba-bear-customer-commerce:local",
+  operations: "boba-bear-operations:local",
+  tooling: "boba-bear-tooling:local",
+};
+const BOBA_RUNTIME_SERVICES = Object.keys(BOBA_BUILD_IMAGES).filter((service) => service !== "tooling");
 
 const command = process.argv[2];
-if (!["status", "deploy-dry-run", "deploy"].includes(command)) {
+const isCli = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isCli && !["status", "deploy-dry-run", "deploy"].includes(command)) {
   console.error("Usage: npm run env:staging:status | npm run env:staging:deploy:dry-run | npm run env:staging:deploy");
   process.exit(1);
 }
@@ -53,12 +64,22 @@ function readCandidate() {
   return { branch, head, originMain, trackedDirty, fingerprint: fingerprint() };
 }
 
+function isFullGitSha(value) {
+  return /^[0-9a-f]{40}$/.test(value);
+}
+
 function assertDeployPreconditions(candidate) {
-  if (candidate.branch !== "main" || candidate.head !== candidate.originMain || candidate.trackedDirty.length !== 0) {
+  if (
+    candidate.branch !== "main" ||
+    candidate.head !== candidate.originMain ||
+    candidate.trackedDirty.length !== 0 ||
+    !isFullGitSha(candidate.head)
+  ) {
     console.error("Staging deployment requires clean tracked source at exact origin/main.");
     console.error(`BRANCH ${candidate.branch}`);
     console.error(`HEAD ${candidate.head}`);
     console.error(`ORIGIN_MAIN ${candidate.originMain}`);
+    console.error(`FULL_GIT_SHA ${isFullGitSha(candidate.head) ? "YES" : "NO"}`);
     console.error(`TRACKED_SOURCE_CLEAN ${candidate.trackedDirty.length === 0 ? "YES" : "NO"}`);
     process.exit(1);
   }
@@ -138,6 +159,88 @@ function podmanInspect(name, format) {
   return execFileSync("podman", ["inspect", name, "--format", format], { encoding: "utf8" }).trim();
 }
 
+function imageRevision(image) {
+  return podmanInspect(image, `{{ index .Config.Labels \"${OCI_REVISION_LABEL}\" }}`);
+}
+
+function assertImageRevisions(expectedSha, images = BOBA_BUILD_IMAGES, inspectRevision = imageRevision) {
+  for (const [service, image] of Object.entries(images)) {
+    const revision = inspectRevision(image);
+    if (revision !== expectedSha) {
+      throw new Error(`Image provenance mismatch for ${service}: expected ${expectedSha}, found ${revision || "MISSING"}.`);
+    }
+  }
+}
+
+function readRunningProvenance(service) {
+  const container = `${STAGING_PROJECT}_${service}_1`;
+  const containerId = podmanInspect(container, "{{.Id}}");
+  const imageId = podmanInspect(container, "{{.Image}}");
+  const imageName = podmanInspect(container, "{{.ImageName}}");
+  const revision = imageRevision(imageId);
+  const health = podmanInspect(container, "{{.State.Health.Status}}");
+  return { service, containerId, imageId, imageName, revision, health };
+}
+
+function readToolingProvenance() {
+  const imageName = BOBA_BUILD_IMAGES.tooling;
+  return {
+    imageName,
+    imageId: podmanInspect(imageName, "{{.Id}}"),
+    revision: imageRevision(imageName),
+  };
+}
+
+function assertRunningProvenance(expectedSha, records) {
+  for (const record of records) {
+    if (record.revision !== expectedSha) {
+      throw new Error(
+        `Running image provenance mismatch for ${record.service}: expected ${expectedSha}, found ${record.revision || "MISSING"}.`,
+      );
+    }
+  }
+}
+
+function reportRunningProvenance(expectedSha) {
+  let records;
+  let tooling;
+  try {
+    records = BOBA_RUNTIME_SERVICES.map(readRunningProvenance);
+    tooling = readToolingProvenance();
+  } catch (error) {
+    console.log(`RUNNING_PROVENANCE_AVAILABLE NO`);
+    console.log(`CANDIDATE_MATCH NO`);
+    console.log(`RUNNING_PROVENANCE_ERROR ${error.message}`);
+    return false;
+  }
+  for (const record of records) {
+    const prefix = record.service.toUpperCase().replaceAll("-", "_");
+    console.log(`${prefix}_CONTAINER_ID ${record.containerId}`);
+    console.log(`${prefix}_IMAGE_ID ${record.imageId}`);
+    console.log(`${prefix}_IMAGE_NAME ${record.imageName}`);
+    console.log(`${prefix}_REVISION ${record.revision || "MISSING"}`);
+    console.log(`${prefix}_HEALTH ${record.health}`);
+  }
+  console.log(`TOOLING_IMAGE_ID ${tooling.imageId}`);
+  console.log(`TOOLING_IMAGE_NAME ${tooling.imageName}`);
+  console.log(`TOOLING_REVISION ${tooling.revision || "MISSING"}`);
+  try {
+    assertRunningProvenance(expectedSha, records);
+    if (tooling.revision !== expectedSha) {
+      throw new Error(`Tooling image provenance mismatch: expected ${expectedSha}, found ${tooling.revision || "MISSING"}.`);
+    }
+    console.log("RUNNING_PROVENANCE_AVAILABLE YES");
+    console.log(`RUNNING_GIT_SHA ${expectedSha}`);
+    console.log("CANDIDATE_MATCH YES");
+    return true;
+  } catch (error) {
+    console.log("RUNNING_PROVENANCE_AVAILABLE YES");
+    console.log(`CANDIDATE_MATCH NO`);
+    console.log(`RUNNING_PROVENANCE_ERROR ${error.message}`);
+    return false;
+  }
+}
+
 function waitForHealthy(containerName, timeoutMs = 180_000) {
   const started = Date.now();
   while (Date.now() - started < timeoutMs) {
@@ -204,6 +307,8 @@ function deploy(candidate) {
       ["build", "app", "migrate", "customer-auth", "workforce-auth", "customer-commerce", "operations"],
       { BOBA_BUILD_SHA: candidate.head, COMPOSE_PROFILES: "tools" },
     );
+    assertImageRevisions(candidate.head);
+    console.log("BUILT_IMAGE_CANDIDATE_MATCH YES");
     upAndWait(buildDir, ["postgres"]);
     podmanCompose(buildDir, ["run", "--rm", "migrate"], { COMPOSE_PROFILES: "tools" });
     runBootstrapApply(buildDir, "menu-import-existing", ["menu:import-existing"]);
@@ -235,14 +340,11 @@ function deploy(candidate) {
       });
       if (result.status !== 0) process.exit(result.status ?? 1);
     }
-    const appImage = execFileSync(
-      "podman",
-      ["inspect", `${STAGING_PROJECT}_app_1`, "--format", "{{.ImageName}}"],
-      { encoding: "utf8" },
-    ).trim();
+    if (!reportRunningProvenance(candidate.head)) {
+      throw new Error("Running staging images do not match the merged Git candidate.");
+    }
     console.log(`STAGING_PROJECT ${STAGING_PROJECT}`);
-    console.log(`DEPLOYED_SHA ${candidate.head}`);
-    console.log(`APP_IMAGE ${appImage}`);
+    console.log(`EXPECTED_GIT_SHA ${candidate.head}`);
     console.log(`UAT_URL http://localhost:8080/order/`);
     console.log(`PERSISTENT_DB_VOLUME ${STAGING_PROJECT}_postgres-data`);
     console.log(`CUSTOMER_AUTH_BASE_URL http://localhost:8080`);
@@ -252,24 +354,28 @@ function deploy(candidate) {
   }
 }
 
-const candidate = readCandidate();
-console.log(`STAGING_PROJECT ${STAGING_PROJECT}`);
-console.log(`BRANCH ${candidate.branch}`);
-console.log(`MERGED_GIT_SHA ${candidate.head}`);
-console.log(`ORIGIN_MAIN ${candidate.originMain}`);
-console.log(`WORKING_TREE_FINGERPRINT ${candidate.fingerprint}`);
-console.log(`TRACKED_SOURCE_CLEAN ${candidate.trackedDirty.length === 0 ? "YES" : "NO"}`);
-console.log("STAGING_ARTIFACT_SOURCE EXACT_MERGED_GIT_TREE");
-console.log("EXACT_GIT_TREE_MECHANISM git archive HEAD to isolated temporary build context");
-console.log("LIVE_UNTRACKED_CONTENT_CAN_AFFECT_STAGING_ARTIFACT NO");
+if (isCli) {
+  const candidate = readCandidate();
+  console.log(`STAGING_PROJECT ${STAGING_PROJECT}`);
+  console.log(`BRANCH ${candidate.branch}`);
+  console.log(`MERGED_GIT_SHA ${candidate.head}`);
+  console.log(`CURRENT_MAIN_SHA ${candidate.originMain}`);
+  console.log(`ORIGIN_MAIN ${candidate.originMain}`);
+  console.log(`WORKING_TREE_FINGERPRINT ${candidate.fingerprint}`);
+  console.log(`TRACKED_SOURCE_CLEAN ${candidate.trackedDirty.length === 0 ? "YES" : "NO"}`);
+  console.log("STAGING_ARTIFACT_SOURCE EXACT_MERGED_GIT_TREE");
+  console.log("EXACT_GIT_TREE_MECHANISM git archive HEAD to isolated temporary build context");
+  console.log("LIVE_UNTRACKED_CONTENT_CAN_AFFECT_STAGING_ARTIFACT NO");
+  console.log(`PERSISTENT_DB_VOLUME ${STAGING_PROJECT}_postgres-data`);
 
-if (command === "deploy-dry-run") {
-  assertDeployPreconditions(candidate);
-  console.log("DEPLOYMENT DRY RUN ONLY — no image, container, network, volume, or migration was created.");
-  console.log(`Future deployment provenance uses MERGED_GIT_SHA ${candidate.head}.`);
-  process.exit(0);
+  if (command === "deploy-dry-run") {
+    assertDeployPreconditions(candidate);
+    console.log("DEPLOYMENT DRY RUN ONLY — no image, container, network, volume, or migration was created.");
+    console.log(`Future deployment provenance uses MERGED_GIT_SHA ${candidate.head}.`);
+  }
+
+  if (command === "deploy") deploy(candidate);
+  if (command === "status") reportRunningProvenance(candidate.originMain);
 }
 
-if (command === "deploy") {
-  deploy(candidate);
-}
+export { BOBA_BUILD_IMAGES, BOBA_RUNTIME_SERVICES, assertImageRevisions, assertRunningProvenance, isFullGitSha };
