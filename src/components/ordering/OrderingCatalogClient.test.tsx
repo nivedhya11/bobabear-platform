@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { OrderingCatalogClient } from "./OrderingCatalogClient";
+import { clearGuestCartCredential, readGuestCartCredential, writeGuestCartCredential } from "@/lib/customer-commerce";
 import type { CustomerMenuProjection } from "@/shared/customer-menu/types";
 
 const getActiveCart = vi.fn<(...args: unknown[]) => unknown>();
@@ -120,6 +121,7 @@ const multiCategoryMenu: CustomerMenuProjection = {
 };
 
 beforeEach(() => {
+  clearGuestCartCredential();
   getActiveCart.mockReset();
   getCustomerMenu.mockReset();
   addCartLine.mockReset();
@@ -230,6 +232,61 @@ describe("OrderingCatalogClient", () => {
     expect(screen.getByTestId("menu-search-input")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /filter/i })).not.toBeInTheDocument();
     expect(screen.queryByText(/most ordered/i)).not.toBeInTheDocument();
+  });
+
+  it("searches globally and restores the selected category when cleared", async () => {
+    getCustomerMenu.mockResolvedValueOnce({ ok: true, status: 200, data: { menu: multiCategoryMenu } });
+    render(<OrderingCatalogClient brandId="brand-1" />);
+    const search = await screen.findByTestId("menu-search-input");
+    await userEvent.click(within(screen.getByTestId("menu-category-nav")).getByRole("button", { name: "Snacks" }));
+    await userEvent.type(search, "smooth");
+    expect(screen.getByRole("heading", { name: "Classic Milk Tea" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Fish Balls" })).not.toBeInTheDocument();
+    await userEvent.clear(search);
+    expect(screen.getByRole("heading", { name: "Fish Balls" })).toBeInTheDocument();
+  });
+
+  it("keeps matching results from every category and shows a global empty result", async () => {
+    getCustomerMenu.mockResolvedValueOnce({ ok: true, status: 200, data: { menu: { ...multiCategoryMenu, items: [{ ...multiCategoryMenu.items[0]!, description: "Fresh taro milk tea" }, { ...multiCategoryMenu.items[1]!, description: "Taro snack" }] } } });
+    render(<OrderingCatalogClient brandId="brand-1" />);
+    const search = await screen.findByTestId("menu-search-input");
+    await userEvent.type(search, "taro");
+    expect(screen.getByRole("heading", { name: "Classic Milk Tea" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Fish Balls" })).toBeInTheDocument();
+    await userEvent.clear(search);
+    await userEvent.type(search, "no matching menu item");
+    expect(screen.getByText("Nothing in the menu matched your search.")).toBeInTheDocument();
+  });
+
+  it.each(["CART_EXPIRED", "CART_NOT_FOUND"] as const)("recovers initial %s without a persistent warning", async (code) => {
+    writeGuestCartCredential({ token: "stale-token", brandId: "brand-1", cartId: "cart-1", revision: "1" });
+    getActiveCart.mockResolvedValueOnce({ ok: false, status: code === "CART_EXPIRED" ? 410 : 404, code });
+    render(<OrderingCatalogClient brandId="brand-1" />);
+    await screen.findByRole("heading", { name: "Classic Milk Tea" });
+    expect(readGuestCartCredential()).toBeNull();
+    expect(screen.queryByText("Your guest cart expired. Add your items again.")).not.toBeInTheDocument();
+    expect(screen.getByTestId("desktop-live-cart")).toHaveTextContent("Your cart is empty");
+  });
+
+  it("retries a stale add once without the stale revision", async () => {
+    getActiveCart.mockResolvedValueOnce({ ok: true, status: 200, data: { cart: { id: "old-cart", brandId: "brand-1", ownerMode: "guest", revision: "1", manualCouponCode: null, expiresAt: null, createdAt: "2026-09-02T00:00:00.000Z", updatedAt: "2026-09-02T00:00:00.000Z", lines: [] } } });
+    addCartLine.mockResolvedValueOnce({ ok: false, status: 410, code: "CART_EXPIRED" }).mockResolvedValueOnce({ ok: true, status: 200, data: { cart: { id: "fresh-cart", brandId: "brand-1", ownerMode: "guest", revision: "1", manualCouponCode: null, expiresAt: null, createdAt: "2026-09-02T00:00:00.000Z", updatedAt: "2026-09-02T00:00:00.000Z", lines: [] } } });
+    render(<OrderingCatalogClient brandId="brand-1" />);
+    await userEvent.click(await screen.findByRole("button", { name: "Add Classic Milk Tea" }));
+    await waitFor(() => expect(addCartLine).toHaveBeenCalledTimes(2));
+    expect(addCartLine.mock.calls[0]?.[0]).toHaveProperty("expectedRevision", "1");
+    expect(addCartLine.mock.calls[1]?.[0]).not.toHaveProperty("expectedRevision");
+  });
+
+  it("retries a stale configured add once", async () => {
+    getCustomerMenu.mockResolvedValueOnce({ ok: true, status: 200, data: { menu: multiCategoryMenu } });
+    addCartLine.mockResolvedValueOnce({ ok: false, status: 404, code: "CART_NOT_FOUND" }).mockResolvedValueOnce({ ok: true, status: 200, data: { cart: { id: "fresh-cart", brandId: "brand-1", ownerMode: "guest", revision: "1", manualCouponCode: null, expiresAt: null, createdAt: "2026-09-02T00:00:00.000Z", updatedAt: "2026-09-02T00:00:00.000Z", lines: [] } } });
+    render(<OrderingCatalogClient brandId="brand-1" />);
+    await userEvent.click(within(await screen.findByTestId("menu-category-nav")).getByRole("button", { name: "Snacks" }));
+    await userEvent.click(screen.getByRole("button", { name: "Add Fish Balls" }));
+    await userEvent.click(screen.getByRole("button", { name: /Add to cart/ }));
+    await waitFor(() => expect(addCartLine).toHaveBeenCalledTimes(2));
+    expect(addCartLine.mock.calls[1]?.[0]).toMatchObject({ variantId: "var-2", modifiers: [] });
   });
 
   it("uses an accessible customization dialog and sends only explicit configured modifier intent", async () => {
