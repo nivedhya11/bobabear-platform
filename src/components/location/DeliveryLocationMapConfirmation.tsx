@@ -25,7 +25,6 @@ import {
   type LoadedGoogleMapsLibrary,
 } from "@/lib/customer-location/maps-js-loader";
 import { waitForMapContainerReady } from "@/lib/customer-location/map-container-ready";
-import { DIRECT_ORDERING_BRAND_ID } from "@/shared/customer-menu/constants";
 import { cn } from "@/lib/utils";
 
 const REVERSE_GEOCODE_DEBOUNCE_MS = 450;
@@ -70,6 +69,7 @@ function formatAddressCard(location: NormalizedCommerceLocation): Readonly<{
 }
 
 export function DeliveryLocationMapConfirmation(props: {
+  brandId: string;
   initialLocation: NormalizedCommerceLocation;
   onConfirm: (location: NormalizedCommerceLocation, decision: CommerceServiceabilityDecision) => void;
   onBack: () => void;
@@ -77,7 +77,7 @@ export function DeliveryLocationMapConfirmation(props: {
   onUseCurrentLocation?: () => void;
   pending?: boolean;
 }) {
-  const { initialLocation, onConfirm, onBack, onChooseAnother, pending = false } = props;
+  const { brandId, initialLocation, onConfirm, onBack, onChooseAnother, pending = false } = props;
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
   const mapsLibraryRef = useRef<LoadedGoogleMapsLibrary | null>(null);
@@ -103,6 +103,7 @@ export function DeliveryLocationMapConfirmation(props: {
   const [checkingServiceability, setCheckingServiceability] = useState(false);
   const [decision, setDecision] = useState<CommerceServiceabilityDecision | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [mapRetryKey, setMapRetryKey] = useState(0);
 
   const addressCard = formatAddressCard(location);
   const recoveryHint = decision ? serviceabilityRecoveryHint(decision.status) : null;
@@ -112,7 +113,8 @@ export function DeliveryLocationMapConfirmation(props: {
     !checkingServiceability &&
     !resolvingAddress &&
     decision?.status === "SERVICEABLE" &&
-    coordinates !== null;
+    coordinates !== null &&
+    (mapsAvailable || !mapsConfigured);
 
   const evaluateForLocation = useCallback(async (next: NormalizedCommerceLocation) => {
     const nextCoordinates = locationCoordinates(next);
@@ -126,7 +128,7 @@ export function DeliveryLocationMapConfirmation(props: {
     setStatusMessage(null);
     setDecision(null);
     const evaluated = await evaluateDeliveryServiceability(
-      DIRECT_ORDERING_BRAND_ID,
+      brandId,
       nextCoordinates,
       next.postalCode,
     );
@@ -139,7 +141,7 @@ export function DeliveryLocationMapConfirmation(props: {
     const nextDecision = evaluated.data.decision;
     setDecision(nextDecision);
     setStatusMessage(serviceabilityStatusCopy(nextDecision.status));
-  }, []);
+  }, [brandId]);
 
   const evaluateForLocationRef = useRef(evaluateForLocation);
   const reverseGeocodeCenterRef = useRef<() => Promise<void>>(async () => {});
@@ -320,7 +322,7 @@ export function DeliveryLocationMapConfirmation(props: {
       mapRef.current = null;
       mapsLibraryRef.current = null;
     };
-  }, [initialLat, initialLng, wantsMap, scheduleReverseGeocode]);
+  }, [initialLat, initialLng, wantsMap, scheduleReverseGeocode, mapRetryKey]);
 
   async function handleUseCurrentLocation(): Promise<void> {
     setStatusMessage(null);
@@ -363,6 +365,16 @@ export function DeliveryLocationMapConfirmation(props: {
   }
 
   const mapLoadFailed = Boolean(mapInitError);
+  const mapRequiredButUnavailable =
+    mapsConfigured && (mapLoadFailed || (!mapsAvailable && !mapsLoading));
+  const showDevTextFallback = !mapsConfigured && hasInitialCoordinates;
+
+  function retryMapLoad(): void {
+    setMapInitError(null);
+    setMapsAvailable(false);
+    setMapsLoading(true);
+    setMapRetryKey((current) => current + 1);
+  }
 
   return (
     <div
@@ -421,13 +433,17 @@ export function DeliveryLocationMapConfirmation(props: {
             ) : null}
           </>
         ) : null}
-        {!wantsMap || mapLoadFailed || (!mapsAvailable && !mapsLoading) ? (
+        {!wantsMap || showDevTextFallback || mapRequiredButUnavailable ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-6 text-center">
-            <p className="font-body text-[15px] text-[var(--text-primary)]">{addressCard.primary}</p>
-            <p className="font-body text-[14px] text-[var(--text-secondary)]">{addressCard.secondary}</p>
+            {!mapRequiredButUnavailable ? (
+              <>
+                <p className="font-body text-[15px] text-[var(--text-primary)]">{addressCard.primary}</p>
+                <p className="font-body text-[14px] text-[var(--text-secondary)]">{addressCard.secondary}</p>
+              </>
+            ) : null}
             <p className="font-body text-[13px] text-[var(--text-secondary)]">
-              {mapLoadFailed
-                ? "We couldn't load the map right now."
+              {mapRequiredButUnavailable
+                ? "We couldn't load the map. Try again."
                 : "Map preview isn't available. You can still confirm using the address below."}
             </p>
           </div>
@@ -482,7 +498,16 @@ export function DeliveryLocationMapConfirmation(props: {
         ) : null}
 
         <div className="flex flex-col gap-2 sm:flex-row">
-          {decision?.status === "NOT_SERVICEABLE" || decision?.status === "TEMPORARILY_UNAVAILABLE" ? (
+          {mapRequiredButUnavailable ? (
+            <>
+              <Button type="button" variant="outline" className="flex-1" onClick={retryMapLoad}>
+                Retry
+              </Button>
+              <Button type="button" variant="primary" className="flex-1" onClick={onChooseAnother}>
+                Choose another location
+              </Button>
+            </>
+          ) : decision?.status === "NOT_SERVICEABLE" || decision?.status === "TEMPORARILY_UNAVAILABLE" ? (
             <Button type="button" variant="primary" className="flex-1" onClick={onChooseAnother}>
               Choose another location
             </Button>

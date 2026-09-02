@@ -3,15 +3,11 @@
 import { useEffect, useState } from "react";
 
 import { AccountShell } from "@/components/account/AccountShell";
-import {
-  AddressForm,
-  EMPTY_ADDRESS_FORM,
-  addressFormFromCommerceAddress,
-  addressFormToCreateInput,
-  addressFormToUpdateInput,
-  type AddressFormValues,
-} from "@/components/account/AddressForm";
 import { AddressCard } from "@/components/account/AddressCard";
+import {
+  CustomerDeliveryAddressFlow,
+  type CustomerDeliveryAddressFlowResult,
+} from "@/components/location/CustomerDeliveryAddressFlow";
 import { Button } from "@/components/ui/Button";
 import { commerceErrorCopy } from "@/components/ordering/error-copy";
 import { fetchCustomerSession } from "@/lib/customer-auth/client";
@@ -24,7 +20,7 @@ import {
   updateOwnAddress,
   type CommerceAddress,
 } from "@/lib/customer-commerce";
-import { consumeAddressPrefillDraft } from "@/lib/customer-location/address-prefill";
+import { DIRECT_ORDERING_BRAND_ID } from "@/shared/customer-menu/constants";
 
 type Screen = "list" | "add" | "edit";
 
@@ -34,8 +30,7 @@ export function AddressesClient() {
   const [error, setError] = useState<string | null>(null);
   const [addresses, setAddresses] = useState<readonly CommerceAddress[]>([]);
   const [screen, setScreen] = useState<Screen>("list");
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState<AddressFormValues>(EMPTY_ADDRESS_FORM);
+  const [editingAddress, setEditingAddress] = useState<CommerceAddress | null>(null);
 
   async function reload(): Promise<void> {
     const listed = await listOwnAddresses();
@@ -56,20 +51,6 @@ export function AddressesClient() {
         return;
       }
       await reload();
-      if (cancelled) return;
-      const prefill = consumeAddressPrefillDraft();
-      if (prefill) {
-        setEditingId(null);
-        setForm({
-          ...EMPTY_ADDRESS_FORM,
-          addressLine1: prefill.addressLine1,
-          locality: prefill.locality,
-          city: prefill.city || prefill.locality,
-          stateCode: prefill.stateCode,
-          postalCode: prefill.postalCode,
-        });
-        setScreen("add");
-      }
       if (!cancelled) setLoading(false);
     })();
     return () => {
@@ -79,33 +60,30 @@ export function AddressesClient() {
 
   function startAdd(): void {
     setError(null);
-    setEditingId(null);
-    setForm(EMPTY_ADDRESS_FORM);
+    setEditingAddress(null);
     setScreen("add");
   }
 
   function startEdit(address: CommerceAddress): void {
     setError(null);
-    setEditingId(address.id);
-    setForm(addressFormFromCommerceAddress(address));
+    setEditingAddress(address);
     setScreen("edit");
   }
 
   function backToList(): void {
     setScreen("list");
-    setEditingId(null);
-    setForm(EMPTY_ADDRESS_FORM);
+    setEditingAddress(null);
     setError(null);
   }
 
-  async function handleSave(event: React.FormEvent): Promise<void> {
-    event.preventDefault();
+  async function handleFlowComplete(result: CustomerDeliveryAddressFlowResult): Promise<void> {
     if (pending) return;
     setPending(true);
     setError(null);
-    if (screen === "add") {
+
+    if (result.kind === "CREATE") {
       const created = await createOwnAddress({
-        ...addressFormToCreateInput(form),
+        ...result.input,
         makeDefault: addresses.length === 0,
       });
       setPending(false);
@@ -117,8 +95,12 @@ export function AddressesClient() {
       backToList();
       return;
     }
-    if (screen === "edit" && editingId) {
-      const updated = await updateOwnAddress(editingId, addressFormToUpdateInput(form));
+
+    if (result.kind === "UPDATE") {
+      const updated = await updateOwnAddress(result.addressId, {
+        ...result.input,
+        coordinates: result.coordinates,
+      });
       setPending(false);
       if (!updated.ok) {
         setError(commerceErrorCopy(updated.code));
@@ -156,6 +138,8 @@ export function AddressesClient() {
     }
     await reload();
   }
+
+  const brandId = DIRECT_ORDERING_BRAND_ID;
 
   return (
     <AccountShell title="Addresses">
@@ -199,21 +183,26 @@ export function AddressesClient() {
         </div>
       ) : null}
 
-      {!loading && (screen === "add" || screen === "edit") ? (
-        <form onSubmit={(event) => void handleSave(event)} className="flex flex-col gap-4 max-w-md">
-          <p className="font-body text-[15px] text-[var(--text-secondary)]">
-            {screen === "add" ? "Add a saved delivery address." : "Update this saved address."}
-          </p>
-          <AddressForm values={form} onChange={setForm} disabled={pending} idPrefix={screen} />
-          <div className="flex flex-wrap gap-3">
-            <Button type="submit" variant="primary" disabled={pending}>
-              {pending ? "Saving…" : "Save address"}
-            </Button>
-            <Button type="button" variant="outline" disabled={pending} onClick={backToList}>
-              Cancel
-            </Button>
-          </div>
-        </form>
+      {!loading && screen === "add" ? (
+        <CustomerDeliveryAddressFlow
+          brandId={brandId}
+          mode={{ kind: "add" }}
+          pending={pending}
+          testIdPrefix="account-address"
+          onCancel={backToList}
+          onComplete={(result) => void handleFlowComplete(result)}
+        />
+      ) : null}
+
+      {!loading && screen === "edit" && editingAddress ? (
+        <CustomerDeliveryAddressFlow
+          brandId={brandId}
+          mode={{ kind: "edit", address: editingAddress }}
+          pending={pending}
+          testIdPrefix="account-address"
+          onCancel={backToList}
+          onComplete={(result) => void handleFlowComplete(result)}
+        />
       ) : null}
     </AccountShell>
   );

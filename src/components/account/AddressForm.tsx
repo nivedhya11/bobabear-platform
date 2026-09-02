@@ -1,6 +1,7 @@
 "use client";
 
-import { INDIA_SUBDIVISIONS } from "@/shared/customer-addresses";
+import { INDIA_SUBDIVISIONS, getIndiaSubdivisionName } from "@/shared/customer-addresses";
+import { cn } from "@/lib/utils";
 
 export const ADDRESS_LABEL_OPTIONS = ["Home", "Work", "Other"] as const;
 
@@ -40,41 +41,30 @@ export function AddressForm(props: {
   disabled?: boolean;
   /** Map-first flows supply city/state/PIN from reverse geocode; hide manual entry. */
   hideAdministrativeFields?: boolean;
+  /** McDelivery-style labels and Home/Work/Other selector for map-first flows. */
+  mapFirstMode?: boolean;
 }) {
   const prefix = props.idPrefix ?? "address";
-  const { values, onChange, disabled = false, hideAdministrativeFields = false } = props;
+  const {
+    values,
+    onChange,
+    disabled = false,
+    hideAdministrativeFields = false,
+    mapFirstMode = false,
+  } = props;
 
   function patch(field: keyof AddressFormValues, value: string): void {
     onChange({ ...values, [field]: value });
   }
 
+  const line1Label = mapFirstMode ? "Flat / House / Building" : "Address line 1";
+  const line2Label = mapFirstMode ? "Floor / Block / Unit" : "Address line 2";
+  const landmarkLabel = mapFirstMode ? "Landmark / How to reach" : "Landmark";
+
   return (
     <div className="flex flex-col gap-3">
       <label className="font-body text-[13px] font-semibold">
-        Recipient name
-        <input
-          required
-          disabled={disabled}
-          className={FIELD_CLASS}
-          value={values.recipientName}
-          autoComplete="name"
-          onChange={(event) => patch("recipientName", event.target.value)}
-        />
-      </label>
-      <label className="font-body text-[13px] font-semibold">
-        Mobile number
-        <input
-          required
-          disabled={disabled}
-          className={FIELD_CLASS}
-          value={values.recipientPhone}
-          autoComplete="tel"
-          inputMode="tel"
-          onChange={(event) => patch("recipientPhone", event.target.value)}
-        />
-      </label>
-      <label className="font-body text-[13px] font-semibold">
-        Address line 1
+        {line1Label}
         <input
           required
           disabled={disabled}
@@ -85,7 +75,7 @@ export function AddressForm(props: {
         />
       </label>
       <label className="font-body text-[13px] font-semibold">
-        Address line 2
+        {line2Label}
         <input
           disabled={disabled}
           className={FIELD_CLASS}
@@ -95,7 +85,7 @@ export function AddressForm(props: {
         />
       </label>
       <label className="font-body text-[13px] font-semibold">
-        Landmark
+        {landmarkLabel}
         <input
           disabled={disabled}
           className={FIELD_CLASS}
@@ -103,21 +93,22 @@ export function AddressForm(props: {
           onChange={(event) => patch("landmark", event.target.value)}
         />
       </label>
-      <label className="font-body text-[13px] font-semibold">
-        Locality
-        <input
-          disabled={disabled}
-          className={FIELD_CLASS}
-          value={values.locality}
-          onChange={(event) => patch("locality", event.target.value)}
-        />
-      </label>
+      {!hideAdministrativeFields ? (
+        <label className="font-body text-[13px] font-semibold">
+          Locality
+          <input
+            disabled={disabled}
+            className={FIELD_CLASS}
+            value={values.locality}
+            onChange={(event) => patch("locality", event.target.value)}
+          />
+        </label>
+      ) : null}
       {hideAdministrativeFields ? (
         <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-section)] p-3 font-body text-[13px] text-[var(--text-secondary)]">
           <p className="font-semibold text-[var(--text-primary)]">Area details from map</p>
-          <p>
-            {[values.locality, values.city, values.postalCode].filter(Boolean).join(" · ") ||
-              "Confirmed from your map selection"}
+          <p className="whitespace-pre-line">
+            {formatReadOnlyAreaSummary(values)}
           </p>
         </div>
       ) : (
@@ -171,27 +162,83 @@ export function AddressForm(props: {
           </label>
         </>
       )}
-      <div className="flex flex-col">
-        <label htmlFor={`${prefix}-label`} className="font-body text-[13px] font-semibold">
-          Label
-        </label>
-        <select
-          id={`${prefix}-label`}
+      <label className="font-body text-[13px] font-semibold">
+        Recipient name
+        <input
+          required
           disabled={disabled}
-          className={`${FIELD_CLASS} bg-[var(--bg-page)]`}
-          value={values.label}
-          onChange={(event) => patch("label", event.target.value)}
-        >
-          <option value="">No label</option>
-          {ADDRESS_LABEL_OPTIONS.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </select>
-      </div>
+          className={FIELD_CLASS}
+          value={values.recipientName}
+          autoComplete="name"
+          onChange={(event) => patch("recipientName", event.target.value)}
+        />
+      </label>
+      <label className="font-body text-[13px] font-semibold">
+        Mobile number
+        <input
+          required
+          disabled={disabled}
+          className={FIELD_CLASS}
+          value={values.recipientPhone}
+          autoComplete="tel"
+          inputMode="tel"
+          onChange={(event) => patch("recipientPhone", event.target.value)}
+        />
+      </label>
+      {mapFirstMode ? (
+        <fieldset className="flex flex-col gap-2">
+          <legend className="font-body text-[13px] font-semibold">Save this address as</legend>
+          <div className="flex flex-wrap gap-2">
+            {ADDRESS_LABEL_OPTIONS.map((option) => (
+              <button
+                key={option}
+                type="button"
+                disabled={disabled}
+                className={cn(
+                  "rounded-full border px-4 py-2 font-body text-[14px] focus-ring",
+                  values.label === option
+                    ? "border-[var(--interactive-primary)] bg-[var(--interactive-primary)] text-[var(--text-on-primary)]"
+                    : "border-[var(--border-strong)] bg-transparent text-[var(--text-primary)]",
+                )}
+                onClick={() => patch("label", option)}
+              >
+                {option}
+              </button>
+            ))}
+          </div>
+        </fieldset>
+      ) : (
+        <div className="flex flex-col">
+          <label htmlFor={`${prefix}-label`} className="font-body text-[13px] font-semibold">
+            Label
+          </label>
+          <select
+            id={`${prefix}-label`}
+            disabled={disabled}
+            className={`${FIELD_CLASS} bg-[var(--bg-page)]`}
+            value={values.label}
+            onChange={(event) => patch("label", event.target.value)}
+          >
+            <option value="">No label</option>
+            {ADDRESS_LABEL_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
     </div>
   );
+}
+
+function formatReadOnlyAreaSummary(values: AddressFormValues): string {
+  const stateName = values.stateCode
+    ? (getIndiaSubdivisionName(values.stateCode) ?? values.stateCode)
+    : null;
+  const cityLine = [values.city, stateName, values.postalCode].filter(Boolean).join(", ");
+  const lines = [values.locality, cityLine].filter(Boolean);
+  return lines.length > 0 ? lines.join("\n") : "Confirmed from your map selection";
 }
 
 export function addressFormFromCommerceAddress(
