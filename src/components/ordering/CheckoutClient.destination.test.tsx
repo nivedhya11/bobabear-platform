@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { CheckoutClient, EMPTY_ONE_TIME_ADDRESS } from "./CheckoutClient";
+import { CheckoutClient } from "./CheckoutClient";
 import type { OrderingCatalog } from "@/shared/ordering-catalog";
 
 const fetchCustomerSession = vi.fn<(...args: unknown[]) => unknown>();
@@ -13,6 +13,10 @@ const readGuestCartCredential = vi.fn<(...args: unknown[]) => unknown>(() => nul
 
 vi.mock("@/lib/customer-auth/client", () => ({
   fetchCustomerSession: (...args: unknown[]) => fetchCustomerSession(...args),
+}));
+
+vi.mock("@/components/ordering/CheckoutDestinationFlow", () => ({
+  CheckoutDestinationFlow: () => <div data-testid="checkout-destination-select">Map-first destination</div>,
 }));
 
 vi.mock("@/lib/customer-commerce", async () => {
@@ -30,6 +34,7 @@ vi.mock("@/lib/customer-commerce", async () => {
     reconcileGuestCart: vi.fn(),
     clearGuestCartCredential: vi.fn(),
     createOwnAddress: vi.fn(),
+    updateOwnAddress: vi.fn(),
     setCheckoutDestination: vi.fn(),
     evaluateCheckout: vi.fn(),
   };
@@ -87,21 +92,12 @@ beforeEach(() => {
   listOwnAddresses.mockResolvedValue({ ok: true, status: 200, data: { addresses: [] } });
 });
 
-describe("one-time destination defaults", () => {
-  it("does not assume 248001 or IN-UT", () => {
-    expect(EMPTY_ONE_TIME_ADDRESS.postalCode).toBe("");
-    expect(EMPTY_ONE_TIME_ADDRESS.stateCode).toBe("");
-    expect(EMPTY_ONE_TIME_ADDRESS.city).toBe("");
-    expect(JSON.stringify(EMPTY_ONE_TIME_ADDRESS)).not.toMatch(/248001|IN-UT|Dehradun/);
-  });
-
-  it("requires the customer to enter PIN and state", async () => {
+describe("map-first checkout destination", () => {
+  it("renders the map-first destination flow instead of manual City/State/PIN fields", async () => {
     render(<CheckoutClient catalog={catalog} />);
-    await waitFor(() => expect(screen.getByLabelText(/PIN code/i)).toBeInTheDocument());
-    expect(screen.getByLabelText(/PIN code/i)).toHaveValue("");
-    expect(screen.getByLabelText(/^City$/i)).toHaveValue("");
-    const state = screen.getByLabelText(/^State$/i) as HTMLSelectElement;
-    expect(state.value).toBe("");
-    expect(state.value).not.toBe("IN-UT");
+    await waitFor(() => expect(screen.getByTestId("checkout-destination-select")).toBeInTheDocument());
+    expect(screen.queryByLabelText(/PIN code/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/^City$/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/^State$/i)).not.toBeInTheDocument();
   });
 });
