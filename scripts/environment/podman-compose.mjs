@@ -3,10 +3,10 @@
 import { spawnSync } from "node:child_process";
 import process from "node:process";
 
-const socket = `/run/user/${process.getuid()}/podman/podman.sock`;
+const socket = `unix:///run/user/${process.getuid()}/podman/podman.sock`;
 const result = spawnSync("podman-compose", process.argv.slice(2), {
   stdio: "inherit",
-  env: { ...process.env, DOCKER_HOST: process.env.DOCKER_HOST ?? `unix://${socket}` },
+  env: { ...process.env, DOCKER_HOST: socket },
 });
 
 if (result.error) {

@@ -341,8 +341,9 @@ WORKING_TREE_FINGERPRINT
   applicable validation and technical-acceptance gates before founder UAT.
 - Founder UAT runtime is rootless **PODMAN_WSL**. The sole persistent Founder project is
   `boba-staging`. Founder staging must be built from an exact merged-main candidate: canonical
-  repository, `branch=main`, `HEAD=origin/main`, and clean tracked source. Untracked evidence may
-  remain only when excluded from the build context. Do not deploy an unmerged branch, dirty tracked
+  repository, `branch=main`, `HEAD=origin/main`, and clean tracked source. Its artifact build
+  context must be materialized from that exact merged Git tree, not the live worktree. Untracked
+  evidence may remain outside that isolated build context. Do not deploy an unmerged branch, dirty tracked
   source, an older clone, `/mnt/c`, or a stale image as Founder-UAT evidence.
 - UAT deployment evidence must identify the source candidate and the deployed artifact as far as
   current tooling allows, including source repository, branch, `HEAD`, fingerprint, image name,

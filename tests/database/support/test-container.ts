@@ -43,7 +43,7 @@ function toPostgresqlScheme(connectionUri: string): string {
 export async function startPostgresTestContainer(): Promise<TestContainerHandle> {
   // Rootless Podman is the supported local runtime. Ryuk is deliberately not
   // relied on there: every caller owns explicit, idempotent teardown.
-  process.env.DOCKER_HOST ??= `unix:///run/user/${process.getuid?.() ?? 1000}/podman/podman.sock`;
+  process.env.DOCKER_HOST = `unix:///run/user/${process.getuid?.() ?? 1000}/podman/podman.sock`;
   process.env.TESTCONTAINERS_RYUK_DISABLED ??= "true";
   const password = randomBytes(24).toString("hex");
 
@@ -53,6 +53,10 @@ export async function startPostgresTestContainer(): Promise<TestContainerHandle>
       .withUsername(TEST_ADMIN_USERNAME)
       .withPassword(password)
       .withDatabase(TEST_ADMIN_DATABASE)
+      .withLabels({
+        "com.bobabear.environment": "test",
+        "com.bobabear.lifecycle": "ephemeral",
+      })
       .start();
   } catch (error) {
     throw new Error(

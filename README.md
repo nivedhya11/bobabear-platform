@@ -113,7 +113,8 @@ uses `podman-compose`, not the host's broken `podman compose` provider. `npm run
 audit-only report; pass `-- --apply` only to remove label-proven disposable Testcontainers resources.
 
 Founder staging is reserved as the future single `boba-staging` project. It is not deployed by this
-tooling phase. `npm run env:staging:status` reports candidate provenance, and
+tooling phase. Its future artifact source is an isolated exact merged Git-tree build context (not
+the live worktree). `npm run env:staging:status` reports candidate provenance, and
 `npm run env:staging:deploy:dry-run` verifies the merged-main/clean-tracked-source requirement
 without changing Podman state.
 
