@@ -184,7 +184,7 @@ function materializeStagingPostgresInit(buildDir, sha) {
   if (!existsSync(source)) throw new Error("Exact staging candidate does not contain docker/postgres/init.");
   rmSync(destination, { recursive: true, force: true });
   mkdirSync(path.dirname(destination), { recursive: true, mode: 0o700 });
-  cpSync(source, destination, { recursive: true, mode: "preserve" });
+  cpSync(source, destination, { recursive: true, preserveTimestamps: true });
   console.log(`STAGING_POSTGRES_INIT_DIR ${destination}`);
   console.log(`STAGING_POSTGRES_INIT_SOURCE_GIT_SHA ${sha}`);
   return destination;

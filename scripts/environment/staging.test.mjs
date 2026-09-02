@@ -89,7 +89,7 @@ test("staging PostgreSQL uses a durable configurable init mount", () => {
   assert.match(postgres, /\$\{BOBA_POSTGRES_INIT_DIR:-\.\/docker\/postgres\/init\}/);
   assert.match(source, /STAGING_RUNTIME_ASSETS_DIR/);
   assert.match(source, /materializeStagingPostgresInit\(buildDir, sha\)/);
-  assert.match(source, /cpSync\(source, destination/);
+  assert.match(source, /cpSync\(source, destination, \{ recursive: true, preserveTimestamps: true \}\)/);
   assert.match(source, /rmSync\(buildDir, \{ recursive: true, force: true \}\)/);
   assert.match(source, /BOBA_POSTGRES_INIT_DIR: initDir/);
 });
