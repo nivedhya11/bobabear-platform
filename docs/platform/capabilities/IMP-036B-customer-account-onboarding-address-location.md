@@ -20,8 +20,8 @@
 This document is the locked capability architecture for **IMP-036B — Customer Account,
 Onboarding, Address & Location Experience**. It delivers My BOBA account routes, progressive
 optional profile completion, saved-address management, a reusable delivery-location selector, and
-PIN-authoritative Serviceability presentation over existing Customer Profile, Address, and
-Serviceability authorities.
+coordinate-authoritative outlet-distance Serviceability over existing Customer Profile, Address,
+and Serviceability authorities.
 
 | Field | Value |
 |---|---|
@@ -79,8 +79,6 @@ IMP-036B delivers a coherent signed-in customer account and delivery-location fo
 - **Saved addresses** — list/add/edit/default/delete over IMP-018 authority
 - **Location selector** — saved addresses, Google search, device location, map confirmation
 - **Serviceability UX** — coordinate-authoritative outlet-distance model; four honest customer states
-
-## 2. Preserved authorities
 
 ## 2. Preserved authorities
 
@@ -204,7 +202,9 @@ Selected delivery context uses bounded `sessionStorage` via `delivery-context.ts
 - coordinates (required for Serviceability)
 - displayLabel for customer chrome
 - postalCode optional address metadata
-- source: saved_address | manual_pin | device_location | location_search
+- source: saved_address | device_location | location_search
+- `manual_pin` remains accepted only when reading legacy persisted sessionStorage context; it does
+  not represent a current customer manual-PIN flow and cannot determine Serviceability
 - optional savedAddressId when applicable
 
 No durable database state is invented for temporary anonymous location. Device coordinates are not persisted indefinitely.
@@ -224,8 +224,10 @@ No durable database state is invented for temporary anonymous location. Device c
 - Optional welcome/profile after first login; Not now continues journey
 - Profile view/edit/delete labeled accurately (not account erasure)
 - Address CRUD/default with ownership-safe handling
-- Location selector: saved address, manual PIN, device location with honest fallbacks
-- Serviceability four states with PIN authority preserved
+- Location selector: saved address, Google location search, device location, and map confirmation
+  with honest fallbacks; manual customer PIN entry is removed
+- Serviceability four states from BOBA server-side coordinate/Haversine evaluation; postal/PIN is
+  address metadata only
 - My BOBA nav reaches Profile, Addresses, Orders
 - Mobile/accessibility baseline; no raw IDs/enums in normal customer flow
 - Founder UAT required before `COMPLETE_AND_ACCEPTED`
