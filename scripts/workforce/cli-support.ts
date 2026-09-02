@@ -10,6 +10,7 @@
  */
 import path from "node:path";
 import process from "node:process";
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 import { loadEnvConfig } from "@next/env";
@@ -73,6 +74,15 @@ export function requireValidPassword(raw: string): string {
     throw new Error("Invalid --password value (must be 15–128 characters).");
   }
   return raw;
+}
+
+/** Read one password from stdin without reflecting it to output or argv. */
+export function requirePasswordFromStdin(): string {
+  const value = readFileSync(0, "utf8").replace(/\r?\n$/, "");
+  if (value.includes("\n") || value.includes("\r")) {
+    throw new Error("Invalid password input.");
+  }
+  return requireValidPassword(value);
 }
 
 function loadWorkforceCliEnvironment(): {
