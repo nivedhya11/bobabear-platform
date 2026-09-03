@@ -2,5 +2,5 @@
 2:"$Sreact.suspense"
 3:I[92025,["8409","static/chunks/8409-6521fbaf4dd9a2b7.js","4269","static/chunks/app/workforce/(portal)/login/page-1fae99639ecf11c7.js"],"WorkforceLoginClient"]
 4:I[90484,[],"OutletBoundary"]
-0:{"rsc":["$","$1","c",{"children":[["$","$2",null,{"fallback":["$","p",null,{"className":"font-body text-[15px] text-[var(--text-secondary)]","children":"Loading sign-in…"}],"children":["$","$L3",null,{}]}],null,["$","$L4",null,{"children":["$","$2",null,{"name":"Next.MetadataOutlet","children":"$@5"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"8lK28-_1YnwoEEBZJfq7I"}
+0:{"rsc":["$","$1","c",{"children":[["$","$2",null,{"fallback":["$","p",null,{"className":"font-body text-[15px] text-[var(--text-secondary)]","children":"Loading sign-in…"}],"children":["$","$L3",null,{}]}],null,["$","$L4",null,{"children":["$","$2",null,{"name":"Next.MetadataOutlet","children":"$@5"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"rMXsbu2W0RPBVyahNFnes"}
 5:null
