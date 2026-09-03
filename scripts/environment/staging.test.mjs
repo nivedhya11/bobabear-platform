@@ -1,18 +1,28 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import {
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { test } from "node:test";
 
 import {
   BOBA_BUILD_IMAGES,
   BOBA_RUNTIME_SERVICES,
+  STAGING_PUBLIC_ORIGIN,
   assertImageRevisions,
   assertRunningProvenance,
   assertServiceabilitySmokeResponse,
   closedStdinInherit,
   createStagingWorkforceUser,
   discardMismatchedOperatorCandidateTag,
+  ensureStagingEnvFiles,
   isFullGitSha,
+  normalizeEnvAssignment,
+  normalizeStagingAuthOriginEnv,
   readSecretStdinBuffer,
   runPodmanWithSecretStdin,
   spawnIgnoringStdin,
@@ -468,4 +478,189 @@ test("createStagingWorkforceUser does not mutate persistent staging services", (
   assert.doesNotMatch(operator, /podmanCompose|upAndWait|force-recreate|recover-postgres|volume", "rm"|compose down/);
   assert.match(operator, /--read-only/);
   assert.match(operator, /no-new-privileges:true/);
+});
+
+test("normalizeEnvAssignment replaces, appends once, and stays idempotent", () => {
+  const wrong = "WORKFORCE_AUTH_BASE_URL=http://127.0.0.1:8080\nWORKFORCE_AUTH_SECRET=s3cret-value-do-not-log\n";
+  const replaced = normalizeEnvAssignment(wrong, "WORKFORCE_AUTH_BASE_URL", STAGING_PUBLIC_ORIGIN);
+  assert.equal(
+    replaced,
+    "WORKFORCE_AUTH_BASE_URL=http://localhost:8080\nWORKFORCE_AUTH_SECRET=s3cret-value-do-not-log\n",
+  );
+  assert.equal(
+    normalizeEnvAssignment(replaced, "WORKFORCE_AUTH_BASE_URL", STAGING_PUBLIC_ORIGIN),
+    replaced,
+  );
+
+  const missing = "WORKFORCE_AUTH_SECRET=s3cret-value-do-not-log\n";
+  const appended = normalizeEnvAssignment(missing, "WORKFORCE_AUTH_BASE_URL", STAGING_PUBLIC_ORIGIN);
+  assert.equal(
+    appended,
+    "WORKFORCE_AUTH_SECRET=s3cret-value-do-not-log\nWORKFORCE_AUTH_BASE_URL=http://localhost:8080\n",
+  );
+  assert.equal(
+    normalizeEnvAssignment(appended, "WORKFORCE_AUTH_BASE_URL", STAGING_PUBLIC_ORIGIN),
+    appended,
+  );
+  assert.equal([...appended.matchAll(/^WORKFORCE_AUTH_BASE_URL=/gm)].length, 1);
+});
+
+test("normalizeStagingAuthOriginEnv covers customer and workforce auth files only", () => {
+  const customer = normalizeStagingAuthOriginEnv(
+    ".env.customer-auth.docker.local",
+    "CUSTOMER_AUTH_BASE_URL=http://127.0.0.1:8080\n",
+  );
+  assert.equal(customer, "CUSTOMER_AUTH_BASE_URL=http://localhost:8080\n");
+
+  const workforce = normalizeStagingAuthOriginEnv(
+    ".env.workforce-auth.docker.local",
+    "WORKFORCE_AUTH_BASE_URL=http://127.0.0.1:8080\n",
+  );
+  assert.equal(workforce, "WORKFORCE_AUTH_BASE_URL=http://localhost:8080\n");
+
+  const untouched = "OTHER=1\n";
+  assert.equal(normalizeStagingAuthOriginEnv(".env.runtime.docker.local", untouched), untouched);
+});
+
+test("ensureStagingEnvFiles canonicalizes workforce and customer auth origins into both copies", () => {
+  const root = mkdtempSync(path.join(os.tmpdir(), "boba-staging-env-root-"));
+  const stagingEnvDir = mkdtempSync(path.join(os.tmpdir(), "boba-staging-env-persist-"));
+  const buildDir = mkdtempSync(path.join(os.tmpdir(), "boba-staging-env-build-"));
+  const secret = "workforce-secret-BYTES-never-logged-0123456789abcdef";
+  const pii = "workforce-pii-BYTES-never-logged-fedcba9876543210";
+  const customerSecret = "customer-secret-BYTES-never-logged-0123456789abcdef";
+  const envFiles = [
+    ".env.docker.local",
+    ".env.runtime.docker.local",
+    ".env.migration.docker.local",
+    ".env.customer-auth.docker.local",
+    ".env.workforce-auth.docker.local",
+    ".env.customer-commerce.docker.local",
+    ".env.operations.docker.local",
+  ];
+
+  try {
+    for (const file of envFiles) {
+      writeFileSync(path.join(root, file), `# live ${file}\nKEEP=1\n`, { mode: 0o600 });
+    }
+    writeFileSync(
+      path.join(stagingEnvDir, ".env.workforce-auth.docker.local"),
+      [
+        "WORKFORCE_AUTH_SECRET=" + secret,
+        "WORKFORCE_AUTH_BASE_URL=http://127.0.0.1:8080",
+        "WORKFORCE_AUTH_PII_HASH_SECRET=" + pii,
+        "WORKFORCE_AUTH_TRUST_PROXY_HOPS=1",
+        "WORKFORCE_AUTH_SERVICE_HOST=0.0.0.0",
+        "WORKFORCE_AUTH_SERVICE_PORT=8082",
+        "",
+      ].join("\n"),
+      { mode: 0o600 },
+    );
+    writeFileSync(
+      path.join(stagingEnvDir, ".env.customer-auth.docker.local"),
+      [
+        "CUSTOMER_AUTH_SECRET=" + customerSecret,
+        "CUSTOMER_AUTH_BASE_URL=http://127.0.0.1:8080",
+        "CUSTOMER_AUTH_SERVICE_PORT=8081",
+        "",
+      ].join("\n"),
+      { mode: 0o600 },
+    );
+    for (const file of envFiles) {
+      if (
+        file === ".env.workforce-auth.docker.local" ||
+        file === ".env.customer-auth.docker.local"
+      ) {
+        continue;
+      }
+      writeFileSync(path.join(stagingEnvDir, file), `# persist ${file}\nKEEP=1\n`, { mode: 0o600 });
+    }
+
+    const liveWorkforceBefore = readFileSync(path.join(root, ".env.workforce-auth.docker.local"), "utf8");
+    const liveCustomerBefore = readFileSync(path.join(root, ".env.customer-auth.docker.local"), "utf8");
+
+    ensureStagingEnvFiles(buildDir, {
+      stagingEnvDir,
+      root,
+      envFiles,
+      initMissing: false,
+    });
+    ensureStagingEnvFiles(buildDir, {
+      stagingEnvDir,
+      root,
+      envFiles,
+      initMissing: false,
+    });
+
+    const workforcePersistent = readFileSync(
+      path.join(stagingEnvDir, ".env.workforce-auth.docker.local"),
+      "utf8",
+    );
+    const workforceBuild = readFileSync(path.join(buildDir, ".env.workforce-auth.docker.local"), "utf8");
+    const customerPersistent = readFileSync(
+      path.join(stagingEnvDir, ".env.customer-auth.docker.local"),
+      "utf8",
+    );
+    const customerBuild = readFileSync(path.join(buildDir, ".env.customer-auth.docker.local"), "utf8");
+
+    assert.equal(workforcePersistent, workforceBuild);
+    assert.equal(customerPersistent, customerBuild);
+    assert.match(workforcePersistent, /^WORKFORCE_AUTH_BASE_URL=http:\/\/localhost:8080$/m);
+    assert.equal([...workforcePersistent.matchAll(/^WORKFORCE_AUTH_BASE_URL=/gm)].length, 1);
+    assert.doesNotMatch(workforcePersistent, /127\.0\.0\.1:8080/);
+    assert.match(workforcePersistent, new RegExp(`^WORKFORCE_AUTH_SECRET=${secret}$`, "m"));
+    assert.match(workforcePersistent, new RegExp(`^WORKFORCE_AUTH_PII_HASH_SECRET=${pii}$`, "m"));
+    assert.match(workforcePersistent, /^WORKFORCE_AUTH_TRUST_PROXY_HOPS=1$/m);
+    assert.match(workforcePersistent, /^WORKFORCE_AUTH_SERVICE_PORT=8082$/m);
+    assert.match(customerPersistent, /^CUSTOMER_AUTH_BASE_URL=http:\/\/localhost:8080$/m);
+    assert.equal([...customerPersistent.matchAll(/^CUSTOMER_AUTH_BASE_URL=/gm)].length, 1);
+    assert.match(customerPersistent, new RegExp(`^CUSTOMER_AUTH_SECRET=${customerSecret}$`, "m"));
+
+    assert.equal(readFileSync(path.join(root, ".env.workforce-auth.docker.local"), "utf8"), liveWorkforceBefore);
+    assert.equal(readFileSync(path.join(root, ".env.customer-auth.docker.local"), "utf8"), liveCustomerBefore);
+    assert.doesNotMatch(liveWorkforceBefore, /localhost:8080/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+    rmSync(stagingEnvDir, { recursive: true, force: true });
+    rmSync(buildDir, { recursive: true, force: true });
+  }
+});
+
+test("ensureStagingEnvFiles appends missing WORKFORCE_AUTH_BASE_URL exactly once", () => {
+  const root = mkdtempSync(path.join(os.tmpdir(), "boba-staging-env-root-"));
+  const stagingEnvDir = mkdtempSync(path.join(os.tmpdir(), "boba-staging-env-persist-"));
+  const buildDir = mkdtempSync(path.join(os.tmpdir(), "boba-staging-env-build-"));
+  const envFiles = [".env.workforce-auth.docker.local"];
+  try {
+    writeFileSync(path.join(root, ".env.workforce-auth.docker.local"), "OTHER=1\n", { mode: 0o600 });
+    writeFileSync(
+      path.join(stagingEnvDir, ".env.workforce-auth.docker.local"),
+      "WORKFORCE_AUTH_SECRET=keep-me-secret\n",
+      { mode: 0o600 },
+    );
+    ensureStagingEnvFiles(buildDir, { stagingEnvDir, root, envFiles, initMissing: false });
+    ensureStagingEnvFiles(buildDir, { stagingEnvDir, root, envFiles, initMissing: false });
+    const content = readFileSync(path.join(buildDir, ".env.workforce-auth.docker.local"), "utf8");
+    assert.equal(
+      content,
+      "WORKFORCE_AUTH_SECRET=keep-me-secret\nWORKFORCE_AUTH_BASE_URL=http://localhost:8080\n",
+    );
+    assert.equal([...content.matchAll(/^WORKFORCE_AUTH_BASE_URL=/gm)].length, 1);
+    assert.equal(readFileSync(path.join(root, ".env.workforce-auth.docker.local"), "utf8"), "OTHER=1\n");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+    rmSync(stagingEnvDir, { recursive: true, force: true });
+    rmSync(buildDir, { recursive: true, force: true });
+  }
+});
+
+test("staging auth-origin normalization never logs secrets", () => {
+  const source = readFileSync(path.resolve("scripts/environment/staging.mjs"), "utf8");
+  assert.match(source, /STAGING_AUTH_ORIGIN_NORMALIZATIONS[\s\S]*WORKFORCE_AUTH_BASE_URL/);
+  assert.match(source, /STAGING_AUTH_ORIGIN_NORMALIZATIONS[\s\S]*CUSTOMER_AUTH_BASE_URL/);
+  assert.match(source, /normalizeStagingAuthOriginEnv\(file,/);
+  assert.doesNotMatch(
+    source,
+    /console\.(log|info|debug|warn|error)\([^)]*(AUTH_SECRET|PII_HASH_SECRET|password|PASSWORD)/,
+  );
 });

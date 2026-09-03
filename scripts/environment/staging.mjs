@@ -200,12 +200,50 @@ function materializeExactGitTree(sha) {
   return buildDir;
 }
 
-function ensureStagingEnvFiles(buildDir) {
-  mkdirSync(STAGING_ENV_DIR, { recursive: true });
-  const missing = STAGING_ENV_FILES.filter(
-    (file) => !existsSync(path.join(STAGING_ENV_DIR, file)) && !existsSync(path.join(repositoryRoot, file)),
+/** Founder staging browser/public origin (Nginx UAT). Not a production default. */
+const STAGING_PUBLIC_ORIGIN = "http://localhost:8080";
+
+const STAGING_AUTH_ORIGIN_NORMALIZATIONS = Object.freeze({
+  ".env.customer-auth.docker.local": "CUSTOMER_AUTH_BASE_URL",
+  ".env.workforce-auth.docker.local": "WORKFORCE_AUTH_BASE_URL",
+});
+
+/**
+ * Replace or append exactly one `KEY=value` assignment. Idempotent for the
+ * same key/value. Does not touch other assignments.
+ */
+function normalizeEnvAssignment(content, key, value) {
+  const assignment = `${key}=${value}`;
+  if (content.includes(`${key}=`)) {
+    return content.replace(new RegExp(`^${key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}=.*$`, "m"), assignment);
+  }
+  return `${content.trimEnd()}\n${assignment}\n`;
+}
+
+/** Canonicalize Founder-staging auth base URLs to the browser public origin. */
+function normalizeStagingAuthOriginEnv(fileName, content) {
+  const key = STAGING_AUTH_ORIGIN_NORMALIZATIONS[fileName];
+  if (!key) return content;
+  return normalizeEnvAssignment(content, key, STAGING_PUBLIC_ORIGIN);
+}
+
+function ensureStagingEnvFiles(
+  buildDir,
+  {
+    stagingEnvDir = STAGING_ENV_DIR,
+    root = repositoryRoot,
+    envFiles = STAGING_ENV_FILES,
+    initMissing = true,
+  } = {},
+) {
+  mkdirSync(stagingEnvDir, { recursive: true });
+  const missing = envFiles.filter(
+    (file) => !existsSync(path.join(stagingEnvDir, file)) && !existsSync(path.join(root, file)),
   );
   if (missing.length > 0) {
+    if (!initMissing) {
+      throw new Error(`Missing required staging env file: ${missing.join(", ")}`);
+    }
     for (const step of [
       { title: "db:env:init", args: ["run", "db:env:init"] },
       { title: "docker:env:init", args: ["run", "docker:env:init"] },
@@ -214,23 +252,20 @@ function ensureStagingEnvFiles(buildDir) {
       if (result.status !== 0) process.exit(result.status ?? 1);
     }
   }
-  for (const file of STAGING_ENV_FILES) {
-    const persistent = path.join(STAGING_ENV_DIR, file);
-    const live = path.join(repositoryRoot, file);
+  for (const file of envFiles) {
+    const persistent = path.join(stagingEnvDir, file);
+    const live = path.join(root, file);
     const source = existsSync(persistent) ? persistent : live;
     if (!existsSync(source)) {
       console.error(`Missing required staging env file: ${file}`);
       process.exit(1);
     }
     if (!existsSync(persistent)) copyFileSync(source, persistent);
-    copyFileSync(persistent, path.join(buildDir, file));
-    const customerAuthPath = path.join(buildDir, ".env.customer-auth.docker.local");
-    if (file === ".env.customer-auth.docker.local" && existsSync(customerAuthPath)) {
-      const content = readFileSync(customerAuthPath, "utf8");
-      const normalized = content.includes("CUSTOMER_AUTH_BASE_URL=")
-        ? content.replace(/^CUSTOMER_AUTH_BASE_URL=.*$/m, "CUSTOMER_AUTH_BASE_URL=http://localhost:8080")
-        : `${content.trimEnd()}\nCUSTOMER_AUTH_BASE_URL=http://localhost:8080\n`;
-      writeFileSync(customerAuthPath, normalized, { mode: 0o600 });
+    const buildCopy = path.join(buildDir, file);
+    copyFileSync(persistent, buildCopy);
+    if (Object.hasOwn(STAGING_AUTH_ORIGIN_NORMALIZATIONS, file) && existsSync(buildCopy)) {
+      const normalized = normalizeStagingAuthOriginEnv(file, readFileSync(buildCopy, "utf8"));
+      writeFileSync(buildCopy, normalized, { mode: 0o600 });
       writeFileSync(persistent, normalized, { mode: 0o600 });
     }
   }
@@ -766,6 +801,7 @@ if (isCli) {
 export {
   BOBA_BUILD_IMAGES,
   BOBA_RUNTIME_SERVICES,
+  STAGING_PUBLIC_ORIGIN,
   assertImageRevisions,
   assertRunningProvenance,
   assertLegacyPostgresRecoveryTarget,
@@ -778,4 +814,7 @@ export {
   runPodmanWithSecretStdin,
   createStagingWorkforceUser,
   discardMismatchedOperatorCandidateTag,
+  ensureStagingEnvFiles,
+  normalizeEnvAssignment,
+  normalizeStagingAuthOriginEnv,
 };
