@@ -256,6 +256,33 @@ function imageRevision(image) {
   return podmanInspect(image, `{{ index .Config.Labels \"${OCI_REVISION_LABEL}\" }}`);
 }
 
+function readDockerfileNodeImage(dockerfilePath) {
+  const match = readFileSync(dockerfilePath, "utf8").match(/^ARG NODE_IMAGE=(\S+)/m);
+  if (!match) throw new Error("Dockerfile is missing ARG NODE_IMAGE.");
+  return match[1];
+}
+
+function assertLocalOperatorBaseImage(image) {
+  const result = spawnIgnoringStdin("podman", ["image", "exists", image]);
+  if (result.status !== 0) {
+    throw new Error(`LOCAL_OPERATOR_BASE_IMAGE_REQUIRED: ${image}`);
+  }
+}
+
+function discardMismatchedOperatorCandidateTag(
+  image,
+  expectedSha,
+  {
+    exists = (name) => spawnIgnoringStdin("podman", ["image", "exists", name]).status === 0,
+    inspectRevision = imageRevision,
+    untag = (name) => runPodman(["untag", name]),
+  } = {},
+) {
+  if (!exists(image)) return;
+  if (inspectRevision(image) === expectedSha) return;
+  untag(image);
+}
+
 function assertImageRevisions(expectedSha, images = BOBA_BUILD_IMAGES, inspectRevision = imageRevision) {
   for (const [service, image] of Object.entries(images)) {
     const revision = inspectRevision(image);
@@ -431,6 +458,9 @@ function createStagingWorkforceUser(args, deps = {}) {
     assertPreconditions = assertDeployPreconditions,
     materializeTree = materializeExactGitTree,
     ensureEnv = ensureStagingEnvFiles,
+    readBaseImage = readDockerfileNodeImage,
+    assertLocalBase = assertLocalOperatorBaseImage,
+    discardStaleTag = discardMismatchedOperatorCandidateTag,
     buildPodman = runPodman,
     revisionOf = imageRevision,
     readStdin = readSecretStdinBuffer,
@@ -449,8 +479,24 @@ function createStagingWorkforceUser(args, deps = {}) {
   let secretBuffer;
   try {
     ensureEnv(buildDir);
+    assertLocalBase(readBaseImage(path.join(buildDir, "Dockerfile")));
+    discardStaleTag(image, candidate.head);
     buildPodman(
-      ["build", "--file", "Dockerfile", "--target", "tooling", "--build-arg", `BOBA_BUILD_SHA=${candidate.head}`, "--tag", image, "."],
+      [
+        "build",
+        "--pull=never",
+        "--file",
+        "Dockerfile",
+        "--target",
+        "tooling",
+        "--build-arg",
+        `BOBA_BUILD_SHA=${candidate.head}`,
+        "--label",
+        `${OCI_REVISION_LABEL}=${candidate.head}`,
+        "--tag",
+        image,
+        ".",
+      ],
       { cwd: buildDir },
     );
     if (revisionOf(image) !== candidate.head) {
@@ -731,4 +777,5 @@ export {
   spawnWithStdinBuffer,
   runPodmanWithSecretStdin,
   createStagingWorkforceUser,
+  discardMismatchedOperatorCandidateTag,
 };
