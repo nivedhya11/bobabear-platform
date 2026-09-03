@@ -11,6 +11,7 @@ import {
   assertServiceabilitySmokeResponse,
   closedStdinInherit,
   createStagingWorkforceUser,
+  discardMismatchedOperatorCandidateTag,
   isFullGitSha,
   readSecretStdinBuffer,
   runPodmanWithSecretStdin,
@@ -160,7 +161,11 @@ test("staging workforce operator uses direct Podman without Compose dependency r
   const source = readFileSync(path.resolve("scripts/environment/staging.mjs"), "utf8");
   const compose = readFileSync(path.resolve("compose.yaml"), "utf8");
   assert.match(source, /const image = `boba-bear-staging-workforce-operator:\$\{candidate\.head\}`/);
-  assert.match(source, /buildPodman\(\s*\n\s*\["build", "--file", "Dockerfile", "--target", "tooling"/);
+  assert.match(source, /buildPodman\(\s*\n\s*\[\s*\n\s*"build",\s*\n\s*"--pull=never",\s*\n\s*"--file",\s*\n\s*"Dockerfile",\s*\n\s*"--target",\s*\n\s*"tooling"/);
+  assert.match(source, /"--label",\s*\n\s*`\$\{OCI_REVISION_LABEL\}=\$\{candidate\.head\}`/);
+  assert.match(source, /LOCAL_OPERATOR_BASE_IMAGE_REQUIRED/);
+  assert.match(source, /discardStaleTag\(image, candidate\.head\)/);
+  assert.doesNotMatch(source.match(/function createStagingWorkforceUser\(args, deps = \{\}\) \{([\s\S]*?)\n\}/)?.[1] ?? "", /--no-cache/);
   assert.match(source, /runOperator\(runArgs, secretBuffer/);
   assert.match(source, /--env-file/);
   assert.match(source, /POSTGRES_RUNNING YES/);
@@ -286,10 +291,23 @@ test("createStagingWorkforceUser delivers password to final podman run only", ()
       ensureEnv: () => {
         events.push("ensureEnv");
       },
+      readBaseImage: () => "docker.io/library/node:22.23.1-bookworm-slim",
+      assertLocalBase: (image) => {
+        events.push({ phase: "assertLocalBase", image });
+      },
+      discardStaleTag: (image, sha) => {
+        events.push({ phase: "discardStaleTag", image, sha });
+      },
       buildPodman: (args) => {
         events.push({ phase: "build", args: [...args], stdinConsumed });
         assert.equal(stdinConsumed, false);
         assert.match(args.join(" "), /build .*--target tooling/);
+        assert.equal(args.includes("--pull=never"), true);
+        assert.equal(args.includes("--no-cache"), false);
+        assert.equal(args.filter((arg) => arg === "--label").length, 1);
+        assert.equal(args[args.indexOf("--label") + 1], `org.opencontainers.image.revision=${candidateSha}`);
+        assert.ok(args.indexOf("--label") < args.indexOf("--tag"));
+        assert.ok(args.indexOf("--pull=never") < args.indexOf("--file"));
       },
       revisionOf: () => candidateSha,
       readStdin: () => {
@@ -338,6 +356,8 @@ test("createStagingWorkforceUser delivers password to final podman run only", ()
       "assertPreconditions",
       "materializeTree",
       "ensureEnv",
+      "assertLocalBase",
+      "discardStaleTag",
       "build",
       "readStdin",
       "run",
@@ -348,6 +368,9 @@ test("createStagingWorkforceUser delivers password to final podman run only", ()
   assert.equal(stdinConsumed, true);
   assert.equal(bufferZeroed, true);
   assert.equal(secret.equals(Buffer.alloc(secret.length, 0)), true);
+  const discarded = events.find((event) => event.phase === "discardStaleTag");
+  assert.equal(discarded.image, `boba-bear-staging-workforce-operator:${candidateSha}`);
+  assert.equal(discarded.sha, candidateSha);
 
   const source = readFileSync(path.resolve("scripts/environment/staging.mjs"), "utf8");
   assert.match(source, /spawnIgnoringStdin\(\s*"bash"/);
@@ -355,6 +378,88 @@ test("createStagingWorkforceUser delivers password to final podman run only", ()
   assert.match(source, /function runPodman\(args, options = \{\}\) \{\n  const result = spawnIgnoringStdin\("podman"/);
   assert.match(source, /secretBuffer = readStdin\(\)/);
   assert.doesNotMatch(source, /runPodman\(\["run", "--rm"/);
+});
+
+test("staging workforce operator rejects an older cached revision before reading secret stdin", () => {
+  let stdinRead = false;
+  assert.throws(
+    () =>
+      createStagingWorkforceUser([], {
+        assertTarget: () => ({ network: "boba-staging_default" }),
+        readCandidateFn: () => ({ head: candidateSha }),
+        assertPreconditions: () => {},
+        materializeTree: () => "/tmp/boba-staging-build-test",
+        ensureEnv: () => {},
+        readBaseImage: () => "docker.io/library/node:22.23.1-bookworm-slim",
+        assertLocalBase: () => {},
+        discardStaleTag: () => {},
+        buildPodman: (args) => {
+          assert.equal(args[args.indexOf("--label") + 1], `org.opencontainers.image.revision=${candidateSha}`);
+        },
+        revisionOf: () => "ee00366b4106440b659dce91a150f40eda0c5f00",
+        readStdin: () => {
+          stdinRead = true;
+          return Buffer.alloc(0);
+        },
+        exists: () => true,
+        removeDir: () => {},
+      }),
+    /lacks exact merged-main provenance/,
+  );
+  assert.equal(stdinRead, false);
+});
+
+test("staging workforce operator fails closed when the Node base image is not local", () => {
+  let built = false;
+  assert.throws(
+    () =>
+      createStagingWorkforceUser([], {
+        assertTarget: () => ({ network: "boba-staging_default" }),
+        readCandidateFn: () => ({ head: candidateSha }),
+        assertPreconditions: () => {},
+        materializeTree: () => "/tmp/boba-staging-build-test",
+        ensureEnv: () => {},
+        readBaseImage: () => "docker.io/library/node:22.23.1-bookworm-slim",
+        assertLocalBase: () => {
+          throw new Error("LOCAL_OPERATOR_BASE_IMAGE_REQUIRED: docker.io/library/node:22.23.1-bookworm-slim");
+        },
+        discardStaleTag: () => {
+          throw new Error("should not untag without a local base image");
+        },
+        buildPodman: () => {
+          built = true;
+        },
+        readStdin: () => Buffer.alloc(0),
+        exists: () => true,
+        removeDir: () => {},
+      }),
+    /LOCAL_OPERATOR_BASE_IMAGE_REQUIRED/,
+  );
+  assert.equal(built, false);
+});
+
+test("mismatched operator candidate tags are untagged without deleting a prior valid tag", () => {
+  const current = `boba-bear-staging-workforce-operator:${candidateSha}`;
+  const prior = "boba-bear-staging-workforce-operator:ee00366b4106440b659dce91a150f40eda0c5f00";
+  const untagged = [];
+  discardMismatchedOperatorCandidateTag(current, candidateSha, {
+    exists: (image) => image === current,
+    inspectRevision: () => "ee00366b4106440b659dce91a150f40eda0c5f00",
+    untag: (image) => untagged.push(image),
+  });
+  assert.deepEqual(untagged, [current]);
+  discardMismatchedOperatorCandidateTag(current, candidateSha, {
+    exists: () => true,
+    inspectRevision: () => candidateSha,
+    untag: (image) => untagged.push(image),
+  });
+  assert.deepEqual(untagged, [current]);
+  discardMismatchedOperatorCandidateTag(prior, "ee00366b4106440b659dce91a150f40eda0c5f00", {
+    exists: () => true,
+    inspectRevision: () => "ee00366b4106440b659dce91a150f40eda0c5f00",
+    untag: (image) => untagged.push(image),
+  });
+  assert.deepEqual(untagged, [current]);
 });
 
 test("createStagingWorkforceUser does not mutate persistent staging services", () => {
