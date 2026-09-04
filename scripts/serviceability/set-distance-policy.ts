@@ -21,7 +21,7 @@ import {
   getOutletServiceabilityConfiguration,
   setOutletServiceabilityDistancePolicy,
 } from "../../src/server/serviceability";
-import { principalFor } from "../../tests/database/support/access-control-fixtures";
+import { resolveWorkforcePrincipalFromDatabase } from "../access/resolve-workforce-principal-from-db";
 
 function usage(): never {
   process.stderr.write(`Usage:
@@ -90,39 +90,43 @@ async function main(): Promise<void> {
   const config = loadConfig({ processKind: "worker", source: process.env });
   const args = parseArgs(process.argv.slice(2));
   const persistence = getApplicationPersistence(config);
-  const actor = principalFor(args.actorId);
+  try {
+    const actor = await resolveWorkforcePrincipalFromDatabase(persistence, args.actorId);
 
-  const before = await getOutletServiceabilityConfiguration(persistence, actor, {
-    outletId: args.outletId,
-  });
-  const updated = await setOutletServiceabilityDistancePolicy(persistence, actor, {
-    outletId: args.outletId,
-    expectedRevision: args.revision,
-    serviceOriginLatitude: args.clear ? null : args.originLat!,
-    serviceOriginLongitude: args.clear ? null : args.originLng!,
-    maxServiceDistanceMeters: args.clear ? null : args.maxDistanceMeters!,
-  });
+    const before = await getOutletServiceabilityConfiguration(persistence, actor, {
+      outletId: args.outletId,
+    });
+    const updated = await setOutletServiceabilityDistancePolicy(persistence, actor, {
+      outletId: args.outletId,
+      expectedRevision: args.revision,
+      serviceOriginLatitude: args.clear ? null : args.originLat!,
+      serviceOriginLongitude: args.clear ? null : args.originLng!,
+      maxServiceDistanceMeters: args.clear ? null : args.maxDistanceMeters!,
+    });
 
-  process.stdout.write(
-    `${JSON.stringify(
-      {
-        before: {
-          revision: before.revision?.toString() ?? null,
-          serviceOriginLatitude: before.serviceOriginLatitude,
-          serviceOriginLongitude: before.serviceOriginLongitude,
-          maxServiceDistanceMeters: before.maxServiceDistanceMeters,
+    process.stdout.write(
+      `${JSON.stringify(
+        {
+          before: {
+            revision: before.revision?.toString() ?? null,
+            serviceOriginLatitude: before.serviceOriginLatitude,
+            serviceOriginLongitude: before.serviceOriginLongitude,
+            maxServiceDistanceMeters: before.maxServiceDistanceMeters,
+          },
+          after: {
+            revision: updated.revision?.toString() ?? null,
+            serviceOriginLatitude: updated.serviceOriginLatitude,
+            serviceOriginLongitude: updated.serviceOriginLongitude,
+            maxServiceDistanceMeters: updated.maxServiceDistanceMeters,
+          },
         },
-        after: {
-          revision: updated.revision?.toString() ?? null,
-          serviceOriginLatitude: updated.serviceOriginLatitude,
-          serviceOriginLongitude: updated.serviceOriginLongitude,
-          maxServiceDistanceMeters: updated.maxServiceDistanceMeters,
-        },
-      },
-      null,
-      2,
-    )}\n`,
-  );
+        null,
+        2,
+      )}\n`,
+    );
+  } finally {
+    await persistence.close();
+  }
 }
 
 void main().catch((error: unknown) => {

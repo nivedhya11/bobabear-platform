@@ -55,6 +55,7 @@
     "audit:customer-profiles": "node scripts/audit-customer-profiles.mjs",
     "audit:customer-addresses": "node scripts/audit-customer-addresses.mjs",
     "access:bootstrap-platform-admin": "node --conditions=react-server --import tsx scripts/access/bootstrap-platform-admin.ts",
+    "staging:bootstrap-dehradun-business": "node --conditions=react-server --import tsx scripts/access/bootstrap-dehradun-business.ts",
     "menu:inventory-existing": "node --conditions=react-server --import tsx scripts/menu/inventory-existing.ts",
     "menu:import-existing": "node --conditions=react-server --import tsx scripts/menu/import-existing.ts",
     "menu:verify-existing": "node --conditions=react-server --import tsx scripts/menu/verify-existing.ts",

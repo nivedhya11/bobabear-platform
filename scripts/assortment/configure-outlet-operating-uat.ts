@@ -22,7 +22,7 @@ import {
 } from "../../src/server/assortment/operating";
 import { resolveOutletOperatingState } from "../../src/server/assortment/resolve-operating";
 import { getApplicationPersistence } from "../../src/server/persistence";
-import { principalFor } from "../../tests/database/support/access-control-fixtures";
+import { resolveWorkforcePrincipalFromDatabase } from "../access/resolve-workforce-principal-from-db";
 
 function usage(): never {
   process.stderr.write(`Usage:
@@ -89,9 +89,9 @@ async function main(): Promise<void> {
   const config = loadConfig({ processKind: "worker", source: process.env });
   const args = parseArgs(process.argv.slice(2));
   const persistence = getApplicationPersistence(config);
-  const actor = principalFor(args.actorId);
 
   try {
+    const actor = await resolveWorkforcePrincipalFromDatabase(persistence, args.actorId);
     const existingProfile = await persistence.withContext((ctx) =>
       findOutletOperatingProfile(ctx, args.outletId),
     );
