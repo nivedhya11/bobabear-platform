@@ -135,10 +135,16 @@ test("Razorpay modal dismiss does not create an Order", async ({ page }) => {
   await installRazorpayCheckoutMock(page, "dismiss");
   await reachReadyForPayment(page, PHONE_NUMBERS.dismiss);
   await page.getByTestId("payment-start").click();
-  await expect(paymentProductAlert(page)).toContainText(/Payment window closed\. Not confirmed\./i, {
-    timeout: 20_000,
-  });
-  await expect(page.getByTestId("payment-start")).toBeVisible();
+  await expect(page.getByTestId("payment-recovery-dismissed")).toContainText(
+    /Payment not completed/i,
+    { timeout: 20_000 },
+  );
+  await expect(page.getByTestId("payment-recovery-dismissed")).toContainText(
+    /closed the payment window before completing payment/i,
+  );
+  await expect(page.getByTestId("payment-continue")).toBeVisible();
+  await expect(page.getByTestId("payment-start")).toHaveCount(0);
+  await expect(page.getByTestId("payment-retry")).toHaveCount(0);
   await expect(page.getByTestId("order-confirmation")).toHaveCount(0);
 });
 
@@ -147,10 +153,14 @@ test("Razorpay provider-surface failure does not create an Order", async ({ page
   await installRazorpayCheckoutMock(page, "fail");
   await reachReadyForPayment(page, PHONE_NUMBERS.providerFailure);
   await page.getByTestId("payment-start").click();
-  await expect(paymentProductAlert(page)).toContainText(
-    /That payment attempt did not complete\./i,
-    { timeout: 20_000 },
-  );
+  // Browser payment.failed is not authoritative FAILED — stay on checking, no retry CTA.
+  await expect(page.getByTestId("payment-checking")).toContainText(/Checking your payment/i, {
+    timeout: 20_000,
+  });
+  await expect(page.getByTestId("payment-checking")).toContainText(/don't pay again yet/i);
+  await expect(page.getByTestId("payment-retry")).toHaveCount(0);
+  await expect(page.getByTestId("payment-continue")).toHaveCount(0);
+  await expect(page.getByText(/Payment window closed/i)).toHaveCount(0);
   await expect(page.getByTestId("order-confirmation")).toHaveCount(0);
 });
 
