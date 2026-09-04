@@ -8,6 +8,7 @@ import { commerceErrorCopy } from "@/components/ordering/error-copy";
 import { formatPaise } from "@/components/ordering/format-money";
 import { interpretClientAction, isZeroPayableTotal } from "@/components/ordering/client-action";
 import { browserNavigate } from "@/components/ordering/browser-navigate";
+import { cartChangedRecoveryPresentation } from "@/components/ordering/cart-changed-recovery-presentation";
 import {
   paymentRecoveryPresentation,
   type PaymentRecoveryKind,
@@ -103,16 +104,33 @@ export function PaymentPanel(props: {
   onBackToReview?: (checkoutRevision: string) => void;
   /** Keep parent checkout revision current after payment mutations. */
   onCheckoutRevisionChange?: (checkoutRevision: string) => void;
+  /**
+   * Resume an existing Payment (session recovery) without offering a new Pay start.
+   * Used when cart revision diverged under PAYMENT_PENDING — authority first.
+   */
+  resumePaymentId?: string | null;
+  /**
+   * Cart revision no longer matches checkout.sourceCartRevision while a payment
+   * may still be financially open. Suppresses new Pay starts; uses cart-changed
+   * unresolved copy; notifies parent when payment is safely terminal.
+   */
+  cartChangedWhilePending?: boolean;
+  /** Payment cancelled/expired/superseded — parent may offer fresh current-cart checkout. */
+  onPaymentTerminalForCartChange?: () => void;
 }) {
   const zeroPayable = isZeroPayableTotal(props.snapshot.grandTotalPaise);
   const payableLabel = formatPaise(props.snapshot.grandTotalPaise);
   const payableRows = snapshotPayableRows(props.snapshot);
+  const resumePaymentId = props.resumePaymentId ?? null;
+  const cartChangedWhilePending = props.cartChangedWhilePending === true;
 
-  const [screen, setScreen] = useState<PaymentScreen>("idle");
+  const [screen, setScreen] = useState<PaymentScreen>(resumePaymentId ? "checking" : "idle");
   const [checkingKind, setCheckingKind] = useState<CheckingKind>("generic");
   const [error, setError] = useState<string | null>(null);
-  const [recoveryKind, setRecoveryKind] = useState<PaymentRecoveryKind | null>(null);
-  const [paymentId, setPaymentId] = useState<string | null>(null);
+  const [recoveryKind, setRecoveryKind] = useState<PaymentRecoveryKind | null>(
+    resumePaymentId ? "unresolved" : null,
+  );
+  const [paymentId, setPaymentId] = useState<string | null>(resumePaymentId);
   const [checkoutRevision, setCheckoutRevision] = useState(props.checkout.revision);
   const [attemptId, setAttemptId] = useState<string | null>(null);
   const [pendingCheckoutAction, setPendingCheckoutAction] = useState<CommerceClientAction | null>(null);
@@ -121,6 +139,7 @@ export function PaymentPanel(props: {
   const finished = useRef(false);
   /** Set when Razorpay `payment.failed` is observed for the current checkout open. */
   const providerFailureObservedRef = useRef(false);
+  const resumeStarted = useRef(false);
   const payButtonRef = useRef<HTMLButtonElement>(null);
 
   function restorePayFocus(): void {
@@ -195,6 +214,10 @@ export function PaymentPanel(props: {
       payment?.status === "CANCELLED" ||
       payment?.status === "SUPERSEDED"
     ) {
+      if (cartChangedWhilePending) {
+        props.onPaymentTerminalForCartChange?.();
+        return;
+      }
       setRecoveryKind(null);
       setError(
         commerceErrorCopy(payment.status === "EXPIRED" ? "PAYMENT_EXPIRED" : "PAYMENT_TERMINAL"),
@@ -234,6 +257,11 @@ export function PaymentPanel(props: {
       if (!state || !state.ok) {
         setError(commerceErrorCopy(state?.code));
         if (!state || state.code === "NETWORK_ERROR" || state.code === "INVALID_RESPONSE") return;
+        if (cartChangedWhilePending) {
+          // Keep unresolved checking — do not fall into a plain error dead-end.
+          showUnresolvedChecking("generic");
+          return;
+        }
         setScreen("error");
         return;
       }
@@ -248,6 +276,28 @@ export function PaymentPanel(props: {
     // applyPaymentState closes over current setters; poll key is paymentId/screen.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [screen, paymentId]);
+
+  useEffect(() => {
+    if (!resumePaymentId || resumeStarted.current) return;
+    resumeStarted.current = true;
+    setPaymentId(resumePaymentId);
+    showUnresolvedChecking(cartChangedWhilePending ? "confirming" : "generic");
+    void (async () => {
+      const state = await getPaymentState(resumePaymentId);
+      if (!state.ok) {
+        if (cartChangedWhilePending) {
+          showUnresolvedChecking("generic");
+          return;
+        }
+        setError(commerceErrorCopy(state.code));
+        setScreen("error");
+        return;
+      }
+      await applyPaymentState(state.data.state, "checking");
+    })();
+    // One-shot resume bootstrap keyed by resumePaymentId.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resumePaymentId]);
 
   async function launchRazorpayCheckout(action: CommerceClientAction): Promise<void> {
     const parsed = parseRazorpayStandardCheckoutAction(action);
@@ -424,6 +474,11 @@ export function PaymentPanel(props: {
   }
 
   async function handleStart(): Promise<void> {
+    if (cartChangedWhilePending) {
+      // Never start a second payment while cart-changed under unresolved authority.
+      showUnresolvedChecking("generic");
+      return;
+    }
     if (
       inflight.current ||
       screen === "starting" ||
@@ -532,6 +587,10 @@ export function PaymentPanel(props: {
 
   const recovery =
     recoveryKind != null ? paymentRecoveryPresentation(recoveryKind, payableLabel) : null;
+  const cartChangedUnresolved =
+    cartChangedWhilePending && recoveryKind === "unresolved"
+      ? cartChangedRecoveryPresentation("unresolved")
+      : null;
 
   const statusMessage =
     screen === "loading_checkout"
@@ -543,6 +602,12 @@ export function PaymentPanel(props: {
             ? "Completing order…"
             : "Starting payment…"
           : null;
+
+  const hidePayStart =
+    cartChangedWhilePending &&
+    screen !== "retryable" &&
+    screen !== "dismissed" &&
+    screen !== "checkout_load_failed";
 
   return (
     <div className="flex flex-col gap-4" data-testid="checkout-payment">
@@ -560,7 +625,21 @@ export function PaymentPanel(props: {
         ))}
       </dl>
 
-      {recovery ? (
+      {cartChangedUnresolved ? (
+        <div
+          role="status"
+          aria-live="polite"
+          data-testid="payment-checking"
+          data-checking-kind={checkingKind}
+          data-cart-changed="true"
+          className="flex flex-col gap-2"
+        >
+          <h2 className="font-body text-[18px] font-semibold text-[var(--text-primary)]">
+            {cartChangedUnresolved.headline}
+          </h2>
+          <p className="font-body text-[14px] text-[var(--text-secondary)]">{cartChangedUnresolved.body}</p>
+        </div>
+      ) : recovery ? (
         <div
           role={recovery.kind === "failed" ? "alert" : "status"}
           aria-live={recovery.kind === "failed" ? "assertive" : "polite"}
@@ -600,7 +679,7 @@ export function PaymentPanel(props: {
         </p>
       ) : null}
 
-      {!zeroPayable && (screen === "idle" || screen === "error") ? (
+      {!zeroPayable && (screen === "idle" || screen === "error") && !hidePayStart ? (
         <p className="font-body text-[14px] text-[var(--text-secondary)]" data-testid="payment-provider-owned-note">
           You’ll choose UPI, card, or net banking securely in Razorpay.
         </p>
@@ -620,7 +699,7 @@ export function PaymentPanel(props: {
         </Button>
       ) : null}
 
-      {zeroPayable ? (
+      {zeroPayable && !cartChangedWhilePending ? (
         <Button
           type="button"
           variant="primary"
@@ -657,7 +736,10 @@ export function PaymentPanel(props: {
         >
           Continue payment · {payableLabel}
         </Button>
-      ) : screen !== "checkout_load_failed" && screen !== "checking" && screen !== "dismissed" ? (
+      ) : !hidePayStart &&
+        screen !== "checkout_load_failed" &&
+        screen !== "checking" &&
+        screen !== "dismissed" ? (
         <Button
           ref={payButtonRef}
           type="button"
@@ -675,7 +757,7 @@ export function PaymentPanel(props: {
         </Button>
       ) : null}
 
-      {props.onBackToReview ? (
+      {props.onBackToReview && !cartChangedWhilePending ? (
         <Button
           type="button"
           variant="outline"
@@ -689,7 +771,9 @@ export function PaymentPanel(props: {
       ) : null}
 
       <Button asChild variant="outline" className="min-h-[44px]">
-        <a href="/order/cart/">Back to cart</a>
+        <a href="/order/cart/" data-testid="cart-changed-back-to-cart">
+          Back to cart
+        </a>
       </Button>
     </div>
   );

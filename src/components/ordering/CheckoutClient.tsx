@@ -12,8 +12,10 @@ import {
   evaluateCheckout,
   getActiveCart,
   getActiveCheckout,
+  listCustomerOrders,
   listOwnAddresses,
   readGuestCartCredential,
+  readPaymentRecovery,
   reconcileGuestCart,
   setCheckoutDestination,
   startCheckout,
@@ -36,6 +38,7 @@ import {
 import { OrderMoneySummaryPanel } from "@/components/ordering/OrderMoneySummaryPanel";
 import { narrowCheckoutSnapshotLines } from "@/components/ordering/checkout-line-presentation";
 import { PaymentPanel } from "@/components/ordering/PaymentPanel";
+import { cartChangedRecoveryPresentation } from "@/components/ordering/cart-changed-recovery-presentation";
 import { commerceErrorCopy } from "@/components/ordering/error-copy";
 import type { OrderingCatalog } from "@/shared/ordering-catalog";
 
@@ -46,7 +49,18 @@ type Screen =
   | "destination"
   | "review"
   | "payment"
+  | "cart_changed_unresolved"
+  | "cart_changed_fresh"
   | "error";
+
+async function waitForCustomerOrder(): Promise<string | null> {
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    const listed = await listCustomerOrders({ limit: 5 });
+    if (listed.ok && listed.data.items[0]) return listed.data.items[0].orderId;
+    await new Promise((resolve) => setTimeout(resolve, 300));
+  }
+  return null;
+}
 
 function destinationSummary(snapshot: CommerceCheckoutSnapshot | null): string | null {
   const destination = snapshot?.destination;
@@ -67,6 +81,8 @@ export function CheckoutClient(props: { catalog: OrderingCatalog }) {
   const [addresses, setAddresses] = useState<readonly CommerceAddress[]>([]);
   const [guestRevision, setGuestRevision] = useState<string | null>(null);
   const [customerRevision, setCustomerRevision] = useState<string | null>(null);
+  const [resumePaymentId, setResumePaymentId] = useState<string | null>(null);
+  const [cartChangedWhilePending, setCartChangedWhilePending] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -187,11 +203,23 @@ export function CheckoutClient(props: { catalog: OrderingCatalog }) {
       current.sourceCartRevision !== ownedCart.revision &&
       current.status === "PAYMENT_PENDING"
     ) {
+      // Payment authority first — never dead-end on plain cart-changed copy.
       setCheckout(current);
-      setScreen("error");
-      setError(commerceErrorCopy("CHECKOUT_CART_CHANGED"));
+      setSnapshot(current.activeSnapshot);
+      setCartChangedWhilePending(true);
+      setError(null);
+      const recovery = readPaymentRecovery();
+      if (recovery?.checkoutId === current.id) {
+        setResumePaymentId(recovery.paymentId);
+        setScreen("payment");
+        return;
+      }
+      setResumePaymentId(null);
+      setScreen("cart_changed_unresolved");
       return;
     }
+    setCartChangedWhilePending(false);
+    setResumePaymentId(null);
     if (!current) {
       const started = await startCheckout({ cartId: ownedCart.id });
       if (!started.ok) {
@@ -217,6 +245,44 @@ export function CheckoutClient(props: { catalog: OrderingCatalog }) {
     }
     setSnapshot(current.activeSnapshot);
     setScreen("destination");
+  }
+
+  async function startFreshCheckoutFromCurrentCart(): Promise<void> {
+    if (pending || !cart) return;
+    setPending(true);
+    setError(null);
+    setCartChangedWhilePending(false);
+    setResumePaymentId(null);
+    const started = await startCheckout({ cartId: cart.id });
+    setPending(false);
+    if (!started.ok) {
+      // Domain may still hold PAYMENT_PENDING — keep unresolved recovery, never plain dead-end.
+      if (started.code === "CHECKOUT_STATE_CONFLICT" || started.code === "CHECKOUT_CONFLICT") {
+        setScreen("cart_changed_unresolved");
+        return;
+      }
+      setScreen("error");
+      setError(commerceErrorCopy(started.code));
+      return;
+    }
+    const fresh = started.data.checkout;
+    if (
+      fresh.status === "PAYMENT_PENDING" &&
+      fresh.sourceCartRevision !== cart.revision
+    ) {
+      setCheckout(fresh);
+      setSnapshot(fresh.activeSnapshot);
+      setCartChangedWhilePending(true);
+      const recovery = readPaymentRecovery();
+      if (recovery?.checkoutId === fresh.id) {
+        setResumePaymentId(recovery.paymentId);
+        setScreen("payment");
+        return;
+      }
+      setScreen("cart_changed_unresolved");
+      return;
+    }
+    await continueWithCart(cart);
   }
 
   async function chooseResolution(resolution: CartReconciliationResolution): Promise<void> {
@@ -378,8 +444,67 @@ export function CheckoutClient(props: { catalog: OrderingCatalog }) {
     setScreen("destination");
   }
 
+  useEffect(() => {
+    if (screen !== "cart_changed_unresolved" || !cart) return;
+    let cancelled = false;
+    const tick = async () => {
+      if (cancelled) return;
+      const recovery = readPaymentRecovery();
+      const active = await getActiveCheckout({ cartId: cart.id });
+      if (cancelled) return;
+      if (!active.ok) return;
+      const current = active.data.checkout;
+      if (current?.status === "COMPLETED") {
+        const orderId = await waitForCustomerOrder();
+        if (cancelled) return;
+        if (orderId) {
+          window.location.assign(`/order/confirmation/?orderId=${encodeURIComponent(orderId)}`);
+        }
+        return;
+      }
+      if (!current) {
+        setCartChangedWhilePending(false);
+        setScreen("cart_changed_fresh");
+        return;
+      }
+      if (
+        current.status === "PAYMENT_PENDING" &&
+        current.sourceCartRevision !== cart.revision
+      ) {
+        setCheckout(current);
+        setSnapshot(current.activeSnapshot);
+        if (recovery?.checkoutId === current.id) {
+          setResumePaymentId(recovery.paymentId);
+          setCartChangedWhilePending(true);
+          setScreen("payment");
+        }
+        return;
+      }
+      if (current.sourceCartRevision !== cart.revision) {
+        // READY/DRAFT after payment resolved to non-pending — safe to offer fresh checkout.
+        setCartChangedWhilePending(false);
+        setScreen("cart_changed_fresh");
+        return;
+      }
+      setCartChangedWhilePending(false);
+      setResumePaymentId(null);
+      await continueWithCart(cart);
+    };
+    void tick();
+    const timer = window.setInterval(() => void tick(), 2000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+    // continueWithCart is stable for this poll purpose; keyed by screen/cart.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [screen, cart]);
+
   const activeStep =
     screen === "destination" ? "delivery" : screen === "review" ? "review" : "payment";
+
+  const unresolvedPresentation = cartChangedRecoveryPresentation("unresolved");
+  const freshPresentation = cartChangedRecoveryPresentation("fresh_checkout");
 
   return (
     <main id="main-content" tabIndex={-1} className="bg-[var(--bg-page)] focus:outline-none">
@@ -402,7 +527,7 @@ export function CheckoutClient(props: { catalog: OrderingCatalog }) {
           <p className="font-body text-[15px] text-[var(--text-secondary)]">Preparing checkout…</p>
         ) : null}
 
-        {error ? (
+        {error && screen !== "cart_changed_unresolved" && screen !== "cart_changed_fresh" ? (
           <p role="alert" className="font-body text-[14px] text-[var(--text-secondary)]">
             {error}
           </p>
@@ -415,6 +540,58 @@ export function CheckoutClient(props: { catalog: OrderingCatalog }) {
             </p>
             <Button asChild variant="primary">
               <a href="/order/">Back to menu</a>
+            </Button>
+          </div>
+        ) : null}
+
+        {screen === "cart_changed_unresolved" ? (
+          <div
+            className="flex flex-col gap-4"
+            data-testid="cart-changed-unresolved"
+            role="status"
+            aria-live="polite"
+          >
+            <h2 className="font-body text-[18px] font-semibold text-[var(--text-primary)]">
+              {unresolvedPresentation.headline}
+            </h2>
+            <p className="font-body text-[14px] text-[var(--text-secondary)]">
+              {unresolvedPresentation.body}
+            </p>
+            <Button asChild variant="outline" className="min-h-[44px]">
+              <a
+                href={unresolvedPresentation.secondaryHref ?? "/order/cart/"}
+                data-testid={unresolvedPresentation.secondaryTestId ?? "cart-changed-back-to-cart"}
+              >
+                {unresolvedPresentation.secondaryActionLabel}
+              </a>
+            </Button>
+          </div>
+        ) : null}
+
+        {screen === "cart_changed_fresh" ? (
+          <div className="flex flex-col gap-4" data-testid="cart-changed-fresh">
+            <h2 className="font-body text-[18px] font-semibold text-[var(--text-primary)]">
+              {freshPresentation.headline}
+            </h2>
+            <p className="font-body text-[14px] text-[var(--text-secondary)]">{freshPresentation.body}</p>
+            <Button
+              type="button"
+              variant="primary"
+              size="lg"
+              className="min-h-[44px]"
+              data-testid={freshPresentation.primaryTestId ?? "cart-changed-start-fresh"}
+              disabled={pending}
+              onClick={() => void startFreshCheckoutFromCurrentCart()}
+            >
+              {freshPresentation.primaryActionLabel}
+            </Button>
+            <Button asChild variant="outline" className="min-h-[44px]">
+              <a
+                href={freshPresentation.secondaryHref ?? "/order/cart/"}
+                data-testid={freshPresentation.secondaryTestId ?? "cart-changed-review-cart"}
+              >
+                {freshPresentation.secondaryActionLabel}
+              </a>
             </Button>
           </div>
         ) : null}
@@ -469,11 +646,22 @@ export function CheckoutClient(props: { catalog: OrderingCatalog }) {
             <PaymentPanel
               checkout={checkout}
               snapshot={snapshot}
+              resumePaymentId={resumePaymentId}
+              cartChangedWhilePending={cartChangedWhilePending}
               onCheckoutRevisionChange={adoptCheckoutRevision}
-              onBackToReview={(revision) => {
-                adoptCheckoutRevision(revision);
-                setScreen("review");
+              onPaymentTerminalForCartChange={() => {
+                setCartChangedWhilePending(false);
+                setResumePaymentId(null);
+                setScreen("cart_changed_fresh");
               }}
+              onBackToReview={
+                cartChangedWhilePending
+                  ? undefined
+                  : (revision) => {
+                      adoptCheckoutRevision(revision);
+                      setScreen("review");
+                    }
+              }
               onOrderReady={(orderId) => {
                 window.location.assign(`/order/confirmation/?orderId=${encodeURIComponent(orderId)}`);
               }}

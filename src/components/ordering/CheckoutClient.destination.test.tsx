@@ -14,6 +14,7 @@ const {
   setCheckoutDestination,
   evaluateCheckout,
   readGuestCartCredential,
+  readPaymentRecovery,
 } = vi.hoisted(() => ({
   fetchCustomerSession: vi.fn<(...args: unknown[]) => unknown>(),
   getActiveCart: vi.fn<(...args: unknown[]) => unknown>(),
@@ -23,6 +24,7 @@ const {
   setCheckoutDestination: vi.fn<(...args: unknown[]) => unknown>(),
   evaluateCheckout: vi.fn<(...args: unknown[]) => unknown>(),
   readGuestCartCredential: vi.fn<(...args: unknown[]) => unknown>(() => null),
+  readPaymentRecovery: vi.fn<(...args: unknown[]) => unknown>(() => null),
 }));
 
 vi.mock("@/lib/customer-auth/client", () => ({
@@ -61,8 +63,18 @@ vi.mock("@/components/ordering/PaymentPanel", () => ({
   PaymentPanel: (props: {
     onBackToReview?: (checkoutRevision: string) => void;
     onCheckoutRevisionChange?: (checkoutRevision: string) => void;
+    resumePaymentId?: string | null;
+    cartChangedWhilePending?: boolean;
+    onPaymentTerminalForCartChange?: () => void;
   }) => (
-    <div data-testid="payment-panel-mock">
+    <div
+      data-testid="payment-panel-mock"
+      data-resume-payment-id={props.resumePaymentId ?? ""}
+      data-cart-changed={props.cartChangedWhilePending ? "true" : "false"}
+    >
+      {props.cartChangedWhilePending ? (
+        <p data-testid="payment-checking">Checking your previous payment</p>
+      ) : null}
       <button
         type="button"
         data-testid="simulate-payment-revision-advance"
@@ -76,6 +88,13 @@ vi.mock("@/components/ordering/PaymentPanel", () => ({
         onClick={() => props.onBackToReview?.("11")}
       >
         Back to review
+      </button>
+      <button
+        type="button"
+        data-testid="simulate-payment-terminal"
+        onClick={() => props.onPaymentTerminalForCartChange?.()}
+      >
+        Simulate terminal payment
       </button>
     </div>
   ),
@@ -94,6 +113,7 @@ vi.mock("@/lib/customer-commerce", async () => {
     setCheckoutDestination: (...args: unknown[]) => setCheckoutDestination(...args),
     evaluateCheckout: (...args: unknown[]) => evaluateCheckout(...args),
     readGuestCartCredential: (...args: unknown[]) => readGuestCartCredential(...args),
+    readPaymentRecovery: (...args: unknown[]) => readPaymentRecovery(...args),
     claimGuestCart: vi.fn(),
     reconcileGuestCart: vi.fn(),
     clearGuestCartCredential: vi.fn(),
@@ -224,6 +244,7 @@ beforeEach(() => {
       ],
     },
   });
+  readPaymentRecovery.mockReturnValue(null);
 });
 
 describe("map-first checkout destination", () => {
@@ -452,5 +473,113 @@ describe("CheckoutClient back-navigation revision reconciliation", () => {
     await waitFor(() =>
       expect(screen.getByRole("alert")).toHaveTextContent("Checkout changed. Refresh and try again."),
     );
+  });
+});
+
+describe("CheckoutClient cart-changed payment recovery", () => {
+  const pendingCheckout = checkoutState({
+    revision: "4",
+    status: "PAYMENT_PENDING",
+    sourceCartRevision: "5",
+    activeSnapshotId: "snap-1",
+    activeSnapshot: snapshot({ sourceCartRevision: "5", checkoutRevision: "4" }),
+  });
+
+  beforeEach(() => {
+    getActiveCart.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { cart: { ...cart, revision: "16" } },
+    });
+    getActiveCheckout.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { checkout: pendingCheckout },
+    });
+    startCheckout.mockReset();
+    readPaymentRecovery.mockReturnValue(null);
+  });
+
+  it("does not render plain-text cart-changed dead-end when payment is unresolved", async () => {
+    render(<CheckoutClient catalog={catalog} />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("cart-changed-unresolved")).toBeInTheDocument();
+    });
+    expect(screen.getByText("Checking your previous payment")).toBeInTheDocument();
+    expect(screen.getByTestId("cart-changed-back-to-cart")).toBeInTheDocument();
+    expect(
+      screen.queryByText("Your cart changed. Review it and start checkout again."),
+    ).not.toBeInTheDocument();
+    expect(startCheckout).not.toHaveBeenCalled();
+  });
+
+  it("resumes payment panel with authority-first flags when session recovery matches", async () => {
+    readPaymentRecovery.mockReturnValue({
+      paymentId: "pay-1",
+      checkoutId: "chk-1",
+      checkoutRevision: "4",
+    });
+
+    render(<CheckoutClient catalog={catalog} />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("payment-panel-mock")).toBeInTheDocument();
+    });
+    const panel = screen.getByTestId("payment-panel-mock");
+    expect(panel.getAttribute("data-resume-payment-id")).toBe("pay-1");
+    expect(panel.getAttribute("data-cart-changed")).toBe("true");
+    expect(screen.getByTestId("payment-checking")).toBeInTheDocument();
+    expect(startCheckout).not.toHaveBeenCalled();
+  });
+
+  it("offers actionable fresh checkout after payment becomes terminal", async () => {
+    readPaymentRecovery.mockReturnValue({
+      paymentId: "pay-1",
+      checkoutId: "chk-1",
+      checkoutRevision: "4",
+    });
+    startCheckout.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        checkout: checkoutState({
+          id: "chk-2",
+          status: "DRAFT",
+          sourceCartRevision: "16",
+          revision: "1",
+        }),
+      },
+    });
+    getActiveCheckout
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        data: { checkout: pendingCheckout },
+      })
+      .mockResolvedValue({
+        ok: true,
+        status: 200,
+        data: { checkout: null },
+      });
+
+    render(<CheckoutClient catalog={catalog} />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("payment-panel-mock")).toBeInTheDocument();
+    });
+    await userEvent.click(screen.getByTestId("simulate-payment-terminal"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("cart-changed-fresh")).toBeInTheDocument();
+    });
+    expect(screen.getByText("Your cart changed")).toBeInTheDocument();
+    expect(screen.getByTestId("cart-changed-start-fresh")).toBeInTheDocument();
+    expect(screen.getByTestId("cart-changed-review-cart")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByTestId("cart-changed-start-fresh"));
+    await waitFor(() => {
+      expect(startCheckout).toHaveBeenCalledWith({ cartId: "cart-1" });
+    });
   });
 });
