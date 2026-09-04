@@ -16,6 +16,7 @@ import { usePathname } from "next/navigation";
 import { Menu, ArrowLeft, Sun, Moon, Bag } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { useCustomerChromeSession } from "@/lib/customer-auth/chrome-session";
+import { signInHrefForPath } from "@/lib/customer-auth/return-to";
 import { getActiveCart } from "@/lib/customer-commerce";
 import { cartUnitCount } from "@/components/ordering/cart-presentation";
 import { subscribeToCartCount } from "@/components/ordering/cart-count-sync";
@@ -31,7 +32,6 @@ const CART_HREF = "/order/cart/";
 const MY_ORDERS_HREF = "/order/orders/";
 const PROFILE_HREF = "/account/profile/";
 const ADDRESSES_HREF = "/account/addresses/";
-const SIGN_IN_HREF = "/login/";
 
 function subscribeTheme(cb: () => void) {
   const obs = new MutationObserver(cb);
@@ -112,6 +112,7 @@ export function Nav() {
   const profileActive = isProfilePath(pathname);
   const addressesActive = isAddressesPath(pathname);
   const signInActive = isLoginPath(pathname);
+  const signInHref = signInHrefForPath(pathname);
   const orderingChrome = pathname.startsWith("/order");
 
   useEffect(() => {
@@ -277,7 +278,7 @@ export function Nav() {
       ) : null}
     </div>
   ) : (
-    <a href={SIGN_IN_HREF} className={chromeLinkClass(signInActive)}>
+    <a href={signInHref} className={chromeLinkClass(signInActive)}>
       Sign In
     </a>
   );
@@ -574,7 +575,7 @@ export function Nav() {
             ) : (
               <li>
                 <a
-                  href={SIGN_IN_HREF}
+                  href={signInHref}
                   onClick={closeDrawer}
                   aria-current={signInActive ? "page" : undefined}
                   className={cn(

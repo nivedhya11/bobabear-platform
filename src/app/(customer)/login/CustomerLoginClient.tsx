@@ -23,21 +23,22 @@ import { useSearchParams } from "next/navigation";
 import {
   fetchCustomerSession,
   sendCustomerOtp,
-  signOutCustomer,
   verifyCustomerOtp,
 } from "@/lib/customer-auth/client";
 import { notifyCustomerChromeSessionChanged } from "@/lib/customer-auth/chrome-session";
-import { parseSafeReturnPath } from "@/lib/customer-auth/return-to";
+import {
+  parseSafeReturnPath,
+  resolveCustomerPostAuthHref,
+} from "@/lib/customer-auth/return-to";
 import { getOwnProfile } from "@/lib/customer-commerce";
 import { shouldOfferWelcome, welcomeUrlWithReturn } from "@/lib/customer-commerce/welcome-flow";
 import { normalizeIndianMobileNumber } from "@/shared/customer-auth/phone";
 import { cn } from "@/lib/utils";
 
-type Screen = "loading" | "phone" | "code" | "signed-in";
+type Screen = "loading" | "phone" | "code";
 
 type Notice =
   | Readonly<{ kind: "otp-sent" }>
-  | Readonly<{ kind: "signed-out" }>
   | Readonly<{ kind: "invalid-phone" }>
   | Readonly<{ kind: "invalid-code" }>
   | Readonly<{ kind: "attempts-exhausted" }>
@@ -70,16 +71,6 @@ const BUTTON_PRIMARY_CLASS = cn(
   "focus-ring",
 );
 
-const BUTTON_SECONDARY_CLASS = cn(
-  "h-11 px-5 rounded-sm",
-  "border border-[var(--border-strong)] text-[var(--text-primary)]",
-  "font-mono text-[12px] font-bold uppercase tracking-[0.16em]",
-  "hover:border-[var(--interactive-secondary)]",
-  "transition-colors duration-[150ms] ease-out",
-  "disabled:opacity-60 disabled:cursor-not-allowed",
-  "focus-ring self-start",
-);
-
 const LINK_CLASS = cn(
   "font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--text-tertiary)]",
   "hover:text-[var(--interactive-secondary)] transition-colors duration-[150ms] ease-out",
@@ -100,8 +91,6 @@ function describeNotice(
     switch (notice.kind) {
       case "otp-sent":
         return "Code sent — check your messages.";
-      case "signed-out":
-        return "You've been signed out.";
       case "invalid-phone":
         return "Enter a valid Indian mobile number.";
       case "invalid-code":
@@ -145,11 +134,7 @@ export function CustomerLoginClient() {
       const result = await fetchCustomerSession();
       if (cancelled) return;
       if (result.ok && result.data.authenticated) {
-        if (returnTo) {
-          window.location.assign(returnTo);
-          return;
-        }
-        setScreen("signed-in");
+        window.location.assign(resolveCustomerPostAuthHref(returnTo));
         return;
       }
       setScreen("phone");
@@ -238,11 +223,7 @@ export function CustomerLoginClient() {
         window.location.assign(welcomeUrlWithReturn(returnTo));
         return;
       }
-      if (returnTo) {
-        window.location.assign(returnTo);
-        return;
-      }
-      setScreen("signed-in");
+      window.location.assign(resolveCustomerPostAuthHref(returnTo));
       return;
     }
     if (data.code === "OTP_ATTEMPTS_EXHAUSTED") {
@@ -276,20 +257,6 @@ export function CustomerLoginClient() {
     setNotice(null);
   }
 
-  async function handleSignOut(): Promise<void> {
-    if (pending) return;
-    setPending(true);
-    await signOutCustomer();
-    notifyCustomerChromeSessionChanged();
-    setPending(false);
-    setPhoneInput("");
-    setNormalizedPhone(null);
-    setCode("");
-    setResendAvailableAt(null);
-    setNotice({ kind: "signed-out" });
-    setScreen("phone");
-  }
-
   const statusMessage = describeNotice(screen, notice, cooldownSeconds);
 
   return (
@@ -306,22 +273,6 @@ export function CustomerLoginClient() {
 
         {screen === "loading" && (
           <p className="font-body text-[15px] text-[var(--text-secondary)]">Checking your session…</p>
-        )}
-
-        {screen === "signed-in" && (
-          <div className="flex flex-col gap-5">
-            <p className="font-body text-[15px] text-[var(--text-secondary)]">
-              You&rsquo;re signed in.
-            </p>
-            <button
-              type="button"
-              onClick={() => void handleSignOut()}
-              disabled={pending}
-              className={BUTTON_SECONDARY_CLASS}
-            >
-              {pending ? "Signing out…" : "Sign out"}
-            </button>
-          </div>
         )}
 
         {screen === "phone" && (

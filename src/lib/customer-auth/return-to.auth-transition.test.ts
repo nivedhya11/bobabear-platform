@@ -27,4 +27,18 @@ describe("guest cart survives auth navigation", () => {
     );
     expect(readGuestCartCredential()?.token).toBe("survive-auth");
   });
+
+  it("keeps guest cart credential when Nav Sign In preserves cart returnTo", () => {
+    writeGuestCartCredential({
+      token: "nav-cart-auth",
+      brandId: "56ff7724-d511-5ef4-b5d5-d629cbfb2388",
+      cartId: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+      revision: "7",
+    });
+
+    const href = loginUrlWithReturn("/order/cart/");
+    expect(href).toBe("/login?returnTo=%2Forder%2Fcart%2F");
+    expect(readGuestCartCredential()?.token).toBe("nav-cart-auth");
+    expect(readGuestCartCredential()?.cartId).toBe("eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee");
+  });
 });

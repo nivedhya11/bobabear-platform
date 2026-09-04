@@ -87,6 +87,32 @@ describe("Nav — IMP-028A Food Direct chrome", () => {
     expect(within(nav).queryByRole("link", { name: "Order" })).not.toBeInTheDocument();
   });
 
+  it("preserves /order/ as Sign In returnTo from the menu route", async () => {
+    usePathname.mockReturnValue("/order/");
+    render(<Nav />);
+    const nav = desktopNav();
+    await waitFor(() => {
+      expect(within(nav).getByRole("link", { name: "Sign In" })).toBeInTheDocument();
+    });
+    expect(within(nav).getByRole("link", { name: "Sign In" })).toHaveAttribute(
+      "href",
+      "/login?returnTo=%2Forder%2F",
+    );
+  });
+
+  it("preserves /order/cart/ as Sign In returnTo from the cart route", async () => {
+    usePathname.mockReturnValue("/order/cart/");
+    render(<Nav />);
+    const nav = desktopNav();
+    await waitFor(() => {
+      expect(within(nav).getByRole("link", { name: "Sign In" })).toBeInTheDocument();
+    });
+    expect(within(nav).getByRole("link", { name: "Sign In" })).toHaveAttribute(
+      "href",
+      "/login?returnTo=%2Forder%2Fcart%2F",
+    );
+  });
+
   it("shows authenticated chrome My BOBA instead of Sign In", async () => {
     vi.stubGlobal(
       "fetch",
@@ -243,6 +269,19 @@ describe("Nav — IMP-028A Food Direct chrome", () => {
     expect(within(nav).queryByRole("link", { name: "Offers" })).not.toBeInTheDocument();
     expect(within(nav).queryByRole("link", { name: "Merch" })).not.toBeInTheDocument();
     expect(within(nav).queryByRole("link", { name: "Artists" })).not.toBeInTheDocument();
+  });
+
+  it("preserves cart returnTo on mobile Sign In from /order/cart/", async () => {
+    usePathname.mockReturnValue("/order/cart/");
+    const user = userEvent.setup();
+    render(<Nav />);
+    await user.click(screen.getByRole("button", { name: "Open navigation menu" }));
+    const drawer = screen.getByRole("dialog", { name: "Navigation menu" });
+    const nav = within(drawer).getByRole("navigation", { name: "Mobile navigation" });
+    expect(within(nav).getByRole("link", { name: "Sign In" })).toHaveAttribute(
+      "href",
+      "/login?returnTo=%2Forder%2Fcart%2F",
+    );
   });
 
   it("loads the active cart count and synchronizes successful mutations without reload", async () => {
