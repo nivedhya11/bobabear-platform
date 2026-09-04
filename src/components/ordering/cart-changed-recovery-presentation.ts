@@ -16,6 +16,12 @@ export type CartChangedRecoveryPresentation = Readonly<{
   secondaryHref: string | null;
 }>;
 
+export const PREVIOUS_CHECKOUT_LOCK_COPY =
+  "This checkout is locked while its payment status is being confirmed. Its items and delivery address can't be changed.";
+
+export const PREVIOUS_CHECKOUT_ADDRESS_LOCK_COPY =
+  "Delivery details are locked while this payment is being confirmed.";
+
 export function cartChangedRecoveryPresentation(
   kind: CartChangedRecoveryKind,
 ): CartChangedRecoveryPresentation {
@@ -23,11 +29,11 @@ export function cartChangedRecoveryPresentation(
     case "unresolved":
       return Object.freeze({
         kind,
-        headline: "Checking your previous payment",
-        body: "We're confirming the payment status before you can start checkout again. Please don't pay again yet.",
+        headline: "Previous payment is being checked",
+        body: "We're checking payment for your previous checkout. Your cart has changed since that payment started. Please don't pay again yet.",
         primaryActionLabel: null,
         primaryTestId: null,
-        secondaryActionLabel: "Back to cart",
+        secondaryActionLabel: "View current cart",
         secondaryTestId: "cart-changed-back-to-cart",
         secondaryHref: "/order/cart/",
       });

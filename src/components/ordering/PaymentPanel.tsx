@@ -115,6 +115,11 @@ export function PaymentPanel(props: {
    * unresolved copy; notifies parent when payment is safely terminal.
    */
   cartChangedWhilePending?: boolean;
+  /**
+   * Parent already renders previous-vs-current cart recovery chrome.
+   * Suppress duplicate order framing / fee breakdown / back-to-cart link.
+   */
+  embeddedInPreviousPaymentRecovery?: boolean;
   /** Payment cancelled/expired/superseded — parent may offer fresh current-cart checkout. */
   onPaymentTerminalForCartChange?: () => void;
 }) {
@@ -123,6 +128,7 @@ export function PaymentPanel(props: {
   const payableRows = snapshotPayableRows(props.snapshot);
   const resumePaymentId = props.resumePaymentId ?? null;
   const cartChangedWhilePending = props.cartChangedWhilePending === true;
+  const embeddedRecovery = props.embeddedInPreviousPaymentRecovery === true;
 
   const [screen, setScreen] = useState<PaymentScreen>(resumePaymentId ? "checking" : "idle");
   const [checkingKind, setCheckingKind] = useState<CheckingKind>("generic");
@@ -588,7 +594,7 @@ export function PaymentPanel(props: {
   const recovery =
     recoveryKind != null ? paymentRecoveryPresentation(recoveryKind, payableLabel) : null;
   const cartChangedUnresolved =
-    cartChangedWhilePending && recoveryKind === "unresolved"
+    cartChangedWhilePending && recoveryKind === "unresolved" && !embeddedRecovery
       ? cartChangedRecoveryPresentation("unresolved")
       : null;
 
@@ -611,19 +617,27 @@ export function PaymentPanel(props: {
 
   return (
     <div className="flex flex-col gap-4" data-testid="checkout-payment">
-      <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--interactive-secondary)]">
-        {zeroPayable ? "No payment required" : "Pay for your order"}
-      </p>
-      <dl className="grid grid-cols-2 gap-2 font-body text-[14px]" data-testid="checkout-fee-breakdown">
-        {payableRows.map((row) => (
-          <div key={row.key} className="contents">
-            <dt className={row.key === "total" ? "text-[var(--text-primary)] font-semibold" : "text-[var(--text-tertiary)]"}>
-              {row.label}
-            </dt>
-            <dd className={row.key === "total" ? "font-bold" : undefined}>{formatPaise(row.amountPaise)}</dd>
-          </div>
-        ))}
-      </dl>
+      {!embeddedRecovery ? (
+        <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--interactive-secondary)]">
+          {zeroPayable ? "No payment required" : "Pay for your order"}
+        </p>
+      ) : (
+        <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--interactive-secondary)]">
+          Previous payment status
+        </p>
+      )}
+      {!embeddedRecovery ? (
+        <dl className="grid grid-cols-2 gap-2 font-body text-[14px]" data-testid="checkout-fee-breakdown">
+          {payableRows.map((row) => (
+            <div key={row.key} className="contents">
+              <dt className={row.key === "total" ? "text-[var(--text-primary)] font-semibold" : "text-[var(--text-tertiary)]"}>
+                {row.label}
+              </dt>
+              <dd className={row.key === "total" ? "font-bold" : undefined}>{formatPaise(row.amountPaise)}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
 
       {cartChangedUnresolved ? (
         <div
@@ -639,7 +653,7 @@ export function PaymentPanel(props: {
           </h2>
           <p className="font-body text-[14px] text-[var(--text-secondary)]">{cartChangedUnresolved.body}</p>
         </div>
-      ) : recovery ? (
+      ) : recovery && !(cartChangedWhilePending && recovery.kind === "unresolved" && embeddedRecovery) ? (
         <div
           role={recovery.kind === "failed" ? "alert" : "status"}
           aria-live={recovery.kind === "failed" ? "assertive" : "polite"}
@@ -653,6 +667,17 @@ export function PaymentPanel(props: {
             {recovery.headline}
           </h2>
           <p className="font-body text-[14px] text-[var(--text-secondary)]">{recovery.body}</p>
+        </div>
+      ) : cartChangedWhilePending && recoveryKind === "unresolved" && embeddedRecovery ? (
+        <div
+          role="status"
+          aria-live="polite"
+          data-testid="payment-checking"
+          data-checking-kind={checkingKind}
+          data-cart-changed="true"
+          className="sr-only"
+        >
+          Checking previous payment status
         </div>
       ) : null}
 
@@ -770,11 +795,13 @@ export function PaymentPanel(props: {
         </Button>
       ) : null}
 
-      <Button asChild variant="outline" className="min-h-[44px]">
-        <a href="/order/cart/" data-testid="cart-changed-back-to-cart">
-          Back to cart
-        </a>
-      </Button>
+      {!embeddedRecovery ? (
+        <Button asChild variant="outline" className="min-h-[44px]">
+          <a href="/order/cart/" data-testid="cart-changed-back-to-cart">
+            Back to cart
+          </a>
+        </Button>
+      ) : null}
     </div>
   );
 }

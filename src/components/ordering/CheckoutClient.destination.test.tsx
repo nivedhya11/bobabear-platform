@@ -65,15 +65,17 @@ vi.mock("@/components/ordering/PaymentPanel", () => ({
     onCheckoutRevisionChange?: (checkoutRevision: string) => void;
     resumePaymentId?: string | null;
     cartChangedWhilePending?: boolean;
+    embeddedInPreviousPaymentRecovery?: boolean;
     onPaymentTerminalForCartChange?: () => void;
   }) => (
     <div
       data-testid="payment-panel-mock"
       data-resume-payment-id={props.resumePaymentId ?? ""}
       data-cart-changed={props.cartChangedWhilePending ? "true" : "false"}
+      data-embedded-recovery={props.embeddedInPreviousPaymentRecovery ? "true" : "false"}
     >
       {props.cartChangedWhilePending ? (
-        <p data-testid="payment-checking">Checking your previous payment</p>
+        <p data-testid="payment-checking">Checking previous payment status</p>
       ) : null}
       <button
         type="button"
@@ -124,7 +126,22 @@ vi.mock("@/lib/customer-commerce", async () => {
 
 const catalog = {
   brandId: "56ff7724-d511-5ef4-b5d5-d629cbfb2388",
-  items: [],
+  items: [
+    {
+      sourceKey: "hk",
+      productId: "p-1",
+      variantId: "var-1",
+      sectionId: "s-1",
+      name: "Brown Sugar Boba",
+      description: "",
+      imagePath: "",
+      presentationPriceRupees: 220,
+      tags: [],
+      categorySlug: "drinks",
+      subcategoryName: "Tea",
+      position: 1,
+    },
+  ],
 } as unknown as OrderingCatalog;
 
 const cart = {
@@ -477,12 +494,26 @@ describe("CheckoutClient back-navigation revision reconciliation", () => {
 });
 
 describe("CheckoutClient cart-changed payment recovery", () => {
+  const pendingSnapshot = snapshot({
+    sourceCartRevision: "5",
+    checkoutRevision: "4",
+    grandTotalPaise: "84700",
+    lines: [
+      {
+        productName: "Hong Kong Milk Tea Boba",
+        variantName: "Regular",
+        quantity: 3,
+        lineTotalPaise: "78700",
+      },
+    ],
+  });
+
   const pendingCheckout = checkoutState({
     revision: "4",
     status: "PAYMENT_PENDING",
     sourceCartRevision: "5",
     activeSnapshotId: "snap-1",
-    activeSnapshot: snapshot({ sourceCartRevision: "5", checkoutRevision: "4" }),
+    activeSnapshot: pendingSnapshot,
   });
 
   beforeEach(() => {
@@ -500,21 +531,32 @@ describe("CheckoutClient cart-changed payment recovery", () => {
     readPaymentRecovery.mockReturnValue(null);
   });
 
-  it("does not render plain-text cart-changed dead-end when payment is unresolved", async () => {
+  it("renders dedicated previous-payment recovery instead of plain dead-end", async () => {
     render(<CheckoutClient catalog={catalog} />);
 
     await waitFor(() => {
       expect(screen.getByTestId("cart-changed-unresolved")).toBeInTheDocument();
     });
-    expect(screen.getByText("Checking your previous payment")).toBeInTheDocument();
-    expect(screen.getByTestId("cart-changed-back-to-cart")).toBeInTheDocument();
+    expect(screen.getByText("Previous payment is being checked")).toBeInTheDocument();
+    expect(screen.getByTestId("previous-checkout-summary")).toHaveTextContent("Previous checkout");
+    expect(screen.getByText("Previous checkout items")).toBeInTheDocument();
+    expect(screen.getByText(/3 × Hong Kong Milk Tea Boba/)).toBeInTheDocument();
+    expect(screen.getByTestId("current-cart-summary")).toHaveTextContent("1 item");
+    expect(screen.getByTestId("current-cart-lines")).toHaveTextContent("1 × Brown Sugar Boba");
+    expect(screen.getByTestId("current-cart-summary")).not.toHaveTextContent(
+      "Hong Kong Milk Tea Boba",
+    );
+    expect(screen.queryByText("Your items")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("checkout-steps")).not.toBeInTheDocument();
+    expect(screen.getByTestId("previous-checkout-address-lock")).toBeInTheDocument();
+    expect(screen.getByTestId("cart-changed-back-to-cart")).toHaveAttribute("href", "/order/cart/");
     expect(
       screen.queryByText("Your cart changed. Review it and start checkout again."),
     ).not.toBeInTheDocument();
     expect(startCheckout).not.toHaveBeenCalled();
   });
 
-  it("resumes payment panel with authority-first flags when session recovery matches", async () => {
+  it("keeps recovery presentation when session recovery matches (no normal payment layout)", async () => {
     readPaymentRecovery.mockReturnValue({
       paymentId: "pay-1",
       checkoutId: "chk-1",
@@ -524,13 +566,46 @@ describe("CheckoutClient cart-changed payment recovery", () => {
     render(<CheckoutClient catalog={catalog} />);
 
     await waitFor(() => {
-      expect(screen.getByTestId("payment-panel-mock")).toBeInTheDocument();
+      expect(screen.getByTestId("cart-changed-unresolved")).toBeInTheDocument();
     });
+    expect(screen.getByTestId("payment-panel-mock")).toBeInTheDocument();
     const panel = screen.getByTestId("payment-panel-mock");
     expect(panel.getAttribute("data-resume-payment-id")).toBe("pay-1");
     expect(panel.getAttribute("data-cart-changed")).toBe("true");
+    expect(panel.getAttribute("data-embedded-recovery")).toBe("true");
     expect(screen.getByTestId("payment-checking")).toBeInTheDocument();
+    expect(screen.queryByTestId("checkout-ready")).not.toBeInTheDocument();
+    expect(screen.queryByText("Your items")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("checkout-steps")).not.toBeInTheDocument();
     expect(startCheckout).not.toHaveBeenCalled();
+  });
+
+  it("returns to recovery when startCheckout still sees unresolved previous payment", async () => {
+    readPaymentRecovery.mockReturnValue({
+      paymentId: "pay-1",
+      checkoutId: "chk-1",
+      checkoutRevision: "4",
+    });
+    getActiveCheckout.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { checkout: pendingCheckout },
+    });
+    startCheckout.mockResolvedValue({
+      ok: false,
+      code: "CHECKOUT_STATE_CONFLICT",
+      status: 409,
+    });
+
+    render(<CheckoutClient catalog={catalog} />);
+    await waitFor(() => expect(screen.getByTestId("payment-panel-mock")).toBeInTheDocument());
+    await userEvent.click(screen.getByTestId("simulate-payment-terminal"));
+    await waitFor(() => expect(screen.getByTestId("cart-changed-fresh")).toBeInTheDocument());
+    await userEvent.click(screen.getByTestId("cart-changed-start-fresh"));
+    await waitFor(() => {
+      expect(screen.getByTestId("cart-changed-unresolved")).toBeInTheDocument();
+    });
+    expect(startCheckout).toHaveBeenCalledWith({ cartId: "cart-1" });
   });
 
   it("offers actionable fresh checkout after payment becomes terminal", async () => {
@@ -551,17 +626,11 @@ describe("CheckoutClient cart-changed payment recovery", () => {
         }),
       },
     });
-    getActiveCheckout
-      .mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        data: { checkout: pendingCheckout },
-      })
-      .mockResolvedValue({
-        ok: true,
-        status: 200,
-        data: { checkout: null },
-      });
+    getActiveCheckout.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { checkout: pendingCheckout },
+    });
 
     render(<CheckoutClient catalog={catalog} />);
 
@@ -576,10 +645,33 @@ describe("CheckoutClient cart-changed payment recovery", () => {
     expect(screen.getByText("Your cart changed")).toBeInTheDocument();
     expect(screen.getByTestId("cart-changed-start-fresh")).toBeInTheDocument();
     expect(screen.getByTestId("cart-changed-review-cart")).toBeInTheDocument();
+    expect(screen.queryByTestId("checkout-steps")).not.toBeInTheDocument();
 
     await userEvent.click(screen.getByTestId("cart-changed-start-fresh"));
     await waitFor(() => {
       expect(startCheckout).toHaveBeenCalledWith({ cartId: "cart-1" });
     });
+  });
+
+  it("keeps normal Delivery/Review/Payment stepper when cart matches checkout", async () => {
+    getActiveCart.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { cart },
+    });
+    getActiveCheckout.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { checkout: null },
+    });
+    startCheckout.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { checkout: checkoutState({ revision: "1", status: "DRAFT", sourceCartRevision: "7" }) },
+    });
+
+    render(<CheckoutClient catalog={catalog} />);
+    await waitFor(() => expect(screen.getByTestId("checkout-destination-select")).toBeInTheDocument());
+    expect(screen.getByTestId("checkout-steps")).toBeInTheDocument();
   });
 });
