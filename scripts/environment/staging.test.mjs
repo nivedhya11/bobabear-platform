@@ -89,8 +89,12 @@ test("staging deploy retains the current-main Podman hardening safeguards", () =
 test("all final BOBA image targets persist the OCI revision label", () => {
   const source = readFileSync(path.resolve("Dockerfile"), "utf8");
   for (const target of ["tooling", "customer-auth-runtime", "workforce-auth-runtime", "customer-commerce-runtime", "operations-runtime", "web-runtime"]) {
-    assert.match(source, new RegExp(`FROM .* AS ${target}\\nARG BOBA_BUILD_SHA\\nLABEL org\\.opencontainers\\.image\\.revision=\\$\\{BOBA_BUILD_SHA\\}`));
+    assert.match(source, new RegExp(`FROM .* AS ${target}\\nARG BOBA_BUILD_SHA\\n(?:RUN[^\\n]+\\n)?LABEL org\\.opencontainers\\.image\\.revision=\\$\\{BOBA_BUILD_SHA\\}`));
   }
+  assert.match(
+    source,
+    /FROM .* AS tooling\nARG BOBA_BUILD_SHA\nRUN printf '%s\\n' "\$\{BOBA_BUILD_SHA\}" > \/tmp\/boba-build-sha\nLABEL org\.opencontainers\.image\.revision=\$\{BOBA_BUILD_SHA\}/,
+  );
 });
 
 test("Compose forwards BOBA_BUILD_SHA to every BOBA build, never PostgreSQL", () => {
