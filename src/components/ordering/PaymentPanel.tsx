@@ -9,6 +9,10 @@ import { formatPaise } from "@/components/ordering/format-money";
 import { interpretClientAction, isZeroPayableTotal } from "@/components/ordering/client-action";
 import { browserNavigate } from "@/components/ordering/browser-navigate";
 import {
+  paymentRecoveryPresentation,
+  type PaymentRecoveryKind,
+} from "@/components/ordering/payment-recovery-presentation";
+import {
   loadRazorpayCheckoutScript,
   openRazorpayStandardCheckout,
   parseRazorpayStandardCheckoutAction,
@@ -42,6 +46,7 @@ type PaymentScreen =
   | "checkout_open"
   | "checking"
   | "retryable"
+  | "dismissed"
   | "checkout_load_failed"
   | "error";
 
@@ -85,21 +90,6 @@ function checkingKindForState(state: CommercePaymentState): CheckingKind {
   return "generic";
 }
 
-function checkingStatusCopy(kind: CheckingKind): string {
-  switch (kind) {
-    case "indeterminate":
-      return "We're still checking your payment. Don't pay again yet.";
-    case "pending":
-      return "Waiting for payment confirmation. Don't pay again yet.";
-    case "processing":
-      return "We're confirming your payment. Don't pay again yet.";
-    case "confirming":
-      return "We're confirming your payment. Don't pay again yet.";
-    default:
-      return "Checking payment… Don't pay again yet.";
-  }
-}
-
 function integrationErrorCopy(reason: "malformed" | "secret" | "unsupported"): string {
   if (reason === "secret") return "Payment checkout is misconfigured. Please try again shortly.";
   return "Payment checkout could not start. Please try again.";
@@ -121,6 +111,7 @@ export function PaymentPanel(props: {
   const [screen, setScreen] = useState<PaymentScreen>("idle");
   const [checkingKind, setCheckingKind] = useState<CheckingKind>("generic");
   const [error, setError] = useState<string | null>(null);
+  const [recoveryKind, setRecoveryKind] = useState<PaymentRecoveryKind | null>(null);
   const [paymentId, setPaymentId] = useState<string | null>(null);
   const [checkoutRevision, setCheckoutRevision] = useState(props.checkout.revision);
   const [attemptId, setAttemptId] = useState<string | null>(null);
@@ -128,6 +119,8 @@ export function PaymentPanel(props: {
   const inflight = useRef(false);
   const handlerSubmitted = useRef(false);
   const finished = useRef(false);
+  /** Set when Razorpay `payment.failed` is observed for the current checkout open. */
+  const providerFailureObservedRef = useRef(false);
   const payButtonRef = useRef<HTMLButtonElement>(null);
 
   function restorePayFocus(): void {
@@ -139,21 +132,40 @@ export function PaymentPanel(props: {
     props.onCheckoutRevisionChange?.(revision);
   }
 
+  function showAuthoritativeFailed(): void {
+    setRecoveryKind("failed");
+    setScreen("retryable");
+    restorePayFocus();
+  }
+
+  function showDismissedRecovery(): void {
+    setError(null);
+    setRecoveryKind("dismissed");
+    setScreen("dismissed");
+    restorePayFocus();
+  }
+
+  function showUnresolvedChecking(kind: CheckingKind): void {
+    setRecoveryKind("unresolved");
+    setCheckingKind(kind);
+    setScreen("checking");
+  }
+
   async function finishWithOrder(): Promise<void> {
     finished.current = true;
     const orderId = await waitForCustomerOrder();
     if (!orderId) {
       setError("Payment confirmed. We're finishing your order — don't pay again.");
-      setScreen("checking");
-      setCheckingKind("generic");
+      showUnresolvedChecking("generic");
       return;
     }
+    setRecoveryKind(null);
     props.onOrderReady(orderId);
   }
 
   async function applyPaymentState(
     state: CommercePaymentState,
-    unresolved: "checking" | "idle" = "checking",
+    unresolved: "checking" | "idle" | "dismissed" = "checking",
   ): Promise<void> {
     const payment = state.payment;
     const attempt = latestAttempt(state);
@@ -183,6 +195,7 @@ export function PaymentPanel(props: {
       payment?.status === "CANCELLED" ||
       payment?.status === "SUPERSEDED"
     ) {
+      setRecoveryKind(null);
       setError(
         commerceErrorCopy(payment.status === "EXPIRED" ? "PAYMENT_EXPIRED" : "PAYMENT_TERMINAL"),
       );
@@ -190,19 +203,24 @@ export function PaymentPanel(props: {
       return;
     }
     if (attempt?.status === "FAILED" && payment?.status === "OPEN" && !unresolvedAttempt(state)) {
-      setScreen("retryable");
-      restorePayFocus();
+      showAuthoritativeFailed();
       return;
     }
-    if (
-      unresolved === "checking" &&
-      (payment?.status === "PROCESSING" || unresolvedAttempt(state))
-    ) {
-      setCheckingKind(checkingKindForState(state));
-      setScreen("checking");
+    if (attempt?.status === "INDETERMINATE" || payment?.status === "PROCESSING" || unresolvedAttempt(state)) {
+      if (unresolved === "dismissed" && !providerFailureObservedRef.current && attempt?.status !== "INDETERMINATE") {
+        // Customer closed Checkout without a confirmed failure — reopen existing clientAction.
+        showDismissedRecovery();
+        return;
+      }
+      showUnresolvedChecking(checkingKindForState(state));
       return;
     }
-    setScreen(unresolved);
+    if (unresolved === "dismissed") {
+      showDismissedRecovery();
+      return;
+    }
+    setRecoveryKind(null);
+    setScreen(unresolved === "checking" ? "checking" : "idle");
     if (unresolved === "idle") restorePayFocus();
   }
 
@@ -235,6 +253,7 @@ export function PaymentPanel(props: {
     const parsed = parseRazorpayStandardCheckoutAction(action);
     if (!parsed.ok) {
       setError(integrationErrorCopy(parsed.reason === "secret" ? "secret" : "malformed"));
+      setRecoveryKind(null);
       setScreen("error");
       restorePayFocus();
       return;
@@ -242,6 +261,8 @@ export function PaymentPanel(props: {
 
     setPendingCheckoutAction(action);
     handlerSubmitted.current = false;
+    providerFailureObservedRef.current = false;
+    setRecoveryKind(null);
     setScreen("loading_checkout");
     setError(null);
     try {
@@ -287,12 +308,11 @@ export function PaymentPanel(props: {
     evidencePaymentId: string,
     evidence: RazorpayCheckoutHandlerResponse,
   ): Promise<void> {
-    if (handlerSubmitted.current || inflight.current) return;
+    if (handlerSubmitted.current || inflight.current || finished.current) return;
     handlerSubmitted.current = true;
     inflight.current = true;
     setError(null);
-    setCheckingKind("confirming");
-    setScreen("checking");
+    showUnresolvedChecking("confirming");
     const submitted = await submitPaymentClientEvidence({
       paymentId: evidencePaymentId,
       kind: RAZORPAY_STANDARD_CHECKOUT_KIND,
@@ -311,12 +331,12 @@ export function PaymentPanel(props: {
         submitted.code === "PAYMENT_PROVIDER_EVIDENCE_INVALID" ||
         submitted.code === "PAYMENT_PROVIDER_INDETERMINATE"
       ) {
-        setCheckingKind(
+        showUnresolvedChecking(
           submitted.code === "PAYMENT_PROVIDER_INDETERMINATE" ? "indeterminate" : "confirming",
         );
-        setScreen("checking");
         return;
       }
+      setRecoveryKind(null);
       setScreen("error");
       return;
     }
@@ -324,27 +344,27 @@ export function PaymentPanel(props: {
   }
 
   async function handleCheckoutDismiss(currentPaymentId: string): Promise<void> {
-    if (handlerSubmitted.current) return;
-    setError("Payment window closed. Not confirmed.");
+    if (handlerSubmitted.current || finished.current) return;
+    // payment.failed commonly precedes modal.ondismiss — never downgrade failure/checking.
+    if (providerFailureObservedRef.current) return;
     const state = await getPaymentState(currentPaymentId);
     if (!state.ok) {
-      setScreen("idle");
-      restorePayFocus();
+      showDismissedRecovery();
       return;
     }
-    await applyPaymentState(state.data.state, "idle");
+    await applyPaymentState(state.data.state, "dismissed");
   }
 
   async function handleCheckoutProviderFailure(currentPaymentId: string): Promise<void> {
-    if (handlerSubmitted.current) return;
-    setError("That payment attempt did not complete. Checking status…");
+    if (handlerSubmitted.current || finished.current) return;
+    providerFailureObservedRef.current = true;
+    showUnresolvedChecking("generic");
     const state = await getPaymentState(currentPaymentId);
     if (!state.ok) {
-      setScreen("idle");
-      restorePayFocus();
+      // Keep checking — browser failure is not authoritative FAILED.
       return;
     }
-    await applyPaymentState(state.data.state, "idle");
+    await applyPaymentState(state.data.state, "checking");
   }
 
   async function applyStartResult(result: CommercePaymentStartResult): Promise<void> {
@@ -366,6 +386,7 @@ export function PaymentPanel(props: {
       result.payment.status === "CANCELLED" ||
       result.payment.status === "SUPERSEDED"
     ) {
+      setRecoveryKind(null);
       setError(
         commerceErrorCopy(result.payment.status === "EXPIRED" ? "PAYMENT_EXPIRED" : "PAYMENT_TERMINAL"),
       );
@@ -384,22 +405,22 @@ export function PaymentPanel(props: {
     }
 
     if (result.attempt.status === "FAILED" && result.payment.status === "OPEN") {
-      setScreen("retryable");
-      restorePayFocus();
+      showAuthoritativeFailed();
       return;
     }
 
-    setCheckingKind(checkingKindForState({
-      payment: result.payment,
-      attempt: result.attempt,
-      attempts: [result.attempt],
-      checkoutId: result.checkoutId,
-      checkoutStatus: "PAYMENT_PENDING",
-      checkoutRevision: result.checkoutRevision,
-      zeroPayableCompleted: false,
-      clientAction: result.clientAction,
-    }));
-    setScreen("checking");
+    showUnresolvedChecking(
+      checkingKindForState({
+        payment: result.payment,
+        attempt: result.attempt,
+        attempts: [result.attempt],
+        checkoutId: result.checkoutId,
+        checkoutStatus: "PAYMENT_PENDING",
+        checkoutRevision: result.checkoutRevision,
+        zeroPayableCompleted: false,
+        clientAction: result.clientAction,
+      }),
+    );
   }
 
   async function handleStart(): Promise<void> {
@@ -408,12 +429,14 @@ export function PaymentPanel(props: {
       screen === "starting" ||
       screen === "checking" ||
       screen === "checkout_open" ||
-      screen === "loading_checkout"
+      screen === "loading_checkout" ||
+      screen === "dismissed"
     ) {
       return;
     }
     inflight.current = true;
     setError(null);
+    setRecoveryKind(null);
     setScreen("starting");
     const idempotencyKey = readOrCreateStartIdempotencyKey({
       checkoutId: props.checkout.id,
@@ -434,8 +457,7 @@ export function PaymentPanel(props: {
         return;
       }
       if (started.code === "PAYMENT_ALREADY_PROCESSING" && paymentId) {
-        setCheckingKind("processing");
-        setScreen("checking");
+        showUnresolvedChecking("processing");
         return;
       }
       setScreen("error");
@@ -448,6 +470,7 @@ export function PaymentPanel(props: {
     if (inflight.current || !paymentId || !attemptId) return;
     inflight.current = true;
     setError(null);
+    setRecoveryKind(null);
     setScreen("starting");
     const idempotencyKey = readOrCreateRetryIdempotencyKey({
       paymentId,
@@ -465,7 +488,7 @@ export function PaymentPanel(props: {
     if (!retried.ok) {
       setError(commerceErrorCopy(retried.code));
       if (retried.code === "NETWORK_ERROR" || retried.code === "INVALID_RESPONSE") {
-        setScreen("retryable");
+        showAuthoritativeFailed();
         return;
       }
       setScreen("error");
@@ -507,18 +530,19 @@ export function PaymentPanel(props: {
     screen === "loading_checkout" ||
     screen === "checkout_open";
 
+  const recovery =
+    recoveryKind != null ? paymentRecoveryPresentation(recoveryKind, payableLabel) : null;
+
   const statusMessage =
     screen === "loading_checkout"
       ? "Opening secure payment…"
       : screen === "checkout_open"
         ? "Complete payment in the checkout window. Don't start another payment."
-        : screen === "checking"
-          ? checkingStatusCopy(checkingKind)
-          : screen === "starting"
-            ? zeroPayable
-              ? "Completing order…"
-              : "Starting payment…"
-            : null;
+        : screen === "starting"
+          ? zeroPayable
+            ? "Completing order…"
+            : "Starting payment…"
+          : null;
 
   return (
     <div className="flex flex-col gap-4" data-testid="checkout-payment">
@@ -536,6 +560,23 @@ export function PaymentPanel(props: {
         ))}
       </dl>
 
+      {recovery ? (
+        <div
+          role={recovery.kind === "failed" ? "alert" : "status"}
+          aria-live={recovery.kind === "failed" ? "assertive" : "polite"}
+          data-testid={
+            recovery.kind === "unresolved" ? "payment-checking" : `payment-recovery-${recovery.kind}`
+          }
+          data-checking-kind={recovery.kind === "unresolved" ? checkingKind : undefined}
+          className="flex flex-col gap-2"
+        >
+          <h2 className="font-body text-[18px] font-semibold text-[var(--text-primary)]">
+            {recovery.headline}
+          </h2>
+          <p className="font-body text-[14px] text-[var(--text-secondary)]">{recovery.body}</p>
+        </div>
+      ) : null}
+
       {error ? (
         <p role="alert" className="font-body text-[14px] text-[var(--text-secondary)]">
           {error}
@@ -551,9 +592,7 @@ export function PaymentPanel(props: {
               ? "payment-loading-checkout"
               : screen === "checkout_open"
                 ? "payment-checkout-open"
-                : screen === "checking"
-                  ? "payment-checking"
-                  : "payment-starting"
+                : "payment-starting"
           }
           className="font-body text-[15px] text-[var(--text-secondary)]"
         >
@@ -561,7 +600,7 @@ export function PaymentPanel(props: {
         </p>
       ) : null}
 
-      {!zeroPayable && (screen === "idle" || screen === "retryable" || screen === "error") ? (
+      {!zeroPayable && (screen === "idle" || screen === "error") ? (
         <p className="font-body text-[14px] text-[var(--text-secondary)]" data-testid="payment-provider-owned-note">
           You’ll choose UPI, card, or net banking securely in Razorpay.
         </p>
@@ -605,7 +644,20 @@ export function PaymentPanel(props: {
         >
           Try payment again · {payableLabel}
         </Button>
-      ) : screen !== "checkout_load_failed" ? (
+      ) : screen === "dismissed" && pendingCheckoutAction ? (
+        <Button
+          ref={payButtonRef}
+          type="button"
+          variant="primary"
+          size="lg"
+          data-testid="payment-continue"
+          className="min-h-[44px]"
+          aria-label={`Continue payment for ${payableLabel}`}
+          onClick={() => void reopenPendingCheckout()}
+        >
+          Continue payment · {payableLabel}
+        </Button>
+      ) : screen !== "checkout_load_failed" && screen !== "checking" && screen !== "dismissed" ? (
         <Button
           ref={payButtonRef}
           type="button"
