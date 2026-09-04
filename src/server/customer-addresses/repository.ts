@@ -3,6 +3,8 @@
  * Ownership resolution by address ID + auth-user ID — no directory/search APIs.
  */
 import { and, asc, desc, eq, sql } from "drizzle-orm";
+
+import { checkoutDeliveryDestinationsTable } from "../../platform/database/schema/checkout";
 import { randomUUID } from "node:crypto";
 
 import {
@@ -287,6 +289,32 @@ export async function updateCustomerAddressDefaultState(
     );
   }
   return toCustomerAddress(row);
+}
+
+/**
+ * Detach live checkout destinations that still point at a saved address.
+ *
+ * Destination rows already copy address fields. Converting SAVED_ADDRESS →
+ * ONE_TIME_ADDRESS (null source) preserves destination truth and satisfies the
+ * provenance CHECK so the owned address row can be deleted (ON DELETE SET NULL
+ * alone would violate that CHECK).
+ */
+export async function detachCheckoutDestinationsFromSavedAddress(
+  context: PersistenceTransactionContext,
+  addressId: string,
+  now: Date,
+): Promise<number> {
+  assertTransactionContext(context, "detachCheckoutDestinationsFromSavedAddress");
+  const updated = await context.db
+    .update(checkoutDeliveryDestinationsTable)
+    .set({
+      destinationKind: "ONE_TIME_ADDRESS",
+      sourceSavedAddressId: null,
+      updatedAt: now,
+    })
+    .where(eq(checkoutDeliveryDestinationsTable.sourceSavedAddressId, addressId))
+    .returning({ checkoutId: checkoutDeliveryDestinationsTable.checkoutId });
+  return updated.length;
 }
 
 export async function deleteCustomerAddressByIdAndCustomerAuthUserId(

@@ -174,6 +174,24 @@ export function CheckoutClient(props: { catalog: OrderingCatalog }) {
       return;
     }
     let current = active.data.checkout;
+    if (
+      current &&
+      current.sourceCartRevision !== ownedCart.revision &&
+      (current.status === "DRAFT" || current.status === "READY_FOR_PAYMENT")
+    ) {
+      // Server getActiveCheckout should already hide these; belt-and-braces.
+      current = null;
+    }
+    if (
+      current &&
+      current.sourceCartRevision !== ownedCart.revision &&
+      current.status === "PAYMENT_PENDING"
+    ) {
+      setCheckout(current);
+      setScreen("error");
+      setError(commerceErrorCopy("CHECKOUT_CART_CHANGED"));
+      return;
+    }
     if (!current) {
       const started = await startCheckout({ cartId: ownedCart.id });
       if (!started.ok) {
@@ -188,11 +206,16 @@ export function CheckoutClient(props: { catalog: OrderingCatalog }) {
     const listed = await listOwnAddresses();
     if (listed.ok) setAddresses(listed.data.addresses);
 
-    if (current.status === "READY_FOR_PAYMENT" && current.activeSnapshot) {
+    if (
+      current.status === "READY_FOR_PAYMENT" &&
+      current.activeSnapshot &&
+      current.sourceCartRevision === ownedCart.revision
+    ) {
       setSnapshot(current.activeSnapshot);
       setScreen("payment");
       return;
     }
+    setSnapshot(current.activeSnapshot);
     setScreen("destination");
   }
 
@@ -376,6 +399,15 @@ export function CheckoutClient(props: { catalog: OrderingCatalog }) {
               <p className="font-body text-[14px] text-[var(--text-secondary)]">
                 {destinationSummary(snapshot) ?? "Delivery destination confirmed"}
               </p>
+              <Button
+                type="button"
+                variant="outline"
+                className="mt-3 min-h-[44px]"
+                data-testid="checkout-back-to-delivery"
+                onClick={() => setScreen("destination")}
+              >
+                Edit delivery
+              </Button>
             </section>
             <CheckoutSnapshotLineList
               title="Your items"
@@ -398,6 +430,7 @@ export function CheckoutClient(props: { catalog: OrderingCatalog }) {
             <PaymentPanel
               checkout={checkout}
               snapshot={snapshot}
+              onBackToReview={() => setScreen("review")}
               onOrderReady={(orderId) => {
                 window.location.assign(`/order/confirmation/?orderId=${encodeURIComponent(orderId)}`);
               }}

@@ -12,6 +12,7 @@ export type OrderMoneySummaryCharge = Readonly<{
 }>;
 
 export type OrderMoneySummary = Readonly<{
+  /** Merchandise-only subtotal (excludes itemized charges). */
   prePromotionSubtotalMinor: string;
   promotionDiscountMinor: string;
   charges: readonly OrderMoneySummaryCharge[];
@@ -21,8 +22,12 @@ export type OrderMoneySummary = Readonly<{
 }>;
 
 export function moneySummaryFromSnapshot(snapshot: CheckoutSnapshot): OrderMoneySummary {
+  const merchandisePaise =
+    snapshot.prePromotionSubtotalPaise - snapshot.chargesPaise;
   return Object.freeze({
-    prePromotionSubtotalMinor: serializeMoneyMinor(snapshot.prePromotionSubtotalPaise),
+    prePromotionSubtotalMinor: serializeMoneyMinor(
+      merchandisePaise < BigInt(0) ? BigInt(0) : merchandisePaise,
+    ),
     promotionDiscountMinor: serializeMoneyMinor(snapshot.promotionDiscountPaise),
     charges: Object.freeze(
       snapshot.charges.map((charge) =>

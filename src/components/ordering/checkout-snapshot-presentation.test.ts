@@ -59,10 +59,31 @@ describe("checkout snapshot presentation", () => {
     ]);
   });
 
-  it("builds payable rows including total", () => {
+  it("builds payable rows with merchandise subtotal, itemized charges, and authoritative total", () => {
     const rows = snapshotPayableRows(snapshot);
+    expect(rows.find((row) => row.key === "subtotal")?.amountPaise).toBe("19900");
     expect(rows.some((row) => row.key === "charge-packaging")).toBe(true);
     expect(rows.some((row) => row.key === "charge-delivery")).toBe(true);
     expect(rows.find((row) => row.key === "total")?.amountPaise).toBe("27195");
+  });
+
+  it("keeps Founder UAT money shape: merchandise 108600 + charges 6000 => grandTotal 114600", () => {
+    const uat: CommerceCheckoutSnapshot = {
+      ...snapshot,
+      basePaise: "108600",
+      chargesPaise: "6000",
+      prePromotionSubtotalPaise: "114600",
+      promotionDiscountPaise: "0",
+      taxablePaise: "114600",
+      taxPaise: "0",
+      grandTotalPaise: "114600",
+      taxInclusionMode: "inclusive",
+      taxComponents: [],
+    };
+    const rows = snapshotPayableRows(uat);
+    expect(rows.find((row) => row.key === "subtotal")?.amountPaise).toBe("108600");
+    expect(rows.find((row) => row.key === "charge-packaging")?.amountPaise).toBe("2000");
+    expect(rows.find((row) => row.key === "charge-delivery")?.amountPaise).toBe("4000");
+    expect(rows.find((row) => row.key === "total")?.amountPaise).toBe("114600");
   });
 });
