@@ -1,27 +1,43 @@
 import { render, screen, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CUSTOMER_AUTH_PUBLIC_PATHS } from "@/shared/customer-auth/contracts";
 import {
+  CUSTOMER_SIGN_OUT_REDIRECT_HREF,
   notifyCustomerChromeSessionChanged,
   useCustomerChromeSession,
 } from "./chrome-session";
 
 function Probe() {
-  const { session } = useCustomerChromeSession();
-  return <div data-testid="chrome-session">{session}</div>;
+  const { session, signOut } = useCustomerChromeSession();
+  return (
+    <div>
+      <div data-testid="chrome-session">{session}</div>
+      <button type="button" onClick={() => void signOut()}>
+        Sign out
+      </button>
+    </div>
+  );
 }
 
-function jsonResponse(body: unknown): Response {
+function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
-    status: 200,
+    status,
     headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
   });
 }
 
 describe("useCustomerChromeSession — existing session API contract", () => {
+  const assign = vi.fn();
+
   afterEach(() => {
     vi.unstubAllGlobals();
+  });
+
+  beforeEach(() => {
+    assign.mockReset();
+    vi.stubGlobal("location", { ...window.location, assign });
   });
 
   it("maps a real unauthenticated session payload to anonymous chrome", async () => {
@@ -68,5 +84,66 @@ describe("useCustomerChromeSession — existing session API contract", () => {
       expect(screen.getByTestId("chrome-session")).toHaveTextContent("authenticated");
     });
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("navigates to /order/ only after successful signOut and publishes anonymous chrome", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes(CUSTOMER_AUTH_PUBLIC_PATHS.signOut) && init?.method === "POST") {
+        expect(assign).not.toHaveBeenCalled();
+        return jsonResponse({ authenticated: false });
+      }
+      if (fetchMock.mock.calls.some(([called]) => String(called).includes(CUSTOMER_AUTH_PUBLIC_PATHS.signOut))) {
+        return jsonResponse({ authenticated: false });
+      }
+      return jsonResponse({ authenticated: true, user: { id: "usr_opaque_3" } });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<Probe />);
+    await waitFor(() => {
+      expect(screen.getByTestId("chrome-session")).toHaveTextContent("authenticated");
+    });
+
+    await user.click(screen.getByRole("button", { name: "Sign out" }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("chrome-session")).toHaveTextContent("anonymous");
+    });
+    expect(assign).toHaveBeenCalledTimes(1);
+    expect(assign).toHaveBeenCalledWith(CUSTOMER_SIGN_OUT_REDIRECT_HREF);
+    expect(CUSTOMER_SIGN_OUT_REDIRECT_HREF).toBe("/order/");
+  });
+
+  it("does not navigate or pretend logout succeeded when signOut fails", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes(CUSTOMER_AUTH_PUBLIC_PATHS.signOut) && init?.method === "POST") {
+        return jsonResponse({ error: "forbidden" }, 403);
+      }
+      return jsonResponse({ authenticated: true, user: { id: "usr_opaque_4" } });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<Probe />);
+    await waitFor(() => {
+      expect(screen.getByTestId("chrome-session")).toHaveTextContent("authenticated");
+    });
+
+    await user.click(screen.getByRole("button", { name: "Sign out" }));
+
+    await waitFor(() => {
+      expect(
+        fetchMock.mock.calls.some(
+          ([input, init]) =>
+            String(input).includes(CUSTOMER_AUTH_PUBLIC_PATHS.signOut) &&
+            (init as RequestInit | undefined)?.method === "POST",
+        ),
+      ).toBe(true);
+    });
+    expect(screen.getByTestId("chrome-session")).toHaveTextContent("authenticated");
+    expect(assign).not.toHaveBeenCalled();
   });
 });

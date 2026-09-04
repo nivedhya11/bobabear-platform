@@ -203,7 +203,8 @@ export function Nav() {
   const closeDrawer = () => setDrawerOpen(false);
 
   async function handleChromeSignOut(): Promise<void> {
-    await signOut();
+    const ok = await signOut();
+    if (!ok) return;
     setMyBobaOpen(false);
     closeDrawer();
   }

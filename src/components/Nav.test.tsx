@@ -34,6 +34,8 @@ function desktopNav() {
 }
 
 describe("Nav — IMP-028A Food Direct chrome", () => {
+  const assign = vi.fn();
+
   afterEach(() => {
     vi.unstubAllGlobals();
     window.sessionStorage.clear();
@@ -43,6 +45,8 @@ describe("Nav — IMP-028A Food Direct chrome", () => {
     usePathname.mockReturnValue("/");
     getActiveCart.mockReset();
     getActiveCart.mockResolvedValue({ ok: true, status: 200, data: { cart: null } });
+    assign.mockReset();
+    vi.stubGlobal("location", { ...window.location, assign });
     vi.stubGlobal(
       "fetch",
       vi.fn(async (input: RequestInfo | URL) => {
@@ -141,11 +145,12 @@ describe("Nav — IMP-028A Food Direct chrome", () => {
     expect(trigger).toHaveAttribute("aria-expanded", "false");
   });
 
-  it("returns to anonymous chrome after Sign Out", async () => {
+  it("returns to anonymous chrome after Sign Out and navigates to /order/", async () => {
     const user = userEvent.setup();
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
       if (url.includes(CUSTOMER_AUTH_PUBLIC_PATHS.signOut) && init?.method === "POST") {
+        expect(assign).not.toHaveBeenCalled();
         return jsonResponse({ authenticated: false });
       }
       if (fetchMock.mock.calls.some(([called]) => String(called).includes(CUSTOMER_AUTH_PUBLIC_PATHS.signOut))) {
@@ -161,6 +166,7 @@ describe("Nav — IMP-028A Food Direct chrome", () => {
       expect(within(desktopNav()).getByRole("link", { name: "Sign In" })).toBeInTheDocument();
     });
     expect(within(desktopNav()).queryByRole("button", { name: "My BOBA" })).not.toBeInTheDocument();
+    expect(assign).toHaveBeenCalledWith("/order/");
     expect(
       fetchMock.mock.calls.some(
         ([input, init]) =>
@@ -168,6 +174,34 @@ describe("Nav — IMP-028A Food Direct chrome", () => {
           (init as RequestInit | undefined)?.method === "POST",
       ),
     ).toBe(true);
+  });
+
+  it("does not navigate when chrome Sign Out fails", async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (url.includes(CUSTOMER_AUTH_PUBLIC_PATHS.signOut) && init?.method === "POST") {
+          return new Response("nope", { status: 500 });
+        }
+        return jsonResponse({ authenticated: true, user: { id: "opaque-user" } });
+      }),
+    );
+    render(<Nav />);
+    await user.click(await screen.findByRole("button", { name: "My BOBA" }));
+    await user.click(screen.getByRole("menuitem", { name: "Sign Out" }));
+    await waitFor(() => {
+      expect(
+        vi.mocked(fetch).mock.calls.some(
+          ([input, init]) =>
+            String(input).includes(CUSTOMER_AUTH_PUBLIC_PATHS.signOut) &&
+            (init as RequestInit | undefined)?.method === "POST",
+        ),
+      ).toBe(true);
+    });
+    expect(within(desktopNav()).getByRole("button", { name: "My BOBA" })).toBeInTheDocument();
+    expect(assign).not.toHaveBeenCalled();
   });
 
   it("uses a route-safe Drops destination from commerce routes", async () => {

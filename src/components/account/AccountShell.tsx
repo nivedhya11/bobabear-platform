@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/utils";
@@ -24,11 +24,25 @@ export function AccountShell(props: {
   eyebrow?: string;
   children: ReactNode;
 }) {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const { signOut } = useCustomerChromeSession();
+  const [signOutError, setSignOutError] = useState<string | null>(null);
+  const [signingOut, setSigningOut] = useState(false);
   const profileActive = pathname.startsWith("/account/profile");
   const addressesActive = pathname.startsWith("/account/addresses");
   const ordersActive = pathname.startsWith("/order/orders");
+
+  async function handleSignOut(): Promise<void> {
+    if (signingOut) return;
+    setSigningOut(true);
+    setSignOutError(null);
+    const ok = await signOut();
+    if (!ok) {
+      setSignOutError("Sign out failed. Please try again.");
+      setSigningOut(false);
+    }
+    // On success, chrome-session navigates to /order/ — do not clear signingOut.
+  }
 
   return (
     <main id="main-content" tabIndex={-1} className="bg-[var(--bg-page)] focus:outline-none">
@@ -58,12 +72,19 @@ export function AccountShell(props: {
           </a>
           <button
             type="button"
-            onClick={() => void signOut()}
-            className={cn(navLinkClass(false), "cursor-pointer")}
+            onClick={() => void handleSignOut()}
+            disabled={signingOut}
+            className={cn(navLinkClass(false), "cursor-pointer disabled:opacity-60")}
           >
             Sign out
           </button>
         </nav>
+
+        {signOutError ? (
+          <p role="alert" className="font-body text-[14px] text-[var(--text-secondary)]">
+            {signOutError}
+          </p>
+        ) : null}
 
         {props.children}
       </div>
