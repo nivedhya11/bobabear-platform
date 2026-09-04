@@ -583,10 +583,31 @@ function upAndWait(buildDir, services, extraEnv = {}) {
 
 function ensurePersistentPostgres(buildDir, initDir) {
   const container = `${STAGING_PROJECT}_postgres_1`;
+  const volume = `${STAGING_PROJECT}_postgres-data`;
   try {
     const database = inspectJson(container);
+    const dataMounts = database.Mounts.filter(
+      (mount) => mount.Name === volume && mount.Destination === "/var/lib/postgresql",
+    );
+    if (dataMounts.length !== 1) {
+      throw new Error("Persistent PostgreSQL is missing the boba-staging_postgres-data volume mount.");
+    }
     const initMount = database.Mounts.find((mount) => mount.Destination === "/docker-entrypoint-initdb.d");
-    if (initMount?.Source !== initDir) throw new Error("Persistent PostgreSQL has an obsolete runtime init mount; run env:staging:recover-postgres.");
+    if (initMount?.Source !== initDir) {
+      // Init scripts only run on empty data dirs. Recreate the container with the
+      // current candidate init mount while preserving the persistent volume.
+      console.log("POSTGRES_INIT_MOUNT_REFRESH YES");
+      console.log(`POSTGRES_INIT_MOUNT_PREVIOUS ${initMount?.Source ?? "MISSING"}`);
+      console.log(`POSTGRES_INIT_MOUNT_NEXT ${initDir}`);
+      if (database.State.Status === "running") {
+        runPodman(["stop", "-t", "30", container]);
+      }
+      runPodman(["rm", container]);
+      podmanCompose(buildDir, ["up", "-d", "postgres"], { BOBA_POSTGRES_INIT_DIR: initDir });
+      waitForHealthy(container);
+      console.log("POSTGRES_VOLUME_PRESERVED YES");
+      return;
+    }
     if (database.State.Status !== "running") runPodman(["start", container]);
   } catch (error) {
     if (!String(error.message).includes("no such object")) throw error;
