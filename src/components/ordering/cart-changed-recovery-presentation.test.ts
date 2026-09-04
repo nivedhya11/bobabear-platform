@@ -1,19 +1,32 @@
 import { describe, expect, it } from "vitest";
 
-import { cartChangedRecoveryPresentation } from "./cart-changed-recovery-presentation";
+import {
+  cartChangedRecoveryPresentation,
+  PREVIOUS_CHECKOUT_ADDRESS_LOCK_COPY,
+  PREVIOUS_CHECKOUT_LOCK_COPY,
+} from "./cart-changed-recovery-presentation";
 
 describe("cartChangedRecoveryPresentation", () => {
   it("returns unresolved copy with no pay/start CTA", () => {
     expect(cartChangedRecoveryPresentation("unresolved")).toEqual({
       kind: "unresolved",
-      headline: "Checking your previous payment",
-      body: "We're confirming the payment status before you can start checkout again. Please don't pay again yet.",
+      headline: "Previous payment is being checked",
+      body: "We're checking payment for your previous checkout. Your cart has changed since that payment started. Please don't pay again yet.",
       primaryActionLabel: null,
       primaryTestId: null,
-      secondaryActionLabel: "Back to cart",
+      secondaryActionLabel: "View current cart",
       secondaryTestId: "cart-changed-back-to-cart",
       secondaryHref: "/order/cart/",
     });
+  });
+
+  it("exposes address and checkout lock copy without technical terms", () => {
+    expect(PREVIOUS_CHECKOUT_LOCK_COPY).toContain("locked while its payment status is being confirmed");
+    expect(PREVIOUS_CHECKOUT_ADDRESS_LOCK_COPY).toContain(
+      "Delivery details are locked while this payment is being confirmed.",
+    );
+    expect(PREVIOUS_CHECKOUT_LOCK_COPY).not.toMatch(/sourceCartRevision|snapshot|aggregate/i);
+    expect(PREVIOUS_CHECKOUT_ADDRESS_LOCK_COPY).not.toMatch(/sourceCartRevision|snapshot|aggregate/i);
   });
 
   it("returns fresh-checkout copy with review and start actions", () => {

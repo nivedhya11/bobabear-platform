@@ -1245,7 +1245,7 @@ describe("PaymentPanel", () => {
       />,
     );
     await waitFor(() => expect(screen.getByTestId("payment-checking")).toBeInTheDocument());
-    expect(screen.getByText("Checking your previous payment")).toBeInTheDocument();
+    expect(screen.getByText("Previous payment is being checked")).toBeInTheDocument();
     expect(screen.queryByTestId("payment-start")).not.toBeInTheDocument();
     expect(startPayment).not.toHaveBeenCalled();
     expect(getPaymentState).toHaveBeenCalledWith("pay-1");
@@ -1279,6 +1279,37 @@ describe("PaymentPanel", () => {
       />,
     );
     await waitFor(() => expect(onTerminal).toHaveBeenCalled());
+    expect(screen.queryByTestId("payment-start")).not.toBeInTheDocument();
+  });
+
+  it("keeps previous-checkout retry for FAILED+OPEN when cart changed (no public abandon)", async () => {
+    getPaymentState.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        state: {
+          payment: { ...payment, status: "OPEN" },
+          attempt: { ...attempt, status: "FAILED" },
+          attempts: [{ ...attempt, status: "FAILED" }],
+          checkoutId: "chk-1",
+          checkoutStatus: "PAYMENT_PENDING",
+          checkoutRevision: "4",
+          zeroPayableCompleted: false,
+        },
+      },
+    });
+    render(
+      <PaymentPanel
+        checkout={checkout}
+        snapshot={snapshotBase}
+        onOrderReady={vi.fn()}
+        resumePaymentId="pay-1"
+        cartChangedWhilePending
+        embeddedInPreviousPaymentRecovery
+      />,
+    );
+    await waitFor(() => expect(screen.getByTestId("payment-retry")).toBeInTheDocument());
+    expect(screen.getByTestId("payment-recovery-failed")).toBeInTheDocument();
     expect(screen.queryByTestId("payment-start")).not.toBeInTheDocument();
   });
 });
