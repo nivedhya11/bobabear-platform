@@ -5,7 +5,11 @@ import { sql } from "drizzle-orm";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { setCartLineQuantity } from "../../src/server/cart";
-import { getActiveCheckout } from "../../src/server/checkout";
+import {
+  evaluateCheckout,
+  getActiveCheckout,
+  setCheckoutDestination,
+} from "../../src/server/checkout";
 import {
   cancelPayment,
   completeZeroPayableCheckout,
@@ -767,6 +771,89 @@ describe("IMP-022 payment domain — expiry / abandonment / browser return", () 
       );
       expect(superseded.status).toBe("SUPERSEDED");
       expect(superseded.supersededAt).not.toBeNull();
+    });
+  });
+
+  it("IMP-036C: after failed attempt, destination change with current revision rebuilds commercial snapshot without reusing payment", async () => {
+    await withPaymentReadyHarness(async (h) => {
+      const provider = createFakePaymentProvider({ defaultOutcome: "fail" });
+      const opts = paymentOpts(provider);
+      const failed = await startPayment(
+        h.persistence,
+        h.actor,
+        {
+          checkoutId: h.checkoutId,
+          expectedCheckoutRevision: h.revision,
+          paymentMethodIntent: "upi",
+          idempotencyKey: newIdempotencyKey(),
+        },
+        opts,
+      );
+      expect(failed.payment.status).toBe("OPEN");
+      expect(failed.attempt.status).toBe("FAILED");
+
+      const afterFail = await getActiveCheckout(
+        h.persistence,
+        h.actor,
+        { checkoutId: h.checkoutId },
+        { clock: opts.clock, policy: CHECKOUT_POLICY },
+      );
+      expect(afterFail).not.toBeNull();
+      expect(afterFail!.status).toBe("READY_FOR_PAYMENT");
+      expect(afterFail!.revision).toBe(failed.checkoutRevision);
+
+      const changed = await setCheckoutDestination(
+        h.persistence,
+        h.actor,
+        {
+          checkoutId: h.checkoutId,
+          expectedCheckoutRevision: afterFail!.revision,
+          destination: {
+            ...h.oneTimeDestination,
+            recipientName: "Alt Recipient",
+          },
+        },
+        { clock: opts.clock, policy: CHECKOUT_POLICY },
+      );
+      expect(changed.status).toBe("DRAFT");
+      expect(changed.activeSnapshotId).toBeNull();
+
+      const rebuilt = await evaluateCheckout(
+        h.persistence,
+        h.actor,
+        {
+          checkoutId: h.checkoutId,
+          expectedCheckoutRevision: changed.revision,
+        },
+        { clock: opts.clock, policy: CHECKOUT_POLICY },
+      );
+      expect(rebuilt.checkout.status).toBe("READY_FOR_PAYMENT");
+      expect(rebuilt.snapshot.id).not.toBe(failed.payment.checkoutSnapshotId);
+
+      const restarted = await startPayment(
+        h.persistence,
+        h.actor,
+        {
+          checkoutId: h.checkoutId,
+          expectedCheckoutRevision: rebuilt.checkout.revision,
+          paymentMethodIntent: "upi",
+          idempotencyKey: newIdempotencyKey("rebuild"),
+        },
+        opts,
+      );
+      expect(restarted.payment.id).not.toBe(failed.payment.id);
+      expect(restarted.payment.checkoutSnapshotId).toBe(rebuilt.snapshot.id);
+      expect(restarted.payment.expectedAmountPaise).toBe(rebuilt.snapshot.grandTotalPaise);
+
+      // Prior OPEN payment remains bound to the obsolete snapshot (not reused).
+      const prior = await getPayment(
+        h.persistence,
+        h.actor,
+        { paymentId: failed.payment.id },
+        opts,
+      );
+      expect(prior.status).toBe("OPEN");
+      expect(prior.checkoutSnapshotId).toBe(failed.payment.checkoutSnapshotId);
     });
   });
 

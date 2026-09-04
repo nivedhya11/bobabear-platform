@@ -340,6 +340,44 @@ export function CheckoutClient(props: { catalog: OrderingCatalog }) {
     setScreen("review");
   }
 
+  function adoptCheckoutRevision(revision: string): void {
+    setCheckout((current) => (current ? { ...current, revision } : current));
+  }
+
+  /**
+   * Back-nav into Delivery must use authoritative server checkout revision.
+   * Payment start/failure advances revision inside PaymentPanel; parent state
+   * must not keep a pre-payment expectedCheckoutRevision.
+   */
+  async function returnToDelivery(): Promise<void> {
+    if (pending || !checkout || !cart) return;
+    setPending(true);
+    setError(null);
+    const active = await getActiveCheckout({ cartId: cart.id });
+    if (!active.ok) {
+      setPending(false);
+      setError(commerceErrorCopy(active.code));
+      return;
+    }
+    const current = active.data.checkout;
+    if (!current || current.id !== checkout.id) {
+      setPending(false);
+      setError(commerceErrorCopy("CHECKOUT_NOT_FOUND"));
+      return;
+    }
+    setCheckout(current);
+    if (current.activeSnapshot) {
+      setSnapshot(current.activeSnapshot);
+    }
+    setPending(false);
+    if (current.status === "PAYMENT_PENDING") {
+      // Existing domain forbids destination mutation while PAYMENT_PENDING.
+      setError(commerceErrorCopy("CHECKOUT_STATE_CONFLICT"));
+      return;
+    }
+    setScreen("destination");
+  }
+
   const activeStep =
     screen === "destination" ? "delivery" : screen === "review" ? "review" : "payment";
 
@@ -404,7 +442,8 @@ export function CheckoutClient(props: { catalog: OrderingCatalog }) {
                 variant="outline"
                 className="mt-3 min-h-[44px]"
                 data-testid="checkout-back-to-delivery"
-                onClick={() => setScreen("destination")}
+                disabled={pending}
+                onClick={() => void returnToDelivery()}
               >
                 Edit delivery
               </Button>
@@ -430,7 +469,11 @@ export function CheckoutClient(props: { catalog: OrderingCatalog }) {
             <PaymentPanel
               checkout={checkout}
               snapshot={snapshot}
-              onBackToReview={() => setScreen("review")}
+              onCheckoutRevisionChange={adoptCheckoutRevision}
+              onBackToReview={(revision) => {
+                adoptCheckoutRevision(revision);
+                setScreen("review");
+              }}
               onOrderReady={(orderId) => {
                 window.location.assign(`/order/confirmation/?orderId=${encodeURIComponent(orderId)}`);
               }}
