@@ -77,6 +77,8 @@ test("staging deploy retains the current-main Podman hardening safeguards", () =
   assert.match(source, /ensurePersistentPostgres\(buildDir, initDir\)/);
   assert.match(source, /POSTGRES_INIT_MOUNT_REFRESH YES/);
   assert.match(source, /POSTGRES_VOLUME_PRESERVED YES/);
+  assert.match(source, /\["run", "--rm", "--no-deps", "migrate"\]/);
+  assert.match(source, /"--no-deps"/);
   assert.match(source, /upAndWait\(buildDir, BOBA_RUNTIME_SERVICES, \{ BOBA_POSTGRES_INIT_DIR: initDir \}\)/);
   assert.doesNotMatch(source, /upAndWait\(buildDir, \["postgres"\]\)/);
   assert.doesNotMatch(source, /--wait/);
