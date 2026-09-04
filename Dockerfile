@@ -86,6 +86,9 @@ RUN npm run build \
 # run` time — none are baked into this image.
 FROM base AS tooling
 ARG BOBA_BUILD_SHA
+# Incorporate the build SHA into a RUN layer so Podman/Buildah cannot reuse a
+# stale LABEL-only cache entry across candidate revisions.
+RUN printf '%s\n' "${BOBA_BUILD_SHA}" > /tmp/boba-build-sha
 LABEL org.opencontainers.image.revision=${BOBA_BUILD_SHA}
 ENV NODE_ENV=production
 COPY --from=dependencies /app/node_modules ./node_modules
