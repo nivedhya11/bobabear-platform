@@ -679,6 +679,7 @@ function runBootstrapApply(buildDir, service, npmArgs) {
   podmanCompose(buildDir, [
     "run",
     "--rm",
+    "--no-deps",
     "--entrypoint",
     "",
     service,
@@ -758,7 +759,7 @@ function deploy(candidate) {
     console.log("BUILT_IMAGE_CANDIDATE_MATCH YES");
     const initDir = materializeStagingPostgresInit(buildDir, candidate.head);
     ensurePersistentPostgres(buildDir, initDir);
-    podmanCompose(buildDir, ["run", "--rm", "migrate"], { COMPOSE_PROFILES: "tools" });
+    podmanCompose(buildDir, ["run", "--rm", "--no-deps", "migrate"], { COMPOSE_PROFILES: "tools" });
     runBootstrapApply(buildDir, "menu-import-existing", ["menu:import-existing"]);
     runBootstrapApply(buildDir, "assortment-bootstrap-existing-menu", ["assortment:bootstrap-existing-menu"]);
     runBootstrapApply(buildDir, "pricing-bootstrap-existing-menu", ["pricing:bootstrap-existing-menu"]);
