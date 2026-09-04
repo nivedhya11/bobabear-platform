@@ -98,6 +98,8 @@ COPY scripts/assortment ./scripts/assortment
 COPY scripts/pricing ./scripts/pricing
 COPY scripts/catalog ./scripts/catalog
 COPY scripts/workforce ./scripts/workforce
+COPY scripts/access ./scripts/access
+COPY scripts/serviceability ./scripts/serviceability
 COPY scripts/check-config.ts ./scripts/check-config.ts
 COPY data/platform/imports ./data/platform/imports
 COPY data/platform/pricing ./data/platform/pricing

@@ -59,6 +59,7 @@ const ALLOWED_PERSISTENCE_IMPORT_PREFIXES = [
   "scripts/menu/",
   "scripts/assortment/",
   "scripts/pricing/",
+  "scripts/serviceability/",
   "tests/database/",
   "tests/access-control/",
   "tests/catalog/",

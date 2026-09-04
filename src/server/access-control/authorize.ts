@@ -25,7 +25,7 @@ import { findOutletById } from "../organization/outlets";
 import { findTerritoryById } from "../organization/territories";
 import type { PersistenceQueryContext } from "../persistence/types";
 import { assertApplicationRole } from "./assert-role";
-import { AuthorizationError } from "./errors";
+import { AccessControlNotFoundError, AuthorizationError } from "./errors";
 import { isWorkforcePrincipal, requireWorkforcePrincipal, type WorkforcePrincipal } from "./principal";
 import {
   assignmentCoversResource,
@@ -359,14 +359,27 @@ export async function countEffectivePlatformSuperAdmins(
   return Number.parseInt(result.rows[0]?.count ?? "0", 10);
 }
 
-/** Lock the PSA role catalog row for concurrency-safe last-admin / bootstrap. */
+/**
+ * Serialize Platform Super Admin bootstrap / last-admin checks.
+ *
+ * Catalog table `app.access_roles` is SELECT-only for `boba_bear_app`
+ * (migration 0005). PostgreSQL `SELECT … FOR UPDATE` requires UPDATE, so the
+ * concurrency lock is a transaction-scoped advisory lock; the catalog row is
+ * still verified with SELECT so a missing PSA role fails closed.
+ */
 export async function lockPlatformSuperAdminRoleRow(
   context: PersistenceQueryContext,
 ): Promise<void> {
   assertApplicationRole(context, "lockPlatformSuperAdminRoleRow");
+  // Fixed namespace + role key hash — not derived from mutable catalog bytes.
   await context.db.execute(sql`
+    select pg_advisory_xact_lock(872014011, hashtext('platform_super_admin'))
+  `);
+  const role = await context.db.execute<{ key: string }>(sql`
     select key from app.access_roles
     where key = 'platform_super_admin'
-    for update
   `);
+  if (!role.rows[0]?.key) {
+    throw new AccessControlNotFoundError("access_role");
+  }
 }
