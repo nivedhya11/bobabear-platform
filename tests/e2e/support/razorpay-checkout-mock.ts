@@ -44,6 +44,10 @@ export async function installRazorpayCheckoutMock(
           }
           if (state.mode === "fail") {
             this.failHandler?.({ error: { description: "simulated failure" } });
+            // Real Razorpay often fires modal.ondismiss after payment.failed.
+            queueMicrotask(() => {
+              modal?.ondismiss?.();
+            });
             return;
           }
           const paymentId =
