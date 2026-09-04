@@ -8,6 +8,10 @@ import {
   addressFormFromCommerceAddress,
   addressFormToCreateInput,
   addressFormToUpdateInput,
+  firstInvalidAddressField,
+  validateAddressFormValues,
+  type AddressFormFieldErrors,
+  type AddressFormFieldKey,
   type AddressFormValues,
 } from "@/components/account/AddressForm";
 import { DeliveryLocationMapConfirmation } from "@/components/location/DeliveryLocationMapConfirmation";
@@ -139,6 +143,8 @@ export function CustomerDeliveryAddressFlow(props: {
   );
   const [confirmedLocation, setConfirmedLocation] = useState<NormalizedCommerceLocation | null>(null);
   const [addressForm, setAddressForm] = useState<AddressFormValues>(() => initialForm(mode));
+  const [fieldErrors, setFieldErrors] = useState<AddressFormFieldErrors>({});
+  const fieldRefs = useRef<Partial<Record<AddressFormFieldKey, HTMLElement | null>>>({});
   const searchAbortRef = useRef<AbortController | null>(null);
   const searchSessionRef = useRef<LocationSearchSession | null>(null);
   const debounceTimerRef = useRef<number | null>(null);
@@ -329,6 +335,22 @@ export function CustomerDeliveryAddressFlow(props: {
       return;
     }
 
+    const errors = validateAddressFormValues(addressForm, {
+      requireAdministrativeFields: false,
+    });
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      const first = firstInvalidAddressField(errors);
+      if (first) {
+        const node = fieldRefs.current[first];
+        if (node && "focus" in node) {
+          queueMicrotask(() => (node as HTMLElement).focus());
+        }
+      }
+      return;
+    }
+    setFieldErrors({});
+
     if (mode.kind === "edit") {
       onComplete({
         kind: "UPDATE",
@@ -385,11 +407,16 @@ export function CustomerDeliveryAddressFlow(props: {
         <form onSubmit={handleDetailsSubmit} className="flex flex-col gap-4">
           <AddressForm
             values={addressForm}
-            onChange={setAddressForm}
+            onChange={(next) => {
+              setAddressForm(next);
+              if (Object.keys(fieldErrors).length > 0) setFieldErrors({});
+            }}
             disabled={busy}
             idPrefix={testIdPrefix}
             hideAdministrativeFields
             mapFirstMode
+            fieldErrors={fieldErrors}
+            fieldRefs={fieldRefs}
           />
           <div className="flex flex-wrap gap-3">
             <Button type="submit" variant="primary" disabled={busy}>

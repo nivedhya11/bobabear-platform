@@ -32,7 +32,7 @@ import {
   startCheckout,
 } from "../../src/server/checkout";
 import { checkoutSnapshotsStructurallyEqual } from "../../src/server/checkout/compare-snapshots";
-import { updateOwnAddress } from "../../src/server/customer-addresses";
+import { deleteOwnAddress, updateOwnAddress } from "../../src/server/customer-addresses";
 import {
   activateCoupon,
   activatePromotion,
@@ -2128,6 +2128,186 @@ describe("IMP-021 checkout domain — evaluate commercial", () => {
             opts,
           ),
         ).rejects.toMatchObject({ code: "CHECKOUT_CART_CHANGED" });
+      },
+    );
+  });
+
+  it("IMP-036C UAT: startCheckout supersedes READY checkout when cart revision advances", async () => {
+    await withCheckoutReadyHarness(
+      async ({ persistence, actors, cartId, addressId }) => {
+        const opts = checkoutOpts();
+        const access = customerAccess(actors.customerA, actors.tree.brand.id);
+        let checkout = await startCheckout(
+          persistence,
+          actors.customerA,
+          { cartId },
+          opts,
+        );
+        checkout = await setCheckoutDestination(
+          persistence,
+          actors.customerA,
+          {
+            checkoutId: checkout.id,
+            expectedCheckoutRevision: checkout.revision,
+            destination: { kind: "SAVED_ADDRESS", savedAddressId: addressId },
+          },
+          opts,
+        );
+        const ready = await evaluateCheckout(
+          persistence,
+          actors.customerA,
+          {
+            checkoutId: checkout.id,
+            expectedCheckoutRevision: checkout.revision,
+          },
+          opts,
+        );
+        expect(ready.checkout.status).toBe("READY_FOR_PAYMENT");
+        expect(ready.checkout.sourceCartRevision).toBe(BigInt(1));
+        const staleSnapshotId = ready.snapshot.id;
+
+        await setCartLineQuantity(persistence, access, {
+          cartLineId: ready.snapshot.lines[0]!.sourceCartLineId,
+          quantity: 3,
+          expectedRevision: ready.checkout.sourceCartRevision,
+        });
+
+        const active = await getActiveCheckout(
+          persistence,
+          actors.customerA,
+          { cartId },
+          opts,
+        );
+        expect(active).toBeNull();
+
+        const fresh = await startCheckout(
+          persistence,
+          actors.customerA,
+          { cartId },
+          opts,
+        );
+        expect(fresh.id).not.toBe(ready.checkout.id);
+        expect(fresh.status).toBe("DRAFT");
+        expect(fresh.sourceCartRevision).toBe(BigInt(2));
+        expect(fresh.activeSnapshotId).toBeNull();
+
+        const cancelled = await getActiveCheckout(
+          persistence,
+          actors.customerA,
+          { checkoutId: ready.checkout.id },
+          opts,
+        );
+        expect(cancelled).toBeNull();
+        void staleSnapshotId;
+      },
+    );
+  });
+
+  it("IMP-036C UAT: snapshot grandTotal includes packaging + delivery charges", async () => {
+    await withCheckoutReadyHarness(
+      async ({ persistence, actors, cartId, addressId, catalog }) => {
+        const opts = checkoutOpts();
+        await persistence.withContext(async (ctx) => {
+          const book = await ctx.db.execute(sql`
+            select id::text as id from app.price_books
+            where brand_id = ${actors.tree.brand.id}::uuid
+              and lifecycle_status = 'active'
+            limit 1
+          `);
+          const priceBookId = book.rows[0]!.id as string;
+          await seedChargePricesOnBook(persistence, {
+            brandId: actors.tree.brand.id,
+            priceBookId,
+            packagingPaise: BigInt(2_000),
+            deliveryPaise: BigInt(4_000),
+          });
+        });
+
+        let checkout = await startCheckout(
+          persistence,
+          actors.customerA,
+          { cartId },
+          opts,
+        );
+        checkout = await setCheckoutDestination(
+          persistence,
+          actors.customerA,
+          {
+            checkoutId: checkout.id,
+            expectedCheckoutRevision: checkout.revision,
+            destination: { kind: "SAVED_ADDRESS", savedAddressId: addressId },
+          },
+          opts,
+        );
+        const ready = await evaluateCheckout(
+          persistence,
+          actors.customerA,
+          {
+            checkoutId: checkout.id,
+            expectedCheckoutRevision: checkout.revision,
+          },
+          opts,
+        );
+        const merchandise =
+          ready.snapshot.basePaise +
+          ready.snapshot.modifierAdjustmentsPaise +
+          ready.snapshot.bundleAdjustmentsPaise;
+        expect(ready.snapshot.chargesPaise).toBe(BigInt(6_000));
+        expect(ready.snapshot.prePromotionSubtotalPaise).toBe(
+          merchandise + ready.snapshot.chargesPaise,
+        );
+        expect(ready.snapshot.grandTotalPaise).toBe(
+          ready.snapshot.prePromotionSubtotalPaise -
+            ready.snapshot.promotionDiscountPaise +
+            (ready.snapshot.taxInclusionMode === "exclusive"
+              ? ready.snapshot.taxPaise
+              : BigInt(0)),
+        );
+        expect(ready.snapshot.charges.map((c) => c.chargeCode).sort()).toEqual([
+          "delivery",
+          "packaging",
+        ]);
+        void catalog;
+      },
+    );
+  });
+
+  it("IMP-036C UAT: saved address referenced by checkout destination remains deletable", async () => {
+    await withCheckoutReadyHarness(
+      async ({ persistence, actors, cartId, addressId }) => {
+        const opts = checkoutOpts();
+        const started = await startCheckout(
+          persistence,
+          actors.customerA,
+          { cartId },
+          opts,
+        );
+        await setCheckoutDestination(
+          persistence,
+          actors.customerA,
+          {
+            checkoutId: started.id,
+            expectedCheckoutRevision: started.revision,
+            destination: { kind: "SAVED_ADDRESS", savedAddressId: addressId },
+          },
+          opts,
+        );
+
+        await deleteOwnAddress(
+          persistence,
+          addressCustomerActor(actors.customerAId),
+          addressId,
+        );
+
+        await persistence.withContext(async (ctx) => {
+          const dest = await ctx.db.execute(sql`
+            select destination_kind, source_saved_address_id::text as sid
+            from app.checkout_delivery_destinations
+            where checkout_id = ${started.id}::uuid
+          `);
+          expect(dest.rows[0]?.destination_kind).toBe("ONE_TIME_ADDRESS");
+          expect(dest.rows[0]?.sid).toBeNull();
+        });
       },
     );
   });

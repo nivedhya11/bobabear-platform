@@ -212,7 +212,7 @@ describe("PaymentPanel", () => {
     expect(startPayment).toHaveBeenCalledWith({
       checkoutId: "chk-1",
       expectedCheckoutRevision: "3",
-      paymentMethodIntent: "upi",
+      paymentMethodIntent: "card",
       idempotencyKey: "idem-start",
     });
     expect(readOrCreateStartIdempotencyKey).toHaveBeenCalledTimes(1);
@@ -282,7 +282,7 @@ describe("PaymentPanel", () => {
     expect(retryPayment).toHaveBeenCalledWith({
       paymentId: "pay-1",
       expectedCheckoutRevision: "4",
-      paymentMethodIntent: "upi",
+      paymentMethodIntent: "card",
       idempotencyKey: "idem-retry",
     });
   });
@@ -808,7 +808,13 @@ describe("PaymentPanel", () => {
     render(<PaymentPanel checkout={checkout} snapshot={snapshotBase} onOrderReady={vi.fn()} />);
     expect(screen.getByTestId("checkout-fee-breakdown")).toHaveTextContent("Packaging");
     expect(screen.getByTestId("checkout-fee-breakdown")).toHaveTextContent("Delivery");
-    expect(screen.getByTestId("payment-start")).toHaveTextContent("Pay ₹271.95");
+    expect(screen.getByTestId("checkout-fee-breakdown")).toHaveTextContent("Subtotal");
+    expect(screen.getByTestId("checkout-fee-breakdown")).toHaveTextContent("₹199.00");
+    expect(screen.queryByRole("radio")).not.toBeInTheDocument();
+    expect(screen.getByTestId("payment-provider-owned-note")).toBeInTheDocument();
+    expect(screen.getByTestId("payment-start")).toHaveTextContent(
+      "Pay securely with Razorpay · ₹271.95",
+    );
   });
 
   it("blocks a second pay while payment is processing", async () => {

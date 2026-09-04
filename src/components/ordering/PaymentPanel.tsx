@@ -47,11 +47,13 @@ type PaymentScreen =
 
 type CheckingKind = "processing" | "pending" | "indeterminate" | "confirming" | "generic";
 
-const METHOD_OPTIONS: ReadonlyArray<{ value: CommercePaymentMethodIntent; label: string }> = [
-  { value: "upi", label: "UPI" },
-  { value: "card", label: "Card" },
-  { value: "netbanking", label: "Net banking" },
-];
+/**
+ * Payment-domain attempt fingerprint only — NOT a BOBA method preselect.
+ * Razorpay Standard Checkout owns UPI/Card/Netbanking selection (D-361).
+ * The Razorpay adapter ignores this field when creating Orders / client actions.
+ * Persisted because start/retry APIs and attempt rows still require a non-empty intent.
+ */
+const PROVIDER_OWNED_ATTEMPT_METHOD_FINGERPRINT: CommercePaymentMethodIntent = "card";
 
 const RAZORPAY_LOGO_SRC = "/assets/logos/boba-bear-full-logo.svg";
 
@@ -107,6 +109,7 @@ export function PaymentPanel(props: {
   checkout: CommerceCheckout;
   snapshot: CommerceCheckoutSnapshot;
   onOrderReady: (orderId: string) => void;
+  onBackToReview?: () => void;
 }) {
   const zeroPayable = isZeroPayableTotal(props.snapshot.grandTotalPaise);
   const payableLabel = formatPaise(props.snapshot.grandTotalPaise);
@@ -114,7 +117,6 @@ export function PaymentPanel(props: {
 
   const [screen, setScreen] = useState<PaymentScreen>("idle");
   const [checkingKind, setCheckingKind] = useState<CheckingKind>("generic");
-  const [method, setMethod] = useState<CommercePaymentMethodIntent>("upi");
   const [error, setError] = useState<string | null>(null);
   const [paymentId, setPaymentId] = useState<string | null>(null);
   const [checkoutRevision, setCheckoutRevision] = useState(props.checkout.revision);
@@ -408,12 +410,12 @@ export function PaymentPanel(props: {
     const idempotencyKey = readOrCreateStartIdempotencyKey({
       checkoutId: props.checkout.id,
       checkoutRevision,
-      paymentMethodIntent: method,
+      paymentMethodIntent: PROVIDER_OWNED_ATTEMPT_METHOD_FINGERPRINT,
     });
     const started = await startPayment({
       checkoutId: props.checkout.id,
       expectedCheckoutRevision: checkoutRevision,
-      paymentMethodIntent: method,
+      paymentMethodIntent: PROVIDER_OWNED_ATTEMPT_METHOD_FINGERPRINT,
       idempotencyKey,
     });
     inflight.current = false;
@@ -443,12 +445,12 @@ export function PaymentPanel(props: {
       paymentId,
       attemptId,
       checkoutRevision,
-      paymentMethodIntent: method,
+      paymentMethodIntent: PROVIDER_OWNED_ATTEMPT_METHOD_FINGERPRINT,
     });
     const retried = await retryPayment({
       paymentId,
       expectedCheckoutRevision: checkoutRevision,
-      paymentMethodIntent: method,
+      paymentMethodIntent: PROVIDER_OWNED_ATTEMPT_METHOD_FINGERPRINT,
       idempotencyKey,
     });
     inflight.current = false;
@@ -552,24 +554,9 @@ export function PaymentPanel(props: {
       ) : null}
 
       {!zeroPayable && (screen === "idle" || screen === "retryable" || screen === "error") ? (
-        <fieldset className="flex flex-col gap-2">
-          <legend className="font-body text-[13px] font-semibold text-[var(--text-primary)]">
-            Payment method
-          </legend>
-          {METHOD_OPTIONS.map((option) => (
-            <label key={option.value} className="flex items-center gap-2 font-body text-[14px]">
-              <input
-                type="radio"
-                name="paymentMethod"
-                value={option.value}
-                checked={method === option.value}
-                onChange={() => setMethod(option.value)}
-                disabled={screen === "retryable"}
-              />
-              {option.label}
-            </label>
-          ))}
-        </fieldset>
+        <p className="font-body text-[14px] text-[var(--text-secondary)]" data-testid="payment-provider-owned-note">
+          You’ll choose UPI, card, or net banking securely in Razorpay.
+        </p>
       ) : null}
 
       {screen === "checkout_load_failed" && pendingCheckoutAction ? (
@@ -624,7 +611,20 @@ export function PaymentPanel(props: {
         >
           {screen === "starting" || screen === "loading_checkout"
             ? "Starting…"
-            : `Pay ${payableLabel}`}
+            : `Pay securely with Razorpay · ${payableLabel}`}
+        </Button>
+      ) : null}
+
+      {props.onBackToReview ? (
+        <Button
+          type="button"
+          variant="outline"
+          className="min-h-[44px]"
+          data-testid="payment-back-to-review"
+          disabled={payBlocked}
+          onClick={() => props.onBackToReview?.()}
+        >
+          Back to review
         </Button>
       ) : null}
 

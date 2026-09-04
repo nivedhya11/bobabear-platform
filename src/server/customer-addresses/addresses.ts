@@ -20,6 +20,7 @@ import { insertCustomerAddressAuditEvent } from "./audit";
 import { isForeignKeyViolation } from "./assert-role";
 import {
   deleteCustomerAddressByIdAndCustomerAuthUserId,
+  detachCheckoutDestinationsFromSavedAddress,
   findAddressByIdAndCustomerAuthUserId,
   findAddressRowByIdAndCustomerAuthUserId,
   findDefaultAddressByCustomerAuthUserId,
@@ -299,6 +300,7 @@ export async function deleteOwnAddress(
       const now = new Date();
 
       try {
+        await detachCheckoutDestinationsFromSavedAddress(tx, addressId, now);
         const deleted = await deleteCustomerAddressByIdAndCustomerAuthUserId(
           tx,
           addressId,

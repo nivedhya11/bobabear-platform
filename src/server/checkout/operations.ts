@@ -30,6 +30,7 @@ import {
   markCheckoutExpired,
   newCheckoutId,
 } from "./repository";
+import { findCartRowById, loadCartAggregate } from "../cart/repository";
 
 export type CheckoutOperationOptions = Readonly<{
   clock?: CheckoutClock;
@@ -71,6 +72,24 @@ export async function getActiveCheckout(
     let row = null;
     if (parsed.cartId !== undefined) {
       row = await findActiveNonTerminalForCart(ctx, parsed.cartId);
+      if (
+        row &&
+        (row.status === "DRAFT" || row.status === "READY_FOR_PAYMENT")
+      ) {
+        const cartRow = await findCartRowById(ctx, parsed.cartId);
+        if (
+          !cartRow ||
+          cartRow.customerAuthUserId !== customer.authUserId ||
+          cartRow.guestCredentialVerifier !== null
+        ) {
+          return null;
+        }
+        const cart = await loadCartAggregate(ctx, cartRow);
+        if (row.sourceCartRevision !== cart.revision) {
+          // Stale active checkout must not represent a newer cart revision.
+          return null;
+        }
+      }
     } else if (parsed.checkoutId !== undefined) {
       row = await findCheckoutRowById(ctx, parsed.checkoutId);
     }
@@ -111,6 +130,15 @@ export async function startCheckout(
           isLogicallyExpired(existing.expiresAt, now)
         ) {
           await markCheckoutExpired(tx, existing, now);
+          existing = null;
+        } else if (
+          (existing.status === "DRAFT" ||
+            existing.status === "READY_FOR_PAYMENT") &&
+          existing.sourceCartRevision !== cart.revision
+        ) {
+          // Existing cancel semantics: supersede stale DRAFT/READY so a new
+          // draft can bind the current cart revision. Do not invent new states.
+          await markCheckoutCancelled(tx, existing, now);
           existing = null;
         } else if (
           existing.status === "DRAFT" ||

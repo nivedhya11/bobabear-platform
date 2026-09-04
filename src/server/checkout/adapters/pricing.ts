@@ -259,6 +259,7 @@ export async function buildCheckoutCommercialResult(
   }
 
   let quote: DirectPricingQuote;
+  let appliedChargeDefs: typeof chargeDefs = [];
   try {
     const packagingDefs = chargeDefs.filter((c) => c.code === "packaging");
     const deliveryDef = chargeDefs.find((c) => c.code === "delivery");
@@ -322,6 +323,7 @@ export async function buildCheckoutCommercialResult(
         amountPaise: resolvedDeliveryPaise,
       });
     }
+    appliedChargeDefs = finalCharges;
 
     quote = await buildDirectPricingQuote(context, {
       outletId: input.outletId,
@@ -529,20 +531,39 @@ export async function buildCheckoutCommercialResult(
     }
   }
 
-  const charges: CheckoutChargeDraft[] = chargeDefs.map((c, i) => {
+  const charges: CheckoutChargeDraft[] = appliedChargeDefs.map((c, i) => {
     const quoted = quote.chargeLines.find(
       (q) => q.chargeDefinitionId === c.chargeDefinitionId,
     );
+    if (!quoted) {
+      throw new CheckoutError(
+        "CHECKOUT_DEPENDENCY_INDETERMINATE",
+        "Quoted charges do not match applied charge definitions.",
+      );
+    }
     return Object.freeze({
       chargeDefinitionId: c.chargeDefinitionId,
       chargeCode: c.code,
       calculationMode: c.calculationMode,
-      amountPaise: quoted?.amountPaise ?? c.amountPaise,
+      amountPaise: quoted.amountPaise,
       name: c.name,
       sortOrder: i,
     });
   });
 
+  const merchandisePaise =
+    quote.basePaise +
+    quote.modifierAdjustmentsPaise +
+    quote.bundleAdjustmentsPaise;
+  if (
+    quote.prePromotionSubtotalPaise !==
+    merchandisePaise + quote.chargesPaise
+  ) {
+    throw new CheckoutError(
+      "CHECKOUT_DEPENDENCY_INDETERMINATE",
+      "Commercial quote failed monetary invariant for charges.",
+    );
+  }
   const promotionEffects = await buildPromotionEffects(
     context,
     input,

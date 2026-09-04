@@ -59,6 +59,22 @@ export function chargeLabel(code: "packaging" | "delivery"): string {
   return code === "packaging" ? "Packaging" : "Delivery";
 }
 
+/**
+ * Merchandise-only subtotal for customer display.
+ *
+ * Authoritative `prePromotionSubtotalPaise` already includes charges. Showing that
+ * field as "Subtotal" while also itemizing Packaging/Delivery double-counts fees.
+ * Display subtotal = prePromotion − chargesPaise (= base + modifiers + bundles).
+ */
+export function snapshotMerchandiseSubtotalPaise(
+  snapshot: Pick<CommerceCheckoutSnapshot, "prePromotionSubtotalPaise" | "chargesPaise">,
+): string {
+  const pre = BigInt(snapshot.prePromotionSubtotalPaise || "0");
+  const charges = BigInt(snapshot.chargesPaise || "0");
+  const merchandise = pre - charges;
+  return (merchandise < BigInt(0) ? BigInt(0) : merchandise).toString();
+}
+
 export function snapshotPayableRows(snapshot: CommerceCheckoutSnapshot): ReadonlyArray<
   Readonly<{ key: string; label: string; amountPaise: string }>
 > {
@@ -66,7 +82,7 @@ export function snapshotPayableRows(snapshot: CommerceCheckoutSnapshot): Readonl
     {
       key: "subtotal",
       label: "Subtotal",
-      amountPaise: snapshot.prePromotionSubtotalPaise,
+      amountPaise: snapshotMerchandiseSubtotalPaise(snapshot),
     },
   ];
 
