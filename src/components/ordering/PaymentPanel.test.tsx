@@ -1218,4 +1218,67 @@ describe("PaymentPanel", () => {
     await userEvent.click(screen.getByTestId("payment-back-to-review"));
     expect(onBackToReview).toHaveBeenCalledWith("11");
   });
+
+  it("resumes unresolved checking for cart-changed PAYMENT_PENDING without Pay CTA", async () => {
+    getPaymentState.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        state: {
+          payment,
+          attempt,
+          attempts: [attempt],
+          checkoutId: "chk-1",
+          checkoutStatus: "PAYMENT_PENDING",
+          checkoutRevision: "4",
+          zeroPayableCompleted: false,
+        },
+      },
+    });
+    render(
+      <PaymentPanel
+        checkout={checkout}
+        snapshot={snapshotBase}
+        onOrderReady={vi.fn()}
+        resumePaymentId="pay-1"
+        cartChangedWhilePending
+      />,
+    );
+    await waitFor(() => expect(screen.getByTestId("payment-checking")).toBeInTheDocument());
+    expect(screen.getByText("Checking your previous payment")).toBeInTheDocument();
+    expect(screen.queryByTestId("payment-start")).not.toBeInTheDocument();
+    expect(startPayment).not.toHaveBeenCalled();
+    expect(getPaymentState).toHaveBeenCalledWith("pay-1");
+  });
+
+  it("notifies parent when resumed cart-changed payment is terminal", async () => {
+    const onTerminal = vi.fn();
+    getPaymentState.mockImplementation(async () => ({
+      ok: true,
+      status: 200,
+      data: {
+        state: {
+          payment: { ...payment, status: "CANCELLED" },
+          attempt: { ...attempt, status: "FAILED" },
+          attempts: [{ ...attempt, status: "FAILED" }],
+          checkoutId: "chk-1",
+          checkoutStatus: "DRAFT",
+          checkoutRevision: "5",
+          zeroPayableCompleted: false,
+        },
+      },
+    }));
+    render(
+      <PaymentPanel
+        checkout={checkout}
+        snapshot={snapshotBase}
+        onOrderReady={vi.fn()}
+        resumePaymentId="pay-1"
+        cartChangedWhilePending
+        onPaymentTerminalForCartChange={onTerminal}
+      />,
+    );
+    await waitFor(() => expect(onTerminal).toHaveBeenCalled());
+    expect(screen.queryByTestId("payment-start")).not.toBeInTheDocument();
+  });
 });
