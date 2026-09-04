@@ -216,8 +216,57 @@ No durable database state is invented for temporary anonymous location. Device c
 | External location marketplace / Routes / Distance Matrix / Address Validation / maps tiles | Out of scope |
 | Full commerce V2 redesign | IMP-036C |
 | Account erasure / privacy deletion semantics | IMP-038 adjacency |
+| Auth-gated anonymous Google Maps / Places / reverse-geocode I/O (McDelivery-style) | IMP-038 — see §6.1 |
 | onboarding_complete persistence flag | Out of scope |
 | New auth / roles / permissions | Out of scope |
+
+### 6.1 FUTURE SUPERSEDING HARDENING REQUIREMENT (IMP-038 — RECORD ONLY)
+
+```text
+STATUS: FOUNDER_APPROVED_FUTURE_REQUIREMENT
+OWNER: IMP-038 — Security & Privacy Hardening
+IMPLEMENTATION: NOT AUTHORIZED / NOT STARTED
+ACTIVATES_IMP038: NO
+SUPERSEDES_IMP036B_HISTORY: NO
+```
+
+Accepted IMP-036B **explicitly allowed** temporary anonymous location context (sessionStorage
+delivery context; anonymous Google location search / Maps JS / Places / reverse geocode where
+configured). That accepted history is **not** rewritten or reinterpreted here.
+
+Founder has approved this **future superseding** product/security direction for IMP-038 planning:
+
+```text
+ANONYMOUS_GOOGLE_LOCATION_IO = NO
+ANONYMOUS_DEFAULT_LOCATION = Dehradun
+AUTH_REQUIRED_TO_CHANGE_DELIVERY_LOCATION = YES
+AUTH_REQUIRED_FOR_MAPS_JS = YES
+AUTH_REQUIRED_FOR_PLACES_AUTOCOMPLETE = YES
+AUTH_REQUIRED_FOR_REVERSE_GEOCODE = YES
+AUTH_REQUIRED_TO_ADD_SAVED_ADDRESS = YES
+```
+
+Signed-out customer experience (future):
+
+```text
+top location: Delivering to Dehradun
+click/change location → require customer authentication
+→ after successful authentication return to location selection
+→ only then permit Google Maps / Places / reverse geocode / saved-address interaction
+```
+
+Rationale: reduce unauthenticated Google API abuse/cost exposure; align with Founder-preferred
+McDelivery-style interaction; saved address remains authenticated customer data.
+
+IMP-038 planning must also assess (authentication alone is **not** complete abuse protection):
+
+- authenticated / user / IP / session rate controls
+- Places autocomplete abuse protection
+- Place Details / reverse-geocode request controls
+- Google API restrictions and quotas
+- bot / automation mitigation
+
+Do **not** implement this behavior under IMP-036B / IMP-036C. IMP-038 remains `PLANNED` only.
 
 ## 7. Acceptance evidence targets
 
