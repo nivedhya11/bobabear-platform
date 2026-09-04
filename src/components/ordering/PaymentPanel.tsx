@@ -109,7 +109,10 @@ export function PaymentPanel(props: {
   checkout: CommerceCheckout;
   snapshot: CommerceCheckoutSnapshot;
   onOrderReady: (orderId: string) => void;
-  onBackToReview?: () => void;
+  /** Parent adopts the authoritative revision when leaving payment. */
+  onBackToReview?: (checkoutRevision: string) => void;
+  /** Keep parent checkout revision current after payment mutations. */
+  onCheckoutRevisionChange?: (checkoutRevision: string) => void;
 }) {
   const zeroPayable = isZeroPayableTotal(props.snapshot.grandTotalPaise);
   const payableLabel = formatPaise(props.snapshot.grandTotalPaise);
@@ -129,6 +132,11 @@ export function PaymentPanel(props: {
 
   function restorePayFocus(): void {
     queueMicrotask(() => payButtonRef.current?.focus());
+  }
+
+  function adoptCheckoutRevision(revision: string): void {
+    setCheckoutRevision(revision);
+    props.onCheckoutRevisionChange?.(revision);
   }
 
   async function finishWithOrder(): Promise<void> {
@@ -151,7 +159,7 @@ export function PaymentPanel(props: {
     const attempt = latestAttempt(state);
     if (payment) {
       setPaymentId(payment.id);
-      setCheckoutRevision(state.checkoutRevision);
+      adoptCheckoutRevision(state.checkoutRevision);
       if (attempt) setAttemptId(attempt.id);
       rememberPaymentRecovery({
         paymentId: payment.id,
@@ -341,7 +349,7 @@ export function PaymentPanel(props: {
 
   async function applyStartResult(result: CommercePaymentStartResult): Promise<void> {
     setPaymentId(result.payment.id);
-    setCheckoutRevision(result.checkoutRevision);
+    adoptCheckoutRevision(result.checkoutRevision);
     setAttemptId(result.attempt.id);
     rememberPaymentRecovery({
       paymentId: result.payment.id,
@@ -622,7 +630,7 @@ export function PaymentPanel(props: {
           className="min-h-[44px]"
           data-testid="payment-back-to-review"
           disabled={payBlocked}
-          onClick={() => props.onBackToReview?.()}
+          onClick={() => props.onBackToReview?.(checkoutRevision)}
         >
           Back to review
         </Button>

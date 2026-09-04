@@ -871,4 +871,34 @@ describe("PaymentPanel", () => {
       expect(screen.getByTestId("payment-checking")).toHaveTextContent(/don't pay again yet/i),
     );
   });
+
+  it("notifies parent of checkout revision on start and back-to-review", async () => {
+    const onCheckoutRevisionChange = vi.fn();
+    const onBackToReview = vi.fn();
+    startPayment.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        kind: "payment_started",
+        payment: { ...payment, status: "OPEN" },
+        attempt: { ...attempt, status: "FAILED" },
+        checkoutId: "chk-1",
+        checkoutRevision: "11",
+      },
+    });
+    render(
+      <PaymentPanel
+        checkout={checkout}
+        snapshot={snapshotBase}
+        onOrderReady={vi.fn()}
+        onCheckoutRevisionChange={onCheckoutRevisionChange}
+        onBackToReview={onBackToReview}
+      />,
+    );
+    await userEvent.click(screen.getByTestId("payment-start"));
+    await waitFor(() => expect(screen.getByTestId("payment-retry")).toBeInTheDocument());
+    expect(onCheckoutRevisionChange).toHaveBeenCalledWith("11");
+    await userEvent.click(screen.getByTestId("payment-back-to-review"));
+    expect(onBackToReview).toHaveBeenCalledWith("11");
+  });
 });
