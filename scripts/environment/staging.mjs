@@ -599,6 +599,15 @@ function ensurePersistentPostgres(buildDir, initDir) {
       console.log("POSTGRES_INIT_MOUNT_REFRESH YES");
       console.log(`POSTGRES_INIT_MOUNT_PREVIOUS ${initMount?.Source ?? "MISSING"}`);
       console.log(`POSTGRES_INIT_MOUNT_NEXT ${initDir}`);
+      for (const service of BOBA_RUNTIME_SERVICES) {
+        const dependent = `${STAGING_PROJECT}_${service}_1`;
+        try {
+          runPodman(["stop", "-t", "30", dependent]);
+          runPodman(["rm", dependent]);
+        } catch {
+          /* absent dependents are permitted */
+        }
+      }
       if (database.State.Status === "running") {
         runPodman(["stop", "-t", "30", container]);
       }
