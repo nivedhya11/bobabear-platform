@@ -2,5 +2,5 @@
 2:I[43756,["8409","static/chunks/8409-6521fbaf4dd9a2b7.js","5461","static/chunks/5461-04493380ca19e071.js","2960","static/chunks/2960-af0d3111a21476f9.js","8397","static/chunks/8397-d08c8b025644e46e.js","8164","static/chunks/8164-55f56c853dfa832e.js","8467","static/chunks/app/(customer)/account/addresses/page-08b522782b76021a.js"],"AddressesClient"]
 3:I[90484,[],"OutletBoundary"]
 4:"$Sreact.suspense"
-0:{"rsc":["$","$1","c",{"children":[["$","$L2",null,{}],null,["$","$L3",null,{"children":["$","$4",null,{"name":"Next.MetadataOutlet","children":"$@5"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"zmcQRgicOGQAAjLJjGAvP"}
+0:{"rsc":["$","$1","c",{"children":[["$","$L2",null,{}],null,["$","$L3",null,{"children":["$","$4",null,{"name":"Next.MetadataOutlet","children":"$@5"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"sJzfj9Ec6PqoQxAYjHT6D"}
 5:null
