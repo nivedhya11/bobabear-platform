@@ -3,10 +3,10 @@ Status: ARCHITECTURE_LOCKED SUPPORTING EXPERIENCE CONTRACT
 Capability: IMP-036D — Workforce & Franchise Operations Portal V2
 Lifecycle: ARCHITECTURE_LOCKED
 Architecture: ARCHITECTURE_LOCKED
-Implementation: NOT_AUTHORIZED / NOT_STARTED
+Implementation: AUTHORIZED / NOT_STARTED
 Founder UAT required: YES
 IMP-036D_ARCHITECTURE_LOCKED: YES
-IMP-036D_IMPLEMENTATION_AUTHORIZED: NO
+IMP-036D_IMPLEMENTATION_AUTHORIZED: YES
 IMP-036D_STARTED: NO
 IMP-036D_IMPLEMENTATION_COMPLETE: NO
 IMP-036D_ACCEPTED: NO
@@ -28,17 +28,20 @@ This document is a **SUPPORTING** experience contract. It must not compete with 
 locked capability architecture at
 [`../../capabilities/IMP-036D-workforce-franchise-operations-v2.md`](../../capabilities/IMP-036D-workforce-franchise-operations-v2.md).
 
-## Architecture lock status (GTM-R104 / STATE-R102)
+## Architecture lock status (GTM-R105 / STATE-R103)
 
 ```text
 IMP-036D_ARCHITECTURE_WORK_AUTHORIZED = YES
 IMP-036D_ARCHITECTURE_LOCKED = YES
-IMP-036D_IMPLEMENTATION_AUTHORIZED = NO
+IMP-036D_IMPLEMENTATION_AUTHORIZED = YES
 IMP-036D_STARTED = NO
 IMP-036D_IMPLEMENTATION_COMPLETE = NO
 IMP-036D_ACCEPTED = NO
 IMP-036D_FOUNDER_UAT_REQUIRED = YES
 ```
+
+Founder implementation authorization recorded at GTM-R105 / STATE-R103. Authorization does not
+start implementation.
 
 Founder-approved locked decisions:
 
@@ -105,7 +108,7 @@ POST /api/operations/v1/orders/{orderId}/notifications/{notificationRequestId}/r
   PaymentProvider boundary preserved.
 - Store Operations Management (assortment, availability, hours/schedules, serviceability,
   team/store-management expansion) remains IMP-036E.
-- No D-374 / no ARCH-R20. Implementation remains **NOT_AUTHORIZED** / **NOT_STARTED**.
+- No D-374 / no ARCH-R20. Implementation is **AUTHORIZED** / **NOT_STARTED**.
 
 ## Target outcomes and information architecture
 
