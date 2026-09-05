@@ -11,6 +11,8 @@ export type PaymentRecoveryPresentation = Readonly<{
   body: string;
   primaryActionLabel: string | null;
   primaryTestId: string | null;
+  secondaryActionLabel: string | null;
+  secondaryTestId: string | null;
 }>;
 
 export function paymentRecoveryPresentation(
@@ -25,6 +27,8 @@ export function paymentRecoveryPresentation(
         body: "Your payment wasn't completed. No order has been placed.",
         primaryActionLabel: `Try payment again · ${payableLabel}`,
         primaryTestId: "payment-retry",
+        secondaryActionLabel: "Start a new order",
+        secondaryTestId: "payment-start-new-order",
       });
     case "dismissed":
       return Object.freeze({
@@ -33,6 +37,8 @@ export function paymentRecoveryPresentation(
         body: "You closed the payment window before completing payment.",
         primaryActionLabel: `Continue payment · ${payableLabel}`,
         primaryTestId: "payment-continue",
+        secondaryActionLabel: null,
+        secondaryTestId: null,
       });
     case "unresolved":
       return Object.freeze({
@@ -41,6 +47,8 @@ export function paymentRecoveryPresentation(
         body: "We're confirming the payment status. Please don't pay again yet.",
         primaryActionLabel: null,
         primaryTestId: null,
+        secondaryActionLabel: null,
+        secondaryTestId: null,
       });
   }
 }

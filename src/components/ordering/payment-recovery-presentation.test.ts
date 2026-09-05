@@ -3,13 +3,15 @@ import { describe, expect, it } from "vitest";
 import { paymentRecoveryPresentation } from "./payment-recovery-presentation";
 
 describe("paymentRecoveryPresentation", () => {
-  it("returns authoritative failure copy with retry CTA", () => {
+  it("returns authoritative failure copy with retry and start-new-order CTAs", () => {
     expect(paymentRecoveryPresentation("failed", "₹847.00")).toEqual({
       kind: "failed",
       headline: "Payment unsuccessful",
       body: "Your payment wasn't completed. No order has been placed.",
       primaryActionLabel: "Try payment again · ₹847.00",
       primaryTestId: "payment-retry",
+      secondaryActionLabel: "Start a new order",
+      secondaryTestId: "payment-start-new-order",
     });
   });
 
@@ -20,6 +22,8 @@ describe("paymentRecoveryPresentation", () => {
       body: "You closed the payment window before completing payment.",
       primaryActionLabel: "Continue payment · ₹847.00",
       primaryTestId: "payment-continue",
+      secondaryActionLabel: null,
+      secondaryTestId: null,
     });
   });
 
@@ -30,6 +34,8 @@ describe("paymentRecoveryPresentation", () => {
       body: "We're confirming the payment status. Please don't pay again yet.",
       primaryActionLabel: null,
       primaryTestId: null,
+      secondaryActionLabel: null,
+      secondaryTestId: null,
     });
   });
 });

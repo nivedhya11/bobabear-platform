@@ -30,7 +30,11 @@ Landing → location context → Menu → category/search → product/customizat
 - **Checkout:** a clear logical Delivery → Order → Price → Payment → Place order journey; multiple
   routes are not required solely for aesthetics.
 - **Payment recovery:** customer-close, failure, processing, provider success pending BOBA
-  confirmation, duplicate submission, network recovery, and final confirmation.
+  confirmation, duplicate submission, network recovery, and final confirmation. Authoritative
+  FAILED+OPEN may retry the same immutable checkout or explicitly Start a new order (clears active
+  cart + browser payment-recovery pointer; historical checkout/payment retained; unresolved payment
+  blocks second pay / new-order). Failed payment is not an Order; customer failed-payment history is
+  deferred (Orders-only transport).
 - **Orders:** current/past grouping, customer-readable timeline, and safe Delivery projection with no
   internal provider or domain-status leakage.
 

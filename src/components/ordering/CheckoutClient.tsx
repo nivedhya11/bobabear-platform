@@ -544,6 +544,8 @@ export function CheckoutClient(props: { catalog: OrderingCatalog }) {
                 <PaymentPanel
                   checkout={checkout}
                   snapshot={snapshot}
+                  brandId={brandId}
+                  activeCartRevision={cart.revision}
                   resumePaymentId={resumePaymentId}
                   cartChangedWhilePending
                   embeddedInPreviousPaymentRecovery
@@ -642,6 +644,8 @@ export function CheckoutClient(props: { catalog: OrderingCatalog }) {
             <PaymentPanel
               checkout={checkout}
               snapshot={snapshot}
+              brandId={brandId}
+              activeCartRevision={cart?.revision}
               resumePaymentId={resumePaymentId}
               onCheckoutRevisionChange={adoptCheckoutRevision}
               onBackToReview={(revision) => {

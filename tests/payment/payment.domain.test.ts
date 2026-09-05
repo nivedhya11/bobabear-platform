@@ -4,11 +4,12 @@
 import { sql } from "drizzle-orm";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { setCartLineQuantity } from "../../src/server/cart";
+import { setCartLineQuantity, clearCart, addCartLine, getActiveCart } from "../../src/server/cart";
 import {
   evaluateCheckout,
   getActiveCheckout,
   setCheckoutDestination,
+  startCheckout,
 } from "../../src/server/checkout";
 import {
   cancelPayment,
@@ -854,6 +855,124 @@ describe("IMP-022 payment domain — expiry / abandonment / browser return", () 
       );
       expect(prior.status).toBe("OPEN");
       expect(prior.checkoutSnapshotId).toBe(failed.payment.checkoutSnapshotId);
+    });
+  });
+
+  it("IMP-036C founder: FAILED → clearCart → add line → startCheckout releases stale READY without mutating Checkout A into Checkout B", async () => {
+    await withPaymentReadyHarness(async (h) => {
+      const provider = createFakePaymentProvider({ defaultOutcome: "fail" });
+      const opts = paymentOpts(provider);
+      const access = {
+        kind: "customer" as const,
+        actor: h.actor,
+        brandId: h.brandId,
+      };
+      const failed = await startPayment(
+        h.persistence,
+        h.actor,
+        {
+          checkoutId: h.checkoutId,
+          expectedCheckoutRevision: h.revision,
+          paymentMethodIntent: "upi",
+          idempotencyKey: newIdempotencyKey(),
+        },
+        opts,
+      );
+      expect(failed.payment.status).toBe("OPEN");
+      expect(failed.attempt.status).toBe("FAILED");
+
+      const afterFail = await getActiveCheckout(
+        h.persistence,
+        h.actor,
+        { checkoutId: h.checkoutId },
+        { clock: opts.clock, policy: CHECKOUT_POLICY },
+      );
+      expect(afterFail).not.toBeNull();
+      expect(afterFail!.status).toBe("READY_FOR_PAYMENT");
+      expect(afterFail!.id).toBe(h.checkoutId);
+
+      const cartBeforeClear = await getActiveCart(h.persistence, access);
+      expect(cartBeforeClear).not.toBeNull();
+      expect(cartBeforeClear!.lines.length).toBeGreaterThan(0);
+
+      const emptied = await clearCart(h.persistence, access, {
+        expectedRevision: cartBeforeClear!.revision,
+      });
+      expect(emptied.lines).toHaveLength(0);
+      expect(emptied.revision).toBe(cartBeforeClear!.revision + BigInt(1));
+
+      // Empty cart cannot startCheckout (CHECKOUT_EMPTY_CART). Stale READY is hidden.
+      const staleActive = await getActiveCheckout(
+        h.persistence,
+        h.actor,
+        { cartId: h.cartId },
+        { clock: opts.clock, policy: CHECKOUT_POLICY },
+      );
+      expect(staleActive).toBeNull();
+
+      const historicalA = await h.persistence.withContext(async (ctx) => {
+        const r = await ctx.db.execute(sql`
+          select status::text as status from app.checkouts where id = ${h.checkoutId}::uuid
+        `);
+        return r.rows[0]!.status as string;
+      });
+      expect(historicalA).toBe("READY_FOR_PAYMENT");
+
+      // Retry against Checkout A is blocked once cart diverged (prepare demotes READY→DRAFT).
+      await expect(
+        retryPayment(
+          h.persistence,
+          h.actor,
+          {
+            paymentId: failed.payment.id,
+            expectedCheckoutRevision: failed.checkoutRevision,
+            paymentMethodIntent: "upi",
+            idempotencyKey: newIdempotencyKey("retry-after-clear"),
+          },
+          opts,
+        ),
+      ).rejects.toMatchObject({ code: "CHECKOUT_REPRICED" });
+
+      const cartAfterBlockedRetry = await getActiveCart(h.persistence, access);
+      expect(cartAfterBlockedRetry).not.toBeNull();
+      expect(cartAfterBlockedRetry!.revision).toBe(emptied.revision);
+      expect(cartAfterBlockedRetry!.lines).toHaveLength(0);
+
+      const withItem = await addCartLine(h.persistence, access, {
+        variantId: h.catalog.variantId,
+        quantity: 1,
+        expectedRevision: emptied.revision,
+      });
+      expect(withItem.cart.lines).toHaveLength(1);
+      expect(withItem.cart.lines[0]!.variantId).toBe(h.catalog.variantId);
+
+      const checkoutB = await startCheckout(
+        h.persistence,
+        h.actor,
+        { cartId: h.cartId },
+        { clock: opts.clock, policy: CHECKOUT_POLICY },
+      );
+      expect(checkoutB.id).not.toBe(h.checkoutId);
+      expect(checkoutB.status).toBe("DRAFT");
+      expect(checkoutB.sourceCartRevision).toBe(withItem.cart.revision);
+      expect(checkoutB.activeSnapshotId).toBeNull();
+
+      const statusA = await h.persistence.withContext(async (ctx) => {
+        const r = await ctx.db.execute(sql`
+          select status::text as status from app.checkouts where id = ${h.checkoutId}::uuid
+        `);
+        return r.rows[0]!.status as string;
+      });
+      expect(statusA).toBe("CANCELLED");
+
+      const priorPayment = await getPayment(
+        h.persistence,
+        h.actor,
+        { paymentId: failed.payment.id },
+        opts,
+      );
+      expect(priorPayment.status).toBe("OPEN");
+      expect(priorPayment.checkoutSnapshotId).toBe(failed.payment.checkoutSnapshotId);
     });
   });
 

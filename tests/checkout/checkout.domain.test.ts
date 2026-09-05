@@ -42,7 +42,10 @@ import {
   setPromotionTargets,
 } from "../../src/server/promotions";
 import type { CheckoutSnapshot } from "../../src/shared/checkout";
-import { pauseOutletIndefinitely } from "../database/support/serviceability-fixtures";
+import {
+  pauseOutletIndefinitely,
+  TEST_OUTSIDE_COORDS,
+} from "../database/support/serviceability-fixtures";
 import {
   GUEST_POLICY,
   seedActiveBundleWithComponent,
@@ -418,14 +421,18 @@ describe("IMP-021 checkout domain — evaluate commercial", () => {
           opts,
         );
 
-        // NOT_SERVICEABLE — unknown PIN
+        // NOT_SERVICEABLE — coordinates outside outlet service distance (PIN is metadata only)
         let checkout = await setCheckoutDestination(
           persistence,
           actors.customerA,
           {
             checkoutId: started.id,
             expectedCheckoutRevision: started.revision,
-            destination: { ...oneTimeDestination, postalCode: "110001" },
+            destination: {
+              ...oneTimeDestination,
+              postalCode: "110001",
+              coordinates: TEST_OUTSIDE_COORDS,
+            },
           },
           opts,
         );
@@ -762,19 +769,22 @@ describe("IMP-021 checkout domain — evaluate commercial", () => {
           update app.carts set revision = revision + 1 where id = ${added.cart.id}::uuid
         `);
       });
-      const live = await getActiveCheckout(
-        persistence,
-        actors.customerA,
-        { cartId: added.cart.id },
-        opts,
-      );
+      // Stale READY is hidden by getActiveCheckout after cart-revision divergence; evaluate by id.
+      expect(
+        await getActiveCheckout(
+          persistence,
+          actors.customerA,
+          { cartId: added.cart.id },
+          opts,
+        ),
+      ).toBeNull();
       await expect(
         evaluateCheckout(
           persistence,
           actors.customerA,
           {
-            checkoutId: live!.id,
-            expectedCheckoutRevision: live!.revision,
+            checkoutId: checkout.id,
+            expectedCheckoutRevision: checkout.revision,
           },
           opts,
         ),

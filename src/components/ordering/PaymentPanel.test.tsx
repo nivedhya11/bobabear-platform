@@ -12,6 +12,8 @@ const submitPaymentClientEvidence = vi.fn<(...args: unknown[]) => unknown>();
 const completeZeroPayableCheckout = vi.fn<(...args: unknown[]) => unknown>();
 const listCustomerOrders = vi.fn<(...args: unknown[]) => unknown>();
 const rememberPaymentRecovery = vi.fn<(...args: unknown[]) => unknown>();
+const clearPaymentRecovery = vi.fn<(...args: unknown[]) => unknown>();
+const clearCart = vi.fn<(...args: unknown[]) => unknown>();
 const browserNavigate = vi.fn<(...args: unknown[]) => unknown>();
 const readOrCreateStartIdempotencyKey = vi.fn<(...args: unknown[]) => unknown>(() => "idem-start");
 const readOrCreateRetryIdempotencyKey = vi.fn<(...args: unknown[]) => unknown>(() => "idem-retry");
@@ -36,6 +38,8 @@ vi.mock("@/lib/customer-commerce", async () => {
     completeZeroPayableCheckout: (...args: unknown[]) => completeZeroPayableCheckout(...args),
     listCustomerOrders: (...args: unknown[]) => listCustomerOrders(...args),
     rememberPaymentRecovery: (...args: unknown[]) => rememberPaymentRecovery(...args),
+    clearPaymentRecovery: (...args: unknown[]) => clearPaymentRecovery(...args),
+    clearCart: (...args: unknown[]) => clearCart(...args),
     readOrCreateStartIdempotencyKey: (...args: unknown[]) => readOrCreateStartIdempotencyKey(...args),
     readOrCreateRetryIdempotencyKey: (...args: unknown[]) => readOrCreateRetryIdempotencyKey(...args),
     readOrCreateZeroPayableIdempotencyKey: (...args: unknown[]) =>
@@ -160,6 +164,8 @@ beforeEach(() => {
   completeZeroPayableCheckout.mockReset();
   listCustomerOrders.mockReset();
   rememberPaymentRecovery.mockReset();
+  clearPaymentRecovery.mockReset();
+  clearCart.mockReset();
   browserNavigate.mockReset();
   loadRazorpayCheckoutScript.mockReset();
   openRazorpayStandardCheckout.mockReset();
@@ -876,6 +882,78 @@ describe("PaymentPanel", () => {
       /wasn't completed\. No order has been placed/i,
     );
     expect(screen.getByTestId("payment-retry")).toHaveTextContent("Try payment again · ₹271.95");
+    expect(screen.queryByTestId("payment-start-new-order")).not.toBeInTheDocument();
+  });
+
+  it("offers Start a new order after authoritative FAILED and clears cart via existing clearCart", async () => {
+    getPaymentState.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        state: {
+          payment: { ...payment, status: "OPEN" },
+          attempt: { ...attempt, status: "FAILED" },
+          attempts: [{ ...attempt, status: "FAILED" }],
+          checkoutId: "chk-1",
+          checkoutStatus: "READY_FOR_PAYMENT",
+          checkoutRevision: "4",
+          zeroPayableCompleted: false,
+        },
+      },
+    });
+    clearCart.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { cart: { id: "cart-1", revision: "3", lines: [] } },
+    });
+    render(
+      <PaymentPanel
+        checkout={checkout}
+        snapshot={snapshotBase}
+        brandId="brand-1"
+        activeCartRevision="2"
+        onOrderReady={vi.fn()}
+        resumePaymentId="pay-1"
+      />,
+    );
+    await waitFor(() => expect(screen.getByTestId("payment-start-new-order")).toBeInTheDocument());
+    expect(screen.getByTestId("payment-retry")).toBeInTheDocument();
+    await userEvent.click(screen.getByTestId("payment-start-new-order"));
+    await waitFor(() => expect(clearCart).toHaveBeenCalledWith({ brandId: "brand-1", expectedRevision: "2" }));
+    expect(clearPaymentRecovery).toHaveBeenCalled();
+    expect(browserNavigate).toHaveBeenCalledWith("/order/");
+  });
+
+  it("hides Start a new order while payment remains unresolved", async () => {
+    getPaymentState.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        state: {
+          payment: { ...payment, status: "PROCESSING" },
+          attempt: { ...attempt, status: "PENDING" },
+          attempts: [{ ...attempt, status: "PENDING" }],
+          checkoutId: "chk-1",
+          checkoutStatus: "PAYMENT_PENDING",
+          checkoutRevision: "4",
+          zeroPayableCompleted: false,
+        },
+      },
+    });
+    render(
+      <PaymentPanel
+        checkout={checkout}
+        snapshot={snapshotBase}
+        brandId="brand-1"
+        activeCartRevision="2"
+        onOrderReady={vi.fn()}
+        resumePaymentId="pay-1"
+      />,
+    );
+    await waitFor(() => expect(screen.getByTestId("payment-checking")).toBeInTheDocument());
+    expect(screen.queryByTestId("payment-start-new-order")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("payment-retry")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("payment-start")).not.toBeInTheDocument();
   });
 
   it("does not let dismiss overwrite a successful handler confirmation path", async () => {
@@ -1302,6 +1380,8 @@ describe("PaymentPanel", () => {
       <PaymentPanel
         checkout={checkout}
         snapshot={snapshotBase}
+        brandId="brand-1"
+        activeCartRevision="2"
         onOrderReady={vi.fn()}
         resumePaymentId="pay-1"
         cartChangedWhilePending
@@ -1310,6 +1390,7 @@ describe("PaymentPanel", () => {
     );
     await waitFor(() => expect(screen.getByTestId("payment-retry")).toBeInTheDocument());
     expect(screen.getByTestId("payment-recovery-failed")).toBeInTheDocument();
+    expect(screen.getByTestId("payment-start-new-order")).toBeInTheDocument();
     expect(screen.queryByTestId("payment-start")).not.toBeInTheDocument();
   });
 });

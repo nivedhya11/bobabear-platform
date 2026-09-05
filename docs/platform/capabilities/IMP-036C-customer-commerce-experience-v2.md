@@ -113,7 +113,8 @@ Exact band ₹ values and free-delivery thresholds are **business configuration*
 - **Cart:** line clarity, evaluation problems, serviceability note, estimated subtotal semantics.
 - **Checkout:** logical Delivery → Review → Payment on one route; server-side serviceability
   re-evaluation at evaluate; item review + monetary summary before payment.
-- **Payment:** existing PaymentPanel recovery semantics; no duplicate order intent.
+- **Payment:** existing PaymentPanel recovery semantics; no duplicate order intent. Authoritative
+  FAILED+OPEN may retry the same immutable checkout **or** explicitly Start a new order (see §8).
 - **Confirmation / Orders:** monetary summary from snapshot projection; D-357 status timeline only;
   current vs past order grouping; safe delivery projection.
 
@@ -133,3 +134,33 @@ preparation lifecycle, Routes API, live courier quote pass-through, invented ana
 IMP-036B location selector, session tokens, Back refresh, map stability, coordinate
 serviceability, and saved-address behavior must not regress where 036C composition touches those
 surfaces.
+
+## 8. Founder decision — failed-payment new-order continuity (capability-local)
+
+Product locks for authoritative Payment Attempt `FAILED` with Payment `OPEN` (presentation only;
+no new Payment/Checkout lifecycle, transport endpoint, or Order materialization):
+
+```text
+FAILED_PAYMENT_RETRY_SAME_CHECKOUT = YES
+FAILED_PAYMENT_START_NEW_ORDER = YES
+START_NEW_ORDER_CLEARS_ACTIVE_CART = YES
+START_NEW_ORDER_CLEARS_BROWSER_PAYMENT_RECOVERY = YES
+FAILED_CHECKOUT_REMAINS_IMMUTABLE_HISTORY = YES
+UNRESOLVED_PAYMENT_BLOCKS_NEW_ORDER = YES
+UNRESOLVED_PAYMENT_BLOCKS_SECOND_PAYMENT = YES
+FAILED_PAYMENT_IS_ORDER = NO
+FAILED_PAYMENT_CUSTOMER_HISTORY = DEFERRED
+DEFERRED_CUSTOMER_FAILED_PAYMENT_HISTORY = YES
+```
+
+| Action | Behavior |
+|---|---|
+| Try payment again | Existing `retryPayment` against the same previous Checkout and immutable commercial snapshot |
+| Start a new order | Existing `clearCart` once → `clearPaymentRecovery` → navigate `/order/`; historical Checkout A + Payment A retained server-side; later `startCheckout` supersedes stale READY via existing cart-revision rules |
+| Unresolved (CREATED / PENDING / PROCESSING / INDETERMINATE) | No Start a new order, no Try payment again, no new Pay — customer remains on Checking your payment / previous payment |
+| Success | Unchanged: Payment SUCCEEDED → Checkout COMPLETED → Order materialization → existing cart finalization (`finalize-after-order` semantics preserved) |
+
+Failed payment is **not** an Order. Customer-visible failed-payment history (desired My BOBA:
+successful commerce via Order; failed commerce attempt via Checkout + Payment history) is
+**deferred** because existing public customer order transport is Orders-only. No new public
+customer transport endpoint is introduced in this repair; no future IMP owner is assigned here.
