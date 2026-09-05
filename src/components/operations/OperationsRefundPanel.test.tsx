@@ -172,8 +172,40 @@ describe("OperationsRefundPanel", () => {
     expect(createOrderRefund).toHaveBeenCalledTimes(1);
   });
 
-  it("does not silently reuse UUID after immutable facts change, and issues a new UUID for a new command", async () => {
+  it("does not silently replace an unresolved ambiguous UUID when immutable facts change", async () => {
     const user = userEvent.setup();
+    createOrderRefund.mockResolvedValueOnce({ ok: false, status: 0, code: "NETWORK_ERROR" });
+
+    render(<OperationsRefundPanel orderId={ORDER_ID} canInitiate />);
+    await screen.findByLabelText("Refund amount (₹)");
+    await user.type(screen.getByLabelText("Refund amount (₹)"), "100");
+    await user.type(screen.getByLabelText("Reason"), "first command");
+    await user.click(screen.getByRole("button", { name: "Authorize refund" }));
+    await waitFor(() => expect(createOrderRefund).toHaveBeenCalledTimes(1));
+
+    await user.clear(screen.getByLabelText("Refund amount (₹)"));
+    await user.type(screen.getByLabelText("Refund amount (₹)"), "50");
+    await user.clear(screen.getByLabelText("Reason"));
+    await user.type(screen.getByLabelText("Reason"), "different amount");
+    await user.click(screen.getByRole("button", { name: "Authorize refund" }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert").textContent).toMatch(
+        /previous refund request is still unconfirmed/i,
+      );
+    });
+    expect(createOrderRefund).toHaveBeenCalledTimes(1);
+    expect(createOrderRefund.mock.calls[0]?.[1].refundRequestId).toBe(
+      "11111111-1111-4111-8111-000000000001",
+    );
+    expect(screen.getByRole("button", { name: "Check refund status" })).toBeTruthy();
+  });
+
+  it("reuses the same UUID after NETWORK_ERROR even when sessionStorage.setItem throws", async () => {
+    const user = userEvent.setup();
+    const setItem = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("setItem blocked");
+    });
     createOrderRefund
       .mockResolvedValueOnce({ ok: false, status: 0, code: "NETWORK_ERROR" })
       .mockResolvedValueOnce({
@@ -183,11 +215,79 @@ describe("OperationsRefundPanel", () => {
           paymentStatus: "SUCCEEDED",
           balance: readyBalance("17195"),
           refund: {
+            refundId: "11111111-1111-4111-8111-000000000001",
+            amountPaise: "10000",
+            currency: "INR",
+            status: "ACCEPTED",
+            reason: "storage failure retry",
+            operatorNote: null,
+            createdAt: "2026-09-05T00:00:00.000Z",
+            acceptedAt: "2026-09-05T00:00:00.000Z",
+            pendingAt: null,
+            indeterminateAt: null,
+            processedAt: null,
+            failedAt: null,
+            recoveryHint: "awaiting provider",
+          },
+        },
+      });
+
+    render(<OperationsRefundPanel orderId={ORDER_ID} canInitiate />);
+    await screen.findByLabelText("Refund amount (₹)");
+    await user.type(screen.getByLabelText("Refund amount (₹)"), "100.00");
+    await user.type(screen.getByLabelText("Reason"), "storage failure retry");
+    await user.click(screen.getByRole("button", { name: "Authorize refund" }));
+    await waitFor(() => expect(createOrderRefund).toHaveBeenCalledTimes(1));
+
+    await user.click(screen.getByRole("button", { name: "Authorize refund" }));
+    await waitFor(() => expect(createOrderRefund).toHaveBeenCalledTimes(2));
+    expect(createOrderRefund.mock.calls[0]?.[1].refundRequestId).toBe(
+      "11111111-1111-4111-8111-000000000001",
+    );
+    expect(createOrderRefund.mock.calls[1]?.[1].refundRequestId).toBe(
+      "11111111-1111-4111-8111-000000000001",
+    );
+    setItem.mockRestore();
+  });
+
+  it("issues a new UUID for a genuinely new logical Refund after a successful prior command", async () => {
+    const user = userEvent.setup();
+    createOrderRefund
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        data: {
+          paymentStatus: "SUCCEEDED",
+          balance: readyBalance("17195"),
+          refund: {
+            refundId: "11111111-1111-4111-8111-000000000001",
+            amountPaise: "10000",
+            currency: "INR",
+            status: "ACCEPTED",
+            reason: "first logical",
+            operatorNote: null,
+            createdAt: "2026-09-05T00:00:00.000Z",
+            acceptedAt: "2026-09-05T00:00:00.000Z",
+            pendingAt: null,
+            indeterminateAt: null,
+            processedAt: null,
+            failedAt: null,
+            recoveryHint: null,
+          },
+        },
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        data: {
+          paymentStatus: "SUCCEEDED",
+          balance: readyBalance("12195"),
+          refund: {
             refundId: "11111111-1111-4111-8111-000000000002",
             amountPaise: "5000",
             currency: "INR",
             status: "ACCEPTED",
-            reason: "different amount",
+            reason: "second logical",
             operatorNote: null,
             createdAt: "2026-09-05T00:00:00.000Z",
             acceptedAt: "2026-09-05T00:00:00.000Z",
@@ -203,14 +303,12 @@ describe("OperationsRefundPanel", () => {
     render(<OperationsRefundPanel orderId={ORDER_ID} canInitiate />);
     await screen.findByLabelText("Refund amount (₹)");
     await user.type(screen.getByLabelText("Refund amount (₹)"), "100");
-    await user.type(screen.getByLabelText("Reason"), "first command");
+    await user.type(screen.getByLabelText("Reason"), "first logical");
     await user.click(screen.getByRole("button", { name: "Authorize refund" }));
     await waitFor(() => expect(createOrderRefund).toHaveBeenCalledTimes(1));
 
-    await user.clear(screen.getByLabelText("Refund amount (₹)"));
     await user.type(screen.getByLabelText("Refund amount (₹)"), "50");
-    await user.clear(screen.getByLabelText("Reason"));
-    await user.type(screen.getByLabelText("Reason"), "different amount");
+    await user.type(screen.getByLabelText("Reason"), "second logical");
     await user.click(screen.getByRole("button", { name: "Authorize refund" }));
     await waitFor(() => expect(createOrderRefund).toHaveBeenCalledTimes(2));
     expect(createOrderRefund.mock.calls[0]?.[1].refundRequestId).toBe(

@@ -42,6 +42,9 @@ function errorMessage(code: string): string {
   if (code === "REFUND_IDEMPOTENCY_CONFLICT") {
     return "This refund request conflicts with an earlier submission. Start a new refund if needed.";
   }
+  if (code === "AMBIGUOUS_PENDING_FACTS_CHANGED") {
+    return "A previous refund request is still unconfirmed. Check refund status or retry the same amount and reason — do not start a different refund yet.";
+  }
   if (code === "REFUND_AMOUNT_EXCEEDS_REMAINING" || code === "REFUND_FULLY_REFUNDED") {
     return "The refund amount is not available against the remaining balance.";
   }
@@ -211,7 +214,14 @@ export function OperationsRefundPanel({
       reason,
       operatorNote,
     });
-    const command = bindPendingRefundCommand(facts);
+    const bound = bindPendingRefundCommand(facts);
+    if (!bound.ok) {
+      setPendingAmbiguous(true);
+      setAlert(errorMessage(bound.code));
+      setStatusMessage("Previous refund request is still unconfirmed.");
+      return;
+    }
+    const command = bound.command;
     setBusy(true);
     setStatusMessage("Submitting refund…");
     const result = await createOrderRefund(orderId, {

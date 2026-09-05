@@ -2,8 +2,13 @@
  * Client-side pending logical Refund command (IMP-036D).
  *
  * Preserves one stable refundRequestId across ambiguous transport results.
- * Browser storage is UX recovery only — server Refund authority remains final.
- * Never stores secrets.
+ *
+ * Identity layers:
+ *   1. In-memory map — primary for the current tab / mounted execution
+ *   2. sessionStorage — optional reload recovery only
+ *
+ * Browser storage failure must never destroy same-page command identity.
+ * Server Refund authority remains final. Never stores secrets.
  */
 import { createRefundRequestId } from "./refunds";
 
@@ -22,12 +27,35 @@ export type PendingRefundCommand = Readonly<{
   ambiguous: boolean;
 }>;
 
+export type BindPendingRefundCommandResult =
+  | Readonly<{ ok: true; command: PendingRefundCommand }>
+  | Readonly<{
+      ok: false;
+      code: "AMBIGUOUS_PENDING_FACTS_CHANGED";
+      pending: PendingRefundCommand;
+    }>;
+
+/**
+ * Primary identity for the current tab execution. sessionStorage is optional mirror only.
+ * `null` is an intentional clear tombstone: do not re-hydrate from stale storage after
+ * removeItem fails on the same mounted page.
+ */
+const memoryByOrderId = new Map<string, PendingRefundCommand | null>();
+
 function canUseSessionStorage(): boolean {
   return typeof window !== "undefined" && typeof window.sessionStorage !== "undefined";
 }
 
 function storageKey(orderId: string): string {
   return `${STORAGE_PREFIX}:${orderId}`;
+}
+
+function freezeCommand(command: PendingRefundCommand): PendingRefundCommand {
+  return Object.freeze({
+    refundRequestId: command.refundRequestId,
+    facts: Object.freeze({ ...command.facts }),
+    ambiguous: command.ambiguous,
+  });
 }
 
 /** Collapse whitespace the same way server reason/note normalization does. */
@@ -83,72 +111,107 @@ function isPendingRefundCommand(value: unknown): value is PendingRefundCommand {
   );
 }
 
-export function readPendingRefundCommand(orderId: string): PendingRefundCommand | null {
+function readFromSessionStorage(orderId: string): PendingRefundCommand | null {
   if (!canUseSessionStorage()) return null;
   try {
     const raw = window.sessionStorage.getItem(storageKey(orderId));
     if (!raw) return null;
     const parsed: unknown = JSON.parse(raw);
     if (!isPendingRefundCommand(parsed) || parsed.facts.orderId !== orderId) return null;
-    return Object.freeze({
-      refundRequestId: parsed.refundRequestId,
-      facts: Object.freeze({ ...parsed.facts }),
-      ambiguous: parsed.ambiguous,
-    });
+    return freezeCommand(parsed);
   } catch {
     return null;
   }
 }
 
-function writePendingRefundCommand(command: PendingRefundCommand): void {
+function writeToSessionStorage(command: PendingRefundCommand): void {
   if (!canUseSessionStorage()) return;
   try {
     window.sessionStorage.setItem(storageKey(command.facts.orderId), JSON.stringify(command));
   } catch {
-    /* sessionStorage may be blocked */
+    /* sessionStorage may be blocked — in-memory identity remains authoritative */
   }
 }
 
-export function clearPendingRefundCommand(orderId: string): void {
+function removeFromSessionStorage(orderId: string): void {
   if (!canUseSessionStorage()) return;
   try {
     window.sessionStorage.removeItem(storageKey(orderId));
   } catch {
-    /* ignore */
+    /* ignore — in-memory clear still proceeds */
   }
+}
+
+function persistCommand(command: PendingRefundCommand): PendingRefundCommand {
+  const frozen = freezeCommand(command);
+  memoryByOrderId.set(frozen.facts.orderId, frozen);
+  writeToSessionStorage(frozen);
+  return frozen;
+}
+
+export function readPendingRefundCommand(orderId: string): PendingRefundCommand | null {
+  if (memoryByOrderId.has(orderId)) {
+    return memoryByOrderId.get(orderId) ?? null;
+  }
+
+  const fromStorage = readFromSessionStorage(orderId);
+  if (!fromStorage) return null;
+
+  // Hydrate memory so subsequent same-tab reads do not depend on storage availability.
+  memoryByOrderId.set(orderId, fromStorage);
+  return fromStorage;
+}
+
+export function clearPendingRefundCommand(orderId: string): void {
+  // Tombstone prevents same-page re-hydration if sessionStorage.removeItem throws.
+  memoryByOrderId.set(orderId, null);
+  removeFromSessionStorage(orderId);
+}
+
+/**
+ * Test helper: drop in-memory entries without touching sessionStorage.
+ * Simulates a full page reload where only storage recovery remains.
+ */
+export function dropPendingRefundCommandMemoryForTests(): void {
+  memoryByOrderId.clear();
 }
 
 /**
  * Bind a UUID to immutable command facts for one logical Refund.
- * Reuses the pending UUID only when facts match; otherwise starts a new command.
+ * Reuses the pending UUID only when facts match.
+ * Unresolved ambiguous commands are not silently replaced by changed facts.
  */
 export function bindPendingRefundCommand(
   facts: PendingRefundCommandFacts,
   createId: () => string = createRefundRequestId,
-): PendingRefundCommand {
+): BindPendingRefundCommandResult {
   const existing = readPendingRefundCommand(facts.orderId);
   if (existing && pendingRefundFactsEqual(existing.facts, facts)) {
-    return existing;
+    return { ok: true, command: existing };
   }
-  const command: PendingRefundCommand = Object.freeze({
+  if (existing?.ambiguous) {
+    return {
+      ok: false,
+      code: "AMBIGUOUS_PENDING_FACTS_CHANGED",
+      pending: existing,
+    };
+  }
+  const command = persistCommand({
     refundRequestId: createId(),
     facts,
     ambiguous: false,
   });
-  writePendingRefundCommand(command);
-  return command;
+  return { ok: true, command };
 }
 
 export function markPendingRefundCommandAmbiguous(orderId: string): PendingRefundCommand | null {
   const existing = readPendingRefundCommand(orderId);
   if (!existing) return null;
-  const next: PendingRefundCommand = Object.freeze({
+  return persistCommand({
     ...existing,
     facts: Object.freeze({ ...existing.facts }),
     ambiguous: true,
   });
-  writePendingRefundCommand(next);
-  return next;
 }
 
 export function findPendingRefundInList<T extends { refundId: string }>(
