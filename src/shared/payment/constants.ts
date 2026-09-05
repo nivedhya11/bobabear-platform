@@ -107,6 +107,13 @@ export const RAZORPAY_ORDER_REFERENCE_KIND = "razorpay_order_id" as const;
 export const RAZORPAY_PAYMENT_REFERENCE_KIND = "razorpay_payment_id" as const;
 export const RAZORPAY_RECEIPT_REFERENCE_KIND = "razorpay_receipt" as const;
 
+/**
+ * Minimum interval between secondary provider query reconciliations for one
+ * Attempt (D-362). Customer payment-state polls may be more frequent; this
+ * bound prevents a provider query storm without inventing a worker.
+ */
+export const PAYMENT_SECONDARY_RECONCILE_MIN_INTERVAL_MS = 5_000;
+
 export const SUPPORTED_PAYMENT_METHOD_INTENTS = [
   "upi",
   "card",

@@ -19,6 +19,7 @@ import {
   startPaymentFingerprint,
   zeroPayableFingerprint,
   PaymentError,
+  PAYMENT_SECONDARY_RECONCILE_MIN_INTERVAL_MS,
   type NormalizedProviderEvidence,
   type Payment,
   type PaymentAttempt,
@@ -49,6 +50,7 @@ import {
   listProviderReferencesForAttempt,
   findCheckoutAndSnapshotForPayment,
   findIdempotencyRecord,
+  findLatestQueryObservationForAttempt,
   findPaymentById,
   findPaymentBySnapshotId,
   findUnresolvedAttempt,
@@ -1029,11 +1031,37 @@ export async function getPayment(
   });
 }
 
+/**
+ * Whether D-362 secondary reconcile may run for this unresolved Attempt.
+ * Bounds provider.queryExecution so payment-state polling cannot storm Razorpay.
+ */
+async function isSecondaryReconcileDue(
+  persistence: Persistence,
+  attemptId: string,
+  now: Date,
+): Promise<boolean> {
+  const latestQuery = await persistence.withContext((ctx) =>
+    findLatestQueryObservationForAttempt(ctx, attemptId),
+  );
+  if (!latestQuery) return true;
+  const elapsedMs = now.getTime() - latestQuery.observedAt.getTime();
+  return elapsedMs >= PAYMENT_SECONDARY_RECONCILE_MIN_INTERVAL_MS;
+}
+
+/**
+ * Read Payment state for the owning customer.
+ *
+ * When a configured provider is available and the Payment still has an
+ * unresolved Attempt, performs bounded secondary reconciliation
+ * (`reconcilePaymentAttempt` → `provider.queryExecution`) before returning.
+ * Browser callbacks remain non-authoritative; this path converges provider
+ * truth into Payment authority when webhooks are absent or delayed (D-362).
+ */
 export async function getPaymentState(
   persistence: Persistence,
   actor: unknown,
   input: unknown,
-  _options: PaymentOperationOptions = {},
+  options: PaymentOperationOptions = {},
 ): Promise<PaymentStateView> {
   const customer = requireCustomerActor(actor);
   const parsed = parseGetPaymentInput(input);
@@ -1043,6 +1071,45 @@ export async function getPaymentState(
   if (!payment) {
     throw new PaymentError("PAYMENT_NOT_FOUND", "Payment not found.");
   }
+
+  const provider = options.provider;
+  if (provider && provider.name !== "disabled" && payment.status === "PROCESSING") {
+    const unresolved = await persistence.withContext((ctx) =>
+      findUnresolvedAttempt(ctx, payment.id),
+    );
+    if (unresolved) {
+      const linked = await persistence.withContext((ctx) =>
+        findCheckoutAndSnapshotForPayment(ctx, payment),
+      );
+      if (linked && linked.checkout.customerAuthUserId === customer.authUserId) {
+        const due = await isSecondaryReconcileDue(
+          persistence,
+          unresolved.id,
+          clockOf(options).now(),
+        );
+        if (due) {
+          try {
+            return await reconcilePaymentAttempt(
+              persistence,
+              customer,
+              {
+                paymentId: payment.id,
+                attemptId: unresolved.id,
+              },
+              options,
+            );
+          } catch (error) {
+            // State reads must remain available when provider query is uncertain.
+            // Authoritative transitions only occur inside reconcilePaymentAttempt.
+            if (error instanceof PaymentError && error.code === "PAYMENT_NOT_FOUND") {
+              throw error;
+            }
+          }
+        }
+      }
+    }
+  }
+
   return buildPaymentStateView(persistence, payment, customer.authUserId);
 }
 

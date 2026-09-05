@@ -937,9 +937,12 @@ export async function routeCustomerCommerceRequest(
       if (stateParams && method === "GET") {
         const identity = await requireTrustedIdentity(deps.runtime, req.headers);
         const actor = toCartCustomerActor(identity);
-        const state = await getPaymentState(deps.persistence, actor, {
-          paymentId: stateParams.paymentId,
-        });
+        const state = await getPaymentState(
+          deps.persistence,
+          actor,
+          { paymentId: stateParams.paymentId },
+          { provider: deps.paymentProvider },
+        );
         sendJson(res, { ok: true, state }, { status: 200, requestId });
         return outcome("get_payment_state", 200, "OK");
       }
