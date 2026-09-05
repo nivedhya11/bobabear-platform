@@ -107,6 +107,9 @@ export default defineConfig({
       "tests/operations/orders-mutation-http.integration.test.ts",
       "tests/operations/runtime-service.integration.test.ts",
       "tests/operations/operational-status.integration.test.ts",
+      // IMP-036D: Workforce Operations Refund + Notification support HTTP.
+      "tests/operations/refunds-http.integration.test.ts",
+      "tests/operations/notifications-http.integration.test.ts",
       // IMP-035: Administration API authorization and transport integration.
       "tests/administration/**/*.integration.test.ts",
       // IMP-031: Provider-neutral Delivery foundation (Boundary C).

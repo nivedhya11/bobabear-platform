@@ -35,7 +35,7 @@ export const WORKFORCE_DESTINATIONS: readonly WorkforceDestination[] = [
   {
     id: "operations",
     label: "Operations",
-    description: "Order queue, fulfilment, and delivery coordination.",
+    description: "Today, orders, delivery, store, and operational status.",
     href: "/workforce/operations/",
     requiredAnyPermission: ["order.read"],
   },

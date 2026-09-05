@@ -1,19 +1,47 @@
 /**
- * Refund command parsing (IMP-027).
+ * Refund command parsing (IMP-027 / IMP-036D).
  */
 import { PAYMENT_CURRENCY } from "../payment";
 import { RefundError } from "./errors";
 import { normalizeRefundOperatorNote, normalizeRefundReason } from "./reason";
-import type { GetRefundInput, ReconcileRefundInput, RequestRefundInput } from "./types";
+import type {
+  GetRefundInput,
+  ReconcileRefundInput,
+  RequestRefundInput,
+  ReserveOrderRefundInput,
+} from "./types";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const RESERVE_ORDER_REFUND_ALLOWED_KEYS = [
+  "refundRequestId",
+  "amountPaise",
+  "reason",
+  "operatorNote",
+] as const;
 
 function requireUuid(value: unknown, field: string): string {
   if (typeof value !== "string" || !UUID_RE.test(value)) {
     throw new RefundError("REFUND_INVALID_INPUT", `${field} must be a UUID.`, { field });
   }
   return value;
+}
+
+function rejectUnknownKeys(
+  value: Record<string, unknown>,
+  allowed: readonly string[],
+  context: string,
+): void {
+  for (const key of Object.keys(value)) {
+    if (!allowed.includes(key)) {
+      throw new RefundError(
+        "REFUND_INVALID_INPUT",
+        `Unknown field '${key}' is not permitted on ${context}.`,
+        { field: key },
+      );
+    }
+  }
 }
 
 function requireAmountPaise(value: unknown): bigint {
@@ -71,4 +99,29 @@ export function parseGetRefundInput(input: unknown): GetRefundInput {
 
 export function parseReconcileRefundInput(input: unknown): ReconcileRefundInput {
   return parseGetRefundInput(input);
+}
+
+/**
+ * Operations POST /orders/{orderId}/refunds body. Path orderId is supplied separately.
+ * Rejects unknown fields and any caller-supplied outlet/payment/provider authority.
+ */
+export function parseReserveOrderRefundBody(
+  orderId: string,
+  input: unknown,
+): ReserveOrderRefundInput {
+  requireUuid(orderId, "orderId");
+  if (typeof input !== "object" || input === null || Array.isArray(input)) {
+    throw new RefundError("REFUND_INVALID_INPUT", "Refund request is invalid.");
+  }
+  const record = input as Record<string, unknown>;
+  rejectUnknownKeys(record, RESERVE_ORDER_REFUND_ALLOWED_KEYS, "order refund request");
+  const reason = normalizeRefundReason(record.reason);
+  const operatorNote = normalizeRefundOperatorNote(record.operatorNote);
+  return Object.freeze({
+    orderId,
+    refundRequestId: requireUuid(record.refundRequestId, "refundRequestId"),
+    amountPaise: requireAmountPaise(record.amountPaise),
+    reason,
+    ...(operatorNote !== null ? { operatorNote } : {}),
+  });
 }

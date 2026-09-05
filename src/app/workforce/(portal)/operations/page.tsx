@@ -1,17 +1,17 @@
 /**
- * /workforce/operations — read-only workforce Operations order list (IMP-030).
+ * /workforce/operations — Today workspace (IMP-036D).
  *
- * Static export page shell. All list transport and session handling occur
- * client-side via same-origin requests to `/api/operations/v1/orders`.
+ * Static export page shell. Experience composition over accepted authorities.
  */
 import type { Metadata } from "next";
 
-import { OperationsOrderListClient } from "@/components/operations/OperationsOrderListClient";
+import { OperationsTodayClient } from "@/components/operations/OperationsTodayClient";
+import { OperationsWorkspaceNav } from "@/components/operations/OperationsWorkspaceNav";
 import { PageHeader } from "@/components/enterprise/PageHeader";
 
 export const metadata: Metadata = {
-  title: "Operations Orders",
-  description: "Workforce operations order list for Boba Bear.",
+  title: "Operations Today",
+  description: "Workforce operations today workspace for Boba Bear.",
   alternates: { canonical: "/workforce/operations" },
   robots: {
     index: false,
@@ -19,18 +19,19 @@ export const metadata: Metadata = {
   },
 };
 
-export default function WorkforceOperationsPage() {
+export default function WorkforceOperationsTodayPage() {
   return (
     <>
       <PageHeader
-        title="Operations orders"
-        description="Search, review, and action the live order queue."
+        title="Today"
+        description="Open work and safe operational context for the current shift."
         breadcrumbs={[
           { label: "Workforce", href: "/workforce/" },
           { label: "Operations" },
         ]}
       />
-      <OperationsOrderListClient />
+      <OperationsWorkspaceNav />
+      <OperationsTodayClient />
     </>
   );
 }

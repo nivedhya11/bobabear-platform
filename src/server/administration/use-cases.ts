@@ -109,7 +109,26 @@ const ACCESS_CAPS = [
 ] as const satisfies readonly PermissionKey[];
 
 /** Portal session projection includes operations permissions for workforce hub navigation. */
-const PORTAL_SESSION_CAPS = ["order.read", ...ACCESS_CAPS] as const satisfies readonly PermissionKey[];
+const PORTAL_SESSION_CAPS = [
+  "order.read",
+  "order.accept",
+  "order.fulfil",
+  "order.cancel",
+  "payment.refund",
+  "payment.refund.read",
+  "notification.resend",
+  "delivery.read",
+  "delivery.dispatch",
+  "delivery.book",
+  "delivery.assign",
+  "delivery.pickup",
+  "delivery.complete",
+  "delivery.cancel",
+  "delivery.fail",
+  "delivery.return",
+  "delivery.cost.record",
+  ...ACCESS_CAPS,
+] as const satisfies readonly PermissionKey[];
 
 const LIST_LIMIT = 200;
 
