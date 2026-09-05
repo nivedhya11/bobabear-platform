@@ -60,6 +60,10 @@ directory.
 | [`capabilities/IMP-034-meta-whatsapp-cloud-api-adapter.md`](./capabilities/IMP-034-meta-whatsapp-cloud-api-adapter.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-034 Meta WhatsApp Cloud API Adapter; COMPLETE_AND_ACCEPTED (`IMP-034_ACCEPTED: YES`) |
 | [`capabilities/IMP-035-initial-administration-capabilities.md`](./capabilities/IMP-035-initial-administration-capabilities.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-035 Initial Administration Capabilities; COMPLETE_AND_ACCEPTED (`IMP-035_ACCEPTED: YES`; Founder UAT PASS; D-373 / ARCH-R19) |
 | [`capabilities/IMP-036-observability-operational-controls.md`](./capabilities/IMP-036-observability-operational-controls.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-036 Observability & Operational Controls; COMPLETE_AND_ACCEPTED (`IMP-036_ACCEPTED: YES`) |
+| [`capabilities/IMP-036A-multi-portal-experience-foundation.md`](./capabilities/IMP-036A-multi-portal-experience-foundation.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-036A Multi-Portal Experience Foundation; COMPLETE_AND_ACCEPTED |
+| [`capabilities/IMP-036B-customer-account-onboarding-address-location.md`](./capabilities/IMP-036B-customer-account-onboarding-address-location.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-036B Customer Account, Onboarding, Address & Location; COMPLETE_AND_ACCEPTED |
+| [`capabilities/IMP-036C-customer-commerce-experience-v2.md`](./capabilities/IMP-036C-customer-commerce-experience-v2.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-036C Customer Commerce Experience V2; COMPLETE_AND_ACCEPTED |
+| [`capabilities/IMP-036D-workforce-franchise-operations-v2.md`](./capabilities/IMP-036D-workforce-franchise-operations-v2.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-036D Workforce & Franchise Operations Portal V2; architecture LOCKED; implementation NOT_AUTHORIZED / NOT_STARTED |
 
 ## Supporting documents
 

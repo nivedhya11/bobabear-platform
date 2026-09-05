@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R103",
+  "roadmapVersion": "GTM-R104",
   "acceptedThrough": "IMP-036C",
   "currentProductSlice": "IMP-036D",
   "nextProductSlice": "IMP-036E",
   "gtmBoundary": "IMP-040",
   "lastReviewed": "2026-09-05",
-  "supersedes": "GTM-R102"
+  "supersedes": "GTM-R103"
 }
 -->
 
@@ -299,6 +299,11 @@ IMP-036 locked capability architecture (architecture **ARCHITECTURE_LOCKED**; im
 
 [`capabilities/IMP-036-observability-operational-controls.md`](./capabilities/IMP-036-observability-operational-controls.md)
 
+IMP-036D locked capability architecture (architecture **ARCHITECTURE_LOCKED**; implementation
+**NOT_AUTHORIZED** / **NOT_STARTED**):
+
+[`capabilities/IMP-036D-workforce-franchise-operations-v2.md`](./capabilities/IMP-036D-workforce-franchise-operations-v2.md)
+
 ## 2. Current Position
 
 ```text
@@ -309,24 +314,23 @@ Pending Acceptance:    NONE
 Public GTM Boundary:   IMP-040 — Launch Validation & Cutover
 ```
 
-**GTM-R103** records explicit Founder architecture activation of **IMP-036D — Workforce & Franchise
-Operations Portal V2** as `currentProductSlice` for architecture work only. IMP-036D lifecycle is
-`ARCHITECTURE_IN_PROGRESS`; architecture is `NOT_LOCKED` (`IMP-036D_ARCHITECTURE_LOCKED: NO`);
-implementation remains `NOT_AUTHORIZED` / `NOT_STARTED` (`IMP-036D_IMPLEMENTATION_AUTHORIZED: NO`;
-`IMP-036D_STARTED: NO`; `IMP-036D_IMPLEMENTATION_COMPLETE: NO`; `IMP-036D_ACCEPTED: NO`).
-`acceptedThrough` remains IMP-036C; `pendingAcceptance` remains NONE; `nextProductSlice` becomes
-IMP-036E, which remains `PLANNED` / `NOT_ACTIVATED` / `NOT_AUTHORIZED` / `NOT_STARTED`. No
-capability architecture artifact is created; no architecture lock; no D-374; no ARCH-R20.
-Founder architecture decisions recorded at activation:
-`IMP036D_PREPARATION_READINESS_DECISION = NO_NEW_V1_DOMAIN_STATE_REQUIRED` (no PREPARING/READY;
-D-357 preserved); `IMP036D_FINANCIAL_DOCUMENT_WORKFORCE_REVIEW = DEFERRED`;
-`IMP036D_NOTIFICATION_RESEND_WORKFORCE_TRANSPORT = APPROVED_FOR_ARCHITECTURE` under existing D-372
-with resource-specific outlet authorization (`notification.resend` reused; no new permission/role;
-`D374_REQUIRED_FOR_NOTIFICATION_RESEND = NO`); `IMP036D_REFUND_WORKFORCE_SUPPORT_INTENT = YES` /
-`IMP036D_REFUND_READ_PROJECTION_DESIRED = YES` but `IMP036D_REFUND_MUTATION_TRANSPORT_LOCKED = NO`
-and `IMP036D_REFUND_EXECUTION_TOPOLOGY = DECISION_REQUIRED` (blocks architecture lock; D-361/D-364
-PaymentProvider customer-commerce boundary preserved). Founder UAT remains required eventually
-(`IMP-036D_FOUNDER_UAT_REQUIRED: YES`).
+**GTM-R104** records Founder-approved IMP-036D architecture lock. IMP-036D lifecycle is
+`ARCHITECTURE_LOCKED` (`IMP-036D_ARCHITECTURE_LOCKED: YES`); implementation remains
+`NOT_AUTHORIZED` / `NOT_STARTED` (`IMP-036D_IMPLEMENTATION_AUTHORIZED: NO`; `IMP-036D_STARTED: NO`;
+`IMP-036D_IMPLEMENTATION_COMPLETE: NO`; `IMP-036D_ACCEPTED: NO`). Locked capability architecture:
+[`capabilities/IMP-036D-workforce-franchise-operations-v2.md`](./capabilities/IMP-036D-workforce-franchise-operations-v2.md).
+`acceptedThrough` remains IMP-036C; `pendingAcceptance` remains NONE; `nextProductSlice` remains
+IMP-036E (`PLANNED` / `NOT_ACTIVATED` / `NOT_AUTHORIZED` / `NOT_STARTED`). Refund topology blocker
+is resolved and locked: Operations provider-free reservation → Refund `ACCEPTED` row durable handoff
+→ existing customer-commerce `RefundReconciliationProcessor` / PaymentProvider / Razorpay
+(`IMP036D_REFUND_EXECUTION_TOPOLOGY: RESOLVED_AND_LOCKED`;
+`IMP036D_REFUND_TOPOLOGY_BLOCKS_ARCHITECTURE_LOCK: NO`;
+`IMP036D_REFUND_MUTATION_TRANSPORT_LOCKED: YES`). D-361 / D-364 / D-372 preserved. No schema; no new
+service/queue/auth/role/permission; no D-374; no ARCH-R20. Financial Document workforce review
+remains deferred; preparation/readiness remains no-new-state; Notification resend remains bounded
+resource-scoped under D-372. Founder UAT remains required eventually
+(`IMP-036D_FOUNDER_UAT_REQUIRED: YES`). Architecture lock does **not** authorize or start
+implementation.
 
 IMP-036C remains `COMPLETE_AND_ACCEPTED`. Architecture remains **ARCHITECTURE_LOCKED**
 (`IMP-036C_ARCHITECTURE_LOCKED: YES`). Implementation is `AUTHORIZED` / `STARTED` / `COMPLETE`
@@ -603,9 +607,10 @@ IMP036C_DIRECT_MAIN_EXCEPTION_SHA: 13835d285f53186c9ed89dc1ed0d11e30be75cca
 IMP036C_PROCESS_EXCEPTION_OUTSTANDING: NO
 STANDARDIZED_CUSTOMER_DELIVERY_FEE: YES
 DEFERRED_CUSTOMER_FAILED_PAYMENT_HISTORY: YES
-IMP-036D: ARCHITECTURE_IN_PROGRESS
-IMP-036D_ARCHITECTURE: NOT_LOCKED
-IMP-036D_ARCHITECTURE_LOCKED: NO
+IMP-036D: ARCHITECTURE_LOCKED
+IMP-036D_ARCHITECTURE: LOCKED
+IMP-036D_ARCHITECTURE_LOCKED: YES
+IMP-036D_IMPLEMENTATION: NOT_AUTHORIZED / NOT_STARTED
 IMP-036D_IMPLEMENTATION_AUTHORIZED: NO
 IMP-036D_STARTED: NO
 IMP-036D_IMPLEMENTATION_COMPLETE: NO
@@ -620,9 +625,10 @@ NEW_NOTIFICATION_ROLE: NO
 NEW_NOTIFICATION_SCOPE_MODEL: NO
 IMP036D_REFUND_WORKFORCE_SUPPORT_INTENT: YES
 IMP036D_REFUND_READ_PROJECTION_DESIRED: YES
-IMP036D_REFUND_MUTATION_TRANSPORT_LOCKED: NO
-IMP036D_REFUND_EXECUTION_TOPOLOGY: DECISION_REQUIRED
-IMP036D_REFUND_TOPOLOGY_BLOCKS_ARCHITECTURE_LOCK: YES
+IMP036D_REFUND_MUTATION_TRANSPORT_LOCKED: YES
+IMP036D_REFUND_EXECUTION_TOPOLOGY: RESOLVED_AND_LOCKED
+IMP036D_REFUND_TOPOLOGY_BLOCKS_ARCHITECTURE_LOCK: NO
+SCHEMA_CHANGE_REQUIRED: NO
 D-374_CREATED: NO
 ARCH_R20_REQUIRED: NO
 FRANCHISE_IS_BUSINESS_PERSONA: YES
@@ -825,14 +831,17 @@ only). Webhook acknowledgement timing / durable inbox / asynchronous Payment pro
 
 ## 4. Current Product Slice
 
-IMP-036D — Workforce & Franchise Operations Portal V2 is `ARCHITECTURE_IN_PROGRESS` for architecture
-work only (`IMP-036D_ARCHITECTURE_LOCKED: NO`; `IMP-036D_IMPLEMENTATION_AUTHORIZED: NO`;
-`IMP-036D_STARTED: NO`; `IMP-036D_IMPLEMENTATION_COMPLETE: NO`; `IMP-036D_ACCEPTED: NO`). No locked
-capability artifact exists yet. Supporting experience plan:
+IMP-036D — Workforce & Franchise Operations Portal V2 is `ARCHITECTURE_LOCKED`
+(`IMP-036D_ARCHITECTURE_LOCKED: YES`; `IMP-036D_IMPLEMENTATION_AUTHORIZED: NO`;
+`IMP-036D_STARTED: NO`; `IMP-036D_IMPLEMENTATION_COMPLETE: NO`; `IMP-036D_ACCEPTED: NO`). Locked
+capability architecture:
+[`capabilities/IMP-036D-workforce-franchise-operations-v2.md`](./capabilities/IMP-036D-workforce-franchise-operations-v2.md).
+Supporting experience contract:
 [`experience/enterprise-experience/IMP-036D-workforce-franchise-operations-v2.md`](./experience/enterprise-experience/IMP-036D-workforce-franchise-operations-v2.md).
-Refund provider-execution topology remains `DECISION_REQUIRED` and blocks architecture lock.
+Refund topology is `RESOLVED_AND_LOCKED` and no longer blocks architecture lock.
 `acceptedThrough` remains IMP-036C; `pendingAcceptance` remains NONE; `nextProductSlice` is
 IMP-036E (`PLANNED` / `NOT_ACTIVATED`). ARCH-R19 and DR-15 remain unchanged; D-374 is not created.
+Implementation remains unauthorized.
 
 IMP-036C — Customer Commerce Experience V2 remains `COMPLETE_AND_ACCEPTED` with locked capability
 architecture at
@@ -1132,7 +1141,7 @@ consume or remap IMP-029 → IMP-040 identities and is `COMPLETE_AND_ACCEPTED`.
 | IMP-036A | Multi-Portal Experience Foundation | COMPLETE_AND_ACCEPTED |
 | IMP-036B | Customer Account, Onboarding, Address & Location Experience | COMPLETE_AND_ACCEPTED |
 | IMP-036C | Customer Commerce Experience V2 | COMPLETE_AND_ACCEPTED |
-| IMP-036D | Workforce & Franchise Operations Portal V2 | ARCHITECTURE_IN_PROGRESS / NOT_AUTHORIZED / NOT_STARTED |
+| IMP-036D | Workforce & Franchise Operations Portal V2 | ARCHITECTURE_LOCKED / NOT_AUTHORIZED / NOT_STARTED |
 | IMP-036E | Store Operations Management | PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED |
 | IMP-036F | Catalog, Menu, Pricing & Promotions Management | PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED |
 | IMP-036G | Administration Console V2 | PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED |
@@ -1537,6 +1546,35 @@ Historical GTM-R1 meanings that are **not** current:
 Current public GTM boundary is **IMP-040**, not IMP-035.
 
 ## 9. Roadmap Change Log
+
+### GTM-R104 — 2026-09-05
+
+- Records Founder-approved architecture lock of **IMP-036D — Workforce & Franchise Operations Portal
+  V2** after resolution of the Refund provider-execution topology blocker.
+- IMP-036D lifecycle becomes `ARCHITECTURE_LOCKED` (`IMP-036D_ARCHITECTURE_LOCKED: YES`);
+  implementation remains `NOT_AUTHORIZED` / `NOT_STARTED` (`IMP-036D_IMPLEMENTATION_AUTHORIZED: NO`;
+  `IMP-036D_STARTED: NO`; `IMP-036D_IMPLEMENTATION_COMPLETE: NO`; `IMP-036D_ACCEPTED: NO`).
+- Creates locked capability artifact
+  [`capabilities/IMP-036D-workforce-franchise-operations-v2.md`](./capabilities/IMP-036D-workforce-franchise-operations-v2.md).
+- Preserves `acceptedThrough = IMP-036C` and `pendingAcceptance = NONE`; `currentProductSlice`
+  remains IMP-036D; `nextProductSlice` remains IMP-036E (`PLANNED` / `NOT_ACTIVATED` /
+  `NOT_AUTHORIZED` / `NOT_STARTED`).
+- Locks Founder-approved Refund topology: Operations process provider-free reservation; Refund
+  `ACCEPTED` row as durable handoff; customer-commerce canonical provider execution via existing
+  `RefundReconciliationProcessor` / PaymentProvider / Razorpay; HTTP Refund command idempotency via
+  client-stable Refund UUID as Refund id; no Operations Razorpay I/O, PaymentProvider, secrets,
+  internal HTTP, RPC, queue, broker, or new service
+  (`IMP036D_REFUND_EXECUTION_TOPOLOGY: RESOLVED_AND_LOCKED`;
+  `IMP036D_REFUND_TOPOLOGY_BLOCKS_ARCHITECTURE_LOCK: NO`;
+  `IMP036D_REFUND_MUTATION_TRANSPORT_LOCKED: YES`).
+- Preserves D-357 / D-358 / D-359 / D-361 / D-364 / D-372. No schema change; no new auth model,
+  role, permission, or scope model. No D-374; no ARCH-R20. ARCH-R19 and DR-15 remain unchanged.
+- Financial Document workforce review remains deferred; preparation/readiness remains
+  `NO_NEW_V1_DOMAIN_STATE_REQUIRED`; Notification resend remains bounded resource-scoped under
+  D-372 (`notification.resend` reused). Franchise remains a business persona only.
+- Founder UAT remains required eventually (`IMP-036D_FOUNDER_UAT_REQUIRED: YES`). Architecture lock
+  does **not** authorize or start implementation. IMP-036E remains planned/unactivated.
+- Supersedes GTM-R103 for the current product-slice architecture-lock position.
 
 ### GTM-R103 — 2026-09-05
 

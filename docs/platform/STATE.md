@@ -2,7 +2,7 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R101",
+  "stateVersion": "STATE-R102",
   "acceptedThrough": "IMP-036C",
   "currentProductSlice": "IMP-036D",
   "nextProductSlice": "IMP-036E",
@@ -32,7 +32,7 @@ Current Product Implementation: NONE
 Pending Acceptance:             NONE
 Current Product Slice:          IMP-036D — Workforce & Franchise Operations Portal V2
 Next Product Slice:             IMP-036E — Store Operations Management
-Current Governance Activity:    IMP-036D ARCHITECTURE_IN_PROGRESS (NOT_LOCKED;
+Current Governance Activity:    IMP-036D ARCHITECTURE_LOCKED (LOCKED;
                               NOT_AUTHORIZED / NOT_STARTED); IMP-036C
                               COMPLETE_AND_ACCEPTED; IMP-036E–G and IMP-037
                               PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED.
@@ -356,6 +356,28 @@ STATE-R36 record IMP-028B canonical activation without changing decision registe
 architecture. GTM-R39 / STATE-R37 record IMP-028B architecture lock and implementation
 authorization without changing decision register or global architecture.
 
+
+STATE-R102 records Founder-approved architecture lock of **IMP-036D — Workforce & Franchise
+Operations Portal V2**. IMP-036D is `ARCHITECTURE_LOCKED` (`IMP-036D_ARCHITECTURE_LOCKED: YES`);
+implementation remains `NOT_AUTHORIZED` / `NOT_STARTED` (`IMP-036D_IMPLEMENTATION_AUTHORIZED: NO`;
+`IMP-036D_STARTED: NO`; `IMP-036D_IMPLEMENTATION_COMPLETE: NO`; `IMP-036D_ACCEPTED: NO`). Locked
+capability architecture exists at
+[`capabilities/IMP-036D-workforce-franchise-operations-v2.md`](./capabilities/IMP-036D-workforce-franchise-operations-v2.md).
+`acceptedThrough` remains IMP-036C; `pendingAcceptance` remains NONE; `currentProductSlice` remains
+IMP-036D; `nextProductSlice` remains IMP-036E (`PLANNED` / `NOT_ACTIVATED` / `NOT_AUTHORIZED` /
+`NOT_STARTED`). Refund topology blocker is resolved and locked:
+`IMP036D_REFUND_EXECUTION_TOPOLOGY: RESOLVED_AND_LOCKED`;
+`IMP036D_REFUND_TOPOLOGY_BLOCKS_ARCHITECTURE_LOCK: NO`;
+`IMP036D_REFUND_MUTATION_TRANSPORT_LOCKED: YES` (Operations provider-free reservation; Refund
+`ACCEPTED` durable handoff; customer-commerce canonical provider execution). D-361 / D-364 / D-372
+preserved. No schema; no new service/queue/auth/role/permission; no D-374; no ARCH-R20. ARCH-R19 and
+DR-15 remain unchanged. Founder decisions preserved:
+`IMP036D_PREPARATION_READINESS_DECISION: NO_NEW_V1_DOMAIN_STATE_REQUIRED`;
+`IMP036D_FINANCIAL_DOCUMENT_WORKFORCE_REVIEW: DEFERRED`;
+`IMP036D_NOTIFICATION_RESEND_WORKFORCE_TRANSPORT: APPROVED_FOR_ARCHITECTURE`. Founder UAT remains
+required eventually (`IMP-036D_FOUNDER_UAT_REQUIRED: YES`). Architecture lock does **not** imply
+product implementation exists and does **not** authorize or start implementation. Supersedes
+STATE-R101 for the current product-slice architecture-lock position.
 
 STATE-R101 records explicit Founder architecture activation of **IMP-036D — Workforce & Franchise
 Operations Portal V2** as `currentProductSlice` for architecture work only. IMP-036D is
@@ -1645,9 +1667,10 @@ IMP036C_DIRECT_MAIN_EXCEPTION_SHA: 13835d285f53186c9ed89dc1ed0d11e30be75cca
 IMP036C_PROCESS_EXCEPTION_OUTSTANDING: NO
 STANDARDIZED_CUSTOMER_DELIVERY_FEE: YES
 DEFERRED_CUSTOMER_FAILED_PAYMENT_HISTORY: YES
-IMP-036D: ARCHITECTURE_IN_PROGRESS
-IMP-036D_ARCHITECTURE: NOT_LOCKED
-IMP-036D_ARCHITECTURE_LOCKED: NO
+IMP-036D: ARCHITECTURE_LOCKED
+IMP-036D_ARCHITECTURE: LOCKED
+IMP-036D_ARCHITECTURE_LOCKED: YES
+IMP-036D_IMPLEMENTATION: NOT_AUTHORIZED / NOT_STARTED
 IMP-036D_IMPLEMENTATION_AUTHORIZED: NO
 IMP-036D_STARTED: NO
 IMP-036D_IMPLEMENTATION_COMPLETE: NO
@@ -1662,9 +1685,10 @@ NEW_NOTIFICATION_ROLE: NO
 NEW_NOTIFICATION_SCOPE_MODEL: NO
 IMP036D_REFUND_WORKFORCE_SUPPORT_INTENT: YES
 IMP036D_REFUND_READ_PROJECTION_DESIRED: YES
-IMP036D_REFUND_MUTATION_TRANSPORT_LOCKED: NO
-IMP036D_REFUND_EXECUTION_TOPOLOGY: DECISION_REQUIRED
-IMP036D_REFUND_TOPOLOGY_BLOCKS_ARCHITECTURE_LOCK: YES
+IMP036D_REFUND_MUTATION_TRANSPORT_LOCKED: YES
+IMP036D_REFUND_EXECUTION_TOPOLOGY: RESOLVED_AND_LOCKED
+IMP036D_REFUND_TOPOLOGY_BLOCKS_ARCHITECTURE_LOCK: NO
+SCHEMA_CHANGE_REQUIRED: NO
 D-374_CREATED: NO
 ARCH_R20_REQUIRED: NO
 FRANCHISE_IS_BUSINESS_PERSONA: YES
