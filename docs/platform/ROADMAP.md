@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R105",
+  "roadmapVersion": "GTM-R106",
   "acceptedThrough": "IMP-036C",
   "currentProductSlice": "IMP-036D",
   "nextProductSlice": "IMP-036E",
   "gtmBoundary": "IMP-040",
   "lastReviewed": "2026-09-05",
-  "supersedes": "GTM-R104"
+  "supersedes": "GTM-R105"
 }
 -->
 
@@ -300,7 +300,7 @@ IMP-036 locked capability architecture (architecture **ARCHITECTURE_LOCKED**; im
 [`capabilities/IMP-036-observability-operational-controls.md`](./capabilities/IMP-036-observability-operational-controls.md)
 
 IMP-036D locked capability architecture (architecture **ARCHITECTURE_LOCKED**; implementation
-**AUTHORIZED** / **NOT_STARTED**):
+**AUTHORIZED** / **STARTED**):
 
 [`capabilities/IMP-036D-workforce-franchise-operations-v2.md`](./capabilities/IMP-036D-workforce-franchise-operations-v2.md)
 
@@ -314,11 +314,14 @@ Pending Acceptance:    NONE
 Public GTM Boundary:   IMP-040 — Launch Validation & Cutover
 ```
 
-**GTM-R105** records Founder authorization of IMP-036D implementation under the locked capability
-architecture. IMP-036D lifecycle remains `ARCHITECTURE_LOCKED` (`IMP-036D_ARCHITECTURE_LOCKED: YES`);
-implementation is `AUTHORIZED` / `NOT_STARTED` (`IMP-036D_IMPLEMENTATION_AUTHORIZED: YES`;
-`IMP-036D_STARTED: NO`; `IMP-036D_IMPLEMENTATION_COMPLETE: NO`; `IMP-036D_ACCEPTED: NO`).
-Authorization does **not** auto-start implementation. Locked capability architecture:
+**GTM-R106** records the separate Founder implementation-start gate for IMP-036D under the locked
+capability architecture and prior GTM-R105 authorization. IMP-036D lifecycle is
+`IMPLEMENTATION_IN_PROGRESS`. Architecture remains `ARCHITECTURE_LOCKED`
+(`IMP-036D_ARCHITECTURE_LOCKED: YES`); implementation is `AUTHORIZED` / `STARTED`
+(`IMP-036D_IMPLEMENTATION_AUTHORIZED: YES`; `IMP-036D_STARTED: YES`;
+`IMP-036D_IMPLEMENTATION_COMPLETE: NO`; `IMP-036D_ACCEPTED: NO`). Start does **not** complete or
+accept implementation. This checkpoint starts the implementation lifecycle but contains **no**
+product implementation itself. Locked capability architecture:
 [`capabilities/IMP-036D-workforce-franchise-operations-v2.md`](./capabilities/IMP-036D-workforce-franchise-operations-v2.md).
 `acceptedThrough` remains IMP-036C; `pendingAcceptance` remains NONE; `nextProductSlice` remains
 IMP-036E (`PLANNED` / `NOT_ACTIVATED` / `NOT_AUTHORIZED` / `NOT_STARTED`). Refund topology remains
@@ -330,8 +333,7 @@ resolved and locked: Operations provider-free reservation → Refund `ACCEPTED` 
 service/queue/auth/role/permission; no D-374; no ARCH-R20. Financial Document workforce review
 remains deferred; preparation/readiness remains no-new-state; Notification resend remains bounded
 resource-scoped under D-372. Founder UAT remains required eventually
-(`IMP-036D_FOUNDER_UAT_REQUIRED: YES`). No product implementation code accompanies this
-authorization.
+(`IMP-036D_FOUNDER_UAT_REQUIRED: YES`). No product implementation code accompanies this start gate.
 
 IMP-036C remains `COMPLETE_AND_ACCEPTED`. Architecture remains **ARCHITECTURE_LOCKED**
 (`IMP-036C_ARCHITECTURE_LOCKED: YES`). Implementation is `AUTHORIZED` / `STARTED` / `COMPLETE`
@@ -608,12 +610,12 @@ IMP036C_DIRECT_MAIN_EXCEPTION_SHA: 13835d285f53186c9ed89dc1ed0d11e30be75cca
 IMP036C_PROCESS_EXCEPTION_OUTSTANDING: NO
 STANDARDIZED_CUSTOMER_DELIVERY_FEE: YES
 DEFERRED_CUSTOMER_FAILED_PAYMENT_HISTORY: YES
-IMP-036D: ARCHITECTURE_LOCKED
+IMP-036D: IMPLEMENTATION_IN_PROGRESS
 IMP-036D_ARCHITECTURE: LOCKED
 IMP-036D_ARCHITECTURE_LOCKED: YES
-IMP-036D_IMPLEMENTATION: AUTHORIZED / NOT_STARTED
+IMP-036D_IMPLEMENTATION: AUTHORIZED / STARTED
 IMP-036D_IMPLEMENTATION_AUTHORIZED: YES
-IMP-036D_STARTED: NO
+IMP-036D_STARTED: YES
 IMP-036D_IMPLEMENTATION_COMPLETE: NO
 IMP-036D_ACCEPTED: NO
 IMP-036D_FOUNDER_UAT_REQUIRED: YES
@@ -832,11 +834,12 @@ only). Webhook acknowledgement timing / durable inbox / asynchronous Payment pro
 
 ## 4. Current Product Slice
 
-IMP-036D — Workforce & Franchise Operations Portal V2 is `ARCHITECTURE_LOCKED` with implementation
-`AUTHORIZED` / `NOT_STARTED` (`IMP-036D_ARCHITECTURE_LOCKED: YES`;
-`IMP-036D_IMPLEMENTATION_AUTHORIZED: YES`; `IMP-036D_STARTED: NO`;
-`IMP-036D_IMPLEMENTATION_COMPLETE: NO`; `IMP-036D_ACCEPTED: NO`). Authorization does **not**
-auto-start implementation. Locked capability architecture:
+IMP-036D — Workforce & Franchise Operations Portal V2 is `IMPLEMENTATION_IN_PROGRESS` with
+architecture `ARCHITECTURE_LOCKED` and implementation `AUTHORIZED` / `STARTED`
+(`IMP-036D_ARCHITECTURE_LOCKED: YES`; `IMP-036D_IMPLEMENTATION_AUTHORIZED: YES`;
+`IMP-036D_STARTED: YES`; `IMP-036D_IMPLEMENTATION_COMPLETE: NO`; `IMP-036D_ACCEPTED: NO`). Start does
+**not** complete or accept implementation. This start gate contains no product implementation.
+Locked capability architecture:
 [`capabilities/IMP-036D-workforce-franchise-operations-v2.md`](./capabilities/IMP-036D-workforce-franchise-operations-v2.md).
 Supporting experience contract:
 [`experience/enterprise-experience/IMP-036D-workforce-franchise-operations-v2.md`](./experience/enterprise-experience/IMP-036D-workforce-franchise-operations-v2.md).
@@ -1142,7 +1145,7 @@ consume or remap IMP-029 → IMP-040 identities and is `COMPLETE_AND_ACCEPTED`.
 | IMP-036A | Multi-Portal Experience Foundation | COMPLETE_AND_ACCEPTED |
 | IMP-036B | Customer Account, Onboarding, Address & Location Experience | COMPLETE_AND_ACCEPTED |
 | IMP-036C | Customer Commerce Experience V2 | COMPLETE_AND_ACCEPTED |
-| IMP-036D | Workforce & Franchise Operations Portal V2 | ARCHITECTURE_LOCKED / AUTHORIZED / NOT_STARTED |
+| IMP-036D | Workforce & Franchise Operations Portal V2 | IMPLEMENTATION_IN_PROGRESS / AUTHORIZED / STARTED |
 | IMP-036E | Store Operations Management | PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED |
 | IMP-036F | Catalog, Menu, Pricing & Promotions Management | PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED |
 | IMP-036G | Administration Console V2 | PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED |
@@ -1547,6 +1550,30 @@ Historical GTM-R1 meanings that are **not** current:
 Current public GTM boundary is **IMP-040**, not IMP-035.
 
 ## 9. Roadmap Change Log
+
+### GTM-R106 — 2026-09-05
+
+- Records the separate Founder implementation-start gate for **IMP-036D — Workforce & Franchise
+  Operations Portal V2** under the locked capability architecture at
+  [`capabilities/IMP-036D-workforce-franchise-operations-v2.md`](./capabilities/IMP-036D-workforce-franchise-operations-v2.md)
+  and prior GTM-R105 authorization.
+- IMP-036D lifecycle becomes `IMPLEMENTATION_IN_PROGRESS`. Architecture remains
+  `ARCHITECTURE_LOCKED` (`IMP-036D_ARCHITECTURE_LOCKED: YES`); implementation becomes
+  `AUTHORIZED` / `STARTED` (`IMP-036D_IMPLEMENTATION_AUTHORIZED: YES`; `IMP-036D_STARTED: YES`;
+  `IMP-036D_IMPLEMENTATION_COMPLETE: NO`; `IMP-036D_ACCEPTED: NO`).
+- Start does **not** complete or accept implementation. This checkpoint starts the implementation
+  lifecycle but contains **no** product implementation itself.
+- Preserves `acceptedThrough = IMP-036C` and `pendingAcceptance = NONE`; `currentProductSlice`
+  remains IMP-036D; `nextProductSlice` remains IMP-036E (`PLANNED` / `NOT_ACTIVATED` /
+  `NOT_AUTHORIZED` / `NOT_STARTED`).
+- Preserves locked Refund topology (`IMP036D_REFUND_EXECUTION_TOPOLOGY: RESOLVED_AND_LOCKED`),
+  D-357 / D-358 / D-359 / D-361 / D-364 / D-372, schema-change = NO, no D-374, no ARCH-R20.
+  ARCH-R19 and DR-15 remain unchanged.
+- Founder UAT remains required eventually (`IMP-036D_FOUNDER_UAT_REQUIRED: YES`). IMP-036E remains
+  planned/unactivated.
+- Supersedes GTM-R105 for the current product-slice implementation-start position. Historical
+  GTM-R105 / STATE-R103 implementation-authorization checkpoint remains preserved as prior
+  authority.
 
 ### GTM-R105 — 2026-09-05
 

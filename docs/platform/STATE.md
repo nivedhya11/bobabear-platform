@@ -2,7 +2,7 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R103",
+  "stateVersion": "STATE-R104",
   "acceptedThrough": "IMP-036C",
   "currentProductSlice": "IMP-036D",
   "nextProductSlice": "IMP-036E",
@@ -28,12 +28,12 @@ Accepted Range:            IMP-001 → IMP-036C (including IMP-005A and IMP-026C
 ## 2. Current Work Position
 
 ```text
-Current Product Implementation: NONE
+Current Product Implementation: IMP-036D — Workforce & Franchise Operations Portal V2
 Pending Acceptance:             NONE
 Current Product Slice:          IMP-036D — Workforce & Franchise Operations Portal V2
 Next Product Slice:             IMP-036E — Store Operations Management
-Current Governance Activity:    IMP-036D ARCHITECTURE_LOCKED (LOCKED;
-                              AUTHORIZED / NOT_STARTED); IMP-036C
+Current Governance Activity:    IMP-036D IMPLEMENTATION_IN_PROGRESS (ARCHITECTURE_LOCKED;
+                              AUTHORIZED / STARTED); IMP-036C
                               COMPLETE_AND_ACCEPTED; IMP-036E–G and IMP-037
                               PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED.
 Governance Health:              ALIGNED
@@ -356,6 +356,32 @@ STATE-R36 record IMP-028B canonical activation without changing decision registe
 architecture. GTM-R39 / STATE-R37 record IMP-028B architecture lock and implementation
 authorization without changing decision register or global architecture.
 
+
+STATE-R104 records the separate Founder implementation-start gate for **IMP-036D — Workforce &
+Franchise Operations Portal V2** under the locked capability architecture and prior STATE-R103
+authorization. IMP-036D lifecycle is `IMPLEMENTATION_IN_PROGRESS`. Architecture remains
+`ARCHITECTURE_LOCKED` (`IMP-036D_ARCHITECTURE_LOCKED: YES`); implementation is `AUTHORIZED` /
+`STARTED` (`IMP-036D_IMPLEMENTATION_AUTHORIZED: YES`; `IMP-036D_STARTED: YES`;
+`IMP-036D_IMPLEMENTATION_COMPLETE: NO`; `IMP-036D_ACCEPTED: NO`). Start does **not** complete or
+accept implementation. This checkpoint starts the implementation lifecycle but contains **no**
+product implementation itself and does **not** claim implementation evidence exists. Locked
+capability architecture remains at
+[`capabilities/IMP-036D-workforce-franchise-operations-v2.md`](./capabilities/IMP-036D-workforce-franchise-operations-v2.md).
+`acceptedThrough` remains IMP-036C; `pendingAcceptance` remains NONE; `currentProductSlice` remains
+IMP-036D; `nextProductSlice` remains IMP-036E (`PLANNED` / `NOT_ACTIVATED` / `NOT_AUTHORIZED` /
+`NOT_STARTED`). Refund topology remains resolved and locked:
+`IMP036D_REFUND_EXECUTION_TOPOLOGY: RESOLVED_AND_LOCKED`;
+`IMP036D_REFUND_TOPOLOGY_BLOCKS_ARCHITECTURE_LOCK: NO`;
+`IMP036D_REFUND_MUTATION_TRANSPORT_LOCKED: YES`. D-361 / D-364 / D-372 preserved. No schema; no new
+service/queue/auth/role/permission; no D-374; no ARCH-R20. ARCH-R19 and DR-15 remain unchanged.
+Founder decisions preserved:
+`IMP036D_PREPARATION_READINESS_DECISION: NO_NEW_V1_DOMAIN_STATE_REQUIRED`;
+`IMP036D_FINANCIAL_DOCUMENT_WORKFORCE_REVIEW: DEFERRED`;
+`IMP036D_NOTIFICATION_RESEND_WORKFORCE_TRANSPORT: APPROVED_FOR_ARCHITECTURE`. Founder UAT remains
+required eventually (`IMP-036D_FOUNDER_UAT_REQUIRED: YES`). Schema change remains not required
+(`IMP-036D_SCHEMA_CHANGE_REQUIRED: NO`). Supersedes STATE-R103 for the current product-slice
+implementation-start position. Historical STATE-R103 authorization checkpoint remains preserved as
+prior authority.
 
 STATE-R103 records Founder authorization of **IMP-036D — Workforce & Franchise Operations Portal
 V2** implementation under the locked capability architecture. IMP-036D remains
@@ -1690,15 +1716,16 @@ IMP036C_DIRECT_MAIN_EXCEPTION_SHA: 13835d285f53186c9ed89dc1ed0d11e30be75cca
 IMP036C_PROCESS_EXCEPTION_OUTSTANDING: NO
 STANDARDIZED_CUSTOMER_DELIVERY_FEE: YES
 DEFERRED_CUSTOMER_FAILED_PAYMENT_HISTORY: YES
-IMP-036D: ARCHITECTURE_LOCKED
+IMP-036D: IMPLEMENTATION_IN_PROGRESS
 IMP-036D_ARCHITECTURE: LOCKED
 IMP-036D_ARCHITECTURE_LOCKED: YES
-IMP-036D_IMPLEMENTATION: AUTHORIZED / NOT_STARTED
+IMP-036D_IMPLEMENTATION: AUTHORIZED / STARTED
 IMP-036D_IMPLEMENTATION_AUTHORIZED: YES
-IMP-036D_STARTED: NO
+IMP-036D_STARTED: YES
 IMP-036D_IMPLEMENTATION_COMPLETE: NO
 IMP-036D_ACCEPTED: NO
 IMP-036D_FOUNDER_UAT_REQUIRED: YES
+IMP-036D_SCHEMA_CHANGE_REQUIRED: NO
 IMP036D_PREPARATION_READINESS_DECISION: NO_NEW_V1_DOMAIN_STATE_REQUIRED
 IMP036D_FINANCIAL_DOCUMENT_WORKFORCE_REVIEW: DEFERRED
 IMP036D_NOTIFICATION_RESEND_WORKFORCE_TRANSPORT: APPROVED_FOR_ARCHITECTURE

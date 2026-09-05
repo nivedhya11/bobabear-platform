@@ -1,13 +1,17 @@
 ---
 Status: ARCHITECTURE_LOCKED SUPPORTING EXPERIENCE CONTRACT
 Capability: IMP-036D — Workforce & Franchise Operations Portal V2
-Lifecycle: ARCHITECTURE_LOCKED
+Lifecycle: IMPLEMENTATION_IN_PROGRESS
 Architecture: ARCHITECTURE_LOCKED
-Implementation: AUTHORIZED / NOT_STARTED
+Implementation: AUTHORIZED / STARTED
+Implementation authorized: YES
+Implementation started: YES
+Implementation complete: NO
+Accepted: NO
 Founder UAT required: YES
 IMP-036D_ARCHITECTURE_LOCKED: YES
 IMP-036D_IMPLEMENTATION_AUTHORIZED: YES
-IMP-036D_STARTED: NO
+IMP-036D_STARTED: YES
 IMP-036D_IMPLEMENTATION_COMPLETE: NO
 IMP-036D_ACCEPTED: NO
 Authority: SUPPORTING EXPERIENCE CONTRACT — locked capability architecture at
@@ -28,20 +32,20 @@ This document is a **SUPPORTING** experience contract. It must not compete with 
 locked capability architecture at
 [`../../capabilities/IMP-036D-workforce-franchise-operations-v2.md`](../../capabilities/IMP-036D-workforce-franchise-operations-v2.md).
 
-## Architecture lock status (GTM-R105 / STATE-R103)
+## Architecture lock status (GTM-R106 / STATE-R104)
 
 ```text
 IMP-036D_ARCHITECTURE_WORK_AUTHORIZED = YES
 IMP-036D_ARCHITECTURE_LOCKED = YES
 IMP-036D_IMPLEMENTATION_AUTHORIZED = YES
-IMP-036D_STARTED = NO
+IMP-036D_STARTED = YES
 IMP-036D_IMPLEMENTATION_COMPLETE = NO
 IMP-036D_ACCEPTED = NO
 IMP-036D_FOUNDER_UAT_REQUIRED = YES
 ```
 
-Founder implementation authorization recorded at GTM-R105 / STATE-R103. Authorization does not
-start implementation.
+Founder implementation-start authorization recorded at GTM-R106 / STATE-R104. Start does not
+complete or accept implementation.
 
 Founder-approved locked decisions:
 

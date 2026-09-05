@@ -5,7 +5,7 @@
   "capability": "IMP-036D",
   "title": "Workforce & Franchise Operations Portal V2",
   "architectureLock": "ARCHITECTURE_LOCKED",
-  "implementation": "AUTHORIZED / NOT_STARTED",
+  "implementation": "AUTHORIZED / STARTED",
   "implementationAuthorized": true,
   "founderUATRequired": true,
   "schemaChangeRequired": false,
@@ -17,20 +17,20 @@
 
 # IMP-036D — Workforce & Franchise Operations Portal V2
 
-## Capability Architecture (ARCHITECTURE_LOCKED — IMPLEMENTATION AUTHORIZED / NOT_STARTED)
+## Capability Architecture (ARCHITECTURE_LOCKED — IMPLEMENTATION AUTHORIZED / STARTED)
 
 This document is the **locked capability architecture** for IMP-036D. It is the sole CURRENT
 capability-architecture authority for this slice. Supporting experience planning must not compete
 with this lock.
 
-Founder implementation authorization recorded at GTM-R105 / STATE-R103. Authorization does not
-start implementation.
+Founder implementation-start authorization recorded at GTM-R106 / STATE-R104. Start does not
+complete or accept implementation.
 
 | Field | Value |
 |---|---|
 | Architecture lock | `ARCHITECTURE_LOCKED` |
-| Lifecycle | `ARCHITECTURE_LOCKED` |
-| Implementation | `AUTHORIZED` / `NOT_STARTED` |
+| Lifecycle | `IMPLEMENTATION_IN_PROGRESS` |
+| Implementation | `AUTHORIZED` / `STARTED` |
 | Implementation authorized | **YES** |
 | Implementation complete | **NO** |
 | Accepted | **NO** |
@@ -38,19 +38,19 @@ start implementation.
 | Current product slice | IMP-036D |
 | Pending acceptance | NONE |
 | Next product slice | IMP-036E |
-| Governance checkpoint | GTM-R105 / STATE-R103 |
+| Governance checkpoint | GTM-R106 / STATE-R104 |
 | Founder UAT required for acceptance | **YES** |
 | Schema change required | **NO** |
 | New D-number | **NO** (`D-374` not created) |
 | Global ARCH bump | **NO** (`ARCH-R19` preserved; `ARCH-R20` not created) |
 
 ```text
-IMP-036D: ARCHITECTURE_LOCKED
+IMP-036D: IMPLEMENTATION_IN_PROGRESS
 IMP-036D_ARCHITECTURE: LOCKED
 IMP-036D_ARCHITECTURE_LOCKED: YES
-IMP-036D_IMPLEMENTATION: AUTHORIZED / NOT_STARTED
+IMP-036D_IMPLEMENTATION: AUTHORIZED / STARTED
 IMP-036D_IMPLEMENTATION_AUTHORIZED: YES
-IMP-036D_STARTED: NO
+IMP-036D_STARTED: YES
 IMP-036D_IMPLEMENTATION_COMPLETE: NO
 IMP-036D_ACCEPTED: NO
 IMP-036D_FOUNDER_UAT_REQUIRED: YES
@@ -83,9 +83,9 @@ NEW_FRANCHISE_ROLE: NO
 NEW_FRANCHISE_PERMISSION: NO
 NEW_FRANCHISE_SCOPE_MODEL: NO
 ARBITRARY_MULTI_OUTLET_FRANCHISE_RBAC: DEFERRED
-AUTHORIZATION IS NOT IMPLEMENTATION START: YES
+START IS NOT COMPLETION OR ACCEPTANCE: YES
 IMPLEMENTATION_AUTHORIZED: YES
-IMPLEMENTATION_STARTED: NO
+IMPLEMENTATION_STARTED: YES
 ```
 
 Canonical authorities:
@@ -779,7 +779,7 @@ amendment. Do not silently change this lock.
 
 ## 20. Non-goals
 
-- Starting product implementation without separate Founder implementation-start authorization
+- Claiming implementation complete or acceptance without separate completion and acceptance gates
 - Financial Document workforce review / signing / tax-compliance admin
 - IMP-036E store operations management
 - New Order preparation/readiness durable states
