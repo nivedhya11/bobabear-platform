@@ -2,10 +2,10 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R100",
+  "stateVersion": "STATE-R101",
   "acceptedThrough": "IMP-036C",
-  "currentProductSlice": "NONE",
-  "nextProductSlice": "IMP-036D",
+  "currentProductSlice": "IMP-036D",
+  "nextProductSlice": "IMP-036E",
   "pendingAcceptance": "NONE",
   "governanceHealth": "ALIGNED",
   "lastReviewed": "2026-09-05"
@@ -30,10 +30,12 @@ Accepted Range:            IMP-001 → IMP-036C (including IMP-005A and IMP-026C
 ```text
 Current Product Implementation: NONE
 Pending Acceptance:             NONE
-Next Product Slice:             IMP-036D — Workforce Franchise Operations V2
-Current Governance Activity:    IMP-036C COMPLETE_AND_ACCEPTED;
-                              IMP-036D–G and IMP-037 PLANNED / NOT_ACTIVATED /
-                              NOT_AUTHORIZED / NOT_STARTED.
+Current Product Slice:          IMP-036D — Workforce & Franchise Operations Portal V2
+Next Product Slice:             IMP-036E — Store Operations Management
+Current Governance Activity:    IMP-036D ARCHITECTURE_IN_PROGRESS (NOT_LOCKED;
+                              NOT_AUTHORIZED / NOT_STARTED); IMP-036C
+                              COMPLETE_AND_ACCEPTED; IMP-036E–G and IMP-037
+                              PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED.
 Governance Health:              ALIGNED
 ```
 
@@ -355,6 +357,24 @@ architecture. GTM-R39 / STATE-R37 record IMP-028B architecture lock and implemen
 authorization without changing decision register or global architecture.
 
 
+STATE-R101 records explicit Founder architecture activation of **IMP-036D — Workforce & Franchise
+Operations Portal V2** as `currentProductSlice` for architecture work only. IMP-036D is
+`ARCHITECTURE_IN_PROGRESS`; architecture is `NOT_LOCKED` (`IMP-036D_ARCHITECTURE_LOCKED: NO`);
+implementation remains `NOT_AUTHORIZED` / `NOT_STARTED` (`IMP-036D_IMPLEMENTATION_AUTHORIZED: NO`;
+`IMP-036D_STARTED: NO`; `IMP-036D_IMPLEMENTATION_COMPLETE: NO`; `IMP-036D_ACCEPTED: NO`).
+`acceptedThrough` remains IMP-036C; `pendingAcceptance` remains NONE; `nextProductSlice` becomes
+IMP-036E, which remains `PLANNED` / `NOT_ACTIVATED` / `NOT_AUTHORIZED` / `NOT_STARTED`. No
+capability architecture artifact is created; no architecture lock; no D-374; no ARCH-R20.
+ARCH-R19 and DR-15 remain unchanged. Active unresolved architecture blocker:
+`IMP036D_REFUND_EXECUTION_TOPOLOGY: DECISION_REQUIRED` (blocks architecture lock; D-361/D-364
+PaymentProvider customer-commerce boundary preserved). Founder decisions recorded:
+`IMP036D_PREPARATION_READINESS_DECISION: NO_NEW_V1_DOMAIN_STATE_REQUIRED`;
+`IMP036D_FINANCIAL_DOCUMENT_WORKFORCE_REVIEW: DEFERRED`;
+`IMP036D_NOTIFICATION_RESEND_WORKFORCE_TRANSPORT: APPROVED_FOR_ARCHITECTURE` under D-372 with
+resource-specific outlet authorization. Founder UAT remains required eventually
+(`IMP-036D_FOUNDER_UAT_REQUIRED: YES`). Supersedes STATE-R100 for the current product-slice
+position.
+
 STATE-R100 records formal acceptance of **IMP-036C — Customer Commerce Experience V2** after
 independent technical acceptance and Founder UAT PASS for the exact accepted product candidate:
 repository `/home/ajoshi/repos/boba-bear-platform`; branch `main`; HEAD
@@ -366,7 +386,7 @@ Founder UAT is **PASS** (`IMP036C_FOUNDER_UAT: PASS`); formal acceptance is reco
 `COMPLETE_AND_ACCEPTED`; architecture remains `LOCKED` (`IMP-036C_ARCHITECTURE_LOCKED: YES`).
 `acceptedThrough` advances to IMP-036C; `currentProductSlice` and `pendingAcceptance` become NONE;
 `nextProductSlice` remains IMP-036D, which remains `PLANNED` / `NOT_ACTIVATED` /
-`NOT_AUTHORIZED` / `NOT_STARTED`. Formal acceptance does **not** authorize, start, or activate
+`NOT_AUTHORIZED` / `NOT_STARTED` until STATE-R101. Formal acceptance does **not** authorize, start, or activate
 IMP-036D. Docs/governance reconciliation after this product SHA is governance provenance only and
 is **not** a new product UAT candidate (`product_retested_after_docs_merge_required: NO`).
 
@@ -1625,7 +1645,32 @@ IMP036C_DIRECT_MAIN_EXCEPTION_SHA: 13835d285f53186c9ed89dc1ed0d11e30be75cca
 IMP036C_PROCESS_EXCEPTION_OUTSTANDING: NO
 STANDARDIZED_CUSTOMER_DELIVERY_FEE: YES
 DEFERRED_CUSTOMER_FAILED_PAYMENT_HISTORY: YES
-IMP-036D: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
+IMP-036D: ARCHITECTURE_IN_PROGRESS
+IMP-036D_ARCHITECTURE: NOT_LOCKED
+IMP-036D_ARCHITECTURE_LOCKED: NO
+IMP-036D_IMPLEMENTATION_AUTHORIZED: NO
+IMP-036D_STARTED: NO
+IMP-036D_IMPLEMENTATION_COMPLETE: NO
+IMP-036D_ACCEPTED: NO
+IMP-036D_FOUNDER_UAT_REQUIRED: YES
+IMP036D_PREPARATION_READINESS_DECISION: NO_NEW_V1_DOMAIN_STATE_REQUIRED
+IMP036D_FINANCIAL_DOCUMENT_WORKFORCE_REVIEW: DEFERRED
+IMP036D_NOTIFICATION_RESEND_WORKFORCE_TRANSPORT: APPROVED_FOR_ARCHITECTURE
+D374_REQUIRED_FOR_NOTIFICATION_RESEND: NO
+NEW_NOTIFICATION_PERMISSION: NO
+NEW_NOTIFICATION_ROLE: NO
+NEW_NOTIFICATION_SCOPE_MODEL: NO
+IMP036D_REFUND_WORKFORCE_SUPPORT_INTENT: YES
+IMP036D_REFUND_READ_PROJECTION_DESIRED: YES
+IMP036D_REFUND_MUTATION_TRANSPORT_LOCKED: NO
+IMP036D_REFUND_EXECUTION_TOPOLOGY: DECISION_REQUIRED
+IMP036D_REFUND_TOPOLOGY_BLOCKS_ARCHITECTURE_LOCK: YES
+D-374_CREATED: NO
+ARCH_R20_REQUIRED: NO
+FRANCHISE_IS_BUSINESS_PERSONA: YES
+NEW_FRANCHISE_ROLE: NO
+NEW_FRANCHISE_SCOPE_MODEL: NO
+ARBITRARY_MULTI_OUTLET_FRANCHISE_RBAC: DEFERRED
 IMP-036E: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
 IMP-036F: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
 IMP-036G: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
