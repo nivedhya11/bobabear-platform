@@ -22,6 +22,8 @@ import {
 } from "@/lib/razorpay";
 import { SITE_NAME } from "@/lib/site";
 import {
+  clearCart,
+  clearPaymentRecovery,
   completeZeroPayableCheckout,
   getPaymentState,
   listCustomerOrders,
@@ -100,6 +102,9 @@ export function PaymentPanel(props: {
   checkout: CommerceCheckout;
   snapshot: CommerceCheckoutSnapshot;
   onOrderReady: (orderId: string) => void;
+  /** Brand + live cart revision for FAILED → Start a new order (clearCart). */
+  brandId?: string;
+  activeCartRevision?: string;
   /** Parent adopts the authoritative revision when leaving payment. */
   onBackToReview?: (checkoutRevision: string) => void;
   /** Keep parent checkout revision current after payment mutations. */
@@ -129,6 +134,11 @@ export function PaymentPanel(props: {
   const resumePaymentId = props.resumePaymentId ?? null;
   const cartChangedWhilePending = props.cartChangedWhilePending === true;
   const embeddedRecovery = props.embeddedInPreviousPaymentRecovery === true;
+  const canStartNewOrder =
+    typeof props.brandId === "string" &&
+    props.brandId.length > 0 &&
+    typeof props.activeCartRevision === "string" &&
+    props.activeCartRevision.length > 0;
 
   const [screen, setScreen] = useState<PaymentScreen>(resumePaymentId ? "checking" : "idle");
   const [checkingKind, setCheckingKind] = useState<CheckingKind>("generic");
@@ -558,6 +568,30 @@ export function PaymentPanel(props: {
     await applyStartResult(retried.data);
   }
 
+  /**
+   * Authoritative FAILED only. Uses existing clearCart so the live cart is empty;
+   * stale READY checkout is released later by startCheckout cart-revision supersession
+   * (no new lifecycle / no public cancelCheckout).
+   */
+  async function handleStartNewOrder(): Promise<void> {
+    if (inflight.current || screen !== "retryable" || recoveryKind !== "failed") return;
+    if (!canStartNewOrder || !props.brandId || !props.activeCartRevision) return;
+    inflight.current = true;
+    setError(null);
+    const cleared = await clearCart({
+      brandId: props.brandId,
+      expectedRevision: props.activeCartRevision,
+    });
+    inflight.current = false;
+    if (!cleared.ok) {
+      setError(commerceErrorCopy(cleared.code));
+      showAuthoritativeFailed();
+      return;
+    }
+    clearPaymentRecovery();
+    browserNavigate("/order/");
+  }
+
   async function handleZeroPayable(): Promise<void> {
     if (inflight.current) return;
     inflight.current = true;
@@ -736,18 +770,33 @@ export function PaymentPanel(props: {
           {screen === "starting" ? "Completing…" : "Complete order"}
         </Button>
       ) : screen === "retryable" ? (
-        <Button
-          ref={payButtonRef}
-          type="button"
-          variant="primary"
-          size="lg"
-          data-testid="payment-retry"
-          className="min-h-[44px]"
-          aria-label={`Try payment again for ${payableLabel}`}
-          onClick={() => void handleRetry()}
-        >
-          Try payment again · {payableLabel}
-        </Button>
+        <div className="flex flex-col gap-3">
+          <Button
+            ref={payButtonRef}
+            type="button"
+            variant="primary"
+            size="lg"
+            data-testid="payment-retry"
+            className="min-h-[44px]"
+            aria-label={`Try payment again for ${payableLabel}`}
+            onClick={() => void handleRetry()}
+          >
+            Try payment again · {payableLabel}
+          </Button>
+          {canStartNewOrder ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              data-testid="payment-start-new-order"
+              className="min-h-[44px]"
+              disabled={payBlocked}
+              onClick={() => void handleStartNewOrder()}
+            >
+              {recovery?.secondaryActionLabel ?? "Start a new order"}
+            </Button>
+          ) : null}
+        </div>
       ) : screen === "dismissed" && pendingCheckoutAction ? (
         <Button
           ref={payButtonRef}
