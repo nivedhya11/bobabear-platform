@@ -53,6 +53,7 @@ export {
 
 export {
   actorHasNotificationCapability,
+  authorizeNotificationOutletAccess,
   requireNotificationCapability,
   requireNotificationWorkforceActor,
   type NotificationWorkforceActor,
@@ -97,6 +98,7 @@ export {
   findPreference,
   insertProviderEventIfAbsent,
   listNotificationAttempts,
+  listNotificationRequestsForOrder,
   setCommunicationPreference,
   setConsentStatus,
 } from "./repository";

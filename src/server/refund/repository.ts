@@ -260,6 +260,50 @@ export async function findProviderPaymentId(
   return rows[0]?.value ?? null;
 }
 
+/**
+ * Derive the authoritative captured provider Payment reference without composing
+ * a PaymentProvider. Fail closed when missing or ambiguous.
+ */
+export async function findAuthoritativeProviderPaymentReference(
+  context: PersistenceQueryContext,
+  paymentId: string,
+): Promise<{ provider: string; providerPaymentId: string } | null> {
+  assertApplicationRole(context, "findAuthoritativeProviderPaymentReference");
+  const rows = await context.db
+    .select({
+      provider: paymentProviderReferencesTable.provider,
+      value: paymentProviderReferencesTable.referenceValue,
+    })
+    .from(paymentProviderReferencesTable)
+    .where(
+      and(
+        eq(paymentProviderReferencesTable.paymentId, paymentId),
+        eq(paymentProviderReferencesTable.referenceKind, RAZORPAY_PAYMENT_REFERENCE_KIND),
+      ),
+    );
+  if (rows.length === 0) return null;
+  const first = rows[0]!;
+  for (const row of rows) {
+    if (row.provider !== first.provider || row.value !== first.value) {
+      return null;
+    }
+  }
+  if (!first.provider || !first.value) return null;
+  return { provider: first.provider, providerPaymentId: first.value };
+}
+
+export async function listRefundsForOrder(
+  context: PersistenceQueryContext,
+  orderId: string,
+): Promise<readonly RefundRow[]> {
+  assertApplicationRole(context, "listRefundsForOrder");
+  return context.db
+    .select()
+    .from(refundsTable)
+    .where(eq(refundsTable.orderId, orderId))
+    .orderBy(asc(refundsTable.createdAt));
+}
+
 export async function insertRefund(
   context: PersistenceTransactionContext,
   input: {

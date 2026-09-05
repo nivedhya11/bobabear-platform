@@ -1,7 +1,8 @@
 /**
- * Server-only Refund domain boundary (IMP-027).
+ * Server-only Refund domain boundary (IMP-027 / IMP-036D).
  *
- * No customer HTTP. No Operations Console transport.
+ * No customer HTTP. Operations Console transport is thin and lives under
+ * `src/server/operations/http` — this module remains domain authority only.
  */
 import "server-only";
 
@@ -15,6 +16,8 @@ export type {
 export { systemRefundClock, fixedRefundClock, type RefundClock } from "./clock";
 export {
   requestRefund,
+  reserveOrderRefund,
+  getOrderRefundSupport,
   getRefund,
   reconcileRefund,
   applyRefundProviderEvidence,

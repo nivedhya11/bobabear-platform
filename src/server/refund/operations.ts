@@ -17,6 +17,7 @@ import {
   parseGetRefundInput,
   parseReconcileRefundInput,
   parseRequestRefundInput,
+  parseReserveOrderRefundBody,
   refundProviderIdempotencyKey,
   type NormalizedRefundEvidence,
   type RefundObservationOutcome,
@@ -28,18 +29,21 @@ import type { Persistence } from "../persistence/types";
 import { findPaymentById } from "../payment/repository";
 import type { PaymentProvider } from "../payment/provider";
 import { disabledPaymentProvider } from "../payment/provider";
+import { findOrderById } from "../order/repository";
 import {
   authorizeRefundOutletAccess,
   requireRefundCapability,
   requireRefundWorkforceActor,
 } from "./authorize";
 import { systemRefundClock, type RefundClock } from "./clock";
+import { isUniqueViolation } from "./assert-role";
 import { tryEnsureRefundStatutoryDecisionPendingAfterProcessed } from "./refund-statutory-decision-hook";
 import {
   balanceFromRefundRows,
+  findAuthoritativeProviderPaymentReference,
   findNonTerminalRefundsByProviderPaymentId,
-    findPaymentCapturedFacts,
-    findProviderPaymentId,
+  findPaymentCapturedFacts,
+  findProviderPaymentId,
   findRefundById,
   findRefundByProviderRefundId,
   insertRefund,
@@ -448,6 +452,295 @@ export async function requestRefund(
     clock.now(),
   );
   return buildRefundResult(persistence, reserved.id);
+}
+
+function normalizeComparableNote(value: string | null | undefined): string | null {
+  if (value === undefined || value === null) return null;
+  const normalized = value.replace(/\s+/g, " ").trim();
+  return normalized.length === 0 ? null : normalized;
+}
+
+function refundCommandIdentityMatches(
+  existing: RefundRow,
+  expected: Readonly<{
+    paymentId: string;
+    orderId: string;
+    amountPaise: bigint;
+    reason: string;
+    operatorNote: string | null;
+    initiatedByActorId: string;
+  }>,
+): boolean {
+  return (
+    existing.paymentId === expected.paymentId &&
+    existing.orderId === expected.orderId &&
+    existing.amountPaise === expected.amountPaise &&
+    existing.currency === "INR" &&
+    existing.reason === expected.reason &&
+    normalizeComparableNote(existing.operatorNote) === expected.operatorNote &&
+    existing.initiatedByActorId === expected.initiatedByActorId
+  );
+}
+
+async function resolveExistingOrderRefundReplay(
+  persistence: Persistence,
+  actor: ReturnType<typeof requireRefundWorkforceActor>,
+  existing: RefundRow,
+  expected: Readonly<{
+    orderId: string;
+    paymentId: string;
+    amountPaise: bigint;
+    reason: string;
+    operatorNote: string | null;
+    initiatedByActorId: string;
+  }>,
+): Promise<RefundResult> {
+  try {
+    await authorizePaymentRefund(
+      persistence,
+      actor,
+      existing.paymentId,
+      REFUND_INITIATE_PERMISSION,
+    );
+  } catch (error) {
+    if (error instanceof RefundError && error.code === "REFUND_UNAUTHORIZED") {
+      throw error;
+    }
+    // Outside-scope / missing → do not leak existence of another Refund.
+    throw new RefundError("REFUND_NOT_FOUND", "Refund not found.");
+  }
+  if (
+    existing.orderId !== expected.orderId ||
+    existing.paymentId !== expected.paymentId ||
+    !refundCommandIdentityMatches(existing, expected)
+  ) {
+    throw new RefundError(
+      "REFUND_IDEMPOTENCY_CONFLICT",
+      "Refund request conflicts with an existing refund command.",
+    );
+  }
+  return buildRefundResult(persistence, existing.id);
+}
+
+/**
+ * Provider-free Operations Refund reservation (IMP-036D).
+ *
+ * Authenticates, authorizes against the server-derived Outlet, reserves one
+ * ACCEPTED Refund, and performs ZERO PaymentProvider / Razorpay I/O.
+ * Customer-commerce RefundReconciliationProcessor remains the provider executor.
+ */
+export async function reserveOrderRefund(
+  persistence: Persistence,
+  actor: unknown,
+  input: unknown,
+  options: RefundOperationOptions = {},
+): Promise<RefundResult> {
+  const workforce = requireRefundWorkforceActor(actor);
+  if (typeof input !== "object" || input === null || Array.isArray(input)) {
+    throw new RefundError("REFUND_INVALID_INPUT", "Refund request is invalid.");
+  }
+  const record = input as Record<string, unknown>;
+  const orderIdRaw = record.orderId;
+  if (typeof orderIdRaw !== "string") {
+    throw new RefundError("REFUND_INVALID_INPUT", "orderId must be a UUID.", {
+      field: "orderId",
+    });
+  }
+  // Path orderId is authoritative locator; reject any other authority fields from the body.
+  const bodyWithoutOrderId: Record<string, unknown> = { ...record };
+  delete bodyWithoutOrderId.orderId;
+  const parsed = parseReserveOrderRefundBody(orderIdRaw, bodyWithoutOrderId);
+  const clock = clockOf(options);
+  const operatorNote = parsed.operatorNote ?? null;
+
+  const context = await persistence.withContext(async (ctx) => {
+    const order = await findOrderById(ctx, parsed.orderId);
+    if (!order || !order.paymentId) {
+      await requireRefundCapability(ctx, workforce, REFUND_INITIATE_PERMISSION);
+      throw new RefundError("REFUND_NOT_FOUND", "Refund not found.");
+    }
+    const payment = await findPaymentById(ctx, order.paymentId);
+    if (!payment) {
+      await requireRefundCapability(ctx, workforce, REFUND_INITIATE_PERMISSION);
+      throw new RefundError("REFUND_NOT_FOUND", "Refund not found.");
+    }
+    const facts = await findPaymentCapturedFacts(ctx, payment);
+    if (!facts || facts.orderId !== order.id) {
+      await requireRefundCapability(ctx, workforce, REFUND_INITIATE_PERMISSION);
+      throw new RefundError("REFUND_NOT_FOUND", "Refund not found.");
+    }
+    await authorizeRefundOutletAccess(
+      ctx,
+      workforce,
+      facts.outletId,
+      REFUND_INITIATE_PERMISSION,
+    );
+    const providerRef = await findAuthoritativeProviderPaymentReference(ctx, payment.id);
+    return {
+      orderId: order.id,
+      paymentId: payment.id,
+      paymentStatus: payment.status,
+      outletId: facts.outletId,
+      checkoutId: facts.checkoutId,
+      checkoutSnapshotId: facts.checkoutSnapshotId,
+      capturedAmount: facts.grandTotalPaise,
+      providerRef,
+    };
+  });
+
+  if (context.paymentStatus !== "SUCCEEDED") {
+    throw new RefundError(
+      "REFUND_PAYMENT_NOT_ELIGIBLE",
+      "Only a successful captured Payment may be refunded.",
+    );
+  }
+  if (!context.providerRef) {
+    throw new RefundError(
+      "REFUND_PROVIDER_REFERENCE_MISSING",
+      "Payment is missing the required provider payment reference.",
+    );
+  }
+
+  const expectedIdentity = Object.freeze({
+    orderId: context.orderId,
+    paymentId: context.paymentId,
+    amountPaise: parsed.amountPaise,
+    reason: parsed.reason,
+    operatorNote,
+    initiatedByActorId: workforce.workforceUserId,
+  });
+
+  const existing = await persistence.withContext((ctx) =>
+    findRefundById(ctx, parsed.refundRequestId),
+  );
+  if (existing) {
+    return resolveExistingOrderRefundReplay(persistence, workforce, existing, expectedIdentity);
+  }
+
+  try {
+    const outcome = await persistence.transaction(async (tx) => {
+      const locked = await lockPaymentAndRefunds(tx, context.paymentId);
+      if (!locked.payment || locked.payment.status !== "SUCCEEDED") {
+        throw new RefundError(
+          "REFUND_PAYMENT_NOT_ELIGIBLE",
+          "Only a successful captured Payment may be refunded.",
+        );
+      }
+      const raced = await findRefundById(tx, parsed.refundRequestId);
+      if (raced) {
+        return { kind: "existing" as const, row: raced };
+      }
+      const facts = await findPaymentCapturedFacts(tx, locked.payment);
+      if (!facts || facts.orderId !== context.orderId) {
+        throw new RefundError("REFUND_PAYMENT_NOT_ELIGIBLE", "Payment captured truth is missing.");
+      }
+      const providerRef = await findAuthoritativeProviderPaymentReference(tx, locked.payment.id);
+      if (
+        !providerRef ||
+        providerRef.provider !== context.providerRef!.provider ||
+        providerRef.providerPaymentId !== context.providerRef!.providerPaymentId
+      ) {
+        throw new RefundError(
+          "REFUND_PROVIDER_REFERENCE_MISSING",
+          "Payment is missing the required provider payment reference.",
+        );
+      }
+      const balance = balanceFromRefundRows(facts.grandTotalPaise, locked.refunds);
+      if (balance.fullyRefunded || balance.remainingRefundableAmount <= BigInt(0)) {
+        throw new RefundError("REFUND_FULLY_REFUNDED", "Payment has no remaining refundable amount.");
+      }
+      if (parsed.amountPaise > balance.remainingRefundableAmount) {
+        throw new RefundError(
+          "REFUND_AMOUNT_EXCEEDS_REMAINING",
+          "Requested refund exceeds remaining refundable amount.",
+        );
+      }
+      const now = clock.now();
+      await insertRefund(tx, {
+        id: parsed.refundRequestId,
+        paymentId: locked.payment.id,
+        checkoutId: facts.checkoutId,
+        checkoutSnapshotId: facts.checkoutSnapshotId,
+        orderId: context.orderId,
+        amountPaise: parsed.amountPaise,
+        currency: "INR",
+        provider: providerRef.provider,
+        providerIdempotencyKey: refundProviderIdempotencyKey(parsed.refundRequestId),
+        providerPaymentId: providerRef.providerPaymentId,
+        reason: parsed.reason,
+        operatorNote,
+        initiatedByActorId: workforce.workforceUserId,
+        now,
+      });
+      return { kind: "created" as const };
+    });
+    if (outcome.kind === "existing") {
+      return resolveExistingOrderRefundReplay(
+        persistence,
+        workforce,
+        outcome.row,
+        expectedIdentity,
+      );
+    }
+  } catch (error) {
+    if (isUniqueViolation(error)) {
+      const raced = await persistence.withContext((ctx) =>
+        findRefundById(ctx, parsed.refundRequestId),
+      );
+      if (!raced) {
+        throw new RefundError(
+          "REFUND_IDEMPOTENCY_CONFLICT",
+          "Refund request conflicts with an existing refund command.",
+        );
+      }
+      return resolveExistingOrderRefundReplay(persistence, workforce, raced, expectedIdentity);
+    }
+    throw error;
+  }
+
+  return buildRefundResult(persistence, parsed.refundRequestId);
+}
+
+/**
+ * Safe workforce Refund support projection for one Order (IMP-036D).
+ * Permission: payment.refund.read against server-derived Outlet.
+ */
+export async function getOrderRefundSupport(
+  persistence: Persistence,
+  actor: unknown,
+  orderId: string,
+): Promise<{
+  refunds: readonly ReturnType<typeof mapRefundRow>[];
+  balance: RefundResult["balance"];
+  paymentStatus: string;
+  paymentId: string;
+}> {
+  const workforce = requireRefundWorkforceActor(actor);
+  return persistence.withContext(async (ctx) => {
+    const order = await findOrderById(ctx, orderId);
+    if (!order || !order.paymentId) {
+      await requireRefundCapability(ctx, workforce, REFUND_READ_PERMISSION);
+      throw new RefundError("REFUND_NOT_FOUND", "Refund not found.");
+    }
+    const payment = await findPaymentById(ctx, order.paymentId);
+    if (!payment) {
+      await requireRefundCapability(ctx, workforce, REFUND_READ_PERMISSION);
+      throw new RefundError("REFUND_NOT_FOUND", "Refund not found.");
+    }
+    const facts = await findPaymentCapturedFacts(ctx, payment);
+    if (!facts || facts.orderId !== order.id) {
+      await requireRefundCapability(ctx, workforce, REFUND_READ_PERMISSION);
+      throw new RefundError("REFUND_NOT_FOUND", "Refund not found.");
+    }
+    await authorizeRefundOutletAccess(ctx, workforce, facts.outletId, REFUND_READ_PERMISSION);
+    const rows = await listRefundsForPayment(ctx, payment.id);
+    return Object.freeze({
+      refunds: rows.map(mapRefundRow),
+      balance: balanceFromRefundRows(facts.grandTotalPaise, rows),
+      paymentStatus: payment.status,
+      paymentId: payment.id,
+    });
+  });
 }
 
 export async function getRefund(
