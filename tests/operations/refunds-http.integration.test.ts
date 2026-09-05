@@ -291,7 +291,7 @@ describe("IMP-036D Operations Refund HTTP", () => {
     });
   });
 
-  it("concurrent duplicate submissions converge on one Refund", async () => {
+  it("concurrent duplicate submissions converge on one Refund and reserve balance once", async () => {
     await withRefundReadyHarness(async (h) => {
       const supportId = await grantScopedUser(h, "support_refund_operator");
       const refundRequestId = randomUUID();
@@ -329,6 +329,105 @@ describe("IMP-036D Operations Refund HTTP", () => {
         });
         const listedBody = await listed.json();
         expect(listedBody.refunds).toHaveLength(1);
+        expect(listedBody.balance.reservedAmountPaise).toBe(String(amount));
+        expect(listedBody.balance.remainingRefundableAmountPaise).toBe(
+          (h.grandTotalPaise - BigInt(amount)).toString(),
+        );
+      });
+    });
+  });
+
+  it("proves exact replay and immutable-fact / actor-bound idempotency conflicts", async () => {
+    await withRefundReadyHarness(async (h) => {
+      const supportA = await grantScopedUser(h, "support_refund_operator", "A");
+      const supportA2 = await grantScopedUser(h, "support_refund_operator", "A");
+      const refundRequestId = randomUUID();
+      const amount = Number(h.grandTotalPaise / BigInt(4));
+      const reason = "idempotency proof refund";
+      const operatorNote = "first note";
+
+      await withOperationsServer(h, async ({ request, adapter, headers }) => {
+        const tokenA = (await adapter.createSession(supportA)).token;
+        const created = await request(`/api/operations/v1/orders/${h.order.id}/refunds`, {
+          method: "POST",
+          headers: await headers(tokenA),
+          body: JSON.stringify({
+            refundRequestId,
+            amountPaise: amount,
+            reason,
+            operatorNote,
+          }),
+        });
+        expect(created.status).toBe(200);
+        expect((await created.json()).refund.refundId).toBe(refundRequestId);
+
+        const exactReplay = await request(`/api/operations/v1/orders/${h.order.id}/refunds`, {
+          method: "POST",
+          headers: await headers(tokenA),
+          body: JSON.stringify({
+            refundRequestId,
+            amountPaise: amount,
+            reason,
+            operatorNote,
+          }),
+        });
+        expect(exactReplay.status).toBe(200);
+        expect((await exactReplay.json()).refund.refundId).toBe(refundRequestId);
+
+        const amountConflict = await request(`/api/operations/v1/orders/${h.order.id}/refunds`, {
+          method: "POST",
+          headers: await headers(tokenA),
+          body: JSON.stringify({
+            refundRequestId,
+            amountPaise: amount + 1,
+            reason,
+            operatorNote,
+          }),
+        });
+        expect(amountConflict.status).toBe(409);
+        expect((await amountConflict.json()).code).toBe("REFUND_IDEMPOTENCY_CONFLICT");
+
+        const reasonConflict = await request(`/api/operations/v1/orders/${h.order.id}/refunds`, {
+          method: "POST",
+          headers: await headers(tokenA),
+          body: JSON.stringify({
+            refundRequestId,
+            amountPaise: amount,
+            reason: "different normalized reason",
+            operatorNote,
+          }),
+        });
+        expect(reasonConflict.status).toBe(409);
+        expect((await reasonConflict.json()).code).toBe("REFUND_IDEMPOTENCY_CONFLICT");
+
+        const noteConflict = await request(`/api/operations/v1/orders/${h.order.id}/refunds`, {
+          method: "POST",
+          headers: await headers(tokenA),
+          body: JSON.stringify({
+            refundRequestId,
+            amountPaise: amount,
+            reason,
+            operatorNote: "different note",
+          }),
+        });
+        expect(noteConflict.status).toBe(409);
+        expect((await noteConflict.json()).code).toBe("REFUND_IDEMPOTENCY_CONFLICT");
+
+        const tokenA2 = (await adapter.createSession(supportA2)).token;
+        const actorConflict = await request(`/api/operations/v1/orders/${h.order.id}/refunds`, {
+          method: "POST",
+          headers: await headers(tokenA2),
+          body: JSON.stringify({
+            refundRequestId,
+            amountPaise: amount,
+            reason,
+            operatorNote,
+          }),
+        });
+        expect(actorConflict.status).toBe(409);
+        const actorBody = await actorConflict.json();
+        expect(actorBody.code).toBe("REFUND_IDEMPOTENCY_CONFLICT");
+        expect(actorBody.refund).toBeUndefined();
       });
     });
   });

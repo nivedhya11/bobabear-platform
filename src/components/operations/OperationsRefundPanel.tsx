@@ -1,12 +1,21 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { formatPaise } from "@/components/ordering/format-money";
 import {
+  bindPendingRefundCommand,
+  buildPendingRefundCommandFacts,
+  clearPendingRefundCommand,
+  findPendingRefundInList,
+  isAmbiguousRefundTransportFailure,
+  markPendingRefundCommandAmbiguous,
+  readPendingRefundCommand,
+} from "@/lib/operations/pending-refund-command";
+import { parseOperatorRefundAmountInrToPaise } from "@/lib/operations/refund-amount";
+import {
   createOrderRefund,
-  createRefundRequestId,
   getOrderRefunds,
   refundStatusLabel,
   type OperationsRefundBalance,
@@ -39,10 +48,10 @@ function errorMessage(code: string): string {
   if (code === "REFUND_INVALID_INPUT" || code === "REFUND_REASON_REQUIRED") {
     return "Check the refund amount and reason, then try again.";
   }
-  if (code === "NETWORK_ERROR") {
-    return "The network connection was interrupted before the result was confirmed. Refresh before trying again.";
+  if (isAmbiguousRefundTransportFailure(code)) {
+    return "The network connection was interrupted before the result was confirmed. Check refund status or retry this same request — do not start a different refund yet.";
   }
-  return "The refund could not be submitted. Refresh before trying again.";
+  return "The refund could not be submitted. Check the details and try again.";
 }
 
 export function OperationsRefundPanel({
@@ -53,13 +62,13 @@ export function OperationsRefundPanel({
   const reasonId = useId();
   const noteId = useId();
   const [state, setState] = useState<PanelState>({ kind: "loading" });
-  const [amountPaise, setAmountPaise] = useState("");
+  const [amountInr, setAmountInr] = useState("");
   const [reason, setReason] = useState("");
   const [operatorNote, setOperatorNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [alert, setAlert] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState("");
-  const refundRequestIdRef = useRef<string | null>(null);
+  const [pendingAmbiguous, setPendingAmbiguous] = useState(false);
   const mountedRef = useRef(true);
 
   useEffect(() => {
@@ -68,6 +77,58 @@ export function OperationsRefundPanel({
       mountedRef.current = false;
     };
   }, []);
+
+  const applyReady = useCallback(
+    (data: {
+      balance: OperationsRefundBalance;
+      refunds: readonly OperationsRefundItem[];
+      paymentStatus: string;
+    }) => {
+      const pending = readPendingRefundCommand(orderId);
+      if (pending) {
+        const existing = findPendingRefundInList(data.refunds, pending.refundRequestId);
+        if (existing) {
+          clearPendingRefundCommand(orderId);
+          setPendingAmbiguous(false);
+          setStatusMessage(`Refund ${refundStatusLabel(existing.status)}.`);
+        } else {
+          setPendingAmbiguous(pending.ambiguous);
+        }
+      } else {
+        setPendingAmbiguous(false);
+      }
+      setState({
+        kind: "ready",
+        balance: data.balance,
+        refunds: data.refunds,
+        paymentStatus: data.paymentStatus,
+      });
+    },
+    [orderId],
+  );
+
+  const loadRefunds = useCallback(async () => {
+    const result = await getOrderRefunds(orderId);
+    if (!mountedRef.current) return result;
+    if (!result.ok) {
+      if (
+        result.status === 403 ||
+        result.code === "REFUND_UNAUTHORIZED" ||
+        result.code === "REFUND_NOT_FOUND"
+      ) {
+        setState({ kind: "hidden" });
+        return result;
+      }
+      if (result.status === 401 || result.code === "WORKFORCE_AUTH_REQUIRED") {
+        setState({ kind: "forbidden" });
+        return result;
+      }
+      setState({ kind: "error", message: errorMessage(result.code) });
+      return result;
+    }
+    applyReady(result.data);
+    return result;
+  }, [applyReady, orderId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -90,49 +151,98 @@ export function OperationsRefundPanel({
         setState({ kind: "error", message: errorMessage(result.code) });
         return;
       }
-      setState({
-        kind: "ready",
-        balance: result.data.balance,
-        refunds: result.data.refunds,
-        paymentStatus: result.data.paymentStatus,
-      });
+      applyReady(result.data);
     })();
     return () => {
       cancelled = true;
     };
-  }, [orderId]);
+  }, [applyReady, orderId]);
 
-  async function submitRefund() {
-    if (state.kind !== "ready" || busy) return;
+  async function reconcilePendingStatus() {
     setAlert(null);
-    if (!refundRequestIdRef.current) {
-      refundRequestIdRef.current = createRefundRequestId();
-    }
-    const refundRequestId = refundRequestIdRef.current;
     setBusy(true);
-    setStatusMessage("Submitting refund…");
-    const result = await createOrderRefund(orderId, {
-      refundRequestId,
-      amountPaise,
-      reason,
-      ...(operatorNote.trim().length > 0 ? { operatorNote: operatorNote.trim() } : {}),
-    });
+    setStatusMessage("Checking refund status…");
+    const result = await loadRefunds();
     if (!mountedRef.current) return;
     setBusy(false);
     if (!result.ok) {
       setAlert(errorMessage(result.code));
-      setStatusMessage("Refund submission failed.");
-      // Keep the same UUID for safe retry of this logical command.
+      setStatusMessage("Could not confirm refund status.");
       return;
     }
-    refundRequestIdRef.current = null;
-    setAmountPaise("");
+    const pending = readPendingRefundCommand(orderId);
+    if (!pending) {
+      setStatusMessage("Refund status updated.");
+      return;
+    }
+    const existing = findPendingRefundInList(result.data.refunds, pending.refundRequestId);
+    if (existing) {
+      setStatusMessage(`Refund ${refundStatusLabel(existing.status)}.`);
+      return;
+    }
+    setPendingAmbiguous(true);
+    setAlert(
+      "No matching refund is recorded yet. You can safely retry this same request without starting a different refund.",
+    );
+    setStatusMessage("Pending refund not found on server yet.");
+  }
+
+  async function submitRefund() {
+    if (state.kind !== "ready" || busy) return;
+    setAlert(null);
+
+    const parsedAmount = parseOperatorRefundAmountInrToPaise(amountInr);
+    if (!parsedAmount.ok) {
+      setAlert(
+        parsedAmount.reason === "non_positive"
+          ? "Enter a refund amount greater than zero."
+          : "Enter a valid refund amount in rupees (up to two decimal places).",
+      );
+      return;
+    }
+    if (reason.trim().length === 0) {
+      setAlert("A refund reason is required.");
+      return;
+    }
+
+    const facts = buildPendingRefundCommandFacts({
+      orderId,
+      amountPaise: parsedAmount.amountPaise,
+      reason,
+      operatorNote,
+    });
+    const command = bindPendingRefundCommand(facts);
+    setBusy(true);
+    setStatusMessage("Submitting refund…");
+    const result = await createOrderRefund(orderId, {
+      refundRequestId: command.refundRequestId,
+      amountPaise: facts.amountPaise,
+      reason: facts.reason,
+      ...(facts.operatorNote !== null ? { operatorNote: facts.operatorNote } : {}),
+    });
+    if (!mountedRef.current) return;
+    setBusy(false);
+    if (!result.ok) {
+      if (isAmbiguousRefundTransportFailure(result.code)) {
+        markPendingRefundCommandAmbiguous(orderId);
+        setPendingAmbiguous(true);
+      }
+      setAlert(errorMessage(result.code));
+      setStatusMessage("Refund submission failed.");
+      return;
+    }
+    clearPendingRefundCommand(orderId);
+    setPendingAmbiguous(false);
+    setAmountInr("");
     setReason("");
     setOperatorNote("");
     setState({
       kind: "ready",
       balance: result.data.balance,
-      refunds: [result.data.refund, ...state.refunds.filter((r) => r.refundId !== result.data.refund.refundId)],
+      refunds: [
+        result.data.refund,
+        ...state.refunds.filter((r) => r.refundId !== result.data.refund.refundId),
+      ],
       paymentStatus: result.data.paymentStatus,
     });
     setStatusMessage(`Refund ${refundStatusLabel(result.data.refund.status)}.`);
@@ -163,11 +273,12 @@ export function OperationsRefundPanel({
   }
 
   const remaining = state.balance.remainingRefundableAmountPaise;
+  const amountParse = parseOperatorRefundAmountInrToPaise(amountInr);
   const canSubmit =
     canInitiate &&
     !state.balance.fullyRefunded &&
     state.paymentStatus === "SUCCEEDED" &&
-    amountPaise.trim().length > 0 &&
+    amountParse.ok &&
     reason.trim().length > 0;
 
   return (
@@ -231,20 +342,21 @@ export function OperationsRefundPanel({
         >
           <div>
             <label htmlFor={amountId} className="block text-sm font-medium">
-              Amount (paise)
+              Refund amount (₹)
             </label>
             <input
               id={amountId}
-              name="amountPaise"
-              inputMode="numeric"
+              name="amountInr"
+              inputMode="decimal"
               className="mt-1 w-full min-h-11 rounded border border-[var(--enterprise-border)] px-3"
-              value={amountPaise}
+              value={amountInr}
               disabled={busy}
-              onChange={(event) => setAmountPaise(event.target.value)}
+              onChange={(event) => setAmountInr(event.target.value)}
               aria-describedby={`${amountId}-hint`}
             />
             <p id={`${amountId}-hint`} className="mt-1 text-xs text-[var(--enterprise-muted)]">
-              Enter a whole-number amount in paise. Remaining: {remaining}.
+              Enter the amount in rupees (up to two decimal places). Remaining refundable:{" "}
+              {formatPaise(remaining)}.
             </p>
           </div>
           <div>
@@ -283,9 +395,23 @@ export function OperationsRefundPanel({
           <p className="sr-only" aria-live="polite">
             {statusMessage}
           </p>
-          <Button type="submit" disabled={!canSubmit || busy} aria-busy={busy}>
-            {busy ? "Submitting…" : "Authorize refund"}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button type="submit" disabled={!canSubmit || busy} aria-busy={busy}>
+              {busy ? "Submitting…" : "Authorize refund"}
+            </Button>
+            {pendingAmbiguous ? (
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={busy}
+                onClick={() => {
+                  void reconcilePendingStatus();
+                }}
+              >
+                Check refund status
+              </Button>
+            ) : null}
+          </div>
         </form>
       ) : null}
     </section>

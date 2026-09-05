@@ -37,6 +37,7 @@ import {
 } from "./authorize";
 import { systemRefundClock, type RefundClock } from "./clock";
 import { isUniqueViolation } from "./assert-role";
+import { throwMappedOrderRefundReplayAuthorizationFailure } from "./replay-authorization";
 import { tryEnsureRefundStatutoryDecisionPendingAfterProcessed } from "./refund-statutory-decision-hook";
 import {
   balanceFromRefundRows,
@@ -503,11 +504,8 @@ async function resolveExistingOrderRefundReplay(
       REFUND_INITIATE_PERMISSION,
     );
   } catch (error) {
-    if (error instanceof RefundError && error.code === "REFUND_UNAUTHORIZED") {
-      throw error;
-    }
-    // Outside-scope / missing → do not leak existence of another Refund.
-    throw new RefundError("REFUND_NOT_FOUND", "Refund not found.");
+    // Expected unauthorized / not-found stay non-disclosing; unexpected errors rethrow.
+    throwMappedOrderRefundReplayAuthorizationFailure(error);
   }
   if (
     existing.orderId !== expected.orderId ||

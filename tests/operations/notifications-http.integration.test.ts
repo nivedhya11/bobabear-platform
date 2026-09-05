@@ -15,6 +15,7 @@ import {
   processPendingNotification,
   type NotificationOutboxPayload,
 } from "../../src/server/notifications";
+import { updateNotificationRequest } from "../../src/server/notifications/repository";
 import { routeOperationsRequest } from "../../src/server/operations/http/router";
 import { applicationConfig, closeTrackedPersistenceHandles } from "../database/support/cart-fixtures";
 import { createEligibleWorkforceUser } from "../database/support/access-control-fixtures";
@@ -220,6 +221,100 @@ describe("IMP-036D Operations Notification HTTP", () => {
         const resentBody = await resent.json();
         expect(resentBody.notification.notificationRequestId).toBe(created!.id);
         expect(resentBody.notification.attemptCount).toBe("2");
+      });
+    });
+  });
+
+  it("projects and enforces resend eligibility including hard attempt ceiling", async () => {
+    await withCompletedPositiveOrderHarness(async (h) => {
+      const supportId = await grantOutletUser(h, "support_refund_operator", "A");
+
+      const failedCreated = await createNotificationRequestFromDomainEvent(
+        h.persistence,
+        orderIntent(h.order.id, h.actor.authUserId),
+      );
+      expect(failedCreated).not.toBeNull();
+      const failed = await processPendingNotification(h.persistence, failedCreated!.id);
+      expect(failed.status).toBe("FAILED");
+
+      const reviewCreated = await createNotificationRequestFromDomainEvent(
+        h.persistence,
+        {
+          ...orderIntent(h.order.id, h.actor.authUserId),
+          domainEventRef: `order:${h.order.id}:received:review`,
+          occurredAt: new Date().toISOString(),
+        },
+      );
+      expect(reviewCreated).not.toBeNull();
+      await h.persistence.transaction(async (tx) => {
+        await updateNotificationRequest(tx, reviewCreated!.id, {
+          status: "REVIEW_REQUIRED",
+          attemptCount: BigInt(1),
+          maxAttempts: BigInt(3),
+          reviewReason: "UNKNOWN_FAILURE",
+          nextAttemptAt: null,
+          terminalAt: new Date(),
+          now: new Date(),
+        });
+      });
+
+      const ceilingCreated = await createNotificationRequestFromDomainEvent(
+        h.persistence,
+        {
+          ...orderIntent(h.order.id, h.actor.authUserId),
+          domainEventRef: `order:${h.order.id}:received:ceiling`,
+          occurredAt: new Date().toISOString(),
+        },
+      );
+      expect(ceilingCreated).not.toBeNull();
+      await h.persistence.transaction(async (tx) => {
+        await updateNotificationRequest(tx, ceilingCreated!.id, {
+          status: "FAILED",
+          attemptCount: BigInt(20),
+          maxAttempts: BigInt(20),
+          nextAttemptAt: null,
+          terminalAt: new Date(),
+          now: new Date(),
+        });
+      });
+
+      await withOperationsServer(h, async ({ request, adapter, headers }) => {
+        const supportToken = (await adapter.createSession(supportId)).token;
+        const listed = await request(`/api/operations/v1/orders/${h.order.id}/notifications`, {
+          headers: await headers(supportToken),
+        });
+        expect(listed.status).toBe(200);
+        const items = (await listed.json()).items as Array<{
+          notificationRequestId: string;
+          status: string;
+          resendPermitted: boolean;
+        }>;
+        const byId = new Map(items.map((item) => [item.notificationRequestId, item]));
+        expect(byId.get(failedCreated!.id)?.resendPermitted).toBe(true);
+        expect(byId.get(reviewCreated!.id)?.status).toBe("REVIEW_REQUIRED");
+        expect(byId.get(reviewCreated!.id)?.resendPermitted).toBe(true);
+        expect(byId.get(ceilingCreated!.id)?.resendPermitted).toBe(false);
+
+        const ceilingDenied = await request(
+          `/api/operations/v1/orders/${h.order.id}/notifications/${ceilingCreated!.id}/resend`,
+          {
+            method: "POST",
+            headers: await headers(supportToken),
+            body: JSON.stringify({ reason: "Should be blocked at ceiling" }),
+          },
+        );
+        expect(ceilingDenied.status).toBe(409);
+        expect((await ceilingDenied.json()).code).toBe("NOTIFICATION_RESEND_NOT_ALLOWED");
+
+        const reviewResend = await request(
+          `/api/operations/v1/orders/${h.order.id}/notifications/${reviewCreated!.id}/resend`,
+          {
+            method: "POST",
+            headers: await headers(supportToken),
+            body: JSON.stringify({ reason: "Operator follow-up for review-required notice" }),
+          },
+        );
+        expect(reviewResend.status).toBe(200);
       });
     });
   });

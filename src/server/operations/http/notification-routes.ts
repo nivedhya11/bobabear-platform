@@ -18,6 +18,7 @@ import {
   type NotificationChannelRegistry,
   type NotificationOperationOptions,
 } from "../../notifications";
+import { isManualNotificationResendPermitted } from "../../notifications/resend-eligibility";
 import { findOrderById } from "../../order/repository";
 import { loadSnapshotRowForOrder } from "../../order/adapters/checkout";
 import type { Persistence } from "../../persistence";
@@ -34,8 +35,6 @@ export type NotificationRoute =
       notificationRequestId: string;
     }>;
 
-const RESENDABLE_STATUSES = new Set(["FAILED", "REVIEW_REQUIRED"]);
-
 const RESEND_ALLOWED_KEYS = ["reason"] as const;
 
 function toSafeNotificationProjection(request: {
@@ -51,7 +50,11 @@ function toSafeNotificationProjection(request: {
   suppressionReason: string | null;
   reviewReason: string | null;
 }): Record<string, unknown> {
-  const resendPermitted = RESENDABLE_STATUSES.has(request.status);
+  const resendPermitted = isManualNotificationResendPermitted({
+    status: request.status,
+    attemptCount: request.attemptCount,
+    maxAttempts: request.maxAttempts,
+  });
   return {
     notificationRequestId: request.id,
     semanticType: request.semanticType,
