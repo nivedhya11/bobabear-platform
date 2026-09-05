@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R99",
-  "acceptedThrough": "IMP-036B",
-  "currentProductSlice": "IMP-036C",
+  "stateVersion": "STATE-R100",
+  "acceptedThrough": "IMP-036C",
+  "currentProductSlice": "NONE",
   "nextProductSlice": "IMP-036D",
-  "pendingAcceptance": "IMP-036C",
+  "pendingAcceptance": "NONE",
   "governanceHealth": "ALIGNED",
-  "lastReviewed": "2026-09-02"
+  "lastReviewed": "2026-09-05"
 }
 -->
 
@@ -20,18 +20,18 @@ current-reality authority.
 ## 1. Accepted Position
 
 ```text
-Accepted Through:          IMP-036B — Customer Account, Onboarding, Address & Location Experience
+Accepted Through:          IMP-036C — Customer Commerce Experience V2
 Accepted Inserted Slice:   IMP-005A — Dockerized local application runtime; IMP-026C — Pilot Customer-Commerce UX Hardening; IMP-028A — Food Direct UX Foundation; IMP-028B — Customer Menu Projection + Discovery; IMP-028C — Food Customization; IMP-028D — Desktop Ordering Continuity
-Accepted Range:            IMP-001 → IMP-036B (including IMP-005A and IMP-026C)
+Accepted Range:            IMP-001 → IMP-036C (including IMP-005A and IMP-026C)
 ```
 
 ## 2. Current Work Position
 
 ```text
-Current Product Implementation: IMP-036C — Customer Commerce Experience V2
-Pending Acceptance:             IMP-036C
+Current Product Implementation: NONE
+Pending Acceptance:             NONE
 Next Product Slice:             IMP-036D — Workforce Franchise Operations V2
-Current Governance Activity:    IMP-036C IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE;
+Current Governance Activity:    IMP-036C COMPLETE_AND_ACCEPTED;
                               IMP-036D–G and IMP-037 PLANNED / NOT_ACTIVATED /
                               NOT_AUTHORIZED / NOT_STARTED.
 Governance Health:              ALIGNED
@@ -354,6 +354,41 @@ STATE-R36 record IMP-028B canonical activation without changing decision registe
 architecture. GTM-R39 / STATE-R37 record IMP-028B architecture lock and implementation
 authorization without changing decision register or global architecture.
 
+
+STATE-R100 records formal acceptance of **IMP-036C — Customer Commerce Experience V2** after
+independent technical acceptance and Founder UAT PASS for the exact accepted product candidate:
+repository `/home/ajoshi/repos/boba-bear-platform`; branch `main`; HEAD
+`0ec83ba5b7b03387dcefbd478807faefc3499d6b`; tree
+`778723aaf8ee363d337f4887455c13f68e1385bc` (merge PR #107). Implementation evidence is **COMPLETE**;
+independent implementation review is **PASS**; independent acceptance evidence is **ACCEPTED**;
+Founder UAT is **PASS** (`IMP036C_FOUNDER_UAT: PASS`); formal acceptance is recorded
+(`IMP036C_FORMAL_ACCEPTANCE: ACCEPTED`; `IMP-036C_ACCEPTED: YES`). IMP-036C is
+`COMPLETE_AND_ACCEPTED`; architecture remains `LOCKED` (`IMP-036C_ARCHITECTURE_LOCKED: YES`).
+`acceptedThrough` advances to IMP-036C; `currentProductSlice` and `pendingAcceptance` become NONE;
+`nextProductSlice` remains IMP-036D, which remains `PLANNED` / `NOT_ACTIVATED` /
+`NOT_AUTHORIZED` / `NOT_STARTED`. Formal acceptance does **not** authorize, start, or activate
+IMP-036D. Docs/governance reconciliation after this product SHA is governance provenance only and
+is **not** a new product UAT candidate (`product_retested_after_docs_merge_required: NO`).
+
+Founder UAT / candidate history preserved (only the final SHA is accepted):
+
+- `abe19d578521165df8b8c0888cf6fbd41f91b930` family — earlier Founder UAT failure during the
+  IMP-036C journey (not accepted).
+- `13835d285f53186c9ed89dc1ed0d11e30be75cca` — direct-main process exception / intermediate UAT
+  candidate (not accepted). Process exception is **reconciled**: subsequent work returned to
+  normal branch→PR→CI→merge governance; no outstanding process exception remains for IMP-036C
+  (`IMP036C_DIRECT_MAIN_PROCESS_EXCEPTION: RECONCILED`;
+  `IMP036C_PROCESS_EXCEPTION_OUTSTANDING: NO`).
+- `16e8b8223aa7bb25b759402e69e2f934a1a844fe` — explicit Founder UAT **FAIL** (legacy address
+  deletion, validation UX, stale checkout, payment UX/back-navigation, pricing
+  presentation/recovery) — not rewritten as PASS.
+- Subsequent repair merges before `0ec83ba5…` — intermediate non-accepted candidates only.
+- `0ec83ba5b7b03387dcefbd478807faefc3499d6b` — sole Founder-accepted IMP-036C product candidate.
+
+Deferred requirements remain deferred: Maps hardening owner remains **IMP-038** (PLANNED only;
+not activated); `DEFERRED_CUSTOMER_FAILED_PAYMENT_HISTORY: YES` (failed Payment is not an Order;
+no new owner assigned). Supersedes STATE-R99 for the current IMP-036C lifecycle and acceptance
+position.
 
 STATE-R99 records a single founder-authorized **combined** gate for **IMP-036C — Customer Commerce
 Experience V2**: canonical activation, capability architecture LOCKED at
@@ -1341,13 +1376,14 @@ Cart → Checkout → Payment → Order
 | IMP-036 | Observability & Operational Controls | COMPLETE_AND_ACCEPTED |
 | IMP-036A | Multi-Portal Experience Foundation | COMPLETE_AND_ACCEPTED |
 | IMP-036B | Customer Account, Onboarding, Address & Location Experience | COMPLETE_AND_ACCEPTED |
+| IMP-036C | Customer Commerce Experience V2 | COMPLETE_AND_ACCEPTED |
 
 ## 5. Acceptance Position
 
 ```text
-acceptedThrough: IMP-036B
-pendingAcceptance: IMP-036C
-currentProductSlice: IMP-036C — Customer Commerce Experience V2
+acceptedThrough: IMP-036C
+pendingAcceptance: NONE
+currentProductSlice: NONE
 nextProductSlice: IMP-036D — Workforce Franchise Operations V2
 IMP-028: COMPLETE_AND_ACCEPTED
 IMP-028_ACCEPTED: YES
@@ -1558,20 +1594,43 @@ IMP036A_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
 IMP036A_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
 IMP036A_ACCEPTED_MAIN_SHA: ee4926709ba6082ff6c24aabc2ea7d88d9bc1d6f
 IMP036A_ACCEPTED_TREE: 4fd243f5923565deceeb6c3f461e0d8a2f5a1eec
-IMP-036B: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
+IMP-036B: COMPLETE_AND_ACCEPTED
 IMP-036B_ARCHITECTURE_LOCKED: YES
 IMP-036B_IMPLEMENTATION_AUTHORIZED: YES
 IMP-036B_STARTED: YES
 IMP-036B_IMPLEMENTATION_COMPLETE: YES
-IMP-036B_ACCEPTED: NO
+IMP-036B_ACCEPTED: YES
 IMP-036B_FOUNDER_UAT_REQUIRED: YES
+IMP-036B_FOUNDER_UAT: PASS
+IMP036B_FORMAL_ACCEPTANCE: ACCEPTED
 IMP036B_IMPLEMENTATION_EVIDENCE: COMPLETE
-IMP-036C: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
+IMP-036C: COMPLETE_AND_ACCEPTED
+IMP-036C_ARCHITECTURE_LOCKED: YES
+IMP-036C_IMPLEMENTATION_AUTHORIZED: YES
+IMP-036C_STARTED: YES
+IMP-036C_IMPLEMENTATION_COMPLETE: YES
+IMP-036C_ACCEPTED: YES
+IMP-036C_FOUNDER_UAT_REQUIRED: YES
+IMP-036C_FOUNDER_UAT: PASS
+IMP036C_FOUNDER_UAT: PASS
+IMP036C_FORMAL_ACCEPTANCE: ACCEPTED
+IMP036C_IMPLEMENTATION_EVIDENCE: COMPLETE
+IMP036C_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
+IMP036C_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
+IMP036C_ACCEPTED_MAIN_SHA: 0ec83ba5b7b03387dcefbd478807faefc3499d6b
+IMP036C_ACCEPTED_TREE: 778723aaf8ee363d337f4887455c13f68e1385bc
+IMP036C_ACCEPTED_CANDIDATE: 0ec83ba5b7b03387dcefbd478807faefc3499d6b
+IMP036C_DIRECT_MAIN_PROCESS_EXCEPTION: RECONCILED
+IMP036C_DIRECT_MAIN_EXCEPTION_SHA: 13835d285f53186c9ed89dc1ed0d11e30be75cca
+IMP036C_PROCESS_EXCEPTION_OUTSTANDING: NO
+STANDARDIZED_CUSTOMER_DELIVERY_FEE: YES
+DEFERRED_CUSTOMER_FAILED_PAYMENT_HISTORY: YES
 IMP-036D: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
 IMP-036E: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
 IMP-036F: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
 IMP-036G: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
 IMP-037: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
+IMP-038: PLANNED
 ```
 
 Independent acceptance of IMP-028A **is** claimed and formally reconciled
