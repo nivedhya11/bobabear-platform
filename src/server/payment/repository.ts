@@ -447,6 +447,32 @@ export async function insertProviderReferences(
   }
 }
 
+/**
+ * Latest observation produced by provider query / reconciliation for an Attempt.
+ * Used to bound secondary reconcile cadence on payment-state reads (D-362).
+ */
+export async function findLatestQueryObservationForAttempt(
+  context: PersistenceQueryContext,
+  attemptId: string,
+): Promise<PaymentProviderObservationRow | null> {
+  assertApplicationRole(context, "findLatestQueryObservationForAttempt");
+  const rows = await context.db
+    .select()
+    .from(paymentProviderObservationsTable)
+    .where(
+      and(
+        eq(paymentProviderObservationsTable.attemptId, attemptId),
+        inArray(paymentProviderObservationsTable.observationSource, [
+          "query",
+          "reconciliation",
+        ]),
+      ),
+    )
+    .orderBy(desc(paymentProviderObservationsTable.observedAt))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
 export async function insertObservation(
   context: PersistenceTransactionContext,
   input: {

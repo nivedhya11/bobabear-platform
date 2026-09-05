@@ -779,8 +779,12 @@ describe("PaymentPanel", () => {
     await waitFor(() => expect(screen.getByTestId("payment-checking")).toBeInTheDocument());
     expect(screen.getByTestId("payment-checking")).toHaveTextContent(/Checking your payment/i);
     expect(screen.getByTestId("payment-checking")).toHaveTextContent(/don't pay again yet/i);
+    // Browser failure triggers server state read (reconcile authority), never client FAILED.
+    await waitFor(() => expect(getPaymentState).toHaveBeenCalled());
+    expect(submitPaymentClientEvidence).not.toHaveBeenCalled();
     expect(screen.queryByTestId("payment-retry")).not.toBeInTheDocument();
     expect(screen.queryByTestId("payment-continue")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Start a new order/i })).not.toBeInTheDocument();
     expect(screen.queryByText(/window closed/i)).not.toBeInTheDocument();
     expect(onOrderReady).not.toHaveBeenCalled();
     expect(submitPaymentClientEvidence).not.toHaveBeenCalled();
