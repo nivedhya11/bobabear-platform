@@ -2,10 +2,10 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R106",
+  "stateVersion": "STATE-R107",
   "acceptedThrough": "IMP-036D",
-  "currentProductSlice": "NONE",
-  "nextProductSlice": "IMP-036E",
+  "currentProductSlice": "IMP-036E",
+  "nextProductSlice": "IMP-036F",
   "pendingAcceptance": "NONE",
   "governanceHealth": "ALIGNED",
   "lastReviewed": "2026-09-06"
@@ -30,10 +30,11 @@ Accepted Range:            IMP-001 → IMP-036D (including IMP-005A and IMP-026C
 ```text
 Current Product Implementation: NONE
 Pending Acceptance:             NONE
-Current Product Slice:          NONE
-Next Product Slice:             IMP-036E — Store Operations Management
+Current Product Slice:          IMP-036E — Store Operations Management
+Next Product Slice:             IMP-036F — Catalog, Menu, Pricing & Promotions Management
 Current Governance Activity:    IMP-036D COMPLETE_AND_ACCEPTED;
-                              IMP-036E–G and IMP-037 remain PLANNED / NOT_ACTIVATED /
+                              IMP-036E ARCHITECTURE_IN_PROGRESS;
+                              IMP-036F/G and IMP-037 remain PLANNED / NOT_ACTIVATED /
                               NOT_AUTHORIZED / NOT_STARTED.
 Governance Health:              ALIGNED
 ```
@@ -355,6 +356,24 @@ STATE-R36 record IMP-028B canonical activation without changing decision registe
 architecture. GTM-R39 / STATE-R37 record IMP-028B architecture lock and implementation
 authorization without changing decision register or global architecture.
 
+
+STATE-R107 records explicit Founder architecture activation of **IMP-036E — Store Operations
+Management** as `currentProductSlice` for architecture work only. IMP-036E is
+`ARCHITECTURE_IN_PROGRESS`; architecture is `NOT_LOCKED` (`IMP-036E_ARCHITECTURE_LOCKED: NO`);
+implementation remains `NOT_AUTHORIZED` / `NOT_STARTED` (`IMP-036E_IMPLEMENTATION_AUTHORIZED: NO`;
+`IMP-036E_STARTED: NO`; `IMP-036E_IMPLEMENTATION_COMPLETE: NO`; `IMP-036E_ACCEPTED: NO`).
+`acceptedThrough` remains IMP-036D; `pendingAcceptance` remains NONE; `nextProductSlice` becomes
+IMP-036F, which remains `PLANNED` / `NOT_ACTIVATED` / `NOT_AUTHORIZED` / `NOT_STARTED`. No
+capability architecture artifact is created; no architecture lock; no D-374; no ARCH-R20
+(`D374_CREATED: NO`; `ARCH_R20_CREATED: NO`). ARCH-R19 and DR-15 remain unchanged. Founder UAT
+remains required eventually (`IMP-036E_FOUNDER_UAT_REQUIRED: YES`). Stale IMP-036E planning language
+that described Serviceability as PIN/postal-code authoritative is corrected to align with accepted
+IMP-036B authority `OUTLET_DISTANCE_SERVICEABILITY_V1` (`SERVICEABILITY_COORDINATE_AUTHORITY: YES`;
+`SERVICEABILITY_POSTAL_PIN_RUNTIME_AUTHORITY: NO`; `SERVICEABILITY_POSTAL_PIN_METADATA_ONLY: YES`;
+`SERVICEABILITY_MAP_IS_PROJECTION_ONLY: YES`). That correction is source alignment to accepted
+authority, not a new Serviceability decision. Does **not** authorize, start, or lock IMP-036E
+implementation; does **not** activate IMP-036F. IMP-036D remains `COMPLETE_AND_ACCEPTED` and is not
+reopened. Supersedes STATE-R106 for the current product-slice architecture-activation position.
 
 STATE-R106 records formal acceptance of **IMP-036D — Workforce & Franchise Operations Portal V2**
 after complete implementation evidence, independent implementation review PASS, bounded workforce-auth
@@ -1837,7 +1856,21 @@ FRANCHISE_IS_BUSINESS_PERSONA: YES
 NEW_FRANCHISE_ROLE: NO
 NEW_FRANCHISE_SCOPE_MODEL: NO
 ARBITRARY_MULTI_OUTLET_FRANCHISE_RBAC: DEFERRED
-IMP-036E: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
+IMP-036E: ARCHITECTURE_IN_PROGRESS
+IMP-036E_ARCHITECTURE: NOT_LOCKED
+IMP-036E_ARCHITECTURE_LOCKED: NO
+IMP-036E_IMPLEMENTATION_AUTHORIZED: NO
+IMP-036E_STARTED: NO
+IMP-036E_IMPLEMENTATION_COMPLETE: NO
+IMP-036E_ACCEPTED: NO
+IMP-036E_FOUNDER_UAT_REQUIRED: YES
+SERVICEABILITY_MODEL: OUTLET_DISTANCE_SERVICEABILITY_V1
+SERVICEABILITY_COORDINATE_AUTHORITY: YES
+SERVICEABILITY_POSTAL_PIN_RUNTIME_AUTHORITY: NO
+SERVICEABILITY_POSTAL_PIN_METADATA_ONLY: YES
+SERVICEABILITY_MAP_IS_PROJECTION_ONLY: YES
+D374_CREATED: NO
+ARCH_R20_CREATED: NO
 IMP-036F: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
 IMP-036G: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
 IMP-037: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
