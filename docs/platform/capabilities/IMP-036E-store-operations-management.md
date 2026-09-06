@@ -5,8 +5,8 @@
   "capability": "IMP-036E",
   "title": "Store Operations Management",
   "architectureLock": "ARCHITECTURE_LOCKED",
-  "implementation": "NOT_AUTHORIZED / NOT_STARTED",
-  "implementationAuthorized": false,
+  "implementation": "AUTHORIZED / NOT_STARTED",
+  "implementationAuthorized": true,
   "founderUATRequired": true,
   "schemaChangeRequired": false,
   "lastReviewed": "2026-09-06",
@@ -17,25 +17,29 @@
 
 # IMP-036E — Store Operations Management
 
-## Capability Architecture (ARCHITECTURE_LOCKED — IMPLEMENTATION NOT_AUTHORIZED)
+## Capability Architecture (ARCHITECTURE_LOCKED — IMPLEMENTATION AUTHORIZED / NOT_STARTED)
 
 This document is the **locked capability architecture** for IMP-036E. It is the sole CURRENT
 capability-architecture authority for this slice. Supporting experience planning must not compete
 with this lock.
 
+Founder implementation authorization recorded at GTM-R111 / STATE-R109. Authorization does not
+start implementation.
+
 | Field | Value |
 |---|---|
 | Architecture lock | `ARCHITECTURE_LOCKED` |
 | Lifecycle | `ARCHITECTURE_LOCKED` |
-| Implementation | `NOT_AUTHORIZED` / `NOT_STARTED` |
-| Implementation authorized | **NO** |
+| Implementation | `AUTHORIZED` / `NOT_STARTED` |
+| Implementation authorized | **YES** |
+| Implementation started | **NO** |
 | Implementation complete | **NO** |
 | Accepted | **NO** |
 | Accepted product through | IMP-036D (unchanged) |
 | Current product slice | IMP-036E |
 | Pending acceptance | NONE |
 | Next product slice | IMP-036F |
-| Governance checkpoint | GTM-R110 / STATE-R108 |
+| Governance checkpoint | GTM-R111 / STATE-R109 |
 | Founder UAT required for acceptance | **YES** |
 | Schema change required | **NO** |
 | New D-number | **NO** (`D-374` not created) |
@@ -46,8 +50,8 @@ with this lock.
 IMP-036E: ARCHITECTURE_LOCKED
 IMP-036E_ARCHITECTURE: LOCKED
 IMP-036E_ARCHITECTURE_LOCKED: YES
-IMP-036E_IMPLEMENTATION: NOT_AUTHORIZED / NOT_STARTED
-IMP-036E_IMPLEMENTATION_AUTHORIZED: NO
+IMP-036E_IMPLEMENTATION: AUTHORIZED / NOT_STARTED
+IMP-036E_IMPLEMENTATION_AUTHORIZED: YES
 IMP-036E_STARTED: NO
 IMP-036E_IMPLEMENTATION_COMPLETE: NO
 IMP-036E_ACCEPTED: NO
@@ -69,7 +73,7 @@ D374_REQUIRED_FOR_IMP036E_LOCK: NO
 ARCH_R20_REQUIRED_FOR_IMP036E_LOCK: NO
 ARCH-R20_CREATED: NO
 AUTHORIZATION IS NOT IMPLEMENTATION START: YES
-IMPLEMENTATION_AUTHORIZED: NO
+IMPLEMENTATION_AUTHORIZED: YES
 IMPLEMENTATION_STARTED: NO
 ```
 
@@ -847,11 +851,12 @@ façade), ARCH-G25 (D-373 Admin façade).
 ## 16. Implementation posture
 
 ```text
-IMP-036E_IMPLEMENTATION_AUTHORIZED: NO
+IMP-036E_IMPLEMENTATION_AUTHORIZED: YES
 IMP-036E_STARTED: NO
 IMP-036E_IMPLEMENTATION_COMPLETE: NO
 IMP-036E_ACCEPTED: NO
 IMP-036F: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
 ```
 
-Architecture lock is **not** implementation authorization and is **not** IMP-036F activation.
+Founder implementation authorization recorded at GTM-R111 / STATE-R109 does **not** start
+implementation and is **not** IMP-036F activation.
