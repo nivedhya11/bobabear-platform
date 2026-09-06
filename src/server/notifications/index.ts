@@ -52,7 +52,16 @@ export {
 } from "./operations";
 
 export {
+  NOTIFICATION_MANUAL_RESENDABLE_STATUSES,
+  NOTIFICATION_MAX_ATTEMPTS_CEILING,
+  effectiveManualResendMaxAttempts,
+  isManualNotificationResendPermitted,
+  isNotificationManualResendableStatus,
+} from "./resend-eligibility";
+
+export {
   actorHasNotificationCapability,
+  authorizeNotificationOutletAccess,
   requireNotificationCapability,
   requireNotificationWorkforceActor,
   type NotificationWorkforceActor,
@@ -97,6 +106,7 @@ export {
   findPreference,
   insertProviderEventIfAbsent,
   listNotificationAttempts,
+  listNotificationRequestsForOrder,
   setCommunicationPreference,
   setConsentStatus,
 } from "./repository";

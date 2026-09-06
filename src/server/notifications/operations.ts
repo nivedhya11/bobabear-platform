@@ -41,12 +41,13 @@ import {
   newNotificationRequestId,
   updateNotificationRequest,
 } from "./repository";
+import {
+  effectiveManualResendMaxAttempts,
+  isNotificationManualResendableStatus,
+} from "./resend-eligibility";
 import { normalizeFailureCategory, resolveFailureOutcome } from "./retry";
 import { resolveApprovedTemplate } from "./templates";
 import type { NotificationChannelRegistry } from "./types";
-
-/** Hard ceiling matching `notification_requests_max_attempts_check`. */
-const MAX_ATTEMPTS_CEILING = BigInt(20);
 
 export type NotificationOperationOptions = Readonly<{
   clock?: NotificationClock;
@@ -375,10 +376,6 @@ export type ManualResendInput = Readonly<{
   reason: string;
 }>;
 
-/** Requests a manual resend may start from. Never a suppressed, expired,
- * cancelled, or already-accepted notification. */
-const RESENDABLE_STATUSES = ["FAILED", "REVIEW_REQUIRED"] as const;
-
 /**
  * Operator-driven resend, gated on `notification.resend`.
  *
@@ -420,7 +417,7 @@ export async function manualResendNotification(
   if (!existing) {
     throw new NotificationError("NOTIFICATION_NOT_FOUND", "Notification not found.");
   }
-  if (!(RESENDABLE_STATUSES as readonly string[]).includes(existing.status)) {
+  if (!isNotificationManualResendableStatus(existing.status)) {
     throw new NotificationError(
       "NOTIFICATION_RESEND_NOT_ALLOWED",
       "Notification cannot be resent from its current status.",
@@ -433,19 +430,17 @@ export async function manualResendNotification(
     if (!locked) {
       throw new NotificationError("NOTIFICATION_NOT_FOUND", "Notification not found.");
     }
-    if (!(RESENDABLE_STATUSES as readonly string[]).includes(locked.status)) {
+    if (!isNotificationManualResendableStatus(locked.status)) {
       throw new NotificationError(
         "NOTIFICATION_RESEND_NOT_ALLOWED",
         "Notification cannot be resent from its current status.",
       );
     }
     // Grant exactly one further attempt when the automatic budget is spent.
-    const maxAttempts =
-      locked.attemptCount >= locked.maxAttempts
-        ? (locked.attemptCount + BigInt(1) > MAX_ATTEMPTS_CEILING
-            ? MAX_ATTEMPTS_CEILING
-            : locked.attemptCount + BigInt(1))
-        : locked.maxAttempts;
+    const maxAttempts = effectiveManualResendMaxAttempts(
+      locked.attemptCount,
+      locked.maxAttempts,
+    );
     if (locked.attemptCount >= maxAttempts) {
       throw new NotificationError(
         "NOTIFICATION_RESEND_NOT_ALLOWED",

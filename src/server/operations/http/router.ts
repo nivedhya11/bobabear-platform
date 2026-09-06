@@ -1,5 +1,5 @@
 /**
- * Operations Order HTTP router (IMP-029).
+ * Operations Order HTTP router (IMP-029 / IMP-036D).
  *
  * Thin transport only: trusted workforce session → existing Order authority.
  */
@@ -24,13 +24,16 @@ import {
   parseCancelOrderInput,
   parseFulfilOrderInput,
 } from "../../../shared/order";
+import type { NotificationChannelRegistry } from "../../notifications";
 import type { Persistence } from "../../persistence";
 import { checkTrustedOrigin } from "../../workforce-auth/http/origin";
 import { resolveOperationsWorkforcePrincipal } from "./auth";
 import { readOperationsJsonObjectBody } from "./body";
 import { classifyDeliveryRoute, handleDeliveryRoute } from "./delivery-routes";
 import { classifyAdminRoute, routeAdminRequest } from "./admin-routes";
+import { classifyNotificationRoute, handleNotificationRoute } from "./notification-routes";
 import { handleOperationalStatusRequest } from "./operational-status-routes";
+import { classifyRefundRoute, handleRefundRoute } from "./refund-routes";
 import { mapOperationsError } from "./error-map";
 import { sendJson, sendMethodNotAllowed, sendNotFound } from "./response";
 
@@ -41,6 +44,7 @@ export type OperationsRouteDependencies = Readonly<{
   startedAt?: Date;
   serviceName?: string;
   workers?: readonly WorkerHealthReporter[];
+  notificationChannels?: NotificationChannelRegistry;
 }>;
 
 export type OperationsRouteOutcome = Readonly<{
@@ -145,9 +149,51 @@ export async function routeOperationsRequest(
   const route = classifyRoute(url.pathname);
   const deliveryRoute = classifyDeliveryRoute(url.pathname);
   const adminRoute = classifyAdminRoute(url.pathname);
+  const refundRoute = classifyRefundRoute(url.pathname);
+  const notificationRoute = classifyNotificationRoute(url.pathname);
 
   if (adminRoute) {
     return routeAdminRequest(req, res, deps, requestId);
+  }
+
+  if (notificationRoute) {
+    if (url.search !== "" && notificationRoute.kind !== "list_notifications") {
+      sendJson(res, { ok: false, code: "NOTIFICATION_INVALID_INPUT", requestId }, { status: 400, requestId });
+      return { operation: notificationRoute.kind, safeOutcomeCode: "NOTIFICATION_INVALID_INPUT", httpStatus: 400 };
+    }
+    if (notificationRoute.kind !== "list_notifications") {
+      if (!checkTrustedOrigin(req.headers, deps.trustedOrigin).ok) {
+        sendJson(res, { ok: false, code: "NOTIFICATION_INVALID_INPUT", requestId }, { status: 403, requestId });
+        return { operation: notificationRoute.kind, safeOutcomeCode: "NOTIFICATION_INVALID_INPUT", httpStatus: 403 };
+      }
+    }
+    const outcome = await handleNotificationRoute(req, notificationRoute, deps, requestId);
+    sendJson(res, outcome.body, { status: outcome.status, requestId });
+    return {
+      operation: outcome.operation,
+      safeOutcomeCode: outcome.code,
+      httpStatus: outcome.status,
+    };
+  }
+
+  if (refundRoute) {
+    if (url.search !== "" && method === "POST") {
+      sendJson(res, { ok: false, code: "REFUND_INVALID_INPUT", requestId }, { status: 400, requestId });
+      return { operation: "create_refund", safeOutcomeCode: "REFUND_INVALID_INPUT", httpStatus: 400 };
+    }
+    if (method === "POST") {
+      if (!checkTrustedOrigin(req.headers, deps.trustedOrigin).ok) {
+        sendJson(res, { ok: false, code: "REFUND_INVALID_INPUT", requestId }, { status: 403, requestId });
+        return { operation: "create_refund", safeOutcomeCode: "REFUND_INVALID_INPUT", httpStatus: 403 };
+      }
+    }
+    const outcome = await handleRefundRoute(req, refundRoute, deps, requestId);
+    sendJson(res, outcome.body, { status: outcome.status, requestId });
+    return {
+      operation: outcome.operation,
+      safeOutcomeCode: outcome.code,
+      httpStatus: outcome.status,
+    };
   }
 
   if (deliveryRoute) {

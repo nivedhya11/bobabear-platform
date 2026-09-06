@@ -81,6 +81,7 @@ export class OperationsService {
         startedAt: this.startedAt,
         serviceName: OPERATIONS_SERVICE_NAME,
         workers: this.notificationProcessor ? [this.notificationProcessor] : [],
+        notificationChannels,
       },
       {
         onRequestStart: () => { this.inFlightCount += 1; },

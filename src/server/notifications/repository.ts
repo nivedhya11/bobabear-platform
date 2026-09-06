@@ -611,6 +611,22 @@ export async function findApprovedTemplate(
 }
 
 /**
+ * List NotificationRequests for one authoritative Order (IMP-036D support).
+ */
+export async function listNotificationRequestsForOrder(
+  context: PersistenceQueryContext,
+  orderId: string,
+): Promise<readonly NotificationRequest[]> {
+  assertApplicationRole(context, "listNotificationRequestsForOrder");
+  const rows = await context.db
+    .select()
+    .from(notificationRequestsTable)
+    .where(eq(notificationRequestsTable.orderId, orderId))
+    .orderBy(asc(notificationRequestsTable.createdAt));
+  return rows.map(mapNotificationRequestRow);
+}
+
+/**
  * Semantic types already dispatched for one Order — the input to stale
  * suppression. "Dispatched" means an attempt row exists, so a suppressed or
  * still-pending sibling never suppresses an earlier notification.

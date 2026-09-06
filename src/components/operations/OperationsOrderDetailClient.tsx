@@ -5,9 +5,12 @@ import { useSearchParams } from "next/navigation";
 
 import { OperationsDeliveryPanel } from "@/components/operations/OperationsDeliveryPanel";
 import { OperationsLifecycleConfirmationDialog } from "@/components/operations/OperationsLifecycleConfirmationDialog";
+import { OperationsNotificationPanel } from "@/components/operations/OperationsNotificationPanel";
+import { OperationsRefundPanel } from "@/components/operations/OperationsRefundPanel";
 import { formatPaise } from "@/components/ordering/format-money";
 import { orderStatusLabel } from "@/components/ordering/order-status";
 import { Button } from "@/components/ui/Button";
+import { fetchAdminSession } from "@/lib/administration/api";
 import {
   acceptWorkforceOrder,
   cancelWorkforceOrder,
@@ -137,6 +140,7 @@ export function OperationsOrderDetailClient() {
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [statusMessage, setStatusMessage] = useState("");
   const [mutationAlert, setMutationAlert] = useState<string | null>(null);
+  const [canInitiateRefund, setCanInitiateRefund] = useState(false);
   const fetchGenerationRef = useRef(0);
   const mutationEpochRef = useRef(0);
   const displayedOrderIdRef = useRef(orderId);
@@ -146,6 +150,20 @@ export function OperationsOrderDetailClient() {
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const result = await fetchAdminSession();
+      if (cancelled || !mountedRef.current) return;
+      setCanInitiateRefund(
+        result.ok === true && result.data.session.capabilities?.["payment.refund"] === true,
+      );
+    })();
+    return () => {
+      cancelled = true;
     };
   }, []);
 
@@ -383,6 +401,7 @@ export function OperationsOrderDetailClient() {
         {view.kind === "ready" ? (
           <OrderDetail
             order={view.order}
+            canInitiateRefund={canInitiateRefund}
             mutationPending={mutationPendingForOrder !== null}
             mutationAlert={activeMutationAlert}
             onAccept={() => openConfirm("ACCEPT")}
@@ -426,8 +445,8 @@ function DetailMessage({
     >
       <p className="font-body text-[15px] text-[var(--text-secondary)]">{message}</p>
       <Button asChild variant="outline">
-        <a href={signIn ? "/workforce/login/" : "/workforce/operations/"}>
-          {signIn ? "Workforce sign in" : "Back to Operations"}
+        <a href={signIn ? "/workforce/login/" : "/workforce/operations/orders/"}>
+          {signIn ? "Workforce sign in" : "Back to Orders"}
         </a>
       </Button>
     </section>
@@ -436,6 +455,7 @@ function DetailMessage({
 
 function OrderDetail({
   order,
+  canInitiateRefund,
   mutationPending,
   mutationAlert,
   onAccept,
@@ -444,6 +464,7 @@ function OrderDetail({
   onRefresh,
 }: Readonly<{
   order: OperationsOrderDetail;
+  canInitiateRefund: boolean;
   mutationPending: boolean;
   mutationAlert: string | null;
   onAccept: () => void;
@@ -516,6 +537,10 @@ function OrderDetail({
       </section>
 
       <OperationsDeliveryPanel orderId={order.orderId} />
+
+      <OperationsRefundPanel orderId={order.orderId} canInitiate={canInitiateRefund} />
+
+      <OperationsNotificationPanel orderId={order.orderId} />
 
       <section aria-labelledby="operations-items">
         <h2 id="operations-items" className="font-body text-[18px] font-semibold">
@@ -621,7 +646,7 @@ function OrderDetail({
           Refresh
         </Button>
         <Button asChild variant="outline">
-          <a href="/workforce/operations/">Back to Operations</a>
+          <a href="/workforce/operations/orders/">Back to Orders</a>
         </Button>
       </div>
     </div>

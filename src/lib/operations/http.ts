@@ -10,7 +10,7 @@ const JSON_CONTENT_TYPE = "application/json";
 export type OperationsRequestOptions = Readonly<{
   method?: "GET" | "POST";
   query?: Readonly<Record<string, string | undefined>>;
-  body?: Readonly<Record<string, string>>;
+  body?: Readonly<Record<string, unknown>>;
 }>;
 
 export type OperationsHttpResult<T> =

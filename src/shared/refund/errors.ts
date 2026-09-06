@@ -16,6 +16,7 @@ export const REFUND_ERROR_CODES = [
   "REFUND_REASON_REQUIRED",
   "REFUND_STATE_CONFLICT",
   "REFUND_FULLY_REFUNDED",
+  "REFUND_IDEMPOTENCY_CONFLICT",
 ] as const;
 
 export type RefundErrorCode = (typeof REFUND_ERROR_CODES)[number];

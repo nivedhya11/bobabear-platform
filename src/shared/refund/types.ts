@@ -75,6 +75,15 @@ export type RequestRefundInput = Readonly<{
   operatorNote?: string | null;
 }>;
 
+/** Operations workforce Refund reservation (IMP-036D). */
+export type ReserveOrderRefundInput = Readonly<{
+  orderId: string;
+  refundRequestId: string;
+  amountPaise: bigint;
+  reason: string;
+  operatorNote?: string | null;
+}>;
+
 export type GetRefundInput = Readonly<{
   refundId: string;
 }>;

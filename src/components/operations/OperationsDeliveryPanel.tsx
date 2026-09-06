@@ -20,9 +20,36 @@ function externalBookingHint(status: string): string | null {
     return "Begin manual booking in BOBA before attempting external courier booking.";
   }
   if (status === "BOOKING_OUTCOME_UNKNOWN") {
-    return "External booking may now be attempted. Resolve definitively once outcome is known.";
+    return "External booking outcome is not yet confirmed. Resolve once the courier result is known.";
   }
   return null;
+}
+
+function deliveryStatusLabel(status: string): string {
+  if (status === "REQUESTED") return "Requested";
+  if (status === "BOOKING_OUTCOME_UNKNOWN") return "Booking outcome unknown";
+  if (status === "BOOKED") return "Booked";
+  if (status === "PICKED_UP") return "Picked up";
+  if (status === "DELIVERED") return "Delivered";
+  if (status === "FAILED") return "Failed";
+  if (status === "CANCELLED") return "Cancelled";
+  return status;
+}
+
+function providerCostLabel(kind: string): string {
+  if (kind === "estimated") return "Estimated provider cost";
+  if (kind === "booked") return "Booked provider cost";
+  if (kind === "final") return "Final provider cost";
+  if (kind === "cancellation") return "Cancellation provider cost";
+  if (kind === "return") return "Return provider cost";
+  if (kind === "adjustment") return "Provider cost adjustment";
+  return kind;
+}
+
+function formatCostPaise(amountPaise: string): string {
+  const value = Number(amountPaise);
+  if (!Number.isFinite(value)) return `${amountPaise} paise`;
+  return `₹${(value / 100).toFixed(2)}`;
 }
 
 function deliveryBasePayload(delivery: OperationsDeliveryDetail["delivery"]) {
@@ -144,7 +171,7 @@ export function OperationsDeliveryPanel(props: Readonly<{ orderId: string }>) {
       <dl className="grid gap-1 text-sm">
         <div>
           <dt className="text-[var(--text-tertiary)]">Status</dt>
-          <dd>{d.status}</dd>
+          <dd>{deliveryStatusLabel(d.status)}</dd>
         </div>
         {d.bookingCorrelationId ? (
           <div>
@@ -175,6 +202,18 @@ export function OperationsDeliveryPanel(props: Readonly<{ orderId: string }>) {
           </div>
         ) : null}
       </dl>
+      {detail.providerCosts.length > 0 ? (
+        <div className="rounded-sm border border-[var(--border-subtle)] p-2 text-sm">
+          <p className="font-medium">Provider cost (workforce only)</p>
+          <ul className="mt-2 space-y-1">
+            {detail.providerCosts.map((cost) => (
+              <li key={`${cost.kind}-${cost.amountPaise}`}>
+                {providerCostLabel(cost.kind)}: {formatCostPaise(cost.amountPaise)}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
       {hint ? (
         <p className="rounded-sm bg-[var(--surface-muted)] p-2 text-sm text-[var(--text-secondary)]">
           {hint}

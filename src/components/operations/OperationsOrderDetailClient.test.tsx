@@ -14,6 +14,55 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(query),
 }));
 
+vi.mock("@/lib/administration/api", () => ({
+  fetchAdminSession: vi.fn(async () => ({
+    ok: true,
+    status: 200,
+    data: {
+      session: {
+        workforceUserId: "workforce-1",
+        signedInLabel: "ops@example.com",
+        capabilities: {
+          "order.read": true,
+          "payment.refund": true,
+          "payment.refund.read": true,
+          "notification.resend": true,
+        },
+      },
+    },
+  })),
+}));
+
+vi.mock("@/lib/operations/delivery", () => ({
+  getWorkforceDelivery: vi.fn(async () => ({
+    ok: true,
+    status: 200,
+    data: { delivery: null },
+  })),
+  postDeliveryCommand: vi.fn(),
+}));
+
+vi.mock("@/lib/operations/refunds", () => ({
+  getOrderRefunds: vi.fn(async () => ({
+    ok: false,
+    status: 404,
+    code: "REFUND_NOT_FOUND",
+  })),
+  createOrderRefund: vi.fn(),
+  createRefundRequestId: () => "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+  refundStatusLabel: (status: string) => status,
+}));
+
+vi.mock("@/lib/operations/notifications", () => ({
+  getOrderNotifications: vi.fn(async () => ({
+    ok: false,
+    status: 404,
+    code: "NOTIFICATION_NOT_FOUND",
+  })),
+  resendOrderNotification: vi.fn(),
+  notificationStatusLabel: (status: string) => status,
+}));
+
 vi.mock("@/lib/operations/orders", async () => {
   const actual = await vi.importActual<typeof import("@/lib/operations/orders")>(
     "@/lib/operations/orders",
@@ -406,9 +455,9 @@ describe("OperationsOrderDetailClient", () => {
 
   it.each([
     [401, "WORKFORCE_AUTH_REQUIRED", "operations-detail-unauthorized", /workforce sign in/i],
-    [403, "ORDER_UNAUTHORIZED", "operations-detail-forbidden", /back to operations/i],
-    [404, "ORDER_NOT_FOUND", "operations-detail-not-found", /back to operations/i],
-    [500, "INTERNAL_ERROR", "operations-detail-error", /back to operations/i],
+    [403, "ORDER_UNAUTHORIZED", "operations-detail-forbidden", /back to orders/i],
+    [404, "ORDER_NOT_FOUND", "operations-detail-not-found", /back to orders/i],
+    [500, "INTERNAL_ERROR", "operations-detail-error", /back to orders/i],
   ])("renders safe failure state for %s", async (status, code, testId, linkName) => {
     getWorkforceOrder.mockResolvedValue({ ok: false, status, code });
     render(<OperationsOrderDetailClient />);
