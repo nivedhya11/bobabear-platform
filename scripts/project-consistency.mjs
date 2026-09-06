@@ -1461,7 +1461,7 @@ function isImp031AcceptanceCheckpoint(roadmap, state) {
   return isSupportedImp030GovernanceCheckpoint(roadmap?.meta.roadmapVersion, state?.meta.stateVersion, "imp031Acceptance");
 }
 
-/** @param {string} roadmapVersion @param {string} stateVersion @param {"activation" | "lock" | "authorization" | "start" | "routeAmendment" | "consistencyRepair" | "acceptance" | "imp031Activation" | "imp031Draft" | "imp031Lock" | "imp031Authorization" | "imp031Start" | "imp031Completion" | "imp031Acceptance" | "imp032Activation" | "imp032Draft" | "imp032Lock" | "imp032Authorization" | "imp032Start" | "imp032BoundaryClarification" | "imp032Completion" | "imp032Acceptance" | "imp033Activation" | "imp033Completion" | "imp033Acceptance" | "imp034Completion" | "imp034Acceptance" | "imp035Completion" | "imp035Acceptance" | "imp036Completion" | "imp036Acceptance" | "enterpriseExperiencePlan" | "imp036dActivation" | "imp036dLock" | "imp036dAuthorization" | "imp036dStart" | "imp036dCompletion" | "imp036dAcceptance" | "imp036eActivation"} [kind] */
+/** @param {string} roadmapVersion @param {string} stateVersion @param {"activation" | "lock" | "authorization" | "start" | "routeAmendment" | "consistencyRepair" | "acceptance" | "imp031Activation" | "imp031Draft" | "imp031Lock" | "imp031Authorization" | "imp031Start" | "imp031Completion" | "imp031Acceptance" | "imp032Activation" | "imp032Draft" | "imp032Lock" | "imp032Authorization" | "imp032Start" | "imp032BoundaryClarification" | "imp032Completion" | "imp032Acceptance" | "imp033Activation" | "imp033Completion" | "imp033Acceptance" | "imp034Completion" | "imp034Acceptance" | "imp035Completion" | "imp035Acceptance" | "imp036Completion" | "imp036Acceptance" | "enterpriseExperiencePlan" | "imp036dActivation" | "imp036dLock" | "imp036dAuthorization" | "imp036dStart" | "imp036dCompletion" | "imp036dAcceptance" | "imp036eActivation" | "imp036eLock"} [kind] */
 export function isSupportedImp030GovernanceCheckpoint(roadmapVersion, stateVersion, kind) {
   const activation = roadmapVersion === "GTM-R66" && stateVersion === "STATE-R64";
   const lock = roadmapVersion === "GTM-R67" && stateVersion === "STATE-R65";
@@ -1515,6 +1515,7 @@ export function isSupportedImp030GovernanceCheckpoint(roadmapVersion, stateVersi
   const imp036dCompletion = roadmapVersion === "GTM-R107" && stateVersion === "STATE-R105";
   const imp036dAcceptance = roadmapVersion === "GTM-R108" && stateVersion === "STATE-R106";
   const imp036eActivation = roadmapVersion === "GTM-R109" && stateVersion === "STATE-R107";
+  const imp036eLock = roadmapVersion === "GTM-R110" && stateVersion === "STATE-R108";
   if (kind === "activation") return activation;
   if (kind === "lock") return lock;
   if (kind === "authorization") return authorization;
@@ -1560,7 +1561,8 @@ export function isSupportedImp030GovernanceCheckpoint(roadmapVersion, stateVersi
   if (kind === "imp036dCompletion") return imp036dCompletion;
   if (kind === "imp036dAcceptance") return imp036dAcceptance;
   if (kind === "imp036eActivation") return imp036eActivation;
-  return activation || lock || authorization || start || routeAmendment || consistencyRepair || acceptance || imp031Activation || imp031Draft || imp031Lock || imp031Authorization || imp031Start || imp031Completion || imp031Acceptance || imp032Activation || imp032Draft || imp032Lock || imp032Authorization || imp032Start || imp032BoundaryClarification || imp032Completion || imp032Acceptance || imp033Activation || imp033Completion || imp033Acceptance || imp034Completion || imp034Acceptance || imp035Completion || imp035Acceptance || imp036Completion || imp036Acceptance || enterpriseExperiencePlan || imp036aCompletion || imp036aAcceptance || imp036bCompletion || imp036bAcceptance || imp036cCompletion || imp036cAcceptance || imp036dActivation || imp036dLock || imp036dAuthorization || imp036dStart || imp036dCompletion || imp036dAcceptance || imp036eActivation;
+  if (kind === "imp036eLock") return imp036eLock;
+  return activation || lock || authorization || start || routeAmendment || consistencyRepair || acceptance || imp031Activation || imp031Draft || imp031Lock || imp031Authorization || imp031Start || imp031Completion || imp031Acceptance || imp032Activation || imp032Draft || imp032Lock || imp032Authorization || imp032Start || imp032BoundaryClarification || imp032Completion || imp032Acceptance || imp033Activation || imp033Completion || imp033Acceptance || imp034Completion || imp034Acceptance || imp035Completion || imp035Acceptance || imp036Completion || imp036Acceptance || enterpriseExperiencePlan || imp036aCompletion || imp036aAcceptance || imp036bCompletion || imp036bAcceptance || imp036cCompletion || imp036cAcceptance || imp036dActivation || imp036dLock || imp036dAuthorization || imp036dStart || imp036dCompletion || imp036dAcceptance || imp036eActivation || imp036eLock;
 }
 
 function isImp032ArchitectureActivationCheckpoint(roadmap, state) {
@@ -1687,6 +1689,10 @@ function isImp036eArchitectureActivationCheckpoint(roadmap, state) {
   return isSupportedImp030GovernanceCheckpoint(roadmap?.meta.roadmapVersion, state?.meta.stateVersion, "imp036eActivation");
 }
 
+function isImp036eArchitectureLockCheckpoint(roadmap, state) {
+  return isSupportedImp030GovernanceCheckpoint(roadmap?.meta.roadmapVersion, state?.meta.stateVersion, "imp036eLock");
+}
+
 function isImp030ArchitectureCheckpoint(roadmap, state) {
   return isImp030ArchitectureActivationCheckpoint(roadmap, state) || isImp030ArchitectureLockCheckpoint(roadmap, state);
 }
@@ -1737,7 +1743,8 @@ function isImp030GovernanceCheckpoint(roadmap, state) {
     isImp036dImplementationStartCheckpoint(roadmap, state) ||
     isImp036dImplementationCompletionCheckpoint(roadmap, state) ||
     isImp036dAcceptanceCheckpoint(roadmap, state) ||
-    isImp036eArchitectureActivationCheckpoint(roadmap, state)
+    isImp036eArchitectureActivationCheckpoint(roadmap, state) ||
+    isImp036eArchitectureLockCheckpoint(roadmap, state)
   );
 }
 
@@ -4950,6 +4957,130 @@ export function evaluateImp036eArchitectureActivationCheckpoint(checkpoint) {
       code: "IMP036E_SERVICEABILITY_ALIGNMENT",
       message: "IMP-036E experience contract must align to OUTLET_DISTANCE_SERVICEABILITY_V1",
     };
+  }
+  return { ok: true };
+}
+
+/**
+ * Validate the exact IMP-036E architecture-lock lifecycle facts (R110/S108).
+ * @param {Record<string, unknown>} checkpoint
+ */
+export function evaluateImp036eArchitectureLockCheckpoint(checkpoint) {
+  const expected = {
+    roadmapVersion: "GTM-R110",
+    stateVersion: "STATE-R108",
+    acceptedThrough: "IMP-036D",
+    currentProductSlice: "IMP-036E",
+    nextProductSlice: "IMP-036F",
+    pendingAcceptance: "NONE",
+    imp036d: "COMPLETE_AND_ACCEPTED",
+    imp036e: "ARCHITECTURE_LOCKED",
+    architecture: "LOCKED",
+    architectureLocked: "YES",
+    implementation: "NOT_AUTHORIZED / NOT_STARTED",
+    implementationAuthorized: "NO",
+    started: "NO",
+    implementationComplete: "NO",
+    accepted: "NO",
+    founderUatRequired: "YES",
+    imp036f: "PLANNED",
+    roadmapLifecycle: "ARCHITECTURE_LOCKED",
+    stateLifecycle: "ARCHITECTURE_LOCKED",
+    architectureVersion: "ARCH-R19",
+    decisionRegisterVersion: "DR-15",
+    schemaChangeRequired: "NO",
+  };
+  for (const [key, value] of Object.entries(expected)) {
+    if (checkpoint[key] !== value) {
+      return { ok: false, code: "IMP036E_ARCHITECTURE_LOCK", message: `${key} must be ${value}` };
+    }
+  }
+  if (checkpoint.d374Exists) {
+    return { ok: false, code: "IMP036E_D374", message: "D-374 must not be created during IMP-036E architecture lock" };
+  }
+  if (checkpoint.archR20Exists) {
+    return { ok: false, code: "IMP036E_ARCH_R20", message: "ARCH-R20 must not be created during IMP-036E architecture lock" };
+  }
+  if (!checkpoint.capabilityArtifactExists) {
+    return {
+      ok: false,
+      code: "IMP036E_CAPABILITY_ARTIFACT",
+      message: "IMP-036E locked capability artifact must exist",
+    };
+  }
+  if (!checkpoint.artifactValid) {
+    return {
+      ok: false,
+      code: "IMP036E_CAPABILITY_LOCK",
+      message: "IMP-036E capability artifact must record ARCHITECTURE_LOCKED / NOT_AUTHORIZED",
+    };
+  }
+  if (checkpoint.imp036dAccepted !== true) {
+    return { ok: false, code: "IMP036E_IMP036D_ACCEPTANCE", message: "IMP-036D must remain COMPLETE_AND_ACCEPTED" };
+  }
+  return { ok: true };
+}
+
+/**
+ * Validate the locked IMP-036E capability artifact without accepting authorization/start progression.
+ * @param {string} text
+ */
+export function evaluateImp036eArchitectureLockArtifact(text) {
+  const required = [
+    /"status":\s*"CURRENT"/,
+    /"authority":\s*"CAPABILITY_ARCHITECTURE"/,
+    /"capability":\s*"IMP-036E"/,
+    /"architectureLock":\s*"ARCHITECTURE_LOCKED"/,
+    /"implementation":\s*"NOT_AUTHORIZED \/ NOT_STARTED"/,
+    /"implementationAuthorized":\s*false/,
+    /"founderUATRequired":\s*true/,
+    /"schemaChangeRequired":\s*false/,
+    /IMP-036E:\s*ARCHITECTURE_LOCKED/,
+    /IMP-036E_ARCHITECTURE:\s*LOCKED/,
+    /IMP-036E_ARCHITECTURE_LOCKED:\s*YES/,
+    /IMP-036E_IMPLEMENTATION_AUTHORIZED:\s*NO/,
+    /IMP-036E_STARTED:\s*NO/,
+    /IMP-036E_IMPLEMENTATION_COMPLETE:\s*NO/,
+    /IMP-036E_ACCEPTED:\s*NO/,
+    /IMP-036E_FOUNDER_UAT_REQUIRED:\s*YES/,
+    /IMP036E_ASSORTMENT_AUTHORITY\s*=\s*BRAND/,
+    /OUTLET_MANAGER_OUTLET_SCOPE_ASSORTMENT_MANAGE\s*=\s*NO/,
+    /OUTLET_EFFECTIVE_ASSORTMENT_PRESENTATION\s*=\s*AUTHORIZED_READ_OR_ESCALATE/,
+    /IMP036E_BULK_AVAILABILITY\s*=\s*DEFERRED/,
+    /SERVICEABILITY_MODEL\s*=\s*OUTLET_DISTANCE_SERVICEABILITY_V1/,
+    /SERVICEABILITY_COORDINATE_AUTHORITY\s*=\s*YES/,
+    /SERVICEABILITY_POSTAL_PIN_RUNTIME_AUTHORITY\s*=\s*NO/,
+    /SERVICEABILITY_MAP_IS_PROJECTION_ONLY\s*=\s*YES/,
+    /IMP036E_SERVICEABILITY_ROUTING_PRIORITY_UI\s*=\s*HIDDEN_PREREQUISITE/,
+    /IMP036E_SESSION_CAPABILITY_PROJECTION_EXTENSION\s*=\s*EXISTING_PERMISSION_KEYS_ONLY/,
+    /SCHEMA_CHANGE_REQUIRED:\s*NO/,
+    /D374_REQUIRED_FOR_IMP036E_LOCK:\s*NO/,
+    /D-374_CREATED:\s*NO/,
+    /ARCH_R20_REQUIRED_FOR_IMP036E_LOCK:\s*NO/,
+    /NEW_PERMISSION:\s*NO/,
+    /NEW_ROLE:\s*NO/,
+    /NEW_SCOPE_MODEL:\s*NO/,
+    /IMP036E_STORE_OVERVIEW\s*=\s*PERMISSION_GATED_COMPOSITION/,
+    /\/api\/operations\/v1\/outlets\/\{outletId\}\//,
+    /\bD-372\b/,
+    /\bD-373\b/,
+  ];
+  if (required.some((pattern) => !pattern.test(text))) {
+    return { ok: false, code: "IMP036E_CAPABILITY_LOCK", message: "IMP-036E artifact must record the complete ARCHITECTURE_LOCKED checkpoint" };
+  }
+  const forbidden = [
+    /"architectureLock":\s*"NOT_LOCKED"/,
+    /"implementationAuthorized":\s*true/,
+    /IMP-036E_ARCHITECTURE_LOCKED:\s*NO/,
+    /IMP-036E_IMPLEMENTATION_AUTHORIZED:\s*YES/,
+    /IMP-036E_STARTED:\s*YES/,
+    /IMP-036E_IMPLEMENTATION_COMPLETE:\s*YES/,
+    /IMP-036E_ACCEPTED:\s*YES/,
+    /\|\s*D-374\s*\|/,
+    /###\s*D-374\b/,
+  ];
+  if (forbidden.some((pattern) => pattern.test(text))) {
+    return { ok: false, code: "IMP036E_CAPABILITY_LOCK", message: "IMP-036E artifact must not authorize implementation or create D-374" };
   }
   return { ok: true };
 }
@@ -9356,7 +9487,8 @@ function checkImp028ArchitectureLock(roadmap, state, architecture, decision) {
         isImp036dImplementationStartCheckpoint(roadmap, state) ||
         isImp036dImplementationCompletionCheckpoint(roadmap, state) ||
         isImp036dAcceptanceCheckpoint(roadmap, state) ||
-        isImp036eArchitectureActivationCheckpoint(roadmap, state)
+        isImp036eArchitectureActivationCheckpoint(roadmap, state) ||
+        isImp036eArchitectureLockCheckpoint(roadmap, state)
         ? "ARCH-R19"
       : isArchR17GovernanceCheckpoint(roadmap, state)
         ? "ARCH-R17"
@@ -9437,7 +9569,8 @@ function checkImp028ArchitectureLock(roadmap, state, architecture, decision) {
         isImp036dImplementationStartCheckpoint(roadmap, state) ||
         isImp036dImplementationCompletionCheckpoint(roadmap, state) ||
         isImp036dAcceptanceCheckpoint(roadmap, state) ||
-        isImp036eArchitectureActivationCheckpoint(roadmap, state)
+        isImp036eArchitectureActivationCheckpoint(roadmap, state) ||
+        isImp036eArchitectureLockCheckpoint(roadmap, state)
         ? "DR-15"
       : "DR-13";
     if (decision.meta.decisionRegisterVersion !== expectedDecisionRegisterVersion) {
@@ -13860,6 +13993,244 @@ function checkImp036dAcceptance(roadmap, state, architecture, decision) {
   else note(`IMP-036D COMPLETE_AND_ACCEPTED (${artifactRel})`);
 }
 
+
+function checkImp036eArchitectureLock(roadmap, state, architecture, decision) {
+  if (!isImp036eArchitectureLockCheckpoint(roadmap, state)) return;
+
+  const currentRoadmapSection = roadmap.text.slice(roadmap.text.indexOf("## 2."), roadmap.text.indexOf("## 3."));
+  const currentStateAcceptance = (() => {
+    const start = state.text.indexOf("## 5. Acceptance Position");
+    const end = state.text.indexOf("\n## ", start + 1);
+    return start === -1 ? "" : state.text.slice(start, end === -1 ? undefined : end);
+  })();
+  const currentStateActivity = (() => {
+    const start = state.text.indexOf("## 2. Current Work Position");
+    const end = state.text.indexOf("\n## ", start + 1);
+    return start === -1 ? "" : state.text.slice(start, end === -1 ? undefined : end);
+  })();
+  const futureSection = roadmap.text.split("## 5. Future GTM Slices")[1]?.split("## 6.")[0] || "";
+  const artifactRel = "docs/platform/capabilities/IMP-036E-store-operations-management.md";
+  const artifact = resolveExactRelativeFile(artifactRel);
+  const artifactText = artifact ? readFileSync(artifact, "utf8") : "";
+  const artifactValidation = evaluateImp036eArchitectureLockArtifact(artifactText);
+  const artifactValid = artifact !== null && artifactValidation.ok;
+
+  const experienceRel =
+    "docs/platform/experience/enterprise-experience/IMP-036E-store-operations-management.md";
+  const experience = resolveExactRelativeFile(experienceRel);
+  const experienceText = experience ? readFileSync(experience, "utf8") : "";
+
+  const requiredTokens = [
+    [currentRoadmapSection, /IMP-036E:\s*ARCHITECTURE_LOCKED/, "ROADMAP must record IMP-036E architecture locked"],
+    [currentRoadmapSection, /IMP-036E_ARCHITECTURE:\s*LOCKED/, "ROADMAP must record IMP-036E architecture LOCKED"],
+    [currentRoadmapSection, /IMP-036E_ARCHITECTURE_LOCKED:\s*YES/, "ROADMAP must record IMP-036E architecture lock YES"],
+    [currentRoadmapSection, /IMP-036E_IMPLEMENTATION_AUTHORIZED:\s*NO/, "ROADMAP must record IMP-036E implementation not authorized"],
+    [currentRoadmapSection, /IMP-036E_STARTED:\s*NO/, "ROADMAP must record IMP-036E not started"],
+    [currentRoadmapSection, /IMP-036E_IMPLEMENTATION_COMPLETE:\s*NO/, "ROADMAP must record IMP-036E incomplete"],
+    [currentRoadmapSection, /IMP-036E_ACCEPTED:\s*NO/, "ROADMAP must record IMP-036E unaccepted"],
+    [currentRoadmapSection, /IMP-036E_FOUNDER_UAT_REQUIRED:\s*YES/, "ROADMAP must record IMP-036E Founder UAT required"],
+    [currentRoadmapSection, /IMP036E_ASSORTMENT_AUTHORITY:\s*BRAND/, "ROADMAP must record Founder-A Assortment BRAND authority"],
+    [currentRoadmapSection, /OUTLET_MANAGER_OUTLET_SCOPE_ASSORTMENT_MANAGE:\s*NO/, "ROADMAP must record outlet-manager assortment manage NO"],
+    [currentRoadmapSection, /OUTLET_EFFECTIVE_ASSORTMENT_PRESENTATION:\s*AUTHORIZED_READ_OR_ESCALATE/, "ROADMAP must record assortment presentation rule"],
+    [currentRoadmapSection, /IMP036E_BULK_AVAILABILITY:\s*DEFERRED/, "ROADMAP must defer bulk availability"],
+    [currentRoadmapSection, /SERVICEABILITY_MODEL:\s*OUTLET_DISTANCE_SERVICEABILITY_V1/, "ROADMAP must record OUTLET_DISTANCE_SERVICEABILITY_V1"],
+    [currentRoadmapSection, /SERVICEABILITY_COORDINATE_AUTHORITY:\s*YES/, "ROADMAP must record coordinate Serviceability authority"],
+    [currentRoadmapSection, /SERVICEABILITY_POSTAL_PIN_RUNTIME_AUTHORITY:\s*NO/, "ROADMAP must record postal/PIN runtime authority NO"],
+    [currentRoadmapSection, /SERVICEABILITY_MAP_IS_PROJECTION_ONLY:\s*YES/, "ROADMAP must record map projection-only"],
+    [currentRoadmapSection, /IMP036E_SERVICEABILITY_ROUTING_PRIORITY_UI:\s*HIDDEN_PREREQUISITE/, "ROADMAP must hide routing-priority Store UI"],
+    [currentRoadmapSection, /IMP036E_SESSION_CAPABILITY_PROJECTION_EXTENSION:\s*EXISTING_PERMISSION_KEYS_ONLY/, "ROADMAP must record session projection extension rule"],
+    [currentRoadmapSection, /SCHEMA_CHANGE_REQUIRED:\s*NO/, "ROADMAP must record SCHEMA_CHANGE_REQUIRED: NO"],
+    [currentRoadmapSection, /NEW_PERMISSION:\s*NO/, "ROADMAP must record NEW_PERMISSION: NO"],
+    [currentRoadmapSection, /NEW_ROLE:\s*NO/, "ROADMAP must record NEW_ROLE: NO"],
+    [currentRoadmapSection, /NEW_SCOPE_MODEL:\s*NO/, "ROADMAP must record NEW_SCOPE_MODEL: NO"],
+    [currentRoadmapSection, /D374_REQUIRED_FOR_IMP036E_LOCK:\s*NO/, "ROADMAP must record D374 not required"],
+    [currentRoadmapSection, /D-374_CREATED:\s*NO/, "ROADMAP must record D-374_CREATED: NO"],
+    [currentRoadmapSection, /ARCH_R20_REQUIRED_FOR_IMP036E_LOCK:\s*NO/, "ROADMAP must record ARCH-R20 not required"],
+    [currentRoadmapSection, /IMP-036F:\s*PLANNED \/ NOT_ACTIVATED/, "ROADMAP must keep IMP-036F PLANNED / NOT_ACTIVATED"],
+    [currentRoadmapSection, /IMP-036D:\s*COMPLETE_AND_ACCEPTED/, "ROADMAP must preserve IMP-036D COMPLETE_AND_ACCEPTED"],
+    [currentStateAcceptance, /IMP-036E:\s*ARCHITECTURE_LOCKED/, "STATE must record IMP-036E architecture locked"],
+    [currentStateAcceptance, /IMP-036E_ARCHITECTURE:\s*LOCKED/, "STATE must record IMP-036E architecture LOCKED"],
+    [currentStateAcceptance, /IMP-036E_ARCHITECTURE_LOCKED:\s*YES/, "STATE must record IMP-036E architecture lock YES"],
+    [currentStateAcceptance, /IMP-036E_IMPLEMENTATION_AUTHORIZED:\s*NO/, "STATE must record IMP-036E implementation not authorized"],
+    [currentStateAcceptance, /IMP-036E_STARTED:\s*NO/, "STATE must record IMP-036E not started"],
+    [currentStateAcceptance, /IMP-036E_IMPLEMENTATION_COMPLETE:\s*NO/, "STATE must record IMP-036E incomplete"],
+    [currentStateAcceptance, /IMP-036E_ACCEPTED:\s*NO/, "STATE must record IMP-036E unaccepted"],
+    [currentStateAcceptance, /IMP-036E_FOUNDER_UAT_REQUIRED:\s*YES/, "STATE must record IMP-036E Founder UAT required"],
+    [currentStateAcceptance, /IMP036E_ASSORTMENT_AUTHORITY:\s*BRAND/, "STATE must record Founder-A Assortment BRAND authority"],
+    [currentStateAcceptance, /OUTLET_MANAGER_OUTLET_SCOPE_ASSORTMENT_MANAGE:\s*NO/, "STATE must record outlet-manager assortment manage NO"],
+    [currentStateAcceptance, /OUTLET_EFFECTIVE_ASSORTMENT_PRESENTATION:\s*AUTHORIZED_READ_OR_ESCALATE/, "STATE must record assortment presentation rule"],
+    [currentStateAcceptance, /IMP036E_BULK_AVAILABILITY:\s*DEFERRED/, "STATE must defer bulk availability"],
+    [currentStateAcceptance, /SERVICEABILITY_MODEL:\s*OUTLET_DISTANCE_SERVICEABILITY_V1/, "STATE must record OUTLET_DISTANCE_SERVICEABILITY_V1"],
+    [currentStateAcceptance, /SERVICEABILITY_COORDINATE_AUTHORITY:\s*YES/, "STATE must record coordinate Serviceability authority"],
+    [currentStateAcceptance, /SERVICEABILITY_POSTAL_PIN_RUNTIME_AUTHORITY:\s*NO/, "STATE must record postal/PIN runtime authority NO"],
+    [currentStateAcceptance, /SERVICEABILITY_MAP_IS_PROJECTION_ONLY:\s*YES/, "STATE must record map projection-only"],
+    [currentStateAcceptance, /IMP036E_SERVICEABILITY_ROUTING_PRIORITY_UI:\s*HIDDEN_PREREQUISITE/, "STATE must hide routing-priority Store UI"],
+    [currentStateAcceptance, /IMP036E_SESSION_CAPABILITY_PROJECTION_EXTENSION:\s*EXISTING_PERMISSION_KEYS_ONLY/, "STATE must record session projection extension rule"],
+    [currentStateAcceptance, /SCHEMA_CHANGE_REQUIRED:\s*NO/, "STATE must record SCHEMA_CHANGE_REQUIRED: NO"],
+    [currentStateAcceptance, /NEW_PERMISSION:\s*NO/, "STATE must record NEW_PERMISSION: NO"],
+    [currentStateAcceptance, /NEW_ROLE:\s*NO/, "STATE must record NEW_ROLE: NO"],
+    [currentStateAcceptance, /NEW_SCOPE_MODEL:\s*NO/, "STATE must record NEW_SCOPE_MODEL: NO"],
+    [currentStateAcceptance, /D374_REQUIRED_FOR_IMP036E_LOCK:\s*NO/, "STATE must record D374 not required"],
+    [currentStateAcceptance, /D-374_CREATED:\s*NO/, "STATE must record D-374_CREATED: NO"],
+    [currentStateAcceptance, /ARCH_R20_REQUIRED_FOR_IMP036E_LOCK:\s*NO/, "STATE must record ARCH-R20 not required"],
+    [currentStateAcceptance, /IMP-036F:\s*PLANNED \/ NOT_ACTIVATED/, "STATE must keep IMP-036F PLANNED / NOT_ACTIVATED"],
+    [currentStateAcceptance, /IMP-036D:\s*COMPLETE_AND_ACCEPTED/, "STATE must preserve IMP-036D COMPLETE_AND_ACCEPTED"],
+  ];
+  for (const [text, pattern, message] of requiredTokens) {
+    if (!pattern.test(text)) fail("IMP036E_ARCHITECTURE_LOCK", message);
+  }
+
+  const premature = [
+    /IMP-036E_IMPLEMENTATION_AUTHORIZED:\s*YES/,
+    /IMP-036E_STARTED:\s*YES/,
+    /IMP-036E_IMPLEMENTATION_COMPLETE:\s*YES/,
+    /IMP-036E_ACCEPTED:\s*YES/,
+    /IMP-036F_IMPLEMENTATION_AUTHORIZED:\s*YES/,
+    /IMP-036F_STARTED:\s*YES/,
+    /IMP-036F:\s*ARCHITECTURE_IN_PROGRESS/,
+    /IMP-036F:\s*ARCHITECTURE_LOCKED/,
+  ];
+  for (const text of [currentRoadmapSection, currentStateAcceptance, currentStateActivity]) {
+    if (premature.some((pattern) => pattern.test(text))) {
+      fail(
+        "IMP036E_PREMATURE_PROGRESSION",
+        "IMP-036E lock must not authorize/start implementation, accept the slice, or activate IMP-036F",
+      );
+      break;
+    }
+  }
+
+  if (
+    !/IMP-036E\s*\|\s*Store Operations Management\s*\|\s*ARCHITECTURE_LOCKED/.test(
+      futureSection,
+    )
+  ) {
+    fail(
+      "IMP036E_ROADMAP_LIFECYCLE",
+      "ROADMAP future ledger must list IMP-036E Store Operations Management as ARCHITECTURE_LOCKED",
+    );
+  }
+  if (!/IMP-036F\s*\|\s*Catalog, Menu, Pricing & Promotions Management\s*\|\s*PLANNED/.test(futureSection)) {
+    fail("IMP036F_ROADMAP_NOT_PLANNED", "ROADMAP future ledger must keep IMP-036F Catalog, Menu, Pricing & Promotions Management PLANNED");
+  }
+  if (/\|\s*D-374\s*\|/.test(decision?.text ?? "") || /###\s*D-374\b/.test(decision?.text ?? "")) {
+    fail("IMP036E_D374_CREATED", "D-374 must not be created during IMP-036E architecture lock");
+  }
+  if (/architectureVersion":\s*"ARCH-R20"/.test(architecture?.text ?? "") || architecture?.meta?.architectureVersion === "ARCH-R20") {
+    fail("IMP036E_ARCH_R20_CREATED", "ARCH-R20 must not be created during IMP-036E architecture lock");
+  }
+  if (!artifact) {
+    fail("IMP036E_CAPABILITY_ARTIFACT", `Missing IMP-036E capability artifact at ${artifactRel}`);
+  } else if (!artifactValidation.ok) {
+    fail(artifactValidation.code, artifactValidation.message);
+  }
+  if (!experience) {
+    fail("IMP036E_EXPERIENCE_MISSING", `Missing IMP-036E experience plan at ${experienceRel}`);
+  } else {
+    const experienceRequired = [
+      /Status:\s*ARCHITECTURE_LOCKED SUPPORTING EXPERIENCE CONTRACT/,
+      /Lifecycle:\s*ARCHITECTURE_LOCKED/,
+      /Architecture:\s*LOCKED/,
+      /Implementation:\s*NOT_AUTHORIZED \/ NOT_STARTED/,
+      /Founder UAT required:\s*YES/,
+      /IMP-036E_ARCHITECTURE_LOCKED:\s*YES/,
+      /IMP-036E_IMPLEMENTATION_AUTHORIZED:\s*NO/,
+      /IMP-036E_STARTED:\s*NO/,
+      /IMP-036E_IMPLEMENTATION_COMPLETE:\s*NO/,
+      /IMP-036E_ACCEPTED:\s*NO/,
+      /IMP-036E_FOUNDER_UAT_REQUIRED:\s*YES/,
+      /IMP036E_ASSORTMENT_AUTHORITY\s*=\s*BRAND/,
+      /OUTLET_MANAGER_OUTLET_SCOPE_ASSORTMENT_MANAGE\s*=\s*NO/,
+      /OUTLET_EFFECTIVE_ASSORTMENT_PRESENTATION\s*=\s*AUTHORIZED_READ_OR_ESCALATE/,
+      /OUTLET_DISTANCE_SERVICEABILITY_V1/,
+      /SERVICEABILITY_COORDINATE_AUTHORITY\s*=\s*YES/,
+      /SERVICEABILITY_POSTAL_PIN_RUNTIME_AUTHORITY\s*=\s*NO/,
+      /SERVICEABILITY_MAP_IS_PROJECTION_ONLY\s*=\s*YES/,
+      /IMP036E_SERVICEABILITY_ROUTING_PRIORITY_UI\s*=\s*HIDDEN_PREREQUISITE/,
+      /IMP036E_SESSION_CAPABILITY_PROJECTION_EXTENSION\s*=\s*EXISTING_PERMISSION_KEYS_ONLY/,
+      /SCHEMA_CHANGE_REQUIRED\s*=\s*NO/,
+      /D374_REQUIRED_FOR_IMP036E_LOCK\s*=\s*NO/,
+      /D-374_CREATED:\s*NO/,
+      /ARCH_R20_REQUIRED_FOR_IMP036E_LOCK\s*=\s*NO/,
+      /capabilities\/IMP-036E-store-operations-management\.md/,
+    ];
+    if (experienceRequired.some((pattern) => !pattern.test(experienceText))) {
+      fail(
+        "IMP036E_EXPERIENCE_LOCK",
+        "IMP-036E experience contract must record architecture-locked decisions and Founder-A markers",
+      );
+    }
+  }
+
+  if (
+    state.meta.acceptedThrough !== "IMP-036D" ||
+    state.meta.currentProductSlice !== "IMP-036E" ||
+    state.meta.pendingAcceptance !== "NONE" ||
+    state.meta.nextProductSlice !== "IMP-036F"
+  ) {
+    fail(
+      "IMP036E_STATE_POSITION",
+      "STATE must record acceptedThrough IMP-036D, currentProductSlice IMP-036E, nextProductSlice IMP-036F, pendingAcceptance NONE",
+    );
+  }
+  if (!/IMP-036E ARCHITECTURE_LOCKED/.test(currentStateActivity)) {
+    fail("IMP036E_STATE_ACTIVITY", "STATE current governance activity must record IMP-036E ARCHITECTURE_LOCKED");
+  }
+  if (
+    !/IMP-036D:\s*COMPLETE_AND_ACCEPTED/.test(currentStateAcceptance) ||
+    /IMP-036D_ACCEPTED:\s*NO/.test(currentStateAcceptance)
+  ) {
+    fail("IMP036E_IMP036D_REGRESSION", "IMP-036E lock must not regress or reopen IMP-036D acceptance");
+  }
+  if (architecture?.meta.architectureVersion !== "ARCH-R19") {
+    fail("IMP036E_ARCH_VERSION", "ARCHITECTURE must be ARCH-R19 during IMP-036E architecture lock");
+  }
+  if (decision?.meta.decisionRegisterVersion !== "DR-15") {
+    fail("IMP036E_DR_VERSION", "decision register must be DR-15 during IMP-036E architecture lock");
+  }
+
+  const checkpoint = evaluateImp036eArchitectureLockCheckpoint({
+    roadmapVersion: roadmap.meta.roadmapVersion,
+    stateVersion: state.meta.stateVersion,
+    acceptedThrough: state.meta.acceptedThrough,
+    currentProductSlice: state.meta.currentProductSlice,
+    nextProductSlice: state.meta.nextProductSlice,
+    pendingAcceptance: state.meta.pendingAcceptance,
+    imp036d: /IMP-036D:\s*COMPLETE_AND_ACCEPTED/.test(currentRoadmapSection) ? "COMPLETE_AND_ACCEPTED" : "",
+    imp036e: /IMP-036E:\s*ARCHITECTURE_LOCKED/.test(currentRoadmapSection) ? "ARCHITECTURE_LOCKED" : "",
+    architecture: /IMP-036E_ARCHITECTURE:\s*LOCKED/.test(currentRoadmapSection) ? "LOCKED" : "",
+    architectureLocked: /IMP-036E_ARCHITECTURE_LOCKED:\s*YES/.test(currentRoadmapSection) ? "YES" : "",
+    implementation: /IMP-036E_IMPLEMENTATION_AUTHORIZED:\s*NO/.test(currentRoadmapSection) &&
+      /IMP-036E_STARTED:\s*NO/.test(currentRoadmapSection)
+      ? "NOT_AUTHORIZED / NOT_STARTED"
+      : "",
+    implementationAuthorized: /IMP-036E_IMPLEMENTATION_AUTHORIZED:\s*NO/.test(currentRoadmapSection) ? "NO" : "",
+    started: /IMP-036E_STARTED:\s*NO/.test(currentRoadmapSection) ? "NO" : "",
+    implementationComplete: /IMP-036E_IMPLEMENTATION_COMPLETE:\s*NO/.test(currentRoadmapSection) ? "NO" : "",
+    accepted: /IMP-036E_ACCEPTED:\s*NO/.test(currentRoadmapSection) ? "NO" : "",
+    founderUatRequired: /IMP-036E_FOUNDER_UAT_REQUIRED:\s*YES/.test(currentRoadmapSection) ? "YES" : "",
+    imp036f: /IMP-036F:\s*PLANNED/.test(currentRoadmapSection) ? "PLANNED" : "",
+    roadmapLifecycle: /IMP-036E:\s*ARCHITECTURE_LOCKED/.test(currentRoadmapSection)
+      ? "ARCHITECTURE_LOCKED"
+      : "",
+    stateLifecycle: /IMP-036E:\s*ARCHITECTURE_LOCKED/.test(currentStateAcceptance)
+      ? "ARCHITECTURE_LOCKED"
+      : "",
+    architectureVersion: architecture?.meta.architectureVersion,
+    decisionRegisterVersion: decision?.meta.decisionRegisterVersion,
+    schemaChangeRequired: /SCHEMA_CHANGE_REQUIRED:\s*NO/.test(currentRoadmapSection) ? "NO" : "",
+    d374Exists: /\|\s*D-374\s*\|/.test(decision?.text ?? "") || /###\s*D-374\b/.test(decision?.text ?? ""),
+    archR20Exists: architecture?.meta?.architectureVersion === "ARCH-R20" ||
+      /"architectureVersion":\s*"ARCH-R20"/.test(architecture?.text ?? ""),
+    capabilityArtifactExists: Boolean(artifact),
+    artifactValid,
+    imp036dAccepted: /IMP-036D:\s*COMPLETE_AND_ACCEPTED/.test(currentStateAcceptance) &&
+      /IMP-036D_ACCEPTED:\s*YES/.test(currentStateAcceptance),
+  });
+  if (!checkpoint.ok) fail(checkpoint.code, checkpoint.message);
+  else note(`IMP-036E capability architecture locked (${artifactRel})`);
+}
+
 function checkImp036eArchitectureActivation(roadmap, state, architecture, decision) {
   if (!isImp036eArchitectureActivationCheckpoint(roadmap, state)) return;
 
@@ -14997,7 +15368,8 @@ export function runProjectConsistency() {
       !isImp036dImplementationStartCheckpoint(roadmap, state) &&
       !isImp036dImplementationCompletionCheckpoint(roadmap, state) &&
       !isImp036dAcceptanceCheckpoint(roadmap, state) &&
-      !isImp036eArchitectureActivationCheckpoint(roadmap, state)
+      !isImp036eArchitectureActivationCheckpoint(roadmap, state) &&
+      !isImp036eArchitectureLockCheckpoint(roadmap, state)
     ) {
       fail("UNSUPPORTED_GOVERNANCE_CHECKPOINT", "Governance revisions at or beyond GTM-R66 / STATE-R64 require an exact supported canonical checkpoint");
     }
@@ -15065,6 +15437,7 @@ export function runProjectConsistency() {
   checkImp036dImplementationCompletion(roadmap, state, architecture, decision);
   checkImp036dAcceptance(roadmap, state, architecture, decision);
   checkImp036eArchitectureActivation(roadmap, state, architecture, decision);
+  checkImp036eArchitectureLock(roadmap, state, architecture, decision);
   checkTechnicalInventory();
   checkStaticWeb();
   checkAgentsPointer();

@@ -2,7 +2,7 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R107",
+  "stateVersion": "STATE-R108",
   "acceptedThrough": "IMP-036D",
   "currentProductSlice": "IMP-036E",
   "nextProductSlice": "IMP-036F",
@@ -33,7 +33,8 @@ Pending Acceptance:             NONE
 Current Product Slice:          IMP-036E — Store Operations Management
 Next Product Slice:             IMP-036F — Catalog, Menu, Pricing & Promotions Management
 Current Governance Activity:    IMP-036D COMPLETE_AND_ACCEPTED;
-                              IMP-036E ARCHITECTURE_IN_PROGRESS;
+                              IMP-036E ARCHITECTURE_LOCKED;
+                              implementation NOT_AUTHORIZED / NOT_STARTED;
                               IMP-036F/G and IMP-037 remain PLANNED / NOT_ACTIVATED /
                               NOT_AUTHORIZED / NOT_STARTED.
 Governance Health:              ALIGNED
@@ -356,6 +357,27 @@ STATE-R36 record IMP-028B canonical activation without changing decision registe
 architecture. GTM-R39 / STATE-R37 record IMP-028B architecture lock and implementation
 authorization without changing decision register or global architecture.
 
+
+STATE-R108 records formal architecture lock of **IMP-036E — Store Operations Management**.
+IMP-036E is `ARCHITECTURE_LOCKED`; architecture is `LOCKED` (`IMP-036E_ARCHITECTURE_LOCKED: YES`);
+implementation remains `NOT_AUTHORIZED` / `NOT_STARTED` (`IMP-036E_IMPLEMENTATION_AUTHORIZED: NO`;
+`IMP-036E_STARTED: NO`; `IMP-036E_IMPLEMENTATION_COMPLETE: NO`; `IMP-036E_ACCEPTED: NO`). Locked
+capability architecture:
+[`capabilities/IMP-036E-store-operations-management.md`](./capabilities/IMP-036E-store-operations-management.md).
+`acceptedThrough` remains IMP-036D; `pendingAcceptance` remains NONE; `currentProductSlice` remains
+IMP-036E; `nextProductSlice` remains IMP-036F, which remains `PLANNED` / `NOT_ACTIVATED` /
+`NOT_AUTHORIZED` / `NOT_STARTED`. Founder Option A locks Assortment as Brand authority
+(`IMP036E_ASSORTMENT_AUTHORITY: BRAND`; `OUTLET_MANAGER_OUTLET_SCOPE_ASSORTMENT_MANAGE: NO`;
+`OUTLET_EFFECTIVE_ASSORTMENT_PRESENTATION: AUTHORIZED_READ_OR_ESCALATE`). Store Overview is
+permission-gated composition; bulk availability deferred; Serviceability remains
+`OUTLET_DISTANCE_SERVICEABILITY_V1` with routing-priority Store UI hidden; Team reuses Admin façade;
+bounded Operations transport for Availability / Operating / Hours / Serviceability;
+`SCHEMA_CHANGE_REQUIRED: NO`; `NEW_PERMISSION: NO`; `NEW_ROLE: NO`; `NEW_SCOPE_MODEL: NO`;
+`D374_REQUIRED_FOR_IMP036E_LOCK: NO`; `D-374_CREATED: NO`; `ARCH_R20_REQUIRED_FOR_IMP036E_LOCK: NO`;
+`ARCH_R20_CREATED: NO`. ARCH-R19 and DR-15 remain unchanged. Founder UAT remains required eventually
+(`IMP-036E_FOUNDER_UAT_REQUIRED: YES`). Does **not** authorize or start implementation; does **not**
+activate IMP-036F. IMP-036D remains `COMPLETE_AND_ACCEPTED` and is not reopened. Supersedes
+STATE-R107 for the current product-slice architecture-lock position.
 
 STATE-R107 records explicit Founder architecture activation of **IMP-036E — Store Operations
 Management** as `currentProductSlice` for architecture work only. IMP-036E is
@@ -1856,20 +1878,38 @@ FRANCHISE_IS_BUSINESS_PERSONA: YES
 NEW_FRANCHISE_ROLE: NO
 NEW_FRANCHISE_SCOPE_MODEL: NO
 ARBITRARY_MULTI_OUTLET_FRANCHISE_RBAC: DEFERRED
-IMP-036E: ARCHITECTURE_IN_PROGRESS
-IMP-036E_ARCHITECTURE: NOT_LOCKED
-IMP-036E_ARCHITECTURE_LOCKED: NO
+IMP-036E: ARCHITECTURE_LOCKED
+IMP-036E_ARCHITECTURE: LOCKED
+IMP-036E_ARCHITECTURE_LOCKED: YES
 IMP-036E_IMPLEMENTATION_AUTHORIZED: NO
 IMP-036E_STARTED: NO
 IMP-036E_IMPLEMENTATION_COMPLETE: NO
 IMP-036E_ACCEPTED: NO
 IMP-036E_FOUNDER_UAT_REQUIRED: YES
+IMP036E_ASSORTMENT_AUTHORITY: BRAND
+OUTLET_MANAGER_OUTLET_SCOPE_ASSORTMENT_MANAGE: NO
+OUTLET_MANAGER_OUTLET_SCOPE_ASSORTMENT_READ_AS_BRAND_AUTHORITY: NO
+OUTLET_EFFECTIVE_ASSORTMENT_PRESENTATION: AUTHORIZED_READ_OR_ESCALATE
+IMP036E_RBAC_CATALOG_RECONCILIATION_FOLLOW_UP: YES
+IMP036E_LOCK_BLOCKED_BY_CATALOG_RECONCILIATION: NO
+IMP036E_STORE_OVERVIEW: PERMISSION_GATED_COMPOSITION
+IMP036E_BULK_AVAILABILITY: DEFERRED
 SERVICEABILITY_MODEL: OUTLET_DISTANCE_SERVICEABILITY_V1
 SERVICEABILITY_COORDINATE_AUTHORITY: YES
 SERVICEABILITY_POSTAL_PIN_RUNTIME_AUTHORITY: NO
 SERVICEABILITY_POSTAL_PIN_METADATA_ONLY: YES
 SERVICEABILITY_MAP_IS_PROJECTION_ONLY: YES
+IMP036E_SERVICEABILITY_ROUTING_PRIORITY_UI: HIDDEN_PREREQUISITE
+IMP036E_SERVICEABILITY_MAP: OPTIONAL_PROJECTION_ONLY
+IMP036E_SESSION_CAPABILITY_PROJECTION_EXTENSION: EXISTING_PERMISSION_KEYS_ONLY
+SCHEMA_CHANGE_REQUIRED: NO
+NEW_PERMISSION: NO
+NEW_ROLE: NO
+NEW_SCOPE_MODEL: NO
+D374_REQUIRED_FOR_IMP036E_LOCK: NO
+D-374_CREATED: NO
 D374_CREATED: NO
+ARCH_R20_REQUIRED_FOR_IMP036E_LOCK: NO
 ARCH_R20_CREATED: NO
 IMP-036F: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
 IMP-036G: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
