@@ -3,11 +3,11 @@ Status: ARCHITECTURE_LOCKED SUPPORTING EXPERIENCE CONTRACT
 Capability: IMP-036E — Store Operations Management
 Lifecycle: ARCHITECTURE_LOCKED
 Architecture: LOCKED
-Implementation: NOT_AUTHORIZED / NOT_STARTED
+Implementation: AUTHORIZED / NOT_STARTED
 Founder UAT required: YES
 IMP-036E_ARCHITECTURE_WORK_AUTHORIZED: YES
 IMP-036E_ARCHITECTURE_LOCKED: YES
-IMP-036E_IMPLEMENTATION_AUTHORIZED: NO
+IMP-036E_IMPLEMENTATION_AUTHORIZED: YES
 IMP-036E_STARTED: NO
 IMP-036E_IMPLEMENTATION_COMPLETE: NO
 IMP-036E_ACCEPTED: NO
@@ -33,12 +33,12 @@ locked capability architecture at
 [`../../capabilities/IMP-036E-store-operations-management.md`](../../capabilities/IMP-036E-store-operations-management.md).
 The capability artifact is the sole CURRENT IMP-036E capability architecture authority.
 
-## Architecture lock status (GTM-R110 / STATE-R108)
+## Architecture lock status (GTM-R111 / STATE-R109)
 
 ```text
 IMP-036E_ARCHITECTURE_WORK_AUTHORIZED = YES
 IMP-036E_ARCHITECTURE_LOCKED = YES
-IMP-036E_IMPLEMENTATION_AUTHORIZED = NO
+IMP-036E_IMPLEMENTATION_AUTHORIZED = YES
 IMP-036E_STARTED = NO
 IMP-036E_IMPLEMENTATION_COMPLETE = NO
 IMP-036E_ACCEPTED = NO
@@ -48,6 +48,9 @@ D-374_CREATED = NO
 ARCH_R20_CREATED = NO
 ARCH_R20_REQUIRED = NO
 ```
+
+Founder implementation authorization recorded at GTM-R111 / STATE-R109. Authorization does not
+start implementation.
 
 ## Serviceability authority alignment (accepted IMP-036B — not a new decision)
 
