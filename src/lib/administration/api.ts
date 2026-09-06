@@ -15,6 +15,39 @@ export function listAdminMemberships() {
   return adminRequest<{ ok: true; items: unknown[] }>("/api/admin/v1/memberships");
 }
 
+/** Authorized outlets for Store outlet selection (IMP-036E). */
+export function listAdminOutlets() {
+  return adminRequest<{ ok: true; items: AdministrationResource[] }>(
+    "/api/admin/v1/resources/outlets",
+  );
+}
+
+/** Outlet-narrowed membership list (filter after authorization; outletId is not authority). */
+export function listAdminMembershipsFiltered(outletId: string) {
+  return adminRequest<{ ok: true; items: AdministrationMembership[] }>(
+    "/api/admin/v1/memberships",
+    { query: { outletId } },
+  );
+}
+
+export function createAdminMembership(
+  body: Readonly<{
+    workforceUserId?: string;
+    workforceEmail?: string;
+    scopeType: string;
+    brandId?: string;
+    organizationId?: string;
+    territoryId?: string;
+    outletId?: string;
+    status?: string;
+  }>,
+) {
+  return adminRequest<{ ok: true; membership: AdministrationMembership }>(
+    "/api/admin/v1/memberships",
+    { method: "POST", body },
+  );
+}
+
 export function listAdminBrands() {
   return adminRequest<{ ok: true; items: unknown[] }>("/api/admin/v1/resources/brands");
 }
@@ -81,6 +114,7 @@ export type AdministrationResource = Readonly<{
 export type AdministrationMembership = Readonly<{
   id: string;
   workforceUserId: string;
+  memberLabel: string;
   scopeType: string;
   status: string;
   brandId: string | null;

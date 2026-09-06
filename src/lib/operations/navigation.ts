@@ -41,7 +41,16 @@ export const OPERATIONS_NAV_ITEMS: readonly OperationsNavItem[] = [
     id: "store",
     label: "Store",
     href: "/workforce/operations/store/",
-    requiredAnyPermission: ["outlet.read", "order.read"],
+    // Coarse Store discovery only — resource-scoped caps gate section controls (IMP-036E).
+    requiredAnyPermission: [
+      "outlet.read",
+      "availability.read",
+      "outlet.operating_state.read",
+      "outlet.operating_schedule.read",
+      "serviceability.read",
+      "assortment.read",
+      "access.membership.read",
+    ],
   },
   {
     id: "operational-status",

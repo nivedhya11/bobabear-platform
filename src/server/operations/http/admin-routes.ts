@@ -147,7 +147,12 @@ export async function routeAdminRequest(
 
   try {
     if (url.search !== "" && route.kind !== "effective-permissions") {
-      throw new AdministrationError("ADMIN_REQUEST_INVALID", "Query parameters are unsupported for this route.");
+      // Memberships collection GET may filter by outletId (IMP-036E Store Team).
+      const membershipsCollectionGet =
+        route.kind === "memberships" && !route.id && method === "GET";
+      if (!membershipsCollectionGet) {
+        throw new AdministrationError("ADMIN_REQUEST_INVALID", "Query parameters are unsupported for this route.");
+      }
     }
     if (isMutation(method)) {
       if (!checkTrustedOrigin(req.headers, deps.trustedOrigin).ok) {
@@ -211,7 +216,27 @@ export async function routeAdminRequest(
 
     if (route.kind === "memberships") {
       if (!route.id && method === "GET") {
-        const items = dateJson(await adminListMemberships(deps.persistence, principal));
+        const query = url.search !== "" ? queryObject(url) : {};
+        const allowedKeys = new Set(["outletId"]);
+        for (const key of Object.keys(query)) {
+          if (!allowedKeys.has(key)) {
+            throw new AdministrationError(
+              "ADMIN_REQUEST_INVALID",
+              "Unknown query parameter.",
+              { field: key },
+            );
+          }
+        }
+        const filter =
+          typeof query.outletId === "string" && query.outletId.length > 0
+            ? { outletId: query.outletId }
+            : undefined;
+        if (query.outletId !== undefined && filter === undefined) {
+          throw new AdministrationError("ADMIN_REQUEST_INVALID", "outletId must be a non-empty string.", {
+            field: "outletId",
+          });
+        }
+        const items = dateJson(await adminListMemberships(deps.persistence, principal, filter));
         sendJson(res, { ok: true, items }, { status: 200, requestId });
         return { operation, safeOutcomeCode: "OK", httpStatus: 200 };
       }

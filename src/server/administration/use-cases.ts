@@ -6,7 +6,7 @@
  */
 import "server-only";
 
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 
 import {
   isRoleKey,
@@ -14,8 +14,9 @@ import {
   type PermissionKey,
   type RoleKey,
 } from "../../shared/access-control";
+import { normalizeWorkforceEmail } from "../../shared/workforce-auth/email";
 import { workforceAuthUsers } from "../../platform/database/schema/workforce-auth";
-import { resolveSignedInLabel } from "../../lib/workforce-hub/identity";
+import { resolveMemberLabel, resolveSignedInLabel } from "../../lib/workforce-hub/identity";
 import type { Persistence, PersistenceQueryContext } from "../persistence/types";
 import {
   accessScopeToProtectedResource,
@@ -40,6 +41,7 @@ import {
   type ProtectedResource,
   type WorkforcePrincipal,
 } from "../access-control";
+import { findWorkforceUserByEmail } from "../auth/workforce/operator/lifecycle";
 import {
   createBrand,
   createLegalEntity,
@@ -127,6 +129,17 @@ const PORTAL_SESSION_CAPS = [
   "delivery.fail",
   "delivery.return",
   "delivery.cost.record",
+  "availability.read",
+  "availability.manage",
+  "outlet.operating_state.read",
+  "outlet.operating_state.pause",
+  "outlet.operating_state.suspend",
+  "outlet.operating_schedule.read",
+  "outlet.operating_schedule.manage",
+  "serviceability.read",
+  "serviceability.manage",
+  "assortment.read",
+  "assortment.manage",
   ...ACCESS_CAPS,
 ] as const satisfies readonly PermissionKey[];
 
@@ -177,6 +190,43 @@ async function filterByPermission<T>(
 function membershipResource(membership: AccessMembership): ProtectedResource | null {
   const scope = membershipToAccessScope(membership);
   return scope ? accessScopeToProtectedResource(scope) : null;
+}
+
+/** Safe Admin membership projection — human label only after authorization. */
+export type AdministrationMembershipProjection = AccessMembership & {
+  readonly memberLabel: string;
+};
+
+async function enrichMembershipsWithMemberLabel(
+  context: PersistenceQueryContext,
+  memberships: readonly AccessMembership[],
+): Promise<AdministrationMembershipProjection[]> {
+  if (memberships.length === 0) return [];
+  const ids = [...new Set(memberships.map((membership) => membership.workforceUserId))];
+  const rows = await context.db
+    .select({
+      id: workforceAuthUsers.id,
+      name: workforceAuthUsers.name,
+      email: workforceAuthUsers.email,
+    })
+    .from(workforceAuthUsers)
+    .where(inArray(workforceAuthUsers.id, ids));
+  const byId = new Map(rows.map((row) => [row.id, row]));
+  return memberships.map((membership) => {
+    const user = byId.get(membership.workforceUserId);
+    return {
+      ...membership,
+      memberLabel: resolveMemberLabel({ name: user?.name, email: user?.email }),
+    };
+  });
+}
+
+async function enrichMembershipWithMemberLabel(
+  context: PersistenceQueryContext,
+  membership: AccessMembership,
+): Promise<AdministrationMembershipProjection> {
+  const [enriched] = await enrichMembershipsWithMemberLabel(context, [membership]);
+  return enriched!;
 }
 
 function auditResource(event: AccessAuditEvent): ProtectedResource | null {
@@ -746,18 +796,57 @@ export async function adminUpdateOutlet(
 export async function adminListMemberships(
   persistence: Persistence,
   actor: WorkforcePrincipal | null,
-): Promise<AccessMembership[]> {
+  filter?: Readonly<{ outletId?: string }>,
+): Promise<AdministrationMembershipProjection[]> {
   const principal = requirePrincipal(actor);
-  return persistence.withContext(async (context) =>
-    filterByPermission(context, principal, "access.membership.read", await listMemberships(context), membershipResource),
-  );
+  return persistence.withContext(async (context) => {
+    const all = await listMemberships(context);
+    let authorized: AccessMembership[];
+    if (!filter?.outletId) {
+      authorized = await filterByPermission(
+        context,
+        principal,
+        "access.membership.read",
+        all,
+        membershipResource,
+      );
+    } else {
+      const outlet = await findOutletById(context, filter.outletId);
+      if (!outlet) {
+        throw new AdministrationError("ADMIN_NOT_FOUND", "Outlet not found.");
+      }
+      await requireAuthorization(context, {
+        actor: principal,
+        permission: "access.membership.read",
+        resource: {
+          type: "outlet",
+          brandId: outlet.brandId,
+          organizationId: outlet.organizationId,
+          territoryId: outlet.territoryId,
+          outletId: outlet.id,
+        },
+      });
+      const narrowed = all.filter(
+        (membership) =>
+          membership.scopeType === "outlet" && membership.outletId === outlet.id,
+      );
+      authorized = await filterByPermission(
+        context,
+        principal,
+        "access.membership.read",
+        narrowed,
+        membershipResource,
+      );
+    }
+    return enrichMembershipsWithMemberLabel(context, authorized);
+  });
 }
 
 export async function adminGetMembership(
   persistence: Persistence,
   actor: WorkforcePrincipal | null,
   membershipId: string,
-): Promise<AccessMembership> {
+): Promise<AdministrationMembershipProjection> {
   const principal = requirePrincipal(actor);
   return persistence.withContext(async (context) => {
     const membership = await findMembershipById(context, membershipId);
@@ -769,7 +858,7 @@ export async function adminGetMembership(
       permission: "access.membership.read",
       resource,
     });
-    return membership;
+    return enrichMembershipWithMemberLabel(context, membership);
   });
 }
 
@@ -815,23 +904,59 @@ export async function adminCreateMembership(
   persistence: Persistence,
   actor: WorkforcePrincipal | null,
   body: Readonly<Record<string, unknown>>,
-): Promise<AccessMembership> {
+): Promise<AdministrationMembershipProjection> {
   const principal = requirePrincipal(actor);
   rejectForgedAuthorityFields(body);
-  const workforceUserId = typeof body.workforceUserId === "string" ? body.workforceUserId : "";
-  if (!workforceUserId) {
-    throw new AdministrationError("ADMIN_REQUEST_INVALID", "workforceUserId is required.");
+  const hasUserId =
+    typeof body.workforceUserId === "string" && body.workforceUserId.trim().length > 0;
+  const hasEmail =
+    typeof body.workforceEmail === "string" && body.workforceEmail.trim().length > 0;
+  if (hasUserId && hasEmail) {
+    throw new AdministrationError(
+      "ADMIN_REQUEST_INVALID",
+      "Provide workforceUserId or workforceEmail, not both.",
+    );
+  }
+  if (!hasUserId && !hasEmail) {
+    throw new AdministrationError(
+      "ADMIN_REQUEST_INVALID",
+      "workforceUserId or workforceEmail is required.",
+    );
   }
   const scope = parseScope(body);
   const status = body.status === "active" ? "active" : "invited";
-  return persistence.transaction(async (tx) =>
-    createMembership(tx, {
+  return persistence.transaction(async (tx) => {
+    let workforceUserId: string;
+    if (hasEmail) {
+      // Authorize the exact requested scope BEFORE resolving identity (no enumeration).
+      await requireAuthorization(tx, {
+        actor: principal,
+        permission: "access.membership.manage",
+        resource: accessScopeToProtectedResource(scope),
+      });
+      const normalized = normalizeWorkforceEmail(body.workforceEmail);
+      if (!normalized.ok) {
+        throw new AdministrationError("ADMIN_REQUEST_INVALID", "workforceEmail is invalid.", {
+          field: "workforceEmail",
+        });
+      }
+      const user = await findWorkforceUserByEmail(tx, normalized.email);
+      if (!user || user.disabledAt) {
+        throw new AdministrationError("ADMIN_NOT_FOUND", "Workforce user not found.");
+      }
+      workforceUserId = user.id;
+    } else {
+      workforceUserId = (body.workforceUserId as string).trim();
+    }
+
+    const created = await createMembership(tx, {
       actor: principal,
       workforceUserId,
       scope,
       status,
-    }),
-  );
+    });
+    return enrichMembershipWithMemberLabel(tx, created);
+  });
 }
 
 export async function adminTransitionMembership(
