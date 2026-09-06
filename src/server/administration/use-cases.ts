@@ -127,6 +127,17 @@ const PORTAL_SESSION_CAPS = [
   "delivery.fail",
   "delivery.return",
   "delivery.cost.record",
+  "availability.read",
+  "availability.manage",
+  "outlet.operating_state.read",
+  "outlet.operating_state.pause",
+  "outlet.operating_state.suspend",
+  "outlet.operating_schedule.read",
+  "outlet.operating_schedule.manage",
+  "serviceability.read",
+  "serviceability.manage",
+  "assortment.read",
+  "assortment.manage",
   ...ACCESS_CAPS,
 ] as const satisfies readonly PermissionKey[];
 
@@ -746,11 +757,48 @@ export async function adminUpdateOutlet(
 export async function adminListMemberships(
   persistence: Persistence,
   actor: WorkforcePrincipal | null,
+  filter?: Readonly<{ outletId?: string }>,
 ): Promise<AccessMembership[]> {
   const principal = requirePrincipal(actor);
-  return persistence.withContext(async (context) =>
-    filterByPermission(context, principal, "access.membership.read", await listMemberships(context), membershipResource),
-  );
+  return persistence.withContext(async (context) => {
+    const all = await listMemberships(context);
+    if (!filter?.outletId) {
+      return filterByPermission(
+        context,
+        principal,
+        "access.membership.read",
+        all,
+        membershipResource,
+      );
+    }
+
+    const outlet = await findOutletById(context, filter.outletId);
+    if (!outlet) {
+      throw new AdministrationError("ADMIN_NOT_FOUND", "Outlet not found.");
+    }
+    await requireAuthorization(context, {
+      actor: principal,
+      permission: "access.membership.read",
+      resource: {
+        type: "outlet",
+        brandId: outlet.brandId,
+        organizationId: outlet.organizationId,
+        territoryId: outlet.territoryId,
+        outletId: outlet.id,
+      },
+    });
+    const narrowed = all.filter(
+      (membership) =>
+        membership.scopeType === "outlet" && membership.outletId === outlet.id,
+    );
+    return filterByPermission(
+      context,
+      principal,
+      "access.membership.read",
+      narrowed,
+      membershipResource,
+    );
+  });
 }
 
 export async function adminGetMembership(

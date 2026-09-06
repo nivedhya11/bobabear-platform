@@ -110,6 +110,8 @@ export default defineConfig({
       // IMP-036D: Workforce Operations Refund + Notification support HTTP.
       "tests/operations/refunds-http.integration.test.ts",
       "tests/operations/notifications-http.integration.test.ts",
+      // IMP-036E: Store Operations HTTP transport integration.
+      "tests/operations/store-http.integration.test.ts",
       // IMP-035: Administration API authorization and transport integration.
       "tests/administration/**/*.integration.test.ts",
       // IMP-031: Provider-neutral Delivery foundation (Boundary C).

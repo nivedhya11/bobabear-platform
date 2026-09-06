@@ -34,6 +34,7 @@ import { classifyAdminRoute, routeAdminRequest } from "./admin-routes";
 import { classifyNotificationRoute, handleNotificationRoute } from "./notification-routes";
 import { handleOperationalStatusRequest } from "./operational-status-routes";
 import { classifyRefundRoute, handleRefundRoute } from "./refund-routes";
+import { classifyStoreRoute, handleStoreRoute } from "./store-routes";
 import { mapOperationsError } from "./error-map";
 import { sendJson, sendMethodNotAllowed, sendNotFound } from "./response";
 
@@ -151,9 +152,31 @@ export async function routeOperationsRequest(
   const adminRoute = classifyAdminRoute(url.pathname);
   const refundRoute = classifyRefundRoute(url.pathname);
   const notificationRoute = classifyNotificationRoute(url.pathname);
+  const storeRoute = classifyStoreRoute(url.pathname);
 
   if (adminRoute) {
     return routeAdminRequest(req, res, deps, requestId);
+  }
+
+  if (storeRoute) {
+    // Store reads accept no query; mutations reject query and require trusted Origin.
+    if (url.search !== "") {
+      sendJson(res, { ok: false, code: "STORE_REQUEST_INVALID", requestId }, { status: 400, requestId });
+      return { operation: storeRoute.kind, safeOutcomeCode: "STORE_REQUEST_INVALID", httpStatus: 400 };
+    }
+    if (method === "POST") {
+      if (!checkTrustedOrigin(req.headers, deps.trustedOrigin).ok) {
+        sendJson(res, { ok: false, code: "STORE_REQUEST_INVALID", requestId }, { status: 403, requestId });
+        return { operation: storeRoute.kind, safeOutcomeCode: "STORE_REQUEST_INVALID", httpStatus: 403 };
+      }
+    }
+    const outcome = await handleStoreRoute(req, storeRoute, deps, requestId);
+    sendJson(res, outcome.body, { status: outcome.status, requestId });
+    return {
+      operation: outcome.operation,
+      safeOutcomeCode: outcome.code,
+      httpStatus: outcome.status,
+    };
   }
 
   if (notificationRoute) {

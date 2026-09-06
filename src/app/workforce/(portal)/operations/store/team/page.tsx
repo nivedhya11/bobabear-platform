@@ -1,35 +1,36 @@
 /**
- * /workforce/operations/store — Store Operations overview (IMP-036E).
+ * /workforce/operations/store/team — Store team members (IMP-036E).
  */
 import type { Metadata } from "next";
 
 import { OperationsWorkspaceNav } from "@/components/operations/OperationsWorkspaceNav";
-import { StoreOverviewClient } from "@/components/operations/store/StoreOverviewClient";
 import { StoreShell } from "@/components/operations/store/StoreShell";
+import { StoreTeamMembersClient } from "@/components/operations/store/StoreTeamMembersClient";
 import { PageHeader } from "@/components/enterprise/PageHeader";
 
 export const metadata: Metadata = {
-  title: "Operations Store",
-  description: "Outlet store operations workspace for Boba Bear workforce.",
-  alternates: { canonical: "/workforce/operations/store" },
+  title: "Store Team",
+  description: "Outlet-scoped team memberships.",
+  alternates: { canonical: "/workforce/operations/store/team" },
   robots: { index: false, follow: false },
 };
 
-export default function WorkforceOperationsStorePage() {
+export default function WorkforceStoreTeamPage() {
   return (
     <>
       <PageHeader
-        title="Store"
-        description="Manage outlet availability, hours, operating status, serviceability, and team access."
+        title="Team Members"
+        description="Review and manage workforce memberships for this outlet."
         breadcrumbs={[
           { label: "Workforce", href: "/workforce/" },
           { label: "Operations", href: "/workforce/operations/" },
-          { label: "Store" },
+          { label: "Store", href: "/workforce/operations/store/" },
+          { label: "Team" },
         ]}
       />
       <OperationsWorkspaceNav />
       <StoreShell>
-        <StoreOverviewClient />
+        <StoreTeamMembersClient />
       </StoreShell>
     </>
   );
