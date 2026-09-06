@@ -14,6 +14,21 @@ export function resolveSignedInLabel(input: Readonly<{
   return "Signed in";
 }
 
+/**
+ * Human-readable member label for already-authorized membership projections.
+ * Prefer meaningful name, then safe email, then a neutral fallback — never an opaque UUID.
+ */
+export function resolveMemberLabel(input: Readonly<{
+  name?: string | null;
+  email?: string | null;
+}>): string {
+  const name = typeof input.name === "string" ? input.name.trim() : "";
+  if (name.length > 0) return name;
+  const email = typeof input.email === "string" ? input.email.trim() : "";
+  if (email.includes("@")) return email;
+  return "Workforce member";
+}
+
 export function isOpaqueWorkforceUserId(value: string | null | undefined): boolean {
   if (!value) return false;
   if (value.includes("@")) return false;

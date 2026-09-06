@@ -32,7 +32,8 @@ export function listAdminMembershipsFiltered(outletId: string) {
 
 export function createAdminMembership(
   body: Readonly<{
-    workforceUserId: string;
+    workforceUserId?: string;
+    workforceEmail?: string;
     scopeType: string;
     brandId?: string;
     organizationId?: string;
@@ -113,6 +114,7 @@ export type AdministrationResource = Readonly<{
 export type AdministrationMembership = Readonly<{
   id: string;
   workforceUserId: string;
+  memberLabel: string;
   scopeType: string;
   status: string;
   brandId: string | null;

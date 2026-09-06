@@ -6,14 +6,17 @@
  */
 import "server-only";
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 
+import { assortmentRulesTable } from "../../../platform/database/schema/assortment";
 import {
-  assortmentRulesTable,
-  outletModifierOptionAvailabilityTable,
-} from "../../../platform/database/schema/assortment";
+  catalogModifierGroupOptionsTable,
+  catalogModifierOptionsTable,
+  catalogVariantModifierGroupsTable,
+} from "../../../platform/database/schema/catalog";
 import type { WorkforcePrincipal } from "../../access-control";
 import {
+  getEffectiveModifierOptionAssortment,
   getEffectiveVariantAssortment,
   getModifierOptionAvailability,
   getVariantAvailability,
@@ -50,6 +53,52 @@ export type StoreAssortmentListItem = Readonly<{
   eligibilityCode: string;
 }>;
 
+/**
+ * Discover active Modifier Options reachable from an active Variant via the
+ * canonical Catalog binding graph (variant → group → option).
+ */
+async function discoverModifierOptionIdsForVariant(
+  context: PersistenceQueryContext,
+  brandId: string,
+  variantId: string,
+): Promise<readonly string[]> {
+  const bindings = await context.db
+    .select({ groupId: catalogVariantModifierGroupsTable.modifierGroupId })
+    .from(catalogVariantModifierGroupsTable)
+    .where(
+      and(
+        eq(catalogVariantModifierGroupsTable.brandId, brandId),
+        eq(catalogVariantModifierGroupsTable.variantId, variantId),
+        eq(catalogVariantModifierGroupsTable.lifecycleStatus, "active"),
+      ),
+    );
+  if (bindings.length === 0) return [];
+
+  const groupIds = [...new Set(bindings.map((row) => row.groupId))];
+  const links = await context.db
+    .select({
+      modifierOptionId: catalogModifierGroupOptionsTable.modifierOptionId,
+    })
+    .from(catalogModifierGroupOptionsTable)
+    .innerJoin(
+      catalogModifierOptionsTable,
+      and(
+        eq(catalogModifierOptionsTable.id, catalogModifierGroupOptionsTable.modifierOptionId),
+        eq(catalogModifierOptionsTable.brandId, catalogModifierGroupOptionsTable.brandId),
+      ),
+    )
+    .where(
+      and(
+        eq(catalogModifierGroupOptionsTable.brandId, brandId),
+        inArray(catalogModifierGroupOptionsTable.modifierGroupId, groupIds),
+        eq(catalogModifierGroupOptionsTable.lifecycleStatus, "active"),
+        eq(catalogModifierOptionsTable.lifecycleStatus, "active"),
+      ),
+    );
+
+  return [...new Set(links.map((row) => row.modifierOptionId))];
+}
+
 export async function listStoreAvailabilityProjection(
   context: PersistenceQueryContext,
   actor: WorkforcePrincipal,
@@ -59,6 +108,7 @@ export async function listStoreAvailabilityProjection(
   if (!outlet) throw new AssortmentNotFoundError("outlet");
   const now = new Date();
   const items: StoreAvailabilityListItem[] = [];
+  const seenModifierOptionIds = new Set<string>();
 
   const includeRows = await context.db
     .select({
@@ -82,7 +132,7 @@ export async function listStoreAvailabilityProjection(
     if (!variantId) continue;
 
     // HTTP boundary already authorized availability.read; avoid re-checking Brand assortment.
-    await getEffectiveVariantAssortment(context, {
+    const variantAssortment = await getEffectiveVariantAssortment(context, {
       outletId,
       variantId,
       authorize: false,
@@ -108,34 +158,47 @@ export async function listStoreAvailabilityProjection(
         ? availability.unavailableUntil.toISOString()
         : null,
     });
-  }
 
-  const modifierRows = await context.db
-    .select()
-    .from(outletModifierOptionAvailabilityTable)
-    .where(eq(outletModifierOptionAvailabilityTable.outletId, outletId))
-    .limit(LIST_CAP);
+    // Modifier Options are discovered from the Catalog/Assortment graph — never
+    // from existing availability override rows (no-row ⇒ default available).
+    if (!variantAssortment.eligible) continue;
 
-  for (const row of modifierRows) {
-    if (items.length >= LIST_CAP) break;
-    const option = await findModifierOptionById(context, row.modifierOptionId);
-    const availability = await getModifierOptionAvailability(context, {
-      actor,
-      outletId,
-      modifierOptionId: row.modifierOptionId,
-      now,
-    });
-    items.push({
-      kind: "modifier_option",
-      id: row.modifierOptionId,
-      ...(option?.name !== undefined ? { variantName: option.name } : {}),
-      ...(option?.code !== undefined ? { code: option.code } : {}),
-      effectiveState: availability.effectiveState,
-      persistedState: availability.persistedState,
-      unavailableUntil: availability.unavailableUntil
-        ? availability.unavailableUntil.toISOString()
-        : null,
-    });
+    const optionIds = await discoverModifierOptionIdsForVariant(
+      context,
+      outlet.brandId,
+      variantId,
+    );
+    for (const modifierOptionId of optionIds) {
+      if (items.length >= LIST_CAP) break;
+      if (seenModifierOptionIds.has(modifierOptionId)) continue;
+      seenModifierOptionIds.add(modifierOptionId);
+
+      const optionAssortment = await getEffectiveModifierOptionAssortment(context, {
+        outletId,
+        modifierOptionId,
+        authorize: false,
+      });
+      if (!optionAssortment.eligible) continue;
+
+      const option = await findModifierOptionById(context, modifierOptionId);
+      const optionAvailability = await getModifierOptionAvailability(context, {
+        actor,
+        outletId,
+        modifierOptionId,
+        now,
+      });
+      items.push({
+        kind: "modifier_option",
+        id: modifierOptionId,
+        ...(option?.name !== undefined ? { variantName: option.name } : {}),
+        ...(option?.code !== undefined ? { code: option.code } : {}),
+        effectiveState: optionAvailability.effectiveState,
+        persistedState: optionAvailability.persistedState,
+        unavailableUntil: optionAvailability.unavailableUntil
+          ? optionAvailability.unavailableUntil.toISOString()
+          : null,
+      });
+    }
   }
 
   return { outletId, items };

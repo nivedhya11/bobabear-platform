@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
 import {
-  getAdminMembership,
   grantMembershipRole,
   listAdminMembershipsFiltered,
   listMembershipRoleAssignments,
@@ -13,6 +12,7 @@ import {
   type AdministrationMembership,
 } from "@/lib/administration/api";
 
+import { StoreConfirmationDialog } from "./StoreConfirmationDialog";
 import { useStoreOutlet } from "./StoreOutletContext";
 
 type Assignment = Readonly<{
@@ -25,26 +25,51 @@ type ViewState =
   | Readonly<{ kind: "loading" }>
   | Readonly<{ kind: "unauthorized" }>
   | Readonly<{ kind: "forbidden" }>
-  | Readonly<{ kind: "missing" }>
   | Readonly<{ kind: "error"; message: string }>
   | Readonly<{
       kind: "ready";
-      membership: AdministrationMembership | Record<string, unknown>;
+      membership: AdministrationMembership | null;
       assignments: readonly Assignment[];
       members: readonly AdministrationMembership[];
     }>;
+
+type ConfirmAction =
+  | Readonly<{ kind: "suspend" }>
+  | Readonly<{ kind: "revoke_membership" }>
+  | Readonly<{ kind: "revoke_role"; assignmentId: string; roleKey: string }>;
 
 function membershipIdFromLocation(): string | null {
   if (typeof window === "undefined") return null;
   return new URLSearchParams(window.location.search).get("membershipId");
 }
 
+function syncMembershipIdInUrl(next: string | null): void {
+  if (typeof window === "undefined") return;
+  const url = new URL(window.location.href);
+  if (next) {
+    url.searchParams.set("membershipId", next);
+  } else {
+    url.searchParams.delete("membershipId");
+  }
+  window.history.replaceState({}, "", `${url.pathname}${url.search}`);
+}
+
+const ROLE_LABELS: Readonly<Record<string, string>> = {
+  outlet_manager: "Outlet manager",
+  kitchen_operator: "Kitchen operator",
+  delivery_coordinator: "Delivery coordinator",
+  brand_admin: "Brand administrator",
+};
+
 function roleLabel(roleKey: string): string {
-  if (roleKey === "outlet_manager") return "Outlet manager";
-  if (roleKey === "kitchen_operator") return "Kitchen operator";
-  if (roleKey === "delivery_coordinator") return "Delivery coordinator";
-  if (roleKey === "brand_admin") return "Brand administrator";
-  return roleKey.replace(/_/g, " ");
+  return ROLE_LABELS[roleKey] ?? roleKey.replace(/_/g, " ");
+}
+
+function memberDisplayLabel(member: AdministrationMembership | null | undefined): string {
+  if (!member) return "Workforce member";
+  const label = typeof member.memberLabel === "string" ? member.memberLabel.trim() : "";
+  if (label.length > 0) return label;
+  return "Workforce member";
 }
 
 export function StoreTeamAccessClient() {
@@ -58,6 +83,7 @@ export function StoreTeamAccessClient() {
   const [roleKey, setRoleKey] = useState("kitchen_operator");
   const [actionError, setActionError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
 
   const membersLoadKey = useMemo(
@@ -85,31 +111,30 @@ export function StoreTeamAccessClient() {
         return;
       }
       const members = listResult.data.items;
-      const selectedId = membershipId ?? members[0]?.id ?? null;
-      if (!selectedId) {
-        setView({ kind: "ready", membership: {}, assignments: [], members });
+      // Filtered outlet membership set is authoritative for Store Team Access.
+      const selectedFromSet =
+        membershipId !== null
+          ? (members.find((member) => member.id === membershipId) ?? null)
+          : null;
+      const selected = selectedFromSet ?? members[0] ?? null;
+
+      if (selected?.id !== membershipId) {
+        // Correct stale/foreign membershipId, then let the next effect run fetch.
+        setMembershipId(selected?.id ?? null);
+        syncMembershipIdInUrl(selected?.id ?? null);
         return;
       }
-      if (!membershipId && members[0]) {
-        setMembershipId(members[0].id);
-      }
-      const membershipResult = await getAdminMembership(selectedId);
-      if (cancelled) return;
-      if (!membershipResult.ok) {
-        if (membershipResult.status === 401) {
-          setView({ kind: "unauthorized" });
-          return;
-        }
-        if (membershipResult.status === 403) {
-          setView({ kind: "forbidden" });
-          return;
-        }
-        setView({ kind: "error", message: "Membership could not be loaded." });
+
+      if (!selected) {
+        setView({ kind: "ready", membership: null, assignments: [], members });
+        setActionError(null);
         return;
       }
+
       let assignments: Assignment[] = [];
       if (canReadAssignments) {
-        const assignmentsResult = await listMembershipRoleAssignments(selectedId);
+        const assignmentsResult = await listMembershipRoleAssignments(selected.id);
+        if (cancelled) return;
         if (assignmentsResult.ok) {
           assignments = (assignmentsResult.data.items as Assignment[]).map((item) => ({
             id: String(item.id),
@@ -118,11 +143,12 @@ export function StoreTeamAccessClient() {
           }));
         }
       }
+      if (cancelled) return;
       // Intentionally do NOT fetch/display current-actor effective-permissions as the
-      // target member's permissions (IMP-036E).
+      // target member's permissions (IMP-036E). Foreign membership detail is never fetched.
       setView({
         kind: "ready",
-        membership: membershipResult.data.membership as AdministrationMembership,
+        membership: selected,
         assignments,
         members,
       });
@@ -133,8 +159,13 @@ export function StoreTeamAccessClient() {
     };
   }, [membersLoadKey, membershipId, canReadAssignments, staleOutletId, outletId]);
 
+  function selectedBelongsToFilteredSet(): boolean {
+    if (view.kind !== "ready" || !membershipId) return false;
+    return view.members.some((member) => member.id === membershipId);
+  }
+
   async function onGrant() {
-    if (!membershipId || !canGrant) return;
+    if (!membershipId || !canGrant || !selectedBelongsToFilteredSet()) return;
     setPending(true);
     setActionError(null);
     announce("Granting role…");
@@ -150,8 +181,8 @@ export function StoreTeamAccessClient() {
     setReloadToken((n) => n + 1);
   }
 
-  async function onRevoke(assignmentId: string) {
-    if (!canRevoke) return;
+  async function onRevokeRole(assignmentId: string) {
+    if (!canRevoke || !selectedBelongsToFilteredSet()) return;
     setPending(true);
     setActionError(null);
     announce("Revoking role…");
@@ -161,23 +192,27 @@ export function StoreTeamAccessClient() {
       const message = "Role could not be revoked.";
       setActionError(message);
       announce(message);
+      setConfirmAction(null);
       return;
     }
     announce("Role revoked.");
+    setConfirmAction(null);
     setReloadToken((n) => n + 1);
   }
 
   async function onTransition(toStatus: string) {
-    if (!membershipId || !canManageMembership) return;
+    if (!membershipId || !canManageMembership || !selectedBelongsToFilteredSet()) return;
     setPending(true);
     setActionError(null);
     const result = await transitionMembership(membershipId, toStatus);
     setPending(false);
     if (!result.ok) {
       setActionError("Membership status could not be updated.");
+      setConfirmAction(null);
       return;
     }
     announce("Membership updated.");
+    setConfirmAction(null);
     setReloadToken((n) => n + 1);
   }
 
@@ -207,11 +242,9 @@ export function StoreTeamAccessClient() {
       </p>
     );
   }
-  if (view.kind === "missing") {
-    return <p data-testid="store-team-access-missing">Select a team member to manage access.</p>;
-  }
 
-  const membership = view.membership as AdministrationMembership;
+  const membership = view.membership;
+  const label = memberDisplayLabel(membership);
   const hasMembership = Boolean(membership?.id);
 
   return (
@@ -223,19 +256,17 @@ export function StoreTeamAccessClient() {
           value={membershipId ?? ""}
           onChange={(event) => {
             const next = event.target.value;
+            const allowed = view.members.some((member) => member.id === next);
+            if (!allowed) return;
             setMembershipId(next);
-            if (typeof window !== "undefined") {
-              const url = new URL(window.location.href);
-              url.searchParams.set("membershipId", next);
-              window.history.replaceState({}, "", `${url.pathname}${url.search}`);
-            }
+            syncMembershipIdInUrl(next);
           }}
           className="min-h-11 rounded-sm border border-[var(--border-strong)] bg-transparent px-3 outline-none focus:shadow-[0_0_0_3px_var(--focus-ring)]"
         >
           {view.members.length === 0 ? <option value="">No members</option> : null}
           {view.members.map((item) => (
             <option key={item.id} value={item.id}>
-              {item.workforceUserId} ({item.status})
+              {memberDisplayLabel(item)} ({item.status})
             </option>
           ))}
         </select>
@@ -245,28 +276,34 @@ export function StoreTeamAccessClient() {
         <p data-testid="store-team-access-empty">No memberships available for this outlet.</p>
       ) : (
         <>
-          <p className="text-sm">
-            {String(membership.workforceUserId)} · Status: {String(membership.status)}
+          <p className="text-sm" data-testid="store-team-access-member-label">
+            {label} · Status: {String(membership!.status)}
           </p>
 
           {canManageMembership ? (
             <div className="flex flex-wrap gap-2">
-              <Button type="button" disabled={pending} onClick={() => void onTransition("active")}>
+              <Button
+                type="button"
+                disabled={pending}
+                onClick={() => void onTransition("active")}
+              >
                 Activate
               </Button>
               <Button
                 type="button"
                 variant="outline"
+                data-testid="store-team-access-suspend"
                 disabled={pending}
-                onClick={() => void onTransition("suspended")}
+                onClick={() => setConfirmAction({ kind: "suspend" })}
               >
                 Suspend membership
               </Button>
               <Button
                 type="button"
                 variant="destructive"
+                data-testid="store-team-access-revoke-membership"
                 disabled={pending}
-                onClick={() => void onTransition("revoked")}
+                onClick={() => setConfirmAction({ kind: "revoke_membership" })}
               >
                 Revoke membership
               </Button>
@@ -291,8 +328,15 @@ export function StoreTeamAccessClient() {
                       <Button
                         type="button"
                         variant="outline"
+                        data-testid={`store-team-access-revoke-role-${item.id}`}
                         disabled={pending}
-                        onClick={() => void onRevoke(item.id)}
+                        onClick={() =>
+                          setConfirmAction({
+                            kind: "revoke_role",
+                            assignmentId: item.id,
+                            roleKey: item.roleKey,
+                          })
+                        }
                       >
                         Revoke role
                       </Button>
@@ -333,10 +377,53 @@ export function StoreTeamAccessClient() {
         </>
       )}
 
-      {actionError ? (
+      {actionError && !confirmAction ? (
         <p role="alert" data-testid="store-team-access-action-error" className="text-sm">
           {actionError}
         </p>
+      ) : null}
+
+      {confirmAction ? (
+        <StoreConfirmationDialog
+          title={
+            confirmAction.kind === "suspend"
+              ? `Suspend ${label}?`
+              : confirmAction.kind === "revoke_membership"
+                ? `Revoke ${label}?`
+                : `Revoke role for ${label}?`
+          }
+          description={
+            confirmAction.kind === "suspend"
+              ? `${label} will lose active outlet access until reactivated.`
+              : confirmAction.kind === "revoke_membership"
+                ? `${label}'s membership for this outlet will be revoked.`
+                : `${label} will lose the ${roleLabel(confirmAction.roleKey)} role on this outlet.`
+          }
+          confirmLabel={
+            confirmAction.kind === "suspend"
+              ? "Confirm suspend"
+              : confirmAction.kind === "revoke_membership"
+                ? "Confirm revoke"
+                : "Confirm revoke role"
+          }
+          destructive={confirmAction.kind !== "suspend"}
+          pending={pending}
+          error={actionError}
+          onConfirm={() => {
+            if (confirmAction.kind === "suspend") {
+              void onTransition("suspended");
+            } else if (confirmAction.kind === "revoke_membership") {
+              void onTransition("revoked");
+            } else {
+              void onRevokeRole(confirmAction.assignmentId);
+            }
+          }}
+          onDismiss={() => {
+            if (pending) return;
+            setConfirmAction(null);
+            setActionError(null);
+          }}
+        />
       ) : null}
     </div>
   );

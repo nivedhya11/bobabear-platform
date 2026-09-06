@@ -8,10 +8,17 @@ import { StoreAvailabilityClient } from "./StoreAvailabilityClient";
 import { StoreOperatingStatusClient } from "./StoreOperatingStatusClient";
 import { StoreHoursClient } from "./StoreHoursClient";
 import { StoreServiceabilityClient } from "./StoreServiceabilityClient";
+import { StoreTeamAccessClient } from "./StoreTeamAccessClient";
 import { StoreTeamMembersClient } from "./StoreTeamMembersClient";
 
 const listAdminOutlets = vi.fn();
 const listAdminMembershipsFiltered = vi.fn();
+const createAdminMembership = vi.fn();
+const transitionMembership = vi.fn();
+const getAdminMembership = vi.fn();
+const listMembershipRoleAssignments = vi.fn();
+const grantMembershipRole = vi.fn();
+const revokeRoleAssignment = vi.fn();
 const getStoreCapabilities = vi.fn();
 const listStoreAvailability = vi.fn();
 const setVariantAvailability = vi.fn();
@@ -25,8 +32,12 @@ const setStoreDistancePolicy = vi.fn();
 vi.mock("@/lib/administration/api", () => ({
   listAdminOutlets: (...args: unknown[]) => listAdminOutlets(...args),
   listAdminMembershipsFiltered: (...args: unknown[]) => listAdminMembershipsFiltered(...args),
-  createAdminMembership: vi.fn(),
-  transitionMembership: vi.fn(),
+  createAdminMembership: (...args: unknown[]) => createAdminMembership(...args),
+  transitionMembership: (...args: unknown[]) => transitionMembership(...args),
+  getAdminMembership: (...args: unknown[]) => getAdminMembership(...args),
+  listMembershipRoleAssignments: (...args: unknown[]) => listMembershipRoleAssignments(...args),
+  grantMembershipRole: (...args: unknown[]) => grantMembershipRole(...args),
+  revokeRoleAssignment: (...args: unknown[]) => revokeRoleAssignment(...args),
 }));
 
 vi.mock("@/lib/operations/store", async () => {
@@ -81,6 +92,12 @@ const outletB = {
 beforeEach(() => {
   listAdminOutlets.mockReset();
   listAdminMembershipsFiltered.mockReset();
+  createAdminMembership.mockReset();
+  transitionMembership.mockReset();
+  getAdminMembership.mockReset();
+  listMembershipRoleAssignments.mockReset();
+  grantMembershipRole.mockReset();
+  revokeRoleAssignment.mockReset();
   getStoreCapabilities.mockReset();
   listStoreAvailability.mockReset();
   setVariantAvailability.mockReset();
@@ -453,7 +470,8 @@ describe("serviceability stale revision recovery", () => {
 });
 
 describe("team visibility", () => {
-  it("lists filtered memberships for the selected outlet", async () => {
+  it("lists filtered memberships with human-readable labels and email invite", async () => {
+    const user = userEvent.setup();
     listAdminOutlets.mockResolvedValue({
       ok: true,
       status: 200,
@@ -464,7 +482,7 @@ describe("team visibility", () => {
       status: 200,
       data: {
         ok: true,
-        capabilities: { "access.membership.read": true, "access.membership.manage": false },
+        capabilities: { "access.membership.read": true, "access.membership.manage": true },
       },
     });
     listAdminMembershipsFiltered.mockResolvedValue({
@@ -475,7 +493,8 @@ describe("team visibility", () => {
         items: [
           {
             id: "m1",
-            workforceUserId: "user-1",
+            workforceUserId: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+            memberLabel: "Alex Operator",
             scopeType: "outlet",
             status: "active",
             brandId: "brand-1",
@@ -486,6 +505,16 @@ describe("team visibility", () => {
         ],
       },
     });
+    createAdminMembership.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { ok: true, membership: { id: "m2" } },
+    });
+    transitionMembership.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { ok: true, membership: { id: "m1" } },
+    });
 
     render(
       <StoreShell>
@@ -494,8 +523,214 @@ describe("team visibility", () => {
     );
 
     await waitFor(() => expect(screen.getByTestId("store-team-members")).toBeInTheDocument());
-    expect(screen.getByText("user-1")).toBeInTheDocument();
-    expect(screen.queryByTestId("store-team-create")).not.toBeInTheDocument();
+    expect(screen.getByTestId("store-team-member-label-m1")).toHaveTextContent("Alex Operator");
+    expect(screen.queryByText("aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee")).not.toBeInTheDocument();
+    expect(screen.getByTestId("store-team-create-email")).toBeInTheDocument();
+    expect(screen.queryByTestId("store-team-create-user")).not.toBeInTheDocument();
     expect(listAdminMembershipsFiltered).toHaveBeenCalledWith(outletA.id);
+
+    await user.click(screen.getByTestId("store-team-revoke-m1"));
+    expect(screen.getByTestId("store-confirmation-dialog")).toBeInTheDocument();
+    expect(transitionMembership).not.toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: "Go back" }));
+    expect(transitionMembership).not.toHaveBeenCalled();
+
+    await user.click(screen.getByTestId("store-team-revoke-m1"));
+    await user.click(screen.getByRole("button", { name: "Confirm revoke" }));
+    await waitFor(() => expect(transitionMembership).toHaveBeenCalledTimes(1));
+    expect(transitionMembership).toHaveBeenCalledWith("m1", "revoked");
+
+    transitionMembership.mockClear();
+    await user.click(screen.getByTestId("store-team-suspend-m1"));
+    expect(screen.getByTestId("store-confirmation-dialog")).toBeInTheDocument();
+    expect(transitionMembership).not.toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: "Confirm suspend" }));
+    await waitFor(() => expect(transitionMembership).toHaveBeenCalledTimes(1));
+    expect(transitionMembership).toHaveBeenCalledWith("m1", "suspended");
+
+    await user.type(screen.getByTestId("store-team-create-email"), "new.member@example.com");
+    await user.click(screen.getByTestId("store-team-create"));
+    await waitFor(() =>
+      expect(createAdminMembership).toHaveBeenCalledWith(
+        expect.objectContaining({
+          workforceEmail: "new.member@example.com",
+          outletId: outletA.id,
+          scopeType: "outlet",
+        }),
+      ),
+    );
+  });
+});
+
+describe("team access context integrity", () => {
+  const memberA = {
+    id: "membership-a",
+    workforceUserId: "user-a-aaaaaaaaaaaaaaaaaaaa",
+    memberLabel: "Outlet A Member",
+    scopeType: "outlet",
+    status: "active",
+    brandId: "brand-1",
+    organizationId: "org-1",
+    territoryId: "terr-1",
+    outletId: outletA.id,
+  };
+  const memberB = {
+    id: "membership-b",
+    workforceUserId: "user-b-bbbbbbbbbbbbbbbbbbbb",
+    memberLabel: "Outlet B Member",
+    scopeType: "outlet",
+    status: "active",
+    brandId: "brand-1",
+    organizationId: "org-1",
+    territoryId: "terr-1",
+    outletId: outletB.id,
+  };
+
+  it("ignores foreign membershipId and never fetches foreign detail/assignments", async () => {
+    const user = userEvent.setup();
+    window.history.replaceState(
+      {},
+      "",
+      `/workforce/operations/store/team/access/?outletId=${outletA.id}&membershipId=${memberB.id}`,
+    );
+    listAdminOutlets.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { ok: true, items: [outletA, outletB] },
+    });
+    getStoreCapabilities.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        ok: true,
+        capabilities: {
+          "access.membership.read": true,
+          "access.membership.manage": true,
+          "access.role_assignment.read": true,
+          "access.role_assignment.grant": true,
+          "access.role_assignment.revoke": true,
+        },
+      },
+    });
+    listAdminMembershipsFiltered.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { ok: true, items: [memberA] },
+    });
+    listMembershipRoleAssignments.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        ok: true,
+        items: [{ id: "ra-1", roleKey: "kitchen_operator", revokedAt: null }],
+      },
+    });
+    revokeRoleAssignment.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { ok: true, assignment: { id: "ra-1" } },
+    });
+    transitionMembership.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { ok: true, membership: memberA },
+    });
+
+    render(
+      <StoreShell>
+        <StoreTeamAccessClient />
+      </StoreShell>,
+    );
+
+    await waitFor(() => expect(screen.getByTestId("store-team-access")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByTestId("store-team-access-revoke-role-ra-1")).toBeInTheDocument(),
+    );
+    expect(getAdminMembership).not.toHaveBeenCalled();
+    expect(listMembershipRoleAssignments).toHaveBeenCalledWith(memberA.id);
+    expect(listMembershipRoleAssignments).not.toHaveBeenCalledWith(memberB.id);
+    expect(screen.getByTestId("store-team-access-member-label")).toHaveTextContent("Outlet A Member");
+    expect(screen.queryByText(memberB.workforceUserId)).not.toBeInTheDocument();
+    expect(window.location.search).toContain(`membershipId=${memberA.id}`);
+    expect(window.location.search).not.toContain(memberB.id);
+
+    await user.click(screen.getByTestId("store-team-access-revoke-role-ra-1"));
+    expect(screen.getByTestId("store-confirmation-dialog")).toBeInTheDocument();
+    expect(revokeRoleAssignment).not.toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: "Go back" }));
+    expect(revokeRoleAssignment).not.toHaveBeenCalled();
+
+    await user.click(screen.getByTestId("store-team-access-revoke-role-ra-1"));
+    await user.click(screen.getByRole("button", { name: "Confirm revoke role" }));
+    await waitFor(() => expect(revokeRoleAssignment).toHaveBeenCalledTimes(1));
+    expect(revokeRoleAssignment).toHaveBeenCalledWith("ra-1");
+
+    transitionMembership.mockClear();
+    await user.click(screen.getByTestId("store-team-access-suspend"));
+    expect(transitionMembership).not.toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: "Confirm suspend" }));
+    await waitFor(() => expect(transitionMembership).toHaveBeenCalledWith(memberA.id, "suspended"));
+
+    transitionMembership.mockClear();
+    await user.click(screen.getByTestId("store-team-access-revoke-membership"));
+    expect(transitionMembership).not.toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: "Confirm revoke" }));
+    await waitFor(() => expect(transitionMembership).toHaveBeenCalledWith(memberA.id, "revoked"));
+  });
+
+  it("clears stale membership selection when switching outlets", async () => {
+    window.history.replaceState(
+      {},
+      "",
+      `/workforce/operations/store/team/access/?outletId=${outletA.id}&membershipId=${memberA.id}`,
+    );
+    listAdminOutlets.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { ok: true, items: [outletA, outletB] },
+    });
+    getStoreCapabilities.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        ok: true,
+        capabilities: {
+          "access.membership.read": true,
+          "access.role_assignment.read": true,
+        },
+      },
+    });
+    listAdminMembershipsFiltered.mockImplementation(async (outletId: string) => ({
+      ok: true,
+      status: 200,
+      data: {
+        ok: true,
+        items: outletId === outletA.id ? [memberA] : [memberB],
+      },
+    }));
+    listMembershipRoleAssignments.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { ok: true, items: [] },
+    });
+
+    const user = userEvent.setup();
+    render(
+      <StoreShell>
+        <StoreTeamAccessClient />
+      </StoreShell>,
+    );
+
+    await waitFor(() => expect(screen.getByTestId("store-team-access-member-label")).toHaveTextContent("Outlet A Member"));
+    expect(listMembershipRoleAssignments).toHaveBeenCalledWith(memberA.id);
+
+    await user.selectOptions(screen.getByTestId("store-outlet-select"), outletB.id);
+    await waitFor(() =>
+      expect(screen.getByTestId("store-team-access-member-label")).toHaveTextContent("Outlet B Member"),
+    );
+    expect(listMembershipRoleAssignments).toHaveBeenCalledWith(memberB.id);
+    expect(getAdminMembership).not.toHaveBeenCalled();
+    expect(window.location.search).toContain(`membershipId=${memberB.id}`);
+    expect(window.location.search).not.toContain(memberA.id);
   });
 });

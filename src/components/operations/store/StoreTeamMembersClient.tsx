@@ -11,6 +11,7 @@ import {
 } from "@/lib/administration/api";
 import { appendOutletId } from "@/lib/operations/store-navigation";
 
+import { StoreConfirmationDialog } from "./StoreConfirmationDialog";
 import { useStoreOutlet } from "./StoreOutletContext";
 
 type ViewState =
@@ -19,6 +20,12 @@ type ViewState =
   | Readonly<{ kind: "forbidden" }>
   | Readonly<{ kind: "error"; message: string }>
   | Readonly<{ kind: "ready"; items: readonly AdministrationMembership[] }>;
+
+type ConfirmAction = Readonly<{
+  membershipId: string;
+  memberLabel: string;
+  toStatus: "suspended" | "revoked";
+}>;
 
 function membershipStatusLabel(status: string): string {
   if (status === "invited") return "Invited";
@@ -29,13 +36,20 @@ function membershipStatusLabel(status: string): string {
   return status;
 }
 
+function memberDisplayLabel(item: AdministrationMembership): string {
+  const label = typeof item.memberLabel === "string" ? item.memberLabel.trim() : "";
+  if (label.length > 0) return label;
+  return "Workforce member";
+}
+
 export function StoreTeamMembersClient() {
   const { outletId, selectedOutlet, capabilities, announce, staleOutletId } = useStoreOutlet();
   const canManage = capabilities?.["access.membership.manage"] === true;
   const [view, setView] = useState<ViewState>({ kind: "loading" });
-  const [workforceUserId, setWorkforceUserId] = useState("");
+  const [workforceEmail, setWorkforceEmail] = useState("");
   const [actionError, setActionError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
@@ -70,16 +84,16 @@ export function StoreTeamMembersClient() {
       setActionError("Outlet hierarchy context is incomplete for creating a membership.");
       return;
     }
-    const userId = workforceUserId.trim();
-    if (!userId) {
-      setActionError("Enter a workforce user id.");
+    const email = workforceEmail.trim();
+    if (!email) {
+      setActionError("Enter a workforce email.");
       return;
     }
     setPending(true);
     setActionError(null);
     announce("Creating membership…");
     const result = await createAdminMembership({
-      workforceUserId: userId,
+      workforceEmail: email,
       scopeType: "outlet",
       brandId: selectedOutlet.brandId,
       organizationId: selectedOutlet.organizationId,
@@ -94,7 +108,7 @@ export function StoreTeamMembersClient() {
       announce(message);
       return;
     }
-    setWorkforceUserId("");
+    setWorkforceEmail("");
     announce("Membership created.");
     setReloadToken((n) => n + 1);
   }
@@ -110,9 +124,11 @@ export function StoreTeamMembersClient() {
       const message = "Membership status could not be updated.";
       setActionError(message);
       announce(message);
+      setConfirmAction(null);
       return;
     }
     announce("Membership updated.");
+    setConfirmAction(null);
     setReloadToken((n) => n + 1);
   }
 
@@ -154,56 +170,78 @@ export function StoreTeamMembersClient() {
         </p>
       ) : (
         <ul className="divide-y divide-[var(--border-subtle)]">
-          {view.items.map((item) => (
-            <li key={item.id} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="font-medium">{item.workforceUserId}</p>
-                <p className="text-sm text-[var(--text-secondary)]">
-                  Status: {membershipStatusLabel(item.status)} · Scope: outlet
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <a
-                  className="inline-flex min-h-11 items-center underline underline-offset-4 outline-none focus-visible:ring-2 focus-visible:ring-[var(--enterprise-focus)]"
-                  href={appendOutletId(
-                    `/workforce/operations/store/team/access/?membershipId=${encodeURIComponent(item.id)}`,
-                    outletId,
-                  )}
-                >
-                  Manage access
-                </a>
-                {canManage && item.status === "invited" ? (
-                  <Button
-                    type="button"
-                    disabled={pending}
-                    onClick={() => void onTransition(item.id, "active")}
+          {view.items.map((item) => {
+            const label = memberDisplayLabel(item);
+            return (
+              <li
+                key={item.id}
+                className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div>
+                  <p className="font-medium" data-testid={`store-team-member-label-${item.id}`}>
+                    {label}
+                  </p>
+                  <p className="text-sm text-[var(--text-secondary)]">
+                    Status: {membershipStatusLabel(item.status)} · Scope: outlet
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <a
+                    className="inline-flex min-h-11 items-center underline underline-offset-4 outline-none focus-visible:ring-2 focus-visible:ring-[var(--enterprise-focus)]"
+                    href={appendOutletId(
+                      `/workforce/operations/store/team/access/?membershipId=${encodeURIComponent(item.id)}`,
+                      outletId,
+                    )}
                   >
-                    Activate
-                  </Button>
-                ) : null}
-                {canManage && item.status === "active" ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={pending}
-                    onClick={() => void onTransition(item.id, "suspended")}
-                  >
-                    Suspend
-                  </Button>
-                ) : null}
-                {canManage && (item.status === "active" || item.status === "suspended") ? (
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    disabled={pending}
-                    onClick={() => void onTransition(item.id, "revoked")}
-                  >
-                    Revoke
-                  </Button>
-                ) : null}
-              </div>
-            </li>
-          ))}
+                    Manage access
+                  </a>
+                  {canManage && item.status === "invited" ? (
+                    <Button
+                      type="button"
+                      disabled={pending}
+                      onClick={() => void onTransition(item.id, "active")}
+                    >
+                      Activate
+                    </Button>
+                  ) : null}
+                  {canManage && item.status === "active" ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      data-testid={`store-team-suspend-${item.id}`}
+                      disabled={pending}
+                      onClick={() =>
+                        setConfirmAction({
+                          membershipId: item.id,
+                          memberLabel: label,
+                          toStatus: "suspended",
+                        })
+                      }
+                    >
+                      Suspend
+                    </Button>
+                  ) : null}
+                  {canManage && (item.status === "active" || item.status === "suspended") ? (
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      data-testid={`store-team-revoke-${item.id}`}
+                      disabled={pending}
+                      onClick={() =>
+                        setConfirmAction({
+                          membershipId: item.id,
+                          memberLabel: label,
+                          toStatus: "revoked",
+                        })
+                      }
+                    >
+                      Revoke
+                    </Button>
+                  ) : null}
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
 
@@ -211,12 +249,14 @@ export function StoreTeamMembersClient() {
         <div className="flex flex-col gap-2 border-t border-[var(--border-subtle)] pt-4">
           <h3 className="font-medium">Invite team member</h3>
           <label className="flex flex-col gap-1 text-sm">
-            <span className="text-[var(--text-secondary)]">Workforce user id</span>
+            <span className="text-[var(--text-secondary)]">Workforce email</span>
             <input
-              data-testid="store-team-create-user"
-              value={workforceUserId}
+              data-testid="store-team-create-email"
+              type="email"
+              autoComplete="off"
+              value={workforceEmail}
               disabled={pending}
-              onChange={(event) => setWorkforceUserId(event.target.value)}
+              onChange={(event) => setWorkforceEmail(event.target.value)}
               className="min-h-11 rounded-sm border border-[var(--border-strong)] bg-transparent px-3 outline-none focus:shadow-[0_0_0_3px_var(--focus-ring)]"
             />
           </label>
@@ -234,10 +274,37 @@ export function StoreTeamMembersClient() {
         </div>
       ) : null}
 
-      {actionError ? (
+      {actionError && !confirmAction ? (
         <p role="alert" data-testid="store-team-action-error" className="text-sm">
           {actionError}
         </p>
+      ) : null}
+
+      {confirmAction ? (
+        <StoreConfirmationDialog
+          title={
+            confirmAction.toStatus === "suspended"
+              ? `Suspend ${confirmAction.memberLabel}?`
+              : `Revoke ${confirmAction.memberLabel}?`
+          }
+          description={
+            confirmAction.toStatus === "suspended"
+              ? `${confirmAction.memberLabel} will lose active outlet access until reactivated.`
+              : `${confirmAction.memberLabel}'s membership for this outlet will be revoked.`
+          }
+          confirmLabel={
+            confirmAction.toStatus === "suspended" ? "Confirm suspend" : "Confirm revoke"
+          }
+          destructive={confirmAction.toStatus === "revoked"}
+          pending={pending}
+          error={actionError}
+          onConfirm={() => void onTransition(confirmAction.membershipId, confirmAction.toStatus)}
+          onDismiss={() => {
+            if (pending) return;
+            setConfirmAction(null);
+            setActionError(null);
+          }}
+        />
       ) : null}
     </div>
   );

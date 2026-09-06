@@ -28,6 +28,7 @@ import {
 } from "../database/support/access-control-fixtures";
 import { applyMigrations, withIsolatedTestDatabase } from "../database/support/test-database";
 import { createActiveStandardVariant } from "../assortment-availability/support";
+import { seedActiveVariantWithModifier } from "../database/support/cart-fixtures";
 import {
   TEST_SERVICE_ORIGIN,
 } from "../database/support/serviceability-fixtures";
@@ -155,6 +156,20 @@ describe("IMP-036E Store Operations HTTP", () => {
           actor: psaActor,
           brandId: tree.brand.id,
           variantId: catalog.variantId,
+        }),
+      );
+
+      const catalogWithModifier = await seedActiveVariantWithModifier(
+        persistence,
+        tree.brand.id,
+        psaActor,
+        "stmod",
+      );
+      await persistence.transaction((tx) =>
+        includeBrandVariant(tx, {
+          actor: psaActor,
+          brandId: tree.brand.id,
+          variantId: catalogWithModifier.variantId,
         }),
       );
 
@@ -376,6 +391,75 @@ describe("IMP-036E Store Operations HTTP", () => {
           expect((await response.json()).ok).toBe(true);
         }
 
+        // Real eligible Modifier Option with NO availability override row must be discoverable.
+        response = await request(outletPath(tree.outletA.id, "/availability"), {
+          headers: managerHeaders,
+        });
+        expect(response.status).toBe(200);
+        const availabilityWithModifier = await response.json();
+        const modifierItem = (
+          availabilityWithModifier.items as Array<{
+            kind: string;
+            id: string;
+            effectiveState: string;
+            persistedState: string | null;
+          }>
+        ).find(
+          (item) =>
+            item.kind === "modifier_option" && item.id === catalogWithModifier.modifierOptionId,
+        );
+        expect(modifierItem).toBeDefined();
+        expect(modifierItem!.effectiveState).toBe("available");
+        expect(modifierItem!.persistedState).toBeNull();
+
+        response = await request(
+          outletPath(
+            tree.outletA.id,
+            `/availability/modifier-options/${catalogWithModifier.modifierOptionId}`,
+          ),
+          {
+            method: "POST",
+            headers: managerHeaders,
+            body: JSON.stringify({ state: "sold_out", unavailableUntil: null }),
+          },
+        );
+        expect(response.status).toBe(200);
+        expect((await response.json()).availability.effectiveState).toBe("sold_out");
+
+        response = await request(
+          outletPath(
+            tree.outletA.id,
+            `/availability/modifier-options/${catalogWithModifier.modifierOptionId}`,
+          ),
+          { headers: managerHeaders },
+        );
+        expect(response.status).toBe(200);
+        const modifierDetail = await response.json();
+        expect(modifierDetail.availability.effectiveState).toBe("sold_out");
+        expect(modifierDetail.availability.persistedState).toBe("sold_out");
+
+        response = await request(outletPath(tree.outletA.id, "/availability"), {
+          headers: managerHeaders,
+        });
+        expect(response.status).toBe(200);
+        const afterMutation = (
+          (await response.json()).items as Array<{ id: string; effectiveState: string }>
+        ).find((item) => item.id === catalogWithModifier.modifierOptionId);
+        expect(afterMutation?.effectiveState).toBe("sold_out");
+
+        response = await request(
+          outletPath(
+            tree.outletB.id,
+            `/availability/modifier-options/${catalogWithModifier.modifierOptionId}`,
+          ),
+          {
+            method: "POST",
+            headers: managerHeaders,
+            body: JSON.stringify({ state: "available" }),
+          },
+        );
+        expect([response.status, (await response.json()).code]).toEqual([403, "STORE_UNAUTHORIZED"]);
+
         // --- OPERATING ---
         response = await request(outletPath(tree.outletA.id, "/operating-state"), {
           headers: managerHeaders,
@@ -563,12 +647,17 @@ describe("IMP-036E Store Operations HTTP", () => {
           outletId: string | null;
           scopeType: string;
           workforceUserId: string;
+          memberLabel: string;
         }>;
         expect(membershipsA.length).toBeGreaterThan(0);
         expect(membershipsA.every((m) => m.scopeType === "outlet" && m.outletId === tree.outletA.id)).toBe(
           true,
         );
         expect(membershipsA.some((m) => m.outletId === tree.outletB.id)).toBe(false);
+        expect(
+          membershipsA.every((m) => typeof m.memberLabel === "string" && m.memberLabel.length > 0),
+        ).toBe(true);
+        expect(membershipsA.every((m) => m.memberLabel !== m.workforceUserId)).toBe(true);
 
         const siblingHeaders = await headersFor(outletBManager.id);
         response = await request(
@@ -599,6 +688,80 @@ describe("IMP-036E Store Operations HTTP", () => {
           }),
         });
         expect([response.status, (await response.json()).code]).toEqual([400, "ADMIN_REQUEST_INVALID"]);
+
+        // Email invite path: authorize scope before identity resolution; user-id path remains.
+        const invitee = await createEligibleWorkforceUser(persistence, {
+          email: "store-invitee@example.com",
+          name: "Store Invitee",
+        });
+        response = await request("/api/admin/v1/memberships", {
+          method: "POST",
+          headers: siblingHeaders,
+          body: JSON.stringify({
+            workforceEmail: invitee.email,
+            scopeType: "outlet",
+            brandId: tree.brand.id,
+            organizationId: tree.orgA.id,
+            territoryId: tree.terrA.id,
+            outletId: tree.outletA.id,
+            status: "invited",
+          }),
+        });
+        expect([response.status, (await response.json()).code]).toEqual([403, "ADMIN_UNAUTHORIZED"]);
+
+        response = await request("/api/admin/v1/memberships", {
+          method: "POST",
+          headers: managerHeaders,
+          body: JSON.stringify({
+            workforceEmail: invitee.email,
+            scopeType: "outlet",
+            brandId: tree.brand.id,
+            organizationId: tree.orgA.id,
+            territoryId: tree.terrA.id,
+            outletId: tree.outletA.id,
+            status: "invited",
+          }),
+        });
+        expect(response.status).toBe(200);
+        const invited = (await response.json()).membership as {
+          workforceUserId: string;
+          memberLabel: string;
+          outletId: string;
+        };
+        expect(invited.workforceUserId).toBe(invitee.id);
+        expect(invited.memberLabel).toBe("Store Invitee");
+        expect(invited.outletId).toBe(tree.outletA.id);
+
+        response = await request("/api/admin/v1/memberships", {
+          method: "POST",
+          headers: managerHeaders,
+          body: JSON.stringify({
+            workforceEmail: outletAManager.email,
+            scopeType: "outlet",
+            brandId: tree.brand.id,
+            organizationId: tree.orgA.id,
+            territoryId: tree.terrA.id,
+            outletId: tree.outletA.id,
+            status: "invited",
+          }),
+        });
+        expect([response.status, (await response.json()).code]).toEqual([403, "ADMIN_FORBIDDEN"]);
+
+        response = await request("/api/admin/v1/memberships", {
+          method: "POST",
+          headers: managerHeaders,
+          body: JSON.stringify({
+            workforceUserId: subject.id,
+            scopeType: "outlet",
+            brandId: tree.brand.id,
+            organizationId: tree.orgA.id,
+            territoryId: tree.terrA.id,
+            outletId: tree.outletA.id,
+            status: "invited",
+          }),
+        });
+        expect(response.status).toBe(200);
+        expect((await response.json()).membership.workforceUserId).toBe(subject.id);
       } finally {
         await new Promise<void>((resolve, reject) =>
           server.close((error) => (error ? reject(error) : resolve())),
