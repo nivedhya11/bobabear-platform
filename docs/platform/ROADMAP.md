@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R109",
+  "roadmapVersion": "GTM-R110",
   "acceptedThrough": "IMP-036D",
   "currentProductSlice": "IMP-036E",
   "nextProductSlice": "IMP-036F",
   "gtmBoundary": "IMP-040",
   "lastReviewed": "2026-09-06",
-  "supersedes": "GTM-R108"
+  "supersedes": "GTM-R109"
 }
 -->
 
@@ -304,6 +304,11 @@ IMP-036D locked capability architecture (architecture **ARCHITECTURE_LOCKED**; i
 
 [`capabilities/IMP-036D-workforce-franchise-operations-v2.md`](./capabilities/IMP-036D-workforce-franchise-operations-v2.md)
 
+IMP-036E locked capability architecture (architecture **ARCHITECTURE_LOCKED**; implementation
+**NOT_AUTHORIZED** / **NOT_STARTED**):
+
+[`capabilities/IMP-036E-store-operations-management.md`](./capabilities/IMP-036E-store-operations-management.md)
+
 ## 2. Current Position
 
 ```text
@@ -314,20 +319,32 @@ Pending Acceptance:    NONE
 Public GTM Boundary:   IMP-040 — Launch Validation & Cutover
 ```
 
-**GTM-R109** records explicit Founder architecture activation of **IMP-036E — Store Operations
-Management** as `currentProductSlice` for architecture work only. IMP-036E lifecycle is
-`ARCHITECTURE_IN_PROGRESS`; architecture is `NOT_LOCKED` (`IMP-036E_ARCHITECTURE_LOCKED: NO`);
-implementation remains `NOT_AUTHORIZED` / `NOT_STARTED` (`IMP-036E_IMPLEMENTATION_AUTHORIZED: NO`;
-`IMP-036E_STARTED: NO`; `IMP-036E_IMPLEMENTATION_COMPLETE: NO`; `IMP-036E_ACCEPTED: NO`).
-`acceptedThrough` remains IMP-036D; `pendingAcceptance` remains NONE; `nextProductSlice` becomes
-IMP-036F, which remains `PLANNED` / `NOT_ACTIVATED` / `NOT_AUTHORIZED` / `NOT_STARTED`. No
-capability architecture artifact is created; no architecture lock; no implementation authorization
-or start; no D-374; no ARCH-R20. ARCH-R19 and DR-15 remain unchanged. Founder UAT remains required
-eventually (`IMP-036E_FOUNDER_UAT_REQUIRED: YES`). Stale IMP-036E planning language that described
-Serviceability as PIN/postal-code authoritative is corrected to align with accepted IMP-036B
-authority `OUTLET_DISTANCE_SERVICEABILITY_V1` (coordinates authoritative; postal/PIN metadata
-non-authoritative; map projection-only). That correction is source alignment to accepted authority,
-not a new Serviceability decision.
+**GTM-R110** records the formal architecture lock of **IMP-036E — Store Operations Management**.
+IMP-036E lifecycle is `ARCHITECTURE_LOCKED`; architecture is `LOCKED`
+(`IMP-036E_ARCHITECTURE_LOCKED: YES`); implementation remains `NOT_AUTHORIZED` / `NOT_STARTED`
+(`IMP-036E_IMPLEMENTATION_AUTHORIZED: NO`; `IMP-036E_STARTED: NO`;
+`IMP-036E_IMPLEMENTATION_COMPLETE: NO`; `IMP-036E_ACCEPTED: NO`). Locked capability architecture:
+[`capabilities/IMP-036E-store-operations-management.md`](./capabilities/IMP-036E-store-operations-management.md).
+`acceptedThrough` remains IMP-036D; `pendingAcceptance` remains NONE; `currentProductSlice` remains
+IMP-036E; `nextProductSlice` remains IMP-036F, which remains `PLANNED` / `NOT_ACTIVATED` /
+`NOT_AUTHORIZED` / `NOT_STARTED`. Founder Option A locks Assortment as Brand authority
+(`IMP036E_ASSORTMENT_AUTHORITY: BRAND`; `OUTLET_MANAGER_OUTLET_SCOPE_ASSORTMENT_MANAGE: NO`;
+`OUTLET_EFFECTIVE_ASSORTMENT_PRESENTATION: AUTHORIZED_READ_OR_ESCALATE`;
+`IMP036E_ASSORTMENT_WORKFORCE_TRANSPORT: READ_ONLY_OPERATIONS_PROJECTION`;
+`ASSORTMENT_AUTHORIZATION_RESOURCE: BRAND_DERIVED_FROM_OUTLET`;
+`ASSORTMENT_MANAGE_ROUTE_IMP036E: NO`; preferred Store read route
+`GET /api/operations/v1/outlets/{outletId}/assortment`). Store Overview is permission-gated
+composition; bulk availability is deferred; Serviceability remains
+`OUTLET_DISTANCE_SERVICEABILITY_V1` with routing-priority Store UI hidden; Team reuses Admin façade;
+bounded Operations transport covers Availability / Assortment (read-only) / Operating / Hours /
+Serviceability. Global session capability booleans are coarse navigation only
+(`IMP036E_GLOBAL_SESSION_CAPS_ARE_RESOURCE_AUTHORITY: NO`;
+`IMP036E_GLOBAL_SESSION_CAPS_PURPOSE: COARSE_NAVIGATION_ONLY`;
+`IMP036E_RESOURCE_SCOPED_CONTROL_VISIBILITY: REQUIRED`;
+`IMP036E_SERVER_AUTHORIZATION_REMAINS_AUTHORITATIVE: YES`). Schema change **NO**; new
+permission/role/scope **NO**; D-374 **NO**; ARCH-R20 **NO**. ARCH-R19 and DR-15 remain unchanged.
+Founder UAT remains required eventually (`IMP-036E_FOUNDER_UAT_REQUIRED: YES`). Does **not**
+authorize or start implementation; does **not** activate IMP-036F.
 
 IMP-036D remains `COMPLETE_AND_ACCEPTED`. Architecture remains `ARCHITECTURE_LOCKED`
 (`IMP-036D_ARCHITECTURE_LOCKED: YES`); implementation is `AUTHORIZED` / `STARTED` / `COMPLETE`
@@ -684,21 +701,49 @@ FRANCHISE_IS_BUSINESS_PERSONA: YES
 NEW_FRANCHISE_ROLE: NO
 NEW_FRANCHISE_SCOPE_MODEL: NO
 ARBITRARY_MULTI_OUTLET_FRANCHISE_RBAC: DEFERRED
-IMP-036E: ARCHITECTURE_IN_PROGRESS
-IMP-036E_ARCHITECTURE: NOT_LOCKED
-IMP-036E_ARCHITECTURE_LOCKED: NO
+IMP-036E: ARCHITECTURE_LOCKED
+IMP-036E_ARCHITECTURE: LOCKED
+IMP-036E_ARCHITECTURE_LOCKED: YES
 IMP-036E_IMPLEMENTATION: NOT_AUTHORIZED / NOT_STARTED
 IMP-036E_IMPLEMENTATION_AUTHORIZED: NO
 IMP-036E_STARTED: NO
 IMP-036E_IMPLEMENTATION_COMPLETE: NO
 IMP-036E_ACCEPTED: NO
 IMP-036E_FOUNDER_UAT_REQUIRED: YES
+IMP036E_ASSORTMENT_AUTHORITY: BRAND
+OUTLET_MANAGER_OUTLET_SCOPE_ASSORTMENT_MANAGE: NO
+OUTLET_MANAGER_OUTLET_SCOPE_ASSORTMENT_READ_AS_BRAND_AUTHORITY: NO
+OUTLET_EFFECTIVE_ASSORTMENT_PRESENTATION: AUTHORIZED_READ_OR_ESCALATE
+IMP036E_ASSORTMENT_WORKFORCE_TRANSPORT: READ_ONLY_OPERATIONS_PROJECTION
+IMP036E_ASSORTMENT_MANAGE_TRANSPORT: NO
+ASSORTMENT_ROUTE_RESOURCE_LOCATOR: OUTLET
+ASSORTMENT_AUTHORIZATION_RESOURCE: BRAND_DERIVED_FROM_OUTLET
+ASSORTMENT_READ_PERMISSION: assortment.read
+ASSORTMENT_MANAGE_ROUTE_IMP036E: NO
+IMP036E_RBAC_CATALOG_RECONCILIATION_FOLLOW_UP: YES
+IMP036E_LOCK_BLOCKED_BY_CATALOG_RECONCILIATION: NO
+IMP036E_STORE_OVERVIEW: PERMISSION_GATED_COMPOSITION
+IMP036E_BULK_AVAILABILITY: DEFERRED
 SERVICEABILITY_MODEL: OUTLET_DISTANCE_SERVICEABILITY_V1
 SERVICEABILITY_COORDINATE_AUTHORITY: YES
 SERVICEABILITY_POSTAL_PIN_RUNTIME_AUTHORITY: NO
 SERVICEABILITY_POSTAL_PIN_METADATA_ONLY: YES
 SERVICEABILITY_MAP_IS_PROJECTION_ONLY: YES
+IMP036E_SERVICEABILITY_ROUTING_PRIORITY_UI: HIDDEN_PREREQUISITE
+IMP036E_SERVICEABILITY_MAP: OPTIONAL_PROJECTION_ONLY
+IMP036E_SESSION_CAPABILITY_PROJECTION_EXTENSION: EXISTING_PERMISSION_KEYS_ONLY
+IMP036E_GLOBAL_SESSION_CAPS_ARE_RESOURCE_AUTHORITY: NO
+IMP036E_GLOBAL_SESSION_CAPS_PURPOSE: COARSE_NAVIGATION_ONLY
+IMP036E_RESOURCE_SCOPED_CONTROL_VISIBILITY: REQUIRED
+IMP036E_SERVER_AUTHORIZATION_REMAINS_AUTHORITATIVE: YES
+SCHEMA_CHANGE_REQUIRED: NO
+NEW_PERMISSION: NO
+NEW_ROLE: NO
+NEW_SCOPE_MODEL: NO
+D374_REQUIRED_FOR_IMP036E_LOCK: NO
+D-374_CREATED: NO
 D374_CREATED: NO
+ARCH_R20_REQUIRED_FOR_IMP036E_LOCK: NO
 ARCH_R20_CREATED: NO
 IMP-036F: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
 IMP-036G: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
@@ -896,18 +941,24 @@ only). Webhook acknowledgement timing / durable inbox / asynchronous Payment pro
 
 ## 4. Current Product Slice
 
-IMP-036E — Store Operations Management is `ARCHITECTURE_IN_PROGRESS` for architecture work only
-(`IMP-036E_ARCHITECTURE_LOCKED: NO`; `IMP-036E_IMPLEMENTATION_AUTHORIZED: NO`;
-`IMP-036E_STARTED: NO`; `IMP-036E_IMPLEMENTATION_COMPLETE: NO`; `IMP-036E_ACCEPTED: NO`). No locked
-capability artifact exists yet. Supporting experience plan:
-[`experience/enterprise-experience/IMP-036E-store-operations-management.md`](./experience/enterprise-experience/IMP-036E-store-operations-management.md).
-Serviceability planning aligns to accepted IMP-036B `OUTLET_DISTANCE_SERVICEABILITY_V1`
-(`SERVICEABILITY_COORDINATE_AUTHORITY: YES`; `SERVICEABILITY_POSTAL_PIN_RUNTIME_AUTHORITY: NO`;
-`SERVICEABILITY_MAP_IS_PROJECTION_ONLY: YES`). `acceptedThrough` remains IMP-036D;
-`pendingAcceptance` remains NONE; `nextProductSlice` is IMP-036F (`PLANNED` / `NOT_ACTIVATED` /
-`NOT_AUTHORIZED` / `NOT_STARTED`). ARCH-R19 and DR-15 remain unchanged; `D374_CREATED: NO`;
+IMP-036E — Store Operations Management is `ARCHITECTURE_LOCKED`
+(`IMP-036E_ARCHITECTURE_LOCKED: YES`; `IMP-036E_IMPLEMENTATION_AUTHORIZED: NO`;
+`IMP-036E_STARTED: NO`; `IMP-036E_IMPLEMENTATION_COMPLETE: NO`; `IMP-036E_ACCEPTED: NO`). Locked
+capability architecture:
+[`capabilities/IMP-036E-store-operations-management.md`](./capabilities/IMP-036E-store-operations-management.md).
+Supporting experience contract:
+[`experience/enterprise-experience/IMP-036E-store-operations-management.md`](./experience/enterprise-experience/IMP-036E-store-operations-management.md)
+(SUPPORTING; must not override the capability lock). Founder Option A locks Assortment as Brand
+authority (`IMP036E_ASSORTMENT_AUTHORITY: BRAND`). Serviceability remains accepted IMP-036B
+`OUTLET_DISTANCE_SERVICEABILITY_V1` (`SERVICEABILITY_COORDINATE_AUTHORITY: YES`;
+`SERVICEABILITY_POSTAL_PIN_RUNTIME_AUTHORITY: NO`; `SERVICEABILITY_MAP_IS_PROJECTION_ONLY: YES`;
+`IMP036E_SERVICEABILITY_ROUTING_PRIORITY_UI: HIDDEN_PREREQUISITE`). `acceptedThrough` remains
+IMP-036D; `pendingAcceptance` remains NONE; `nextProductSlice` is IMP-036F (`PLANNED` /
+`NOT_ACTIVATED` / `NOT_AUTHORIZED` / `NOT_STARTED`). ARCH-R19 and DR-15 remain unchanged;
+`SCHEMA_CHANGE_REQUIRED: NO`; `NEW_PERMISSION: NO`; `NEW_ROLE: NO`; `NEW_SCOPE_MODEL: NO`;
+`D374_REQUIRED_FOR_IMP036E_LOCK: NO`; `D-374_CREATED: NO`; `ARCH_R20_REQUIRED_FOR_IMP036E_LOCK: NO`;
 `ARCH_R20_CREATED: NO`. Founder UAT remains required eventually
-(`IMP-036E_FOUNDER_UAT_REQUIRED: YES`).
+(`IMP-036E_FOUNDER_UAT_REQUIRED: YES`). Implementation remains not authorized / not started.
 
 IMP-036D — Workforce & Franchise Operations Portal V2 remains `COMPLETE_AND_ACCEPTED` with
 architecture `ARCHITECTURE_LOCKED` and implementation `AUTHORIZED` / `STARTED` / `COMPLETE`
@@ -1221,7 +1272,7 @@ consume or remap IMP-029 → IMP-040 identities and is `COMPLETE_AND_ACCEPTED`.
 | IMP-036B | Customer Account, Onboarding, Address & Location Experience | COMPLETE_AND_ACCEPTED |
 | IMP-036C | Customer Commerce Experience V2 | COMPLETE_AND_ACCEPTED |
 | IMP-036D | Workforce & Franchise Operations Portal V2 | COMPLETE_AND_ACCEPTED |
-| IMP-036E | Store Operations Management | ARCHITECTURE_IN_PROGRESS / NOT_AUTHORIZED / NOT_STARTED |
+| IMP-036E | Store Operations Management | ARCHITECTURE_LOCKED / NOT_AUTHORIZED / NOT_STARTED |
 | IMP-036F | Catalog, Menu, Pricing & Promotions Management | PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED |
 | IMP-036G | Administration Console V2 | PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED |
 | IMP-037 | Backup, Restore & Migration Readiness | PLANNED |
@@ -1625,6 +1676,46 @@ Historical GTM-R1 meanings that are **not** current:
 Current public GTM boundary is **IMP-040**, not IMP-035.
 
 ## 9. Roadmap Change Log
+
+### GTM-R110 — 2026-09-06
+
+- Records formal architecture lock of **IMP-036E — Store Operations Management**.
+- IMP-036E lifecycle becomes `ARCHITECTURE_LOCKED`; architecture is `LOCKED`
+  (`IMP-036E_ARCHITECTURE_LOCKED: YES`); implementation remains `NOT_AUTHORIZED` / `NOT_STARTED`
+  (`IMP-036E_IMPLEMENTATION_AUTHORIZED: NO`; `IMP-036E_STARTED: NO`;
+  `IMP-036E_IMPLEMENTATION_COMPLETE: NO`; `IMP-036E_ACCEPTED: NO`).
+- Creates locked capability artifact
+  [`capabilities/IMP-036E-store-operations-management.md`](./capabilities/IMP-036E-store-operations-management.md)
+  as sole CURRENT IMP-036E capability architecture authority; supporting experience contract remains
+  SUPPORTING and must not override the lock.
+- Preserves `acceptedThrough = IMP-036D`, `pendingAcceptance = NONE`, `currentProductSlice = IMP-036E`,
+  and `nextProductSlice = IMP-036F` (`PLANNED` / `NOT_ACTIVATED` / `NOT_AUTHORIZED` / `NOT_STARTED`).
+- Locks Founder Option A Assortment boundary (`IMP036E_ASSORTMENT_AUTHORITY: BRAND`;
+  `OUTLET_MANAGER_OUTLET_SCOPE_ASSORTMENT_MANAGE: NO`;
+  `OUTLET_EFFECTIVE_ASSORTMENT_PRESENTATION: AUTHORIZED_READ_OR_ESCALATE`; catalog reconciliation
+  follow-up non-blocking).
+- Locks Assortment Store workforce transport as read-only Operations projection
+  (`IMP036E_ASSORTMENT_WORKFORCE_TRANSPORT: READ_ONLY_OPERATIONS_PROJECTION`;
+  `ASSORTMENT_ROUTE_RESOURCE_LOCATOR: OUTLET`;
+  `ASSORTMENT_AUTHORIZATION_RESOURCE: BRAND_DERIVED_FROM_OUTLET`;
+  `ASSORTMENT_READ_PERMISSION: assortment.read`; `ASSORTMENT_MANAGE_ROUTE_IMP036E: NO`;
+  `GET /api/operations/v1/outlets/{outletId}/assortment`).
+- Locks global/session capability booleans as coarse navigation only
+  (`IMP036E_GLOBAL_SESSION_CAPS_ARE_RESOURCE_AUTHORITY: NO`;
+  `IMP036E_GLOBAL_SESSION_CAPS_PURPOSE: COARSE_NAVIGATION_ONLY`;
+  `IMP036E_RESOURCE_SCOPED_CONTROL_VISIBILITY: REQUIRED`;
+  `IMP036E_SERVER_AUTHORIZATION_REMAINS_AUTHORITATIVE: YES`).
+- Locks Store Overview as permission-gated composition; Availability / Operating / Hours /
+  Serviceability reuse accepted domain authority with bounded `/api/operations/v1/outlets/{outletId}/...`
+  transport; Team reuses `/api/admin/v1/*`; bulk availability deferred; routing-priority Store UI
+  hidden; Serviceability remains `OUTLET_DISTANCE_SERVICEABILITY_V1`; session projection may add
+  existing permission keys for coarse navigation only; `SCHEMA_CHANGE_REQUIRED: NO`;
+  `NEW_PERMISSION: NO`; `NEW_ROLE: NO`; `NEW_SCOPE_MODEL: NO`.
+- No D-374; no ARCH-R20 (`D374_REQUIRED_FOR_IMP036E_LOCK: NO`; `D-374_CREATED: NO`;
+  `ARCH_R20_REQUIRED_FOR_IMP036E_LOCK: NO`; `ARCH_R20_CREATED: NO`). ARCH-R19 and DR-15 unchanged.
+- Does **not** authorize or start implementation; does **not** activate IMP-036F. Founder UAT remains
+  required eventually (`IMP-036E_FOUNDER_UAT_REQUIRED: YES`). IMP-036D remains `COMPLETE_AND_ACCEPTED`.
+- Supersedes GTM-R109 for the current product-slice architecture-lock position.
 
 ### GTM-R109 — 2026-09-06
 

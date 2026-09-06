@@ -1,19 +1,23 @@
 ---
-Status: ARCHITECTURE_IN_PROGRESS EXPERIENCE CONTRACT
+Status: ARCHITECTURE_LOCKED SUPPORTING EXPERIENCE CONTRACT
 Capability: IMP-036E — Store Operations Management
-Lifecycle: ARCHITECTURE_IN_PROGRESS
-Architecture: NOT_LOCKED
+Lifecycle: ARCHITECTURE_LOCKED
+Architecture: LOCKED
 Implementation: NOT_AUTHORIZED / NOT_STARTED
 Founder UAT required: YES
 IMP-036E_ARCHITECTURE_WORK_AUTHORIZED: YES
-IMP-036E_ARCHITECTURE_LOCKED: NO
+IMP-036E_ARCHITECTURE_LOCKED: YES
 IMP-036E_IMPLEMENTATION_AUTHORIZED: NO
 IMP-036E_STARTED: NO
 IMP-036E_IMPLEMENTATION_COMPLETE: NO
 IMP-036E_ACCEPTED: NO
 IMP-036E_FOUNDER_UAT_REQUIRED: YES
+Authority: SUPPORTING EXPERIENCE CONTRACT — locked capability architecture at
+  docs/platform/capabilities/IMP-036E-store-operations-management.md is CURRENT authority
 D374_CREATED: NO
+D-374_CREATED: NO
 ARCH_R20_CREATED: NO
+ARCH_R20_REQUIRED: NO
 ---
 
 # IMP-036E — Store Operations Management
@@ -24,23 +28,26 @@ Give authorized outlet managers and operators one coherent management workspace 
 outlet-scoped operational capabilities. Current controls are fragmented and do not clearly separate
 assortment, availability, operating status, hours, and Serviceability.
 
-## Architecture activation status (GTM-R109 / STATE-R107)
+This document is a **SUPPORTING** experience contract. It must not compete with or override the
+locked capability architecture at
+[`../../capabilities/IMP-036E-store-operations-management.md`](../../capabilities/IMP-036E-store-operations-management.md).
+The capability artifact is the sole CURRENT IMP-036E capability architecture authority.
+
+## Architecture lock status (GTM-R110 / STATE-R108)
 
 ```text
 IMP-036E_ARCHITECTURE_WORK_AUTHORIZED = YES
-IMP-036E_ARCHITECTURE_LOCKED = NO
+IMP-036E_ARCHITECTURE_LOCKED = YES
 IMP-036E_IMPLEMENTATION_AUTHORIZED = NO
 IMP-036E_STARTED = NO
 IMP-036E_IMPLEMENTATION_COMPLETE = NO
 IMP-036E_ACCEPTED = NO
 IMP-036E_FOUNDER_UAT_REQUIRED = YES
 D374_CREATED = NO
+D-374_CREATED = NO
 ARCH_R20_CREATED = NO
+ARCH_R20_REQUIRED = NO
 ```
-
-This document remains a working architecture/experience input. It is **not** a locked capability
-architecture. Architecture analysis is authorized; architecture lock, implementation authorization,
-implementation start, D-374, and ARCH-R20 are **not** authorized by this activation.
 
 ## Serviceability authority alignment (accepted IMP-036B — not a new decision)
 
@@ -54,6 +61,8 @@ SERVICEABILITY_COORDINATE_AUTHORITY = YES
 SERVICEABILITY_POSTAL_PIN_RUNTIME_AUTHORITY = NO
 SERVICEABILITY_POSTAL_PIN_METADATA_ONLY = YES
 SERVICEABILITY_MAP_IS_PROJECTION_ONLY = YES
+IMP036E_SERVICEABILITY_ROUTING_PRIORITY_UI = HIDDEN_PREREQUISITE
+IMP036E_SERVICEABILITY_MAP = OPTIONAL_PROJECTION_ONLY
 ```
 
 Accepted runtime semantics preserved:
@@ -67,8 +76,113 @@ Accepted runtime semantics preserved:
   authority
 
 Do not introduce polygons, geofences-as-authority, Google/Routes/PostGIS as Serviceability authority,
-or PIN fallback authority. Exact transport/UI mutation architecture for distance-policy management
-remains open for the architecture gate.
+or PIN fallback authority. Routing-priority Store editor remains hidden/prerequisite in V1. Map is
+optional projection only and not required for V1 acceptance.
+
+## Founder boundary — Assortment authorization (capability-local; not D-374)
+
+Resolved architecture-gate stop: preserve Brand Assortment authority. This is Founder policy for
+IMP-036E architecture work. It does **not** create `D-374`, bump `ARCH-R20`, remap permissions,
+add permissions, or change scope semantics.
+
+```text
+IMP036E_ASSORTMENT_AUTHORITY = BRAND
+ASSORTMENT_PERMISSION_TARGET_KIND = brand
+ASSORTMENT_READ_PERMISSION = assortment.read
+ASSORTMENT_MANAGE_PERMISSION = assortment.manage
+OUTLET_MANAGER_OUTLET_SCOPE_ASSORTMENT_MANAGE = NO
+OUTLET_MANAGER_OUTLET_SCOPE_ASSORTMENT_READ_AS_BRAND_AUTHORITY = NO
+OUTLET_SCOPED_OUTLET_MANAGER_GAIN_ASSORTMENT_MANAGE_VIA_IMP036E = NO
+OUTLET_EFFECTIVE_ASSORTMENT_PRESENTATION = AUTHORIZED_READ_OR_ESCALATE
+IMP036E_ASSORTMENT_WORKFORCE_TRANSPORT = READ_ONLY_OPERATIONS_PROJECTION
+IMP036E_ASSORTMENT_MANAGE_TRANSPORT = NO
+ASSORTMENT_ROUTE_RESOURCE_LOCATOR = OUTLET
+ASSORTMENT_AUTHORIZATION_RESOURCE = BRAND_DERIVED_FROM_OUTLET
+ASSORTMENT_MANAGE_ROUTE_IMP036E = NO
+CALLER_BRAND_AUTHORITY = NONE
+CALLER_OUTLET_SCOPE_IS_NOT_ASSORTMENT_AUTHORITY = YES
+SILENT_PERMISSION_REMAP = NO
+NEW_PERMISSION = NO
+NEW_ASSORTMENT_PERMISSION = NO
+NEW_ASSORTMENT_ROLE = NO
+NEW_ASSORTMENT_SCOPE_MODEL = NO
+NEW_SCOPE_SEMANTICS = NO
+IMP036E_RBAC_CATALOG_RECONCILIATION_FOLLOW_UP = YES
+IMP036E_LOCK_BLOCKED_BY_CATALOG_RECONCILIATION = NO
+D374_CREATED_FOR_THIS_BOUNDARY = NO
+ARCH_R20_CREATED_FOR_THIS_BOUNDARY = NO
+```
+
+Binding implications for Store Operations architecture:
+
+- `assortment.read` / `assortment.manage` remain Brand-targeted authority under existing Access
+  Control (`PERMISSION_TARGET_KIND` and `requireAssortmentRead` / `requireAssortmentManage`).
+- An outlet-scoped `OUTLET_MANAGER` does **not** gain Assortment management authority through
+  IMP-036E. Existing role-mapping inventory that lists those keys on `outlet_manager` with
+  `exact` inheritance is **not** reinterpreted as outlet Assortment authority and must not be
+  silently remapped.
+- Store Assortment experience: effective Assortment may be loaded through the authorized read-only
+  Operations projection `GET /api/operations/v1/outlets/{outletId}/assortment` (Outlet locator →
+  server-derived Brand authorization via `assortment.read`). There is **no** Store Assortment manage
+  route. Unauthorized actors receive escalation / read-unavailable UX (no fake manage affordance;
+  no client-side permission invention).
+- Availability and operating controls remain outlet-local under existing `availability.*` and
+  `outlet.operating_*` permissions.
+- Catalog/Menu identity remains distinct from Assortment; IMP-036E must not conflate them.
+
+## Permission UX (global caps ≠ resource authority)
+
+```text
+IMP036E_GLOBAL_SESSION_CAPS_ARE_RESOURCE_AUTHORITY = NO
+IMP036E_GLOBAL_SESSION_CAPS_PURPOSE = COARSE_NAVIGATION_ONLY
+IMP036E_RESOURCE_SCOPED_CONTROL_VISIBILITY = REQUIRED
+IMP036E_SERVER_AUTHORIZATION_REMAINS_AUTHORITATIVE = YES
+IMP036E_SESSION_CAPABILITY_PROJECTION_EXTENSION = EXISTING_PERMISSION_KEYS_ONLY
+```
+
+- Global portal/session capability booleans are coarse navigation hints only.
+- Enabled controls for a selected Outlet require resource-scoped permission evaluation.
+- Assortment visibility is Brand-authorized (Brand derived from selected Outlet), not inferred from
+  global session caps or Outlet effective-permission unions.
+- No role-name inference. Server authorization remains authoritative.
+
+## Locked architecture conclusions (summary)
+
+```text
+IMP036E_STORE_OVERVIEW = PERMISSION_GATED_COMPOSITION
+IMP036E_BULK_AVAILABILITY = DEFERRED
+IMP036E_SESSION_CAPABILITY_PROJECTION_EXTENSION = EXISTING_PERMISSION_KEYS_ONLY
+IMP036E_GLOBAL_SESSION_CAPS_ARE_RESOURCE_AUTHORITY = NO
+IMP036E_GLOBAL_SESSION_CAPS_PURPOSE = COARSE_NAVIGATION_ONLY
+IMP036E_RESOURCE_SCOPED_CONTROL_VISIBILITY = REQUIRED
+IMP036E_SERVER_AUTHORIZATION_REMAINS_AUTHORITATIVE = YES
+IMP036E_ASSORTMENT_WORKFORCE_TRANSPORT = READ_ONLY_OPERATIONS_PROJECTION
+ASSORTMENT_AUTHORIZATION_RESOURCE = BRAND_DERIVED_FROM_OUTLET
+ASSORTMENT_MANAGE_ROUTE_IMP036E = NO
+SCHEMA_CHANGE_REQUIRED = NO
+NEW_PERMISSION = NO
+NEW_ROLE = NO
+NEW_SCOPE_MODEL = NO
+D374_REQUIRED_FOR_IMP036E_LOCK = NO
+D-374_CREATED = NO
+ARCH_R20_REQUIRED_FOR_IMP036E_LOCK = NO
+```
+
+- Overview is permission-gated composition across authorized projections (no mega DTO, no invented
+  KPI, no persisted dashboard/warning/effective-status state).
+- Availability reuses existing variant/modifier-option commands and states; bulk availability is
+  deferred.
+- Operating Status reuses IMP-014 outlet operating commands — not service health
+  `/operational-status`.
+- Hours reuse existing operating profile/schedule authority (IANA timezone; day intervals; closed
+  day = absence of intervals).
+- Serviceability remains `OUTLET_DISTANCE_SERVICEABILITY_V1`; Store V1 hides routing-priority editor.
+- Team / Access reuse `/api/admin/v1/*` (D-373); Store operational config uses bounded
+  `/api/operations/v1/outlets/{outletId}/...` (D-372), including read-only Assortment projection.
+- Session capability projection may add existing permission keys for coarse navigation only; global
+  booleans are not selected-resource authority; selected-resource control visibility is required.
+- No schema change; no new permission/role/scope; no D-374; no ARCH-R20.
+- Implementation remains **NOT_AUTHORIZED** / **NOT_STARTED**. IMP-036F remains unactivated.
 
 ## Target outcomes and information architecture
 
@@ -86,10 +200,14 @@ Store
 ```
 
 - **Overview:** selected outlet identity/context, operating state, next opening when existing data
-  supports it, unavailable items, and serviceability/operational warnings.
-- **Availability:** efficient item search/filter and individual mutation; bulk behavior only when
-  accepted authority safely supports it.
-- **Assortment:** make what an outlet offers distinct from canonical Catalog/Menu identity.
+  supports it, unavailable items, and serviceability/operational warnings — permission-gated
+  composition only.
+- **Availability:** efficient item search/filter and individual mutation; bulk behavior deferred
+  (`IMP036E_BULK_AVAILABILITY = DEFERRED`).
+- **Assortment:** present what an outlet offers as distinct from canonical Catalog/Menu identity;
+  load effective Assortment through authorized read-only Operations projection when Brand
+  `assortment.read` is satisfied; mutations remain Brand-permissioned and there is no Store
+  Assortment manage route (no outlet-scoped Assortment manage via IMP-036E).
 - **Operating Status:** open/pause/resume or equivalent only where accepted authority provides the
   transition; high-risk actions remain permission constrained.
 - **Hours:** weekly schedule editing, validation, and closed-day treatment over existing schedule
@@ -107,7 +225,9 @@ Store
 
 1. Select an authorized outlet context and inspect its operational summary.
 2. Find an item and change availability with visible pending/result/conflict handling.
-3. Review assortment membership without changing Catalog identity.
+3. Where authorized, review effective Assortment context via the read-only Operations projection
+   without changing Catalog identity; otherwise show read-only/escalation (no Assortment manage
+   for outlet-scoped OUTLET_MANAGER; no Store Assortment manage route).
 4. Execute a permitted operating-status transition with consequence confirmation.
 5. Edit/validate weekly hours and closed days.
 6. Inspect/manage accepted distance-policy Serviceability (coordinates + max distance) within
@@ -119,22 +239,21 @@ Store
 
 Reuse accepted Brand/Outlet hierarchy, workforce session, effective permissions/scope, Catalog/Menu,
 assortment/availability, outlet operating state, schedules, and Serviceability
-(`OUTLET_DISTANCE_SERVICEABILITY_V1`). Existing transports and schemas are expected to remain
-authoritative; a future architecture gate must inventory actual commands/projections before promising
-UI. This plan adds no endpoints, bulk semantics, persistence, geospatial policy, roles, or
-permissions.
+(`OUTLET_DISTANCE_SERVICEABILITY_V1`). Existing transports and schemas remain authoritative under the
+locked capability architecture. This plan adds no bulk semantics, geospatial policy, roles, or
+permissions beyond locked bounded Operations transport extensions.
 
 Repository-native administration exists before IMP-036E UI (`setOutletServiceabilityDistancePolicy`,
-`npm run serviceability:set-distance-policy`). Activation does not invent Store APIs or decide
-whether workforce/admin HTTP transport already covers distance-policy mutation.
+`npm run serviceability:set-distance-policy`). Lock decides Store operational config uses bounded
+Operations transport and Team continues on Admin façade.
 
 IMP-036G may expose the same canonical access authority through richer hierarchy-wide governance
 workflows; IMP-036E does not duplicate or supersede it.
 
 ## Delivery settings ownership (aligned to accepted IMP-036B)
 
-IMP-036E may eventually provide task-oriented Store Operations UI for delivery configuration using
-the same Serviceability authority accepted in IMP-036B:
+IMP-036E may provide task-oriented Store Operations UI for delivery configuration using the same
+Serviceability authority accepted in IMP-036B:
 
 - outlet delivery enabled/disabled (via existing operating/Serviceability authorities)
 - service origin coordinates (geographic authority)
@@ -142,26 +261,7 @@ the same Serviceability authority accepted in IMP-036B:
 - temporary delivery controls where accepted authority supports them
 - postal/PIN as address metadata only (never runtime Serviceability authority)
 
-Exact mutation transport and UI architecture remain open for the architecture gate.
-
-## Open architecture work (authorized for analysis; not locked)
-
-Architecture work must inventory actual repository authority for:
-
-A. Store Overview projections / outlet identity / operating state / schedules / warnings
-B. Availability commands, transport, concurrency, audit, and whether safe bulk mutation exists
-C. Assortment membership authority vs Catalog/Menu identity
-D. Operating-status transitions and permission gates
-E. Hours schedule aggregate/schema, validation, timezone, closed-day semantics
-F. Serviceability distance-policy read/write authority and existing transports (no PIN runtime
-   authority)
-G. Team / Access reuse of IMP-035 membership, role assignment, effective permissions, audit,
-   delegation ceiling, and privilege-escalation protections
-H. Which UI capabilities can reuse `/api/operations/v1/*` and `/api/admin/v1/*` vs bounded new
-   routes under existing authority (do not create routes at activation)
-I. Schema inventory first — do not lock `SCHEMA_CHANGE_REQUIRED` at activation without conclusive
-   repository evidence
-J. RBAC reuse — do not create a Store Manager role or new permissions at activation
+Routing-priority Store editor remains `HIDDEN_PREREQUISITE` in V1.
 
 ## Responsive, accessibility, and state requirements
 
@@ -173,7 +273,7 @@ Cover loading, no assortment/coverage, errors/retry, 401, scope-safe 403/404, st
 concurrent schedule/availability/status changes, pending/success/failure, unavailable transitions,
 and destructive/high-impact confirmation. Use safe IMP-036 correlation where applicable.
 
-## Enterprise UX comprehension (ARCHITECTURE_IN_PROGRESS)
+## Enterprise UX comprehension
 
 ```text
 ENTERPRISE_UX_IS_TASK_ORIENTED = YES
@@ -189,7 +289,8 @@ user-language loading/error/recovery.
 
 - Outlet context and permission/scope are always visible and server-enforced.
 - Assortment, availability, Catalog/Menu identity, hours, operating status, and Serviceability are
-  presented as distinct accepted concepts.
+  presented as distinct accepted concepts; Assortment manage remains Brand-targeted and is not
+  granted to outlet-scoped OUTLET_MANAGER through IMP-036E.
 - Mutations preserve accepted validation/concurrency/audit behavior and recover from stale state.
 - Serviceability remains `OUTLET_DISTANCE_SERVICEABILITY_V1` with coordinates authoritative;
   postal/PIN is metadata only; no map implies coverage truth.
@@ -202,9 +303,9 @@ user-language loading/error/recovery.
 Depends on IMP-036A/D and accepted outlet/commerce/serviceability/IMP-035 access authority.
 Non-goals: new outlet lifecycle, bulk mutation without existing authority, geospatial polygons,
 PIN-based Serviceability, provider choice, schema, new permissions/roles, a duplicate access-control
-domain, hierarchy-wide Admin replacement, analytics, implementation, UI/API coding, DB migration,
-new decision number, or global architecture bump. Exact commands and any transport gaps are deferred
-to the architecture gate. IMP-036G remains the richer hierarchy-wide Administration Console slice.
+domain, hierarchy-wide Admin replacement, analytics, or global architecture bump. Bulk availability,
+Assortment outlet-scope remapping, routing-priority Store editor, and required Serviceability map
+remain deferred/not-in-V1. IMP-036G remains the richer hierarchy-wide Administration Console slice.
 
 Figma is not required initially; visual refinements may not change outlet, permission, mutation, or
 Serviceability semantics.
