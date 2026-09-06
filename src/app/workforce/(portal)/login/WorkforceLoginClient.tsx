@@ -53,6 +53,7 @@ type Screen =
 type Notice =
   | Readonly<{ kind: "signed-out" }>
   | Readonly<{ kind: "reauthentication-required" }>
+  | Readonly<{ kind: "password-changed-reauthenticate" }>
   | Readonly<{ kind: "authentication-failed" }>
   | Readonly<{ kind: "invalid-email" }>
   | Readonly<{ kind: "password-policy-violation" }>
@@ -118,6 +119,8 @@ function describeNotice(screen: Screen, notice: Notice): string {
         return "You've been signed out.";
       case "reauthentication-required":
         return "Authenticator set up. Sign in again to continue.";
+      case "password-changed-reauthenticate":
+        return "Password updated. Sign in again with your new password.";
       case "authentication-failed":
         return "Email or password is incorrect.";
       case "invalid-email":
@@ -351,9 +354,18 @@ export function WorkforceLoginClient() {
     }
 
     const { data } = result;
+    if ("authenticated" in data && data.authenticated === true) {
+      clearPasswordFields();
+      void redirectAfterAuthentication();
+      return;
+    }
     if ("next" in data && data.next === "mfa_enrollment") {
       clearPasswordFields();
       setScreen("mfa-enroll-required");
+      return;
+    }
+    if ("next" in data && data.next === "sign_in") {
+      goToSignIn({ kind: "password-changed-reauthenticate" });
       return;
     }
 
@@ -483,10 +495,17 @@ export function WorkforceLoginClient() {
     }
 
     const { data } = result;
-    if (data.authenticated) {
+    if (data.authenticated === true) {
       setTotpCode("");
       setBackupCode("");
       void redirectAfterAuthentication();
+      return;
+    }
+    if ("next" in data && data.next === "change_password") {
+      setTotpCode("");
+      setBackupCode("");
+      setNotice(null);
+      setScreen("change-password");
       return;
     }
 
@@ -525,10 +544,17 @@ export function WorkforceLoginClient() {
     }
 
     const { data } = result;
-    if (data.authenticated) {
+    if (data.authenticated === true) {
       setTotpCode("");
       setBackupCode("");
       void redirectAfterAuthentication();
+      return;
+    }
+    if ("next" in data && data.next === "change_password") {
+      setTotpCode("");
+      setBackupCode("");
+      setNotice(null);
+      setScreen("change-password");
       return;
     }
 
