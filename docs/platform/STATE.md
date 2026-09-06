@@ -2,11 +2,11 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R105",
-  "acceptedThrough": "IMP-036C",
-  "currentProductSlice": "IMP-036D",
+  "stateVersion": "STATE-R106",
+  "acceptedThrough": "IMP-036D",
+  "currentProductSlice": "NONE",
   "nextProductSlice": "IMP-036E",
-  "pendingAcceptance": "IMP-036D",
+  "pendingAcceptance": "NONE",
   "governanceHealth": "ALIGNED",
   "lastReviewed": "2026-09-06"
 }
@@ -20,22 +20,20 @@ current-reality authority.
 ## 1. Accepted Position
 
 ```text
-Accepted Through:          IMP-036C — Customer Commerce Experience V2
+Accepted Through:          IMP-036D — Workforce & Franchise Operations Portal V2
 Accepted Inserted Slice:   IMP-005A — Dockerized local application runtime; IMP-026C — Pilot Customer-Commerce UX Hardening; IMP-028A — Food Direct UX Foundation; IMP-028B — Customer Menu Projection + Discovery; IMP-028C — Food Customization; IMP-028D — Desktop Ordering Continuity
-Accepted Range:            IMP-001 → IMP-036C (including IMP-005A and IMP-026C)
+Accepted Range:            IMP-001 → IMP-036D (including IMP-005A and IMP-026C)
 ```
 
 ## 2. Current Work Position
 
 ```text
-Current Product Implementation: IMP-036D — Workforce & Franchise Operations Portal V2
-Pending Acceptance:             IMP-036D
-Current Product Slice:          IMP-036D — Workforce & Franchise Operations Portal V2
+Current Product Implementation: NONE
+Pending Acceptance:             NONE
+Current Product Slice:          NONE
 Next Product Slice:             IMP-036E — Store Operations Management
-Current Governance Activity:    IMP-036D IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE;
-                              Founder UAT required / not yet performed;
-                              IMP-036C COMPLETE_AND_ACCEPTED;
-                              IMP-036E–G and IMP-037 PLANNED / NOT_ACTIVATED /
+Current Governance Activity:    IMP-036D COMPLETE_AND_ACCEPTED;
+                              IMP-036E–G and IMP-037 remain PLANNED / NOT_ACTIVATED /
                               NOT_AUTHORIZED / NOT_STARTED.
 Governance Health:              ALIGNED
 ```
@@ -357,6 +355,46 @@ STATE-R36 record IMP-028B canonical activation without changing decision registe
 architecture. GTM-R39 / STATE-R37 record IMP-028B architecture lock and implementation
 authorization without changing decision register or global architecture.
 
+
+STATE-R106 records formal acceptance of **IMP-036D — Workforce & Franchise Operations Portal V2**
+after complete implementation evidence, independent implementation review PASS, bounded workforce-auth
+UAT defect repair review PASS (PR #115), exact merged-main Founder UAT deployment, exact runtime
+provenance verification, and Founder UAT PASS for the exact accepted UAT candidate: repository
+`/home/ajoshi/repos/boba-bear-platform`; branch `main`; HEAD
+`a6ff612c65e0d58409017b2935e0da16cffa9530`; tree
+`6580497091525c3ddd892aa44aafd63ef1132d35`; working-tree fingerprint
+`3d999b0a154e70b9332d8f5228d1723ddd501cf8b6ec162ebec8c1bfc042a735`. Implementation evidence is
+**COMPLETE**; independent implementation review is **PASS**; independent acceptance evidence is
+**ACCEPTED**; Founder UAT is **PASS** (`IMP036D_FOUNDER_UAT: PASS`); formal acceptance is recorded
+(`IMP036D_FORMAL_ACCEPTANCE: ACCEPTED`; `IMP036D_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED`;
+`IMP-036D_ACCEPTED: YES`). IMP-036D is `COMPLETE_AND_ACCEPTED`; architecture remains `LOCKED`
+(`IMP-036D_ARCHITECTURE_LOCKED: YES`). `acceptedThrough` advances to IMP-036D; `currentProductSlice`
+and `pendingAcceptance` become NONE; `nextProductSlice` remains IMP-036E, which remains `PLANNED` /
+`NOT_ACTIVATED` / `NOT_AUTHORIZED` / `NOT_STARTED`. Formal acceptance does **not** authorize, start,
+or activate IMP-036E. All runtime OCI revisions matched `a6ff612c…` during UAT deployment. Docs /
+governance reconciliation after this accepted candidate is governance provenance only and is **not**
+a new product UAT candidate (`product_retested_after_docs_merge_required: NO`).
+
+Founder UAT / candidate history preserved (only the final SHA is accepted):
+
+- `f36dcca96ed1b9976188bbc310c91a0cd4677a97` (tree `7a4514f76fa4e0a1f18a03734ab477b7eeb52d33`) —
+  initial IMP-036D Founder UAT candidate; FOUNDER UAT DEFECT / NOT ACCEPTED (existing workforce user
+  with `passwordChangeRequired=true` and `twoFactorEnabled=true`; temporary password → MFA →
+  returned to login → repeated login loop). Not rewritten as PASS.
+- Auth repair PR #115 reviewed head `bbb9b8f79da26dc761a8d58bac67f7770b2a2d9c` (tree
+  `6580497091525c3ddd892aa44aafd63ef1132d35`) — required before acceptance; merged-main
+  `a6ff612c65e0d58409017b2935e0da16cffa9530`.
+- `a6ff612c65e0d58409017b2935e0da16cffa9530` — sole Founder-accepted IMP-036D UAT candidate.
+
+Implementation-review provenance remains distinct from the accepted UAT candidate:
+`IMP036D_IMPLEMENTATION_MERGE_SHA: b615fb20e034d71f49a1fa588f976d0592a46098`;
+`IMP036D_IMPLEMENTATION_TREE: 8a5e75516ccee922e89c6202ad402e5a2acb24b9`;
+`IMP036D_REVIEWED_CANDIDATE_HEAD: 72e321ffd90d4d6f009ee1457bb728b22fc0a2fd`;
+`IMP036D_REVIEWED_CANDIDATE_TREE: 8a5e75516ccee922e89c6202ad402e5a2acb24b9`. Subsequent canonical
+main contained implementation-completion governance reconciliation and the bounded workforce-auth
+UAT defect repair before Founder UAT PASS. Locked architecture facts preserved (no D-374 / no
+ARCH-R20 / no schema / no new service/role/permission/scope). Supersedes STATE-R105 for the current
+IMP-036D lifecycle and acceptance position.
 
 STATE-R105 records IMP-036D implementation complete pending independent acceptance after exact
 implementation PR #113 merge (`IMP036D_IMPLEMENTATION_MERGE_SHA:
@@ -1501,13 +1539,14 @@ Cart → Checkout → Payment → Order
 | IMP-036A | Multi-Portal Experience Foundation | COMPLETE_AND_ACCEPTED |
 | IMP-036B | Customer Account, Onboarding, Address & Location Experience | COMPLETE_AND_ACCEPTED |
 | IMP-036C | Customer Commerce Experience V2 | COMPLETE_AND_ACCEPTED |
+| IMP-036D | Workforce & Franchise Operations Portal V2 | COMPLETE_AND_ACCEPTED |
 
 ## 5. Acceptance Position
 
 ```text
-acceptedThrough: IMP-036C
-pendingAcceptance: IMP-036D
-currentProductSlice: IMP-036D
+acceptedThrough: IMP-036D
+pendingAcceptance: NONE
+currentProductSlice: NONE
 nextProductSlice: IMP-036E — Store Operations Management
 IMP-028: COMPLETE_AND_ACCEPTED
 IMP-028_ACCEPTED: YES
@@ -1749,19 +1788,32 @@ IMP036C_DIRECT_MAIN_EXCEPTION_SHA: 13835d285f53186c9ed89dc1ed0d11e30be75cca
 IMP036C_PROCESS_EXCEPTION_OUTSTANDING: NO
 STANDARDIZED_CUSTOMER_DELIVERY_FEE: YES
 DEFERRED_CUSTOMER_FAILED_PAYMENT_HISTORY: YES
-IMP-036D: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
+IMP-036D: COMPLETE_AND_ACCEPTED
 IMP-036D_ARCHITECTURE: LOCKED
 IMP-036D_ARCHITECTURE_LOCKED: YES
 IMP-036D_IMPLEMENTATION: AUTHORIZED / STARTED / COMPLETE
 IMP-036D_IMPLEMENTATION_AUTHORIZED: YES
 IMP-036D_STARTED: YES
 IMP-036D_IMPLEMENTATION_COMPLETE: YES
-IMP-036D_ACCEPTED: NO
+IMP-036D_ACCEPTED: YES
 IMP-036D_FOUNDER_UAT_REQUIRED: YES
-IMP-036D_FOUNDER_UAT: NOT_STARTED
-IMP-036D_SCHEMA_CHANGE_REQUIRED: NO
+IMP-036D_FOUNDER_UAT: PASS
+IMP036D_FOUNDER_UAT: PASS
+IMP036D_FORMAL_ACCEPTANCE: ACCEPTED
 IMP036D_IMPLEMENTATION_EVIDENCE: COMPLETE
 IMP_036D_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
+IMP036D_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
+IMP036D_ACCEPTED_MAIN_SHA: a6ff612c65e0d58409017b2935e0da16cffa9530
+IMP036D_ACCEPTED_TREE: 6580497091525c3ddd892aa44aafd63ef1132d35
+IMP036D_ACCEPTED_CANDIDATE: a6ff612c65e0d58409017b2935e0da16cffa9530
+IMP036D_FOUNDER_UAT_CANDIDATE_REPOSITORY: /home/ajoshi/repos/boba-bear-platform
+IMP036D_FOUNDER_UAT_CANDIDATE_BRANCH: main
+IMP036D_FOUNDER_UAT_CANDIDATE_HEAD: a6ff612c65e0d58409017b2935e0da16cffa9530
+IMP036D_FOUNDER_UAT_CANDIDATE_TREE: 6580497091525c3ddd892aa44aafd63ef1132d35
+IMP036D_FOUNDER_UAT_CANDIDATE_FINGERPRINT: 3d999b0a154e70b9332d8f5228d1723ddd501cf8b6ec162ebec8c1bfc042a735
+IMP036D_FOUNDER_UAT_DECISION_DATE: 2026-09-06
+IMP036D_FOUNDER_UAT_ACCEPTANCE_AUTHORITY: Founder
+IMP-036D_SCHEMA_CHANGE_REQUIRED: NO
 IMP036D_IMPLEMENTATION_MERGE_SHA: b615fb20e034d71f49a1fa588f976d0592a46098
 IMP036D_IMPLEMENTATION_TREE: 8a5e75516ccee922e89c6202ad402e5a2acb24b9
 IMP036D_REVIEWED_CANDIDATE_HEAD: 72e321ffd90d4d6f009ee1457bb728b22fc0a2fd

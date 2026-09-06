@@ -5,7 +5,7 @@
   "capability": "IMP-036D",
   "title": "Workforce & Franchise Operations Portal V2",
   "architectureLock": "ARCHITECTURE_LOCKED",
-  "implementation": "AUTHORIZED / STARTED / COMPLETE",
+  "implementation": "COMPLETE_AND_ACCEPTED",
   "implementationAuthorized": true,
   "founderUATRequired": true,
   "schemaChangeRequired": false,
@@ -17,47 +17,51 @@
 
 # IMP-036D — Workforce & Franchise Operations Portal V2
 
-## Capability Architecture (ARCHITECTURE_LOCKED — IMPLEMENTATION AUTHORIZED / STARTED / COMPLETE)
+## Capability Architecture (ARCHITECTURE_LOCKED — COMPLETE_AND_ACCEPTED)
 
 This document is the **locked capability architecture** for IMP-036D. It is the sole CURRENT
 capability-architecture authority for this slice. Supporting experience planning must not compete
 with this lock.
 
-Implementation complete pending acceptance recorded at GTM-R107 / STATE-R105. Completion is not
-acceptance. Founder UAT remains required and has not been performed.
+Formal acceptance recorded at GTM-R108 / STATE-R106 after Founder UAT PASS on the exact accepted UAT
+candidate `a6ff612c65e0d58409017b2935e0da16cffa9530`.
 
 | Field | Value |
 |---|---|
 | Architecture lock | `ARCHITECTURE_LOCKED` |
-| Lifecycle | `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` |
+| Lifecycle | `COMPLETE_AND_ACCEPTED` |
 | Implementation | `AUTHORIZED` / `STARTED` / `COMPLETE` |
 | Implementation authorized | **YES** |
 | Implementation complete | **YES** |
-| Accepted | **NO** |
-| Accepted product through | IMP-036C (unchanged) |
-| Current product slice | IMP-036D |
-| Pending acceptance | IMP-036D |
+| Accepted | **YES** |
+| Accepted product through | IMP-036D |
+| Current product slice | NONE |
+| Pending acceptance | NONE |
 | Next product slice | IMP-036E |
-| Governance checkpoint | GTM-R107 / STATE-R105 |
+| Governance checkpoint | GTM-R108 / STATE-R106 |
 | Founder UAT required for acceptance | **YES** |
-| Founder UAT | **NOT_STARTED** |
+| Founder UAT | **PASS** |
 | Schema change required | **NO** |
 | New D-number | **NO** (`D-374` not created) |
 | Global ARCH bump | **NO** (`ARCH-R19` preserved; `ARCH-R20` not created) |
 
 ```text
-IMP-036D: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
+IMP-036D: COMPLETE_AND_ACCEPTED
 IMP-036D_ARCHITECTURE: LOCKED
 IMP-036D_ARCHITECTURE_LOCKED: YES
 IMP-036D_IMPLEMENTATION: AUTHORIZED / STARTED / COMPLETE
 IMP-036D_IMPLEMENTATION_AUTHORIZED: YES
 IMP-036D_STARTED: YES
 IMP-036D_IMPLEMENTATION_COMPLETE: YES
-IMP-036D_ACCEPTED: NO
+IMP-036D_ACCEPTED: YES
 IMP-036D_FOUNDER_UAT_REQUIRED: YES
-IMP-036D_FOUNDER_UAT: NOT_STARTED
+IMP-036D_FOUNDER_UAT: PASS
+IMP036D_FOUNDER_UAT: PASS
+IMP036D_FORMAL_ACCEPTANCE: ACCEPTED
+IMP036D_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
 FOUNDER_UAT_REQUIRED: YES
 FOUNDER_UAT_REQUIRED_FOR_ACCEPTANCE: YES
+FOUNDER_UAT: PASS
 schema_change: NO
 SCHEMA_CHANGE_REQUIRED: NO
 provider_IO: NO (Operations process)
@@ -85,12 +89,21 @@ NEW_FRANCHISE_ROLE: NO
 NEW_FRANCHISE_PERMISSION: NO
 NEW_FRANCHISE_SCOPE_MODEL: NO
 ARBITRARY_MULTI_OUTLET_FRANCHISE_RBAC: DEFERRED
-COMPLETION IS NOT ACCEPTANCE: YES
 IMPLEMENTATION_AUTHORIZED: YES
 IMPLEMENTATION_STARTED: YES
 IMPLEMENTATION_COMPLETE: YES
 IMP036D_IMPLEMENTATION_EVIDENCE: COMPLETE
 IMP_036D_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
+IMP036D_ACCEPTED_MAIN_SHA: a6ff612c65e0d58409017b2935e0da16cffa9530
+IMP036D_ACCEPTED_TREE: 6580497091525c3ddd892aa44aafd63ef1132d35
+IMP036D_ACCEPTED_CANDIDATE: a6ff612c65e0d58409017b2935e0da16cffa9530
+IMP036D_FOUNDER_UAT_CANDIDATE_REPOSITORY: /home/ajoshi/repos/boba-bear-platform
+IMP036D_FOUNDER_UAT_CANDIDATE_BRANCH: main
+IMP036D_FOUNDER_UAT_CANDIDATE_HEAD: a6ff612c65e0d58409017b2935e0da16cffa9530
+IMP036D_FOUNDER_UAT_CANDIDATE_TREE: 6580497091525c3ddd892aa44aafd63ef1132d35
+IMP036D_FOUNDER_UAT_CANDIDATE_FINGERPRINT: 3d999b0a154e70b9332d8f5228d1723ddd501cf8b6ec162ebec8c1bfc042a735
+IMP036D_FOUNDER_UAT_DECISION_DATE: 2026-09-06
+IMP036D_FOUNDER_UAT_ACCEPTANCE_AUTHORITY: Founder
 IMP036D_IMPLEMENTATION_MERGE_SHA: b615fb20e034d71f49a1fa588f976d0592a46098
 IMP036D_IMPLEMENTATION_TREE: 8a5e75516ccee922e89c6202ad402e5a2acb24b9
 IMP036D_REVIEWED_CANDIDATE_HEAD: 72e321ffd90d4d6f009ee1457bb728b22fc0a2fd
@@ -801,11 +814,42 @@ amendment. Do not silently change this lock.
 
 ---
 
-## 21. Acceptance posture (future)
+## 21. Acceptance posture
 
-When separately authorized and implemented, Founder UAT is **required** before
-`COMPLETE_AND_ACCEPTED` because this slice materially changes workforce-visible operations,
-refund/support recovery, and delivery/order daily workflows.
+Founder UAT was **required** and is **PASS**. Formal acceptance is recorded at GTM-R108 /
+STATE-R106. Lifecycle is `COMPLETE_AND_ACCEPTED`.
 
-This architecture lock does **not** authorize implementation, start implementation, complete
-implementation, or accept the product slice.
+Docs/governance reconciliation after the accepted product SHA is governance provenance only and is
+**not** a new product UAT candidate (`product_retested_after_docs_merge_required: NO`).
+
+## 22. Acceptance / UAT history
+
+```text
+IMP036D_ACCEPTED_CANDIDATE = a6ff612c65e0d58409017b2935e0da16cffa9530
+IMP036D_ACCEPTED_MAIN_SHA = a6ff612c65e0d58409017b2935e0da16cffa9530
+IMP036D_ACCEPTED_TREE = 6580497091525c3ddd892aa44aafd63ef1132d35
+IMP036D_FOUNDER_UAT_CANDIDATE_FINGERPRINT = 3d999b0a154e70b9332d8f5228d1723ddd501cf8b6ec162ebec8c1bfc042a735
+IMP036D_FOUNDER_UAT = PASS
+IMP036D_LIFECYCLE = COMPLETE_AND_ACCEPTED
+IMP036D_ACCEPTED = YES
+IMP036D_FORMAL_ACCEPTANCE = ACCEPTED
+IMP036D_INDEPENDENT_ACCEPTANCE_EVIDENCE = ACCEPTED
+```
+
+Implementation-review provenance (not rewritten as the accepted UAT candidate):
+
+| Candidate | Role |
+|---|---|
+| `b615fb20e034d71f49a1fa588f976d0592a46098` (tree `8a5e75516ccee922e89c6202ad402e5a2acb24b9`) | Implementation merge SHA / tree |
+| `72e321ffd90d4d6f009ee1457bb728b22fc0a2fd` (tree `8a5e75516ccee922e89c6202ad402e5a2acb24b9`) | Independent implementation-review candidate |
+
+Founder UAT history (not rewritten as PASS / not accepted unless noted):
+
+| Candidate | Role |
+|---|---|
+| `f36dcca96ed1b9976188bbc310c91a0cd4677a97` (tree `7a4514f76fa4e0a1f18a03734ab477b7eeb52d33`) | Initial IMP-036D Founder UAT candidate; FOUNDER UAT DEFECT / NOT ACCEPTED (existing workforce user with `passwordChangeRequired=true` and `twoFactorEnabled=true`; temporary password → MFA → login loop) |
+| `bbb9b8f79da26dc761a8d58bac67f7770b2a2d9c` (tree `6580497091525c3ddd892aa44aafd63ef1132d35`) | Reviewed auth-fix PR #115 head |
+| `a6ff612c65e0d58409017b2935e0da16cffa9530` (tree `6580497091525c3ddd892aa44aafd63ef1132d35`) | Sole Founder-accepted IMP-036D UAT candidate |
+
+Docs/governance reconciliation after the product SHA is governance provenance only and is **not**
+a new product UAT candidate.
