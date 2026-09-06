@@ -112,9 +112,12 @@ function parseChangePasswordBody(
   body: unknown,
   retryAfterSeconds: number | undefined,
 ): WorkforceAuthChangePasswordResponse | null {
-  if (!isPlainObject(body) || body.authenticated !== false) return null;
-  if (body.next === "mfa_enrollment") {
-    return { authenticated: false, next: "mfa_enrollment" };
+  if (!isPlainObject(body) || typeof body.authenticated !== "boolean") return null;
+  if (body.authenticated === true) {
+    return { authenticated: true };
+  }
+  if (body.next === "mfa_enrollment" || body.next === "sign_in") {
+    return { authenticated: false, next: body.next };
   }
   if (
     body.code === "AUTHENTICATION_FAILED" ||
@@ -187,6 +190,9 @@ function parseMfaVerifyEnrollmentBody(
 function parseMfaVerifyBody(body: unknown): WorkforceAuthMfaVerifyResponse | null {
   if (!isPlainObject(body) || typeof body.authenticated !== "boolean") return null;
   if (body.authenticated === true) return { authenticated: true };
+  if (body.next === "change_password") {
+    return { authenticated: false, next: "change_password" };
+  }
   if (
     body.code === "MFA_INVALID_CODE" ||
     body.code === "MFA_LOCKED" ||

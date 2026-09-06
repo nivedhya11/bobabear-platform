@@ -49,10 +49,14 @@ export type WorkforceAuthChangePasswordRequest = Readonly<{
   newPassword: string;
 }>;
 
-export type WorkforceAuthChangePasswordSuccess = Readonly<{
-  authenticated: false;
-  next: "mfa_enrollment";
-}>;
+export type WorkforceAuthChangePasswordSuccess =
+  | Readonly<{
+      authenticated: true;
+    }>
+  | Readonly<{
+      authenticated: false;
+      next: "mfa_enrollment" | "sign_in";
+    }>;
 
 export type WorkforceAuthChangePasswordFailure = Readonly<{
   authenticated: false;
@@ -120,9 +124,14 @@ export type WorkforceAuthMfaVerifyRequest = Readonly<{
   code: string;
 }>;
 
-export type WorkforceAuthMfaVerifySuccess = Readonly<{
-  authenticated: true;
-}>;
+export type WorkforceAuthMfaVerifySuccess =
+  | Readonly<{
+      authenticated: true;
+    }>
+  | Readonly<{
+      authenticated: false;
+      next: "change_password";
+    }>;
 
 export type WorkforceAuthMfaVerifyFailure = Readonly<{
   authenticated: false;

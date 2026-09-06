@@ -129,13 +129,30 @@ test.describe("workforce login — full temporary-password → MFA lifecycle", (
 
     await page.getByLabel("Authenticator code", { exact: true }).fill(await currentTotp(secret));
     await page.getByRole("button", { name: /verify/i }).click();
-    await expect(page.getByText(/you.?re signed in/i)).toBeVisible();
 
-    await page.reload();
-    await expect(page.getByText(/you.?re signed in/i)).toBeVisible();
+    // Fully authenticated: MFA challenge leaves and the workforce session is live.
+    // Portal post-login may navigate away from /workforce/login (admin/ops resolution).
+    await expect(page.getByLabel("Authenticator code", { exact: true })).toHaveCount(0, {
+      timeout: 15_000,
+    });
+    await expect
+      .poll(async () => {
+        const response = await page.request.get("/api/workforce-auth/session");
+        return response.json();
+      })
+      .toMatchObject({ authenticated: true, user: { id: expect.any(String) } });
 
-    // Sign out, then prove backup-code login and replay rejection.
-    await page.getByRole("button", { name: /sign out/i }).click();
+    await page.goto("/workforce/login");
+    // Authenticated session must not return a fresh password form.
+    await expect(emailField(page)).toHaveCount(0, { timeout: 15_000 });
+
+    // Sign out via the public façade (login UI no longer hosts a signed-in screen).
+    const signOut = await page.request.post("/api/workforce-auth/sign-out", {
+      data: {},
+      headers: { "content-type": "application/json", origin: new URL(page.url()).origin },
+    });
+    expect(signOut.ok()).toBeTruthy();
+    await page.goto("/workforce/login");
     await expect(emailField(page)).toBeVisible();
 
     await emailField(page).fill(EMAIL!);
@@ -146,9 +163,22 @@ test.describe("workforce login — full temporary-password → MFA lifecycle", (
     await page.getByRole("button", { name: /use a backup code/i }).click();
     await page.getByLabel("Backup code", { exact: true }).fill(firstBackup);
     await page.getByRole("button", { name: /verify backup code/i }).click();
-    await expect(page.getByText(/you.?re signed in/i)).toBeVisible();
+    await expect(page.getByLabel("Backup code", { exact: true })).toHaveCount(0, {
+      timeout: 15_000,
+    });
+    await expect
+      .poll(async () => {
+        const response = await page.request.get("/api/workforce-auth/session");
+        return response.json();
+      })
+      .toMatchObject({ authenticated: true });
 
-    await page.getByRole("button", { name: /sign out/i }).click();
+    const signOutAgain = await page.request.post("/api/workforce-auth/sign-out", {
+      data: {},
+      headers: { "content-type": "application/json", origin: new URL(page.url()).origin },
+    });
+    expect(signOutAgain.ok()).toBeTruthy();
+    await page.goto("/workforce/login");
     await emailField(page).fill(EMAIL!);
     await passwordField(page).fill(PERMANENT_PASSWORD!);
     await page.getByRole("button", { name: /^Sign in$/i }).click();

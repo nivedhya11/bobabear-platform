@@ -13,7 +13,7 @@ import { base32 } from "@better-auth/utils/base32";
 import { afterEach, describe, expect, inject, it } from "vitest";
 
 import type { WebConfig } from "../../src/platform/config";
-import { createWorkforceOperatorAuthRuntime, createWorkforceOperatorUser, setWorkforceOperatorLifecycleState } from "../../src/server/auth/workforce/operator";
+import { createWorkforceOperatorAuthRuntime, createWorkforceOperatorUser, setWorkforceOperatorLifecycleState, findWorkforceUserByEmail } from "../../src/server/auth/workforce/operator";
 import { validateWorkforceAuthConfig } from "../../src/server/auth/shared/config";
 import {
   WORKFORCE_TOTP_DIGITS,
@@ -530,6 +530,328 @@ describe("IMP-010 HTTP: MFA lockout and rate limits", () => {
         }
       }
       expect(sawRateLimit).toBe(true);
+    });
+  });
+});
+
+describe("IMP-010 HTTP: existing MFA + password-reset loop repair", () => {
+  async function enrollExistingMfaUser(
+    baseUrl: string,
+    databaseUrl: string,
+    email: string,
+  ): Promise<{ secret: string; backupCodes: string[] }> {
+    await provisionViaRuntime(databaseUrl, {
+      email,
+      password: TEMP_PASSWORD,
+      passwordChangeRequired: true,
+      twoFactorEnabled: false,
+    });
+
+    const signInTemp = await fetch(`${baseUrl}${WORKFORCE_AUTH_PUBLIC_PATHS.signIn}`, {
+      method: "POST",
+      headers: stateChangingHeaders(),
+      body: JSON.stringify({ email, password: TEMP_PASSWORD }),
+    });
+    const cookieAfterTemp = cookieFromResponse(signInTemp);
+
+    const change = await fetch(`${baseUrl}${WORKFORCE_AUTH_PUBLIC_PATHS.changePassword}`, {
+      method: "POST",
+      headers: stateChangingHeaders({ cookie: cookieAfterTemp }),
+      body: JSON.stringify({
+        currentPassword: TEMP_PASSWORD,
+        newPassword: PERMANENT_PASSWORD,
+      }),
+    });
+    expect(await change.json()).toEqual({ authenticated: false, next: "mfa_enrollment" });
+    const cookieAfterChange = cookieFromResponse(change) || cookieAfterTemp;
+
+    const enroll = await fetch(`${baseUrl}${WORKFORCE_AUTH_PUBLIC_PATHS.mfaEnroll}`, {
+      method: "POST",
+      headers: stateChangingHeaders({ cookie: cookieAfterChange }),
+      body: JSON.stringify({ password: PERMANENT_PASSWORD }),
+    });
+    const enrollBody = (await enroll.json()) as {
+      totpUri: string;
+      backupCodes: string[];
+    };
+    const secret = secretFromTotpUri(enrollBody.totpUri);
+
+    await fetch(`${baseUrl}${WORKFORCE_AUTH_PUBLIC_PATHS.mfaVerifyEnrollment}`, {
+      method: "POST",
+      headers: stateChangingHeaders({ cookie: cookieAfterChange }),
+      body: JSON.stringify({ code: await totpNow(secret) }),
+    });
+
+    return { secret, backupCodes: enrollBody.backupCodes };
+  }
+
+  async function markPasswordChangeRequired(
+    databaseUrl: string,
+    email: string,
+  ): Promise<void> {
+    const authResult = validateWorkforceAuthConfig(
+      {
+        WORKFORCE_AUTH_SECRET: WORKFORCE_AUTH_HTTP_TEST_SECRET,
+        WORKFORCE_AUTH_BASE_URL: WORKFORCE_AUTH_HTTP_TEST_ORIGIN,
+      },
+      "test",
+    );
+    if (!authResult.ok) throw new Error("invalid auth config");
+
+    const runtime = createWorkforceOperatorAuthRuntime({
+      auth: authResult.config,
+      persistence: applicationConfig(databaseUrl),
+    });
+    openRuntimes.push(runtime);
+
+    const created = await runtime.withContext((ctx) => findWorkforceUserByEmail(ctx, email));
+    if (!created) throw new Error("user missing");
+
+    await runtime.withContext((ctx) =>
+      setWorkforceOperatorLifecycleState(ctx, created.id, {
+        passwordChangeRequired: true,
+      }),
+    );
+  }
+
+  async function readLifecycle(
+    databaseUrl: string,
+    email: string,
+  ): Promise<{ passwordChangeRequired: boolean; twoFactorEnabled: boolean | null }> {
+    const authResult = validateWorkforceAuthConfig(
+      {
+        WORKFORCE_AUTH_SECRET: WORKFORCE_AUTH_HTTP_TEST_SECRET,
+        WORKFORCE_AUTH_BASE_URL: WORKFORCE_AUTH_HTTP_TEST_ORIGIN,
+      },
+      "test",
+    );
+    if (!authResult.ok) throw new Error("invalid auth config");
+    const runtime = createWorkforceOperatorAuthRuntime({
+      auth: authResult.config,
+      persistence: applicationConfig(databaseUrl),
+    });
+    openRuntimes.push(runtime);
+    const user = await runtime.withContext((ctx) => findWorkforceUserByEmail(ctx, email));
+    if (!user) throw new Error("user missing");
+    return {
+      passwordChangeRequired: user.passwordChangeRequired,
+      twoFactorEnabled: user.twoFactorEnabled,
+    };
+  }
+
+  it("existing MFA + passwordChangeRequired: TOTP → change_password → authenticated (no enrollment)", async () => {
+    await withRunningService(async ({ baseUrl, databaseUrl }) => {
+      const email = "existing-mfa-reset-totp@example.test";
+      const { secret } = await enrollExistingMfaUser(baseUrl, databaseUrl, email);
+      await markPasswordChangeRequired(databaseUrl, email);
+
+      const signIn = await fetch(`${baseUrl}${WORKFORCE_AUTH_PUBLIC_PATHS.signIn}`, {
+        method: "POST",
+        headers: stateChangingHeaders(),
+        body: JSON.stringify({ email, password: PERMANENT_PASSWORD }),
+      });
+      expect(signIn.status).toBe(200);
+      expect(await signIn.json()).toEqual({ authenticated: false, next: "mfa" });
+      const mfaCookie = cookieFromResponse(signIn);
+
+      const verifyTotp = await fetch(`${baseUrl}${WORKFORCE_AUTH_PUBLIC_PATHS.mfaVerify}`, {
+        method: "POST",
+        headers: stateChangingHeaders({ cookie: mfaCookie }),
+        body: JSON.stringify({ code: await totpNow(secret) }),
+      });
+      expect(verifyTotp.status).toBe(200);
+      expect(await verifyTotp.json()).toEqual({
+        authenticated: false,
+        next: "change_password",
+      });
+      const limitedCookie = cookieFromResponse(verifyTotp) || mfaCookie;
+
+      const sessionBeforeChange = await fetch(`${baseUrl}${WORKFORCE_AUTH_PUBLIC_PATHS.session}`, {
+        headers: { cookie: limitedCookie },
+      });
+      expect(await sessionBeforeChange.json()).toEqual({
+        authenticated: false,
+        next: "change_password",
+      });
+
+      const changedPassword = `${PERMANENT_PASSWORD}-reset`;
+      const change = await fetch(`${baseUrl}${WORKFORCE_AUTH_PUBLIC_PATHS.changePassword}`, {
+        method: "POST",
+        headers: stateChangingHeaders({ cookie: limitedCookie }),
+        body: JSON.stringify({
+          currentPassword: PERMANENT_PASSWORD,
+          newPassword: changedPassword,
+        }),
+      });
+      expect(change.status).toBe(200);
+      const changeBody = (await change.json()) as {
+        authenticated?: boolean;
+        next?: string;
+      };
+      expect(changeBody.next).not.toBe("mfa_enrollment");
+
+      const lifecycle = await readLifecycle(databaseUrl, email);
+      expect(lifecycle.passwordChangeRequired).toBe(false);
+      expect(lifecycle.twoFactorEnabled).toBe(true);
+
+      if (changeBody.authenticated === true) {
+        const authCookie = cookieFromResponse(change) || limitedCookie;
+        const sessionOk = await fetch(`${baseUrl}${WORKFORCE_AUTH_PUBLIC_PATHS.session}`, {
+          headers: { cookie: authCookie },
+        });
+        expect(await sessionOk.json()).toEqual({
+          authenticated: true,
+          user: { id: expect.any(String) },
+        });
+      } else {
+        expect(changeBody).toEqual({ authenticated: false, next: "sign_in" });
+        const reSignIn = await fetch(`${baseUrl}${WORKFORCE_AUTH_PUBLIC_PATHS.signIn}`, {
+          method: "POST",
+          headers: stateChangingHeaders(),
+          body: JSON.stringify({ email, password: changedPassword }),
+        });
+        expect(await reSignIn.json()).toEqual({ authenticated: false, next: "mfa" });
+        const reMfaCookie = cookieFromResponse(reSignIn);
+        const reVerify = await fetch(`${baseUrl}${WORKFORCE_AUTH_PUBLIC_PATHS.mfaVerify}`, {
+          method: "POST",
+          headers: stateChangingHeaders({ cookie: reMfaCookie }),
+          body: JSON.stringify({ code: await totpNow(secret) }),
+        });
+        expect(await reVerify.json()).toEqual({ authenticated: true });
+        const authCookie = cookieFromResponse(reVerify);
+        const sessionOk = await fetch(`${baseUrl}${WORKFORCE_AUTH_PUBLIC_PATHS.session}`, {
+          headers: { cookie: authCookie },
+        });
+        expect(await sessionOk.json()).toEqual({
+          authenticated: true,
+          user: { id: expect.any(String) },
+        });
+      }
+    });
+  });
+
+  it("existing MFA + passwordChangeRequired: backup code → change_password (no enrollment)", async () => {
+    await withRunningService(async ({ baseUrl, databaseUrl }) => {
+      const email = "existing-mfa-reset-backup@example.test";
+      const { backupCodes } = await enrollExistingMfaUser(baseUrl, databaseUrl, email);
+      await markPasswordChangeRequired(databaseUrl, email);
+
+      const signIn = await fetch(`${baseUrl}${WORKFORCE_AUTH_PUBLIC_PATHS.signIn}`, {
+        method: "POST",
+        headers: stateChangingHeaders(),
+        body: JSON.stringify({ email, password: PERMANENT_PASSWORD }),
+      });
+      expect(await signIn.json()).toEqual({ authenticated: false, next: "mfa" });
+      const mfaCookie = cookieFromResponse(signIn);
+
+      const verifyBackup = await fetch(
+        `${baseUrl}${WORKFORCE_AUTH_PUBLIC_PATHS.mfaVerifyBackupCode}`,
+        {
+          method: "POST",
+          headers: stateChangingHeaders({ cookie: mfaCookie }),
+          body: JSON.stringify({ code: backupCodes[0]! }),
+        },
+      );
+      expect(verifyBackup.status).toBe(200);
+      expect(await verifyBackup.json()).toEqual({
+        authenticated: false,
+        next: "change_password",
+      });
+
+      const limitedCookie = cookieFromResponse(verifyBackup) || mfaCookie;
+      const change = await fetch(`${baseUrl}${WORKFORCE_AUTH_PUBLIC_PATHS.changePassword}`, {
+        method: "POST",
+        headers: stateChangingHeaders({ cookie: limitedCookie }),
+        body: JSON.stringify({
+          currentPassword: PERMANENT_PASSWORD,
+          newPassword: `${PERMANENT_PASSWORD}-backup`,
+        }),
+      });
+      const changeBody = (await change.json()) as { next?: string };
+      expect(changeBody.next).not.toBe("mfa_enrollment");
+
+      const lifecycle = await readLifecycle(databaseUrl, email);
+      expect(lifecycle.passwordChangeRequired).toBe(false);
+      expect(lifecycle.twoFactorEnabled).toBe(true);
+    });
+  });
+
+  it("correct MFA does not bypass required password change", async () => {
+    await withRunningService(async ({ baseUrl, databaseUrl }) => {
+      const email = "mfa-no-bypass@example.test";
+      const { secret } = await enrollExistingMfaUser(baseUrl, databaseUrl, email);
+      await markPasswordChangeRequired(databaseUrl, email);
+
+      const signIn = await fetch(`${baseUrl}${WORKFORCE_AUTH_PUBLIC_PATHS.signIn}`, {
+        method: "POST",
+        headers: stateChangingHeaders(),
+        body: JSON.stringify({ email, password: PERMANENT_PASSWORD }),
+      });
+      const mfaCookie = cookieFromResponse(signIn);
+      const verify = await fetch(`${baseUrl}${WORKFORCE_AUTH_PUBLIC_PATHS.mfaVerify}`, {
+        method: "POST",
+        headers: stateChangingHeaders({ cookie: mfaCookie }),
+        body: JSON.stringify({ code: await totpNow(secret) }),
+      });
+      expect(await verify.json()).toEqual({
+        authenticated: false,
+        next: "change_password",
+      });
+      const cookie = cookieFromResponse(verify) || mfaCookie;
+      const session = await fetch(`${baseUrl}${WORKFORCE_AUTH_PUBLIC_PATHS.session}`, {
+        headers: { cookie },
+      });
+      expect(await session.json()).toEqual({
+        authenticated: false,
+        next: "change_password",
+      });
+    });
+  });
+
+  it("disabled user remains rejected after successful MFA verify", async () => {
+    await withRunningService(async ({ baseUrl, databaseUrl }) => {
+      const email = "disabled-after-mfa@example.test";
+      const { secret } = await enrollExistingMfaUser(baseUrl, databaseUrl, email);
+
+      const signIn = await fetch(`${baseUrl}${WORKFORCE_AUTH_PUBLIC_PATHS.signIn}`, {
+        method: "POST",
+        headers: stateChangingHeaders(),
+        body: JSON.stringify({ email, password: PERMANENT_PASSWORD }),
+      });
+      const mfaCookie = cookieFromResponse(signIn);
+
+      const authResult = validateWorkforceAuthConfig(
+        {
+          WORKFORCE_AUTH_SECRET: WORKFORCE_AUTH_HTTP_TEST_SECRET,
+          WORKFORCE_AUTH_BASE_URL: WORKFORCE_AUTH_HTTP_TEST_ORIGIN,
+        },
+        "test",
+      );
+      if (!authResult.ok) throw new Error("invalid auth config");
+      const runtime = createWorkforceOperatorAuthRuntime({
+        auth: authResult.config,
+        persistence: applicationConfig(databaseUrl),
+      });
+      openRuntimes.push(runtime);
+      const user = await runtime.withContext((ctx) => findWorkforceUserByEmail(ctx, email));
+      if (!user) throw new Error("user missing");
+      await runtime.withContext((ctx) =>
+        setWorkforceOperatorLifecycleState(ctx, user.id, {
+          passwordChangeRequired: false,
+          disabledAt: new Date(),
+        }),
+      );
+
+      const verify = await fetch(`${baseUrl}${WORKFORCE_AUTH_PUBLIC_PATHS.mfaVerify}`, {
+        method: "POST",
+        headers: stateChangingHeaders({ cookie: mfaCookie }),
+        body: JSON.stringify({ code: await totpNow(secret) }),
+      });
+      expect(verify.status).toBe(401);
+      expect(await verify.json()).toEqual({
+        authenticated: false,
+        code: "AUTHENTICATION_FAILED",
+      });
     });
   });
 });

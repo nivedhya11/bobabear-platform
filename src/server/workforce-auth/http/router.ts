@@ -724,6 +724,51 @@ async function handleChangePassword(
       passwordChangeRequired: false,
     });
 
+    const lifecycleUser = await loadWorkforceLifecycleUser(auth, session.user.id);
+    const hadExistingMfa = lifecycleUser?.twoFactorEnabled === true;
+
+    // Already-MFA-enabled users must never be sent back through enrollment.
+    if (hadExistingMfa) {
+      const postChangeSession = await resolveWorkforceSessionFromHeaders(
+        auth,
+        requestHeaders,
+        { returnHeaders: true },
+      );
+      const state = resolveWorkforceAuthLifecycle({
+        sessionPresent: Boolean(postChangeSession.userId),
+        user: postChangeSession.lifecycleUser,
+      });
+
+      if (isFullyAuthenticated(state)) {
+        const body: WorkforceAuthChangePasswordSuccess = { authenticated: true };
+        sendJson(res, body, {
+          status: 200,
+          requestId,
+          setCookies: mergeUniqueCookies(
+            responseHeaders.getSetCookie(),
+            postChangeSession.headers.getSetCookie(),
+          ),
+        });
+        return { operation, safeOutcomeCode: "PASSWORD_CHANGED_AUTHENTICATED", httpStatus: 200 };
+      }
+
+      // Library invalidated the limited session — require fresh sign-in + MFA.
+      const body: WorkforceAuthChangePasswordSuccess = {
+        authenticated: false,
+        next: "sign_in",
+      };
+      sendJson(res, body, {
+        status: 200,
+        requestId,
+        setCookies: responseHeaders.getSetCookie(),
+      });
+      return {
+        operation,
+        safeOutcomeCode: "PASSWORD_CHANGED_REAUTHENTICATION_REQUIRED",
+        httpStatus: 200,
+      };
+    }
+
     const body: WorkforceAuthChangePasswordSuccess = {
       authenticated: false,
       next: "mfa_enrollment",
@@ -1112,6 +1157,22 @@ async function handleMfaVerify(
         };
         sendJson(res, body, { status: 401, requestId, setCookies: clearCookies });
         return { operation, safeOutcomeCode: "AUTHENTICATION_FAILED", httpStatus: 401 };
+      }
+
+      // Existing MFA may complete before a required password change. Preserve the
+      // post-MFA limited session and route to change_password — never mint full
+      // authentication while passwordChangeRequired remains true.
+      if (lifecycleUser.passwordChangeRequired) {
+        const body: WorkforceAuthMfaVerifySuccess = {
+          authenticated: false,
+          next: "change_password",
+        };
+        sendJson(res, body, {
+          status: 200,
+          requestId,
+          setCookies: result.headers.getSetCookie(),
+        });
+        return { operation, safeOutcomeCode: "PASSWORD_CHANGE_REQUIRED", httpStatus: 200 };
       }
     }
 
