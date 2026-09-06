@@ -161,6 +161,14 @@ IMP036E_ASSORTMENT_AUTHORITY = BRAND
 OUTLET_MANAGER_OUTLET_SCOPE_ASSORTMENT_MANAGE = NO
 OUTLET_MANAGER_OUTLET_SCOPE_ASSORTMENT_READ_AS_BRAND_AUTHORITY = NO
 OUTLET_EFFECTIVE_ASSORTMENT_PRESENTATION = AUTHORIZED_READ_OR_ESCALATE
+IMP036E_ASSORTMENT_WORKFORCE_TRANSPORT = READ_ONLY_OPERATIONS_PROJECTION
+IMP036E_ASSORTMENT_MANAGE_TRANSPORT = NO
+ASSORTMENT_ROUTE_RESOURCE_LOCATOR = OUTLET
+ASSORTMENT_AUTHORIZATION_RESOURCE = BRAND_DERIVED_FROM_OUTLET
+ASSORTMENT_READ_PERMISSION = assortment.read
+ASSORTMENT_MANAGE_ROUTE_IMP036E = NO
+CALLER_BRAND_AUTHORITY = NONE
+CALLER_OUTLET_SCOPE_IS_NOT_ASSORTMENT_AUTHORITY = YES
 NEW_ASSORTMENT_PERMISSION = NO
 NEW_ASSORTMENT_ROLE = NO
 NEW_ASSORTMENT_SCOPE_MODEL = NO
@@ -178,14 +186,58 @@ assortment.manage
 remain Brand-targeted. IMP-036E MUST NOT remap these permissions.
 
 An Outlet-scoped exact `OUTLET_MANAGER` assignment does **not** acquire Brand Assortment authority
-merely because the Store UI exists.
+merely because the Store UI exists, because a global session permission union contains the key, or
+because Outlet-scoped effective permissions include the key.
 
-Store Assortment presentation may:
+Store Assortment UI locality:
 
-- show effective assortment when the actor actually satisfies accepted Brand authority
-- otherwise show a safe read-only / escalation state
+- selected resource for UI = Outlet
+- authorization resource = Brand derived server-side from selected Outlet
 
-Do not bypass authorization with `authorize:false` from the HTTP/UI boundary.
+Authorized Assortment Store transport is **read-only** under the existing D-372 Operations façade:
+
+```text
+GET /api/operations/v1/outlets/{outletId}/assortment
+```
+
+Authorization model:
+
+```text
+request outletId
+→ load authoritative Outlet server-side
+→ derive authoritative Brand from Outlet
+→ require existing assortment.read against Brand
+→ call/reuse existing Assortment read authority
+→ return safe effective-assortment projection
+```
+
+No caller-supplied brand authorization, permission, role, scope, or authorized flag may become
+authority. The route exists for Store UX locality only. It does **not** change Assortment Brand
+authority.
+
+The projection may expose only what is needed to truthfully show the effective Assortment for the
+selected Outlet and may reuse/join safe display identity needed by Store UI. It MUST NOT:
+
+- become Catalog/Menu identity authority
+- create outlet-scoped Assortment authority
+- expose Assortment manage to Outlet Manager
+- bypass `requireAssortmentRead`
+- call internal `authorize:false` from the HTTP boundary
+- create a new permission, role, or scope model
+- change existing narrowing rules
+- create persistence
+
+If the actor does not satisfy Brand `assortment.read`, return normal scope-safe denied/not-found
+behavior according to existing Operations error conventions. The UI may then render the Founder-A
+escalation / read-unavailable state.
+
+```text
+ASSORTMENT_MANAGE_ROUTE_IMP036E = NO
+IMP036E_ASSORTMENT_MANAGE_TRANSPORT = NO
+```
+
+Do **not** invent a Store Assortment manage mutation route (no POST/PATCH/DELETE Assortment Store
+route under IMP-036E).
 
 Known catalog inconsistency: `OUTLET_MANAGER` currently contains `assortment.read` /
 `assortment.manage` mappings even though exact Outlet scope cannot satisfy Brand-targeted
@@ -499,6 +551,7 @@ surfaces.
 | Concern | Transport |
 |---|---|
 | Availability / Operating Status / Hours / Serviceability | bounded `/api/operations/v1/*` extensions |
+| Assortment | READ-ONLY bounded Operations projection; Brand authorization derived from Outlet |
 | Team / Access | existing `/api/admin/v1/*` |
 | Outlet hierarchy identity/context | existing Admin resource authority |
 
@@ -524,6 +577,14 @@ Authorized route families:
 - GET/POST bounded Modifier Option availability operations
 - GET bounded availability list/projection where required by Store UI
 
+**Assortment (read-only)**
+
+- `GET /api/operations/v1/outlets/{outletId}/assortment`
+- Outlet is the route resource locator only
+- Brand authorization is derived server-side from the Outlet
+- permission: existing `assortment.read`
+- **NO** POST/PATCH/DELETE Assortment Store route (`ASSORTMENT_MANAGE_ROUTE_IMP036E = NO`)
+
 **Operating state**
 
 - GET current/effective state
@@ -544,8 +605,9 @@ Authorized route families:
 - GET Store-safe distance Serviceability configuration
 - POST distance-policy mutation
 
-Exact child naming/payload DTO shape may be finalized during implementation only if it does not
-alter these locked semantics.
+Exact child naming/payload DTO shape for non-Assortment families may be finalized during
+implementation only if it does not alter these locked semantics. Assortment Store route spelling is
+locked as above.
 
 DO NOT expose provider/internal authority fields.
 
@@ -574,10 +636,19 @@ Existing session capability projection omits Store permission keys.
 
 ```text
 IMP036E_SESSION_CAPABILITY_PROJECTION_EXTENSION = EXISTING_PERMISSION_KEYS_ONLY
+IMP036E_GLOBAL_SESSION_CAPS_ARE_RESOURCE_AUTHORITY = NO
+IMP036E_GLOBAL_SESSION_CAPS_PURPOSE = COARSE_NAVIGATION_ONLY
+IMP036E_RESOURCE_SCOPED_CONTROL_VISIBILITY = REQUIRED
+IMP036E_SERVER_AUTHORIZATION_REMAINS_AUTHORITATIVE = YES
 ```
 
-Implementation may extend the existing safe workforce/admin session capability projection with
-existing keys needed for Store navigation/control visibility:
+`getAdminSession` → `getEffectivePermissions(actor)` with **no** resource yields a union of
+permission keys across all effective grants. Therefore a boolean such as
+`capabilities["assortment.manage"] = true` does **not** prove authorization against the selected
+Store's Brand (or any selected Outlet).
+
+Existing permission keys may be added to the global/session capability projection for **coarse
+navigation only**:
 
 ```text
 outlet.read
@@ -601,10 +672,63 @@ access.effective_permissions.read
 access.audit.read
 ```
 
-This is a projection change only. It does **not** grant permission, modify role mappings, replace
-`authorize()`, or create new RBAC authority.
+Global/session capability booleans may be used for:
 
-UI hiding remains convenience only. Server authorization remains authoritative.
+- coarse portal/navigation discovery
+- avoiding obviously irrelevant navigation
+- non-security UX hints
+
+They MUST NOT be used as sole authority for:
+
+- showing enabled mutation controls for the selected Outlet
+- showing Assortment manage/read capability for the selected Brand
+- executing a mutation
+- deciding access to selected-resource data
+
+### Resource-scoped Store capability visibility
+
+Selected-resource control visibility **requires** resource-scoped permission evaluation using
+existing permission keys and existing authorization machinery only. Do **not** create new RBAC.
+
+For selected Outlet operational controls, resource-scoped capability state must be derived against
+the authoritative selected Outlet for:
+
+```text
+availability.read / availability.manage
+outlet.operating_state.read / pause / suspend
+outlet.operating_schedule.read / manage
+serviceability.read / serviceability.manage
+```
+
+Assortment must be evaluated separately against the authoritative Brand derived from the selected
+Outlet using:
+
+```text
+assortment.read
+assortment.manage
+```
+
+Therefore:
+
+```text
+global session assortment.read/manage ≠ selected Store Assortment authority
+Outlet effective permissions ≠ Brand Assortment authority
+```
+
+The Store UI must not infer Assortment authority from either. It must use a Brand-specific
+authorization / effective-permission result, or the actual authorized Assortment read response.
+
+Implementation may satisfy selected-resource capability visibility by reusing
+`GET /api/admin/v1/effective-permissions` where appropriate (that route already accepts a
+`ProtectedResource` and uses resource-scoped `getEffectivePermissions`), or by adding an equivalent
+bounded Store capability projection under existing Operations authority if necessary for Store
+composition. Architecture must preserve resource-specific server authorization and MUST NOT create a
+second authorization engine, new permissions, or new scope semantics. Exact frontend request
+sequencing is not over-locked.
+
+This session projection change does **not** grant permission, modify role mappings, replace
+`authorize()`, or create new RBAC authority. Server authorization always re-checks the exact
+protected resource and remains authoritative.
 
 ---
 
@@ -682,11 +806,14 @@ Reasons:
 - existing schema reused
 - existing permission keys reused
 - existing role/scope model reused
-- D-372 Operations façade extended capability-locally
+- D-372 Operations façade extended capability-locally (including Assortment read-only projection)
 - D-373 Admin façade reused
-- Founder A preserves accepted Assortment authority
-- session changes are projection only
+- Founder A preserves accepted Assortment Brand authority
+- Assortment Store route authorizes Brand derived from Outlet via existing `assortment.read`
+- session changes are projection only; global caps are coarse navigation, not resource authority
+- selected-resource control visibility reuses existing resource-scoped authorization
 - Store Overview is composition only
+- corrective amendment prevents false UX authority rather than creating new RBAC
 
 Do not create a D-number merely to restate these capability-local decisions.
 

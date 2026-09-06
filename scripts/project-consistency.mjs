@@ -5046,6 +5046,12 @@ export function evaluateImp036eArchitectureLockArtifact(text) {
     /IMP036E_ASSORTMENT_AUTHORITY\s*=\s*BRAND/,
     /OUTLET_MANAGER_OUTLET_SCOPE_ASSORTMENT_MANAGE\s*=\s*NO/,
     /OUTLET_EFFECTIVE_ASSORTMENT_PRESENTATION\s*=\s*AUTHORIZED_READ_OR_ESCALATE/,
+    /IMP036E_ASSORTMENT_WORKFORCE_TRANSPORT\s*=\s*READ_ONLY_OPERATIONS_PROJECTION/,
+    /IMP036E_ASSORTMENT_MANAGE_TRANSPORT\s*=\s*NO/,
+    /ASSORTMENT_ROUTE_RESOURCE_LOCATOR\s*=\s*OUTLET/,
+    /ASSORTMENT_AUTHORIZATION_RESOURCE\s*=\s*BRAND_DERIVED_FROM_OUTLET/,
+    /ASSORTMENT_READ_PERMISSION\s*=\s*assortment\.read/,
+    /ASSORTMENT_MANAGE_ROUTE_IMP036E\s*=\s*NO/,
     /IMP036E_BULK_AVAILABILITY\s*=\s*DEFERRED/,
     /SERVICEABILITY_MODEL\s*=\s*OUTLET_DISTANCE_SERVICEABILITY_V1/,
     /SERVICEABILITY_COORDINATE_AUTHORITY\s*=\s*YES/,
@@ -5053,6 +5059,10 @@ export function evaluateImp036eArchitectureLockArtifact(text) {
     /SERVICEABILITY_MAP_IS_PROJECTION_ONLY\s*=\s*YES/,
     /IMP036E_SERVICEABILITY_ROUTING_PRIORITY_UI\s*=\s*HIDDEN_PREREQUISITE/,
     /IMP036E_SESSION_CAPABILITY_PROJECTION_EXTENSION\s*=\s*EXISTING_PERMISSION_KEYS_ONLY/,
+    /IMP036E_GLOBAL_SESSION_CAPS_ARE_RESOURCE_AUTHORITY\s*=\s*NO/,
+    /IMP036E_GLOBAL_SESSION_CAPS_PURPOSE\s*=\s*COARSE_NAVIGATION_ONLY/,
+    /IMP036E_RESOURCE_SCOPED_CONTROL_VISIBILITY\s*=\s*REQUIRED/,
+    /IMP036E_SERVER_AUTHORIZATION_REMAINS_AUTHORITATIVE\s*=\s*YES/,
     /SCHEMA_CHANGE_REQUIRED:\s*NO/,
     /D374_REQUIRED_FOR_IMP036E_LOCK:\s*NO/,
     /D-374_CREATED:\s*NO/,
@@ -5062,6 +5072,7 @@ export function evaluateImp036eArchitectureLockArtifact(text) {
     /NEW_SCOPE_MODEL:\s*NO/,
     /IMP036E_STORE_OVERVIEW\s*=\s*PERMISSION_GATED_COMPOSITION/,
     /\/api\/operations\/v1\/outlets\/\{outletId\}\//,
+    /GET\s+\/api\/operations\/v1\/outlets\/\{outletId\}\/assortment/,
     /\bD-372\b/,
     /\bD-373\b/,
   ];
@@ -5078,6 +5089,15 @@ export function evaluateImp036eArchitectureLockArtifact(text) {
     /IMP-036E_ACCEPTED:\s*YES/,
     /\|\s*D-374\s*\|/,
     /###\s*D-374\b/,
+    /IMP036E_GLOBAL_SESSION_CAPS_ARE_RESOURCE_AUTHORITY\s*=\s*YES/,
+    /GLOBAL_SESSION_CAPS_ARE_RESOURCE_AUTHORITY\s*=\s*YES/,
+    /global capability booleans are sufficient authorization for selected Store/i,
+    /Outlet-scoped permission union grants Brand Assortment authority/i,
+    /ASSORTMENT_MANAGE_ROUTE_IMP036E\s*=\s*YES/,
+    /IMP036E_ASSORTMENT_MANAGE_TRANSPORT\s*=\s*YES/,
+    /POST\s+\/api\/operations\/v1\/outlets\/\{outletId\}\/assortment/,
+    /PATCH\s+\/api\/operations\/v1\/outlets\/\{outletId\}\/assortment/,
+    /DELETE\s+\/api\/operations\/v1\/outlets\/\{outletId\}\/assortment/,
   ];
   if (forbidden.some((pattern) => pattern.test(text))) {
     return { ok: false, code: "IMP036E_CAPABILITY_LOCK", message: "IMP-036E artifact must not authorize implementation or create D-374" };
@@ -14032,6 +14052,9 @@ function checkImp036eArchitectureLock(roadmap, state, architecture, decision) {
     [currentRoadmapSection, /IMP036E_ASSORTMENT_AUTHORITY:\s*BRAND/, "ROADMAP must record Founder-A Assortment BRAND authority"],
     [currentRoadmapSection, /OUTLET_MANAGER_OUTLET_SCOPE_ASSORTMENT_MANAGE:\s*NO/, "ROADMAP must record outlet-manager assortment manage NO"],
     [currentRoadmapSection, /OUTLET_EFFECTIVE_ASSORTMENT_PRESENTATION:\s*AUTHORIZED_READ_OR_ESCALATE/, "ROADMAP must record assortment presentation rule"],
+    [currentRoadmapSection, /IMP036E_ASSORTMENT_WORKFORCE_TRANSPORT:\s*READ_ONLY_OPERATIONS_PROJECTION/, "ROADMAP must record Assortment read-only Operations projection"],
+    [currentRoadmapSection, /ASSORTMENT_AUTHORIZATION_RESOURCE:\s*BRAND_DERIVED_FROM_OUTLET/, "ROADMAP must record Assortment Brand-from-Outlet authorization"],
+    [currentRoadmapSection, /ASSORTMENT_MANAGE_ROUTE_IMP036E:\s*NO/, "ROADMAP must record Assortment manage route NO"],
     [currentRoadmapSection, /IMP036E_BULK_AVAILABILITY:\s*DEFERRED/, "ROADMAP must defer bulk availability"],
     [currentRoadmapSection, /SERVICEABILITY_MODEL:\s*OUTLET_DISTANCE_SERVICEABILITY_V1/, "ROADMAP must record OUTLET_DISTANCE_SERVICEABILITY_V1"],
     [currentRoadmapSection, /SERVICEABILITY_COORDINATE_AUTHORITY:\s*YES/, "ROADMAP must record coordinate Serviceability authority"],
@@ -14039,6 +14062,10 @@ function checkImp036eArchitectureLock(roadmap, state, architecture, decision) {
     [currentRoadmapSection, /SERVICEABILITY_MAP_IS_PROJECTION_ONLY:\s*YES/, "ROADMAP must record map projection-only"],
     [currentRoadmapSection, /IMP036E_SERVICEABILITY_ROUTING_PRIORITY_UI:\s*HIDDEN_PREREQUISITE/, "ROADMAP must hide routing-priority Store UI"],
     [currentRoadmapSection, /IMP036E_SESSION_CAPABILITY_PROJECTION_EXTENSION:\s*EXISTING_PERMISSION_KEYS_ONLY/, "ROADMAP must record session projection extension rule"],
+    [currentRoadmapSection, /IMP036E_GLOBAL_SESSION_CAPS_ARE_RESOURCE_AUTHORITY:\s*NO/, "ROADMAP must record global session caps are not resource authority"],
+    [currentRoadmapSection, /IMP036E_GLOBAL_SESSION_CAPS_PURPOSE:\s*COARSE_NAVIGATION_ONLY/, "ROADMAP must record global session caps coarse navigation only"],
+    [currentRoadmapSection, /IMP036E_RESOURCE_SCOPED_CONTROL_VISIBILITY:\s*REQUIRED/, "ROADMAP must require resource-scoped control visibility"],
+    [currentRoadmapSection, /IMP036E_SERVER_AUTHORIZATION_REMAINS_AUTHORITATIVE:\s*YES/, "ROADMAP must keep server authorization authoritative"],
     [currentRoadmapSection, /SCHEMA_CHANGE_REQUIRED:\s*NO/, "ROADMAP must record SCHEMA_CHANGE_REQUIRED: NO"],
     [currentRoadmapSection, /NEW_PERMISSION:\s*NO/, "ROADMAP must record NEW_PERMISSION: NO"],
     [currentRoadmapSection, /NEW_ROLE:\s*NO/, "ROADMAP must record NEW_ROLE: NO"],
@@ -14059,6 +14086,9 @@ function checkImp036eArchitectureLock(roadmap, state, architecture, decision) {
     [currentStateAcceptance, /IMP036E_ASSORTMENT_AUTHORITY:\s*BRAND/, "STATE must record Founder-A Assortment BRAND authority"],
     [currentStateAcceptance, /OUTLET_MANAGER_OUTLET_SCOPE_ASSORTMENT_MANAGE:\s*NO/, "STATE must record outlet-manager assortment manage NO"],
     [currentStateAcceptance, /OUTLET_EFFECTIVE_ASSORTMENT_PRESENTATION:\s*AUTHORIZED_READ_OR_ESCALATE/, "STATE must record assortment presentation rule"],
+    [currentStateAcceptance, /IMP036E_ASSORTMENT_WORKFORCE_TRANSPORT:\s*READ_ONLY_OPERATIONS_PROJECTION/, "STATE must record Assortment read-only Operations projection"],
+    [currentStateAcceptance, /ASSORTMENT_AUTHORIZATION_RESOURCE:\s*BRAND_DERIVED_FROM_OUTLET/, "STATE must record Assortment Brand-from-Outlet authorization"],
+    [currentStateAcceptance, /ASSORTMENT_MANAGE_ROUTE_IMP036E:\s*NO/, "STATE must record Assortment manage route NO"],
     [currentStateAcceptance, /IMP036E_BULK_AVAILABILITY:\s*DEFERRED/, "STATE must defer bulk availability"],
     [currentStateAcceptance, /SERVICEABILITY_MODEL:\s*OUTLET_DISTANCE_SERVICEABILITY_V1/, "STATE must record OUTLET_DISTANCE_SERVICEABILITY_V1"],
     [currentStateAcceptance, /SERVICEABILITY_COORDINATE_AUTHORITY:\s*YES/, "STATE must record coordinate Serviceability authority"],
@@ -14066,6 +14096,10 @@ function checkImp036eArchitectureLock(roadmap, state, architecture, decision) {
     [currentStateAcceptance, /SERVICEABILITY_MAP_IS_PROJECTION_ONLY:\s*YES/, "STATE must record map projection-only"],
     [currentStateAcceptance, /IMP036E_SERVICEABILITY_ROUTING_PRIORITY_UI:\s*HIDDEN_PREREQUISITE/, "STATE must hide routing-priority Store UI"],
     [currentStateAcceptance, /IMP036E_SESSION_CAPABILITY_PROJECTION_EXTENSION:\s*EXISTING_PERMISSION_KEYS_ONLY/, "STATE must record session projection extension rule"],
+    [currentStateAcceptance, /IMP036E_GLOBAL_SESSION_CAPS_ARE_RESOURCE_AUTHORITY:\s*NO/, "STATE must record global session caps are not resource authority"],
+    [currentStateAcceptance, /IMP036E_GLOBAL_SESSION_CAPS_PURPOSE:\s*COARSE_NAVIGATION_ONLY/, "STATE must record global session caps coarse navigation only"],
+    [currentStateAcceptance, /IMP036E_RESOURCE_SCOPED_CONTROL_VISIBILITY:\s*REQUIRED/, "STATE must require resource-scoped control visibility"],
+    [currentStateAcceptance, /IMP036E_SERVER_AUTHORIZATION_REMAINS_AUTHORITATIVE:\s*YES/, "STATE must keep server authorization authoritative"],
     [currentStateAcceptance, /SCHEMA_CHANGE_REQUIRED:\s*NO/, "STATE must record SCHEMA_CHANGE_REQUIRED: NO"],
     [currentStateAcceptance, /NEW_PERMISSION:\s*NO/, "STATE must record NEW_PERMISSION: NO"],
     [currentStateAcceptance, /NEW_ROLE:\s*NO/, "STATE must record NEW_ROLE: NO"],
@@ -14078,6 +14112,23 @@ function checkImp036eArchitectureLock(roadmap, state, architecture, decision) {
   ];
   for (const [text, pattern, message] of requiredTokens) {
     if (!pattern.test(text)) fail("IMP036E_ARCHITECTURE_LOCK", message);
+  }
+
+  const correctiveForbidden = [
+    /IMP036E_GLOBAL_SESSION_CAPS_ARE_RESOURCE_AUTHORITY:\s*YES/,
+    /ASSORTMENT_MANAGE_ROUTE_IMP036E:\s*YES/,
+    /IMP036E_ASSORTMENT_MANAGE_TRANSPORT:\s*YES/,
+    /Outlet-scoped permission union grants Brand Assortment authority/i,
+    /global capability booleans are sufficient authorization for selected Store/i,
+  ];
+  for (const text of [currentRoadmapSection, currentStateAcceptance, artifactText]) {
+    if (correctiveForbidden.some((pattern) => pattern.test(text))) {
+      fail(
+        "IMP036E_CORRECTIVE_SEMANTICS",
+        "IMP-036E lock must keep Assortment Store transport read-only and global session caps non-authoritative",
+      );
+      break;
+    }
   }
 
   const premature = [
@@ -14142,6 +14193,14 @@ function checkImp036eArchitectureLock(roadmap, state, architecture, decision) {
       /IMP036E_ASSORTMENT_AUTHORITY\s*=\s*BRAND/,
       /OUTLET_MANAGER_OUTLET_SCOPE_ASSORTMENT_MANAGE\s*=\s*NO/,
       /OUTLET_EFFECTIVE_ASSORTMENT_PRESENTATION\s*=\s*AUTHORIZED_READ_OR_ESCALATE/,
+      /IMP036E_ASSORTMENT_WORKFORCE_TRANSPORT\s*=\s*READ_ONLY_OPERATIONS_PROJECTION/,
+      /ASSORTMENT_AUTHORIZATION_RESOURCE\s*=\s*BRAND_DERIVED_FROM_OUTLET/,
+      /ASSORTMENT_MANAGE_ROUTE_IMP036E\s*=\s*NO/,
+      /GET\s+\/api\/operations\/v1\/outlets\/\{outletId\}\/assortment/,
+      /IMP036E_GLOBAL_SESSION_CAPS_ARE_RESOURCE_AUTHORITY\s*=\s*NO/,
+      /IMP036E_GLOBAL_SESSION_CAPS_PURPOSE\s*=\s*COARSE_NAVIGATION_ONLY/,
+      /IMP036E_RESOURCE_SCOPED_CONTROL_VISIBILITY\s*=\s*REQUIRED/,
+      /IMP036E_SERVER_AUTHORIZATION_REMAINS_AUTHORITATIVE\s*=\s*YES/,
       /OUTLET_DISTANCE_SERVICEABILITY_V1/,
       /SERVICEABILITY_COORDINATE_AUTHORITY\s*=\s*YES/,
       /SERVICEABILITY_POSTAL_PIN_RUNTIME_AUTHORITY\s*=\s*NO/,

@@ -94,6 +94,13 @@ OUTLET_MANAGER_OUTLET_SCOPE_ASSORTMENT_MANAGE = NO
 OUTLET_MANAGER_OUTLET_SCOPE_ASSORTMENT_READ_AS_BRAND_AUTHORITY = NO
 OUTLET_SCOPED_OUTLET_MANAGER_GAIN_ASSORTMENT_MANAGE_VIA_IMP036E = NO
 OUTLET_EFFECTIVE_ASSORTMENT_PRESENTATION = AUTHORIZED_READ_OR_ESCALATE
+IMP036E_ASSORTMENT_WORKFORCE_TRANSPORT = READ_ONLY_OPERATIONS_PROJECTION
+IMP036E_ASSORTMENT_MANAGE_TRANSPORT = NO
+ASSORTMENT_ROUTE_RESOURCE_LOCATOR = OUTLET
+ASSORTMENT_AUTHORIZATION_RESOURCE = BRAND_DERIVED_FROM_OUTLET
+ASSORTMENT_MANAGE_ROUTE_IMP036E = NO
+CALLER_BRAND_AUTHORITY = NONE
+CALLER_OUTLET_SCOPE_IS_NOT_ASSORTMENT_AUTHORITY = YES
 SILENT_PERMISSION_REMAP = NO
 NEW_PERMISSION = NO
 NEW_ASSORTMENT_PERMISSION = NO
@@ -114,12 +121,30 @@ Binding implications for Store Operations architecture:
   IMP-036E. Existing role-mapping inventory that lists those keys on `outlet_manager` with
   `exact` inheritance is **not** reinterpreted as outlet Assortment authority and must not be
   silently remapped.
-- Store may present **effective Assortment read context** only where the actor is actually
-  authorized under Brand Assortment rules. Otherwise present an appropriate read-only /
-  escalation state (no fake manage affordance; no client-side permission invention).
+- Store Assortment experience: effective Assortment may be loaded through the authorized read-only
+  Operations projection `GET /api/operations/v1/outlets/{outletId}/assortment` (Outlet locator →
+  server-derived Brand authorization via `assortment.read`). There is **no** Store Assortment manage
+  route. Unauthorized actors receive escalation / read-unavailable UX (no fake manage affordance;
+  no client-side permission invention).
 - Availability and operating controls remain outlet-local under existing `availability.*` and
   `outlet.operating_*` permissions.
 - Catalog/Menu identity remains distinct from Assortment; IMP-036E must not conflate them.
+
+## Permission UX (global caps ≠ resource authority)
+
+```text
+IMP036E_GLOBAL_SESSION_CAPS_ARE_RESOURCE_AUTHORITY = NO
+IMP036E_GLOBAL_SESSION_CAPS_PURPOSE = COARSE_NAVIGATION_ONLY
+IMP036E_RESOURCE_SCOPED_CONTROL_VISIBILITY = REQUIRED
+IMP036E_SERVER_AUTHORIZATION_REMAINS_AUTHORITATIVE = YES
+IMP036E_SESSION_CAPABILITY_PROJECTION_EXTENSION = EXISTING_PERMISSION_KEYS_ONLY
+```
+
+- Global portal/session capability booleans are coarse navigation hints only.
+- Enabled controls for a selected Outlet require resource-scoped permission evaluation.
+- Assortment visibility is Brand-authorized (Brand derived from selected Outlet), not inferred from
+  global session caps or Outlet effective-permission unions.
+- No role-name inference. Server authorization remains authoritative.
 
 ## Locked architecture conclusions (summary)
 
@@ -127,6 +152,13 @@ Binding implications for Store Operations architecture:
 IMP036E_STORE_OVERVIEW = PERMISSION_GATED_COMPOSITION
 IMP036E_BULK_AVAILABILITY = DEFERRED
 IMP036E_SESSION_CAPABILITY_PROJECTION_EXTENSION = EXISTING_PERMISSION_KEYS_ONLY
+IMP036E_GLOBAL_SESSION_CAPS_ARE_RESOURCE_AUTHORITY = NO
+IMP036E_GLOBAL_SESSION_CAPS_PURPOSE = COARSE_NAVIGATION_ONLY
+IMP036E_RESOURCE_SCOPED_CONTROL_VISIBILITY = REQUIRED
+IMP036E_SERVER_AUTHORIZATION_REMAINS_AUTHORITATIVE = YES
+IMP036E_ASSORTMENT_WORKFORCE_TRANSPORT = READ_ONLY_OPERATIONS_PROJECTION
+ASSORTMENT_AUTHORIZATION_RESOURCE = BRAND_DERIVED_FROM_OUTLET
+ASSORTMENT_MANAGE_ROUTE_IMP036E = NO
 SCHEMA_CHANGE_REQUIRED = NO
 NEW_PERMISSION = NO
 NEW_ROLE = NO
@@ -146,8 +178,9 @@ ARCH_R20_REQUIRED_FOR_IMP036E_LOCK = NO
   day = absence of intervals).
 - Serviceability remains `OUTLET_DISTANCE_SERVICEABILITY_V1`; Store V1 hides routing-priority editor.
 - Team / Access reuse `/api/admin/v1/*` (D-373); Store operational config uses bounded
-  `/api/operations/v1/outlets/{outletId}/...` (D-372).
-- Session capability projection may add existing permission keys only.
+  `/api/operations/v1/outlets/{outletId}/...` (D-372), including read-only Assortment projection.
+- Session capability projection may add existing permission keys for coarse navigation only; global
+  booleans are not selected-resource authority; selected-resource control visibility is required.
 - No schema change; no new permission/role/scope; no D-374; no ARCH-R20.
 - Implementation remains **NOT_AUTHORIZED** / **NOT_STARTED**. IMP-036F remains unactivated.
 
@@ -172,8 +205,9 @@ Store
 - **Availability:** efficient item search/filter and individual mutation; bulk behavior deferred
   (`IMP036E_BULK_AVAILABILITY = DEFERRED`).
 - **Assortment:** present what an outlet offers as distinct from canonical Catalog/Menu identity;
-  mutations and authoritative Assortment reads remain Brand-permissioned per Founder boundary
-  above (no outlet-scoped Assortment manage via IMP-036E).
+  load effective Assortment through authorized read-only Operations projection when Brand
+  `assortment.read` is satisfied; mutations remain Brand-permissioned and there is no Store
+  Assortment manage route (no outlet-scoped Assortment manage via IMP-036E).
 - **Operating Status:** open/pause/resume or equivalent only where accepted authority provides the
   transition; high-risk actions remain permission constrained.
 - **Hours:** weekly schedule editing, validation, and closed-day treatment over existing schedule
@@ -191,8 +225,9 @@ Store
 
 1. Select an authorized outlet context and inspect its operational summary.
 2. Find an item and change availability with visible pending/result/conflict handling.
-3. Where authorized, review effective Assortment context without changing Catalog identity;
-   otherwise show read-only/escalation (no Assortment manage for outlet-scoped OUTLET_MANAGER).
+3. Where authorized, review effective Assortment context via the read-only Operations projection
+   without changing Catalog identity; otherwise show read-only/escalation (no Assortment manage
+   for outlet-scoped OUTLET_MANAGER; no Store Assortment manage route).
 4. Execute a permitted operating-status transition with consequence confirmation.
 5. Edit/validate weekly hours and closed days.
 6. Inspect/manage accepted distance-policy Serviceability (coordinates + max distance) within

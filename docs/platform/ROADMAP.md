@@ -329,13 +329,22 @@ IMP-036E lifecycle is `ARCHITECTURE_LOCKED`; architecture is `LOCKED`
 IMP-036E; `nextProductSlice` remains IMP-036F, which remains `PLANNED` / `NOT_ACTIVATED` /
 `NOT_AUTHORIZED` / `NOT_STARTED`. Founder Option A locks Assortment as Brand authority
 (`IMP036E_ASSORTMENT_AUTHORITY: BRAND`; `OUTLET_MANAGER_OUTLET_SCOPE_ASSORTMENT_MANAGE: NO`;
-`OUTLET_EFFECTIVE_ASSORTMENT_PRESENTATION: AUTHORIZED_READ_OR_ESCALATE`). Store Overview is
-permission-gated composition; bulk availability is deferred; Serviceability remains
+`OUTLET_EFFECTIVE_ASSORTMENT_PRESENTATION: AUTHORIZED_READ_OR_ESCALATE`;
+`IMP036E_ASSORTMENT_WORKFORCE_TRANSPORT: READ_ONLY_OPERATIONS_PROJECTION`;
+`ASSORTMENT_AUTHORIZATION_RESOURCE: BRAND_DERIVED_FROM_OUTLET`;
+`ASSORTMENT_MANAGE_ROUTE_IMP036E: NO`; preferred Store read route
+`GET /api/operations/v1/outlets/{outletId}/assortment`). Store Overview is permission-gated
+composition; bulk availability is deferred; Serviceability remains
 `OUTLET_DISTANCE_SERVICEABILITY_V1` with routing-priority Store UI hidden; Team reuses Admin façade;
-bounded Operations transport covers Availability / Operating / Hours / Serviceability. Schema change
-**NO**; new permission/role/scope **NO**; D-374 **NO**; ARCH-R20 **NO**. ARCH-R19 and DR-15 remain
-unchanged. Founder UAT remains required eventually (`IMP-036E_FOUNDER_UAT_REQUIRED: YES`). Does
-**not** authorize or start implementation; does **not** activate IMP-036F.
+bounded Operations transport covers Availability / Assortment (read-only) / Operating / Hours /
+Serviceability. Global session capability booleans are coarse navigation only
+(`IMP036E_GLOBAL_SESSION_CAPS_ARE_RESOURCE_AUTHORITY: NO`;
+`IMP036E_GLOBAL_SESSION_CAPS_PURPOSE: COARSE_NAVIGATION_ONLY`;
+`IMP036E_RESOURCE_SCOPED_CONTROL_VISIBILITY: REQUIRED`;
+`IMP036E_SERVER_AUTHORIZATION_REMAINS_AUTHORITATIVE: YES`). Schema change **NO**; new
+permission/role/scope **NO**; D-374 **NO**; ARCH-R20 **NO**. ARCH-R19 and DR-15 remain unchanged.
+Founder UAT remains required eventually (`IMP-036E_FOUNDER_UAT_REQUIRED: YES`). Does **not**
+authorize or start implementation; does **not** activate IMP-036F.
 
 IMP-036D remains `COMPLETE_AND_ACCEPTED`. Architecture remains `ARCHITECTURE_LOCKED`
 (`IMP-036D_ARCHITECTURE_LOCKED: YES`); implementation is `AUTHORIZED` / `STARTED` / `COMPLETE`
@@ -705,6 +714,12 @@ IMP036E_ASSORTMENT_AUTHORITY: BRAND
 OUTLET_MANAGER_OUTLET_SCOPE_ASSORTMENT_MANAGE: NO
 OUTLET_MANAGER_OUTLET_SCOPE_ASSORTMENT_READ_AS_BRAND_AUTHORITY: NO
 OUTLET_EFFECTIVE_ASSORTMENT_PRESENTATION: AUTHORIZED_READ_OR_ESCALATE
+IMP036E_ASSORTMENT_WORKFORCE_TRANSPORT: READ_ONLY_OPERATIONS_PROJECTION
+IMP036E_ASSORTMENT_MANAGE_TRANSPORT: NO
+ASSORTMENT_ROUTE_RESOURCE_LOCATOR: OUTLET
+ASSORTMENT_AUTHORIZATION_RESOURCE: BRAND_DERIVED_FROM_OUTLET
+ASSORTMENT_READ_PERMISSION: assortment.read
+ASSORTMENT_MANAGE_ROUTE_IMP036E: NO
 IMP036E_RBAC_CATALOG_RECONCILIATION_FOLLOW_UP: YES
 IMP036E_LOCK_BLOCKED_BY_CATALOG_RECONCILIATION: NO
 IMP036E_STORE_OVERVIEW: PERMISSION_GATED_COMPOSITION
@@ -717,6 +732,10 @@ SERVICEABILITY_MAP_IS_PROJECTION_ONLY: YES
 IMP036E_SERVICEABILITY_ROUTING_PRIORITY_UI: HIDDEN_PREREQUISITE
 IMP036E_SERVICEABILITY_MAP: OPTIONAL_PROJECTION_ONLY
 IMP036E_SESSION_CAPABILITY_PROJECTION_EXTENSION: EXISTING_PERMISSION_KEYS_ONLY
+IMP036E_GLOBAL_SESSION_CAPS_ARE_RESOURCE_AUTHORITY: NO
+IMP036E_GLOBAL_SESSION_CAPS_PURPOSE: COARSE_NAVIGATION_ONLY
+IMP036E_RESOURCE_SCOPED_CONTROL_VISIBILITY: REQUIRED
+IMP036E_SERVER_AUTHORIZATION_REMAINS_AUTHORITATIVE: YES
 SCHEMA_CHANGE_REQUIRED: NO
 NEW_PERMISSION: NO
 NEW_ROLE: NO
@@ -1675,12 +1694,23 @@ Current public GTM boundary is **IMP-040**, not IMP-035.
   `OUTLET_MANAGER_OUTLET_SCOPE_ASSORTMENT_MANAGE: NO`;
   `OUTLET_EFFECTIVE_ASSORTMENT_PRESENTATION: AUTHORIZED_READ_OR_ESCALATE`; catalog reconciliation
   follow-up non-blocking).
+- Locks Assortment Store workforce transport as read-only Operations projection
+  (`IMP036E_ASSORTMENT_WORKFORCE_TRANSPORT: READ_ONLY_OPERATIONS_PROJECTION`;
+  `ASSORTMENT_ROUTE_RESOURCE_LOCATOR: OUTLET`;
+  `ASSORTMENT_AUTHORIZATION_RESOURCE: BRAND_DERIVED_FROM_OUTLET`;
+  `ASSORTMENT_READ_PERMISSION: assortment.read`; `ASSORTMENT_MANAGE_ROUTE_IMP036E: NO`;
+  `GET /api/operations/v1/outlets/{outletId}/assortment`).
+- Locks global/session capability booleans as coarse navigation only
+  (`IMP036E_GLOBAL_SESSION_CAPS_ARE_RESOURCE_AUTHORITY: NO`;
+  `IMP036E_GLOBAL_SESSION_CAPS_PURPOSE: COARSE_NAVIGATION_ONLY`;
+  `IMP036E_RESOURCE_SCOPED_CONTROL_VISIBILITY: REQUIRED`;
+  `IMP036E_SERVER_AUTHORIZATION_REMAINS_AUTHORITATIVE: YES`).
 - Locks Store Overview as permission-gated composition; Availability / Operating / Hours /
   Serviceability reuse accepted domain authority with bounded `/api/operations/v1/outlets/{outletId}/...`
   transport; Team reuses `/api/admin/v1/*`; bulk availability deferred; routing-priority Store UI
   hidden; Serviceability remains `OUTLET_DISTANCE_SERVICEABILITY_V1`; session projection may add
-  existing permission keys only; `SCHEMA_CHANGE_REQUIRED: NO`; `NEW_PERMISSION: NO`; `NEW_ROLE: NO`;
-  `NEW_SCOPE_MODEL: NO`.
+  existing permission keys for coarse navigation only; `SCHEMA_CHANGE_REQUIRED: NO`;
+  `NEW_PERMISSION: NO`; `NEW_ROLE: NO`; `NEW_SCOPE_MODEL: NO`.
 - No D-374; no ARCH-R20 (`D374_REQUIRED_FOR_IMP036E_LOCK: NO`; `D-374_CREATED: NO`;
   `ARCH_R20_REQUIRED_FOR_IMP036E_LOCK: NO`; `ARCH_R20_CREATED: NO`). ARCH-R19 and DR-15 unchanged.
 - Does **not** authorize or start implementation; does **not** activate IMP-036F. Founder UAT remains
