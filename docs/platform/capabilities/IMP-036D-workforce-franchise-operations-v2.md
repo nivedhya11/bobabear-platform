@@ -5,11 +5,11 @@
   "capability": "IMP-036D",
   "title": "Workforce & Franchise Operations Portal V2",
   "architectureLock": "ARCHITECTURE_LOCKED",
-  "implementation": "AUTHORIZED / STARTED",
+  "implementation": "AUTHORIZED / STARTED / COMPLETE",
   "implementationAuthorized": true,
   "founderUATRequired": true,
   "schemaChangeRequired": false,
-  "lastReviewed": "2026-09-05",
+  "lastReviewed": "2026-09-06",
   "bindingDecisions": ["D-357", "D-358", "D-359", "D-361", "D-364", "D-372"],
   "dependsOn": ["IMP-010", "IMP-011", "IMP-023", "IMP-024", "IMP-027", "IMP-029", "IMP-030", "IMP-031", "IMP-032", "IMP-033", "IMP-034", "IMP-035", "IMP-036", "IMP-036A"]
 }
@@ -17,43 +17,45 @@
 
 # IMP-036D — Workforce & Franchise Operations Portal V2
 
-## Capability Architecture (ARCHITECTURE_LOCKED — IMPLEMENTATION AUTHORIZED / STARTED)
+## Capability Architecture (ARCHITECTURE_LOCKED — IMPLEMENTATION AUTHORIZED / STARTED / COMPLETE)
 
 This document is the **locked capability architecture** for IMP-036D. It is the sole CURRENT
 capability-architecture authority for this slice. Supporting experience planning must not compete
 with this lock.
 
-Founder implementation-start authorization recorded at GTM-R106 / STATE-R104. Start does not
-complete or accept implementation.
+Implementation complete pending acceptance recorded at GTM-R107 / STATE-R105. Completion is not
+acceptance. Founder UAT remains required and has not been performed.
 
 | Field | Value |
 |---|---|
 | Architecture lock | `ARCHITECTURE_LOCKED` |
-| Lifecycle | `IMPLEMENTATION_IN_PROGRESS` |
-| Implementation | `AUTHORIZED` / `STARTED` |
+| Lifecycle | `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` |
+| Implementation | `AUTHORIZED` / `STARTED` / `COMPLETE` |
 | Implementation authorized | **YES** |
-| Implementation complete | **NO** |
+| Implementation complete | **YES** |
 | Accepted | **NO** |
 | Accepted product through | IMP-036C (unchanged) |
 | Current product slice | IMP-036D |
-| Pending acceptance | NONE |
+| Pending acceptance | IMP-036D |
 | Next product slice | IMP-036E |
-| Governance checkpoint | GTM-R106 / STATE-R104 |
+| Governance checkpoint | GTM-R107 / STATE-R105 |
 | Founder UAT required for acceptance | **YES** |
+| Founder UAT | **NOT_STARTED** |
 | Schema change required | **NO** |
 | New D-number | **NO** (`D-374` not created) |
 | Global ARCH bump | **NO** (`ARCH-R19` preserved; `ARCH-R20` not created) |
 
 ```text
-IMP-036D: IMPLEMENTATION_IN_PROGRESS
+IMP-036D: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
 IMP-036D_ARCHITECTURE: LOCKED
 IMP-036D_ARCHITECTURE_LOCKED: YES
-IMP-036D_IMPLEMENTATION: AUTHORIZED / STARTED
+IMP-036D_IMPLEMENTATION: AUTHORIZED / STARTED / COMPLETE
 IMP-036D_IMPLEMENTATION_AUTHORIZED: YES
 IMP-036D_STARTED: YES
-IMP-036D_IMPLEMENTATION_COMPLETE: NO
+IMP-036D_IMPLEMENTATION_COMPLETE: YES
 IMP-036D_ACCEPTED: NO
 IMP-036D_FOUNDER_UAT_REQUIRED: YES
+IMP-036D_FOUNDER_UAT: NOT_STARTED
 FOUNDER_UAT_REQUIRED: YES
 FOUNDER_UAT_REQUIRED_FOR_ACCEPTANCE: YES
 schema_change: NO
@@ -83,9 +85,16 @@ NEW_FRANCHISE_ROLE: NO
 NEW_FRANCHISE_PERMISSION: NO
 NEW_FRANCHISE_SCOPE_MODEL: NO
 ARBITRARY_MULTI_OUTLET_FRANCHISE_RBAC: DEFERRED
-START IS NOT COMPLETION OR ACCEPTANCE: YES
+COMPLETION IS NOT ACCEPTANCE: YES
 IMPLEMENTATION_AUTHORIZED: YES
 IMPLEMENTATION_STARTED: YES
+IMPLEMENTATION_COMPLETE: YES
+IMP036D_IMPLEMENTATION_EVIDENCE: COMPLETE
+IMP_036D_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
+IMP036D_IMPLEMENTATION_MERGE_SHA: b615fb20e034d71f49a1fa588f976d0592a46098
+IMP036D_IMPLEMENTATION_TREE: 8a5e75516ccee922e89c6202ad402e5a2acb24b9
+IMP036D_REVIEWED_CANDIDATE_HEAD: 72e321ffd90d4d6f009ee1457bb728b22fc0a2fd
+IMP036D_REVIEWED_CANDIDATE_TREE: 8a5e75516ccee922e89c6202ad402e5a2acb24b9
 ```
 
 Canonical authorities:

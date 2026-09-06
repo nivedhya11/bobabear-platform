@@ -1,18 +1,20 @@
 ---
 Status: ARCHITECTURE_LOCKED SUPPORTING EXPERIENCE CONTRACT
 Capability: IMP-036D — Workforce & Franchise Operations Portal V2
-Lifecycle: IMPLEMENTATION_IN_PROGRESS
+Lifecycle: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
 Architecture: ARCHITECTURE_LOCKED
-Implementation: AUTHORIZED / STARTED
+Implementation: AUTHORIZED / STARTED / COMPLETE
 Implementation authorized: YES
 Implementation started: YES
-Implementation complete: NO
+Implementation complete: YES
 Accepted: NO
+Pending acceptance: IMP-036D
 Founder UAT required: YES
+Founder UAT: NOT_STARTED
 IMP-036D_ARCHITECTURE_LOCKED: YES
 IMP-036D_IMPLEMENTATION_AUTHORIZED: YES
 IMP-036D_STARTED: YES
-IMP-036D_IMPLEMENTATION_COMPLETE: NO
+IMP-036D_IMPLEMENTATION_COMPLETE: YES
 IMP-036D_ACCEPTED: NO
 Authority: SUPPORTING EXPERIENCE CONTRACT — locked capability architecture at
   docs/platform/capabilities/IMP-036D-workforce-franchise-operations-v2.md is CURRENT authority
@@ -32,20 +34,22 @@ This document is a **SUPPORTING** experience contract. It must not compete with 
 locked capability architecture at
 [`../../capabilities/IMP-036D-workforce-franchise-operations-v2.md`](../../capabilities/IMP-036D-workforce-franchise-operations-v2.md).
 
-## Architecture lock status (GTM-R106 / STATE-R104)
+## Architecture lock status (GTM-R107 / STATE-R105)
 
 ```text
 IMP-036D_ARCHITECTURE_WORK_AUTHORIZED = YES
 IMP-036D_ARCHITECTURE_LOCKED = YES
 IMP-036D_IMPLEMENTATION_AUTHORIZED = YES
 IMP-036D_STARTED = YES
-IMP-036D_IMPLEMENTATION_COMPLETE = NO
+IMP-036D_IMPLEMENTATION_COMPLETE = YES
 IMP-036D_ACCEPTED = NO
 IMP-036D_FOUNDER_UAT_REQUIRED = YES
+IMP-036D_FOUNDER_UAT = NOT_STARTED
+pendingAcceptance = IMP-036D
 ```
 
-Founder implementation-start authorization recorded at GTM-R106 / STATE-R104. Start does not
-complete or accept implementation.
+Implementation complete pending acceptance recorded at GTM-R107 / STATE-R105. Completion is not
+acceptance. Founder UAT remains required and has not been performed.
 
 Founder-approved locked decisions:
 

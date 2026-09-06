@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R104",
+  "stateVersion": "STATE-R105",
   "acceptedThrough": "IMP-036C",
   "currentProductSlice": "IMP-036D",
   "nextProductSlice": "IMP-036E",
-  "pendingAcceptance": "NONE",
+  "pendingAcceptance": "IMP-036D",
   "governanceHealth": "ALIGNED",
-  "lastReviewed": "2026-09-05"
+  "lastReviewed": "2026-09-06"
 }
 -->
 
@@ -29,13 +29,14 @@ Accepted Range:            IMP-001 → IMP-036C (including IMP-005A and IMP-026C
 
 ```text
 Current Product Implementation: IMP-036D — Workforce & Franchise Operations Portal V2
-Pending Acceptance:             NONE
+Pending Acceptance:             IMP-036D
 Current Product Slice:          IMP-036D — Workforce & Franchise Operations Portal V2
 Next Product Slice:             IMP-036E — Store Operations Management
-Current Governance Activity:    IMP-036D IMPLEMENTATION_IN_PROGRESS (ARCHITECTURE_LOCKED;
-                              AUTHORIZED / STARTED); IMP-036C
-                              COMPLETE_AND_ACCEPTED; IMP-036E–G and IMP-037
-                              PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED.
+Current Governance Activity:    IMP-036D IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE;
+                              Founder UAT required / not yet performed;
+                              IMP-036C COMPLETE_AND_ACCEPTED;
+                              IMP-036E–G and IMP-037 PLANNED / NOT_ACTIVATED /
+                              NOT_AUTHORIZED / NOT_STARTED.
 Governance Health:              ALIGNED
 ```
 
@@ -356,6 +357,38 @@ STATE-R36 record IMP-028B canonical activation without changing decision registe
 architecture. GTM-R39 / STATE-R37 record IMP-028B architecture lock and implementation
 authorization without changing decision register or global architecture.
 
+
+STATE-R105 records IMP-036D implementation complete pending independent acceptance after exact
+implementation PR #113 merge (`IMP036D_IMPLEMENTATION_MERGE_SHA:
+b615fb20e034d71f49a1fa588f976d0592a46098`; `IMP036D_IMPLEMENTATION_TREE:
+8a5e75516ccee922e89c6202ad402e5a2acb24b9`), independent implementation review PASS on reviewed
+product candidate (`IMP036D_REVIEWED_CANDIDATE_HEAD:
+72e321ffd90d4d6f009ee1457bb728b22fc0a2fd`; `IMP036D_REVIEWED_CANDIDATE_TREE:
+8a5e75516ccee922e89c6202ad402e5a2acb24b9`), and successful post-merge CI. Implementation evidence is
+**COMPLETE** (`IMP036D_IMPLEMENTATION_EVIDENCE: COMPLETE`); independent implementation review is
+**PASS** (`IMP_036D_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS`). IMP-036D lifecycle is
+`IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`. Architecture remains `ARCHITECTURE_LOCKED`
+(`IMP-036D_ARCHITECTURE_LOCKED: YES`); implementation is `AUTHORIZED` / `STARTED` / `COMPLETE`
+(`IMP-036D_IMPLEMENTATION_AUTHORIZED: YES`; `IMP-036D_STARTED: YES`;
+`IMP-036D_IMPLEMENTATION_COMPLETE: YES`; `IMP-036D_ACCEPTED: NO`). Completion is **not** acceptance
+and does **not** claim Founder UAT PASS. Founder UAT remains required and has not been performed
+(`IMP-036D_FOUNDER_UAT_REQUIRED: YES`; `IMP-036D_FOUNDER_UAT: NOT_STARTED`). Locked capability
+architecture remains at
+[`capabilities/IMP-036D-workforce-franchise-operations-v2.md`](./capabilities/IMP-036D-workforce-franchise-operations-v2.md).
+`acceptedThrough` remains IMP-036C; `pendingAcceptance` becomes IMP-036D; `currentProductSlice`
+remains IMP-036D; `nextProductSlice` remains IMP-036E (`PLANNED` / `NOT_ACTIVATED` /
+`NOT_AUTHORIZED` / `NOT_STARTED`). Does **not** activate, authorize, or start IMP-036E. Refund
+topology remains resolved and locked: `IMP036D_REFUND_EXECUTION_TOPOLOGY: RESOLVED_AND_LOCKED`;
+`IMP036D_REFUND_TOPOLOGY_BLOCKS_ARCHITECTURE_LOCK: NO`;
+`IMP036D_REFUND_MUTATION_TRANSPORT_LOCKED: YES`. D-361 / D-364 / D-372 preserved. No schema; no new
+service/queue/auth/role/permission; no D-374; no ARCH-R20. ARCH-R19 and DR-15 remain unchanged.
+Founder decisions preserved:
+`IMP036D_PREPARATION_READINESS_DECISION: NO_NEW_V1_DOMAIN_STATE_REQUIRED`;
+`IMP036D_FINANCIAL_DOCUMENT_WORKFORCE_REVIEW: DEFERRED`;
+`IMP036D_NOTIFICATION_RESEND_WORKFORCE_TRANSPORT: APPROVED_FOR_ARCHITECTURE`. Schema change remains
+not required (`IMP-036D_SCHEMA_CHANGE_REQUIRED: NO`). No architecture/global-decision change.
+Supersedes STATE-R104 for the current product-slice implementation-completion position. Historical
+STATE-R104 implementation-start checkpoint remains preserved as prior authority.
 
 STATE-R104 records the separate Founder implementation-start gate for **IMP-036D — Workforce &
 Franchise Operations Portal V2** under the locked capability architecture and prior STATE-R103
@@ -1473,9 +1506,9 @@ Cart → Checkout → Payment → Order
 
 ```text
 acceptedThrough: IMP-036C
-pendingAcceptance: NONE
-currentProductSlice: NONE
-nextProductSlice: IMP-036D — Workforce Franchise Operations V2
+pendingAcceptance: IMP-036D
+currentProductSlice: IMP-036D
+nextProductSlice: IMP-036E — Store Operations Management
 IMP-028: COMPLETE_AND_ACCEPTED
 IMP-028_ACCEPTED: YES
 IMP-028A: COMPLETE_AND_ACCEPTED
@@ -1716,16 +1749,23 @@ IMP036C_DIRECT_MAIN_EXCEPTION_SHA: 13835d285f53186c9ed89dc1ed0d11e30be75cca
 IMP036C_PROCESS_EXCEPTION_OUTSTANDING: NO
 STANDARDIZED_CUSTOMER_DELIVERY_FEE: YES
 DEFERRED_CUSTOMER_FAILED_PAYMENT_HISTORY: YES
-IMP-036D: IMPLEMENTATION_IN_PROGRESS
+IMP-036D: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
 IMP-036D_ARCHITECTURE: LOCKED
 IMP-036D_ARCHITECTURE_LOCKED: YES
-IMP-036D_IMPLEMENTATION: AUTHORIZED / STARTED
+IMP-036D_IMPLEMENTATION: AUTHORIZED / STARTED / COMPLETE
 IMP-036D_IMPLEMENTATION_AUTHORIZED: YES
 IMP-036D_STARTED: YES
-IMP-036D_IMPLEMENTATION_COMPLETE: NO
+IMP-036D_IMPLEMENTATION_COMPLETE: YES
 IMP-036D_ACCEPTED: NO
 IMP-036D_FOUNDER_UAT_REQUIRED: YES
+IMP-036D_FOUNDER_UAT: NOT_STARTED
 IMP-036D_SCHEMA_CHANGE_REQUIRED: NO
+IMP036D_IMPLEMENTATION_EVIDENCE: COMPLETE
+IMP_036D_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
+IMP036D_IMPLEMENTATION_MERGE_SHA: b615fb20e034d71f49a1fa588f976d0592a46098
+IMP036D_IMPLEMENTATION_TREE: 8a5e75516ccee922e89c6202ad402e5a2acb24b9
+IMP036D_REVIEWED_CANDIDATE_HEAD: 72e321ffd90d4d6f009ee1457bb728b22fc0a2fd
+IMP036D_REVIEWED_CANDIDATE_TREE: 8a5e75516ccee922e89c6202ad402e5a2acb24b9
 IMP036D_PREPARATION_READINESS_DECISION: NO_NEW_V1_DOMAIN_STATE_REQUIRED
 IMP036D_FINANCIAL_DOCUMENT_WORKFORCE_REVIEW: DEFERRED
 IMP036D_NOTIFICATION_RESEND_WORKFORCE_TRANSPORT: APPROVED_FOR_ARCHITECTURE
