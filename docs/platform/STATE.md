@@ -2,7 +2,7 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R109",
+  "stateVersion": "STATE-R110",
   "acceptedThrough": "IMP-036D",
   "currentProductSlice": "IMP-036E",
   "nextProductSlice": "IMP-036F",
@@ -28,13 +28,13 @@ Accepted Range:            IMP-001 → IMP-036D (including IMP-005A and IMP-026C
 ## 2. Current Work Position
 
 ```text
-Current Product Implementation: NONE
+Current Product Implementation: IMP-036E — Store Operations Management
 Pending Acceptance:             NONE
 Current Product Slice:          IMP-036E — Store Operations Management
 Next Product Slice:             IMP-036F — Catalog, Menu, Pricing & Promotions Management
 Current Governance Activity:    IMP-036D COMPLETE_AND_ACCEPTED;
-                              IMP-036E ARCHITECTURE_LOCKED;
-                              implementation AUTHORIZED / NOT_STARTED;
+                              IMP-036E IMPLEMENTATION_IN_PROGRESS
+                              (ARCHITECTURE_LOCKED; AUTHORIZED / STARTED);
                               IMP-036F/G and IMP-037 remain PLANNED / NOT_ACTIVATED /
                               NOT_AUTHORIZED / NOT_STARTED.
 Governance Health:              ALIGNED
@@ -357,6 +357,43 @@ STATE-R36 record IMP-028B canonical activation without changing decision registe
 architecture. GTM-R39 / STATE-R37 record IMP-028B architecture lock and implementation
 authorization without changing decision register or global architecture.
 
+
+STATE-R110 records the separate Founder implementation-start gate for **IMP-036E — Store
+Operations Management** under the locked capability architecture and prior STATE-R109
+authorization. IMP-036E lifecycle is `IMPLEMENTATION_IN_PROGRESS`. Architecture remains
+`ARCHITECTURE_LOCKED` (`IMP-036E_ARCHITECTURE_LOCKED: YES`); implementation is `AUTHORIZED` /
+`STARTED` (`IMP-036E_IMPLEMENTATION: AUTHORIZED / STARTED`;
+`IMP-036E_IMPLEMENTATION_AUTHORIZED: YES`; `IMP-036E_STARTED: YES`;
+`IMP-036E_IMPLEMENTATION_COMPLETE: NO`; `IMP-036E_ACCEPTED: NO`). Start does **not** complete or
+accept implementation. This checkpoint starts the implementation lifecycle but contains **no**
+product implementation itself and does **not** claim implementation evidence exists. Locked
+capability architecture remains at
+[`capabilities/IMP-036E-store-operations-management.md`](./capabilities/IMP-036E-store-operations-management.md).
+`acceptedThrough` remains IMP-036D; `pendingAcceptance` remains NONE; `currentProductSlice` remains
+IMP-036E; `nextProductSlice` remains IMP-036F, which remains `PLANNED` / `NOT_ACTIVATED` /
+`NOT_AUTHORIZED` / `NOT_STARTED`. Current Product Implementation is IMP-036E — Store Operations
+Management. Founder Option A Assortment remains Brand authority
+(`IMP036E_ASSORTMENT_AUTHORITY: BRAND`; `OUTLET_MANAGER_OUTLET_SCOPE_ASSORTMENT_MANAGE: NO`;
+`OUTLET_EFFECTIVE_ASSORTMENT_PRESENTATION: AUTHORIZED_READ_OR_ESCALATE`;
+`IMP036E_ASSORTMENT_WORKFORCE_TRANSPORT: READ_ONLY_OPERATIONS_PROJECTION`;
+`ASSORTMENT_AUTHORIZATION_RESOURCE: BRAND_DERIVED_FROM_OUTLET`;
+`ASSORTMENT_MANAGE_ROUTE_IMP036E: NO`; Store read route
+`GET /api/operations/v1/outlets/{outletId}/assortment`). Store Overview is permission-gated
+composition; bulk availability deferred; Serviceability remains `OUTLET_DISTANCE_SERVICEABILITY_V1`
+with routing-priority Store UI hidden; Team reuses Admin façade; bounded Operations transport for
+Availability / Assortment (read-only) / Operating / Hours / Serviceability; global session
+capability booleans are coarse navigation only
+(`IMP036E_GLOBAL_SESSION_CAPS_ARE_RESOURCE_AUTHORITY: NO`;
+`IMP036E_GLOBAL_SESSION_CAPS_PURPOSE: COARSE_NAVIGATION_ONLY`;
+`IMP036E_RESOURCE_SCOPED_CONTROL_VISIBILITY: REQUIRED`;
+`IMP036E_SERVER_AUTHORIZATION_REMAINS_AUTHORITATIVE: YES`); `SCHEMA_CHANGE_REQUIRED: NO`;
+`NEW_PERMISSION: NO`; `NEW_ROLE: NO`; `NEW_SCOPE_MODEL: NO`;
+`D374_REQUIRED_FOR_IMP036E_LOCK: NO`; `D-374_CREATED: NO`; `ARCH_R20_REQUIRED_FOR_IMP036E_LOCK: NO`;
+`ARCH_R20_CREATED: NO`. ARCH-R19 and DR-15 remain unchanged. Founder UAT remains required eventually
+(`IMP-036E_FOUNDER_UAT_REQUIRED: YES`). No runtime implementation accompanies this governance
+start checkpoint. Does **not** activate IMP-036F. IMP-036D remains `COMPLETE_AND_ACCEPTED` and is
+not reopened. Supersedes STATE-R109 for the current product-slice implementation-start position.
+Historical STATE-R109 implementation-authorization checkpoint remains preserved as prior authority.
 
 STATE-R109 records Founder authorization of **IMP-036E — Store Operations Management**
 implementation under the locked capability architecture. IMP-036E remains `ARCHITECTURE_LOCKED`;
@@ -1922,12 +1959,12 @@ FRANCHISE_IS_BUSINESS_PERSONA: YES
 NEW_FRANCHISE_ROLE: NO
 NEW_FRANCHISE_SCOPE_MODEL: NO
 ARBITRARY_MULTI_OUTLET_FRANCHISE_RBAC: DEFERRED
-IMP-036E: ARCHITECTURE_LOCKED
+IMP-036E: IMPLEMENTATION_IN_PROGRESS
 IMP-036E_ARCHITECTURE: LOCKED
 IMP-036E_ARCHITECTURE_LOCKED: YES
-IMP-036E_IMPLEMENTATION: AUTHORIZED / NOT_STARTED
+IMP-036E_IMPLEMENTATION: AUTHORIZED / STARTED
 IMP-036E_IMPLEMENTATION_AUTHORIZED: YES
-IMP-036E_STARTED: NO
+IMP-036E_STARTED: YES
 IMP-036E_IMPLEMENTATION_COMPLETE: NO
 IMP-036E_ACCEPTED: NO
 IMP-036E_FOUNDER_UAT_REQUIRED: YES
