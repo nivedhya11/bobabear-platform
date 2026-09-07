@@ -1,5 +1,5 @@
-# Minimal deterministic validation CI for BOBA Bear Platform.
-# Does not deploy, release, or mutate product lifecycle state.
+# Session 3B2 deterministic verification CI for BOBA Bear Platform.
+# Verification only: does not deploy, release, or mutate product lifecycle state.
 name: CI
 
 on:
@@ -7,74 +7,284 @@ on:
   push:
     branches:
       - main
-      - "imp-**"
+
+permissions:
+  contents: read
 
 jobs:
-  validate:
-    name: Validate
+  quality:
+    name: Quality
     runs-on: ubuntu-latest
-    timeout-minutes: 90
-
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          # Dockerfile / accepted-foundation pin: node:22.23.1-bookworm-slim
           node-version: "22.23.1"
           cache: npm
-
       - name: Install dependencies
         run: npm ci
-
       - name: Typecheck
         run: npm run typecheck
-
       - name: Lint
         run: npm run lint
+      - name: Project consistency
+        run: npm run project:consistency
+      - name: Governance fingerprint
+        run: npm run governance:fingerprint
+      - name: Environment hygiene
+        run: npm run env:hygiene
+      - name: Testing inventory
+        run: npm run testing:inventory:check
 
+  unit-component:
+    name: Unit / Component
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.1"
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Unit and component suite
+        run: npm run test
+
+  scripts:
+    name: Scripts
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.1"
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Script test suite
+        run: npm run test:scripts
+
+  commerce-core:
+    name: Commerce Core
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.1"
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
       - name: IMP-028C modifier / bootstrap tests
         run: npm run test:catalog-imp028c-modifiers
-
       - name: Catalog tests
         run: npm run test:catalog
-
       - name: Cart tests
         run: npm run test:cart
-
       - name: Customer-commerce HTTP tests
         run: npm run test:customer-commerce:http
-
       - name: Customer Menu projection unit tests
         run: node scripts/run-vitest.mjs run src/server/customer-commerce/menu/project-customer-menu.test.ts
-
       - name: Customer Menu modifier projection integration tests
         run: >-
           node scripts/run-vitest.mjs run
           --config vitest.database.config.mts
           tests/database/customer-menu-modifier-projection.integration.test.ts
 
-      - name: Docker tooling command wiring
-        run: node --test scripts/docker-tool-command-wiring.test.mjs
+  security-smoke:
+    name: Security Smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.1"
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Access-control tests
+        run: npm run test:access-control
+      - name: Checkout security tests
+        run: npm run test:checkout-security
 
-      - name: Staging runtime provenance
-        run: node --test scripts/environment/staging.test.mjs
-
-      - name: Project-consistency unit suite
-        run: node --test scripts/project-consistency.test.mjs
-
-      - name: Project consistency
-        run: npm run project:consistency
-
-      - name: Governance fingerprint
-        run: npm run governance:fingerprint
-
-      - name: Build tooling image
-        run: docker build --target tooling -t boba-bear-tooling:ci .
-
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.1"
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
       - name: Production build
         run: npm run build
         env:
           NEXT_PUBLIC_SITE_URL: https://thebobabear.in
+
+  database-foundation:
+    name: Database Foundation
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.1"
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Persistence database tests
+        run: npm run test:database:persistence
+      - name: Outbox / idempotency database tests
+        run: npm run test:database:outbox-idempotency
+      - name: Auth foundation database tests
+        run: npm run test:database:auth-foundation
+
+  database-commerce:
+    name: Database Commerce
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.1"
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Cart database tests
+        run: npm run test:database:cart
+      - name: Checkout database tests
+        run: npm run test:database:checkout
+      - name: Payment database tests
+        run: npm run test:database:payment
+      - name: Order database tests
+        run: npm run test:database:order
+      - name: Serviceability database tests
+        run: npm run test:database:serviceability
+      - name: Catalog database tests
+        run: npm run test:database:catalog
+
+  security-matrix:
+    name: Security Matrix
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.1"
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Access-control tests
+        run: npm run test:access-control
+      - name: Database access-control tests
+        run: npm run test:database:access-control
+      - name: Payment security tests
+        run: npm run test:payment-security
+      - name: Checkout security tests
+        run: npm run test:checkout-security
+      - name: Serviceability security tests
+        run: npm run test:serviceability-security
+
+  domain-extended:
+    name: Domain Extended
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.1"
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Checkout tests
+        run: npm run test:checkout
+      - name: Payment tests
+        run: npm run test:payment
+      - name: Order tests
+        run: npm run test:order
+      - name: Serviceability tests
+        run: npm run test:serviceability
+      - name: Assortment availability tests
+        run: npm run test:assortment-availability
+      - name: Pricing tax tests
+        run: npm run test:pricing-tax
+      - name: Promotions tests
+        run: npm run test:promotions
+
+  http-surfaces:
+    name: HTTP Surfaces
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.1"
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Customer-auth HTTP tests
+        run: npm run test:customer-auth:http
+      - name: Workforce-auth HTTP tests
+        run: npm run test:workforce-auth:http
+      - name: Administration tests
+        run: npm run test:administration
+
+  audits:
+    name: Audits
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.1"
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Persistence audit
+        run: npm run audit:persistence
+      - name: Customer phone auth audit
+        run: npm run audit:customer-phone-auth
