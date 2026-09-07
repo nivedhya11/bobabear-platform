@@ -153,8 +153,8 @@ export function hasUseClientDirective(contents) {
 const PERSISTENCE_SPECIFIER_PATTERN = /["']([^"']*\bserver\/persistence[^"']*)["']/;
 
 /**
- * True when a source line is a static ES-module import or re-export whose
- * module specifier refers to server/persistence or server/persistence/**.
+ * True when a source line/statement is a static ES-module import or re-export
+ * whose module specifier refers to server/persistence or server/persistence/**.
  *
  * Covered forms (at minimum):
  *   import { X } from "..."
@@ -179,6 +179,49 @@ export function isPersistenceDependencyLine(line) {
   return false;
 }
 
+const STATIC_DEPENDENCY_START_PATTERN =
+  /^(?:import\b|export\s+(?:type\s+)?\{|export\s+\*)/;
+const STATIC_DEPENDENCY_FROM_PATTERN = /\bfrom\s+["'][^"']+["']\s*;?\s*$/;
+const STATIC_SIDE_EFFECT_IMPORT_PATTERN = /^import\s+["'][^"']+["']\s*;?\s*$/;
+
+/**
+ * Collect complete static import/re-export declarations so multiline ESM
+ * syntax is classified by the same persistence-boundary rule as one-line
+ * syntax. Only declaration shapes that can carry module dependencies are
+ * accumulated; ordinary exported declarations are ignored.
+ *
+ * @returns {{ text: string, lineNo: number }[]}
+ */
+export function collectStaticDependencyStatements(contents) {
+  const statements = [];
+  const lines = contents.split("\n");
+  let current = null;
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+    const trimmed = line.trimStart();
+
+    if (current === null) {
+      if (!STATIC_DEPENDENCY_START_PATTERN.test(trimmed)) {
+        continue;
+      }
+      current = { text: line, lineNo: index + 1 };
+    } else {
+      current.text += `\n${line}`;
+    }
+
+    if (
+      STATIC_DEPENDENCY_FROM_PATTERN.test(current.text) ||
+      STATIC_SIDE_EFFECT_IMPORT_PATTERN.test(current.text.trim())
+    ) {
+      statements.push(current);
+      current = null;
+    }
+  }
+
+  return statements;
+}
+
 /**
  * Narrow health.ts exception: may consume the Persistence type only via
  * `import type` from the dedicated types module. Not a public persistence
@@ -190,13 +233,13 @@ export function isAllowedHealthPersistenceTypeImport(relativePath, line) {
   }
   // Exact named binding only: `{ Persistence }`. Other types, multi-bindings,
   // and aliases are rejected. Whitespace around the binding is tolerated.
-  return /^\s*import\s+type\s+\{\s*Persistence\s*\}\s+from\s+["']\.\.\/\.\.\/server\/persistence\/types["']\s*;?\s*$/.test(
+  return /^\s*import\s+type\s+\{\s*Persistence\s*,?\s*\}\s+from\s+["']\.\.\/\.\.\/server\/persistence\/types["']\s*;?\s*$/.test(
     line,
   );
 }
 
 /**
- * Shared enforcement classifier for a single source line that may import or
+ * Shared enforcement classifier for a source statement that may import or
  * re-export src/server/persistence.
  *
  * Architectural boundary: type-only imports are NOT exempt for public trees.
@@ -334,17 +377,19 @@ function scanSourceTree(files) {
     const lines = contents.split("\n");
     const isClientModule = hasUseClientDirective(contents);
 
-    lines.forEach((line, index) => {
-      const lineNo = index + 1;
-
+    for (const statement of collectStaticDependencyStatements(contents)) {
       const persistenceKind = classifyPersistenceImportLine({
         relativePath: rel,
-        line,
+        line: statement.text,
         isClientModule,
       });
       if (persistenceKind !== null) {
-        findings.push(persistenceImportFindingMessage(persistenceKind, rel, lineNo));
+        findings.push(persistenceImportFindingMessage(persistenceKind, rel, statement.lineNo));
       }
+    }
+
+    lines.forEach((line, index) => {
+      const lineNo = index + 1;
 
       if (isClientModule && (PG_IMPORT_PATTERN.test(line) || DRIZZLE_RUNTIME_IMPORT_PATTERN.test(line))) {
         findings.push(
