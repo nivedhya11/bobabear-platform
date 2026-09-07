@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 import {
   classifyPersistenceImportLine,
+  collectStaticDependencyStatements,
   hasUseClientDirective,
   isAllowedHealthPersistenceTypeImport,
   isAllowedMigrationFactoryImportPath,
@@ -521,6 +522,85 @@ test("classifyPersistenceImportLine rejects client-module persistence imports ou
       line: 'import { getApplicationPersistence } from "@/server/persistence";',
       isClientModule: true,
     }),
+    "CLIENT_MODULE",
+  );
+});
+
+function classifyCollectedPersistence(contents, relativePath = "src/platform/observability/health.ts", isClientModule = false) {
+  const statements = collectStaticDependencyStatements(contents);
+  assert.equal(statements.length, 1);
+  return classifyPersistenceImportLine({
+    relativePath,
+    line: statements[0].text,
+    isClientModule,
+  });
+}
+
+test("collectStaticDependencyStatements preserves multiline declaration and start line", () => {
+  const statements = collectStaticDependencyStatements(
+    'const before = true;\nimport type {\n  Persistence,\n} from "../../server/persistence/types";\n',
+  );
+  assert.deepEqual(statements, [
+    {
+      text: 'import type {\n  Persistence,\n} from "../../server/persistence/types";',
+      lineNo: 2,
+    },
+  ]);
+});
+
+test("collectStaticDependencyStatements ignores line-leading dynamic imports", () => {
+  assert.deepEqual(collectStaticDependencyStatements('import("./lazy-module");\nconst after = true;'), []);
+});
+
+test("multiline health exact Persistence type import remains allowed", () => {
+  assert.equal(
+    classifyCollectedPersistence('import type {\n  Persistence,\n} from "../../server/persistence/types";'),
+    null,
+  );
+});
+
+test("multiline health other, multiple, and aliased type imports are rejected", () => {
+  for (const contents of [
+    'import type {\n  PersistenceRole,\n} from "../../server/persistence/types";',
+    'import type {\n  Persistence,\n  PersistenceRole,\n} from "../../server/persistence/types";',
+    'import type {\n  Persistence as HealthPersistence,\n} from "../../server/persistence/types";',
+  ]) {
+    assert.equal(classifyCollectedPersistence(contents), "OUTSIDE_ALLOWLIST");
+  }
+});
+
+test("multiline health runtime import and type re-export are rejected", () => {
+  assert.equal(
+    classifyCollectedPersistence('import {\n  getApplicationPersistence,\n} from "../../server/persistence";'),
+    "OUTSIDE_ALLOWLIST",
+  );
+  assert.equal(
+    classifyCollectedPersistence('export type {\n  Persistence,\n} from "../../server/persistence/types";'),
+    "OUTSIDE_ALLOWLIST",
+  );
+});
+
+test("multiline public app/component and client boundaries remain strict", () => {
+  assert.equal(
+    classifyCollectedPersistence(
+      'import type {\n  Persistence,\n} from "@/server/persistence/types";',
+      "src/app/order/page.tsx",
+    ),
+    "PUBLIC_APP_TREE",
+  );
+  assert.equal(
+    classifyCollectedPersistence(
+      'export type {\n  Persistence,\n} from "@/server/persistence/types";',
+      "src/components/CartBadge.tsx",
+    ),
+    "PUBLIC_APP_TREE",
+  );
+  assert.equal(
+    classifyCollectedPersistence(
+      'import type {\n  Persistence,\n} from "@/server/persistence/types";',
+      "src/lib/client-helper.ts",
+      true,
+    ),
     "CLIENT_MODULE",
   );
 });
