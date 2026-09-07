@@ -239,6 +239,34 @@ test("isAllowedHealthPersistenceTypeImport allows only the exact type import", (
   assert.equal(
     isAllowedHealthPersistenceTypeImport(
       "src/platform/observability/health.ts",
+      'import type { PersistenceRole } from "../../server/persistence/types";',
+    ),
+    false,
+  );
+  assert.equal(
+    isAllowedHealthPersistenceTypeImport(
+      "src/platform/observability/health.ts",
+      'import type { PersistenceQueryContext } from "../../server/persistence/types";',
+    ),
+    false,
+  );
+  assert.equal(
+    isAllowedHealthPersistenceTypeImport(
+      "src/platform/observability/health.ts",
+      'import type { Persistence, PersistenceRole } from "../../server/persistence/types";',
+    ),
+    false,
+  );
+  assert.equal(
+    isAllowedHealthPersistenceTypeImport(
+      "src/platform/observability/health.ts",
+      'import type { Persistence as HealthPersistence } from "../../server/persistence/types";',
+    ),
+    false,
+  );
+  assert.equal(
+    isAllowedHealthPersistenceTypeImport(
+      "src/platform/observability/health.ts",
       'import { getApplicationPersistence } from "../../server/persistence";',
     ),
     false,
@@ -367,6 +395,40 @@ test("E: classifyPersistenceImportLine allows health.ts narrow type-only import"
       isClientModule: false,
     }),
     null,
+  );
+});
+
+// E. Health forbidden other / multi / aliased type imports (classifier uses same rule)
+test("E: classifyPersistenceImportLine rejects health.ts OTHER type import", () => {
+  assert.equal(
+    classifyPersistenceImportLine({
+      relativePath: "src/platform/observability/health.ts",
+      line: 'import type { PersistenceQueryContext } from "../../server/persistence/types";',
+      isClientModule: false,
+    }),
+    "OUTSIDE_ALLOWLIST",
+  );
+});
+
+test("E: classifyPersistenceImportLine rejects health.ts MULTIPLE type import", () => {
+  assert.equal(
+    classifyPersistenceImportLine({
+      relativePath: "src/platform/observability/health.ts",
+      line: 'import type { Persistence, PersistenceRole } from "../../server/persistence/types";',
+      isClientModule: false,
+    }),
+    "OUTSIDE_ALLOWLIST",
+  );
+});
+
+test("E: classifyPersistenceImportLine rejects health.ts ALIASED Persistence type import", () => {
+  assert.equal(
+    classifyPersistenceImportLine({
+      relativePath: "src/platform/observability/health.ts",
+      line: 'import type { Persistence as HealthPersistence } from "../../server/persistence/types";',
+      isClientModule: false,
+    }),
+    "OUTSIDE_ALLOWLIST",
   );
 });
 

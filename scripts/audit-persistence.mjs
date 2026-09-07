@@ -188,7 +188,9 @@ export function isAllowedHealthPersistenceTypeImport(relativePath, line) {
   if (relativePath !== HEALTH_OBSERVABILITY_PATH) {
     return false;
   }
-  return /^\s*import\s+type\s+\{[^}]*\}\s+from\s+["']\.\.\/\.\.\/server\/persistence\/types["']\s*;?\s*$/.test(
+  // Exact named binding only: `{ Persistence }`. Other types, multi-bindings,
+  // and aliases are rejected. Whitespace around the binding is tolerated.
+  return /^\s*import\s+type\s+\{\s*Persistence\s*\}\s+from\s+["']\.\.\/\.\.\/server\/persistence\/types["']\s*;?\s*$/.test(
     line,
   );
 }
