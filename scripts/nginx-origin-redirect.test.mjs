@@ -27,8 +27,10 @@ async function waitForNginx(origin) {
   let lastError;
   for (let attempt = 0; attempt < 20; attempt += 1) {
     try {
-      const response = await fetch(origin, { redirect: "manual" });
-      if (response.ok) return;
+      // Readiness is transport-level here. This fixture intentionally has no
+      // root index.html, so a healthy Nginx may answer `/` with 404.
+      await fetch(origin, { redirect: "manual" });
+      return;
     } catch (error) {
       lastError = error;
     }
