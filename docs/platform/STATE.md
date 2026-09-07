@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R110",
+  "stateVersion": "STATE-R111",
   "acceptedThrough": "IMP-036D",
   "currentProductSlice": "IMP-036E",
   "nextProductSlice": "IMP-036F",
-  "pendingAcceptance": "NONE",
+  "pendingAcceptance": "IMP-036E",
   "governanceHealth": "ALIGNED",
-  "lastReviewed": "2026-09-06"
+  "lastReviewed": "2026-09-07"
 }
 -->
 
@@ -29,12 +29,12 @@ Accepted Range:            IMP-001 → IMP-036D (including IMP-005A and IMP-026C
 
 ```text
 Current Product Implementation: IMP-036E — Store Operations Management
-Pending Acceptance:             NONE
+Pending Acceptance:             IMP-036E
 Current Product Slice:          IMP-036E — Store Operations Management
 Next Product Slice:             IMP-036F — Catalog, Menu, Pricing & Promotions Management
-Current Governance Activity:    IMP-036D COMPLETE_AND_ACCEPTED;
-                              IMP-036E IMPLEMENTATION_IN_PROGRESS
-                              (ARCHITECTURE_LOCKED; AUTHORIZED / STARTED);
+Current Governance Activity:    IMP-036E IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE;
+                              Founder UAT required / not yet performed;
+                              IMP-036D COMPLETE_AND_ACCEPTED;
                               IMP-036F/G and IMP-037 remain PLANNED / NOT_ACTIVATED /
                               NOT_AUTHORIZED / NOT_STARTED.
 Governance Health:              ALIGNED
@@ -357,6 +357,51 @@ STATE-R36 record IMP-028B canonical activation without changing decision registe
 architecture. GTM-R39 / STATE-R37 record IMP-028B architecture lock and implementation
 authorization without changing decision register or global architecture.
 
+
+STATE-R111 records IMP-036E implementation complete pending independent acceptance after exact
+implementation merge (`IMP036E_IMPLEMENTATION_MERGE_SHA:
+0ebb5e937cd7ac14bb3e39e9d1d494e32c9d2739`; `IMP036E_IMPLEMENTATION_TREE:
+0def59ce9bcab4575a7b43b7c3c07c85ac575428`), independent implementation review PASS on reviewed
+product candidate (`IMP036E_REVIEWED_CANDIDATE_HEAD:
+b2ffaa5bc2b5c6f58ff5241c226b583160132837`; `IMP036E_REVIEWED_CANDIDATE_TREE:
+0def59ce9bcab4575a7b43b7c3c07c85ac575428`), and successful post-merge CI (`workflow: CI`; run
+`34055991330`; head_sha `0ebb5e937cd7ac14bb3e39e9d1d494e32c9d2739`; result SUCCESS). Implementation
+evidence is **COMPLETE** (`IMP036E_IMPLEMENTATION_EVIDENCE: COMPLETE`); independent implementation
+review is **PASS** (`IMP_036E_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS`). IMP-036E lifecycle is
+`IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`. Architecture remains `ARCHITECTURE_LOCKED`
+(`IMP-036E_ARCHITECTURE_LOCKED: YES`); implementation is `AUTHORIZED` / `STARTED` / `COMPLETE`
+(`IMP-036E_IMPLEMENTATION: AUTHORIZED / STARTED / COMPLETE`;
+`IMP-036E_IMPLEMENTATION_AUTHORIZED: YES`; `IMP-036E_STARTED: YES`;
+`IMP-036E_IMPLEMENTATION_COMPLETE: YES`; `IMP-036E_ACCEPTED: NO`). Completion is **not** acceptance.
+Locked capability architecture remains at
+[`capabilities/IMP-036E-store-operations-management.md`](./capabilities/IMP-036E-store-operations-management.md).
+`acceptedThrough` remains IMP-036D; `pendingAcceptance` becomes IMP-036E; `currentProductSlice`
+remains IMP-036E; `nextProductSlice` remains IMP-036F, which remains `PLANNED` / `NOT_ACTIVATED` /
+`NOT_AUTHORIZED` / `NOT_STARTED`. Current Product Implementation remains IMP-036E — Store
+Operations Management. Founder Option A Assortment remains Brand authority
+(`IMP036E_ASSORTMENT_AUTHORITY: BRAND`; `OUTLET_MANAGER_OUTLET_SCOPE_ASSORTMENT_MANAGE: NO`;
+`OUTLET_EFFECTIVE_ASSORTMENT_PRESENTATION: AUTHORIZED_READ_OR_ESCALATE`;
+`IMP036E_ASSORTMENT_WORKFORCE_TRANSPORT: READ_ONLY_OPERATIONS_PROJECTION`;
+`ASSORTMENT_AUTHORIZATION_RESOURCE: BRAND_DERIVED_FROM_OUTLET`;
+`ASSORTMENT_MANAGE_ROUTE_IMP036E: NO`; Store read route
+`GET /api/operations/v1/outlets/{outletId}/assortment`). Store Overview is permission-gated
+composition; bulk availability deferred; Serviceability remains `OUTLET_DISTANCE_SERVICEABILITY_V1`
+with routing-priority Store UI hidden; Team reuses Admin façade; bounded Operations transport for
+Availability / Assortment (read-only) / Operating / Hours / Serviceability; global session
+capability booleans are coarse navigation only
+(`IMP036E_GLOBAL_SESSION_CAPS_ARE_RESOURCE_AUTHORITY: NO`;
+`IMP036E_GLOBAL_SESSION_CAPS_PURPOSE: COARSE_NAVIGATION_ONLY`;
+`IMP036E_RESOURCE_SCOPED_CONTROL_VISIBILITY: REQUIRED`;
+`IMP036E_SERVER_AUTHORIZATION_REMAINS_AUTHORITATIVE: YES`); `SCHEMA_CHANGE_REQUIRED: NO`;
+`NEW_PERMISSION: NO`; `NEW_ROLE: NO`; `NEW_SCOPE_MODEL: NO`;
+`D374_REQUIRED_FOR_IMP036E_LOCK: NO`; `D-374_CREATED: NO`; `ARCH_R20_REQUIRED_FOR_IMP036E_LOCK: NO`;
+`ARCH_R20_CREATED: NO`. ARCH-R19 and DR-15 remain unchanged. Founder UAT remains required and has
+**not** been performed (`IMP-036E_FOUNDER_UAT_REQUIRED: YES`; `IMP-036E_FOUNDER_UAT: NOT_STARTED`).
+GitHub Pages is not Founder staging/UAT evidence (`FOUNDER_STAGING_DEPLOYMENT: NOT_PERFORMED`;
+`FOUNDER_UAT: NOT_PERFORMED`). Does **not** activate IMP-036F. IMP-036D remains
+`COMPLETE_AND_ACCEPTED` and is not reopened. Supersedes STATE-R110 for the current product-slice
+implementation-completion position. Historical STATE-R110 implementation-start checkpoint remains
+preserved as prior authority.
 
 STATE-R110 records the separate Founder implementation-start gate for **IMP-036E — Store
 Operations Management** under the locked capability architecture and prior STATE-R109
@@ -1959,15 +2004,22 @@ FRANCHISE_IS_BUSINESS_PERSONA: YES
 NEW_FRANCHISE_ROLE: NO
 NEW_FRANCHISE_SCOPE_MODEL: NO
 ARBITRARY_MULTI_OUTLET_FRANCHISE_RBAC: DEFERRED
-IMP-036E: IMPLEMENTATION_IN_PROGRESS
+IMP-036E: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
 IMP-036E_ARCHITECTURE: LOCKED
 IMP-036E_ARCHITECTURE_LOCKED: YES
-IMP-036E_IMPLEMENTATION: AUTHORIZED / STARTED
+IMP-036E_IMPLEMENTATION: AUTHORIZED / STARTED / COMPLETE
 IMP-036E_IMPLEMENTATION_AUTHORIZED: YES
 IMP-036E_STARTED: YES
-IMP-036E_IMPLEMENTATION_COMPLETE: NO
+IMP-036E_IMPLEMENTATION_COMPLETE: YES
 IMP-036E_ACCEPTED: NO
 IMP-036E_FOUNDER_UAT_REQUIRED: YES
+IMP-036E_FOUNDER_UAT: NOT_STARTED
+IMP036E_IMPLEMENTATION_EVIDENCE: COMPLETE
+IMP_036E_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
+IMP036E_IMPLEMENTATION_MERGE_SHA: 0ebb5e937cd7ac14bb3e39e9d1d494e32c9d2739
+IMP036E_IMPLEMENTATION_TREE: 0def59ce9bcab4575a7b43b7c3c07c85ac575428
+IMP036E_REVIEWED_CANDIDATE_HEAD: b2ffaa5bc2b5c6f58ff5241c226b583160132837
+IMP036E_REVIEWED_CANDIDATE_TREE: 0def59ce9bcab4575a7b43b7c3c07c85ac575428
 IMP036E_ASSORTMENT_AUTHORITY: BRAND
 OUTLET_MANAGER_OUTLET_SCOPE_ASSORTMENT_MANAGE: NO
 OUTLET_MANAGER_OUTLET_SCOPE_ASSORTMENT_READ_AS_BRAND_AUTHORITY: NO

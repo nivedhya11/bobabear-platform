@@ -5,11 +5,11 @@
   "capability": "IMP-036E",
   "title": "Store Operations Management",
   "architectureLock": "ARCHITECTURE_LOCKED",
-  "implementation": "AUTHORIZED / STARTED",
+  "implementation": "AUTHORIZED / STARTED / COMPLETE",
   "implementationAuthorized": true,
   "founderUATRequired": true,
   "schemaChangeRequired": false,
-  "lastReviewed": "2026-09-06",
+  "lastReviewed": "2026-09-07",
   "bindingDecisions": ["D-358", "D-359", "D-372", "D-373"],
   "dependsOn": ["IMP-011", "IMP-014", "IMP-019", "IMP-029", "IMP-030", "IMP-035", "IMP-036B", "IMP-036D"]
 }
@@ -17,44 +17,47 @@
 
 # IMP-036E — Store Operations Management
 
-## Capability Architecture (ARCHITECTURE_LOCKED — IMPLEMENTATION IN PROGRESS)
+## Capability Architecture (ARCHITECTURE_LOCKED — IMPLEMENTATION AUTHORIZED / STARTED / COMPLETE)
 
 This document is the **locked capability architecture** for IMP-036E. It is the sole CURRENT
 capability-architecture authority for this slice. Supporting experience planning must not compete
 with this lock.
 
-Founder implementation-start authorization recorded at GTM-R112 / STATE-R110. This checkpoint contains no product implementation itself.
+Implementation complete pending acceptance recorded at GTM-R113 / STATE-R111. Completion is not
+acceptance. Founder UAT remains required and has not been performed.
 
 | Field | Value |
 |---|---|
 | Architecture lock | `ARCHITECTURE_LOCKED` |
-| Lifecycle | `IMPLEMENTATION_IN_PROGRESS` |
-| Implementation | `AUTHORIZED` / `STARTED` |
+| Lifecycle | `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` |
+| Implementation | `AUTHORIZED` / `STARTED` / `COMPLETE` |
 | Implementation authorized | **YES** |
 | Implementation started | **YES** |
-| Implementation complete | **NO** |
+| Implementation complete | **YES** |
 | Accepted | **NO** |
 | Accepted product through | IMP-036D (unchanged) |
 | Current product slice | IMP-036E |
-| Pending acceptance | NONE |
+| Pending acceptance | IMP-036E |
 | Next product slice | IMP-036F |
-| Governance checkpoint | GTM-R112 / STATE-R110 |
+| Governance checkpoint | GTM-R113 / STATE-R111 |
 | Founder UAT required for acceptance | **YES** |
+| Founder UAT | **NOT_STARTED** |
 | Schema change required | **NO** |
 | New D-number | **NO** (`D-374` not created) |
 | Global ARCH bump | **NO** (`ARCH-R19` preserved; `ARCH-R20` not created) |
 | Decision register | DR-15 (unchanged) |
 
 ```text
-IMP-036E: IMPLEMENTATION_IN_PROGRESS
+IMP-036E: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
 IMP-036E_ARCHITECTURE: LOCKED
 IMP-036E_ARCHITECTURE_LOCKED: YES
-IMP-036E_IMPLEMENTATION: AUTHORIZED / STARTED
+IMP-036E_IMPLEMENTATION: AUTHORIZED / STARTED / COMPLETE
 IMP-036E_IMPLEMENTATION_AUTHORIZED: YES
 IMP-036E_STARTED: YES
-IMP-036E_IMPLEMENTATION_COMPLETE: NO
+IMP-036E_IMPLEMENTATION_COMPLETE: YES
 IMP-036E_ACCEPTED: NO
 IMP-036E_FOUNDER_UAT_REQUIRED: YES
+IMP-036E_FOUNDER_UAT: NOT_STARTED
 FOUNDER_UAT_REQUIRED: YES
 FOUNDER_UAT_REQUIRED_FOR_ACCEPTANCE: YES
 schema_change: NO
@@ -74,6 +77,14 @@ ARCH-R20_CREATED: NO
 IMPLEMENTATION_START_RECORDED: YES
 IMPLEMENTATION_AUTHORIZED: YES
 IMPLEMENTATION_STARTED: YES
+COMPLETION IS NOT ACCEPTANCE: YES
+IMPLEMENTATION_COMPLETE: YES
+IMP036E_IMPLEMENTATION_EVIDENCE: COMPLETE
+IMP_036E_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
+IMP036E_IMPLEMENTATION_MERGE_SHA: 0ebb5e937cd7ac14bb3e39e9d1d494e32c9d2739
+IMP036E_IMPLEMENTATION_TREE: 0def59ce9bcab4575a7b43b7c3c07c85ac575428
+IMP036E_REVIEWED_CANDIDATE_HEAD: b2ffaa5bc2b5c6f58ff5241c226b583160132837
+IMP036E_REVIEWED_CANDIDATE_TREE: 0def59ce9bcab4575a7b43b7c3c07c85ac575428
 ```
 
 Canonical authorities:
@@ -852,11 +863,12 @@ façade), ARCH-G25 (D-373 Admin façade).
 ```text
 IMP-036E_IMPLEMENTATION_AUTHORIZED: YES
 IMP-036E_STARTED: YES
-IMP-036E_IMPLEMENTATION_COMPLETE: NO
+IMP-036E_IMPLEMENTATION_COMPLETE: YES
 IMP-036E_ACCEPTED: NO
+IMP-036E_FOUNDER_UAT: NOT_STARTED
 IMP-036F: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
 ```
 
-Founder implementation-start authorization recorded at GTM-R112 / STATE-R110 starts the
-implementation lifecycle but contains no product implementation itself and is **not** IMP-036F
+Implementation complete pending acceptance recorded at GTM-R113 / STATE-R111. Completion is **not**
+acceptance. Founder UAT remains required and has not been performed. This is **not** IMP-036F
 activation.
