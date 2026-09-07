@@ -51,17 +51,14 @@ Dockerfile
 .dockerignore
 compose.yaml
 
-# Non-repo reference/wireframe assets and root-level design images — not
+# Historical design archive and any remaining root-level design images — not
 # used by the build, no reason to ship them into the build context. Anchored
 # to the context root (leading "/") so this does NOT also match the real
 # application assets under public/assets/**.
-Boba Bear Landing Page Wireframe Updated
-Boba_Bear_Design_System_Updated
+archive/design-history
 test-results*
 playwright-report*
 scripts/assortment/configure-outlet-operating-uat.ts
 /*.png
 /*.jpeg
 /*.jpg
-Updated_BOBA BEAR_ DESIGN SYSTEM (V1.1).md
-boba-bear-design-system.md

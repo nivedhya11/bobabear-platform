@@ -14,10 +14,14 @@
 /coverage
 /playwright-report
 /playwright-report-customer-auth
+/playwright-report-workforce-auth
 /test-results
 /test-results-customer-auth
+/test-results-workforce-auth
 /test-results-operations-lifecycle
 /blob-report
+/artifacts/playwright-report-customer-auth/
+/artifacts/test-results-customer-auth/
 
 # next.js
 /.next/
