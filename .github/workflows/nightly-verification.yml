@@ -1,0 +1,196 @@
+# Session 3B2 expensive TEST-1 verification.
+# Verification only: does not deploy, release, tag, or mutate lifecycle state.
+name: Nightly Verification
+
+on:
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  e2e-customer-ordering:
+    name: E2E Customer Ordering
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.1"
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Customer ordering E2E
+        run: npm run test:e2e:customer-ordering
+      - name: Preserve customer ordering evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-customer-ordering
+          path: test-results-customer-ordering/**
+          if-no-files-found: ignore
+
+  e2e-customer-auth:
+    name: E2E Customer Auth
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.1"
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Customer auth E2E
+        run: npm run test:e2e:customer-auth
+      - name: Preserve customer auth evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: customer-auth-e2e-results
+          path: |
+            playwright-report-customer-auth/**
+            test-results-customer-auth/**
+          if-no-files-found: ignore
+
+  e2e-workforce-auth:
+    name: E2E Workforce Auth
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.1"
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Workforce auth E2E
+        run: npm run test:e2e:workforce-auth
+      - name: Preserve workforce auth evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: workforce-auth-e2e-results
+          path: |
+            playwright-report-workforce-auth/**
+            test-results-workforce-auth/**
+          if-no-files-found: ignore
+
+  e2e-operations-lifecycle:
+    name: E2E Operations Lifecycle
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.1"
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Operations lifecycle E2E
+        run: npm run test:e2e:operations-lifecycle
+      - name: Preserve operations lifecycle evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: operations-lifecycle-e2e-results
+          path: |
+            playwright-report-operations-lifecycle/**
+            test-results-operations-lifecycle/**
+          if-no-files-found: ignore
+
+  e2e-location-serviceability:
+    name: E2E Location Serviceability
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.1"
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Location selector layout E2E
+        run: npm run test:e2e:location-selector-layout
+      - name: Preserve location selector evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-location-selector-layout
+          path: test-results-location-selector-layout/**
+          if-no-files-found: ignore
+
+  concurrency-matrix:
+    name: Concurrency Matrix
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.1"
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Payment concurrency
+        run: npm run test:payment-concurrency
+      - name: Checkout concurrency
+        run: npm run test:checkout-concurrency
+      - name: Cart concurrency
+        run: npm run test:cart-concurrency
+      - name: Order concurrency
+        run: npm run test:order-concurrency
+      - name: Serviceability concurrency
+        run: npm run test:serviceability-concurrency
+      - name: Customer address concurrency
+        run: npm run test:customer-address-concurrency
+
+  recovery-matrix:
+    name: Recovery Matrix
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.1"
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Payment idempotency
+        run: npm run test:payment-idempotency
+      - name: Order crash recovery
+        run: npm run test:order-crash
+      - name: Payment reconciliation
+        run: npm run test:payment-reconciliation
