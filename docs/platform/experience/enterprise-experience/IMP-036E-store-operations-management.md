@@ -1,17 +1,19 @@
 ---
 Status: ARCHITECTURE_LOCKED SUPPORTING EXPERIENCE CONTRACT
 Capability: IMP-036E — Store Operations Management
-Lifecycle: IMPLEMENTATION_IN_PROGRESS
+Lifecycle: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
 Architecture: LOCKED
-Implementation: AUTHORIZED / STARTED
+Implementation: AUTHORIZED / STARTED / COMPLETE
 Founder UAT required: YES
+Founder UAT: NOT_STARTED
 IMP-036E_ARCHITECTURE_WORK_AUTHORIZED: YES
 IMP-036E_ARCHITECTURE_LOCKED: YES
 IMP-036E_IMPLEMENTATION_AUTHORIZED: YES
 IMP-036E_STARTED: YES
-IMP-036E_IMPLEMENTATION_COMPLETE: NO
+IMP-036E_IMPLEMENTATION_COMPLETE: YES
 IMP-036E_ACCEPTED: NO
 IMP-036E_FOUNDER_UAT_REQUIRED: YES
+pendingAcceptance = IMP-036E
 Authority: SUPPORTING EXPERIENCE CONTRACT — locked capability architecture at
   docs/platform/capabilities/IMP-036E-store-operations-management.md is CURRENT authority
 D374_CREATED: NO
@@ -33,23 +35,26 @@ locked capability architecture at
 [`../../capabilities/IMP-036E-store-operations-management.md`](../../capabilities/IMP-036E-store-operations-management.md).
 The capability artifact is the sole CURRENT IMP-036E capability architecture authority.
 
-## Architecture lock status (GTM-R112 / STATE-R110)
+## Architecture lock status (GTM-R113 / STATE-R111)
 
 ```text
 IMP-036E_ARCHITECTURE_WORK_AUTHORIZED = YES
 IMP-036E_ARCHITECTURE_LOCKED = YES
 IMP-036E_IMPLEMENTATION_AUTHORIZED = YES
 IMP-036E_STARTED = YES
-IMP-036E_IMPLEMENTATION_COMPLETE = NO
+IMP-036E_IMPLEMENTATION_COMPLETE = YES
 IMP-036E_ACCEPTED = NO
 IMP-036E_FOUNDER_UAT_REQUIRED = YES
+IMP-036E_FOUNDER_UAT = NOT_STARTED
+pendingAcceptance = IMP-036E
 D374_CREATED = NO
 D-374_CREATED = NO
 ARCH_R20_CREATED = NO
 ARCH_R20_REQUIRED = NO
 ```
 
-Founder implementation-start authorization recorded at GTM-R112 / STATE-R110. This start gate contains no product implementation.
+Implementation complete pending acceptance recorded at GTM-R113 / STATE-R111. Completion is not
+acceptance. Founder UAT remains required and has not been performed.
 
 ## Serviceability authority alignment (accepted IMP-036B — not a new decision)
 
@@ -184,7 +189,9 @@ ARCH_R20_REQUIRED_FOR_IMP036E_LOCK = NO
 - Session capability projection may add existing permission keys for coarse navigation only; global
   booleans are not selected-resource authority; selected-resource control visibility is required.
 - No schema change; no new permission/role/scope; no D-374; no ARCH-R20.
-- Implementation remains **NOT_AUTHORIZED** / **NOT_STARTED**. IMP-036F remains unactivated.
+- Implementation is **AUTHORIZED** / **STARTED** / **COMPLETE** pending acceptance
+  (`IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`). Completion is **not** acceptance. Founder UAT
+  remains required and has **not** been performed. IMP-036F remains unactivated.
 
 ## Target outcomes and information architecture
 
