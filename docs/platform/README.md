@@ -48,6 +48,12 @@ implements it; this index makes no claim of full current CI enforcement.
 
 Machine check: `npm run project:consistency`.
 
+Governance fingerprint (`npm run governance:fingerprint`) covers CURRENT authorities including
+`PRODUCT-DELIVERY.md` (PD-1), `TESTING.md` (TEST-1), and all tracked Markdown under
+[`product/`](./product/) recursively, plus the existing canonical/supporting governance set.
+AGENTS is the agent execution contract; CLOSED historical one-active-slice exception detail lives
+in ROADMAP/STATE history and is not restated in AGENTS.
+
 Working-tree integrity: `npm run working-tree:fingerprint`. `WORKING_TREE_FINGERPRINT` is
 content-sensitive across tracked and non-ignored untracked repository files (see `AGENTS.md`).
 Default `git status --porcelain` is not exact-content authority for files beneath an already-untracked

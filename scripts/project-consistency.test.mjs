@@ -6294,3 +6294,35 @@ describe("Enterprise Experience planning checkpoint", () => {
     }
   });
 });
+
+
+describe("PD-1 / TEST-1 product delivery process authorities", () => {
+  it("emits OK findings for PD-1, TEST-1, product artifacts, and prospective boundaries", () => {
+    const findings = runProjectConsistency();
+    const failures = findings.filter((f) => !f.ok);
+    assert.equal(
+      failures.length,
+      0,
+      failures.map((f) => `[${f.code}] ${f.message}`).join("\n"),
+    );
+
+    const messages = findings.filter((f) => f.ok).map((f) => f.message);
+    assert.ok(messages.some((m) => m.includes("PRODUCT-DELIVERY.md") && m.includes("governance-meta OK")));
+    assert.ok(messages.some((m) => m.includes("TESTING.md") && m.includes("governance-meta OK")));
+    assert.ok(messages.some((m) => m === "PRODUCT-DELIVERY.md version PD-1"));
+    assert.ok(messages.some((m) => m === "TESTING.md version TEST-1"));
+    assert.ok(messages.some((m) => m === "PRODUCT-DELIVERY.md effectiveFrom IMP-036F"));
+    assert.ok(messages.some((m) => m === "TESTING.md effectiveFrom contains IMP-036F"));
+    assert.ok(messages.some((m) => m === "PRODUCT-DELIVERY.md prospective boundary markers OK"));
+    assert.ok(messages.some((m) => m === "TESTING.md prospective boundary markers OK"));
+    assert.ok(messages.some((m) => m === "AGENTS.md prospective boundary markers OK"));
+    for (const rel of [
+      "docs/platform/product/README.md",
+      "docs/platform/product/personas.md",
+      "docs/platform/product/golden-journeys.md",
+      "docs/platform/product/templates/product-definition-template.md",
+    ]) {
+      assert.ok(messages.some((m) => m === `product artifact present: ${rel}`), rel);
+    }
+  });
+});

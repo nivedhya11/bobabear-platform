@@ -16696,7 +16696,16 @@ function checkAgentsPointer() {
     return;
   }
   const text = readFileSync(agents, "utf8");
-  for (const needle of ["VISION.md", "ROADMAP.md", "STATE.md", "ARCHITECTURE.md", "decision-register.md", "ALIGNMENT_GATE"]) {
+  for (const needle of [
+    "VISION.md",
+    "ROADMAP.md",
+    "STATE.md",
+    "ARCHITECTURE.md",
+    "decision-register.md",
+    "PRODUCT-DELIVERY.md",
+    "TESTING.md",
+    "ALIGNMENT_GATE",
+  ]) {
     if (!text.includes(needle)) fail("AGENTS_POINTER", `AGENTS.md missing required pointer/content: ${needle}`);
   }
   if (/implementation-roadmap\.md/.test(text) && !/SUPERSEDED|not an independent roadmap/i.test(text)) {
@@ -16706,6 +16715,111 @@ function checkAgentsPointer() {
     }
   }
   note("AGENTS.md points at canonical authorities");
+}
+
+const REQUIRED_PRODUCT_ARTIFACTS = [
+  "docs/platform/product/README.md",
+  "docs/platform/product/personas.md",
+  "docs/platform/product/golden-journeys.md",
+  "docs/platform/product/templates/product-definition-template.md",
+];
+
+const PRODUCT_DELIVERY_PROSPECTIVE_MARKERS = [
+  "PRODUCT_DELIVERY_PROCESS_EFFECTIVE_FROM = IMP-036F",
+  "HISTORICAL_ACCEPTED_IMPS_REWRITTEN = NO",
+  "IMP036E_LIFECYCLE_CHANGED = NO",
+  "IMP036F_ACTIVATED = NO",
+];
+
+/**
+ * Bounded Session-1 CURRENT process authority checks (PD-1 / TEST-1).
+ * Prospective only — does not require an IMP-036F Product Definition while
+ * IMP-036F remains unactivated.
+ */
+function checkProductDeliveryProcessAuthorities() {
+  const productDelivery = loadCanonical(
+    "docs/platform/PRODUCT-DELIVERY.md",
+    "PRODUCT_DELIVERY_PROCESS",
+    ["version", "effectiveFrom", "lastReviewed"],
+  );
+  if (productDelivery) {
+    if (productDelivery.meta.version !== "PD-1") {
+      fail(
+        "PRODUCT_DELIVERY_VERSION",
+        `PRODUCT-DELIVERY.md version must be PD-1 (got ${JSON.stringify(productDelivery.meta.version)})`,
+      );
+    } else {
+      note("PRODUCT-DELIVERY.md version PD-1");
+    }
+    if (productDelivery.meta.effectiveFrom !== "IMP-036F") {
+      fail(
+        "PRODUCT_DELIVERY_EFFECTIVE_FROM",
+        `PRODUCT-DELIVERY.md effectiveFrom must be IMP-036F (got ${JSON.stringify(productDelivery.meta.effectiveFrom)})`,
+      );
+    } else {
+      note("PRODUCT-DELIVERY.md effectiveFrom IMP-036F");
+    }
+    for (const marker of PRODUCT_DELIVERY_PROSPECTIVE_MARKERS) {
+      if (!productDelivery.text.includes(marker)) {
+        fail("PRODUCT_DELIVERY_PROSPECTIVE", `PRODUCT-DELIVERY.md missing prospective marker: ${marker}`);
+      }
+    }
+    if (PRODUCT_DELIVERY_PROSPECTIVE_MARKERS.every((m) => productDelivery.text.includes(m))) {
+      note("PRODUCT-DELIVERY.md prospective boundary markers OK");
+    }
+  }
+
+  const testing = loadCanonical("docs/platform/TESTING.md", "VERIFICATION_POLICY", [
+    "version",
+    "effectiveFrom",
+    "lastReviewed",
+  ]);
+  if (testing) {
+    if (testing.meta.version !== "TEST-1") {
+      fail("TESTING_VERSION", `TESTING.md version must be TEST-1 (got ${JSON.stringify(testing.meta.version)})`);
+    } else {
+      note("TESTING.md version TEST-1");
+    }
+    const effectiveFrom = String(testing.meta.effectiveFrom ?? "");
+    if (!effectiveFrom.includes("IMP-036F")) {
+      fail(
+        "TESTING_EFFECTIVE_FROM",
+        `TESTING.md effectiveFrom must contain IMP-036F (got ${JSON.stringify(testing.meta.effectiveFrom)})`,
+      );
+    } else {
+      note("TESTING.md effectiveFrom contains IMP-036F");
+    }
+    for (const marker of PRODUCT_DELIVERY_PROSPECTIVE_MARKERS) {
+      if (!testing.text.includes(marker)) {
+        fail("TESTING_PROSPECTIVE", `TESTING.md missing prospective marker: ${marker}`);
+      }
+    }
+    if (PRODUCT_DELIVERY_PROSPECTIVE_MARKERS.every((m) => testing.text.includes(m))) {
+      note("TESTING.md prospective boundary markers OK");
+    }
+  }
+
+  for (const rel of REQUIRED_PRODUCT_ARTIFACTS) {
+    const abs = resolveExactRelativeFile(rel);
+    if (!abs) {
+      fail("PRODUCT_ARTIFACT_MISSING", `Missing required product artifact: ${rel}`);
+    } else {
+      note(`product artifact present: ${rel}`);
+    }
+  }
+
+  const agentsAbs = path.join(projectRoot, "AGENTS.md");
+  if (existsSync(agentsAbs)) {
+    const agentsText = readFileSync(agentsAbs, "utf8");
+    for (const marker of PRODUCT_DELIVERY_PROSPECTIVE_MARKERS) {
+      if (!agentsText.includes(marker)) {
+        fail("AGENTS_PROSPECTIVE", `AGENTS.md missing prospective marker: ${marker}`);
+      }
+    }
+    if (PRODUCT_DELIVERY_PROSPECTIVE_MARKERS.every((m) => agentsText.includes(m))) {
+      note("AGENTS.md prospective boundary markers OK");
+    }
+  }
 }
 
 function checkSupersededRoadmap() {
@@ -16917,6 +17031,7 @@ export function runProjectConsistency() {
   checkTechnicalInventory();
   checkStaticWeb();
   checkAgentsPointer();
+  checkProductDeliveryProcessAuthorities();
   checkSupersededRoadmap();
   checkWorkingTreeFingerprint();
 
