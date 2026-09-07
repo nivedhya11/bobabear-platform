@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  classifyPersistenceImportLine,
   hasUseClientDirective,
   isAllowedMigrationFactoryImportPath,
   isAllowedPersistenceImportPath,
@@ -77,6 +78,7 @@ test("isAllowedPersistenceImportPath allows the persistence boundary, db tooling
 
 test("isAllowedPersistenceImportPath allows the exact additional script consumers", () => {
   const allowedScriptPaths = [
+    "src/platform/observability/health.ts",
     "scripts/catalog/bootstrap-imp028c-modifiers.ts",
     "scripts/catalog/bootstrap-imp036c-required-topping.ts",
     "scripts/e2e/seed-customer-ordering.ts",
@@ -150,7 +152,7 @@ test("isAllowedPersistenceImportPath rejects the public app tree and arbitrary s
   assert.equal(isAllowedPersistenceImportPath("src/components/Nav.tsx"), false);
   assert.equal(isAllowedPersistenceImportPath("src/lib/site.ts"), false);
   assert.equal(isAllowedPersistenceImportPath("src/server/workforce-auth/service.ts"), false);
-  assert.equal(isAllowedPersistenceImportPath("src/platform/observability/health.ts"), false);
+  assert.equal(isAllowedPersistenceImportPath("src/platform/observability/other.ts"), false);
 });
 
 test("isAllowedMigrationFactoryImportPath allows the migration factory, boundary, and db tooling/tests", () => {
@@ -188,5 +190,82 @@ test("hasUseClientDirective rejects a directive that is not the first statement"
   assert.equal(
     hasUseClientDirective('const x = 1;\n"use client";\nexport default function X() {}'),
     false,
+  );
+});
+
+test("classifyPersistenceImportLine rejects ordinary production src/app persistence import", () => {
+  assert.equal(
+    classifyPersistenceImportLine({
+      relativePath: "src/app/order/page.tsx",
+      line: 'import { getApplicationPersistence } from "@/server/persistence";',
+      isClientModule: false,
+    }),
+    "PUBLIC_APP_TREE",
+  );
+});
+
+test("classifyPersistenceImportLine rejects ordinary production src/components persistence import", () => {
+  assert.equal(
+    classifyPersistenceImportLine({
+      relativePath: "src/components/CartBadge.tsx",
+      line: 'import { getApplicationPersistence } from "@/server/persistence";',
+      isClientModule: false,
+    }),
+    "PUBLIC_APP_TREE",
+  );
+});
+
+test("classifyPersistenceImportLine rejects TYPE-ONLY src/app persistence import", () => {
+  assert.equal(
+    classifyPersistenceImportLine({
+      relativePath: "src/app/order/page.tsx",
+      line: 'import type { ApplicationPersistence } from "@/server/persistence";',
+      isClientModule: false,
+    }),
+    "PUBLIC_APP_TREE",
+  );
+});
+
+test("classifyPersistenceImportLine rejects TYPE-ONLY src/components persistence import", () => {
+  assert.equal(
+    classifyPersistenceImportLine({
+      relativePath: "src/components/CartBadge.tsx",
+      line: 'import type { ApplicationPersistence } from "@/server/persistence";',
+      isClientModule: true,
+    }),
+    "PUBLIC_APP_TREE",
+  );
+});
+
+test("classifyPersistenceImportLine allows allowlisted health.ts type-only persistence import", () => {
+  assert.equal(
+    classifyPersistenceImportLine({
+      relativePath: "src/platform/observability/health.ts",
+      line: 'import type { Persistence } from "../../server/persistence/types";',
+      isClientModule: false,
+    }),
+    null,
+  );
+});
+
+test("classifyPersistenceImportLine allows allowlisted non-public persistence imports", () => {
+  assert.equal(
+    classifyPersistenceImportLine({
+      relativePath: "src/server/catalog/products.ts",
+      line: 'import { getApplicationPersistence } from "@/server/persistence";',
+      isClientModule: false,
+    }),
+    null,
+  );
+});
+
+test("classifyPersistenceImportLine rejects client-module persistence imports outside public tree", () => {
+  assert.equal(
+    classifyPersistenceImportLine({
+      relativePath: "src/lib/client-helper.ts",
+      line: 'import { getApplicationPersistence } from "@/server/persistence";',
+      isClientModule: true,
+    }),
+    "CLIENT_MODULE",
   );
 });

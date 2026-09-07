@@ -87,6 +87,7 @@ const ALLOWED_PERSISTENCE_IMPORT_PREFIXES = [
 ];
 
 const ALLOWED_PERSISTENCE_IMPORT_PATHS = new Set([
+  "src/platform/observability/health.ts",
   "scripts/catalog/bootstrap-imp028c-modifiers.ts",
   "scripts/catalog/bootstrap-imp036c-required-topping.ts",
   "scripts/e2e/seed-customer-ordering.ts",
@@ -140,7 +141,8 @@ export function hasUseClientDirective(contents) {
   return false;
 }
 
-const PERSISTENCE_IMPORT_PATTERN = /from\s+["']([^"']*\bserver\/persistence[^"']*)["']/;
+const PERSISTENCE_IMPORT_PATTERN =
+  /^\s*import(?:\s+type)?\b.*\bfrom\s+["']([^"']*\bserver\/persistence[^"']*)["']/;
 const PG_IMPORT_PATTERN = /from\s+["']pg["']|require\(\s*["']pg["']\s*\)/;
 const DRIZZLE_RUNTIME_IMPORT_PATTERN =
   /from\s+["']drizzle-orm\/node-postgres[^"']*["']|require\(\s*["']drizzle-orm\/node-postgres[^"']*["']\s*\)/;
@@ -151,6 +153,50 @@ const GENERIC_ROLE_FACTORY_PATTERN =
   /export\s+(?:async\s+)?function\s+getPersistence\s*\(|export\s+const\s+getPersistence\s*=/;
 const MIGRATION_FACTORY_USAGE_PATTERN = /getMigrationPersistence\s*\(/;
 const NEXT_PUBLIC_DATABASE_PATTERN = /NEXT_PUBLIC_[A-Z0-9_]*DATABASE[A-Z0-9_]*/;
+
+/**
+ * Shared enforcement classifier for a single source line that may import
+ * src/server/persistence.
+ *
+ * Architectural boundary: type-only imports are NOT exempt. Any import of
+ * the persistence boundary from src/app/** or src/components/** is rejected,
+ * including type-only imports of that boundary.
+ *
+ * @param {{ relativePath: string, line: string, isClientModule: boolean }} args
+ * @returns {"PUBLIC_APP_TREE" | "CLIENT_MODULE" | "OUTSIDE_ALLOWLIST" | null}
+ */
+export function classifyPersistenceImportLine({ relativePath, line, isClientModule }) {
+  if (!PERSISTENCE_IMPORT_PATTERN.test(line)) {
+    return null;
+  }
+
+  const isPublicAppTree =
+    relativePath.startsWith("src/app/") || relativePath.startsWith("src/components/");
+
+  if (isPublicAppTree) {
+    return "PUBLIC_APP_TREE";
+  }
+  if (isClientModule) {
+    return "CLIENT_MODULE";
+  }
+  if (!isAllowedPersistenceImportPath(relativePath)) {
+    return "OUTSIDE_ALLOWLIST";
+  }
+  return null;
+}
+
+function persistenceImportFindingMessage(kind, relativePath, lineNo) {
+  switch (kind) {
+    case "PUBLIC_APP_TREE":
+      return `${relativePath}:${lineNo}: imports the persistence boundary from the public application tree (src/app/**, src/components/**), which must remain fully static in this slice.`;
+    case "CLIENT_MODULE":
+      return `${relativePath}:${lineNo}: a "use client" module imports the persistence boundary — persistence must never reach a browser bundle.`;
+    case "OUTSIDE_ALLOWLIST":
+      return `${relativePath}:${lineNo}: imports the persistence boundary from outside the approved boundary (${ALLOWED_PERSISTENCE_IMPORT_PREFIXES.join(", ")}).`;
+    default:
+      return `${relativePath}:${lineNo}: persistence import boundary violation.`;
+  }
+}
 
 /** @type {string[]} */
 const findings = [];
@@ -227,28 +273,17 @@ function scanSourceTree(files) {
     if (contents === null) continue;
     const lines = contents.split("\n");
     const isClientModule = hasUseClientDirective(contents);
-    const isPublicAppTree = rel.startsWith("src/app/") || rel.startsWith("src/components/");
 
     lines.forEach((line, index) => {
       const lineNo = index + 1;
 
-      const persistenceImportMatch = PERSISTENCE_IMPORT_PATTERN.exec(line);
-      // Type-only imports do not pull the persistence runtime into a bundle.
-      const isTypeOnlyImport = /^\s*import\s+type\s+/.test(line);
-      if (persistenceImportMatch && !isTypeOnlyImport) {
-        if (isPublicAppTree) {
-          findings.push(
-            `${rel}:${lineNo}: imports the persistence boundary from the public application tree (src/app/**, src/components/**), which must remain fully static in this slice.`,
-          );
-        } else if (isClientModule) {
-          findings.push(
-            `${rel}:${lineNo}: a "use client" module imports the persistence boundary — persistence must never reach a browser bundle.`,
-          );
-        } else if (!isAllowedPersistenceImportPath(rel)) {
-          findings.push(
-            `${rel}:${lineNo}: imports the persistence boundary from outside the approved boundary (${ALLOWED_PERSISTENCE_IMPORT_PREFIXES.join(", ")}).`,
-          );
-        }
+      const persistenceKind = classifyPersistenceImportLine({
+        relativePath: rel,
+        line,
+        isClientModule,
+      });
+      if (persistenceKind !== null) {
+        findings.push(persistenceImportFindingMessage(persistenceKind, rel, lineNo));
       }
 
       if (isClientModule && (PG_IMPORT_PATTERN.test(line) || DRIZZLE_RUNTIME_IMPORT_PATTERN.test(line))) {
