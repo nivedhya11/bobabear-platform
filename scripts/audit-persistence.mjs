@@ -9,12 +9,14 @@
  * looked at committed files would miss it.
  *
  * Checks performed:
- *   1. No "use client" module imports src/server/persistence.
+ *   1. No "use client" module imports or re-exports src/server/persistence.
  *   2. No "use client" module imports "pg" or a Drizzle database runtime
  *      module.
- *   3. No src/app/** or src/components/** module imports
- *      src/server/persistence at all (client or server — this slice keeps
- *      the public app fully static; see AGENTS.md IMP-006).
+ *   3. No src/app/** or src/components/** module may depend on
+ *      src/server/persistence at all — ordinary imports, type-only imports,
+ *      and re-exports are all prohibited. Type-only does not bypass that
+ *      architectural boundary; the public app must remain fully static
+ *      (see AGENTS.md IMP-006). No browser/runtime persistence leakage.
  *   4. The persistence public entry point (src/server/persistence/index.ts)
  *      carries the `server-only` marker.
  *   5. No bootstrap/admin persistence factory exists.
@@ -24,6 +26,11 @@
  *   8. No new NEXT_PUBLIC_* database-shaped variable was introduced.
  *   9. Nothing outside the migration factory / persistence boundary /
  *      database tooling / tests imports the migration-role factory.
+ *  10. health.ts retains its injected-Persistence design and may import only
+ *      the Persistence type from the dedicated persistence types module
+ *      (`import type … from "../../server/persistence/types"`). Runtime
+ *      persistence imports/re-exports from health.ts remain prohibited.
+ *      This is not a generic type-import exemption.
  */
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
@@ -36,6 +43,8 @@ const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "
 const SOURCE_EXTENSIONS = new Set([".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"]);
 
 const PERSISTENCE_TEST_FILE_SUFFIXES = [".test.ts", ".test.tsx", ".test.mjs"];
+
+const HEALTH_OBSERVABILITY_PATH = "src/platform/observability/health.ts";
 
 /** A path exempt from the "no hardcoded connection string" check — an
  * explicit, narrowly-scoped test fixture, never an ordinary source file. */
@@ -81,23 +90,30 @@ const ALLOWED_PERSISTENCE_IMPORT_PREFIXES = [
   "tests/serviceability-security/",
   "tests/serviceability-auth-integration/",
   "tests/serviceability-concurrency/",
+  "tests/administration/",
+  "tests/operations/",
+  "tests/workforce-auth/",
 ];
 
 const ALLOWED_PERSISTENCE_IMPORT_PATHS = new Set([
   "scripts/catalog/bootstrap-imp028c-modifiers.ts",
+  "scripts/catalog/bootstrap-imp036c-required-topping.ts",
   "scripts/e2e/seed-customer-ordering.ts",
+  "scripts/e2e/seed-operations-lifecycle.ts",
   "scripts/financial-document/recover-missing-receipt-vouchers.ts",
   "scripts/financial-document/recover-missing-tax-invoices.ts",
   "scripts/financial-document/signing.ts",
   "scripts/order/recover-missing-orders.ts",
   "scripts/refund/recover-missing-statutory-decisions.ts",
   "tests/catalog-imp028c-modifiers/bootstrap.integration.test.tsx",
+  "tests/catalog-imp036c-required-topping/bootstrap.integration.test.tsx",
 ]);
 
 /** Paths allowed to import the persistence boundary at all (the boundary
  * itself, organization/access-control/catalog/assortment/pricing/promotions/
  * customer-profiles/customer-addresses/serviceability application modules, one-shot database/access/menu/
- * assortment/pricing tooling, and the integration-test trees). */
+ * assortment/pricing tooling, and the integration-test trees).
+ * health.ts is NOT on this list — it has only a narrow type-only exception. */
 export function isAllowedPersistenceImportPath(relativePath) {
   return (
     ALLOWED_PERSISTENCE_IMPORT_PATHS.has(relativePath) ||
@@ -134,17 +150,145 @@ export function hasUseClientDirective(contents) {
   return false;
 }
 
-const PERSISTENCE_IMPORT_PATTERN = /from\s+["']([^"']*\bserver\/persistence[^"']*)["']/;
-const PG_IMPORT_PATTERN = /from\s+["']pg["']|require\(\s*["']pg["']\s*\)/;
-const DRIZZLE_RUNTIME_IMPORT_PATTERN =
-  /from\s+["']drizzle-orm\/node-postgres[^"']*["']|require\(\s*["']drizzle-orm\/node-postgres[^"']*["']\s*\)/;
-const CONNECTION_STRING_LITERAL_PATTERN = /postgresql:\/\/[^\s"'`]*:[^\s"'`]*@/;
-const ADMIN_FACTORY_PATTERN =
-  /\b(getAdminPersistence|getBootstrapPersistence|AdminPersistenceConfig|BootstrapPersistenceConfig)\b/;
-const GENERIC_ROLE_FACTORY_PATTERN =
-  /export\s+(?:async\s+)?function\s+getPersistence\s*\(|export\s+const\s+getPersistence\s*=/;
-const MIGRATION_FACTORY_USAGE_PATTERN = /getMigrationPersistence\s*\(/;
-const NEXT_PUBLIC_DATABASE_PATTERN = /NEXT_PUBLIC_[A-Z0-9_]*DATABASE[A-Z0-9_]*/;
+const PERSISTENCE_SPECIFIER_PATTERN = /["']([^"']*\bserver\/persistence[^"']*)["']/;
+
+/**
+ * True when a source line/statement is a static ES-module import or re-export
+ * whose module specifier refers to server/persistence or server/persistence/**.
+ *
+ * Covered forms (at minimum):
+ *   import { X } from "..."
+ *   import type { X } from "..."
+ *   import X from "..."
+ *   import * as X from "..."
+ *   export { X } from "..."
+ *   export type { X } from "..."
+ *   export * from "..."
+ */
+export function isPersistenceDependencyLine(line) {
+  if (!PERSISTENCE_SPECIFIER_PATTERN.test(line)) {
+    return false;
+  }
+  const trimmed = line.trimStart();
+  if (trimmed.startsWith("import ") && /\bfrom\s+["'][^"']*\bserver\/persistence/.test(line)) {
+    return true;
+  }
+  if (trimmed.startsWith("export ") && /\bfrom\s+["'][^"']*\bserver\/persistence/.test(line)) {
+    return true;
+  }
+  return false;
+}
+
+const STATIC_DEPENDENCY_START_PATTERN =
+  /^(?:import\s+|export\s+(?:type\s+)?\{|export\s+\*)/;
+const STATIC_DEPENDENCY_FROM_PATTERN = /\bfrom\s+["'][^"']+["']\s*;?\s*(?:\/\/.*)?$/;
+const STATIC_SIDE_EFFECT_IMPORT_PATTERN = /^import\s+["'][^"']+["']\s*;?\s*(?:\/\/.*)?$/;
+
+/**
+ * Collect complete static import/re-export declarations so multiline ESM
+ * syntax is classified by the same persistence-boundary rule as one-line
+ * syntax. Only declaration shapes that can carry module dependencies are
+ * accumulated; ordinary exported declarations are ignored.
+ *
+ * @returns {{ text: string, lineNo: number }[]}
+ */
+export function collectStaticDependencyStatements(contents) {
+  const statements = [];
+  const lines = contents.split("\n");
+  let current = null;
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+    const trimmed = line.trimStart();
+
+    if (current === null) {
+      if (!STATIC_DEPENDENCY_START_PATTERN.test(trimmed)) {
+        continue;
+      }
+      current = { text: line, lineNo: index + 1 };
+    } else {
+      current.text += `\n${line}`;
+    }
+
+    if (
+      STATIC_DEPENDENCY_FROM_PATTERN.test(current.text) ||
+      STATIC_SIDE_EFFECT_IMPORT_PATTERN.test(current.text.trim())
+    ) {
+      statements.push(current);
+      current = null;
+    }
+  }
+
+  return statements;
+}
+
+/**
+ * Narrow health.ts exception: may consume the Persistence type only via
+ * `import type` from the dedicated types module. Not a public persistence
+ * boundary, not a runtime factory consumer, and not a re-export surface.
+ */
+export function isAllowedHealthPersistenceTypeImport(relativePath, line) {
+  if (relativePath !== HEALTH_OBSERVABILITY_PATH) {
+    return false;
+  }
+  // Exact named binding only: `{ Persistence }`. Other types, multi-bindings,
+  // and aliases are rejected. Whitespace around the binding is tolerated.
+  return /^\s*import\s+type\s+\{\s*Persistence\s*,?\s*\}\s+from\s+["']\.\.\/\.\.\/server\/persistence\/types["']\s*;?\s*$/.test(
+    line,
+  );
+}
+
+/**
+ * Shared enforcement classifier for a source statement that may import or
+ * re-export src/server/persistence.
+ *
+ * Architectural boundary: type-only imports are NOT exempt for public trees.
+ * Re-exporting persistence also counts as a prohibited dependency.
+ *
+ * Enforcement order:
+ *   1. src/app/** or src/components/** → always reject
+ *   2. "use client" modules → reject
+ *   3. approved allowlist paths → allow
+ *   4. health.ts → only the exact narrow type-only import exception
+ *
+ * @param {{ relativePath: string, line: string, isClientModule: boolean }} args
+ * @returns {"PUBLIC_APP_TREE" | "CLIENT_MODULE" | "OUTSIDE_ALLOWLIST" | null}
+ */
+export function classifyPersistenceImportLine({ relativePath, line, isClientModule }) {
+  if (!isPersistenceDependencyLine(line)) {
+    return null;
+  }
+
+  const isPublicAppTree =
+    relativePath.startsWith("src/app/") || relativePath.startsWith("src/components/");
+
+  if (isPublicAppTree) {
+    return "PUBLIC_APP_TREE";
+  }
+  if (isClientModule) {
+    return "CLIENT_MODULE";
+  }
+  if (isAllowedPersistenceImportPath(relativePath)) {
+    return null;
+  }
+  if (isAllowedHealthPersistenceTypeImport(relativePath, line)) {
+    return null;
+  }
+  return "OUTSIDE_ALLOWLIST";
+}
+
+function persistenceImportFindingMessage(kind, relativePath, lineNo) {
+  switch (kind) {
+    case "PUBLIC_APP_TREE":
+      return `${relativePath}:${lineNo}: depends on / re-exports the persistence boundary from the public application tree (src/app/**, src/components/**), which must remain fully static in this slice.`;
+    case "CLIENT_MODULE":
+      return `${relativePath}:${lineNo}: a "use client" module depends on / re-exports the persistence boundary — persistence must never reach a browser bundle.`;
+    case "OUTSIDE_ALLOWLIST":
+      return `${relativePath}:${lineNo}: depends on / re-exports the persistence boundary from outside the approved boundary (${ALLOWED_PERSISTENCE_IMPORT_PREFIXES.join(", ")}).`;
+    default:
+      return `${relativePath}:${lineNo}: persistence dependency boundary violation.`;
+  }
+}
 
 /** @type {string[]} */
 const findings = [];
@@ -212,6 +356,17 @@ function checkNewPublicDatabaseEnvVar(files) {
   }
 }
 
+const ADMIN_FACTORY_PATTERN =
+  /\b(getAdminPersistence|getBootstrapPersistence|AdminPersistenceConfig|BootstrapPersistenceConfig)\b/;
+const GENERIC_ROLE_FACTORY_PATTERN =
+  /export\s+(?:async\s+)?function\s+getPersistence\s*\(|export\s+const\s+getPersistence\s*=/;
+const MIGRATION_FACTORY_USAGE_PATTERN = /getMigrationPersistence\s*\(/;
+const CONNECTION_STRING_LITERAL_PATTERN = /postgresql:\/\/[^\s"'`]*:[^\s"'`]*@/;
+const PG_IMPORT_PATTERN = /from\s+["']pg["']|require\(\s*["']pg["']\s*\)/;
+const DRIZZLE_RUNTIME_IMPORT_PATTERN =
+  /from\s+["']drizzle-orm\/node-postgres[^"']*["']|require\(\s*["']drizzle-orm\/node-postgres[^"']*["']\s*\)/;
+const NEXT_PUBLIC_DATABASE_PATTERN = /NEXT_PUBLIC_[A-Z0-9_]*DATABASE[A-Z0-9_]*/;
+
 function scanSourceTree(files) {
   for (const rel of files) {
     const ext = path.extname(rel);
@@ -221,27 +376,20 @@ function scanSourceTree(files) {
     if (contents === null) continue;
     const lines = contents.split("\n");
     const isClientModule = hasUseClientDirective(contents);
-    const isPublicAppTree = rel.startsWith("src/app/") || rel.startsWith("src/components/");
+
+    for (const statement of collectStaticDependencyStatements(contents)) {
+      const persistenceKind = classifyPersistenceImportLine({
+        relativePath: rel,
+        line: statement.text,
+        isClientModule,
+      });
+      if (persistenceKind !== null) {
+        findings.push(persistenceImportFindingMessage(persistenceKind, rel, statement.lineNo));
+      }
+    }
 
     lines.forEach((line, index) => {
       const lineNo = index + 1;
-
-      const persistenceImportMatch = PERSISTENCE_IMPORT_PATTERN.exec(line);
-      if (persistenceImportMatch) {
-        if (isPublicAppTree) {
-          findings.push(
-            `${rel}:${lineNo}: imports the persistence boundary from the public application tree (src/app/**, src/components/**), which must remain fully static in this slice.`,
-          );
-        } else if (isClientModule) {
-          findings.push(
-            `${rel}:${lineNo}: a "use client" module imports the persistence boundary — persistence must never reach a browser bundle.`,
-          );
-        } else if (!isAllowedPersistenceImportPath(rel)) {
-          findings.push(
-            `${rel}:${lineNo}: imports the persistence boundary from outside the approved boundary (src/server/persistence/**, src/server/organization/**, src/server/access-control/**, src/server/catalog/**, src/server/assortment/**, src/server/pricing/**, src/server/promotions/**, src/server/customer-profiles/**, src/server/customer-addresses/**, src/server/serviceability/**, scripts/database/**, scripts/access/**, scripts/menu/**, scripts/assortment/**, scripts/pricing/**, tests/database/**, tests/access-control/**, tests/catalog/**, tests/menu-import/**, tests/assortment-availability/**, tests/assortment-bootstrap/**, tests/pricing-tax/**, tests/pricing-bootstrap/**, tests/pricing-parity/**, tests/customer-profiles/**, tests/customer-profile-security/**, tests/customer-profile-auth-integration/**, tests/customer-addresses/**, tests/customer-address-security/**, tests/customer-address-auth-integration/**, tests/customer-address-concurrency/**, tests/customer-commerce/**, tests/serviceability/**, tests/serviceability-security/**, tests/serviceability-auth-integration/**, tests/serviceability-concurrency/**).`,
-          );
-        }
-      }
 
       if (isClientModule && (PG_IMPORT_PATTERN.test(line) || DRIZZLE_RUNTIME_IMPORT_PATTERN.test(line))) {
         findings.push(
@@ -270,30 +418,36 @@ function scanSourceTree(files) {
   }
 }
 
-const files = listAllFiles();
+function main() {
+  const files = listAllFiles();
 
-checkPersistenceEntryPointIsServerOnly();
-checkNoAdminOrGenericFactory(files);
-checkNewPublicDatabaseEnvVar(files);
-scanSourceTree(files);
+  checkPersistenceEntryPointIsServerOnly();
+  checkNoAdminOrGenericFactory(files);
+  checkNewPublicDatabaseEnvVar(files);
+  scanSourceTree(files);
 
-console.log("Persistence-boundary audit");
-console.log("=".repeat(60));
+  console.log("Persistence-boundary audit");
+  console.log("=".repeat(60));
 
-if (findings.length > 0) {
-  for (const finding of findings) {
-    console.log(`  ✗  ${finding}`);
+  if (findings.length > 0) {
+    for (const finding of findings) {
+      console.log(`  ✗  ${finding}`);
+    }
+    console.log("=".repeat(60));
+    console.log(`${findings.length} problem(s) found.`);
+    process.exitCode = 1;
+  } else {
+    console.log("  ✓  Persistence entry point carries the server-only marker.");
+    console.log("  ✓  No client-component or public-app-tree persistence dependency/re-export.");
+    console.log("  ✓  No bootstrap/admin or generic role-selecting factory.");
+    console.log("  ✓  No hardcoded connection string in persistence source.");
+    console.log("  ✓  No new NEXT_PUBLIC_* database variable.");
+    console.log("  ✓  No application-code use of the migration factory.");
+    console.log("=".repeat(60));
+    console.log("All checks passed. ✓");
   }
-  console.log("=".repeat(60));
-  console.log(`${findings.length} problem(s) found.`);
-  process.exitCode = 1;
-} else {
-  console.log("  ✓  Persistence entry point carries the server-only marker.");
-  console.log("  ✓  No client-component or public-app-tree persistence import.");
-  console.log("  ✓  No bootstrap/admin or generic role-selecting factory.");
-  console.log("  ✓  No hardcoded connection string in persistence source.");
-  console.log("  ✓  No new NEXT_PUBLIC_* database variable.");
-  console.log("  ✓  No application-code use of the migration factory.");
-  console.log("=".repeat(60));
-  console.log("All checks passed. ✓");
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main();
 }

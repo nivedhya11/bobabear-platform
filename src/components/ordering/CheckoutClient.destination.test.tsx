@@ -27,9 +27,13 @@ const {
   readPaymentRecovery: vi.fn<(...args: unknown[]) => unknown>(() => null),
 }));
 
-vi.mock("@/lib/customer-auth/client", () => ({
-  fetchCustomerSession: (...args: unknown[]) => fetchCustomerSession(...args),
-}));
+vi.mock("@/lib/customer-auth/client", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/customer-auth/client")>();
+  return {
+    ...actual,
+    fetchCustomerSession: (...args: unknown[]) => fetchCustomerSession(...args),
+  };
+});
 
 vi.mock("@/components/ordering/CheckoutDestinationFlow", () => ({
   CheckoutDestinationFlow: (props: {

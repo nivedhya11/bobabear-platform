@@ -10,7 +10,7 @@
  * this script focuses on the customer-phone-auth-specific surface: the
  * dedicated `src/server/customer-auth/**` service, `src/shared/customer-auth/**`,
  * the browser façade (`src/lib/customer-auth/**`), the login UI
- * (`src/app/login/**`), the rate-limit schema, and the one IMP-009 migration.
+ * (`src/app/(customer)/login/**`), the rate-limit schema, and the one IMP-009 migration.
  *
  * Checks performed:
  *   1. libphonenumber-js is pinned to exactly 1.13.10 (no ranges); no
@@ -67,7 +67,7 @@ const REQUIRED_BETTER_AUTH_VERSION = "1.6.25";
 const CUSTOMER_AUTH_SERVICE_DIR = "src/server/customer-auth/";
 const SHARED_CUSTOMER_AUTH_DIR = "src/shared/customer-auth/";
 const BROWSER_CUSTOMER_AUTH_DIR = "src/lib/customer-auth/";
-const LOGIN_APP_DIR = "src/app/login/";
+const LOGIN_APP_DIR = "src/app/(customer)/login/";
 const SERVICE_LOG_FILE = `${CUSTOMER_AUTH_SERVICE_DIR}service.ts`;
 // The process entry point logs its own process-lifecycle start/shutdown/
 // fatal-error lines, same accepted pattern as `scripts/database/migrate.ts`
@@ -658,55 +658,59 @@ function checkNoHardcodedFixedOtpInPackageScripts() {
   }
 }
 
-// ── run ──────────────────────────────────────────────────────────────────
+function main() {
+  const files = listAllFiles();
 
-const files = listAllFiles();
+  checkPinnedDependencies();
+  checkNoHttpTransportEscape(files);
+  checkComposeNeverPublishesCustomerAuthPort();
+  checkNginxNeverProxiesCustomerAuthHealth();
+  checkNoDisallowedPublicSurface(files);
+  checkTempEmailNeverLeaksRawPhone();
+  checkNoStrayLogging(files);
+  checkRateLimitSchemaNeverStoresRawPii();
+  checkNoOutboxUsage(files);
+  checkNoWebStorageOfPii(files);
+  checkNoPublicCustomerAuthVariable(files);
+  checkNoDirectDatabaseAccess(files);
+  checkProviderFailsClosed();
+  checkRouterNeverEchoesOtp();
+  checkProviderTestSeamNotPublic();
+  checkMigrationIntegrity(files);
+  checkRequiredModulesExist();
+  checkMigrationFileExists(files);
+  checkNoHardcodedFixedOtpInPackageScripts();
 
-checkPinnedDependencies();
-checkNoHttpTransportEscape(files);
-checkComposeNeverPublishesCustomerAuthPort();
-checkNginxNeverProxiesCustomerAuthHealth();
-checkNoDisallowedPublicSurface(files);
-checkTempEmailNeverLeaksRawPhone();
-checkNoStrayLogging(files);
-checkRateLimitSchemaNeverStoresRawPii();
-checkNoOutboxUsage(files);
-checkNoWebStorageOfPii(files);
-checkNoPublicCustomerAuthVariable(files);
-checkNoDirectDatabaseAccess(files);
-checkProviderFailsClosed();
-checkRouterNeverEchoesOtp();
-checkProviderTestSeamNotPublic();
-checkMigrationIntegrity(files);
-checkRequiredModulesExist();
-checkMigrationFileExists(files);
-checkNoHardcodedFixedOtpInPackageScripts();
+  console.log("Customer phone OTP authentication audit");
+  console.log("=".repeat(60));
 
-console.log("Customer phone OTP authentication audit");
-console.log("=".repeat(60));
-
-if (findings.length > 0) {
-  for (const finding of findings) {
-    console.log(`  ✗  ${finding}`);
+  if (findings.length > 0) {
+    for (const finding of findings) {
+      console.log(`  ✗  ${finding}`);
+    }
+    console.log("=".repeat(60));
+    console.log(`${findings.length} problem(s) found.`);
+    process.exitCode = 1;
+  } else {
+    console.log("  ✓  libphonenumber-js pinned to 1.13.10; better-auth family unchanged; no forbidden dependency.");
+    console.log("  ✓  No Better Auth catch-all/HTTP route escape; no published customer-auth host port or health proxy.");
+    console.log("  ✓  No phone-update/removal, password, or MFA public surface.");
+    console.log("  ✓  Temporary-email derivation never leaks the raw phone number.");
+    console.log("  ✓  No stray console.* logging outside the two allowlisted call sites.");
+    console.log("  ✓  Rate-limit schema stores only technical counters — no raw PII column.");
+    console.log("  ✓  No outbox usage; no localStorage/sessionStorage of phone/OTP; no public NEXT_PUBLIC_* leak.");
+    console.log("  ✓  No direct database driver or migration-role usage in the service.");
+    console.log("  ✓  The local provider and service config fail closed in staging/production.");
+    console.log("  ✓  The HTTP router never echoes an OTP code back in a response body.");
+    console.log("  ✓  The test-only provider capture seam is not re-exported publicly.");
+    console.log("  ✓  Exactly one new migration; previously sealed migrations are unchanged.");
+    console.log("  ✓  Every required module and public entry point exists and is server-only.");
+    console.log("  ✓  No hardcoded CUSTOMER_OTP_LOCAL_FIXED_CODE in package.json.");
+    console.log("=".repeat(60));
+    console.log("All checks passed. ✓");
   }
-  console.log("=".repeat(60));
-  console.log(`${findings.length} problem(s) found.`);
-  process.exitCode = 1;
-} else {
-  console.log("  ✓  libphonenumber-js pinned to 1.13.10; better-auth family unchanged; no forbidden dependency.");
-  console.log("  ✓  No Better Auth catch-all/HTTP route escape; no published customer-auth host port or health proxy.");
-  console.log("  ✓  No phone-update/removal, password, or MFA public surface.");
-  console.log("  ✓  Temporary-email derivation never leaks the raw phone number.");
-  console.log("  ✓  No stray console.* logging outside the two allowlisted call sites.");
-  console.log("  ✓  Rate-limit schema stores only technical counters — no raw PII column.");
-  console.log("  ✓  No outbox usage; no localStorage/sessionStorage of phone/OTP; no public NEXT_PUBLIC_* leak.");
-  console.log("  ✓  No direct database driver or migration-role usage in the service.");
-  console.log("  ✓  The local provider and service config fail closed in staging/production.");
-  console.log("  ✓  The HTTP router never echoes an OTP code back in a response body.");
-  console.log("  ✓  The test-only provider capture seam is not re-exported publicly.");
-  console.log("  ✓  Exactly one new migration; previously sealed migrations are unchanged.");
-  console.log("  ✓  Every required module and public entry point exists and is server-only.");
-  console.log("  ✓  No hardcoded CUSTOMER_OTP_LOCAL_FIXED_CODE in package.json.");
-  console.log("=".repeat(60));
-  console.log("All checks passed. ✓");
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main();
 }

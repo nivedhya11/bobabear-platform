@@ -9,9 +9,13 @@ const fetchCustomerSession = vi.fn<(...args: unknown[]) => unknown>();
 const listOwnAddresses = vi.fn<(...args: unknown[]) => unknown>();
 const evaluateDeliveryServiceability = vi.fn<(...args: unknown[]) => unknown>();
 
-vi.mock("@/lib/customer-auth/client", () => ({
-  fetchCustomerSession: (...args: unknown[]) => fetchCustomerSession(...args),
-}));
+vi.mock("@/lib/customer-auth/client", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/customer-auth/client")>();
+  return {
+    ...actual,
+    fetchCustomerSession: (...args: unknown[]) => fetchCustomerSession(...args),
+  };
+});
 
 vi.mock("@/lib/customer-commerce", async () => {
   const actual = await vi.importActual<typeof import("@/lib/customer-commerce")>(

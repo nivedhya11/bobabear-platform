@@ -19,6 +19,10 @@ analysis for Session 3 verification work.
    structural inventory (regenerate/check via package scripts below).
 4. Read [`CI-GAP-ANALYSIS.md`](./CI-GAP-ANALYSIS.md) for Session 3B / 3C
    implementation planning.
+5. Read [`CI-READINESS.md`](./CI-READINESS.md) for Session 3B1 repair evidence
+   (`npm run test` / `test:scripts` / coverage baseline).
+6. Read [`CI-JOB-CONTRACT.md`](./CI-JOB-CONTRACT.md) for the Session 3B2
+   workflow implementation contract (not an authorization to edit workflows).
 
 ## Explicit non-authority
 
