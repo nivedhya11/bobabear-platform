@@ -4,8 +4,10 @@ import assert from "node:assert/strict";
 import {
   classifyPersistenceImportLine,
   hasUseClientDirective,
+  isAllowedHealthPersistenceTypeImport,
   isAllowedMigrationFactoryImportPath,
   isAllowedPersistenceImportPath,
+  isPersistenceDependencyLine,
   isPersistenceTestFixture,
 } from "./audit-persistence.mjs";
 
@@ -78,7 +80,6 @@ test("isAllowedPersistenceImportPath allows the persistence boundary, db tooling
 
 test("isAllowedPersistenceImportPath allows the exact additional script consumers", () => {
   const allowedScriptPaths = [
-    "src/platform/observability/health.ts",
     "scripts/catalog/bootstrap-imp028c-modifiers.ts",
     "scripts/catalog/bootstrap-imp036c-required-topping.ts",
     "scripts/e2e/seed-customer-ordering.ts",
@@ -93,6 +94,10 @@ test("isAllowedPersistenceImportPath allows the exact additional script consumer
   for (const path of allowedScriptPaths) {
     assert.equal(isAllowedPersistenceImportPath(path), true, path);
   }
+});
+
+test("isAllowedPersistenceImportPath does not generally allowlist health.ts", () => {
+  assert.equal(isAllowedPersistenceImportPath("src/platform/observability/health.ts"), false);
 });
 
 test("isAllowedPersistenceImportPath allows the exact modifier-bootstrap integration test", () => {
@@ -193,7 +198,76 @@ test("hasUseClientDirective rejects a directive that is not the first statement"
   );
 });
 
-test("classifyPersistenceImportLine rejects ordinary production src/app persistence import", () => {
+test("isPersistenceDependencyLine recognizes import and re-export forms", () => {
+  assert.equal(
+    isPersistenceDependencyLine('import { getApplicationPersistence } from "@/server/persistence";'),
+    true,
+  );
+  assert.equal(
+    isPersistenceDependencyLine('import type { Persistence } from "@/server/persistence/types";'),
+    true,
+  );
+  assert.equal(
+    isPersistenceDependencyLine('import Persistence from "../../server/persistence/types";'),
+    true,
+  );
+  assert.equal(
+    isPersistenceDependencyLine('import * as persistence from "@/server/persistence";'),
+    true,
+  );
+  assert.equal(
+    isPersistenceDependencyLine('export { getApplicationPersistence } from "@/server/persistence";'),
+    true,
+  );
+  assert.equal(
+    isPersistenceDependencyLine('export type { Persistence } from "@/server/persistence/types";'),
+    true,
+  );
+  assert.equal(isPersistenceDependencyLine('export * from "@/server/persistence";'), true);
+  assert.equal(isPersistenceDependencyLine('import { something } from "@/server/other";'), false);
+  assert.equal(isPersistenceDependencyLine("// server/persistence mentioned"), false);
+});
+
+test("isAllowedHealthPersistenceTypeImport allows only the exact type import", () => {
+  assert.equal(
+    isAllowedHealthPersistenceTypeImport(
+      "src/platform/observability/health.ts",
+      'import type { Persistence } from "../../server/persistence/types";',
+    ),
+    true,
+  );
+  assert.equal(
+    isAllowedHealthPersistenceTypeImport(
+      "src/platform/observability/health.ts",
+      'import { getApplicationPersistence } from "../../server/persistence";',
+    ),
+    false,
+  );
+  assert.equal(
+    isAllowedHealthPersistenceTypeImport(
+      "src/platform/observability/health.ts",
+      'import { Persistence } from "../../server/persistence/types";',
+    ),
+    false,
+  );
+  assert.equal(
+    isAllowedHealthPersistenceTypeImport(
+      "src/platform/observability/health.ts",
+      'export type { Persistence } from "../../server/persistence/types";',
+    ),
+    false,
+  );
+  assert.equal(
+    isAllowedHealthPersistenceTypeImport(
+      "src/platform/observability/other.ts",
+      'import type { Persistence } from "../../server/persistence/types";',
+    ),
+    false,
+  );
+});
+
+// A. Public application imports
+test("A: classifyPersistenceImportLine rejects ordinary src/app persistence import", () => {
   assert.equal(
     classifyPersistenceImportLine({
       relativePath: "src/app/order/page.tsx",
@@ -204,7 +278,19 @@ test("classifyPersistenceImportLine rejects ordinary production src/app persiste
   );
 });
 
-test("classifyPersistenceImportLine rejects ordinary production src/components persistence import", () => {
+test("A: classifyPersistenceImportLine rejects TYPE-ONLY src/app persistence import", () => {
+  assert.equal(
+    classifyPersistenceImportLine({
+      relativePath: "src/app/order/page.tsx",
+      line: 'import type { Persistence } from "@/server/persistence";',
+      isClientModule: false,
+    }),
+    "PUBLIC_APP_TREE",
+  );
+});
+
+// B. Public component imports
+test("B: classifyPersistenceImportLine rejects ordinary src/components persistence import", () => {
   assert.equal(
     classifyPersistenceImportLine({
       relativePath: "src/components/CartBadge.tsx",
@@ -215,29 +301,65 @@ test("classifyPersistenceImportLine rejects ordinary production src/components p
   );
 });
 
-test("classifyPersistenceImportLine rejects TYPE-ONLY src/app persistence import", () => {
-  assert.equal(
-    classifyPersistenceImportLine({
-      relativePath: "src/app/order/page.tsx",
-      line: 'import type { ApplicationPersistence } from "@/server/persistence";',
-      isClientModule: false,
-    }),
-    "PUBLIC_APP_TREE",
-  );
-});
-
-test("classifyPersistenceImportLine rejects TYPE-ONLY src/components persistence import", () => {
+test("B: classifyPersistenceImportLine rejects TYPE-ONLY src/components persistence import", () => {
   assert.equal(
     classifyPersistenceImportLine({
       relativePath: "src/components/CartBadge.tsx",
-      line: 'import type { ApplicationPersistence } from "@/server/persistence";',
+      line: 'import type { Persistence } from "@/server/persistence";',
       isClientModule: true,
     }),
     "PUBLIC_APP_TREE",
   );
 });
 
-test("classifyPersistenceImportLine allows allowlisted health.ts type-only persistence import", () => {
+// C. Public application re-exports
+test("C: classifyPersistenceImportLine rejects src/app runtime re-export", () => {
+  assert.equal(
+    classifyPersistenceImportLine({
+      relativePath: "src/app/order/page.tsx",
+      line: 'export { getApplicationPersistence } from "@/server/persistence";',
+      isClientModule: false,
+    }),
+    "PUBLIC_APP_TREE",
+  );
+});
+
+test("C: classifyPersistenceImportLine rejects src/app type re-export", () => {
+  assert.equal(
+    classifyPersistenceImportLine({
+      relativePath: "src/app/order/page.tsx",
+      line: 'export type { Persistence } from "@/server/persistence";',
+      isClientModule: false,
+    }),
+    "PUBLIC_APP_TREE",
+  );
+});
+
+test("C: classifyPersistenceImportLine rejects src/app export * re-export", () => {
+  assert.equal(
+    classifyPersistenceImportLine({
+      relativePath: "src/app/order/page.tsx",
+      line: 'export * from "@/server/persistence";',
+      isClientModule: false,
+    }),
+    "PUBLIC_APP_TREE",
+  );
+});
+
+// D. Public component re-export
+test("D: classifyPersistenceImportLine rejects src/components type re-export", () => {
+  assert.equal(
+    classifyPersistenceImportLine({
+      relativePath: "src/components/CartBadge.tsx",
+      line: 'export type { Persistence } from "@/server/persistence/types";',
+      isClientModule: false,
+    }),
+    "PUBLIC_APP_TREE",
+  );
+});
+
+// E. Health allowed case
+test("E: classifyPersistenceImportLine allows health.ts narrow type-only import", () => {
   assert.equal(
     classifyPersistenceImportLine({
       relativePath: "src/platform/observability/health.ts",
@@ -248,7 +370,66 @@ test("classifyPersistenceImportLine allows allowlisted health.ts type-only persi
   );
 });
 
-test("classifyPersistenceImportLine allows allowlisted non-public persistence imports", () => {
+// F. Health forbidden runtime import
+test("F: classifyPersistenceImportLine rejects health.ts runtime persistence import", () => {
+  assert.equal(
+    classifyPersistenceImportLine({
+      relativePath: "src/platform/observability/health.ts",
+      line: 'import { getApplicationPersistence } from "../../server/persistence";',
+      isClientModule: false,
+    }),
+    "OUTSIDE_ALLOWLIST",
+  );
+});
+
+// G. Health forbidden runtime import from types module
+test("G: classifyPersistenceImportLine rejects health.ts value import from types", () => {
+  assert.equal(
+    classifyPersistenceImportLine({
+      relativePath: "src/platform/observability/health.ts",
+      line: 'import { Persistence } from "../../server/persistence/types";',
+      isClientModule: false,
+    }),
+    "OUTSIDE_ALLOWLIST",
+  );
+});
+
+test("G: classifyPersistenceImportLine rejects health.ts default import from types", () => {
+  assert.equal(
+    classifyPersistenceImportLine({
+      relativePath: "src/platform/observability/health.ts",
+      line: 'import Persistence from "../../server/persistence/types";',
+      isClientModule: false,
+    }),
+    "OUTSIDE_ALLOWLIST",
+  );
+});
+
+// H. Health forbidden re-export
+test("H: classifyPersistenceImportLine rejects health.ts type re-export", () => {
+  assert.equal(
+    classifyPersistenceImportLine({
+      relativePath: "src/platform/observability/health.ts",
+      line: 'export type { Persistence } from "../../server/persistence/types";',
+      isClientModule: false,
+    }),
+    "OUTSIDE_ALLOWLIST",
+  );
+});
+
+test("H: classifyPersistenceImportLine rejects health.ts runtime re-export", () => {
+  assert.equal(
+    classifyPersistenceImportLine({
+      relativePath: "src/platform/observability/health.ts",
+      line: 'export { getApplicationPersistence } from "../../server/persistence";',
+      isClientModule: false,
+    }),
+    "OUTSIDE_ALLOWLIST",
+  );
+});
+
+// I. Normal approved server consumer
+test("I: classifyPersistenceImportLine allows approved non-public server persistence consumer", () => {
   assert.equal(
     classifyPersistenceImportLine({
       relativePath: "src/server/catalog/products.ts",
@@ -256,6 +437,18 @@ test("classifyPersistenceImportLine allows allowlisted non-public persistence im
       isClientModule: false,
     }),
     null,
+  );
+});
+
+// J. Arbitrary server/lib consumer outside allowlist
+test("J: classifyPersistenceImportLine rejects arbitrary server/lib consumer outside allowlist", () => {
+  assert.equal(
+    classifyPersistenceImportLine({
+      relativePath: "src/lib/site.ts",
+      line: 'import { getApplicationPersistence } from "@/server/persistence";',
+      isClientModule: false,
+    }),
+    "OUTSIDE_ALLOWLIST",
   );
 });
 

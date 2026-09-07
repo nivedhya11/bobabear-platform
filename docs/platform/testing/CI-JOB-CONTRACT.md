@@ -51,7 +51,7 @@ states which jobs **should** be treated as blocking once wired and green.
 |---|---|---|
 | PR | `quality`, `unit-component`, `scripts`, `commerce-core`, `security-smoke`, `build` | Coverage |
 | Main push | All PR blocking jobs + `database-foundation`, `database-commerce`, `security-matrix`, `domain-extended`, `http-surfaces`, `audits` | Coverage |
-| Nightly / release | Exact E2E / concurrency / recovery jobs listed below | `golden-journey-evidence` job; IMP-036B location precert beyond `test:e2e:location-selector-layout` |
+| Nightly verification (`schedule` `0 2 * * *` or `workflow_dispatch`) | Exact E2E / concurrency / recovery jobs listed below | `golden-journey-evidence` job; IMP-036B location precert beyond `test:e2e:location-selector-layout` |
 
 **No silent retry** of failed verification jobs. Flakes must be fixed or
 explicitly quarantined under TEST-1 policy — not hidden by workflow `retry`.
@@ -367,16 +367,49 @@ REASON = full browser matrix stays nightly
 
 ---
 
-## NIGHTLY / RELEASE — expensive proof
+## NIGHTLY VERIFICATION — expensive proof
 
-Trigger: `schedule` (nightly) and/or explicit release workflow  
-Cadence: nightly + pre-release
+```text
+WORKFLOW_PURPOSE = expensive TEST-1 verification only
+
+GITHUB_ACTIONS_TRIGGERS =
+  schedule:
+    cron: "0 2 * * *"
+  workflow_dispatch:
+
+NIGHTLY_CRON = 0 2 * * *
+MANUAL_TRIGGER = workflow_dispatch
+
+Interpretation:
+  - scheduled verification runs every day at 02:00 UTC
+  - manual workflow_dispatch may be used for explicit pre-release/release
+    evidence runs
+  - workflow_dispatch is VERIFICATION ONLY
+  - it does not deploy staging or production
+  - it does not create a Git tag
+  - it does not constitute production-release approval
+
+NOT used for this workflow in initial 3B2:
+  release:
+  push tags:
+  pull_request:
+
+Do NOT couple this workflow to deploy.yml.
+```
+
+`BLOCKING_SEMANTICS = YES for release evidence` means the manually/scheduled
+verification result may be required as evidence before a separately authorized
+release process. It does **not** mean these jobs themselves create a release,
+deploy production, deploy staging, create tags, change environments, or approve
+release promotion. ADR-002 production-release controls remain separate.
 
 ### JOB `e2e-customer-ordering`
 
 ```text
 JOB_ID = e2e-customer-ordering
-TRIGGER = nightly / release
+TRIGGER =
+  workflow schedule "0 2 * * *"
+  OR manual workflow_dispatch
 EXACT_COMMANDS =
   npm run test:e2e:customer-ordering
 DB_REQUIREMENT = YES
@@ -392,7 +425,9 @@ DISPOSITION = IMPLEMENT_IN_3B2
 
 ```text
 JOB_ID = e2e-customer-auth
-TRIGGER = nightly / release
+TRIGGER =
+  workflow schedule "0 2 * * *"
+  OR manual workflow_dispatch
 EXACT_COMMANDS =
   npm run test:e2e:customer-auth
 DB_REQUIREMENT = YES
@@ -408,7 +443,9 @@ DISPOSITION = IMPLEMENT_IN_3B2
 
 ```text
 JOB_ID = e2e-workforce-auth
-TRIGGER = nightly / release
+TRIGGER =
+  workflow schedule "0 2 * * *"
+  OR manual workflow_dispatch
 EXACT_COMMANDS =
   npm run test:e2e:workforce-auth
 DB_REQUIREMENT = YES
@@ -424,7 +461,9 @@ DISPOSITION = IMPLEMENT_IN_3B2
 
 ```text
 JOB_ID = e2e-operations-lifecycle
-TRIGGER = nightly / release
+TRIGGER =
+  workflow schedule "0 2 * * *"
+  OR manual workflow_dispatch
 EXACT_COMMANDS =
   npm run test:e2e:operations-lifecycle
 DB_REQUIREMENT = YES
@@ -440,7 +479,9 @@ DISPOSITION = IMPLEMENT_IN_3B2
 
 ```text
 JOB_ID = e2e-location-serviceability
-TRIGGER = nightly / release
+TRIGGER =
+  workflow schedule "0 2 * * *"
+  OR manual workflow_dispatch
 EXACT_COMMANDS =
   npm run test:e2e:location-selector-layout
 DB_REQUIREMENT = YES
@@ -463,7 +504,9 @@ DEFERRED_TO_SESSION_3C
 
 ```text
 JOB_ID = concurrency-matrix
-TRIGGER = nightly / release
+TRIGGER =
+  workflow schedule "0 2 * * *"
+  OR manual workflow_dispatch
 EXACT_COMMANDS =
   npm run test:payment-concurrency
   npm run test:checkout-concurrency
@@ -484,7 +527,9 @@ DISPOSITION = IMPLEMENT_IN_3B2
 
 ```text
 JOB_ID = recovery-matrix
-TRIGGER = nightly / release
+TRIGGER =
+  workflow schedule "0 2 * * *"
+  OR manual workflow_dispatch
 EXACT_COMMANDS =
   npm run test:payment-idempotency
   npm run test:order-crash
