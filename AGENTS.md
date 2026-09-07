@@ -11,10 +11,23 @@ Heed deprecation notices.
 This file is the **agent operating contract**. It points to canonical authorities; it is not an
 independent roadmap, state, vision, or architecture authority.
 
-Operating lifecycle:
+Product delivery process for new substantial product work from IMP-036F onward:
 
 ```text
-ANCHOR → GATE → EXECUTE → PROVE → ACCEPT → RECONCILE → ADVANCE
+ANCHOR → DISCOVER → STORY_MAP → PRODUCT_DEFINITION_GATE → ARCHITECTURE_FIT
+→ IMPLEMENT → PROVE → INDEPENDENT_REVIEW → FOUNDER_UAT (when required)
+→ ACCEPT → RECONCILE → ADVANCE
+```
+
+These are delivery process phases, not new ROADMAP lifecycle states. The canonical method is
+[`PRODUCT-DELIVERY.md`](docs/platform/PRODUCT-DELIVERY.md). IMP-036E and earlier retain their
+existing lifecycle (`ANCHOR → GATE → EXECUTE → PROVE → ACCEPT → RECONCILE → ADVANCE`).
+
+```text
+PRODUCT_DELIVERY_PROCESS_EFFECTIVE_FROM = IMP-036F
+HISTORICAL_ACCEPTED_IMPS_REWRITTEN = NO
+IMP036E_LIFECYCLE_CHANGED = NO
+IMP036F_ACTIVATED = NO
 ```
 
 ## Canonical authorities
@@ -26,6 +39,9 @@ ANCHOR → GATE → EXECUTE → PROVE → ACCEPT → RECONCILE → ADVANCE
 | Which decisions are binding | [`docs/platform/decision-register.md`](docs/platform/decision-register.md) |
 | IMP identity / sequence / GTM boundary | [`docs/platform/ROADMAP.md`](docs/platform/ROADMAP.md) |
 | Independently accepted reality | [`docs/platform/STATE.md`](docs/platform/STATE.md) |
+| How product work is defined/delivered | [`docs/platform/PRODUCT-DELIVERY.md`](docs/platform/PRODUCT-DELIVERY.md) |
+| Personas / journeys / per-IMP stories | [`docs/platform/product/README.md`](docs/platform/product/README.md) and relevant Product Definition |
+| How behaviour is proven | [`docs/platform/TESTING.md`](docs/platform/TESTING.md) |
 | Agent rules (this file) | `AGENTS.md` |
 | Accepted foundation operating constraints | [`docs/platform/accepted-foundation-operating-rules.md`](docs/platform/accepted-foundation-operating-rules.md) (SUPPORTING) |
 
@@ -35,16 +51,26 @@ authority says otherwise.
 
 ## Mandatory read order
 
+For IMP-036F onward:
+
 1. `AGENTS.md` (this file)
 2. `docs/platform/VISION.md`
 3. `docs/platform/ROADMAP.md`
 4. `docs/platform/STATE.md`
-5. `docs/platform/ARCHITECTURE.md`
-6. `docs/platform/decision-register.md`
-7. Relevant ADRs / capability architecture
-8. Current task specification
-9. Relevant implementation code
-10. Supporting foundation operating rules when touching accepted foundations
+5. `docs/platform/PRODUCT-DELIVERY.md`
+6. Relevant per-IMP Product Definition under `docs/platform/product/`
+7. `docs/platform/ARCHITECTURE.md`
+8. `docs/platform/decision-register.md`
+9. Relevant capability architecture / ADRs
+10. `docs/platform/TESTING.md`
+11. Current task specification and relevant implementation code
+12. Supporting foundation operating rules when touching accepted foundations
+
+For IMP-036E and earlier, retain the existing authority order by omitting the new process,
+Product Definition, and testing-policy steps where `N/A — PRE-PD-1` applies. Engineering-only
+changes without product behaviour changes may remain specification-driven. For large authorities,
+metadata/version verification, targeted search, and relevant section/range reads satisfy this
+order when they prove applicable authority; whole-document repasting is not required.
 
 ## Alignment gate
 
@@ -59,6 +85,12 @@ Roadmap Version: ...
 State Version: ...
 Architecture Version: ...
 Decision Register Version: ...
+Product Delivery Version: ...
+Product Definition: ...
+Stories: ...
+Acceptance Scenarios: ...
+Golden Journeys: ...
+Testing Policy: ...
 Accepted Through: ...
 Current Product Slice: ...
 Task Slice: ...
@@ -74,6 +106,10 @@ Gate Result: PASS / STOP
 ```
 
 Prompt values must be verified against canonical documents rather than repeated from memory.
+The six product-delivery fields apply prospectively; `N/A — PRE-PD-1` is valid where appropriate
+for IMP-036E and earlier. Product-visible implementation from IMP-036F requires a passed
+Product Definition Gate, story Definition of Ready, architecture fit/lock, and implementation
+authorization. Story completion does not constitute IMP acceptance.
 
 ## Stop statuses
 
@@ -86,6 +122,7 @@ Prompt values must be verified against canonical documents rather than repeated 
 | ARCHITECTURE_MISMATCH | Task conflicts with ARCHITECTURE / ARCH-G invariants |
 | DECISION_CONFLICT | Task conflicts with a CURRENT decision |
 | DECISION_REQUIRED | Gap needs a human decision; agent must not invent one |
+| PRODUCT_DECISION_REQUIRED | Material user/business behaviour is undefined and cannot be inferred; stop for a human product decision |
 | DECISION_REGISTER_INVALID | Decision register structurally unusable |
 | REPOSITORY_AUTHORITY_CONFLICT | Wrong repo/branch/HEAD authority |
 | SCOPE_CONFLICT | Requested change exceeds allowed scope |
@@ -110,6 +147,11 @@ Agents may make only local, reversible implementation decisions that do not chan
 Agents may **not** independently create: new domain authority, lifecycle states, actor models,
 permission models, services, queues, retry semantics, financial policy, roadmap capabilities, or
 global architecture. Such gaps produce `DECISION_REQUIRED`.
+
+Architecture agents must not resolve `PRODUCT_DECISION_REQUIRED` by inventing product behaviour.
+A Product Definition must not silently override global architecture, security/financial/persistence
+authority, concurrency semantics, accepted STATE, or binding decisions. Stop affected work on
+conflict for human resolution.
 
 ## Anti-hallucination vocabulary
 
@@ -174,6 +216,35 @@ Independent acceptance outcomes: `COMPLETE_AND_ACCEPTED` | `PARTIAL` | `DEFECT_F
 `ARCHITECTURE_MISMATCH` | `ACCEPTANCE_EVIDENCE_INSUFFICIENT`.
 
 Implementation reports are evidence input, not acceptance authority.
+
+For prospective story delivery, follow [`PRODUCT-DELIVERY.md`](docs/platform/PRODUCT-DELIVERY.md)
+and [`TESTING.md`](docs/platform/TESTING.md) for readiness, completion, and behavioural evidence.
+A Journey Gap Audit of previously implemented product journeys is required before public GTM
+cutover / IMP-040 acceptance. Session 1 establishes the requirement; it does not perform the audit
+or rewrite historical acceptance.
+
+### AI context and handoff efficiency
+
+Apply **MINIMUM_SUFFICIENT_CONTEXT** from
+[`PRODUCT-DELIVERY.md`](docs/platform/PRODUCT-DELIVERY.md#ai-execution-and-documentation-efficiency).
+Prompts should include task/story IDs, exact authority versions / SHA / tree, acceptance criteria,
+affected invariants, allowed/forbidden scope, and expected evidence; include the working-tree
+fingerprint wherever existing provenance rules require it. Prefer canonical paths to pasted docs.
+
+Do not repeatedly paste whole ROADMAP, STATE, ARCHITECTURE, governance history, prior accepted
+reports, or unrelated capability architecture. Verify metadata/versions, search, and read relevant
+sections/ranges without guessing applicable authority. The existing hard prompt-size ceiling stays.
+
+First review covers the full relevant slice. Follow-up review covers previous approved SHA → new
+SHA, changed files, affected invariants, and new evidence (including required content fingerprints).
+Widen review if the delta changes earlier assumptions. Reports return changed facts, evidence,
+exceptions, SHA/tree, and unresolved items; retain required report fields without repeating history.
+
+Bundle authorized machine work until the next genuine human decision boundary: implement → focused
+tests → relevant regression → validation → commit → return once. When each applicable action is
+authorized, continue push → PR → wait for exact-head CI → return once. Independent promotion gates
+remain binding; push authorization alone does not authorize a PR, merge, or deployment. Efficiency
+must never permit guessed product, security, or business decisions.
 
 ### Acceptance principles
 
