@@ -36,25 +36,26 @@ function parseManifest(stdout) {
 }
 
 /**
+ * @param {string} dirRel
  * @returns {string[]}
  */
-function trackedProductMarkdown() {
+function trackedMarkdownUnder(dirRel) {
   const listed = spawnSync(
     "git",
-    ["-C", projectRoot, "ls-files", "--full-name", "--", "docs/platform/product"],
+    ["-C", projectRoot, "ls-files", "--full-name", "--", dirRel],
     { encoding: "utf8" },
   );
-  assert.equal(listed.status, 0, "git ls-files docs/platform/product failed");
+  assert.equal(listed.status, 0, `git ls-files ${dirRel} failed`);
   return listed.stdout
     .split(/\r?\n/)
     .filter(Boolean)
     .map((p) => p.replace(/\\/g, "/"))
-    .filter((p) => p.startsWith("docs/platform/product/") && p.toLowerCase().endsWith(".md"))
+    .filter((p) => p.startsWith(`${dirRel}/`) && p.toLowerCase().endsWith(".md"))
     .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
 }
 
 describe("governance fingerprint", () => {
-  it("exits 0 and emits PD-1 / TEST-1 / product Markdown with deterministic unique paths", () => {
+  it("exits 0 and emits PD-1 / TEST-1 / product / history Markdown with deterministic unique paths", () => {
     const { status, stdout, stderr } = runFingerprint();
     assert.equal(status, 0, stderr || stdout);
     assert.match(stdout, /^GOVERNANCE_FINGERPRINT [0-9a-f]{64}\n/m);
@@ -63,10 +64,21 @@ describe("governance fingerprint", () => {
     assert.ok(manifest.includes("docs/platform/PRODUCT-DELIVERY.md"));
     assert.ok(manifest.includes("docs/platform/TESTING.md"));
 
-    const productMd = trackedProductMarkdown();
+    const productMd = trackedMarkdownUnder("docs/platform/product");
     assert.ok(productMd.length >= 4, `expected tracked product Markdown, got ${productMd.length}`);
     for (const rel of productMd) {
       assert.ok(manifest.includes(rel), `missing product path ${rel}`);
+    }
+
+    const historyMd = trackedMarkdownUnder("docs/platform/history");
+    assert.ok(historyMd.length >= 3, `expected tracked history Markdown, got ${historyMd.length}`);
+    for (const rel of [
+      "docs/platform/history/README.md",
+      "docs/platform/history/ROADMAP-GTM-R113-pre-compression.md",
+      "docs/platform/history/STATE-STATE-R111-pre-compression.md",
+    ]) {
+      assert.ok(manifest.includes(rel), `missing history path ${rel}`);
+      assert.ok(historyMd.includes(rel), `history ls-files missing ${rel}`);
     }
 
     const sorted = [...manifest].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));

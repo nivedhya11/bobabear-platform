@@ -231,6 +231,14 @@ Prompts should include task/story IDs, exact authority versions / SHA / tree, ac
 affected invariants, allowed/forbidden scope, and expected evidence; include the working-tree
 fingerprint wherever existing provenance rules require it. Prefer canonical paths to pasted docs.
 
+**CURRENT FIRST:** read [`docs/platform/ROADMAP.md`](docs/platform/ROADMAP.md) and
+[`docs/platform/STATE.md`](docs/platform/STATE.md) for lifecycle authority.
+
+**HISTORY ON DEMAND:** read [`docs/platform/history/`](docs/platform/history/) only when the task
+materially requires historical revision, acceptance, or provenance detail. Agents MUST NOT load
+complete historical snapshots during ordinary current product work. Historical snapshots do not
+override CURRENT metadata.
+
 Do not repeatedly paste whole ROADMAP, STATE, ARCHITECTURE, governance history, prior accepted
 reports, or unrelated capability architecture. Verify metadata/versions, search, and read relevant
 sections/ranges without guessing applicable authority. The existing hard prompt-size ceiling stays.

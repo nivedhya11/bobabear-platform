@@ -91,6 +91,73 @@ function resolveExactRelativeFile(relativePath) {
 /** Canonical Decision Register pathname (tracked + portable). */
 const DECISION_REGISTER_REL = "docs/platform/decision-register.md";
 
+
+const HISTORY_DIR_REL = "docs/platform/history";
+const HISTORY_README_REL = "docs/platform/history/README.md";
+const HISTORY_ROADMAP_REL = "docs/platform/history/ROADMAP-GTM-R113-pre-compression.md";
+const HISTORY_STATE_REL = "docs/platform/history/STATE-STATE-R111-pre-compression.md";
+const REQUIRED_HISTORY_MARKDOWN = [HISTORY_README_REL, HISTORY_ROADMAP_REL, HISTORY_STATE_REL];
+
+/** @type {{ roadmapText: string, stateText: string, blob: string } | null} */
+let historicalAuthorityCorpusCache = null;
+
+/**
+ * Load immutable pre-compression ROADMAP/STATE snapshots for historical checkpoint evidence.
+ * Historical text is NOT current lifecycle authority.
+ * @returns {{ roadmapText: string, stateText: string, blob: string }}
+ */
+export function loadHistoricalAuthorityCorpus() {
+  if (historicalAuthorityCorpusCache) return historicalAuthorityCorpusCache;
+  /** @type {string[]} */
+  const missing = [];
+  /** @type {Record<string, string>} */
+  const loaded = {};
+  for (const rel of [HISTORY_ROADMAP_REL, HISTORY_STATE_REL]) {
+    const abs = resolveExactRelativeFile(rel) ?? resolvePlatformDoc(rel);
+    if (!abs || !existsSync(abs)) {
+      missing.push(rel);
+      continue;
+    }
+    loaded[rel] = readFileSync(abs, "utf8");
+  }
+  if (missing.length) {
+    throw new Error(`MISSING_HISTORICAL_AUTHORITY_CORPUS: ${missing.join(", ")}`);
+  }
+  const roadmapText = loaded[HISTORY_ROADMAP_REL];
+  const stateText = loaded[HISTORY_STATE_REL];
+  historicalAuthorityCorpusCache = {
+    roadmapText,
+    stateText,
+    blob: `${roadmapText}\n${stateText}`,
+  };
+  return historicalAuthorityCorpusCache;
+}
+
+/**
+ * CURRENT authority text only (lifecycle / anti-stale).
+ * @param {{ text?: string } | null | undefined} roadmap
+ * @param {{ text?: string } | null | undefined} state
+ */
+export function currentAuthorityBlob(roadmap, state) {
+  return `${roadmap?.text ?? ""}\n${state?.text ?? ""}`;
+}
+
+/**
+ * CURRENT + historical snapshot evidence for accepted-history invariants.
+ * Stale historical claims must not override CURRENT metadata.
+ * @param {{ text?: string } | null | undefined} roadmap
+ * @param {{ text?: string } | null | undefined} state
+ */
+export function authorityEvidenceBlob(roadmap, state) {
+  try {
+    const hist = loadHistoricalAuthorityCorpus();
+    return `${currentAuthorityBlob(roadmap, state)}\n${hist.blob}`;
+  } catch {
+    return currentAuthorityBlob(roadmap, state);
+  }
+}
+
+
 /**
  * Formal ROADMAP ledger IMP identifier: numeric id with optional single uppercase suffix.
  * Examples: IMP-001, IMP-005A, IMP-026C. Rejects IMP-026AA, IMP-26a, IMP-026-C, IMP_026C.
@@ -1519,6 +1586,7 @@ export function isSupportedImp030GovernanceCheckpoint(roadmapVersion, stateVersi
   const imp036eAuthorization = roadmapVersion === "GTM-R111" && stateVersion === "STATE-R109";
   const imp036eStart = roadmapVersion === "GTM-R112" && stateVersion === "STATE-R110";
   const imp036eCompletion = roadmapVersion === "GTM-R113" && stateVersion === "STATE-R111";
+  const authorityCompression = roadmapVersion === "GTM-R114" && stateVersion === "STATE-R112";
   if (kind === "activation") return activation;
   if (kind === "lock") return lock;
   if (kind === "authorization") return authorization;
@@ -1568,7 +1636,8 @@ export function isSupportedImp030GovernanceCheckpoint(roadmapVersion, stateVersi
   if (kind === "imp036eAuthorization") return imp036eAuthorization;
   if (kind === "imp036eStart") return imp036eStart;
   if (kind === "imp036eCompletion") return imp036eCompletion;
-  return activation || lock || authorization || start || routeAmendment || consistencyRepair || acceptance || imp031Activation || imp031Draft || imp031Lock || imp031Authorization || imp031Start || imp031Completion || imp031Acceptance || imp032Activation || imp032Draft || imp032Lock || imp032Authorization || imp032Start || imp032BoundaryClarification || imp032Completion || imp032Acceptance || imp033Activation || imp033Completion || imp033Acceptance || imp034Completion || imp034Acceptance || imp035Completion || imp035Acceptance || imp036Completion || imp036Acceptance || enterpriseExperiencePlan || imp036aCompletion || imp036aAcceptance || imp036bCompletion || imp036bAcceptance || imp036cCompletion || imp036cAcceptance || imp036dActivation || imp036dLock || imp036dAuthorization || imp036dStart || imp036dCompletion || imp036dAcceptance || imp036eActivation || imp036eLock || imp036eAuthorization || imp036eStart || imp036eCompletion;
+  if (kind === "authorityCompression") return authorityCompression;
+  return activation || lock || authorization || start || routeAmendment || consistencyRepair || acceptance || imp031Activation || imp031Draft || imp031Lock || imp031Authorization || imp031Start || imp031Completion || imp031Acceptance || imp032Activation || imp032Draft || imp032Lock || imp032Authorization || imp032Start || imp032BoundaryClarification || imp032Completion || imp032Acceptance || imp033Activation || imp033Completion || imp033Acceptance || imp034Completion || imp034Acceptance || imp035Completion || imp035Acceptance || imp036Completion || imp036Acceptance || enterpriseExperiencePlan || imp036aCompletion || imp036aAcceptance || imp036bCompletion || imp036bAcceptance || imp036cCompletion || imp036cAcceptance || imp036dActivation || imp036dLock || imp036dAuthorization || imp036dStart || imp036dCompletion || imp036dAcceptance || imp036eActivation || imp036eLock || imp036eAuthorization || imp036eStart || imp036eCompletion || authorityCompression;
 }
 
 function isImp032ArchitectureActivationCheckpoint(roadmap, state) {
@@ -1711,6 +1780,11 @@ function isImp036eImplementationCompletionCheckpoint(roadmap, state) {
   return isSupportedImp030GovernanceCheckpoint(roadmap?.meta.roadmapVersion, state?.meta.stateVersion, "imp036eCompletion");
 }
 
+function isAuthorityCompressionCheckpoint(roadmap, state) {
+  return isSupportedImp030GovernanceCheckpoint(roadmap?.meta.roadmapVersion, state?.meta.stateVersion, "authorityCompression");
+}
+
+
 function isImp030ArchitectureCheckpoint(roadmap, state) {
   return isImp030ArchitectureActivationCheckpoint(roadmap, state) || isImp030ArchitectureLockCheckpoint(roadmap, state);
 }
@@ -1765,7 +1839,8 @@ function isImp030GovernanceCheckpoint(roadmap, state) {
     isImp036eArchitectureLockCheckpoint(roadmap, state) ||
     isImp036eImplementationAuthorizationCheckpoint(roadmap, state) ||
     isImp036eImplementationStartCheckpoint(roadmap, state) ||
-    isImp036eImplementationCompletionCheckpoint(roadmap, state)
+    isImp036eImplementationCompletionCheckpoint(roadmap, state) ||
+    isAuthorityCompressionCheckpoint(roadmap, state)
   );
 }
 
@@ -8946,7 +9021,7 @@ function checkImp026cArchitectureLock(roadmap, state) {
     if (!/ARCHITECTURE_LOCKED/.test(body)) {
       fail("IMP026C_CAPABILITY_LOCK", "IMP-026C capability artifact must declare ARCHITECTURE_LOCKED");
     }
-    const blob = `${roadmap?.text ?? ""}\n${state?.text ?? ""}`;
+    const blob = authorityEvidenceBlob(roadmap, state);
     const claimsCompleteAndAccepted = /IMP-026C:\s*COMPLETE_AND_ACCEPTED/.test(blob);
     const claimsImplementationComplete =
       /IMP-026C:\s*IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE/.test(blob);
@@ -8989,7 +9064,7 @@ function checkImp026cArchitectureLock(roadmap, state) {
     }
   }
 
-  const blob = `${roadmap?.text ?? ""}\n${state?.text ?? ""}`;
+  const blob = authorityEvidenceBlob(roadmap, state);
   const claimsCompleteAndAccepted = /IMP-026C:\s*COMPLETE_AND_ACCEPTED/.test(blob);
   const claimsImplementationComplete =
     /IMP-026C:\s*IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE/.test(blob);
@@ -9351,7 +9426,7 @@ function checkImp026cArchitectureLock(roadmap, state) {
 }
 
 function checkImp027ArchitectureLock(roadmap, state, architecture) {
-  const blob = `${roadmap?.text ?? ""}\n${state?.text ?? ""}`;
+  const blob = authorityEvidenceBlob(roadmap, state);
   const artifactRel = "docs/platform/capabilities/IMP-027-refund-foundation.md";
   const artifact = resolveExactRelativeFile(artifactRel);
   const artifactPresent = Boolean(artifact);
@@ -9573,7 +9648,7 @@ function checkImp027ArchitectureLock(roadmap, state, architecture) {
 }
 
 function checkImp028ArchitectureLock(roadmap, state, architecture, decision) {
-  const blob = `${roadmap?.text ?? ""}\n${state?.text ?? ""}`;
+  const blob = authorityEvidenceBlob(roadmap, state);
   const artifactRel = "docs/platform/capabilities/IMP-028-invoice-tax-receipt-credit-note.md";
   const artifact = resolveExactRelativeFile(artifactRel);
   const artifactPresent = Boolean(artifact);
@@ -9989,7 +10064,8 @@ function checkImp028ArchitectureLock(roadmap, state, architecture, decision) {
         isImp036eArchitectureLockCheckpoint(roadmap, state) ||
         isImp036eImplementationAuthorizationCheckpoint(roadmap, state) ||
         isImp036eImplementationStartCheckpoint(roadmap, state) ||
-        isImp036eImplementationCompletionCheckpoint(roadmap, state)
+        isImp036eImplementationCompletionCheckpoint(roadmap, state) ||
+        isAuthorityCompressionCheckpoint(roadmap, state)
         ? "ARCH-R19"
       : isArchR17GovernanceCheckpoint(roadmap, state)
         ? "ARCH-R17"
@@ -10074,7 +10150,8 @@ function checkImp028ArchitectureLock(roadmap, state, architecture, decision) {
         isImp036eArchitectureLockCheckpoint(roadmap, state) ||
         isImp036eImplementationAuthorizationCheckpoint(roadmap, state) ||
         isImp036eImplementationStartCheckpoint(roadmap, state) ||
-        isImp036eImplementationCompletionCheckpoint(roadmap, state)
+        isImp036eImplementationCompletionCheckpoint(roadmap, state) ||
+        isAuthorityCompressionCheckpoint(roadmap, state)
         ? "DR-15"
       : "DR-13";
     if (decision.meta.decisionRegisterVersion !== expectedDecisionRegisterVersion) {
@@ -10087,7 +10164,7 @@ function checkImp028ArchitectureLock(roadmap, state, architecture, decision) {
 }
 
 function checkImp028aImplementationAuthorization(roadmap, state) {
-  const blob = `${roadmap?.text ?? ""}\n${state?.text ?? ""}`;
+  const blob = authorityEvidenceBlob(roadmap, state);
   const artifactRel = "docs/platform/capabilities/IMP-028A-food-direct-ux-foundation.md";
   const artifact = resolveExactRelativeFile(artifactRel);
   if (!artifact) {
@@ -10274,7 +10351,7 @@ function checkImp028aImplementationAuthorization(roadmap, state) {
 }
 
 function checkImp028bCanonicalActivation(roadmap, state) {
-  const blob = `${roadmap?.text ?? ""}\n${state?.text ?? ""}`;
+  const blob = authorityEvidenceBlob(roadmap, state);
   const artifactRel = "docs/platform/capabilities/IMP-028B-customer-menu-projection-and-discovery.md";
   const artifact = resolveExactRelativeFile(artifactRel);
   if (!artifact) {
@@ -10537,7 +10614,7 @@ function checkImp029ArchitectureLock(roadmap, state, architecture, decision) {
     }
   }
 
-  const blob = `${roadmap?.text ?? ""}\n${state?.text ?? ""}`;
+  const blob = authorityEvidenceBlob(roadmap, state);
   const requiredTokens = [
     ["IMP029_ARCHITECTURE_LOCKED", /IMP-029_ARCHITECTURE_LOCKED:\s*YES/, "IMP-029 architecture must be locked"],
     ["IMP029_AUTHORIZATION", new RegExp(`IMP-029_IMPLEMENTATION_AUTHORIZED:\\s*${authorized ? "YES" : "NO"}`), `IMP-029 implementation must be ${authorized ? "AUTHORIZED" : "NOT_AUTHORIZED"}`],
@@ -16956,7 +17033,8 @@ export function runProjectConsistency() {
       !isImp036eArchitectureLockCheckpoint(roadmap, state) &&
       !isImp036eImplementationAuthorizationCheckpoint(roadmap, state) &&
       !isImp036eImplementationStartCheckpoint(roadmap, state) &&
-      !isImp036eImplementationCompletionCheckpoint(roadmap, state)
+      !isImp036eImplementationCompletionCheckpoint(roadmap, state) &&
+      !isAuthorityCompressionCheckpoint(roadmap, state)
     ) {
       fail("UNSUPPORTED_GOVERNANCE_CHECKPOINT", "Governance revisions at or beyond GTM-R66 / STATE-R64 require an exact supported canonical checkpoint");
     }
@@ -16969,16 +17047,44 @@ export function runProjectConsistency() {
     note(`governanceHealth=${state.meta.governanceHealth}`);
   }
 
+  /** @type {typeof roadmap} */
+  let roadmapEvidence = roadmap;
+  /** @type {typeof state} */
+  let stateEvidence = state;
+  try {
+    const hist = loadHistoricalAuthorityCorpus();
+    for (const rel of REQUIRED_HISTORY_MARKDOWN) {
+      const abs = resolveExactRelativeFile(rel) ?? resolvePlatformDoc(rel);
+      if (!abs || !existsSync(abs)) {
+        fail("HISTORICAL_AUTHORITY_SNAPSHOT", `Missing required historical authority file: ${rel}`);
+      }
+    }
+    roadmapEvidence = roadmap
+      ? { ...roadmap, text: `${roadmap.text}\n\n<!-- historical-authority-corpus -->\n${hist.roadmapText}` }
+      : roadmap;
+    stateEvidence = state
+      ? { ...state, text: `${state.text}\n\n<!-- historical-authority-corpus -->\n${hist.stateText}` }
+      : state;
+    note("historical authority corpus loaded for accepted-history evidence checks");
+  } catch (err) {
+    fail(
+      "HISTORICAL_AUTHORITY_CORPUS",
+      `historical authority corpus failed: ${err instanceof Error ? err.message : String(err)}`,
+    );
+  }
+
   checkRoadmapState(roadmap, state);
+  checkCurrentAuthorityAntiStale(roadmap, state);
   checkDecisionRegister(decision, roadmap, state);
-  checkImp024ArchitectureLock(roadmap, state, architecture);
-  checkImp025ArchitectureLock(roadmap, state, architecture);
-  checkImp026ArchitectureLock(roadmap, state, architecture, decision);
-  checkImp026cArchitectureLock(roadmap, state);
-  checkImp027ArchitectureLock(roadmap, state, architecture);
-  checkImp028ArchitectureLock(roadmap, state, architecture, decision);
-  checkImp028aImplementationAuthorization(roadmap, state);
-  checkImp028bCanonicalActivation(roadmap, state);
+  // Ungated accepted-history invariants may read historical snapshot evidence.
+  checkImp024ArchitectureLock(roadmapEvidence, stateEvidence, architecture);
+  checkImp025ArchitectureLock(roadmapEvidence, stateEvidence, architecture);
+  checkImp026ArchitectureLock(roadmapEvidence, stateEvidence, architecture, decision);
+  checkImp026cArchitectureLock(roadmapEvidence, stateEvidence);
+  checkImp027ArchitectureLock(roadmapEvidence, stateEvidence, architecture);
+  checkImp028ArchitectureLock(roadmapEvidence, stateEvidence, architecture, decision);
+  checkImp028aImplementationAuthorization(roadmapEvidence, stateEvidence);
+  checkImp028bCanonicalActivation(roadmapEvidence, stateEvidence);
   checkImp029ArchitectureLock(roadmap, state, architecture, decision);
   checkImp030ArchitectureLock(roadmap, state, architecture, decision);
   checkImp030ImplementationAuthorization(roadmap, state, architecture, decision);
@@ -17028,6 +17134,7 @@ export function runProjectConsistency() {
   checkImp036eImplementationAuthorization(roadmap, state, architecture, decision);
   checkImp036eImplementationStart(roadmap, state, architecture, decision);
   checkImp036eImplementationCompletion(roadmap, state, architecture, decision);
+  checkAuthorityCompression(roadmap, state, architecture, decision);
   checkTechnicalInventory();
   checkStaticWeb();
   checkAgentsPointer();
@@ -17036,6 +17143,196 @@ export function runProjectConsistency() {
   checkWorkingTreeFingerprint();
 
   return findings;
+}
+
+
+/**
+ * Validate CURRENT authority metadata/position after GTM-R114 / STATE-R112 compression.
+ * Does not accept IMP-036E or activate IMP-036F.
+ */
+function checkAuthorityCompression(roadmap, state, architecture, decision) {
+  if (!isAuthorityCompressionCheckpoint(roadmap, state)) return;
+
+  for (const rel of REQUIRED_HISTORY_MARKDOWN) {
+    const abs = resolveExactRelativeFile(rel) ?? resolvePlatformDoc(rel);
+    if (!abs || !existsSync(abs)) {
+      fail("HISTORICAL_AUTHORITY_SNAPSHOT", `Missing required historical authority file: ${rel}`);
+    } else {
+      note(`historical authority present: ${rel}`);
+    }
+  }
+
+  try {
+    const hist = loadHistoricalAuthorityCorpus();
+    if (!/roadmapVersion":\s*"GTM-R113"/.test(hist.roadmapText) && !/"roadmapVersion": "GTM-R113"/.test(hist.roadmapText)) {
+      fail("HISTORICAL_ROADMAP_VERSION", "Historical ROADMAP snapshot must retain GTM-R113");
+    } else {
+      note("historical ROADMAP snapshot retains GTM-R113");
+    }
+    if (!/"stateVersion":\s*"STATE-R111"/.test(hist.stateText) && !/"stateVersion": "STATE-R111"/.test(hist.stateText)) {
+      fail("HISTORICAL_STATE_VERSION", "Historical STATE snapshot must retain STATE-R111");
+    } else {
+      note("historical STATE snapshot retains STATE-R111");
+    }
+    if (!/IMP-036E:\s*IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE/.test(hist.roadmapText)) {
+      fail("HISTORICAL_IMP036E_EVIDENCE", "Historical ROADMAP snapshot must retain IMP-036E completion evidence");
+    } else {
+      note("historical checkpoint evidence for IMP-036E remains available from snapshot");
+    }
+  } catch (err) {
+    fail(
+      "HISTORICAL_AUTHORITY_CORPUS",
+      `historical authority corpus failed: ${err instanceof Error ? err.message : String(err)}`,
+    );
+  }
+
+  if (roadmap?.meta.roadmapVersion !== "GTM-R114") {
+    fail("AUTHORITY_COMPRESSION_ROADMAP_VERSION", "roadmapVersion must be GTM-R114");
+  }
+  if (state?.meta.stateVersion !== "STATE-R112") {
+    fail("AUTHORITY_COMPRESSION_STATE_VERSION", "stateVersion must be STATE-R112");
+  }
+  if (roadmap?.meta.acceptedThrough !== "IMP-036D" || state?.meta.acceptedThrough !== "IMP-036D") {
+    fail("AUTHORITY_COMPRESSION_ACCEPTED_THROUGH", "acceptedThrough must remain IMP-036D");
+  }
+  if (roadmap?.meta.currentProductSlice !== "IMP-036E" || state?.meta.currentProductSlice !== "IMP-036E") {
+    fail("AUTHORITY_COMPRESSION_CURRENT_SLICE", "currentProductSlice must remain IMP-036E");
+  }
+  if (roadmap?.meta.nextProductSlice !== "IMP-036F" || state?.meta.nextProductSlice !== "IMP-036F") {
+    fail("AUTHORITY_COMPRESSION_NEXT_SLICE", "nextProductSlice must remain IMP-036F");
+  }
+  if (state?.meta.pendingAcceptance !== "IMP-036E") {
+    fail("AUTHORITY_COMPRESSION_PENDING", "pendingAcceptance must remain IMP-036E");
+  }
+
+  const currentRoadmapSection = roadmap.text.slice(roadmap.text.indexOf("## 2."), roadmap.text.indexOf("## 3."));
+  const currentStateAcceptance = (() => {
+    const start = state.text.indexOf("## 5. Acceptance Position");
+    const end = state.text.indexOf("\n## ", start + 1);
+    return start === -1 ? "" : state.text.slice(start, end === -1 ? undefined : end);
+  })();
+  const currentStateActivity = (() => {
+    const start = state.text.indexOf("## 2. Current Work Position");
+    const end = state.text.indexOf("\n## ", start + 1);
+    return start === -1 ? "" : state.text.slice(start, end === -1 ? undefined : end);
+  })();
+
+  const requiredTokens = [
+    [currentRoadmapSection, /IMP-036E:\s*IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE/, "ROADMAP must record IMP-036E IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE"],
+    [currentRoadmapSection, /IMP-036E_ARCHITECTURE_LOCKED:\s*YES/, "ROADMAP must record IMP-036E architecture lock YES"],
+    [currentRoadmapSection, /IMP-036E_IMPLEMENTATION:\s*AUTHORIZED \/ STARTED \/ COMPLETE/, "ROADMAP must record IMP-036E AUTHORIZED / STARTED / COMPLETE"],
+    [currentRoadmapSection, /IMP-036E_ACCEPTED:\s*NO/, "ROADMAP must record IMP-036E unaccepted"],
+    [currentRoadmapSection, /IMP-036E_FOUNDER_UAT:\s*NOT_STARTED/, "ROADMAP must record IMP-036E Founder UAT NOT_STARTED"],
+    [currentRoadmapSection, /IMP-036F:\s*PLANNED \/ NOT_ACTIVATED/, "ROADMAP must keep IMP-036F PLANNED / NOT_ACTIVATED"],
+    [currentRoadmapSection, /IMP036E_ASSORTMENT_AUTHORITY:\s*BRAND/, "ROADMAP must record Assortment BRAND authority"],
+    [currentRoadmapSection, /IMP036E_GLOBAL_SESSION_CAPS_PURPOSE:\s*COARSE_NAVIGATION_ONLY/, "ROADMAP must record coarse navigation session caps"],
+    [currentStateAcceptance, /IMP-036E:\s*IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE/, "STATE must record IMP-036E IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE"],
+    [currentStateAcceptance, /IMP-036E_ACCEPTED:\s*NO/, "STATE must record IMP-036E unaccepted"],
+    [currentStateAcceptance, /IMP-036E_FOUNDER_UAT:\s*NOT_STARTED/, "STATE must record IMP-036E Founder UAT NOT_STARTED"],
+    [currentStateAcceptance, /IMP036F_ACTIVATED:\s*NO/, "STATE must record IMP036F_ACTIVATED: NO"],
+    [currentStateActivity, /IMP-036E IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE/, "STATE current governance activity must record IMP-036E IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE"],
+    [currentStateActivity, /Founder UAT required \/ not yet performed/, "STATE current governance activity must record Founder UAT required / not yet performed"],
+  ];
+  for (const [haystack, pattern, message] of requiredTokens) {
+    if (!pattern.test(haystack)) fail("AUTHORITY_COMPRESSION_CURRENT", message);
+  }
+
+  const premature = [
+    /IMP-036E_ACCEPTED:\s*YES/,
+    /IMP-036E:\s*COMPLETE_AND_ACCEPTED/,
+    /IMP-036E_FOUNDER_UAT:\s*PASS/,
+    /IMP-036F_IMPLEMENTATION_AUTHORIZED:\s*YES/,
+    /IMP-036F:\s*ARCHITECTURE_LOCKED/,
+    /IMP036F_ACTIVATED:\s*YES/,
+  ];
+  for (const haystack of [currentRoadmapSection, currentStateAcceptance, currentStateActivity]) {
+    if (premature.some((pattern) => pattern.test(haystack))) {
+      fail("AUTHORITY_COMPRESSION_PREMATURE", "Authority compression must not claim IMP-036E acceptance or IMP-036F activation");
+      break;
+    }
+  }
+
+  const artifactRel = "docs/platform/capabilities/IMP-036E-store-operations-management.md";
+  const artifact = resolveExactRelativeFile(artifactRel);
+  const artifactText = artifact ? readFileSync(artifact, "utf8") : "";
+  const artifactValidation = evaluateImp036eImplementationCompletionArtifact(artifactText);
+  if (!artifact || !artifactValidation.ok) {
+    fail(
+      "AUTHORITY_COMPRESSION_CAPABILITY",
+      artifactValidation.message || "IMP-036E capability artifact must remain IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE",
+    );
+  } else {
+    note("IMP-036E capability artifact still records completion-pending-acceptance checkpoint");
+  }
+
+  if (architecture && architecture.meta.architectureVersion !== "ARCH-R19") {
+    fail("AUTHORITY_COMPRESSION_ARCH", `ARCHITECTURE must remain ARCH-R19, got ${architecture.meta.architectureVersion}`);
+  }
+  if (decision && decision.meta.decisionRegisterVersion !== "DR-15") {
+    fail("AUTHORITY_COMPRESSION_DR", `Decision register must remain DR-15, got ${decision.meta.decisionRegisterVersion}`);
+  }
+
+  note("GTM-R114 / STATE-R112 authority compression checkpoint OK (no product lifecycle change)");
+}
+
+/**
+ * CURRENT ROADMAP/STATE must not present stale lifecycle claims that contradict CURRENT metadata.
+ */
+function checkCurrentAuthorityAntiStale(roadmap, state) {
+  if (!roadmap || !state) return;
+  const currentRoadmapSection = (() => {
+    const start = roadmap.text.indexOf("## 2. Current Position");
+    const end = roadmap.text.indexOf("\n## ", start + 1);
+    return start === -1 ? "" : roadmap.text.slice(start, end === -1 ? undefined : end);
+  })();
+  const currentStateActivity = (() => {
+    const start = state.text.indexOf("## 2. Current Work Position");
+    const end = state.text.indexOf("\n## ", start + 1);
+    return start === -1 ? "" : state.text.slice(start, end === -1 ? undefined : end);
+  })();
+  const currentStateAcceptance = (() => {
+    const start = state.text.indexOf("## 5. Acceptance Position");
+    const end = state.text.indexOf("\n## ", start + 1);
+    return start === -1 ? "" : state.text.slice(start, end === -1 ? undefined : end);
+  })();
+
+  const staleCurrentClaims = [
+    [/acceptedThrough:\s*IMP-031\b/i, "acceptedThrough = IMP-031"],
+    [/Accepted Through:\s*IMP-031\b/i, "Accepted Through = IMP-031"],
+    [/pendingAcceptance:\s*NONE\b/i, "pendingAcceptance = NONE"],
+    [/Pending Acceptance:\s*NONE\b/i, "Pending Acceptance = NONE"],
+    [/currentProductSlice:\s*NONE\b/i, "currentProductSlice = NONE"],
+    [/Current Product Slice:\s*NONE\b/i, "Current Product Slice = NONE"],
+    [/IMP-035[^\n]{0,80}pending acceptance/i, "IMP-035 pending acceptance"],
+  ];
+
+  for (const section of [currentRoadmapSection, currentStateActivity, currentStateAcceptance]) {
+    for (const [pattern, label] of staleCurrentClaims) {
+      if (pattern.test(section)) {
+        fail(
+          "CURRENT_AUTHORITY_STALE",
+          `CURRENT authority section must not claim stale ${label} (metadata is acceptedThrough=${state.meta.acceptedThrough}, pendingAcceptance=${state.meta.pendingAcceptance}, currentProductSlice=${state.meta.currentProductSlice})`,
+        );
+        return;
+      }
+    }
+  }
+
+  // Historical snapshot may contain stale claims; they must not override CURRENT metadata.
+  try {
+    const hist = loadHistoricalAuthorityCorpus();
+    const histHasStale =
+      /pendingAcceptance:\s*NONE/.test(hist.stateText) ||
+      /currentProductSlice:\s*NONE/.test(hist.stateText) ||
+      /acceptedThrough:\s*IMP-031/.test(hist.stateText);
+    if (histHasStale && state.meta.pendingAcceptance === "IMP-036E" && state.meta.acceptedThrough === "IMP-036D") {
+      note("historical snapshot stale lifecycle claims do not override CURRENT STATE metadata");
+    }
+  } catch {
+    /* corpus missing reported elsewhere */
+  }
+
+  note("CURRENT authority anti-stale checks OK");
 }
 
 function checkWorkingTreeFingerprint() {
