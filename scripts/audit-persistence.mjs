@@ -180,9 +180,9 @@ export function isPersistenceDependencyLine(line) {
 }
 
 const STATIC_DEPENDENCY_START_PATTERN =
-  /^(?:import\b|export\s+(?:type\s+)?\{|export\s+\*)/;
-const STATIC_DEPENDENCY_FROM_PATTERN = /\bfrom\s+["'][^"']+["']\s*;?\s*$/;
-const STATIC_SIDE_EFFECT_IMPORT_PATTERN = /^import\s+["'][^"']+["']\s*;?\s*$/;
+  /^(?:import\s+|export\s+(?:type\s+)?\{|export\s+\*)/;
+const STATIC_DEPENDENCY_FROM_PATTERN = /\bfrom\s+["'][^"']+["']\s*;?\s*(?:\/\/.*)?$/;
+const STATIC_SIDE_EFFECT_IMPORT_PATTERN = /^import\s+["'][^"']+["']\s*;?\s*(?:\/\/.*)?$/;
 
 /**
  * Collect complete static import/re-export declarations so multiline ESM

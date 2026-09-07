@@ -29,6 +29,19 @@ test("collectStaticDependencyStatements preserves multiline declaration and star
   ]);
 });
 
+test("collectStaticDependencyStatements ignores line-leading dynamic imports", () => {
+  assert.deepEqual(collectStaticDependencyStatements('import("./lazy-module");\nconst after = true;'), []);
+});
+
+test("collectStaticDependencyStatements accepts a trailing line comment", () => {
+  const statements = collectStaticDependencyStatements(
+    'import type { Persistence } from "../../server/persistence/types"; // boundary type',
+  );
+
+  assert.equal(statements.length, 1);
+  assert.equal(statements[0].lineNo, 1);
+});
+
 test("multiline health exact Persistence type import remains allowed", () => {
   assert.equal(
     classify('import type {\n  Persistence,\n} from "../../server/persistence/types";'),
