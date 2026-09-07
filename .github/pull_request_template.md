@@ -2,6 +2,13 @@
 
 - Task or capability ID/name:
 - Specification:
+- Product outcome:
+- Story IDs:
+- Acceptance criteria:
+- Golden Journeys affected:
+
+Use the approved Product Definition for product-visible IMP-036F+ work; engineering-only work may
+reference its specification. Earlier slices may use `N/A — PRE-PD-1`.
 
 ## Scope
 
@@ -18,6 +25,19 @@
 - Focused tests:
 - Required full validation:
 - CI run/link (when available):
+
+Story/AC evidence (link scenarios to proof; not every layer applies; material layers marked N/A
+need a reason):
+
+- Unit:
+- Component:
+- API:
+- DB:
+- Security:
+- E2E:
+- Accessibility:
+
+Layer selection and additional risk-specific evidence: [TESTING](../docs/platform/TESTING.md).
 
 For a defect fix with a practical observable regression test:
 
