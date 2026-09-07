@@ -21,6 +21,12 @@ Read these first. They are the only CURRENT answers to their owned questions:
 | [`TESTING.md`](./TESTING.md) | How behaviour is proven (TEST-1) |
 | [`capabilities/`](./capabilities/) | Locked capability architectures (IMP-024 onward) |
 | [`../../AGENTS.md`](../../AGENTS.md) | Agent execution / safety / provenance |
+| [`history/`](./history/README.md) | Exact prior ROADMAP/STATE snapshots (HISTORICAL SUPPORTING EVIDENCE; not CURRENT lifecycle) |
+
+[`ROADMAP.md`](./ROADMAP.md) and [`STATE.md`](./STATE.md) are compact CURRENT authorities.
+[`history/`](./history/README.md) preserves exact prior snapshots after authority-context
+compression. Agents and humans should read history only when historical acceptance, provenance, or
+revision evidence is materially required.
 
 Delivery process for new substantial product work from IMP-036F:
 
@@ -49,10 +55,11 @@ implements it; this index makes no claim of full current CI enforcement.
 Machine check: `npm run project:consistency`.
 
 Governance fingerprint (`npm run governance:fingerprint`) covers CURRENT authorities including
-`PRODUCT-DELIVERY.md` (PD-1), `TESTING.md` (TEST-1), and all tracked Markdown under
-[`product/`](./product/) recursively, plus the existing canonical/supporting governance set.
+`PRODUCT-DELIVERY.md` (PD-1), `TESTING.md` (TEST-1), all tracked Markdown under
+[`product/`](./product/) recursively, all tracked Markdown under [`history/`](./history/)
+recursively, plus the existing canonical/supporting governance set.
 AGENTS is the agent execution contract; CLOSED historical one-active-slice exception detail lives
-in ROADMAP/STATE history and is not restated in AGENTS.
+in ROADMAP/STATE history snapshots and is not restated in AGENTS.
 
 Working-tree integrity: `npm run working-tree:fingerprint`. `WORKING_TREE_FINGERPRINT` is
 content-sensitive across tracked and non-ignored untracked repository files (see `AGENTS.md`).

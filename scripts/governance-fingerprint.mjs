@@ -51,6 +51,7 @@ const EXPLICIT = [
 ];
 
 const PRODUCT_DIR_REL = "docs/platform/product";
+const HISTORY_DIR_REL = "docs/platform/history";
 
 const REQUIRED_PRODUCT_MARKDOWN = [
   "docs/platform/product/README.md",
@@ -59,14 +60,22 @@ const REQUIRED_PRODUCT_MARKDOWN = [
   "docs/platform/product/templates/product-definition-template.md",
 ];
 
+const REQUIRED_HISTORY_MARKDOWN = [
+  "docs/platform/history/README.md",
+  "docs/platform/history/ROADMAP-GTM-R113-pre-compression.md",
+  "docs/platform/history/STATE-STATE-R111-pre-compression.md",
+];
+
 /**
- * Recursively collect tracked Markdown under docs/platform/product/.
- * Prefer git ls-files so future Product Definitions are included automatically
- * without editing this manifest list; fall back to filesystem walk when git is
- * unavailable (ephemeral mirrors).
+ * Recursively collect tracked Markdown under a docs/platform subtree.
+ * Prefer git ls-files so future files are included automatically without editing
+ * this manifest list; fall back to filesystem walk when git is unavailable
+ * (ephemeral mirrors).
+ * @param {string} dirRel
+ * @param {string[]} requiredRels
  * @returns {string[]} normalized relative paths, sorted, unique
  */
-function collectProductMarkdownRels() {
+function collectTrackedMarkdownRels(dirRel, requiredRels) {
   const head = spawnSync("git", ["-C", projectRoot, "rev-parse", "--verify", "HEAD"], {
     encoding: "utf8",
   });
@@ -75,22 +84,22 @@ function collectProductMarkdownRels() {
   if (head.status === 0) {
     const listed = spawnSync(
       "git",
-      ["-C", projectRoot, "ls-files", "--full-name", "--", PRODUCT_DIR_REL],
+      ["-C", projectRoot, "ls-files", "--full-name", "--", dirRel],
       { encoding: "utf8" },
     );
     if (listed.status !== 0) {
-      console.error(`GIT_LS_FILES_FAILED ${PRODUCT_DIR_REL}`);
+      console.error(`GIT_LS_FILES_FAILED ${dirRel}`);
       process.exit(2);
     }
     rels = listed.stdout
       .split(/\r?\n/)
       .filter(Boolean)
       .map((p) => p.replace(/\\/g, "/"))
-      .filter((p) => p.startsWith(`${PRODUCT_DIR_REL}/`) && p.toLowerCase().endsWith(".md"));
+      .filter((p) => p.startsWith(`${dirRel}/`) && p.toLowerCase().endsWith(".md"));
   } else {
-    const absRoot = path.join(projectRoot, PRODUCT_DIR_REL);
+    const absRoot = path.join(projectRoot, dirRel);
     if (!existsSync(absRoot)) {
-      console.error(`MISSING ${PRODUCT_DIR_REL}/`);
+      console.error(`MISSING ${dirRel}/`);
       process.exit(2);
     }
     /** @param {string} dir */
@@ -108,13 +117,29 @@ function collectProductMarkdownRels() {
   }
 
   const unique = [...new Set(rels)].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
-  for (const required of REQUIRED_PRODUCT_MARKDOWN) {
+  for (const required of requiredRels) {
     if (!unique.includes(required)) {
       console.error(`MISSING ${required}`);
       process.exit(2);
     }
   }
   return unique;
+}
+
+/**
+ * Recursively collect tracked Markdown under docs/platform/product/.
+ * @returns {string[]} normalized relative paths, sorted, unique
+ */
+function collectProductMarkdownRels() {
+  return collectTrackedMarkdownRels(PRODUCT_DIR_REL, REQUIRED_PRODUCT_MARKDOWN);
+}
+
+/**
+ * Recursively collect tracked Markdown under docs/platform/history/.
+ * @returns {string[]} normalized relative paths, sorted, unique
+ */
+function collectHistoryMarkdownRels() {
+  return collectTrackedMarkdownRels(HISTORY_DIR_REL, REQUIRED_HISTORY_MARKDOWN);
 }
 
 /**
@@ -176,9 +201,10 @@ assertExactDirEntry(DECISION_REGISTER_REL);
 assertTrackedExactPath(DECISION_REGISTER_REL);
 
 const productRels = collectProductMarkdownRels();
-const manifestRels = [...new Set([...EXPLICIT.map((r) => r.replace(/\\/g, "/")), ...productRels])].sort(
-  (a, b) => (a < b ? -1 : a > b ? 1 : 0),
-);
+const historyRels = collectHistoryMarkdownRels();
+const manifestRels = [
+  ...new Set([...EXPLICIT.map((r) => r.replace(/\\/g, "/")), ...productRels, ...historyRels]),
+].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
 
 const resolved = [];
 for (const rel of manifestRels) {

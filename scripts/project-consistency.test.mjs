@@ -101,9 +101,12 @@ import {
   extractCurrentImp030Lifecycle,
   evaluateLifecycleAuthorityAlignment,
   evaluatePendingAcceptanceSplit,
+  authorityEvidenceBlob,
+  currentAuthorityBlob,
   isAllowedGovernanceVersion,
   isSupportedImp030GovernanceCheckpoint,
   isValidCanonicalRevision,
+  loadHistoricalAuthorityCorpus,
   runProjectConsistency,
 } from "./project-consistency.mjs";
 
@@ -4473,8 +4476,9 @@ describe("IMP-030 formal acceptance checkpoint", () => {
     d373Exists: false, artifact: true,
   });
 
-  const roadmapText = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
-  const stateText = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
+  const historicalAuthority = loadHistoricalAuthorityCorpus();
+  const roadmapText = historicalAuthority.roadmapText;
+  const stateText = historicalAuthority.stateText;
   const decisionText = decisionRegisterWithoutD373();
   const architectureText = readFileSync(new URL("../docs/platform/ARCHITECTURE.md", import.meta.url), "utf8");
   const capabilityText = readFileSync(new URL("../docs/platform/capabilities/IMP-030-operations-console-ui.md", import.meta.url), "utf8");
@@ -4920,14 +4924,15 @@ describe("IMP-032 formal acceptance checkpoint", () => {
   });
 
   const capabilityText = readFileSync("docs/platform/capabilities/IMP-032-dehradun-delivery-operating-mode.md", "utf8");
-  const roadmapText = readFileSync("docs/platform/ROADMAP.md", "utf8")
+  const historicalAuthority = loadHistoricalAuthorityCorpus();
+  const roadmapText = historicalAuthority.roadmapText
     .replaceAll("GTM-R87", "GTM-R86")
     .replaceAll("STATE-R85", "STATE-R84")
     .replaceAll("Current Product Slice: IMP-033", "Current Product Slice: NONE")
     .replaceAll("currentProductSlice: IMP-033", "currentProductSlice: NONE")
     .replaceAll("IMP-033: ARCHITECTURE_IN_PROGRESS", "IMP-033: PLANNED / NOT_ACTIVATED")
     .replaceAll("| IMP-033 | Notification Foundation | ARCHITECTURE_IN_PROGRESS |", "| IMP-033 | Notification Foundation | PLANNED |");
-  const stateText = readFileSync("docs/platform/STATE.md", "utf8")
+  const stateText = historicalAuthority.stateText
     .replaceAll("STATE-R85", "STATE-R84")
     .replaceAll("currentProductSlice: IMP-033", "currentProductSlice: NONE")
     .replaceAll("IMP-033:                  ARCHITECTURE_IN_PROGRESS", "IMP-033:                  PLANNED / NOT_ACTIVATED");
@@ -6324,5 +6329,79 @@ describe("PD-1 / TEST-1 product delivery process authorities", () => {
     ]) {
       assert.ok(messages.some((m) => m === `product artifact present: ${rel}`), rel);
     }
+  });
+});
+
+describe("canonical authority history compression", () => {
+  it("recognizes GTM-R114 / STATE-R112 authorityCompression without treating it as IMP-036E acceptance", () => {
+    assert.equal(
+      isSupportedImp030GovernanceCheckpoint("GTM-R114", "STATE-R112", "authorityCompression"),
+      true,
+    );
+    assert.equal(
+      isSupportedImp030GovernanceCheckpoint("GTM-R114", "STATE-R112", "imp036eCompletion"),
+      false,
+    );
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R114", "STATE-R112"), true);
+    assert.equal(
+      isSupportedImp030GovernanceCheckpoint("GTM-R113", "STATE-R111", "imp036eCompletion"),
+      true,
+    );
+  });
+
+  it("loads historical snapshots and keeps them distinct from CURRENT authority text", () => {
+    const hist = loadHistoricalAuthorityCorpus();
+    assert.match(hist.roadmapText, /"roadmapVersion": "GTM-R113"/);
+    assert.match(hist.stateText, /"stateVersion": "STATE-R111"/);
+    assert.match(hist.roadmapText, /IMP-036E:\s*IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE/);
+
+    const roadmap = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
+    const state = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
+    assert.match(roadmap, /"roadmapVersion": "GTM-R114"/);
+    assert.match(state, /"stateVersion": "STATE-R112"/);
+    assert.match(state, /"acceptedThrough": "IMP-036D"/);
+    assert.match(state, /"pendingAcceptance": "IMP-036E"/);
+    assert.match(state, /"currentProductSlice": "IMP-036E"/);
+    assert.match(state, /"nextProductSlice": "IMP-036F"/);
+    assert.match(roadmap, /IMP-036E_ACCEPTED:\s*NO/);
+    assert.match(state, /IMP-036E_FOUNDER_UAT:\s*NOT_STARTED/);
+    assert.match(state, /IMP036F_ACTIVATED:\s*NO/);
+    assert.match(roadmap, /FOUNDER_STAGING_DEPLOYMENT:\s*PERFORMED/);
+    assert.match(roadmap, /FOUNDER_STAGING_STATUS:\s*READY_FOR_FOUNDER_UAT/);
+    assert.match(roadmap, /FOUNDER_STAGING_CANDIDATE_SHA:\s*e9821271a29ae35ba6c921008b976cd2e8d15c50/);
+    assert.match(roadmap, /FOUNDER_STAGING_CANDIDATE_TREE:\s*8259d30f662e6668f2208788f2e95faaea831384/);
+    assert.match(state, /FOUNDER_STAGING_DEPLOYMENT:\s*PERFORMED/);
+    assert.match(state, /FOUNDER_STAGING_STATUS:\s*READY_FOR_FOUNDER_UAT/);
+    assert.match(state, /FOUNDER_STAGING_CANDIDATE_SHA:\s*e9821271a29ae35ba6c921008b976cd2e8d15c50/);
+    assert.match(state, /FOUNDER_STAGING_CANDIDATE_TREE:\s*8259d30f662e6668f2208788f2e95faaea831384/);
+    assert.doesNotMatch(roadmap, /FOUNDER_STAGING_DEPLOYMENT:\s*NOT_PERFORMED/);
+    assert.doesNotMatch(state, /FOUNDER_STAGING_DEPLOYMENT:\s*NOT_PERFORMED/);
+
+    const current = currentAuthorityBlob({ text: roadmap }, { text: state });
+    const evidence = authorityEvidenceBlob({ text: roadmap }, { text: state });
+    assert.ok(evidence.includes(hist.roadmapText.slice(0, 80)));
+    assert.ok(current.includes("GTM-R114"));
+    assert.ok(!current.includes('"roadmapVersion": "GTM-R113"'));
+    // Stale historical claim may exist in snapshot evidence without overriding CURRENT metadata.
+    assert.ok(/pendingAcceptance:\s*NONE/.test(hist.stateText) || /Pending Acceptance:\s+NONE/.test(hist.stateText));
+    assert.match(state, /"pendingAcceptance": "IMP-036E"/);
+    // Historical snapshots may retain pre-correction FOUNDER_STAGING_DEPLOYMENT: NOT_PERFORMED.
+    assert.match(hist.roadmapText, /FOUNDER_STAGING_DEPLOYMENT:\s*NOT_PERFORMED/);
+    assert.ok(current.includes("FOUNDER_STAGING_STATUS: READY_FOR_FOUNDER_UAT"));
+    assert.ok(!/FOUNDER_STAGING_DEPLOYMENT:\s*NOT_PERFORMED/.test(current));
+  });
+
+  it("fails CURRENT authority checks when live metadata diverges from the compression checkpoint", () => {
+    const findings = runProjectConsistency();
+    const failures = findings.filter((f) => !f.ok);
+    assert.equal(failures.length, 0, failures.map((f) => `[${f.code}] ${f.message}`).join("\n"));
+    const messages = findings.filter((f) => f.ok).map((f) => f.message);
+    assert.ok(messages.some((m) => m.includes("authority compression checkpoint OK")));
+    assert.ok(messages.some((m) => m.includes("CURRENT authority anti-stale checks OK")));
+    assert.ok(messages.some((m) => m.includes("historical authority corpus loaded")));
+    assert.ok(messages.some((m) => m.includes("historical checkpoint evidence for IMP-036E")));
+    assert.ok(
+      messages.some((m) => m.includes("historical FOUNDER_STAGING_DEPLOYMENT: NOT_PERFORMED does not override CURRENT")),
+    );
   });
 });
