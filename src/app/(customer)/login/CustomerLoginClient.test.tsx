@@ -15,15 +15,23 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => useSearchParams(),
 }));
 
-vi.mock("@/lib/customer-auth/client", () => ({
-  fetchCustomerSession: (...args: unknown[]) => fetchCustomerSession(...args),
-  sendCustomerOtp: (...args: unknown[]) => sendCustomerOtp(...args),
-  verifyCustomerOtp: (...args: unknown[]) => verifyCustomerOtp(...args),
-}));
+vi.mock("@/lib/customer-auth/client", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/customer-auth/client")>();
+  return {
+    ...actual,
+    fetchCustomerSession: (...args: unknown[]) => fetchCustomerSession(...args),
+    sendCustomerOtp: (...args: unknown[]) => sendCustomerOtp(...args),
+    verifyCustomerOtp: (...args: unknown[]) => verifyCustomerOtp(...args),
+  };
+});
 
-vi.mock("@/lib/customer-auth/chrome-session", () => ({
-  notifyCustomerChromeSessionChanged: () => notifyCustomerChromeSessionChanged(),
-}));
+vi.mock("@/lib/customer-auth/chrome-session", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/customer-auth/chrome-session")>();
+  return {
+    ...actual,
+    notifyCustomerChromeSessionChanged: () => notifyCustomerChromeSessionChanged(),
+  };
+});
 
 vi.mock("@/lib/customer-commerce", async () => {
   const actual = await vi.importActual<typeof import("@/lib/customer-commerce")>(

@@ -23,24 +23,15 @@ export default defineConfig({
     },
   },
   test: {
-    // This sandboxed dev environment is slow/unreliable at spawning worker
-    // processes and constructing jsdom (observed 40-160s per environment),
-    // which exceeds Vitest's fixed 60s worker-start timeout and caused
-    // intermittent "[vitest-pool-runner]: Timeout waiting for worker to
-    // respond" failures — including a test file silently not running while
-    // the overall run still exited 0. Disabling isolation means jsdom is
-    // constructed once and reused across every test file in the single
-    // worker process (fileParallelism: false), instead of once per file.
-    // The suite is small and side-effect-free enough that sharing the
-    // environment has no meaningful test-isolation cost.
-    //
-    // NOTE: pool stays on the default "forks" — switching to "threads"
-    // was tried to reduce process-spawn overhead further, but it silently
-    // broke V8 coverage instrumentation (every file reported 0% despite
-    // tests passing). "forks" is the pool the V8 coverage provider is
-    // verified to work correctly with.
+    // Session 3B1: `isolate: false` made jsdom cheaper to start in constrained
+    // sandboxes, but Vitest module mocks then leak across files (last mock
+    // factory wins for the whole worker). That produced intermittent failures
+    // in AccountShell / Nav / location-selector / map-confirmation under
+    // `mockReset: true` — blocking honest mandatory `npm run test` CI.
+    // Per-file isolation is required for CI readiness; accept slower
+    // environment setup over cross-suite mock pollution.
     fileParallelism: false,
-    isolate: false,
+    isolate: true,
     environment: "jsdom",
     globals: false,
     restoreMocks: true,

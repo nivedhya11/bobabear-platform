@@ -81,17 +81,23 @@ const ALLOWED_PERSISTENCE_IMPORT_PREFIXES = [
   "tests/serviceability-security/",
   "tests/serviceability-auth-integration/",
   "tests/serviceability-concurrency/",
+  "tests/administration/",
+  "tests/operations/",
+  "tests/workforce-auth/",
 ];
 
 const ALLOWED_PERSISTENCE_IMPORT_PATHS = new Set([
   "scripts/catalog/bootstrap-imp028c-modifiers.ts",
+  "scripts/catalog/bootstrap-imp036c-required-topping.ts",
   "scripts/e2e/seed-customer-ordering.ts",
+  "scripts/e2e/seed-operations-lifecycle.ts",
   "scripts/financial-document/recover-missing-receipt-vouchers.ts",
   "scripts/financial-document/recover-missing-tax-invoices.ts",
   "scripts/financial-document/signing.ts",
   "scripts/order/recover-missing-orders.ts",
   "scripts/refund/recover-missing-statutory-decisions.ts",
   "tests/catalog-imp028c-modifiers/bootstrap.integration.test.tsx",
+  "tests/catalog-imp036c-required-topping/bootstrap.integration.test.tsx",
 ]);
 
 /** Paths allowed to import the persistence boundary at all (the boundary
@@ -227,7 +233,9 @@ function scanSourceTree(files) {
       const lineNo = index + 1;
 
       const persistenceImportMatch = PERSISTENCE_IMPORT_PATTERN.exec(line);
-      if (persistenceImportMatch) {
+      // Type-only imports do not pull the persistence runtime into a bundle.
+      const isTypeOnlyImport = /^\s*import\s+type\s+/.test(line);
+      if (persistenceImportMatch && !isTypeOnlyImport) {
         if (isPublicAppTree) {
           findings.push(
             `${rel}:${lineNo}: imports the persistence boundary from the public application tree (src/app/**, src/components/**), which must remain fully static in this slice.`,
@@ -238,7 +246,7 @@ function scanSourceTree(files) {
           );
         } else if (!isAllowedPersistenceImportPath(rel)) {
           findings.push(
-            `${rel}:${lineNo}: imports the persistence boundary from outside the approved boundary (src/server/persistence/**, src/server/organization/**, src/server/access-control/**, src/server/catalog/**, src/server/assortment/**, src/server/pricing/**, src/server/promotions/**, src/server/customer-profiles/**, src/server/customer-addresses/**, src/server/serviceability/**, scripts/database/**, scripts/access/**, scripts/menu/**, scripts/assortment/**, scripts/pricing/**, tests/database/**, tests/access-control/**, tests/catalog/**, tests/menu-import/**, tests/assortment-availability/**, tests/assortment-bootstrap/**, tests/pricing-tax/**, tests/pricing-bootstrap/**, tests/pricing-parity/**, tests/customer-profiles/**, tests/customer-profile-security/**, tests/customer-profile-auth-integration/**, tests/customer-addresses/**, tests/customer-address-security/**, tests/customer-address-auth-integration/**, tests/customer-address-concurrency/**, tests/customer-commerce/**, tests/serviceability/**, tests/serviceability-security/**, tests/serviceability-auth-integration/**, tests/serviceability-concurrency/**).`,
+            `${rel}:${lineNo}: imports the persistence boundary from outside the approved boundary (${ALLOWED_PERSISTENCE_IMPORT_PREFIXES.join(", ")}).`,
           );
         }
       }
@@ -270,30 +278,36 @@ function scanSourceTree(files) {
   }
 }
 
-const files = listAllFiles();
+function main() {
+  const files = listAllFiles();
 
-checkPersistenceEntryPointIsServerOnly();
-checkNoAdminOrGenericFactory(files);
-checkNewPublicDatabaseEnvVar(files);
-scanSourceTree(files);
+  checkPersistenceEntryPointIsServerOnly();
+  checkNoAdminOrGenericFactory(files);
+  checkNewPublicDatabaseEnvVar(files);
+  scanSourceTree(files);
 
-console.log("Persistence-boundary audit");
-console.log("=".repeat(60));
+  console.log("Persistence-boundary audit");
+  console.log("=".repeat(60));
 
-if (findings.length > 0) {
-  for (const finding of findings) {
-    console.log(`  ✗  ${finding}`);
+  if (findings.length > 0) {
+    for (const finding of findings) {
+      console.log(`  ✗  ${finding}`);
+    }
+    console.log("=".repeat(60));
+    console.log(`${findings.length} problem(s) found.`);
+    process.exitCode = 1;
+  } else {
+    console.log("  ✓  Persistence entry point carries the server-only marker.");
+    console.log("  ✓  No client-component or public-app-tree persistence import.");
+    console.log("  ✓  No bootstrap/admin or generic role-selecting factory.");
+    console.log("  ✓  No hardcoded connection string in persistence source.");
+    console.log("  ✓  No new NEXT_PUBLIC_* database variable.");
+    console.log("  ✓  No application-code use of the migration factory.");
+    console.log("=".repeat(60));
+    console.log("All checks passed. ✓");
   }
-  console.log("=".repeat(60));
-  console.log(`${findings.length} problem(s) found.`);
-  process.exitCode = 1;
-} else {
-  console.log("  ✓  Persistence entry point carries the server-only marker.");
-  console.log("  ✓  No client-component or public-app-tree persistence import.");
-  console.log("  ✓  No bootstrap/admin or generic role-selecting factory.");
-  console.log("  ✓  No hardcoded connection string in persistence source.");
-  console.log("  ✓  No new NEXT_PUBLIC_* database variable.");
-  console.log("  ✓  No application-code use of the migration factory.");
-  console.log("=".repeat(60));
-  console.log("All checks passed. ✓");
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main();
 }

@@ -78,7 +78,9 @@ test("isAllowedPersistenceImportPath allows the persistence boundary, db tooling
 test("isAllowedPersistenceImportPath allows the exact additional script consumers", () => {
   const allowedScriptPaths = [
     "scripts/catalog/bootstrap-imp028c-modifiers.ts",
+    "scripts/catalog/bootstrap-imp036c-required-topping.ts",
     "scripts/e2e/seed-customer-ordering.ts",
+    "scripts/e2e/seed-operations-lifecycle.ts",
     "scripts/financial-document/recover-missing-receipt-vouchers.ts",
     "scripts/financial-document/recover-missing-tax-invoices.ts",
     "scripts/financial-document/signing.ts",
@@ -96,6 +98,27 @@ test("isAllowedPersistenceImportPath allows the exact modifier-bootstrap integra
     isAllowedPersistenceImportPath(
       "tests/catalog-imp028c-modifiers/bootstrap.integration.test.tsx",
     ),
+    true,
+  );
+  assert.equal(
+    isAllowedPersistenceImportPath(
+      "tests/catalog-imp036c-required-topping/bootstrap.integration.test.tsx",
+    ),
+    true,
+  );
+});
+
+test("isAllowedPersistenceImportPath allows administration/operations/workforce-auth test trees", () => {
+  assert.equal(
+    isAllowedPersistenceImportPath("tests/administration/admin-http.integration.test.ts"),
+    true,
+  );
+  assert.equal(
+    isAllowedPersistenceImportPath("tests/operations/store-http.integration.test.ts"),
+    true,
+  );
+  assert.equal(
+    isAllowedPersistenceImportPath("tests/workforce-auth/trusted-identity.integration.test.ts"),
     true,
   );
 });
@@ -116,6 +139,10 @@ test("isAllowedPersistenceImportPath rejects other exact-allowlist siblings", ()
     isAllowedPersistenceImportPath("tests/catalog-imp028c-modifiers/not-authorized.test.tsx"),
     false,
   );
+  assert.equal(
+    isAllowedPersistenceImportPath("tests/catalog-imp036c-required-topping/not-authorized.test.tsx"),
+    false,
+  );
 });
 
 test("isAllowedPersistenceImportPath rejects the public app tree and arbitrary server code", () => {
@@ -123,6 +150,7 @@ test("isAllowedPersistenceImportPath rejects the public app tree and arbitrary s
   assert.equal(isAllowedPersistenceImportPath("src/components/Nav.tsx"), false);
   assert.equal(isAllowedPersistenceImportPath("src/lib/site.ts"), false);
   assert.equal(isAllowedPersistenceImportPath("src/server/workforce-auth/service.ts"), false);
+  assert.equal(isAllowedPersistenceImportPath("src/platform/observability/health.ts"), false);
 });
 
 test("isAllowedMigrationFactoryImportPath allows the migration factory, boundary, and db tooling/tests", () => {

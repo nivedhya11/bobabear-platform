@@ -4,9 +4,10 @@ import { describe, expect, it } from "vitest";
 
 describe("Operations order detail static shell", () => {
   it("keeps the fixed App Router detail shell and canonical href", async () => {
+    // Canonical route lives under the workforce (portal) segment (IMP-036A).
     const pagePath = path.join(
       process.cwd(),
-      "src/app/workforce/operations/orders/detail/page.tsx",
+      "src/app/workforce/(portal)/operations/orders/detail/page.tsx",
     );
     await access(pagePath);
     const source = await readFile(pagePath, "utf8");

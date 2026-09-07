@@ -2,7 +2,14 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import * as notificationsClient from "@/lib/operations/notifications";
+
 import { OperationsOrderDetailClient } from "./OperationsOrderDetailClient";
+import {
+  mockCreateOrderRefund,
+  mockCreateRefundRequestId,
+  mockGetOrderRefunds,
+} from "./test-support/mock-operations-refunds";
 
 const getWorkforceOrder = vi.fn<(...args: unknown[]) => unknown>();
 const acceptWorkforceOrder = vi.fn<(...args: unknown[]) => unknown>();
@@ -42,26 +49,33 @@ vi.mock("@/lib/operations/delivery", () => ({
   postDeliveryCommand: vi.fn(),
 }));
 
-vi.mock("@/lib/operations/refunds", () => ({
-  getOrderRefunds: vi.fn(async () => ({
-    ok: false,
-    status: 404,
-    code: "REFUND_NOT_FOUND",
-  })),
-  createOrderRefund: vi.fn(),
-  createRefundRequestId: () => "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
-  refundStatusLabel: (status: string) => status,
-}));
+vi.mock("@/lib/operations/refunds", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/operations/refunds")>(
+    "@/lib/operations/refunds",
+  );
+  const {
+    mockCreateOrderRefund: createOrderRefund,
+    mockCreateRefundRequestId: createRefundRequestId,
+    mockGetOrderRefunds: getOrderRefunds,
+  } = await import("./test-support/mock-operations-refunds");
+  return {
+    ...actual,
+    getOrderRefunds: getOrderRefunds,
+    createOrderRefund: createOrderRefund,
+    createRefundRequestId: createRefundRequestId,
+  };
+});
 
-vi.mock("@/lib/operations/notifications", () => ({
-  getOrderNotifications: vi.fn(async () => ({
-    ok: false,
-    status: 404,
-    code: "NOTIFICATION_NOT_FOUND",
-  })),
-  resendOrderNotification: vi.fn(),
-  notificationStatusLabel: (status: string) => status,
-}));
+vi.mock("@/lib/operations/notifications", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/operations/notifications")>(
+    "@/lib/operations/notifications",
+  );
+  return {
+    ...actual,
+    getOrderNotifications: vi.fn(),
+    resendOrderNotification: vi.fn(),
+  };
+});
 
 vi.mock("@/lib/operations/orders", async () => {
   const actual = await vi.importActual<typeof import("@/lib/operations/orders")>(
@@ -75,6 +89,8 @@ vi.mock("@/lib/operations/orders", async () => {
     cancelWorkforceOrder: (...args: unknown[]) => cancelWorkforceOrder(...args),
   };
 });
+
+const getOrderNotifications = vi.mocked(notificationsClient.getOrderNotifications);
 
 const ORDER_ID = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const ORDER_ID_TWO = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
@@ -130,6 +146,22 @@ beforeEach(() => {
   acceptWorkforceOrder.mockReset();
   fulfilWorkforceOrder.mockReset();
   cancelWorkforceOrder.mockReset();
+  // Re-apply after global mockReset so child panels never see undefined API results.
+  mockGetOrderRefunds.mockReset();
+  mockCreateOrderRefund.mockReset();
+  mockCreateRefundRequestId.mockReset();
+  getOrderNotifications.mockReset();
+  mockCreateRefundRequestId.mockImplementation(() => "cccccccc-cccc-4ccc-8ccc-cccccccccccc");
+  mockGetOrderRefunds.mockResolvedValue({
+    ok: false,
+    status: 404,
+    code: "REFUND_NOT_FOUND",
+  });
+  getOrderNotifications.mockResolvedValue({
+    ok: false,
+    status: 404,
+    code: "NOTIFICATION_NOT_FOUND",
+  });
 });
 
 async function renderReady(orderOverride = order) {

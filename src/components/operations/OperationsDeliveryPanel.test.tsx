@@ -8,8 +8,15 @@ describe("OperationsDeliveryPanel source invariants", () => {
   const source = readFileSync("src/components/operations/OperationsDeliveryPanel.tsx", "utf8");
 
   it("instructs external booking only after begin manual booking path", () => {
-    expect(source).toContain("Begin manual booking in BOBA before attempting external courier booking");
-    expect(source).toContain("External booking may now be attempted");
+    // REQUESTED: forbid external courier attempt until BOBA begin-manual-booking runs.
+    expect(source).toContain(
+      "Begin manual booking in BOBA before attempting external courier booking.",
+    );
+    // BOOKING_OUTCOME_UNKNOWN: resolve courier result; do not invite a fresh external attempt.
+    expect(source).toContain(
+      "External booking outcome is not yet confirmed. Resolve once the courier result is known.",
+    );
+    expect(source).not.toContain("External booking may now be attempted");
   });
 
   it("gates lifecycle commands via permittedCommands", () => {
