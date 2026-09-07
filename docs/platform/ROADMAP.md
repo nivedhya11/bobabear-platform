@@ -117,7 +117,11 @@ IMP-036E_STARTED: YES
 IMP-036E_IMPLEMENTATION_COMPLETE: YES
 IMP-036E_ACCEPTED: NO
 IMP-036E_FOUNDER_UAT_REQUIRED: YES
-IMP-036E_FOUNDER_UAT: NOT_STARTED
+IMP-036E_FOUNDER_UAT: NOT_STARTED / NOT_PERFORMED
+FOUNDER_STAGING_DEPLOYMENT: PERFORMED
+FOUNDER_STAGING_STATUS: READY_FOR_FOUNDER_UAT
+FOUNDER_STAGING_CANDIDATE_SHA: e9821271a29ae35ba6c921008b976cd2e8d15c50
+FOUNDER_STAGING_CANDIDATE_TREE: 8259d30f662e6668f2208788f2e95faaea831384
 IMP036E_IMPLEMENTATION_EVIDENCE: COMPLETE
 IMP_036E_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
 IMP036E_IMPLEMENTATION_MERGE_SHA: 0ebb5e937cd7ac14bb3e39e9d1d494e32c9d2739
@@ -160,8 +164,12 @@ Completion is **not** acceptance. Locked capability architecture:
 [`capabilities/IMP-036E-store-operations-management.md`](./capabilities/IMP-036E-store-operations-management.md).
 Preferred Store Assortment read route:
 `GET /api/operations/v1/outlets/{outletId}/assortment`. ARCH-R19 and DR-15 remain unchanged.
-GitHub Pages is not Founder staging/UAT evidence (`FOUNDER_STAGING_DEPLOYMENT: NOT_PERFORMED`;
-`FOUNDER_UAT: NOT_PERFORMED`). Does **not** activate IMP-036F.
+GitHub Pages is not Founder staging/UAT evidence. Founder staging deployment was performed
+(`FOUNDER_STAGING_DEPLOYMENT: PERFORMED`; `FOUNDER_STAGING_STATUS: READY_FOR_FOUNDER_UAT`;
+candidate SHA `e9821271a29ae35ba6c921008b976cd2e8d15c50` / tree
+`8259d30f662e6668f2208788f2e95faaea831384`). Founder UAT remains `NOT_STARTED` /
+`NOT_PERFORMED`. Later governance-only commits after that candidate are not the deployed
+Founder-UAT product candidate. Does **not** activate IMP-036F.
 
 IMP-036D remains `COMPLETE_AND_ACCEPTED`. Concise acceptance identity: UAT candidate HEAD
 `a6ff612c65e0d58409017b2935e0da16cffa9530` / tree `6580497091525c3ddd892aa44aafd63ef1132d35`

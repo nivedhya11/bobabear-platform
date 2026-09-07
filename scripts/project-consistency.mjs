@@ -17223,15 +17223,27 @@ function checkAuthorityCompression(roadmap, state, architecture, decision) {
     [currentRoadmapSection, /IMP-036E_IMPLEMENTATION:\s*AUTHORIZED \/ STARTED \/ COMPLETE/, "ROADMAP must record IMP-036E AUTHORIZED / STARTED / COMPLETE"],
     [currentRoadmapSection, /IMP-036E_ACCEPTED:\s*NO/, "ROADMAP must record IMP-036E unaccepted"],
     [currentRoadmapSection, /IMP-036E_FOUNDER_UAT:\s*NOT_STARTED/, "ROADMAP must record IMP-036E Founder UAT NOT_STARTED"],
+    [currentRoadmapSection, /FOUNDER_STAGING_DEPLOYMENT:\s*PERFORMED/, "ROADMAP must record FOUNDER_STAGING_DEPLOYMENT: PERFORMED"],
+    [currentRoadmapSection, /FOUNDER_STAGING_STATUS:\s*READY_FOR_FOUNDER_UAT/, "ROADMAP must record FOUNDER_STAGING_STATUS: READY_FOR_FOUNDER_UAT"],
+    [currentRoadmapSection, /FOUNDER_STAGING_CANDIDATE_SHA:\s*e9821271a29ae35ba6c921008b976cd2e8d15c50/, "ROADMAP must preserve Founder staging candidate SHA e9821271…"],
+    [currentRoadmapSection, /FOUNDER_STAGING_CANDIDATE_TREE:\s*8259d30f662e6668f2208788f2e95faaea831384/, "ROADMAP must preserve Founder staging candidate tree 8259d30f…"],
     [currentRoadmapSection, /IMP-036F:\s*PLANNED \/ NOT_ACTIVATED/, "ROADMAP must keep IMP-036F PLANNED / NOT_ACTIVATED"],
     [currentRoadmapSection, /IMP036E_ASSORTMENT_AUTHORITY:\s*BRAND/, "ROADMAP must record Assortment BRAND authority"],
     [currentRoadmapSection, /IMP036E_GLOBAL_SESSION_CAPS_PURPOSE:\s*COARSE_NAVIGATION_ONLY/, "ROADMAP must record coarse navigation session caps"],
     [currentStateAcceptance, /IMP-036E:\s*IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE/, "STATE must record IMP-036E IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE"],
     [currentStateAcceptance, /IMP-036E_ACCEPTED:\s*NO/, "STATE must record IMP-036E unaccepted"],
     [currentStateAcceptance, /IMP-036E_FOUNDER_UAT:\s*NOT_STARTED/, "STATE must record IMP-036E Founder UAT NOT_STARTED"],
+    [currentStateAcceptance, /FOUNDER_STAGING_DEPLOYMENT:\s*PERFORMED/, "STATE must record FOUNDER_STAGING_DEPLOYMENT: PERFORMED"],
+    [currentStateAcceptance, /FOUNDER_STAGING_STATUS:\s*READY_FOR_FOUNDER_UAT/, "STATE must record FOUNDER_STAGING_STATUS: READY_FOR_FOUNDER_UAT"],
+    [currentStateAcceptance, /FOUNDER_STAGING_CANDIDATE_SHA:\s*e9821271a29ae35ba6c921008b976cd2e8d15c50/, "STATE must preserve Founder staging candidate SHA e9821271…"],
+    [currentStateAcceptance, /FOUNDER_STAGING_CANDIDATE_TREE:\s*8259d30f662e6668f2208788f2e95faaea831384/, "STATE must preserve Founder staging candidate tree 8259d30f…"],
     [currentStateAcceptance, /IMP036F_ACTIVATED:\s*NO/, "STATE must record IMP036F_ACTIVATED: NO"],
     [currentStateActivity, /IMP-036E IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE/, "STATE current governance activity must record IMP-036E IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE"],
     [currentStateActivity, /Founder UAT required \/ not yet performed/, "STATE current governance activity must record Founder UAT required / not yet performed"],
+    [currentStateActivity, /FOUNDER_STAGING_DEPLOYMENT:\s*PERFORMED/, "STATE current position must record FOUNDER_STAGING_DEPLOYMENT: PERFORMED"],
+    [currentStateActivity, /FOUNDER_STAGING_STATUS:\s*READY_FOR_FOUNDER_UAT/, "STATE current position must record FOUNDER_STAGING_STATUS: READY_FOR_FOUNDER_UAT"],
+    [currentStateActivity, /FOUNDER_STAGING_CANDIDATE_SHA:\s*e9821271a29ae35ba6c921008b976cd2e8d15c50/, "STATE current position must preserve Founder staging candidate SHA"],
+    [currentStateActivity, /FOUNDER_STAGING_CANDIDATE_TREE:\s*8259d30f662e6668f2208788f2e95faaea831384/, "STATE current position must preserve Founder staging candidate tree"],
   ];
   for (const [haystack, pattern, message] of requiredTokens) {
     if (!pattern.test(haystack)) fail("AUTHORITY_COMPRESSION_CURRENT", message);
@@ -17249,6 +17261,20 @@ function checkAuthorityCompression(roadmap, state, architecture, decision) {
     if (premature.some((pattern) => pattern.test(haystack))) {
       fail("AUTHORITY_COMPRESSION_PREMATURE", "Authority compression must not claim IMP-036E acceptance or IMP-036F activation");
       break;
+    }
+  }
+
+  // Staging performed ≠ Founder UAT performed; CURRENT must not revive the stale NOT_PERFORMED staging claim.
+  for (const [haystack, label] of [
+    [currentRoadmapSection, "ROADMAP Current Position"],
+    [currentStateAcceptance, "STATE Acceptance Position"],
+    [currentStateActivity, "STATE Current Work Position"],
+  ]) {
+    if (/FOUNDER_STAGING_DEPLOYMENT:\s*NOT_PERFORMED/.test(haystack)) {
+      fail(
+        "AUTHORITY_COMPRESSION_STAGING_STALE",
+        `${label} must not claim FOUNDER_STAGING_DEPLOYMENT: NOT_PERFORMED (staging is PERFORMED / READY_FOR_FOUNDER_UAT)`,
+      );
     }
   }
 
@@ -17304,6 +17330,7 @@ function checkCurrentAuthorityAntiStale(roadmap, state) {
     [/currentProductSlice:\s*NONE\b/i, "currentProductSlice = NONE"],
     [/Current Product Slice:\s*NONE\b/i, "Current Product Slice = NONE"],
     [/IMP-035[^\n]{0,80}pending acceptance/i, "IMP-035 pending acceptance"],
+    [/FOUNDER_STAGING_DEPLOYMENT:\s*NOT_PERFORMED/, "FOUNDER_STAGING_DEPLOYMENT = NOT_PERFORMED"],
   ];
 
   for (const section of [currentRoadmapSection, currentStateActivity, currentStateAcceptance]) {
@@ -17327,6 +17354,14 @@ function checkCurrentAuthorityAntiStale(roadmap, state) {
       /acceptedThrough:\s*IMP-031/.test(hist.stateText);
     if (histHasStale && state.meta.pendingAcceptance === "IMP-036E" && state.meta.acceptedThrough === "IMP-036D") {
       note("historical snapshot stale lifecycle claims do not override CURRENT STATE metadata");
+    }
+    const histHasStaleStaging = /FOUNDER_STAGING_DEPLOYMENT:\s*NOT_PERFORMED/.test(hist.roadmapText) ||
+      /FOUNDER_STAGING_DEPLOYMENT:\s*NOT_PERFORMED/.test(hist.stateText);
+    const currentHasStagingReady =
+      /FOUNDER_STAGING_STATUS:\s*READY_FOR_FOUNDER_UAT/.test(currentRoadmapSection) &&
+      /FOUNDER_STAGING_DEPLOYMENT:\s*PERFORMED/.test(currentRoadmapSection);
+    if (histHasStaleStaging && currentHasStagingReady) {
+      note("historical FOUNDER_STAGING_DEPLOYMENT: NOT_PERFORMED does not override CURRENT READY_FOR_FOUNDER_UAT");
     }
   } catch {
     /* corpus missing reported elsewhere */

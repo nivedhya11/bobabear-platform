@@ -6366,6 +6366,16 @@ describe("canonical authority history compression", () => {
     assert.match(roadmap, /IMP-036E_ACCEPTED:\s*NO/);
     assert.match(state, /IMP-036E_FOUNDER_UAT:\s*NOT_STARTED/);
     assert.match(state, /IMP036F_ACTIVATED:\s*NO/);
+    assert.match(roadmap, /FOUNDER_STAGING_DEPLOYMENT:\s*PERFORMED/);
+    assert.match(roadmap, /FOUNDER_STAGING_STATUS:\s*READY_FOR_FOUNDER_UAT/);
+    assert.match(roadmap, /FOUNDER_STAGING_CANDIDATE_SHA:\s*e9821271a29ae35ba6c921008b976cd2e8d15c50/);
+    assert.match(roadmap, /FOUNDER_STAGING_CANDIDATE_TREE:\s*8259d30f662e6668f2208788f2e95faaea831384/);
+    assert.match(state, /FOUNDER_STAGING_DEPLOYMENT:\s*PERFORMED/);
+    assert.match(state, /FOUNDER_STAGING_STATUS:\s*READY_FOR_FOUNDER_UAT/);
+    assert.match(state, /FOUNDER_STAGING_CANDIDATE_SHA:\s*e9821271a29ae35ba6c921008b976cd2e8d15c50/);
+    assert.match(state, /FOUNDER_STAGING_CANDIDATE_TREE:\s*8259d30f662e6668f2208788f2e95faaea831384/);
+    assert.doesNotMatch(roadmap, /FOUNDER_STAGING_DEPLOYMENT:\s*NOT_PERFORMED/);
+    assert.doesNotMatch(state, /FOUNDER_STAGING_DEPLOYMENT:\s*NOT_PERFORMED/);
 
     const current = currentAuthorityBlob({ text: roadmap }, { text: state });
     const evidence = authorityEvidenceBlob({ text: roadmap }, { text: state });
@@ -6375,6 +6385,10 @@ describe("canonical authority history compression", () => {
     // Stale historical claim may exist in snapshot evidence without overriding CURRENT metadata.
     assert.ok(/pendingAcceptance:\s*NONE/.test(hist.stateText) || /Pending Acceptance:\s+NONE/.test(hist.stateText));
     assert.match(state, /"pendingAcceptance": "IMP-036E"/);
+    // Historical snapshots may retain pre-correction FOUNDER_STAGING_DEPLOYMENT: NOT_PERFORMED.
+    assert.match(hist.roadmapText, /FOUNDER_STAGING_DEPLOYMENT:\s*NOT_PERFORMED/);
+    assert.ok(current.includes("FOUNDER_STAGING_STATUS: READY_FOR_FOUNDER_UAT"));
+    assert.ok(!/FOUNDER_STAGING_DEPLOYMENT:\s*NOT_PERFORMED/.test(current));
   });
 
   it("fails CURRENT authority checks when live metadata diverges from the compression checkpoint", () => {
@@ -6386,5 +6400,8 @@ describe("canonical authority history compression", () => {
     assert.ok(messages.some((m) => m.includes("CURRENT authority anti-stale checks OK")));
     assert.ok(messages.some((m) => m.includes("historical authority corpus loaded")));
     assert.ok(messages.some((m) => m.includes("historical checkpoint evidence for IMP-036E")));
+    assert.ok(
+      messages.some((m) => m.includes("historical FOUNDER_STAGING_DEPLOYMENT: NOT_PERFORMED does not override CURRENT")),
+    );
   });
 });
