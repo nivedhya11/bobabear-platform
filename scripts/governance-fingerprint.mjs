@@ -26,6 +26,8 @@ const EXPLICIT = [
   DECISION_REGISTER_REL,
   "docs/platform/ROADMAP.md",
   "docs/platform/STATE.md",
+  "docs/platform/PRODUCT-DELIVERY.md",
+  "docs/platform/TESTING.md",
   "docs/platform/README.md",
   "docs/platform/implementation-roadmap.md",
   "docs/platform/decision-register-historical.md",
@@ -47,6 +49,73 @@ const EXPLICIT = [
   "scripts/governance-fingerprint.mjs",
   "README.md",
 ];
+
+const PRODUCT_DIR_REL = "docs/platform/product";
+
+const REQUIRED_PRODUCT_MARKDOWN = [
+  "docs/platform/product/README.md",
+  "docs/platform/product/personas.md",
+  "docs/platform/product/golden-journeys.md",
+  "docs/platform/product/templates/product-definition-template.md",
+];
+
+/**
+ * Recursively collect tracked Markdown under docs/platform/product/.
+ * Prefer git ls-files so future Product Definitions are included automatically
+ * without editing this manifest list; fall back to filesystem walk when git is
+ * unavailable (ephemeral mirrors).
+ * @returns {string[]} normalized relative paths, sorted, unique
+ */
+function collectProductMarkdownRels() {
+  const head = spawnSync("git", ["-C", projectRoot, "rev-parse", "--verify", "HEAD"], {
+    encoding: "utf8",
+  });
+  /** @type {string[]} */
+  let rels = [];
+  if (head.status === 0) {
+    const listed = spawnSync(
+      "git",
+      ["-C", projectRoot, "ls-files", "--full-name", "--", PRODUCT_DIR_REL],
+      { encoding: "utf8" },
+    );
+    if (listed.status !== 0) {
+      console.error(`GIT_LS_FILES_FAILED ${PRODUCT_DIR_REL}`);
+      process.exit(2);
+    }
+    rels = listed.stdout
+      .split(/\r?\n/)
+      .filter(Boolean)
+      .map((p) => p.replace(/\\/g, "/"))
+      .filter((p) => p.startsWith(`${PRODUCT_DIR_REL}/`) && p.toLowerCase().endsWith(".md"));
+  } else {
+    const absRoot = path.join(projectRoot, PRODUCT_DIR_REL);
+    if (!existsSync(absRoot)) {
+      console.error(`MISSING ${PRODUCT_DIR_REL}/`);
+      process.exit(2);
+    }
+    /** @param {string} dir */
+    const walk = (dir) => {
+      for (const name of readdirSync(dir)) {
+        const abs = path.join(dir, name);
+        const st = statSync(abs);
+        if (st.isDirectory()) walk(abs);
+        else if (st.isFile() && name.toLowerCase().endsWith(".md")) {
+          rels.push(path.relative(projectRoot, abs).replace(/\\/g, "/"));
+        }
+      }
+    };
+    walk(absRoot);
+  }
+
+  const unique = [...new Set(rels)].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+  for (const required of REQUIRED_PRODUCT_MARKDOWN) {
+    if (!unique.includes(required)) {
+      console.error(`MISSING ${required}`);
+      process.exit(2);
+    }
+  }
+  return unique;
+}
 
 /**
  * Exact directory-entry check for a relative file (basename must match).
@@ -106,17 +175,20 @@ function assertTrackedExactPath(rel) {
 assertExactDirEntry(DECISION_REGISTER_REL);
 assertTrackedExactPath(DECISION_REGISTER_REL);
 
+const productRels = collectProductMarkdownRels();
+const manifestRels = [...new Set([...EXPLICIT.map((r) => r.replace(/\\/g, "/")), ...productRels])].sort(
+  (a, b) => (a < b ? -1 : a > b ? 1 : 0),
+);
+
 const resolved = [];
-for (const rel of EXPLICIT) {
+for (const rel of manifestRels) {
   const abs = path.join(projectRoot, rel);
   if (!existsSync(abs) || !statSync(abs).isFile()) {
     console.error(`MISSING ${rel}`);
     process.exit(2);
   }
-  resolved.push({ rel: rel.replace(/\\/g, "/"), abs });
+  resolved.push({ rel, abs });
 }
-
-resolved.sort((a, b) => (a.rel < b.rel ? -1 : a.rel > b.rel ? 1 : 0));
 
 const hash = createHash("sha256");
 for (const { rel, abs } of resolved) {

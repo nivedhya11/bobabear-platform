@@ -284,50 +284,13 @@ pre-governance accepted slices are historical gaps — they do not downgrade acc
 - Work from the WSL Linux filesystem for Turbopack/Podman reliability when developing.
 - Coding-agent implementation prompts must remain below 50,000 characters; split slices if needed.
 - Only one product slice is normally active; never start a slice whose dependencies are
-  unresolved, except the documented GTM-R15 founder exception in ROADMAP/STATE: IMP-026C
-  may proceed while IMP-026 remains `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`
-  with deferred public HTTPS webhook debt. GTM-R19/R20 extend that governed continuation for
-  IMP-027 architecture (`ARCHITECTURE_IN_PROGRESS` then `ARCHITECTURE_LOCKED`). GTM-R21 records
-  explicit founder authorization for IMP-027 implementation (`IMPLEMENTATION_IN_PROGRESS`) under
-  the locked capability artifact. GTM-R22 records IMP-027
-  `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` behind oldest pending acceptance IMP-026, while
-  IMP-026 / IMP-026C remain unaccepted. GTM-R23 records explicit founder authorization for
-  IMP-028 architecture activation (`ARCHITECTURE_IN_PROGRESS` only) while IMP-026 / IMP-026C /
-  IMP-027 remain unaccepted. GTM-R24 records IMP-028 architecture lock (`ARCHITECTURE_LOCKED`)
-  with implementation **NOT_AUTHORIZED**, binding **D-365**, while IMP-026 / IMP-026C / IMP-027
-  remain unaccepted. GTM-R25 records explicit founder authorization for IMP-028 implementation
-  (`IMP-028_IMPLEMENTATION_AUTHORIZED: YES`; `IMP-028_IMPLEMENTATION_STARTED: NO`) under that
-  locked artifact and **D-365** / ARCH-G16, while IMP-026 / IMP-026C / IMP-027 remain unaccepted.
-  GTM-R26 records IMP-028 implementation started (`IMP-028_IMPLEMENTATION_STARTED: YES`;
-  lifecycle `IMPLEMENTATION_IN_PROGRESS`) under that locked artifact and authorization, while
-  IMP-026 / IMP-026C / IMP-027 remain unaccepted.
-  GTM-R30 records IMP-028 `COMPLETE_AND_ACCEPTED` (`IMP-028_ACCEPTED: YES`;
-  `acceptedThrough = IMP-028`; `pendingAcceptance = NONE`; `currentProductSlice = NONE`;
-  `nextProductSlice = IMP-029`). Formal acceptance of IMP-028 does **not** authorize or start
-  IMP-029 (`IMP-029_IMPLEMENTATION_AUTHORIZED: NO`; `IMP-029_STARTED: NO`).
-  GTM-R34 records canonical activation of IMP-028A — Food Direct UX Foundation
-  (`currentProductSlice = IMP-028A`; `PLANNED` / `NOT_STARTED` / `NOT_AUTHORIZED`; architecture
-  `NOT_LOCKED`; `IMP-028A_IMPLEMENTATION_AUTHORIZED: NO`; `IMP-028A_IMPLEMENTATION_STARTED: NO`)
-  without retargeting IMP-029, creating `D-371`, or authorizing Food Direct implementation.
-  GTM-R35 records IMP-028A capability-local architecture lock and implementation authorization
-  (`ARCHITECTURE_LOCKED`; `IMP-028A_IMPLEMENTATION_AUTHORIZED: YES`;
-  `IMP-028A_IMPLEMENTATION_STARTED: NO`) without starting product implementation, creating
-  `D-371`, retargeting IMP-029, or activating Food Direct families B–F.
-  GTM-R36 records IMP-028A `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`
-  (`IMP-028A_IMPLEMENTATION_STARTED: YES`; `IMP-028A_IMPLEMENTATION_COMPLETE: YES`;
-  `pendingAcceptance = IMP-028A`) without accepting IMP-028A, creating `D-371`, retargeting
-  IMP-029, or activating Food Direct families B–F.
-  GTM-R37 records IMP-028A `COMPLETE_AND_ACCEPTED` (`IMP-028A_ACCEPTED: YES`;
-  `acceptedThrough = IMP-028A`; `pendingAcceptance = NONE`; `currentProductSlice = NONE`;
-  `nextProductSlice = IMP-029`) and does **not** authorize or start IMP-029, implement
-  D-368 / D-369 / D-370, create `D-371`, or activate Food Direct families B–F.
-  `pendingAcceptance` identifies the oldest unresolved formal acceptance gate (currently
-  NONE); it does not mean a later authorized slice is still in progress. Formal acceptance
-  remains contiguous. The GTM-R15–R26 exception does not accept IMP-026, accept IMP-026C, accept
-  IMP-027, mark IMP-028 complete/accepted, activate
-  IMP-029, or apply
-  automatically to unrelated future slices. Those predecessor acceptances were recorded by later
-  dedicated reconciliations (GTM-R27/R28/R29/R30/R37), not by the exception itself.
+  unresolved. Historical controlled-continuation exceptions for the IMP-026 → IMP-028
+  period are preserved in ROADMAP/STATE history. They are CLOSED historical exceptions and
+  MUST NOT be applied to future slices without an explicit new Founder/governance decision.
+  Current lifecycle position (`acceptedThrough`, `currentProductSlice`, `pendingAcceptance`,
+  `nextProductSlice`) is authoritative only in ROADMAP/STATE; agents must not invent a new
+  continuation exception. `pendingAcceptance` identifies the oldest unresolved formal
+  acceptance gate and does not by itself authorize starting another product slice.
 - Platform docs under `docs/platform/` are canonical for product/architecture; treat older wireframe
   folders as historical unless CURRENT authority says otherwise.
 

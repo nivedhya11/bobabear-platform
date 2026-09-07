@@ -21,34 +21,40 @@ IMP036E_LIFECYCLE_CHANGED = NO
 IMP036F_ACTIVATED = NO
 ```
 
-1. Verify applicable authorities and scope. For prospective product-visible work, require the
-   approved versioned Product Definition and passed Product Definition Gate before architecture
-   fit/lock; stop on unresolved material product behaviour or architecture conflict. Engineering-only
-   changes require an approved specification and applicable architecture fit.
-2. Record a clean checkpoint and repository provenance; create a task branch only when authorized.
-3. Identify stories/observable acceptance scenarios and relevant tests under
+1. Verify applicable authorities and scope. For prospective product-visible work from IMP-036F,
+   require the approved versioned Product Definition and a passed Product Definition Gate before
+   the next step; stop on unresolved material product behaviour. Engineering-only changes require
+   an approved specification (no Product Definition Gate).
+2. Architecture fit/lock. For prospective product-visible IMP-036F+ work, complete architecture
+   fit (and lock when the capability requires a locked artifact) before implementation
+   authorization or implementation; stop on architecture conflict with CURRENT authorities.
+   Engineering-only work requires applicable architecture fit against existing authorities and
+   remains specification-driven — do not invent new lifecycle states.
+3. Record a clean checkpoint and repository provenance; create a task branch only when authorized.
+4. Identify stories/observable acceptance scenarios and relevant tests under
    [`TESTING.md`](../TESTING.md) for prospective story delivery, including story Definition of Ready.
    Engineering-only work uses its specification's acceptance criteria. Require applicable
-   implementation authorization in either case.
-4. Implement only the approved story/AC scope (or engineering specification scope).
-5. Run focused tests, relevant regression, and deterministic local validation; retain commands,
+   implementation authorization in either case before coding product-visible or governed capability
+   work.
+5. Implement only the approved story/AC scope (or engineering specification scope).
+6. Run focused tests, relevant regression, and deterministic local validation; retain commands,
    exit codes, relevant raw output, story/AC evidence, and changed files/diff.
-6. Create authorized small, reconstructible local commit(s); record SHA/tree and required working-tree
+7. Create authorized small, reconstructible local commit(s); record SHA/tree and required working-tree
    fingerprint. Never rewrite published history.
-7. Push only when separately authorized; retain the resulting CI run/link when available.
-8. Independently review story completeness, architecture compliance, actual diff, and deterministic
+8. Push only when separately authorized; retain the resulting CI run/link when available.
+9. Independently review story completeness, architecture compliance, actual diff, and deterministic
    evidence, including required Golden Journeys. First review covers the full relevant slice;
    follow-up review uses previous approved SHA → new SHA, changed files, affected invariants, and
    new evidence. Widen review when changed authority requires it. Ask: “Identify the three most
    plausible defects or invariant violations in this diff.”
-9. Merge only when separately authorized.
-10. After merging an authorized task branch, verify its exact tip is contained in `main`, then delete
+10. Merge only when separately authorized.
+11. After merging an authorized task branch, verify its exact tip is contained in `main`, then delete
     the completed task branch locally and remotely. Do not delete a branch that still contains
     unique/unmerged commits; preserve it until that work is reconciled.
-11. When applicable, prepare an immutable artifact under the existing provenance rules; obtain
+12. When applicable, prepare an immutable artifact under the existing provenance rules; obtain
     deployment authorization before deploying it. Required independent technical acceptance must
     precede UAT deployment.
-12. After independent technical acceptance, run founder UAT when required against the exact accepted
+13. After independent technical acceptance, run founder UAT when required against the exact accepted
     candidate under AGENTS deployment/provenance rules, then complete acceptance or rework. Reconcile
     applicable canonical records and run `npm run project:consistency` before advancing.
 
