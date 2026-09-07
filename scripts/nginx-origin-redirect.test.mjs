@@ -50,10 +50,21 @@ describe("Nginx directory redirects", { skip: !dockerAvailable() }, () => {
       fs.writeFileSync(path.join(directory, "index.html"), "<!doctype html>");
     }
 
+    // The production web-runtime copies this script into the official Nginx
+    // entrypoint directory and marks it executable. Mirror that setup here so
+    // nginx.conf can include the runtime-generated resolver fragment.
+    const resolverScript = path.join(fixtureRoot, "40-boba-runtime-resolver.sh");
+    fs.copyFileSync(
+      path.join(repositoryRoot, "docker/nginx/40-boba-runtime-resolver.sh"),
+      resolverScript,
+    );
+    fs.chmodSync(resolverScript, 0o755);
+
     containerId = docker([
       "run", "--rm", "-d", "-p", "127.0.0.1::8080",
       "--tmpfs", "/tmp", "--tmpfs", "/var/cache/nginx", "--tmpfs", "/var/run",
       "-v", `${path.join(repositoryRoot, "docker/nginx/nginx.conf")}:/etc/nginx/nginx.conf:ro`,
+      "-v", `${resolverScript}:/docker-entrypoint.d/40-boba-runtime-resolver.sh:ro`,
       "-v", `${fixtureRoot}:/usr/share/nginx/html:ro`,
       nginxImage,
     ]);
