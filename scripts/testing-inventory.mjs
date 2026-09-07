@@ -551,18 +551,22 @@ function inferCiInclusion(workflows, pathRel, packageCommands) {
     .filter((w) => w.path === ".github/workflows/ci.yml")
     .flatMap((w) => w.validationSteps.map((s) => s.run));
   const haystack = ciRuns.join("\n");
+  const hasUnitSuite = ciRuns.some((run) => run.trim() === "npm run test");
+  const hasScriptSuite = ciRuns.some((run) => run.trim() === "npm run test:scripts");
+
   if (haystack.includes(pathRel)) return "YES";
   for (const cmd of packageCommands) {
     if (cmd === "test" || cmd === "test:coverage" || cmd === "test:scripts") continue;
     if (haystack.includes(`npm run ${cmd}`) || haystack.includes(cmd)) return "YES";
   }
-  // Narrow CI script tests referenced directly
-  if (pathRel.startsWith("scripts/") && pathRel.endsWith(".test.mjs") && haystack.includes(pathRel)) {
-    return "YES";
+  // The Session 3B2 umbrella script job covers every scripts/*.test.mjs file.
+  if (pathRel.startsWith("scripts/") && pathRel.endsWith(".test.mjs")) {
+    if (hasScriptSuite || haystack.includes(pathRel)) return "YES";
+    return "NO";
   }
-  // Default unit suite is NOT invoked by current CI (CI runs selected suites only).
+  // The default Vitest unit/component suite covers src/**/*.test.{ts,tsx}.
   if (pathRel.startsWith("src/") && /\.test\.(ts|tsx)$/.test(pathRel)) {
-    if (haystack.includes(pathRel)) return "YES";
+    if (hasUnitSuite || haystack.includes(pathRel)) return "YES";
     return "NO";
   }
   if (isPlaywrightSpecPath(pathRel)) return "NO";
