@@ -12,6 +12,8 @@
     "test:watch": "vitest",
     "test:coverage": "node scripts/run-vitest.mjs coverage",
     "test:scripts": "find scripts -name \"*.test.mjs\" -print0 | xargs -0 node --test",
+    "testing:inventory": "node scripts/testing-inventory.mjs --write",
+    "testing:inventory:check": "node scripts/testing-inventory.mjs --check",
     "test:e2e": "npm run build && playwright test",
     "test:e2e:headed": "npm run build && playwright test --headed",
     "test:database": "node scripts/run-vitest.mjs run --config vitest.database.config.mts",
