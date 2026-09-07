@@ -12,10 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
-    // Vendored design-system reference kits and Figma tooling — not shipped
-    // app code, so they shouldn't gate `npm run lint`.
-    "Boba_Bear_Design_System_Updated/**",
-    "Boba Bear Landing Page Wireframe Updated/**",
+    // Historical design archive and Figma tooling — not shipped app code,
+    // so they shouldn't gate `npm run lint`.
+    "archive/design-history/**",
     "figma-sync/**",
     // Generated Vitest coverage report — not shipped app code.
     "coverage/**",

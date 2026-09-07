@@ -621,13 +621,8 @@ applied on Vercel or any Node host but are no-ops on GitHub Pages (static files 
 
 ## Design & iteration resources
 
-Kept in the repo so the design can be re-iterated in Figma or rebuilt with Claude Code:
-
-- `figma-sync/` — script + section screenshots for syncing to Figma.
-- `Boba_Bear_Design_System_Updated/`, `boba-bear-design-system.md`,
-  `Updated_BOBA BEAR_ DESIGN SYSTEM (V1.1).md` — the design-system spec (color, type, components, voice).
-- `Boba Bear Landing Page Wireframe Updated/` — the build guide / wireframes.
-- `Boba_Bear_Images/` (deprecated/archived — do not use as a production source) and the root `*.png` files — design reference screenshots. Production images live in `public/assets/`.
+- `figma-sync/` — active script + section screenshots for syncing to Figma (`npm run figma:sync`).
+- `archive/design-history/` — historical / non-canonical design wireframes, design-system kits, and reference screenshots (Session 2B2). See `archive/design-history/README.md`. Production images live in `public/assets/`.
 - `AGENTS.md` / `CLAUDE.md` — notes for AI-assisted edits.
 
-These are reference/tooling only — they are not imported by the app and do not ship in the build.
+Historical design material is reference-only — it is not CURRENT platform authority (`docs/platform/`), is not imported by the app, and does not ship in the build.
