@@ -39,6 +39,7 @@ async function waitForNginx(origin) {
 
 describe("Nginx directory redirects", { skip: !dockerAvailable() }, () => {
   let fixtureRoot;
+  let bootstrapRoot;
   let containerId;
   let origin;
 
@@ -50,10 +51,21 @@ describe("Nginx directory redirects", { skip: !dockerAvailable() }, () => {
       fs.writeFileSync(path.join(directory, "index.html"), "<!doctype html>");
     }
 
+    // Reproduce production Dockerfile: COPY + chmod 755 into /docker-entrypoint.d/
+    // without changing the tracked mode of the repository bootstrap script.
+    bootstrapRoot = fs.mkdtempSync(path.join(os.tmpdir(), "boba-nginx-bootstrap-"));
+    const resolverBootstrap = path.join(bootstrapRoot, "40-boba-runtime-resolver.sh");
+    fs.copyFileSync(
+      path.join(repositoryRoot, "docker/nginx/40-boba-runtime-resolver.sh"),
+      resolverBootstrap,
+    );
+    fs.chmodSync(resolverBootstrap, 0o755);
+
     containerId = docker([
       "run", "--rm", "-d", "-p", "127.0.0.1::8080",
       "--tmpfs", "/tmp", "--tmpfs", "/var/cache/nginx", "--tmpfs", "/var/run",
       "-v", `${path.join(repositoryRoot, "docker/nginx/nginx.conf")}:/etc/nginx/nginx.conf:ro`,
+      "-v", `${resolverBootstrap}:/docker-entrypoint.d/40-boba-runtime-resolver.sh:ro`,
       "-v", `${fixtureRoot}:/usr/share/nginx/html:ro`,
       nginxImage,
     ]);
@@ -67,6 +79,7 @@ describe("Nginx directory redirects", { skip: !dockerAvailable() }, () => {
   after(() => {
     if (containerId) execFileSync("docker", ["rm", "-f", containerId], { stdio: "ignore" });
     if (fixtureRoot) fs.rmSync(fixtureRoot, { recursive: true, force: true });
+    if (bootstrapRoot) fs.rmSync(bootstrapRoot, { recursive: true, force: true });
   });
 
   for (const route of directoryRoutes) {
