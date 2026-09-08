@@ -25,14 +25,14 @@ function dockerAvailable() {
 
 async function waitForNginx(origin) {
   let lastError;
-  for (let attempt = 0; attempt < 20; attempt += 1) {
+  for (let attempt = 0; attempt < 60; attempt += 1) {
     try {
       const response = await fetch(origin, { redirect: "manual" });
       if (response.ok) return;
     } catch (error) {
       lastError = error;
     }
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 250));
   }
   throw lastError ?? new Error(`Nginx did not become available at ${origin}`);
 }
