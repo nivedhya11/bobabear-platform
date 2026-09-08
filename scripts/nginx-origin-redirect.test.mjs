@@ -73,7 +73,7 @@ describe("Nginx directory redirects", { skip: !dockerAvailable() }, () => {
     const port = binding.match(/:(\d+)\s*$/)?.[1];
     assert.ok(port, `could not determine published Nginx port from ${binding}`);
     origin = `http://127.0.0.1:${port}`;
-    await waitForNginx(origin);
+    await waitForNginx(`${origin}/order/`);
   });
 
   after(() => {
