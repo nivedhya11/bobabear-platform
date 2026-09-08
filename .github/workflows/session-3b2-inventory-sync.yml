@@ -1,0 +1,40 @@
+# Temporary Session 3B2 inventory synchronization helper.
+# This workflow is removed before final validation and is not part of the 3B2 contract.
+name: Session 3B2 Inventory Sync
+
+on:
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    if: github.event.pull_request.number == 129 && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.1"
+      - name: Generate exact final inventory
+        shell: bash
+        run: |
+          git rm --cached -- .github/workflows/session-3b2-inventory-sync.yml
+          node scripts/testing-inventory.mjs --write
+          node scripts/testing-inventory.mjs --check
+          git reset HEAD -- .github/workflows/session-3b2-inventory-sync.yml
+      - name: Commit generated snapshot only
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/platform/testing/test-inventory.json
+          git diff --cached --exit-code && exit 0
+          git commit -m "test: correct final Session 3B2 inventory"
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
