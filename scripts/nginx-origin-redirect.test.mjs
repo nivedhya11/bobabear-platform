@@ -46,6 +46,9 @@ describe("Nginx directory redirects", { skip: !dockerAvailable() }, () => {
 
   before(async () => {
     fixtureRoot = fs.mkdtempSync(path.join(os.tmpdir(), "boba-nginx-origin-"));
+    // mkdtemp creates the root as 0700. The Nginx worker runs as a non-root
+    // user and must be able to traverse the bind-mounted static document root.
+    fs.chmodSync(fixtureRoot, 0o755);
     for (const route of directoryRoutes) {
       const directory = path.join(fixtureRoot, route.slice(1));
       fs.mkdirSync(directory, { recursive: true });
