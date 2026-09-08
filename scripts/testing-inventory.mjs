@@ -427,6 +427,46 @@ export function selectPackageVerificationCommands(scripts) {
   return groups;
 }
 
+/** YAML block-scalar headers used by GitHub Actions `run:` forms. */
+const WORKFLOW_RUN_BLOCK_SCALAR = /^[|>][+-]?$/;
+
+/**
+ * Leading whitespace length (spaces/tabs) for indentation-aware YAML scanning.
+ * @param {string} line
+ */
+function lineIndentLength(line) {
+  const match = line.match(/^[ \t]*/);
+  return match ? match[0].length : 0;
+}
+
+/**
+ * Extract a workflow step `run:` value, including literal/folded block scalars.
+ * Block bodies are collected by indentation deeper than the `run:` key and joined
+ * with `\n` for deterministic inventory storage.
+ * @param {string[]} lines
+ * @param {number} runLineIndex
+ * @returns {string | null}
+ */
+function extractWorkflowRunCommand(lines, runLineIndex) {
+  const runMatch = lines[runLineIndex].match(/^(\s*)run:\s*(.*?)\s*$/);
+  if (!runMatch) return null;
+  const runKeyIndent = runMatch[1].length;
+  const raw = runMatch[2];
+  if (WORKFLOW_RUN_BLOCK_SCALAR.test(raw)) {
+    /** @type {string[]} */
+    const parts = [];
+    for (let k = runLineIndex + 1; k < lines.length; k++) {
+      const line = lines[k];
+      if (/^\s*$/.test(line)) continue;
+      if (lineIndentLength(line) <= runKeyIndent) break;
+      parts.push(line.trim());
+    }
+    return parts.length > 0 ? parts.join("\n") : null;
+  }
+  const inline = raw.trim();
+  return inline.length > 0 ? inline : null;
+}
+
 /**
  * @param {string} root
  * @param {string[]} tracked
@@ -451,26 +491,8 @@ export function inventoryWorkflowValidationSteps(root, tracked) {
       let run = null;
       for (let j = i + 1; j < Math.min(i + 12, lines.length); j++) {
         if (/^\s+-\s+name:\s*/.test(lines[j])) break;
-        const runMatch = lines[j].match(/^\s+run:\s*(.+)\s*$/);
-        if (runMatch) {
-          run = runMatch[1].replace(/^>\-\s*/, "").trim();
-          // Collect folded run blocks starting with >-
-          if (lines[j].includes(">-") || run === "" || run === ">-") {
-            const parts = [];
-            for (let k = j + 1; k < lines.length; k++) {
-              if (/^\s{0,8}-\s+name:/.test(lines[k]) || /^[a-zA-Z]/.test(lines[k])) break;
-              if (/^\s{10,}\S/.test(lines[k]) || /^\s{8}\S/.test(lines[k])) {
-                parts.push(lines[k].trim());
-              } else if (parts.length && /^\s*$/.test(lines[k])) {
-                break;
-              } else if (parts.length === 0 && /^\s*$/.test(lines[k])) {
-                continue;
-              } else if (parts.length) {
-                break;
-              }
-            }
-            run = parts.join(" ").trim() || run;
-          }
+        if (/^\s+run:\s*/.test(lines[j])) {
+          run = extractWorkflowRunCommand(lines, j);
           break;
         }
         const usesMatch = lines[j].match(/^\s+uses:\s*(.+)\s*$/);
@@ -479,7 +501,7 @@ export function inventoryWorkflowValidationSteps(root, tracked) {
           break;
         }
       }
-      if (run && run !== ">-") {
+      if (run) {
         steps.push({ name: stepName[1].trim(), run });
       }
     }
@@ -541,6 +563,17 @@ function matchPackageCommandsForPath(pathRel, scripts, commands) {
 }
 
 /**
+ * True when CI run text invokes exactly `npm run <script>` (not a longer name).
+ * `npm run test` must not match `npm run test:scripts` / `npm run test:coverage`.
+ * @param {string} haystack
+ * @param {string} scriptName
+ */
+function ciInvokesNpmScript(haystack, scriptName) {
+  const escaped = scriptName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(?:^|[\\s;&|])npm run ${escaped}(?!:|[\\w-])`, "m").test(haystack);
+}
+
+/**
  * Derive CI inclusion from workflow run strings.
  * @param {ReturnType<typeof inventoryWorkflowValidationSteps>} workflows
  * @param {string} pathRel
@@ -556,13 +589,22 @@ function inferCiInclusion(workflows, pathRel, packageCommands) {
     if (cmd === "test" || cmd === "test:coverage" || cmd === "test:scripts") continue;
     if (haystack.includes(`npm run ${cmd}`) || haystack.includes(cmd)) return "YES";
   }
-  // Narrow CI script tests referenced directly
-  if (pathRel.startsWith("scripts/") && pathRel.endsWith(".test.mjs") && haystack.includes(pathRel)) {
+  // Session 3B2: broad CI umbrellas. Coverage (`npm run test:coverage`) is not equivalent.
+  if (
+    pathRel.startsWith("src/") &&
+    /\.test\.(ts|tsx)$/.test(pathRel) &&
+    ciInvokesNpmScript(haystack, "test")
+  ) {
     return "YES";
   }
-  // Default unit suite is NOT invoked by current CI (CI runs selected suites only).
+  if (
+    pathRel.startsWith("scripts/") &&
+    pathRel.endsWith(".test.mjs") &&
+    ciInvokesNpmScript(haystack, "test:scripts")
+  ) {
+    return "YES";
+  }
   if (pathRel.startsWith("src/") && /\.test\.(ts|tsx)$/.test(pathRel)) {
-    if (haystack.includes(pathRel)) return "YES";
     return "NO";
   }
   if (isPlaywrightSpecPath(pathRel)) return "NO";

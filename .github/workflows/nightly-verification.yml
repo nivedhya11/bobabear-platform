@@ -1,0 +1,300 @@
+# TEST-1 nightly / on-demand expensive verification (Session 3B2).
+# Verification only — does not deploy, release, tag, or promote environments.
+name: Nightly Verification
+
+on:
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+
+jobs:
+  e2e-customer-ordering:
+    name: E2E customer ordering
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.1"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Ensure rootless Podman socket
+        run: |
+          socket="/run/user/$(id -u)/podman/podman.sock"
+          command -v podman
+          if [ ! -S "$socket" ]; then
+            systemctl --user start podman.socket
+          fi
+          test -S "$socket"
+          podman --version
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Customer ordering E2E
+        run: npm run test:e2e:customer-ordering
+
+      - name: Upload customer-ordering evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-e2e-customer-ordering
+          path: test-results-customer-ordering/**
+          if-no-files-found: ignore
+
+  e2e-customer-auth:
+    name: E2E customer auth
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.1"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Ensure rootless Podman socket
+        run: |
+          socket="/run/user/$(id -u)/podman/podman.sock"
+          command -v podman
+          if [ ! -S "$socket" ]; then
+            systemctl --user start podman.socket
+          fi
+          test -S "$socket"
+          podman --version
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Customer auth E2E
+        run: npm run test:e2e:customer-auth
+
+      - name: Upload customer-auth evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-e2e-customer-auth
+          path: |
+            test-results-customer-auth/**
+            playwright-report-customer-auth/**
+          if-no-files-found: ignore
+
+  e2e-workforce-auth:
+    name: E2E workforce auth
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.1"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Ensure rootless Podman socket
+        run: |
+          socket="/run/user/$(id -u)/podman/podman.sock"
+          command -v podman
+          if [ ! -S "$socket" ]; then
+            systemctl --user start podman.socket
+          fi
+          test -S "$socket"
+          podman --version
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Workforce auth E2E
+        run: npm run test:e2e:workforce-auth
+
+      - name: Upload workforce-auth evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-e2e-workforce-auth
+          path: |
+            test-results-workforce-auth/**
+            playwright-report-workforce-auth/**
+          if-no-files-found: ignore
+
+  e2e-operations-lifecycle:
+    name: E2E operations lifecycle
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.1"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Ensure rootless Podman socket
+        run: |
+          socket="/run/user/$(id -u)/podman/podman.sock"
+          command -v podman
+          if [ ! -S "$socket" ]; then
+            systemctl --user start podman.socket
+          fi
+          test -S "$socket"
+          podman --version
+
+      - name: Ensure podman-compose
+        run: |
+          if ! command -v podman-compose >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y podman-compose
+          fi
+          podman-compose --version
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Operations lifecycle E2E
+        run: npm run test:e2e:operations-lifecycle
+
+      - name: Upload operations-lifecycle evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-e2e-operations-lifecycle
+          path: test-results-operations-lifecycle/**
+          if-no-files-found: ignore
+
+  e2e-location-serviceability:
+    name: E2E location serviceability
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.1"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Ensure rootless Podman socket
+        run: |
+          socket="/run/user/$(id -u)/podman/podman.sock"
+          command -v podman
+          if [ ! -S "$socket" ]; then
+            systemctl --user start podman.socket
+          fi
+          test -S "$socket"
+          podman --version
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Location selector layout E2E
+        run: npm run test:e2e:location-selector-layout
+
+      - name: Upload location-serviceability evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-e2e-location-serviceability
+          path: test-results-location-selector-layout/**
+          if-no-files-found: ignore
+
+  concurrency-matrix:
+    name: Concurrency matrix
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.1"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Ensure rootless Podman socket
+        run: |
+          socket="/run/user/$(id -u)/podman/podman.sock"
+          command -v podman
+          if [ ! -S "$socket" ]; then
+            systemctl --user start podman.socket
+          fi
+          test -S "$socket"
+          podman --version
+
+      - name: Payment concurrency
+        run: npm run test:payment-concurrency
+
+      - name: Checkout concurrency
+        run: npm run test:checkout-concurrency
+
+      - name: Cart concurrency
+        run: npm run test:cart-concurrency
+
+      - name: Order concurrency
+        run: npm run test:order-concurrency
+
+      - name: Serviceability concurrency
+        run: npm run test:serviceability-concurrency
+
+      - name: Customer-address concurrency
+        run: npm run test:customer-address-concurrency
+
+  recovery-matrix:
+    name: Recovery matrix
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.1"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Ensure rootless Podman socket
+        run: |
+          socket="/run/user/$(id -u)/podman/podman.sock"
+          command -v podman
+          if [ ! -S "$socket" ]; then
+            systemctl --user start podman.socket
+          fi
+          test -S "$socket"
+          podman --version
+
+      - name: Payment idempotency
+        run: npm run test:payment-idempotency
+
+      - name: Order crash recovery
+        run: npm run test:order-crash
+
+      - name: Payment reconciliation
+        run: npm run test:payment-reconciliation

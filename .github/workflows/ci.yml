@@ -1,4 +1,4 @@
-# Minimal deterministic validation CI for BOBA Bear Platform.
+# TEST-1 verification CI for BOBA Bear Platform (Session 3B2).
 # Does not deploy, release, or mutate product lifecycle state.
 name: CI
 
@@ -7,14 +7,11 @@ on:
   push:
     branches:
       - main
-      - "imp-**"
 
 jobs:
-  validate:
-    name: Validate
+  quality:
+    name: Quality
     runs-on: ubuntu-latest
-    timeout-minutes: 90
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -22,7 +19,6 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          # Dockerfile / accepted-foundation pin: node:22.23.1-bookworm-slim
           node-version: "22.23.1"
           cache: npm
 
@@ -34,6 +30,82 @@ jobs:
 
       - name: Lint
         run: npm run lint
+
+      - name: Project consistency
+        run: npm run project:consistency
+
+      - name: Governance fingerprint
+        run: npm run governance:fingerprint
+
+      - name: Env hygiene
+        run: npm run env:hygiene
+
+      - name: Testing inventory check
+        run: npm run testing:inventory:check
+
+  unit-component:
+    name: Unit / component
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.1"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Unit / component tests
+        run: npm run test
+
+  scripts:
+    name: Scripts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.1"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Script tests
+        run: npm run test:scripts
+
+  commerce-core:
+    name: Commerce core
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.1"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Ensure rootless Podman socket
+        run: |
+          socket="/run/user/$(id -u)/podman/podman.sock"
+          command -v podman
+          if [ ! -S "$socket" ]; then
+            systemctl --user start podman.socket
+          fi
+          test -S "$socket"
+          podman --version
 
       - name: IMP-028C modifier / bootstrap tests
         run: npm run test:catalog-imp028c-modifiers
@@ -56,25 +128,285 @@ jobs:
           --config vitest.database.config.mts
           tests/database/customer-menu-modifier-projection.integration.test.ts
 
-      - name: Docker tooling command wiring
-        run: node --test scripts/docker-tool-command-wiring.test.mjs
+  security-smoke:
+    name: Security smoke
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Staging runtime provenance
-        run: node --test scripts/environment/staging.test.mjs
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.1"
+          cache: npm
 
-      - name: Project-consistency unit suite
-        run: node --test scripts/project-consistency.test.mjs
+      - name: Install dependencies
+        run: npm ci
 
-      - name: Project consistency
-        run: npm run project:consistency
+      - name: Ensure rootless Podman socket
+        run: |
+          socket="/run/user/$(id -u)/podman/podman.sock"
+          command -v podman
+          if [ ! -S "$socket" ]; then
+            systemctl --user start podman.socket
+          fi
+          test -S "$socket"
+          podman --version
 
-      - name: Governance fingerprint
-        run: npm run governance:fingerprint
+      - name: Access-control tests
+        run: npm run test:access-control
 
-      - name: Build tooling image
-        run: docker build --target tooling -t boba-bear-tooling:ci .
+      - name: Checkout-security tests
+        run: npm run test:checkout-security
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.1"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Production build
         run: npm run build
         env:
           NEXT_PUBLIC_SITE_URL: https://thebobabear.in
+
+  database-foundation:
+    name: Database foundation
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.1"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Ensure rootless Podman socket
+        run: |
+          socket="/run/user/$(id -u)/podman/podman.sock"
+          command -v podman
+          if [ ! -S "$socket" ]; then
+            systemctl --user start podman.socket
+          fi
+          test -S "$socket"
+          podman --version
+
+      - name: Database persistence tests
+        run: npm run test:database:persistence
+
+      - name: Database outbox / idempotency tests
+        run: npm run test:database:outbox-idempotency
+
+      - name: Database auth-foundation tests
+        run: npm run test:database:auth-foundation
+
+  database-commerce:
+    name: Database commerce
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.1"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Ensure rootless Podman socket
+        run: |
+          socket="/run/user/$(id -u)/podman/podman.sock"
+          command -v podman
+          if [ ! -S "$socket" ]; then
+            systemctl --user start podman.socket
+          fi
+          test -S "$socket"
+          podman --version
+
+      - name: Database cart tests
+        run: npm run test:database:cart
+
+      - name: Database checkout tests
+        run: npm run test:database:checkout
+
+      - name: Database payment tests
+        run: npm run test:database:payment
+
+      - name: Database order tests
+        run: npm run test:database:order
+
+      - name: Database serviceability tests
+        run: npm run test:database:serviceability
+
+      - name: Database catalog tests
+        run: npm run test:database:catalog
+
+  security-matrix:
+    name: Security matrix
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.1"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Ensure rootless Podman socket
+        run: |
+          socket="/run/user/$(id -u)/podman/podman.sock"
+          command -v podman
+          if [ ! -S "$socket" ]; then
+            systemctl --user start podman.socket
+          fi
+          test -S "$socket"
+          podman --version
+
+      - name: Access-control tests
+        run: npm run test:access-control
+
+      - name: Database access-control tests
+        run: npm run test:database:access-control
+
+      - name: Payment-security tests
+        run: npm run test:payment-security
+
+      - name: Checkout-security tests
+        run: npm run test:checkout-security
+
+      - name: Serviceability-security tests
+        run: npm run test:serviceability-security
+
+  domain-extended:
+    name: Domain extended
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.1"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Ensure rootless Podman socket
+        run: |
+          socket="/run/user/$(id -u)/podman/podman.sock"
+          command -v podman
+          if [ ! -S "$socket" ]; then
+            systemctl --user start podman.socket
+          fi
+          test -S "$socket"
+          podman --version
+
+      - name: Checkout tests
+        run: npm run test:checkout
+
+      - name: Payment tests
+        run: npm run test:payment
+
+      - name: Order tests
+        run: npm run test:order
+
+      - name: Serviceability tests
+        run: npm run test:serviceability
+
+      - name: Assortment / availability tests
+        run: npm run test:assortment-availability
+
+      - name: Pricing / tax tests
+        run: npm run test:pricing-tax
+
+      - name: Promotions tests
+        run: npm run test:promotions
+
+  http-surfaces:
+    name: HTTP surfaces
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.1"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Ensure rootless Podman socket
+        run: |
+          socket="/run/user/$(id -u)/podman/podman.sock"
+          command -v podman
+          if [ ! -S "$socket" ]; then
+            systemctl --user start podman.socket
+          fi
+          test -S "$socket"
+          podman --version
+
+      - name: Customer-auth HTTP tests
+        run: npm run test:customer-auth:http
+
+      - name: Workforce-auth HTTP tests
+        run: npm run test:workforce-auth:http
+
+      - name: Administration tests
+        run: npm run test:administration
+
+  audits:
+    name: Audits
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.1"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Persistence audit
+        run: npm run audit:persistence
+
+      - name: Customer phone-auth audit
+        run: npm run audit:customer-phone-auth
