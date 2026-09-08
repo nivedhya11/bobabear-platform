@@ -37,7 +37,7 @@ jobs:
       - name: Environment hygiene
         run: npm run env:hygiene
       - name: Generate testing inventory diagnostic
-        run: npm run testing:inventory:write
+        run: node scripts/testing-inventory.mjs --write
       - name: Upload generated testing inventory
         uses: actions/upload-artifact@v4
         with:
