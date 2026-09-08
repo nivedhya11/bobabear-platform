@@ -33,7 +33,7 @@ import {
   type CustomerPiiHashSecret,
 } from "../../src/server/customer-auth/pii";
 import { createLocalCustomerOtpProviderForTests } from "../../src/server/customer-auth/provider/local";
-import { removeOutletServiceabilityPins } from "../../src/server/serviceability";
+import { setOutletServiceabilityDistancePolicy } from "../../src/server/serviceability";
 import {
   applicationConfig,
   trackPersistenceHandle,
@@ -48,6 +48,10 @@ import {
   mutableCartClock,
   withCheckoutReadyHarness,
 } from "../database/support/checkout-fixtures";
+import {
+  TEST_INSIDE_COORDS,
+  TEST_SERVICE_ORIGIN,
+} from "../database/support/serviceability-fixtures";
 
 const CHECKOUT_SECURITY_PII_HASH_SECRET =
   "checkout-security-pii-hash-secret-32chars!" as CustomerPiiHashSecret;
@@ -455,6 +459,7 @@ describe("IMP-021 checkout security S01–S24", () => {
               city: "Dehradun",
               stateCode: "IN-UT",
               postalCode: "248001",
+              coordinates: TEST_INSIDE_COORDS,
             },
           },
           opts,
@@ -915,13 +920,15 @@ describe("IMP-021 checkout security S01–S24", () => {
           cartId,
           addressId,
         );
-        await removeOutletServiceabilityPins(
+        await setOutletServiceabilityDistancePolicy(
           persistence,
           actors.brandAdminActor,
           {
             outletId: actors.tree.outletA.id,
-            postalCodes: ["248001"],
             expectedRevision: BigInt(2),
+            serviceOriginLatitude: TEST_SERVICE_ORIGIN.latitude,
+            serviceOriginLongitude: TEST_SERVICE_ORIGIN.longitude,
+            maxServiceDistanceMeters: 1,
           },
         );
         await expect(

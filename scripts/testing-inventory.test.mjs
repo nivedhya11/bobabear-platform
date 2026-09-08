@@ -136,7 +136,7 @@ test("write and check snapshot round-trip in an isolated temp repo layout", () =
     writeFileSync(path.join(dir, "scripts/tool.test.mjs"), "import { test } from 'node:test'\n");
     writeFileSync(
       path.join(dir, ".github/workflows/ci.yml"),
-      "name: CI\non: [push]\njobs:\n  validate:\n    runs-on: ubuntu-latest\n    steps:\n      - name: Typecheck\n        run: npm run typecheck\n      - name: Lint\n        run: npm run lint\n",
+      "name: CI\non: [push]\njobs:\n  quality:\n    runs-on: ubuntu-latest\n    steps:\n      - name: Typecheck\n        run: npm run typecheck\n      - name: Lint\n        run: npm run lint\n  unit:\n    runs-on: ubuntu-latest\n    steps:\n      - name: Unit suite\n        run: npm run test\n  scripts:\n    runs-on: ubuntu-latest\n    steps:\n      - name: Script suite\n        run: npm run test:scripts\n",
     );
     writeFileSync(path.join(dir, "coverage/lcov.info"), "TN:\n");
     writeFileSync(path.join(dir, "archive/design-history/README.md"), "archive\n");
@@ -165,6 +165,18 @@ test("write and check snapshot round-trip in an isolated temp repo layout", () =
     );
     assert.ok(inventory.ciWorkflows.some((w) => w.path === ".github/workflows/ci.yml"));
     assert.ok(inventory.packageCommands.test.includes("test"));
+    assert.equal(
+      inventory.executableRecords.find((r) => r.path === "src/example.test.ts")?.ciInclusion,
+      "YES",
+    );
+    assert.equal(
+      inventory.executableRecords.find((r) => r.path === "scripts/tool.test.mjs")?.ciInclusion,
+      "YES",
+    );
+    assert.equal(
+      inventory.executableRecords.find((r) => r.path === "tests/e2e/sample.spec.ts")?.ciInclusion,
+      "NO",
+    );
 
     writeInventorySnapshot(dir, inventory);
     const ok = checkInventorySnapshot(dir);

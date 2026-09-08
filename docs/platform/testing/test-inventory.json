@@ -29,7 +29,7 @@
     "note": "Protected evidence and generated reports are never classified as executable test source."
   },
   "counts": {
-    "trackedPathsConsidered": 1766,
+    "trackedPathsConsidered": 1767,
     "executableTestFiles": 346,
     "sourceTestFiles": 127,
     "testsTreeExecutableFiles": 185,
@@ -44,8 +44,8 @@
     "packageCheckCommands": 12,
     "packageCoverageCommands": 1,
     "packageInventoryCommands": 2,
-    "ciWorkflowFiles": 2,
-    "ciValidationSteps": 18,
+    "ciWorkflowFiles": 3,
+    "ciValidationSteps": 83,
     "protectedEvidenceTrackedFiles": 3,
     "archiveTrackedFiles": 92
   },
@@ -756,6 +756,42 @@
           "run": "npm run lint"
         },
         {
+          "name": "Project consistency",
+          "run": "npm run project:consistency"
+        },
+        {
+          "name": "Governance fingerprint",
+          "run": "npm run governance:fingerprint"
+        },
+        {
+          "name": "Environment hygiene",
+          "run": "npm run env:hygiene"
+        },
+        {
+          "name": "Testing inventory",
+          "run": "npm run testing:inventory:check"
+        },
+        {
+          "name": "Install dependencies",
+          "run": "npm ci"
+        },
+        {
+          "name": "Unit and component suite",
+          "run": "npm run test"
+        },
+        {
+          "name": "Install dependencies",
+          "run": "npm ci"
+        },
+        {
+          "name": "Script test suite",
+          "run": "npm run test:scripts"
+        },
+        {
+          "name": "Install dependencies",
+          "run": "npm ci"
+        },
+        {
           "name": "IMP-028C modifier / bootstrap tests",
           "run": "npm run test:catalog-imp028c-modifiers"
         },
@@ -780,32 +816,152 @@
           "run": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/database/customer-menu-modifier-projection.integration.test.ts"
         },
         {
-          "name": "Docker tooling command wiring",
-          "run": "node --test scripts/docker-tool-command-wiring.test.mjs"
+          "name": "Install dependencies",
+          "run": "npm ci"
         },
         {
-          "name": "Staging runtime provenance",
-          "run": "node --test scripts/environment/staging.test.mjs"
+          "name": "Access-control tests",
+          "run": "npm run test:access-control"
         },
         {
-          "name": "Project-consistency unit suite",
-          "run": "node --test scripts/project-consistency.test.mjs"
+          "name": "Checkout security tests",
+          "run": "npm run test:checkout-security"
         },
         {
-          "name": "Project consistency",
-          "run": "npm run project:consistency"
-        },
-        {
-          "name": "Governance fingerprint",
-          "run": "npm run governance:fingerprint"
-        },
-        {
-          "name": "Build tooling image",
-          "run": "docker build --target tooling -t boba-bear-tooling:ci ."
+          "name": "Install dependencies",
+          "run": "npm ci"
         },
         {
           "name": "Production build",
           "run": "npm run build"
+        },
+        {
+          "name": "Install dependencies",
+          "run": "npm ci"
+        },
+        {
+          "name": "Persistence database tests",
+          "run": "npm run test:database:persistence"
+        },
+        {
+          "name": "Outbox / idempotency database tests",
+          "run": "npm run test:database:outbox-idempotency"
+        },
+        {
+          "name": "Auth foundation database tests",
+          "run": "npm run test:database:auth-foundation"
+        },
+        {
+          "name": "Install dependencies",
+          "run": "npm ci"
+        },
+        {
+          "name": "Cart database tests",
+          "run": "npm run test:database:cart"
+        },
+        {
+          "name": "Checkout database tests",
+          "run": "npm run test:database:checkout"
+        },
+        {
+          "name": "Payment database tests",
+          "run": "npm run test:database:payment"
+        },
+        {
+          "name": "Order database tests",
+          "run": "npm run test:database:order"
+        },
+        {
+          "name": "Serviceability database tests",
+          "run": "npm run test:database:serviceability"
+        },
+        {
+          "name": "Catalog database tests",
+          "run": "npm run test:database:catalog"
+        },
+        {
+          "name": "Install dependencies",
+          "run": "npm ci"
+        },
+        {
+          "name": "Access-control tests",
+          "run": "npm run test:access-control"
+        },
+        {
+          "name": "Database access-control tests",
+          "run": "npm run test:database:access-control"
+        },
+        {
+          "name": "Payment security tests",
+          "run": "npm run test:payment-security"
+        },
+        {
+          "name": "Checkout security tests",
+          "run": "npm run test:checkout-security"
+        },
+        {
+          "name": "Serviceability security tests",
+          "run": "npm run test:serviceability-security"
+        },
+        {
+          "name": "Install dependencies",
+          "run": "npm ci"
+        },
+        {
+          "name": "Checkout tests",
+          "run": "npm run test:checkout"
+        },
+        {
+          "name": "Payment tests",
+          "run": "npm run test:payment"
+        },
+        {
+          "name": "Order tests",
+          "run": "npm run test:order"
+        },
+        {
+          "name": "Serviceability tests",
+          "run": "npm run test:serviceability"
+        },
+        {
+          "name": "Assortment availability tests",
+          "run": "npm run test:assortment-availability"
+        },
+        {
+          "name": "Pricing tax tests",
+          "run": "npm run test:pricing-tax"
+        },
+        {
+          "name": "Promotions tests",
+          "run": "npm run test:promotions"
+        },
+        {
+          "name": "Install dependencies",
+          "run": "npm ci"
+        },
+        {
+          "name": "Customer-auth HTTP tests",
+          "run": "npm run test:customer-auth:http"
+        },
+        {
+          "name": "Workforce-auth HTTP tests",
+          "run": "npm run test:workforce-auth:http"
+        },
+        {
+          "name": "Administration tests",
+          "run": "npm run test:administration"
+        },
+        {
+          "name": "Install dependencies",
+          "run": "npm ci"
+        },
+        {
+          "name": "Persistence audit",
+          "run": "npm run audit:persistence"
+        },
+        {
+          "name": "Customer phone auth audit",
+          "run": "npm run audit:customer-phone-auth"
         }
       ]
     },
@@ -820,6 +976,116 @@
         {
           "name": "Build static export",
           "run": "npm run build"
+        }
+      ]
+    },
+    {
+      "path": ".github/workflows/nightly-verification.yml",
+      "name": "Nightly Verification",
+      "validationSteps": [
+        {
+          "name": "Install dependencies",
+          "run": "npm ci"
+        },
+        {
+          "name": "Install Chromium",
+          "run": "npx playwright install --with-deps chromium"
+        },
+        {
+          "name": "Customer ordering E2E",
+          "run": "npm run test:e2e:customer-ordering"
+        },
+        {
+          "name": "Install dependencies",
+          "run": "npm ci"
+        },
+        {
+          "name": "Install Chromium",
+          "run": "npx playwright install --with-deps chromium"
+        },
+        {
+          "name": "Customer auth E2E",
+          "run": "npm run test:e2e:customer-auth"
+        },
+        {
+          "name": "Install dependencies",
+          "run": "npm ci"
+        },
+        {
+          "name": "Install Chromium",
+          "run": "npx playwright install --with-deps chromium"
+        },
+        {
+          "name": "Workforce auth E2E",
+          "run": "npm run test:e2e:workforce-auth"
+        },
+        {
+          "name": "Install dependencies",
+          "run": "npm ci"
+        },
+        {
+          "name": "Install Chromium",
+          "run": "npx playwright install --with-deps chromium"
+        },
+        {
+          "name": "Operations lifecycle E2E",
+          "run": "npm run test:e2e:operations-lifecycle"
+        },
+        {
+          "name": "Install dependencies",
+          "run": "npm ci"
+        },
+        {
+          "name": "Install Chromium",
+          "run": "npx playwright install --with-deps chromium"
+        },
+        {
+          "name": "Location selector layout E2E",
+          "run": "npm run test:e2e:location-selector-layout"
+        },
+        {
+          "name": "Install dependencies",
+          "run": "npm ci"
+        },
+        {
+          "name": "Payment concurrency",
+          "run": "npm run test:payment-concurrency"
+        },
+        {
+          "name": "Checkout concurrency",
+          "run": "npm run test:checkout-concurrency"
+        },
+        {
+          "name": "Cart concurrency",
+          "run": "npm run test:cart-concurrency"
+        },
+        {
+          "name": "Order concurrency",
+          "run": "npm run test:order-concurrency"
+        },
+        {
+          "name": "Serviceability concurrency",
+          "run": "npm run test:serviceability-concurrency"
+        },
+        {
+          "name": "Customer address concurrency",
+          "run": "npm run test:customer-address-concurrency"
+        },
+        {
+          "name": "Install dependencies",
+          "run": "npm ci"
+        },
+        {
+          "name": "Payment idempotency",
+          "run": "npm run test:payment-idempotency"
+        },
+        {
+          "name": "Order crash recovery",
+          "run": "npm run test:order-crash"
+        },
+        {
+          "name": "Payment reconciliation",
+          "run": "npm run test:payment-reconciliation"
         }
       ]
     }
@@ -863,7 +1129,7 @@
       "packageCommands": [
         "test:scripts"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "7-authorization-security"
@@ -881,7 +1147,7 @@
       "packageCommands": [
         "test:scripts"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -898,7 +1164,7 @@
       "packageCommands": [
         "test:scripts"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -915,7 +1181,7 @@
       "packageCommands": [
         "test:scripts"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -932,7 +1198,7 @@
       "packageCommands": [
         "test:scripts"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -949,7 +1215,7 @@
       "packageCommands": [
         "test:scripts"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -966,7 +1232,7 @@
       "packageCommands": [
         "test:scripts"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -983,7 +1249,7 @@
       "packageCommands": [
         "test:scripts"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -1000,7 +1266,7 @@
       "packageCommands": [
         "test:scripts"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "9-recovery-idempotency"
@@ -1018,7 +1284,7 @@
       "packageCommands": [
         "test:scripts"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -1035,7 +1301,7 @@
       "packageCommands": [
         "test:scripts"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -1052,7 +1318,7 @@
       "packageCommands": [
         "test:scripts"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -1069,7 +1335,7 @@
       "packageCommands": [
         "test:scripts"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -1086,7 +1352,7 @@
       "packageCommands": [
         "test:scripts"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -1103,7 +1369,7 @@
       "packageCommands": [
         "test:scripts"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -1137,7 +1403,7 @@
       "packageCommands": [
         "test:scripts"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -1154,7 +1420,7 @@
       "packageCommands": [
         "test:scripts"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -1171,7 +1437,7 @@
       "packageCommands": [
         "test:scripts"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -1188,7 +1454,7 @@
       "packageCommands": [
         "test:scripts"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -1205,7 +1471,7 @@
       "packageCommands": [
         "test:scripts"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -1222,7 +1488,7 @@
       "packageCommands": [
         "test:scripts"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -1239,7 +1505,7 @@
       "packageCommands": [
         "test:scripts"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -1256,7 +1522,7 @@
       "packageCommands": [
         "test:scripts"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -1273,7 +1539,7 @@
       "packageCommands": [
         "test:scripts"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -1307,7 +1573,7 @@
       "packageCommands": [
         "test:scripts"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -1324,7 +1590,7 @@
       "packageCommands": [
         "test:scripts"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -1341,7 +1607,7 @@
       "packageCommands": [
         "test:scripts"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -1375,7 +1641,7 @@
       "packageCommands": [
         "test:scripts"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -1392,7 +1658,7 @@
       "packageCommands": [
         "test:scripts"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -1409,7 +1675,7 @@
       "packageCommands": [
         "test:scripts"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -1426,7 +1692,7 @@
       "packageCommands": [
         "test:scripts"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -1444,7 +1710,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "2-component"
       ],
@@ -1462,7 +1728,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "2-component"
       ],
@@ -1480,7 +1746,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "2-component"
       ],
@@ -1498,7 +1764,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "2-component"
       ],
@@ -1516,7 +1782,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "2-component"
       ],
@@ -1534,7 +1800,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "2-component"
       ],
@@ -1552,7 +1818,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "2-component"
       ],
@@ -1570,7 +1836,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -1588,7 +1854,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "2-component"
       ],
@@ -1606,7 +1872,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "2-component"
       ],
@@ -1624,7 +1890,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "2-component"
       ],
@@ -1642,7 +1908,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -1660,7 +1926,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "2-component"
       ],
@@ -1678,7 +1944,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "2-component"
       ],
@@ -1696,7 +1962,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "2-component"
       ],
@@ -1714,7 +1980,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "2-component"
       ],
@@ -1732,7 +1998,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "2-component"
       ],
@@ -1750,7 +2016,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "2-component"
       ],
@@ -1768,7 +2034,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "2-component"
       ],
@@ -1786,7 +2052,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "2-component"
       ],
@@ -1804,7 +2070,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "2-component"
       ],
@@ -1822,7 +2088,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "2-component"
       ],
@@ -1840,7 +2106,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "2-component"
       ],
@@ -1858,7 +2124,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "2-component"
       ],
@@ -1876,7 +2142,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "2-component"
       ],
@@ -1894,7 +2160,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "2-component"
       ],
@@ -1912,7 +2178,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "2-component"
       ],
@@ -1930,7 +2196,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "9-recovery-idempotency"
@@ -1949,7 +2215,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -1967,7 +2233,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -1985,7 +2251,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -2003,7 +2269,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -2021,7 +2287,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -2039,7 +2305,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -2057,7 +2323,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "9-recovery-idempotency"
@@ -2076,7 +2342,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -2094,7 +2360,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "2-component"
       ],
@@ -2112,7 +2378,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "UNKNOWN"
       ],
@@ -2130,7 +2396,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -2148,7 +2414,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -2166,7 +2432,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -2184,7 +2450,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -2202,7 +2468,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -2220,7 +2486,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -2238,7 +2504,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "6-http-api-contract"
@@ -2257,7 +2523,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "9-recovery-idempotency"
@@ -2276,7 +2542,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -2294,7 +2560,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -2312,7 +2578,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -2330,7 +2596,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -2348,7 +2614,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -2366,7 +2632,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -2384,7 +2650,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -2402,7 +2668,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -2420,7 +2686,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -2438,7 +2704,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -2456,7 +2722,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -2474,7 +2740,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -2492,7 +2758,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -2510,7 +2776,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -2528,7 +2794,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -2546,7 +2812,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -2564,7 +2830,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -2582,7 +2848,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -2600,7 +2866,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -2618,7 +2884,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -2636,7 +2902,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -2654,7 +2920,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -2672,7 +2938,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -2690,7 +2956,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -2708,7 +2974,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -2726,7 +2992,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -2744,7 +3010,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -2762,7 +3028,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -2780,7 +3046,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -2799,7 +3065,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -2818,7 +3084,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case",
@@ -2838,7 +3104,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -2857,7 +3123,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -2876,7 +3142,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -2895,7 +3161,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -2914,7 +3180,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -2933,7 +3199,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -2952,7 +3218,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -2971,7 +3237,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -2990,7 +3256,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -3009,7 +3275,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -3028,7 +3294,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -3066,7 +3332,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -3085,7 +3351,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -3104,7 +3370,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -3123,7 +3389,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -3142,7 +3408,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -3161,7 +3427,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -3180,7 +3446,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -3199,7 +3465,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -3218,7 +3484,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -3237,7 +3503,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case",
@@ -3257,7 +3523,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case",
@@ -3277,7 +3543,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case",
@@ -3297,7 +3563,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case",
@@ -3317,7 +3583,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -3336,7 +3602,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -3355,7 +3621,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -3374,7 +3640,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -3393,7 +3659,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -3412,7 +3678,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -3431,7 +3697,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -3450,7 +3716,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -3469,7 +3735,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -3488,7 +3754,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -3507,7 +3773,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -3526,7 +3792,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -3545,7 +3811,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -3564,7 +3830,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -3583,7 +3849,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -3602,7 +3868,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -3621,7 +3887,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -3640,7 +3906,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -3659,7 +3925,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -3678,7 +3944,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -3697,7 +3963,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -3716,7 +3982,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -3735,7 +4001,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -3754,7 +4020,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -3773,7 +4039,7 @@
         "test",
         "test:coverage"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -3792,7 +4058,7 @@
         "test:access-control",
         "test:access-control:cli"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "7-authorization-security"
       ],
@@ -3810,7 +4076,7 @@
         "test:access-control",
         "test:access-control:cli"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "7-authorization-security"
       ],
@@ -3828,7 +4094,7 @@
         "test:access-control",
         "test:access-control:cli"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "7-authorization-security"
       ],
@@ -3846,7 +4112,7 @@
         "test:access-control",
         "test:access-control:cli"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "7-authorization-security"
       ],
@@ -3864,7 +4130,7 @@
         "test:access-control",
         "test:access-control:cli"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "7-authorization-security"
       ],
@@ -3882,7 +4148,7 @@
         "test:access-control",
         "test:access-control:cli"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "7-authorization-security"
       ],
@@ -3900,7 +4166,7 @@
         "test:administration",
         "test:database:administration"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "2-component"
       ],
@@ -3918,7 +4184,7 @@
         "test:administration",
         "test:database:administration"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration",
@@ -3938,7 +4204,7 @@
         "test:administration",
         "test:database:administration"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -3956,7 +4222,7 @@
         "test:administration",
         "test:database:administration"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "6-http-api-contract"
@@ -3975,7 +4241,7 @@
         "test:administration",
         "test:database:administration"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "2-component"
       ],
@@ -3993,7 +4259,7 @@
         "test:administration",
         "test:database:administration"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -4011,7 +4277,7 @@
       "packageCommands": [
         "test:assortment-availability"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -4028,7 +4294,7 @@
       "packageCommands": [
         "test:assortment-availability"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -4045,7 +4311,7 @@
       "packageCommands": [
         "test:assortment-availability"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -4062,7 +4328,7 @@
       "packageCommands": [
         "test:assortment-availability"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -4079,7 +4345,7 @@
       "packageCommands": [
         "test:assortment-availability"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -4409,7 +4675,7 @@
       "packageCommands": [
         "test:checkout-security"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "7-authorization-security"
       ],
@@ -4429,7 +4695,7 @@
         "test:checkout-concurrency",
         "test:checkout-security"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -4516,7 +4782,7 @@
       "packageCommands": [
         "test:customer-auth:http"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration",
@@ -4663,7 +4929,7 @@
         "test:database:serviceability",
         "test:database:workforce-auth"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration",
@@ -4701,7 +4967,7 @@
         "test:database:serviceability",
         "test:database:workforce-auth"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -4738,7 +5004,7 @@
         "test:database:serviceability",
         "test:database:workforce-auth"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -4775,7 +5041,7 @@
         "test:database:serviceability",
         "test:database:workforce-auth"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -4812,7 +5078,7 @@
         "test:database:serviceability",
         "test:database:workforce-auth"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -4849,7 +5115,7 @@
         "test:database:serviceability",
         "test:database:workforce-auth"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -4886,7 +5152,7 @@
         "test:database:serviceability",
         "test:database:workforce-auth"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -4923,7 +5189,7 @@
         "test:database:serviceability",
         "test:database:workforce-auth"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -4960,7 +5226,7 @@
         "test:database:serviceability",
         "test:database:workforce-auth"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -5034,7 +5300,7 @@
         "test:database:serviceability",
         "test:database:workforce-auth"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -5071,7 +5337,7 @@
         "test:database:serviceability",
         "test:database:workforce-auth"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -5108,7 +5374,7 @@
         "test:database:serviceability",
         "test:database:workforce-auth"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -5145,7 +5411,7 @@
         "test:database:serviceability",
         "test:database:workforce-auth"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -5182,7 +5448,7 @@
         "test:database:serviceability",
         "test:database:workforce-auth"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -5219,7 +5485,7 @@
         "test:database:serviceability",
         "test:database:workforce-auth"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -5256,7 +5522,7 @@
         "test:database:serviceability",
         "test:database:workforce-auth"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -5293,7 +5559,7 @@
         "test:database:serviceability",
         "test:database:workforce-auth"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -5330,7 +5596,7 @@
         "test:database:serviceability",
         "test:database:workforce-auth"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -5367,7 +5633,7 @@
         "test:database:serviceability",
         "test:database:workforce-auth"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -5404,7 +5670,7 @@
         "test:database:serviceability",
         "test:database:workforce-auth"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -5441,7 +5707,7 @@
         "test:database:serviceability",
         "test:database:workforce-auth"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -5478,7 +5744,7 @@
         "test:database:serviceability",
         "test:database:workforce-auth"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration",
@@ -5516,7 +5782,7 @@
         "test:database:serviceability",
         "test:database:workforce-auth"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -5553,7 +5819,7 @@
         "test:database:serviceability",
         "test:database:workforce-auth"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -5590,7 +5856,7 @@
         "test:database:serviceability",
         "test:database:workforce-auth"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -5627,7 +5893,7 @@
         "test:database:serviceability",
         "test:database:workforce-auth"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -5664,7 +5930,7 @@
         "test:database:serviceability",
         "test:database:workforce-auth"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -5701,7 +5967,7 @@
         "test:database:serviceability",
         "test:database:workforce-auth"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -5738,7 +6004,7 @@
         "test:database:serviceability",
         "test:database:workforce-auth"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration",
@@ -5776,7 +6042,7 @@
         "test:database:serviceability",
         "test:database:workforce-auth"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -5813,7 +6079,7 @@
         "test:database:serviceability",
         "test:database:workforce-auth"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -5850,7 +6116,7 @@
         "test:database:serviceability",
         "test:database:workforce-auth"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -5887,7 +6153,7 @@
         "test:database:serviceability",
         "test:database:workforce-auth"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -5924,7 +6190,7 @@
         "test:database:serviceability",
         "test:database:workforce-auth"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -5961,7 +6227,7 @@
         "test:database:serviceability",
         "test:database:workforce-auth"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -5998,7 +6264,7 @@
         "test:database:serviceability",
         "test:database:workforce-auth"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -6035,7 +6301,7 @@
         "test:database:serviceability",
         "test:database:workforce-auth"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -6072,7 +6338,7 @@
         "test:database:serviceability",
         "test:database:workforce-auth"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -6109,7 +6375,7 @@
         "test:database:serviceability",
         "test:database:workforce-auth"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -6146,7 +6412,7 @@
         "test:database:serviceability",
         "test:database:workforce-auth"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -6183,7 +6449,7 @@
         "test:database:serviceability",
         "test:database:workforce-auth"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -6220,7 +6486,7 @@
         "test:database:serviceability",
         "test:database:workforce-auth"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -6257,7 +6523,7 @@
         "test:database:serviceability",
         "test:database:workforce-auth"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -6294,7 +6560,7 @@
         "test:database:serviceability",
         "test:database:workforce-auth"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -7072,7 +7338,7 @@
         "test:order-security",
         "test:ordering-catalog"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -7095,7 +7361,7 @@
         "test:order-security",
         "test:ordering-catalog"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -7117,7 +7383,7 @@
         "test:order-security",
         "test:ordering-catalog"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -7323,7 +7589,7 @@
       "packageCommands": [
         "test:payment-security"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "7-authorization-security"
       ],
@@ -7348,7 +7614,7 @@
         "test:payment-reconciliation",
         "test:payment-security"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -7400,7 +7666,7 @@
       "packageCommands": [
         "test:pricing-tax"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -7417,7 +7683,7 @@
       "packageCommands": [
         "test:pricing-tax"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -7434,7 +7700,7 @@
       "packageCommands": [
         "test:pricing-tax"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -7485,7 +7751,7 @@
       "packageCommands": [
         "test:promotions"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -7502,7 +7768,7 @@
       "packageCommands": [
         "test:promotions"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -7519,7 +7785,7 @@
       "packageCommands": [
         "test:promotions"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -7536,7 +7802,7 @@
       "packageCommands": [
         "test:promotions"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -7553,7 +7819,7 @@
       "packageCommands": [
         "test:promotions"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "UNKNOWN"
       ],
@@ -7665,7 +7931,7 @@
       "packageCommands": [
         "test:serviceability-security"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "7-authorization-security"
       ],
@@ -7685,7 +7951,7 @@
         "test:serviceability-concurrency",
         "test:serviceability-security"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
@@ -7703,7 +7969,7 @@
       "packageCommands": [
         "test:workforce-auth:http"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration",
@@ -7722,7 +7988,7 @@
       "packageCommands": [
         "test:workforce-auth:http"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
