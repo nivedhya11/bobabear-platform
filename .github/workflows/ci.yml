@@ -36,6 +36,16 @@ jobs:
         run: npm run governance:fingerprint
       - name: Environment hygiene
         run: npm run env:hygiene
+      - name: Generate testing inventory diagnostic
+        run: npm run testing:inventory:write
+      - name: Upload generated testing inventory
+        uses: actions/upload-artifact@v4
+        with:
+          name: session-3b2-testing-inventory
+          path: docs/platform/testing/test-inventory.json
+          retention-days: 1
+      - name: Restore tracked testing inventory
+        run: git checkout -- docs/platform/testing/test-inventory.json
       - name: Testing inventory
         run: npm run testing:inventory:check
 
