@@ -14,6 +14,35 @@ function docker(args) {
   return execFileSync("docker", args, { encoding: "utf8" }).trim();
 }
 
+function dockerDiagnostic(args) {
+  try {
+    return execFileSync("docker", args, {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+    }).trim();
+  } catch (error) {
+    const stdout =
+      typeof error.stdout === "string" ? error.stdout.trim() : "";
+    const stderr =
+      typeof error.stderr === "string" ? error.stderr.trim() : "";
+
+    return [stdout, stderr].filter(Boolean).join("\n");
+  }
+}
+
+function inspectContainerState(containerId) {
+  return dockerDiagnostic([
+    "inspect",
+    "--format",
+    "status={{.State.Status}} running={{.State.Running}} exitCode={{.State.ExitCode}} oomKilled={{.State.OOMKilled}} error={{json .State.Error}}",
+    containerId,
+  ]);
+}
+
+function readContainerLogs(containerId) {
+  return dockerDiagnostic(["logs", containerId]);
+}
+
 function dockerAvailable() {
   try {
     docker(["info"]);
@@ -23,18 +52,66 @@ function dockerAvailable() {
   }
 }
 
-async function waitForNginx(origin) {
+async function waitForNginx(origin, containerId) {
   let lastError;
+
   for (let attempt = 0; attempt < 60; attempt += 1) {
     try {
       const response = await fetch(origin, { redirect: "manual" });
       if (response.ok) return;
+
+      lastError = new Error(
+        `Nginx readiness returned HTTP ${response.status}`,
+      );
     } catch (error) {
       lastError = error;
     }
+
+    const running = dockerDiagnostic([
+      "inspect",
+      "--format",
+      "{{.State.Running}}",
+      containerId,
+    ]);
+
+    if (running === "false") {
+      const state = inspectContainerState(containerId);
+      const logs = readContainerLogs(containerId);
+
+      throw new Error(
+        [
+          "Nginx container exited before readiness.",
+          `state: ${state || "<unavailable>"}`,
+          "container logs:",
+          logs || "<empty>",
+          `last readiness error: ${
+            lastError instanceof Error
+              ? lastError.message
+              : String(lastError)
+          }`,
+        ].join("\n"),
+      );
+    }
+
     await new Promise((resolve) => setTimeout(resolve, 250));
   }
-  throw lastError ?? new Error(`Nginx did not become available at ${origin}`);
+
+  const state = inspectContainerState(containerId);
+  const logs = readContainerLogs(containerId);
+
+  throw new Error(
+    [
+      `Nginx did not become ready at ${origin}.`,
+      `state: ${state || "<unavailable>"}`,
+      "container logs:",
+      logs || "<empty>",
+      `last readiness error: ${
+        lastError instanceof Error
+          ? lastError.message
+          : String(lastError)
+      }`,
+    ].join("\n"),
+  );
 }
 
 describe("Nginx directory redirects", { skip: !dockerAvailable() }, () => {
@@ -73,11 +150,19 @@ describe("Nginx directory redirects", { skip: !dockerAvailable() }, () => {
     const port = binding.match(/:(\d+)\s*$/)?.[1];
     assert.ok(port, `could not determine published Nginx port from ${binding}`);
     origin = `http://127.0.0.1:${port}`;
-    await waitForNginx(`${origin}/order/`);
+    await waitForNginx(`${origin}/order/`, containerId);
   });
 
   after(() => {
-    if (containerId) execFileSync("docker", ["rm", "-f", containerId], { stdio: "ignore" });
+    if (containerId) {
+      try {
+        execFileSync("docker", ["rm", "-f", containerId], {
+          stdio: "ignore",
+        });
+      } catch {
+        // Container may already have been removed by --rm.
+      }
+    }
     if (fixtureRoot) fs.rmSync(fixtureRoot, { recursive: true, force: true });
     if (bootstrapRoot) fs.rmSync(bootstrapRoot, { recursive: true, force: true });
   });
