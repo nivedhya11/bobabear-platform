@@ -122,10 +122,26 @@ describe("Nginx directory redirects", { skip: !dockerAvailable() }, () => {
 
   before(async () => {
     fixtureRoot = fs.mkdtempSync(path.join(os.tmpdir(), "boba-nginx-origin-"));
+
+    // Production makes /usr/share/nginx/html recursively readable and
+    // directory-traversable before switching to the non-root nginx user.
+    // Reproduce that permission boundary for this bind-mounted fixture.
+    fs.chmodSync(fixtureRoot, 0o755);
+
     for (const route of directoryRoutes) {
       const directory = path.join(fixtureRoot, route.slice(1));
-      fs.mkdirSync(directory, { recursive: true });
-      fs.writeFileSync(path.join(directory, "index.html"), "<!doctype html>");
+
+      fs.mkdirSync(directory, {
+        recursive: true,
+        mode: 0o755,
+      });
+      fs.chmodSync(directory, 0o755);
+
+      const indexPath = path.join(directory, "index.html");
+      fs.writeFileSync(indexPath, "<!doctype html>", {
+        mode: 0o644,
+      });
+      fs.chmodSync(indexPath, 0o644);
     }
 
     // Reproduce production Dockerfile: COPY + chmod 755 into /docker-entrypoint.d/
