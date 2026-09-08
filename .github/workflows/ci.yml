@@ -327,22 +327,16 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+          import re
           path = Path('.github/workflows/ci.yml')
           text = path.read_text()
-          diagnostic = '''      - name: Generate testing inventory diagnostic
-                run: node scripts/testing-inventory.mjs --write
-              - name: Upload generated testing inventory
-                uses: actions/upload-artifact@v4
-                with:
-                  name: session-3b2-testing-inventory
-                  path: docs/platform/testing/test-inventory.json
-                  retention-days: 1
-              - name: Restore tracked testing inventory
-                run: git checkout -- docs/platform/testing/test-inventory.json
-          '''
-          if diagnostic not in text:
-              raise SystemExit('expected inventory diagnostic block not found')
-          text = text.replace(diagnostic, '')
+          pattern = re.compile(
+              r'      - name: Generate testing inventory diagnostic\n.*?(?=      - name: Testing inventory\n)',
+              re.S,
+          )
+          text, replacements = pattern.subn('', text, count=1)
+          if replacements != 1:
+              raise SystemExit(f'expected one inventory diagnostic block, removed {replacements}')
           marker = '  # TEMP_SESSION_3B2_INVENTORY_SYNC_BEGIN\n'
           if marker not in text:
               raise SystemExit('expected temporary inventory-sync marker not found')
