@@ -6,8 +6,8 @@
  *   <BobaCup className="text-firefly-400" size={20} />
  *   <ArrowUpRight title="Access the drop" strokeWidth={2} />
  *
- * Every icon inherits `currentColor`, so set colour with a text-* token and
- * it tracks dark / light mode automatically. `iconRegistry` groups every glyph
+ * Every icon inherits `currentColor`, so set colour with a text-* token on the
+ * dark-only theme. `iconRegistry` groups every glyph
  * by category for the /dev/icons gallery and for any name → component lookups.
  */
 

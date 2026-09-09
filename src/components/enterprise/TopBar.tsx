@@ -31,14 +31,14 @@ export function TopBar({
   secondaryAction?: React.ReactNode;
 }>) {
   return (
-    <header className="sticky top-0 z-40 border-b border-[var(--enterprise-border,#d8ddd0)] bg-[var(--enterprise-bg-panel,#ffffff)]">
+    <header className="sticky top-0 z-40 border-b border-[var(--enterprise-border,#3D6026)] bg-[var(--enterprise-bg-panel,#22361A)]">
       <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4 sm:px-6">
         {showMenuButton ? (
           <button
             ref={menuButtonRef}
             type="button"
             className={cn(
-              "inline-flex h-10 w-10 items-center justify-center rounded-md border border-[var(--enterprise-border,#d8ddd0)] lg:hidden",
+              "inline-flex h-10 w-10 items-center justify-center rounded-md border border-[var(--enterprise-border,#3D6026)] lg:hidden",
               enterpriseFocusRingClass,
             )}
             aria-label={navigationExpanded ? "Close navigation" : "Open navigation"}
@@ -52,17 +52,17 @@ export function TopBar({
           </button>
         ) : null}
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-[var(--enterprise-text-primary,#1a2210)]">
+          <p className="truncate text-sm font-semibold text-[var(--enterprise-text-primary,#FAF3E2)]">
             {productLabel}
           </p>
           {contextLabel ? (
-            <p className="truncate text-xs text-[var(--enterprise-text-secondary,#4b5542)]">{contextLabel}</p>
+            <p className="truncate text-xs text-[var(--enterprise-text-secondary,#EBD9A6)]">{contextLabel}</p>
           ) : null}
         </div>
         {secondaryAction}
         {signedInLabel ? (
           <p
-            className="hidden max-w-[12rem] truncate text-xs text-[var(--enterprise-text-secondary,#4b5542)] sm:block"
+            className="hidden max-w-[12rem] truncate text-xs text-[var(--enterprise-text-secondary,#EBD9A6)] sm:block"
             data-testid="enterprise-signed-in-label"
             title={signedInLabel}
           >

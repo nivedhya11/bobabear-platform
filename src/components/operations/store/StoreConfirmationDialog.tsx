@@ -73,29 +73,29 @@ export function StoreConfirmationDialog(props: StoreConfirmationDialogProps) {
   }, []);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
       <div
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={descriptionId}
-        className="flex w-full max-w-md flex-col gap-4 border border-[var(--border-strong)] bg-[var(--bg-page)] p-6"
+        className="flex w-full max-w-md flex-col gap-4 rounded-lg border border-[var(--enterprise-border,#3D6026)] bg-[var(--enterprise-bg-panel,#22361A)] p-6 shadow-xl"
         data-testid="store-confirmation-dialog"
       >
-        <h2 id={titleId} className="text-xl font-semibold text-[var(--text-primary)]">
+        <h2 id={titleId} className="text-xl font-semibold text-[var(--enterprise-text-primary,#FAF3E2)]">
           {props.title}
         </h2>
-        <p id={descriptionId} className="text-sm text-[var(--text-secondary)]">
+        <p id={descriptionId} className="text-sm leading-relaxed text-[var(--enterprise-text-secondary,#EBD9A6)]">
           {props.description}
         </p>
         {props.error ? (
-          <p role="alert" className="text-sm text-[var(--text-primary)]">
+          <p role="alert" className="rounded-md border border-rose-500/50 bg-rose-950/45 px-3 py-2 text-sm text-rose-100">
             {props.error}
           </p>
         ) : null}
         {props.pending ? (
-          <p aria-live="polite" className="text-sm text-[var(--text-secondary)]">
+          <p aria-live="polite" className="text-sm text-[var(--enterprise-muted,#C4D4A8)]">
             Updating…
           </p>
         ) : null}

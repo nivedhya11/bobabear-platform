@@ -233,13 +233,19 @@ Mobile:
 
 ## 10. Theme
 
-For RC1 ordering:
+For RC1 ordering (historical implementation lock):
 
 - **Boba Cream/light mode is the preferred default visual target.**
 - Dark theme may remain supported if current architecture already provides it.
 - Do not remove theme capability merely to implement RC1.
 - Ordering should prioritize food/product legibility and scanability.
 
+**Runtime theme policy amendment (IMP-036E UAT-readiness):** Founder-approved current product
+behaviour is **dark-only** (`THEME_COUNT = 1`, no light/system switching, no user toggle). See
+[`enterprise-experience/IMP-036E-store-operations-management.md`](./enterprise-experience/IMP-036E-store-operations-management.md)
+§ “Founder-approved UAT-readiness visual direction”. That presentation policy supersedes the RC1
+light-default preference for **current runtime theme support** without changing RC1 layout,
+commerce, or accessibility contracts.
 ## 11. Customer-copy rules
 
 Do not show:

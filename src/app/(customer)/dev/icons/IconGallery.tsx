@@ -4,14 +4,12 @@
  * IconGallery — interactive showcase for the Boba Bear icon library.
  *
  * Controls: live search, size, stroke weight, and accent colour. Every icon
- * is rendered through the same token stack as the rest of the site, so the
- * gallery doubles as a contrast check across dark / light mode. Click a tile
- * to copy its import name.
+ * is rendered through the same dark-only token stack as the rest of the site.
+ * Click a tile to copy its import name.
  */
 
 import { useMemo, useState } from "react";
 import { iconRegistry, type IconComponent } from "@/components/icons";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { cn } from "@/lib/utils";
 
 // ── Control option sets ─────────────────────────────────────────────────────
@@ -138,18 +136,15 @@ export function IconGallery() {
 
         {/* ── Header ──────────────────────────────────────────────────── */}
         <header className="flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <p className="font-body font-semibold text-label-md text-label uppercase tracking-[0.08em]">
-              Internal · Not Indexed
-            </p>
-            <ThemeToggle />
-          </div>
+          <p className="font-body font-semibold text-label-md text-label uppercase tracking-[0.08em]">
+            Internal · Not Indexed
+          </p>
           <h1 className="font-display text-h1 text-primary">Icon Library</h1>
           <p className="font-body text-body-lg text-secondary max-w-2xl">
             {TOTAL} icons across {iconRegistry.length} categories — monoline,{" "}
             <code className="font-mono text-code-sm text-tertiary">currentColor</code>,
-            built on the 24px grid. Each inherits the active text token, so it
-            tracks dark / light mode. Click any tile to copy its import name.
+            built on the 24px grid. Each inherits the active text token on the
+            dark-only theme. Click any tile to copy its import name.
           </p>
         </header>
 

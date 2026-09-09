@@ -1,10 +1,16 @@
-/** Shared Tailwind class bundles for enterprise surfaces (IMP-036A). */
+/** Shared Tailwind class bundles for enterprise surfaces (IMP-036A / IMP-036E).
+ *  Fallbacks match the dark-only Night Forest enterprise tokens in globals.css.
+ */
 
 export const enterpriseSurfaceClass =
-  "min-h-full bg-[var(--enterprise-bg-page,#f4f5f2)] text-[var(--enterprise-text-primary,#1a2210)]";
+  "min-h-full bg-[var(--enterprise-bg-page,#1A2210)] text-[var(--enterprise-text-primary,#FAF3E2)]";
 
 export const enterprisePanelClass =
-  "rounded-lg border border-[var(--enterprise-border,#d8ddd0)] bg-[var(--enterprise-bg-panel,#ffffff)] shadow-sm";
+  "rounded-lg border border-[var(--enterprise-border,#3D6026)] bg-[var(--enterprise-bg-panel,#22361A)] shadow-sm";
 
 export const enterpriseFocusRingClass =
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--enterprise-focus,#4a6741)] focus-visible:ring-offset-2";
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--enterprise-focus,#A8D832)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--enterprise-bg-page,#1A2210)]";
+
+/** Shared control chrome for Store Operations forms/selects on dark surfaces. */
+export const enterpriseFieldClass =
+  "min-h-11 rounded-md border border-[var(--enterprise-border,#3D6026)] bg-[var(--bg-surface,#2E4720)] px-3 text-sm text-[var(--enterprise-text-primary,#FAF3E2)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--enterprise-focus,#A8D832)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--enterprise-bg-page,#1A2210)] disabled:cursor-not-allowed disabled:opacity-60";

@@ -2,7 +2,7 @@
  * /dev/icons — Boba Bear Icon Library gallery (internal only).
  *
  * Renders every icon in the library on the live token stack, with controls
- * for size, stroke weight, accent colour, and light/dark mode. Click a tile
+ * for size, stroke weight, and accent colour. Click a tile
  * to copy its import name. Not indexed.
  */
 

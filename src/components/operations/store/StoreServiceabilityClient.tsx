@@ -186,7 +186,7 @@ export function StoreServiceabilityClient() {
             value={latitude}
             disabled={!canManage || pending}
             onChange={(event) => setLatitude(event.target.value)}
-            className="min-h-11 rounded-sm border border-[var(--border-strong)] bg-transparent px-3 outline-none focus:shadow-[0_0_0_3px_var(--focus-ring)]"
+            className="min-h-11 rounded-md border border-[var(--enterprise-border,#3D6026)] bg-[var(--bg-surface,#2E4720)] px-3 text-sm text-[var(--enterprise-text-primary,#FAF3E2)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--enterprise-focus,#A8D832)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--enterprise-bg-page,#1A2210)]"
           />
         </label>
         <label className="flex flex-col gap-1 text-sm">
@@ -196,7 +196,7 @@ export function StoreServiceabilityClient() {
             value={longitude}
             disabled={!canManage || pending}
             onChange={(event) => setLongitude(event.target.value)}
-            className="min-h-11 rounded-sm border border-[var(--border-strong)] bg-transparent px-3 outline-none focus:shadow-[0_0_0_3px_var(--focus-ring)]"
+            className="min-h-11 rounded-md border border-[var(--enterprise-border,#3D6026)] bg-[var(--bg-surface,#2E4720)] px-3 text-sm text-[var(--enterprise-text-primary,#FAF3E2)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--enterprise-focus,#A8D832)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--enterprise-bg-page,#1A2210)]"
           />
         </label>
         <label className="flex flex-col gap-1 text-sm sm:col-span-2">
@@ -206,7 +206,7 @@ export function StoreServiceabilityClient() {
             value={maxDistance}
             disabled={!canManage || pending}
             onChange={(event) => setMaxDistance(event.target.value)}
-            className="min-h-11 rounded-sm border border-[var(--border-strong)] bg-transparent px-3 outline-none focus:shadow-[0_0_0_3px_var(--focus-ring)]"
+            className="min-h-11 rounded-md border border-[var(--enterprise-border,#3D6026)] bg-[var(--bg-surface,#2E4720)] px-3 text-sm text-[var(--enterprise-text-primary,#FAF3E2)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--enterprise-focus,#A8D832)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--enterprise-bg-page,#1A2210)]"
           />
         </label>
       </div>

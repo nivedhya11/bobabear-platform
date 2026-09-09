@@ -1,7 +1,9 @@
 @import "tailwindcss";
 
 /* ─── Static design tokens ──────────────────────────────────────────────────
-   All values that don't change between light/dark live here.
+   Brand color scales and non-semantic foundations. Runtime presentation is
+   dark-only (Night Forest); cream/light scale values remain as brand palette
+   assets, not as a second theme mode.
    Tailwind v4 generates utilities directly from @theme variables.
    ──────────────────────────────────────────────────────────────────────── */
 @theme {
@@ -41,7 +43,7 @@
   --color-bear-800: #42281A;
   --color-bear-950: #1F120C;
 
-  /* Boba Cream — light-mode page bg, packaging fill */
+  /* Boba Cream — packaging fill, light text/on-dark accents (not a light theme) */
   --color-cream-50:  #FEFCF7;
   --color-cream-100: #FDF8EB;
   --color-cream-200: #FAF3E2;
@@ -53,7 +55,7 @@
   --color-cream-800: #6B5C34;
   --color-cream-950: #342D1A;
 
-  /* Night Forest — dark-mode page bg */
+  /* Night Forest — page / enterprise surfaces */
   --color-forest-50:  #EEF2EA;
   --color-forest-100: #D4DFC5;
   --color-forest-200: #A8BF8F;
@@ -141,7 +143,7 @@
   --shadow-xl:          0 16px 40px rgba(26, 34, 16, 0.24);
   --shadow-glow-firefly: 0 4px 20px rgba(168, 216, 50, 0.40);
   --shadow-glow-saffron: 0 4px 20px rgba(245, 166, 35, 0.35);
-  /* --shadow-focus-ring is semantic (changes per mode) — defined in :root/.light */
+  /* --shadow-focus-ring is semantic — defined with :root tokens below */
 
   /* ── Motion — durations ───────────────────────────────────────────────── */
   --duration-instant: 0ms;
@@ -158,11 +160,14 @@
   --ease-spring-gentle: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* ─── Semantic tokens — dark mode (default, no class needed) ────────────────
-   Naming follows the design system §3 exactly.
-   Exposed to Tailwind via @theme inline below.
+/* ─── Semantic tokens — dark-only (canonical runtime theme) ─────────────────
+   Naming follows the design system §3. Night Forest / Firefly / Saffron /
+   Boba Cream. No .light overrides; light/system theme switching is not
+   supported. Exposed to Tailwind via @theme inline below.
    ──────────────────────────────────────────────────────────────────────── */
 :root {
+  color-scheme: dark;
+
   /* Backgrounds */
   --bg-page:           #1A2210;
   --bg-section:        #22361A;
@@ -170,19 +175,19 @@
   --bg-surface-raised: #3D6026;
   --bg-surface-sunken: #0D1208;
 
-  /* Text */
+  /* Text — refined for WCAG 2.2 AA hierarchy on Night Forest */
   --text-primary:      #FAF3E2;
   --text-secondary:    #EBD9A6;
-  --text-tertiary:     #A8BF8F;
-  --text-disabled:     #558036;
+  --text-tertiary:     #C4D4A8;
+  --text-disabled:     #7C9F5F;
   --text-label:        #A8D832;
   --text-on-primary:   #1A2210;
   --text-on-secondary: #1A2210;
 
   /* Borders */
-  --border-default: #2E4720;
-  --border-strong:  #558036;
-  --border-subtle:  #22361A;
+  --border-default: #3D6026;
+  --border-strong:  #7C9F5F;
+  --border-subtle:  #2E4720;
   --border-focus:   #A8D832;
 
   /* Interactive */
@@ -191,51 +196,17 @@
   --interactive-primary-pressed:  #8FBD28;
   --interactive-secondary:        #F5A623;
   --interactive-secondary-hover:  #F8BC58;
-  --interactive-ghost-hover:      #2E472033;
-  --interactive-destructive:      #E11D48;
+  --interactive-ghost-hover:      #2E472066;
+  --interactive-destructive:      #FB7185;
 
   /* Focus ring */
-  --focus-ring:        rgba(168, 216, 50, 0.35);
-  --shadow-focus-ring: 0 0 0 3px var(--focus-ring);
-}
-
-/* ─── Semantic tokens — light mode (.light class on <html>) ─────────────── */
-.light {
-  --bg-page:           #FAF3E2;
-  --bg-section:        #FDF8EB;
-  --bg-surface:        #FEFCF7;
-  --bg-surface-raised: #FFFFFF;
-  --bg-surface-sunken: #F4E8C8;
-
-  --text-primary:      #42281A;
-  --text-secondary:    #5F3A24;
-  --text-tertiary:     #8B5C38;
-  --text-disabled:     #C39866;
-  --text-label:        #7B4A2D;
-  --text-on-primary:   #1A2210;
-  --text-on-secondary: #42281A;
-
-  --border-default: #EBD9A6;
-  --border-strong:  #C39866;
-  --border-subtle:  #F4E8C8;
-  --border-focus:   #759E20;
-
-  --interactive-primary:         #8FBD28;
-  --interactive-primary-hover:   #759E20;
-  --interactive-primary-pressed: #5A7C18;
-  --interactive-secondary:       #D88C1A;
-  --interactive-secondary-hover: #B37010;
-  --interactive-ghost-hover:     #EBD9A633;
-  --interactive-destructive:     #E11D48;
-
-  --focus-ring:        rgba(117, 158, 32, 0.25);
+  --focus-ring:        rgba(168, 216, 50, 0.45);
   --shadow-focus-ring: 0 0 0 3px var(--focus-ring);
 }
 
 /* ─── Semantic token → Tailwind color utilities ─────────────────────────────
    @theme inline keeps these as CSS var() references so they resolve at
-   runtime (needed for theme switching). Tailwind v4 handles opacity
-   modifiers automatically via color-mix.
+   runtime. Tailwind v4 handles opacity modifiers via color-mix.
 
    Naming convention so class names read naturally:
      bg-page          → background token
@@ -307,16 +278,22 @@ html {
   }
 }
 
-/* ─── Enterprise workforce/admin surfaces (IMP-036A) ─────────────────────── */
+/* ─── Enterprise workforce/admin surfaces (IMP-036A / IMP-036E) ─────────────
+   Dark-only Night Forest enterprise presentation. Aligns with brand semantic
+   tokens; does not introduce a second theme system.
+   ──────────────────────────────────────────────────────────────────────── */
 :root {
-  --enterprise-bg-page: #f4f5f2;
-  --enterprise-bg-panel: #ffffff;
-  --enterprise-text-primary: #1a2210;
-  --enterprise-text-secondary: #4b5542;
-  --enterprise-border: #d8ddd0;
-  --enterprise-focus: #4a6741;
-  --enterprise-nav-active-bg: #e8efe2;
-  --enterprise-nav-hover-bg: #eef2ea;
+  --enterprise-bg-page: #1A2210;
+  --enterprise-bg-panel: #22361A;
+  --enterprise-text-primary: #FAF3E2;
+  --enterprise-text-secondary: #EBD9A6;
+  --enterprise-border: #3D6026;
+  --enterprise-focus: #A8D832;
+  --enterprise-nav-active-bg: #2E4720;
+  --enterprise-nav-hover-bg: #22361A;
+  --enterprise-accent: #A8D832;
+  --enterprise-fg: #FAF3E2;
+  --enterprise-muted: #C4D4A8;
 }
 
 body {
@@ -329,8 +306,7 @@ body {
    Applied as a class on every interactive element (Button, Chip, etc.).
    Uses CSS outline so it renders outside the element and never conflicts with
    box-shadow (which carries hover glow on primary/secondary buttons).
-   Color: --border-focus  →  Firefly-400 dark / Firefly-600 light.
-   Spec : 3 px ring · 2 px offset from element edge (§9 focus state).
+   Color: --border-focus → Firefly-400. Spec: 3 px ring · 2 px offset (§9).
    ──────────────────────────────────────────────────────────────────────── */
 .focus-ring:focus-visible {
   outline: 3px solid var(--border-focus);

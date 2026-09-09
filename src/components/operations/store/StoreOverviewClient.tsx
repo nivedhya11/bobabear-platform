@@ -213,21 +213,27 @@ export function StoreOverviewClient() {
     );
   }
 
+  const panel = "rounded-lg border border-[var(--enterprise-border,#3D6026)] bg-[var(--enterprise-bg-panel,#22361A)] px-4 py-4";
+
   return (
-    <div className="flex flex-col gap-6" data-testid="store-overview">
-      <section aria-labelledby="store-overview-status-heading">
-        <h2 id="store-overview-status-heading" className="text-lg font-semibold">
+    <div className="flex flex-col gap-4" data-testid="store-overview">
+      <section className={panel} aria-labelledby="store-overview-status-heading">
+        <h2 id="store-overview-status-heading" className="text-base font-semibold tracking-tight">
           Current status
         </h2>
         {state.operating ? (
-          <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
+          <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
             <div>
-              <dt className="text-[var(--text-secondary)]">Effective status</dt>
-              <dd>{operatingStateLabel(state.operating.effectiveState)}</dd>
+              <dt className="text-xs font-bold uppercase tracking-wide text-[var(--enterprise-muted,#C4D4A8)]">
+                Effective status
+              </dt>
+              <dd className="mt-1 font-medium">{operatingStateLabel(state.operating.effectiveState)}</dd>
             </div>
             <div>
-              <dt className="text-[var(--text-secondary)]">Control</dt>
-              <dd>
+              <dt className="text-xs font-bold uppercase tracking-wide text-[var(--enterprise-muted,#C4D4A8)]">
+                Control
+              </dt>
+              <dd className="mt-1 font-medium">
                 {state.operating.controlState
                   ? operatingStateLabel(state.operating.controlState)
                   : "Not set"}
@@ -235,24 +241,26 @@ export function StoreOverviewClient() {
             </div>
             {state.timezone ? (
               <div>
-                <dt className="text-[var(--text-secondary)]">Timezone</dt>
-                <dd>{state.timezone}</dd>
+                <dt className="text-xs font-bold uppercase tracking-wide text-[var(--enterprise-muted,#C4D4A8)]">
+                  Timezone
+                </dt>
+                <dd className="mt-1 font-medium">{state.timezone}</dd>
               </div>
             ) : null}
           </dl>
         ) : (
-          <p className="mt-2 text-sm text-[var(--text-secondary)]">
+          <p className="mt-2 text-sm text-[var(--enterprise-muted,#C4D4A8)]">
             Operating status is not available for this outlet.
           </p>
         )}
       </section>
 
       {state.unavailableCount !== null ? (
-        <section aria-labelledby="store-overview-availability-heading">
-          <h2 id="store-overview-availability-heading" className="text-lg font-semibold">
+        <section className={panel} aria-labelledby="store-overview-availability-heading">
+          <h2 id="store-overview-availability-heading" className="text-base font-semibold tracking-tight">
             Availability
           </h2>
-          <p className="mt-2 text-sm">
+          <p className="mt-2 text-sm leading-relaxed">
             {state.unavailableCount === 0
               ? "All listed items are currently available."
               : `${state.unavailableCount} item${state.unavailableCount === 1 ? "" : "s"} currently unavailable or sold out.`}
@@ -261,11 +269,11 @@ export function StoreOverviewClient() {
       ) : null}
 
       {state.serviceability ? (
-        <section aria-labelledby="store-overview-serviceability-heading">
-          <h2 id="store-overview-serviceability-heading" className="text-lg font-semibold">
+        <section className={panel} aria-labelledby="store-overview-serviceability-heading">
+          <h2 id="store-overview-serviceability-heading" className="text-base font-semibold tracking-tight">
             Serviceability
           </h2>
-          <p className="mt-2 text-sm">
+          <p className="mt-2 text-sm leading-relaxed">
             {state.serviceability.configured
               ? `Distance policy configured (max ${state.serviceability.maxServiceDistanceMeters ?? "—"} m).`
               : "Distance policy is incomplete."}
@@ -273,37 +281,40 @@ export function StoreOverviewClient() {
         </section>
       ) : null}
 
-      <section aria-labelledby="store-overview-assortment-heading">
-        <h2 id="store-overview-assortment-heading" className="text-lg font-semibold">
+      <section className={panel} aria-labelledby="store-overview-assortment-heading">
+        <h2 id="store-overview-assortment-heading" className="text-base font-semibold tracking-tight">
           Assortment
         </h2>
         {state.assortmentEscalation ? (
-          <p className="mt-2 text-sm text-[var(--text-secondary)]" data-testid="store-overview-assortment-escalate">
+          <p className="mt-2 text-sm leading-relaxed text-[var(--enterprise-muted,#C4D4A8)]" data-testid="store-overview-assortment-escalate">
             Assortment is managed at brand level. Ask a brand administrator if you need assortment
             changes.
           </p>
         ) : state.assortmentCount !== null ? (
-          <p className="mt-2 text-sm">{state.assortmentCount} assortment item(s) in projection.</p>
+          <p className="mt-2 text-sm leading-relaxed">{state.assortmentCount} assortment item(s) in projection.</p>
         ) : (
-          <p className="mt-2 text-sm text-[var(--text-secondary)]">Assortment not loaded.</p>
+          <p className="mt-2 text-sm text-[var(--enterprise-muted,#C4D4A8)]">Assortment not loaded.</p>
         )}
       </section>
 
       {state.teamCount !== null ? (
-        <section aria-labelledby="store-overview-team-heading">
-          <h2 id="store-overview-team-heading" className="text-lg font-semibold">
+        <section className={panel} aria-labelledby="store-overview-team-heading">
+          <h2 id="store-overview-team-heading" className="text-base font-semibold tracking-tight">
             Team
           </h2>
-          <p className="mt-2 text-sm">{state.teamCount} membership(s) for this outlet.</p>
+          <p className="mt-2 text-sm leading-relaxed">{state.teamCount} membership(s) for this outlet.</p>
         </section>
       ) : null}
 
       {state.warnings.length > 0 ? (
-        <section aria-labelledby="store-overview-warnings-heading">
-          <h2 id="store-overview-warnings-heading" className="text-lg font-semibold">
+        <section
+          className="rounded-lg border border-amber-500/50 bg-amber-950/40 px-4 py-4 text-amber-100"
+          aria-labelledby="store-overview-warnings-heading"
+        >
+          <h2 id="store-overview-warnings-heading" className="text-base font-semibold tracking-tight">
             Attention
           </h2>
-          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm" data-testid="store-overview-warnings">
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-relaxed" data-testid="store-overview-warnings">
             {state.warnings.map((warning) => (
               <li key={warning}>{warning}</li>
             ))}

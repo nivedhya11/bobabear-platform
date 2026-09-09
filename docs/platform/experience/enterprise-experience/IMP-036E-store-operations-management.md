@@ -318,3 +318,32 @@ remain deferred/not-in-V1. IMP-036G remains the richer hierarchy-wide Administra
 
 Figma is not required initially; visual refinements may not change outlet, permission, mutation, or
 Serviceability semantics.
+
+## Founder-approved UAT-readiness visual direction (presentation only)
+
+```text
+THEME_COUNT = 1
+PRIMARY_THEME = DARK
+LIGHT_THEME = REMOVED / NOT_SUPPORTED
+SYSTEM_THEME_SWITCHING = NO
+USER_THEME_TOGGLE = NO
+FOUNDER_APPROVED_UAT_READINESS_VISUAL_DIRECTION = DARK_ONLY
+```
+
+BOBA Bear’s Night Forest dark theme (Firefly Green primary interactions, Saffron Gold accents,
+Boba Cream text) is the **only currently supported runtime theme** for the product, including Store
+Operations and shared customer/enterprise chrome.
+
+This is **presentation / experience policy only**. It does **not** change domain behaviour, RBAC,
+Assortment authority, Serviceability authority, financial/payment semantics, persistence,
+API contracts, schema, or IMP lifecycle acceptance. It does **not** activate IMP-036F and does
+**not** constitute Founder UAT.
+
+Light mode and system-preference theme negotiation are not part of current product behaviour.
+Historical ordering design-lock language that preferred Boba Cream / light as a default visual
+target (IMP-028D RC1) is superseded for **current runtime theme policy** by this Founder-approved
+dark-only direction. Cream/light brand palette values may still exist as static brand scales; they
+are not a second theme mode.
+
+Agents must not reintroduce light/system theme switching, theme toggles, or dual semantic token
+modes without a new explicit Founder/product decision.

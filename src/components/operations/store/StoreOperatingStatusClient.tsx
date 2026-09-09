@@ -134,21 +134,29 @@ export function StoreOperatingStatusClient() {
 
   return (
     <div className="flex flex-col gap-4" data-testid="store-operating-status">
-      <dl className="grid gap-2 text-sm sm:grid-cols-2">
+      <dl className="grid gap-3 rounded-lg border border-[var(--enterprise-border,#3D6026)] bg-[var(--enterprise-bg-panel,#22361A)] px-4 py-4 text-sm sm:grid-cols-2">
         <div>
-          <dt className="text-[var(--text-secondary)]">Effective status</dt>
-          <dd data-testid="store-operating-effective">{operatingStateLabel(effective)}</dd>
+          <dt className="text-xs font-bold uppercase tracking-wide text-[var(--enterprise-muted,#C4D4A8)]">
+            Effective status
+          </dt>
+          <dd className="mt-1 font-medium" data-testid="store-operating-effective">
+            {operatingStateLabel(effective)}
+          </dd>
         </div>
         <div>
-          <dt className="text-[var(--text-secondary)]">Control state</dt>
-          <dd data-testid="store-operating-control">
+          <dt className="text-xs font-bold uppercase tracking-wide text-[var(--enterprise-muted,#C4D4A8)]">
+            Control state
+          </dt>
+          <dd className="mt-1 font-medium" data-testid="store-operating-control">
             {control ? operatingStateLabel(control) : "Not set"}
           </dd>
         </div>
         {view.operating.pausedUntil ? (
           <div>
-            <dt className="text-[var(--text-secondary)]">Paused until</dt>
-            <dd>{view.operating.pausedUntil}</dd>
+            <dt className="text-xs font-bold uppercase tracking-wide text-[var(--enterprise-muted,#C4D4A8)]">
+              Paused until
+            </dt>
+            <dd className="mt-1 font-medium">{view.operating.pausedUntil}</dd>
           </div>
         ) : null}
       </dl>
