@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { CartLineList } from "@/components/ordering/CartLineList";
@@ -58,6 +58,7 @@ export function CartClient(props: { brandId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [editTarget, setEditTarget] = useState<EditTarget | null>(null);
   const [dialogError, setDialogError] = useState<string | null>(null);
+  const evaluationRequestIdRef = useRef(0);
 
   const menuLookups = useMemo(
     () => (menu ? buildCustomerMenuLookups(menu) : null),
@@ -75,8 +76,11 @@ export function CartClient(props: { brandId: string }) {
 
   const refreshEvaluation = useCallback(
     async (context: DeliveryContext, currentCart: CommerceCart | null) => {
+      const requestId = ++evaluationRequestIdRef.current;
       if (!currentCart || currentCart.lines.length === 0) {
-        setEvaluation(null);
+        if (requestId === evaluationRequestIdRef.current) {
+          setEvaluation(null);
+        }
         return;
       }
       const evaluated = await evaluateCart(
@@ -90,6 +94,9 @@ export function CartClient(props: { brandId: string }) {
             }
           : { brandId },
       );
+      if (requestId !== evaluationRequestIdRef.current) {
+        return;
+      }
       if (evaluated.ok) setEvaluation(evaluated.data);
       else setEvaluation(null);
     },
@@ -135,7 +142,8 @@ export function CartClient(props: { brandId: string }) {
   async function applyCartMutation(nextCart: CommerceCart): Promise<void> {
     setCart(nextCart);
     publishCartCount(cartUnitCount(nextCart));
-    await refreshEvaluation(deliveryContext, nextCart);
+    // Evaluate against live delivery authority, not a stale render/async closure.
+    await refreshEvaluation(readDeliveryContext(), nextCart);
   }
 
   async function withPending(work: () => Promise<void>): Promise<void> {
