@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
@@ -10,6 +10,7 @@ import {
   buildTestingInventory,
   checkInventorySnapshot,
   inventoryWorkflowValidationSteps,
+  isDefaultVitestIncludedPath,
   isExecutableTestPath,
   isExcludedGeneratedOrArchive,
   listTrackedPaths,
@@ -389,4 +390,307 @@ test("Session 3B2 CI umbrellas set ciInclusion without path references or covera
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test("default Vitest umbrella includes explicit tests/** and excludes e2e/cli/integration", () => {
+  assert.equal(isDefaultVitestIncludedPath("src/lib/utils.test.ts"), true);
+  assert.equal(isDefaultVitestIncludedPath("tests/imp-036b/delivery-context.test.ts"), true);
+  assert.equal(isDefaultVitestIncludedPath("tests/menu-parity/existing-menu-parity.test.ts"), true);
+  assert.equal(isDefaultVitestIncludedPath("tests/workforce-hub/destinations.test.ts"), true);
+  assert.equal(isDefaultVitestIncludedPath("tests/e2e/customer-ordering.spec.ts"), false);
+  assert.equal(
+    isDefaultVitestIncludedPath("tests/access-control/cli/bootstrap-platform-admin.test.ts"),
+    false,
+  );
+  assert.equal(
+    isDefaultVitestIncludedPath("tests/administration/admin-http.integration.test.ts"),
+    false,
+  );
+  assert.equal(isDefaultVitestIncludedPath("tests/database/cart.integration.test.ts"), false);
+  assert.equal(isDefaultVitestIncludedPath("tests/cart-concurrency/cart.concurrency.test.ts"), false);
+});
+
+test("npm run test umbrella and coverage-alone semantics for ciInclusion", () => {
+  const dir = mkdtempSync(path.join(tmpdir(), "boba-testing-inventory-vitest-"));
+  try {
+    execFileSync("git", ["init"], { cwd: dir });
+    execFileSync("git", ["config", "user.email", "inventory-test@example.com"], { cwd: dir });
+    execFileSync("git", ["config", "user.name", "inventory-test"], { cwd: dir });
+
+    mkdirSync(path.join(dir, "src"), { recursive: true });
+    mkdirSync(path.join(dir, "tests/imp-036b"), { recursive: true });
+    mkdirSync(path.join(dir, "tests/e2e"), { recursive: true });
+    mkdirSync(path.join(dir, "tests/access-control/cli"), { recursive: true });
+    mkdirSync(path.join(dir, "tests/administration"), { recursive: true });
+    mkdirSync(path.join(dir, "tests/database"), { recursive: true });
+    mkdirSync(path.join(dir, ".github/workflows"), { recursive: true });
+
+    writeFileSync(
+      path.join(dir, "package.json"),
+      JSON.stringify(
+        {
+          scripts: {
+            test: "node scripts/run-vitest.mjs run",
+            "test:coverage": "node scripts/run-vitest.mjs coverage",
+            "test:e2e": "playwright test",
+          },
+        },
+        null,
+        2,
+      ),
+    );
+    writeFileSync(path.join(dir, "src/example.test.ts"), "test('x', () => {})\n");
+    writeFileSync(path.join(dir, "tests/imp-036b/flow.test.ts"), "test('y', () => {})\n");
+    writeFileSync(path.join(dir, "tests/e2e/sample.spec.ts"), "test('e2e', () => {})\n");
+    writeFileSync(
+      path.join(dir, "tests/access-control/cli/bootstrap.test.ts"),
+      "test('cli', () => {})\n",
+    );
+    writeFileSync(
+      path.join(dir, "tests/administration/admin-http.integration.test.ts"),
+      "test('int', () => {})\n",
+    );
+    writeFileSync(
+      path.join(dir, "tests/database/cart.integration.test.ts"),
+      "test('db', () => {})\n",
+    );
+    writeFileSync(
+      path.join(dir, ".github/workflows/ci.yml"),
+      [
+        "name: CI",
+        "on: [push]",
+        "jobs:",
+        "  unit:",
+        "    runs-on: ubuntu-latest",
+        "    steps:",
+        "      - name: Unit",
+        "        run: npm run test",
+        "",
+      ].join("\n"),
+    );
+
+    execFileSync("git", ["add", "."], { cwd: dir });
+    execFileSync("git", ["commit", "-m", "seed"], { cwd: dir });
+
+    const withTest = buildTestingInventory(dir);
+    const byPath = Object.fromEntries(withTest.executableRecords.map((r) => [r.path, r]));
+    assert.equal(byPath["src/example.test.ts"].ciInclusion, "YES");
+    assert.equal(byPath["tests/imp-036b/flow.test.ts"].ciInclusion, "YES");
+    assert.equal(byPath["tests/e2e/sample.spec.ts"].ciInclusion, "NO");
+    assert.equal(byPath["tests/access-control/cli/bootstrap.test.ts"].ciInclusion, "NO");
+    assert.equal(
+      byPath["tests/administration/admin-http.integration.test.ts"].ciInclusion,
+      "NO",
+    );
+    assert.equal(byPath["tests/database/cart.integration.test.ts"].ciInclusion, "NO");
+
+    writeFileSync(
+      path.join(dir, ".github/workflows/ci.yml"),
+      [
+        "name: CI",
+        "on: [push]",
+        "jobs:",
+        "  coverage-only:",
+        "    runs-on: ubuntu-latest",
+        "    steps:",
+        "      - name: Coverage",
+        "        run: npm run test:coverage",
+        "",
+      ].join("\n"),
+    );
+    execFileSync("git", ["add", ".github/workflows/ci.yml"], { cwd: dir });
+    execFileSync("git", ["commit", "-m", "coverage-only"], { cwd: dir });
+
+    const coverageOnly = buildTestingInventory(dir);
+    const covByPath = Object.fromEntries(coverageOnly.executableRecords.map((r) => [r.path, r]));
+    assert.equal(covByPath["src/example.test.ts"].ciInclusion, "NO");
+    assert.equal(covByPath["tests/imp-036b/flow.test.ts"].ciInclusion, "NO");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("nightly workflow maps dedicated E2E and concurrency commands to ciInclusion", () => {
+  const dir = mkdtempSync(path.join(tmpdir(), "boba-testing-inventory-nightly-"));
+  try {
+    execFileSync("git", ["init"], { cwd: dir });
+    execFileSync("git", ["config", "user.email", "inventory-test@example.com"], { cwd: dir });
+    execFileSync("git", ["config", "user.name", "inventory-test"], { cwd: dir });
+
+    mkdirSync(path.join(dir, "tests/e2e"), { recursive: true });
+    mkdirSync(path.join(dir, "tests/payment-concurrency"), { recursive: true });
+    mkdirSync(path.join(dir, ".github/workflows"), { recursive: true });
+
+    writeFileSync(
+      path.join(dir, "package.json"),
+      JSON.stringify(
+        {
+          scripts: {
+            test: "node scripts/run-vitest.mjs run",
+            "test:e2e:customer-ordering": "playwright test --config=playwright.customer-ordering.config.ts",
+            "test:e2e:location-selector-layout":
+              "playwright test --config=playwright.location-selector.config.ts",
+            "test:payment-concurrency":
+              "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/payment-concurrency",
+            "test:e2e": "playwright test",
+          },
+        },
+        null,
+        2,
+      ),
+    );
+    writeFileSync(path.join(dir, "tests/e2e/customer-ordering.spec.ts"), "test('co', () => {})\n");
+    writeFileSync(
+      path.join(dir, "tests/e2e/location-selector-layout.spec.ts"),
+      "test('lsl', () => {})\n",
+    );
+    writeFileSync(
+      path.join(dir, "tests/e2e/location-selector-search-map.spec.ts"),
+      "test('lssm', () => {})\n",
+    );
+    writeFileSync(path.join(dir, "tests/e2e/home-page.spec.ts"), "test('home', () => {})\n");
+    writeFileSync(
+      path.join(dir, "tests/payment-concurrency/payment.concurrency.test.ts"),
+      "test('pc', () => {})\n",
+    );
+    writeFileSync(
+      path.join(dir, ".github/workflows/ci.yml"),
+      [
+        "name: CI",
+        "on: [push]",
+        "jobs:",
+        "  quality:",
+        "    runs-on: ubuntu-latest",
+        "    steps:",
+        "      - name: Placeholder",
+        "        run: echo ci",
+        "",
+      ].join("\n"),
+    );
+    writeFileSync(
+      path.join(dir, ".github/workflows/nightly-verification.yml"),
+      [
+        "name: Nightly verification",
+        "on:",
+        "  schedule:",
+        "    - cron: '0 2 * * *'",
+        "jobs:",
+        "  e2e:",
+        "    runs-on: ubuntu-latest",
+        "    steps:",
+        "      - name: Customer ordering E2E",
+        "        run: npm run test:e2e:customer-ordering",
+        "      - name: Location selector E2E",
+        "        run: npm run test:e2e:location-selector-layout",
+        "      - name: Payment concurrency",
+        "        run: npm run test:payment-concurrency",
+        "",
+      ].join("\n"),
+    );
+
+    execFileSync("git", ["add", "."], { cwd: dir });
+    execFileSync("git", ["commit", "-m", "seed"], { cwd: dir });
+
+    const inventory = buildTestingInventory(dir);
+    const byPath = Object.fromEntries(inventory.executableRecords.map((r) => [r.path, r]));
+    assert.equal(byPath["tests/e2e/customer-ordering.spec.ts"].ciInclusion, "YES");
+    assert.equal(byPath["tests/e2e/location-selector-layout.spec.ts"].ciInclusion, "YES");
+    assert.equal(byPath["tests/e2e/location-selector-search-map.spec.ts"].ciInclusion, "YES");
+    assert.equal(
+      byPath["tests/payment-concurrency/payment.concurrency.test.ts"].ciInclusion,
+      "YES",
+    );
+    assert.equal(byPath["tests/e2e/home-page.spec.ts"].ciInclusion, "NO");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("ciInclusion aggregates from ci.yml or nightly-verification.yml without path text", () => {
+  const dir = mkdtempSync(path.join(tmpdir(), "boba-testing-inventory-agg-"));
+  try {
+    execFileSync("git", ["init"], { cwd: dir });
+    execFileSync("git", ["config", "user.email", "inventory-test@example.com"], { cwd: dir });
+    execFileSync("git", ["config", "user.name", "inventory-test"], { cwd: dir });
+
+    mkdirSync(path.join(dir, "src"), { recursive: true });
+    mkdirSync(path.join(dir, "tests/e2e"), { recursive: true });
+    mkdirSync(path.join(dir, ".github/workflows"), { recursive: true });
+
+    writeFileSync(
+      path.join(dir, "package.json"),
+      JSON.stringify(
+        {
+          scripts: {
+            test: "node scripts/run-vitest.mjs run",
+            "test:e2e:workforce-auth": "playwright test --config=playwright.workforce-auth.config.ts",
+          },
+        },
+        null,
+        2,
+      ),
+    );
+    writeFileSync(path.join(dir, "src/from-ci.test.ts"), "test('ci', () => {})\n");
+    writeFileSync(path.join(dir, "tests/e2e/workforce-auth.spec.ts"), "test('wa', () => {})\n");
+
+    writeFileSync(
+      path.join(dir, ".github/workflows/ci.yml"),
+      [
+        "name: CI",
+        "on: [push]",
+        "jobs:",
+        "  unit:",
+        "    runs-on: ubuntu-latest",
+        "    steps:",
+        "      - name: Unit",
+        "        run: npm run test",
+        "",
+      ].join("\n"),
+    );
+    writeFileSync(
+      path.join(dir, ".github/workflows/nightly-verification.yml"),
+      [
+        "name: Nightly",
+        "on: [schedule]",
+        "jobs:",
+        "  e2e:",
+        "    runs-on: ubuntu-latest",
+        "    steps:",
+        "      - name: Workforce auth",
+        "        run: npm run test:e2e:workforce-auth",
+        "",
+      ].join("\n"),
+    );
+
+    execFileSync("git", ["add", "."], { cwd: dir });
+    execFileSync("git", ["commit", "-m", "seed"], { cwd: dir });
+
+    const inventory = buildTestingInventory(dir);
+    const byPath = Object.fromEntries(inventory.executableRecords.map((r) => [r.path, r]));
+    assert.equal(byPath["src/from-ci.test.ts"].ciInclusion, "YES");
+    assert.equal(byPath["tests/e2e/workforce-auth.spec.ts"].ciInclusion, "YES");
+    const allRuns = inventory.ciWorkflows.flatMap((w) => w.validationSteps.map((s) => s.run)).join("\n");
+    assert.equal(allRuns.includes("src/from-ci.test.ts"), false);
+    assert.equal(allRuns.includes("tests/e2e/workforce-auth.spec.ts"), false);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("nightly Playwright configs forbid silent CI retries", () => {
+  const configs = [
+    "playwright.customer-ordering.config.ts",
+    "playwright.customer-auth.config.ts",
+    "playwright.workforce-auth.config.ts",
+    "playwright.location-selector.config.ts",
+  ];
+  for (const rel of configs) {
+    const text = readFileSync(path.join(repoRoot, rel), "utf8");
+    assert.match(text, /retries:\s*0\s*,/);
+    assert.equal(text.includes("retries: isCI ? 1 : 0"), false);
+    assert.match(text, /forbidOnly:\s*isCI/);
+  }
+  const ops = readFileSync(path.join(repoRoot, "playwright.operations-lifecycle.config.ts"), "utf8");
+  assert.equal(/\bretries:\s*[1-9]/.test(ops), false);
+  assert.equal(ops.includes("retries: isCI ? 1 : 0"), false);
 });

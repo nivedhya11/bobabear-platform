@@ -4115,8 +4115,10 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
+        "test",
         "test:access-control",
-        "test:access-control:cli"
+        "test:access-control:cli",
+        "test:coverage"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -4133,8 +4135,10 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
+        "test",
         "test:access-control",
-        "test:access-control:cli"
+        "test:access-control:cli",
+        "test:coverage"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -4169,8 +4173,10 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
+        "test",
         "test:access-control",
-        "test:access-control:cli"
+        "test:access-control:cli",
+        "test:coverage"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -4187,8 +4193,10 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
+        "test",
         "test:access-control",
-        "test:access-control:cli"
+        "test:access-control:cli",
+        "test:coverage"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -4205,8 +4213,10 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
+        "test",
         "test:access-control",
-        "test:access-control:cli"
+        "test:access-control:cli",
+        "test:coverage"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -4223,7 +4233,9 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
+        "test",
         "test:administration",
+        "test:coverage",
         "test:database:administration"
       ],
       "ciInclusion": "YES",
@@ -4261,7 +4273,9 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
+        "test",
         "test:administration",
+        "test:coverage",
         "test:database:administration"
       ],
       "ciInclusion": "YES",
@@ -4279,7 +4293,9 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
+        "test",
         "test:administration",
+        "test:coverage",
         "test:database:administration"
       ],
       "ciInclusion": "YES",
@@ -4298,7 +4314,9 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
+        "test",
         "test:administration",
+        "test:coverage",
         "test:database:administration"
       ],
       "ciInclusion": "YES",
@@ -4457,7 +4475,7 @@
       "packageCommands": [
         "test:cart-concurrency"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "8-concurrency"
       ],
@@ -4718,7 +4736,7 @@
       "packageCommands": [
         "test:checkout-concurrency"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "8-concurrency"
       ],
@@ -4790,7 +4808,7 @@
       "packageCommands": [
         "test:customer-address-concurrency"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "UNKNOWN"
       ],
@@ -6681,9 +6699,10 @@
       "browserRequired": "YES",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:e2e"
+        "test:e2e",
+        "test:e2e:customer-auth"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "11-e2e-browser-ui"
       ],
@@ -6698,9 +6717,10 @@
       "browserRequired": "YES",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:e2e"
+        "test:e2e",
+        "test:e2e:customer-ordering"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "11-e2e-browser-ui"
       ],
@@ -6783,9 +6803,10 @@
       "browserRequired": "YES",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:e2e"
+        "test:e2e",
+        "test:e2e:location-selector-layout"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "11-e2e-browser-ui"
       ],
@@ -6800,9 +6821,10 @@
       "browserRequired": "YES",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:e2e"
+        "test:e2e",
+        "test:e2e:location-selector-layout"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "11-e2e-browser-ui"
       ],
@@ -6817,9 +6839,10 @@
       "browserRequired": "YES",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:e2e"
+        "test:e2e",
+        "test:e2e:operations-lifecycle"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "11-e2e-browser-ui"
       ],
@@ -6851,9 +6874,10 @@
       "browserRequired": "YES",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:e2e"
+        "test:e2e",
+        "test:e2e:workforce-auth"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "11-e2e-browser-ui"
       ],
@@ -6867,8 +6891,11 @@
       "dbRequired": "NO",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [],
-      "ciInclusion": "NO",
+      "packageCommands": [
+        "test",
+        "test:coverage"
+      ],
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -6882,8 +6909,11 @@
       "dbRequired": "NO",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [],
-      "ciInclusion": "NO",
+      "packageCommands": [
+        "test",
+        "test:coverage"
+      ],
+      "ciInclusion": "YES",
       "test1Layers": [
         "2-component"
       ],
@@ -6897,8 +6927,11 @@
       "dbRequired": "NO",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [],
-      "ciInclusion": "NO",
+      "packageCommands": [
+        "test",
+        "test:coverage"
+      ],
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -6912,8 +6945,11 @@
       "dbRequired": "NO",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [],
-      "ciInclusion": "NO",
+      "packageCommands": [
+        "test",
+        "test:coverage"
+      ],
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -6927,8 +6963,11 @@
       "dbRequired": "NO",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [],
-      "ciInclusion": "NO",
+      "packageCommands": [
+        "test",
+        "test:coverage"
+      ],
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -6942,8 +6981,11 @@
       "dbRequired": "NO",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [],
-      "ciInclusion": "NO",
+      "packageCommands": [
+        "test",
+        "test:coverage"
+      ],
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -6957,8 +6999,11 @@
       "dbRequired": "NO",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [],
-      "ciInclusion": "NO",
+      "packageCommands": [
+        "test",
+        "test:coverage"
+      ],
+      "ciInclusion": "YES",
       "test1Layers": [
         "2-component"
       ],
@@ -6972,8 +7017,11 @@
       "dbRequired": "NO",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [],
-      "ciInclusion": "NO",
+      "packageCommands": [
+        "test",
+        "test:coverage"
+      ],
+      "ciInclusion": "YES",
       "test1Layers": [
         "2-component"
       ],
@@ -6987,8 +7035,11 @@
       "dbRequired": "NO",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [],
-      "ciInclusion": "NO",
+      "packageCommands": [
+        "test",
+        "test:coverage"
+      ],
+      "ciInclusion": "YES",
       "test1Layers": [
         "2-component"
       ],
@@ -7002,8 +7053,11 @@
       "dbRequired": "NO",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [],
-      "ciInclusion": "NO",
+      "packageCommands": [
+        "test",
+        "test:coverage"
+      ],
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -7017,8 +7071,11 @@
       "dbRequired": "NO",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [],
-      "ciInclusion": "NO",
+      "packageCommands": [
+        "test",
+        "test:coverage"
+      ],
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -7032,8 +7089,11 @@
       "dbRequired": "NO",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [],
-      "ciInclusion": "NO",
+      "packageCommands": [
+        "test",
+        "test:coverage"
+      ],
+      "ciInclusion": "YES",
       "test1Layers": [
         "7-authorization-security"
       ],
@@ -7047,8 +7107,11 @@
       "dbRequired": "NO",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [],
-      "ciInclusion": "NO",
+      "packageCommands": [
+        "test",
+        "test:coverage"
+      ],
+      "ciInclusion": "YES",
       "test1Layers": [
         "2-component"
       ],
@@ -7062,8 +7125,11 @@
       "dbRequired": "NO",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [],
-      "ciInclusion": "NO",
+      "packageCommands": [
+        "test",
+        "test:coverage"
+      ],
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -7077,8 +7143,11 @@
       "dbRequired": "NO",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [],
-      "ciInclusion": "NO",
+      "packageCommands": [
+        "test",
+        "test:coverage"
+      ],
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -7092,8 +7161,11 @@
       "dbRequired": "NO",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [],
-      "ciInclusion": "NO",
+      "packageCommands": [
+        "test",
+        "test:coverage"
+      ],
+      "ciInclusion": "YES",
       "test1Layers": [
         "2-component"
       ],
@@ -7107,8 +7179,11 @@
       "dbRequired": "NO",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [],
-      "ciInclusion": "NO",
+      "packageCommands": [
+        "test",
+        "test:coverage"
+      ],
+      "ciInclusion": "YES",
       "test1Layers": [
         "2-component"
       ],
@@ -7158,9 +7233,11 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
+        "test",
+        "test:coverage",
         "test:menu-parity"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -7306,8 +7383,11 @@
       "dbRequired": "NO",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [],
-      "ciInclusion": "NO",
+      "packageCommands": [
+        "test",
+        "test:coverage"
+      ],
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -7341,7 +7421,7 @@
       "packageCommands": [
         "test:order-concurrency"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "8-concurrency"
       ],
@@ -7358,7 +7438,7 @@
       "packageCommands": [
         "test:order-crash"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "9-recovery-idempotency"
@@ -7458,9 +7538,11 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
+        "test",
+        "test:coverage",
         "test:ordering-catalog"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -7494,7 +7576,7 @@
       "packageCommands": [
         "test:payment-concurrency"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "8-concurrency"
       ],
@@ -7511,7 +7593,7 @@
       "packageCommands": [
         "test:payment-idempotency"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "9-recovery-idempotency"
@@ -7612,9 +7694,11 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "YES_OR_LIKELY",
       "packageCommands": [
+        "test",
+        "test:coverage",
         "test:payment-razorpay"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -7631,7 +7715,7 @@
       "packageCommands": [
         "test:payment-reconciliation"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit",
         "9-recovery-idempotency"
@@ -7707,9 +7791,11 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
+        "test",
+        "test:coverage",
         "test:pricing-parity"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -7775,9 +7861,11 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
+        "test",
+        "test:coverage",
         "test:promotion-coupons"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -7792,9 +7880,11 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
+        "test",
+        "test:coverage",
         "test:promotion-pricing-parity"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -7809,6 +7899,8 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
+        "test",
+        "test:coverage",
         "test:promotions"
       ],
       "ciInclusion": "YES",
@@ -7826,6 +7918,8 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
+        "test",
+        "test:coverage",
         "test:promotions"
       ],
       "ciInclusion": "YES",
@@ -7843,6 +7937,8 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
+        "test",
+        "test:coverage",
         "test:promotions"
       ],
       "ciInclusion": "YES",
@@ -7860,6 +7956,8 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
+        "test",
+        "test:coverage",
         "test:promotions"
       ],
       "ciInclusion": "YES",
@@ -7877,6 +7975,8 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
+        "test",
+        "test:coverage",
         "test:promotions"
       ],
       "ciInclusion": "YES",
@@ -7908,8 +8008,11 @@
       "dbRequired": "YES",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [],
-      "ciInclusion": "NO",
+      "packageCommands": [
+        "test",
+        "test:coverage"
+      ],
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -7974,7 +8077,7 @@
       "packageCommands": [
         "test:serviceability-concurrency"
       ],
-      "ciInclusion": "NO",
+      "ciInclusion": "YES",
       "test1Layers": [
         "UNKNOWN"
       ],
@@ -8063,8 +8166,11 @@
       "dbRequired": "NO",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [],
-      "ciInclusion": "NO",
+      "packageCommands": [
+        "test",
+        "test:coverage"
+      ],
+      "ciInclusion": "YES",
       "test1Layers": [
         "2-component"
       ],
@@ -8078,8 +8184,11 @@
       "dbRequired": "NO",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [],
-      "ciInclusion": "NO",
+      "packageCommands": [
+        "test",
+        "test:coverage"
+      ],
+      "ciInclusion": "YES",
       "test1Layers": [
         "2-component"
       ],
@@ -8093,8 +8202,11 @@
       "dbRequired": "NO",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [],
-      "ciInclusion": "NO",
+      "packageCommands": [
+        "test",
+        "test:coverage"
+      ],
+      "ciInclusion": "YES",
       "test1Layers": [
         "2-component"
       ],
@@ -8108,8 +8220,11 @@
       "dbRequired": "NO",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [],
-      "ciInclusion": "NO",
+      "packageCommands": [
+        "test",
+        "test:coverage"
+      ],
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -8123,8 +8238,11 @@
       "dbRequired": "NO",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [],
-      "ciInclusion": "NO",
+      "packageCommands": [
+        "test",
+        "test:coverage"
+      ],
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -8138,8 +8256,11 @@
       "dbRequired": "NO",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [],
-      "ciInclusion": "NO",
+      "packageCommands": [
+        "test",
+        "test:coverage"
+      ],
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -8153,8 +8274,11 @@
       "dbRequired": "NO",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [],
-      "ciInclusion": "NO",
+      "packageCommands": [
+        "test",
+        "test:coverage"
+      ],
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -8168,8 +8292,11 @@
       "dbRequired": "NO",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [],
-      "ciInclusion": "NO",
+      "packageCommands": [
+        "test",
+        "test:coverage"
+      ],
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],

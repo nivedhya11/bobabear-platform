@@ -15,7 +15,7 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   forbidOnly: isCI,
-  retries: isCI ? 1 : 0,
+  retries: 0,
   reporter: [["line"]],
   outputDir: "test-results-customer-ordering",
   timeout: 180_000,
