@@ -193,7 +193,6 @@ describe("IMP-036B outlet-distance serviceability evaluation", () => {
       });
       await seedOutletDistanceServiceability(persistence, brandAdminActor, secondId, {
         routingPriority: 5,
-        routingExpectedRevision: BigInt(2),
       });
 
       const candidates = await persistence.withContext((ctx) =>
@@ -214,7 +213,7 @@ describe("IMP-036B outlet-distance serviceability evaluation", () => {
       await setOutletServiceabilityRoutingPriority(persistence, brandAdminActor, {
         outletId: secondId,
         routingPriority: 1,
-        expectedRevision: BigInt(4),
+        expectedRevision: BigInt(2),
       });
       const preferLower = await evaluateServiceability(
         persistence,
@@ -238,7 +237,6 @@ describe("IMP-036B outlet-distance serviceability evaluation", () => {
       });
       await seedOutletDistanceServiceability(persistence, brandAdminActor, tree.outletB.id, {
         routingPriority: 2,
-        routingExpectedRevision: BigInt(2),
       });
 
       await pauseOutletIndefinitely(persistence, psaActor, tree.outletA.id);
@@ -286,7 +284,6 @@ describe("IMP-019 serviceability evaluation (legacy admin PIN tables remain non-
       });
       await seedOutletDistanceServiceability(persistence, brandAdminActor, tree.outletB.id, {
         routingPriority: 99,
-        routingExpectedRevision: BigInt(2),
       });
       await pauseOutletIndefinitely(persistence, psaActor, tree.outletB.id);
 
