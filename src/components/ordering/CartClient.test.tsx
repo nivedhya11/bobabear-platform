@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -171,18 +171,43 @@ describe("CartClient", () => {
       status: 200,
       data: { cart: guestCart("1", [{ id: "line-1", variantId, quantity: 1 }]) },
     });
+    let resolveWithoutLocation: ((value: unknown) => void) | undefined;
+    let resolveWithLocation: ((value: unknown) => void) | undefined;
     evaluateCart
-      .mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        data: {
-          cartId: "cart-1",
-          cartRevision: "1",
-          evaluatedAt: "2026-08-13T00:00:00.000Z",
-          status: "REQUIRES_FULFILMENT_CONTEXT",
-        },
-      })
-      .mockResolvedValueOnce({
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveWithoutLocation = resolve;
+          }),
+      )
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveWithLocation = resolve;
+          }),
+      );
+
+    render(<CartClient brandId={brandId} />);
+    await waitFor(() => expect(evaluateCart).toHaveBeenCalledTimes(1));
+    expect(evaluateCart).toHaveBeenLastCalledWith({ brandId });
+
+    writeDeliveryContext({
+      displayLabel: "Rajpur Road, Dehradun",
+      coordinates: { latitude: "30.3256000", longitude: "78.0436000" },
+      source: "location_search",
+    });
+
+    await waitFor(() => expect(evaluateCart).toHaveBeenCalledTimes(2));
+    expect(evaluateCart).toHaveBeenLastCalledWith({
+      brandId,
+      location: {
+        coordinates: { latitude: "30.3256000", longitude: "78.0436000" },
+      },
+    });
+
+    // Newer delivery-context evaluation completes first.
+    await act(async () => {
+      resolveWithLocation?.({
         ok: true,
         status: 200,
         data: {
@@ -192,25 +217,26 @@ describe("CartClient", () => {
           status: "COMPLETE",
         },
       });
+    });
 
-    render(<CartClient brandId={brandId} />);
-    await screen.findByText("Choose your delivery location to check availability.");
-
-    writeDeliveryContext({
-      displayLabel: "Rajpur Road, Dehradun",
-      coordinates: { latitude: "30.3256000", longitude: "78.0436000" },
-      source: "location_search",
+    // Older no-location evaluation resolves later and must not overwrite.
+    await act(async () => {
+      resolveWithoutLocation?.({
+        ok: true,
+        status: 200,
+        data: {
+          cartId: "cart-1",
+          cartRevision: "1",
+          evaluatedAt: "2026-08-13T00:00:00.000Z",
+          status: "REQUIRES_FULFILMENT_CONTEXT",
+        },
+      });
     });
 
     await waitFor(() => {
-      expect(evaluateCart).toHaveBeenLastCalledWith({
-        brandId,
-        location: {
-          coordinates: { latitude: "30.3256000", longitude: "78.0436000" },
-        },
-      });
-      expect(screen.queryByText("Choose your delivery location to check availability.")).not.toBeInTheDocument();
+      expect(screen.queryByText("Loading cart…")).not.toBeInTheDocument();
       expect(screen.getByText("This location looks deliverable.")).toBeInTheDocument();
+      expect(screen.queryByText("Choose your delivery location to check availability.")).not.toBeInTheDocument();
     });
   });
 
