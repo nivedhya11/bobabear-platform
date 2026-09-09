@@ -59,6 +59,27 @@ const PLAYWRIGHT_CONFIG_BASENAMES = Object.freeze([
   "playwright.workforce-auth.config.ts",
 ]);
 
+/** Verification workflows that may establish `ciInclusion` (not deploy). */
+const VERIFICATION_WORKFLOW_PATHS = Object.freeze([
+  ".github/workflows/ci.yml",
+  ".github/workflows/nightly-verification.yml",
+]);
+
+/**
+ * Dedicated E2E package commands → Playwright specs selected by their configs.
+ * Grounded in current package.json commands / config testMatch — not speculative.
+ */
+const DEDICATED_E2E_COMMAND_SPECS = Object.freeze({
+  "test:e2e:customer-ordering": Object.freeze(["tests/e2e/customer-ordering.spec.ts"]),
+  "test:e2e:customer-auth": Object.freeze(["tests/e2e/customer-auth.spec.ts"]),
+  "test:e2e:workforce-auth": Object.freeze(["tests/e2e/workforce-auth.spec.ts"]),
+  "test:e2e:operations-lifecycle": Object.freeze(["tests/e2e/operations-lifecycle.spec.ts"]),
+  "test:e2e:location-selector-layout": Object.freeze([
+    "tests/e2e/location-selector-layout.spec.ts",
+    "tests/e2e/location-selector-search-map.spec.ts",
+  ]),
+});
+
 const TEST_SUPPORT_SCRIPT_PREFIXES = Object.freeze([
   "scripts/e2e/",
   "scripts/run-vitest.mjs",
@@ -178,6 +199,53 @@ export function isExecutableTestPath(pathRel) {
  */
 export function isPlaywrightSpecPath(pathRel) {
   return pathRel.startsWith("tests/e2e/") && /\.spec\.(ts|tsx)$/.test(pathRel);
+}
+
+/**
+ * Whether a path is selected by the default Vitest unit/component config
+ * (`vitest.config.mts` include/exclude) that `npm run test` executes.
+ * Mirrors the CURRENT explicit include/exclude contract — not all of `tests/`.
+ * @param {string} pathRel
+ */
+export function isDefaultVitestIncludedPath(pathRel) {
+  if (!pathRel || isExcludedGeneratedOrArchive(pathRel)) return false;
+
+  // vitest.config.mts exclude (default unit/component project)
+  if (pathRel.startsWith("tests/e2e/")) return false;
+  if (pathRel.startsWith("tests/access-control/cli/")) return false;
+  if (
+    pathRel.startsWith("tests/administration/") &&
+    pathRel.includes(".integration.test.")
+  ) {
+    return false;
+  }
+
+  if (/^src\/.+\.test\.(ts|tsx)$/.test(pathRel)) return true;
+
+  /** @type {Array<{ prefix: string; ext: RegExp }>} */
+  const directoryIncludes = [
+    { prefix: "tests/access-control/", ext: /\.test\.ts$/ },
+    { prefix: "tests/menu-parity/", ext: /\.test\.ts$/ },
+    { prefix: "tests/pricing-parity/", ext: /\.test\.ts$/ },
+    { prefix: "tests/promotions/", ext: /\.test\.ts$/ },
+    { prefix: "tests/promotion-coupons/", ext: /\.test\.ts$/ },
+    { prefix: "tests/promotion-pricing-parity/", ext: /\.test\.ts$/ },
+    { prefix: "tests/ordering-catalog/", ext: /\.test\.ts$/ },
+    { prefix: "tests/refund-architecture/", ext: /\.test\.ts$/ },
+    { prefix: "tests/administration/", ext: /\.test\.(ts|tsx)$/ },
+    { prefix: "tests/workforce-hub/", ext: /\.test\.(ts|tsx)$/ },
+    { prefix: "tests/enterprise/", ext: /\.test\.ts$/ },
+    { prefix: "tests/imp-036b/", ext: /\.test\.(ts|tsx)$/ },
+    { prefix: "tests/imp-036c/", ext: /\.test\.(ts|tsx)$/ },
+  ];
+  for (const { prefix, ext } of directoryIncludes) {
+    if (pathRel.startsWith(prefix) && ext.test(pathRel)) return true;
+  }
+
+  if (pathRel === "tests/payment-razorpay/refund.adapter.test.ts") return true;
+  if (pathRel === "tests/operations/workforce-principal-adapter.test.ts") return true;
+
+  return false;
 }
 
 /**
@@ -427,6 +495,46 @@ export function selectPackageVerificationCommands(scripts) {
   return groups;
 }
 
+/** YAML block-scalar headers used by GitHub Actions `run:` forms. */
+const WORKFLOW_RUN_BLOCK_SCALAR = /^[|>][+-]?$/;
+
+/**
+ * Leading whitespace length (spaces/tabs) for indentation-aware YAML scanning.
+ * @param {string} line
+ */
+function lineIndentLength(line) {
+  const match = line.match(/^[ \t]*/);
+  return match ? match[0].length : 0;
+}
+
+/**
+ * Extract a workflow step `run:` value, including literal/folded block scalars.
+ * Block bodies are collected by indentation deeper than the `run:` key and joined
+ * with `\n` for deterministic inventory storage.
+ * @param {string[]} lines
+ * @param {number} runLineIndex
+ * @returns {string | null}
+ */
+function extractWorkflowRunCommand(lines, runLineIndex) {
+  const runMatch = lines[runLineIndex].match(/^(\s*)run:\s*(.*?)\s*$/);
+  if (!runMatch) return null;
+  const runKeyIndent = runMatch[1].length;
+  const raw = runMatch[2];
+  if (WORKFLOW_RUN_BLOCK_SCALAR.test(raw)) {
+    /** @type {string[]} */
+    const parts = [];
+    for (let k = runLineIndex + 1; k < lines.length; k++) {
+      const line = lines[k];
+      if (/^\s*$/.test(line)) continue;
+      if (lineIndentLength(line) <= runKeyIndent) break;
+      parts.push(line.trim());
+    }
+    return parts.length > 0 ? parts.join("\n") : null;
+  }
+  const inline = raw.trim();
+  return inline.length > 0 ? inline : null;
+}
+
 /**
  * @param {string} root
  * @param {string[]} tracked
@@ -451,26 +559,8 @@ export function inventoryWorkflowValidationSteps(root, tracked) {
       let run = null;
       for (let j = i + 1; j < Math.min(i + 12, lines.length); j++) {
         if (/^\s+-\s+name:\s*/.test(lines[j])) break;
-        const runMatch = lines[j].match(/^\s+run:\s*(.+)\s*$/);
-        if (runMatch) {
-          run = runMatch[1].replace(/^>\-\s*/, "").trim();
-          // Collect folded run blocks starting with >-
-          if (lines[j].includes(">-") || run === "" || run === ">-") {
-            const parts = [];
-            for (let k = j + 1; k < lines.length; k++) {
-              if (/^\s{0,8}-\s+name:/.test(lines[k]) || /^[a-zA-Z]/.test(lines[k])) break;
-              if (/^\s{10,}\S/.test(lines[k]) || /^\s{8}\S/.test(lines[k])) {
-                parts.push(lines[k].trim());
-              } else if (parts.length && /^\s*$/.test(lines[k])) {
-                break;
-              } else if (parts.length === 0 && /^\s*$/.test(lines[k])) {
-                continue;
-              } else if (parts.length) {
-                break;
-              }
-            }
-            run = parts.join(" ").trim() || run;
-          }
+        if (/^\s+run:\s*/.test(lines[j])) {
+          run = extractWorkflowRunCommand(lines, j);
           break;
         }
         const usesMatch = lines[j].match(/^\s+uses:\s*(.+)\s*$/);
@@ -479,7 +569,7 @@ export function inventoryWorkflowValidationSteps(root, tracked) {
           break;
         }
       }
-      if (run && run !== ">-") {
+      if (run) {
         steps.push({ name: stepName[1].trim(), run });
       }
     }
@@ -531,41 +621,83 @@ function matchPackageCommandsForPath(pathRel, scripts, commands) {
       continue;
     }
   }
-  if (pathRel.startsWith("src/") && /\.test\.(ts|tsx)$/.test(pathRel)) {
-    matched.push("test", "test:coverage");
+  if (isDefaultVitestIncludedPath(pathRel)) {
+    if (!matched.includes("test")) matched.push("test");
+    if (!matched.includes("test:coverage")) matched.push("test:coverage");
   }
   if (isPlaywrightSpecPath(pathRel) && !matched.includes("test:e2e")) {
     matched.push("test:e2e");
+  }
+  for (const [cmd, specs] of Object.entries(DEDICATED_E2E_COMMAND_SPECS)) {
+    if (specs.includes(pathRel) && !matched.includes(cmd)) {
+      matched.push(cmd);
+    }
   }
   return normalizePaths(matched);
 }
 
 /**
- * Derive CI inclusion from workflow run strings.
+ * True when CI run text invokes exactly `npm run <script>` (not a longer name).
+ * `npm run test` must not match `npm run test:scripts` / `npm run test:coverage`.
+ * @param {string} haystack
+ * @param {string} scriptName
+ */
+function ciInvokesNpmScript(haystack, scriptName) {
+  const escaped = scriptName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(?:^|[\\s;&|])npm run ${escaped}(?!:|[\\w-])`, "m").test(haystack);
+}
+
+/**
+ * Verification-workflow run strings only (`ci.yml` + `nightly-verification.yml`).
+ * Deploy and other non-verification workflows do not establish `ciInclusion`.
+ * @param {ReturnType<typeof inventoryWorkflowValidationSteps>} workflows
+ */
+function verificationWorkflowRunHaystack(workflows) {
+  return workflows
+    .filter((w) => VERIFICATION_WORKFLOW_PATHS.includes(w.path))
+    .flatMap((w) => w.validationSteps.map((s) => s.run))
+    .join("\n");
+}
+
+/**
+ * Derive CI inclusion from verification workflow run strings.
+ * `ciInclusion` means repository verification workflow inclusion (PR CI and/or nightly),
+ * not coverage-only wiring.
  * @param {ReturnType<typeof inventoryWorkflowValidationSteps>} workflows
  * @param {string} pathRel
  * @param {string[]} packageCommands
  */
 function inferCiInclusion(workflows, pathRel, packageCommands) {
-  const ciRuns = workflows
-    .filter((w) => w.path === ".github/workflows/ci.yml")
-    .flatMap((w) => w.validationSteps.map((s) => s.run));
-  const haystack = ciRuns.join("\n");
+  const haystack = verificationWorkflowRunHaystack(workflows);
   if (haystack.includes(pathRel)) return "YES";
+
+  // Exact npm-script invocations. Coverage never establishes initial 3B2 inclusion.
   for (const cmd of packageCommands) {
-    if (cmd === "test" || cmd === "test:coverage" || cmd === "test:scripts") continue;
-    if (haystack.includes(`npm run ${cmd}`) || haystack.includes(cmd)) return "YES";
+    if (cmd === "test:coverage") continue;
+    if (cmd === "test" || cmd === "test:scripts") continue;
+    if (ciInvokesNpmScript(haystack, cmd)) return "YES";
   }
-  // Narrow CI script tests referenced directly
-  if (pathRel.startsWith("scripts/") && pathRel.endsWith(".test.mjs") && haystack.includes(pathRel)) {
+
+  // Dedicated E2E command → config testMatch specs (nightly / explicit wiring).
+  for (const [cmd, specs] of Object.entries(DEDICATED_E2E_COMMAND_SPECS)) {
+    if (specs.includes(pathRel) && ciInvokesNpmScript(haystack, cmd)) {
+      return "YES";
+    }
+  }
+
+  // Default Vitest umbrella (`npm run test`) — src + explicitly included tests/** only.
+  if (isDefaultVitestIncludedPath(pathRel) && ciInvokesNpmScript(haystack, "test")) {
     return "YES";
   }
-  // Default unit suite is NOT invoked by current CI (CI runs selected suites only).
-  if (pathRel.startsWith("src/") && /\.test\.(ts|tsx)$/.test(pathRel)) {
-    if (haystack.includes(pathRel)) return "YES";
-    return "NO";
+
+  if (
+    pathRel.startsWith("scripts/") &&
+    pathRel.endsWith(".test.mjs") &&
+    ciInvokesNpmScript(haystack, "test:scripts")
+  ) {
+    return "YES";
   }
-  if (isPlaywrightSpecPath(pathRel)) return "NO";
+
   return "NO";
 }
 

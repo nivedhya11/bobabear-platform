@@ -14,6 +14,35 @@ function docker(args) {
   return execFileSync("docker", args, { encoding: "utf8" }).trim();
 }
 
+function dockerDiagnostic(args) {
+  try {
+    return execFileSync("docker", args, {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+    }).trim();
+  } catch (error) {
+    const stdout =
+      typeof error.stdout === "string" ? error.stdout.trim() : "";
+    const stderr =
+      typeof error.stderr === "string" ? error.stderr.trim() : "";
+
+    return [stdout, stderr].filter(Boolean).join("\n");
+  }
+}
+
+function inspectContainerState(containerId) {
+  return dockerDiagnostic([
+    "inspect",
+    "--format",
+    "status={{.State.Status}} running={{.State.Running}} exitCode={{.State.ExitCode}} oomKilled={{.State.OOMKilled}} error={{json .State.Error}}",
+    containerId,
+  ]);
+}
+
+function readContainerLogs(containerId) {
+  return dockerDiagnostic(["logs", containerId]);
+}
+
 function dockerAvailable() {
   try {
     docker(["info"]);
@@ -23,37 +52,113 @@ function dockerAvailable() {
   }
 }
 
-async function waitForNginx(origin) {
+async function waitForNginx(origin, containerId) {
   let lastError;
-  for (let attempt = 0; attempt < 20; attempt += 1) {
+
+  for (let attempt = 0; attempt < 60; attempt += 1) {
     try {
       const response = await fetch(origin, { redirect: "manual" });
       if (response.ok) return;
+
+      lastError = new Error(
+        `Nginx readiness returned HTTP ${response.status}`,
+      );
     } catch (error) {
       lastError = error;
     }
-    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    const running = dockerDiagnostic([
+      "inspect",
+      "--format",
+      "{{.State.Running}}",
+      containerId,
+    ]);
+
+    if (running === "false") {
+      const state = inspectContainerState(containerId);
+      const logs = readContainerLogs(containerId);
+
+      throw new Error(
+        [
+          "Nginx container exited before readiness.",
+          `state: ${state || "<unavailable>"}`,
+          "container logs:",
+          logs || "<empty>",
+          `last readiness error: ${
+            lastError instanceof Error
+              ? lastError.message
+              : String(lastError)
+          }`,
+        ].join("\n"),
+      );
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 250));
   }
-  throw lastError ?? new Error(`Nginx did not become available at ${origin}`);
+
+  const state = inspectContainerState(containerId);
+  const logs = readContainerLogs(containerId);
+
+  throw new Error(
+    [
+      `Nginx did not become ready at ${origin}.`,
+      `state: ${state || "<unavailable>"}`,
+      "container logs:",
+      logs || "<empty>",
+      `last readiness error: ${
+        lastError instanceof Error
+          ? lastError.message
+          : String(lastError)
+      }`,
+    ].join("\n"),
+  );
 }
 
 describe("Nginx directory redirects", { skip: !dockerAvailable() }, () => {
   let fixtureRoot;
+  let bootstrapRoot;
   let containerId;
   let origin;
 
   before(async () => {
     fixtureRoot = fs.mkdtempSync(path.join(os.tmpdir(), "boba-nginx-origin-"));
+
+    // Production makes /usr/share/nginx/html recursively readable and
+    // directory-traversable before switching to the non-root nginx user.
+    // Reproduce that permission boundary for this bind-mounted fixture.
+    fs.chmodSync(fixtureRoot, 0o755);
+
     for (const route of directoryRoutes) {
       const directory = path.join(fixtureRoot, route.slice(1));
-      fs.mkdirSync(directory, { recursive: true });
-      fs.writeFileSync(path.join(directory, "index.html"), "<!doctype html>");
+
+      fs.mkdirSync(directory, {
+        recursive: true,
+        mode: 0o755,
+      });
+      fs.chmodSync(directory, 0o755);
+
+      const indexPath = path.join(directory, "index.html");
+      fs.writeFileSync(indexPath, "<!doctype html>", {
+        mode: 0o644,
+      });
+      fs.chmodSync(indexPath, 0o644);
     }
+
+    // Reproduce production Dockerfile: COPY + chmod 755 into /docker-entrypoint.d/
+    // without changing the tracked mode of the repository bootstrap script.
+    bootstrapRoot = fs.mkdtempSync(path.join(os.tmpdir(), "boba-nginx-bootstrap-"));
+    const resolverBootstrap = path.join(bootstrapRoot, "40-boba-runtime-resolver.sh");
+    fs.copyFileSync(
+      path.join(repositoryRoot, "docker/nginx/40-boba-runtime-resolver.sh"),
+      resolverBootstrap,
+    );
+    fs.chmodSync(resolverBootstrap, 0o755);
 
     containerId = docker([
       "run", "--rm", "-d", "-p", "127.0.0.1::8080",
       "--tmpfs", "/tmp", "--tmpfs", "/var/cache/nginx", "--tmpfs", "/var/run",
       "-v", `${path.join(repositoryRoot, "docker/nginx/nginx.conf")}:/etc/nginx/nginx.conf:ro`,
+      "-v", `${resolverBootstrap}:/docker-entrypoint.d/40-boba-runtime-resolver.sh:ro`,
       "-v", `${fixtureRoot}:/usr/share/nginx/html:ro`,
       nginxImage,
     ]);
@@ -61,12 +166,21 @@ describe("Nginx directory redirects", { skip: !dockerAvailable() }, () => {
     const port = binding.match(/:(\d+)\s*$/)?.[1];
     assert.ok(port, `could not determine published Nginx port from ${binding}`);
     origin = `http://127.0.0.1:${port}`;
-    await waitForNginx(origin);
+    await waitForNginx(`${origin}/order/`, containerId);
   });
 
   after(() => {
-    if (containerId) execFileSync("docker", ["rm", "-f", containerId], { stdio: "ignore" });
+    if (containerId) {
+      try {
+        execFileSync("docker", ["rm", "-f", containerId], {
+          stdio: "ignore",
+        });
+      } catch {
+        // Container may already have been removed by --rm.
+      }
+    }
     if (fixtureRoot) fs.rmSync(fixtureRoot, { recursive: true, force: true });
+    if (bootstrapRoot) fs.rmSync(bootstrapRoot, { recursive: true, force: true });
   });
 
   for (const route of directoryRoutes) {

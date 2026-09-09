@@ -41,7 +41,7 @@ export default defineConfig({
   fullyParallel: false, // shares one fixed-code OTP provider across tests
   workers: 1,
   forbidOnly: isCI,
-  retries: isCI ? 1 : 0,
+  retries: 0,
   reporter: [["html", { outputFolder: "playwright-report-customer-auth", open: "never" }]],
   outputDir: "test-results-customer-auth",
   timeout: 30_000,

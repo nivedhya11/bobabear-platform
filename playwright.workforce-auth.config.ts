@@ -28,7 +28,7 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   forbidOnly: isCI,
-  retries: isCI ? 1 : 0,
+  retries: 0,
   reporter: [["html", { outputFolder: "playwright-report-workforce-auth", open: "never" }]],
   outputDir: "test-results-workforce-auth",
   timeout: 60_000,

@@ -6021,7 +6021,9 @@ function deriveImp036aAcceptanceDocs(liveRoadmap, liveState, liveCapability) {
   ) {
     return { capabilityText: liveCapability, roadmapText: liveRoadmap, stateText: liveState };
   }
-  const base = "2f62507";
+  // Published main-history merge for IMP-036A formal acceptance (PR #60).
+  // Do not use local-only/orphan abbreviated SHAs — Actions shallow/orphan objects are unreachable.
+  const base = "94cb9dee045f03962584ea5be0b624fa4f64092d";
   return {
     capabilityText: liveCapability,
     roadmapText: execSync(`git show ${base}:docs/platform/ROADMAP.md`, { encoding: "utf8" }),
