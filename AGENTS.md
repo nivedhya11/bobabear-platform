@@ -122,11 +122,18 @@ DELIVERY_MODE=PUBLISH_PR
 
 - `LOCAL_ONLY` — in one run: inspect → implement → test → diagnose/self-correct → validate →
   local commit(s) → return once. A task-specific `NO_COMMIT` instruction may narrow this and forbid
-  local commits.
-- `PUBLISH_PR` — everything `LOCAL_ONLY` authorizes (subject to any `NO_COMMIT` narrowing), plus:
-  create/use a short-lived task branch from the verified base when a suitable task branch is not
-  already specified → normal push of that branch → PR creation → exact-head PR-CI observation →
+  local commits. `NO_COMMIT` means no commit may be created and is compatible only with
+  `LOCAL_ONLY` / unpublished work.
+- `PUBLISH_PR` — in one run: inspect → implement → test → diagnose/self-correct → validate →
+  commit(s) containing the task changes → create/use a short-lived task branch from the verified
+  base when a suitable task branch is not already specified → normal push of that branch →
+  PR creation → wait for exact-head PR CI to reach a terminal state → report the final CI outcome →
   return once. Ordinary task commits must **not** be published directly to `main`.
+  `PUBLISH_PR` requires at least one commit containing the task changes. Returning while
+  exact-head PR CI has merely started or is still pending is not permitted.
+
+`NO_COMMIT` + `PUBLISH_PR` is a task-contract conflict: **STOP** rather than silently choosing one
+constraint or weakening either. Do not invent a hybrid (for example push/PR without a commit).
 
 When `DELIVERY_MODE` is unset, treat remote publication (push/PR) as unauthorized. Local commits
 remain permitted for authorized R1/R2 engineering unless `NO_COMMIT` is set.
@@ -398,8 +405,10 @@ Bundle authorized machine work until the next genuine human decision boundary:
 
 - `LOCAL_ONLY`: inspect → implement → test → diagnose/self-correct → validate → local commit(s)
   (unless `NO_COMMIT`) → return once.
-- `PUBLISH_PR`: the above on a short-lived task branch (create from verified base if needed) →
-  normal push → PR → exact-head PR-CI observation → return once.
+- `PUBLISH_PR`: inspect → implement → test → diagnose/self-correct → validate → commit(s) →
+  short-lived task branch (create from verified base if needed) → normal push → PR → wait for
+  exact-head PR CI terminal state → report final outcome → return once.
+  `NO_COMMIT` + `PUBLISH_PR` is a task-contract conflict (STOP).
 - Merge, deploy, acceptance, and Founder UAT remain separate R3 human gates.
 
 Efficiency must never permit guessed product, security, payment, or business decisions.
@@ -454,10 +463,12 @@ DEFAULT_DEVELOPMENT_BRANCH = main
 - Never destroy `boba-bear_postgres-data` or run `docker compose down --volumes`.
 - Prefer Podman for local DB/container runtime when Compose/container work is required.
 - Preserve protected evidence directories (including `test-results-customer-ordering/**`).
-- Local commits are authorized under R1/R2 `LOCAL_ONLY` and `PUBLISH_PR` unless `NO_COMMIT`
-  narrows that permission; keep commits small and reconstructible.
-- `PUBLISH_PR` authorizes short-lived-branch push + PR + PR-CI observation; do not re-require
-  separate mid-run push/PR authorization for that sequence.
+- Local commits are authorized under R1/R2 `LOCAL_ONLY` and under `PUBLISH_PR`. `NO_COMMIT` may
+  narrow only `LOCAL_ONLY` / unpublished work and forbids creating any commit; keep commits small
+  and reconstructible. `NO_COMMIT` + `PUBLISH_PR` is a task-contract conflict (STOP).
+- `PUBLISH_PR` authorizes short-lived-branch commit(s) + push + PR + wait for exact-head PR CI
+  terminal state with reporting of the final outcome; do not re-require separate mid-run push/PR
+  authorization for that sequence. Do not return while exact-head PR CI is only started or pending.
 - Merge, tag/release, deployment, force push, history rewrite, destructive data ops, lifecycle
   acceptance, and Founder UAT each require explicit human R3 authorization.
 - Only one product slice is normally active; never start a slice whose dependencies are unresolved.
