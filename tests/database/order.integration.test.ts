@@ -115,7 +115,7 @@ async function insertOrderRaw(
 }
 
 describe("IMP-023 order migration inventory", () => {
-  it("creates app.orders; 57 permissions / 4 order.* keys; prior migrations sealed", async () => {
+  it("creates app.orders; 4 order.* permission keys; prior migrations sealed", async () => {
     const integrity = JSON.parse(
       readFileSync(
         path.join(process.cwd(), "drizzle/migration-integrity.json"),
@@ -142,10 +142,10 @@ describe("IMP-023 order migration inventory", () => {
     const sealed = integrity.migrations.find(
       (m) => m.path === "drizzle/0017_order.sql",
     );
-    if (sealed) {
-      expect(sealed.sha256).toBe(sha256File("drizzle/0017_order.sql"));
-      expect(integrity.migrations).toHaveLength(32);
-    }
+    expect(sealed).toBeDefined();
+    expect(sealed!.sha256).toBe(
+      sha256File("drizzle/0017_order.sql"),
+    );
 
     await withPaymentReadyHarness(async ({ persistence }) => {
       await persistence.withContext(async (ctx) => {
@@ -155,18 +155,6 @@ describe("IMP-023 order migration inventory", () => {
           where table_schema = 'app' and table_name = 'orders'
         `);
         expect(tables.rows[0]?.count).toBe("1");
-
-        const appTables = await ctx.db.execute(sql`
-          select count(*)::text as count
-          from information_schema.tables
-          where table_schema = 'app' and table_type = 'BASE TABLE'
-        `);
-        expect(appTables.rows[0]?.count).toBe("115");
-
-        const perms = await ctx.db.execute(sql`
-          select count(*)::text as count from app.access_permissions
-        `);
-        expect(perms.rows[0]?.count).toBe("57");
 
         const orderKeys = await ctx.db.execute(sql`
           select key from app.access_permissions

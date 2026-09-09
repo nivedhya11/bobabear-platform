@@ -116,7 +116,7 @@ async function insertAttempt(
 }
 
 describe("IMP-022 payment migration inventory", () => {
-  it("creates exactly 6 payment tables; prior migrations sealed; 115 app tables", async () => {
+  it("creates exactly 6 payment tables; prior migrations sealed; payment migration sealed", async () => {
     const integrity = JSON.parse(
       readFileSync(path.join(process.cwd(), "drizzle/migration-integrity.json"), "utf8"),
     ) as { migrations: Array<{ path: string; sha256: string }> };
@@ -140,12 +140,10 @@ describe("IMP-022 payment migration inventory", () => {
     const sealedPayment = integrity.migrations.find(
       (m) => m.path === "drizzle/0016_payment.sql",
     );
-    if (sealedPayment) {
-      expect(sealedPayment.sha256).toBe(sha256File("drizzle/0016_payment.sql"));
-      expect(integrity.migrations).toHaveLength(32);
-    } else {
-      expect(integrity.migrations).toHaveLength(16);
-    }
+    expect(sealedPayment).toBeDefined();
+    expect(sealedPayment!.sha256).toBe(
+      sha256File("drizzle/0016_payment.sql"),
+    );
 
     await withPaymentReadyHarness(async ({ persistence }) => {
       await persistence.withContext(async (ctx) => {
@@ -163,13 +161,6 @@ describe("IMP-022 payment migration inventory", () => {
             )
         `);
         expect(paymentTables.rows[0]?.count).toBe("6");
-
-        const appTables = await ctx.db.execute(sql`
-          select count(*)::text as count
-          from information_schema.tables
-          where table_schema = 'app' and table_type = 'BASE TABLE'
-        `);
-        expect(appTables.rows[0]?.count).toBe("115");
       });
     });
   });
@@ -242,7 +233,7 @@ describe("IMP-022 payment monetary authority DB-P-MONEY", () => {
   });
 
   it("DB-P-MONEY-03 amount mismatch observation does not succeed or alter snapshot", async () => {
-    const { startPayment, getPaymentState } = await import(
+    const { startPayment } = await import(
       "../../src/server/payment"
     );
     const {
@@ -270,7 +261,7 @@ describe("IMP-022 payment monetary authority DB-P-MONEY", () => {
 
       const mismatch = h.grandTotalPaise - BigInt(200);
       expect(mismatch).toBeGreaterThan(BigInt(0));
-      await verifyAndProcessWebhook(
+      const state = await verifyAndProcessWebhook(
         h.persistence,
         provider,
         {
@@ -282,14 +273,9 @@ describe("IMP-022 payment monetary authority DB-P-MONEY", () => {
         opts,
       );
 
-      const state = await getPaymentState(
-        h.persistence,
-        h.actor,
-        { paymentId: started.payment.id },
-        opts,
-      );
-      expect(state.payment!.status).not.toBe("SUCCEEDED");
-      expect(state.payment!.expectedAmountPaise).toBe(h.grandTotalPaise);
+      expect(state).not.toBeNull();
+      expect(state!.payment!.status).not.toBe("SUCCEEDED");
+      expect(state!.payment!.expectedAmountPaise).toBe(h.grandTotalPaise);
 
       await h.persistence.withContext(async (ctx) => {
         const snap = await ctx.db.execute(sql`

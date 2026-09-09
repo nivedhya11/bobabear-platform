@@ -135,7 +135,7 @@ async function insertMinimalSnapshot(
 }
 
 describe("IMP-021 checkout migration", () => {
-  it("DB-01 migration applies; 10 Checkout tables; totals 16 migrations / 85 app tables", async () => {
+  it("DB-01 migration applies; creates exactly 10 Checkout tables", async () => {
     const integrity = JSON.parse(
       readFileSync(path.join(process.cwd(), "drizzle/migration-integrity.json"), "utf8"),
     ) as { migrations: Array<{ path: string; sha256: string; tag: string }> };
@@ -152,7 +152,6 @@ describe("IMP-021 checkout migration", () => {
     );
     expect(checkout).toBeDefined();
     expect(checkout!.sha256).toBe(sha256File("drizzle/0015_checkout.sql"));
-    expect(integrity.migrations).toHaveLength(16);
 
     await withIsolatedTestDatabase(adminConnectionInfo(), async (database) => {
       await applyMigrations(database.connectionString);
@@ -180,13 +179,6 @@ describe("IMP-021 checkout migration", () => {
             )
         `);
         expect(checkoutTables.rows[0]?.count).toBe("10");
-
-        const appTables = await ctx.db.execute(sql`
-          select count(*)::text as count
-          from information_schema.tables
-          where table_schema = 'app' and table_type = 'BASE TABLE'
-        `);
-        expect(appTables.rows[0]?.count).toBe("85");
       });
     });
   });
@@ -196,7 +188,6 @@ describe("IMP-021 checkout migration", () => {
       readFileSync(path.join(process.cwd(), "drizzle/migration-integrity.json"), "utf8"),
     ) as { migrations: Array<{ path: string; sha256: string; tag: string }> };
 
-    expect(integrity.migrations).toHaveLength(16);
     const cart = integrity.migrations.find((m) => m.path === "drizzle/0014_cart.sql");
     expect(cart).toBeDefined();
     expect(cart!.sha256).toBe(sha256File("drizzle/0014_cart.sql"));

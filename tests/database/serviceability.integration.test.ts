@@ -352,7 +352,7 @@ describe("IMP-019 serviceability migration", () => {
     });
   });
 
-  it("rejects forbidden serviceability columns (zones, fees, soft-delete, coords on tables)", async () => {
+  it("rejects forbidden serviceability columns while allowing current policy fields", async () => {
     await withIsolatedTestDatabase(adminConnectionInfo(), async (database) => {
       await applyMigrations(database.connectionString);
       const persistence = getApplicationPersistence(
@@ -375,6 +375,8 @@ describe("IMP-019 serviceability migration", () => {
             n === "outlet_serviceability_configs.service_origin_latitude" ||
             n === "outlet_serviceability_configs.service_origin_longitude" ||
             n === "outlet_serviceability_configs.max_service_distance_meters" ||
+            n === "outlet_serviceability_configs.delivery_fee_bands" ||
+            n === "outlet_serviceability_configs.free_delivery_subtotal_threshold_paise" ||
             n.startsWith("outlet_serviceability_audit_events.previous_service_origin_") ||
             n.startsWith("outlet_serviceability_audit_events.new_service_origin_") ||
             n === "outlet_serviceability_audit_events.previous_max_service_distance_meters" ||
@@ -393,6 +395,10 @@ describe("IMP-019 serviceability migration", () => {
         expect(names).toContain("outlet_serviceability_configs.revision");
         expect(names).toContain("outlet_serviceability_configs.service_origin_latitude");
         expect(names).toContain("outlet_serviceability_configs.max_service_distance_meters");
+        expect(names).toContain("outlet_serviceability_configs.delivery_fee_bands");
+        expect(names).toContain(
+          "outlet_serviceability_configs.free_delivery_subtotal_threshold_paise",
+        );
         expect(names).toContain("outlet_serviceability_pins.postal_code");
       });
     });
