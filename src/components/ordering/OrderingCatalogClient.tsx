@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { CartLineList } from "@/components/ordering/CartLineList";
 import { CartSummary } from "@/components/ordering/CartSummary";
@@ -25,7 +25,10 @@ import {
   type DeliveryContext,
 } from "@/lib/customer-location/delivery-context";
 import { commerceErrorCopy } from "@/components/ordering/error-copy";
-import { cartEvaluationCustomerCopy } from "@/components/ordering/serviceability-copy";
+import {
+  cartEvaluationCustomerCopy,
+  deliveryServiceabilityCustomerCopy,
+} from "@/components/ordering/serviceability-copy";
 import {
   addCartLine,
   clearCart,
@@ -40,7 +43,12 @@ import {
   type CommerceCart,
   type CommerceCartEvaluation,
   type CommerceCartLine,
+  type CommerceServiceabilityDecision,
 } from "@/lib/customer-commerce";
+import {
+  menuOutletIdFromOrderingContext,
+  resolveCustomerOrderingOutletContext,
+} from "@/lib/customer-commerce/ordering-outlet-context";
 import type { CartModifierSelectionInput } from "@/shared/cart/types";
 import type { CustomerMenuItem, CustomerMenuProjection } from "@/shared/customer-menu/types";
 
@@ -54,6 +62,8 @@ export function OrderingCatalogClient(props: { brandId: string }) {
   const [menu, setMenu] = useState<CustomerMenuProjection | null>(null);
   const [cart, setCart] = useState<CommerceCart | null>(null);
   const [evaluation, setEvaluation] = useState<CommerceCartEvaluation | null>(null);
+  const [serviceabilityDecision, setServiceabilityDecision] =
+    useState<CommerceServiceabilityDecision | null>(null);
   const deliveryContext = useDeliveryContext();
   const [loading, setLoading] = useState(true);
   const [pendingKey, setPendingKey] = useState<string | null>(null);
@@ -63,16 +73,26 @@ export function OrderingCatalogClient(props: { brandId: string }) {
   const [dialogError, setDialogError] = useState<string | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const menuRequestIdRef = useRef(0);
+  const evaluationRequestIdRef = useRef(0);
+  const cartRef = useRef<CommerceCart | null>(null);
 
   const menuLookups = useMemo(
     () => (menu ? buildCustomerMenuLookups(menu) : null),
     [menu],
   );
 
+  useEffect(() => {
+    cartRef.current = cart;
+  }, [cart]);
+
   const refreshEvaluation = useCallback(
     async (context: DeliveryContext, currentCart: CommerceCart | null) => {
+      const requestId = ++evaluationRequestIdRef.current;
       if (!currentCart || currentCart.lines.length === 0 || !context.coordinates) {
-        setEvaluation(null);
+        if (requestId === evaluationRequestIdRef.current) {
+          setEvaluation(null);
+        }
         return;
       }
       const evaluated = await evaluateCart({
@@ -82,8 +102,50 @@ export function OrderingCatalogClient(props: { brandId: string }) {
           ...(context.postalCode.length === 6 ? { postalCode: context.postalCode } : {}),
         },
       });
+      if (requestId !== evaluationRequestIdRef.current) return;
       if (evaluated.ok) setEvaluation(evaluated.data);
       else setEvaluation(null);
+    },
+    [brandId],
+  );
+
+  const refreshMenuForContext = useCallback(
+    async (context: DeliveryContext): Promise<boolean> => {
+      const requestId = ++menuRequestIdRef.current;
+      const orderingContext = await resolveCustomerOrderingOutletContext({
+        brandId,
+        coordinates: context.coordinates,
+        postalCode: context.postalCode.length === 6 ? context.postalCode : null,
+      });
+      if (requestId !== menuRequestIdRef.current) return false;
+
+      if (orderingContext.kind === "serviceable") {
+        setServiceabilityDecision(orderingContext.decision);
+      } else if (orderingContext.kind === "not_orderable") {
+        setServiceabilityDecision(orderingContext.decision);
+      } else if (orderingContext.kind === "indeterminate") {
+        setServiceabilityDecision({
+          status: "INDETERMINATE",
+          evaluatedAt: new Date().toISOString(),
+        });
+      } else {
+        setServiceabilityDecision(null);
+      }
+
+      const outletId = menuOutletIdFromOrderingContext(orderingContext);
+      const result = await getCustomerMenu({
+        brandId,
+        ...(outletId ? { outletId } : {}),
+      });
+      if (requestId !== menuRequestIdRef.current) return false;
+      if (!result.ok) {
+        setMenu(null);
+        setError(commerceErrorCopy(result.code));
+        return false;
+      }
+      setMenu(result.data.menu);
+      setError(null);
+      return true;
     },
     [brandId],
   );
@@ -105,8 +167,8 @@ export function OrderingCatalogClient(props: { brandId: string }) {
     setCart(result.data.cart);
     publishCartCount(cartUnitCount(result.data.cart));
     setError(null);
-    await refreshEvaluation(deliveryContext, result.data.cart);
-  }, [brandId, deliveryContext, refreshEvaluation]);
+    await refreshEvaluation(readDeliveryContext(), result.data.cart);
+  }, [brandId, refreshEvaluation]);
 
   function recoverStaleGuestCart(): void {
     clearGuestCartCredential();
@@ -130,28 +192,50 @@ export function OrderingCatalogClient(props: { brandId: string }) {
     return addCartLine(freshCartInput);
   }
 
-  const refreshMenu = useCallback(async () => {
-    const result = await getCustomerMenu({ brandId });
-    if (!result.ok) {
-      setMenu(null);
-      setError(commerceErrorCopy(result.code));
-      return false;
-    }
-    setMenu(result.data.menu);
-    setError(null);
-    return true;
-  }, [brandId]);
+  const refreshOrderingSurface = useCallback(
+    async (context: DeliveryContext) => {
+      await refreshMenuForContext(context);
+      await refreshEvaluation(context, cartRef.current);
+    },
+    [refreshEvaluation, refreshMenuForContext],
+  );
 
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      await Promise.all([refreshMenu(), refreshCart()]);
+      await Promise.all([
+        refreshMenuForContext(readDeliveryContext()),
+        refreshCart(),
+      ]);
       if (!cancelled) setLoading(false);
     })();
     return () => {
       cancelled = true;
     };
-  }, [refreshCart, refreshMenu]);
+    // Initial load only — subsequent refreshes use delivery/visibility subscriptions.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [brandId]);
+
+  useEffect(() => {
+    return subscribeToDeliveryContext((nextContext) => {
+      void refreshOrderingSurface(nextContext);
+    });
+  }, [refreshOrderingSurface]);
+
+  useEffect(() => {
+    function onVisibilityOrFocus(): void {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") {
+        return;
+      }
+      void refreshOrderingSurface(readDeliveryContext());
+    }
+    document.addEventListener("visibilitychange", onVisibilityOrFocus);
+    window.addEventListener("focus", onVisibilityOrFocus);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityOrFocus);
+      window.removeEventListener("focus", onVisibilityOrFocus);
+    };
+  }, [refreshOrderingSurface]);
 
   const groups = useMemo(() => {
     if (!menu) return [];
@@ -227,16 +311,10 @@ export function OrderingCatalogClient(props: { brandId: string }) {
       .filter((group) => group.subcategories.length > 0);
   }, [groups, normalizedSearch, selectedGroup]);
 
-  useEffect(() => {
-    return subscribeToDeliveryContext((nextContext) => {
-      void refreshEvaluation(nextContext, cart);
-    });
-  }, [cart, refreshEvaluation]);
-
   async function updateCartFromMutation(nextCart: CommerceCart): Promise<void> {
     setCart(nextCart);
     publishCartCount(cartUnitCount(nextCart));
-    await refreshEvaluation(deliveryContext, nextCart);
+    await refreshEvaluation(readDeliveryContext(), nextCart);
   }
 
   const quantityByVariant = useMemo(() => {
@@ -276,7 +354,11 @@ export function OrderingCatalogClient(props: { brandId: string }) {
   );
 
   const lineCount = cartUnitCount(cart);
-  const serviceabilityNote = cartEvaluationCustomerCopy(evaluation, Boolean(deliveryContext.coordinates));
+  const hasCoordinates = Boolean(deliveryContext.coordinates);
+  const serviceabilityNote =
+    evaluation && evaluation.status !== "REQUIRES_FULFILMENT_CONTEXT"
+      ? cartEvaluationCustomerCopy(evaluation, hasCoordinates)
+      : deliveryServiceabilityCustomerCopy(serviceabilityDecision, hasCoordinates);
 
   async function withPending(key: string, work: () => Promise<void>): Promise<void> {
     if (pendingKey) return;
@@ -550,7 +632,7 @@ export function OrderingCatalogClient(props: { brandId: string }) {
           <CommerceRetryPanel
             message={error ?? "Menu is unavailable right now."}
             onRetry={() => {
-              void refreshMenu().then((ok) => {
+              void refreshMenuForContext(readDeliveryContext()).then((ok) => {
                 if (ok) void refreshCart();
               });
             }}

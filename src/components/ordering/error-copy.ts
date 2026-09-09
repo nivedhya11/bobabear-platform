@@ -11,6 +11,17 @@ const COPY: Readonly<Record<string, string>> = Object.freeze({
   CART_LINE_NOT_FOUND: "That item is no longer in your cart.",
   CART_INVALID_INPUT: "That cart update wasn't valid. Try again.",
   CART_ITEM_NOT_ORDERABLE: "That item can't be ordered right now.",
+  LINE_VARIANT_UNAVAILABLE: "That item can't be ordered right now.",
+  LINE_NOT_IN_ASSORTMENT: "That item can't be ordered right now.",
+  LINE_CONFIGURATION_INVALID:
+    "A selected option is no longer available. Edit or remove that item.",
+  LINE_REQUIRED_SELECTION_UNAVAILABLE:
+    "A selected option is no longer available. Edit or remove that item.",
+  PRICE_UNAVAILABLE: "We couldn't price that item right now. Try again shortly.",
+  COUPON_CURRENTLY_INELIGIBLE: "That coupon can't be applied right now.",
+  COUPON_EXPIRED: "That coupon has expired.",
+  PROMOTION_EVALUATION_UNAVAILABLE:
+    "We couldn't confirm promotions right now. Try again shortly.",
   CART_RECONCILIATION_CONFLICT: "Choose which cart to keep before continuing.",
   CART_DEPENDENCY_UNAVAILABLE: "Ordering is temporarily unavailable. Try again shortly.",
   CHECKOUT_NOT_FOUND: "We couldn't find that checkout.",
@@ -20,11 +31,26 @@ const COPY: Readonly<Record<string, string>> = Object.freeze({
   CHECKOUT_CART_CHANGED: "Your cart changed. Review it and start checkout again.",
   CHECKOUT_DESTINATION_REQUIRED: "Add a delivery address to continue.",
   CHECKOUT_EMPTY_CART: "Your cart is empty.",
+  CHECKOUT_VARIANT_INVALID: "That item can't be ordered right now.",
+  CHECKOUT_MODIFIER_INVALID:
+    "A selected option is no longer available. Edit or remove that item.",
+  CHECKOUT_BUNDLE_INVALID: "That item configuration can't be ordered right now.",
+  CHECKOUT_NOT_ASSORTED: "That item can't be ordered right now.",
+  CHECKOUT_TEMPORARILY_UNAVAILABLE: "That item is temporarily unavailable.",
+  CHECKOUT_SOLD_OUT: "That item is sold out.",
   CHECKOUT_NOT_SERVICEABLE: "We don't deliver to that address yet.",
   CHECKOUT_SERVICEABILITY_TEMPORARILY_UNAVAILABLE:
     "Delivery availability is temporarily unavailable. Try again shortly.",
   CHECKOUT_SERVICEABILITY_INDETERMINATE:
     "We couldn't confirm delivery for that address. Try again shortly.",
+  CHECKOUT_PRICE_UNRESOLVED: "We couldn't price that item right now. Try again shortly.",
+  CHECKOUT_COUPON_INELIGIBLE: "That coupon can't be applied right now.",
+  CHECKOUT_PROMOTION_INDETERMINATE:
+    "We couldn't confirm promotions right now. Try again shortly.",
+  CHECKOUT_TAX_INDETERMINATE: "We couldn't confirm tax for that checkout. Try again shortly.",
+  CHECKOUT_REPRICED: "Checkout details changed. Review and confirm again.",
+  CHECKOUT_DEPENDENCY_INDETERMINATE:
+    "We couldn't confirm checkout details right now. Try again shortly.",
   CHECKOUT_INVALID_INPUT: "That checkout update wasn't valid. Try again.",
   CUSTOMER_ADDRESS_INPUT_INVALID: "Check the address details and try again.",
   CUSTOMER_ADDRESS_NOT_FOUND: "That address is no longer available.",

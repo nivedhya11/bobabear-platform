@@ -23,6 +23,8 @@ export type CustomerMenuModifierOption = Readonly<{
   position: number;
   displayPriceDeltaPaise: number;
   currency: "INR";
+  /** Present only with authoritative outlet context; existing IMP-014 display states. */
+  availability?: CustomerMenuAvailability;
 }>;
 
 export type CustomerMenuModifierGroup = Readonly<{

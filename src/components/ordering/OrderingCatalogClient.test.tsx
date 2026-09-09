@@ -34,6 +34,14 @@ vi.mock("@/lib/customer-commerce", async () => {
   };
 });
 
+vi.mock("@/lib/customer-commerce/ordering-outlet-context", () => ({
+  resolveCustomerOrderingOutletContext: vi.fn(async (input: { coordinates?: unknown }) =>
+    input.coordinates ? { kind: "indeterminate" as const } : { kind: "no_location" as const },
+  ),
+  menuOutletIdFromOrderingContext: (context: { kind: string; outletId?: string }) =>
+    context.kind === "serviceable" ? context.outletId : undefined,
+}));
+
 const menu: CustomerMenuProjection = {
   brandId: "brand-1",
   menuId: "menu-1",
@@ -797,5 +805,147 @@ describe("OrderingCatalogClient IMP-036C stale guest cart recovery", () => {
     await waitFor(() =>
       expect(screen.getByText("That item can't be ordered right now.")).toBeInTheDocument(),
     );
+  });
+
+  it("passes server-selected outlet into menu projection when serviceable", async () => {
+    const { resolveCustomerOrderingOutletContext } = await import(
+      "@/lib/customer-commerce/ordering-outlet-context"
+    );
+    vi.mocked(resolveCustomerOrderingOutletContext).mockResolvedValue({
+      kind: "serviceable",
+      outletId: "outlet-1",
+      decision: {
+        status: "SERVICEABLE",
+        evaluatedAt: "2026-09-09T00:00:00.000Z",
+        selectedOutletId: "outlet-1",
+      },
+    });
+    const {
+      writeDeliveryContext,
+      resetDeliveryContextSnapshotForTests,
+    } = await import("@/lib/customer-location/delivery-context");
+    window.sessionStorage.clear();
+    resetDeliveryContextSnapshotForTests();
+    writeDeliveryContext({
+      displayLabel: "Rajpur Road",
+      coordinates: { latitude: "30.3256000", longitude: "78.0436000" },
+      source: "location_search",
+    });
+    getCustomerMenu.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        menu: {
+          ...menu,
+          items: [{ ...menu.items[0]!, availability: "sold_out" }],
+        },
+      },
+    });
+
+    render(<OrderingCatalogClient brandId="brand-1" />);
+    await waitFor(() =>
+      expect(getCustomerMenu).toHaveBeenCalledWith({
+        brandId: "brand-1",
+        outletId: "outlet-1",
+      }),
+    );
+    expect(await screen.findByTestId("menu-item-availability")).toHaveTextContent("Sold out");
+    expect(screen.queryByRole("button", { name: "Add Classic Milk Tea" })).not.toBeInTheDocument();
+
+    window.sessionStorage.clear();
+    resetDeliveryContextSnapshotForTests();
+    vi.mocked(resolveCustomerOrderingOutletContext).mockImplementation(async (input: {
+      coordinates?: unknown;
+    }) => (input.coordinates ? { kind: "indeterminate" as const } : { kind: "no_location" as const }));
+  });
+
+  it("ignores stale menu outlet resolution when a newer delivery context wins", async () => {
+    const { resolveCustomerOrderingOutletContext } = await import(
+      "@/lib/customer-commerce/ordering-outlet-context"
+    );
+    const {
+      writeDeliveryContext,
+      resetDeliveryContextSnapshotForTests,
+    } = await import("@/lib/customer-location/delivery-context");
+    window.sessionStorage.clear();
+    resetDeliveryContextSnapshotForTests();
+
+    const resolvers: Array<(value: unknown) => void> = [];
+    vi.mocked(resolveCustomerOrderingOutletContext).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolvers.push(resolve);
+        }) as never,
+    );
+
+    writeDeliveryContext({
+      displayLabel: "First",
+      coordinates: { latitude: "30.3256000", longitude: "78.0436000" },
+      source: "location_search",
+    });
+    render(<OrderingCatalogClient brandId="brand-1" />);
+    await waitFor(() => expect(resolvers.length).toBeGreaterThanOrEqual(1));
+
+    writeDeliveryContext({
+      displayLabel: "Second",
+      coordinates: { latitude: "30.3300000", longitude: "78.0500000" },
+      source: "location_search",
+    });
+    await waitFor(() => expect(resolvers.length).toBeGreaterThanOrEqual(2));
+
+    const stale = resolvers[0]!;
+    const latest = resolvers[resolvers.length - 1]!;
+
+    getCustomerMenu.mockClear();
+    getCustomerMenu.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        menu: {
+          ...menu,
+          items: [{ ...menu.items[0]!, name: "Latest Milk Tea", availability: "available" }],
+        },
+      },
+    });
+
+    latest({
+      kind: "serviceable",
+      outletId: "outlet-latest",
+      decision: {
+        status: "SERVICEABLE",
+        evaluatedAt: "2026-09-09T00:00:01.000Z",
+        selectedOutletId: "outlet-latest",
+      },
+    });
+    await waitFor(() =>
+      expect(getCustomerMenu).toHaveBeenCalledWith({
+        brandId: "brand-1",
+        outletId: "outlet-latest",
+      }),
+    );
+
+    stale({
+      kind: "serviceable",
+      outletId: "outlet-stale",
+      decision: {
+        status: "SERVICEABLE",
+        evaluatedAt: "2026-09-09T00:00:00.000Z",
+        selectedOutletId: "outlet-stale",
+      },
+    });
+
+    await waitFor(() =>
+      expect(screen.getByRole("heading", { name: "Latest Milk Tea" })).toBeInTheDocument(),
+    );
+    expect(getCustomerMenu).not.toHaveBeenCalledWith({
+      brandId: "brand-1",
+      outletId: "outlet-stale",
+    });
+
+    window.sessionStorage.clear();
+    resetDeliveryContextSnapshotForTests();
+    vi.mocked(resolveCustomerOrderingOutletContext).mockImplementation(async (input: {
+      coordinates?: unknown;
+    }) => (input.coordinates ? { kind: "indeterminate" as const } : { kind: "no_location" as const }));
   });
 });

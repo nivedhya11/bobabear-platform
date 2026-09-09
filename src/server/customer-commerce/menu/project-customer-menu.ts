@@ -26,12 +26,62 @@ import type {
   CustomerMenuSection,
 } from "../../../shared/customer-menu/types";
 import { loadEffectiveVariantAvailabilityState } from "../../assortment/availability";
+import { resolveOutletVariantAvailability } from "../../assortment/resolve-eligibility";
 import { effectiveEntryDisplay } from "../../catalog/menu/reads";
 import { assertUuid } from "../../catalog/lifecycle";
 import type { PersistenceQueryContext } from "../../persistence/types";
 import { PricingNotFoundError, PricingResolutionError } from "../../pricing/errors";
 import { resolveBrandVariantPrice, resolveOutletVariantPrice } from "../../pricing/resolve-price";
+import type { EligibilityDecision } from "../../assortment/types";
 import { loadCustomerMenuModifiersByVariantId } from "./load-customer-menu-modifiers";
+
+function isAssortmentOrCatalogOmission(code: EligibilityDecision["code"]): boolean {
+  return (
+    code === "ASSORTMENT_NOT_INCLUDED" ||
+    code === "ASSORTMENT_EXCLUDED_BRAND" ||
+    code === "ASSORTMENT_EXCLUDED_TERRITORY" ||
+    code === "ASSORTMENT_EXCLUDED_ORGANIZATION" ||
+    code === "ASSORTMENT_EXCLUDED_OUTLET" ||
+    code === "CATALOG_INACTIVE" ||
+    code === "OUTLET_INACTIVE" ||
+    code === "DENIED"
+  );
+}
+
+function isOperatingEligibilityCode(code: EligibilityDecision["code"]): boolean {
+  return (
+    code === "OUTLET_PAUSED" ||
+    code === "OUTLET_SUSPENDED" ||
+    code === "OUTLET_CLOSED_BY_SCHEDULE" ||
+    code === "OPERATING_CONFIGURATION_MISSING"
+  );
+}
+
+/**
+ * Compose existing IMP-014 eligibility onto CustomerMenuAvailability.
+ * Assortment exclusions are omitted (ADR-006). Operating state remains
+ * Serviceability/location authority and is not remapped as item availability
+ * when an outletId is supplied for merchandise projection.
+ */
+function displayAvailabilityFromEligibility(
+  decision: EligibilityDecision,
+  opsAvailability: CustomerMenuAvailability,
+): CustomerMenuAvailability | "omit" {
+  if (isAssortmentOrCatalogOmission(decision.code)) return "omit";
+  if (decision.code === "VARIANT_SOLD_OUT") return "sold_out";
+  if (
+    decision.code === "VARIANT_TEMPORARILY_UNAVAILABLE" ||
+    decision.code === "MODIFIER_CONFIGURATION_UNAVAILABLE" ||
+    decision.code === "BUNDLE_COMPONENT_UNAVAILABLE"
+  ) {
+    return "temporarily_unavailable";
+  }
+  if (decision.eligible || isOperatingEligibilityCode(decision.code)) {
+    return opsAvailability;
+  }
+  if (decision.code === "ERROR") return "temporarily_unavailable";
+  return opsAvailability;
+}
 
 export type ProjectCustomerMenuInput = Readonly<{
   brandId: string;
@@ -214,12 +264,22 @@ export async function projectCustomerMenu(
 
     let availability: CustomerMenuAvailability | undefined;
     if (outletId) {
-      availability = await loadEffectiveVariantAvailabilityState(
+      const eligibility = await resolveOutletVariantAvailability(context, {
+        variantId: variant.id,
+        outletId,
+        context: { now: at },
+      });
+      const opsAvailability = await loadEffectiveVariantAvailabilityState(
         context,
         outletId,
         variant.id,
         at,
       );
+      const projected = displayAvailabilityFromEligibility(eligibility, opsAvailability);
+      if (projected === "omit") {
+        continue;
+      }
+      availability = projected;
     }
 
     const modifierGroups = modifiersByVariantId.get(variant.id);

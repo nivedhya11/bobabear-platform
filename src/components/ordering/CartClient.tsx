@@ -24,7 +24,10 @@ import {
 } from "@/lib/customer-location/delivery-context";
 import { commerceErrorCopy } from "@/components/ordering/error-copy";
 import { MenuItemCustomizationDialog } from "@/components/ordering/MenuItemCustomizationDialog";
-import { cartEvaluationCustomerCopy } from "@/components/ordering/serviceability-copy";
+import {
+  cartEvaluationCustomerCopy,
+  isCartCheckoutBlocked,
+} from "@/components/ordering/serviceability-copy";
 import {
   clearCart,
   evaluateCart,
@@ -37,6 +40,10 @@ import {
   type CommerceCartEvaluation,
   type CommerceCartLine,
 } from "@/lib/customer-commerce";
+import {
+  menuOutletIdFromOrderingContext,
+  resolveCustomerOrderingOutletContext,
+} from "@/lib/customer-commerce/ordering-outlet-context";
 import { loginUrlWithReturn } from "@/lib/customer-auth/return-to";
 import { fetchCustomerSession } from "@/lib/customer-auth/client";
 import type { CartModifierSelectionInput } from "@/shared/cart/types";
@@ -59,6 +66,8 @@ export function CartClient(props: { brandId: string }) {
   const [editTarget, setEditTarget] = useState<EditTarget | null>(null);
   const [dialogError, setDialogError] = useState<string | null>(null);
   const evaluationRequestIdRef = useRef(0);
+  const menuRequestIdRef = useRef(0);
+  const cartRef = useRef<CommerceCart | null>(null);
 
   const menuLookups = useMemo(
     () => (menu ? buildCustomerMenuLookups(menu) : null),
@@ -73,6 +82,10 @@ export function CartClient(props: { brandId: string }) {
       ),
     [cart, menuLookups, brandId],
   );
+
+  useEffect(() => {
+    cartRef.current = cart;
+  }, [cart]);
 
   const refreshEvaluation = useCallback(
     async (context: DeliveryContext, currentCart: CommerceCart | null) => {
@@ -103,14 +116,34 @@ export function CartClient(props: { brandId: string }) {
     [brandId],
   );
 
+  const refreshMenuForContext = useCallback(
+    async (context: DeliveryContext) => {
+      const requestId = ++menuRequestIdRef.current;
+      const orderingContext = await resolveCustomerOrderingOutletContext({
+        brandId,
+        coordinates: context.coordinates,
+        postalCode: context.postalCode.length === 6 ? context.postalCode : null,
+      });
+      if (requestId !== menuRequestIdRef.current) return;
+      const outletId = menuOutletIdFromOrderingContext(orderingContext);
+      const menuResult = await getCustomerMenu({
+        brandId,
+        ...(outletId ? { outletId } : {}),
+      });
+      if (requestId !== menuRequestIdRef.current) return;
+      if (!menuResult.ok) {
+        setMenu(null);
+        setError(commerceErrorCopy(menuResult.code));
+      } else {
+        setMenu(menuResult.data.menu);
+      }
+    },
+    [brandId],
+  );
+
   const load = useCallback(async () => {
-    const menuResult = await getCustomerMenu({ brandId });
-    if (!menuResult.ok) {
-      setMenu(null);
-      setError(commerceErrorCopy(menuResult.code));
-    } else {
-      setMenu(menuResult.data.menu);
-    }
+    const context = readDeliveryContext();
+    await refreshMenuForContext(context);
 
     const cartResult = await getActiveCart(brandId, { guestToken: true });
     if (!cartResult.ok) {
@@ -119,8 +152,8 @@ export function CartClient(props: { brandId: string }) {
       return;
     }
     setCart(cartResult.data.cart);
-    await refreshEvaluation(readDeliveryContext(), cartResult.data.cart);
-  }, [brandId, refreshEvaluation]);
+    await refreshEvaluation(context, cartResult.data.cart);
+  }, [brandId, refreshEvaluation, refreshMenuForContext]);
 
   useEffect(() => {
     let cancelled = false;
@@ -135,9 +168,27 @@ export function CartClient(props: { brandId: string }) {
 
   useEffect(() => {
     return subscribeToDeliveryContext((nextContext) => {
-      void refreshEvaluation(nextContext, cart);
+      void refreshMenuForContext(nextContext);
+      void refreshEvaluation(nextContext, cartRef.current);
     });
-  }, [cart, refreshEvaluation]);
+  }, [refreshEvaluation, refreshMenuForContext]);
+
+  useEffect(() => {
+    function onVisibilityOrFocus(): void {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") {
+        return;
+      }
+      const context = readDeliveryContext();
+      void refreshMenuForContext(context);
+      void refreshEvaluation(context, cartRef.current);
+    }
+    document.addEventListener("visibilitychange", onVisibilityOrFocus);
+    window.addEventListener("focus", onVisibilityOrFocus);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityOrFocus);
+      window.removeEventListener("focus", onVisibilityOrFocus);
+    };
+  }, [refreshEvaluation, refreshMenuForContext]);
 
   async function applyCartMutation(nextCart: CommerceCart): Promise<void> {
     setCart(nextCart);
@@ -203,8 +254,10 @@ export function CartClient(props: { brandId: string }) {
     });
   }
 
+  const checkoutBlocked = isCartCheckoutBlocked(evaluation);
+
   async function handleCheckout(): Promise<void> {
-    if (pending || !cart || cart.lines.length === 0) return;
+    if (pending || checkoutBlocked || !cart || cart.lines.length === 0) return;
     setPending(true);
     const session = await fetchCustomerSession();
     setPending(false);
@@ -263,7 +316,10 @@ export function CartClient(props: { brandId: string }) {
   const presentationAmount = presentationEstimate.complete
     ? formatPresentationEstimateLabel(presentationEstimate.totalPaise)
     : presentationLabel;
-  const serviceabilityNote = cartEvaluationCustomerCopy(evaluation, Boolean(deliveryContext.coordinates));
+  const serviceabilityNote = cartEvaluationCustomerCopy(
+    evaluation,
+    Boolean(deliveryContext.coordinates),
+  );
 
   if (loading) {
     return (
@@ -358,7 +414,7 @@ export function CartClient(props: { brandId: string }) {
           >
             {evaluation.problems.map((problem) => (
               <li key={`${problem.cartLineId}-${problem.code}`} className="font-body text-[13px] text-[var(--text-secondary)]">
-                {commerceErrorCopy(problem.code as never) ?? problem.code}
+                {commerceErrorCopy(problem.code)}
               </li>
             ))}
           </ul>
@@ -382,7 +438,7 @@ export function CartClient(props: { brandId: string }) {
               variant="primary"
               size="lg"
               className="mt-6 min-h-[52px] w-full rounded-lg"
-              disabled={pending}
+              disabled={pending || checkoutBlocked}
               onClick={() => void handleCheckout()}
             >
               {pending ? "Continuing…" : "Checkout"}
@@ -418,7 +474,7 @@ export function CartClient(props: { brandId: string }) {
               variant="primary"
               size="lg"
               className="min-h-[48px] shrink-0 rounded-lg px-6"
-              disabled={pending}
+              disabled={pending || checkoutBlocked}
               onClick={() => void handleCheckout()}
             >
               {pending ? "Continuing…" : "Checkout"}

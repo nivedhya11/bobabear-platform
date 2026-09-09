@@ -44,6 +44,11 @@ export {
 } from "./profile";
 export { evaluateDeliveryServiceability } from "./serviceability";
 export {
+  menuOutletIdFromOrderingContext,
+  resolveCustomerOrderingOutletContext,
+  type CustomerOrderingOutletContext,
+} from "./ordering-outlet-context";
+export {
   autocompleteLocation,
   getLocationProviderStatus,
   resolveLocationPlace,

@@ -15,9 +15,15 @@ import {
   catalogVariantModifierGroupsTable,
 } from "../../../platform/database/schema/catalog";
 import type {
+  CustomerMenuAvailability,
   CustomerMenuModifierGroup,
   CustomerMenuModifierOption,
 } from "../../../shared/customer-menu/types";
+import {
+  findModifierOptionExclusion,
+  loadOutletAncestry,
+} from "../../assortment/assortment-reads";
+import { loadEffectiveModifierOptionAvailabilityState } from "../../assortment/availability";
 import type { PersistenceQueryContext } from "../../persistence/types";
 import { resolveModifierDisplayPriceDeltas } from "../../pricing/resolve-price";
 import { PricingResolutionError } from "../../pricing/errors";
@@ -153,6 +159,9 @@ export async function loadCustomerMenuModifiersByVariantId(
     at: input.at,
   });
 
+  const outletAncestry =
+    input.outletId !== null ? await loadOutletAncestry(context, input.outletId) : null;
+
   const modifiersByVariantId = new Map<string, CustomerMenuModifierGroup[]>();
   for (const vmg of variantModifierGroupRows) {
     const group = activeGroupById.get(vmg.modifierGroupId);
@@ -178,8 +187,28 @@ export async function loadCustomerMenuModifiersByVariantId(
       if (!Number.isSafeInteger(displayPriceDeltaPaise)) {
         throw new PricingResolutionError(
           "PRICE_MISSING",
-          "Modifier display price delta exceeds JSON safe integer range.",
+          "modifier display price delta exceeds JSON safe integer range.",
         );
+      }
+
+      let availability: CustomerMenuAvailability | undefined;
+      if (outletAncestry) {
+        const exclusion = await findModifierOptionExclusion(
+          context,
+          outletAncestry,
+          option.id,
+        );
+        if (exclusion) {
+          // Assortment-excluded modifier options are omitted from projection.
+          continue;
+        }
+        const state = await loadEffectiveModifierOptionAvailabilityState(
+          context,
+          outletAncestry.outletId,
+          option.id,
+          input.at,
+        );
+        availability = state;
       }
 
       options.push(
@@ -193,6 +222,7 @@ export async function loadCustomerMenuModifiersByVariantId(
           position: binding.position,
           displayPriceDeltaPaise,
           currency: "INR" as const,
+          ...(availability !== undefined ? { availability } : {}),
         }),
       );
     }

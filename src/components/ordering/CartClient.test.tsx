@@ -34,6 +34,14 @@ vi.mock("@/lib/customer-commerce", async () => {
   };
 });
 
+vi.mock("@/lib/customer-commerce/ordering-outlet-context", () => ({
+  resolveCustomerOrderingOutletContext: vi.fn(async (input: { coordinates?: unknown }) =>
+    input.coordinates ? { kind: "indeterminate" as const } : { kind: "no_location" as const },
+  ),
+  menuOutletIdFromOrderingContext: (context: { kind: string; outletId?: string }) =>
+    context.kind === "serviceable" ? context.outletId : undefined,
+}));
+
 const brandId = "brand-1";
 const variantId = "var-1";
 const bindingId = "binding-1";
@@ -877,5 +885,41 @@ describe("CartClient", () => {
       screen.queryByRole("button", { name: /edit customization for classic milk tea/i }),
     ).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /remove classic milk tea from cart/i })).toBeInTheDocument();
+  });
+
+  it("disables checkout when evaluation is CART_INVALID and shows non-location copy", async () => {
+    getActiveCart.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { cart: guestCart("1", [{ id: "line-1", variantId, quantity: 1 }]) },
+    });
+    evaluateCart.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        cartId: "cart-1",
+        cartRevision: "1",
+        evaluatedAt: "2026-08-13T00:00:00.000Z",
+        status: "CART_INVALID",
+        problems: [{ cartLineId: "line-1", code: "LINE_VARIANT_UNAVAILABLE" }],
+      },
+    });
+    writeDeliveryContext({
+      displayLabel: "Rajpur Road",
+      coordinates: { latitude: "30.3256000", longitude: "78.0436000" },
+      source: "location_search",
+    });
+
+    render(<CartClient brandId={brandId} />);
+    expect(
+      await screen.findByText(/Some items in your cart aren't available right now/i),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("cart-evaluation-problems")).toHaveTextContent(
+      "That item can't be ordered right now.",
+    );
+    const checkoutButtons = screen.getAllByRole("button", { name: "Checkout" });
+    for (const button of checkoutButtons) {
+      expect(button).toBeDisabled();
+    }
   });
 });
