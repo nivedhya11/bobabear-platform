@@ -201,7 +201,7 @@ export function StoreHoursClient() {
           value={timezone}
           disabled={!canManage || pending}
           onChange={(event) => setTimezone(event.target.value)}
-          className="min-h-11 rounded-sm border border-[var(--border-strong)] bg-transparent px-3 text-sm outline-none focus:shadow-[0_0_0_3px_var(--focus-ring)]"
+          className="min-h-11 rounded-md border border-[var(--enterprise-border,#3D6026)] bg-[var(--bg-surface,#2E4720)] px-3 text-sm text-[var(--enterprise-text-primary,#FAF3E2)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--enterprise-focus,#A8D832)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--enterprise-bg-page,#1A2210)]"
         />
       </div>
 
@@ -224,7 +224,7 @@ export function StoreHoursClient() {
                     rows.map((row, i) => (i === index ? { ...row, dayOfWeek } : row)),
                   );
                 }}
-                className="min-h-11 rounded-sm border border-[var(--border-strong)] bg-transparent px-2"
+                className="min-h-11 rounded-md border border-[var(--enterprise-border,#3D6026)] bg-[var(--bg-surface,#2E4720)] px-2 text-sm text-[var(--enterprise-text-primary,#FAF3E2)]"
               >
                 {[0, 1, 2, 3, 4, 5, 6].map((day) => (
                   <option key={day} value={day}>
@@ -246,7 +246,7 @@ export function StoreHoursClient() {
                     rows.map((row, i) => (i === index ? { ...row, startTime } : row)),
                   );
                 }}
-                className="min-h-11 rounded-sm border border-[var(--border-strong)] bg-transparent px-2"
+                className="min-h-11 rounded-md border border-[var(--enterprise-border,#3D6026)] bg-[var(--bg-surface,#2E4720)] px-2 text-sm text-[var(--enterprise-text-primary,#FAF3E2)]"
               />
             </label>
             <label className="flex flex-col gap-1 text-sm">
@@ -262,7 +262,7 @@ export function StoreHoursClient() {
                     rows.map((row, i) => (i === index ? { ...row, endTime } : row)),
                   );
                 }}
-                className="min-h-11 rounded-sm border border-[var(--border-strong)] bg-transparent px-2"
+                className="min-h-11 rounded-md border border-[var(--enterprise-border,#3D6026)] bg-[var(--bg-surface,#2E4720)] px-2 text-sm text-[var(--enterprise-text-primary,#FAF3E2)]"
               />
             </label>
             {canManage ? (

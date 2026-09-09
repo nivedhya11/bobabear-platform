@@ -38,8 +38,8 @@ function NavLinks({
             "rounded-md px-3 py-2 text-sm font-medium transition-colors",
             enterpriseFocusRingClass,
             item.current
-              ? "bg-[var(--enterprise-nav-active-bg,#e8efe2)] text-[var(--enterprise-text-primary,#1a2210)]"
-              : "text-[var(--enterprise-text-secondary,#4b5542)] hover:bg-[var(--enterprise-nav-hover-bg,#eef2ea)] hover:text-[var(--enterprise-text-primary,#1a2210)]",
+              ? "bg-[var(--enterprise-nav-active-bg,#2E4720)] text-[var(--enterprise-text-primary,#FAF3E2)]"
+              : "text-[var(--enterprise-text-secondary,#EBD9A6)] hover:bg-[var(--enterprise-nav-hover-bg,#22361A)] hover:text-[var(--enterprise-text-primary,#FAF3E2)]",
           )}
         >
           {item.label}
@@ -109,7 +109,7 @@ export function SideNavigation({
   return (
     <>
       {showDesktop ? (
-        <aside className="hidden w-60 shrink-0 border-r border-[var(--enterprise-border,#d8ddd0)] bg-[var(--enterprise-bg-panel,#ffffff)] lg:block">
+        <aside className="hidden w-60 shrink-0 border-r border-[var(--enterprise-border,#3D6026)] bg-[var(--enterprise-bg-panel,#22361A)] lg:block">
           <nav id={desktopNavId} aria-label={ariaLabel} className="flex flex-col gap-1 p-3">
             <NavLinks items={items} />
           </nav>
@@ -133,9 +133,9 @@ export function SideNavigation({
             role="dialog"
             aria-modal={mobileOpen}
             aria-label={ariaLabel}
-            className="absolute inset-y-0 left-0 flex w-[min(18rem,88vw)] flex-col border-r border-[var(--enterprise-border,#d8ddd0)] bg-[var(--enterprise-bg-panel,#ffffff)] shadow-xl"
+            className="absolute inset-y-0 left-0 flex w-[min(18rem,88vw)] flex-col border-r border-[var(--enterprise-border,#3D6026)] bg-[var(--enterprise-bg-panel,#22361A)] shadow-xl"
           >
-            <div className="flex items-center justify-between border-b border-[var(--enterprise-border,#d8ddd0)] px-3 py-2">
+            <div className="flex items-center justify-between border-b border-[var(--enterprise-border,#3D6026)] px-3 py-2">
               <p className="text-sm font-semibold">Navigation</p>
               <Button ref={closeButtonRef} type="button" variant="ghost" size="sm" onClick={onMobileClose}>
                 Close

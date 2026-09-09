@@ -9,5 +9,3 @@ export type { BadgeProps, BadgeVariant } from "./Badge";
 
 export { Card, CardBody, CardImage } from "./Card";
 export type { CardProps, CardBodyProps, CardImageProps } from "./Card";
-
-export { ThemeToggle } from "./ThemeToggle";

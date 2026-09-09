@@ -20,11 +20,11 @@ export function PageHeader({
       {breadcrumbs ? <Breadcrumbs items={breadcrumbs} /> : null}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight text-[var(--enterprise-text-primary,#1a2210)]">
+          <h1 className="text-2xl font-semibold tracking-tight text-[var(--enterprise-text-primary,#FAF3E2)]">
             {title}
           </h1>
           {description ? (
-            <p className="max-w-3xl text-sm leading-relaxed text-[var(--enterprise-text-secondary,#4b5542)]">
+            <p className="max-w-3xl text-sm leading-relaxed text-[var(--enterprise-text-secondary,#EBD9A6)]">
               {description}
             </p>
           ) : null}

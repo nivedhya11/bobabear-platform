@@ -34,10 +34,10 @@ function DestinationCard({ destination }: Readonly<{ destination: WorkforceDesti
       href={destination.href}
       className={`${enterprisePanelClass} block px-5 py-4 transition-shadow hover:shadow-md focus-ring`}
     >
-      <h2 className="text-base font-semibold text-[var(--enterprise-text-primary,#1a2210)]">
+      <h2 className="text-base font-semibold text-[var(--enterprise-text-primary,#FAF3E2)]">
         {destination.label}
       </h2>
-      <p className="mt-1 text-sm text-[var(--enterprise-text-secondary,#4b5542)]">{destination.description}</p>
+      <p className="mt-1 text-sm text-[var(--enterprise-text-secondary,#EBD9A6)]">{destination.description}</p>
     </a>
   );
 }
@@ -105,7 +105,7 @@ export function WorkforceHubClient() {
         title="Workforce"
         description="Choose an application based on your authorized scope."
       />
-      <p className="text-sm text-[var(--enterprise-text-secondary,#4b5542)]" data-testid="workforce-hub-identity">
+      <p className="text-sm text-[var(--enterprise-text-secondary,#EBD9A6)]" data-testid="workforce-hub-identity">
         {view.signedInLabel === "Signed in" ? "Signed in" : `Signed in as ${view.signedInLabel}`}
       </p>
       {view.destinations.length > 0 ? (

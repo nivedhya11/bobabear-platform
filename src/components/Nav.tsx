@@ -11,9 +11,9 @@
  * disclosure (My Orders, Sign Out), not a /my-boba route.
  */
 
-import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import { Menu, ArrowLeft, Sun, Moon, Bag } from "@/components/icons";
+import { Menu, ArrowLeft, Bag } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { useCustomerChromeSession } from "@/lib/customer-auth/chrome-session";
 import { signInHrefForPath } from "@/lib/customer-auth/return-to";
@@ -32,18 +32,6 @@ const CART_HREF = "/order/cart/";
 const MY_ORDERS_HREF = "/order/orders/";
 const PROFILE_HREF = "/account/profile/";
 const ADDRESSES_HREF = "/account/addresses/";
-
-function subscribeTheme(cb: () => void) {
-  const obs = new MutationObserver(cb);
-  obs.observe(document.documentElement, {
-    attributes: true,
-    attributeFilter: ["class"],
-  });
-  return () => obs.disconnect();
-}
-
-const getThemeSnapshot = () => document.documentElement.classList.contains("light");
-const getServerSnapshot = () => false;
 
 function chromeLinkClass(active: boolean): string {
   return cn(
@@ -86,17 +74,6 @@ export function Nav() {
   const { session, signOut } = useCustomerChromeSession();
   const authenticated = session === "authenticated";
   const [cartCount, setCartCount] = useState(0);
-
-  const isLight = useSyncExternalStore(subscribeTheme, getThemeSnapshot, getServerSnapshot);
-  const toggleTheme = () => {
-    const next = !isLight;
-    document.documentElement.classList.toggle("light", next);
-    try {
-      localStorage.setItem("theme", next ? "light" : "dark");
-    } catch {
-      /* localStorage blocked — fall back to in-session only */
-    }
-  };
 
   const drawerRef = useRef<HTMLDivElement>(null);
   const lastFocusedRef = useRef<HTMLElement | null>(null);
@@ -348,8 +325,6 @@ export function Nav() {
                 </li>
               </ul>
             </nav>
-
-            <CircleThemeButton isLight={isLight} onClick={toggleTheme} />
           </div>
 
           <div className="relative flex lg:hidden items-center justify-between h-full">
@@ -368,7 +343,6 @@ export function Nav() {
               >
                 <Menu size={16} strokeWidth={2} />
               </button>
-              <CircleThemeButton isLight={isLight} onClick={toggleTheme} className="h-8 w-8" />
             </div>
 
             <a
@@ -601,31 +575,5 @@ export function Nav() {
         </nav>
       </div>
     </>
-  );
-}
-
-function CircleThemeButton({
-  isLight,
-  onClick,
-  className,
-}: {
-  isLight: boolean;
-  onClick: () => void;
-  className?: string;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      aria-label={isLight ? "Switch to dark mode" : "Switch to light mode"}
-      className={cn(
-        "flex items-center justify-center",
-        "h-[38px] w-[38px] rounded-full border border-[var(--border-strong)]",
-        "text-[var(--text-primary)] hover:border-[var(--border-focus)]",
-        "transition-colors duration-[150ms] ease-out focus-ring cursor-pointer",
-        className,
-      )}
-    >
-      {isLight ? <Moon size={16} strokeWidth={2} /> : <Sun size={16} strokeWidth={2} />}
-    </button>
   );
 }

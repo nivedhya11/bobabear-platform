@@ -261,7 +261,7 @@ export function StoreTeamAccessClient() {
             setMembershipId(next);
             syncMembershipIdInUrl(next);
           }}
-          className="min-h-11 rounded-sm border border-[var(--border-strong)] bg-transparent px-3 outline-none focus:shadow-[0_0_0_3px_var(--focus-ring)]"
+          className="min-h-11 rounded-md border border-[var(--enterprise-border,#3D6026)] bg-[var(--bg-surface,#2E4720)] px-3 text-sm text-[var(--enterprise-text-primary,#FAF3E2)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--enterprise-focus,#A8D832)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--enterprise-bg-page,#1A2210)]"
         >
           {view.members.length === 0 ? <option value="">No members</option> : null}
           {view.members.map((item) => (
@@ -357,7 +357,7 @@ export function StoreTeamAccessClient() {
                   value={roleKey}
                   disabled={pending}
                   onChange={(event) => setRoleKey(event.target.value)}
-                  className="min-h-11 rounded-sm border border-[var(--border-strong)] bg-transparent px-2"
+                  className="min-h-11 rounded-md border border-[var(--enterprise-border,#3D6026)] bg-[var(--bg-surface,#2E4720)] px-2 text-sm text-[var(--enterprise-text-primary,#FAF3E2)]"
                 >
                   <option value="kitchen_operator">Kitchen operator</option>
                   <option value="delivery_coordinator">Delivery coordinator</option>

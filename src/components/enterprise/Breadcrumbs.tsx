@@ -8,7 +8,7 @@ export type BreadcrumbItem = Readonly<{
 export function Breadcrumbs({ items }: Readonly<{ items: readonly BreadcrumbItem[] }>) {
   if (items.length === 0) return null;
   return (
-    <nav aria-label="Breadcrumb" className="text-sm text-[var(--enterprise-text-secondary,#4b5542)]">
+    <nav aria-label="Breadcrumb" className="text-sm text-[var(--enterprise-text-secondary,#EBD9A6)]">
       <ol className="flex flex-wrap items-center gap-1.5">
         {items.map((item, index) => {
           const isLast = index === items.length - 1;
@@ -20,7 +20,7 @@ export function Breadcrumbs({ items }: Readonly<{ items: readonly BreadcrumbItem
                   {item.label}
                 </a>
               ) : (
-                <span aria-current={isLast ? "page" : undefined} className={isLast ? "font-medium text-[var(--enterprise-text-primary,#1a2210)]" : undefined}>
+                <span aria-current={isLast ? "page" : undefined} className={isLast ? "font-medium text-[var(--enterprise-text-primary,#FAF3E2)]" : undefined}>
                   {item.label}
                 </span>
               )}

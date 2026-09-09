@@ -94,7 +94,7 @@ export function AdministrationHubClient() {
         title="Administration overview"
         description="Manage organization resources, memberships, and access audit from this workspace."
       />
-      <p className="text-sm text-[var(--enterprise-text-secondary,#4b5542)]" data-testid="admin-hub-identity">
+      <p className="text-sm text-[var(--enterprise-text-secondary,#EBD9A6)]" data-testid="admin-hub-identity">
         {view.signedInLabel === "Signed in" ? "Signed in" : `Signed in as ${view.signedInLabel}`}
       </p>
       <ul className="grid gap-3 sm:grid-cols-2">

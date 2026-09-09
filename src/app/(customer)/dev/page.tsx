@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/Button";
 import { Chip } from "@/components/ui/Chip";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardBody, CardImage } from "@/components/ui/Card";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 export const metadata: Metadata = {
   title: "Component Showcase — Boba Bear Dev",
@@ -52,18 +51,15 @@ export default function DevPage() {
 
         {/* ── Header ─────────────────────────────────────────────────────── */}
         <header className="flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <p className="font-body font-semibold text-label-md text-label uppercase tracking-[0.08em]">
-              Internal · Not Indexed
-            </p>
-            <ThemeToggle />
-          </div>
+          <p className="font-body font-semibold text-label-md text-label uppercase tracking-[0.08em]">
+            Internal · Not Indexed
+          </p>
           <h1 className="font-display text-h1 text-primary">
             Component Showcase
           </h1>
           <p className="font-body text-body-lg text-secondary max-w-xl">
             Every variant and size of every primitive, rendered on the live
-            token stack. Toggle light mode with the button above.
+            dark-only token stack.
           </p>
         </header>
 

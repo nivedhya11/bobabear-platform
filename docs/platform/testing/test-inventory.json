@@ -30,9 +30,9 @@
   },
   "counts": {
     "trackedPathsConsidered": 1767,
-    "executableTestFiles": 346,
+    "executableTestFiles": 347,
     "sourceTestFiles": 127,
-    "testsTreeExecutableFiles": 185,
+    "testsTreeExecutableFiles": 186,
     "scriptTestFiles": 34,
     "playwrightSpecs": 11,
     "vitestConfigs": 2,
@@ -285,6 +285,7 @@
     "tests/e2e/operations-lifecycle.spec.ts",
     "tests/e2e/public-routes.spec.ts",
     "tests/e2e/workforce-auth.spec.ts",
+    "tests/enterprise/dark-only-theme.test.ts",
     "tests/enterprise/portal-surfaces.test.ts",
     "tests/imp-036b/addresses-client.test.tsx",
     "tests/imp-036b/delivery-context.test.ts",
@@ -6882,6 +6883,24 @@
         "11-e2e-browser-ui"
       ],
       "classificationConfidence": "LOW"
+    },
+    {
+      "path": "tests/enterprise/dark-only-theme.test.ts",
+      "runner": "vitest",
+      "domain": "enterprise",
+      "testType": "unit-or-domain",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test",
+        "test:coverage"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit"
+      ],
+      "classificationConfidence": "HEURISTIC"
     },
     {
       "path": "tests/enterprise/portal-surfaces.test.ts",

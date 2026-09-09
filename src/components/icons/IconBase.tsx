@@ -4,7 +4,7 @@
  * House style (§ derived from the Boba Bear Design System):
  *   · 24×24 grid, content kept inside a ~20×20 safe area.
  *   · Monoline outline, `currentColor` so every icon inherits the active
- *     text/interactive token and works in both dark and light mode.
+ *     text/interactive token on the dark-only theme.
  *   · strokeWidth 1.75 default · round caps + joins — refined, editorial,
  *     "premium streetwear" rather than chunky or plush-cute.
  *   · Brand-signature icons (BearFace, Pearls…) lean on filled accents to

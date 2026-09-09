@@ -257,7 +257,7 @@ export function StoreTeamMembersClient() {
               value={workforceEmail}
               disabled={pending}
               onChange={(event) => setWorkforceEmail(event.target.value)}
-              className="min-h-11 rounded-sm border border-[var(--border-strong)] bg-transparent px-3 outline-none focus:shadow-[0_0_0_3px_var(--focus-ring)]"
+              className="min-h-11 rounded-md border border-[var(--enterprise-border,#3D6026)] bg-[var(--bg-surface,#2E4720)] px-3 text-sm text-[var(--enterprise-text-primary,#FAF3E2)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--enterprise-focus,#A8D832)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--enterprise-bg-page,#1A2210)]"
             />
           </label>
           <p className="text-sm text-[var(--text-secondary)]">
