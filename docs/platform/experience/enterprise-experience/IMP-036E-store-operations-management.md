@@ -330,6 +330,31 @@ USER_THEME_TOGGLE = NO
 FOUNDER_APPROVED_UAT_READINESS_VISUAL_DIRECTION = DARK_ONLY
 ```
 
+## Customer commerce cohesion (IMP-036E remediation; not acceptance)
+
+Store Operations mutations that affect existing customer orderability must converge through
+the same accepted domain authorities at the next authoritative customer evaluation. This is
+not a new domain authority and does not activate IMP-036F.
+
+```text
+WORKFORCE_MUTATION → EXISTING_DOMAIN_AUTHORITY → CUSTOMER_READ/EVALUATION → TRUTHFUL_CUSTOMER_EXPERIENCE
+SELECTED_OUTLET = SERVER_DERIVED_FROM_SERVICEABILITY
+CALLER_SELECTED_OUTLET_ID = NOT_GEOGRAPHIC_AUTHORITY
+REALTIME_PUSH_GUARANTEE = NO
+TEAM_ACCESS_CUSTOMER_COUPLING = NO
+STORE_OVERVIEW_AUTOMATIC_CUSTOMER_MUTATION = NO
+```
+
+- When delivery coordinates exist, customer Menu projection uses `selectedOutletId` returned
+  by server Serviceability evaluation — never a browser-stored outlet default.
+- Variant availability, assortment exclusions, and modifier availability/feasibility compose
+  into outlet-aware Menu display using existing IMP-014 / IMP-028B / IMP-028C projection
+  semantics.
+- Operating status and service radius changes surface through fresh Serviceability and cart/
+  checkout re-evaluation; bounded refresh on location change and page focus is sufficient.
+- Team / Access and presentation-only Overview facts remain workforce-only unless an existing
+  accepted authority already requires customer effect.
+
 BOBA Bear’s Night Forest dark theme (Firefly Green primary interactions, Saffron Gold accents,
 Boba Cream text) is the **only currently supported runtime theme** for the product, including Store
 Operations and shared customer/enterprise chrome.

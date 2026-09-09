@@ -34,6 +34,14 @@ vi.mock("@/lib/customer-commerce", async () => {
   };
 });
 
+vi.mock("@/lib/customer-commerce/ordering-outlet-context", () => ({
+  resolveCustomerOrderingOutletContext: vi.fn(async (input: { coordinates?: unknown }) =>
+    input.coordinates ? { kind: "indeterminate" as const } : { kind: "no_location" as const },
+  ),
+  menuOutletIdFromOrderingContext: (context: { kind: string; outletId?: string }) =>
+    context.kind === "serviceable" ? context.outletId : undefined,
+}));
+
 const brandId = "brand-1";
 const variantId = "var-1";
 const bindingId = "binding-1";
@@ -360,6 +368,140 @@ describe("CartClient", () => {
         screen.queryByText("Choose your delivery location to check availability."),
       ).not.toBeInTheDocument();
     });
+  });
+
+  it("keeps the server cart when delivery-context generation B supersedes initial surface load A", async () => {
+    const { resolveCustomerOrderingOutletContext } = await import(
+      "@/lib/customer-commerce/ordering-outlet-context"
+    );
+    const {
+      writeDeliveryContext,
+      resetDeliveryContextSnapshotForTests,
+    } = await import("@/lib/customer-location/delivery-context");
+    window.sessionStorage.clear();
+    resetDeliveryContextSnapshotForTests();
+
+    getActiveCart.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { cart: guestCart("1", [{ id: "line-1", variantId, quantity: 2 }]) },
+    });
+
+    const outletResolvers: Array<(value: unknown) => void> = [];
+    vi.mocked(resolveCustomerOrderingOutletContext).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          outletResolvers.push(resolve);
+        }) as never,
+    );
+
+    writeDeliveryContext({
+      displayLabel: "Context A",
+      coordinates: { latitude: "30.3256000", longitude: "78.0436000" },
+      source: "location_search",
+    });
+    render(<CartClient brandId={brandId} />);
+
+    await waitFor(() => expect(outletResolvers.length).toBeGreaterThanOrEqual(1));
+    await waitFor(() => expect(getActiveCart).toHaveBeenCalled());
+
+    writeDeliveryContext({
+      displayLabel: "Context B",
+      coordinates: { latitude: "30.3300000", longitude: "78.0500000" },
+      source: "location_search",
+    });
+    await waitFor(() => expect(outletResolvers.length).toBeGreaterThanOrEqual(2));
+
+    // Complete B first; A is stale and must not cancel cart acquisition.
+    outletResolvers[outletResolvers.length - 1]!({ kind: "indeterminate" });
+    outletResolvers[0]!({ kind: "indeterminate" });
+
+    await waitFor(() => {
+      expect(screen.queryByText("Loading cart…")).not.toBeInTheDocument();
+      expect(screen.getByText("Classic Milk Tea")).toBeInTheDocument();
+      expect(screen.getByTestId("cart-item-count")).toHaveTextContent("2 items");
+      expect(
+        screen.queryByText("Your cart is empty. Browse the menu to add something."),
+      ).not.toBeInTheDocument();
+    });
+
+    window.sessionStorage.clear();
+    resetDeliveryContextSnapshotForTests();
+    vi.mocked(resolveCustomerOrderingOutletContext).mockImplementation(async (input: {
+      coordinates?: unknown;
+    }) => (input.coordinates ? { kind: "indeterminate" as const } : { kind: "no_location" as const }));
+  });
+
+  it("same delivery-context generation: older cart evaluation cannot overwrite a newer one", async () => {
+    getActiveCart.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { cart: guestCart("1", [{ id: "line-1", variantId, quantity: 1 }]) },
+    });
+    setCartLineQuantity.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { cart: guestCart("2", [{ id: "line-1", variantId, quantity: 2 }]) },
+    });
+
+    writeDeliveryContext({
+      displayLabel: "Rajpur Road, Dehradun",
+      coordinates: { latitude: "30.3256000", longitude: "78.0436000" },
+      source: "location_search",
+    });
+
+    const evaluateResolvers: Array<(value: unknown) => void> = [];
+    evaluateCart.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          evaluateResolvers.push(resolve);
+        }),
+    );
+
+    render(<CartClient brandId={brandId} />);
+    await waitFor(() => expect(evaluateResolvers.length).toBeGreaterThanOrEqual(1));
+    const olderEval = evaluateResolvers[0]!;
+
+    await userEvent.click(
+      await screen.findByRole("button", { name: /increase classic milk tea quantity/i }),
+    );
+    await waitFor(() => expect(setCartLineQuantity).toHaveBeenCalled());
+    await waitFor(() => expect(evaluateResolvers.length).toBeGreaterThanOrEqual(2));
+    const newerEval = evaluateResolvers[evaluateResolvers.length - 1]!;
+
+    await act(async () => {
+      newerEval({
+        ok: true,
+        status: 200,
+        data: {
+          cartId: "cart-1",
+          cartRevision: "2",
+          evaluatedAt: "2026-08-13T00:00:01.000Z",
+          status: "COMPLETE",
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("This location looks deliverable.")).toBeInTheDocument();
+    });
+
+    await act(async () => {
+      olderEval({
+        ok: true,
+        status: 200,
+        data: {
+          cartId: "cart-1",
+          cartRevision: "1",
+          evaluatedAt: "2026-08-13T00:00:00.000Z",
+          status: "CART_INVALID",
+          failures: [{ code: "CART_INVALID", message: "stale older cart" }],
+        },
+      });
+    });
+
+    expect(screen.getByText("This location looks deliverable.")).toBeInTheDocument();
+    expect(screen.queryByText(/stale older cart/i)).not.toBeInTheDocument();
   });
 
   it("loads Customer Menu instead of static ordering catalog for presentation", async () => {
@@ -842,7 +984,7 @@ describe("CartClient", () => {
     expect(updateCartLineConfiguration).not.toHaveBeenCalled();
   });
 
-  it("shows stale modifier presentation and does not offer edit", async () => {
+  it("shows stale modifier presentation and offers edit recovery", async () => {
     getCustomerMenu.mockResolvedValue({
       ok: true,
       status: 200,
@@ -874,8 +1016,44 @@ describe("CartClient", () => {
     ).toBeInTheDocument();
     expect(screen.getByText(/Previously selected option is no longer available × 2/)).toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: /edit customization for classic milk tea/i }),
-    ).not.toBeInTheDocument();
+      screen.getByRole("button", { name: /edit customization for classic milk tea/i }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /remove classic milk tea from cart/i })).toBeInTheDocument();
+  });
+
+  it("disables checkout when evaluation is CART_INVALID and shows non-location copy", async () => {
+    getActiveCart.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { cart: guestCart("1", [{ id: "line-1", variantId, quantity: 1 }]) },
+    });
+    evaluateCart.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        cartId: "cart-1",
+        cartRevision: "1",
+        evaluatedAt: "2026-08-13T00:00:00.000Z",
+        status: "CART_INVALID",
+        problems: [{ cartLineId: "line-1", code: "LINE_VARIANT_UNAVAILABLE" }],
+      },
+    });
+    writeDeliveryContext({
+      displayLabel: "Rajpur Road",
+      coordinates: { latitude: "30.3256000", longitude: "78.0436000" },
+      source: "location_search",
+    });
+
+    render(<CartClient brandId={brandId} />);
+    expect(
+      await screen.findByText(/Some items in your cart aren't available right now/i),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("cart-evaluation-problems")).toHaveTextContent(
+      "That item can't be ordered right now.",
+    );
+    const checkoutButtons = screen.getAllByRole("button", { name: "Checkout" });
+    for (const button of checkoutButtons) {
+      expect(button).toBeDisabled();
+    }
   });
 });

@@ -24,7 +24,10 @@ import {
 } from "@/lib/customer-location/delivery-context";
 import { commerceErrorCopy } from "@/components/ordering/error-copy";
 import { MenuItemCustomizationDialog } from "@/components/ordering/MenuItemCustomizationDialog";
-import { cartEvaluationCustomerCopy } from "@/components/ordering/serviceability-copy";
+import {
+  cartEvaluationCustomerCopy,
+  isCartCheckoutBlocked,
+} from "@/components/ordering/serviceability-copy";
 import {
   clearCart,
   evaluateCart,
@@ -37,6 +40,10 @@ import {
   type CommerceCartEvaluation,
   type CommerceCartLine,
 } from "@/lib/customer-commerce";
+import {
+  menuOutletIdFromOrderingContext,
+  resolveCustomerOrderingOutletContext,
+} from "@/lib/customer-commerce/ordering-outlet-context";
 import { loginUrlWithReturn } from "@/lib/customer-auth/return-to";
 import { fetchCustomerSession } from "@/lib/customer-auth/client";
 import type { CartModifierSelectionInput } from "@/shared/cart/types";
@@ -58,7 +65,11 @@ export function CartClient(props: { brandId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [editTarget, setEditTarget] = useState<EditTarget | null>(null);
   const [dialogError, setDialogError] = useState<string | null>(null);
-  const evaluationRequestIdRef = useRef(0);
+  /** One delivery-context surface generation for outlet/menu → cart eval. */
+  const surfaceGenerationRef = useRef(0);
+  /** Latest cart-evaluation epoch within (and across) a delivery generation. */
+  const evaluationEpochRef = useRef(0);
+  const cartRef = useRef<CommerceCart | null>(null);
 
   const menuLookups = useMemo(
     () => (menu ? buildCustomerMenuLookups(menu) : null),
@@ -74,13 +85,20 @@ export function CartClient(props: { brandId: string }) {
     [cart, menuLookups, brandId],
   );
 
-  const refreshEvaluation = useCallback(
-    async (context: DeliveryContext, currentCart: CommerceCart | null) => {
-      const requestId = ++evaluationRequestIdRef.current;
+  useEffect(() => {
+    cartRef.current = cart;
+  }, [cart]);
+
+  const publishEvaluationIfCurrent = useCallback(
+    async (generation: number, context: DeliveryContext, currentCart: CommerceCart | null) => {
+      const evaluationEpoch = ++evaluationEpochRef.current;
+      const publishIfCurrent = (next: CommerceCartEvaluation | null) => {
+        if (generation !== surfaceGenerationRef.current) return;
+        if (evaluationEpoch !== evaluationEpochRef.current) return;
+        setEvaluation(next);
+      };
       if (!currentCart || currentCart.lines.length === 0) {
-        if (requestId === evaluationRequestIdRef.current) {
-          setEvaluation(null);
-        }
+        publishIfCurrent(null);
         return;
       }
       const evaluated = await evaluateCart(
@@ -94,56 +112,108 @@ export function CartClient(props: { brandId: string }) {
             }
           : { brandId },
       );
-      if (requestId !== evaluationRequestIdRef.current) {
-        return;
-      }
-      if (evaluated.ok) setEvaluation(evaluated.data);
-      else setEvaluation(null);
+      if (evaluated.ok) publishIfCurrent(evaluated.data);
+      else publishIfCurrent(null);
     },
     [brandId],
   );
 
-  const load = useCallback(async () => {
-    const menuResult = await getCustomerMenu({ brandId });
-    if (!menuResult.ok) {
-      setMenu(null);
-      setError(commerceErrorCopy(menuResult.code));
-    } else {
-      setMenu(menuResult.data.menu);
-    }
+  const refreshOrderingSurface = useCallback(
+    async (
+      context: DeliveryContext,
+      options?: Readonly<{ evaluate?: boolean }>,
+    ) => {
+      const generation = ++surfaceGenerationRef.current;
+      const orderingContext = await resolveCustomerOrderingOutletContext({
+        brandId,
+        coordinates: context.coordinates,
+        postalCode: context.postalCode.length === 6 ? context.postalCode : null,
+      });
+      if (generation !== surfaceGenerationRef.current) return;
+      const outletId = menuOutletIdFromOrderingContext(orderingContext);
+      const menuResult = await getCustomerMenu({
+        brandId,
+        ...(outletId ? { outletId } : {}),
+      });
+      if (generation !== surfaceGenerationRef.current) return;
+      if (!menuResult.ok) {
+        setMenu(null);
+        setError(commerceErrorCopy(menuResult.code));
+      } else {
+        setMenu(menuResult.data.menu);
+      }
+      if (options?.evaluate === false) return;
+      void publishEvaluationIfCurrent(generation, context, cartRef.current);
+    },
+    [brandId, publishEvaluationIfCurrent],
+  );
 
+  /** Active cart acquisition is independent of delivery-surface generation. */
+  const refreshCart = useCallback(async (): Promise<CommerceCart | null> => {
     const cartResult = await getActiveCart(brandId, { guestToken: true });
     if (!cartResult.ok) {
       setError(commerceErrorCopy(cartResult.code));
       setCart(null);
-      return;
+      cartRef.current = null;
+      return null;
     }
     setCart(cartResult.data.cart);
-    await refreshEvaluation(readDeliveryContext(), cartResult.data.cart);
-  }, [brandId, refreshEvaluation]);
+    cartRef.current = cartResult.data.cart;
+    return cartResult.data.cart;
+  }, [brandId]);
 
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      await load();
-      if (!cancelled) setLoading(false);
+      const [, acquiredCart] = await Promise.all([
+        refreshOrderingSurface(readDeliveryContext(), { evaluate: false }),
+        refreshCart(),
+      ]);
+      if (cancelled) return;
+      // Cart acquisition must not be aborted by surface generation, and loading
+      // must not wait on evaluation. Publish one evaluation after both settle.
+      void publishEvaluationIfCurrent(
+        surfaceGenerationRef.current,
+        readDeliveryContext(),
+        acquiredCart ?? cartRef.current,
+      );
+      setLoading(false);
     })();
     return () => {
       cancelled = true;
     };
-  }, [load]);
+    // Initial load only — subsequent refreshes use delivery/visibility subscriptions.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [brandId]);
 
   useEffect(() => {
     return subscribeToDeliveryContext((nextContext) => {
-      void refreshEvaluation(nextContext, cart);
+      void refreshOrderingSurface(nextContext);
     });
-  }, [cart, refreshEvaluation]);
+  }, [refreshOrderingSurface]);
+
+  useEffect(() => {
+    function onVisibilityOrFocus(): void {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") {
+        return;
+      }
+      void refreshOrderingSurface(readDeliveryContext());
+    }
+    document.addEventListener("visibilitychange", onVisibilityOrFocus);
+    window.addEventListener("focus", onVisibilityOrFocus);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityOrFocus);
+      window.removeEventListener("focus", onVisibilityOrFocus);
+    };
+  }, [refreshOrderingSurface]);
 
   async function applyCartMutation(nextCart: CommerceCart): Promise<void> {
     setCart(nextCart);
+    cartRef.current = nextCart;
     publishCartCount(cartUnitCount(nextCart));
     // Evaluate against live delivery authority, not a stale render/async closure.
-    await refreshEvaluation(readDeliveryContext(), nextCart);
+    const generation = surfaceGenerationRef.current;
+    await publishEvaluationIfCurrent(generation, readDeliveryContext(), nextCart);
   }
 
   async function withPending(work: () => Promise<void>): Promise<void> {
@@ -203,8 +273,10 @@ export function CartClient(props: { brandId: string }) {
     });
   }
 
+  const checkoutBlocked = isCartCheckoutBlocked(evaluation);
+
   async function handleCheckout(): Promise<void> {
-    if (pending || !cart || cart.lines.length === 0) return;
+    if (pending || checkoutBlocked || !cart || cart.lines.length === 0) return;
     setPending(true);
     const session = await fetchCustomerSession();
     setPending(false);
@@ -263,7 +335,10 @@ export function CartClient(props: { brandId: string }) {
   const presentationAmount = presentationEstimate.complete
     ? formatPresentationEstimateLabel(presentationEstimate.totalPaise)
     : presentationLabel;
-  const serviceabilityNote = cartEvaluationCustomerCopy(evaluation, Boolean(deliveryContext.coordinates));
+  const serviceabilityNote = cartEvaluationCustomerCopy(
+    evaluation,
+    Boolean(deliveryContext.coordinates),
+  );
 
   if (loading) {
     return (
@@ -358,7 +433,7 @@ export function CartClient(props: { brandId: string }) {
           >
             {evaluation.problems.map((problem) => (
               <li key={`${problem.cartLineId}-${problem.code}`} className="font-body text-[13px] text-[var(--text-secondary)]">
-                {commerceErrorCopy(problem.code as never) ?? problem.code}
+                {commerceErrorCopy(problem.code)}
               </li>
             ))}
           </ul>
@@ -382,7 +457,7 @@ export function CartClient(props: { brandId: string }) {
               variant="primary"
               size="lg"
               className="mt-6 min-h-[52px] w-full rounded-lg"
-              disabled={pending}
+              disabled={pending || checkoutBlocked}
               onClick={() => void handleCheckout()}
             >
               {pending ? "Continuing…" : "Checkout"}
@@ -418,7 +493,7 @@ export function CartClient(props: { brandId: string }) {
               variant="primary"
               size="lg"
               className="min-h-[48px] shrink-0 rounded-lg px-6"
-              disabled={pending}
+              disabled={pending || checkoutBlocked}
               onClick={() => void handleCheckout()}
             >
               {pending ? "Continuing…" : "Checkout"}

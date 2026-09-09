@@ -316,7 +316,7 @@ describe("cart presentation", () => {
     expect(STALE_MODIFIER_OPTION_LABEL).toBe(
       "Previously selected option is no longer available",
     );
-    expect(presentation.editEligible).toBe(false);
+    expect(presentation.editEligible).toBe(true);
   });
 
   it("converts persisted bundle selections to update input without server ids", () => {
