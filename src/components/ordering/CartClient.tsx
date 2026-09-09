@@ -142,7 +142,8 @@ export function CartClient(props: { brandId: string }) {
   async function applyCartMutation(nextCart: CommerceCart): Promise<void> {
     setCart(nextCart);
     publishCartCount(cartUnitCount(nextCart));
-    await refreshEvaluation(deliveryContext, nextCart);
+    // Evaluate against live delivery authority, not a stale render/async closure.
+    await refreshEvaluation(readDeliveryContext(), nextCart);
   }
 
   async function withPending(work: () => Promise<void>): Promise<void> {
