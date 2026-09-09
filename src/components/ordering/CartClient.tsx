@@ -67,6 +67,8 @@ export function CartClient(props: { brandId: string }) {
   const [dialogError, setDialogError] = useState<string | null>(null);
   /** One delivery-context surface generation for outlet/menu → cart eval. */
   const surfaceGenerationRef = useRef(0);
+  /** Latest cart-evaluation epoch within (and across) a delivery generation. */
+  const evaluationEpochRef = useRef(0);
   const cartRef = useRef<CommerceCart | null>(null);
 
   const menuLookups = useMemo(
@@ -89,10 +91,14 @@ export function CartClient(props: { brandId: string }) {
 
   const publishEvaluationIfCurrent = useCallback(
     async (generation: number, context: DeliveryContext, currentCart: CommerceCart | null) => {
+      const evaluationEpoch = ++evaluationEpochRef.current;
+      const publishIfCurrent = (next: CommerceCartEvaluation | null) => {
+        if (generation !== surfaceGenerationRef.current) return;
+        if (evaluationEpoch !== evaluationEpochRef.current) return;
+        setEvaluation(next);
+      };
       if (!currentCart || currentCart.lines.length === 0) {
-        if (generation === surfaceGenerationRef.current) {
-          setEvaluation(null);
-        }
+        publishIfCurrent(null);
         return;
       }
       const evaluated = await evaluateCart(
@@ -106,17 +112,17 @@ export function CartClient(props: { brandId: string }) {
             }
           : { brandId },
       );
-      if (generation !== surfaceGenerationRef.current) {
-        return;
-      }
-      if (evaluated.ok) setEvaluation(evaluated.data);
-      else setEvaluation(null);
+      if (evaluated.ok) publishIfCurrent(evaluated.data);
+      else publishIfCurrent(null);
     },
     [brandId],
   );
 
   const refreshOrderingSurface = useCallback(
-    async (context: DeliveryContext) => {
+    async (
+      context: DeliveryContext,
+      options?: Readonly<{ evaluate?: boolean }>,
+    ) => {
       const generation = ++surfaceGenerationRef.current;
       const orderingContext = await resolveCustomerOrderingOutletContext({
         brandId,
@@ -136,54 +142,49 @@ export function CartClient(props: { brandId: string }) {
       } else {
         setMenu(menuResult.data.menu);
       }
-      await publishEvaluationIfCurrent(generation, context, cartRef.current);
+      if (options?.evaluate === false) return;
+      void publishEvaluationIfCurrent(generation, context, cartRef.current);
     },
     [brandId, publishEvaluationIfCurrent],
   );
 
-  const load = useCallback(async () => {
-    const context = readDeliveryContext();
-    const generation = ++surfaceGenerationRef.current;
-    const orderingContext = await resolveCustomerOrderingOutletContext({
-      brandId,
-      coordinates: context.coordinates,
-      postalCode: context.postalCode.length === 6 ? context.postalCode : null,
-    });
-    if (generation !== surfaceGenerationRef.current) return;
-    const outletId = menuOutletIdFromOrderingContext(orderingContext);
-    const menuResult = await getCustomerMenu({
-      brandId,
-      ...(outletId ? { outletId } : {}),
-    });
-    if (generation !== surfaceGenerationRef.current) return;
-    if (!menuResult.ok) {
-      setMenu(null);
-      setError(commerceErrorCopy(menuResult.code));
-    } else {
-      setMenu(menuResult.data.menu);
-    }
-
+  /** Active cart acquisition is independent of delivery-surface generation. */
+  const refreshCart = useCallback(async (): Promise<CommerceCart | null> => {
     const cartResult = await getActiveCart(brandId, { guestToken: true });
-    if (generation !== surfaceGenerationRef.current) return;
     if (!cartResult.ok) {
       setError(commerceErrorCopy(cartResult.code));
       setCart(null);
-      return;
+      cartRef.current = null;
+      return null;
     }
     setCart(cartResult.data.cart);
-    await publishEvaluationIfCurrent(generation, context, cartResult.data.cart);
-  }, [brandId, publishEvaluationIfCurrent]);
+    cartRef.current = cartResult.data.cart;
+    return cartResult.data.cart;
+  }, [brandId]);
 
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      await load();
-      if (!cancelled) setLoading(false);
+      const [, acquiredCart] = await Promise.all([
+        refreshOrderingSurface(readDeliveryContext(), { evaluate: false }),
+        refreshCart(),
+      ]);
+      if (cancelled) return;
+      // Cart acquisition must not be aborted by surface generation, and loading
+      // must not wait on evaluation. Publish one evaluation after both settle.
+      void publishEvaluationIfCurrent(
+        surfaceGenerationRef.current,
+        readDeliveryContext(),
+        acquiredCart ?? cartRef.current,
+      );
+      setLoading(false);
     })();
     return () => {
       cancelled = true;
     };
-  }, [load]);
+    // Initial load only — subsequent refreshes use delivery/visibility subscriptions.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [brandId]);
 
   useEffect(() => {
     return subscribeToDeliveryContext((nextContext) => {
@@ -208,6 +209,7 @@ export function CartClient(props: { brandId: string }) {
 
   async function applyCartMutation(nextCart: CommerceCart): Promise<void> {
     setCart(nextCart);
+    cartRef.current = nextCart;
     publishCartCount(cartUnitCount(nextCart));
     // Evaluate against live delivery authority, not a stale render/async closure.
     const generation = surfaceGenerationRef.current;

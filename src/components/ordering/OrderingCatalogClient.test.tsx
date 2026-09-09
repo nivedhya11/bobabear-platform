@@ -1150,4 +1150,124 @@ describe("OrderingCatalogClient IMP-036C stale guest cart recovery", () => {
       coordinates?: unknown;
     }) => (input.coordinates ? { kind: "indeterminate" as const } : { kind: "no_location" as const }));
   });
+
+  it("same delivery-context generation: older cart evaluation cannot overwrite a newer one", async () => {
+    const {
+      writeDeliveryContext,
+      resetDeliveryContextSnapshotForTests,
+    } = await import("@/lib/customer-location/delivery-context");
+    window.sessionStorage.clear();
+    resetDeliveryContextSnapshotForTests();
+
+    getActiveCart.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        cart: {
+          id: "cart-1",
+          brandId: "brand-1",
+          ownerMode: "guest",
+          revision: "1",
+          manualCouponCode: null,
+          expiresAt: null,
+          createdAt: "2026-08-13T00:00:00.000Z",
+          updatedAt: "2026-08-13T00:00:00.000Z",
+          lines: [
+            {
+              id: "line-1",
+              variantId: "var-1",
+              quantity: 1,
+              modifiers: [],
+              bundleSelections: [],
+            },
+          ],
+        },
+      },
+    });
+    setCartLineQuantity.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        cart: {
+          id: "cart-1",
+          brandId: "brand-1",
+          ownerMode: "guest",
+          revision: "2",
+          manualCouponCode: null,
+          expiresAt: null,
+          createdAt: "2026-08-13T00:00:00.000Z",
+          updatedAt: "2026-08-13T00:00:01.000Z",
+          lines: [
+            {
+              id: "line-1",
+              variantId: "var-1",
+              quantity: 2,
+              modifiers: [],
+              bundleSelections: [],
+            },
+          ],
+        },
+      },
+    });
+
+    const evaluateResolvers: Array<(value: unknown) => void> = [];
+    evaluateCart.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          evaluateResolvers.push(resolve);
+        }),
+    );
+
+    writeDeliveryContext({
+      displayLabel: "Rajpur Road",
+      coordinates: { latitude: "30.3256000", longitude: "78.0436000" },
+      source: "location_search",
+    });
+    render(<OrderingCatalogClient brandId="brand-1" />);
+    await waitFor(() => expect(evaluateResolvers.length).toBeGreaterThanOrEqual(1));
+    const olderEval = evaluateResolvers[0]!;
+
+    await userEvent.click(
+      await screen.findByRole("button", { name: /increase classic milk tea quantity/i }),
+    );
+    await waitFor(() => expect(setCartLineQuantity).toHaveBeenCalled());
+    await waitFor(() => expect(evaluateResolvers.length).toBeGreaterThanOrEqual(2));
+    const newerEval = evaluateResolvers[evaluateResolvers.length - 1]!;
+
+    await act(async () => {
+      newerEval({
+        ok: true,
+        status: 200,
+        data: {
+          cartId: "cart-1",
+          cartRevision: "2",
+          evaluatedAt: "2026-09-09T00:00:01.000Z",
+          status: "COMPLETE",
+        },
+      });
+    });
+    await waitFor(() =>
+      expect(screen.getByText("This location looks deliverable.")).toBeInTheDocument(),
+    );
+
+    await act(async () => {
+      olderEval({
+        ok: true,
+        status: 200,
+        data: {
+          cartId: "cart-1",
+          cartRevision: "1",
+          evaluatedAt: "2026-09-09T00:00:00.000Z",
+          status: "CART_INVALID",
+          failures: [{ code: "CART_INVALID", message: "stale older cart" }],
+        },
+      });
+    });
+
+    expect(screen.getByText("This location looks deliverable.")).toBeInTheDocument();
+    expect(screen.queryByText(/stale older cart/i)).not.toBeInTheDocument();
+
+    window.sessionStorage.clear();
+    resetDeliveryContextSnapshotForTests();
+  });
 });

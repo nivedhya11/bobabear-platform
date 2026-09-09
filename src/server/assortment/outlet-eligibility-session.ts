@@ -1,46 +1,56 @@
 /**
  * Request-scoped outlet eligibility composition for Customer Menu projection.
  *
- * Preloads outlet-wide ancestry / operating / assortment / availability authority
- * once, then reuses IMP-014 decision semantics without a second policy engine.
+ * Preloads outlet-wide ancestry / operating / assortment / availability /
+ * catalog / modifier / bundle feasibility authority once, then reuses IMP-014
+ * decision semantics without a second policy engine or nested scalar fanout.
  */
 import "server-only";
 
 import type { AvailabilityState } from "../../shared/assortment";
 import type { PersistenceQueryContext } from "../persistence/types";
 import {
-  loadActiveBrandVariantIncludes,
-  loadOutletAncestry,
-  loadOutletExclusionIndex,
-  type OutletAncestry,
-  type OutletExclusionIndex,
-} from "./assortment-reads";
-import { loadEffectiveVariantAvailabilityStates } from "./availability";
+  loadOutletEligibilityComposition,
+  type OutletEligibilityComposition,
+} from "./eligibility-composition-preload";
 import {
   resolveOutletVariantAvailability,
   type OutletVariantEligibilityPreload,
 } from "./resolve-eligibility";
-import { resolveOutletOperatingState } from "./resolve-operating";
-import type {
-  EligibilityDecision,
-  ResolveOutletOperatingStateResult,
-} from "./types";
+import type { EligibilityDecision } from "./types";
 
 export type OutletEligibilitySession = Readonly<{
-  ancestry: OutletAncestry;
-  operating: ResolveOutletOperatingStateResult;
+  ancestry: OutletEligibilityComposition["ancestry"];
+  operating: OutletEligibilityComposition["operating"];
   now: Date;
   includedVariantIds: ReadonlySet<string>;
   variantAvailability: ReadonlyMap<string, AvailabilityState>;
-  exclusions: OutletExclusionIndex;
+  exclusions: OutletEligibilityComposition["exclusions"];
   preload: OutletVariantEligibilityPreload;
-  /** Resolve one variant using preloaded outlet-common authority. */
+  /** Resolve one variant using preloaded composition authority. */
   resolveVariant(variantId: string): Promise<EligibilityDecision>;
   opsAvailability(variantId: string): AvailabilityState;
 }>;
 
+function compositionToPreload(
+  composition: OutletEligibilityComposition,
+): OutletVariantEligibilityPreload {
+  return {
+    ancestry: composition.ancestry,
+    operating: composition.operating,
+    includedVariantIds: composition.includedVariantIds,
+    variantAvailability: composition.variantAvailability,
+    exclusions: composition.exclusions,
+    variantsById: composition.variantsById,
+    productsById: composition.productsById,
+    modifierFeasibilityByVariantId: composition.modifierFeasibilityByVariantId,
+    bundleFeasibilityByVariantId: composition.bundleFeasibilityByVariantId,
+    modifierOptionAvailability: composition.modifierOptionAvailability,
+  };
+}
+
 /**
- * Create a menu-projection session that loads outlet-common inputs once.
+ * Create a menu-projection session that loads outlet composition inputs once.
  */
 export async function createOutletEligibilitySession(
   context: PersistenceQueryContext,
@@ -50,42 +60,20 @@ export async function createOutletEligibilitySession(
     now: Date;
   }>,
 ): Promise<OutletEligibilitySession> {
-  const ancestry = await loadOutletAncestry(context, input.outletId);
-  const operating = await resolveOutletOperatingState(context, {
-    outletId: input.outletId,
-    context: { now: input.now },
-  });
-  const [includedVariantIds, variantAvailability, exclusions] = await Promise.all([
-    loadActiveBrandVariantIncludes(context, ancestry.brandId, input.variantIds),
-    loadEffectiveVariantAvailabilityStates(
-      context,
-      input.outletId,
-      input.variantIds,
-      input.now,
-    ),
-    loadOutletExclusionIndex(context, ancestry),
-  ]);
-
-  const preload: OutletVariantEligibilityPreload = {
-    ancestry,
-    operating,
-    includedVariantIds,
-    variantAvailability,
-    exclusions,
-  };
-
+  const composition = await loadOutletEligibilityComposition(context, input);
+  const preload = compositionToPreload(composition);
   const decisionCache = new Map<string, Promise<EligibilityDecision>>();
 
   return {
-    ancestry,
-    operating,
+    ancestry: composition.ancestry,
+    operating: composition.operating,
     now: input.now,
-    includedVariantIds,
-    variantAvailability,
-    exclusions,
+    includedVariantIds: composition.includedVariantIds,
+    variantAvailability: composition.variantAvailability,
+    exclusions: composition.exclusions,
     preload,
     opsAvailability(variantId: string): AvailabilityState {
-      return variantAvailability.get(variantId) ?? "available";
+      return composition.variantAvailability.get(variantId) ?? "available";
     },
     resolveVariant(variantId: string): Promise<EligibilityDecision> {
       const cached = decisionCache.get(variantId);

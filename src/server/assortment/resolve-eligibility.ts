@@ -19,6 +19,7 @@ import { findProductById } from "../catalog/products";
 import { findVariantById } from "../catalog/variants";
 import type { PersistenceQueryContext } from "../persistence/types";
 import { assertApplicationRole, assertUuid } from "./assert-role";
+import type { CatalogProduct, CatalogVariant } from "../catalog/types";
 import type { AvailabilityState } from "../../shared/assortment";
 import {
   findModifierOptionExclusion,
@@ -33,6 +34,10 @@ import {
   loadEffectiveModifierOptionAvailabilityState,
   loadEffectiveVariantAvailabilityState,
 } from "./availability";
+import type {
+  BundleFeasibilityGroup,
+  ModifierFeasibilityGroup,
+} from "./eligibility-composition-preload";
 import { resolveOutletOperatingState } from "./resolve-operating";
 import type {
   EligibilityDecision,
@@ -42,13 +47,19 @@ import type {
   ResolveOutletVariantAvailabilityInput,
 } from "./types";
 
-/** Optional preloaded outlet-common inputs for menu/batch composition. */
+/** Optional preloaded outlet-common / composition inputs for menu batching. */
 export type OutletVariantEligibilityPreload = Readonly<{
   ancestry: OutletAncestry;
   operating: ResolveOutletOperatingStateResult;
   includedVariantIds?: ReadonlySet<string>;
   variantAvailability?: ReadonlyMap<string, AvailabilityState>;
   exclusions?: OutletExclusionIndex;
+  /** When set, catalog / feasibility evaluate in memory (no nested scalar DB). */
+  variantsById?: ReadonlyMap<string, CatalogVariant>;
+  productsById?: ReadonlyMap<string, CatalogProduct>;
+  modifierFeasibilityByVariantId?: ReadonlyMap<string, readonly ModifierFeasibilityGroup[]>;
+  bundleFeasibilityByVariantId?: ReadonlyMap<string, readonly BundleFeasibilityGroup[]>;
+  modifierOptionAvailability?: ReadonlyMap<string, AvailabilityState>;
 }>;
 
 function denied(code: EligibilityDecisionCode): EligibilityDecision {
@@ -133,12 +144,45 @@ async function isModifierOptionSelectableAtOutlet(
   return state === "available";
 }
 
+function requiredModifierConfigurationFeasibleFromPreload(
+  preload: OutletVariantEligibilityPreload,
+  variantId: string,
+): boolean {
+  const groups = preload.modifierFeasibilityByVariantId?.get(variantId) ?? [];
+  const excluded = preload.exclusions?.excludedModifierOptionIds ?? new Set<string>();
+  const availability = preload.modifierOptionAvailability;
+
+  for (const group of groups) {
+    if (group.minTotalQuantity <= 0) continue;
+    let capacity = 0;
+    for (const option of group.options) {
+      if (excluded.has(option.modifierOptionId)) continue;
+      const state = availability?.get(option.modifierOptionId) ?? "available";
+      if (state !== "available") continue;
+      const maxQty =
+        typeof option.maxQuantity === "number" && option.maxQuantity > 0
+          ? option.maxQuantity
+          : 1;
+      capacity += maxQty;
+    }
+    if (capacity < group.minTotalQuantity) {
+      return false;
+    }
+  }
+  return true;
+}
+
 async function requiredModifierConfigurationFeasible(
   context: PersistenceQueryContext,
   ancestry: Awaited<ReturnType<typeof loadOutletAncestry>>,
   variantId: string,
   now: Date,
+  preload?: OutletVariantEligibilityPreload,
 ): Promise<boolean> {
+  if (preload?.modifierFeasibilityByVariantId) {
+    return requiredModifierConfigurationFeasibleFromPreload(preload, variantId);
+  }
+
   const bindings = await context.db
     .select()
     .from(catalogVariantModifierGroupsTable)
@@ -205,12 +249,51 @@ async function requiredModifierConfigurationFeasible(
  * Component eligibility for bundle feasibility: catalog + assortment +
  * availability + modifier feasibility — not nested bundles.
  */
+function isStandardComponentEligibleFromPreload(
+  ancestry: OutletAncestry,
+  componentVariantId: string,
+  preload: OutletVariantEligibilityPreload,
+): boolean {
+  const variant = preload.variantsById?.get(componentVariantId);
+  if (
+    !variant ||
+    variant.brandId !== ancestry.brandId ||
+    variant.lifecycleStatus !== "active" ||
+    variant.productKind !== "standard"
+  ) {
+    return false;
+  }
+  const product = preload.productsById?.get(variant.productId);
+  if (!product || product.lifecycleStatus !== "active") return false;
+
+  if (!(preload.includedVariantIds?.has(componentVariantId) ?? false)) return false;
+
+  if (preload.exclusions) {
+    const exclusion = lookupProductOrVariantExclusion(
+      preload.exclusions,
+      product.id,
+      componentVariantId,
+    );
+    if (exclusion) return false;
+  }
+
+  const avail = preload.variantAvailability?.get(componentVariantId) ?? "available";
+  if (avail !== "available") return false;
+
+  return requiredModifierConfigurationFeasibleFromPreload(preload, componentVariantId);
+}
+
 async function isStandardComponentEligible(
   context: PersistenceQueryContext,
   ancestry: Awaited<ReturnType<typeof loadOutletAncestry>>,
   componentVariantId: string,
   now: Date,
+  preload?: OutletVariantEligibilityPreload,
 ): Promise<boolean> {
+  if (preload?.variantsById && preload.modifierFeasibilityByVariantId) {
+    return isStandardComponentEligibleFromPreload(ancestry, componentVariantId, preload);
+  }
+
   const variant = await findVariantById(context, componentVariantId);
   if (
     !variant ||
@@ -249,12 +332,38 @@ async function isStandardComponentEligible(
   return requiredModifierConfigurationFeasible(context, ancestry, componentVariantId, now);
 }
 
+function requiredBundleConfigurationFeasibleFromPreload(
+  ancestry: OutletAncestry,
+  bundleVariantId: string,
+  preload: OutletVariantEligibilityPreload,
+): boolean {
+  const groups = preload.bundleFeasibilityByVariantId?.get(bundleVariantId) ?? [];
+  for (const group of groups) {
+    if (group.minSelections <= 0) continue;
+    let eligibleCount = 0;
+    for (const componentVariantId of group.componentVariantIds) {
+      if (isStandardComponentEligibleFromPreload(ancestry, componentVariantId, preload)) {
+        eligibleCount += 1;
+      }
+    }
+    if (eligibleCount < group.minSelections) {
+      return false;
+    }
+  }
+  return true;
+}
+
 async function requiredBundleConfigurationFeasible(
   context: PersistenceQueryContext,
   ancestry: Awaited<ReturnType<typeof loadOutletAncestry>>,
   bundleVariantId: string,
   now: Date,
+  preload?: OutletVariantEligibilityPreload,
 ): Promise<boolean> {
+  if (preload?.bundleFeasibilityByVariantId) {
+    return requiredBundleConfigurationFeasibleFromPreload(ancestry, bundleVariantId, preload);
+  }
+
   const groups = await context.db
     .select()
     .from(catalogBundleGroupsTable)
@@ -317,12 +426,15 @@ export async function resolveOutletVariantAvailability(
     const now = input.context.now;
 
     const ancestry = preload?.ancestry ?? (await loadOutletAncestry(context, outletId));
-    const variant = await findVariantById(context, variantId);
+    const variant =
+      preload?.variantsById?.get(variantId) ?? (await findVariantById(context, variantId));
     if (!variant || variant.brandId !== ancestry.brandId) {
       return denied("DENIED");
     }
 
-    const product = await findProductById(context, variant.productId);
+    const product =
+      preload?.productsById?.get(variant.productId) ??
+      (await findProductById(context, variant.productId));
     if (!product || product.brandId !== ancestry.brandId) {
       return denied("DENIED");
     }
@@ -364,6 +476,7 @@ export async function resolveOutletVariantAvailability(
       ancestry,
       variantId,
       now,
+      preload,
     );
     if (!modifiersOk) return denied("MODIFIER_CONFIGURATION_UNAVAILABLE");
 
@@ -373,6 +486,7 @@ export async function resolveOutletVariantAvailability(
         ancestry,
         variantId,
         now,
+        preload,
       );
       if (!bundlesOk) return denied("BUNDLE_COMPONENT_UNAVAILABLE");
     }

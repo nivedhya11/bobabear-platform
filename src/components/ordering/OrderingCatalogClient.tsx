@@ -75,6 +75,8 @@ export function OrderingCatalogClient(props: { brandId: string }) {
   const [searchQuery, setSearchQuery] = useState("");
   /** One delivery-context surface generation for serviceability → menu → cart eval. */
   const surfaceGenerationRef = useRef(0);
+  /** Latest cart-evaluation epoch within (and across) a delivery generation. */
+  const evaluationEpochRef = useRef(0);
   const cartRef = useRef<CommerceCart | null>(null);
 
   const menuLookups = useMemo(
@@ -88,10 +90,14 @@ export function OrderingCatalogClient(props: { brandId: string }) {
 
   const publishEvaluationIfCurrent = useCallback(
     async (generation: number, context: DeliveryContext, currentCart: CommerceCart | null) => {
+      const evaluationEpoch = ++evaluationEpochRef.current;
+      const publishIfCurrent = (next: CommerceCartEvaluation | null) => {
+        if (generation !== surfaceGenerationRef.current) return;
+        if (evaluationEpoch !== evaluationEpochRef.current) return;
+        setEvaluation(next);
+      };
       if (!currentCart || currentCart.lines.length === 0 || !context.coordinates) {
-        if (generation === surfaceGenerationRef.current) {
-          setEvaluation(null);
-        }
+        publishIfCurrent(null);
         return;
       }
       const evaluated = await evaluateCart({
@@ -101,15 +107,17 @@ export function OrderingCatalogClient(props: { brandId: string }) {
           ...(context.postalCode.length === 6 ? { postalCode: context.postalCode } : {}),
         },
       });
-      if (generation !== surfaceGenerationRef.current) return;
-      if (evaluated.ok) setEvaluation(evaluated.data);
-      else setEvaluation(null);
+      if (evaluated.ok) publishIfCurrent(evaluated.data);
+      else publishIfCurrent(null);
     },
     [brandId],
   );
 
   const refreshOrderingSurface = useCallback(
-    async (context: DeliveryContext): Promise<boolean> => {
+    async (
+      context: DeliveryContext,
+      options?: Readonly<{ evaluate?: boolean }>,
+    ): Promise<boolean> => {
       const generation = ++surfaceGenerationRef.current;
       const orderingContext = await resolveCustomerOrderingOutletContext({
         brandId,
@@ -145,7 +153,9 @@ export function OrderingCatalogClient(props: { brandId: string }) {
       setMenu(result.data.menu);
       setError(null);
 
-      await publishEvaluationIfCurrent(generation, context, cartRef.current);
+      if (options?.evaluate !== false) {
+        void publishEvaluationIfCurrent(generation, context, cartRef.current);
+      }
       return generation === surfaceGenerationRef.current;
     },
     [brandId, publishEvaluationIfCurrent],
@@ -166,15 +176,17 @@ export function OrderingCatalogClient(props: { brandId: string }) {
       return;
     }
     setCart(result.data.cart);
+    cartRef.current = result.data.cart;
     publishCartCount(cartUnitCount(result.data.cart));
     setError(null);
     const generation = surfaceGenerationRef.current;
-    await publishEvaluationIfCurrent(generation, readDeliveryContext(), result.data.cart);
+    void publishEvaluationIfCurrent(generation, readDeliveryContext(), result.data.cart);
   }, [brandId, publishEvaluationIfCurrent]);
 
   function recoverStaleGuestCart(): void {
     clearGuestCartCredential();
     setCart(null);
+    cartRef.current = null;
     setEvaluation(null);
     publishCartCount(0);
     setError(null);
@@ -197,11 +209,38 @@ export function OrderingCatalogClient(props: { brandId: string }) {
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      await Promise.all([
-        refreshOrderingSurface(readDeliveryContext()),
-        refreshCart(),
+      const acquireOnly = async (): Promise<CommerceCart | null> => {
+        const result = await getActiveCart(brandId, { guestToken: true });
+        if (!result.ok) {
+          if (result.code === "CART_EXPIRED" || result.code === "CART_NOT_FOUND") {
+            recoverStaleGuestCart();
+            return null;
+          }
+          if (result.code === "NETWORK_ERROR") {
+            setCart(null);
+            cartRef.current = null;
+            return null;
+          }
+          setError(commerceErrorCopy(result.code));
+          return null;
+        }
+        setCart(result.data.cart);
+        cartRef.current = result.data.cart;
+        publishCartCount(cartUnitCount(result.data.cart));
+        setError(null);
+        return result.data.cart;
+      };
+      const [, acquiredCart] = await Promise.all([
+        refreshOrderingSurface(readDeliveryContext(), { evaluate: false }),
+        acquireOnly(),
       ]);
-      if (!cancelled) setLoading(false);
+      if (cancelled) return;
+      void publishEvaluationIfCurrent(
+        surfaceGenerationRef.current,
+        readDeliveryContext(),
+        acquiredCart ?? cartRef.current,
+      );
+      setLoading(false);
     })();
     return () => {
       cancelled = true;
@@ -307,6 +346,7 @@ export function OrderingCatalogClient(props: { brandId: string }) {
 
   async function updateCartFromMutation(nextCart: CommerceCart): Promise<void> {
     setCart(nextCart);
+    cartRef.current = nextCart;
     publishCartCount(cartUnitCount(nextCart));
     const generation = surfaceGenerationRef.current;
     await publishEvaluationIfCurrent(generation, readDeliveryContext(), nextCart);
