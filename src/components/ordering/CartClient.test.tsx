@@ -850,7 +850,7 @@ describe("CartClient", () => {
     expect(updateCartLineConfiguration).not.toHaveBeenCalled();
   });
 
-  it("shows stale modifier presentation and does not offer edit", async () => {
+  it("shows stale modifier presentation and offers edit recovery", async () => {
     getCustomerMenu.mockResolvedValue({
       ok: true,
       status: 200,
@@ -882,8 +882,8 @@ describe("CartClient", () => {
     ).toBeInTheDocument();
     expect(screen.getByText(/Previously selected option is no longer available × 2/)).toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: /edit customization for classic milk tea/i }),
-    ).not.toBeInTheDocument();
+      screen.getByRole("button", { name: /edit customization for classic milk tea/i }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /remove classic milk tea from cart/i })).toBeInTheDocument();
   });
 

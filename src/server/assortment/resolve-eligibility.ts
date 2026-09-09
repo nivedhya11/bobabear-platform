@@ -19,11 +19,15 @@ import { findProductById } from "../catalog/products";
 import { findVariantById } from "../catalog/variants";
 import type { PersistenceQueryContext } from "../persistence/types";
 import { assertApplicationRole, assertUuid } from "./assert-role";
+import type { AvailabilityState } from "../../shared/assortment";
 import {
   findModifierOptionExclusion,
   findProductOrVariantExclusion,
   hasActiveBrandVariantInclude,
   loadOutletAncestry,
+  lookupProductOrVariantExclusion,
+  type OutletAncestry,
+  type OutletExclusionIndex,
 } from "./assortment-reads";
 import {
   loadEffectiveModifierOptionAvailabilityState,
@@ -33,9 +37,19 @@ import { resolveOutletOperatingState } from "./resolve-operating";
 import type {
   EligibilityDecision,
   ResolveModifierOptionAvailabilityInput,
+  ResolveOutletOperatingStateResult,
   ResolveOutletProductAvailabilityInput,
   ResolveOutletVariantAvailabilityInput,
 } from "./types";
+
+/** Optional preloaded outlet-common inputs for menu/batch composition. */
+export type OutletVariantEligibilityPreload = Readonly<{
+  ancestry: OutletAncestry;
+  operating: ResolveOutletOperatingStateResult;
+  includedVariantIds?: ReadonlySet<string>;
+  variantAvailability?: ReadonlyMap<string, AvailabilityState>;
+  exclusions?: OutletExclusionIndex;
+}>;
 
 function denied(code: EligibilityDecisionCode): EligibilityDecision {
   return { eligible: false, code };
@@ -294,6 +308,7 @@ function operatingCodeToDecision(
 export async function resolveOutletVariantAvailability(
   context: PersistenceQueryContext,
   input: ResolveOutletVariantAvailabilityInput,
+  preload?: OutletVariantEligibilityPreload,
 ): Promise<EligibilityDecision> {
   assertApplicationRole(context, "resolveOutletVariantAvailability");
   try {
@@ -301,7 +316,7 @@ export async function resolveOutletVariantAvailability(
     const outletId = assertUuid(input.outletId, "outletId");
     const now = input.context.now;
 
-    const ancestry = await loadOutletAncestry(context, outletId);
+    const ancestry = preload?.ancestry ?? (await loadOutletAncestry(context, outletId));
     const variant = await findVariantById(context, variantId);
     if (!variant || variant.brandId !== ancestry.brandId) {
       return denied("DENIED");
@@ -315,34 +330,28 @@ export async function resolveOutletVariantAvailability(
       return denied("CATALOG_INACTIVE");
     }
 
-    const included = await hasActiveBrandVariantInclude(
-      context,
-      ancestry.brandId,
-      variantId,
-    );
+    const included = preload?.includedVariantIds
+      ? preload.includedVariantIds.has(variantId)
+      : await hasActiveBrandVariantInclude(context, ancestry.brandId, variantId);
     if (!included) return denied("ASSORTMENT_NOT_INCLUDED");
 
-    const exclusion = await findProductOrVariantExclusion(
-      context,
-      ancestry,
-      product.id,
-      variantId,
-    );
+    const exclusion = preload?.exclusions
+      ? lookupProductOrVariantExclusion(preload.exclusions, product.id, variantId)
+      : await findProductOrVariantExclusion(context, ancestry, product.id, variantId);
     if (exclusion) return denied(exclusion);
 
-    const operating = await resolveOutletOperatingState(context, {
-      outletId,
-      context: { now },
-    });
+    const operating =
+      preload?.operating ??
+      (await resolveOutletOperatingState(context, {
+        outletId,
+        context: { now },
+      }));
     const operatingDenied = operatingCodeToDecision(operating.code);
     if (operatingDenied) return operatingDenied;
 
-    const avail = await loadEffectiveVariantAvailabilityState(
-      context,
-      outletId,
-      variantId,
-      now,
-    );
+    const avail =
+      preload?.variantAvailability?.get(variantId) ??
+      (await loadEffectiveVariantAvailabilityState(context, outletId, variantId, now));
     if (avail === "temporarily_unavailable") {
       return denied("VARIANT_TEMPORARILY_UNAVAILABLE");
     }

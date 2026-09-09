@@ -2,6 +2,8 @@
  * Customer Menu modifier graph loading (IMP-028C / D-368 extension).
  *
  * READ composition over existing catalog and pricing authorities.
+ * Unavailable / excluded modifier options are omitted from projection
+ * (accepted D-368 semantics; no per-option public availability DTO field).
  */
 import "server-only";
 
@@ -15,15 +17,15 @@ import {
   catalogVariantModifierGroupsTable,
 } from "../../../platform/database/schema/catalog";
 import type {
-  CustomerMenuAvailability,
   CustomerMenuModifierGroup,
   CustomerMenuModifierOption,
 } from "../../../shared/customer-menu/types";
 import {
-  findModifierOptionExclusion,
   loadOutletAncestry,
+  loadOutletExclusionIndex,
+  type OutletExclusionIndex,
 } from "../../assortment/assortment-reads";
-import { loadEffectiveModifierOptionAvailabilityState } from "../../assortment/availability";
+import { loadEffectiveModifierOptionAvailabilityStates } from "../../assortment/availability";
 import type { PersistenceQueryContext } from "../../persistence/types";
 import { resolveModifierDisplayPriceDeltas } from "../../pricing/resolve-price";
 import { PricingResolutionError } from "../../pricing/errors";
@@ -45,6 +47,7 @@ export async function loadCustomerMenuModifiersByVariantId(
     outletId: string | null;
     variantIds: readonly string[];
     at: Date;
+    exclusionIndex?: OutletExclusionIndex;
   }>,
 ): Promise<ReadonlyMap<string, readonly CustomerMenuModifierGroup[]>> {
   const result = new Map<string, readonly CustomerMenuModifierGroup[]>();
@@ -159,8 +162,22 @@ export async function loadCustomerMenuModifiersByVariantId(
     at: input.at,
   });
 
-  const outletAncestry =
-    input.outletId !== null ? await loadOutletAncestry(context, input.outletId) : null;
+  let exclusionIndex = input.exclusionIndex ?? null;
+  let modifierAvailability = new Map<string, "available" | "sold_out" | "temporarily_unavailable">();
+  if (input.outletId !== null) {
+    if (!exclusionIndex) {
+      const ancestry = await loadOutletAncestry(context, input.outletId);
+      exclusionIndex = await loadOutletExclusionIndex(context, ancestry);
+    }
+    modifierAvailability = new Map(
+      await loadEffectiveModifierOptionAvailabilityStates(
+        context,
+        input.outletId,
+        modifierOptionIds,
+        input.at,
+      ),
+    );
+  }
 
   const modifiersByVariantId = new Map<string, CustomerMenuModifierGroup[]>();
   for (const vmg of variantModifierGroupRows) {
@@ -191,24 +208,17 @@ export async function loadCustomerMenuModifiersByVariantId(
         );
       }
 
-      let availability: CustomerMenuAvailability | undefined;
-      if (outletAncestry) {
-        const exclusion = await findModifierOptionExclusion(
-          context,
-          outletAncestry,
-          option.id,
-        );
-        if (exclusion) {
+      if (exclusionIndex) {
+        if (exclusionIndex.excludedModifierOptionIds.has(option.id)) {
           // Assortment-excluded modifier options are omitted from projection.
           continue;
         }
-        const state = await loadEffectiveModifierOptionAvailabilityState(
-          context,
-          outletAncestry.outletId,
-          option.id,
-          input.at,
-        );
-        availability = state;
+        const state = modifierAvailability.get(option.id) ?? "available";
+        if (state !== "available") {
+          // Sold out / temporarily unavailable options are omitted; stale
+          // cart selections surface explicit recovery without a public DTO field.
+          continue;
+        }
       }
 
       options.push(
@@ -222,7 +232,6 @@ export async function loadCustomerMenuModifiersByVariantId(
           position: binding.position,
           displayPriceDeltaPaise,
           currency: "INR" as const,
-          ...(availability !== undefined ? { availability } : {}),
         }),
       );
     }

@@ -29,9 +29,9 @@
     "note": "Protected evidence and generated reports are never classified as executable test source."
   },
   "counts": {
-    "trackedPathsConsidered": 1770,
-    "executableTestFiles": 349,
-    "sourceTestFiles": 128,
+    "trackedPathsConsidered": 1773,
+    "executableTestFiles": 351,
+    "sourceTestFiles": 130,
     "testsTreeExecutableFiles": 187,
     "scriptTestFiles": 34,
     "playwrightSpecs": 11,
@@ -68,6 +68,7 @@
     "src/components/ordering/CartClient.test.tsx",
     "src/components/ordering/CartLineList.test.tsx",
     "src/components/ordering/CheckoutClient.destination.test.tsx",
+    "src/components/ordering/MenuItemCustomizationDialog.test.tsx",
     "src/components/ordering/OrderConfirmationClient.test.tsx",
     "src/components/ordering/OrderDetailClient.test.tsx",
     "src/components/ordering/OrderFinancialDocuments.test.tsx",
@@ -125,6 +126,7 @@
     "src/platform/observability/redact-log.test.ts",
     "src/platform/observability/request-id.test.ts",
     "src/platform/startup/bootstrap.test.ts",
+    "src/server/assortment/outlet-eligibility-session.test.ts",
     "src/server/auth/customer/runtime.test.ts",
     "src/server/auth/shared/config.test.ts",
     "src/server/auth/shared/realm-isolation.test.ts",
@@ -2086,6 +2088,24 @@
       "classificationConfidence": "HEURISTIC"
     },
     {
+      "path": "src/components/ordering/MenuItemCustomizationDialog.test.tsx",
+      "runner": "vitest",
+      "domain": "components/ordering",
+      "testType": "component-or-tsx",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test",
+        "test:coverage"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "2-component"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
       "path": "src/components/ordering/OrderConfirmationClient.test.tsx",
       "runner": "vitest",
       "domain": "components/ordering",
@@ -3112,6 +3132,25 @@
       "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "src/server/assortment/outlet-eligibility-session.test.ts",
+      "runner": "vitest",
+      "domain": "server/assortment",
+      "testType": "unit-or-domain",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test",
+        "test:coverage"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit",
+        "3-domain-use-case"
       ],
       "classificationConfidence": "HEURISTIC"
     },

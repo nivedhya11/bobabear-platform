@@ -151,13 +151,19 @@ export function resolveCartLinePresentation(
   );
   const fullyResolvable = baseResolved && modifiersComplete && !hasBundleSelections;
   const customizable = (item?.modifierGroups?.length ?? 0) > 0;
+  const hasStaleModifiers = modifiers.some((modifier) => modifier.stale);
   const basePricePaise = item?.displayPricePaise ?? 0;
   const unitPricePaise = hasBundleSelections
     ? basePricePaise
     : basePricePaise + modifierDeltaTotalPaise(modifiers);
   const lineTotalPaise = unitPricePaise * line.quantity;
+  // Allow edit when the line has stale selections so the customer can resolve
+  // them explicitly; do not require fullyResolvable for recovery.
   const editEligible =
-    customizable && fullyResolvable && !hasBundleSelections && line.modifiers.length >= 0;
+    baseResolved &&
+    !hasBundleSelections &&
+    (customizable || hasStaleModifiers || line.modifiers.length > 0) &&
+    ((item?.modifierGroups?.length ?? 0) > 0 || hasStaleModifiers);
 
   return {
     lineId: line.id,

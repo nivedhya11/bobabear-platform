@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { render, screen, waitFor, within, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -941,6 +941,208 @@ describe("OrderingCatalogClient IMP-036C stale guest cart recovery", () => {
       brandId: "brand-1",
       outletId: "outlet-stale",
     });
+
+    window.sessionStorage.clear();
+    resetDeliveryContextSnapshotForTests();
+    vi.mocked(resolveCustomerOrderingOutletContext).mockImplementation(async (input: {
+      coordinates?: unknown;
+    }) => (input.coordinates ? { kind: "indeterminate" as const } : { kind: "no_location" as const }));
+  });
+
+  it("stale delivery-context generation A cannot overwrite B across menu and cart evaluation", async () => {
+    const { resolveCustomerOrderingOutletContext } = await import(
+      "@/lib/customer-commerce/ordering-outlet-context"
+    );
+    const {
+      writeDeliveryContext,
+      resetDeliveryContextSnapshotForTests,
+    } = await import("@/lib/customer-location/delivery-context");
+    window.sessionStorage.clear();
+    resetDeliveryContextSnapshotForTests();
+
+    getActiveCart.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        cart: {
+          id: "cart-1",
+          brandId: "brand-1",
+          ownerMode: "guest",
+          revision: "1",
+          manualCouponCode: null,
+          expiresAt: null,
+          createdAt: "2026-08-13T00:00:00.000Z",
+          updatedAt: "2026-08-13T00:00:00.000Z",
+          lines: [
+            {
+              id: "line-1",
+              variantId: "var-1",
+              quantity: 1,
+              modifiers: [],
+              bundleSelections: [],
+            },
+          ],
+        },
+      },
+    });
+    evaluateCart.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        cartId: "cart-1",
+        cartRevision: "1",
+        evaluatedAt: "2026-09-09T00:00:00.000Z",
+        status: "COMPLETE",
+      },
+    });
+    vi.mocked(resolveCustomerOrderingOutletContext).mockResolvedValue({
+      kind: "serviceable",
+      outletId: "outlet-initial",
+      decision: {
+        status: "SERVICEABLE",
+        evaluatedAt: "2026-09-09T00:00:00.000Z",
+        selectedOutletId: "outlet-initial",
+      },
+    });
+    getCustomerMenu.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        menu: {
+          ...menu,
+          items: [{ ...menu.items[0]!, name: "Initial Milk Tea", availability: "available" }],
+        },
+      },
+    });
+
+    writeDeliveryContext({
+      displayLabel: "Initial",
+      coordinates: { latitude: "30.3200000", longitude: "78.0400000" },
+      source: "location_search",
+    });
+    render(<OrderingCatalogClient brandId="brand-1" />);
+    await waitFor(() =>
+      expect(screen.getByRole("heading", { name: "Initial Milk Tea" })).toBeInTheDocument(),
+    );
+
+    const outletResolvers: Array<(value: unknown) => void> = [];
+    vi.mocked(resolveCustomerOrderingOutletContext).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          outletResolvers.push(resolve);
+        }) as never,
+    );
+    const menuResolvers: Array<(value: unknown) => void> = [];
+    getCustomerMenu.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          menuResolvers.push(resolve);
+        }),
+    );
+    const evalResolvers: Array<(value: unknown) => void> = [];
+    evaluateCart.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          evalResolvers.push(resolve);
+        }),
+    );
+
+    // Generation A starts.
+    writeDeliveryContext({
+      displayLabel: "First",
+      coordinates: { latitude: "30.3256000", longitude: "78.0436000" },
+      source: "location_search",
+    });
+    await waitFor(() => expect(outletResolvers.length).toBeGreaterThanOrEqual(1));
+    outletResolvers[0]!({
+      kind: "serviceable",
+      outletId: "outlet-stale",
+      decision: {
+        status: "SERVICEABLE",
+        evaluatedAt: "2026-09-09T00:00:00.000Z",
+        selectedOutletId: "outlet-stale",
+      },
+    });
+    await waitFor(() => expect(menuResolvers.length).toBeGreaterThanOrEqual(1));
+    menuResolvers[0]!({
+      ok: true,
+      status: 200,
+      data: {
+        menu: {
+          ...menu,
+          items: [{ ...menu.items[0]!, name: "Stale Milk Tea", availability: "available" }],
+        },
+      },
+    });
+    await waitFor(() => expect(evalResolvers.length).toBeGreaterThanOrEqual(1));
+    const staleEval = evalResolvers[0]!;
+    await waitFor(() =>
+      expect(screen.getByRole("heading", { name: "Stale Milk Tea" })).toBeInTheDocument(),
+    );
+
+    // Generation B starts while A's cart evaluation is still in flight.
+    writeDeliveryContext({
+      displayLabel: "Second",
+      coordinates: { latitude: "30.3300000", longitude: "78.0500000" },
+      source: "location_search",
+    });
+    await waitFor(() => expect(outletResolvers.length).toBeGreaterThanOrEqual(2));
+    outletResolvers[outletResolvers.length - 1]!({
+      kind: "serviceable",
+      outletId: "outlet-latest",
+      decision: {
+        status: "SERVICEABLE",
+        evaluatedAt: "2026-09-09T00:00:01.000Z",
+        selectedOutletId: "outlet-latest",
+      },
+    });
+    await waitFor(() => expect(menuResolvers.length).toBeGreaterThanOrEqual(2));
+    menuResolvers[menuResolvers.length - 1]!({
+      ok: true,
+      status: 200,
+      data: {
+        menu: {
+          ...menu,
+          items: [{ ...menu.items[0]!, name: "Latest Milk Tea", availability: "available" }],
+        },
+      },
+    });
+    await waitFor(() => expect(evalResolvers.length).toBeGreaterThanOrEqual(2));
+    evalResolvers[evalResolvers.length - 1]!({
+      ok: true,
+      status: 200,
+      data: {
+        cartId: "cart-1",
+        cartRevision: "1",
+        evaluatedAt: "2026-09-09T00:00:01.000Z",
+        status: "COMPLETE",
+      },
+    });
+
+    await waitFor(() =>
+      expect(screen.getByRole("heading", { name: "Latest Milk Tea" })).toBeInTheDocument(),
+    );
+    await waitFor(() =>
+      expect(screen.getByText("This location looks deliverable.")).toBeInTheDocument(),
+    );
+
+    await act(async () => {
+      staleEval({
+        ok: true,
+        status: 200,
+        data: {
+          cartId: "cart-1",
+          cartRevision: "1",
+          evaluatedAt: "2026-09-09T00:00:00.000Z",
+          status: "CART_INVALID",
+          failures: [{ code: "CART_INVALID", message: "stale" }],
+        },
+      });
+    });
+
+    expect(screen.getByRole("heading", { name: "Latest Milk Tea" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Stale Milk Tea" })).not.toBeInTheDocument();
+    expect(screen.getByText("This location looks deliverable.")).toBeInTheDocument();
 
     window.sessionStorage.clear();
     resetDeliveryContextSnapshotForTests();

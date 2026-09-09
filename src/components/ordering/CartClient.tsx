@@ -65,8 +65,8 @@ export function CartClient(props: { brandId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [editTarget, setEditTarget] = useState<EditTarget | null>(null);
   const [dialogError, setDialogError] = useState<string | null>(null);
-  const evaluationRequestIdRef = useRef(0);
-  const menuRequestIdRef = useRef(0);
+  /** One delivery-context surface generation for outlet/menu → cart eval. */
+  const surfaceGenerationRef = useRef(0);
   const cartRef = useRef<CommerceCart | null>(null);
 
   const menuLookups = useMemo(
@@ -87,11 +87,10 @@ export function CartClient(props: { brandId: string }) {
     cartRef.current = cart;
   }, [cart]);
 
-  const refreshEvaluation = useCallback(
-    async (context: DeliveryContext, currentCart: CommerceCart | null) => {
-      const requestId = ++evaluationRequestIdRef.current;
+  const publishEvaluationIfCurrent = useCallback(
+    async (generation: number, context: DeliveryContext, currentCart: CommerceCart | null) => {
       if (!currentCart || currentCart.lines.length === 0) {
-        if (requestId === evaluationRequestIdRef.current) {
+        if (generation === surfaceGenerationRef.current) {
           setEvaluation(null);
         }
         return;
@@ -107,7 +106,7 @@ export function CartClient(props: { brandId: string }) {
             }
           : { brandId },
       );
-      if (requestId !== evaluationRequestIdRef.current) {
+      if (generation !== surfaceGenerationRef.current) {
         return;
       }
       if (evaluated.ok) setEvaluation(evaluated.data);
@@ -116,44 +115,64 @@ export function CartClient(props: { brandId: string }) {
     [brandId],
   );
 
-  const refreshMenuForContext = useCallback(
+  const refreshOrderingSurface = useCallback(
     async (context: DeliveryContext) => {
-      const requestId = ++menuRequestIdRef.current;
+      const generation = ++surfaceGenerationRef.current;
       const orderingContext = await resolveCustomerOrderingOutletContext({
         brandId,
         coordinates: context.coordinates,
         postalCode: context.postalCode.length === 6 ? context.postalCode : null,
       });
-      if (requestId !== menuRequestIdRef.current) return;
+      if (generation !== surfaceGenerationRef.current) return;
       const outletId = menuOutletIdFromOrderingContext(orderingContext);
       const menuResult = await getCustomerMenu({
         brandId,
         ...(outletId ? { outletId } : {}),
       });
-      if (requestId !== menuRequestIdRef.current) return;
+      if (generation !== surfaceGenerationRef.current) return;
       if (!menuResult.ok) {
         setMenu(null);
         setError(commerceErrorCopy(menuResult.code));
       } else {
         setMenu(menuResult.data.menu);
       }
+      await publishEvaluationIfCurrent(generation, context, cartRef.current);
     },
-    [brandId],
+    [brandId, publishEvaluationIfCurrent],
   );
 
   const load = useCallback(async () => {
     const context = readDeliveryContext();
-    await refreshMenuForContext(context);
+    const generation = ++surfaceGenerationRef.current;
+    const orderingContext = await resolveCustomerOrderingOutletContext({
+      brandId,
+      coordinates: context.coordinates,
+      postalCode: context.postalCode.length === 6 ? context.postalCode : null,
+    });
+    if (generation !== surfaceGenerationRef.current) return;
+    const outletId = menuOutletIdFromOrderingContext(orderingContext);
+    const menuResult = await getCustomerMenu({
+      brandId,
+      ...(outletId ? { outletId } : {}),
+    });
+    if (generation !== surfaceGenerationRef.current) return;
+    if (!menuResult.ok) {
+      setMenu(null);
+      setError(commerceErrorCopy(menuResult.code));
+    } else {
+      setMenu(menuResult.data.menu);
+    }
 
     const cartResult = await getActiveCart(brandId, { guestToken: true });
+    if (generation !== surfaceGenerationRef.current) return;
     if (!cartResult.ok) {
       setError(commerceErrorCopy(cartResult.code));
       setCart(null);
       return;
     }
     setCart(cartResult.data.cart);
-    await refreshEvaluation(context, cartResult.data.cart);
-  }, [brandId, refreshEvaluation, refreshMenuForContext]);
+    await publishEvaluationIfCurrent(generation, context, cartResult.data.cart);
+  }, [brandId, publishEvaluationIfCurrent]);
 
   useEffect(() => {
     let cancelled = false;
@@ -168,19 +187,16 @@ export function CartClient(props: { brandId: string }) {
 
   useEffect(() => {
     return subscribeToDeliveryContext((nextContext) => {
-      void refreshMenuForContext(nextContext);
-      void refreshEvaluation(nextContext, cartRef.current);
+      void refreshOrderingSurface(nextContext);
     });
-  }, [refreshEvaluation, refreshMenuForContext]);
+  }, [refreshOrderingSurface]);
 
   useEffect(() => {
     function onVisibilityOrFocus(): void {
       if (typeof document !== "undefined" && document.visibilityState === "hidden") {
         return;
       }
-      const context = readDeliveryContext();
-      void refreshMenuForContext(context);
-      void refreshEvaluation(context, cartRef.current);
+      void refreshOrderingSurface(readDeliveryContext());
     }
     document.addEventListener("visibilitychange", onVisibilityOrFocus);
     window.addEventListener("focus", onVisibilityOrFocus);
@@ -188,13 +204,14 @@ export function CartClient(props: { brandId: string }) {
       document.removeEventListener("visibilitychange", onVisibilityOrFocus);
       window.removeEventListener("focus", onVisibilityOrFocus);
     };
-  }, [refreshEvaluation, refreshMenuForContext]);
+  }, [refreshOrderingSurface]);
 
   async function applyCartMutation(nextCart: CommerceCart): Promise<void> {
     setCart(nextCart);
     publishCartCount(cartUnitCount(nextCart));
     // Evaluate against live delivery authority, not a stale render/async closure.
-    await refreshEvaluation(readDeliveryContext(), nextCart);
+    const generation = surfaceGenerationRef.current;
+    await publishEvaluationIfCurrent(generation, readDeliveryContext(), nextCart);
   }
 
   async function withPending(work: () => Promise<void>): Promise<void> {

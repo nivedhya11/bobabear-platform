@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { formatPaise } from "@/components/ordering/format-money";
+import { STALE_MODIFIER_OPTION_LABEL } from "@/components/ordering/cart-presentation";
 import type { CartModifierSelectionInput } from "@/shared/cart/types";
 import type {
   CustomerMenuItem,
@@ -14,6 +15,13 @@ export type CustomizationDialogMode = "add" | "edit";
 
 type Quantities = Record<string, number>;
 
+type StaleSelection = Readonly<{
+  variantModifierGroupId: string;
+  modifierGroupOptionId: string;
+  quantity: number;
+  label: string;
+}>;
+
 function selectionKey(groupId: string, optionId: string): string {
   return `${groupId}:${optionId}`;
 }
@@ -23,7 +31,6 @@ function initialQuantitiesForAdd(item: CustomerMenuItem): Quantities {
   for (const group of item.modifierGroups ?? []) {
     let groupTotal = 0;
     for (const option of group.options) {
-      if (option.availability && option.availability !== "available") continue;
       if (option.displayPriceDeltaPaise > 0) continue;
       const quantity = Math.min(
         option.defaultQuantity,
@@ -38,19 +45,6 @@ function initialQuantitiesForAdd(item: CustomerMenuItem): Quantities {
     }
   }
   return quantities;
-}
-
-function optionUnavailable(
-  option: CustomerMenuModifierGroup["options"][number],
-): boolean {
-  return Boolean(option.availability && option.availability !== "available");
-}
-
-function optionAvailabilityLabel(
-  option: CustomerMenuModifierGroup["options"][number],
-): string | null {
-  if (!option.availability || option.availability === "available") return null;
-  return option.availability === "sold_out" ? "Sold out" : "Unavailable";
 }
 
 function initialQuantitiesForEdit(
@@ -74,6 +68,40 @@ function resolveInitialQuantities(
     return initialQuantitiesForEdit(initialModifiers);
   }
   return initialQuantitiesForAdd(item);
+}
+
+function resolveStaleSelections(
+  mode: CustomizationDialogMode,
+  item: CustomerMenuItem,
+  initialModifiers: readonly CartModifierSelectionInput[] | undefined,
+  quantities: Quantities,
+): readonly StaleSelection[] {
+  if (mode !== "edit" || !initialModifiers) return [];
+  const projectedKeys = new Set<string>();
+  for (const group of item.modifierGroups ?? []) {
+    for (const option of group.options) {
+      projectedKeys.add(
+        selectionKey(group.variantModifierGroupId, option.modifierGroupOptionId),
+      );
+    }
+  }
+  const stale: StaleSelection[] = [];
+  for (const modifier of initialModifiers) {
+    const key = selectionKey(
+      modifier.variantModifierGroupId,
+      modifier.modifierGroupOptionId,
+    );
+    if (projectedKeys.has(key)) continue;
+    const quantity = quantities[key] ?? 0;
+    if (quantity <= 0) continue;
+    stale.push({
+      variantModifierGroupId: modifier.variantModifierGroupId,
+      modifierGroupOptionId: modifier.modifierGroupOptionId,
+      quantity,
+      label: STALE_MODIFIER_OPTION_LABEL,
+    });
+  }
+  return stale;
 }
 
 function groupError(group: CustomerMenuModifierGroup, quantities: Quantities): string | null {
@@ -137,10 +165,15 @@ function MenuItemCustomizationDialogContents(props: MenuItemCustomizationDialogP
     () => [...(item.modifierGroups ?? [])].sort((a, b) => a.position - b.position),
     [item.modifierGroups],
   );
+  const staleSelections = useMemo(
+    () => resolveStaleSelections(mode, item, props.initialModifiers, quantities),
+    [mode, item, props.initialModifiers, quantities],
+  );
   const errors = groups
     .map((group) => groupError(group, quantities))
     .filter((error): error is string => error !== null);
-  const valid = errors.length === 0;
+  const unresolvedStale = staleSelections.length > 0;
+  const valid = errors.length === 0 && !unresolvedStale;
 
   function setQuantity(
     group: CustomerMenuModifierGroup,
@@ -150,9 +183,6 @@ function MenuItemCustomizationDialogContents(props: MenuItemCustomizationDialogP
     setQuantities((current) => {
       const key = selectionKey(group.variantModifierGroupId, optionId);
       const option = group.options.find((candidate) => candidate.modifierGroupOptionId === optionId)!;
-      if (optionUnavailable(option)) {
-        return current;
-      }
       if (nextQuantity > 0 && group.maxTotalQuantity === 1 && option.maxQuantity === 1) {
         const withoutGroup = Object.fromEntries(
           Object.entries(current).filter(([entry]) => !entry.startsWith(`${group.variantModifierGroupId}:`)),
@@ -178,7 +208,21 @@ function MenuItemCustomizationDialogContents(props: MenuItemCustomizationDialogP
     });
   }
 
-  const modifiers = groups.flatMap((group) =>
+  function decreaseStaleSelection(selection: StaleSelection): void {
+    setQuantities((current) => {
+      const key = selectionKey(
+        selection.variantModifierGroupId,
+        selection.modifierGroupOptionId,
+      );
+      const quantity = (current[key] ?? 0) - 1;
+      if (quantity <= 0) {
+        return Object.fromEntries(Object.entries(current).filter(([entry]) => entry !== key));
+      }
+      return { ...current, [key]: quantity };
+    });
+  }
+
+  const projectedModifiers = groups.flatMap((group) =>
     group.options.flatMap((option) => {
       const quantity =
         quantities[selectionKey(group.variantModifierGroupId, option.modifierGroupOptionId)] ?? 0;
@@ -193,6 +237,15 @@ function MenuItemCustomizationDialogContents(props: MenuItemCustomizationDialogP
         : [];
     }),
   );
+  // Never silently drop unresolved stale selections from a full-replacement payload.
+  const modifiers: readonly CartModifierSelectionInput[] = [
+    ...projectedModifiers,
+    ...staleSelections.map((selection) => ({
+      variantModifierGroupId: selection.variantModifierGroupId,
+      modifierGroupOptionId: selection.modifierGroupOptionId,
+      quantity: selection.quantity,
+    })),
+  ];
   const itemTotalPaise = item.displayPricePaise + groups.reduce(
     (groupSum, group) => groupSum + group.options.reduce(
       (optionSum, option) => optionSum +
@@ -209,6 +262,7 @@ function MenuItemCustomizationDialogContents(props: MenuItemCustomizationDialogP
   const pendingLabel = mode === "edit" ? "Saving…" : "Adding…";
 
   function handleSubmit(): void {
+    if (!valid) return;
     if (mode === "edit") {
       props.onSave?.(modifiers);
       return;
@@ -253,6 +307,61 @@ function MenuItemCustomizationDialogContents(props: MenuItemCustomizationDialogP
             Close
           </Button>
         </div>
+        {staleSelections.length > 0 ? (
+          <fieldset
+            className="flex flex-col gap-3 border-t border-[var(--border-default)] pt-4"
+            data-testid="stale-modifier-recovery"
+          >
+            <legend className="font-body font-bold text-[16px] text-[var(--text-primary)]">
+              Needs attention
+            </legend>
+            <p className="font-body text-[13px] text-[var(--text-secondary)]">
+              Remove unavailable selections before saving.
+            </p>
+            {staleSelections.map((selection) => {
+              const key = selectionKey(
+                selection.variantModifierGroupId,
+                selection.modifierGroupOptionId,
+              );
+              return (
+                <div
+                  key={key}
+                  className="flex min-h-[44px] items-center justify-between gap-3 rounded-lg border border-[var(--border-default)] bg-[var(--bg-section)] px-3"
+                  data-stale-modifier="true"
+                >
+                  <span className="font-body text-[15px] text-[var(--text-primary)]">
+                    {selection.label}
+                    {selection.quantity > 1 ? ` × ${selection.quantity}` : ""}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="min-h-[44px] min-w-[44px] md:min-h-8 md:min-w-8"
+                      aria-label={`Remove ${selection.label}`}
+                      disabled={props.pending}
+                      onClick={() => decreaseStaleSelection(selection)}
+                    >
+                      −
+                    </Button>
+                    <span aria-live="polite">{selection.quantity}</span>
+                    <Button
+                      type="button"
+                      variant="primary"
+                      size="sm"
+                      className="min-h-[44px] min-w-[44px] md:min-h-8 md:min-w-8"
+                      aria-label={`Increase ${selection.label}`}
+                      disabled
+                    >
+                      +
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </fieldset>
+        ) : null}
         {groups.map((group) => {
           const total = group.options.reduce(
             (sum, option) =>
@@ -282,8 +391,6 @@ function MenuItemCustomizationDialogContents(props: MenuItemCustomizationDialogP
                     quantities[
                       selectionKey(group.variantModifierGroupId, option.modifierGroupOptionId)
                     ] ?? 0;
-                  const unavailable = optionUnavailable(option);
-                  const availabilityLabel = optionAvailabilityLabel(option);
                   const singleSelectReplace =
                     group.maxTotalQuantity === 1 &&
                     group.options.every((candidate) => candidate.maxQuantity === 1);
@@ -291,8 +398,7 @@ function MenuItemCustomizationDialogContents(props: MenuItemCustomizationDialogP
                     return (
                       <label
                         key={option.modifierGroupOptionId}
-                        className={`flex min-h-[52px] items-center justify-between gap-3 rounded-lg border px-3 transition-colors ${unavailable ? "cursor-not-allowed opacity-60" : "cursor-pointer"} ${quantity > 0 ? "border-[var(--interactive-primary)] bg-[var(--interactive-ghost-hover)]" : "border-[var(--border-default)] bg-[var(--bg-section)]"}`}
-                        data-availability={option.availability ?? "available"}
+                        className={`flex min-h-[52px] items-center justify-between gap-3 rounded-lg border px-3 transition-colors cursor-pointer ${quantity > 0 ? "border-[var(--interactive-primary)] bg-[var(--interactive-ghost-hover)]" : "border-[var(--border-default)] bg-[var(--bg-section)]"}`}
                       >
                         <span className="flex items-center gap-3">
                           <input
@@ -301,7 +407,6 @@ function MenuItemCustomizationDialogContents(props: MenuItemCustomizationDialogP
                             checked={quantity > 0}
                             disabled={
                               props.pending ||
-                              unavailable ||
                               (!singleSelectReplace &&
                                 quantity === 0 &&
                                 total >= group.maxTotalQuantity)
@@ -318,11 +423,6 @@ function MenuItemCustomizationDialogContents(props: MenuItemCustomizationDialogP
                           <span className="font-body text-[15px] text-[var(--text-primary)]">
                             {option.name}
                           </span>
-                          {availabilityLabel ? (
-                            <span className="font-body text-[12px] font-semibold text-[var(--text-secondary)]">
-                              {availabilityLabel}
-                            </span>
-                          ) : null}
                           {quantity > 0 && option.displayPriceDeltaPaise === 0 ? <span className="font-body text-[12px] font-semibold text-[var(--interactive-primary-pressed)]">Included</span> : null}
                         </span>
                         {option.displayPriceDeltaPaise !== 0 ? (
@@ -338,11 +438,9 @@ function MenuItemCustomizationDialogContents(props: MenuItemCustomizationDialogP
                     <div
                       key={option.modifierGroupOptionId}
                       className="flex min-h-[44px] items-center justify-between gap-3"
-                      data-availability={option.availability ?? "available"}
                     >
                       <span className="font-body text-[15px] text-[var(--text-primary)]">
                         {option.name}
-                        {availabilityLabel ? ` · ${availabilityLabel}` : ""}
                         {option.displayPriceDeltaPaise !== 0
                           ? ` (${option.displayPriceDeltaPaise > 0 ? "+" : ""}${formatPaise(option.displayPriceDeltaPaise)})`
                           : ""}
@@ -354,7 +452,7 @@ function MenuItemCustomizationDialogContents(props: MenuItemCustomizationDialogP
                           size="sm"
                           className="min-h-[44px] min-w-[44px] md:min-h-8 md:min-w-8"
                           aria-label={`Decrease ${option.name}`}
-                          disabled={props.pending || unavailable || quantity === 0}
+                          disabled={props.pending || quantity === 0}
                           onClick={() =>
                             setQuantity(group, option.modifierGroupOptionId, quantity - 1)
                           }
@@ -370,7 +468,6 @@ function MenuItemCustomizationDialogContents(props: MenuItemCustomizationDialogP
                           aria-label={`Increase ${option.name}`}
                           disabled={
                             props.pending ||
-                            unavailable ||
                             quantity >= option.maxQuantity ||
                             total >= group.maxTotalQuantity
                           }
@@ -387,6 +484,11 @@ function MenuItemCustomizationDialogContents(props: MenuItemCustomizationDialogP
             </fieldset>
           );
         })}
+        {unresolvedStale ? (
+          <p role="alert" className="font-body text-[14px] text-[var(--text-secondary)]">
+            Remove unavailable selections before saving.
+          </p>
+        ) : null}
         {errors.length > 0 ? (
           <p role="alert" className="font-body text-[14px] text-[var(--text-secondary)]">
             {errors[0]}

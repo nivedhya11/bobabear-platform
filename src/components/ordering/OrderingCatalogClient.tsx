@@ -73,8 +73,8 @@ export function OrderingCatalogClient(props: { brandId: string }) {
   const [dialogError, setDialogError] = useState<string | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const menuRequestIdRef = useRef(0);
-  const evaluationRequestIdRef = useRef(0);
+  /** One delivery-context surface generation for serviceability → menu → cart eval. */
+  const surfaceGenerationRef = useRef(0);
   const cartRef = useRef<CommerceCart | null>(null);
 
   const menuLookups = useMemo(
@@ -86,11 +86,10 @@ export function OrderingCatalogClient(props: { brandId: string }) {
     cartRef.current = cart;
   }, [cart]);
 
-  const refreshEvaluation = useCallback(
-    async (context: DeliveryContext, currentCart: CommerceCart | null) => {
-      const requestId = ++evaluationRequestIdRef.current;
+  const publishEvaluationIfCurrent = useCallback(
+    async (generation: number, context: DeliveryContext, currentCart: CommerceCart | null) => {
       if (!currentCart || currentCart.lines.length === 0 || !context.coordinates) {
-        if (requestId === evaluationRequestIdRef.current) {
+        if (generation === surfaceGenerationRef.current) {
           setEvaluation(null);
         }
         return;
@@ -102,22 +101,22 @@ export function OrderingCatalogClient(props: { brandId: string }) {
           ...(context.postalCode.length === 6 ? { postalCode: context.postalCode } : {}),
         },
       });
-      if (requestId !== evaluationRequestIdRef.current) return;
+      if (generation !== surfaceGenerationRef.current) return;
       if (evaluated.ok) setEvaluation(evaluated.data);
       else setEvaluation(null);
     },
     [brandId],
   );
 
-  const refreshMenuForContext = useCallback(
+  const refreshOrderingSurface = useCallback(
     async (context: DeliveryContext): Promise<boolean> => {
-      const requestId = ++menuRequestIdRef.current;
+      const generation = ++surfaceGenerationRef.current;
       const orderingContext = await resolveCustomerOrderingOutletContext({
         brandId,
         coordinates: context.coordinates,
         postalCode: context.postalCode.length === 6 ? context.postalCode : null,
       });
-      if (requestId !== menuRequestIdRef.current) return false;
+      if (generation !== surfaceGenerationRef.current) return false;
 
       if (orderingContext.kind === "serviceable") {
         setServiceabilityDecision(orderingContext.decision);
@@ -137,7 +136,7 @@ export function OrderingCatalogClient(props: { brandId: string }) {
         brandId,
         ...(outletId ? { outletId } : {}),
       });
-      if (requestId !== menuRequestIdRef.current) return false;
+      if (generation !== surfaceGenerationRef.current) return false;
       if (!result.ok) {
         setMenu(null);
         setError(commerceErrorCopy(result.code));
@@ -145,9 +144,11 @@ export function OrderingCatalogClient(props: { brandId: string }) {
       }
       setMenu(result.data.menu);
       setError(null);
-      return true;
+
+      await publishEvaluationIfCurrent(generation, context, cartRef.current);
+      return generation === surfaceGenerationRef.current;
     },
-    [brandId],
+    [brandId, publishEvaluationIfCurrent],
   );
 
   const refreshCart = useCallback(async () => {
@@ -167,8 +168,9 @@ export function OrderingCatalogClient(props: { brandId: string }) {
     setCart(result.data.cart);
     publishCartCount(cartUnitCount(result.data.cart));
     setError(null);
-    await refreshEvaluation(readDeliveryContext(), result.data.cart);
-  }, [brandId, refreshEvaluation]);
+    const generation = surfaceGenerationRef.current;
+    await publishEvaluationIfCurrent(generation, readDeliveryContext(), result.data.cart);
+  }, [brandId, publishEvaluationIfCurrent]);
 
   function recoverStaleGuestCart(): void {
     clearGuestCartCredential();
@@ -192,19 +194,11 @@ export function OrderingCatalogClient(props: { brandId: string }) {
     return addCartLine(freshCartInput);
   }
 
-  const refreshOrderingSurface = useCallback(
-    async (context: DeliveryContext) => {
-      await refreshMenuForContext(context);
-      await refreshEvaluation(context, cartRef.current);
-    },
-    [refreshEvaluation, refreshMenuForContext],
-  );
-
   useEffect(() => {
     let cancelled = false;
     void (async () => {
       await Promise.all([
-        refreshMenuForContext(readDeliveryContext()),
+        refreshOrderingSurface(readDeliveryContext()),
         refreshCart(),
       ]);
       if (!cancelled) setLoading(false);
@@ -314,7 +308,8 @@ export function OrderingCatalogClient(props: { brandId: string }) {
   async function updateCartFromMutation(nextCart: CommerceCart): Promise<void> {
     setCart(nextCart);
     publishCartCount(cartUnitCount(nextCart));
-    await refreshEvaluation(readDeliveryContext(), nextCart);
+    const generation = surfaceGenerationRef.current;
+    await publishEvaluationIfCurrent(generation, readDeliveryContext(), nextCart);
   }
 
   const quantityByVariant = useMemo(() => {
@@ -632,7 +627,7 @@ export function OrderingCatalogClient(props: { brandId: string }) {
           <CommerceRetryPanel
             message={error ?? "Menu is unavailable right now."}
             onRetry={() => {
-              void refreshMenuForContext(readDeliveryContext()).then((ok) => {
+              void refreshOrderingSurface(readDeliveryContext()).then((ok) => {
                 if (ok) void refreshCart();
               });
             }}

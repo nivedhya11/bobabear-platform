@@ -25,8 +25,7 @@ import type {
   CustomerMenuProjection,
   CustomerMenuSection,
 } from "../../../shared/customer-menu/types";
-import { loadEffectiveVariantAvailabilityState } from "../../assortment/availability";
-import { resolveOutletVariantAvailability } from "../../assortment/resolve-eligibility";
+import { createOutletEligibilitySession } from "../../assortment/outlet-eligibility-session";
 import { effectiveEntryDisplay } from "../../catalog/menu/reads";
 import { assertUuid } from "../../catalog/lifecycle";
 import type { PersistenceQueryContext } from "../../persistence/types";
@@ -238,11 +237,21 @@ export async function projectCustomerMenu(
     pendingItems.push({ entry, product, variant, display });
   }
 
+  const eligibilitySession =
+    outletId !== null
+      ? await createOutletEligibilitySession(context, {
+          outletId,
+          variantIds: projectedVariantIds,
+          now: at,
+        })
+      : null;
+
   const modifiersByVariantId = await loadCustomerMenuModifiersByVariantId(context, {
     brandId,
     outletId,
     variantIds: projectedVariantIds,
     at,
+    exclusionIndex: eligibilitySession?.exclusions,
   });
 
   const sections: CustomerMenuSection[] = sectionRows.map((section) =>
@@ -263,18 +272,9 @@ export async function projectCustomerMenu(
       : await resolveBrandVariantPrice(context, { brandId, variantId: variant.id, at });
 
     let availability: CustomerMenuAvailability | undefined;
-    if (outletId) {
-      const eligibility = await resolveOutletVariantAvailability(context, {
-        variantId: variant.id,
-        outletId,
-        context: { now: at },
-      });
-      const opsAvailability = await loadEffectiveVariantAvailabilityState(
-        context,
-        outletId,
-        variant.id,
-        at,
-      );
+    if (outletId && eligibilitySession) {
+      const eligibility = await eligibilitySession.resolveVariant(variant.id);
+      const opsAvailability = eligibilitySession.opsAvailability(variant.id);
       const projected = displayAvailabilityFromEligibility(eligibility, opsAvailability);
       if (projected === "omit") {
         continue;

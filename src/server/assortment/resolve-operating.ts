@@ -14,6 +14,16 @@ import type {
   ResolveOutletOperatingStateResult,
 } from "./types";
 
+/** Request-scoped operating-state memoization keyed by outletId + now ISO. */
+const operatingByContext = new WeakMap<
+  PersistenceQueryContext,
+  Map<string, Promise<ResolveOutletOperatingStateResult>>
+>();
+
+function operatingCacheKey(outletId: string, now: Date): string {
+  return `${outletId}@${now.toISOString()}`;
+}
+
 export async function resolveOutletOperatingState(
   context: PersistenceQueryContext,
   input: ResolveOperatingStateInput,
@@ -30,6 +40,30 @@ export async function resolveOutletOperatingState(
     };
   }
 
+  let cache = operatingByContext.get(context);
+  if (!cache) {
+    cache = new Map();
+    operatingByContext.set(context, cache);
+  }
+  const key = operatingCacheKey(outletId, now);
+  const cached = cache.get(key);
+  if (cached) return cached;
+
+  const pending = resolveOutletOperatingStateUncached(context, outletId, now);
+  cache.set(key, pending);
+  try {
+    return await pending;
+  } catch (error) {
+    cache.delete(key);
+    throw error;
+  }
+}
+
+async function resolveOutletOperatingStateUncached(
+  context: PersistenceQueryContext,
+  outletId: string,
+  now: Date,
+): Promise<ResolveOutletOperatingStateResult> {
   try {
     const ancestry = await loadOutletAncestry(context, outletId);
     if (ancestry.status !== "active") {

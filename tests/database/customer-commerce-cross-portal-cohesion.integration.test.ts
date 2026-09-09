@@ -259,7 +259,7 @@ describe("customer commerce cross-portal cohesion (IMP-036E)", () => {
     });
   });
 
-  it("projects modifier option availability and infeasible required configuration", async () => {
+  it("omits sold-out required modifier options and marks parent temporarily unavailable", async () => {
     await withCatalogDomain(async (persistence, { tree, brandAdminActor: actor }) => {
       const seeded = await seedMenuVariant(
         persistence,
@@ -343,10 +343,11 @@ describe("customer commerce cross-portal cohesion (IMP-036E)", () => {
       );
       const item = menu.items.find((entry) => entry.variantId === seeded.variantId)!;
       expect(item.availability).toBe("temporarily_unavailable");
-      const projectedOption = item.modifierGroups![0]!.options.find(
+      const projectedOption = item.modifierGroups?.[0]?.options.find(
         (entry) => entry.modifierOptionId === option.id,
-      )!;
-      expect(projectedOption.availability).toBe("sold_out");
+      );
+      // Sold-out options are omitted from D-368 projection (no public option.availability).
+      expect(projectedOption).toBeUndefined();
     });
   });
 

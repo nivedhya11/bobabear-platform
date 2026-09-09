@@ -3,7 +3,7 @@
  */
 import { randomUUID } from "node:crypto";
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 
 import {
   isAvailabilityState,
@@ -438,23 +438,48 @@ export async function loadEffectiveVariantAvailabilityState(
   variantId: string,
   now: Date,
 ): Promise<AvailabilityState> {
+  const states = await loadEffectiveVariantAvailabilityStates(
+    context,
+    outletId,
+    [variantId],
+    now,
+  );
+  return states.get(variantId) ?? "available";
+}
+
+/** Batch trusted variant availability reads for one outlet (menu composition). */
+export async function loadEffectiveVariantAvailabilityStates(
+  context: PersistenceQueryContext,
+  outletId: string,
+  variantIds: readonly string[],
+  now: Date,
+): Promise<ReadonlyMap<string, AvailabilityState>> {
+  const result = new Map<string, AvailabilityState>();
+  for (const variantId of variantIds) {
+    result.set(variantId, "available");
+  }
+  if (variantIds.length === 0) return result;
+
   const rows = await context.db
     .select()
     .from(outletVariantAvailabilityTable)
     .where(
       and(
         eq(outletVariantAvailabilityTable.outletId, outletId),
-        eq(outletVariantAvailabilityTable.variantId, variantId),
+        inArray(outletVariantAvailabilityTable.variantId, [...variantIds]),
       ),
-    )
-    .limit(1);
-  const row = rows[0];
-  if (!row) return "available";
-  return effectiveAvailabilityState(
-    row.state as AvailabilityState,
-    row.unavailableUntil ? new Date(row.unavailableUntil) : null,
-    now,
-  );
+    );
+  for (const row of rows) {
+    result.set(
+      row.variantId,
+      effectiveAvailabilityState(
+        row.state as AvailabilityState,
+        row.unavailableUntil ? new Date(row.unavailableUntil) : null,
+        now,
+      ),
+    );
+  }
+  return result;
 }
 
 export async function loadEffectiveModifierOptionAvailabilityState(
@@ -463,21 +488,48 @@ export async function loadEffectiveModifierOptionAvailabilityState(
   modifierOptionId: string,
   now: Date,
 ): Promise<AvailabilityState> {
+  const states = await loadEffectiveModifierOptionAvailabilityStates(
+    context,
+    outletId,
+    [modifierOptionId],
+    now,
+  );
+  return states.get(modifierOptionId) ?? "available";
+}
+
+/** Batch trusted modifier-option availability reads for one outlet. */
+export async function loadEffectiveModifierOptionAvailabilityStates(
+  context: PersistenceQueryContext,
+  outletId: string,
+  modifierOptionIds: readonly string[],
+  now: Date,
+): Promise<ReadonlyMap<string, AvailabilityState>> {
+  const result = new Map<string, AvailabilityState>();
+  for (const modifierOptionId of modifierOptionIds) {
+    result.set(modifierOptionId, "available");
+  }
+  if (modifierOptionIds.length === 0) return result;
+
   const rows = await context.db
     .select()
     .from(outletModifierOptionAvailabilityTable)
     .where(
       and(
         eq(outletModifierOptionAvailabilityTable.outletId, outletId),
-        eq(outletModifierOptionAvailabilityTable.modifierOptionId, modifierOptionId),
+        inArray(outletModifierOptionAvailabilityTable.modifierOptionId, [
+          ...modifierOptionIds,
+        ]),
       ),
-    )
-    .limit(1);
-  const row = rows[0];
-  if (!row) return "available";
-  return effectiveAvailabilityState(
-    row.state as AvailabilityState,
-    row.unavailableUntil ? new Date(row.unavailableUntil) : null,
-    now,
-  );
+    );
+  for (const row of rows) {
+    result.set(
+      row.modifierOptionId,
+      effectiveAvailabilityState(
+        row.state as AvailabilityState,
+        row.unavailableUntil ? new Date(row.unavailableUntil) : null,
+        now,
+      ),
+    );
+  }
+  return result;
 }

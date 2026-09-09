@@ -1,7 +1,7 @@
 /**
  * Effective assortment eligibility reads (IMP-014).
  */
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray, or } from "drizzle-orm";
 
 import type { EligibilityDecisionCode } from "../../shared/assortment";
 import { assortmentRulesTable } from "../../platform/database/schema/assortment";
@@ -23,20 +23,182 @@ export type OutletAncestry = Readonly<{
   status: string;
 }>;
 
+/** Request-scoped ancestry memoization (one PersistenceQueryContext = one request). */
+const ancestryByContext = new WeakMap<
+  PersistenceQueryContext,
+  Map<string, Promise<OutletAncestry>>
+>();
+
 export async function loadOutletAncestry(
   context: PersistenceQueryContext,
   outletId: string,
 ): Promise<OutletAncestry> {
   assertApplicationRole(context, "loadOutletAncestry");
-  const outlet = await findOutletById(context, assertUuid(outletId, "outletId"));
-  if (!outlet) throw new AssortmentNotFoundError("outlet");
-  return {
-    outletId: outlet.id,
-    brandId: outlet.brandId,
-    organizationId: outlet.organizationId,
-    territoryId: outlet.territoryId,
-    status: outlet.status,
-  };
+  const id = assertUuid(outletId, "outletId");
+  let cache = ancestryByContext.get(context);
+  if (!cache) {
+    cache = new Map();
+    ancestryByContext.set(context, cache);
+  }
+  const cached = cache.get(id);
+  if (cached) return cached;
+
+  const pending = (async (): Promise<OutletAncestry> => {
+    const outlet = await findOutletById(context, id);
+    if (!outlet) throw new AssortmentNotFoundError("outlet");
+    return {
+      outletId: outlet.id,
+      brandId: outlet.brandId,
+      organizationId: outlet.organizationId,
+      territoryId: outlet.territoryId,
+      status: outlet.status,
+    };
+  })();
+  cache.set(id, pending);
+  try {
+    return await pending;
+  } catch (error) {
+    cache.delete(id);
+    throw error;
+  }
+}
+
+/** Batch brand-variant include checks for menu composition. */
+export async function loadActiveBrandVariantIncludes(
+  context: PersistenceQueryContext,
+  brandId: string,
+  variantIds: readonly string[],
+): Promise<ReadonlySet<string>> {
+  const included = new Set<string>();
+  if (variantIds.length === 0) return included;
+  const rows = await context.db
+    .select({ variantId: assortmentRulesTable.variantId })
+    .from(assortmentRulesTable)
+    .where(
+      and(
+        eq(assortmentRulesTable.status, "active"),
+        eq(assortmentRulesTable.brandId, brandId),
+        eq(assortmentRulesTable.scopeType, "brand"),
+        eq(assortmentRulesTable.targetType, "variant"),
+        eq(assortmentRulesTable.decision, "include"),
+        inArray(assortmentRulesTable.variantId, [...variantIds]),
+      ),
+    );
+  for (const row of rows) {
+    if (row.variantId) included.add(row.variantId);
+  }
+  return included;
+}
+
+type ExclusionScope = "brand" | "territory" | "organization" | "outlet";
+
+const EXCLUSION_CODES: Readonly<Record<ExclusionScope, EligibilityDecisionCode>> = {
+  brand: "ASSORTMENT_EXCLUDED_BRAND",
+  territory: "ASSORTMENT_EXCLUDED_TERRITORY",
+  organization: "ASSORTMENT_EXCLUDED_ORGANIZATION",
+  outlet: "ASSORTMENT_EXCLUDED_OUTLET",
+};
+
+export type OutletExclusionIndex = Readonly<{
+  excludedProductIds: ReadonlyMap<string, EligibilityDecisionCode>;
+  excludedVariantIds: ReadonlyMap<string, EligibilityDecisionCode>;
+  excludedModifierOptionIds: ReadonlySet<string>;
+}>;
+
+const SCOPE_PRIORITY: ReadonlyArray<ExclusionScope> = [
+  "brand",
+  "territory",
+  "organization",
+  "outlet",
+];
+
+/**
+ * Load active exclusions for an outlet ancestry once, then resolve in memory.
+ * Preserves existing scope precedence (brand → territory → organization → outlet).
+ */
+export async function loadOutletExclusionIndex(
+  context: PersistenceQueryContext,
+  ancestry: OutletAncestry,
+): Promise<OutletExclusionIndex> {
+  const scopeFilter = or(
+    and(
+      eq(assortmentRulesTable.scopeType, "brand"),
+      eq(assortmentRulesTable.brandId, ancestry.brandId),
+    ),
+    and(
+      eq(assortmentRulesTable.scopeType, "territory"),
+      eq(assortmentRulesTable.brandId, ancestry.brandId),
+      eq(assortmentRulesTable.territoryId, ancestry.territoryId),
+    ),
+    and(
+      eq(assortmentRulesTable.scopeType, "organization"),
+      eq(assortmentRulesTable.brandId, ancestry.brandId),
+      eq(assortmentRulesTable.organizationId, ancestry.organizationId),
+    ),
+    and(
+      eq(assortmentRulesTable.scopeType, "outlet"),
+      eq(assortmentRulesTable.brandId, ancestry.brandId),
+      eq(assortmentRulesTable.outletId, ancestry.outletId),
+    ),
+  );
+
+  const rows = await context.db
+    .select({
+      scopeType: assortmentRulesTable.scopeType,
+      targetType: assortmentRulesTable.targetType,
+      productId: assortmentRulesTable.productId,
+      variantId: assortmentRulesTable.variantId,
+      modifierOptionId: assortmentRulesTable.modifierOptionId,
+    })
+    .from(assortmentRulesTable)
+    .where(
+      and(
+        eq(assortmentRulesTable.status, "active"),
+        eq(assortmentRulesTable.decision, "exclude"),
+        scopeFilter!,
+      ),
+    );
+
+  const excludedProductIds = new Map<string, EligibilityDecisionCode>();
+  const excludedVariantIds = new Map<string, EligibilityDecisionCode>();
+  const excludedModifierOptionIds = new Set<string>();
+
+  const ranked = [...rows].sort((left, right) => {
+    const leftRank = SCOPE_PRIORITY.indexOf(left.scopeType as ExclusionScope);
+    const rightRank = SCOPE_PRIORITY.indexOf(right.scopeType as ExclusionScope);
+    return leftRank - rightRank;
+  });
+
+  for (const row of ranked) {
+    const scope = row.scopeType as ExclusionScope;
+    if (!EXCLUSION_CODES[scope]) continue;
+    const code = EXCLUSION_CODES[scope];
+    if (row.targetType === "product" && row.productId && !excludedProductIds.has(row.productId)) {
+      excludedProductIds.set(row.productId, code);
+    } else if (
+      row.targetType === "variant" &&
+      row.variantId &&
+      !excludedVariantIds.has(row.variantId)
+    ) {
+      excludedVariantIds.set(row.variantId, code);
+    } else if (row.targetType === "modifier_option" && row.modifierOptionId) {
+      excludedModifierOptionIds.add(row.modifierOptionId);
+    }
+  }
+
+  return { excludedProductIds, excludedVariantIds, excludedModifierOptionIds };
+}
+
+export function lookupProductOrVariantExclusion(
+  index: OutletExclusionIndex,
+  productId: string,
+  variantId: string,
+): EligibilityDecisionCode | null {
+  return (
+    index.excludedProductIds.get(productId) ??
+    index.excludedVariantIds.get(variantId) ??
+    null
+  );
 }
 
 async function hasActiveRule(
@@ -67,15 +229,6 @@ export async function hasActiveBrandVariantInclude(
     )!,
   );
 }
-
-type ExclusionScope = "brand" | "territory" | "organization" | "outlet";
-
-const EXCLUSION_CODES: Readonly<Record<ExclusionScope, EligibilityDecisionCode>> = {
-  brand: "ASSORTMENT_EXCLUDED_BRAND",
-  territory: "ASSORTMENT_EXCLUDED_TERRITORY",
-  organization: "ASSORTMENT_EXCLUDED_ORGANIZATION",
-  outlet: "ASSORTMENT_EXCLUDED_OUTLET",
-};
 
 async function findProductOrVariantExclusion(
   context: PersistenceQueryContext,
