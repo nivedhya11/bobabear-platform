@@ -29,10 +29,10 @@
     "note": "Protected evidence and generated reports are never classified as executable test source."
   },
   "counts": {
-    "trackedPathsConsidered": 1767,
-    "executableTestFiles": 347,
-    "sourceTestFiles": 127,
-    "testsTreeExecutableFiles": 186,
+    "trackedPathsConsidered": 1770,
+    "executableTestFiles": 349,
+    "sourceTestFiles": 128,
+    "testsTreeExecutableFiles": 187,
     "scriptTestFiles": 34,
     "playwrightSpecs": 11,
     "vitestConfigs": 2,
@@ -96,6 +96,7 @@
     "src/lib/customer-commerce/guest-token.test.ts",
     "src/lib/customer-commerce/http.test.ts",
     "src/lib/customer-commerce/idempotency.test.ts",
+    "src/lib/customer-commerce/ordering-outlet-context.test.ts",
     "src/lib/customer-commerce/orders.test.ts",
     "src/lib/customer-commerce/payment.test.ts",
     "src/lib/menuImages.test.ts",
@@ -235,6 +236,7 @@
     "tests/database/checkout.integration.test.ts",
     "tests/database/cleanup.integration.test.ts",
     "tests/database/customer-addresses.integration.test.ts",
+    "tests/database/customer-commerce-cross-portal-cohesion.integration.test.ts",
     "tests/database/customer-menu-modifier-projection.integration.test.ts",
     "tests/database/customer-phone-auth.integration.test.ts",
     "tests/database/customer-profiles.integration.test.ts",
@@ -2588,6 +2590,24 @@
       "test1Layers": [
         "1-unit",
         "9-recovery-idempotency"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "src/lib/customer-commerce/ordering-outlet-context.test.ts",
+      "runner": "vitest",
+      "domain": "lib/customer-commerce",
+      "testType": "unit-or-domain",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test",
+        "test:coverage"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit"
       ],
       "classificationConfidence": "HEURISTIC"
     },
@@ -5279,6 +5299,43 @@
       "path": "tests/database/customer-addresses.integration.test.ts",
       "runner": "vitest",
       "domain": "database/customer-addresses",
+      "testType": "integration",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:administration",
+        "test:database:access-control",
+        "test:database:assortment-availability",
+        "test:database:auth-foundation",
+        "test:database:cart",
+        "test:database:catalog",
+        "test:database:checkout",
+        "test:database:customer-addresses",
+        "test:database:customer-phone-auth",
+        "test:database:customer-profiles",
+        "test:database:menu-import",
+        "test:database:notifications",
+        "test:database:order",
+        "test:database:outbox-idempotency",
+        "test:database:payment",
+        "test:database:persistence",
+        "test:database:pricing-tax",
+        "test:database:promotions",
+        "test:database:serviceability",
+        "test:database:workforce-auth"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "4-integration",
+        "5-database-integration"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/database/customer-commerce-cross-portal-cohesion.integration.test.ts",
+      "runner": "vitest",
+      "domain": "database/customer-commerce-cross-portal-cohesion",
       "testType": "integration",
       "dbRequired": "YES",
       "browserRequired": "NO",
