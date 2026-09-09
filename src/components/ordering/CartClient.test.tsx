@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -171,18 +171,43 @@ describe("CartClient", () => {
       status: 200,
       data: { cart: guestCart("1", [{ id: "line-1", variantId, quantity: 1 }]) },
     });
+    let resolveWithoutLocation: ((value: unknown) => void) | undefined;
+    let resolveWithLocation: ((value: unknown) => void) | undefined;
     evaluateCart
-      .mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        data: {
-          cartId: "cart-1",
-          cartRevision: "1",
-          evaluatedAt: "2026-08-13T00:00:00.000Z",
-          status: "REQUIRES_FULFILMENT_CONTEXT",
-        },
-      })
-      .mockResolvedValueOnce({
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveWithoutLocation = resolve;
+          }),
+      )
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveWithLocation = resolve;
+          }),
+      );
+
+    render(<CartClient brandId={brandId} />);
+    await waitFor(() => expect(evaluateCart).toHaveBeenCalledTimes(1));
+    expect(evaluateCart).toHaveBeenLastCalledWith({ brandId });
+
+    writeDeliveryContext({
+      displayLabel: "Rajpur Road, Dehradun",
+      coordinates: { latitude: "30.3256000", longitude: "78.0436000" },
+      source: "location_search",
+    });
+
+    await waitFor(() => expect(evaluateCart).toHaveBeenCalledTimes(2));
+    expect(evaluateCart).toHaveBeenLastCalledWith({
+      brandId,
+      location: {
+        coordinates: { latitude: "30.3256000", longitude: "78.0436000" },
+      },
+    });
+
+    // Newer delivery-context evaluation completes first.
+    await act(async () => {
+      resolveWithLocation?.({
         ok: true,
         status: 200,
         data: {
@@ -192,25 +217,148 @@ describe("CartClient", () => {
           status: "COMPLETE",
         },
       });
+    });
+
+    // Older no-location evaluation resolves later and must not overwrite.
+    await act(async () => {
+      resolveWithoutLocation?.({
+        ok: true,
+        status: 200,
+        data: {
+          cartId: "cart-1",
+          cartRevision: "1",
+          evaluatedAt: "2026-08-13T00:00:00.000Z",
+          status: "REQUIRES_FULFILMENT_CONTEXT",
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText("Loading cart…")).not.toBeInTheDocument();
+      expect(screen.getByText("This location looks deliverable.")).toBeInTheDocument();
+      expect(screen.queryByText("Choose your delivery location to check availability.")).not.toBeInTheDocument();
+    });
+  });
+
+  it("post-mutation evaluation uses the current delivery context, not a stale mutation closure", async () => {
+    getActiveCart.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { cart: guestCart("1", [{ id: "line-1", variantId, quantity: 1 }]) },
+    });
+
+    let resolveMutation: ((value: unknown) => void) | undefined;
+    setCartLineQuantity.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveMutation = resolve;
+        }),
+    );
+
+    const evaluateResolvers: Array<(value: unknown) => void> = [];
+    evaluateCart.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          evaluateResolvers.push(resolve);
+        }),
+    );
 
     render(<CartClient brandId={brandId} />);
-    await screen.findByText("Choose your delivery location to check availability.");
+    await waitFor(() => expect(evaluateCart).toHaveBeenCalledTimes(1));
+    expect(evaluateCart).toHaveBeenLastCalledWith({ brandId });
 
+    await act(async () => {
+      evaluateResolvers[0]!({
+        ok: true,
+        status: 200,
+        data: {
+          cartId: "cart-1",
+          cartRevision: "1",
+          evaluatedAt: "2026-08-13T00:00:00.000Z",
+          status: "REQUIRES_FULFILMENT_CONTEXT",
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("Choose your delivery location to check availability."),
+      ).toBeInTheDocument();
+    });
+
+    // Mutation starts while context A (no location) is current.
+    await userEvent.click(
+      await screen.findByRole("button", { name: /increase classic milk tea quantity/i }),
+    );
+    await waitFor(() => expect(setCartLineQuantity).toHaveBeenCalled());
+
+    // Location changes to B while the mutation is still pending.
     writeDeliveryContext({
       displayLabel: "Rajpur Road, Dehradun",
       coordinates: { latitude: "30.3256000", longitude: "78.0436000" },
       source: "location_search",
     });
 
-    await waitFor(() => {
-      expect(evaluateCart).toHaveBeenLastCalledWith({
-        brandId,
-        location: {
-          coordinates: { latitude: "30.3256000", longitude: "78.0436000" },
+    await waitFor(() => expect(evaluateCart).toHaveBeenCalledTimes(2));
+    expect(evaluateCart).toHaveBeenLastCalledWith({
+      brandId,
+      location: {
+        coordinates: { latitude: "30.3256000", longitude: "78.0436000" },
+      },
+    });
+
+    // Mutation resolves later; post-mutation evaluation must use B, not A.
+    await act(async () => {
+      resolveMutation?.({
+        ok: true,
+        status: 200,
+        data: { cart: guestCart("2", [{ id: "line-1", variantId, quantity: 2 }]) },
+      });
+    });
+
+    await waitFor(() => expect(evaluateCart).toHaveBeenCalledTimes(3));
+    expect(evaluateCart).toHaveBeenLastCalledWith({
+      brandId,
+      location: {
+        coordinates: { latitude: "30.3256000", longitude: "78.0436000" },
+      },
+    });
+    expect(evaluateCart.mock.calls[2]).not.toEqual([{ brandId }]);
+
+    // B subscription result completes first.
+    await act(async () => {
+      evaluateResolvers[1]!({
+        ok: true,
+        status: 200,
+        data: {
+          cartId: "cart-1",
+          cartRevision: "1",
+          evaluatedAt: "2026-08-13T00:00:00.000Z",
+          status: "COMPLETE",
         },
       });
-      expect(screen.queryByText("Choose your delivery location to check availability.")).not.toBeInTheDocument();
+    });
+
+    // Newer post-mutation evaluation (also B) completes last and must keep B semantics.
+    // Under the stale-closure bug this call used A and would restore REQUIRES_FULFILMENT_CONTEXT.
+    await act(async () => {
+      evaluateResolvers[2]!({
+        ok: true,
+        status: 200,
+        data: {
+          cartId: "cart-1",
+          cartRevision: "2",
+          evaluatedAt: "2026-08-13T00:00:01.000Z",
+          status: "COMPLETE",
+        },
+      });
+    });
+
+    await waitFor(() => {
       expect(screen.getByText("This location looks deliverable.")).toBeInTheDocument();
+      expect(
+        screen.queryByText("Choose your delivery location to check availability."),
+      ).not.toBeInTheDocument();
     });
   });
 
