@@ -8,8 +8,9 @@ Heed deprecation notices.
 
 # BOBA Bear — Agent Execution Contract
 
-This file is the **agent operating contract**. It points to canonical authorities; it is not an
-independent roadmap, state, vision, or architecture authority.
+This file is the **sole agent operating contract**. It points to canonical authorities; it is not an
+independent roadmap, state, vision, or architecture authority. Do not create a competing governance
+document or duplicate rule source. `CLAUDE.md` delegates here.
 
 Product delivery process for new substantial product work from IMP-036F onward:
 
@@ -47,7 +48,7 @@ IMP036F_ACTIVATED = NO
 
 Historical / supporting platform docs are indexed in [`docs/platform/README.md`](docs/platform/README.md).
 Older planning folders (wireframes, design-system drafts) are reference-only unless a CURRENT
-authority says otherwise.
+authority says otherwise. Canonical docs remain authoritative over conversational restatement.
 
 ## Mandatory read order
 
@@ -72,14 +73,120 @@ changes without product behaviour changes may remain specification-driven. For l
 metadata/version verification, targeted search, and relevant section/range reads satisfy this
 order when they prove applicable authority; whole-document repasting is not required.
 
+## Operating planes
+
+```text
+PLANNING / GOVERNANCE / CONTROL  = Human + designated planning/governance agent (currently ChatGPT)
+EXECUTION                        = Coding agent
+DURABLE VERIFICATION             = GitHub / CI
+CONSEQUENTIAL TRANSITIONS        = Human only (R3)
+```
+
+Autonomy never permits guessed product, security, payment, or business decisions. Escalation is by
+decision/risk boundary, not every Git command.
+
+## Risk-bounded autonomy
+
+| Level | Name | Autonomy |
+|---|---|---|
+| **R0** | `READ/ANALYZE` | Autonomous read, search, diagnosis, and analysis. No source mutation. |
+| **R1** | `BOUNDED_ENGINEERING` | Implementation agent owns inspect → plan → edit → test → diagnose → same-scope repair → validate within authorized scope. Do not stop for every newly exposed same-class defect inside that scope. Use compact R1 alignment and completion reporting. |
+| **R2** | `CONTRACT_SENSITIVE` | Product behaviour, public/domain contracts, payment, auth/security, persistence authority / schema strategy, concurrency semantics, provider policy, architecture/topology. Investigate autonomously; implement only when intended binding semantics are explicitly defined by canonical authority and the current authorized task; stop before inventing undefined binding behaviour or resolving canonical conflicts by assumption. Independent review required before R3 promotion/merge/acceptance. Full alignment and session-close reporting. |
+| **R3** | `CONSEQUENTIAL` | Merge; deployment/release; production or destructive data operations; force push / history rewrite; lifecycle or product acceptance; Founder UAT verdict. Require explicit human authorization. |
+
+### Risk escalation
+
+- The task contract declares the initial risk level.
+- The implementation agent may **raise** the risk classification when repository evidence requires it.
+- The implementation agent may **not** silently downgrade the declared risk.
+- If only part of the task crosses into a higher-risk or undefined boundary, stop affected work and
+  continue safe authorized work where practical.
+
+### Task-contract precedence
+
+Task contracts may narrow agent scope or authority, including `NO_COMMIT`, but may not silently
+downgrade R2/R3 safeguards or override canonical product, architecture, security, financial,
+persistence, or lifecycle authority. Such overrides require the applicable explicit human or
+canonical decision.
+
+### Delivery mode (R1 and R2)
+
+Task contracts may authorize either:
+
+```text
+DELIVERY_MODE=LOCAL_ONLY
+DELIVERY_MODE=PUBLISH_PR
+```
+
+`DELIVERY_MODE` applies to both R1 and R2. Neither mode authorizes R3 actions.
+
+- `LOCAL_ONLY` — in one run: inspect → implement → test → diagnose/self-correct → validate →
+  local commit(s) → return once. A task-specific `NO_COMMIT` instruction may narrow this and forbid
+  local commits.
+- `PUBLISH_PR` — everything `LOCAL_ONLY` authorizes (subject to any `NO_COMMIT` narrowing), plus:
+  create/use a short-lived task branch from the verified base when a suitable task branch is not
+  already specified → normal push of that branch → PR creation → exact-head PR-CI observation →
+  return once. Ordinary task commits must **not** be published directly to `main`.
+
+When `DELIVERY_MODE` is unset, treat remote publication (push/PR) as unauthorized. Local commits
+remain permitted for authorized R1/R2 engineering unless `NO_COMMIT` is set.
+
+### Agent ownership
+
+- One implementation agent normally owns the write path for a task.
+- Multi-agent use is for genuinely parallel investigation or independent evaluation — not mandatory
+  decomposition of ordinary coding.
+- Same-scope implementation choices are delegated to the coding agent within authorized R1/R2 scope.
+- Prefer repository / commit / PR / CI artifacts over large conversational evidence dumps.
+- Reviewers should independently inspect GitHub rather than asking the implementation agent to
+  restate independently observable facts.
+
+### Failure evidence and retries
+
+Aligned with [`TESTING.md`](docs/platform/TESTING.md) (TEST-1):
+
+- Preserve the initial failure.
+- Never present silent retries as proof of correctness.
+- Diagnostic reruns after investigation are allowed when the original failure, diagnostic purpose,
+  and result remain distinguishable.
+- Same-scope repair + validation remains autonomous within authorized risk/delivery mode.
+
 ## Alignment gate
 
-Before any source mutation, every implementation agent must verify and report:
+Before any source mutation, every implementation agent must verify alignment against canonical
+authorities.
+
+A passing alignment gate is **not** a human approval checkpoint. The agent verifies it before
+mutation and continues autonomously. Return/control handoff is required only if the gate fails or
+another escalation boundary is reached.
+
+### Compact R1 alignment
+
+For ordinary R1 bounded engineering, report only:
+
+```text
+ALIGNMENT_GATE (R1 compact)
+
+Repository / Branch / HEAD: ...
+Task: ...
+Risk Level: R1
+DELIVERY_MODE: LOCAL_ONLY | PUBLISH_PR | UNSET
+Applicable Authorities Checked: ...
+Semantic Scope: ...
+Conflicts / Unverified Material Facts: ...
+Gate Result: PASS / STOP
+```
+
+### Full alignment (R2 / R3 / elevated)
+
+Use the full template for R2, R3, product-visible delivery, architecture-sensitive work, or when
+material conflict risk requires it:
 
 ```text
 ALIGNMENT_GATE
 
 Repository Authority: VERIFIED / CONFLICT
+Repository / Branch / HEAD: ...
 Vision Version: ...
 Roadmap Version: ...
 State Version: ...
@@ -100,8 +207,11 @@ Relevant ARCH-G Invariants: ...
 Relevant Binding Decisions: ...
 Task Assumptions: ...
 Deferred Capabilities Touched: ...
+Semantic Scope: ...
 Conflicts: ...
 Unverified Material Facts: ...
+Risk Level: R0 | R1 | R2 | R3
+DELIVERY_MODE: LOCAL_ONLY | PUBLISH_PR | UNSET
 Gate Result: PASS / STOP
 ```
 
@@ -134,24 +244,34 @@ interpretation” workaround.
 
 ## Decision boundary
 
-Agents may make only local, reversible implementation decisions that do not change:
+Within R1 and locked task scope, agents may make local, reversible implementation decisions that do
+not change binding semantics.
+
+R2 work may implement contract-sensitive behaviour only when the intended binding semantics are
+explicitly defined by canonical authority and the current authorized task. Agents must stop before:
+
+- inventing undefined binding behaviour
+- resolving canonical conflicts by assumption
+- materially changing authority beyond the authorized contract
+
+Surfaces that remain R2-sensitive (implement only when explicitly defined and authorized; otherwise
+stop / escalate):
 
 - public/domain contracts
-- persistence authority
+- persistence authority or schema strategy
 - security/auth semantics
 - concurrency semantics
 - roadmap scope
 - provider policy
 - architectural topology
+- new domain authority, lifecycle states, actor models, permission models, services, queues, retry
+  semantics, financial/payment policy, or global architecture
 
-Agents may **not** independently create: new domain authority, lifecycle states, actor models,
-permission models, services, queues, retry semantics, financial policy, roadmap capabilities, or
-global architecture. Such gaps produce `DECISION_REQUIRED`.
-
-Architecture agents must not resolve `PRODUCT_DECISION_REQUIRED` by inventing product behaviour.
-A Product Definition must not silently override global architecture, security/financial/persistence
-authority, concurrency semantics, accepted STATE, or binding decisions. Stop affected work on
-conflict for human resolution.
+Undefined gaps produce `DECISION_REQUIRED` or `PRODUCT_DECISION_REQUIRED`. Architecture agents must
+not resolve `PRODUCT_DECISION_REQUIRED` by inventing product behaviour. A Product Definition must
+not silently override global architecture, security/financial/persistence authority, concurrency
+semantics, accepted STATE, or binding decisions. Stop affected work on conflict for human
+resolution. R2 still requires independent review before R3 promotion, merge, or acceptance.
 
 ## Anti-hallucination vocabulary
 
@@ -186,9 +306,30 @@ COMPLETE | PARTIAL | BLOCKED
 
 Agents must never self-report `COMPLETE_AND_ACCEPTED`.
 
-## Session-close contract
+## Session-close / completion reporting
 
-Future implementation reports must contain:
+Prefer compact deltas, paths, SHAs, CI URLs, and fingerprints over restating capability history or
+independently observable GitHub facts.
+
+### Compact R1 completion report
+
+For ordinary R1 bounded engineering:
+
+```text
+STATUS: COMPLETE | PARTIAL | BLOCKED
+Repository / Branch / Final HEAD: ...
+Scope / Files Changed: ...
+Validation / CI: ...
+Deviations: ... | PROMPT DEVIATIONS: NONE
+Out-of-Scope Observations: ...
+Unresolved Items: ...
+Delivery Artifact: local commit(s) | PR URL | NONE (NO_COMMIT) | ...
+Risk Level / DELIVERY_MODE: ...
+```
+
+### Full session-close report
+
+Use for R2, R3, and substantial product / lifecycle / architecture-sensitive work:
 
 ```text
 A. Agent Status
@@ -204,6 +345,8 @@ J. Out-of-Scope Observations
 K. Unverified Items
 L. Proposed State Delta
 M. Recommended Acceptance Gates
+N. Risk Level / DELIVERY_MODE
+O. Delivery Artifact (local commit(s) / PR)
 ```
 
 When true, state explicitly: `PROMPT DEVIATIONS: NONE`.
@@ -215,7 +358,8 @@ Coding agent outcomes: `COMPLETE` | `PARTIAL` | `BLOCKED`.
 Independent acceptance outcomes: `COMPLETE_AND_ACCEPTED` | `PARTIAL` | `DEFECT_FOUND` |
 `ARCHITECTURE_MISMATCH` | `ACCEPTANCE_EVIDENCE_INSUFFICIENT`.
 
-Implementation reports are evidence input, not acceptance authority.
+Implementation reports are evidence input, not acceptance authority. Lifecycle and product
+acceptance remain R3 (human).
 
 For prospective story delivery, follow [`PRODUCT-DELIVERY.md`](docs/platform/PRODUCT-DELIVERY.md)
 and [`TESTING.md`](docs/platform/TESTING.md) for readiness, completion, and behavioural evidence.
@@ -227,9 +371,10 @@ or rewrite historical acceptance.
 
 Apply **MINIMUM_SUFFICIENT_CONTEXT** from
 [`PRODUCT-DELIVERY.md`](docs/platform/PRODUCT-DELIVERY.md#ai-execution-and-documentation-efficiency).
-Prompts should include task/story IDs, exact authority versions / SHA / tree, acceptance criteria,
-affected invariants, allowed/forbidden scope, and expected evidence; include the working-tree
-fingerprint wherever existing provenance rules require it. Prefer canonical paths to pasted docs.
+Prompts should include task/story IDs, risk level, `DELIVERY_MODE`, any `NO_COMMIT` narrowing,
+exact authority versions / SHA / tree, acceptance criteria, affected invariants,
+allowed/forbidden scope, and expected evidence; include the working-tree fingerprint wherever
+existing provenance rules require it. Prefer canonical paths to pasted docs.
 
 **CURRENT FIRST:** read [`docs/platform/ROADMAP.md`](docs/platform/ROADMAP.md) and
 [`docs/platform/STATE.md`](docs/platform/STATE.md) for lifecycle authority.
@@ -241,24 +386,29 @@ override CURRENT metadata.
 
 Do not repeatedly paste whole ROADMAP, STATE, ARCHITECTURE, governance history, prior accepted
 reports, or unrelated capability architecture. Verify metadata/versions, search, and read relevant
-sections/ranges without guessing applicable authority. The existing hard prompt-size ceiling stays.
+sections/ranges without guessing applicable authority. Coding-agent implementation prompts must
+remain below 50,000 characters; split slices if needed.
 
 First review covers the full relevant slice. Follow-up review covers previous approved SHA → new
 SHA, changed files, affected invariants, and new evidence (including required content fingerprints).
 Widen review if the delta changes earlier assumptions. Reports return changed facts, evidence,
 exceptions, SHA/tree, and unresolved items; retain required report fields without repeating history.
 
-Bundle authorized machine work until the next genuine human decision boundary: implement → focused
-tests → relevant regression → validation → commit → return once. When each applicable action is
-authorized, continue push → PR → wait for exact-head CI → return once. Independent promotion gates
-remain binding; push authorization alone does not authorize a PR, merge, or deployment. Efficiency
-must never permit guessed product, security, or business decisions.
+Bundle authorized machine work until the next genuine human decision boundary:
+
+- `LOCAL_ONLY`: inspect → implement → test → diagnose/self-correct → validate → local commit(s)
+  (unless `NO_COMMIT`) → return once.
+- `PUBLISH_PR`: the above on a short-lived task branch (create from verified base if needed) →
+  normal push → PR → exact-head PR-CI observation → return once.
+- Merge, deploy, acceptance, and Founder UAT remain separate R3 human gates.
+
+Efficiency must never permit guessed product, security, payment, or business decisions.
 
 ### Acceptance principles
 
 - provenance first
 - architecture before tests
-- evidence over claims
+- evidence over claims (prefer GitHub/CI artifacts; no silent-retry “passes”)
 - negative security evidence where relevant
 - real concurrency where race correctness matters
 - crash/recovery evidence where relevant
@@ -281,31 +431,7 @@ From IMP-024 onward, every substantial IMP must persist its complete locked capa
 in the repository before implementation begins. Missing historical architecture artifacts for
 pre-governance accepted slices are historical gaps — they do not downgrade accepted implementation.
 
-## Repository safety
-
-- For an authorized bounded task, local commits are permitted and should be small and
-  reconstructible. Do not rewrite published history. Push remains a separate founder/user
-  authorization gate.
-- Do not run destructive Git operations (`reset`, `restore`, `clean`, `stash`, force checkout) unless
-  explicitly instructed.
-- Never destroy `boba-bear_postgres-data` or run `docker compose down --volumes`.
-- Work from the WSL Linux filesystem for Turbopack/Podman reliability when developing.
-- Coding-agent implementation prompts must remain below 50,000 characters; split slices if needed.
-- Only one product slice is normally active; never start a slice whose dependencies are
-  unresolved. Historical controlled-continuation exceptions for the IMP-026 → IMP-028
-  period are preserved in ROADMAP/STATE history. They are CLOSED historical exceptions and
-  MUST NOT be applied to future slices without an explicit new Founder/governance decision.
-  Current lifecycle position (`acceptedThrough`, `currentProductSlice`, `pendingAcceptance`,
-  `nextProductSlice`) is authoritative only in ROADMAP/STATE; agents must not invent a new
-  continuation exception. `pendingAcceptance` identifies the oldest unresolved formal
-  acceptance gate and does not by itself authorize starting another product slice.
-- Platform docs under `docs/platform/` are canonical for product/architecture; treat older wireframe
-  folders as historical unless CURRENT authority says otherwise.
-
-## Canonical development repository (operational)
-
-This section is an **operational / agent** rule. It is not a product architecture invariant and
-does not change VISION, ROADMAP, STATE, ARCHITECTURE, or the decision register.
+## Repository safety and publication
 
 ```text
 PLATFORM_NAME = BOBA Bear Platform
@@ -314,15 +440,35 @@ DEFAULT_DEVELOPMENT_BRANCH = main
 ```
 
 - `/home/ajoshi/repos/boba-bear-platform` is the sole BOBA Bear Platform development authority.
-- Perform work on `main` unless the user explicitly authorizes another branch.
-- Do not create additional Git worktrees.
-- Do not create duplicate BOBA development clones.
-- Do not use `/mnt/c` as development repository authority.
-- Keep development in the WSL/Linux filesystem under `/home/ajoshi/repos`.
-- Preserve intentional dirty-tree work according to existing repository rules.
-- Never reset, stash, or clean unrelated work.
-- Local commits for an authorized bounded task are permitted. Push, merge, tag/release, and
-  deployment each require separate explicit authorization.
+- Default integration branch is `main`. Read/analyze and verified-base checkout may use `main`.
+  Ordinary task commits must not be published directly to `main`.
+- For `PUBLISH_PR`, create or use a short-lived task branch from the verified base when a suitable
+  task branch is not already specified. An explicit task/user branch authorization still controls
+  when already provided.
+- Do not create additional Git worktrees or duplicate BOBA development clones.
+- Do not use `/mnt/c` as development repository authority; keep development under
+  `/home/ajoshi/repos` on the WSL Linux filesystem (Turbopack/Podman reliability).
+- Preserve intentional dirty-tree work. Never reset, stash, or clean unrelated work.
+- Do not run destructive Git operations (`reset`, `restore`, `clean`, `stash`, force checkout,
+  force push, history rewrite) unless explicitly authorized (R3).
+- Never destroy `boba-bear_postgres-data` or run `docker compose down --volumes`.
+- Prefer Podman for local DB/container runtime when Compose/container work is required.
+- Preserve protected evidence directories (including `test-results-customer-ordering/**`).
+- Local commits are authorized under R1/R2 `LOCAL_ONLY` and `PUBLISH_PR` unless `NO_COMMIT`
+  narrows that permission; keep commits small and reconstructible.
+- `PUBLISH_PR` authorizes short-lived-branch push + PR + PR-CI observation; do not re-require
+  separate mid-run push/PR authorization for that sequence.
+- Merge, tag/release, deployment, force push, history rewrite, destructive data ops, lifecycle
+  acceptance, and Founder UAT each require explicit human R3 authorization.
+- Only one product slice is normally active; never start a slice whose dependencies are unresolved.
+  Historical controlled-continuation exceptions for the IMP-026 → IMP-028 period are CLOSED and
+  MUST NOT be applied to future slices without an explicit new Founder/governance decision.
+  Current lifecycle position (`acceptedThrough`, `currentProductSlice`, `pendingAcceptance`,
+  `nextProductSlice`) is authoritative only in ROADMAP/STATE. `pendingAcceptance` identifies the
+  oldest unresolved formal acceptance gate and does not by itself authorize starting another
+  product slice.
+- Platform docs under `docs/platform/` are canonical for product/architecture; treat older wireframe
+  folders as historical unless CURRENT authority says otherwise.
 
 ## Branch lifecycle
 
@@ -356,7 +502,7 @@ finding. `npm run governance:fingerprint` remains a separate canonical-document 
 
 This section is an **operational / agent** rule. It does not itself change product acceptance
 status in `ROADMAP.md` or `STATE.md`; it governs how future acceptance evidence must be produced
-when founder UAT is required.
+when founder UAT is required. Founder UAT verdict and acceptance reconciliation are R3.
 
 - For any capability that materially changes customer-visible behavior, materially changes
   operator-visible behavior needing interactive validation, is explicitly marked `FOUNDER_UAT_REQUIRED
@@ -418,20 +564,6 @@ WORKING_TREE_FINGERPRINT
   of IMP-028B. **IMP-035 — Initial Administration Capabilities** is likewise
   `FOUNDER_UAT_REQUIRED = YES` before `COMPLETE_AND_ACCEPTED` because it creates operator-visible
   administration behavior.
-
-## Autonomous coding-agent execution (stable policy)
-
-Repository and canonical docs under `docs/platform/` are the source of truth. For an authorized
-product slice, coding agents may autonomously perform routine implementation, ordinary bug/test
-fixes, capability-local governance updates, Git commits, PR creation, CI repair, and merge when
-explicitly tasked to do so. Escalate only genuine architecture, product, or security decisions that
-would change binding authority (RBAC/trust model, new roles/permissions with semantic effect, tenant
-hierarchy, new identity semantics, privilege-delegation expansion, new deployable service/domain
-ownership). Founder UAT cannot be self-declared. Prefer Podman for local DB/container runtime when
-Compose/container work is required. Preserve protected evidence directories (including
-`test-results-customer-ordering/**`). Do not run destructive Git operations (`reset`, `restore`,
-`clean`, `stash`, force push) unless explicitly instructed. Prefer compact completion reporting over
-restating capability history in this file.
 
 ## Foundation operating constraints
 
