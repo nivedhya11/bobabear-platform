@@ -6405,4 +6405,35 @@ describe("canonical authority history compression", () => {
     assert.ok(messages.some((m) => m.includes("CURRENT authority anti-stale checks OK")));
     assert.ok(messages.some((m) => m.includes("historical authority corpus loaded")));
   });
+
+  it("preserves accepted IMP-036E customer-commerce cohesion and dark-only policy in CURRENT capability", () => {
+    const capability = readFileSync(
+      new URL("../docs/platform/capabilities/IMP-036E-store-operations-management.md", import.meta.url),
+      "utf8",
+    );
+    assert.match(
+      capability,
+      /WORKFORCE_MUTATION\s*→\s*EXISTING_DOMAIN_AUTHORITY\s*→\s*CUSTOMER_READ\/EVALUATION\s*→\s*TRUTHFUL_CUSTOMER_EXPERIENCE/,
+    );
+    assert.match(capability, /SELECTED_OUTLET\s*=\s*SERVER_DERIVED_FROM_SERVICEABILITY/);
+    assert.match(capability, /CALLER_SELECTED_OUTLET_ID\s*=\s*NOT_GEOGRAPHIC_AUTHORITY/);
+    assert.match(capability, /THEME_COUNT\s*=\s*1/);
+    assert.match(capability, /PRIMARY_THEME\s*=\s*DARK/);
+    assert.match(capability, /FOUNDER_APPROVED_UAT_READINESS_VISUAL_DIRECTION\s*=\s*DARK_ONLY/);
+    assert.match(capability, /IMP036F_ACTIVATED:\s*NO/);
+
+    const experience = readFileSync(
+      new URL(
+        "../docs/platform/experience/enterprise-experience/IMP-036E-store-operations-management.md",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+    assert.match(experience, /Status:\s*SUPERSEDED HISTORICAL PROGRAMME CONTRACT/);
+    assert.match(experience, /THEME_COUNT\s*=\s*1/);
+    assert.match(experience, /WORKFORCE_MUTATION/);
+    assert.match(experience, /SELECTED_OUTLET\s*=\s*SERVER_DERIVED_FROM_SERVICEABILITY/);
+    assert.match(experience, /Target outcomes and information architecture/);
+    assert.match(experience, /Founder-approved UAT-readiness visual direction/);
+  });
 });

@@ -6380,6 +6380,17 @@ export function evaluateImp036eAcceptanceArtifact(text) {
     /NEW_PERMISSION:\s*NO/,
     /NEW_ROLE:\s*NO/,
     /NEW_SCOPE_MODEL:\s*NO/,
+    /WORKFORCE_MUTATION\s*→\s*EXISTING_DOMAIN_AUTHORITY\s*→\s*CUSTOMER_READ\/EVALUATION\s*→\s*TRUTHFUL_CUSTOMER_EXPERIENCE/,
+    /SELECTED_OUTLET\s*=\s*SERVER_DERIVED_FROM_SERVICEABILITY/,
+    /CALLER_SELECTED_OUTLET_ID\s*=\s*NOT_GEOGRAPHIC_AUTHORITY/,
+    /REALTIME_PUSH_GUARANTEE\s*=\s*NO/,
+    /THEME_COUNT\s*=\s*1/,
+    /PRIMARY_THEME\s*=\s*DARK/,
+    /LIGHT_THEME\s*=\s*REMOVED\s*\/\s*NOT_SUPPORTED/,
+    /SYSTEM_THEME_SWITCHING\s*=\s*NO/,
+    /USER_THEME_TOGGLE\s*=\s*NO/,
+    /FOUNDER_APPROVED_UAT_READINESS_VISUAL_DIRECTION\s*=\s*DARK_ONLY/,
+    /IMP036F_ACTIVATED:\s*NO/,
   ];
   if (required.some((pattern) => !pattern.test(text))) {
     return { ok: false, code: "IMP036E_CAPABILITY_ACCEPTANCE", message: "IMP-036E artifact must record COMPLETE_AND_ACCEPTED" };

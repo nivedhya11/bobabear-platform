@@ -875,7 +875,50 @@ façade), ARCH-G25 (D-373 Admin façade).
 
 ---
 
-## 16. Implementation posture
+## 16. Accepted customer-commerce cohesion
+
+Preserved accepted IMP-036E experience semantics (PR #135 remediation + Founder UAT). This is **not**
+a new product decision, domain authority, DTO, event bus, websocket requirement, lifecycle state, or
+binding decision. Store Operations mutations that affect customer orderability converge through
+existing accepted authorities at the next authoritative customer evaluation:
+
+```text
+WORKFORCE_MUTATION → EXISTING_DOMAIN_AUTHORITY → CUSTOMER_READ/EVALUATION → TRUTHFUL_CUSTOMER_EXPERIENCE
+SELECTED_OUTLET = SERVER_DERIVED_FROM_SERVICEABILITY
+CALLER_SELECTED_OUTLET_ID = NOT_GEOGRAPHIC_AUTHORITY
+REALTIME_PUSH_GUARANTEE = NO
+TEAM_ACCESS_CUSTOMER_COUPLING = NO
+STORE_OVERVIEW_AUTOMATIC_CUSTOMER_MUTATION = NO
+```
+
+Accepted principles:
+
+- Selected customer outlet is server-derived from Serviceability; browser-supplied outlet identity
+  is not geographic authority.
+- Variant availability, effective assortment exclusions, and modifier availability/feasibility
+  participate in outlet-aware customer Menu truth through existing IMP-014 / IMP-028B / IMP-028C
+  authorities.
+- Operating-status/hours and Serviceability radius/origin changes surface through fresh
+  Serviceability / customer evaluation.
+- Cart and Checkout/payment must evaluate fresh authoritative truth.
+- Bounded refresh on location/focus is sufficient; realtime push is not required.
+- Team/Access and presentation-only Overview facts do not automatically mutate customer behavior.
+
+## 17. Accepted runtime presentation policy (presentation only)
+
+Founder-approved dark-only runtime theme. Presentation / experience policy only — does **not** alter
+architecture, domain, RBAC, Assortment, Serviceability, payment, persistence, or lifecycle semantics.
+
+```text
+THEME_COUNT = 1
+PRIMARY_THEME = DARK
+LIGHT_THEME = REMOVED / NOT_SUPPORTED
+SYSTEM_THEME_SWITCHING = NO
+USER_THEME_TOGGLE = NO
+FOUNDER_APPROVED_UAT_READINESS_VISUAL_DIRECTION = DARK_ONLY
+```
+
+## 18. Implementation posture
 
 ```text
 IMP-036E_IMPLEMENTATION_AUTHORIZED: YES
