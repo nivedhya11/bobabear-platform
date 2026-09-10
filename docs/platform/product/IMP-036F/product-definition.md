@@ -258,7 +258,7 @@ entities.
 Architecture fit / applicable invariants: D-085 separations; D-368 projection ≠ authority
 Open material decisions: NONE
 Device applicability: Desktop/tablet full inspection; mobile inspection/context supported
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Architecture Fit not performed)
+Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization remains a separate gate and is NOT granted.
 ```
 
 ```text
@@ -287,8 +287,7 @@ customer-visible or customer-evaluation-affecting ACTIVE Product/Variant mutatio
 Open material decisions: NONE (Founder intent ADR-006 preserved; mechanism is Architecture Fit)
 Device applicability: Desktop/tablet authoring required for V1; mobile inspection/context only
 (no mandatory commercial mutations)
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Architecture Fit not performed;
-conformance gap remains an Architecture Fit input)
+Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization remains a separate gate and is NOT granted.
 ```
 
 ```text
@@ -313,7 +312,7 @@ Architecture fit / applicable invariants: ADR-006 modifier association surfaces;
 customer paid-modifier selection
 Open material decisions: NONE
 Device applicability: Desktop/tablet authoring; mobile inspection/context only
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Architecture Fit not performed)
+Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization remains a separate gate and is NOT granted.
 ```
 
 ```text
@@ -339,7 +338,7 @@ Architecture fit / applicable invariants: ADR-006 / D-089 lifecycle; confirmatio
 Open material decisions: NONE
 Device applicability: Desktop/tablet for consequential lifecycle transitions; mobile
 inspection/context only
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Architecture Fit not performed)
+Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization remains a separate gate and is NOT granted.
 ```
 
 ```text
@@ -366,7 +365,7 @@ Architecture fit / applicable invariants: D-086 Menu≠Category; D-368 projectio
 Menu boundary
 Open material decisions: NONE
 Device applicability: Desktop/tablet authoring; mobile inspection/context only
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Architecture Fit not performed)
+Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization remains a separate gate and is NOT granted.
 ```
 
 ```text
@@ -392,7 +391,7 @@ Brand Assortment mutation via this slice
 Architecture fit / applicable invariants: D-094–D-096/D-100; IMP-036E Store Assortment boundary
 Open material decisions: NONE
 Device applicability: Desktop/tablet Brand Assortment authoring; mobile inspection/context only
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Architecture Fit not performed)
+Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization remains a separate gate and is NOT granted.
 ```
 
 ```text
@@ -418,7 +417,7 @@ Architecture fit / applicable invariants: D-102 Catalog≠money; ADR-007 price b
 workforce pricing authoring surface composition
 Open material decisions: NONE
 Device applicability: Desktop/tablet pricing authoring; mobile inspection/context only
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Architecture Fit not performed)
+Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization remains a separate gate and is NOT granted.
 ```
 
 ```text
@@ -444,7 +443,7 @@ Architecture fit / applicable invariants: ADR-007 / D-122–D-127 lifecycle fide
 workforce promotion authoring surface
 Open material decisions: NONE
 Device applicability: Desktop/tablet authoring; mobile inspection/context only
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Architecture Fit not performed)
+Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization remains a separate gate and is NOT granted.
 ```
 
 ```text
@@ -481,8 +480,7 @@ Open material decisions: NONE (authorization mechanism is Architecture Fit, not 
 product choice)
 Device applicability: Desktop/tablet tariff authoring; mobile inspection/context only
 Classification: PLANNED_IMP036F; mutation mapping remains ARCHITECTURE_FIT_AUTHORIZATION_GAP until Fit
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Architecture Fit not performed;
-tariff authorization/command mapping unresolved)
+Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization remains a separate gate and is NOT granted.
 ```
 
 ```text
@@ -508,7 +506,7 @@ false single source of truth (ARCHITECTURE_FIT_REQUIRED for composition mechanis
 Open material decisions: NONE
 Device applicability: Desktop/tablet for consequential review/publish path; mobile
 inspection/context only
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Architecture Fit not performed)
+Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization remains a separate gate and is NOT granted.
 ```
 
 ```text
@@ -537,8 +535,7 @@ Product/Variant mutations (known examples: ACTIVE Product name/description; ACTI
 `isDefault`)
 Open material decisions: NONE
 Device applicability: Desktop/tablet publish/effect; mobile inspection/context only
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Architecture Fit not performed;
-conformance gap remains an Architecture Fit input)
+Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization remains a separate gate and is NOT granted.
 ```
 
 ```text
@@ -567,7 +564,7 @@ Open material decisions: NONE
 Device applicability: Desktop/tablet verification workflow; mobile may support inspection/context
 verification reads where operable, without requiring full authoring
 Secondary persona consequence: PERSONA-CUSTOMER experiences truthful Menu/order evaluation
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Architecture Fit not performed)
+Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization remains a separate gate and is NOT granted.
 ```
 
 ```text
@@ -594,7 +591,7 @@ Architecture fit / applicable invariants: How existing authorities supply diagno
 Open material decisions: NONE
 Device applicability: Desktop/tablet diagnosis; mobile inspection/context diagnosis supported where
 operable
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Architecture Fit not performed)
+Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization remains a separate gate and is NOT granted.
 ```
 
 ```text
@@ -628,7 +625,7 @@ optional later mapping of any verified existing select/change path is FOLLOW_UP
 Open material decisions: NONE (deferring unverified media-reference mutation is authorized by
 DISC-F-010; no new Founder decision required)
 Device applicability: Desktop/tablet/mobile inspection of existing references as context
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Architecture Fit not performed)
+Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization remains a separate gate and is NOT granted.
 ```
 
 ```text
@@ -664,7 +661,7 @@ Any future simple mobile mutation requires explicit selection plus story/AC cove
 Product Definition revision or separately authorized follow-up.
 Device applicability: Desktop and tablet mandatory for full V1 authoring; mobile mandatory for
 inspection/context support (not “unsupported”)
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Architecture Fit not performed)
+Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization remains a separate gate and is NOT granted.
 ```
 
 ```text
@@ -690,7 +687,7 @@ Architecture fit / applicable invariants: DISC-F-006 / ADR-007 Tax/Charges separ
 commercial workflow
 Open material decisions: NONE
 Device applicability: Desktop/tablet/mobile inspection/context as applicable
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Architecture Fit not performed)
+Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization remains a separate gate and is NOT granted.
 ```
 
 ---
