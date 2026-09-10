@@ -7024,6 +7024,31 @@ IMP036G_ACTIVATED: NO
 ARCHITECTURE_FIT_REVIEWED_CANDIDATE_HEAD = 9ae06d6267e997223b1995124540974215ee17fd
 INDEPENDENT_ARCHITECTURE_REVIEW = 5169723968
 \`\`\`
+
+## US-IMP-036F-009
+
+Permission / resource context:
+DELIVERY_TARIFF_AUTHORITY = PRICING
+Tariff read: pricing.read @ Brand derived server-side from Outlet
+Tariff mutation: pricing.manage @ Brand derived server-side from Outlet
+SERVICEABILITY_MANAGE_AUTHORIZES_TARIFF_PRICE = NO
+NEW_PERMISSION_REQUIRED = NO
+Architecture Fit status: RESOLVED / PASS / LOCKED
+Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization remains a separate gate and is NOT granted.
+
+| Action | Permission | Scope | Outcome |
+|---|---|---|---|
+| Mutate delivery tariff | pricing.manage | Brand derived server-side from Outlet | authorized allow / unauthorized deny; serviceability.manage does not authorize tariff price |
+
+## Dependencies
+
+| Dependency | Authority | Required before | Unresolved impact |
+|---|---|---|---|
+| Architecture Fit | PD-1 phase | Before implementation readiness | PERFORMED / PASS — locked capability architecture; implementation remains separately unauthorized |
+| Implementation authorization | ROADMAP/STATE | Before coding | NO |
+
+Originally identified Architecture Fit inputs (Product Definition Gate era; **resolved** by locked capability architecture):
+1. \`ARCHITECTURE_FIT_AUTHORIZATION_GAP\` (delivery-tariff mutation permission/command mapping) → **resolved** as Pricing authority / Brand derived from Outlet; \`pricing.read\` / \`pricing.manage\`.
 `;
 
   it("passes valid R119/S117 architecture-lock checkpoint", () => {
@@ -7111,6 +7136,11 @@ INDEPENDENT_ARCHITECTURE_REVIEW = 5169723968
       }).ok,
       false,
     );
+    const pdAuthorized = validFitPd.replace(
+      "IMP036F_IMPLEMENTATION_AUTHORIZED: NO",
+      "IMP036F_IMPLEMENTATION_AUTHORIZED: YES",
+    );
+    assert.equal(evaluateImp036fArchitectureFitProductDefinition(pdAuthorized).ok, false);
   });
 
   it("fails when implementation started YES", () => {
@@ -7201,6 +7231,57 @@ INDEPENDENT_ARCHITECTURE_REVIEW = 5169723968
       }).ok,
       false,
     );
+  });
+
+  it("fails US-009 current readiness blocker ARCHITECTURE_FIT_AUTHORIZATION_GAP", () => {
+    const stale = `${validFitPd}
+
+Permission / resource context: Must use the Architecture Fit-mapped existing authorization/command
+path only; do not invent a permission in this Product Definition. Current readiness blocker:
+ARCHITECTURE_FIT_AUTHORIZATION_GAP until mapping is resolved.
+`;
+    const result = evaluateImp036fArchitectureFitProductDefinition(stale);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036F_PD_STALE_US009_FIT_BLOCKER");
+  });
+
+  it("fails tariff permission row saying currently ARCHITECTURE_FIT_AUTHORIZATION_GAP", () => {
+    const stale = `${validFitPd}
+
+| Mutate delivery tariff | Existing authority/command path mapped by Architecture Fit (currently **ARCHITECTURE_FIT_AUTHORIZATION_GAP** readiness blocker) | Outlet commercial tariff scope | After Fit: authorized allow |
+`;
+    const result = evaluateImp036fArchitectureFitProductDefinition(stale);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036F_PD_STALE_TARIFF_PERMISSION_BLOCKER");
+  });
+
+  it("fails current Architecture Fit dependency row NOT_PERFORMED", () => {
+    const stale = validFitPd.replace(
+      "| Architecture Fit | PD-1 phase | Before implementation readiness | PERFORMED / PASS — locked capability architecture; implementation remains separately unauthorized |",
+      "| Architecture Fit | PD-1 phase | Before implementation readiness | NOT_PERFORMED |",
+    );
+    const result = evaluateImp036fArchitectureFitProductDefinition(stale);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036F_PD_STALE_DEPENDENCY_FIT_NOT_PERFORMED");
+  });
+
+  it("allows explicitly historical ARCHITECTURE_FIT_AUTHORIZATION_GAP resolved provenance", () => {
+    const historical = `${validFitPd}
+
+Originally identified at Product Definition Gate as ARCHITECTURE_FIT_AUTHORIZATION_GAP;
+later resolved by locked capability architecture as pricing.manage @ Brand←Outlet.
+`;
+    assert.deepEqual(evaluateImp036fArchitectureFitProductDefinition(historical), { ok: true });
+  });
+
+  it("fails mutation mapping remains ARCHITECTURE_FIT_AUTHORIZATION_GAP until Fit", () => {
+    const stale = `${validFitPd}
+
+Classification: PLANNED_IMP036F; mutation mapping remains ARCHITECTURE_FIT_AUTHORIZATION_GAP until Fit
+`;
+    const result = evaluateImp036fArchitectureFitProductDefinition(stale);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036F_PD_STALE_MUTATION_MAPPING_UNTIL_FIT");
   });
 
   it("preserves prior R116/S114, R117/S115 and R118/S116 checkpoint evaluators", () => {

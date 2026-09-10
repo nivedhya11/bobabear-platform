@@ -166,7 +166,11 @@ permission/resource mapping is resolved (including delivery tariff); Catalog pub
 locked `ENTITY_CONTENT_REVISION` model covering the full customer-affecting Catalog/modifier graph;
 Menu publication uses atomic effective-revision switch (no in-place ACTIVE graph authoring) while
 preserving stable Menu / section / placement logical identities; consequence review is version-bound
-to effect for Catalog, Menu, Pricing, Promotion, and Coupon; PriceBook aggregate revision includes
+to effect for Catalog, Menu, Assortment, Pricing, Promotion, Coupon, and delivery tariff
+(`Catalog → expectedContentRevision`; `Menu → expectedMenuRevision`;
+`Assortment → expectedRuleRevision`; `Pricing → expectedPriceBookRevision`;
+`Promotion → expectedPromotionRevision`; `Coupon → expectedCouponRevision`;
+`Tariff → expectedTariffConfigRevision`); PriceBook aggregate revision includes
 child monetary rows; Promotion Benefit/Targets participate in Promotion aggregate revision; Coupon
 lifecycle concurrency is explicit; all 64 mandatory Product Definition ACs are traced; material
 commercial writes have precise concurrency contracts; persistence/audit consequences are explicit;

@@ -6874,6 +6874,100 @@ export function evaluateImp036fLockedCapabilityArchitecture(text) {
   return { ok: true };
 }
 
+/**
+ * True when nearby prose explicitly scopes Fit-gap text as historical/pre-Fit provenance.
+ * @param {string} context
+ */
+function isHistoricalImp036fFitGapProvenance(context) {
+  return /originally\s+identified|at\s+gate\s+time|pre[- ]?Fit|later\s+resolved|(?:→|—|-)\s*\*?\*?resolved\*?\*?|\*\*resolved\*\*/i.test(
+    context,
+  );
+}
+
+/**
+ * Reject active CURRENT-state Fit-blocker prose that contradicts Architecture Fit PASS / lock.
+ * Historical Product Definition Gate provenance remains allowed when explicitly scoped.
+ * @param {string} body
+ */
+export function evaluateImp036fArchitectureFitCurrentStateConsistency(body) {
+  const text = String(body);
+
+  // US-009 / story "Current readiness blocker: ARCHITECTURE_FIT_AUTHORIZATION_GAP"
+  if (
+    /Current readiness blocker:\s*(?:\*\*)?ARCHITECTURE_FIT_AUTHORIZATION_GAP/i.test(text) ||
+    /Current readiness blocker:\s*\n\s*(?:\*\*)?ARCHITECTURE_FIT_AUTHORIZATION_GAP/i.test(text)
+  ) {
+    return {
+      ok: false,
+      code: "IMP036F_PD_STALE_US009_FIT_BLOCKER",
+      message:
+        "Architecture-locked IMP-036F Product Definition must not retain current US-009 readiness blocker ARCHITECTURE_FIT_AUTHORIZATION_GAP",
+    };
+  }
+
+  // Permissions matrix: "currently ARCHITECTURE_FIT_AUTHORIZATION_GAP readiness blocker"
+  if (
+    /currently\s+(?:\*\*)?ARCHITECTURE_FIT_AUTHORIZATION_GAP(?:\*\*)?\s+readiness blocker/i.test(text)
+  ) {
+    return {
+      ok: false,
+      code: "IMP036F_PD_STALE_TARIFF_PERMISSION_BLOCKER",
+      message:
+        "Architecture-locked IMP-036F Product Definition must not retain current tariff permission ARCHITECTURE_FIT_AUTHORIZATION_GAP readiness blocker",
+    };
+  }
+
+  // Classification / story: "mutation mapping remains ARCHITECTURE_FIT_AUTHORIZATION_GAP until Fit"
+  if (
+    /mutation mapping remains\s+(?:\*\*)?ARCHITECTURE_FIT_AUTHORIZATION_GAP(?:\*\*)?\s+until Fit/i.test(
+      text,
+    )
+  ) {
+    return {
+      ok: false,
+      code: "IMP036F_PD_STALE_MUTATION_MAPPING_UNTIL_FIT",
+      message:
+        "Architecture-locked IMP-036F Product Definition must not claim mutation mapping remains ARCHITECTURE_FIT_AUTHORIZATION_GAP until Fit",
+    };
+  }
+
+  // Other active (non-historical) current-blocker formulations in story/permissions regions.
+  const activeAuthGapBlockers = [
+    /ARCHITECTURE_FIT_AUTHORIZATION_GAP\s+until mapping is resolved/i,
+    /ARCHITECTURE_FIT_AUTHORIZATION_GAP\s+must be resolved before implementation readiness/i,
+    /ARCHITECTURE_FIT_AUTHORIZATION_GAP\s+remains a Definition of Ready/i,
+    /ARCHITECTURE_FIT_AUTHORIZATION_GAP\s+for mutation permission\/command mapping/i,
+  ];
+  for (const pattern of activeAuthGapBlockers) {
+    const match = pattern.exec(text);
+    if (!match) continue;
+    const start = Math.max(0, match.index - 220);
+    const end = Math.min(text.length, match.index + match[0].length + 220);
+    const context = text.slice(start, end);
+    if (isHistoricalImp036fFitGapProvenance(context)) continue;
+    return {
+      ok: false,
+      code: "IMP036F_PD_STALE_AUTH_GAP_BLOCKER",
+      message:
+        "Architecture-locked IMP-036F Product Definition must not retain active ARCHITECTURE_FIT_AUTHORIZATION_GAP blocker prose",
+    };
+  }
+
+  // Dependency table current row: Architecture Fit | ... | NOT_PERFORMED
+  if (
+    /\|\s*Architecture Fit\s*\|[^|\n]*\|[^|\n]*\|\s*NOT_PERFORMED\s*\|/i.test(text)
+  ) {
+    return {
+      ok: false,
+      code: "IMP036F_PD_STALE_DEPENDENCY_FIT_NOT_PERFORMED",
+      message:
+        "Architecture-locked IMP-036F Product Definition dependency table must not record Architecture Fit as NOT_PERFORMED",
+    };
+  }
+
+  return { ok: true };
+}
+
 export function evaluateImp036fArchitectureFitProductDefinition(text) {
   if (!text || !String(text).trim()) {
     return { ok: false, code: "IMP036F_PD_FIT_ABSENT", message: "Architecture-locked IMP-036F Product Definition must not be empty" };
@@ -6969,6 +7063,8 @@ export function evaluateImp036fArchitectureFitProductDefinition(text) {
       message: "Architecture-locked IMP-036F Product Definition must record Fit candidate 9ae06d62… and review 5169723968",
     };
   }
+  const currentState = evaluateImp036fArchitectureFitCurrentStateConsistency(body);
+  if (!currentState.ok) return currentState;
   return { ok: true };
 }
 
