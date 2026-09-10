@@ -139,9 +139,12 @@ ARCHITECTURE_FIT_CANDIDATE_RESULT = PASS
 ```
 
 PASS means: every mandatory V1 story has a technically viable fit under existing global architecture;
-permission/resource mapping is resolved (including delivery tariff); Catalog publication conformance
-gap has a bounded revision strategy; persistence/concurrency/audit consequences are explicit;
-implementation boundaries are precise enough for independent review.
+permission/resource mapping is resolved (including delivery tariff); Catalog publication uses one
+locked `ENTITY_CONTENT_REVISION` model covering the full customer-affecting Catalog/modifier graph;
+Menu publication uses atomic effective-revision switch (no in-place ACTIVE graph authoring); all 64
+mandatory Product Definition ACs are traced; material commercial writes have precise concurrency
+contracts; persistence/audit consequences are explicit; implementation boundaries are precise enough
+for independent review.
 
 PASS does **not** mean canonical lock, implementation authorization, or acceptance.
 
@@ -155,7 +158,7 @@ performed/locked) — report-only in §29.
 | Concern | Authority owner | Notes |
 |---|---|---|
 | Product / Variant / Modifier structure | Catalog | Brand; ADR-006 |
-| Menu sections/entries/display/one-active Menu | Menu | Brand; activation is publication gate |
+| Menu sections/entries/display/one-active Menu | Menu | Brand; `publishMenuRevision` atomic effective switch |
 | Assortment include/exclude | Assortment | Brand; IMP-036E preserved |
 | Availability / pause / hours | Assortment/Operating | Outlet; Store Operations (IMP-036E) — inspect context only in F commercial journey |
 | Variant / modifier / charge money | Pricing | Brand; ADR-007 |
@@ -190,7 +193,7 @@ Customer verification:
 | Concern | Classification | Façade |
 |---|---|---|
 | Catalog Product/Variant/Modifier association | `ADMIN_FACADE` | `/api/admin/v1/*` |
-| Menu organization / activate | `ADMIN_FACADE` | `/api/admin/v1/*` |
+| Menu organization / publish | `ADMIN_FACADE` | `/api/admin/v1/*` |
 | Brand Assortment mutation | `ADMIN_FACADE` | `/api/admin/v1/*` |
 | Pricing price-book authoring / activate | `ADMIN_FACADE` | `/api/admin/v1/*` |
 | Promotions / Coupons manage / activate | `ADMIN_FACADE` | `/api/admin/v1/*` |
@@ -295,83 +298,174 @@ Edit draft → Validate catalog structure → Publish → Create/activate effect
 → Customer Menu resolves new effective truth
 ```
 
-Exact revision storage was left open by ADR-006. This candidate fills that implementation
-non-decision without amending ADR-006 and without changing global invariants.
+Exact revision storage was left open by ADR-006. This candidate **locks one** capability-local
+persistence/publication model without amending ADR-006 and without changing global invariants.
 
 ```text
 ADR006_preserved = YES
 architecture_gap_resolved = YES (candidate design; not implemented)
+CATALOG_PUBLICATION_MODEL = ENTITY_CONTENT_REVISION
+CATALOG_PUBLICATION_MODEL_ALTERNATIVES_OPEN = NO
+```
+
+### Locked model: `ENTITY_CONTENT_REVISION`
+
+```text
+WHAT_IS_VERSIONED =
+  Product content
+  Variant content
+  Modifier Group content
+  Modifier Option content
+  Group↔Option binding content (quantities, position)
+  Variant↔Modifier Group binding content (totals, position)
+  (lifecycle transitions remain Catalog lifecycle commands; customer-affecting effect of
+   activate/retire on these entities participates in the same publication envelope when the
+   change would alter customer-visible/orderable graph — see field inventory)
+
+WHERE_DRAFT_CONTENT_RESIDES =
+  Catalog-owned non-effective ENTITY_CONTENT_REVISION store keyed by stable entity/binding id
+  + content_revision.
+  Draft-lifecycle primary rows may continue in-row authoring until first customer-effective
+  publication.
+  ACTIVE customer/structure-affecting fields are NEVER mutated in place on the effective row.
+
+STABLE_IDENTITY =
+  Product / Variant / ModifierGroup / ModifierOption / binding row identities remain stable
+  across publications. No identity churn. No second Catalog authority. No superseding-row
+  model that replaces stable entity ids.
+
+HOW_ONE_EFFECTIVE_GRAPH_IS_SELECTED =
+  Exactly one effective content revision per stable Catalog entity/binding is customer-visible.
+  Customer projection and checkout revalidation resolve effective content only.
+
+HOW_PUBLISH_IS_ATOMIC =
+  publishCatalogContentChange (Application/Admin deliberate command) runs in one DB transaction:
+    validate complete product graph (Product + Variants + Modifier Groups/Options + bindings)
+    → CAS expectedContentRevision / publish envelope revision
+    → switch effective revision pointers for all entities in the publish envelope
+    → write Catalog mutation/publish audit
+  Half-published graphs are impossible after commit failure (transaction abort).
+
+HOW_STALE_PUBLISH_IS_REJECTED =
+  EXPECTED_VERSION_REQUIRED = YES
+  mismatch → deterministic conflict (no silent LWW)
+
+HOW_CUSTOMER_PROJECTION_RESOLVES_EFFECTIVE_CONTENT =
+  D-368 live read of one effective Menu + ACTIVE Catalog entities’ effective content revisions
+  at request time (no second customer commercial projection store)
+
+HOW_CHECKOUT_ORDER_SNAPSHOTS_REMAIN_IMMUTABLE =
+  Checkout/Order catalog snapshots remain immutable historical payloads; later effective
+  revision switches do not rewrite sealed snapshots (ARCH-G05)
+```
+
+Rejected alternatives (not left to implementation):
+
+```text
+REJECTED_CATALOG_MODEL_CHOICE = superseding-row identity churn
+REJECTED_CATALOG_MODEL_CHOICE = “draft overlay OR superseding draft publish path” as open OR
+REJECTED_CATALOG_MODEL_CHOICE = ACTIVE in-place customer/structure-affecting writes
 ```
 
 ### ACTIVE mutable field inventory (VERIFIED)
 
-| Entity | Mutable field (ACTIVE allowed today) | Customer display | Default variant | Price resolution | Modifier/customization | Orderability / checkout | Classification |
-|---|---|---|---|---|---|---|---|
-| Product | `name` | YES (via Menu `effectiveEntryDisplay` fallback) | NO | NO | NO | Indirect (identity display) | **CUSTOMER_AFFECTING** |
-| Product | `description` | YES (display fallback) | NO | NO | NO | Indirect | **CUSTOMER_AFFECTING** |
-| Variant | `name` | YES (selector/customization surfaces) | NO | NO | YES (label) | Indirect | **CUSTOMER_AFFECTING** |
-| Variant | `description` | Possible | NO | NO | Possible | Indirect | **CUSTOMER_AFFECTING** |
-| Variant | `isDefault` | Indirect | **YES** (`pickDefaultActiveVariant`) | Indirect (which variant priced) | YES | YES | **CUSTOMER_AFFECTING** |
-| Variant | `isSelectorVisible` | Not used by D-368 projector | NO | NO | Validation / eligibility composition | Possible (validation rules) | **STRUCTURE_AFFECTING** (treat as publication-gated) |
+| Entity | Mutable field / binding (ACTIVE allowed today) | Customer display | Customization / defaults | Quantity / cardinality | Orderability / checkout | Classification |
+|---|---|---|---|---|---|---|
+| Product | `name` | YES (Menu `effectiveEntryDisplay` fallback) | NO | NO | Indirect (identity display) | **CUSTOMER_AFFECTING** |
+| Product | `description` | YES (display fallback) | NO | NO | Indirect | **CUSTOMER_AFFECTING** |
+| Variant | `name` | YES | YES (label) | NO | Indirect | **CUSTOMER_AFFECTING** |
+| Variant | `description` | Possible | Possible | NO | Indirect | **CUSTOMER_AFFECTING** |
+| Variant | `isDefault` | Indirect | YES | NO | YES (`pickDefaultActiveVariant`) | **CUSTOMER_AFFECTING** |
+| Variant | `isSelectorVisible` | Not used by D-368 projector today | Validation / eligibility | NO | Possible | **STRUCTURE_AFFECTING** |
+| Modifier Group | `name` | YES (`loadCustomerMenuModifiersByVariantId`) | YES (group label) | NO | Indirect | **CUSTOMER_AFFECTING** |
+| Modifier Group | `description` | Possible | Possible | NO | Indirect | **CUSTOMER_AFFECTING** |
+| Modifier Option | `name` | YES | YES (option label) | NO | Indirect (labels/checkout labels) | **CUSTOMER_AFFECTING** |
+| Modifier Option | `description` | Possible | Possible | NO | Indirect | **CUSTOMER_AFFECTING** |
+| Group↔Option binding | `minQuantity` / `maxQuantity` | YES (projected) | YES | **YES** | Structure for valid customization | **CUSTOMER_AFFECTING** + **STRUCTURE_AFFECTING** |
+| Group↔Option binding | `defaultQuantity` | YES (defaults) | **YES** | YES | Default behaviour | **CUSTOMER_AFFECTING** |
+| Group↔Option binding | `position` | YES (order) | Presentation | NO | Indirect | **CUSTOMER_AFFECTING** |
+| Group↔Option binding | lifecycle activate/retire | Omits non-active from projection | YES | YES | Orderability of option | **STRUCTURE_AFFECTING** |
+| Variant↔Modifier Group | `minTotalQuantity` / `maxTotalQuantity` | YES | YES | **YES** | Valid customization totals | **CUSTOMER_AFFECTING** + **STRUCTURE_AFFECTING** |
+| Variant↔Modifier Group | `position` | YES | Presentation | NO | Indirect | **CUSTOMER_AFFECTING** |
+| Variant↔Modifier Group | lifecycle activate/retire | Omits non-active groups | YES | YES | Orderability of group | **STRUCTURE_AFFECTING** |
 
-Immutable after create (VERIFIED): Product/Variant `code`, kind, brand/product linkage.
+Immutable after create (VERIFIED): Product/Variant `code`, kind, brand/product linkage; binding
+pair uniqueness constraints remain.
+
+```text
+ACTIVE_CUSTOMER_OR_STRUCTURE_AFFECTING_CATALOG_MUTATION → DIRECT_IN_PLACE_WRITE = REJECT
+
+PUBLICATION_ENVELOPE =
+  PRODUCT
+  VARIANT
+  MODIFIER_GROUP
+  MODIFIER_OPTION
+  GROUP_OPTION_BINDING
+  VARIANT_MODIFIER_GROUP_BINDING
+```
+
+Harmless metadata fields are not invented here. Every ACTIVE-mutable field above is classified from
+verified downstream impact (customer Menu modifier loader, product/variant display, checkout
+merchandise/label paths). Fields with no verified customer/structure impact are not listed as
+publication-gated solely by assumption.
 
 ### Write paths that bypass ADR-006 publication semantics (VERIFIED)
 
-1. `updateProduct` allows ACTIVE `name`/`description` (`src/server/catalog/products.ts`)
-2. `updateVariant` allows ACTIVE `name`/`description`/`isDefault`/`isSelectorVisible`
-3. No catalog content `revision` / publish command / catalog mutation audit module
-4. Menu activation exists, but Catalog ACTIVE in-place edits do not require Menu republish
-5. No Admin HTTP façade today (domain callable without publication gate wrapper)
+1. `updateProduct` — ACTIVE `name`/`description` (`src/server/catalog/products.ts`)
+2. `updateVariant` — ACTIVE `name`/`description`/`isDefault`/`isSelectorVisible`
+3. `updateModifierGroup` — ACTIVE `name`/`description` (`src/server/catalog/modifiers.ts`)
+4. `updateModifierOption` — ACTIVE `name`/`description`
+5. `updateModifierGroupOption` — ACTIVE `minQuantity`/`maxQuantity`/`defaultQuantity`/`position`
+6. `updateVariantModifierGroup` — ACTIVE `minTotalQuantity`/`maxTotalQuantity`/`position`
+7. Lifecycle activate/retire on modifier groups/options/bindings can change customer-visible
+   orderability immediately when rows flip to/from `active` without a Catalog publish envelope
+8. No catalog content `ENTITY_CONTENT_REVISION` store / publish command / catalog mutation audit
+9. Menu activation exists, but Catalog ACTIVE in-place edits do not require Catalog republish
+10. Bootstrap/import paths (`imp028c-modifiers/bootstrap.ts`, `menu-import/importer.ts`) are not
+    ordinary commercial write APIs; Fit does not authorize them as V1 commercial bypasses
+11. No Admin HTTP façade today (domain callable without publication gate wrapper)
 
-### Chosen minimum compliant architecture
+### Chosen compliant architecture (locked)
 
 ```text
-CATALOG_REVISION_STRATEGY =
-  ENTITY_CONTENT_REVISION
-  + ACTIVE_CUSTOMER_AFFECTING_FIELD_GATE
-  + VALIDATE_THEN_PUBLISH_COMMAND
-  + CATALOG_MUTATION_AUDIT
+CATALOG_REVISION_STRATEGY = ENTITY_CONTENT_REVISION
+ACTIVE_CUSTOMER_AFFECTING_FIELD_GATE = YES
+VALIDATE_THEN_PUBLISH_COMMAND = publishCatalogContentChange
+CATALOG_MUTATION_AUDIT = YES (new append-only audit)
 
 SCHEMA_CHANGE_REQUIRED = YES
 MIGRATION_REQUIRED = YES (architecture conclusion only; not authorized now)
 
 PUBLICATION_COMMAND_BOUNDARY =
   Application/Admin:
-    validateCatalogPublication(productOrGraph)
-    publishCatalogContentChange(expectedRevision, …)
+    validateCatalogPublication(completeProductGraph)
+    publishCatalogContentChange(expectedContentRevision, …)
   Domain:
     refuse ACTIVE in-place mutation of CUSTOMER_AFFECTING / STRUCTURE_AFFECTING fields
-    apply publication transactionally to active rows OR draft→activate with contentRevision bump
+      listed in the inventory (including modifier graph)
+    apply publication by atomically switching effective ENTITY_CONTENT_REVISION pointers
+      for the publish envelope inside one transaction
 
 CUSTOMER_PROJECTION_REVISION_SOURCE =
-  D-368 live read of one active Menu + active Catalog entities at request time
+  D-368 live read of one effective Menu + effective Catalog content revisions
   (no second customer commercial projection store)
 
 HISTORICAL_REFERENCE_BEHAVIOR =
   Checkout/order catalog snapshots remain immutable; do not rewrite history
 
 CONCURRENCY_MODEL =
-  contentRevision bigint on catalog_products / catalog_variants (and publish envelope)
-  expectedContentRevision required on publish and on draft saves that will become publishable
-  stale → deterministic conflict (no silent LWW)
+  contentRevision / publish-envelope revision on Catalog entities and revision store
+  EXPECTED_VERSION_REQUIRED = YES on draft revision saves that participate in publication
+    and on publishCatalogContentChange
+  CONDITIONAL_WRITE = UPDATE … WHERE id = ? AND content_revision = expected
+  STALE_RESULT = deterministic conflict
+  ATOMIC_BOUNDARY = publishCatalogContentChange transaction
 ```
-
-Bounded mechanism (capability-local; fills ADR-006 open choice):
-
-1. Add `content_revision` (bigint, >0) to `catalog_products` and `catalog_variants`.
-2. Draft lifecycle retains free mutation of draft-mutable fields with `expectedContentRevision`.
-3. While `lifecycleStatus = active`, domain `update*` **rejects** customer/structure-affecting field
-   changes; those require a **publishable draft change-set** (preferred: edit-as-draft overlay /
-   superseding draft revision row owned by Catalog) then `publishCatalogContentChange`.
-4. Publish validates structure (`assert`/`validate` family already in catalog), bumps revision,
-   writes audit, then customer reads observe new active values via D-368.
-5. Stable Product/Variant IDs preserved; no identity churn for historical snapshots.
-6. Menu remains separate publication gate (one active Menu + section/entry activation).
 
 ```text
 GLOBAL_ARCHITECTURE_DECISION_REQUIRED = NO
 ADR_006_AMENDMENT_REQUIRED = NO
+SECOND_CATALOG_AUTHORITY = NO
 ```
 
 ---
@@ -381,23 +475,95 @@ ADR_006_AMENDMENT_REQUIRED = NO
 Current schema (`menus`, `menu_sections`, `menu_entries`): lifecycle draft|active|retired;
 `position`; entry `displayName` / `displayDescription` / `imagePath`.
 
-| Approved action | Current command | Fit |
-|---|---|---|
-| Create section | `createMenuSection` | REUSE |
-| Rename/update section | **NOT_FOUND** | ADD_BOUNDED_DOMAIN_COMMAND `updateMenuSection` |
-| Reorder section | **NOT_FOUND** (position at create only) | ADD_BOUNDED_DOMAIN_COMMAND `reorderMenuSections` |
-| Add entry | `createMenuEntry` | REUSE |
-| Remove entry | `retireMenuEntry` | REUSE (retire = remove from active graph) |
-| Move entry / reorder | **NOT_FOUND** | ADD_BOUNDED_DOMAIN_COMMAND `reorderMenuEntries` / `moveMenuEntry` |
-| Display name/description override | set at create only | ADD_BOUNDED_DOMAIN_COMMAND `updateMenuEntryDisplay` |
-| Visibility/lifecycle | activate/retire section/entry/menu | REUSE |
-| Deliberate publication/effect | `activateMenu` (+ section/entry activate); one-active-Menu enforced in customer load | REUSE + Admin wrapper; no new Menu lifecycle states |
-| Read graph | `getMenuGraph` | REUSE |
+**VERIFIED gap:** `activateMenu` only transitions the selected Menu `draft → active` and does **not**
+atomically retire/supersede another active Menu (`src/server/catalog/menu/menus.ts`). Customer load
+requires exactly one active Menu (`loadActiveMenuForBrand`) and fails if zero or many. Newly proposed
+update/reorder/display commands must not make ACTIVE graph edits customer-visible immediately.
 
 ```text
-MENU_SCHEMA_CHANGE_REQUIRED = NO for ordering/display fields (reuse existing columns)
-MENU_REVISION_CONCURRENCY = ADD contentRevision on menus (or section graph revision) for material edits/publish
-ONE_ACTIVE_MENU_BOUNDARY = PRESERVE (customer projector)
+ACTIVE_MENU_GRAPH_IN_PLACE_AUTHORING = NO
+
+MENU_AUTHORING =
+  edits occur against non-customer-visible draft/revision state only
+
+MENU_PUBLISH =
+  validate complete draft graph
+  → consequence review already completed at product/application layer
+  → atomic publication transaction
+  → exactly one effective active Menu/revision after commit
+
+CUSTOMER_MENU =
+  never observes two active effective Menus
+  never observes half-published graph
+  never observes draft reorder/display changes
+
+STALE_PUBLISH = deterministic conflict
+```
+
+### Locked Menu publication strategy
+
+```text
+MENU_REVISION_STRATEGY =
+  STABLE_MENU_IDENTITY
+  + VERSIONED_MENU_GRAPH / MENU_REVISION
+  + ATOMIC_EFFECTIVE_REVISION_SWITCH
+
+MENU_DRAFT_STORAGE =
+  Menu-owned non-effective MENU_REVISION graph (sections, entries, positions, display overrides)
+  keyed by stable menuId + menuRevision.
+  Material update/reorder/display commands write only to non-effective revision state.
+
+MENU_PUBLICATION_COMMAND = publishMenuRevision
+  Deliberate Brand Menu cutover command.
+  Current activateMenu (activate-selected-only; no atomic supersede) is NOT sufficient and is NOT
+  reused as-is.
+  publishMenuRevision redesigns the publication contract:
+    1. validate complete draft graph (assertMenuGraphReady family)
+    2. require expectedMenuRevision (CAS)
+    3. atomically switch Brand effective (menuId, menuRevision) pointer / exclusive effective state
+    4. guarantee exactly one effective Menu/revision for the Brand after commit
+    5. write Menu publication audit
+  First customer cutover and subsequent republication both use publishMenuRevision.
+  activateMenu must not remain an independent unsafe public path that can create a second active
+  Menu; it is subsumed/replaced by publishMenuRevision for V1 commercial publication.
+
+MENU_EFFECTIVE_POINTER_OR_STATE =
+  Brand → exactly one effective (menuId, menuRevision)
+  Customer projection resolves that single effective graph only
+
+MENU_ATOMICITY =
+  One DB transaction for publish; no half-published graph; never two effective Menus
+
+MENU_CONCURRENCY =
+  EXPECTED_VERSION_REQUIRED = YES
+  CONDITIONAL_WRITE = revision CAS on draft material edits and on publishMenuRevision
+  STALE_RESULT = deterministic conflict
+  ATOMIC_BOUNDARY = publishMenuRevision transaction
+
+MENU_AUDIT =
+  Menu mutation/publish audit events (add; currently MUTATION_AUDIT_GAP)
+
+SCHEMA_CHANGE_REQUIRED = YES
+  (MENU_REVISION storage + Brand effective pointer / exclusive effective state;
+   exact table/column names are implementation detail; semantics above are locked)
+```
+
+| Approved action | Current command | Fit |
+|---|---|---|
+| Create section | `createMenuSection` | REUSE into draft/revision graph |
+| Rename/update section | **NOT_FOUND** | ADD_BOUNDED_DOMAIN_COMMAND `updateMenuSection` (**draft/revision only**) |
+| Reorder section | **NOT_FOUND** (position at create only) | ADD_BOUNDED_DOMAIN_COMMAND `reorderMenuSections` (**draft/revision only**) |
+| Add entry | `createMenuEntry` | REUSE into draft/revision graph |
+| Remove entry | `retireMenuEntry` | REUSE against draft/revision; customer effect only after publish |
+| Move entry / reorder | **NOT_FOUND** | ADD_BOUNDED_DOMAIN_COMMAND `reorderMenuEntries` / `moveMenuEntry` (**draft/revision only**) |
+| Display name/description override | set at create only | ADD_BOUNDED_DOMAIN_COMMAND `updateMenuEntryDisplay` (**draft/revision only**) |
+| Visibility/lifecycle within revision | activate/retire section/entry inside draft graph | REUSE/adapt inside non-effective revision |
+| Deliberate publication/effect | current `activateMenu` insufficient | **ADD_BOUNDED_DOMAIN_COMMAND `publishMenuRevision`** (atomic effective switch) |
+| Read graph | `getMenuGraph` | REUSE (+ distinguish draft vs effective reads) |
+
+```text
+MENU_SCHEMA_CHANGE_REQUIRED = YES (revision graph + effective pointer; ordering/display columns reused conceptually)
+ONE_ACTIVE_MENU_BOUNDARY = PRESERVE and enforce at publication write time (not only at customer load)
 ```
 
 ---
@@ -420,8 +586,17 @@ IMP-036E Store `GET …/assortment` remains read-only Operations projection.
 Audit: existing `assortment_availability_audit_events` — `EXISTING_AUDIT_SUFFICIENT` for mutations;
 Admin may add read projection.
 
-Concurrency: current upserts lack revision — Fit requires `expectedRuleRevision` or equivalent
-conflict detection on material Assortment mutations (bounded; no generic idempotency framework).
+Concurrency: current upserts lack revision — Fit requires locked `expectedRuleRevision` CAS on
+material Assortment mutations (explicit revision column; not `updatedAt`-only alternative; no
+generic idempotency framework).
+
+```text
+ASSORTMENT_CONCURRENCY =
+  EXPECTED_VERSION_REQUIRED = YES
+  CONDITIONAL_WRITE = expectedRuleRevision CAS
+  STALE_RESULT = deterministic conflict
+  ATOMIC_BOUNDARY = Assortment mutation statement/transaction
+```
 
 ---
 
@@ -437,13 +612,17 @@ owns monetary values; Checkout snapshots immutable.
 | Charge price attach | schema exists; admin command **NOT_FOUND** | NOT in ordinary V1 manage workflow; inspect via `charges.read` |
 | Activation | `activatePriceBook` with overlap conflict | REUSE |
 | Read/explain | resolve* helpers | ADD_READ_PROJECTION for commercial UI |
-| Concurrency | draft-only writes; activate overlap | ADD expectedRevision on draft price-book edits if concurrent draft authors; activate remains conflict-checked |
+| Concurrency | draft-only writes; activate overlap | ADD `expectedPriceBookRevision` on draft price-book edits; activate remains conflict-checked |
 
 ```text
-PRICING_SCHEMA_CHANGE_REQUIRED = NO for baseline Variant books; YES only if draft book revision column added for stale draft recovery (preferred YES for ARCH-G09 on concurrent draft edits)
+PRICING_SCHEMA_CHANGE_REQUIRED = NO for baseline Variant books; YES for explicit draft `content_revision` / book revision column (ARCH-G09; locked — not optional)
 PRICING_COMMAND_GAPS = attachDraftModifierPrice (+ Admin wrappers); commercial explanation reads
 PRICING_READ_PROJECTION = Admin commercial pricing inspect/explain composing resolve* + book status
-PRICING_CONCURRENCY = draft gate + activate overlap + expectedRevision on draft mutations
+PRICING_CONCURRENCY =
+  EXPECTED_VERSION_REQUIRED = YES on draft price-book material edits
+  CONDITIONAL_WRITE = revision CAS
+  STALE_RESULT = deterministic conflict
+  ATOMIC_BOUNDARY = draft edit statement; activatePriceBook overlap transaction (existing)
 ```
 
 No second pricing formula; no frontend pricing authority; no new scheduling model.
@@ -468,8 +647,17 @@ Reuse: `create/update/deletePromotionDraft`, `setPromotionBenefit`, `setPromotio
 Gaps: Admin HTTP wrappers + commercial list/detail/audit read projections. Evaluation engine
 unchanged.
 
-Concurrency: draft-gated edits; activation fingerprint — add `expectedRevision` on draft update
-where product ACs require stale recovery (bounded column or updatedAt/version compare).
+Concurrency: draft-gated edits; activation fingerprint — add explicit `expectedRevision` on draft
+update (locked revision column; not `updatedAt`-only optional alternative) where product ACs require
+stale recovery.
+
+```text
+PROMOTION_CONCURRENCY =
+  EXPECTED_VERSION_REQUIRED = YES on draft Promotion/Coupon material edits
+  CONDITIONAL_WRITE = revision CAS
+  STALE_RESULT = deterministic conflict
+  ATOMIC_BOUNDARY = draft update statement; activate remains fingerprint/conflict-checked
+```
 
 ---
 
@@ -531,8 +719,11 @@ tax/charge administration product in F.
 
 ```text
 MANDATORY_V1 = view existing Menu-entry imagePath (and equivalent references)
-MEDIA_MUTATION = FOLLOW_UP (DISC-F-010)
+MEDIA_MUTATION = FOLLOW_UP (DISC-F-010) — AC-IMP-036F-014-02 Mandatory = NO
+UPLOAD_NOT_OFFERED_V1 = YES (AC-IMP-036F-014-03)
 NO upload platform / object storage / CDN / scanning / registry locked here
+NO upload transport / domain / persistence architecture in IMP-036F V1
+V1_UI_CAPABILITY_BOUNDARY = inspect/view references only; upload control absent
 ```
 
 ---
@@ -600,8 +791,8 @@ escalation — never leak hidden resource data.
 
 | Domain | Classification | Notes |
 |---|---|---|
-| Catalog mutation/publish | `MUTATION_AUDIT_GAP` | Add catalog mutation audit table/events |
-| Menu mutation/publish | `MUTATION_AUDIT_GAP` | Add menu mutation audit events |
+| Catalog mutation/publish | `MUTATION_AUDIT_GAP` | Add catalog mutation audit covering Product/Variant/Modifier graph publish envelope |
+| Menu mutation/publish | `MUTATION_AUDIT_GAP` | Add menu mutation audit events including `publishMenuRevision` |
 | Assortment | `EXISTING_AUDIT_SUFFICIENT` (+ read projection) | Existing assortment audit |
 | Pricing price books | `EXISTING_AUDIT_NEEDS_READ_PROJECTION` | `pricing_tax_audit_events` |
 | Promotions/Coupons | `EXISTING_AUDIT_SUFFICIENT` (+ read projection) | `promotion_audit_events` |
@@ -618,16 +809,29 @@ Schema required for Catalog/Menu/tariff audit gaps (architecture conclusion).
 
 ## 21. Concurrency / idempotency / recovery
 
-| Action | CURRENT_CONCURRENCY | FIT_DECISION | EXPECTED_REVISION_REQUIRED | DB_CONSTRAINT_REQUIRED | IDEMPOTENCY_REQUIRED | STALE_WRITE_RESULT |
-|---|---|---|---|---|---|---|
-| Catalog draft/edit/publish | LWW / none | Add contentRevision + gate ACTIVE fields | YES | YES (revision > 0; conditional update) | NO (unless transport retries use request keys later) | Conflict / reload |
-| Menu organize/publish | LWW on missing updates | Add menu/graph revision on material commands | YES | YES | NO | Conflict / reload |
-| Assortment mutation | Upsert LWW | Add rule revision or compare-and-set | YES | Preferred unique+revision | NO | Conflict / reload |
-| Pricing draft/activate | Draft gate + activate overlap | Keep activate conflict; add draft expectedRevision | YES on draft edits | Preferred | Activate already conflict-checked | Conflict |
-| Promotion/Coupon edit/activate | Draft gate + activate fingerprint | Add expectedRevision on draft updates | YES | Preferred | NO | Conflict / reload |
-| Delivery tariff edit | Config revision exists; unused for tariff writes | Reuse serviceability `revision` + `expectedRevision` | YES | YES (existing) | NO | Conflict / reload |
+Material commercial writes have locked semantic concurrency contracts. Architecture-significant
+alternatives (optional revision vs `updatedAt` CAS; overlay vs supersede) are **not** left open.
+
+| Action | CURRENT_CONCURRENCY | FIT_DECISION | EXPECTED_VERSION_REQUIRED | CONDITIONAL_WRITE | ATOMIC_BOUNDARY | STALE_WRITE_RESULT | DB_CONSTRAINT_REQUIRED | IDEMPOTENCY_REQUIRED |
+|---|---|---|---|---|---|---|---|---|
+| Catalog draft revision save (incl. modifier graph) | LWW / none | ENTITY_CONTENT_REVISION draft store + CAS | YES | revision CAS | draft revision write | deterministic conflict | YES (revision > 0) | NO |
+| Catalog publish | none | `publishCatalogContentChange` | YES | envelope + entity revision CAS | publish transaction (full envelope) | deterministic conflict | YES | NO |
+| Menu draft organize (update/reorder/display) | LWW / missing cmds | non-effective MENU_REVISION only | YES | menuRevision CAS | draft revision write | deterministic conflict | YES | NO |
+| Menu publish | `activateMenu` non-atomic | `publishMenuRevision` atomic effective switch | YES | effective-pointer + menuRevision CAS | publishMenuRevision transaction | deterministic conflict | YES | NO |
+| Assortment mutation | Upsert LWW | `expectedRuleRevision` CAS | YES | rule revision CAS | mutation statement/tx | deterministic conflict | YES (unique+revision) | NO |
+| Pricing draft edit | Draft gate | explicit book revision CAS | YES | book revision CAS | draft edit statement | deterministic conflict | YES | NO |
+| Pricing activate | activate overlap | keep overlap conflict | YES on concurrent activate path where applicable | overlap / fingerprint | activate transaction | Conflict | existing overlap | NO |
+| Promotion/Coupon draft edit | Draft gate | explicit revision CAS | YES | revision CAS | draft update | deterministic conflict | YES | NO |
+| Promotion/Coupon activate | activate fingerprint | keep fingerprint conflict | YES where concurrent activate applies | fingerprint/CAS | activate transaction | Conflict | existing | NO |
+| Delivery tariff edit | Config revision unused for tariff | reuse serviceability `revision` | YES | `expectedRevision` CAS | tariff mutate + audit | deterministic conflict | YES (existing) | NO |
 
 No generic idempotency framework required for V1 Fit.
+
+```text
+CONCURRENCY_CONTRACTS_PRECISE = YES
+OPTIONAL_REVISION_LANGUAGE = REMOVED
+REVISION_OR_UPDATED_AT_OPEN_CHOICE = NO
+```
 
 ---
 
@@ -635,19 +839,26 @@ No generic idempotency framework required for V1 Fit.
 
 | Concern | Existing storage | Required change | Why | Authority owner | Migration required | Historical compatibility |
 |---|---|---|---|---|---|---|
-| Catalog content concurrency | `catalog_products` / `catalog_variants` | Add `content_revision`; tighten ACTIVE update rules | ADR-006 + ARCH-G09 | Catalog | YES | Backfill revision=1; IDs stable |
-| Catalog publish draft overlay | lifecycle draft\|active only | Bounded draft change-set / overlay OR superseding draft publish path | Close ACTIVE in-place customer-affecting edits | Catalog | YES | Preserve snapshots |
+| Catalog ENTITY_CONTENT_REVISION | primary Product/Variant/Modifier rows only | Non-effective revision store + effective pointers for Product, Variant, Modifier Group, Modifier Option, Group↔Option binding, Variant↔Modifier Group binding; refuse ACTIVE in-place customer/structure writes | ADR-006 + locked publication model | Catalog | YES | Stable IDs; snapshots preserved |
+| Catalog content concurrency | none / LWW `updatedAt` | `content_revision` / envelope revision with CAS | ARCH-G09 | Catalog | YES | Backfill revision=1 |
 | Catalog audit | none | New audit events table | Durable attribution | Catalog | YES | Append-only |
-| Menu update/reorder | columns exist | Commands only; add `content_revision` on `menus` | Stale recovery | Menu | YES (revision col) | Backfill |
+| Menu VERSIONED_MENU_GRAPH | `menus` / sections / entries lifecycle only | MENU_REVISION draft graph + Brand effective (menuId, menuRevision) pointer; `publishMenuRevision` | Atomic one-effective Menu; no ACTIVE in-place authoring | Menu | YES | Preserve section/entry semantics; stable menu identity |
 | Menu audit | none | New audit events | Attribution | Menu | YES | Append-only |
-| Assortment concurrency | `assortment_rules` | Revision/CAS | ARCH-G09 | Assortment | YES preferred | Compatible |
+| Assortment concurrency | `assortment_rules` | Explicit rule revision + CAS | ARCH-G09 | Assortment | YES | Compatible |
 | Pricing modifier attach | `price_book_modifier_prices` | Command surface (schema may suffice) | V1 modifier price authoring | Pricing | NO if table sufficient | Compatible |
-| Pricing draft concurrency | `price_books` | Optional revision | Stale draft AC | Pricing | YES preferred | Compatible |
-| Promotion draft concurrency | `promotions` / coupons | Optional revision | Stale draft AC | Promotions | YES preferred | Compatible |
+| Pricing draft concurrency | `price_books` | Explicit draft revision column + CAS | Stale draft AC; ARCH-G09 | Pricing | YES | Compatible |
+| Promotion draft concurrency | `promotions` / coupons | Explicit draft revision column + CAS | Stale draft AC; ARCH-G09 | Promotions | YES | Compatible |
 | Delivery tariff fields | serviceability config columns | Write path + audit; no new tariff tables | Reuse accepted storage | Pricing (auth) / physical row shared | NO new columns; YES audit | Compatible |
-| Media / tax manage | existing | none for V1 mutate | Boundaries | — | NO | — |
+| Media / tax manage | existing | none for V1 mutate/upload | Boundaries | — | NO | — |
 
-Strong preference: reuse tables; no duplicate mutable authorities; no tables solely for UI composition.
+Strong preference: reuse tables for identity; revision stores are Catalog/Menu-owned content, not a
+second commercial authority; no tables solely for UI composition.
+
+```text
+CATALOG_PUBLICATION_MODEL_SELECTED = ENTITY_CONTENT_REVISION
+MENU_PUBLICATION_MODEL_SELECTED = STABLE_MENU_IDENTITY + VERSIONED_MENU_GRAPH + ATOMIC_EFFECTIVE_REVISION_SWITCH
+SCHEMA_CHANGE_REQUIRED = YES
+```
 
 ---
 
@@ -673,9 +884,10 @@ Store Operations UI/routes unchanged for Assortment manage (remain absent).
 | Area | Classification |
 |---|---|
 | Catalog create/activate/retire/read | REUSE_EXISTING_COMMAND + ADD_TRANSPORT_WRAPPER |
-| Catalog ACTIVE field gate + publish + revision | ADD_BOUNDED_DOMAIN_COMMAND + SCHEMA_SUPPORT_REQUIRED |
-| Menu create/activate/retire/graph | REUSE_EXISTING_COMMAND + ADD_TRANSPORT_WRAPPER |
-| Menu update/reorder/display | ADD_BOUNDED_DOMAIN_COMMAND + ADD_TRANSPORT_WRAPPER |
+| Catalog ACTIVE field gate + ENTITY_CONTENT_REVISION + publish envelope (Product/Variant/Modifier graph) | ADD_BOUNDED_DOMAIN_COMMAND + SCHEMA_SUPPORT_REQUIRED |
+| Menu create/read/graph | REUSE_EXISTING_COMMAND + ADD_TRANSPORT_WRAPPER |
+| Menu update/reorder/display (draft/revision only) | ADD_BOUNDED_DOMAIN_COMMAND + ADD_TRANSPORT_WRAPPER |
+| Menu `publishMenuRevision` (atomic effective switch; replace unsafe activateMenu publication path) | ADD_BOUNDED_DOMAIN_COMMAND + SCHEMA_SUPPORT_REQUIRED |
 | Assortment Brand mutate | REUSE_EXISTING_COMMAND + ADD_TRANSPORT_WRAPPER |
 | Pricing variant books | REUSE_EXISTING_COMMAND + ADD_TRANSPORT_WRAPPER |
 | Pricing modifier attach | ADD_BOUNDED_DOMAIN_COMMAND + ADD_TRANSPORT_WRAPPER |
@@ -683,35 +895,70 @@ Store Operations UI/routes unchanged for Assortment manage (remain absent).
 | Delivery tariff | ADD_BOUNDED_APPLICATION_OPERATION + ADD_BOUNDED_DOMAIN_COMMAND + ADD_TRANSPORT_WRAPPER |
 | Consequence / diagnosis / verification compose | ADD_READ_PROJECTION (+ application preview ops) |
 | Tax/Charges inspect | ADD_READ_PROJECTION |
-| Media view | ADD_READ_PROJECTION (fields already stored) |
-| Customer Menu path | NO_IMPLEMENTATION_CHANGE to authority (regression only) |
+| Media view (no upload) | ADD_READ_PROJECTION (fields already stored); UI negative: upload absent |
+| Customer Menu path | NO_IMPLEMENTATION_CHANGE to authority (regression only; benefits from atomic Menu publish) |
 
 ---
 
 ## 24. Story / AC traceability
 
+### Mechanical mandatory AC audit (PD-IMP-036F-DRAFT-1)
+
+```text
+MANDATORY_AC_TOTAL_FROM_PD = 64
+NONMANDATORY_ACS_IDENTIFIED = 1 (AC-IMP-036F-014-02 — FOLLOW_UP / Mandatory = NO)
+MANDATORY_AC_MAPPED = 64
+MISSING_MANDATORY_ACS = NONE
+mandatory_ACs_mapped = YES
+```
+
+| Story | Mandatory ACs (exact) | Architecture mapping (permission / resource / transport / op / evidence intent) |
+|---|---|---|
+| US-001 | 001-01, 001-02, 001-03, 001-04 | Multi-authority Admin commercial inspect projection; deny-by-default mutation affordances; stale/not-found without implying customer truth; no cross-scope leak |
+| US-002 | 002-01, 002-02, 002-03, 002-04, 002-05 | Catalog draft create/edit; ENTITY_CONTENT_REVISION; expectedContentRevision conflicts; validation blocks publish; a11y UI |
+| US-003 | 003-01, 003-02, 003-03 | Modifier association via Catalog commands under `catalog.manage` @ Brand; missing prerequisite validation; **AC-IMP-036F-003-03** Unauthorized modifier association → `catalog.manage` @ Brand resource, server-side denial, no mutation, negative authorization proof (Admin transport) |
+| US-004 | 004-01, 004-02, 004-03 | Legal Catalog lifecycle only; illegal transition rejected; no hard delete; customer/structure-affecting activate/retire participates in publication envelope rules |
+| US-005 | 005-01, 005-02, 005-03, 005-04, 005-05 | Menu draft/revision organize + display; `publishMenuRevision` preserves one effective Menu; invalid refs fail; tablet authoring |
+| US-006 | 006-01, 006-02, 006-03, 006-04 | Brand Assortment `assortment.manage`; Outlet Manager cannot gain Brand authority; unauthorized denial; Store Assortment manage = NO |
+| US-007 | 007-01, 007-02, 007-03, 007-04, 007-05 | Pricing books + modifier price attach; invalid money rejected; diagnosis honesty; Checkout snapshot authority unchanged |
+| US-008 | 008-01, 008-02, 008-03, 008-04, 008-05 | Existing Promotion/Coupon lifecycles only; validation; unauthorized denial; no invented states |
+| US-009 | 009-01, 009-02, 009-03, 009-04, 009-05 | Pricing-owned tariff via `pricing.read`/`pricing.manage` Brand←Outlet; provider cost separate; unauthorized denial; not `serviceability.manage` |
+| US-010 | 010-01, 010-02, 010-03, 010-04 | Non-authoritative consequence preview before publish; cancel leaves draft; no four-eyes; draft vs effective explicit |
+| US-011 | 011-01, 011-02, 011-03, 011-04, 011-05 | `publishCatalogContentChange` / `publishMenuRevision` / pricing&promo activate after validate; auth denial; verifiable resulting effective state; no-op when unchanged |
+| US-012 | 012-01, 012-02, 012-03, 012-04 | Verify via existing `/api/v1/*` customer reads; no realtime push requirement; partial consequence honesty; do not trust edit form alone |
+| US-013 | 013-01, 013-02, 013-03, 013-04, 013-05 | Non-authoritative diagnosis composition across Catalog/Menu/Assortment/Availability/Pricing/Promo/hours/serviceability |
+| US-014 | 014-01, 014-03 | **AC-IMP-036F-014-01:** view existing media references; **AC-IMP-036F-014-03:** Upload not offered as V1 capability — V1 UI capability boundary, no upload/storage/CDN action, no upload transport/domain/persistence architecture, UI/E2E negative evidence. (**AC-IMP-036F-014-02** non-mandatory FOLLOW_UP — not counted in mandatory map) |
+| US-015 | 015-01, 015-02, 015-03 | Desktop/tablet full authoring; mobile inspection/context only; no mandatory mobile commercial mutations |
+| US-016 | 016-01, 016-02 | Tax/Charges read inspection only; no general tax/charge administration in V1 commercial workflow |
+
+### Story fit summary
+
 | Story ID | Mandatory ACs | Domain authority | Permission/resource | UI surface | Transport | Application/domain operation | Persistence | Concurrency | Customer consequence | Audit | Security notes | Fit | Ready after future lock |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | US-001 | 001-01…04 | Multi-read composition | catalog/menu/assortment/pricing/promotions read; outlet context reads | Commercial overview | Admin | commercial offering inspect projection | none | n/a | none direct | composed reads | no cross-scope leak | PASS | YES |
-| US-002 | 002-01…05 | Catalog | catalog.manage @ Brand | Product/Variant authoring | Admin | create/update draft; publish gate | revision+audit | expectedRevision | none until publish | catalog audit | ACTIVE field gate | PASS | YES |
-| US-003 | 003-01…02 | Catalog modifiers | catalog.manage @ Brand | Modifier association | Admin | existing modifier associate cmds + transport | none new tables | revision | after publish | catalog audit | no Modifier Library | PASS | YES |
-| US-004 | 004-* lifecycle | Catalog | catalog.manage @ Brand | Lifecycle actions | Admin | activate/retire + publish rules | revision | expectedRevision | on activate | catalog audit | draft≠live | PASS | YES |
-| US-005 | 005-* | Menu | menu.manage @ Brand | Menu flow | Admin | create + new update/reorder + activate | menu revision | expectedRevision | on Menu activate | menu audit | one-active Menu | PASS | YES |
-| US-006 | 006-* | Assortment | assortment.manage @ Brand | Assortment commercial | Admin | include/exclude/retire | rule CAS | expectedRevision | eligibility | assortment audit | no Store manage | PASS | YES |
-| US-007 | 007-* | Pricing | pricing.manage @ Brand | Pricing | Admin | price book cmds + modifier attach | optional revision | draft+activate | price resolve | pricing audit | Catalog≠money | PASS | YES |
-| US-008 | 008-* | Promotions | promotions/coupons.* @ Brand | Promotions | Admin | existing promo/coupon cmds | optional revision | draft+activate | evaluation | promotion audit | no invented states | PASS | YES |
-| US-009 | 009-* | Pricing tariff | pricing.read/manage @ Brand←Outlet | Tariff | Admin | new tariff read/mutate ops | reuse columns + audit | serviceability revision | delivery charge resolve | pricing tariff audit | not serviceability.manage | PASS | YES |
-| US-010 | 010-* | Composition | domain reads | Consequence | Admin | previewCommercialConsequence | none authoritative | n/a | none until confirm | n/a | non-authoritative | PASS | YES |
-| US-011 | 011-* | Catalog/Menu/Pricing/Promo | manage/activate | Publish | Admin | domain publish/activate after preview | as above | expectedRevision | D-368/pricing | domain audits | deliberate only | PASS | YES |
-| US-012 | 012-* | Customer reads | commercial read context | Verification | Admin orchestrates `/api/v1` | existing customer Menu/price/checkout | none | n/a | truthful UX | n/a | no second projection | PASS | YES |
-| US-013 | 013-* | Multi-read | partial reads | Diagnosis | Admin | diagnoseSellability composition | none | n/a | explanation only | n/a | fail closed | PASS | YES |
-| US-014 | 014-01 view; 014-02 FOLLOW_UP | Menu/Catalog refs | read | Media inspect | Admin | read imagePath | none | n/a | none | n/a | no upload | PASS | YES (view) |
-| US-015 | 015-* | UI | same auth | Desktop author; mobile inspect | static UI | n/a | none | n/a | n/a | n/a | mobile no mandatory mutate | PASS | YES |
-| US-016 | 016-* | Tax/Charges | tax.read/charges.read | Inspect context | Admin | read projections | none | n/a | context only | existing pricing/tax audit read | no manage lock | PASS | YES |
+| US-002 | 002-01…05 | Catalog | catalog.manage @ Brand | Product/Variant authoring | Admin | create/update draft revision; publish gate | ENTITY_CONTENT_REVISION + audit | expectedContentRevision | none until publish | catalog audit | ACTIVE field gate | PASS | YES |
+| US-003 | 003-01…03 | Catalog modifiers | catalog.manage @ Brand | Modifier association | Admin | associate cmds under publication rules + transport | revision store (bindings in envelope) | expectedContentRevision | after publish | catalog audit | **003-03 deny + no mutation**; no Modifier Library | PASS | YES |
+| US-004 | 004-01…03 | Catalog | catalog.manage @ Brand | Lifecycle actions | Admin | activate/retire + publication envelope when customer/structure-affecting | revision | expectedContentRevision | on effective publish | catalog audit | draft≠live | PASS | YES |
+| US-005 | 005-01…05 | Menu | menu.manage @ Brand | Menu flow | Admin | draft/revision update/reorder/display + `publishMenuRevision` | MENU_REVISION + effective pointer | expectedMenuRevision | on publish only | menu audit | one-effective Menu; no ACTIVE in-place authoring | PASS | YES |
+| US-006 | 006-01…04 | Assortment | assortment.manage @ Brand | Assortment commercial | Admin | include/exclude/retire | rule CAS | expectedRuleRevision | eligibility | assortment audit | no Store manage | PASS | YES |
+| US-007 | 007-01…05 | Pricing | pricing.manage @ Brand | Pricing | Admin | price book cmds + modifier attach | book revision | expectedPriceBookRevision + activate conflict | price resolve | pricing audit | Catalog≠money | PASS | YES |
+| US-008 | 008-01…05 | Promotions | promotions/coupons.* @ Brand | Promotions | Admin | existing promo/coupon cmds | draft revision | expectedRevision + activate fingerprint | evaluation | promotion audit | no invented states | PASS | YES |
+| US-009 | 009-01…05 | Pricing tariff | pricing.read/manage @ Brand←Outlet | Tariff | Admin | new tariff read/mutate ops | reuse columns + audit | serviceability expectedRevision | delivery charge resolve | pricing tariff audit | not serviceability.manage | PASS | YES |
+| US-010 | 010-01…04 | Composition | domain reads | Consequence | Admin | previewCommercialConsequence | none authoritative | n/a | none until confirm | n/a | non-authoritative | PASS | YES |
+| US-011 | 011-01…05 | Catalog/Menu/Pricing/Promo | manage/activate | Publish | Admin | `publishCatalogContentChange` / `publishMenuRevision` / domain activate after preview | as above | expectedRevision on each | D-368/pricing effective truth | domain audits | deliberate only; atomic Catalog+Menu publish | PASS | YES |
+| US-012 | 012-01…04 | Customer reads | commercial read context | Verification | Admin orchestrates `/api/v1` | existing customer Menu/price/checkout | none | n/a | truthful UX | n/a | no second projection | PASS | YES |
+| US-013 | 013-01…05 | Multi-read | partial reads | Diagnosis | Admin | diagnoseSellability composition | none | n/a | explanation only | n/a | fail closed | PASS | YES |
+| US-014 | 014-01 + 014-03 (014-02 FOLLOW_UP) | Menu/Catalog refs | read | Media inspect | Admin | read imagePath; **upload absent** | none | n/a | none | n/a | no upload/storage/CDN architecture | PASS | YES (view + upload-absent) |
+| US-015 | 015-01…03 | UI | same auth | Desktop author; mobile inspect | static UI | n/a | none | n/a | n/a | n/a | mobile no mandatory mutate | PASS | YES |
+| US-016 | 016-01…02 | Tax/Charges | tax.read/charges.read | Inspect context | Admin | read projections | none | n/a | context only | existing pricing/tax audit read | no manage lock | PASS | YES |
 
 ```text
 stories_mapped = 16
-mandatory_ACs_mapped = YES (including tariff authorization resolution for US-009)
+mandatory_ACs_mapped = YES
+MANDATORY_AC_TOTAL_FROM_PD = 64
+MANDATORY_AC_MAPPED = 64
+MISSING_MANDATORY_ACS = NONE
+NONMANDATORY_ACS_IDENTIFIED = 1 (AC-IMP-036F-014-02)
 unfit_stories = NONE
 stories_ready_after_future_lock = US-001…016 (AC-014-02 remains FOLLOW_UP)
 stories_still_blocked_after_candidate = NONE for Fit; implementation remains unauthorized
@@ -770,11 +1017,16 @@ concurrency races + E2E commercial journey + negative auth + Founder UAT on exac
 | Independent Architecture Fit review | REQUIRED (next gate) |
 | Canonical lock persistence (ROADMAP/STATE/PD/capability lock markers) | NOT AUTHORIZED here |
 | Exact Admin route path spelling / page split | Implementation detail after lock |
-| Catalog draft overlay table vs in-row draft supersede mechanics | Bounded implementation choice under §9 strategy (same publication semantics) |
-| Whether Assortment/Pricing/Promotion revision columns are strictly additive vs compare-and-set on `updated_at` | Prefer explicit revision columns; either must satisfy ARCH-G09 |
-| AC-014-02 media mutation | FOLLOW_UP (approved) |
+| Exact SQL migration filenames / non-semantic column spellings for revision stores | Implementation detail under locked ENTITY_CONTENT_REVISION + MENU_REVISION semantics |
+| AC-014-02 media mutation | FOLLOW_UP (approved; non-mandatory) |
 
-No `PRODUCT_DECISION_REQUIRED` and no `PRODUCT_ARCHITECTURE_CONFLICT` identified.
+```text
+CATALOG_DRAFT_OVERLAY_VS_SUPERSEDE_OPEN_CHOICE = CLOSED (ENTITY_CONTENT_REVISION locked)
+MENU_ACTIVATEMENU_REUSE_AS_PUBLICATION = CLOSED (publishMenuRevision locked)
+PRODUCT_DECISION_REQUIRED = NO
+PRODUCT_ARCHITECTURE_CONFLICT = NO
+GLOBAL_ARCHITECTURE_CONFLICT = NO
+```
 
 ---
 
@@ -863,14 +1115,17 @@ UI grouping must not redefine domain authority.
 - Permissions: `src/shared/access-control/catalog.ts`
 - Admin routes (no commercial handlers today): `src/server/operations/http/admin-routes.ts`
 - Store Operations: `src/server/operations/http/store-routes.ts`
-- Catalog ACTIVE updates: `src/server/catalog/products.ts`, `variants.ts`
-- Menu commands: `src/server/catalog/menu/*`
+- Catalog ACTIVE Product/Variant updates: `src/server/catalog/products.ts`, `variants.ts`
+- Catalog ACTIVE Modifier graph updates: `src/server/catalog/modifiers.ts`
+- Menu commands (non-atomic `activateMenu`): `src/server/catalog/menu/*`
 - Assortment: `src/server/assortment/rules.ts`
 - Pricing: `src/server/pricing/price-books.ts`, `resolve-delivery-charge.ts`
 - Promotions: `src/server/promotions/*`
 - Tariff columns without write path: `src/platform/database/schema/serviceability.ts`;
   `updateServiceabilityConfig` omits tariff fields
-- Customer Menu: `src/server/customer-commerce/menu/project-customer-menu.ts` (`pickDefaultActiveVariant`)
+- Customer Menu one-active enforcement: `src/server/customer-commerce/menu/project-customer-menu.ts`
+- Customer modifier projection: `src/server/customer-commerce/menu/load-customer-menu-modifiers.ts`
+- Checkout merchandise revalidation: `src/server/checkout/adapters/catalog.ts`
 
 ---
 
