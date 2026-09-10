@@ -15,12 +15,14 @@ authorize implementation independently of ROADMAP and the existing gates.
 PRODUCT_DELIVERY_PROCESS_EFFECTIVE_FROM = IMP-036F
 HISTORICAL_ACCEPTED_IMPS_REWRITTEN = NO
 IMP036E_LIFECYCLE_CHANGED = NO
-IMP036F_ACTIVATED = NO
+PD1_DID_NOT_ACTIVATE_IMP036F_AT_ADOPTION = YES
 ```
 
-Those markers describe adoption of the operating model, not future capability lifecycle updates.
-IMP-036E remains on its existing lifecycle. A historical Journey Gap Audit is required before public
-GTM cutover / IMP-040 acceptance and is not performed in Session 1.
+Those markers describe adoption of the operating model. PD-1 did not itself activate IMP-036F when
+introduced; current activation and lifecycle truth must be read from ROADMAP/STATE. This template
+is not an IMP-036F lifecycle authority. IMP-036E remains on its existing lifecycle. A historical
+Journey Gap Audit is required before public GTM cutover / IMP-040 acceptance and is not performed
+in Session 1.
 
 ## 1. Identity / version / status
 

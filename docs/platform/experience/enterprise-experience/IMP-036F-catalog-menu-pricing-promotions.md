@@ -1,7 +1,9 @@
 ---
-Status: PLANNED CAPABILITY CONTRACT
+Status: PLANNED CAPABILITY CONTRACT (SUPPORTING planning/discovery input; not PD-1 Product Definition)
 Capability: IMP-036F — Catalog, Menu, Pricing & Promotions Management
-Lifecycle: PLANNED / NOT_ACTIVATED
+Current product slice: YES (see ROADMAP/STATE; IMP036F_ACTIVATED: YES)
+Formal ROADMAP lifecycle: PLANNED
+Product Definition: NOT_CREATED
 Architecture: NOT_LOCKED
 Implementation: NOT_AUTHORIZED / NOT_STARTED
 Founder UAT required: YES
@@ -89,7 +91,7 @@ Catalog vs Menu vs Assortment vs Availability vs Pricing vs Promotions must be e
 rather than assuming user domain knowledge. Require plain-language purpose, a clear primary task,
 human-readable names/context rather than opaque IDs, progressive disclosure, useful empty states with
 a next action, explained commercially consequential mutations, and no raw JSON/debug presentation as
-normal UX. This amendment does not activate IMP-036F.
+normal UX. This planned amendment does not redefine activation; CURRENT activation is owned by ROADMAP/STATE.
 
 ## Major acceptance criteria
 

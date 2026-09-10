@@ -2,10 +2,10 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R113",
+  "stateVersion": "STATE-R114",
   "acceptedThrough": "IMP-036E",
-  "currentProductSlice": "NONE",
-  "nextProductSlice": "IMP-036F",
+  "currentProductSlice": "IMP-036F",
+  "nextProductSlice": "IMP-036G",
   "pendingAcceptance": "NONE",
   "governanceHealth": "ALIGNED",
   "lastReviewed": "2026-09-10"
@@ -34,13 +34,17 @@ Accepted Range:            IMP-001 → IMP-036E (including IMP-005A and IMP-026C
 ```text
 Current Product Implementation: NONE
 Pending Acceptance:             NONE
-Current Product Slice:          NONE
-Next Product Slice:             IMP-036F — Catalog, Menu, Pricing & Promotions Management
-Current Governance Activity:    IMP-036E COMPLETE_AND_ACCEPTED after Founder UAT PASS (2026-09-10);
-                              accepted UAT candidate 05c534bac3d077f5ab89928495568bb63faf78df;
-                              IMP-036F/G and IMP-037 remain PLANNED / NOT_ACTIVATED /
-                              NOT_AUTHORIZED / NOT_STARTED; IMP036F_ACTIVATED: NO;
-                              ADVANCE of IMP-036F is a separate Founder-authorized task.
+Current Product Slice:          IMP-036F — Catalog, Menu, Pricing & Promotions Management
+Next Product Slice:             IMP-036G — Administration Console V2
+Current Governance Activity:    IMP-036F activated as CURRENT product slice (GTM-R116 / STATE-R114);
+                              formal IMP-036F ROADMAP lifecycle remains PLANNED;
+                              IMP036F_ACTIVATED: YES; IMP036F_PRODUCT_DEFINITION: NOT_CREATED;
+                              IMP036F_ARCHITECTURE_LOCKED: NO; IMP036F_IMPLEMENTATION_AUTHORIZED: NO;
+                              IMP036F_STARTED: NO; IMP036F_ACCEPTED: NO;
+                              IMP036F_FOUNDER_UAT_REQUIRED: YES; PD-1 next phase ANCHOR → DISCOVER;
+                              IMP-036E remains COMPLETE_AND_ACCEPTED; IMP-036G remains
+                              PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
+                              (IMP036G_ACTIVATED: NO).
 Governance Health:              ALIGNED
 ```
 
@@ -107,8 +111,16 @@ IMP-036D:                 COMPLETE_AND_ACCEPTED
 IMP-036D_ARCHITECTURE_LOCKED: YES
 IMP-036D_ACCEPTED:        YES
 IMP-036D_FOUNDER_UAT:     PASS
-IMP-036F:                 PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
-IMP036F_ACTIVATED:        NO
+IMP-036F:                 PLANNED / NOT_AUTHORIZED / NOT_STARTED
+IMP036F_ACTIVATED:        YES
+IMP036F_PRODUCT_DEFINITION: NOT_CREATED
+IMP036F_ARCHITECTURE_LOCKED: NO
+IMP036F_IMPLEMENTATION_AUTHORIZED: NO
+IMP036F_STARTED:          NO
+IMP036F_ACCEPTED:         NO
+IMP036F_FOUNDER_UAT_REQUIRED: YES
+IMP-036G:                 PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
+IMP036G_ACTIVATED:        NO
 ```
 
 Locked capability architecture:
@@ -244,8 +256,8 @@ Cart → Checkout → Payment → Order
 ```text
 acceptedThrough: IMP-036E
 pendingAcceptance: NONE
-currentProductSlice: NONE
-nextProductSlice: IMP-036F — Catalog, Menu, Pricing & Promotions Management
+currentProductSlice: IMP-036F — Catalog, Menu, Pricing & Promotions Management
+nextProductSlice: IMP-036G — Administration Console V2
 IMP-036E: COMPLETE_AND_ACCEPTED
 IMP-036E_ARCHITECTURE: LOCKED
 IMP-036E_ARCHITECTURE_LOCKED: YES
@@ -306,8 +318,16 @@ ARCH_R20_REQUIRED_FOR_IMP036E_LOCK: NO
 IMP-036D: COMPLETE_AND_ACCEPTED
 IMP-036D_ACCEPTED: YES
 IMP-036D_FOUNDER_UAT: PASS
-IMP-036F: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
-IMP036F_ACTIVATED: NO
+IMP-036F: PLANNED / NOT_AUTHORIZED / NOT_STARTED
+IMP036F_ACTIVATED: YES
+IMP036F_PRODUCT_DEFINITION: NOT_CREATED
+IMP036F_ARCHITECTURE_LOCKED: NO
+IMP036F_IMPLEMENTATION_AUTHORIZED: NO
+IMP036F_STARTED: NO
+IMP036F_ACCEPTED: NO
+IMP036F_FOUNDER_UAT_REQUIRED: YES
+IMP-036G: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
+IMP036G_ACTIVATED: NO
 architectureVersion: ARCH-R19
 decisionRegisterVersion: DR-15
 ```
@@ -345,7 +365,7 @@ is recorded in
 
 ## 8. Explicitly Not Yet Accepted
 
-- IMP-036F — Catalog, Menu, Pricing & Promotions Management (`PLANNED` / `NOT_ACTIVATED`)
+- IMP-036F — Catalog, Menu, Pricing & Promotions Management (`PLANNED` / `NOT_AUTHORIZED` / `NOT_STARTED`; `IMP036F_ACTIVATED: YES`; Product Definition NOT_CREATED; architecture NOT_LOCKED; implementation NOT_AUTHORIZED / NOT_STARTED)
 - IMP-036G — Administration Console V2 (`PLANNED` / `NOT_ACTIVATED`)
 - IMP-037 — Backup, Restore & Migration Readiness
 - IMP-038 — Security & Privacy Hardening
@@ -368,7 +388,35 @@ is recorded in
 Agents may propose a STATE delta in their report. Only independent acceptance updates this file's
 accepted position and may promote `governanceHealth` to `ALIGNED`.
 
-## 10. STATE-R113 record
+## 10. STATE-R114 record
+
+```text
+STATE-R114 = IMP-036F_PRODUCT_SLICE_ACTIVATION
+acceptedThrough: IMP-036E
+pendingAcceptance: NONE
+currentProductSlice: IMP-036F
+nextProductSlice: IMP-036G
+IMP-036E: COMPLETE_AND_ACCEPTED
+IMP-036E_ACCEPTED: YES
+IMP-036E_FOUNDER_UAT: PASS
+IMP-036F: PLANNED / NOT_AUTHORIZED / NOT_STARTED
+IMP036F_ACTIVATED: YES
+IMP036F_PRODUCT_DEFINITION: NOT_CREATED
+IMP036F_ARCHITECTURE_LOCKED: NO
+IMP036F_IMPLEMENTATION_AUTHORIZED: NO
+IMP036F_STARTED: NO
+IMP036F_ACCEPTED: NO
+IMP036F_FOUNDER_UAT_REQUIRED: YES
+IMP-036G: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
+IMP036G_ACTIVATED: NO
+architectureVersion: ARCH-R19
+decisionRegisterVersion: DR-15
+productDeliveryVersion: PD-1
+supersedes: STATE-R113
+```
+
+## 11. STATE-R113 record
+
 
 ```text
 STATE-R113 = IMP-036E_FORMAL_ACCEPTANCE
@@ -390,7 +438,7 @@ decisionRegisterVersion: DR-15
 supersedes: STATE-R112
 ```
 
-## 11. STATE-R112 record (historical compression)
+## 12. STATE-R112 record (historical compression)
 
 ```text
 STATE-R112 = CANONICAL_AUTHORITY_CONTEXT_COMPRESSION_ONLY

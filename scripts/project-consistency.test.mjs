@@ -6321,7 +6321,7 @@ describe("PD-1 / TEST-1 product delivery process authorities", () => {
     assert.ok(messages.some((m) => m === "PRODUCT-DELIVERY.md effectiveFrom IMP-036F"));
     assert.ok(messages.some((m) => m === "TESTING.md effectiveFrom contains IMP-036F"));
     assert.ok(messages.some((m) => m === "PRODUCT-DELIVERY.md prospective boundary markers OK"));
-    assert.ok(messages.some((m) => m === "TESTING.md prospective boundary markers OK"));
+    assert.ok(messages.some((m) => m.startsWith("TESTING.md prospective boundary markers OK")));
     assert.ok(messages.some((m) => m === "AGENTS.md prospective boundary markers OK"));
     for (const rel of [
       "docs/platform/product/README.md",
@@ -6357,6 +6357,14 @@ describe("canonical authority history compression", () => {
       isSupportedImp030GovernanceCheckpoint("GTM-R115", "STATE-R113", "imp036eAcceptance"),
       true,
     );
+    assert.equal(
+      isSupportedImp030GovernanceCheckpoint("GTM-R116", "STATE-R114", "imp036fActivation"),
+      true,
+    );
+    assert.equal(
+      isSupportedImp030GovernanceCheckpoint("GTM-R116", "STATE-R114", "imp036eAcceptance"),
+      false,
+    );
   });
 
   it("loads historical snapshots and keeps them distinct from CURRENT accepted authority text", () => {
@@ -6367,15 +6375,17 @@ describe("canonical authority history compression", () => {
 
     const roadmap = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
     const state = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
-    assert.match(roadmap, /"roadmapVersion": "GTM-R115"/);
-    assert.match(state, /"stateVersion": "STATE-R113"/);
+    assert.match(roadmap, /"roadmapVersion": "GTM-R116"/);
+    assert.match(state, /"stateVersion": "STATE-R114"/);
     assert.match(state, /"acceptedThrough": "IMP-036E"/);
     assert.match(state, /"pendingAcceptance": "NONE"/);
-    assert.match(state, /"currentProductSlice": "NONE"/);
-    assert.match(state, /"nextProductSlice": "IMP-036F"/);
+    assert.match(state, /"currentProductSlice": "IMP-036F"/);
+    assert.match(state, /"nextProductSlice": "IMP-036G"/);
     assert.match(roadmap, /IMP-036E_ACCEPTED:\s*YES/);
     assert.match(state, /IMP-036E_FOUNDER_UAT:\s*PASS/);
-    assert.match(state, /IMP036F_ACTIVATED:\s*NO/);
+    assert.match(state, /IMP036F_ACTIVATED:\s*YES/);
+    assert.match(roadmap, /IMP036F_ACTIVATED:\s*YES/);
+    assert.match(roadmap, /IMP-036F:\s*PLANNED \/ NOT_AUTHORIZED \/ NOT_STARTED/);
     assert.match(roadmap, /IMP036E_ACCEPTED_MAIN_SHA:\s*05c534bac3d077f5ab89928495568bb63faf78df/);
     assert.match(roadmap, /FOUNDER_STAGING_INTERMEDIATE_CANDIDATE_SHA:\s*e9821271a29ae35ba6c921008b976cd2e8d15c50/);
     assert.match(state, /FOUNDER_STAGING_INTERMEDIATE_CANDIDATE_SHA:\s*e9821271a29ae35ba6c921008b976cd2e8d15c50/);
@@ -6385,7 +6395,7 @@ describe("canonical authority history compression", () => {
     const current = currentAuthorityBlob({ text: roadmap }, { text: state });
     const evidence = authorityEvidenceBlob({ text: roadmap }, { text: state });
     assert.ok(evidence.includes(hist.roadmapText.slice(0, 80)));
-    assert.ok(current.includes("GTM-R115"));
+    assert.ok(current.includes("GTM-R116"));
     assert.ok(!current.includes('"roadmapVersion": "GTM-R113"'));
     // Stale historical claim may exist in snapshot evidence without overriding CURRENT metadata.
     assert.ok(/pendingAcceptance:\s*NONE/.test(hist.stateText) || /Pending Acceptance:\s+NONE/.test(hist.stateText));
@@ -6396,12 +6406,12 @@ describe("canonical authority history compression", () => {
     assert.ok(!/FOUNDER_STAGING_DEPLOYMENT:\s*NOT_PERFORMED/.test(current));
   });
 
-  it("passes CURRENT authority checks at the IMP-036E acceptance checkpoint", () => {
+  it("passes CURRENT authority checks at the IMP-036F activation checkpoint", () => {
     const findings = runProjectConsistency();
     const failures = findings.filter((f) => !f.ok);
     assert.equal(failures.length, 0, failures.map((f) => `[${f.code}] ${f.message}`).join("\n"));
     const messages = findings.filter((f) => f.ok).map((f) => f.message);
-    assert.ok(messages.some((m) => m.includes("IMP-036E COMPLETE_AND_ACCEPTED")));
+    assert.ok(messages.some((m) => m.includes("IMP-036F product-slice activation lifecycle valid")));
     assert.ok(messages.some((m) => m.includes("CURRENT authority anti-stale checks OK")));
     assert.ok(messages.some((m) => m.includes("historical authority corpus loaded")));
   });
