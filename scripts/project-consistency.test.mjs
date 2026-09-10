@@ -114,6 +114,9 @@ import {
   evaluateImp036fProductDefinitionGatePassCheckpoint,
   evaluateImp036fApprovedProductDefinitionCandidate,
   evaluateImp036fArchitectureLockCheckpoint,
+  evaluateImp036fImplementationAuthorizationCheckpoint,
+  evaluateImp036fAuthorizedCapabilityArchitecture,
+  evaluateImp036fAuthorizedProductDefinition,
   evaluateImp036fLockedCapabilityArchitecture,
   evaluateImp036fArchitectureFitProductDefinition,
 } from "./project-consistency.mjs";
@@ -6437,6 +6440,18 @@ describe("canonical authority history compression", () => {
       isSupportedImp030GovernanceCheckpoint("GTM-R118", "STATE-R116", "imp036fArchitectureLock"),
       false,
     );
+    assert.equal(
+      isSupportedImp030GovernanceCheckpoint("GTM-R120", "STATE-R118", "imp036fImplementationAuthorization"),
+      true,
+    );
+    assert.equal(
+      isSupportedImp030GovernanceCheckpoint("GTM-R120", "STATE-R118", "imp036fArchitectureLock"),
+      false,
+    );
+    assert.equal(
+      isSupportedImp030GovernanceCheckpoint("GTM-R119", "STATE-R117", "imp036fImplementationAuthorization"),
+      false,
+    );
   });
 
   it("loads historical snapshots and keeps them distinct from CURRENT accepted authority text", () => {
@@ -6447,8 +6462,8 @@ describe("canonical authority history compression", () => {
 
     const roadmap = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
     const state = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
-    assert.match(roadmap, /"roadmapVersion": "GTM-R119"/);
-    assert.match(state, /"stateVersion": "STATE-R117"/);
+    assert.match(roadmap, /"roadmapVersion": "GTM-R120"/);
+    assert.match(state, /"stateVersion": "STATE-R118"/);
     assert.match(state, /"acceptedThrough": "IMP-036E"/);
     assert.match(state, /"pendingAcceptance": "NONE"/);
     assert.match(state, /"currentProductSlice": "IMP-036F"/);
@@ -6457,7 +6472,7 @@ describe("canonical authority history compression", () => {
     assert.match(state, /IMP-036E_FOUNDER_UAT:\s*PASS/);
     assert.match(state, /IMP036F_ACTIVATED:\s*YES/);
     assert.match(roadmap, /IMP036F_ACTIVATED:\s*YES/);
-    assert.match(roadmap, /IMP-036F:\s*ARCHITECTURE_LOCKED \/ NOT_AUTHORIZED \/ NOT_STARTED/);
+    assert.match(roadmap, /IMP-036F:\s*ARCHITECTURE_LOCKED \/ AUTHORIZED \/ NOT_STARTED/);
     assert.match(roadmap, /IMP036F_PRODUCT_DEFINITION:\s*APPROVED/);
     assert.match(roadmap, /IMP036F_PRODUCT_DEFINITION_GATE:\s*PASS/);
     assert.match(roadmap, /IMP036F_ARCHITECTURE_FIT:\s*PASS/);
@@ -6475,7 +6490,7 @@ describe("canonical authority history compression", () => {
     const current = currentAuthorityBlob({ text: roadmap }, { text: state });
     const evidence = authorityEvidenceBlob({ text: roadmap }, { text: state });
     assert.ok(evidence.includes(hist.roadmapText.slice(0, 80)));
-    assert.ok(current.includes("GTM-R119"));
+    assert.ok(current.includes("GTM-R120"));
     assert.ok(!current.includes('"roadmapVersion": "GTM-R113"'));
     // Stale historical claim may exist in snapshot evidence without overriding CURRENT metadata.
     assert.ok(/pendingAcceptance:\s*NONE/.test(hist.stateText) || /Pending Acceptance:\s+NONE/.test(hist.stateText));
@@ -6486,12 +6501,12 @@ describe("canonical authority history compression", () => {
     assert.ok(!/FOUNDER_STAGING_DEPLOYMENT:\s*NOT_PERFORMED/.test(current));
   });
 
-  it("passes CURRENT authority checks at the IMP-036F Architecture Lock checkpoint", () => {
+  it("passes CURRENT authority checks at the IMP-036F Implementation Authorization checkpoint", () => {
     const findings = runProjectConsistency();
     const failures = findings.filter((f) => !f.ok);
     assert.equal(failures.length, 0, failures.map((f) => `[${f.code}] ${f.message}`).join("\n"));
     const messages = findings.filter((f) => f.ok).map((f) => f.message);
-    assert.ok(messages.some((m) => m.includes("IMP-036F Architecture Fit PASS / architecture lock persistence valid")));
+    assert.ok(messages.some((m) => m.includes("IMP-036F implementation authorization persistence valid")));
     assert.ok(messages.some((m) => m.includes("CURRENT authority anti-stale checks OK")));
     assert.ok(messages.some((m) => m.includes("historical authority corpus loaded")));
   });
@@ -7295,5 +7310,291 @@ Classification: PLANNED_IMP036F; mutation mapping remains ARCHITECTURE_FIT_AUTHO
       true,
     );
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R119", "STATE-R117", "imp036fArchitectureLock"), true);
+  });
+});
+
+describe("IMP-036F Implementation Authorization checkpoints", () => {
+  const authBase = {
+    roadmapVersion: "GTM-R120",
+    stateVersion: "STATE-R118",
+    acceptedThrough: "IMP-036E",
+    currentProductSlice: "IMP-036F",
+    nextProductSlice: "IMP-036G",
+    pendingAcceptance: "NONE",
+    imp036e: "COMPLETE_AND_ACCEPTED",
+    imp036fFormalLifecycle: "ARCHITECTURE_LOCKED",
+    imp036fActivated: "YES",
+    productDefinition: "APPROVED",
+    productDefinitionGate: "PASS",
+    architectureFit: "PASS",
+    architectureLocked: "YES",
+    implementationAuthorized: "YES",
+    started: "NO",
+    accepted: "NO",
+    founderUatRequired: "YES",
+    imp036gActivated: "NO",
+    architectureVersion: "ARCH-R19",
+    decisionRegisterVersion: "DR-15",
+    productDeliveryVersion: "PD-1",
+    productDefinitionExists: true,
+    capabilityArtifactExists: true,
+    d374Exists: false,
+    archR20Exists: false,
+  };
+
+  const validAuthorizedCapability = `<!-- governance-meta
+{
+  "status": "CURRENT",
+  "authority": "CAPABILITY_ARCHITECTURE",
+  "capability": "IMP-036F",
+  "architectureLock": "ARCHITECTURE_LOCKED",
+  "architectureFitResult": "PASS",
+  "implementation": "AUTHORIZED / NOT_STARTED",
+  "implementationAuthorized": true,
+  "implementationStarted": false,
+  "impAccepted": false,
+  "founderUATRequired": true,
+  "schemaChangeRequired": true
+}
+-->
+
+# IMP-036F
+
+IMP036F_ARCHITECTURE_LOCKED: YES
+ARCHITECTURE_FIT: PASS
+ARCHITECTURE_REVIEWED_CANDIDATE_HEAD = 9ae06d6267e997223b1995124540974215ee17fd
+ARCHITECTURE_REVIEWED_CANDIDATE_TREE = 55adb287bb0eb77240a6becdc16fed2d504ba144
+INDEPENDENT_ARCHITECTURE_REVIEW = 5169723968
+IMPLEMENTATION_AUTHORIZED: YES
+IMPLEMENTATION_STARTED: NO
+CANONICAL_ROADMAP_STATE = GTM-R120 / STATE-R118
+`;
+
+  const validAuthorizedPd = `<!-- governance-meta
+{
+  "status": "APPROVED",
+  "authority": "PRODUCT_DEFINITION",
+  "architectureFit": "PASS",
+  "architectureFitExecution": "PERFORMED",
+  "architectureLocked": "YES",
+  "implementationAuthorized": "YES",
+  "implementationStarted": "NO"
+}
+-->
+
+# IMP-036F Product Definition
+
+Document status: APPROVED
+
+\`\`\`text
+PRODUCT_DEFINITION_GATE_EXECUTION: PERFORMED
+Gate Result: PASS
+ARCHITECTURE_FIT_EXECUTION: PERFORMED
+ARCHITECTURE_FIT_RESULT: PASS
+ARCHITECTURE_FIT: PASS
+IMP036F_ARCHITECTURE_LOCKED: YES
+IMP036F_IMPLEMENTATION_AUTHORIZED: YES
+IMP036F_STARTED: NO
+IMP036F_ACCEPTED: NO
+IMP036G_ACTIVATED: NO
+ARCHITECTURE_FIT_REVIEWED_CANDIDATE_HEAD = 9ae06d6267e997223b1995124540974215ee17fd
+INDEPENDENT_ARCHITECTURE_REVIEW = 5169723968
+CANONICAL_ANCHORS = GTM-R120 / STATE-R118
+\`\`\`
+
+## US-IMP-036F-009
+
+Permission / resource context:
+DELIVERY_TARIFF_AUTHORITY = PRICING
+Architecture Fit status: RESOLVED / PASS / LOCKED
+Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization is granted at GTM-R120 / STATE-R118; implementation has not started.
+
+## Dependencies
+
+| Dependency | Authority | Required before | Unresolved impact |
+|---|---|---|---|
+| Architecture Fit | PD-1 phase | Before implementation readiness | PERFORMED / PASS — locked capability architecture |
+| Implementation authorization | ROADMAP/STATE | Before coding | YES / PERFORMED / AUTHORIZED |
+
+Originally identified Architecture Fit inputs (Product Definition Gate era; **resolved** by locked capability architecture):
+1. \`ARCHITECTURE_FIT_AUTHORIZATION_GAP\` (delivery-tariff mutation permission/command mapping) → **resolved** as Pricing authority / Brand derived from Outlet; \`pricing.read\` / \`pricing.manage\`.
+`;
+
+  it("passes valid GTM-R120 / STATE-R118 authorization checkpoint", () => {
+    assert.deepEqual(
+      evaluateImp036fImplementationAuthorizationCheckpoint({
+        ...authBase,
+        productDefinitionText: validAuthorizedPd,
+        capabilityText: validAuthorizedCapability,
+      }),
+      { ok: true },
+    );
+  });
+
+  it("fails when implementation authorized is NO at R120/S118", () => {
+    const result = evaluateImp036fImplementationAuthorizationCheckpoint({
+      ...authBase,
+      implementationAuthorized: "NO",
+      productDefinitionText: validAuthorizedPd,
+      capabilityText: validAuthorizedCapability,
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036F_IMPLEMENTATION_AUTHORIZATION");
+  });
+
+  it("fails when implementation started is YES", () => {
+    const result = evaluateImp036fImplementationAuthorizationCheckpoint({
+      ...authBase,
+      started: "YES",
+      productDefinitionText: validAuthorizedPd,
+      capabilityText: validAuthorizedCapability,
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036F_IMPLEMENTATION_AUTHORIZATION");
+  });
+
+  it("fails when capability claims IMPLEMENTATION_IN_PROGRESS", () => {
+    const result = evaluateImp036fAuthorizedCapabilityArchitecture(
+      validAuthorizedCapability.replace(
+        "IMPLEMENTATION_STARTED: NO",
+        "IMPLEMENTATION_STARTED: NO\nIMP-036F: IMPLEMENTATION_IN_PROGRESS",
+      ),
+    );
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036F_CAPABILITY_PREMATURE_PROGRESSION");
+  });
+
+  it("fails when IMP-036F accepted is YES", () => {
+    const result = evaluateImp036fImplementationAuthorizationCheckpoint({
+      ...authBase,
+      accepted: "YES",
+      productDefinitionText: validAuthorizedPd,
+      capabilityText: validAuthorizedCapability,
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036F_IMPLEMENTATION_AUTHORIZATION");
+  });
+
+  it("fails when IMP-036G activated is YES", () => {
+    const result = evaluateImp036fImplementationAuthorizationCheckpoint({
+      ...authBase,
+      imp036gActivated: "YES",
+      productDefinitionText: validAuthorizedPd,
+      capabilityText: validAuthorizedCapability,
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036F_IMPLEMENTATION_AUTHORIZATION");
+  });
+
+  it("fails when Product Definition authorization remains NO", () => {
+    const stalePd = validAuthorizedPd
+      .replace(/"implementationAuthorized": "YES"/, '"implementationAuthorized": "NO"')
+      .replace(/IMP036F_IMPLEMENTATION_AUTHORIZED: YES/, "IMP036F_IMPLEMENTATION_AUTHORIZED: NO");
+    const result = evaluateImp036fImplementationAuthorizationCheckpoint({
+      ...authBase,
+      productDefinitionText: stalePd,
+      capabilityText: validAuthorizedCapability,
+    });
+    assert.equal(result.ok, false);
+    assert.ok(
+      result.code === "IMP036F_PD_IMPLEMENTATION_AUTHORIZED" ||
+        result.code === "IMP036F_PD_STALE_UNAUTHORIZED",
+    );
+  });
+
+  it("fails when capability authorization remains false/NOT_AUTHORIZED", () => {
+    const staleCap = validAuthorizedCapability
+      .replace(/"implementationAuthorized": true/, '"implementationAuthorized": false')
+      .replace(/"implementation": "AUTHORIZED \/ NOT_STARTED"/, '"implementation": "NOT_AUTHORIZED / NOT_STARTED"')
+      .replace(/IMPLEMENTATION_AUTHORIZED: YES/, "IMPLEMENTATION_AUTHORIZED: NO");
+    const result = evaluateImp036fImplementationAuthorizationCheckpoint({
+      ...authBase,
+      productDefinitionText: validAuthorizedPd,
+      capabilityText: staleCap,
+    });
+    assert.equal(result.ok, false);
+    assert.ok(
+      result.code === "IMP036F_CAPABILITY_AUTHORIZATION" ||
+        result.code === "IMP036F_CAPABILITY_STALE_UNAUTHORIZED",
+    );
+  });
+
+  it("fails when Architecture Fit/lock regresses", () => {
+    const result = evaluateImp036fImplementationAuthorizationCheckpoint({
+      ...authBase,
+      architectureFit: "NOT_PERFORMED",
+      productDefinitionText: validAuthorizedPd,
+      capabilityText: validAuthorizedCapability,
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036F_IMPLEMENTATION_AUTHORIZATION");
+
+    const result2 = evaluateImp036fImplementationAuthorizationCheckpoint({
+      ...authBase,
+      architectureLocked: "NO",
+      productDefinitionText: validAuthorizedPd,
+      capabilityText: validAuthorizedCapability,
+    });
+    assert.equal(result2.ok, false);
+    assert.equal(result2.code, "IMP036F_IMPLEMENTATION_AUTHORIZATION");
+  });
+
+  it("fails when ROADMAP/STATE versions mismatch", () => {
+    const result = evaluateImp036fImplementationAuthorizationCheckpoint({
+      ...authBase,
+      roadmapVersion: "GTM-R119",
+      productDefinitionText: validAuthorizedPd,
+      capabilityText: validAuthorizedCapability,
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036F_IMPLEMENTATION_AUTHORIZATION");
+
+    const result2 = evaluateImp036fImplementationAuthorizationCheckpoint({
+      ...authBase,
+      stateVersion: "STATE-R117",
+      productDefinitionText: validAuthorizedPd,
+      capabilityText: validAuthorizedCapability,
+    });
+    assert.equal(result2.ok, false);
+    assert.equal(result2.code, "IMP036F_IMPLEMENTATION_AUTHORIZATION");
+  });
+
+  it("fails when D-374 is created", () => {
+    const result = evaluateImp036fImplementationAuthorizationCheckpoint({
+      ...authBase,
+      d374Exists: true,
+      productDefinitionText: validAuthorizedPd,
+      capabilityText: validAuthorizedCapability,
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036F_D374");
+  });
+
+  it("fails when ARCH-R20 is created", () => {
+    const result = evaluateImp036fImplementationAuthorizationCheckpoint({
+      ...authBase,
+      archR20Exists: true,
+      productDefinitionText: validAuthorizedPd,
+      capabilityText: validAuthorizedCapability,
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036F_ARCH_R20");
+  });
+
+  it("preserves prior R116/S114, R117/S115, R118/S116 and R119/S117 checkpoints", () => {
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R116", "STATE-R114", "imp036fActivation"), true);
+    assert.equal(
+      isSupportedImp030GovernanceCheckpoint("GTM-R117", "STATE-R115", "imp036fProductDefinitionDraftAuthorized"),
+      true,
+    );
+    assert.equal(
+      isSupportedImp030GovernanceCheckpoint("GTM-R118", "STATE-R116", "imp036fProductDefinitionGatePass"),
+      true,
+    );
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R119", "STATE-R117", "imp036fArchitectureLock"), true);
+    assert.equal(
+      isSupportedImp030GovernanceCheckpoint("GTM-R120", "STATE-R118", "imp036fImplementationAuthorization"),
+      true,
+    );
   });
 });

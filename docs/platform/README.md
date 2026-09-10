@@ -110,6 +110,7 @@ through metadata, targeted searches, and relevant ranges, as described in PD-1.
 | [`capabilities/IMP-036C-customer-commerce-experience-v2.md`](./capabilities/IMP-036C-customer-commerce-experience-v2.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-036C Customer Commerce Experience V2; COMPLETE_AND_ACCEPTED |
 | [`capabilities/IMP-036D-workforce-franchise-operations-v2.md`](./capabilities/IMP-036D-workforce-franchise-operations-v2.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-036D Workforce & Franchise Operations Portal V2; architecture LOCKED; COMPLETE_AND_ACCEPTED; AUTHORIZED / STARTED / COMPLETE (`IMP-036D_ACCEPTED: YES`; Founder UAT PASS) |
 | [`capabilities/IMP-036E-store-operations-management.md`](./capabilities/IMP-036E-store-operations-management.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-036E Store Operations Management; architecture LOCKED; COMPLETE_AND_ACCEPTED; AUTHORIZED / STARTED / COMPLETE (`IMP-036E_ACCEPTED: YES`; Founder UAT PASS) |
+| [`capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md`](./capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-036F Catalog, Menu, Pricing & Promotions Management; architecture LOCKED; implementation AUTHORIZED / NOT_STARTED; unaccepted current slice |
 
 ## Supporting documents
 

@@ -2,7 +2,7 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R117",
+  "stateVersion": "STATE-R118",
   "acceptedThrough": "IMP-036E",
   "currentProductSlice": "IMP-036F",
   "nextProductSlice": "IMP-036G",
@@ -36,25 +36,28 @@ Current Product Implementation: NONE
 Pending Acceptance:             NONE
 Current Product Slice:          IMP-036F — Catalog, Menu, Pricing & Promotions Management
 Next Product Slice:             IMP-036G — Administration Console V2
-Current Governance Activity:    GTM-R119 / STATE-R117;
+Current Governance Activity:    GTM-R120 / STATE-R118;
                               Product Definition APPROVED / Gate PASS;
                               Architecture Fit PASS;
-                              IMP036F_ARCHITECTURE_LOCKED = YES;
-                              implementation NOT_AUTHORIZED / NOT_STARTED;
+                              Architecture Locked YES;
+                              Implementation AUTHORIZED / NOT_STARTED;
                               IMP036F_ACTIVATED: YES; IMP036F_PRODUCT_DEFINITION: APPROVED;
                               IMP036F_PRODUCT_DEFINITION_GATE: PASS;
                               IMP036F_ARCHITECTURE_FIT: PASS;
-                              IMP036F_IMPLEMENTATION_AUTHORIZED: NO;
+                              IMP036F_ARCHITECTURE_LOCKED: YES;
+                              IMP036F_IMPLEMENTATION_AUTHORIZED: YES;
                               IMP036F_STARTED: NO; IMP036F_ACCEPTED: NO;
                               IMP036F_FOUNDER_UAT_REQUIRED: YES;
                               locked capability architecture =
                               docs/platform/capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md
                               (unaccepted current lock; not in accepted capability ledger);
-                              reviewed Architecture Fit candidate
-                              9ae06d6267e997223b1995124540974215ee17fd /
-                              tree 55adb287bb0eb77240a6becdc16fed2d504ba144;
-                              independent review 5169723968 PASS; exact-head CI 34501448266 SUCCESS;
-                              next gate = explicit implementation authorization
+                              Implementation Authorization Gate PASS
+                              (PR #141 issue comment 5622858455);
+                              authorization applies to locked Product Definition / architecture;
+                              no implementation accompanies GTM-R120;
+                              schema design locked; migration execution not started;
+                              AUTHORIZED + NOT_STARTED ≠ IMPLEMENTATION_IN_PROGRESS;
+                              next gate = explicit implementation start / execution authorization
                               (after merge/reconciliation);
                               IMP-036E remains COMPLETE_AND_ACCEPTED (latest accepted locked
                               capability = IMP-036E); IMP-036G remains
@@ -126,13 +129,13 @@ IMP-036D:                 COMPLETE_AND_ACCEPTED
 IMP-036D_ARCHITECTURE_LOCKED: YES
 IMP-036D_ACCEPTED:        YES
 IMP-036D_FOUNDER_UAT:     PASS
-IMP-036F:                 ARCHITECTURE_LOCKED / NOT_AUTHORIZED / NOT_STARTED
+IMP-036F:                 ARCHITECTURE_LOCKED / AUTHORIZED / NOT_STARTED
 IMP036F_ACTIVATED:        YES
 IMP036F_PRODUCT_DEFINITION: APPROVED
 IMP036F_PRODUCT_DEFINITION_GATE: PASS
 IMP036F_ARCHITECTURE_FIT: PASS
 IMP036F_ARCHITECTURE_LOCKED: YES
-IMP036F_IMPLEMENTATION_AUTHORIZED: NO
+IMP036F_IMPLEMENTATION_AUTHORIZED: YES
 IMP036F_STARTED:          NO
 IMP036F_ACCEPTED:         NO
 IMP036F_FOUNDER_UAT_REQUIRED: YES
@@ -338,13 +341,13 @@ ARCH_R20_REQUIRED_FOR_IMP036E_LOCK: NO
 IMP-036D: COMPLETE_AND_ACCEPTED
 IMP-036D_ACCEPTED: YES
 IMP-036D_FOUNDER_UAT: PASS
-IMP-036F: ARCHITECTURE_LOCKED / NOT_AUTHORIZED / NOT_STARTED
+IMP-036F: ARCHITECTURE_LOCKED / AUTHORIZED / NOT_STARTED
 IMP036F_ACTIVATED: YES
 IMP036F_PRODUCT_DEFINITION: APPROVED
 IMP036F_PRODUCT_DEFINITION_GATE: PASS
 IMP036F_ARCHITECTURE_FIT: PASS
 IMP036F_ARCHITECTURE_LOCKED: YES
-IMP036F_IMPLEMENTATION_AUTHORIZED: NO
+IMP036F_IMPLEMENTATION_AUTHORIZED: YES
 IMP036F_STARTED: NO
 IMP036F_ACCEPTED: NO
 IMP036F_FOUNDER_UAT_REQUIRED: YES
@@ -387,7 +390,7 @@ is recorded in
 
 ## 8. Explicitly Not Yet Accepted
 
-- IMP-036F — Catalog, Menu, Pricing & Promotions Management (`ARCHITECTURE_LOCKED` / `NOT_AUTHORIZED` / `NOT_STARTED`; `IMP036F_ACTIVATED: YES`; Product Definition APPROVED; Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation NOT_AUTHORIZED / NOT_STARTED)
+- IMP-036F — Catalog, Menu, Pricing & Promotions Management (`ARCHITECTURE_LOCKED` / `AUTHORIZED` / `NOT_STARTED`; `IMP036F_ACTIVATED: YES`; Product Definition APPROVED; Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation AUTHORIZED / NOT_STARTED)
 - IMP-036G — Administration Console V2 (`PLANNED` / `NOT_ACTIVATED`)
 - IMP-037 — Backup, Restore & Migration Readiness
 - IMP-038 — Security & Privacy Hardening
@@ -411,7 +414,46 @@ is recorded in
 Agents may propose a STATE delta in their report. Only independent acceptance updates this file's
 accepted position and may promote `governanceHealth` to `ALIGNED`.
 
-## 10. STATE-R117 record
+## 10. STATE-R118 record
+
+```text
+STATE-R118 = IMP-036F_IMPLEMENTATION_AUTHORIZATION
+acceptedThrough: IMP-036E
+pendingAcceptance: NONE
+currentProductSlice: IMP-036F
+nextProductSlice: IMP-036G
+IMP-036E: COMPLETE_AND_ACCEPTED
+IMP-036E_ACCEPTED: YES
+IMP-036E_FOUNDER_UAT: PASS
+IMP-036F: ARCHITECTURE_LOCKED / AUTHORIZED / NOT_STARTED
+IMP036F_ACTIVATED: YES
+IMP036F_PRODUCT_DEFINITION: APPROVED
+IMP036F_PRODUCT_DEFINITION_GATE: PASS
+IMP036F_ARCHITECTURE_FIT: PASS
+IMP036F_ARCHITECTURE_LOCKED: YES
+IMP036F_IMPLEMENTATION_AUTHORIZED: YES
+IMP036F_STARTED: NO
+IMP036F_ACCEPTED: NO
+IMP036F_FOUNDER_UAT_REQUIRED: YES
+IMP-036G: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
+IMP036G_ACTIVATED: NO
+architectureVersion: ARCH-R19
+decisionRegisterVersion: DR-15
+productDeliveryVersion: PD-1
+implementationAuthorizationGate: PASS
+implementationAuthorizationEvidence: PR#141/5622858455
+authorizationAppliesTo: locked PD-IMP-036F-DRAFT-1 + locked capability architecture
+implementationAccompanied: NO
+schemaDesignLocked: YES
+migrationExecutionStarted: NO
+D374_REQUIRED_FOR_IMP036F_AUTHORIZATION: NO
+ARCH_R20_REQUIRED_FOR_IMP036F_AUTHORIZATION: NO
+nextGate: explicit implementation start / execution authorization
+lockedCapabilityArchitecture: docs/platform/capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md
+supersedes: STATE-R117
+```
+
+## 11. STATE-R117 record
 
 ```text
 STATE-R117 = IMP-036F_ARCHITECTURE_LOCK
@@ -450,7 +492,7 @@ ARCH_R20_REQUIRED_FOR_IMP036F_LOCK: NO
 supersedes: STATE-R116
 ```
 
-## 11. STATE-R116 record
+## 12. STATE-R116 record
 
 ```text
 STATE-R116 = IMP-036F_PRODUCT_DEFINITION_GATE_PASS
@@ -481,7 +523,7 @@ gateDate: 2026-09-10
 supersedes: STATE-R115
 ```
 
-## 12. STATE-R115 record
+## 13. STATE-R115 record
 
 ```text
 STATE-R115 = IMP-036F_PRODUCT_DEFINITION_DRAFT_AUTHORIZED
@@ -509,7 +551,7 @@ productDeliveryVersion: PD-1
 supersedes: STATE-R114
 ```
 
-## 13. STATE-R114 record
+## 14. STATE-R114 record
 
 ```text
 STATE-R114 = IMP-036F_PRODUCT_SLICE_ACTIVATION
@@ -536,7 +578,7 @@ productDeliveryVersion: PD-1
 supersedes: STATE-R113
 ```
 
-## 14. STATE-R113 record
+## 15. STATE-R113 record
 
 
 ```text
@@ -559,7 +601,7 @@ decisionRegisterVersion: DR-15
 supersedes: STATE-R112
 ```
 
-## 15. STATE-R112 record (historical compression)
+## 16. STATE-R112 record (historical compression)
 
 ```text
 STATE-R112 = CANONICAL_AUTHORITY_CONTEXT_COMPRESSION_ONLY

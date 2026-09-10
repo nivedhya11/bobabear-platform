@@ -1,15 +1,19 @@
 ---
-Status: PLANNED CAPABILITY CONTRACT (SUPPORTING planning/discovery input; not PD-1 Product Definition)
+Status: SUPPORTING planning/discovery contract; not lifecycle or PD-1 authority
 Capability: IMP-036F — Catalog, Menu, Pricing & Promotions Management
-Current product slice: YES (see ROADMAP/STATE; IMP036F_ACTIVATED: YES)
-Formal ROADMAP lifecycle: PLANNED
-Product Definition: NOT_CREATED
-Architecture: NOT_LOCKED
-Implementation: NOT_AUTHORIZED / NOT_STARTED
+Current product slice: YES
+Formal ROADMAP lifecycle: ARCHITECTURE_LOCKED
+Product Definition: PD-IMP-036F-DRAFT-1 APPROVED / Gate PASS
+Architecture: LOCKED
+Implementation: AUTHORIZED / NOT_STARTED
 Founder UAT required: YES
 ---
 
 # IMP-036F — Catalog, Menu, Pricing & Promotions Management
+
+> **Provenance warning:** Pre-Fit planning and future-architecture statements in this supporting
+> artifact are historical discovery input where superseded by the approved Product Definition or
+> locked capability architecture. ROADMAP/STATE remain lifecycle authority.
 
 ## Purpose, users, and problem
 
