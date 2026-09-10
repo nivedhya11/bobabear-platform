@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R117",
+  "roadmapVersion": "GTM-R118",
   "acceptedThrough": "IMP-036E",
   "currentProductSlice": "IMP-036F",
   "nextProductSlice": "IMP-036G",
   "gtmBoundary": "IMP-040",
   "lastReviewed": "2026-09-10",
-  "supersedes": "GTM-R116"
+  "supersedes": "GTM-R117"
 }
 -->
 
@@ -166,8 +166,8 @@ ARCH_R20_REQUIRED_FOR_IMP036E_LOCK: NO
 ARCH_R20_CREATED: NO
 IMP-036F: PLANNED / NOT_AUTHORIZED / NOT_STARTED
 IMP036F_ACTIVATED: YES
-IMP036F_PRODUCT_DEFINITION: DRAFT_AUTHORIZED
-IMP036F_PRODUCT_DEFINITION_GATE: NOT_PERFORMED
+IMP036F_PRODUCT_DEFINITION: APPROVED
+IMP036F_PRODUCT_DEFINITION_GATE: PASS
 IMP036F_ARCHITECTURE_LOCKED: NO
 IMP036F_IMPLEMENTATION_AUTHORIZED: NO
 IMP036F_STARTED: NO
@@ -181,15 +181,15 @@ IMP-036D_ACCEPTED: YES
 IMP-036D_FOUNDER_UAT: PASS
 ```
 
-**GTM-R117** advances IMP-036F from the activation-only ANCHOR/DISCOVER checkpoint (GTM-R116 /
-STATE-R114) to an explicit post-discovery Product Definition drafting authorization. IMP-036F
-remains CURRENT / PLANNED / ACTIVATED. Founder product direction from DISCOVER is approved for
-STORY_MAP + Product Definition drafting (`IMP036F_PRODUCT_DEFINITION: DRAFT_AUTHORIZED`;
-`IMP036F_PRODUCT_DEFINITION_GATE: NOT_PERFORMED`). Architecture fit is NOT performed. Architecture
-remains NOT_LOCKED. Implementation remains NOT_AUTHORIZED / NOT_STARTED. This revision does **not**
-create a Product Definition on canonical main, pass the Product Definition Gate, lock architecture,
-authorize implementation, or activate IMP-036G. DISCOVER product decisions belong in the subsequent
-per-IMP Product Definition draft and are not restated here.
+**GTM-R118** persists the independently executed Product Definition Gate PASS for IMP-036F
+candidate `PD-IMP-036F-DRAFT-1` (gate-evaluated SHA
+`014e0f935f193f54718d6afd5e7991508088f9bc`; durable PR #140 review `5166877450`; gate date
+2026-09-10). IMP-036F remains CURRENT / PLANNED / ACTIVATED.
+`IMP036F_PRODUCT_DEFINITION: APPROVED`; `IMP036F_PRODUCT_DEFINITION_GATE: PASS`. Architecture Fit
+is NOT performed. Architecture remains NOT_LOCKED. Implementation remains NOT_AUTHORIZED /
+NOT_STARTED. This revision does **not** lock architecture, authorize/start implementation, accept
+IMP-036F, activate IMP-036G, or authorize merge. Next phase is Architecture Fit under separate
+authorization.
 
 IMP-036E remains `COMPLETE_AND_ACCEPTED`. Locked capability architecture remains
 [`capabilities/IMP-036E-store-operations-management.md`](./capabilities/IMP-036E-store-operations-management.md).
@@ -199,7 +199,7 @@ Preferred Store Assortment read route:
 `nextProductSlice = IMP-036G`. Formal IMP-036F ROADMAP lifecycle remains `PLANNED`
 (`IMP036F_ACTIVATED: YES`; `IMP036F_ARCHITECTURE_LOCKED: NO`;
 `IMP036F_IMPLEMENTATION_AUTHORIZED: NO`; `IMP036F_STARTED: NO`; `IMP036F_ACCEPTED: NO`;
-`IMP036F_PRODUCT_DEFINITION: DRAFT_AUTHORIZED`; `IMP036F_PRODUCT_DEFINITION_GATE: NOT_PERFORMED`;
+`IMP036F_PRODUCT_DEFINITION: APPROVED`; `IMP036F_PRODUCT_DEFINITION_GATE: PASS`;
 `IMP036F_FOUNDER_UAT_REQUIRED: YES`). PD-1 applies prospectively.
 
 Implementation / review provenance remains distinct from the accepted UAT candidate:
@@ -281,13 +281,15 @@ Current product slice is IMP-036F — Catalog, Menu, Pricing & Promotions Manage
 (`currentProductSlice = IMP-036F`; `pendingAcceptance = NONE`; `IMP036F_ACTIVATED: YES`).
 Formal ROADMAP lifecycle for IMP-036F remains `PLANNED` (`NOT_AUTHORIZED` / `NOT_STARTED`;
 `IMP036F_ARCHITECTURE_LOCKED: NO`; `IMP036F_IMPLEMENTATION_AUTHORIZED: NO`;
-`IMP036F_STARTED: NO`; `IMP036F_ACCEPTED: NO`; `IMP036F_PRODUCT_DEFINITION: DRAFT_AUTHORIZED`;
-`IMP036F_PRODUCT_DEFINITION_GATE: NOT_PERFORMED`; `IMP036F_FOUNDER_UAT_REQUIRED: YES`).
-IMP-036F remains CURRENT / PLANNED / ACTIVATED. Founder product direction from DISCOVER is approved
-for STORY_MAP + Product Definition drafting. Architecture fit is NOT performed. Architecture
-remains NOT_LOCKED. Implementation remains NOT_AUTHORIZED / NOT_STARTED. No Product Definition is
-created by this governance advance; Product Definition Gate remains NOT_PERFORMED. Supporting
-planned experience contract (discovery input only; not a Product Definition):
+`IMP036F_STARTED: NO`; `IMP036F_ACCEPTED: NO`; `IMP036F_PRODUCT_DEFINITION: APPROVED`;
+`IMP036F_PRODUCT_DEFINITION_GATE: PASS`; `IMP036F_FOUNDER_UAT_REQUIRED: YES`).
+IMP-036F remains CURRENT / PLANNED / ACTIVATED. Product Definition Gate = PASS for candidate
+`PD-IMP-036F-DRAFT-1` (gate-evaluated SHA `014e0f935f193f54718d6afd5e7991508088f9bc`; PR #140
+review `5166877450`). Architecture Fit is NOT performed. Architecture remains NOT_LOCKED.
+Implementation remains NOT_AUTHORIZED / NOT_STARTED. Next phase is Architecture Fit under separate
+authorization. Per-IMP Product Definition:
+[`product/IMP-036F/product-definition.md`](./product/IMP-036F/product-definition.md). Supporting
+planned experience contract (discovery input only; not lifecycle authority):
 [`experience/enterprise-experience/IMP-036F-catalog-menu-pricing-promotions.md`](./experience/enterprise-experience/IMP-036F-catalog-menu-pricing-promotions.md).
 
 IMP-036E — Store Operations Management remains `COMPLETE_AND_ACCEPTED` with architecture
@@ -412,6 +414,23 @@ Current public GTM boundary is **IMP-040**, not IMP-035.
 
 Historical revision evidence for GTM-R1…GTM-R113 is preserved byte-for-byte in
 [`history/ROADMAP-GTM-R113-pre-compression.md`](./history/ROADMAP-GTM-R113-pre-compression.md).
+
+### GTM-R118 — 2026-09-10
+
+- Persist independently executed Product Definition Gate PASS for IMP-036F candidate
+  `PD-IMP-036F-DRAFT-1` (`IMP036F_PRODUCT_DEFINITION: APPROVED`;
+  `IMP036F_PRODUCT_DEFINITION_GATE: PASS`).
+- Gate-evaluated content SHA `014e0f935f193f54718d6afd5e7991508088f9bc`; durable PR #140 review
+  `5166877450`; gate date 2026-09-10. Post-gate persistence commit is not the evaluated artifact.
+- Preserves `acceptedThrough = IMP-036E`; `currentProductSlice = IMP-036F`;
+  `pendingAcceptance = NONE`; `nextProductSlice = IMP-036G`.
+- Preserves `IMP036F_ACTIVATED: YES` while formal IMP-036F ROADMAP lifecycle remains `PLANNED`
+  (`IMP036F_ARCHITECTURE_LOCKED: NO`; `IMP036F_IMPLEMENTATION_AUTHORIZED: NO`;
+  `IMP036F_STARTED: NO`; `IMP036F_ACCEPTED: NO`; `IMP036F_FOUNDER_UAT_REQUIRED: YES`).
+- Does **not** perform Architecture Fit, lock architecture, authorize/start implementation, accept
+  IMP-036F, activate IMP-036G, or authorize merge. Next phase = Architecture Fit (separate auth).
+- ARCH-R19 / DR-15 / PD-1 / TEST-1 / VISION-1 unchanged.
+- Supersedes GTM-R117.
 
 ### GTM-R117 — 2026-09-10
 
