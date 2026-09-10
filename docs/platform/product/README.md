@@ -18,7 +18,7 @@ owned by [TESTING.md](../TESTING.md).
 | [Persona registry](./personas.md) | Human responsibilities, goals, jobs, and context; no authorization authority |
 | [Golden Journey registry](./golden-journeys.md) | Cross-capability business continuity references and their bounded status |
 | [Product Definition template](./templates/product-definition-template.md) | Required structure for a capability's product definition |
-| [IMP-036F Product Definition](./IMP-036F/product-definition.md) | First PD-1 per-IMP Product Definition (`PD-IMP-036F-DRAFT-1`); Product Definition Gate = PASS; Architecture Fit = NOT_PERFORMED; implementation remains unauthorized (ROADMAP/STATE remain lifecycle authority) |
+| [IMP-036F Product Definition](./IMP-036F/product-definition.md) | First PD-1 per-IMP Product Definition (`PD-IMP-036F-DRAFT-1`); Product Definition Gate = PASS; Architecture Fit = PASS; Capability architecture = LOCKED; implementation = NOT_AUTHORIZED / NOT_STARTED (ROADMAP/STATE remain lifecycle authority) |
 | Per-IMP Product Definition | Business outcome, journeys, acceptance slice, stories, scenarios, business rules, and explicit deferrals within existing authority |
 
 A per-IMP Product Definition is mandatory from **IMP-036F onward** for new substantial product
