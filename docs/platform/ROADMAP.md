@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R118",
+  "roadmapVersion": "GTM-R119",
   "acceptedThrough": "IMP-036E",
   "currentProductSlice": "IMP-036F",
   "nextProductSlice": "IMP-036G",
   "gtmBoundary": "IMP-040",
   "lastReviewed": "2026-09-10",
-  "supersedes": "GTM-R117"
+  "supersedes": "GTM-R118"
 }
 -->
 
@@ -164,11 +164,12 @@ D374_REQUIRED_FOR_IMP036E_LOCK: NO
 D-374_CREATED: NO
 ARCH_R20_REQUIRED_FOR_IMP036E_LOCK: NO
 ARCH_R20_CREATED: NO
-IMP-036F: PLANNED / NOT_AUTHORIZED / NOT_STARTED
+IMP-036F: ARCHITECTURE_LOCKED / NOT_AUTHORIZED / NOT_STARTED
 IMP036F_ACTIVATED: YES
 IMP036F_PRODUCT_DEFINITION: APPROVED
 IMP036F_PRODUCT_DEFINITION_GATE: PASS
-IMP036F_ARCHITECTURE_LOCKED: NO
+IMP036F_ARCHITECTURE_FIT: PASS
+IMP036F_ARCHITECTURE_LOCKED: YES
 IMP036F_IMPLEMENTATION_AUTHORIZED: NO
 IMP036F_STARTED: NO
 IMP036F_ACCEPTED: NO
@@ -181,26 +182,31 @@ IMP-036D_ACCEPTED: YES
 IMP-036D_FOUNDER_UAT: PASS
 ```
 
-**GTM-R118** persists the independently executed Product Definition Gate PASS for IMP-036F
-candidate `PD-IMP-036F-DRAFT-1` (gate-evaluated SHA
-`014e0f935f193f54718d6afd5e7991508088f9bc`; durable PR #140 review `5166877450`; gate date
-2026-09-10). IMP-036F remains CURRENT / PLANNED / ACTIVATED.
-`IMP036F_PRODUCT_DEFINITION: APPROVED`; `IMP036F_PRODUCT_DEFINITION_GATE: PASS`. Architecture Fit
-is NOT performed. Architecture remains NOT_LOCKED. Implementation remains NOT_AUTHORIZED /
-NOT_STARTED. This revision does **not** lock architecture, authorize/start implementation, accept
-IMP-036F, activate IMP-036G, or authorize merge. Next phase is Architecture Fit under separate
-authorization.
+**GTM-R119** persists the independently reviewed IMP-036F Architecture Fit PASS and locks the
+capability architecture. Reviewed Architecture Fit candidate head
+`9ae06d6267e997223b1995124540974215ee17fd` / tree `55adb287bb0eb77240a6becdc16fed2d504ba144`;
+independent Architecture Fit review `5169723968` (`ARCHITECTURE_FIT — PASS`); exact-head CI run
+`34501448266` SUCCESS. Locked capability architecture:
+[`capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md`](./capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md).
+Architecture Fit performed and PASS. Capability architecture locked.
+`IMP036F_ARCHITECTURE_FIT: PASS`; `IMP036F_ARCHITECTURE_LOCKED: YES`. Implementation remains
+`NOT_AUTHORIZED` / `NOT_STARTED`. No schema migration or application implementation occurred.
+IMP-036F is not accepted. IMP-036G is not activated. D-374 not required/not created; ARCH-R20 not
+required/not created; ARCH-R19 / DR-15 preserved. This revision does **not** authorize/start
+implementation, accept IMP-036F, activate IMP-036G, or authorize merge. Next human gate after
+successful merge/reconciliation is explicit implementation authorization.
 
-IMP-036E remains `COMPLETE_AND_ACCEPTED`. Locked capability architecture remains
+IMP-036E remains `COMPLETE_AND_ACCEPTED`. Latest accepted locked capability architecture remains
 [`capabilities/IMP-036E-store-operations-management.md`](./capabilities/IMP-036E-store-operations-management.md).
-Preferred Store Assortment read route:
+IMP-036F locked capability architecture is current/unaccepted (not part of the accepted capability
+ledger). Preferred Store Assortment read route:
 `GET /api/operations/v1/outlets/{outletId}/assortment`. ARCH-R19 and DR-15 remain unchanged.
 `acceptedThrough` remains IMP-036E; `currentProductSlice = IMP-036F`; `pendingAcceptance = NONE`;
-`nextProductSlice = IMP-036G`. Formal IMP-036F ROADMAP lifecycle remains `PLANNED`
-(`IMP036F_ACTIVATED: YES`; `IMP036F_ARCHITECTURE_LOCKED: NO`;
+`nextProductSlice = IMP-036G`. Formal IMP-036F ROADMAP lifecycle is `ARCHITECTURE_LOCKED`
+(`IMP036F_ACTIVATED: YES`; `IMP036F_ARCHITECTURE_LOCKED: YES`;
 `IMP036F_IMPLEMENTATION_AUTHORIZED: NO`; `IMP036F_STARTED: NO`; `IMP036F_ACCEPTED: NO`;
 `IMP036F_PRODUCT_DEFINITION: APPROVED`; `IMP036F_PRODUCT_DEFINITION_GATE: PASS`;
-`IMP036F_FOUNDER_UAT_REQUIRED: YES`). PD-1 applies prospectively.
+`IMP036F_ARCHITECTURE_FIT: PASS`; `IMP036F_FOUNDER_UAT_REQUIRED: YES`). PD-1 applies prospectively.
 
 Implementation / review provenance remains distinct from the accepted UAT candidate:
 implementation merge `0ebb5e937cd7ac14bb3e39e9d1d494e32c9d2739` / tree
@@ -279,15 +285,20 @@ IMP-036D remains `COMPLETE_AND_ACCEPTED`. Concise acceptance identity: UAT candi
 
 Current product slice is IMP-036F — Catalog, Menu, Pricing & Promotions Management
 (`currentProductSlice = IMP-036F`; `pendingAcceptance = NONE`; `IMP036F_ACTIVATED: YES`).
-Formal ROADMAP lifecycle for IMP-036F remains `PLANNED` (`NOT_AUTHORIZED` / `NOT_STARTED`;
-`IMP036F_ARCHITECTURE_LOCKED: NO`; `IMP036F_IMPLEMENTATION_AUTHORIZED: NO`;
+Formal ROADMAP lifecycle for IMP-036F is `ARCHITECTURE_LOCKED` (`NOT_AUTHORIZED` / `NOT_STARTED`;
+`IMP036F_ARCHITECTURE_LOCKED: YES`; `IMP036F_IMPLEMENTATION_AUTHORIZED: NO`;
 `IMP036F_STARTED: NO`; `IMP036F_ACCEPTED: NO`; `IMP036F_PRODUCT_DEFINITION: APPROVED`;
-`IMP036F_PRODUCT_DEFINITION_GATE: PASS`; `IMP036F_FOUNDER_UAT_REQUIRED: YES`).
-IMP-036F remains CURRENT / PLANNED / ACTIVATED. Product Definition Gate = PASS for candidate
-`PD-IMP-036F-DRAFT-1` (gate-evaluated SHA `014e0f935f193f54718d6afd5e7991508088f9bc`; PR #140
-review `5166877450`). Architecture Fit is NOT performed. Architecture remains NOT_LOCKED.
-Implementation remains NOT_AUTHORIZED / NOT_STARTED. Next phase is Architecture Fit under separate
-authorization. Per-IMP Product Definition:
+`IMP036F_PRODUCT_DEFINITION_GATE: PASS`; `IMP036F_ARCHITECTURE_FIT: PASS`;
+`IMP036F_FOUNDER_UAT_REQUIRED: YES`).
+IMP-036F remains CURRENT / ACTIVATED. Product Definition Gate = PASS for candidate
+`PD-IMP-036F-DRAFT-1`. Architecture Fit performed and PASS (reviewed candidate
+`9ae06d6267e997223b1995124540974215ee17fd` / tree `55adb287bb0eb77240a6becdc16fed2d504ba144`;
+independent review `5169723968`; exact-head CI `34501448266` SUCCESS). Capability architecture is
+LOCKED at
+[`capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md`](./capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md).
+Implementation remains NOT_AUTHORIZED / NOT_STARTED. No schema migration or implementation
+occurred. Next human gate after merge/reconciliation is explicit implementation authorization.
+Per-IMP Product Definition:
 [`product/IMP-036F/product-definition.md`](./product/IMP-036F/product-definition.md). Supporting
 planned experience contract (discovery input only; not lifecycle authority):
 [`experience/enterprise-experience/IMP-036F-catalog-menu-pricing-promotions.md`](./experience/enterprise-experience/IMP-036F-catalog-menu-pricing-promotions.md).
@@ -296,7 +307,7 @@ IMP-036E — Store Operations Management remains `COMPLETE_AND_ACCEPTED` with ar
 `ARCHITECTURE_LOCKED` and implementation `AUTHORIZED` / `STARTED` / `COMPLETE`
 (`IMP-036E_ARCHITECTURE_LOCKED: YES`; `IMP-036E_IMPLEMENTATION_AUTHORIZED: YES`;
 `IMP-036E_STARTED: YES`; `IMP-036E_IMPLEMENTATION_COMPLETE: YES`; `IMP-036E_ACCEPTED: YES`;
-`IMP-036E_FOUNDER_UAT: PASS`). Locked capability architecture:
+`IMP-036E_FOUNDER_UAT: PASS`). Locked capability architecture (latest accepted):
 [`capabilities/IMP-036E-store-operations-management.md`](./capabilities/IMP-036E-store-operations-management.md).
 Supporting experience contract is historical after acceptance:
 [`experience/enterprise-experience/IMP-036E-store-operations-management.md`](./experience/enterprise-experience/IMP-036E-store-operations-management.md).
@@ -309,9 +320,10 @@ booleans are coarse navigation only (`IMP036E_GLOBAL_SESSION_CAPS_ARE_RESOURCE_A
 `IMP036E_GLOBAL_SESSION_CAPS_PURPOSE: COARSE_NAVIGATION_ONLY`;
 `IMP036E_RESOURCE_SCOPED_CONTROL_VISIBILITY: REQUIRED`;
 `IMP036E_SERVER_AUTHORIZATION_REMAINS_AUTHORITATIVE: YES`). ARCH-R19 and DR-15 remain unchanged;
-`SCHEMA_CHANGE_REQUIRED: NO`; `NEW_PERMISSION: NO`; `NEW_ROLE: NO`; `NEW_SCOPE_MODEL: NO`;
+`SCHEMA_CHANGE_REQUIRED: NO` (IMP-036E); IMP-036F architecture concludes schema change required
+YES but execution is not authorized; `NEW_PERMISSION: NO`; `NEW_ROLE: NO`; `NEW_SCOPE_MODEL: NO`;
 `D374_REQUIRED_FOR_IMP036E_LOCK: NO`; `D-374_CREATED: NO`; `ARCH_R20_REQUIRED_FOR_IMP036E_LOCK: NO`;
-`ARCH_R20_CREATED: NO`.
+`ARCH_R20_CREATED: NO`; `D374_REQUIRED_FOR_IMP036F_LOCK: NO`; `ARCH_R20_REQUIRED_FOR_IMP036F_LOCK: NO`.
 
 Next product slice is IMP-036G — Administration Console V2
 (`PLANNED` / `NOT_ACTIVATED` / `NOT_AUTHORIZED` / `NOT_STARTED`; `IMP036G_ACTIVATED: NO`).
@@ -336,7 +348,7 @@ not future identities. Historical Food Direct insertion narration remains in
 | IMP-036C | Customer Commerce Experience V2 | COMPLETE_AND_ACCEPTED |
 | IMP-036D | Workforce & Franchise Operations Portal V2 | COMPLETE_AND_ACCEPTED |
 | IMP-036E | Store Operations Management | COMPLETE_AND_ACCEPTED |
-| IMP-036F | Catalog, Menu, Pricing & Promotions Management | PLANNED / NOT_AUTHORIZED / NOT_STARTED |
+| IMP-036F | Catalog, Menu, Pricing & Promotions Management | ARCHITECTURE_LOCKED / NOT_AUTHORIZED / NOT_STARTED |
 | IMP-036G | Administration Console V2 | PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED |
 | IMP-037 | Backup, Restore & Migration Readiness | PLANNED |
 | IMP-038 | Security & Privacy Hardening | PLANNED |
@@ -352,7 +364,7 @@ IMP-036A → B → C → D → E → F → G → IMP-037.
 ```text
 FIGMA_REQUIRED_FOR_INITIAL_IMPLEMENTATION: NO
 IMP-036A → IMP-036E: COMPLETE_AND_ACCEPTED
-IMP-036F: PLANNED / NOT_AUTHORIZED / NOT_STARTED (IMP036F_ACTIVATED: YES; currentProductSlice)
+IMP-036F: ARCHITECTURE_LOCKED / NOT_AUTHORIZED / NOT_STARTED (IMP036F_ACTIVATED: YES; currentProductSlice; IMP036F_ARCHITECTURE_LOCKED: YES)
 IMP-036G: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED (IMP036G_ACTIVATED: NO)
 FOUNDER_UAT_REQUIRED: YES for each Enterprise Experience slice
 ```
@@ -414,6 +426,31 @@ Current public GTM boundary is **IMP-040**, not IMP-035.
 
 Historical revision evidence for GTM-R1…GTM-R113 is preserved byte-for-byte in
 [`history/ROADMAP-GTM-R113-pre-compression.md`](./history/ROADMAP-GTM-R113-pre-compression.md).
+
+### GTM-R119 — 2026-09-10
+
+- Persist independently reviewed IMP-036F Architecture Fit PASS and lock capability architecture.
+- Reviewed Architecture Fit candidate head `9ae06d6267e997223b1995124540974215ee17fd` / tree
+  `55adb287bb0eb77240a6becdc16fed2d504ba144`; independent review `5169723968` PASS; exact-head CI
+  run `34501448266` SUCCESS. Lock date 2026-09-10.
+- Locked capability artifact:
+  [`capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md`](./capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md).
+- Sets formal IMP-036F ROADMAP lifecycle to `ARCHITECTURE_LOCKED` / `NOT_AUTHORIZED` / `NOT_STARTED`
+  (`IMP036F_ARCHITECTURE_FIT: PASS`; `IMP036F_ARCHITECTURE_LOCKED: YES`).
+- Preserves `acceptedThrough = IMP-036E`; `currentProductSlice = IMP-036F`;
+  `pendingAcceptance = NONE`; `nextProductSlice = IMP-036G`.
+- Preserves `IMP036F_ACTIVATED: YES`; `IMP036F_PRODUCT_DEFINITION: APPROVED`;
+  `IMP036F_PRODUCT_DEFINITION_GATE: PASS`; `IMP036F_IMPLEMENTATION_AUTHORIZED: NO`;
+  `IMP036F_STARTED: NO`; `IMP036F_ACCEPTED: NO`; `IMP036F_FOUNDER_UAT_REQUIRED: YES`;
+  `IMP036G_ACTIVATED: NO`.
+- Architecture Fit performed and PASS. Capability architecture locked. Implementation remains
+  NOT_AUTHORIZED / NOT_STARTED. No schema migration or implementation occurred. IMP-036F not
+  accepted. IMP-036G not activated. D-374 not required/not created; ARCH-R20 not required/not
+  created; ARCH-R19 / DR-15 preserved.
+- Does **not** authorize/start implementation, accept IMP-036F, activate IMP-036G, or authorize
+  merge. Next gate = explicit implementation authorization (after merge/reconciliation).
+- VISION-1 / PD-1 / TEST-1 unchanged.
+- Supersedes GTM-R118.
 
 ### GTM-R118 — 2026-09-10
 

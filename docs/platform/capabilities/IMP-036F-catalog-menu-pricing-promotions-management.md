@@ -1,15 +1,16 @@
 <!-- governance-meta
 {
-  "status": "DRAFT",
-  "authority": "CAPABILITY_ARCHITECTURE_CANDIDATE",
+  "status": "CURRENT",
+  "authority": "CAPABILITY_ARCHITECTURE",
   "capability": "IMP-036F",
   "title": "Catalog, Menu, Pricing & Promotions Management",
-  "architectureLock": "NOT_LOCKED",
-  "architectureFitCandidateResult": "PASS",
+  "architectureLock": "ARCHITECTURE_LOCKED",
+  "architectureFitResult": "PASS",
   "implementation": "NOT_AUTHORIZED / NOT_STARTED",
   "implementationAuthorized": false,
   "implementationStarted": false,
   "impAccepted": false,
+  "founderUATRequired": true,
   "schemaChangeRequired": true,
   "lastReviewed": "2026-09-10",
   "productDefinition": "PD-IMP-036F-DRAFT-1",
@@ -20,35 +21,35 @@
 
 # IMP-036F — Catalog, Menu, Pricing & Promotions Management
 
-## Capability Architecture — ARCHITECTURE FIT CANDIDATE / NOT LOCKED
+## Capability Architecture — ARCHITECTURE_LOCKED / IMPLEMENTATION NOT AUTHORIZED
 
-This document is an **Architecture Fit review candidate** for IMP-036F. It is **not** the
-canonically locked capability architecture.
+This document is the **locked capability architecture** for IMP-036F. It began as an Architecture
+Fit candidate, received independent Architecture Fit PASS, and is now the sole CURRENT
+capability-architecture authority for this slice. Supporting experience planning must not compete
+with this lock.
 
 ```text
-ARCHITECTURE_FIT_CANDIDATE_RESULT = PASS
-CANDIDATE_STATUS = ARCHITECTURE_FIT_CANDIDATE / INDEPENDENT_REVIEW_REQUIRED
-IMP036F_ARCHITECTURE_LOCKED = NO
-ARCHITECTURE_LOCKED = NO
+ARCHITECTURE_FIT = PASS
+IMP036F_ARCHITECTURE_LOCKED = YES
+ARCHITECTURE_LOCKED = YES
 IMPLEMENTATION_AUTHORIZED = NO
 IMPLEMENTATION_STARTED = NO
 IMP036F_ACCEPTED = NO
 IMP036G_ACTIVATED = NO
-CANONICAL_ROADMAP_STATE_CLAIM = UNCHANGED (GTM-R118 / STATE-R116)
-PRODUCT_DEFINITION = PD-IMP-036F-DRAFT-1 APPROVED (Gate PASS; ARCHITECTURE_FIT remains NOT_PERFORMED in PD/ROADMAP/STATE until separate lock persistence)
+CANONICAL_ROADMAP_STATE = GTM-R119 / STATE-R117
+PRODUCT_DEFINITION = PD-IMP-036F-DRAFT-1 APPROVED (Gate PASS; Architecture Fit PASS; architecture locked)
 ```
 
-Independent Architecture Fit review is required. Separate explicit human authorization is required
-before any architecture-lock / governance persistence. This candidate does **not** authorize
-implementation, schema migration execution, merge, deployment, Founder UAT, or IMP acceptance.
+Architecture lock does **not** authorize implementation, schema migration execution, merge,
+deployment, Founder UAT, or IMP acceptance. Implementation authorization remains a separate later
+gate.
 
 | Field | Value |
 |---|---|
-| Architecture lock | `NOT_LOCKED` (candidate only) |
-| Formal ROADMAP lifecycle | `PLANNED` / `NOT_AUTHORIZED` / `NOT_STARTED` (`IMP036F_ACTIVATED: YES`) |
+| Architecture lock | `ARCHITECTURE_LOCKED` |
+| Formal ROADMAP lifecycle | `ARCHITECTURE_LOCKED` / `NOT_AUTHORIZED` / `NOT_STARTED` (`IMP036F_ACTIVATED: YES`) |
 | Product Definition | `PD-IMP-036F-DRAFT-1` **APPROVED**; Product Definition Gate **PASS** |
-| Canonical Architecture Fit (ROADMAP/STATE/PD) | Still `NOT_PERFORMED` until lock persistence |
-| Candidate Fit result | **PASS** |
+| Architecture Fit | **PASS** (performed; locked) |
 | Implementation | **NOT_AUTHORIZED** / **NOT_STARTED** |
 | Schema change required (architecture conclusion) | **YES** (not authorized to execute) |
 | New D-number | **NO** (`D374_REQUIRED_FOR_IMP036F_LOCK = NO`) |
@@ -56,19 +57,38 @@ implementation, schema migration execution, merge, deployment, Founder UAT, or I
 | New permission / role / auth model / deployable | **NO** |
 | Founder UAT required (future acceptance) | **YES** |
 
+### Architecture lock provenance
+
+```text
+ARCHITECTURE_FIT = PASS
+ARCHITECTURE_REVIEWED_CANDIDATE_HEAD = 9ae06d6267e997223b1995124540974215ee17fd
+ARCHITECTURE_REVIEWED_CANDIDATE_TREE = 55adb287bb0eb77240a6becdc16fed2d504ba144
+INDEPENDENT_ARCHITECTURE_REVIEW = 5169723968
+INDEPENDENT_ARCHITECTURE_REVIEW_RESULT = PASS
+EXACT_HEAD_CI_RUN = 34501448266
+EXACT_HEAD_CI_RESULT = SUCCESS
+ARCHITECTURE_LOCK_DATE = 2026-09-10
+```
+
+The independently reviewed Architecture Fit candidate is specifically head `9ae06d62…` / tree
+`55adb287…`. This lock-persistence revision is a subsequent governance commit and is **not** the
+artifact reviewed by `5169723968`.
+
 ---
 
 ## 1. Authority / status
 
-Verified base for this candidate investigation:
+Verified base for the reviewed Architecture Fit candidate investigation (preserved):
 
 ```text
 Repository: /home/ajoshi/repos/boba-bear-platform
 origin/main HEAD: 1f59333d1a3bfe0dfecde908245306e2edacd834
 origin/main tree: 284800a71a20d27c01b9c0cec7cadb45bb5d059b
 VISION = VISION-1
-ROADMAP = GTM-R118
-STATE = STATE-R116
+ROADMAP (at candidate review) = GTM-R118
+STATE (at candidate review) = STATE-R116
+ROADMAP (after lock persistence) = GTM-R119
+STATE (after lock persistence) = STATE-R117
 ARCHITECTURE = ARCH-R19
 DECISION REGISTER = DR-15
 PRODUCT DELIVERY = PD-1
@@ -78,13 +98,14 @@ GOLDEN JOURNEYS = GJ-1
 Product Definition = docs/platform/product/IMP-036F/product-definition.md (APPROVED)
 ```
 
-Canonical authorities unchanged by this candidate. Supporting plan remains non-authoritative:
+Canonical ARCH-R19 / DR-15 / PD-1 / TEST-1 / VISION-1 remain unchanged. Supporting plan remains
+non-authoritative:
 `docs/platform/experience/enterprise-experience/IMP-036F-catalog-menu-pricing-promotions.md`.
 
-Representation convention: historical capability drafts use
-`"architectureLock": "NOT_LOCKED"` under `docs/platform/capabilities/` during pre-lock review
-(IMP-031/032 fixtures). This candidate follows that safe pre-lock representation and does **not**
-claim `ARCHITECTURE_LOCKED`.
+Historical note: this artifact began as an Architecture Fit candidate with architectureLock
+NOT_LOCKED and CAPABILITY_ARCHITECTURE_CANDIDATE authority during pre-lock review. After
+independent review `5169723968` PASS, lock persistence converts it to CURRENT
+CAPABILITY_ARCHITECTURE with ARCHITECTURE_LOCKED.
 
 ---
 
@@ -135,7 +156,9 @@ SECOND_PRICING_OR_CATALOG_AUTHORITY = NO
 ## 4. Architecture-fit verdict
 
 ```text
+ARCHITECTURE_FIT = PASS
 ARCHITECTURE_FIT_CANDIDATE_RESULT = PASS
+IMP036F_ARCHITECTURE_LOCKED = YES
 ```
 
 PASS means: every mandatory V1 story has a technically viable fit under existing global architecture;
@@ -149,10 +172,9 @@ lifecycle concurrency is explicit; all 64 mandatory Product Definition ACs are t
 commercial writes have precise concurrency contracts; persistence/audit consequences are explicit;
 implementation boundaries are precise enough for independent review.
 
-PASS does **not** mean canonical lock, implementation authorization, or acceptance.
-
-Unresolved for later lock persistence only: ROADMAP/STATE/PD markers (`ARCHITECTURE_FIT`
-performed/locked) — report-only in §29.
+Independent Architecture Fit review `5169723968` accepted this Fit. Canonical lock is now persisted
+at GTM-R119 / STATE-R117. PASS + lock still does **not** mean implementation authorization or
+acceptance.
 
 ---
 
@@ -1211,9 +1233,10 @@ concurrency races + E2E commercial journey + negative auth + Founder UAT on exac
 
 | Item | Status |
 |---|---|
-| Independent Architecture Fit review | REQUIRED (next gate) |
-| Canonical lock persistence (ROADMAP/STATE/PD/capability lock markers) | NOT AUTHORIZED here |
-| Exact Admin route path spelling / page split | Implementation detail after lock |
+| Independent Architecture Fit review | **COMPLETE** — PASS (`5169723968` on reviewed candidate `9ae06d62…`) |
+| Canonical lock persistence (ROADMAP/STATE/PD/capability lock markers) | **COMPLETE** — GTM-R119 / STATE-R117 |
+| Explicit implementation authorization | NOT AUTHORIZED (next human gate after merge/reconciliation) |
+| Exact Admin route path spelling / page split | Implementation detail after implementation authorization |
 | Exact SQL migration filenames / non-semantic column spellings for revision stores | Implementation detail under locked ENTITY_CONTENT_REVISION + MENU_REVISION semantics |
 | AC-014-02 media mutation | FOLLOW_UP (approved; non-mandatory) |
 
@@ -1245,29 +1268,32 @@ No new durable cross-capability decision required for lock.
 
 ---
 
-## 29. Proposed architecture-lock delta (REPORT ONLY — DO NOT PERSIST)
+## 29. Architecture-lock persistence record
 
-If independent review accepts this candidate, a **separate** authorized governance task may persist
-approximately:
+Independent Architecture Fit PASS and architecture-lock persistence are recorded as:
 
 ```text
-ROADMAP: future GTM-R119 candidate
-STATE: future STATE-R117 candidate
+ROADMAP = GTM-R119
+STATE = STATE-R117
 
 IMP036F_PRODUCT_DEFINITION = APPROVED
 IMP036F_PRODUCT_DEFINITION_GATE = PASS
+IMP036F_ARCHITECTURE_FIT = PASS
 IMP036F_ARCHITECTURE_LOCKED = YES
 IMP036F_IMPLEMENTATION_AUTHORIZED = NO
 IMP036F_STARTED = NO
 IMP036F_ACCEPTED = NO
 IMP036G_ACTIVATED = NO
+
+ARCHITECTURE_REVIEWED_CANDIDATE_HEAD = 9ae06d6267e997223b1995124540974215ee17fd
+ARCHITECTURE_REVIEWED_CANDIDATE_TREE = 55adb287bb0eb77240a6becdc16fed2d504ba144
+INDEPENDENT_ARCHITECTURE_REVIEW = 5169723968
+EXACT_HEAD_CI_RUN = 34501448266
 ```
 
-Exact version numbers follow repository convention at persistence time. This candidate does **not**
-edit ROADMAP/STATE/PD/ARCHITECTURE/decision-register.
-
-On lock persistence, this file’s `architectureLock` would become `ARCHITECTURE_LOCKED` under that
-separate authorization — **not** performed here.
+This file’s `architectureLock` is now `ARCHITECTURE_LOCKED`. No schema migration or application
+implementation occurred in this persistence. ARCH-R19 / DR-15 preserved; D-374 / ARCH-R20 not
+created.
 
 ---
 
@@ -1332,11 +1358,21 @@ UI grouping must not redefine domain authority.
 ## End matter
 
 ```text
+IMP-036F: ARCHITECTURE_LOCKED
+IMP-036F_ARCHITECTURE: LOCKED
+IMP-036F_ARCHITECTURE_LOCKED: YES
+ARCHITECTURE_FIT = PASS
 ARCHITECTURE_FIT_CANDIDATE_RESULT = PASS
-IMP036F_ARCHITECTURE_LOCKED = NO
 IMPLEMENTATION_AUTHORIZED = NO
 IMPLEMENTATION_STARTED = NO
-NEXT_GATE = Independent review of this Architecture Fit candidate
-THEN = Separate human authorization for architecture-lock persistence
-STOP = Do not merge as lock; do not authorize implementation from this candidate alone
+IMP036F_IMPLEMENTATION_AUTHORIZED = NO
+IMP036F_STARTED = NO
+IMP036F_ACCEPTED = NO
+IMP036G_ACTIVATED = NO
+SCHEMA_CHANGE_REQUIRED = YES
+D374_REQUIRED_FOR_IMP036F_LOCK = NO
+ARCH_R20_REQUIRED_FOR_IMP036F_LOCK = NO
+NEXT_GATE = Independent review of Architecture Lock / GTM-R119 / STATE-R117 persistence
+THEN = Separate explicit human authorization before merge; implementation authorization remains later
+STOP = Do not authorize or start implementation from architecture lock alone
 ```
