@@ -6323,6 +6323,7 @@ describe("PD-1 / TEST-1 product delivery process authorities", () => {
     assert.ok(messages.some((m) => m === "PRODUCT-DELIVERY.md prospective boundary markers OK"));
     assert.ok(messages.some((m) => m.startsWith("TESTING.md prospective boundary markers OK")));
     assert.ok(messages.some((m) => m === "AGENTS.md prospective boundary markers OK"));
+    assert.ok(messages.some((m) => m === "supporting GJ/TEST lifecycle markers aligned with IMP-036F activation"));
     for (const rel of [
       "docs/platform/product/README.md",
       "docs/platform/product/personas.md",

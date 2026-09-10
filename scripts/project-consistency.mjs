@@ -17117,18 +17117,17 @@ const PRODUCT_DELIVERY_PROSPECTIVE_MARKERS = [
   "PD1_DID_NOT_ACTIVATE_IMP036F_AT_ADOPTION = YES",
 ];
 
-/** Session-1 TESTING.md retains historical `IMP036F_ACTIVATED = NO` adoption wording; not CURRENT lifecycle authority. */
+/** TEST-1 adoption boundary: PD-1/TEST-1 did not activate IMP-036F; ROADMAP/STATE own activation. */
 const TESTING_PROSPECTIVE_MARKERS = [
   "PRODUCT_DELIVERY_PROCESS_EFFECTIVE_FROM = IMP-036F",
   "HISTORICAL_ACCEPTED_IMPS_REWRITTEN = NO",
   "IMP036E_LIFECYCLE_CHANGED = NO",
-  "IMP036F_ACTIVATED = NO",
+  "PD1_DID_NOT_ACTIVATE_IMP036F_AT_ADOPTION = YES",
 ];
 
 /**
- * Bounded Session-1 CURRENT process authority checks (PD-1 / TEST-1).
- * Prospective only — does not require an IMP-036F Product Definition while
- * IMP-036F remains unactivated.
+ * Bounded CURRENT process authority checks (PD-1 / TEST-1).
+ * Prospective adoption markers remain required; CURRENT activation truth is ROADMAP/STATE.
  */
 function checkProductDeliveryProcessAuthorities() {
   const productDelivery = loadCanonical(
@@ -17189,7 +17188,7 @@ function checkProductDeliveryProcessAuthorities() {
       }
     }
     if (TESTING_PROSPECTIVE_MARKERS.every((m) => testing.text.includes(m))) {
-      note("TESTING.md prospective boundary markers OK (Session-1 adoption markers; not CURRENT activation authority)");
+      note("TESTING.md prospective boundary markers OK (adoption markers; ROADMAP/STATE own CURRENT activation)");
     }
   }
 
@@ -17212,6 +17211,60 @@ function checkProductDeliveryProcessAuthorities() {
     }
     if (PRODUCT_DELIVERY_PROSPECTIVE_MARKERS.every((m) => agentsText.includes(m))) {
       note("AGENTS.md prospective boundary markers OK");
+    }
+  }
+
+  // Bounded supporting-authority anti-stale checks after IMP-036F activation.
+  const roadmapAbs = resolvePlatformDoc("docs/platform/ROADMAP.md");
+  const stateAbs = resolvePlatformDoc("docs/platform/STATE.md");
+  const roadmapText = existsSync(roadmapAbs) ? readFileSync(roadmapAbs, "utf8") : "";
+  const stateText = existsSync(stateAbs) ? readFileSync(stateAbs, "utf8") : "";
+  const stateMeta = stateText ? parseGovernanceMeta(stateText) : null;
+  const imp036fActivated =
+    /IMP036F_ACTIVATED:\s*YES/.test(roadmapText) &&
+    /IMP036F_ACTIVATED:\s*YES/.test(stateText) &&
+    stateMeta?.acceptedThrough === "IMP-036E";
+
+  if (imp036fActivated) {
+    if (testing && /IMP036F_ACTIVATED\s*=\s*NO/.test(testing.text)) {
+      fail(
+        "TESTING_ACTIVATION_STALE",
+        "TESTING.md must not assert IMP036F_ACTIVATED = NO while ROADMAP/STATE assert YES",
+      );
+    }
+
+    const gjAbs = resolveExactRelativeFile("docs/platform/product/golden-journeys.md");
+    if (gjAbs) {
+      const gjText = readFileSync(gjAbs, "utf8");
+      if (/IMP036F_ACTIVATED\s*=\s*NO/.test(gjText)) {
+        fail(
+          "GJ_ACTIVATION_STALE",
+          "golden-journeys.md must not assert IMP036F_ACTIVATED = NO while ROADMAP/STATE assert YES",
+        );
+      }
+      if (!/IMP036F_ACTIVATED\s*=\s*YES/.test(gjText)) {
+        fail(
+          "GJ_ACTIVATION_MARKER",
+          "golden-journeys.md must record IMP036F_ACTIVATED = YES after activation (ROADMAP/STATE remain activation authority)",
+        );
+      }
+      if (
+        /IMP-036E[^\n]{0,160}(pending acceptance|unaccepted|acceptance remains outstanding|outstanding Founder UAT)/i.test(
+          gjText,
+        )
+      ) {
+        fail(
+          "GJ_IMP036E_ACCEPTANCE_STALE",
+          "golden-journeys.md must not claim IMP-036E remains pending/unaccepted after acceptedThrough IMP-036E",
+        );
+      }
+      if (/IMP-036F[^\n]{0,160}NOT_ACTIVATED/i.test(gjText)) {
+        fail(
+          "GJ_IMP036F_NOT_ACTIVATED_STALE",
+          "golden-journeys.md must not claim IMP-036F NOT_ACTIVATED while ROADMAP/STATE assert IMP036F_ACTIVATED = YES",
+        );
+      }
+      note("supporting GJ/TEST lifecycle markers aligned with IMP-036F activation");
     }
   }
 }
