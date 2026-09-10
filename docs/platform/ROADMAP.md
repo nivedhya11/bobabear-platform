@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R116",
+  "roadmapVersion": "GTM-R117",
   "acceptedThrough": "IMP-036E",
   "currentProductSlice": "IMP-036F",
   "nextProductSlice": "IMP-036G",
   "gtmBoundary": "IMP-040",
   "lastReviewed": "2026-09-10",
-  "supersedes": "GTM-R115"
+  "supersedes": "GTM-R116"
 }
 -->
 
@@ -166,7 +166,8 @@ ARCH_R20_REQUIRED_FOR_IMP036E_LOCK: NO
 ARCH_R20_CREATED: NO
 IMP-036F: PLANNED / NOT_AUTHORIZED / NOT_STARTED
 IMP036F_ACTIVATED: YES
-IMP036F_PRODUCT_DEFINITION: NOT_CREATED
+IMP036F_PRODUCT_DEFINITION: DRAFT_AUTHORIZED
+IMP036F_PRODUCT_DEFINITION_GATE: NOT_PERFORMED
 IMP036F_ARCHITECTURE_LOCKED: NO
 IMP036F_IMPLEMENTATION_AUTHORIZED: NO
 IMP036F_STARTED: NO
@@ -180,11 +181,17 @@ IMP-036D_ACCEPTED: YES
 IMP-036D_FOUNDER_UAT: PASS
 ```
 
-**GTM-R116** activates IMP-036F — Catalog, Menu, Pricing & Promotions Management as the CURRENT
-product slice after accepted and reconciled IMP-036E (GTM-R115 / STATE-R113; PR #136 merge
-`4c0ec4ffd9d614c9854b3d8747ebc566bdd713fc` / tree `60043230c5f62398f7b1f88f4bc38299d32da8e7`;
-automatic main CI run `34441511722` PASS). IMP-036E remains `COMPLETE_AND_ACCEPTED`. Locked
-capability architecture remains
+**GTM-R117** advances IMP-036F from the activation-only ANCHOR/DISCOVER checkpoint (GTM-R116 /
+STATE-R114) to an explicit post-discovery Product Definition drafting authorization. IMP-036F
+remains CURRENT / PLANNED / ACTIVATED. Founder product direction from DISCOVER is approved for
+STORY_MAP + Product Definition drafting (`IMP036F_PRODUCT_DEFINITION: DRAFT_AUTHORIZED`;
+`IMP036F_PRODUCT_DEFINITION_GATE: NOT_PERFORMED`). Architecture fit is NOT performed. Architecture
+remains NOT_LOCKED. Implementation remains NOT_AUTHORIZED / NOT_STARTED. This revision does **not**
+create a Product Definition on canonical main, pass the Product Definition Gate, lock architecture,
+authorize implementation, or activate IMP-036G. DISCOVER product decisions belong in the subsequent
+per-IMP Product Definition draft and are not restated here.
+
+IMP-036E remains `COMPLETE_AND_ACCEPTED`. Locked capability architecture remains
 [`capabilities/IMP-036E-store-operations-management.md`](./capabilities/IMP-036E-store-operations-management.md).
 Preferred Store Assortment read route:
 `GET /api/operations/v1/outlets/{outletId}/assortment`. ARCH-R19 and DR-15 remain unchanged.
@@ -192,9 +199,8 @@ Preferred Store Assortment read route:
 `nextProductSlice = IMP-036G`. Formal IMP-036F ROADMAP lifecycle remains `PLANNED`
 (`IMP036F_ACTIVATED: YES`; `IMP036F_ARCHITECTURE_LOCKED: NO`;
 `IMP036F_IMPLEMENTATION_AUTHORIZED: NO`; `IMP036F_STARTED: NO`; `IMP036F_ACCEPTED: NO`;
-`IMP036F_PRODUCT_DEFINITION: NOT_CREATED`; `IMP036F_FOUNDER_UAT_REQUIRED: YES`). PD-1 applies
-prospectively; next separately bounded activity is ANCHOR → DISCOVER. This ADVANCE does **not**
-create a Product Definition, lock architecture, authorize implementation, or activate IMP-036G.
+`IMP036F_PRODUCT_DEFINITION: DRAFT_AUTHORIZED`; `IMP036F_PRODUCT_DEFINITION_GATE: NOT_PERFORMED`;
+`IMP036F_FOUNDER_UAT_REQUIRED: YES`). PD-1 applies prospectively.
 
 Implementation / review provenance remains distinct from the accepted UAT candidate:
 implementation merge `0ebb5e937cd7ac14bb3e39e9d1d494e32c9d2739` / tree
@@ -275,11 +281,13 @@ Current product slice is IMP-036F — Catalog, Menu, Pricing & Promotions Manage
 (`currentProductSlice = IMP-036F`; `pendingAcceptance = NONE`; `IMP036F_ACTIVATED: YES`).
 Formal ROADMAP lifecycle for IMP-036F remains `PLANNED` (`NOT_AUTHORIZED` / `NOT_STARTED`;
 `IMP036F_ARCHITECTURE_LOCKED: NO`; `IMP036F_IMPLEMENTATION_AUTHORIZED: NO`;
-`IMP036F_STARTED: NO`; `IMP036F_ACCEPTED: NO`; `IMP036F_PRODUCT_DEFINITION: NOT_CREATED`;
-`IMP036F_FOUNDER_UAT_REQUIRED: YES`). PD-1 is operational for this slice; next activity is
-ANCHOR → DISCOVER. No Product Definition, architecture lock, or implementation authorization is
-granted by this ADVANCE. Supporting planned experience contract (discovery input only; not a
-Product Definition):
+`IMP036F_STARTED: NO`; `IMP036F_ACCEPTED: NO`; `IMP036F_PRODUCT_DEFINITION: DRAFT_AUTHORIZED`;
+`IMP036F_PRODUCT_DEFINITION_GATE: NOT_PERFORMED`; `IMP036F_FOUNDER_UAT_REQUIRED: YES`).
+IMP-036F remains CURRENT / PLANNED / ACTIVATED. Founder product direction from DISCOVER is approved
+for STORY_MAP + Product Definition drafting. Architecture fit is NOT performed. Architecture
+remains NOT_LOCKED. Implementation remains NOT_AUTHORIZED / NOT_STARTED. No Product Definition is
+created by this governance advance; Product Definition Gate remains NOT_PERFORMED. Supporting
+planned experience contract (discovery input only; not a Product Definition):
 [`experience/enterprise-experience/IMP-036F-catalog-menu-pricing-promotions.md`](./experience/enterprise-experience/IMP-036F-catalog-menu-pricing-promotions.md).
 
 IMP-036E — Store Operations Management remains `COMPLETE_AND_ACCEPTED` with architecture
@@ -404,6 +412,22 @@ Current public GTM boundary is **IMP-040**, not IMP-035.
 
 Historical revision evidence for GTM-R1…GTM-R113 is preserved byte-for-byte in
 [`history/ROADMAP-GTM-R113-pre-compression.md`](./history/ROADMAP-GTM-R113-pre-compression.md).
+
+### GTM-R117 — 2026-09-10
+
+- Post-discovery governance advance for IMP-036F: authorize STORY_MAP + Product Definition drafting
+  after DISCOVER (`IMP036F_PRODUCT_DEFINITION: DRAFT_AUTHORIZED`;
+  `IMP036F_PRODUCT_DEFINITION_GATE: NOT_PERFORMED`).
+- Preserves `acceptedThrough = IMP-036E`; `currentProductSlice = IMP-036F`;
+  `pendingAcceptance = NONE`; `nextProductSlice = IMP-036G`.
+- Preserves `IMP036F_ACTIVATED: YES` while formal IMP-036F ROADMAP lifecycle remains `PLANNED`
+  (`IMP036F_ARCHITECTURE_LOCKED: NO`; `IMP036F_IMPLEMENTATION_AUTHORIZED: NO`;
+  `IMP036F_STARTED: NO`; `IMP036F_ACCEPTED: NO`; `IMP036F_FOUNDER_UAT_REQUIRED: YES`).
+- Does **not** create a Product Definition on canonical main, pass Product Definition Gate, lock
+  architecture, authorize/start implementation, or activate IMP-036G.
+- ARCH-R19 / DR-15 / PD-1 / TEST-1 / VISION-1 unchanged (PD-1 lastReviewed clarification only for
+  pre-gate draft semantics).
+- Supersedes GTM-R116.
 
 ### GTM-R116 — 2026-09-10
 

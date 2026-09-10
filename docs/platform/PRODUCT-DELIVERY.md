@@ -4,7 +4,7 @@
   "authority": "PRODUCT_DELIVERY_PROCESS",
   "version": "PD-1",
   "effectiveFrom": "IMP-036F",
-  "lastReviewed": "2026-09-07"
+  "lastReviewed": "2026-09-10"
 }
 -->
 
@@ -80,7 +80,7 @@ gates remain authoritative. A phase transition never grants push, PR, merge, or 
 | ANCHOR | Verify repository candidate, canonical versions, current slice, dependencies, and authorized scope. |
 | DISCOVER | Establish outcome, personas, current/desired journeys, evidence, and material questions with the product decision owner. |
 | STORY_MAP | Map activities and stories; identify the acceptance slice and classify every identified possibility. |
-| PRODUCT_DEFINITION_GATE | Record PASS or STOP on the versioned Product Definition; no material product decision remains unresolved. |
+| PRODUCT_DEFINITION_GATE | Record PASS or STOP on the versioned Product Definition; no material product decision remains unresolved. An ungated draft may exist before this phase with gate execution = NOT_PERFORMED. |
 | ARCHITECTURE_FIT | Check product behaviour against global/capability architecture and binding decisions; persist required capability architecture lock before implementation. |
 | IMPLEMENT | Implement only authorized stories that satisfy Definition of Ready. |
 | PROVE | Map each mandatory acceptance scenario to meaningful behavioural evidence under TEST-1. |
@@ -127,6 +127,23 @@ and revalidate affected scenarios before relying on prior evidence.
 
 Every applicable field needs a concrete answer or evidence link. `N/A` needs a brief reason.
 
+A Product Definition candidate may exist as a **pre-gate draft** before the Product Definition Gate
+phase executes. Pre-gate drafts are not approved and do not authorize architecture fit or
+implementation.
+
+```text
+PRE-GATE DRAFT:
+PRODUCT_DEFINITION_GATE_EXECUTION = NOT_PERFORMED
+Gate Result: NOT_PERFORMED
+
+ACTUAL PRODUCT_DEFINITION_GATE EXECUTION:
+Gate Result: PASS | STOP
+```
+
+`NOT_PERFORMED` is **not** a third gate verdict. It means no gate evaluation has occurred. Once the
+Product Definition Gate actually executes, `NOT_PERFORMED` is invalid and must be replaced by
+`PASS` or `STOP`.
+
 ```text
 PRODUCT_DEFINITION_GATE
 Capability:
@@ -150,7 +167,8 @@ Golden Journeys Identified:
 Explicit Deferrals Recorded:
 Unresolved Product Decisions:
 Architecture Conflicts:
-Gate Result: PASS / STOP
+PRODUCT_DEFINITION_GATE_EXECUTION: NOT_PERFORMED | PERFORMED
+Gate Result: NOT_PERFORMED | PASS | STOP
 ```
 
 PASS requires complete applicable product definition, no material unresolved product decision, and

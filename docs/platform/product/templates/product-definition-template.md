@@ -292,6 +292,21 @@ Complete the canonical gate with evidence references or a justified N/A. `PASS` 
 unresolved product decision or architecture conflict and complete applicable definition fields.
 It is not architecture lock, implementation authorization, or IMP acceptance.
 
+A draft Product Definition may exist before the Product Definition Gate executes. Pre-gate drafts
+must record gate execution as not performed:
+
+```text
+PRE-GATE DRAFT:
+PRODUCT_DEFINITION_GATE_EXECUTION = NOT_PERFORMED
+Gate Result: NOT_PERFORMED
+
+ACTUAL PRODUCT_DEFINITION_GATE EXECUTION:
+Gate Result: PASS | STOP
+```
+
+`NOT_PERFORMED` is not a third gate verdict; it means no evaluation has occurred. After the gate
+actually executes, replace `NOT_PERFORMED` with `PASS` or `STOP`.
+
 ```text
 PRODUCT_DEFINITION_GATE
 
@@ -316,5 +331,6 @@ Golden Journeys Identified:
 Explicit Deferrals Recorded:
 Unresolved Product Decisions:
 Architecture Conflicts:
-Gate Result: PASS / STOP
+PRODUCT_DEFINITION_GATE_EXECUTION: NOT_PERFORMED | PERFORMED
+Gate Result: NOT_PERFORMED | PASS | STOP
 ```
