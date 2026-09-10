@@ -2,7 +2,7 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R114",
+  "stateVersion": "STATE-R115",
   "acceptedThrough": "IMP-036E",
   "currentProductSlice": "IMP-036F",
   "nextProductSlice": "IMP-036G",
@@ -36,12 +36,16 @@ Current Product Implementation: NONE
 Pending Acceptance:             NONE
 Current Product Slice:          IMP-036F — Catalog, Menu, Pricing & Promotions Management
 Next Product Slice:             IMP-036G — Administration Console V2
-Current Governance Activity:    IMP-036F activated as CURRENT product slice (GTM-R116 / STATE-R114);
-                              formal IMP-036F ROADMAP lifecycle remains PLANNED;
-                              IMP036F_ACTIVATED: YES; IMP036F_PRODUCT_DEFINITION: NOT_CREATED;
+Current Governance Activity:    IMP-036F remains CURRENT / PLANNED / ACTIVATED (GTM-R117 /
+                              STATE-R115); Founder product direction from DISCOVER is approved for
+                              STORY_MAP + Product Definition drafting;
+                              IMP036F_ACTIVATED: YES; IMP036F_PRODUCT_DEFINITION: DRAFT_AUTHORIZED;
+                              IMP036F_PRODUCT_DEFINITION_GATE: NOT_PERFORMED;
                               IMP036F_ARCHITECTURE_LOCKED: NO; IMP036F_IMPLEMENTATION_AUTHORIZED: NO;
                               IMP036F_STARTED: NO; IMP036F_ACCEPTED: NO;
-                              IMP036F_FOUNDER_UAT_REQUIRED: YES; PD-1 next phase ANCHOR → DISCOVER;
+                              IMP036F_FOUNDER_UAT_REQUIRED: YES;
+                              Architecture fit NOT performed; architecture remains NOT_LOCKED;
+                              implementation remains NOT_AUTHORIZED / NOT_STARTED;
                               IMP-036E remains COMPLETE_AND_ACCEPTED; IMP-036G remains
                               PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
                               (IMP036G_ACTIVATED: NO).
@@ -113,7 +117,8 @@ IMP-036D_ACCEPTED:        YES
 IMP-036D_FOUNDER_UAT:     PASS
 IMP-036F:                 PLANNED / NOT_AUTHORIZED / NOT_STARTED
 IMP036F_ACTIVATED:        YES
-IMP036F_PRODUCT_DEFINITION: NOT_CREATED
+IMP036F_PRODUCT_DEFINITION: DRAFT_AUTHORIZED
+IMP036F_PRODUCT_DEFINITION_GATE: NOT_PERFORMED
 IMP036F_ARCHITECTURE_LOCKED: NO
 IMP036F_IMPLEMENTATION_AUTHORIZED: NO
 IMP036F_STARTED:          NO
@@ -320,7 +325,8 @@ IMP-036D_ACCEPTED: YES
 IMP-036D_FOUNDER_UAT: PASS
 IMP-036F: PLANNED / NOT_AUTHORIZED / NOT_STARTED
 IMP036F_ACTIVATED: YES
-IMP036F_PRODUCT_DEFINITION: NOT_CREATED
+IMP036F_PRODUCT_DEFINITION: DRAFT_AUTHORIZED
+IMP036F_PRODUCT_DEFINITION_GATE: NOT_PERFORMED
 IMP036F_ARCHITECTURE_LOCKED: NO
 IMP036F_IMPLEMENTATION_AUTHORIZED: NO
 IMP036F_STARTED: NO
@@ -365,7 +371,7 @@ is recorded in
 
 ## 8. Explicitly Not Yet Accepted
 
-- IMP-036F — Catalog, Menu, Pricing & Promotions Management (`PLANNED` / `NOT_AUTHORIZED` / `NOT_STARTED`; `IMP036F_ACTIVATED: YES`; Product Definition NOT_CREATED; architecture NOT_LOCKED; implementation NOT_AUTHORIZED / NOT_STARTED)
+- IMP-036F — Catalog, Menu, Pricing & Promotions Management (`PLANNED` / `NOT_AUTHORIZED` / `NOT_STARTED`; `IMP036F_ACTIVATED: YES`; Product Definition DRAFT_AUTHORIZED; Product Definition Gate NOT_PERFORMED; architecture NOT_LOCKED; implementation NOT_AUTHORIZED / NOT_STARTED)
 - IMP-036G — Administration Console V2 (`PLANNED` / `NOT_ACTIVATED`)
 - IMP-037 — Backup, Restore & Migration Readiness
 - IMP-038 — Security & Privacy Hardening
@@ -388,7 +394,35 @@ is recorded in
 Agents may propose a STATE delta in their report. Only independent acceptance updates this file's
 accepted position and may promote `governanceHealth` to `ALIGNED`.
 
-## 10. STATE-R114 record
+## 10. STATE-R115 record
+
+```text
+STATE-R115 = IMP-036F_PRODUCT_DEFINITION_DRAFT_AUTHORIZED
+acceptedThrough: IMP-036E
+pendingAcceptance: NONE
+currentProductSlice: IMP-036F
+nextProductSlice: IMP-036G
+IMP-036E: COMPLETE_AND_ACCEPTED
+IMP-036E_ACCEPTED: YES
+IMP-036E_FOUNDER_UAT: PASS
+IMP-036F: PLANNED / NOT_AUTHORIZED / NOT_STARTED
+IMP036F_ACTIVATED: YES
+IMP036F_PRODUCT_DEFINITION: DRAFT_AUTHORIZED
+IMP036F_PRODUCT_DEFINITION_GATE: NOT_PERFORMED
+IMP036F_ARCHITECTURE_LOCKED: NO
+IMP036F_IMPLEMENTATION_AUTHORIZED: NO
+IMP036F_STARTED: NO
+IMP036F_ACCEPTED: NO
+IMP036F_FOUNDER_UAT_REQUIRED: YES
+IMP-036G: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
+IMP036G_ACTIVATED: NO
+architectureVersion: ARCH-R19
+decisionRegisterVersion: DR-15
+productDeliveryVersion: PD-1
+supersedes: STATE-R114
+```
+
+## 11. STATE-R114 record
 
 ```text
 STATE-R114 = IMP-036F_PRODUCT_SLICE_ACTIVATION
@@ -415,7 +449,7 @@ productDeliveryVersion: PD-1
 supersedes: STATE-R113
 ```
 
-## 11. STATE-R113 record
+## 12. STATE-R113 record
 
 
 ```text
@@ -438,7 +472,7 @@ decisionRegisterVersion: DR-15
 supersedes: STATE-R112
 ```
 
-## 12. STATE-R112 record (historical compression)
+## 13. STATE-R112 record (historical compression)
 
 ```text
 STATE-R112 = CANONICAL_AUTHORITY_CONTEXT_COMPRESSION_ONLY
