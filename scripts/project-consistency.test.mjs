@@ -6323,6 +6323,14 @@ describe("PD-1 / TEST-1 product delivery process authorities", () => {
     assert.ok(messages.some((m) => m === "PRODUCT-DELIVERY.md prospective boundary markers OK"));
     assert.ok(messages.some((m) => m.startsWith("TESTING.md prospective boundary markers OK")));
     assert.ok(messages.some((m) => m === "AGENTS.md prospective boundary markers OK"));
+    assert.ok(messages.some((m) => m === "supporting GJ/TEST lifecycle markers aligned with IMP-036F activation"));
+    assert.ok(
+      messages.some(
+        (m) =>
+          m ===
+          "IMP-036E-backed Golden Journey statuses aligned at accepted-E / activated-F checkpoint",
+      ),
+    );
     for (const rel of [
       "docs/platform/product/README.md",
       "docs/platform/product/personas.md",
@@ -6330,6 +6338,26 @@ describe("PD-1 / TEST-1 product delivery process authorities", () => {
       "docs/platform/product/templates/product-definition-template.md",
     ]) {
       assert.ok(messages.some((m) => m === `product artifact present: ${rel}`), rel);
+    }
+  });
+
+  it("keeps IMP-036E-backed Golden Journeys CURRENT and menu-launch PLANNED at accepted-E / activated-F", () => {
+    const gj = readFileSync(
+      new URL("../docs/platform/product/golden-journeys.md", import.meta.url),
+      "utf8",
+    );
+    const required = {
+      "GJ-AVAILABILITY": "CURRENT",
+      "GJ-STORE-PAUSE-RESUME": "CURRENT",
+      "GJ-TRADING-HOURS": "CURRENT",
+      "GJ-ADDRESS-SERVICEABILITY": "CURRENT",
+      "GJ-PRODUCT-MENU-LAUNCH": "PLANNED",
+    };
+    for (const [journeyId, expected] of Object.entries(required)) {
+      const match = gj.match(
+        new RegExp(String.raw`\| \`${journeyId}\`[^|]*\|[^|]*\|\s*\`([A-Z_]+)\``),
+      );
+      assert.equal(match?.[1], expected, `${journeyId} status`);
     }
   });
 });
