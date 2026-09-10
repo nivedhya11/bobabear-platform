@@ -17264,6 +17264,42 @@ function checkProductDeliveryProcessAuthorities() {
           "golden-journeys.md must not claim IMP-036F NOT_ACTIVATED while ROADMAP/STATE assert IMP036F_ACTIVATED = YES",
         );
       }
+
+      // Explicit accepted-E / activated-F checkpoint: IMP-036E-backed GJ rows must not remain PARTIAL.
+      const roadmapMeta = roadmapText ? parseGovernanceMeta(roadmapText) : null;
+      const atAcceptedEActivatedFCheckpoint =
+        roadmapMeta?.roadmapVersion === "GTM-R116" &&
+        stateMeta?.stateVersion === "STATE-R114" &&
+        stateMeta?.acceptedThrough === "IMP-036E" &&
+        /IMP036F_ACTIVATED:\s*YES/.test(roadmapText) &&
+        /IMP036F_ACTIVATED:\s*YES/.test(stateText);
+      if (atAcceptedEActivatedFCheckpoint) {
+        const requiredGjStatuses = [
+          ["GJ-AVAILABILITY", "CURRENT"],
+          ["GJ-STORE-PAUSE-RESUME", "CURRENT"],
+          ["GJ-TRADING-HOURS", "CURRENT"],
+          ["GJ-ADDRESS-SERVICEABILITY", "CURRENT"],
+          ["GJ-PRODUCT-MENU-LAUNCH", "PLANNED"],
+        ];
+        let allAligned = true;
+        for (const [journeyId, expectedStatus] of requiredGjStatuses) {
+          const match = gjText.match(
+            new RegExp(String.raw`\| \`${journeyId}\`[^|]*\|[^|]*\|\s*\`([A-Z_]+)\``),
+          );
+          const actual = match?.[1] ?? null;
+          if (actual !== expectedStatus) {
+            allAligned = false;
+            fail(
+              "GJ_IMP036E_BACKED_STATUS",
+              `${journeyId} must be ${expectedStatus} at GTM-R116/STATE-R114 acceptedThrough IMP-036E (got ${actual ?? "NOT_FOUND"})`,
+            );
+          }
+        }
+        if (allAligned) {
+          note("IMP-036E-backed Golden Journey statuses aligned at accepted-E / activated-F checkpoint");
+        }
+      }
+
       note("supporting GJ/TEST lifecycle markers aligned with IMP-036F activation");
     }
   }
