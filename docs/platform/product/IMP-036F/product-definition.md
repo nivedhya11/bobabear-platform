@@ -1,13 +1,13 @@
 <!-- governance-meta
 {
-  "status": "DRAFT",
+  "status": "APPROVED",
   "authority": "PRODUCT_DEFINITION",
   "capability": "IMP-036F",
   "productDefinitionVersion": "PD-IMP-036F-DRAFT-1",
   "process": "PD-1",
   "verificationPolicy": "TEST-1",
   "lastReviewed": "2026-09-10",
-  "productDefinitionGateExecution": "NOT_PERFORMED",
+  "productDefinitionGateExecution": "PERFORMED",
   "architectureFit": "NOT_PERFORMED",
   "architectureLocked": "NO",
   "implementationAuthorized": "NO",
@@ -19,14 +19,14 @@
 
 # IMP-036F — Catalog, Menu, Pricing & Promotions Management
 
-## Product Definition (PRE-GATE DRAFT)
+## Product Definition (APPROVED — Product Definition Gate PASS)
 
 ```text
-Document status: DRAFT
+Document status: APPROVED
 PRODUCT_DEFINITION_VERSION: PD-IMP-036F-DRAFT-1
-PRE-GATE DRAFT: YES
-PRODUCT_DEFINITION_GATE_EXECUTION: NOT_PERFORMED
-Gate Result: NOT_PERFORMED
+PRE-GATE DRAFT: NO
+PRODUCT_DEFINITION_GATE_EXECUTION: PERFORMED
+Gate Result: PASS
 ARCHITECTURE_FIT: NOT_PERFORMED
 IMP036F_ARCHITECTURE_LOCKED: NO
 IMP036F_IMPLEMENTATION_AUTHORIZED: NO
@@ -35,8 +35,9 @@ IMP036F_ACCEPTED: NO
 IMP036G_ACTIVATED: NO
 ```
 
-This artifact is a **pre-gate Product Definition candidate**. It is not Product Definition approval,
-architecture fit, architecture lock, implementation authorization, or IMP acceptance.
+This artifact is the **gate-passed Product Definition** for candidate `PD-IMP-036F-DRAFT-1`.
+Product Definition Gate = PASS. It is not Architecture Fit, architecture lock, implementation
+authorization, implementation start, or IMP acceptance.
 
 ```text
 PRODUCT_DELIVERY_PROCESS_EFFECTIVE_FROM = IMP-036F
@@ -55,12 +56,12 @@ direction; not unresolved proposals).
 | Field | Definition |
 |---|---|
 | Capability / title | `IMP-036F — Catalog, Menu, Pricing & Promotions Management` |
-| Product Definition version / document status | `PD-IMP-036F-DRAFT-1`; **Document status: DRAFT** |
-| Product owner / approval evidence | Founder product direction via DISCOVER (`DISC-F-001`…`011`); Product Definition Gate **not executed** |
+| Product Definition version / document status | `PD-IMP-036F-DRAFT-1`; **Document status: APPROVED** |
+| Product owner / approval evidence | Founder product direction via DISCOVER (`DISC-F-001`…`011`); Product Definition Gate **PASS** on 2026-09-10 (PR #140 review `5166877450`; gate-evaluated content SHA `014e0f935f193f54718d6afd5e7991508088f9bc`) |
 | Process / verification policy | `PD-1` / `TEST-1` |
-| Canonical anchors | VISION-1; ROADMAP GTM-R117; STATE STATE-R115; ARCH-R19; DR-15; PD-1; TEST-1; PERSONA-1; GJ-1 |
-| Repository candidate | Canonical path `/home/ajoshi/repos/boba-bear-platform`; verified base `main` HEAD `4f5259231a71402a32d694b3aac4902b14c31e44`; tree `22f83b1def14a2846d58e917864061d9ca6afe3c`; publication branch/HEAD/fingerprint recorded at PR time |
-| Capability lifecycle / authorization | ROADMAP/STATE: `PLANNED` / `NOT_AUTHORIZED` / `NOT_STARTED`; `IMP036F_ACTIVATED: YES`; `IMP036F_PRODUCT_DEFINITION: DRAFT_AUTHORIZED`; `IMP036F_PRODUCT_DEFINITION_GATE: NOT_PERFORMED`; architecture **not** locked; implementation **not** authorized / **not** started; `FOUNDER_UAT_REQUIRED: YES` |
+| Canonical anchors | VISION-1; ROADMAP GTM-R118; STATE STATE-R116; ARCH-R19; DR-15; PD-1; TEST-1; PERSONA-1; GJ-1 |
+| Repository candidate | Canonical path `/home/ajoshi/repos/boba-bear-platform`; verified base `main` HEAD `4f5259231a71402a32d694b3aac4902b14c31e44`; tree `22f83b1def14a2846d58e917864061d9ca6afe3c`; gate-evaluated PR head `014e0f935f193f54718d6afd5e7991508088f9bc`; post-gate persistence is a subsequent PR #140 commit (not the gate-evaluated artifact) |
+| Capability lifecycle / authorization | ROADMAP/STATE: `PLANNED` / `NOT_AUTHORIZED` / `NOT_STARTED`; `IMP036F_ACTIVATED: YES`; `IMP036F_PRODUCT_DEFINITION: APPROVED`; `IMP036F_PRODUCT_DEFINITION_GATE: PASS`; architecture **not** locked; implementation **not** authorized / **not** started; `FOUNDER_UAT_REQUIRED: YES` |
 | Relevant capability architecture / ADRs | Supporting plan [`experience/enterprise-experience/IMP-036F-catalog-menu-pricing-promotions.md`](../../experience/enterprise-experience/IMP-036F-catalog-menu-pricing-promotions.md); binding ADR-006, ADR-007, ADR-008 (as amended by accepted STATE / D-368–D-370); historical locks D-085…D-100, D-102, D-108–D-111, D-118, D-122–D-127, D-137–D-144 where applicable; accepted IMP-036E Store Assortment boundary |
 | Founder UAT applicability | `FOUNDER_UAT_REQUIRED = YES` — materially changes operator commercial configuration and resulting customer discovery/orderability truth (ROADMAP/STATE) |
 
@@ -216,11 +217,12 @@ SERVICEABILITY | DELIVERY TARIFF | TAX / CHARGES
 
 | Slice | Mandatory story IDs | Mandatory AC IDs | Required Golden Journeys | Observable acceptance boundary |
 |---|---|---|---|---|
-| `V1_ACCEPTANCE_SLICE` | `US-IMP-036F-001` … `US-IMP-036F-016` | All ACs marked `Mandatory in acceptance slice: YES` below (64 mandatory; AC-014-02 = NO / FOLLOW_UP) | **Candidate (gate review):** `GJ-PRODUCT-MENU-LAUNCH`; **supporting CURRENT deps (not re-accepted as F):** `GJ-FIRST-ORDER`, `GJ-AVAILABILITY`, `GJ-ADDRESS-SERVICEABILITY` | Authorized Brand commercial operator completes coherent inspect→configure→review→publish/effect→verify/diagnose job within existing authorities and V1 bounds |
+| `V1_ACCEPTANCE_SLICE` | `US-IMP-036F-001` … `US-IMP-036F-016` | All ACs marked `Mandatory in acceptance slice: YES` below (64 mandatory; AC-014-02 = NO / FOLLOW_UP) | **Mandatory for IMP-036F acceptance:** `GJ-PRODUCT-MENU-LAUNCH`; **supporting CURRENT deps (not re-accepted as F):** `GJ-FIRST-ORDER`, `GJ-AVAILABILITY`, `GJ-ADDRESS-SERVICEABILITY` | Authorized Brand commercial operator completes coherent inspect→configure→review→publish/effect→verify/diagnose job within existing authorities and V1 bounds |
 | `FOLLOW_UP` | Advanced Modifier Library UX; Bundle Builder; richer audit composition UX if Architecture Fit requires phased delivery; media-reference select/change once a safe existing path is verified (DISC-F-010); any future simple mobile commercial mutations (none selected in this Product Definition) | TBD after Architecture Fit / later product gate or Product Definition revision | May affect `GJ-PRODUCT-MENU-LAUNCH` depth | Not silently required for V1 |
 | `DEFERRED` | Media upload/storage/scanning/CDN; tax/charge administration product; role/permission editor; four-eyes; realtime push; new lifecycles/scheduling; generic bulk semantics; full complex mobile commercial authoring; IMP-036G console expansion | N/A | Not part of IMP-036F acceptance | Explicit non-goals |
 
-Final mandatory Golden Journey selection remains subject to Product Definition Gate review.
+Mandatory Golden Journey for eventual IMP-036F acceptance (finalized at Product Definition Gate PASS):
+`GJ-PRODUCT-MENU-LAUNCH`. Registry status remains `PLANNED` (not CURRENT; not journey-test PASS).
 
 ---
 
@@ -252,7 +254,7 @@ entities.
 Architecture fit / applicable invariants: D-085 separations; D-368 projection ≠ authority
 Open material decisions: NONE
 Device applicability: Desktop/tablet full inspection; mobile inspection/context supported
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate and Architecture Fit not performed)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Architecture Fit not performed)
 ```
 
 ```text
@@ -281,7 +283,7 @@ customer-visible or customer-evaluation-affecting ACTIVE Product/Variant mutatio
 Open material decisions: NONE (Founder intent ADR-006 preserved; mechanism is Architecture Fit)
 Device applicability: Desktop/tablet authoring required for V1; mobile inspection/context only
 (no mandatory commercial mutations)
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate and Architecture Fit not performed;
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Architecture Fit not performed;
 conformance gap remains an Architecture Fit input)
 ```
 
@@ -307,7 +309,7 @@ Architecture fit / applicable invariants: ADR-006 modifier association surfaces;
 customer paid-modifier selection
 Open material decisions: NONE
 Device applicability: Desktop/tablet authoring; mobile inspection/context only
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate and Architecture Fit not performed)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Architecture Fit not performed)
 ```
 
 ```text
@@ -333,7 +335,7 @@ Architecture fit / applicable invariants: ADR-006 / D-089 lifecycle; confirmatio
 Open material decisions: NONE
 Device applicability: Desktop/tablet for consequential lifecycle transitions; mobile
 inspection/context only
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate and Architecture Fit not performed)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Architecture Fit not performed)
 ```
 
 ```text
@@ -360,7 +362,7 @@ Architecture fit / applicable invariants: D-086 Menu≠Category; D-368 projectio
 Menu boundary
 Open material decisions: NONE
 Device applicability: Desktop/tablet authoring; mobile inspection/context only
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate and Architecture Fit not performed)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Architecture Fit not performed)
 ```
 
 ```text
@@ -386,7 +388,7 @@ Brand Assortment mutation via this slice
 Architecture fit / applicable invariants: D-094–D-096/D-100; IMP-036E Store Assortment boundary
 Open material decisions: NONE
 Device applicability: Desktop/tablet Brand Assortment authoring; mobile inspection/context only
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate and Architecture Fit not performed)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Architecture Fit not performed)
 ```
 
 ```text
@@ -412,7 +414,7 @@ Architecture fit / applicable invariants: D-102 Catalog≠money; ADR-007 price b
 workforce pricing authoring surface composition
 Open material decisions: NONE
 Device applicability: Desktop/tablet pricing authoring; mobile inspection/context only
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate and Architecture Fit not performed)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Architecture Fit not performed)
 ```
 
 ```text
@@ -438,7 +440,7 @@ Architecture fit / applicable invariants: ADR-007 / D-122–D-127 lifecycle fide
 workforce promotion authoring surface
 Open material decisions: NONE
 Device applicability: Desktop/tablet authoring; mobile inspection/context only
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate and Architecture Fit not performed)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Architecture Fit not performed)
 ```
 
 ```text
@@ -475,7 +477,7 @@ Open material decisions: NONE (authorization mechanism is Architecture Fit, not 
 product choice)
 Device applicability: Desktop/tablet tariff authoring; mobile inspection/context only
 Classification: PLANNED_IMP036F; mutation mapping remains ARCHITECTURE_FIT_AUTHORIZATION_GAP until Fit
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate and Architecture Fit not performed;
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Architecture Fit not performed;
 tariff authorization/command mapping unresolved)
 ```
 
@@ -502,7 +504,7 @@ false single source of truth (ARCHITECTURE_FIT_REQUIRED for composition mechanis
 Open material decisions: NONE
 Device applicability: Desktop/tablet for consequential review/publish path; mobile
 inspection/context only
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate and Architecture Fit not performed)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Architecture Fit not performed)
 ```
 
 ```text
@@ -531,7 +533,7 @@ Product/Variant mutations (known examples: ACTIVE Product name/description; ACTI
 `isDefault`)
 Open material decisions: NONE
 Device applicability: Desktop/tablet publish/effect; mobile inspection/context only
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate and Architecture Fit not performed;
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Architecture Fit not performed;
 conformance gap remains an Architecture Fit input)
 ```
 
@@ -561,7 +563,7 @@ Open material decisions: NONE
 Device applicability: Desktop/tablet verification workflow; mobile may support inspection/context
 verification reads where operable, without requiring full authoring
 Secondary persona consequence: PERSONA-CUSTOMER experiences truthful Menu/order evaluation
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate and Architecture Fit not performed)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Architecture Fit not performed)
 ```
 
 ```text
@@ -588,7 +590,7 @@ Architecture fit / applicable invariants: How existing authorities supply diagno
 Open material decisions: NONE
 Device applicability: Desktop/tablet diagnosis; mobile inspection/context diagnosis supported where
 operable
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate and Architecture Fit not performed)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Architecture Fit not performed)
 ```
 
 ```text
@@ -622,7 +624,7 @@ optional later mapping of any verified existing select/change path is FOLLOW_UP
 Open material decisions: NONE (deferring unverified media-reference mutation is authorized by
 DISC-F-010; no new Founder decision required)
 Device applicability: Desktop/tablet/mobile inspection of existing references as context
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate and Architecture Fit not performed)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Architecture Fit not performed)
 ```
 
 ```text
@@ -658,7 +660,7 @@ Any future simple mobile mutation requires explicit selection plus story/AC cove
 Product Definition revision or separately authorized follow-up.
 Device applicability: Desktop and tablet mandatory for full V1 authoring; mobile mandatory for
 inspection/context support (not “unsupported”)
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate and Architecture Fit not performed)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Architecture Fit not performed)
 ```
 
 ```text
@@ -684,7 +686,7 @@ Architecture fit / applicable invariants: DISC-F-006 / ADR-007 Tax/Charges separ
 commercial workflow
 Open material decisions: NONE
 Device applicability: Desktop/tablet/mobile inspection/context as applicable
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate and Architecture Fit not performed)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Architecture Fit not performed)
 ```
 
 ---
@@ -1306,7 +1308,7 @@ Mandatory in acceptance slice: YES
 
 | Story / AC ID | Required behaviour / risk | Applicable test layers | Planned proof | Actual evidence / candidate / result |
 |---|---|---|---|---|
-| US-IMP-036F-001 / AC-001-* | Inspection integrity; auth denial; empty/stale | unit/integration + real-browser where UI | Planned after Architecture Fit + implementation authorization | Not executed (pre-gate draft) |
+| US-IMP-036F-001 / AC-001-* | Inspection integrity; auth denial; empty/stale | unit/integration + real-browser where UI | Planned after Architecture Fit + implementation authorization | Not executed (post-gate; Architecture Fit not performed) |
 | US-IMP-036F-002…004 / AC-002…004-* | Catalog draft/lifecycle/modifiers; ADR-006 intent | domain + UI + E2E | Planned | Not executed |
 | US-IMP-036F-005 / AC-005-* | Menu organization; one active Menu | UI + customer projection verification | Planned | Not executed |
 | US-IMP-036F-006 / AC-006-* | Brand Assortment; OM boundary | domain + UI + IMP-036E regression | Planned | Not executed |
@@ -1499,11 +1501,11 @@ User/support outcomes (not telemetry architecture):
 
 ## 20. Golden Journeys affected
 
-GJ-1 remains descriptive supporting authority; **not mutated** by this draft.
+GJ-1 remains descriptive supporting authority; **not mutated** by this Product Definition.
 
 | GJ ID / registry status | Affected steps / downstream behaviour | Mandatory for this acceptance? | Related story / AC IDs | Required proof / actual evidence |
 |---|---|---|---|---|
-| `GJ-PRODUCT-MENU-LAUNCH` / `PLANNED` | Core commercial configure → Menu/outlet context → customer discovery/orderability | **Acceptance-critical candidate** (final selection at Product Definition Gate) | US-001…013 | Real-browser + Founder UAT after implementation; not CURRENT yet |
+| `GJ-PRODUCT-MENU-LAUNCH` / `PLANNED` | Core commercial configure → Menu/outlet context → customer discovery/orderability | **YES — mandatory for IMP-036F acceptance** (finalized at Product Definition Gate PASS; registry remains PLANNED) | US-001…013 | Real-browser + Founder UAT after implementation; not CURRENT yet |
 | `GJ-FIRST-ORDER` / `CURRENT` | Customer discover→pay continuity depends on truthful commercial config | Supporting/current dependency (do not re-accept F as replacing it) | US-012 | Regression under TEST-1 when F lands |
 | `GJ-AVAILABILITY` / `CURRENT` | Diagnosis distinguishes Availability; F must not collapse Assortment/Availability | Supporting/current dependency | US-006, US-013 | Regression |
 | `GJ-ADDRESS-SERVICEABILITY` / `CURRENT` | Serviceability ≠ delivery tariff; diagnosis may include serviceability | Supporting/current dependency | US-009, US-013 | Regression |
@@ -1527,7 +1529,7 @@ Do not silently convert `GJ-PRODUCT-MENU-LAUNCH` from `PLANNED` to `CURRENT` in 
 | Accepted delivery fee storage/calc | IMP-036C | US-009 | Workforce journey + auth mapping gap |
 | Accepted IMP-036E Store Assortment boundary | STATE / capability docs | US-006 | NONE — preserve |
 | Customer Menu projection | D-368 / IMP-028B | US-012 | Conformance gap vs ADR-006 for customer-affecting ACTIVE Product/Variant live mutations (incl. Product name/description; Variant `isDefault`) |
-| Product Definition Gate | PD-1 | Before Architecture Fit | Currently NOT_PERFORMED |
+| Product Definition Gate | PD-1 | Before Architecture Fit | PERFORMED — PASS (2026-09-10; PR #140 review `5166877450`) |
 | Architecture Fit | PD-1 phase | Before implementation readiness | NOT_PERFORMED |
 | Implementation authorization | ROADMAP/STATE | Before coding | NO |
 
@@ -1590,7 +1592,7 @@ Do not silently convert `GJ-PRODUCT-MENU-LAUNCH` from `PLANNED` to `CURRENT` in 
 
 | `UNRESOLVED_DECISION_REQUIRED` item | Material user/business impact | Decision owner / evidence needed | Affected stories / gate |
 |---|---|---|---|
-| NONE | DISC-F-001…011 encode approved Founder direction; remaining gaps are Architecture Fit / implementation mechanism questions, not new product behaviour choices | N/A | Product Definition Gate may still execute later; this draft does not execute it |
+| NONE | DISC-F-001…011 encode approved Founder direction; remaining gaps are Architecture Fit / implementation mechanism questions, not new product behaviour choices | N/A | Product Definition Gate PASS recorded; Architecture Fit remains next phase |
 
 Architecture Fit inputs (not product decisions; not Architecture Conflicts):
 
@@ -1619,46 +1621,57 @@ These remain **UNASSIGNED** and are **not** IMP-036F V1 stories:
 
 | Story ID | Applicable template fields complete / evidence | Open material decisions | Readiness / blocker |
 |---|---|---|---|
-| US-IMP-036F-001 | YES — all §9 template fields present (incl. N/A where justified) | NONE | NOT_READY_FOR_IMPLEMENTATION — Product Definition Gate + Architecture Fit not performed |
-| US-IMP-036F-002 | YES | NONE | NOT_READY_FOR_IMPLEMENTATION — gate + Architecture Fit not performed; ADR-006 conformance gap is Fit input |
-| US-IMP-036F-003 | YES | NONE | NOT_READY_FOR_IMPLEMENTATION — gate + Architecture Fit not performed |
-| US-IMP-036F-004 | YES | NONE | NOT_READY_FOR_IMPLEMENTATION — gate + Architecture Fit not performed |
-| US-IMP-036F-005 | YES | NONE | NOT_READY_FOR_IMPLEMENTATION — gate + Architecture Fit not performed |
-| US-IMP-036F-006 | YES | NONE | NOT_READY_FOR_IMPLEMENTATION — gate + Architecture Fit not performed |
-| US-IMP-036F-007 | YES | NONE | NOT_READY_FOR_IMPLEMENTATION — gate + Architecture Fit not performed |
-| US-IMP-036F-008 | YES | NONE | NOT_READY_FOR_IMPLEMENTATION — gate + Architecture Fit not performed |
-| US-IMP-036F-009 | YES | NONE | NOT_READY_FOR_IMPLEMENTATION — gate + Architecture Fit not performed; `ARCHITECTURE_FIT_AUTHORIZATION_GAP` DoR blocker for tariff mutation mapping |
-| US-IMP-036F-010 | YES | NONE | NOT_READY_FOR_IMPLEMENTATION — gate + Architecture Fit not performed |
-| US-IMP-036F-011 | YES | NONE | NOT_READY_FOR_IMPLEMENTATION — gate + Architecture Fit not performed; ADR-006 conformance gap is Fit input |
-| US-IMP-036F-012 | YES | NONE | NOT_READY_FOR_IMPLEMENTATION — gate + Architecture Fit not performed |
-| US-IMP-036F-013 | YES | NONE | NOT_READY_FOR_IMPLEMENTATION — gate + Architecture Fit not performed |
-| US-IMP-036F-014 | YES | NONE | NOT_READY_FOR_IMPLEMENTATION — gate + Architecture Fit not performed; media mutation FOLLOW_UP |
-| US-IMP-036F-015 | YES | NONE | NOT_READY_FOR_IMPLEMENTATION — gate + Architecture Fit not performed; mobile mutations none mandatory |
-| US-IMP-036F-016 | YES | NONE | NOT_READY_FOR_IMPLEMENTATION — gate + Architecture Fit not performed |
+| US-IMP-036F-001 | YES — all §9 template fields present (incl. N/A where justified) | NONE | NOT_READY_FOR_IMPLEMENTATION — Architecture Fit not performed |
+| US-IMP-036F-002 | YES | NONE | NOT_READY_FOR_IMPLEMENTATION — Architecture Fit not performed; ADR-006 conformance gap is Fit input |
+| US-IMP-036F-003 | YES | NONE | NOT_READY_FOR_IMPLEMENTATION — Architecture Fit not performed |
+| US-IMP-036F-004 | YES | NONE | NOT_READY_FOR_IMPLEMENTATION — Architecture Fit not performed |
+| US-IMP-036F-005 | YES | NONE | NOT_READY_FOR_IMPLEMENTATION — Architecture Fit not performed |
+| US-IMP-036F-006 | YES | NONE | NOT_READY_FOR_IMPLEMENTATION — Architecture Fit not performed |
+| US-IMP-036F-007 | YES | NONE | NOT_READY_FOR_IMPLEMENTATION — Architecture Fit not performed |
+| US-IMP-036F-008 | YES | NONE | NOT_READY_FOR_IMPLEMENTATION — Architecture Fit not performed |
+| US-IMP-036F-009 | YES | NONE | NOT_READY_FOR_IMPLEMENTATION — Architecture Fit not performed; `ARCHITECTURE_FIT_AUTHORIZATION_GAP` DoR blocker for tariff mutation mapping |
+| US-IMP-036F-010 | YES | NONE | NOT_READY_FOR_IMPLEMENTATION — Architecture Fit not performed |
+| US-IMP-036F-011 | YES | NONE | NOT_READY_FOR_IMPLEMENTATION — Architecture Fit not performed; ADR-006 conformance gap is Fit input |
+| US-IMP-036F-012 | YES | NONE | NOT_READY_FOR_IMPLEMENTATION — Architecture Fit not performed |
+| US-IMP-036F-013 | YES | NONE | NOT_READY_FOR_IMPLEMENTATION — Architecture Fit not performed |
+| US-IMP-036F-014 | YES | NONE | NOT_READY_FOR_IMPLEMENTATION — Architecture Fit not performed; media mutation FOLLOW_UP |
+| US-IMP-036F-015 | YES | NONE | NOT_READY_FOR_IMPLEMENTATION — Architecture Fit not performed; mobile mutations none mandatory |
+| US-IMP-036F-016 | YES | NONE | NOT_READY_FOR_IMPLEMENTATION — Architecture Fit not performed |
 
 Product-definition template fields are complete for all 16 stories above. Completeness of §9 fields does **not** make any story ready for implementation.
 
-`STORY_COMPLETE != IMP_ACCEPTED`. Final story readiness requires Product Definition Gate, Architecture Fit/lock, and implementation authorization, plus any story-specific Fit blockers (e.g. US-009 tariff authorization mapping).
+`STORY_COMPLETE != IMP_ACCEPTED`. Final story readiness requires Architecture Fit/lock and implementation authorization (Product Definition Gate already PASS), plus any story-specific Fit blockers (e.g. US-009 tariff authorization mapping).
 
 ---
 
 ## 27. Product Definition Gate
 
 ```text
-PRE-GATE DRAFT:
-PRODUCT_DEFINITION_GATE_EXECUTION = NOT_PERFORMED
-Gate Result: NOT_PERFORMED
+PRODUCT_DEFINITION_GATE_EXECUTION: PERFORMED
+Gate Result: PASS
 ```
 
-Actual Product Definition Gate execution has **not** occurred. After a future gate execution, the
-execution marker and Gate Result must be replaced with an actual gate verdict under PD-1. This draft
-must not be treated as approved.
+Product Definition Gate execution was performed on 2026-09-10 against exact candidate
+`PD-IMP-036F-DRAFT-1`. Durable gate-verdict evidence is PR #140 COMMENT review `5166877450`
+(`PRODUCT_DEFINITION_GATE — PASS`). An attempted GitHub APPROVE review was rejected only because
+the connected GitHub identity owns PR #140; that platform limitation is not a failed gate.
+
+```text
+GATE-EVALUATED CONTENT SHA = 014e0f935f193f54718d6afd5e7991508088f9bc
+POST-GATE PERSISTENCE SHA = subsequent PR #140 head after this gate-pass persistence commit
+  (this persistence revision is NOT the artifact evaluated by the gate)
+Gate date: 2026-09-10
+PR: #140
+Durable gate review record: 5166877450
+Product Definition Gate result: PASS
+```
 
 ```text
 PRODUCT_DEFINITION_GATE
 
 Capability: IMP-036F — Catalog, Menu, Pricing & Promotions Management
 Product Definition Version: PD-IMP-036F-DRAFT-1
+Document status: APPROVED
 Business Outcome: Defined (bounded end-to-end commercial management; DISC-F-001)
 Primary Personas: PERSONA-WORKFORCE-OPERATOR (primary); PERSONA-CUSTOMER (secondary consequence)
 Journeys Defined: YES (current fragmented + desired JOURNEY-PRODUCT-MENU-LAUNCH)
@@ -1674,7 +1687,10 @@ Concurrency Considered: YES
 Destructive Actions Defined: YES (consequential publish/lifecycle; no hard-delete)
 UX State Matrix Complete: YES
 Accessibility Considered: YES
-Golden Journeys Identified: YES (candidates; final mandatory selection at gate review)
+Golden Journeys Identified: YES
+Mandatory Golden Journey for IMP-036F acceptance: GJ-PRODUCT-MENU-LAUNCH (registry remains PLANNED)
+Supporting CURRENT Golden Journey dependencies (not re-accepted as IMP-036F):
+  GJ-FIRST-ORDER; GJ-AVAILABILITY; GJ-ADDRESS-SERVICEABILITY
 Explicit Deferrals Recorded: YES
 Unresolved Product Decisions: NONE (DISC-F-001…011 encoded; Architecture Fit gaps recorded separately)
 Architecture Conflicts: NONE IDENTIFIED AT PRODUCT-DEFINITION LEVEL
@@ -1686,8 +1702,8 @@ Architecture Fit Inputs:
 - Audit composition
 - Diagnosis composition
 - ARCHITECTURE_FIT = NOT_PERFORMED
-PRODUCT_DEFINITION_GATE_EXECUTION: NOT_PERFORMED
-Gate Result: NOT_PERFORMED
+PRODUCT_DEFINITION_GATE_EXECUTION: PERFORMED
+Gate Result: PASS
 ```
 
 ```text
@@ -1699,6 +1715,8 @@ IMP036F_ACCEPTED: NO
 IMP036G_ACTIVATED: NO
 ```
 
+Next phase: `ARCHITECTURE_FIT — NOT_PERFORMED` (separate authorization). This gate PASS does not
+lock architecture, authorize or start implementation, accept IMP-036F, or activate IMP-036G.
 ---
 
 ## Appendix A — Founder decisions encoding checklist
