@@ -2,4 +2,4 @@
 2:I[19610,["8409","static/chunks/8409-6521fbaf4dd9a2b7.js","8455","static/chunks/8455-4946be778666d085.js","282","static/chunks/282-4a8cc63694900bb1.js","1456","static/chunks/app/workforce/(portal)/layout-1f6c0a3f1f45222b.js"],"WorkforceAppShell"]
 3:I[57121,[],""]
 4:I[74581,[],""]
-0:{"rsc":["$","$1","c",{"children":[null,["$","$L2",null,{"children":["$","$L3",null,{"parallelRouterKey":"children","template":["$","$L4",null,{}]}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"QVhwBhPRxP0yWOKtMoI-D"}
+0:{"rsc":["$","$1","c",{"children":[null,["$","$L2",null,{"children":["$","$L3",null,{"parallelRouterKey":"children","template":["$","$L4",null,{}]}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"ZgnJJQk-71HTGWQ77LarW"}
