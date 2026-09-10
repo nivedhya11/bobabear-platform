@@ -615,7 +615,23 @@ ASSORTMENT_CONCURRENCY =
   CONDITIONAL_WRITE = expectedRuleRevision CAS
   STALE_RESULT = deterministic conflict
   ATOMIC_BOUNDARY = Assortment mutation statement/transaction
+
+ASSORTMENT_REVIEW_EFFECT_BINDING = REQUIRED
+
+previewCommercialConsequence:
+  for consequential Assortment mutation
+  → returns authoritative expectedRuleRevision
+
+include / exclude / retire Assortment mutation:
+  → requires reviewed expectedRuleRevision
+  → conditionally verifies current rule state/revision
+  → mismatch = deterministic conflict
+  → no mutation
+  → operator must reload and review again
 ```
+
+Preserve: Assortment authority = Brand; Outlet Manager Brand Assortment manage = NO;
+Store Assortment mutation surface = NO.
 
 ---
 
@@ -792,18 +808,37 @@ NEW_PERMISSION_REQUIRED = NO
 ```
 
 ```text
+expectedTariffConfigRevision =
+  architecture name for the authoritative serviceability-config row revision
+  (same physical revision authority already locked for the Pricing-owned tariff write;
+   NOT a second tariff revision authority)
+
 Tariff READ:
   selected outletId → load Outlet → derive Brand → requirePricingRead(Brand) → read tariff fields
 
 Tariff MUTATION:
   selected outletId → load Outlet → derive Brand → requirePricingManage(Brand)
   → mutate only delivery_fee_bands + free_delivery_subtotal_threshold_paise
-  → require expectedRevision on serviceability config row
+  → require expectedTariffConfigRevision (serviceability-config row revision CAS)
   → write pricing-owned audit event (and bump config revision)
+
+TARIFF_REVIEW_EFFECT_BINDING = REQUIRED
+
+previewCommercialConsequence:
+  for consequential tariff mutation
+  → returns authoritative expectedTariffConfigRevision
+
+tariff mutation:
+  → requires the reviewed expectedTariffConfigRevision
+  → verifies it inside the tariff mutation + audit transaction
+  → mismatch = deterministic conflict
+  → prior tariff remains unchanged
+  → operator must reload and review again
 ```
 
 Do **not** use `requireOutletPricingManage` / outlet-targeted `pricing.manage` as Brand proof.
 Do **not** authorize via `serviceability.manage` merely because columns co-reside.
+Do **not** create a second tariff revision authority.
 
 Persistence locality ≠ business authority.
 
@@ -850,9 +885,9 @@ REVISION_FINGERPRINT_IS_SECOND_COMMERCIAL_AUTHORITY = NO
 ```
 
 The configuration the operator reviews is the configuration that is subsequently effected. Reuse each
-domain’s bounded revision mechanism. This candidate locks numeric aggregate/Coupon revision for
-Pricing, Promotion, and Coupon; it does not use a reviewed-configuration fingerprint as the effect
-predicate.
+domain’s bounded revision mechanism. This candidate locks reviewed-revision→effect binding for every
+consequential commercial domain (Catalog, Menu, Assortment, Pricing, Promotion, Coupon, delivery
+tariff); it does not use a reviewed-configuration fingerprint as the effect predicate.
 
 ```text
 existing authoritative domain state
@@ -876,8 +911,10 @@ previewCommercialConsequence result:
   - relevant current/effective truth
   - proposed truth
   - authoritative expected revision(s) required by that specific effect
-    (expectedContentRevision / expectedMenuRevision / expectedPriceBookRevision /
-     expectedPromotionRevision / expectedCouponRevision as applicable)
+    (expectedContentRevision / expectedMenuRevision / expectedRuleRevision /
+     expectedPriceBookRevision / expectedPromotionRevision / expectedCouponRevision /
+     expectedTariffConfigRevision as applicable — only revisions relevant to the
+     specific pending effect)
 
 Effect / publish:
   - consumes those expected revisions from the reviewed preview/read state
@@ -895,9 +932,11 @@ Domain reuse (no generic token service):
 |---|---|---|
 | `publishCatalogContentChange` | expectedContentRevision | Fit already locks envelope + entity revision CAS |
 | `publishMenuRevision` | expectedMenuRevision | Fit already locks menuRevision CAS |
+| Assortment include/exclude/retire | expectedRuleRevision | Fit already locks rule revision CAS; consequence preview must return it |
 | `activatePriceBook` | expectedPriceBookRevision | overlap-only today; overlap is additional, not the stale-review guard |
 | `activatePromotion` | expectedPromotionRevision | fingerprint computed at activation is provenance, not a stale-review guard |
 | Coupon activate/disable/enable/retire (and draft update when consequence-reviewed) | expectedCouponRevision | no configuration fingerprint / revision predicate today |
+| Delivery tariff mutate | expectedTariffConfigRevision | serviceability config `revision` already locked for tariff write; preview must return it as `expectedTariffConfigRevision` |
 
 
 ---
@@ -975,7 +1014,7 @@ alternatives (optional revision vs `updatedAt` CAS; overlay vs supersede) are **
 | Promotion draft aggregate (fields + Benefit + qualifier/benefit targets) | Draft gate | PROMOTION_AGGREGATE_REVISION CAS | YES | expectedPromotionRevision | draft mutation statement/tx | deterministic conflict | YES | NO |
 | Promotion activate | computes/stores `configurationFingerprint` at activation (VERIFIED; not a stale-review guard) | reviewed Promotion aggregate revision CAS; fingerprint remains effective provenance | YES | EXPECTED = reviewed Promotion aggregate revision | activation transaction | deterministic conflict | YES | NO |
 | Coupon material edit / lifecycle (draft update, activate, disable, enable, retire) | lifecycle/state only; no configuration fingerprint (VERIFIED) | COUPON_REVISION CAS | YES | EXPECTED = Coupon revision | mutation/lifecycle transaction | deterministic conflict | YES | NO |
-| Delivery tariff edit | Config revision unused for tariff | reuse serviceability `revision` | YES | `expectedRevision` CAS | tariff mutate + audit | deterministic conflict | YES (existing) | NO |
+| Delivery tariff edit | Config revision unused for tariff | reuse serviceability `revision` as `expectedTariffConfigRevision` | YES | `expectedTariffConfigRevision` CAS | tariff mutate + audit | deterministic conflict | YES (existing) | NO |
 
 No generic idempotency framework required for V1 Fit.
 
@@ -1081,8 +1120,8 @@ mandatory_ACs_mapped = YES
 | US-007 | 007-01, 007-02, 007-03, 007-04, 007-05 | Pricing books + modifier price attach under PRICE_BOOK_AGGREGATE_REVISION; invalid money rejected; diagnosis honesty; Checkout snapshot authority unchanged; activate requires reviewed expectedPriceBookRevision |
 | US-008 | 008-01, 008-02, 008-03, 008-04, 008-05 | Existing Promotion/Coupon lifecycles only; Promotion aggregate revision covers Benefit/Targets; Coupon revision on material edit/lifecycle; validation; unauthorized denial; no invented states |
 | US-009 | 009-01, 009-02, 009-03, 009-04, 009-05 | Pricing-owned tariff via `pricing.read`/`pricing.manage` Brand←Outlet; provider cost separate; unauthorized denial; not `serviceability.manage` |
-| US-010 | 010-01, 010-02, 010-03, 010-04 | Non-authoritative consequence preview before publish; preview returns authoritative expected revision(s) for the subsequent effect; cancel leaves draft; no four-eyes; draft vs effective explicit |
-| US-011 | 011-01, 011-02, 011-03, 011-04, 011-05 | `publishCatalogContentChange` / `publishMenuRevision` / pricing&promo/coupon effect after validate; each consumes reviewed expected revision; auth denial; verifiable resulting effective state; no-op when unchanged |
+| US-010 | 010-01, 010-02, 010-03, 010-04 | Non-authoritative consequence preview before publish; preview returns authoritative expected revision(s) for the subsequent effect including Assortment `expectedRuleRevision` and tariff `expectedTariffConfigRevision` when those domains are consequential; cancel leaves draft; no four-eyes; draft vs effective explicit |
+| US-011 | 011-01, 011-02, 011-03, 011-04, 011-05 | `publishCatalogContentChange` / `publishMenuRevision` / Assortment include/exclude/retire / pricing&promo/coupon / delivery-tariff effect after validate; each consumes reviewed expected revision (`expectedRuleRevision` / `expectedTariffConfigRevision` included); auth denial; verifiable resulting effective state; no-op when unchanged; stale mismatch = conflict / no effect / re-review |
 | US-012 | 012-01, 012-02, 012-03, 012-04 | Verify via existing `/api/v1/*` customer reads; no realtime push requirement; partial consequence honesty; do not trust edit form alone |
 | US-013 | 013-01, 013-02, 013-03, 013-04, 013-05 | Non-authoritative diagnosis composition across Catalog/Menu/Assortment/Availability/Pricing/Promo/hours/serviceability |
 | US-014 | 014-01, 014-03 | **AC-IMP-036F-014-01:** view existing media references; **AC-IMP-036F-014-03:** Upload not offered as V1 capability — V1 UI capability boundary, no upload/storage/CDN action, no upload transport/domain/persistence architecture, UI/E2E negative evidence. (**AC-IMP-036F-014-02** non-mandatory FOLLOW_UP — not counted in mandatory map) |
@@ -1101,9 +1140,9 @@ mandatory_ACs_mapped = YES
 | US-006 | 006-01…04 | Assortment | assortment.manage @ Brand | Assortment commercial | Admin | include/exclude/retire | rule CAS | expectedRuleRevision | eligibility | assortment audit | no Store manage | PASS | YES |
 | US-007 | 007-01…05 | Pricing | pricing.manage @ Brand | Pricing | Admin | price book cmds + modifier attach | PriceBook aggregate revision | expectedPriceBookRevision on draft graph mutations and activate; overlap additional | price resolve | pricing audit | Catalog≠money | PASS | YES |
 | US-008 | 008-01…05 | Promotions | promotions/coupons.* @ Brand | Promotions | Admin | existing promo/coupon cmds | Promotion aggregate revision; Coupon revision | expectedPromotionRevision / expectedCouponRevision on draft and effect | evaluation | promotion audit | no invented states; fingerprint is provenance | PASS | YES |
-| US-009 | 009-01…05 | Pricing tariff | pricing.read/manage @ Brand←Outlet | Tariff | Admin | new tariff read/mutate ops | reuse columns + audit | serviceability expectedRevision | delivery charge resolve | pricing tariff audit | not serviceability.manage | PASS | YES |
-| US-010 | 010-01…04 | Composition | domain reads | Consequence | Admin | previewCommercialConsequence | none authoritative | preview returns expected revisions for effect; not a write CAS | none until confirm | n/a | non-authoritative | PASS | YES |
-| US-011 | 011-01…05 | Catalog/Menu/Pricing/Promo | manage/activate | Publish | Admin | `publishCatalogContentChange` / `publishMenuRevision` / domain activate after preview | as above | expectedContentRevision / expectedMenuRevision / expectedPriceBookRevision / expectedPromotionRevision / expectedCouponRevision | D-368/pricing effective truth | domain audits | deliberate only; atomic Catalog+Menu publish; stale review = conflict | PASS | YES |
+| US-009 | 009-01…05 | Pricing tariff | pricing.read/manage @ Brand←Outlet | Tariff | Admin | new tariff read/mutate ops | reuse columns + audit | expectedTariffConfigRevision (serviceability-config row) | delivery charge resolve | pricing tariff audit | not serviceability.manage | PASS | YES |
+| US-010 | 010-01…04 | Composition | domain reads | Consequence | Admin | previewCommercialConsequence | none authoritative | preview returns expected revisions for effect incl. Assortment expectedRuleRevision + tariff expectedTariffConfigRevision; not a write CAS | none until confirm | n/a | non-authoritative | PASS | YES |
+| US-011 | 011-01…05 | Catalog/Menu/Assortment/Pricing/Promo/tariff | manage/activate | Publish | Admin | `publishCatalogContentChange` / `publishMenuRevision` / Assortment mutate / domain activate / tariff mutate after preview | as above | expectedContentRevision / expectedMenuRevision / expectedRuleRevision / expectedPriceBookRevision / expectedPromotionRevision / expectedCouponRevision / expectedTariffConfigRevision | D-368/pricing effective truth | domain audits | deliberate only; atomic Catalog+Menu publish; stale review = conflict | PASS | YES |
 | US-012 | 012-01…04 | Customer reads | commercial read context | Verification | Admin orchestrates `/api/v1` | existing customer Menu/price/checkout | none | n/a | truthful UX | n/a | no second projection | PASS | YES |
 | US-013 | 013-01…05 | Multi-read | partial reads | Diagnosis | Admin | diagnoseSellability composition | none | n/a | explanation only | n/a | fail closed | PASS | YES |
 | US-014 | 014-01 + 014-03 (014-02 FOLLOW_UP) | Menu/Catalog refs | read | Media inspect | Admin | read imagePath; **upload absent** | none | n/a | none | n/a | no upload/storage/CDN architecture | PASS | YES (view + upload-absent) |
