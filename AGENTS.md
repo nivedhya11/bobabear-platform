@@ -28,8 +28,12 @@ existing lifecycle (`ANCHOR → GATE → EXECUTE → PROVE → ACCEPT → RECONC
 PRODUCT_DELIVERY_PROCESS_EFFECTIVE_FROM = IMP-036F
 HISTORICAL_ACCEPTED_IMPS_REWRITTEN = NO
 IMP036E_LIFECYCLE_CHANGED = NO
-IMP036F_ACTIVATED = NO
+PD1_DID_NOT_ACTIVATE_IMP036F_AT_ADOPTION = YES
 ```
+
+PD-1 did not itself activate IMP-036F when introduced. IMP-036F activation is governed by CURRENT
+[`ROADMAP.md`](docs/platform/ROADMAP.md) / [`STATE.md`](docs/platform/STATE.md)
+(`IMP036F_ACTIVATED`). Read current lifecycle truth only from those authorities.
 
 ## Canonical authorities
 

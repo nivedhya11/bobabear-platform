@@ -22,7 +22,7 @@ owned by [TESTING.md](../TESTING.md).
 
 A per-IMP Product Definition is mandatory from **IMP-036F onward** for new substantial product
 work. Use `docs/platform/product/<IMP>/product-definition.md`, with its own identity, version,
-and gate record. This convention creates no IMP-036F Product Definition or activation in Session 1.
+and gate record. Session 1 created no IMP-036F Product Definition; activation is governed by CURRENT ROADMAP/STATE, not by this index.
 Engineering-only changes without a product surface may remain specification-driven under the
 [change workflow](../engineering/change-workflow.md).
 
@@ -51,9 +51,11 @@ select which journeys are mandatory for acceptance.
 PRODUCT_DELIVERY_PROCESS_EFFECTIVE_FROM = IMP-036F
 HISTORICAL_ACCEPTED_IMPS_REWRITTEN = NO
 IMP036E_LIFECYCLE_CHANGED = NO
-IMP036F_ACTIVATED = NO
+PD1_DID_NOT_ACTIVATE_IMP036F_AT_ADOPTION = YES
 ```
 
-A Journey Gap Audit of previously implemented product journeys is required before public GTM
-cutover / IMP-040 acceptance. Session 1 establishes the process and initial registry; it does not
-perform that audit or revise prior acceptance.
+PD-1 Session 1 did not itself activate IMP-036F. Current IMP-036F activation truth is owned only by
+[`ROADMAP.md`](../ROADMAP.md) / [`STATE.md`](../STATE.md). A Journey Gap Audit of previously
+implemented product journeys is required before public GTM cutover / IMP-040 acceptance. Session 1
+establishes the process and initial registry; it does not perform that audit or revise prior
+acceptance.

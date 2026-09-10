@@ -44,11 +44,13 @@ product documents cannot override technical/security/data authority or invent ro
 PRODUCT_DELIVERY_PROCESS_EFFECTIVE_FROM = IMP-036F
 HISTORICAL_ACCEPTED_IMPS_REWRITTEN = NO
 IMP036E_LIFECYCLE_CHANGED = NO
-IMP036F_ACTIVATED = NO
+PD1_DID_NOT_ACTIVATE_IMP036F_AT_ADOPTION = YES
 ```
 
-A per-IMP [Product Definition](./product/templates/product-definition-template.md) is mandatory
-from IMP-036F. PD-1 requires a Journey Gap Audit before public GTM cutover / IMP-040 acceptance;
+PD-1 did not itself activate IMP-036F when introduced; read current activation from
+[`ROADMAP.md`](./ROADMAP.md) / [`STATE.md`](./STATE.md). A per-IMP
+[Product Definition](./product/templates/product-definition-template.md) is mandatory from
+IMP-036F. PD-1 requires a Journey Gap Audit before public GTM cutover / IMP-040 acceptance;
 that audit is not performed in Session 1. TEST-1's CI restructuring is TARGET until Session 3
 implements it; this index makes no claim of full current CI enforcement.
 

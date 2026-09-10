@@ -29,14 +29,16 @@ agent execution, safety, provenance, and promotion rules.
 PRODUCT_DELIVERY_PROCESS_EFFECTIVE_FROM = IMP-036F
 HISTORICAL_ACCEPTED_IMPS_REWRITTEN = NO
 IMP036E_LIFECYCLE_CHANGED = NO
-IMP036F_ACTIVATED = NO
+PD1_DID_NOT_ACTIVATE_IMP036F_AT_ADOPTION = YES
 ```
 
 PD-1 is mandatory for new substantial product work beginning with IMP-036F. A per-IMP Product
 Definition is required using the [template](./product/templates/product-definition-template.md).
 IMP-036E continues under its existing lifecycle; accepted IMPs are not rewritten or reopened by
-this policy. These adoption markers do not replace future ROADMAP/STATE lifecycle authority.
-Engineering-only changes with no product behaviour change may remain specification-driven.
+this policy. PD-1 did not itself activate IMP-036F when introduced; current activation truth is
+owned only by [`ROADMAP.md`](./ROADMAP.md) / [`STATE.md`](./STATE.md) (`IMP036F_ACTIVATED`).
+These adoption markers do not replace ROADMAP/STATE lifecycle authority. Engineering-only changes
+with no product behaviour change may remain specification-driven.
 
 A **Journey Gap Audit** of previously implemented product journeys is required before public GTM
 cutover / IMP-040 acceptance. Session 1 establishes that requirement; it does not perform the audit.
