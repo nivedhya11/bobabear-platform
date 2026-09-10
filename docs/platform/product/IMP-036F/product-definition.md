@@ -115,8 +115,8 @@ experiences are fragmented or missing. Operators cannot reliably complete one co
 | Promotions/Coupons | CURRENT_SUPPORTED domain; workforce UX gap | Promotion/coupon manage exists; coherent campaign-management journey is missing |
 | Delivery tariff | CURRENT_SUPPORTED calc/storage; workforce UX gap | Distance bands / free-delivery threshold accepted (IMP-036C); coherent workforce tariff management journey missing; clean mutation permission/command mapping is an Architecture Fit question |
 | Consequence / audit | Distributed | Commercial audit/review evidence is distributed rather than a coherent operator consequence review |
-| Media | CURRENT_SUPPORTED references; NOT_SUPPORTED platform | Media references may exist; upload/storage/scanning/CDN platform is not required for V1 |
-| Catalog publication conformance | ARCHITECTURE_FIT_CONFORMANCE_GAP | ADR-006 requires draft→validate→publish→effective revision; current implementation can live-update ACTIVE Product name/description and customer Menu projection can consume those live fields |
+| Media | CURRENT_SUPPORTED reference storage on Menu entries (`imagePath`); NOT_SUPPORTED platform; mutation workflow UNVERIFIED | Existing Menu-entry `imagePath` references may be viewed where present; no verified safe workforce select/change workflow for V1. Upload/storage/scanning/CDN platform is not required (DISC-F-010). Media-reference mutation is FOLLOW_UP under DISC-F-010 until a safe existing path is proven. |
+| Catalog publication conformance | ARCHITECTURE_FIT_CONFORMANCE_GAP | ADR-006 requires draft→validate→publish→effective revision; CURRENT implementation permits customer-visible or customer-evaluation-affecting ACTIVE Product/Variant mutations without that publication boundary. Known examples: ACTIVE Product name/description; ACTIVE Variant default-selection (`isDefault`, via `updateVariant` + `pickDefaultActiveVariant` in customer Menu projection). Architecture Fit must inventory all ACTIVE Product/Variant mutable fields that can affect customer-visible or ordering truth and make implementation conform to ADR-006. Do not claim every mutable Variant field (e.g. `isSelectorVisible`) necessarily changes customer projection unless verified. |
 
 Do not treat implementation quirks as desired product behaviour.
 
@@ -158,7 +158,7 @@ REALTIME_PUSH_GUARANTEE = NO
 
 | Journey ID | Entry / context | Ordered activities | Success / downstream outcome | Alternate / recovery paths |
 |---|---|---|---|---|
-| `JOURNEY-PRODUCT-MENU-LAUNCH` (desired; still registry-PLANNED until accepted) | Authorized Brand commercial operator; Brand resource scope; existing domain authorities available | 1 Understand offering → 2 Introduce/maintain Product/Variant → 3 Configure Menu presentation → 4 Decide Assortment → 5 Configure price → 6 Configure promotion/coupon where needed → 7 Configure delivery tariff where relevant → 8 Review consequence → 9 Deliberately publish/effect → 10 Verify customer truth → 11 Diagnose sellability blockers | Offering is accurately presented, correctly priced, sellable in intended outlets, customer truth verifiable via authoritative read/evaluation | Validation failure; authorization denial; stale/conflict; draft vs published/effective; missing prerequisite; partial downstream consequence; recover/retry after correction; mobile limited to inspection/simple actions |
+| `JOURNEY-PRODUCT-MENU-LAUNCH` (desired; still registry-PLANNED until accepted) | Authorized Brand commercial operator; Brand resource scope; existing domain authorities available | 1 Understand offering → 2 Introduce/maintain Product/Variant → 3 Configure Menu presentation → 4 Decide Assortment → 5 Configure price → 6 Configure promotion/coupon where needed → 7 Configure delivery tariff where relevant → 8 Review consequence → 9 Deliberately publish/effect → 10 Verify customer truth → 11 Diagnose sellability blockers | Offering is accurately presented, correctly priced, sellable in intended outlets, customer truth verifiable via authoritative read/evaluation | Validation failure; authorization denial; stale/conflict; draft vs published/effective; missing prerequisite; partial downstream consequence; recover/retry after correction; mobile limited to inspection/context only (no mandatory commercial mutations) |
 
 Central product concept (`DISC-F-001`):
 
@@ -216,9 +216,9 @@ SERVICEABILITY | DELIVERY TARIFF | TAX / CHARGES
 
 | Slice | Mandatory story IDs | Mandatory AC IDs | Required Golden Journeys | Observable acceptance boundary |
 |---|---|---|---|---|
-| `V1_ACCEPTANCE_SLICE` | `US-IMP-036F-001` … `US-IMP-036F-016` | All ACs marked `Mandatory in acceptance slice: YES` below | **Candidate (gate review):** `GJ-PRODUCT-MENU-LAUNCH`; **supporting CURRENT deps (not re-accepted as F):** `GJ-FIRST-ORDER`, `GJ-AVAILABILITY`, `GJ-ADDRESS-SERVICEABILITY` | Authorized Brand commercial operator completes coherent inspect→configure→review→publish/effect→verify/diagnose job within existing authorities and V1 bounds |
-| `FOLLOW_UP` | Advanced Modifier Library UX; Bundle Builder; richer audit composition UX if Architecture Fit requires phased delivery; broader mobile authoring | TBD after Architecture Fit / later product gate | May affect `GJ-PRODUCT-MENU-LAUNCH` depth | Not silently required for V1 |
-| `DEFERRED` | Media upload/storage/scanning/CDN; tax/charge administration product; role/permission editor; four-eyes; realtime push; new lifecycles/scheduling; generic bulk semantics; IMP-036G console expansion | N/A | Not part of IMP-036F acceptance | Explicit non-goals |
+| `V1_ACCEPTANCE_SLICE` | `US-IMP-036F-001` … `US-IMP-036F-016` | All ACs marked `Mandatory in acceptance slice: YES` below (64 mandatory; AC-014-02 = NO / FOLLOW_UP) | **Candidate (gate review):** `GJ-PRODUCT-MENU-LAUNCH`; **supporting CURRENT deps (not re-accepted as F):** `GJ-FIRST-ORDER`, `GJ-AVAILABILITY`, `GJ-ADDRESS-SERVICEABILITY` | Authorized Brand commercial operator completes coherent inspect→configure→review→publish/effect→verify/diagnose job within existing authorities and V1 bounds |
+| `FOLLOW_UP` | Advanced Modifier Library UX; Bundle Builder; richer audit composition UX if Architecture Fit requires phased delivery; media-reference select/change once a safe existing path is verified (DISC-F-010); any future simple mobile commercial mutations (none selected in this Product Definition) | TBD after Architecture Fit / later product gate or Product Definition revision | May affect `GJ-PRODUCT-MENU-LAUNCH` depth | Not silently required for V1 |
+| `DEFERRED` | Media upload/storage/scanning/CDN; tax/charge administration product; role/permission editor; four-eyes; realtime push; new lifecycles/scheduling; generic bulk semantics; full complex mobile commercial authoring; IMP-036G console expansion | N/A | Not part of IMP-036F acceptance | Explicit non-goals |
 
 Final mandatory Golden Journey selection remains subject to Product Definition Gate review.
 
@@ -245,11 +245,13 @@ Error / recovery: Denied actions explain lack of authority without leaking cross
 after session/scope correction.
 Dependencies: Accepted Catalog/Menu/Assortment/Pricing/Promotion/Serviceability read authorities
 Explicit non-goals: Analytics product; Store Overview as commercial mutation surface
-Data implications: Operator must not treat editable form state as customer truth
-Security implications: Cross-Brand/outlet leakage forbidden
+Data implications: Operator must not treat editable form state as customer truth; inspection reads
+authoritative domain state only.
+Security implications: Cross-Brand/outlet leakage forbidden; denial must not disclose out-of-scope
+entities.
 Architecture fit / applicable invariants: D-085 separations; D-368 projection ≠ authority
 Open material decisions: NONE
-Device: desktop/tablet full; mobile inspection supported
+Device applicability: Desktop/tablet full inspection; mobile inspection/context supported
 Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate and Architecture Fit not performed)
 ```
 
@@ -259,7 +261,7 @@ As a PERSONA-WORKFORCE-OPERATOR (Brand commercial operator)
 I want to create and edit Products and Variants as commercial drafts
 so that I can introduce or maintain offerings without immediately changing customer-visible truth.
 
-Journey / activity: A2
+Journey / activity: JOURNEY-PRODUCT-MENU-LAUNCH / A2
 Preconditions: Brand Catalog mutation authority; required identity/commercial fields satisfiable
 Acceptance scenarios: AC-IMP-036F-002-01 … 002-05
 Business rules: BR-IMP-036F-003, BR-IMP-036F-004, BR-IMP-036F-005
@@ -268,12 +270,19 @@ Permission / resource context: Existing Catalog manage authority; server-enforce
 Error / recovery: Validation lists correctable issues; conflict requires reload/reconcile
 Dependencies: ADR-006 Product/Variant model; D-087
 Explicit non-goals: Desired behaviour is not active-record live customer mutation; full Bundle Builder
-Data implications: Draft edits remain non-customer-visible until deliberate publish/effect path
-Security implications: Server-side authorization; audit attribution expected via existing/fit-approved path
-Architecture fit / applicable invariants: ARCHITECTURE_FIT_CONFORMANCE_GAP vs current live update
+Data implications: Draft edits remain non-customer-visible until deliberate publish/effect path;
+ACTIVE live mutation of customer-affecting Product/Variant fields is a conformance gap to close, not
+desired behaviour.
+Security implications: Server-side authorization; audit attribution expected via existing /
+Architecture-Fit-approved path
+Architecture fit / applicable invariants: ARCHITECTURE_FIT_CONFORMANCE_GAP — inventory and conform
+customer-visible or customer-evaluation-affecting ACTIVE Product/Variant mutations to ADR-006
+(known examples: ACTIVE Product name/description; ACTIVE Variant `isDefault` default-selection)
 Open material decisions: NONE (Founder intent ADR-006 preserved; mechanism is Architecture Fit)
-Device: desktop/tablet authoring; mobile not full authoring requirement
-Readiness: NOT_READY_FOR_IMPLEMENTATION
+Device applicability: Desktop/tablet authoring required for V1; mobile inspection/context only
+(no mandatory commercial mutations)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate and Architecture Fit not performed;
+conformance gap remains an Architecture Fit input)
 ```
 
 ```text
@@ -282,7 +291,7 @@ As a PERSONA-WORKFORCE-OPERATOR
 I want to associate Products/Variants with existing supported modifier structures where needed
 so that customers can customize offerings already modeled in Catalog.
 
-Journey / activity: A2
+Journey / activity: JOURNEY-PRODUCT-MENU-LAUNCH / A2
 Preconditions: Existing modifier groups/options available; Catalog mutation authority
 Acceptance scenarios: AC-IMP-036F-003-01 … 003-03
 Business rules: BR-IMP-036F-006
@@ -291,9 +300,14 @@ Permission / resource context: Existing Catalog authority only
 Error / recovery: Missing modifier prerequisite blocks association with actionable message
 Dependencies: ADR-006 modifier model; D-369 remains binding for customer paid-modifier selection
 Explicit non-goals: Full advanced Modifier Library product; inventing typed modifier kinds
+Data implications: Associations persist under existing Catalog modifier tables; no new modifier
+identity invented here
+Security implications: Server-side Catalog authorization; no client-asserted association authority
+Architecture fit / applicable invariants: ADR-006 modifier association surfaces; D-369 preserved for
+customer paid-modifier selection
 Open material decisions: NONE
-Device: desktop/tablet; mobile inspection/simple only
-Readiness: NOT_READY_FOR_IMPLEMENTATION
+Device applicability: Desktop/tablet authoring; mobile inspection/context only
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate and Architecture Fit not performed)
 ```
 
 ```text
@@ -302,7 +316,7 @@ As a PERSONA-WORKFORCE-OPERATOR
 I want to apply existing Product/Variant lifecycle transitions deliberately
 so that offerings move through supported commercial states without hard-deleting history.
 
-Journey / activity: A2
+Journey / activity: JOURNEY-PRODUCT-MENU-LAUNCH / A2
 Preconditions: Entity exists; transition permitted by existing lifecycle authority
 Acceptance scenarios: AC-IMP-036F-004-01 … 004-03
 Business rules: BR-IMP-036F-003, BR-IMP-036F-007
@@ -311,8 +325,15 @@ Permission / resource context: Existing Catalog lifecycle authority
 Error / recovery: Illegal transition rejected with reason; no silent skip
 Dependencies: ADR-006 / D-089 DRAFT/ACTIVE/RETIRED; no hard-delete of historical entities
 Explicit non-goals: New Catalog lifecycle states
+Data implications: Lifecycle stamps/history remain queryable; no hard-delete of historically
+referenced entities
+Security implications: Consequential transitions require authorized actor and attributable audit via
+existing / fit-approved path
+Architecture fit / applicable invariants: ADR-006 / D-089 lifecycle; confirmation + audit composition
 Open material decisions: NONE
-Readiness: NOT_READY_FOR_IMPLEMENTATION
+Device applicability: Desktop/tablet for consequential lifecycle transitions; mobile
+inspection/context only
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate and Architecture Fit not performed)
 ```
 
 ```text
@@ -322,7 +343,7 @@ I want to organize the customer Menu (sections/categories, ordering, placement, 
 supported display overrides)
 so that customers see the intended presentation of sellable offerings.
 
-Journey / activity: A3
+Journey / activity: JOURNEY-PRODUCT-MENU-LAUNCH / A3
 Preconditions: Catalog entities eligible for placement; Menu mutation authority; preserve one active
 customer Menu boundary
 Acceptance scenarios: AC-IMP-036F-005-01 … 005-05
@@ -332,9 +353,14 @@ Permission / resource context: Existing Menu manage authority; no new Menu lifec
 Error / recovery: Invalid references rejected; reorder conflicts recoverable
 Dependencies: ADR-006 Menu vs Category (D-086); customer Menu projection D-368
 Explicit non-goals: Multi-active customer menus; inventing unsupported publication states
+Data implications: Menu placement/order/visibility persist under existing Menu authority; display
+overrides do not redefine Catalog identity
+Security implications: Server-side Menu authorization; no cross-Brand Menu leakage
+Architecture fit / applicable invariants: D-086 Menu≠Category; D-368 projection; one active customer
+Menu boundary
 Open material decisions: NONE
-Device: desktop/tablet authoring; mobile inspection/simple only
-Readiness: NOT_READY_FOR_IMPLEMENTATION
+Device applicability: Desktop/tablet authoring; mobile inspection/context only
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate and Architecture Fit not performed)
 ```
 
 ```text
@@ -343,7 +369,7 @@ As a PERSONA-WORKFORCE-OPERATOR
 I want to set Brand Assortment so intended outlets may offer a Variant
 so that sellability intent is explicit and separate from operational Availability.
 
-Journey / activity: A4
+Journey / activity: JOURNEY-PRODUCT-MENU-LAUNCH / A4
 Preconditions: Brand Assortment authority; Variant exists; outlet(s) in Brand scope
 Acceptance scenarios: AC-IMP-036F-006-01 … 006-04
 Business rules: BR-IMP-036F-010, BR-IMP-036F-011
@@ -353,8 +379,14 @@ read/understand/escalate (IMP-036E); no new Brand Assortment grant to Outlet Man
 Error / recovery: Cross-scope denial; conflicting assortment state requires explicit correction
 Dependencies: D-094 inheritance; D-095/D-096/D-100; IMP-036E accepted Store behaviour
 Explicit non-goals: Collapsing Assortment with Availability; Store Overview auto-mutation
+Data implications: Assortment intent remains distinct from Availability records; inheritance rules
+unchanged
+Security implications: Brand Assortment mutation denied outside Brand authority; OM cannot obtain
+Brand Assortment mutation via this slice
+Architecture fit / applicable invariants: D-094–D-096/D-100; IMP-036E Store Assortment boundary
 Open material decisions: NONE
-Readiness: NOT_READY_FOR_IMPLEMENTATION
+Device applicability: Desktop/tablet Brand Assortment authoring; mobile inspection/context only
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate and Architecture Fit not performed)
 ```
 
 ```text
@@ -364,7 +396,7 @@ I want to configure Brand baseline Product/Variant pricing and applicable modifi
 using existing scope/effective-timing semantics
 so that customer display and checkout evaluation resolve correct commercial amounts.
 
-Journey / activity: A5
+Journey / activity: JOURNEY-PRODUCT-MENU-LAUNCH / A5
 Preconditions: Pricing manage authority; Catalog entities exist; currency unambiguous
 Acceptance scenarios: AC-IMP-036F-007-01 … 007-05
 Business rules: BR-IMP-036F-012, BR-IMP-036F-013
@@ -373,9 +405,14 @@ Permission / resource context: Existing Pricing authority; Catalog does not own 
 Error / recovery: Invalid/incomplete pricing blocks effect; conflict recoverable after reload
 Dependencies: ADR-007 price books / modifier prices; existing effective timing only
 Explicit non-goals: New scheduling model; redefining checkout price-snapshot authority
+Data implications: Monetary values currency-aware; checkout/order snapshots remain immutable after
+transaction; Catalog does not persist authoritative money
+Security implications: Pricing mutation server-authorized; no client-asserted monetary authority
+Architecture fit / applicable invariants: D-102 Catalog≠money; ADR-007 price books / timing;
+workforce pricing authoring surface composition
 Open material decisions: NONE
-Device: desktop/tablet; mobile inspection/simple only
-Readiness: NOT_READY_FOR_IMPLEMENTATION
+Device applicability: Desktop/tablet pricing authoring; mobile inspection/context only
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate and Architecture Fit not performed)
 ```
 
 ```text
@@ -385,7 +422,7 @@ I want to author and operate existing supported Promotions and Coupons through t
 lifecycle semantics
 so that promotional eligibility and benefits are intentional and auditable.
 
-Journey / activity: A6
+Journey / activity: JOURNEY-PRODUCT-MENU-LAUNCH / A6
 Preconditions: Promotions/Coupons manage authority; eligible catalog/pricing context as required
 Acceptance scenarios: AC-IMP-036F-008-01 … 008-05
 Business rules: BR-IMP-036F-014
@@ -394,8 +431,14 @@ Permission / resource context: Existing promotions/coupons permissions only
 Error / recovery: Invalid eligibility rejected; disabled coupon does not rewrite pricing engine
 Dependencies: ADR-007 promotion/coupon model (D-122–D-127); preserve existing lifecycle
 Explicit non-goals: Invented lifecycle labels; campaign-media platform; arbitrary scripting
+Data implications: Promotions/Coupons persist under existing promotional authority; coupons do not
+embed separate pricing logic
+Security implications: Server-side promotions/coupons authorization; no invented permission
+Architecture fit / applicable invariants: ADR-007 / D-122–D-127 lifecycle fidelity; coherent
+workforce promotion authoring surface
 Open material decisions: NONE
-Readiness: NOT_READY_FOR_IMPLEMENTATION
+Device applicability: Desktop/tablet authoring; mobile inspection/context only
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate and Architecture Fit not performed)
 ```
 
 ```text
@@ -404,21 +447,36 @@ As a PERSONA-WORKFORCE-OPERATOR
 I want to configure customer delivery tariff using existing distance-band and free-delivery concepts
 so that customer delivery price policy is deliberate commercial monetary configuration.
 
-Journey / activity: A7
-Preconditions: Authorized commercial actor for tariff operation; outlet(s) in scope; existing
-IMP-036C tariff concepts available as configuration targets
+Journey / activity: JOURNEY-PRODUCT-MENU-LAUNCH / A7
+Preconditions: Architecture Fit has mapped an existing valid authorization/command path for tariff
+mutation; authorized commercial actor for the target outlet/resource; existing IMP-036C tariff
+concepts available as configuration targets. Until that mapping exists,
+ARCHITECTURE_FIT_AUTHORIZATION_GAP remains a Definition of Ready / Architecture Fit input blocker
+(not a product acceptance AC).
 Acceptance scenarios: AC-IMP-036F-009-01 … 009-05
 Business rules: BR-IMP-036F-015, BR-IMP-036F-016
-UX states: validation error, authorization denied / ARCHITECTURE_FIT_AUTHORIZATION_GAP surfaced as
-product stop for unfit mapping, confirmation, success
-Permission / resource context: Must map to existing authorization if Architecture Fit finds a clean
-mapping; otherwise `ARCHITECTURE_FIT_AUTHORIZATION_GAP` — do not invent a permission in this draft
-Error / recovery: Invalid bands/thresholds rejected; Serviceability settings remain separately editable
-Dependencies: IMP-036C delivery fee bands / free-delivery threshold; D-118; D-143
-Explicit non-goals: New tariff model; merging provider cost; collapsing with Serviceability
-Open material decisions: NONE (authorization mechanism is Architecture Fit, not a new Founder product choice)
-Classification: PLANNED_IMP036F + ARCHITECTURE_FIT_AUTHORIZATION_GAP for mutation mapping
-Readiness: NOT_READY_FOR_IMPLEMENTATION
+UX states: validation error, authorization denied, confirmation, success
+Permission / resource context: Must use the Architecture Fit-mapped existing authorization/command
+path only; do not invent a permission in this Product Definition. Current readiness blocker:
+ARCHITECTURE_FIT_AUTHORIZATION_GAP until mapping is resolved.
+Error / recovery: Invalid bands/thresholds rejected; unauthorized mutation denied without changing
+prior tariff; Serviceability settings remain separately editable
+Dependencies: IMP-036C delivery fee bands / free-delivery threshold; D-118; D-143;
+ARCHITECTURE_FIT_AUTHORIZATION_GAP for mutation permission/command mapping
+Explicit non-goals: New tariff model; merging provider cost; collapsing with Serviceability;
+inventing a new permission because mapping is unresolved
+Data implications: Customer delivery-price policy persists under existing tariff storage; provider
+cost and Serviceability data remain separate authorities
+Security implications: Server-authoritative allow/deny on the fit-mapped path; cross-scope
+information must not leak on denial
+Architecture fit / applicable invariants: D-118; D-143; DISC-F-008 separations;
+ARCHITECTURE_FIT_AUTHORIZATION_GAP must be resolved before implementation readiness
+Open material decisions: NONE (authorization mechanism is Architecture Fit, not a new Founder
+product choice)
+Device applicability: Desktop/tablet tariff authoring; mobile inspection/context only
+Classification: PLANNED_IMP036F; mutation mapping remains ARCHITECTURE_FIT_AUTHORIZATION_GAP until Fit
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate and Architecture Fit not performed;
+tariff authorization/command mapping unresolved)
 ```
 
 ```text
@@ -427,7 +485,7 @@ As a PERSONA-WORKFORCE-OPERATOR
 I want a consequence review before consequential commercial mutation/publish
 so that I understand what will change for Brand/outlet scope, timing, money, and customer visibility.
 
-Journey / activity: A8
+Journey / activity: JOURNEY-PRODUCT-MENU-LAUNCH / A8
 Preconditions: Pending consequential change drafted; operator authorized to attempt the action
 Acceptance scenarios: AC-IMP-036F-010-01 … 010-04
 Business rules: BR-IMP-036F-017
@@ -436,8 +494,15 @@ Permission / resource context: Same as underlying mutation; review is not a seco
 Error / recovery: Incomplete consequence review blocks publish where required; cancel leaves draft
 Dependencies: Composition across authorities without new source of truth
 Explicit non-goals: Four-eyes approval; guaranteed instant customer push
+Data implications: Consequence review is presentation/composition over existing authorities; it does
+not create a new commercial truth store
+Security implications: Consequence presentation must not leak entities outside authorized scope
+Architecture fit / applicable invariants: Consequence/verification composition without inventing a
+false single source of truth (ARCHITECTURE_FIT_REQUIRED for composition mechanism)
 Open material decisions: NONE
-Readiness: NOT_READY_FOR_IMPLEMENTATION
+Device applicability: Desktop/tablet for consequential review/publish path; mobile
+inspection/context only
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate and Architecture Fit not performed)
 ```
 
 ```text
@@ -446,18 +511,28 @@ As a PERSONA-WORKFORCE-OPERATOR
 I want to deliberately publish/effect customer-visible commercial change after validation
 so that customers resolve new effective truth only through intentional publication/effect.
 
-Journey / activity: A9
+Journey / activity: JOURNEY-PRODUCT-MENU-LAUNCH / A9
 Preconditions: Draft changes validated; consequence review completed where required; authority present
 Acceptance scenarios: AC-IMP-036F-011-01 … 011-05
 Business rules: BR-IMP-036F-004, BR-IMP-036F-005, BR-IMP-036F-018
 UX states: validate; publish/effective confirmation; success with verifiable resulting state; conflict
 Permission / resource context: Existing domain publish/effect authorities only
 Error / recovery: Validation failure lists issues; conflict requires reconcile; unauthorized denied
-Dependencies: ADR-006 draft→validate→publish→effective revision intent; existing Menu/Pricing/Promotion effect semantics
-Explicit non-goals: Treating live ACTIVE field mutation as desired product behaviour
-Architecture fit: ARCHITECTURE_FIT_CONFORMANCE_GAP for current live Product name/description projection
+Dependencies: ADR-006 draft→validate→publish→effective revision intent; existing Menu/Pricing/
+Promotion effect semantics
+Explicit non-goals: Treating live ACTIVE Product/Variant field mutation as desired product behaviour
+Data implications: Effective/published commercial truth must be distinguishable from draft; customer
+resolves effective revision only after deliberate publish/effect
+Security implications: Publish/effect server-authorized; unauthorized attempt leaves customer truth
+unchanged
+Architecture fit / applicable invariants: ADR-006 publication boundary;
+ARCHITECTURE_FIT_CONFORMANCE_GAP for customer-visible or customer-evaluation-affecting ACTIVE
+Product/Variant mutations (known examples: ACTIVE Product name/description; ACTIVE Variant
+`isDefault`)
 Open material decisions: NONE
-Readiness: NOT_READY_FOR_IMPLEMENTATION
+Device applicability: Desktop/tablet publish/effect; mobile inspection/context only
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate and Architecture Fit not performed;
+conformance gap remains an Architecture Fit input)
 ```
 
 ```text
@@ -466,7 +541,7 @@ As a PERSONA-WORKFORCE-OPERATOR
 I want to verify resulting customer discovery/orderability after publish/effect
 so that I confirm authoritative customer truth rather than trusting the edit form.
 
-Journey / activity: A10
+Journey / activity: JOURNEY-PRODUCT-MENU-LAUNCH / A10
 Preconditions: Publish/effect succeeded or no-op documented; operator can access verification path
 Acceptance scenarios: AC-IMP-036F-012-01 … 012-04
 Business rules: BR-IMP-036F-019
@@ -477,9 +552,16 @@ Error / recovery: If verification read is temporarily inconsistent, retry/refres
 promise websocket propagation
 Dependencies: D-368; IMP-036E REALTIME_PUSH_GUARANTEE = NO; GJ-FIRST-ORDER continuity
 Explicit non-goals: Realtime customer push guarantee
+Data implications: Verification uses authoritative downstream read/evaluation; form state is not
+customer truth
+Security implications: Verification paths must respect authorized outlet/customer evaluation scope
+Architecture fit / applicable invariants: D-368 Menu projection; verification composition across
+authorities; REALTIME_PUSH_GUARANTEE = NO
 Open material decisions: NONE
+Device applicability: Desktop/tablet verification workflow; mobile may support inspection/context
+verification reads where operable, without requiring full authoring
 Secondary persona consequence: PERSONA-CUSTOMER experiences truthful Menu/order evaluation
-Readiness: NOT_READY_FOR_IMPLEMENTATION
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate and Architecture Fit not performed)
 ```
 
 ```text
@@ -489,7 +571,7 @@ I want a user-facing diagnosis of why an offering cannot currently be sold
 so that I can distinguish Catalog/Menu/Assortment/Availability/Pricing/Promotion/hours/Serviceability
 and other authoritative constraints without guessing.
 
-Journey / activity: A11
+Journey / activity: JOURNEY-PRODUCT-MENU-LAUNCH / A11
 Preconditions: Target Product/Variant/outlet(/customer location where relevant) identifiable
 Acceptance scenarios: AC-IMP-036F-013-01 … 013-05
 Business rules: BR-IMP-036F-020
@@ -498,48 +580,85 @@ Permission / resource context: Existing read authorities composed for comprehens
 Error / recovery: Unknown/unsupported signal labeled honestly; escalate with entity/scope references
 Dependencies: Existing authorities (D-097 effective menu composition concepts, Availability, etc.)
 Explicit non-goals: Inventing a new consolidated backend decision engine as product mechanism
-Architecture fit: how existing authorities supply diagnosis truth
+Data implications: Diagnosis composes existing authoritative signals; does not invent new sellability
+truth
+Security implications: Diagnosis must not leak out-of-scope Brand/outlet entities
+Architecture fit / applicable invariants: How existing authorities supply diagnosis truth
+(ARCHITECTURE_FIT_REQUIRED for diagnosis composition); D-097 concepts
 Open material decisions: NONE
-Readiness: NOT_READY_FOR_IMPLEMENTATION
+Device applicability: Desktop/tablet diagnosis; mobile inspection/context diagnosis supported where
+operable
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate and Architecture Fit not performed)
 ```
 
 ```text
 Story ID: US-IMP-036F-014
 As a PERSONA-WORKFORCE-OPERATOR
-I want to view and, where currently supported, select/change existing media references on offerings
-so that customer presentation can use available imagery without requiring a media platform.
+I want to view existing media references on offerings where present
+so that customer presentation context is visible during commercial inspection without requiring a
+media platform or inventing an unverified select/change workflow.
 
-Journey / activity: Cross-cutting (A2/A3)
-Preconditions: Media references exist or are selectable under current capabilities
+Journey / activity: Cross-cutting (A1/A2/A3 inspection context)
+Preconditions: An offering may already carry a supported media reference (e.g. Menu-entry
+`imagePath` populated by prior import/create paths)
 Acceptance scenarios: AC-IMP-036F-014-01 … 014-03
 Business rules: BR-IMP-036F-021
-UX states: ready; unsupported action disabled with explanation; empty media
-Permission / resource context: Existing Catalog/media reference authority only
-Error / recovery: Unsupported upload paths are not offered as if available
-Dependencies: Existing media reference semantics; D-093 brand-owned metadata intent
-Explicit non-goals: Upload pipeline; storage; scanning; transformation; CDN management (DISC-F-010)
-Open material decisions: NONE
-Readiness: NOT_READY_FOR_IMPLEMENTATION
+UX states: ready; empty media; unsupported mutation/upload affordances not offered as available
+Permission / resource context: Existing read visibility of stored media references only for V1
+mandatory acceptance; no new media permission
+Error / recovery: Unsupported upload or unverified select/change paths are not offered as if
+available
+Dependencies: Existing Menu-entry `imagePath` reference storage; D-093 brand-owned metadata intent;
+DISC-F-010
+Explicit non-goals: Upload pipeline; storage service; scanning; transformation; CDN management;
+invention of asset registry; mandatory media-reference mutation in this V1 slice
+Data implications: V1 inspects existing reference values only; does not require new media schema.
+Local Menu-entry `imagePath` exists as CURRENT storage, but no safe workforce select/change
+workflow is verified for V1 acceptance.
+Security implications: Do not expose upload/CDN management surfaces; reference display must respect
+authorized commercial scope
+Architecture fit / applicable invariants: DISC-F-010 bound; no asset infrastructure invented;
+optional later mapping of any verified existing select/change path is FOLLOW_UP
+Open material decisions: NONE (deferring unverified media-reference mutation is authorized by
+DISC-F-010; no new Founder decision required)
+Device applicability: Desktop/tablet/mobile inspection of existing references as context
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate and Architecture Fit not performed)
 ```
 
 ```text
 Story ID: US-IMP-036F-015
 As a PERSONA-WORKFORCE-OPERATOR
-I want full commercial authoring on desktop and tablet, with mobile limited to inspection and
-explicitly selected simple actions
-so that complex V1 authoring is not blocked by mobile constraints.
+I want full commercial authoring on desktop and tablet, with mobile limited to inspection/context
+so that complex V1 authoring is not blocked by mobile constraints and the V1 device boundary is
+objectively testable.
 
-Journey / activity: Cross-cutting
-Preconditions: Supported viewport contexts
+Journey / activity: Cross-cutting device experience
+Preconditions: Supported viewport contexts (desktop, tablet, mobile)
 Acceptance scenarios: AC-IMP-036F-015-01 … 015-03
 Business rules: BR-IMP-036F-022
-UX states: mobile limitation messaging; desktop/tablet ready authoring
-Permission / resource context: Unchanged
-Error / recovery: N/A beyond clear non-authoring mobile boundary
-Dependencies: DISC-F-011
-Explicit non-goals: Full complex mobile commercial authoring as V1 acceptance requirement
-Open material decisions: NONE
-Readiness: NOT_READY_FOR_IMPLEMENTATION
+UX states: mobile non-mutation limitation messaging; desktop/tablet ready authoring
+Permission / resource context: Unchanged from underlying stories; device does not grant authority
+Error / recovery: N/A beyond clear mobile non-mutation boundary messaging when commercial mutation
+is attempted on mobile
+Dependencies: DISC-F-011 (approved; not reopened)
+Explicit non-goals: Full complex mobile commercial authoring as V1 acceptance requirement; any
+mobile commercial mutation as mandatory V1 behaviour
+Data implications: N/A — device boundary does not change commercial data authorities
+Security implications: N/A — device viewport does not alter authorization; server authority unchanged
+Architecture fit / applicable invariants: N/A beyond responsive presentation of existing surfaces;
+no architecture topology change
+Open material decisions: NONE — this Product Definition selects no simple mobile mutation actions.
+V1 boundary:
+
+DESKTOP / TABLET: full IMP-036F V1 commercial authoring
+MOBILE: inspection / context only required for V1
+MOBILE COMMERCIAL MUTATIONS: none mandatory in this Product Definition
+
+Any future simple mobile mutation requires explicit selection plus story/AC coverage through a later
+Product Definition revision or separately authorized follow-up.
+Device applicability: Desktop and tablet mandatory for full V1 authoring; mobile mandatory for
+inspection/context support (not “unsupported”)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate and Architecture Fit not performed)
 ```
 
 ```text
@@ -548,17 +667,24 @@ As a PERSONA-WORKFORCE-OPERATOR
 I want inspection/context for Tax/Charges where relevant to commercial understanding
 so that I do not confuse ordinary commercial workflow with general tax/charge administration.
 
-Journey / activity: Cross-cutting
+Journey / activity: Cross-cutting commercial context
 Preconditions: Existing tax/charge configuration may be present
 Acceptance scenarios: AC-IMP-036F-016-01 … 016-02
 Business rules: BR-IMP-036F-023
 UX states: inspection ready; administration actions not offered as V1 commercial workflow
 Permission / resource context: Existing read visibility only for V1 commercial journey
-Error / recovery: N/A
+Error / recovery: N/A — administration is out of V1 commercial workflow rather than an error path
 Dependencies: ADR-007 Tax/Charges authority remains separate (DISC-F-006)
-Explicit non-goals: General tax administration; general charge administration in ordinary commercial workflow
+Explicit non-goals: General tax administration; general charge administration in ordinary commercial
+workflow
+Data implications: Tax/Charges remain separate authority data; V1 does not mutate tax/charge
+administration records as part of the commercial journey
+Security implications: Inspection must not escalate into unauthorized tax/charge administration
+Architecture fit / applicable invariants: DISC-F-006 / ADR-007 Tax/Charges separation from ordinary
+commercial workflow
 Open material decisions: NONE
-Readiness: NOT_READY_FOR_IMPLEMENTATION
+Device applicability: Desktop/tablet/mobile inspection/context as applicable
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate and Architecture Fit not performed)
 ```
 
 ---
@@ -883,8 +1009,9 @@ Mandatory in acceptance slice: YES
 ```text
 AC-IMP-036F-009-01 — Configure distance-band delivery fees
 Story: US-IMP-036F-009
-Given authorized tariff operation (pending Architecture Fit authorization mapping) and an outlet
-When the operator sets supported distance bands and fee values
+Given Architecture Fit has mapped an existing valid authorization/command path for tariff mutation
+And an authorized commercial actor operates on an in-scope outlet
+When the operator sets supported distance bands and fee values through that authoritative path
 Then customer delivery-price policy reflects those bands after effect
 And Serviceability distance/eligibility configuration remains a separate concern
 Mandatory in acceptance slice: YES
@@ -893,8 +1020,9 @@ Mandatory in acceptance slice: YES
 ```text
 AC-IMP-036F-009-02 — Configure free-delivery threshold/rule already supported
 Story: US-IMP-036F-009
-Given supported free-delivery threshold configuration
-When the operator sets or clears the threshold
+Given Architecture Fit has mapped the authoritative tariff mutation path
+And supported free-delivery threshold configuration is available
+When an authorized operator sets or clears the threshold
 Then checkout evaluation uses the configured commercial rule after effect
 Mandatory in acceptance slice: YES
 ```
@@ -918,13 +1046,15 @@ Mandatory in acceptance slice: YES
 ```
 
 ```text
-AC-IMP-036F-009-05 — Authorization mapping gap handling
+AC-IMP-036F-009-05 — Unauthorized tariff mutation denied
 Story: US-IMP-036F-009
-Given Architecture Fit has not yet mapped a clean existing permission/command for tariff mutation
-When implementation is considered
-Then the gap remains ARCHITECTURE_FIT_AUTHORIZATION_GAP
-And this Product Definition invents no new permission
-Mandatory in acceptance slice: YES (process/boundary scenario)
+Given Architecture Fit has established the authoritative tariff mutation path
+And the workforce actor lacks the required authority for the target resource
+When tariff mutation is attempted
+Then the server-authoritative operation is denied
+And the prior tariff remains unchanged
+And cross-scope information is not leaked
+Mandatory in acceptance slice: YES
 ```
 
 ```text
@@ -1102,12 +1232,19 @@ Mandatory in acceptance slice: YES
 ```
 
 ```text
-AC-IMP-036F-014-02 — Change media reference where supported
+AC-IMP-036F-014-02 — Media-reference mutation not mandatory in V1
 Story: US-IMP-036F-014
-Given current capabilities permit selecting/changing a media reference
-When the operator selects another supported reference and effects through Catalog rules
-Then the reference updates under those supported rules
-Mandatory in acceptance slice: YES
+Given no verified safe workforce select/change workflow for existing media references
+(Menu-entry `imagePath` storage exists; create/import can populate it; workforce select/change UX
+is not verified)
+When V1 commercial acceptance is evaluated
+Then media-reference mutation is not a mandatory V1 acceptance requirement
+And viewing existing references (AC-014-01) remains sufficient commercial presentation context
+And media-reference select/change remains FOLLOW_UP under DISC-F-010 until a safe existing path is
+proven in a later Product Definition revision
+And the end-to-end commercial V1 journey remains coherent without mutation because imagery is not
+required to introduce, price, assort, publish, or verify sellability
+Mandatory in acceptance slice: NO (FOLLOW_UP / DISC-F-010 boundary)
 ```
 
 ```text
@@ -1138,12 +1275,14 @@ Mandatory in acceptance slice: YES
 ```
 
 ```text
-AC-IMP-036F-015-03 — Mobile inspection / simple actions only
+AC-IMP-036F-015-03 — Mobile inspection / context only
 Story: US-IMP-036F-015
 Given a mobile viewport
 When the operator opens commercial management
-Then inspection/context and only explicitly selected simple actions are available
-And complex full authoring is not a V1 acceptance requirement
+Then inspection/context is available
+And no commercial mutation actions are mandatory or required for V1 acceptance
+And complex full authoring is not a V1 acceptance requirement on mobile
+And mobile is not treated as unsupported — inspection/context remains supported product intent
 Mandatory in acceptance slice: YES
 ```
 
@@ -1173,10 +1312,10 @@ Mandatory in acceptance slice: YES
 | US-IMP-036F-006 / AC-006-* | Brand Assortment; OM boundary | domain + UI + IMP-036E regression | Planned | Not executed |
 | US-IMP-036F-007 / AC-007-* | Pricing; snapshot immutability | domain monetary + UI | Planned | Not executed |
 | US-IMP-036F-008 / AC-008-* | Promotions/Coupons lifecycle fidelity | domain + UI | Planned | Not executed |
-| US-IMP-036F-009 / AC-009-* | Delivery tariff; separation; auth gap | domain + UI after auth mapping | Planned; blocked on Architecture Fit auth mapping | Not executed |
+| US-IMP-036F-009 / AC-009-* | Delivery tariff; separation; post-fit auth allow/deny | domain + UI after auth mapping | Planned; DoR blocked on Architecture Fit auth mapping | Not executed |
 | US-IMP-036F-010…012 / AC-010…012-* | Consequence, publish, verify; no realtime push | UI + customer read E2E | Planned; Founder UAT later | Not executed |
 | US-IMP-036F-013 / AC-013-* | Sellability diagnosis composition | UI + composed reads | Planned | Not executed |
-| US-IMP-036F-014…016 / AC-014…016-* | Media bounds; device; tax inspection | UI responsive/a11y | Planned | Not executed |
+| US-IMP-036F-014…016 / AC-014…016-* | Media view bounds (mutation FOLLOW_UP); device inspection-only; tax inspection | UI responsive/a11y | Planned | Not executed |
 
 ---
 
@@ -1188,7 +1327,7 @@ Mandatory in acceptance slice: YES
 | `BR-IMP-036F-002` | Visibility of an action is not authorization; server-side/domain authorization is authoritative | D-358/D-372/D-373; PERSONA ≠ PERMISSION | US-001, all mutation stories |
 | `BR-IMP-036F-003` | Products/Variants follow existing DRAFT/ACTIVE/RETIRED lifecycle; no hard-delete of historical entities | ADR-006; D-089 | US-002, US-004 |
 | `BR-IMP-036F-004` | Customer-visible Catalog change requires EDIT DRAFT → VALIDATE → PUBLISH → EFFECTIVE REVISION → customer resolve; not active-record live mutation as desired behaviour | ADR-006; DISC-F-002; D-089 | US-002, US-011 |
-| `BR-IMP-036F-005` | Current live ACTIVE Product name/description update consumed by Menu projection is an `ARCHITECTURE_FIT_CONFORMANCE_GAP`, not Founder product intent and not an ADR-006 amendment | Evidence vs ADR-006 | US-002, US-011 |
+| `BR-IMP-036F-005` | Current customer-visible or customer-evaluation-affecting ACTIVE Product/Variant mutations without ADR-006 draft→validate→publish→effective revision are an `ARCHITECTURE_FIT_CONFORMANCE_GAP`, not Founder product intent and not an ADR-006 amendment. Known examples: ACTIVE Product name/description; ACTIVE Variant default-selection (`isDefault`). Architecture Fit must inventory all ACTIVE Product/Variant mutable fields that can affect customer-visible or ordering truth. Do not claim every mutable Variant field necessarily changes customer projection unless verified. | Evidence vs ADR-006 (`updateProduct` / `updateVariant` / Menu projection) | US-002, US-011 |
 | `BR-IMP-036F-006` | V1 associates existing modifier structures only; no full Modifier Library / Bundle Builder requirement | DISC-F-002 | US-003 |
 | `BR-IMP-036F-007` | Consequential lifecycle transitions require confirmation and attribution/audit via appropriate authority | DISC-F-009; ADR-006 audit intent | US-004, US-010 |
 | `BR-IMP-036F-008` | Menu organizes presentation; Category ≠ Menu section | D-086; DISC-F-003 | US-005 |
@@ -1204,8 +1343,8 @@ Mandatory in acceptance slice: YES
 | `BR-IMP-036F-018` | Publish/effect success must yield a verifiable resulting state | DISC-F-009 | US-011, US-012 |
 | `BR-IMP-036F-019` | Customer verification uses authoritative downstream read/evaluation; `REALTIME_PUSH_GUARANTEE = NO` | IMP-036E; D-368 | US-012 |
 | `BR-IMP-036F-020` | Sellability diagnosis must distinguish relevant authoritative causes without inventing a new decision engine | DISC-F-001; D-097 concepts | US-013 |
-| `BR-IMP-036F-021` | Media V1 = view/select existing references only; no upload/storage/scanning/CDN platform | DISC-F-010 | US-014 |
-| `BR-IMP-036F-022` | Full authoring target = desktop/tablet; mobile = inspection + selected simple actions | DISC-F-011 | US-015 |
+| `BR-IMP-036F-021` | Media V1 mandatory = view/inspect existing references where present; media-reference select/change is FOLLOW_UP until a safe existing workflow is verified; no upload/storage/scanning/CDN/asset registry | DISC-F-010 | US-014; AC-014-01 YES; AC-014-02 NO |
+| `BR-IMP-036F-022` | Full authoring target = desktop/tablet; mobile = inspection/context only for V1; no mobile commercial mutations are mandatory in this Product Definition | DISC-F-011 | US-015 |
 | `BR-IMP-036F-023` | Tax/Charges: inspection/context only in V1 commercial workflow; no general administration product | DISC-F-006 | US-016 |
 
 ---
@@ -1223,7 +1362,7 @@ Journey: `JOURNEY-PRODUCT-MENU-LAUNCH` (desired V1)
 | HAPPY PATH | End-to-end introduce/maintain → present → assort → price → promote/tariff → review → publish → verify | US-002…012 |
 | ALTERNATE VALID PATHS | Maintain existing offering; promotion-only change; tariff-only change; diagnosis-only | US-008, US-009, US-013 |
 | VALIDATION FAILURE | Field-associated errors; publish blocked | AC-002-03, AC-005-04, AC-007-03, AC-008-03, AC-009-03, AC-011-02 |
-| AUTHORIZATION | Server-side denial; OM Assortment boundary; tariff auth gap classified | AC-001-03, AC-006-03/04, AC-009-05, AC-011-03 |
+| AUTHORIZATION | Server-side denial; OM Assortment boundary; post-fit tariff allow/deny | AC-001-03, AC-006-03/04, AC-009-01/05, AC-011-03 |
 | NOT FOUND / STALE REFERENCE | Stale entity handling | AC-001-04, AC-002-04 |
 | SERVER / NETWORK ERROR | Recoverable error with retry; distinguish domain rejection where practical | UX matrix; US-001 |
 | RECOVERY | Correct validation; reload after conflict; retry verification | AC-002-04, AC-012-02 |
@@ -1232,7 +1371,7 @@ Journey: `JOURNEY-PRODUCT-MENU-LAUNCH` (desired V1)
 | SUCCESS FEEDBACK | Verifiable effective state after publish/effect | AC-011-04, US-012 |
 | DOWNSTREAM EFFECT | Customer Menu/orderability via authoritative evaluation | US-012; GJ-FIRST-ORDER dependency |
 | REVISIT / RELOAD | Reload shows authoritative state; form state not sole truth | AC-012-04 |
-| RESPONSIVE / MOBILE | Desktop/tablet authoring; mobile inspection/simple | US-015 |
+| RESPONSIVE / MOBILE | Desktop/tablet full V1 commercial authoring; mobile inspection/context only (no mandatory mobile commercial mutations) | US-015 |
 | ACCESSIBILITY | Keyboard, focus, labels, error association, non-color-only | AC-002-05; §18 |
 
 ---
@@ -1258,7 +1397,7 @@ Enterprise task-oriented language. No invented domain lifecycle states for UI co
 | Checkout context / no serviceability | Location not serviceable | Serviceability distinct from tariff | N/A for tariff editor | adjust Serviceability separately | AC-013-04 |
 | Any / recoverable error | Transport/system failure | Retry; distinguish from domain rejection where practical | Focus to retry | ready | Journey matrix |
 | Any / non-recoverable / support escalation | Unrecoverable domain/system fault | Support reference with entity/scope context | Focus to copyable reference | escalate | US-013 |
-| Mobile / non-authoring limitation | Mobile viewport on complex task | Explains desktop/tablet authoring requirement; inspection remains | Focus to inspection | desktop/tablet | AC-015-03 |
+| Mobile / inspection-context boundary | Mobile viewport on commercial management | Explains desktop/tablet authoring requirement; inspection/context remains; no mandatory mobile commercial mutations | Focus to inspection | desktop/tablet for mutations | AC-015-03 |
 
 ---
 
@@ -1272,7 +1411,7 @@ Enterprise task-oriented language. No invented domain lifecycle states for UI co
 | Mutate Brand Assortment | Existing Brand Assortment authority | Brand → outlet assortment scope | Outlet Manager Store Assortment remains non-mutating Brand authority | AC-006-03/04 |
 | Mutate Pricing | Existing Pricing manage / price-book authority | Brand pricing scope; existing effective timing | Deny without authority | AC-007-* |
 | Mutate Promotions/Coupons | Existing promotions/coupons manage authority | Brand promotional scope | Deny without authority | AC-008-* |
-| Mutate delivery tariff | **ARCHITECTURE_FIT_AUTHORIZATION_GAP** if no clean existing mapping | Outlet commercial tariff scope (customer delivery price) | Do not invent permission; Architecture Fit must map or escalate | AC-009-05 |
+| Mutate delivery tariff | Existing authority/command path mapped by Architecture Fit (currently **ARCHITECTURE_FIT_AUTHORIZATION_GAP** readiness blocker) | Outlet commercial tariff scope (customer delivery price) | After Fit: authorized allow (AC-009-01); unauthorized deny without changing prior tariff or leaking cross-scope data (AC-009-05). Do not invent permission. | AC-009-01, AC-009-05 |
 | Publish/effect customer-visible change | Existing publish/effect authorities per domain | Same as underlying entity scope | Visibility ≠ authorization | AC-011-03 |
 | Verify customer truth | Authorized verification via customer read/evaluation paths | Outlet/customer evaluation context | No realtime push requirement | AC-012-* |
 | Role/permission editor | N/A — not in IMP-036F | N/A | NOT_SUPPORTED | §24 |
@@ -1283,7 +1422,7 @@ Product-level authorization boundaries:
 - Server-side/domain authorization remains authoritative.
 - No arbitrary role/permission editor.
 - No new role or permission invented in this draft.
-- Where desired behaviour lacks clean authorization mapping → `ARCHITECTURE_FIT_AUTHORIZATION_GAP`.
+- Where desired behaviour lacks clean authorization mapping → `ARCHITECTURE_FIT_AUTHORIZATION_GAP` (readiness/Fit input; not a product acceptance AC by itself).
 
 ---
 
@@ -1339,7 +1478,7 @@ Desktop/tablet full workflows must meet reasonable product acceptance expectatio
 - Accessible confirmation/warning semantics for consequential publish
 - Usable table/form navigation
 
-Mobile: inspection/context + explicitly selected simple actions only (`DISC-F-011`).
+Mobile: inspection/context only for V1; no mandatory commercial mutations (`DISC-F-011`). Mobile remains supported for inspection/context — not “unsupported.”
 
 Do not prescribe frontend libraries. Automated scans alone are insufficient proof (TEST-1).
 
@@ -1387,7 +1526,7 @@ Do not silently convert `GJ-PRODUCT-MENU-LAUNCH` from `PLANNED` to `CURRENT` in 
 | Accepted Pricing/Promotions | ADR-007 | US-007, US-008 | NONE for product intent |
 | Accepted delivery fee storage/calc | IMP-036C | US-009 | Workforce journey + auth mapping gap |
 | Accepted IMP-036E Store Assortment boundary | STATE / capability docs | US-006 | NONE — preserve |
-| Customer Menu projection | D-368 / IMP-028B | US-012 | Conformance gap vs ADR-006 live fields |
+| Customer Menu projection | D-368 / IMP-028B | US-012 | Conformance gap vs ADR-006 for customer-affecting ACTIVE Product/Variant live mutations (incl. Product name/description; Variant `isDefault`) |
 | Product Definition Gate | PD-1 | Before Architecture Fit | Currently NOT_PERFORMED |
 | Architecture Fit | PD-1 phase | Before implementation readiness | NOT_PERFORMED |
 | Implementation authorization | ROADMAP/STATE | Before coding | NO |
@@ -1404,7 +1543,7 @@ Do not silently convert `GJ-PRODUCT-MENU-LAUNCH` from `PLANNED` to `CURRENT` in 
 | Pricing/Promotion domain manage capabilities | CURRENT_SUPPORTED (domain) | ADR-007 |
 | Delivery fee bands / free-delivery threshold calculation/storage | CURRENT_SUPPORTED | IMP-036C |
 | Coherent Brand commercial workforce end-to-end journey | PLANNED_IMP036F (this draft) | US-001…016 |
-| ADR-006 draft/publish customer-visible Catalog intent | PLANNED_IMP036F product intent; CURRENT implementation non-conforming | BR-005; Architecture Fit |
+| ADR-006 draft/publish customer-visible Catalog intent | PLANNED_IMP036F product intent; CURRENT implementation non-conforming for customer-visible / customer-evaluation-affecting ACTIVE Product/Variant mutations | BR-005; Architecture Fit inventory |
 
 ---
 
@@ -1415,9 +1554,11 @@ Do not silently convert `GJ-PRODUCT-MENU-LAUNCH` from `PLANNED` to `CURRENT` in 
 | Full advanced Modifier Library | DEFERRED | Not required to complete approved commercial journey | Future product gate |
 | Bundle Builder | DEFERRED | Same | Future product gate |
 | Media upload/storage/scanning/CDN platform | DEFERRED | DISC-F-010 | Architecture/product decision if ever required |
+| Media-reference select/change via workforce UX | FOLLOW_UP | No verified safe select/change workflow for V1; Menu-entry `imagePath` storage/create-import exists | Later PD revision after path verification; DISC-F-010 |
 | General tax administration product | DEFERRED | DISC-F-006 | Separate capability |
 | General charge administration in ordinary commercial workflow | DEFERRED | DISC-F-006 | Separate capability |
 | Full complex mobile commercial authoring | DEFERRED | DISC-F-011 | Future UX decision |
+| Any simple mobile commercial mutation | FOLLOW_UP | None selected in this Product Definition | Later PD revision with explicit action + AC coverage |
 | Four-eyes / second-approver workflow | DEFERRED | DISC-F-009 | Explicit future authorization |
 | Realtime customer push | DEFERRED | IMP-036E guarantee = NO | Explicit future authorization |
 | New generic bulk-operation semantics | DEFERRED | Non-goal unless separately approved | Founder/product |
@@ -1451,14 +1592,16 @@ Do not silently convert `GJ-PRODUCT-MENU-LAUNCH` from `PLANNED` to `CURRENT` in 
 |---|---|---|---|
 | NONE | DISC-F-001…011 encode approved Founder direction; remaining gaps are Architecture Fit / implementation mechanism questions, not new product behaviour choices | N/A | Product Definition Gate may still execute later; this draft does not execute it |
 
-Architecture Fit inputs (not product decisions):
+Architecture Fit inputs (not product decisions; not Architecture Conflicts):
 
-1. `ARCHITECTURE_FIT_CONFORMANCE_GAP` — ADR-006 draft/publish vs current ACTIVE Product live name/description projection.
-2. `ARCHITECTURE_FIT_AUTHORIZATION_GAP` — delivery-tariff mutation permission/command mapping.
-3. Coherent workforce authoring surfaces over fragmented domain mutation paths.
+1. `ARCHITECTURE_FIT_CONFORMANCE_GAP` — ADR-006 draft/publish vs current customer-visible or customer-evaluation-affecting ACTIVE Product/Variant mutations. Known examples: ACTIVE Product name/description; ACTIVE Variant `isDefault`. Architecture Fit must inventory all ACTIVE Product/Variant mutable fields that can affect customer-visible or ordering truth and make implementation conform to ADR-006.
+2. `ARCHITECTURE_FIT_AUTHORIZATION_GAP` — delivery-tariff mutation permission/command mapping (DoR blocker for US-009; not itself a mandatory product AC).
+3. Missing coherent workforce authoring command surfaces over fragmented domain mutation paths.
 4. Consequence/verification composition across authorities without a false new source of truth.
 5. Audit presentation/composition across distributed commercial mutation evidence.
-6. Any existing API/domain command gap required by an approved user story (evaluate; do not invent endpoints here).
+6. Diagnosis composition over existing authorities without inventing a new decision engine.
+7. Any existing API/domain command gap required by an approved user story (evaluate; do not invent endpoints here).
+8. `ARCHITECTURE_FIT = NOT_PERFORMED`.
 
 ### Unassigned IMP-036E UX observations (not attached to IMP-036F)
 
@@ -1474,26 +1617,28 @@ These remain **UNASSIGNED** and are **not** IMP-036F V1 stories:
 
 ## 26. Definition of Ready
 
-| Story ID | Applicable fields complete / evidence | Open material decisions | Readiness / blocker |
+| Story ID | Applicable template fields complete / evidence | Open material decisions | Readiness / blocker |
 |---|---|---|---|
-| US-IMP-036F-001 | §9 complete for draft | NONE | NOT_READY_FOR_IMPLEMENTATION — gate + Architecture Fit pending |
-| US-IMP-036F-002 | §9 complete for draft | NONE | NOT_READY_FOR_IMPLEMENTATION — includes conformance gap for Architecture Fit |
-| US-IMP-036F-003 | §9 complete for draft | NONE | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-036F-004 | §9 complete for draft | NONE | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-036F-005 | §9 complete for draft | NONE | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-036F-006 | §9 complete for draft | NONE | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-036F-007 | §9 complete for draft | NONE | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-036F-008 | §9 complete for draft | NONE | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-036F-009 | §9 complete for draft | NONE | NOT_READY_FOR_IMPLEMENTATION — authorization gap for Architecture Fit |
-| US-IMP-036F-010 | §9 complete for draft | NONE | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-036F-011 | §9 complete for draft | NONE | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-036F-012 | §9 complete for draft | NONE | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-036F-013 | §9 complete for draft | NONE | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-036F-014 | §9 complete for draft | NONE | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-036F-015 | §9 complete for draft | NONE | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-036F-016 | §9 complete for draft | NONE | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-036F-001 | YES — all §9 template fields present (incl. N/A where justified) | NONE | NOT_READY_FOR_IMPLEMENTATION — Product Definition Gate + Architecture Fit not performed |
+| US-IMP-036F-002 | YES | NONE | NOT_READY_FOR_IMPLEMENTATION — gate + Architecture Fit not performed; ADR-006 conformance gap is Fit input |
+| US-IMP-036F-003 | YES | NONE | NOT_READY_FOR_IMPLEMENTATION — gate + Architecture Fit not performed |
+| US-IMP-036F-004 | YES | NONE | NOT_READY_FOR_IMPLEMENTATION — gate + Architecture Fit not performed |
+| US-IMP-036F-005 | YES | NONE | NOT_READY_FOR_IMPLEMENTATION — gate + Architecture Fit not performed |
+| US-IMP-036F-006 | YES | NONE | NOT_READY_FOR_IMPLEMENTATION — gate + Architecture Fit not performed |
+| US-IMP-036F-007 | YES | NONE | NOT_READY_FOR_IMPLEMENTATION — gate + Architecture Fit not performed |
+| US-IMP-036F-008 | YES | NONE | NOT_READY_FOR_IMPLEMENTATION — gate + Architecture Fit not performed |
+| US-IMP-036F-009 | YES | NONE | NOT_READY_FOR_IMPLEMENTATION — gate + Architecture Fit not performed; `ARCHITECTURE_FIT_AUTHORIZATION_GAP` DoR blocker for tariff mutation mapping |
+| US-IMP-036F-010 | YES | NONE | NOT_READY_FOR_IMPLEMENTATION — gate + Architecture Fit not performed |
+| US-IMP-036F-011 | YES | NONE | NOT_READY_FOR_IMPLEMENTATION — gate + Architecture Fit not performed; ADR-006 conformance gap is Fit input |
+| US-IMP-036F-012 | YES | NONE | NOT_READY_FOR_IMPLEMENTATION — gate + Architecture Fit not performed |
+| US-IMP-036F-013 | YES | NONE | NOT_READY_FOR_IMPLEMENTATION — gate + Architecture Fit not performed |
+| US-IMP-036F-014 | YES | NONE | NOT_READY_FOR_IMPLEMENTATION — gate + Architecture Fit not performed; media mutation FOLLOW_UP |
+| US-IMP-036F-015 | YES | NONE | NOT_READY_FOR_IMPLEMENTATION — gate + Architecture Fit not performed; mobile mutations none mandatory |
+| US-IMP-036F-016 | YES | NONE | NOT_READY_FOR_IMPLEMENTATION — gate + Architecture Fit not performed |
 
-`STORY_COMPLETE != IMP_ACCEPTED`. Final story readiness requires Product Definition Gate, Architecture Fit/lock, and implementation authorization.
+Product-definition template fields are complete for all 16 stories above. Completeness of §9 fields does **not** make any story ready for implementation.
+
+`STORY_COMPLETE != IMP_ACCEPTED`. Final story readiness requires Product Definition Gate, Architecture Fit/lock, and implementation authorization, plus any story-specific Fit blockers (e.g. US-009 tariff authorization mapping).
 
 ---
 
@@ -1532,7 +1677,15 @@ Accessibility Considered: YES
 Golden Journeys Identified: YES (candidates; final mandatory selection at gate review)
 Explicit Deferrals Recorded: YES
 Unresolved Product Decisions: NONE (DISC-F-001…011 encoded; Architecture Fit gaps recorded separately)
-Architecture Conflicts: ARCHITECTURE_FIT_CONFORMANCE_GAP (ADR-006 vs live Catalog update); ARCHITECTURE_FIT_AUTHORIZATION_GAP (delivery tariff mutation mapping); other fit inputs recorded — Architecture Fit NOT_PERFORMED
+Architecture Conflicts: NONE IDENTIFIED AT PRODUCT-DEFINITION LEVEL
+Architecture Fit Inputs:
+- ARCHITECTURE_FIT_CONFORMANCE_GAP (customer-visible / customer-evaluation-affecting ACTIVE Product/Variant mutations vs ADR-006; known examples Product name/description and Variant `isDefault`)
+- ARCHITECTURE_FIT_AUTHORIZATION_GAP (delivery tariff mutation permission/command mapping)
+- Missing coherent workforce authoring command surfaces
+- Consequence/verification composition
+- Audit composition
+- Diagnosis composition
+- ARCHITECTURE_FIT = NOT_PERFORMED
 PRODUCT_DEFINITION_GATE_EXECUTION: NOT_PERFORMED
 Gate Result: NOT_PERFORMED
 ```
@@ -1576,5 +1729,8 @@ IMP036G_ACTIVATED: NO
 | Story map activities | 11 (+ 3 cross-cutting story groups) |
 | User stories | 16 |
 | V1 acceptance stories | 16 |
-| Acceptance scenarios | 65 |
+| Acceptance scenarios (total defined) | 65 |
+| Mandatory in V1 acceptance slice | 64 (AC-IMP-036F-014-02 = NO / FOLLOW_UP) |
 | Business rules | 23 |
+
+V1 still proves one coherent bounded commercial job (inspect → configure → review → publish/effect → verify/diagnose) within existing authorities. Media-reference mutation and mobile commercial mutations are not required to prove that job.
