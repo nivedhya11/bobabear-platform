@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R112",
-  "acceptedThrough": "IMP-036D",
-  "currentProductSlice": "IMP-036E",
+  "stateVersion": "STATE-R113",
+  "acceptedThrough": "IMP-036E",
+  "currentProductSlice": "NONE",
   "nextProductSlice": "IMP-036F",
-  "pendingAcceptance": "IMP-036E",
+  "pendingAcceptance": "NONE",
   "governanceHealth": "ALIGNED",
-  "lastReviewed": "2026-09-07"
+  "lastReviewed": "2026-09-10"
 }
 -->
 
@@ -24,45 +24,54 @@ Do not infer current lifecycle from that snapshot.
 ## 1. Accepted Position
 
 ```text
-Accepted Through:          IMP-036D — Workforce & Franchise Operations Portal V2
+Accepted Through:          IMP-036E — Store Operations Management
 Accepted Inserted Slice:   IMP-005A — Dockerized local application runtime; IMP-026C — Pilot Customer-Commerce UX Hardening; IMP-028A — Food Direct UX Foundation; IMP-028B — Customer Menu Projection + Discovery; IMP-028C — Food Customization; IMP-028D — Desktop Ordering Continuity
-Accepted Range:            IMP-001 → IMP-036D (including IMP-005A and IMP-026C)
+Accepted Range:            IMP-001 → IMP-036E (including IMP-005A and IMP-026C)
 ```
 
 ## 2. Current Work Position
 
 ```text
-Current Product Implementation: IMP-036E — Store Operations Management
-Pending Acceptance:             IMP-036E
-Current Product Slice:          IMP-036E — Store Operations Management
+Current Product Implementation: NONE
+Pending Acceptance:             NONE
+Current Product Slice:          NONE
 Next Product Slice:             IMP-036F — Catalog, Menu, Pricing & Promotions Management
-Current Governance Activity:    IMP-036E IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE;
-                              Founder UAT required / not yet performed;
-                              IMP-036D COMPLETE_AND_ACCEPTED;
+Current Governance Activity:    IMP-036E COMPLETE_AND_ACCEPTED after Founder UAT PASS (2026-09-10);
+                              accepted UAT candidate 05c534bac3d077f5ab89928495568bb63faf78df;
                               IMP-036F/G and IMP-037 remain PLANNED / NOT_ACTIVATED /
-                              NOT_AUTHORIZED / NOT_STARTED.
+                              NOT_AUTHORIZED / NOT_STARTED; IMP036F_ACTIVATED: NO;
+                              ADVANCE of IMP-036F is a separate Founder-authorized task.
 Governance Health:              ALIGNED
 ```
 
 ```text
-IMP-036D:                 COMPLETE_AND_ACCEPTED
-IMP-036D_ARCHITECTURE_LOCKED: YES
-IMP-036D_ACCEPTED:        YES
-IMP-036D_FOUNDER_UAT:     PASS
-IMP-036E:                 IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
+IMP-036E:                 COMPLETE_AND_ACCEPTED
 IMP-036E_ARCHITECTURE:    LOCKED
 IMP-036E_ARCHITECTURE_LOCKED: YES
 IMP-036E_IMPLEMENTATION:  AUTHORIZED / STARTED / COMPLETE
 IMP-036E_IMPLEMENTATION_AUTHORIZED: YES
 IMP-036E_STARTED:         YES
 IMP-036E_IMPLEMENTATION_COMPLETE: YES
-IMP-036E_ACCEPTED:        NO
+IMP-036E_ACCEPTED:        YES
 IMP-036E_FOUNDER_UAT_REQUIRED: YES
-IMP-036E_FOUNDER_UAT:     NOT_STARTED / NOT_PERFORMED
+IMP-036E_FOUNDER_UAT:     PASS
+IMP036E_FOUNDER_UAT:      PASS
+IMP036E_FORMAL_ACCEPTANCE: ACCEPTED
+IMP036E_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
+IMP036E_ACCEPTED_MAIN_SHA: 05c534bac3d077f5ab89928495568bb63faf78df
+IMP036E_ACCEPTED_TREE: 55b28977ee9860c2c07cb25f751c9f48ef4a2aa6
+IMP036E_ACCEPTED_CANDIDATE: 05c534bac3d077f5ab89928495568bb63faf78df
+IMP036E_FOUNDER_UAT_CANDIDATE_REPOSITORY: /home/ajoshi/repos/boba-bear-platform
+IMP036E_FOUNDER_UAT_CANDIDATE_BRANCH: main
+IMP036E_FOUNDER_UAT_CANDIDATE_HEAD: 05c534bac3d077f5ab89928495568bb63faf78df
+IMP036E_FOUNDER_UAT_CANDIDATE_TREE: 55b28977ee9860c2c07cb25f751c9f48ef4a2aa6
+IMP036E_FOUNDER_UAT_CANDIDATE_FINGERPRINT: 1a97d3a4c80394804e19398e4f3684067aefb0d42a01a7899e8777d1a07cb289
+IMP036E_FOUNDER_UAT_DECISION_DATE: 2026-09-10
+IMP036E_FOUNDER_UAT_ACCEPTANCE_AUTHORITY: Founder
 FOUNDER_STAGING_DEPLOYMENT: PERFORMED
-FOUNDER_STAGING_STATUS:   READY_FOR_FOUNDER_UAT
-FOUNDER_STAGING_CANDIDATE_SHA: e9821271a29ae35ba6c921008b976cd2e8d15c50
-FOUNDER_STAGING_CANDIDATE_TREE: 8259d30f662e6668f2208788f2e95faaea831384
+FOUNDER_STAGING_STATUS:   FOUNDER_UAT_COMPLETE
+FOUNDER_STAGING_INTERMEDIATE_CANDIDATE_SHA: e9821271a29ae35ba6c921008b976cd2e8d15c50
+FOUNDER_STAGING_INTERMEDIATE_CANDIDATE_TREE: 8259d30f662e6668f2208788f2e95faaea831384
 IMP036E_IMPLEMENTATION_EVIDENCE: COMPLETE
 IMP_036E_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
 IMP036E_IMPLEMENTATION_MERGE_SHA: 0ebb5e937cd7ac14bb3e39e9d1d494e32c9d2739
@@ -94,6 +103,10 @@ D374_REQUIRED_FOR_IMP036E_LOCK: NO
 D-374_CREATED: NO
 ARCH_R20_REQUIRED_FOR_IMP036E_LOCK: NO
 ARCH_R20_CREATED: NO
+IMP-036D:                 COMPLETE_AND_ACCEPTED
+IMP-036D_ARCHITECTURE_LOCKED: YES
+IMP-036D_ACCEPTED:        YES
+IMP-036D_FOUNDER_UAT:     PASS
 IMP-036F:                 PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
 IMP036F_ACTIVATED:        NO
 ```
@@ -224,31 +237,42 @@ Cart → Checkout → Payment → Order
 | IMP-036B | Customer Account, Onboarding, Address & Location Experience | COMPLETE_AND_ACCEPTED |
 | IMP-036C | Customer Commerce Experience V2 | COMPLETE_AND_ACCEPTED |
 | IMP-036D | Workforce & Franchise Operations Portal V2 | COMPLETE_AND_ACCEPTED |
+| IMP-036E | Store Operations Management | COMPLETE_AND_ACCEPTED |
 
 ## 5. Acceptance Position
 
 ```text
-acceptedThrough: IMP-036D
-pendingAcceptance: IMP-036E
-currentProductSlice: IMP-036E
+acceptedThrough: IMP-036E
+pendingAcceptance: NONE
+currentProductSlice: NONE
 nextProductSlice: IMP-036F — Catalog, Menu, Pricing & Promotions Management
-IMP-036D: COMPLETE_AND_ACCEPTED
-IMP-036D_ACCEPTED: YES
-IMP-036D_FOUNDER_UAT: PASS
-IMP-036E: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
+IMP-036E: COMPLETE_AND_ACCEPTED
 IMP-036E_ARCHITECTURE: LOCKED
 IMP-036E_ARCHITECTURE_LOCKED: YES
 IMP-036E_IMPLEMENTATION: AUTHORIZED / STARTED / COMPLETE
 IMP-036E_IMPLEMENTATION_AUTHORIZED: YES
 IMP-036E_STARTED: YES
 IMP-036E_IMPLEMENTATION_COMPLETE: YES
-IMP-036E_ACCEPTED: NO
+IMP-036E_ACCEPTED: YES
 IMP-036E_FOUNDER_UAT_REQUIRED: YES
-IMP-036E_FOUNDER_UAT: NOT_STARTED / NOT_PERFORMED
+IMP-036E_FOUNDER_UAT: PASS
+IMP036E_FOUNDER_UAT: PASS
+IMP036E_FORMAL_ACCEPTANCE: ACCEPTED
+IMP036E_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
+IMP036E_ACCEPTED_MAIN_SHA: 05c534bac3d077f5ab89928495568bb63faf78df
+IMP036E_ACCEPTED_TREE: 55b28977ee9860c2c07cb25f751c9f48ef4a2aa6
+IMP036E_ACCEPTED_CANDIDATE: 05c534bac3d077f5ab89928495568bb63faf78df
+IMP036E_FOUNDER_UAT_CANDIDATE_REPOSITORY: /home/ajoshi/repos/boba-bear-platform
+IMP036E_FOUNDER_UAT_CANDIDATE_BRANCH: main
+IMP036E_FOUNDER_UAT_CANDIDATE_HEAD: 05c534bac3d077f5ab89928495568bb63faf78df
+IMP036E_FOUNDER_UAT_CANDIDATE_TREE: 55b28977ee9860c2c07cb25f751c9f48ef4a2aa6
+IMP036E_FOUNDER_UAT_CANDIDATE_FINGERPRINT: 1a97d3a4c80394804e19398e4f3684067aefb0d42a01a7899e8777d1a07cb289
+IMP036E_FOUNDER_UAT_DECISION_DATE: 2026-09-10
+IMP036E_FOUNDER_UAT_ACCEPTANCE_AUTHORITY: Founder
 FOUNDER_STAGING_DEPLOYMENT: PERFORMED
-FOUNDER_STAGING_STATUS: READY_FOR_FOUNDER_UAT
-FOUNDER_STAGING_CANDIDATE_SHA: e9821271a29ae35ba6c921008b976cd2e8d15c50
-FOUNDER_STAGING_CANDIDATE_TREE: 8259d30f662e6668f2208788f2e95faaea831384
+FOUNDER_STAGING_STATUS: FOUNDER_UAT_COMPLETE
+FOUNDER_STAGING_INTERMEDIATE_CANDIDATE_SHA: e9821271a29ae35ba6c921008b976cd2e8d15c50
+FOUNDER_STAGING_INTERMEDIATE_CANDIDATE_TREE: 8259d30f662e6668f2208788f2e95faaea831384
 IMP036E_IMPLEMENTATION_EVIDENCE: COMPLETE
 IMP_036E_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
 IMP036E_IMPLEMENTATION_MERGE_SHA: 0ebb5e937cd7ac14bb3e39e9d1d494e32c9d2739
@@ -279,6 +303,9 @@ NEW_SCOPE_MODEL: NO
 D374_REQUIRED_FOR_IMP036E_LOCK: NO
 D-374_CREATED: NO
 ARCH_R20_REQUIRED_FOR_IMP036E_LOCK: NO
+IMP-036D: COMPLETE_AND_ACCEPTED
+IMP-036D_ACCEPTED: YES
+IMP-036D_FOUNDER_UAT: PASS
 IMP-036F: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
 IMP036F_ACTIVATED: NO
 architectureVersion: ARCH-R19
@@ -299,20 +326,25 @@ Closed historical conflicts and prior STATE-Rxx progression narratives remain in
 
 ## 7. Acceptance Provenance
 
-Accepted product through IMP-036D is independently accepted. Detailed per-slice evidence remains in
-repository tests, audits, Docker runtime proof, capability artifacts, and
-[`history/STATE-STATE-R111-pre-compression.md`](./history/STATE-STATE-R111-pre-compression.md).
+Accepted product through IMP-036E is independently accepted after Founder UAT PASS on 2026-09-10 for
+exact candidate SHA `05c534bac3d077f5ab89928495568bb63faf78df` / tree
+`55b28977ee9860c2c07cb25f751c9f48ef4a2aa6` (PR #135; main CI run `34389543060` 12/12 PASS).
+Post-Resume read-only Founder-staging verification on that same candidate observed
+`control_state = accepting` with origin/nearby SERVICEABLE and outside NOT_SERVICEABLE
+(cross-portal recovery PASS). The first Serviceability smoke on the same candidate observed
+TEMPORARILY_UNAVAILABLE for origin/nearby while the outlet was intentionally paused; that
+observation is preserved and was resolved by authorized Store Resume, not by code replacement.
+Governance docs reconciliation after that product SHA is not a new product UAT candidate.
 
-IMP-036E remains `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` (`IMP-036E_ACCEPTED: NO`; Founder UAT
-`NOT_STARTED` / `NOT_PERFORMED`). Founder staging is `READY_FOR_FOUNDER_UAT` for candidate
-`e9821271a29ae35ba6c921008b976cd2e8d15c50` / tree `8259d30f662e6668f2208788f2e95faaea831384`
-(`FOUNDER_STAGING_DEPLOYMENT: PERFORMED`; deployment is not Founder UAT). Implementation evidence
-and independent implementation review references required for acceptance remain recorded above and
-in [`capabilities/IMP-036E-store-operations-management.md`](./capabilities/IMP-036E-store-operations-management.md).
+Detailed per-slice evidence for earlier accepted IMPs remains in repository tests, audits, Docker
+runtime proof, capability artifacts, and
+[`history/STATE-STATE-R111-pre-compression.md`](./history/STATE-STATE-R111-pre-compression.md).
+Implementation/review provenance for IMP-036E remains distinct from the accepted UAT candidate and
+is recorded in
+[`capabilities/IMP-036E-store-operations-management.md`](./capabilities/IMP-036E-store-operations-management.md).
 
 ## 8. Explicitly Not Yet Accepted
 
-- IMP-036E — Store Operations Management (`IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`; Founder UAT required / not performed)
 - IMP-036F — Catalog, Menu, Pricing & Promotions Management (`PLANNED` / `NOT_ACTIVATED`)
 - IMP-036G — Administration Console V2 (`PLANNED` / `NOT_ACTIVATED`)
 - IMP-037 — Backup, Restore & Migration Readiness
@@ -336,17 +368,39 @@ in [`capabilities/IMP-036E-store-operations-management.md`](./capabilities/IMP-0
 Agents may propose a STATE delta in their report. Only independent acceptance updates this file's
 accepted position and may promote `governanceHealth` to `ALIGNED`.
 
-## 10. STATE-R112 record
+## 10. STATE-R113 record
+
+```text
+STATE-R113 = IMP-036E_FORMAL_ACCEPTANCE
+acceptedThrough: IMP-036E
+pendingAcceptance: NONE
+currentProductSlice: NONE
+nextProductSlice: IMP-036F
+IMP-036E: COMPLETE_AND_ACCEPTED
+IMP-036E_ACCEPTED: YES
+IMP-036E_FOUNDER_UAT: PASS
+IMP036E_FORMAL_ACCEPTANCE: ACCEPTED
+IMP036E_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
+IMP036E_ACCEPTED_MAIN_SHA: 05c534bac3d077f5ab89928495568bb63faf78df
+IMP036E_ACCEPTED_TREE: 55b28977ee9860c2c07cb25f751c9f48ef4a2aa6
+IMP036E_FOUNDER_UAT_DECISION_DATE: 2026-09-10
+IMP036F_ACTIVATED: NO
+architectureVersion: ARCH-R19
+decisionRegisterVersion: DR-15
+supersedes: STATE-R112
+```
+
+## 11. STATE-R112 record (historical compression)
 
 ```text
 STATE-R112 = CANONICAL_AUTHORITY_CONTEXT_COMPRESSION_ONLY
 source snapshot exact: YES (blob 748c3b615fe9b93f91ff573f88548223b9ba1d0d)
 source commit: 33a226a18e4e9428c07233990d026541418f0860
 acceptance change: NO
-acceptedThrough: IMP-036D (unchanged)
-pendingAcceptance: IMP-036E (unchanged)
-currentProductSlice: IMP-036E (unchanged)
-nextProductSlice: IMP-036F (unchanged)
+acceptedThrough: IMP-036D (unchanged at that revision)
+pendingAcceptance: IMP-036E (unchanged at that revision)
+currentProductSlice: IMP-036E (unchanged at that revision)
+nextProductSlice: IMP-036F (unchanged at that revision)
 IMP-036E_ACCEPTED: NO
 IMP036F_ACTIVATED: NO
 ```

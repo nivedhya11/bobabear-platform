@@ -1,6 +1,6 @@
 ---
 Status: Canonical index
-Last updated: 2026-09-07
+Last updated: 2026-09-10
 ---
 
 # BOBA Bear Platform Documentation
@@ -107,7 +107,7 @@ through metadata, targeted searches, and relevant ranges, as described in PD-1.
 | [`capabilities/IMP-036B-customer-account-onboarding-address-location.md`](./capabilities/IMP-036B-customer-account-onboarding-address-location.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-036B Customer Account, Onboarding, Address & Location; COMPLETE_AND_ACCEPTED |
 | [`capabilities/IMP-036C-customer-commerce-experience-v2.md`](./capabilities/IMP-036C-customer-commerce-experience-v2.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-036C Customer Commerce Experience V2; COMPLETE_AND_ACCEPTED |
 | [`capabilities/IMP-036D-workforce-franchise-operations-v2.md`](./capabilities/IMP-036D-workforce-franchise-operations-v2.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-036D Workforce & Franchise Operations Portal V2; architecture LOCKED; COMPLETE_AND_ACCEPTED; AUTHORIZED / STARTED / COMPLETE (`IMP-036D_ACCEPTED: YES`; Founder UAT PASS) |
-| [`capabilities/IMP-036E-store-operations-management.md`](./capabilities/IMP-036E-store-operations-management.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-036E Store Operations Management; architecture LOCKED; IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE; AUTHORIZED / STARTED / COMPLETE (`IMP-036E_ARCHITECTURE_LOCKED: YES`; Founder UAT required / NOT_STARTED) |
+| [`capabilities/IMP-036E-store-operations-management.md`](./capabilities/IMP-036E-store-operations-management.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-036E Store Operations Management; architecture LOCKED; COMPLETE_AND_ACCEPTED; AUTHORIZED / STARTED / COMPLETE (`IMP-036E_ACCEPTED: YES`; Founder UAT PASS) |
 
 ## Supporting documents
 

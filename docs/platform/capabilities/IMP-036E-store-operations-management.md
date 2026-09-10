@@ -5,11 +5,11 @@
   "capability": "IMP-036E",
   "title": "Store Operations Management",
   "architectureLock": "ARCHITECTURE_LOCKED",
-  "implementation": "AUTHORIZED / STARTED / COMPLETE",
+  "implementation": "COMPLETE_AND_ACCEPTED",
   "implementationAuthorized": true,
   "founderUATRequired": true,
   "schemaChangeRequired": false,
-  "lastReviewed": "2026-09-07",
+  "lastReviewed": "2026-09-10",
   "bindingDecisions": ["D-358", "D-359", "D-372", "D-373"],
   "dependsOn": ["IMP-011", "IMP-014", "IMP-019", "IMP-029", "IMP-030", "IMP-035", "IMP-036B", "IMP-036D"]
 }
@@ -17,49 +17,53 @@
 
 # IMP-036E — Store Operations Management
 
-## Capability Architecture (ARCHITECTURE_LOCKED — IMPLEMENTATION AUTHORIZED / STARTED / COMPLETE)
+## Capability Architecture (ARCHITECTURE_LOCKED — COMPLETE_AND_ACCEPTED)
 
 This document is the **locked capability architecture** for IMP-036E. It is the sole CURRENT
 capability-architecture authority for this slice. Supporting experience planning must not compete
 with this lock.
 
-Implementation complete pending acceptance recorded at GTM-R113 / STATE-R111. Completion is not
-acceptance. Founder UAT remains required and has not been performed.
+Formal acceptance recorded at GTM-R115 / STATE-R113 after Founder UAT PASS on the exact accepted UAT
+candidate `05c534bac3d077f5ab89928495568bb63faf78df`.
 
 | Field | Value |
 |---|---|
 | Architecture lock | `ARCHITECTURE_LOCKED` |
-| Lifecycle | `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` |
+| Lifecycle | `COMPLETE_AND_ACCEPTED` |
 | Implementation | `AUTHORIZED` / `STARTED` / `COMPLETE` |
 | Implementation authorized | **YES** |
 | Implementation started | **YES** |
 | Implementation complete | **YES** |
-| Accepted | **NO** |
-| Accepted product through | IMP-036D (unchanged) |
-| Current product slice | IMP-036E |
-| Pending acceptance | IMP-036E |
+| Accepted | **YES** |
+| Accepted product through | IMP-036E |
+| Current product slice | NONE |
+| Pending acceptance | NONE |
 | Next product slice | IMP-036F |
-| Governance checkpoint | GTM-R113 / STATE-R111 |
+| Governance checkpoint | GTM-R115 / STATE-R113 |
 | Founder UAT required for acceptance | **YES** |
-| Founder UAT | **NOT_STARTED** |
+| Founder UAT | **PASS** |
 | Schema change required | **NO** |
 | New D-number | **NO** (`D-374` not created) |
 | Global ARCH bump | **NO** (`ARCH-R19` preserved; `ARCH-R20` not created) |
 | Decision register | DR-15 (unchanged) |
 
 ```text
-IMP-036E: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
+IMP-036E: COMPLETE_AND_ACCEPTED
 IMP-036E_ARCHITECTURE: LOCKED
 IMP-036E_ARCHITECTURE_LOCKED: YES
 IMP-036E_IMPLEMENTATION: AUTHORIZED / STARTED / COMPLETE
 IMP-036E_IMPLEMENTATION_AUTHORIZED: YES
 IMP-036E_STARTED: YES
 IMP-036E_IMPLEMENTATION_COMPLETE: YES
-IMP-036E_ACCEPTED: NO
+IMP-036E_ACCEPTED: YES
 IMP-036E_FOUNDER_UAT_REQUIRED: YES
-IMP-036E_FOUNDER_UAT: NOT_STARTED
+IMP-036E_FOUNDER_UAT: PASS
+IMP036E_FOUNDER_UAT: PASS
+IMP036E_FORMAL_ACCEPTANCE: ACCEPTED
+IMP036E_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
 FOUNDER_UAT_REQUIRED: YES
 FOUNDER_UAT_REQUIRED_FOR_ACCEPTANCE: YES
+FOUNDER_UAT: PASS
 schema_change: NO
 SCHEMA_CHANGE_REQUIRED: NO
 provider_IO: NO
@@ -77,7 +81,6 @@ ARCH-R20_CREATED: NO
 IMPLEMENTATION_START_RECORDED: YES
 IMPLEMENTATION_AUTHORIZED: YES
 IMPLEMENTATION_STARTED: YES
-COMPLETION IS NOT ACCEPTANCE: YES
 IMPLEMENTATION_COMPLETE: YES
 IMP036E_IMPLEMENTATION_EVIDENCE: COMPLETE
 IMP_036E_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
@@ -85,6 +88,20 @@ IMP036E_IMPLEMENTATION_MERGE_SHA: 0ebb5e937cd7ac14bb3e39e9d1d494e32c9d2739
 IMP036E_IMPLEMENTATION_TREE: 0def59ce9bcab4575a7b43b7c3c07c85ac575428
 IMP036E_REVIEWED_CANDIDATE_HEAD: b2ffaa5bc2b5c6f58ff5241c226b583160132837
 IMP036E_REVIEWED_CANDIDATE_TREE: 0def59ce9bcab4575a7b43b7c3c07c85ac575428
+IMP036E_ACCEPTED_MAIN_SHA: 05c534bac3d077f5ab89928495568bb63faf78df
+IMP036E_ACCEPTED_TREE: 55b28977ee9860c2c07cb25f751c9f48ef4a2aa6
+IMP036E_ACCEPTED_CANDIDATE: 05c534bac3d077f5ab89928495568bb63faf78df
+IMP036E_FOUNDER_UAT_CANDIDATE_REPOSITORY: /home/ajoshi/repos/boba-bear-platform
+IMP036E_FOUNDER_UAT_CANDIDATE_BRANCH: main
+IMP036E_FOUNDER_UAT_CANDIDATE_HEAD: 05c534bac3d077f5ab89928495568bb63faf78df
+IMP036E_FOUNDER_UAT_CANDIDATE_TREE: 55b28977ee9860c2c07cb25f751c9f48ef4a2aa6
+IMP036E_FOUNDER_UAT_CANDIDATE_FINGERPRINT: 1a97d3a4c80394804e19398e4f3684067aefb0d42a01a7899e8777d1a07cb289
+IMP036E_FOUNDER_UAT_DECISION_DATE: 2026-09-10
+IMP036E_FOUNDER_UAT_ACCEPTANCE_AUTHORITY: Founder
+FOUNDER_STAGING_DEPLOYMENT: PERFORMED
+FOUNDER_STAGING_STATUS: FOUNDER_UAT_COMPLETE
+FOUNDER_STAGING_INTERMEDIATE_CANDIDATE_SHA: e9821271a29ae35ba6c921008b976cd2e8d15c50
+FOUNDER_STAGING_INTERMEDIATE_CANDIDATE_TREE: 8259d30f662e6668f2208788f2e95faaea831384
 ```
 
 Canonical authorities:
@@ -864,11 +881,16 @@ façade), ARCH-G25 (D-373 Admin façade).
 IMP-036E_IMPLEMENTATION_AUTHORIZED: YES
 IMP-036E_STARTED: YES
 IMP-036E_IMPLEMENTATION_COMPLETE: YES
-IMP-036E_ACCEPTED: NO
-IMP-036E_FOUNDER_UAT: NOT_STARTED
+IMP-036E_ACCEPTED: YES
+IMP-036E_FOUNDER_UAT: PASS
+IMP036E_FORMAL_ACCEPTANCE: ACCEPTED
+IMP036E_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
+IMP036E_ACCEPTED_MAIN_SHA: 05c534bac3d077f5ab89928495568bb63faf78df
+IMP036E_ACCEPTED_TREE: 55b28977ee9860c2c07cb25f751c9f48ef4a2aa6
 IMP-036F: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
+IMP036F_ACTIVATED: NO
 ```
 
-Implementation complete pending acceptance recorded at GTM-R113 / STATE-R111. Completion is **not**
-acceptance. Founder UAT remains required and has not been performed. This is **not** IMP-036F
-activation.
+Formal acceptance recorded at GTM-R115 / STATE-R113 after Founder UAT PASS on 2026-09-10. Accepted
+UAT product candidate remains `05c534bac3d077f5ab89928495568bb63faf78df`. Governance reconciliation
+is not a new product candidate and does **not** activate IMP-036F.
