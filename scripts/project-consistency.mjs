@@ -6481,21 +6481,41 @@ export function evaluateImp036fUngatedProductDefinitionDraftCandidate(text) {
   if (!hasDraftStatus) {
     return { ok: false, code: "IMP036F_PD_DRAFT_STATUS", message: "Ungated IMP-036F Product Definition candidate must record Document status = DRAFT" };
   }
-  if (/Gate Result\s*[:=]\s*PASS\b/.test(body) || /PRODUCT_DEFINITION_GATE_EXECUTION\s*[:=]\s*PERFORMED/.test(body)) {
+  const hasExecutionPerformed = /PRODUCT_DEFINITION_GATE_EXECUTION\s*[:=]\s*PERFORMED/.test(body);
+  const hasGateResultPass = /Gate Result\s*[:=]\s*PASS\b/.test(body);
+  const hasGateResultStop = /Gate Result\s*[:=]\s*STOP\b/.test(body);
+  const hasExecutionNotPerformed = /PRODUCT_DEFINITION_GATE_EXECUTION\s*[:=]\s*NOT_PERFORMED/.test(body);
+  const hasGateResultNotPerformed = /Gate Result\s*[:=]\s*NOT_PERFORMED/.test(body);
+
+  // Both pre-gate markers are conjunctive: PRESENT ungated drafts must record BOTH
+  // PRODUCT_DEFINITION_GATE_EXECUTION: NOT_PERFORMED and Gate Result: NOT_PERFORMED.
+  // PASS/STOP are actual gate verdicts and must never be certified before gate execution.
+  if (hasExecutionPerformed) {
     return {
       ok: false,
       code: "IMP036F_PD_PREMATURE_GATE_PASS",
-      message: "Ungated IMP-036F Product Definition candidate must not claim Product Definition Gate PASS/PERFORMED",
+      message: "Ungated IMP-036F Product Definition candidate must not claim PRODUCT_DEFINITION_GATE_EXECUTION: PERFORMED",
     };
   }
-  const gateNotPerformed =
-    /PRODUCT_DEFINITION_GATE_EXECUTION\s*[:=]\s*NOT_PERFORMED/.test(body) ||
-    /Gate Result\s*[:=]\s*NOT_PERFORMED/.test(body);
-  if (!gateNotPerformed) {
+  if (hasGateResultPass || hasGateResultStop) {
     return {
       ok: false,
-      code: "IMP036F_PD_GATE_NOT_PERFORMED",
-      message: "Ungated IMP-036F Product Definition candidate must record Product Definition Gate execution / Gate Result = NOT_PERFORMED",
+      code: "IMP036F_PD_PREMATURE_GATE_PASS",
+      message: "Ungated IMP-036F Product Definition candidate must not claim Gate Result PASS or STOP before gate execution",
+    };
+  }
+  if (!hasExecutionNotPerformed) {
+    return {
+      ok: false,
+      code: "IMP036F_PD_GATE_EXECUTION_NOT_PERFORMED",
+      message: "Ungated IMP-036F Product Definition candidate must record PRODUCT_DEFINITION_GATE_EXECUTION: NOT_PERFORMED",
+    };
+  }
+  if (!hasGateResultNotPerformed) {
+    return {
+      ok: false,
+      code: "IMP036F_PD_GATE_RESULT_NOT_PERFORMED",
+      message: "Ungated IMP-036F Product Definition candidate must record Gate Result: NOT_PERFORMED",
     };
   }
   if (

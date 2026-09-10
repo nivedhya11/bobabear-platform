@@ -6610,6 +6610,47 @@ IMP036G_ACTIVATED: NO
     assert.equal(result.code, "IMP036F_PD_PREMATURE_GATE_PASS");
   });
 
+  it("rejects NOT_PERFORMED execution with Gate Result STOP (actual verdict before gate)", () => {
+    const bad = validUngatedDraft.replace("Gate Result: NOT_PERFORMED", "Gate Result: STOP");
+    const result = evaluateImp036fUngatedProductDefinitionDraftCandidate(bad);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036F_PD_PREMATURE_GATE_PASS");
+  });
+
+  it("rejects NOT_PERFORMED execution with Gate Result PASS (actual verdict before gate)", () => {
+    const bad = validUngatedDraft.replace("Gate Result: NOT_PERFORMED", "Gate Result: PASS");
+    const result = evaluateImp036fUngatedProductDefinitionDraftCandidate(bad);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036F_PD_PREMATURE_GATE_PASS");
+  });
+
+  it("rejects PERFORMED execution even when Gate Result is NOT_PERFORMED", () => {
+    const bad = validUngatedDraft.replace(
+      "PRODUCT_DEFINITION_GATE_EXECUTION: NOT_PERFORMED",
+      "PRODUCT_DEFINITION_GATE_EXECUTION: PERFORMED",
+    );
+    const result = evaluateImp036fUngatedProductDefinitionDraftCandidate(bad);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036F_PD_PREMATURE_GATE_PASS");
+  });
+
+  it("rejects missing PRODUCT_DEFINITION_GATE_EXECUTION when Gate Result is NOT_PERFORMED", () => {
+    const bad = validUngatedDraft.replace(
+      "PRODUCT_DEFINITION_GATE_EXECUTION: NOT_PERFORMED\n",
+      "",
+    );
+    const result = evaluateImp036fUngatedProductDefinitionDraftCandidate(bad);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036F_PD_GATE_EXECUTION_NOT_PERFORMED");
+  });
+
+  it("rejects missing Gate Result when PRODUCT_DEFINITION_GATE_EXECUTION is NOT_PERFORMED", () => {
+    const bad = validUngatedDraft.replace("Gate Result: NOT_PERFORMED\n", "");
+    const result = evaluateImp036fUngatedProductDefinitionDraftCandidate(bad);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036F_PD_GATE_RESULT_NOT_PERFORMED");
+  });
+
   it("fails GTM-R117 / STATE-R115 when architecture is locked or implementation is authorized/started", () => {
     assert.equal(
       evaluateImp036fProductDefinitionDraftAuthorizedCheckpoint({
