@@ -6344,14 +6344,22 @@ describe("canonical authority history compression", () => {
       isSupportedImp030GovernanceCheckpoint("GTM-R114", "STATE-R112", "imp036eCompletion"),
       false,
     );
+    assert.equal(
+      isSupportedImp030GovernanceCheckpoint("GTM-R114", "STATE-R112", "imp036eAcceptance"),
+      false,
+    );
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R114", "STATE-R112"), true);
     assert.equal(
       isSupportedImp030GovernanceCheckpoint("GTM-R113", "STATE-R111", "imp036eCompletion"),
       true,
     );
+    assert.equal(
+      isSupportedImp030GovernanceCheckpoint("GTM-R115", "STATE-R113", "imp036eAcceptance"),
+      true,
+    );
   });
 
-  it("loads historical snapshots and keeps them distinct from CURRENT authority text", () => {
+  it("loads historical snapshots and keeps them distinct from CURRENT accepted authority text", () => {
     const hist = loadHistoricalAuthorityCorpus();
     assert.match(hist.roadmapText, /"roadmapVersion": "GTM-R113"/);
     assert.match(hist.stateText, /"stateVersion": "STATE-R111"/);
@@ -6359,51 +6367,73 @@ describe("canonical authority history compression", () => {
 
     const roadmap = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
     const state = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
-    assert.match(roadmap, /"roadmapVersion": "GTM-R114"/);
-    assert.match(state, /"stateVersion": "STATE-R112"/);
-    assert.match(state, /"acceptedThrough": "IMP-036D"/);
-    assert.match(state, /"pendingAcceptance": "IMP-036E"/);
-    assert.match(state, /"currentProductSlice": "IMP-036E"/);
+    assert.match(roadmap, /"roadmapVersion": "GTM-R115"/);
+    assert.match(state, /"stateVersion": "STATE-R113"/);
+    assert.match(state, /"acceptedThrough": "IMP-036E"/);
+    assert.match(state, /"pendingAcceptance": "NONE"/);
+    assert.match(state, /"currentProductSlice": "NONE"/);
     assert.match(state, /"nextProductSlice": "IMP-036F"/);
-    assert.match(roadmap, /IMP-036E_ACCEPTED:\s*NO/);
-    assert.match(state, /IMP-036E_FOUNDER_UAT:\s*NOT_STARTED/);
+    assert.match(roadmap, /IMP-036E_ACCEPTED:\s*YES/);
+    assert.match(state, /IMP-036E_FOUNDER_UAT:\s*PASS/);
     assert.match(state, /IMP036F_ACTIVATED:\s*NO/);
-    assert.match(roadmap, /FOUNDER_STAGING_DEPLOYMENT:\s*PERFORMED/);
-    assert.match(roadmap, /FOUNDER_STAGING_STATUS:\s*READY_FOR_FOUNDER_UAT/);
-    assert.match(roadmap, /FOUNDER_STAGING_CANDIDATE_SHA:\s*e9821271a29ae35ba6c921008b976cd2e8d15c50/);
-    assert.match(roadmap, /FOUNDER_STAGING_CANDIDATE_TREE:\s*8259d30f662e6668f2208788f2e95faaea831384/);
-    assert.match(state, /FOUNDER_STAGING_DEPLOYMENT:\s*PERFORMED/);
-    assert.match(state, /FOUNDER_STAGING_STATUS:\s*READY_FOR_FOUNDER_UAT/);
-    assert.match(state, /FOUNDER_STAGING_CANDIDATE_SHA:\s*e9821271a29ae35ba6c921008b976cd2e8d15c50/);
-    assert.match(state, /FOUNDER_STAGING_CANDIDATE_TREE:\s*8259d30f662e6668f2208788f2e95faaea831384/);
+    assert.match(roadmap, /IMP036E_ACCEPTED_MAIN_SHA:\s*05c534bac3d077f5ab89928495568bb63faf78df/);
+    assert.match(roadmap, /FOUNDER_STAGING_INTERMEDIATE_CANDIDATE_SHA:\s*e9821271a29ae35ba6c921008b976cd2e8d15c50/);
+    assert.match(state, /FOUNDER_STAGING_INTERMEDIATE_CANDIDATE_SHA:\s*e9821271a29ae35ba6c921008b976cd2e8d15c50/);
     assert.doesNotMatch(roadmap, /FOUNDER_STAGING_DEPLOYMENT:\s*NOT_PERFORMED/);
     assert.doesNotMatch(state, /FOUNDER_STAGING_DEPLOYMENT:\s*NOT_PERFORMED/);
 
     const current = currentAuthorityBlob({ text: roadmap }, { text: state });
     const evidence = authorityEvidenceBlob({ text: roadmap }, { text: state });
     assert.ok(evidence.includes(hist.roadmapText.slice(0, 80)));
-    assert.ok(current.includes("GTM-R114"));
+    assert.ok(current.includes("GTM-R115"));
     assert.ok(!current.includes('"roadmapVersion": "GTM-R113"'));
     // Stale historical claim may exist in snapshot evidence without overriding CURRENT metadata.
     assert.ok(/pendingAcceptance:\s*NONE/.test(hist.stateText) || /Pending Acceptance:\s+NONE/.test(hist.stateText));
-    assert.match(state, /"pendingAcceptance": "IMP-036E"/);
+    assert.match(state, /"pendingAcceptance": "NONE"/);
     // Historical snapshots may retain pre-correction FOUNDER_STAGING_DEPLOYMENT: NOT_PERFORMED.
     assert.match(hist.roadmapText, /FOUNDER_STAGING_DEPLOYMENT:\s*NOT_PERFORMED/);
-    assert.ok(current.includes("FOUNDER_STAGING_STATUS: READY_FOR_FOUNDER_UAT"));
+    assert.ok(current.includes("FOUNDER_STAGING_STATUS: FOUNDER_UAT_COMPLETE"));
     assert.ok(!/FOUNDER_STAGING_DEPLOYMENT:\s*NOT_PERFORMED/.test(current));
   });
 
-  it("fails CURRENT authority checks when live metadata diverges from the compression checkpoint", () => {
+  it("passes CURRENT authority checks at the IMP-036E acceptance checkpoint", () => {
     const findings = runProjectConsistency();
     const failures = findings.filter((f) => !f.ok);
     assert.equal(failures.length, 0, failures.map((f) => `[${f.code}] ${f.message}`).join("\n"));
     const messages = findings.filter((f) => f.ok).map((f) => f.message);
-    assert.ok(messages.some((m) => m.includes("authority compression checkpoint OK")));
+    assert.ok(messages.some((m) => m.includes("IMP-036E COMPLETE_AND_ACCEPTED")));
     assert.ok(messages.some((m) => m.includes("CURRENT authority anti-stale checks OK")));
     assert.ok(messages.some((m) => m.includes("historical authority corpus loaded")));
-    assert.ok(messages.some((m) => m.includes("historical checkpoint evidence for IMP-036E")));
-    assert.ok(
-      messages.some((m) => m.includes("historical FOUNDER_STAGING_DEPLOYMENT: NOT_PERFORMED does not override CURRENT")),
+  });
+
+  it("preserves accepted IMP-036E customer-commerce cohesion and dark-only policy in CURRENT capability", () => {
+    const capability = readFileSync(
+      new URL("../docs/platform/capabilities/IMP-036E-store-operations-management.md", import.meta.url),
+      "utf8",
     );
+    assert.match(
+      capability,
+      /WORKFORCE_MUTATION\s*→\s*EXISTING_DOMAIN_AUTHORITY\s*→\s*CUSTOMER_READ\/EVALUATION\s*→\s*TRUTHFUL_CUSTOMER_EXPERIENCE/,
+    );
+    assert.match(capability, /SELECTED_OUTLET\s*=\s*SERVER_DERIVED_FROM_SERVICEABILITY/);
+    assert.match(capability, /CALLER_SELECTED_OUTLET_ID\s*=\s*NOT_GEOGRAPHIC_AUTHORITY/);
+    assert.match(capability, /THEME_COUNT\s*=\s*1/);
+    assert.match(capability, /PRIMARY_THEME\s*=\s*DARK/);
+    assert.match(capability, /FOUNDER_APPROVED_UAT_READINESS_VISUAL_DIRECTION\s*=\s*DARK_ONLY/);
+    assert.match(capability, /IMP036F_ACTIVATED:\s*NO/);
+
+    const experience = readFileSync(
+      new URL(
+        "../docs/platform/experience/enterprise-experience/IMP-036E-store-operations-management.md",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+    assert.match(experience, /Status:\s*SUPERSEDED HISTORICAL PROGRAMME CONTRACT/);
+    assert.match(experience, /THEME_COUNT\s*=\s*1/);
+    assert.match(experience, /WORKFORCE_MUTATION/);
+    assert.match(experience, /SELECTED_OUTLET\s*=\s*SERVER_DERIVED_FROM_SERVICEABILITY/);
+    assert.match(experience, /Target outcomes and information architecture/);
+    assert.match(experience, /Founder-approved UAT-readiness visual direction/);
   });
 });

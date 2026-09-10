@@ -1,28 +1,30 @@
 ---
-Status: ARCHITECTURE_LOCKED SUPPORTING EXPERIENCE CONTRACT
+Status: SUPERSEDED HISTORICAL PROGRAMME CONTRACT
 Capability: IMP-036E — Store Operations Management
-Lifecycle: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
-Architecture: LOCKED
-Implementation: AUTHORIZED / STARTED / COMPLETE
-Founder UAT required: YES
-Founder UAT: NOT_STARTED
-IMP-036E_ARCHITECTURE_WORK_AUTHORIZED: YES
-IMP-036E_ARCHITECTURE_LOCKED: YES
-IMP-036E_IMPLEMENTATION_AUTHORIZED: YES
-IMP-036E_STARTED: YES
-IMP-036E_IMPLEMENTATION_COMPLETE: YES
-IMP-036E_ACCEPTED: NO
-IMP-036E_FOUNDER_UAT_REQUIRED: YES
-pendingAcceptance = IMP-036E
-Authority: SUPPORTING EXPERIENCE CONTRACT — locked capability architecture at
-  docs/platform/capabilities/IMP-036E-store-operations-management.md is CURRENT authority
-D374_CREATED: NO
-D-374_CREATED: NO
-ARCH_R20_CREATED: NO
-ARCH_R20_REQUIRED: NO
+Superseded by: docs/platform/capabilities/IMP-036E-store-operations-management.md
+Accepted outcome: COMPLETE_AND_ACCEPTED
+Founder UAT: PASS
+Last reconciled: 2026-09-10
 ---
 
 # IMP-036E — Store Operations Management
+
+This enterprise-experience contract is **historical / superseded**. It is retained as acceptance and
+product provenance for IMP-036E experience semantics (Store IA, workflows, UX comprehension,
+availability, operating status, hours, Serviceability, Team/Access, dark-only runtime presentation,
+and customer-commerce cohesion). It is **not** an independent CURRENT authority for lifecycle,
+architecture, or Store Operations behavior.
+
+CURRENT authorities (must not be overridden by this document):
+
+- [`../../ROADMAP.md`](../../ROADMAP.md) — GTM-R115 lifecycle
+- [`../../STATE.md`](../../STATE.md) — STATE-R113 accepted reality
+- [`../../capabilities/IMP-036E-store-operations-management.md`](../../capabilities/IMP-036E-store-operations-management.md)
+  — locked capability architecture (sole CURRENT IMP-036E capability-architecture authority)
+
+Accepted outcome: `COMPLETE_AND_ACCEPTED` after Founder UAT **PASS** on product candidate
+`05c534bac3d077f5ab89928495568bb63faf78df`. Historical detail below remains reference provenance
+only.
 
 ## Purpose, users, and problem
 
@@ -30,31 +32,31 @@ Give authorized outlet managers and operators one coherent management workspace 
 outlet-scoped operational capabilities. Current controls are fragmented and do not clearly separate
 assortment, availability, operating status, hours, and Serviceability.
 
-This document is a **SUPPORTING** experience contract. It must not compete with or override the
-locked capability architecture at
-[`../../capabilities/IMP-036E-store-operations-management.md`](../../capabilities/IMP-036E-store-operations-management.md).
-The capability artifact is the sole CURRENT IMP-036E capability architecture authority.
+## Architecture lock status (historical pre-acceptance — GTM-R113 / STATE-R111)
 
-## Architecture lock status (GTM-R113 / STATE-R111)
+The block below records the **pre-acceptance** lock/completion checkpoint. It is **not** CURRENT
+lifecycle fact. CURRENT accepted facts are GTM-R115 / STATE-R113:
+`IMP-036E = COMPLETE_AND_ACCEPTED`, Founder UAT = PASS, `pendingAcceptance = NONE`.
 
 ```text
+# HISTORICAL / PRE-ACCEPTANCE (not CURRENT)
 IMP-036E_ARCHITECTURE_WORK_AUTHORIZED = YES
 IMP-036E_ARCHITECTURE_LOCKED = YES
 IMP-036E_IMPLEMENTATION_AUTHORIZED = YES
 IMP-036E_STARTED = YES
 IMP-036E_IMPLEMENTATION_COMPLETE = YES
-IMP-036E_ACCEPTED = NO
+IMP-036E_ACCEPTED = NO   # superseded: CURRENT = YES / COMPLETE_AND_ACCEPTED
 IMP-036E_FOUNDER_UAT_REQUIRED = YES
-IMP-036E_FOUNDER_UAT = NOT_STARTED
-pendingAcceptance = IMP-036E
+IMP-036E_FOUNDER_UAT = NOT_STARTED   # superseded: CURRENT = PASS
+pendingAcceptance = IMP-036E   # superseded: CURRENT = NONE
 D374_CREATED = NO
 D-374_CREATED = NO
 ARCH_R20_CREATED = NO
 ARCH_R20_REQUIRED = NO
 ```
 
-Implementation complete pending acceptance recorded at GTM-R113 / STATE-R111. Completion is not
-acceptance. Founder UAT remains required and has not been performed.
+Historical note: implementation-complete pending acceptance was recorded at GTM-R113 / STATE-R111.
+That checkpoint has been superseded by formal acceptance at GTM-R115 / STATE-R113.
 
 ## Serviceability authority alignment (accepted IMP-036B — not a new decision)
 
@@ -189,9 +191,10 @@ ARCH_R20_REQUIRED_FOR_IMP036E_LOCK = NO
 - Session capability projection may add existing permission keys for coarse navigation only; global
   booleans are not selected-resource authority; selected-resource control visibility is required.
 - No schema change; no new permission/role/scope; no D-374; no ARCH-R20.
-- Implementation is **AUTHORIZED** / **STARTED** / **COMPLETE** pending acceptance
-  (`IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`). Completion is **not** acceptance. Founder UAT
-  remains required and has **not** been performed. IMP-036F remains unactivated.
+- Historical pre-acceptance posture was **AUTHORIZED** / **STARTED** / **COMPLETE** pending
+  acceptance. That checkpoint is superseded: IMP-036E is now `COMPLETE_AND_ACCEPTED` with Founder
+  UAT **PASS**. IMP-036F remains `PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED`
+  (`IMP036F_ACTIVATED: NO`).
 
 ## Target outcomes and information architecture
 
@@ -330,11 +333,13 @@ USER_THEME_TOGGLE = NO
 FOUNDER_APPROVED_UAT_READINESS_VISUAL_DIRECTION = DARK_ONLY
 ```
 
-## Customer commerce cohesion (IMP-036E remediation; not acceptance)
+## Customer commerce cohesion (accepted IMP-036E experience semantics)
 
 Store Operations mutations that affect existing customer orderability must converge through
 the same accepted domain authorities at the next authoritative customer evaluation. This is
-not a new domain authority and does not activate IMP-036F.
+accepted experience/product provenance (remediation through PR #135 and Founder UAT), not a new
+domain authority, and does not activate IMP-036F. CURRENT representation also lives in the locked
+capability architecture.
 
 ```text
 WORKFORCE_MUTATION → EXISTING_DOMAIN_AUTHORITY → CUSTOMER_READ/EVALUATION → TRUTHFUL_CUSTOMER_EXPERIENCE
@@ -350,10 +355,13 @@ STORE_OVERVIEW_AUTOMATIC_CUSTOMER_MUTATION = NO
 - Variant availability, assortment exclusions, and modifier availability/feasibility compose
   into outlet-aware Menu display using existing IMP-014 / IMP-028B / IMP-028C projection
   semantics.
-- Operating status and service radius changes surface through fresh Serviceability and cart/
-  checkout re-evaluation; bounded refresh on location change and page focus is sufficient.
+- Operating status and service radius/origin changes surface through fresh Serviceability and
+  cart/checkout re-evaluation; bounded refresh on location change and page focus is sufficient;
+  realtime push is not required.
+- Cart and Checkout/payment must evaluate fresh authoritative truth.
 - Team / Access and presentation-only Overview facts remain workforce-only unless an existing
-  accepted authority already requires customer effect.
+  accepted authority already requires customer effect; they do not automatically mutate customer
+  behavior.
 
 BOBA Bear’s Night Forest dark theme (Firefly Green primary interactions, Saffron Gold accents,
 Boba Cream text) is the **only currently supported runtime theme** for the product, including Store
@@ -361,8 +369,7 @@ Operations and shared customer/enterprise chrome.
 
 This is **presentation / experience policy only**. It does **not** change domain behaviour, RBAC,
 Assortment authority, Serviceability authority, financial/payment semantics, persistence,
-API contracts, schema, or IMP lifecycle acceptance. It does **not** activate IMP-036F and does
-**not** constitute Founder UAT.
+API contracts, schema, or IMP lifecycle acceptance. It does **not** activate IMP-036F.
 
 Light mode and system-preference theme negotiation are not part of current product behaviour.
 Historical ordering design-lock language that preferred Boba Cream / light as a default visual

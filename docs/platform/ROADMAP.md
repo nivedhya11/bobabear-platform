@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R114",
-  "acceptedThrough": "IMP-036D",
-  "currentProductSlice": "IMP-036E",
+  "roadmapVersion": "GTM-R115",
+  "acceptedThrough": "IMP-036E",
+  "currentProductSlice": "NONE",
   "nextProductSlice": "IMP-036F",
   "gtmBoundary": "IMP-040",
-  "lastReviewed": "2026-09-07",
-  "supersedes": "GTM-R113"
+  "lastReviewed": "2026-09-10",
+  "supersedes": "GTM-R114"
 }
 -->
 
@@ -84,13 +84,11 @@ Canonical capability-architecture directory:
 docs/platform/capabilities/
 ```
 
-Current product-slice locked artifact (IMP-036E; architecture **ARCHITECTURE_LOCKED**;
-implementation **AUTHORIZED** / **STARTED** / **COMPLETE**; lifecycle
-**IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE**):
+Immediately prior accepted locked artifact (IMP-036E; `COMPLETE_AND_ACCEPTED`):
 
 [`capabilities/IMP-036E-store-operations-management.md`](./capabilities/IMP-036E-store-operations-management.md)
 
-Immediately prior accepted locked artifact (IMP-036D; `COMPLETE_AND_ACCEPTED`):
+Prior accepted locked artifact (IMP-036D; `COMPLETE_AND_ACCEPTED`):
 
 [`capabilities/IMP-036D-workforce-franchise-operations-v2.md`](./capabilities/IMP-036D-workforce-franchise-operations-v2.md)
 
@@ -100,34 +98,47 @@ snapshot. `ARCHITECTURE_LOCKED` remains the retained lock vocabulary for accepte
 ## 2. Current Position
 
 ```text
-Accepted Through:     IMP-036D — Workforce & Franchise Operations Portal V2
-Current Product Slice: IMP-036E — Store Operations Management
+Accepted Through:     IMP-036E — Store Operations Management
+Current Product Slice: NONE
 Next Product Slice:    IMP-036F — Catalog, Menu, Pricing & Promotions Management
-Pending Acceptance:    IMP-036E
+Pending Acceptance:    NONE
 Public GTM Boundary:   IMP-040 — Launch Validation & Cutover
 ```
 
 ```text
-IMP-036E: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
+IMP-036E: COMPLETE_AND_ACCEPTED
 IMP-036E_ARCHITECTURE: LOCKED
 IMP-036E_ARCHITECTURE_LOCKED: YES
 IMP-036E_IMPLEMENTATION: AUTHORIZED / STARTED / COMPLETE
 IMP-036E_IMPLEMENTATION_AUTHORIZED: YES
 IMP-036E_STARTED: YES
 IMP-036E_IMPLEMENTATION_COMPLETE: YES
-IMP-036E_ACCEPTED: NO
+IMP-036E_ACCEPTED: YES
 IMP-036E_FOUNDER_UAT_REQUIRED: YES
-IMP-036E_FOUNDER_UAT: NOT_STARTED / NOT_PERFORMED
-FOUNDER_STAGING_DEPLOYMENT: PERFORMED
-FOUNDER_STAGING_STATUS: READY_FOR_FOUNDER_UAT
-FOUNDER_STAGING_CANDIDATE_SHA: e9821271a29ae35ba6c921008b976cd2e8d15c50
-FOUNDER_STAGING_CANDIDATE_TREE: 8259d30f662e6668f2208788f2e95faaea831384
+IMP-036E_FOUNDER_UAT: PASS
+IMP036E_FOUNDER_UAT: PASS
+IMP036E_FORMAL_ACCEPTANCE: ACCEPTED
+IMP036E_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
+IMP036E_ACCEPTED_MAIN_SHA: 05c534bac3d077f5ab89928495568bb63faf78df
+IMP036E_ACCEPTED_TREE: 55b28977ee9860c2c07cb25f751c9f48ef4a2aa6
+IMP036E_ACCEPTED_CANDIDATE: 05c534bac3d077f5ab89928495568bb63faf78df
+IMP036E_FOUNDER_UAT_CANDIDATE_REPOSITORY: /home/ajoshi/repos/boba-bear-platform
+IMP036E_FOUNDER_UAT_CANDIDATE_BRANCH: main
+IMP036E_FOUNDER_UAT_CANDIDATE_HEAD: 05c534bac3d077f5ab89928495568bb63faf78df
+IMP036E_FOUNDER_UAT_CANDIDATE_TREE: 55b28977ee9860c2c07cb25f751c9f48ef4a2aa6
+IMP036E_FOUNDER_UAT_CANDIDATE_FINGERPRINT: 1a97d3a4c80394804e19398e4f3684067aefb0d42a01a7899e8777d1a07cb289
+IMP036E_FOUNDER_UAT_DECISION_DATE: 2026-09-10
+IMP036E_FOUNDER_UAT_ACCEPTANCE_AUTHORITY: Founder
 IMP036E_IMPLEMENTATION_EVIDENCE: COMPLETE
 IMP_036E_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
 IMP036E_IMPLEMENTATION_MERGE_SHA: 0ebb5e937cd7ac14bb3e39e9d1d494e32c9d2739
 IMP036E_IMPLEMENTATION_TREE: 0def59ce9bcab4575a7b43b7c3c07c85ac575428
 IMP036E_REVIEWED_CANDIDATE_HEAD: b2ffaa5bc2b5c6f58ff5241c226b583160132837
 IMP036E_REVIEWED_CANDIDATE_TREE: 0def59ce9bcab4575a7b43b7c3c07c85ac575428
+FOUNDER_STAGING_DEPLOYMENT: PERFORMED
+FOUNDER_STAGING_STATUS: FOUNDER_UAT_COMPLETE
+FOUNDER_STAGING_INTERMEDIATE_CANDIDATE_SHA: e9821271a29ae35ba6c921008b976cd2e8d15c50
+FOUNDER_STAGING_INTERMEDIATE_CANDIDATE_TREE: 8259d30f662e6668f2208788f2e95faaea831384
 IMP036E_ASSORTMENT_AUTHORITY: BRAND
 OUTLET_MANAGER_OUTLET_SCOPE_ASSORTMENT_MANAGE: NO
 OUTLET_EFFECTIVE_ASSORTMENT_PRESENTATION: AUTHORIZED_READ_OR_ESCALATE
@@ -154,33 +165,46 @@ D-374_CREATED: NO
 ARCH_R20_REQUIRED_FOR_IMP036E_LOCK: NO
 ARCH_R20_CREATED: NO
 IMP-036F: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
+IMP036F_ACTIVATED: NO
 IMP-036D: COMPLETE_AND_ACCEPTED
 IMP-036D_ARCHITECTURE_LOCKED: YES
 IMP-036D_ACCEPTED: YES
 IMP-036D_FOUNDER_UAT: PASS
 ```
 
-Completion is **not** acceptance. Locked capability architecture:
+**GTM-R115** records formal IMP-036E acceptance after Founder UAT PASS on 2026-09-10 for the exact
+accepted UAT product candidate `05c534bac3d077f5ab89928495568bb63faf78df` / tree
+`55b28977ee9860c2c07cb25f751c9f48ef4a2aa6` (PR #135 merge restoring Store Operations →
+customer-commerce cohesion; automatic main CI run `34389543060` 12/12 PASS on that exact merge
+SHA). Locked capability architecture:
 [`capabilities/IMP-036E-store-operations-management.md`](./capabilities/IMP-036E-store-operations-management.md).
 Preferred Store Assortment read route:
 `GET /api/operations/v1/outlets/{outletId}/assortment`. ARCH-R19 and DR-15 remain unchanged.
-GitHub Pages is not Founder staging/UAT evidence. Founder staging deployment was performed
-(`FOUNDER_STAGING_DEPLOYMENT: PERFORMED`; `FOUNDER_STAGING_STATUS: READY_FOR_FOUNDER_UAT`;
-candidate SHA `e9821271a29ae35ba6c921008b976cd2e8d15c50` / tree
-`8259d30f662e6668f2208788f2e95faaea831384`). Founder UAT remains `NOT_STARTED` /
-`NOT_PERFORMED`. Later governance-only commits after that candidate are not the deployed
-Founder-UAT product candidate. Does **not** activate IMP-036F.
+`acceptedThrough` advances to IMP-036E; `currentProductSlice = NONE`; `pendingAcceptance = NONE`;
+`nextProductSlice` remains IMP-036F (`PLANNED` / `NOT_ACTIVATED` / `NOT_AUTHORIZED` /
+`NOT_STARTED`; `IMP036F_ACTIVATED: NO`). This governance reconciliation is **not** a new product
+UAT candidate and does **not** activate IMP-036F.
+
+Implementation / review provenance remains distinct from the accepted UAT candidate:
+implementation merge `0ebb5e937cd7ac14bb3e39e9d1d494e32c9d2739` / tree
+`0def59ce9bcab4575a7b43b7c3c07c85ac575428`; reviewed candidate HEAD
+`b2ffaa5bc2b5c6f58ff5241c226b583160132837` / tree `0def59ce9bcab4575a7b43b7c3c07c85ac575428`.
+Earlier Founder-staging deploy identity `e9821271a29ae35ba6c921008b976cd2e8d15c50` / tree
+`8259d30f662e6668f2208788f2e95faaea831384` remains historical intermediate staging evidence and is
+**not** the accepted UAT product candidate.
+
+Exact-candidate Founder-staging verification on `05c534ba…` observed post-Resume cross-portal
+recovery PASS (`control_state = accepting`; origin/nearby SERVICEABLE; outside NOT_SERVICEABLE).
+The first Serviceability smoke on that same candidate observed TEMPORARILY_UNAVAILABLE for
+origin/nearby while the preserved Dehradun outlet was intentionally `control_state = paused`;
+that observation is preserved and was resolved by authorized Store Operations Resume, not by code
+replacement or redeployment. `05c534ba…` is not a failed or superseded product candidate.
 
 IMP-036D remains `COMPLETE_AND_ACCEPTED`. Concise acceptance identity: UAT candidate HEAD
 `a6ff612c65e0d58409017b2935e0da16cffa9530` / tree `6580497091525c3ddd892aa44aafd63ef1132d35`
 (GTM-R108). Detailed candidate/failure/reconciliation evidence remains in
 [`history/ROADMAP-GTM-R113-pre-compression.md`](./history/ROADMAP-GTM-R113-pre-compression.md) and
 [`capabilities/IMP-036D-workforce-franchise-operations-v2.md`](./capabilities/IMP-036D-workforce-franchise-operations-v2.md).
-
-**GTM-R114** is `CANONICAL_AUTHORITY_CONTEXT_COMPRESSION_ONLY`. It does **not** mean product
-acceptance, slice activation, architecture progression, implementation authorization, deployment,
-or a new product decision. `acceptedThrough` / `currentProductSlice` / `pendingAcceptance` /
-`nextProductSlice` are unchanged from GTM-R113.
 
 ## 3. Accepted Slices
 
@@ -232,33 +256,37 @@ or a new product decision. `acceptedThrough` / `currentProductSlice` / `pendingA
 | IMP-036B | Customer Account, Onboarding, Address & Location Experience | COMPLETE_AND_ACCEPTED |
 | IMP-036C | Customer Commerce Experience V2 | COMPLETE_AND_ACCEPTED |
 | IMP-036D | Workforce & Franchise Operations Portal V2 | COMPLETE_AND_ACCEPTED |
+| IMP-036E | Store Operations Management | COMPLETE_AND_ACCEPTED |
 
 ## 4. Current Product Slice
 
-IMP-036E — Store Operations Management is `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` with
-architecture `ARCHITECTURE_LOCKED` and implementation `AUTHORIZED` / `STARTED` / `COMPLETE`
+No active product slice (`currentProductSlice = NONE`; `pendingAcceptance = NONE`).
+
+IMP-036E — Store Operations Management is `COMPLETE_AND_ACCEPTED` with architecture
+`ARCHITECTURE_LOCKED` and implementation `AUTHORIZED` / `STARTED` / `COMPLETE`
 (`IMP-036E_ARCHITECTURE_LOCKED: YES`; `IMP-036E_IMPLEMENTATION_AUTHORIZED: YES`;
-`IMP-036E_STARTED: YES`; `IMP-036E_IMPLEMENTATION_COMPLETE: YES`; `IMP-036E_ACCEPTED: NO`).
-Completion is **not** acceptance. Founder UAT remains required and has not been performed
-(`IMP-036E_FOUNDER_UAT_REQUIRED: YES`; `IMP-036E_FOUNDER_UAT: NOT_STARTED`). Locked capability
-architecture:
+`IMP-036E_STARTED: YES`; `IMP-036E_IMPLEMENTATION_COMPLETE: YES`; `IMP-036E_ACCEPTED: YES`;
+`IMP-036E_FOUNDER_UAT: PASS`). Locked capability architecture:
 [`capabilities/IMP-036E-store-operations-management.md`](./capabilities/IMP-036E-store-operations-management.md).
-Supporting experience contract:
-[`experience/enterprise-experience/IMP-036E-store-operations-management.md`](./experience/enterprise-experience/IMP-036E-store-operations-management.md)
-(SUPPORTING; must not override the capability lock). Founder Option A locks Assortment as Brand
-authority (`IMP036E_ASSORTMENT_AUTHORITY: BRAND`). Serviceability remains
-`OUTLET_DISTANCE_SERVICEABILITY_V1` (`SERVICEABILITY_COORDINATE_AUTHORITY: YES`;
-`SERVICEABILITY_POSTAL_PIN_RUNTIME_AUTHORITY: NO`; `SERVICEABILITY_MAP_IS_PROJECTION_ONLY: YES`;
+Supporting experience contract is historical after acceptance:
+[`experience/enterprise-experience/IMP-036E-store-operations-management.md`](./experience/enterprise-experience/IMP-036E-store-operations-management.md).
+Founder Option A locks Assortment as Brand authority (`IMP036E_ASSORTMENT_AUTHORITY: BRAND`).
+Serviceability remains `OUTLET_DISTANCE_SERVICEABILITY_V1`
+(`SERVICEABILITY_COORDINATE_AUTHORITY: YES`; `SERVICEABILITY_POSTAL_PIN_RUNTIME_AUTHORITY: NO`;
+`SERVICEABILITY_MAP_IS_PROJECTION_ONLY: YES`;
 `IMP036E_SERVICEABILITY_ROUTING_PRIORITY_UI: HIDDEN_PREREQUISITE`). Global session capability
 booleans are coarse navigation only (`IMP036E_GLOBAL_SESSION_CAPS_ARE_RESOURCE_AUTHORITY: NO`;
 `IMP036E_GLOBAL_SESSION_CAPS_PURPOSE: COARSE_NAVIGATION_ONLY`;
 `IMP036E_RESOURCE_SCOPED_CONTROL_VISIBILITY: REQUIRED`;
-`IMP036E_SERVER_AUTHORIZATION_REMAINS_AUTHORITATIVE: YES`). `acceptedThrough` remains IMP-036D;
-`pendingAcceptance` is IMP-036E; `nextProductSlice` is IMP-036F (`PLANNED` / `NOT_ACTIVATED` /
-`NOT_AUTHORIZED` / `NOT_STARTED`). ARCH-R19 and DR-15 remain unchanged;
+`IMP036E_SERVER_AUTHORIZATION_REMAINS_AUTHORITATIVE: YES`). ARCH-R19 and DR-15 remain unchanged;
 `SCHEMA_CHANGE_REQUIRED: NO`; `NEW_PERMISSION: NO`; `NEW_ROLE: NO`; `NEW_SCOPE_MODEL: NO`;
 `D374_REQUIRED_FOR_IMP036E_LOCK: NO`; `D-374_CREATED: NO`; `ARCH_R20_REQUIRED_FOR_IMP036E_LOCK: NO`;
 `ARCH_R20_CREATED: NO`.
+
+Next product slice remains IMP-036F — Catalog, Menu, Pricing & Promotions Management
+(`PLANNED` / `NOT_ACTIVATED` / `NOT_AUTHORIZED` / `NOT_STARTED`; `IMP036F_ACTIVATED: NO`).
+ADVANCE / activation of IMP-036F is a separate Founder-authorized task and is **not** performed by
+this acceptance reconciliation.
 
 IMP-036D — Workforce & Franchise Operations Portal V2 remains `COMPLETE_AND_ACCEPTED`
 (`IMP-036D_ACCEPTED: YES`; `IMP-036D_FOUNDER_UAT: PASS`). Locked capability architecture:
@@ -279,7 +307,7 @@ not future identities. Historical Food Direct insertion narration remains in
 | IMP-036B | Customer Account, Onboarding, Address & Location Experience | COMPLETE_AND_ACCEPTED |
 | IMP-036C | Customer Commerce Experience V2 | COMPLETE_AND_ACCEPTED |
 | IMP-036D | Workforce & Franchise Operations Portal V2 | COMPLETE_AND_ACCEPTED |
-| IMP-036E | Store Operations Management | IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE |
+| IMP-036E | Store Operations Management | COMPLETE_AND_ACCEPTED |
 | IMP-036F | Catalog, Menu, Pricing & Promotions Management | PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED |
 | IMP-036G | Administration Console V2 | PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED |
 | IMP-037 | Backup, Restore & Migration Readiness | PLANNED |
@@ -295,8 +323,7 @@ IMP-036A → B → C → D → E → F → G → IMP-037.
 
 ```text
 FIGMA_REQUIRED_FOR_INITIAL_IMPLEMENTATION: NO
-IMP-036A → IMP-036D: COMPLETE_AND_ACCEPTED
-IMP-036E: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
+IMP-036A → IMP-036E: COMPLETE_AND_ACCEPTED
 IMP-036F → IMP-036G: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
 FOUNDER_UAT_REQUIRED: YES for each Enterprise Experience slice
 ```
@@ -358,6 +385,25 @@ Current public GTM boundary is **IMP-040**, not IMP-035.
 
 Historical revision evidence for GTM-R1…GTM-R113 is preserved byte-for-byte in
 [`history/ROADMAP-GTM-R113-pre-compression.md`](./history/ROADMAP-GTM-R113-pre-compression.md).
+
+### GTM-R115 — 2026-09-10
+
+- Formal acceptance of IMP-036E — Store Operations Management after Founder UAT PASS.
+- Accepted UAT product candidate remains `05c534bac3d077f5ab89928495568bb63faf78df` / tree
+  `55b28977ee9860c2c07cb25f751c9f48ef4a2aa6` (PR #135). Governance reconciliation is not a new
+  product candidate.
+- Advances `acceptedThrough = IMP-036E`; sets `currentProductSlice = NONE` and
+  `pendingAcceptance = NONE`; preserves `nextProductSlice = IMP-036F`.
+- Records `IMP-036E: COMPLETE_AND_ACCEPTED`; `IMP-036E_ACCEPTED: YES`; `IMP-036E_FOUNDER_UAT: PASS`;
+  `IMP036E_FORMAL_ACCEPTANCE: ACCEPTED`; `IMP036E_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED`.
+- Preserves implementation/review SHAs distinct from the accepted UAT candidate.
+- Preserves intermediate Founder-staging candidate `e9821271…` as historical staging evidence only.
+- Preserves initial paused-state Serviceability observation and post-Resume recovery PASS on the
+  same accepted candidate.
+- IMP-036F remains `PLANNED` / `NOT_ACTIVATED` / `NOT_AUTHORIZED` / `NOT_STARTED`
+  (`IMP036F_ACTIVATED: NO`). No ADVANCE.
+- ARCH-R19 / DR-15 / D-374 / ARCH-R20 unchanged (no new binding semantics).
+- Supersedes GTM-R114.
 
 ### GTM-R114 — 2026-09-07
 
