@@ -527,7 +527,7 @@ describe("IMP-036F F3A — concurrency", () => {
   it("lifecycle stale mutation race — activate with stale revision fails, no 40P01", async () => {
     await withCatalogDomain(async (persistence, { tree, brandAdminActor: actor }) => {
       const brandId = tree.brand.id;
-      const { productId } = await seedPublishedPricedProduct(
+      await seedPublishedPricedProduct(
         persistence,
         actor,
         brandId,
@@ -587,7 +587,7 @@ describe("IMP-036F F3A — concurrency", () => {
   it("reorder stale mutation race — one success, other MENU_STALE_REVISION, no 40P01", async () => {
     await withCatalogDomain(async (persistence, { tree, brandAdminActor: actor }) => {
       const brandId = tree.brand.id;
-      const { productId } = await seedPublishedPricedProduct(
+      await seedPublishedPricedProduct(
         persistence,
         actor,
         brandId,

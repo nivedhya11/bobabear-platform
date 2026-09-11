@@ -43,7 +43,6 @@ import {
   reorderMenuEntries,
   reorderMenuSections,
   retireMenuEntry,
-  retireMenuSection,
   updateMenuEntryDisplay,
   updateMenuSection,
 } from "../../src/server/catalog/menu";
@@ -664,8 +663,6 @@ describe("IMP-036F F3A — draft isolation", () => {
       );
       const beforeFp = await customerProjectionFingerprint(persistence, brandId);
 
-      let menu = await persistence.withContext((ctx) => findMenuById(ctx, seeded.menu.id));
-
       // 7. section rename
       await persistence.transaction(async (tx) => {
         const current = await findMenuById(tx, seeded.menu.id);
@@ -676,7 +673,6 @@ describe("IMP-036F F3A — draft isolation", () => {
           expectedMenuRevision: current!.revision,
         });
       });
-      menu = await persistence.withContext((ctx) => findMenuById(ctx, seeded.menu.id)).then((m) => m!);
 
       const rootB = await persistence.transaction(async (tx) => {
         const current = await findMenuById(tx, seeded.menu.id);
@@ -690,7 +686,6 @@ describe("IMP-036F F3A — draft isolation", () => {
           expectedMenuRevision: current!.revision,
         });
       });
-      menu = await persistence.withContext((ctx) => findMenuById(ctx, seeded.menu.id)).then((m) => m!);
       await persistence.transaction(async (tx) => {
         const current = await findMenuById(tx, seeded.menu.id);
         await activateMenuSection(tx, {
@@ -699,7 +694,6 @@ describe("IMP-036F F3A — draft isolation", () => {
           expectedMenuRevision: current!.revision,
         });
       });
-      menu = await persistence.withContext((ctx) => findMenuById(ctx, seeded.menu.id)).then((m) => m!);
 
       // 8. section reorder (root siblings only)
       await persistence.transaction(async (tx) => {
@@ -712,7 +706,6 @@ describe("IMP-036F F3A — draft isolation", () => {
           expectedMenuRevision: current!.revision,
         });
       });
-      menu = await persistence.withContext((ctx) => findMenuById(ctx, seeded.menu.id)).then((m) => m!);
 
       // 9. product move/reorder
       await persistence.transaction(async (tx) => {
@@ -725,7 +718,6 @@ describe("IMP-036F F3A — draft isolation", () => {
           expectedMenuRevision: current!.revision,
         });
       });
-      menu = await persistence.withContext((ctx) => findMenuById(ctx, seeded.menu.id)).then((m) => m!);
       await persistence.transaction(async (tx) => {
         const current = await findMenuById(tx, seeded.menu.id);
         await reorderMenuEntries(tx, {
@@ -735,7 +727,6 @@ describe("IMP-036F F3A — draft isolation", () => {
           expectedMenuRevision: current!.revision,
         });
       });
-      menu = await persistence.withContext((ctx) => findMenuById(ctx, seeded.menu.id)).then((m) => m!);
 
       // 10. display override
       await persistence.transaction(async (tx) => {
@@ -748,7 +739,6 @@ describe("IMP-036F F3A — draft isolation", () => {
           expectedMenuRevision: current!.revision,
         });
       });
-      menu = await persistence.withContext((ctx) => findMenuById(ctx, seeded.menu.id)).then((m) => m!);
 
       // 11. visibility — retire entry in draft
       await persistence.transaction(async (tx) => {
@@ -1448,10 +1438,9 @@ describe("IMP-036F F3A — draft CAS", () => {
   it("parent-scoped reorder: A children reorder leaves roots and B-child unchanged", async () => {
     await withCatalogDomain(async (persistence, { tree, brandAdminActor: actor }) => {
       const brandId = tree.brand.id;
-      const [a, b, c] = await seedPublishedPricedProducts(persistence, actor, brandId, [
+      const [a, b] = await seedPublishedPricedProducts(persistence, actor, brandId, [
         { code: "reord-a", name: "Reord A" },
         { code: "reord-b", name: "Reord B" },
-        { code: "reord-c", name: "Reord C" },
       ]);
 
       let menu = await persistence.transaction((tx) =>

@@ -90,7 +90,7 @@ describe("menu section depth and parent rules", () => {
 
   it("rejects self-parent via assertSectionDepthAllowed", async () => {
     await withCatalogDomain(async (persistence, { tree, brandAdminActor: actor }) => {
-      let menu = await persistence.transaction((tx) =>
+      const menu = await persistence.transaction((tx) =>
         createMenu(tx, {
           actor,
           brandId: tree.brand.id,
