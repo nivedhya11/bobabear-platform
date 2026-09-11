@@ -22,12 +22,16 @@ import {
   createVariant,
   findProductById,
   findModifierGroupById,
+  findModifierGroupOptionById,
+  findModifierOptionById,
   findVariantModifierGroupById,
   loadEffectiveProductContent,
   previewCatalogPublicationConsequence,
   publishCatalogContentChange,
+  retireModifierGroupOption,
   retireVariantModifierGroup,
   saveModifierGroupContentDraft,
+  saveModifierOptionContentDraft,
   saveProductContentDraft,
   saveVariantModifierGroupContentDraft,
 } from "../../src/server/catalog";
@@ -673,6 +677,604 @@ describe("IMP-036F F2 — shared modifier blast radius (R3)", () => {
       expect(scopeVariantIds).not.toContain(variantB.id);
 
       const aScope = (vmgChange!.affectedScope ?? []).find((s) => s.variantId === variantA.id);
+      expect(aScope?.customerTruthAffected).toBe(true);
+    });
+  });
+});
+
+describe("IMP-036F F2 — shared ModifierOption effective Group↔Option filter", () => {
+  async function seedTwoProductsWithSeparateGroupsSharingOption(
+    persistence: Parameters<Parameters<typeof withCatalogDomain>[0]>[0],
+    actor: unknown,
+    brandId: string,
+    codes: {
+      productA: string;
+      productB: string;
+      groupA: string;
+      groupB: string;
+      option: string;
+      anchorOption: string;
+    },
+  ) {
+    const productA = await persistence.transaction((tx) =>
+      createProduct(tx, {
+        actor,
+        brandId,
+        code: codes.productA,
+        name: "Product A",
+        productKind: "standard",
+      }),
+    );
+    const variantA = await persistence.transaction((tx) =>
+      createVariant(tx, {
+        actor,
+        productId: productA.id,
+        code: "va",
+        name: "A Default",
+        isDefault: true,
+        isSelectorVisible: true,
+      }),
+    );
+    const productB = await persistence.transaction((tx) =>
+      createProduct(tx, {
+        actor,
+        brandId,
+        code: codes.productB,
+        name: "Product B",
+        productKind: "standard",
+      }),
+    );
+    const variantB = await persistence.transaction((tx) =>
+      createVariant(tx, {
+        actor,
+        productId: productB.id,
+        code: "vb",
+        name: "B Default",
+        isDefault: true,
+        isSelectorVisible: true,
+      }),
+    );
+
+    const groupA = await persistence.transaction((tx) =>
+      createModifierGroup(tx, { actor, brandId, code: codes.groupA, name: "Group A" }),
+    );
+    const groupB = await persistence.transaction((tx) =>
+      createModifierGroup(tx, { actor, brandId, code: codes.groupB, name: "Group B" }),
+    );
+    // Anchor option keeps Group B graph-valid after shared X Group↔Option retirement.
+    const anchorOption = await persistence.transaction((tx) =>
+      createModifierOption(tx, {
+        actor,
+        brandId,
+        code: codes.anchorOption,
+        name: "Anchor Option",
+      }),
+    );
+    const option = await persistence.transaction((tx) =>
+      createModifierOption(tx, { actor, brandId, code: codes.option, name: "Shared Pearl" }),
+    );
+    const groupOptionA = await persistence.transaction((tx) =>
+      addModifierOptionToGroup(tx, {
+        actor,
+        modifierGroupId: groupA.id,
+        modifierOptionId: option.id,
+        minQuantity: 0,
+        maxQuantity: 1,
+        defaultQuantity: 0,
+        position: 0,
+      }),
+    );
+    const groupOptionBAnchor = await persistence.transaction((tx) =>
+      addModifierOptionToGroup(tx, {
+        actor,
+        modifierGroupId: groupB.id,
+        modifierOptionId: anchorOption.id,
+        minQuantity: 0,
+        maxQuantity: 1,
+        defaultQuantity: 0,
+        position: 0,
+      }),
+    );
+    const groupOptionB = await persistence.transaction((tx) =>
+      addModifierOptionToGroup(tx, {
+        actor,
+        modifierGroupId: groupB.id,
+        modifierOptionId: option.id,
+        minQuantity: 0,
+        maxQuantity: 1,
+        defaultQuantity: 0,
+        position: 1,
+      }),
+    );
+    const vmgA = await persistence.transaction((tx) =>
+      applyModifierGroupToVariant(tx, {
+        actor,
+        variantId: variantA.id,
+        modifierGroupId: groupA.id,
+        minTotalQuantity: 0,
+        maxTotalQuantity: 1,
+        position: 0,
+      }),
+    );
+    const vmgB = await persistence.transaction((tx) =>
+      applyModifierGroupToVariant(tx, {
+        actor,
+        variantId: variantB.id,
+        modifierGroupId: groupB.id,
+        minTotalQuantity: 0,
+        maxTotalQuantity: 1,
+        position: 0,
+      }),
+    );
+
+    await persistence.transaction(async (tx) => {
+      await activateVariant(tx, { actor, variantId: variantA.id });
+      await activateVariant(tx, { actor, variantId: variantB.id });
+      await activateProduct(tx, { actor, productId: productA.id });
+      await activateProduct(tx, { actor, productId: productB.id });
+      await activateModifierGroup(tx, { actor, modifierGroupId: groupA.id });
+      await activateModifierGroup(tx, { actor, modifierGroupId: groupB.id });
+      await activateModifierOption(tx, { actor, modifierOptionId: anchorOption.id });
+      await activateModifierOption(tx, { actor, modifierOptionId: option.id });
+      await activateModifierGroupOption(tx, { actor, modifierGroupOptionId: groupOptionA.id });
+      await activateModifierGroupOption(tx, {
+        actor,
+        modifierGroupOptionId: groupOptionBAnchor.id,
+      });
+      await activateModifierGroupOption(tx, { actor, modifierGroupOptionId: groupOptionB.id });
+      await activateVariantModifierGroup(tx, { actor, variantModifierGroupId: vmgA.id });
+      await activateVariantModifierGroup(tx, { actor, variantModifierGroupId: vmgB.id });
+    });
+
+    await persistence.transaction((tx) =>
+      publishProductEnvelope(tx, { actor, brandId, productId: productA.id }),
+    );
+    await persistence.transaction((tx) =>
+      publishProductEnvelope(tx, { actor, brandId, productId: productB.id }),
+    );
+
+    return {
+      productA,
+      productB,
+      variantA,
+      variantB,
+      groupA,
+      groupB,
+      option,
+      groupOptionA,
+      groupOptionB,
+      vmgA,
+      vmgB,
+    };
+  }
+
+  it("A/B: effective shared option marks both products; staged then published Group↔Option retirement", async () => {
+    await withCatalogDomain(async (persistence, { tree, brandAdminActor: actor }) => {
+      const brandId = tree.brand.id;
+      const seeded = await seedTwoProductsWithSeparateGroupsSharingOption(
+        persistence,
+        actor,
+        brandId,
+        {
+          productA: "opt-share-a",
+          productB: "opt-share-b",
+          groupA: "opt-ga",
+          groupB: "opt-gb",
+          option: "opt-shared-x",
+          anchorOption: "opt-anchor-b",
+        },
+      );
+
+      // A — both effectively expose Option X
+      const optionFresh = await persistence.withContext((ctx) =>
+        findModifierOptionById(ctx, seeded.option.id),
+      );
+      await persistence.transaction((tx) =>
+        saveModifierOptionContentDraft(tx, {
+          actor,
+          modifierOptionId: seeded.option.id,
+          expectedContentRevision: optionFresh!.draftContentRevision,
+          name: "Shared Pearl Deluxe",
+        }),
+      );
+
+      const previewBoth = await persistence.transaction((tx) =>
+        previewCatalogPublicationConsequence(tx, {
+          actor,
+          brandId,
+          productId: seeded.productA.id,
+        }),
+      );
+      const optionChangeBoth = previewBoth.changes.find(
+        (c) => c.entityKind === "modifier_option" && c.entityId === seeded.option.id,
+      );
+      expect(optionChangeBoth).toBeTruthy();
+      const aScopeBoth = (optionChangeBoth!.affectedScope ?? []).find(
+        (s) => s.productId === seeded.productA.id,
+      );
+      const bScopeBoth = (optionChangeBoth!.affectedScope ?? []).find(
+        (s) => s.productId === seeded.productB.id,
+      );
+      expect(aScopeBoth?.relationship).toBe("shared_modifier_option");
+      expect(aScopeBoth?.customerTruthAffected).toBe(true);
+      expect(bScopeBoth?.customerTruthAffected).toBe(true);
+
+      // B — stage B's Group↔Option retirement without publishing
+      await persistence.transaction((tx) =>
+        retireModifierGroupOption(tx, {
+          actor,
+          modifierGroupOptionId: seeded.groupOptionB.id,
+        }),
+      );
+
+      const optionAfterStage = await persistence.withContext((ctx) =>
+        findModifierOptionById(ctx, seeded.option.id),
+      );
+      await persistence.transaction((tx) =>
+        saveModifierOptionContentDraft(tx, {
+          actor,
+          modifierOptionId: seeded.option.id,
+          expectedContentRevision: optionAfterStage!.draftContentRevision,
+          name: "Shared Pearl Staged Retire",
+        }),
+      );
+
+      const previewStaged = await persistence.transaction((tx) =>
+        previewCatalogPublicationConsequence(tx, {
+          actor,
+          brandId,
+          productId: seeded.productA.id,
+        }),
+      );
+      const optionChangeStaged = previewStaged.changes.find(
+        (c) => c.entityKind === "modifier_option" && c.entityId === seeded.option.id,
+      );
+      const bScopeStaged = (optionChangeStaged!.affectedScope ?? []).find(
+        (s) => s.productId === seeded.productB.id,
+      );
+      expect(bScopeStaged?.customerTruthAffected).toBe(true);
+
+      // C — publish B's Group↔Option retirement; B no longer customer-affected
+      const previewBRetire = await persistence.transaction((tx) =>
+        previewCatalogPublicationConsequence(tx, {
+          actor,
+          brandId,
+          productId: seeded.productB.id,
+        }),
+      );
+      await persistence.transaction((tx) =>
+        publishCatalogContentChange(tx, {
+          actor,
+          brandId,
+          productId: seeded.productB.id,
+          expectedContentRevision: previewBRetire.expectedContentRevision,
+        }),
+      );
+
+      const optionAfterPublish = await persistence.withContext((ctx) =>
+        findModifierOptionById(ctx, seeded.option.id),
+      );
+      await persistence.transaction((tx) =>
+        saveModifierOptionContentDraft(tx, {
+          actor,
+          modifierOptionId: seeded.option.id,
+          expectedContentRevision: optionAfterPublish!.draftContentRevision,
+          name: "Shared Pearl After Retire",
+        }),
+      );
+
+      const previewPublished = await persistence.transaction((tx) =>
+        previewCatalogPublicationConsequence(tx, {
+          actor,
+          brandId,
+          productId: seeded.productA.id,
+        }),
+      );
+      const optionChangePublished = previewPublished.changes.find(
+        (c) => c.entityKind === "modifier_option" && c.entityId === seeded.option.id,
+      );
+      const aScopePublished = (optionChangePublished!.affectedScope ?? []).find(
+        (s) => s.productId === seeded.productA.id,
+      );
+      const bScopePublished = (optionChangePublished!.affectedScope ?? []).find(
+        (s) => s.productId === seeded.productB.id,
+      );
+      expect(aScopePublished?.customerTruthAffected).toBe(true);
+      expect(bScopePublished?.customerTruthAffected).toBe(false);
+    });
+  });
+
+  it("D: unpublished external Group↔Option association is not customer-affected", async () => {
+    await withCatalogDomain(async (persistence, { tree, brandAdminActor: actor }) => {
+      const brandId = tree.brand.id;
+
+      const productA = await persistence.transaction((tx) =>
+        createProduct(tx, {
+          actor,
+          brandId,
+          code: "opt-ext-a",
+          name: "Product A",
+          productKind: "standard",
+        }),
+      );
+      const variantA = await persistence.transaction((tx) =>
+        createVariant(tx, {
+          actor,
+          productId: productA.id,
+          code: "va",
+          name: "A Default",
+          isDefault: true,
+          isSelectorVisible: true,
+        }),
+      );
+      const productB = await persistence.transaction((tx) =>
+        createProduct(tx, {
+          actor,
+          brandId,
+          code: "opt-ext-b",
+          name: "Product B",
+          productKind: "standard",
+        }),
+      );
+      const variantB = await persistence.transaction((tx) =>
+        createVariant(tx, {
+          actor,
+          productId: productB.id,
+          code: "vb",
+          name: "B Default",
+          isDefault: true,
+          isSelectorVisible: true,
+        }),
+      );
+
+      const groupA = await persistence.transaction((tx) =>
+        createModifierGroup(tx, { actor, brandId, code: "opt-ext-ga", name: "Group A" }),
+      );
+      const groupB = await persistence.transaction((tx) =>
+        createModifierGroup(tx, { actor, brandId, code: "opt-ext-gb", name: "Group B" }),
+      );
+      const option = await persistence.transaction((tx) =>
+        createModifierOption(tx, { actor, brandId, code: "opt-ext-x", name: "Pearl" }),
+      );
+      const anchorB = await persistence.transaction((tx) =>
+        createModifierOption(tx, { actor, brandId, code: "opt-ext-anchor", name: "Anchor B" }),
+      );
+      const groupOptionA = await persistence.transaction((tx) =>
+        addModifierOptionToGroup(tx, {
+          actor,
+          modifierGroupId: groupA.id,
+          modifierOptionId: option.id,
+          minQuantity: 0,
+          maxQuantity: 1,
+          defaultQuantity: 0,
+          position: 0,
+        }),
+      );
+      const groupOptionBAnchor = await persistence.transaction((tx) =>
+        addModifierOptionToGroup(tx, {
+          actor,
+          modifierGroupId: groupB.id,
+          modifierOptionId: anchorB.id,
+          minQuantity: 0,
+          maxQuantity: 1,
+          defaultQuantity: 0,
+          position: 0,
+        }),
+      );
+      const vmgA = await persistence.transaction((tx) =>
+        applyModifierGroupToVariant(tx, {
+          actor,
+          variantId: variantA.id,
+          modifierGroupId: groupA.id,
+          minTotalQuantity: 0,
+          maxTotalQuantity: 1,
+          position: 0,
+        }),
+      );
+      const vmgB = await persistence.transaction((tx) =>
+        applyModifierGroupToVariant(tx, {
+          actor,
+          variantId: variantB.id,
+          modifierGroupId: groupB.id,
+          minTotalQuantity: 0,
+          maxTotalQuantity: 1,
+          position: 0,
+        }),
+      );
+
+      await persistence.transaction(async (tx) => {
+        await activateVariant(tx, { actor, variantId: variantA.id });
+        await activateVariant(tx, { actor, variantId: variantB.id });
+        await activateProduct(tx, { actor, productId: productA.id });
+        await activateProduct(tx, { actor, productId: productB.id });
+        await activateModifierGroup(tx, { actor, modifierGroupId: groupA.id });
+        await activateModifierGroup(tx, { actor, modifierGroupId: groupB.id });
+        await activateModifierOption(tx, { actor, modifierOptionId: option.id });
+        await activateModifierOption(tx, { actor, modifierOptionId: anchorB.id });
+        await activateModifierGroupOption(tx, { actor, modifierGroupOptionId: groupOptionA.id });
+        await activateModifierGroupOption(tx, {
+          actor,
+          modifierGroupOptionId: groupOptionBAnchor.id,
+        });
+        await activateVariantModifierGroup(tx, { actor, variantModifierGroupId: vmgA.id });
+        await activateVariantModifierGroup(tx, { actor, variantModifierGroupId: vmgB.id });
+      });
+
+      await persistence.transaction((tx) =>
+        publishProductEnvelope(tx, { actor, brandId, productId: productA.id }),
+      );
+      await persistence.transaction((tx) =>
+        publishProductEnvelope(tx, { actor, brandId, productId: productB.id }),
+      );
+
+      // B stages a new Group↔Option to X without publishing.
+      const groupOptionB = await persistence.transaction((tx) =>
+        addModifierOptionToGroup(tx, {
+          actor,
+          modifierGroupId: groupB.id,
+          modifierOptionId: option.id,
+          minQuantity: 0,
+          maxQuantity: 1,
+          defaultQuantity: 0,
+          position: 1,
+        }),
+      );
+      await persistence.transaction((tx) =>
+        activateModifierGroupOption(tx, { actor, modifierGroupOptionId: groupOptionB.id }),
+      );
+      const goB = await persistence.withContext((ctx) =>
+        findModifierGroupOptionById(ctx, groupOptionB.id),
+      );
+      expect(goB?.effectiveContentRevision).toBeNull();
+
+      const optionFresh = await persistence.withContext((ctx) =>
+        findModifierOptionById(ctx, option.id),
+      );
+      await persistence.transaction((tx) =>
+        saveModifierOptionContentDraft(tx, {
+          actor,
+          modifierOptionId: option.id,
+          expectedContentRevision: optionFresh!.draftContentRevision,
+          name: "Pearl External",
+        }),
+      );
+
+      const preview = await persistence.transaction((tx) =>
+        previewCatalogPublicationConsequence(tx, {
+          actor,
+          brandId,
+          productId: productA.id,
+        }),
+      );
+      const optionChange = preview.changes.find(
+        (c) => c.entityKind === "modifier_option" && c.entityId === option.id,
+      );
+      expect(optionChange).toBeTruthy();
+      const aScope = (optionChange!.affectedScope ?? []).find((s) => s.productId === productA.id);
+      const bScope = (optionChange!.affectedScope ?? []).find((s) => s.productId === productB.id);
+      expect(aScope?.customerTruthAffected).toBe(true);
+      expect(bScope?.customerTruthAffected).toBe(false);
+    });
+  });
+
+  it("E: root Group↔Option first activation reports root consumer affected", async () => {
+    await withCatalogDomain(async (persistence, { tree, brandAdminActor: actor }) => {
+      const brandId = tree.brand.id;
+
+      const productA = await persistence.transaction((tx) =>
+        createProduct(tx, {
+          actor,
+          brandId,
+          code: "opt-first-a",
+          name: "Product A",
+          productKind: "standard",
+        }),
+      );
+      const variantA = await persistence.transaction((tx) =>
+        createVariant(tx, {
+          actor,
+          productId: productA.id,
+          code: "va",
+          name: "A Default",
+          isDefault: true,
+          isSelectorVisible: true,
+        }),
+      );
+
+      const groupA = await persistence.transaction((tx) =>
+        createModifierGroup(tx, { actor, brandId, code: "opt-first-ga", name: "Group A" }),
+      );
+      const anchor = await persistence.transaction((tx) =>
+        createModifierOption(tx, { actor, brandId, code: "opt-first-anchor", name: "Anchor" }),
+      );
+      const option = await persistence.transaction((tx) =>
+        createModifierOption(tx, { actor, brandId, code: "opt-first-x", name: "Pearl" }),
+      );
+      const groupOptionAnchor = await persistence.transaction((tx) =>
+        addModifierOptionToGroup(tx, {
+          actor,
+          modifierGroupId: groupA.id,
+          modifierOptionId: anchor.id,
+          minQuantity: 0,
+          maxQuantity: 1,
+          defaultQuantity: 0,
+          position: 0,
+        }),
+      );
+      const vmgA = await persistence.transaction((tx) =>
+        applyModifierGroupToVariant(tx, {
+          actor,
+          variantId: variantA.id,
+          modifierGroupId: groupA.id,
+          minTotalQuantity: 0,
+          maxTotalQuantity: 1,
+          position: 0,
+        }),
+      );
+
+      await persistence.transaction(async (tx) => {
+        await activateVariant(tx, { actor, variantId: variantA.id });
+        await activateProduct(tx, { actor, productId: productA.id });
+        await activateModifierGroup(tx, { actor, modifierGroupId: groupA.id });
+        await activateModifierOption(tx, { actor, modifierOptionId: anchor.id });
+        await activateModifierOption(tx, { actor, modifierOptionId: option.id });
+        await activateModifierGroupOption(tx, {
+          actor,
+          modifierGroupOptionId: groupOptionAnchor.id,
+        });
+        await activateVariantModifierGroup(tx, { actor, variantModifierGroupId: vmgA.id });
+      });
+
+      // Publish product/group/VMG/anchor without shared X association yet.
+      await persistence.transaction((tx) =>
+        publishProductEnvelope(tx, { actor, brandId, productId: productA.id }),
+      );
+
+      const groupOptionA = await persistence.transaction((tx) =>
+        addModifierOptionToGroup(tx, {
+          actor,
+          modifierGroupId: groupA.id,
+          modifierOptionId: option.id,
+          minQuantity: 0,
+          maxQuantity: 1,
+          defaultQuantity: 0,
+          position: 1,
+        }),
+      );
+      await persistence.transaction((tx) =>
+        activateModifierGroupOption(tx, { actor, modifierGroupOptionId: groupOptionA.id }),
+      );
+      const goA = await persistence.withContext((ctx) =>
+        findModifierGroupOptionById(ctx, groupOptionA.id),
+      );
+      expect(goA?.lifecycleStatus).toBe("active");
+      expect(goA?.effectiveContentRevision).toBeNull();
+
+      const optionFresh = await persistence.withContext((ctx) =>
+        findModifierOptionById(ctx, option.id),
+      );
+      await persistence.transaction((tx) =>
+        saveModifierOptionContentDraft(tx, {
+          actor,
+          modifierOptionId: option.id,
+          expectedContentRevision: optionFresh!.draftContentRevision,
+          name: "Pearl First Activate",
+        }),
+      );
+
+      const preview = await persistence.transaction((tx) =>
+        previewCatalogPublicationConsequence(tx, {
+          actor,
+          brandId,
+          productId: productA.id,
+        }),
+      );
+      const optionChange = preview.changes.find(
+        (c) => c.entityKind === "modifier_option" && c.entityId === option.id,
+      );
+      expect(optionChange).toBeTruthy();
+      const aScope = (optionChange!.affectedScope ?? []).find((s) => s.productId === productA.id);
+      expect(aScope?.relationship).toBe("shared_modifier_option");
       expect(aScope?.customerTruthAffected).toBe(true);
     });
   });

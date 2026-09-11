@@ -8,7 +8,7 @@
  */
 import "server-only";
 
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import {
   catalogModifierGroupOptionsTable,
@@ -165,25 +165,24 @@ async function loadSharedModifierGroupConsumers(
   return rows;
 }
 
+type SharedOptionConsumer = SharedConsumer &
+  Readonly<{
+    groupOptionId: string;
+    groupOptionMinQuantity: number;
+    groupOptionMaxQuantity: number;
+    groupOptionDefaultQuantity: number;
+    groupOptionPosition: number;
+    groupOptionLifecycleStatus: string;
+    groupOptionEffectiveContentRevision: bigint | null;
+  }>;
+
 async function loadSharedModifierOptionConsumers(
   context: PersistenceQueryContext,
   brandId: string,
   modifierOptionId: string,
-): Promise<readonly SharedConsumer[]> {
-  const groupRows = await context.db
-    .select({
-      modifierGroupId: catalogModifierGroupOptionsTable.modifierGroupId,
-    })
-    .from(catalogModifierGroupOptionsTable)
-    .where(
-      and(
-        eq(catalogModifierGroupOptionsTable.brandId, brandId),
-        eq(catalogModifierGroupOptionsTable.modifierOptionId, modifierOptionId),
-      ),
-    );
-  const groupIds = [...new Set(groupRows.map((r) => r.modifierGroupId))];
-  if (groupIds.length === 0) return [];
-
+): Promise<readonly SharedOptionConsumer[]> {
+  // Join through each Group↔Option primary row so consequence scope retains
+  // that binding's identity/revision — not merely group membership.
   const rows = await context.db
     .select({
       productId: catalogProductsTable.id,
@@ -198,8 +197,26 @@ async function loadSharedModifierOptionConsumers(
       bindingMaxTotalQuantity: catalogVariantModifierGroupsTable.maxTotalQuantity,
       bindingPosition: catalogVariantModifierGroupsTable.position,
       bindingLifecycleStatus: catalogVariantModifierGroupsTable.lifecycleStatus,
+      groupOptionId: catalogModifierGroupOptionsTable.id,
+      groupOptionMinQuantity: catalogModifierGroupOptionsTable.minQuantity,
+      groupOptionMaxQuantity: catalogModifierGroupOptionsTable.maxQuantity,
+      groupOptionDefaultQuantity: catalogModifierGroupOptionsTable.defaultQuantity,
+      groupOptionPosition: catalogModifierGroupOptionsTable.position,
+      groupOptionLifecycleStatus: catalogModifierGroupOptionsTable.lifecycleStatus,
+      groupOptionEffectiveContentRevision:
+        catalogModifierGroupOptionsTable.effectiveContentRevision,
     })
-    .from(catalogVariantModifierGroupsTable)
+    .from(catalogModifierGroupOptionsTable)
+    .innerJoin(
+      catalogVariantModifierGroupsTable,
+      and(
+        eq(
+          catalogVariantModifierGroupsTable.modifierGroupId,
+          catalogModifierGroupOptionsTable.modifierGroupId,
+        ),
+        eq(catalogVariantModifierGroupsTable.brandId, catalogModifierGroupOptionsTable.brandId),
+      ),
+    )
     .innerJoin(
       catalogVariantsTable,
       eq(catalogVariantsTable.id, catalogVariantModifierGroupsTable.variantId),
@@ -207,8 +224,8 @@ async function loadSharedModifierOptionConsumers(
     .innerJoin(catalogProductsTable, eq(catalogProductsTable.id, catalogVariantsTable.productId))
     .where(
       and(
-        eq(catalogVariantModifierGroupsTable.brandId, brandId),
-        inArray(catalogVariantModifierGroupsTable.modifierGroupId, groupIds),
+        eq(catalogModifierGroupOptionsTable.brandId, brandId),
+        eq(catalogModifierGroupOptionsTable.modifierOptionId, modifierOptionId),
       ),
     );
   return rows;
@@ -240,6 +257,39 @@ async function isEffectiveCustomerConsumer(
   return bindingEffective != null && bindingEffective.lifecycleStatus === "active";
 }
 
+/**
+ * Shared ModifierOption consumers additionally require the Group↔Option path
+ * to be customer-effective (or becoming so via this root publication).
+ */
+async function isEffectiveSharedOptionConsumer(
+  context: PersistenceQueryContext,
+  consumer: SharedOptionConsumer,
+  rootActiveGroupOptionIds: ReadonlySet<string>,
+): Promise<boolean> {
+  if (!(await isEffectiveCustomerConsumer(context, consumer))) {
+    return false;
+  }
+  const groupOptionEffective = await loadEffectiveModifierGroupOptionContent(context, {
+    id: consumer.groupOptionId,
+    minQuantity: consumer.groupOptionMinQuantity,
+    maxQuantity: consumer.groupOptionMaxQuantity,
+    defaultQuantity: consumer.groupOptionDefaultQuantity,
+    position: consumer.groupOptionPosition,
+    lifecycleStatus: consumer.groupOptionLifecycleStatus,
+    effectiveContentRevision: consumer.groupOptionEffectiveContentRevision,
+  });
+  if (groupOptionEffective != null && groupOptionEffective.lifecycleStatus === "active") {
+    return true;
+  }
+  // Exact Group↔Option in this root candidate that this publish will make
+  // customer-effective (first activation). Unrelated external staged rows excluded.
+  return (
+    rootActiveGroupOptionIds.has(consumer.groupOptionId) &&
+    consumer.groupOptionLifecycleStatus === "active" &&
+    (groupOptionEffective == null || groupOptionEffective.lifecycleStatus !== "active")
+  );
+}
+
 async function toAffectedScope(
   context: PersistenceQueryContext,
   consumers: readonly SharedConsumer[],
@@ -257,6 +307,37 @@ async function toAffectedScope(
       variantCode: c.variantCode,
       relationship,
       customerTruthAffected: customerTruthChange && otherCustomerVisible,
+    });
+  }
+  return [...byKey.values()];
+}
+
+async function toSharedOptionAffectedScope(
+  context: PersistenceQueryContext,
+  consumers: readonly SharedOptionConsumer[],
+  customerTruthChange: boolean,
+  rootActiveGroupOptionIds: ReadonlySet<string>,
+): Promise<CatalogPublicationAffectedScope[]> {
+  const byKey = new Map<string, CatalogPublicationAffectedScope>();
+  for (const c of consumers) {
+    const key = `${c.productId}:${c.variantId}`;
+    const otherCustomerVisible = await isEffectiveSharedOptionConsumer(
+      context,
+      c,
+      rootActiveGroupOptionIds,
+    );
+    const customerTruthAffected = customerTruthChange && otherCustomerVisible;
+    const prev = byKey.get(key);
+    if (prev != null && prev.customerTruthAffected) {
+      continue;
+    }
+    byKey.set(key, {
+      productId: c.productId,
+      productCode: c.productCode,
+      variantId: c.variantId,
+      variantCode: c.variantCode,
+      relationship: "shared_modifier_option",
+      customerTruthAffected,
     });
   }
   return [...byKey.values()];
@@ -500,16 +581,23 @@ export async function previewCatalogPublicationConsequence(
     }
   }
 
+  // Root Group↔Option rows that this product-rooted publish can first-activate.
+  const rootActiveGroupOptionIds = new Set(
+    graph.modifierGroupOptions
+      .filter((b) => b.lifecycleStatus === "active")
+      .map((b) => b.id),
+  );
+
   for (const option of graph.modifierOptions) {
     const effective = await loadEffectiveModifierOptionContent(context, option);
     const consumers = await loadSharedModifierOptionConsumers(context, brandId, option.id);
     const customerTruthChange =
       option.lifecycleStatus === "retired" || option.lifecycleStatus === "active";
-    const affectedScope = await toAffectedScope(
+    const affectedScope = await toSharedOptionAffectedScope(
       context,
       consumers,
-      "shared_modifier_option",
       customerTruthChange,
+      rootActiveGroupOptionIds,
     );
 
     if (option.lifecycleStatus === "retired" && option.effectiveContentRevision != null) {
