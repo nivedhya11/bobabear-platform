@@ -29,10 +29,10 @@
     "note": "Protected evidence and generated reports are never classified as executable test source."
   },
   "counts": {
-    "trackedPathsConsidered": 1785,
-    "executableTestFiles": 354,
+    "trackedPathsConsidered": 1792,
+    "executableTestFiles": 357,
     "sourceTestFiles": 130,
-    "testsTreeExecutableFiles": 190,
+    "testsTreeExecutableFiles": 193,
     "scriptTestFiles": 34,
     "playwrightSpecs": 11,
     "vitestConfigs": 2,
@@ -189,6 +189,8 @@
     "tests/access-control/principal.test.ts",
     "tests/access-control/scope.test.ts",
     "tests/administration/AdministrationHubClient.test.tsx",
+    "tests/administration/admin-catalog-http-customer-truth.integration.test.ts",
+    "tests/administration/admin-catalog-http.integration.test.ts",
     "tests/administration/admin-http.integration.test.ts",
     "tests/administration/admin-route-classify.test.ts",
     "tests/administration/admin-transport.test.ts",
@@ -217,6 +219,7 @@
     "tests/catalog/lifecycle.test.ts",
     "tests/catalog/menu-graph.test.ts",
     "tests/catalog/modifier-create-input.contract.test.ts",
+    "tests/catalog/publication-preview-f2.test.ts",
     "tests/checkout-auth-integration/checkout.auth.test.ts",
     "tests/checkout-concurrency/checkout.concurrency.test.ts",
     "tests/checkout-security/checkout.security.test.ts",
@@ -685,7 +688,7 @@
     "test:customer-profiles": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/customer-profiles",
     "test:database": "node scripts/run-vitest.mjs run --config vitest.database.config.mts",
     "test:database:access-control": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/database/access-control.integration.test.ts",
-    "test:database:administration": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/administration/admin-http.integration.test.ts",
+    "test:database:administration": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/administration/admin-http.integration.test.ts tests/administration/admin-catalog-http.integration.test.ts tests/administration/admin-catalog-http-customer-truth.integration.test.ts",
     "test:database:assortment-availability": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/database/assortment-availability.integration.test.ts",
     "test:database:auth-foundation": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/database/auth-foundation.integration.test.ts",
     "test:database:cart": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/database/cart.integration.test.ts",
@@ -4308,6 +4311,45 @@
       "classificationConfidence": "HEURISTIC"
     },
     {
+      "path": "tests/administration/admin-catalog-http-customer-truth.integration.test.ts",
+      "runner": "vitest",
+      "domain": "administration",
+      "testType": "integration",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:administration",
+        "test:database:administration"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "4-integration",
+        "5-database-integration"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/administration/admin-catalog-http.integration.test.ts",
+      "runner": "vitest",
+      "domain": "administration",
+      "testType": "integration",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:administration",
+        "test:database:administration"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "4-integration",
+        "5-database-integration",
+        "6-http-api-contract"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
       "path": "tests/administration/admin-http.integration.test.ts",
       "runner": "vitest",
       "domain": "administration",
@@ -4811,6 +4853,25 @@
     },
     {
       "path": "tests/catalog/modifier-create-input.contract.test.ts",
+      "runner": "vitest",
+      "domain": "catalog",
+      "testType": "unit-or-domain",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:catalog",
+        "test:catalog-imp028c-modifiers",
+        "test:catalog-imp036c-required-topping"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/catalog/publication-preview-f2.test.ts",
       "runner": "vitest",
       "domain": "catalog",
       "testType": "unit-or-domain",

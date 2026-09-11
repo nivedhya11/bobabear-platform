@@ -121,11 +121,32 @@ export {
 } from "./dietary";
 
 export {
+  getBrandCatalogModifierGroup,
+  getBrandCatalogModifierOption,
+  getBrandCatalogProduct,
+  getBrandCatalogProductGraph,
   getCatalogProduct,
   getCatalogProductGraph,
+  listBrandCatalogModifierGroups,
+  listBrandCatalogModifierOptions,
+  listBrandCatalogProducts,
   trustedInternalFindProductById,
   validateCatalogProduct,
 } from "./reads";
+
+export type { ListBrandCatalogProductsInput } from "./reads";
+
+export {
+  previewCatalogPublicationConsequence,
+} from "./publication-preview";
+
+export type {
+  CatalogPublicationAffectedScope,
+  CatalogPublicationChangedField,
+  CatalogPublicationEntityChange,
+  PreviewCatalogPublicationConsequenceInput,
+  PreviewCatalogPublicationConsequenceResult,
+} from "./publication-preview";
 
 export {
   assertProductGraphReady,
