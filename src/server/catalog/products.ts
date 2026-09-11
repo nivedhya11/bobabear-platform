@@ -35,6 +35,13 @@ import {
   assertUuid,
   retirementTimestamps,
 } from "./lifecycle";
+import {
+  advanceBrandContentRevision,
+  assertInPlaceContentMutationAllowed,
+  ensureProductContentRevision1,
+  ensurePublicationCandidateBootstrap,
+  lockBrandEnvelope,
+} from "./revisions";
 import type {
   CatalogProduct,
   CreateProductInput,
@@ -58,6 +65,8 @@ function rowToProduct(row: typeof catalogProductsTable.$inferSelect): CatalogPro
     description: row.description,
     productKind: row.productKind as ProductKind,
     lifecycleStatus: row.lifecycleStatus as CatalogLifecycleStatus,
+    effectiveContentRevision: row.effectiveContentRevision,
+    draftContentRevision: row.draftContentRevision,
     createdAt: new Date(row.createdAt),
     updatedAt: new Date(row.updatedAt),
     activatedAt: row.activatedAt ? new Date(row.activatedAt) : null,
@@ -148,6 +157,8 @@ export async function updateProduct(
     throw new CatalogValidationError({ message: "updateProduct requires name and/or description." });
   }
 
+  assertInPlaceContentMutationAllowed(existing);
+
   const name =
     input.name !== undefined
       ? normalizeName(input.name, "name", CATALOG_NAME_MAX.product)
@@ -184,6 +195,20 @@ export async function activateProduct(
   assertCanTransition(existing.lifecycleStatus, "active");
   await assertProductGraphReady(context, productId);
 
+  // Brand envelope before entity — same order as publishCatalogContentChange.
+  await lockBrandEnvelope(context, existing.brandId);
+  const locked = await context.db
+    .select()
+    .from(catalogProductsTable)
+    .where(eq(catalogProductsTable.id, productId))
+    .for("update")
+    .limit(1);
+  if (!locked[0]) throw new CatalogNotFoundError("product");
+  assertCanTransition(
+    locked[0].lifecycleStatus as "draft" | "active" | "retired",
+    "active",
+  );
+
   const stamps = activationTimestamps();
   await context.db
     .update(catalogProductsTable)
@@ -194,6 +219,16 @@ export async function activateProduct(
       updatedAt: stamps.updatedAt,
     })
     .where(eq(catalogProductsTable.id, productId));
+
+  // Activation stages the product into the publication candidate only; customer
+  // visibility changes exclusively via publishCatalogContentChange.
+  await ensurePublicationCandidateBootstrap(context, {
+    brandId: existing.brandId,
+    ensureRevision1: async () => {
+      await ensureProductContentRevision1(context, existing, stamps.activatedAt);
+    },
+  });
+  await advanceBrandContentRevision(context, existing.brandId, stamps.updatedAt);
 
   await validateActiveProductGraph(context, productId);
 
@@ -224,7 +259,17 @@ export async function retireProduct(
     throw error;
   }
 
-  const stamps = retirementTimestamps(existing.lifecycleStatus, existing.activatedAt);
+  await lockBrandEnvelope(context, existing.brandId);
+  const locked = await context.db
+    .select()
+    .from(catalogProductsTable)
+    .where(eq(catalogProductsTable.id, productId))
+    .for("update")
+    .limit(1);
+  if (!locked[0]) throw new CatalogNotFoundError("product");
+  assertCanTransition(locked[0].lifecycleStatus as CatalogLifecycleStatus, "retired");
+
+  const stamps = retirementTimestamps(locked[0].lifecycleStatus as CatalogLifecycleStatus, locked[0].activatedAt);
   await context.db
     .update(catalogProductsTable)
     .set({
@@ -234,6 +279,16 @@ export async function retireProduct(
       updatedAt: stamps.updatedAt,
     })
     .where(eq(catalogProductsTable.id, productId));
+
+  // Retirement stages removal; the previously published effective revision keeps
+  // serving customers until publishCatalogContentChange.
+  await ensurePublicationCandidateBootstrap(context, {
+    brandId: existing.brandId,
+    ensureRevision1: async () => {
+      await ensureProductContentRevision1(context, existing, stamps.retiredAt);
+    },
+  });
+  await advanceBrandContentRevision(context, existing.brandId, stamps.updatedAt);
 
   // Reject retirement when this product's variants are still required by an
   // active bundle (or would leave any dependent active graph invalid).

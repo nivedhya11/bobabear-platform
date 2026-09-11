@@ -217,9 +217,9 @@ function checkSchemaFile() {
   const tableDecls = [
     ...contents.matchAll(/export const (catalog\w+Table)\s*=\s*appSchema\.table\(/g),
   ];
-  if (tableDecls.length !== 11) {
+  if (tableDecls.length !== 19) {
     findings.push(
-      `${rel}: expected exactly 11 catalog table declarations, found ${tableDecls.length}`,
+      `${rel}: expected exactly 19 catalog table declarations, found ${tableDecls.length}`,
     );
   }
 
@@ -488,7 +488,7 @@ function main() {
   console.log("audit:catalog passed");
   console.log("  ✓  Required modules and server-only marker");
   console.log("  ✓  Migrations 0000–0005 unchanged; single 0006 IMP-012 migration");
-  console.log("  ✓  Eleven catalog tables; no price/availability/menu/ownership columns");
+  console.log("  ✓  Eleven IMP-012 foundation catalog tables; IMP-036F adds revision/audit tables (19 total); no price/availability/menu/ownership columns");
   console.log("  ✓  No hard-delete, nested bundles, public HTTP/UI, Docker catalog service, or menu import");
 }
 

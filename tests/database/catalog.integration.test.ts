@@ -34,6 +34,14 @@ const CATALOG_TABLES = [
   "catalog_dietary_tags",
   "catalog_variant_dietary_tags",
   "catalog_modifier_option_dietary_tags",
+  "catalog_content_revisions",
+  "catalog_product_content_revisions",
+  "catalog_variant_content_revisions",
+  "catalog_modifier_group_content_revisions",
+  "catalog_modifier_option_content_revisions",
+  "catalog_modifier_group_option_content_revisions",
+  "catalog_variant_modifier_group_content_revisions",
+  "catalog_mutation_audit_events",
 ] as const;
 
 const PRIOR_MIGRATION_HASHES: Record<string, string> = {
@@ -121,7 +129,7 @@ async function expectPermissionDenied(promise: Promise<unknown>): Promise<void> 
 }
 
 describe("IMP-012 migration replay and seal", () => {
-  it("creates exactly 11 catalog tables and seeds catalog permissions", async () => {
+  it("creates catalog foundation + content-revision tables and seeds catalog permissions", async () => {
     await withMigratedPersistence(async (persistence) => {
       await persistence.withContext(async (ctx) => {
         const tables = await ctx.db.execute<{ relname: string }>(sql`
@@ -134,7 +142,7 @@ describe("IMP-012 migration replay and seal", () => {
           order by c.relname
         `);
         expect(tables.rows.map((r) => r.relname).sort()).toEqual([...CATALOG_TABLES].sort());
-        expect(tables.rows.length).toBe(11);
+        expect(tables.rows.length).toBe(19);
 
         const permissions = await ctx.db.execute<{ count: string }>(
           sql`select count(*)::text as count from app.access_permissions`,
@@ -689,6 +697,68 @@ describe("catalog privilege REVOKE", () => {
           });
         },
       );
+    });
+  });
+});
+
+describe("IMP-036F content revision columns", () => {
+  it("exposes draft/effective revision pointers and accepts revision-1 content rows", async () => {
+    await withMigratedPersistence(async (persistence) => {
+      const tree = await persistence.transaction((tx) => seedBrandTree(tx, "rev"));
+
+      await persistence.withContext(async (ctx) => {
+        const cols = await ctx.db.execute<{ column_name: string }>(sql`
+          select column_name
+          from information_schema.columns
+          where table_schema = 'app'
+            and table_name = 'catalog_products'
+            and column_name in ('draft_content_revision', 'effective_content_revision')
+          order by column_name
+        `);
+        expect(cols.rows.map((r) => r.column_name)).toEqual([
+          "draft_content_revision",
+          "effective_content_revision",
+        ]);
+
+        const productId = randomUUID();
+        const now = new Date().toISOString();
+        await ctx.db.execute(sql`
+          insert into app.catalog_products (
+            id, brand_id, code, name, product_kind, lifecycle_status,
+            draft_content_revision, created_at, updated_at
+          ) values (
+            ${productId}::uuid, ${tree.brand.id}::uuid, 'rev-p1', 'Revision Product', 'standard', 'draft',
+            1, ${now}::timestamptz, ${now}::timestamptz
+          )
+        `);
+        await ctx.db.execute(sql`
+          insert into app.catalog_content_revisions (brand_id, content_revision, updated_at)
+          values (${tree.brand.id}::uuid, 1, ${now}::timestamptz)
+        `);
+        await ctx.db.execute(sql`
+          insert into app.catalog_product_content_revisions (
+            product_id, content_revision, brand_id, name, description, created_at
+          ) values (
+            ${productId}::uuid, 1, ${tree.brand.id}::uuid, 'Revision Product', null, ${now}::timestamptz
+          )
+        `);
+
+        const pointers = await ctx.db.execute<{
+          draft_content_revision: string;
+          effective_content_revision: string | null;
+        }>(sql`
+          select draft_content_revision::text, effective_content_revision::text
+          from app.catalog_products where id = ${productId}::uuid
+        `);
+        expect(pointers.rows[0]?.draft_content_revision).toBe("1");
+        expect(pointers.rows[0]?.effective_content_revision).toBeNull();
+
+        const rev = await ctx.db.execute<{ name: string }>(sql`
+          select name from app.catalog_product_content_revisions
+          where product_id = ${productId}::uuid and content_revision = 1
+        `);
+        expect(rev.rows[0]?.name).toBe("Revision Product");
+      });
     });
   });
 });

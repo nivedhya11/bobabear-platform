@@ -1,10 +1,12 @@
 /**
  * Shared harness for assortment / availability / operating domain tests (IMP-014).
  */
+import { eq } from "drizzle-orm";
 import { afterEach } from "vitest";
 import { inject } from "vitest";
 
 import type { WebConfig } from "../../src/platform/config";
+import { catalogContentRevisionsTable } from "../../src/platform/database/schema/catalog";
 import {
   bootstrapPlatformSuperAdmin,
   createMembership,
@@ -15,6 +17,7 @@ import {
   activateVariant,
   createProduct,
   createVariant,
+  publishCatalogContentChange,
 } from "../../src/server/catalog";
 import {
   configureOutletOperatingProfile,
@@ -164,7 +167,32 @@ export type ActiveStandardVariant = Readonly<{
   variantId: string;
 }>;
 
-/** Create + activate a standard product with one default variant. */
+/**
+ * Create, activate, and publish a standard product with one default variant.
+ * Publication is required for the variant to be customer-effective (IMP-036F).
+ */
+export async function publishBrandProduct(
+  persistence: Persistence,
+  actor: unknown,
+  brandId: string,
+  productId: string,
+): Promise<void> {
+  await persistence.transaction(async (tx) => {
+    const envelope = await tx.db
+      .select()
+      .from(catalogContentRevisionsTable)
+      .where(eq(catalogContentRevisionsTable.brandId, brandId))
+      .limit(1);
+    if (!envelope[0]) throw new Error("missing brand content revision");
+    await publishCatalogContentChange(tx, {
+      actor,
+      brandId,
+      productId,
+      expectedContentRevision: envelope[0].contentRevision,
+    });
+  });
+}
+
 export async function createActiveStandardVariant(
   persistence: Persistence,
   actor: unknown,
@@ -194,6 +222,7 @@ export async function createActiveStandardVariant(
     await activateVariant(tx, { actor, variantId: variant.id });
     await activateProduct(tx, { actor, productId: product.id });
   });
+  await publishBrandProduct(persistence, actor, brandId, product.id);
   return { productId: product.id, variantId: variant.id };
 }
 

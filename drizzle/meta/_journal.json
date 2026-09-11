@@ -260,6 +260,13 @@
       "when": 1788400000000,
       "tag": "0036_outlet_delivery_fee_policy",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1789104946547,
+      "tag": "0037_hesitant_scorpion",
+      "breakpoints": true
     }
   ]
 }

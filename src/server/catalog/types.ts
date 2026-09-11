@@ -15,6 +15,8 @@ export type CatalogProduct = Readonly<{
   description: string | null;
   productKind: ProductKind;
   lifecycleStatus: CatalogLifecycleStatus;
+  effectiveContentRevision: bigint | null;
+  draftContentRevision: bigint;
   createdAt: Date;
   updatedAt: Date;
   activatedAt: Date | null;
@@ -32,6 +34,8 @@ export type CatalogVariant = Readonly<{
   isDefault: boolean;
   isSelectorVisible: boolean;
   lifecycleStatus: CatalogLifecycleStatus;
+  effectiveContentRevision: bigint | null;
+  draftContentRevision: bigint;
   createdAt: Date;
   updatedAt: Date;
   activatedAt: Date | null;
@@ -45,6 +49,8 @@ export type CatalogModifierGroup = Readonly<{
   name: string;
   description: string | null;
   lifecycleStatus: CatalogLifecycleStatus;
+  effectiveContentRevision: bigint | null;
+  draftContentRevision: bigint;
   createdAt: Date;
   updatedAt: Date;
   activatedAt: Date | null;
@@ -58,6 +64,8 @@ export type CatalogModifierOption = Readonly<{
   name: string;
   description: string | null;
   lifecycleStatus: CatalogLifecycleStatus;
+  effectiveContentRevision: bigint | null;
+  draftContentRevision: bigint;
   createdAt: Date;
   updatedAt: Date;
   activatedAt: Date | null;
@@ -74,6 +82,8 @@ export type CatalogModifierGroupOption = Readonly<{
   defaultQuantity: number;
   position: number;
   lifecycleStatus: CatalogLifecycleStatus;
+  effectiveContentRevision: bigint | null;
+  draftContentRevision: bigint;
   createdAt: Date;
   updatedAt: Date;
   activatedAt: Date | null;
@@ -91,6 +101,8 @@ export type CatalogVariantModifierGroup = Readonly<{
   required: boolean;
   position: number;
   lifecycleStatus: CatalogLifecycleStatus;
+  effectiveContentRevision: bigint | null;
+  draftContentRevision: bigint;
   createdAt: Date;
   updatedAt: Date;
   activatedAt: Date | null;

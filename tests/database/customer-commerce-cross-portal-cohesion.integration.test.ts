@@ -41,7 +41,11 @@ import {
 } from "../../src/server/pricing";
 import { evaluateServiceability, fixedServiceabilityClock } from "../../src/server/serviceability";
 import { TAX_CATEGORY_RESTAURANT_SERVICE_ID } from "../../src/shared/pricing";
-import { withCatalogDomain, type CatalogActors } from "../catalog/support";
+import {
+  publishProductEnvelope,
+  withCatalogDomain,
+  type CatalogActors,
+} from "../catalog/support";
 import { seedModifierDeltaOnBook } from "./support/checkout-fixtures";
 import {
   closeTrackedPersistenceHandles,
@@ -92,6 +96,9 @@ async function seedMenuVariant(
   await persistence.transaction(async (tx) => {
     await activateVariant(tx, { actor, variantId: variant.id });
     await activateProduct(tx, { actor, productId: product.id });
+    // Customer projection reads effective content only, so the activated
+    // candidate must be published before it is visible (IMP-036F).
+    await publishProductEnvelope(tx, { actor, brandId, productId: product.id });
     await includeBrandVariant(tx, { actor, brandId, variantId: variant.id });
   });
 
@@ -316,6 +323,13 @@ describe("customer commerce cross-portal cohesion (IMP-036E)", () => {
           variantModifierGroupId: vmg.id,
         });
       });
+      await persistence.transaction((tx) =>
+        publishProductEnvelope(tx, {
+          actor,
+          brandId: tree.brand.id,
+          productId: seeded.productId,
+        }),
+      );
 
       await seedModifierDeltaOnBook(persistence, {
         brandId: tree.brand.id,

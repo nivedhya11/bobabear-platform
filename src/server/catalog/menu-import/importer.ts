@@ -29,6 +29,10 @@ import {
   MenuImportError,
   validateManifestStructure,
 } from "./validate-manifest";
+import {
+  bootstrapActiveProductRevision,
+  bootstrapActiveVariantRevision,
+} from "../bootstrap-revisions";
 
 export type ImportPlanAction =
   | "create"
@@ -216,6 +220,28 @@ export async function runExistingMenuImport(options: {
             activatedAt: now,
             retiredAt: null,
           });
+          await bootstrapActiveProductRevision(
+            tx,
+            {
+              id: product.id,
+              brandId,
+              name: product.name,
+              description: product.description,
+            },
+            now,
+          );
+          await bootstrapActiveVariantRevision(
+            tx,
+            {
+              id: product.variant.id,
+              brandId,
+              name: "Default",
+              description: null,
+              isDefault: true,
+              isSelectorVisible: false,
+            },
+            now,
+          );
         }
       } else {
         const matches = materialMatch(

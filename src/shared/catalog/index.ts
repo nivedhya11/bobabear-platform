@@ -3,6 +3,7 @@
  */
 
 export {
+  CATALOG_AUDIT_ACTIONS,
   CATALOG_CODE_MAX_LENGTH,
   CATALOG_CODE_MIN_LENGTH,
   CATALOG_CODE_PATTERN,
@@ -12,12 +13,14 @@ export {
   CATALOG_QUANTITY_MAX,
   DIETARY_TAG_KINDS,
   PRODUCT_KINDS,
+  isCatalogAuditAction,
   isCatalogLifecycleStatus,
   isDietaryTagKind,
   isModifierGroupRequired,
   isProductKind,
 } from "./constants";
 export type {
+  CatalogAuditAction,
   CatalogLifecycleStatus,
   DietaryTagKind,
   ProductKind,

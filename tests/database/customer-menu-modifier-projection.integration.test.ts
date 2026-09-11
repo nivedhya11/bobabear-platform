@@ -37,7 +37,11 @@ import {
 } from "../../src/server/pricing";
 import { includeBrandVariant } from "../../src/server/assortment";
 import { TAX_CATEGORY_RESTAURANT_SERVICE_ID } from "../../src/shared/pricing";
-import { withCatalogDomain, type CatalogActors } from "../catalog/support";
+import {
+  publishProductEnvelope,
+  withCatalogDomain,
+  type CatalogActors,
+} from "../catalog/support";
 import { seedModifierDeltaOnBook } from "./support/checkout-fixtures";
 
 const AT = new Date("2026-08-09T12:00:00.000Z");
@@ -115,6 +119,9 @@ async function seedActiveMenuProduct(
   await persistence.transaction(async (tx) => {
     await activateVariant(tx, { actor, variantId: variant.id });
     await activateProduct(tx, { actor, productId: product.id });
+    // Activation only stages the candidate — customer projection reads
+    // effective content, so the envelope must be published (IMP-036F).
+    await publishProductEnvelope(tx, { actor, brandId, productId: product.id });
     await includeBrandVariant(tx, {
       actor,
       brandId,
@@ -317,6 +324,15 @@ describe("customer menu modifier projection (IMP-028C Slice 1)", () => {
           variantModifierGroupId: toppingsVmg.id,
         });
       });
+      // Modifier activations only stage the candidate; one product-envelope
+      // publish makes the whole modifier graph customer-effective.
+      await persistence.transaction((tx) =>
+        publishProductEnvelope(tx, {
+          actor,
+          brandId: tree.brand.id,
+          productId: seeded.productId,
+        }),
+      );
 
       await seedModifierDeltaOnBook(persistence, {
         brandId: tree.brand.id,
@@ -465,6 +481,13 @@ describe("customer menu modifier projection (IMP-028C Slice 1)", () => {
         });
         // hidden chain remains draft: group-option, group, and vmg bindings stay inactive
       });
+      await persistence.transaction((tx) =>
+        publishProductEnvelope(tx, {
+          actor,
+          brandId: tree.brand.id,
+          productId: seeded.productId,
+        }),
+      );
 
       await seedModifierDeltaOnBook(persistence, {
         brandId: tree.brand.id,
@@ -565,6 +588,13 @@ describe("customer menu modifier projection (IMP-028C Slice 1)", () => {
           variantModifierGroupId: vmg.id,
         });
       });
+      await persistence.transaction((tx) =>
+        publishProductEnvelope(tx, {
+          actor,
+          brandId: tree.brand.id,
+          productId: seeded.productId,
+        }),
+      );
 
       await seedModifierDeltaOnBook(persistence, {
         brandId: tree.brand.id,
@@ -653,6 +683,13 @@ describe("customer menu modifier projection (IMP-028C Slice 1)", () => {
           variantModifierGroupId: vmg.id,
         });
       });
+      await persistence.transaction((tx) =>
+        publishProductEnvelope(tx, {
+          actor,
+          brandId: tree.brand.id,
+          productId: seeded.productId,
+        }),
+      );
 
       await seedModifierDeltaOnBook(persistence, {
         brandId: tree.brand.id,

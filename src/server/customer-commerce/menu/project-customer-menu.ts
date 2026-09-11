@@ -28,6 +28,10 @@ import type {
 import { createOutletEligibilitySession } from "../../assortment/outlet-eligibility-session";
 import { effectiveEntryDisplay } from "../../catalog/menu/reads";
 import { assertUuid } from "../../catalog/lifecycle";
+import {
+  loadEffectiveProductContentMap,
+  loadEffectiveVariantContentMap,
+} from "../../catalog/revisions";
 import type { PersistenceQueryContext } from "../../persistence/types";
 import { PricingNotFoundError, PricingResolutionError } from "../../pricing/errors";
 import { resolveBrandVariantPrice, resolveOutletVariantPrice } from "../../pricing/resolve-price";
@@ -133,15 +137,19 @@ async function resolveOutletForBrand(
   return outlet.id;
 }
 
-function pickDefaultActiveVariant(
-  variants: ReadonlyArray<typeof catalogVariantsTable.$inferSelect>,
-): typeof catalogVariantsTable.$inferSelect {
-  const active = variants.filter((variant) => variant.lifecycleStatus === "active");
-  const defaults = active.filter((variant) => variant.isDefault);
+function pickDefaultEffectiveVariant(
+  variants: ReadonlyArray<{
+    id: string;
+    isDefault: boolean;
+  }>,
+): { id: string; isDefault: boolean } {
+  // Customer truth is effective content only — primary lifecycle/draft defaults
+  // must not participate in default selection.
+  const defaults = variants.filter((variant) => variant.isDefault);
   if (defaults.length !== 1) {
     throw new CustomerMenuError(
       "MENU_UNAVAILABLE",
-      "Active menu entry product lacks exactly one active default variant.",
+      "Active menu entry product lacks exactly one effective default variant.",
     );
   }
   return defaults[0]!;
@@ -207,6 +215,9 @@ export async function projectCustomerMenu(
     variantsByProductId.set(variant.productId, list);
   }
 
+  const effectiveProducts = await loadEffectiveProductContentMap(context, productRows);
+  const effectiveVariants = await loadEffectiveVariantContentMap(context, variantRows);
+
   const outletId =
     input.outletId && input.outletId.length > 0
       ? await resolveOutletForBrand(context, brandId, input.outletId)
@@ -222,19 +233,42 @@ export async function projectCustomerMenu(
 
   for (const entry of entryRows) {
     const product = productsById.get(entry.productId);
-    if (!product || product.lifecycleStatus !== "active") {
+    const productContent = product ? effectiveProducts.get(product.id) : undefined;
+    // Customer-visible product = effective content present. Staged activation
+    // (primary active, effective null) and missing revision rows fail closed.
+    if (!product || !productContent) {
       throw new CustomerMenuError(
         "MENU_UNAVAILABLE",
         "Active menu entry references missing or inactive product.",
       );
     }
 
-    const productVariants = variantsByProductId.get(entry.productId) ?? [];
-    const variant = pickDefaultActiveVariant(productVariants);
-    const display = effectiveEntryDisplay(entry, product);
+    const productVariants = (variantsByProductId.get(entry.productId) ?? [])
+      .map((variant) => {
+        const content = effectiveVariants.get(variant.id);
+        if (!content) return null;
+        return {
+          ...variant,
+          name: content.name,
+          description: content.description,
+          isDefault: content.isDefault,
+          isSelectorVisible: content.isSelectorVisible,
+        };
+      })
+      .filter((variant): variant is NonNullable<typeof variant> => variant != null);
+    const variant = pickDefaultEffectiveVariant(productVariants);
+    const display = effectiveEntryDisplay(entry, {
+      name: productContent.name,
+      description: productContent.description,
+    });
 
     projectedVariantIds.push(variant.id);
-    pendingItems.push({ entry, product, variant, display });
+    pendingItems.push({
+      entry,
+      product,
+      variant: productVariants.find((v) => v.id === variant.id)!,
+      display,
+    });
   }
 
   const eligibilitySession =

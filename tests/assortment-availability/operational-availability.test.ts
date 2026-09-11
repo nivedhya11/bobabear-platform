@@ -33,6 +33,7 @@ import {
   createActiveStandardVariant,
   includeVariantAtBrand,
   nowInsideAcceptingWindow,
+  publishBrandProduct,
   withAssortmentDomain,
 } from "./support";
 
@@ -271,6 +272,7 @@ describe("operational availability", () => {
           await activateVariant(tx, { actor: brandAdminActor, variantId: variant.id });
           await activateProduct(tx, { actor: brandAdminActor, productId: product.id });
         });
+        await publishBrandProduct(persistence, brandAdminActor, tree.brand.id, product.id);
         await includeVariantAtBrand(persistence, brandAdminActor, tree.brand.id, variant.id);
         await configureAlwaysAcceptingOutlet(persistence, outletManagerActor, tree.outletA.id);
         const now = nowInsideAcceptingWindow();
@@ -401,6 +403,7 @@ describe("operational availability", () => {
             await activateVariant(tx, { actor: brandAdminActor, variantId: variant.id });
             await activateProduct(tx, { actor: brandAdminActor, productId: product.id });
           });
+          await publishBrandProduct(persistence, brandAdminActor, tree.brand.id, product.id);
           await includeVariantAtBrand(persistence, brandAdminActor, tree.brand.id, variant.id);
           return variant.id;
         }
@@ -462,6 +465,7 @@ describe("operational availability", () => {
           await activateVariant(tx, { actor: brandAdminActor, variantId: bundleVariant.id });
           await activateProduct(tx, { actor: brandAdminActor, productId: bundleProduct.id });
         });
+        await publishBrandProduct(persistence, brandAdminActor, tree.brand.id, bundleProduct.id);
         await includeVariantAtBrand(
           persistence,
           brandAdminActor,

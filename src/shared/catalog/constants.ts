@@ -54,3 +54,15 @@ export function isDietaryTagKind(value: unknown): value is DietaryTagKind {
 export function isModifierGroupRequired(minTotalQuantity: number): boolean {
   return minTotalQuantity > 0;
 }
+
+/** Append-only catalog mutation audit actions (IMP-036F). */
+export const CATALOG_AUDIT_ACTIONS = [
+  "catalog.content_draft_saved",
+  "catalog.content_published",
+  "catalog.first_effective_publication",
+] as const;
+export type CatalogAuditAction = (typeof CATALOG_AUDIT_ACTIONS)[number];
+
+export function isCatalogAuditAction(value: unknown): value is CatalogAuditAction {
+  return typeof value === "string" && (CATALOG_AUDIT_ACTIONS as readonly string[]).includes(value);
+}

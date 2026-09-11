@@ -16,6 +16,7 @@ import {
   createActiveStandardVariant,
   includeVariantAtBrand,
   nowInsideAcceptingWindow,
+  publishBrandProduct,
   withAssortmentDomain,
 } from "./support";
 
@@ -111,6 +112,7 @@ describe("assortment eligibility", () => {
         await activateVariant(tx, { actor: brandAdminActor, variantId: vAlt.id });
         await activateProduct(tx, { actor: brandAdminActor, productId: product.id });
       });
+      await publishBrandProduct(persistence, brandAdminActor, tree.brand.id, product.id);
       await includeVariantAtBrand(persistence, brandAdminActor, tree.brand.id, vDefault.id);
       await includeVariantAtBrand(persistence, brandAdminActor, tree.brand.id, vAlt.id);
       await configureAlwaysAcceptingOutlet(persistence, outletManagerActor, tree.outletA.id);

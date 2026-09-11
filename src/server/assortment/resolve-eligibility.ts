@@ -16,6 +16,11 @@ import {
 } from "../../platform/database/schema/catalog";
 import { findModifierOptionById } from "../catalog/modifiers";
 import { findProductById } from "../catalog/products";
+import {
+  loadEffectiveModifierGroupOptionContent,
+  loadEffectiveModifierOptionContent,
+  loadEffectiveVariantModifierGroupContent,
+} from "../catalog/revisions";
 import { findVariantById } from "../catalog/variants";
 import type { PersistenceQueryContext } from "../persistence/types";
 import { assertApplicationRole, assertUuid } from "./assert-role";
@@ -47,6 +52,13 @@ import type {
   ResolveOutletVariantAvailabilityInput,
 } from "./types";
 
+/** Customer-orderable Catalog entity: published effective pointer present. */
+function hasCustomerEffectiveCatalog(entity: {
+  effectiveContentRevision: bigint | null;
+}): boolean {
+  return entity.effectiveContentRevision != null;
+}
+
 /** Optional preloaded outlet-common / composition inputs for menu batching. */
 export type OutletVariantEligibilityPreload = Readonly<{
   ancestry: OutletAncestry;
@@ -76,34 +88,37 @@ async function isModifierOptionApplicableToVariant(
   variantId: string,
   modifierOptionId: string,
 ): Promise<boolean> {
+  // Candidate rows without primary-lifecycle filter — effective binding truth
+  // decides customer applicability (staged retire/activate stays invisible).
   const bindings = await context.db
-    .select({
-      bindingId: catalogVariantModifierGroupsTable.id,
-      groupId: catalogVariantModifierGroupsTable.modifierGroupId,
-    })
+    .select()
     .from(catalogVariantModifierGroupsTable)
     .where(
       and(
         eq(catalogVariantModifierGroupsTable.brandId, brandId),
         eq(catalogVariantModifierGroupsTable.variantId, variantId),
-        eq(catalogVariantModifierGroupsTable.lifecycleStatus, "active"),
       ),
     );
 
   for (const binding of bindings) {
+    const vmgContent = await loadEffectiveVariantModifierGroupContent(context, binding);
+    if (!vmgContent || vmgContent.lifecycleStatus !== "active") continue;
+
     const links = await context.db
-      .select({ id: catalogModifierGroupOptionsTable.id })
+      .select()
       .from(catalogModifierGroupOptionsTable)
       .where(
         and(
           eq(catalogModifierGroupOptionsTable.brandId, brandId),
-          eq(catalogModifierGroupOptionsTable.modifierGroupId, binding.groupId),
+          eq(catalogModifierGroupOptionsTable.modifierGroupId, binding.modifierGroupId),
           eq(catalogModifierGroupOptionsTable.modifierOptionId, modifierOptionId),
-          eq(catalogModifierGroupOptionsTable.lifecycleStatus, "active"),
         ),
       )
       .limit(1);
-    if (links.length > 0) return true;
+    const link = links[0];
+    if (!link) continue;
+    const mgoContent = await loadEffectiveModifierGroupOptionContent(context, link);
+    if (mgoContent && mgoContent.lifecycleStatus === "active") return true;
   }
   return false;
 }
@@ -120,7 +135,15 @@ async function isModifierOptionSelectableAtOutlet(
   now: Date,
 ): Promise<boolean> {
   const option = await findModifierOptionById(context, modifierOptionId);
-  if (!option || option.brandId !== ancestry.brandId || option.lifecycleStatus !== "active") {
+  if (
+    !option ||
+    option.brandId !== ancestry.brandId ||
+    !hasCustomerEffectiveCatalog(option)
+  ) {
+    return false;
+  }
+  // Fail closed if the effective revision row is missing/corrupt.
+  if ((await loadEffectiveModifierOptionContent(context, option)) == null) {
     return false;
   }
 
@@ -190,12 +213,13 @@ async function requiredModifierConfigurationFeasible(
       and(
         eq(catalogVariantModifierGroupsTable.brandId, ancestry.brandId),
         eq(catalogVariantModifierGroupsTable.variantId, variantId),
-        eq(catalogVariantModifierGroupsTable.lifecycleStatus, "active"),
       ),
     );
 
   for (const binding of bindings) {
-    if (binding.minTotalQuantity <= 0) continue;
+    const vmgContent = await loadEffectiveVariantModifierGroupContent(context, binding);
+    if (!vmgContent || vmgContent.lifecycleStatus !== "active") continue;
+    if (vmgContent.minTotalQuantity <= 0) continue;
 
     const groupOptions = await context.db
       .select()
@@ -204,23 +228,25 @@ async function requiredModifierConfigurationFeasible(
         and(
           eq(catalogModifierGroupOptionsTable.brandId, ancestry.brandId),
           eq(catalogModifierGroupOptionsTable.modifierGroupId, binding.modifierGroupId),
-          eq(catalogModifierGroupOptionsTable.lifecycleStatus, "active"),
         ),
       );
 
     let capacity = 0;
     for (const groupOption of groupOptions) {
+      const mgoContent = await loadEffectiveModifierGroupOptionContent(
+        context,
+        groupOption,
+      );
+      if (!mgoContent || mgoContent.lifecycleStatus !== "active") continue;
+
       const optionRows = await context.db
         .select()
         .from(catalogModifierOptionsTable)
-        .where(
-          and(
-            eq(catalogModifierOptionsTable.id, groupOption.modifierOptionId),
-            eq(catalogModifierOptionsTable.lifecycleStatus, "active"),
-          ),
-        )
+        .where(eq(catalogModifierOptionsTable.id, groupOption.modifierOptionId))
         .limit(1);
-      if (!optionRows[0]) continue;
+      const option = optionRows[0];
+      if (!option || !hasCustomerEffectiveCatalog(option)) continue;
+      if ((await loadEffectiveModifierOptionContent(context, option)) == null) continue;
 
       const selectable = await isModifierOptionSelectableAtOutlet(
         context,
@@ -232,13 +258,13 @@ async function requiredModifierConfigurationFeasible(
       if (!selectable) continue;
 
       const maxQty =
-        typeof groupOption.maxQuantity === "number" && groupOption.maxQuantity > 0
-          ? groupOption.maxQuantity
+        typeof mgoContent.maxQuantity === "number" && mgoContent.maxQuantity > 0
+          ? mgoContent.maxQuantity
           : 1;
       capacity += maxQty;
     }
 
-    if (capacity < binding.minTotalQuantity) {
+    if (capacity < vmgContent.minTotalQuantity) {
       return false;
     }
   }
@@ -258,13 +284,13 @@ function isStandardComponentEligibleFromPreload(
   if (
     !variant ||
     variant.brandId !== ancestry.brandId ||
-    variant.lifecycleStatus !== "active" ||
+    !hasCustomerEffectiveCatalog(variant) ||
     variant.productKind !== "standard"
   ) {
     return false;
   }
   const product = preload.productsById?.get(variant.productId);
-  if (!product || product.lifecycleStatus !== "active") return false;
+  if (!product || !hasCustomerEffectiveCatalog(product)) return false;
 
   if (!(preload.includedVariantIds?.has(componentVariantId) ?? false)) return false;
 
@@ -298,13 +324,13 @@ async function isStandardComponentEligible(
   if (
     !variant ||
     variant.brandId !== ancestry.brandId ||
-    variant.lifecycleStatus !== "active" ||
+    !hasCustomerEffectiveCatalog(variant) ||
     variant.productKind !== "standard"
   ) {
     return false;
   }
   const product = await findProductById(context, variant.productId);
-  if (!product || product.lifecycleStatus !== "active") return false;
+  if (!product || !hasCustomerEffectiveCatalog(product)) return false;
 
   const included = await hasActiveBrandVariantInclude(
     context,
@@ -438,7 +464,10 @@ export async function resolveOutletVariantAvailability(
     if (!product || product.brandId !== ancestry.brandId) {
       return denied("DENIED");
     }
-    if (product.lifecycleStatus !== "active" || variant.lifecycleStatus !== "active") {
+    if (
+      !hasCustomerEffectiveCatalog(product) ||
+      !hasCustomerEffectiveCatalog(variant)
+    ) {
       return denied("CATALOG_INACTIVE");
     }
 
@@ -512,29 +541,33 @@ export async function resolveOutletProductAvailability(
     if (!product || product.brandId !== ancestry.brandId) {
       return denied("DENIED");
     }
-    if (product.lifecycleStatus !== "active") {
+    if (!hasCustomerEffectiveCatalog(product)) {
       return denied("CATALOG_INACTIVE");
     }
 
-    // Product effective availability is derived: at least one active Variant
-    // must be effectively eligible. No persisted Product operational row.
+    // Product effective availability is derived: at least one customer-effective
+    // Variant must be eligible. Primary lifecycle is ignored — staged activation
+    // (effective null) and staged retirement (effective still set) use pointers.
     const variants = await context.db
-      .select({ id: catalogVariantsTable.id })
+      .select({
+        id: catalogVariantsTable.id,
+        effectiveContentRevision: catalogVariantsTable.effectiveContentRevision,
+      })
       .from(catalogVariantsTable)
       .where(
         and(
           eq(catalogVariantsTable.productId, productId),
           eq(catalogVariantsTable.brandId, ancestry.brandId),
-          eq(catalogVariantsTable.lifecycleStatus, "active"),
         ),
       );
+    const effectiveVariants = variants.filter((v) => v.effectiveContentRevision != null);
 
-    if (variants.length === 0) {
+    if (effectiveVariants.length === 0) {
       return denied("CATALOG_INACTIVE");
     }
 
     let lastDenial: EligibilityDecision = denied("DENIED");
-    for (const variant of variants) {
+    for (const variant of effectiveVariants) {
       const decision = await resolveOutletVariantAvailability(context, {
         variantId: variant.id,
         outletId,
@@ -565,7 +598,10 @@ export async function resolveModifierOptionAvailability(
     if (!option || option.brandId !== ancestry.brandId) {
       return denied("DENIED");
     }
-    if (option.lifecycleStatus !== "active") {
+    if (!hasCustomerEffectiveCatalog(option)) {
+      return denied("CATALOG_INACTIVE");
+    }
+    if ((await loadEffectiveModifierOptionContent(context, option)) == null) {
       return denied("CATALOG_INACTIVE");
     }
 

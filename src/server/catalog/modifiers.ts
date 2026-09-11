@@ -3,7 +3,7 @@
  */
 import { randomUUID } from "node:crypto";
 
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import {
   CATALOG_DESCRIPTION_MAX,
@@ -13,9 +13,11 @@ import {
   type CatalogLifecycleStatus,
 } from "../../shared/catalog";
 import {
+  catalogModifierGroupOptionContentRevisionsTable,
   catalogModifierGroupOptionsTable,
   catalogModifierGroupsTable,
   catalogModifierOptionsTable,
+  catalogVariantModifierGroupContentRevisionsTable,
   catalogVariantModifierGroupsTable,
 } from "../../platform/database/schema/catalog";
 import type { PersistenceQueryContext, PersistenceTransactionContext } from "../persistence/types";
@@ -41,6 +43,16 @@ import {
   assertUuid,
   retirementTimestamps,
 } from "./lifecycle";
+import {
+  advanceBrandContentRevision,
+  assertInPlaceContentMutationAllowed,
+  ensureModifierGroupContentRevision1,
+  ensureModifierGroupOptionContentRevision1,
+  ensureModifierOptionContentRevision1,
+  ensurePublicationCandidateBootstrap,
+  ensureVariantModifierGroupContentRevision1,
+  lockBrandEnvelope,
+} from "./revisions";
 import type {
   AddModifierOptionToGroupInput,
   ApplyModifierGroupToVariantInput,
@@ -74,6 +86,8 @@ function rowToGroup(row: typeof catalogModifierGroupsTable.$inferSelect): Catalo
     name: row.name,
     description: row.description,
     lifecycleStatus: row.lifecycleStatus as CatalogLifecycleStatus,
+    effectiveContentRevision: row.effectiveContentRevision,
+    draftContentRevision: row.draftContentRevision,
     createdAt: new Date(row.createdAt),
     updatedAt: new Date(row.updatedAt),
     activatedAt: row.activatedAt ? new Date(row.activatedAt) : null,
@@ -89,6 +103,8 @@ function rowToOption(row: typeof catalogModifierOptionsTable.$inferSelect): Cata
     name: row.name,
     description: row.description,
     lifecycleStatus: row.lifecycleStatus as CatalogLifecycleStatus,
+    effectiveContentRevision: row.effectiveContentRevision,
+    draftContentRevision: row.draftContentRevision,
     createdAt: new Date(row.createdAt),
     updatedAt: new Date(row.updatedAt),
     activatedAt: row.activatedAt ? new Date(row.activatedAt) : null,
@@ -109,6 +125,8 @@ function rowToGroupOption(
     defaultQuantity: row.defaultQuantity,
     position: row.position,
     lifecycleStatus: row.lifecycleStatus as CatalogLifecycleStatus,
+    effectiveContentRevision: row.effectiveContentRevision,
+    draftContentRevision: row.draftContentRevision,
     createdAt: new Date(row.createdAt),
     updatedAt: new Date(row.updatedAt),
     activatedAt: row.activatedAt ? new Date(row.activatedAt) : null,
@@ -129,6 +147,8 @@ function rowToVariantModifierGroup(
     required: isModifierGroupRequired(row.minTotalQuantity),
     position: row.position,
     lifecycleStatus: row.lifecycleStatus as CatalogLifecycleStatus,
+    effectiveContentRevision: row.effectiveContentRevision,
+    draftContentRevision: row.draftContentRevision,
     createdAt: new Date(row.createdAt),
     updatedAt: new Date(row.updatedAt),
     activatedAt: row.activatedAt ? new Date(row.activatedAt) : null,
@@ -157,6 +177,99 @@ function assertTotalRange(minTotal: number, maxTotal: number): void {
       message: "minTotalQuantity must be <= maxTotalQuantity.",
     });
   }
+}
+
+/**
+ * Binding lifecycle is customer-visible content, so it lives in the content
+ * revision store. The primary row is only the admin mirror: staging a lifecycle
+ * change appends a draft revision that `publishCatalogContentChange` later makes
+ * effective.
+ */
+async function stageModifierGroupOptionLifecycle(
+  context: PersistenceTransactionContext,
+  binding: CatalogModifierGroupOption,
+  lifecycleStatus: CatalogLifecycleStatus,
+  at: Date,
+): Promise<void> {
+  const next = binding.draftContentRevision + BigInt(1);
+  await context.db.insert(catalogModifierGroupOptionContentRevisionsTable).values({
+    bindingId: binding.id,
+    contentRevision: next,
+    brandId: binding.brandId,
+    minQuantity: binding.minQuantity,
+    maxQuantity: binding.maxQuantity,
+    defaultQuantity: binding.defaultQuantity,
+    position: binding.position,
+    lifecycleStatus,
+    createdAt: at,
+  });
+  await context.db
+    .update(catalogModifierGroupOptionsTable)
+    .set({ draftContentRevision: next, updatedAt: at })
+    .where(eq(catalogModifierGroupOptionsTable.id, binding.id));
+}
+
+async function stageVariantModifierGroupLifecycle(
+  context: PersistenceTransactionContext,
+  binding: CatalogVariantModifierGroup,
+  lifecycleStatus: CatalogLifecycleStatus,
+  at: Date,
+): Promise<void> {
+  const next = binding.draftContentRevision + BigInt(1);
+  await context.db.insert(catalogVariantModifierGroupContentRevisionsTable).values({
+    bindingId: binding.id,
+    contentRevision: next,
+    brandId: binding.brandId,
+    minTotalQuantity: binding.minTotalQuantity,
+    maxTotalQuantity: binding.maxTotalQuantity,
+    position: binding.position,
+    lifecycleStatus,
+    createdAt: at,
+  });
+  await context.db
+    .update(catalogVariantModifierGroupsTable)
+    .set({ draftContentRevision: next, updatedAt: at })
+    .where(eq(catalogVariantModifierGroupsTable.id, binding.id));
+}
+
+async function modifierGroupOptionDraftLifecycle(
+  context: PersistenceTransactionContext,
+  binding: CatalogModifierGroupOption,
+): Promise<string | null> {
+  const rows = await context.db
+    .select()
+    .from(catalogModifierGroupOptionContentRevisionsTable)
+    .where(
+      and(
+        eq(catalogModifierGroupOptionContentRevisionsTable.bindingId, binding.id),
+        eq(
+          catalogModifierGroupOptionContentRevisionsTable.contentRevision,
+          binding.draftContentRevision,
+        ),
+      ),
+    )
+    .limit(1);
+  return rows[0]?.lifecycleStatus ?? null;
+}
+
+async function variantModifierGroupDraftLifecycle(
+  context: PersistenceTransactionContext,
+  binding: CatalogVariantModifierGroup,
+): Promise<string | null> {
+  const rows = await context.db
+    .select()
+    .from(catalogVariantModifierGroupContentRevisionsTable)
+    .where(
+      and(
+        eq(catalogVariantModifierGroupContentRevisionsTable.bindingId, binding.id),
+        eq(
+          catalogVariantModifierGroupContentRevisionsTable.contentRevision,
+          binding.draftContentRevision,
+        ),
+      ),
+    )
+    .limit(1);
+  return rows[0]?.lifecycleStatus ?? null;
 }
 
 export async function findModifierGroupById(
@@ -278,6 +391,8 @@ export async function updateModifierGroup(
     });
   }
 
+  assertInPlaceContentMutationAllowed(existing);
+
   const name =
     input.name !== undefined
       ? normalizeName(input.name, "name", CATALOG_NAME_MAX.modifierGroup)
@@ -311,6 +426,7 @@ export async function activateModifierGroup(
   await requireCatalogManage(context, input.actor, existing.brandId);
 
   assertCanTransition(existing.lifecycleStatus, "active");
+  await lockBrandEnvelope(context, existing.brandId);
   const stamps = activationTimestamps();
   await context.db
     .update(catalogModifierGroupsTable)
@@ -321,6 +437,16 @@ export async function activateModifierGroup(
       updatedAt: stamps.updatedAt,
     })
     .where(eq(catalogModifierGroupsTable.id, existing.id));
+
+  // Activation stages the group into the publication candidate only; customer
+  // visibility changes exclusively via publishCatalogContentChange.
+  await ensurePublicationCandidateBootstrap(context, {
+    brandId: existing.brandId,
+    ensureRevision1: async () => {
+      await ensureModifierGroupContentRevision1(context, existing, stamps.activatedAt);
+    },
+  });
+  await advanceBrandContentRevision(context, existing.brandId, stamps.updatedAt);
 
   await revalidateProductsForModifierGroup(context, existing.id);
 
@@ -339,6 +465,7 @@ export async function retireModifierGroup(
   await requireCatalogManage(context, input.actor, existing.brandId);
 
   assertCanTransition(existing.lifecycleStatus, "retired");
+  await lockBrandEnvelope(context, existing.brandId);
   const stamps = retirementTimestamps(existing.lifecycleStatus, existing.activatedAt);
   await context.db
     .update(catalogModifierGroupsTable)
@@ -349,6 +476,16 @@ export async function retireModifierGroup(
       updatedAt: stamps.updatedAt,
     })
     .where(eq(catalogModifierGroupsTable.id, existing.id));
+
+  // Retirement stages removal; the published effective revision keeps serving
+  // customers until publishCatalogContentChange.
+  await ensurePublicationCandidateBootstrap(context, {
+    brandId: existing.brandId,
+    ensureRevision1: async () => {
+      await ensureModifierGroupContentRevision1(context, existing, stamps.retiredAt);
+    },
+  });
+  await advanceBrandContentRevision(context, existing.brandId, stamps.updatedAt);
 
   await revalidateProductsForModifierGroup(context, existing.id);
 
@@ -420,6 +557,8 @@ export async function updateModifierOption(
     });
   }
 
+  assertInPlaceContentMutationAllowed(existing);
+
   const name =
     input.name !== undefined
       ? normalizeName(input.name, "name", CATALOG_NAME_MAX.modifierOption)
@@ -453,6 +592,7 @@ export async function activateModifierOption(
   await requireCatalogManage(context, input.actor, existing.brandId);
 
   assertCanTransition(existing.lifecycleStatus, "active");
+  await lockBrandEnvelope(context, existing.brandId);
   const stamps = activationTimestamps();
   await context.db
     .update(catalogModifierOptionsTable)
@@ -463,6 +603,16 @@ export async function activateModifierOption(
       updatedAt: stamps.updatedAt,
     })
     .where(eq(catalogModifierOptionsTable.id, existing.id));
+
+  // Activation stages the option into the publication candidate only; customer
+  // visibility changes exclusively via publishCatalogContentChange.
+  await ensurePublicationCandidateBootstrap(context, {
+    brandId: existing.brandId,
+    ensureRevision1: async () => {
+      await ensureModifierOptionContentRevision1(context, existing, stamps.activatedAt);
+    },
+  });
+  await advanceBrandContentRevision(context, existing.brandId, stamps.updatedAt);
 
   await revalidateProductsForModifierOption(context, existing.id);
 
@@ -481,6 +631,7 @@ export async function retireModifierOption(
   await requireCatalogManage(context, input.actor, existing.brandId);
 
   assertCanTransition(existing.lifecycleStatus, "retired");
+  await lockBrandEnvelope(context, existing.brandId);
   const stamps = retirementTimestamps(existing.lifecycleStatus, existing.activatedAt);
   await context.db
     .update(catalogModifierOptionsTable)
@@ -491,6 +642,16 @@ export async function retireModifierOption(
       updatedAt: stamps.updatedAt,
     })
     .where(eq(catalogModifierOptionsTable.id, existing.id));
+
+  // Retirement stages removal; the published effective revision keeps serving
+  // customers until publishCatalogContentChange.
+  await ensurePublicationCandidateBootstrap(context, {
+    brandId: existing.brandId,
+    ensureRevision1: async () => {
+      await ensureModifierOptionContentRevision1(context, existing, stamps.retiredAt);
+    },
+  });
+  await advanceBrandContentRevision(context, existing.brandId, stamps.updatedAt);
 
   await revalidateProductsForModifierOption(context, existing.id);
 
@@ -579,6 +740,8 @@ export async function updateModifierGroupOption(
     });
   }
 
+  assertInPlaceContentMutationAllowed(existing);
+
   const minQuantity =
     input.minQuantity !== undefined
       ? assertNonNegativeInt(input.minQuantity, "minQuantity")
@@ -625,6 +788,7 @@ export async function activateModifierGroupOption(
   await requireCatalogManage(context, input.actor, existing.brandId);
 
   assertCanTransition(existing.lifecycleStatus, "active");
+  await lockBrandEnvelope(context, existing.brandId);
   const stamps = activationTimestamps();
   try {
     await context.db
@@ -645,6 +809,21 @@ export async function activateModifierGroupOption(
     throw error;
   }
 
+  // Activation stages the binding into the publication candidate only; customer
+  // visibility changes exclusively via publishCatalogContentChange.
+  await ensurePublicationCandidateBootstrap(context, {
+    brandId: existing.brandId,
+    ensureRevision1: async () => {
+      await ensureModifierGroupOptionContentRevision1(context, existing, stamps.activatedAt);
+    },
+  });
+
+  const draftLifecycle = await modifierGroupOptionDraftLifecycle(context, existing);
+  if (existing.effectiveContentRevision == null || draftLifecycle !== "active") {
+    await stageModifierGroupOptionLifecycle(context, existing, "active", stamps.activatedAt);
+  }
+  await advanceBrandContentRevision(context, existing.brandId, stamps.updatedAt);
+
   await revalidateProductsForModifierGroup(context, existing.modifierGroupId);
 
   const updated = await findModifierGroupOptionById(context, existing.id);
@@ -662,6 +841,7 @@ export async function retireModifierGroupOption(
   await requireCatalogManage(context, input.actor, existing.brandId);
 
   assertCanTransition(existing.lifecycleStatus, "retired");
+  await lockBrandEnvelope(context, existing.brandId);
   const stamps = retirementTimestamps(existing.lifecycleStatus, existing.activatedAt);
   await context.db
     .update(catalogModifierGroupOptionsTable)
@@ -672,6 +852,17 @@ export async function retireModifierGroupOption(
       updatedAt: stamps.updatedAt,
     })
     .where(eq(catalogModifierGroupOptionsTable.id, existing.id));
+
+  // Retirement stages removal; the published effective revision keeps serving
+  // customers until publishCatalogContentChange.
+  await ensurePublicationCandidateBootstrap(context, {
+    brandId: existing.brandId,
+    ensureRevision1: async () => {
+      await ensureModifierGroupOptionContentRevision1(context, existing, stamps.retiredAt);
+    },
+  });
+  await stageModifierGroupOptionLifecycle(context, existing, "retired", stamps.retiredAt);
+  await advanceBrandContentRevision(context, existing.brandId, stamps.updatedAt);
 
   await revalidateProductsForModifierGroup(context, existing.modifierGroupId);
 
@@ -766,6 +957,8 @@ export async function updateVariantModifierGroup(
     });
   }
 
+  assertInPlaceContentMutationAllowed(existing);
+
   const minTotalQuantity =
     input.minTotalQuantity !== undefined
       ? assertNonNegativeInt(input.minTotalQuantity, "minTotalQuantity")
@@ -808,6 +1001,7 @@ export async function activateVariantModifierGroup(
   await requireCatalogManage(context, input.actor, existing.brandId);
 
   assertCanTransition(existing.lifecycleStatus, "active");
+  await lockBrandEnvelope(context, existing.brandId);
   const stamps = activationTimestamps();
   try {
     await context.db
@@ -828,6 +1022,21 @@ export async function activateVariantModifierGroup(
     throw error;
   }
 
+  // Activation stages the binding into the publication candidate only; customer
+  // visibility changes exclusively via publishCatalogContentChange.
+  await ensurePublicationCandidateBootstrap(context, {
+    brandId: existing.brandId,
+    ensureRevision1: async () => {
+      await ensureVariantModifierGroupContentRevision1(context, existing, stamps.activatedAt);
+    },
+  });
+
+  const draftLifecycle = await variantModifierGroupDraftLifecycle(context, existing);
+  if (existing.effectiveContentRevision == null || draftLifecycle !== "active") {
+    await stageVariantModifierGroupLifecycle(context, existing, "active", stamps.activatedAt);
+  }
+  await advanceBrandContentRevision(context, existing.brandId, stamps.updatedAt);
+
   const variant = await findVariantById(context, existing.variantId);
   if (variant) await validateActiveProductGraph(context, variant.productId);
 
@@ -846,6 +1055,7 @@ export async function retireVariantModifierGroup(
   await requireCatalogManage(context, input.actor, existing.brandId);
 
   assertCanTransition(existing.lifecycleStatus, "retired");
+  await lockBrandEnvelope(context, existing.brandId);
   const stamps = retirementTimestamps(existing.lifecycleStatus, existing.activatedAt);
   await context.db
     .update(catalogVariantModifierGroupsTable)
@@ -856,6 +1066,17 @@ export async function retireVariantModifierGroup(
       updatedAt: stamps.updatedAt,
     })
     .where(eq(catalogVariantModifierGroupsTable.id, existing.id));
+
+  // Retirement stages removal; the published effective revision keeps serving
+  // customers until publishCatalogContentChange.
+  await ensurePublicationCandidateBootstrap(context, {
+    brandId: existing.brandId,
+    ensureRevision1: async () => {
+      await ensureVariantModifierGroupContentRevision1(context, existing, stamps.retiredAt);
+    },
+  });
+  await stageVariantModifierGroupLifecycle(context, existing, "retired", stamps.retiredAt);
+  await advanceBrandContentRevision(context, existing.brandId, stamps.updatedAt);
 
   const variant = await findVariantById(context, existing.variantId);
   if (variant) await validateActiveProductGraph(context, variant.productId);

@@ -3,9 +3,11 @@
  */
 import { randomBytes, randomUUID } from "node:crypto";
 
+import { eq } from "drizzle-orm";
 import { inject } from "vitest";
 
 import type { WebConfig } from "../../../src/platform/config";
+import { catalogContentRevisionsTable } from "../../../src/platform/database/schema/catalog";
 import {
   bootstrapPlatformSuperAdmin,
   createMembership,
@@ -28,6 +30,7 @@ import {
   createModifierOption,
   createProduct,
   createVariant,
+  publishCatalogContentChange,
 } from "../../../src/server/catalog";
 import {
   getCustomerAuthRuntime,
@@ -43,7 +46,10 @@ import {
 } from "../../../src/server/customer-auth/pii";
 import { createLocalCustomerOtpProviderForTests } from "../../../src/server/customer-auth/provider/local";
 import { getApplicationPersistence } from "../../../src/server/persistence";
-import type { Persistence } from "../../../src/server/persistence/types";
+import type {
+  Persistence,
+  PersistenceTransactionContext,
+} from "../../../src/server/persistence/types";
 import {
   activateCoupon,
   activatePromotion,
@@ -126,6 +132,32 @@ export async function closeTrackedPersistenceHandles(): Promise<void> {
 
 export function uniqueCode(prefix: string): string {
   return `${prefix}-${randomBytes(3).toString("hex")}`;
+}
+
+/**
+ * Make an activated product-rooted graph customer-effective (IMP-036F).
+ *
+ * Activation only stages a publication candidate, so cart/checkout fixtures
+ * must publish before the catalog is orderable. Every activation advances the
+ * Brand envelope, so the expected revision is read immediately before publish.
+ */
+async function publishProductEnvelope(
+  tx: PersistenceTransactionContext,
+  input: Readonly<{ actor: unknown; brandId: string; productId: string }>,
+): Promise<void> {
+  const rows = await tx.db
+    .select()
+    .from(catalogContentRevisionsTable)
+    .where(eq(catalogContentRevisionsTable.brandId, input.brandId))
+    .limit(1);
+  const envelope = rows[0];
+  if (!envelope) throw new Error("missing brand content revision");
+  await publishCatalogContentChange(tx, {
+    actor: input.actor,
+    brandId: input.brandId,
+    productId: input.productId,
+    expectedContentRevision: envelope.contentRevision,
+  });
 }
 
 /**
@@ -240,6 +272,7 @@ export async function seedActiveStandardVariant(
     });
     await activateVariant(tx, { actor, variantId: variant.id });
     await activateProduct(tx, { actor, productId: product.id });
+    await publishProductEnvelope(tx, { actor, brandId, productId: product.id });
     return { productId: product.id, variantId: variant.id };
   });
 }
@@ -314,6 +347,7 @@ export async function seedActiveVariantWithModifier(
     });
     await activateVariant(tx, { actor, variantId: variant.id });
     await activateProduct(tx, { actor, productId: product.id });
+    await publishProductEnvelope(tx, { actor, brandId, productId: product.id });
     return {
       productId: product.id,
       variantId: variant.id,
@@ -399,6 +433,7 @@ export async function seedActiveBundleWithComponent(
     await activateBundleGroup(tx, { actor, bundleGroupId: group.id });
     await activateVariant(tx, { actor, variantId: bundleVariant.id });
     await activateProduct(tx, { actor, productId: bundleProduct.id });
+    await publishProductEnvelope(tx, { actor, brandId, productId: bundleProduct.id });
 
     const nested =
       withNested && "variantModifierGroupId" in component
