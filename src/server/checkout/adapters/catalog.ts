@@ -1,5 +1,8 @@
 /**
  * Catalog labels + structural validation for Checkout (IMP-021).
+ *
+ * Checkout/order labels resolve PUBLISHED / EFFECTIVE Catalog truth only.
+ * Primary name columns mirror latest drafts and must not leak into snapshots.
  */
 
 import { and, eq } from "drizzle-orm";
@@ -22,6 +25,12 @@ import {
 import type { PersistenceQueryContext } from "../../persistence/types";
 import { validateCartLineStructure } from "../../cart/validate-structure";
 import { cartLineToCanonicalConfiguration } from "../../cart/canonicalize-config";
+import {
+  loadEffectiveModifierGroupContent,
+  loadEffectiveModifierOptionContent,
+  loadEffectiveProductContent,
+  loadEffectiveVariantContent,
+} from "../../catalog/revisions";
 import { assertApplicationRole } from "../assert-role";
 
 export type CatalogLineLabels = Readonly<{
@@ -79,7 +88,6 @@ export async function validateCheckoutCartMerchandise(
     const variant = await context.db
       .select({
         id: catalogVariantsTable.id,
-        lifecycleStatus: catalogVariantsTable.lifecycleStatus,
         productId: catalogVariantsTable.productId,
         effectiveContentRevision: catalogVariantsTable.effectiveContentRevision,
       })
@@ -101,7 +109,6 @@ export async function validateCheckoutCartMerchandise(
     }
     const product = await context.db
       .select({
-        lifecycleStatus: catalogProductsTable.lifecycleStatus,
         effectiveContentRevision: catalogProductsTable.effectiveContentRevision,
       })
       .from(catalogProductsTable)
@@ -133,15 +140,68 @@ export async function loadCatalogLabelsForCart(
   return result;
 }
 
+async function loadEffectiveModifierLabels(
+  context: PersistenceQueryContext,
+  variantModifierGroupId: string,
+  modifierGroupOptionId: string,
+): Promise<{ groupName: string; optionName: string }> {
+  const rows = await context.db
+    .select({
+      group: catalogModifierGroupsTable,
+      option: catalogModifierOptionsTable,
+    })
+    .from(catalogVariantModifierGroupsTable)
+    .innerJoin(
+      catalogModifierGroupsTable,
+      eq(
+        catalogModifierGroupsTable.id,
+        catalogVariantModifierGroupsTable.modifierGroupId,
+      ),
+    )
+    .innerJoin(
+      catalogModifierGroupOptionsTable,
+      eq(catalogModifierGroupOptionsTable.id, modifierGroupOptionId),
+    )
+    .innerJoin(
+      catalogModifierOptionsTable,
+      eq(
+        catalogModifierOptionsTable.id,
+        catalogModifierGroupOptionsTable.modifierOptionId,
+      ),
+    )
+    .where(
+      and(
+        eq(catalogVariantModifierGroupsTable.id, variantModifierGroupId),
+        eq(catalogModifierGroupOptionsTable.id, modifierGroupOptionId),
+      ),
+    )
+    .limit(1);
+  const row = rows[0];
+  if (!row) {
+    throw new CheckoutError(
+      "CHECKOUT_MODIFIER_INVALID",
+      "Modifier labels could not be resolved.",
+    );
+  }
+  const groupContent = await loadEffectiveModifierGroupContent(context, row.group);
+  const optionContent = await loadEffectiveModifierOptionContent(context, row.option);
+  if (!groupContent || !optionContent) {
+    throw new CheckoutError(
+      "CHECKOUT_MODIFIER_INVALID",
+      "Modifier labels could not be resolved from effective Catalog content.",
+    );
+  }
+  return { groupName: groupContent.name, optionName: optionContent.name };
+}
+
 async function loadLabelsForLine(
   context: PersistenceQueryContext,
   line: CartLine,
 ): Promise<CatalogLineLabels> {
   const variantRows = await context.db
     .select({
-      productId: catalogVariantsTable.productId,
-      variantName: catalogVariantsTable.name,
-      productName: catalogProductsTable.name,
+      variant: catalogVariantsTable,
+      product: catalogProductsTable,
     })
     .from(catalogVariantsTable)
     .innerJoin(
@@ -150,63 +210,35 @@ async function loadLabelsForLine(
     )
     .where(eq(catalogVariantsTable.id, line.variantId))
     .limit(1);
-  const variant = variantRows[0];
-  if (!variant) {
+  const row = variantRows[0];
+  if (!row) {
     throw new CheckoutError(
       "CHECKOUT_VARIANT_INVALID",
       "Variant labels could not be resolved.",
     );
   }
+  const productContent = await loadEffectiveProductContent(context, row.product);
+  const variantContent = await loadEffectiveVariantContent(context, row.variant);
+  if (!productContent || !variantContent) {
+    throw new CheckoutError(
+      "CHECKOUT_VARIANT_INVALID",
+      "Variant labels could not be resolved from effective Catalog content.",
+    );
+  }
 
   const modifiers = [];
   for (const mod of line.modifiers) {
-    const rows = await context.db
-      .select({
-        groupName: catalogModifierGroupsTable.name,
-        optionName: catalogModifierOptionsTable.name,
-      })
-      .from(catalogVariantModifierGroupsTable)
-      .innerJoin(
-        catalogModifierGroupsTable,
-        eq(
-          catalogModifierGroupsTable.id,
-          catalogVariantModifierGroupsTable.modifierGroupId,
-        ),
-      )
-      .innerJoin(
-        catalogModifierGroupOptionsTable,
-        eq(
-          catalogModifierGroupOptionsTable.id,
-          mod.modifierGroupOptionId,
-        ),
-      )
-      .innerJoin(
-        catalogModifierOptionsTable,
-        eq(
-          catalogModifierOptionsTable.id,
-          catalogModifierGroupOptionsTable.modifierOptionId,
-        ),
-      )
-      .where(
-        and(
-          eq(catalogVariantModifierGroupsTable.id, mod.variantModifierGroupId),
-          eq(catalogModifierGroupOptionsTable.id, mod.modifierGroupOptionId),
-        ),
-      )
-      .limit(1);
-    const row = rows[0];
-    if (!row) {
-      throw new CheckoutError(
-        "CHECKOUT_MODIFIER_INVALID",
-        "Modifier labels could not be resolved.",
-      );
-    }
+    const names = await loadEffectiveModifierLabels(
+      context,
+      mod.variantModifierGroupId,
+      mod.modifierGroupOptionId,
+    );
     modifiers.push(
       Object.freeze({
         variantModifierGroupId: mod.variantModifierGroupId,
         modifierGroupOptionId: mod.modifierGroupOptionId,
-        groupName: row.groupName,
-        optionName: row.optionName,
+        groupName: names.groupName,
+        optionName: names.optionName,
       }),
     );
   }
@@ -217,8 +249,7 @@ async function loadLabelsForLine(
       .select({
         groupName: catalogBundleGroupsTable.name,
         selectedVariantId: catalogBundleGroupOptionsTable.componentVariantId,
-        optionName: catalogVariantsTable.name,
-        variantName: catalogVariantsTable.name,
+        componentVariant: catalogVariantsTable,
       })
       .from(catalogBundleGroupOptionsTable)
       .innerJoin(
@@ -237,60 +268,37 @@ async function loadLabelsForLine(
       )
       .where(eq(catalogBundleGroupOptionsTable.id, bundle.bundleGroupOptionId))
       .limit(1);
-    const row = rows[0];
-    if (!row) {
+    const bundleRow = rows[0];
+    if (!bundleRow) {
       throw new CheckoutError(
         "CHECKOUT_BUNDLE_INVALID",
         "Bundle labels could not be resolved.",
       );
     }
+    const componentVariantContent = await loadEffectiveVariantContent(
+      context,
+      bundleRow.componentVariant,
+    );
+    if (!componentVariantContent) {
+      throw new CheckoutError(
+        "CHECKOUT_BUNDLE_INVALID",
+        "Bundle labels could not be resolved from effective Catalog content.",
+      );
+    }
 
     const nestedMods = [];
     for (const mod of bundle.modifiers) {
-      const modRows = await context.db
-        .select({
-          groupName: catalogModifierGroupsTable.name,
-          optionName: catalogModifierOptionsTable.name,
-        })
-        .from(catalogVariantModifierGroupsTable)
-        .innerJoin(
-          catalogModifierGroupsTable,
-          eq(
-            catalogModifierGroupsTable.id,
-            catalogVariantModifierGroupsTable.modifierGroupId,
-          ),
-        )
-        .innerJoin(
-          catalogModifierGroupOptionsTable,
-          eq(catalogModifierGroupOptionsTable.id, mod.modifierGroupOptionId),
-        )
-        .innerJoin(
-          catalogModifierOptionsTable,
-          eq(
-            catalogModifierOptionsTable.id,
-            catalogModifierGroupOptionsTable.modifierOptionId,
-          ),
-        )
-        .where(
-          and(
-            eq(catalogVariantModifierGroupsTable.id, mod.variantModifierGroupId),
-            eq(catalogModifierGroupOptionsTable.id, mod.modifierGroupOptionId),
-          ),
-        )
-        .limit(1);
-      const modRow = modRows[0];
-      if (!modRow) {
-        throw new CheckoutError(
-          "CHECKOUT_MODIFIER_INVALID",
-          "Bundle modifier labels could not be resolved.",
-        );
-      }
+      const names = await loadEffectiveModifierLabels(
+        context,
+        mod.variantModifierGroupId,
+        mod.modifierGroupOptionId,
+      );
       nestedMods.push(
         Object.freeze({
           variantModifierGroupId: mod.variantModifierGroupId,
           modifierGroupOptionId: mod.modifierGroupOptionId,
-          groupName: modRow.groupName,
-          optionName: modRow.optionName,
+          groupName: names.groupName,
+          optionName: names.optionName,
         }),
       );
     }
@@ -298,19 +306,19 @@ async function loadLabelsForLine(
     bundleSelections.push(
       Object.freeze({
         bundleGroupOptionId: bundle.bundleGroupOptionId,
-        selectedVariantId: row.selectedVariantId,
-        groupName: row.groupName,
-        optionName: row.optionName,
-        variantName: row.variantName,
+        selectedVariantId: bundleRow.selectedVariantId,
+        groupName: bundleRow.groupName,
+        optionName: componentVariantContent.name,
+        variantName: componentVariantContent.name,
         modifiers: Object.freeze(nestedMods),
       }),
     );
   }
 
   return Object.freeze({
-    productId: variant.productId,
-    productName: variant.productName,
-    variantName: variant.variantName,
+    productId: row.product.id,
+    productName: productContent.name,
+    variantName: variantContent.name,
     modifiers: Object.freeze(modifiers),
     bundleSelections: Object.freeze(bundleSelections),
   });

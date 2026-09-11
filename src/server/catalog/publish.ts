@@ -4,13 +4,17 @@
  * Primary rows mirror the latest draft for admin LWW display of name/etc.
  * Customer projection reads effective content revision rows only.
  *
+ * Canonical lock order for material draft / lifecycle mutation and publish:
+ *   Brand envelope FOR UPDATE → affected entity/binding FOR UPDATE → validate
+ *   CAS → mutate → advance envelope.
  * Every material draft save advances the Brand content envelope so that a
  * previously reviewed `expectedContentRevision` can never publish content the
  * reviewer did not see. `publishCatalogContentChange` locks the whole
  * product-rooted envelope before validation, applies effective pointers by
  * entity lifecycle (active publishes the draft, retired clears customer
  * visibility, draft stays unpublished), and is a no-op — no envelope bump, no
- * audit event, no pointer switch — when nothing in the envelope would change.
+ * audit event, no pointer switch — when material effective truth is unchanged
+ * (AC-IMP-036F-011-05), even if draft revision IDs differ after A→B→A edits.
  */
 import { and, eq, inArray, ne } from "drizzle-orm";
 
@@ -55,7 +59,6 @@ import { assertUuid } from "./lifecycle";
 import {
   advanceBrandContentRevision,
   assertExpectedContentRevision,
-  ensureBrandContentRevision,
   ensureModifierGroupContentRevision1,
   ensureModifierGroupOptionContentRevision1,
   ensureModifierOptionContentRevision1,
@@ -105,6 +108,38 @@ async function lockVariantForDraft(
     throw new CatalogInvalidStateError({ message: "Cannot draft content for a retired variant." });
   }
   return row;
+}
+
+/**
+ * Soft-read brandId then lock Brand envelope before any entity FOR UPDATE.
+ * Prevents draft-save ↔ publish lock-order cycles (entity then Brand vs Brand then entity).
+ */
+async function lockBrandEnvelopeForProductDraft(
+  context: PersistenceTransactionContext,
+  productId: string,
+): Promise<string> {
+  const soft = await context.db
+    .select({ brandId: catalogProductsTable.brandId })
+    .from(catalogProductsTable)
+    .where(eq(catalogProductsTable.id, productId))
+    .limit(1);
+  if (!soft[0]) throw new CatalogNotFoundError("product");
+  await lockBrandEnvelope(context, soft[0].brandId);
+  return soft[0].brandId;
+}
+
+async function lockBrandEnvelopeForVariantDraft(
+  context: PersistenceTransactionContext,
+  variantId: string,
+): Promise<string> {
+  const soft = await context.db
+    .select({ brandId: catalogVariantsTable.brandId })
+    .from(catalogVariantsTable)
+    .where(eq(catalogVariantsTable.id, variantId))
+    .limit(1);
+  if (!soft[0]) throw new CatalogNotFoundError("variant");
+  await lockBrandEnvelope(context, soft[0].brandId);
+  return soft[0].brandId;
 }
 
 function assertDraftCas(current: bigint, expected: bigint, entityLabel: string): void {
@@ -201,6 +236,7 @@ export async function saveProductContentDraft(
   assertTransactionContext(context, "saveProductContentDraft");
   const productId = assertUuid(input.productId, "productId");
   const expected = parseExpectedContentRevision(input.expectedContentRevision);
+  await lockBrandEnvelopeForProductDraft(context, productId);
   const row = await lockProductForDraft(context, productId);
   await requireCatalogManage(context, input.actor, row.brandId);
 
@@ -211,7 +247,6 @@ export async function saveProductContentDraft(
   }
 
   assertDraftCas(row.draftContentRevision, expected, "Product");
-  await ensureBrandContentRevision(context, row.brandId);
   await ensureProductContentRevision1(context, row);
 
   const name =
@@ -291,6 +326,7 @@ export async function saveVariantContentDraft(
   assertTransactionContext(context, "saveVariantContentDraft");
   const variantId = assertUuid(input.variantId, "variantId");
   const expected = parseExpectedContentRevision(input.expectedContentRevision);
+  await lockBrandEnvelopeForVariantDraft(context, variantId);
   const row = await lockVariantForDraft(context, variantId);
   await requireCatalogManage(context, input.actor, row.brandId);
 
@@ -306,7 +342,6 @@ export async function saveVariantContentDraft(
   }
 
   assertDraftCas(row.draftContentRevision, expected, "Variant");
-  await ensureBrandContentRevision(context, row.brandId);
   await ensureVariantContentRevision1(context, row);
 
   const name =
@@ -396,6 +431,13 @@ export async function saveModifierGroupContentDraft(
   assertTransactionContext(context, "saveModifierGroupContentDraft");
   const modifierGroupId = assertUuid(input.modifierGroupId, "modifierGroupId");
   const expected = parseExpectedContentRevision(input.expectedContentRevision);
+  const soft = await context.db
+    .select({ brandId: catalogModifierGroupsTable.brandId })
+    .from(catalogModifierGroupsTable)
+    .where(eq(catalogModifierGroupsTable.id, modifierGroupId))
+    .limit(1);
+  if (!soft[0]) throw new CatalogNotFoundError("modifier_group");
+  await lockBrandEnvelope(context, soft[0].brandId);
   const rows = await context.db
     .select()
     .from(catalogModifierGroupsTable)
@@ -416,7 +458,6 @@ export async function saveModifierGroupContentDraft(
     });
   }
   assertDraftCas(row.draftContentRevision, expected, "ModifierGroup");
-  await ensureBrandContentRevision(context, row.brandId);
   await ensureModifierGroupContentRevision1(context, row);
 
   const name =
@@ -477,6 +518,13 @@ export async function saveModifierOptionContentDraft(
   assertTransactionContext(context, "saveModifierOptionContentDraft");
   const modifierOptionId = assertUuid(input.modifierOptionId, "modifierOptionId");
   const expected = parseExpectedContentRevision(input.expectedContentRevision);
+  const soft = await context.db
+    .select({ brandId: catalogModifierOptionsTable.brandId })
+    .from(catalogModifierOptionsTable)
+    .where(eq(catalogModifierOptionsTable.id, modifierOptionId))
+    .limit(1);
+  if (!soft[0]) throw new CatalogNotFoundError("modifier_option");
+  await lockBrandEnvelope(context, soft[0].brandId);
   const rows = await context.db
     .select()
     .from(catalogModifierOptionsTable)
@@ -497,7 +545,6 @@ export async function saveModifierOptionContentDraft(
     });
   }
   assertDraftCas(row.draftContentRevision, expected, "ModifierOption");
-  await ensureBrandContentRevision(context, row.brandId);
   await ensureModifierOptionContentRevision1(context, row);
 
   const name =
@@ -567,6 +614,13 @@ export async function saveModifierGroupOptionContentDraft(
   assertTransactionContext(context, "saveModifierGroupOptionContentDraft");
   const bindingId = assertUuid(input.modifierGroupOptionId, "modifierGroupOptionId");
   const expected = parseExpectedContentRevision(input.expectedContentRevision);
+  const soft = await context.db
+    .select({ brandId: catalogModifierGroupOptionsTable.brandId })
+    .from(catalogModifierGroupOptionsTable)
+    .where(eq(catalogModifierGroupOptionsTable.id, bindingId))
+    .limit(1);
+  if (!soft[0]) throw new CatalogNotFoundError("modifier_group_option");
+  await lockBrandEnvelope(context, soft[0].brandId);
   const rows = await context.db
     .select()
     .from(catalogModifierGroupOptionsTable)
@@ -594,7 +648,6 @@ export async function saveModifierGroupOptionContentDraft(
   }
 
   assertDraftCas(row.draftContentRevision, expected, "modifierGroupOption");
-  await ensureBrandContentRevision(context, row.brandId);
   await ensureModifierGroupOptionContentRevision1(context, row);
 
   const minQuantity =
@@ -691,6 +744,13 @@ export async function saveVariantModifierGroupContentDraft(
   assertTransactionContext(context, "saveVariantModifierGroupContentDraft");
   const bindingId = assertUuid(input.variantModifierGroupId, "variantModifierGroupId");
   const expected = parseExpectedContentRevision(input.expectedContentRevision);
+  const soft = await context.db
+    .select({ brandId: catalogVariantModifierGroupsTable.brandId })
+    .from(catalogVariantModifierGroupsTable)
+    .where(eq(catalogVariantModifierGroupsTable.id, bindingId))
+    .limit(1);
+  if (!soft[0]) throw new CatalogNotFoundError("variant_modifier_group");
+  await lockBrandEnvelope(context, soft[0].brandId);
   const rows = await context.db
     .select()
     .from(catalogVariantModifierGroupsTable)
@@ -717,7 +777,6 @@ export async function saveVariantModifierGroupContentDraft(
   }
 
   assertDraftCas(row.draftContentRevision, expected, "variantModifierGroup");
-  await ensureBrandContentRevision(context, row.brandId);
   await ensureVariantModifierGroupContentRevision1(context, row);
 
   const minTotalQuantity =
@@ -836,6 +895,14 @@ type PublicationEntity = Readonly<{
   effectiveContentRevision: bigint | null;
 }>;
 
+type PublicationEntityKind =
+  | "product"
+  | "variant"
+  | "modifier_group"
+  | "modifier_option"
+  | "modifier_group_option"
+  | "variant_modifier_group";
+
 /**
  * Effective pointer this publication would install:
  * `bigint` publishes the draft, `null` withdraws customer visibility, and
@@ -849,10 +916,170 @@ function plannedEffectiveContentRevision(
   return undefined;
 }
 
-function hasMaterialEffectiveDifference(entity: PublicationEntity): boolean {
+async function loadRevisionRow(
+  context: PersistenceTransactionContext,
+  kind: PublicationEntityKind,
+  entityId: string,
+  contentRevision: bigint,
+): Promise<Record<string, unknown> | null> {
+  switch (kind) {
+    case "product": {
+      const rows = await context.db
+        .select()
+        .from(catalogProductContentRevisionsTable)
+        .where(
+          and(
+            eq(catalogProductContentRevisionsTable.productId, entityId),
+            eq(catalogProductContentRevisionsTable.contentRevision, contentRevision),
+          ),
+        )
+        .limit(1);
+      return rows[0] ?? null;
+    }
+    case "variant": {
+      const rows = await context.db
+        .select()
+        .from(catalogVariantContentRevisionsTable)
+        .where(
+          and(
+            eq(catalogVariantContentRevisionsTable.variantId, entityId),
+            eq(catalogVariantContentRevisionsTable.contentRevision, contentRevision),
+          ),
+        )
+        .limit(1);
+      return rows[0] ?? null;
+    }
+    case "modifier_group": {
+      const rows = await context.db
+        .select()
+        .from(catalogModifierGroupContentRevisionsTable)
+        .where(
+          and(
+            eq(catalogModifierGroupContentRevisionsTable.modifierGroupId, entityId),
+            eq(
+              catalogModifierGroupContentRevisionsTable.contentRevision,
+              contentRevision,
+            ),
+          ),
+        )
+        .limit(1);
+      return rows[0] ?? null;
+    }
+    case "modifier_option": {
+      const rows = await context.db
+        .select()
+        .from(catalogModifierOptionContentRevisionsTable)
+        .where(
+          and(
+            eq(catalogModifierOptionContentRevisionsTable.modifierOptionId, entityId),
+            eq(
+              catalogModifierOptionContentRevisionsTable.contentRevision,
+              contentRevision,
+            ),
+          ),
+        )
+        .limit(1);
+      return rows[0] ?? null;
+    }
+    case "modifier_group_option": {
+      const rows = await context.db
+        .select()
+        .from(catalogModifierGroupOptionContentRevisionsTable)
+        .where(
+          and(
+            eq(catalogModifierGroupOptionContentRevisionsTable.bindingId, entityId),
+            eq(
+              catalogModifierGroupOptionContentRevisionsTable.contentRevision,
+              contentRevision,
+            ),
+          ),
+        )
+        .limit(1);
+      return rows[0] ?? null;
+    }
+    case "variant_modifier_group": {
+      const rows = await context.db
+        .select()
+        .from(catalogVariantModifierGroupContentRevisionsTable)
+        .where(
+          and(
+            eq(catalogVariantModifierGroupContentRevisionsTable.bindingId, entityId),
+            eq(
+              catalogVariantModifierGroupContentRevisionsTable.contentRevision,
+              contentRevision,
+            ),
+          ),
+        )
+        .limit(1);
+      return rows[0] ?? null;
+    }
+  }
+}
+
+function materialFieldsEqual(
+  kind: PublicationEntityKind,
+  draft: Record<string, unknown>,
+  effective: Record<string, unknown>,
+): boolean {
+  switch (kind) {
+    case "product":
+    case "modifier_group":
+    case "modifier_option":
+      return draft.name === effective.name && draft.description === effective.description;
+    case "variant":
+      return (
+        draft.name === effective.name &&
+        draft.description === effective.description &&
+        draft.isDefault === effective.isDefault &&
+        draft.isSelectorVisible === effective.isSelectorVisible
+      );
+    case "modifier_group_option":
+      return (
+        draft.minQuantity === effective.minQuantity &&
+        draft.maxQuantity === effective.maxQuantity &&
+        draft.defaultQuantity === effective.defaultQuantity &&
+        draft.position === effective.position &&
+        draft.lifecycleStatus === effective.lifecycleStatus
+      );
+    case "variant_modifier_group":
+      return (
+        draft.minTotalQuantity === effective.minTotalQuantity &&
+        draft.maxTotalQuantity === effective.maxTotalQuantity &&
+        draft.position === effective.position &&
+        draft.lifecycleStatus === effective.lifecycleStatus
+      );
+  }
+}
+
+/**
+ * AC-IMP-036F-011-05: material no-op compares planned effective truth against
+ * current effective truth. Pointer identity alone is insufficient (A→B→A).
+ */
+async function hasMaterialEffectiveDifference(
+  context: PersistenceTransactionContext,
+  kind: PublicationEntityKind,
+  entity: PublicationEntity,
+): Promise<boolean> {
   const planned = plannedEffectiveContentRevision(entity);
   if (planned === undefined) return false;
-  return planned !== entity.effectiveContentRevision;
+  if (planned === entity.effectiveContentRevision) return false;
+
+  // Existence change: first publish or retire/withdraw.
+  if (planned === null || entity.effectiveContentRevision == null) {
+    return true;
+  }
+
+  const draft = await loadRevisionRow(context, kind, entity.id, planned);
+  const effective = await loadRevisionRow(
+    context,
+    kind,
+    entity.id,
+    entity.effectiveContentRevision,
+  );
+  // Missing revision rows cannot prove equivalence — treat as material so
+  // publish does not silently skip a broken candidate.
+  if (!draft || !effective) return true;
+  return !materialFieldsEqual(kind, draft, effective);
 }
 
 /**
@@ -946,16 +1173,51 @@ export async function publishCatalogContentChange(
   for (const b of groupOptions) await ensureModifierGroupOptionContentRevision1(context, b, now);
   for (const b of vmgs) await ensureVariantModifierGroupContentRevision1(context, b, now);
 
-  const envelopeEntities: PublicationEntity[] = [
-    product,
-    ...variants,
-    ...groups,
-    ...options,
-    ...groupOptions,
-    ...vmgs,
+  const envelopeEntities: Array<{
+    kind: PublicationEntityKind;
+    entity: PublicationEntity;
+    table:
+      | typeof catalogProductsTable
+      | typeof catalogVariantsTable
+      | typeof catalogModifierGroupsTable
+      | typeof catalogModifierOptionsTable
+      | typeof catalogModifierGroupOptionsTable
+      | typeof catalogVariantModifierGroupsTable;
+  }> = [
+    { kind: "product", entity: product, table: catalogProductsTable },
+    ...variants.map((entity) => ({
+      kind: "variant" as const,
+      entity,
+      table: catalogVariantsTable,
+    })),
+    ...groups.map((entity) => ({
+      kind: "modifier_group" as const,
+      entity,
+      table: catalogModifierGroupsTable,
+    })),
+    ...options.map((entity) => ({
+      kind: "modifier_option" as const,
+      entity,
+      table: catalogModifierOptionsTable,
+    })),
+    ...groupOptions.map((entity) => ({
+      kind: "modifier_group_option" as const,
+      entity,
+      table: catalogModifierGroupOptionsTable,
+    })),
+    ...vmgs.map((entity) => ({
+      kind: "variant_modifier_group" as const,
+      entity,
+      table: catalogVariantModifierGroupsTable,
+    })),
   ];
 
-  if (!envelopeEntities.some(hasMaterialEffectiveDifference)) {
+  const materialFlags = await Promise.all(
+    envelopeEntities.map(({ kind, entity }) =>
+      hasMaterialEffectiveDifference(context, kind, entity),
+    ),
+  );
+  if (!materialFlags.some(Boolean)) {
     return {
       changed: false,
       contentRevision: expected,
@@ -973,11 +1235,14 @@ export async function publishCatalogContentChange(
       | typeof catalogModifierOptionsTable
       | typeof catalogModifierGroupOptionsTable
       | typeof catalogVariantModifierGroupsTable,
+    kind: PublicationEntityKind,
     entity: PublicationEntity,
   ): Promise<void> {
     const planned = plannedEffectiveContentRevision(entity);
     // Draft-lifecycle entities stay unpublished; leave their pointer untouched.
     if (planned === undefined) return;
+    // Do not switch pointers merely because draft revision IDs differ (A→B→A).
+    if (!(await hasMaterialEffectiveDifference(context, kind, entity))) return;
     await context.db
       .update(table)
       .set({
@@ -987,12 +1252,9 @@ export async function publishCatalogContentChange(
       .where(eq(table.id, entity.id));
   }
 
-  await applyEffective(catalogProductsTable, product);
-  for (const v of variants) await applyEffective(catalogVariantsTable, v);
-  for (const g of groups) await applyEffective(catalogModifierGroupsTable, g);
-  for (const o of options) await applyEffective(catalogModifierOptionsTable, o);
-  for (const b of groupOptions) await applyEffective(catalogModifierGroupOptionsTable, b);
-  for (const b of vmgs) await applyEffective(catalogVariantModifierGroupsTable, b);
+  for (const item of envelopeEntities) {
+    await applyEffective(item.table, item.kind, item.entity);
+  }
 
   const newEnvelope = expected + BigInt(1);
   await context.db

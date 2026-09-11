@@ -40,6 +40,7 @@ import {
   assertInPlaceContentMutationAllowed,
   ensureProductContentRevision1,
   ensurePublicationCandidateBootstrap,
+  lockBrandEnvelope,
 } from "./revisions";
 import type {
   CatalogProduct,
@@ -194,6 +195,20 @@ export async function activateProduct(
   assertCanTransition(existing.lifecycleStatus, "active");
   await assertProductGraphReady(context, productId);
 
+  // Brand envelope before entity — same order as publishCatalogContentChange.
+  await lockBrandEnvelope(context, existing.brandId);
+  const locked = await context.db
+    .select()
+    .from(catalogProductsTable)
+    .where(eq(catalogProductsTable.id, productId))
+    .for("update")
+    .limit(1);
+  if (!locked[0]) throw new CatalogNotFoundError("product");
+  assertCanTransition(
+    locked[0].lifecycleStatus as "draft" | "active" | "retired",
+    "active",
+  );
+
   const stamps = activationTimestamps();
   await context.db
     .update(catalogProductsTable)
@@ -244,7 +259,17 @@ export async function retireProduct(
     throw error;
   }
 
-  const stamps = retirementTimestamps(existing.lifecycleStatus, existing.activatedAt);
+  await lockBrandEnvelope(context, existing.brandId);
+  const locked = await context.db
+    .select()
+    .from(catalogProductsTable)
+    .where(eq(catalogProductsTable.id, productId))
+    .for("update")
+    .limit(1);
+  if (!locked[0]) throw new CatalogNotFoundError("product");
+  assertCanTransition(locked[0].lifecycleStatus as CatalogLifecycleStatus, "retired");
+
+  const stamps = retirementTimestamps(locked[0].lifecycleStatus as CatalogLifecycleStatus, locked[0].activatedAt);
   await context.db
     .update(catalogProductsTable)
     .set({

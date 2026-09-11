@@ -42,6 +42,7 @@ import {
   assertInPlaceContentMutationAllowed,
   ensurePublicationCandidateBootstrap,
   ensureVariantContentRevision1,
+  lockBrandEnvelope,
 } from "./revisions";
 import type {
   CatalogVariant,
@@ -211,6 +212,7 @@ export async function createVariant(
   }
 
   if (isDefault) {
+    await lockBrandEnvelope(context, product.brandId);
     const { stagedContentChange } = await clearOtherDefaults(context, product.id, id);
     if (stagedContentChange) {
       await advanceBrandContentRevision(context, product.brandId, now);
@@ -268,6 +270,7 @@ export async function updateVariant(
   const isSelectorVisible = input.isSelectorVisible ?? existing.isSelectorVisible;
 
   if (isDefault) {
+    await lockBrandEnvelope(context, existing.brandId);
     const { stagedContentChange } = await clearOtherDefaults(
       context,
       existing.productId,
@@ -314,6 +317,15 @@ export async function activateVariant(
   await requireCatalogManage(context, input.actor, existing.brandId);
 
   assertCanTransition(existing.lifecycleStatus, "active");
+  await lockBrandEnvelope(context, existing.brandId);
+  const locked = await context.db
+    .select()
+    .from(catalogVariantsTable)
+    .where(eq(catalogVariantsTable.id, variantId))
+    .for("update")
+    .limit(1);
+  if (!locked[0]) throw new CatalogNotFoundError("variant");
+  assertCanTransition(locked[0].lifecycleStatus as CatalogLifecycleStatus, "active");
   const stamps = activationTimestamps();
   await context.db
     .update(catalogVariantsTable)
@@ -353,7 +365,16 @@ export async function retireVariant(
   await requireCatalogManage(context, input.actor, existing.brandId);
 
   assertCanTransition(existing.lifecycleStatus, "retired");
-  const stamps = retirementTimestamps(existing.lifecycleStatus, existing.activatedAt);
+  await lockBrandEnvelope(context, existing.brandId);
+  const locked = await context.db
+    .select()
+    .from(catalogVariantsTable)
+    .where(eq(catalogVariantsTable.id, variantId))
+    .for("update")
+    .limit(1);
+  if (!locked[0]) throw new CatalogNotFoundError("variant");
+  assertCanTransition(locked[0].lifecycleStatus as CatalogLifecycleStatus, "retired");
+  const stamps = retirementTimestamps(locked[0].lifecycleStatus as CatalogLifecycleStatus, locked[0].activatedAt);
   await context.db
     .update(catalogVariantsTable)
     .set({

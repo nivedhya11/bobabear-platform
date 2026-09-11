@@ -51,6 +51,7 @@ import {
   ensureModifierOptionContentRevision1,
   ensurePublicationCandidateBootstrap,
   ensureVariantModifierGroupContentRevision1,
+  lockBrandEnvelope,
 } from "./revisions";
 import type {
   AddModifierOptionToGroupInput,
@@ -425,6 +426,7 @@ export async function activateModifierGroup(
   await requireCatalogManage(context, input.actor, existing.brandId);
 
   assertCanTransition(existing.lifecycleStatus, "active");
+  await lockBrandEnvelope(context, existing.brandId);
   const stamps = activationTimestamps();
   await context.db
     .update(catalogModifierGroupsTable)
@@ -463,6 +465,7 @@ export async function retireModifierGroup(
   await requireCatalogManage(context, input.actor, existing.brandId);
 
   assertCanTransition(existing.lifecycleStatus, "retired");
+  await lockBrandEnvelope(context, existing.brandId);
   const stamps = retirementTimestamps(existing.lifecycleStatus, existing.activatedAt);
   await context.db
     .update(catalogModifierGroupsTable)
@@ -589,6 +592,7 @@ export async function activateModifierOption(
   await requireCatalogManage(context, input.actor, existing.brandId);
 
   assertCanTransition(existing.lifecycleStatus, "active");
+  await lockBrandEnvelope(context, existing.brandId);
   const stamps = activationTimestamps();
   await context.db
     .update(catalogModifierOptionsTable)
@@ -627,6 +631,7 @@ export async function retireModifierOption(
   await requireCatalogManage(context, input.actor, existing.brandId);
 
   assertCanTransition(existing.lifecycleStatus, "retired");
+  await lockBrandEnvelope(context, existing.brandId);
   const stamps = retirementTimestamps(existing.lifecycleStatus, existing.activatedAt);
   await context.db
     .update(catalogModifierOptionsTable)
@@ -783,6 +788,7 @@ export async function activateModifierGroupOption(
   await requireCatalogManage(context, input.actor, existing.brandId);
 
   assertCanTransition(existing.lifecycleStatus, "active");
+  await lockBrandEnvelope(context, existing.brandId);
   const stamps = activationTimestamps();
   try {
     await context.db
@@ -835,6 +841,7 @@ export async function retireModifierGroupOption(
   await requireCatalogManage(context, input.actor, existing.brandId);
 
   assertCanTransition(existing.lifecycleStatus, "retired");
+  await lockBrandEnvelope(context, existing.brandId);
   const stamps = retirementTimestamps(existing.lifecycleStatus, existing.activatedAt);
   await context.db
     .update(catalogModifierGroupOptionsTable)
@@ -994,6 +1001,7 @@ export async function activateVariantModifierGroup(
   await requireCatalogManage(context, input.actor, existing.brandId);
 
   assertCanTransition(existing.lifecycleStatus, "active");
+  await lockBrandEnvelope(context, existing.brandId);
   const stamps = activationTimestamps();
   try {
     await context.db
@@ -1047,6 +1055,7 @@ export async function retireVariantModifierGroup(
   await requireCatalogManage(context, input.actor, existing.brandId);
 
   assertCanTransition(existing.lifecycleStatus, "retired");
+  await lockBrandEnvelope(context, existing.brandId);
   const stamps = retirementTimestamps(existing.lifecycleStatus, existing.activatedAt);
   await context.db
     .update(catalogVariantModifierGroupsTable)

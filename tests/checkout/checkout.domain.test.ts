@@ -591,11 +591,14 @@ describe("IMP-021 checkout domain — evaluate commercial", () => {
 
         await persistence.withContext(async (ctx) => {
           const now = new Date();
+          // Published retirement withdraws the effective pointer; primary lifecycle
+          // alone must not invalidate checkout before Catalog publication.
           await ctx.db.execute(sql`
             update app.catalog_variants
             set lifecycle_status = 'retired',
                 retired_at = ${now},
-                updated_at = ${now}
+                updated_at = ${now},
+                effective_content_revision = null
             where id = ${catalog.variantId}::uuid
           `);
         });
@@ -1127,14 +1130,15 @@ describe("IMP-021 checkout domain — evaluate commercial", () => {
           opts,
         );
 
-        // Line A: retire the original harness variant → CHECKOUT_VARIANT_INVALID.
+        // Line A: published retirement withdraws effective pointer → CHECKOUT_VARIANT_INVALID.
         await persistence.withContext(async (ctx) => {
           const now = new Date();
           await ctx.db.execute(sql`
             update app.catalog_variants
             set lifecycle_status = 'retired',
                 retired_at = ${now},
-                updated_at = ${now}
+                updated_at = ${now},
+                effective_content_revision = null
             where id = ${catalog.variantId}::uuid
           `);
         });

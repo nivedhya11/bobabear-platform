@@ -171,6 +171,28 @@ export type ActiveStandardVariant = Readonly<{
  * Create, activate, and publish a standard product with one default variant.
  * Publication is required for the variant to be customer-effective (IMP-036F).
  */
+export async function publishBrandProduct(
+  persistence: Persistence,
+  actor: unknown,
+  brandId: string,
+  productId: string,
+): Promise<void> {
+  await persistence.transaction(async (tx) => {
+    const envelope = await tx.db
+      .select()
+      .from(catalogContentRevisionsTable)
+      .where(eq(catalogContentRevisionsTable.brandId, brandId))
+      .limit(1);
+    if (!envelope[0]) throw new Error("missing brand content revision");
+    await publishCatalogContentChange(tx, {
+      actor,
+      brandId,
+      productId,
+      expectedContentRevision: envelope[0].contentRevision,
+    });
+  });
+}
+
 export async function createActiveStandardVariant(
   persistence: Persistence,
   actor: unknown,
@@ -199,19 +221,8 @@ export async function createActiveStandardVariant(
   await persistence.transaction(async (tx) => {
     await activateVariant(tx, { actor, variantId: variant.id });
     await activateProduct(tx, { actor, productId: product.id });
-    const envelope = await tx.db
-      .select()
-      .from(catalogContentRevisionsTable)
-      .where(eq(catalogContentRevisionsTable.brandId, brandId))
-      .limit(1);
-    if (!envelope[0]) throw new Error("missing brand content revision");
-    await publishCatalogContentChange(tx, {
-      actor,
-      brandId,
-      productId: product.id,
-      expectedContentRevision: envelope[0].contentRevision,
-    });
   });
+  await publishBrandProduct(persistence, actor, brandId, product.id);
   return { productId: product.id, variantId: variant.id };
 }
 

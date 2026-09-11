@@ -20,6 +20,11 @@ import {
   catalogVariantsTable,
 } from "../../platform/database/schema/catalog";
 import type { CatalogProduct, CatalogVariant } from "../catalog/types";
+import {
+  loadEffectiveModifierGroupOptionContent,
+  loadEffectiveModifierOptionContent,
+  loadEffectiveVariantModifierGroupContent,
+} from "../catalog/revisions";
 import type { PersistenceQueryContext } from "../persistence/types";
 import {
   loadActiveBrandVariantIncludes,
@@ -220,6 +225,8 @@ async function loadModifierFeasibilityByVariantId(
     return { feasibilityByVariantId, modifierOptionIds };
   }
 
+  // Load candidate bindings without primary lifecycle filter — effective
+  // revision lifecycle + quantities are authoritative for customer feasibility.
   const bindings = await context.db
     .select()
     .from(catalogVariantModifierGroupsTable)
@@ -227,7 +234,6 @@ async function loadModifierFeasibilityByVariantId(
       and(
         eq(catalogVariantModifierGroupsTable.brandId, brandId),
         inArray(catalogVariantModifierGroupsTable.variantId, [...variantIds]),
-        eq(catalogVariantModifierGroupsTable.lifecycleStatus, "active"),
       ),
     );
   if (bindings.length === 0) {
@@ -242,46 +248,50 @@ async function loadModifierFeasibilityByVariantId(
       and(
         eq(catalogModifierGroupOptionsTable.brandId, brandId),
         inArray(catalogModifierGroupOptionsTable.modifierGroupId, groupIds),
-        eq(catalogModifierGroupOptionsTable.lifecycleStatus, "active"),
       ),
     );
 
   const optionIds = [...new Set(groupOptionRows.map((row) => row.modifierOptionId))];
-  const activeOptionRows =
+  const optionRows =
     optionIds.length === 0
       ? []
       : await context.db
-          .select({ id: catalogModifierOptionsTable.id })
+          .select()
           .from(catalogModifierOptionsTable)
           .where(
             and(
               eq(catalogModifierOptionsTable.brandId, brandId),
               inArray(catalogModifierOptionsTable.id, optionIds),
-              eq(catalogModifierOptionsTable.lifecycleStatus, "active"),
             ),
           );
-  const activeOptionIds = new Set(activeOptionRows.map((row) => row.id));
+  const optionById = new Map(optionRows.map((row) => [row.id, row]));
 
-  const optionsByGroupId = new Map<
+  const effectiveOptionsByGroupId = new Map<
     string,
     Array<{ modifierOptionId: string; maxQuantity: number | null }>
   >();
   for (const row of groupOptionRows) {
-    if (!activeOptionIds.has(row.modifierOptionId)) continue;
-    const list = optionsByGroupId.get(row.modifierGroupId) ?? [];
+    const bindingContent = await loadEffectiveModifierGroupOptionContent(context, row);
+    if (!bindingContent || bindingContent.lifecycleStatus !== "active") continue;
+    const option = optionById.get(row.modifierOptionId);
+    if (!option || option.effectiveContentRevision == null) continue;
+    if ((await loadEffectiveModifierOptionContent(context, option)) == null) continue;
+    const list = effectiveOptionsByGroupId.get(row.modifierGroupId) ?? [];
     list.push({
       modifierOptionId: row.modifierOptionId,
-      maxQuantity: row.maxQuantity,
+      maxQuantity: bindingContent.maxQuantity,
     });
-    optionsByGroupId.set(row.modifierGroupId, list);
+    effectiveOptionsByGroupId.set(row.modifierGroupId, list);
     modifierOptionIds.push(row.modifierOptionId);
   }
 
   for (const binding of bindings) {
-    const options = optionsByGroupId.get(binding.modifierGroupId) ?? [];
+    const vmgContent = await loadEffectiveVariantModifierGroupContent(context, binding);
+    if (!vmgContent || vmgContent.lifecycleStatus !== "active") continue;
+    const options = effectiveOptionsByGroupId.get(binding.modifierGroupId) ?? [];
     const list = feasibilityByVariantId.get(binding.variantId) ?? [];
     list.push({
-      minTotalQuantity: binding.minTotalQuantity,
+      minTotalQuantity: vmgContent.minTotalQuantity,
       options: Object.freeze(options.map((option) => Object.freeze(option))),
     });
     feasibilityByVariantId.set(binding.variantId, list);
