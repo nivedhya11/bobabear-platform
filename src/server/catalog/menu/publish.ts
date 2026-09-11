@@ -1,9 +1,11 @@
 /**
- * publishMenuRevision + previewMenuPublication (IMP-036F F3A).
+ * publishMenuRevision + previewMenuPublication (IMP-036F F3A / F3B).
  *
  * Lock order for publication: Brand FOR UPDATE → Brand Menus (id order) →
  * candidate MenuVersion → section/entry children → validate → material diff →
  * atomic pointer switch + exclusive active Menu.
+ *
+ * Preview is non-authoring: it never creates a draft when none exists.
  */
 import { and, eq, ne } from "drizzle-orm";
 
@@ -30,7 +32,6 @@ import {
   advanceMenuRevision,
   assertExpectedMenuRevision,
   compareMaterialGraphs,
-  ensureDraftMenuVersion,
   loadVersionGraph,
   lockBrandForUpdate,
   lockBrandMenusForUpdate,
@@ -39,10 +40,20 @@ import {
   lockVersionGraphChildren,
   materialGraphFingerprint,
   parseExpectedMenuRevision,
+  type MenuEntryVersionRow,
+  type MenuSectionVersionRow,
 } from "./versions";
 
 function actorId(actor: unknown): string {
   return requireWorkforcePrincipal(actor).workforceUserId;
+}
+
+function isKnownMenuValidationError(error: unknown): boolean {
+  return (
+    error instanceof MenuValidationError ||
+    error instanceof MenuInvalidStateError ||
+    error instanceof MenuNotFoundError
+  );
 }
 
 export type PublishMenuRevisionInput = Readonly<{
@@ -61,6 +72,38 @@ export type PublishMenuRevisionResult = Readonly<{
   previousEffectiveMenuVersionId: string | null;
 }>;
 
+export type MenuPublicationSectionChanges = Readonly<{
+  added: readonly string[];
+  retired: readonly string[];
+  activated: readonly string[];
+  renamed: readonly string[];
+  descriptionChanged: readonly string[];
+  reparented: readonly string[];
+  reordered: readonly string[];
+}>;
+
+export type MenuPublicationEntryChanges = Readonly<{
+  added: readonly string[];
+  retired: readonly string[];
+  activated: readonly string[];
+  moved: readonly string[];
+  reordered: readonly string[];
+  displayNameChanged: readonly string[];
+  displayDescriptionChanged: readonly string[];
+}>;
+
+export type MenuPublicationChanges = Readonly<{
+  sections: MenuPublicationSectionChanges;
+  entries: MenuPublicationEntryChanges;
+}>;
+
+export type MenuPublicationActiveMenuEffect = Readonly<{
+  targetBecomesActive: boolean;
+  replacesAnotherActiveMenu: boolean;
+  /** Informational snapshot only — not revision-bound by expectedMenuRevision. */
+  currentActiveMenuId: string | null;
+}>;
+
 export type PreviewMenuPublicationInput = Readonly<{
   actor: unknown;
   menuId: string;
@@ -72,14 +115,153 @@ export type PreviewMenuPublicationResult = Readonly<{
   expectedMenuRevision: string;
   effectiveMenuVersionId: string | null;
   draftMenuVersionId: string | null;
+  draftDiffersFromEffective: boolean;
   wouldChangeCustomerTruth: boolean;
   validationOk: boolean;
   validationBlockers: readonly string[];
+  changes: MenuPublicationChanges;
+  activeMenuEffect: MenuPublicationActiveMenuEffect;
   materialFingerprintDraft: string | null;
   materialFingerprintEffective: string | null;
   operation: "menu_revision_publish";
+  hasPendingDraft: boolean;
 }>;
 
+function emptyChanges(): MenuPublicationChanges {
+  return {
+    sections: {
+      added: [],
+      retired: [],
+      activated: [],
+      renamed: [],
+      descriptionChanged: [],
+      reparented: [],
+      reordered: [],
+    },
+    entries: {
+      added: [],
+      retired: [],
+      activated: [],
+      moved: [],
+      reordered: [],
+      displayNameChanged: [],
+      displayDescriptionChanged: [],
+    },
+  };
+}
+
+export function diffMenuPublicationChanges(
+  draftSections: readonly MenuSectionVersionRow[],
+  draftEntries: readonly MenuEntryVersionRow[],
+  effectiveSections: readonly MenuSectionVersionRow[] | null,
+  effectiveEntries: readonly MenuEntryVersionRow[] | null,
+): MenuPublicationChanges {
+  const effectiveSectionMap = new Map(
+    (effectiveSections ?? []).map((s) => [s.sectionId, s] as const),
+  );
+  const effectiveEntryMap = new Map((effectiveEntries ?? []).map((e) => [e.entryId, e] as const));
+  const draftSectionMap = new Map(draftSections.map((s) => [s.sectionId, s] as const));
+  const draftEntryMap = new Map(draftEntries.map((e) => [e.entryId, e] as const));
+
+  const sectionsAdded: string[] = [];
+  const sectionsRetired: string[] = [];
+  const sectionsActivated: string[] = [];
+  const sectionsRenamed: string[] = [];
+  const sectionsDescriptionChanged: string[] = [];
+  const sectionsReparented: string[] = [];
+  const sectionsReordered: string[] = [];
+
+  for (const draft of draftSections) {
+    const prior = effectiveSectionMap.get(draft.sectionId);
+    if (!prior) {
+      sectionsAdded.push(draft.sectionId);
+      continue;
+    }
+    if (prior.lifecycleStatus !== "retired" && draft.lifecycleStatus === "retired") {
+      sectionsRetired.push(draft.sectionId);
+    }
+    if (prior.lifecycleStatus !== "active" && draft.lifecycleStatus === "active") {
+      sectionsActivated.push(draft.sectionId);
+    }
+    if (prior.name !== draft.name) sectionsRenamed.push(draft.sectionId);
+    if ((prior.description ?? null) !== (draft.description ?? null)) {
+      sectionsDescriptionChanged.push(draft.sectionId);
+    }
+    if ((prior.parentSectionId ?? null) !== (draft.parentSectionId ?? null)) {
+      sectionsReparented.push(draft.sectionId);
+    }
+    if (prior.position !== draft.position) sectionsReordered.push(draft.sectionId);
+  }
+
+  for (const prior of effectiveSections ?? []) {
+    if (!draftSectionMap.has(prior.sectionId) && prior.lifecycleStatus !== "retired") {
+      sectionsRetired.push(prior.sectionId);
+    }
+  }
+
+  const entriesAdded: string[] = [];
+  const entriesRetired: string[] = [];
+  const entriesActivated: string[] = [];
+  const entriesMoved: string[] = [];
+  const entriesReordered: string[] = [];
+  const entriesDisplayNameChanged: string[] = [];
+  const entriesDisplayDescriptionChanged: string[] = [];
+
+  for (const draft of draftEntries) {
+    const prior = effectiveEntryMap.get(draft.entryId);
+    if (!prior) {
+      entriesAdded.push(draft.entryId);
+      continue;
+    }
+    if (prior.lifecycleStatus !== "retired" && draft.lifecycleStatus === "retired") {
+      entriesRetired.push(draft.entryId);
+    }
+    if (prior.lifecycleStatus !== "active" && draft.lifecycleStatus === "active") {
+      entriesActivated.push(draft.entryId);
+    }
+    if (prior.sectionId !== draft.sectionId) entriesMoved.push(draft.entryId);
+    if (prior.position !== draft.position) entriesReordered.push(draft.entryId);
+    if ((prior.displayName ?? null) !== (draft.displayName ?? null)) {
+      entriesDisplayNameChanged.push(draft.entryId);
+    }
+    if ((prior.displayDescription ?? null) !== (draft.displayDescription ?? null)) {
+      entriesDisplayDescriptionChanged.push(draft.entryId);
+    }
+  }
+
+  for (const prior of effectiveEntries ?? []) {
+    if (!draftEntryMap.has(prior.entryId) && prior.lifecycleStatus !== "retired") {
+      entriesRetired.push(prior.entryId);
+    }
+  }
+
+  return {
+    sections: {
+      added: sectionsAdded,
+      retired: sectionsRetired,
+      activated: sectionsActivated,
+      renamed: sectionsRenamed,
+      descriptionChanged: sectionsDescriptionChanged,
+      reparented: sectionsReparented,
+      reordered: sectionsReordered,
+    },
+    entries: {
+      added: entriesAdded,
+      retired: entriesRetired,
+      activated: entriesActivated,
+      moved: entriesMoved,
+      reordered: entriesReordered,
+      displayNameChanged: entriesDisplayNameChanged,
+      displayDescriptionChanged: entriesDisplayDescriptionChanged,
+    },
+  };
+}
+
+/**
+ * Non-authoring consequence preview for deliberate Menu publication.
+ * Does NOT call ensureDraftMenuVersion — no pending draft yields a deterministic
+ * no-candidate response without advancing authoring/audit state.
+ */
 export async function previewMenuPublication(
   context: PersistenceTransactionContext,
   input: PreviewMenuPublicationInput,
@@ -89,16 +271,56 @@ export async function previewMenuPublication(
   const menu = await lockMenuForUpdate(context, menuId);
   await requireMenuManage(context, input.actor, menu.brandId);
 
-  const workforceUserId = actorId(input.actor);
-  const { menu: withDraft, draft } = await ensureDraftMenuVersion(context, {
-    menuId,
-    actorWorkforceUserId: workforceUserId,
-  });
+  const brandMenus = await lockBrandMenusForUpdate(context, menu.brandId);
+  const currentActiveMenuId =
+    brandMenus.find((row) => row.lifecycleStatus === "active" && row.id !== menuId)?.id ??
+    (menu.lifecycleStatus === "active" ? menu.id : null);
+  const otherActiveExists = brandMenus.some(
+    (row) => row.id !== menuId && row.lifecycleStatus === "active",
+  );
 
-  const draftGraph = await loadVersionGraph(context, draft.id);
+  if (!menu.draftMenuVersionId) {
+    let effectiveFingerprint: string | null = null;
+    if (menu.effectiveMenuVersionId) {
+      const effectiveGraph = await loadVersionGraph(context, menu.effectiveMenuVersionId);
+      effectiveFingerprint = materialGraphFingerprint(
+        effectiveGraph.sections,
+        effectiveGraph.entries,
+      );
+    }
+    return {
+      menuId,
+      brandId: menu.brandId,
+      expectedMenuRevision: menu.revision.toString(10),
+      effectiveMenuVersionId: menu.effectiveMenuVersionId,
+      draftMenuVersionId: null,
+      draftDiffersFromEffective: false,
+      wouldChangeCustomerTruth: false,
+      validationOk: false,
+      validationBlockers: [
+        "No draft MenuVersion exists to publish; create draft changes first.",
+      ],
+      changes: emptyChanges(),
+      activeMenuEffect: {
+        targetBecomesActive: false,
+        replacesAnotherActiveMenu: false,
+        currentActiveMenuId,
+      },
+      materialFingerprintDraft: null,
+      materialFingerprintEffective: effectiveFingerprint,
+      operation: "menu_revision_publish",
+      hasPendingDraft: false,
+    };
+  }
+
+  const draftGraph = await loadVersionGraph(context, menu.draftMenuVersionId);
+  let effectiveSections: readonly MenuSectionVersionRow[] | null = null;
+  let effectiveEntries: readonly MenuEntryVersionRow[] | null = null;
   let effectiveFingerprint: string | null = null;
-  if (withDraft.effectiveMenuVersionId) {
-    const effectiveGraph = await loadVersionGraph(context, withDraft.effectiveMenuVersionId);
+  if (menu.effectiveMenuVersionId) {
+    const effectiveGraph = await loadVersionGraph(context, menu.effectiveMenuVersionId);
+    effectiveSections = effectiveGraph.sections;
+    effectiveEntries = effectiveGraph.entries;
     effectiveFingerprint = materialGraphFingerprint(
       effectiveGraph.sections,
       effectiveGraph.entries,
@@ -113,23 +335,95 @@ export async function previewMenuPublication(
 
   const blockers: string[] = [];
   try {
-    await assertMenuGraphReady(context, menuId, { menuVersionId: draft.id });
+    await assertMenuGraphReady(context, menuId, { menuVersionId: menu.draftMenuVersionId });
   } catch (error) {
+    if (!isKnownMenuValidationError(error)) {
+      throw error;
+    }
+    blockers.push(error instanceof Error ? error.message : "Menu graph validation failed.");
+  }
+
+  const changes = diffMenuPublicationChanges(
+    draftGraph.sections,
+    draftGraph.entries,
+    effectiveSections,
+    effectiveEntries,
+  );
+
+  return {
+    menuId,
+    brandId: menu.brandId,
+    expectedMenuRevision: menu.revision.toString(10),
+    effectiveMenuVersionId: menu.effectiveMenuVersionId,
+    draftMenuVersionId: menu.draftMenuVersionId,
+    draftDiffersFromEffective: wouldChange,
+    wouldChangeCustomerTruth: wouldChange,
+    validationOk: blockers.length === 0,
+    validationBlockers: blockers,
+    changes,
+    activeMenuEffect: {
+      targetBecomesActive: wouldChange && menu.lifecycleStatus !== "active",
+      replacesAnotherActiveMenu: wouldChange && otherActiveExists,
+      currentActiveMenuId,
+    },
+    materialFingerprintDraft: draftFingerprint,
+    materialFingerprintEffective: effectiveFingerprint,
+    operation: "menu_revision_publish",
+    hasPendingDraft: true,
+  };
+}
+
+/**
+ * Validate the pending draft graph without publishing or creating a draft.
+ */
+export async function validateMenuPublication(
+  context: PersistenceTransactionContext,
+  input: Readonly<{ actor: unknown; menuId: string }>,
+): Promise<
+  Readonly<{
+    menuId: string;
+    brandId: string;
+    expectedMenuRevision: string;
+    validationOk: boolean;
+    validationBlockers: readonly string[];
+    hasPendingDraft: boolean;
+  }>
+> {
+  assertTransactionContext(context, "validateMenuPublication");
+  const menuId = assertUuid(input.menuId, "menuId");
+  const menu = await lockMenuForUpdate(context, menuId);
+  await requireMenuManage(context, input.actor, menu.brandId);
+
+  if (!menu.draftMenuVersionId) {
+    return {
+      menuId,
+      brandId: menu.brandId,
+      expectedMenuRevision: menu.revision.toString(10),
+      validationOk: false,
+      validationBlockers: [
+        "No draft MenuVersion exists to publish; create draft changes first.",
+      ],
+      hasPendingDraft: false,
+    };
+  }
+
+  const blockers: string[] = [];
+  try {
+    await assertMenuGraphReady(context, menuId, { menuVersionId: menu.draftMenuVersionId });
+  } catch (error) {
+    if (!isKnownMenuValidationError(error)) {
+      throw error;
+    }
     blockers.push(error instanceof Error ? error.message : "Menu graph validation failed.");
   }
 
   return {
     menuId,
-    brandId: withDraft.brandId,
-    expectedMenuRevision: withDraft.revision.toString(),
-    effectiveMenuVersionId: withDraft.effectiveMenuVersionId,
-    draftMenuVersionId: draft.id,
-    wouldChangeCustomerTruth: wouldChange,
+    brandId: menu.brandId,
+    expectedMenuRevision: menu.revision.toString(10),
     validationOk: blockers.length === 0,
     validationBlockers: blockers,
-    materialFingerprintDraft: draftFingerprint,
-    materialFingerprintEffective: effectiveFingerprint,
-    operation: "menu_revision_publish",
+    hasPendingDraft: true,
   };
 }
 
