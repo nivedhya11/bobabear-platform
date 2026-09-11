@@ -2,7 +2,7 @@
  * Menu section commands (IMP-013 / IMP-036F F3A).
  *
  * Material graph edits route through DRAFT MenuVersion authority and mirror
- * legacy rows for admin LWW.
+ * legacy rows for admin LWW. Aggregate CAS via expectedMenuRevision.
  */
 import { randomUUID } from "node:crypto";
 
@@ -36,7 +36,6 @@ import {
 import { insertMenuMutationAuditEvent } from "./audit";
 import { requireMenuManage } from "./authorize-menu";
 import { MenuConflictError, MenuNotFoundError, MenuValidationError } from "./errors";
-import { findMenuById } from "./menus";
 import type { CreateMenuSectionInput, MenuSection, MenuSectionLifecycleInput } from "./types";
 import {
   assertNoActiveChildrenForSection,
@@ -46,8 +45,8 @@ import {
 } from "./validation";
 import {
   advanceMenuRevision,
-  ensureDraftMenuVersion,
-  lockMenuForUpdate,
+  beginMaterialMenuDraftMutation,
+  loadDraftSectionVersion,
   upsertDraftSectionVersion,
 } from "./versions";
 
@@ -67,15 +66,22 @@ export async function createMenuSection(
   input: CreateMenuSectionInput,
 ): Promise<MenuSection> {
   assertTransactionContext(context, "createMenuSection");
-  await requireMenuManage(context, input.actor, input.brandId);
-
   const menuId = assertUuid(input.menuId, "menuId");
   const brandId = assertUuid(input.brandId, "brandId");
-  const menu = await findMenuById(context, menuId);
-  if (!menu) throw new MenuNotFoundError("menu");
-  if (menu.brandId !== brandId) {
-    throw new MenuValidationError({ message: "Section brandId must match the menu brand." });
-  }
+  const workforceUserId = actorId(input.actor);
+
+  const { menu, draft, expected, at } = await beginMaterialMenuDraftMutation(context, {
+    actor: input.actor,
+    menuId,
+    expectedMenuRevision: input.expectedMenuRevision,
+    actorWorkforceUserId: workforceUserId,
+    authorize: async (lockedBrandId) => {
+      await requireMenuManage(context, input.actor, lockedBrandId);
+      if (lockedBrandId !== brandId) {
+        throw new MenuValidationError({ message: "Section brandId must match the menu brand." });
+      }
+    },
+  });
 
   const parentSectionId =
     input.parentSectionId === undefined || input.parentSectionId === null
@@ -89,7 +95,7 @@ export async function createMenuSection(
   });
 
   if (parentSectionId !== null) {
-    const parent = await findMenuSectionById(context, parentSectionId);
+    const parent = await loadDraftSectionVersion(context, draft.id, parentSectionId);
     if (!parent) throw new MenuNotFoundError("menu_section");
     if (parent.menuId !== menuId || parent.brandId !== brandId) {
       throw new MenuValidationError({
@@ -107,8 +113,6 @@ export async function createMenuSection(
   );
   const position = assertNonNegativeInt(input.position ?? 0, "position");
   const id = input.id ? assertUuid(input.id, "id") : randomUUID();
-  const now = new Date();
-  const workforceUserId = actorId(input.actor);
 
   try {
     await context.db.insert(menuSectionsTable).values({
@@ -121,8 +125,8 @@ export async function createMenuSection(
       description,
       position,
       lifecycleStatus: "draft",
-      createdAt: now,
-      updatedAt: now,
+      createdAt: at,
+      updatedAt: at,
       activatedAt: null,
       retiredAt: null,
     });
@@ -132,12 +136,6 @@ export async function createMenuSection(
     }
     throw error;
   }
-
-  const { menu: lockedMenu, draft } = await ensureDraftMenuVersion(context, {
-    menuId,
-    actorWorkforceUserId: workforceUserId,
-    at: now,
-  });
 
   await upsertDraftSectionVersion(context, {
     menuVersionId: draft.id,
@@ -152,11 +150,7 @@ export async function createMenuSection(
     lifecycleStatus: "draft",
   });
 
-  const advanced = await advanceMenuRevision(
-    context,
-    await lockMenuForUpdate(context, menuId),
-    now,
-  );
+  const advanced = await advanceMenuRevision(context, menu, at);
 
   await insertMenuMutationAuditEvent(context, {
     actorWorkforceUserId: workforceUserId,
@@ -166,7 +160,7 @@ export async function createMenuSection(
     menuVersionId: draft.id,
     targetType: "menu_section",
     targetId: id,
-    previousMenuRevision: lockedMenu.revision,
+    previousMenuRevision: expected,
     newMenuRevision: advanced.revision,
     metadata: { op: "create" },
   });
@@ -182,17 +176,23 @@ export async function activateMenuSection(
 ): Promise<MenuSection> {
   assertTransactionContext(context, "activateMenuSection");
   const sectionId = assertUuid(input.sectionId, "sectionId");
-  const existing = await findMenuSectionById(context, sectionId);
+  const identity = await findMenuSectionById(context, sectionId);
+  if (!identity) throw new MenuNotFoundError("menu_section");
+  const workforceUserId = actorId(input.actor);
+
+  const { menu, draft, expected } = await beginMaterialMenuDraftMutation(context, {
+    actor: input.actor,
+    menuId: identity.menuId,
+    expectedMenuRevision: input.expectedMenuRevision,
+    actorWorkforceUserId: workforceUserId,
+    authorize: (brandId) => requireMenuManage(context, input.actor, brandId),
+  });
+
+  const existing = await loadDraftSectionVersion(context, draft.id, sectionId);
   if (!existing) throw new MenuNotFoundError("menu_section");
-  await requireMenuManage(context, input.actor, existing.brandId);
 
-  const menu = await findMenuById(context, existing.menuId);
-  if (!menu) throw new MenuNotFoundError("menu");
-
-  // Version-graph authoring: parent must be active in legacy mirror (admin LWW).
-  // Menu aggregate need not be active when staging the first draft graph.
   if (existing.parentSectionId !== null) {
-    const parent = await findMenuSectionById(context, existing.parentSectionId);
+    const parent = await loadDraftSectionVersion(context, draft.id, existing.parentSectionId);
     if (!parent || parent.lifecycleStatus !== "active") {
       throw new MenuValidationError({
         message: "Cannot activate a child section unless its parent is active.",
@@ -200,9 +200,8 @@ export async function activateMenuSection(
     }
   }
 
-  assertCanTransition(existing.lifecycleStatus, "active");
+  assertCanTransition(existing.lifecycleStatus as MenuLifecycleStatus, "active");
   const stamps = activationTimestamps();
-  const workforceUserId = actorId(input.actor);
 
   await context.db
     .update(menuSectionsTable)
@@ -213,12 +212,6 @@ export async function activateMenuSection(
       updatedAt: stamps.updatedAt,
     })
     .where(eq(menuSectionsTable.id, sectionId));
-
-  const { menu: lockedMenu, draft } = await ensureDraftMenuVersion(context, {
-    menuId: existing.menuId,
-    actorWorkforceUserId: workforceUserId,
-    at: stamps.updatedAt,
-  });
 
   await upsertDraftSectionVersion(context, {
     menuVersionId: draft.id,
@@ -233,13 +226,7 @@ export async function activateMenuSection(
     lifecycleStatus: "active",
   });
 
-  // When menu already has an effective pointer, draft-only change advances revision.
-  // Pre-first-effective staging also advances so reviews stay coherent.
-  const advanced = await advanceMenuRevision(
-    context,
-    await lockMenuForUpdate(context, existing.menuId),
-    stamps.updatedAt,
-  );
+  const advanced = await advanceMenuRevision(context, menu, stamps.updatedAt);
 
   await insertMenuMutationAuditEvent(context, {
     actorWorkforceUserId: workforceUserId,
@@ -249,7 +236,7 @@ export async function activateMenuSection(
     menuVersionId: draft.id,
     targetType: "menu_section",
     targetId: sectionId,
-    previousMenuRevision: lockedMenu.revision,
+    previousMenuRevision: expected,
     newMenuRevision: advanced.revision,
     metadata: { op: "activate" },
   });
@@ -265,19 +252,29 @@ export async function retireMenuSection(
 ): Promise<MenuSection> {
   assertTransactionContext(context, "retireMenuSection");
   const sectionId = assertUuid(input.sectionId, "sectionId");
-  const existing = await findMenuSectionById(context, sectionId);
-  if (!existing) throw new MenuNotFoundError("menu_section");
-  await requireMenuManage(context, input.actor, existing.brandId);
+  const identity = await findMenuSectionById(context, sectionId);
+  if (!identity) throw new MenuNotFoundError("menu_section");
+  const workforceUserId = actorId(input.actor);
 
-  assertCanTransition(existing.lifecycleStatus, "retired");
+  const { menu, draft, expected } = await beginMaterialMenuDraftMutation(context, {
+    actor: input.actor,
+    menuId: identity.menuId,
+    expectedMenuRevision: input.expectedMenuRevision,
+    actorWorkforceUserId: workforceUserId,
+    authorize: (brandId) => requireMenuManage(context, input.actor, brandId),
+  });
+
+  const existing = await loadDraftSectionVersion(context, draft.id, sectionId);
+  if (!existing) throw new MenuNotFoundError("menu_section");
+
+  assertCanTransition(existing.lifecycleStatus as MenuLifecycleStatus, "retired");
   await assertNoActiveChildrenForSection(context, sectionId);
   await assertNoActiveEntriesForSection(context, sectionId);
 
   const stamps = retirementTimestamps(
     existing.lifecycleStatus as MenuLifecycleStatus,
-    existing.activatedAt,
+    identity.activatedAt,
   );
-  const workforceUserId = actorId(input.actor);
 
   await context.db
     .update(menuSectionsTable)
@@ -288,12 +285,6 @@ export async function retireMenuSection(
       updatedAt: stamps.updatedAt,
     })
     .where(eq(menuSectionsTable.id, sectionId));
-
-  const { menu: lockedMenu, draft } = await ensureDraftMenuVersion(context, {
-    menuId: existing.menuId,
-    actorWorkforceUserId: workforceUserId,
-    at: stamps.updatedAt,
-  });
 
   await upsertDraftSectionVersion(context, {
     menuVersionId: draft.id,
@@ -308,11 +299,7 @@ export async function retireMenuSection(
     lifecycleStatus: "retired",
   });
 
-  const advanced = await advanceMenuRevision(
-    context,
-    await lockMenuForUpdate(context, existing.menuId),
-    stamps.updatedAt,
-  );
+  const advanced = await advanceMenuRevision(context, menu, stamps.updatedAt);
 
   await insertMenuMutationAuditEvent(context, {
     actorWorkforceUserId: workforceUserId,
@@ -322,7 +309,7 @@ export async function retireMenuSection(
     menuVersionId: draft.id,
     targetType: "menu_section",
     targetId: sectionId,
-    previousMenuRevision: lockedMenu.revision,
+    previousMenuRevision: expected,
     newMenuRevision: advanced.revision,
     metadata: { op: "retire" },
   });

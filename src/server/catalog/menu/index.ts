@@ -65,9 +65,12 @@ export type { InsertMenuMutationAuditEventInput } from "./audit";
 export {
   advanceMenuRevision,
   assertExpectedMenuRevision,
+  beginMaterialMenuDraftMutation,
   compareMaterialGraphs,
   ensureDraftMenuVersion,
   loadVersionGraph,
+  lockBrandForUpdate,
+  lockBrandMenusForUpdate,
   lockMenuForUpdate,
   materialGraphFingerprint,
   parseExpectedMenuRevision,

@@ -28,7 +28,6 @@ export const MENU_AUDIT_ACTIONS = [
   "menu.entry_changed",
   "menu.publish_attempted",
   "menu.published",
-  "menu.publish_conflict",
   "menu.version_superseded",
 ] as const;
 export type MenuAuditAction = (typeof MENU_AUDIT_ACTIONS)[number];

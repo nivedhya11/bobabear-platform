@@ -17,7 +17,7 @@ import {
 } from "../../src/shared/access-control";
 import { createBrand } from "../../src/server/organization";
 import { getApplicationPersistence } from "../../src/server/persistence";
-import { seedBrandTree } from "./support/access-control-fixtures";
+import { createEligibleWorkforceUser, seedBrandTree } from "./support/access-control-fixtures";
 import { withCatalogRoleFixture } from "./support/catalog-roles";
 import { applyMigrations, withIsolatedTestDatabase } from "./support/test-database";
 
@@ -420,6 +420,77 @@ describe("menu privilege REVOKE", () => {
             await expectPermissionDenied(ctx.db.execute(sql`truncate app.menus`));
             await expectPermissionDenied(ctx.db.execute(sql`truncate app.menu_sections`));
             await expectPermissionDenied(ctx.db.execute(sql`truncate app.menu_entries`));
+            await expectPermissionDenied(ctx.db.execute(sql`truncate app.menu_versions`));
+            await expectPermissionDenied(
+              ctx.db.execute(sql`truncate app.menu_mutation_audit_events`),
+            );
+          });
+        },
+      );
+    });
+  });
+
+  it("allows INSERT on menu_mutation_audit_events but denies UPDATE/DELETE/TRUNCATE", async () => {
+    await withMigratedPersistence(async (persistence, database) => {
+      const tree = await persistence.transaction((tx) => seedBrandTree(tx, "maudit"));
+      const actor = await createEligibleWorkforceUser(persistence);
+      const menuId = randomUUID();
+      const auditId = randomUUID();
+      const now = new Date().toISOString();
+
+      await persistence.withContext(async (ctx) => {
+        await ctx.db.execute(sql`
+          insert into app.menus (
+            id, brand_id, code, name, lifecycle_status, revision, created_at, updated_at
+          ) values (
+            ${menuId}::uuid, ${tree.brand.id}::uuid, 'audit-menu', 'Audit Menu',
+            'draft', 1, ${now}::timestamptz, ${now}::timestamptz
+          )
+        `);
+      });
+
+      await withCatalogRoleFixture(
+        database.databaseName,
+        database.connectionString,
+        async (fixture) => {
+          const appPersistence = getApplicationPersistence(
+            applicationConfig(fixture.applicationConnectionString),
+          );
+          openHandles.push(appPersistence);
+
+          await appPersistence.withContext(async (ctx) => {
+            await ctx.db.execute(sql`
+              insert into app.menu_mutation_audit_events (
+                id, actor_workforce_user_id, action, brand_id, menu_id,
+                target_type, target_id, previous_menu_revision, new_menu_revision, occurred_at
+              ) values (
+                ${auditId}::uuid,
+                ${actor.id},
+                'menu.section_changed',
+                ${tree.brand.id}::uuid,
+                ${menuId}::uuid,
+                'menu',
+                ${menuId}::uuid,
+                1,
+                2,
+                ${now}::timestamptz
+              )
+            `);
+
+            await expectPermissionDenied(
+              ctx.db.execute(sql`
+                update app.menu_mutation_audit_events
+                set action = 'tampered' where id = ${auditId}::uuid
+              `),
+            );
+            await expectPermissionDenied(
+              ctx.db.execute(sql`
+                delete from app.menu_mutation_audit_events where id = ${auditId}::uuid
+              `),
+            );
+            await expectPermissionDenied(
+              ctx.db.execute(sql`truncate app.menu_mutation_audit_events`),
+            );
           });
         },
       );

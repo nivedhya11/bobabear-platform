@@ -1,36 +1,45 @@
 /**
  * publishMenuRevision + previewMenuPublication (IMP-036F F3A).
  *
- * Lock order: Menu FOR UPDATE → candidate MenuVersion → section/entry children
- * (sectionId / entryId order) → validate → material diff → atomic pointer switch.
+ * Lock order for publication: Brand FOR UPDATE → Brand Menus (id order) →
+ * candidate MenuVersion → section/entry children → validate → material diff →
+ * atomic pointer switch + exclusive active Menu.
  */
 import { and, eq, ne } from "drizzle-orm";
 
+import type { MenuLifecycleStatus } from "../../../shared/catalog/menu";
 import { menusTable, menuVersionsTable } from "../../../platform/database/schema/menu";
 import { requireWorkforcePrincipal } from "../../access-control/principal";
 import type { PersistenceTransactionContext } from "../../persistence/types";
 import { assertTransactionContext } from "../assert-role";
-import { assertUuid } from "../lifecycle";
+import {
+  activationTimestamps,
+  assertUuid,
+  retirementTimestamps,
+} from "../lifecycle";
 import { insertMenuMutationAuditEvent } from "./audit";
 import { requireMenuManage } from "./authorize-menu";
 import {
-  MenuConflictError,
   MenuInvalidStateError,
+  MenuNotFoundError,
   MenuValidationError,
 } from "./errors";
+import { findMenuById } from "./menus";
+import { assertMenuGraphReady } from "./validation";
 import {
   advanceMenuRevision,
   assertExpectedMenuRevision,
   compareMaterialGraphs,
   ensureDraftMenuVersion,
   loadVersionGraph,
+  lockBrandForUpdate,
+  lockBrandMenusForUpdate,
   lockMenuForUpdate,
   lockMenuVersionForUpdate,
   lockVersionGraphChildren,
   materialGraphFingerprint,
   parseExpectedMenuRevision,
 } from "./versions";
-import { assertMenuGraphReady } from "./validation";
 
 function actorId(actor: unknown): string {
   return requireWorkforcePrincipal(actor).workforceUserId;
@@ -125,8 +134,8 @@ export async function previewMenuPublication(
 }
 
 /**
- * Atomic MenuVersion publication.
- * Material no-op: changed=false, no menu.published, no pointer switch.
+ * Atomic MenuVersion publication + exclusive Brand active-Menu cutover.
+ * Material no-op: changed=false, no menu.published, no pointer/lifecycle switch.
  */
 export async function publishMenuRevision(
   context: PersistenceTransactionContext,
@@ -137,46 +146,22 @@ export async function publishMenuRevision(
   const expected = parseExpectedMenuRevision(input.expectedMenuRevision);
   const workforceUserId = actorId(input.actor);
 
-  const menu = await lockMenuForUpdate(context, menuId);
-  await requireMenuManage(context, input.actor, menu.brandId);
+  const soft = await findMenuById(context, menuId);
+  if (!soft) throw new MenuNotFoundError("menu");
 
-  try {
-    assertExpectedMenuRevision(menu, expected);
-  } catch (error) {
-    if (error instanceof MenuConflictError) {
-      await insertMenuMutationAuditEvent(context, {
-        actorWorkforceUserId: workforceUserId,
-        action: "menu.publish_conflict",
-        brandId: menu.brandId,
-        menuId: menu.id,
-        menuVersionId: menu.draftMenuVersionId,
-        targetType: "menu",
-        targetId: menu.id,
-        previousMenuRevision: expected,
-        newMenuRevision: menu.revision,
-        metadata: { reason: "MENU_STALE_REVISION" },
-      });
-    }
-    throw error;
-  }
+  await lockBrandForUpdate(context, soft.brandId);
+  const brandMenus = await lockBrandMenusForUpdate(context, soft.brandId);
+  const menu = brandMenus.find((row) => row.id === menuId);
+  if (!menu) throw new MenuNotFoundError("menu");
+
+  await requireMenuManage(context, input.actor, menu.brandId);
+  assertExpectedMenuRevision(menu, expected);
 
   if (menu.lifecycleStatus === "retired") {
     throw new MenuInvalidStateError({
       message: "Cannot publish a menu revision for a retired menu.",
     });
   }
-
-  await insertMenuMutationAuditEvent(context, {
-    actorWorkforceUserId: workforceUserId,
-    action: "menu.publish_attempted",
-    brandId: menu.brandId,
-    menuId: menu.id,
-    menuVersionId: menu.draftMenuVersionId,
-    targetType: "menu",
-    targetId: menu.id,
-    previousMenuRevision: expected,
-    newMenuRevision: expected,
-  });
 
   if (!menu.draftMenuVersionId) {
     throw new MenuValidationError({
@@ -224,6 +209,7 @@ export async function publishMenuRevision(
   }
 
   const now = new Date();
+  const stamps = activationTimestamps();
 
   if (previousEffectiveId) {
     await context.db
@@ -253,7 +239,6 @@ export async function publishMenuRevision(
     });
   }
 
-  // Exactly one EFFECTIVE version per menu: supersede any stray EFFECTIVE rows.
   const strayEffective = await context.db
     .select({ id: menuVersionsTable.id })
     .from(menuVersionsTable)
@@ -282,20 +267,60 @@ export async function publishMenuRevision(
     })
     .where(eq(menuVersionsTable.id, candidate.id));
 
+  for (const other of brandMenus) {
+    if (other.id === menuId || other.lifecycleStatus !== "active") continue;
+    const retireStamps = retirementTimestamps(
+      other.lifecycleStatus as MenuLifecycleStatus,
+      other.activatedAt,
+    );
+    await context.db
+      .update(menusTable)
+      .set({
+        lifecycleStatus: retireStamps.lifecycleStatus,
+        activatedAt: retireStamps.activatedAt,
+        retiredAt: retireStamps.retiredAt,
+        updatedAt: retireStamps.updatedAt,
+      })
+      .where(eq(menusTable.id, other.id));
+  }
+
   await context.db
     .update(menusTable)
     .set({
       effectiveMenuVersionId: candidate.id,
       draftMenuVersionId: null,
+      lifecycleStatus: stamps.lifecycleStatus,
+      activatedAt: menu.activatedAt ?? stamps.activatedAt,
+      retiredAt: null,
       updatedAt: now,
     })
     .where(eq(menusTable.id, menu.id));
 
   const advanced = await advanceMenuRevision(
     context,
-    { ...menu, draftMenuVersionId: null, effectiveMenuVersionId: candidate.id },
+    {
+      ...menu,
+      draftMenuVersionId: null,
+      effectiveMenuVersionId: candidate.id,
+      lifecycleStatus: "active",
+      activatedAt: menu.activatedAt ?? stamps.activatedAt,
+      retiredAt: null,
+      updatedAt: now,
+    },
     now,
   );
+
+  await insertMenuMutationAuditEvent(context, {
+    actorWorkforceUserId: workforceUserId,
+    action: "menu.publish_attempted",
+    brandId: menu.brandId,
+    menuId: menu.id,
+    menuVersionId: candidate.id,
+    targetType: "menu",
+    targetId: menu.id,
+    previousMenuRevision: expected,
+    newMenuRevision: advanced.revision,
+  });
 
   await insertMenuMutationAuditEvent(context, {
     actorWorkforceUserId: workforceUserId,
@@ -310,6 +335,7 @@ export async function publishMenuRevision(
     metadata: {
       previousEffectiveMenuVersionId: previousEffectiveId ?? "",
       effectiveMenuVersionId: candidate.id,
+      firstCutover: previousEffectiveId == null,
     },
   });
 

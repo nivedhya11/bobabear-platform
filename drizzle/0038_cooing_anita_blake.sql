@@ -211,3 +211,20 @@ ALTER TABLE "app"."menus" ADD CONSTRAINT "menus_draft_menu_version_fk"
   FOREIGN KEY ("draft_menu_version_id", "id")
   REFERENCES "app"."menu_versions"("id", "menu_id")
   ON DELETE no action ON UPDATE no action;
+--> statement-breakpoint
+DO $priv$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'boba_bear_app') THEN
+    -- Menu mutation audit is append-only (SELECT/INSERT; no UPDATE/DELETE/TRUNCATE).
+    REVOKE UPDATE ON
+      app.menu_mutation_audit_events
+    FROM boba_bear_app;
+    REVOKE DELETE ON
+      app.menu_mutation_audit_events
+    FROM boba_bear_app;
+    REVOKE TRUNCATE ON
+      app.menu_mutation_audit_events
+    FROM boba_bear_app;
+  END IF;
+END
+$priv$;

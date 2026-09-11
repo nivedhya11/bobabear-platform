@@ -25,8 +25,18 @@ const CATALOG_TABLES = [
   "catalog_modifier_option_dietary_tags",
 ] as const;
 
-/** IMP-013 menu presentation tables — same DML shape (no DELETE/TRUNCATE). */
-const MENU_TABLES = ["menus", "menu_sections", "menu_entries"] as const;
+/** IMP-013 / IMP-036F menu tables — soft lifecycle + version rows (no DELETE/TRUNCATE). */
+const MENU_SOFT_TABLES = [
+  "menus",
+  "menu_sections",
+  "menu_entries",
+  "menu_versions",
+  "menu_section_versions",
+  "menu_entry_versions",
+] as const;
+
+/** IMP-036F append-only menu mutation audit — SELECT/INSERT only. */
+const MENU_AUDIT_TABLES = ["menu_mutation_audit_events"] as const;
 
 /**
  * IMP-014 assortment / availability / operating tables.
@@ -120,7 +130,10 @@ export async function withCatalogRoleFixture<T>(
       `GRANT SELECT, INSERT, UPDATE ON ${qualify(CATALOG_TABLES)} TO ${quoteIdentifier(role)}`,
     );
     await admin.pool.query(
-      `GRANT SELECT, INSERT, UPDATE ON ${qualify(MENU_TABLES)} TO ${quoteIdentifier(role)}`,
+      `GRANT SELECT, INSERT, UPDATE ON ${qualify(MENU_SOFT_TABLES)} TO ${quoteIdentifier(role)}`,
+    );
+    await admin.pool.query(
+      `GRANT SELECT, INSERT ON ${qualify(MENU_AUDIT_TABLES)} TO ${quoteIdentifier(role)}`,
     );
     await admin.pool.query(
       `GRANT SELECT, INSERT, UPDATE ON ${qualify(ASSORTMENT_SOFT_TABLES)} TO ${quoteIdentifier(role)}`,

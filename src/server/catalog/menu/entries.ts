@@ -2,7 +2,7 @@
  * Menu entry commands (IMP-013 / IMP-036F F3A).
  *
  * Material graph edits route through DRAFT MenuVersion authority and mirror
- * legacy rows for admin LWW.
+ * legacy rows for admin LWW. Aggregate CAS via expectedMenuRevision.
  */
 import { randomUUID } from "node:crypto";
 
@@ -37,8 +37,6 @@ import {
 import { insertMenuMutationAuditEvent } from "./audit";
 import { requireMenuManage } from "./authorize-menu";
 import { MenuConflictError, MenuNotFoundError, MenuValidationError } from "./errors";
-import { findMenuById } from "./menus";
-import { findMenuSectionById } from "./sections";
 import type { CreateMenuEntryInput, MenuEntry, MenuEntryLifecycleInput } from "./types";
 import {
   assertProductEligibleForEntry,
@@ -46,8 +44,9 @@ import {
 } from "./validation";
 import {
   advanceMenuRevision,
-  ensureDraftMenuVersion,
-  lockMenuForUpdate,
+  beginMaterialMenuDraftMutation,
+  loadDraftEntryVersion,
+  loadDraftSectionVersion,
   upsertDraftEntryVersion,
 } from "./versions";
 
@@ -92,20 +91,26 @@ export async function createMenuEntry(
   input: CreateMenuEntryInput,
 ): Promise<MenuEntry> {
   assertTransactionContext(context, "createMenuEntry");
-  await requireMenuManage(context, input.actor, input.brandId);
-
   const brandId = assertUuid(input.brandId, "brandId");
   const menuId = assertUuid(input.menuId, "menuId");
   const sectionId = assertUuid(input.sectionId, "sectionId");
   const productId = assertUuid(input.productId, "productId");
+  const workforceUserId = actorId(input.actor);
 
-  const menu = await findMenuById(context, menuId);
-  if (!menu) throw new MenuNotFoundError("menu");
-  if (menu.brandId !== brandId) {
-    throw new MenuValidationError({ message: "Entry brandId must match the menu brand." });
-  }
+  const { menu, draft, expected, at } = await beginMaterialMenuDraftMutation(context, {
+    actor: input.actor,
+    menuId,
+    expectedMenuRevision: input.expectedMenuRevision,
+    actorWorkforceUserId: workforceUserId,
+    authorize: async (lockedBrandId) => {
+      await requireMenuManage(context, input.actor, lockedBrandId);
+      if (lockedBrandId !== brandId) {
+        throw new MenuValidationError({ message: "Entry brandId must match the menu brand." });
+      }
+    },
+  });
 
-  const section = await findMenuSectionById(context, sectionId);
+  const section = await loadDraftSectionVersion(context, draft.id, sectionId);
   if (!section) throw new MenuNotFoundError("menu_section");
   if (section.menuId !== menuId || section.brandId !== brandId) {
     throw new MenuValidationError({
@@ -127,8 +132,6 @@ export async function createMenuEntry(
   const imagePath = normalizeOptionalImagePath(input.imagePath, "imagePath");
   const position = assertNonNegativeInt(input.position ?? 0, "position");
   const id = input.id ? assertUuid(input.id, "id") : randomUUID();
-  const now = new Date();
-  const workforceUserId = actorId(input.actor);
 
   try {
     await context.db.insert(menuEntriesTable).values({
@@ -142,8 +145,8 @@ export async function createMenuEntry(
       imagePath,
       position,
       lifecycleStatus: "draft",
-      createdAt: now,
-      updatedAt: now,
+      createdAt: at,
+      updatedAt: at,
       activatedAt: null,
       retiredAt: null,
     });
@@ -155,12 +158,6 @@ export async function createMenuEntry(
     }
     throw error;
   }
-
-  const { menu: lockedMenu, draft } = await ensureDraftMenuVersion(context, {
-    menuId,
-    actorWorkforceUserId: workforceUserId,
-    at: now,
-  });
 
   await upsertDraftEntryVersion(context, {
     menuVersionId: draft.id,
@@ -176,11 +173,7 @@ export async function createMenuEntry(
     lifecycleStatus: "draft",
   });
 
-  const advanced = await advanceMenuRevision(
-    context,
-    await lockMenuForUpdate(context, menuId),
-    now,
-  );
+  const advanced = await advanceMenuRevision(context, menu, at);
 
   await insertMenuMutationAuditEvent(context, {
     actorWorkforceUserId: workforceUserId,
@@ -190,7 +183,7 @@ export async function createMenuEntry(
     menuVersionId: draft.id,
     targetType: "menu_entry",
     targetId: id,
-    previousMenuRevision: lockedMenu.revision,
+    previousMenuRevision: expected,
     newMenuRevision: advanced.revision,
     metadata: { op: "create" },
   });
@@ -206,11 +199,22 @@ export async function activateMenuEntry(
 ): Promise<MenuEntry> {
   assertTransactionContext(context, "activateMenuEntry");
   const entryId = assertUuid(input.entryId, "entryId");
-  const existing = await findMenuEntryById(context, entryId);
-  if (!existing) throw new MenuNotFoundError("menu_entry");
-  await requireMenuManage(context, input.actor, existing.brandId);
+  const identity = await findMenuEntryById(context, entryId);
+  if (!identity) throw new MenuNotFoundError("menu_entry");
+  const workforceUserId = actorId(input.actor);
 
-  const section = await findMenuSectionById(context, existing.sectionId);
+  const { menu, draft, expected } = await beginMaterialMenuDraftMutation(context, {
+    actor: input.actor,
+    menuId: identity.menuId,
+    expectedMenuRevision: input.expectedMenuRevision,
+    actorWorkforceUserId: workforceUserId,
+    authorize: (brandId) => requireMenuManage(context, input.actor, brandId),
+  });
+
+  const existing = await loadDraftEntryVersion(context, draft.id, entryId);
+  if (!existing) throw new MenuNotFoundError("menu_entry");
+
+  const section = await loadDraftSectionVersion(context, draft.id, existing.sectionId);
   if (!section || section.lifecycleStatus !== "active") {
     throw new MenuValidationError({
       message: "Cannot activate a menu entry unless its section is active.",
@@ -228,9 +232,8 @@ export async function activateMenuEntry(
     });
   }
 
-  assertCanTransition(existing.lifecycleStatus, "active");
+  assertCanTransition(existing.lifecycleStatus as MenuLifecycleStatus, "active");
   const stamps = activationTimestamps();
-  const workforceUserId = actorId(input.actor);
 
   await context.db
     .update(menuEntriesTable)
@@ -241,12 +244,6 @@ export async function activateMenuEntry(
       updatedAt: stamps.updatedAt,
     })
     .where(eq(menuEntriesTable.id, entryId));
-
-  const { menu: lockedMenu, draft } = await ensureDraftMenuVersion(context, {
-    menuId: existing.menuId,
-    actorWorkforceUserId: workforceUserId,
-    at: stamps.updatedAt,
-  });
 
   await upsertDraftEntryVersion(context, {
     menuVersionId: draft.id,
@@ -262,11 +259,7 @@ export async function activateMenuEntry(
     lifecycleStatus: "active",
   });
 
-  const advanced = await advanceMenuRevision(
-    context,
-    await lockMenuForUpdate(context, existing.menuId),
-    stamps.updatedAt,
-  );
+  const advanced = await advanceMenuRevision(context, menu, stamps.updatedAt);
 
   await insertMenuMutationAuditEvent(context, {
     actorWorkforceUserId: workforceUserId,
@@ -276,7 +269,7 @@ export async function activateMenuEntry(
     menuVersionId: draft.id,
     targetType: "menu_entry",
     targetId: entryId,
-    previousMenuRevision: lockedMenu.revision,
+    previousMenuRevision: expected,
     newMenuRevision: advanced.revision,
     metadata: { op: "activate" },
   });
@@ -292,16 +285,26 @@ export async function retireMenuEntry(
 ): Promise<MenuEntry> {
   assertTransactionContext(context, "retireMenuEntry");
   const entryId = assertUuid(input.entryId, "entryId");
-  const existing = await findMenuEntryById(context, entryId);
-  if (!existing) throw new MenuNotFoundError("menu_entry");
-  await requireMenuManage(context, input.actor, existing.brandId);
+  const identity = await findMenuEntryById(context, entryId);
+  if (!identity) throw new MenuNotFoundError("menu_entry");
+  const workforceUserId = actorId(input.actor);
 
-  assertCanTransition(existing.lifecycleStatus, "retired");
+  const { menu, draft, expected } = await beginMaterialMenuDraftMutation(context, {
+    actor: input.actor,
+    menuId: identity.menuId,
+    expectedMenuRevision: input.expectedMenuRevision,
+    actorWorkforceUserId: workforceUserId,
+    authorize: (brandId) => requireMenuManage(context, input.actor, brandId),
+  });
+
+  const existing = await loadDraftEntryVersion(context, draft.id, entryId);
+  if (!existing) throw new MenuNotFoundError("menu_entry");
+
+  assertCanTransition(existing.lifecycleStatus as MenuLifecycleStatus, "retired");
   const stamps = retirementTimestamps(
     existing.lifecycleStatus as MenuLifecycleStatus,
-    existing.activatedAt,
+    identity.activatedAt,
   );
-  const workforceUserId = actorId(input.actor);
 
   await context.db
     .update(menuEntriesTable)
@@ -312,12 +315,6 @@ export async function retireMenuEntry(
       updatedAt: stamps.updatedAt,
     })
     .where(eq(menuEntriesTable.id, entryId));
-
-  const { menu: lockedMenu, draft } = await ensureDraftMenuVersion(context, {
-    menuId: existing.menuId,
-    actorWorkforceUserId: workforceUserId,
-    at: stamps.updatedAt,
-  });
 
   await upsertDraftEntryVersion(context, {
     menuVersionId: draft.id,
@@ -333,11 +330,7 @@ export async function retireMenuEntry(
     lifecycleStatus: "retired",
   });
 
-  const advanced = await advanceMenuRevision(
-    context,
-    await lockMenuForUpdate(context, existing.menuId),
-    stamps.updatedAt,
-  );
+  const advanced = await advanceMenuRevision(context, menu, stamps.updatedAt);
 
   await insertMenuMutationAuditEvent(context, {
     actorWorkforceUserId: workforceUserId,
@@ -347,7 +340,7 @@ export async function retireMenuEntry(
     menuVersionId: draft.id,
     targetType: "menu_entry",
     targetId: entryId,
-    previousMenuRevision: lockedMenu.revision,
+    previousMenuRevision: expected,
     newMenuRevision: advanced.revision,
     metadata: { op: "retire" },
   });

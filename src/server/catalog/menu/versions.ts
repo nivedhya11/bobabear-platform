@@ -17,6 +17,7 @@ import {
   menuSectionVersionsTable,
   menuVersionsTable,
 } from "../../../platform/database/schema/menu";
+import { brandsTable } from "../../../platform/database/schema/organizations";
 import type {
   PersistenceQueryContext,
   PersistenceTransactionContext,
@@ -145,7 +146,7 @@ export function assertExpectedMenuRevision(
     throw new MenuConflictError({
       code: "MENU_STALE_REVISION",
       message:
-        "expectedMenuRevision does not match current Menu.revision; no publish effect.",
+        "expectedMenuRevision does not match current Menu.revision; no mutation effect.",
     });
   }
 }
@@ -165,6 +166,122 @@ export async function lockMenuForUpdate(
   const row = rows[0];
   if (!row) throw new MenuNotFoundError("menu");
   return rowToMenu(row);
+}
+
+/**
+ * Brand-level serialization for one-active Menu transitions.
+ * Lock Brand before locking Brand Menus (never lock only active Menus — zero
+ * rows would provide no exclusivity).
+ */
+export async function lockBrandForUpdate(
+  context: PersistenceTransactionContext,
+  brandId: string,
+): Promise<void> {
+  assertTransactionContext(context, "lockBrandForUpdate");
+  const id = assertUuid(brandId, "brandId");
+  const rows = await context.db
+    .select({ id: brandsTable.id })
+    .from(brandsTable)
+    .where(eq(brandsTable.id, id))
+    .for("update")
+    .limit(1);
+  if (!rows[0]) {
+    throw new MenuNotFoundError("brand");
+  }
+}
+
+/** Lock every Menu for a Brand in deterministic id order (caller holds Brand lock). */
+export async function lockBrandMenusForUpdate(
+  context: PersistenceTransactionContext,
+  brandId: string,
+): Promise<Menu[]> {
+  assertTransactionContext(context, "lockBrandMenusForUpdate");
+  const id = assertUuid(brandId, "brandId");
+  const rows = await context.db
+    .select()
+    .from(menusTable)
+    .where(eq(menusTable.brandId, id))
+    .orderBy(asc(menusTable.id))
+    .for("update");
+  return rows.map(rowToMenu);
+}
+
+/**
+ * Begin a material Menu draft mutation under aggregate CAS.
+ * Lock order: Menu FOR UPDATE → authorize → expectedMenuRevision → DRAFT graph.
+ */
+export async function beginMaterialMenuDraftMutation(
+  context: PersistenceTransactionContext,
+  input: Readonly<{
+    actor: unknown;
+    menuId: string;
+    expectedMenuRevision: bigint | number | string;
+    at?: Date;
+    authorize: (brandId: string) => Promise<void>;
+    actorWorkforceUserId: string;
+  }>,
+): Promise<{ menu: Menu; draft: MenuVersion; expected: bigint; at: Date }> {
+  assertTransactionContext(context, "beginMaterialMenuDraftMutation");
+  const menuId = assertUuid(input.menuId, "menuId");
+  const expected = parseExpectedMenuRevision(input.expectedMenuRevision);
+  const at = input.at ?? new Date();
+
+  let menu = await lockMenuForUpdate(context, menuId);
+  await input.authorize(menu.brandId);
+  assertExpectedMenuRevision(menu, expected);
+
+  const ensured = await ensureDraftMenuVersion(context, {
+    menuId,
+    actorWorkforceUserId: input.actorWorkforceUserId,
+    at,
+  });
+  menu = ensured.menu;
+  if (menu.revision !== expected) {
+    throw new MenuConflictError({
+      code: "MENU_STALE_REVISION",
+      message:
+        "expectedMenuRevision does not match current Menu.revision; no mutation effect.",
+    });
+  }
+  return { menu, draft: ensured.draft, expected, at };
+}
+
+export async function loadDraftSectionVersion(
+  context: PersistenceTransactionContext,
+  menuVersionId: string,
+  sectionId: string,
+): Promise<MenuSectionVersionRow | null> {
+  assertTransactionContext(context, "loadDraftSectionVersion");
+  const rows = await context.db
+    .select()
+    .from(menuSectionVersionsTable)
+    .where(
+      and(
+        eq(menuSectionVersionsTable.menuVersionId, menuVersionId),
+        eq(menuSectionVersionsTable.sectionId, sectionId),
+      ),
+    )
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+export async function loadDraftEntryVersion(
+  context: PersistenceTransactionContext,
+  menuVersionId: string,
+  entryId: string,
+): Promise<MenuEntryVersionRow | null> {
+  assertTransactionContext(context, "loadDraftEntryVersion");
+  const rows = await context.db
+    .select()
+    .from(menuEntryVersionsTable)
+    .where(
+      and(
+        eq(menuEntryVersionsTable.menuVersionId, menuVersionId),
+        eq(menuEntryVersionsTable.entryId, entryId),
+      ),
+    )
+    .limit(1);
+  return rows[0] ?? null;
 }
 
 export async function lockMenuVersionForUpdate(
@@ -498,14 +615,9 @@ export async function ensureDraftMenuVersion(
     seedEntries = legacy.entries;
   }
 
+  // MenuVersion.revision is independent of Menu.revision (CAS authority).
+  // Never bump Menu.revision here — only material mutations / publish advance it.
   const versionRevision = await nextVersionRevision(context, menu);
-  if (versionRevision > menu.revision) {
-    await context.db
-      .update(menusTable)
-      .set({ revision: versionRevision, updatedAt: at })
-      .where(eq(menusTable.id, menu.id));
-    menu = { ...menu, revision: versionRevision, updatedAt: at };
-  }
 
   const draftId = randomUUID();
   await context.db.insert(menuVersionsTable).values({

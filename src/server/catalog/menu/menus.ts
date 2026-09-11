@@ -3,13 +3,13 @@
  */
 import { randomUUID } from "node:crypto";
 
-import { and, eq, ne } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 import {
   MENU_NAME_MAX,
   type MenuLifecycleStatus,
 } from "../../../shared/catalog/menu";
-import { menusTable, menuVersionsTable } from "../../../platform/database/schema/menu";
+import { menusTable } from "../../../platform/database/schema/menu";
 import { requireWorkforcePrincipal } from "../../access-control/principal";
 import type { PersistenceQueryContext, PersistenceTransactionContext } from "../../persistence/types";
 import {
@@ -24,18 +24,16 @@ import {
   assertUuid,
   retirementTimestamps,
 } from "../lifecycle";
-import { insertMenuMutationAuditEvent } from "./audit";
 import { requireMenuManage } from "./authorize-menu";
 import { MenuConflictError, MenuInvalidStateError, MenuNotFoundError } from "./errors";
 import type { CreateMenuInput, Menu, MenuLifecycleInput } from "./types";
 import {
-  assertMenuGraphReady,
   assertNoActiveSectionsForMenu,
   loadMenuById,
 } from "./validation";
 import {
-  ensureDraftMenuVersion,
-  lockMenuForUpdate,
+  lockBrandForUpdate,
+  lockBrandMenusForUpdate,
   lockMenuVersionForUpdate,
   rowToMenu,
 } from "./versions";
@@ -92,9 +90,10 @@ export async function createMenu(
 }
 
 /**
- * Activate Menu aggregate lifecycle with exclusive one-active-per-brand.
- * When no effective version yet, promotes the current DRAFT version to EFFECTIVE.
- * Does not toggle Menu lifecycle on subsequent publishMenuRevision calls.
+ * Activate Menu aggregate lifecycle only (exclusive one-active-per-brand).
+ *
+ * Does NOT publish: no DRAFT→EFFECTIVE promotion, no effectiveMenuVersionId
+ * switch, no menu.published. First customer cutover requires publishMenuRevision.
  */
 export async function activateMenu(
   context: PersistenceTransactionContext,
@@ -102,28 +101,33 @@ export async function activateMenu(
 ): Promise<Menu> {
   assertTransactionContext(context, "activateMenu");
   const menuId = assertUuid(input.menuId, "menuId");
-  const workforceUserId = actorId(input.actor);
-  let menu = await lockMenuForUpdate(context, menuId);
-  await requireMenuManage(context, input.actor, menu.brandId);
+  void actorId(input.actor);
 
+  const soft = await findMenuById(context, menuId);
+  if (!soft) throw new MenuNotFoundError("menu");
+
+  await lockBrandForUpdate(context, soft.brandId);
+  const brandMenus = await lockBrandMenusForUpdate(context, soft.brandId);
+  const menu = brandMenus.find((row) => row.id === menuId);
+  if (!menu) throw new MenuNotFoundError("menu");
+
+  await requireMenuManage(context, input.actor, menu.brandId);
   assertCanTransition(menu.lifecycleStatus, "active");
+
+  if (menu.effectiveMenuVersionId == null) {
+    throw new MenuInvalidStateError({
+      message:
+        "Cannot activate a menu without an effective MenuVersion; use publishMenuRevision for first customer cutover.",
+    });
+  }
+
+  await lockMenuVersionForUpdate(context, menu.effectiveMenuVersionId);
+
   const stamps = activationTimestamps();
   const now = stamps.updatedAt;
 
-  // Exclusive activate: retire other brand actives (one-effective customer boundary).
-  const otherActives = await context.db
-    .select()
-    .from(menusTable)
-    .where(
-      and(
-        eq(menusTable.brandId, menu.brandId),
-        eq(menusTable.lifecycleStatus, "active"),
-        ne(menusTable.id, menuId),
-      ),
-    )
-    .for("update");
-
-  for (const other of otherActives) {
+  for (const other of brandMenus) {
+    if (other.id === menuId || other.lifecycleStatus !== "active") continue;
     const retireStamps = retirementTimestamps(
       other.lifecycleStatus as MenuLifecycleStatus,
       other.activatedAt,
@@ -139,82 +143,15 @@ export async function activateMenu(
       .where(eq(menusTable.id, other.id));
   }
 
-  // Ensure a draft graph exists, then promote to EFFECTIVE if needed.
-  const ensured = await ensureDraftMenuVersion(context, {
-    menuId,
-    actorWorkforceUserId: workforceUserId,
-    at: now,
-  });
-  menu = ensured.menu;
-  const candidate = ensured.draft;
-
-  await assertMenuGraphReady(context, menuId, { menuVersionId: candidate.id });
-
-  if (menu.effectiveMenuVersionId == null) {
-    const priorEffective = await context.db
-      .select()
-      .from(menuVersionsTable)
-      .where(
-        and(
-          eq(menuVersionsTable.menuId, menuId),
-          eq(menuVersionsTable.lifecycleStatus, "EFFECTIVE"),
-        ),
-      )
-      .for("update");
-    for (const prior of priorEffective) {
-      await context.db
-        .update(menuVersionsTable)
-        .set({ lifecycleStatus: "SUPERSEDED", supersededAt: now })
-        .where(eq(menuVersionsTable.id, prior.id));
-    }
-
-    await context.db
-      .update(menuVersionsTable)
-      .set({
-        lifecycleStatus: "EFFECTIVE",
-        effectiveAt: now,
-        supersededAt: null,
-      })
-      .where(eq(menuVersionsTable.id, candidate.id));
-
-    await context.db
-      .update(menusTable)
-      .set({
-        lifecycleStatus: stamps.lifecycleStatus,
-        activatedAt: stamps.activatedAt,
-        retiredAt: stamps.retiredAt,
-        updatedAt: now,
-        effectiveMenuVersionId: candidate.id,
-        draftMenuVersionId: null,
-      })
-      .where(eq(menusTable.id, menuId));
-
-    await insertMenuMutationAuditEvent(context, {
-      actorWorkforceUserId: workforceUserId,
-      action: "menu.published",
-      brandId: menu.brandId,
-      menuId,
-      menuVersionId: candidate.id,
-      targetType: "menu",
-      targetId: menuId,
-      previousMenuRevision: menu.revision,
-      newMenuRevision: menu.revision,
-      metadata: { via: "activateMenu", firstEffective: true },
-    });
-  } else {
-    // Menu already has effective pointer — only flip aggregate lifecycle.
-    // Ensure draft remains for further authoring; do not switch effective here.
-    await lockMenuVersionForUpdate(context, menu.effectiveMenuVersionId);
-    await context.db
-      .update(menusTable)
-      .set({
-        lifecycleStatus: stamps.lifecycleStatus,
-        activatedAt: stamps.activatedAt,
-        retiredAt: stamps.retiredAt,
-        updatedAt: now,
-      })
-      .where(eq(menusTable.id, menuId));
-  }
+  await context.db
+    .update(menusTable)
+    .set({
+      lifecycleStatus: stamps.lifecycleStatus,
+      activatedAt: stamps.activatedAt,
+      retiredAt: stamps.retiredAt,
+      updatedAt: now,
+    })
+    .where(eq(menusTable.id, menuId));
 
   const updated = await findMenuById(context, menuId);
   if (!updated) throw new MenuNotFoundError("menu");

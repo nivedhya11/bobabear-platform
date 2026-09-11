@@ -77,6 +77,8 @@ export type MenuGraph = Readonly<{
   menuVersionId: string | null;
 }>;
 
+export type ExpectedMenuRevisionInput = bigint | number | string;
+
 export type CreateMenuInput = Readonly<{
   actor: WorkforcePrincipal;
   brandId: string;
@@ -89,6 +91,7 @@ export type CreateMenuSectionInput = Readonly<{
   actor: WorkforcePrincipal;
   brandId: string;
   menuId: string;
+  expectedMenuRevision: ExpectedMenuRevisionInput;
   parentSectionId?: string | null;
   code: string;
   name: string;
@@ -101,6 +104,7 @@ export type CreateMenuEntryInput = Readonly<{
   actor: WorkforcePrincipal;
   brandId: string;
   menuId: string;
+  expectedMenuRevision: ExpectedMenuRevisionInput;
   sectionId: string;
   productId: string;
   displayName?: string | null;
@@ -118,11 +122,13 @@ export type MenuLifecycleInput = Readonly<{
 export type MenuSectionLifecycleInput = Readonly<{
   actor: WorkforcePrincipal;
   sectionId: string;
+  expectedMenuRevision: ExpectedMenuRevisionInput;
 }>;
 
 export type MenuEntryLifecycleInput = Readonly<{
   actor: WorkforcePrincipal;
   entryId: string;
+  expectedMenuRevision: ExpectedMenuRevisionInput;
 }>;
 
 export type MenuReadInput = Readonly<{
@@ -133,6 +139,7 @@ export type MenuReadInput = Readonly<{
 export type UpdateMenuSectionInput = Readonly<{
   actor: WorkforcePrincipal;
   sectionId: string;
+  expectedMenuRevision: ExpectedMenuRevisionInput;
   name?: string;
   description?: string | null;
   parentSectionId?: string | null;
@@ -141,18 +148,23 @@ export type UpdateMenuSectionInput = Readonly<{
 export type ReorderMenuSectionsInput = Readonly<{
   actor: WorkforcePrincipal;
   menuId: string;
+  expectedMenuRevision: ExpectedMenuRevisionInput;
+  /** null = reorder root sections; otherwise direct children of this parent. */
+  parentSectionId: string | null;
   orderedSectionIds: readonly string[];
 }>;
 
 export type ReorderMenuEntriesInput = Readonly<{
   actor: WorkforcePrincipal;
   sectionId: string;
+  expectedMenuRevision: ExpectedMenuRevisionInput;
   orderedEntryIds: readonly string[];
 }>;
 
 export type MoveMenuEntryInput = Readonly<{
   actor: WorkforcePrincipal;
   entryId: string;
+  expectedMenuRevision: ExpectedMenuRevisionInput;
   targetSectionId: string;
   position?: number;
 }>;
@@ -160,6 +172,7 @@ export type MoveMenuEntryInput = Readonly<{
 export type UpdateMenuEntryDisplayInput = Readonly<{
   actor: WorkforcePrincipal;
   entryId: string;
+  expectedMenuRevision: ExpectedMenuRevisionInput;
   displayName?: string | null;
   displayDescription?: string | null;
   imagePath?: string | null;
