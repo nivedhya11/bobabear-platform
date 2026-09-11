@@ -29,10 +29,10 @@
     "note": "Protected evidence and generated reports are never classified as executable test source."
   },
   "counts": {
-    "trackedPathsConsidered": 1785,
-    "executableTestFiles": 354,
+    "trackedPathsConsidered": 1789,
+    "executableTestFiles": 355,
     "sourceTestFiles": 130,
-    "testsTreeExecutableFiles": 190,
+    "testsTreeExecutableFiles": 191,
     "scriptTestFiles": 34,
     "playwrightSpecs": 11,
     "vitestConfigs": 2,
@@ -189,6 +189,7 @@
     "tests/access-control/principal.test.ts",
     "tests/access-control/scope.test.ts",
     "tests/administration/AdministrationHubClient.test.tsx",
+    "tests/administration/admin-catalog-http.integration.test.ts",
     "tests/administration/admin-http.integration.test.ts",
     "tests/administration/admin-route-classify.test.ts",
     "tests/administration/admin-transport.test.ts",
@@ -685,7 +686,7 @@
     "test:customer-profiles": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/customer-profiles",
     "test:database": "node scripts/run-vitest.mjs run --config vitest.database.config.mts",
     "test:database:access-control": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/database/access-control.integration.test.ts",
-    "test:database:administration": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/administration/admin-http.integration.test.ts",
+    "test:database:administration": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/administration/admin-http.integration.test.ts tests/administration/admin-catalog-http.integration.test.ts",
     "test:database:assortment-availability": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/database/assortment-availability.integration.test.ts",
     "test:database:auth-foundation": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/database/auth-foundation.integration.test.ts",
     "test:database:cart": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/database/cart.integration.test.ts",
@@ -4304,6 +4305,26 @@
       "ciInclusion": "YES",
       "test1Layers": [
         "2-component"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/administration/admin-catalog-http.integration.test.ts",
+      "runner": "vitest",
+      "domain": "administration",
+      "testType": "integration",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:administration",
+        "test:database:administration"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "4-integration",
+        "5-database-integration",
+        "6-http-api-contract"
       ],
       "classificationConfidence": "HEURISTIC"
     },

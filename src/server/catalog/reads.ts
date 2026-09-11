@@ -111,6 +111,29 @@ export async function getCatalogProduct(
   return product;
 }
 
+export type ListBrandCatalogProductsInput = Readonly<{
+  actor: unknown;
+  brandId: string;
+}>;
+
+/**
+ * Authorized Brand-scoped Product list for commercial Catalog inspection.
+ */
+export async function listBrandCatalogProducts(
+  context: PersistenceQueryContext,
+  input: ListBrandCatalogProductsInput,
+): Promise<readonly CatalogProduct[]> {
+  assertApplicationRole(context, "listBrandCatalogProducts");
+  const brandId = assertUuid(input.brandId, "brandId");
+  await requireCatalogRead(context, input.actor, brandId);
+  const rows = await context.db
+    .select()
+    .from(catalogProductsTable)
+    .where(eq(catalogProductsTable.brandId, brandId))
+    .orderBy(asc(catalogProductsTable.code), asc(catalogProductsTable.id));
+  return rows.map(rowToProduct);
+}
+
 async function loadProductGraph(
   context: PersistenceQueryContext,
   product: CatalogProduct,

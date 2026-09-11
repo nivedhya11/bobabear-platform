@@ -123,9 +123,22 @@ export {
 export {
   getCatalogProduct,
   getCatalogProductGraph,
+  listBrandCatalogProducts,
   trustedInternalFindProductById,
   validateCatalogProduct,
 } from "./reads";
+
+export type { ListBrandCatalogProductsInput } from "./reads";
+
+export {
+  previewCatalogPublicationConsequence,
+} from "./publication-preview";
+
+export type {
+  CatalogPublicationEntityChange,
+  PreviewCatalogPublicationConsequenceInput,
+  PreviewCatalogPublicationConsequenceResult,
+} from "./publication-preview";
 
 export {
   assertProductGraphReady,
