@@ -35,11 +35,16 @@ import {
   findProductById,
   findVariantById,
   findVariantModifierGroupById,
-  getCatalogProduct,
-  getCatalogProductGraph,
+  getBrandCatalogModifierGroup,
+  getBrandCatalogModifierOption,
+  getBrandCatalogProduct,
+  getBrandCatalogProductGraph,
+  listBrandCatalogModifierGroups,
+  listBrandCatalogModifierOptions,
   listBrandCatalogProducts,
   previewCatalogPublicationConsequence,
   publishCatalogContentChange,
+  requireCatalogManage,
   retireModifierGroup,
   retireModifierGroupOption,
   retireModifierOption,
@@ -69,6 +74,10 @@ export type AdminCatalogRouteKind =
   | "get_product"
   | "get_product_graph"
   | "content_revision"
+  | "list_modifier_groups"
+  | "get_modifier_group"
+  | "list_modifier_options"
+  | "get_modifier_option"
   | "create_product"
   | "create_variant"
   | "product_content_draft"
@@ -195,21 +204,15 @@ function requireExpectedContentRevision(
   body: Readonly<Record<string, unknown>>,
 ): string {
   const value = body.expectedContentRevision;
-  if (typeof value === "number" && Number.isInteger(value)) {
-    return String(value);
-  }
   if (typeof value === "string" && value.length > 0) {
     return value;
   }
-  throw new CatalogValidationError({
-    message: "expectedContentRevision must be a non-empty string or integer.",
-  });
-}
-
-function assertBrandScope(entityBrandId: string, pathBrandId: string): void {
-  if (entityBrandId !== pathBrandId) {
-    throw new CatalogNotFoundError("resource");
+  if (typeof value === "number" && Number.isSafeInteger(value) && value >= 0) {
+    return String(value);
   }
+  throw new CatalogValidationError({
+    message: "expectedContentRevision must be a non-empty decimal string or safe non-negative integer.",
+  });
 }
 
 export function classifyAdminCatalogRoute(pathname: string): AdminCatalogRoute | null {
@@ -237,10 +240,10 @@ export function classifyAdminCatalogRoute(pathname: string): AdminCatalogRoute |
     return { kind: "list_products", brandId };
   }
   if (rest.length === 1 && rest[0] === "modifier-groups") {
-    return { kind: "create_modifier_group", brandId };
+    return { kind: "list_modifier_groups", brandId };
   }
   if (rest.length === 1 && rest[0] === "modifier-options") {
-    return { kind: "create_modifier_option", brandId };
+    return { kind: "list_modifier_options", brandId };
   }
 
   if (rest[0] === "products" && rest[1]) {
@@ -278,6 +281,9 @@ export function classifyAdminCatalogRoute(pathname: string): AdminCatalogRoute |
 
   if (rest[0] === "modifier-groups" && rest[1]) {
     const modifierGroupId = rest[1];
+    if (rest.length === 2) {
+      return { kind: "get_modifier_group", brandId, modifierGroupId };
+    }
     if (rest.length === 3) {
       const action = rest[2];
       if (action === "content-draft") {
@@ -293,6 +299,9 @@ export function classifyAdminCatalogRoute(pathname: string): AdminCatalogRoute |
 
   if (rest[0] === "modifier-options" && rest[1]) {
     const modifierOptionId = rest[1];
+    if (rest.length === 2) {
+      return { kind: "get_modifier_option", brandId, modifierOptionId };
+    }
     if (rest.length === 3) {
       const action = rest[2];
       if (action === "content-draft") {
@@ -372,6 +381,10 @@ function allowedMethodFor(kind: AdminCatalogRouteKind): "GET" | "POST" {
     case "get_product":
     case "get_product_graph":
     case "content_revision":
+    case "list_modifier_groups":
+    case "get_modifier_group":
+    case "list_modifier_options":
+    case "get_modifier_option":
       return "GET";
     default:
       return "POST";
@@ -382,10 +395,16 @@ function isMutationKind(kind: AdminCatalogRouteKind): boolean {
   return allowedMethodFor(kind) === "POST";
 }
 
-/** Dual-method: GET list_products vs POST create_product on same path. */
+/** Dual-method: GET list vs POST create on same collection paths. */
 function resolveRouteForMethod(route: AdminCatalogRoute, method: string): AdminCatalogRoute {
   if (method === "POST" && route.kind === "list_products") {
     return { kind: "create_product", brandId: route.brandId };
+  }
+  if (method === "POST" && route.kind === "list_modifier_groups") {
+    return { kind: "create_modifier_group", brandId: route.brandId };
+  }
+  if (method === "POST" && route.kind === "list_modifier_options") {
+    return { kind: "create_modifier_option", brandId: route.brandId };
   }
   if (method === "GET" && route.kind === "get_product") {
     return route;
@@ -493,20 +512,50 @@ async function dispatchRead(
       return { products };
     }
     case "get_product": {
-      const product = await getCatalogProduct(context, {
+      const product = await getBrandCatalogProduct(context, {
         actor: principal,
+        brandId: route.brandId,
         productId: route.productId!,
       });
-      assertBrandScope(product.brandId, route.brandId);
       return { product };
     }
     case "get_product_graph": {
-      const graph = await getCatalogProductGraph(context, {
+      const graph = await getBrandCatalogProductGraph(context, {
         actor: principal,
+        brandId: route.brandId,
         productId: route.productId!,
       });
-      assertBrandScope(graph.product.brandId, route.brandId);
       return { graph };
+    }
+    case "list_modifier_groups": {
+      const modifierGroups = await listBrandCatalogModifierGroups(context, {
+        actor: principal,
+        brandId: route.brandId,
+      });
+      return { modifierGroups };
+    }
+    case "get_modifier_group": {
+      const modifierGroup = await getBrandCatalogModifierGroup(context, {
+        actor: principal,
+        brandId: route.brandId,
+        modifierGroupId: route.modifierGroupId!,
+      });
+      return { modifierGroup };
+    }
+    case "list_modifier_options": {
+      const modifierOptions = await listBrandCatalogModifierOptions(context, {
+        actor: principal,
+        brandId: route.brandId,
+      });
+      return { modifierOptions };
+    }
+    case "get_modifier_option": {
+      const modifierOption = await getBrandCatalogModifierOption(context, {
+        actor: principal,
+        brandId: route.brandId,
+        modifierOptionId: route.modifierOptionId!,
+      });
+      return { modifierOption };
     }
     default:
       throw new CatalogValidationError({ message: "Unsupported catalog read route." });
@@ -519,6 +568,11 @@ async function dispatchMutation(
   route: AdminCatalogRoute,
   body: Readonly<Record<string, unknown>>,
 ): Promise<Record<string, unknown>> {
+  // Path-Brand authority before resource lookup (anti-oracle). Preview is read-scoped.
+  if (route.kind !== "consequence_preview") {
+    await requireCatalogManage(context, principal, route.brandId);
+  }
+
   switch (route.kind) {
     case "create_product": {
       const productKindRaw = body.productKind;

@@ -121,8 +121,14 @@ export {
 } from "./dietary";
 
 export {
+  getBrandCatalogModifierGroup,
+  getBrandCatalogModifierOption,
+  getBrandCatalogProduct,
+  getBrandCatalogProductGraph,
   getCatalogProduct,
   getCatalogProductGraph,
+  listBrandCatalogModifierGroups,
+  listBrandCatalogModifierOptions,
   listBrandCatalogProducts,
   trustedInternalFindProductById,
   validateCatalogProduct,
@@ -135,6 +141,8 @@ export {
 } from "./publication-preview";
 
 export type {
+  CatalogPublicationAffectedScope,
+  CatalogPublicationChangedField,
   CatalogPublicationEntityChange,
   PreviewCatalogPublicationConsequenceInput,
   PreviewCatalogPublicationConsequenceResult,

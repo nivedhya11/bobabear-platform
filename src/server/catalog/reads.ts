@@ -5,7 +5,7 @@
  * future server-side menu/cart/order modules only — never expose as an
  * unrestricted browser endpoint. Admin reads require `catalog.read`.
  */
-import { asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
 
 import { isModifierGroupRequired, type CatalogLifecycleStatus, type DietaryTagKind, type ProductKind } from "../../shared/catalog";
 import {
@@ -111,6 +111,14 @@ export async function getCatalogProduct(
   return product;
 }
 
+export type BrandCatalogResourceInput = Readonly<{
+  actor: unknown;
+  brandId: string;
+  productId?: string;
+  modifierGroupId?: string;
+  modifierOptionId?: string;
+}>;
+
 export type ListBrandCatalogProductsInput = Readonly<{
   actor: unknown;
   brandId: string;
@@ -132,6 +140,180 @@ export async function listBrandCatalogProducts(
     .where(eq(catalogProductsTable.brandId, brandId))
     .orderBy(asc(catalogProductsTable.code), asc(catalogProductsTable.id));
   return rows.map(rowToProduct);
+}
+
+/**
+ * Path-Brand-first Product read: authorize the locator Brand, then constrain
+ * retrieval to that Brand. Missing and cross-Brand IDs share not-found.
+ */
+export async function getBrandCatalogProduct(
+  context: PersistenceQueryContext,
+  input: Readonly<{ actor: unknown; brandId: string; productId: string }>,
+): Promise<CatalogProduct> {
+  assertApplicationRole(context, "getBrandCatalogProduct");
+  const brandId = assertUuid(input.brandId, "brandId");
+  const productId = assertUuid(input.productId, "productId");
+  await requireCatalogRead(context, input.actor, brandId);
+  const rows = await context.db
+    .select()
+    .from(catalogProductsTable)
+    .where(and(eq(catalogProductsTable.id, productId), eq(catalogProductsTable.brandId, brandId)))
+    .limit(1);
+  const row = rows[0];
+  if (!row) throw new CatalogNotFoundError("product");
+  return rowToProduct(row);
+}
+
+/**
+ * Path-Brand-first Product graph read (same anti-oracle ordering as getBrandCatalogProduct).
+ */
+export async function getBrandCatalogProductGraph(
+  context: PersistenceQueryContext,
+  input: Readonly<{ actor: unknown; brandId: string; productId: string }>,
+): Promise<CatalogProductGraph> {
+  assertApplicationRole(context, "getBrandCatalogProductGraph");
+  const product = await getBrandCatalogProduct(context, input);
+  return loadProductGraph(context, product);
+}
+
+/**
+ * Authorized Brand-scoped ModifierGroup list for commercial association discovery.
+ */
+export async function listBrandCatalogModifierGroups(
+  context: PersistenceQueryContext,
+  input: ListBrandCatalogProductsInput,
+): Promise<readonly CatalogModifierGroup[]> {
+  assertApplicationRole(context, "listBrandCatalogModifierGroups");
+  const brandId = assertUuid(input.brandId, "brandId");
+  await requireCatalogRead(context, input.actor, brandId);
+  const rows = await context.db
+    .select()
+    .from(catalogModifierGroupsTable)
+    .where(eq(catalogModifierGroupsTable.brandId, brandId))
+    .orderBy(asc(catalogModifierGroupsTable.code), asc(catalogModifierGroupsTable.id));
+  return rows.map((row) => ({
+    id: row.id,
+    brandId: row.brandId,
+    code: row.code,
+    name: row.name,
+    description: row.description,
+    lifecycleStatus: row.lifecycleStatus as CatalogLifecycleStatus,
+    effectiveContentRevision: row.effectiveContentRevision,
+    draftContentRevision: row.draftContentRevision,
+    createdAt: new Date(row.createdAt),
+    updatedAt: new Date(row.updatedAt),
+    activatedAt: row.activatedAt ? new Date(row.activatedAt) : null,
+    retiredAt: row.retiredAt ? new Date(row.retiredAt) : null,
+  }));
+}
+
+/**
+ * Authorized Brand-scoped ModifierOption list for commercial association discovery.
+ */
+export async function listBrandCatalogModifierOptions(
+  context: PersistenceQueryContext,
+  input: ListBrandCatalogProductsInput,
+): Promise<readonly CatalogModifierOption[]> {
+  assertApplicationRole(context, "listBrandCatalogModifierOptions");
+  const brandId = assertUuid(input.brandId, "brandId");
+  await requireCatalogRead(context, input.actor, brandId);
+  const rows = await context.db
+    .select()
+    .from(catalogModifierOptionsTable)
+    .where(eq(catalogModifierOptionsTable.brandId, brandId))
+    .orderBy(asc(catalogModifierOptionsTable.code), asc(catalogModifierOptionsTable.id));
+  return rows.map((row) => ({
+    id: row.id,
+    brandId: row.brandId,
+    code: row.code,
+    name: row.name,
+    description: row.description,
+    lifecycleStatus: row.lifecycleStatus as CatalogLifecycleStatus,
+    effectiveContentRevision: row.effectiveContentRevision,
+    draftContentRevision: row.draftContentRevision,
+    createdAt: new Date(row.createdAt),
+    updatedAt: new Date(row.updatedAt),
+    activatedAt: row.activatedAt ? new Date(row.activatedAt) : null,
+    retiredAt: row.retiredAt ? new Date(row.retiredAt) : null,
+  }));
+}
+
+/**
+ * Path-Brand-first ModifierGroup detail.
+ */
+export async function getBrandCatalogModifierGroup(
+  context: PersistenceQueryContext,
+  input: Readonly<{ actor: unknown; brandId: string; modifierGroupId: string }>,
+): Promise<CatalogModifierGroup> {
+  assertApplicationRole(context, "getBrandCatalogModifierGroup");
+  const brandId = assertUuid(input.brandId, "brandId");
+  const modifierGroupId = assertUuid(input.modifierGroupId, "modifierGroupId");
+  await requireCatalogRead(context, input.actor, brandId);
+  const rows = await context.db
+    .select()
+    .from(catalogModifierGroupsTable)
+    .where(
+      and(
+        eq(catalogModifierGroupsTable.id, modifierGroupId),
+        eq(catalogModifierGroupsTable.brandId, brandId),
+      ),
+    )
+    .limit(1);
+  const row = rows[0];
+  if (!row) throw new CatalogNotFoundError("modifier_group");
+  return {
+    id: row.id,
+    brandId: row.brandId,
+    code: row.code,
+    name: row.name,
+    description: row.description,
+    lifecycleStatus: row.lifecycleStatus as CatalogLifecycleStatus,
+    effectiveContentRevision: row.effectiveContentRevision,
+    draftContentRevision: row.draftContentRevision,
+    createdAt: new Date(row.createdAt),
+    updatedAt: new Date(row.updatedAt),
+    activatedAt: row.activatedAt ? new Date(row.activatedAt) : null,
+    retiredAt: row.retiredAt ? new Date(row.retiredAt) : null,
+  };
+}
+
+/**
+ * Path-Brand-first ModifierOption detail.
+ */
+export async function getBrandCatalogModifierOption(
+  context: PersistenceQueryContext,
+  input: Readonly<{ actor: unknown; brandId: string; modifierOptionId: string }>,
+): Promise<CatalogModifierOption> {
+  assertApplicationRole(context, "getBrandCatalogModifierOption");
+  const brandId = assertUuid(input.brandId, "brandId");
+  const modifierOptionId = assertUuid(input.modifierOptionId, "modifierOptionId");
+  await requireCatalogRead(context, input.actor, brandId);
+  const rows = await context.db
+    .select()
+    .from(catalogModifierOptionsTable)
+    .where(
+      and(
+        eq(catalogModifierOptionsTable.id, modifierOptionId),
+        eq(catalogModifierOptionsTable.brandId, brandId),
+      ),
+    )
+    .limit(1);
+  const row = rows[0];
+  if (!row) throw new CatalogNotFoundError("modifier_option");
+  return {
+    id: row.id,
+    brandId: row.brandId,
+    code: row.code,
+    name: row.name,
+    description: row.description,
+    lifecycleStatus: row.lifecycleStatus as CatalogLifecycleStatus,
+    effectiveContentRevision: row.effectiveContentRevision,
+    draftContentRevision: row.draftContentRevision,
+    createdAt: new Date(row.createdAt),
+    updatedAt: new Date(row.updatedAt),
+    activatedAt: row.activatedAt ? new Date(row.activatedAt) : null,
+    retiredAt: row.retiredAt ? new Date(row.retiredAt) : null,
+  };
 }
 
 async function loadProductGraph(
