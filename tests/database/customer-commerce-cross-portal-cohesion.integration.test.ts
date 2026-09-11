@@ -132,9 +132,10 @@ async function seedMenuVariant(
     }),
   );
   await persistence.transaction(async (tx) => {
-    await activateMenu(tx, { actor, menuId: menu.id });
+    // Stage active graph in DRAFT, then activate Menu (promotes EFFECTIVE).
     await activateMenuSection(tx, { actor, sectionId: section.id });
     await activateMenuEntry(tx, { actor, entryId: entry.id });
+    await activateMenu(tx, { actor, menuId: menu.id });
   });
 
   const { priceBookId } = await persistence.transaction(async (tx) => {

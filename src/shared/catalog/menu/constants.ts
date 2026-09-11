@@ -1,5 +1,5 @@
 /**
- * Browser-safe menu presentation constants (IMP-013).
+ * Browser-safe menu presentation constants (IMP-013 / IMP-036F F3A).
  *
  * No database access, no secrets. Positions are zero-based within each parent.
  */
@@ -11,6 +11,27 @@ import {
 
 export const MENU_LIFECYCLE_STATUSES = CATALOG_LIFECYCLE_STATUSES;
 export type MenuLifecycleStatus = CatalogLifecycleStatus;
+
+/** MenuVersion lifecycle (separate from Menu aggregate draft|active|retired). */
+export const MENU_VERSION_LIFECYCLE_STATUSES = [
+  "DRAFT",
+  "EFFECTIVE",
+  "SUPERSEDED",
+] as const;
+export type MenuVersionLifecycleStatus =
+  (typeof MENU_VERSION_LIFECYCLE_STATUSES)[number];
+
+/** Append-only menu mutation audit actions (IMP-036F F3A). */
+export const MENU_AUDIT_ACTIONS = [
+  "menu.version_draft_created",
+  "menu.section_changed",
+  "menu.entry_changed",
+  "menu.publish_attempted",
+  "menu.published",
+  "menu.publish_conflict",
+  "menu.version_superseded",
+] as const;
+export type MenuAuditAction = (typeof MENU_AUDIT_ACTIONS)[number];
 
 /** Maximum section nesting: root Section + one child Section. */
 export const MENU_SECTION_MAX_DEPTH = 2;
@@ -48,5 +69,21 @@ export function isMenuLifecycleStatus(value: unknown): value is MenuLifecycleSta
   return (
     typeof value === "string" &&
     (MENU_LIFECYCLE_STATUSES as readonly string[]).includes(value)
+  );
+}
+
+export function isMenuVersionLifecycleStatus(
+  value: unknown,
+): value is MenuVersionLifecycleStatus {
+  return (
+    typeof value === "string" &&
+    (MENU_VERSION_LIFECYCLE_STATUSES as readonly string[]).includes(value)
+  );
+}
+
+export function isMenuAuditAction(value: unknown): value is MenuAuditAction {
+  return (
+    typeof value === "string" &&
+    (MENU_AUDIT_ACTIONS as readonly string[]).includes(value)
   );
 }

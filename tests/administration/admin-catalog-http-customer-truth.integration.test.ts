@@ -183,9 +183,9 @@ describe("IMP-036F F2 R7 — HTTP authoring to customer Menu projection", () => 
         }),
       );
       await persistence.transaction(async (tx) => {
-        await activateMenu(tx, { actor, menuId: menu.id });
         await activateMenuSection(tx, { actor, sectionId: section.id });
         await activateMenuEntry(tx, { actor, entryId: entry.id });
+        await activateMenu(tx, { actor, menuId: menu.id });
       });
 
       await persistence.transaction(async (tx) => {

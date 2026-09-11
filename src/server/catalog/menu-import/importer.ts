@@ -20,9 +20,13 @@ import {
   menuEntriesTable,
   menusTable,
   menuSectionsTable,
+  menuVersionsTable,
 } from "../../../platform/database/schema/menu";
 import { brandsTable } from "../../../platform/database/schema/organizations";
-import type { Persistence } from "../../persistence/types";
+import type {
+  Persistence,
+  PersistenceTransactionContext,
+} from "../../persistence/types";
 import type { ExistingMenuV1Manifest } from "./manifest-types";
 import {
   assertSourceDigestMatches,
@@ -33,6 +37,56 @@ import {
   bootstrapActiveProductRevision,
   bootstrapActiveVariantRevision,
 } from "../bootstrap-revisions";
+import {
+  ensureDraftMenuVersion,
+  lockMenuForUpdate,
+} from "../menu/versions";
+/**
+ * After legacy graph apply, ensure ACTIVE imported Menu has an EFFECTIVE
+ * MenuVersion pointer. Idempotent when pointer already valid.
+ */
+async function ensureImportedMenuEffectiveVersion(
+  tx: PersistenceTransactionContext,
+  menuId: string,
+  at: Date,
+): Promise<void> {
+  const menu = await lockMenuForUpdate(tx, menuId);
+  if (menu.effectiveMenuVersionId) {
+    return;
+  }
+
+  // Clear stale draft pointer so ensureDraft reseeds from current legacy rows.
+  if (menu.draftMenuVersionId) {
+    await tx.db
+      .update(menusTable)
+      .set({ draftMenuVersionId: null, updatedAt: at })
+      .where(eq(menusTable.id, menuId));
+  }
+
+  const { draft } = await ensureDraftMenuVersion(tx, {
+    menuId,
+    actorWorkforceUserId: null,
+    at,
+  });
+
+  await tx.db
+    .update(menuVersionsTable)
+    .set({
+      lifecycleStatus: "EFFECTIVE",
+      effectiveAt: at,
+      supersededAt: null,
+    })
+    .where(eq(menuVersionsTable.id, draft.id));
+
+  await tx.db
+    .update(menusTable)
+    .set({
+      effectiveMenuVersionId: draft.id,
+      draftMenuVersionId: null,
+      updatedAt: at,
+    })
+    .where(eq(menusTable.id, menuId));
+}
 
 export type ImportPlanAction =
   | "create"
@@ -336,6 +390,9 @@ export async function runExistingMenuImport(options: {
             code: manifest.menu.code,
             name: manifest.menu.name,
             lifecycleStatus: "active",
+            revision: BigInt(1),
+            effectiveMenuVersionId: null,
+            draftMenuVersionId: null,
             createdAt: now,
             updatedAt: now,
             activatedAt: now,
@@ -531,6 +588,10 @@ export async function runExistingMenuImport(options: {
           throw new MenuImportError("validation", `Apply verification missing entry ${entry.id}`);
         }
       }
+
+      // F3A: materialize EFFECTIVE MenuVersion from imported legacy graph so
+      // customer projection can resolve the active Menu without legacy fallback.
+      await ensureImportedMenuEffectiveVersion(tx, manifest.menu.id, now);
     }
   };
 

@@ -1,35 +1,26 @@
 /**
- * Active menu-graph validation (IMP-013).
+ * Active menu-graph validation (IMP-013 / IMP-036F F3A).
  *
  * Fail closed — no silent repair. Max section depth is 2 (root + one child).
+ * Prefer VERSIONED_MENU_GRAPH when menuVersionId is supplied.
  */
-import { and, eq, ne } from "drizzle-orm";
+import { and, eq, inArray, ne } from "drizzle-orm";
 
 import { MENU_SECTION_MAX_DEPTH } from "../../../shared/catalog/menu";
 import {
   menuEntriesTable,
+  menuEntryVersionsTable,
   menusTable,
   menuSectionsTable,
+  menuSectionVersionsTable,
+  menuVersionsTable,
 } from "../../../platform/database/schema/menu";
 import { catalogProductsTable } from "../../../platform/database/schema/catalog";
 import type { PersistenceQueryContext } from "../../persistence/types";
 import { assertApplicationRole } from "../assert-role";
 import { MenuInvalidStateError, MenuNotFoundError, MenuValidationError } from "./errors";
 import type { Menu, MenuEntry, MenuSection } from "./types";
-
-function rowToMenu(row: typeof menusTable.$inferSelect): Menu {
-  return {
-    id: row.id,
-    brandId: row.brandId,
-    code: row.code,
-    name: row.name,
-    lifecycleStatus: row.lifecycleStatus as Menu["lifecycleStatus"],
-    createdAt: new Date(row.createdAt),
-    updatedAt: new Date(row.updatedAt),
-    activatedAt: row.activatedAt ? new Date(row.activatedAt) : null,
-    retiredAt: row.retiredAt ? new Date(row.retiredAt) : null,
-  };
-}
+import { rowToMenu } from "./versions";
 
 function rowToSection(row: typeof menuSectionsTable.$inferSelect): MenuSection {
   return {
@@ -161,13 +152,32 @@ export async function assertSectionDepthAllowed(
   return depth;
 }
 
+export type AssertMenuGraphReadyOptions = Readonly<{
+  /** Validate active sections/entries in this version graph (publish / activate). */
+  menuVersionId?: string;
+}>;
+
 export async function assertMenuGraphReady(
   context: PersistenceQueryContext,
   menuId: string,
+  options?: AssertMenuGraphReadyOptions,
 ): Promise<void> {
   assertApplicationRole(context, "assertMenuGraphReady");
   const menu = await loadMenuById(context, menuId);
   if (!menu) throw new MenuNotFoundError("menu");
+
+  const versionId =
+    options?.menuVersionId ??
+    menu.effectiveMenuVersionId ??
+    menu.draftMenuVersionId ??
+    null;
+
+  if (versionId) {
+    await assertMenuVersionGraphReady(context, menu, versionId);
+    return;
+  }
+
+  // Pre-seed legacy-only path (no version pointers yet).
   if (menu.lifecycleStatus !== "active") {
     throw new MenuInvalidStateError({
       message: "Active menu graph validation requires an active menu.",
@@ -217,25 +227,109 @@ export async function assertMenuGraphReady(
         message: "Active menu entry requires an active section.",
       });
     }
-    const productRows = await context.db
-      .select({
-        brandId: catalogProductsTable.brandId,
-        lifecycleStatus: catalogProductsTable.lifecycleStatus,
-      })
-      .from(catalogProductsTable)
-      .where(eq(catalogProductsTable.id, entry.productId))
-      .limit(1);
-    const product = productRows[0];
-    if (!product || product.lifecycleStatus !== "active") {
+    await assertProductActiveForMenu(context, entry.productId, menu.brandId);
+  }
+}
+
+async function assertMenuVersionGraphReady(
+  context: PersistenceQueryContext,
+  menu: Menu,
+  menuVersionId: string,
+): Promise<void> {
+  const versionRows = await context.db
+    .select()
+    .from(menuVersionsTable)
+    .where(eq(menuVersionsTable.id, menuVersionId))
+    .limit(1);
+  const version = versionRows[0];
+  if (!version || version.menuId !== menu.id) {
+    throw new MenuNotFoundError("menu_version");
+  }
+
+  const sections = await context.db
+    .select()
+    .from(menuSectionVersionsTable)
+    .where(
+      and(
+        eq(menuSectionVersionsTable.menuVersionId, menuVersionId),
+        eq(menuSectionVersionsTable.lifecycleStatus, "active"),
+      ),
+    );
+  const sectionById = new Map(sections.map((s) => [s.sectionId, s]));
+
+  for (const section of sections) {
+    if (section.parentSectionId !== null) {
+      const parent = sectionById.get(section.parentSectionId);
+      if (!parent || parent.lifecycleStatus !== "active") {
+        throw new MenuInvalidStateError({
+          message: "Active child section requires an active parent section.",
+        });
+      }
+      // Depth via version parent chain
+      let depth = 1;
+      let current: string | null = section.parentSectionId;
+      const visited = new Set<string>([section.sectionId]);
+      while (current !== null) {
+        if (visited.has(current)) {
+          throw new MenuValidationError({ message: "Menu section parent cycle is not allowed." });
+        }
+        visited.add(current);
+        depth += 1;
+        if (depth > MENU_SECTION_MAX_DEPTH) {
+          throw new MenuValidationError({
+            message: `Menu section hierarchy depth must be at most ${MENU_SECTION_MAX_DEPTH}.`,
+          });
+        }
+        const parentRow = sectionById.get(current);
+        current = parentRow?.parentSectionId ?? null;
+      }
+    }
+  }
+
+  const entries = await context.db
+    .select()
+    .from(menuEntryVersionsTable)
+    .where(
+      and(
+        eq(menuEntryVersionsTable.menuVersionId, menuVersionId),
+        eq(menuEntryVersionsTable.lifecycleStatus, "active"),
+      ),
+    );
+
+  for (const entry of entries) {
+    const section = sectionById.get(entry.sectionId);
+    if (!section || section.lifecycleStatus !== "active") {
       throw new MenuInvalidStateError({
-        message: "Active menu entry requires an active product.",
+        message: "Active menu entry requires an active section.",
       });
     }
-    if (product.brandId !== menu.brandId) {
-      throw new MenuInvalidStateError({
-        message: "Menu entry product must belong to the same brand as the menu.",
-      });
-    }
+    await assertProductActiveForMenu(context, entry.productId, menu.brandId);
+  }
+}
+
+async function assertProductActiveForMenu(
+  context: PersistenceQueryContext,
+  productId: string,
+  brandId: string,
+): Promise<void> {
+  const productRows = await context.db
+    .select({
+      brandId: catalogProductsTable.brandId,
+      lifecycleStatus: catalogProductsTable.lifecycleStatus,
+    })
+    .from(catalogProductsTable)
+    .where(eq(catalogProductsTable.id, productId))
+    .limit(1);
+  const product = productRows[0];
+  if (!product || product.lifecycleStatus !== "active") {
+    throw new MenuInvalidStateError({
+      message: "Active menu entry requires an active product.",
+    });
+  }
+  if (product.brandId !== brandId) {
+    throw new MenuInvalidStateError({
+      message: "Menu entry product must belong to the same brand as the menu.",
+    });
   }
 }
 
@@ -243,7 +337,7 @@ export async function assertNoActiveSectionsForMenu(
   context: PersistenceQueryContext,
   menuId: string,
 ): Promise<void> {
-  const rows = await context.db
+  const legacy = await context.db
     .select({ id: menuSectionsTable.id })
     .from(menuSectionsTable)
     .where(
@@ -253,9 +347,32 @@ export async function assertNoActiveSectionsForMenu(
       ),
     )
     .limit(1);
-  if (rows[0]) {
+  if (legacy[0]) {
     throw new MenuInvalidStateError({
       message: "Cannot retire a menu while active sections exist.",
+    });
+  }
+
+  const menu = await loadMenuById(context, menuId);
+  if (!menu) return;
+  const versionIds = [menu.effectiveMenuVersionId, menu.draftMenuVersionId].filter(
+    (id): id is string => typeof id === "string",
+  );
+  if (versionIds.length === 0) return;
+
+  const versionActive = await context.db
+    .select({ id: menuSectionVersionsTable.id })
+    .from(menuSectionVersionsTable)
+    .where(
+      and(
+        inArray(menuSectionVersionsTable.menuVersionId, versionIds),
+        eq(menuSectionVersionsTable.lifecycleStatus, "active"),
+      ),
+    )
+    .limit(1);
+  if (versionActive[0]) {
+    throw new MenuInvalidStateError({
+      message: "Cannot retire a menu while active sections exist in a menu version graph.",
     });
   }
 }
@@ -275,6 +392,48 @@ export async function assertNoActiveChildrenForSection(
     )
     .limit(1);
   if (rows[0]) {
+    throw new MenuInvalidStateError({
+      message: "Cannot retire a section while active child sections exist.",
+    });
+  }
+
+  // Prefer DRAFT authoring graph when present; otherwise EFFECTIVE.
+  const sectionInDraft = (
+    await context.db
+      .select({ id: menuSectionVersionsTable.id })
+      .from(menuSectionVersionsTable)
+      .innerJoin(
+        menuVersionsTable,
+        eq(menuSectionVersionsTable.menuVersionId, menuVersionsTable.id),
+      )
+      .where(
+        and(
+          eq(menuSectionVersionsTable.sectionId, sectionId),
+          eq(menuVersionsTable.lifecycleStatus, "DRAFT"),
+        ),
+      )
+      .limit(1)
+  )[0];
+
+  const versionChildren = await context.db
+    .select({ id: menuSectionVersionsTable.id })
+    .from(menuSectionVersionsTable)
+    .innerJoin(
+      menuVersionsTable,
+      eq(menuSectionVersionsTable.menuVersionId, menuVersionsTable.id),
+    )
+    .where(
+      and(
+        eq(menuSectionVersionsTable.parentSectionId, sectionId),
+        eq(menuSectionVersionsTable.lifecycleStatus, "active"),
+        eq(
+          menuVersionsTable.lifecycleStatus,
+          sectionInDraft ? "DRAFT" : "EFFECTIVE",
+        ),
+      ),
+    )
+    .limit(1);
+  if (versionChildren[0]) {
     throw new MenuInvalidStateError({
       message: "Cannot retire a section while active child sections exist.",
     });
@@ -300,6 +459,47 @@ export async function assertNoActiveEntriesForSection(
       message: "Cannot retire a section while active menu entries exist.",
     });
   }
+
+  const sectionInDraft = (
+    await context.db
+      .select({ id: menuSectionVersionsTable.id })
+      .from(menuSectionVersionsTable)
+      .innerJoin(
+        menuVersionsTable,
+        eq(menuSectionVersionsTable.menuVersionId, menuVersionsTable.id),
+      )
+      .where(
+        and(
+          eq(menuSectionVersionsTable.sectionId, sectionId),
+          eq(menuVersionsTable.lifecycleStatus, "DRAFT"),
+        ),
+      )
+      .limit(1)
+  )[0];
+
+  const versionEntries = await context.db
+    .select({ id: menuEntryVersionsTable.id })
+    .from(menuEntryVersionsTable)
+    .innerJoin(
+      menuVersionsTable,
+      eq(menuEntryVersionsTable.menuVersionId, menuVersionsTable.id),
+    )
+    .where(
+      and(
+        eq(menuEntryVersionsTable.sectionId, sectionId),
+        eq(menuEntryVersionsTable.lifecycleStatus, "active"),
+        eq(
+          menuVersionsTable.lifecycleStatus,
+          sectionInDraft ? "DRAFT" : "EFFECTIVE",
+        ),
+      ),
+    )
+    .limit(1);
+  if (versionEntries[0]) {
+    throw new MenuInvalidStateError({
+      message: "Cannot retire a section while active menu entries exist.",
+    });
+  }
 }
 
 export async function assertNoActiveEntriesForProduct(
@@ -318,6 +518,50 @@ export async function assertNoActiveEntriesForProduct(
     )
     .limit(1);
   if (rows[0]) {
+    throw new MenuInvalidStateError({
+      message: "Cannot retire a product while active menu entries reference it.",
+    });
+  }
+
+  // EFFECTIVE: only customer-visible (active) placements block.
+  // DRAFT: any non-retired staged placement blocks (pending publish).
+  const effectiveRows = await context.db
+    .select({ id: menuEntryVersionsTable.id })
+    .from(menuEntryVersionsTable)
+    .innerJoin(
+      menuVersionsTable,
+      eq(menuEntryVersionsTable.menuVersionId, menuVersionsTable.id),
+    )
+    .where(
+      and(
+        eq(menuEntryVersionsTable.productId, productId),
+        eq(menuEntryVersionsTable.lifecycleStatus, "active"),
+        eq(menuVersionsTable.lifecycleStatus, "EFFECTIVE"),
+      ),
+    )
+    .limit(1);
+  if (effectiveRows[0]) {
+    throw new MenuInvalidStateError({
+      message: "Cannot retire a product while active menu entries reference it.",
+    });
+  }
+
+  const draftRows = await context.db
+    .select({ id: menuEntryVersionsTable.id })
+    .from(menuEntryVersionsTable)
+    .innerJoin(
+      menuVersionsTable,
+      eq(menuEntryVersionsTable.menuVersionId, menuVersionsTable.id),
+    )
+    .where(
+      and(
+        eq(menuEntryVersionsTable.productId, productId),
+        ne(menuEntryVersionsTable.lifecycleStatus, "retired"),
+        eq(menuVersionsTable.lifecycleStatus, "DRAFT"),
+      ),
+    )
+    .limit(1);
+  if (draftRows[0]) {
     throw new MenuInvalidStateError({
       message: "Cannot retire a product while active menu entries reference it.",
     });

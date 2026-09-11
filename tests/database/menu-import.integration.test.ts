@@ -21,7 +21,15 @@ import { seedBrandTree } from "./support/access-control-fixtures";
 import { withCatalogRoleFixture } from "./support/catalog-roles";
 import { applyMigrations, withIsolatedTestDatabase } from "./support/test-database";
 
-const MENU_TABLES = ["menus", "menu_sections", "menu_entries"] as const;
+const MENU_TABLES = [
+  "menus",
+  "menu_sections",
+  "menu_entries",
+  "menu_versions",
+  "menu_section_versions",
+  "menu_entry_versions",
+  "menu_mutation_audit_events",
+] as const;
 
 const PRIOR_MIGRATION_HASHES: Record<string, string> = {
   "drizzle/0000_database-foundation.sql":
@@ -110,7 +118,7 @@ async function expectPermissionDenied(promise: Promise<unknown>): Promise<void> 
 }
 
 describe("IMP-013 migration replay and seal", () => {
-  it("creates exactly 3 menu tables and seeds menu permissions (49 / 7 after IMP-016)", async () => {
+  it("creates menu identity + version tables and seeds menu permissions", async () => {
     await withMigratedPersistence(async (persistence) => {
       await persistence.withContext(async (ctx) => {
         const tables = await ctx.db.execute<{ relname: string }>(sql`
@@ -119,16 +127,24 @@ describe("IMP-013 migration replay and seal", () => {
           join pg_namespace n on n.oid = c.relnamespace
           where n.nspname = 'app'
             and c.relkind = 'r'
-            and c.relname in ('menus', 'menu_sections', 'menu_entries')
+            and c.relname in (
+              'menus',
+              'menu_sections',
+              'menu_entries',
+              'menu_versions',
+              'menu_section_versions',
+              'menu_entry_versions',
+              'menu_mutation_audit_events'
+            )
           order by c.relname
         `);
         expect(tables.rows.map((r) => r.relname)).toEqual([...MENU_TABLES].sort());
-        expect(tables.rows.length).toBe(3);
+        expect(tables.rows.length).toBe(MENU_TABLES.length);
 
         const permissions = await ctx.db.execute<{ count: string }>(
           sql`select count(*)::text as count from app.access_permissions`,
         );
-        expect(permissions.rows[0]?.count).toBe("51");
+        expect(permissions.rows[0]?.count).toBe("68");
         expect(PERMISSION_KEYS.length).toBe(68);
 
         const roles = await ctx.db.execute<{ count: string }>(

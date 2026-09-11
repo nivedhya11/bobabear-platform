@@ -1,7 +1,8 @@
 /**
- * Menu presentation subdomain (IMP-013).
+ * Menu presentation subdomain (IMP-013 / IMP-036F F3A).
  *
  * Soft lifecycle only. Active graph is fail-closed. No public HTTP surface.
+ * Customer truth: ACTIVE Menu → effective MenuVersion graph only.
  */
 import "server-only";
 
@@ -26,6 +27,12 @@ export type {
   MenuReadInput,
   MenuSection,
   MenuSectionLifecycleInput,
+  MenuVersion,
+  MoveMenuEntryInput,
+  ReorderMenuEntriesInput,
+  ReorderMenuSectionsInput,
+  UpdateMenuEntryDisplayInput,
+  UpdateMenuSectionInput,
 } from "./types";
 
 export { activateMenu, createMenu, findMenuById, retireMenu } from "./menus";
@@ -51,3 +58,33 @@ export {
   assertNoActiveEntriesForProduct,
   assertSectionDepthAllowed,
 } from "./validation";
+
+export { insertMenuMutationAuditEvent } from "./audit";
+export type { InsertMenuMutationAuditEventInput } from "./audit";
+
+export {
+  advanceMenuRevision,
+  assertExpectedMenuRevision,
+  compareMaterialGraphs,
+  ensureDraftMenuVersion,
+  loadVersionGraph,
+  lockMenuForUpdate,
+  materialGraphFingerprint,
+  parseExpectedMenuRevision,
+} from "./versions";
+
+export {
+  moveMenuEntry,
+  reorderMenuEntries,
+  reorderMenuSections,
+  updateMenuEntryDisplay,
+  updateMenuSection,
+} from "./draft";
+
+export { previewMenuPublication, publishMenuRevision } from "./publish";
+export type {
+  PreviewMenuPublicationInput,
+  PreviewMenuPublicationResult,
+  PublishMenuRevisionInput,
+  PublishMenuRevisionResult,
+} from "./publish";

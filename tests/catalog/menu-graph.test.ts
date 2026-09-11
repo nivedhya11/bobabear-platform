@@ -1,5 +1,5 @@
 /**
- * Menu presentation graph domain tests (IMP-013).
+ * Menu presentation graph domain tests (IMP-013 / IMP-036F F3A).
  * Depth limits, self-parent rejection, and retirement dependency order.
  */
 import { describe, expect, it } from "vitest";
@@ -22,6 +22,8 @@ import {
   createMenu,
   createMenuEntry,
   createMenuSection,
+  findMenuById,
+  publishMenuRevision,
   retireMenu,
   retireMenuEntry,
   retireMenuSection,
@@ -172,10 +174,11 @@ describe("menu retirement dependency order", () => {
         }),
       );
 
+      // Stage active graph in DRAFT, then activate Menu (promotes EFFECTIVE).
       await persistence.transaction(async (tx) => {
-        await activateMenu(tx, { actor, menuId: menu.id });
         await activateMenuSection(tx, { actor, sectionId: root.id });
         await activateMenuEntry(tx, { actor, entryId: entry.id });
+        await activateMenu(tx, { actor, menuId: menu.id });
       });
 
       await expect(
@@ -192,6 +195,17 @@ describe("menu retirement dependency order", () => {
 
       await persistence.transaction((tx) => retireMenuEntry(tx, { actor, entryId: entry.id }));
       await persistence.transaction((tx) => retireMenuSection(tx, { actor, sectionId: root.id }));
+
+      // Customer EFFECTIVE still has placements until deliberate publish.
+      const beforePublish = await persistence.withContext((ctx) => findMenuById(ctx, menu.id));
+      await persistence.transaction((tx) =>
+        publishMenuRevision(tx, {
+          actor,
+          menuId: menu.id,
+          expectedMenuRevision: beforePublish!.revision,
+        }),
+      );
+
       await persistence.transaction((tx) => retireMenu(tx, { actor, menuId: menu.id }));
       await persistence.transaction((tx) => retireProduct(tx, { actor, productId: product.id }));
     });
@@ -230,9 +244,9 @@ describe("menu retirement dependency order", () => {
       );
 
       await persistence.transaction(async (tx) => {
-        await activateMenu(tx, { actor, menuId: menu.id });
         await activateMenuSection(tx, { actor, sectionId: root.id });
         await activateMenuSection(tx, { actor, sectionId: child.id });
+        await activateMenu(tx, { actor, menuId: menu.id });
       });
 
       await expect(

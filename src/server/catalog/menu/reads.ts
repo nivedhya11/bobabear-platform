@@ -1,5 +1,7 @@
 /**
- * Authorized menu graph reads (IMP-013).
+ * Authorized menu graph reads (IMP-013 / IMP-036F F3A).
+ *
+ * Prefer draft version graph when present, else effective, else legacy seed.
  */
 import { asc, eq } from "drizzle-orm";
 
@@ -12,6 +14,11 @@ import { assertUuid } from "../lifecycle";
 import { requireMenuRead } from "./authorize-menu";
 import { MenuNotFoundError } from "./errors";
 import type { MenuEntry, MenuGraph, MenuReadInput, MenuSection } from "./types";
+import {
+  entryVersionToMenuEntry,
+  loadVersionGraph,
+  sectionVersionToMenuSection,
+} from "./versions";
 import { loadMenuById, rowToEntry, rowToSection } from "./validation";
 
 export async function getMenuGraph(
@@ -22,6 +29,28 @@ export async function getMenuGraph(
   const menu = await loadMenuById(context, menuId);
   if (!menu) throw new MenuNotFoundError("menu");
   await requireMenuRead(context, input.actor, menu.brandId);
+
+  const versionId = menu.draftMenuVersionId ?? menu.effectiveMenuVersionId ?? null;
+  if (versionId) {
+    const graph = await loadVersionGraph(context, versionId);
+    const timestamps = {
+      createdAt: menu.createdAt,
+      updatedAt: menu.updatedAt,
+    };
+    const sections: MenuSection[] = graph.sections
+      .map((row) => sectionVersionToMenuSection(row, timestamps))
+      .sort((a, b) => a.position - b.position || a.id.localeCompare(b.id));
+    const entries: MenuEntry[] = graph.entries
+      .map((row) => entryVersionToMenuEntry(row, timestamps))
+      .sort((a, b) => a.position - b.position || a.id.localeCompare(b.id));
+    return {
+      menu,
+      sections,
+      entries,
+      source: menu.draftMenuVersionId ? "draft" : "effective",
+      menuVersionId: versionId,
+    };
+  }
 
   const sectionRows = await context.db
     .select()
@@ -35,10 +64,13 @@ export async function getMenuGraph(
     .where(eq(menuEntriesTable.menuId, menuId))
     .orderBy(asc(menuEntriesTable.position), asc(menuEntriesTable.id));
 
-  const sections: MenuSection[] = sectionRows.map(rowToSection);
-  const entries: MenuEntry[] = entryRows.map(rowToEntry);
-
-  return { menu, sections, entries };
+  return {
+    menu,
+    sections: sectionRows.map(rowToSection),
+    entries: entryRows.map(rowToEntry),
+    source: "legacy",
+    menuVersionId: null,
+  };
 }
 
 /**

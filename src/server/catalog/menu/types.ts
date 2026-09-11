@@ -1,8 +1,11 @@
 /**
- * Menu presentation domain types (IMP-013).
+ * Menu presentation domain types (IMP-013 / IMP-036F F3A).
  */
 
-import type { MenuLifecycleStatus } from "../../../shared/catalog/menu";
+import type {
+  MenuLifecycleStatus,
+  MenuVersionLifecycleStatus,
+} from "../../../shared/catalog/menu";
 import type { WorkforcePrincipal } from "../../access-control/principal";
 
 export type Menu = Readonly<{
@@ -11,10 +14,25 @@ export type Menu = Readonly<{
   code: string;
   name: string;
   lifecycleStatus: MenuLifecycleStatus;
+  revision: bigint;
+  effectiveMenuVersionId: string | null;
+  draftMenuVersionId: string | null;
   createdAt: Date;
   updatedAt: Date;
   activatedAt: Date | null;
   retiredAt: Date | null;
+}>;
+
+export type MenuVersion = Readonly<{
+  id: string;
+  menuId: string;
+  brandId: string;
+  revision: bigint;
+  lifecycleStatus: MenuVersionLifecycleStatus;
+  createdAt: Date;
+  createdBy: string | null;
+  effectiveAt: Date | null;
+  supersededAt: Date | null;
 }>;
 
 export type MenuSection = Readonly<{
@@ -54,6 +72,9 @@ export type MenuGraph = Readonly<{
   menu: Menu;
   sections: readonly MenuSection[];
   entries: readonly MenuEntry[];
+  /** Which version graph was loaded for admin reads, when versioned. */
+  source: "draft" | "effective" | "legacy";
+  menuVersionId: string | null;
 }>;
 
 export type CreateMenuInput = Readonly<{
@@ -107,4 +128,39 @@ export type MenuEntryLifecycleInput = Readonly<{
 export type MenuReadInput = Readonly<{
   actor: WorkforcePrincipal;
   menuId: string;
+}>;
+
+export type UpdateMenuSectionInput = Readonly<{
+  actor: WorkforcePrincipal;
+  sectionId: string;
+  name?: string;
+  description?: string | null;
+  parentSectionId?: string | null;
+}>;
+
+export type ReorderMenuSectionsInput = Readonly<{
+  actor: WorkforcePrincipal;
+  menuId: string;
+  orderedSectionIds: readonly string[];
+}>;
+
+export type ReorderMenuEntriesInput = Readonly<{
+  actor: WorkforcePrincipal;
+  sectionId: string;
+  orderedEntryIds: readonly string[];
+}>;
+
+export type MoveMenuEntryInput = Readonly<{
+  actor: WorkforcePrincipal;
+  entryId: string;
+  targetSectionId: string;
+  position?: number;
+}>;
+
+export type UpdateMenuEntryDisplayInput = Readonly<{
+  actor: WorkforcePrincipal;
+  entryId: string;
+  displayName?: string | null;
+  displayDescription?: string | null;
+  imagePath?: string | null;
 }>;

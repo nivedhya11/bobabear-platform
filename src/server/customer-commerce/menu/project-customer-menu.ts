@@ -13,9 +13,10 @@ import {
   catalogVariantsTable,
 } from "../../../platform/database/schema/catalog";
 import {
-  menuEntriesTable,
+  menuEntryVersionsTable,
   menusTable,
-  menuSectionsTable,
+  menuSectionVersionsTable,
+  menuVersionsTable,
 } from "../../../platform/database/schema/menu";
 import { outletsTable } from "../../../platform/database/schema/organizations";
 import { CustomerMenuError } from "../../../shared/customer-menu/errors";
@@ -164,21 +165,56 @@ export async function projectCustomerMenu(
   const menuRow = await loadActiveMenuForBrand(context, brandId);
   const menuId = menuRow.id;
 
+  // Customer cutover: ACTIVE Menu → effectiveMenuVersionId → EFFECTIVE graph only.
+  // No draft fallback. No legacy menu_sections / menu_entries fallback.
+  if (!menuRow.effectiveMenuVersionId) {
+    throw new CustomerMenuError(
+      "MENU_UNAVAILABLE",
+      "Active menu has no effective MenuVersion pointer.",
+    );
+  }
+
+  const versionRows = await context.db
+    .select()
+    .from(menuVersionsTable)
+    .where(eq(menuVersionsTable.id, menuRow.effectiveMenuVersionId))
+    .limit(1);
+  const menuVersion = versionRows[0];
+  if (
+    !menuVersion ||
+    menuVersion.menuId !== menuId ||
+    menuVersion.lifecycleStatus !== "EFFECTIVE"
+  ) {
+    throw new CustomerMenuError(
+      "MENU_UNAVAILABLE",
+      "Active menu effective MenuVersion is missing or not EFFECTIVE.",
+    );
+  }
+
   const sectionRows = await context.db
     .select()
-    .from(menuSectionsTable)
+    .from(menuSectionVersionsTable)
     .where(
-      and(eq(menuSectionsTable.menuId, menuId), eq(menuSectionsTable.lifecycleStatus, "active")),
+      and(
+        eq(menuSectionVersionsTable.menuVersionId, menuVersion.id),
+        eq(menuSectionVersionsTable.lifecycleStatus, "active"),
+      ),
     )
-    .orderBy(asc(menuSectionsTable.position), asc(menuSectionsTable.id));
+    .orderBy(
+      asc(menuSectionVersionsTable.position),
+      asc(menuSectionVersionsTable.sectionId),
+    );
 
   const entryRows = await context.db
     .select()
-    .from(menuEntriesTable)
+    .from(menuEntryVersionsTable)
     .where(
-      and(eq(menuEntriesTable.menuId, menuId), eq(menuEntriesTable.lifecycleStatus, "active")),
+      and(
+        eq(menuEntryVersionsTable.menuVersionId, menuVersion.id),
+        eq(menuEntryVersionsTable.lifecycleStatus, "active"),
+      ),
     )
-    .orderBy(asc(menuEntriesTable.position), asc(menuEntriesTable.id));
+    .orderBy(asc(menuEntryVersionsTable.position), asc(menuEntryVersionsTable.entryId));
 
   const productIds = [...new Set(entryRows.map((entry) => entry.productId))];
   const productRows =
@@ -290,7 +326,7 @@ export async function projectCustomerMenu(
 
   const sections: CustomerMenuSection[] = sectionRows.map((section) =>
     Object.freeze({
-      id: section.id,
+      id: section.sectionId,
       parentSectionId: section.parentSectionId,
       name: section.name,
       position: section.position,
