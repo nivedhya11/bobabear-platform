@@ -12,7 +12,7 @@
   "architectureFitExecution": "PERFORMED",
   "architectureLocked": "YES",
   "implementationAuthorized": "YES",
-  "implementationStarted": "NO",
+  "implementationStarted": "YES",
   "impAccepted": "NO",
   "imp036gActivated": "NO"
 }
@@ -33,15 +33,15 @@ ARCHITECTURE_FIT_RESULT: PASS
 ARCHITECTURE_FIT: PASS
 IMP036F_ARCHITECTURE_LOCKED: YES
 IMP036F_IMPLEMENTATION_AUTHORIZED: YES
-IMP036F_STARTED: NO
+IMP036F_STARTED: YES
 IMP036F_ACCEPTED: NO
 IMP036G_ACTIVATED: NO
 ```
 
 This artifact is the **gate-passed Product Definition** for candidate `PD-IMP-036F-DRAFT-1`.
 Product Definition Gate = PASS. Architecture Fit = PASS; capability architecture is locked.
-Implementation authorization is granted at GTM-R120 / STATE-R118; implementation has not started.
-Authorization does **not** start implementation, accept IMP-036F, or activate IMP-036G.
+Implementation authorization was granted at GTM-R120 / STATE-R118; implementation start is recorded at GTM-R121 / STATE-R119.
+Start does **not** complete or accept IMP-036F, or activate IMP-036G.
 
 ```text
 PRODUCT_DELIVERY_PROCESS_EFFECTIVE_FROM = IMP-036F
@@ -63,9 +63,9 @@ direction; not unresolved proposals).
 | Product Definition version / document status | `PD-IMP-036F-DRAFT-1`; **Document status: APPROVED** |
 | Product owner / approval evidence | Founder product direction via DISCOVER (`DISC-F-001`…`011`); Product Definition Gate **PASS** on 2026-09-10 (PR #140 review `5166877450`; gate-evaluated content SHA `014e0f935f193f54718d6afd5e7991508088f9bc`) |
 | Process / verification policy | `PD-1` / `TEST-1` |
-| Canonical anchors | VISION-1; ROADMAP GTM-R120; STATE STATE-R118; ARCH-R19; DR-15; PD-1; TEST-1; PERSONA-1; GJ-1 |
+| Canonical anchors | VISION-1; ROADMAP GTM-R121; STATE STATE-R119; ARCH-R19; DR-15; PD-1; TEST-1; PERSONA-1; GJ-1 |
 | Repository candidate | Canonical path `/home/ajoshi/repos/boba-bear-platform`; verified base `main` HEAD `1f59333d1a3bfe0dfecde908245306e2edacd834`; tree `284800a71a20d27c01b9c0cec7cadb45bb5d059b`; Product Definition Gate-evaluated PR head `014e0f935f193f54718d6afd5e7991508088f9bc`; Architecture Fit reviewed candidate head `9ae06d6267e997223b1995124540974215ee17fd` / tree `55adb287bb0eb77240a6becdc16fed2d504ba144` (independent review `5169723968`); architecture-lock persistence is a subsequent PR #141 commit |
-| Capability lifecycle / authorization | ROADMAP/STATE: `ARCHITECTURE_LOCKED` / `AUTHORIZED` / `NOT_STARTED`; `IMP036F_ACTIVATED: YES`; `IMP036F_PRODUCT_DEFINITION: APPROVED`; `IMP036F_PRODUCT_DEFINITION_GATE: PASS`; `IMP036F_ARCHITECTURE_FIT: PASS`; `IMP036F_ARCHITECTURE_LOCKED: YES`; implementation **authorized** / **not** started; `FOUNDER_UAT_REQUIRED: YES` |
+| Capability lifecycle / authorization | ROADMAP/STATE: `IMPLEMENTATION_IN_PROGRESS`; `IMP036F_ACTIVATED: YES`; `IMP036F_PRODUCT_DEFINITION: APPROVED`; `IMP036F_PRODUCT_DEFINITION_GATE: PASS`; `IMP036F_ARCHITECTURE_FIT: PASS`; `IMP036F_ARCHITECTURE_LOCKED: YES`; implementation **authorized** / **started**; `IMP036F_ACCEPTED: NO`; `FOUNDER_UAT_REQUIRED: YES` |
 | Relevant capability architecture / ADRs | Locked capability architecture [`capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md`](../../capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md); supporting plan [`experience/enterprise-experience/IMP-036F-catalog-menu-pricing-promotions.md`](../../experience/enterprise-experience/IMP-036F-catalog-menu-pricing-promotions.md); binding ADR-006, ADR-007, ADR-008 (as amended by accepted STATE / D-368–D-370); historical locks D-085…D-100, D-102, D-108–D-111, D-118, D-122–D-127, D-137–D-144 where applicable; accepted IMP-036E Store Assortment boundary |
 | Founder UAT applicability | `FOUNDER_UAT_REQUIRED = YES` — materially changes operator commercial configuration and resulting customer discovery/orderability truth (ROADMAP/STATE) |
 
@@ -258,7 +258,7 @@ entities.
 Architecture fit / applicable invariants: D-085 separations; D-368 projection ≠ authority
 Open material decisions: NONE
 Device applicability: Desktop/tablet full inspection; mobile inspection/context supported
-Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization is granted at GTM-R120 / STATE-R118; implementation has not started.
+Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization was granted at GTM-R120 / STATE-R118; implementation start is recorded at GTM-R121 / STATE-R119.
 ```
 
 ```text
@@ -290,7 +290,7 @@ resolved by locked capability architecture.
 Open material decisions: NONE (Founder intent ADR-006 preserved; architecture locked)
 Device applicability: Desktop/tablet authoring required for V1; mobile inspection/context only
 (no mandatory commercial mutations)
-Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization is granted at GTM-R120 / STATE-R118; implementation has not started.
+Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization was granted at GTM-R120 / STATE-R118; implementation start is recorded at GTM-R121 / STATE-R119.
 ```
 
 ```text
@@ -315,7 +315,7 @@ Architecture fit / applicable invariants: ADR-006 modifier association surfaces;
 customer paid-modifier selection
 Open material decisions: NONE
 Device applicability: Desktop/tablet authoring; mobile inspection/context only
-Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization is granted at GTM-R120 / STATE-R118; implementation has not started.
+Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization was granted at GTM-R120 / STATE-R118; implementation start is recorded at GTM-R121 / STATE-R119.
 ```
 
 ```text
@@ -341,7 +341,7 @@ Architecture fit / applicable invariants: ADR-006 / D-089 lifecycle; confirmatio
 Open material decisions: NONE
 Device applicability: Desktop/tablet for consequential lifecycle transitions; mobile
 inspection/context only
-Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization is granted at GTM-R120 / STATE-R118; implementation has not started.
+Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization was granted at GTM-R120 / STATE-R118; implementation start is recorded at GTM-R121 / STATE-R119.
 ```
 
 ```text
@@ -368,7 +368,7 @@ Architecture fit / applicable invariants: D-086 Menu≠Category; D-368 projectio
 Menu boundary
 Open material decisions: NONE
 Device applicability: Desktop/tablet authoring; mobile inspection/context only
-Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization is granted at GTM-R120 / STATE-R118; implementation has not started.
+Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization was granted at GTM-R120 / STATE-R118; implementation start is recorded at GTM-R121 / STATE-R119.
 ```
 
 ```text
@@ -394,7 +394,7 @@ Brand Assortment mutation via this slice
 Architecture fit / applicable invariants: D-094–D-096/D-100; IMP-036E Store Assortment boundary
 Open material decisions: NONE
 Device applicability: Desktop/tablet Brand Assortment authoring; mobile inspection/context only
-Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization is granted at GTM-R120 / STATE-R118; implementation has not started.
+Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization was granted at GTM-R120 / STATE-R118; implementation start is recorded at GTM-R121 / STATE-R119.
 ```
 
 ```text
@@ -420,7 +420,7 @@ Architecture fit / applicable invariants: D-102 Catalog≠money; ADR-007 price b
 workforce pricing authoring surface composition
 Open material decisions: NONE
 Device applicability: Desktop/tablet pricing authoring; mobile inspection/context only
-Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization is granted at GTM-R120 / STATE-R118; implementation has not started.
+Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization was granted at GTM-R120 / STATE-R118; implementation start is recorded at GTM-R121 / STATE-R119.
 ```
 
 ```text
@@ -446,7 +446,7 @@ Architecture fit / applicable invariants: ADR-007 / D-122–D-127 lifecycle fide
 workforce promotion authoring surface
 Open material decisions: NONE
 Device applicability: Desktop/tablet authoring; mobile inspection/context only
-Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization is granted at GTM-R120 / STATE-R118; implementation has not started.
+Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization was granted at GTM-R120 / STATE-R118; implementation start is recorded at GTM-R121 / STATE-R119.
 ```
 
 ```text
@@ -486,7 +486,7 @@ DELIVERY_TARIFF_AUTHORITY = PRICING; Architecture Fit status RESOLVED / PASS / L
 Open material decisions: NONE (authorization mechanism locked; not a new Founder product choice)
 Device applicability: Desktop/tablet tariff authoring; mobile inspection/context only
 Classification: PLANNED_IMP036F; tariff auth mapping locked (pricing.manage @ Brand←Outlet)
-Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization is granted at GTM-R120 / STATE-R118; implementation has not started.
+Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization was granted at GTM-R120 / STATE-R118; implementation start is recorded at GTM-R121 / STATE-R119.
 ```
 
 ```text
@@ -512,7 +512,7 @@ false single source of truth (ARCHITECTURE_FIT_REQUIRED for composition mechanis
 Open material decisions: NONE
 Device applicability: Desktop/tablet for consequential review/publish path; mobile
 inspection/context only
-Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization is granted at GTM-R120 / STATE-R118; implementation has not started.
+Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization was granted at GTM-R120 / STATE-R118; implementation start is recorded at GTM-R121 / STATE-R119.
 ```
 
 ```text
@@ -543,7 +543,7 @@ Product/Variant mutations (known examples: ACTIVE Product name/description; ACTI
 later resolved by locked capability architecture.
 Open material decisions: NONE
 Device applicability: Desktop/tablet publish/effect; mobile inspection/context only
-Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization is granted at GTM-R120 / STATE-R118; implementation has not started.
+Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization was granted at GTM-R120 / STATE-R118; implementation start is recorded at GTM-R121 / STATE-R119.
 ```
 
 ```text
@@ -572,7 +572,7 @@ Open material decisions: NONE
 Device applicability: Desktop/tablet verification workflow; mobile may support inspection/context
 verification reads where operable, without requiring full authoring
 Secondary persona consequence: PERSONA-CUSTOMER experiences truthful Menu/order evaluation
-Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization is granted at GTM-R120 / STATE-R118; implementation has not started.
+Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization was granted at GTM-R120 / STATE-R118; implementation start is recorded at GTM-R121 / STATE-R119.
 ```
 
 ```text
@@ -599,7 +599,7 @@ Architecture fit / applicable invariants: How existing authorities supply diagno
 Open material decisions: NONE
 Device applicability: Desktop/tablet diagnosis; mobile inspection/context diagnosis supported where
 operable
-Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization is granted at GTM-R120 / STATE-R118; implementation has not started.
+Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization was granted at GTM-R120 / STATE-R118; implementation start is recorded at GTM-R121 / STATE-R119.
 ```
 
 ```text
@@ -633,7 +633,7 @@ optional later mapping of any verified existing select/change path is FOLLOW_UP
 Open material decisions: NONE (deferring unverified media-reference mutation is authorized by
 DISC-F-010; no new Founder decision required)
 Device applicability: Desktop/tablet/mobile inspection of existing references as context
-Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization is granted at GTM-R120 / STATE-R118; implementation has not started.
+Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization was granted at GTM-R120 / STATE-R118; implementation start is recorded at GTM-R121 / STATE-R119.
 ```
 
 ```text
@@ -669,7 +669,7 @@ Any future simple mobile mutation requires explicit selection plus story/AC cove
 Product Definition revision or separately authorized follow-up.
 Device applicability: Desktop and tablet mandatory for full V1 authoring; mobile mandatory for
 inspection/context support (not “unsupported”)
-Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization is granted at GTM-R120 / STATE-R118; implementation has not started.
+Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization was granted at GTM-R120 / STATE-R118; implementation start is recorded at GTM-R121 / STATE-R119.
 ```
 
 ```text
@@ -695,7 +695,7 @@ Architecture fit / applicable invariants: DISC-F-006 / ADR-007 Tax/Charges separ
 commercial workflow
 Open material decisions: NONE
 Device applicability: Desktop/tablet/mobile inspection/context as applicable
-Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization is granted at GTM-R120 / STATE-R118; implementation has not started.
+Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization was granted at GTM-R120 / STATE-R118; implementation start is recorded at GTM-R121 / STATE-R119.
 ```
 
 ---
@@ -1643,22 +1643,22 @@ These remain **UNASSIGNED** and are **not** IMP-036F V1 stories:
 
 | Story ID | Applicable template fields complete / evidence | Open material decisions | Readiness / blocker |
 |---|---|---|---|
-| US-IMP-036F-001 | YES — all §9 template fields present (incl. N/A where justified) | NONE | Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization is granted at GTM-R120 / STATE-R118; implementation has not started. |
-| US-IMP-036F-002 | YES | NONE | Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization is granted at GTM-R120 / STATE-R118; implementation has not started. |
-| US-IMP-036F-003 | YES | NONE | Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization is granted at GTM-R120 / STATE-R118; implementation has not started. |
-| US-IMP-036F-004 | YES | NONE | Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization is granted at GTM-R120 / STATE-R118; implementation has not started. |
-| US-IMP-036F-005 | YES | NONE | Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization is granted at GTM-R120 / STATE-R118; implementation has not started. |
-| US-IMP-036F-006 | YES | NONE | Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization is granted at GTM-R120 / STATE-R118; implementation has not started. |
-| US-IMP-036F-007 | YES | NONE | Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization is granted at GTM-R120 / STATE-R118; implementation has not started. |
-| US-IMP-036F-008 | YES | NONE | Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization is granted at GTM-R120 / STATE-R118; implementation has not started. |
-| US-IMP-036F-009 | YES | NONE | Readiness: READY — Architecture Fit PASS / architecture locked (tariff auth gap resolved). Implementation authorization is granted at GTM-R120 / STATE-R118; implementation has not started. |
-| US-IMP-036F-010 | YES | NONE | Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization is granted at GTM-R120 / STATE-R118; implementation has not started. |
-| US-IMP-036F-011 | YES | NONE | Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization is granted at GTM-R120 / STATE-R118; implementation has not started. |
-| US-IMP-036F-012 | YES | NONE | Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization is granted at GTM-R120 / STATE-R118; implementation has not started. |
-| US-IMP-036F-013 | YES | NONE | Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization is granted at GTM-R120 / STATE-R118; implementation has not started. |
-| US-IMP-036F-014 | YES | NONE | Readiness: READY — Architecture Fit PASS / architecture locked; media mutation FOLLOW_UP. Implementation authorization is granted at GTM-R120 / STATE-R118; implementation has not started. |
-| US-IMP-036F-015 | YES | NONE | Readiness: READY — Architecture Fit PASS / architecture locked; mobile mutations none mandatory. Implementation authorization is granted at GTM-R120 / STATE-R118; implementation has not started. |
-| US-IMP-036F-016 | YES | NONE | Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization is granted at GTM-R120 / STATE-R118; implementation has not started. |
+| US-IMP-036F-001 | YES — all §9 template fields present (incl. N/A where justified) | NONE | Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization was granted at GTM-R120 / STATE-R118; implementation start is recorded at GTM-R121 / STATE-R119. |
+| US-IMP-036F-002 | YES | NONE | Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization was granted at GTM-R120 / STATE-R118; implementation start is recorded at GTM-R121 / STATE-R119. |
+| US-IMP-036F-003 | YES | NONE | Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization was granted at GTM-R120 / STATE-R118; implementation start is recorded at GTM-R121 / STATE-R119. |
+| US-IMP-036F-004 | YES | NONE | Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization was granted at GTM-R120 / STATE-R118; implementation start is recorded at GTM-R121 / STATE-R119. |
+| US-IMP-036F-005 | YES | NONE | Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization was granted at GTM-R120 / STATE-R118; implementation start is recorded at GTM-R121 / STATE-R119. |
+| US-IMP-036F-006 | YES | NONE | Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization was granted at GTM-R120 / STATE-R118; implementation start is recorded at GTM-R121 / STATE-R119. |
+| US-IMP-036F-007 | YES | NONE | Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization was granted at GTM-R120 / STATE-R118; implementation start is recorded at GTM-R121 / STATE-R119. |
+| US-IMP-036F-008 | YES | NONE | Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization was granted at GTM-R120 / STATE-R118; implementation start is recorded at GTM-R121 / STATE-R119. |
+| US-IMP-036F-009 | YES | NONE | Readiness: READY — Architecture Fit PASS / architecture locked (tariff auth gap resolved). Implementation authorization was granted at GTM-R120 / STATE-R118; implementation start is recorded at GTM-R121 / STATE-R119. |
+| US-IMP-036F-010 | YES | NONE | Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization was granted at GTM-R120 / STATE-R118; implementation start is recorded at GTM-R121 / STATE-R119. |
+| US-IMP-036F-011 | YES | NONE | Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization was granted at GTM-R120 / STATE-R118; implementation start is recorded at GTM-R121 / STATE-R119. |
+| US-IMP-036F-012 | YES | NONE | Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization was granted at GTM-R120 / STATE-R118; implementation start is recorded at GTM-R121 / STATE-R119. |
+| US-IMP-036F-013 | YES | NONE | Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization was granted at GTM-R120 / STATE-R118; implementation start is recorded at GTM-R121 / STATE-R119. |
+| US-IMP-036F-014 | YES | NONE | Readiness: READY — Architecture Fit PASS / architecture locked; media mutation FOLLOW_UP. Implementation authorization was granted at GTM-R120 / STATE-R118; implementation start is recorded at GTM-R121 / STATE-R119. |
+| US-IMP-036F-015 | YES | NONE | Readiness: READY — Architecture Fit PASS / architecture locked; mobile mutations none mandatory. Implementation authorization was granted at GTM-R120 / STATE-R118; implementation start is recorded at GTM-R121 / STATE-R119. |
+| US-IMP-036F-016 | YES | NONE | Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization was granted at GTM-R120 / STATE-R118; implementation start is recorded at GTM-R121 / STATE-R119. |
 
 Product-definition template fields are complete for all 16 stories above. Story `READY` means Product
 Definition + Architecture Fit/lock readiness only.
@@ -1748,11 +1748,11 @@ ARCHITECTURE_FIT_REVIEWED_CANDIDATE_TREE = 55adb287bb0eb77240a6becdc16fed2d504ba
 INDEPENDENT_ARCHITECTURE_REVIEW = 5169723968
 INDEPENDENT_ARCHITECTURE_REVIEW_RESULT = PASS
 LOCKED_CAPABILITY_ARCHITECTURE = docs/platform/capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md
-CANONICAL_ANCHORS = GTM-R120 / STATE-R118
+CANONICAL_ANCHORS = GTM-R121 / STATE-R119
 ```
 
 Next gate after canonical merge/reconciliation: **explicit implementation start / execution
-authorization** (separate human gate). Implementation authorization at GTM-R120 / STATE-R118 does
+authorization** (separate human gate). Implementation authorization at GTM-R121 / STATE-R119 does
 **not** start implementation, accept IMP-036F, or activate IMP-036G.
 ---
 

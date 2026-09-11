@@ -41,6 +41,14 @@ import {
   assertUuid,
   retirementTimestamps,
 } from "./lifecycle";
+import {
+  assertInPlaceContentMutationAllowed,
+  ensureModifierGroupContentRevision1,
+  ensureModifierGroupOptionContentRevision1,
+  ensureModifierOptionContentRevision1,
+  ensureVariantModifierGroupContentRevision1,
+  establishFirstEffectivePublication,
+} from "./revisions";
 import type {
   AddModifierOptionToGroupInput,
   ApplyModifierGroupToVariantInput,
@@ -65,6 +73,7 @@ import {
   revalidateProductsForModifierOption,
   validateActiveProductGraph,
 } from "./validation";
+import { requireWorkforcePrincipal } from "../access-control/principal";
 
 function rowToGroup(row: typeof catalogModifierGroupsTable.$inferSelect): CatalogModifierGroup {
   return {
@@ -74,6 +83,8 @@ function rowToGroup(row: typeof catalogModifierGroupsTable.$inferSelect): Catalo
     name: row.name,
     description: row.description,
     lifecycleStatus: row.lifecycleStatus as CatalogLifecycleStatus,
+    effectiveContentRevision: row.effectiveContentRevision,
+    draftContentRevision: row.draftContentRevision,
     createdAt: new Date(row.createdAt),
     updatedAt: new Date(row.updatedAt),
     activatedAt: row.activatedAt ? new Date(row.activatedAt) : null,
@@ -89,6 +100,8 @@ function rowToOption(row: typeof catalogModifierOptionsTable.$inferSelect): Cata
     name: row.name,
     description: row.description,
     lifecycleStatus: row.lifecycleStatus as CatalogLifecycleStatus,
+    effectiveContentRevision: row.effectiveContentRevision,
+    draftContentRevision: row.draftContentRevision,
     createdAt: new Date(row.createdAt),
     updatedAt: new Date(row.updatedAt),
     activatedAt: row.activatedAt ? new Date(row.activatedAt) : null,
@@ -109,6 +122,8 @@ function rowToGroupOption(
     defaultQuantity: row.defaultQuantity,
     position: row.position,
     lifecycleStatus: row.lifecycleStatus as CatalogLifecycleStatus,
+    effectiveContentRevision: row.effectiveContentRevision,
+    draftContentRevision: row.draftContentRevision,
     createdAt: new Date(row.createdAt),
     updatedAt: new Date(row.updatedAt),
     activatedAt: row.activatedAt ? new Date(row.activatedAt) : null,
@@ -129,6 +144,8 @@ function rowToVariantModifierGroup(
     required: isModifierGroupRequired(row.minTotalQuantity),
     position: row.position,
     lifecycleStatus: row.lifecycleStatus as CatalogLifecycleStatus,
+    effectiveContentRevision: row.effectiveContentRevision,
+    draftContentRevision: row.draftContentRevision,
     createdAt: new Date(row.createdAt),
     updatedAt: new Date(row.updatedAt),
     activatedAt: row.activatedAt ? new Date(row.activatedAt) : null,
@@ -278,6 +295,8 @@ export async function updateModifierGroup(
     });
   }
 
+  assertInPlaceContentMutationAllowed(existing);
+
   const name =
     input.name !== undefined
       ? normalizeName(input.name, "name", CATALOG_NAME_MAX.modifierGroup)
@@ -321,6 +340,32 @@ export async function activateModifierGroup(
       updatedAt: stamps.updatedAt,
     })
     .where(eq(catalogModifierGroupsTable.id, existing.id));
+
+  if (existing.effectiveContentRevision == null) {
+    const actorWorkforceUserId = requireWorkforcePrincipal(input.actor).workforceUserId;
+    await establishFirstEffectivePublication(context, {
+      brandId: existing.brandId,
+      targetType: "modifier_group",
+      targetId: existing.id,
+      actorWorkforceUserId,
+      ensureRevision1: async () => {
+        const row = await findModifierGroupById(context, existing.id);
+        if (!row) throw new CatalogNotFoundError("modifier_group");
+        await ensureModifierGroupContentRevision1(context, row, stamps.activatedAt!);
+      },
+      setEffectiveOnPrimary: async () => {
+        const draft = existing.draftContentRevision;
+        await context.db
+          .update(catalogModifierGroupsTable)
+          .set({
+            effectiveContentRevision: draft,
+            updatedAt: stamps.updatedAt,
+          })
+          .where(eq(catalogModifierGroupsTable.id, existing.id));
+        return draft;
+      },
+    });
+  }
 
   await revalidateProductsForModifierGroup(context, existing.id);
 
@@ -420,6 +465,8 @@ export async function updateModifierOption(
     });
   }
 
+  assertInPlaceContentMutationAllowed(existing);
+
   const name =
     input.name !== undefined
       ? normalizeName(input.name, "name", CATALOG_NAME_MAX.modifierOption)
@@ -463,6 +510,32 @@ export async function activateModifierOption(
       updatedAt: stamps.updatedAt,
     })
     .where(eq(catalogModifierOptionsTable.id, existing.id));
+
+  if (existing.effectiveContentRevision == null) {
+    const actorWorkforceUserId = requireWorkforcePrincipal(input.actor).workforceUserId;
+    await establishFirstEffectivePublication(context, {
+      brandId: existing.brandId,
+      targetType: "modifier_option",
+      targetId: existing.id,
+      actorWorkforceUserId,
+      ensureRevision1: async () => {
+        const row = await findModifierOptionById(context, existing.id);
+        if (!row) throw new CatalogNotFoundError("modifier_option");
+        await ensureModifierOptionContentRevision1(context, row, stamps.activatedAt!);
+      },
+      setEffectiveOnPrimary: async () => {
+        const draft = existing.draftContentRevision;
+        await context.db
+          .update(catalogModifierOptionsTable)
+          .set({
+            effectiveContentRevision: draft,
+            updatedAt: stamps.updatedAt,
+          })
+          .where(eq(catalogModifierOptionsTable.id, existing.id));
+        return draft;
+      },
+    });
+  }
 
   await revalidateProductsForModifierOption(context, existing.id);
 
@@ -579,6 +652,8 @@ export async function updateModifierGroupOption(
     });
   }
 
+  assertInPlaceContentMutationAllowed(existing);
+
   const minQuantity =
     input.minQuantity !== undefined
       ? assertNonNegativeInt(input.minQuantity, "minQuantity")
@@ -643,6 +718,32 @@ export async function activateModifierGroupOption(
       });
     }
     throw error;
+  }
+
+  if (existing.effectiveContentRevision == null) {
+    const actorWorkforceUserId = requireWorkforcePrincipal(input.actor).workforceUserId;
+    await establishFirstEffectivePublication(context, {
+      brandId: existing.brandId,
+      targetType: "modifier_group_option",
+      targetId: existing.id,
+      actorWorkforceUserId,
+      ensureRevision1: async () => {
+        const row = await findModifierGroupOptionById(context, existing.id);
+        if (!row) throw new CatalogNotFoundError("modifier_group_option");
+        await ensureModifierGroupOptionContentRevision1(context, row, stamps.activatedAt!);
+      },
+      setEffectiveOnPrimary: async () => {
+        const draft = existing.draftContentRevision;
+        await context.db
+          .update(catalogModifierGroupOptionsTable)
+          .set({
+            effectiveContentRevision: draft,
+            updatedAt: stamps.updatedAt,
+          })
+          .where(eq(catalogModifierGroupOptionsTable.id, existing.id));
+        return draft;
+      },
+    });
   }
 
   await revalidateProductsForModifierGroup(context, existing.modifierGroupId);
@@ -766,6 +867,8 @@ export async function updateVariantModifierGroup(
     });
   }
 
+  assertInPlaceContentMutationAllowed(existing);
+
   const minTotalQuantity =
     input.minTotalQuantity !== undefined
       ? assertNonNegativeInt(input.minTotalQuantity, "minTotalQuantity")
@@ -826,6 +929,32 @@ export async function activateVariantModifierGroup(
       });
     }
     throw error;
+  }
+
+  if (existing.effectiveContentRevision == null) {
+    const actorWorkforceUserId = requireWorkforcePrincipal(input.actor).workforceUserId;
+    await establishFirstEffectivePublication(context, {
+      brandId: existing.brandId,
+      targetType: "variant_modifier_group",
+      targetId: existing.id,
+      actorWorkforceUserId,
+      ensureRevision1: async () => {
+        const row = await findVariantModifierGroupById(context, existing.id);
+        if (!row) throw new CatalogNotFoundError("variant_modifier_group");
+        await ensureVariantModifierGroupContentRevision1(context, row, stamps.activatedAt!);
+      },
+      setEffectiveOnPrimary: async () => {
+        const draft = existing.draftContentRevision;
+        await context.db
+          .update(catalogVariantModifierGroupsTable)
+          .set({
+            effectiveContentRevision: draft,
+            updatedAt: stamps.updatedAt,
+          })
+          .where(eq(catalogVariantModifierGroupsTable.id, existing.id));
+        return draft;
+      },
+    });
   }
 
   const variant = await findVariantById(context, existing.variantId);

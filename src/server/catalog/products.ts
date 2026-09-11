@@ -35,6 +35,11 @@ import {
   assertUuid,
   retirementTimestamps,
 } from "./lifecycle";
+import {
+  assertInPlaceContentMutationAllowed,
+  ensureProductContentRevision1,
+  establishFirstEffectivePublication,
+} from "./revisions";
 import type {
   CatalogProduct,
   CreateProductInput,
@@ -48,6 +53,7 @@ import {
 } from "./validation";
 import { MenuInvalidStateError } from "./menu/errors";
 import { assertNoActiveEntriesForProduct } from "./menu/validation";
+import { requireWorkforcePrincipal } from "../access-control/principal";
 
 function rowToProduct(row: typeof catalogProductsTable.$inferSelect): CatalogProduct {
   return {
@@ -58,6 +64,8 @@ function rowToProduct(row: typeof catalogProductsTable.$inferSelect): CatalogPro
     description: row.description,
     productKind: row.productKind as ProductKind,
     lifecycleStatus: row.lifecycleStatus as CatalogLifecycleStatus,
+    effectiveContentRevision: row.effectiveContentRevision,
+    draftContentRevision: row.draftContentRevision,
     createdAt: new Date(row.createdAt),
     updatedAt: new Date(row.updatedAt),
     activatedAt: row.activatedAt ? new Date(row.activatedAt) : null,
@@ -148,6 +156,8 @@ export async function updateProduct(
     throw new CatalogValidationError({ message: "updateProduct requires name and/or description." });
   }
 
+  assertInPlaceContentMutationAllowed(existing);
+
   const name =
     input.name !== undefined
       ? normalizeName(input.name, "name", CATALOG_NAME_MAX.product)
@@ -194,6 +204,32 @@ export async function activateProduct(
       updatedAt: stamps.updatedAt,
     })
     .where(eq(catalogProductsTable.id, productId));
+
+  if (existing.effectiveContentRevision == null) {
+    const actorWorkforceUserId = requireWorkforcePrincipal(input.actor).workforceUserId;
+    await establishFirstEffectivePublication(context, {
+      brandId: existing.brandId,
+      targetType: "product",
+      targetId: productId,
+      actorWorkforceUserId,
+      ensureRevision1: async () => {
+        const row = await findProductById(context, productId);
+        if (!row) throw new CatalogNotFoundError("product");
+        await ensureProductContentRevision1(context, row, stamps.activatedAt!);
+      },
+      setEffectiveOnPrimary: async () => {
+        const draft = existing.draftContentRevision;
+        await context.db
+          .update(catalogProductsTable)
+          .set({
+            effectiveContentRevision: draft,
+            updatedAt: stamps.updatedAt,
+          })
+          .where(eq(catalogProductsTable.id, productId));
+        return draft;
+      },
+    });
+  }
 
   await validateActiveProductGraph(context, productId);
 

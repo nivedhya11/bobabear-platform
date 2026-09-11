@@ -29,10 +29,10 @@
     "note": "Protected evidence and generated reports are never classified as executable test source."
   },
   "counts": {
-    "trackedPathsConsidered": 1776,
-    "executableTestFiles": 351,
+    "trackedPathsConsidered": 1783,
+    "executableTestFiles": 352,
     "sourceTestFiles": 130,
-    "testsTreeExecutableFiles": 187,
+    "testsTreeExecutableFiles": 188,
     "scriptTestFiles": 34,
     "playwrightSpecs": 11,
     "vitestConfigs": 2,
@@ -209,6 +209,7 @@
     "tests/catalog-imp036c-required-topping/bootstrap.integration.test.tsx",
     "tests/catalog/active-graph.test.ts",
     "tests/catalog/constants.test.ts",
+    "tests/catalog/content-revision.test.ts",
     "tests/catalog/dietary-derivation.test.ts",
     "tests/catalog/domain.service.test.ts",
     "tests/catalog/lifecycle.test.ts",
@@ -4655,6 +4656,25 @@
     },
     {
       "path": "tests/catalog/constants.test.ts",
+      "runner": "vitest",
+      "domain": "catalog",
+      "testType": "unit-or-domain",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:catalog",
+        "test:catalog-imp028c-modifiers",
+        "test:catalog-imp036c-required-topping"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/catalog/content-revision.test.ts",
       "runner": "vitest",
       "domain": "catalog",
       "testType": "unit-or-domain",

@@ -134,6 +134,43 @@ export {
 
 export { requireCatalogManage, requireCatalogRead } from "./authorize-catalog";
 
+export { insertCatalogMutationAuditEvent } from "./audit";
+
+export {
+  assertExpectedContentRevision,
+  assertInPlaceContentMutationAllowed,
+  ensureBrandContentRevision,
+  loadEffectiveProductContent,
+  loadEffectiveVariantContent,
+  lockBrandEnvelope,
+  parseExpectedContentRevision,
+} from "./revisions";
+
+export {
+  publishCatalogContentChange,
+  saveModifierGroupContentDraft,
+  saveModifierGroupOptionContentDraft,
+  saveModifierOptionContentDraft,
+  saveProductContentDraft,
+  saveVariantContentDraft,
+  saveVariantModifierGroupContentDraft,
+  validateCatalogPublication,
+} from "./publish";
+
+export type {
+  PublishCatalogContentChangeInput,
+  PublishCatalogContentChangeResult,
+  SaveModifierGroupContentDraftInput,
+  SaveModifierGroupOptionContentDraftInput,
+  SaveModifierOptionContentDraftInput,
+  SaveProductContentDraftInput,
+  SaveProductContentDraftResult,
+  SaveVariantContentDraftInput,
+  SaveVariantContentDraftResult,
+  SaveVariantModifierGroupContentDraftInput,
+  ValidateCatalogPublicationInput,
+} from "./publish";
+
 export {
   MenuConflictError,
   MenuInvalidStateError,

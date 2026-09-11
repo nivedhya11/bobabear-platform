@@ -1,8 +1,10 @@
 /**
- * Drizzle schema for the Brand-owned canonical food catalog (IMP-012).
+ * Drizzle schema for the Brand-owned canonical food catalog (IMP-012 / IMP-036F).
  *
- * Exactly eleven `app.catalog_*` tables. Catalog lifecycle is draft|active|retired.
- * Assortment, availability, menu presentation, and pricing are out of scope.
+ * Primary catalog tables retain soft lifecycle draft|active|retired.
+ * IMP-036F adds ENTITY_CONTENT_REVISION publication: draft/effective pointers on
+ * customer/structure-affecting entities, brand envelope authority, non-effective
+ * content revision stores, and catalog mutation audit.
  *
  * Variants denormalize immutable `product_kind` from the parent product so
  * composite FKs can enforce Bundle-parent / Standard-component rules at the
@@ -11,10 +13,14 @@
 import { sql } from "drizzle-orm";
 import {
   type AnyPgColumn,
+  bigint,
   boolean,
   check,
   foreignKey,
+  index,
   integer,
+  jsonb,
+  primaryKey,
   text,
   timestamp,
   unique,
@@ -24,6 +30,25 @@ import {
 
 import { brandsTable } from "./organizations";
 import { appSchema } from "./index";
+import { workforceAuthUsers } from "./workforce-auth";
+
+function contentRevisionColumn(name: string) {
+  return bigint(name, { mode: "bigint" });
+}
+
+function draftAndEffectiveRevisionChecks(
+  tableName: string,
+  draftCol: AnyPgColumn,
+  effectiveCol: AnyPgColumn,
+) {
+  return [
+    check(`${tableName}_draft_content_revision_positive_check`, sql`${draftCol} > 0`),
+    check(
+      `${tableName}_effective_content_revision_positive_check`,
+      sql`${effectiveCol} is null or ${effectiveCol} > 0`,
+    ),
+  ];
+}
 
 function lifecycleStatusChecks(
   tableName: string,
@@ -68,6 +93,10 @@ export const catalogProductsTable = appSchema.table(
     description: text("description"),
     productKind: text("product_kind").notNull(),
     lifecycleStatus: text("lifecycle_status").notNull().default("draft"),
+    effectiveContentRevision: contentRevisionColumn("effective_content_revision"),
+    draftContentRevision: contentRevisionColumn("draft_content_revision")
+      .notNull()
+      .default(1 as unknown as bigint),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
     activatedAt: timestamp("activated_at", { withTimezone: true }),
@@ -103,6 +132,11 @@ export const catalogProductsTable = appSchema.table(
       sql`${table.updatedAt} >= ${table.createdAt}`,
     ),
     codeFormatCheck("catalog_products", table.code),
+    ...draftAndEffectiveRevisionChecks(
+      "catalog_products",
+      table.draftContentRevision,
+      table.effectiveContentRevision,
+    ),
     ...lifecycleStatusChecks(
       "catalog_products",
       table.lifecycleStatus,
@@ -126,6 +160,10 @@ export const catalogVariantsTable = appSchema.table(
     isDefault: boolean("is_default").notNull().default(false),
     isSelectorVisible: boolean("is_selector_visible").notNull().default(true),
     lifecycleStatus: text("lifecycle_status").notNull().default("draft"),
+    effectiveContentRevision: contentRevisionColumn("effective_content_revision"),
+    draftContentRevision: contentRevisionColumn("draft_content_revision")
+      .notNull()
+      .default(1 as unknown as bigint),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
     activatedAt: timestamp("activated_at", { withTimezone: true }),
@@ -173,6 +211,11 @@ export const catalogVariantsTable = appSchema.table(
       sql`${table.updatedAt} >= ${table.createdAt}`,
     ),
     codeFormatCheck("catalog_variants", table.code),
+    ...draftAndEffectiveRevisionChecks(
+      "catalog_variants",
+      table.draftContentRevision,
+      table.effectiveContentRevision,
+    ),
     ...lifecycleStatusChecks(
       "catalog_variants",
       table.lifecycleStatus,
@@ -191,6 +234,10 @@ export const catalogModifierGroupsTable = appSchema.table(
     name: text("name").notNull(),
     description: text("description"),
     lifecycleStatus: text("lifecycle_status").notNull().default("draft"),
+    effectiveContentRevision: contentRevisionColumn("effective_content_revision"),
+    draftContentRevision: contentRevisionColumn("draft_content_revision")
+      .notNull()
+      .default(1 as unknown as bigint),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
     activatedAt: timestamp("activated_at", { withTimezone: true }),
@@ -217,6 +264,11 @@ export const catalogModifierGroupsTable = appSchema.table(
       sql`${table.updatedAt} >= ${table.createdAt}`,
     ),
     codeFormatCheck("catalog_modifier_groups", table.code),
+    ...draftAndEffectiveRevisionChecks(
+      "catalog_modifier_groups",
+      table.draftContentRevision,
+      table.effectiveContentRevision,
+    ),
     ...lifecycleStatusChecks(
       "catalog_modifier_groups",
       table.lifecycleStatus,
@@ -235,6 +287,10 @@ export const catalogModifierOptionsTable = appSchema.table(
     name: text("name").notNull(),
     description: text("description"),
     lifecycleStatus: text("lifecycle_status").notNull().default("draft"),
+    effectiveContentRevision: contentRevisionColumn("effective_content_revision"),
+    draftContentRevision: contentRevisionColumn("draft_content_revision")
+      .notNull()
+      .default(1 as unknown as bigint),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
     activatedAt: timestamp("activated_at", { withTimezone: true }),
@@ -261,6 +317,11 @@ export const catalogModifierOptionsTable = appSchema.table(
       sql`${table.updatedAt} >= ${table.createdAt}`,
     ),
     codeFormatCheck("catalog_modifier_options", table.code),
+    ...draftAndEffectiveRevisionChecks(
+      "catalog_modifier_options",
+      table.draftContentRevision,
+      table.effectiveContentRevision,
+    ),
     ...lifecycleStatusChecks(
       "catalog_modifier_options",
       table.lifecycleStatus,
@@ -282,6 +343,10 @@ export const catalogModifierGroupOptionsTable = appSchema.table(
     defaultQuantity: integer("default_quantity").notNull().default(0),
     position: integer("position").notNull().default(0),
     lifecycleStatus: text("lifecycle_status").notNull().default("draft"),
+    effectiveContentRevision: contentRevisionColumn("effective_content_revision"),
+    draftContentRevision: contentRevisionColumn("draft_content_revision")
+      .notNull()
+      .default(1 as unknown as bigint),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
     activatedAt: timestamp("activated_at", { withTimezone: true }),
@@ -326,6 +391,11 @@ export const catalogModifierGroupOptionsTable = appSchema.table(
       "catalog_modifier_group_options_updated_at_after_created_at_check",
       sql`${table.updatedAt} >= ${table.createdAt}`,
     ),
+    ...draftAndEffectiveRevisionChecks(
+      "catalog_modifier_group_options",
+      table.draftContentRevision,
+      table.effectiveContentRevision,
+    ),
     ...lifecycleStatusChecks(
       "catalog_modifier_group_options",
       table.lifecycleStatus,
@@ -346,6 +416,10 @@ export const catalogVariantModifierGroupsTable = appSchema.table(
     maxTotalQuantity: integer("max_total_quantity").notNull(),
     position: integer("position").notNull().default(0),
     lifecycleStatus: text("lifecycle_status").notNull().default("draft"),
+    effectiveContentRevision: contentRevisionColumn("effective_content_revision"),
+    draftContentRevision: contentRevisionColumn("draft_content_revision")
+      .notNull()
+      .default(1 as unknown as bigint),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
     activatedAt: timestamp("activated_at", { withTimezone: true }),
@@ -385,6 +459,11 @@ export const catalogVariantModifierGroupsTable = appSchema.table(
     check(
       "catalog_variant_modifier_groups_updated_at_after_created_at_check",
       sql`${table.updatedAt} >= ${table.createdAt}`,
+    ),
+    ...draftAndEffectiveRevisionChecks(
+      "catalog_variant_modifier_groups",
+      table.draftContentRevision,
+      table.effectiveContentRevision,
     ),
     ...lifecycleStatusChecks(
       "catalog_variant_modifier_groups",
@@ -624,5 +703,337 @@ export const catalogModifierOptionDietaryTagsTable = appSchema.table(
       columns: [table.dietaryTagId, table.brandId],
       foreignColumns: [catalogDietaryTagsTable.id, catalogDietaryTagsTable.brandId],
     }),
+  ],
+);
+
+// --- IMP-036F ENTITY_CONTENT_REVISION publication stores ---
+
+export const catalogContentRevisionsTable = appSchema.table(
+  "catalog_content_revisions",
+  {
+    brandId: uuid("brand_id").primaryKey(),
+    contentRevision: contentRevisionColumn("content_revision").notNull().default(1 as unknown as bigint),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "catalog_content_revisions_brand_fk",
+      columns: [table.brandId],
+      foreignColumns: [brandsTable.id],
+    }),
+    check(
+      "catalog_content_revisions_content_revision_positive_check",
+      sql`${table.contentRevision} > 0`,
+    ),
+  ],
+);
+
+export const catalogProductContentRevisionsTable = appSchema.table(
+  "catalog_product_content_revisions",
+  {
+    productId: uuid("product_id").notNull(),
+    contentRevision: contentRevisionColumn("content_revision").notNull(),
+    brandId: uuid("brand_id").notNull(),
+    name: text("name").notNull(),
+    description: text("description"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+  },
+  (table) => [
+    primaryKey({
+      name: "catalog_product_content_revisions_pk",
+      columns: [table.productId, table.contentRevision],
+    }),
+    foreignKey({
+      name: "catalog_product_content_revisions_product_brand_fk",
+      columns: [table.productId, table.brandId],
+      foreignColumns: [catalogProductsTable.id, catalogProductsTable.brandId],
+    }),
+    check(
+      "catalog_product_content_revisions_revision_positive_check",
+      sql`${table.contentRevision} > 0`,
+    ),
+    check(
+      "catalog_product_content_revisions_name_length_check",
+      sql`char_length(${table.name}) between 1 and 160`,
+    ),
+    check(
+      "catalog_product_content_revisions_description_length_check",
+      sql`${table.description} is null or char_length(${table.description}) <= 2000`,
+    ),
+  ],
+);
+
+export const catalogVariantContentRevisionsTable = appSchema.table(
+  "catalog_variant_content_revisions",
+  {
+    variantId: uuid("variant_id").notNull(),
+    contentRevision: contentRevisionColumn("content_revision").notNull(),
+    brandId: uuid("brand_id").notNull(),
+    name: text("name").notNull(),
+    description: text("description"),
+    isDefault: boolean("is_default").notNull(),
+    isSelectorVisible: boolean("is_selector_visible").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+  },
+  (table) => [
+    primaryKey({
+      name: "catalog_variant_content_revisions_pk",
+      columns: [table.variantId, table.contentRevision],
+    }),
+    foreignKey({
+      name: "catalog_variant_content_revisions_variant_brand_fk",
+      columns: [table.variantId, table.brandId],
+      foreignColumns: [catalogVariantsTable.id, catalogVariantsTable.brandId],
+    }),
+    check(
+      "catalog_variant_content_revisions_revision_positive_check",
+      sql`${table.contentRevision} > 0`,
+    ),
+    check(
+      "catalog_variant_content_revisions_name_length_check",
+      sql`char_length(${table.name}) between 1 and 120`,
+    ),
+    check(
+      "catalog_variant_content_revisions_description_length_check",
+      sql`${table.description} is null or char_length(${table.description}) <= 1000`,
+    ),
+  ],
+);
+
+export const catalogModifierGroupContentRevisionsTable = appSchema.table(
+  "catalog_modifier_group_content_revisions",
+  {
+    modifierGroupId: uuid("modifier_group_id").notNull(),
+    contentRevision: contentRevisionColumn("content_revision").notNull(),
+    brandId: uuid("brand_id").notNull(),
+    name: text("name").notNull(),
+    description: text("description"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+  },
+  (table) => [
+    primaryKey({
+      name: "catalog_modifier_group_content_revisions_pk",
+      columns: [table.modifierGroupId, table.contentRevision],
+    }),
+    foreignKey({
+      name: "catalog_modifier_group_content_revisions_group_brand_fk",
+      columns: [table.modifierGroupId, table.brandId],
+      foreignColumns: [catalogModifierGroupsTable.id, catalogModifierGroupsTable.brandId],
+    }),
+    check(
+      "catalog_modifier_group_content_revisions_revision_positive_check",
+      sql`${table.contentRevision} > 0`,
+    ),
+    check(
+      "catalog_modifier_group_content_revisions_name_length_check",
+      sql`char_length(${table.name}) between 1 and 160`,
+    ),
+    check(
+      "catalog_modifier_group_content_revisions_description_length_check",
+      sql`${table.description} is null or char_length(${table.description}) <= 2000`,
+    ),
+  ],
+);
+
+export const catalogModifierOptionContentRevisionsTable = appSchema.table(
+  "catalog_modifier_option_content_revisions",
+  {
+    modifierOptionId: uuid("modifier_option_id").notNull(),
+    contentRevision: contentRevisionColumn("content_revision").notNull(),
+    brandId: uuid("brand_id").notNull(),
+    name: text("name").notNull(),
+    description: text("description"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+  },
+  (table) => [
+    primaryKey({
+      name: "catalog_modifier_option_content_revisions_pk",
+      columns: [table.modifierOptionId, table.contentRevision],
+    }),
+    foreignKey({
+      name: "catalog_modifier_option_content_revisions_option_brand_fk",
+      columns: [table.modifierOptionId, table.brandId],
+      foreignColumns: [catalogModifierOptionsTable.id, catalogModifierOptionsTable.brandId],
+    }),
+    check(
+      "catalog_modifier_option_content_revisions_revision_positive_check",
+      sql`${table.contentRevision} > 0`,
+    ),
+    check(
+      "catalog_modifier_option_content_revisions_name_length_check",
+      sql`char_length(${table.name}) between 1 and 160`,
+    ),
+    check(
+      "catalog_modifier_option_content_revisions_description_length_check",
+      sql`${table.description} is null or char_length(${table.description}) <= 2000`,
+    ),
+  ],
+);
+
+export const catalogModifierGroupOptionContentRevisionsTable = appSchema.table(
+  "catalog_modifier_group_option_content_revisions",
+  {
+    bindingId: uuid("binding_id").notNull(),
+    contentRevision: contentRevisionColumn("content_revision").notNull(),
+    brandId: uuid("brand_id").notNull(),
+    minQuantity: integer("min_quantity").notNull(),
+    maxQuantity: integer("max_quantity").notNull(),
+    defaultQuantity: integer("default_quantity").notNull(),
+    position: integer("position").notNull(),
+    lifecycleStatus: text("lifecycle_status").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+  },
+  (table) => [
+    primaryKey({
+      name: "catalog_modifier_group_option_content_revisions_pk",
+      columns: [table.bindingId, table.contentRevision],
+    }),
+    foreignKey({
+      name: "catalog_modifier_group_option_content_revisions_binding_brand_fk",
+      columns: [table.bindingId, table.brandId],
+      foreignColumns: [
+        catalogModifierGroupOptionsTable.id,
+        catalogModifierGroupOptionsTable.brandId,
+      ],
+    }),
+    check(
+      "catalog_modifier_group_option_content_revisions_revision_positive_check",
+      sql`${table.contentRevision} > 0`,
+    ),
+    check(
+      "catalog_modifier_group_option_content_revisions_min_quantity_check",
+      sql`${table.minQuantity} >= 0`,
+    ),
+    check(
+      "catalog_modifier_group_option_content_revisions_max_quantity_check",
+      sql`${table.maxQuantity} >= 1 and ${table.maxQuantity} <= 99`,
+    ),
+    check(
+      "catalog_modifier_group_option_content_revisions_quantity_range_check",
+      sql`${table.minQuantity} <= ${table.maxQuantity}`,
+    ),
+    check(
+      "catalog_modifier_group_option_content_revisions_default_quantity_check",
+      sql`${table.defaultQuantity} >= ${table.minQuantity} and ${table.defaultQuantity} <= ${table.maxQuantity}`,
+    ),
+    check(
+      "catalog_modifier_group_option_content_revisions_position_check",
+      sql`${table.position} >= 0`,
+    ),
+    check(
+      "catalog_modifier_group_option_content_revisions_lifecycle_status_check",
+      sql`${table.lifecycleStatus} in ('draft', 'active', 'retired')`,
+    ),
+  ],
+);
+
+export const catalogVariantModifierGroupContentRevisionsTable = appSchema.table(
+  "catalog_variant_modifier_group_content_revisions",
+  {
+    bindingId: uuid("binding_id").notNull(),
+    contentRevision: contentRevisionColumn("content_revision").notNull(),
+    brandId: uuid("brand_id").notNull(),
+    minTotalQuantity: integer("min_total_quantity").notNull(),
+    maxTotalQuantity: integer("max_total_quantity").notNull(),
+    position: integer("position").notNull(),
+    lifecycleStatus: text("lifecycle_status").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+  },
+  (table) => [
+    primaryKey({
+      name: "catalog_variant_modifier_group_content_revisions_pk",
+      columns: [table.bindingId, table.contentRevision],
+    }),
+    foreignKey({
+      name: "catalog_variant_modifier_group_content_revisions_binding_brand_fk",
+      columns: [table.bindingId, table.brandId],
+      foreignColumns: [
+        catalogVariantModifierGroupsTable.id,
+        catalogVariantModifierGroupsTable.brandId,
+      ],
+    }),
+    check(
+      "catalog_variant_modifier_group_content_revisions_revision_positive_check",
+      sql`${table.contentRevision} > 0`,
+    ),
+    check(
+      "catalog_variant_modifier_group_content_revisions_min_total_check",
+      sql`${table.minTotalQuantity} >= 0`,
+    ),
+    check(
+      "catalog_variant_modifier_group_content_revisions_max_total_check",
+      sql`${table.maxTotalQuantity} >= 1 and ${table.maxTotalQuantity} <= 99`,
+    ),
+    check(
+      "catalog_variant_modifier_group_content_revisions_total_range_check",
+      sql`${table.minTotalQuantity} <= ${table.maxTotalQuantity}`,
+    ),
+    check(
+      "catalog_variant_modifier_group_content_revisions_position_check",
+      sql`${table.position} >= 0`,
+    ),
+    check(
+      "catalog_variant_modifier_group_content_revisions_lifecycle_status_check",
+      sql`${table.lifecycleStatus} in ('draft', 'active', 'retired')`,
+    ),
+  ],
+);
+
+export const catalogMutationAuditEventsTable = appSchema.table(
+  "catalog_mutation_audit_events",
+  {
+    id: uuid("id").primaryKey(),
+    occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull(),
+    actorWorkforceUserId: text("actor_workforce_user_id"),
+    action: text("action").notNull(),
+    brandId: uuid("brand_id").notNull(),
+    targetType: text("target_type").notNull(),
+    targetId: uuid("target_id"),
+    previousContentRevision: contentRevisionColumn("previous_content_revision"),
+    newContentRevision: contentRevisionColumn("new_content_revision"),
+    previousEnvelopeRevision: contentRevisionColumn("previous_envelope_revision"),
+    newEnvelopeRevision: contentRevisionColumn("new_envelope_revision"),
+    metadata: jsonb("metadata").notNull().default({}),
+  },
+  (table) => [
+    foreignKey({
+      name: "catalog_mutation_audit_events_brand_fk",
+      columns: [table.brandId],
+      foreignColumns: [brandsTable.id],
+    }),
+    foreignKey({
+      name: "catalog_mutation_audit_events_actor_workforce_user_fk",
+      columns: [table.actorWorkforceUserId],
+      foreignColumns: [workforceAuthUsers.id],
+    }),
+    check(
+      "catalog_mutation_audit_events_action_nonempty_check",
+      sql`length(trim(${table.action})) > 0`,
+    ),
+    check(
+      "catalog_mutation_audit_events_target_type_nonempty_check",
+      sql`length(trim(${table.targetType})) > 0`,
+    ),
+    check(
+      "catalog_mutation_audit_events_previous_content_revision_positive_check",
+      sql`${table.previousContentRevision} is null or ${table.previousContentRevision} > 0`,
+    ),
+    check(
+      "catalog_mutation_audit_events_new_content_revision_positive_check",
+      sql`${table.newContentRevision} is null or ${table.newContentRevision} > 0`,
+    ),
+    check(
+      "catalog_mutation_audit_events_previous_envelope_revision_positive_check",
+      sql`${table.previousEnvelopeRevision} is null or ${table.previousEnvelopeRevision} > 0`,
+    ),
+    check(
+      "catalog_mutation_audit_events_new_envelope_revision_positive_check",
+      sql`${table.newEnvelopeRevision} is null or ${table.newEnvelopeRevision} > 0`,
+    ),
+    index("catalog_mutation_audit_events_brand_occurred_idx").on(
+      table.brandId,
+      table.occurredAt,
+    ),
+    index("catalog_mutation_audit_events_target_idx").on(table.targetType, table.targetId),
   ],
 );

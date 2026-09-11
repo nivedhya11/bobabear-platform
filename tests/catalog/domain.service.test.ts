@@ -31,10 +31,12 @@ import {
   createProduct,
   createVariant,
   getCatalogProductGraph,
+  publishCatalogContentChange,
   retireBundleOption,
   retireDietaryTag,
   retireProduct,
   retireVariant,
+  saveVariantContentDraft,
   updateVariant,
 } from "../../src/server/catalog";
 import { withCatalogDomain } from "./support";
@@ -107,31 +109,41 @@ describe("catalog product activation and variants", () => {
           code: "500ml",
           name: "500ml",
           isDefault: false,
-          isSelectorVisible: true,
+          isSelectorVisible: false,
         }),
       );
 
       await persistence.transaction((tx) => activateVariant(tx, { actor, variantId: v350.id }));
-      // Second variant still draft — activate product should fail (needs all? actually needs >=1 active + one default)
-      // Activating with only one active default is OK for graph readiness; add second as active but hidden.
+      // Second variant active but selector-hidden — product activation must reject.
       await persistence.transaction((tx) => activateVariant(tx, { actor, variantId: v500.id }));
-      await persistence.transaction((tx) =>
-        updateVariant(tx, { actor, variantId: v500.id, isSelectorVisible: false }),
-      );
 
       await expect(
         persistence.transaction((tx) => activateProduct(tx, { actor, productId: product.id })),
       ).rejects.toBeInstanceOf(CatalogInvalidStateError);
 
+      // ACTIVE variants reject in-place content mutation; make visible via draft + publish.
       await persistence.transaction((tx) =>
-        updateVariant(tx, { actor, variantId: v500.id, isSelectorVisible: true }),
+        saveVariantContentDraft(tx, {
+          actor,
+          variantId: v500.id,
+          expectedContentRevision: BigInt(1),
+          isSelectorVisible: true,
+        }),
+      );
+      await persistence.transaction((tx) =>
+        publishCatalogContentChange(tx, {
+          actor,
+          brandId: tree.brand.id,
+          expectedContentRevision: BigInt(1),
+          productId: product.id,
+        }),
       );
       const activated = await persistence.transaction((tx) =>
         activateProduct(tx, { actor, productId: product.id }),
       );
       expect(activated.lifecycleStatus).toBe("active");
 
-      // Clearing the only default via update while active fails closed.
+      // Clearing the only default via update while active fails closed (revision-safe path required).
       await expect(
         persistence.transaction((tx) =>
           updateVariant(tx, { actor, variantId: v350.id, isDefault: false }),

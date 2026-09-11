@@ -45,6 +45,12 @@ import {
   validateImp028cModifiersArtifactAgainstMenu,
   type Imp028cModifiersArtifact,
 } from "./validate-artifact";
+import {
+  bootstrapActiveModifierGroupOptionRevision,
+  bootstrapActiveModifierGroupRevision,
+  bootstrapActiveModifierOptionRevision,
+  bootstrapActiveVariantModifierGroupRevision,
+} from "../bootstrap-revisions";
 
 export type Imp028cModifiersBootstrapResult = Readonly<{
   mode: "dry-run" | "apply";
@@ -285,7 +291,11 @@ async function activateRowIfNeeded(
     | typeof catalogVariantModifierGroupsTable,
   row: { id: string; lifecycleStatus: string },
 ): Promise<void> {
-  if (row.lifecycleStatus === "active") return;
+  if (row.lifecycleStatus === "active") {
+    // Ensure revision authority even for pre-existing ACTIVE rows without pointers.
+    await establishBootstrapRevisionForTable(tx, table, row.id);
+    return;
+  }
   if (row.lifecycleStatus === "retired") {
     conflict("Bootstrap-owned record is retired.");
   }
@@ -299,6 +309,52 @@ async function activateRowIfNeeded(
       updatedAt: stamps.updatedAt,
     })
     .where(eq(table.id, row.id));
+  await establishBootstrapRevisionForTable(tx, table, row.id, stamps.activatedAt!);
+}
+
+async function establishBootstrapRevisionForTable(
+  tx: PersistenceTransactionContext,
+  table:
+    | typeof catalogModifierGroupsTable
+    | typeof catalogModifierOptionsTable
+    | typeof catalogModifierGroupOptionsTable
+    | typeof catalogVariantModifierGroupsTable,
+  id: string,
+  at: Date = new Date(),
+): Promise<void> {
+  if (table === catalogModifierGroupsTable) {
+    const rows = await tx.db.select().from(catalogModifierGroupsTable).where(eq(catalogModifierGroupsTable.id, id)).limit(1);
+    const row = rows[0];
+    if (!row || row.effectiveContentRevision != null) return;
+    await bootstrapActiveModifierGroupRevision(tx, row, at);
+    return;
+  }
+  if (table === catalogModifierOptionsTable) {
+    const rows = await tx.db.select().from(catalogModifierOptionsTable).where(eq(catalogModifierOptionsTable.id, id)).limit(1);
+    const row = rows[0];
+    if (!row || row.effectiveContentRevision != null) return;
+    await bootstrapActiveModifierOptionRevision(tx, row, at);
+    return;
+  }
+  if (table === catalogModifierGroupOptionsTable) {
+    const rows = await tx.db
+      .select()
+      .from(catalogModifierGroupOptionsTable)
+      .where(eq(catalogModifierGroupOptionsTable.id, id))
+      .limit(1);
+    const row = rows[0];
+    if (!row || row.effectiveContentRevision != null) return;
+    await bootstrapActiveModifierGroupOptionRevision(tx, row, at);
+    return;
+  }
+  const rows = await tx.db
+    .select()
+    .from(catalogVariantModifierGroupsTable)
+    .where(eq(catalogVariantModifierGroupsTable.id, id))
+    .limit(1);
+  const row = rows[0];
+  if (!row || row.effectiveContentRevision != null) return;
+  await bootstrapActiveVariantModifierGroupRevision(tx, row, at);
 }
 
 async function resolveGraphFromDatabase(

@@ -34,6 +34,11 @@ import {
   retirementTimestamps,
 } from "./lifecycle";
 import { findProductById } from "./products";
+import {
+  assertInPlaceContentMutationAllowed,
+  ensureVariantContentRevision1,
+  establishFirstEffectivePublication,
+} from "./revisions";
 import type {
   CatalogVariant,
   CreateVariantInput,
@@ -41,6 +46,7 @@ import type {
   VariantLifecycleInput,
 } from "./types";
 import { revalidateProductsForVariant, validateActiveProductGraph } from "./validation";
+import { requireWorkforcePrincipal } from "../access-control/principal";
 
 function rowToVariant(row: typeof catalogVariantsTable.$inferSelect): CatalogVariant {
   return {
@@ -54,6 +60,8 @@ function rowToVariant(row: typeof catalogVariantsTable.$inferSelect): CatalogVar
     isDefault: row.isDefault,
     isSelectorVisible: row.isSelectorVisible,
     lifecycleStatus: row.lifecycleStatus as CatalogLifecycleStatus,
+    effectiveContentRevision: row.effectiveContentRevision,
+    draftContentRevision: row.draftContentRevision,
     createdAt: new Date(row.createdAt),
     updatedAt: new Date(row.updatedAt),
     activatedAt: row.activatedAt ? new Date(row.activatedAt) : null,
@@ -181,6 +189,8 @@ export async function updateVariant(
     });
   }
 
+  assertInPlaceContentMutationAllowed(existing);
+
   const name =
     input.name !== undefined
       ? normalizeName(input.name, "name", CATALOG_NAME_MAX.variant)
@@ -246,6 +256,32 @@ export async function activateVariant(
       updatedAt: stamps.updatedAt,
     })
     .where(eq(catalogVariantsTable.id, variantId));
+
+  if (existing.effectiveContentRevision == null) {
+    const actorWorkforceUserId = requireWorkforcePrincipal(input.actor).workforceUserId;
+    await establishFirstEffectivePublication(context, {
+      brandId: existing.brandId,
+      targetType: "variant",
+      targetId: variantId,
+      actorWorkforceUserId,
+      ensureRevision1: async () => {
+        const row = await findVariantById(context, variantId);
+        if (!row) throw new CatalogNotFoundError("variant");
+        await ensureVariantContentRevision1(context, row, stamps.activatedAt!);
+      },
+      setEffectiveOnPrimary: async () => {
+        const draft = existing.draftContentRevision;
+        await context.db
+          .update(catalogVariantsTable)
+          .set({
+            effectiveContentRevision: draft,
+            updatedAt: stamps.updatedAt,
+          })
+          .where(eq(catalogVariantsTable.id, variantId));
+        return draft;
+      },
+    });
+  }
 
   await revalidateProductsForVariant(context, variantId);
 

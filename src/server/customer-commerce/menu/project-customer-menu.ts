@@ -28,6 +28,10 @@ import type {
 import { createOutletEligibilitySession } from "../../assortment/outlet-eligibility-session";
 import { effectiveEntryDisplay } from "../../catalog/menu/reads";
 import { assertUuid } from "../../catalog/lifecycle";
+import {
+  loadEffectiveProductContentMap,
+  loadEffectiveVariantContentMap,
+} from "../../catalog/revisions";
 import type { PersistenceQueryContext } from "../../persistence/types";
 import { PricingNotFoundError, PricingResolutionError } from "../../pricing/errors";
 import { resolveBrandVariantPrice, resolveOutletVariantPrice } from "../../pricing/resolve-price";
@@ -134,8 +138,12 @@ async function resolveOutletForBrand(
 }
 
 function pickDefaultActiveVariant(
-  variants: ReadonlyArray<typeof catalogVariantsTable.$inferSelect>,
-): typeof catalogVariantsTable.$inferSelect {
+  variants: ReadonlyArray<{
+    id: string;
+    lifecycleStatus: string;
+    isDefault: boolean;
+  }>,
+): { id: string; lifecycleStatus: string; isDefault: boolean } {
   const active = variants.filter((variant) => variant.lifecycleStatus === "active");
   const defaults = active.filter((variant) => variant.isDefault);
   if (defaults.length !== 1) {
@@ -207,6 +215,9 @@ export async function projectCustomerMenu(
     variantsByProductId.set(variant.productId, list);
   }
 
+  const effectiveProducts = await loadEffectiveProductContentMap(context, productRows);
+  const effectiveVariants = await loadEffectiveVariantContentMap(context, variantRows);
+
   const outletId =
     input.outletId && input.outletId.length > 0
       ? await resolveOutletForBrand(context, brandId, input.outletId)
@@ -229,12 +240,30 @@ export async function projectCustomerMenu(
       );
     }
 
-    const productVariants = variantsByProductId.get(entry.productId) ?? [];
+    const productVariants = (variantsByProductId.get(entry.productId) ?? []).map((variant) => {
+      const content = effectiveVariants.get(variant.id)!;
+      return {
+        ...variant,
+        name: content.name,
+        description: content.description,
+        isDefault: content.isDefault,
+        isSelectorVisible: content.isSelectorVisible,
+      };
+    });
     const variant = pickDefaultActiveVariant(productVariants);
-    const display = effectiveEntryDisplay(entry, product);
+    const productContent = effectiveProducts.get(product.id)!;
+    const display = effectiveEntryDisplay(entry, {
+      name: productContent.name,
+      description: productContent.description,
+    });
 
     projectedVariantIds.push(variant.id);
-    pendingItems.push({ entry, product, variant, display });
+    pendingItems.push({
+      entry,
+      product,
+      variant: productVariants.find((v) => v.id === variant.id)!,
+      display,
+    });
   }
 
   const eligibilitySession =

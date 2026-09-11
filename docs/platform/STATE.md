@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R118",
+  "stateVersion": "STATE-R119",
   "acceptedThrough": "IMP-036E",
   "currentProductSlice": "IMP-036F",
   "nextProductSlice": "IMP-036G",
   "pendingAcceptance": "NONE",
   "governanceHealth": "ALIGNED",
-  "lastReviewed": "2026-09-10"
+  "lastReviewed": "2026-09-11"
 }
 -->
 
@@ -32,21 +32,21 @@ Accepted Range:            IMP-001 → IMP-036E (including IMP-005A and IMP-026C
 ## 2. Current Work Position
 
 ```text
-Current Product Implementation: NONE
+Current Product Implementation: IMP-036F
 Pending Acceptance:             NONE
 Current Product Slice:          IMP-036F — Catalog, Menu, Pricing & Promotions Management
 Next Product Slice:             IMP-036G — Administration Console V2
-Current Governance Activity:    GTM-R120 / STATE-R118;
+Current Governance Activity:    GTM-R121 / STATE-R119;
                               Product Definition APPROVED / Gate PASS;
                               Architecture Fit PASS;
                               Architecture Locked YES;
-                              Implementation AUTHORIZED / NOT_STARTED;
+                              Implementation AUTHORIZED / STARTED;
                               IMP036F_ACTIVATED: YES; IMP036F_PRODUCT_DEFINITION: APPROVED;
                               IMP036F_PRODUCT_DEFINITION_GATE: PASS;
                               IMP036F_ARCHITECTURE_FIT: PASS;
                               IMP036F_ARCHITECTURE_LOCKED: YES;
                               IMP036F_IMPLEMENTATION_AUTHORIZED: YES;
-                              IMP036F_STARTED: NO; IMP036F_ACCEPTED: NO;
+                              IMP036F_STARTED: YES; IMP036F_ACCEPTED: NO;
                               IMP036F_FOUNDER_UAT_REQUIRED: YES;
                               locked capability architecture =
                               docs/platform/capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md
@@ -54,10 +54,10 @@ Current Governance Activity:    GTM-R120 / STATE-R118;
                               Implementation Authorization Gate PASS
                               (PR #141 issue comment 5622858455);
                               authorization applies to locked Product Definition / architecture;
-                              no implementation accompanies GTM-R120;
-                              schema design locked; migration execution not started;
-                              AUTHORIZED + NOT_STARTED ≠ IMPLEMENTATION_IN_PROGRESS;
-                              next gate = explicit implementation start / execution authorization
+                              implementation start recorded at GTM-R121; F1 in progress;
+                              schema migration 0037_hesitant_scorpion accompanies F1 start;
+                              AUTHORIZED + STARTED = IMPLEMENTATION_IN_PROGRESS (not complete/accepted);
+                              next gates = continue F1…Fn implementation; independent review; Founder UAT; acceptance
                               (after merge/reconciliation);
                               IMP-036E remains COMPLETE_AND_ACCEPTED (latest accepted locked
                               capability = IMP-036E); IMP-036G remains
@@ -129,14 +129,14 @@ IMP-036D:                 COMPLETE_AND_ACCEPTED
 IMP-036D_ARCHITECTURE_LOCKED: YES
 IMP-036D_ACCEPTED:        YES
 IMP-036D_FOUNDER_UAT:     PASS
-IMP-036F:                 ARCHITECTURE_LOCKED / AUTHORIZED / NOT_STARTED
+IMP-036F:                 IMPLEMENTATION_IN_PROGRESS
 IMP036F_ACTIVATED:        YES
 IMP036F_PRODUCT_DEFINITION: APPROVED
 IMP036F_PRODUCT_DEFINITION_GATE: PASS
 IMP036F_ARCHITECTURE_FIT: PASS
 IMP036F_ARCHITECTURE_LOCKED: YES
 IMP036F_IMPLEMENTATION_AUTHORIZED: YES
-IMP036F_STARTED:          NO
+IMP036F_STARTED:          YES
 IMP036F_ACCEPTED:         NO
 IMP036F_FOUNDER_UAT_REQUIRED: YES
 IMP-036G:                 PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
@@ -341,14 +341,14 @@ ARCH_R20_REQUIRED_FOR_IMP036E_LOCK: NO
 IMP-036D: COMPLETE_AND_ACCEPTED
 IMP-036D_ACCEPTED: YES
 IMP-036D_FOUNDER_UAT: PASS
-IMP-036F: ARCHITECTURE_LOCKED / AUTHORIZED / NOT_STARTED
+IMP-036F: IMPLEMENTATION_IN_PROGRESS
 IMP036F_ACTIVATED: YES
 IMP036F_PRODUCT_DEFINITION: APPROVED
 IMP036F_PRODUCT_DEFINITION_GATE: PASS
 IMP036F_ARCHITECTURE_FIT: PASS
 IMP036F_ARCHITECTURE_LOCKED: YES
 IMP036F_IMPLEMENTATION_AUTHORIZED: YES
-IMP036F_STARTED: NO
+IMP036F_STARTED: YES
 IMP036F_ACCEPTED: NO
 IMP036F_FOUNDER_UAT_REQUIRED: YES
 IMP-036G: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
@@ -414,7 +414,36 @@ is recorded in
 Agents may propose a STATE delta in their report. Only independent acceptance updates this file's
 accepted position and may promote `governanceHealth` to `ALIGNED`.
 
-## 10. STATE-R118 record
+## 10. STATE-R119 record
+
+```text
+STATE-R119 = IMP-036F_IMPLEMENTATION_START
+acceptedThrough: IMP-036E
+currentProductSlice: IMP-036F
+pendingAcceptance: NONE
+nextProductSlice: IMP-036G
+Current Product Implementation: IMP-036F
+IMP-036F: IMPLEMENTATION_IN_PROGRESS
+IMP036F_ACTIVATED: YES
+IMP036F_PRODUCT_DEFINITION: APPROVED
+IMP036F_PRODUCT_DEFINITION_GATE: PASS
+IMP036F_ARCHITECTURE_FIT: PASS
+IMP036F_ARCHITECTURE_LOCKED: YES
+IMP036F_IMPLEMENTATION_AUTHORIZED: YES
+IMP036F_STARTED: YES
+IMP036F_ACCEPTED: NO
+IMP036F_FOUNDER_UAT_REQUIRED: YES
+IMP036G_ACTIVATED: NO
+architectureVersion: ARCH-R19
+decisionRegisterVersion: DR-15
+productDeliveryVersion: PD-1
+supersedes: STATE-R118
+```
+
+STATE-R119 records IMP-036F implementation start. Implementation is in progress; not complete;
+not accepted. Authorization provenance remains GTM-R120 / STATE-R118.
+
+## 11. STATE-R118 record
 
 ```text
 STATE-R118 = IMP-036F_IMPLEMENTATION_AUTHORIZATION

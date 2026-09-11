@@ -29,6 +29,12 @@ import { loadEffectiveModifierOptionAvailabilityStates } from "../../assortment/
 import type { PersistenceQueryContext } from "../../persistence/types";
 import { resolveModifierDisplayPriceDeltas } from "../../pricing/resolve-price";
 import { PricingResolutionError } from "../../pricing/errors";
+import {
+  loadEffectiveModifierGroupContent,
+  loadEffectiveModifierGroupOptionContent,
+  loadEffectiveModifierOptionContent,
+  loadEffectiveVariantModifierGroupContent,
+} from "../../catalog/revisions";
 
 function compareByPositionThenId(
   left: { position: number; id: string },
@@ -184,17 +190,28 @@ export async function loadCustomerMenuModifiersByVariantId(
     const group = activeGroupById.get(vmg.modifierGroupId);
     if (!group) continue;
 
-    const bindings = [...(groupOptionsByGroupId.get(group.id) ?? [])].sort((left, right) =>
+    const vmgContent = await loadEffectiveVariantModifierGroupContent(context, vmg);
+    const groupContent = await loadEffectiveModifierGroupContent(context, group);
+
+    const bindings = [...(groupOptionsByGroupId.get(group.id) ?? [])];
+    const bindingContents = await Promise.all(
+      bindings.map(async (binding) => ({
+        binding,
+        content: await loadEffectiveModifierGroupOptionContent(context, binding),
+      })),
+    );
+    bindingContents.sort((left, right) =>
       compareByPositionThenId(
-        { position: left.position, id: left.id },
-        { position: right.position, id: right.id },
+        { position: left.content.position, id: left.binding.id },
+        { position: right.content.position, id: right.binding.id },
       ),
     );
 
     const options: CustomerMenuModifierOption[] = [];
-    for (const binding of bindings) {
+    for (const { binding, content: bindingContent } of bindingContents) {
       const option = activeOptionById.get(binding.modifierOptionId);
       if (!option) continue;
+      const optionContent = await loadEffectiveModifierOptionContent(context, option);
 
       const priceKey = `${vmg.id}:${binding.id}`;
       const delta = priceDeltas.get(priceKey);
@@ -225,11 +242,11 @@ export async function loadCustomerMenuModifiersByVariantId(
         Object.freeze({
           modifierOptionId: option.id,
           modifierGroupOptionId: binding.id,
-          name: option.name,
-          minQuantity: binding.minQuantity,
-          maxQuantity: binding.maxQuantity,
-          defaultQuantity: binding.defaultQuantity,
-          position: binding.position,
+          name: optionContent.name,
+          minQuantity: bindingContent.minQuantity,
+          maxQuantity: bindingContent.maxQuantity,
+          defaultQuantity: bindingContent.defaultQuantity,
+          position: bindingContent.position,
           displayPriceDeltaPaise,
           currency: "INR" as const,
         }),
@@ -241,11 +258,11 @@ export async function loadCustomerMenuModifiersByVariantId(
     const projectedGroup = Object.freeze({
       modifierGroupId: group.id,
       variantModifierGroupId: vmg.id,
-      name: group.name,
-      required: isModifierGroupRequired(vmg.minTotalQuantity),
-      minTotalQuantity: vmg.minTotalQuantity,
-      maxTotalQuantity: vmg.maxTotalQuantity,
-      position: vmg.position,
+      name: groupContent.name,
+      required: isModifierGroupRequired(vmgContent.minTotalQuantity),
+      minTotalQuantity: vmgContent.minTotalQuantity,
+      maxTotalQuantity: vmgContent.maxTotalQuantity,
+      position: vmgContent.position,
       options: Object.freeze(options),
     });
 

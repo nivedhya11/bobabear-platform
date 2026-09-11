@@ -6,13 +6,13 @@
   "title": "Catalog, Menu, Pricing & Promotions Management",
   "architectureLock": "ARCHITECTURE_LOCKED",
   "architectureFitResult": "PASS",
-  "implementation": "AUTHORIZED / NOT_STARTED",
+  "implementation": "AUTHORIZED / STARTED",
   "implementationAuthorized": true,
-  "implementationStarted": false,
+  "implementationStarted": true,
   "impAccepted": false,
   "founderUATRequired": true,
   "schemaChangeRequired": true,
-  "lastReviewed": "2026-09-10",
+  "lastReviewed": "2026-09-11",
   "productDefinition": "PD-IMP-036F-DRAFT-1",
   "bindingDecisions": ["ADR-005", "ADR-006", "ADR-007", "ADR-008", "D-358", "D-368", "D-372", "D-373"],
   "dependsOn": ["IMP-011", "IMP-014", "IMP-015", "IMP-019", "IMP-028B", "IMP-029", "IMP-030", "IMP-035", "IMP-036A", "IMP-036C", "IMP-036D", "IMP-036E"]
@@ -21,7 +21,7 @@
 
 # IMP-036F — Catalog, Menu, Pricing & Promotions Management
 
-## Capability Architecture — ARCHITECTURE_LOCKED / IMPLEMENTATION AUTHORIZED / NOT_STARTED
+## Capability Architecture — ARCHITECTURE_LOCKED / IMPLEMENTATION AUTHORIZED / STARTED
 
 This document is the **locked capability architecture** for IMP-036F. It began as an Architecture
 Fit candidate, received independent Architecture Fit PASS, and is now the sole CURRENT
@@ -33,10 +33,10 @@ ARCHITECTURE_FIT = PASS
 IMP036F_ARCHITECTURE_LOCKED = YES
 ARCHITECTURE_LOCKED = YES
 IMPLEMENTATION_AUTHORIZED = YES
-IMPLEMENTATION_STARTED = NO
+IMPLEMENTATION_STARTED = YES
 IMP036F_ACCEPTED = NO
 IMP036G_ACTIVATED = NO
-CANONICAL_ROADMAP_STATE = GTM-R120 / STATE-R118
+CANONICAL_ROADMAP_STATE = GTM-R121 / STATE-R119
 PRODUCT_DEFINITION = PD-IMP-036F-DRAFT-1 APPROVED (Gate PASS; Architecture Fit PASS; architecture locked)
 ```
 
@@ -48,10 +48,10 @@ implementation start / execution authorization remains a separate later gate.
 | Field | Value |
 |---|---|
 | Architecture lock | `ARCHITECTURE_LOCKED` |
-| Formal ROADMAP lifecycle | `ARCHITECTURE_LOCKED` / `AUTHORIZED` / `NOT_STARTED` (`IMP036F_ACTIVATED: YES`) |
+| Formal ROADMAP lifecycle | `IMPLEMENTATION_IN_PROGRESS` (`AUTHORIZED` / `STARTED`; `IMP036F_ACTIVATED: YES`) |
 | Product Definition | `PD-IMP-036F-DRAFT-1` **APPROVED**; Product Definition Gate **PASS** |
 | Architecture Fit | **PASS** (performed; locked) |
-| Implementation | **AUTHORIZED** / **NOT_STARTED** |
+| Implementation | **AUTHORIZED** / **STARTED** |
 | Schema change required (architecture conclusion) | **YES** (design locked; migration execution not started) |
 | New D-number | **NO** (`D374_REQUIRED_FOR_IMP036F_LOCK = NO`) |
 | Global ARCH bump | **NO** (`ARCH_R20_REQUIRED_FOR_IMP036F_LOCK = NO`) |
@@ -74,6 +74,12 @@ ARCHITECTURE_LOCK_DATE = 2026-09-10
 The independently reviewed Architecture Fit candidate is specifically head `9ae06d62…` / tree
 `55adb287…`. This lock-persistence revision is a subsequent governance commit and is **not** the
 artifact reviewed by `5169723968`.
+
+
+Historical pre-R121 lifecycle provenance: implementation authorization was recorded at
+GTM-R120 / STATE-R118 with `IMPLEMENTATION_STARTED = NO` / `AUTHORIZED / NOT_STARTED`. GTM-R121 /
+STATE-R119 advances tip to STARTED / IMPLEMENTATION_IN_PROGRESS without claiming completion or
+acceptance.
 
 ---
 
@@ -1311,7 +1317,7 @@ created.
 
 ```text
 IMPLEMENTATION_AUTHORIZED = YES
-IMPLEMENTATION_STARTED = NO
+IMPLEMENTATION_STARTED = YES
 SCHEMA_MIGRATION_EXECUTION = NOT_STARTED
 APPLICATION_CODE_IMPLEMENTATION = NOT_STARTED
 MERGE = NOT_AUTHORIZED_BY_THIS_REVISION
@@ -1375,7 +1381,7 @@ IMP-036F_ARCHITECTURE_LOCKED: YES
 ARCHITECTURE_FIT = PASS
 ARCHITECTURE_FIT_CANDIDATE_RESULT = PASS
 IMPLEMENTATION_AUTHORIZED = YES
-IMPLEMENTATION_STARTED = NO
+IMPLEMENTATION_STARTED = YES
 IMP036F_IMPLEMENTATION_AUTHORIZED = YES
 IMP036F_STARTED = NO
 IMP036F_ACCEPTED = NO
@@ -1383,7 +1389,7 @@ IMP036G_ACTIVATED = NO
 SCHEMA_CHANGE_REQUIRED = YES
 D374_REQUIRED_FOR_IMP036F_LOCK = NO
 ARCH_R20_REQUIRED_FOR_IMP036F_LOCK = NO
-CANONICAL_ROADMAP_STATE = GTM-R120 / STATE-R118
+CANONICAL_ROADMAP_STATE = GTM-R121 / STATE-R119
 NEXT_GATE = Independent review of Implementation Authorization / GTM-R120 / STATE-R118 persistence
 THEN = Separate explicit human authorization before merge; implementation start remains later
 STOP = Do not start implementation from authorization persistence alone
