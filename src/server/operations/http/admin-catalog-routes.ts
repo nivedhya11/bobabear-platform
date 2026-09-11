@@ -60,6 +60,12 @@ import {
   validateCatalogPublication,
 } from "../../catalog";
 import { CatalogNotFoundError } from "../../catalog/errors";
+import {
+  projectModifierGroupInspection,
+  projectModifierOptionInspection,
+  projectProductGraphInspection,
+  projectProductInspection,
+} from "../../catalog/inspection";
 import type { Persistence } from "../../persistence";
 import type {
   PersistenceQueryContext,
@@ -509,7 +515,11 @@ async function dispatchRead(
         actor: principal,
         brandId: route.brandId,
       });
-      return { products };
+      return {
+        products: await Promise.all(
+          products.map((product) => projectProductInspection(context, product)),
+        ),
+      };
     }
     case "get_product": {
       const product = await getBrandCatalogProduct(context, {
@@ -517,7 +527,7 @@ async function dispatchRead(
         brandId: route.brandId,
         productId: route.productId!,
       });
-      return { product };
+      return { product: await projectProductInspection(context, product) };
     }
     case "get_product_graph": {
       const graph = await getBrandCatalogProductGraph(context, {
@@ -525,14 +535,18 @@ async function dispatchRead(
         brandId: route.brandId,
         productId: route.productId!,
       });
-      return { graph };
+      return { graph: await projectProductGraphInspection(context, graph) };
     }
     case "list_modifier_groups": {
       const modifierGroups = await listBrandCatalogModifierGroups(context, {
         actor: principal,
         brandId: route.brandId,
       });
-      return { modifierGroups };
+      return {
+        modifierGroups: await Promise.all(
+          modifierGroups.map((group) => projectModifierGroupInspection(context, group)),
+        ),
+      };
     }
     case "get_modifier_group": {
       const modifierGroup = await getBrandCatalogModifierGroup(context, {
@@ -540,14 +554,20 @@ async function dispatchRead(
         brandId: route.brandId,
         modifierGroupId: route.modifierGroupId!,
       });
-      return { modifierGroup };
+      return {
+        modifierGroup: await projectModifierGroupInspection(context, modifierGroup),
+      };
     }
     case "list_modifier_options": {
       const modifierOptions = await listBrandCatalogModifierOptions(context, {
         actor: principal,
         brandId: route.brandId,
       });
-      return { modifierOptions };
+      return {
+        modifierOptions: await Promise.all(
+          modifierOptions.map((option) => projectModifierOptionInspection(context, option)),
+        ),
+      };
     }
     case "get_modifier_option": {
       const modifierOption = await getBrandCatalogModifierOption(context, {
@@ -555,7 +575,9 @@ async function dispatchRead(
         brandId: route.brandId,
         modifierOptionId: route.modifierOptionId!,
       });
-      return { modifierOption };
+      return {
+        modifierOption: await projectModifierOptionInspection(context, modifierOption),
+      };
     }
     default:
       throw new CatalogValidationError({ message: "Unsupported catalog read route." });
@@ -568,10 +590,9 @@ async function dispatchMutation(
   route: AdminCatalogRoute,
   body: Readonly<Record<string, unknown>>,
 ): Promise<Record<string, unknown>> {
-  // Path-Brand authority before resource lookup (anti-oracle). Preview is read-scoped.
-  if (route.kind !== "consequence_preview") {
-    await requireCatalogManage(context, principal, route.brandId);
-  }
+  // Path-Brand authority before resource lookup (anti-oracle).
+  // Consequence preview uses the same manage permission as publication (US-010).
+  await requireCatalogManage(context, principal, route.brandId);
 
   switch (route.kind) {
     case "create_product": {

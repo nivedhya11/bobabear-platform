@@ -23,7 +23,7 @@ import {
   createEligibleWorkforceUser,
   seedBrandTree,
 } from "../database/support/access-control-fixtures";
-import { applyMigrations, withIsolatedTestDatabase } from "../database/support/test-database";
+import { applyMigrations, withIsolatedTestDatabase, withTestDatabaseClient } from "../database/support/test-database";
 
 type InternalAdapter = { createSession: (userId: string) => Promise<{ token: string }> };
 
@@ -357,16 +357,21 @@ describe("IMP-036F F2 Catalog commercial Admin HTTP", () => {
         expect(effective?.name).toBe("Milk Tea A");
       });
 
-      // --- inspection exposes graph + draft/revision context ---
+      // --- inspection exposes explicit effective vs draft truth ---
       {
         const res = await fetch(`${base}${brandPath}/products/${productId}/graph`, {
           headers: await headersFor(brandAdmin.id),
         });
         expect(res.status).toBe(200);
         const body = await res.json();
-        expect(body.graph.product.name).toBe("Milk Tea A");
+        expect(body.graph.product.effective.name).toBe("Milk Tea A");
+        expect(body.graph.product.draft.name).toBe("Milk Tea A");
+        expect(body.graph.product.draftDiffersFromEffective).toBe(false);
         expect(body.graph.product.effectiveContentRevision).toBeTruthy();
+        expect(body.graph.product.draftContentRevision).toBeTruthy();
         expect(body.graph.variants).toHaveLength(1);
+        expect(body.graph.variants[0].effective.name).toBeTruthy();
+        expect(body.graph.variants[0].draft.name).toBeTruthy();
       }
 
       // --- Product draft edit (entity draft CAS) ---
@@ -392,7 +397,19 @@ describe("IMP-036F F2 Catalog commercial Admin HTTP", () => {
         expect(body.draft.name).toBe("Milk Tea B");
       }
 
-      // admin draft shows B; customer effective still A
+      // admin draft shows B; customer effective still A — inspection makes both explicit
+      {
+        const res = await fetch(`${base}${brandPath}/products/${productId}`, {
+          headers: await headersFor(brandAdmin.id),
+        });
+        expect(res.status).toBe(200);
+        const body = await res.json();
+        expect(body.product.effective.name).toBe("Milk Tea A");
+        expect(body.product.draft.name).toBe("Milk Tea B");
+        expect(body.product.draftDiffersFromEffective).toBe(true);
+        expect(body.product.effectiveContentRevision).toBeTruthy();
+        expect(body.product.draftContentRevision).toBeTruthy();
+      }
       await persistence.withContext(async (ctx) => {
         const product = await findProductById(ctx, productId);
         expect(product?.name).toBe("Milk Tea B");
@@ -918,13 +935,19 @@ describe("IMP-036F F2 Catalog commercial Admin HTTP", () => {
         headers: await headersFor(brandAdmin.id),
       });
       expect(groupDetail.status).toBe(200);
-      expect((await groupDetail.json()).modifierGroup.code).toBe("local_g");
+      const groupBody = await groupDetail.json();
+      expect(groupBody.modifierGroup.code).toBe("local_g");
+      expect(groupBody.modifierGroup.draft.name).toBe("Local Group");
+      expect(groupBody.modifierGroup.effective).toBeNull();
+      expect(groupBody.modifierGroup.draftDiffersFromEffective).toBe(false);
 
       const optionDetail = await fetch(`${base}${brandPath}/modifier-options/${localOptionId}`, {
         headers: await headersFor(brandAdmin.id),
       });
       expect(optionDetail.status).toBe(200);
-      expect((await optionDetail.json()).modifierOption.code).toBe("local_o");
+      const optionBody = await optionDetail.json();
+      expect(optionBody.modifierOption.code).toBe("local_o");
+      expect(optionBody.modifierOption.draft.name).toBe("Local Option");
 
       // cross-Brand modifier collection denied
       const crossList = await fetch(`${base}${otherBrandPath}/modifier-groups`, {
@@ -1089,6 +1112,101 @@ describe("IMP-036F F2 Catalog commercial Admin HTTP", () => {
       } finally {
         spy.mockRestore();
       }
+    });
+  });
+
+  it("consequence-preview requires catalog.manage; inspection remains catalog.read", async () => {
+    await withIsolatedTestDatabase(adminConnectionInfo(), async (database) => {
+      await applyMigrations(database.connectionString);
+
+      // Strip catalog.manage from brand_admin so the actor has read without manage.
+      await withTestDatabaseClient(database.connectionString, async (admin) => {
+        await admin.pool.query(
+          `delete from app.access_role_permissions
+           where role_key = 'brand_admin' and permission_key = 'catalog.manage'`,
+        );
+      });
+
+      const persistence = getApplicationPersistence(applicationConfig(database.connectionString));
+      openHandles.push(persistence);
+
+      const tree = await persistence.transaction((tx) => seedBrandTree(tx, "caf2rd"));
+      const brandAdmin = await createEligibleWorkforceUser(persistence);
+      await persistence.transaction(async (tx) => {
+        const membership = await createMembership(tx, {
+          workforceUserId: brandAdmin.id,
+          scope: { scopeType: "brand", brandId: tree.brand.id },
+          status: "active",
+        });
+        await grantRole(tx, { membershipId: membership.id, roleKey: "brand_admin" });
+      });
+
+      const runtime = getWorkforceAuthRuntime({
+        auth: workforceAuthConfig().workforce,
+        persistence: applicationConfig(database.connectionString),
+      });
+      openHandles.push(runtime);
+      const adapter = await adapterFor(runtime);
+      const server = createServer((req, res) => {
+        void routeOperationsRequest(
+          req,
+          res,
+          {
+            runtime,
+            persistence,
+            trustedOrigin: workforceAuthConfig().workforce.baseURL.origin,
+          },
+          "catalog-admin-http-read-only",
+        );
+      });
+      await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+      const address = server.address();
+      if (!address || typeof address === "string") throw new Error("Missing test server address");
+      const base = `http://127.0.0.1:${address.port}`;
+      openHandles.push({
+        close: () =>
+          new Promise<void>((resolve, reject) => {
+            server.close((err) => (err ? reject(err) : resolve()));
+          }),
+      });
+
+      const headersFor = async (userId: string, extra: Record<string, string> = {}) => {
+        const session = await adapter.createSession(userId);
+        return {
+          cookie: await signedCookie(session.token),
+          origin: workforceAuthConfig().workforce.baseURL.origin,
+          "content-type": "application/json",
+          ...extra,
+        };
+      };
+
+      const brandPath = `/api/admin/v1/brands/${tree.brand.id}/catalog`;
+      const placeholderProductId = "00000000-0000-4000-8000-000000000001";
+
+      const inspect = await fetch(`${base}${brandPath}/products`, {
+        headers: await headersFor(brandAdmin.id),
+      });
+      expect(inspect.status).toBe(200);
+      expect((await inspect.json()).ok).toBe(true);
+
+      const preview = await fetch(
+        `${base}${brandPath}/products/${placeholderProductId}/consequence-preview`,
+        {
+          method: "POST",
+          headers: await headersFor(brandAdmin.id),
+          body: "{}",
+        },
+      );
+      expect(preview.status).toBe(403);
+      expect(await preview.json()).toMatchObject({ ok: false, code: "CATALOG_UNAUTHORIZED" });
+
+      const publish = await fetch(`${base}${brandPath}/products/${placeholderProductId}/publish`, {
+        method: "POST",
+        headers: await headersFor(brandAdmin.id),
+        body: JSON.stringify({ expectedContentRevision: "0" }),
+      });
+      expect(publish.status).toBe(403);
+      expect(await publish.json()).toMatchObject({ ok: false, code: "CATALOG_UNAUTHORIZED" });
     });
   });
 });

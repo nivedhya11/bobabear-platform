@@ -21,7 +21,7 @@ import type {
   PersistenceTransactionContext,
 } from "../persistence/types";
 import { assertApplicationRole, assertTransactionContext } from "./assert-role";
-import { requireCatalogRead } from "./authorize-catalog";
+import { requireCatalogManage } from "./authorize-catalog";
 import {
   CatalogInvalidStateError,
   CatalogNotFoundError,
@@ -122,8 +122,11 @@ type SharedConsumer = Readonly<{
   variantCode: string;
   productEffectiveContentRevision: bigint | null;
   variantEffectiveContentRevision: bigint | null;
-  productLifecycleStatus: string;
-  variantLifecycleStatus: string;
+  bindingId: string;
+  bindingEffectiveContentRevision: bigint | null;
+  bindingMinTotalQuantity: number;
+  bindingMaxTotalQuantity: number;
+  bindingPosition: number;
   bindingLifecycleStatus: string;
 }>;
 
@@ -140,8 +143,11 @@ async function loadSharedModifierGroupConsumers(
       variantCode: catalogVariantsTable.code,
       productEffectiveContentRevision: catalogProductsTable.effectiveContentRevision,
       variantEffectiveContentRevision: catalogVariantsTable.effectiveContentRevision,
-      productLifecycleStatus: catalogProductsTable.lifecycleStatus,
-      variantLifecycleStatus: catalogVariantsTable.lifecycleStatus,
+      bindingId: catalogVariantModifierGroupsTable.id,
+      bindingEffectiveContentRevision: catalogVariantModifierGroupsTable.effectiveContentRevision,
+      bindingMinTotalQuantity: catalogVariantModifierGroupsTable.minTotalQuantity,
+      bindingMaxTotalQuantity: catalogVariantModifierGroupsTable.maxTotalQuantity,
+      bindingPosition: catalogVariantModifierGroupsTable.position,
       bindingLifecycleStatus: catalogVariantModifierGroupsTable.lifecycleStatus,
     })
     .from(catalogVariantModifierGroupsTable)
@@ -186,8 +192,11 @@ async function loadSharedModifierOptionConsumers(
       variantCode: catalogVariantsTable.code,
       productEffectiveContentRevision: catalogProductsTable.effectiveContentRevision,
       variantEffectiveContentRevision: catalogVariantsTable.effectiveContentRevision,
-      productLifecycleStatus: catalogProductsTable.lifecycleStatus,
-      variantLifecycleStatus: catalogVariantsTable.lifecycleStatus,
+      bindingId: catalogVariantModifierGroupsTable.id,
+      bindingEffectiveContentRevision: catalogVariantModifierGroupsTable.effectiveContentRevision,
+      bindingMinTotalQuantity: catalogVariantModifierGroupsTable.minTotalQuantity,
+      bindingMaxTotalQuantity: catalogVariantModifierGroupsTable.maxTotalQuantity,
+      bindingPosition: catalogVariantModifierGroupsTable.position,
       bindingLifecycleStatus: catalogVariantModifierGroupsTable.lifecycleStatus,
     })
     .from(catalogVariantModifierGroupsTable)
@@ -205,20 +214,42 @@ async function loadSharedModifierOptionConsumers(
   return rows;
 }
 
-function toAffectedScope(
+/**
+ * Customer visibility uses EFFECTIVE published relationships only.
+ * Staged primary lifecycle (e.g. unpublished RETIRED) must not hide consumers
+ * that still resolve the shared modifier under effective truth.
+ */
+async function isEffectiveCustomerConsumer(
+  context: PersistenceQueryContext,
+  consumer: SharedConsumer,
+): Promise<boolean> {
+  if (
+    consumer.productEffectiveContentRevision == null ||
+    consumer.variantEffectiveContentRevision == null
+  ) {
+    return false;
+  }
+  const bindingEffective = await loadEffectiveVariantModifierGroupContent(context, {
+    id: consumer.bindingId,
+    minTotalQuantity: consumer.bindingMinTotalQuantity,
+    maxTotalQuantity: consumer.bindingMaxTotalQuantity,
+    position: consumer.bindingPosition,
+    lifecycleStatus: consumer.bindingLifecycleStatus,
+    effectiveContentRevision: consumer.bindingEffectiveContentRevision,
+  });
+  return bindingEffective != null && bindingEffective.lifecycleStatus === "active";
+}
+
+async function toAffectedScope(
+  context: PersistenceQueryContext,
   consumers: readonly SharedConsumer[],
   relationship: CatalogPublicationAffectedScope["relationship"],
   customerTruthChange: boolean,
-): CatalogPublicationAffectedScope[] {
+): Promise<CatalogPublicationAffectedScope[]> {
   const byKey = new Map<string, CatalogPublicationAffectedScope>();
   for (const c of consumers) {
     const key = `${c.productId}:${c.variantId}`;
-    const otherCustomerVisible =
-      c.productEffectiveContentRevision != null &&
-      c.variantEffectiveContentRevision != null &&
-      c.productLifecycleStatus === "active" &&
-      c.variantLifecycleStatus === "active" &&
-      c.bindingLifecycleStatus === "active";
+    const otherCustomerVisible = await isEffectiveCustomerConsumer(context, c);
     byKey.set(key, {
       productId: c.productId,
       productCode: c.productCode,
@@ -245,7 +276,7 @@ export async function previewCatalogPublicationConsequence(
   assertTransactionContext(context, "previewCatalogPublicationConsequence");
   const brandId = assertUuid(input.brandId, "brandId");
   const productId = assertUuid(input.productId, "productId");
-  await requireCatalogRead(context, input.actor, brandId);
+  await requireCatalogManage(context, input.actor, brandId);
 
   // R1: lock envelope before candidate reads so PREVIEW_CONTENT is bound to
   // the returned expectedContentRevision under READ COMMITTED.
@@ -415,7 +446,8 @@ export async function previewCatalogPublicationConsequence(
     const customerTruthChange =
       group.lifecycleStatus === "retired" ||
       group.lifecycleStatus === "active";
-    const affectedScope = toAffectedScope(
+    const affectedScope = await toAffectedScope(
+      context,
       consumers,
       "shared_modifier_group",
       customerTruthChange,
@@ -473,7 +505,8 @@ export async function previewCatalogPublicationConsequence(
     const consumers = await loadSharedModifierOptionConsumers(context, brandId, option.id);
     const customerTruthChange =
       option.lifecycleStatus === "retired" || option.lifecycleStatus === "active";
-    const affectedScope = toAffectedScope(
+    const affectedScope = await toAffectedScope(
+      context,
       consumers,
       "shared_modifier_option",
       customerTruthChange,
@@ -533,7 +566,8 @@ export async function previewCatalogPublicationConsequence(
       brandId,
       binding.modifierGroupId,
     );
-    const affectedScope = toAffectedScope(
+    const affectedScope = await toAffectedScope(
+      context,
       consumers,
       "shared_modifier_group_option",
       binding.lifecycleStatus === "retired" || binding.lifecycleStatus === "active",
@@ -598,29 +632,35 @@ export async function previewCatalogPublicationConsequence(
   for (const binding of graph.variantModifierGroups) {
     const effective = await loadEffectiveVariantModifierGroupContent(context, binding);
     const variant = graph.variants.find((v) => v.id === binding.variantId);
-    const consumers = await loadSharedModifierGroupConsumers(
-      context,
-      brandId,
-      binding.modifierGroupId,
-    );
-    const affectedScope: CatalogPublicationAffectedScope[] = [
-      ...toAffectedScope(
-        consumers,
-        "shared_variant_modifier_group",
-        binding.lifecycleStatus === "retired" || binding.lifecycleStatus === "active",
-      ),
-    ];
-    // Always include the binding's own variant even if shared query missed it.
-    if (variant && !affectedScope.some((s) => s.variantId === variant.id)) {
-      affectedScope.push({
-        productId: graph.product.id,
-        productCode: graph.product.code,
-        variantId: variant.id,
-        variantCode: variant.code,
-        relationship: "shared_variant_modifier_group",
-        customerTruthAffected: true,
-      });
-    }
+    // VMG content/cardinality/lifecycle is binding-specific. Sharing a ModifierGroup
+    // does not fan out Variant A changes to Variant B.
+    const productVariantPublished =
+      graph.product.effectiveContentRevision != null &&
+      variant?.effectiveContentRevision != null;
+    const currentlyCustomerVisible =
+      productVariantPublished &&
+      effective != null &&
+      effective.lifecycleStatus === "active";
+    const firstPublishActive =
+      productVariantPublished &&
+      effective == null &&
+      binding.lifecycleStatus === "active";
+    const customerTruthChange =
+      binding.lifecycleStatus === "retired" || binding.lifecycleStatus === "active";
+    const affectedScope: CatalogPublicationAffectedScope[] =
+      variant == null
+        ? []
+        : [
+            {
+              productId: graph.product.id,
+              productCode: graph.product.code,
+              variantId: variant.id,
+              variantCode: variant.code,
+              relationship: "shared_variant_modifier_group",
+              customerTruthAffected:
+                customerTruthChange && (currentlyCustomerVisible || firstPublishActive),
+            },
+          ];
 
     if (binding.lifecycleStatus === "retired" && binding.effectiveContentRevision != null) {
       changes.push({
