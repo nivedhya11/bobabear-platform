@@ -72,6 +72,54 @@ vi.mock("./availability", async () => {
   };
 });
 
+vi.mock("../catalog/revisions", () => ({
+  loadEffectiveModifierGroupOptionContent: async (
+    _ctx: unknown,
+    binding: {
+      effectiveContentRevision: bigint | null;
+      minQuantity: number;
+      maxQuantity: number;
+      defaultQuantity: number;
+      position: number;
+      lifecycleStatus: string;
+    },
+  ) =>
+    binding.effectiveContentRevision == null
+      ? null
+      : {
+          minQuantity: binding.minQuantity,
+          maxQuantity: binding.maxQuantity,
+          defaultQuantity: binding.defaultQuantity,
+          position: binding.position,
+          lifecycleStatus: "active",
+        },
+  loadEffectiveVariantModifierGroupContent: async (
+    _ctx: unknown,
+    binding: {
+      effectiveContentRevision: bigint | null;
+      minTotalQuantity: number;
+      maxTotalQuantity: number;
+      position: number;
+      lifecycleStatus: string;
+    },
+  ) =>
+    binding.effectiveContentRevision == null
+      ? null
+      : {
+          minTotalQuantity: binding.minTotalQuantity,
+          maxTotalQuantity: binding.maxTotalQuantity,
+          position: binding.position,
+          lifecycleStatus: "active",
+        },
+  loadEffectiveModifierOptionContent: async (
+    _ctx: unknown,
+    option: { effectiveContentRevision: bigint | null },
+  ) =>
+    option.effectiveContentRevision == null
+      ? null
+      : { name: "opt", description: null },
+}));
+
 describe("outlet eligibility production query bound", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -130,6 +178,8 @@ describe("outlet eligibility production query bound", () => {
         isDefault: true,
         isSelectorVisible: true,
         lifecycleStatus: "active",
+        effectiveContentRevision: BigInt(1),
+        draftContentRevision: BigInt(1),
         createdAt: "2026-01-01T00:00:00.000Z",
         updatedAt: "2026-01-01T00:00:00.000Z",
         activatedAt: "2026-01-01T00:00:00.000Z",
@@ -143,6 +193,8 @@ describe("outlet eligibility production query bound", () => {
         description: null,
         productKind: "standard",
         lifecycleStatus: "active",
+        effectiveContentRevision: BigInt(1),
+        draftContentRevision: BigInt(1),
         createdAt: "2026-01-01T00:00:00.000Z",
         updatedAt: "2026-01-01T00:00:00.000Z",
         activatedAt: "2026-01-01T00:00:00.000Z",
@@ -157,6 +209,8 @@ describe("outlet eligibility production query bound", () => {
         maxTotalQuantity: 2,
         position: 0,
         lifecycleStatus: "active",
+        effectiveContentRevision: BigInt(1),
+        draftContentRevision: BigInt(1),
       })),
       variantIds.map((_variantId, index) => ({
         id: `go-${index}`,
@@ -168,8 +222,16 @@ describe("outlet eligibility production query bound", () => {
         defaultQuantity: 0,
         position: 0,
         lifecycleStatus: "active",
+        effectiveContentRevision: BigInt(1),
+        draftContentRevision: BigInt(1),
       })),
-      variantIds.map((_id, index) => ({ id: `opt-${index}` })),
+      variantIds.map((_id, index) => ({
+        id: `opt-${index}`,
+        brandId: "brand-1",
+        effectiveContentRevision: BigInt(1),
+        draftContentRevision: BigInt(1),
+        lifecycleStatus: "active",
+      })),
     ];
 
     let selectCallsDuringResolve = 0;
@@ -270,6 +332,8 @@ describe("outlet eligibility production query bound", () => {
           isDefault: true,
           isSelectorVisible: true,
           lifecycleStatus: "active",
+          effectiveContentRevision: BigInt(1),
+          draftContentRevision: BigInt(1),
           createdAt: "2026-01-01T00:00:00.000Z",
           updatedAt: "2026-01-01T00:00:00.000Z",
           activatedAt: "2026-01-01T00:00:00.000Z",
@@ -285,6 +349,8 @@ describe("outlet eligibility production query bound", () => {
           description: null,
           productKind: "standard",
           lifecycleStatus: "active",
+          effectiveContentRevision: BigInt(1),
+          draftContentRevision: BigInt(1),
           createdAt: "2026-01-01T00:00:00.000Z",
           updatedAt: "2026-01-01T00:00:00.000Z",
           activatedAt: "2026-01-01T00:00:00.000Z",
@@ -301,6 +367,8 @@ describe("outlet eligibility production query bound", () => {
           maxTotalQuantity: 1,
           position: 0,
           lifecycleStatus: "active",
+          effectiveContentRevision: BigInt(1),
+          draftContentRevision: BigInt(1),
         },
       ],
       [
@@ -314,9 +382,17 @@ describe("outlet eligibility production query bound", () => {
           defaultQuantity: 0,
           position: 0,
           lifecycleStatus: "active",
+          effectiveContentRevision: BigInt(1),
+          draftContentRevision: BigInt(1),
         },
       ],
-      [{ id: "opt-1" }],
+      [{
+        id: "opt-1",
+        brandId: "brand-1",
+        effectiveContentRevision: BigInt(1),
+        draftContentRevision: BigInt(1),
+        lifecycleStatus: "active",
+      }],
     ];
 
     const db = {
