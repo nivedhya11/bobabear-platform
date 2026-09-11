@@ -7182,6 +7182,30 @@ export function evaluateImp036fAuthorizedCapabilityArchitecture(text) {
       message: "Authorized IMP-036F capability must not retain implementation NOT_AUTHORIZED markers",
     };
   }
+  // Exempt only sections explicitly labelled as historical pre-R120/R119 provenance.
+  // Stop at the next level-two heading so later CURRENT status cannot inherit the exemption.
+  const currentCapabilityProse = body
+    .split(/(?=^## )/m)
+    .filter((section) => !/^## [^\n]*historical[^\n]*(?:pre[- ]R120|(?:GTM-)?R119)[^\n]*provenance/i.test(section))
+    .join("\n")
+    .replace(/[*`]/g, "");
+  const staleCapabilityProse = [
+    /\bimplementation\s+(?:(?:is|remains|still)\s+)?(?:unauthorized|not[\s_]+authorized|pending\s+authorization)\b/i,
+    /\bimplementation_authorized_for_any_story\s*[:=]\s*NO\b/i,
+    /\bmigration[^.\n|]*\bnot[\s_]+authorized\s+now\b/i,
+    /\|\s*Explicit implementation authorization\s*\|\s*(?:NOT[\s_]+AUTHORIZED|PENDING|next\s+human\s+gate)\b/i,
+    /\bimplementation authorization\s+(?:is|remains)\s+(?:a\s+)?(?:separate\s+)?(?:future\s+|next\s+human\s+)?gate\b/i,
+    /\bImplementation detail after implementation authorization\b/i,
+    /\b(?:stories_)?ready[ _]after[ _]future[ _]lock\b/i,
+    /\bPASS\s*\+\s*lock\s+still\s+does\s+not\s+mean\s+implementation authorization\b/i,
+  ];
+  if (staleCapabilityProse.some((pattern) => pattern.test(currentCapabilityProse))) {
+    return {
+      ok: false,
+      code: "IMP036F_CAPABILITY_STALE_UNAUTHORIZED_PROSE",
+      message: "Authorized IMP-036F capability must not retain current lifecycle prose claiming authorization or architecture lock is pending",
+    };
+  }
   // Historical R119/S117 architecture-lock provenance may retain AUTHORIZED=NO; reject stale CURRENT sections.
   if (/## End matter[\s\S]*IMPLEMENTATION_AUTHORIZED = NO/.test(body) || /## End matter[\s\S]*IMP036F_IMPLEMENTATION_AUTHORIZED = NO/.test(body)) {
     return {

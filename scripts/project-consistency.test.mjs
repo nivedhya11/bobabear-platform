@@ -7502,6 +7502,76 @@ Originally identified Architecture Fit inputs (Product Definition Gate era; **re
     );
   });
 
+  const staleCapabilityStatuses = [
+    "implementation remains unauthorized",
+    "implementation_authorized_for_any_story = NO",
+    "MIGRATION_REQUIRED = YES (architecture conclusion only; not authorized now)",
+    "Migration execution is not authorized now",
+    "| Explicit implementation authorization | NOT AUTHORIZED (next human gate after merge/reconciliation) |",
+    "| Explicit implementation authorization | Pending (next human gate) |",
+    "Implementation authorization remains a separate future gate",
+    "implementation pending authorization",
+    "Implementation detail after implementation authorization",
+    "| Story | Ready after future lock |",
+    "stories_ready_after_future_lock = US-001…016",
+    "PASS + lock still does **not** mean implementation authorization or acceptance.",
+  ];
+
+  for (const status of staleCapabilityStatuses) {
+    it(`rejects current capability lifecycle prose: ${status}`, () => {
+      const result = evaluateImp036fAuthorizedCapabilityArchitecture(
+        `${validAuthorizedCapability}\n\n## Current story / migration / readiness status\n\n${status}`,
+      );
+      assert.equal(result.ok, false);
+      assert.equal(result.code, "IMP036F_CAPABILITY_STALE_UNAUTHORIZED_PROSE");
+    });
+
+    it(`allows historical R119 capability provenance: ${status}`, () => {
+      assert.deepEqual(
+        evaluateImp036fAuthorizedCapabilityArchitecture(`${validAuthorizedCapability}
+
+## 29. Architecture-lock persistence record (historical GTM-R119 / STATE-R117 provenance)
+
+${status}
+IMP036F_IMPLEMENTATION_AUTHORIZED = NO
+
+## 30. Current implementation status
+
+IMPLEMENTATION_AUTHORIZED = YES
+IMPLEMENTATION_STARTED = NO`),
+        { ok: true },
+      );
+    });
+  }
+
+  it("allows capability runtime denial and separately granted lifecycle authorization", () => {
+    assert.deepEqual(
+      evaluateImp036fAuthorizedCapabilityArchitecture(`${validAuthorizedCapability}
+
+Runtime unauthorized actor / unauthorized user denied; unauthorized mutation denied;
+server-side denial without authority. Migration rejects an unauthorized actor.
+
+Architecture Fit PASS + lock alone did not authorize implementation;
+separate authorization was subsequently granted at GTM-R120 / STATE-R118.
+Explicit implementation start / execution authorization remains a separate later gate.`),
+      { ok: true },
+    );
+  });
+
+  it("does not let historical R119 provenance hide a later current capability contradiction", () => {
+    const result = evaluateImp036fAuthorizedCapabilityArchitecture(`${validAuthorizedCapability}
+
+## Historical pre-R120 architecture-lock provenance
+
+implementation remains unauthorized
+
+## Current story status
+
+implementation_authorized_for_any_story = NO`);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036F_CAPABILITY_STALE_UNAUTHORIZED_PROSE");
+  });
+
   const staleImplementationStatuses = [
     "implementation remains unauthorized",
     "Implementation conformance work NOT YET IMPLEMENTED / NOT AUTHORIZED",

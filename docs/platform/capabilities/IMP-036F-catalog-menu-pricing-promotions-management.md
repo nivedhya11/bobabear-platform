@@ -179,9 +179,10 @@ lifecycle concurrency is explicit; all 64 mandatory Product Definition ACs are t
 commercial writes have precise concurrency contracts; persistence/audit consequences are explicit;
 implementation boundaries are precise enough for independent review.
 
-Independent Architecture Fit review `5169723968` accepted this Fit. Canonical lock is now persisted
-at GTM-R119 / STATE-R117. PASS + lock still does **not** mean implementation authorization or
-acceptance.
+Independent Architecture Fit review `5169723968` accepted this Fit. Canonical lock was persisted
+at GTM-R119 / STATE-R117. Architecture Fit PASS + lock alone did not grant implementation
+authorization; separate authorization was subsequently granted at GTM-R120 / STATE-R118.
+Implementation remains AUTHORIZED / NOT_STARTED; IMP-036F remains unaccepted.
 
 ---
 
@@ -466,7 +467,8 @@ VALIDATE_THEN_PUBLISH_COMMAND = publishCatalogContentChange
 CATALOG_MUTATION_AUDIT = YES (new append-only audit)
 
 SCHEMA_CHANGE_REQUIRED = YES
-MIGRATION_REQUIRED = YES (architecture conclusion only; not authorized now)
+MIGRATION_REQUIRED = YES
+MIGRATION_EXECUTION = AUTHORIZED / NOT_STARTED
 
 PUBLICATION_COMMAND_BOUNDARY =
   Application/Admin:
@@ -1159,7 +1161,7 @@ mandatory_ACs_mapped = YES
 
 ### Story fit summary
 
-| Story ID | Mandatory ACs | Domain authority | Permission/resource | UI surface | Transport | Application/domain operation | Persistence | Concurrency | Customer consequence | Audit | Security notes | Fit | Ready after future lock |
+| Story ID | Mandatory ACs | Domain authority | Permission/resource | UI surface | Transport | Application/domain operation | Persistence | Concurrency | Customer consequence | Audit | Security notes | Fit | Ready under current lock |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | US-001 | 001-01…04 | Multi-read composition | catalog/menu/assortment/pricing/promotions read; outlet context reads | Commercial overview | Admin | commercial offering inspect projection | none | n/a | none direct | composed reads | no cross-scope leak | PASS | YES |
 | US-002 | 002-01…05 | Catalog | catalog.manage @ Brand | Product/Variant authoring | Admin | create/update draft revision; publish gate | ENTITY_CONTENT_REVISION + audit | expectedContentRevision | none until publish | catalog audit | ACTIVE field gate | PASS | YES |
@@ -1186,9 +1188,10 @@ MANDATORY_AC_MAPPED = 64
 MISSING_MANDATORY_ACS = NONE
 NONMANDATORY_ACS_IDENTIFIED = 1 (AC-IMP-036F-014-02)
 unfit_stories = NONE
-stories_ready_after_future_lock = US-001…016 (AC-014-02 remains FOLLOW_UP)
-stories_still_blocked_after_candidate = NONE for Fit; implementation remains unauthorized
-implementation_authorized_for_any_story = NO
+stories_ready_under_current_lock = US-001…016 (AC-014-02 remains FOLLOW_UP)
+stories_still_blocked_after_lock = NONE for Fit; implementation authorized / not started
+implementation_authorized_for_any_story = YES
+implementation_started_for_any_story = NO
 ```
 
 ---
@@ -1220,8 +1223,8 @@ concurrency races + E2E commercial journey + negative auth + Founder UAT on exac
 
 ## 26. Non-goals
 
-- Canonical architecture lock / ROADMAP/STATE advancement in this artifact
-- Implementation authorization or start
+- Further canonical architecture / ROADMAP/STATE advancement beyond the persisted lock and authorization
+- Implementation start (authorization already granted at GTM-R120 / STATE-R118)
 - New deployable service, queue, auth realm, or `/api/commercial/*` façade
 - New permissions/roles/scope model
 - Outlet Manager Brand Assortment authority; Store Assortment manage surface
@@ -1242,8 +1245,8 @@ concurrency races + E2E commercial journey + negative auth + Founder UAT on exac
 |---|---|
 | Independent Architecture Fit review | **COMPLETE** — PASS (`5169723968` on reviewed candidate `9ae06d62…`) |
 | Canonical lock persistence (ROADMAP/STATE/PD/capability lock markers) | **COMPLETE** — GTM-R119 / STATE-R117 |
-| Explicit implementation authorization | NOT AUTHORIZED (next human gate after merge/reconciliation) |
-| Exact Admin route path spelling / page split | Implementation detail after implementation authorization |
+| Explicit implementation authorization | **COMPLETE / AUTHORIZED** — GTM-R120 / STATE-R118; implementation NOT_STARTED |
+| Exact Admin route path spelling / page split | Implementation detail during implementation execution after explicit implementation start |
 | Exact SQL migration filenames / non-semantic column spellings for revision stores | Implementation detail under locked ENTITY_CONTENT_REVISION + MENU_REVISION semantics |
 | AC-014-02 media mutation | FOLLOW_UP (approved; non-mandatory) |
 
