@@ -17,7 +17,12 @@ import {
   catalogVariantModifierGroupsTable,
   catalogVariantsTable,
 } from "../../../platform/database/schema/catalog";
-import type { Cart, CartLine } from "../../../shared/cart";
+import type {
+  Cart,
+  CartBundleModifierSelection,
+  CartLine,
+  CartModifierSelection,
+} from "../../../shared/cart";
 import {
   CheckoutError,
   type CheckoutMerchandiseProblem,
@@ -27,9 +32,11 @@ import { validateCartLineStructure } from "../../cart/validate-structure";
 import { cartLineToCanonicalConfiguration } from "../../cart/canonicalize-config";
 import {
   loadEffectiveModifierGroupContent,
+  loadEffectiveModifierGroupOptionContent,
   loadEffectiveModifierOptionContent,
   loadEffectiveProductContent,
   loadEffectiveVariantContent,
+  loadEffectiveVariantModifierGroupContent,
 } from "../../catalog/revisions";
 import { assertApplicationRole } from "../assert-role";
 
@@ -57,6 +64,97 @@ export type CatalogLineLabels = Readonly<{
     }>[];
   }>[];
 }>;
+
+/**
+ * Revalidate selected modifier quantities against PUBLISHED / EFFECTIVE
+ * VariantModifierGroup + ModifierGroupOption cardinality. Stable primary
+ * identities establish relationships; revision content owns min/max bounds.
+ *
+ * Returns false when any selected binding is non-effective or quantity bounds
+ * (per-option or per-group totals, including required-group minima) fail.
+ */
+async function validateEffectiveModifierCardinality(
+  context: PersistenceQueryContext,
+  brandId: string,
+  variantId: string,
+  selections: readonly (CartModifierSelection | CartBundleModifierSelection)[],
+): Promise<boolean> {
+  const totalsByVmg = new Map<string, number>();
+
+  for (const mod of selections) {
+    const vmgRows = await context.db
+      .select()
+      .from(catalogVariantModifierGroupsTable)
+      .where(eq(catalogVariantModifierGroupsTable.id, mod.variantModifierGroupId))
+      .limit(1);
+    const vmg = vmgRows[0];
+    if (!vmg || vmg.brandId !== brandId || vmg.variantId !== variantId) {
+      return false;
+    }
+    const vmgContent = await loadEffectiveVariantModifierGroupContent(context, vmg);
+    if (!vmgContent || vmgContent.lifecycleStatus !== "active") {
+      return false;
+    }
+
+    const mgoRows = await context.db
+      .select()
+      .from(catalogModifierGroupOptionsTable)
+      .where(eq(catalogModifierGroupOptionsTable.id, mod.modifierGroupOptionId))
+      .limit(1);
+    const mgo = mgoRows[0];
+    if (
+      !mgo ||
+      mgo.brandId !== brandId ||
+      mgo.modifierGroupId !== vmg.modifierGroupId
+    ) {
+      return false;
+    }
+    const mgoContent = await loadEffectiveModifierGroupOptionContent(context, mgo);
+    if (!mgoContent || mgoContent.lifecycleStatus !== "active") {
+      return false;
+    }
+
+    if (
+      mod.quantity < mgoContent.minQuantity ||
+      mod.quantity > mgoContent.maxQuantity
+    ) {
+      return false;
+    }
+
+    totalsByVmg.set(
+      mod.variantModifierGroupId,
+      (totalsByVmg.get(mod.variantModifierGroupId) ?? 0) + mod.quantity,
+    );
+  }
+
+  // Group totals: every customer-effective VMG on this variant participates in
+  // the line configuration (selected total may be 0 for unselected groups).
+  const variantVmgs = await context.db
+    .select()
+    .from(catalogVariantModifierGroupsTable)
+    .where(
+      and(
+        eq(catalogVariantModifierGroupsTable.brandId, brandId),
+        eq(catalogVariantModifierGroupsTable.variantId, variantId),
+      ),
+    );
+
+  for (const vmg of variantVmgs) {
+    const vmgContent = await loadEffectiveVariantModifierGroupContent(context, vmg);
+    if (!vmgContent || vmgContent.lifecycleStatus !== "active") {
+      continue;
+    }
+    const total = totalsByVmg.get(vmg.id) ?? 0;
+    if (
+      total < vmgContent.minTotalQuantity ||
+      total > vmgContent.maxTotalQuantity
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+}
 
 export async function validateCheckoutCartMerchandise(
   context: PersistenceQueryContext,
@@ -121,6 +219,58 @@ export async function validateCheckoutCartMerchandise(
           code: "CHECKOUT_VARIANT_INVALID",
         }),
       );
+      continue;
+    }
+
+    const modifiersOk = await validateEffectiveModifierCardinality(
+      context,
+      brandId,
+      line.variantId,
+      line.modifiers,
+    );
+    if (!modifiersOk) {
+      problems.push(
+        Object.freeze({
+          cartLineId: line.id,
+          code: "CHECKOUT_MODIFIER_INVALID",
+        }),
+      );
+      continue;
+    }
+
+    for (const bundle of line.bundleSelections) {
+      const bgoRows = await context.db
+        .select({
+          componentVariantId: catalogBundleGroupOptionsTable.componentVariantId,
+        })
+        .from(catalogBundleGroupOptionsTable)
+        .where(eq(catalogBundleGroupOptionsTable.id, bundle.bundleGroupOptionId))
+        .limit(1);
+      const componentVariantId = bgoRows[0]?.componentVariantId;
+      if (!componentVariantId) {
+        problems.push(
+          Object.freeze({
+            cartLineId: line.id,
+            code: "CHECKOUT_BUNDLE_INVALID",
+          }),
+        );
+        break;
+      }
+      const nestedOk = await validateEffectiveModifierCardinality(
+        context,
+        brandId,
+        componentVariantId,
+        bundle.modifiers,
+      );
+      if (!nestedOk) {
+        problems.push(
+          Object.freeze({
+            cartLineId: line.id,
+            code: "CHECKOUT_MODIFIER_INVALID",
+          }),
+        );
+        break;
+      }
     }
   }
 

@@ -18,14 +18,18 @@ import {
 } from "../../src/server/assortment";
 import {
   CatalogConflictError,
+  activateBundleGroup,
+  activateBundleOption,
   activateModifierGroup,
   activateModifierGroupOption,
   activateModifierOption,
   activateProduct,
   activateVariant,
   activateVariantModifierGroup,
+  addBundleOption,
   addModifierOptionToGroup,
   applyModifierGroupToVariant,
+  createBundleGroup,
   createModifierGroup,
   createModifierOption,
   createProduct,
@@ -33,21 +37,27 @@ import {
   findProductById,
   findVariantById,
   findModifierGroupOptionById,
+  findVariantModifierGroupById,
   publishCatalogContentChange,
   retireModifierGroupOption,
   retireProduct,
   retireVariant,
+  retireVariantModifierGroup,
   saveModifierGroupContentDraft,
   saveModifierGroupOptionContentDraft,
   saveModifierOptionContentDraft,
   saveProductContentDraft,
   saveVariantContentDraft,
+  saveVariantModifierGroupContentDraft,
 } from "../../src/server/catalog";
 import {
   loadEffectiveProductContent,
   loadEffectiveVariantContent,
 } from "../../src/server/catalog/revisions";
-import { loadCatalogLabelsForCart } from "../../src/server/checkout/adapters/catalog";
+import {
+  loadCatalogLabelsForCart,
+  validateCheckoutCartMerchandise,
+} from "../../src/server/checkout/adapters/catalog";
 import type { PersistenceQueryContext } from "../../src/server/persistence/types";
 import type { Cart } from "../../src/shared/cart";
 import {
@@ -204,6 +214,16 @@ function labelsCart(input: {
   modifiers?: ReadonlyArray<{
     variantModifierGroupId: string;
     modifierGroupOptionId: string;
+    quantity?: number;
+  }>;
+  bundleSelections?: ReadonlyArray<{
+    bundleGroupOptionId: string;
+    quantity?: number;
+    modifiers?: ReadonlyArray<{
+      variantModifierGroupId: string;
+      modifierGroupOptionId: string;
+      quantity?: number;
+    }>;
   }>;
 }): Cart {
   const now = new Date();
@@ -226,14 +246,37 @@ function labelsCart(input: {
             Object.freeze({
               variantModifierGroupId: mod.variantModifierGroupId,
               modifierGroupOptionId: mod.modifierGroupOptionId,
-              quantity: 1,
+              quantity: mod.quantity ?? 1,
             }),
           ),
         ),
-        bundleSelections: Object.freeze([]),
+        bundleSelections: Object.freeze(
+          (input.bundleSelections ?? []).map((bundle) =>
+            Object.freeze({
+              id: "00000000-0000-4000-8000-000000000097",
+              bundleGroupOptionId: bundle.bundleGroupOptionId,
+              quantity: bundle.quantity ?? 1,
+              modifiers: Object.freeze(
+                (bundle.modifiers ?? []).map((mod) =>
+                  Object.freeze({
+                    variantModifierGroupId: mod.variantModifierGroupId,
+                    modifierGroupOptionId: mod.modifierGroupOptionId,
+                    quantity: mod.quantity ?? 1,
+                  }),
+                ),
+              ),
+            }),
+          ),
+        ),
       }),
     ]),
   });
+}
+
+function merchandiseProblems(
+  problems: Awaited<ReturnType<typeof validateCheckoutCartMerchandise>>,
+) {
+  return problems.map((problem) => problem.code);
 }
 
 describe("IMP-036F F1 — eligibility uses effective Catalog truth", () => {
@@ -1000,6 +1043,475 @@ describe("IMP-036F F1 — association staging invalidates reviewed aggregate", (
           }),
         ),
       ).rejects.toBeInstanceOf(CatalogConflictError);
+    });
+  });
+});
+
+describe("IMP-036F F1 — checkout effective modifier cardinality", () => {
+  it("A: draft maxQuantity reduction does not invalidate Checkout before publish", async () => {
+    await withCatalogDomain(async (persistence, { tree, brandAdminActor: actor }) => {
+      const seeded = await seedPublishedProductWithModifiers(
+        persistence,
+        actor,
+        tree.brand.id,
+        "chk-pre",
+      );
+      const cart = labelsCart({
+        brandId: tree.brand.id,
+        variantId: seeded.variantId,
+        modifiers: [
+          {
+            variantModifierGroupId: seeded.variantModifierGroupId,
+            modifierGroupOptionId: seeded.bindingOneId,
+            quantity: 2,
+          },
+        ],
+      });
+
+      const beforeDraft = await persistence.withContext((ctx) =>
+        validateCheckoutCartMerchandise(ctx, tree.brand.id, cart),
+      );
+      expect(merchandiseProblems(beforeDraft)).toEqual([]);
+
+      const binding = await persistence.withContext((ctx) =>
+        findModifierGroupOptionById(ctx, seeded.bindingOneId),
+      );
+      await persistence.transaction((tx) =>
+        saveModifierGroupOptionContentDraft(tx, {
+          actor,
+          modifierGroupOptionId: seeded.bindingOneId,
+          expectedContentRevision: binding!.draftContentRevision,
+          maxQuantity: 1,
+        }),
+      );
+
+      const afterDraft = await persistence.withContext((ctx) =>
+        validateCheckoutCartMerchandise(ctx, tree.brand.id, cart),
+      );
+      expect(merchandiseProblems(afterDraft)).toEqual([]);
+    });
+  });
+
+  it("B: published maxQuantity reduction rejects incompatible cart quantity", async () => {
+    await withCatalogDomain(async (persistence, { tree, brandAdminActor: actor }) => {
+      const seeded = await seedPublishedProductWithModifiers(
+        persistence,
+        actor,
+        tree.brand.id,
+        "chk-post",
+      );
+      const cart = labelsCart({
+        brandId: tree.brand.id,
+        variantId: seeded.variantId,
+        modifiers: [
+          {
+            variantModifierGroupId: seeded.variantModifierGroupId,
+            modifierGroupOptionId: seeded.bindingOneId,
+            quantity: 2,
+          },
+        ],
+      });
+
+      const binding = await persistence.withContext((ctx) =>
+        findModifierGroupOptionById(ctx, seeded.bindingOneId),
+      );
+      await persistence.transaction((tx) =>
+        saveModifierGroupOptionContentDraft(tx, {
+          actor,
+          modifierGroupOptionId: seeded.bindingOneId,
+          expectedContentRevision: binding!.draftContentRevision,
+          maxQuantity: 1,
+        }),
+      );
+      await persistence.transaction((tx) =>
+        publishProductEnvelope(tx, {
+          actor,
+          brandId: tree.brand.id,
+          productId: seeded.productId,
+        }),
+      );
+
+      const afterPublish = await persistence.withContext((ctx) =>
+        validateCheckoutCartMerchandise(ctx, tree.brand.id, cart),
+      );
+      expect(merchandiseProblems(afterPublish)).toEqual(["CHECKOUT_MODIFIER_INVALID"]);
+    });
+  });
+
+  it("C: effective VMG maxTotalQuantity rejects over-selected group total", async () => {
+    await withCatalogDomain(async (persistence, { tree, brandAdminActor: actor }) => {
+      const seeded = await seedPublishedProductWithModifiers(
+        persistence,
+        actor,
+        tree.brand.id,
+        "chk-max",
+      );
+
+      const overMax = labelsCart({
+        brandId: tree.brand.id,
+        variantId: seeded.variantId,
+        modifiers: [
+          {
+            variantModifierGroupId: seeded.variantModifierGroupId,
+            modifierGroupOptionId: seeded.bindingOneId,
+            quantity: 2,
+          },
+          {
+            variantModifierGroupId: seeded.variantModifierGroupId,
+            modifierGroupOptionId: seeded.bindingTwoId,
+            quantity: 1,
+          },
+        ],
+      });
+      // Seeded effective maxTotalQuantity=3; publish maxTotal=2 so total=3 is invalid.
+      const vmg = await persistence.withContext((ctx) =>
+        findVariantModifierGroupById(ctx, seeded.variantModifierGroupId),
+      );
+      await persistence.transaction((tx) =>
+        saveVariantModifierGroupContentDraft(tx, {
+          actor,
+          variantModifierGroupId: seeded.variantModifierGroupId,
+          expectedContentRevision: vmg!.draftContentRevision,
+          maxTotalQuantity: 2,
+        }),
+      );
+      await persistence.transaction((tx) =>
+        publishProductEnvelope(tx, {
+          actor,
+          brandId: tree.brand.id,
+          productId: seeded.productId,
+        }),
+      );
+
+      const overMaxProblems = await persistence.withContext((ctx) =>
+        validateCheckoutCartMerchandise(ctx, tree.brand.id, overMax),
+      );
+      expect(merchandiseProblems(overMaxProblems)).toEqual(["CHECKOUT_MODIFIER_INVALID"]);
+    });
+  });
+
+  it("D: effective VMG minTotalQuantity rejects empty selection; compatible cart succeeds", async () => {
+    await withCatalogDomain(async (persistence, { tree, brandAdminActor: actor }) => {
+      const base = await seedPublishedProduct(
+        persistence,
+        actor,
+        tree.brand.id,
+        "chk-min-p",
+        "Required Toppings Product",
+      );
+      const seeded = await persistence.transaction(async (tx) => {
+        const group = await createModifierGroup(tx, {
+          actor,
+          brandId: tree.brand.id,
+          code: "chk-min-g",
+          name: "Required Toppings",
+        });
+        const option = await createModifierOption(tx, {
+          actor,
+          brandId: tree.brand.id,
+          code: "chk-min-o",
+          name: "Pearl",
+        });
+        const binding = await addModifierOptionToGroup(tx, {
+          actor,
+          modifierGroupId: group.id,
+          modifierOptionId: option.id,
+          minQuantity: 0,
+          maxQuantity: 2,
+          defaultQuantity: 1,
+          position: 0,
+        });
+        const vmg = await applyModifierGroupToVariant(tx, {
+          actor,
+          variantId: base.variantId,
+          modifierGroupId: group.id,
+          minTotalQuantity: 1,
+          maxTotalQuantity: 2,
+          position: 0,
+        });
+        await activateModifierOption(tx, { actor, modifierOptionId: option.id });
+        await activateModifierGroupOption(tx, {
+          actor,
+          modifierGroupOptionId: binding.id,
+        });
+        await activateModifierGroup(tx, { actor, modifierGroupId: group.id });
+        await activateVariantModifierGroup(tx, {
+          actor,
+          variantModifierGroupId: vmg.id,
+        });
+        await publishProductEnvelope(tx, {
+          actor,
+          brandId: tree.brand.id,
+          productId: base.productId,
+        });
+        return {
+          ...base,
+          bindingId: binding.id,
+          variantModifierGroupId: vmg.id,
+        };
+      });
+
+      const underMin = labelsCart({
+        brandId: tree.brand.id,
+        variantId: seeded.variantId,
+        modifiers: [],
+      });
+      const underMinProblems = await persistence.withContext((ctx) =>
+        validateCheckoutCartMerchandise(ctx, tree.brand.id, underMin),
+      );
+      expect(merchandiseProblems(underMinProblems)).toEqual(["CHECKOUT_MODIFIER_INVALID"]);
+
+      const compatible = labelsCart({
+        brandId: tree.brand.id,
+        variantId: seeded.variantId,
+        modifiers: [
+          {
+            variantModifierGroupId: seeded.variantModifierGroupId,
+            modifierGroupOptionId: seeded.bindingId,
+            quantity: 1,
+          },
+        ],
+      });
+      const compatibleProblems = await persistence.withContext((ctx) =>
+        validateCheckoutCartMerchandise(ctx, tree.brand.id, compatible),
+      );
+      expect(merchandiseProblems(compatibleProblems)).toEqual([]);
+    });
+  });
+
+  it("E: published retirement of MGO/VMG used by cart yields CHECKOUT_MODIFIER_INVALID", async () => {
+    await withCatalogDomain(async (persistence, { tree, brandAdminActor: actor }) => {
+      const seeded = await seedPublishedProductWithModifiers(
+        persistence,
+        actor,
+        tree.brand.id,
+        "chk-ret",
+      );
+      const cart = labelsCart({
+        brandId: tree.brand.id,
+        variantId: seeded.variantId,
+        modifiers: [
+          {
+            variantModifierGroupId: seeded.variantModifierGroupId,
+            modifierGroupOptionId: seeded.bindingOneId,
+            quantity: 1,
+          },
+        ],
+      });
+
+      await persistence.transaction((tx) =>
+        retireModifierGroupOption(tx, {
+          actor,
+          modifierGroupOptionId: seeded.bindingOneId,
+        }),
+      );
+      const staged = await persistence.withContext((ctx) =>
+        validateCheckoutCartMerchandise(ctx, tree.brand.id, cart),
+      );
+      expect(merchandiseProblems(staged)).toEqual([]);
+
+      await persistence.transaction((tx) =>
+        publishProductEnvelope(tx, {
+          actor,
+          brandId: tree.brand.id,
+          productId: seeded.productId,
+        }),
+      );
+      const afterMgoRetire = await persistence.withContext((ctx) =>
+        validateCheckoutCartMerchandise(ctx, tree.brand.id, cart),
+      );
+      expect(merchandiseProblems(afterMgoRetire)).toEqual(["CHECKOUT_MODIFIER_INVALID"]);
+
+      const seededVmg = await seedPublishedProductWithModifiers(
+        persistence,
+        actor,
+        tree.brand.id,
+        "chk-vmg",
+      );
+      const vmgCart = labelsCart({
+        brandId: tree.brand.id,
+        variantId: seededVmg.variantId,
+        modifiers: [
+          {
+            variantModifierGroupId: seededVmg.variantModifierGroupId,
+            modifierGroupOptionId: seededVmg.bindingOneId,
+            quantity: 1,
+          },
+        ],
+      });
+      await persistence.transaction((tx) =>
+        retireVariantModifierGroup(tx, {
+          actor,
+          variantModifierGroupId: seededVmg.variantModifierGroupId,
+        }),
+      );
+      await persistence.transaction((tx) =>
+        publishProductEnvelope(tx, {
+          actor,
+          brandId: tree.brand.id,
+          productId: seededVmg.productId,
+        }),
+      );
+      const afterVmgRetire = await persistence.withContext((ctx) =>
+        validateCheckoutCartMerchandise(ctx, tree.brand.id, vmgCart),
+      );
+      expect(merchandiseProblems(afterVmgRetire)).toEqual(["CHECKOUT_MODIFIER_INVALID"]);
+    });
+  });
+
+  it("F: nested bundle modifier cardinality uses effective bounds", async () => {
+    await withCatalogDomain(async (persistence, { tree, brandAdminActor: actor }) => {
+      const component = await seedPublishedProductWithModifiers(
+        persistence,
+        actor,
+        tree.brand.id,
+        "chk-nest-c",
+      );
+      const bundle = await persistence.transaction(async (tx) => {
+        const product = await createProduct(tx, {
+          actor,
+          brandId: tree.brand.id,
+          code: "chk-nest-bp",
+          name: "Nested Bundle",
+          productKind: "bundle",
+        });
+        const variant = await createVariant(tx, {
+          actor,
+          productId: product.id,
+          code: "default",
+          name: "Default",
+          isDefault: true,
+          isSelectorVisible: false,
+        });
+        const group = await createBundleGroup(tx, {
+          actor,
+          bundleVariantId: variant.id,
+          code: "chk-nest-bg",
+          name: "Choose",
+          minSelections: 1,
+          maxSelections: 1,
+          position: 0,
+        });
+        const option = await addBundleOption(tx, {
+          actor,
+          bundleGroupId: group.id,
+          componentVariantId: component.variantId,
+          quantity: 1,
+          isDefault: true,
+          position: 0,
+        });
+        await activateBundleOption(tx, { actor, bundleGroupOptionId: option.id });
+        await activateBundleGroup(tx, { actor, bundleGroupId: group.id });
+        await activateVariant(tx, { actor, variantId: variant.id });
+        await activateProduct(tx, { actor, productId: product.id });
+        await publishProductEnvelope(tx, {
+          actor,
+          brandId: tree.brand.id,
+          productId: product.id,
+        });
+        return {
+          productId: product.id,
+          variantId: variant.id,
+          bundleGroupOptionId: option.id,
+        };
+      });
+
+      const cart = labelsCart({
+        brandId: tree.brand.id,
+        variantId: bundle.variantId,
+        bundleSelections: [
+          {
+            bundleGroupOptionId: bundle.bundleGroupOptionId,
+            modifiers: [
+              {
+                variantModifierGroupId: component.variantModifierGroupId,
+                modifierGroupOptionId: component.bindingOneId,
+                quantity: 2,
+              },
+            ],
+          },
+        ],
+      });
+
+      const before = await persistence.withContext((ctx) =>
+        validateCheckoutCartMerchandise(ctx, tree.brand.id, cart),
+      );
+      expect(merchandiseProblems(before)).toEqual([]);
+
+      const binding = await persistence.withContext((ctx) =>
+        findModifierGroupOptionById(ctx, component.bindingOneId),
+      );
+      await persistence.transaction((tx) =>
+        saveModifierGroupOptionContentDraft(tx, {
+          actor,
+          modifierGroupOptionId: component.bindingOneId,
+          expectedContentRevision: binding!.draftContentRevision,
+          maxQuantity: 1,
+        }),
+      );
+      const staged = await persistence.withContext((ctx) =>
+        validateCheckoutCartMerchandise(ctx, tree.brand.id, cart),
+      );
+      expect(merchandiseProblems(staged)).toEqual([]);
+
+      await persistence.transaction((tx) =>
+        publishProductEnvelope(tx, {
+          actor,
+          brandId: tree.brand.id,
+          productId: component.productId,
+        }),
+      );
+      const after = await persistence.withContext((ctx) =>
+        validateCheckoutCartMerchandise(ctx, tree.brand.id, cart),
+      );
+      expect(merchandiseProblems(after)).toEqual(["CHECKOUT_MODIFIER_INVALID"]);
+    });
+  });
+
+  it("effective per-option minQuantity is enforced", async () => {
+    await withCatalogDomain(async (persistence, { tree, brandAdminActor: actor }) => {
+      const seeded = await seedPublishedProductWithModifiers(
+        persistence,
+        actor,
+        tree.brand.id,
+        "chk-minq",
+      );
+      const binding = await persistence.withContext((ctx) =>
+        findModifierGroupOptionById(ctx, seeded.bindingOneId),
+      );
+      await persistence.transaction((tx) =>
+        saveModifierGroupOptionContentDraft(tx, {
+          actor,
+          modifierGroupOptionId: seeded.bindingOneId,
+          expectedContentRevision: binding!.draftContentRevision,
+          minQuantity: 2,
+          maxQuantity: 3,
+          defaultQuantity: 2,
+        }),
+      );
+      await persistence.transaction((tx) =>
+        publishProductEnvelope(tx, {
+          actor,
+          brandId: tree.brand.id,
+          productId: seeded.productId,
+        }),
+      );
+
+      const tooLow = labelsCart({
+        brandId: tree.brand.id,
+        variantId: seeded.variantId,
+        modifiers: [
+          {
+            variantModifierGroupId: seeded.variantModifierGroupId,
+            modifierGroupOptionId: seeded.bindingOneId,
+            quantity: 1,
+          },
+        ],
+      });
+      const problems = await persistence.withContext((ctx) =>
+        validateCheckoutCartMerchandise(ctx, tree.brand.id, tooLow),
+      );
+      expect(merchandiseProblems(problems)).toEqual(["CHECKOUT_MODIFIER_INVALID"]);
     });
   });
 });
