@@ -20,12 +20,13 @@ import {
   createVariant,
 } from "../../src/server/catalog";
 import {
-  activateMenu,
   activateMenuEntry,
   activateMenuSection,
   createMenu,
   createMenuEntry,
   createMenuSection,
+  findMenuById,
+  publishMenuRevision,
 } from "../../src/server/catalog/menu";
 import {
   excludeVariantAtScope,
@@ -110,31 +111,52 @@ async function seedMenuVariant(
       name: `${codePrefix} Menu`,
     }),
   );
-  const section = await persistence.transaction((tx) =>
-    createMenuSection(tx, {
+  let currentMenu = menu;
+  const section = await persistence.transaction(async (tx) => {
+    const current = await findMenuById(tx, currentMenu.id);
+    return createMenuSection(tx, {
       actor,
       brandId,
-      menuId: menu.id,
+      menuId: currentMenu.id,
       code: `${codePrefix}-section`,
       name: "Section",
       position: 0,
-    }),
-  );
-  const entry = await persistence.transaction((tx) =>
-    createMenuEntry(tx, {
+      expectedMenuRevision: current!.revision,
+    });
+  });
+  currentMenu = (await persistence.withContext((ctx) => findMenuById(ctx, menu.id)))!;
+  const entry = await persistence.transaction(async (tx) => {
+    const current = await findMenuById(tx, currentMenu.id);
+    return createMenuEntry(tx, {
       actor,
       brandId,
-      menuId: menu.id,
+      menuId: currentMenu.id,
       sectionId: section.id,
       productId: product.id,
       position: 0,
       imagePath: null,
-    }),
-  );
+      expectedMenuRevision: current!.revision,
+    });
+  });
   await persistence.transaction(async (tx) => {
-    await activateMenu(tx, { actor, menuId: menu.id });
-    await activateMenuSection(tx, { actor, sectionId: section.id });
-    await activateMenuEntry(tx, { actor, entryId: entry.id });
+    let current = await findMenuById(tx, currentMenu.id);
+    await activateMenuSection(tx, {
+      actor,
+      sectionId: section.id,
+      expectedMenuRevision: current!.revision,
+    });
+    current = await findMenuById(tx, currentMenu.id);
+    await activateMenuEntry(tx, {
+      actor,
+      entryId: entry.id,
+      expectedMenuRevision: current!.revision,
+    });
+    current = await findMenuById(tx, currentMenu.id);
+    await publishMenuRevision(tx, {
+      actor,
+      menuId: currentMenu.id,
+      expectedMenuRevision: current!.revision,
+    });
   });
 
   const { priceBookId } = await persistence.transaction(async (tx) => {

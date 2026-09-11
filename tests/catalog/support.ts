@@ -16,6 +16,12 @@ import {
   publishCatalogContentChange,
   type PublishCatalogContentChangeResult,
 } from "../../src/server/catalog";
+import {
+  findMenuById,
+  publishMenuRevision,
+  type Menu,
+  type PublishMenuRevisionResult,
+} from "../../src/server/catalog/menu";
 import { getApplicationPersistence } from "../../src/server/persistence";
 import type {
   Persistence,
@@ -173,4 +179,40 @@ export async function publishProductEnvelope(
     productId: input.productId,
     expectedContentRevision,
   });
+}
+
+/** Current Menu.revision — read immediately before a material Menu CAS mutation. */
+export async function readMenuRevision(
+  context: PersistenceQueryContext,
+  menuId: string,
+): Promise<bigint> {
+  const menu = await findMenuById(context, menuId);
+  if (!menu) throw new Error(`menu not found: ${menuId}`);
+  return menu.revision;
+}
+
+export async function requireMenuById(
+  persistence: Persistence,
+  menuId: string,
+): Promise<Menu> {
+  const menu = await persistence.withContext((ctx) => findMenuById(ctx, menuId));
+  if (!menu) throw new Error(`menu not found: ${menuId}`);
+  return menu;
+}
+
+/** Publish at the Menu.revision observed immediately before the transaction opens. */
+export async function publishMenuAtCurrentRevision(
+  persistence: Persistence,
+  input: Readonly<{ actor: unknown; menuId: string }>,
+): Promise<PublishMenuRevisionResult> {
+  const revision = await persistence.withContext((ctx) =>
+    readMenuRevision(ctx, input.menuId),
+  );
+  return persistence.transaction((tx) =>
+    publishMenuRevision(tx, {
+      actor: input.actor,
+      menuId: input.menuId,
+      expectedMenuRevision: revision,
+    }),
+  );
 }

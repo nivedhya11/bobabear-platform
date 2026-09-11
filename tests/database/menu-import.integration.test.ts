@@ -17,11 +17,19 @@ import {
 } from "../../src/shared/access-control";
 import { createBrand } from "../../src/server/organization";
 import { getApplicationPersistence } from "../../src/server/persistence";
-import { seedBrandTree } from "./support/access-control-fixtures";
+import { createEligibleWorkforceUser, seedBrandTree } from "./support/access-control-fixtures";
 import { withCatalogRoleFixture } from "./support/catalog-roles";
 import { applyMigrations, withIsolatedTestDatabase } from "./support/test-database";
 
-const MENU_TABLES = ["menus", "menu_sections", "menu_entries"] as const;
+const MENU_TABLES = [
+  "menus",
+  "menu_sections",
+  "menu_entries",
+  "menu_versions",
+  "menu_section_versions",
+  "menu_entry_versions",
+  "menu_mutation_audit_events",
+] as const;
 
 const PRIOR_MIGRATION_HASHES: Record<string, string> = {
   "drizzle/0000_database-foundation.sql":
@@ -110,7 +118,7 @@ async function expectPermissionDenied(promise: Promise<unknown>): Promise<void> 
 }
 
 describe("IMP-013 migration replay and seal", () => {
-  it("creates exactly 3 menu tables and seeds menu permissions (49 / 7 after IMP-016)", async () => {
+  it("creates menu identity + version tables and seeds menu permissions", async () => {
     await withMigratedPersistence(async (persistence) => {
       await persistence.withContext(async (ctx) => {
         const tables = await ctx.db.execute<{ relname: string }>(sql`
@@ -119,16 +127,24 @@ describe("IMP-013 migration replay and seal", () => {
           join pg_namespace n on n.oid = c.relnamespace
           where n.nspname = 'app'
             and c.relkind = 'r'
-            and c.relname in ('menus', 'menu_sections', 'menu_entries')
+            and c.relname in (
+              'menus',
+              'menu_sections',
+              'menu_entries',
+              'menu_versions',
+              'menu_section_versions',
+              'menu_entry_versions',
+              'menu_mutation_audit_events'
+            )
           order by c.relname
         `);
         expect(tables.rows.map((r) => r.relname)).toEqual([...MENU_TABLES].sort());
-        expect(tables.rows.length).toBe(3);
+        expect(tables.rows.length).toBe(MENU_TABLES.length);
 
         const permissions = await ctx.db.execute<{ count: string }>(
           sql`select count(*)::text as count from app.access_permissions`,
         );
-        expect(permissions.rows[0]?.count).toBe("51");
+        expect(permissions.rows[0]?.count).toBe("68");
         expect(PERMISSION_KEYS.length).toBe(68);
 
         const roles = await ctx.db.execute<{ count: string }>(
@@ -404,6 +420,77 @@ describe("menu privilege REVOKE", () => {
             await expectPermissionDenied(ctx.db.execute(sql`truncate app.menus`));
             await expectPermissionDenied(ctx.db.execute(sql`truncate app.menu_sections`));
             await expectPermissionDenied(ctx.db.execute(sql`truncate app.menu_entries`));
+            await expectPermissionDenied(ctx.db.execute(sql`truncate app.menu_versions`));
+            await expectPermissionDenied(
+              ctx.db.execute(sql`truncate app.menu_mutation_audit_events`),
+            );
+          });
+        },
+      );
+    });
+  });
+
+  it("allows INSERT on menu_mutation_audit_events but denies UPDATE/DELETE/TRUNCATE", async () => {
+    await withMigratedPersistence(async (persistence, database) => {
+      const tree = await persistence.transaction((tx) => seedBrandTree(tx, "maudit"));
+      const actor = await createEligibleWorkforceUser(persistence);
+      const menuId = randomUUID();
+      const auditId = randomUUID();
+      const now = new Date().toISOString();
+
+      await persistence.withContext(async (ctx) => {
+        await ctx.db.execute(sql`
+          insert into app.menus (
+            id, brand_id, code, name, lifecycle_status, revision, created_at, updated_at
+          ) values (
+            ${menuId}::uuid, ${tree.brand.id}::uuid, 'audit-menu', 'Audit Menu',
+            'draft', 1, ${now}::timestamptz, ${now}::timestamptz
+          )
+        `);
+      });
+
+      await withCatalogRoleFixture(
+        database.databaseName,
+        database.connectionString,
+        async (fixture) => {
+          const appPersistence = getApplicationPersistence(
+            applicationConfig(fixture.applicationConnectionString),
+          );
+          openHandles.push(appPersistence);
+
+          await appPersistence.withContext(async (ctx) => {
+            await ctx.db.execute(sql`
+              insert into app.menu_mutation_audit_events (
+                id, actor_workforce_user_id, action, brand_id, menu_id,
+                target_type, target_id, previous_menu_revision, new_menu_revision, occurred_at
+              ) values (
+                ${auditId}::uuid,
+                ${actor.id},
+                'menu.section_changed',
+                ${tree.brand.id}::uuid,
+                ${menuId}::uuid,
+                'menu',
+                ${menuId}::uuid,
+                1,
+                2,
+                ${now}::timestamptz
+              )
+            `);
+
+            await expectPermissionDenied(
+              ctx.db.execute(sql`
+                update app.menu_mutation_audit_events
+                set action = 'tampered' where id = ${auditId}::uuid
+              `),
+            );
+            await expectPermissionDenied(
+              ctx.db.execute(sql`
+                delete from app.menu_mutation_audit_events where id = ${auditId}::uuid
+              `),
+            );
+            await expectPermissionDenied(
+              ctx.db.execute(sql`truncate app.menu_mutation_audit_events`),
+            );
           });
         },
       );

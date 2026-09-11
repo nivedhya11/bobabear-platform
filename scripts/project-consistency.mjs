@@ -18166,22 +18166,22 @@ function checkTechnicalInventory() {
   const journal = JSON.parse(readFileSync(journalPath, "utf8"));
   const entries = journal.entries || [];
   const latest = entries[entries.length - 1];
-  if (!latest || latest.tag !== "0037_hesitant_scorpion") {
+  if (!latest || latest.tag !== "0038_cooing_anita_blake") {
     fail(
       "LATEST_MIGRATION",
-      `Expected latest migration tag 0037_hesitant_scorpion, got ${latest && latest.tag}`,
+      `Expected latest migration tag 0038_cooing_anita_blake, got ${latest && latest.tag}`,
     );
   } else {
-    note("Latest migration tag 0037_hesitant_scorpion");
+    note("Latest migration tag 0038_cooing_anita_blake");
   }
   const sqlFiles = readdirSync(path.join(projectRoot, "drizzle")).filter((f) => f.endsWith(".sql"));
-  if (sqlFiles.length !== 38 || entries.length !== 38) {
+  if (sqlFiles.length !== 39 || entries.length !== 39) {
     fail(
       "MIGRATION_COUNT",
-      `Expected 38 migrations, got sql=${sqlFiles.length} journal=${entries.length}`,
+      `Expected 39 migrations, got sql=${sqlFiles.length} journal=${entries.length}`,
     );
   } else {
-    note("Migration count 38");
+    note("Migration count 39");
   }
 
   // Application tables
@@ -18192,10 +18192,10 @@ function checkTechnicalInventory() {
     const t = readFileSync(path.join(schemaDir, name), "utf8");
     tableCount += [...t.matchAll(/appSchema\.table\(/g)].length;
   }
-  if (tableCount !== 130) {
-    fail("TABLE_COUNT", `Expected 130 appSchema.table declarations, got ${tableCount}`);
+  if (tableCount !== 134) {
+    fail("TABLE_COUNT", `Expected 134 appSchema.table declarations, got ${tableCount}`);
   } else {
-    note("Application table count 130");
+    note("Application table count 134");
   }
 
   const catalog = readFileSync(path.join(projectRoot, "src/shared/access-control/catalog.ts"), "utf8");

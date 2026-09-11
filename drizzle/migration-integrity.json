@@ -191,6 +191,11 @@
       "tag": "0037_hesitant_scorpion",
       "path": "drizzle/0037_hesitant_scorpion.sql",
       "sha256": "1217f9bb552cded229f009562c5e942d3ae2cd147ec7f14f8b9d25983192b073"
+    },
+    {
+      "tag": "0038_cooing_anita_blake",
+      "path": "drizzle/0038_cooing_anita_blake.sql",
+      "sha256": "220f358d80b0b571bd94974e1efed354584f3733571791b432645f49f15c90c8"
     }
   ]
 }
