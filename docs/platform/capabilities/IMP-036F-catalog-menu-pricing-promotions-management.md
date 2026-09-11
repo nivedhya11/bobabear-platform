@@ -40,10 +40,11 @@ CANONICAL_ROADMAP_STATE = GTM-R121 / STATE-R119
 PRODUCT_DEFINITION = PD-IMP-036F-DRAFT-1 APPROVED (Gate PASS; Architecture Fit PASS; architecture locked)
 ```
 
-Implementation authorization is granted at GTM-R120 / STATE-R118; implementation has not started.
-`AUTHORIZED` + `NOT_STARTED` ≠ `IMPLEMENTATION_IN_PROGRESS`. Authorization does **not** start
-schema migration execution, merge, deployment, Founder UAT, or IMP acceptance. Explicit
-implementation start / execution authorization remains a separate later gate.
+Implementation authorization is granted at GTM-R120 / STATE-R118; implementation start is recorded
+at GTM-R121 / STATE-R119. F1 implementation is in progress.
+`AUTHORIZED` + `STARTED` = `IMPLEMENTATION_IN_PROGRESS`. Authorization alone (GTM-R120) did **not**
+start schema migration execution; explicit start at GTM-R121 did. Merge, deployment, Founder UAT,
+and IMP acceptance remain separate later gates.
 
 | Field | Value |
 |---|---|
@@ -52,7 +53,7 @@ implementation start / execution authorization remains a separate later gate.
 | Product Definition | `PD-IMP-036F-DRAFT-1` **APPROVED**; Product Definition Gate **PASS** |
 | Architecture Fit | **PASS** (performed; locked) |
 | Implementation | **AUTHORIZED** / **STARTED** |
-| Schema change required (architecture conclusion) | **YES** (design locked; migration execution not started) |
+| Schema change required (architecture conclusion) | **YES** (design locked; F1 migration execution in progress) |
 | New D-number | **NO** (`D374_REQUIRED_FOR_IMP036F_LOCK = NO`) |
 | Global ARCH bump | **NO** (`ARCH_R20_REQUIRED_FOR_IMP036F_LOCK = NO`) |
 | New permission / role / auth model / deployable | **NO** |
@@ -188,7 +189,7 @@ implementation boundaries are precise enough for independent review.
 Independent Architecture Fit review `5169723968` accepted this Fit. Canonical lock was persisted
 at GTM-R119 / STATE-R117. Architecture Fit PASS + lock alone did not grant implementation
 authorization; separate authorization was subsequently granted at GTM-R120 / STATE-R118.
-Implementation remains AUTHORIZED / NOT_STARTED; IMP-036F remains unaccepted.
+Implementation start is recorded at GTM-R121 / STATE-R119; IMP-036F remains unaccepted.
 
 ---
 
@@ -474,7 +475,7 @@ CATALOG_MUTATION_AUDIT = YES (new append-only audit)
 
 SCHEMA_CHANGE_REQUIRED = YES
 MIGRATION_REQUIRED = YES
-MIGRATION_EXECUTION = AUTHORIZED / NOT_STARTED
+MIGRATION_EXECUTION = AUTHORIZED / IN_PROGRESS
 
 PUBLICATION_COMMAND_BOUNDARY =
   Application/Admin:
@@ -1195,9 +1196,9 @@ MISSING_MANDATORY_ACS = NONE
 NONMANDATORY_ACS_IDENTIFIED = 1 (AC-IMP-036F-014-02)
 unfit_stories = NONE
 stories_ready_under_current_lock = US-001…016 (AC-014-02 remains FOLLOW_UP)
-stories_still_blocked_after_lock = NONE for Fit; implementation authorized / not started
+stories_still_blocked_after_lock = NONE for Fit; implementation authorized / started (F1 in progress)
 implementation_authorized_for_any_story = YES
-implementation_started_for_any_story = NO
+implementation_started_for_any_story = YES
 ```
 
 ---
@@ -1230,7 +1231,7 @@ concurrency races + E2E commercial journey + negative auth + Founder UAT on exac
 ## 26. Non-goals
 
 - Further canonical architecture / ROADMAP/STATE advancement beyond the persisted lock and authorization
-- Implementation start (authorization already granted at GTM-R120 / STATE-R118)
+- IMP acceptance / Founder UAT (implementation started at GTM-R121 / STATE-R119; not complete)
 - New deployable service, queue, auth realm, or `/api/commercial/*` façade
 - New permissions/roles/scope model
 - Outlet Manager Brand Assortment authority; Store Assortment manage surface
@@ -1251,8 +1252,9 @@ concurrency races + E2E commercial journey + negative auth + Founder UAT on exac
 |---|---|
 | Independent Architecture Fit review | **COMPLETE** — PASS (`5169723968` on reviewed candidate `9ae06d62…`) |
 | Canonical lock persistence (ROADMAP/STATE/PD/capability lock markers) | **COMPLETE** — GTM-R119 / STATE-R117 |
-| Explicit implementation authorization | **COMPLETE / AUTHORIZED** — GTM-R120 / STATE-R118; implementation NOT_STARTED |
-| Exact Admin route path spelling / page split | Implementation detail during implementation execution after explicit implementation start |
+| Explicit implementation authorization | **COMPLETE / AUTHORIZED** — GTM-R120 / STATE-R118 (historical) |
+| Implementation start | **RECORDED / IN_PROGRESS** — GTM-R121 / STATE-R119; F1 in progress |
+| Exact Admin route path spelling / page split | Implementation detail during F1 implementation execution |
 | Exact SQL migration filenames / non-semantic column spellings for revision stores | Implementation detail under locked ENTITY_CONTENT_REVISION + MENU_REVISION semantics |
 | AC-014-02 media mutation | FOLLOW_UP (approved; non-mandatory) |
 
@@ -1313,21 +1315,23 @@ created.
 
 ---
 
-## 30. Explicit implementation authorized / not-started statement
+## 30. Explicit implementation authorized / started statement
 
 ```text
 IMPLEMENTATION_AUTHORIZED = YES
 IMPLEMENTATION_STARTED = YES
-SCHEMA_MIGRATION_EXECUTION = NOT_STARTED
-APPLICATION_CODE_IMPLEMENTATION = NOT_STARTED
+IMP036F_STARTED = YES
+SCHEMA_MIGRATION_EXECUTION = IN_PROGRESS
+APPLICATION_CODE_IMPLEMENTATION = IN_PROGRESS
 MERGE = NOT_AUTHORIZED_BY_THIS_REVISION
 DEPLOYMENT = NOT_AUTHORIZED_BY_THIS_REVISION
 FOUNDER_UAT = NOT_STARTED
 IMP_ACCEPTANCE = NO
 ```
 
-All schema/API/command changes above remain **architecture design** until explicit implementation
-start. Implementation authorization at GTM-R120 / STATE-R118 does **not** start execution.
+F1 schema/domain/application work is in progress under GTM-R121 / STATE-R119. Implementation
+authorization provenance remains GTM-R120 / STATE-R118; authorization alone did **not** start
+execution. Merge, deployment, Founder UAT, and IMP acceptance remain separate later gates.
 
 ---
 
@@ -1375,7 +1379,7 @@ UI grouping must not redefine domain authority.
 ## End matter
 
 ```text
-IMP-036F: ARCHITECTURE_LOCKED / AUTHORIZED / NOT_STARTED
+IMP-036F: IMPLEMENTATION_IN_PROGRESS (AUTHORIZED / STARTED)
 IMP-036F_ARCHITECTURE: LOCKED
 IMP-036F_ARCHITECTURE_LOCKED: YES
 ARCHITECTURE_FIT = PASS
@@ -1383,14 +1387,15 @@ ARCHITECTURE_FIT_CANDIDATE_RESULT = PASS
 IMPLEMENTATION_AUTHORIZED = YES
 IMPLEMENTATION_STARTED = YES
 IMP036F_IMPLEMENTATION_AUTHORIZED = YES
-IMP036F_STARTED = NO
+IMP036F_STARTED = YES
 IMP036F_ACCEPTED = NO
 IMP036G_ACTIVATED = NO
 SCHEMA_CHANGE_REQUIRED = YES
 D374_REQUIRED_FOR_IMP036F_LOCK = NO
 ARCH_R20_REQUIRED_FOR_IMP036F_LOCK = NO
 CANONICAL_ROADMAP_STATE = GTM-R121 / STATE-R119
-NEXT_GATE = Independent review of Implementation Authorization / GTM-R120 / STATE-R118 persistence
-THEN = Separate explicit human authorization before merge; implementation start remains later
-STOP = Do not start implementation from authorization persistence alone
+IMPLEMENTATION_AUTHORIZATION_PROVENANCE = GTM-R120 / STATE-R118
+IMPLEMENTATION_START_PROVENANCE = GTM-R121 / STATE-R119
+NEXT_GATE = Continue F1 implementation → independent review → Founder UAT → acceptance
+STOP = Do not claim IMP-036F complete/accepted or activate IMP-036G
 ```

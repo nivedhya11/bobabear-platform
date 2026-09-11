@@ -81,12 +81,16 @@ export async function validateCheckoutCartMerchandise(
         id: catalogVariantsTable.id,
         lifecycleStatus: catalogVariantsTable.lifecycleStatus,
         productId: catalogVariantsTable.productId,
+        effectiveContentRevision: catalogVariantsTable.effectiveContentRevision,
       })
       .from(catalogVariantsTable)
       .where(eq(catalogVariantsTable.id, line.variantId))
       .limit(1);
     const v = variant[0];
-    if (!v || v.lifecycleStatus !== "active") {
+    // Customer-orderable requires published effective content; staged activation
+    // (primary active, effective null) and staged retirement (primary retired,
+    // effective still set) are resolved via effective pointer presence.
+    if (!v || v.effectiveContentRevision == null) {
       problems.push(
         Object.freeze({
           cartLineId: line.id,
@@ -96,11 +100,14 @@ export async function validateCheckoutCartMerchandise(
       continue;
     }
     const product = await context.db
-      .select({ lifecycleStatus: catalogProductsTable.lifecycleStatus })
+      .select({
+        lifecycleStatus: catalogProductsTable.lifecycleStatus,
+        effectiveContentRevision: catalogProductsTable.effectiveContentRevision,
+      })
       .from(catalogProductsTable)
       .where(eq(catalogProductsTable.id, v.productId))
       .limit(1);
-    if (!product[0] || product[0].lifecycleStatus !== "active") {
+    if (!product[0] || product[0].effectiveContentRevision == null) {
       problems.push(
         Object.freeze({
           cartLineId: line.id,

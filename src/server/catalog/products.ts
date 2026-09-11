@@ -36,9 +36,10 @@ import {
   retirementTimestamps,
 } from "./lifecycle";
 import {
+  advanceBrandContentRevision,
   assertInPlaceContentMutationAllowed,
   ensureProductContentRevision1,
-  establishFirstEffectivePublication,
+  ensurePublicationCandidateBootstrap,
 } from "./revisions";
 import type {
   CatalogProduct,
@@ -53,7 +54,6 @@ import {
 } from "./validation";
 import { MenuInvalidStateError } from "./menu/errors";
 import { assertNoActiveEntriesForProduct } from "./menu/validation";
-import { requireWorkforcePrincipal } from "../access-control/principal";
 
 function rowToProduct(row: typeof catalogProductsTable.$inferSelect): CatalogProduct {
   return {
@@ -205,31 +205,15 @@ export async function activateProduct(
     })
     .where(eq(catalogProductsTable.id, productId));
 
-  if (existing.effectiveContentRevision == null) {
-    const actorWorkforceUserId = requireWorkforcePrincipal(input.actor).workforceUserId;
-    await establishFirstEffectivePublication(context, {
-      brandId: existing.brandId,
-      targetType: "product",
-      targetId: productId,
-      actorWorkforceUserId,
-      ensureRevision1: async () => {
-        const row = await findProductById(context, productId);
-        if (!row) throw new CatalogNotFoundError("product");
-        await ensureProductContentRevision1(context, row, stamps.activatedAt!);
-      },
-      setEffectiveOnPrimary: async () => {
-        const draft = existing.draftContentRevision;
-        await context.db
-          .update(catalogProductsTable)
-          .set({
-            effectiveContentRevision: draft,
-            updatedAt: stamps.updatedAt,
-          })
-          .where(eq(catalogProductsTable.id, productId));
-        return draft;
-      },
-    });
-  }
+  // Activation stages the product into the publication candidate only; customer
+  // visibility changes exclusively via publishCatalogContentChange.
+  await ensurePublicationCandidateBootstrap(context, {
+    brandId: existing.brandId,
+    ensureRevision1: async () => {
+      await ensureProductContentRevision1(context, existing, stamps.activatedAt);
+    },
+  });
+  await advanceBrandContentRevision(context, existing.brandId, stamps.updatedAt);
 
   await validateActiveProductGraph(context, productId);
 
@@ -270,6 +254,16 @@ export async function retireProduct(
       updatedAt: stamps.updatedAt,
     })
     .where(eq(catalogProductsTable.id, productId));
+
+  // Retirement stages removal; the previously published effective revision keeps
+  // serving customers until publishCatalogContentChange.
+  await ensurePublicationCandidateBootstrap(context, {
+    brandId: existing.brandId,
+    ensureRevision1: async () => {
+      await ensureProductContentRevision1(context, existing, stamps.retiredAt);
+    },
+  });
+  await advanceBrandContentRevision(context, existing.brandId, stamps.updatedAt);
 
   // Reject retirement when this product's variants are still required by an
   // active bundle (or would leave any dependent active graph invalid).

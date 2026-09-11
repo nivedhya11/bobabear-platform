@@ -7389,6 +7389,41 @@ export function evaluateImp036fAuthorizedProductDefinition(text) {
 }
 
 /**
+ * Return IMP-036F artifact body with historical governance sections removed.
+ * Preserves GTM-R120/S118 authorization-only provenance in labelled historical blocks.
+ * @param {string} text
+ */
+export function stripImp036fHistoricalGovernanceSections(text) {
+  let body = String(text);
+  body = body.replace(
+    /Historical pre-R121 lifecycle provenance:[\s\S]*?(?=\n---|\n## |\n\*\*GTM-R|\nIMP-036E|\n$)/,
+    "",
+  );
+  body = body.replace(
+    /Historical \*\*GTM-R120\*\*[\s\S]*?(?=\n\nIMP-036E|\n## |\n$)/,
+    "",
+  );
+  body = body.replace(
+    /Historical note \(GTM-R120[^\n]*\):[\s\S]*?(?=\n\n`STORY_COMPLETE|\n## |\n$)/,
+    "",
+  );
+  const sections = body.split(/\n(?=## )/);
+  return sections
+    .filter((section) => {
+      if (/^## 29\. Architecture-lock persistence record/i.test(section)) return false;
+      if (
+        /^## [^\n]*historical[^\n]*(?:pre[- ]R121|(?:GTM-)?R120|GTM-R119\s*\/\s*STATE-R117)[^\n]*provenance/i.test(
+          section,
+        )
+      ) {
+        return false;
+      }
+      return true;
+    })
+    .join("\n");
+}
+
+/**
  * Validate IMP-036F Implementation Start checkpoint (R121/S119).
  * Architecture remains locked; implementation AUTHORIZED / STARTED / IN_PROGRESS.
  * Does not claim COMPLETE or ACCEPTED.
@@ -7454,6 +7489,7 @@ export function evaluateImp036fStartedCapabilityArchitecture(text) {
   const body = String(text);
   const metaMatch = body.match(/<!--\s*governance-meta\s*([\s\S]*?)-->/);
   const meta = metaMatch ? metaMatch[1] : "";
+  const currentBody = stripImp036fHistoricalGovernanceSections(body);
   const required = [
     [meta, /"status"\s*:\s*"CURRENT"/, "status CURRENT"],
     [meta, /"authority"\s*:\s*"CAPABILITY_ARCHITECTURE"/, "authority CAPABILITY_ARCHITECTURE"],
@@ -7466,11 +7502,13 @@ export function evaluateImp036fStartedCapabilityArchitecture(text) {
     [meta, /"impAccepted"\s*:\s*false/, "impAccepted false"],
     [meta, /"founderUATRequired"\s*:\s*true/, "founderUATRequired true"],
     [meta, /"schemaChangeRequired"\s*:\s*true/, "schemaChangeRequired true"],
-    [body, /IMP036F_ARCHITECTURE_LOCKED\s*[:=]\s*YES/, "IMP036F_ARCHITECTURE_LOCKED YES"],
-    [body, /ARCHITECTURE_FIT\s*[:=]\s*PASS/, "ARCHITECTURE_FIT PASS"],
-    [body, /IMPLEMENTATION_AUTHORIZED\s*[:=]\s*YES/, "IMPLEMENTATION_AUTHORIZED YES"],
-    [body, /IMPLEMENTATION_STARTED\s*[:=]\s*YES/, "IMPLEMENTATION_STARTED YES"],
-    [body, /GTM-R121\s*\/\s*STATE-R119/, "canonical GTM-R121 / STATE-R119"],
+    [currentBody, /IMP036F_ARCHITECTURE_LOCKED\s*[:=]\s*YES/, "IMP036F_ARCHITECTURE_LOCKED YES"],
+    [currentBody, /ARCHITECTURE_FIT\s*[:=]\s*PASS/, "ARCHITECTURE_FIT PASS"],
+    [currentBody, /IMPLEMENTATION_AUTHORIZED\s*[:=]\s*YES/, "IMPLEMENTATION_AUTHORIZED YES"],
+    [currentBody, /IMPLEMENTATION_STARTED\s*[:=]\s*YES/, "IMPLEMENTATION_STARTED YES"],
+    [currentBody, /IMP036F_IMPLEMENTATION_AUTHORIZED\s*[:=]\s*YES/, "IMP036F_IMPLEMENTATION_AUTHORIZED YES"],
+    [currentBody, /IMP036F_STARTED\s*[:=]\s*YES/, "IMP036F_STARTED YES"],
+    [currentBody, /GTM-R121\s*\/\s*STATE-R119/, "canonical GTM-R121 / STATE-R119"],
   ];
   for (const [haystack, pattern, label] of required) {
     if (!pattern.test(haystack)) {
@@ -7482,39 +7520,34 @@ export function evaluateImp036fStartedCapabilityArchitecture(text) {
     }
   }
   const forbidden = [
-    /"implementationStarted"\s*:\s*false/,
-    /"implementation"\s*:\s*"AUTHORIZED \/ NOT_STARTED"/,
-    /IMP036F_ACCEPTED\s*[:=]\s*YES/,
-    /IMPLEMENTATION_COMPLETE\s*[:=]\s*YES/,
-    /IMP036G_ACTIVATED\s*[:=]\s*YES/,
+    [/IMP036F_STARTED\s*[:=]\s*NO/, "IMP036F_STARTED NO"],
+    [/IMPLEMENTATION_STARTED\s*[:=]\s*NO/, "IMPLEMENTATION_STARTED NO"],
+    [/IMP-036F:\s*[^\n]*AUTHORIZED\s*\/\s*NOT_STARTED/, "IMP-036F AUTHORIZED / NOT_STARTED lifecycle"],
+    [/Implementation (?:is|remains|has) [^\n]*NOT_STARTED/, "CURRENT implementation NOT_STARTED"],
+    [/implementation has not started/i, "implementation has not started"],
+    [/NEXT_GATE\s*=\s*[^\n]*implementation start/i, "NEXT_GATE implementation start authorization"],
+    [/NEXT_GATE\s*=\s*[^\n]*Implementation Authorization/i, "NEXT_GATE Implementation Authorization review"],
+    [/explicit implementation start \/ execution authorization/i, "explicit implementation start next gate"],
+    [/"implementationStarted"\s*:\s*false/, "implementationStarted false meta"],
+    [/"implementation"\s*:\s*"AUTHORIZED \/ NOT_STARTED"/, "implementation AUTHORIZED / NOT_STARTED meta"],
+    [/IMP036F_ACCEPTED\s*[:=]\s*YES/, "IMP036F_ACCEPTED YES"],
+    [/IMPLEMENTATION_COMPLETE\s*[:=]\s*YES/, "IMPLEMENTATION_COMPLETE YES"],
+    [/IMP036G_ACTIVATED\s*[:=]\s*YES/, "IMP036G_ACTIVATED YES"],
   ];
-  // Exempt only sections explicitly labelled as historical pre-R121 provenance.
-  const sections = body.split(/\n(?=## )/);
-  const currentSections = sections.filter(
-    (section) => !/^## [^\n]*historical[^\n]*(?:pre[- ]R121|(?:GTM-)?R120)[^\n]*provenance/i.test(section),
-  );
-  const currentBody = currentSections.join("\n");
-  for (const pattern of forbidden) {
-    if (pattern.test(meta) || (pattern.test(currentBody) && !/Historical\s+pre[- ]R121/i.test(currentBody))) {
-      // Allow historical provenance paragraphs to retain NOT_STARTED wording.
-      if (/Historical\s+pre[- ]R121/.test(body) && /AUTHORIZED \/ NOT_STARTED|IMPLEMENTATION_STARTED = NO/.test(body)) {
-        // still fail if CURRENT meta itself is stale
-        if (pattern.test(meta)) {
-          return {
-            ok: false,
-            code: "IMP036F_CAPABILITY_START_STALE",
-            message: "Started IMP-036F capability must not retain NOT_STARTED / unaccepted-complete markers in CURRENT meta",
-          };
-        }
-        continue;
-      }
-      if (pattern.test(meta) || pattern.test(currentBody)) {
-        return {
-          ok: false,
-          code: "IMP036F_CAPABILITY_START_STALE",
-          message: "Started IMP-036F capability must not claim NOT_STARTED, COMPLETE, ACCEPTED, or IMP-036G activation",
-        };
-      }
+  for (const [pattern, label] of forbidden) {
+    if (pattern.test(meta)) {
+      return {
+        ok: false,
+        code: "IMP036F_CAPABILITY_START_STALE",
+        message: `Started IMP-036F capability must not retain CURRENT ${label}`,
+      };
+    }
+    if (pattern.test(currentBody)) {
+      return {
+        ok: false,
+        code: "IMP036F_CAPABILITY_START_STALE",
+        message: `Started IMP-036F capability must not claim CURRENT ${label}`,
+      };
     }
   }
   return { ok: true };
@@ -7531,19 +7564,40 @@ export function evaluateImp036fStartedProductDefinition(text) {
   const body = String(text);
   const metaMatch = body.match(/<!--\s*governance-meta\s*([\s\S]*?)-->/);
   const meta = metaMatch ? metaMatch[1] : "";
-  if (!/"implementationStarted"\s*:\s*"YES"/.test(meta)) {
-    return {
-      ok: false,
-      code: "IMP036F_PD_START",
-      message: "Started IMP-036F Product Definition must record implementationStarted YES",
-    };
+  const currentBody = stripImp036fHistoricalGovernanceSections(body);
+  const required = [
+    [meta, /"implementationStarted"\s*:\s*"YES"/, "implementationStarted YES meta"],
+    [meta, /"implementationAuthorized"\s*:\s*"YES"/, "implementationAuthorized YES meta"],
+    [currentBody, /IMP036F_STARTED\s*[:=]\s*YES/, "IMP036F_STARTED YES"],
+    [currentBody, /IMP036F_IMPLEMENTATION_AUTHORIZED\s*[:=]\s*YES/, "IMP036F_IMPLEMENTATION_AUTHORIZED YES"],
+    [currentBody, /GTM-R121/, "GTM-R121 anchor"],
+    [currentBody, /STATE-R119/, "STATE-R119 anchor"],
+  ];
+  for (const [haystack, pattern, label] of required) {
+    if (!pattern.test(haystack)) {
+      return {
+        ok: false,
+        code: "IMP036F_PD_START",
+        message: `Started IMP-036F Product Definition must record ${label}`,
+      };
+    }
   }
-  if (!/GTM-R121/.test(body) || !/STATE-R119/.test(body)) {
-    return {
-      ok: false,
-      code: "IMP036F_PD_CANONICAL_ANCHORS",
-      message: "Started IMP-036F Product Definition must record canonical anchors GTM-R121 / STATE-R119",
-    };
+  const forbidden = [
+    [/IMP036F_STARTED\s*[:=]\s*NO/, "IMP036F_STARTED NO"],
+    [/implementation started = NO/i, "implementation started = NO"],
+    [/implementation has not started/i, "implementation has not started"],
+    [/AUTHORIZED \/ NOT_STARTED/, "AUTHORIZED / NOT_STARTED current lifecycle"],
+    [/Next gate[^\n]*explicit implementation start \/ execution authorization/i, "next gate implementation start"],
+    [/Next gate[^\n]*implementation start authorization/i, "next gate implementation start authorization"],
+  ];
+  for (const [pattern, label] of forbidden) {
+    if (pattern.test(currentBody)) {
+      return {
+        ok: false,
+        code: "IMP036F_PD_START_STALE",
+        message: `Started IMP-036F Product Definition must not claim CURRENT ${label}`,
+      };
+    }
   }
   return { ok: true };
 }
@@ -19624,6 +19678,32 @@ function checkImp036fImplementationStart(roadmap, state, architecture, decision)
   ];
   for (const [haystack, pattern, message] of requiredTokens) {
     if (!pattern.test(haystack)) fail("IMP036F_IMPLEMENTATION_START", message);
+  }
+
+  const currentRoadmapNarrative = stripImp036fHistoricalGovernanceSections(currentRoadmapSection);
+  const stateNotAcceptedSection = (() => {
+    const start = state.text.indexOf("## 8. Explicitly Not Yet Accepted");
+    const end = state.text.indexOf("\n## ", start + 1);
+    return start === -1 ? "" : state.text.slice(start, end === -1 ? undefined : end);
+  })();
+
+  const currentPositionForbidden = [
+    [/IMP036F_STARTED:\s*NO/, "IMP036F_STARTED NO"],
+    [/Formal IMP-036F ROADMAP lifecycle is `ARCHITECTURE_LOCKED`[^\n]*NOT_STARTED/, "formal lifecycle NOT_STARTED"],
+    [/implementation is `AUTHORIZED` \/ `NOT_STARTED`/, "implementation AUTHORIZED / NOT_STARTED"],
+    [/implementation AUTHORIZED \/ NOT_STARTED/, "implementation AUTHORIZED / NOT_STARTED"],
+    [/explicit implementation start \/ execution authorization/, "next gate implementation start"],
+  ];
+  for (const [pattern, label] of currentPositionForbidden) {
+    if (pattern.test(currentRoadmapNarrative)) {
+      fail("IMP036F_IMPLEMENTATION_START_STALE", `ROADMAP current position must not claim CURRENT ${label}`);
+    }
+  }
+  if (!/IMP-036F[^\n]*IMPLEMENTATION_IN_PROGRESS/.test(stateNotAcceptedSection)) {
+    fail("IMP036F_STATE_NOT_ACCEPTED", "STATE §8 must record IMP-036F IMPLEMENTATION_IN_PROGRESS");
+  }
+  if (/IMP-036F[^\n]*AUTHORIZED\s*\/\s*NOT_STARTED/.test(stateNotAcceptedSection)) {
+    fail("IMP036F_STATE_NOT_ACCEPTED_STALE", "STATE §8 must not list IMP-036F as AUTHORIZED / NOT_STARTED");
   }
 
   const forbidden = [

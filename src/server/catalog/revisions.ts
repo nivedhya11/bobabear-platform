@@ -155,6 +155,31 @@ export async function lockBrandEnvelope(
   };
 }
 
+/**
+ * Advance the Brand Catalog content revision (aggregate candidate revision).
+ * Every material draft / customer-affecting lifecycle stage must invalidate
+ * previously reviewed expectedContentRevision values.
+ */
+export async function advanceBrandContentRevision(
+  context: PersistenceTransactionContext,
+  brandId: string,
+  at: Date = new Date(),
+): Promise<BrandContentEnvelope> {
+  assertTransactionContext(context, "advanceBrandContentRevision");
+  const envelope = await lockBrandEnvelope(context, brandId);
+  const next = envelope.contentRevision + BigInt(1);
+  await context.db
+    .update(catalogContentRevisionsTable)
+    .set({ contentRevision: next, updatedAt: at })
+    .where(
+      and(
+        eq(catalogContentRevisionsTable.brandId, envelope.brandId),
+        eq(catalogContentRevisionsTable.contentRevision, envelope.contentRevision),
+      ),
+    );
+  return { brandId: envelope.brandId, contentRevision: next, updatedAt: at };
+}
+
 export function assertExpectedContentRevision(
   envelope: BrandContentEnvelope,
   expectedContentRevision: bigint,
@@ -326,8 +351,31 @@ export async function ensureVariantModifierGroupContentRevision1(
 }
 
 /**
- * First activation / ACTIVE bootstrap: establish content revision 1, set effective
- * pointer from draft (typically 1), ensure brand envelope. Does not bump envelope.
+ * Ensure Brand envelope + content revision 1 exist for an entity that is entering
+ * the Catalog publication candidate. Does NOT set effective pointers and does NOT
+ * bump the Brand publication envelope — callers that stage customer-affecting
+ * lifecycle must call `advanceBrandContentRevision` separately.
+ *
+ * Commercial customer effect occurs only via `publishCatalogContentChange`.
+ */
+export async function ensurePublicationCandidateBootstrap(
+  context: PersistenceTransactionContext,
+  input: Readonly<{
+    brandId: string;
+    ensureRevision1: () => Promise<void>;
+  }>,
+): Promise<void> {
+  assertTransactionContext(context, "ensurePublicationCandidateBootstrap");
+  await ensureBrandContentRevision(context, input.brandId);
+  await input.ensureRevision1();
+}
+
+/**
+ * @deprecated Commercial activation must not set effective pointers. Prefer
+ * `ensurePublicationCandidateBootstrap` + `advanceBrandContentRevision`, then
+ * `publishCatalogContentChange`. Retained only for narrowly bounded import
+ * bootstrap paths that intentionally initialize effective state outside the
+ * commercial publication command.
  */
 export async function establishFirstEffectivePublication(
   context: PersistenceTransactionContext,
@@ -366,10 +414,11 @@ export async function loadEffectiveProductContent(
     description: string | null;
     effectiveContentRevision: bigint | null;
   },
-): Promise<{ name: string; description: string | null }> {
+): Promise<{ name: string; description: string | null } | null> {
   assertApplicationRole(context, "loadEffectiveProductContent");
+  // Never fall back to mutable primary draft as customer truth.
   if (product.effectiveContentRevision == null) {
-    return { name: product.name, description: product.description };
+    return null;
   }
   const rows = await context.db
     .select()
@@ -386,7 +435,7 @@ export async function loadEffectiveProductContent(
     .limit(1);
   const row = rows[0];
   if (!row) {
-    return { name: product.name, description: product.description };
+    return null;
   }
   return { name: row.name, description: row.description };
 }
@@ -406,15 +455,10 @@ export async function loadEffectiveVariantContent(
   description: string | null;
   isDefault: boolean;
   isSelectorVisible: boolean;
-}> {
+} | null> {
   assertApplicationRole(context, "loadEffectiveVariantContent");
   if (variant.effectiveContentRevision == null) {
-    return {
-      name: variant.name,
-      description: variant.description,
-      isDefault: variant.isDefault,
-      isSelectorVisible: variant.isSelectorVisible,
-    };
+    return null;
   }
   const rows = await context.db
     .select()
@@ -431,12 +475,7 @@ export async function loadEffectiveVariantContent(
     .limit(1);
   const row = rows[0];
   if (!row) {
-    return {
-      name: variant.name,
-      description: variant.description,
-      isDefault: variant.isDefault,
-      isSelectorVisible: variant.isSelectorVisible,
-    };
+    return null;
   }
   return {
     name: row.name,
@@ -454,10 +493,10 @@ export async function loadEffectiveModifierGroupContent(
     description: string | null;
     effectiveContentRevision: bigint | null;
   },
-): Promise<{ name: string; description: string | null }> {
+): Promise<{ name: string; description: string | null } | null> {
   assertApplicationRole(context, "loadEffectiveModifierGroupContent");
   if (group.effectiveContentRevision == null) {
-    return { name: group.name, description: group.description };
+    return null;
   }
   const rows = await context.db
     .select()
@@ -474,7 +513,7 @@ export async function loadEffectiveModifierGroupContent(
     .limit(1);
   const row = rows[0];
   if (!row) {
-    return { name: group.name, description: group.description };
+    return null;
   }
   return { name: row.name, description: row.description };
 }
@@ -487,10 +526,10 @@ export async function loadEffectiveModifierOptionContent(
     description: string | null;
     effectiveContentRevision: bigint | null;
   },
-): Promise<{ name: string; description: string | null }> {
+): Promise<{ name: string; description: string | null } | null> {
   assertApplicationRole(context, "loadEffectiveModifierOptionContent");
   if (option.effectiveContentRevision == null) {
-    return { name: option.name, description: option.description };
+    return null;
   }
   const rows = await context.db
     .select()
@@ -507,7 +546,7 @@ export async function loadEffectiveModifierOptionContent(
     .limit(1);
   const row = rows[0];
   if (!row) {
-    return { name: option.name, description: option.description };
+    return null;
   }
   return { name: row.name, description: row.description };
 }
@@ -520,6 +559,7 @@ export async function loadEffectiveModifierGroupOptionContent(
     maxQuantity: number;
     defaultQuantity: number;
     position: number;
+    lifecycleStatus: string;
     effectiveContentRevision: bigint | null;
   },
 ): Promise<{
@@ -527,15 +567,11 @@ export async function loadEffectiveModifierGroupOptionContent(
   maxQuantity: number;
   defaultQuantity: number;
   position: number;
-}> {
+  lifecycleStatus: string;
+} | null> {
   assertApplicationRole(context, "loadEffectiveModifierGroupOptionContent");
   if (binding.effectiveContentRevision == null) {
-    return {
-      minQuantity: binding.minQuantity,
-      maxQuantity: binding.maxQuantity,
-      defaultQuantity: binding.defaultQuantity,
-      position: binding.position,
-    };
+    return null;
   }
   const rows = await context.db
     .select()
@@ -552,18 +588,14 @@ export async function loadEffectiveModifierGroupOptionContent(
     .limit(1);
   const row = rows[0];
   if (!row) {
-    return {
-      minQuantity: binding.minQuantity,
-      maxQuantity: binding.maxQuantity,
-      defaultQuantity: binding.defaultQuantity,
-      position: binding.position,
-    };
+    return null;
   }
   return {
     minQuantity: row.minQuantity,
     maxQuantity: row.maxQuantity,
     defaultQuantity: row.defaultQuantity,
     position: row.position,
+    lifecycleStatus: row.lifecycleStatus,
   };
 }
 
@@ -574,20 +606,18 @@ export async function loadEffectiveVariantModifierGroupContent(
     minTotalQuantity: number;
     maxTotalQuantity: number;
     position: number;
+    lifecycleStatus: string;
     effectiveContentRevision: bigint | null;
   },
 ): Promise<{
   minTotalQuantity: number;
   maxTotalQuantity: number;
   position: number;
-}> {
+  lifecycleStatus: string;
+} | null> {
   assertApplicationRole(context, "loadEffectiveVariantModifierGroupContent");
   if (binding.effectiveContentRevision == null) {
-    return {
-      minTotalQuantity: binding.minTotalQuantity,
-      maxTotalQuantity: binding.maxTotalQuantity,
-      position: binding.position,
-    };
+    return null;
   }
   const rows = await context.db
     .select()
@@ -604,20 +634,17 @@ export async function loadEffectiveVariantModifierGroupContent(
     .limit(1);
   const row = rows[0];
   if (!row) {
-    return {
-      minTotalQuantity: binding.minTotalQuantity,
-      maxTotalQuantity: binding.maxTotalQuantity,
-      position: binding.position,
-    };
+    return null;
   }
   return {
     minTotalQuantity: row.minTotalQuantity,
     maxTotalQuantity: row.maxTotalQuantity,
     position: row.position,
+    lifecycleStatus: row.lifecycleStatus,
   };
 }
 
-/** Batch-load effective product content for customer projection. */
+/** Batch-load effective product content for customer projection (fail-closed). */
 export async function loadEffectiveProductContentMap(
   context: PersistenceQueryContext,
   products: ReadonlyArray<{
@@ -629,36 +656,14 @@ export async function loadEffectiveProductContentMap(
 ): Promise<Map<string, { name: string; description: string | null }>> {
   assertApplicationRole(context, "loadEffectiveProductContentMap");
   const result = new Map<string, { name: string; description: string | null }>();
-  const needing: Array<{ id: string; rev: bigint }> = [];
   for (const product of products) {
-    if (product.effectiveContentRevision == null) {
-      result.set(product.id, { name: product.name, description: product.description });
-    } else {
-      needing.push({ id: product.id, rev: product.effectiveContentRevision });
+    const content = await loadEffectiveProductContent(context, {
+      ...product,
+      brandId: "",
+    });
+    if (content) {
+      result.set(product.id, content);
     }
-  }
-  if (needing.length === 0) return result;
-
-  // Load per-product (small menu graphs); preserve fallback to primary.
-  for (const item of needing) {
-    const primary = products.find((p) => p.id === item.id)!;
-    const rows = await context.db
-      .select()
-      .from(catalogProductContentRevisionsTable)
-      .where(
-        and(
-          eq(catalogProductContentRevisionsTable.productId, item.id),
-          eq(catalogProductContentRevisionsTable.contentRevision, item.rev),
-        ),
-      )
-      .limit(1);
-    const row = rows[0];
-    result.set(
-      item.id,
-      row
-        ? { name: row.name, description: row.description }
-        : { name: primary.name, description: primary.description },
-    );
   }
   return result;
 }
@@ -695,7 +700,10 @@ export async function loadEffectiveVariantContentMap(
     }
   >();
   for (const variant of variants) {
-    result.set(variant.id, await loadEffectiveVariantContent(context, variant));
+    const content = await loadEffectiveVariantContent(context, variant);
+    if (content) {
+      result.set(variant.id, content);
+    }
   }
   return result;
 }

@@ -390,7 +390,7 @@ is recorded in
 
 ## 8. Explicitly Not Yet Accepted
 
-- IMP-036F — Catalog, Menu, Pricing & Promotions Management (`ARCHITECTURE_LOCKED` / `AUTHORIZED` / `NOT_STARTED`; `IMP036F_ACTIVATED: YES`; Product Definition APPROVED; Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation AUTHORIZED / NOT_STARTED)
+- IMP-036F — Catalog, Menu, Pricing & Promotions Management (`IMPLEMENTATION_IN_PROGRESS`; `AUTHORIZED` / `STARTED`; `IMP036F_ACTIVATED: YES`; Product Definition APPROVED; Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation authorized at GTM-R120 / STATE-R118; start at GTM-R121 / STATE-R119; F1 in progress; not accepted)
 - IMP-036G — Administration Console V2 (`PLANNED` / `NOT_ACTIVATED`)
 - IMP-037 — Backup, Restore & Migration Readiness
 - IMP-038 — Security & Privacy Hardening

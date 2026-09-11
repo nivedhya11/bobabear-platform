@@ -7791,6 +7791,8 @@ IMP036F_ARCHITECTURE_LOCKED: YES
 ARCHITECTURE_FIT: PASS
 IMPLEMENTATION_AUTHORIZED: YES
 IMPLEMENTATION_STARTED: YES
+IMP036F_IMPLEMENTATION_AUTHORIZED: YES
+IMP036F_STARTED: YES
 CANONICAL_ROADMAP_STATE = GTM-R121 / STATE-R119
 `;
 
@@ -7808,6 +7810,8 @@ CANONICAL_ROADMAP_STATE = GTM-R121 / STATE-R119
 
 # IMP-036F Product Definition
 
+IMP036F_IMPLEMENTATION_AUTHORIZED: YES
+IMP036F_STARTED: YES
 Canonical anchors GTM-R121 / STATE-R119
 `;
 
@@ -7860,6 +7864,50 @@ Canonical anchors GTM-R121 / STATE-R119
     );
     assert.equal(result.ok, false);
     assert.equal(result.code, "IMP036F_PD_START");
+  });
+
+  it("fails when capability end matter retains IMP036F_STARTED NO", () => {
+    const result = evaluateImp036fStartedCapabilityArchitecture(
+      `${validStartedCapability}
+## End matter
+IMP036F_STARTED: NO
+NEXT_GATE = Independent review of Implementation Authorization / GTM-R120 / STATE-R118 persistence
+`,
+    );
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036F_CAPABILITY_START_STALE");
+  });
+
+  it("fails when capability CURRENT body claims implementation has not started", () => {
+    const result = evaluateImp036fStartedCapabilityArchitecture(
+      validStartedCapability.replace(
+        "IMPLEMENTATION_STARTED: YES",
+        "IMPLEMENTATION_STARTED: YES\nimplementation has not started.",
+      ),
+    );
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036F_CAPABILITY_START_STALE");
+  });
+
+  it("allows historical GTM-R120 authorization-only NOT_STARTED provenance", () => {
+    const result = evaluateImp036fStartedCapabilityArchitecture(
+      `${validStartedCapability}
+Historical pre-R121 lifecycle provenance: implementation authorization was recorded at
+GTM-R120 / STATE-R118 with IMPLEMENTATION_STARTED = NO / AUTHORIZED / NOT_STARTED.
+`,
+    );
+    assert.equal(result.ok, true);
+  });
+
+  it("fails when Product Definition gate section retains IMP036F_STARTED NO", () => {
+    const result = evaluateImp036fStartedProductDefinition(
+      `${validStartedPd}
+IMP036F_STARTED: NO
+Next gate after canonical merge/reconciliation: explicit implementation start / execution authorization
+`,
+    );
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036F_PD_START_STALE");
   });
 
   it("preserves prior R120/S118 authorization checkpoint", () => {

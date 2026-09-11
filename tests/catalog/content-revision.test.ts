@@ -1,5 +1,10 @@
 /**
  * IMP-036F ENTITY_CONTENT_REVISION publication tests (F1).
+ *
+ * Activation only stages a publication candidate: customer effect requires
+ * `publishCatalogContentChange`. Every material draft save and every
+ * activate/retire advances the Brand envelope, so publishes must always use the
+ * envelope value read immediately before the call.
  */
 import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
@@ -7,8 +12,10 @@ import { describe, expect, it } from "vitest";
 import {
   catalogContentRevisionsTable,
   catalogModifierGroupsTable,
+  catalogModifierOptionsTable,
   catalogProductContentRevisionsTable,
   catalogProductsTable,
+  catalogVariantModifierGroupsTable,
 } from "../../src/platform/database/schema/catalog";
 import {
   CatalogConflictError,
@@ -27,6 +34,7 @@ import {
   createVariant,
   findProductById,
   findVariantById,
+  loadEffectiveProductContent,
   publishCatalogContentChange,
   saveModifierGroupContentDraft,
   saveProductContentDraft,
@@ -34,10 +42,21 @@ import {
   updateProduct,
   updateVariant,
 } from "../../src/server/catalog";
-import { withCatalogDomain } from "./support";
+import {
+  publishProductEnvelope,
+  readBrandContentRevision,
+  withCatalogDomain,
+} from "./support";
 
-async function seedActiveStandardProduct(
-  persistence: Parameters<Parameters<typeof withCatalogDomain>[0]>[0],
+type TestPersistence = Parameters<Parameters<typeof withCatalogDomain>[0]>[0];
+
+/**
+ * Create + activate a standard product and its default variant WITHOUT
+ * publishing. Leaves the product staged: primary rows active, effective
+ * pointers still null, Brand envelope advanced by each activation.
+ */
+async function activateStandardProduct(
+  persistence: TestPersistence,
   actor: unknown,
   brandId: string,
   code: string,
@@ -69,10 +88,71 @@ async function seedActiveStandardProduct(
   return { product: activated, variant };
 }
 
+/**
+ * Activate and then publish, so the product/variant are customer-effective.
+ * `envelopeAfterPublish` is the Brand revision a later publish must expect.
+ */
+async function seedActiveStandardProduct(
+  persistence: TestPersistence,
+  actor: unknown,
+  brandId: string,
+  code: string,
+  name: string,
+) {
+  const staged = await activateStandardProduct(persistence, actor, brandId, code, name);
+  await persistence.transaction((tx) =>
+    publishProductEnvelope(tx, { actor, brandId, productId: staged.product.id }),
+  );
+  const product = await persistence.withContext((ctx) =>
+    findProductById(ctx, staged.product.id),
+  );
+  const variant = await persistence.withContext((ctx) =>
+    findVariantById(ctx, staged.variant.id),
+  );
+  const envelopeAfterPublish = await persistence.withContext((ctx) =>
+    readBrandContentRevision(ctx, brandId),
+  );
+  return { product: product!, variant: variant!, envelopeAfterPublish };
+}
+
 describe("catalog content revisions (IMP-036F F1)", () => {
-  it("activation establishes effective revision 1 matching content", async () => {
+  it("activation alone does not establish effective content", async () => {
     await withCatalogDomain(async (persistence, { tree, brandAdminActor: actor }) => {
-      const { product } = await seedActiveStandardProduct(
+      const { product, variant } = await activateStandardProduct(
+        persistence,
+        actor,
+        tree.brand.id,
+        "rev-activate-only",
+        "Activation Tea",
+      );
+
+      expect(product.lifecycleStatus).toBe("active");
+      expect(product.effectiveContentRevision).toBeNull();
+      expect(product.draftContentRevision).toBe(BigInt(1));
+
+      const variantAfter = await persistence.withContext((ctx) =>
+        findVariantById(ctx, variant.id),
+      );
+      expect(variantAfter!.lifecycleStatus).toBe("active");
+      expect(variantAfter!.effectiveContentRevision).toBeNull();
+
+      // Fail-closed customer read: no effective pointer means no content.
+      const effectiveContent = await persistence.withContext((ctx) =>
+        loadEffectiveProductContent(ctx, product),
+      );
+      expect(effectiveContent).toBeNull();
+
+      // Each activation invalidates any previously reviewed envelope.
+      const envelope = await persistence.withContext((ctx) =>
+        readBrandContentRevision(ctx, tree.brand.id),
+      );
+      expect(envelope).toBeGreaterThan(BigInt(1));
+    });
+  });
+
+  it("publish after activation establishes effective revision 1 matching content", async () => {
+    await withCatalogDomain(async (persistence, { tree, brandAdminActor: actor }) => {
+      const { product, envelopeAfterPublish } = await seedActiveStandardProduct(
         persistence,
         actor,
         tree.brand.id,
@@ -97,6 +177,11 @@ describe("catalog content revisions (IMP-036F F1)", () => {
       expect(revision[0]!.contentRevision).toBe(BigInt(1));
       expect(revision[0]!.name).toBe("Activation Tea");
 
+      const effectiveContent = await persistence.withContext((ctx) =>
+        loadEffectiveProductContent(ctx, product),
+      );
+      expect(effectiveContent).toEqual({ name: "Activation Tea", description: null });
+
       const envelope = await persistence.transaction(async (tx) => {
         const rows = await tx.db
           .select()
@@ -104,13 +189,14 @@ describe("catalog content revisions (IMP-036F F1)", () => {
           .where(eq(catalogContentRevisionsTable.brandId, tree.brand.id));
         return rows[0];
       });
-      expect(envelope?.contentRevision).toBe(BigInt(1));
+      expect(envelope?.contentRevision).toBe(envelopeAfterPublish);
+      expect(envelopeAfterPublish).toBeGreaterThan(BigInt(1));
     });
   });
 
   it("draft save isolates from effective / customer content until publish", async () => {
     await withCatalogDomain(async (persistence, { tree, brandAdminActor: actor }) => {
-      const { product } = await seedActiveStandardProduct(
+      const { product, envelopeAfterPublish } = await seedActiveStandardProduct(
         persistence,
         actor,
         tree.brand.id,
@@ -135,6 +221,12 @@ describe("catalog content revisions (IMP-036F F1)", () => {
       expect(afterDraft!.effectiveContentRevision).toBe(BigInt(1));
       expect(afterDraft!.draftContentRevision).toBe(BigInt(2));
 
+      // The draft invalidated the envelope reviewers saw at publish time.
+      const envelopeAfterDraft = await persistence.withContext((ctx) =>
+        readBrandContentRevision(ctx, tree.brand.id),
+      );
+      expect(envelopeAfterDraft).toBe(envelopeAfterPublish + BigInt(1));
+
       const effectiveRow = await persistence.transaction(async (tx) => {
         const rows = await tx.db
           .select()
@@ -143,6 +235,11 @@ describe("catalog content revisions (IMP-036F F1)", () => {
         return rows.find((r) => r.contentRevision === BigInt(1));
       });
       expect(effectiveRow!.name).toBe("Original Name");
+
+      const customerContent = await persistence.withContext((ctx) =>
+        loadEffectiveProductContent(ctx, afterDraft!),
+      );
+      expect(customerContent!.name).toBe("Original Name");
     });
   });
 
@@ -213,15 +310,19 @@ describe("catalog content revisions (IMP-036F F1)", () => {
         }),
       );
 
+      const reviewed = await persistence.withContext((ctx) =>
+        readBrandContentRevision(ctx, tree.brand.id),
+      );
       const published = await persistence.transaction((tx) =>
         publishCatalogContentChange(tx, {
           actor,
           brandId: tree.brand.id,
-          expectedContentRevision: 1,
+          expectedContentRevision: reviewed,
           productId: product.id,
         }),
       );
-      expect(published.contentRevision).toBe(BigInt(2));
+      expect(published.changed).toBe(true);
+      expect(published.contentRevision).toBe(reviewed + BigInt(1));
 
       const after = await persistence.transaction((tx) => findProductById(tx, product.id));
       expect(after!.effectiveContentRevision).toBe(BigInt(2));
@@ -270,12 +371,15 @@ describe("catalog content revisions (IMP-036F F1)", () => {
         }),
       );
 
-      // First publish consumes envelope 1 → 2
+      // Reviewed envelope N; the first publish consumes it.
+      const reviewed = await persistence.withContext((ctx) =>
+        readBrandContentRevision(ctx, tree.brand.id),
+      );
       await persistence.transaction((tx) =>
         publishCatalogContentChange(tx, {
           actor,
           brandId: tree.brand.id,
-          expectedContentRevision: 1,
+          expectedContentRevision: reviewed,
           productId: product.id,
         }),
       );
@@ -309,7 +413,7 @@ describe("catalog content revisions (IMP-036F F1)", () => {
           publishCatalogContentChange(tx, {
             actor,
             brandId: tree.brand.id,
-            expectedContentRevision: 1, // stale
+            expectedContentRevision: reviewed, // stale
             productId: product.id,
           }),
         ),
@@ -352,7 +456,8 @@ describe("catalog content revisions (IMP-036F F1)", () => {
           productKind: "standard",
         }),
       );
-      // Draft-only product cannot activate/publish without default variant.
+      // Nothing has advanced the envelope yet, so 1 is the current revision:
+      // the rejection must come from graph readiness, not from CAS.
       await expect(
         persistence.transaction((tx) =>
           publishCatalogContentChange(tx, {
@@ -366,7 +471,7 @@ describe("catalog content revisions (IMP-036F F1)", () => {
     });
   });
 
-  it("modifier draft does not leak until product-envelope publish", async () => {
+  it("modifier activation and draft do not leak until product-envelope publish", async () => {
     await withCatalogDomain(async (persistence, { tree, brandAdminActor: actor }) => {
       const { product, variant } = await seedActiveStandardProduct(
         persistence,
@@ -412,6 +517,10 @@ describe("catalog content revisions (IMP-036F F1)", () => {
         }),
       );
 
+      const envelopeBeforeActivations = await persistence.withContext((ctx) =>
+        readBrandContentRevision(ctx, tree.brand.id),
+      );
+
       await persistence.transaction((tx) =>
         activateModifierOption(tx, { actor, modifierOptionId: option.id }),
       );
@@ -431,6 +540,39 @@ describe("catalog content revisions (IMP-036F F1)", () => {
         }),
       );
 
+      // Each modifier activation advances the Brand envelope...
+      const envelopeAfterActivations = await persistence.withContext((ctx) =>
+        readBrandContentRevision(ctx, tree.brand.id),
+      );
+      expect(envelopeAfterActivations).toBeGreaterThan(envelopeBeforeActivations);
+
+      // ...but none of them is customer-effective yet.
+      const stagedModifiers = await persistence.transaction(async (tx) => {
+        const groupRow = (
+          await tx.db
+            .select()
+            .from(catalogModifierGroupsTable)
+            .where(eq(catalogModifierGroupsTable.id, group.id))
+        )[0]!;
+        const optionRow = (
+          await tx.db
+            .select()
+            .from(catalogModifierOptionsTable)
+            .where(eq(catalogModifierOptionsTable.id, option.id))
+        )[0]!;
+        const vmgRow = (
+          await tx.db
+            .select()
+            .from(catalogVariantModifierGroupsTable)
+            .where(eq(catalogVariantModifierGroupsTable.id, vmg.id))
+        )[0]!;
+        return { groupRow, optionRow, vmgRow };
+      });
+      expect(stagedModifiers.groupRow.lifecycleStatus).toBe("active");
+      expect(stagedModifiers.groupRow.effectiveContentRevision).toBeNull();
+      expect(stagedModifiers.optionRow.effectiveContentRevision).toBeNull();
+      expect(stagedModifiers.vmgRow.effectiveContentRevision).toBeNull();
+
       await persistence.transaction((tx) =>
         saveModifierGroupContentDraft(tx, {
           actor,
@@ -440,7 +582,7 @@ describe("catalog content revisions (IMP-036F F1)", () => {
         }),
       );
 
-      // Before publish: effective group name remains Sugar Level
+      // Before publish the product keeps its previously published revision.
       const beforePublish = await persistence.transaction(async (tx) => {
         const rows = await tx.db
           .select()
@@ -451,10 +593,9 @@ describe("catalog content revisions (IMP-036F F1)", () => {
       expect(beforePublish.effectiveContentRevision).toBe(BigInt(1));
 
       await persistence.transaction((tx) =>
-        publishCatalogContentChange(tx, {
+        publishProductEnvelope(tx, {
           actor,
           brandId: tree.brand.id,
-          expectedContentRevision: 1,
           productId: product.id,
         }),
       );

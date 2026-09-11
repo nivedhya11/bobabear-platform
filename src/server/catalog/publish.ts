@@ -3,8 +3,16 @@
  *
  * Primary rows mirror the latest draft for admin LWW display of name/etc.
  * Customer projection reads effective content revision rows only.
+ *
+ * Every material draft save advances the Brand content envelope so that a
+ * previously reviewed `expectedContentRevision` can never publish content the
+ * reviewer did not see. `publishCatalogContentChange` locks the whole
+ * product-rooted envelope before validation, applies effective pointers by
+ * entity lifecycle (active publishes the draft, retired clears customer
+ * visibility, draft stays unpublished), and is a no-op — no envelope bump, no
+ * audit event, no pointer switch — when nothing in the envelope would change.
  */
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, ne } from "drizzle-orm";
 
 import {
   CATALOG_DESCRIPTION_MAX,
@@ -45,6 +53,7 @@ import {
 } from "./errors";
 import { assertUuid } from "./lifecycle";
 import {
+  advanceBrandContentRevision,
   assertExpectedContentRevision,
   ensureBrandContentRevision,
   ensureModifierGroupContentRevision1,
@@ -102,6 +111,70 @@ function assertDraftCas(current: bigint, expected: bigint, entityLabel: string):
   if (current !== expected) {
     throw new CatalogConflictError({
       message: `${entityLabel} draftContentRevision does not match expectedContentRevision; no draft write.`,
+    });
+  }
+}
+
+/**
+ * Revision-safe clearing of sibling default variants.
+ *
+ * Clearing `isDefault` on the primary row alone would keep the customer reading
+ * the old default from the sibling's effective revision until publish, so each
+ * cleared sibling also gets a new draft content revision carrying
+ * `isDefault: false`. Must run before the target variant claims the default so
+ * the partial unique index on one non-retired default per product holds.
+ */
+async function clearSiblingVariantDefaults(
+  context: PersistenceTransactionContext,
+  input: Readonly<{
+    productId: string;
+    keepVariantId: string;
+    actorWorkforceUserId: string;
+    at: Date;
+  }>,
+): Promise<void> {
+  const siblings = await context.db
+    .select()
+    .from(catalogVariantsTable)
+    .where(
+      and(
+        eq(catalogVariantsTable.productId, input.productId),
+        ne(catalogVariantsTable.id, input.keepVariantId),
+      ),
+    )
+    .for("update");
+
+  for (const sibling of siblings) {
+    if (!sibling.isDefault || sibling.lifecycleStatus === "retired") continue;
+
+    await ensureVariantContentRevision1(context, sibling, input.at);
+    const next = sibling.draftContentRevision + BigInt(1);
+
+    await context.db.insert(catalogVariantContentRevisionsTable).values({
+      variantId: sibling.id,
+      contentRevision: next,
+      brandId: sibling.brandId,
+      name: sibling.name,
+      description: sibling.description,
+      isDefault: false,
+      isSelectorVisible: sibling.isSelectorVisible,
+      createdAt: input.at,
+    });
+
+    await context.db
+      .update(catalogVariantsTable)
+      .set({ isDefault: false, draftContentRevision: next, updatedAt: input.at })
+      .where(eq(catalogVariantsTable.id, sibling.id));
+
+    await insertCatalogMutationAuditEvent(context, {
+      actorWorkforceUserId: input.actorWorkforceUserId,
+      action: "catalog.content_draft_saved",
+      brandId: sibling.brandId,
+      targetType: "variant",
+      targetId: sibling.id,
+      previousContentRevision: sibling.draftContentRevision,
+      newContentRevision: next,
+      metadata: { defaultVariantCleared: true },
     });
   }
 }
@@ -175,6 +248,9 @@ export async function saveProductContentDraft(
       updatedAt: now,
     })
     .where(eq(catalogProductsTable.id, productId));
+
+  // Material draft change invalidates any previously reviewed Brand envelope.
+  await advanceBrandContentRevision(context, row.brandId, now);
 
   await insertCatalogMutationAuditEvent(context, {
     actorWorkforceUserId: actorId(input.actor),
@@ -250,6 +326,15 @@ export async function saveVariantContentDraft(
   const next = expected + BigInt(1);
   const now = new Date();
 
+  if (isDefault) {
+    await clearSiblingVariantDefaults(context, {
+      productId: row.productId,
+      keepVariantId: variantId,
+      actorWorkforceUserId: actorId(input.actor),
+      at: now,
+    });
+  }
+
   await context.db.insert(catalogVariantContentRevisionsTable).values({
     variantId,
     contentRevision: next,
@@ -272,6 +357,9 @@ export async function saveVariantContentDraft(
       updatedAt: now,
     })
     .where(eq(catalogVariantsTable.id, variantId));
+
+  // One advance covers the target variant plus any sibling default clears.
+  await advanceBrandContentRevision(context, row.brandId, now);
 
   await insertCatalogMutationAuditEvent(context, {
     actorWorkforceUserId: actorId(input.actor),
@@ -359,6 +447,8 @@ export async function saveModifierGroupContentDraft(
     .set({ name, description, draftContentRevision: next, updatedAt: now })
     .where(eq(catalogModifierGroupsTable.id, modifierGroupId));
 
+  await advanceBrandContentRevision(context, row.brandId, now);
+
   await insertCatalogMutationAuditEvent(context, {
     actorWorkforceUserId: actorId(input.actor),
     action: "catalog.content_draft_saved",
@@ -437,6 +527,8 @@ export async function saveModifierOptionContentDraft(
     .update(catalogModifierOptionsTable)
     .set({ name, description, draftContentRevision: next, updatedAt: now })
     .where(eq(catalogModifierOptionsTable.id, modifierOptionId));
+
+  await advanceBrandContentRevision(context, row.brandId, now);
 
   await insertCatalogMutationAuditEvent(context, {
     actorWorkforceUserId: actorId(input.actor),
@@ -555,6 +647,8 @@ export async function saveModifierGroupOptionContentDraft(
     })
     .where(eq(catalogModifierGroupOptionsTable.id, bindingId));
 
+  await advanceBrandContentRevision(context, row.brandId, now);
+
   await insertCatalogMutationAuditEvent(context, {
     actorWorkforceUserId: actorId(input.actor),
     action: "catalog.content_draft_saved",
@@ -667,6 +761,8 @@ export async function saveVariantModifierGroupContentDraft(
     })
     .where(eq(catalogVariantModifierGroupsTable.id, bindingId));
 
+  await advanceBrandContentRevision(context, row.brandId, now);
+
   await insertCatalogMutationAuditEvent(context, {
     actorWorkforceUserId: actorId(input.actor),
     action: "catalog.content_draft_saved",
@@ -725,15 +821,45 @@ export type PublishCatalogContentChangeInput = Readonly<{
 }>;
 
 export type PublishCatalogContentChangeResult = Readonly<{
+  changed: boolean;
   contentRevision: bigint;
   previousContentRevision: bigint;
   productId: string;
   brandId: string;
 }>;
 
+/** Pointer fields every publishable primary row exposes. */
+type PublicationEntity = Readonly<{
+  id: string;
+  lifecycleStatus: string;
+  draftContentRevision: bigint;
+  effectiveContentRevision: bigint | null;
+}>;
+
+/**
+ * Effective pointer this publication would install:
+ * `bigint` publishes the draft, `null` withdraws customer visibility, and
+ * `undefined` means the entity is still draft-only and must not be published.
+ */
+function plannedEffectiveContentRevision(
+  entity: PublicationEntity,
+): bigint | null | undefined {
+  if (entity.lifecycleStatus === "retired") return null;
+  if (entity.lifecycleStatus === "active") return entity.draftContentRevision;
+  return undefined;
+}
+
+function hasMaterialEffectiveDifference(entity: PublicationEntity): boolean {
+  const planned = plannedEffectiveContentRevision(entity);
+  if (planned === undefined) return false;
+  return planned !== entity.effectiveContentRevision;
+}
+
 /**
  * Atomic publication of the product-rooted CONTENT envelope.
  * CAS brand envelope first; on mismatch throw with zero effective switches.
+ * Publishing an envelope that would not change any effective pointer is a
+ * no-op: the Brand revision is not bumped and no publication event is emitted.
  */
 export async function publishCatalogContentChange(
   context: PersistenceTransactionContext,
@@ -760,8 +886,8 @@ export async function publishCatalogContentChange(
     throw new CatalogNotFoundError("product");
   }
 
-  await assertProductGraphReady(context, productId);
-
+  // Lock the complete child graph before validating so the candidate that is
+  // validated is exactly the candidate that is published.
   const variants = await context.db
     .select()
     .from(catalogVariantsTable)
@@ -809,25 +935,8 @@ export async function publishCatalogContentChange(
 
   const now = new Date();
 
-  async function switchEffective(
-    table:
-      | typeof catalogProductsTable
-      | typeof catalogVariantsTable
-      | typeof catalogModifierGroupsTable
-      | typeof catalogModifierOptionsTable
-      | typeof catalogModifierGroupOptionsTable
-      | typeof catalogVariantModifierGroupsTable,
-    id: string,
-    draft: bigint,
-  ): Promise<void> {
-    await context.db
-      .update(table)
-      .set({
-        effectiveContentRevision: draft,
-        updatedAt: now,
-      } as never)
-      .where(eq(table.id, id));
-  }
+  // Candidate primary graph — validated only after every row is locked.
+  await assertProductGraphReady(context, productId);
 
   // Ensure revision rows exist for draft pointers before switching.
   await ensureProductContentRevision1(context, product, now);
@@ -837,22 +946,53 @@ export async function publishCatalogContentChange(
   for (const b of groupOptions) await ensureModifierGroupOptionContentRevision1(context, b, now);
   for (const b of vmgs) await ensureVariantModifierGroupContentRevision1(context, b, now);
 
-  await switchEffective(catalogProductsTable, product.id, product.draftContentRevision);
-  for (const v of variants) {
-    await switchEffective(catalogVariantsTable, v.id, v.draftContentRevision);
+  const envelopeEntities: PublicationEntity[] = [
+    product,
+    ...variants,
+    ...groups,
+    ...options,
+    ...groupOptions,
+    ...vmgs,
+  ];
+
+  if (!envelopeEntities.some(hasMaterialEffectiveDifference)) {
+    return {
+      changed: false,
+      contentRevision: expected,
+      previousContentRevision: expected,
+      productId,
+      brandId,
+    };
   }
-  for (const g of groups) {
-    await switchEffective(catalogModifierGroupsTable, g.id, g.draftContentRevision);
+
+  async function applyEffective(
+    table:
+      | typeof catalogProductsTable
+      | typeof catalogVariantsTable
+      | typeof catalogModifierGroupsTable
+      | typeof catalogModifierOptionsTable
+      | typeof catalogModifierGroupOptionsTable
+      | typeof catalogVariantModifierGroupsTable,
+    entity: PublicationEntity,
+  ): Promise<void> {
+    const planned = plannedEffectiveContentRevision(entity);
+    // Draft-lifecycle entities stay unpublished; leave their pointer untouched.
+    if (planned === undefined) return;
+    await context.db
+      .update(table)
+      .set({
+        effectiveContentRevision: planned,
+        updatedAt: now,
+      } as never)
+      .where(eq(table.id, entity.id));
   }
-  for (const o of options) {
-    await switchEffective(catalogModifierOptionsTable, o.id, o.draftContentRevision);
-  }
-  for (const b of groupOptions) {
-    await switchEffective(catalogModifierGroupOptionsTable, b.id, b.draftContentRevision);
-  }
-  for (const b of vmgs) {
-    await switchEffective(catalogVariantModifierGroupsTable, b.id, b.draftContentRevision);
-  }
+
+  await applyEffective(catalogProductsTable, product);
+  for (const v of variants) await applyEffective(catalogVariantsTable, v);
+  for (const g of groups) await applyEffective(catalogModifierGroupsTable, g);
+  for (const o of options) await applyEffective(catalogModifierOptionsTable, o);
+  for (const b of groupOptions) await applyEffective(catalogModifierGroupOptionsTable, b);
+  for (const b of vmgs) await applyEffective(catalogVariantModifierGroupsTable, b);
 
   const newEnvelope = expected + BigInt(1);
   await context.db
@@ -881,6 +1021,7 @@ export async function publishCatalogContentChange(
   });
 
   return {
+    changed: true,
     contentRevision: newEnvelope,
     previousContentRevision: expected,
     productId,

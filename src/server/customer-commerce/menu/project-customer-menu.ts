@@ -137,19 +137,19 @@ async function resolveOutletForBrand(
   return outlet.id;
 }
 
-function pickDefaultActiveVariant(
+function pickDefaultEffectiveVariant(
   variants: ReadonlyArray<{
     id: string;
-    lifecycleStatus: string;
     isDefault: boolean;
   }>,
-): { id: string; lifecycleStatus: string; isDefault: boolean } {
-  const active = variants.filter((variant) => variant.lifecycleStatus === "active");
-  const defaults = active.filter((variant) => variant.isDefault);
+): { id: string; isDefault: boolean } {
+  // Customer truth is effective content only — primary lifecycle/draft defaults
+  // must not participate in default selection.
+  const defaults = variants.filter((variant) => variant.isDefault);
   if (defaults.length !== 1) {
     throw new CustomerMenuError(
       "MENU_UNAVAILABLE",
-      "Active menu entry product lacks exactly one active default variant.",
+      "Active menu entry product lacks exactly one effective default variant.",
     );
   }
   return defaults[0]!;
@@ -233,25 +233,30 @@ export async function projectCustomerMenu(
 
   for (const entry of entryRows) {
     const product = productsById.get(entry.productId);
-    if (!product || product.lifecycleStatus !== "active") {
+    const productContent = product ? effectiveProducts.get(product.id) : undefined;
+    // Customer-visible product = effective content present. Staged activation
+    // (primary active, effective null) and missing revision rows fail closed.
+    if (!product || !productContent) {
       throw new CustomerMenuError(
         "MENU_UNAVAILABLE",
         "Active menu entry references missing or inactive product.",
       );
     }
 
-    const productVariants = (variantsByProductId.get(entry.productId) ?? []).map((variant) => {
-      const content = effectiveVariants.get(variant.id)!;
-      return {
-        ...variant,
-        name: content.name,
-        description: content.description,
-        isDefault: content.isDefault,
-        isSelectorVisible: content.isSelectorVisible,
-      };
-    });
-    const variant = pickDefaultActiveVariant(productVariants);
-    const productContent = effectiveProducts.get(product.id)!;
+    const productVariants = (variantsByProductId.get(entry.productId) ?? [])
+      .map((variant) => {
+        const content = effectiveVariants.get(variant.id);
+        if (!content) return null;
+        return {
+          ...variant,
+          name: content.name,
+          description: content.description,
+          isDefault: content.isDefault,
+          isSelectorVisible: content.isSelectorVisible,
+        };
+      })
+      .filter((variant): variant is NonNullable<typeof variant> => variant != null);
+    const variant = pickDefaultEffectiveVariant(productVariants);
     const display = effectiveEntryDisplay(entry, {
       name: productContent.name,
       description: productContent.description,

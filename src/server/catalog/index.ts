@@ -137,9 +137,11 @@ export { requireCatalogManage, requireCatalogRead } from "./authorize-catalog";
 export { insertCatalogMutationAuditEvent } from "./audit";
 
 export {
+  advanceBrandContentRevision,
   assertExpectedContentRevision,
   assertInPlaceContentMutationAllowed,
   ensureBrandContentRevision,
+  ensurePublicationCandidateBootstrap,
   loadEffectiveProductContent,
   loadEffectiveVariantContent,
   lockBrandEnvelope,

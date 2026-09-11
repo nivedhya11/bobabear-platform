@@ -11,7 +11,10 @@ import {
   type CatalogLifecycleStatus,
   type ProductKind,
 } from "../../shared/catalog";
-import { catalogVariantsTable } from "../../platform/database/schema/catalog";
+import {
+  catalogVariantContentRevisionsTable,
+  catalogVariantsTable,
+} from "../../platform/database/schema/catalog";
 import type { PersistenceQueryContext, PersistenceTransactionContext } from "../persistence/types";
 import {
   assertTransactionContext,
@@ -35,9 +38,10 @@ import {
 } from "./lifecycle";
 import { findProductById } from "./products";
 import {
+  advanceBrandContentRevision,
   assertInPlaceContentMutationAllowed,
+  ensurePublicationCandidateBootstrap,
   ensureVariantContentRevision1,
-  establishFirstEffectivePublication,
 } from "./revisions";
 import type {
   CatalogVariant,
@@ -46,7 +50,6 @@ import type {
   VariantLifecycleInput,
 } from "./types";
 import { revalidateProductsForVariant, validateActiveProductGraph } from "./validation";
-import { requireWorkforcePrincipal } from "../access-control/principal";
 
 function rowToVariant(row: typeof catalogVariantsTable.$inferSelect): CatalogVariant {
   return {
@@ -83,14 +86,22 @@ export async function findVariantById(
   return row ? rowToVariant(row) : null;
 }
 
+/**
+ * Demote sibling defaults. A sibling that already participates in the content
+ * revision store must not be mutated in place: its `isDefault` change is staged
+ * as a new draft content revision so publication can switch defaults atomically.
+ *
+ * Returns whether any revision-tracked sibling changed, so the caller can
+ * invalidate reviewed brand expectedContentRevision values.
+ */
 async function clearOtherDefaults(
   context: PersistenceTransactionContext,
   productId: string,
   keepVariantId: string,
-): Promise<void> {
-  await context.db
-    .update(catalogVariantsTable)
-    .set({ isDefault: false, updatedAt: new Date() })
+): Promise<{ stagedContentChange: boolean }> {
+  const siblings = await context.db
+    .select()
+    .from(catalogVariantsTable)
     .where(
       and(
         eq(catalogVariantsTable.productId, productId),
@@ -99,6 +110,53 @@ async function clearOtherDefaults(
         sql`${catalogVariantsTable.lifecycleStatus} <> 'retired'`,
       ),
     );
+
+  const now = new Date();
+  let stagedContentChange = false;
+
+  for (const sibling of siblings) {
+    const draftRows = await context.db
+      .select()
+      .from(catalogVariantContentRevisionsTable)
+      .where(
+        and(
+          eq(catalogVariantContentRevisionsTable.variantId, sibling.id),
+          eq(
+            catalogVariantContentRevisionsTable.contentRevision,
+            sibling.draftContentRevision,
+          ),
+        ),
+      )
+      .limit(1);
+
+    if (sibling.effectiveContentRevision == null && !draftRows[0]) {
+      await context.db
+        .update(catalogVariantsTable)
+        .set({ isDefault: false, updatedAt: now })
+        .where(eq(catalogVariantsTable.id, sibling.id));
+      continue;
+    }
+
+    await ensureVariantContentRevision1(context, sibling, now);
+    const next = sibling.draftContentRevision + BigInt(1);
+    await context.db.insert(catalogVariantContentRevisionsTable).values({
+      variantId: sibling.id,
+      contentRevision: next,
+      brandId: sibling.brandId,
+      name: sibling.name,
+      description: sibling.description,
+      isDefault: false,
+      isSelectorVisible: sibling.isSelectorVisible,
+      createdAt: now,
+    });
+    await context.db
+      .update(catalogVariantsTable)
+      .set({ isDefault: false, draftContentRevision: next, updatedAt: now })
+      .where(eq(catalogVariantsTable.id, sibling.id));
+    stagedContentChange = true;
+  }
+
+  return { stagedContentChange };
 }
 
 export async function createVariant(
@@ -153,7 +211,10 @@ export async function createVariant(
   }
 
   if (isDefault) {
-    await clearOtherDefaults(context, product.id, id);
+    const { stagedContentChange } = await clearOtherDefaults(context, product.id, id);
+    if (stagedContentChange) {
+      await advanceBrandContentRevision(context, product.brandId, now);
+    }
   }
 
   await validateActiveProductGraph(context, product.id);
@@ -207,7 +268,14 @@ export async function updateVariant(
   const isSelectorVisible = input.isSelectorVisible ?? existing.isSelectorVisible;
 
   if (isDefault) {
-    await clearOtherDefaults(context, existing.productId, existing.id);
+    const { stagedContentChange } = await clearOtherDefaults(
+      context,
+      existing.productId,
+      existing.id,
+    );
+    if (stagedContentChange) {
+      await advanceBrandContentRevision(context, existing.brandId, new Date());
+    }
   }
 
   try {
@@ -257,31 +325,15 @@ export async function activateVariant(
     })
     .where(eq(catalogVariantsTable.id, variantId));
 
-  if (existing.effectiveContentRevision == null) {
-    const actorWorkforceUserId = requireWorkforcePrincipal(input.actor).workforceUserId;
-    await establishFirstEffectivePublication(context, {
-      brandId: existing.brandId,
-      targetType: "variant",
-      targetId: variantId,
-      actorWorkforceUserId,
-      ensureRevision1: async () => {
-        const row = await findVariantById(context, variantId);
-        if (!row) throw new CatalogNotFoundError("variant");
-        await ensureVariantContentRevision1(context, row, stamps.activatedAt!);
-      },
-      setEffectiveOnPrimary: async () => {
-        const draft = existing.draftContentRevision;
-        await context.db
-          .update(catalogVariantsTable)
-          .set({
-            effectiveContentRevision: draft,
-            updatedAt: stamps.updatedAt,
-          })
-          .where(eq(catalogVariantsTable.id, variantId));
-        return draft;
-      },
-    });
-  }
+  // Activation stages the variant into the publication candidate only; customer
+  // visibility changes exclusively via publishCatalogContentChange.
+  await ensurePublicationCandidateBootstrap(context, {
+    brandId: existing.brandId,
+    ensureRevision1: async () => {
+      await ensureVariantContentRevision1(context, existing, stamps.activatedAt);
+    },
+  });
+  await advanceBrandContentRevision(context, existing.brandId, stamps.updatedAt);
 
   await revalidateProductsForVariant(context, variantId);
 
@@ -312,6 +364,38 @@ export async function retireVariant(
       isDefault: false,
     })
     .where(eq(catalogVariantsTable.id, variantId));
+
+  // Retirement stages removal; the published effective revision keeps serving
+  // customers until publishCatalogContentChange.
+  await ensurePublicationCandidateBootstrap(context, {
+    brandId: existing.brandId,
+    ensureRevision1: async () => {
+      await ensureVariantContentRevision1(context, existing, stamps.retiredAt);
+    },
+  });
+
+  // The primary `isDefault` reset above is admin-graph hygiene. When the variant
+  // was already published as default, stage the demotion as a draft revision so
+  // publication can switch defaults atomically.
+  if (existing.effectiveContentRevision != null && existing.isDefault) {
+    const next = existing.draftContentRevision + BigInt(1);
+    await context.db.insert(catalogVariantContentRevisionsTable).values({
+      variantId,
+      contentRevision: next,
+      brandId: existing.brandId,
+      name: existing.name,
+      description: existing.description,
+      isDefault: false,
+      isSelectorVisible: existing.isSelectorVisible,
+      createdAt: stamps.retiredAt,
+    });
+    await context.db
+      .update(catalogVariantsTable)
+      .set({ draftContentRevision: next, updatedAt: stamps.updatedAt })
+      .where(eq(catalogVariantsTable.id, variantId));
+  }
+
+  await advanceBrandContentRevision(context, existing.brandId, stamps.updatedAt);
 
   await revalidateProductsForVariant(context, variantId);
 

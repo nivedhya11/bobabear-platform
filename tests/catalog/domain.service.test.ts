@@ -31,7 +31,6 @@ import {
   createProduct,
   createVariant,
   getCatalogProductGraph,
-  publishCatalogContentChange,
   retireBundleOption,
   retireDietaryTag,
   retireProduct,
@@ -39,7 +38,7 @@ import {
   saveVariantContentDraft,
   updateVariant,
 } from "../../src/server/catalog";
-import { withCatalogDomain } from "./support";
+import { publishProductEnvelope, withCatalogDomain } from "./support";
 
 describe("catalog product activation and variants", () => {
   it("creates a draft standard product, hidden default variant, and activates", async () => {
@@ -130,11 +129,12 @@ describe("catalog product activation and variants", () => {
           isSelectorVisible: true,
         }),
       );
+      // Each activation and draft save advances the Brand envelope, so publish
+      // must expect the current revision rather than a fixed one.
       await persistence.transaction((tx) =>
-        publishCatalogContentChange(tx, {
+        publishProductEnvelope(tx, {
           actor,
           brandId: tree.brand.id,
-          expectedContentRevision: BigInt(1),
           productId: product.id,
         }),
       );

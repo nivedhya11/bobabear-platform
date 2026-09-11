@@ -182,20 +182,24 @@ IMP-036D_ACCEPTED: YES
 IMP-036D_FOUNDER_UAT: PASS
 ```
 
-**GTM-R120** persists IMP-036F implementation authorization after independent Implementation
-Authorization Gate PASS (PR #141 issue comment `5622858455`). Authorization applies to the locked
-IMP-036F Product Definition (`PD-IMP-036F-DRAFT-1` APPROVED / Gate PASS) and locked capability
-architecture
-[`capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md`](./capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md).
-Architecture Fit PASS and architecture lock remain in force (`IMP036F_ARCHITECTURE_FIT: PASS`;
-`IMP036F_ARCHITECTURE_LOCKED: YES`). Implementation is `AUTHORIZED` / `NOT_STARTED`.
-`IMPLEMENTATION_AUTHORIZED = YES` + `IMPLEMENTATION_STARTED = NO` does **not** equal
-`IMPLEMENTATION_IN_PROGRESS`. No implementation, schema migration execution, or application code
-accompanies GTM-R120. Schema design remains locked but migration execution has not started.
-IMP-036F is not accepted. IMP-036G is not activated. D-374 remains absent/not required; ARCH-R20
-remains absent/not required; ARCH-R19 / DR-15 preserved. This revision does **not** start
-implementation, accept IMP-036F, activate IMP-036G, or authorize merge. Next human gate after
-successful merge/reconciliation is explicit implementation start / execution authorization.
+**GTM-R121** records IMP-036F implementation start after Founder/human execution authorization.
+Implementation authorization provenance remains GTM-R120 / STATE-R118 (PR #141 issue comment
+`5622858455`). Start is recorded at GTM-R121 / STATE-R119. F1 catalog ENTITY_CONTENT_REVISION
+schema/domain work accompanies GTM-R121. Formal IMP-036F ROADMAP lifecycle is
+`IMPLEMENTATION_IN_PROGRESS` (`AUTHORIZED` / `STARTED`; `IMP036F_ACTIVATED: YES`;
+`IMP036F_ARCHITECTURE_LOCKED: YES`; `IMP036F_IMPLEMENTATION_AUTHORIZED: YES`;
+`IMP036F_STARTED: YES`; `IMP036F_ACCEPTED: NO`; `IMP036F_PRODUCT_DEFINITION: APPROVED`;
+`IMP036F_PRODUCT_DEFINITION_GATE: PASS`; `IMP036F_ARCHITECTURE_FIT: PASS`;
+`IMP036F_FOUNDER_UAT_REQUIRED: YES`). `IMPLEMENTATION_AUTHORIZED = YES` +
+`IMPLEMENTATION_STARTED = YES` = `IMPLEMENTATION_IN_PROGRESS` (start recorded; not
+complete/accepted). IMP-036F is not accepted. IMP-036G is not activated. D-374 remains
+absent/not required; ARCH-R20 remains absent/not required; ARCH-R19 / DR-15 preserved. Next gates:
+continue F1 implementation → independent review → Founder UAT → acceptance.
+
+Historical **GTM-R120** / STATE-R118 persisted implementation authorization only
+(`AUTHORIZED` / `NOT_STARTED`; no schema migration execution or application code). That
+authorization-only provenance remains valid; it is superseded for CURRENT lifecycle position by
+GTM-R121 / STATE-R119 start.
 
 IMP-036E remains `COMPLETE_AND_ACCEPTED`. Latest accepted locked capability architecture remains
 [`capabilities/IMP-036E-store-operations-management.md`](./capabilities/IMP-036E-store-operations-management.md).
@@ -203,11 +207,7 @@ IMP-036F locked capability architecture is current/unaccepted (not part of the a
 ledger). Preferred Store Assortment read route:
 `GET /api/operations/v1/outlets/{outletId}/assortment`. ARCH-R19 and DR-15 remain unchanged.
 `acceptedThrough` remains IMP-036E; `currentProductSlice = IMP-036F`; `pendingAcceptance = NONE`;
-`nextProductSlice = IMP-036G`. Formal IMP-036F ROADMAP lifecycle is `ARCHITECTURE_LOCKED` /
-`AUTHORIZED` / `NOT_STARTED` (`IMP036F_ACTIVATED: YES`; `IMP036F_ARCHITECTURE_LOCKED: YES`;
-`IMP036F_IMPLEMENTATION_AUTHORIZED: YES`; `IMP036F_STARTED: YES`; `IMP036F_ACCEPTED: NO`;
-`IMP036F_PRODUCT_DEFINITION: APPROVED`; `IMP036F_PRODUCT_DEFINITION_GATE: PASS`;
-`IMP036F_ARCHITECTURE_FIT: PASS`; `IMP036F_FOUNDER_UAT_REQUIRED: YES`). PD-1 applies prospectively.
+`nextProductSlice = IMP-036G`. PD-1 applies prospectively.
 
 Implementation / review provenance remains distinct from the accepted UAT candidate:
 implementation merge `0ebb5e937cd7ac14bb3e39e9d1d494e32c9d2739` / tree
@@ -325,7 +325,7 @@ booleans are coarse navigation only (`IMP036E_GLOBAL_SESSION_CAPS_ARE_RESOURCE_A
 `IMP036E_RESOURCE_SCOPED_CONTROL_VISIBILITY: REQUIRED`;
 `IMP036E_SERVER_AUTHORIZATION_REMAINS_AUTHORITATIVE: YES`). ARCH-R19 and DR-15 remain unchanged;
 `SCHEMA_CHANGE_REQUIRED: NO` (IMP-036E); IMP-036F architecture concludes schema change required
-YES (design locked; migration execution has not started); `NEW_PERMISSION: NO`; `NEW_ROLE: NO`;
+YES (design locked; F1 migration execution in progress); `NEW_PERMISSION: NO`; `NEW_ROLE: NO`;
 `NEW_SCOPE_MODEL: NO`; `D374_REQUIRED_FOR_IMP036E_LOCK: NO`; `D-374_CREATED: NO`;
 `ARCH_R20_REQUIRED_FOR_IMP036E_LOCK: NO`; `ARCH_R20_CREATED: NO`;
 `D374_REQUIRED_FOR_IMP036F_LOCK: NO`; `ARCH_R20_REQUIRED_FOR_IMP036F_LOCK: NO`.

@@ -1,17 +1,27 @@
 /**
  * Shared harness for catalog domain tests that need PostgreSQL (IMP-012).
  */
+import { eq } from "drizzle-orm";
 import { afterEach } from "vitest";
 import { inject } from "vitest";
 
 import type { WebConfig } from "../../src/platform/config";
+import { catalogContentRevisionsTable } from "../../src/platform/database/schema/catalog";
 import {
   bootstrapPlatformSuperAdmin,
   createMembership,
   grantRole,
 } from "../../src/server/access-control";
+import {
+  publishCatalogContentChange,
+  type PublishCatalogContentChangeResult,
+} from "../../src/server/catalog";
 import { getApplicationPersistence } from "../../src/server/persistence";
-import type { Persistence } from "../../src/server/persistence/types";
+import type {
+  Persistence,
+  PersistenceQueryContext,
+  PersistenceTransactionContext,
+} from "../../src/server/persistence/types";
 import {
   createEligibleWorkforceUser,
   principalFor,
@@ -124,5 +134,43 @@ export async function withCatalogDomain<T>(
       otherBrandAdminActor: principalFor(otherBrandAdmin.id),
       outletManagerActor: principalFor(outletManager.id),
     });
+  });
+}
+
+/**
+ * Current Brand publication envelope (`catalog_content_revisions`).
+ *
+ * Every material draft save and every activate/retire advances this value, so
+ * tests must read it immediately before publishing rather than assuming 1.
+ */
+export async function readBrandContentRevision(
+  context: PersistenceQueryContext,
+  brandId: string,
+): Promise<bigint> {
+  const rows = await context.db
+    .select()
+    .from(catalogContentRevisionsTable)
+    .where(eq(catalogContentRevisionsTable.brandId, brandId))
+    .limit(1);
+  const row = rows[0];
+  if (!row) throw new Error("missing brand content revision");
+  return row.contentRevision;
+}
+
+/**
+ * Publish the product-rooted envelope at whatever revision the Brand currently
+ * holds. Use when a test needs customer-visible catalog state rather than when
+ * it is asserting CAS behaviour for a specific reviewed revision.
+ */
+export async function publishProductEnvelope(
+  context: PersistenceTransactionContext,
+  input: Readonly<{ actor: unknown; brandId: string; productId: string }>,
+): Promise<PublishCatalogContentChangeResult> {
+  const expectedContentRevision = await readBrandContentRevision(context, input.brandId);
+  return publishCatalogContentChange(context, {
+    actor: input.actor,
+    brandId: input.brandId,
+    productId: input.productId,
+    expectedContentRevision,
   });
 }
