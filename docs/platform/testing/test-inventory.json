@@ -690,7 +690,7 @@
     "test:customer-profiles": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/customer-profiles",
     "test:database": "node scripts/run-vitest.mjs run --config vitest.database.config.mts",
     "test:database:access-control": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/database/access-control.integration.test.ts",
-    "test:database:administration": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/administration/admin-http.integration.test.ts tests/administration/admin-catalog-http.integration.test.ts tests/administration/admin-catalog-http-customer-truth.integration.test.ts",
+    "test:database:administration": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/administration/admin-http.integration.test.ts tests/administration/admin-catalog-http.integration.test.ts tests/administration/admin-catalog-http-customer-truth.integration.test.ts tests/administration/admin-menu-http.integration.test.ts",
     "test:database:assortment-availability": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/database/assortment-availability.integration.test.ts",
     "test:database:auth-foundation": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/database/auth-foundation.integration.test.ts",
     "test:database:cart": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/database/cart.integration.test.ts",

@@ -1,8 +1,9 @@
 /**
- * Menu presentation subdomain (IMP-013 / IMP-036F F3A).
+ * Menu presentation subdomain (IMP-013 / IMP-036F F3A / F3B).
  *
- * Soft lifecycle only. Active graph is fail-closed. No public HTTP surface.
+ * Soft lifecycle only. Active graph is fail-closed.
  * Customer truth: ACTIVE Menu → effective MenuVersion graph only.
+ * Admin HTTP transport lives under operations `/api/admin/v1/brands/{brandId}/menus/*`.
  */
 import "server-only";
 
@@ -54,6 +55,18 @@ export {
 export { effectiveEntryDisplay, getMenuGraph } from "./reads";
 
 export {
+  getBrandMenuInspection,
+  listBrandMenus,
+} from "./inspection";
+export type {
+  MenuInspection,
+  MenuInspectionEntry,
+  MenuInspectionSection,
+  MenuInspectionVersionGraph,
+  MenuListItem,
+} from "./inspection";
+
+export {
   assertMenuGraphReady,
   assertNoActiveEntriesForProduct,
   assertSectionDepthAllowed,
@@ -84,8 +97,17 @@ export {
   updateMenuSection,
 } from "./draft";
 
-export { previewMenuPublication, publishMenuRevision } from "./publish";
+export {
+  diffMenuPublicationChanges,
+  previewMenuPublication,
+  publishMenuRevision,
+  validateMenuPublication,
+} from "./publish";
 export type {
+  MenuPublicationActiveMenuEffect,
+  MenuPublicationChanges,
+  MenuPublicationEntryChanges,
+  MenuPublicationSectionChanges,
   PreviewMenuPublicationInput,
   PreviewMenuPublicationResult,
   PublishMenuRevisionInput,
