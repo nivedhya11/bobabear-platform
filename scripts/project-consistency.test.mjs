@@ -7502,6 +7502,59 @@ Originally identified Architecture Fit inputs (Product Definition Gate era; **re
     );
   });
 
+  const staleImplementationStatuses = [
+    "implementation remains unauthorized",
+    "Implementation conformance work NOT YET IMPLEMENTED / NOT AUTHORIZED",
+    "Implementation conformance work remains NOT YET IMPLEMENTED / NOT AUTHORIZED",
+    "Implementation conformance work NOT YET\nIMPLEMENTED / NOT AUTHORIZED",
+    "implementation still unauthorized",
+    "implementation pending authorization",
+    "Not executed (implementation not authorized)",
+  ];
+
+  for (const status of staleImplementationStatuses) {
+    it(`rejects current lifecycle prose: ${status}`, () => {
+      const result = evaluateImp036fAuthorizedProductDefinition(
+        `${validAuthorizedPd}\n\n| Current story / rule / evidence | ${status} |`,
+      );
+      assert.equal(result.ok, false);
+      assert.equal(result.code, "IMP036F_PD_STALE_UNAUTHORIZED_PROSE");
+    });
+
+    it(`allows explicitly historical pre-R120 lifecycle prose: ${status}`, () => {
+      assert.deepEqual(
+        evaluateImp036fAuthorizedProductDefinition(
+          `${validAuthorizedPd}\n\nHistorical pre-R120 lifecycle provenance: ${status}.`,
+        ),
+        { ok: true },
+      );
+    });
+  }
+
+  it("allows runtime authorization-denial product language", () => {
+    assert.deepEqual(
+      evaluateImp036fAuthorizedProductDefinition(`${validAuthorizedPd}
+
+Error / recovery: unauthorized mutation denied; unauthorized actor;
+server-side denial without authority; publish denied without domain authority.
+Implementation must ensure unauthorized tariff mutation is denied.`),
+      { ok: true },
+    );
+  });
+
+  it("does not let historical or resolved Fit context exempt current lifecycle status", () => {
+    for (const context of [
+      "Historical pre-R120 lifecycle provenance: implementation remains unauthorized.\n\n",
+      "Originally identified at Product Definition Gate; later resolved by locked architecture. ",
+    ]) {
+      const result = evaluateImp036fAuthorizedProductDefinition(
+        `${validAuthorizedPd}\n\n${context}Implementation conformance work remains NOT YET IMPLEMENTED / NOT AUTHORIZED.`,
+      );
+      assert.equal(result.ok, false);
+      assert.equal(result.code, "IMP036F_PD_STALE_UNAUTHORIZED_PROSE");
+    }
+  });
+
   it("fails when capability authorization remains false/NOT_AUTHORIZED", () => {
     const staleCap = validAuthorizedCapability
       .replace(/"implementationAuthorized": true/, '"implementationAuthorized": false')

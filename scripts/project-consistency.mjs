@@ -7296,13 +7296,23 @@ export function evaluateImp036fAuthorizedProductDefinition(text) {
       message: "Authorized IMP-036F Product Definition must not retain current IMP036F_IMPLEMENTATION_AUTHORIZED: NO",
     };
   }
-  if (
-    /Implementation authorization remains a separate gate and is NOT granted/i.test(body)
-  ) {
+  // Only explicitly labelled pre-R120 historical paragraphs are exempt. Resolved Fit
+  // provenance elsewhere must not hide current story, rule, or evidence status.
+  const currentImplementationProse = body
+    .split(/\n\s*\n/)
+    .filter((paragraph) => !/^\s*Historical\s+pre[- ]R120\s+lifecycle\s+provenance\s*:/i.test(paragraph))
+    .join("\n\n")
+    .replace(/[*`]/g, "");
+  const staleImplementationProse = [
+    /Implementation authorization remains a separate gate and is NOT granted/i,
+    /\bimplementation\s+(?:(?:is|remains|still)\s+)?(?:unauthorized|not[\s_]+authorized|pending\s+authorization)\b/i,
+    /\bimplementation\s+conformance\s+work\s+(?:remains\s+)?NOT\s+YET\s+IMPLEMENTED\s*\/\s*NOT[\s_]+AUTHORIZED\b/i,
+  ];
+  if (staleImplementationProse.some((pattern) => pattern.test(currentImplementationProse))) {
     return {
       ok: false,
       code: "IMP036F_PD_STALE_UNAUTHORIZED_PROSE",
-      message: "Authorized IMP-036F Product Definition must not retain 'implementation authorization ... NOT granted' current prose",
+      message: "Authorized IMP-036F Product Definition must not retain current lifecycle implementation prose claiming authorization is absent or pending",
     };
   }
   if (
