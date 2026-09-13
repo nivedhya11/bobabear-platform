@@ -10,7 +10,8 @@ import {
 } from "../../platform/database/schema/pricing";
 import { requirePricingRead } from "./authorize-pricing";
 import { PricingNotFoundError, PricingResolutionError } from "./errors";
-import { resolveBrandVariantPrice } from "./resolve-price";
+import { loadOutletsInPriceBookScope } from "./price-books";
+import { resolveBrandVariantPrice, resolveOutletVariantPrice } from "./resolve-price";
 import type { PersistenceQueryContext } from "../persistence/types";
 import { assertApplicationRole, assertUuid } from "./assert-role";
 import { rowToBook, type PriceBookRecord } from "./price-books";
@@ -43,6 +44,7 @@ export type PriceBookInspection = Readonly<{
   modifierPrices: readonly PriceBookModifierPriceRow[];
   customerEffective: readonly Readonly<{
     variantId: string;
+    outletId: string | null;
     amountPaise: string | null;
     code: string;
   }>[];
@@ -115,28 +117,50 @@ export async function inspectBrandPriceBook(
 
   const at = input.at ?? new Date();
   const customerEffective: Array<PriceBookInspection["customerEffective"][number]> = [];
+  const outletContexts: Array<string | null> =
+    priceBook.scopeType === "brand"
+      ? [null]
+      : (await loadOutletsInPriceBookScope(context, priceBook)).map((outlet) => outlet.id);
   for (const row of variantPrices) {
-    try {
-      const resolved = await resolveBrandVariantPrice(context, {
-        brandId,
-        variantId: row.variantId,
-        at,
-      });
-      customerEffective.push({
-        variantId: row.variantId,
-        amountPaise: resolved.amountPaise.toString(10),
-        code: "PRICE_RESOLVED",
-      });
-    } catch (error) {
-      if (error instanceof PricingResolutionError) {
-        customerEffective.push({
-          variantId: row.variantId,
-          amountPaise: null,
-          code: error.pricingErrorCode,
-        });
-        continue;
+    for (const outletId of outletContexts) {
+      try {
+        if (outletId) {
+          const resolved = await resolveOutletVariantPrice(context, {
+            variantId: row.variantId,
+            outletId,
+            at,
+          });
+          customerEffective.push({
+            variantId: row.variantId,
+            outletId,
+            amountPaise: resolved.amountPaise.toString(10),
+            code: "PRICE_RESOLVED",
+          });
+        } else {
+          const resolved = await resolveBrandVariantPrice(context, {
+            brandId,
+            variantId: row.variantId,
+            at,
+          });
+          customerEffective.push({
+            variantId: row.variantId,
+            outletId: null,
+            amountPaise: resolved.amountPaise.toString(10),
+            code: "PRICE_RESOLVED",
+          });
+        }
+      } catch (error) {
+        if (error instanceof PricingResolutionError) {
+          customerEffective.push({
+            variantId: row.variantId,
+            outletId,
+            amountPaise: null,
+            code: error.pricingErrorCode,
+          });
+          continue;
+        }
+        throw error;
       }
-      throw error;
     }
   }
 

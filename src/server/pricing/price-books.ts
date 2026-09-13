@@ -6,13 +6,19 @@
  * expectedPriceBookRevision (PRICE_BOOK_AGGREGATE_REVISION CAS).
  */
 import { randomUUID } from "node:crypto";
-import { and, eq, ne, sql } from "drizzle-orm";
+import { and, asc, eq, ne, sql } from "drizzle-orm";
 
 import {
   catalogModifierGroupOptionsTable,
   catalogVariantModifierGroupsTable,
   catalogVariantsTable,
 } from "../../platform/database/schema/catalog";
+import {
+  brandsTable,
+  organizationsTable,
+  outletsTable,
+  territoriesTable,
+} from "../../platform/database/schema/organizations";
 import {
   priceBookModifierPricesTable,
   priceBookVariantPricesTable,
@@ -35,6 +41,16 @@ import {
 } from "./errors";
 import { requireOutletPricingManage, requirePricingManage } from "./authorize-pricing";
 
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+type ResolvedPriceBookScope = Readonly<{
+  scopeType: PriceBookScopeType;
+  territoryId: string | null;
+  organizationId: string | null;
+  outletId: string | null;
+}>;
+
 function stalePriceBookRevision(): never {
   throw new PricingConflictError({
     code: "PRICE_BOOK_STALE_REVISION",
@@ -53,7 +69,7 @@ export function parseExpectedPriceBookRevision(
     }
     return value;
   }
-  if (typeof value === "number" && Number.isInteger(value) && value > 0) {
+  if (typeof value === "number" && Number.isSafeInteger(value) && value > 0) {
     return BigInt(value);
   }
   if (typeof value === "string" && /^\d+$/.test(value)) {
@@ -116,6 +132,126 @@ export function rowToBook(row: typeof priceBooksTable.$inferSelect): PriceBookRe
     activatedAt: row.activatedAt ? new Date(row.activatedAt) : null,
     retiredAt: row.retiredAt ? new Date(row.retiredAt) : null,
   };
+}
+
+function requireScopeUuid(value: unknown, field: string): string {
+  const id = assertUuid(value, field);
+  if (!UUID_RE.test(id)) {
+    throw new PricingValidationError({ message: `${field} must be a UUID.` });
+  }
+  return id;
+}
+
+async function resolveDraftPriceBookScope(
+  context: PersistenceQueryContext,
+  brandId: string,
+  input: {
+    scopeType: PriceBookScopeType;
+    territoryId?: string | null;
+    organizationId?: string | null;
+    outletId?: string | null;
+  },
+): Promise<ResolvedPriceBookScope> {
+  if (input.scopeType === "brand") {
+    if (input.territoryId || input.organizationId || input.outletId) {
+      throw new PricingValidationError({
+        message: "brand scope must not include territory, organization, or outlet ids.",
+      });
+    }
+    return {
+      scopeType: "brand",
+      territoryId: null,
+      organizationId: null,
+      outletId: null,
+    };
+  }
+
+  if (input.scopeType === "territory") {
+    if (input.organizationId || input.outletId) {
+      throw new PricingValidationError({
+        message: "territory scope must not include organization or outlet ids.",
+      });
+    }
+    const territoryId = requireScopeUuid(input.territoryId, "territoryId");
+    const rows = await context.db
+      .select({ id: territoriesTable.id })
+      .from(territoriesTable)
+      .where(and(eq(territoriesTable.id, territoryId), eq(territoriesTable.brandId, brandId)))
+      .limit(1);
+    if (!rows[0]) throw new PricingNotFoundError("territory");
+    return {
+      scopeType: "territory",
+      territoryId: rows[0].id,
+      organizationId: null,
+      outletId: null,
+    };
+  }
+
+  if (input.scopeType === "organization") {
+    if (input.territoryId || input.outletId) {
+      throw new PricingValidationError({
+        message: "organization scope must not include territory or outlet ids.",
+      });
+    }
+    const organizationId = requireScopeUuid(input.organizationId, "organizationId");
+    const rows = await context.db
+      .select({ id: organizationsTable.id })
+      .from(organizationsTable)
+      .where(
+        and(eq(organizationsTable.id, organizationId), eq(organizationsTable.brandId, brandId)),
+      )
+      .limit(1);
+    if (!rows[0]) throw new PricingNotFoundError("organization");
+    return {
+      scopeType: "organization",
+      territoryId: null,
+      organizationId: rows[0].id,
+      outletId: null,
+    };
+  }
+
+  if (input.scopeType === "outlet") {
+    const outletId = requireScopeUuid(input.outletId, "outletId");
+    const rows = await context.db
+      .select()
+      .from(outletsTable)
+      .where(and(eq(outletsTable.id, outletId), eq(outletsTable.brandId, brandId)))
+      .limit(1);
+    const outlet = rows[0];
+    if (!outlet) throw new PricingNotFoundError("outlet");
+    if (input.territoryId && input.territoryId !== outlet.territoryId) {
+      throw new PricingValidationError({
+        message: "outlet scope territoryId must match the outlet ancestry.",
+      });
+    }
+    if (input.organizationId && input.organizationId !== outlet.organizationId) {
+      throw new PricingValidationError({
+        message: "outlet scope organizationId must match the outlet ancestry.",
+      });
+    }
+    return {
+      scopeType: "outlet",
+      territoryId: outlet.territoryId,
+      organizationId: outlet.organizationId,
+      outletId: outlet.id,
+    };
+  }
+
+  throw new PricingValidationError({ message: "Invalid price book scopeType." });
+}
+
+async function lockBrandPricingOverlapAuthority(
+  context: PersistenceTransactionContext,
+  brandId: string,
+): Promise<void> {
+  const rows = await context.db
+    .select({ id: brandsTable.id })
+    .from(brandsTable)
+    .where(eq(brandsTable.id, brandId))
+    .orderBy(asc(brandsTable.id))
+    .for("update")
+    .limit(1);
+  if (!rows[0]) throw new PricingNotFoundError("brand");
 }
 
 async function lockBrandPriceBook(
@@ -211,15 +347,36 @@ export type CreateDraftPriceBookInput = Readonly<{
   effectiveTo?: Date | null;
 }>;
 
+export async function loadOutletsInPriceBookScope(
+  context: PersistenceQueryContext,
+  book: Pick<PriceBookRecord, "brandId" | "scopeType" | "territoryId" | "organizationId" | "outletId">,
+): Promise<ReadonlyArray<{ id: string; territoryId: string; organizationId: string }>> {
+  const rows = await context.db
+    .select({
+      id: outletsTable.id,
+      territoryId: outletsTable.territoryId,
+      organizationId: outletsTable.organizationId,
+    })
+    .from(outletsTable)
+    .where(eq(outletsTable.brandId, book.brandId));
+  return rows.filter((outlet) => {
+    if (book.scopeType === "brand") return true;
+    if (book.scopeType === "territory") return outlet.territoryId === book.territoryId;
+    if (book.scopeType === "organization") return outlet.organizationId === book.organizationId;
+    return outlet.id === book.outletId;
+  });
+}
+
 export async function createDraftPriceBook(
   context: PersistenceTransactionContext,
   input: CreateDraftPriceBookInput,
 ): Promise<{ id: string; revision: bigint }> {
   assertTransactionContext(context, "createDraftPriceBook");
   const brandId = assertUuid(input.brandId, "brandId");
+  const scope = await resolveDraftPriceBookScope(context, brandId, input);
 
-  if (input.scopeType === "outlet") {
-    await requireOutletPricingManage(context, input.actor, assertUuid(input.outletId, "outletId"));
+  if (scope.scopeType === "outlet") {
+    await requireOutletPricingManage(context, input.actor, scope.outletId!);
   } else {
     await requirePricingManage(context, input.actor, brandId);
   }
@@ -239,10 +396,10 @@ export async function createDraftPriceBook(
     await context.db.insert(priceBooksTable).values({
       id,
       brandId,
-      scopeType: input.scopeType,
-      territoryId: input.territoryId ?? null,
-      organizationId: input.organizationId ?? null,
-      outletId: input.outletId ?? null,
+      scopeType: scope.scopeType,
+      territoryId: scope.territoryId,
+      organizationId: scope.organizationId,
+      outletId: scope.outletId,
       code: input.code,
       name: input.name,
       salesChannel: "direct",
@@ -271,12 +428,12 @@ export async function createDraftPriceBook(
     actorWorkforceUserId: principal.workforceUserId,
     action: "price_book.created",
     brandId,
-    territoryId: input.territoryId ?? null,
-    organizationId: input.organizationId ?? null,
-    outletId: input.outletId ?? null,
+    territoryId: scope.territoryId,
+    organizationId: scope.organizationId,
+    outletId: scope.outletId,
     targetType: "price_book",
     targetId: id,
-    metadata: { scopeType: input.scopeType, code: input.code, revision: "1" },
+    metadata: { scopeType: scope.scopeType, code: input.code, revision: "1" },
   });
 
   return { id, revision };
@@ -629,6 +786,7 @@ export async function activatePriceBook(
   await requirePricingManage(context, input.actor, brandId);
   const principal = requireWorkforcePrincipal(input.actor);
 
+  await lockBrandPricingOverlapAuthority(context, brandId);
   const book = await lockBrandPriceBook(context, brandId, priceBookId);
   if (book.revision !== expected) stalePriceBookRevision();
   if (book.lifecycleStatus !== "draft") {

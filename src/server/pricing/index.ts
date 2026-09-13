@@ -35,6 +35,7 @@ export {
   attachDraftVariantPrice,
   createDraftPriceBook,
   findOverlappingActivePriceBooks,
+  loadOutletsInPriceBookScope,
   parseExpectedPriceBookRevision,
   retirePriceBook,
   rowToBook,

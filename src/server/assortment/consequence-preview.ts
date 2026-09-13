@@ -6,22 +6,32 @@
  */
 import { and, eq } from "drizzle-orm";
 
-import type { AssortmentScopeType, EligibilityDecisionCode } from "../../shared/assortment";
+import type { AssortmentScopeType } from "../../shared/assortment";
 import {
+  catalogModifierGroupOptionsTable,
   catalogModifierOptionsTable,
   catalogProductsTable,
+  catalogVariantModifierGroupsTable,
   catalogVariantsTable,
 } from "../../platform/database/schema/catalog";
 import { outletsTable } from "../../platform/database/schema/organizations";
 import type { PersistenceQueryContext } from "../persistence/types";
 import { assertApplicationRole, assertUuid } from "./assert-role";
-import { getEffectiveVariantAssortment } from "./assortment-reads";
+import {
+  getEffectiveModifierOptionAssortment,
+  getEffectiveVariantAssortment,
+  type AssortmentRuleEvaluationOverride,
+} from "./assortment-reads";
 import { requireAssortmentManage } from "./authorize-assortment";
 import {
   AssortmentNotFoundError,
   AssortmentValidationError,
 } from "./errors";
-import { findActiveEquivalentAssortmentRule, findBrandAssortmentRuleById } from "./rules";
+import {
+  findActiveEquivalentAssortmentRule,
+  findBrandAssortmentRuleById,
+  resolveExcludeScope,
+} from "./rules";
 import type { AssortmentRule } from "./types";
 
 export type AssortmentPreviewMutationType = "include_variant" | "exclude" | "retire_rule";
@@ -63,8 +73,11 @@ export type AssortmentConsequencePreview = Readonly<{
   }>;
   expectedRuleRevision: string | null;
   availabilityRemainsSeparate: true;
+  affectedVariantIds: readonly string[];
   outletConsequences: readonly Readonly<{
     outletId: string;
+    variantId: string | null;
+    modifierOptionId: string | null;
     currentIntended: boolean;
     currentCode: string;
     proposedIntended: boolean;
@@ -79,43 +92,76 @@ function ruleRevisionJson(rule: AssortmentRule | null): string | null {
   return rule ? rule.revision.toString(10) : null;
 }
 
-function proposedIncludeEligible(current: {
-  eligible: boolean;
-  code: EligibilityDecisionCode;
-}): { eligible: boolean; code: EligibilityDecisionCode } {
-  if (current.code === "ASSORTMENT_NOT_INCLUDED") {
-    return { eligible: true, code: "AVAILABLE" };
+function evaluationForPreview(args: {
+  mutationType: AssortmentPreviewMutationType;
+  currentRule: AssortmentRule | null;
+  extraExclude: AssortmentRuleEvaluationOverride["extraExclude"];
+}): AssortmentRuleEvaluationOverride | undefined {
+  if (args.mutationType === "include_variant") {
+    return { assumeBrandInclude: true };
   }
-  return current;
+  if (args.mutationType === "exclude" && args.extraExclude) {
+    return { extraExclude: args.extraExclude };
+  }
+  if (args.mutationType === "retire_rule" && args.currentRule) {
+    return { ignoreRuleId: args.currentRule.id };
+  }
+  return undefined;
 }
 
-function proposedExcludeAtOutlet(
-  current: { eligible: boolean; code: EligibilityDecisionCode },
-  outletId: string,
-  previewOutletId: string | null,
-  scopeType: AssortmentScopeType | null,
-): { eligible: boolean; code: EligibilityDecisionCode } {
-  if (!current.eligible) return current;
-  if (scopeType === "brand") {
-    return { eligible: false, code: "ASSORTMENT_EXCLUDED_BRAND" };
-  }
-  if (scopeType === "outlet" && previewOutletId === outletId) {
-    return { eligible: false, code: "ASSORTMENT_EXCLUDED_OUTLET" };
-  }
-  if (scopeType === "territory" || scopeType === "organization") {
-    // Conservative: narrower-scope preview reports the named outlet when matched;
-    // other outlets keep current evaluation (inheritance applied at effect).
-    if (previewOutletId === outletId) {
-      return {
-        eligible: false,
-        code:
-          scopeType === "territory"
-            ? "ASSORTMENT_EXCLUDED_TERRITORY"
-            : "ASSORTMENT_EXCLUDED_ORGANIZATION",
-      };
-    }
-  }
-  return current;
+async function loadBrandOutlets(
+  context: PersistenceQueryContext,
+  brandId: string,
+): Promise<ReadonlyArray<{ id: string; territoryId: string; organizationId: string }>> {
+  return context.db
+    .select({
+      id: outletsTable.id,
+      territoryId: outletsTable.territoryId,
+      organizationId: outletsTable.organizationId,
+    })
+    .from(outletsTable)
+    .where(eq(outletsTable.brandId, brandId));
+}
+
+async function loadProductVariantIds(
+  context: PersistenceQueryContext,
+  brandId: string,
+  productId: string,
+): Promise<string[]> {
+  const rows = await context.db
+    .select({ id: catalogVariantsTable.id })
+    .from(catalogVariantsTable)
+    .where(
+      and(eq(catalogVariantsTable.brandId, brandId), eq(catalogVariantsTable.productId, productId)),
+    );
+  return rows.map((row) => row.id);
+}
+
+async function loadModifierOptionConsumerVariantIds(
+  context: PersistenceQueryContext,
+  brandId: string,
+  modifierOptionId: string,
+): Promise<string[]> {
+  const rows = await context.db
+    .select({ variantId: catalogVariantModifierGroupsTable.variantId })
+    .from(catalogVariantModifierGroupsTable)
+    .innerJoin(
+      catalogModifierGroupOptionsTable,
+      and(
+        eq(
+          catalogModifierGroupOptionsTable.modifierGroupId,
+          catalogVariantModifierGroupsTable.modifierGroupId,
+        ),
+        eq(catalogModifierGroupOptionsTable.brandId, catalogVariantModifierGroupsTable.brandId),
+      ),
+    )
+    .where(
+      and(
+        eq(catalogVariantModifierGroupsTable.brandId, brandId),
+        eq(catalogModifierGroupOptionsTable.modifierOptionId, modifierOptionId),
+      ),
+    );
+  return [...new Set(rows.map((row) => row.variantId))];
 }
 
 export async function previewAssortmentConsequence(
@@ -133,18 +179,23 @@ export async function previewAssortmentConsequence(
   let variantId: string | null = input.variantId ?? null;
   let modifierOptionId: string | null = input.modifierOptionId ?? null;
   let scopeType: AssortmentScopeType | null = input.scopeType ?? null;
-  const territoryId = input.territoryId ?? null;
-  const organizationId = input.organizationId ?? null;
-  const outletId = input.outletId ?? null;
+  let territoryId = input.territoryId ?? null;
+  let organizationId = input.organizationId ?? null;
+  let outletId = input.outletId ?? null;
   let proposedDecision: AssortmentRule["decision"] | "retire" = "include";
   let proposedStatus: AssortmentRule["status"] | "absent" = "active";
-  let inspectVariantId: string | null = variantId;
+  const inspectVariantIds: string[] = [];
+  let extraExclude: AssortmentRuleEvaluationOverride["extraExclude"] = null;
+  let inspectModifierOptionId: string | null = null;
 
   if (input.mutationType === "include_variant") {
     proposedDecision = "include";
     proposedStatus = "active";
     targetType = "variant";
     scopeType = "brand";
+    territoryId = null;
+    organizationId = null;
+    outletId = null;
     if (!variantId) {
       throw new AssortmentValidationError({ message: "variantId is required for include_variant." });
     }
@@ -155,7 +206,7 @@ export async function previewAssortmentConsequence(
       .where(and(eq(catalogVariantsTable.id, id), eq(catalogVariantsTable.brandId, brandId)))
       .limit(1);
     if (!rows[0]) throw new AssortmentNotFoundError("variant");
-    inspectVariantId = id;
+    inspectVariantIds.push(id);
     variantId = id;
     currentRule = await findActiveEquivalentAssortmentRule(context, {
       brandId,
@@ -175,6 +226,16 @@ export async function previewAssortmentConsequence(
     if (!scopeType) {
       throw new AssortmentValidationError({ message: "scopeType is required for exclude." });
     }
+    const scope = await resolveExcludeScope(context, brandId, {
+      scopeType,
+      territoryId,
+      organizationId,
+      outletId,
+    });
+    scopeType = scope.scopeType;
+    territoryId = scope.territoryId;
+    organizationId = scope.organizationId;
+    outletId = scope.outletId;
     if (variantId) {
       targetType = "variant";
       const id = assertUuid(variantId, "variantId");
@@ -184,8 +245,10 @@ export async function previewAssortmentConsequence(
         .where(and(eq(catalogVariantsTable.id, id), eq(catalogVariantsTable.brandId, brandId)))
         .limit(1);
       if (!rows[0]) throw new AssortmentNotFoundError("variant");
-      inspectVariantId = id;
+      inspectVariantIds.push(id);
       variantId = id;
+      productId = null;
+      modifierOptionId = null;
     } else if (productId) {
       targetType = "product";
       const id = assertUuid(productId, "productId");
@@ -196,6 +259,9 @@ export async function previewAssortmentConsequence(
         .limit(1);
       if (!rows[0]) throw new AssortmentNotFoundError("product");
       productId = id;
+      variantId = null;
+      modifierOptionId = null;
+      inspectVariantIds.push(...(await loadProductVariantIds(context, brandId, id)));
     } else if (modifierOptionId) {
       targetType = "modifier_option";
       const id = assertUuid(modifierOptionId, "modifierOptionId");
@@ -211,11 +277,25 @@ export async function previewAssortmentConsequence(
         .limit(1);
       if (!rows[0]) throw new AssortmentNotFoundError("modifier_option");
       modifierOptionId = id;
+      inspectModifierOptionId = id;
+      productId = null;
+      variantId = null;
+      inspectVariantIds.push(...(await loadModifierOptionConsumerVariantIds(context, brandId, id)));
     } else {
       throw new AssortmentValidationError({
         message: "exclude requires productId, variantId, or modifierOptionId.",
       });
     }
+    extraExclude = {
+      scopeType,
+      territoryId,
+      organizationId,
+      outletId,
+      targetType,
+      productId,
+      variantId,
+      modifierOptionId,
+    };
     currentRule = await findActiveEquivalentAssortmentRule(context, {
       brandId,
       scopeType,
@@ -241,7 +321,25 @@ export async function previewAssortmentConsequence(
     variantId = currentRule.variantId;
     modifierOptionId = currentRule.modifierOptionId;
     scopeType = currentRule.scopeType;
-    inspectVariantId = currentRule.variantId;
+    territoryId = currentRule.territoryId;
+    organizationId = currentRule.organizationId;
+    outletId = currentRule.outletId;
+    if (currentRule.targetType === "variant" && currentRule.variantId) {
+      inspectVariantIds.push(currentRule.variantId);
+    } else if (currentRule.targetType === "product" && currentRule.productId) {
+      inspectVariantIds.push(
+        ...(await loadProductVariantIds(context, brandId, currentRule.productId)),
+      );
+    } else if (currentRule.targetType === "modifier_option" && currentRule.modifierOptionId) {
+      inspectModifierOptionId = currentRule.modifierOptionId;
+      inspectVariantIds.push(
+        ...(await loadModifierOptionConsumerVariantIds(
+          context,
+          brandId,
+          currentRule.modifierOptionId,
+        )),
+      );
+    }
     if (currentRule.status === "retired") {
       blockers.push({
         code: "invalid_state",
@@ -252,42 +350,68 @@ export async function previewAssortmentConsequence(
     throw new AssortmentValidationError({ message: "Unsupported assortment preview mutationType." });
   }
 
-  const outletRows = inspectVariantId
-    ? await context.db
-        .select({ id: outletsTable.id })
-        .from(outletsTable)
-        .where(eq(outletsTable.brandId, brandId))
-    : [];
-
+  const evaluation = evaluationForPreview({
+    mutationType: input.mutationType,
+    currentRule,
+    extraExclude,
+  });
+  const outletRows = await loadBrandOutlets(context, brandId);
   const outletConsequences: Array<
     AssortmentConsequencePreview["outletConsequences"][number]
   > = [];
-  for (const outlet of outletRows) {
-    const current = await getEffectiveVariantAssortment(context, {
-      actor: input.actor,
-      outletId: outlet.id,
-      variantId: inspectVariantId!,
-      authorize: false,
-    });
-    let proposed = { eligible: current.eligible, code: current.code };
-    if (input.mutationType === "include_variant") {
-      proposed = proposedIncludeEligible(current);
-    } else if (input.mutationType === "exclude") {
-      proposed = proposedExcludeAtOutlet(current, outlet.id, outletId, scopeType);
-    } else if (input.mutationType === "retire_rule" && currentRule?.decision === "include") {
-      proposed = { eligible: false, code: "ASSORTMENT_NOT_INCLUDED" };
-    } else if (input.mutationType === "retire_rule" && currentRule?.decision === "exclude") {
-      if (!current.eligible && current.code.startsWith("ASSORTMENT_EXCLUDED")) {
-        proposed = { eligible: true, code: "AVAILABLE" };
+
+  if (inspectModifierOptionId) {
+    for (const outlet of outletRows) {
+      const current = await getEffectiveModifierOptionAssortment(context, {
+        actor: input.actor,
+        outletId: outlet.id,
+        modifierOptionId: inspectModifierOptionId,
+        authorize: false,
+      });
+      const proposed = await getEffectiveModifierOptionAssortment(context, {
+        actor: input.actor,
+        outletId: outlet.id,
+        modifierOptionId: inspectModifierOptionId,
+        authorize: false,
+        evaluation,
+      });
+      outletConsequences.push({
+        outletId: outlet.id,
+        variantId: null,
+        modifierOptionId: inspectModifierOptionId,
+        currentIntended: current.eligible,
+        currentCode: current.code,
+        proposedIntended: proposed.eligible,
+        proposedCode: proposed.code,
+      });
+    }
+  } else {
+    for (const inspectId of inspectVariantIds) {
+      for (const outlet of outletRows) {
+        const current = await getEffectiveVariantAssortment(context, {
+          actor: input.actor,
+          outletId: outlet.id,
+          variantId: inspectId,
+          authorize: false,
+        });
+        const proposed = await getEffectiveVariantAssortment(context, {
+          actor: input.actor,
+          outletId: outlet.id,
+          variantId: inspectId,
+          authorize: false,
+          evaluation,
+        });
+        outletConsequences.push({
+          outletId: outlet.id,
+          variantId: inspectId,
+          modifierOptionId: null,
+          currentIntended: current.eligible,
+          currentCode: current.code,
+          proposedIntended: proposed.eligible,
+          proposedCode: proposed.code,
+        });
       }
     }
-    outletConsequences.push({
-      outletId: outlet.id,
-      currentIntended: current.eligible,
-      currentCode: current.code,
-      proposedIntended: proposed.eligible,
-      proposedCode: proposed.code,
-    });
   }
 
   const wouldChangeAssortmentIntent =
@@ -314,14 +438,14 @@ export async function previewAssortmentConsequence(
     variantId,
     modifierOptionId,
     scopeType,
-    territoryId: input.mutationType === "retire_rule" ? currentRule?.territoryId ?? null : territoryId,
-    organizationId:
-      input.mutationType === "retire_rule" ? currentRule?.organizationId ?? null : organizationId,
-    outletId: input.mutationType === "retire_rule" ? currentRule?.outletId ?? null : outletId,
+    territoryId,
+    organizationId,
+    outletId,
     currentRule,
     proposed: { decision: proposedDecision, status: proposedStatus },
     expectedRuleRevision: ruleRevisionJson(currentRule),
     availabilityRemainsSeparate: true,
+    affectedVariantIds: inspectVariantIds,
     outletConsequences,
     customerOrderabilityImplication,
     validationBlockers: blockers,

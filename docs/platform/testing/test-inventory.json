@@ -29,10 +29,10 @@
     "note": "Protected evidence and generated reports are never classified as executable test source."
   },
   "counts": {
-    "trackedPathsConsidered": 1818,
-    "executableTestFiles": 364,
+    "trackedPathsConsidered": 1820,
+    "executableTestFiles": 366,
     "sourceTestFiles": 130,
-    "testsTreeExecutableFiles": 200,
+    "testsTreeExecutableFiles": 202,
     "scriptTestFiles": 34,
     "playwrightSpecs": 11,
     "vitestConfigs": 2,
@@ -199,6 +199,7 @@
     "tests/administration/admin-transport.test.ts",
     "tests/administration/admin-ui.test.tsx",
     "tests/administration/portal-session.integration.test.ts",
+    "tests/assortment-availability/assortment-consequence-preview.test.ts",
     "tests/assortment-availability/assortment-revision-concurrency.test.ts",
     "tests/assortment-availability/assortment-rules.test.ts",
     "tests/assortment-availability/configure-outlet-operating-uat.test.ts",
@@ -354,6 +355,7 @@
     "tests/pricing-bootstrap/bootstrap.test.ts",
     "tests/pricing-parity/parity.test.ts",
     "tests/pricing-tax/money.test.ts",
+    "tests/pricing-tax/price-book-f4-correction.test.ts",
     "tests/pricing-tax/price-book-revision.test.ts",
     "tests/pricing-tax/resolve.test.ts",
     "tests/pricing-tax/tax-profiles.test.ts",
@@ -4517,6 +4519,23 @@
       "classificationConfidence": "HEURISTIC"
     },
     {
+      "path": "tests/assortment-availability/assortment-consequence-preview.test.ts",
+      "runner": "vitest",
+      "domain": "assortment-availability",
+      "testType": "unit-or-domain",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:assortment-availability"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
       "path": "tests/assortment-availability/assortment-revision-concurrency.test.ts",
       "runner": "vitest",
       "domain": "assortment-availability",
@@ -8161,6 +8180,23 @@
     },
     {
       "path": "tests/pricing-tax/money.test.ts",
+      "runner": "vitest",
+      "domain": "pricing-tax",
+      "testType": "unit-or-domain",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:pricing-tax"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/pricing-tax/price-book-f4-correction.test.ts",
       "runner": "vitest",
       "domain": "pricing-tax",
       "testType": "unit-or-domain",

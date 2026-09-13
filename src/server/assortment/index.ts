@@ -52,6 +52,7 @@ export {
   findActiveEquivalentAssortmentRule,
   includeBrandVariant,
   parseExpectedRuleRevision,
+  resolveExcludeScope,
   retireAssortmentRule,
 } from "./rules";
 

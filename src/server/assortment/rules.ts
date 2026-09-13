@@ -66,7 +66,7 @@ export function parseExpectedRuleRevision(
     }
     return value;
   }
-  if (typeof value === "number" && Number.isInteger(value) && value > 0) {
+  if (typeof value === "number" && Number.isSafeInteger(value) && value > 0) {
     return BigInt(value);
   }
   if (typeof value === "string" && /^\d+$/.test(value)) {
@@ -171,8 +171,8 @@ async function requireBrandModifierOption(
   return row;
 }
 
-async function resolveExcludeScope(
-  context: PersistenceTransactionContext,
+export async function resolveExcludeScope(
+  context: PersistenceQueryContext,
   brandId: string,
   input: {
     scopeType: AssortmentScopeType;

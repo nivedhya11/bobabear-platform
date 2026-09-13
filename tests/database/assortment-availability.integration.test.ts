@@ -3,7 +3,7 @@
  * Real Testcontainers PostgreSQL 18 — migration, constraints, privileges, permissions.
  */
 import { createHash, randomUUID } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 
 import { sql } from "drizzle-orm";
@@ -272,7 +272,20 @@ describe("IMP-014 migration replay and seal", () => {
     if (tags0015.length === 1) {
       expect(tags0015[0]?.tag).toBe("0015_checkout");
     }
-    expect(integrity.migrations).toHaveLength(16);
+    expect(integrity.migrations.length).toBeGreaterThanOrEqual(16);
+    const sqlMigrations = readdirSync(path.join(process.cwd(), "drizzle")).filter((name) =>
+      /^\d{4}_.+\.sql$/.test(name),
+    );
+    expect(integrity.migrations).toHaveLength(sqlMigrations.length);
+    const f4Revision = integrity.migrations.find(
+      (m) => m.path === "drizzle/0039_familiar_vin_gonzales.sql",
+    );
+    expect(f4Revision).toBeDefined();
+    expect(f4Revision?.sha256).toBe(
+      createHash("sha256")
+        .update(readFileSync(path.join(process.cwd(), "drizzle/0039_familiar_vin_gonzales.sql")))
+        .digest("hex"),
+    );
 
     const sealed0008 = integrity.migrations.find(
       (m) => m.tag === "0008_assortment_operational_availability",
@@ -295,13 +308,13 @@ describe("IMP-014 migration replay and seal", () => {
 });
 
 describe("IMP-014 permissions catalog", () => {
-  it("seeds 49 permissions / 7 roles with the 10 new assortment permissions mapped", async () => {
+  it("seeds the canonical permission catalog with the 10 assortment permissions mapped", async () => {
     await withMigratedPersistence(async (persistence) => {
       await persistence.withContext(async (ctx) => {
         const permissions = await ctx.db.execute<{ count: string }>(
           sql`select count(*)::text as count from app.access_permissions`,
         );
-        expect(permissions.rows[0]?.count).toBe("51");
+        expect(permissions.rows[0]?.count).toBe(String(PERMISSION_KEYS.length));
         expect(PERMISSION_KEYS.length).toBe(68);
 
         const roles = await ctx.db.execute<{ count: string }>(

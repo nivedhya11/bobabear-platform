@@ -1,9 +1,9 @@
 /**
  * Effective assortment eligibility reads (IMP-014).
  */
-import { and, eq, inArray, or } from "drizzle-orm";
+import { and, eq, inArray, ne, or } from "drizzle-orm";
 
-import type { EligibilityDecisionCode } from "../../shared/assortment";
+import type { AssortmentScopeType, EligibilityDecisionCode } from "../../shared/assortment";
 import { assortmentRulesTable } from "../../platform/database/schema/assortment";
 import { findOutletById } from "../organization/outlets";
 import type { PersistenceQueryContext } from "../persistence/types";
@@ -201,14 +201,47 @@ export function lookupProductOrVariantExclusion(
   );
 }
 
+export type AssortmentRuleEvaluationOverride = Readonly<{
+  assumeBrandInclude?: boolean;
+  ignoreRuleId?: string | null;
+  extraExclude?: Readonly<{
+    scopeType: AssortmentScopeType;
+    territoryId: string | null;
+    organizationId: string | null;
+    outletId: string | null;
+    targetType: "product" | "variant" | "modifier_option";
+    productId: string | null;
+    variantId: string | null;
+    modifierOptionId: string | null;
+  }> | null;
+}>;
+
+function extraExcludeAppliesAtScope(
+  extra: AssortmentRuleEvaluationOverride["extraExclude"],
+  ancestry: OutletAncestry,
+  scope: ExclusionScope,
+): boolean {
+  if (!extra || extra.scopeType !== scope) return false;
+  if (scope === "brand") return true;
+  if (scope === "territory") return extra.territoryId === ancestry.territoryId;
+  if (scope === "organization") return extra.organizationId === ancestry.organizationId;
+  return extra.outletId === ancestry.outletId;
+}
+
 async function hasActiveRule(
   context: PersistenceQueryContext,
   where: Parameters<typeof and>[0],
+  ignoreRuleId?: string | null,
 ): Promise<boolean> {
+  const conditions = [
+    eq(assortmentRulesTable.status, "active"),
+    where,
+    ...(ignoreRuleId ? [ne(assortmentRulesTable.id, ignoreRuleId)] : []),
+  ];
   const rows = await context.db
     .select({ id: assortmentRulesTable.id })
     .from(assortmentRulesTable)
-    .where(and(eq(assortmentRulesTable.status, "active"), where))
+    .where(and(...conditions))
     .limit(1);
   return rows.length > 0;
 }
@@ -217,6 +250,7 @@ export async function hasActiveBrandVariantInclude(
   context: PersistenceQueryContext,
   brandId: string,
   variantId: string,
+  ignoreRuleId?: string | null,
 ): Promise<boolean> {
   return hasActiveRule(
     context,
@@ -227,6 +261,7 @@ export async function hasActiveBrandVariantInclude(
       eq(assortmentRulesTable.variantId, variantId),
       eq(assortmentRulesTable.decision, "include"),
     )!,
+    ignoreRuleId,
   );
 }
 
@@ -235,6 +270,7 @@ async function findProductOrVariantExclusion(
   ancestry: OutletAncestry,
   productId: string,
   variantId: string,
+  evaluation?: AssortmentRuleEvaluationOverride,
 ): Promise<EligibilityDecisionCode | null> {
   const scopes: Array<{
     scope: ExclusionScope;
@@ -278,24 +314,32 @@ async function findProductOrVariantExclusion(
   ];
 
   for (const { scope, filter } of scopes) {
-    const productHit = await hasActiveRule(
-      context,
-      and(
-        filter!,
-        eq(assortmentRulesTable.targetType, "product"),
-        eq(assortmentRulesTable.productId, productId),
-      )!,
-    );
+    const extraAtScope = extraExcludeAppliesAtScope(evaluation?.extraExclude, ancestry, scope);
+    const extra = evaluation?.extraExclude ?? null;
+    const productHit =
+      (extraAtScope && extra?.targetType === "product" && extra.productId === productId) ||
+      (await hasActiveRule(
+        context,
+        and(
+          filter!,
+          eq(assortmentRulesTable.targetType, "product"),
+          eq(assortmentRulesTable.productId, productId),
+        )!,
+        evaluation?.ignoreRuleId,
+      ));
     if (productHit) return EXCLUSION_CODES[scope];
 
-    const variantHit = await hasActiveRule(
-      context,
-      and(
-        filter!,
-        eq(assortmentRulesTable.targetType, "variant"),
-        eq(assortmentRulesTable.variantId, variantId),
-      )!,
-    );
+    const variantHit =
+      (extraAtScope && extra?.targetType === "variant" && extra.variantId === variantId) ||
+      (await hasActiveRule(
+        context,
+        and(
+          filter!,
+          eq(assortmentRulesTable.targetType, "variant"),
+          eq(assortmentRulesTable.variantId, variantId),
+        )!,
+        evaluation?.ignoreRuleId,
+      ));
     if (variantHit) return EXCLUSION_CODES[scope];
   }
   return null;
@@ -365,6 +409,7 @@ export async function findModifierOptionExclusion(
   context: PersistenceQueryContext,
   ancestry: OutletAncestry,
   modifierOptionId: string,
+  evaluation?: AssortmentRuleEvaluationOverride,
 ): Promise<EligibilityDecisionCode | null> {
   const scopes: Array<{
     scope: ExclusionScope;
@@ -416,7 +461,18 @@ export async function findModifierOptionExclusion(
   ];
 
   for (const { scope, filter } of scopes) {
-    if (await hasActiveRule(context, filter!)) return EXCLUSION_CODES[scope];
+    const extraAtScope = extraExcludeAppliesAtScope(evaluation?.extraExclude, ancestry, scope);
+    const extra = evaluation?.extraExclude ?? null;
+    if (
+      extraAtScope &&
+      extra?.targetType === "modifier_option" &&
+      extra.modifierOptionId === modifierOptionId
+    ) {
+      return EXCLUSION_CODES[scope];
+    }
+    if (await hasActiveRule(context, filter!, evaluation?.ignoreRuleId)) {
+      return EXCLUSION_CODES[scope];
+    }
   }
   return null;
 }
@@ -432,6 +488,7 @@ export async function getEffectiveVariantAssortment(
     outletId: string;
     variantId: string;
     authorize?: boolean;
+    evaluation?: AssortmentRuleEvaluationOverride;
   }>,
 ): Promise<AssortmentEligibilityResult> {
   assertApplicationRole(context, "getEffectiveVariantAssortment");
@@ -457,7 +514,14 @@ export async function getEffectiveVariantAssortment(
     return { eligible: false, code: "DENIED" };
   }
 
-  const included = await hasActiveBrandVariantInclude(context, ancestry.brandId, variantId);
+  const included =
+    input.evaluation?.assumeBrandInclude === true ||
+    (await hasActiveBrandVariantInclude(
+      context,
+      ancestry.brandId,
+      variantId,
+      input.evaluation?.ignoreRuleId,
+    ));
   if (!included) {
     return { eligible: false, code: "ASSORTMENT_NOT_INCLUDED" };
   }
@@ -467,6 +531,7 @@ export async function getEffectiveVariantAssortment(
     ancestry,
     product.id,
     variantId,
+    input.evaluation,
   );
   if (exclusion) {
     return { eligible: false, code: exclusion };
@@ -485,6 +550,7 @@ export async function getEffectiveModifierOptionAssortment(
     outletId: string;
     modifierOptionId: string;
     authorize?: boolean;
+    evaluation?: AssortmentRuleEvaluationOverride;
   }>,
 ): Promise<AssortmentEligibilityResult> {
   assertApplicationRole(context, "getEffectiveModifierOptionAssortment");
@@ -505,7 +571,12 @@ export async function getEffectiveModifierOptionAssortment(
     return { eligible: false, code: "DENIED" };
   }
 
-  const exclusion = await findModifierOptionExclusion(context, ancestry, modifierOptionId);
+  const exclusion = await findModifierOptionExclusion(
+    context,
+    ancestry,
+    modifierOptionId,
+    input.evaluation,
+  );
   if (exclusion) {
     return { eligible: false, code: exclusion };
   }
