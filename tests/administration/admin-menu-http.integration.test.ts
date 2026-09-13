@@ -21,6 +21,7 @@ import {
 } from "../../src/server/catalog";
 import {
   createMenu,
+  createMenuSection,
   findMenuById,
   previewMenuPublication,
 } from "../../src/server/catalog/menu";
@@ -1478,6 +1479,219 @@ describe("IMP-036F F3B Menu commercial Admin HTTP", () => {
           .where(eq(menuMutationAuditEventsTable.menuId, menu.id)),
       );
       expect(audits.some((a) => a.action === "menu.version_draft_created")).toBe(false);
+    });
+  });
+
+  it("body-reference anti-oracle: foreign vs missing productId and parentSectionId", async () => {
+    await withIsolatedTestDatabase(adminConnectionInfo(), async (database) => {
+      await applyMigrations(database.connectionString);
+      const persistence = getApplicationPersistence(applicationConfig(database.connectionString));
+      openHandles.push(persistence);
+
+      const tree = await persistence.transaction((tx) => seedBrandTree(tx, "mao1"));
+      const otherTree = await persistence.transaction((tx) => seedBrandTree(tx, "mao2"));
+      const brandAdmin = await createEligibleWorkforceUser(persistence);
+      const otherBrandAdmin = await createEligibleWorkforceUser(persistence);
+      await persistence.transaction(async (tx) => {
+        const membership = await createMembership(tx, {
+          workforceUserId: brandAdmin.id,
+          scope: { scopeType: "brand", brandId: tree.brand.id },
+          status: "active",
+        });
+        await grantRole(tx, { membershipId: membership.id, roleKey: "brand_admin" });
+      });
+      await persistence.transaction(async (tx) => {
+        const membership = await createMembership(tx, {
+          workforceUserId: otherBrandAdmin.id,
+          scope: { scopeType: "brand", brandId: otherTree.brand.id },
+          status: "active",
+        });
+        await grantRole(tx, { membershipId: membership.id, roleKey: "brand_admin" });
+      });
+
+      const actor = principalFor(brandAdmin.id);
+      const otherActor = principalFor(otherBrandAdmin.id);
+      const brandId = tree.brand.id;
+      const otherBrandId = otherTree.brand.id;
+
+      const localProduct = await persistence.transaction((tx) =>
+        createProduct(tx, {
+          actor,
+          brandId,
+          code: "mao-local",
+          name: "Local",
+          productKind: "standard",
+        }),
+      );
+      const foreignProduct = await persistence.transaction((tx) =>
+        createProduct(tx, {
+          actor: otherActor,
+          brandId: otherBrandId,
+          code: "mao-foreign",
+          name: "Foreign",
+          productKind: "standard",
+        }),
+      );
+
+      const menu = await persistence.transaction((tx) =>
+        createMenu(tx, {
+          actor,
+          brandId,
+          code: "mao-menu",
+          name: "MAO Menu",
+        }),
+      );
+      let revision = menu.revision.toString(10);
+
+      const foreignMenu = await persistence.transaction((tx) =>
+        createMenu(tx, {
+          actor: otherActor,
+          brandId: otherBrandId,
+          code: "mao-fmenu",
+          name: "Foreign Menu",
+        }),
+      );
+      const foreignSection = await persistence.transaction(async (tx) => {
+        const current = await findMenuById(tx, foreignMenu.id);
+        return createMenuSection(tx, {
+          actor: otherActor,
+          brandId: otherBrandId,
+          menuId: foreignMenu.id,
+          code: "mao-froot",
+          name: "Foreign Root",
+          position: 0,
+          expectedMenuRevision: current!.revision,
+        });
+      });
+
+      const runtime = getWorkforceAuthRuntime({
+        auth: workforceAuthConfig().workforce,
+        persistence: applicationConfig(database.connectionString),
+      });
+      openHandles.push(runtime);
+      const adapter = await adapterFor(runtime);
+      const server = createServer((req, res) => {
+        void routeOperationsRequest(
+          req,
+          res,
+          {
+            runtime,
+            persistence,
+            trustedOrigin: workforceAuthConfig().workforce.baseURL.origin,
+          },
+          "menu-admin-http-anti-oracle",
+        );
+      });
+      await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+      const address = server.address();
+      if (!address || typeof address === "string") throw new Error("Missing test server address");
+      const base = `http://127.0.0.1:${address.port}`;
+      openHandles.push({
+        close: () =>
+          new Promise<void>((resolve, reject) => {
+            server.close((err) => (err ? reject(err) : resolve()));
+          }),
+      });
+
+      const headersFor = async (userId: string) => {
+        const session = await adapter.createSession(userId);
+        return {
+          cookie: await signedCookie(session.token),
+          origin: workforceAuthConfig().workforce.baseURL.origin,
+          "content-type": "application/json",
+        };
+      };
+      const brandPath = `/api/admin/v1/brands/${brandId}/menus`;
+      const json = async (res: Response) => res.json() as Promise<Record<string, unknown>>;
+
+      // Create a local root section first (valid placement).
+      const rootRes = await fetch(`${base}${brandPath}/${menu.id}/sections`, {
+        method: "POST",
+        headers: await headersFor(brandAdmin.id),
+        body: JSON.stringify({
+          code: "mao-root",
+          name: "Root",
+          expectedMenuRevision: revision,
+        }),
+      });
+      expect(rootRes.status).toBe(200);
+      const rootBody = await json(rootRes);
+      const rootId = (rootBody.section as { id: string }).id;
+      const currentMenu = await persistence.withContext((ctx) => findMenuById(ctx, menu.id));
+      revision = currentMenu!.revision.toString(10);
+
+      const missingProductId = "ffffffff-ffff-4fff-8fff-ffffffffffff";
+      const missingParentId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+
+      const missingProduct = await fetch(`${base}${brandPath}/${menu.id}/entries`, {
+        method: "POST",
+        headers: await headersFor(brandAdmin.id),
+        body: JSON.stringify({
+          sectionId: rootId,
+          productId: missingProductId,
+          expectedMenuRevision: revision,
+        }),
+      });
+      const foreignProductRes = await fetch(`${base}${brandPath}/${menu.id}/entries`, {
+        method: "POST",
+        headers: await headersFor(brandAdmin.id),
+        body: JSON.stringify({
+          sectionId: rootId,
+          productId: foreignProduct.id,
+          expectedMenuRevision: revision,
+        }),
+      });
+      expect(missingProduct.status).toBe(404);
+      expect(foreignProductRes.status).toBe(404);
+      const missingProductBody = await json(missingProduct);
+      const foreignProductBody = await json(foreignProductRes);
+      expect(missingProductBody).toMatchObject({ ok: false, code: "MENU_NOT_FOUND" });
+      expect(foreignProductBody).toMatchObject({ ok: false, code: "MENU_NOT_FOUND" });
+      expect(JSON.stringify(foreignProductBody)).not.toMatch(/another brand|belongs/i);
+      expect(JSON.stringify(foreignProductBody)).not.toContain(otherBrandId);
+      expect(JSON.stringify(foreignProductBody)).not.toContain(foreignProduct.id);
+
+      const missingParent = await fetch(`${base}${brandPath}/${menu.id}/sections`, {
+        method: "POST",
+        headers: await headersFor(brandAdmin.id),
+        body: JSON.stringify({
+          code: "mao-child-m",
+          name: "Child Missing",
+          parentSectionId: missingParentId,
+          expectedMenuRevision: revision,
+        }),
+      });
+      const foreignParent = await fetch(`${base}${brandPath}/${menu.id}/sections`, {
+        method: "POST",
+        headers: await headersFor(brandAdmin.id),
+        body: JSON.stringify({
+          code: "mao-child-f",
+          name: "Child Foreign",
+          parentSectionId: foreignSection.id,
+          expectedMenuRevision: revision,
+        }),
+      });
+      expect(missingParent.status).toBe(404);
+      expect(foreignParent.status).toBe(404);
+      const missingParentBody = await json(missingParent);
+      const foreignParentBody = await json(foreignParent);
+      expect(missingParentBody).toMatchObject({ ok: false, code: "MENU_NOT_FOUND" });
+      expect(foreignParentBody).toMatchObject({ ok: false, code: "MENU_NOT_FOUND" });
+      expect(JSON.stringify(foreignParentBody)).not.toMatch(/same brand|belongs/i);
+      expect(JSON.stringify(foreignParentBody)).not.toContain(otherBrandId);
+      expect(JSON.stringify(foreignParentBody)).not.toContain(foreignSection.id);
+
+      // Sanity: local product still placeable.
+      const localEntry = await fetch(`${base}${brandPath}/${menu.id}/entries`, {
+        method: "POST",
+        headers: await headersFor(brandAdmin.id),
+        body: JSON.stringify({
+          sectionId: rootId,
+          productId: localProduct.id,
+          expectedMenuRevision: revision,
+        }),
+      });
+      expect(localEntry.status).toBe(200);
     });
   });
 });

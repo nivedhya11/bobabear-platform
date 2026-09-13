@@ -28,6 +28,8 @@ import {
 import {
   MenuConflictError,
   MenuInvalidStateError,
+  MenuNotFoundError,
+  MenuValidationError,
   activateMenu,
   activateMenuEntry,
   activateMenuSection,
@@ -45,6 +47,7 @@ import {
   retireMenuEntry,
   updateMenuEntryDisplay,
   updateMenuSection,
+  validateMenuPublication,
 } from "../../src/server/catalog/menu";
 import { projectCustomerMenu } from "../../src/server/customer-commerce/menu/project-customer-menu";
 import {
@@ -1664,5 +1667,576 @@ describe("IMP-036F F3A — preview publication", () => {
       expect(after!.effectiveMenuVersionId).toBe(pointerBefore);
       expect(await customerProjectionFingerprint(persistence, brandId)).toBe(beforeFp);
     });
+  });
+});
+
+describe("IMP-036F F3B correction — effective Catalog Product at Menu validate/publish", () => {
+  it("staged-ACTIVE non-effective Product blocks Menu validate/publish; Catalog publish then permits", async () => {
+    await withCatalogDomain(async (persistence, { tree, brandAdminActor: actor }) => {
+      const brandId = tree.brand.id;
+
+      const product = await persistence.transaction((tx) =>
+        createProduct(tx, {
+          actor,
+          brandId,
+          code: "staged-ne",
+          name: "Staged Non-Effective",
+          productKind: "standard",
+        }),
+      );
+      const variant = await persistence.transaction((tx) =>
+        createVariant(tx, {
+          actor,
+          productId: product.id,
+          code: "default",
+          name: "Regular",
+          isDefault: true,
+          isSelectorVisible: false,
+        }),
+      );
+      await persistence.transaction(async (tx) => {
+        await activateVariant(tx, { actor, variantId: variant.id });
+        await activateProduct(tx, { actor, productId: product.id });
+      });
+      const staged = await persistence.withContext((ctx) => findProductById(ctx, product.id));
+      expect(staged!.lifecycleStatus).toBe("active");
+      expect(staged!.effectiveContentRevision).toBeNull();
+
+      let menu = await persistence.transaction((tx) =>
+        createMenu(tx, {
+          actor,
+          brandId,
+          code: "eff-cat-menu",
+          name: "Effective Catalog Gate Menu",
+        }),
+      );
+      const section = await persistence.transaction(async (tx) => {
+        const current = await findMenuById(tx, menu.id);
+        return createMenuSection(tx, {
+          actor,
+          brandId,
+          menuId: menu.id,
+          code: "eff-root",
+          name: "Root",
+          position: 0,
+          expectedMenuRevision: current!.revision,
+        });
+      });
+      const entry = await persistence.transaction(async (tx) => {
+        const current = await findMenuById(tx, menu.id);
+        return createMenuEntry(tx, {
+          actor,
+          brandId,
+          menuId: menu.id,
+          sectionId: section.id,
+          productId: product.id,
+          position: 0,
+          imagePath: IMAGE,
+          expectedMenuRevision: current!.revision,
+        });
+      });
+      await persistence.transaction(async (tx) => {
+        let current = await findMenuById(tx, menu.id);
+        await activateMenuSection(tx, {
+          actor,
+          sectionId: section.id,
+          expectedMenuRevision: current!.revision,
+        });
+        current = await findMenuById(tx, menu.id);
+        await activateMenuEntry(tx, {
+          actor,
+          entryId: entry.id,
+          expectedMenuRevision: current!.revision,
+        });
+      });
+      menu = (await persistence.withContext((ctx) => findMenuById(ctx, menu.id)))!;
+
+      const blockedValidate = await persistence.transaction((tx) =>
+        validateMenuPublication(tx, { actor, menuId: menu.id }),
+      );
+      expect(blockedValidate.validationOk).toBe(false);
+      expect(blockedValidate.validationBlockers.join(" ")).toMatch(/Catalog-effective/i);
+
+      const customerBefore = persistence.withContext((ctx) =>
+        projectCustomerMenu(ctx, { brandId, at: AT }),
+      );
+      await expect(customerBefore).rejects.toBeInstanceOf(CustomerMenuError);
+
+      let publishCaught: unknown;
+      try {
+        await persistence.transaction((tx) =>
+          publishMenuRevision(tx, {
+            actor,
+            menuId: menu.id,
+            expectedMenuRevision: menu.revision,
+          }),
+        );
+      } catch (error) {
+        publishCaught = error;
+      }
+      expect(publishCaught).toBeInstanceOf(MenuInvalidStateError);
+      const afterBlocked = await persistence.withContext((ctx) => findMenuById(ctx, menu.id));
+      expect(afterBlocked!.effectiveMenuVersionId).toBeNull();
+      expect(afterBlocked!.lifecycleStatus).not.toBe("active");
+
+      await persistence.transaction(async (tx) => {
+        await publishProductEnvelope(tx, { actor, brandId, productId: product.id });
+      });
+      await persistence.transaction(async (tx) => {
+        const book = await createDraftPriceBook(tx, {
+          actor,
+          brandId,
+          scopeType: "brand",
+          code: `pb-${randomUUID().slice(0, 8)}`,
+          name: "Brand book",
+          effectiveFrom: new Date("2026-09-01T00:00:00+05:30"),
+          effectiveTo: null,
+        });
+        await attachDraftVariantPrice(tx, {
+          actor,
+          priceBookId: book.id,
+          brandId,
+          variantId: variant.id,
+          amountPaise: BigInt(17_900),
+          taxCategoryId: TAX_CATEGORY_RESTAURANT_SERVICE_ID,
+        });
+        await activatePriceBook(tx, { actor, priceBookId: book.id, brandId });
+      });
+
+      const publishedProduct = await persistence.withContext((ctx) =>
+        findProductById(ctx, product.id),
+      );
+      expect(publishedProduct!.effectiveContentRevision).not.toBeNull();
+
+      menu = (await persistence.withContext((ctx) => findMenuById(ctx, menu.id)))!;
+      const okValidate = await persistence.transaction((tx) =>
+        validateMenuPublication(tx, { actor, menuId: menu.id }),
+      );
+      expect(okValidate.validationOk).toBe(true);
+
+      const published = await persistence.transaction((tx) =>
+        publishMenuRevision(tx, {
+          actor,
+          menuId: menu.id,
+          expectedMenuRevision: menu.revision,
+        }),
+      );
+      expect(published.changed).toBe(true);
+
+      const customer = await persistence.withContext((ctx) =>
+        projectCustomerMenu(ctx, { brandId, at: AT }),
+      );
+      expect(customer.menuId).toBe(menu.id);
+      expect(customer.items.some((i) => i.productId === product.id)).toBe(true);
+    });
+  });
+});
+
+describe("IMP-036F F3B correction — duplicate entry reorder", () => {
+  it("rejects [A,A], leaves revision and positions unchanged; valid [B,A] reorders", async () => {
+    await withCatalogDomain(async (persistence, { tree, brandAdminActor: actor }) => {
+      const brandId = tree.brand.id;
+      const [a, b] = await seedPublishedPricedProducts(persistence, actor, brandId, [
+        { code: "dup-a", name: "Dup A" },
+        { code: "dup-b", name: "Dup B" },
+      ]);
+      const seeded = await seedActivatedRepresentativeMenu(
+        persistence,
+        actor,
+        brandId,
+        "dup-ord",
+        { productA: a!.productId, productB: b!.productId },
+      );
+
+      // Place both entries in the same section for sibling reorder.
+      await persistence.transaction(async (tx) => {
+        const current = await findMenuById(tx, seeded.menu.id);
+        await moveMenuEntry(tx, {
+          actor,
+          entryId: seeded.entryB.id,
+          targetSectionId: seeded.root.id,
+          position: 1,
+          expectedMenuRevision: current!.revision,
+        });
+      });
+      const before = await persistence.withContext((ctx) => findMenuById(ctx, seeded.menu.id));
+      const positionsBefore = await persistence.withContext(async (ctx) => {
+        const rows = await ctx.db
+          .select()
+          .from(menuEntriesTable)
+          .where(eq(menuEntriesTable.sectionId, seeded.root.id));
+        return new Map(rows.map((r) => [r.id, r.position]));
+      });
+
+      let caught: unknown;
+      try {
+        await persistence.transaction((tx) =>
+          reorderMenuEntries(tx, {
+            actor,
+            sectionId: seeded.root.id,
+            orderedEntryIds: [seeded.entryA.id, seeded.entryA.id],
+            expectedMenuRevision: before!.revision,
+          }),
+        );
+      } catch (error) {
+        caught = error;
+      }
+      expect(caught).toBeInstanceOf(MenuValidationError);
+      expect((caught as MenuValidationError).message).toMatch(/duplicate/i);
+
+      const afterFail = await persistence.withContext((ctx) => findMenuById(ctx, seeded.menu.id));
+      expect(afterFail!.revision).toBe(before!.revision);
+      const positionsAfterFail = await persistence.withContext(async (ctx) => {
+        const rows = await ctx.db
+          .select()
+          .from(menuEntriesTable)
+          .where(eq(menuEntriesTable.sectionId, seeded.root.id));
+        return new Map(rows.map((r) => [r.id, r.position]));
+      });
+      expect(positionsAfterFail.get(seeded.entryA.id)).toBe(positionsBefore.get(seeded.entryA.id));
+      expect(positionsAfterFail.get(seeded.entryB.id)).toBe(positionsBefore.get(seeded.entryB.id));
+
+      await persistence.transaction((tx) =>
+        reorderMenuEntries(tx, {
+          actor,
+          sectionId: seeded.root.id,
+          orderedEntryIds: [seeded.entryB.id, seeded.entryA.id],
+          expectedMenuRevision: before!.revision,
+        }),
+      );
+      const positionsOk = await persistence.withContext(async (ctx) => {
+        const rows = await ctx.db
+          .select()
+          .from(menuEntriesTable)
+          .where(eq(menuEntriesTable.sectionId, seeded.root.id));
+        return new Map(rows.map((r) => [r.id, r.position]));
+      });
+      expect(positionsOk.get(seeded.entryB.id)).toBe(0);
+      expect(positionsOk.get(seeded.entryA.id)).toBe(1);
+    });
+  });
+});
+
+describe("IMP-036F F3B correction — first-cutover preview/publish agreement", () => {
+  it("draft-only graph: preview reports no customer effect; publish returns changed=false", async () => {
+    await withCatalogDomain(async (persistence, { tree, brandAdminActor: actor }) => {
+      const brandId = tree.brand.id;
+      const { productId } = await seedPublishedPricedProduct(
+        persistence,
+        actor,
+        brandId,
+        "draft-only",
+        "Draft Only Product",
+      );
+
+      let menu = await persistence.transaction((tx) =>
+        createMenu(tx, {
+          actor,
+          brandId,
+          code: "draft-only-menu",
+          name: "Draft Only Menu",
+        }),
+      );
+      const section = await persistence.transaction(async (tx) => {
+        const current = await findMenuById(tx, menu.id);
+        return createMenuSection(tx, {
+          actor,
+          brandId,
+          menuId: menu.id,
+          code: "draft-only-root",
+          name: "Draft Root",
+          position: 0,
+          expectedMenuRevision: current!.revision,
+        });
+      });
+      await persistence.transaction(async (tx) => {
+        const current = await findMenuById(tx, menu.id);
+        await createMenuEntry(tx, {
+          actor,
+          brandId,
+          menuId: menu.id,
+          sectionId: section.id,
+          productId,
+          position: 0,
+          imagePath: IMAGE,
+          expectedMenuRevision: current!.revision,
+        });
+      });
+      menu = (await persistence.withContext((ctx) => findMenuById(ctx, menu.id)))!;
+      expect(menu.effectiveMenuVersionId).toBeNull();
+      expect(menu.draftMenuVersionId).toBeTruthy();
+
+      const preview = await persistence.transaction((tx) =>
+        previewMenuPublication(tx, { actor, menuId: menu.id }),
+      );
+      expect(preview.wouldChangeCustomerTruth).toBe(false);
+      expect(preview.activeMenuEffect.targetBecomesActive).toBe(false);
+      expect(preview.hasPendingDraft).toBe(true);
+
+      const published = await persistence.transaction((tx) =>
+        publishMenuRevision(tx, {
+          actor,
+          menuId: menu.id,
+          expectedMenuRevision: menu.revision,
+        }),
+      );
+      expect(published.changed).toBe(false);
+      const after = await persistence.withContext((ctx) => findMenuById(ctx, menu.id));
+      expect(after!.effectiveMenuVersionId).toBeNull();
+      expect(after!.lifecycleStatus).not.toBe("active");
+    });
+  });
+
+  it("ACTIVE first-cutover: preview and publish agree on material customer effect", async () => {
+    await withCatalogDomain(async (persistence, { tree, brandAdminActor: actor }) => {
+      const brandId = tree.brand.id;
+      const { productId } = await seedPublishedPricedProduct(
+        persistence,
+        actor,
+        brandId,
+        "active-cut",
+        "Active Cutover Product",
+      );
+
+      let menu = await persistence.transaction((tx) =>
+        createMenu(tx, {
+          actor,
+          brandId,
+          code: "active-cut-menu",
+          name: "Active Cutover Menu",
+        }),
+      );
+      const section = await persistence.transaction(async (tx) => {
+        const current = await findMenuById(tx, menu.id);
+        return createMenuSection(tx, {
+          actor,
+          brandId,
+          menuId: menu.id,
+          code: "active-cut-root",
+          name: "Active Root",
+          position: 0,
+          expectedMenuRevision: current!.revision,
+        });
+      });
+      const entry = await persistence.transaction(async (tx) => {
+        const current = await findMenuById(tx, menu.id);
+        return createMenuEntry(tx, {
+          actor,
+          brandId,
+          menuId: menu.id,
+          sectionId: section.id,
+          productId,
+          position: 0,
+          imagePath: IMAGE,
+          expectedMenuRevision: current!.revision,
+        });
+      });
+      await persistence.transaction(async (tx) => {
+        let current = await findMenuById(tx, menu.id);
+        await activateMenuSection(tx, {
+          actor,
+          sectionId: section.id,
+          expectedMenuRevision: current!.revision,
+        });
+        current = await findMenuById(tx, menu.id);
+        await activateMenuEntry(tx, {
+          actor,
+          entryId: entry.id,
+          expectedMenuRevision: current!.revision,
+        });
+      });
+      menu = (await persistence.withContext((ctx) => findMenuById(ctx, menu.id)))!;
+
+      const preview = await persistence.transaction((tx) =>
+        previewMenuPublication(tx, { actor, menuId: menu.id }),
+      );
+      expect(preview.wouldChangeCustomerTruth).toBe(true);
+      expect(preview.activeMenuEffect.targetBecomesActive).toBe(true);
+      expect(preview.validationOk).toBe(true);
+
+      const published = await persistence.transaction((tx) =>
+        publishMenuRevision(tx, {
+          actor,
+          menuId: menu.id,
+          expectedMenuRevision: preview.expectedMenuRevision,
+        }),
+      );
+      expect(published.changed).toBe(true);
+      expect(published.effectiveMenuVersionId).toBeTruthy();
+
+      const customer = await persistence.withContext((ctx) =>
+        projectCustomerMenu(ctx, { brandId, at: AT }),
+      );
+      expect(customer.menuId).toBe(menu.id);
+    });
+  });
+});
+
+describe("IMP-036F F3B correction — body-reference anti-oracle", () => {
+  it("foreign vs missing productId and parentSectionId are equivalent not-found", async () => {
+    await withCatalogDomain(
+      async (persistence, { tree, otherTree, brandAdminActor: actor, otherBrandAdminActor }) => {
+        const brandId = tree.brand.id;
+        const otherBrandId = otherTree.brand.id;
+
+        const localProduct = await seedPublishedPricedProduct(
+          persistence,
+          actor,
+          brandId,
+          "local-p",
+          "Local Product",
+        );
+        const foreignProduct = await seedPublishedPricedProduct(
+          persistence,
+          otherBrandAdminActor,
+          otherBrandId,
+          "foreign-p",
+          "Foreign Product",
+        );
+
+        let menu = await persistence.transaction((tx) =>
+          createMenu(tx, {
+            actor,
+            brandId,
+            code: "anti-oracle-menu",
+            name: "Anti Oracle Menu",
+          }),
+        );
+        const section = await persistence.transaction(async (tx) => {
+          const current = await findMenuById(tx, menu.id);
+          return createMenuSection(tx, {
+            actor,
+            brandId,
+            menuId: menu.id,
+            code: "anti-root",
+            name: "Root",
+            position: 0,
+            expectedMenuRevision: current!.revision,
+          });
+        });
+        menu = (await persistence.withContext((ctx) => findMenuById(ctx, menu.id)))!;
+
+        const missingProductId = "dddddddd-dddd-4ddd-8ddd-dddddddddddd";
+        let missingCaught: unknown;
+        let foreignCaught: unknown;
+        try {
+          await persistence.transaction((tx) =>
+            createMenuEntry(tx, {
+              actor,
+              brandId,
+              menuId: menu.id,
+              sectionId: section.id,
+              productId: missingProductId,
+              position: 0,
+              expectedMenuRevision: menu.revision,
+            }),
+          );
+        } catch (error) {
+          missingCaught = error;
+        }
+        try {
+          await persistence.transaction((tx) =>
+            createMenuEntry(tx, {
+              actor,
+              brandId,
+              menuId: menu.id,
+              sectionId: section.id,
+              productId: foreignProduct.productId,
+              position: 0,
+              expectedMenuRevision: menu.revision,
+            }),
+          );
+        } catch (error) {
+          foreignCaught = error;
+        }
+        expect(missingCaught).toBeInstanceOf(MenuNotFoundError);
+        expect(foreignCaught).toBeInstanceOf(MenuNotFoundError);
+        expect((missingCaught as MenuNotFoundError).menuErrorCode).toBe(
+          (foreignCaught as MenuNotFoundError).menuErrorCode,
+        );
+        expect((missingCaught as MenuNotFoundError).message).toBe(
+          (foreignCaught as MenuNotFoundError).message,
+        );
+
+        const foreignMenu = await persistence.transaction((tx) =>
+          createMenu(tx, {
+            actor: otherBrandAdminActor,
+            brandId: otherBrandId,
+            code: "foreign-parent-menu",
+            name: "Foreign Parent Menu",
+          }),
+        );
+        const foreignSection = await persistence.transaction(async (tx) => {
+          const current = await findMenuById(tx, foreignMenu.id);
+          return createMenuSection(tx, {
+            actor: otherBrandAdminActor,
+            brandId: otherBrandId,
+            menuId: foreignMenu.id,
+            code: "foreign-root",
+            name: "Foreign Root",
+            position: 0,
+            expectedMenuRevision: current!.revision,
+          });
+        });
+        menu = (await persistence.withContext((ctx) => findMenuById(ctx, menu.id)))!;
+        const missingParentId = "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee";
+
+        let missingParentCaught: unknown;
+        let foreignParentCaught: unknown;
+        try {
+          await persistence.transaction((tx) =>
+            createMenuSection(tx, {
+              actor,
+              brandId,
+              menuId: menu.id,
+              parentSectionId: missingParentId,
+              code: "child-missing",
+              name: "Child Missing",
+              position: 0,
+              expectedMenuRevision: menu.revision,
+            }),
+          );
+        } catch (error) {
+          missingParentCaught = error;
+        }
+        try {
+          await persistence.transaction((tx) =>
+            createMenuSection(tx, {
+              actor,
+              brandId,
+              menuId: menu.id,
+              parentSectionId: foreignSection.id,
+              code: "child-foreign",
+              name: "Child Foreign",
+              position: 0,
+              expectedMenuRevision: menu.revision,
+            }),
+          );
+        } catch (error) {
+          foreignParentCaught = error;
+        }
+        expect(missingParentCaught).toBeInstanceOf(MenuNotFoundError);
+        expect(foreignParentCaught).toBeInstanceOf(MenuNotFoundError);
+        expect((missingParentCaught as MenuNotFoundError).menuErrorCode).toBe(
+          (foreignParentCaught as MenuNotFoundError).menuErrorCode,
+        );
+        expect((missingParentCaught as MenuNotFoundError).message).toBe(
+          (foreignParentCaught as MenuNotFoundError).message,
+        );
+
+        // Local product placement still allowed.
+        await persistence.transaction((tx) =>
+          createMenuEntry(tx, {
+            actor,
+            brandId,
+            menuId: menu.id,
+            sectionId: section.id,
+            productId: localProduct.productId,
+            position: 0,
+            expectedMenuRevision: menu.revision,
+          }),
+        );
+      },
+    );
   });
 });

@@ -150,6 +150,32 @@ function emptyChanges(): MenuPublicationChanges {
   };
 }
 
+/**
+ * Shared preview/publish predicate: whether publishing this locked candidate
+ * would perform a material customer cutover.
+ *
+ * First cutover (no effective version): requires at least one ACTIVE section or
+ * entry. Existing effective: material fingerprint comparison.
+ */
+export function wouldMateriallyChangeCustomerTruth(
+  draft: Readonly<{
+    sections: readonly MenuSectionVersionRow[];
+    entries: readonly MenuEntryVersionRow[];
+  }>,
+  previousEffective: Readonly<{
+    sections: readonly MenuSectionVersionRow[];
+    entries: readonly MenuEntryVersionRow[];
+  }> | null,
+): boolean {
+  if (previousEffective == null) {
+    return (
+      draft.sections.some((s) => s.lifecycleStatus === "active") ||
+      draft.entries.some((e) => e.lifecycleStatus === "active")
+    );
+  }
+  return !compareMaterialGraphs(draft, previousEffective);
+}
+
 export function diffMenuPublicationChanges(
   draftSections: readonly MenuSectionVersionRow[],
   draftEntries: readonly MenuEntryVersionRow[],
@@ -261,6 +287,9 @@ export function diffMenuPublicationChanges(
  * Non-authoring consequence preview for deliberate Menu publication.
  * Does NOT call ensureDraftMenuVersion — no pending draft yields a deterministic
  * no-candidate response without advancing authoring/audit state.
+ *
+ * Lock order matches publication: Brand FOR UPDATE → Brand Menus (id order) →
+ * select target Menu from locked set (never lock target Menu before Brand).
  */
 export async function previewMenuPublication(
   context: PersistenceTransactionContext,
@@ -268,10 +297,17 @@ export async function previewMenuPublication(
 ): Promise<PreviewMenuPublicationResult> {
   assertTransactionContext(context, "previewMenuPublication");
   const menuId = assertUuid(input.menuId, "menuId");
-  const menu = await lockMenuForUpdate(context, menuId);
+
+  const soft = await findMenuById(context, menuId);
+  if (!soft) throw new MenuNotFoundError("menu");
+
+  await lockBrandForUpdate(context, soft.brandId);
+  const brandMenus = await lockBrandMenusForUpdate(context, soft.brandId);
+  const menu = brandMenus.find((row) => row.id === menuId);
+  if (!menu) throw new MenuNotFoundError("menu");
+
   await requireMenuManage(context, input.actor, menu.brandId);
 
-  const brandMenus = await lockBrandMenusForUpdate(context, menu.brandId);
   const currentActiveMenuId =
     brandMenus.find((row) => row.lifecycleStatus === "active" && row.id !== menuId)?.id ??
     (menu.lifecycleStatus === "active" ? menu.id : null);
@@ -317,6 +353,10 @@ export async function previewMenuPublication(
   let effectiveSections: readonly MenuSectionVersionRow[] | null = null;
   let effectiveEntries: readonly MenuEntryVersionRow[] | null = null;
   let effectiveFingerprint: string | null = null;
+  let previousEffective: {
+    sections: readonly MenuSectionVersionRow[];
+    entries: readonly MenuEntryVersionRow[];
+  } | null = null;
   if (menu.effectiveMenuVersionId) {
     const effectiveGraph = await loadVersionGraph(context, menu.effectiveMenuVersionId);
     effectiveSections = effectiveGraph.sections;
@@ -325,13 +365,18 @@ export async function previewMenuPublication(
       effectiveGraph.sections,
       effectiveGraph.entries,
     );
+    previousEffective = {
+      sections: effectiveGraph.sections,
+      entries: effectiveGraph.entries,
+    };
   }
 
   const draftFingerprint = materialGraphFingerprint(draftGraph.sections, draftGraph.entries);
-  const wouldChange =
-    effectiveFingerprint == null
+  const draftDiffersFromEffective =
+    previousEffective == null
       ? draftGraph.sections.length > 0 || draftGraph.entries.length > 0
       : draftFingerprint !== effectiveFingerprint;
+  const wouldChange = wouldMateriallyChangeCustomerTruth(draftGraph, previousEffective);
 
   const blockers: string[] = [];
   try {
@@ -356,7 +401,7 @@ export async function previewMenuPublication(
     expectedMenuRevision: menu.revision.toString(10),
     effectiveMenuVersionId: menu.effectiveMenuVersionId,
     draftMenuVersionId: menu.draftMenuVersionId,
-    draftDiffersFromEffective: wouldChange,
+    draftDiffersFromEffective,
     wouldChangeCustomerTruth: wouldChange,
     validationOk: blockers.length === 0,
     validationBlockers: blockers,
@@ -474,7 +519,10 @@ export async function publishMenuRevision(
   await assertMenuGraphReady(context, menuId, { menuVersionId: candidate.id });
 
   const previousEffectiveId = menu.effectiveMenuVersionId;
-  let materiallyDifferent = true;
+  let previousEffectiveGraph: {
+    sections: readonly MenuSectionVersionRow[];
+    entries: readonly MenuEntryVersionRow[];
+  } | null = null;
   if (previousEffectiveId) {
     const prior = await lockMenuVersionForUpdate(context, previousEffectiveId);
     if (prior.lifecycleStatus !== "EFFECTIVE") {
@@ -483,12 +531,12 @@ export async function publishMenuRevision(
       });
     }
     const priorChildren = await lockVersionGraphChildren(context, prior.id);
-    materiallyDifferent = !compareMaterialGraphs(children, priorChildren);
-  } else {
-    materiallyDifferent =
-      children.sections.some((s) => s.lifecycleStatus === "active") ||
-      children.entries.some((e) => e.lifecycleStatus === "active");
+    previousEffectiveGraph = priorChildren;
   }
+  const materiallyDifferent = wouldMateriallyChangeCustomerTruth(
+    children,
+    previousEffectiveGraph,
+  );
 
   if (!materiallyDifferent) {
     return {

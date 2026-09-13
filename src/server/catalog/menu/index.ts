@@ -102,6 +102,7 @@ export {
   previewMenuPublication,
   publishMenuRevision,
   validateMenuPublication,
+  wouldMateriallyChangeCustomerTruth,
 } from "./publish";
 export type {
   MenuPublicationActiveMenuEffect,

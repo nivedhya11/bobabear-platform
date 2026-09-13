@@ -96,11 +96,9 @@ export async function createMenuSection(
 
   if (parentSectionId !== null) {
     const parent = await loadDraftSectionVersion(context, draft.id, parentSectionId);
-    if (!parent) throw new MenuNotFoundError("menu_section");
-    if (parent.menuId !== menuId || parent.brandId !== brandId) {
-      throw new MenuValidationError({
-        message: "Parent section must belong to the same brand and menu.",
-      });
+    // Missing and foreign parents are indistinguishable (body-reference anti-oracle).
+    if (!parent || parent.menuId !== menuId || parent.brandId !== brandId) {
+      throw new MenuNotFoundError("menu_section");
     }
   }
 
