@@ -55,6 +55,8 @@ import {
   activatePromotion,
   createCouponDraft,
   createPromotionDraft,
+  getCoupon,
+  getPromotion,
   setPromotionBenefit,
   setPromotionTargets,
 } from "../../../src/server/promotions";
@@ -480,6 +482,7 @@ export async function seedRecognizedCoupon(
     await setPromotionBenefit(tx, {
       actor,
       promotionId: created.id,
+      expectedPromotionRevision: (await getPromotion(tx, created.id))!.revision,
       benefit: {
         benefitType: "percentage_discount",
         percentageBps: 1000,
@@ -496,6 +499,7 @@ export async function seedRecognizedCoupon(
     await setPromotionTargets(tx, {
       actor,
       promotionId: created.id,
+      expectedPromotionRevision: (await getPromotion(tx, created.id))!.revision,
       targetRole: "qualifier",
       targets: [
         {
@@ -510,6 +514,7 @@ export async function seedRecognizedCoupon(
     await setPromotionTargets(tx, {
       actor,
       promotionId: created.id,
+      expectedPromotionRevision: (await getPromotion(tx, created.id))!.revision,
       targetRole: "benefit",
       targets: [
         {
@@ -521,7 +526,7 @@ export async function seedRecognizedCoupon(
         },
       ],
     });
-    await activatePromotion(tx, { actor, promotionId: created.id });
+    await activatePromotion(tx, { actor, expectedPromotionRevision: (await getPromotion(tx, created.id))!.revision, promotionId: created.id });
     const coupon = await createCouponDraft(tx, {
       actor,
       promotionId: created.id,
@@ -529,7 +534,7 @@ export async function seedRecognizedCoupon(
       canonicalCode,
     });
     if (options.activate !== false) {
-      await activateCoupon(tx, { actor, couponId: coupon.id });
+      await activateCoupon(tx, { actor, expectedCouponRevision: (await getCoupon(tx, coupon.id))!.revision, couponId: coupon.id });
     }
     return {
       promotionId: created.id,

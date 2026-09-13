@@ -146,6 +146,7 @@ export const promotionsTable = appSchema.table(
     minimumQualifyingAmountPaise: paise("minimum_qualifying_amount_paise"),
     minimumItemQuantity: integer("minimum_item_quantity"),
     configurationFingerprint: text("configuration_fingerprint"),
+    revision: bigint("revision", { mode: "bigint" }).notNull().default(sql`1`),
     activatedAt: timestamp("activated_at", { withTimezone: true }),
     activatedByWorkforceUserId: text("activated_by_workforce_user_id"),
     retiredAt: timestamp("retired_at", { withTimezone: true }),
@@ -242,6 +243,7 @@ export const promotionsTable = appSchema.table(
       "promotions_updated_at_after_created_at_check",
       sql`${table.updatedAt} >= ${table.createdAt}`,
     ),
+    check("promotions_revision_positive_check", sql`${table.revision} > 0`),
     index("promotions_brand_status_channel_idx").on(
       table.brandId,
       table.status,
@@ -451,6 +453,7 @@ export const promotionCouponsTable = appSchema.table(
     activatedAt: timestamp("activated_at", { withTimezone: true }),
     disabledAt: timestamp("disabled_at", { withTimezone: true }),
     retiredAt: timestamp("retired_at", { withTimezone: true }),
+    revision: bigint("revision", { mode: "bigint" }).notNull().default(sql`1`),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
   },
@@ -505,6 +508,7 @@ export const promotionCouponsTable = appSchema.table(
       "promotion_coupons_updated_at_after_created_at_check",
       sql`${table.updatedAt} >= ${table.createdAt}`,
     ),
+    check("promotion_coupons_revision_positive_check", sql`${table.revision} > 0`),
     index("promotion_coupons_promotion_status_idx").on(table.promotionId, table.status),
   ],
 );

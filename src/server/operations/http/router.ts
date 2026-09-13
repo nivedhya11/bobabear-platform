@@ -47,6 +47,10 @@ import {
   classifyAdminPricingRoute,
   handleAdminPricingRoute,
 } from "./admin-pricing-routes";
+import {
+  classifyAdminPromotionsRoute,
+  handleAdminPromotionsRoute,
+} from "./admin-promotions-routes";
 import { classifyNotificationRoute, handleNotificationRoute } from "./notification-routes";
 import { handleOperationalStatusRequest } from "./operational-status-routes";
 import { classifyRefundRoute, handleRefundRoute } from "./refund-routes";
@@ -170,6 +174,7 @@ export async function routeOperationsRequest(
   const adminMenuRoute = classifyAdminMenuRoute(url.pathname);
   const adminAssortmentRoute = classifyAdminAssortmentRoute(url.pathname);
   const adminPricingRoute = classifyAdminPricingRoute(url.pathname);
+  const adminPromotionsRoute = classifyAdminPromotionsRoute(url.pathname);
   const refundRoute = classifyRefundRoute(url.pathname);
   const notificationRoute = classifyNotificationRoute(url.pathname);
   const storeRoute = classifyStoreRoute(url.pathname);
@@ -278,6 +283,34 @@ export async function routeOperationsRequest(
       }
     }
     const outcome = await handleAdminPricingRoute(req, adminPricingRoute, deps, requestId);
+    sendJson(res, outcome.body, { status: outcome.status, requestId });
+    return {
+      operation: outcome.operation,
+      safeOutcomeCode: outcome.code,
+      httpStatus: outcome.status,
+    };
+  }
+
+  if (adminPromotionsRoute) {
+    if (url.search !== "") {
+      sendJson(res, { ok: false, code: "PROMOTIONS_REQUEST_INVALID", requestId }, { status: 400, requestId });
+      return {
+        operation: adminPromotionsRoute.kind,
+        safeOutcomeCode: "PROMOTIONS_REQUEST_INVALID",
+        httpStatus: 400,
+      };
+    }
+    if (method === "POST") {
+      if (!checkTrustedOrigin(req.headers, deps.trustedOrigin).ok) {
+        sendJson(res, { ok: false, code: "PROMOTIONS_REQUEST_INVALID", requestId }, { status: 403, requestId });
+        return {
+          operation: adminPromotionsRoute.kind,
+          safeOutcomeCode: "PROMOTIONS_REQUEST_INVALID",
+          httpStatus: 403,
+        };
+      }
+    }
+    const outcome = await handleAdminPromotionsRoute(req, adminPromotionsRoute, deps, requestId);
     sendJson(res, outcome.body, { status: outcome.status, requestId });
     return {
       operation: outcome.operation,

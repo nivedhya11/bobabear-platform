@@ -305,3 +305,104 @@ export async function countPinsForOutlet(
     .where(eq(outletServiceabilityPinsTable.outletId, outletId));
   return Number(rows[0]?.count ?? 0);
 }
+
+export type OutletDeliveryTariffRow = Readonly<{
+  outletId: string;
+  revision: bigint;
+  routingPriority: number;
+  serviceOriginLatitude: string | null;
+  serviceOriginLongitude: string | null;
+  maxServiceDistanceMeters: number | null;
+  deliveryFeeBands: unknown;
+  freeDeliverySubtotalThresholdPaise: bigint | null;
+}>;
+
+function mapTariffRow(row: {
+  outletId: string;
+  revision: bigint;
+  routingPriority: number;
+  serviceOriginLatitude: string | null;
+  serviceOriginLongitude: string | null;
+  maxServiceDistanceMeters: number | null;
+  deliveryFeeBands: unknown;
+  freeDeliverySubtotalThresholdPaise: bigint | null;
+}): OutletDeliveryTariffRow {
+  return Object.freeze({
+    outletId: row.outletId,
+    revision: row.revision,
+    routingPriority: row.routingPriority,
+    serviceOriginLatitude: row.serviceOriginLatitude,
+    serviceOriginLongitude: row.serviceOriginLongitude,
+    maxServiceDistanceMeters: row.maxServiceDistanceMeters,
+    deliveryFeeBands: row.deliveryFeeBands,
+    freeDeliverySubtotalThresholdPaise: row.freeDeliverySubtotalThresholdPaise,
+  });
+}
+
+const TARIFF_COLUMNS = {
+  outletId: outletServiceabilityConfigsTable.outletId,
+  revision: outletServiceabilityConfigsTable.revision,
+  routingPriority: outletServiceabilityConfigsTable.routingPriority,
+  serviceOriginLatitude: outletServiceabilityConfigsTable.serviceOriginLatitude,
+  serviceOriginLongitude: outletServiceabilityConfigsTable.serviceOriginLongitude,
+  maxServiceDistanceMeters: outletServiceabilityConfigsTable.maxServiceDistanceMeters,
+  deliveryFeeBands: outletServiceabilityConfigsTable.deliveryFeeBands,
+  freeDeliverySubtotalThresholdPaise:
+    outletServiceabilityConfigsTable.freeDeliverySubtotalThresholdPaise,
+} as const;
+
+export async function findOutletDeliveryTariff(
+  context: PersistenceQueryContext,
+  outletId: string,
+): Promise<OutletDeliveryTariffRow | null> {
+  assertApplicationRole(context, "findOutletDeliveryTariff");
+  const rows = await context.db
+    .select(TARIFF_COLUMNS)
+    .from(outletServiceabilityConfigsTable)
+    .where(eq(outletServiceabilityConfigsTable.outletId, outletId))
+    .limit(1);
+  const row = rows[0];
+  return row ? mapTariffRow(row) : null;
+}
+
+export async function lockOutletDeliveryTariffForUpdate(
+  context: PersistenceTransactionContext,
+  outletId: string,
+): Promise<OutletDeliveryTariffRow | null> {
+  assertTransactionContext(context, "lockOutletDeliveryTariffForUpdate");
+  const rows = await context.db
+    .select(TARIFF_COLUMNS)
+    .from(outletServiceabilityConfigsTable)
+    .where(eq(outletServiceabilityConfigsTable.outletId, outletId))
+    .for("update");
+  const row = rows[0];
+  return row ? mapTariffRow(row) : null;
+}
+
+export async function updateOutletDeliveryTariffFields(
+  context: PersistenceTransactionContext,
+  input: {
+    outletId: string;
+    expectedRevision: bigint;
+    deliveryFeeBands: unknown;
+    freeDeliverySubtotalThresholdPaise: bigint | null;
+    nextRevision: bigint;
+  },
+): Promise<boolean> {
+  assertTransactionContext(context, "updateOutletDeliveryTariffFields");
+  const updated = await context.db
+    .update(outletServiceabilityConfigsTable)
+    .set({
+      deliveryFeeBands: input.deliveryFeeBands,
+      freeDeliverySubtotalThresholdPaise: input.freeDeliverySubtotalThresholdPaise,
+      revision: input.nextRevision,
+    })
+    .where(
+      and(
+        eq(outletServiceabilityConfigsTable.outletId, input.outletId),
+        eq(outletServiceabilityConfigsTable.revision, input.expectedRevision),
+      ),
+    )
+    .returning({ revision: outletServiceabilityConfigsTable.revision });
+  return Boolean(updated[0]);
+}

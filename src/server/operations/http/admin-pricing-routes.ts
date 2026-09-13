@@ -24,9 +24,12 @@ import {
   createDraftPriceBook,
   inspectBrandPriceBook,
   listBrandPriceBooks,
+  previewOutletDeliveryTariffConsequence,
   previewPriceBookConsequence,
+  readOutletDeliveryTariff,
   requirePricingManage,
   requirePricingRead,
+  updateOutletDeliveryTariff,
 } from "../../pricing";
 import {
   PRICE_BOOK_SCOPE_TYPES,
@@ -45,12 +48,16 @@ export type AdminPricingRouteKind =
   | "attach_variant_price"
   | "attach_modifier_price"
   | "consequence_preview"
-  | "activate";
+  | "activate"
+  | "get_delivery_tariff"
+  | "update_delivery_tariff"
+  | "delivery_tariff_consequence_preview";
 
 export type AdminPricingRoute = Readonly<{
   kind: AdminPricingRouteKind;
   brandId: string;
   priceBookId?: string;
+  outletId?: string;
 }>;
 
 const FORBIDDEN_BODY_KEYS = new Set([
@@ -196,6 +203,36 @@ function optionalIsoDate(
   return requireIsoDate(body, field);
 }
 
+function requireExpectedTariffConfigRevision(body: Readonly<Record<string, unknown>>): string {
+  const value = body.expectedTariffConfigRevision;
+  if (typeof value === "string" && /^\d+$/.test(value) && value !== "0" && !/^0\d+/.test(value)) {
+    return value;
+  }
+  if (typeof value === "number" && Number.isSafeInteger(value) && value > 0) {
+    return String(value);
+  }
+  throw new PricingValidationError({
+    message:
+      "expectedTariffConfigRevision must be a non-empty positive decimal string or safe positive integer.",
+  });
+}
+
+function requireDeliveryFeeBands(body: Readonly<Record<string, unknown>>): unknown {
+  if (!("deliveryFeeBands" in body)) {
+    throw new PricingValidationError({ message: "deliveryFeeBands is required." });
+  }
+  return body.deliveryFeeBands;
+}
+
+function requireFreeDeliveryThreshold(body: Readonly<Record<string, unknown>>): unknown {
+  if (!("freeDeliverySubtotalThresholdPaise" in body)) {
+    throw new PricingValidationError({
+      message: "freeDeliverySubtotalThresholdPaise is required (use null to clear).",
+    });
+  }
+  return body.freeDeliverySubtotalThresholdPaise;
+}
+
 export function classifyAdminPricingRoute(pathname: string): AdminPricingRoute | null {
   const segments = pathname.split("/").filter(Boolean);
   if (
@@ -229,12 +266,27 @@ export function classifyAdminPricingRoute(pathname: string): AdminPricingRoute |
   if (rest.length === 3 && rest[0] === "price-books" && rest[1] && rest[2] === "activate") {
     return { kind: "activate", brandId, priceBookId: rest[1] };
   }
+  if (rest.length === 3 && rest[0] === "outlets" && rest[1] && rest[2] === "delivery-tariff") {
+    return { kind: "get_delivery_tariff", brandId, outletId: rest[1] };
+  }
+  if (
+    rest.length === 4 &&
+    rest[0] === "outlets" &&
+    rest[1] &&
+    rest[2] === "delivery-tariff" &&
+    rest[3] === "consequence-preview"
+  ) {
+    return { kind: "delivery_tariff_consequence_preview", brandId, outletId: rest[1] };
+  }
   return null;
 }
 
 function resolveRouteForMethod(route: AdminPricingRoute, method: string): AdminPricingRoute {
   if (method === "POST" && route.kind === "list_price_books") {
     return { kind: "create_price_book", brandId: route.brandId };
+  }
+  if (method === "POST" && route.kind === "get_delivery_tariff") {
+    return { kind: "update_delivery_tariff", brandId: route.brandId, outletId: route.outletId };
   }
   return route;
 }
@@ -243,6 +295,7 @@ function allowedMethodFor(kind: AdminPricingRouteKind): "GET" | "POST" {
   switch (kind) {
     case "list_price_books":
     case "get_price_book":
+    case "get_delivery_tariff":
       return "GET";
     default:
       return "POST";
@@ -274,6 +327,14 @@ async function dispatchRead(
         priceBookId: route.priceBookId!,
       });
       return { inspection };
+    }
+    case "get_delivery_tariff": {
+      const tariff = await readOutletDeliveryTariff(context, {
+        actor: principal,
+        outletId: route.outletId!,
+        pathBrandId: route.brandId,
+      });
+      return { tariff };
     }
     default:
       throw new PricingValidationError({ message: "Unsupported pricing read route." });
@@ -377,6 +438,29 @@ async function dispatchMutation(
         brandId: route.brandId,
         priceBookId: route.priceBookId!,
         expectedPriceBookRevision: requireExpectedPriceBookRevision(body),
+      });
+      return { revision: result.revision.toString(10) };
+    }
+
+    case "delivery_tariff_consequence_preview": {
+      const preview = await previewOutletDeliveryTariffConsequence(context, {
+        actor: principal,
+        outletId: route.outletId!,
+        pathBrandId: route.brandId,
+        proposedDeliveryFeeBands: requireDeliveryFeeBands(body),
+        proposedFreeDeliverySubtotalThresholdPaise: requireFreeDeliveryThreshold(body),
+      });
+      return { preview };
+    }
+
+    case "update_delivery_tariff": {
+      const result = await updateOutletDeliveryTariff(context, {
+        actor: principal,
+        outletId: route.outletId!,
+        pathBrandId: route.brandId,
+        expectedTariffConfigRevision: requireExpectedTariffConfigRevision(body),
+        deliveryFeeBands: requireDeliveryFeeBands(body),
+        freeDeliverySubtotalThresholdPaise: requireFreeDeliveryThreshold(body),
       });
       return { revision: result.revision.toString(10) };
     }

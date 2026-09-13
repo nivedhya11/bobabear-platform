@@ -27,6 +27,8 @@ import {
   activatePromotion,
   createCouponDraft,
   createPromotionDraft,
+  getCoupon,
+  getPromotion,
   setPromotionBenefit,
   setPromotionTargets,
 } from "../../../src/server/promotions";
@@ -251,6 +253,7 @@ export async function seedLimitedCoupon(
     await setPromotionBenefit(tx, {
       actor,
       promotionId: created.id,
+      expectedPromotionRevision: (await getPromotion(tx, created.id))!.revision,
       benefit: {
         benefitType:
           args.fixedAmountPaise != null
@@ -272,6 +275,7 @@ export async function seedLimitedCoupon(
       await setPromotionTargets(tx, {
         actor,
         promotionId: created.id,
+        expectedPromotionRevision: (await getPromotion(tx, created.id))!.revision,
         targetRole: role,
         targets: [
           {
@@ -284,7 +288,7 @@ export async function seedLimitedCoupon(
         ],
       });
     }
-    await activatePromotion(tx, { actor, promotionId: created.id });
+    await activatePromotion(tx, { actor, expectedPromotionRevision: (await getPromotion(tx, created.id))!.revision, promotionId: created.id });
     const coupon = await createCouponDraft(tx, {
       actor,
       promotionId: created.id,
@@ -294,7 +298,7 @@ export async function seedLimitedCoupon(
       maximumRedemptionsPerCustomer:
         args.maximumRedemptionsPerCustomer ?? null,
     });
-    await activateCoupon(tx, { actor, couponId: coupon.id });
+    await activateCoupon(tx, { actor, expectedCouponRevision: (await getCoupon(tx, coupon.id))!.revision, couponId: coupon.id });
     return {
       promotionId: created.id,
       couponId: coupon.id,

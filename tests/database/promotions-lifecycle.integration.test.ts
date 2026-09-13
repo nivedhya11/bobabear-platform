@@ -20,6 +20,7 @@ import {
   deletePromotionDraft,
   disableCoupon,
   enableCoupon,
+  getCoupon,
   getPromotion,
   insertPromotionAuditEvent,
   retireCoupon,
@@ -67,12 +68,14 @@ describe("promotion lifecycle and immutability", () => {
         await updatePromotionDraft(tx, {
           actor,
           promotionId: draft.id,
+          expectedPromotionRevision: (await getPromotion(tx, draft.id))!.revision,
           displayName: "Updated Draft",
           priority: 3,
         });
         await setPromotionBenefit(tx, {
           actor,
           promotionId: draft.id,
+          expectedPromotionRevision: (await getPromotion(tx, draft.id))!.revision,
           benefit: {
             benefitType: "fixed_amount_discount",
             percentageBps: null,
@@ -94,7 +97,7 @@ describe("promotion lifecycle and immutability", () => {
         startsAt: new Date("2099-01-01T00:00:00Z"),
       });
       await harness.persistence.transaction(async (tx) => {
-        await activatePromotion(tx, { actor, promotionId: future.id });
+        await activatePromotion(tx, { actor, expectedPromotionRevision: (await getPromotion(tx, future.id))!.revision, promotionId: future.id });
       });
       const futureRow = await harness.persistence.withContext((ctx) => getPromotion(ctx, future.id));
       expect(futureRow?.status).toBe("active");
@@ -102,7 +105,7 @@ describe("promotion lifecycle and immutability", () => {
       expect(futureRow?.activatedAt).toBeTruthy();
 
       await harness.persistence.transaction(async (tx) => {
-        await activatePromotion(tx, { actor, promotionId: draft.id });
+        await activatePromotion(tx, { actor, expectedPromotionRevision: (await getPromotion(tx, draft.id))!.revision, promotionId: draft.id });
       });
       const active = await harness.persistence.withContext((ctx) => getPromotion(ctx, draft.id));
       expect(active?.status).toBe("active");
@@ -113,6 +116,7 @@ describe("promotion lifecycle and immutability", () => {
           await updatePromotionDraft(tx, {
             actor,
             promotionId: draft.id,
+            expectedPromotionRevision: (await getPromotion(tx, draft.id))!.revision,
             displayName: "Nope",
           });
         }),
@@ -123,6 +127,7 @@ describe("promotion lifecycle and immutability", () => {
           await setPromotionBenefit(tx, {
             actor,
             promotionId: draft.id,
+            expectedPromotionRevision: (await getPromotion(tx, draft.id))!.revision,
             benefit: {
               benefitType: "percentage_discount",
               percentageBps: 500,
@@ -144,6 +149,7 @@ describe("promotion lifecycle and immutability", () => {
           await setPromotionTargets(tx, {
             actor,
             promotionId: draft.id,
+            expectedPromotionRevision: (await getPromotion(tx, draft.id))!.revision,
             targetRole: "benefit",
             targets: [
               {
@@ -160,7 +166,7 @@ describe("promotion lifecycle and immutability", () => {
 
       await expect(
         harness.persistence.transaction(async (tx) => {
-          await deletePromotionDraft(tx, { actor, promotionId: draft.id });
+          await deletePromotionDraft(tx, { actor, expectedPromotionRevision: (await getPromotion(tx, draft.id))!.revision, promotionId: draft.id });
         }),
       ).rejects.toMatchObject({ code: "PROMOTION_NOT_DRAFT" });
 
@@ -176,14 +182,14 @@ describe("promotion lifecycle and immutability", () => {
       ).rejects.toThrow();
 
       await harness.persistence.transaction(async (tx) => {
-        await retirePromotion(tx, { actor, promotionId: draft.id });
+        await retirePromotion(tx, { actor, expectedPromotionRevision: (await getPromotion(tx, draft.id))!.revision, promotionId: draft.id });
       });
       const retired = await harness.persistence.withContext((ctx) => getPromotion(ctx, draft.id));
       expect(retired?.status).toBe("retired");
 
       await expect(
         harness.persistence.transaction(async (tx) => {
-          await activatePromotion(tx, { actor, promotionId: draft.id });
+          await activatePromotion(tx, { actor, expectedPromotionRevision: (await getPromotion(tx, draft.id))!.revision, promotionId: draft.id });
         }),
       ).rejects.toMatchObject({ code: "PROMOTION_RETIRED" });
 
@@ -192,6 +198,7 @@ describe("promotion lifecycle and immutability", () => {
           await updatePromotionDraft(tx, {
             actor,
             promotionId: draft.id,
+            expectedPromotionRevision: (await getPromotion(tx, draft.id))!.revision,
             displayName: "retired mutate",
           });
         }),
@@ -199,14 +206,14 @@ describe("promotion lifecycle and immutability", () => {
 
       await expect(
         harness.persistence.transaction(async (tx) => {
-          await deletePromotionDraft(tx, { actor, promotionId: draft.id });
+          await deletePromotionDraft(tx, { actor, expectedPromotionRevision: (await getPromotion(tx, draft.id))!.revision, promotionId: draft.id });
         }),
       ).rejects.toMatchObject({ code: "PROMOTION_NOT_DRAFT" });
 
       // never-active draft delete allowed
       const disposable = await createReadyDraftPromotion(harness, { code: uniqueCode("del") });
       await harness.persistence.transaction(async (tx) => {
-        await deletePromotionDraft(tx, { actor, promotionId: disposable.id });
+        await deletePromotionDraft(tx, { actor, expectedPromotionRevision: (await getPromotion(tx, disposable.id))!.revision, promotionId: disposable.id });
       });
       const gone = await harness.persistence.withContext((ctx) => getPromotion(ctx, disposable.id));
       expect(gone).toBeNull();
@@ -233,7 +240,7 @@ describe("promotion lifecycle and immutability", () => {
 
       await expect(
         harness.persistence.transaction(async (tx) => {
-          await activatePromotion(tx, { actor, promotionId: bare.id });
+          await activatePromotion(tx, { actor, expectedPromotionRevision: (await getPromotion(tx, bare.id))!.revision, promotionId: bare.id });
         }),
       ).rejects.toBeInstanceOf(PromotionAdminError);
 
@@ -241,6 +248,7 @@ describe("promotion lifecycle and immutability", () => {
         await setPromotionBenefit(tx, {
           actor,
           promotionId: bare.id,
+          expectedPromotionRevision: (await getPromotion(tx, bare.id))!.revision,
           benefit: {
             benefitType: "percentage_discount",
             percentageBps: 1000,
@@ -257,6 +265,7 @@ describe("promotion lifecycle and immutability", () => {
         await setPromotionTargets(tx, {
           actor,
           promotionId: bare.id,
+          expectedPromotionRevision: (await getPromotion(tx, bare.id))!.revision,
           targetRole: "qualifier",
           targets: [
             {
@@ -272,7 +281,7 @@ describe("promotion lifecycle and immutability", () => {
 
       await expect(
         harness.persistence.transaction(async (tx) => {
-          await activatePromotion(tx, { actor, promotionId: bare.id });
+          await activatePromotion(tx, { actor, expectedPromotionRevision: (await getPromotion(tx, bare.id))!.revision, promotionId: bare.id });
         }),
       ).rejects.toMatchObject({ code: "PROMOTION_BENEFIT_TARGET_REQUIRED" });
 
@@ -305,6 +314,7 @@ describe("promotion lifecycle and immutability", () => {
           await setPromotionBenefit(tx, {
             actor,
             promotionId: d.id,
+            expectedPromotionRevision: (await getPromotion(tx, d.id))!.revision,
             benefit: {
               benefitType: "percentage_discount",
               percentageBps: 10001,
@@ -336,6 +346,7 @@ describe("promotion lifecycle and immutability", () => {
           await setPromotionTargets(tx, {
             actor,
             promotionId: d.id,
+            expectedPromotionRevision: (await getPromotion(tx, d.id))!.revision,
             targetRole: "benefit",
             targets: [
               {
@@ -386,6 +397,7 @@ describe("promotion lifecycle and immutability", () => {
           await setPromotionTargets(tx, {
             actor,
             promotionId: cross.id,
+            expectedPromotionRevision: (await getPromotion(tx, cross.id))!.revision,
             targetRole: "benefit",
             targets: [
               {
@@ -397,7 +409,7 @@ describe("promotion lifecycle and immutability", () => {
               },
             ],
           });
-          await activatePromotion(tx, { actor, promotionId: cross.id });
+          await activatePromotion(tx, { actor, expectedPromotionRevision: (await getPromotion(tx, cross.id))!.revision, promotionId: cross.id });
         }),
       ).rejects.toMatchObject({ code: "PROMOTION_TARGET_BRAND_MISMATCH" });
 
@@ -407,6 +419,7 @@ describe("promotion lifecycle and immutability", () => {
           await setPromotionTargets(tx, {
             actor,
             promotionId: crossV.id,
+            expectedPromotionRevision: (await getPromotion(tx, crossV.id))!.revision,
             targetRole: "benefit",
             targets: [
               {
@@ -418,7 +431,7 @@ describe("promotion lifecycle and immutability", () => {
               },
             ],
           });
-          await activatePromotion(tx, { actor, promotionId: crossV.id });
+          await activatePromotion(tx, { actor, expectedPromotionRevision: (await getPromotion(tx, crossV.id))!.revision, promotionId: crossV.id });
         }),
       ).rejects.toMatchObject({ code: "PROMOTION_TARGET_BRAND_MISMATCH" });
     });
@@ -446,12 +459,12 @@ describe("coupon lifecycle and immutability", () => {
       );
       await expect(
         harness.persistence.transaction(async (tx) => {
-          await activateCoupon(tx, { actor, couponId: couponOnDraft.id });
+          await activateCoupon(tx, { actor, expectedCouponRevision: (await getCoupon(tx, couponOnDraft.id))!.revision, couponId: couponOnDraft.id });
         }),
       ).rejects.toMatchObject({ code: "COUPON_PROMOTION_NOT_ACTIVE" });
 
       await harness.persistence.transaction(async (tx) => {
-        await activatePromotion(tx, { actor, promotionId: draftPromo.id });
+        await activatePromotion(tx, { actor, expectedPromotionRevision: (await getPromotion(tx, draftPromo.id))!.revision, promotionId: draftPromo.id });
       });
 
       const created = await harness.persistence.transaction(async (tx) =>
@@ -468,12 +481,13 @@ describe("coupon lifecycle and immutability", () => {
         await updateCouponDraft(tx, {
           actor,
           couponId: created.id,
+          expectedCouponRevision: (await getCoupon(tx, created.id))!.revision,
           maximumRedemptions: 20,
         });
       });
 
       await harness.persistence.transaction(async (tx) => {
-        await activateCoupon(tx, { actor, couponId: created.id });
+        await activateCoupon(tx, { actor, expectedCouponRevision: (await getCoupon(tx, created.id))!.revision, couponId: created.id });
       });
 
       await expect(
@@ -481,27 +495,28 @@ describe("coupon lifecycle and immutability", () => {
           await updateCouponDraft(tx, {
             actor,
             couponId: created.id,
+            expectedCouponRevision: (await getCoupon(tx, created.id))!.revision,
             maximumRedemptions: 99,
           });
         }),
       ).rejects.toMatchObject({ code: "COUPON_NOT_DRAFT" });
 
       await harness.persistence.transaction(async (tx) => {
-        await disableCoupon(tx, { actor, couponId: created.id });
-        await enableCoupon(tx, { actor, couponId: created.id });
-        await disableCoupon(tx, { actor, couponId: created.id });
-        await retireCoupon(tx, { actor, couponId: created.id });
+        await disableCoupon(tx, { actor, expectedCouponRevision: (await getCoupon(tx, created.id))!.revision, couponId: created.id });
+        await enableCoupon(tx, { actor, expectedCouponRevision: (await getCoupon(tx, created.id))!.revision, couponId: created.id });
+        await disableCoupon(tx, { actor, expectedCouponRevision: (await getCoupon(tx, created.id))!.revision, couponId: created.id });
+        await retireCoupon(tx, { actor, expectedCouponRevision: (await getCoupon(tx, created.id))!.revision, couponId: created.id });
       });
 
       await expect(
         harness.persistence.transaction(async (tx) => {
-          await enableCoupon(tx, { actor, couponId: created.id });
+          await enableCoupon(tx, { actor, expectedCouponRevision: (await getCoupon(tx, created.id))!.revision, couponId: created.id });
         }),
       ).rejects.toThrow();
 
       await expect(
         harness.persistence.transaction(async (tx) => {
-          await deleteCouponDraft(tx, { actor, couponId: created.id });
+          await deleteCouponDraft(tx, { actor, expectedCouponRevision: (await getCoupon(tx, created.id))!.revision, couponId: created.id });
         }),
       ).rejects.toMatchObject({ code: "COUPON_IMMUTABLE" });
 
@@ -527,7 +542,7 @@ describe("coupon lifecycle and immutability", () => {
         }),
       );
       await harness.persistence.transaction(async (tx) => {
-        await deleteCouponDraft(tx, { actor, couponId: reusable.id });
+        await deleteCouponDraft(tx, { actor, expectedCouponRevision: (await getCoupon(tx, reusable.id))!.revision, couponId: reusable.id });
       });
       const reused = await harness.persistence.transaction(async (tx) =>
         createCouponDraft(tx, {
@@ -559,8 +574,8 @@ describe("coupon lifecycle and immutability", () => {
         }),
       );
       await harness.persistence.transaction(async (tx) => {
-        await activateCoupon(tx, { actor, couponId: c2.id });
-        await retireCoupon(tx, { actor, couponId: c2.id });
+        await activateCoupon(tx, { actor, expectedCouponRevision: (await getCoupon(tx, c2.id))!.revision, couponId: c2.id });
+        await retireCoupon(tx, { actor, expectedCouponRevision: (await getCoupon(tx, c2.id))!.revision, couponId: c2.id });
       });
     });
   }, 120_000);
@@ -575,8 +590,8 @@ describe("promotion audit atomicity and privileges", () => {
 
       const draft = await createReadyDraftPromotion(harness, { code: uniqueCode("aud") });
       await harness.persistence.transaction(async (tx) => {
-        await activatePromotion(tx, { actor, promotionId: draft.id });
-        await retirePromotion(tx, { actor, promotionId: draft.id });
+        await activatePromotion(tx, { actor, expectedPromotionRevision: (await getPromotion(tx, draft.id))!.revision, promotionId: draft.id });
+        await retirePromotion(tx, { actor, expectedPromotionRevision: (await getPromotion(tx, draft.id))!.revision, promotionId: draft.id });
       });
 
       await harness.persistence.withContext(async (ctx) => {

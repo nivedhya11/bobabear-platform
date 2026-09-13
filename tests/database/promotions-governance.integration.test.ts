@@ -12,6 +12,7 @@ import {
 import {
   createCouponDraft,
   createPromotionDraft,
+  getCoupon,
   getPromotion,
   loadApplicableAutomaticPromotions,
   updateBrandPromotionPolicy,
@@ -349,6 +350,7 @@ describe("Coupon authorization inherits Promotion scope", () => {
         await updateCouponDraft(tx, {
           actor: managerPrincipal,
           couponId: ok.id,
+          expectedCouponRevision: (await getCoupon(tx, ok.id))!.revision,
           maximumRedemptions: 5,
         });
       });

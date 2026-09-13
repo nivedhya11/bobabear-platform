@@ -85,7 +85,7 @@ describe("IMP-016 promotions migration", () => {
     expect(integrity.migrations.length).toBeGreaterThanOrEqual(12);
   });
 
-  it("creates 6 promotion tables within current app inventory, 49 permissions, 7 roles", async () => {
+  it("creates 6 promotion tables within current app inventory, current permissions, 7 roles", async () => {
     await withIsolatedTestDatabase(adminConnectionInfo(), async (database) => {
       await applyMigrations(database.connectionString);
       await applyMigrations(database.connectionString);
@@ -115,7 +115,7 @@ describe("IMP-016 promotions migration", () => {
         const permissions = await ctx.db.execute(
           sql`select count(*)::text as count from app.access_permissions`,
         );
-        expect(permissions.rows[0]?.count).toBe("51");
+        expect(permissions.rows[0]?.count).toBe(String(PERMISSION_KEYS.length));
         expect(PERMISSION_KEYS.length).toBe(68);
         expect(ROLE_KEYS.length).toBe(7);
 
