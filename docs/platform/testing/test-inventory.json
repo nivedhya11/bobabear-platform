@@ -29,10 +29,10 @@
     "note": "Protected evidence and generated reports are never classified as executable test source."
   },
   "counts": {
-    "trackedPathsConsidered": 1820,
-    "executableTestFiles": 366,
+    "trackedPathsConsidered": 1831,
+    "executableTestFiles": 370,
     "sourceTestFiles": 130,
-    "testsTreeExecutableFiles": 202,
+    "testsTreeExecutableFiles": 206,
     "scriptTestFiles": 34,
     "playwrightSpecs": 11,
     "vitestConfigs": 2,
@@ -195,7 +195,9 @@
     "tests/administration/admin-http.integration.test.ts",
     "tests/administration/admin-menu-http.integration.test.ts",
     "tests/administration/admin-pricing-http.integration.test.ts",
+    "tests/administration/admin-promotions-http.integration.test.ts",
     "tests/administration/admin-route-classify.test.ts",
+    "tests/administration/admin-tariff-http.integration.test.ts",
     "tests/administration/admin-transport.test.ts",
     "tests/administration/admin-ui.test.tsx",
     "tests/administration/portal-session.integration.test.ts",
@@ -279,6 +281,7 @@
     "tests/database/pricing-tax.integration.test.ts",
     "tests/database/promotions-governance.integration.test.ts",
     "tests/database/promotions-lifecycle.integration.test.ts",
+    "tests/database/promotions-revision.integration.test.ts",
     "tests/database/promotions.integration.test.ts",
     "tests/database/refund-statutory-decision-finalization.integration.test.ts",
     "tests/database/refund-statutory-decision-processed-workflow.integration.test.ts",
@@ -354,6 +357,7 @@
     "tests/payment/payment.domain.test.ts",
     "tests/pricing-bootstrap/bootstrap.test.ts",
     "tests/pricing-parity/parity.test.ts",
+    "tests/pricing-tax/delivery-tariff.test.ts",
     "tests/pricing-tax/money.test.ts",
     "tests/pricing-tax/price-book-f4-correction.test.ts",
     "tests/pricing-tax/price-book-revision.test.ts",
@@ -4439,6 +4443,26 @@
       "classificationConfidence": "HEURISTIC"
     },
     {
+      "path": "tests/administration/admin-promotions-http.integration.test.ts",
+      "runner": "vitest",
+      "domain": "administration",
+      "testType": "integration",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:administration",
+        "test:database:administration"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "4-integration",
+        "5-database-integration",
+        "6-http-api-contract"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
       "path": "tests/administration/admin-route-classify.test.ts",
       "runner": "vitest",
       "domain": "administration",
@@ -4455,6 +4479,26 @@
       "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/administration/admin-tariff-http.integration.test.ts",
+      "runner": "vitest",
+      "domain": "administration",
+      "testType": "integration",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:administration",
+        "test:database:administration"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "4-integration",
+        "5-database-integration",
+        "6-http-api-contract"
       ],
       "classificationConfidence": "HEURISTIC"
     },
@@ -6672,6 +6716,43 @@
       "classificationConfidence": "HEURISTIC"
     },
     {
+      "path": "tests/database/promotions-revision.integration.test.ts",
+      "runner": "vitest",
+      "domain": "database/promotions-revision",
+      "testType": "integration",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:administration",
+        "test:database:access-control",
+        "test:database:assortment-availability",
+        "test:database:auth-foundation",
+        "test:database:cart",
+        "test:database:catalog",
+        "test:database:checkout",
+        "test:database:customer-addresses",
+        "test:database:customer-phone-auth",
+        "test:database:customer-profiles",
+        "test:database:menu-import",
+        "test:database:notifications",
+        "test:database:order",
+        "test:database:outbox-idempotency",
+        "test:database:payment",
+        "test:database:persistence",
+        "test:database:pricing-tax",
+        "test:database:promotions",
+        "test:database:serviceability",
+        "test:database:workforce-auth"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "4-integration",
+        "5-database-integration"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
       "path": "tests/database/promotions.integration.test.ts",
       "runner": "vitest",
       "domain": "database/promotions",
@@ -8171,6 +8252,23 @@
         "test",
         "test:coverage",
         "test:pricing-parity"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/pricing-tax/delivery-tariff.test.ts",
+      "runner": "vitest",
+      "domain": "pricing-tax",
+      "testType": "unit-or-domain",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:pricing-tax"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
