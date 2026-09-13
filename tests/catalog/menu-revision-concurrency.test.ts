@@ -89,8 +89,12 @@ async function seedPublishedPricedProduct(
       variantId: variant.id,
       amountPaise: BigInt(17_900),
       taxCategoryId: TAX_CATEGORY_RESTAURANT_SERVICE_ID,
-    });
-    await activatePriceBook(tx, { actor, priceBookId: book.id, brandId });
+
+          expectedPriceBookRevision: book.revision,
+        });
+    await activatePriceBook(tx, { actor, priceBookId: book.id, brandId,
+          expectedPriceBookRevision: book.revision + BigInt(1),
+        });
   });
   return { productId: product.id };
 }

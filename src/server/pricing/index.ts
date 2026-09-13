@@ -31,13 +31,19 @@ export {
 
 export {
   activatePriceBook,
+  attachDraftModifierPrice,
   attachDraftVariantPrice,
   createDraftPriceBook,
+  findOverlappingActivePriceBooks,
+  parseExpectedPriceBookRevision,
   retirePriceBook,
+  rowToBook,
 } from "./price-books";
 export type {
+  AttachModifierPriceInput,
   AttachVariantPriceInput,
   CreateDraftPriceBookInput,
+  PriceBookRecord,
 } from "./price-books";
 
 export {
@@ -73,3 +79,16 @@ export type {
 
 export { verifyExistingMenuPricing } from "./verify";
 export type { PricingVerifyResult } from "./verify";
+
+export { inspectBrandPriceBook, listBrandPriceBooks } from "./commercial-reads";
+export type {
+  PriceBookInspection,
+  PriceBookModifierPriceRow,
+  PriceBookVariantPriceRow,
+} from "./commercial-reads";
+
+export { previewPriceBookConsequence } from "./consequence-preview";
+export type {
+  PriceBookConsequencePreview,
+  PricingPreviewBlocker,
+} from "./consequence-preview";

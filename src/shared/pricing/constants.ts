@@ -76,6 +76,8 @@ export const INDIA_UNION_TERRITORY_STATE_CODES = [
 
 export const PRICING_TAX_AUDIT_ACTIONS = [
   "price_book.created",
+  "price_book.variant_price_attached",
+  "price_book.modifier_price_attached",
   "price_book.activated",
   "price_book.retired",
   "pricing.bootstrap_existing_menu",

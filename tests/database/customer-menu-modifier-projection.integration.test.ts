@@ -75,11 +75,13 @@ async function activateBrandVariantPrice(
       variantId: args.variantId,
       amountPaise: args.amountPaise ?? BigInt(17_900),
       taxCategoryId: TAX_CATEGORY_RESTAURANT_SERVICE_ID,
+      expectedPriceBookRevision: book.revision,
     });
     await activatePriceBook(tx, {
       actor: args.actor,
       priceBookId: book.id,
       brandId: args.brandId,
+      expectedPriceBookRevision: book.revision + BigInt(1),
     });
     return { priceBookId: book.id };
   });
@@ -127,6 +129,7 @@ async function seedActiveMenuProduct(
       actor,
       brandId,
       variantId: variant.id,
+      expectedRuleRevision: null,
     });
   });
 

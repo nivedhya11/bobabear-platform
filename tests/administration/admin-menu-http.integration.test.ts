@@ -256,17 +256,25 @@ describe("IMP-036F F3B Menu commercial Admin HTTP", () => {
           effectiveFrom: new Date("2026-09-01T00:00:00+05:30"),
           effectiveTo: null,
         });
+        let revision = book.revision;
         for (const row of products) {
-          await attachDraftVariantPrice(tx, {
+          const attached = await attachDraftVariantPrice(tx, {
             actor,
             priceBookId: book.id,
             brandId,
             variantId: row.variantId,
             amountPaise: BigInt(17_900),
             taxCategoryId: TAX_CATEGORY_RESTAURANT_SERVICE_ID,
+            expectedPriceBookRevision: revision,
           });
+          revision = attached.priceBookRevision;
         }
-        await activatePriceBook(tx, { actor, priceBookId: book.id, brandId });
+        await activatePriceBook(tx, {
+          actor,
+          priceBookId: book.id,
+          brandId,
+          expectedPriceBookRevision: revision,
+        });
       });
 
       // Other-brand menu for anti-leak.
@@ -1186,23 +1194,30 @@ describe("IMP-036F F3B Menu commercial Admin HTTP", () => {
           effectiveFrom: new Date("2026-09-01T00:00:00+05:30"),
           effectiveTo: null,
         });
-        await attachDraftVariantPrice(tx, {
+        const attachedA = await attachDraftVariantPrice(tx, {
           actor,
           priceBookId: book.id,
           brandId,
           variantId: variant.id,
           amountPaise: BigInt(10_000),
           taxCategoryId: TAX_CATEGORY_RESTAURANT_SERVICE_ID,
+          expectedPriceBookRevision: book.revision,
         });
-        await attachDraftVariantPrice(tx, {
+        const attachedB = await attachDraftVariantPrice(tx, {
           actor,
           priceBookId: book.id,
           brandId,
           variantId: variantB.id,
           amountPaise: BigInt(11_000),
           taxCategoryId: TAX_CATEGORY_RESTAURANT_SERVICE_ID,
+          expectedPriceBookRevision: attachedA.priceBookRevision,
         });
-        await activatePriceBook(tx, { actor, priceBookId: book.id, brandId });
+        await activatePriceBook(tx, {
+          actor,
+          priceBookId: book.id,
+          brandId,
+          expectedPriceBookRevision: attachedB.priceBookRevision,
+        });
       });
 
       const runtime = getWorkforceAuthRuntime({

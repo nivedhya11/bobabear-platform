@@ -100,7 +100,7 @@ async function seedMenuVariant(
     // Customer projection reads effective content only, so the activated
     // candidate must be published before it is visible (IMP-036F).
     await publishProductEnvelope(tx, { actor, brandId, productId: product.id });
-    await includeBrandVariant(tx, { actor, brandId, variantId: variant.id });
+    await includeBrandVariant(tx, { actor, brandId, variantId: variant.id, expectedRuleRevision: null });
   });
 
   const menu = await persistence.transaction((tx) =>
@@ -176,8 +176,12 @@ async function seedMenuVariant(
       variantId: variant.id,
       amountPaise: BigInt(17_900),
       taxCategoryId: TAX_CATEGORY_RESTAURANT_SERVICE_ID,
-    });
-    await activatePriceBook(tx, { actor, priceBookId: book.id, brandId });
+
+          expectedPriceBookRevision: book.revision,
+        });
+    await activatePriceBook(tx, { actor, priceBookId: book.id, brandId,
+          expectedPriceBookRevision: book.revision + BigInt(1),
+        });
     return { priceBookId: book.id };
   });
 
@@ -271,6 +275,7 @@ describe("customer commerce cross-portal cohesion (IMP-036E)", () => {
         await excludeVariantAtScope(tx, {
           actor,
           brandId: tree.brand.id,
+          expectedRuleRevision: null,
           scopeType: "outlet",
           outletId: tree.outletA.id,
           variantId: seeded.variantId,

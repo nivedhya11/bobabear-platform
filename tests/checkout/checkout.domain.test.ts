@@ -961,6 +961,7 @@ describe("IMP-021 checkout domain — evaluate commercial", () => {
           await excludeVariantAtScope(tx, {
             actor: actors.brandAdminActor,
             brandId: actors.tree.brand.id,
+          expectedRuleRevision: null,
             scopeType: "outlet",
             outletId: actors.tree.outletA.id,
             variantId: catalog.variantId,

@@ -85,12 +85,16 @@ async function activateBrandBaseline(
       allowOutletOverride: args.allowOutletOverride ?? false,
       floorPaise: args.floorPaise ?? null,
       ceilingPaise: args.ceilingPaise ?? null,
-    });
+
+          expectedPriceBookRevision: book.revision,
+        });
     await activatePriceBook(tx, {
       actor: args.actor,
       priceBookId: book.id,
       brandId: args.brandId,
-    });
+
+          expectedPriceBookRevision: book.revision + BigInt(1),
+        });
     return book;
   });
 }
@@ -163,11 +167,15 @@ describe("resolveOutletVariantPrice", () => {
           variantId: catalog.variantId,
           amountPaise: BigInt(19900),
           taxCategoryId: TAX_CATEGORY_RESTAURANT_SERVICE_ID,
+
+          expectedPriceBookRevision: outletBook.revision,
         });
         await activatePriceBook(tx, {
           actor: brandAdminActor,
           priceBookId: outletBook.id,
           brandId: tree.brand.id,
+
+          expectedPriceBookRevision: outletBook.revision + BigInt(1),
         });
       });
 
@@ -217,11 +225,15 @@ describe("resolveOutletVariantPrice", () => {
           variantId: catalog.variantId,
           amountPaise: BigInt(18900),
           taxCategoryId: TAX_CATEGORY_RESTAURANT_SERVICE_ID,
+
+          expectedPriceBookRevision: book.revision,
         });
         await activatePriceBook(tx, {
           actor: brandAdminActor,
           priceBookId: book.id,
           brandId: tree.brand.id,
+
+          expectedPriceBookRevision: book.revision + BigInt(1),
         });
       });
 
@@ -269,11 +281,15 @@ describe("resolveOutletVariantPrice", () => {
           variantId: catalog.variantId,
           amountPaise: BigInt(18900),
           taxCategoryId: TAX_CATEGORY_RESTAURANT_SERVICE_ID,
+
+          expectedPriceBookRevision: book.revision,
         });
         await activatePriceBook(tx, {
           actor: brandAdminActor,
           priceBookId: book.id,
           brandId: tree.brand.id,
+
+          expectedPriceBookRevision: book.revision + BigInt(1),
         });
       });
 
@@ -324,11 +340,15 @@ describe("resolveOutletVariantPrice", () => {
           variantId: catalog.variantId,
           amountPaise: BigInt(18500),
           taxCategoryId: TAX_CATEGORY_RESTAURANT_SERVICE_ID,
+
+          expectedPriceBookRevision: terr.revision,
         });
         await activatePriceBook(tx, {
           actor: brandAdminActor,
           priceBookId: terr.id,
           brandId: tree.brand.id,
+
+          expectedPriceBookRevision: terr.revision + BigInt(1),
         });
 
         const org = await createDraftPriceBook(tx, {
@@ -347,11 +367,15 @@ describe("resolveOutletVariantPrice", () => {
           variantId: catalog.variantId,
           amountPaise: BigInt(19500),
           taxCategoryId: TAX_CATEGORY_RESTAURANT_SERVICE_ID,
+
+          expectedPriceBookRevision: org.revision,
         });
         await activatePriceBook(tx, {
           actor: brandAdminActor,
           priceBookId: org.id,
           brandId: tree.brand.id,
+
+          expectedPriceBookRevision: org.revision + BigInt(1),
         });
       });
 
@@ -402,11 +426,15 @@ describe("resolveOutletVariantPrice", () => {
           variantId: catalog.variantId,
           amountPaise: BigInt(19000),
           taxCategoryId: TAX_CATEGORY_RESTAURANT_SERVICE_ID,
+
+          expectedPriceBookRevision: org.revision,
         });
         await activatePriceBook(tx, {
           actor: brandAdminActor,
           priceBookId: org.id,
           brandId: tree.brand.id,
+
+          expectedPriceBookRevision: org.revision + BigInt(1),
         });
 
         const outlet = await createDraftPriceBook(tx, {
@@ -427,11 +455,15 @@ describe("resolveOutletVariantPrice", () => {
           variantId: catalog.variantId,
           amountPaise: BigInt(20500),
           taxCategoryId: TAX_CATEGORY_RESTAURANT_SERVICE_ID,
+
+          expectedPriceBookRevision: outlet.revision,
         });
         await activatePriceBook(tx, {
           actor: brandAdminActor,
           priceBookId: outlet.id,
           brandId: tree.brand.id,
+
+          expectedPriceBookRevision: outlet.revision + BigInt(1),
         });
       });
 
@@ -482,11 +514,15 @@ describe("resolveOutletVariantPrice", () => {
           variantId: catalog.variantId,
           amountPaise: BigInt(16000),
           taxCategoryId: TAX_CATEGORY_RESTAURANT_SERVICE_ID,
+
+          expectedPriceBookRevision: low.revision,
         });
         await activatePriceBook(tx, {
           actor: brandAdminActor,
           priceBookId: low.id,
           brandId: tree.brand.id,
+
+          expectedPriceBookRevision: low.revision + BigInt(1),
         });
       });
       await expect(
@@ -533,11 +569,15 @@ describe("resolveOutletVariantPrice", () => {
           variantId: catalog.variantId,
           amountPaise: BigInt(20000),
           taxCategoryId: TAX_CATEGORY_RESTAURANT_SERVICE_ID,
+
+          expectedPriceBookRevision: high.revision,
         });
         await activatePriceBook(tx, {
           actor: brandAdminActor,
           priceBookId: high.id,
           brandId: tree.brand.id,
+
+          expectedPriceBookRevision: high.revision + BigInt(1),
         });
       });
       await expect(
@@ -624,12 +664,16 @@ describe("resolveOutletVariantPrice", () => {
             variantId: catalog.variantId,
             amountPaise: BigInt(18900),
             taxCategoryId: TAX_CATEGORY_RESTAURANT_SERVICE_ID,
-          });
+
+          expectedPriceBookRevision: book.revision,
+        });
           await activatePriceBook(tx, {
             actor: brandAdminActor,
             priceBookId: book.id,
             brandId: tree.brand.id,
-          });
+
+          expectedPriceBookRevision: book.revision + BigInt(1),
+        });
         }),
       ).rejects.toBeInstanceOf(PricingConflictError);
     });

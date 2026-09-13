@@ -22,6 +22,7 @@ export type {
   ExcludeModifierOptionAtScopeInput,
   ExcludeProductAtScopeInput,
   ExcludeVariantAtScopeInput,
+  ExpectedRuleRevisionInput,
   GetModifierOptionAvailabilityInput,
   GetVariantAvailabilityInput,
   IncludeBrandVariantInput,
@@ -47,7 +48,10 @@ export {
   excludeProductAtScope,
   excludeVariantAtScope,
   findAssortmentRuleById,
+  findBrandAssortmentRuleById,
+  findActiveEquivalentAssortmentRule,
   includeBrandVariant,
+  parseExpectedRuleRevision,
   retireAssortmentRule,
 } from "./rules";
 
@@ -102,5 +106,23 @@ export {
   requireOperatingStateRead,
   requireOperatingStateSuspend,
 } from "./authorize-assortment";
+
+export {
+  inspectBrandVariantAssortment,
+  listBrandAssortmentRules,
+} from "./commercial-reads";
+export type {
+  BrandAssortmentRuleList,
+  BrandVariantAssortmentInspection,
+  OutletAssortmentConsequence,
+} from "./commercial-reads";
+
+export { previewAssortmentConsequence } from "./consequence-preview";
+export type {
+  AssortmentConsequencePreview,
+  AssortmentConsequencePreviewInput,
+  AssortmentPreviewBlocker,
+  AssortmentPreviewMutationType,
+} from "./consequence-preview";
 
 export { insertAssortmentAuditEvent } from "./audit";

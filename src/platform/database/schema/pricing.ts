@@ -269,6 +269,7 @@ export const priceBooksTable = appSchema.table(
     effectiveFrom: timestamp("effective_from", { withTimezone: true }).notNull(),
     effectiveTo: timestamp("effective_to", { withTimezone: true }),
     lifecycleStatus: text("lifecycle_status").notNull().default("draft"),
+    revision: bigint("revision", { mode: "bigint" }).notNull().default(sql`1`),
     createdByWorkforceUserId: text("created_by_workforce_user_id"),
     activatedByWorkforceUserId: text("activated_by_workforce_user_id"),
     retiredByWorkforceUserId: text("retired_by_workforce_user_id"),
@@ -364,6 +365,7 @@ export const priceBooksTable = appSchema.table(
       "price_books_updated_at_after_created_at_check",
       sql`${table.updatedAt} >= ${table.createdAt}`,
     ),
+    check("price_books_revision_positive_check", sql`${table.revision} > 0`),
     index("price_books_brand_scope_status_idx").on(
       table.brandId,
       table.scopeType,

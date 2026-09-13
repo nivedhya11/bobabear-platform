@@ -111,17 +111,25 @@ async function seedPublishedPricedProducts(
       effectiveFrom: new Date("2026-09-01T00:00:00+05:30"),
       effectiveTo: null,
     });
+    let revision = book.revision;
     for (const row of seeded) {
-      await attachDraftVariantPrice(tx, {
+      const attached = await attachDraftVariantPrice(tx, {
         actor,
         priceBookId: book.id,
         brandId,
         variantId: row.variantId,
         amountPaise: BigInt(17_900),
         taxCategoryId: TAX_CATEGORY_RESTAURANT_SERVICE_ID,
+        expectedPriceBookRevision: revision,
       });
+      revision = attached.priceBookRevision;
     }
-    await activatePriceBook(tx, { actor, priceBookId: book.id, brandId });
+    await activatePriceBook(tx, {
+      actor,
+      priceBookId: book.id,
+      brandId,
+      expectedPriceBookRevision: revision,
+    });
   });
 
   return seeded;
@@ -1799,8 +1807,12 @@ describe("IMP-036F F3B correction — effective Catalog Product at Menu validate
           variantId: variant.id,
           amountPaise: BigInt(17_900),
           taxCategoryId: TAX_CATEGORY_RESTAURANT_SERVICE_ID,
+
+          expectedPriceBookRevision: book.revision,
         });
-        await activatePriceBook(tx, { actor, priceBookId: book.id, brandId });
+        await activatePriceBook(tx, { actor, priceBookId: book.id, brandId,
+          expectedPriceBookRevision: book.revision + BigInt(1),
+        });
       });
 
       const publishedProduct = await persistence.withContext((ctx) =>

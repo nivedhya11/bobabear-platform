@@ -39,6 +39,14 @@ import {
   classifyAdminMenuRoute,
   handleAdminMenuRoute,
 } from "./admin-menu-routes";
+import {
+  classifyAdminAssortmentRoute,
+  handleAdminAssortmentRoute,
+} from "./admin-assortment-routes";
+import {
+  classifyAdminPricingRoute,
+  handleAdminPricingRoute,
+} from "./admin-pricing-routes";
 import { classifyNotificationRoute, handleNotificationRoute } from "./notification-routes";
 import { handleOperationalStatusRequest } from "./operational-status-routes";
 import { classifyRefundRoute, handleRefundRoute } from "./refund-routes";
@@ -160,6 +168,8 @@ export async function routeOperationsRequest(
   const adminRoute = classifyAdminRoute(url.pathname);
   const adminCatalogRoute = classifyAdminCatalogRoute(url.pathname);
   const adminMenuRoute = classifyAdminMenuRoute(url.pathname);
+  const adminAssortmentRoute = classifyAdminAssortmentRoute(url.pathname);
+  const adminPricingRoute = classifyAdminPricingRoute(url.pathname);
   const refundRoute = classifyRefundRoute(url.pathname);
   const notificationRoute = classifyNotificationRoute(url.pathname);
   const storeRoute = classifyStoreRoute(url.pathname);
@@ -212,6 +222,62 @@ export async function routeOperationsRequest(
       }
     }
     const outcome = await handleAdminMenuRoute(req, adminMenuRoute, deps, requestId);
+    sendJson(res, outcome.body, { status: outcome.status, requestId });
+    return {
+      operation: outcome.operation,
+      safeOutcomeCode: outcome.code,
+      httpStatus: outcome.status,
+    };
+  }
+
+  if (adminAssortmentRoute) {
+    if (url.search !== "") {
+      sendJson(res, { ok: false, code: "ASSORTMENT_REQUEST_INVALID", requestId }, { status: 400, requestId });
+      return {
+        operation: adminAssortmentRoute.kind,
+        safeOutcomeCode: "ASSORTMENT_REQUEST_INVALID",
+        httpStatus: 400,
+      };
+    }
+    if (method === "POST") {
+      if (!checkTrustedOrigin(req.headers, deps.trustedOrigin).ok) {
+        sendJson(res, { ok: false, code: "ASSORTMENT_REQUEST_INVALID", requestId }, { status: 403, requestId });
+        return {
+          operation: adminAssortmentRoute.kind,
+          safeOutcomeCode: "ASSORTMENT_REQUEST_INVALID",
+          httpStatus: 403,
+        };
+      }
+    }
+    const outcome = await handleAdminAssortmentRoute(req, adminAssortmentRoute, deps, requestId);
+    sendJson(res, outcome.body, { status: outcome.status, requestId });
+    return {
+      operation: outcome.operation,
+      safeOutcomeCode: outcome.code,
+      httpStatus: outcome.status,
+    };
+  }
+
+  if (adminPricingRoute) {
+    if (url.search !== "") {
+      sendJson(res, { ok: false, code: "PRICING_REQUEST_INVALID", requestId }, { status: 400, requestId });
+      return {
+        operation: adminPricingRoute.kind,
+        safeOutcomeCode: "PRICING_REQUEST_INVALID",
+        httpStatus: 400,
+      };
+    }
+    if (method === "POST") {
+      if (!checkTrustedOrigin(req.headers, deps.trustedOrigin).ok) {
+        sendJson(res, { ok: false, code: "PRICING_REQUEST_INVALID", requestId }, { status: 403, requestId });
+        return {
+          operation: adminPricingRoute.kind,
+          safeOutcomeCode: "PRICING_REQUEST_INVALID",
+          httpStatus: 403,
+        };
+      }
+    }
+    const outcome = await handleAdminPricingRoute(req, adminPricingRoute, deps, requestId);
     sendJson(res, outcome.body, { status: outcome.status, requestId });
     return {
       operation: outcome.operation,

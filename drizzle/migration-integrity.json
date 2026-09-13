@@ -196,6 +196,11 @@
       "tag": "0038_cooing_anita_blake",
       "path": "drizzle/0038_cooing_anita_blake.sql",
       "sha256": "220f358d80b0b571bd94974e1efed354584f3733571791b432645f49f15c90c8"
+    },
+    {
+      "tag": "0039_familiar_vin_gonzales",
+      "path": "drizzle/0039_familiar_vin_gonzales.sql",
+      "sha256": "39b3d034720a049394620b3cce32d75e4616a4e48045375255de6aed1ae905b4"
     }
   ]
 }
