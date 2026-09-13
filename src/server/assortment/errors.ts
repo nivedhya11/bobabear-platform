@@ -7,6 +7,7 @@ export type AssortmentErrorCode =
   | "not_found"
   | "conflict"
   | "invalid_state"
+  | "ASSORTMENT_STALE_REVISION"
   | "BOOTSTRAP_CONFLICT"
   | "SOURCE_DRIFT"
   | "persistence";

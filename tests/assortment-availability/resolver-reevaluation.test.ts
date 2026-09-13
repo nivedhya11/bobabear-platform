@@ -72,6 +72,7 @@ describe("resolver ordering and immediate re-evaluation", () => {
           excludeVariantAtScope(tx, {
             actor: brandAdminActor,
             brandId: tree.brand.id,
+          expectedRuleRevision: null,
             scopeType: "brand",
             variantId: catalog.variantId,
           }),
@@ -86,7 +87,7 @@ describe("resolver ordering and immediate re-evaluation", () => {
           ),
         ).toMatchObject({ code: "ASSORTMENT_EXCLUDED_BRAND" });
         await persistence.transaction((tx) =>
-          retireAssortmentRule(tx, { actor: brandAdminActor, ruleId: brandEx.id }),
+          retireAssortmentRule(tx, { actor: brandAdminActor, brandId: tree.brand.id, ruleId: brandEx.id, expectedRuleRevision: brandEx.revision }),
         );
 
         // 4. Territory exclusion
@@ -94,6 +95,7 @@ describe("resolver ordering and immediate re-evaluation", () => {
           excludeVariantAtScope(tx, {
             actor: brandAdminActor,
             brandId: tree.brand.id,
+          expectedRuleRevision: null,
             scopeType: "territory",
             territoryId: tree.terrA.id,
             variantId: catalog.variantId,
@@ -109,7 +111,7 @@ describe("resolver ordering and immediate re-evaluation", () => {
           ),
         ).toMatchObject({ code: "ASSORTMENT_EXCLUDED_TERRITORY" });
         await persistence.transaction((tx) =>
-          retireAssortmentRule(tx, { actor: brandAdminActor, ruleId: terrEx.id }),
+          retireAssortmentRule(tx, { actor: brandAdminActor, brandId: tree.brand.id, ruleId: terrEx.id, expectedRuleRevision: terrEx.revision }),
         );
 
         // 5. Organization exclusion
@@ -117,6 +119,7 @@ describe("resolver ordering and immediate re-evaluation", () => {
           excludeVariantAtScope(tx, {
             actor: brandAdminActor,
             brandId: tree.brand.id,
+          expectedRuleRevision: null,
             scopeType: "organization",
             organizationId: tree.orgA.id,
             variantId: catalog.variantId,
@@ -132,7 +135,7 @@ describe("resolver ordering and immediate re-evaluation", () => {
           ),
         ).toMatchObject({ code: "ASSORTMENT_EXCLUDED_ORGANIZATION" });
         await persistence.transaction((tx) =>
-          retireAssortmentRule(tx, { actor: brandAdminActor, ruleId: orgEx.id }),
+          retireAssortmentRule(tx, { actor: brandAdminActor, brandId: tree.brand.id, ruleId: orgEx.id, expectedRuleRevision: orgEx.revision }),
         );
 
         // 6. Outlet exclusion
@@ -140,6 +143,7 @@ describe("resolver ordering and immediate re-evaluation", () => {
           excludeVariantAtScope(tx, {
             actor: brandAdminActor,
             brandId: tree.brand.id,
+          expectedRuleRevision: null,
             scopeType: "outlet",
             outletId: tree.outletA.id,
             variantId: catalog.variantId,
@@ -155,7 +159,7 @@ describe("resolver ordering and immediate re-evaluation", () => {
           ),
         ).toMatchObject({ code: "ASSORTMENT_EXCLUDED_OUTLET" });
         await persistence.transaction((tx) =>
-          retireAssortmentRule(tx, { actor: brandAdminActor, ruleId: outEx.id }),
+          retireAssortmentRule(tx, { actor: brandAdminActor, brandId: tree.brand.id, ruleId: outEx.id, expectedRuleRevision: outEx.revision }),
         );
 
         // 7. Pause / suspend / schedule / sold out
@@ -306,6 +310,7 @@ describe("resolver ordering and immediate re-evaluation", () => {
           excludeVariantAtScope(tx, {
             actor: brandAdminActor,
             brandId: tree.brand.id,
+          expectedRuleRevision: null,
             scopeType: "outlet",
             outletId: tree.outletA.id,
             variantId: catalog.variantId,
@@ -314,7 +319,7 @@ describe("resolver ordering and immediate re-evaluation", () => {
         expect(await resolve()).toMatchObject({ code: "ASSORTMENT_EXCLUDED_OUTLET" });
 
         await persistence.transaction((tx) =>
-          retireAssortmentRule(tx, { actor: brandAdminActor, ruleId: exclusion.id }),
+          retireAssortmentRule(tx, { actor: brandAdminActor, brandId: tree.brand.id, ruleId: exclusion.id, expectedRuleRevision: exclusion.revision }),
         );
         expect(await resolve()).toEqual({ eligible: true, code: "AVAILABLE" });
 

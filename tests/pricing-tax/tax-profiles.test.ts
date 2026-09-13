@@ -64,12 +64,16 @@ async function seedBrandPriceAndTaxProfile(
       variantId: args.variantId,
       amountPaise: args.amountPaise,
       taxCategoryId: TAX_CATEGORY_RESTAURANT_SERVICE_ID,
-    });
+
+          expectedPriceBookRevision: book.revision,
+        });
     await activatePriceBook(tx, {
       actor: args.actor,
       priceBookId: book.id,
       brandId: args.brandId,
-    });
+
+          expectedPriceBookRevision: book.revision + BigInt(1),
+        });
 
     const profile = await createLegalEntityTaxProfile(tx, {
       actorWorkforceUserId: null,

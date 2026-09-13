@@ -27,6 +27,40 @@ import { PricingNotFoundError, PricingResolutionError } from "./errors";
 type PriceBookRow = typeof priceBooksTable.$inferSelect;
 type VariantPriceRow = typeof priceBookVariantPricesTable.$inferSelect;
 
+/**
+ * Preview-only evaluation overlay: treat one candidate PriceBook as the active
+ * book at its exact Brand/scope identity. Does not persist, queue, or add a
+ * second Pricing authority.
+ */
+export type PriceBookEvaluationOverlay = Readonly<{
+  candidate: PriceBookRow;
+}>;
+
+function overlayMatchesScope(
+  overlay: PriceBookRow,
+  args: {
+    brandId: string;
+    scopeType: PriceBookScopeType;
+    territoryId: string | null;
+    organizationId: string | null;
+    outletId: string | null;
+  },
+): boolean {
+  if (overlay.brandId !== args.brandId) return false;
+  if (overlay.scopeType !== args.scopeType) return false;
+  if (overlay.salesChannel !== "direct" || overlay.currency !== "INR") return false;
+  if (args.scopeType === "brand") {
+    return overlay.territoryId === null && overlay.organizationId === null && overlay.outletId === null;
+  }
+  if (args.scopeType === "territory") {
+    return overlay.territoryId === args.territoryId;
+  }
+  if (args.scopeType === "organization") {
+    return overlay.organizationId === args.organizationId;
+  }
+  return overlay.outletId === args.outletId;
+}
+
 async function loadOutlet(context: PersistenceQueryContext, outletId: string) {
   const rows = await context.db
     .select()
@@ -56,8 +90,13 @@ async function findActivePriceBook(
     organizationId: string | null;
     outletId: string | null;
     at: Date;
+    overlay?: PriceBookEvaluationOverlay | null;
   },
 ): Promise<PriceBookRow | null> {
+  if (args.overlay && overlayMatchesScope(args.overlay.candidate, args)) {
+    return args.overlay.candidate;
+  }
+
   const conditions = [
     eq(priceBooksTable.brandId, args.brandId),
     eq(priceBooksTable.scopeType, args.scopeType),
@@ -138,12 +177,14 @@ export async function resolveOutletVariantPrice(
     readonly variantId: string;
     readonly outletId: string;
     readonly at: Date;
+    readonly evaluationOverlay?: PriceBookEvaluationOverlay | null;
   },
 ): Promise<ResolvedOutletVariantPrice> {
   assertApplicationRole(context, "resolveOutletVariantPrice");
   const variantId = assertUuid(input.variantId, "variantId");
   const outletId = assertUuid(input.outletId, "outletId");
   const at = input.at;
+  const overlay = input.evaluationOverlay ?? null;
 
   const outlet = await loadOutlet(context, outletId);
   const variantRows = await context.db
@@ -163,6 +204,7 @@ export async function resolveOutletVariantPrice(
     organizationId: null,
     outletId: null,
     at,
+    overlay,
   });
   if (!brandBook) {
     throw new PricingResolutionError("PRICE_MISSING", "No active Brand price book at the requested time.");
@@ -184,6 +226,7 @@ export async function resolveOutletVariantPrice(
     organizationId: null,
     outletId: null,
     at,
+    overlay,
   });
   if (territoryBook) {
     const territoryPrice = await loadVariantPrice(context, territoryBook.id, variantId);
@@ -208,6 +251,7 @@ export async function resolveOutletVariantPrice(
     organizationId: outlet.organizationId,
     outletId: null,
     at,
+    overlay,
   });
   if (organizationBook) {
     const organizationPrice = await loadVariantPrice(context, organizationBook.id, variantId);
@@ -232,6 +276,7 @@ export async function resolveOutletVariantPrice(
     organizationId: outlet.organizationId,
     outletId: outlet.id,
     at,
+    overlay,
   });
   if (outletBook) {
     const outletPrice = await loadVariantPrice(context, outletBook.id, variantId);
@@ -271,6 +316,7 @@ export async function resolveBrandVariantPrice(
     readonly brandId: string;
     readonly variantId: string;
     readonly at: Date;
+    readonly evaluationOverlay?: PriceBookEvaluationOverlay | null;
   },
 ): Promise<Readonly<{ amountPaise: bigint; currency: "INR" }>> {
   assertApplicationRole(context, "resolveBrandVariantPrice");
@@ -295,6 +341,7 @@ export async function resolveBrandVariantPrice(
     organizationId: null,
     outletId: null,
     at,
+    overlay: input.evaluationOverlay ?? null,
   });
   if (!brandBook) {
     throw new PricingResolutionError("PRICE_MISSING", "No active Brand price book at the requested time.");
@@ -363,6 +410,7 @@ export async function resolveModifierDisplayPriceDeltas(
     readonly outletId?: string | null;
     readonly keys: readonly ModifierDisplayPriceKey[];
     readonly at: Date;
+    readonly evaluationOverlay?: PriceBookEvaluationOverlay | null;
   },
 ): Promise<ReadonlyMap<string, bigint>> {
   assertApplicationRole(context, "resolveModifierDisplayPriceDeltas");
@@ -372,6 +420,7 @@ export async function resolveModifierDisplayPriceDeltas(
 
   const brandId = assertUuid(input.brandId, "brandId");
   const at = input.at;
+  const overlay = input.evaluationOverlay ?? null;
   const dedupedKeys = [
     ...new Map(input.keys.map((key) => [modifierDisplayPriceMapKey(key), key])).values(),
   ];
@@ -383,6 +432,7 @@ export async function resolveModifierDisplayPriceDeltas(
     organizationId: null,
     outletId: null,
     at,
+    overlay,
   });
   if (!brandBook) {
     throw new PricingResolutionError("MODIFIER_PRICE_MISSING", "No active Brand price book.");
@@ -437,6 +487,7 @@ export async function resolveModifierDisplayPriceDeltas(
         organizationId: scope.organizationId,
         outletId: scope.outletId,
         at,
+        overlay,
       });
       if (!book) continue;
       bookIds.push(book.id);

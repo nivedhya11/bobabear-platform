@@ -156,7 +156,7 @@ describe("IMP-036F F2 R7 — HTTP authoring to customer Menu projection", () => 
           productId: product.id,
           expectedContentRevision: expected,
         });
-        await includeBrandVariant(tx, { actor, brandId, variantId: variant.id });
+        await includeBrandVariant(tx, { actor, brandId, variantId: variant.id, expectedRuleRevision: null });
       });
 
       const menu = await persistence.transaction((tx) =>
@@ -227,8 +227,12 @@ describe("IMP-036F F2 R7 — HTTP authoring to customer Menu projection", () => 
           variantId: variant.id,
           amountPaise: BigInt(19_900),
           taxCategoryId: TAX_CATEGORY_RESTAURANT_SERVICE_ID,
+
+          expectedPriceBookRevision: book.revision,
         });
-        await activatePriceBook(tx, { actor, priceBookId: book.id, brandId });
+        await activatePriceBook(tx, { actor, priceBookId: book.id, brandId,
+          expectedPriceBookRevision: book.revision + BigInt(1),
+        });
       });
 
       // 2. observe A through customer Menu

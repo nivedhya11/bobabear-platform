@@ -156,6 +156,7 @@ describe("IMP-036E Store Operations HTTP", () => {
           actor: psaActor,
           brandId: tree.brand.id,
           variantId: catalog.variantId,
+          expectedRuleRevision: null,
         }),
       );
 
@@ -170,6 +171,7 @@ describe("IMP-036E Store Operations HTTP", () => {
           actor: psaActor,
           brandId: tree.brand.id,
           variantId: catalogWithModifier.variantId,
+          expectedRuleRevision: null,
         }),
       );
 

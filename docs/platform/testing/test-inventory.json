@@ -29,10 +29,10 @@
     "note": "Protected evidence and generated reports are never classified as executable test source."
   },
   "counts": {
-    "trackedPathsConsidered": 1804,
-    "executableTestFiles": 360,
+    "trackedPathsConsidered": 1820,
+    "executableTestFiles": 366,
     "sourceTestFiles": 130,
-    "testsTreeExecutableFiles": 196,
+    "testsTreeExecutableFiles": 202,
     "scriptTestFiles": 34,
     "playwrightSpecs": 11,
     "vitestConfigs": 2,
@@ -189,14 +189,18 @@
     "tests/access-control/principal.test.ts",
     "tests/access-control/scope.test.ts",
     "tests/administration/AdministrationHubClient.test.tsx",
+    "tests/administration/admin-assortment-http.integration.test.ts",
     "tests/administration/admin-catalog-http-customer-truth.integration.test.ts",
     "tests/administration/admin-catalog-http.integration.test.ts",
     "tests/administration/admin-http.integration.test.ts",
     "tests/administration/admin-menu-http.integration.test.ts",
+    "tests/administration/admin-pricing-http.integration.test.ts",
     "tests/administration/admin-route-classify.test.ts",
     "tests/administration/admin-transport.test.ts",
     "tests/administration/admin-ui.test.tsx",
     "tests/administration/portal-session.integration.test.ts",
+    "tests/assortment-availability/assortment-consequence-preview.test.ts",
+    "tests/assortment-availability/assortment-revision-concurrency.test.ts",
     "tests/assortment-availability/assortment-rules.test.ts",
     "tests/assortment-availability/configure-outlet-operating-uat.test.ts",
     "tests/assortment-availability/operating-state.test.ts",
@@ -351,6 +355,8 @@
     "tests/pricing-bootstrap/bootstrap.test.ts",
     "tests/pricing-parity/parity.test.ts",
     "tests/pricing-tax/money.test.ts",
+    "tests/pricing-tax/price-book-f4-correction.test.ts",
+    "tests/pricing-tax/price-book-revision.test.ts",
     "tests/pricing-tax/resolve.test.ts",
     "tests/pricing-tax/tax-profiles.test.ts",
     "tests/promotion-coupons/outcomes.test.ts",
@@ -691,7 +697,7 @@
     "test:customer-profiles": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/customer-profiles",
     "test:database": "node scripts/run-vitest.mjs run --config vitest.database.config.mts",
     "test:database:access-control": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/database/access-control.integration.test.ts",
-    "test:database:administration": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/administration/admin-http.integration.test.ts tests/administration/admin-catalog-http.integration.test.ts tests/administration/admin-catalog-http-customer-truth.integration.test.ts tests/administration/admin-menu-http.integration.test.ts",
+    "test:database:administration": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/administration/admin-http.integration.test.ts tests/administration/admin-catalog-http.integration.test.ts tests/administration/admin-catalog-http-customer-truth.integration.test.ts tests/administration/admin-menu-http.integration.test.ts tests/administration/admin-assortment-http.integration.test.ts tests/administration/admin-pricing-http.integration.test.ts",
     "test:database:assortment-availability": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/database/assortment-availability.integration.test.ts",
     "test:database:auth-foundation": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/database/auth-foundation.integration.test.ts",
     "test:database:cart": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/database/cart.integration.test.ts",
@@ -4314,6 +4320,26 @@
       "classificationConfidence": "HEURISTIC"
     },
     {
+      "path": "tests/administration/admin-assortment-http.integration.test.ts",
+      "runner": "vitest",
+      "domain": "administration",
+      "testType": "integration",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:administration",
+        "test:database:administration"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "4-integration",
+        "5-database-integration",
+        "6-http-api-contract"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
       "path": "tests/administration/admin-catalog-http-customer-truth.integration.test.ts",
       "runner": "vitest",
       "domain": "administration",
@@ -4374,6 +4400,26 @@
     },
     {
       "path": "tests/administration/admin-menu-http.integration.test.ts",
+      "runner": "vitest",
+      "domain": "administration",
+      "testType": "integration",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:administration",
+        "test:database:administration"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "4-integration",
+        "5-database-integration",
+        "6-http-api-contract"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/administration/admin-pricing-http.integration.test.ts",
       "runner": "vitest",
       "domain": "administration",
       "testType": "integration",
@@ -4471,6 +4517,40 @@
         "5-database-integration"
       ],
       "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/assortment-availability/assortment-consequence-preview.test.ts",
+      "runner": "vitest",
+      "domain": "assortment-availability",
+      "testType": "unit-or-domain",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:assortment-availability"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/assortment-availability/assortment-revision-concurrency.test.ts",
+      "runner": "vitest",
+      "domain": "assortment-availability",
+      "testType": "unit-or-domain",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:assortment-availability"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "UNKNOWN"
+      ],
+      "classificationConfidence": "LOW"
     },
     {
       "path": "tests/assortment-availability/assortment-rules.test.ts",
@@ -8100,6 +8180,40 @@
     },
     {
       "path": "tests/pricing-tax/money.test.ts",
+      "runner": "vitest",
+      "domain": "pricing-tax",
+      "testType": "unit-or-domain",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:pricing-tax"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/pricing-tax/price-book-f4-correction.test.ts",
+      "runner": "vitest",
+      "domain": "pricing-tax",
+      "testType": "unit-or-domain",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:pricing-tax"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/pricing-tax/price-book-revision.test.ts",
       "runner": "vitest",
       "domain": "pricing-tax",
       "testType": "unit-or-domain",

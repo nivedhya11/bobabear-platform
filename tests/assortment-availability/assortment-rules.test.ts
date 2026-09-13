@@ -4,7 +4,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  AssortmentValidationError,
+  AssortmentNotFoundError,
   excludeModifierOptionAtScope,
   excludeProductAtScope,
   excludeVariantAtScope,
@@ -121,6 +121,7 @@ describe("assortment eligibility", () => {
         excludeProductAtScope(tx, {
           actor: brandAdminActor,
           brandId: tree.brand.id,
+          expectedRuleRevision: null,
           scopeType: "brand",
           productId: product.id,
         }),
@@ -147,13 +148,14 @@ describe("assortment eligibility", () => {
       ).toEqual({ eligible: false, code: "ASSORTMENT_EXCLUDED_BRAND" });
 
       await persistence.transaction((tx) =>
-        retireAssortmentRule(tx, { actor: brandAdminActor, ruleId: productExclude.id }),
+        retireAssortmentRule(tx, { actor: brandAdminActor, brandId: tree.brand.id, ruleId: productExclude.id, expectedRuleRevision: productExclude.revision }),
       );
 
       await persistence.transaction((tx) =>
         excludeVariantAtScope(tx, {
           actor: brandAdminActor,
           brandId: tree.brand.id,
+          expectedRuleRevision: null,
           scopeType: "brand",
           variantId: vDefault.id,
         }),
@@ -196,6 +198,7 @@ describe("assortment eligibility", () => {
         excludeVariantAtScope(tx, {
           actor: brandAdminActor,
           brandId: tree.brand.id,
+          expectedRuleRevision: null,
           scopeType: "territory",
           territoryId: tree.terrA.id,
           variantId: catalog.variantId,
@@ -215,6 +218,7 @@ describe("assortment eligibility", () => {
         excludeVariantAtScope(tx, {
           actor: brandAdminActor,
           brandId: tree.brand.id,
+          expectedRuleRevision: null,
           scopeType: "organization",
           organizationId: tree.orgA.id,
           variantId: catalog.variantId,
@@ -235,6 +239,7 @@ describe("assortment eligibility", () => {
         excludeVariantAtScope(tx, {
           actor: brandAdminActor,
           brandId: tree.brand.id,
+          expectedRuleRevision: null,
           scopeType: "outlet",
           outletId: tree.outletA.id,
           variantId: catalog.variantId,
@@ -242,7 +247,7 @@ describe("assortment eligibility", () => {
       );
 
       await persistence.transaction((tx) =>
-        retireAssortmentRule(tx, { actor: brandAdminActor, ruleId: outletRule.id }),
+        retireAssortmentRule(tx, { actor: brandAdminActor, brandId: tree.brand.id, ruleId: outletRule.id, expectedRuleRevision: outletRule.revision }),
       );
       // Still denied by organization after outlet retire — but territory still first.
       expect(
@@ -256,7 +261,7 @@ describe("assortment eligibility", () => {
       ).toEqual({ eligible: false, code: "ASSORTMENT_EXCLUDED_TERRITORY" });
 
       await persistence.transaction((tx) =>
-        retireAssortmentRule(tx, { actor: brandAdminActor, ruleId: terrRule.id }),
+        retireAssortmentRule(tx, { actor: brandAdminActor, brandId: tree.brand.id, ruleId: terrRule.id, expectedRuleRevision: terrRule.revision }),
       );
       expect(
         await persistence.withContext((ctx) =>
@@ -269,7 +274,7 @@ describe("assortment eligibility", () => {
       ).toEqual({ eligible: false, code: "ASSORTMENT_EXCLUDED_ORGANIZATION" });
 
       await persistence.transaction((tx) =>
-        retireAssortmentRule(tx, { actor: brandAdminActor, ruleId: orgRule.id }),
+        retireAssortmentRule(tx, { actor: brandAdminActor, brandId: tree.brand.id, ruleId: orgRule.id, expectedRuleRevision: orgRule.revision }),
       );
       expect(
         await persistence.withContext((ctx) =>
@@ -357,6 +362,7 @@ describe("assortment eligibility", () => {
         excludeModifierOptionAtScope(tx, {
           actor: brandAdminActor,
           brandId: tree.brand.id,
+          expectedRuleRevision: null,
           scopeType: "brand",
           modifierOptionId: option.id,
         }),
@@ -375,7 +381,7 @@ describe("assortment eligibility", () => {
     });
   });
 
-  it("rejects Brand include at lower scope via domain ValidationError path (cross-brand)", async () => {
+  it("rejects foreign Variant as not-found (no cross-brand leak)", async () => {
     await withAssortmentDomain(
       async (persistence, { tree, otherTree, brandAdminActor, otherBrandAdminActor }) => {
         const catalog = await createActiveStandardVariant(
@@ -384,22 +390,22 @@ describe("assortment eligibility", () => {
           tree.brand.id,
           "xbrand",
         );
-        // Variant belongs to tree.brand — other brand cannot exclude it.
         await expect(
           persistence.transaction((tx) =>
             excludeVariantAtScope(tx, {
               actor: otherBrandAdminActor,
               brandId: otherTree.brand.id,
+              expectedRuleRevision: null,
               scopeType: "brand",
               variantId: catalog.variantId,
             }),
           ),
-        ).rejects.toBeInstanceOf(AssortmentValidationError);
+        ).rejects.toBeInstanceOf(AssortmentNotFoundError);
       },
     );
   });
 
-  it("cross-Brand territory scope is denied with AssortmentValidationError", async () => {
+  it("rejects foreign territory scope as not-found (no cross-brand leak)", async () => {
     await withAssortmentDomain(async (persistence, { tree, otherTree, brandAdminActor }) => {
       const catalog = await createActiveStandardVariant(
         persistence,
@@ -412,12 +418,13 @@ describe("assortment eligibility", () => {
           excludeVariantAtScope(tx, {
             actor: brandAdminActor,
             brandId: tree.brand.id,
+            expectedRuleRevision: null,
             scopeType: "territory",
             territoryId: otherTree.terrA.id,
             variantId: catalog.variantId,
           }),
         ),
-      ).rejects.toBeInstanceOf(AssortmentValidationError);
+      ).rejects.toBeInstanceOf(AssortmentNotFoundError);
     });
   });
 });

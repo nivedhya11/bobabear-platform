@@ -31,16 +31,20 @@ export type AssortmentRule = Readonly<{
   decision: AssortmentDecision;
   status: AssortmentRuleStatus;
   reasonCode: string | null;
+  revision: bigint;
   createdByWorkforceUserId: string | null;
   retiredByWorkforceUserId: string | null;
   createdAt: Date;
   retiredAt: Date | null;
 }>;
 
+export type ExpectedRuleRevisionInput = bigint | number | string | null;
+
 export type IncludeBrandVariantInput = AssortmentActorInput &
   Readonly<{
     brandId: string;
     variantId: string;
+    expectedRuleRevision: ExpectedRuleRevisionInput;
     reasonCode?: string | null;
   }>;
 
@@ -48,6 +52,7 @@ export type ExcludeAtScopeInput = AssortmentActorInput &
   Readonly<{
     brandId: string;
     scopeType: AssortmentScopeType;
+    expectedRuleRevision: ExpectedRuleRevisionInput;
     territoryId?: string | null;
     organizationId?: string | null;
     outletId?: string | null;
@@ -66,6 +71,8 @@ export type ExcludeModifierOptionAtScopeInput = ExcludeAtScopeInput &
 export type RetireAssortmentRuleInput = AssortmentActorInput &
   Readonly<{
     ruleId: string;
+    brandId: string;
+    expectedRuleRevision: ExpectedRuleRevisionInput;
   }>;
 
 export type AssortmentEligibilityResult = Readonly<{

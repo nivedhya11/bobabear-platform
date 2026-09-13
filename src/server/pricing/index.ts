@@ -31,13 +31,20 @@ export {
 
 export {
   activatePriceBook,
+  attachDraftModifierPrice,
   attachDraftVariantPrice,
   createDraftPriceBook,
+  findOverlappingActivePriceBooks,
+  loadOutletsInPriceBookScope,
+  parseExpectedPriceBookRevision,
   retirePriceBook,
+  rowToBook,
 } from "./price-books";
 export type {
+  AttachModifierPriceInput,
   AttachVariantPriceInput,
   CreateDraftPriceBookInput,
+  PriceBookRecord,
 } from "./price-books";
 
 export {
@@ -47,7 +54,7 @@ export {
   resolveModifierPriceDelta,
   resolveOutletVariantPrice,
 } from "./resolve-price";
-export type { ModifierDisplayPriceKey } from "./resolve-price";
+export type { ModifierDisplayPriceKey, PriceBookEvaluationOverlay } from "./resolve-price";
 
 export {
   allocateLargestRemainder,
@@ -73,3 +80,16 @@ export type {
 
 export { verifyExistingMenuPricing } from "./verify";
 export type { PricingVerifyResult } from "./verify";
+
+export { inspectBrandPriceBook, listBrandPriceBooks } from "./commercial-reads";
+export type {
+  PriceBookInspection,
+  PriceBookModifierPriceRow,
+  PriceBookVariantPriceRow,
+} from "./commercial-reads";
+
+export { previewPriceBookConsequence } from "./consequence-preview";
+export type {
+  PriceBookConsequencePreview,
+  PricingPreviewBlocker,
+} from "./consequence-preview";

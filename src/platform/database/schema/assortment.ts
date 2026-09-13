@@ -6,6 +6,7 @@
  */
 import { sql } from "drizzle-orm";
 import {
+  bigint,
   check,
   foreignKey,
   index,
@@ -48,6 +49,7 @@ export const assortmentRulesTable = appSchema.table(
     decision: text("decision").notNull(),
     status: text("status").notNull().default("active"),
     reasonCode: text("reason_code"),
+    revision: bigint("revision", { mode: "bigint" }).notNull().default(sql`1`),
     createdByWorkforceUserId: text("created_by_workforce_user_id"),
     retiredByWorkforceUserId: text("retired_by_workforce_user_id"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
@@ -192,6 +194,7 @@ export const assortmentRulesTable = appSchema.table(
       "assortment_rules_reason_code_length_check",
       sql`${table.reasonCode} is null or char_length(${table.reasonCode}) between 1 and 64`,
     ),
+    check("assortment_rules_revision_positive_check", sql`${table.revision} > 0`),
     // Active uniqueness for brand-scope rules (territory/org/outlet null).
     uniqueIndex("assortment_rules_active_brand_product_uidx")
       .on(table.brandId, table.scopeType, table.targetType, table.productId, table.decision)

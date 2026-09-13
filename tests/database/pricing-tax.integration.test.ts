@@ -2,7 +2,7 @@
  * PostgreSQL integration tests for pricing / charges / tax (IMP-015).
  */
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 
 import { sql } from "drizzle-orm";
@@ -86,9 +86,18 @@ describe("IMP-015 pricing migration", () => {
     expect(entry).toBeDefined();
     expect(entry!.sha256).toBe(sha256File("drizzle/0009_pricing_charges_tax.sql"));
     expect(sha256File("drizzle/0009_pricing_charges_tax.sql").length).toBe(64);
+    const sqlMigrations = readdirSync(path.join(process.cwd(), "drizzle")).filter((name) =>
+      /^\d{4}_.+\.sql$/.test(name),
+    );
+    expect(integrity.migrations).toHaveLength(sqlMigrations.length);
+    const f4Revision = integrity.migrations.find(
+      (m) => m.path === "drizzle/0039_familiar_vin_gonzales.sql",
+    );
+    expect(f4Revision).toBeDefined();
+    expect(f4Revision!.sha256).toBe(sha256File("drizzle/0039_familiar_vin_gonzales.sql"));
   });
 
-  it("replays migrations, creates 12 tables, seeds system tax/charges, 49 permissions after IMP-016", async () => {
+  it("replays migrations, creates 12 tables, seeds system tax/charges, and the canonical permission catalog after IMP-016", async () => {
     await withIsolatedTestDatabase(adminConnectionInfo(), async (database) => {
       await applyMigrations(database.connectionString);
       await applyMigrations(database.connectionString); // second migrate no-op
@@ -113,7 +122,7 @@ describe("IMP-015 pricing migration", () => {
         const permissions = await ctx.db.execute(
           sql`select count(*)::text as count from app.access_permissions`,
         );
-        expect(permissions.rows[0]?.count).toBe("51");
+        expect(permissions.rows[0]?.count).toBe(String(PERMISSION_KEYS.length));
         expect(PERMISSION_KEYS.length).toBe(68);
         expect(ROLE_KEYS.length).toBe(7);
 
@@ -197,6 +206,16 @@ describe("IMP-015 pricing migration", () => {
             and column_name = 'amount_paise'
         `);
         expect(moneyType.rows[0]?.data_type).toBe("bigint");
+
+        const revisionCol = await ctx.db.execute(sql`
+          select data_type, is_nullable, column_default
+          from information_schema.columns
+          where table_schema = 'app'
+            and table_name = 'price_books'
+            and column_name = 'revision'
+        `);
+        expect(revisionCol.rows[0]?.data_type).toBe("bigint");
+        expect(revisionCol.rows[0]?.is_nullable).toBe("NO");
       });
     });
   });

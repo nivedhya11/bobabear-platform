@@ -258,7 +258,7 @@ export async function includeVariantAtBrand(
   variantId: string,
 ): Promise<void> {
   await persistence.transaction((tx) =>
-    includeBrandVariant(tx, { actor, brandId, variantId }),
+    includeBrandVariant(tx, { actor, brandId, variantId, expectedRuleRevision: null }),
   );
 }
 
