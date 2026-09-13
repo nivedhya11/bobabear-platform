@@ -9,6 +9,7 @@ import { describe, expect, it } from "vitest";
 
 import { priceBooksTable } from "../../src/platform/database/schema/pricing";
 import { TAX_CATEGORY_RESTAURANT_SERVICE_ID } from "../../src/shared/pricing";
+import { createOutlet } from "../../src/server/organization";
 import {
   PricingConflictError,
   PricingNotFoundError,
@@ -96,6 +97,69 @@ async function activateBrandBook(
         allowTerritoryOverride: args.modifier.allowTerritoryOverride ?? false,
         allowOrganizationOverride: args.modifier.allowOrganizationOverride ?? false,
         allowOutletOverride: args.modifier.allowOutletOverride ?? false,
+        expectedPriceBookRevision: revision,
+      });
+      revision = modifier.priceBookRevision;
+    }
+    await activatePriceBook(tx, {
+      actor: args.actor,
+      brandId: args.brandId,
+      priceBookId: book.id,
+      expectedPriceBookRevision: revision,
+    });
+    return book;
+  });
+}
+
+async function activateOverrideBook(
+  persistence: Parameters<Parameters<typeof withAssortmentDomain>[0]>[0],
+  args: {
+    actor: unknown;
+    brandId: string;
+    scopeType: "territory" | "organization" | "outlet";
+    territoryId?: string | null;
+    organizationId?: string | null;
+    outletId?: string | null;
+    variantId: string;
+    amountPaise: bigint;
+    modifier?: {
+      variantModifierGroupId: string;
+      modifierGroupOptionId: string;
+      priceDeltaPaise: bigint;
+    };
+  },
+): Promise<{ id: string }> {
+  return persistence.transaction(async (tx) => {
+    const book = await createDraftPriceBook(tx, {
+      actor: args.actor,
+      brandId: args.brandId,
+      scopeType: args.scopeType,
+      territoryId: args.territoryId,
+      organizationId: args.organizationId,
+      outletId: args.outletId,
+      code: `${args.scopeType}-${randomUUID().slice(0, 8)}`,
+      name: `Live ${args.scopeType}`,
+      effectiveFrom: FROM,
+    });
+    let revision = book.revision;
+    const attached = await attachDraftVariantPrice(tx, {
+      actor: args.actor,
+      brandId: args.brandId,
+      priceBookId: book.id,
+      variantId: args.variantId,
+      amountPaise: args.amountPaise,
+      taxCategoryId: TAX_CATEGORY_RESTAURANT_SERVICE_ID,
+      expectedPriceBookRevision: revision,
+    });
+    revision = attached.priceBookRevision;
+    if (args.modifier) {
+      const modifier = await attachDraftModifierPrice(tx, {
+        actor: args.actor,
+        brandId: args.brandId,
+        priceBookId: book.id,
+        variantModifierGroupId: args.modifier.variantModifierGroupId,
+        modifierGroupOptionId: args.modifier.modifierGroupOptionId,
+        priceDeltaPaise: args.modifier.priceDeltaPaise,
         expectedPriceBookRevision: revision,
       });
       revision = modifier.priceBookRevision;
@@ -410,6 +474,427 @@ describe("IMP-036F F4 — scoped current price consequence", () => {
         currentAmountPaise: "10000",
         proposedAmountPaise: "10000",
       });
+    });
+  });
+});
+
+describe("IMP-036F F4 — post-effect Pricing projection", () => {
+  it("territory candidate masked by organization override does not change that outlet; sibling without override does", async () => {
+    await withAssortmentDomain(async (persistence, { tree, brandAdminActor }) => {
+      const catalog = await createActiveStandardVariant(
+        persistence,
+        brandAdminActor,
+        tree.brand.id,
+        "tmask",
+      );
+      await activateBrandBook(persistence, {
+        actor: brandAdminActor,
+        brandId: tree.brand.id,
+        variantId: catalog.variantId,
+        amountPaise: BigInt(10_000),
+        allowTerritoryOverride: true,
+        allowOrganizationOverride: true,
+      });
+      await activateOverrideBook(persistence, {
+        actor: brandAdminActor,
+        brandId: tree.brand.id,
+        scopeType: "organization",
+        organizationId: tree.orgA.id,
+        variantId: catalog.variantId,
+        amountPaise: BigInt(13_000),
+      });
+      const sibling = await persistence.transaction((tx) =>
+        createOutlet(tx, {
+          brandId: tree.brand.id,
+          organizationId: tree.orgB.id,
+          territoryId: tree.terrA.id,
+          legalEntityId: tree.leB.id,
+          code: `sib-org-${randomUUID().slice(0, 8)}`,
+          name: "Sibling terrA orgB",
+        }),
+      );
+      const draft = await persistence.transaction(async (tx) => {
+        const book = await createDraftPriceBook(tx, {
+          actor: brandAdminActor,
+          brandId: tree.brand.id,
+          scopeType: "territory",
+          territoryId: tree.terrA.id,
+          code: `terr-mask-${randomUUID().slice(0, 8)}`,
+          name: "Territory candidate",
+          effectiveFrom: FROM,
+        });
+        await attachDraftVariantPrice(tx, {
+          actor: brandAdminActor,
+          brandId: tree.brand.id,
+          priceBookId: book.id,
+          variantId: catalog.variantId,
+          amountPaise: BigInt(12_000),
+          taxCategoryId: TAX_CATEGORY_RESTAURANT_SERVICE_ID,
+          expectedPriceBookRevision: book.revision,
+        });
+        return book;
+      });
+
+      const preview = await persistence.withContext((ctx) =>
+        previewPriceBookConsequence(ctx, {
+          actor: brandAdminActor,
+          brandId: tree.brand.id,
+          priceBookId: draft.id,
+          at: AT,
+        }),
+      );
+      const masked = preview.variantPriceChanges.find((row) => row.outletId === tree.outletA.id);
+      const siblingChange = preview.variantPriceChanges.find((row) => row.outletId === sibling.id);
+      expect(masked).toMatchObject({
+        currentAmountPaise: "13000",
+        proposedAmountPaise: "13000",
+      });
+      expect(siblingChange).toMatchObject({
+        currentAmountPaise: "10000",
+        proposedAmountPaise: "12000",
+      });
+      expect(preview.draftCandidate).toEqual([
+        expect.objectContaining({ variantId: catalog.variantId, amountPaise: "12000" }),
+      ]);
+      expect(preview.wouldChangeCustomerPricing).toBe(true);
+    });
+  });
+
+  it("territory candidate masked by organization override reports no customer change when every affected outlet is masked", async () => {
+    await withAssortmentDomain(async (persistence, { tree, brandAdminActor }) => {
+      const catalog = await createActiveStandardVariant(
+        persistence,
+        brandAdminActor,
+        tree.brand.id,
+        "tonly",
+      );
+      await activateBrandBook(persistence, {
+        actor: brandAdminActor,
+        brandId: tree.brand.id,
+        variantId: catalog.variantId,
+        amountPaise: BigInt(10_000),
+        allowTerritoryOverride: true,
+        allowOrganizationOverride: true,
+      });
+      await activateOverrideBook(persistence, {
+        actor: brandAdminActor,
+        brandId: tree.brand.id,
+        scopeType: "organization",
+        organizationId: tree.orgA.id,
+        variantId: catalog.variantId,
+        amountPaise: BigInt(13_000),
+      });
+      const draft = await persistence.transaction(async (tx) => {
+        const book = await createDraftPriceBook(tx, {
+          actor: brandAdminActor,
+          brandId: tree.brand.id,
+          scopeType: "territory",
+          territoryId: tree.terrA.id,
+          code: `terr-only-${randomUUID().slice(0, 8)}`,
+          name: "Territory masked only",
+          effectiveFrom: FROM,
+        });
+        await attachDraftVariantPrice(tx, {
+          actor: brandAdminActor,
+          brandId: tree.brand.id,
+          priceBookId: book.id,
+          variantId: catalog.variantId,
+          amountPaise: BigInt(12_000),
+          taxCategoryId: TAX_CATEGORY_RESTAURANT_SERVICE_ID,
+          expectedPriceBookRevision: book.revision,
+        });
+        return book;
+      });
+      const preview = await persistence.withContext((ctx) =>
+        previewPriceBookConsequence(ctx, {
+          actor: brandAdminActor,
+          brandId: tree.brand.id,
+          priceBookId: draft.id,
+          at: AT,
+        }),
+      );
+      expect(preview.variantPriceChanges).toEqual([
+        expect.objectContaining({
+          outletId: tree.outletA.id,
+          currentAmountPaise: "13000",
+          proposedAmountPaise: "13000",
+        }),
+      ]);
+      expect(preview.wouldChangeCustomerPricing).toBe(false);
+    });
+  });
+
+  it("territory candidate masked by outlet override does not change that outlet; sibling without override does", async () => {
+    await withAssortmentDomain(async (persistence, { tree, brandAdminActor }) => {
+      const catalog = await createActiveStandardVariant(
+        persistence,
+        brandAdminActor,
+        tree.brand.id,
+        "tout",
+      );
+      await activateBrandBook(persistence, {
+        actor: brandAdminActor,
+        brandId: tree.brand.id,
+        variantId: catalog.variantId,
+        amountPaise: BigInt(10_000),
+        allowTerritoryOverride: true,
+        allowOutletOverride: true,
+      });
+      await activateOverrideBook(persistence, {
+        actor: brandAdminActor,
+        brandId: tree.brand.id,
+        scopeType: "outlet",
+        outletId: tree.outletA.id,
+        variantId: catalog.variantId,
+        amountPaise: BigInt(14_000),
+      });
+      const sibling = await persistence.transaction((tx) =>
+        createOutlet(tx, {
+          brandId: tree.brand.id,
+          organizationId: tree.orgB.id,
+          territoryId: tree.terrA.id,
+          legalEntityId: tree.leB.id,
+          code: `sib-out-${randomUUID().slice(0, 8)}`,
+          name: "Sibling terrA no outlet override",
+        }),
+      );
+      const draft = await persistence.transaction(async (tx) => {
+        const book = await createDraftPriceBook(tx, {
+          actor: brandAdminActor,
+          brandId: tree.brand.id,
+          scopeType: "territory",
+          territoryId: tree.terrA.id,
+          code: `terr-out-${randomUUID().slice(0, 8)}`,
+          name: "Territory vs outlet",
+          effectiveFrom: FROM,
+        });
+        await attachDraftVariantPrice(tx, {
+          actor: brandAdminActor,
+          brandId: tree.brand.id,
+          priceBookId: book.id,
+          variantId: catalog.variantId,
+          amountPaise: BigInt(12_000),
+          taxCategoryId: TAX_CATEGORY_RESTAURANT_SERVICE_ID,
+          expectedPriceBookRevision: book.revision,
+        });
+        return book;
+      });
+      const preview = await persistence.withContext((ctx) =>
+        previewPriceBookConsequence(ctx, {
+          actor: brandAdminActor,
+          brandId: tree.brand.id,
+          priceBookId: draft.id,
+          at: AT,
+        }),
+      );
+      expect(
+        preview.variantPriceChanges.find((row) => row.outletId === tree.outletA.id),
+      ).toMatchObject({
+        currentAmountPaise: "14000",
+        proposedAmountPaise: "14000",
+      });
+      expect(preview.variantPriceChanges.find((row) => row.outletId === sibling.id)).toMatchObject({
+        currentAmountPaise: "10000",
+        proposedAmountPaise: "12000",
+      });
+      expect(preview.wouldChangeCustomerPricing).toBe(true);
+    });
+  });
+
+  it("organization candidate masked by outlet override does not change that outlet; sibling without override does", async () => {
+    await withAssortmentDomain(async (persistence, { tree, brandAdminActor }) => {
+      const catalog = await createActiveStandardVariant(
+        persistence,
+        brandAdminActor,
+        tree.brand.id,
+        "omask",
+      );
+      await activateBrandBook(persistence, {
+        actor: brandAdminActor,
+        brandId: tree.brand.id,
+        variantId: catalog.variantId,
+        amountPaise: BigInt(10_000),
+        allowOrganizationOverride: true,
+        allowOutletOverride: true,
+      });
+      await activateOverrideBook(persistence, {
+        actor: brandAdminActor,
+        brandId: tree.brand.id,
+        scopeType: "outlet",
+        outletId: tree.outletA.id,
+        variantId: catalog.variantId,
+        amountPaise: BigInt(14_000),
+      });
+      const sibling = await persistence.transaction((tx) =>
+        createOutlet(tx, {
+          brandId: tree.brand.id,
+          organizationId: tree.orgA.id,
+          territoryId: tree.terrB.id,
+          legalEntityId: tree.leA.id,
+          code: `sib-oa-${randomUUID().slice(0, 8)}`,
+          name: "Sibling orgA no outlet override",
+        }),
+      );
+      const draft = await persistence.transaction(async (tx) => {
+        const book = await createDraftPriceBook(tx, {
+          actor: brandAdminActor,
+          brandId: tree.brand.id,
+          scopeType: "organization",
+          organizationId: tree.orgA.id,
+          code: `org-mask-${randomUUID().slice(0, 8)}`,
+          name: "Organization vs outlet",
+          effectiveFrom: FROM,
+        });
+        await attachDraftVariantPrice(tx, {
+          actor: brandAdminActor,
+          brandId: tree.brand.id,
+          priceBookId: book.id,
+          variantId: catalog.variantId,
+          amountPaise: BigInt(13_000),
+          taxCategoryId: TAX_CATEGORY_RESTAURANT_SERVICE_ID,
+          expectedPriceBookRevision: book.revision,
+        });
+        return book;
+      });
+      const preview = await persistence.withContext((ctx) =>
+        previewPriceBookConsequence(ctx, {
+          actor: brandAdminActor,
+          brandId: tree.brand.id,
+          priceBookId: draft.id,
+          at: AT,
+        }),
+      );
+      expect(
+        preview.variantPriceChanges.find((row) => row.outletId === tree.outletA.id),
+      ).toMatchObject({
+        currentAmountPaise: "14000",
+        proposedAmountPaise: "14000",
+      });
+      expect(preview.variantPriceChanges.find((row) => row.outletId === sibling.id)).toMatchObject({
+        currentAmountPaise: "10000",
+        proposedAmountPaise: "13000",
+      });
+      expect(preview.wouldChangeCustomerPricing).toBe(true);
+    });
+  });
+
+  it("territory modifier candidate is masked by organization/outlet overrides; sibling without override reports the candidate", async () => {
+    await withAssortmentDomain(async (persistence, { tree, brandAdminActor }) => {
+      const catalog = await seedActiveVariantWithModifier(
+        persistence,
+        tree.brand.id,
+        brandAdminActor,
+        "mproj",
+      );
+      await activateBrandBook(persistence, {
+        actor: brandAdminActor,
+        brandId: tree.brand.id,
+        variantId: catalog.variantId,
+        amountPaise: BigInt(10_000),
+        allowTerritoryOverride: true,
+        allowOrganizationOverride: true,
+        allowOutletOverride: true,
+        modifier: {
+          variantModifierGroupId: catalog.variantModifierGroupId,
+          modifierGroupOptionId: catalog.modifierGroupOptionId,
+          priceDeltaPaise: BigInt(0),
+          allowTerritoryOverride: true,
+          allowOrganizationOverride: true,
+          allowOutletOverride: true,
+        },
+      });
+      await activateOverrideBook(persistence, {
+        actor: brandAdminActor,
+        brandId: tree.brand.id,
+        scopeType: "organization",
+        organizationId: tree.orgA.id,
+        variantId: catalog.variantId,
+        amountPaise: BigInt(10_000),
+        modifier: {
+          variantModifierGroupId: catalog.variantModifierGroupId,
+          modifierGroupOptionId: catalog.modifierGroupOptionId,
+          priceDeltaPaise: BigInt(2_000),
+        },
+      });
+      await activateOverrideBook(persistence, {
+        actor: brandAdminActor,
+        brandId: tree.brand.id,
+        scopeType: "outlet",
+        outletId: tree.outletA.id,
+        variantId: catalog.variantId,
+        amountPaise: BigInt(10_000),
+        modifier: {
+          variantModifierGroupId: catalog.variantModifierGroupId,
+          modifierGroupOptionId: catalog.modifierGroupOptionId,
+          priceDeltaPaise: BigInt(2_500),
+        },
+      });
+      const sibling = await persistence.transaction((tx) =>
+        createOutlet(tx, {
+          brandId: tree.brand.id,
+          organizationId: tree.orgB.id,
+          territoryId: tree.terrA.id,
+          legalEntityId: tree.leB.id,
+          code: `sib-mod-${randomUUID().slice(0, 8)}`,
+          name: "Sibling terrA modifier",
+        }),
+      );
+      const draft = await persistence.transaction(async (tx) => {
+        const book = await createDraftPriceBook(tx, {
+          actor: brandAdminActor,
+          brandId: tree.brand.id,
+          scopeType: "territory",
+          territoryId: tree.terrA.id,
+          code: `terr-mod-${randomUUID().slice(0, 8)}`,
+          name: "Territory modifier candidate",
+          effectiveFrom: FROM,
+        });
+        const variant = await attachDraftVariantPrice(tx, {
+          actor: brandAdminActor,
+          brandId: tree.brand.id,
+          priceBookId: book.id,
+          variantId: catalog.variantId,
+          amountPaise: BigInt(10_000),
+          taxCategoryId: TAX_CATEGORY_RESTAURANT_SERVICE_ID,
+          expectedPriceBookRevision: book.revision,
+        });
+        await attachDraftModifierPrice(tx, {
+          actor: brandAdminActor,
+          brandId: tree.brand.id,
+          priceBookId: book.id,
+          variantModifierGroupId: catalog.variantModifierGroupId,
+          modifierGroupOptionId: catalog.modifierGroupOptionId,
+          priceDeltaPaise: BigInt(1_500),
+          expectedPriceBookRevision: variant.priceBookRevision,
+        });
+        return book;
+      });
+      const preview = await persistence.withContext((ctx) =>
+        previewPriceBookConsequence(ctx, {
+          actor: brandAdminActor,
+          brandId: tree.brand.id,
+          priceBookId: draft.id,
+          at: AT,
+        }),
+      );
+      expect(
+        preview.modifierPriceChanges.find((row) => row.outletId === tree.outletA.id),
+      ).toMatchObject({
+        currentPriceDeltaPaise: "2500",
+        proposedPriceDeltaPaise: "2500",
+      });
+      expect(preview.modifierPriceChanges.find((row) => row.outletId === sibling.id)).toMatchObject({
+        currentPriceDeltaPaise: "0",
+        proposedPriceDeltaPaise: "1500",
+      });
+      expect(preview.modifierDraftCandidate).toEqual([
+        expect.objectContaining({
+          variantModifierGroupId: catalog.variantModifierGroupId,
+          modifierGroupOptionId: catalog.modifierGroupOptionId,
+          priceDeltaPaise: "1500",
+        }),
+      ]);
+      expect(preview.wouldChangeCustomerPricing).toBe(true);
     });
   });
 });

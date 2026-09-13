@@ -18,6 +18,7 @@ import {
   resolveBrandVariantPrice,
   resolveModifierDisplayPriceDeltas,
   resolveOutletVariantPrice,
+  type PriceBookEvaluationOverlay,
 } from "./resolve-price";
 import type { PersistenceQueryContext } from "../persistence/types";
 import { assertApplicationRole, assertUuid } from "./assert-role";
@@ -55,14 +56,14 @@ export type PriceBookConsequencePreview = Readonly<{
     variantId: string;
     outletId: string | null;
     currentAmountPaise: string | null;
-    proposedAmountPaise: string;
+    proposedAmountPaise: string | null;
   }>[];
   modifierPriceChanges: readonly Readonly<{
     variantModifierGroupId: string;
     modifierGroupOptionId: string;
     outletId: string | null;
     currentPriceDeltaPaise: string | null;
-    proposedPriceDeltaPaise: string;
+    proposedPriceDeltaPaise: string | null;
   }>[];
   customerMonetaryConsequence: string;
   overlapBlockers: readonly PricingPreviewBlocker[];
@@ -77,6 +78,7 @@ async function resolveCurrentVariantAmount(
     variantId: string;
     at: Date;
     outletId: string | null;
+    evaluationOverlay?: PriceBookEvaluationOverlay | null;
   }>,
 ): Promise<{ amountPaise: string | null; code: string }> {
   try {
@@ -85,6 +87,7 @@ async function resolveCurrentVariantAmount(
         variantId: input.variantId,
         outletId: input.outletId,
         at: input.at,
+        evaluationOverlay: input.evaluationOverlay,
       });
       return { amountPaise: resolved.amountPaise.toString(10), code: "PRICE_RESOLVED" };
     }
@@ -92,6 +95,7 @@ async function resolveCurrentVariantAmount(
       brandId: input.brandId,
       variantId: input.variantId,
       at: input.at,
+      evaluationOverlay: input.evaluationOverlay,
     });
     return { amountPaise: resolved.amountPaise.toString(10), code: "PRICE_RESOLVED" };
   } catch (error) {
@@ -112,6 +116,7 @@ async function resolveCurrentModifierDelta(
     variantModifierGroupId: string;
     modifierGroupOptionId: string;
     at: Date;
+    evaluationOverlay?: PriceBookEvaluationOverlay | null;
   }>,
 ): Promise<{ deltaPaise: string | null; code: string }> {
   try {
@@ -125,6 +130,7 @@ async function resolveCurrentModifierDelta(
         },
       ],
       at: input.at,
+      evaluationOverlay: input.evaluationOverlay,
     });
     const delta = deltas.get(modifierKey(input.variantModifierGroupId, input.modifierGroupOptionId));
     if (delta == null) {
@@ -186,13 +192,14 @@ export async function previewPriceBookConsequence(
     book.scopeType === "brand" ? [] : [...(await loadOutletsInPriceBookScope(context, book))];
   const outletContexts: Array<string | null> =
     book.scopeType === "brand" ? [null] : affectedOutlets.map((outlet) => outlet.id);
+  const overlay: PriceBookEvaluationOverlay | null =
+    book.lifecycleStatus === "draft" ? { candidate: bookRow } : null;
 
   const currentEffective: Array<PriceBookConsequencePreview["currentEffective"][number]> = [];
   const variantPriceChanges: Array<PriceBookConsequencePreview["variantPriceChanges"][number]> =
     [];
   let wouldChange = false;
   for (const row of variantRows) {
-    const proposed = row.amountPaise.toString(10);
     for (const outletId of outletContexts) {
       const current = await resolveCurrentVariantAmount(context, {
         brandId,
@@ -200,6 +207,15 @@ export async function previewPriceBookConsequence(
         at,
         outletId,
       });
+      const projected = overlay
+        ? await resolveCurrentVariantAmount(context, {
+            brandId,
+            variantId: row.variantId,
+            at,
+            outletId,
+            evaluationOverlay: overlay,
+          })
+        : current;
       currentEffective.push({
         variantId: row.variantId,
         outletId,
@@ -210,16 +226,15 @@ export async function previewPriceBookConsequence(
         variantId: row.variantId,
         outletId,
         currentAmountPaise: current.amountPaise,
-        proposedAmountPaise: proposed,
+        proposedAmountPaise: projected.amountPaise,
       });
-      if (current.amountPaise !== proposed) wouldChange = true;
+      if (current.amountPaise !== projected.amountPaise) wouldChange = true;
     }
   }
 
   const modifierPriceChanges: Array<PriceBookConsequencePreview["modifierPriceChanges"][number]> =
     [];
   for (const row of modifierRows) {
-    const proposed = row.priceDeltaPaise.toString(10);
     for (const outletId of outletContexts) {
       const current = await resolveCurrentModifierDelta(context, {
         brandId,
@@ -228,14 +243,24 @@ export async function previewPriceBookConsequence(
         modifierGroupOptionId: row.modifierGroupOptionId,
         at,
       });
+      const projected = overlay
+        ? await resolveCurrentModifierDelta(context, {
+            brandId,
+            outletId,
+            variantModifierGroupId: row.variantModifierGroupId,
+            modifierGroupOptionId: row.modifierGroupOptionId,
+            at,
+            evaluationOverlay: overlay,
+          })
+        : current;
       modifierPriceChanges.push({
         variantModifierGroupId: row.variantModifierGroupId,
         modifierGroupOptionId: row.modifierGroupOptionId,
         outletId,
         currentPriceDeltaPaise: current.deltaPaise,
-        proposedPriceDeltaPaise: proposed,
+        proposedPriceDeltaPaise: projected.deltaPaise,
       });
-      if (current.deltaPaise !== proposed) wouldChange = true;
+      if (current.deltaPaise !== projected.deltaPaise) wouldChange = true;
     }
   }
 

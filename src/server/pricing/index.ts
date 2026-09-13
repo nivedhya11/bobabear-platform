@@ -54,7 +54,7 @@ export {
   resolveModifierPriceDelta,
   resolveOutletVariantPrice,
 } from "./resolve-price";
-export type { ModifierDisplayPriceKey } from "./resolve-price";
+export type { ModifierDisplayPriceKey, PriceBookEvaluationOverlay } from "./resolve-price";
 
 export {
   allocateLargestRemainder,
