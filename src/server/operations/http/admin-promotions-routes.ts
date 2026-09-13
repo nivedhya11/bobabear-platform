@@ -44,6 +44,7 @@ import {
   PROMOTION_BENEFIT_TYPES,
   PROMOTION_SCOPE_TYPES,
   PROMOTION_STACKING_POLICIES,
+  PROMOTION_STATUSES,
   PROMOTION_TARGET_ROLES,
   PROMOTION_TARGET_TYPES,
   PROMOTION_TRIGGER_TYPES,
@@ -53,6 +54,7 @@ import {
   type PromotionBenefitType,
   type PromotionScopeType,
   type PromotionStackingPolicy,
+  type PromotionStatus,
   type PromotionTargetConfig,
   type PromotionTargetRole,
   type PromotionTargetType,
@@ -442,6 +444,7 @@ async function dispatchMutation(
     case "update_promotion_draft": {
       const result = await updatePromotionDraft(context, {
         actor: principal,
+        brandId: route.brandId,
         promotionId: route.promotionId!,
         expectedPromotionRevision: requireExpectedRevision(body, "expectedPromotionRevision"),
         displayName: optionalString(body, "displayName") ?? undefined,
@@ -464,6 +467,7 @@ async function dispatchMutation(
     case "set_benefit": {
       const result = await setPromotionBenefit(context, {
         actor: principal,
+        brandId: route.brandId,
         promotionId: route.promotionId!,
         expectedPromotionRevision: requireExpectedRevision(body, "expectedPromotionRevision"),
         benefit: parseBenefit(body),
@@ -474,6 +478,7 @@ async function dispatchMutation(
       const parsed = parseTargets(body);
       const result = await setPromotionTargets(context, {
         actor: principal,
+        brandId: route.brandId,
         promotionId: route.promotionId!,
         expectedPromotionRevision: requireExpectedRevision(body, "expectedPromotionRevision"),
         targetRole: parsed.targetRole,
@@ -482,16 +487,22 @@ async function dispatchMutation(
       return { revision: result.revision.toString(10) };
     }
     case "promotion_consequence_preview": {
+      const proposedRaw = requireString(body, "proposedStatus");
+      if (!(PROMOTION_STATUSES as readonly string[]).includes(proposedRaw)) {
+        throw new PromotionValidationError("Unsupported promotion lifecycle state.");
+      }
       const preview = await previewPromotionConsequence(context, {
         actor: principal,
         brandId: route.brandId,
         promotionId: route.promotionId!,
+        proposedStatus: proposedRaw as PromotionStatus,
       });
       return { preview };
     }
     case "activate_promotion": {
       const result = await activatePromotion(context, {
         actor: principal,
+        brandId: route.brandId,
         promotionId: route.promotionId!,
         expectedPromotionRevision: requireExpectedRevision(body, "expectedPromotionRevision"),
       });
@@ -500,6 +511,7 @@ async function dispatchMutation(
     case "retire_promotion": {
       const result = await retirePromotion(context, {
         actor: principal,
+        brandId: route.brandId,
         promotionId: route.promotionId!,
         expectedPromotionRevision: requireExpectedRevision(body, "expectedPromotionRevision"),
       });
@@ -512,6 +524,7 @@ async function dispatchMutation(
       }
       const created = await createCouponDraft(context, {
         actor: principal,
+        brandId: route.brandId,
         promotionId: route.promotionId!,
         origin: origin as CouponOrigin,
         canonicalCode: optionalString(body, "canonicalCode") ?? undefined,
@@ -531,6 +544,7 @@ async function dispatchMutation(
     case "update_coupon_draft": {
       const result = await updateCouponDraft(context, {
         actor: principal,
+        brandId: route.brandId,
         couponId: route.couponId!,
         expectedCouponRevision: requireExpectedRevision(body, "expectedCouponRevision"),
         startsAt: optionalIsoDate(body, "startsAt"),
@@ -541,25 +555,22 @@ async function dispatchMutation(
       return { revision: result.revision.toString(10) };
     }
     case "coupon_consequence_preview": {
-      let proposedStatus: CouponStatus | null = null;
-      if ("proposedStatus" in body && body.proposedStatus !== null) {
-        const raw = requireString(body, "proposedStatus");
-        if (!(COUPON_STATUSES as readonly string[]).includes(raw)) {
-          throw new PromotionValidationError("Unsupported coupon lifecycle state.");
-        }
-        proposedStatus = raw as CouponStatus;
+      const proposedRaw = requireString(body, "proposedStatus");
+      if (!(COUPON_STATUSES as readonly string[]).includes(proposedRaw)) {
+        throw new PromotionValidationError("Unsupported coupon lifecycle state.");
       }
       const preview = await previewCouponConsequence(context, {
         actor: principal,
         brandId: route.brandId,
         couponId: route.couponId!,
-        proposedStatus,
+        proposedStatus: proposedRaw as CouponStatus,
       });
       return { preview };
     }
     case "activate_coupon": {
       const result = await activateCoupon(context, {
         actor: principal,
+        brandId: route.brandId,
         couponId: route.couponId!,
         expectedCouponRevision: requireExpectedRevision(body, "expectedCouponRevision"),
       });
@@ -568,6 +579,7 @@ async function dispatchMutation(
     case "disable_coupon": {
       const result = await disableCoupon(context, {
         actor: principal,
+        brandId: route.brandId,
         couponId: route.couponId!,
         expectedCouponRevision: requireExpectedRevision(body, "expectedCouponRevision"),
       });
@@ -576,6 +588,7 @@ async function dispatchMutation(
     case "enable_coupon": {
       const result = await enableCoupon(context, {
         actor: principal,
+        brandId: route.brandId,
         couponId: route.couponId!,
         expectedCouponRevision: requireExpectedRevision(body, "expectedCouponRevision"),
       });
@@ -584,6 +597,7 @@ async function dispatchMutation(
     case "retire_coupon": {
       const result = await retireCoupon(context, {
         actor: principal,
+        brandId: route.brandId,
         couponId: route.couponId!,
         expectedCouponRevision: requireExpectedRevision(body, "expectedCouponRevision"),
       });

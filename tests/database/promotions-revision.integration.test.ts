@@ -136,11 +136,15 @@ describe("IMP-036F F5 — Promotion aggregate revision", () => {
           actor,
           brandId: harness.tree.brand.id,
           promotionId: draft.id,
+          proposedStatus: "active",
         }),
       );
       expect(preview.expectedPromotionRevision).toBe("7");
+      expect(preview.currentStatus).toBe("draft");
+      expect(preview.proposedStatus).toBe("active");
       expect(preview.lifecycleStatus).toBe("draft");
-      expect(preview.draftVsEffective).toBe("draft");
+      expect(preview.draftVsEffective).toBe("effective");
+      expect(preview.customerVisibleImplication).toMatch(/Active automatic/i);
       expect(preview.supportedLifecycleStates).toEqual(["draft", "active", "retired"]);
       expect(preview.supportedLifecycleStates).not.toContain("scheduled");
       expect(preview.supportedLifecycleStates).not.toContain("ended");
@@ -212,10 +216,14 @@ describe("IMP-036F F5 — Promotion aggregate revision", () => {
           actor,
           brandId: harness.tree.brand.id,
           promotionId: draft.id,
+          proposedStatus: "retired",
         }),
       );
       expect(retirePreview.expectedPromotionRevision).toBe("8");
-      expect(retirePreview.draftVsEffective).toBe("effective");
+      expect(retirePreview.currentStatus).toBe("active");
+      expect(retirePreview.proposedStatus).toBe("retired");
+      expect(retirePreview.draftVsEffective).toBe("retired");
+      expect(retirePreview.customerVisibleImplication).toMatch(/no longer receive/i);
       expect(retirePreview.configurationFingerprint).toBe(fingerprint);
 
       const retired = await harness.persistence.transaction((tx) =>
@@ -332,6 +340,9 @@ describe("IMP-036F F5 — Coupon revision lifecycle", () => {
       );
       expect(preview.expectedCouponRevision).toBe("2");
       expect(preview.promotionId).toBe(promo.id);
+      expect(preview.canonicalCode).toBe(created.canonicalCode);
+      expect(preview.currentStatus).toBe("draft");
+      expect(preview.proposedStatus).toBe("active");
       expect(preview.supportedLifecycleStates).toEqual(["draft", "active", "disabled", "retired"]);
 
       const activated = await harness.persistence.transaction((tx) =>

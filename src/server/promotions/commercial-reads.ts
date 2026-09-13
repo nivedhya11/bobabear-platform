@@ -54,6 +54,7 @@ function serializeCoupon(row: typeof promotionCouponsTable.$inferSelect) {
   return {
     id: row.id,
     promotionId: row.promotionId,
+    canonicalCode: row.canonicalCode,
     origin: row.origin,
     status: row.status as CouponStatus,
     startsAt: row.startsAt ? row.startsAt.toISOString() : null,

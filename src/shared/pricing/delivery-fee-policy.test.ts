@@ -49,6 +49,18 @@ describe("delivery fee policy validation (IMP-036F F5)", () => {
     expect(validateDeliveryFeeBands([{ maxDistanceMeters: 1000, amountPaise: -1 }]).ok).toBe(false);
   });
 
+  it("rejects unsafe integer band amounts and distances", () => {
+    const unsafe = Number.MAX_SAFE_INTEGER + 1;
+    expect(validateDeliveryFeeBands([{ maxDistanceMeters: 1000, amountPaise: unsafe }]).ok).toBe(
+      false,
+    );
+    expect(validateDeliveryFeeBands([{ maxDistanceMeters: unsafe, amountPaise: 100 }]).ok).toBe(
+      false,
+    );
+    expect(Number.isInteger(unsafe)).toBe(true);
+    expect(Number.isSafeInteger(unsafe)).toBe(false);
+  });
+
   it("accepts null, zero, and positive free-delivery thresholds", () => {
     expect(validateFreeDeliveryThresholdPaise(null)).toEqual({ ok: true, thresholdPaise: null });
     expect(validateFreeDeliveryThresholdPaise(0)).toEqual({ ok: true, thresholdPaise: BigInt(0) });
@@ -61,5 +73,6 @@ describe("delivery fee policy validation (IMP-036F F5)", () => {
   it("rejects invalid free-delivery amounts", () => {
     expect(validateFreeDeliveryThresholdPaise(-1).ok).toBe(false);
     expect(validateFreeDeliveryThresholdPaise("01").ok).toBe(false);
+    expect(validateFreeDeliveryThresholdPaise(Number.MAX_SAFE_INTEGER + 1).ok).toBe(false);
   });
 });

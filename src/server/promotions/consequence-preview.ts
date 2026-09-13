@@ -15,6 +15,7 @@ import {
 import {
   PROMOTION_STATUSES,
   COUPON_STATUSES,
+  assertLegalCouponLifecycleTransition,
   type CouponStatus,
   type PromotionStatus,
 } from "../../shared/promotions";
@@ -32,6 +33,8 @@ export type PromotionConsequencePreview = Readonly<{
   promotionId: string;
   brandId: string;
   expectedPromotionRevision: string;
+  currentStatus: PromotionStatus;
+  proposedStatus: PromotionStatus;
   lifecycleStatus: PromotionStatus;
   draftVsEffective: "draft" | "effective" | "retired";
   scopeType: string;
@@ -54,9 +57,10 @@ export type CouponConsequencePreview = Readonly<{
   couponId: string;
   promotionId: string;
   brandId: string;
+  canonicalCode: string;
   expectedCouponRevision: string;
   currentStatus: CouponStatus;
-  proposedStatus: CouponStatus | null;
+  proposedStatus: CouponStatus;
   draftVsEffective: "draft" | "effective" | "disabled" | "retired";
   startsAt: string | null;
   endsAt: string | null;
@@ -77,6 +81,18 @@ function couponDraftVsEffective(status: string): CouponConsequencePreview["draft
   if (status === "disabled") return "disabled";
   if (status === "retired") return "retired";
   return "draft";
+}
+
+function assertLegalPromotionLifecycleTransition(
+  current: PromotionStatus,
+  proposed: PromotionStatus,
+): void {
+  if (current === "draft" && proposed === "active") return;
+  if (current === "active" && proposed === "retired") return;
+  throw new PromotionAdminError(
+    "invalid_state",
+    `Illegal promotion lifecycle transition: ${current} -> ${proposed}.`,
+  );
 }
 
 function promotionalImplication(input: {
@@ -107,11 +123,20 @@ function promotionalImplication(input: {
 
 export async function previewPromotionConsequence(
   context: PersistenceQueryContext,
-  input: { actor: unknown; brandId: string; promotionId: string },
+  input: {
+    actor: unknown;
+    brandId: string;
+    promotionId: string;
+    proposedStatus: PromotionStatus;
+  },
 ): Promise<PromotionConsequencePreview> {
   assertApplicationRole(context, "previewPromotionConsequence");
   const brandId = assertUuid(input.brandId, "brandId");
   const promotionId = assertUuid(input.promotionId, "promotionId");
+  if (!(PROMOTION_STATUSES as readonly string[]).includes(input.proposedStatus)) {
+    throw new PromotionAdminError("validation", "Unsupported promotion lifecycle state.");
+  }
+  const proposedStatus = input.proposedStatus;
   const rows = await context.db
     .select()
     .from(promotionsTable)
@@ -119,14 +144,22 @@ export async function previewPromotionConsequence(
     .limit(1);
   const row = rows[0];
   if (!row || row.brandId !== brandId) throw new PromotionNotFoundError("promotion");
-  await requirePromotionManageForScope(context, input.actor, {
-    brandId: row.brandId,
-    scopeType: row.scopeType as PromotionScopeType,
-    territoryId: row.territoryId,
-    organizationId: row.organizationId,
-    outletId: row.outletId,
-  });
-  await requirePromotionsActivate(context, input.actor, row.brandId);
+  const currentStatus = row.status as PromotionStatus;
+  assertLegalPromotionLifecycleTransition(currentStatus, proposedStatus);
+
+  // Authorization matches the corresponding effect endpoint.
+  if (proposedStatus === "active") {
+    await requirePromotionManageForScope(context, input.actor, {
+      brandId: row.brandId,
+      scopeType: row.scopeType as PromotionScopeType,
+      territoryId: row.territoryId,
+      organizationId: row.organizationId,
+      outletId: row.outletId,
+    });
+    await requirePromotionsActivate(context, input.actor, row.brandId);
+  } else {
+    await requirePromotionsActivate(context, input.actor, row.brandId);
+  }
 
   const [benefit] = await context.db
     .select()
@@ -145,8 +178,10 @@ export async function previewPromotionConsequence(
     promotionId: row.id,
     brandId: row.brandId,
     expectedPromotionRevision: row.revision.toString(10),
-    lifecycleStatus: row.status as PromotionStatus,
-    draftVsEffective: draftVsEffective(row.status),
+    currentStatus,
+    proposedStatus,
+    lifecycleStatus: currentStatus,
+    draftVsEffective: draftVsEffective(proposedStatus),
     scopeType: row.scopeType,
     territoryId: row.territoryId,
     organizationId: row.organizationId,
@@ -183,7 +218,7 @@ export async function previewPromotionConsequence(
     })),
     configurationFingerprint: row.configurationFingerprint,
     customerVisibleImplication: promotionalImplication({
-      status: row.status,
+      status: proposedStatus,
       triggerType: row.triggerType,
       benefitType: benefit?.benefitType ?? null,
     }),
@@ -197,12 +232,16 @@ export async function previewCouponConsequence(
     actor: unknown;
     brandId: string;
     couponId: string;
-    proposedStatus?: CouponStatus | null;
+    proposedStatus: CouponStatus;
   },
 ): Promise<CouponConsequencePreview> {
   assertApplicationRole(context, "previewCouponConsequence");
   const brandId = assertUuid(input.brandId, "brandId");
   const couponId = assertUuid(input.couponId, "couponId");
+  if (!(COUPON_STATUSES as readonly string[]).includes(input.proposedStatus)) {
+    throw new PromotionAdminError("validation", "Unsupported coupon lifecycle state.");
+  }
+  const proposedStatus = input.proposedStatus;
   const coupons = await context.db
     .select()
     .from(promotionCouponsTable)
@@ -225,18 +264,15 @@ export async function previewCouponConsequence(
     outletId: promotion.outletId,
   });
 
-  const proposed = input.proposedStatus ?? null;
-  if (proposed && !(COUPON_STATUSES as readonly string[]).includes(proposed)) {
-    throw new PromotionAdminError("validation", "Unsupported coupon lifecycle state.");
-  }
+  const currentStatus = coupon.status as CouponStatus;
+  assertLegalCouponLifecycleTransition(currentStatus, proposedStatus);
 
   let implication = "Draft coupon; customers cannot redeem this code until activation.";
-  const statusForImplication = proposed ?? coupon.status;
-  if (statusForImplication === "active") {
+  if (proposedStatus === "active") {
     implication = "Customers can redeem this coupon code against the referenced Promotion.";
-  } else if (statusForImplication === "disabled") {
+  } else if (proposedStatus === "disabled") {
     implication = "Disabled; customers cannot redeem this coupon code until it is enabled.";
-  } else if (statusForImplication === "retired") {
+  } else if (proposedStatus === "retired") {
     implication = "Retired; customers cannot redeem this coupon code.";
   }
 
@@ -244,10 +280,11 @@ export async function previewCouponConsequence(
     couponId: coupon.id,
     promotionId: coupon.promotionId,
     brandId: promotion.brandId,
+    canonicalCode: coupon.canonicalCode,
     expectedCouponRevision: coupon.revision.toString(10),
-    currentStatus: coupon.status as CouponStatus,
-    proposedStatus: proposed,
-    draftVsEffective: couponDraftVsEffective(coupon.status),
+    currentStatus,
+    proposedStatus,
+    draftVsEffective: couponDraftVsEffective(proposedStatus),
     startsAt: coupon.startsAt ? coupon.startsAt.toISOString() : null,
     endsAt: coupon.endsAt ? coupon.endsAt.toISOString() : null,
     maximumRedemptions: coupon.maximumRedemptions,

@@ -116,6 +116,16 @@ function assertDraft(row: { status: string; activatedAt: Date | null }) {
   }
 }
 
+function assertPathBrandMatchesPromotion(
+  row: typeof promotionsTable.$inferSelect | null,
+  pathBrandId: string | undefined,
+): asserts row is typeof promotionsTable.$inferSelect {
+  if (!row) throw new PromotionNotFoundError("promotion");
+  if (pathBrandId && row.brandId !== assertUuid(pathBrandId, "brandId")) {
+    throw new PromotionNotFoundError("promotion");
+  }
+}
+
 function validateScopeShape(input: {
   scopeType: PromotionScopeType;
   territoryId?: string | null;
@@ -225,6 +235,7 @@ export async function updatePromotionDraft(
   context: PersistenceTransactionContext,
   input: {
     actor: unknown;
+    brandId?: string;
     promotionId: string;
     expectedPromotionRevision: bigint | number | string;
     displayName?: string;
@@ -239,7 +250,7 @@ export async function updatePromotionDraft(
   assertTransactionContext(context, "updatePromotionDraft");
   const expected = parseExpectedPromotionRevision(input.expectedPromotionRevision);
   const row = await lockPromotionRow(context, assertUuid(input.promotionId, "promotionId"));
-  if (!row) throw new PromotionNotFoundError("promotion");
+  assertPathBrandMatchesPromotion(row, input.brandId);
   await requirePromotionManageForScope(context, input.actor, {
     brandId: row.brandId,
     scopeType: row.scopeType as PromotionScopeType,
@@ -294,6 +305,7 @@ export async function deletePromotionDraft(
   context: PersistenceTransactionContext,
   input: {
     actor: unknown;
+    brandId?: string;
     promotionId: string;
     expectedPromotionRevision: bigint | number | string;
   },
@@ -301,7 +313,7 @@ export async function deletePromotionDraft(
   assertTransactionContext(context, "deletePromotionDraft");
   const expected = parseExpectedPromotionRevision(input.expectedPromotionRevision);
   const row = await lockPromotionRow(context, assertUuid(input.promotionId, "promotionId"));
-  if (!row) throw new PromotionNotFoundError("promotion");
+  assertPathBrandMatchesPromotion(row, input.brandId);
   await requirePromotionManageForScope(context, input.actor, {
     brandId: row.brandId,
     scopeType: row.scopeType as PromotionScopeType,
@@ -330,6 +342,7 @@ export async function setPromotionBenefit(
   context: PersistenceTransactionContext,
   input: {
     actor: unknown;
+    brandId?: string;
     promotionId: string;
     expectedPromotionRevision: bigint | number | string;
     benefit: PromotionBenefitConfig;
@@ -338,7 +351,7 @@ export async function setPromotionBenefit(
   assertTransactionContext(context, "setPromotionBenefit");
   const expected = parseExpectedPromotionRevision(input.expectedPromotionRevision);
   const row = await lockPromotionRow(context, assertUuid(input.promotionId, "promotionId"));
-  if (!row) throw new PromotionNotFoundError("promotion");
+  assertPathBrandMatchesPromotion(row, input.brandId);
   await requirePromotionManageForScope(context, input.actor, {
     brandId: row.brandId,
     scopeType: row.scopeType as PromotionScopeType,
@@ -412,6 +425,7 @@ export async function setPromotionTargets(
   context: PersistenceTransactionContext,
   input: {
     actor: unknown;
+    brandId?: string;
     promotionId: string;
     expectedPromotionRevision: bigint | number | string;
     targetRole: PromotionTargetRole;
@@ -421,7 +435,7 @@ export async function setPromotionTargets(
   assertTransactionContext(context, "setPromotionTargets");
   const expected = parseExpectedPromotionRevision(input.expectedPromotionRevision);
   const row = await lockPromotionRow(context, assertUuid(input.promotionId, "promotionId"));
-  if (!row) throw new PromotionNotFoundError("promotion");
+  assertPathBrandMatchesPromotion(row, input.brandId);
   await requirePromotionManageForScope(context, input.actor, {
     brandId: row.brandId,
     scopeType: row.scopeType as PromotionScopeType,
@@ -516,6 +530,7 @@ export async function activatePromotion(
   context: PersistenceTransactionContext,
   input: {
     actor: unknown;
+    brandId?: string;
     promotionId: string;
     expectedPromotionRevision: bigint | number | string;
   },
@@ -523,7 +538,7 @@ export async function activatePromotion(
   assertTransactionContext(context, "activatePromotion");
   const expected = parseExpectedPromotionRevision(input.expectedPromotionRevision);
   const row = await lockPromotionRow(context, assertUuid(input.promotionId, "promotionId"));
-  if (!row) throw new PromotionNotFoundError("promotion");
+  assertPathBrandMatchesPromotion(row, input.brandId);
   await requirePromotionsActivate(context, input.actor, row.brandId);
   // Still require manage scope for lower-scope governance visibility
   await requirePromotionManageForScope(context, input.actor, {
@@ -682,6 +697,7 @@ export async function retirePromotion(
   context: PersistenceTransactionContext,
   input: {
     actor: unknown;
+    brandId?: string;
     promotionId: string;
     expectedPromotionRevision: bigint | number | string;
   },
@@ -689,7 +705,7 @@ export async function retirePromotion(
   assertTransactionContext(context, "retirePromotion");
   const expected = parseExpectedPromotionRevision(input.expectedPromotionRevision);
   const row = await lockPromotionRow(context, assertUuid(input.promotionId, "promotionId"));
-  if (!row) throw new PromotionNotFoundError("promotion");
+  assertPathBrandMatchesPromotion(row, input.brandId);
   await requirePromotionsActivate(context, input.actor, row.brandId);
   if (row.revision !== expected) stalePromotionRevision();
   if (row.status !== "active") {

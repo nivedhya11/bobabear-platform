@@ -339,7 +339,7 @@ describe("IMP-036F F5 Promotions commercial Admin HTTP", () => {
       const preview = await fetch(`${base}${itemPath}/consequence-preview`, {
         method: "POST",
         headers: await headersFor(brandAdmin.id),
-        body: JSON.stringify({}),
+        body: JSON.stringify({ proposedStatus: "active" }),
       });
       expect(preview.status).toBe(200);
       const previewBody = await json(preview);
@@ -347,9 +347,15 @@ describe("IMP-036F F5 Promotions commercial Admin HTTP", () => {
         expectedPromotionRevision: string;
         supportedLifecycleStates: string[];
         lifecycleStatus: string;
+        currentStatus: string;
+        proposedStatus: string;
+        customerVisibleImplication: string;
       };
       expect(previewPayload.expectedPromotionRevision).toBe("5");
       expect(previewPayload.lifecycleStatus).toBe("draft");
+      expect(previewPayload.currentStatus).toBe("draft");
+      expect(previewPayload.proposedStatus).toBe("active");
+      expect(previewPayload.customerVisibleImplication).toMatch(/Active automatic/i);
       expect(previewPayload.supportedLifecycleStates).toEqual(["draft", "active", "retired"]);
       expect(previewPayload.supportedLifecycleStates).not.toContain("scheduled");
       const afterPreview = await persistence.withContext((ctx) => getPromotion(ctx, promotionId));
@@ -474,10 +480,12 @@ describe("IMP-036F F5 Promotions commercial Admin HTTP", () => {
       const couponPreviewPayload = couponPreviewBody.preview as {
         expectedCouponRevision: string;
         promotionId: string;
+        canonicalCode: string;
         supportedLifecycleStates: string[];
       };
       expect(couponPreviewPayload.expectedCouponRevision).toBe("1");
       expect(couponPreviewPayload.promotionId).toBe(couponPromotionId);
+      expect(couponPreviewPayload.canonicalCode).toBe(couponCode);
       expect(couponPreviewPayload.supportedLifecycleStates).toEqual([
         "draft",
         "active",
