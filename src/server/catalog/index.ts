@@ -213,7 +213,9 @@ export {
   findMenuById,
   findMenuEntryById,
   findMenuSectionById,
+  getBrandMenuInspection,
   getMenuGraph,
+  listBrandMenus,
   moveMenuEntry,
   parseExpectedMenuRevision,
   previewMenuPublication,
@@ -227,6 +229,7 @@ export {
   retireMenuSection,
   updateMenuEntryDisplay,
   updateMenuSection,
+  validateMenuPublication,
 } from "./menu";
 
 export type {
@@ -237,7 +240,9 @@ export type {
   MenuEntry,
   MenuEntryLifecycleInput,
   MenuGraph,
+  MenuInspection,
   MenuLifecycleInput,
+  MenuListItem,
   MenuReadInput,
   MenuSection,
   MenuSectionLifecycleInput,

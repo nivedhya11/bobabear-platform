@@ -18,6 +18,7 @@ import {
 import { catalogProductsTable } from "../../../platform/database/schema/catalog";
 import type { PersistenceQueryContext } from "../../persistence/types";
 import { assertApplicationRole } from "../assert-role";
+import { loadEffectiveProductContent } from "../revisions";
 import { MenuInvalidStateError, MenuNotFoundError, MenuValidationError } from "./errors";
 import type { Menu, MenuEntry, MenuSection } from "./types";
 import { rowToMenu } from "./versions";
@@ -139,13 +140,9 @@ export async function assertSectionDepthAllowed(
       });
     }
     const parent = await loadSectionById(context, currentId);
-    if (!parent) {
+    // Missing and foreign parents are indistinguishable (body-reference anti-oracle).
+    if (!parent || parent.menuId !== input.menuId || parent.brandId !== input.brandId) {
       throw new MenuNotFoundError("menu_section");
-    }
-    if (parent.menuId !== input.menuId || parent.brandId !== input.brandId) {
-      throw new MenuValidationError({
-        message: "Parent section must belong to the same brand and menu.",
-      });
     }
     currentId = parent.parentSectionId;
   }
@@ -312,23 +309,30 @@ async function assertProductActiveForMenu(
   productId: string,
   brandId: string,
 ): Promise<void> {
+  // Customer Product truth after F1: effective Catalog revision authority —
+  // not primary lifecycle staging alone.
   const productRows = await context.db
     .select({
+      id: catalogProductsTable.id,
       brandId: catalogProductsTable.brandId,
-      lifecycleStatus: catalogProductsTable.lifecycleStatus,
+      name: catalogProductsTable.name,
+      description: catalogProductsTable.description,
+      effectiveContentRevision: catalogProductsTable.effectiveContentRevision,
     })
     .from(catalogProductsTable)
     .where(eq(catalogProductsTable.id, productId))
     .limit(1);
   const product = productRows[0];
-  if (!product || product.lifecycleStatus !== "active") {
-    throw new MenuInvalidStateError({
-      message: "Active menu entry requires an active product.",
-    });
-  }
-  if (product.brandId !== brandId) {
+  if (!product || product.brandId !== brandId) {
     throw new MenuInvalidStateError({
       message: "Menu entry product must belong to the same brand as the menu.",
+    });
+  }
+  const effective = await loadEffectiveProductContent(context, product);
+  if (effective == null) {
+    throw new MenuInvalidStateError({
+      message:
+        "Active menu entry requires a Catalog-effective product (effective content revision).",
     });
   }
 }
@@ -585,7 +589,12 @@ export async function countActiveEntriesForProduct(
   return rows.length;
 }
 
-/** Trusted internal: product exists and is same brand (for entry create). */
+/**
+ * Trusted internal: product exists in the authorized Brand (for entry create/staging).
+ * Missing and foreign product IDs are indistinguishable (body-reference anti-oracle).
+ * Does not require Catalog-effective content — draft Menu placement may stage ahead of
+ * Catalog publication; validate/publish enforces effective Product truth separately.
+ */
 export async function assertProductEligibleForEntry(
   context: PersistenceQueryContext,
   productId: string,
@@ -595,19 +604,14 @@ export async function assertProductEligibleForEntry(
     .select({
       id: catalogProductsTable.id,
       brandId: catalogProductsTable.brandId,
-      lifecycleStatus: catalogProductsTable.lifecycleStatus,
     })
     .from(catalogProductsTable)
-    .where(eq(catalogProductsTable.id, productId))
+    .where(
+      and(eq(catalogProductsTable.id, productId), eq(catalogProductsTable.brandId, brandId)),
+    )
     .limit(1);
-  const product = productRows[0];
-  if (!product) {
-    throw new MenuNotFoundError("product");
-  }
-  if (product.brandId !== brandId) {
-    throw new MenuValidationError({
-      message: "Menu entry product must belong to the same brand as the menu.",
-    });
+  if (!productRows[0]) {
+    throw new MenuNotFoundError("menu");
   }
 }
 

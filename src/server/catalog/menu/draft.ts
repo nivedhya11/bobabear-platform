@@ -320,8 +320,16 @@ export async function reorderMenuEntries(
         "orderedEntryIds must include every non-retired entry in the section exactly once.",
     });
   }
+  const seen = new Set<string>();
   for (const id of input.orderedEntryIds) {
-    if (!byId.has(assertUuid(id, "entryId"))) {
+    const entryId = assertUuid(id, "entryId");
+    if (seen.has(entryId)) {
+      throw new MenuValidationError({
+        message: "orderedEntryIds must not contain duplicates.",
+      });
+    }
+    seen.add(entryId);
+    if (!byId.has(entryId)) {
       throw new MenuValidationError({
         message: "orderedEntryIds contains an unknown entry for this section draft.",
       });

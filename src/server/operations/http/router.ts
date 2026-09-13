@@ -35,6 +35,10 @@ import {
   classifyAdminCatalogRoute,
   handleAdminCatalogRoute,
 } from "./admin-catalog-routes";
+import {
+  classifyAdminMenuRoute,
+  handleAdminMenuRoute,
+} from "./admin-menu-routes";
 import { classifyNotificationRoute, handleNotificationRoute } from "./notification-routes";
 import { handleOperationalStatusRequest } from "./operational-status-routes";
 import { classifyRefundRoute, handleRefundRoute } from "./refund-routes";
@@ -155,6 +159,7 @@ export async function routeOperationsRequest(
   const deliveryRoute = classifyDeliveryRoute(url.pathname);
   const adminRoute = classifyAdminRoute(url.pathname);
   const adminCatalogRoute = classifyAdminCatalogRoute(url.pathname);
+  const adminMenuRoute = classifyAdminMenuRoute(url.pathname);
   const refundRoute = classifyRefundRoute(url.pathname);
   const notificationRoute = classifyNotificationRoute(url.pathname);
   const storeRoute = classifyStoreRoute(url.pathname);
@@ -179,6 +184,34 @@ export async function routeOperationsRequest(
       }
     }
     const outcome = await handleAdminCatalogRoute(req, adminCatalogRoute, deps, requestId);
+    sendJson(res, outcome.body, { status: outcome.status, requestId });
+    return {
+      operation: outcome.operation,
+      safeOutcomeCode: outcome.code,
+      httpStatus: outcome.status,
+    };
+  }
+
+  if (adminMenuRoute) {
+    if (url.search !== "") {
+      sendJson(res, { ok: false, code: "MENU_REQUEST_INVALID", requestId }, { status: 400, requestId });
+      return {
+        operation: adminMenuRoute.kind,
+        safeOutcomeCode: "MENU_REQUEST_INVALID",
+        httpStatus: 400,
+      };
+    }
+    if (method === "POST") {
+      if (!checkTrustedOrigin(req.headers, deps.trustedOrigin).ok) {
+        sendJson(res, { ok: false, code: "MENU_REQUEST_INVALID", requestId }, { status: 403, requestId });
+        return {
+          operation: adminMenuRoute.kind,
+          safeOutcomeCode: "MENU_REQUEST_INVALID",
+          httpStatus: 403,
+        };
+      }
+    }
+    const outcome = await handleAdminMenuRoute(req, adminMenuRoute, deps, requestId);
     sendJson(res, outcome.body, { status: outcome.status, requestId });
     return {
       operation: outcome.operation,

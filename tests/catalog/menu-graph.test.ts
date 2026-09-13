@@ -27,7 +27,7 @@ import {
   retireMenuEntry,
   retireMenuSection,
 } from "../../src/server/catalog/menu";
-import { withCatalogDomain } from "./support";
+import { withCatalogDomain, publishProductEnvelope } from "./support";
 
 describe("menu section depth and parent rules", () => {
   it("allows depth 2 and rejects depth 3", async () => {
@@ -150,6 +150,11 @@ describe("menu retirement dependency order", () => {
       await persistence.transaction(async (tx) => {
         await activateVariant(tx, { actor, variantId: variant.id });
         await activateProduct(tx, { actor, productId: product.id });
+        await publishProductEnvelope(tx, {
+          actor,
+          brandId: tree.brand.id,
+          productId: product.id,
+        });
       });
 
       let menu = await persistence.transaction((tx) =>

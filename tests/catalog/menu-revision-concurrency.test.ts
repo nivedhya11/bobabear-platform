@@ -21,6 +21,7 @@ import {
   createMenuEntry,
   createMenuSection,
   findMenuById,
+  previewMenuPublication,
   publishMenuRevision,
   reorderMenuSections,
   updateMenuSection,
@@ -816,6 +817,100 @@ describe("IMP-036F F3A — concurrency", () => {
         return rows;
       });
       expect(effectiveVersions).toHaveLength(1);
+    });
+  });
+
+  it("concurrent consequence previews of two Menus in same Brand complete without deadlock", async () => {
+    await withCatalogDomain(async (persistence, { tree, brandAdminActor: actor }) => {
+      const brandId = tree.brand.id;
+      // One shared priced product — avoid overlapping brand price books.
+      const { productId } = await seedPublishedPricedProduct(
+        persistence,
+        actor,
+        brandId,
+        "prev-shared",
+        "Preview Shared",
+      );
+
+      async function seedPendingDraftMenu(code: string): Promise<{ menuId: string }> {
+        let menu = await persistence.transaction((tx) =>
+          createMenu(tx, {
+            actor,
+            brandId,
+            code,
+            name: code,
+          }),
+        );
+        const section = await persistence.transaction(async (tx) => {
+          const current = await findMenuById(tx, menu.id);
+          return createMenuSection(tx, {
+            actor,
+            brandId,
+            menuId: menu.id,
+            code: `${code}-root`,
+            name: "Root",
+            position: 0,
+            expectedMenuRevision: current!.revision,
+          });
+        });
+        const entry = await persistence.transaction(async (tx) => {
+          const current = await findMenuById(tx, menu.id);
+          return createMenuEntry(tx, {
+            actor,
+            brandId,
+            menuId: menu.id,
+            sectionId: section.id,
+            productId,
+            position: 0,
+            imagePath: IMAGE,
+            expectedMenuRevision: current!.revision,
+          });
+        });
+        await persistence.transaction(async (tx) => {
+          let current = await findMenuById(tx, menu.id);
+          await activateMenuSection(tx, {
+            actor,
+            sectionId: section.id,
+            expectedMenuRevision: current!.revision,
+          });
+          current = await findMenuById(tx, menu.id);
+          await activateMenuEntry(tx, {
+            actor,
+            entryId: entry.id,
+            expectedMenuRevision: current!.revision,
+          });
+        });
+        menu = (await persistence.withContext((ctx) => findMenuById(ctx, menu.id)))!;
+        expect(menu.draftMenuVersionId).toBeTruthy();
+        return { menuId: menu.id };
+      }
+
+      const menuA = await seedPendingDraftMenu("conc-prev-a");
+      const menuB = await seedPendingDraftMenu("conc-prev-b");
+
+      const settled = await Promise.allSettled([
+        persistence.transaction((tx) =>
+          previewMenuPublication(tx, { actor, menuId: menuA.menuId }),
+        ),
+        persistence.transaction((tx) =>
+          previewMenuPublication(tx, { actor, menuId: menuB.menuId }),
+        ),
+      ]);
+
+      expect(settled).toHaveLength(2);
+      for (const result of settled) {
+        assertNoDeadlock(result);
+        expect(result.status).toBe("fulfilled");
+      }
+      const previews = settled.map((r) => {
+        expect(r.status).toBe("fulfilled");
+        return (r as PromiseFulfilledResult<Awaited<ReturnType<typeof previewMenuPublication>>>)
+          .value;
+      });
+      expect(previews[0]!.wouldChangeCustomerTruth).toBe(true);
+      expect(previews[1]!.wouldChangeCustomerTruth).toBe(true);
+      expect(previews[0]!.validationOk).toBe(true);
+      expect(previews[1]!.validationOk).toBe(true);
     });
   });
 });
