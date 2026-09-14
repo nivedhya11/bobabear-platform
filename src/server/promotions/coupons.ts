@@ -9,6 +9,7 @@ import {
   promotionsTable,
 } from "../../platform/database/schema/promotions";
 import {
+  assertCouponActivationReady,
   assertLegalCouponLifecycleTransition,
   generateCouponCode,
   normalizeCouponCode,
@@ -326,25 +327,7 @@ export async function activateCoupon(
     throw new PromotionAdminError("COUPON_NOT_DRAFT", "Only draft coupons can activate.");
   }
   assertLegalCouponLifecycleTransition("draft", "active");
-  assertCouponTriggeredPromotion(promotion);
-  if (promotion.status !== "active") {
-    throw new PromotionAdminError(
-      "COUPON_PROMOTION_NOT_ACTIVE",
-      "Coupon activation requires an active promotion.",
-    );
-  }
-  if (coupon.startsAt && coupon.startsAt < promotion.startsAt) {
-    throw new PromotionAdminError(
-      "COUPON_WINDOW_INVALID",
-      "Coupon startsAt cannot precede promotion startsAt.",
-    );
-  }
-  if (coupon.endsAt && promotion.endsAt && coupon.endsAt > promotion.endsAt) {
-    throw new PromotionAdminError(
-      "COUPON_WINDOW_INVALID",
-      "Coupon endsAt cannot exceed promotion endsAt.",
-    );
-  }
+  assertCouponActivationReady({ coupon, promotion });
   const principal = requireWorkforcePrincipal(input.actor);
   const now = new Date();
   const revision = await advanceCouponRevision(
@@ -398,6 +381,10 @@ async function transitionCoupon(
     }
   }
   assertLegalCouponLifecycleTransition(coupon.status as CouponStatus, to);
+  if (to === "active") {
+    // Re-enable restores customer redeemability; same parent readiness as activateCoupon.
+    assertCouponActivationReady({ coupon, promotion });
+  }
 
   const principal = requireWorkforcePrincipal(input.actor);
   const now = new Date();

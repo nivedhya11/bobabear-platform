@@ -16,6 +16,8 @@ import {
   activateCoupon,
   activatePromotion,
   createCouponDraft,
+  disableCoupon,
+  enableCoupon,
   getCoupon,
   getPromotion,
   inspectBrandCoupon,
@@ -35,6 +37,7 @@ import {
 } from "../../src/server/pricing/delivery-tariff";
 import { resolveCustomerDeliveryCharge } from "../../src/server/pricing/resolve-delivery-charge";
 import {
+  assertCouponActivationReady,
   assertLegalCouponLifecycleTransition,
   isLegalCouponLifecycleTransition,
 } from "../../src/shared/promotions";
@@ -617,6 +620,434 @@ describe("IMP-036F F5 correction — coupon trigger + preview + brand binding", 
   }, 180_000);
 });
 
+describe("IMP-036F F5 residual — coupon activation-preview parity", () => {
+  async function snapshotCouponPromotion(
+    harness: Awaited<ReturnType<typeof seedPromotionsHarness>>,
+    couponId: string,
+    promotionId: string,
+  ) {
+    const coupon = await harness.persistence.withContext((ctx) => getCoupon(ctx, couponId));
+    const promotion = await harness.persistence.withContext((ctx) => getPromotion(ctx, promotionId));
+    return {
+      couponStatus: coupon!.status,
+      couponRevision: coupon!.revision,
+      promotionStatus: promotion!.status,
+      promotionRevision: promotion!.revision,
+      promotionStartsAt: promotion!.startsAt.toISOString(),
+      promotionEndsAt: promotion!.endsAt ? promotion!.endsAt.toISOString() : null,
+    };
+  }
+
+  it("draft→active: ready parent succeeds; inactive/retired/automatic/window failures reject preview+effect without mutation", async () => {
+    await withIsolatedTestDatabase(adminConnectionInfo(), async (database) => {
+      await applyMigrations(database.connectionString);
+      const harness = await seedPromotionsHarness(database.connectionString, openHandles);
+      const actor = harness.brandAdminPrincipal;
+      const brandId = harness.tree.brand.id;
+      const promoStart = new Date("2026-03-01T00:00:00.000Z");
+      const promoEnd = new Date("2026-06-01T00:00:00.000Z");
+
+      // 1 + 7: active coupon-triggered Promotion + equal/narrower Coupon window → preview+effect succeed
+      const readyPromo = await createAndActivatePromotion(harness, {
+        code: uniqueCode("rdy"),
+        triggerType: "coupon",
+        startsAt: promoStart,
+        endsAt: promoEnd,
+      });
+      const readyCoupon = await harness.persistence.transaction((tx) =>
+        createCouponDraft(tx, {
+          actor,
+          brandId,
+          promotionId: readyPromo.id,
+          origin: "manual",
+          canonicalCode: "READYACT1",
+          startsAt: promoStart,
+          endsAt: new Date("2026-05-01T00:00:00.000Z"),
+        }),
+      );
+      const beforeReady = await snapshotCouponPromotion(harness, readyCoupon.id, readyPromo.id);
+      const readyPreview = await harness.persistence.withContext((ctx) =>
+        previewCouponConsequence(ctx, {
+          actor,
+          brandId,
+          couponId: readyCoupon.id,
+          proposedStatus: "active",
+        }),
+      );
+      expect(readyPreview.currentStatus).toBe("draft");
+      expect(readyPreview.proposedStatus).toBe("active");
+      expect(readyPreview.expectedCouponRevision).toBe(beforeReady.couponRevision.toString(10));
+      expect(readyPreview.customerVisibleImplication).toMatch(/can redeem/i);
+      const afterReadyPreview = await snapshotCouponPromotion(
+        harness,
+        readyCoupon.id,
+        readyPromo.id,
+      );
+      expect(afterReadyPreview).toEqual(beforeReady);
+
+      const activated = await harness.persistence.transaction((tx) =>
+        activateCoupon(tx, {
+          actor,
+          brandId,
+          couponId: readyCoupon.id,
+          expectedCouponRevision: BigInt(readyPreview.expectedCouponRevision),
+        }),
+      );
+      expect(activated.revision).toBe(beforeReady.couponRevision + BigInt(1));
+      const afterReadyEffect = await harness.persistence.withContext((ctx) =>
+        getCoupon(ctx, readyCoupon.id),
+      );
+      expect(afterReadyEffect?.status).toBe("active");
+      expect(afterReadyEffect?.revision).toBe(activated.revision);
+
+      // 2: draft/inactive parent Promotion → preview+effect fail, unchanged
+      const draftPromo = await createReadyDraftPromotion(harness, {
+        code: uniqueCode("dft"),
+        triggerType: "coupon",
+      });
+      const draftCoupon = await harness.persistence.transaction((tx) =>
+        createCouponDraft(tx, {
+          actor,
+          brandId,
+          promotionId: draftPromo.id,
+          origin: "manual",
+          canonicalCode: "DRAFTPAR1",
+        }),
+      );
+      const beforeDraft = await snapshotCouponPromotion(harness, draftCoupon.id, draftPromo.id);
+      await expect(
+        harness.persistence.withContext((ctx) =>
+          previewCouponConsequence(ctx, {
+            actor,
+            brandId,
+            couponId: draftCoupon.id,
+            proposedStatus: "active",
+          }),
+        ),
+      ).rejects.toMatchObject({ code: "COUPON_PROMOTION_NOT_ACTIVE" });
+      await expect(
+        harness.persistence.transaction((tx) =>
+          activateCoupon(tx, {
+            actor,
+            brandId,
+            couponId: draftCoupon.id,
+            expectedCouponRevision: beforeDraft.couponRevision,
+          }),
+        ),
+      ).rejects.toMatchObject({ code: "COUPON_PROMOTION_NOT_ACTIVE" });
+      expect(await snapshotCouponPromotion(harness, draftCoupon.id, draftPromo.id)).toEqual(
+        beforeDraft,
+      );
+
+      // 3: retired parent Promotion → preview+effect fail
+      const retirePromo = await createAndActivatePromotion(harness, {
+        code: uniqueCode("ret"),
+        triggerType: "coupon",
+      });
+      const retireCoupon = await harness.persistence.transaction((tx) =>
+        createCouponDraft(tx, {
+          actor,
+          brandId,
+          promotionId: retirePromo.id,
+          origin: "manual",
+          canonicalCode: "RETIRED1X",
+        }),
+      );
+      const retirePromoRevision = (
+        await harness.persistence.withContext((ctx) => getPromotion(ctx, retirePromo.id))
+      )!.revision;
+      await harness.persistence.transaction((tx) =>
+        retirePromotion(tx, {
+          actor,
+          brandId,
+          promotionId: retirePromo.id,
+          expectedPromotionRevision: retirePromoRevision,
+        }),
+      );
+      const beforeRetired = await snapshotCouponPromotion(harness, retireCoupon.id, retirePromo.id);
+      expect(beforeRetired.promotionStatus).toBe("retired");
+      await expect(
+        harness.persistence.withContext((ctx) =>
+          previewCouponConsequence(ctx, {
+            actor,
+            brandId,
+            couponId: retireCoupon.id,
+            proposedStatus: "active",
+          }),
+        ),
+      ).rejects.toMatchObject({ code: "COUPON_PROMOTION_NOT_ACTIVE" });
+      await expect(
+        harness.persistence.transaction((tx) =>
+          activateCoupon(tx, {
+            actor,
+            brandId,
+            couponId: retireCoupon.id,
+            expectedCouponRevision: beforeRetired.couponRevision,
+          }),
+        ),
+      ).rejects.toMatchObject({ code: "COUPON_PROMOTION_NOT_ACTIVE" });
+      expect(await snapshotCouponPromotion(harness, retireCoupon.id, retirePromo.id)).toEqual(
+        beforeRetired,
+      );
+
+      // 4: automatic Promotion + legacy Coupon row → preview+effect fail
+      const automatic = await createAndActivatePromotion(harness, {
+        code: uniqueCode("aut"),
+        triggerType: "automatic",
+      });
+      const legacyId = randomUUID();
+      const now = new Date();
+      await harness.persistence.transaction(async (tx) => {
+        await tx.db.insert(promotionCouponsTable).values({
+          id: legacyId,
+          promotionId: automatic.id,
+          canonicalCode: "LEGACYPRV1",
+          origin: "manual",
+          status: "draft",
+          startsAt: null,
+          endsAt: null,
+          maximumRedemptions: null,
+          maximumRedemptionsPerCustomer: null,
+          activatedAt: null,
+          disabledAt: null,
+          retiredAt: null,
+          revision: BigInt(1),
+          createdAt: now,
+          updatedAt: now,
+        });
+      });
+      const beforeLegacy = await snapshotCouponPromotion(harness, legacyId, automatic.id);
+      await expect(
+        harness.persistence.withContext((ctx) =>
+          previewCouponConsequence(ctx, {
+            actor,
+            brandId,
+            couponId: legacyId,
+            proposedStatus: "active",
+          }),
+        ),
+      ).rejects.toMatchObject({
+        message: expect.stringMatching(/coupon-triggered/i),
+      });
+      await expect(
+        harness.persistence.transaction((tx) =>
+          activateCoupon(tx, {
+            actor,
+            brandId,
+            couponId: legacyId,
+            expectedCouponRevision: beforeLegacy.couponRevision,
+          }),
+        ),
+      ).rejects.toMatchObject({
+        message: expect.stringMatching(/coupon-triggered/i),
+      });
+      expect(await snapshotCouponPromotion(harness, legacyId, automatic.id)).toEqual(beforeLegacy);
+
+      // 5: Coupon starts before Promotion → reject
+      const earlyCoupon = await harness.persistence.transaction((tx) =>
+        createCouponDraft(tx, {
+          actor,
+          brandId,
+          promotionId: readyPromo.id,
+          origin: "manual",
+          canonicalCode: "EARLYSTRT1",
+          startsAt: new Date("2026-02-01T00:00:00.000Z"),
+          endsAt: new Date("2026-05-01T00:00:00.000Z"),
+        }),
+      );
+      const beforeEarly = await snapshotCouponPromotion(harness, earlyCoupon.id, readyPromo.id);
+      await expect(
+        harness.persistence.withContext((ctx) =>
+          previewCouponConsequence(ctx, {
+            actor,
+            brandId,
+            couponId: earlyCoupon.id,
+            proposedStatus: "active",
+          }),
+        ),
+      ).rejects.toMatchObject({ code: "COUPON_WINDOW_INVALID" });
+      await expect(
+        harness.persistence.transaction((tx) =>
+          activateCoupon(tx, {
+            actor,
+            brandId,
+            couponId: earlyCoupon.id,
+            expectedCouponRevision: beforeEarly.couponRevision,
+          }),
+        ),
+      ).rejects.toMatchObject({ code: "COUPON_WINDOW_INVALID" });
+      expect(await snapshotCouponPromotion(harness, earlyCoupon.id, readyPromo.id)).toEqual(
+        beforeEarly,
+      );
+
+      // 6: Coupon ends after Promotion → reject
+      const lateCoupon = await harness.persistence.transaction((tx) =>
+        createCouponDraft(tx, {
+          actor,
+          brandId,
+          promotionId: readyPromo.id,
+          origin: "manual",
+          canonicalCode: "LATEENDXX1",
+          startsAt: promoStart,
+          endsAt: new Date("2026-07-01T00:00:00.000Z"),
+        }),
+      );
+      const beforeLate = await snapshotCouponPromotion(harness, lateCoupon.id, readyPromo.id);
+      await expect(
+        harness.persistence.withContext((ctx) =>
+          previewCouponConsequence(ctx, {
+            actor,
+            brandId,
+            couponId: lateCoupon.id,
+            proposedStatus: "active",
+          }),
+        ),
+      ).rejects.toMatchObject({ code: "COUPON_WINDOW_INVALID" });
+      await expect(
+        harness.persistence.transaction((tx) =>
+          activateCoupon(tx, {
+            actor,
+            brandId,
+            couponId: lateCoupon.id,
+            expectedCouponRevision: beforeLate.couponRevision,
+          }),
+        ),
+      ).rejects.toMatchObject({ code: "COUPON_WINDOW_INVALID" });
+      expect(await snapshotCouponPromotion(harness, lateCoupon.id, readyPromo.id)).toEqual(
+        beforeLate,
+      );
+    });
+  }, 180_000);
+
+  it("disabled→active re-enable: preview/effect parity with parent Promotion readiness", async () => {
+    await withIsolatedTestDatabase(adminConnectionInfo(), async (database) => {
+      await applyMigrations(database.connectionString);
+      const harness = await seedPromotionsHarness(database.connectionString, openHandles);
+      const actor = harness.brandAdminPrincipal;
+      const brandId = harness.tree.brand.id;
+
+      const promo = await createAndActivatePromotion(harness, {
+        code: uniqueCode("enb"),
+        triggerType: "coupon",
+        startsAt: new Date("2026-03-01T00:00:00.000Z"),
+        endsAt: new Date("2026-06-01T00:00:00.000Z"),
+      });
+      const coupon = await harness.persistence.transaction((tx) =>
+        createCouponDraft(tx, {
+          actor,
+          brandId,
+          promotionId: promo.id,
+          origin: "manual",
+          canonicalCode: "REENABLE1",
+          startsAt: new Date("2026-03-01T00:00:00.000Z"),
+          endsAt: new Date("2026-05-15T00:00:00.000Z"),
+        }),
+      );
+      const activateRev = (
+        await harness.persistence.withContext((ctx) => getCoupon(ctx, coupon.id))
+      )!.revision;
+      await harness.persistence.transaction((tx) =>
+        activateCoupon(tx, {
+          actor,
+          brandId,
+          couponId: coupon.id,
+          expectedCouponRevision: activateRev,
+        }),
+      );
+      const disableRev = (
+        await harness.persistence.withContext((ctx) => getCoupon(ctx, coupon.id))
+      )!.revision;
+      await harness.persistence.transaction((tx) =>
+        disableCoupon(tx, {
+          actor,
+          brandId,
+          couponId: coupon.id,
+          expectedCouponRevision: disableRev,
+        }),
+      );
+
+      // Valid re-enable while parent remains active
+      const beforeEnable = await snapshotCouponPromotion(harness, coupon.id, promo.id);
+      expect(beforeEnable.couponStatus).toBe("disabled");
+      const enablePreview = await harness.persistence.withContext((ctx) =>
+        previewCouponConsequence(ctx, {
+          actor,
+          brandId,
+          couponId: coupon.id,
+          proposedStatus: "active",
+        }),
+      );
+      expect(enablePreview.currentStatus).toBe("disabled");
+      expect(enablePreview.proposedStatus).toBe("active");
+      expect(enablePreview.expectedCouponRevision).toBe(beforeEnable.couponRevision.toString(10));
+      expect(await snapshotCouponPromotion(harness, coupon.id, promo.id)).toEqual(beforeEnable);
+
+      const enabled = await harness.persistence.transaction((tx) =>
+        enableCoupon(tx, {
+          actor,
+          brandId,
+          couponId: coupon.id,
+          expectedCouponRevision: BigInt(enablePreview.expectedCouponRevision),
+        }),
+      );
+      expect(enabled.revision).toBe(beforeEnable.couponRevision + BigInt(1));
+      expect(
+        (await harness.persistence.withContext((ctx) => getCoupon(ctx, coupon.id)))?.status,
+      ).toBe("active");
+
+      // Disable again, retire parent → re-enable preview+effect reject
+      const disableAgainRev = (
+        await harness.persistence.withContext((ctx) => getCoupon(ctx, coupon.id))
+      )!.revision;
+      await harness.persistence.transaction((tx) =>
+        disableCoupon(tx, {
+          actor,
+          brandId,
+          couponId: coupon.id,
+          expectedCouponRevision: disableAgainRev,
+        }),
+      );
+      const retireParentRev = (
+        await harness.persistence.withContext((ctx) => getPromotion(ctx, promo.id))
+      )!.revision;
+      await harness.persistence.transaction((tx) =>
+        retirePromotion(tx, {
+          actor,
+          brandId,
+          promotionId: promo.id,
+          expectedPromotionRevision: retireParentRev,
+        }),
+      );
+      const beforeRetiredParent = await snapshotCouponPromotion(harness, coupon.id, promo.id);
+      expect(beforeRetiredParent.couponStatus).toBe("disabled");
+      expect(beforeRetiredParent.promotionStatus).toBe("retired");
+      await expect(
+        harness.persistence.withContext((ctx) =>
+          previewCouponConsequence(ctx, {
+            actor,
+            brandId,
+            couponId: coupon.id,
+            proposedStatus: "active",
+          }),
+        ),
+      ).rejects.toMatchObject({ code: "COUPON_PROMOTION_NOT_ACTIVE" });
+      await expect(
+        harness.persistence.transaction((tx) =>
+          enableCoupon(tx, {
+            actor,
+            brandId,
+            couponId: coupon.id,
+            expectedCouponRevision: beforeRetiredParent.couponRevision,
+          }),
+        ),
+      ).rejects.toMatchObject({ code: "COUPON_PROMOTION_NOT_ACTIVE" });
+      expect(await snapshotCouponPromotion(harness, coupon.id, promo.id)).toEqual(
+        beforeRetiredParent,
+      );
+    });
+  }, 180_000);
+});
+
 describe("IMP-036F F5 correction — coupon lifecycle rule unit", () => {
   it("enumerates legal and illegal coupon transitions", () => {
     expect(isLegalCouponLifecycleTransition("draft", "active")).toBe(true);
@@ -637,6 +1068,51 @@ describe("IMP-036F F5 correction — coupon lifecycle rule unit", () => {
     expect(() => assertLegalCouponLifecycleTransition("draft", "retired")).toThrow(
       /Illegal coupon lifecycle/i,
     );
+  });
+
+  it("assertCouponActivationReady rejects automatic / inactive / window mismatches", () => {
+    const promotion = {
+      triggerType: "coupon",
+      status: "active",
+      startsAt: new Date("2026-03-01T00:00:00.000Z"),
+      endsAt: new Date("2026-06-01T00:00:00.000Z"),
+    };
+    expect(() =>
+      assertCouponActivationReady({
+        coupon: { startsAt: null, endsAt: null },
+        promotion,
+      }),
+    ).not.toThrow();
+    expect(() =>
+      assertCouponActivationReady({
+        coupon: { startsAt: null, endsAt: null },
+        promotion: { ...promotion, triggerType: "automatic" },
+      }),
+    ).toThrow(/coupon-triggered/i);
+    expect(() =>
+      assertCouponActivationReady({
+        coupon: { startsAt: null, endsAt: null },
+        promotion: { ...promotion, status: "draft" },
+      }),
+    ).toThrow(/active promotion/i);
+    expect(() =>
+      assertCouponActivationReady({
+        coupon: {
+          startsAt: new Date("2026-02-01T00:00:00.000Z"),
+          endsAt: null,
+        },
+        promotion,
+      }),
+    ).toThrow(/startsAt/i);
+    expect(() =>
+      assertCouponActivationReady({
+        coupon: {
+          startsAt: null,
+          endsAt: new Date("2026-07-01T00:00:00.000Z"),
+        },
+        promotion,
+      }),
+    ).toThrow(/endsAt/i);
   });
 });
 

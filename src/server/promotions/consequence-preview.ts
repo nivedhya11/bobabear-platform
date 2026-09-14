@@ -15,6 +15,7 @@ import {
 import {
   PROMOTION_STATUSES,
   COUPON_STATUSES,
+  assertCouponActivationReady,
   assertLegalCouponLifecycleTransition,
   type CouponStatus,
   type PromotionStatus,
@@ -266,6 +267,10 @@ export async function previewCouponConsequence(
 
   const currentStatus = coupon.status as CouponStatus;
   assertLegalCouponLifecycleTransition(currentStatus, proposedStatus);
+  if (proposedStatus === "active") {
+    // draft→active and disabled→active both imply customer redeemability.
+    assertCouponActivationReady({ coupon, promotion });
+  }
 
   let implication = "Draft coupon; customers cannot redeem this code until activation.";
   if (proposedStatus === "active") {
