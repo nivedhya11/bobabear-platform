@@ -51,6 +51,10 @@ import {
   classifyAdminPromotionsRoute,
   handleAdminPromotionsRoute,
 } from "./admin-promotions-routes";
+import {
+  classifyAdminCommercialRoute,
+  handleAdminCommercialRoute,
+} from "./admin-commercial-routes";
 import { classifyNotificationRoute, handleNotificationRoute } from "./notification-routes";
 import { handleOperationalStatusRequest } from "./operational-status-routes";
 import { classifyRefundRoute, handleRefundRoute } from "./refund-routes";
@@ -175,6 +179,7 @@ export async function routeOperationsRequest(
   const adminAssortmentRoute = classifyAdminAssortmentRoute(url.pathname);
   const adminPricingRoute = classifyAdminPricingRoute(url.pathname);
   const adminPromotionsRoute = classifyAdminPromotionsRoute(url.pathname);
+  const adminCommercialRoute = classifyAdminCommercialRoute(url.pathname);
   const refundRoute = classifyRefundRoute(url.pathname);
   const notificationRoute = classifyNotificationRoute(url.pathname);
   const storeRoute = classifyStoreRoute(url.pathname);
@@ -311,6 +316,42 @@ export async function routeOperationsRequest(
       }
     }
     const outcome = await handleAdminPromotionsRoute(req, adminPromotionsRoute, deps, requestId);
+    sendJson(res, outcome.body, { status: outcome.status, requestId });
+    return {
+      operation: outcome.operation,
+      safeOutcomeCode: outcome.code,
+      httpStatus: outcome.status,
+    };
+  }
+
+  if (adminCommercialRoute) {
+    if (url.search !== "") {
+      sendJson(
+        res,
+        { ok: false, code: "COMMERCIAL_REQUEST_INVALID", requestId },
+        { status: 400, requestId },
+      );
+      return {
+        operation: adminCommercialRoute.kind,
+        safeOutcomeCode: "COMMERCIAL_REQUEST_INVALID",
+        httpStatus: 400,
+      };
+    }
+    if (method === "POST") {
+      if (!checkTrustedOrigin(req.headers, deps.trustedOrigin).ok) {
+        sendJson(
+          res,
+          { ok: false, code: "COMMERCIAL_REQUEST_INVALID", requestId },
+          { status: 403, requestId },
+        );
+        return {
+          operation: adminCommercialRoute.kind,
+          safeOutcomeCode: "COMMERCIAL_REQUEST_INVALID",
+          httpStatus: 403,
+        };
+      }
+    }
+    const outcome = await handleAdminCommercialRoute(req, adminCommercialRoute, deps, requestId);
     sendJson(res, outcome.body, { status: outcome.status, requestId });
     return {
       operation: outcome.operation,

@@ -291,6 +291,50 @@ export async function findServiceabilityCandidates(
   );
 }
 
+/**
+ * Single-outlet geographic candidate for Outlet-scoped Serviceability evaluation.
+ * Returns null when the outlet is not in the Brand or lacks a complete distance policy.
+ */
+export async function findServiceabilityCandidateForOutlet(
+  context: PersistenceQueryContext,
+  input: { brandId: string; outletId: string },
+): Promise<ServiceabilityCandidate | null> {
+  assertApplicationRole(context, "findServiceabilityCandidateForOutlet");
+  const rows = await context.db
+    .select({
+      outletId: outletServiceabilityConfigsTable.outletId,
+      routingPriority: outletServiceabilityConfigsTable.routingPriority,
+      serviceOriginLatitude: outletServiceabilityConfigsTable.serviceOriginLatitude,
+      serviceOriginLongitude: outletServiceabilityConfigsTable.serviceOriginLongitude,
+      maxServiceDistanceMeters: outletServiceabilityConfigsTable.maxServiceDistanceMeters,
+    })
+    .from(outletServiceabilityConfigsTable)
+    .innerJoin(
+      outletsTable,
+      eq(outletServiceabilityConfigsTable.outletId, outletsTable.id),
+    )
+    .where(
+      and(
+        eq(outletsTable.brandId, input.brandId),
+        eq(outletServiceabilityConfigsTable.outletId, input.outletId),
+      ),
+    )
+    .limit(1);
+  const row = rows[0];
+  if (!row) return null;
+  const distancePolicy = readDistancePolicy({
+    serviceOriginLatitude: row.serviceOriginLatitude,
+    serviceOriginLongitude: row.serviceOriginLongitude,
+    maxServiceDistanceMeters: row.maxServiceDistanceMeters,
+  });
+  if (distancePolicy === null) return null;
+  return Object.freeze({
+    outletId: row.outletId,
+    routingPriority: row.routingPriority,
+    distancePolicy,
+  });
+}
+
 /** Used by tests to prove coherent snapshot reads share one transaction. */
 export async function countPinsForOutlet(
   context: PersistenceQueryContext,

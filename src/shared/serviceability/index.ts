@@ -53,6 +53,7 @@ export {
   parseGetConfigurationInput,
   parseRemovePinsInput,
   parseReplacePinsInput,
+  parseServiceabilityLocationEvidence,
   parseSetDistancePolicyInput,
   parseSetRoutingPriorityInput,
 } from "./parse-input";

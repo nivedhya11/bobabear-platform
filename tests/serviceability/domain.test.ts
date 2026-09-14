@@ -6,12 +6,14 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import {
   addOutletServiceabilityPins,
+  evaluateOutletServiceability,
   evaluateServiceability,
   findServiceabilityCandidates,
   fixedServiceabilityClock,
   getOutletServiceabilityConfiguration,
   removeOutletServiceabilityPins,
   replaceOutletServiceabilityPins,
+  setOutletServiceabilityDistancePolicy,
   setOutletServiceabilityRoutingPriority,
   ServiceabilityError,
 } from "../../src/server/serviceability";
@@ -23,6 +25,7 @@ import {
   TEST_OUTSIDE_COORDS,
   withServiceabilityHarness,
 } from "../database/support/serviceability-fixtures";
+import { findServiceabilityConfig } from "../../src/server/serviceability/repository";
 
 afterEach(async () => {
   await closeTrackedPersistenceHandles();
@@ -296,6 +299,158 @@ describe("IMP-019 serviceability evaluation (legacy admin PIN tables remain non-
         status: "SERVICEABLE",
         evaluatedAt: FIXED_NOW,
         selectedOutletId: tree.outletA.id,
+      });
+    });
+  });
+
+  it("evaluates only the requested outlet (sibling coverage does not pass)", async () => {
+    await withServiceabilityHarness(async ({ persistence, actors }) => {
+      const { tree, brandAdminActor } = actors;
+      const clock = fixedServiceabilityClock(FIXED_NOW);
+
+      await seedOutletDistanceServiceability(persistence, brandAdminActor, tree.outletA.id, {
+        routingPriority: 1,
+        maxServiceDistanceMeters: 9_000,
+      });
+      await seedOutletDistanceServiceability(persistence, brandAdminActor, tree.outletB.id, {
+        routingPriority: 2,
+        maxServiceDistanceMeters: 9_000,
+      });
+      const currentB = await persistence.withContext((ctx) =>
+        findServiceabilityConfig(ctx, tree.outletB.id),
+      );
+      if (!currentB) throw new Error("expected outlet B config");
+      await setOutletServiceabilityDistancePolicy(persistence, brandAdminActor, {
+        outletId: tree.outletB.id,
+        expectedRevision: currentB.revision,
+        serviceOriginLatitude: TEST_OUTSIDE_COORDS.latitude,
+        serviceOriginLongitude: TEST_OUTSIDE_COORDS.longitude,
+        maxServiceDistanceMeters: 9_000,
+      });
+
+      const brandWide = await evaluateServiceability(
+        persistence,
+        { brandId: tree.brand.id, location: { coordinates: TEST_OUTSIDE_COORDS } },
+        { clock },
+      );
+      expect(brandWide).toMatchObject({
+        status: "SERVICEABLE",
+        selectedOutletId: tree.outletB.id,
+      });
+
+      const outletAOnly = await evaluateOutletServiceability(
+        persistence,
+        {
+          brandId: tree.brand.id,
+          outletId: tree.outletA.id,
+          location: { coordinates: TEST_OUTSIDE_COORDS },
+        },
+        { clock },
+      );
+      expect(outletAOnly).toEqual({
+        status: "NOT_SERVICEABLE",
+        evaluatedAt: FIXED_NOW,
+      });
+
+      const outletAInside = await evaluateOutletServiceability(
+        persistence,
+        {
+          brandId: tree.brand.id,
+          outletId: tree.outletA.id,
+          location: { coordinates: TEST_INSIDE_COORDS },
+        },
+        { clock },
+      );
+      expect(outletAInside).toMatchObject({
+        status: "SERVICEABLE",
+        selectedOutletId: tree.outletA.id,
+      });
+    });
+  });
+
+  it("outlet-scoped evaluation uses the same coordinate validation as brand-wide", async () => {
+    await withServiceabilityHarness(async ({ persistence, actors }) => {
+      const { tree, brandAdminActor } = actors;
+      const clock = fixedServiceabilityClock(FIXED_NOW);
+
+      await seedOutletDistanceServiceability(persistence, brandAdminActor, tree.outletA.id, {
+        routingPriority: 1,
+        maxServiceDistanceMeters: 9_000,
+      });
+
+      await expect(
+        evaluateOutletServiceability(
+          persistence,
+          {
+            brandId: tree.brand.id,
+            outletId: tree.outletA.id,
+            location: { coordinates: { latitude: "91.0", longitude: "78.0" } },
+          },
+          { clock },
+        ),
+      ).rejects.toMatchObject({ code: "SERVICEABILITY_COORDINATES_INVALID" });
+
+      await expect(
+        evaluateOutletServiceability(
+          persistence,
+          {
+            brandId: tree.brand.id,
+            outletId: tree.outletA.id,
+            location: { coordinates: { latitude: "-91.0", longitude: "78.0" } },
+          },
+          { clock },
+        ),
+      ).rejects.toMatchObject({ code: "SERVICEABILITY_COORDINATES_INVALID" });
+
+      await expect(
+        evaluateOutletServiceability(
+          persistence,
+          {
+            brandId: tree.brand.id,
+            outletId: tree.outletA.id,
+            location: { coordinates: { latitude: "30.0", longitude: "181.0" } },
+          },
+          { clock },
+        ),
+      ).rejects.toMatchObject({ code: "SERVICEABILITY_COORDINATES_INVALID" });
+
+      await expect(
+        evaluateOutletServiceability(
+          persistence,
+          {
+            brandId: tree.brand.id,
+            outletId: tree.outletA.id,
+            location: { coordinates: { latitude: "30.0", longitude: "-181.0" } },
+          },
+          { clock },
+        ),
+      ).rejects.toMatchObject({ code: "SERVICEABILITY_COORDINATES_INVALID" });
+
+      await expect(
+        evaluateOutletServiceability(
+          persistence,
+          {
+            brandId: tree.brand.id,
+            outletId: tree.outletA.id,
+            location: { coordinates: { latitude: "not-a-number", longitude: "78.0" } },
+          },
+          { clock },
+        ),
+      ).rejects.toMatchObject({ code: "SERVICEABILITY_COORDINATES_INVALID" });
+
+      const missingCoords = await evaluateOutletServiceability(
+        persistence,
+        {
+          brandId: tree.brand.id,
+          outletId: tree.outletA.id,
+          location: {},
+        },
+        { clock },
+      );
+      expect(missingCoords).toEqual({
+        status: "INDETERMINATE",
+        evaluatedAt: FIXED_NOW,
+        reason: "LOCATION_COORDINATES_REQUIRED",
       });
     });
   });

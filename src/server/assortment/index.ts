@@ -99,6 +99,7 @@ export {
 export {
   requireAssortmentManage,
   requireAssortmentRead,
+  requireAssortmentAuditRead,
   requireAvailabilityManage,
   requireAvailabilityRead,
   requireOperatingScheduleManage,

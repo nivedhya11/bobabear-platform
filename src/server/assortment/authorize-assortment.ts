@@ -85,6 +85,20 @@ export async function requireAssortmentRead(
   );
 }
 
+export async function requireAssortmentAuditRead(
+  context: PersistenceQueryContext,
+  actor: unknown,
+  brandId: string,
+): Promise<void> {
+  await requireBrandPermission(
+    context,
+    actor,
+    brandId,
+    "assortment.audit.read",
+    "requireAssortmentAuditRead",
+  );
+}
+
 export async function requireAvailabilityManage(
   context: PersistenceQueryContext,
   actor: unknown,

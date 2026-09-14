@@ -211,6 +211,44 @@ const RUNTIME_FORBIDDEN = new Set([
   "actorId",
 ]);
 
+/**
+ * Canonical location evidence parser shared by Brand-wide and Outlet-scoped
+ * Serviceability evaluation. Applies postal + WGS84 coordinate validation.
+ */
+export function parseServiceabilityLocationEvidence(
+  raw: unknown,
+): ServiceabilityLocationEvidence {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+    throw new ServiceabilityError(
+      "SERVICEABILITY_VALIDATION_ERROR",
+      "location must be an object.",
+      "location",
+    );
+  }
+  const locationObj = raw as Record<string, unknown>;
+  rejectUnknownFields(locationObj, new Set(["postalCode", "coordinates"]));
+  for (const key of Object.keys(locationObj)) {
+    if (RUNTIME_FORBIDDEN.has(key)) {
+      throw new ServiceabilityError(
+        "SERVICEABILITY_FORBIDDEN_FIELD",
+        `Forbidden location field: ${key}.`,
+        key,
+      );
+    }
+  }
+
+  const postalCode = canonicalizeOptionalServiceabilityPostalCode(
+    locationObj.postalCode,
+  );
+  const coordinates: ServiceabilityCoordinates | null =
+    canonicalizeServiceabilityCoordinates(locationObj.coordinates);
+
+  return Object.freeze({
+    ...(postalCode !== null ? { postalCode } : {}),
+    ...(coordinates !== null ? { coordinates } : {}),
+  });
+}
+
 export function parseEvaluateServiceabilityInput(
   raw: unknown,
 ): EvaluateServiceabilityInput {
@@ -233,40 +271,8 @@ export function parseEvaluateServiceabilityInput(
   }
 
   const brandId = assertUuid(obj.brandId, "brandId");
-  if (
-    typeof obj.location !== "object" ||
-    obj.location === null ||
-    Array.isArray(obj.location)
-  ) {
-    throw new ServiceabilityError(
-      "SERVICEABILITY_VALIDATION_ERROR",
-      "location must be an object.",
-      "location",
-    );
-  }
-  const locationObj = obj.location as Record<string, unknown>;
-  rejectUnknownFields(locationObj, new Set(["postalCode", "coordinates"]));
-  for (const key of Object.keys(locationObj)) {
-    if (RUNTIME_FORBIDDEN.has(key)) {
-      throw new ServiceabilityError(
-        "SERVICEABILITY_FORBIDDEN_FIELD",
-        `Forbidden location field: ${key}.`,
-        key,
-      );
-    }
-  }
-
-  const postalCode = canonicalizeOptionalServiceabilityPostalCode(
-    locationObj.postalCode,
-  );
-  const coordinates: ServiceabilityCoordinates | null =
-    canonicalizeServiceabilityCoordinates(locationObj.coordinates);
-
   return Object.freeze({
     brandId,
-    location: Object.freeze({
-      ...(postalCode !== null ? { postalCode } : {}),
-      ...(coordinates !== null ? { coordinates } : {}),
-    }),
+    location: parseServiceabilityLocationEvidence(obj.location),
   });
 }
