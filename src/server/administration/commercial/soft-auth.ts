@@ -9,7 +9,6 @@ import "server-only";
 import type { PermissionKey } from "../../../shared/access-control";
 import { authorize } from "../../access-control/authorize";
 import { requireWorkforcePrincipal, type WorkforcePrincipal } from "../../access-control/principal";
-import { findBrandById } from "../../organization/brands";
 import { findOutletById } from "../../organization/outlets";
 import type { PersistenceQueryContext } from "../../persistence/types";
 import { AdministrationError } from "../errors";
@@ -25,17 +24,6 @@ export function assertCommercialUuid(value: unknown, field: string): string {
     });
   }
   return value;
-}
-
-export async function requireExistingBrand(
-  context: PersistenceQueryContext,
-  brandId: string,
-): Promise<{ id: string }> {
-  const brand = await findBrandById(context, brandId);
-  if (!brand) {
-    throw new AdministrationError("ADMIN_NOT_FOUND", "Brand not found.");
-  }
-  return { id: brand.id };
 }
 
 export async function requireOutletInBrand(
@@ -120,13 +108,14 @@ export async function requireAnyBrandCommercialRead(
   brandId: string,
 ): Promise<WorkforcePrincipal> {
   const principal = requireWorkforcePrincipal(actor);
-  await requireExistingBrand(context, brandId);
+  // Authorize before revealing Brand existence so foreign-existing and
+  // nonexistent Brand paths stay indistinguishable to cross-scope callers.
   for (const permission of BRAND_COMMERCIAL_READS) {
     if (await softAuthorizeBrandPermission(context, principal, brandId, permission)) {
       return principal;
     }
   }
-  throw new AdministrationError("ADMIN_UNAUTHORIZED", "Not authorized for commercial inspection.");
+  throw new AdministrationError("ADMIN_NOT_FOUND", "Brand not found.");
 }
 
 export function unavailableSection(

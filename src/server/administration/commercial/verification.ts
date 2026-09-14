@@ -92,7 +92,6 @@ export async function verifyCustomerCommercialTruth(
     const variantRows = await context.db
       .select({
         id: catalogVariantsTable.id,
-        productId: catalogVariantsTable.productId,
       })
       .from(catalogVariantsTable)
       .where(and(eq(catalogVariantsTable.id, variantId), eq(catalogVariantsTable.brandId, brandId)))
@@ -133,10 +132,7 @@ export async function verifyCustomerCommercialTruth(
           outletId,
           at,
         });
-        const item =
-          projection.items.find((i) => i.variantId === variantId) ??
-          projection.items.find((i) => i.productId === variant.productId) ??
-          null;
+    const item = projection.items.find((i) => i.variantId === variantId) ?? null;
         menuDisplayPrice = item?.displayPricePaise ?? null;
         customerMenu = {
           state: "observed",
@@ -243,14 +239,35 @@ export async function verifyCustomerCommercialTruth(
         amountPaise: null,
         source: null,
       };
+    } else if (
+      input.orderSubtotalPaise == null ||
+      input.orderSubtotalPaise === ""
+    ) {
+      deliveryTariff = {
+        state: "insufficient_context",
+        amountPaise: null,
+        source: null,
+      };
     } else {
+      if (
+        typeof input.orderSubtotalPaise !== "string" ||
+        !/^\d+$/.test(input.orderSubtotalPaise)
+      ) {
+        throw new AdministrationError(
+          "ADMIN_REQUEST_INVALID",
+          "orderSubtotalPaise must be a non-negative integer string.",
+          { field: "orderSubtotalPaise" },
+        );
+      }
+      const subtotal = BigInt(input.orderSubtotalPaise);
+      if (subtotal > BigInt(Number.MAX_SAFE_INTEGER)) {
+        throw new AdministrationError(
+          "ADMIN_REQUEST_INVALID",
+          "orderSubtotalPaise exceeds the supported integer range.",
+          { field: "orderSubtotalPaise" },
+        );
+      }
       try {
-        const subtotal =
-          input.orderSubtotalPaise != null && /^\d+$/.test(input.orderSubtotalPaise)
-            ? BigInt(input.orderSubtotalPaise)
-            : pricing.amountPaise != null
-              ? BigInt(pricing.amountPaise)
-              : BigInt(0);
         const charge = await resolveCustomerDeliveryCharge(context, {
           brandId,
           outletId,

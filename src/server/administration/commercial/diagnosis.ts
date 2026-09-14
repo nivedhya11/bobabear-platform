@@ -17,7 +17,7 @@ import { getBrandMenuInspection, listBrandMenus } from "../../catalog/menu/inspe
 import { loadApplicableAutomaticPromotions } from "../../promotions/load-for-evaluation";
 import { PricingResolutionError } from "../../pricing/errors";
 import { resolveOutletVariantPrice } from "../../pricing/resolve-price";
-import { evaluateServiceability } from "../../serviceability/evaluate";
+import { evaluateOutletServiceability } from "../../serviceability/evaluate";
 import type { Persistence } from "../../persistence/types";
 import { AdministrationError } from "../errors";
 import {
@@ -536,8 +536,9 @@ export async function diagnoseSellability(
         }),
       );
     } else {
-      const decision = await evaluateServiceability(persistence, {
+      const decision = await evaluateOutletServiceability(persistence, {
         brandId,
+        outletId,
         location: {
           coordinates: {
             latitude: input.customerLocation.latitude,
@@ -557,7 +558,7 @@ export async function diagnoseSellability(
               : status === "NOT_SERVICEABLE"
                 ? "block"
                 : "info",
-          explanation: `Serviceability status=${status}. This is geographic/operating eligibility — not delivery tariff or provider cost.`,
+          explanation: `Serviceability status=${status} for the requested outlet. This is geographic/operating eligibility — not delivery tariff or provider cost.`,
           actionableContext:
             status === "NOT_SERVICEABLE"
               ? "Adjust service distance policy/origin or choose a serviceable destination."

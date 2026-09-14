@@ -9,24 +9,28 @@ import {
   parseServiceabilityCoordinate,
   parseEvaluateServiceabilityInput,
   ServiceabilityError,
+  assertUuid,
+  type ServiceabilityCandidate,
   type ServiceabilityDecision,
+  type ServiceabilityLocationEvidence,
 } from "../../shared/serviceability";
 import { resolveOutletOperatingState } from "../assortment/resolve-operating";
-import type { Persistence } from "../persistence/types";
+import type { Persistence, PersistenceQueryContext } from "../persistence/types";
 import { assertApplicationRole } from "./assert-role";
 import {
   systemServiceabilityClock,
   type ServiceabilityClock,
 } from "./clock";
-import { findServiceabilityCandidates } from "./repository";
+import {
+  findServiceabilityCandidateForOutlet,
+  findServiceabilityCandidates,
+} from "./repository";
 
 export type EvaluateServiceabilityOptions = Readonly<{
   clock?: ServiceabilityClock;
 }>;
 
-function isAuthoritativelyEligible(
-  code: string,
-): boolean {
+function isAuthoritativelyEligible(code: string): boolean {
   return code === "AVAILABLE";
 }
 
@@ -41,7 +45,7 @@ function isAuthoritativelyUnavailable(code: string): boolean {
 }
 
 function isGeographicallyEligible(
-  candidate: Awaited<ReturnType<typeof findServiceabilityCandidates>>[number],
+  candidate: ServiceabilityCandidate,
   coordinates: Readonly<{ latitude: string; longitude: string }>,
 ): boolean {
   const policy = candidate.distancePolicy;
@@ -68,6 +72,107 @@ function isGeographicallyEligible(
 }
 
 /**
+ * Shared candidate evaluation rules for Brand-wide and Outlet-scoped reads.
+ * Does not invent separate sellability rules.
+ */
+async function evaluateServiceabilityCandidates(
+  ctx: PersistenceQueryContext,
+  candidates: readonly ServiceabilityCandidate[],
+  coordinates: Readonly<{ latitude: string; longitude: string }>,
+  evaluatedAt: Date,
+): Promise<ServiceabilityDecision> {
+  if (candidates.length === 0) {
+    return Object.freeze({
+      status: "INDETERMINATE" as const,
+      evaluatedAt,
+      reason: "CONFIGURATION_INCONSISTENT" as const,
+    });
+  }
+
+  let sawAuthoritativeUnavailable = false;
+  let sawGeographicallyIneligible = false;
+
+  for (const candidate of candidates) {
+    if (!isGeographicallyEligible(candidate, coordinates)) {
+      sawGeographicallyIneligible = true;
+      continue;
+    }
+
+    let operating;
+    try {
+      operating = await resolveOutletOperatingState(ctx, {
+        outletId: candidate.outletId,
+        context: { now: evaluatedAt },
+      });
+    } catch {
+      return Object.freeze({
+        status: "INDETERMINATE" as const,
+        evaluatedAt,
+        reason: "OPERATIONAL_EVALUATION_FAILED" as const,
+      });
+    }
+
+    if (operating.code === "ERROR") {
+      return Object.freeze({
+        status: "INDETERMINATE" as const,
+        evaluatedAt,
+        reason: "OPERATIONAL_EVALUATION_FAILED" as const,
+      });
+    }
+
+    if (isAuthoritativelyEligible(operating.code)) {
+      return Object.freeze({
+        status: "SERVICEABLE" as const,
+        evaluatedAt,
+        selectedOutletId: candidate.outletId,
+      });
+    }
+
+    if (isAuthoritativelyUnavailable(operating.code)) {
+      sawAuthoritativeUnavailable = true;
+      continue;
+    }
+
+    return Object.freeze({
+      status: "INDETERMINATE" as const,
+      evaluatedAt,
+      reason: "DEPENDENCY_FAILURE" as const,
+    });
+  }
+
+  if (sawAuthoritativeUnavailable) {
+    return Object.freeze({
+      status: "TEMPORARILY_UNAVAILABLE" as const,
+      evaluatedAt,
+    });
+  }
+
+  if (sawGeographicallyIneligible) {
+    return Object.freeze({
+      status: "NOT_SERVICEABLE" as const,
+      evaluatedAt,
+    });
+  }
+
+  return Object.freeze({
+    status: "INDETERMINATE" as const,
+    evaluatedAt,
+    reason: "CONFIGURATION_INCONSISTENT" as const,
+  });
+}
+
+function resolveEvaluatedAt(clock: ServiceabilityClock): Date {
+  const evaluatedAt = clock.now();
+  if (!(evaluatedAt instanceof Date) || Number.isNaN(evaluatedAt.getTime())) {
+    throw new ServiceabilityError(
+      "SERVICEABILITY_VALIDATION_ERROR",
+      "Trusted evaluation clock returned an invalid instant.",
+    );
+  }
+  return evaluatedAt;
+}
+
+/**
  * Evaluate current Serviceability for trusted Brand + location evidence.
  * Does not require a workforce session. Never writes.
  */
@@ -78,13 +183,7 @@ export async function evaluateServiceability(
 ): Promise<ServiceabilityDecision> {
   const parsed = parseEvaluateServiceabilityInput(input);
   const clock = options.clock ?? systemServiceabilityClock;
-  const evaluatedAt = clock.now();
-  if (!(evaluatedAt instanceof Date) || Number.isNaN(evaluatedAt.getTime())) {
-    throw new ServiceabilityError(
-      "SERVICEABILITY_VALIDATION_ERROR",
-      "Trusted evaluation clock returned an invalid instant.",
-    );
-  }
+  const evaluatedAt = resolveEvaluatedAt(clock);
 
   const coordinates = parsed.location.coordinates ?? undefined;
   if (!coordinates) {
@@ -102,83 +201,58 @@ export async function evaluateServiceability(
       brandId: parsed.brandId,
     });
 
-    if (candidates.length === 0) {
-      return Object.freeze({
-        status: "INDETERMINATE" as const,
-        evaluatedAt,
-        reason: "CONFIGURATION_INCONSISTENT" as const,
-      });
-    }
+    return evaluateServiceabilityCandidates(
+      ctx,
+      candidates,
+      coordinates,
+      evaluatedAt,
+    );
+  });
+}
 
-    let sawAuthoritativeUnavailable = false;
-    let sawGeographicallyIneligible = false;
+export type EvaluateOutletServiceabilityInput = Readonly<{
+  brandId: string;
+  outletId: string;
+  location: ServiceabilityLocationEvidence;
+}>;
 
-    for (const candidate of candidates) {
-      if (!isGeographicallyEligible(candidate, coordinates)) {
-        sawGeographicallyIneligible = true;
-        continue;
-      }
+/**
+ * Evaluate Serviceability for exactly one Brand Outlet + location evidence.
+ * Uses the same geographic + operating rules as Brand-wide evaluation, but never
+ * considers sibling outlets. Read-only; no workforce session required.
+ */
+export async function evaluateOutletServiceability(
+  persistence: Persistence,
+  input: EvaluateOutletServiceabilityInput,
+  options: EvaluateServiceabilityOptions = {},
+): Promise<ServiceabilityDecision> {
+  const brandId = assertUuid(input.brandId, "brandId");
+  const outletId = assertUuid(input.outletId, "outletId");
+  const clock = options.clock ?? systemServiceabilityClock;
+  const evaluatedAt = resolveEvaluatedAt(clock);
 
-      let operating;
-      try {
-        operating = await resolveOutletOperatingState(ctx, {
-          outletId: candidate.outletId,
-          context: { now: evaluatedAt },
-        });
-      } catch {
-        return Object.freeze({
-          status: "INDETERMINATE" as const,
-          evaluatedAt,
-          reason: "OPERATIONAL_EVALUATION_FAILED" as const,
-        });
-      }
-
-      if (operating.code === "ERROR") {
-        return Object.freeze({
-          status: "INDETERMINATE" as const,
-          evaluatedAt,
-          reason: "OPERATIONAL_EVALUATION_FAILED" as const,
-        });
-      }
-
-      if (isAuthoritativelyEligible(operating.code)) {
-        return Object.freeze({
-          status: "SERVICEABLE" as const,
-          evaluatedAt,
-          selectedOutletId: candidate.outletId,
-        });
-      }
-
-      if (isAuthoritativelyUnavailable(operating.code)) {
-        sawAuthoritativeUnavailable = true;
-        continue;
-      }
-
-      return Object.freeze({
-        status: "INDETERMINATE" as const,
-        evaluatedAt,
-        reason: "DEPENDENCY_FAILURE" as const,
-      });
-    }
-
-    if (sawAuthoritativeUnavailable) {
-      return Object.freeze({
-        status: "TEMPORARILY_UNAVAILABLE" as const,
-        evaluatedAt,
-      });
-    }
-
-    if (sawGeographicallyIneligible) {
-      return Object.freeze({
-        status: "NOT_SERVICEABLE" as const,
-        evaluatedAt,
-      });
-    }
-
+  const coordinates = input.location.coordinates ?? undefined;
+  if (!coordinates) {
     return Object.freeze({
       status: "INDETERMINATE" as const,
       evaluatedAt,
-      reason: "CONFIGURATION_INCONSISTENT" as const,
+      reason: "LOCATION_COORDINATES_REQUIRED" as const,
     });
+  }
+
+  return persistence.withContext(async (ctx) => {
+    assertApplicationRole(ctx, "evaluateOutletServiceability");
+
+    const candidate = await findServiceabilityCandidateForOutlet(ctx, {
+      brandId,
+      outletId,
+    });
+
+    return evaluateServiceabilityCandidates(
+      ctx,
+      candidate ? [candidate] : [],
+      coordinates,
+      evaluatedAt,
+    );
   });
 }

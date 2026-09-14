@@ -33,7 +33,9 @@ export {
 } from "./administration";
 
 export {
+  evaluateOutletServiceability,
   evaluateServiceability,
+  type EvaluateOutletServiceabilityInput,
   type EvaluateServiceabilityOptions,
 } from "./evaluate";
 
@@ -43,4 +45,7 @@ export {
   type ServiceabilityClock,
 } from "./clock";
 
-export { findServiceabilityCandidates } from "./repository";
+export {
+  findServiceabilityCandidateForOutlet,
+  findServiceabilityCandidates,
+} from "./repository";

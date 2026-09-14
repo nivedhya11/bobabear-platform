@@ -717,13 +717,31 @@ describe("IMP-036F F6A commercial composition Admin HTTP", () => {
       const kitchenInspect = await fetch(`${base}${variantBase}/inspection`, {
         headers: { Cookie: kitchenCookie },
       });
-      expect(kitchenInspect.status).toBe(403);
+      expect(kitchenInspect.status).toBe(404);
+      expect((await kitchenInspect.json()).code).toBe("COMMERCIAL_NOT_FOUND");
 
       const invalidBrand = await fetch(
         `http://127.0.0.1:${address.port}/api/admin/v1/brands/not-a-uuid/commercial/activity`,
         { headers: { Cookie: cookie } },
       );
       expect(invalidBrand.status).toBe(400);
+
+      const missingBrandId = "00000000-0000-4000-8000-000000000404";
+      const missingBrandActivity = await fetch(
+        `${base}/api/admin/v1/brands/${missingBrandId}/commercial/activity`,
+        { headers: { Cookie: cookie } },
+      );
+      const foreignBrandActivity = await fetch(
+        `${base}/api/admin/v1/brands/${otherTree.brand.id}/commercial/activity`,
+        { headers: { Cookie: cookie } },
+      );
+      expect(missingBrandActivity.status).toBe(404);
+      expect(foreignBrandActivity.status).toBe(404);
+      const missingBrandJson = (await missingBrandActivity.json()) as { code: string };
+      const foreignBrandJson = (await foreignBrandActivity.json()) as { code: string };
+      expect(missingBrandJson.code).toBe("COMMERCIAL_NOT_FOUND");
+      expect(foreignBrandJson.code).toBe(missingBrandJson.code);
+      expect(JSON.stringify(foreignBrandJson)).not.toContain(otherTree.brand.id);
 
       const missingVariant = "00000000-0000-4000-8000-000000000404";
       const missingInspect = await fetch(
@@ -761,6 +779,379 @@ describe("IMP-036F F6A commercial composition Admin HTTP", () => {
       });
       expect(includeSpy).not.toHaveBeenCalled();
       includeSpy.mockRestore();
+    });
+  }, 180_000);
+
+  it("corrects F6A defects A–F with focused regressions", async () => {
+    await withIsolatedTestDatabase(adminConnectionInfo(), async (database) => {
+      await applyMigrations(database.connectionString);
+      const persistence = getApplicationPersistence(applicationConfig(database.connectionString));
+      openHandles.push(persistence);
+
+      const tree = await persistence.transaction((tx) => seedBrandTree(tx, "f6c"));
+      const brandAdmin = await createEligibleWorkforceUser(persistence);
+      const actor = principalFor(brandAdmin.id);
+
+      await persistence.transaction(async (tx) => {
+        const membership = await createMembership(tx, {
+          workforceUserId: brandAdmin.id,
+          scope: { scopeType: "brand", brandId: tree.brand.id },
+          status: "active",
+        });
+        await grantRole(tx, { membershipId: membership.id, roleKey: "brand_admin" });
+      });
+
+      const brandId = tree.brand.id;
+      const outletA = tree.outletA.id;
+      const outletB = tree.outletB.id;
+
+      const catalog = await createActiveStandardVariant(persistence, actor, brandId, "f6c");
+      await includeVariantAtBrand(persistence, actor, brandId, catalog.variantId);
+      await seedMenuWithImage(persistence, actor, brandId, catalog.productId, "f6c");
+      await alwaysAccepting(persistence, actor, outletA);
+      await alwaysAccepting(persistence, actor, outletB);
+      await seedOutletDistanceServiceability(persistence, actor, outletA, {
+        routingPriority: 1,
+        maxServiceDistanceMeters: 9_000,
+      });
+      // Outlet B covers TEST_OUTSIDE while outlet A does not.
+      await seedOutletDistanceServiceability(persistence, actor, outletB, {
+        routingPriority: 2,
+        maxServiceDistanceMeters: 9_000,
+      });
+      {
+        const { setOutletServiceabilityDistancePolicy } = await import(
+          "../../src/server/serviceability"
+        );
+        const { findServiceabilityConfig } = await import(
+          "../../src/server/serviceability/repository"
+        );
+        const current = await persistence.withContext((ctx) =>
+          findServiceabilityConfig(ctx, outletB),
+        );
+        if (!current) throw new Error("expected outlet B serviceability config");
+        await setOutletServiceabilityDistancePolicy(persistence, actor, {
+          outletId: outletB,
+          expectedRevision: current.revision,
+          serviceOriginLatitude: TEST_OUTSIDE_COORDS.latitude,
+          serviceOriginLongitude: TEST_OUTSIDE_COORDS.longitude,
+          maxServiceDistanceMeters: 9_000,
+        });
+      }
+      await persistence.transaction(async (tx) => {
+        const created = await createPromotionDraft(tx, {
+          actor,
+          brandId,
+          code: `f6c${randomUUID().slice(0, 6).toLowerCase()}`,
+          displayName: "F6C Promo",
+          scopeType: "brand",
+          territoryId: null,
+          organizationId: null,
+          outletId: null,
+          triggerType: "automatic",
+          stackingPolicy: "exclusive",
+          startsAt: new Date("2026-01-01T00:00:00.000Z"),
+          endsAt: null,
+        });
+        let revision = created.revision;
+        revision = (
+          await setPromotionBenefit(tx, {
+            actor,
+            promotionId: created.id,
+            expectedPromotionRevision: revision,
+            benefit: {
+              benefitType: "percentage_discount",
+              percentageBps: 1000,
+              fixedAmountPaise: null,
+              maximumDiscountPaise: null,
+              buyQuantity: null,
+              getQuantity: null,
+              repeatable: null,
+              maximumRewardQuantity: null,
+              includeModifiers: false,
+              includeBundleDeltas: false,
+            },
+          })
+        ).revision;
+        for (const role of ["qualifier", "benefit"] as const) {
+          revision = (
+            await setPromotionTargets(tx, {
+              actor,
+              promotionId: created.id,
+              expectedPromotionRevision: revision,
+              targetRole: role,
+              targets: [
+                {
+                  targetRole: role,
+                  targetType: "all_merchandise",
+                  productId: null,
+                  variantId: null,
+                  chargeDefinitionId: null,
+                },
+              ],
+            })
+          ).revision;
+        }
+        await activatePromotion(tx, {
+          actor,
+          promotionId: created.id,
+          expectedPromotionRevision: revision,
+        });
+      });
+
+      // Multi-variant product: customer Menu projects the default; sibling shares productId + price.
+      const {
+        createProduct,
+        createVariant,
+        activateVariant,
+        activateProduct,
+        publishCatalogContentChange,
+      } = await import("../../src/server/catalog");
+      const { catalogContentRevisionsTable } = await import(
+        "../../src/platform/database/schema/catalog"
+      );
+      const { eq } = await import("drizzle-orm");
+      const multiProduct = await persistence.transaction((tx) =>
+        createProduct(tx, {
+          actor,
+          brandId,
+          code: "f6c-multi",
+          name: "F6C Multi",
+          productKind: "standard",
+        }),
+      );
+      const defaultVariant = await persistence.transaction((tx) =>
+        createVariant(tx, {
+          actor,
+          productId: multiProduct.id,
+          code: "regular",
+          name: "Regular",
+          isDefault: true,
+          isSelectorVisible: true,
+        }),
+      );
+      const sibling = await persistence.transaction((tx) =>
+        createVariant(tx, {
+          actor,
+          productId: multiProduct.id,
+          code: "large",
+          name: "Large",
+          isDefault: false,
+          isSelectorVisible: true,
+        }),
+      );
+      await persistence.transaction(async (tx) => {
+        await activateVariant(tx, { actor, variantId: defaultVariant.id });
+        await activateVariant(tx, { actor, variantId: sibling.id });
+        await activateProduct(tx, { actor, productId: multiProduct.id });
+      });
+      await persistence.transaction(async (tx) => {
+        const envelope = await tx.db
+          .select()
+          .from(catalogContentRevisionsTable)
+          .where(eq(catalogContentRevisionsTable.brandId, brandId))
+          .limit(1);
+        if (!envelope[0]) throw new Error("missing brand content revision");
+        await publishCatalogContentChange(tx, {
+          actor,
+          brandId,
+          productId: multiProduct.id,
+          expectedContentRevision: envelope[0].contentRevision,
+        });
+      });
+      await includeVariantAtBrand(persistence, actor, brandId, defaultVariant.id);
+      await includeVariantAtBrand(persistence, actor, brandId, sibling.id);
+      await seedMenuWithImage(persistence, actor, brandId, multiProduct.id, "f6cm");
+
+      await persistence.transaction(async (tx) => {
+        const book = await createDraftPriceBook(tx, {
+          actor,
+          brandId,
+          scopeType: "brand",
+          code: `pb-${randomUUID().slice(0, 8)}`,
+          name: "Brand book",
+          effectiveFrom: new Date("2026-01-01T00:00:00.000Z"),
+          effectiveTo: null,
+        });
+        let revision = book.revision;
+        for (const variantId of [catalog.variantId, defaultVariant.id, sibling.id]) {
+          const attached = await attachDraftVariantPrice(tx, {
+            actor,
+            priceBookId: book.id,
+            brandId,
+            variantId,
+            amountPaise: BigInt(19_900),
+            taxCategoryId: TAX_CATEGORY_RESTAURANT_SERVICE_ID,
+            expectedPriceBookRevision: revision,
+          });
+          revision = attached.priceBookRevision;
+        }
+        await activatePriceBook(tx, {
+          actor,
+          priceBookId: book.id,
+          brandId,
+          expectedPriceBookRevision: revision,
+        });
+      });
+
+      const runtime = getWorkforceAuthRuntime({
+        auth: workforceAuthConfig().workforce,
+        persistence: applicationConfig(database.connectionString),
+      });
+      openHandles.push(runtime);
+      const adapter = await adapterFor(runtime);
+      const server = createServer((req, res) => {
+        void routeOperationsRequest(
+          req,
+          res,
+          {
+            runtime,
+            persistence,
+            trustedOrigin: "http://localhost:3000",
+          },
+          req.headers["x-request-id"]?.toString() ?? "f6c-req",
+        );
+      });
+      await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+      openHandles.push({
+        close: () =>
+          new Promise<void>((resolve, reject) => {
+            server.close((err) => (err ? reject(err) : resolve()));
+          }),
+      });
+      const address = server.address();
+      if (!address || typeof address === "string") throw new Error("expected tcp address");
+      const base = `http://127.0.0.1:${address.port}`;
+      const session = await adapter.createSession(brandAdmin.id);
+      const cookie = await signedCookie(session.token);
+      const commercialBase = `/api/admin/v1/brands/${brandId}/commercial`;
+      const variantBase = `${commercialBase}/variants/${catalog.variantId}`;
+
+      // A — requested-outlet Serviceability (outside A, inside B) must block for A
+      const multiOutletDiagnosis = await fetch(`${base}${variantBase}/diagnosis`, {
+        method: "POST",
+        headers: {
+          Cookie: cookie,
+          Origin: "http://localhost:3000",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          outletId: outletA,
+          customerLocation: TEST_OUTSIDE_COORDS,
+        }),
+      });
+      expect(multiOutletDiagnosis.status).toBe(200);
+      const multiBody = (await multiOutletDiagnosis.json()) as {
+        signals: Array<{ key: string; outcome: string }>;
+      };
+      expect(
+        Object.fromEntries(multiBody.signals.map((s) => [s.key, s])).SERVICEABILITY?.outcome,
+      ).toBe("block");
+
+      const insideADiagnosis = await fetch(`${base}${variantBase}/diagnosis`, {
+        method: "POST",
+        headers: {
+          Cookie: cookie,
+          Origin: "http://localhost:3000",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          outletId: outletA,
+          customerLocation: TEST_INSIDE_COORDS,
+        }),
+      });
+      expect(
+        Object.fromEntries(
+          (
+            (await insideADiagnosis.json()) as {
+              signals: Array<{ key: string; outcome: string }>;
+            }
+          ).signals.map((s) => [s.key, s]),
+        ).SERVICEABILITY?.outcome,
+      ).toBe("pass");
+
+      // B — exact Variant verification (sibling not in customer Menu truth)
+      const siblingVerify = await fetch(
+        `${base}${commercialBase}/variants/${sibling.id}/verification`,
+        {
+          method: "POST",
+          headers: {
+            Cookie: cookie,
+            Origin: "http://localhost:3000",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ outletId: outletA }),
+        },
+      );
+      expect(siblingVerify.status).toBe(200);
+      const siblingBody = (await siblingVerify.json()) as {
+        outcome: string;
+        customerMenu: { present: boolean | null; item: { variantId: string } | null };
+      };
+      expect(siblingBody.customerMenu.present).toBe(false);
+      expect(siblingBody.customerMenu.item).toBeNull();
+      expect(siblingBody.outcome).not.toBe("VERIFIED_MATCH");
+
+      // E — delivery subtotal: coords without subtotal = insufficient_context
+      const missingSubtotal = await fetch(`${base}${variantBase}/verification`, {
+        method: "POST",
+        headers: {
+          Cookie: cookie,
+          Origin: "http://localhost:3000",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          outletId: outletA,
+          destinationCoordinates: TEST_INSIDE_COORDS,
+        }),
+      });
+      expect(missingSubtotal.status).toBe(200);
+      expect(
+        ((await missingSubtotal.json()) as { deliveryTariff: { state: string } }).deliveryTariff
+          .state,
+      ).toBe("insufficient_context");
+
+      const badSubtotal = await fetch(`${base}${variantBase}/verification`, {
+        method: "POST",
+        headers: {
+          Cookie: cookie,
+          Origin: "http://localhost:3000",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          outletId: outletA,
+          destinationCoordinates: TEST_INSIDE_COORDS,
+          orderSubtotalPaise: "not-a-number",
+        }),
+      });
+      expect(badSubtotal.status).toBe(400);
+      expect((await badSubtotal.json()).code).toBe("COMMERCIAL_REQUEST_INVALID");
+
+      // F — Promotion audit actor attribution survives composition
+      const activityRes = await fetch(`${base}${commercialBase}/activity`, {
+        headers: { Cookie: cookie },
+      });
+      expect(activityRes.status).toBe(200);
+      const activity = (await activityRes.json()) as {
+        events: Array<{ domain: string; actorWorkforceUserId: string | null }>;
+      };
+      const promoEvents = activity.events.filter((e) => e.domain === "promotions");
+      expect(promoEvents.length).toBeGreaterThan(0);
+      expect(promoEvents.some((e) => e.actorWorkforceUserId === brandAdmin.id)).toBe(true);
+
+      // C — unexpected tariff read failure must not mask as empty config
+      const tariffMod = await import("../../src/server/pricing/delivery-tariff");
+      const tariffSpy = vi
+        .spyOn(tariffMod, "readOutletDeliveryTariff")
+        .mockRejectedValueOnce(new Error("simulated delivery-tariff outage"));
+      const inspectionFail = await fetch(
+        `${base}${variantBase}/outlets/${outletA}/inspection`,
+        { headers: { Cookie: cookie } },
+      );
+      tariffSpy.mockRestore();
+      expect(inspectionFail.status).toBeGreaterThanOrEqual(500);
+      const failBody = (await inspectionFail.json()) as Record<string, unknown>;
+      expect(JSON.stringify(failBody)).not.toMatch(/No delivery tariff configuration/);
     });
   }, 180_000);
 });

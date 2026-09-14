@@ -24,7 +24,7 @@ import {
 import { resolveOutletOperatingState } from "../../assortment/resolve-operating";
 import { findOutletOperatingProfile, listOutletOperatingIntervals } from "../../assortment/operating";
 import { resolveOutletVariantPrice } from "../../pricing/resolve-price";
-import { PricingResolutionError } from "../../pricing/errors";
+import { PricingResolutionError, PricingValidationError } from "../../pricing/errors";
 import { readOutletDeliveryTariff } from "../../pricing/delivery-tariff";
 import { listBrandPromotions } from "../../promotions/commercial-reads";
 import type { PersistenceQueryContext } from "../../persistence/types";
@@ -428,18 +428,22 @@ export async function inspectCommercialOffering(
             providerCostIsSeparate: true,
           },
         };
-      } catch {
-        deliveryTariff = {
-          state: "available",
-          permission: "pricing.read",
-          explanation: "No delivery tariff configuration present for this outlet.",
-          data: {
-            deliveryFeeBands: [],
-            freeDeliverySubtotalThresholdPaise: null,
-            serviceabilityIsSeparate: true,
-            providerCostIsSeparate: true,
-          },
-        };
+      } catch (error) {
+        if (error instanceof PricingValidationError) {
+          deliveryTariff = {
+            state: "available",
+            permission: "pricing.read",
+            explanation: "No delivery tariff configuration present for this outlet.",
+            data: {
+              deliveryFeeBands: [],
+              freeDeliverySubtotalThresholdPaise: null,
+              serviceabilityIsSeparate: true,
+              providerCostIsSeparate: true,
+            },
+          };
+        } else {
+          throw error;
+        }
       }
     }
   }

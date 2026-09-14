@@ -179,7 +179,7 @@ export async function composeCommercialActivity(
         domain: "promotions",
         id: row.id,
         occurredAt: row.occurredAt,
-        actorWorkforceUserId: null,
+        actorWorkforceUserId: row.actorWorkforceUserId ?? null,
         action: row.action,
         resourceType: row.resourceType,
         resourceId: row.resourceId,

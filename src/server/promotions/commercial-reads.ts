@@ -217,6 +217,7 @@ export async function listBrandPromotionAuditEvents(
     events: rows.map((row) => ({
       id: row.id,
       occurredAt: row.occurredAt.toISOString(),
+      actorWorkforceUserId: row.actorWorkforceUserId,
       action: row.action,
       resourceType: row.resourceType,
       resourceId: row.resourceId,
