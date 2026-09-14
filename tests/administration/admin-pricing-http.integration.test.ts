@@ -130,6 +130,19 @@ describe("classifyAdminPricingRoute", () => {
       brandId,
       priceBookId,
     });
+    const outletId = "33333333-3333-4333-8333-333333333333";
+    expect(classifyAdminPricingRoute(`${base}/outlets/${outletId}/delivery-tariff`)).toEqual({
+      kind: "get_delivery_tariff",
+      brandId,
+      outletId,
+    });
+    expect(
+      classifyAdminPricingRoute(`${base}/outlets/${outletId}/delivery-tariff/consequence-preview`),
+    ).toEqual({
+      kind: "delivery_tariff_consequence_preview",
+      brandId,
+      outletId,
+    });
     expect(classifyAdminPricingRoute(`/api/admin/v1/brands/${brandId}/assortment/rules`)).toBeNull();
   });
 });

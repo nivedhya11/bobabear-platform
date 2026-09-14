@@ -93,3 +93,14 @@ export type {
   PriceBookConsequencePreview,
   PricingPreviewBlocker,
 } from "./consequence-preview";
+
+export {
+  parseExpectedTariffConfigRevision,
+  previewOutletDeliveryTariffConsequence,
+  readOutletDeliveryTariff,
+  updateOutletDeliveryTariff,
+} from "./delivery-tariff";
+export type {
+  DeliveryTariffConsequencePreview,
+  DeliveryTariffProjection,
+} from "./delivery-tariff";

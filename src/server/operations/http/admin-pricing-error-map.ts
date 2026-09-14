@@ -50,9 +50,11 @@ export function mapPricingAdminError(error: unknown, requestId: string): MappedP
     const code =
       error.pricingErrorCode === "PRICE_BOOK_STALE_REVISION"
         ? "PRICE_BOOK_STALE_REVISION"
-        : error.pricingErrorCode === "PRICE_BOOK_OVERLAP"
-          ? "PRICE_BOOK_OVERLAP"
-          : "PRICING_CONFLICT";
+        : error.pricingErrorCode === "TARIFF_STALE_REVISION"
+          ? "TARIFF_STALE_REVISION"
+          : error.pricingErrorCode === "PRICE_BOOK_OVERLAP"
+            ? "PRICE_BOOK_OVERLAP"
+            : "PRICING_CONFLICT";
     return {
       status: 409,
       body: { ok: false, code, requestId, message: error.message },

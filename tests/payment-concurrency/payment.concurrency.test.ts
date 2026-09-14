@@ -22,6 +22,8 @@ import {
   activatePromotion,
   createCouponDraft,
   createPromotionDraft,
+  getCoupon,
+  getPromotion,
   setPromotionBenefit,
   setPromotionTargets,
 } from "../../src/server/promotions";
@@ -131,6 +133,7 @@ async function seedAutomaticCombinablePromotion(
     await setPromotionBenefit(tx, {
       actor,
       promotionId: created.id,
+      expectedPromotionRevision: (await getPromotion(tx, created.id))!.revision,
       benefit: {
         benefitType: "percentage_discount",
         percentageBps,
@@ -148,6 +151,7 @@ async function seedAutomaticCombinablePromotion(
       await setPromotionTargets(tx, {
         actor,
         promotionId: created.id,
+        expectedPromotionRevision: (await getPromotion(tx, created.id))!.revision,
         targetRole: role,
         targets: [
           {
@@ -160,7 +164,7 @@ async function seedAutomaticCombinablePromotion(
         ],
       });
     }
-    await activatePromotion(tx, { actor, promotionId: created.id });
+    await activatePromotion(tx, { actor, expectedPromotionRevision: (await getPromotion(tx, created.id))!.revision, promotionId: created.id });
     return created.id;
   });
 }
@@ -190,6 +194,7 @@ async function seedCombinableLimitedCoupon(
     await setPromotionBenefit(tx, {
       actor,
       promotionId: created.id,
+      expectedPromotionRevision: (await getPromotion(tx, created.id))!.revision,
       benefit: {
         benefitType: "percentage_discount",
         percentageBps: 500,
@@ -207,6 +212,7 @@ async function seedCombinableLimitedCoupon(
       await setPromotionTargets(tx, {
         actor,
         promotionId: created.id,
+        expectedPromotionRevision: (await getPromotion(tx, created.id))!.revision,
         targetRole: role,
         targets: [
           {
@@ -219,7 +225,7 @@ async function seedCombinableLimitedCoupon(
         ],
       });
     }
-    await activatePromotion(tx, { actor, promotionId: created.id });
+    await activatePromotion(tx, { actor, expectedPromotionRevision: (await getPromotion(tx, created.id))!.revision, promotionId: created.id });
     const coupon = await createCouponDraft(tx, {
       actor,
       promotionId: created.id,
@@ -228,7 +234,7 @@ async function seedCombinableLimitedCoupon(
       maximumRedemptions,
       maximumRedemptionsPerCustomer: null,
     });
-    await activateCoupon(tx, { actor, couponId: coupon.id });
+    await activateCoupon(tx, { actor, expectedCouponRevision: (await getCoupon(tx, coupon.id))!.revision, couponId: coupon.id });
     return {
       promotionId: created.id,
       couponId: coupon.id,

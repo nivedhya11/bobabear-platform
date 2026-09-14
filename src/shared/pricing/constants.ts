@@ -88,6 +88,7 @@ export const PRICING_TAX_AUDIT_ACTIONS = [
   "tax_policy.activated",
   "tax_policy.retired",
   "charge_definition.changed",
+  "delivery_tariff.updated",
 ] as const;
 export type PricingTaxAuditAction = (typeof PRICING_TAX_AUDIT_ACTIONS)[number];
 

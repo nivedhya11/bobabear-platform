@@ -201,6 +201,11 @@
       "tag": "0039_familiar_vin_gonzales",
       "path": "drizzle/0039_familiar_vin_gonzales.sql",
       "sha256": "39b3d034720a049394620b3cce32d75e4616a4e48045375255de6aed1ae905b4"
+    },
+    {
+      "tag": "0040_curvy_tomas",
+      "path": "drizzle/0040_curvy_tomas.sql",
+      "sha256": "fc0b72e96201771b1c99fbb30439ba3ba3fdfb05bdd6d3de0bfb040586d3ce41"
     }
   ]
 }

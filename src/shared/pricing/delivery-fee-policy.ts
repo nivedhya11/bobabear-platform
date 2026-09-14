@@ -54,6 +54,113 @@ export function parseDeliveryFeeBands(raw: unknown): readonly DeliveryFeeBand[] 
   return Object.freeze(bands);
 }
 
+/** PostgreSQL signed bigint upper bound used for authoritative paise columns. */
+const PG_BIGINT_MAX = BigInt("9223372036854775807");
+
+function isNonNegativeSafeInteger(value: unknown): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
+}
+
+function isPositiveSafeInteger(value: unknown): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value > 0;
+}
+
+export function validateDeliveryFeeBands(
+  raw: unknown,
+): { ok: true; bands: readonly DeliveryFeeBand[] } | { ok: false; issues: readonly string[] } {
+  if (!Array.isArray(raw)) {
+    return { ok: false, issues: Object.freeze(["deliveryFeeBands must be an array."]) };
+  }
+  const issues: string[] = [];
+  const bands: DeliveryFeeBand[] = [];
+  for (let i = 0; i < raw.length; i += 1) {
+    const entry = raw[i];
+    if (!isRecord(entry)) {
+      issues.push(`deliveryFeeBands[${i}] must be an object.`);
+      continue;
+    }
+    const maxDistanceMeters = entry.maxDistanceMeters;
+    const amountPaise = entry.amountPaise;
+    if (!isPositiveSafeInteger(maxDistanceMeters)) {
+      issues.push(
+        `deliveryFeeBands[${i}].maxDistanceMeters must be a positive safe integer.`,
+      );
+    }
+    if (!isNonNegativeSafeInteger(amountPaise)) {
+      issues.push(
+        `deliveryFeeBands[${i}].amountPaise must be a non-negative safe integer.`,
+      );
+    }
+    if (isPositiveSafeInteger(maxDistanceMeters) && isNonNegativeSafeInteger(amountPaise)) {
+      bands.push(
+        Object.freeze({
+          maxDistanceMeters,
+          amountPaise,
+        }),
+      );
+    }
+  }
+  if (issues.length > 0) {
+    return { ok: false, issues: Object.freeze(issues) };
+  }
+  for (let i = 1; i < bands.length; i += 1) {
+    if (bands[i]!.maxDistanceMeters <= bands[i - 1]!.maxDistanceMeters) {
+      issues.push("deliveryFeeBands must be strictly increasing by maxDistanceMeters with no overlap.");
+      break;
+    }
+  }
+  if (issues.length > 0) {
+    return { ok: false, issues: Object.freeze(issues) };
+  }
+  return { ok: true, bands: Object.freeze(bands) };
+}
+
+export function validateFreeDeliveryThresholdPaise(
+  value: unknown,
+): { ok: true; thresholdPaise: bigint | null } | { ok: false; issues: readonly string[] } {
+  if (value === null) {
+    return { ok: true, thresholdPaise: null };
+  }
+  if (typeof value === "number") {
+    if (!Number.isSafeInteger(value) || value < 0) {
+      return {
+        ok: false,
+        issues: Object.freeze([
+          "freeDeliverySubtotalThresholdPaise must be a non-negative safe integer or null.",
+        ]),
+      };
+    }
+    return { ok: true, thresholdPaise: BigInt(value) };
+  }
+  if (typeof value === "bigint") {
+    if (value < BigInt(0) || value > PG_BIGINT_MAX) {
+      return {
+        ok: false,
+        issues: Object.freeze([
+          "freeDeliverySubtotalThresholdPaise must be a non-negative integer within database range or null.",
+        ]),
+      };
+    }
+    return { ok: true, thresholdPaise: value };
+  }
+  if (typeof value === "string" && /^(0|[1-9]\d*)$/.test(value)) {
+    const parsed = BigInt(value);
+    if (parsed > PG_BIGINT_MAX) {
+      return {
+        ok: false,
+        issues: Object.freeze([
+          "freeDeliverySubtotalThresholdPaise must be a non-negative integer within database range or null.",
+        ]),
+      };
+    }
+    return { ok: true, thresholdPaise: parsed };
+  }
+  return {
+    ok: false,
+    issues: Object.freeze(["freeDeliverySubtotalThresholdPaise must be a non-negative integer or null."]),
+  };
+}
+
 export function resolveDeliveryFeeFromBands(
   distanceMeters: number,
   bands: readonly DeliveryFeeBand[],

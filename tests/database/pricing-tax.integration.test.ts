@@ -95,6 +95,11 @@ describe("IMP-015 pricing migration", () => {
     );
     expect(f4Revision).toBeDefined();
     expect(f4Revision!.sha256).toBe(sha256File("drizzle/0039_familiar_vin_gonzales.sql"));
+    const f5Revision = integrity.migrations.find(
+      (m) => m.path === "drizzle/0040_curvy_tomas.sql",
+    );
+    expect(f5Revision).toBeDefined();
+    expect(f5Revision!.sha256).toBe(sha256File("drizzle/0040_curvy_tomas.sql"));
   });
 
   it("replays migrations, creates 12 tables, seeds system tax/charges, and the canonical permission catalog after IMP-016", async () => {

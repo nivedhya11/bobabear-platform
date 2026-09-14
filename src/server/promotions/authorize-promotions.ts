@@ -155,6 +155,14 @@ export async function requirePromotionManageForScope(
   throw new PromotionAdminError("PROMOTION_SCOPE_INVALID", "Unknown promotion scope.");
 }
 
+export async function requireCouponsRead(
+  context: PersistenceQueryContext,
+  actor: unknown,
+  brandId: string,
+): Promise<void> {
+  await requireBrandPermission(context, actor, brandId, "coupons.read", "requireCouponsRead");
+}
+
 export async function requirePromotionsRead(
   context: PersistenceQueryContext,
   actor: unknown,

@@ -6,6 +6,8 @@ export * from "./constants";
 export * from "./types";
 export * from "./errors";
 export * from "./coupon-code";
+export * from "./coupon-lifecycle";
+export * from "./coupon-activation";
 export * from "./fingerprint";
 export * from "./money";
 export * from "./targets";

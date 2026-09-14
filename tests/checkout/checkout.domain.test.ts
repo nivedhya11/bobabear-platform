@@ -38,6 +38,8 @@ import {
   activatePromotion,
   createCouponDraft,
   createPromotionDraft,
+  getCoupon,
+  getPromotion,
   setPromotionBenefit,
   setPromotionTargets,
 } from "../../src/server/promotions";
@@ -1329,6 +1331,7 @@ describe("IMP-021 checkout domain — evaluate commercial", () => {
           await setPromotionBenefit(tx, {
             actor: actors.brandAdminActor,
             promotionId: created.id,
+            expectedPromotionRevision: (await getPromotion(tx, created.id))!.revision,
             benefit: {
               benefitType: "percentage_discount",
               percentageBps: 1000,
@@ -1345,6 +1348,7 @@ describe("IMP-021 checkout domain — evaluate commercial", () => {
           await setPromotionTargets(tx, {
             actor: actors.brandAdminActor,
             promotionId: created.id,
+            expectedPromotionRevision: (await getPromotion(tx, created.id))!.revision,
             targetRole: "qualifier",
             targets: [
               {
@@ -1359,6 +1363,7 @@ describe("IMP-021 checkout domain — evaluate commercial", () => {
           await setPromotionTargets(tx, {
             actor: actors.brandAdminActor,
             promotionId: created.id,
+            expectedPromotionRevision: (await getPromotion(tx, created.id))!.revision,
             targetRole: "benefit",
             targets: [
               {
@@ -1373,6 +1378,7 @@ describe("IMP-021 checkout domain — evaluate commercial", () => {
           await activatePromotion(tx, {
             actor: actors.brandAdminActor,
             promotionId: created.id,
+            expectedPromotionRevision: (await getPromotion(tx, created.id))!.revision,
           });
           const coupon = await createCouponDraft(tx, {
             actor: actors.brandAdminActor,
@@ -1380,7 +1386,7 @@ describe("IMP-021 checkout domain — evaluate commercial", () => {
             origin: "manual",
             canonicalCode: "WRONGITEM",
           });
-          await activateCoupon(tx, { actor: actors.brandAdminActor, couponId: coupon.id });
+          await activateCoupon(tx, { actor: actors.brandAdminActor, expectedCouponRevision: (await getCoupon(tx, coupon.id))!.revision, couponId: coupon.id });
           return coupon;
         });
 
@@ -1458,6 +1464,7 @@ describe("IMP-021 checkout domain — evaluate commercial", () => {
           await setPromotionBenefit(tx, {
             actor: actors.brandAdminActor,
             promotionId: created.id,
+            expectedPromotionRevision: (await getPromotion(tx, created.id))!.revision,
             benefit: {
               benefitType: "percentage_discount",
               percentageBps: 500,
@@ -1475,6 +1482,7 @@ describe("IMP-021 checkout domain — evaluate commercial", () => {
             await setPromotionTargets(tx, {
               actor: actors.brandAdminActor,
               promotionId: created.id,
+              expectedPromotionRevision: (await getPromotion(tx, created.id))!.revision,
               targetRole: role,
               targets: [
                 {
@@ -1490,6 +1498,7 @@ describe("IMP-021 checkout domain — evaluate commercial", () => {
           await activatePromotion(tx, {
             actor: actors.brandAdminActor,
             promotionId: created.id,
+            expectedPromotionRevision: (await getPromotion(tx, created.id))!.revision,
           });
         });
 
@@ -1586,6 +1595,7 @@ describe("IMP-021 checkout domain — evaluate commercial", () => {
           await setPromotionBenefit(tx, {
             actor: actors.brandAdminActor,
             promotionId: created.id,
+            expectedPromotionRevision: (await getPromotion(tx, created.id))!.revision,
             benefit: {
               benefitType: "buy_x_get_y",
               percentageBps: null,
@@ -1603,6 +1613,7 @@ describe("IMP-021 checkout domain — evaluate commercial", () => {
             await setPromotionTargets(tx, {
               actor: actors.brandAdminActor,
               promotionId: created.id,
+              expectedPromotionRevision: (await getPromotion(tx, created.id))!.revision,
               targetRole: role,
               targets: [
                 {
@@ -1618,6 +1629,7 @@ describe("IMP-021 checkout domain — evaluate commercial", () => {
           await activatePromotion(tx, {
             actor: actors.brandAdminActor,
             promotionId: created.id,
+            expectedPromotionRevision: (await getPromotion(tx, created.id))!.revision,
           });
         });
 

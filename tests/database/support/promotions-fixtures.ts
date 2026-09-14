@@ -96,7 +96,7 @@ export async function createReadyDraftPromotion(
     endsAt?: Date | null;
     actor?: ReturnType<typeof principalFor>;
   } = {},
-): Promise<{ id: string }> {
+): Promise<{ id: string; revision: bigint }> {
   const actor = input.actor ?? harness.brandAdminPrincipal;
   const scopeType = input.scopeType ?? "brand";
   return harness.persistence.transaction(async (tx) => {
@@ -114,66 +114,77 @@ export async function createReadyDraftPromotion(
       startsAt: input.startsAt ?? new Date("2026-01-01T00:00:00Z"),
       endsAt: input.endsAt ?? null,
     });
-    await setPromotionBenefit(tx, {
-      actor,
-      promotionId: created.id,
-      benefit: {
-        benefitType: "percentage_discount",
-        percentageBps: 1000,
-        fixedAmountPaise: null,
-        maximumDiscountPaise: null,
-        buyQuantity: null,
-        getQuantity: null,
-        repeatable: null,
-        maximumRewardQuantity: null,
-        includeModifiers: false,
-        includeBundleDeltas: false,
-      },
-    });
-    await setPromotionTargets(tx, {
-      actor,
-      promotionId: created.id,
-      targetRole: "qualifier",
-      targets: [
-        {
-          targetRole: "qualifier",
-          targetType: "all_merchandise",
-          productId: null,
-          variantId: null,
-          chargeDefinitionId: null,
+    let revision = created.revision;
+    revision = (
+      await setPromotionBenefit(tx, {
+        actor,
+        promotionId: created.id,
+        expectedPromotionRevision: revision,
+        benefit: {
+          benefitType: "percentage_discount",
+          percentageBps: 1000,
+          fixedAmountPaise: null,
+          maximumDiscountPaise: null,
+          buyQuantity: null,
+          getQuantity: null,
+          repeatable: null,
+          maximumRewardQuantity: null,
+          includeModifiers: false,
+          includeBundleDeltas: false,
         },
-      ],
-    });
-    await setPromotionTargets(tx, {
-      actor,
-      promotionId: created.id,
-      targetRole: "benefit",
-      targets: [
-        {
-          targetRole: "benefit",
-          targetType: "all_merchandise",
-          productId: null,
-          variantId: null,
-          chargeDefinitionId: null,
-        },
-      ],
-    });
-    return created;
+      })
+    ).revision;
+    revision = (
+      await setPromotionTargets(tx, {
+        actor,
+        promotionId: created.id,
+        expectedPromotionRevision: revision,
+        targetRole: "qualifier",
+        targets: [
+          {
+            targetRole: "qualifier",
+            targetType: "all_merchandise",
+            productId: null,
+            variantId: null,
+            chargeDefinitionId: null,
+          },
+        ],
+      })
+    ).revision;
+    revision = (
+      await setPromotionTargets(tx, {
+        actor,
+        promotionId: created.id,
+        expectedPromotionRevision: revision,
+        targetRole: "benefit",
+        targets: [
+          {
+            targetRole: "benefit",
+            targetType: "all_merchandise",
+            productId: null,
+            variantId: null,
+            chargeDefinitionId: null,
+          },
+        ],
+      })
+    ).revision;
+    return { id: created.id, revision };
   });
 }
 
 export async function createAndActivatePromotion(
   harness: PromotionsHarness,
   input: Parameters<typeof createReadyDraftPromotion>[1] = {},
-): Promise<{ id: string }> {
+): Promise<{ id: string; revision: bigint }> {
   const draft = await createReadyDraftPromotion(harness, input);
-  await harness.persistence.transaction(async (tx) => {
-    await activatePromotion(tx, {
+  const activated = await harness.persistence.transaction(async (tx) => {
+    return activatePromotion(tx, {
       actor: harness.brandAdminPrincipal,
       promotionId: draft.id,
+      expectedPromotionRevision: draft.revision,
     });
   });
-  return draft;
+  return { id: draft.id, revision: activated.revision };
 }
 
 export async function enableOutletDelegation(harness: PromotionsHarness): Promise<void> {

@@ -48,9 +48,81 @@ async function loadPromotionRow(context: PersistenceQueryContext, id: string) {
   return rows[0] ?? null;
 }
 
+function stalePromotionRevision(): never {
+  throw new PromotionAdminError(
+    "PROMOTION_STALE_REVISION",
+    "expectedPromotionRevision does not match current Promotion revision; no mutation effect.",
+  );
+}
+
+export function parseExpectedPromotionRevision(
+  value: unknown,
+  field = "expectedPromotionRevision",
+): bigint {
+  if (typeof value === "bigint") {
+    if (value <= BigInt(0)) {
+      throw new PromotionValidationError(`${field} must be > 0.`);
+    }
+    return value;
+  }
+  if (typeof value === "number" && Number.isSafeInteger(value) && value > 0) {
+    return BigInt(value);
+  }
+  if (typeof value === "string" && /^\d+$/.test(value) && value !== "0" && !/^0\d+/.test(value)) {
+    const parsed = BigInt(value);
+    if (parsed <= BigInt(0)) {
+      throw new PromotionValidationError(`${field} must be > 0.`);
+    }
+    return parsed;
+  }
+  throw new PromotionValidationError(`${field} must be a positive integer.`);
+}
+
+async function lockPromotionRow(context: PersistenceTransactionContext, id: string) {
+  const rows = await context.db
+    .select()
+    .from(promotionsTable)
+    .where(eq(promotionsTable.id, id))
+    .for("update")
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+async function advancePromotionRevision(
+  context: PersistenceTransactionContext,
+  row: typeof promotionsTable.$inferSelect,
+  expected: bigint,
+  extra: Record<string, unknown>,
+  now: Date,
+): Promise<bigint> {
+  if (row.revision !== expected) stalePromotionRevision();
+  const next = row.revision + BigInt(1);
+  const updated = await context.db
+    .update(promotionsTable)
+    .set({
+      revision: next,
+      updatedAt: now,
+      ...extra,
+    })
+    .where(and(eq(promotionsTable.id, row.id), eq(promotionsTable.revision, expected)))
+    .returning({ revision: promotionsTable.revision });
+  if (!updated[0]) stalePromotionRevision();
+  return next;
+}
+
 function assertDraft(row: { status: string; activatedAt: Date | null }) {
   if (row.status !== "draft" || row.activatedAt !== null) {
     throw new PromotionAdminError("PROMOTION_NOT_DRAFT", "Promotion is not a mutable draft.");
+  }
+}
+
+function assertPathBrandMatchesPromotion(
+  row: typeof promotionsTable.$inferSelect | null,
+  pathBrandId: string | undefined,
+): asserts row is typeof promotionsTable.$inferSelect {
+  if (!row) throw new PromotionNotFoundError("promotion");
+  if (pathBrandId && row.brandId !== assertUuid(pathBrandId, "brandId")) {
+    throw new PromotionNotFoundError("promotion");
   }
 }
 
@@ -92,7 +164,7 @@ export async function createPromotionDraft(
     minimumQualifyingAmountPaise?: bigint | null;
     minimumItemQuantity?: number | null;
   },
-): Promise<{ id: string }> {
+): Promise<{ id: string; revision: bigint }> {
   assertTransactionContext(context, "createPromotionDraft");
   const brandId = assertUuid(input.brandId, "brandId");
   validateScopeShape(input);
@@ -129,6 +201,7 @@ export async function createPromotionDraft(
       minimumQualifyingAmountPaise: input.minimumQualifyingAmountPaise ?? null,
       minimumItemQuantity: input.minimumItemQuantity ?? null,
       configurationFingerprint: null,
+      revision: BigInt(1),
       activatedAt: null,
       activatedByWorkforceUserId: null,
       retiredAt: null,
@@ -153,16 +226,18 @@ export async function createPromotionDraft(
     territoryId: input.territoryId ?? null,
     organizationId: input.organizationId ?? null,
     outletId: input.outletId ?? null,
-    metadata: { code: input.code, scopeType: input.scopeType },
+    metadata: { code: input.code, scopeType: input.scopeType, revision: "1" },
   });
-  return { id };
+  return { id, revision: BigInt(1) };
 }
 
 export async function updatePromotionDraft(
   context: PersistenceTransactionContext,
   input: {
     actor: unknown;
+    brandId?: string;
     promotionId: string;
+    expectedPromotionRevision: bigint | number | string;
     displayName?: string;
     stackingPolicy?: PromotionStackingPolicy;
     priority?: number;
@@ -171,11 +246,11 @@ export async function updatePromotionDraft(
     minimumQualifyingAmountPaise?: bigint | null;
     minimumItemQuantity?: number | null;
   },
-): Promise<void> {
+): Promise<{ revision: bigint }> {
   assertTransactionContext(context, "updatePromotionDraft");
-  const row = await loadPromotionRow(context, assertUuid(input.promotionId, "promotionId"));
-  if (!row) throw new PromotionNotFoundError("promotion");
-  assertDraft(row);
+  const expected = parseExpectedPromotionRevision(input.expectedPromotionRevision);
+  const row = await lockPromotionRow(context, assertUuid(input.promotionId, "promotionId"));
+  assertPathBrandMatchesPromotion(row, input.brandId);
   await requirePromotionManageForScope(context, input.actor, {
     brandId: row.brandId,
     scopeType: row.scopeType as PromotionScopeType,
@@ -183,15 +258,20 @@ export async function updatePromotionDraft(
     organizationId: row.organizationId,
     outletId: row.outletId,
   });
+  if (row.revision !== expected) stalePromotionRevision();
+  assertDraft(row);
   const principal = requireWorkforcePrincipal(input.actor);
   const startsAt = input.startsAt ?? row.startsAt;
   const endsAt = input.endsAt !== undefined ? input.endsAt : row.endsAt;
   if (endsAt && endsAt <= startsAt) {
     throw new PromotionAdminError("PROMOTION_TIME_WINDOW_INVALID", "endsAt must be after startsAt.");
   }
-  await context.db
-    .update(promotionsTable)
-    .set({
+  const now = new Date();
+  const revision = await advancePromotionRevision(
+    context,
+    row,
+    expected,
+    {
       displayName: input.displayName ?? row.displayName,
       stackingPolicy: input.stackingPolicy ?? row.stackingPolicy,
       priority: input.priority ?? row.priority,
@@ -205,9 +285,9 @@ export async function updatePromotionDraft(
         input.minimumItemQuantity !== undefined
           ? input.minimumItemQuantity
           : row.minimumItemQuantity,
-      updatedAt: new Date(),
-    })
-    .where(eq(promotionsTable.id, row.id));
+    },
+    now,
+  );
 
   await insertPromotionAuditEvent(context, {
     actorWorkforceUserId: principal.workforceUserId,
@@ -216,20 +296,24 @@ export async function updatePromotionDraft(
     resourceType: "promotion",
     resourceId: row.id,
     brandId: row.brandId,
-    metadata: { updated: true },
+    metadata: { updated: true, revision: revision.toString(10) },
   });
+  return { revision };
 }
 
 export async function deletePromotionDraft(
   context: PersistenceTransactionContext,
-  input: { actor: unknown; promotionId: string },
+  input: {
+    actor: unknown;
+    brandId?: string;
+    promotionId: string;
+    expectedPromotionRevision: bigint | number | string;
+  },
 ): Promise<void> {
   assertTransactionContext(context, "deletePromotionDraft");
-  const row = await loadPromotionRow(context, assertUuid(input.promotionId, "promotionId"));
-  if (!row) throw new PromotionNotFoundError("promotion");
-  if (row.activatedAt !== null || row.status !== "draft") {
-    throw new PromotionAdminError("PROMOTION_NOT_DRAFT", "Ever-active promotions cannot be deleted.");
-  }
+  const expected = parseExpectedPromotionRevision(input.expectedPromotionRevision);
+  const row = await lockPromotionRow(context, assertUuid(input.promotionId, "promotionId"));
+  assertPathBrandMatchesPromotion(row, input.brandId);
   await requirePromotionManageForScope(context, input.actor, {
     brandId: row.brandId,
     scopeType: row.scopeType as PromotionScopeType,
@@ -237,6 +321,10 @@ export async function deletePromotionDraft(
     organizationId: row.organizationId,
     outletId: row.outletId,
   });
+  if (row.revision !== expected) stalePromotionRevision();
+  if (row.activatedAt !== null || row.status !== "draft") {
+    throw new PromotionAdminError("PROMOTION_NOT_DRAFT", "Ever-active promotions cannot be deleted.");
+  }
   const principal = requireWorkforcePrincipal(input.actor);
   await context.db.delete(promotionsTable).where(eq(promotionsTable.id, row.id));
   await insertPromotionAuditEvent(context, {
@@ -254,14 +342,16 @@ export async function setPromotionBenefit(
   context: PersistenceTransactionContext,
   input: {
     actor: unknown;
+    brandId?: string;
     promotionId: string;
+    expectedPromotionRevision: bigint | number | string;
     benefit: PromotionBenefitConfig;
   },
-): Promise<void> {
+): Promise<{ revision: bigint }> {
   assertTransactionContext(context, "setPromotionBenefit");
-  const row = await loadPromotionRow(context, assertUuid(input.promotionId, "promotionId"));
-  if (!row) throw new PromotionNotFoundError("promotion");
-  assertDraft(row);
+  const expected = parseExpectedPromotionRevision(input.expectedPromotionRevision);
+  const row = await lockPromotionRow(context, assertUuid(input.promotionId, "promotionId"));
+  assertPathBrandMatchesPromotion(row, input.brandId);
   await requirePromotionManageForScope(context, input.actor, {
     brandId: row.brandId,
     scopeType: row.scopeType as PromotionScopeType,
@@ -269,6 +359,8 @@ export async function setPromotionBenefit(
     organizationId: row.organizationId,
     outletId: row.outletId,
   });
+  if (row.revision !== expected) stalePromotionRevision();
+  assertDraft(row);
   const b = input.benefit;
   if (b.benefitType === "percentage_discount") {
     if (b.percentageBps === null || b.percentageBps <= 0 || b.percentageBps > 10000) {
@@ -315,21 +407,35 @@ export async function setPromotionBenefit(
       createdAt: now,
     });
   }
+  const revision = await advancePromotionRevision(context, row, expected, {}, now);
+  const principal = requireWorkforcePrincipal(input.actor);
+  await insertPromotionAuditEvent(context, {
+    actorWorkforceUserId: principal.workforceUserId,
+    permissionKey: "promotions.manage",
+    action: "promotion.updated",
+    resourceType: "promotion",
+    resourceId: row.id,
+    brandId: row.brandId,
+    metadata: { benefit: true, revision: revision.toString(10) },
+  });
+  return { revision };
 }
 
 export async function setPromotionTargets(
   context: PersistenceTransactionContext,
   input: {
     actor: unknown;
+    brandId?: string;
     promotionId: string;
+    expectedPromotionRevision: bigint | number | string;
     targetRole: PromotionTargetRole;
     targets: readonly PromotionTargetConfig[];
   },
-): Promise<void> {
+): Promise<{ revision: bigint }> {
   assertTransactionContext(context, "setPromotionTargets");
-  const row = await loadPromotionRow(context, assertUuid(input.promotionId, "promotionId"));
-  if (!row) throw new PromotionNotFoundError("promotion");
-  assertDraft(row);
+  const expected = parseExpectedPromotionRevision(input.expectedPromotionRevision);
+  const row = await lockPromotionRow(context, assertUuid(input.promotionId, "promotionId"));
+  assertPathBrandMatchesPromotion(row, input.brandId);
   await requirePromotionManageForScope(context, input.actor, {
     brandId: row.brandId,
     scopeType: row.scopeType as PromotionScopeType,
@@ -337,6 +443,8 @@ export async function setPromotionTargets(
     organizationId: row.organizationId,
     outletId: row.outletId,
   });
+  if (row.revision !== expected) stalePromotionRevision();
+  assertDraft(row);
   assertNoAmbiguousMerchandiseTargets(input.targets, input.targetRole);
   await context.db
     .delete(promotionTargetsTable)
@@ -359,6 +467,18 @@ export async function setPromotionTargets(
       createdAt: now,
     });
   }
+  const revision = await advancePromotionRevision(context, row, expected, {}, now);
+  const principal = requireWorkforcePrincipal(input.actor);
+  await insertPromotionAuditEvent(context, {
+    actorWorkforceUserId: principal.workforceUserId,
+    permissionKey: "promotions.manage",
+    action: "promotion.updated",
+    resourceType: "promotion",
+    resourceId: row.id,
+    brandId: row.brandId,
+    metadata: { targets: true, targetRole: input.targetRole, revision: revision.toString(10) },
+  });
+  return { revision };
 }
 
 async function assertTargetBrandOwnership(
@@ -408,18 +528,17 @@ async function assertTargetBrandOwnership(
 
 export async function activatePromotion(
   context: PersistenceTransactionContext,
-  input: { actor: unknown; promotionId: string },
-): Promise<void> {
+  input: {
+    actor: unknown;
+    brandId?: string;
+    promotionId: string;
+    expectedPromotionRevision: bigint | number | string;
+  },
+): Promise<{ revision: bigint }> {
   assertTransactionContext(context, "activatePromotion");
-  const row = await loadPromotionRow(context, assertUuid(input.promotionId, "promotionId"));
-  if (!row) throw new PromotionNotFoundError("promotion");
-  if (row.status === "active") {
-    throw new PromotionAdminError("PROMOTION_ALREADY_ACTIVE", "Promotion is already active.");
-  }
-  if (row.status === "retired") {
-    throw new PromotionAdminError("PROMOTION_RETIRED", "Retired promotions cannot activate.");
-  }
-  assertDraft(row);
+  const expected = parseExpectedPromotionRevision(input.expectedPromotionRevision);
+  const row = await lockPromotionRow(context, assertUuid(input.promotionId, "promotionId"));
+  assertPathBrandMatchesPromotion(row, input.brandId);
   await requirePromotionsActivate(context, input.actor, row.brandId);
   // Still require manage scope for lower-scope governance visibility
   await requirePromotionManageForScope(context, input.actor, {
@@ -429,6 +548,14 @@ export async function activatePromotion(
     organizationId: row.organizationId,
     outletId: row.outletId,
   });
+  if (row.revision !== expected) stalePromotionRevision();
+  if (row.status === "active") {
+    throw new PromotionAdminError("PROMOTION_ALREADY_ACTIVE", "Promotion is already active.");
+  }
+  if (row.status === "retired") {
+    throw new PromotionAdminError("PROMOTION_RETIRED", "Retired promotions cannot activate.");
+  }
+  assertDraft(row);
 
   const benefits = await context.db
     .select()
@@ -537,16 +664,18 @@ export async function activatePromotion(
 
   const principal = requireWorkforcePrincipal(input.actor);
   const now = new Date();
-  await context.db
-    .update(promotionsTable)
-    .set({
+  const revision = await advancePromotionRevision(
+    context,
+    row,
+    expected,
+    {
       status: "active",
       activatedAt: now,
       activatedByWorkforceUserId: principal.workforceUserId,
       configurationFingerprint: fingerprint,
-      updatedAt: now,
-    })
-    .where(eq(promotionsTable.id, row.id));
+    },
+    now,
+  );
 
   await insertPromotionAuditEvent(context, {
     actorWorkforceUserId: principal.workforceUserId,
@@ -559,32 +688,42 @@ export async function activatePromotion(
     organizationId: row.organizationId,
     outletId: row.outletId,
     configurationFingerprint: fingerprint,
-    metadata: { activated: true },
+    metadata: { activated: true, revision: revision.toString(10) },
   });
+  return { revision };
 }
 
 export async function retirePromotion(
   context: PersistenceTransactionContext,
-  input: { actor: unknown; promotionId: string },
-): Promise<void> {
+  input: {
+    actor: unknown;
+    brandId?: string;
+    promotionId: string;
+    expectedPromotionRevision: bigint | number | string;
+  },
+): Promise<{ revision: bigint }> {
   assertTransactionContext(context, "retirePromotion");
-  const row = await loadPromotionRow(context, assertUuid(input.promotionId, "promotionId"));
-  if (!row) throw new PromotionNotFoundError("promotion");
+  const expected = parseExpectedPromotionRevision(input.expectedPromotionRevision);
+  const row = await lockPromotionRow(context, assertUuid(input.promotionId, "promotionId"));
+  assertPathBrandMatchesPromotion(row, input.brandId);
+  await requirePromotionsActivate(context, input.actor, row.brandId);
+  if (row.revision !== expected) stalePromotionRevision();
   if (row.status !== "active") {
     throw new PromotionAdminError("invalid_state", "Only active promotions can be retired.");
   }
-  await requirePromotionsActivate(context, input.actor, row.brandId);
   const principal = requireWorkforcePrincipal(input.actor);
   const now = new Date();
-  await context.db
-    .update(promotionsTable)
-    .set({
+  const revision = await advancePromotionRevision(
+    context,
+    row,
+    expected,
+    {
       status: "retired",
       retiredAt: now,
       retiredByWorkforceUserId: principal.workforceUserId,
-      updatedAt: now,
-    })
-    .where(eq(promotionsTable.id, row.id));
+    },
+    now,
+  );
   await insertPromotionAuditEvent(context, {
     actorWorkforceUserId: principal.workforceUserId,
     permissionKey: "promotions.activate",
@@ -593,8 +732,9 @@ export async function retirePromotion(
     resourceId: row.id,
     brandId: row.brandId,
     configurationFingerprint: row.configurationFingerprint,
-    metadata: { retired: true },
+    metadata: { retired: true, revision: revision.toString(10) },
   });
+  return { revision };
 }
 
 export async function getPromotion(context: PersistenceQueryContext, promotionId: string) {

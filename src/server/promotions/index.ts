@@ -15,6 +15,7 @@ export type { InsertPromotionAuditEventInput } from "./audit";
 
 export {
   getBrandPromotionPolicyFlags,
+  requireCouponsRead,
   requirePromotionManageForScope,
   requirePromotionsRead,
   requirePromotionsActivate,
@@ -35,6 +36,7 @@ export {
   getPromotion,
   getPromotionForActor,
   listPromotions,
+  parseExpectedPromotionRevision,
 } from "./promotions";
 
 export {
@@ -48,7 +50,19 @@ export {
   getCoupon,
   findCouponByCanonicalCode,
   listCoupons,
+  parseExpectedCouponRevision,
 } from "./coupons";
+
+export {
+  inspectBrandCoupon,
+  inspectBrandPromotion,
+  listBrandPromotionAuditEvents,
+  listBrandPromotions,
+  listPromotionCoupons,
+} from "./commercial-reads";
+
+export { previewCouponConsequence, previewPromotionConsequence } from "./consequence-preview";
+export type { CouponConsequencePreview, PromotionConsequencePreview } from "./consequence-preview";
 
 export {
   loadApplicableAutomaticPromotions,

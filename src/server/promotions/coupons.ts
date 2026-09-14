@@ -2,16 +2,19 @@
  * Coupon draft administration + lifecycle (IMP-016).
  */
 import { randomUUID } from "node:crypto";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import {
   promotionCouponsTable,
   promotionsTable,
 } from "../../platform/database/schema/promotions";
 import {
+  assertCouponActivationReady,
+  assertLegalCouponLifecycleTransition,
   generateCouponCode,
   normalizeCouponCode,
   type CouponOrigin,
+  type CouponStatus,
   type PromotionScopeType,
 } from "../../shared/promotions";
 import { requireWorkforcePrincipal } from "../access-control/principal";
@@ -19,7 +22,26 @@ import type { PersistenceQueryContext, PersistenceTransactionContext } from "../
 import { assertTransactionContext, assertUuid, isUniqueViolation } from "./assert-role";
 import { insertPromotionAuditEvent } from "./audit";
 import { requireCouponsManageForPromotionScope } from "./authorize-promotions";
-import { PromotionAdminError, PromotionNotFoundError } from "./errors";
+import { PromotionAdminError, PromotionNotFoundError, PromotionValidationError } from "./errors";
+
+function assertCouponTriggeredPromotion(promotion: { triggerType: string }): void {
+  if (promotion.triggerType !== "coupon") {
+    throw new PromotionValidationError(
+      "Coupons may only reference coupon-triggered promotions.",
+    );
+  }
+}
+
+function assertPathBrandMatchesPromotion(
+  promotion: typeof promotionsTable.$inferSelect | null,
+  pathBrandId: string | undefined,
+  resourceType: "coupon" | "promotion",
+): asserts promotion is typeof promotionsTable.$inferSelect {
+  if (!promotion) throw new PromotionNotFoundError(resourceType);
+  if (pathBrandId && promotion.brandId !== assertUuid(pathBrandId, "brandId")) {
+    throw new PromotionNotFoundError(resourceType);
+  }
+}
 
 async function loadCoupon(context: PersistenceQueryContext, id: string) {
   const rows = await context.db
@@ -28,6 +50,68 @@ async function loadCoupon(context: PersistenceQueryContext, id: string) {
     .where(eq(promotionCouponsTable.id, id))
     .limit(1);
   return rows[0] ?? null;
+}
+
+function staleCouponRevision(): never {
+  throw new PromotionAdminError(
+    "COUPON_STALE_REVISION",
+    "expectedCouponRevision does not match current Coupon revision; no mutation effect.",
+  );
+}
+
+export function parseExpectedCouponRevision(
+  value: unknown,
+  field = "expectedCouponRevision",
+): bigint {
+  if (typeof value === "bigint") {
+    if (value <= BigInt(0)) {
+      throw new PromotionAdminError("validation", `${field} must be > 0.`);
+    }
+    return value;
+  }
+  if (typeof value === "number" && Number.isSafeInteger(value) && value > 0) {
+    return BigInt(value);
+  }
+  if (typeof value === "string" && /^\d+$/.test(value) && value !== "0" && !/^0\d+/.test(value)) {
+    const parsed = BigInt(value);
+    if (parsed <= BigInt(0)) {
+      throw new PromotionAdminError("validation", `${field} must be > 0.`);
+    }
+    return parsed;
+  }
+  throw new PromotionAdminError("validation", `${field} must be a positive integer.`);
+}
+
+async function lockCoupon(context: PersistenceTransactionContext, id: string) {
+  const rows = await context.db
+    .select()
+    .from(promotionCouponsTable)
+    .where(eq(promotionCouponsTable.id, id))
+    .for("update")
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+async function advanceCouponRevision(
+  context: PersistenceTransactionContext,
+  coupon: typeof promotionCouponsTable.$inferSelect,
+  expected: bigint,
+  extra: Record<string, unknown>,
+  now: Date,
+): Promise<bigint> {
+  if (coupon.revision !== expected) staleCouponRevision();
+  const next = coupon.revision + BigInt(1);
+  const updated = await context.db
+    .update(promotionCouponsTable)
+    .set({
+      revision: next,
+      updatedAt: now,
+      ...extra,
+    })
+    .where(and(eq(promotionCouponsTable.id, coupon.id), eq(promotionCouponsTable.revision, expected)))
+    .returning({ revision: promotionCouponsTable.revision });
+  if (!updated[0]) staleCouponRevision();
+  return next;
 }
 
 async function loadPromotion(context: PersistenceQueryContext, id: string) {
@@ -43,6 +127,7 @@ export async function createCouponDraft(
   context: PersistenceTransactionContext,
   input: {
     actor: unknown;
+    brandId?: string;
     promotionId: string;
     origin: CouponOrigin;
     canonicalCode?: string;
@@ -51,10 +136,10 @@ export async function createCouponDraft(
     maximumRedemptions?: number | null;
     maximumRedemptionsPerCustomer?: number | null;
   },
-): Promise<{ id: string; canonicalCode: string }> {
+): Promise<{ id: string; canonicalCode: string; revision: bigint }> {
   assertTransactionContext(context, "createCouponDraft");
   const promotion = await loadPromotion(context, assertUuid(input.promotionId, "promotionId"));
-  if (!promotion) throw new PromotionNotFoundError("promotion");
+  assertPathBrandMatchesPromotion(promotion, input.brandId, "promotion");
   await requireCouponsManageForPromotionScope(context, input.actor, {
     brandId: promotion.brandId,
     scopeType: promotion.scopeType as PromotionScopeType,
@@ -62,6 +147,7 @@ export async function createCouponDraft(
     organizationId: promotion.organizationId,
     outletId: promotion.outletId,
   });
+  assertCouponTriggeredPromotion(promotion);
 
   let canonicalCode: string;
   if (input.origin === "generated") {
@@ -90,6 +176,7 @@ export async function createCouponDraft(
       activatedAt: null,
       disabledAt: null,
       retiredAt: null,
+      revision: BigInt(1),
       createdAt: now,
       updatedAt: now,
     });
@@ -107,30 +194,30 @@ export async function createCouponDraft(
     resourceType: "coupon",
     resourceId: id,
     brandId: promotion.brandId,
-    metadata: { promotionId: promotion.id, origin: input.origin },
+    metadata: { promotionId: promotion.id, origin: input.origin, revision: "1" },
   });
-  return { id, canonicalCode };
+  return { id, canonicalCode, revision: BigInt(1) };
 }
 
 export async function updateCouponDraft(
   context: PersistenceTransactionContext,
   input: {
     actor: unknown;
+    brandId?: string;
     couponId: string;
+    expectedCouponRevision: bigint | number | string;
     startsAt?: Date | null;
     endsAt?: Date | null;
     maximumRedemptions?: number | null;
     maximumRedemptionsPerCustomer?: number | null;
   },
-): Promise<void> {
+): Promise<{ revision: bigint }> {
   assertTransactionContext(context, "updateCouponDraft");
-  const coupon = await loadCoupon(context, assertUuid(input.couponId, "couponId"));
+  const expected = parseExpectedCouponRevision(input.expectedCouponRevision);
+  const coupon = await lockCoupon(context, assertUuid(input.couponId, "couponId"));
   if (!coupon) throw new PromotionNotFoundError("coupon");
-  if (coupon.status !== "draft" || coupon.activatedAt !== null) {
-    throw new PromotionAdminError("COUPON_NOT_DRAFT", "Only draft coupons are mutable.");
-  }
   const promotion = await loadPromotion(context, coupon.promotionId);
-  if (!promotion) throw new PromotionNotFoundError("promotion");
+  assertPathBrandMatchesPromotion(promotion, input.brandId, "coupon");
   await requireCouponsManageForPromotionScope(context, input.actor, {
     brandId: promotion.brandId,
     scopeType: promotion.scopeType as PromotionScopeType,
@@ -138,10 +225,17 @@ export async function updateCouponDraft(
     organizationId: promotion.organizationId,
     outletId: promotion.outletId,
   });
+  if (coupon.revision !== expected) staleCouponRevision();
+  if (coupon.status !== "draft" || coupon.activatedAt !== null) {
+    throw new PromotionAdminError("COUPON_NOT_DRAFT", "Only draft coupons are mutable.");
+  }
   const principal = requireWorkforcePrincipal(input.actor);
-  await context.db
-    .update(promotionCouponsTable)
-    .set({
+  const now = new Date();
+  const revision = await advanceCouponRevision(
+    context,
+    coupon,
+    expected,
+    {
       startsAt: input.startsAt !== undefined ? input.startsAt : coupon.startsAt,
       endsAt: input.endsAt !== undefined ? input.endsAt : coupon.endsAt,
       maximumRedemptions:
@@ -152,9 +246,9 @@ export async function updateCouponDraft(
         input.maximumRedemptionsPerCustomer !== undefined
           ? input.maximumRedemptionsPerCustomer
           : coupon.maximumRedemptionsPerCustomer,
-      updatedAt: new Date(),
-    })
-    .where(eq(promotionCouponsTable.id, coupon.id));
+    },
+    now,
+  );
   await insertPromotionAuditEvent(context, {
     actorWorkforceUserId: principal.workforceUserId,
     permissionKey: "coupons.manage",
@@ -162,22 +256,26 @@ export async function updateCouponDraft(
     resourceType: "coupon",
     resourceId: coupon.id,
     brandId: promotion.brandId,
-    metadata: { updated: true },
+    metadata: { updated: true, revision: revision.toString(10) },
   });
+  return { revision };
 }
 
 export async function deleteCouponDraft(
   context: PersistenceTransactionContext,
-  input: { actor: unknown; couponId: string },
+  input: {
+    actor: unknown;
+    brandId?: string;
+    couponId: string;
+    expectedCouponRevision: bigint | number | string;
+  },
 ): Promise<void> {
   assertTransactionContext(context, "deleteCouponDraft");
-  const coupon = await loadCoupon(context, assertUuid(input.couponId, "couponId"));
+  const expected = parseExpectedCouponRevision(input.expectedCouponRevision);
+  const coupon = await lockCoupon(context, assertUuid(input.couponId, "couponId"));
   if (!coupon) throw new PromotionNotFoundError("coupon");
-  if (coupon.activatedAt !== null || coupon.status !== "draft") {
-    throw new PromotionAdminError("COUPON_IMMUTABLE", "Ever-active coupons cannot be deleted.");
-  }
   const promotion = await loadPromotion(context, coupon.promotionId);
-  if (!promotion) throw new PromotionNotFoundError("promotion");
+  assertPathBrandMatchesPromotion(promotion, input.brandId, "coupon");
   await requireCouponsManageForPromotionScope(context, input.actor, {
     brandId: promotion.brandId,
     scopeType: promotion.scopeType as PromotionScopeType,
@@ -185,6 +283,10 @@ export async function deleteCouponDraft(
     organizationId: promotion.organizationId,
     outletId: promotion.outletId,
   });
+  if (coupon.revision !== expected) staleCouponRevision();
+  if (coupon.activatedAt !== null || coupon.status !== "draft") {
+    throw new PromotionAdminError("COUPON_IMMUTABLE", "Ever-active coupons cannot be deleted.");
+  }
   const principal = requireWorkforcePrincipal(input.actor);
   await context.db.delete(promotionCouponsTable).where(eq(promotionCouponsTable.id, coupon.id));
   await insertPromotionAuditEvent(context, {
@@ -200,34 +302,19 @@ export async function deleteCouponDraft(
 
 export async function activateCoupon(
   context: PersistenceTransactionContext,
-  input: { actor: unknown; couponId: string },
-): Promise<void> {
+  input: {
+    actor: unknown;
+    brandId?: string;
+    couponId: string;
+    expectedCouponRevision: bigint | number | string;
+  },
+): Promise<{ revision: bigint }> {
   assertTransactionContext(context, "activateCoupon");
-  const coupon = await loadCoupon(context, assertUuid(input.couponId, "couponId"));
+  const expected = parseExpectedCouponRevision(input.expectedCouponRevision);
+  const coupon = await lockCoupon(context, assertUuid(input.couponId, "couponId"));
   if (!coupon) throw new PromotionNotFoundError("coupon");
-  if (coupon.status !== "draft") {
-    throw new PromotionAdminError("COUPON_NOT_DRAFT", "Only draft coupons can activate.");
-  }
   const promotion = await loadPromotion(context, coupon.promotionId);
-  if (!promotion) throw new PromotionNotFoundError("promotion");
-  if (promotion.status !== "active") {
-    throw new PromotionAdminError(
-      "COUPON_PROMOTION_NOT_ACTIVE",
-      "Coupon activation requires an active promotion.",
-    );
-  }
-  if (coupon.startsAt && coupon.startsAt < promotion.startsAt) {
-    throw new PromotionAdminError(
-      "COUPON_WINDOW_INVALID",
-      "Coupon startsAt cannot precede promotion startsAt.",
-    );
-  }
-  if (coupon.endsAt && promotion.endsAt && coupon.endsAt > promotion.endsAt) {
-    throw new PromotionAdminError(
-      "COUPON_WINDOW_INVALID",
-      "Coupon endsAt cannot exceed promotion endsAt.",
-    );
-  }
+  assertPathBrandMatchesPromotion(promotion, input.brandId, "coupon");
   await requireCouponsManageForPromotionScope(context, input.actor, {
     brandId: promotion.brandId,
     scopeType: promotion.scopeType as PromotionScopeType,
@@ -235,12 +322,21 @@ export async function activateCoupon(
     organizationId: promotion.organizationId,
     outletId: promotion.outletId,
   });
+  if (coupon.revision !== expected) staleCouponRevision();
+  if (coupon.status !== "draft") {
+    throw new PromotionAdminError("COUPON_NOT_DRAFT", "Only draft coupons can activate.");
+  }
+  assertLegalCouponLifecycleTransition("draft", "active");
+  assertCouponActivationReady({ coupon, promotion });
   const principal = requireWorkforcePrincipal(input.actor);
   const now = new Date();
-  await context.db
-    .update(promotionCouponsTable)
-    .set({ status: "active", activatedAt: now, updatedAt: now })
-    .where(eq(promotionCouponsTable.id, coupon.id));
+  const revision = await advanceCouponRevision(
+    context,
+    coupon,
+    expected,
+    { status: "active", activatedAt: now },
+    now,
+  );
   await insertPromotionAuditEvent(context, {
     actorWorkforceUserId: principal.workforceUserId,
     permissionKey: "coupons.manage",
@@ -248,21 +344,28 @@ export async function activateCoupon(
     resourceType: "coupon",
     resourceId: coupon.id,
     brandId: promotion.brandId,
-    metadata: { activated: true },
+    metadata: { activated: true, promotionId: promotion.id, revision: revision.toString(10) },
   });
+  return { revision };
 }
 
 async function transitionCoupon(
   context: PersistenceTransactionContext,
-  input: { actor: unknown; couponId: string },
+  input: {
+    actor: unknown;
+    brandId?: string;
+    couponId: string;
+    expectedCouponRevision: bigint | number | string;
+  },
   to: "disabled" | "active" | "retired",
   action: "coupon.disabled" | "coupon.enabled" | "coupon.retired",
-) {
+): Promise<{ revision: bigint }> {
   assertTransactionContext(context, `coupon:${to}`);
-  const coupon = await loadCoupon(context, assertUuid(input.couponId, "couponId"));
+  const expected = parseExpectedCouponRevision(input.expectedCouponRevision);
+  const coupon = await lockCoupon(context, assertUuid(input.couponId, "couponId"));
   if (!coupon) throw new PromotionNotFoundError("coupon");
   const promotion = await loadPromotion(context, coupon.promotionId);
-  if (!promotion) throw new PromotionNotFoundError("promotion");
+  assertPathBrandMatchesPromotion(promotion, input.brandId, "coupon");
   await requireCouponsManageForPromotionScope(context, input.actor, {
     brandId: promotion.brandId,
     scopeType: promotion.scopeType as PromotionScopeType,
@@ -270,31 +373,32 @@ async function transitionCoupon(
     organizationId: promotion.organizationId,
     outletId: promotion.outletId,
   });
-
-  if (to === "disabled" && coupon.status !== "active") {
-    throw new PromotionAdminError("invalid_state", "Only active coupons can disable.");
+  if (coupon.revision !== expected) staleCouponRevision();
+  if (to === "active") {
+    // enableCoupon is disabled -> active only; draft -> active uses activateCoupon.
+    if (coupon.status !== "disabled") {
+      throw new PromotionAdminError("invalid_state", "Only disabled coupons can re-enable.");
+    }
   }
-  if (to === "active" && coupon.status !== "disabled") {
-    throw new PromotionAdminError("invalid_state", "Only disabled coupons can re-enable.");
-  }
-  if (to === "retired" && coupon.status !== "active" && coupon.status !== "disabled") {
-    throw new PromotionAdminError("invalid_state", "Only active/disabled coupons can retire.");
-  }
-  if (coupon.status === "retired") {
-    throw new PromotionAdminError("invalid_state", "Retired coupons are terminal.");
+  assertLegalCouponLifecycleTransition(coupon.status as CouponStatus, to);
+  if (to === "active") {
+    // Re-enable restores customer redeemability; same parent readiness as activateCoupon.
+    assertCouponActivationReady({ coupon, promotion });
   }
 
   const principal = requireWorkforcePrincipal(input.actor);
   const now = new Date();
-  await context.db
-    .update(promotionCouponsTable)
-    .set({
+  const revision = await advanceCouponRevision(
+    context,
+    coupon,
+    expected,
+    {
       status: to,
       disabledAt: to === "disabled" ? now : to === "active" ? null : coupon.disabledAt,
       retiredAt: to === "retired" ? now : coupon.retiredAt,
-      updatedAt: now,
-    })
-    .where(eq(promotionCouponsTable.id, coupon.id));
+    },
+    now,
+  );
   await insertPromotionAuditEvent(context, {
     actorWorkforceUserId: principal.workforceUserId,
     permissionKey: "coupons.manage",
@@ -302,27 +406,43 @@ async function transitionCoupon(
     resourceType: "coupon",
     resourceId: coupon.id,
     brandId: promotion.brandId,
-    metadata: { status: to },
+    metadata: { status: to, promotionId: promotion.id, revision: revision.toString(10) },
   });
+  return { revision };
 }
 
 export async function disableCoupon(
   context: PersistenceTransactionContext,
-  input: { actor: unknown; couponId: string },
+  input: {
+    actor: unknown;
+    brandId?: string;
+    couponId: string;
+    expectedCouponRevision: bigint | number | string;
+  },
 ) {
   return transitionCoupon(context, input, "disabled", "coupon.disabled");
 }
 
 export async function enableCoupon(
   context: PersistenceTransactionContext,
-  input: { actor: unknown; couponId: string },
+  input: {
+    actor: unknown;
+    brandId?: string;
+    couponId: string;
+    expectedCouponRevision: bigint | number | string;
+  },
 ) {
   return transitionCoupon(context, input, "active", "coupon.enabled");
 }
 
 export async function retireCoupon(
   context: PersistenceTransactionContext,
-  input: { actor: unknown; couponId: string },
+  input: {
+    actor: unknown;
+    brandId?: string;
+    couponId: string;
+    expectedCouponRevision: bigint | number | string;
+  },
 ) {
   return transitionCoupon(context, input, "retired", "coupon.retired");
 }
