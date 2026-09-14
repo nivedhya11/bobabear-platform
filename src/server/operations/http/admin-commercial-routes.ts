@@ -16,6 +16,7 @@ import {
 } from "../../administration/commercial";
 import { AdministrationError } from "../../administration/errors";
 import type { Persistence } from "../../persistence";
+import { parseNonNegativePaiseIntegerString } from "../../../shared/pricing/delivery-fee-policy";
 import { resolveOperationsWorkforcePrincipal } from "./auth";
 import { readOperationsJsonObjectBody } from "./body";
 import { mapCommercialAdminError } from "./admin-commercial-error-map";
@@ -93,6 +94,27 @@ function optionalCoordinates(
     );
   }
   return { latitude: obj.latitude, longitude: obj.longitude };
+}
+
+/**
+ * Absent / null → optional missing context.
+ * Any other supplied value must be a canonical non-negative integer string.
+ */
+function optionalOrderSubtotalPaise(
+  body: Readonly<Record<string, unknown>>,
+): string | null {
+  if (!("orderSubtotalPaise" in body) || body.orderSubtotalPaise == null) {
+    return null;
+  }
+  const parsed = parseNonNegativePaiseIntegerString(body.orderSubtotalPaise);
+  if (!parsed.ok) {
+    throw new AdministrationError(
+      "ADMIN_REQUEST_INVALID",
+      "orderSubtotalPaise must be a non-negative integer string.",
+      { field: "orderSubtotalPaise" },
+    );
+  }
+  return parsed.paise.toString(10);
 }
 
 export function classifyAdminCommercialRoute(pathname: string): AdminCommercialRoute | null {
@@ -236,10 +258,8 @@ export async function handleAdminCommercialRoute(
           field: "outletId",
         });
       }
-      const orderSubtotalPaise =
-        typeof body.value.orderSubtotalPaise === "string"
-          ? body.value.orderSubtotalPaise
-          : null;
+      // Validate supplied subtotal before destination context branching.
+      const orderSubtotalPaise = optionalOrderSubtotalPaise(body.value);
       const result = await verifyCustomerCommercialTruth(deps.persistence, {
         actor: principal,
         brandId: route.brandId,

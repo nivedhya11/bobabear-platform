@@ -57,6 +57,36 @@ export function parseDeliveryFeeBands(raw: unknown): readonly DeliveryFeeBand[] 
 /** PostgreSQL signed bigint upper bound used for authoritative paise columns. */
 const PG_BIGINT_MAX = BigInt("9223372036854775807");
 
+/** Canonical non-negative base-10 integer string (no leading zeros except `"0"`). */
+const NON_NEGATIVE_PAISE_INTEGER_STRING = /^(0|[1-9]\d*)$/;
+
+/**
+ * Parse a supplied paise amount that must already be a non-negative integer string.
+ * Rejects numbers, floats, scientific notation, leading zeros, and empty strings.
+ */
+export function parseNonNegativePaiseIntegerString(
+  value: unknown,
+): { ok: true; paise: bigint } | { ok: false; issues: readonly string[] } {
+  if (typeof value !== "string" || !NON_NEGATIVE_PAISE_INTEGER_STRING.test(value)) {
+    return {
+      ok: false,
+      issues: Object.freeze([
+        "value must be a non-negative base-10 integer string with no leading zeros.",
+      ]),
+    };
+  }
+  const parsed = BigInt(value);
+  if (parsed > PG_BIGINT_MAX) {
+    return {
+      ok: false,
+      issues: Object.freeze([
+        "value must be a non-negative integer within database range.",
+      ]),
+    };
+  }
+  return { ok: true, paise: parsed };
+}
+
 function isNonNegativeSafeInteger(value: unknown): value is number {
   return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
 }
@@ -143,17 +173,17 @@ export function validateFreeDeliveryThresholdPaise(
     }
     return { ok: true, thresholdPaise: value };
   }
-  if (typeof value === "string" && /^(0|[1-9]\d*)$/.test(value)) {
-    const parsed = BigInt(value);
-    if (parsed > PG_BIGINT_MAX) {
+  if (typeof value === "string") {
+    const parsed = parseNonNegativePaiseIntegerString(value);
+    if (!parsed.ok) {
       return {
         ok: false,
         issues: Object.freeze([
-          "freeDeliverySubtotalThresholdPaise must be a non-negative integer within database range or null.",
+          "freeDeliverySubtotalThresholdPaise must be a non-negative integer or null.",
         ]),
       };
     }
-    return { ok: true, thresholdPaise: parsed };
+    return { ok: true, thresholdPaise: parsed.paise };
   }
   return {
     ok: false,

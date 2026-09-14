@@ -367,6 +367,93 @@ describe("IMP-019 serviceability evaluation (legacy admin PIN tables remain non-
       });
     });
   });
+
+  it("outlet-scoped evaluation uses the same coordinate validation as brand-wide", async () => {
+    await withServiceabilityHarness(async ({ persistence, actors }) => {
+      const { tree, brandAdminActor } = actors;
+      const clock = fixedServiceabilityClock(FIXED_NOW);
+
+      await seedOutletDistanceServiceability(persistence, brandAdminActor, tree.outletA.id, {
+        routingPriority: 1,
+        maxServiceDistanceMeters: 9_000,
+      });
+
+      await expect(
+        evaluateOutletServiceability(
+          persistence,
+          {
+            brandId: tree.brand.id,
+            outletId: tree.outletA.id,
+            location: { coordinates: { latitude: "91.0", longitude: "78.0" } },
+          },
+          { clock },
+        ),
+      ).rejects.toMatchObject({ code: "SERVICEABILITY_COORDINATES_INVALID" });
+
+      await expect(
+        evaluateOutletServiceability(
+          persistence,
+          {
+            brandId: tree.brand.id,
+            outletId: tree.outletA.id,
+            location: { coordinates: { latitude: "-91.0", longitude: "78.0" } },
+          },
+          { clock },
+        ),
+      ).rejects.toMatchObject({ code: "SERVICEABILITY_COORDINATES_INVALID" });
+
+      await expect(
+        evaluateOutletServiceability(
+          persistence,
+          {
+            brandId: tree.brand.id,
+            outletId: tree.outletA.id,
+            location: { coordinates: { latitude: "30.0", longitude: "181.0" } },
+          },
+          { clock },
+        ),
+      ).rejects.toMatchObject({ code: "SERVICEABILITY_COORDINATES_INVALID" });
+
+      await expect(
+        evaluateOutletServiceability(
+          persistence,
+          {
+            brandId: tree.brand.id,
+            outletId: tree.outletA.id,
+            location: { coordinates: { latitude: "30.0", longitude: "-181.0" } },
+          },
+          { clock },
+        ),
+      ).rejects.toMatchObject({ code: "SERVICEABILITY_COORDINATES_INVALID" });
+
+      await expect(
+        evaluateOutletServiceability(
+          persistence,
+          {
+            brandId: tree.brand.id,
+            outletId: tree.outletA.id,
+            location: { coordinates: { latitude: "not-a-number", longitude: "78.0" } },
+          },
+          { clock },
+        ),
+      ).rejects.toMatchObject({ code: "SERVICEABILITY_COORDINATES_INVALID" });
+
+      const missingCoords = await evaluateOutletServiceability(
+        persistence,
+        {
+          brandId: tree.brand.id,
+          outletId: tree.outletA.id,
+          location: {},
+        },
+        { clock },
+      );
+      expect(missingCoords).toEqual({
+        status: "INDETERMINATE",
+        evaluatedAt: FIXED_NOW,
+        reason: "LOCATION_COORDINATES_REQUIRED",
+      });
+    });
+  });
 });
 
 describe("IMP-019 serviceability administration", () => {

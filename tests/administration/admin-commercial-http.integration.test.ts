@@ -963,6 +963,46 @@ describe("IMP-036F F6A commercial composition Admin HTTP", () => {
       await includeVariantAtBrand(persistence, actor, brandId, sibling.id);
       await seedMenuWithImage(persistence, actor, brandId, multiProduct.id, "f6cm");
 
+      // Priced + assorted Product with no Menu entry — proves authentic absence ≠ sibling partial.
+      const absentProduct = await persistence.transaction((tx) =>
+        createProduct(tx, {
+          actor,
+          brandId,
+          code: "f6c-absent",
+          name: "F6C Absent",
+          productKind: "standard",
+        }),
+      );
+      const absentVariant = await persistence.transaction((tx) =>
+        createVariant(tx, {
+          actor,
+          productId: absentProduct.id,
+          code: "only",
+          name: "Only",
+          isDefault: true,
+          isSelectorVisible: true,
+        }),
+      );
+      await persistence.transaction(async (tx) => {
+        await activateVariant(tx, { actor, variantId: absentVariant.id });
+        await activateProduct(tx, { actor, productId: absentProduct.id });
+      });
+      await persistence.transaction(async (tx) => {
+        const envelope = await tx.db
+          .select()
+          .from(catalogContentRevisionsTable)
+          .where(eq(catalogContentRevisionsTable.brandId, brandId))
+          .limit(1);
+        if (!envelope[0]) throw new Error("missing brand content revision");
+        await publishCatalogContentChange(tx, {
+          actor,
+          brandId,
+          productId: absentProduct.id,
+          expectedContentRevision: envelope[0].contentRevision,
+        });
+      });
+      await includeVariantAtBrand(persistence, actor, brandId, absentVariant.id);
+
       await persistence.transaction(async (tx) => {
         const book = await createDraftPriceBook(tx, {
           actor,
@@ -974,7 +1014,12 @@ describe("IMP-036F F6A commercial composition Admin HTTP", () => {
           effectiveTo: null,
         });
         let revision = book.revision;
-        for (const variantId of [catalog.variantId, defaultVariant.id, sibling.id]) {
+        for (const variantId of [
+          catalog.variantId,
+          defaultVariant.id,
+          sibling.id,
+          absentVariant.id,
+        ]) {
           const attached = await attachDraftVariantPrice(tx, {
             actor,
             priceBookId: book.id,
@@ -1070,7 +1115,31 @@ describe("IMP-036F F6A commercial composition Admin HTTP", () => {
         ).SERVICEABILITY?.outcome,
       ).toBe("pass");
 
-      // B — exact Variant verification (sibling not in customer Menu truth)
+      // B — exact Variant verification semantics
+      // Exact default Variant observed → normal exact verification (match allowed).
+      const defaultVerify = await fetch(
+        `${base}${commercialBase}/variants/${defaultVariant.id}/verification`,
+        {
+          method: "POST",
+          headers: {
+            Cookie: cookie,
+            Origin: "http://localhost:3000",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ outletId: outletA }),
+        },
+      );
+      expect(defaultVerify.status).toBe(200);
+      const defaultBody = (await defaultVerify.json()) as {
+        outcome: string;
+        customerMenu: { present: boolean | null; item: { variantId: string } | null };
+      };
+      expect(defaultBody.customerMenu.present).toBe(true);
+      expect(defaultBody.customerMenu.item?.variantId).toBe(defaultVariant.id);
+      expect(["VERIFIED_MATCH", "PARTIAL_VERIFICATION"]).toContain(defaultBody.outcome);
+      expect(defaultBody.outcome).not.toBe("VERIFIED_MISMATCH");
+
+      // Non-default sibling: Product observed via default Variant ≠ authoritative absence.
       const siblingVerify = await fetch(
         `${base}${commercialBase}/variants/${sibling.id}/verification`,
         {
@@ -1088,9 +1157,32 @@ describe("IMP-036F F6A commercial composition Admin HTTP", () => {
         outcome: string;
         customerMenu: { present: boolean | null; item: { variantId: string } | null };
       };
-      expect(siblingBody.customerMenu.present).toBe(false);
+      expect(siblingBody.customerMenu.present).toBeNull();
       expect(siblingBody.customerMenu.item).toBeNull();
+      expect(siblingBody.outcome).toBe("PARTIAL_VERIFICATION");
       expect(siblingBody.outcome).not.toBe("VERIFIED_MATCH");
+      expect(siblingBody.outcome).not.toBe("VERIFIED_MISMATCH");
+
+      // Genuinely absent Product/Menu entry still yields mismatch (not partial-from-sibling).
+      const absentVerify = await fetch(
+        `${base}${commercialBase}/variants/${absentVariant.id}/verification`,
+        {
+          method: "POST",
+          headers: {
+            Cookie: cookie,
+            Origin: "http://localhost:3000",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ outletId: outletA }),
+        },
+      );
+      expect(absentVerify.status).toBe(200);
+      const absentBody = (await absentVerify.json()) as {
+        outcome: string;
+        customerMenu: { present: boolean | null };
+      };
+      expect(absentBody.customerMenu.present).toBe(false);
+      expect(absentBody.outcome).toBe("VERIFIED_MISMATCH");
 
       // E — delivery subtotal: coords without subtotal = insufficient_context
       const missingSubtotal = await fetch(`${base}${variantBase}/verification`, {
@@ -1111,7 +1203,7 @@ describe("IMP-036F F6A commercial composition Admin HTTP", () => {
           .state,
       ).toBe("insufficient_context");
 
-      const badSubtotal = await fetch(`${base}${variantBase}/verification`, {
+      const nullSubtotal = await fetch(`${base}${variantBase}/verification`, {
         method: "POST",
         headers: {
           Cookie: cookie,
@@ -1121,11 +1213,133 @@ describe("IMP-036F F6A commercial composition Admin HTTP", () => {
         body: JSON.stringify({
           outletId: outletA,
           destinationCoordinates: TEST_INSIDE_COORDS,
-          orderSubtotalPaise: "not-a-number",
+          orderSubtotalPaise: null,
         }),
       });
-      expect(badSubtotal.status).toBe(400);
-      expect((await badSubtotal.json()).code).toBe("COMMERCIAL_REQUEST_INVALID");
+      expect(nullSubtotal.status).toBe(200);
+      expect(
+        ((await nullSubtotal.json()) as { deliveryTariff: { state: string } }).deliveryTariff
+          .state,
+      ).toBe("insufficient_context");
+
+      const validSubtotal = await fetch(`${base}${variantBase}/verification`, {
+        method: "POST",
+        headers: {
+          Cookie: cookie,
+          Origin: "http://localhost:3000",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          outletId: outletA,
+          destinationCoordinates: TEST_INSIDE_COORDS,
+          orderSubtotalPaise: "10000",
+        }),
+      });
+      expect(validSubtotal.status).toBe(200);
+
+      for (const badValue of ["", "abc", "-1", "1.5", 10000, true, {}] as const) {
+        const badSubtotal = await fetch(`${base}${variantBase}/verification`, {
+          method: "POST",
+          headers: {
+            Cookie: cookie,
+            Origin: "http://localhost:3000",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            outletId: outletA,
+            destinationCoordinates: TEST_INSIDE_COORDS,
+            orderSubtotalPaise: badValue,
+          }),
+        });
+        expect(badSubtotal.status).toBe(400);
+        expect((await badSubtotal.json()).code).toBe("COMMERCIAL_REQUEST_INVALID");
+      }
+
+      // Malformed supplied subtotal is rejected even without destination coordinates.
+      const badWithoutCoords = await fetch(`${base}${variantBase}/verification`, {
+        method: "POST",
+        headers: {
+          Cookie: cookie,
+          Origin: "http://localhost:3000",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          outletId: outletA,
+          orderSubtotalPaise: 10000,
+        }),
+      });
+      expect(badWithoutCoords.status).toBe(400);
+      expect((await badWithoutCoords.json()).code).toBe("COMMERCIAL_REQUEST_INVALID");
+
+      // Free-delivery threshold must use supplied order subtotal, not Variant price.
+      {
+        const { readOutletDeliveryTariff, updateOutletDeliveryTariff } = await import(
+          "../../src/server/pricing/delivery-tariff"
+        );
+        const currentTariff = await persistence.withContext((ctx) =>
+          readOutletDeliveryTariff(ctx, {
+            actor,
+            outletId: outletA,
+            pathBrandId: brandId,
+          }),
+        );
+        await persistence.transaction((tx) =>
+          updateOutletDeliveryTariff(tx, {
+            actor,
+            outletId: outletA,
+            pathBrandId: brandId,
+            expectedTariffConfigRevision: currentTariff.expectedTariffConfigRevision,
+            deliveryFeeBands: [
+              { maxDistanceMeters: 7000, amountPaise: 2500 },
+              { maxDistanceMeters: 12000, amountPaise: 6000 },
+            ],
+            freeDeliverySubtotalThresholdPaise: 15_000,
+          }),
+        );
+      }
+      const belowThreshold = await fetch(`${base}${variantBase}/verification`, {
+        method: "POST",
+        headers: {
+          Cookie: cookie,
+          Origin: "http://localhost:3000",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          outletId: outletA,
+          destinationCoordinates: TEST_INSIDE_COORDS,
+          // Variant price is 19_900 (above threshold); order subtotal is below.
+          orderSubtotalPaise: "10000",
+        }),
+      });
+      expect(belowThreshold.status).toBe(200);
+      const belowBody = (await belowThreshold.json()) as {
+        deliveryTariff: { state: string; amountPaise: string | null };
+        pricing: { amountPaise: string };
+      };
+      expect(belowBody.pricing.amountPaise).toBe("19900");
+      expect(belowBody.deliveryTariff.state).toBe("observed");
+      expect(belowBody.deliveryTariff.amountPaise).not.toBe("0");
+      expect(belowBody.deliveryTariff.amountPaise).toBe("2500");
+
+      const aboveThreshold = await fetch(`${base}${variantBase}/verification`, {
+        method: "POST",
+        headers: {
+          Cookie: cookie,
+          Origin: "http://localhost:3000",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          outletId: outletA,
+          destinationCoordinates: TEST_INSIDE_COORDS,
+          orderSubtotalPaise: "19900",
+        }),
+      });
+      expect(aboveThreshold.status).toBe(200);
+      const aboveBody = (await aboveThreshold.json()) as {
+        deliveryTariff: { state: string; amountPaise: string | null };
+      };
+      expect(aboveBody.deliveryTariff.state).toBe("observed");
+      expect(aboveBody.deliveryTariff.amountPaise).toBe("0");
 
       // F — Promotion audit actor attribution survives composition
       const activityRes = await fetch(`${base}${commercialBase}/activity`, {

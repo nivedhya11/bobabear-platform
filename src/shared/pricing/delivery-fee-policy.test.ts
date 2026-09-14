@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   parseDeliveryFeeBands,
+  parseNonNegativePaiseIntegerString,
   resolveDeliveryFeeFromBands,
   validateDeliveryFeeBands,
   validateFreeDeliveryThresholdPaise,
@@ -74,5 +75,21 @@ describe("delivery fee policy validation (IMP-036F F5)", () => {
     expect(validateFreeDeliveryThresholdPaise(-1).ok).toBe(false);
     expect(validateFreeDeliveryThresholdPaise("01").ok).toBe(false);
     expect(validateFreeDeliveryThresholdPaise(Number.MAX_SAFE_INTEGER + 1).ok).toBe(false);
+  });
+});
+
+describe("parseNonNegativePaiseIntegerString", () => {
+  it("accepts canonical non-negative integer strings", () => {
+    expect(parseNonNegativePaiseIntegerString("0")).toEqual({ ok: true, paise: BigInt(0) });
+    expect(parseNonNegativePaiseIntegerString("19900")).toEqual({
+      ok: true,
+      paise: BigInt(19_900),
+    });
+  });
+
+  it("rejects non-canonical supplied values", () => {
+    for (const bad of ["", " ", "-1", "+1", "1.5", "01", "1e3", "₹100", 100, 100.0, true, {}, []]) {
+      expect(parseNonNegativePaiseIntegerString(bad).ok).toBe(false);
+    }
   });
 });

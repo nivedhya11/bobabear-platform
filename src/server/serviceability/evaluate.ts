@@ -8,6 +8,7 @@ import {
   geodesicDistanceMeters,
   parseServiceabilityCoordinate,
   parseEvaluateServiceabilityInput,
+  parseServiceabilityLocationEvidence,
   ServiceabilityError,
   assertUuid,
   type ServiceabilityCandidate,
@@ -228,10 +229,12 @@ export async function evaluateOutletServiceability(
 ): Promise<ServiceabilityDecision> {
   const brandId = assertUuid(input.brandId, "brandId");
   const outletId = assertUuid(input.outletId, "outletId");
+  // Same canonical location validation as Brand-wide evaluateServiceability.
+  const location = parseServiceabilityLocationEvidence(input.location);
   const clock = options.clock ?? systemServiceabilityClock;
   const evaluatedAt = resolveEvaluatedAt(clock);
 
-  const coordinates = input.location.coordinates ?? undefined;
+  const coordinates = location.coordinates ?? undefined;
   if (!coordinates) {
     return Object.freeze({
       status: "INDETERMINATE" as const,

@@ -12,6 +12,7 @@ import { and, eq } from "drizzle-orm";
 import { catalogVariantsTable } from "../../../platform/database/schema/catalog";
 import { projectCustomerMenu } from "../../customer-commerce/menu/project-customer-menu";
 import { CustomerMenuError } from "../../../shared/customer-menu/errors";
+import { parseNonNegativePaiseIntegerString } from "../../../shared/pricing/delivery-fee-policy";
 import { loadApplicableAutomaticPromotions } from "../../promotions/load-for-evaluation";
 import { PricingResolutionError } from "../../pricing/errors";
 import { resolveOutletVariantPrice } from "../../pricing/resolve-price";
@@ -65,6 +66,18 @@ export type CustomerVerificationResult = Readonly<{
   subsequentReadValid: true;
 }>;
 
+function parseSuppliedOrderSubtotalPaise(value: unknown): bigint {
+  const parsed = parseNonNegativePaiseIntegerString(value);
+  if (!parsed.ok) {
+    throw new AdministrationError(
+      "ADMIN_REQUEST_INVALID",
+      "orderSubtotalPaise must be a non-negative integer string.",
+      { field: "orderSubtotalPaise" },
+    );
+  }
+  return parsed.paise;
+}
+
 export async function verifyCustomerCommercialTruth(
   persistence: Persistence,
   input: Readonly<{
@@ -85,6 +98,12 @@ export async function verifyCustomerCommercialTruth(
   const outletId = assertCommercialUuid(input.outletId, "outletId");
   const at = input.at ?? new Date();
 
+  // Supplied (non-null) subtotal is validated before destination context branching.
+  const suppliedSubtotalPaise =
+    input.orderSubtotalPaise === undefined || input.orderSubtotalPaise === null
+      ? null
+      : parseSuppliedOrderSubtotalPaise(input.orderSubtotalPaise);
+
   return persistence.withContext(async (context) => {
     const principal = await requireAnyBrandCommercialRead(context, input.actor, brandId);
     const outlet = await requireOutletInBrand(context, brandId, outletId);
@@ -92,6 +111,7 @@ export async function verifyCustomerCommercialTruth(
     const variantRows = await context.db
       .select({
         id: catalogVariantsTable.id,
+        productId: catalogVariantsTable.productId,
       })
       .from(catalogVariantsTable)
       .where(and(eq(catalogVariantsTable.id, variantId), eq(catalogVariantsTable.brandId, brandId)))
@@ -124,6 +144,7 @@ export async function verifyCustomerCommercialTruth(
       draftNotUsed: true,
     };
     let menuDisplayPrice: number | null = null;
+    let exactVariantUnobservableViaDefaultProjection = false;
 
     if (canMenu) {
       try {
@@ -132,23 +153,47 @@ export async function verifyCustomerCommercialTruth(
           outletId,
           at,
         });
-    const item = projection.items.find((i) => i.variantId === variantId) ?? null;
-        menuDisplayPrice = item?.displayPricePaise ?? null;
-        customerMenu = {
-          state: "observed",
-          present: item != null,
-          item: item
-            ? {
-                productId: item.productId,
-                variantId: item.variantId,
-                name: item.name,
-                displayPricePaise: item.displayPricePaise,
-                imagePath: item.imagePath,
-                availability: item.availability ?? null,
-              }
-            : null,
-          draftNotUsed: true,
-        };
+        const exactItem =
+          projection.items.find((i) => i.variantId === variantId) ?? null;
+        // productId is classification-only — never substitute a sibling as exact evidence.
+        const sameProductItem =
+          exactItem == null
+            ? (projection.items.find((i) => i.productId === variant.productId) ?? null)
+            : null;
+
+        if (exactItem != null) {
+          menuDisplayPrice = exactItem.displayPricePaise;
+          customerMenu = {
+            state: "observed",
+            present: true,
+            item: {
+              productId: exactItem.productId,
+              variantId: exactItem.variantId,
+              name: exactItem.name,
+              displayPricePaise: exactItem.displayPricePaise,
+              imagePath: exactItem.imagePath,
+              availability: exactItem.availability ?? null,
+            },
+            draftNotUsed: true,
+          };
+        } else if (sameProductItem != null) {
+          // Default-only customer projection observed the Product via another Variant.
+          // That proves non-observation of the requested Variant, not authoritative absence.
+          exactVariantUnobservableViaDefaultProjection = true;
+          customerMenu = {
+            state: "observed",
+            present: null,
+            item: null,
+            draftNotUsed: true,
+          };
+        } else {
+          customerMenu = {
+            state: "observed",
+            present: false,
+            item: null,
+            draftNotUsed: true,
+          };
+        }
       } catch (error) {
         if (error instanceof CustomerMenuError) {
           customerMenu = {
@@ -233,40 +278,13 @@ export async function verifyCustomerCommercialTruth(
         amountPaise: null,
         source: null,
       };
-    } else if (!input.destinationCoordinates) {
-      deliveryTariff = {
-        state: "insufficient_context",
-        amountPaise: null,
-        source: null,
-      };
-    } else if (
-      input.orderSubtotalPaise == null ||
-      input.orderSubtotalPaise === ""
-    ) {
+    } else if (!input.destinationCoordinates || suppliedSubtotalPaise === null) {
       deliveryTariff = {
         state: "insufficient_context",
         amountPaise: null,
         source: null,
       };
     } else {
-      if (
-        typeof input.orderSubtotalPaise !== "string" ||
-        !/^\d+$/.test(input.orderSubtotalPaise)
-      ) {
-        throw new AdministrationError(
-          "ADMIN_REQUEST_INVALID",
-          "orderSubtotalPaise must be a non-negative integer string.",
-          { field: "orderSubtotalPaise" },
-        );
-      }
-      const subtotal = BigInt(input.orderSubtotalPaise);
-      if (subtotal > BigInt(Number.MAX_SAFE_INTEGER)) {
-        throw new AdministrationError(
-          "ADMIN_REQUEST_INVALID",
-          "orderSubtotalPaise exceeds the supported integer range.",
-          { field: "orderSubtotalPaise" },
-        );
-      }
       try {
         const charge = await resolveCustomerDeliveryCharge(context, {
           brandId,
@@ -290,7 +308,7 @@ export async function verifyCustomerCommercialTruth(
             },
             label: null,
           },
-          prePromotionSubtotalPaise: subtotal,
+          prePromotionSubtotalPaise: suppliedSubtotalPaise,
         });
         if (!charge) {
           deliveryTariff = {
@@ -324,6 +342,10 @@ export async function verifyCustomerCommercialTruth(
     if (missingCriticalContext) {
       outcome = "INSUFFICIENT_CONTEXT";
       explanation = "Insufficient authorized context to verify customer commercial truth.";
+    } else if (exactVariantUnobservableViaDefaultProjection) {
+      outcome = "PARTIAL_VERIFICATION";
+      explanation =
+        "Customer Menu projection observes this Product via a different Variant; the exact requested Variant is not observable through the default-Variant customer projection.";
     } else if (
       observedMenu &&
       customerMenu.present === true &&
