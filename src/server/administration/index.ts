@@ -1,4 +1,4 @@
-/** Public administration module entry (IMP-035). */
+/** Public administration module entry (IMP-035 / IMP-036F F6A). */
 import "server-only";
 
 export { AdministrationError } from "./errors";
@@ -37,3 +37,10 @@ export {
   getAdminSession,
   rejectForgedAuthorityFields,
 } from "./use-cases";
+
+export {
+  composeCommercialActivity,
+  diagnoseSellability,
+  inspectCommercialOffering,
+  verifyCustomerCommercialTruth,
+} from "./commercial";
