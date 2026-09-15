@@ -85,6 +85,7 @@ test("isAllowedPersistenceImportPath allows the exact additional script consumer
     "scripts/catalog/bootstrap-imp036c-required-topping.ts",
     "scripts/e2e/seed-customer-ordering.ts",
     "scripts/e2e/seed-operations-lifecycle.ts",
+    "scripts/e2e/seed-commercial-workspace.ts",
     "scripts/financial-document/recover-missing-receipt-vouchers.ts",
     "scripts/financial-document/recover-missing-tax-invoices.ts",
     "scripts/financial-document/signing.ts",
