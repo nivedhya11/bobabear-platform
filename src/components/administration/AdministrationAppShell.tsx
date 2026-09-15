@@ -40,6 +40,20 @@ function adminSectionItems(pathname: string, capabilities: Record<string, boolea
       current: normalized.startsWith("/workforce/admin/resources/"),
     },
   ];
+  const hasCommercialRead =
+    capabilities["catalog.read"] === true ||
+    capabilities["menu.read"] === true ||
+    capabilities["assortment.read"] === true ||
+    capabilities["pricing.read"] === true ||
+    capabilities["promotions.read"] === true ||
+    capabilities["coupons.read"] === true;
+  if (hasCommercialRead) {
+    items.push({
+      href: "/workforce/admin/commercial/",
+      label: "Commercial",
+      current: normalized.startsWith("/workforce/admin/commercial/"),
+    });
+  }
   if (capabilities["access.membership.read"] === true) {
     items.push({
       href: "/workforce/admin/memberships/",

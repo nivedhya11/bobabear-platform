@@ -9,10 +9,12 @@
       "playwright-report-customer-auth/",
       "playwright-report-workforce-auth/",
       "playwright-report-operations-lifecycle/",
+      "playwright-report-commercial-workspace/",
       "test-results/",
       "test-results-customer-auth/",
       "test-results-workforce-auth/",
       "test-results-operations-lifecycle/",
+      "test-results-commercial-workspace/",
       "artifacts/playwright-report-customer-auth/",
       "artifacts/test-results-customer-auth/",
       ".next/",
@@ -29,23 +31,23 @@
     "note": "Protected evidence and generated reports are never classified as executable test source."
   },
   "counts": {
-    "trackedPathsConsidered": 1847,
-    "executableTestFiles": 372,
+    "trackedPathsConsidered": 1889,
+    "executableTestFiles": 386,
     "sourceTestFiles": 130,
-    "testsTreeExecutableFiles": 208,
+    "testsTreeExecutableFiles": 222,
     "scriptTestFiles": 34,
-    "playwrightSpecs": 11,
+    "playwrightSpecs": 12,
     "vitestConfigs": 2,
-    "playwrightConfigs": 6,
-    "testSupportScripts": 47,
+    "playwrightConfigs": 7,
+    "testSupportScripts": 50,
     "packageTestCommands": 77,
     "packageAuditCommands": 23,
-    "packageE2eCommands": 8,
+    "packageE2eCommands": 9,
     "packageCheckCommands": 12,
     "packageCoverageCommands": 1,
     "packageInventoryCommands": 2,
     "ciWorkflowFiles": 3,
-    "ciValidationSteps": 98,
+    "ciValidationSteps": 103,
     "protectedEvidenceTrackedFiles": 3,
     "archiveTrackedFiles": 92
   },
@@ -189,6 +191,17 @@
     "tests/access-control/principal.test.ts",
     "tests/access-control/scope.test.ts",
     "tests/administration/AdministrationHubClient.test.tsx",
+    "tests/administration/AssortmentEditor.test.tsx",
+    "tests/administration/CatalogEditor.test.tsx",
+    "tests/administration/CommercialInspectionPanel.test.tsx",
+    "tests/administration/CommercialWorkspaceClient.test.tsx",
+    "tests/administration/ConsequenceReviewDialog.test.tsx",
+    "tests/administration/CustomerVerificationPanel.test.tsx",
+    "tests/administration/DeliveryTariffEditor.test.tsx",
+    "tests/administration/MenuEditor.test.tsx",
+    "tests/administration/PricingEditor.test.tsx",
+    "tests/administration/PromotionsEditor.test.tsx",
+    "tests/administration/SellabilityDiagnosisPanel.test.tsx",
     "tests/administration/admin-assortment-http.integration.test.ts",
     "tests/administration/admin-catalog-http-customer-truth.integration.test.ts",
     "tests/administration/admin-catalog-http.integration.test.ts",
@@ -201,6 +214,8 @@
     "tests/administration/admin-tariff-http.integration.test.ts",
     "tests/administration/admin-transport.test.ts",
     "tests/administration/admin-ui.test.tsx",
+    "tests/administration/commercial-money.test.ts",
+    "tests/administration/commercial-types.test.ts",
     "tests/administration/portal-session.integration.test.ts",
     "tests/assortment-availability/assortment-consequence-preview.test.ts",
     "tests/assortment-availability/assortment-revision-concurrency.test.ts",
@@ -296,6 +311,7 @@
     "tests/delivery-application/delivery.application.test.ts",
     "tests/delivery-concurrency/delivery.concurrency.test.ts",
     "tests/delivery-manual/delivery.manual.test.ts",
+    "tests/e2e/commercial-workspace.spec.ts",
     "tests/e2e/customer-auth.spec.ts",
     "tests/e2e/customer-ordering.spec.ts",
     "tests/e2e/external-links.spec.ts",
@@ -428,6 +444,7 @@
     "scripts/working-tree-fingerprint.test.mjs"
   ],
   "playwrightSpecs": [
+    "tests/e2e/commercial-workspace.spec.ts",
     "tests/e2e/customer-auth.spec.ts",
     "tests/e2e/customer-ordering.spec.ts",
     "tests/e2e/external-links.spec.ts",
@@ -445,6 +462,7 @@
     "vitest.database.config.mts"
   ],
   "playwrightConfigs": [
+    "playwright.commercial-workspace.config.ts",
     "playwright.config.ts",
     "playwright.customer-auth.config.ts",
     "playwright.customer-ordering.config.ts",
@@ -453,13 +471,16 @@
     "playwright.workforce-auth.config.ts"
   ],
   "testSupportScripts": [
+    "scripts/e2e/build-commercial-workspace-seed.mjs",
     "scripts/e2e/build-operations-lifecycle-seed.mjs",
     "scripts/e2e/customer-auth-server.ts",
     "scripts/e2e/customer-ordering-server.ts",
+    "scripts/e2e/run-commercial-workspace-e2e.mjs",
     "scripts/e2e/run-customer-auth-e2e.mjs",
     "scripts/e2e/run-customer-ordering-e2e.mjs",
     "scripts/e2e/run-operations-lifecycle-e2e.mjs",
     "scripts/e2e/run-workforce-auth-e2e.mjs",
+    "scripts/e2e/seed-commercial-workspace.ts",
     "scripts/e2e/seed-customer-ordering.ts",
     "scripts/e2e/seed-operations-lifecycle.ts",
     "scripts/e2e/workforce-auth-server.ts",
@@ -608,6 +629,7 @@
     ],
     "e2e": [
       "test:e2e",
+      "test:e2e:commercial-workspace",
       "test:e2e:customer-auth",
       "test:e2e:customer-ordering",
       "test:e2e:docker",
@@ -723,6 +745,7 @@
     "test:database:serviceability": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/database/serviceability.integration.test.ts",
     "test:database:workforce-auth": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/database/workforce-auth.integration.test.ts",
     "test:e2e": "npm run build && playwright test",
+    "test:e2e:commercial-workspace": "node scripts/e2e/run-commercial-workspace-e2e.mjs",
     "test:e2e:customer-auth": "npm run build && npm run customer-auth:build && node scripts/e2e/run-customer-auth-e2e.mjs",
     "test:e2e:customer-ordering": "npm run build && npm run customer-auth:build && npm run customer-commerce:build && node scripts/e2e/run-customer-ordering-e2e.mjs",
     "test:e2e:docker": "PLAYWRIGHT_TARGET=docker playwright test",
@@ -1104,6 +1127,26 @@
         {
           "name": "Operations lifecycle E2E",
           "run": "npm run test:e2e:operations-lifecycle"
+        },
+        {
+          "name": "Install dependencies",
+          "run": "npm ci"
+        },
+        {
+          "name": "Ensure rootless Podman socket",
+          "run": "socket=\"/run/user/$(id -u)/podman/podman.sock\"\ncommand -v podman\nif [ ! -S \"$socket\" ]; then\nsystemctl --user start podman.socket\nfi\ntest -S \"$socket\"\npodman --version"
+        },
+        {
+          "name": "Ensure podman-compose",
+          "run": "if ! command -v podman-compose >/dev/null 2>&1; then\nsudo apt-get update\nsudo apt-get install -y podman-compose\nfi\npodman-compose --version"
+        },
+        {
+          "name": "Install Playwright Chromium",
+          "run": "npx playwright install --with-deps chromium"
+        },
+        {
+          "name": "Commercial workspace E2E",
+          "run": "npm run test:e2e:commercial-workspace"
         },
         {
           "name": "Install dependencies",
@@ -4326,6 +4369,226 @@
       "classificationConfidence": "HEURISTIC"
     },
     {
+      "path": "tests/administration/AssortmentEditor.test.tsx",
+      "runner": "vitest",
+      "domain": "administration",
+      "testType": "component-or-tsx",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test",
+        "test:administration",
+        "test:coverage",
+        "test:database:administration"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "2-component"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/administration/CatalogEditor.test.tsx",
+      "runner": "vitest",
+      "domain": "administration",
+      "testType": "component-or-tsx",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test",
+        "test:administration",
+        "test:coverage",
+        "test:database:administration"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "2-component"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/administration/CommercialInspectionPanel.test.tsx",
+      "runner": "vitest",
+      "domain": "administration",
+      "testType": "component-or-tsx",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test",
+        "test:administration",
+        "test:coverage",
+        "test:database:administration"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "2-component"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/administration/CommercialWorkspaceClient.test.tsx",
+      "runner": "vitest",
+      "domain": "administration",
+      "testType": "component-or-tsx",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test",
+        "test:administration",
+        "test:coverage",
+        "test:database:administration"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "2-component"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/administration/ConsequenceReviewDialog.test.tsx",
+      "runner": "vitest",
+      "domain": "administration",
+      "testType": "component-or-tsx",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test",
+        "test:administration",
+        "test:coverage",
+        "test:database:administration"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "2-component"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/administration/CustomerVerificationPanel.test.tsx",
+      "runner": "vitest",
+      "domain": "administration",
+      "testType": "component-or-tsx",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test",
+        "test:administration",
+        "test:coverage",
+        "test:database:administration"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "2-component"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/administration/DeliveryTariffEditor.test.tsx",
+      "runner": "vitest",
+      "domain": "administration",
+      "testType": "component-or-tsx",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test",
+        "test:administration",
+        "test:coverage",
+        "test:database:administration"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "2-component"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/administration/MenuEditor.test.tsx",
+      "runner": "vitest",
+      "domain": "administration",
+      "testType": "component-or-tsx",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test",
+        "test:administration",
+        "test:coverage",
+        "test:database:administration"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "2-component"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/administration/PricingEditor.test.tsx",
+      "runner": "vitest",
+      "domain": "administration",
+      "testType": "component-or-tsx",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test",
+        "test:administration",
+        "test:coverage",
+        "test:database:administration"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "2-component"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/administration/PromotionsEditor.test.tsx",
+      "runner": "vitest",
+      "domain": "administration",
+      "testType": "component-or-tsx",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test",
+        "test:administration",
+        "test:coverage",
+        "test:database:administration"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "2-component"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/administration/SellabilityDiagnosisPanel.test.tsx",
+      "runner": "vitest",
+      "domain": "administration",
+      "testType": "component-or-tsx",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test",
+        "test:administration",
+        "test:coverage",
+        "test:database:administration"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "2-component"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
       "path": "tests/administration/admin-assortment-http.integration.test.ts",
       "runner": "vitest",
       "domain": "administration",
@@ -4562,6 +4825,46 @@
       "ciInclusion": "YES",
       "test1Layers": [
         "2-component"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/administration/commercial-money.test.ts",
+      "runner": "vitest",
+      "domain": "administration",
+      "testType": "unit-or-domain",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test",
+        "test:administration",
+        "test:coverage",
+        "test:database:administration"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/administration/commercial-types.test.ts",
+      "runner": "vitest",
+      "domain": "administration",
+      "testType": "unit-or-domain",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test",
+        "test:administration",
+        "test:coverage",
+        "test:database:administration"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit"
       ],
       "classificationConfidence": "HEURISTIC"
     },
@@ -7188,6 +7491,24 @@
         "1-unit"
       ],
       "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/e2e/commercial-workspace.spec.ts",
+      "runner": "playwright",
+      "domain": "e2e",
+      "testType": "e2e-spec",
+      "dbRequired": "UNKNOWN",
+      "browserRequired": "YES",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:e2e",
+        "test:e2e:commercial-workspace"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "11-e2e-browser-ui"
+      ],
+      "classificationConfidence": "LOW"
     },
     {
       "path": "tests/e2e/customer-auth.spec.ts",

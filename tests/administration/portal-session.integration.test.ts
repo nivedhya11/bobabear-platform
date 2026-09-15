@@ -170,6 +170,9 @@ describe("IMP-036A portal session destination projection", () => {
         expect(managerJson.session.capabilities["order.read"]).toBe(true);
         expect(managerJson.session.capabilities["access.membership.read"]).toBe(true);
         expect(managerJson.session.capabilities["access.audit.read"]).toBe(true);
+        // Commercial navigation keys are projected; outlet managers lack Catalog Brand authority.
+        expect(managerJson.session.capabilities["catalog.read"]).toBe(false);
+        expect(managerJson.session.capabilities["assortment.read"]).toBe(true);
         expect(resolveAuthorizedDestinations(managerJson.session.capabilities).map((d) => d.id)).toEqual([
           "operations",
           "administration",

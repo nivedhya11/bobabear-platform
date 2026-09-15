@@ -54,6 +54,47 @@ describe("AdministrationHubClient", () => {
     expect(screen.queryByRole("link", { name: /access audit/i })).not.toBeInTheDocument();
   });
 
+  it("shows Commercial when catalog.read is present", async () => {
+    fetchAdminSession.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      data: {
+        session: {
+          workforceUserId: "wf-1",
+          capabilities: {
+            "catalog.read": true,
+            "access.membership.read": true,
+          },
+        },
+      },
+    });
+    render(<AdministrationHubClient />);
+    await waitFor(() => expect(screen.getByTestId("admin-hub")).toBeInTheDocument());
+    expect(screen.getByRole("link", { name: /^Commercial$/i })).toHaveAttribute(
+      "href",
+      "/workforce/admin/commercial/",
+    );
+  });
+
+  it("hides Commercial when only access.membership.read is present", async () => {
+    fetchAdminSession.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      data: {
+        session: {
+          workforceUserId: "wf-1",
+          capabilities: {
+            "access.membership.read": true,
+          },
+        },
+      },
+    });
+    render(<AdministrationHubClient />);
+    await waitFor(() => expect(screen.getByTestId("admin-hub")).toBeInTheDocument());
+    expect(screen.queryByRole("link", { name: /^Commercial$/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /memberships/i })).toBeInTheDocument();
+  });
+
   it("renders a generic error state", async () => {
     fetchAdminSession.mockResolvedValueOnce({
       ok: false,

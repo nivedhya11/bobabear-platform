@@ -23,6 +23,11 @@ function listJsFilesRecursive(dir) {
 }
 function fileExists(candidate) { try { return statSync(candidate).isFile(); } catch { return false; } }
 function resolveRewrittenSpecifier(fileAbsolutePath, specifier) {
+  // Leave JSON (and other non-JS assets) alone — tsc emit with resolveJsonModule
+  // keeps the `.json` specifier and may copy the asset beside the graph.
+  if (/\.(json|css|svg|png|jpg|jpeg|webp|gif)$/i.test(specifier)) {
+    return specifier;
+  }
   const targetBase = specifier.startsWith("@/") ? path.join(outDir, specifier.slice(2)) : path.resolve(path.dirname(fileAbsolutePath), specifier);
   const resolved = [`${targetBase}.js`, path.join(targetBase, "index.js")].find(fileExists);
   if (!resolved) throw new Error(`operations build: unresolved emitted import "${specifier}".`);
@@ -36,7 +41,17 @@ function main() {
   const files = listJsFilesRecursive(outDir);
   for (const file of files) {
     const source = readFileSync(file, "utf8");
-    const rewritten = source.replace(SPECIFIER_PATTERN, (match, quote, specifier) => REWRITABLE_SPECIFIER.test(specifier) ? match.replace(`${quote}${specifier}${quote}`, `${quote}${resolveRewrittenSpecifier(file, specifier)}${quote}`) : match);
+    // Node 22+ requires `with { type: "json" }` for ESM JSON imports.
+    const withJsonAttributes = source.replace(
+      /\b(from|import)\s*\(?\s*(["'])((?:\.\.?\/|@\/)[^"']+\.json)\2(?!\s*with\s*\{)/g,
+      (match, keyword, quote, specifier) =>
+        match.includes(" with {") ? match : match.replace(`${quote}${specifier}${quote}`, `${quote}${specifier}${quote} with { type: "json" }`),
+    );
+    const rewritten = withJsonAttributes.replace(SPECIFIER_PATTERN, (match, quote, specifier) => {
+      if (!REWRITABLE_SPECIFIER.test(specifier)) return match;
+      if (/\.json$/i.test(specifier)) return match;
+      return match.replace(`${quote}${specifier}${quote}`, `${quote}${resolveRewrittenSpecifier(file, specifier)}${quote}`);
+    });
     if (rewritten !== source) writeFileSync(file, rewritten, "utf8");
   }
   writeFileSync(path.join(outDir, "package.json"), `${JSON.stringify({ type: "module" }, null, 2)}\n`, "utf8");

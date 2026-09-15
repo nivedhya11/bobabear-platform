@@ -52,7 +52,7 @@ export type CustomerVerificationResult = Readonly<{
     matchesMenuDisplayPrice: boolean | null;
   }>;
   promotions: Readonly<{
-    state: "observed" | "unavailable" | "insufficient_context";
+    state: "observed" | "unavailable" | "insufficient_context" | "error";
     applicableAutomaticCount: number | null;
     note: string;
   }>;
@@ -240,6 +240,12 @@ export async function verifyCustomerCommercialTruth(
             matchesMenuDisplayPrice:
               menuDisplayPrice == null ? null : menuDisplayPrice === 0 ? true : false,
           };
+        } else if (error instanceof PricingResolutionError) {
+          pricing = {
+            state: "error",
+            amountPaise: null,
+            matchesMenuDisplayPrice: null,
+          };
         } else {
           throw error;
         }
@@ -252,19 +258,27 @@ export async function verifyCustomerCommercialTruth(
       note: "Promotion evaluation unavailable to inspect.",
     };
     if (canPromotions) {
-      const automatic = await loadApplicableAutomaticPromotions(context, {
-        brandId,
-        territoryId: outlet.territoryId,
-        organizationId: outlet.organizationId,
-        outletId,
-        at,
-      });
-      promotions = {
-        state: "observed",
-        applicableAutomaticCount: automatic.length,
-        note:
-          "Automatic promotions loaded via existing Promotions evaluation path; cart-level qualifier outcomes may still differ.",
-      };
+      try {
+        const automatic = await loadApplicableAutomaticPromotions(context, {
+          brandId,
+          territoryId: outlet.territoryId,
+          organizationId: outlet.organizationId,
+          outletId,
+          at,
+        });
+        promotions = {
+          state: "observed",
+          applicableAutomaticCount: automatic.length,
+          note:
+            "Automatic promotions loaded via existing Promotions evaluation path; cart-level qualifier outcomes may still differ.",
+        };
+      } catch {
+        promotions = {
+          state: "error",
+          applicableAutomaticCount: null,
+          note: "Promotion evaluation failed; other customer authorities remain independently inspected.",
+        };
+      }
     }
 
     let deliveryTariff: CustomerVerificationResult["deliveryTariff"] = {
