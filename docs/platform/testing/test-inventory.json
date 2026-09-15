@@ -31,10 +31,10 @@
     "note": "Protected evidence and generated reports are never classified as executable test source."
   },
   "counts": {
-    "trackedPathsConsidered": 1888,
-    "executableTestFiles": 385,
+    "trackedPathsConsidered": 1889,
+    "executableTestFiles": 386,
     "sourceTestFiles": 130,
-    "testsTreeExecutableFiles": 221,
+    "testsTreeExecutableFiles": 222,
     "scriptTestFiles": 34,
     "playwrightSpecs": 12,
     "vitestConfigs": 2,
@@ -199,6 +199,7 @@
     "tests/administration/CustomerVerificationPanel.test.tsx",
     "tests/administration/DeliveryTariffEditor.test.tsx",
     "tests/administration/MenuEditor.test.tsx",
+    "tests/administration/PricingEditor.test.tsx",
     "tests/administration/PromotionsEditor.test.tsx",
     "tests/administration/SellabilityDiagnosisPanel.test.tsx",
     "tests/administration/admin-assortment-http.integration.test.ts",
@@ -4509,6 +4510,26 @@
     },
     {
       "path": "tests/administration/MenuEditor.test.tsx",
+      "runner": "vitest",
+      "domain": "administration",
+      "testType": "component-or-tsx",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test",
+        "test:administration",
+        "test:coverage",
+        "test:database:administration"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "2-component"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/administration/PricingEditor.test.tsx",
       "runner": "vitest",
       "domain": "administration",
       "testType": "component-or-tsx",
