@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R119",
-  "acceptedThrough": "IMP-036E",
-  "currentProductSlice": "IMP-036F",
+  "stateVersion": "STATE-R120",
+  "acceptedThrough": "IMP-036F",
+  "currentProductSlice": "NONE",
   "nextProductSlice": "IMP-036G",
   "pendingAcceptance": "NONE",
   "governanceHealth": "ALIGNED",
-  "lastReviewed": "2026-09-11"
+  "lastReviewed": "2026-09-15"
 }
 -->
 
@@ -24,49 +24,81 @@ Do not infer current lifecycle from that snapshot.
 ## 1. Accepted Position
 
 ```text
-Accepted Through:          IMP-036E — Store Operations Management
+Accepted Through:          IMP-036F — Catalog, Menu, Pricing & Promotions Management
 Accepted Inserted Slice:   IMP-005A — Dockerized local application runtime; IMP-026C — Pilot Customer-Commerce UX Hardening; IMP-028A — Food Direct UX Foundation; IMP-028B — Customer Menu Projection + Discovery; IMP-028C — Food Customization; IMP-028D — Desktop Ordering Continuity
-Accepted Range:            IMP-001 → IMP-036E (including IMP-005A and IMP-026C)
+Accepted Range:            IMP-001 → IMP-036F (including IMP-005A and IMP-026C)
 ```
 
 ## 2. Current Work Position
 
 ```text
-Current Product Implementation: IMP-036F
+Current Product Implementation: NONE
 Pending Acceptance:             NONE
-Current Product Slice:          IMP-036F — Catalog, Menu, Pricing & Promotions Management
+Current Product Slice:          NONE
 Next Product Slice:             IMP-036G — Administration Console V2
-Current Governance Activity:    GTM-R121 / STATE-R119;
-                              Product Definition APPROVED / Gate PASS;
-                              Architecture Fit PASS;
-                              Architecture Locked YES;
-                              Implementation AUTHORIZED / STARTED;
-                              IMP036F_ACTIVATED: YES; IMP036F_PRODUCT_DEFINITION: APPROVED;
-                              IMP036F_PRODUCT_DEFINITION_GATE: PASS;
-                              IMP036F_ARCHITECTURE_FIT: PASS;
-                              IMP036F_ARCHITECTURE_LOCKED: YES;
-                              IMP036F_IMPLEMENTATION_AUTHORIZED: YES;
-                              IMP036F_STARTED: YES; IMP036F_ACCEPTED: NO;
-                              IMP036F_FOUNDER_UAT_REQUIRED: YES;
-                              locked capability architecture =
-                              docs/platform/capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md
-                              (unaccepted current lock; not in accepted capability ledger);
-                              Implementation Authorization Gate PASS
-                              (PR #141 issue comment 5622858455);
-                              authorization applies to locked Product Definition / architecture;
-                              implementation start recorded at GTM-R121; F1 in progress;
-                              schema migration 0037_hesitant_scorpion accompanies F1 start;
-                              AUTHORIZED + STARTED = IMPLEMENTATION_IN_PROGRESS (not complete/accepted);
-                              next gates = continue F1…Fn implementation; independent review; Founder UAT; acceptance
-                              (after merge/reconciliation);
-                              IMP-036E remains COMPLETE_AND_ACCEPTED (latest accepted locked
-                              capability = IMP-036E); IMP-036G remains
-                              PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
-                              (IMP036G_ACTIVATED: NO).
+Current Governance Activity:    IMP-036F COMPLETE_AND_ACCEPTED after Founder UAT PASS (2026-09-15);
+                              accepted UAT candidate 91d0b5e5e5815da6bf0bb325a3c6ab884dc06652 /
+                              tree ab41fc7f2bf6d0a52c3ea6c2b69ed331ca9540cf;
+                              fingerprint c689630cb9a4d002fda3376f949a1f324015776d392abfd2abde7b6f5b91f973;
+                              exact-main CI 34991901136 SUCCESS;
+                              Product Definition PD-IMP-036F-DRAFT-1 APPROVED / Gate PASS /
+                              Architecture Fit PASS preserved;
+                              IMP036F_IMPLEMENTATION_COMPLETE: YES; IMP036F_ACCEPTED: YES;
+                              IMP036F_FOUNDER_UAT: PASS; IMP036F_FORMAL_ACCEPTANCE: ACCEPTED;
+                              latest accepted locked capability =
+                              docs/platform/capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md;
+                              IMP-036E remains COMPLETE_AND_ACCEPTED;
+                              IMP-036G remains PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
+                              (IMP036G_ACTIVATED: NO); ADVANCE of IMP-036G is a separate
+                              Founder-authorized task.
 Governance Health:              ALIGNED
 ```
 
 ```text
+IMP-036F:                 COMPLETE_AND_ACCEPTED
+IMP-036F_ARCHITECTURE:    LOCKED
+IMP036F_ARCHITECTURE_LOCKED: YES
+IMP036F_IMPLEMENTATION:   AUTHORIZED / STARTED / COMPLETE
+IMP036F_IMPLEMENTATION_AUTHORIZED: YES
+IMP036F_STARTED:          YES
+IMP036F_IMPLEMENTATION_COMPLETE: YES
+IMP036F_ACCEPTED:         YES
+IMP036F_FOUNDER_UAT_REQUIRED: YES
+IMP036F_FOUNDER_UAT:      PASS
+IMP036F_FORMAL_ACCEPTANCE: ACCEPTED
+IMP036F_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
+IMP036F_PRODUCT_DEFINITION: APPROVED
+IMP036F_PRODUCT_DEFINITION_GATE: PASS
+IMP036F_ARCHITECTURE_FIT: PASS
+IMP036F_ACTIVATED:        YES
+IMP036F_ACCEPTED_MAIN_SHA: 91d0b5e5e5815da6bf0bb325a3c6ab884dc06652
+IMP036F_ACCEPTED_TREE: ab41fc7f2bf6d0a52c3ea6c2b69ed331ca9540cf
+IMP036F_ACCEPTED_CANDIDATE: 91d0b5e5e5815da6bf0bb325a3c6ab884dc06652
+IMP036F_FOUNDER_UAT_CANDIDATE_BRANCH: main
+IMP036F_FOUNDER_UAT_CANDIDATE_HEAD: 91d0b5e5e5815da6bf0bb325a3c6ab884dc06652
+IMP036F_FOUNDER_UAT_CANDIDATE_TREE: ab41fc7f2bf6d0a52c3ea6c2b69ed331ca9540cf
+IMP036F_FOUNDER_UAT_CANDIDATE_FINGERPRINT: c689630cb9a4d002fda3376f949a1f324015776d392abfd2abde7b6f5b91f973
+IMP036F_FOUNDER_UAT_DECISION_DATE: 2026-09-15
+IMP036F_FOUNDER_UAT_ACCEPTANCE_AUTHORITY: Founder
+IMP036F_EXACT_MAIN_CI: 34991901136
+IMP036F_EXACT_MAIN_CI_RESULT: SUCCESS
+IMP036F_F6A_PR: 149
+IMP036F_F6A_REVIEWED_HEAD: 429923f182d22d960052f5ca840bc367d4fd9078
+IMP036F_F6A_MERGE_MAIN: 611d6e7707f561c581118873d58214e92faf75bb
+IMP036F_F6B_PR: 150
+IMP036F_F6B_REVIEWED_HEAD: 240cb4ee20cd468280198304e96efecb7ecaf895
+IMP036F_F6B_INDEPENDENT_REVIEW: 5210814689
+IMP036F_F6B_MERGE: 07f15d5a2eab1a86d7a9412622554db4b0117f49
+IMP036F_POST_MERGE_AUDIT_PR: 151
+IMP036F_POST_MERGE_AUDIT_REVIEWED_HEAD: b95fe1d1cd20290bcd92f82b072258d7d9ec7bce
+IMP036F_POST_MERGE_AUDIT_INDEPENDENT_REVIEW: 5212370227
+IMP036F_POST_MERGE_AUDIT_MERGE: 91d0b5e5e5815da6bf0bb325a3c6ab884dc06652
+IMP036F_CRITICAL_POST_MERGE_PERSISTENCE_AUDIT: PASS
+FOUNDER_STAGING_PROJECT: boba-staging
+FOUNDER_STAGING_CANDIDATE_MATCH: YES
+FOUNDER_STAGING_STATUS: FOUNDER_UAT_COMPLETE
+FOUNDER_STAGING_UAT_ROUTE: /workforce/admin/commercial
+NON_BLOCKING_UAT_OBSERVATIONS: Menu-only-effective empty until draft mutation; Pricing Proposed preview occasional `—`; Founder staging UAT side-effects expected
 IMP-036E:                 COMPLETE_AND_ACCEPTED
 IMP-036E_ARCHITECTURE:    LOCKED
 IMP-036E_ARCHITECTURE_LOCKED: YES
@@ -90,8 +122,6 @@ IMP036E_FOUNDER_UAT_CANDIDATE_TREE: 55b28977ee9860c2c07cb25f751c9f48ef4a2aa6
 IMP036E_FOUNDER_UAT_CANDIDATE_FINGERPRINT: 1a97d3a4c80394804e19398e4f3684067aefb0d42a01a7899e8777d1a07cb289
 IMP036E_FOUNDER_UAT_DECISION_DATE: 2026-09-10
 IMP036E_FOUNDER_UAT_ACCEPTANCE_AUTHORITY: Founder
-FOUNDER_STAGING_DEPLOYMENT: PERFORMED
-FOUNDER_STAGING_STATUS:   FOUNDER_UAT_COMPLETE
 FOUNDER_STAGING_INTERMEDIATE_CANDIDATE_SHA: e9821271a29ae35ba6c921008b976cd2e8d15c50
 FOUNDER_STAGING_INTERMEDIATE_CANDIDATE_TREE: 8259d30f662e6668f2208788f2e95faaea831384
 IMP036E_IMPLEMENTATION_EVIDENCE: COMPLETE
@@ -129,26 +159,16 @@ IMP-036D:                 COMPLETE_AND_ACCEPTED
 IMP-036D_ARCHITECTURE_LOCKED: YES
 IMP-036D_ACCEPTED:        YES
 IMP-036D_FOUNDER_UAT:     PASS
-IMP-036F:                 IMPLEMENTATION_IN_PROGRESS
-IMP036F_ACTIVATED:        YES
-IMP036F_PRODUCT_DEFINITION: APPROVED
-IMP036F_PRODUCT_DEFINITION_GATE: PASS
-IMP036F_ARCHITECTURE_FIT: PASS
-IMP036F_ARCHITECTURE_LOCKED: YES
-IMP036F_IMPLEMENTATION_AUTHORIZED: YES
-IMP036F_STARTED:          YES
-IMP036F_ACCEPTED:         NO
-IMP036F_FOUNDER_UAT_REQUIRED: YES
 IMP-036G:                 PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
 IMP036G_ACTIVATED:        NO
 ```
 
 Latest accepted locked capability architecture:
+[`capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md`](./capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md).
+Prior accepted locked capability architecture:
 [`capabilities/IMP-036E-store-operations-management.md`](./capabilities/IMP-036E-store-operations-management.md).
-Current unaccepted but locked IMP-036F capability architecture:
-[`capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md`](./capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md)
-(not part of the accepted capability ledger). Architecture versions remain ARCH-R19 / DR-15.
-Detailed accepted-slice marker inventories for IMP-024…IMP-036D remain in the historical STATE
+Architecture versions remain ARCH-R19 / DR-15.
+Detailed accepted-slice marker inventories for IMP-024…IMP-036E remain in the historical STATE
 snapshot and capability/acceptance artifacts.
 
 ## 3. Accepted Technical Inventory
@@ -273,14 +293,59 @@ Cart → Checkout → Payment → Order
 | IMP-036C | Customer Commerce Experience V2 | COMPLETE_AND_ACCEPTED |
 | IMP-036D | Workforce & Franchise Operations Portal V2 | COMPLETE_AND_ACCEPTED |
 | IMP-036E | Store Operations Management | COMPLETE_AND_ACCEPTED |
+| IMP-036F | Catalog, Menu, Pricing & Promotions Management | COMPLETE_AND_ACCEPTED |
 
 ## 5. Acceptance Position
 
 ```text
-acceptedThrough: IMP-036E
+acceptedThrough: IMP-036F
 pendingAcceptance: NONE
-currentProductSlice: IMP-036F — Catalog, Menu, Pricing & Promotions Management
+currentProductSlice: NONE
 nextProductSlice: IMP-036G — Administration Console V2
+IMP-036F: COMPLETE_AND_ACCEPTED
+IMP-036F_ARCHITECTURE: LOCKED
+IMP036F_ARCHITECTURE_LOCKED: YES
+IMP036F_IMPLEMENTATION: AUTHORIZED / STARTED / COMPLETE
+IMP036F_IMPLEMENTATION_AUTHORIZED: YES
+IMP036F_STARTED: YES
+IMP036F_IMPLEMENTATION_COMPLETE: YES
+IMP036F_ACCEPTED: YES
+IMP036F_FOUNDER_UAT_REQUIRED: YES
+IMP036F_FOUNDER_UAT: PASS
+IMP036F_FORMAL_ACCEPTANCE: ACCEPTED
+IMP036F_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
+IMP036F_PRODUCT_DEFINITION: APPROVED
+IMP036F_PRODUCT_DEFINITION_GATE: PASS
+IMP036F_ARCHITECTURE_FIT: PASS
+IMP036F_ACTIVATED: YES
+IMP036F_ACCEPTED_MAIN_SHA: 91d0b5e5e5815da6bf0bb325a3c6ab884dc06652
+IMP036F_ACCEPTED_TREE: ab41fc7f2bf6d0a52c3ea6c2b69ed331ca9540cf
+IMP036F_ACCEPTED_CANDIDATE: 91d0b5e5e5815da6bf0bb325a3c6ab884dc06652
+IMP036F_FOUNDER_UAT_CANDIDATE_BRANCH: main
+IMP036F_FOUNDER_UAT_CANDIDATE_HEAD: 91d0b5e5e5815da6bf0bb325a3c6ab884dc06652
+IMP036F_FOUNDER_UAT_CANDIDATE_TREE: ab41fc7f2bf6d0a52c3ea6c2b69ed331ca9540cf
+IMP036F_FOUNDER_UAT_CANDIDATE_FINGERPRINT: c689630cb9a4d002fda3376f949a1f324015776d392abfd2abde7b6f5b91f973
+IMP036F_FOUNDER_UAT_DECISION_DATE: 2026-09-15
+IMP036F_FOUNDER_UAT_ACCEPTANCE_AUTHORITY: Founder
+IMP036F_EXACT_MAIN_CI: 34991901136
+IMP036F_EXACT_MAIN_CI_RESULT: SUCCESS
+IMP036F_F6A_PR: 149
+IMP036F_F6A_REVIEWED_HEAD: 429923f182d22d960052f5ca840bc367d4fd9078
+IMP036F_F6A_MERGE_MAIN: 611d6e7707f561c581118873d58214e92faf75bb
+IMP036F_F6B_PR: 150
+IMP036F_F6B_REVIEWED_HEAD: 240cb4ee20cd468280198304e96efecb7ecaf895
+IMP036F_F6B_INDEPENDENT_REVIEW: 5210814689
+IMP036F_F6B_MERGE: 07f15d5a2eab1a86d7a9412622554db4b0117f49
+IMP036F_POST_MERGE_AUDIT_PR: 151
+IMP036F_POST_MERGE_AUDIT_REVIEWED_HEAD: b95fe1d1cd20290bcd92f82b072258d7d9ec7bce
+IMP036F_POST_MERGE_AUDIT_INDEPENDENT_REVIEW: 5212370227
+IMP036F_POST_MERGE_AUDIT_MERGE: 91d0b5e5e5815da6bf0bb325a3c6ab884dc06652
+IMP036F_CRITICAL_POST_MERGE_PERSISTENCE_AUDIT: PASS
+FOUNDER_STAGING_PROJECT: boba-staging
+FOUNDER_STAGING_CANDIDATE_MATCH: YES
+FOUNDER_STAGING_STATUS: FOUNDER_UAT_COMPLETE
+FOUNDER_STAGING_UAT_ROUTE: /workforce/admin/commercial
+NON_BLOCKING_UAT_OBSERVATIONS: Menu-only-effective empty until draft mutation; Pricing Proposed preview occasional `—`; Founder staging UAT side-effects expected
 IMP-036E: COMPLETE_AND_ACCEPTED
 IMP-036E_ARCHITECTURE: LOCKED
 IMP-036E_ARCHITECTURE_LOCKED: YES
@@ -304,8 +369,6 @@ IMP036E_FOUNDER_UAT_CANDIDATE_TREE: 55b28977ee9860c2c07cb25f751c9f48ef4a2aa6
 IMP036E_FOUNDER_UAT_CANDIDATE_FINGERPRINT: 1a97d3a4c80394804e19398e4f3684067aefb0d42a01a7899e8777d1a07cb289
 IMP036E_FOUNDER_UAT_DECISION_DATE: 2026-09-10
 IMP036E_FOUNDER_UAT_ACCEPTANCE_AUTHORITY: Founder
-FOUNDER_STAGING_DEPLOYMENT: PERFORMED
-FOUNDER_STAGING_STATUS: FOUNDER_UAT_COMPLETE
 FOUNDER_STAGING_INTERMEDIATE_CANDIDATE_SHA: e9821271a29ae35ba6c921008b976cd2e8d15c50
 FOUNDER_STAGING_INTERMEDIATE_CANDIDATE_TREE: 8259d30f662e6668f2208788f2e95faaea831384
 IMP036E_IMPLEMENTATION_EVIDENCE: COMPLETE
@@ -341,16 +404,6 @@ ARCH_R20_REQUIRED_FOR_IMP036E_LOCK: NO
 IMP-036D: COMPLETE_AND_ACCEPTED
 IMP-036D_ACCEPTED: YES
 IMP-036D_FOUNDER_UAT: PASS
-IMP-036F: IMPLEMENTATION_IN_PROGRESS
-IMP036F_ACTIVATED: YES
-IMP036F_PRODUCT_DEFINITION: APPROVED
-IMP036F_PRODUCT_DEFINITION_GATE: PASS
-IMP036F_ARCHITECTURE_FIT: PASS
-IMP036F_ARCHITECTURE_LOCKED: YES
-IMP036F_IMPLEMENTATION_AUTHORIZED: YES
-IMP036F_STARTED: YES
-IMP036F_ACCEPTED: NO
-IMP036F_FOUNDER_UAT_REQUIRED: YES
 IMP-036G: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
 IMP036G_ACTIVATED: NO
 architectureVersion: ARCH-R19
@@ -371,26 +424,42 @@ Closed historical conflicts and prior STATE-Rxx progression narratives remain in
 
 ## 7. Acceptance Provenance
 
-Accepted product through IMP-036E is independently accepted after Founder UAT PASS on 2026-09-10 for
-exact candidate SHA `05c534bac3d077f5ab89928495568bb63faf78df` / tree
-`55b28977ee9860c2c07cb25f751c9f48ef4a2aa6` (PR #135; main CI run `34389543060` 12/12 PASS).
-Post-Resume read-only Founder-staging verification on that same candidate observed
-`control_state = accepting` with origin/nearby SERVICEABLE and outside NOT_SERVICEABLE
-(cross-portal recovery PASS). The first Serviceability smoke on the same candidate observed
-TEMPORARILY_UNAVAILABLE for origin/nearby while the outlet was intentionally paused; that
-observation is preserved and was resolved by authorized Store Resume, not by code replacement.
-Governance docs reconciliation after that product SHA is not a new product UAT candidate.
+Accepted product through IMP-036F is independently accepted after Founder UAT PASS on 2026-09-15 for
+exact candidate SHA `91d0b5e5e5815da6bf0bb325a3c6ab884dc06652` / tree
+`ab41fc7f2bf6d0a52c3ea6c2b69ed331ca9540cf` (fingerprint
+`c689630cb9a4d002fda3376f949a1f324015776d392abfd2abde7b6f5b91f973`; exact-main CI run
+`34991901136` SUCCESS). Founder staging `boba-staging` recorded `CANDIDATE_MATCH: YES`, healthy,
+UAT route `/workforce/admin/commercial`. Formal Founder acceptance: `ACCEPT IMP-036F`.
+Critical post-merge persistence audit: PASS. Implementation/review provenance: F6A PR #149 reviewed
+head `429923f182d22d960052f5ca840bc367d4fd9078` merge/main
+`611d6e7707f561c581118873d58214e92faf75bb`; F6B PR #150 final independently reviewed head
+`240cb4ee20cd468280198304e96efecb7ecaf895` (independent PASS `5210814689`) merge
+`07f15d5a2eab1a86d7a9412622554db4b0117f49`; post-merge audit correction PR #151 reviewed head
+`b95fe1d1cd20290bcd92f82b072258d7d9ec7bce` (independent PASS `5212370227`) final accepted merge
+`91d0b5e5…`. Governance docs reconciliation after that product SHA is not a new product UAT
+candidate.
+
+```text
+NON_BLOCKING_UAT_OBSERVATIONS (NOT acceptance blockers):
+1. Menu with only effective Menu can initially appear empty until a draft-creating mutation
+2. Pricing activation consequence preview can occasionally show Proposed `—` while effect/result is correct
+3. Founder staging contains expected UAT test side-effects
+```
+
+IMP-036E remains independently accepted after Founder UAT PASS on 2026-09-10 for exact candidate SHA
+`05c534bac3d077f5ab89928495568bb63faf78df` / tree `55b28977ee9860c2c07cb25f751c9f48ef4a2aa6`
+(PR #135; main CI run `34389543060` 12/12 PASS). Implementation/review provenance for IMP-036E
+remains recorded in
+[`capabilities/IMP-036E-store-operations-management.md`](./capabilities/IMP-036E-store-operations-management.md).
 
 Detailed per-slice evidence for earlier accepted IMPs remains in repository tests, audits, Docker
 runtime proof, capability artifacts, and
 [`history/STATE-STATE-R111-pre-compression.md`](./history/STATE-STATE-R111-pre-compression.md).
-Implementation/review provenance for IMP-036E remains distinct from the accepted UAT candidate and
-is recorded in
-[`capabilities/IMP-036E-store-operations-management.md`](./capabilities/IMP-036E-store-operations-management.md).
+Implementation/review provenance for IMP-036F is recorded in
+[`capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md`](./capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md).
 
 ## 8. Explicitly Not Yet Accepted
 
-- IMP-036F — Catalog, Menu, Pricing & Promotions Management (`IMPLEMENTATION_IN_PROGRESS`; `AUTHORIZED` / `STARTED`; `IMP036F_ACTIVATED: YES`; Product Definition APPROVED; Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation authorized at GTM-R120 / STATE-R118; start at GTM-R121 / STATE-R119; F1 in progress; not accepted)
 - IMP-036G — Administration Console V2 (`PLANNED` / `NOT_ACTIVATED`)
 - IMP-037 — Backup, Restore & Migration Readiness
 - IMP-038 — Security & Privacy Hardening
@@ -407,14 +476,40 @@ is recorded in
 | Why / Non-Goals | [`VISION.md`](./VISION.md) |
 | Durable architecture | [`ARCHITECTURE.md`](./ARCHITECTURE.md) |
 | Binding decision status | [`decision-register.md`](./decision-register.md) |
-| IMP-036E locked capability architecture (latest accepted) | [`capabilities/IMP-036E-store-operations-management.md`](./capabilities/IMP-036E-store-operations-management.md) |
-| IMP-036F locked capability architecture (current unaccepted) | [`capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md`](./capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md) |
+| IMP-036F locked capability architecture (latest accepted) | [`capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md`](./capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md) |
+| IMP-036E locked capability architecture | [`capabilities/IMP-036E-store-operations-management.md`](./capabilities/IMP-036E-store-operations-management.md) |
 | IMP-036D locked capability architecture | [`capabilities/IMP-036D-workforce-franchise-operations-v2.md`](./capabilities/IMP-036D-workforce-franchise-operations-v2.md) |
 
 Agents may propose a STATE delta in their report. Only independent acceptance updates this file's
 accepted position and may promote `governanceHealth` to `ALIGNED`.
 
-## 10. STATE-R119 record
+## 10. STATE-R120 record
+
+```text
+STATE-R120 = IMP-036F_FORMAL_ACCEPTANCE
+acceptedThrough: IMP-036F
+pendingAcceptance: NONE
+currentProductSlice: NONE
+nextProductSlice: IMP-036G
+IMP-036F: COMPLETE_AND_ACCEPTED
+IMP036F_ACCEPTED: YES
+IMP036F_FOUNDER_UAT: PASS
+IMP036F_FORMAL_ACCEPTANCE: ACCEPTED
+IMP036F_IMPLEMENTATION_COMPLETE: YES
+IMP036F_ACCEPTED_MAIN_SHA: 91d0b5e5e5815da6bf0bb325a3c6ab884dc06652
+IMP036F_ACCEPTED_TREE: ab41fc7f2bf6d0a52c3ea6c2b69ed331ca9540cf
+IMP036F_FOUNDER_UAT_CANDIDATE_FINGERPRINT: c689630cb9a4d002fda3376f949a1f324015776d392abfd2abde7b6f5b91f973
+IMP036F_FOUNDER_UAT_DECISION_DATE: 2026-09-15
+IMP036F_FOUNDER_UAT_ACCEPTANCE_AUTHORITY: Founder
+IMP036F_EXACT_MAIN_CI: 34991901136
+IMP036G_ACTIVATED: NO
+architectureVersion: ARCH-R19
+decisionRegisterVersion: DR-15
+productDeliveryVersion: PD-1
+supersedes: STATE-R119
+```
+
+## 11. STATE-R119 record
 
 ```text
 STATE-R119 = IMP-036F_IMPLEMENTATION_START
@@ -443,7 +538,7 @@ supersedes: STATE-R118
 STATE-R119 records IMP-036F implementation start. Implementation is in progress; not complete;
 not accepted. Authorization provenance remains GTM-R120 / STATE-R118.
 
-## 11. STATE-R118 record
+## 12. STATE-R118 record
 
 ```text
 STATE-R118 = IMP-036F_IMPLEMENTATION_AUTHORIZATION

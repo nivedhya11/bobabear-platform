@@ -1,11 +1,12 @@
 ---
 Status: SUPPORTING planning/discovery contract; not lifecycle or PD-1 authority
 Capability: IMP-036F — Catalog, Menu, Pricing & Promotions Management
-Current product slice: YES
-Formal ROADMAP lifecycle: ARCHITECTURE_LOCKED
+Current product slice: NO
+Formal ROADMAP lifecycle: COMPLETE_AND_ACCEPTED
 Product Definition: PD-IMP-036F-DRAFT-1 APPROVED / Gate PASS
 Architecture: LOCKED
-Implementation: AUTHORIZED / NOT_STARTED
+Implementation: AUTHORIZED / STARTED / COMPLETE
+Founder UAT: PASS
 Founder UAT required: YES
 ---
 

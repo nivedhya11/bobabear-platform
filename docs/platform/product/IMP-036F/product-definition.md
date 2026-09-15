@@ -13,7 +13,7 @@
   "architectureLocked": "YES",
   "implementationAuthorized": "YES",
   "implementationStarted": "YES",
-  "impAccepted": "NO",
+  "impAccepted": "YES",
   "imp036gActivated": "NO"
 }
 -->
@@ -34,14 +34,14 @@ ARCHITECTURE_FIT: PASS
 IMP036F_ARCHITECTURE_LOCKED: YES
 IMP036F_IMPLEMENTATION_AUTHORIZED: YES
 IMP036F_STARTED: YES
-IMP036F_ACCEPTED: NO
+IMP036F_ACCEPTED: YES
 IMP036G_ACTIVATED: NO
 ```
 
 This artifact is the **gate-passed Product Definition** for candidate `PD-IMP-036F-DRAFT-1`.
 Product Definition Gate = PASS. Architecture Fit = PASS; capability architecture is locked.
 Implementation authorization was granted at GTM-R120 / STATE-R118; implementation start is recorded at GTM-R121 / STATE-R119.
-Start does **not** complete or accept IMP-036F, or activate IMP-036G.
+Formal acceptance is recorded at GTM-R122 / STATE-R120 (`IMP036F_ACCEPTED: YES`). Acceptance does **not** activate IMP-036G.
 
 ```text
 PRODUCT_DELIVERY_PROCESS_EFFECTIVE_FROM = IMP-036F
@@ -63,9 +63,9 @@ direction; not unresolved proposals).
 | Product Definition version / document status | `PD-IMP-036F-DRAFT-1`; **Document status: APPROVED** |
 | Product owner / approval evidence | Founder product direction via DISCOVER (`DISC-F-001`…`011`); Product Definition Gate **PASS** on 2026-09-10 (PR #140 review `5166877450`; gate-evaluated content SHA `014e0f935f193f54718d6afd5e7991508088f9bc`) |
 | Process / verification policy | `PD-1` / `TEST-1` |
-| Canonical anchors | VISION-1; ROADMAP GTM-R121; STATE STATE-R119; ARCH-R19; DR-15; PD-1; TEST-1; PERSONA-1; GJ-1 |
+| Canonical anchors | VISION-1; ROADMAP GTM-R122; STATE STATE-R120; ARCH-R19; DR-15; PD-1; TEST-1; PERSONA-1; GJ-1 |
 | Repository candidate | Canonical path `/home/ajoshi/repos/boba-bear-platform`; verified base `main` HEAD `1f59333d1a3bfe0dfecde908245306e2edacd834`; tree `284800a71a20d27c01b9c0cec7cadb45bb5d059b`; Product Definition Gate-evaluated PR head `014e0f935f193f54718d6afd5e7991508088f9bc`; Architecture Fit reviewed candidate head `9ae06d6267e997223b1995124540974215ee17fd` / tree `55adb287bb0eb77240a6becdc16fed2d504ba144` (independent review `5169723968`); architecture-lock persistence is a subsequent PR #141 commit |
-| Capability lifecycle / authorization | ROADMAP/STATE: `IMPLEMENTATION_IN_PROGRESS`; `IMP036F_ACTIVATED: YES`; `IMP036F_PRODUCT_DEFINITION: APPROVED`; `IMP036F_PRODUCT_DEFINITION_GATE: PASS`; `IMP036F_ARCHITECTURE_FIT: PASS`; `IMP036F_ARCHITECTURE_LOCKED: YES`; implementation **authorized** / **started**; `IMP036F_ACCEPTED: NO`; `FOUNDER_UAT_REQUIRED: YES` |
+| Capability lifecycle / authorization | ROADMAP/STATE: `COMPLETE_AND_ACCEPTED`; `IMP036F_ACTIVATED: YES`; `IMP036F_PRODUCT_DEFINITION: APPROVED`; `IMP036F_PRODUCT_DEFINITION_GATE: PASS`; `IMP036F_ARCHITECTURE_FIT: PASS`; `IMP036F_ARCHITECTURE_LOCKED: YES`; implementation **authorized** / **started** / **complete**; `IMP036F_ACCEPTED: YES`; `IMP036F_FOUNDER_UAT: PASS`; `FOUNDER_UAT_REQUIRED: YES` |
 | Relevant capability architecture / ADRs | Locked capability architecture [`capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md`](../../capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md); supporting plan [`experience/enterprise-experience/IMP-036F-catalog-menu-pricing-promotions.md`](../../experience/enterprise-experience/IMP-036F-catalog-menu-pricing-promotions.md); binding ADR-006, ADR-007, ADR-008 (as amended by accepted STATE / D-368–D-370); historical locks D-085…D-100, D-102, D-108–D-111, D-118, D-122–D-127, D-137–D-144 where applicable; accepted IMP-036E Store Assortment boundary |
 | Founder UAT applicability | `FOUNDER_UAT_REQUIRED = YES` — materially changes operator commercial configuration and resulting customer discovery/orderability truth (ROADMAP/STATE) |
 
@@ -144,7 +144,7 @@ No new persona is created for the specialized commercial job.
 |---|---|---|---|
 | Fragmented commercial ops (evidence across Catalog/Menu/Pricing/Promotions/Assortment domains + IMP-036E Store) | Authorized workforce session; Brand or Store scope depending on capability | Inspect Store Assortment/Availability (IMP-036E); mutate Availability/pause within Store scope; commercial Catalog/Menu/Pricing/Promotion/tariff mutation largely via incomplete or non-coherent surfaces / domain-only paths | Domain truth partially exists; coherent Brand commercial end-to-end job is **not** a CURRENT supported workforce journey |
 | `JOURNEY-FIRST-ORDER` / `GJ-FIRST-ORDER` (CURRENT) | Customer discovery entry | Discover Menu → customize → cart → checkout → pay | Customer commerce CURRENT; depends on commercial configuration truth produced upstream |
-| `JOURNEY-PRODUCT-MENU-LAUNCH` / `GJ-PRODUCT-MENU-LAUNCH` (PLANNED) | Intended commercial launch path | Not an accepted CURRENT workforce journey | Remains PLANNED; this Product Definition drafts the acceptance slice candidate |
+| `JOURNEY-PRODUCT-MENU-LAUNCH` / `GJ-PRODUCT-MENU-LAUNCH` (CURRENT) | Intended commercial launch path | Accepted CURRENT workforce commercial continuity through IMP-036F | Accepted with IMP-036F COMPLETE_AND_ACCEPTED |
 
 Cross-portal accepted pattern (IMP-036E; preserve):
 
@@ -163,7 +163,7 @@ REALTIME_PUSH_GUARANTEE = NO
 
 | Journey ID | Entry / context | Ordered activities | Success / downstream outcome | Alternate / recovery paths |
 |---|---|---|---|---|
-| `JOURNEY-PRODUCT-MENU-LAUNCH` (desired; still registry-PLANNED until accepted) | Authorized Brand commercial operator; Brand resource scope; existing domain authorities available | 1 Understand offering → 2 Introduce/maintain Product/Variant → 3 Configure Menu presentation → 4 Decide Assortment → 5 Configure price → 6 Configure promotion/coupon where needed → 7 Configure delivery tariff where relevant → 8 Review consequence → 9 Deliberately publish/effect → 10 Verify customer truth → 11 Diagnose sellability blockers | Offering is accurately presented, correctly priced, sellable in intended outlets, customer truth verifiable via authoritative read/evaluation | Validation failure; authorization denial; stale/conflict; draft vs published/effective; missing prerequisite; partial downstream consequence; recover/retry after correction; mobile limited to inspection/context only (no mandatory commercial mutations) |
+| `JOURNEY-PRODUCT-MENU-LAUNCH` (desired; registry CURRENT after IMP-036F acceptance) | Authorized Brand commercial operator; Brand resource scope; existing domain authorities available | 1 Understand offering → 2 Introduce/maintain Product/Variant → 3 Configure Menu presentation → 4 Decide Assortment → 5 Configure price → 6 Configure promotion/coupon where needed → 7 Configure delivery tariff where relevant → 8 Review consequence → 9 Deliberately publish/effect → 10 Verify customer truth → 11 Diagnose sellability blockers | Offering is accurately presented, correctly priced, sellable in intended outlets, customer truth verifiable via authoritative read/evaluation | Validation failure; authorization denial; stale/conflict; draft vs published/effective; missing prerequisite; partial downstream consequence; recover/retry after correction; mobile limited to inspection/context only (no mandatory commercial mutations) |
 
 Central product concept (`DISC-F-001`):
 
@@ -225,8 +225,9 @@ SERVICEABILITY | DELIVERY TARIFF | TAX / CHARGES
 | `FOLLOW_UP` | Advanced Modifier Library UX; Bundle Builder; richer audit composition UX if Architecture Fit requires phased delivery; media-reference select/change once a safe existing path is verified (DISC-F-010); any future simple mobile commercial mutations (none selected in this Product Definition) | TBD after Architecture Fit / later product gate or Product Definition revision | May affect `GJ-PRODUCT-MENU-LAUNCH` depth | Not silently required for V1 |
 | `DEFERRED` | Media upload/storage/scanning/CDN; tax/charge administration product; role/permission editor; four-eyes; realtime push; new lifecycles/scheduling; generic bulk semantics; full complex mobile commercial authoring; IMP-036G console expansion | N/A | Not part of IMP-036F acceptance | Explicit non-goals |
 
-Mandatory Golden Journey for eventual IMP-036F acceptance (finalized at Product Definition Gate PASS):
-`GJ-PRODUCT-MENU-LAUNCH`. Registry status remains `PLANNED` (not CURRENT; not journey-test PASS).
+Mandatory Golden Journey for IMP-036F acceptance (finalized at Product Definition Gate PASS; now
+accepted): `GJ-PRODUCT-MENU-LAUNCH`. Registry status is `CURRENT` after IMP-036F
+`COMPLETE_AND_ACCEPTED` (GTM-R122 / STATE-R120).
 
 ---
 
@@ -1516,7 +1517,7 @@ GJ-1 remains descriptive supporting authority; **not mutated** by this Product D
 
 | GJ ID / registry status | Affected steps / downstream behaviour | Mandatory for this acceptance? | Related story / AC IDs | Required proof / actual evidence |
 |---|---|---|---|---|
-| `GJ-PRODUCT-MENU-LAUNCH` / `PLANNED` | Core commercial configure → Menu/outlet context → customer discovery/orderability | **YES — mandatory for IMP-036F acceptance** (finalized at Product Definition Gate PASS; registry remains PLANNED) | US-001…013 | Real-browser + Founder UAT after implementation; not CURRENT yet |
+| `GJ-PRODUCT-MENU-LAUNCH` / `CURRENT` | Core commercial configure → Menu/outlet context → customer discovery/orderability | **YES — mandatory for IMP-036F acceptance** (finalized at Product Definition Gate PASS; registry CURRENT after IMP-036F COMPLETE_AND_ACCEPTED) | US-001…013 | Real-browser + Founder UAT PASS on accepted candidate |
 | `GJ-FIRST-ORDER` / `CURRENT` | Customer discover→pay continuity depends on truthful commercial config | Supporting/current dependency (do not re-accept F as replacing it) | US-012 | Regression under TEST-1 when F lands |
 | `GJ-AVAILABILITY` / `CURRENT` | Diagnosis distinguishes Availability; F must not collapse Assortment/Availability | Supporting/current dependency | US-006, US-013 | Regression |
 | `GJ-ADDRESS-SERVICEABILITY` / `CURRENT` | Serviceability ≠ delivery tariff; diagnosis may include serviceability | Supporting/current dependency | US-009, US-013 | Regression |
@@ -1527,7 +1528,7 @@ GJ-1 remains descriptive supporting authority; **not mutated** by this Product D
 | `GJ-PAYMENT-RECOVERY` / `CURRENT` | Unaffected | No | — | N/A |
 | `GJ-CANCELLATION-REFUND` / `CURRENT` | Unaffected | No | — | N/A |
 
-Do not silently convert `GJ-PRODUCT-MENU-LAUNCH` from `PLANNED` to `CURRENT` in this task.
+`GJ-PRODUCT-MENU-LAUNCH` registry status is `CURRENT` after IMP-036F COMPLETE_AND_ACCEPTED.
 
 ---
 
@@ -1664,9 +1665,10 @@ Product-definition template fields are complete for all 16 stories above. Story 
 Definition + Architecture Fit/lock readiness only.
 
 Historical note (GTM-R120 / STATE-R118): `READY` stories had implementation authorization granted
-with implementation not yet started. CURRENT (GTM-R121 / STATE-R119): implementation start is
-recorded; F1 is in progress. `AUTHORIZED` + `STARTED` = `IMPLEMENTATION_IN_PROGRESS`. Start does
-**not** complete or accept IMP-036F, or activate IMP-036G.
+with implementation not yet started. Historical note (GTM-R121 / STATE-R119): implementation start
+was recorded; F1 was in progress. CURRENT (GTM-R122 / STATE-R120): IMP-036F is
+`COMPLETE_AND_ACCEPTED` (`IMP036F_ACCEPTED: YES`; Founder UAT PASS). Acceptance does **not**
+activate IMP-036G.
 
 `STORY_COMPLETE != IMP_ACCEPTED`.
 
@@ -1716,7 +1718,7 @@ Destructive Actions Defined: YES (consequential publish/lifecycle; no hard-delet
 UX State Matrix Complete: YES
 Accessibility Considered: YES
 Golden Journeys Identified: YES
-Mandatory Golden Journey for IMP-036F acceptance: GJ-PRODUCT-MENU-LAUNCH (registry remains PLANNED)
+Mandatory Golden Journey for IMP-036F acceptance: GJ-PRODUCT-MENU-LAUNCH (registry CURRENT after acceptance)
 Supporting CURRENT Golden Journey dependencies (not re-accepted as IMP-036F):
   GJ-FIRST-ORDER; GJ-AVAILABILITY; GJ-ADDRESS-SERVICEABILITY
 Explicit Deferrals Recorded: YES
@@ -1741,7 +1743,7 @@ ARCHITECTURE_FIT: PASS
 IMP036F_ARCHITECTURE_LOCKED: YES
 IMP036F_IMPLEMENTATION_AUTHORIZED: YES
 IMP036F_STARTED: YES
-IMP036F_ACCEPTED: NO
+IMP036F_ACCEPTED: YES
 IMP036G_ACTIVATED: NO
 
 ARCHITECTURE_FIT_REVIEWED_CANDIDATE_HEAD = 9ae06d6267e997223b1995124540974215ee17fd
@@ -1749,12 +1751,14 @@ ARCHITECTURE_FIT_REVIEWED_CANDIDATE_TREE = 55adb287bb0eb77240a6becdc16fed2d504ba
 INDEPENDENT_ARCHITECTURE_REVIEW = 5169723968
 INDEPENDENT_ARCHITECTURE_REVIEW_RESULT = PASS
 LOCKED_CAPABILITY_ARCHITECTURE = docs/platform/capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md
-CANONICAL_ANCHORS = GTM-R121 / STATE-R119
+CANONICAL_ANCHORS = GTM-R122 / STATE-R120
 IMPLEMENTATION_AUTHORIZATION_PROVENANCE = GTM-R120 / STATE-R118
 IMPLEMENTATION_START_PROVENANCE = GTM-R121 / STATE-R119
+FORMAL_ACCEPTANCE_PROVENANCE = GTM-R122 / STATE-R120
 ```
 
-Next gates: continue F1 implementation → independent review → Founder UAT → acceptance.
+Formal acceptance recorded at GTM-R122 / STATE-R120 after Founder UAT PASS. Acceptance does **not**
+activate IMP-036G.
 Implementation authorization provenance = GTM-R120 / STATE-R118; start = GTM-R121 / STATE-R119.
 Start does **not** complete or accept IMP-036F, or activate IMP-036G.
 ---

@@ -18,14 +18,14 @@ owned by [TESTING.md](../TESTING.md).
 | [Persona registry](./personas.md) | Human responsibilities, goals, jobs, and context; no authorization authority |
 | [Golden Journey registry](./golden-journeys.md) | Cross-capability business continuity references and their bounded status |
 | [Product Definition template](./templates/product-definition-template.md) | Required structure for a capability's product definition |
-| [IMP-036F Product Definition](./IMP-036F/product-definition.md) | First PD-1 per-IMP Product Definition (`PD-IMP-036F-DRAFT-1`); Product Definition Gate = PASS; Architecture Fit = PASS; Capability architecture = LOCKED; implementation = AUTHORIZED / NOT_STARTED (ROADMAP/STATE remain lifecycle authority) |
+| [IMP-036F Product Definition](./IMP-036F/product-definition.md) | First PD-1 per-IMP Product Definition (`PD-IMP-036F-DRAFT-1`); Product Definition Gate = PASS; Architecture Fit = PASS; Capability architecture = LOCKED; lifecycle = COMPLETE_AND_ACCEPTED / accepted (ROADMAP/STATE remain lifecycle authority) |
 | Per-IMP Product Definition | Business outcome, journeys, acceptance slice, stories, scenarios, business rules, and explicit deferrals within existing authority |
 
 A per-IMP Product Definition is mandatory from **IMP-036F onward** for new substantial product
 work. Use `docs/platform/product/<IMP>/product-definition.md`, with its own identity, version,
 and gate record. IMP-036F has a gate-passed Product Definition at
 [`./IMP-036F/product-definition.md`](./IMP-036F/product-definition.md) (Product Definition Gate PASS /
-Architecture Fit PASS / architecture LOCKED / implementation AUTHORIZED / NOT_STARTED). Activation
+Architecture Fit PASS / architecture LOCKED / COMPLETE_AND_ACCEPTED). Activation
 and formal lifecycle remain owned
 only by CURRENT ROADMAP/STATE, not by this index.
 Engineering-only changes without a product surface may remain specification-driven under the
