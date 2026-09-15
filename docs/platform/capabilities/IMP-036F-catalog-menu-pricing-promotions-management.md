@@ -6,13 +6,13 @@
   "title": "Catalog, Menu, Pricing & Promotions Management",
   "architectureLock": "ARCHITECTURE_LOCKED",
   "architectureFitResult": "PASS",
-  "implementation": "AUTHORIZED / STARTED",
+  "implementation": "COMPLETE_AND_ACCEPTED",
   "implementationAuthorized": true,
   "implementationStarted": true,
-  "impAccepted": false,
+  "impAccepted": true,
   "founderUATRequired": true,
   "schemaChangeRequired": true,
-  "lastReviewed": "2026-09-11",
+  "lastReviewed": "2026-09-15",
   "productDefinition": "PD-IMP-036F-DRAFT-1",
   "bindingDecisions": ["ADR-005", "ADR-006", "ADR-007", "ADR-008", "D-358", "D-368", "D-372", "D-373"],
   "dependsOn": ["IMP-011", "IMP-014", "IMP-015", "IMP-019", "IMP-028B", "IMP-029", "IMP-030", "IMP-035", "IMP-036A", "IMP-036C", "IMP-036D", "IMP-036E"]
@@ -21,12 +21,15 @@
 
 # IMP-036F — Catalog, Menu, Pricing & Promotions Management
 
-## Capability Architecture — ARCHITECTURE_LOCKED / IMPLEMENTATION AUTHORIZED / STARTED
+## Capability Architecture — ARCHITECTURE_LOCKED / COMPLETE_AND_ACCEPTED
 
 This document is the **locked capability architecture** for IMP-036F. It began as an Architecture
 Fit candidate, received independent Architecture Fit PASS, and is now the sole CURRENT
 capability-architecture authority for this slice. Supporting experience planning must not compete
 with this lock.
+
+Formal acceptance recorded at GTM-R122 / STATE-R120 after Founder UAT PASS on the exact accepted UAT
+candidate `91d0b5e5e5815da6bf0bb325a3c6ab884dc06652`.
 
 ```text
 ARCHITECTURE_FIT = PASS
@@ -34,30 +37,66 @@ IMP036F_ARCHITECTURE_LOCKED = YES
 ARCHITECTURE_LOCKED = YES
 IMPLEMENTATION_AUTHORIZED = YES
 IMPLEMENTATION_STARTED = YES
-IMP036F_ACCEPTED = NO
+IMP036F_IMPLEMENTATION_COMPLETE = YES
+IMP036F_ACCEPTED = YES
+IMP036F_FOUNDER_UAT = PASS
+IMP036F_FORMAL_ACCEPTANCE = ACCEPTED
 IMP036G_ACTIVATED = NO
-CANONICAL_ROADMAP_STATE = GTM-R121 / STATE-R119
+CANONICAL_ROADMAP_STATE = GTM-R122 / STATE-R120
 PRODUCT_DEFINITION = PD-IMP-036F-DRAFT-1 APPROVED (Gate PASS; Architecture Fit PASS; architecture locked)
 ```
-
-Implementation authorization is granted at GTM-R120 / STATE-R118; implementation start is recorded
-at GTM-R121 / STATE-R119. F1 implementation is in progress.
-`AUTHORIZED` + `STARTED` = `IMPLEMENTATION_IN_PROGRESS`. Authorization alone (GTM-R120) did **not**
-start schema migration execution; explicit start at GTM-R121 did. Merge, deployment, Founder UAT,
-and IMP acceptance remain separate later gates.
 
 | Field | Value |
 |---|---|
 | Architecture lock | `ARCHITECTURE_LOCKED` |
-| Formal ROADMAP lifecycle | `IMPLEMENTATION_IN_PROGRESS` (`AUTHORIZED` / `STARTED`; `IMP036F_ACTIVATED: YES`) |
+| Formal ROADMAP lifecycle | `COMPLETE_AND_ACCEPTED` |
 | Product Definition | `PD-IMP-036F-DRAFT-1` **APPROVED**; Product Definition Gate **PASS** |
 | Architecture Fit | **PASS** (performed; locked) |
-| Implementation | **AUTHORIZED** / **STARTED** |
-| Schema change required (architecture conclusion) | **YES** (design locked; F1 migration execution in progress) |
+| Implementation | **AUTHORIZED** / **STARTED** / **COMPLETE** |
+| Accepted | **YES** |
+| Founder UAT | **PASS** |
+| Schema change required (architecture conclusion) | **YES** |
 | New D-number | **NO** (`D374_REQUIRED_FOR_IMP036F_LOCK = NO`) |
 | Global ARCH bump | **NO** (`ARCH_R20_REQUIRED_FOR_IMP036F_LOCK = NO`) |
 | New permission / role / auth model / deployable | **NO** |
-| Founder UAT required (future acceptance) | **YES** |
+| Founder UAT required | **YES** |
+
+### Acceptance evidence
+
+```text
+IMP-036F: COMPLETE_AND_ACCEPTED
+IMP036F_ACCEPTED: YES
+IMP036F_FOUNDER_UAT: PASS
+IMP036F_FORMAL_ACCEPTANCE: ACCEPTED
+IMP036F_INDEPENDENT_ACCEPTANCE_EVIDENCE: ACCEPTED
+IMP036F_ACCEPTED_MAIN_SHA: 91d0b5e5e5815da6bf0bb325a3c6ab884dc06652
+IMP036F_ACCEPTED_TREE: ab41fc7f2bf6d0a52c3ea6c2b69ed331ca9540cf
+IMP036F_ACCEPTED_CANDIDATE: 91d0b5e5e5815da6bf0bb325a3c6ab884dc06652
+IMP036F_FOUNDER_UAT_CANDIDATE_BRANCH: main
+IMP036F_FOUNDER_UAT_CANDIDATE_HEAD: 91d0b5e5e5815da6bf0bb325a3c6ab884dc06652
+IMP036F_FOUNDER_UAT_CANDIDATE_TREE: ab41fc7f2bf6d0a52c3ea6c2b69ed331ca9540cf
+IMP036F_FOUNDER_UAT_CANDIDATE_FINGERPRINT: c689630cb9a4d002fda3376f949a1f324015776d392abfd2abde7b6f5b91f973
+IMP036F_FOUNDER_UAT_DECISION_DATE: 2026-09-15
+IMP036F_FOUNDER_UAT_ACCEPTANCE_AUTHORITY: Founder
+IMP036F_EXACT_MAIN_CI: 34991901136
+IMP036F_EXACT_MAIN_CI_RESULT: SUCCESS
+IMP036F_F6A_PR: 149
+IMP036F_F6A_REVIEWED_HEAD: 429923f182d22d960052f5ca840bc367d4fd9078
+IMP036F_F6A_MERGE_MAIN: 611d6e7707f561c581118873d58214e92faf75bb
+IMP036F_F6B_PR: 150
+IMP036F_F6B_REVIEWED_HEAD: 240cb4ee20cd468280198304e96efecb7ecaf895
+IMP036F_F6B_INDEPENDENT_REVIEW: 5210814689
+IMP036F_F6B_MERGE: 07f15d5a2eab1a86d7a9412622554db4b0117f49
+IMP036F_POST_MERGE_AUDIT_PR: 151
+IMP036F_POST_MERGE_AUDIT_REVIEWED_HEAD: b95fe1d1cd20290bcd92f82b072258d7d9ec7bce
+IMP036F_POST_MERGE_AUDIT_INDEPENDENT_REVIEW: 5212370227
+IMP036F_POST_MERGE_AUDIT_MERGE: 91d0b5e5e5815da6bf0bb325a3c6ab884dc06652
+IMP036F_CRITICAL_POST_MERGE_PERSISTENCE_AUDIT: PASS
+FOUNDER_STAGING_PROJECT: boba-staging
+FOUNDER_STAGING_CANDIDATE_MATCH: YES
+FOUNDER_STAGING_UAT_ROUTE: /workforce/admin/commercial
+IMP036G_ACTIVATED: NO
+```
 
 ### Architecture lock provenance
 
@@ -1253,7 +1292,8 @@ concurrency races + E2E commercial journey + negative auth + Founder UAT on exac
 | Independent Architecture Fit review | **COMPLETE** — PASS (`5169723968` on reviewed candidate `9ae06d62…`) |
 | Canonical lock persistence (ROADMAP/STATE/PD/capability lock markers) | **COMPLETE** — GTM-R119 / STATE-R117 |
 | Explicit implementation authorization | **COMPLETE / AUTHORIZED** — GTM-R120 / STATE-R118 (historical) |
-| Implementation start | **RECORDED / IN_PROGRESS** — GTM-R121 / STATE-R119; F1 in progress |
+| Implementation start | **COMPLETE** — historical GTM-R121 / STATE-R119 |
+| Implementation / Founder UAT / formal acceptance | **COMPLETE_AND_ACCEPTED** — GTM-R122 / STATE-R120; Founder UAT PASS 2026-09-15 |
 | Exact Admin route path spelling / page split | Implementation detail during F1 implementation execution |
 | Exact SQL migration filenames / non-semantic column spellings for revision stores | Implementation detail under locked ENTITY_CONTENT_REVISION + MENU_REVISION semantics |
 | AC-014-02 media mutation | FOLLOW_UP (approved; non-mandatory) |
@@ -1315,23 +1355,26 @@ created.
 
 ---
 
-## 30. Explicit implementation authorized / started statement
+## 30. Explicit implementation complete / accepted statement
 
 ```text
 IMPLEMENTATION_AUTHORIZED = YES
 IMPLEMENTATION_STARTED = YES
 IMP036F_STARTED = YES
-SCHEMA_MIGRATION_EXECUTION = IN_PROGRESS
-APPLICATION_CODE_IMPLEMENTATION = IN_PROGRESS
-MERGE = NOT_AUTHORIZED_BY_THIS_REVISION
-DEPLOYMENT = NOT_AUTHORIZED_BY_THIS_REVISION
-FOUNDER_UAT = NOT_STARTED
-IMP_ACCEPTANCE = NO
+IMP036F_IMPLEMENTATION_COMPLETE = YES
+FOUNDER_UAT = PASS
+IMP036F_FOUNDER_UAT = PASS
+IMP_ACCEPTANCE = YES
+IMP036F_ACCEPTED = YES
+IMP036F_FORMAL_ACCEPTANCE = ACCEPTED
+IMP036G_ACTIVATED = NO
+CANONICAL_ROADMAP_STATE = GTM-R122 / STATE-R120
 ```
 
-F1 schema/domain/application work is in progress under GTM-R121 / STATE-R119. Implementation
-authorization provenance remains GTM-R120 / STATE-R118; authorization alone did **not** start
-execution. Merge, deployment, Founder UAT, and IMP acceptance remain separate later gates.
+Formal acceptance recorded at GTM-R122 / STATE-R120 after Founder UAT PASS on 2026-09-15 for exact
+candidate `91d0b5e5e5815da6bf0bb325a3c6ab884dc06652`. Implementation authorization provenance
+remains GTM-R120 / STATE-R118; start provenance remains GTM-R121 / STATE-R119. This acceptance
+reconciliation does **not** activate IMP-036G.
 
 ---
 
@@ -1379,7 +1422,7 @@ UI grouping must not redefine domain authority.
 ## End matter
 
 ```text
-IMP-036F: IMPLEMENTATION_IN_PROGRESS (AUTHORIZED / STARTED)
+IMP-036F: COMPLETE_AND_ACCEPTED
 IMP-036F_ARCHITECTURE: LOCKED
 IMP-036F_ARCHITECTURE_LOCKED: YES
 ARCHITECTURE_FIT = PASS
@@ -1388,14 +1431,23 @@ IMPLEMENTATION_AUTHORIZED = YES
 IMPLEMENTATION_STARTED = YES
 IMP036F_IMPLEMENTATION_AUTHORIZED = YES
 IMP036F_STARTED = YES
-IMP036F_ACCEPTED = NO
+IMP036F_IMPLEMENTATION_COMPLETE = YES
+IMP036F_ACCEPTED = YES
+IMP036F_FOUNDER_UAT = PASS
+IMP036F_FORMAL_ACCEPTANCE = ACCEPTED
+IMP036F_INDEPENDENT_ACCEPTANCE_EVIDENCE = ACCEPTED
+IMP036F_ACCEPTED_MAIN_SHA = 91d0b5e5e5815da6bf0bb325a3c6ab884dc06652
+IMP036F_ACCEPTED_TREE = ab41fc7f2bf6d0a52c3ea6c2b69ed331ca9540cf
+IMP036F_ACCEPTED_CANDIDATE = 91d0b5e5e5815da6bf0bb325a3c6ab884dc06652
+IMP036F_FOUNDER_UAT_CANDIDATE_FINGERPRINT = c689630cb9a4d002fda3376f949a1f324015776d392abfd2abde7b6f5b91f973
+IMP036F_FOUNDER_UAT_DECISION_DATE = 2026-09-15
+IMP036F_FOUNDER_UAT_ACCEPTANCE_AUTHORITY = Founder
 IMP036G_ACTIVATED = NO
 SCHEMA_CHANGE_REQUIRED = YES
 D374_REQUIRED_FOR_IMP036F_LOCK = NO
 ARCH_R20_REQUIRED_FOR_IMP036F_LOCK = NO
-CANONICAL_ROADMAP_STATE = GTM-R121 / STATE-R119
+CANONICAL_ROADMAP_STATE = GTM-R122 / STATE-R120
 IMPLEMENTATION_AUTHORIZATION_PROVENANCE = GTM-R120 / STATE-R118
 IMPLEMENTATION_START_PROVENANCE = GTM-R121 / STATE-R119
-NEXT_GATE = Continue F1 implementation → independent review → Founder UAT → acceptance
-STOP = Do not claim IMP-036F complete/accepted or activate IMP-036G
+STOP = Do not activate IMP-036G; ADVANCE is a separate Founder-authorized task
 ```
