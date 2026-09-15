@@ -693,4 +693,10 @@ test("nightly Playwright configs forbid silent CI retries", () => {
   const ops = readFileSync(path.join(repoRoot, "playwright.operations-lifecycle.config.ts"), "utf8");
   assert.equal(/\bretries:\s*[1-9]/.test(ops), false);
   assert.equal(ops.includes("retries: isCI ? 1 : 0"), false);
+  const commercial = readFileSync(
+    path.join(repoRoot, "playwright.commercial-workspace.config.ts"),
+    "utf8",
+  );
+  assert.equal(/\bretries:\s*[1-9]/.test(commercial), false);
+  assert.equal(commercial.includes("retries: isCI ? 1 : 0"), false);
 });

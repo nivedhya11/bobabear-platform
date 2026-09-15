@@ -110,7 +110,12 @@ const ACCESS_CAPS = [
   "access.audit.read",
 ] as const satisfies readonly PermissionKey[];
 
-/** Portal session projection includes operations permissions for workforce hub navigation. */
+/**
+ * Portal session projection for workforce hub / administration navigation affordances.
+ * Session flags are navigation-only — server authorization remains authoritative for reads/mutations.
+ * IMP-036F F6B: include commercial read/manage keys so Commercial workspace section affordances
+ * can reflect coarse capability without inventing client-side authority.
+ */
 const PORTAL_SESSION_CAPS = [
   "order.read",
   "order.accept",
@@ -140,6 +145,17 @@ const PORTAL_SESSION_CAPS = [
   "serviceability.manage",
   "assortment.read",
   "assortment.manage",
+  "catalog.read",
+  "catalog.manage",
+  "menu.read",
+  "menu.manage",
+  "pricing.read",
+  "pricing.manage",
+  "promotions.read",
+  "promotions.manage",
+  "promotions.activate",
+  "coupons.read",
+  "coupons.manage",
   ...ACCESS_CAPS,
 ] as const satisfies readonly PermissionKey[];
 

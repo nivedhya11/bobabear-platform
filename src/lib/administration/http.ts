@@ -11,7 +11,14 @@ export type AdminRequestOptions = Readonly<{
 
 export type AdminHttpResult<T> =
   | Readonly<{ ok: true; status: number; data: T }>
-  | Readonly<{ ok: false; code: string; status: number; field?: string }>;
+  | Readonly<{
+      ok: false;
+      code: string;
+      status: number;
+      field?: string;
+      message?: string;
+      issues?: readonly string[];
+    }>;
 
 function buildUrl(path: string, query?: Readonly<Record<string, string | undefined>>): string {
   if (!query) return path;
@@ -46,21 +53,27 @@ export async function adminRequest<T>(
     return { ok: false, code: "INVALID_RESPONSE", status: response.status };
   }
   if (!response.ok) {
+    const envelope =
+      typeof parsed === "object" && parsed !== null ? (parsed as Record<string, unknown>) : null;
     const code =
-      typeof parsed === "object" &&
-      parsed !== null &&
-      "code" in parsed &&
-      typeof (parsed as { code: unknown }).code === "string"
-        ? (parsed as { code: string }).code
-        : "INVALID_RESPONSE";
-    const field =
-      typeof parsed === "object" &&
-      parsed !== null &&
-      "field" in parsed &&
-      typeof (parsed as { field: unknown }).field === "string"
-        ? (parsed as { field: string }).field
+      envelope && typeof envelope.code === "string" ? envelope.code : "INVALID_RESPONSE";
+    const field = envelope && typeof envelope.field === "string" ? envelope.field : undefined;
+    const message =
+      envelope && typeof envelope.message === "string" ? envelope.message : undefined;
+    const issues =
+      envelope &&
+      Array.isArray(envelope.issues) &&
+      envelope.issues.every((issue) => typeof issue === "string")
+        ? (envelope.issues as string[])
         : undefined;
-    return { ok: false, code, status: response.status, ...(field ? { field } : {}) };
+    return {
+      ok: false,
+      code,
+      status: response.status,
+      ...(field ? { field } : {}),
+      ...(message ? { message } : {}),
+      ...(issues ? { issues } : {}),
+    };
   }
   if (typeof parsed !== "object" || parsed === null || (parsed as { ok?: unknown }).ok !== true) {
     return { ok: false, code: "INVALID_RESPONSE", status: response.status };

@@ -9,10 +9,12 @@
       "playwright-report-customer-auth/",
       "playwright-report-workforce-auth/",
       "playwright-report-operations-lifecycle/",
+      "playwright-report-commercial-workspace/",
       "test-results/",
       "test-results-customer-auth/",
       "test-results-workforce-auth/",
       "test-results-operations-lifecycle/",
+      "test-results-commercial-workspace/",
       "artifacts/playwright-report-customer-auth/",
       "artifacts/test-results-customer-auth/",
       ".next/",
@@ -40,12 +42,12 @@
     "testSupportScripts": 47,
     "packageTestCommands": 77,
     "packageAuditCommands": 23,
-    "packageE2eCommands": 8,
+    "packageE2eCommands": 9,
     "packageCheckCommands": 12,
     "packageCoverageCommands": 1,
     "packageInventoryCommands": 2,
     "ciWorkflowFiles": 3,
-    "ciValidationSteps": 98,
+    "ciValidationSteps": 103,
     "protectedEvidenceTrackedFiles": 3,
     "archiveTrackedFiles": 92
   },
@@ -608,6 +610,7 @@
     ],
     "e2e": [
       "test:e2e",
+      "test:e2e:commercial-workspace",
       "test:e2e:customer-auth",
       "test:e2e:customer-ordering",
       "test:e2e:docker",
@@ -723,6 +726,7 @@
     "test:database:serviceability": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/database/serviceability.integration.test.ts",
     "test:database:workforce-auth": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/database/workforce-auth.integration.test.ts",
     "test:e2e": "npm run build && playwright test",
+    "test:e2e:commercial-workspace": "node scripts/e2e/run-commercial-workspace-e2e.mjs",
     "test:e2e:customer-auth": "npm run build && npm run customer-auth:build && node scripts/e2e/run-customer-auth-e2e.mjs",
     "test:e2e:customer-ordering": "npm run build && npm run customer-auth:build && npm run customer-commerce:build && node scripts/e2e/run-customer-ordering-e2e.mjs",
     "test:e2e:docker": "PLAYWRIGHT_TARGET=docker playwright test",
@@ -1104,6 +1108,26 @@
         {
           "name": "Operations lifecycle E2E",
           "run": "npm run test:e2e:operations-lifecycle"
+        },
+        {
+          "name": "Install dependencies",
+          "run": "npm ci"
+        },
+        {
+          "name": "Ensure rootless Podman socket",
+          "run": "socket=\"/run/user/$(id -u)/podman/podman.sock\"\ncommand -v podman\nif [ ! -S \"$socket\" ]; then\nsystemctl --user start podman.socket\nfi\ntest -S \"$socket\"\npodman --version"
+        },
+        {
+          "name": "Ensure podman-compose",
+          "run": "if ! command -v podman-compose >/dev/null 2>&1; then\nsudo apt-get update\nsudo apt-get install -y podman-compose\nfi\npodman-compose --version"
+        },
+        {
+          "name": "Install Playwright Chromium",
+          "run": "npx playwright install --with-deps chromium"
+        },
+        {
+          "name": "Commercial workspace E2E",
+          "run": "npm run test:e2e:commercial-workspace"
         },
         {
           "name": "Install dependencies",

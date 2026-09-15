@@ -27,10 +27,12 @@ const GENERATED_PREFIXES = Object.freeze([
   "playwright-report-customer-auth/",
   "playwright-report-workforce-auth/",
   "playwright-report-operations-lifecycle/",
+  "playwright-report-commercial-workspace/",
   "test-results/",
   "test-results-customer-auth/",
   "test-results-workforce-auth/",
   "test-results-operations-lifecycle/",
+  "test-results-commercial-workspace/",
   "artifacts/playwright-report-customer-auth/",
   "artifacts/test-results-customer-auth/",
   ".next/",
@@ -56,6 +58,7 @@ const PLAYWRIGHT_CONFIG_BASENAMES = Object.freeze([
   "playwright.customer-ordering.config.ts",
   "playwright.location-selector.config.ts",
   "playwright.operations-lifecycle.config.ts",
+  "playwright.commercial-workspace.config.ts",
   "playwright.workforce-auth.config.ts",
 ]);
 
@@ -74,6 +77,7 @@ const DEDICATED_E2E_COMMAND_SPECS = Object.freeze({
   "test:e2e:customer-auth": Object.freeze(["tests/e2e/customer-auth.spec.ts"]),
   "test:e2e:workforce-auth": Object.freeze(["tests/e2e/workforce-auth.spec.ts"]),
   "test:e2e:operations-lifecycle": Object.freeze(["tests/e2e/operations-lifecycle.spec.ts"]),
+  "test:e2e:commercial-workspace": Object.freeze(["tests/e2e/commercial-workspace.spec.ts"]),
   "test:e2e:location-selector-layout": Object.freeze([
     "tests/e2e/location-selector-layout.spec.ts",
     "tests/e2e/location-selector-search-map.spec.ts",

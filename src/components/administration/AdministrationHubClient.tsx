@@ -74,8 +74,21 @@ export function AdministrationHubClient() {
     return <ErrorState message={view.message} />;
   }
 
+  const hasCommercialRead =
+    view.capabilities["catalog.read"] === true ||
+    view.capabilities["menu.read"] === true ||
+    view.capabilities["assortment.read"] === true ||
+    view.capabilities["pricing.read"] === true ||
+    view.capabilities["promotions.read"] === true ||
+    view.capabilities["coupons.read"] === true;
+
   const links = [
     { href: "/workforce/admin/resources/", label: "Resources", show: true },
+    {
+      href: "/workforce/admin/commercial/",
+      label: "Commercial",
+      show: hasCommercialRead,
+    },
     {
       href: "/workforce/admin/memberships/",
       label: "Memberships",

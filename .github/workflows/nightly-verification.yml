@@ -180,6 +180,56 @@ jobs:
           path: test-results-operations-lifecycle/**
           if-no-files-found: ignore
 
+  e2e-commercial-workspace:
+    name: E2E commercial workspace
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.1"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Ensure rootless Podman socket
+        run: |
+          socket="/run/user/$(id -u)/podman/podman.sock"
+          command -v podman
+          if [ ! -S "$socket" ]; then
+            systemctl --user start podman.socket
+          fi
+          test -S "$socket"
+          podman --version
+
+      - name: Ensure podman-compose
+        run: |
+          if ! command -v podman-compose >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y podman-compose
+          fi
+          podman-compose --version
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Commercial workspace E2E
+        run: npm run test:e2e:commercial-workspace
+
+      - name: Upload commercial-workspace evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-e2e-commercial-workspace
+          path: |
+            test-results-commercial-workspace/**
+            playwright-report-commercial-workspace/**
+          if-no-files-found: ignore
+
   e2e-location-serviceability:
     name: E2E location serviceability
     runs-on: ubuntu-latest
