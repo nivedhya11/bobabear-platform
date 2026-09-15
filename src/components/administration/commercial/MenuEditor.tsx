@@ -75,6 +75,16 @@ function nonRetiredSiblings(
     .sort((a, b) => a.position - b.position);
 }
 
+/** Authoritative reorder set: all non-retired entries in a section, exactly once. */
+function nonRetiredEntriesInSection(
+  entries: readonly MenuEntry[],
+  sectionId: string,
+): MenuEntry[] {
+  return entries
+    .filter((e) => e.sectionId === sectionId && e.lifecycleStatus !== "retired")
+    .sort((a, b) => a.position - b.position);
+}
+
 /** Roots by position, then children indented under parents (depth-aware). */
 function hierarchicalSections(sections: readonly MenuSection[]): HierarchicalSection[] {
   const out: HierarchicalSection[] = [];
@@ -344,9 +354,7 @@ export function MenuEditor(props: MenuEditorProps) {
 
   async function moveEntry(sectionId: string, entryId: string, direction: -1 | 1) {
     if (!canManage || !context.brandId || !context.menuId || !detail) return;
-    const sectionEntries = entries
-      .filter((e) => e.sectionId === sectionId)
-      .sort((a, b) => a.position - b.position);
+    const sectionEntries = nonRetiredEntriesInSection(entries, sectionId);
     const idx = sectionEntries.findIndex((e) => e.id === entryId);
     const swapIdx = idx + direction;
     if (idx < 0 || swapIdx < 0 || swapIdx >= sectionEntries.length) return;
@@ -726,7 +734,12 @@ function SectionBlock(props: {
         ) : null}
       </div>
       <ul className="space-y-3">
-        {props.entries.map((entry, idx) => (
+        {props.entries.map((entry) => {
+          const movableEntries = props.entries.filter((e) => e.lifecycleStatus !== "retired");
+          const movableIdx = movableEntries.findIndex((e) => e.id === entry.id);
+          const isFirstMovable = movableIdx === 0;
+          const isLastMovable = movableIdx >= 0 && movableIdx === movableEntries.length - 1;
+          return (
           <li key={entry.id} className="space-y-2 text-sm">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div>
@@ -756,7 +769,7 @@ function SectionBlock(props: {
                         type="button"
                         size="sm"
                         variant="outline"
-                        disabled={idx === 0}
+                        disabled={isFirstMovable}
                         onClick={() => props.onMoveEntry(entry.id, -1)}
                       >
                         Move up
@@ -765,7 +778,7 @@ function SectionBlock(props: {
                         type="button"
                         size="sm"
                         variant="outline"
-                        disabled={idx === props.entries.length - 1}
+                        disabled={isLastMovable}
                         onClick={() => props.onMoveEntry(entry.id, 1)}
                       >
                         Move down
@@ -832,7 +845,8 @@ function SectionBlock(props: {
               </fieldset>
             ) : null}
           </li>
-        ))}
+          );
+        })}
       </ul>
     </div>
   );

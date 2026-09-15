@@ -15,6 +15,7 @@ const retireMenuSection = vi.fn();
 const activateMenuEntry = vi.fn();
 const retireMenuEntry = vi.fn();
 const reorderMenuSections = vi.fn();
+const reorderMenuEntries = vi.fn();
 
 vi.mock("@/lib/administration/commercial-menu", () => ({
   listMenus: (...args: unknown[]) => listMenus(...args),
@@ -23,7 +24,7 @@ vi.mock("@/lib/administration/commercial-menu", () => ({
   addMenuSection: vi.fn(),
   addMenuEntry: vi.fn(),
   reorderMenuSections: (...args: unknown[]) => reorderMenuSections(...args),
-  reorderMenuEntries: vi.fn(),
+  reorderMenuEntries: (...args: unknown[]) => reorderMenuEntries(...args),
   saveMenuEntryDisplayDraft: vi.fn(),
   previewMenuPublish: vi.fn(),
   publishMenu: vi.fn(),
@@ -74,10 +75,12 @@ beforeEach(() => {
   activateMenuEntry.mockReset();
   retireMenuEntry.mockReset();
   reorderMenuSections.mockReset();
+  reorderMenuEntries.mockReset();
 
   activateMenuSection.mockResolvedValue({ ok: true, status: 200, data: {} });
   activateMenuEntry.mockResolvedValue({ ok: true, status: 200, data: {} });
   reorderMenuSections.mockResolvedValue({ ok: true, status: 200, data: {} });
+  reorderMenuEntries.mockResolvedValue({ ok: true, status: 200, data: {} });
 
   listMenus.mockResolvedValue({
     ok: true,
@@ -282,5 +285,124 @@ describe("MenuEditor", () => {
     expect(activateMenuEntry).toHaveBeenCalledWith("brand-1", "menu-1", "entry-1", {
       expectedMenuRevision: "1",
     });
+  });
+
+  it("entry reorder excludes retired siblings and sends complete non-retired set", async () => {
+    const user = userEvent.setup();
+    getMenu.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        menu: {
+          id: "menu-1",
+          brandId: "brand-1",
+          code: "MAIN",
+          name: "Main menu",
+          lifecycleStatus: "draft",
+          revision: "7",
+          effectiveMenuVersionId: null,
+          draftMenuVersionId: "dv-1",
+        },
+        effective: null,
+        draft: {
+          versionId: "dv-1",
+          sections: [
+            {
+              id: "sec-root-a",
+              parentSectionId: null,
+              code: "ROOT_A",
+              name: "Root A",
+              description: null,
+              position: 0,
+              lifecycleStatus: "active",
+            },
+            {
+              id: "sec-other",
+              parentSectionId: null,
+              code: "OTHER",
+              name: "Other",
+              description: null,
+              position: 1,
+              lifecycleStatus: "active",
+            },
+          ],
+          entries: [
+            {
+              id: "entry-a",
+              sectionId: "sec-root-a",
+              productId: "product-1",
+              displayName: "Entry A",
+              displayDescription: null,
+              imagePath: null,
+              position: 0,
+              lifecycleStatus: "active",
+            },
+            {
+              id: "entry-b",
+              sectionId: "sec-root-a",
+              productId: "product-1",
+              displayName: "Entry B retired",
+              displayDescription: null,
+              imagePath: null,
+              position: 1,
+              lifecycleStatus: "retired",
+            },
+            {
+              id: "entry-c",
+              sectionId: "sec-root-a",
+              productId: "product-1",
+              displayName: "Entry C",
+              displayDescription: null,
+              imagePath: null,
+              position: 2,
+              lifecycleStatus: "draft",
+            },
+            {
+              id: "entry-other",
+              sectionId: "sec-other",
+              productId: "product-1",
+              displayName: "Other section entry",
+              displayDescription: null,
+              imagePath: null,
+              position: 0,
+              lifecycleStatus: "active",
+            },
+          ],
+        },
+        draftDiffersFromEffective: true,
+      },
+    });
+
+    render(
+      <MenuEditor
+        context={context}
+        capabilities={capabilities}
+        authoringAllowed
+        onStatus={vi.fn()}
+        onSelectMenu={vi.fn()}
+      />,
+    );
+    await waitFor(() => expect(screen.getByText("Entry A")).toBeInTheDocument());
+
+    const entryA = screen.getByText("Entry A").closest("li") as HTMLElement;
+    const entryC = screen.getByText("Entry C").closest("li") as HTMLElement;
+    expect(within(entryA).getByRole("button", { name: "Move up" })).toBeDisabled();
+    expect(within(entryA).getByRole("button", { name: "Move down" })).toBeEnabled();
+    expect(within(entryC).getByRole("button", { name: "Move up" })).toBeEnabled();
+    expect(within(entryC).getByRole("button", { name: "Move down" })).toBeDisabled();
+
+    await user.click(within(entryA).getByRole("button", { name: "Move down" }));
+    await waitFor(() => expect(reorderMenuEntries).toHaveBeenCalled());
+    expect(reorderMenuEntries).toHaveBeenCalledWith("brand-1", "menu-1", "sec-root-a", {
+      expectedMenuRevision: "7",
+      orderedEntryIds: ["entry-c", "entry-a"],
+    });
+    const payload = reorderMenuEntries.mock.calls[0]![3] as {
+      orderedEntryIds: string[];
+      expectedMenuRevision: string;
+    };
+    expect(payload.orderedEntryIds).not.toContain("entry-b");
+    expect(payload.orderedEntryIds).not.toContain("entry-other");
+    expect(payload.expectedMenuRevision).toBe("7");
   });
 });

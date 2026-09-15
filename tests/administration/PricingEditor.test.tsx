@@ -13,6 +13,8 @@ const listPriceBooks = vi.fn();
 const getPriceBook = vi.fn();
 const attachModifierPrice = vi.fn();
 const getCatalogProductGraph = vi.fn();
+const previewPriceBookActivation = vi.fn();
+const activatePriceBook = vi.fn();
 
 vi.mock("@/lib/administration/commercial-pricing", () => ({
   listPriceBooks: (...args: unknown[]) => listPriceBooks(...args),
@@ -20,8 +22,8 @@ vi.mock("@/lib/administration/commercial-pricing", () => ({
   createPriceBook: vi.fn(),
   attachVariantPrice: vi.fn(),
   attachModifierPrice: (...args: unknown[]) => attachModifierPrice(...args),
-  previewPriceBookActivation: vi.fn(),
-  activatePriceBook: vi.fn(),
+  previewPriceBookActivation: (...args: unknown[]) => previewPriceBookActivation(...args),
+  activatePriceBook: (...args: unknown[]) => activatePriceBook(...args),
 }));
 
 vi.mock("@/lib/administration/commercial-catalog", () => ({
@@ -79,6 +81,8 @@ beforeEach(() => {
   getPriceBook.mockReset();
   attachModifierPrice.mockReset();
   getCatalogProductGraph.mockReset();
+  previewPriceBookActivation.mockReset();
+  activatePriceBook.mockReset();
 
   listPriceBooks.mockResolvedValue({
     ok: true,
@@ -146,6 +150,22 @@ beforeEach(() => {
     status: 200,
     data: { modifierPrice: { id: "mp-1" }, priceBookRevision: "6" },
   });
+  previewPriceBookActivation.mockResolvedValue({
+    ok: true,
+    status: 200,
+    data: {
+      preview: {
+        expectedPriceBookRevision: "5",
+        lifecycleStatus: "draft",
+        customerMonetaryConsequence: "Activation would change customer-effective monetary amounts.",
+        variantPriceChanges: [],
+        overlapBlockers: [],
+        referenceBlockers: [],
+        wouldChangeCustomerPricing: true,
+      },
+    },
+  });
+  activatePriceBook.mockResolvedValue({ ok: true, status: 200, data: { revision: "6" } });
 });
 
 describe("PricingEditor", () => {
@@ -224,5 +244,78 @@ describe("PricingEditor", () => {
     await waitFor(() =>
       expect(onStatus).toHaveBeenCalledWith(COMMERCIAL_CONFLICT_MESSAGE),
     );
+  });
+
+  it("activation consumes exact reviewed expectedPriceBookRevision and reports effect", async () => {
+    const user = userEvent.setup();
+    const onStatus = vi.fn();
+    render(
+      <PricingEditor
+        context={context}
+        capabilities={capabilities}
+        authoringAllowed
+        onStatus={onStatus}
+      />,
+    );
+    await waitFor(() => expect(screen.getByText(/Main book \(MAIN\)/)).toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: /Main book \(MAIN\)/ }));
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: /Review & activate/i })).toBeInTheDocument(),
+    );
+    await user.click(screen.getByRole("button", { name: /Review & activate/i }));
+    await waitFor(() => expect(screen.getByTestId("consequence-review-dialog")).toBeInTheDocument());
+    expect(screen.getByText("5")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /Confirm effect/i }));
+    await waitFor(() => expect(activatePriceBook).toHaveBeenCalled());
+    expect(activatePriceBook).toHaveBeenCalledWith("brand-1", "pb-1", {
+      expectedPriceBookRevision: "5",
+    });
+    await waitFor(() => expect(onStatus).toHaveBeenCalledWith("Price book activated."));
+  });
+
+  it("stale activation conflict remains recoverable in the review dialog", async () => {
+    const user = userEvent.setup();
+    activatePriceBook.mockResolvedValue({
+      ok: false,
+      status: 409,
+      code: "PRICE_BOOK_REVISION_CONFLICT",
+    });
+    render(
+      <PricingEditor
+        context={context}
+        capabilities={capabilities}
+        authoringAllowed
+        onStatus={vi.fn()}
+      />,
+    );
+    await waitFor(() => expect(screen.getByText(/Main book \(MAIN\)/)).toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: /Main book \(MAIN\)/ }));
+    await user.click(await screen.findByRole("button", { name: /Review & activate/i }));
+    await waitFor(() => expect(screen.getByTestId("consequence-review-dialog")).toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: /Confirm effect/i }));
+    await waitFor(() =>
+      expect(screen.getByRole("alert")).toHaveTextContent(COMMERCIAL_CONFLICT_MESSAGE),
+    );
+    expect(screen.getByTestId("consequence-review-dialog")).toBeInTheDocument();
+  });
+
+  it("Cancel on activation review reports no effect without calling activate", async () => {
+    const user = userEvent.setup();
+    const onStatus = vi.fn();
+    render(
+      <PricingEditor
+        context={context}
+        capabilities={capabilities}
+        authoringAllowed
+        onStatus={onStatus}
+      />,
+    );
+    await waitFor(() => expect(screen.getByText(/Main book \(MAIN\)/)).toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: /Main book \(MAIN\)/ }));
+    await user.click(await screen.findByRole("button", { name: /Review & activate/i }));
+    await waitFor(() => expect(screen.getByTestId("consequence-review-dialog")).toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: /^Cancel$/i }));
+    expect(activatePriceBook).not.toHaveBeenCalled();
+    expect(onStatus).toHaveBeenCalledWith("No effect — draft work remains.");
   });
 });

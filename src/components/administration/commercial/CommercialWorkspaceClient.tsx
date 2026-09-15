@@ -124,6 +124,8 @@ export function CommercialWorkspaceClient() {
   const [view, setView] = useState<ViewState>({ kind: "loading" });
   const [section, setSection] = useState<CommercialSectionId>("offering");
   const [statusMessage, setStatusMessage] = useState("");
+  /** Blocks URL writes until initial deep-link query params have been read/applied. */
+  const [urlSyncReady, setUrlSyncReady] = useState(false);
   const [outlets, setOutlets] = useState<AdministrationResource[]>([]);
   const [products, setProducts] = useState<
     readonly Readonly<{ id: string; label: string; code: string }>[]
@@ -153,10 +155,12 @@ export function CommercialWorkspaceClient() {
       const outcome = classifyPortalSessionResult(sessionResult);
       if (outcome === "authentication_required") {
         setView({ kind: "unauthorized" });
+        setUrlSyncReady(true);
         return;
       }
       if (outcome === "service_failure" || !sessionResult.ok) {
         setView({ kind: "error", message: "Administration session could not be loaded." });
+        setUrlSyncReady(true);
         return;
       }
       const capabilities = resolveCommercialCapabilities(sessionResult.data.session.capabilities);
@@ -165,12 +169,14 @@ export function CommercialWorkspaceClient() {
           kind: "error",
           message: "No commercial read capabilities are granted for your authorized scope.",
         });
+        setUrlSyncReady(true);
         return;
       }
       const brandsResult = await listAdminBrands();
       if (cancelled) return;
       if (!brandsResult.ok) {
         setView({ kind: "error", message: describeAdminFailure(brandsResult) });
+        setUrlSyncReady(true);
         return;
       }
       const brands = (brandsResult.data.items as AdministrationResource[]) ?? [];
@@ -190,6 +196,8 @@ export function CommercialWorkspaceClient() {
           }));
         }
       }
+      // Enable URL sync only after the initial query has been read (and applied when authorized).
+      setUrlSyncReady(true);
     })();
     return () => {
       cancelled = true;
@@ -197,8 +205,9 @@ export function CommercialWorkspaceClient() {
   }, []);
 
   useEffect(() => {
+    if (!urlSyncReady) return;
     writeQueryParams(context);
-  }, [context]);
+  }, [context, urlSyncReady]);
 
   useEffect(() => {
     let cancelled = false;

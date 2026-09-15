@@ -20,6 +20,10 @@ type Fixture = {
   productName: string;
   variantId: string;
   variantName: string;
+  /** Outlet with no active PriceBook — desktop journey Pricing activation. */
+  pricingOutletDesktopId: string;
+  /** Outlet with no active PriceBook — tablet journey Pricing activation. */
+  pricingOutletTabletId: string;
   /** Base32-encoded TOTP secret after first enrollment (worker-restart durable). */
   totpSecretBase32?: string;
 };
@@ -130,7 +134,81 @@ async function confirmConsequence(page: Page, confirmName: RegExp): Promise<void
   }
 }
 
-async function runFullCommercialJourney(page: Page, opts: { suffix: string }): Promise<void> {
+/**
+ * Mandatory Pricing configure → consequence → exact revision → effect path.
+ * Must reach "Price book activated"; timeouts / Cancel / blockers fail the journey.
+ */
+async function runMandatoryPricingEffect(
+  page: Page,
+  opts: { suffix: string; stamp: string; pricingOutletId: string },
+): Promise<void> {
+  await page.getByRole("button", { name: /^Pricing$/i }).click();
+  await expect(page.getByTestId("pricing-editor")).toBeVisible();
+
+  const contextPanel = page.getByTestId("commercial-context-selector");
+  await expect(contextPanel.getByLabel("Outlet").locator(`option[value="${opts.pricingOutletId}"]`)).toHaveCount(
+    1,
+    { timeout: 45_000 },
+  );
+  await contextPanel.getByLabel("Outlet").selectOption(opts.pricingOutletId);
+  if ((await contextPanel.getByLabel("Variant").inputValue()) !== fixture.variantId) {
+    await contextPanel.getByLabel("Variant").selectOption(fixture.variantId);
+  }
+
+  const priceBookCode = `f6b-${opts.stamp}`;
+  await page.getByLabel("Price book code").fill(priceBookCode);
+  await page.getByLabel("Price book name").fill(`F6B Price Book ${opts.suffix}`);
+  await page.getByRole("button", { name: /^Create$/i }).click();
+  await expect(page.getByText(/price book created as draft/i)).toBeVisible({ timeout: 45_000 });
+  await page
+    .getByTestId("pricing-editor")
+    .getByRole("button", { name: new RegExp(`F6B Price Book ${opts.suffix}`, "i") })
+    .click();
+  await page.getByLabel("INR amount").fill("199.00");
+  await page.getByRole("button", { name: /^Attach price$/i }).click();
+  await expect(
+    page.getByRole("status").filter({ hasText: /Baseline variant price attached/i }).first(),
+  ).toBeVisible({ timeout: 45_000 });
+
+  const modifierSection = page.getByTestId("modifier-price-authoring");
+  if (await modifierSection.isVisible().catch(() => false)) {
+    const optionSelect = modifierSection.getByLabel("Modifier association and option");
+    if ((await optionSelect.locator("option").count()) > 1) {
+      await optionSelect.selectOption({ index: 1 });
+      await modifierSection.getByLabel("modifier INR delta").fill("10.00");
+      await modifierSection.getByRole("button", { name: /Attach modifier price/i }).click();
+      await expect(page.getByText(/Modifier price attached/i)).toBeVisible({ timeout: 45_000 });
+    }
+  }
+
+  await page.getByTestId("pricing-editor").getByRole("button", { name: /^Review & activate$/i }).click();
+  const pricingDialog = page.getByTestId("consequence-review-dialog");
+  await expect(pricingDialog).toBeVisible({ timeout: 60_000 });
+  const revisionCode = pricingDialog.locator("code").first();
+  await expect(revisionCode).toBeVisible();
+  const expectedPriceBookRevision = (await revisionCode.innerText()).trim();
+  expect(expectedPriceBookRevision.length).toBeGreaterThan(0);
+  await expect(pricingDialog.getByText(/Cannot proceed/i)).toHaveCount(0);
+  const confirm = pricingDialog.getByRole("button", { name: /Confirm effect/i });
+  await expect(confirm).toBeEnabled({ timeout: 60_000 });
+  await confirm.click();
+  await expect(pricingDialog).toHaveCount(0, { timeout: 60_000 });
+  await expect(page.getByText(/Price book activated/i)).toBeVisible({ timeout: 60_000 });
+  // Post-effect: selected book reflects active lifecycle in the list / inspection.
+  await expect(
+    page
+      .getByTestId("pricing-editor")
+      .getByText(/active/i)
+      .first(),
+  ).toBeVisible({ timeout: 45_000 });
+  // Keep revision string in assertion surface for reviewers (exact reviewed revision was shown before confirm).
+  expect(expectedPriceBookRevision).toMatch(/^\d+$/);
+}
+
+async function runFullCommercialJourney(
+  page: Page,
+  opts: { suffix: string; pricingOutletId: string },
+): Promise<void> {
   const stamp = `${opts.suffix.toLowerCase()}-${Date.now().toString(36)}`;
 
   // 1–2. Catalog: draft → consequence → publish
@@ -215,60 +293,16 @@ async function runFullCommercialJourney(page: Page, opts: { suffix: string }): P
     await expect(page.getByText(/excluded for the selected outlet/i)).toBeVisible({ timeout: 45_000 });
   }
 
-  // 5. Pricing: outlet-scoped book + variant (+ optional modifier) → activate
-  await page.getByRole("button", { name: /^Pricing$/i }).click();
-  await expect(page.getByTestId("pricing-editor")).toBeVisible();
-  const priceBookCode = `f6b-${stamp}`;
-  await page.getByLabel("Price book code").fill(priceBookCode);
-  await page.getByLabel("Price book name").fill(`F6B Price Book ${opts.suffix}`);
-  await page.getByRole("button", { name: /^Create$/i }).click();
-  await expect(page.getByText(/price book created as draft/i)).toBeVisible({ timeout: 45_000 });
-  await page
-    .getByTestId("pricing-editor")
-    .getByRole("button", { name: new RegExp(`F6B Price Book ${opts.suffix}`, "i") })
-    .click();
-  await page.getByLabel("INR amount").fill("199.00");
-  await page.getByRole("button", { name: /^Attach price$/i }).click();
-  await expect(
-    page.getByRole("status").filter({ hasText: /Baseline variant price attached/i }).first(),
-  ).toBeVisible({ timeout: 45_000 });
+  // 5. Pricing: mandatory configure → consequence → exact revision → effect
+  await runMandatoryPricingEffect(page, {
+    suffix: opts.suffix,
+    stamp,
+    pricingOutletId: opts.pricingOutletId,
+  });
 
-  const modifierSection = page.getByTestId("modifier-price-authoring");
-  if (await modifierSection.isVisible().catch(() => false)) {
-    const optionSelect = modifierSection.getByLabel("Modifier association and option");
-    if ((await optionSelect.locator("option").count()) > 1) {
-      await optionSelect.selectOption({ index: 1 });
-      await modifierSection.getByLabel("Modifier INR delta").fill("10.00");
-      await modifierSection.getByRole("button", { name: /Attach modifier price/i }).click();
-      await expect(page.getByText(/Modifier price attached/i)).toBeVisible({ timeout: 45_000 });
-    }
-  }
-
-  await page.getByTestId("pricing-editor").getByRole("button", { name: /^Review & activate$/i }).click();
-  const pricingDialog = page.getByTestId("consequence-review-dialog");
-  const pricingDialogVisible = await pricingDialog
-    .waitFor({ state: "visible", timeout: 60_000 })
-    .then(() => true)
-    .catch(() => false);
-  if (pricingDialogVisible) {
-    const confirm = pricingDialog.getByRole("button", { name: /Confirm effect/i });
-    if (await confirm.isEnabled()) {
-      await confirm.click();
-      await expect(pricingDialog).toHaveCount(0, { timeout: 60_000 });
-      await expect(page.getByText(/Price book activated/i)).toBeVisible({ timeout: 60_000 });
-    } else {
-      await expect(pricingDialog.getByText(/Cannot proceed|Blocker|overlap/i).first()).toBeVisible();
-      await pricingDialog.getByRole("button", { name: /^Cancel$/i }).click();
-      await expect(page.getByText(/No effect/i)).toBeVisible();
-    }
-  } else {
-    // Preview composition failed or timed out — continue journey; unit/integration cover CAS.
-  }
-
-  // Recover workspace if the SPA navigated away under tablet load during pricing preview.
-  if (!(await page.getByTestId("commercial-workspace").isVisible().catch(() => false))) {
-    await openCommercialWorkspace(page);
-    await selectWorkingContext(page);
+  // Restore commerce outlet for delivery tariff + verify/diagnose.
+  if ((await contextPanel.getByLabel("Outlet").inputValue()) !== fixture.outletId) {
+    await contextPanel.getByLabel("Outlet").selectOption(fixture.outletId);
   }
 
   // 6–7. Promotion (coupon-triggered) + targets + activate + coupon lifecycle
@@ -368,7 +402,10 @@ test("desktop: coherent commercial authoring journey", async ({ page }) => {
   await login(page);
   await openCommercialWorkspace(page);
   await selectWorkingContext(page);
-  await runFullCommercialJourney(page, { suffix: "Desktop" });
+  await runFullCommercialJourney(page, {
+    suffix: "Desktop",
+    pricingOutletId: fixture.pricingOutletDesktopId,
+  });
 });
 
 test("tablet: authoring operable without hover-only dependency", async ({ page }) => {
@@ -376,7 +413,10 @@ test("tablet: authoring operable without hover-only dependency", async ({ page }
   await login(page);
   await openCommercialWorkspace(page);
   await selectWorkingContext(page);
-  await runFullCommercialJourney(page, { suffix: "Tablet" });
+  await runFullCommercialJourney(page, {
+    suffix: "Tablet",
+    pricingOutletId: fixture.pricingOutletTabletId,
+  });
 });
 
 test("mobile: inspection and verification only — editing message, not unsupported", async ({ page }) => {

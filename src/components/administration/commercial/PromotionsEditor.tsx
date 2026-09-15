@@ -67,6 +67,9 @@ export function PromotionsEditor(props: PromotionsEditorProps) {
   const canRead = capabilities.promotionsRead || capabilities.couponsRead;
   const canManagePromo = capabilities.promotionsManage && authoringAllowed;
   const canActivatePromo = capabilities.promotionsActivate && authoringAllowed;
+  // Server activate requires promotions.manage + promotions.activate; retire requires activate only.
+  const canCompletePromotionActivation = canManagePromo && canActivatePromo;
+  const canRetirePromotion = canActivatePromo;
   const canManageCoupon = capabilities.couponsManage && authoringAllowed;
 
   const [loading, setLoading] = useState(false);
@@ -312,8 +315,8 @@ export function PromotionsEditor(props: PromotionsEditorProps) {
 
   async function openPromotionReview(proposedStatus: PromotionStatus) {
     if (!context.brandId || !promotion) return;
-    if (proposedStatus === "active" && !canActivatePromo && !canManagePromo) return;
-    if (proposedStatus === "retired" && !canManagePromo && !canActivatePromo) return;
+    if (proposedStatus === "active" && !canCompletePromotionActivation) return;
+    if (proposedStatus === "retired" && !canRetirePromotion) return;
     const result = await previewPromotionConsequence(context.brandId, promotion.id, {
       proposedStatus,
     });
@@ -651,12 +654,12 @@ export function PromotionsEditor(props: PromotionsEditorProps) {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {promotion.status === "draft" && (canActivatePromo || canManagePromo) ? (
+            {promotion.status === "draft" && canCompletePromotionActivation ? (
               <Button type="button" variant="secondary" onClick={() => void openPromotionReview("active")}>
                 Review &amp; activate
               </Button>
             ) : null}
-            {promotion.status !== "retired" && (canManagePromo || canActivatePromo) ? (
+            {promotion.status !== "retired" && canRetirePromotion ? (
               <Button type="button" variant="outline" onClick={() => void openPromotionReview("retired")}>
                 Review &amp; retire
               </Button>

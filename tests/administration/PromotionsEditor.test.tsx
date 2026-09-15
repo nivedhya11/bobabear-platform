@@ -64,6 +64,7 @@ function draftPromotion(overrides: Partial<{
   id: string;
   triggerType: "automatic" | "coupon";
   revision: string;
+  status: "draft" | "active" | "retired";
 }> = {}) {
   return {
     id: overrides.id ?? "promo-1",
@@ -75,7 +76,7 @@ function draftPromotion(overrides: Partial<{
     organizationId: null,
     outletId: null,
     salesChannel: "online",
-    status: "draft" as const,
+    status: (overrides.status ?? "draft") as "draft" | "active" | "retired",
     triggerType: (overrides.triggerType ?? "automatic") as "automatic" | "coupon",
     stackingPolicy: "exclusive",
     priority: 100,
@@ -221,5 +222,72 @@ describe("PromotionsEditor", () => {
         },
       ],
     });
+  });
+
+  it("manage without activate hides Review & activate and Review & retire", async () => {
+    const user = userEvent.setup();
+    mockPromotionDetail(draftPromotion());
+    render(
+      <PromotionsEditor
+        context={baseContext}
+        capabilities={{
+          ...capabilities,
+          promotionsManage: true,
+          promotionsActivate: false,
+        }}
+        authoringAllowed
+        onStatus={vi.fn()}
+      />,
+    );
+    await waitFor(() => expect(screen.getByText(/Welcome \(WELCOME\)/)).toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: /Welcome \(WELCOME\)/ }));
+    await waitFor(() => expect(screen.getByLabelText("Benefit type")).toBeInTheDocument());
+    expect(screen.queryByRole("button", { name: /Review & activate/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Review & retire/i })).not.toBeInTheDocument();
+  });
+
+  it("manage with activate exposes Review & activate", async () => {
+    const user = userEvent.setup();
+    mockPromotionDetail(draftPromotion());
+    render(
+      <PromotionsEditor
+        context={baseContext}
+        capabilities={{
+          ...capabilities,
+          promotionsManage: true,
+          promotionsActivate: true,
+        }}
+        authoringAllowed
+        onStatus={vi.fn()}
+      />,
+    );
+    await waitFor(() => expect(screen.getByText(/Welcome \(WELCOME\)/)).toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: /Welcome \(WELCOME\)/ }));
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: /Review & activate/i })).toBeInTheDocument(),
+    );
+  });
+
+  it("activate without manage hides activation but still exposes retirement affordance", async () => {
+    const user = userEvent.setup();
+    mockPromotionDetail(draftPromotion({ status: "active" }));
+    render(
+      <PromotionsEditor
+        context={baseContext}
+        capabilities={{
+          ...capabilities,
+          promotionsManage: false,
+          promotionsActivate: true,
+        }}
+        authoringAllowed
+        onStatus={vi.fn()}
+      />,
+    );
+    await waitFor(() => expect(screen.getByText(/Welcome \(WELCOME\)/)).toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: /Welcome \(WELCOME\)/ }));
+    await waitFor(() => expect(screen.getByText(/Trigger:/)).toBeInTheDocument());
+    expect(screen.queryByRole("button", { name: /Review & activate/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Review & retire/i })).toBeInTheDocument();
+    expect(screen.queryByLabelText("Benefit type")).not.toBeInTheDocument();
   });
 });

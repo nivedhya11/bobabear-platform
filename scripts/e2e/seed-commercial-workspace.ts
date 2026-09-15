@@ -7,6 +7,7 @@ import { sql } from "drizzle-orm";
 import { createMembership, grantRole } from "../../src/server/access-control";
 import { createWorkforceOperatorAuthRuntime, createWorkforceOperatorUser } from "../../src/server/auth/workforce/operator";
 import { loadAuthFoundationConfig } from "../../src/server/auth/shared/config";
+import { createOutlet } from "../../src/server/organization";
 import { getApplicationPersistence } from "../../src/server/persistence";
 import { loadConfig } from "../../src/platform/config";
 import { seedCustomerOrderingCommerce } from "./seed-customer-ordering";
@@ -32,8 +33,14 @@ async function main() {
       const brandResult = await ctx.db.execute<{ name: string }>(sql`
         select name from app.brands where id = ${commerce.brandId}::uuid
       `);
-      const outletResult = await ctx.db.execute<{ name: string }>(sql`
-        select name from app.outlets where id = ${commerce.outletId}::uuid
+      const outletResult = await ctx.db.execute<{
+        name: string;
+        organization_id: string;
+        territory_id: string;
+        legal_entity_id: string;
+      }>(sql`
+        select name, organization_id, territory_id, legal_entity_id
+        from app.outlets where id = ${commerce.outletId}::uuid
       `);
       const catalogResult = await ctx.db.execute<{
         product_id: string;
@@ -54,17 +61,42 @@ async function main() {
         limit 1
       `);
       const brandName = brandResult.rows[0]?.name;
-      const outletName = outletResult.rows[0]?.name;
-      if (!brandName || !outletName) throw new Error("Seeded brand/outlet labels missing.");
+      const outlet = outletResult.rows[0];
+      if (!brandName || !outlet) throw new Error("Seeded brand/outlet labels missing.");
       const catalog = catalogResult.rows[0];
       return {
         brandName,
-        outletName,
+        outletName: outlet.name,
+        organizationId: outlet.organization_id,
+        territoryId: outlet.territory_id,
+        legalEntityId: outlet.legal_entity_id,
         productId: catalog?.product_id ?? null,
         productName: catalog?.product_code ?? null,
         variantId: catalog?.variant_id ?? null,
         variantName: catalog?.variant_code ?? null,
       };
+    });
+
+    // Dedicated outlets with no active PriceBooks so desktop/tablet journeys can each
+    // activate an outlet-scoped book without overlap nondeterminism.
+    const pricingOutlets = await persistence.transaction(async (tx) => {
+      const desktop = await createOutlet(tx, {
+        brandId: commerce.brandId,
+        organizationId: labels.organizationId,
+        territoryId: labels.territoryId,
+        legalEntityId: labels.legalEntityId,
+        code: "e2e-pricing-desktop",
+        name: "E2E Pricing Desktop",
+      });
+      const tablet = await createOutlet(tx, {
+        brandId: commerce.brandId,
+        organizationId: labels.organizationId,
+        territoryId: labels.territoryId,
+        legalEntityId: labels.legalEntityId,
+        code: "e2e-pricing-tablet",
+        name: "E2E Pricing Tablet",
+      });
+      return { desktopId: desktop.id, tabletId: tablet.id };
     });
 
     const operator = await createWorkforceOperatorUser(runtime, {
@@ -89,6 +121,8 @@ async function main() {
         brandName: labels.brandName,
         outletId: commerce.outletId,
         outletName: labels.outletName,
+        pricingOutletDesktopId: pricingOutlets.desktopId,
+        pricingOutletTabletId: pricingOutlets.tabletId,
         ...(labels.productId
           ? {
               productId: labels.productId,
