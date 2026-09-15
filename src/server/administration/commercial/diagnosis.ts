@@ -388,6 +388,18 @@ export async function diagnoseSellability(
               authoritative: true,
             }),
           );
+        } else if (error instanceof PricingResolutionError) {
+          signals.push(
+            signal({
+              key: "PRICING_COMPLETENESS",
+              authority: "pricing",
+              subject: subjectBase,
+              outcome: "unavailable_to_inspect",
+              explanation: "Pricing resolution could not be composed for diagnosis.",
+              actionableContext: null,
+              authoritative: false,
+            }),
+          );
         } else {
           throw error;
         }
@@ -413,27 +425,42 @@ export async function diagnoseSellability(
         }),
       );
     } else {
-      const automatic = await loadApplicableAutomaticPromotions(context, {
-        brandId,
-        territoryId: outlet.territoryId,
-        organizationId: outlet.organizationId,
-        outletId,
-        at,
-      });
-      signals.push(
-        signal({
-          key: "PROMOTION_APPLICABILITY",
-          authority: "promotions",
-          subject: subjectBase,
-          outcome: "info",
-          explanation:
-            automatic.length === 0
-              ? "No currently applicable automatic promotions for this outlet context. Promotion non-applicability is not a Pricing incompleteness and is not required for basic sellability."
-              : `${automatic.length} automatic promotion(s) are in scope for evaluation; applicability still depends on cart/qualifier evaluation.`,
-          actionableContext: null,
-          authoritative: true,
-        }),
-      );
+      try {
+        const automatic = await loadApplicableAutomaticPromotions(context, {
+          brandId,
+          territoryId: outlet.territoryId,
+          organizationId: outlet.organizationId,
+          outletId,
+          at,
+        });
+        signals.push(
+          signal({
+            key: "PROMOTION_APPLICABILITY",
+            authority: "promotions",
+            subject: subjectBase,
+            outcome: "info",
+            explanation:
+              automatic.length === 0
+                ? "No currently applicable automatic promotions for this outlet context. Promotion non-applicability is not a Pricing incompleteness and is not required for basic sellability."
+                : `${automatic.length} automatic promotion(s) are in scope for evaluation; applicability still depends on cart/qualifier evaluation.`,
+            actionableContext: null,
+            authoritative: true,
+          }),
+        );
+      } catch {
+        signals.push(
+          signal({
+            key: "PROMOTION_APPLICABILITY",
+            authority: "promotions",
+            subject: subjectBase,
+            outcome: "unavailable_to_inspect",
+            explanation:
+              "Promotion evaluation failed during diagnosis; other authorities remain independently inspected.",
+            actionableContext: null,
+            authoritative: false,
+          }),
+        );
+      }
     }
 
     const canOperating = await softAuthorizeOutletPermission(

@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { PromotionsEditor } from "../../src/components/administration/commercial/PromotionsEditor";
@@ -10,6 +11,7 @@ import type {
 const listPromotions = vi.fn();
 const listCoupons = vi.fn();
 const getPromotion = vi.fn();
+const setPromotionTargets = vi.fn();
 
 vi.mock("@/lib/administration/commercial-promotions", () => ({
   listPromotions: (...args: unknown[]) => listPromotions(...args),
@@ -19,6 +21,7 @@ vi.mock("@/lib/administration/commercial-promotions", () => ({
   createCoupon: vi.fn(),
   savePromotionDraft: vi.fn(),
   savePromotionBenefit: vi.fn(),
+  setPromotionTargets: (...args: unknown[]) => setPromotionTargets(...args),
   previewPromotionConsequence: vi.fn(),
   previewCouponConsequence: vi.fn(),
   activatePromotion: vi.fn(),
@@ -29,7 +32,7 @@ vi.mock("@/lib/administration/commercial-promotions", () => ({
   retireCoupon: vi.fn(),
 }));
 
-const context: CommercialContext = {
+const baseContext: CommercialContext = {
   brandId: "brand-1",
   brandName: "BOBA",
   productId: null,
@@ -57,12 +60,13 @@ const capabilities: CommercialCapabilities = {
   couponsManage: true,
 };
 
-beforeEach(() => {
-  listPromotions.mockReset();
-  listCoupons.mockReset();
-  getPromotion.mockReset();
-  const draftPromotion = {
-    id: "promo-1",
+function draftPromotion(overrides: Partial<{
+  id: string;
+  triggerType: "automatic" | "coupon";
+  revision: string;
+}> = {}) {
+  return {
+    id: overrides.id ?? "promo-1",
     brandId: "brand-1",
     code: "WELCOME",
     displayName: "Welcome",
@@ -72,39 +76,51 @@ beforeEach(() => {
     outletId: null,
     salesChannel: "online",
     status: "draft" as const,
-    triggerType: "automatic" as const,
+    triggerType: (overrides.triggerType ?? "automatic") as "automatic" | "coupon",
     stackingPolicy: "exclusive",
     priority: 100,
     startsAt: "2026-01-01T00:00:00.000Z",
     endsAt: null,
     minimumQualifyingAmountPaise: null,
     minimumItemQuantity: null,
-    revision: "1",
+    revision: overrides.revision ?? "1",
     supportedLifecycleStates: ["draft", "active", "retired"] as const,
   };
+}
+
+function mockPromotionDetail(promotion: ReturnType<typeof draftPromotion>) {
   listPromotions.mockResolvedValue({
     ok: true,
     status: 200,
-    data: { promotions: [draftPromotion] },
+    data: { promotions: [promotion] },
   });
   listCoupons.mockResolvedValue({ ok: true, status: 200, data: { coupons: [] } });
   getPromotion.mockResolvedValue({
     ok: true,
     status: 200,
     data: {
-      promotion: draftPromotion,
+      promotion,
       benefit: null,
       qualifierTargets: [],
       benefitTargets: [],
     },
   });
+}
+
+beforeEach(() => {
+  listPromotions.mockReset();
+  listCoupons.mockReset();
+  getPromotion.mockReset();
+  setPromotionTargets.mockReset();
+  setPromotionTargets.mockResolvedValue({ ok: true, status: 200, data: {} });
+  mockPromotionDetail(draftPromotion());
 });
 
 describe("PromotionsEditor", () => {
   it("documents only draft/active/retired lifecycle labels", async () => {
     render(
       <PromotionsEditor
-        context={context}
+        context={baseContext}
         capabilities={capabilities}
         authoringAllowed
         onStatus={vi.fn()}
@@ -118,5 +134,92 @@ describe("PromotionsEditor", () => {
     expect(editor.textContent).not.toMatch(/\bscheduled\b/i);
     expect(editor.textContent).not.toMatch(/\bended\b/i);
     expect(editor.textContent).not.toMatch(/\bpaused\b/i);
+  });
+
+  it("create UI has Trigger type select", async () => {
+    render(
+      <PromotionsEditor
+        context={baseContext}
+        capabilities={capabilities}
+        authoringAllowed
+        onStatus={vi.fn()}
+      />,
+    );
+    await waitFor(() => expect(screen.getByTestId("promotions-editor")).toBeInTheDocument());
+    expect(screen.getByLabelText("Trigger type")).toBeInTheDocument();
+  });
+
+  it("automatic trigger hides Create coupon and shows coupon-triggered explanation", async () => {
+    const user = userEvent.setup();
+    mockPromotionDetail(draftPromotion({ triggerType: "automatic" }));
+    render(
+      <PromotionsEditor
+        context={baseContext}
+        capabilities={capabilities}
+        authoringAllowed
+        onStatus={vi.fn()}
+      />,
+    );
+    await waitFor(() => expect(screen.getByText(/Welcome \(WELCOME\)/)).toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: /Welcome \(WELCOME\)/ }));
+    await waitFor(() => expect(screen.getByText(/Trigger: automatic/)).toBeInTheDocument());
+    expect(screen.queryByTestId("coupon-authoring")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Create coupon/i })).not.toBeInTheDocument();
+    expect(
+      screen.getByText(/Coupons require a coupon-triggered Promotion/i),
+    ).toBeInTheDocument();
+  });
+
+  it("coupon trigger shows Create coupon authoring", async () => {
+    const user = userEvent.setup();
+    mockPromotionDetail(draftPromotion({ triggerType: "coupon" }));
+    render(
+      <PromotionsEditor
+        context={baseContext}
+        capabilities={capabilities}
+        authoringAllowed
+        onStatus={vi.fn()}
+      />,
+    );
+    await waitFor(() => expect(screen.getByText(/Welcome \(WELCOME\)/)).toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: /Welcome \(WELCOME\)/ }));
+    await waitFor(() => expect(screen.getByTestId("coupon-authoring")).toBeInTheDocument());
+    expect(screen.getByRole("button", { name: /Create coupon/i })).toBeInTheDocument();
+  });
+
+  it("draft promotion with product+variant context sets qualifier via setPromotionTargets", async () => {
+    const user = userEvent.setup();
+    mockPromotionDetail(draftPromotion({ revision: "3" }));
+    setPromotionTargets.mockResolvedValue({ ok: true, status: 200, data: {} });
+    render(
+      <PromotionsEditor
+        context={{
+          ...baseContext,
+          productId: "product-1",
+          productLabel: "Tea",
+          variantId: "variant-1",
+          variantLabel: "Regular",
+        }}
+        capabilities={capabilities}
+        authoringAllowed
+        onStatus={vi.fn()}
+      />,
+    );
+    await waitFor(() => expect(screen.getByText(/Welcome \(WELCOME\)/)).toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: /Welcome \(WELCOME\)/ }));
+    await waitFor(() => expect(screen.getByTestId("promotion-targets")).toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: "Set qualifier to selected variant" }));
+    await waitFor(() => expect(setPromotionTargets).toHaveBeenCalled());
+    expect(setPromotionTargets).toHaveBeenCalledWith("brand-1", "promo-1", {
+      expectedPromotionRevision: "3",
+      targetRole: "qualifier",
+      targets: [
+        {
+          targetType: "variant",
+          variantId: "variant-1",
+          productId: null,
+        },
+      ],
+    });
   });
 });

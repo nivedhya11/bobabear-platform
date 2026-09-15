@@ -189,3 +189,51 @@ export function publishMenu(
     }>;
   }>(`${brandMenus(brandId)}/${menuId}/publish`, { method: "POST", body });
 }
+
+export function activateMenuSection(
+  brandId: string,
+  menuId: string,
+  sectionId: string,
+  body: Readonly<{ expectedMenuRevision: string }>,
+) {
+  return adminRequest<{ ok: true; section: MenuSection; menuRevision: string }>(
+    `${brandMenus(brandId)}/${menuId}/sections/${sectionId}/activate`,
+    { method: "POST", body },
+  );
+}
+
+export function retireMenuSection(
+  brandId: string,
+  menuId: string,
+  sectionId: string,
+  body: Readonly<{ expectedMenuRevision: string }>,
+) {
+  return adminRequest<{ ok: true; section: MenuSection; menuRevision: string }>(
+    `${brandMenus(brandId)}/${menuId}/sections/${sectionId}/retire`,
+    { method: "POST", body },
+  );
+}
+
+export function activateMenuEntry(
+  brandId: string,
+  menuId: string,
+  entryId: string,
+  body: Readonly<{ expectedMenuRevision: string }>,
+) {
+  return adminRequest<{ ok: true; entry: MenuEntry; menuRevision: string }>(
+    `${brandMenus(brandId)}/${menuId}/entries/${entryId}/activate`,
+    { method: "POST", body },
+  );
+}
+
+export function retireMenuEntry(
+  brandId: string,
+  menuId: string,
+  entryId: string,
+  body: Readonly<{ expectedMenuRevision: string }>,
+) {
+  return adminRequest<{ ok: true; entry: MenuEntry; menuRevision: string }>(
+    `${brandMenus(brandId)}/${menuId}/entries/${entryId}/retire`,
+    { method: "POST", body },
+  );
+}

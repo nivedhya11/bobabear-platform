@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   formatInrFromPaise,
   parseInrToPaise,
+  parseStrictPositiveMeters,
 } from "../../src/lib/administration/commercial-money";
 
 describe("formatInrFromPaise", () => {
@@ -42,5 +43,25 @@ describe("parseInrToPaise", () => {
     expect(parseInrToPaise("abc")).toBeNull();
     expect(parseInrToPaise("1.2.3")).toBeNull();
     expect(parseInrToPaise("₹")).toBeNull();
+  });
+});
+
+describe("parseStrictPositiveMeters", () => {
+  it("accepts strict positive safe integers", () => {
+    expect(parseStrictPositiveMeters("1")).toBe(1);
+    expect(parseStrictPositiveMeters("3000")).toBe(3000);
+    expect(parseStrictPositiveMeters(" 42 ")).toBe(42);
+  });
+
+  it("rejects malformed values without silent truncation", () => {
+    expect(parseStrictPositiveMeters("3000abc")).toBeNull();
+    expect(parseStrictPositiveMeters("1.5")).toBeNull();
+    expect(parseStrictPositiveMeters("0")).toBeNull();
+    expect(parseStrictPositiveMeters("-1")).toBeNull();
+    expect(parseStrictPositiveMeters("")).toBeNull();
+    expect(parseStrictPositiveMeters("   ")).toBeNull();
+    expect(parseStrictPositiveMeters("01")).toBeNull();
+    expect(parseStrictPositiveMeters("1e3")).toBeNull();
+    expect(parseStrictPositiveMeters(String(Number.MAX_SAFE_INTEGER + 1))).toBeNull();
   });
 });

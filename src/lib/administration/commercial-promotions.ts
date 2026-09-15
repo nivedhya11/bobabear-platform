@@ -50,13 +50,23 @@ export function listPromotions(brandId: string) {
   return adminRequest<{ ok: true; promotions: Promotion[] }>(brandPromotions(brandId));
 }
 
+export type PromotionTargetType = "all_merchandise" | "product" | "variant" | "charge";
+export type PromotionTargetRole = "qualifier" | "benefit";
+
+export type PromotionTarget = Readonly<{
+  targetType: PromotionTargetType;
+  productId: string | null;
+  variantId: string | null;
+  chargeDefinitionId: string | null;
+}>;
+
 export function getPromotion(brandId: string, promotionId: string) {
   return adminRequest<{
     ok: true;
     promotion: Promotion;
     benefit: unknown;
-    qualifierTargets: unknown;
-    benefitTargets: unknown;
+    qualifierTargets: readonly PromotionTarget[];
+    benefitTargets: readonly PromotionTarget[];
   }>(`${brandPromotions(brandId)}/${promotionId}`);
 }
 
@@ -123,6 +133,26 @@ export function savePromotionBenefit(
 ) {
   return adminRequest<{ ok: true; revision: string }>(
     `${brandPromotions(brandId)}/${promotionId}/benefit`,
+    { method: "POST", body },
+  );
+}
+
+export function setPromotionTargets(
+  brandId: string,
+  promotionId: string,
+  body: Readonly<{
+    expectedPromotionRevision: string;
+    targetRole: PromotionTargetRole;
+    targets: readonly Readonly<{
+      targetType: PromotionTargetType;
+      productId?: string | null;
+      variantId?: string | null;
+      chargeDefinitionId?: string | null;
+    }>[];
+  }>,
+) {
+  return adminRequest<{ ok: true; revision: string }>(
+    `${brandPromotions(brandId)}/${promotionId}/targets`,
     { method: "POST", body },
   );
 }

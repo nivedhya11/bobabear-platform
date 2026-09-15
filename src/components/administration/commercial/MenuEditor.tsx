@@ -12,6 +12,8 @@ import {
 } from "@/components/enterprise/enterprise-tokens";
 import { Button } from "@/components/ui/Button";
 import {
+  activateMenuEntry,
+  activateMenuSection,
   addMenuEntry,
   addMenuSection,
   createMenu,
@@ -21,6 +23,8 @@ import {
   publishMenu,
   reorderMenuEntries,
   reorderMenuSections,
+  retireMenuEntry,
+  retireMenuSection,
   saveMenuEntryDisplayDraft,
   type MenuDetail,
   type MenuEntry,
@@ -52,6 +56,53 @@ type ReviewState = Readonly<{
   blockers: readonly string[];
   wouldChange: boolean;
 }>;
+
+type HierarchicalSection = Readonly<{
+  section: MenuSection;
+  depth: number;
+  isFirst: boolean;
+  isLast: boolean;
+}>;
+
+function nonRetiredSiblings(
+  sections: readonly MenuSection[],
+  parentSectionId: string | null,
+): MenuSection[] {
+  return sections
+    .filter(
+      (s) => s.parentSectionId === parentSectionId && s.lifecycleStatus !== "retired",
+    )
+    .sort((a, b) => a.position - b.position);
+}
+
+/** Roots by position, then children indented under parents (depth-aware). */
+function hierarchicalSections(sections: readonly MenuSection[]): HierarchicalSection[] {
+  const out: HierarchicalSection[] = [];
+  function walk(parentSectionId: string | null, depth: number) {
+    const children = sections
+      .filter((s) => s.parentSectionId === parentSectionId)
+      .sort((a, b) => a.position - b.position);
+    const movable = children.filter((s) => s.lifecycleStatus !== "retired");
+    for (const section of children) {
+      const movableIdx = movable.findIndex((s) => s.id === section.id);
+      out.push({
+        section,
+        depth,
+        isFirst: movableIdx === 0,
+        isLast: movableIdx >= 0 && movableIdx === movable.length - 1,
+      });
+      walk(section.id, depth + 1);
+    }
+  }
+  walk(null, 0);
+  return out;
+}
+
+function lifecycleTone(status: string): "success" | "danger" | "neutral" {
+  if (status === "active") return "success";
+  if (status === "retired") return "danger";
+  return "neutral";
+}
 
 export function MenuEditor(props: MenuEditorProps) {
   const { context, capabilities, authoringAllowed } = props;
@@ -205,11 +256,13 @@ export function MenuEditor(props: MenuEditorProps) {
 
   async function moveSection(sectionId: string, direction: -1 | 1) {
     if (!canManage || !context.brandId || !context.menuId || !detail) return;
-    const ordered = [...sections].sort((a, b) => a.position - b.position);
-    const idx = ordered.findIndex((s) => s.id === sectionId);
+    const section = sections.find((s) => s.id === sectionId);
+    if (!section) return;
+    const siblings = nonRetiredSiblings(sections, section.parentSectionId);
+    const idx = siblings.findIndex((s) => s.id === sectionId);
     const swapIdx = idx + direction;
-    if (idx < 0 || swapIdx < 0 || swapIdx >= ordered.length) return;
-    const next = [...ordered];
+    if (idx < 0 || swapIdx < 0 || swapIdx >= siblings.length) return;
+    const next = [...siblings];
     const a = next[idx]!;
     const b = next[swapIdx]!;
     next[idx] = b;
@@ -218,7 +271,7 @@ export function MenuEditor(props: MenuEditorProps) {
     const result = await reorderMenuSections(context.brandId, context.menuId, {
       expectedMenuRevision: detail.menu.revision,
       orderedSectionIds: next.map((s) => s.id),
-      parentSectionId: null,
+      parentSectionId: section.parentSectionId,
     });
     setBusy(false);
     if (!result.ok) {
@@ -226,6 +279,66 @@ export function MenuEditor(props: MenuEditorProps) {
       return;
     }
     props.onStatus("Sections reordered on draft.");
+    await loadDetail();
+  }
+
+  async function handleActivateSection(sectionId: string) {
+    if (!canManage || !context.brandId || !context.menuId || !detail) return;
+    setBusy(true);
+    const result = await activateMenuSection(context.brandId, context.menuId, sectionId, {
+      expectedMenuRevision: detail.menu.revision,
+    });
+    setBusy(false);
+    if (!result.ok) {
+      props.onStatus(describeAdminFailure(result));
+      return;
+    }
+    props.onStatus("Section activated.");
+    await loadDetail();
+  }
+
+  async function handleRetireSection(sectionId: string) {
+    if (!canManage || !context.brandId || !context.menuId || !detail) return;
+    setBusy(true);
+    const result = await retireMenuSection(context.brandId, context.menuId, sectionId, {
+      expectedMenuRevision: detail.menu.revision,
+    });
+    setBusy(false);
+    if (!result.ok) {
+      props.onStatus(describeAdminFailure(result));
+      return;
+    }
+    props.onStatus("Section retired.");
+    await loadDetail();
+  }
+
+  async function handleActivateEntry(entryId: string) {
+    if (!canManage || !context.brandId || !context.menuId || !detail) return;
+    setBusy(true);
+    const result = await activateMenuEntry(context.brandId, context.menuId, entryId, {
+      expectedMenuRevision: detail.menu.revision,
+    });
+    setBusy(false);
+    if (!result.ok) {
+      props.onStatus(describeAdminFailure(result));
+      return;
+    }
+    props.onStatus("Entry activated.");
+    await loadDetail();
+  }
+
+  async function handleRetireEntry(entryId: string) {
+    if (!canManage || !context.brandId || !context.menuId || !detail) return;
+    setBusy(true);
+    const result = await retireMenuEntry(context.brandId, context.menuId, entryId, {
+      expectedMenuRevision: detail.menu.revision,
+    });
+    setBusy(false);
+    if (!result.ok) {
+      props.onStatus(describeAdminFailure(result));
+      return;
+    }
+    props.onStatus("Entry retired.");
     await loadDetail();
   }
 
@@ -407,23 +520,34 @@ export function MenuEditor(props: MenuEditorProps) {
             confirming.
           </Alert>
 
-          {[...sections]
-            .sort((a, b) => a.position - b.position)
-            .map((section, sectionIndex, orderedSections) => (
+          {hierarchicalSections(sections).map(({ section, depth, isFirst, isLast }) => (
               <SectionBlock
                 key={section.id}
                 section={section}
+                depth={depth}
                 entries={entries
                   .filter((e) => e.sectionId === section.id)
                   .sort((a, b) => a.position - b.position)}
                 canManage={canManage}
-                isFirst={sectionIndex === 0}
-                isLast={sectionIndex === orderedSections.length - 1}
+                isFirst={isFirst}
+                isLast={isLast}
                 editingEntryId={editingEntryId}
                 displayName={displayName}
                 displayDescription={displayDescription}
                 onMoveSection={(dir) => void moveSection(section.id, dir)}
                 onMoveEntry={(entryId, dir) => void moveEntry(section.id, entryId, dir)}
+                onActivateSection={
+                  section.lifecycleStatus === "draft"
+                    ? () => void handleActivateSection(section.id)
+                    : undefined
+                }
+                onRetireSection={
+                  section.lifecycleStatus === "active"
+                    ? () => void handleRetireSection(section.id)
+                    : undefined
+                }
+                onActivateEntry={(entryId) => void handleActivateEntry(entryId)}
+                onRetireEntry={(entryId) => void handleRetireEntry(entryId)}
                 onEditEntry={(entry) => {
                   setEditingEntryId(entry.id);
                   setDisplayName(entry.displayName ?? "");
@@ -528,6 +652,7 @@ export function MenuEditor(props: MenuEditorProps) {
 
 function SectionBlock(props: {
   section: MenuSection;
+  depth: number;
   entries: MenuEntry[];
   canManage: boolean;
   isFirst: boolean;
@@ -537,41 +662,66 @@ function SectionBlock(props: {
   displayDescription: string;
   onMoveSection: (dir: -1 | 1) => void;
   onMoveEntry: (entryId: string, dir: -1 | 1) => void;
+  onActivateSection?: () => void;
+  onRetireSection?: () => void;
+  onActivateEntry: (entryId: string) => void;
+  onRetireEntry: (entryId: string) => void;
   onEditEntry: (entry: MenuEntry) => void;
   onDisplayName: (v: string) => void;
   onDisplayDescription: (v: string) => void;
   onSaveDisplay: (entry: MenuEntry) => void;
   onCancelEdit: () => void;
 }) {
+  const sectionMovable = props.section.lifecycleStatus !== "retired";
   return (
-    <div className="rounded-md border border-[var(--enterprise-border,#3D6026)] p-3">
+    <div
+      className="rounded-md border border-[var(--enterprise-border,#3D6026)] p-3"
+      style={props.depth > 0 ? { paddingLeft: `${props.depth}rem` } : undefined}
+    >
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <h4 className="text-sm font-semibold">
           {props.section.name}{" "}
           <span className="font-normal text-[var(--enterprise-muted,#C4D4A8)]">
             ({props.section.code})
           </span>
+          <StatusBadge className="ml-2" tone={lifecycleTone(props.section.lifecycleStatus)}>
+            {props.section.lifecycleStatus}
+          </StatusBadge>
         </h4>
         {props.canManage ? (
-          <div className="flex gap-1">
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              disabled={props.isFirst}
-              onClick={() => props.onMoveSection(-1)}
-            >
-              Move up
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              disabled={props.isLast}
-              onClick={() => props.onMoveSection(1)}
-            >
-              Move down
-            </Button>
+          <div className="flex flex-wrap gap-1">
+            {sectionMovable ? (
+              <>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={props.isFirst}
+                  onClick={() => props.onMoveSection(-1)}
+                >
+                  Move up
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={props.isLast}
+                  onClick={() => props.onMoveSection(1)}
+                >
+                  Move down
+                </Button>
+              </>
+            ) : null}
+            {props.onActivateSection ? (
+              <Button type="button" size="sm" variant="outline" onClick={props.onActivateSection}>
+                Activate section
+              </Button>
+            ) : null}
+            {props.onRetireSection ? (
+              <Button type="button" size="sm" variant="outline" onClick={props.onRetireSection}>
+                Retire section
+              </Button>
+            ) : null}
           </div>
         ) : null}
       </div>
@@ -582,6 +732,9 @@ function SectionBlock(props: {
               <div>
                 <p className="font-medium">
                   {entry.displayName ?? `Product ${entry.productId.slice(0, 8)}…`}
+                  <StatusBadge className="ml-2" tone={lifecycleTone(entry.lifecycleStatus)}>
+                    {entry.lifecycleStatus}
+                  </StatusBadge>
                 </p>
                 <p className="text-[var(--enterprise-text-secondary,#EBD9A6)]">
                   {entry.displayDescription ?? "No display description override"}
@@ -597,27 +750,56 @@ function SectionBlock(props: {
               </div>
               {props.canManage ? (
                 <div className="flex flex-wrap gap-1">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    disabled={idx === 0}
-                    onClick={() => props.onMoveEntry(entry.id, -1)}
-                  >
-                    Move up
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    disabled={idx === props.entries.length - 1}
-                    onClick={() => props.onMoveEntry(entry.id, 1)}
-                  >
-                    Move down
-                  </Button>
-                  <Button type="button" size="sm" variant="ghost" onClick={() => props.onEditEntry(entry)}>
-                    Display override
-                  </Button>
+                  {entry.lifecycleStatus !== "retired" ? (
+                    <>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={idx === 0}
+                        onClick={() => props.onMoveEntry(entry.id, -1)}
+                      >
+                        Move up
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={idx === props.entries.length - 1}
+                        onClick={() => props.onMoveEntry(entry.id, 1)}
+                      >
+                        Move down
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => props.onEditEntry(entry)}
+                      >
+                        Display override
+                      </Button>
+                    </>
+                  ) : null}
+                  {entry.lifecycleStatus === "draft" ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => props.onActivateEntry(entry.id)}
+                    >
+                      Activate entry
+                    </Button>
+                  ) : null}
+                  {entry.lifecycleStatus === "active" ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => props.onRetireEntry(entry.id)}
+                    >
+                      Retire entry
+                    </Button>
+                  ) : null}
                 </div>
               ) : null}
             </div>

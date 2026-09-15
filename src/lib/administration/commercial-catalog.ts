@@ -81,6 +81,34 @@ export function getCatalogProduct(brandId: string, productId: string) {
   );
 }
 
+export type CatalogVariantModifierGroupRow = Readonly<{
+  id: string;
+  brandId: string;
+  variantId: string;
+  modifierGroupId: string;
+  minTotalQuantity?: number;
+  maxTotalQuantity?: number;
+  required?: boolean;
+  position?: number;
+  lifecycleStatus?: CatalogLifecycleStatus;
+}>;
+
+export type CatalogModifierOptionRow = Readonly<{
+  id: string;
+  brandId: string;
+  code: string;
+  draft?: Readonly<{ name: string; description: string | null; lifecycleStatus: CatalogLifecycleStatus }>;
+}>;
+
+export type CatalogModifierGroupOptionRow = Readonly<{
+  id: string;
+  brandId: string;
+  modifierGroupId: string;
+  modifierOptionId: string;
+  position?: number;
+  lifecycleStatus?: CatalogLifecycleStatus;
+}>;
+
 export function getCatalogProductGraph(brandId: string, productId: string) {
   return adminRequest<{
     ok: true;
@@ -88,9 +116,9 @@ export function getCatalogProductGraph(brandId: string, productId: string) {
       product: CatalogProductInspection;
       variants: CatalogVariantInspection[];
       modifierGroups: CatalogModifierGroupInspection[];
-      modifierOptions: unknown[];
-      modifierGroupOptions: unknown[];
-      variantModifierGroups: unknown[];
+      modifierOptions: CatalogModifierOptionRow[];
+      modifierGroupOptions: CatalogModifierGroupOptionRow[];
+      variantModifierGroups: CatalogVariantModifierGroupRow[];
     }>;
   }>(`${brandCatalog(brandId)}/products/${productId}/graph`);
 }

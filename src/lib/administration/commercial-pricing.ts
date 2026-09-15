@@ -33,10 +33,20 @@ export type VariantPriceRow = Readonly<{
   ceilingPaise: string | null;
 }>;
 
+export type ModifierPriceRow = Readonly<{
+  id: string;
+  variantModifierGroupId: string;
+  modifierGroupOptionId: string;
+  priceDeltaPaise: string;
+  allowTerritoryOverride: boolean;
+  allowOrganizationOverride: boolean;
+  allowOutletOverride: boolean;
+}>;
+
 export type PriceBookInspection = Readonly<{
   priceBook: PriceBook;
   variantPrices: readonly VariantPriceRow[];
-  modifierPrices: readonly unknown[];
+  modifierPrices: readonly ModifierPriceRow[];
   customerEffective: readonly Readonly<{
     variantId: string;
     outletId: string;
@@ -119,6 +129,29 @@ export function attachVariantPrice(
     variantPrice: Readonly<{ id: string }>;
     priceBookRevision: string;
   }>(`${brandPricing(brandId)}/price-books/${priceBookId}/variant-prices`, {
+    method: "POST",
+    body,
+  });
+}
+
+export function attachModifierPrice(
+  brandId: string,
+  priceBookId: string,
+  body: Readonly<{
+    expectedPriceBookRevision: string;
+    variantModifierGroupId: string;
+    modifierGroupOptionId: string;
+    priceDeltaPaise: string;
+    allowTerritoryOverride?: boolean;
+    allowOrganizationOverride?: boolean;
+    allowOutletOverride?: boolean;
+  }>,
+) {
+  return adminRequest<{
+    ok: true;
+    modifierPrice: Readonly<{ id: string }>;
+    priceBookRevision: string;
+  }>(`${brandPricing(brandId)}/price-books/${priceBookId}/modifier-prices`, {
     method: "POST",
     body,
   });

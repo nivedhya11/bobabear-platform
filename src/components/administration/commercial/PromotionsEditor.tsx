@@ -27,10 +27,12 @@ import {
   retirePromotion,
   savePromotionBenefit,
   savePromotionDraft,
+  setPromotionTargets,
   type Coupon,
   type CouponStatus,
   type Promotion,
   type PromotionStatus,
+  type PromotionTarget,
 } from "@/lib/administration/commercial-promotions";
 import {
   describeAdminFailure,
@@ -72,6 +74,8 @@ export function PromotionsEditor(props: PromotionsEditorProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [promotion, setPromotion] = useState<Promotion | null>(null);
   const [benefit, setBenefit] = useState<unknown>(null);
+  const [qualifierTargets, setQualifierTargets] = useState<readonly PromotionTarget[]>([]);
+  const [benefitTargets, setBenefitTargets] = useState<readonly PromotionTarget[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -79,6 +83,7 @@ export function PromotionsEditor(props: PromotionsEditorProps) {
 
   const [code, setCode] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [triggerType, setTriggerType] = useState<"automatic" | "coupon">("automatic");
   const [draftName, setDraftName] = useState("");
   const [benefitType, setBenefitType] = useState<"percentage_discount" | "fixed_amount_discount">(
     "percentage_discount",
@@ -107,6 +112,8 @@ export function PromotionsEditor(props: PromotionsEditorProps) {
   const loadDetail = useCallback(async () => {
     if (!context.brandId || !selectedId || !capabilities.promotionsRead) {
       setPromotion(null);
+      setQualifierTargets([]);
+      setBenefitTargets([]);
       setCoupons([]);
       return;
     }
@@ -124,9 +131,15 @@ export function PromotionsEditor(props: PromotionsEditorProps) {
     }
     setPromotion(promoResult.data.promotion);
     setBenefit(promoResult.data.benefit);
+    setQualifierTargets(promoResult.data.qualifierTargets);
+    setBenefitTargets(promoResult.data.benefitTargets);
     setDraftName(promoResult.data.promotion.displayName);
     setActivationError(null);
-    if (couponResult && couponResult.ok) {
+    if (
+      couponResult &&
+      couponResult.ok &&
+      promoResult.data.promotion.triggerType === "coupon"
+    ) {
       setCoupons(couponResult.data.coupons);
     } else {
       setCoupons([]);
@@ -172,7 +185,7 @@ export function PromotionsEditor(props: PromotionsEditorProps) {
       code: code.trim(),
       displayName: displayName.trim(),
       scopeType: "brand",
-      triggerType: "automatic",
+      triggerType,
       startsAt: new Date().toISOString(),
     });
     setBusy(false);
@@ -182,9 +195,65 @@ export function PromotionsEditor(props: PromotionsEditorProps) {
     }
     setCode("");
     setDisplayName("");
+    setTriggerType("automatic");
     setSelectedId(result.data.promotion.id);
     props.onStatus("Promotion created as draft.");
     await loadList();
+  }
+
+  async function handleSetTargets(
+    targetRole: "qualifier" | "benefit",
+    targetType: "product" | "variant",
+  ) {
+    if (!canManagePromo || !context.brandId || !promotion) return;
+    if (targetType === "product" && !context.productId) {
+      props.onStatus("Select a product in commercial context first.");
+      return;
+    }
+    if (targetType === "variant" && !context.variantId) {
+      props.onStatus("Select a variant in commercial context first.");
+      return;
+    }
+    setBusy(true);
+    const targets =
+      targetType === "product"
+        ? [{ targetType: "product" as const, productId: context.productId!, variantId: null }]
+        : [
+            {
+              targetType: "variant" as const,
+              variantId: context.variantId!,
+              productId: null,
+            },
+          ];
+    const result = await setPromotionTargets(context.brandId, promotion.id, {
+      expectedPromotionRevision: promotion.revision,
+      targetRole,
+      targets,
+    });
+    setBusy(false);
+    if (!result.ok) {
+      props.onStatus(`${result.code}: ${describeAdminFailure(result)}`);
+      return;
+    }
+    props.onStatus(`${targetRole} targets updated.`);
+    await loadDetail();
+  }
+
+  function formatTarget(target: PromotionTarget) {
+    if (target.targetType === "product") {
+      return `product ${target.productId ?? "—"}`;
+    }
+    if (target.targetType === "variant") {
+      return `variant ${target.variantId ?? "—"}${
+        target.productId ? ` (product ${target.productId})` : ""
+      }`;
+    }
+    if (target.targetType === "all_merchandise") {
+      return "all merchandise";
+    }
+    return `${target.targetType}${
+      target.chargeDefinitionId ? ` ${target.chargeDefinitionId}` : ""
+    }`;
   }
 
   async function handleSaveDraft() {
@@ -411,7 +480,7 @@ export function PromotionsEditor(props: PromotionsEditorProps) {
         )}
 
         {canManagePromo ? (
-          <fieldset className="grid gap-2 sm:grid-cols-3" disabled={busy}>
+          <fieldset className="grid gap-2 sm:grid-cols-4" disabled={busy}>
             <legend className="mb-1 text-sm font-semibold">Create promotion</legend>
             <input
               className={cn(enterpriseFieldClass)}
@@ -427,6 +496,18 @@ export function PromotionsEditor(props: PromotionsEditorProps) {
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
             />
+            <label className="flex flex-col gap-1 text-sm">
+              <span>Trigger type</span>
+              <select
+                className={cn(enterpriseFieldClass)}
+                aria-label="Trigger type"
+                value={triggerType}
+                onChange={(e) => setTriggerType(e.target.value as "automatic" | "coupon")}
+              >
+                <option value="automatic">automatic</option>
+                <option value="coupon">coupon</option>
+              </select>
+            </label>
             <Button type="button" onClick={() => void handleCreatePromotion()}>
               Create
             </Button>
@@ -439,6 +520,9 @@ export function PromotionsEditor(props: PromotionsEditorProps) {
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-base font-semibold">{promotion.displayName}</h3>
             <StatusBadge tone={statusTone(promotion.status)}>{promotion.status}</StatusBadge>
+            <span className="text-xs text-[var(--enterprise-muted,#C4D4A8)]">
+              Trigger: {promotion.triggerType}
+            </span>
             <span className="text-xs text-[var(--enterprise-muted,#C4D4A8)]">
               Revision {promotion.revision}
             </span>
@@ -457,6 +541,65 @@ export function PromotionsEditor(props: PromotionsEditorProps) {
               <Button type="button" onClick={() => void handleSaveDraft()}>
                 Save draft
               </Button>
+
+              <fieldset className="space-y-2" data-testid="promotion-targets" disabled={busy}>
+                <legend className="text-sm font-semibold">Targets</legend>
+                <div className="text-sm text-[var(--enterprise-text-secondary,#EBD9A6)]">
+                  Qualifier targets:{" "}
+                  {qualifierTargets.length === 0
+                    ? "None configured"
+                    : qualifierTargets.map(formatTarget).join("; ")}
+                </div>
+                <div className="text-sm text-[var(--enterprise-text-secondary,#EBD9A6)]">
+                  Benefit targets:{" "}
+                  {benefitTargets.length === 0
+                    ? "None configured"
+                    : benefitTargets.map(formatTarget).join("; ")}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={!context.productId}
+                    onClick={() => void handleSetTargets("qualifier", "product")}
+                  >
+                    Set qualifier to selected product
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={!context.variantId}
+                    onClick={() => void handleSetTargets("qualifier", "variant")}
+                  >
+                    Set qualifier to selected variant
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={!context.productId}
+                    onClick={() => void handleSetTargets("benefit", "product")}
+                  >
+                    Set benefit to selected product
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={!context.variantId}
+                    onClick={() => void handleSetTargets("benefit", "variant")}
+                  >
+                    Set benefit to selected variant
+                  </Button>
+                </div>
+                {!context.productId && !context.variantId ? (
+                  <p className="text-xs text-[var(--enterprise-muted,#C4D4A8)]">
+                    Select a product or variant in commercial context to set targets.
+                  </p>
+                ) : null}
+              </fieldset>
 
               <fieldset className="space-y-2" disabled={busy}>
                 <legend className="text-sm font-semibold">Benefit</legend>
@@ -523,76 +666,86 @@ export function PromotionsEditor(props: PromotionsEditorProps) {
           {capabilities.couponsRead ? (
             <div className="space-y-3 border-t border-[var(--enterprise-border,#3D6026)] pt-3">
               <h4 className="text-sm font-semibold">Coupons</h4>
-              <ul className="space-y-2 text-sm">
-                {coupons.map((c) => (
-                  <li key={c.id} className="flex flex-wrap items-center justify-between gap-2">
-                    <span>
-                      {c.canonicalCode}{" "}
-                      <StatusBadge tone={statusTone(c.status)}>{c.status}</StatusBadge>
-                    </span>
-                    {canManageCoupon ? (
-                      <div className="flex flex-wrap gap-1">
-                        {c.status === "draft" ? (
-                          <Button
-                            type="button"
-                            size="sm"
-                            onClick={() => void openCouponReview(c, "active", "activate")}
-                          >
-                            Activate
-                          </Button>
+              {promotion.triggerType === "automatic" ? (
+                <Alert tone="info" title="Coupons require a coupon-triggered Promotion">
+                  This promotion uses automatic trigger type. Create or select a coupon-triggered
+                  promotion to author coupons. Coupons are not valid on automatic promotions.
+                </Alert>
+              ) : (
+                <div className="space-y-3" data-testid="coupon-authoring">
+                  <ul className="space-y-2 text-sm">
+                    {coupons.map((c) => (
+                      <li key={c.id} className="flex flex-wrap items-center justify-between gap-2">
+                        <span>
+                          {c.canonicalCode}{" "}
+                          <StatusBadge tone={statusTone(c.status)}>{c.status}</StatusBadge>
+                        </span>
+                        {canManageCoupon ? (
+                          <div className="flex flex-wrap gap-1">
+                            {c.status === "draft" ? (
+                              <Button
+                                type="button"
+                                size="sm"
+                                onClick={() => void openCouponReview(c, "active", "activate")}
+                              >
+                                Activate
+                              </Button>
+                            ) : null}
+                            {c.status === "active" ? (
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => void openCouponReview(c, "disabled", "disable")}
+                              >
+                                Disable
+                              </Button>
+                            ) : null}
+                            {c.status === "disabled" ? (
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => void openCouponReview(c, "active", "enable")}
+                              >
+                                Enable
+                              </Button>
+                            ) : null}
+                            {c.status !== "retired" ? (
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => void openCouponReview(c, "retired", "retire")}
+                              >
+                                Retire
+                              </Button>
+                            ) : null}
+                          </div>
                         ) : null}
-                        {c.status === "active" ? (
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            onClick={() => void openCouponReview(c, "disabled", "disable")}
-                          >
-                            Disable
-                          </Button>
-                        ) : null}
-                        {c.status === "disabled" ? (
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            onClick={() => void openCouponReview(c, "active", "enable")}
-                          >
-                            Enable
-                          </Button>
-                        ) : null}
-                        {c.status !== "retired" ? (
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => void openCouponReview(c, "retired", "retire")}
-                          >
-                            Retire
-                          </Button>
-                        ) : null}
-                      </div>
+                      </li>
+                    ))}
+                    {coupons.length === 0 ? (
+                      <li className="text-[var(--enterprise-muted,#C4D4A8)]">No coupons.</li>
                     ) : null}
-                  </li>
-                ))}
-                {coupons.length === 0 ? (
-                  <li className="text-[var(--enterprise-muted,#C4D4A8)]">No coupons.</li>
-                ) : null}
-              </ul>
-              {canManageCoupon ? (
-                <fieldset className="flex flex-wrap gap-2" disabled={busy}>
-                  <input
-                    className={cn(enterpriseFieldClass)}
-                    placeholder="Canonical code (optional)"
-                    aria-label="Coupon code"
-                    value={couponCode}
-                    onChange={(e) => setCouponCode(e.target.value)}
-                  />
-                  <Button type="button" onClick={() => void handleCreateCoupon()}>
-                    Create coupon
-                  </Button>
-                </fieldset>
-              ) : null}
+                  </ul>
+                  {canManageCoupon ? (
+                    <fieldset className="flex flex-wrap gap-2" disabled={busy}>
+                      <legend className="sr-only">Create coupon</legend>
+                      <input
+                        className={cn(enterpriseFieldClass)}
+                        placeholder="Canonical code (optional)"
+                        aria-label="Coupon code"
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value)}
+                      />
+                      <Button type="button" onClick={() => void handleCreateCoupon()}>
+                        Create coupon
+                      </Button>
+                    </fieldset>
+                  ) : null}
+                </div>
+              )}
             </div>
           ) : null}
         </div>

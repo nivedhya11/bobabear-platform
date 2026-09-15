@@ -30,10 +30,17 @@ type AssortmentEditorProps = Readonly<{
   onStatus: (message: string) => void;
 }>;
 
-type PendingMutation = "include_variant" | "exclude";
+type ExcludeScope = Readonly<
+  | { scopeType: "brand" }
+  | { scopeType: "outlet"; outletId: string }
+>;
+
+type PendingMutation =
+  | { kind: "include_variant" }
+  | { kind: "exclude"; scope: ExcludeScope };
 
 type ReviewState = Readonly<{
-  mutationType: PendingMutation;
+  mutation: PendingMutation;
   expectedRuleRevision: string | null;
   draftLabel: string;
   effectiveLabel: string;
@@ -41,6 +48,12 @@ type ReviewState = Readonly<{
   blockers: readonly string[];
   wouldChange: boolean;
 }>;
+
+function scopeLabel(scope: ExcludeScope): string {
+  return scope.scopeType === "outlet"
+    ? `Outlet exclusion (outlet ${scope.outletId.slice(0, 8)}…)`
+    : "Brand-wide exclusion";
+}
 
 export function AssortmentEditor(props: AssortmentEditorProps) {
   const { context, capabilities, authoringAllowed } = props;
@@ -104,10 +117,10 @@ export function AssortmentEditor(props: AssortmentEditorProps) {
     return <LoadingState label="Loading assortment…" />;
   }
 
-  async function openReview(mutationType: PendingMutation) {
+  async function openIncludeReview() {
     if (!canManage || !context.brandId || !context.variantId) return;
     const result = await previewAssortmentConsequence(context.brandId, {
-      mutationType,
+      mutationType: "include_variant",
       variantId: context.variantId,
       scopeType: "brand",
     });
@@ -117,13 +130,56 @@ export function AssortmentEditor(props: AssortmentEditorProps) {
     }
     const preview = result.data.preview;
     setReview({
-      mutationType,
+      mutation: { kind: "include_variant" },
       expectedRuleRevision: preview.expectedRuleRevision,
       draftLabel: `Proposed: ${preview.proposed.decision} / ${preview.proposed.status}`,
       effectiveLabel: preview.currentRule
         ? `Current: ${preview.currentRule.decision} / ${preview.currentRule.status}`
         : "No current include/exclude rule",
       dimensions: [
+        { label: "Target scope", value: "Brand-wide include (commercial intent)" },
+        { label: "Authority", value: "ASSORTMENT (brand commercial intent)" },
+        {
+          label: "AVAILABILITY",
+          value: "Unchanged — operational availability is a separate authority",
+        },
+        {
+          label: "Customer implication",
+          value: preview.customerOrderabilityImplication,
+        },
+      ],
+      blockers: preview.validationBlockers.map(String),
+      wouldChange: preview.wouldChangeAssortmentIntent,
+    });
+    setReviewError(null);
+  }
+
+  async function openExcludeReview(scope: ExcludeScope) {
+    if (!canManage || !context.brandId || !context.variantId) return;
+    if (scope.scopeType === "outlet" && !scope.outletId) {
+      props.onStatus("Select an outlet before performing an outlet-specific exclusion.");
+      return;
+    }
+    const result = await previewAssortmentConsequence(context.brandId, {
+      mutationType: "exclude",
+      variantId: context.variantId,
+      scopeType: scope.scopeType,
+      ...(scope.scopeType === "outlet" ? { outletId: scope.outletId } : {}),
+    });
+    if (!result.ok) {
+      props.onStatus(describeAdminFailure(result));
+      return;
+    }
+    const preview = result.data.preview;
+    setReview({
+      mutation: { kind: "exclude", scope },
+      expectedRuleRevision: preview.expectedRuleRevision,
+      draftLabel: `Proposed: ${preview.proposed.decision} / ${preview.proposed.status}`,
+      effectiveLabel: preview.currentRule
+        ? `Current: ${preview.currentRule.decision} / ${preview.currentRule.status}`
+        : "No current include/exclude rule",
+      dimensions: [
+        { label: "Target scope", value: scopeLabel(scope) },
         { label: "Authority", value: "ASSORTMENT (brand commercial intent)" },
         {
           label: "AVAILABILITY",
@@ -145,15 +201,18 @@ export function AssortmentEditor(props: AssortmentEditorProps) {
     setReviewBusy(true);
     setReviewError(null);
     const result =
-      review.mutationType === "include_variant"
+      review.mutation.kind === "include_variant"
         ? await includeAssortmentVariant(context.brandId, {
             variantId: context.variantId,
             expectedRuleRevision: review.expectedRuleRevision,
           })
         : await excludeAssortmentTarget(context.brandId, {
-            scopeType: "brand",
+            scopeType: review.mutation.scope.scopeType,
             variantId: context.variantId,
             expectedRuleRevision: review.expectedRuleRevision,
+            ...(review.mutation.scope.scopeType === "outlet"
+              ? { outletId: review.mutation.scope.outletId }
+              : {}),
           });
     setReviewBusy(false);
     if (!result.ok) {
@@ -162,14 +221,17 @@ export function AssortmentEditor(props: AssortmentEditorProps) {
     }
     setReview(null);
     props.onStatus(
-      review.mutationType === "include_variant"
+      review.mutation.kind === "include_variant"
         ? "Variant included in brand assortment."
-        : "Variant excluded from brand assortment.",
+        : review.mutation.scope.scopeType === "outlet"
+          ? "Variant excluded for the selected outlet."
+          : "Variant excluded brand-wide.",
     );
     await load();
   }
 
   const includeRule = inspection?.includeRule ?? null;
+  const outletSelected = Boolean(context.outletId);
 
   return (
     <div data-testid="assortment-editor" className="space-y-4">
@@ -194,6 +256,10 @@ export function AssortmentEditor(props: AssortmentEditorProps) {
           <strong>ASSORTMENT:</strong> Is this outlet intended/permitted to offer the Variant?{" "}
           <strong>AVAILABILITY:</strong> Can it be ordered operationally right now? Availability is
           not edited in this commercial workspace.
+        </p>
+        <p className="text-xs text-[var(--enterprise-muted,#C4D4A8)]">
+          Exclusion scope is explicit: outlet-selected exclusions use outlet scope; brand-wide
+          exclusions are labeled separately and never silently substituted.
         </p>
 
         {inspection ? (
@@ -241,11 +307,31 @@ export function AssortmentEditor(props: AssortmentEditorProps) {
 
             {canManage ? (
               <div className="flex flex-wrap gap-2 pt-2">
-                <Button type="button" onClick={() => void openReview("include_variant")}>
-                  Include variant
+                <Button type="button" onClick={() => void openIncludeReview()}>
+                  Include variant (brand)
                 </Button>
-                <Button type="button" variant="outline" onClick={() => void openReview("exclude")}>
-                  Exclude variant
+                {outletSelected && context.outletId ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    data-testid="exclude-outlet-assortment"
+                    onClick={() =>
+                      void openExcludeReview({
+                        scopeType: "outlet",
+                        outletId: context.outletId!,
+                      })
+                    }
+                  >
+                    Exclude at selected outlet
+                  </Button>
+                ) : null}
+                <Button
+                  type="button"
+                  variant="outline"
+                  data-testid="exclude-brand-assortment"
+                  onClick={() => void openExcludeReview({ scopeType: "brand" })}
+                >
+                  Exclude brand-wide
                 </Button>
               </div>
             ) : null}

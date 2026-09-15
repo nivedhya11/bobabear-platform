@@ -161,4 +161,123 @@ describe("CatalogEditor", () => {
     expect(screen.getByLabelText("Name")).toBeInTheDocument();
     expect(screen.getByLabelText("Description")).toBeInTheDocument();
   });
+
+  it("shows Associated only for the variant that owns the modifier group link", async () => {
+    const user = userEvent.setup();
+    const product = {
+      id: "product-1",
+      brandId: "brand-1",
+      code: "TEA",
+      productKind: "standard" as const,
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+      activatedAt: null,
+      retiredAt: null,
+      effectiveContentRevision: null,
+      draftContentRevision: "1",
+      draftDiffersFromEffective: true,
+      effective: null,
+      draft: {
+        name: "Tea",
+        description: null,
+        lifecycleStatus: "draft" as const,
+      },
+    };
+    const variantA = {
+      id: "variant-a",
+      brandId: "brand-1",
+      productId: "product-1",
+      code: "A",
+      productKind: "standard" as const,
+      effectiveContentRevision: null,
+      draftContentRevision: "1",
+      draftDiffersFromEffective: true,
+      effective: null,
+      draft: {
+        name: "Variant A",
+        description: null,
+        isDefault: true,
+        isSelectorVisible: true,
+        lifecycleStatus: "draft" as const,
+      },
+    };
+    const variantB = {
+      ...variantA,
+      id: "variant-b",
+      code: "B",
+      draft: { ...variantA.draft, name: "Variant B", isDefault: false },
+    };
+    const modifierGroup = {
+      id: "mg-1",
+      brandId: "brand-1",
+      code: "TOPPINGS",
+      draftContentRevision: "1",
+      draft: {
+        name: "Toppings",
+        description: null,
+        lifecycleStatus: "draft" as const,
+      },
+      effective: null,
+    };
+
+    listCatalogProducts.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { products: [product] },
+    });
+    listCatalogModifierGroups.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: { modifierGroups: [modifierGroup] },
+    });
+    getCatalogProductGraph.mockResolvedValue({
+      ok: true,
+      status: 200,
+      data: {
+        graph: {
+          product,
+          variants: [variantA, variantB],
+          modifierGroups: [modifierGroup],
+          modifierOptions: [],
+          modifierGroupOptions: [],
+          variantModifierGroups: [
+            {
+              id: "vmg-1",
+              brandId: "brand-1",
+              variantId: "variant-a",
+              modifierGroupId: "mg-1",
+            },
+          ],
+        },
+      },
+    });
+
+    render(
+      <CatalogEditor
+        context={{
+          ...baseContext,
+          productId: "product-1",
+          productLabel: "Tea",
+          variantId: "variant-a",
+          variantLabel: "Variant A",
+        }}
+        capabilities={baseCapabilities}
+        authoringAllowed
+        onStatus={vi.fn()}
+        onProductsChanged={vi.fn()}
+        onSelectProduct={vi.fn()}
+        onSelectVariant={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => expect(screen.getByText(/Toppings \(TOPPINGS\)/)).toBeInTheDocument());
+    expect(screen.getByText("Associated")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Associate" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /Variant B \(B\)/ }));
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Associate" })).toBeInTheDocument(),
+    );
+    expect(screen.queryByText("Associated")).not.toBeInTheDocument();
+  });
 });

@@ -33,3 +33,18 @@ export function parseInrToPaise(input: string): string | null {
   const fraction = BigInt(fractionRaw.padEnd(2, "0"));
   return (sign * (whole * PAISE_PER_RUPEE + fraction)).toString();
 }
+
+/**
+ * Strict positive integer distance in meters.
+ * Rejects decimals, suffixes/prefixes, whitespace-only, zero, negatives, and unsafe integers.
+ * Does not silently normalize malformed input (unlike Number.parseInt).
+ */
+export function parseStrictPositiveMeters(input: string): number | null {
+  if (typeof input !== "string") return null;
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+  if (!/^[1-9]\d*$/.test(trimmed)) return null;
+  const value = Number(trimmed);
+  if (!Number.isSafeInteger(value) || value <= 0) return null;
+  return value;
+}

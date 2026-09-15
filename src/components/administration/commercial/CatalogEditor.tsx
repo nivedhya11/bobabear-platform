@@ -31,6 +31,7 @@ import {
   type CatalogModifierGroupInspection,
   type CatalogProductInspection,
   type CatalogVariantInspection,
+  type CatalogVariantModifierGroupRow,
 } from "@/lib/administration/commercial-catalog";
 import {
   describeAdminFailure,
@@ -72,7 +73,9 @@ export function CatalogEditor(props: CatalogEditorProps) {
   const [product, setProduct] = useState<CatalogProductInspection | null>(null);
   const [variants, setVariants] = useState<CatalogVariantInspection[]>([]);
   const [modifierGroups, setModifierGroups] = useState<CatalogModifierGroupInspection[]>([]);
-  const [associatedGroupIds, setAssociatedGroupIds] = useState<readonly string[]>([]);
+  const [variantModifierGroups, setVariantModifierGroups] = useState<
+    readonly CatalogVariantModifierGroupRow[]
+  >([]);
 
   const [introOpen, setIntroOpen] = useState(false);
   const [newCode, setNewCode] = useState("");
@@ -142,14 +145,7 @@ export function CatalogEditor(props: CatalogEditorProps) {
       setModifierGroups([]);
     }
 
-    const linked = new Set<string>();
-    for (const row of graph.variantModifierGroups) {
-      if (row && typeof row === "object" && "modifierGroupId" in row) {
-        const id = (row as { modifierGroupId?: unknown }).modifierGroupId;
-        if (typeof id === "string") linked.add(id);
-      }
-    }
-    setAssociatedGroupIds([...linked]);
+    setVariantModifierGroups(graph.variantModifierGroups);
 
     const preferred =
       graph.variants.find((v) => v.id === context.variantId) ?? graph.variants[0] ?? null;
@@ -159,6 +155,12 @@ export function CatalogEditor(props: CatalogEditorProps) {
       setVariantDraftDescription(preferred.draft.description ?? "");
     }
   }, [canRead, context.brandId, context.productId, context.variantId]);
+
+  const associatedGroupIdsForSelected = selectedVariant
+    ? variantModifierGroups
+        .filter((row) => row.variantId === selectedVariant.id)
+        .map((row) => row.modifierGroupId)
+    : [];
 
   useEffect(() => {
     // Data-fetch effect: initial loading state is set inside the async loader.
@@ -722,7 +724,7 @@ export function CatalogEditor(props: CatalogEditorProps) {
               ) : (
                 <ul className="space-y-2">
                   {modifierGroups.map((g) => {
-                    const linked = associatedGroupIds.includes(g.id);
+                    const linked = associatedGroupIdsForSelected.includes(g.id);
                     return (
                       <li
                         key={g.id}

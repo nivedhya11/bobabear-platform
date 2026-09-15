@@ -20,7 +20,11 @@ import {
   describeAdminFailure,
   MOBILE_AUTHORING_MESSAGE,
 } from "@/lib/administration/commercial-errors";
-import { formatInrFromPaise, parseInrToPaise } from "@/lib/administration/commercial-money";
+import {
+  formatInrFromPaise,
+  parseInrToPaise,
+  parseStrictPositiveMeters,
+} from "@/lib/administration/commercial-money";
 import { cn } from "@/lib/utils";
 
 import { ConsequenceReviewDialog } from "./ConsequenceReviewDialog";
@@ -129,9 +133,9 @@ export function DeliveryTariffEditor(props: DeliveryTariffEditorProps) {
   function parseBands(): DeliveryFeeBand[] | null {
     const parsed: DeliveryFeeBand[] = [];
     for (const band of bands) {
-      const meters = Number.parseInt(band.maxDistanceMeters, 10);
+      const meters = parseStrictPositiveMeters(band.maxDistanceMeters);
       const paise = parseInrToPaise(band.feeInr);
-      if (!Number.isFinite(meters) || meters <= 0 || paise === null) return null;
+      if (meters === null || paise === null) return null;
       parsed.push({ maxDistanceMeters: meters, amountPaise: Number(paise) });
     }
     return parsed;
