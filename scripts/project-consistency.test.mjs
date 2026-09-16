@@ -110,6 +110,8 @@ import {
   runProjectConsistency,
   evaluateImp036fActivationCheckpoint,
   evaluateImp036gActivationCheckpoint,
+  evaluateImp036gProductDefinitionDraftCheckpoint,
+  evaluateImp036gUngatedProductDefinitionDraftCandidate,
   evaluateImp036fProductDefinitionDraftAuthorizedCheckpoint,
   evaluateImp036fUngatedProductDefinitionDraftCandidate,
   evaluateImp036fProductDefinitionGatePassCheckpoint,
@@ -6495,6 +6497,10 @@ describe("canonical authority history compression", () => {
       true,
     );
     assert.equal(
+      isSupportedImp030GovernanceCheckpoint("GTM-R124", "STATE-R122", "imp036gProductDefinitionDraft"),
+      true,
+    );
+    assert.equal(
       isSupportedImp030GovernanceCheckpoint("GTM-R123", "STATE-R121", "imp036fAcceptance"),
       false,
     );
@@ -6512,8 +6518,8 @@ describe("canonical authority history compression", () => {
 
     const roadmap = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
     const state = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
-    assert.match(roadmap, /"roadmapVersion": "GTM-R123"/);
-    assert.match(state, /"stateVersion": "STATE-R121"/);
+    assert.match(roadmap, /"roadmapVersion": "GTM-R124"/);
+    assert.match(state, /"stateVersion": "STATE-R122"/);
     assert.match(state, /"acceptedThrough": "IMP-036F"/);
     assert.match(state, /"pendingAcceptance": "NONE"/);
     assert.match(state, /"currentProductSlice": "IMP-036G"/);
@@ -6536,7 +6542,10 @@ describe("canonical authority history compression", () => {
     assert.match(state, /IMP036F_ARCHITECTURE_LOCKED:\s*YES/);
     assert.match(roadmap, /IMP036G_ACTIVATED:\s*YES/);
     assert.match(state, /IMP036G_ACTIVATED:\s*YES/);
-    assert.match(roadmap, /IMP036G_PRODUCT_DEFINITION:\s*NOT_CREATED/);
+    assert.match(roadmap, /IMP036G_PRODUCT_DEFINITION:\s*DRAFT/);
+    assert.match(roadmap, /IMP036G_PRODUCT_DEFINITION_VERSION:\s*PD-IMP-036G-DRAFT-1/);
+    assert.match(roadmap, /IMP036G_PRODUCT_DEFINITION_GATE:\s*NOT_PERFORMED/);
+    assert.match(roadmap, /IMP036G_ARCHITECTURE_FIT:\s*NOT_PERFORMED/);
     assert.match(roadmap, /IMP036G_ARCHITECTURE_LOCKED:\s*NO/);
     assert.match(roadmap, /IMP036G_IMPLEMENTATION_AUTHORIZED:\s*NO/);
     assert.match(roadmap, /IMP036G_STARTED:\s*NO/);
@@ -6550,7 +6559,7 @@ describe("canonical authority history compression", () => {
     const current = currentAuthorityBlob({ text: roadmap }, { text: state });
     const evidence = authorityEvidenceBlob({ text: roadmap }, { text: state });
     assert.ok(evidence.includes(hist.roadmapText.slice(0, 80)));
-    assert.ok(current.includes("GTM-R123"));
+    assert.ok(current.includes("GTM-R124"));
     assert.ok(!current.includes('"roadmapVersion": "GTM-R113"'));
     // Stale historical claim may exist in snapshot evidence without overriding CURRENT metadata.
     assert.ok(/pendingAcceptance:\s*NONE/.test(hist.stateText) || /Pending Acceptance:\s+NONE/.test(hist.stateText));
@@ -6561,12 +6570,12 @@ describe("canonical authority history compression", () => {
     assert.ok(!/FOUNDER_STAGING_DEPLOYMENT:\s*NOT_PERFORMED/.test(current));
   });
 
-  it("passes CURRENT authority checks at the IMP-036G activation checkpoint", () => {
+  it("passes CURRENT authority checks at the IMP-036G Product Definition draft checkpoint", () => {
     const findings = runProjectConsistency();
     const failures = findings.filter((f) => !f.ok);
     assert.equal(failures.length, 0, failures.map((f) => `[${f.code}] ${f.message}`).join("\n"));
     const messages = findings.filter((f) => f.ok).map((f) => f.message);
-    assert.ok(messages.some((m) => m.includes("IMP-036G product-slice activation lifecycle valid")));
+    assert.ok(messages.some((m) => m.includes("IMP-036G Product Definition pre-gate DRAFT valid")));
     assert.ok(messages.some((m) => m.includes("CURRENT authority anti-stale checks OK")));
     assert.ok(messages.some((m) => m.includes("historical authority corpus loaded")));
   });
@@ -8226,5 +8235,235 @@ describe("IMP-036G product-slice activation checkpoints", () => {
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R123", "STATE-R121", "imp036gActivation"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R122", "STATE-R120", "imp036fAcceptance"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R123", "STATE-R121", "imp036fAcceptance"), false);
+  });
+});
+
+describe("IMP-036G Product Definition pre-gate draft checkpoints", () => {
+  const draftBase = {
+    roadmapVersion: "GTM-R124",
+    stateVersion: "STATE-R122",
+    acceptedThrough: "IMP-036F",
+    currentProductSlice: "IMP-036G",
+    nextProductSlice: "IMP-037",
+    pendingAcceptance: "NONE",
+    imp036f: "COMPLETE_AND_ACCEPTED",
+    imp036gFormalLifecycle: "PLANNED",
+    imp036gActivated: "YES",
+    productDefinition: "DRAFT",
+    productDefinitionVersion: "PD-IMP-036G-DRAFT-1",
+    productDefinitionGate: "NOT_PERFORMED",
+    architectureFit: "NOT_PERFORMED",
+    architectureLocked: "NO",
+    implementationAuthorized: "NO",
+    started: "NO",
+    accepted: "NO",
+    founderUatRequired: "YES",
+    imp037Activated: "NO",
+    architectureVersion: "ARCH-R19",
+    decisionRegisterVersion: "DR-15",
+    productDeliveryVersion: "PD-1",
+    productDefinitionExists: true,
+    productDefinitionApproved: false,
+    architectureLockedYes: false,
+    implementationAuthorizedYes: false,
+    startedYes: false,
+    acceptedYes: false,
+    d374Exists: false,
+    archR20Exists: false,
+  };
+
+  const validUngatedDraft = `<!-- governance-meta
+{
+  "status": "DRAFT",
+  "authority": "PRODUCT_DEFINITION",
+  "capability": "IMP-036G",
+  "productDefinitionVersion": "PD-IMP-036G-DRAFT-1",
+  "process": "PD-1",
+  "verificationPolicy": "TEST-1",
+  "lastReviewed": "2026-09-16",
+  "productDefinitionGateExecution": "NOT_PERFORMED",
+  "productDefinitionGateResult": "NOT_PERFORMED",
+  "architectureFitExecution": "NOT_PERFORMED",
+  "architectureFit": "NOT_PERFORMED",
+  "architectureLocked": "NO",
+  "implementationAuthorized": "NO",
+  "implementationStarted": "NO",
+  "impAccepted": "NO",
+  "imp037Activated": "NO"
+}
+-->
+
+# IMP-036G Product Definition (ungated draft candidate)
+
+Document status: DRAFT
+PRODUCT_DEFINITION_VERSION: PD-IMP-036G-DRAFT-1
+
+\`\`\`text
+PRE-GATE DRAFT: YES
+PRODUCT_DEFINITION_GATE_EXECUTION: NOT_PERFORMED
+Gate Result: NOT_PERFORMED
+ARCHITECTURE_FIT_EXECUTION: NOT_PERFORMED
+ARCHITECTURE_FIT_RESULT: NOT_PERFORMED
+IMP036G_ARCHITECTURE_LOCKED: NO
+IMP036G_IMPLEMENTATION_AUTHORIZED: NO
+IMP036G_STARTED: NO
+IMP036G_ACCEPTED: NO
+IMP037_ACTIVATED: NO
+\`\`\`
+`;
+
+  /** Mutate only a governance-meta JSON string value; leave prose markers unchanged. */
+  function mutateMetaField(text, key, value) {
+    return text.replace(new RegExp(`("${key}"\\s*:\\s*)"[^"]*"`), `$1"${value}"`);
+  }
+
+  it("passes GTM-R124 / STATE-R122 with required DRAFT Product Definition present", () => {
+    const result = evaluateImp036gProductDefinitionDraftCheckpoint({
+      ...draftBase,
+      productDefinitionText: validUngatedDraft,
+    });
+    assert.deepEqual(result, { ok: true });
+    assert.deepEqual(evaluateImp036gUngatedProductDefinitionDraftCandidate(validUngatedDraft), { ok: true });
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R124", "STATE-R122", "imp036gProductDefinitionDraft"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R123", "STATE-R121", "imp036gProductDefinitionDraft"), false);
+  });
+
+  it("fails when Product Definition file is missing (draft requires file)", () => {
+    const result = evaluateImp036gProductDefinitionDraftCheckpoint({
+      ...draftBase,
+      productDefinitionExists: false,
+      productDefinitionText: "",
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036G_PD_DRAFT");
+  });
+
+  it("rejects DRAFT candidate that claims Gate Result PASS (DRAFT != APPROVED; NOT_PERFORMED != PASS)", () => {
+    const bad = validUngatedDraft.replace("Gate Result: NOT_PERFORMED", "Gate Result: PASS");
+    const result = evaluateImp036gUngatedProductDefinitionDraftCandidate(bad);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036G_PD_PREMATURE_GATE_PASS");
+  });
+
+  it("rejects DRAFT candidate that claims APPROVED status", () => {
+    const bad = validUngatedDraft.replace(/"status": "DRAFT"/, '"status": "APPROVED"').replace(
+      "Document status: DRAFT",
+      "Document status: APPROVED",
+    );
+    const result = evaluateImp036gUngatedProductDefinitionDraftCandidate(bad);
+    assert.equal(result.ok, false);
+    assert.match(result.code, /IMP036G_PD_DRAFT_(STATUS|APPROVED_STATUS)/);
+  });
+
+  it("rejects architecture locked or architecture fit performed", () => {
+    const bad = `${validUngatedDraft}\nIMP036G_ARCHITECTURE_LOCKED: YES\n`;
+    const result = evaluateImp036gUngatedProductDefinitionDraftCandidate(bad);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036G_PD_PREMATURE_ARCHITECTURE");
+  });
+
+  it("rejects implementation authorized/started (PRODUCT_DEFINITION_EXISTS != IMPLEMENTATION_AUTHORIZED)", () => {
+    const bad = `${validUngatedDraft}\nIMP036G_IMPLEMENTATION_AUTHORIZED: YES\n`;
+    const result = evaluateImp036gUngatedProductDefinitionDraftCandidate(bad);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036G_PD_PREMATURE_IMPLEMENTATION");
+  });
+
+  it("rejects IMP acceptance claim", () => {
+    const bad = `${validUngatedDraft}\nIMP036G_ACCEPTED: YES\n`;
+    const result = evaluateImp036gUngatedProductDefinitionDraftCandidate(bad);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036G_PD_PREMATURE_ACCEPTANCE");
+  });
+
+  it("rejects IMP-037 activation", () => {
+    const bad = validUngatedDraft.replace("IMP037_ACTIVATED: NO", "IMP037_ACTIVATED: YES");
+    assert.equal(evaluateImp036gUngatedProductDefinitionDraftCandidate(bad).ok, false);
+    assert.equal(
+      evaluateImp036gProductDefinitionDraftCheckpoint({
+        ...draftBase,
+        productDefinitionText: validUngatedDraft,
+        imp037Activated: "YES",
+      }).ok,
+      false,
+    );
+  });
+
+  it("rejects started / authorized / accepted flags on checkpoint", () => {
+    assert.equal(
+      evaluateImp036gProductDefinitionDraftCheckpoint({
+        ...draftBase,
+        productDefinitionText: validUngatedDraft,
+        implementationAuthorizedYes: true,
+      }).ok,
+      false,
+    );
+    assert.equal(
+      evaluateImp036gProductDefinitionDraftCheckpoint({
+        ...draftBase,
+        productDefinitionText: validUngatedDraft,
+        startedYes: true,
+      }).ok,
+      false,
+    );
+    assert.equal(
+      evaluateImp036gProductDefinitionDraftCheckpoint({
+        ...draftBase,
+        productDefinitionText: validUngatedDraft,
+        acceptedYes: true,
+      }).ok,
+      false,
+    );
+    assert.equal(
+      evaluateImp036gProductDefinitionDraftCheckpoint({
+        ...draftBase,
+        productDefinitionText: validUngatedDraft,
+        architectureLockedYes: true,
+      }).ok,
+      false,
+    );
+  });
+
+  it("rejects canonical governance-meta-only mutations while prose remains valid", () => {
+    const cases = [
+      ["productDefinitionGateExecution", "PERFORMED", /IMP036G_PD_PREMATURE_GATE_PASS/],
+      ["productDefinitionGateResult", "PASS", /IMP036G_PD_PREMATURE_GATE_PASS/],
+      ["architectureFitExecution", "PERFORMED", /IMP036G_PD_PREMATURE_ARCHITECTURE/],
+      ["architectureFit", "PASS", /IMP036G_PD_PREMATURE_ARCHITECTURE/],
+      ["architectureLocked", "YES", /IMP036G_PD_PREMATURE_ARCHITECTURE/],
+      ["implementationAuthorized", "YES", /IMP036G_PD_PREMATURE_IMPLEMENTATION/],
+      ["implementationStarted", "YES", /IMP036G_PD_PREMATURE_IMPLEMENTATION/],
+      ["impAccepted", "YES", /IMP036G_PD_PREMATURE_ACCEPTANCE/],
+      ["imp037Activated", "YES", /IMP036G_PD_IMP037_ACTIVATION/],
+      ["status", "APPROVED", /IMP036G_PD_DRAFT_APPROVED_STATUS/],
+    ];
+    for (const [key, value, codePattern] of cases) {
+      const bad = mutateMetaField(validUngatedDraft, key, value);
+      assert.match(bad, new RegExp(`"${key}"\\s*:\\s*"${value}"`));
+      assert.match(bad, /PRODUCT_DEFINITION_GATE_EXECUTION: NOT_PERFORMED/);
+      assert.match(bad, /Gate Result: NOT_PERFORMED/);
+      assert.match(bad, /Document status: DRAFT/);
+      const result = evaluateImp036gUngatedProductDefinitionDraftCandidate(bad);
+      assert.equal(result.ok, false, `expected fail for meta.${key}=${value}`);
+      assert.match(result.code, codePattern, `unexpected code for meta.${key}=${value}: ${result.code}`);
+    }
+  });
+
+  it("rejects missing or malformed canonical governance-meta", () => {
+    const noMeta = validUngatedDraft.replace(/<!--\s*governance-meta[\s\S]*?-->/, "");
+    assert.equal(evaluateImp036gUngatedProductDefinitionDraftCandidate(noMeta).ok, false);
+    assert.equal(evaluateImp036gUngatedProductDefinitionDraftCandidate(noMeta).code, "IMP036G_PD_META_MISSING");
+
+    const malformed = validUngatedDraft.replace(
+      /<!--\s*governance-meta\s*[\s\S]*?-->/,
+      "<!-- governance-meta\n{ not-json\n-->",
+    );
+    assert.equal(evaluateImp036gUngatedProductDefinitionDraftCandidate(malformed).ok, false);
+    assert.equal(evaluateImp036gUngatedProductDefinitionDraftCandidate(malformed).code, "IMP036G_PD_META_MALFORMED");
+
+    const missingKey = validUngatedDraft.replace(/\n\s*"process": "PD-1",/, "");
+    const missingKeyResult = evaluateImp036gUngatedProductDefinitionDraftCandidate(missingKey);
+    assert.equal(missingKeyResult.ok, false);
+    assert.equal(missingKeyResult.code, "IMP036G_PD_META_KEY");
   });
 });
