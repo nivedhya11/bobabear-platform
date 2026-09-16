@@ -6497,8 +6497,12 @@ describe("canonical authority history compression", () => {
       true,
     );
     assert.equal(
-      isSupportedImp030GovernanceCheckpoint("GTM-R124", "STATE-R122", "imp036gProductDefinitionDraft"),
+      isSupportedImp030GovernanceCheckpoint("GTM-R125", "STATE-R123", "imp036gProductDefinitionDraft"),
       true,
+    );
+    assert.equal(
+      isSupportedImp030GovernanceCheckpoint("GTM-R124", "STATE-R122", "imp036gProductDefinitionDraft"),
+      false,
     );
     assert.equal(
       isSupportedImp030GovernanceCheckpoint("GTM-R123", "STATE-R121", "imp036fAcceptance"),
@@ -6518,8 +6522,8 @@ describe("canonical authority history compression", () => {
 
     const roadmap = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
     const state = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
-    assert.match(roadmap, /"roadmapVersion": "GTM-R124"/);
-    assert.match(state, /"stateVersion": "STATE-R122"/);
+    assert.match(roadmap, /"roadmapVersion": "GTM-R125"/);
+    assert.match(state, /"stateVersion": "STATE-R123"/);
     assert.match(state, /"acceptedThrough": "IMP-036F"/);
     assert.match(state, /"pendingAcceptance": "NONE"/);
     assert.match(state, /"currentProductSlice": "IMP-036G"/);
@@ -6543,7 +6547,9 @@ describe("canonical authority history compression", () => {
     assert.match(roadmap, /IMP036G_ACTIVATED:\s*YES/);
     assert.match(state, /IMP036G_ACTIVATED:\s*YES/);
     assert.match(roadmap, /IMP036G_PRODUCT_DEFINITION:\s*DRAFT/);
-    assert.match(roadmap, /IMP036G_PRODUCT_DEFINITION_VERSION:\s*PD-IMP-036G-DRAFT-1/);
+    assert.match(roadmap, /IMP036G_PRODUCT_DEFINITION_VERSION:\s*PD-IMP-036G-DRAFT-2/);
+    assert.match(roadmap, /IMP036G_PRODUCT_DECISIONS:\s*RESOLVED/);
+    assert.match(roadmap, /IMP036G_PRODUCT_DECISION_COUNT:\s*7/);
     assert.match(roadmap, /IMP036G_PRODUCT_DEFINITION_GATE:\s*NOT_PERFORMED/);
     assert.match(roadmap, /IMP036G_ARCHITECTURE_FIT:\s*NOT_PERFORMED/);
     assert.match(roadmap, /IMP036G_ARCHITECTURE_LOCKED:\s*NO/);
@@ -6559,7 +6565,7 @@ describe("canonical authority history compression", () => {
     const current = currentAuthorityBlob({ text: roadmap }, { text: state });
     const evidence = authorityEvidenceBlob({ text: roadmap }, { text: state });
     assert.ok(evidence.includes(hist.roadmapText.slice(0, 80)));
-    assert.ok(current.includes("GTM-R124"));
+    assert.ok(current.includes("GTM-R125"));
     assert.ok(!current.includes('"roadmapVersion": "GTM-R113"'));
     // Stale historical claim may exist in snapshot evidence without overriding CURRENT metadata.
     assert.ok(/pendingAcceptance:\s*NONE/.test(hist.stateText) || /Pending Acceptance:\s+NONE/.test(hist.stateText));
@@ -6575,7 +6581,7 @@ describe("canonical authority history compression", () => {
     const failures = findings.filter((f) => !f.ok);
     assert.equal(failures.length, 0, failures.map((f) => `[${f.code}] ${f.message}`).join("\n"));
     const messages = findings.filter((f) => f.ok).map((f) => f.message);
-    assert.ok(messages.some((m) => m.includes("IMP-036G Product Definition pre-gate DRAFT valid")));
+    assert.ok(messages.some((m) => m.includes("IMP-036G Product Definition pre-gate DRAFT-2 valid")));
     assert.ok(messages.some((m) => m.includes("CURRENT authority anti-stale checks OK")));
     assert.ok(messages.some((m) => m.includes("historical authority corpus loaded")));
   });
@@ -8240,8 +8246,8 @@ describe("IMP-036G product-slice activation checkpoints", () => {
 
 describe("IMP-036G Product Definition pre-gate draft checkpoints", () => {
   const draftBase = {
-    roadmapVersion: "GTM-R124",
-    stateVersion: "STATE-R122",
+    roadmapVersion: "GTM-R125",
+    stateVersion: "STATE-R123",
     acceptedThrough: "IMP-036F",
     currentProductSlice: "IMP-036G",
     nextProductSlice: "IMP-037",
@@ -8250,7 +8256,9 @@ describe("IMP-036G Product Definition pre-gate draft checkpoints", () => {
     imp036gFormalLifecycle: "PLANNED",
     imp036gActivated: "YES",
     productDefinition: "DRAFT",
-    productDefinitionVersion: "PD-IMP-036G-DRAFT-1",
+    productDefinitionVersion: "PD-IMP-036G-DRAFT-2",
+    productDecisions: "RESOLVED",
+    productDecisionCount: 7,
     productDefinitionGate: "NOT_PERFORMED",
     architectureFit: "NOT_PERFORMED",
     architectureLocked: "NO",
@@ -8277,7 +8285,7 @@ describe("IMP-036G Product Definition pre-gate draft checkpoints", () => {
   "status": "DRAFT",
   "authority": "PRODUCT_DEFINITION",
   "capability": "IMP-036G",
-  "productDefinitionVersion": "PD-IMP-036G-DRAFT-1",
+  "productDefinitionVersion": "PD-IMP-036G-DRAFT-2",
   "process": "PD-1",
   "verificationPolicy": "TEST-1",
   "lastReviewed": "2026-09-16",
@@ -8296,7 +8304,7 @@ describe("IMP-036G Product Definition pre-gate draft checkpoints", () => {
 # IMP-036G Product Definition (ungated draft candidate)
 
 Document status: DRAFT
-PRODUCT_DEFINITION_VERSION: PD-IMP-036G-DRAFT-1
+PRODUCT_DEFINITION_VERSION: PD-IMP-036G-DRAFT-2
 
 \`\`\`text
 PRE-GATE DRAFT: YES
@@ -8309,6 +8317,9 @@ IMP036G_IMPLEMENTATION_AUTHORIZED: NO
 IMP036G_STARTED: NO
 IMP036G_ACCEPTED: NO
 IMP037_ACTIVATED: NO
+UNRESOLVED_COUNT = 0
+PRODUCT_DECISIONS: RESOLVED
+PRODUCT_DECISION_COUNT: 7
 \`\`\`
 `;
 
@@ -8317,14 +8328,15 @@ IMP037_ACTIVATED: NO
     return text.replace(new RegExp(`("${key}"\\s*:\\s*)"[^"]*"`), `$1"${value}"`);
   }
 
-  it("passes GTM-R124 / STATE-R122 with required DRAFT Product Definition present", () => {
+  it("passes GTM-R125 / STATE-R123 with required DRAFT-2 Product Definition present", () => {
     const result = evaluateImp036gProductDefinitionDraftCheckpoint({
       ...draftBase,
       productDefinitionText: validUngatedDraft,
     });
     assert.deepEqual(result, { ok: true });
     assert.deepEqual(evaluateImp036gUngatedProductDefinitionDraftCandidate(validUngatedDraft), { ok: true });
-    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R124", "STATE-R122", "imp036gProductDefinitionDraft"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R125", "STATE-R123", "imp036gProductDefinitionDraft"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R124", "STATE-R122", "imp036gProductDefinitionDraft"), false);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R123", "STATE-R121", "imp036gProductDefinitionDraft"), false);
   });
 
@@ -8465,5 +8477,59 @@ IMP037_ACTIVATED: NO
     const missingKeyResult = evaluateImp036gUngatedProductDefinitionDraftCandidate(missingKey);
     assert.equal(missingKeyResult.ok, false);
     assert.equal(missingKeyResult.code, "IMP036G_PD_META_KEY");
+  });
+
+  it("rejects DRAFT-1 version or unresolved decision count > 0", () => {
+    const draft1 = validUngatedDraft
+      .replaceAll("PD-IMP-036G-DRAFT-2", "PD-IMP-036G-DRAFT-1")
+      .replace("UNRESOLVED_COUNT = 0", "UNRESOLVED_COUNT = 7");
+    const result = evaluateImp036gUngatedProductDefinitionDraftCandidate(draft1);
+    assert.equal(result.ok, false);
+    assert.match(result.code, /IMP036G_PD_(DRAFT_VERSION|UNRESOLVED)/);
+  });
+
+  it("rejects missing PRODUCT_DECISIONS RESOLVED markers", () => {
+    const bad = validUngatedDraft
+      .replace("PRODUCT_DECISIONS: RESOLVED\n", "")
+      .replace("PRODUCT_DECISION_COUNT: 7\n", "");
+    const result = evaluateImp036gUngatedProductDefinitionDraftCandidate(bad);
+    assert.equal(result.ok, false);
+    assert.match(result.code, /IMP036G_PD_DECISION/);
+  });
+
+  it("rejects caller-scoped-sufficient / ≤200 accepted / client-only audit / inspection-only mobile / optional Expire / accepted LWW contradictions", () => {
+    const cases = [
+      ["caller-scoped projection is accepted as V1 sufficient", /IMP036G_PD_CALLER_SCOPED_SUFFICIENT/],
+      ["accepted an explicitly disclosed ≤200-item V1 administration operating boundary", /IMP036G_PD_LIST_LIMIT_ACCEPTED/],
+      ["V1 filtering disposition is client-side of authorized list", /IMP036G_PD_CLIENT_AUDIT_FILTER/],
+      ["inspection-first fallback is acceptable on small mobile", /IMP036G_PD_MOBILE_INSPECTION_ONLY/],
+      ["When Expire is used IF V1 exposes the affordance", /IMP036G_PD_EXPIRE_OPTIONAL/],
+      ["accept current last-writer-wins behaviour for IMP-036G V1", /IMP036G_PD_LWW_ACCEPTED/],
+    ];
+    for (const [phrase, codePattern] of cases) {
+      const bad = `${validUngatedDraft}\n${phrase}\n`;
+      const result = evaluateImp036gUngatedProductDefinitionDraftCandidate(bad);
+      assert.equal(result.ok, false, `expected fail for: ${phrase}`);
+      assert.match(result.code, codePattern, `unexpected code for: ${phrase}: ${result.code}`);
+    }
+  });
+
+  it("rejects checkpoint missing Founder decision markers", () => {
+    assert.equal(
+      evaluateImp036gProductDefinitionDraftCheckpoint({
+        ...draftBase,
+        productDefinitionText: validUngatedDraft,
+        productDecisions: "UNRESOLVED",
+      }).ok,
+      false,
+    );
+    assert.equal(
+      evaluateImp036gProductDefinitionDraftCheckpoint({
+        ...draftBase,
+        productDefinitionText: validUngatedDraft,
+        productDecisionCount: 0,
+      }).ok,
+      false,
+    );
   });
 });

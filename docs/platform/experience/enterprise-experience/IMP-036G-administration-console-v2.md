@@ -4,9 +4,10 @@ Capability: IMP-036G — Administration Console V2
 Current product slice: YES (see ROADMAP/STATE; IMP036G_ACTIVATED: YES)
 Formal ROADMAP lifecycle: PLANNED
 Product Definition:
-  PD-IMP-036G-DRAFT-1
+  PD-IMP-036G-DRAFT-2
   DRAFT
   Gate NOT_PERFORMED
+  Founder product decisions: RESOLVED (7/7; 2026-09-16)
 Architecture: NOT_LOCKED
 Implementation: NOT_AUTHORIZED / NOT_STARTED
 Founder UAT required: YES
@@ -19,6 +20,11 @@ Founder UAT required: YES
 Turn accepted IMP-035 administration capabilities into a coherent enterprise administration product
 for platform and brand administrators. The existing experience is minimum viable and needs clearer
 hierarchy, access workflow safety, auditability, and separation from Customer and Operations.
+
+Canonical intended behaviour is owned by the Product Definition
+[`product/IMP-036G/product-definition.md`](../../product/IMP-036G/product-definition.md)
+(`PD-IMP-036G-DRAFT-2`). This file is supporting planning input only and must not contradict that
+Product Definition.
 
 ## Target outcomes and information architecture
 
@@ -40,26 +46,40 @@ System
 └── Operational Status
 ```
 
-- **Overview:** hierarchy/outlet summary, membership-lifecycle attention, recent access changes, and
-  relevant operational health using accepted projections.
-- **Organization:** hierarchy visualization, list/detail, create/update, and safe lifecycle controls
-  only where IMP-035 authority provides them.
-- **Memberships:** accepted invited/active/suspended/revoked/expired presentation and transitions.
+- **Overview:** truthful useful operational context covering organization/hierarchy or outlet
+  context, membership-lifecycle attention, recent access changes, and relevant safe operational
+  health — derived from authoritative existing domains (mandatory for IMP-036G; not deferred).
+- **Organization:** hierarchy visualization, list/detail, create/update with stale-write protection,
+  scalable discoverability beyond the historical 200-item projection cap, and safe lifecycle
+  controls where IMP-035 authority provides them.
+- **Memberships:** accepted invited/active/suspended/revoked/expired presentation and transitions,
+  including an authorized **Expire** affordance for eligible invited memberships; scalable
+  discoverability beyond 200.
 - **Role assignments:** accepted system roles, explicit scope, safe grant/revoke; no arbitrary
   permission editor.
-- **Effective permissions:** diagnostic principal/resource/scope/permission projection.
-- **Audit:** actor, action, resource, scope, and date filters where accepted data supports them.
+- **Effective permissions:** diagnostic that inspects authoritative effective permissions for a
+  **managed subject/principal** (not caller-only as sufficient desired state); read-only; not a
+  permission editor.
+- **Audit:** server-side actor, action, and date/time-range investigation filtering over the
+  authoritative eligible set, with scalable discoverability beyond 200; append-only.
 
 Administration stays distinct from Operations. An authorized “Open Operations” affordance is
 permitted as navigation; Admin does not become an all-purpose workforce dashboard.
 
 ## Primary workflows
 
-1. Enter an authorized administration scope and understand current organization context.
-2. Browse hierarchy and execute accepted create/update/lifecycle actions safely.
-3. Review and transition memberships through accepted states.
-4. Grant/revoke an accepted role at an explicit scope and inspect resulting effective permissions.
-5. Investigate relevant audit events and safe operational status.
+1. Enter an authorized administration scope and understand current organization context via a useful
+   Overview.
+2. Browse hierarchy (including records beyond the first 200) and execute accepted create/update/
+   lifecycle actions safely, with stale-write protection on hierarchy edits.
+3. Review and transition memberships through accepted states, including Expire for invited.
+4. Grant/revoke an accepted role at an explicit scope and inspect the managed member’s resulting
+   effective permissions.
+5. Investigate relevant audit events with server-side actor/action/date filters and safe
+   operational status.
+6. On small-mobile viewport, safely perform mandatory high-consequence V1 actions (suspend/revoke/
+   expire membership; grant/revoke role; deactivate supported organization resource) with
+   functional parity for those journeys (layout need not match desktop).
 
 ## Reused authority and implications
 
@@ -68,20 +88,35 @@ system roles, resource hierarchy, membership/assignment/permission projections, 
 operational status. The operations process may remain the host, but Admin and Operations retain
 distinct transport and experience boundaries.
 
-Expected schema/new service/new auth/new role/new permission are `NO`; no API is added by this plan.
-Every later control must map to accepted permission and scope. Hidden controls never substitute for
-server-side and direct-URL authorization. Sensitive principal/access/audit data is minimized.
+Planning posture (not Architecture Fit):
+
+```text
+NEW_SERVICE_EXPECTED: NO
+NEW_AUTH_MODEL_EXPECTED: NO
+NEW_ROLE_EXPECTED: NO
+NEW_PERMISSION_EXPECTED: NO
+NEW_RBAC_SEMANTICS_EXPECTED: NO
+NEW_API_OR_API_EXTENSION: ARCHITECTURE_FIT_TO_DETERMINE_MINIMUM_REQUIRED
+SCHEMA_OR_DATA_CONTRACT_CHANGE: ARCHITECTURE_FIT_TO_DETERMINE_MINIMUM_REQUIRED
+```
+
+Architecture Fit owns minimum API/schema mechanisms for subject-principal effective permissions,
+Overview projections if needed, server-side audit filters, scalable discoverability, and
+stale-write protection. Hidden controls never substitute for server-side and direct-URL
+authorization. Sensitive principal/access/audit data is minimized.
 
 ## Responsive, accessibility, and state requirements
 
-Desktop-first with graceful tablet/mobile fallback. Target WCAG 2.2 AA with keyboard hierarchy/data
-navigation, semantic tables or alternate lists, visible focus, accessible drawers/dialogs,
-announced validation/mutation results, and non-color lifecycle/status communication.
+Desktop may provide the richer administration layout. Small-mobile MUST support safe functional
+parity for mandatory high-consequence V1 actions listed above. Target WCAG 2.2 AA with keyboard
+hierarchy/data navigation, semantic tables or alternate lists, visible focus, accessible
+drawers/dialogs, announced validation/mutation results, and non-color lifecycle/status
+communication.
 
-Cover loading, empty hierarchy/membership/audit, errors/retry, session expiry, scope-safe
-403/non-disclosing 404, stale/concurrent lifecycle or assignment changes, pending/success/failure,
-unavailable actions, and explicit confirmation for privilege/lifecycle consequences. Use safe
-IMP-036 correlation without disclosing system secrets.
+Cover loading, empty hierarchy/membership/audit, end-of-collection / more-results states, errors/
+retry, session expiry, scope-safe 403/non-disclosing 404, stale-write conflict recovery with
+reload/review/retry, pending/success/failure, unavailable actions, and explicit confirmation for
+privilege/lifecycle consequences. Use safe IMP-036 correlation without disclosing system secrets.
 
 ## Enterprise UX comprehension (PLANNED)
 
@@ -99,8 +134,13 @@ as normal UX. This planned amendment does not redefine activation; CURRENT activ
 ## Major acceptance criteria
 
 - Administration has a distinct shell and IA with no customer presentation.
-- Hierarchy, memberships, assignments, effective permissions, and audit reflect accepted authority.
+- Hierarchy, memberships, assignments, managed-subject effective permissions, and audit reflect
+  accepted authority and Founder-resolved IMP-036G product requirements.
 - Role grants/revokes show scope and consequence and reject stale/unauthorized mutation safely.
+- Hierarchy updates detect stale writes (no silent last-writer-wins as V1 target).
+- Collections support discoverability beyond the historical 200-item cap; Audit supports server-side
+  actor/action/date filters.
+- Expire is available for eligible invited memberships.
 - No arbitrary permission editor, implicit superuser behavior, or Operations authority bleed exists.
 - Operational status is safe for the authorized audience.
 - Responsive/accessibility/recovery and exact-candidate Founder UAT checks pass.
@@ -108,9 +148,17 @@ as normal UX. This planned amendment does not redefine activation; CURRENT activ
 ## Dependencies, non-goals, and deferred decisions
 
 Depends on IMP-036A, accepted IMP-035/036, and mature enterprise primitives from IMP-036D–F.
-Non-goals: new hierarchy/RBAC/lifecycle semantics, new roles/permissions, arbitrary permission
-editing, schema/service/provider changes, workforce-dashboard consolidation, or analytics. Any proven
-transport/projection gap is deferred to architecture lock.
+Non-goals: custom roles; arbitrary permission editor/grants; new tenancy/auth model; new roles/
+permissions unless Architecture Fit discovers an unavoidable requirement and escalates; new
+deployable service unless Fit escalates; customer-account administration; secrets/provider
+credential console; commercial-management duplication; Operations workflow duplication; analytics
+programme; workforce-dashboard consolidation; hard delete of hierarchy resources; four-eyes
+approval; generic review-token/workflow engine.
+
+Founder product decisions (2026-09-16) expanded IMP-036G only enough to complete the seven
+administration outcomes above. Technical mechanism selection remains Architecture Fit.
+Product Definition Gate and Architecture Fit remain NOT_PERFORMED; architecture NOT_LOCKED;
+implementation NOT_AUTHORIZED / NOT_STARTED.
 
 Figma is not required initially; later visual refinement may not redefine hierarchy, membership,
 RBAC, audit, API, or system authority.
