@@ -21338,6 +21338,25 @@ export function evaluateImp036gApprovedProductDefinitionCandidate(text) {
       message: "Gate-passed IMP-036G Product Definition must not activate IMP-037",
     };
   }
+  // Narrow story-readiness guard: after Gate PASS, current Readiness lines must not claim the
+  // Product Definition Gate is still unperformed. Historical pre-gate prose outside Readiness
+  // lines is out of scope for this check.
+  if (/^Readiness:\s*[^\n]*Product Definition Gate NOT_PERFORMED/im.test(body)) {
+    return {
+      ok: false,
+      code: "IMP036G_PD_STALE_STORY_READINESS_GATE",
+      message:
+        "Gate-passed IMP-036G Product Definition story Readiness must not claim Product Definition Gate NOT_PERFORMED",
+    };
+  }
+  if (/^Readiness:\s*[^\n]*gates not performed/im.test(body)) {
+    return {
+      ok: false,
+      code: "IMP036G_PD_STALE_STORY_READINESS_GATES",
+      message:
+        "Gate-passed IMP-036G Product Definition story Readiness must not claim gates not performed after Gate PASS",
+    };
+  }
   return { ok: true };
 }
 

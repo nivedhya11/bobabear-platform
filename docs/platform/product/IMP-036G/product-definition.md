@@ -73,7 +73,7 @@ Supporting planning input (not this Product Definition):
 | Product owner / approval evidence | Founder / product governance human authority; Product Definition Gate **PASS** on 2026-09-16 after independent pre-gate review **PASS** of exact candidate head `1fe1737d8f05d6069b2073d9faf1142d21b91970` / tree `25412cbadf224ef709687fe067f2427784a414cc` (gate-persistence commit is a subsequent revision and is **not** the evaluated artifact) |
 | Process / verification policy | `PD-1` / `TEST-1` |
 | Canonical anchors | VISION-1; ROADMAP GTM-R126; STATE STATE-R124; ARCH-R19; DR-15; PD-1; TEST-1; PERSONA-1; GJ-1 |
-| Repository candidate | Gate-evaluated candidate: canonical path `/home/ajoshi/repos/boba-bear-platform`; branch `governance/imp036g-resolve-product-decisions`; **GATE_EVALUATED_HEAD** `1fe1737d8f05d6069b2073d9faf1142d21b91970`; **GATE_EVALUATED_TREE** `25412cbadf224ef709687fe067f2427784a414cc`. Draft-creation/base provenance (not the gate-evaluated candidate): verified base `main` merge `475d0c46598c2bf512570469354b69a3d75b7817` / tree `4ee7687b0d77027caa67d6672eadc390c7c916f8`. Gate-persistence commit SHA/tree differ from the gate-evaluated candidate. |
+| Repository candidate | Gate-evaluated candidate: canonical path `/home/ajoshi/repos/boba-bear-platform`; branch `governance/imp036g-resolve-product-decisions`; **GATE_EVALUATED_HEAD** `1fe1737d8f05d6069b2073d9faf1142d21b91970`; **GATE_EVALUATED_TREE** `25412cbadf224ef709687fe067f2427784a414cc`; **GATE_EVALUATED_WORKING_TREE_FINGERPRINT** `123f56202a347db48d4ed14e0792d418edd6ac98165af2470af938c3e84f357e` (content-sensitive; reconstructed from clean exact gate-evaluated HEAD/tree via `npm run working-tree:fingerprint`). Draft-creation/base provenance (not the gate-evaluated candidate): verified base `main` merge `475d0c46598c2bf512570469354b69a3d75b7817` / tree `4ee7687b0d77027caa67d6672eadc390c7c916f8`. CURRENT_PR_HEAD / GATE_PERSISTENCE_COMMITS differ from the gate-evaluated candidate and are **not** the artifact that received Gate PASS. |
 | Capability lifecycle / authorization | ROADMAP/STATE: `currentProductSlice = IMP-036G`; `IMP036G_ACTIVATED: YES`; formal lifecycle `PLANNED` / `NOT_AUTHORIZED` / `NOT_STARTED`; `IMP036G_PRODUCT_DEFINITION: APPROVED`; `IMP036G_PRODUCT_DEFINITION_VERSION: PD-IMP-036G-DRAFT-2`; `IMP036G_PRODUCT_DEFINITION_GATE: PASS`; `IMP036G_ARCHITECTURE_FIT: NOT_PERFORMED`; `IMP036G_ARCHITECTURE_LOCKED: NO`; `IMP036G_IMPLEMENTATION_AUTHORIZED: NO`; `IMP036G_STARTED: NO`; `IMP036G_ACCEPTED: NO`; `IMP036G_FOUNDER_UAT_REQUIRED: YES`; `nextProductSlice = IMP-037` (**IMP037_ACTIVATED: NO**) |
 | Relevant capability architecture / ADRs | Accepted IMP-035 capability [`capabilities/IMP-035-initial-administration-capabilities.md`](../../capabilities/IMP-035-initial-administration-capabilities.md); binding D-373; ARCH-G25 / ARCH-R19; Access Control + Organization domain authority; supporting plan [`IMP-036G-administration-console-v2.md`](../../experience/enterprise-experience/IMP-036G-administration-console-v2.md). **IMP-036G capability architecture: NOT_LOCKED / NOT_CREATED for Fit.** |
 | Founder UAT applicability | `FOUNDER_UAT_REQUIRED = YES` — materially changes operator-visible administration experience (ROADMAP/STATE; enterprise-experience programme rule) |
@@ -251,7 +251,7 @@ Data implications: session/capability + authoritative domain projections for Ove
 Security implications: no client-supplied authority; no privilege gain via UI
 Architecture fit / applicable invariants: D-373; ARCH-G25; NEW_API_OR_API_EXTENSION / SCHEMA_OR_DATA_CONTRACT_CHANGE = ARCHITECTURE_FIT_TO_DETERMINE_MINIMUM_REQUIRED for Overview projections if needed
 Open material decisions: NONE for Overview mandatory content (Founder-resolved §25 item 2); Fit chooses reuse vs bounded projection
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate NOT_PERFORMED; Architecture Fit NOT_PERFORMED — not because unresolved product decisions)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate PASS; Architecture Fit NOT_PERFORMED; architecture not locked; implementation not authorized)
 ```
 
 ### US-IMP-036G-002 — Browse organization hierarchy
@@ -275,7 +275,7 @@ Data implications: existing Organization resource projections; Fit determines pa
 Security implications: scope filtering server-side on every result; no forged scope; no foreign leak
 Architecture fit / applicable invariants: D-373 collections authorize-first; NEW_API_OR_API_EXTENSION = ARCHITECTURE_FIT_TO_DETERMINE_MINIMUM_REQUIRED for scalable discoverability
 Open material decisions: NONE for product requirement (Founder-resolved §25 item 6); Fit chooses cursor/offset/page size/search/indexes
-Readiness: NOT_READY_FOR_IMPLEMENTATION (gates not performed — not because unresolved product decisions)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate PASS; Architecture Fit NOT_PERFORMED; architecture not locked; implementation not authorized)
 ```
 
 ### US-IMP-036G-003 — Maintain supported organization resources
@@ -299,7 +299,7 @@ Data implications: soft active/inactive; Fit determines revision/CAS/preconditio
 Security implications: consequence confirmation for deactivate; server denies unauthorized; server enforces concurrency
 Architecture fit / applicable invariants: SCHEMA_OR_DATA_CONTRACT_CHANGE / NEW_API_OR_API_EXTENSION = ARCHITECTURE_FIT_TO_DETERMINE_MINIMUM_REQUIRED for stale-write protection
 Open material decisions: NONE for product requirement (Founder-resolved §25 item 7); Fit chooses revision/CAS/precondition mechanism
-Readiness: NOT_READY_FOR_IMPLEMENTATION (gates not performed — not because unresolved product decisions)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate PASS; Architecture Fit NOT_PERFORMED; architecture not locked; implementation not authorized)
 ```
 
 ### US-IMP-036G-004 — Manage workforce memberships
@@ -323,7 +323,7 @@ Data implications: invited|active|suspended|revoked|expired; no hard-delete; Fit
 Security implications: consequence confirmation for suspend/revoke/expire; distinguish Expire vs Revoke; no authority beyond actor
 Architecture fit / applicable invariants: NEW_API_OR_API_EXTENSION = ARCHITECTURE_FIT_TO_DETERMINE_MINIMUM_REQUIRED if membership discoverability needs transport
 Open material decisions: NONE for Expire or membership scale (Founder-resolved §25 items 5–6)
-Readiness: NOT_READY_FOR_IMPLEMENTATION (gates not performed — not because unresolved product decisions)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate PASS; Architecture Fit NOT_PERFORMED; architecture not locked; implementation not authorized)
 ```
 
 ### US-IMP-036G-005 — Manage existing role assignments safely
@@ -347,7 +347,7 @@ Data implications: existing assignment records; revoke soft semantics as CURRENT
 Security implications: self-elevation deny; ceiling enforce; consequence confirmation
 Architecture fit / applicable invariants: NEW_ROLE/PERMISSION/RBAC_SEMANTICS_EXPECTED: NO
 Open material decisions: NONE for core ceiling semantics (CURRENT_SUPPORTED)
-Readiness: NOT_READY_FOR_IMPLEMENTATION (gates not performed)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate PASS; Architecture Fit NOT_PERFORMED; architecture not locked; implementation not authorized)
 ```
 
 ### US-IMP-036G-006 — Inspect effective permissions
@@ -371,7 +371,7 @@ Data implications: read-only projection; no persistence mutation from diagnostic
 Security implications: must not become covert privilege escalation or permission editor; caller authz enforced; no foreign leak; caller must not be mislabeled as member
 Architecture fit / applicable invariants: NEW_API_OR_API_EXTENSION = ARCHITECTURE_FIT_TO_DETERMINE_MINIMUM_REQUIRED (extend endpoint / new Admin projection / other); EXPECTED_NEW_API: NO is no longer a hard constraint for this gap
 Open material decisions: NONE for product requirement (Founder-resolved §25 item 1); Fit chooses transport
-Readiness: NOT_READY_FOR_IMPLEMENTATION (gates not performed — not because unresolved product decisions)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate PASS; Architecture Fit NOT_PERFORMED; architecture not locked; implementation not authorized)
 ```
 
 ### US-IMP-036G-007 — Investigate access audit history
@@ -395,7 +395,7 @@ Data implications: append-only read; no new audit store expected; Architecture F
 Security implications: minimize sensitive disclosure; authz/scope preserved on every filtered result
 Architecture fit / applicable invariants: Product Definition decides that server-side filtering and scalable discoverability are mandatory; Architecture Fit chooses the minimum technical mechanism, query contract, pagination/filter design, and indexes if required (NEW_API_OR_API_EXTENSION = ARCHITECTURE_FIT_TO_DETERMINE_MINIMUM_REQUIRED). The Product Definition MUST NOT invent endpoint shapes, SQL, index design, page-size constants, or implementation mechanics.
 Open material decisions: NONE for product requirement (Founder-resolved §25 items 3 and 6); Fit chooses query contract/indexes
-Readiness: NOT_READY_FOR_IMPLEMENTATION (gates not performed — not because unresolved product decisions)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate PASS; Architecture Fit NOT_PERFORMED; architecture not locked; implementation not authorized)
 ```
 
 ### US-IMP-036G-008 — Inspect safe operational status and hand off to Operations
@@ -419,7 +419,7 @@ Data implications: reuse existing Ops projection; no new status store
 Security implications: no secrets; no privilege broaden via status UI
 Architecture fit / applicable invariants: Admin≠Ops boundary (D-373 vs D-372); NEW_SERVICE_EXPECTED: NO
 Open material decisions: NONE material if reuse Ops endpoint + navigation; Fit confirms composition (may also feed Overview safe operational health per §25 item 2)
-Readiness: NOT_READY_FOR_IMPLEMENTATION (gates not performed)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate PASS; Architecture Fit NOT_PERFORMED; architecture not locked; implementation not authorized)
 ```
 
 ---
@@ -1424,8 +1424,11 @@ GitHub review ID, PR number, or CI run ID is recorded for this gate persistence 
 ```text
 GATE_EVALUATED_HEAD = 1fe1737d8f05d6069b2073d9faf1142d21b91970
 GATE_EVALUATED_TREE = 25412cbadf224ef709687fe067f2427784a414cc
+GATE_EVALUATED_WORKING_TREE_FINGERPRINT = 123f56202a347db48d4ed14e0792d418edd6ac98165af2470af938c3e84f357e
 GATE_PERSISTENCE_COMMIT = subsequent commit after this gate-pass persistence revision
   (this persistence revision is NOT the artifact evaluated by the gate)
+CURRENT_PR_HEAD / GATE_PERSISTENCE_COMMITS = later persistence/correction commits on the PR branch;
+  they are NOT the candidate that received Product Definition Gate PASS
 Gate date: 2026-09-16
 Product approval authority: Founder / product governance human authority
 Independent pre-gate review: PASS
@@ -1481,7 +1484,9 @@ IMP037_ACTIVATED: NO
 CANONICAL_ANCHORS = VISION-1; GTM-R126; STATE-R124; ARCH-R19; DR-15; PD-1; TEST-1; PERSONA-1; GJ-1
 GATE_EVALUATED_HEAD = 1fe1737d8f05d6069b2073d9faf1142d21b91970
 GATE_EVALUATED_TREE = 25412cbadf224ef709687fe067f2427784a414cc
+GATE_EVALUATED_WORKING_TREE_FINGERPRINT = 123f56202a347db48d4ed14e0792d418edd6ac98165af2470af938c3e84f357e
 GATE_PERSISTENCE_COMMIT = subsequent commit after this gate-pass persistence revision
+CURRENT_PR_HEAD / GATE_PERSISTENCE_COMMITS = later persistence/correction commits; not the gate-evaluated candidate
 REPOSITORY_CANDIDATE_DRAFT_CREATION_BASE_MAIN_MERGE = 475d0c46598c2bf512570469354b69a3d75b7817
 REPOSITORY_CANDIDATE_DRAFT_CREATION_BASE_TREE = 4ee7687b0d77027caa67d6672eadc390c7c916f8
 BRANCH = governance/imp036g-resolve-product-decisions

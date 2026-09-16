@@ -8613,6 +8613,7 @@ IMP036G_ACCEPTED: NO
 IMP037_ACTIVATED: NO
 GATE_EVALUATED_HEAD = 1fe1737d8f05d6069b2073d9faf1142d21b91970
 GATE_EVALUATED_TREE = 25412cbadf224ef709687fe067f2427784a414cc
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate PASS; Architecture Fit NOT_PERFORMED; architecture not locked; implementation not authorized)
 `;
 
   it("passes GTM-R126 / STATE-R124 with required APPROVED Product Definition present", () => {
@@ -8624,6 +8625,29 @@ GATE_EVALUATED_TREE = 25412cbadf224ef709687fe067f2427784a414cc
     assert.deepEqual(evaluateImp036gApprovedProductDefinitionCandidate(validApproved), { ok: true });
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R126", "STATE-R124", "imp036gProductDefinitionGatePass"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R125", "STATE-R123", "imp036gProductDefinitionGatePass"), false);
+  });
+
+  it("passes when story readiness records Product Definition Gate PASS with Architecture Fit pending", () => {
+    const result = evaluateImp036gApprovedProductDefinitionCandidate(validApproved);
+    assert.deepEqual(result, { ok: true });
+    assert.match(
+      validApproved,
+      /Readiness:\s*NOT_READY_FOR_IMPLEMENTATION\s*\(Product Definition Gate PASS; Architecture Fit NOT_PERFORMED/,
+    );
+  });
+
+  it("rejects story readiness that claims Product Definition Gate NOT_PERFORMED", () => {
+    const bad = `${validApproved}\nReadiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate NOT_PERFORMED; Architecture Fit NOT_PERFORMED)\n`;
+    const result = evaluateImp036gApprovedProductDefinitionCandidate(bad);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036G_PD_STALE_STORY_READINESS_GATE");
+  });
+
+  it("rejects story readiness that uses stale gates not performed wording", () => {
+    const bad = `${validApproved}\nReadiness: NOT_READY_FOR_IMPLEMENTATION (gates not performed — not because unresolved product decisions)\n`;
+    const result = evaluateImp036gApprovedProductDefinitionCandidate(bad);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036G_PD_STALE_STORY_READINESS_GATES");
   });
 
   it("rejects approved candidate that retains Gate Result NOT_PERFORMED", () => {
