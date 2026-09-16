@@ -7932,8 +7932,107 @@ export function evaluateImp036gProductDefinitionDraftCheckpoint(checkpoint) {
 }
 
 /**
+ * Required canonical governance-meta values for an ungated IMP-036G Product Definition draft.
+ * ROADMAP/STATE remain lifecycle authority; Product Definition metadata must stay consistent.
+ */
+const IMP036G_UNGATED_PD_GOVERNANCE_META_REQUIRED = Object.freeze({
+  status: "DRAFT",
+  authority: "PRODUCT_DEFINITION",
+  capability: "IMP-036G",
+  productDefinitionVersion: "PD-IMP-036G-DRAFT-1",
+  process: "PD-1",
+  verificationPolicy: "TEST-1",
+  productDefinitionGateExecution: "NOT_PERFORMED",
+  productDefinitionGateResult: "NOT_PERFORMED",
+  architectureFitExecution: "NOT_PERFORMED",
+  architectureFit: "NOT_PERFORMED",
+  architectureLocked: "NO",
+  implementationAuthorized: "NO",
+  implementationStarted: "NO",
+  impAccepted: "NO",
+  imp037Activated: "NO",
+});
+
+/**
+ * Parse and validate ungated IMP-036G Product Definition governance-meta JSON.
+ * Prefer explicit JSON over prose-only markers so canonical camelCase fields cannot drift.
+ * @param {string} text
+ * @returns {{ ok: true, meta: Record<string, unknown> } | { ok: false, code: string, message: string }}
+ */
+export function evaluateImp036gUngatedProductDefinitionGovernanceMeta(text) {
+  const body = String(text ?? "");
+  const metaMatch = body.match(/<!--\s*governance-meta\s*([\s\S]*?)-->/);
+  if (!metaMatch) {
+    return {
+      ok: false,
+      code: "IMP036G_PD_META_MISSING",
+      message: "Ungated IMP-036G Product Definition candidate must include a parseable governance-meta JSON block",
+    };
+  }
+  let meta;
+  try {
+    meta = JSON.parse(metaMatch[1]);
+  } catch {
+    return {
+      ok: false,
+      code: "IMP036G_PD_META_MALFORMED",
+      message: "Ungated IMP-036G Product Definition candidate governance-meta JSON is malformed",
+    };
+  }
+  if (!meta || typeof meta !== "object" || Array.isArray(meta)) {
+    return {
+      ok: false,
+      code: "IMP036G_PD_META_MALFORMED",
+      message: "Ungated IMP-036G Product Definition candidate governance-meta must be a JSON object",
+    };
+  }
+  for (const [key, expected] of Object.entries(IMP036G_UNGATED_PD_GOVERNANCE_META_REQUIRED)) {
+    if (!(key in meta)) {
+      return {
+        ok: false,
+        code: "IMP036G_PD_META_KEY",
+        message: `Ungated IMP-036G Product Definition candidate governance-meta missing required key ${key}`,
+      };
+    }
+    if (meta[key] !== expected) {
+      const prematureCodes = {
+        status: "IMP036G_PD_DRAFT_APPROVED_STATUS",
+        productDefinitionGateExecution: "IMP036G_PD_PREMATURE_GATE_PASS",
+        productDefinitionGateResult: "IMP036G_PD_PREMATURE_GATE_PASS",
+        architectureFitExecution: "IMP036G_PD_PREMATURE_ARCHITECTURE",
+        architectureFit: "IMP036G_PD_PREMATURE_ARCHITECTURE",
+        architectureLocked: "IMP036G_PD_PREMATURE_ARCHITECTURE",
+        implementationAuthorized: "IMP036G_PD_PREMATURE_IMPLEMENTATION",
+        implementationStarted: "IMP036G_PD_PREMATURE_IMPLEMENTATION",
+        impAccepted: "IMP036G_PD_PREMATURE_ACCEPTANCE",
+        imp037Activated: "IMP036G_PD_IMP037_ACTIVATION",
+      };
+      const code =
+        prematureCodes[key] ??
+        (key === "productDefinitionVersion" ? "IMP036G_PD_DRAFT_VERSION" : "IMP036G_PD_META_VALUE");
+      return {
+        ok: false,
+        code,
+        message: `Ungated IMP-036G Product Definition candidate governance-meta.${key} must be ${JSON.stringify(expected)} (got ${JSON.stringify(meta[key])})`,
+      };
+    }
+  }
+  if ("lastReviewed" in meta) {
+    if (typeof meta.lastReviewed !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(meta.lastReviewed)) {
+      return {
+        ok: false,
+        code: "IMP036G_PD_META_LAST_REVIEWED",
+        message: 'Ungated IMP-036G Product Definition candidate governance-meta.lastReviewed must be YYYY-MM-DD when present',
+      };
+    }
+  }
+  return { ok: true, meta };
+}
+
+/**
  * Mechanical validation for an ungated IMP-036G Product Definition draft candidate.
  * Distinguishes DRAFT from APPROVED and NOT_PERFORMED from PASS.
+ * Validates canonical governance-meta JSON explicitly (not prose-only).
  * Does not semantically evaluate the full Product Definition.
  * @param {string} text
  */
@@ -7942,8 +8041,10 @@ export function evaluateImp036gUngatedProductDefinitionDraftCandidate(text) {
     return { ok: false, code: "IMP036G_PD_DRAFT_EMPTY", message: "Present IMP-036G Product Definition draft must not be empty" };
   }
   const body = String(text);
+  const metaResult = evaluateImp036gUngatedProductDefinitionGovernanceMeta(body);
+  if (!metaResult.ok) return metaResult;
+
   const hasDraftStatus =
-    /"status"\s*:\s*"DRAFT"/i.test(body) ||
     /Document status\s*[:=]\s*DRAFT/i.test(body) ||
     /Product Definition version \/ document status\s*\|\s*[^|]*\bDRAFT\b/i.test(body) ||
     /\bdocument status\b[^\n]*\bDRAFT\b/i.test(body) ||
@@ -7952,7 +8053,6 @@ export function evaluateImp036gUngatedProductDefinitionDraftCandidate(text) {
     return { ok: false, code: "IMP036G_PD_DRAFT_STATUS", message: "Ungated IMP-036G Product Definition candidate must record Document status = DRAFT" };
   }
   if (
-    /"status"\s*:\s*"APPROVED"/i.test(body) ||
     /Document status\s*[:=]\s*APPROVED/i.test(body) ||
     /\bstatus\b\s*[:=]\s*APPROVED\b/i.test(body)
   ) {
@@ -8005,8 +8105,6 @@ export function evaluateImp036gUngatedProductDefinitionDraftCandidate(text) {
   }
   if (
     /IMP036G_ARCHITECTURE_LOCKED\s*[:=]\s*YES/.test(body) ||
-    /architectureLocked\s*[:=]\s*"YES"/i.test(body) ||
-    /"architectureLocked"\s*:\s*"YES"/i.test(body) ||
     /ARCHITECTURE_FIT_EXECUTION\s*[:=]\s*PERFORMED/.test(body) ||
     /ARCHITECTURE_FIT_RESULT\s*[:=]\s*PASS\b/.test(body) ||
     /architecture fit\s*[:=]\s*(performed|pass|locked)/i.test(body) ||
@@ -8021,8 +8119,6 @@ export function evaluateImp036gUngatedProductDefinitionDraftCandidate(text) {
   if (
     /IMP036G_IMPLEMENTATION_AUTHORIZED\s*[:=]\s*YES/.test(body) ||
     /IMP036G_STARTED\s*[:=]\s*YES/.test(body) ||
-    /"implementationAuthorized"\s*:\s*"YES"/i.test(body) ||
-    /"implementationStarted"\s*:\s*"YES"/i.test(body) ||
     /implementation\s+authorized\s*[:=]\s*YES/i.test(body) ||
     /implementation\s+started\s*[:=]\s*YES/i.test(body)
   ) {
@@ -8032,14 +8128,14 @@ export function evaluateImp036gUngatedProductDefinitionDraftCandidate(text) {
       message: "Ungated IMP-036G Product Definition candidate must not authorize or start implementation (PRODUCT_DEFINITION_EXISTS != IMPLEMENTATION_AUTHORIZED)",
     };
   }
-  if (/IMP036G_ACCEPTED\s*[:=]\s*YES/.test(body) || /IMP-036G\s*[:=]\s*COMPLETE_AND_ACCEPTED/.test(body) || /"impAccepted"\s*:\s*"YES"/i.test(body)) {
+  if (/IMP036G_ACCEPTED\s*[:=]\s*YES/.test(body) || /IMP-036G\s*[:=]\s*COMPLETE_AND_ACCEPTED/.test(body)) {
     return {
       ok: false,
       code: "IMP036G_PD_PREMATURE_ACCEPTANCE",
       message: "Ungated IMP-036G Product Definition candidate must not claim IMP acceptance",
     };
   }
-  if (/IMP037_ACTIVATED\s*[:=]\s*YES/.test(body) || /IMP-037\s*[:=]\s*ACTIVATED/.test(body) || /"imp037Activated"\s*:\s*"YES"/i.test(body)) {
+  if (/IMP037_ACTIVATED\s*[:=]\s*YES/.test(body) || /IMP-037\s*[:=]\s*ACTIVATED/.test(body)) {
     return {
       ok: false,
       code: "IMP036G_PD_IMP037_ACTIVATION",

@@ -8278,7 +8278,12 @@ describe("IMP-036G Product Definition pre-gate draft checkpoints", () => {
   "authority": "PRODUCT_DEFINITION",
   "capability": "IMP-036G",
   "productDefinitionVersion": "PD-IMP-036G-DRAFT-1",
+  "process": "PD-1",
+  "verificationPolicy": "TEST-1",
+  "lastReviewed": "2026-09-16",
   "productDefinitionGateExecution": "NOT_PERFORMED",
+  "productDefinitionGateResult": "NOT_PERFORMED",
+  "architectureFitExecution": "NOT_PERFORMED",
   "architectureFit": "NOT_PERFORMED",
   "architectureLocked": "NO",
   "implementationAuthorized": "NO",
@@ -8306,6 +8311,11 @@ IMP036G_ACCEPTED: NO
 IMP037_ACTIVATED: NO
 \`\`\`
 `;
+
+  /** Mutate only a governance-meta JSON string value; leave prose markers unchanged. */
+  function mutateMetaField(text, key, value) {
+    return text.replace(new RegExp(`("${key}"\\s*:\\s*)"[^"]*"`), `$1"${value}"`);
+  }
 
   it("passes GTM-R124 / STATE-R122 with required DRAFT Product Definition present", () => {
     const result = evaluateImp036gProductDefinitionDraftCheckpoint({
@@ -8412,5 +8422,48 @@ IMP037_ACTIVATED: NO
       }).ok,
       false,
     );
+  });
+
+  it("rejects canonical governance-meta-only mutations while prose remains valid", () => {
+    const cases = [
+      ["productDefinitionGateExecution", "PERFORMED", /IMP036G_PD_PREMATURE_GATE_PASS/],
+      ["productDefinitionGateResult", "PASS", /IMP036G_PD_PREMATURE_GATE_PASS/],
+      ["architectureFitExecution", "PERFORMED", /IMP036G_PD_PREMATURE_ARCHITECTURE/],
+      ["architectureFit", "PASS", /IMP036G_PD_PREMATURE_ARCHITECTURE/],
+      ["architectureLocked", "YES", /IMP036G_PD_PREMATURE_ARCHITECTURE/],
+      ["implementationAuthorized", "YES", /IMP036G_PD_PREMATURE_IMPLEMENTATION/],
+      ["implementationStarted", "YES", /IMP036G_PD_PREMATURE_IMPLEMENTATION/],
+      ["impAccepted", "YES", /IMP036G_PD_PREMATURE_ACCEPTANCE/],
+      ["imp037Activated", "YES", /IMP036G_PD_IMP037_ACTIVATION/],
+      ["status", "APPROVED", /IMP036G_PD_DRAFT_APPROVED_STATUS/],
+    ];
+    for (const [key, value, codePattern] of cases) {
+      const bad = mutateMetaField(validUngatedDraft, key, value);
+      assert.match(bad, new RegExp(`"${key}"\\s*:\\s*"${value}"`));
+      assert.match(bad, /PRODUCT_DEFINITION_GATE_EXECUTION: NOT_PERFORMED/);
+      assert.match(bad, /Gate Result: NOT_PERFORMED/);
+      assert.match(bad, /Document status: DRAFT/);
+      const result = evaluateImp036gUngatedProductDefinitionDraftCandidate(bad);
+      assert.equal(result.ok, false, `expected fail for meta.${key}=${value}`);
+      assert.match(result.code, codePattern, `unexpected code for meta.${key}=${value}: ${result.code}`);
+    }
+  });
+
+  it("rejects missing or malformed canonical governance-meta", () => {
+    const noMeta = validUngatedDraft.replace(/<!--\s*governance-meta[\s\S]*?-->/, "");
+    assert.equal(evaluateImp036gUngatedProductDefinitionDraftCandidate(noMeta).ok, false);
+    assert.equal(evaluateImp036gUngatedProductDefinitionDraftCandidate(noMeta).code, "IMP036G_PD_META_MISSING");
+
+    const malformed = validUngatedDraft.replace(
+      /<!--\s*governance-meta\s*[\s\S]*?-->/,
+      "<!-- governance-meta\n{ not-json\n-->",
+    );
+    assert.equal(evaluateImp036gUngatedProductDefinitionDraftCandidate(malformed).ok, false);
+    assert.equal(evaluateImp036gUngatedProductDefinitionDraftCandidate(malformed).code, "IMP036G_PD_META_MALFORMED");
+
+    const missingKey = validUngatedDraft.replace(/\n\s*"process": "PD-1",/, "");
+    const missingKeyResult = evaluateImp036gUngatedProductDefinitionDraftCandidate(missingKey);
+    assert.equal(missingKeyResult.ok, false);
+    assert.equal(missingKeyResult.code, "IMP036G_PD_META_KEY");
   });
 });

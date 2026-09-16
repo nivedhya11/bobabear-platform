@@ -140,9 +140,11 @@ enterprise Admin job of “understand my scope → navigate hierarchy → manage
 | Soft lifecycle active/inactive; no DELETE | `CURRENT_SUPPORTED` | Soft lifecycle only; hard DELETE `NOT_SUPPORTED` |
 | Membership transitions | `CURRENT_SUPPORTED` | `invited→active\|revoked\|expired`; `active→suspended\|revoked`; `suspended→active\|revoked`; `revoked`/`expired` terminal |
 | System roles; delegation ceiling; self-elevation deny | `CURRENT_SUPPORTED` | System roles only; grant limited by actor ceiling; self-elevation denied |
+| Admin collection projection cap | `CURRENT_SUPPORTED` with limits | Authorized Admin list projections for **brands, organizations, territories, legal entities, outlets, memberships, and audit events** apply `LIST_LIMIT = 200` via authorize-first filtering (`filterByPermission`). **No** general server pagination/search/filter transport verified for these collections. Role-assignment list is per-membership (not this global cap). See §25 item 6 |
+| Organization resource update concurrency | `CURRENT_SUPPORTED` | Update-by-ID only; **no** revision/CAS/expected-timestamp conflict contract (`NOT_FOUND`). Concurrent edits may be last-writer-wins. See §25 item 7 |
 | Admin UI | `CURRENT_SUPPORTED` PARTIAL | Hub links; brands list only; memberships list + detail transitions/grant/revoke; audit list; **NO** full hierarchy CRUD UI; **NO** create-membership UI; **NO** admin operational-status surface |
 | Effective permissions GET | `CURRENT_SUPPORTED` with VERIFIED gap | Projects **calling actor** permissions at resource — **not** arbitrary subject principal (gap vs journey wording “inspect resulting effective permissions” for a managed member) |
-| Audit list | `CURRENT_SUPPORTED` with limits | Authorized list capped at 200; event fields include actor/action/date; **NO** HTTP query filters for actor/action/date (`NOT_FOUND`) |
+| Audit list | `CURRENT_SUPPORTED` with limits | Authorized list capped at 200 (same `LIST_LIMIT` mechanism); event fields include actor/action/date; **NO** HTTP query filters for actor/action/date (`NOT_FOUND`) |
 | Operational status | `CURRENT_SUPPORTED` Ops-side only | Only `GET /api/operations/v1/operational-status` (`order.read`); Admin must not become Ops dashboard; Open Operations navigation OK if separately authorized |
 | Coherent Admin IA / consequence UX | `PLANNED_IMP036G` | Overview / Organization / Workforce / Access / Audit / System Operational Status as product IA (jobs/outcomes, not React lock) |
 
@@ -256,18 +258,18 @@ so that I can locate the correct resource scope for administration work.
 
 Journey / activity: JOURNEY-G-ADMIN-CONTEXT / JOURNEY-G-ADMIN-INVESTIGATION — hierarchy browse
 Preconditions: Authorized resource read permissions for visible types
-Acceptance scenarios: AC-IMP-036G-002-01 … 002-09
-Business rules: BR-IMP-036G-003, BR-IMP-036G-004
-UX states: loading; empty; ready list/detail; forbidden; not-found/stale; error/retry
-Permission / resource context: brand.read / organization.read / territory.read / legal_entity.read / outlet.read (existing)
-Error / recovery: 403/non-disclosing 404; retry on network; revisit reload
+Acceptance scenarios: AC-IMP-036G-002-01 … 002-10
+Business rules: BR-IMP-036G-003, BR-IMP-036G-004, BR-IMP-036G-026
+UX states: loading; empty; ready list/detail; capped/incomplete disclosure; forbidden; not-found/stale; error/retry
+Permission / resource context: brand.read / organization.read / territory.read / legal_entity.read / outlet.read (existing); LIST_LIMIT=200 authorize-first projections
+Error / recovery: 403/non-disclosing 404; retry on network; revisit reload; truthful cap disclosure (no invented pagination/search)
 Dependencies: IMP-035 resource list/get APIs (CURRENT_SUPPORTED)
-Explicit non-goals: inventing hierarchy levels; customer presentation of hierarchy
-Data implications: existing Organization resource projections
+Explicit non-goals: inventing hierarchy levels; customer presentation of hierarchy; unverified pagination/search/filter transport
+Data implications: existing Organization resource projections; capped at 200 authorized items per collection type
 Security implications: scope filtering server-side; no forged scope
-Architecture fit / applicable invariants: D-373 collections authorize-first
-Open material decisions: NONE for browse itself
-Readiness: NOT_READY_FOR_IMPLEMENTATION (gates not performed)
+Architecture fit / applicable invariants: D-373 collections authorize-first; pagination beyond 200 conflicts EXPECTED_NEW_API: NO if demanded
+Open material decisions: §25 item 6 — accept ≤200 V1 operating boundary vs require discoverability beyond 200
+Readiness: NOT_READY_FOR_IMPLEMENTATION (gates not performed; §25 item 6)
 ```
 
 ### US-IMP-036G-003 — Maintain supported organization resources
@@ -281,17 +283,17 @@ so that hierarchy remains accurate without hard-delete risk.
 Journey / activity: JOURNEY-G-ACCESS-MANAGEMENT — maintain org resources
 Preconditions: Authorized manage permissions for resource type/scope
 Acceptance scenarios: AC-IMP-036G-003-01 … 003-10
-Business rules: BR-IMP-036G-005, BR-IMP-036G-006, BR-IMP-036G-007, BR-IMP-036G-021
-UX states: form ready; validation failure; pending mutation; success; confirmation for deactivate; forbidden; conflict/stale
-Permission / resource context: existing create/update commands only; soft lifecycle
-Error / recovery: validation messages; cancel confirmation; retry; no silent success
+Business rules: BR-IMP-036G-005, BR-IMP-036G-006, BR-IMP-036G-007, BR-IMP-036G-021, BR-IMP-036G-027
+UX states: form ready; validation failure; pending mutation; success; confirmation for deactivate; forbidden; reload/review after concurrent edit (per §25 item 7)
+Permission / resource context: existing create/update commands only; soft lifecycle; update-by-ID without revision/CAS
+Error / recovery: validation messages; cancel confirmation; retry; no silent success; no claimed 409/revision conflict unless authority exists
 Dependencies: IMP-035 resource create/update (CURRENT_SUPPORTED); UI today PARTIAL (brands list only)
-Explicit non-goals: DELETE/hard-delete; new resource types; commercial resource authoring here
-Data implications: soft active/inactive; no schema invention expected
+Explicit non-goals: DELETE/hard-delete; new resource types; commercial resource authoring here; inventing optimistic locking
+Data implications: soft active/inactive; no schema invention expected; no revision field promised
 Security implications: consequence confirmation for deactivate; server denies unauthorized
-Architecture fit / applicable invariants: EXPECTED_NEW_API/SCHEMA: NO
-Open material decisions: NONE material beyond Fit confirmation of UI mapping
-Readiness: NOT_READY_FOR_IMPLEMENTATION
+Architecture fit / applicable invariants: EXPECTED_NEW_API/SCHEMA: NO; stale-write protection would conflict that posture if selected
+Open material decisions: §25 item 7 — accept last-writer-wins V1 vs require stale-write protection
+Readiness: NOT_READY_FOR_IMPLEMENTATION (§25 item 7)
 ```
 
 ### US-IMP-036G-004 — Manage workforce memberships
@@ -305,17 +307,17 @@ so that access governance is safe and understandable.
 Journey / activity: JOURNEY-G-ACCESS-MANAGEMENT — memberships (protects GJ-PERMITTED-OUTLET-ACCESS)
 Preconditions: access.membership.read / manage as applicable; target identity exists; scope authorized
 Acceptance scenarios: AC-IMP-036G-004-01 … 004-12
-Business rules: BR-IMP-036G-008, BR-IMP-036G-009, BR-IMP-036G-010, BR-IMP-036G-021
-UX states: list/detail; create form; transition confirmation; illegal transition unavailable/rejected; terminal states
-Permission / resource context: existing membership APIs; create UI currently missing (PLANNED_IMP036G)
-Error / recovery: illegal transition reject; self-create deny if existing; stale membership; cancel
+Business rules: BR-IMP-036G-008, BR-IMP-036G-009, BR-IMP-036G-010, BR-IMP-036G-021, BR-IMP-036G-026
+UX states: list/detail; create form; transition confirmation; illegal transition unavailable/rejected; terminal states; capped/incomplete disclosure
+Permission / resource context: existing membership APIs (LIST_LIMIT=200); create UI currently missing (PLANNED_IMP036G)
+Error / recovery: illegal transition reject; self-create deny if existing; stale membership; cancel; truthful cap disclosure
 Dependencies: IMP-035 membership create/list/get/transition; GJ-PERMITTED-OUTLET-ACCESS
-Explicit non-goals: invitation delivery system; customer-account admin; inventing statuses
-Data implications: invited|active|suspended|revoked|expired; no hard-delete
+Explicit non-goals: invitation delivery system; customer-account admin; inventing statuses; unverified membership pagination/search
+Data implications: invited|active|suspended|revoked|expired; no hard-delete; membership list capped at 200
 Security implications: consequence confirmation for suspend/revoke; no authority beyond actor
-Architecture fit / applicable invariants: EXPECTED_NEW_*: NO
-Open material decisions: Whether V1 exposes invited→expired affordance (§25 item 5)
-Readiness: NOT_READY_FOR_IMPLEMENTATION (§25 item 5)
+Architecture fit / applicable invariants: EXPECTED_NEW_*: NO; discoverability beyond 200 conflicts EXPECTED_NEW_API: NO if demanded
+Open material decisions: Whether V1 exposes invited→expired affordance (§25 item 5); collection scale beyond 200 (§25 item 6)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (§25 items 5–6)
 ```
 
 ### US-IMP-036G-005 — Manage existing role assignments safely
@@ -492,35 +494,38 @@ AC-IMP-036G-002-01 — Browse Brands in scope
 Story: US-IMP-036G-002
 Given brand.read in scope
 When the person opens Organization → Brands
-Then authorized brands list with human-readable names/codes/status
+Then authorized brands within the CURRENT LIST_LIMIT=200 projection list with human-readable names/codes/status
+And the UI does not claim the list is exhaustive of all authorized brands beyond that cap
 Mandatory in acceptance slice: YES
 
 AC-IMP-036G-002-02 — Browse Organizations in hierarchy context
 Story: US-IMP-036G-002
 Given organization.read
 When Organizations are browsed
-Then items appear with parent Brand context understandable without opaque-ID-only UX as the primary label
+Then items within the CURRENT capped authorized projection appear with parent Brand context understandable without opaque-ID-only UX as the primary label
+And the UI does not claim complete discoverability of every authorized organization beyond LIST_LIMIT=200
 Mandatory in acceptance slice: YES
 
 AC-IMP-036G-002-03 — Browse Territories
 Story: US-IMP-036G-002
 Given territory.read
 When Territories are browsed
-Then authorized territories are listed with Brand context
+Then authorized territories within LIST_LIMIT=200 are listed with Brand context
+And no unverified pagination/search is presented as available
 Mandatory in acceptance slice: YES
 
 AC-IMP-036G-002-04 — Browse Legal Entities
 Story: US-IMP-036G-002
 Given legal_entity.read
 When Legal Entities are browsed
-Then authorized legal entities are listed with Brand/Organization context
+Then authorized legal entities within LIST_LIMIT=200 are listed with Brand/Organization context
 Mandatory in acceptance slice: YES
 
 AC-IMP-036G-002-05 — Browse Outlets
 Story: US-IMP-036G-002
 Given outlet.read
 When Outlets are browsed
-Then authorized outlets are listed with Brand/Organization/Territory context
+Then authorized outlets within LIST_LIMIT=200 are listed with Brand/Organization/Territory context
 Mandatory in acceptance slice: YES
 
 AC-IMP-036G-002-06 — Empty hierarchy for type
@@ -548,7 +553,17 @@ AC-IMP-036G-002-09 — Reload preserves truthful browse
 Story: US-IMP-036G-002
 Given a hierarchy list was loaded
 When the person reloads
-Then the list re-fetches authorized CURRENT projections
+Then the list re-fetches authorized CURRENT projections (still subject to LIST_LIMIT=200)
+Mandatory in acceptance slice: YES
+
+AC-IMP-036G-002-10 — Hierarchy/membership collection cap disclosure
+Story: US-IMP-036G-002
+Given the CURRENT collection projection reaches its 200-item cap for brands, organizations, territories, legal entities, outlets, or memberships
+When the Admin list is displayed
+Then the UI truthfully discloses that the result is capped / may be incomplete
+And it does not imply the list contains all authorized resources
+And no unverified pagination/search capability is presented
+And whether ≤200 is acceptable for V1 remains §25 item 6 (unresolved)
 Mandatory in acceptance slice: YES
 ```
 
@@ -560,7 +575,7 @@ Story: US-IMP-036G-003
 Given brand manage authority
 When the person creates a Brand with valid fields
 Then the Brand is created via existing Admin API
-And appears in subsequent authorized browse
+And appears in subsequent authorized browse (subject to LIST_LIMIT=200)
 Mandatory in acceptance slice: YES
 
 AC-IMP-036G-003-02 — Update supported organization resource
@@ -618,12 +633,14 @@ When mutation is attempted
 Then denial occurs without disclosing unauthorized resource details beyond safe not-found/forbidden patterns
 Mandatory in acceptance slice: YES
 
-AC-IMP-036G-003-09 — Concurrent/stale update conflict handling
+AC-IMP-036G-003-09 — Concurrent-edit product-decision boundary
 Story: US-IMP-036G-003
-Given the resource changed since the form was loaded (where CURRENT conflict semantics exist)
-When save is attempted
-Then the person receives recoverable conflict/stale feedback rather than silent overwrite beyond existing authority
-Mandatory in acceptance slice: YES
+Given the resource changed after the form was loaded
+When the administrator submits an update
+Then the product must follow the resolved V1 concurrency policy from §25 item 7
+And it must not claim stale-write protection / recoverable 409/revision conflict behaviour that the CURRENT update-by-ID server does not provide
+And until §25 item 7 is resolved, UX may guide reload/review without inventing CAS semantics
+Mandatory in acceptance slice: YES (path disposition depends on §25 item 7)
 
 AC-IMP-036G-003-10 — Success feedback after maintain
 Story: US-IMP-036G-003
@@ -641,7 +658,8 @@ AC-IMP-036G-004-01 — List memberships in scope
 Story: US-IMP-036G-004
 Given access.membership.read
 When Memberships is opened
-Then authorized memberships list with member label, scope, and status
+Then authorized memberships within LIST_LIMIT=200 list with member label, scope, and status
+And cap disclosure applies per AC-IMP-036G-002-10 / §25 item 6 when the projection reaches 200
 Mandatory in acceptance slice: YES
 
 AC-IMP-036G-004-02 — Create membership UI (was missing)
@@ -1013,8 +1031,8 @@ Mandatory in acceptance slice: YES
 | Story / AC ID | Required behaviour / risk | Applicable test layers | Planned proof | Actual evidence / candidate / result |
 |---|---|---|---|---|
 | US-001 / AC-001-* | Admin context, IA, authz boundaries | unit/component + integration + E2E as applicable (TEST-1) | Planned Admin overview/navigation suite | `NOT_EXECUTED` / pending implementation |
-| US-002 / AC-002-* | Hierarchy browse, empty/forbidden/stale | integration + E2E | Planned hierarchy browse suite | `NOT_EXECUTED` / pending implementation |
-| US-003 / AC-003-* | Create/update/active-inactive; no delete; confirm deactivate | integration + E2E + a11y for dialogs | Planned resource maintain suite | `NOT_EXECUTED` / pending implementation |
+| US-002 / AC-002-* | Hierarchy browse, empty/forbidden/stale; LIST_LIMIT=200 disclosure | integration + E2E | Planned hierarchy browse suite | `NOT_EXECUTED` / pending implementation |
+| US-003 / AC-003-* | Create/update/active-inactive; no delete; confirm deactivate; concurrency policy boundary | integration + E2E + a11y for dialogs | Planned resource maintain suite | `NOT_EXECUTED` / pending implementation |
 | US-004 / AC-004-* | Membership legal/illegal transitions; create UI; GJ continuity | integration + E2E; GJ regression | Planned membership suite + GJ-PERMITTED-OUTLET-ACCESS continuity | `NOT_EXECUTED` / pending implementation |
 | US-005 / AC-005-* | Grant/revoke; ceiling; self-elevation; cross-scope; confirm | integration + negative security + E2E | Planned role-assignment suite | `NOT_EXECUTED` / pending implementation |
 | US-006 / AC-006-* | Caller effective permissions; subject-principal disposition | integration; Fit decision evidence | Planned diagnostic suite (caller); subject path blocked pending §25 | `NOT_EXECUTED` / pending implementation |
@@ -1031,7 +1049,7 @@ Every mandatory AC needs passing evidence under TEST-1 after implementation auth
 |---|---|---|---|
 | `BR-IMP-036G-001` | Admin UI must not require API/domain knowledge for primary tasks; plain-language labels and hierarchy context | Product outcome; enterprise UX plan | US-001; AC-001-01 |
 | `BR-IMP-036G-002` | Navigation and actions are capability-gated; hidden UI never substitutes for server authorization | D-373; ARCH-G25 | US-001; AC-001-03/08 |
-| `BR-IMP-036G-003` | Hierarchy browse uses existing resource projections only | IMP-035 CURRENT_SUPPORTED | US-002 |
+| `BR-IMP-036G-003` | Hierarchy browse uses existing resource projections only; does not promise exhaustive discoverability beyond CURRENT LIST_LIMIT=200 | IMP-035 CURRENT_SUPPORTED; §25 item 6 | US-002 |
 | `BR-IMP-036G-004` | Cross-scope resource disclosure is forbidden | D-373 authorize-first collections | US-002 AC-002-07/08; US-003 AC-003-08 |
 | `BR-IMP-036G-005` | Organization resources support create/update and soft active/inactive only | IMP-035; no DELETE | US-003 |
 | `BR-IMP-036G-006` | Hard DELETE is NOT_SUPPORTED | IMP-035 / non-goal | AC-003-05 |
@@ -1054,6 +1072,8 @@ Every mandatory AC needs passing evidence under TEST-1 after implementation auth
 | `BR-IMP-036G-023` | Desktop-first; tablet/mobile readable/navigable/safe; full complex authoring parity on small mobile NOT mandatory V1 | Responsive policy | §18; §25 item 4 |
 | `BR-IMP-036G-024` | Accessibility intent WCAG 2.2 AA with observable keyboard/focus/label/announcement requirements | A11y policy | §18 |
 | `BR-IMP-036G-025` | Persona labels never authorize actions | PERSONA-1 | §4, §14 |
+| `BR-IMP-036G-026` | Admin authorized collection projections for brands, organizations, territories, legal entities, outlets, memberships, and audit events are capped at LIST_LIMIT=200; UI must disclose capped/incomplete results and must not invent pagination/search | VERIFIED `filterByPermission` in administration use-cases; §25 item 6 | AC-002-10; AC-004-01; AC-007-03 |
+| `BR-IMP-036G-027` | Organization resource updates are CURRENT update-by-ID without revision/CAS; product must not claim stale-write 409/conflict detection unless §25 item 7 selects and Fit authorizes stronger protection | VERIFIED organization update commands; §25 item 7 | AC-003-09 |
 
 Unresolved material rules remain in §25.
 
@@ -1071,14 +1091,15 @@ Unresolved material rules remain in §25.
 | ALTERNATE VALID PATHS | Activate vs suspend vs revoke; Open Operations hand-off; caller permission inspect | US-004/005/006/008 |
 | VALIDATION FAILURE | Invalid resource/membership fields | AC-003-06; AC-006-04 |
 | AUTHORIZATION | Capability gates; ceiling; self-elevation; cross-scope | AC-001-08; AC-003-07/08; AC-005-04…06; AC-007-04; AC-008-02 |
-| NOT FOUND / STALE REFERENCE | Missing resource/membership/assignment | AC-002-08; AC-003-09; AC-005-09 |
+| NOT FOUND / STALE REFERENCE | Missing resource/membership/assignment (not invented revision conflicts) | AC-002-08; AC-005-09 |
 | SERVER / NETWORK ERROR | Fetch/mutation failure with retry | AC-001-07; AC-007-09; AC-008-08 |
 | RECOVERY | Re-auth; retry; cancel confirmation; reload | AC-001-07; AC-003-04 cancel; AC-005-03 cancel |
-| CONCURRENCY | Stale update/assignment; no invented locking beyond CURRENT | AC-003-09; AC-005-09 |
+| CONCURRENCY | Resource concurrent-edit policy = §25 item 7 (CURRENT last-writer-wins; no CAS); assignment stale/not-found within CURRENT | AC-003-09; AC-005-09 |
 | DESTRUCTIVE ACTION | Suspend/revoke/deactivate/grant-revoke with confirmation (not hard-delete) | BR-021; AC-003-04; AC-004-04/06/07; AC-005-03 |
 | SUCCESS FEEDBACK | Visible success + refreshed projections | AC-003-10; AC-005-11 |
 | DOWNSTREAM EFFECT | GJ-PERMITTED-OUTLET-ACCESS continuity; no invitation delivery | AC-004-12 |
-| REVISIT / RELOAD | Re-fetch authorized truth | AC-002-09; AC-006-08; AC-008-07 |
+| REVISIT / RELOAD | Re-fetch authorized truth (still LIST_LIMIT capped) | AC-002-09/10; AC-006-08; AC-008-07 |
+| COLLECTION SCALE | Hierarchy/membership/audit projections capped at 200; disclosure mandatory; V1 sufficiency = §25 item 6 | AC-002-10; AC-004-01; AC-007-03; BR-026 |
 | RESPONSIVE / MOBILE | Desktop-full V1; tablet/mobile safe; small-mobile mutation parity residual §25 item 4 | §18 |
 | ACCESSIBILITY | WCAG 2.2 AA intent observables | §18; confirmation dialogs announced |
 
@@ -1092,10 +1113,12 @@ Unresolved material rules remain in §25.
 | Overview / ready | Session OK | IA links; identity; limited messaging if needed | Tab through nav links | navigate destinations | AC-001-02/03/05 |
 | Overview / unauthorized | No session | Sign-in CTA | Focus sign-in | login → return | AC-001-04 |
 | Hierarchy list / empty | Read OK, 0 items | Empty + next action if create allowed | Focus empty guidance | create or leave | AC-002-06 |
+| Hierarchy list / capped | Read OK, projection hits LIST_LIMIT=200 | Cap / may-be-incomplete disclosure; no invented pagination/search | Focus disclosure + list | remain / leave; §25 item 6 | AC-002-10 |
 | Hierarchy list / forbidden | Missing read | Non-disclosing denial | Focus message | leave / request access offline | AC-002-07 |
 | Resource form / validation | Invalid submit | Field errors announced | Focus first error | correct → resubmit | AC-003-06 |
 | Resource / deactivate confirm | Deactivate chosen | Target/scope/consequence; Confirm/Cancel | Focus dialog; Esc = cancel | confirm → success; cancel → prior | AC-003-04 |
-| Memberships list / ready | membership.read | Rows to detail; create if authorized | Keyboard list nav | detail/create | AC-004-01/02 |
+| Resource / concurrent edit | Resource may have changed since load | Follow §25 item 7 policy; no fake 409/CAS | Focus guidance / reload | reload/review or accepted LWW | AC-003-09 |
+| Memberships list / ready | membership.read | Rows to detail; create if authorized; cap disclosure if at 200 | Keyboard list nav | detail/create | AC-004-01/02; AC-002-10 |
 | Membership / transition confirm | Suspend/Revoke(/Expire) | Consequence confirm | Dialog focus trap | success or cancel | AC-004-04…09 |
 | Membership / illegal transition | Terminal or illegal | Action hidden or denied | N/A | remain terminal | AC-004-10 |
 | Role grant / deny | Ceiling/self/cross-scope | Denial message | Focus error | choose allowed role or stop | AC-005-04…07 |
@@ -1114,10 +1137,10 @@ Unresolved material rules remain in §25.
 | Action | Existing identity / permission authority | Resource context / server-derived scope | Allowed / denied / cross-scope variants | AC IDs |
 |---|---|---|---|---|
 | Enter Admin / session | Workforce session; Admin portal | Server session projection | Auth required; no client authority | AC-001-04 |
-| Browse Brands | `brand.read` | Authorized brands | Deny outside scope | AC-002-01/07 |
-| Browse Orgs/Territories/LE/Outlets | `organization.read` / `territory.read` / `legal_entity.read` / `outlet.read` | Hierarchy ids server-derived | Deny cross-scope | AC-002-02…05/07 |
-| Create/update/lifecycle resources | Existing manage permissions per type (IMP-035) | Scoped resource | Deny unauthorized; no DELETE | US-003 |
-| List/create/transition memberships | `access.membership.read` / manage (IMP-035) | Membership scope resource | Legal transitions only; self-create deny where CURRENT | US-004 |
+| Browse Brands | `brand.read` | Authorized brands; LIST_LIMIT=200 | Deny outside scope; cap disclosure | AC-002-01/07/10 |
+| Browse Orgs/Territories/LE/Outlets | `organization.read` / `territory.read` / `legal_entity.read` / `outlet.read` | Hierarchy ids server-derived; LIST_LIMIT=200 | Deny cross-scope; cap disclosure | AC-002-02…05/07/10 |
+| Create/update/lifecycle resources | Existing manage permissions per type (IMP-035) | Scoped resource; update-by-ID (no revision/CAS) | Deny unauthorized; no DELETE; concurrency = §25 item 7 | US-003 |
+| List/create/transition memberships | `access.membership.read` / manage (IMP-035) | Membership scope resource; LIST_LIMIT=200 | Legal transitions only; self-create deny where CURRENT; cap disclosure | US-004 |
 | List/grant/revoke roles | `access.role_assignment.read` / manage | Membership resource + role allow-list | Ceiling; self-elevation; scope allow-list | US-005 |
 | Effective permissions | `access.effective_permissions.read` | Resource query; **caller principal** CURRENT | Subject principal = §25 | US-006 |
 | Audit list | `access.audit.read` | Authorized events; cap 200 | No HTTP filters CURRENT | US-007 |
@@ -1157,14 +1180,22 @@ Persona labels do **not** authorize. Unknown material authority → stop for dec
 
 ## 17. Concurrency/recovery
 
-- Overlapping mutations: rely on existing server authorization and CURRENT conflict/stale semantics;
-  UI shows recoverable errors; no invented distributed lock service.
+- Overlapping organization-resource mutations: CURRENT semantics are ordinary update-by-ID
+  without revision/CAS/expected-timestamp conflict detection (VERIFIED). Concurrent edits may
+  therefore be last-writer-wins. Do **not** claim recoverable 409/revision conflict behaviour.
+  V1 product disposition is §25 item 7 (accept LWW with truthful UX/reload guidance, or require
+  stale-write protection via Architecture Fit / API-data-contract work — which would conflict
+  `EXPECTED_NEW_API: NO` / possibly schema if selected).
+- Membership/role assignment overlapping mutations: rely on existing server authorization and
+  CURRENT not-found/deny semantics; UI shows recoverable errors; no invented distributed lock service.
 - Duplicate submits: pending mutation disables duplicate confirm where applicable.
-- Stale membership/assignment/resource: safe not-found/conflict handling (ACs above).
+- Stale membership/assignment/resource references: safe not-found/forbidden handling (ACs above);
+  resource concurrent-edit path is AC-003-09 / §25 item 7, not invented CAS.
 - Partial failure: no false success; retry explicit.
 - Interruption/revisit: reload re-fetches truth; confirmation cancel is non-destructive.
 - Session expiry: re-auth required before further privileged mutation.
-- N/A: new idempotency keys / queue semantics — not in scope (`EXPECTED_NEW_*: NO`).
+- N/A: new idempotency keys / queue semantics / optimistic-locking schema — not in scope unless
+  §25 item 7 selects stronger protection and Fit authorizes (`EXPECTED_NEW_*: NO` posture today).
 
 ---
 
@@ -1218,7 +1249,7 @@ Persona labels do **not** authorize. Unknown material authority → stop for dec
 | Ops operational-status endpoint | CURRENT Ops API | US-008 | NONE if reused; Fit confirms Admin composition |
 | Product Definition Gate | NOT_PERFORMED | Before Architecture Fit / implementation | Blocks READY |
 | Architecture Fit / lock | NOT_PERFORMED / NOT_LOCKED | Before implementation authorization | Blocks READY; §25 items |
-| §25 unresolved decisions | Open | US-004 expire; US-006 subject; US-007 filters; Overview cards; small-mobile | `UNRESOLVED_DECISION_REQUIRED` |
+| §25 unresolved decisions | Open | US-002/004 scale; US-003 concurrency; US-004 expire; US-006 subject; US-007 filters; Overview cards; small-mobile | `UNRESOLVED_DECISION_REQUIRED` |
 | IMP-037 | `nextProductSlice`; **IMP037_ACTIVATED: NO** | N/A — must not activate | NONE |
 
 ---
@@ -1232,7 +1263,7 @@ Persona labels do **not** authorize. Unknown material authority → stop for dec
 | System roles; ceiling; self-elevation deny | Existing verified | US-005 |
 | Partial Admin UI (hub, brands list, membership detail transitions/grant/revoke, audit list) | Existing verified PARTIAL | §3 |
 | Ops `GET /api/operations/v1/operational-status` | Existing verified (Ops) | US-008 |
-| Coherent Admin IA + full hierarchy CRUD UI + create membership UI + consequence UX + Admin status hand-off | V1 acceptance commitment (`PLANNED_IMP036G`) — not yet implemented/accepted | US-001…008 |
+| Coherent Admin IA + full hierarchy CRUD UI + create membership UI + consequence UX + Admin status hand-off | V1 acceptance commitment (`PLANNED_IMP036G`) — not yet implemented/accepted; hierarchy/membership discoverability bounded by LIST_LIMIT=200 / §25 item 6; resource concurrency = §25 item 7 | US-001…008 |
 | Caller-scoped effective permissions diagnostic | Existing verified; V1 must include at minimum | US-006 |
 | GJ-PERMITTED-OUTLET-ACCESS continuity protection | Existing CURRENT GJ; V1 must not break | AC-004-12 |
 
@@ -1250,6 +1281,8 @@ Proposed V1 UI behaviour is not accepted until canonical gates pass.
 | Invitation delivery (email/SMS) system | DEFERRED | Not promised by GJ; non-goal | Future capability decision |
 | Analytics / BI on Admin | DEFERRED | Non-goal | Future |
 | Full small-mobile authoring parity for all high-consequence mutations | DEFERRED / residual question | Desktop-first policy; §25 item 4 | Product owner |
+| General Admin pagination/search/filter beyond LIST_LIMIT=200 | FOLLOW_UP / decision | CURRENT transport capped; EXPECTED_NEW_API: NO | Product + Architecture (§25 item 6) |
+| Revision/CAS stale-write protection on organization resource updates | FOLLOW_UP / decision | CURRENT update-by-ID is last-writer-wins; EXPECTED_NEW_API/SCHEMA: NO | Product + Architecture (§25 item 7) |
 | Custom visual redesign requiring Figma-first | DEFERRED | Plan: Figma not required initially | Design later without redefining authority |
 
 ---
@@ -1279,9 +1312,11 @@ Proposed V1 UI behaviour is not accepted until canonical gates pass.
 | **3. Audit V1 filtering** — Event fields include actor/action/date; HTTP query filters NOT_FOUND; list capped 200. Client-side filter of authorized list vs need for server query filters? | Affects investigation usability and whether NEW API is demanded | Product + Architecture; evidence of CURRENT audit GET | US-007; AC-007-05…07; **product/architecture question** under EXPECTED_NEW_API: NO |
 | **4. Small-mobile high-consequence mutations** — Desktop-first says full V1 on desktop; is inspection-first fallback acceptable on small mobile for every suspend/revoke/grant/deactivate, or must every high-consequence mutation work on small mobile? | Affects responsive acceptance boundary | Product owner; if not fully settled by desktop-first direction, residual product question | §18; BR-023; **residual product question** |
 | **5. Expire membership affordance** — API supports `invited→expired`; current UI has Activate/Suspend/Revoke only (no Expire control). Does V1 expose Expire? | Affects completeness of membership lifecycle UX vs CURRENT UI gap | Product owner; API evidence CURRENT; UI evidence PARTIAL | US-004; AC-004-05; **product choice** |
+| **6. Administration collection scale beyond LIST_LIMIT=200** — CURRENT administration collection projections for **brands, organizations, territories, legal entities, outlets, memberships, and audit events** are capped at 200 authorized items via `filterByPermission` (VERIFIED). No general server pagination/search/filter transport has been verified for these hierarchy/membership collections (role-assignment list is per-membership and not this global cap). Product decision: **(A)** accept an explicitly disclosed ≤200-item V1 administration operating boundary, or **(B)** require discoverability beyond 200, which may require pagination/filter/search transport and therefore Architecture Fit / possible API work (conflicts `EXPECTED_NEW_API: NO` if selected). Do not silently promise records beyond CURRENT transport capability. | Affects whether administrators can locate every authorized resource/membership/audit event | Founder/product + Architecture Fit; runtime evidence of `LIST_LIMIT=200` in `src/server/administration/use-cases.ts` | US-002; US-004; US-007; AC-002-10; AC-004-01; AC-007-03; BR-026; **UNRESOLVED_DECISION_REQUIRED** / **ARCHITECTURE_FIT_REQUIRED** if B |
+| **7. Hierarchy resource concurrent-edit semantics** — CURRENT organization resource update commands (brand/organization/territory/legal-entity/outlet) do not expose revision/CAS/expected-timestamp conflict detection (VERIFIED update-by-ID). Concurrent edits therefore may be last-writer-wins rather than producing a stale-update conflict. Product decision: **(A)** explicitly accept current last-writer-wins behaviour for IMP-036G V1, with truthful UX and reload/review guidance, or **(B)** require stale-write protection, which becomes Architecture Fit / API/data-contract work (and would conflict `EXPECTED_NEW_API: NO` / possibly schema if selected). Do not claim recoverable 409/revision conflict behaviour unless authority exists. | Affects overwrite risk and whether V1 claims conflict recovery it cannot provide | Founder/product + Architecture Fit; runtime evidence of organization update commands | US-003; AC-003-09; BR-027; §17; **UNRESOLVED_DECISION_REQUIRED** / **ARCHITECTURE_FIT_REQUIRED** if B |
 
 ```text
-UNRESOLVED_COUNT = 5
+UNRESOLVED_COUNT = 7
 PRODUCT_DEFINITION_GATE cannot PASS while material unresolved decisions remain.
 Gate Result remains NOT_PERFORMED for this draft (gate not executed).
 Do NOT treat unresolved items as ASSUMED implementation choices.
@@ -1294,12 +1329,12 @@ Do NOT treat unresolved items as ASSUMED implementation choices.
 | Story ID | Applicable fields complete / evidence | Open material decisions | Readiness / blocker |
 |---|---|---|---|
 | `US-IMP-036G-001` | §9 fields defined; ACs defined | §25 item 2 (Overview cards) | `NOT_READY_FOR_IMPLEMENTATION` |
-| `US-IMP-036G-002` | §9 fields defined; ACs defined | NONE material | `NOT_READY_FOR_IMPLEMENTATION` (gates not performed / Fit not locked) |
-| `US-IMP-036G-003` | §9 fields defined; ACs defined | NONE material beyond Fit mapping | `NOT_READY_FOR_IMPLEMENTATION` |
-| `US-IMP-036G-004` | §9 fields defined; ACs defined | §25 item 5 (Expire affordance) | `NOT_READY_FOR_IMPLEMENTATION` |
+| `US-IMP-036G-002` | §9 fields defined; ACs defined | §25 item 6 (collection scale / LIST_LIMIT=200) | `NOT_READY_FOR_IMPLEMENTATION` |
+| `US-IMP-036G-003` | §9 fields defined; ACs defined | §25 item 7 (resource concurrent-edit semantics) | `NOT_READY_FOR_IMPLEMENTATION` |
+| `US-IMP-036G-004` | §9 fields defined; ACs defined | §25 item 5 (Expire affordance); §25 item 6 (membership list scale) | `NOT_READY_FOR_IMPLEMENTATION` |
 | `US-IMP-036G-005` | §9 fields defined; ACs defined | NONE material for ceiling semantics | `NOT_READY_FOR_IMPLEMENTATION` |
 | `US-IMP-036G-006` | §9 fields defined; ACs defined | §25 item 1 (subject vs caller) | `NOT_READY_FOR_IMPLEMENTATION` |
-| `US-IMP-036G-007` | §9 fields defined; ACs defined | §25 item 3 (audit filters) | `NOT_READY_FOR_IMPLEMENTATION` |
+| `US-IMP-036G-007` | §9 fields defined; ACs defined | §25 item 3 (audit filters); §25 item 6 (audit list scale shared) | `NOT_READY_FOR_IMPLEMENTATION` |
 | `US-IMP-036G-008` | §9 fields defined; ACs defined | NONE material if Ops reuse confirmed in Fit | `NOT_READY_FOR_IMPLEMENTATION` |
 
 Open material decisions ≠ NONE for the slice overall → stories are **not** READY for implementation.
@@ -1337,19 +1372,19 @@ Empty / First-Use States Defined: YES
 Error / Recovery Paths Defined: YES
 Authorization Variants Defined: YES (capability, ceiling, self-elevation, cross-scope)
 Cross-Scope Scenarios Defined: YES
-Concurrency Considered: YES (stale/conflict within CURRENT; no new concurrency service)
+Concurrency Considered: YES (CURRENT last-writer-wins for resources recorded; §25 item 7 unresolved; no invented CAS)
 Destructive Actions Defined: YES (consequence confirmation; no hard-delete; no four-eyes)
 UX State Matrix Complete: YES
 Accessibility Considered: YES (WCAG 2.2 AA intent)
 Responsive Considered: YES (desktop-first; §25 item 4 residual)
 Golden Journeys Identified: YES — GJ-PERMITTED-OUTLET-ACCESS continuity (CURRENT; protect)
 Explicit Deferrals Recorded: YES
-Unresolved Product Decisions: YES — five §25 items (subject-principal EP; Overview cards; audit filters; small-mobile mutations; expire affordance)
-Architecture Conflicts: NONE claimed as resolved; Fit NOT_PERFORMED; EXPECTED_NEW_*: NO posture recorded; subject-principal and server audit filters flagged ARCHITECTURE_FIT_REQUIRED if demanded
+Unresolved Product Decisions: YES — seven §25 items (subject-principal EP; Overview cards; audit filters; small-mobile mutations; expire affordance; collection scale beyond 200; resource concurrent-edit semantics)
+Architecture Conflicts: NONE claimed as resolved; Fit NOT_PERFORMED; EXPECTED_NEW_*: NO posture recorded; subject-principal, server audit filters, pagination beyond 200, and stale-write protection flagged ARCHITECTURE_FIT_REQUIRED if demanded
 Architecture Fit Inputs (planning; not verdicts):
 - Map all V1 UI mutations to existing /api/admin/v1/* commands only
 - Confirm Admin operational status composition via existing Ops GET without Admin≠Ops bleed
-- Resolve §25 items 1–5 before claiming definition completeness for PASS
+- Resolve §25 items 1–7 before claiming definition completeness for PASS
 - EXPECTED_NEW_SCHEMA/SERVICE/AUTH_MODEL/ROLE/PERMISSION/RBAC_SEMANTICS/API: NO
 PRODUCT_DEFINITION_GATE_EXECUTION: NOT_PERFORMED
 Gate Result: NOT_PERFORMED
@@ -1407,8 +1442,8 @@ invent truth stores.
 | Capability | CURRENT_SUPPORTED (IMP-035/D-373) | PLANNED_IMP036G |
 |---|---|---|
 | Admin HTTP transport | `/api/admin/v1/*` on operations process | Coherent product IA consuming same transport |
-| Resources | list/get/create/update; soft active/inactive; no DELETE | Full hierarchy CRUD UI (today brands list only) |
-| Memberships | create/list/get/transition legal matrix | Create UI + consequence UX; Expire affordance = §25 |
+| Resources | list/get/create/update; soft active/inactive; no DELETE; LIST_LIMIT=200; update-by-ID no CAS | Full hierarchy CRUD UI (today brands list only); scale/concurrency dispositions = §25 items 6–7 |
+| Memberships | create/list/get/transition legal matrix; LIST_LIMIT=200 | Create UI + consequence UX; Expire affordance = §25; scale = §25 item 6 |
 | Role assignments | grant/list/revoke; system roles; ceiling; self-elevation deny | Safer consequence UX; same semantics |
 | Effective permissions | GET caller-at-resource | Diagnostic UX; subject-principal = §25 |
 | Audit | GET authorized list cap 200; no HTTP filters | Investigation UX; filter disposition = §25 |
@@ -1424,8 +1459,8 @@ invent truth stores.
 | Desired journeys | 3 (`JOURNEY-G-ADMIN-CONTEXT`, `JOURNEY-G-ACCESS-MANAGEMENT`, `JOURNEY-G-ADMIN-INVESTIGATION`) |
 | User stories | 8 (`US-IMP-036G-001` … `008`) |
 | V1 acceptance stories | 8 |
-| Acceptance scenarios (defined) | 75 |
-| Business rules | 25 (`BR-IMP-036G-001` … `025`) |
-| §25 unresolved items | 5 |
+| Acceptance scenarios (defined) | 76 |
+| Business rules | 27 (`BR-IMP-036G-001` … `027`) |
+| §25 unresolved items | 7 |
 
 Evidence for all ACs: `NOT_EXECUTED` / pending implementation. Gate Result: **NOT_PERFORMED**.
