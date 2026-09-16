@@ -13,7 +13,7 @@
   "architectureLocked": "YES",
   "implementationAuthorized": "YES",
   "implementationStarted": "YES",
-  "impAccepted": "NO",
+  "impAccepted": "YES",
   "imp036gActivated": "NO"
 }
 -->
@@ -34,14 +34,14 @@ ARCHITECTURE_FIT: PASS
 IMP036F_ARCHITECTURE_LOCKED: YES
 IMP036F_IMPLEMENTATION_AUTHORIZED: YES
 IMP036F_STARTED: YES
-IMP036F_ACCEPTED: NO
+IMP036F_ACCEPTED: YES
 IMP036G_ACTIVATED: NO
 ```
 
 This artifact is the **gate-passed Product Definition** for candidate `PD-IMP-036F-DRAFT-1`.
 Product Definition Gate = PASS. Architecture Fit = PASS; capability architecture is locked.
 Implementation authorization was granted at GTM-R120 / STATE-R118; implementation start is recorded at GTM-R121 / STATE-R119.
-Start does **not** complete or accept IMP-036F, or activate IMP-036G.
+Formal acceptance is recorded at GTM-R122 / STATE-R120 (`IMP036F_ACCEPTED: YES`). Acceptance does **not** activate IMP-036G.
 
 ```text
 PRODUCT_DELIVERY_PROCESS_EFFECTIVE_FROM = IMP-036F
@@ -63,9 +63,9 @@ direction; not unresolved proposals).
 | Product Definition version / document status | `PD-IMP-036F-DRAFT-1`; **Document status: APPROVED** |
 | Product owner / approval evidence | Founder product direction via DISCOVER (`DISC-F-001`…`011`); Product Definition Gate **PASS** on 2026-09-10 (PR #140 review `5166877450`; gate-evaluated content SHA `014e0f935f193f54718d6afd5e7991508088f9bc`) |
 | Process / verification policy | `PD-1` / `TEST-1` |
-| Canonical anchors | VISION-1; ROADMAP GTM-R121; STATE STATE-R119; ARCH-R19; DR-15; PD-1; TEST-1; PERSONA-1; GJ-1 |
+| Canonical anchors | VISION-1; ROADMAP GTM-R122; STATE STATE-R120; ARCH-R19; DR-15; PD-1; TEST-1; PERSONA-1; GJ-1 |
 | Repository candidate | Canonical path `/home/ajoshi/repos/boba-bear-platform`; verified base `main` HEAD `1f59333d1a3bfe0dfecde908245306e2edacd834`; tree `284800a71a20d27c01b9c0cec7cadb45bb5d059b`; Product Definition Gate-evaluated PR head `014e0f935f193f54718d6afd5e7991508088f9bc`; Architecture Fit reviewed candidate head `9ae06d6267e997223b1995124540974215ee17fd` / tree `55adb287bb0eb77240a6becdc16fed2d504ba144` (independent review `5169723968`); architecture-lock persistence is a subsequent PR #141 commit |
-| Capability lifecycle / authorization | ROADMAP/STATE: `IMPLEMENTATION_IN_PROGRESS`; `IMP036F_ACTIVATED: YES`; `IMP036F_PRODUCT_DEFINITION: APPROVED`; `IMP036F_PRODUCT_DEFINITION_GATE: PASS`; `IMP036F_ARCHITECTURE_FIT: PASS`; `IMP036F_ARCHITECTURE_LOCKED: YES`; implementation **authorized** / **started**; `IMP036F_ACCEPTED: NO`; `FOUNDER_UAT_REQUIRED: YES` |
+| Capability lifecycle / authorization | ROADMAP/STATE: `COMPLETE_AND_ACCEPTED`; `IMP036F_ACTIVATED: YES`; `IMP036F_PRODUCT_DEFINITION: APPROVED`; `IMP036F_PRODUCT_DEFINITION_GATE: PASS`; `IMP036F_ARCHITECTURE_FIT: PASS`; `IMP036F_ARCHITECTURE_LOCKED: YES`; implementation **authorized** / **started** / **complete**; `IMP036F_ACCEPTED: YES`; `IMP036F_FOUNDER_UAT: PASS`; `FOUNDER_UAT_REQUIRED: YES` |
 | Relevant capability architecture / ADRs | Locked capability architecture [`capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md`](../../capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md); supporting plan [`experience/enterprise-experience/IMP-036F-catalog-menu-pricing-promotions.md`](../../experience/enterprise-experience/IMP-036F-catalog-menu-pricing-promotions.md); binding ADR-006, ADR-007, ADR-008 (as amended by accepted STATE / D-368–D-370); historical locks D-085…D-100, D-102, D-108–D-111, D-118, D-122–D-127, D-137–D-144 where applicable; accepted IMP-036E Store Assortment boundary |
 | Founder UAT applicability | `FOUNDER_UAT_REQUIRED = YES` — materially changes operator commercial configuration and resulting customer discovery/orderability truth (ROADMAP/STATE) |
 
@@ -100,28 +100,35 @@ Links VISION workforce commercial-configuration responsibility and owned direct-
 
 ---
 
-## 3. Problem statement
+## 3. Problem statement (Pre-IMP-036F baseline)
+
+This section records the **historical starting problem** before IMP-036F delivery. It is **not**
+CURRENT accepted product truth after GTM-R122 / STATE-R120 (`COMPLETE_AND_ACCEPTED`). Follow-up /
+deferred items that remain intentionally open (media mutation FOLLOW_UP; advanced modifier/bundle UX
+FOLLOW_UP/DEFERRED; mobile complex authoring DEFERRED; no new media platform; Tax/Charges
+read-only) stay classified in §23–§24 and must not be restated here as unresolved CURRENT gaps of
+the accepted slice.
 
 **Who:** Brand commercial operators (`PERSONA-WORKFORCE-OPERATOR` job context) and, as consequence
 recipients, customers (`PERSONA-CUSTOMER`).
 
-**Problem:** Commercial authorities largely exist as domain capabilities, but workforce management
-experiences are fragmented or missing. Operators cannot reliably complete one coherent job of
-“make this offering correctly sellable and verify customer truth.”
+**Pre-IMP-036F problem:** Commercial authorities largely existed as domain capabilities, but
+workforce management experiences were fragmented or missing. Operators could not reliably complete
+one coherent job of “make this offering correctly sellable and verify customer truth.”
 
-**Evidence-backed friction (CURRENT):**
+**Evidence-backed friction (pre-IMP-036F baseline):**
 
 | Area | Evidence class | Summary |
 |---|---|---|
-| Catalog workforce authoring | CURRENT_SUPPORTED domain; workforce UX gap | Catalog manage commands exist; coherent workforce Catalog management experience is missing |
-| Menu organization/editing | CURRENT_SUPPORTED domain + customer projection; workforce UX gap | Menu commands and customer Menu projection exist; workforce Menu curation journey is incomplete/fragmented |
-| Brand Assortment mutation | CURRENT_SUPPORTED domain; workforce UX gap | Brand Assortment authority exists; Store Assortment remains read/understand/escalate (IMP-036E); Brand end-to-end Assortment commercial flow is incomplete |
-| Pricing authoring | CURRENT_SUPPORTED domain; workforce UX gap | Pricing manage / price books exist; coherent commercial pricing authoring UX is fragmented |
-| Promotions/Coupons | CURRENT_SUPPORTED domain; workforce UX gap | Promotion/coupon manage exists; coherent campaign-management journey is missing |
-| Delivery tariff | CURRENT_SUPPORTED calc/storage; workforce UX gap | Distance bands / free-delivery threshold accepted (IMP-036C); coherent workforce tariff management journey missing. Authorization mapping resolved by Architecture Fit (`pricing.read` / `pricing.manage` @ Brand derived from Outlet); implementation is authorized / started (F1 in progress). |
-| Consequence / audit | Distributed | Commercial audit/review evidence is distributed rather than a coherent operator consequence review |
-| Media | CURRENT_SUPPORTED reference storage on Menu entries (`imagePath`); NOT_SUPPORTED platform; mutation workflow UNVERIFIED | Existing Menu-entry `imagePath` references may be viewed where present; no verified safe workforce select/change workflow for V1. Upload/storage/scanning/CDN platform is not required (DISC-F-010). Media-reference mutation is FOLLOW_UP under DISC-F-010 until a safe existing path is proven. |
-| Catalog publication conformance | Architecture decision RESOLVED (locked `ENTITY_CONTENT_REVISION`); Implementation conformance work NOT YET IMPLEMENTED (authorized / started; F1 in progress) | ADR-006 requires draft→validate→publish→effective revision. Pre-Fit CURRENT runtime permitted customer-visible or customer-evaluation-affecting ACTIVE Product/Variant mutations without that publication boundary. Known examples: ACTIVE Product name/description; ACTIVE Variant default-selection (`isDefault`, via `updateVariant` + `pickDefaultActiveVariant` in customer Menu projection). Originally identified at Product Definition Gate as `ARCHITECTURE_FIT_CONFORMANCE_GAP`; later resolved by locked Catalog publication architecture. Runtime conformance remains pending implementation execution (F1 in progress). Do not claim every mutable Variant field (e.g. `isSelectorVisible`) necessarily changes customer projection unless verified. |
+| Catalog workforce authoring | Domain CURRENT_SUPPORTED; workforce UX gap at baseline | Catalog manage commands existed; coherent workforce Catalog management experience was missing before IMP-036F |
+| Menu organization/editing | Domain + customer projection CURRENT_SUPPORTED; workforce UX gap at baseline | Menu commands and customer Menu projection existed; workforce Menu curation journey was incomplete/fragmented before IMP-036F |
+| Brand Assortment mutation | Domain CURRENT_SUPPORTED; workforce UX gap at baseline | Brand Assortment authority existed; Store Assortment remained read/understand/escalate (IMP-036E); Brand end-to-end Assortment commercial flow was incomplete before IMP-036F |
+| Pricing authoring | Domain CURRENT_SUPPORTED; workforce UX gap at baseline | Pricing manage / price books existed; coherent commercial pricing authoring UX was fragmented before IMP-036F |
+| Promotions/Coupons | Domain CURRENT_SUPPORTED; workforce UX gap at baseline | Promotion/coupon manage existed; coherent campaign-management journey was missing before IMP-036F |
+| Delivery tariff | Calc/storage CURRENT_SUPPORTED; workforce UX gap at baseline | Distance bands / free-delivery threshold accepted (IMP-036C); coherent workforce tariff management journey was missing. Authorization mapping was resolved by Architecture Fit (`pricing.read` / `pricing.manage` @ Brand derived from Outlet). Historical GTM-R121 / STATE-R119 state: F1 was in progress; CURRENT accepted candidate includes the completed tariff management journey. |
+| Consequence / audit | Distributed at baseline | Commercial audit/review evidence was distributed rather than a coherent operator consequence review before IMP-036F |
+| Media | CURRENT_SUPPORTED reference storage on Menu entries (`imagePath`); NOT_SUPPORTED platform; mutation workflow UNVERIFIED | Existing Menu-entry `imagePath` references may be viewed where present; no verified safe workforce select/change workflow for V1. Upload/storage/scanning/CDN platform is not required (DISC-F-010). Media-reference mutation remains FOLLOW_UP under DISC-F-010 until a safe existing path is proven. |
+| Catalog publication conformance | Architecture decision RESOLVED (locked `ENTITY_CONTENT_REVISION`); implemented under IMP-036F | ADR-006 requires draft→validate→publish→effective revision. At Product Definition / Architecture Fit time, pre-Fit runtime permitted customer-visible or customer-evaluation-affecting ACTIVE Product/Variant mutations without that publication boundary (known examples: ACTIVE Product name/description; ACTIVE Variant `isDefault`). That gap was identified as `ARCHITECTURE_FIT_CONFORMANCE_GAP`, locked to `ENTITY_CONTENT_REVISION`, subsequently implemented under F1, and is part of the accepted IMP-036F candidate. ADR-006 remains authoritative. Do not claim every mutable Variant field (e.g. `isSelectorVisible`) necessarily changes customer projection unless verified. |
 
 Do not treat implementation quirks as desired product behaviour.
 
@@ -142,9 +149,9 @@ No new persona is created for the specialized commercial job.
 
 | Journey ID / evidence | Entry / preconditions | Activities today | Existing outcome / gap |
 |---|---|---|---|
-| Fragmented commercial ops (evidence across Catalog/Menu/Pricing/Promotions/Assortment domains + IMP-036E Store) | Authorized workforce session; Brand or Store scope depending on capability | Inspect Store Assortment/Availability (IMP-036E); mutate Availability/pause within Store scope; commercial Catalog/Menu/Pricing/Promotion/tariff mutation largely via incomplete or non-coherent surfaces / domain-only paths | Domain truth partially exists; coherent Brand commercial end-to-end job is **not** a CURRENT supported workforce journey |
+| Fragmented commercial ops (pre-IMP-036F baseline across Catalog/Menu/Pricing/Promotions/Assortment domains + IMP-036E Store) | Authorized workforce session; Brand or Store scope depending on capability | Inspect Store Assortment/Availability (IMP-036E); mutate Availability/pause within Store scope; commercial Catalog/Menu/Pricing/Promotion/tariff mutation largely via incomplete or non-coherent surfaces / domain-only paths | Pre-IMP-036F: domain truth partially existed; coherent Brand commercial end-to-end job was **not** yet a supported workforce journey. CURRENT after acceptance: `JOURNEY-PRODUCT-MENU-LAUNCH` / `GJ-PRODUCT-MENU-LAUNCH` is CURRENT |
 | `JOURNEY-FIRST-ORDER` / `GJ-FIRST-ORDER` (CURRENT) | Customer discovery entry | Discover Menu → customize → cart → checkout → pay | Customer commerce CURRENT; depends on commercial configuration truth produced upstream |
-| `JOURNEY-PRODUCT-MENU-LAUNCH` / `GJ-PRODUCT-MENU-LAUNCH` (PLANNED) | Intended commercial launch path | Not an accepted CURRENT workforce journey | Remains PLANNED; this Product Definition drafts the acceptance slice candidate |
+| `JOURNEY-PRODUCT-MENU-LAUNCH` / `GJ-PRODUCT-MENU-LAUNCH` (CURRENT) | Intended commercial launch path | Accepted CURRENT workforce commercial continuity through IMP-036F | Accepted with IMP-036F COMPLETE_AND_ACCEPTED |
 
 Cross-portal accepted pattern (IMP-036E; preserve):
 
@@ -163,7 +170,7 @@ REALTIME_PUSH_GUARANTEE = NO
 
 | Journey ID | Entry / context | Ordered activities | Success / downstream outcome | Alternate / recovery paths |
 |---|---|---|---|---|
-| `JOURNEY-PRODUCT-MENU-LAUNCH` (desired; still registry-PLANNED until accepted) | Authorized Brand commercial operator; Brand resource scope; existing domain authorities available | 1 Understand offering → 2 Introduce/maintain Product/Variant → 3 Configure Menu presentation → 4 Decide Assortment → 5 Configure price → 6 Configure promotion/coupon where needed → 7 Configure delivery tariff where relevant → 8 Review consequence → 9 Deliberately publish/effect → 10 Verify customer truth → 11 Diagnose sellability blockers | Offering is accurately presented, correctly priced, sellable in intended outlets, customer truth verifiable via authoritative read/evaluation | Validation failure; authorization denial; stale/conflict; draft vs published/effective; missing prerequisite; partial downstream consequence; recover/retry after correction; mobile limited to inspection/context only (no mandatory commercial mutations) |
+| `JOURNEY-PRODUCT-MENU-LAUNCH` (desired; registry CURRENT after IMP-036F acceptance) | Authorized Brand commercial operator; Brand resource scope; existing domain authorities available | 1 Understand offering → 2 Introduce/maintain Product/Variant → 3 Configure Menu presentation → 4 Decide Assortment → 5 Configure price → 6 Configure promotion/coupon where needed → 7 Configure delivery tariff where relevant → 8 Review consequence → 9 Deliberately publish/effect → 10 Verify customer truth → 11 Diagnose sellability blockers | Offering is accurately presented, correctly priced, sellable in intended outlets, customer truth verifiable via authoritative read/evaluation | Validation failure; authorization denial; stale/conflict; draft vs published/effective; missing prerequisite; partial downstream consequence; recover/retry after correction; mobile limited to inspection/context only (no mandatory commercial mutations) |
 
 Central product concept (`DISC-F-001`):
 
@@ -225,8 +232,9 @@ SERVICEABILITY | DELIVERY TARIFF | TAX / CHARGES
 | `FOLLOW_UP` | Advanced Modifier Library UX; Bundle Builder; richer audit composition UX if Architecture Fit requires phased delivery; media-reference select/change once a safe existing path is verified (DISC-F-010); any future simple mobile commercial mutations (none selected in this Product Definition) | TBD after Architecture Fit / later product gate or Product Definition revision | May affect `GJ-PRODUCT-MENU-LAUNCH` depth | Not silently required for V1 |
 | `DEFERRED` | Media upload/storage/scanning/CDN; tax/charge administration product; role/permission editor; four-eyes; realtime push; new lifecycles/scheduling; generic bulk semantics; full complex mobile commercial authoring; IMP-036G console expansion | N/A | Not part of IMP-036F acceptance | Explicit non-goals |
 
-Mandatory Golden Journey for eventual IMP-036F acceptance (finalized at Product Definition Gate PASS):
-`GJ-PRODUCT-MENU-LAUNCH`. Registry status remains `PLANNED` (not CURRENT; not journey-test PASS).
+Mandatory Golden Journey for IMP-036F acceptance (finalized at Product Definition Gate PASS; now
+accepted): `GJ-PRODUCT-MENU-LAUNCH`. Registry status is `CURRENT` after IMP-036F
+`COMPLETE_AND_ACCEPTED` (GTM-R122 / STATE-R120).
 
 ---
 
@@ -282,15 +290,15 @@ desired behaviour.
 Security implications: Server-side authorization; audit attribution expected via existing /
 Architecture-Fit-approved path
 Architecture fit / applicable invariants: Architecture decision RESOLVED by locked Catalog
-ENTITY_CONTENT_REVISION; Implementation conformance work NOT YET IMPLEMENTED — AUTHORIZED / STARTED; F1 in progress for
-customer-visible or customer-evaluation-affecting ACTIVE Product/Variant mutations vs ADR-006
-(known examples: ACTIVE Product name/description; ACTIVE Variant `isDefault` default-selection).
-Originally identified at Product Definition Gate as ARCHITECTURE_FIT_CONFORMANCE_GAP; later
-resolved by locked capability architecture.
+ENTITY_CONTENT_REVISION. At Product Definition / Architecture Fit time this was identified as an
+implementation conformance gap for customer-visible or customer-evaluation-affecting ACTIVE
+Product/Variant mutations vs ADR-006 (known examples: ACTIVE Product name/description; ACTIVE
+Variant `isDefault` default-selection). That gap was subsequently implemented under F1 and is part
+of the accepted IMP-036F candidate; ADR-006 remains authoritative.
 Open material decisions: NONE (Founder intent ADR-006 preserved; architecture locked)
 Device applicability: Desktop/tablet authoring required for V1; mobile inspection/context only
 (no mandatory commercial mutations)
-Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization was granted at GTM-R120 / STATE-R118; implementation start is recorded at GTM-R121 / STATE-R119.
+Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization was granted at GTM-R120 / STATE-R118; implementation start is recorded at GTM-R121 / STATE-R119; CURRENT acceptance at GTM-R122 / STATE-R120 (`COMPLETE_AND_ACCEPTED`).
 ```
 
 ```text
@@ -485,8 +493,8 @@ Architecture fit / applicable invariants: D-118; D-143; DISC-F-008 separations;
 DELIVERY_TARIFF_AUTHORITY = PRICING; Architecture Fit status RESOLVED / PASS / LOCKED
 Open material decisions: NONE (authorization mechanism locked; not a new Founder product choice)
 Device applicability: Desktop/tablet tariff authoring; mobile inspection/context only
-Classification: PLANNED_IMP036F; tariff auth mapping locked (pricing.manage @ Brand←Outlet)
-Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization was granted at GTM-R120 / STATE-R118; implementation start is recorded at GTM-R121 / STATE-R119.
+Classification: CURRENT_SUPPORTED after IMP-036F acceptance; tariff auth mapping locked (pricing.manage @ Brand←Outlet)
+Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization was granted at GTM-R120 / STATE-R118; implementation start is recorded at GTM-R121 / STATE-R119; CURRENT acceptance at GTM-R122 / STATE-R120 (`COMPLETE_AND_ACCEPTED`).
 ```
 
 ```text
@@ -536,14 +544,14 @@ resolves effective revision only after deliberate publish/effect
 Security implications: Publish/effect server-authorized; unauthorized attempt leaves customer truth
 unchanged
 Architecture fit / applicable invariants: ADR-006 publication boundary; Architecture decision
-RESOLVED by locked Catalog ENTITY_CONTENT_REVISION; Implementation conformance work NOT YET
-IMPLEMENTED — AUTHORIZED / STARTED; F1 in progress for customer-visible or customer-evaluation-affecting ACTIVE
-Product/Variant mutations (known examples: ACTIVE Product name/description; ACTIVE Variant
-`isDefault`). Originally identified at Product Definition Gate as ARCHITECTURE_FIT_CONFORMANCE_GAP;
-later resolved by locked capability architecture.
+RESOLVED by locked Catalog ENTITY_CONTENT_REVISION. At Product Definition / Architecture Fit time
+this was identified as an implementation conformance gap for customer-visible or
+customer-evaluation-affecting ACTIVE Product/Variant mutations (known examples: ACTIVE Product
+name/description; ACTIVE Variant `isDefault`). That gap was subsequently implemented under F1 and
+is part of the accepted IMP-036F candidate; ADR-006 remains authoritative.
 Open material decisions: NONE
 Device applicability: Desktop/tablet publish/effect; mobile inspection/context only
-Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization was granted at GTM-R120 / STATE-R118; implementation start is recorded at GTM-R121 / STATE-R119.
+Readiness: READY — Architecture Fit PASS / architecture locked. Implementation authorization was granted at GTM-R120 / STATE-R118; implementation start is recorded at GTM-R121 / STATE-R119; CURRENT acceptance at GTM-R122 / STATE-R120 (`COMPLETE_AND_ACCEPTED`).
 ```
 
 ```text
@@ -1317,16 +1325,16 @@ Mandatory in acceptance slice: YES
 
 | Story / AC ID | Required behaviour / risk | Applicable test layers | Planned proof | Actual evidence / candidate / result |
 |---|---|---|---|---|
-| US-IMP-036F-001 / AC-001-* | Inspection integrity; auth denial; empty/stale | unit/integration + real-browser where UI | Planned after implementation execution | Not executed (implementation in progress; F1) |
-| US-IMP-036F-002…004 / AC-002…004-* | Catalog draft/lifecycle/modifiers; ADR-006 intent | domain + UI + E2E | Planned | Not executed |
-| US-IMP-036F-005 / AC-005-* | Menu organization; one active Menu | UI + customer projection verification | Planned | Not executed |
-| US-IMP-036F-006 / AC-006-* | Brand Assortment; OM boundary | domain + UI + IMP-036E regression | Planned | Not executed |
-| US-IMP-036F-007 / AC-007-* | Pricing; snapshot immutability | domain monetary + UI | Planned | Not executed |
-| US-IMP-036F-008 / AC-008-* | Promotions/Coupons lifecycle fidelity | domain + UI | Planned | Not executed |
-| US-IMP-036F-009 / AC-009-* | Delivery tariff; separation; locked pricing.manage auth allow/deny | domain + UI after implementation execution | Planned; Fit mapping resolved; implementation in progress (F1) | Not executed |
-| US-IMP-036F-010…012 / AC-010…012-* | Consequence, publish, verify; no realtime push | UI + customer read E2E | Planned; Founder UAT later | Not executed |
-| US-IMP-036F-013 / AC-013-* | Sellability diagnosis composition | UI + composed reads | Planned | Not executed |
-| US-IMP-036F-014…016 / AC-014…016-* | Media view bounds (mutation FOLLOW_UP); device inspection-only; tax inspection | UI responsive/a11y | Planned | Not executed |
+| US-IMP-036F-001 / AC-001-* | Inspection integrity; auth denial; empty/stale | unit/integration + real-browser where UI | Grouped accepted evidence | Implemented and independently reviewed across F1–F6B (PRs #143–#150); F6B independent review `5210814689`; post-merge audit PR #151 / review `5212370227`; exact-main CI `34991901136` SUCCESS; Founder UAT PASS on accepted candidate `91d0b5e5e5815da6bf0bb325a3c6ab884dc06652` (workspace/context covered) |
+| US-IMP-036F-002…004 / AC-002…004-* | Catalog draft/lifecycle/modifiers; ADR-006 / ENTITY_CONTENT_REVISION | domain + UI + E2E | Grouped accepted evidence | Implemented and independently reviewed across F1–F6B; Catalog publication conformance included in accepted candidate; exact-main CI PASS; Founder UAT PASS (Catalog Product/Variant covered) |
+| US-IMP-036F-005 / AC-005-* | Menu organization; one active Menu | UI + customer projection verification | Grouped accepted evidence | Implemented and independently reviewed across F1–F6B; exact-main CI PASS; Founder UAT PASS (Menu covered) |
+| US-IMP-036F-006 / AC-006-* | Brand Assortment; OM boundary | domain + UI + IMP-036E regression | Grouped accepted evidence | Implemented and independently reviewed across F1–F6B; exact-main CI PASS; Founder UAT PASS (Assortment vs Availability covered) |
+| US-IMP-036F-007 / AC-007-* | Pricing; snapshot immutability | domain monetary + UI | Grouped accepted evidence | Implemented and independently reviewed across F1–F6B; exact-main CI PASS; Founder UAT PASS (Pricing including modifier price covered) |
+| US-IMP-036F-008 / AC-008-* | Promotions/Coupons lifecycle fidelity | domain + UI | Grouped accepted evidence | Implemented and independently reviewed across F1–F6B; exact-main CI PASS; Founder UAT PASS (Promotions/Coupons covered) |
+| US-IMP-036F-009 / AC-009-* | Delivery tariff; separation; locked pricing.manage auth allow/deny | domain + UI | Grouped accepted evidence | Implemented and independently reviewed across F1–F6B; Fit mapping resolved and implemented; exact-main CI PASS; Founder UAT PASS (Delivery Tariff covered) |
+| US-IMP-036F-010…012 / AC-010…012-* | Consequence, publish, verify; no realtime push | UI + customer read E2E | Grouped accepted evidence | Implemented and independently reviewed across F1–F6B; exact-main CI PASS; Founder UAT PASS (consequence review + customer-truth verification covered) |
+| US-IMP-036F-013 / AC-013-* | Sellability diagnosis composition | UI + composed reads | Grouped accepted evidence | Implemented and independently reviewed across F1–F6B; exact-main CI PASS; Founder UAT PASS (sellability diagnosis covered) |
+| US-IMP-036F-014…016 / AC-014…016-* | Media view bounds (mutation FOLLOW_UP); device inspection-only; tax inspection | UI responsive/a11y | Grouped accepted evidence | Implemented and independently reviewed across F1–F6B within V1 bounds (media mutation remains FOLLOW_UP; Tax/Charges read-only; mobile inspection/context); exact-main CI PASS; Founder UAT PASS (desktop/tablet/mobile boundary covered) |
 
 ---
 
@@ -1338,7 +1346,7 @@ Mandatory in acceptance slice: YES
 | `BR-IMP-036F-002` | Visibility of an action is not authorization; server-side/domain authorization is authoritative | D-358/D-372/D-373; PERSONA ≠ PERMISSION | US-001, all mutation stories |
 | `BR-IMP-036F-003` | Products/Variants follow existing DRAFT/ACTIVE/RETIRED lifecycle; no hard-delete of historical entities | ADR-006; D-089 | US-002, US-004 |
 | `BR-IMP-036F-004` | Customer-visible Catalog change requires EDIT DRAFT → VALIDATE → PUBLISH → EFFECTIVE REVISION → customer resolve; not active-record live mutation as desired behaviour | ADR-006; DISC-F-002; D-089 | US-002, US-011 |
-| `BR-IMP-036F-005` | Pre-implementation runtime customer-visible or customer-evaluation-affecting ACTIVE Product/Variant mutations without ADR-006 draft→validate→publish→effective revision were originally identified at Product Definition Gate as an `ARCHITECTURE_FIT_CONFORMANCE_GAP` (not Founder product intent and not an ADR-006 amendment). Architecture decision is RESOLVED by locked Catalog `ENTITY_CONTENT_REVISION`; Implementation conformance work remains NOT YET IMPLEMENTED; implementation is AUTHORIZED / STARTED (F1 in progress). Known examples: ACTIVE Product name/description; ACTIVE Variant default-selection (`isDefault`). Do not claim every mutable Variant field necessarily changes customer projection unless verified. | Evidence vs ADR-006 (`updateProduct` / `updateVariant` / Menu projection); locked capability architecture | US-002, US-011 |
+| `BR-IMP-036F-005` | Pre-implementation runtime customer-visible or customer-evaluation-affecting ACTIVE Product/Variant mutations without ADR-006 draft→validate→publish→effective revision were originally identified at Product Definition Gate as an `ARCHITECTURE_FIT_CONFORMANCE_GAP` (not Founder product intent and not an ADR-006 amendment). Architecture decision is RESOLVED by locked Catalog `ENTITY_CONTENT_REVISION`. That conformance gap was subsequently implemented under F1 and is part of the accepted IMP-036F candidate; ADR-006 remains authoritative. Known examples of the historical gap: ACTIVE Product name/description; ACTIVE Variant default-selection (`isDefault`). Do not claim every mutable Variant field necessarily changes customer projection unless verified. | Evidence vs ADR-006 (`updateProduct` / `updateVariant` / Menu projection); locked capability architecture; accepted candidate | US-002, US-011 |
 | `BR-IMP-036F-006` | V1 associates existing modifier structures only; no full Modifier Library / Bundle Builder requirement | DISC-F-002 | US-003 |
 | `BR-IMP-036F-007` | Consequential lifecycle transitions require confirmation and attribution/audit via appropriate authority | DISC-F-009; ADR-006 audit intent | US-004, US-010 |
 | `BR-IMP-036F-008` | Menu organizes presentation; Category ≠ Menu section | D-086; DISC-F-003 | US-005 |
@@ -1516,7 +1524,7 @@ GJ-1 remains descriptive supporting authority; **not mutated** by this Product D
 
 | GJ ID / registry status | Affected steps / downstream behaviour | Mandatory for this acceptance? | Related story / AC IDs | Required proof / actual evidence |
 |---|---|---|---|---|
-| `GJ-PRODUCT-MENU-LAUNCH` / `PLANNED` | Core commercial configure → Menu/outlet context → customer discovery/orderability | **YES — mandatory for IMP-036F acceptance** (finalized at Product Definition Gate PASS; registry remains PLANNED) | US-001…013 | Real-browser + Founder UAT after implementation; not CURRENT yet |
+| `GJ-PRODUCT-MENU-LAUNCH` / `CURRENT` | Core commercial configure → Menu/outlet context → customer discovery/orderability | **YES — mandatory for IMP-036F acceptance** (finalized at Product Definition Gate PASS; registry CURRENT after IMP-036F COMPLETE_AND_ACCEPTED) | US-001…013 | Real-browser + Founder UAT PASS on accepted candidate |
 | `GJ-FIRST-ORDER` / `CURRENT` | Customer discover→pay continuity depends on truthful commercial config | Supporting/current dependency (do not re-accept F as replacing it) | US-012 | Regression under TEST-1 when F lands |
 | `GJ-AVAILABILITY` / `CURRENT` | Diagnosis distinguishes Availability; F must not collapse Assortment/Availability | Supporting/current dependency | US-006, US-013 | Regression |
 | `GJ-ADDRESS-SERVICEABILITY` / `CURRENT` | Serviceability ≠ delivery tariff; diagnosis may include serviceability | Supporting/current dependency | US-009, US-013 | Regression |
@@ -1527,7 +1535,7 @@ GJ-1 remains descriptive supporting authority; **not mutated** by this Product D
 | `GJ-PAYMENT-RECOVERY` / `CURRENT` | Unaffected | No | — | N/A |
 | `GJ-CANCELLATION-REFUND` / `CURRENT` | Unaffected | No | — | N/A |
 
-Do not silently convert `GJ-PRODUCT-MENU-LAUNCH` from `PLANNED` to `CURRENT` in this task.
+`GJ-PRODUCT-MENU-LAUNCH` registry status is `CURRENT` after IMP-036F COMPLETE_AND_ACCEPTED.
 
 ---
 
@@ -1535,14 +1543,14 @@ Do not silently convert `GJ-PRODUCT-MENU-LAUNCH` from `PLANNED` to `CURRENT` in 
 
 | Dependency | Authority / verified state | Required before which story or gate? | Unresolved impact |
 |---|---|---|---|
-| Accepted Catalog/Menu/Assortment/Availability domains | ADR-006; accepted IMPs | All V1 stories | NONE for product intent; workforce UX gap remains |
+| Accepted Catalog/Menu/Assortment/Availability domains | ADR-006; accepted IMPs | All V1 stories | NONE for product intent; pre-IMP-036F workforce UX gap closed by accepted IMP-036F commercial journey (FOLLOW_UP/DEFERRED items in §23 remain) |
 | Accepted Pricing/Promotions | ADR-007 | US-007, US-008 | NONE for product intent |
-| Accepted delivery fee storage/calc | IMP-036C | US-009 | Fit mapping resolved; implementation work authorized / started (F1 in progress) |
+| Accepted delivery fee storage/calc | IMP-036C | US-009 | Fit mapping resolved; tariff management implemented and included in accepted IMP-036F candidate |
 | Accepted IMP-036E Store Assortment boundary | STATE / capability docs | US-006 | NONE — preserve |
-| Customer Menu projection | D-368 / IMP-028B | US-012 | Architecture decision RESOLVED (locked ENTITY_CONTENT_REVISION); Implementation conformance work NOT YET IMPLEMENTED (authorized / started; F1 in progress) for customer-affecting ACTIVE Product/Variant live mutations (incl. Product name/description; Variant `isDefault`) |
+| Customer Menu projection | D-368 / IMP-028B | US-012 | Architecture decision RESOLVED (locked ENTITY_CONTENT_REVISION); Catalog publication conformance implemented under IMP-036F and included in the accepted candidate (ADR-006 remains authoritative) |
 | Product Definition Gate | PD-1 | Before Architecture Fit | PERFORMED — PASS (2026-09-10; PR #140 review `5166877450`) |
 | Architecture Fit | PD-1 phase | Before implementation readiness | PERFORMED / PASS — locked capability architecture |
-| Implementation authorization | ROADMAP/STATE | Before coding | YES / PERFORMED / AUTHORIZED |
+| Implementation authorization | ROADMAP/STATE | Before coding | YES / PERFORMED / AUTHORIZED; CURRENT acceptance at GTM-R122 / STATE-R120 |
 
 ---
 
@@ -1555,8 +1563,8 @@ Do not silently convert `GJ-PRODUCT-MENU-LAUNCH` from `PLANNED` to `CURRENT` in 
 | Brand Assortment authority; Store Assortment read path | CURRENT_SUPPORTED (IMP-036E Store read) | US-006 preserves |
 | Pricing/Promotion domain manage capabilities | CURRENT_SUPPORTED (domain) | ADR-007 |
 | Delivery fee bands / free-delivery threshold calculation/storage | CURRENT_SUPPORTED | IMP-036C |
-| Coherent Brand commercial workforce end-to-end journey | PLANNED_IMP036F (this draft) | US-001…016 |
-| ADR-006 draft/publish customer-visible Catalog intent | PLANNED_IMP036F product intent; Architecture decision RESOLVED; CURRENT runtime non-conforming until Implementation conformance work is authorized/implemented | BR-005; locked Catalog ENTITY_CONTENT_REVISION |
+| Coherent Brand commercial workforce end-to-end journey | CURRENT_SUPPORTED after IMP-036F COMPLETE_AND_ACCEPTED | US-001…016; `GJ-PRODUCT-MENU-LAUNCH` CURRENT |
+| ADR-006 draft/publish customer-visible Catalog intent | CURRENT_SUPPORTED product intent with locked Catalog `ENTITY_CONTENT_REVISION` implemented under IMP-036F and included in the accepted candidate; ADR-006 remains authoritative | BR-005; locked Catalog ENTITY_CONTENT_REVISION |
 
 ---
 
@@ -1615,7 +1623,7 @@ capability architecture
 4. Consequence/verification composition → **resolved** (`CONSEQUENCE_REVIEW_EFFECT_BINDING = REQUIRED` with per-domain expected-revision bindings).
 5. Audit presentation/composition → **resolved** (distributed existing audit composition; no independent consequence store).
 6. Diagnosis composition → **resolved** (non-authoritative composition over existing authorities).
-7. Existing API/domain command gaps required by approved stories → **resolved** as architecture design only (implementation in progress (F1)).
+7. Existing API/domain command gaps required by approved stories → **resolved** as architecture design and subsequently implemented under IMP-036F (accepted candidate).
 8. `ARCHITECTURE_FIT = NOT_PERFORMED` → **resolved**; `ARCHITECTURE_FIT_EXECUTION: PERFORMED`; `ARCHITECTURE_FIT_RESULT: PASS`.
 
 ```text
@@ -1625,6 +1633,7 @@ missing mandatory ACs = NONE
 open material product decisions = NONE
 story readiness = READY
 implementation authorization = YES; implementation started = YES (GTM-R121 / STATE-R119)
+IMP036F_ACCEPTED = YES; FOUNDER_UAT = PASS (GTM-R122 / STATE-R120)
 ```
 
 ### Unassigned IMP-036E UX observations (not attached to IMP-036F)
@@ -1664,9 +1673,12 @@ Product-definition template fields are complete for all 16 stories above. Story 
 Definition + Architecture Fit/lock readiness only.
 
 Historical note (GTM-R120 / STATE-R118): `READY` stories had implementation authorization granted
-with implementation not yet started. CURRENT (GTM-R121 / STATE-R119): implementation start is
-recorded; F1 is in progress. `AUTHORIZED` + `STARTED` = `IMPLEMENTATION_IN_PROGRESS`. Start does
-**not** complete or accept IMP-036F, or activate IMP-036G.
+with implementation not yet started.
+
+Historical note (GTM-R121 / STATE-R119): implementation start was recorded; F1 was in progress.
+
+CURRENT (GTM-R122 / STATE-R120): IMP-036F is `COMPLETE_AND_ACCEPTED` (`IMP036F_ACCEPTED: YES`;
+Founder UAT PASS). Acceptance does **not** activate IMP-036G.
 
 `STORY_COMPLETE != IMP_ACCEPTED`.
 
@@ -1716,7 +1728,7 @@ Destructive Actions Defined: YES (consequential publish/lifecycle; no hard-delet
 UX State Matrix Complete: YES
 Accessibility Considered: YES
 Golden Journeys Identified: YES
-Mandatory Golden Journey for IMP-036F acceptance: GJ-PRODUCT-MENU-LAUNCH (registry remains PLANNED)
+Mandatory Golden Journey for IMP-036F acceptance: GJ-PRODUCT-MENU-LAUNCH (registry CURRENT after acceptance)
 Supporting CURRENT Golden Journey dependencies (not re-accepted as IMP-036F):
   GJ-FIRST-ORDER; GJ-AVAILABILITY; GJ-ADDRESS-SERVICEABILITY
 Explicit Deferrals Recorded: YES
@@ -1741,7 +1753,7 @@ ARCHITECTURE_FIT: PASS
 IMP036F_ARCHITECTURE_LOCKED: YES
 IMP036F_IMPLEMENTATION_AUTHORIZED: YES
 IMP036F_STARTED: YES
-IMP036F_ACCEPTED: NO
+IMP036F_ACCEPTED: YES
 IMP036G_ACTIVATED: NO
 
 ARCHITECTURE_FIT_REVIEWED_CANDIDATE_HEAD = 9ae06d6267e997223b1995124540974215ee17fd
@@ -1749,12 +1761,14 @@ ARCHITECTURE_FIT_REVIEWED_CANDIDATE_TREE = 55adb287bb0eb77240a6becdc16fed2d504ba
 INDEPENDENT_ARCHITECTURE_REVIEW = 5169723968
 INDEPENDENT_ARCHITECTURE_REVIEW_RESULT = PASS
 LOCKED_CAPABILITY_ARCHITECTURE = docs/platform/capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md
-CANONICAL_ANCHORS = GTM-R121 / STATE-R119
+CANONICAL_ANCHORS = GTM-R122 / STATE-R120
 IMPLEMENTATION_AUTHORIZATION_PROVENANCE = GTM-R120 / STATE-R118
 IMPLEMENTATION_START_PROVENANCE = GTM-R121 / STATE-R119
+FORMAL_ACCEPTANCE_PROVENANCE = GTM-R122 / STATE-R120
 ```
 
-Next gates: continue F1 implementation → independent review → Founder UAT → acceptance.
+Formal acceptance recorded at GTM-R122 / STATE-R120 after Founder UAT PASS. Acceptance does **not**
+activate IMP-036G.
 Implementation authorization provenance = GTM-R120 / STATE-R118; start = GTM-R121 / STATE-R119.
 Start does **not** complete or accept IMP-036F, or activate IMP-036G.
 ---
