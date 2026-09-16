@@ -19,7 +19,7 @@ owned by [TESTING.md](../TESTING.md).
 | [Golden Journey registry](./golden-journeys.md) | Cross-capability business continuity references and their bounded status |
 | [Product Definition template](./templates/product-definition-template.md) | Required structure for a capability's product definition |
 | [IMP-036F Product Definition](./IMP-036F/product-definition.md) | First PD-1 per-IMP Product Definition (`PD-IMP-036F-DRAFT-1`); Product Definition Gate = PASS; Architecture Fit = PASS; Capability architecture = LOCKED; lifecycle = COMPLETE_AND_ACCEPTED / accepted (ROADMAP/STATE remain lifecycle authority) |
-| [IMP-036G Product Definition](./IMP-036G/product-definition.md) | Pre-gate Product Definition draft (`PD-IMP-036G-DRAFT-1`); Document status = DRAFT; Product Definition Gate = NOT_PERFORMED; Architecture Fit = NOT_PERFORMED; architecture not locked; implementation not authorized / not started (ROADMAP/STATE remain lifecycle authority) |
+| [IMP-036G Product Definition](./IMP-036G/product-definition.md) | Pre-gate Product Definition draft (`PD-IMP-036G-DRAFT-2`); Document status = DRAFT / Product Definition Gate NOT_PERFORMED; Founder product decisions RESOLVED (7/7); Architecture Fit = NOT_PERFORMED; architecture not locked; implementation not authorized / not started (ROADMAP/STATE remain lifecycle authority) |
 | Per-IMP Product Definition | Business outcome, journeys, acceptance slice, stories, scenarios, business rules, and explicit deferrals within existing authority |
 
 A per-IMP Product Definition is mandatory from **IMP-036F onward** for new substantial product
@@ -28,8 +28,8 @@ and gate record. IMP-036F has a gate-passed Product Definition at
 [`./IMP-036F/product-definition.md`](./IMP-036F/product-definition.md) (Product Definition Gate PASS /
 Architecture Fit PASS / architecture LOCKED / COMPLETE_AND_ACCEPTED). IMP-036G has a **pre-gate
 DRAFT** Product Definition at [`./IMP-036G/product-definition.md`](./IMP-036G/product-definition.md)
-(`PD-IMP-036G-DRAFT-1`; Gate = NOT_PERFORMED; not approved). Activation
-and formal lifecycle remain owned
+(`PD-IMP-036G-DRAFT-2`; Gate = NOT_PERFORMED; Founder product decisions RESOLVED; not approved).
+Activation and formal lifecycle remain owned
 only by CURRENT ROADMAP/STATE, not by this index.
 Engineering-only changes without a product surface may remain specification-driven under the
 [change workflow](../engineering/change-workflow.md).
