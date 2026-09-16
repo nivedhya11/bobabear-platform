@@ -72,7 +72,7 @@ Supporting planning input (not this Product Definition):
 | Product owner / approval evidence | Founder / product governance human authority; **Product Definition Gate NOT_PERFORMED** — no approval evidence yet |
 | Process / verification policy | `PD-1` / `TEST-1` |
 | Canonical anchors | VISION-1; ROADMAP GTM-R125; STATE STATE-R123; ARCH-R19; DR-15; PD-1; TEST-1; PERSONA-1; GJ-1 |
-| Repository candidate | Canonical path `/home/ajoshi/repos/boba-bear-platform`; branch `governance/imp036g-resolve-product-decisions`; verified base `main` merge `475d0c46598c2bf512570469354b69a3d75b7817` / tree `4ee7687b0d77027caa67d6672eadc390c7c916f8` (draft candidate HEAD will differ after this Product Definition commit) |
+| Repository candidate | **Draft creation/base provenance only** (not the Product Definition Gate-evaluated candidate): canonical path `/home/ajoshi/repos/boba-bear-platform`; branch `governance/imp036g-resolve-product-decisions`; verified base `main` merge `475d0c46598c2bf512570469354b69a3d75b7817` / tree `4ee7687b0d77027caa67d6672eadc390c7c916f8`. Exact Product Definition Gate-evaluated candidate SHA/tree/fingerprint are recorded only when the Gate is performed (currently `NOT_PERFORMED`). |
 | Capability lifecycle / authorization | ROADMAP/STATE: `currentProductSlice = IMP-036G`; `IMP036G_ACTIVATED: YES`; formal lifecycle `PLANNED` / `NOT_AUTHORIZED` / `NOT_STARTED`; `IMP036G_PRODUCT_DEFINITION: DRAFT`; `IMP036G_PRODUCT_DEFINITION_VERSION: PD-IMP-036G-DRAFT-2`; `IMP036G_PRODUCT_DEFINITION_GATE: NOT_PERFORMED`; `IMP036G_ARCHITECTURE_FIT: NOT_PERFORMED`; `IMP036G_ARCHITECTURE_LOCKED: NO`; `IMP036G_IMPLEMENTATION_AUTHORIZED: NO`; `IMP036G_STARTED: NO`; `IMP036G_ACCEPTED: NO`; `IMP036G_FOUNDER_UAT_REQUIRED: YES`; `nextProductSlice = IMP-037` (**IMP037_ACTIVATED: NO**) |
 | Relevant capability architecture / ADRs | Accepted IMP-035 capability [`capabilities/IMP-035-initial-administration-capabilities.md`](../../capabilities/IMP-035-initial-administration-capabilities.md); binding D-373; ARCH-G25 / ARCH-R19; Access Control + Organization domain authority; supporting plan [`IMP-036G-administration-console-v2.md`](../../experience/enterprise-experience/IMP-036G-administration-console-v2.md). **IMP-036G capability architecture: NOT_LOCKED / NOT_CREATED for Fit.** |
 | Founder UAT applicability | `FOUNDER_UAT_REQUIRED = YES` — materially changes operator-visible administration experience (ROADMAP/STATE; enterprise-experience programme rule) |
@@ -383,16 +383,16 @@ so that I can explain who changed memberships/roles/resources within my authoriz
 
 Journey / activity: JOURNEY-G-ADMIN-INVESTIGATION — audit
 Preconditions: access.audit.read
-Acceptance scenarios: AC-IMP-036G-007-01 … 007-09
+Acceptance scenarios: AC-IMP-036G-007-01 … 007-04; 007-06; 007-08; 007-09 (IDs 007-05 and 007-07 intentionally unused)
 Business rules: BR-IMP-036G-016, BR-IMP-036G-017
 UX states: loading; empty; ready list; end-of-results; filter active; forbidden; error/retry
-Permission / resource context: CURRENT authorized list capped 200 with HTTP filters NOT_FOUND is a gap; PLANNED server-side actor/action/date-range filters over authoritative eligible set + scalable discoverability
+Permission / resource context: CURRENT authorized list capped 200 with HTTP actor/action/date query filters NOT_FOUND is a baseline gap (see §3 Audit list; BR-017); PLANNED MUST support server-side actor/action/date-range filters over the authoritative eligible set + scalable discoverability — client-side filtering of only the first 200 results is NOT accepted V1
 Error / recovery: retry; clear empty; do not invent unauthorized events; navigating filters must not broaden authority
-Dependencies: GET /api/admin/v1/audit-events (CURRENT_SUPPORTED); Fit may require query-contract/index work
+Dependencies: GET /api/admin/v1/audit-events (CURRENT_SUPPORTED); Architecture Fit may require query-contract/index work (Fit dependency/artifact — not a runtime Acceptance Criterion)
 Explicit non-goals: analytics; secrets; rewriting audit; Ops log platform; client-only filter of first 200 as accepted V1
-Data implications: append-only read; no new audit store expected; Fit determines filter/query/index contract
+Data implications: append-only read; no new audit store expected; Architecture Fit determines minimum filter/query/index contract (no endpoint shapes, SQL, index design, page-size constants, or implementation mechanics invented here)
 Security implications: minimize sensitive disclosure; authz/scope preserved on every filtered result
-Architecture fit / applicable invariants: NEW_API_OR_API_EXTENSION = ARCHITECTURE_FIT_TO_DETERMINE_MINIMUM_REQUIRED for server-side filters and scale
+Architecture fit / applicable invariants: Product Definition decides that server-side filtering and scalable discoverability are mandatory; Architecture Fit chooses the minimum technical mechanism, query contract, pagination/filter design, and indexes if required (NEW_API_OR_API_EXTENSION = ARCHITECTURE_FIT_TO_DETERMINE_MINIMUM_REQUIRED). The Product Definition MUST NOT invent endpoint shapes, SQL, index design, page-size constants, or implementation mechanics.
 Open material decisions: NONE for product requirement (Founder-resolved §25 items 3 and 6); Fit chooses query contract/indexes
 Readiness: NOT_READY_FOR_IMPLEMENTATION (gates not performed — not because unresolved product decisions)
 ```
@@ -957,13 +957,10 @@ When Audit is requested
 Then denial occurs without event disclosure
 Mandatory in acceptance slice: YES
 
-AC-IMP-036G-007-05 — CURRENT gap: no HTTP query filters today
-Story: US-IMP-036G-007
-Given CURRENT audit GET
-When actor/action/date filter query params are considered against today’s transport
-Then HTTP server query filters are NOT_FOUND (CURRENT fact)
-And this is recorded as a gap to fix — client-side filter of the first 200 is NOT accepted V1 desired state
-Mandatory in acceptance slice: YES (boundary / CURRENT gap)
+(Note: AC-IMP-036G-007-05 and AC-IMP-036G-007-07 are intentionally unused.
+Former CURRENT no-HTTP-filters baseline gap and Architecture Fit query-contract boundary remain in
+§3 Audit list, BR-IMP-036G-017, and US-IMP-036G-007 Architecture Fit / dependency / data fields —
+not as mandatory runtime Acceptance Criteria.)
 
 AC-IMP-036G-007-06 — Server-side audit filters mandatory
 Story: US-IMP-036G-007
@@ -973,14 +970,6 @@ Then filtering is server-side over the authoritative eligible set (not merely cl
 And authz, scope, append-only, no mutation, human-readable fields, and empty/error/retry behaviours are preserved
 And navigating filters must not broaden authority
 Mandatory in acceptance slice: YES
-
-AC-IMP-036G-007-07 — Architecture Fit determines audit query contract
-Story: US-IMP-036G-007
-Given server-side audit filters and scale are mandatory product requirements
-When Architecture Fit evaluates
-Then Fit chooses the minimum required query contract and indexes
-And this Product Definition does not invent endpoint shapes or SQL
-Mandatory in acceptance slice: YES (Fit input; not an invented API shape)
 
 AC-IMP-036G-007-08 — Audit append-only (no rewrite UI)
 Story: US-IMP-036G-007
@@ -1070,7 +1059,7 @@ Mandatory in acceptance slice: YES
 | US-004 / AC-004-* | Membership legal/illegal transitions including Expire; create UI; discoverability; GJ continuity | integration + E2E; GJ regression | Planned membership suite + GJ-PERMITTED-OUTLET-ACCESS continuity | `NOT_EXECUTED` / pending implementation |
 | US-005 / AC-005-* | Grant/revoke; ceiling; self-elevation; cross-scope; confirm | integration + negative security + E2E | Planned role-assignment suite | `NOT_EXECUTED` / pending implementation |
 | US-006 / AC-006-* | Managed-subject effective permissions; read-only; post-role-change refresh | integration + E2E; Fit transport evidence | Planned subject-principal diagnostic suite | `NOT_EXECUTED` / pending implementation |
-| US-007 / AC-007-* | Audit list; server-side actor/action/date filters; scale beyond 200 | integration + E2E | Planned audit filter + discoverability suite | `NOT_EXECUTED` / pending implementation |
+| US-007 / AC-007-01/02/03/04/06/08/09 | Authorized audit listing; empty; discoverability beyond 200; authz denial; server-side actor/action/date-range filters; append-only/no-rewrite; network/retry | integration + E2E | Planned audit filter + discoverability suite (runtime target ACs only). Architecture Fit query-contract/index evidence is a Fit dependency/artifact — not a mandatory runtime AC. CURRENT no-HTTP-filters may remain baseline repository evidence for the problem statement — not a post-implementation passing AC. | `NOT_EXECUTED` / pending implementation |
 | US-008 / AC-008-* | Ops status reuse; Admin≠Ops; Open Operations | integration + E2E authz | Planned status/hand-off suite | `NOT_EXECUTED` / pending implementation |
 
 Every mandatory AC needs passing evidence under TEST-1 after implementation authorization. Planned proof is **not** proven.
@@ -1097,7 +1086,7 @@ Every mandatory AC needs passing evidence under TEST-1 after implementation auth
 | `BR-IMP-036G-014` | Effective-permissions diagnostic is read-only | IMP-035 | AC-006-05 |
 | `BR-IMP-036G-015` | CURRENT effective-permissions projects calling actor (gap); PLANNED MUST inspect managed-subject effective permissions (server-authoritative; read-only; caller authz; no foreign leak; caller not mislabeled as member) | VERIFIED runtime gap; Founder decision §25 item 1 | AC-006-01/06/07/08 |
 | `BR-IMP-036G-016` | Audit is append-only authorized list; CURRENT cap 200 is a gap; PLANNED scalable discoverability beyond 200 | IMP-035 LIST_LIMIT behaviour; Founder decision §25 item 6 | AC-007-01/03/08 |
-| `BR-IMP-036G-017` | CURRENT HTTP audit query filters are NOT_FOUND (gap); PLANNED MUST support server-side actor/action/date-range filters over authoritative eligible set — client-only of first 200 is NOT accepted V1 | VERIFIED CURRENT; Founder decision §25 item 3 | AC-007-05…07 |
+| `BR-IMP-036G-017` | CURRENT HTTP audit query filters are NOT_FOUND (gap); PLANNED MUST support server-side actor/action/date-range filters over authoritative eligible set — client-only of first 200 is NOT accepted V1 | VERIFIED CURRENT; Founder decision §25 item 3 | AC-007-06; §3 Audit list (CURRENT gap); US-007 Fit/dependency fields |
 | `BR-IMP-036G-018` | Admin must not become Operations dashboard; Open Operations is navigation only if separately authorized | D-373 vs Ops; plan | US-008 |
 | `BR-IMP-036G-019` | Operational status reuses existing Ops endpoint authority; no Admin-invented health store | CURRENT Ops API | AC-008-01/03 |
 | `BR-IMP-036G-020` | Admin Overview MUST provide truthful useful operational context from authoritative existing domains (org/hierarchy/outlet; membership lifecycle attention; recent access changes; safe operational health); MUST NOT invent analytics KPI / second truth store; unsupported mandatory Overview MUST NOT be FOLLOW_UP | Founder decision §25 item 2 | AC-001-06 |
@@ -1377,7 +1366,7 @@ shapes, SQL, CAS field names, or page sizes.
 |---|---|---|---|---|
 | **1** | Subject-principal effective permissions | MUST inspect managed member’s effective permissions (server-authoritative; explicit human-readable subject; caller authz enforced; no foreign leak; READ ONLY diagnostic; not a permission editor; after role change show resulting subject permissions; caller must not be mislabeled as member). Caller-only is CURRENT fact, **not** sufficient desired V1 state. | US-006; AC-006-01/06/07/08; BR-015 | Fit chooses transport (extend endpoint / new Admin projection / other). `EXPECTED_NEW_API: NO` is **no longer** a hard constraint for this gap. |
 | **2** | Useful authoritative Admin Overview | MUST provide truthful useful operational context: org/hierarchy/outlet context; membership lifecycle attention; recent access changes; relevant safe operational health — from authoritative existing domains; no second truth store; no invented analytics/KPI; not analytics programme; Admin≠Ops. Unsupported mandatory Overview content MUST NOT be disposed as FOLLOW_UP. | US-001; AC-001-06; BR-020 | Fit may reuse existing projections or introduce a bounded Admin Overview projection. |
-| **3** | Server-side audit filtering | MUST support server-side filters: actor, action, date/time range over authoritative eligible set (not just first 200 client-side). Preserve authz, scope, append-only, no mutation, human-readable, empty/error/retry. Client-only of first 200 is **not** accepted V1. | US-007; AC-007-05…07; BR-017 | Fit chooses query contract/indexes. |
+| **3** | Server-side audit filtering | MUST support server-side filters: actor, action, date/time range over authoritative eligible set (not just first 200 client-side). Preserve authz, scope, append-only, no mutation, human-readable, empty/error/retry. Client-only of first 200 is **not** accepted V1. CURRENT no HTTP query filters remains documented as baseline gap (§3; BR-017), not as a post-implementation Acceptance Criterion. | US-007; AC-007-06; BR-017 | Fit chooses minimum query contract, pagination/filter design, and indexes if required. Product Definition does not invent endpoint shapes, SQL, index design, page-size constants, or implementation mechanics. |
 | **4** | Small-mobile high-consequence actions | MUST safely perform on small-mobile: suspend/revoke membership; expire invited; grant/revoke role; deactivate org resource. Same safety requirements (explicit target/scope/consequence/confirm/cancel/a11y/focus/states). Desktop may be richer layout; mobile needs functional parity for mandatory V1 journeys (not identical layout). Inspection-first-only is **not** accepted V1. | §18; BR-023; US-003/004/005 | Fit confirms responsive UX composition; no new service expected. |
 | **5** | Expire membership | MUST expose authorized Expire for invited→expired. Terminal; consequence confirm; distinguish Expire vs Revoke; illegal transitions unavailable; durable after reload. AC-004-05 is mandatory (not conditional). | US-004; AC-004-05; BR-021 | Fit maps to existing membership transition authority; UI affordance mandatory. |
 | **6** | Collection discoverability beyond 200 | MUST provide scalable discoverability (server pagination and/or search/filter) for brands/orgs/territories/legal entities/outlets/memberships/audit. No UI implying exhaustive when more exist; authz every result; no foreign leak; loading/empty/end/error; navigating must not broaden authority. ≤200 is **rejected** as accepted V1 boundary. | US-002/004/007; AC-002-10/11; AC-004-01; AC-007-03; BR-026 | Fit chooses cursor/offset/page size/search/indexes. |
@@ -1477,10 +1466,11 @@ IMP036G_ACCEPTED: NO
 IMP037_ACTIVATED: NO
 
 CANONICAL_ANCHORS = VISION-1; GTM-R125; STATE-R123; ARCH-R19; DR-15; PD-1; TEST-1; PERSONA-1; GJ-1
+REPOSITORY_CANDIDATE_PROVENANCE = DRAFT_CREATION_BASE_ONLY (not Product Definition Gate-evaluated)
 REPOSITORY_CANDIDATE_BASE_MAIN_MERGE = 475d0c46598c2bf512570469354b69a3d75b7817
 REPOSITORY_CANDIDATE_BASE_TREE = 4ee7687b0d77027caa67d6672eadc390c7c916f8
 BRANCH = governance/imp036g-resolve-product-decisions
-NOTE = draft candidate HEAD will differ after this Product Definition commit
+NOTE = Exact Product Definition Gate-evaluated candidate SHA/tree/fingerprint are recorded only when the Gate is performed (currently NOT_PERFORMED)
 PREDECESSOR_DRAFT = PD-IMP-036G-DRAFT-1
 ```
 
@@ -1537,7 +1527,7 @@ do not invent analytics KPI / second truth stores; Fit may reuse or introduce bo
 | Desired journeys | 3 (`JOURNEY-G-ADMIN-CONTEXT`, `JOURNEY-G-ACCESS-MANAGEMENT`, `JOURNEY-G-ADMIN-INVESTIGATION`) |
 | User stories | 8 (`US-IMP-036G-001` … `008`) |
 | V1 acceptance stories | 8 |
-| Acceptance scenarios (defined) | 77 (includes AC-002-11) |
+| Acceptance scenarios (defined) | 75 (includes AC-002-11; AC-007-05 and AC-007-07 intentionally unused) |
 | Business rules | 27 (`BR-IMP-036G-001` … `027`) |
 | §25 Founder product decisions (RESOLVED) | 7 |
 | §25 unresolved items (active) | 0 |
