@@ -2,7 +2,7 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R121",
+  "stateVersion": "STATE-R122",
   "acceptedThrough": "IMP-036F",
   "currentProductSlice": "IMP-036G",
   "nextProductSlice": "IMP-037",
@@ -36,19 +36,25 @@ Current Product Implementation: NONE
 Pending Acceptance:             NONE
 Current Product Slice:          IMP-036G — Administration Console V2
 Next Product Slice:             IMP-037 — Backup, Restore & Migration Readiness
-Current Governance Activity:    IMP-036G activated as CURRENT product slice (GTM-R123 / STATE-R121);
+Current Governance Activity:    IMP-036G activated as CURRENT product slice; pre-gate Product
+                              Definition draft PD-IMP-036G-DRAFT-1 ready for independent product
+                              review (GTM-R124 / STATE-R122);
+                              PRE-GATE PRODUCT DEFINITION DRAFT READY FOR INDEPENDENT PRODUCT REVIEW;
                               IMP-036F remains COMPLETE_AND_ACCEPTED after Founder UAT PASS
                               (2026-09-15); accepted UAT candidate
                               91d0b5e5e5815da6bf0bb325a3c6ab884dc06652 /
                               tree ab41fc7f2bf6d0a52c3ea6c2b69ed331ca9540cf;
                               formal IMP-036G ROADMAP lifecycle remains PLANNED;
-                              IMP036G_ACTIVATED: YES; IMP036G_PRODUCT_DEFINITION: NOT_CREATED;
+                              IMP036G_ACTIVATED: YES; IMP036G_PRODUCT_DEFINITION: DRAFT;
+                              IMP036G_PRODUCT_DEFINITION_VERSION: PD-IMP-036G-DRAFT-1;
+                              IMP036G_PRODUCT_DEFINITION_GATE: NOT_PERFORMED;
+                              IMP036G_ARCHITECTURE_FIT: NOT_PERFORMED;
                               IMP036G_ARCHITECTURE_LOCKED: NO;
                               IMP036G_IMPLEMENTATION_AUTHORIZED: NO; IMP036G_STARTED: NO;
                               IMP036G_ACCEPTED: NO; IMP036G_FOUNDER_UAT_REQUIRED: YES;
-                              PD-1 next phase ANCHOR → DISCOVER; no Product Definition Gate,
-                              architecture lock, implementation authorization, implementation
-                              start, acceptance, or IMP-037 activation has occurred;
+                              Product Definition Gate, Architecture Fit, architecture lock,
+                              implementation authorization, implementation start, acceptance, and
+                              IMP-037 activation have NOT occurred;
                               IMP-036E remains COMPLETE_AND_ACCEPTED;
                               IMP-037 remains PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED /
                               NOT_STARTED (IMP037_ACTIVATED: NO).
@@ -162,7 +168,10 @@ IMP-036D_ACCEPTED:        YES
 IMP-036D_FOUNDER_UAT:     PASS
 IMP-036G:                 PLANNED / NOT_AUTHORIZED / NOT_STARTED
 IMP036G_ACTIVATED:        YES
-IMP036G_PRODUCT_DEFINITION: NOT_CREATED
+IMP036G_PRODUCT_DEFINITION: DRAFT
+IMP036G_PRODUCT_DEFINITION_VERSION: PD-IMP-036G-DRAFT-1
+IMP036G_PRODUCT_DEFINITION_GATE: NOT_PERFORMED
+IMP036G_ARCHITECTURE_FIT: NOT_PERFORMED
 IMP036G_ARCHITECTURE_LOCKED: NO
 IMP036G_IMPLEMENTATION_AUTHORIZED: NO
 IMP036G_STARTED:          NO
@@ -415,7 +424,10 @@ IMP-036D_ACCEPTED: YES
 IMP-036D_FOUNDER_UAT: PASS
 IMP-036G: PLANNED / NOT_AUTHORIZED / NOT_STARTED
 IMP036G_ACTIVATED: YES
-IMP036G_PRODUCT_DEFINITION: NOT_CREATED
+IMP036G_PRODUCT_DEFINITION: DRAFT
+IMP036G_PRODUCT_DEFINITION_VERSION: PD-IMP-036G-DRAFT-1
+IMP036G_PRODUCT_DEFINITION_GATE: NOT_PERFORMED
+IMP036G_ARCHITECTURE_FIT: NOT_PERFORMED
 IMP036G_ARCHITECTURE_LOCKED: NO
 IMP036G_IMPLEMENTATION_AUTHORIZED: NO
 IMP036G_STARTED: NO
@@ -477,7 +489,7 @@ Implementation/review provenance for IMP-036F is recorded in
 
 ## 8. Explicitly Not Yet Accepted
 
-- IMP-036G — Administration Console V2 (`PLANNED` / `NOT_AUTHORIZED` / `NOT_STARTED`; `IMP036G_ACTIVATED: YES`; Product Definition NOT_CREATED; architecture NOT_LOCKED; implementation NOT_AUTHORIZED / NOT_STARTED)
+- IMP-036G — Administration Console V2 (`PLANNED` / `NOT_AUTHORIZED` / `NOT_STARTED`; `IMP036G_ACTIVATED: YES`; Product Definition DRAFT `PD-IMP-036G-DRAFT-1`; Product Definition Gate NOT_PERFORMED; Architecture Fit NOT_PERFORMED; architecture NOT_LOCKED; implementation NOT_AUTHORIZED / NOT_STARTED)
 - IMP-037 — Backup, Restore & Migration Readiness (`PLANNED` / `NOT_ACTIVATED`; `IMP037_ACTIVATED: NO`)
 - IMP-038 — Security & Privacy Hardening
 - IMP-039 — Production Infrastructure & Release Pipeline
@@ -500,7 +512,38 @@ Implementation/review provenance for IMP-036F is recorded in
 Agents may propose a STATE delta in their report. Only independent acceptance updates this file's
 accepted position and may promote `governanceHealth` to `ALIGNED`.
 
-## 10. STATE-R121 record
+## 10. STATE-R122 record
+
+```text
+STATE-R122 = IMP-036G_PRODUCT_DEFINITION_DRAFT
+acceptedThrough: IMP-036F
+pendingAcceptance: NONE
+currentProductSlice: IMP-036G
+nextProductSlice: IMP-037
+IMP-036F: COMPLETE_AND_ACCEPTED
+IMP036F_ACCEPTED: YES
+IMP036F_FOUNDER_UAT: PASS
+IMP036F_FORMAL_ACCEPTANCE: ACCEPTED
+IMP-036G: PLANNED / NOT_AUTHORIZED / NOT_STARTED
+IMP036G_ACTIVATED: YES
+IMP036G_PRODUCT_DEFINITION: DRAFT
+IMP036G_PRODUCT_DEFINITION_VERSION: PD-IMP-036G-DRAFT-1
+IMP036G_PRODUCT_DEFINITION_GATE: NOT_PERFORMED
+IMP036G_ARCHITECTURE_FIT: NOT_PERFORMED
+IMP036G_ARCHITECTURE_LOCKED: NO
+IMP036G_IMPLEMENTATION_AUTHORIZED: NO
+IMP036G_STARTED: NO
+IMP036G_ACCEPTED: NO
+IMP036G_FOUNDER_UAT_REQUIRED: YES
+IMP-037: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
+IMP037_ACTIVATED: NO
+architectureVersion: ARCH-R19
+decisionRegisterVersion: DR-15
+productDeliveryVersion: PD-1
+supersedes: STATE-R121
+```
+
+## 11. STATE-R121 record
 
 ```text
 STATE-R121 = IMP-036G_PRODUCT_SLICE_ACTIVATION
@@ -528,7 +571,7 @@ productDeliveryVersion: PD-1
 supersedes: STATE-R120
 ```
 
-## 11. STATE-R120 record
+## 12. STATE-R120 record
 
 ```text
 STATE-R120 = IMP-036F_FORMAL_ACCEPTANCE
@@ -554,7 +597,7 @@ productDeliveryVersion: PD-1
 supersedes: STATE-R119
 ```
 
-## 12. STATE-R119 record
+## 13. STATE-R119 record
 
 ```text
 STATE-R119 = IMP-036F_IMPLEMENTATION_START
@@ -583,7 +626,7 @@ supersedes: STATE-R118
 STATE-R119 records IMP-036F implementation start. Implementation is in progress; not complete;
 not accepted. Authorization provenance remains GTM-R120 / STATE-R118.
 
-## 13. STATE-R118 record
+## 14. STATE-R118 record
 
 ```text
 STATE-R118 = IMP-036F_IMPLEMENTATION_AUTHORIZATION
@@ -622,7 +665,7 @@ lockedCapabilityArchitecture: docs/platform/capabilities/IMP-036F-catalog-menu-p
 supersedes: STATE-R117
 ```
 
-## 14. STATE-R117 record
+## 15. STATE-R117 record
 
 ```text
 STATE-R117 = IMP-036F_ARCHITECTURE_LOCK
@@ -661,7 +704,7 @@ ARCH_R20_REQUIRED_FOR_IMP036F_LOCK: NO
 supersedes: STATE-R116
 ```
 
-## 15. STATE-R116 record
+## 16. STATE-R116 record
 
 ```text
 STATE-R116 = IMP-036F_PRODUCT_DEFINITION_GATE_PASS
@@ -692,7 +735,7 @@ gateDate: 2026-09-10
 supersedes: STATE-R115
 ```
 
-## 16. STATE-R115 record
+## 17. STATE-R115 record
 
 ```text
 STATE-R115 = IMP-036F_PRODUCT_DEFINITION_DRAFT_AUTHORIZED
@@ -720,7 +763,7 @@ productDeliveryVersion: PD-1
 supersedes: STATE-R114
 ```
 
-## 17. STATE-R114 record
+## 18. STATE-R114 record
 
 ```text
 STATE-R114 = IMP-036F_PRODUCT_SLICE_ACTIVATION
@@ -747,7 +790,7 @@ productDeliveryVersion: PD-1
 supersedes: STATE-R113
 ```
 
-## 18. STATE-R113 record
+## 19. STATE-R113 record
 
 
 ```text
@@ -770,7 +813,7 @@ decisionRegisterVersion: DR-15
 supersedes: STATE-R112
 ```
 
-## 19. STATE-R112 record (historical compression)
+## 20. STATE-R112 record (historical compression)
 
 ```text
 STATE-R112 = CANONICAL_AUTHORITY_CONTEXT_COMPRESSION_ONLY

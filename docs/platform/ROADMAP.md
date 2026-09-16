@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R123",
+  "roadmapVersion": "GTM-R124",
   "acceptedThrough": "IMP-036F",
   "currentProductSlice": "IMP-036G",
   "nextProductSlice": "IMP-037",
   "gtmBoundary": "IMP-040",
   "lastReviewed": "2026-09-16",
-  "supersedes": "GTM-R122"
+  "supersedes": "GTM-R123"
 }
 -->
 
@@ -211,7 +211,10 @@ ARCH_R20_REQUIRED_FOR_IMP036E_LOCK: NO
 ARCH_R20_CREATED: NO
 IMP-036G: PLANNED / NOT_AUTHORIZED / NOT_STARTED
 IMP036G_ACTIVATED: YES
-IMP036G_PRODUCT_DEFINITION: NOT_CREATED
+IMP036G_PRODUCT_DEFINITION: DRAFT
+IMP036G_PRODUCT_DEFINITION_VERSION: PD-IMP-036G-DRAFT-1
+IMP036G_PRODUCT_DEFINITION_GATE: NOT_PERFORMED
+IMP036G_ARCHITECTURE_FIT: NOT_PERFORMED
 IMP036G_ARCHITECTURE_LOCKED: NO
 IMP036G_IMPLEMENTATION_AUTHORIZED: NO
 IMP036G_STARTED: NO
@@ -225,21 +228,25 @@ IMP-036D_ACCEPTED: YES
 IMP-036D_FOUNDER_UAT: PASS
 ```
 
-**GTM-R123** activates IMP-036G — Administration Console V2 as the CURRENT product slice after
-accepted and reconciled IMP-036F (GTM-R122 / STATE-R120; base main
-`5417cb5b53e5aa64f1841604b9ef96cfc37327de` / tree `f6187f320bb82c65d3623b15773d51a460a420e2`).
-IMP-036F remains `COMPLETE_AND_ACCEPTED`. Locked capability architecture remains
+**GTM-R124** records the IMP-036G pre-gate Product Definition draft
+(`PD-IMP-036G-DRAFT-1`; Document status DRAFT) after ANCHOR → DISCOVER → STORY_MAP on activated
+IMP-036G (GTM-R123 / STATE-R121; base main `e067febf113fe21eebe1c1a3f3be24cbe23dd1f8` / tree
+`8b8f7cd3068bf6dbcfd02055ae795da24c398dcd`). IMP-036F remains `COMPLETE_AND_ACCEPTED`. Locked
+capability architecture remains
 [`capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md`](./capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md).
-Product Definition remains `PD-IMP-036F-DRAFT-1` (APPROVED; Gate PASS; Architecture Fit PASS).
 ARCH-R19 and DR-15 remain unchanged. `acceptedThrough` remains IMP-036F;
 `currentProductSlice = IMP-036G`; `pendingAcceptance = NONE`; `nextProductSlice = IMP-037`.
 Formal IMP-036G ROADMAP lifecycle remains `PLANNED`
-(`IMP036G_ACTIVATED: YES`; `IMP036G_ARCHITECTURE_LOCKED: NO`;
-`IMP036G_IMPLEMENTATION_AUTHORIZED: NO`; `IMP036G_STARTED: NO`; `IMP036G_ACCEPTED: NO`;
-`IMP036G_PRODUCT_DEFINITION: NOT_CREATED`; `IMP036G_FOUNDER_UAT_REQUIRED: YES`). PD-1 applies
-prospectively; next separately bounded activity is ANCHOR → DISCOVER. This ADVANCE does **not**
-create a Product Definition, pass Product Definition Gate, lock architecture, authorize
-implementation, or activate IMP-037.
+(`IMP036G_ACTIVATED: YES`; `IMP036G_PRODUCT_DEFINITION: DRAFT`;
+`IMP036G_PRODUCT_DEFINITION_VERSION: PD-IMP-036G-DRAFT-1`;
+`IMP036G_PRODUCT_DEFINITION_GATE: NOT_PERFORMED`; `IMP036G_ARCHITECTURE_FIT: NOT_PERFORMED`;
+`IMP036G_ARCHITECTURE_LOCKED: NO`; `IMP036G_IMPLEMENTATION_AUTHORIZED: NO`;
+`IMP036G_STARTED: NO`; `IMP036G_ACCEPTED: NO`; `IMP036G_FOUNDER_UAT_REQUIRED: YES`).
+Current Product Implementation remains `NONE`. Current governance activity is pre-gate Product
+Definition draft ready for independent product review. This checkpoint does **not** execute the
+Product Definition Gate, perform Architecture Fit, lock architecture, authorize or start
+implementation, accept IMP-036G, or activate IMP-037. Per-IMP Product Definition draft:
+[`product/IMP-036G/product-definition.md`](./product/IMP-036G/product-definition.md).
 
 Implementation / review provenance for IMP-036F remains distinct from the acceptance
 reconciliation itself: F6A PR #149 reviewed head `429923f182d22d960052f5ca840bc367d4fd9078`
@@ -328,11 +335,15 @@ Current product slice is IMP-036G — Administration Console V2
 (`currentProductSlice = IMP-036G`; `pendingAcceptance = NONE`; `IMP036G_ACTIVATED: YES`).
 Formal ROADMAP lifecycle for IMP-036G remains `PLANNED` (`NOT_AUTHORIZED` / `NOT_STARTED`;
 `IMP036G_ARCHITECTURE_LOCKED: NO`; `IMP036G_IMPLEMENTATION_AUTHORIZED: NO`;
-`IMP036G_STARTED: NO`; `IMP036G_ACCEPTED: NO`; `IMP036G_PRODUCT_DEFINITION: NOT_CREATED`;
-`IMP036G_FOUNDER_UAT_REQUIRED: YES`). PD-1 is operational for this slice; next activity is
-ANCHOR → DISCOVER. No Product Definition, architecture lock, or implementation authorization is
-granted by this ADVANCE. Supporting planned experience contract (discovery input only; not a
-Product Definition):
+`IMP036G_STARTED: NO`; `IMP036G_ACCEPTED: NO`; `IMP036G_PRODUCT_DEFINITION: DRAFT`;
+`IMP036G_PRODUCT_DEFINITION_VERSION: PD-IMP-036G-DRAFT-1`;
+`IMP036G_PRODUCT_DEFINITION_GATE: NOT_PERFORMED`; `IMP036G_ARCHITECTURE_FIT: NOT_PERFORMED`;
+`IMP036G_FOUNDER_UAT_REQUIRED: YES`). PD-1 is operational for this slice. Pre-gate Product
+Definition draft `PD-IMP-036G-DRAFT-1` exists for independent product review; Product Definition
+Gate execution remains `NOT_PERFORMED`. No architecture lock or implementation authorization is
+granted by this draft checkpoint. Per-IMP Product Definition draft:
+[`product/IMP-036G/product-definition.md`](./product/IMP-036G/product-definition.md).
+Supporting planned experience contract (discovery input only; not a Product Definition):
 [`experience/enterprise-experience/IMP-036G-administration-console-v2.md`](./experience/enterprise-experience/IMP-036G-administration-console-v2.md).
 
 IMP-036F — Catalog, Menu, Pricing & Promotions Management remains `COMPLETE_AND_ACCEPTED` with
@@ -471,6 +482,23 @@ Current public GTM boundary is **IMP-040**, not IMP-035.
 
 Historical revision evidence for GTM-R1…GTM-R113 is preserved byte-for-byte in
 [`history/ROADMAP-GTM-R113-pre-compression.md`](./history/ROADMAP-GTM-R113-pre-compression.md).
+
+### GTM-R124 — 2026-09-16
+
+- Records IMP-036G pre-gate Product Definition draft `PD-IMP-036G-DRAFT-1` after ANCHOR → DISCOVER
+  → STORY_MAP on activated IMP-036G (GTM-R123 / STATE-R121; base main
+  `e067febf113fe21eebe1c1a3f3be24cbe23dd1f8`).
+- Preserves `acceptedThrough = IMP-036F`; `currentProductSlice = IMP-036G`;
+  `pendingAcceptance = NONE`; `nextProductSlice = IMP-037`.
+- Sets `IMP036G_PRODUCT_DEFINITION: DRAFT`; `IMP036G_PRODUCT_DEFINITION_VERSION: PD-IMP-036G-DRAFT-1`;
+  `IMP036G_PRODUCT_DEFINITION_GATE: NOT_PERFORMED`; `IMP036G_ARCHITECTURE_FIT: NOT_PERFORMED`.
+- Preserves `IMP036G_ACTIVATED: YES` while formal IMP-036G ROADMAP lifecycle remains `PLANNED`
+  (`IMP036G_ARCHITECTURE_LOCKED: NO`; `IMP036G_IMPLEMENTATION_AUTHORIZED: NO`;
+  `IMP036G_STARTED: NO`; `IMP036G_ACCEPTED: NO`; `IMP036G_FOUNDER_UAT_REQUIRED: YES`).
+- Does **not** execute Product Definition Gate, perform Architecture Fit, lock architecture,
+  authorize/start implementation, accept IMP-036G, or activate IMP-037.
+- ARCH-R19 / DR-15 / PD-1 / TEST-1 / VISION-1 unchanged.
+- Supersedes GTM-R123.
 
 ### GTM-R123 — 2026-09-16
 

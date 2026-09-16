@@ -3,7 +3,10 @@ Status: PLANNED CAPABILITY CONTRACT (SUPPORTING planning/discovery input; not PD
 Capability: IMP-036G — Administration Console V2
 Current product slice: YES (see ROADMAP/STATE; IMP036G_ACTIVATED: YES)
 Formal ROADMAP lifecycle: PLANNED
-Product Definition: NOT_CREATED
+Product Definition:
+  PD-IMP-036G-DRAFT-1
+  DRAFT
+  Gate NOT_PERFORMED
 Architecture: NOT_LOCKED
 Implementation: NOT_AUTHORIZED / NOT_STARTED
 Founder UAT required: YES
