@@ -1,7 +1,9 @@
 ---
-Status: PLANNED CAPABILITY CONTRACT
+Status: PLANNED CAPABILITY CONTRACT (SUPPORTING planning/discovery input; not PD-1 Product Definition)
 Capability: IMP-036G — Administration Console V2
-Lifecycle: PLANNED / NOT_ACTIVATED
+Current product slice: YES (see ROADMAP/STATE; IMP036G_ACTIVATED: YES)
+Formal ROADMAP lifecycle: PLANNED
+Product Definition: NOT_CREATED
 Architecture: NOT_LOCKED
 Implementation: NOT_AUTHORIZED / NOT_STARTED
 Founder UAT required: YES
@@ -89,7 +91,7 @@ understandable terminology, hierarchy context, and safe guided workflows. Users 
 or API architecture knowledge. Require plain-language purpose, a clear primary task, human-readable
 names/context rather than opaque IDs, understandable Brand/Outlet/Scope, progressive disclosure,
 useful empty states with a next action, explained privilege/lifecycle consequences, and no raw JSON
-as normal UX. This amendment does not activate IMP-036G.
+as normal UX. This planned amendment does not redefine activation; CURRENT activation is owned by ROADMAP/STATE.
 
 ## Major acceptance criteria
 
