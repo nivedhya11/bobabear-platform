@@ -8673,4 +8673,40 @@ Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate PASS; Architect
       false,
     );
   });
+
+  const approvedDependencyTable = `
+## 21. Dependencies
+| Dependency | Authority / verified state | Required before which story or gate? | Unresolved impact |
+|---|---|---|---|
+| Product Definition Gate | PASS / PERFORMED | Satisfied before Architecture Fit | NONE — gate complete; Architecture Fit remains the readiness blocker |
+| Architecture Fit / lock | NOT_PERFORMED / NOT_LOCKED | Before implementation authorization | Blocks READY; Fit must determine minimum API/schema for Founder-resolved §25 requirements |
+`;
+
+  it("passes when §21 Product Definition Gate dependency row records PASS / PERFORMED", () => {
+    const candidate = `${validApproved}${approvedDependencyTable}`;
+    const result = evaluateImp036gApprovedProductDefinitionCandidate(candidate);
+    assert.deepEqual(result, { ok: true });
+    assert.match(candidate, /\|\s*Product Definition Gate\s*\|\s*PASS \/ PERFORMED\s*\|/);
+  });
+
+  it("rejects §21 Product Definition Gate dependency row NOT_PERFORMED", () => {
+    const bad = `${validApproved}${approvedDependencyTable}`.replace(
+      "| Product Definition Gate | PASS / PERFORMED | Satisfied before Architecture Fit | NONE — gate complete; Architecture Fit remains the readiness blocker |",
+      "| Product Definition Gate | NOT_PERFORMED | Before Architecture Fit / implementation | Blocks READY |",
+    );
+    const result = evaluateImp036gApprovedProductDefinitionCandidate(bad);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036G_PD_STALE_DEPENDENCY_GATE");
+  });
+
+  it("does not reject Architecture Fit NOT_PERFORMED in §21 after Gate PASS", () => {
+    const candidate = `${validApproved}${approvedDependencyTable}`;
+    const result = evaluateImp036gApprovedProductDefinitionCandidate(candidate);
+    assert.deepEqual(result, { ok: true });
+    assert.match(
+      candidate,
+      /\|\s*Architecture Fit \/ lock\s*\|\s*NOT_PERFORMED \/ NOT_LOCKED\s*\|/,
+    );
+    assert.match(candidate, /ARCHITECTURE_FIT_EXECUTION:\s*NOT_PERFORMED/);
+  });
 });
