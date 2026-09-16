@@ -21357,6 +21357,26 @@ export function evaluateImp036gApprovedProductDefinitionCandidate(text) {
         "Gate-passed IMP-036G Product Definition story Readiness must not claim gates not performed after Gate PASS",
     };
   }
+  // Narrow §21 current dependency-row guard for the GTM-R126 / STATE-R124 approved
+  // IMP-036G Product Definition. Reject Product Definition Gate remaining
+  // NOT_PERFORMED or remaining READY blocker. Architecture Fit NOT_PERFORMED /
+  // NOT_LOCKED is valid current state and must not be rejected here.
+  if (/^\|\s*Product Definition Gate\s*\|[^|\n]*NOT_PERFORMED/im.test(body)) {
+    return {
+      ok: false,
+      code: "IMP036G_PD_STALE_DEPENDENCY_GATE",
+      message:
+        "Gate-passed IMP-036G Product Definition §21 dependency row must not record Product Definition Gate as NOT_PERFORMED",
+    };
+  }
+  if (/^\|\s*Product Definition Gate\s*\|(?:[^|\n]*\|){2}\s*Blocks READY\s*\|?\s*$/im.test(body)) {
+    return {
+      ok: false,
+      code: "IMP036G_PD_STALE_DEPENDENCY_GATE",
+      message:
+        "Gate-passed IMP-036G Product Definition §21 dependency row must not treat Product Definition Gate as a remaining READY blocker",
+    };
+  }
   return { ok: true };
 }
 

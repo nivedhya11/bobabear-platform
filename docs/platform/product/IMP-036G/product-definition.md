@@ -1287,7 +1287,7 @@ Persona labels do **not** authorize. Unknown material authority → stop for dec
 | D-373 / ARCH-G25 | CURRENT binding | All stories | NONE |
 | IMP-036A portal foundation | Accepted | Entry/shell | NONE |
 | Ops operational-status endpoint | CURRENT Ops API | US-008 | NONE if reused; Fit confirms Admin composition |
-| Product Definition Gate | NOT_PERFORMED | Before Architecture Fit / implementation | Blocks READY |
+| Product Definition Gate | PASS / PERFORMED | Satisfied before Architecture Fit | NONE — gate complete; Architecture Fit remains the readiness blocker |
 | Architecture Fit / lock | NOT_PERFORMED / NOT_LOCKED | Before implementation authorization | Blocks READY; Fit must determine minimum API/schema for Founder-resolved §25 requirements |
 | §25 Founder product decisions | RESOLVED 2026-09-16 (`UNRESOLVED_COUNT = 0`) | Binding product requirements for US-001…007 / §18 | Architecture Fit inputs — not unresolved product decisions |
 | IMP-037 | `nextProductSlice`; **IMP037_ACTIVATED: NO** | N/A — must not activate | NONE |
