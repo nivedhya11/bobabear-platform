@@ -7401,7 +7401,8 @@ export function evaluateImp036fAuthorizedProductDefinition(text) {
 
 /**
  * Return IMP-036F artifact body with historical governance sections removed.
- * Preserves GTM-R120/S118 authorization-only provenance in labelled historical blocks.
+ * Preserves GTM-R120/S118 authorization-only provenance and explicitly labelled
+ * historical R121 / pre-IMP-036F baseline blocks outside CURRENT authority checks.
  * @param {string} text
  */
 export function stripImp036fHistoricalGovernanceSections(text) {
@@ -7415,15 +7416,32 @@ export function stripImp036fHistoricalGovernanceSections(text) {
     "",
   );
   body = body.replace(
-    /Historical note \(GTM-R120[^\n]*\):[\s\S]*?(?=\n\n`STORY_COMPLETE|\n## |\n$)/,
+    /Historical note \(GTM-R12[01][^\n]*\):[\s\S]*?(?=\n\n(?:CURRENT|\`STORY_COMPLETE)|(?=\n## )|\n$)/,
     "",
   );
+  body = body.replace(
+    /Historical GTM-R121\s*\/\s*STATE-R119 state:[\s\S]*?(?=\n(?!Historical GTM-R121)|(?=\n## )|\n$)/gi,
+    "",
+  );
+  // Drop explicitly labelled historical paragraphs so CURRENT checks ignore provenance only.
+  body = body
+    .split(/\n\s*\n/)
+    .filter((paragraph) => {
+      const trimmed = paragraph.trim();
+      if (/^Historical\s+pre[- ]R12[01]\s+lifecycle\s+provenance\s*:/i.test(trimmed)) return false;
+      if (/^Historical\s+GTM-R12[01]\b/i.test(trimmed)) return false;
+      if (/^Historical\s+note\s*\(\s*GTM-R12[01]/i.test(trimmed)) return false;
+      if (/^Pre-IMP-036F\s+baseline\s*:/i.test(trimmed)) return false;
+      return true;
+    })
+    .join("\n\n");
   const sections = body.split(/\n(?=## )/);
   return sections
     .filter((section) => {
       if (/^## 29\. Architecture-lock persistence record/i.test(section)) return false;
+      if (/^## [^\n]*Pre-IMP-036F/i.test(section)) return false;
       if (
-        /^## [^\n]*historical[^\n]*(?:pre[- ]R121|(?:GTM-)?R120|GTM-R119\s*\/\s*STATE-R117)[^\n]*provenance/i.test(
+        /^## [^\n]*historical[^\n]*(?:pre[- ](?:R121|IMP-036F)|(?:GTM-)?R12[01]|GTM-R119\s*\/\s*STATE-R117|baseline|Fit\s*\/\s*pre-implementation)[^\n]*/i.test(
           section,
         )
       ) {
@@ -7432,6 +7450,40 @@ export function stripImp036fHistoricalGovernanceSections(text) {
       return true;
     })
     .join("\n");
+}
+
+/**
+ * Reject CURRENT (non-historical) IMP-036F authority prose that still claims
+ * implementation-era / pre-acceptance lifecycle status at GTM-R122 / STATE-R120.
+ * @param {string} text
+ * @param {"capability" | "product-definition"} surface
+ */
+export function evaluateImp036fAcceptedCurrentAuthorityProse(text, surface = "capability") {
+  const currentBody = stripImp036fHistoricalGovernanceSections(String(text ?? "")).replace(/[*`]/g, "");
+  const forbidden = [
+    [/\bF1\s+(?:is\s+)?in\s+progress\b/i, "F1 in progress"],
+    [/\bIMP-036F\s+remains\s+unaccepted\b/i, "IMP-036F remains unaccepted"],
+    [/Implementation conformance work\s+(?:remains\s+)?NOT\s+YET\s+IMPLEMENTED/i, "Implementation conformance work NOT YET IMPLEMENTED"],
+    [/runtime conformance remains pending implementation/i, "runtime conformance remains pending implementation"],
+    [/\bNot executed\b/i, "mandatory acceptance evidence Not executed"],
+    [/\bFounder UAT later\b/i, "Founder UAT later"],
+    [/\bPlanned after implementation execution\b/i, "Planned after implementation execution"],
+    [/IMP036F_STARTED\s*[:=]\s*NO\b/, "IMP036F_STARTED NO"],
+    [/IMPLEMENTATION_STARTED\s*[:=]\s*NO\b/, "IMPLEMENTATION_STARTED NO"],
+    [/\bAUTHORIZED\s*\/\s*NOT_STARTED\b/, "AUTHORIZED / NOT_STARTED"],
+    [/IMP036F_ACCEPTED\s*[:=]\s*NO\b/, "IMP036F_ACCEPTED NO"],
+    [/\bIMP_ACCEPTANCE\s*[:=]\s*NO\b/, "IMP_ACCEPTANCE NO"],
+  ];
+  for (const [pattern, label] of forbidden) {
+    if (pattern.test(currentBody)) {
+      return {
+        ok: false,
+        code: surface === "product-definition" ? "IMP036F_PD_ACCEPTED_STALE_PROSE" : "IMP036F_CAPABILITY_ACCEPTED_STALE_PROSE",
+        message: `Accepted IMP-036F ${surface} must not retain CURRENT claim ${label}`,
+      };
+    }
+  }
+  return { ok: true };
 }
 
 /**
@@ -7764,7 +7816,45 @@ export function evaluateImp036fAcceptanceArtifact(text) {
       };
     }
   }
+  const staleProse = evaluateImp036fAcceptedCurrentAuthorityProse(text, "capability");
+  if (!staleProse.ok) return staleProse;
   return { ok: true };
+}
+
+/**
+ * Validate accepted IMP-036F Product Definition CURRENT authority prose at GTM-R122 / STATE-R120.
+ * Preserves PD version / stories / ACs; rejects stale implementation-era CURRENT claims.
+ * @param {string} text
+ */
+export function evaluateImp036fAcceptedProductDefinition(text) {
+  if (!text || !String(text).trim()) {
+    return { ok: false, code: "IMP036F_PD_ABSENT", message: "Accepted IMP-036F Product Definition must not be empty" };
+  }
+  const body = String(text);
+  const metaMatch = body.match(/<!--\s*governance-meta\s*([\s\S]*?)-->/);
+  const meta = metaMatch ? metaMatch[1] : "";
+  if (!/"productDefinitionVersion"\s*:\s*"PD-IMP-036F-DRAFT-1"/.test(meta)) {
+    return {
+      ok: false,
+      code: "IMP036F_PD_VERSION",
+      message: "Accepted IMP-036F Product Definition must retain PD-IMP-036F-DRAFT-1",
+    };
+  }
+  if (!/"impAccepted"\s*:\s*"YES"/.test(meta) && !/IMP036F_ACCEPTED\s*[:=]\s*YES/.test(body)) {
+    return {
+      ok: false,
+      code: "IMP036F_PD_ACCEPTED",
+      message: "Accepted IMP-036F Product Definition must record IMP036F_ACCEPTED: YES",
+    };
+  }
+  if (!/"imp036gActivated"\s*:\s*"NO"/.test(meta) && !/IMP036G_ACTIVATED\s*[:=]\s*NO/.test(body)) {
+    return {
+      ok: false,
+      code: "IMP036F_PD_IMP036G",
+      message: "Accepted IMP-036F Product Definition must keep IMP036G_ACTIVATED: NO",
+    };
+  }
+  return evaluateImp036fAcceptedCurrentAuthorityProse(body, "product-definition");
 }
 
 
@@ -19959,6 +20049,16 @@ function checkImp036fAcceptance(roadmap, state, architecture, decision) {
   const artifactText = artifact ? readFileSync(artifact, "utf8") : "";
   const artifactValidation = evaluateImp036fAcceptanceArtifact(artifactText);
   if (artifact !== null && !artifactValidation.ok) fail(artifactValidation.code, artifactValidation.message);
+
+  const productDefRel = "docs/platform/product/IMP-036F/product-definition.md";
+  const productDef = resolveExactRelativeFile(productDefRel);
+  const productDefText = productDef ? readFileSync(productDef, "utf8") : "";
+  if (productDef === null) {
+    fail("IMP036F_PD_MISSING", "IMP-036F Product Definition must exist at acceptance");
+  } else {
+    const pdValidation = evaluateImp036fAcceptedProductDefinition(productDefText);
+    if (!pdValidation.ok) fail(pdValidation.code, pdValidation.message);
+  }
 
   if (/IMP-036F\s*\|\s*Catalog, Menu, Pricing & Promotions Management\s*\|\s*IMPLEMENTATION_IN_PROGRESS/.test(futureSection)) {
     fail("IMP036F_ROADMAP_FUTURE", "ROADMAP future ledger must not retain IMP-036F as IMPLEMENTATION_IN_PROGRESS");

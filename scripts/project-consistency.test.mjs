@@ -122,6 +122,8 @@ import {
   evaluateImp036fImplementationStartCheckpoint,
   evaluateImp036fAcceptanceCheckpoint,
   evaluateImp036fAcceptanceArtifact,
+  evaluateImp036fAcceptedProductDefinition,
+  evaluateImp036fAcceptedCurrentAuthorityProse,
   evaluateImp036fStartedCapabilityArchitecture,
   evaluateImp036fStartedProductDefinition,
 } from "./project-consistency.mjs";
@@ -7969,6 +7971,53 @@ describe("IMP-036F Acceptance checkpoints", () => {
     imp036gActivated: false,
   };
 
+  const acceptedCapabilityStub = `<!-- governance-meta
+{
+  "status": "CURRENT",
+  "authority": "CAPABILITY_ARCHITECTURE",
+  "capability": "IMP-036F",
+  "implementation": "COMPLETE_AND_ACCEPTED",
+  "impAccepted": true
+}
+-->
+
+# IMP-036F
+
+## End matter
+
+\`\`\`text
+IMP-036F: COMPLETE_AND_ACCEPTED
+IMP036F_ACCEPTED: YES
+IMP036F_FOUNDER_UAT: PASS
+IMP036F_FORMAL_ACCEPTANCE: ACCEPTED
+IMP036F_ACCEPTED_MAIN_SHA: 91d0b5e5e5815da6bf0bb325a3c6ab884dc06652
+IMP036F_ACCEPTED_TREE: ab41fc7f2bf6d0a52c3ea6c2b69ed331ca9540cf
+IMP036F_FOUNDER_UAT_CANDIDATE_FINGERPRINT: c689630cb9a4d002fda3376f949a1f324015776d392abfd2abde7b6f5b91f973
+IMP036F_FOUNDER_UAT_DECISION_DATE: 2026-09-15
+IMP036F_FOUNDER_UAT_ACCEPTANCE_AUTHORITY: Founder
+IMP036G_ACTIVATED: NO
+CANONICAL_ROADMAP_STATE: GTM-R122 / STATE-R120
+\`\`\`
+`;
+
+  const acceptedPdStub = `<!-- governance-meta
+{
+  "status": "APPROVED",
+  "authority": "PRODUCT_DEFINITION",
+  "capability": "IMP-036F",
+  "productDefinitionVersion": "PD-IMP-036F-DRAFT-1",
+  "impAccepted": "YES",
+  "imp036gActivated": "NO"
+}
+-->
+
+# IMP-036F Product Definition
+
+CURRENT (GTM-R122 / STATE-R120): IMP-036F is COMPLETE_AND_ACCEPTED.
+IMP036F_ACCEPTED: YES
+IMP036G_ACTIVATED: NO
+`;
+
   it("passes valid GTM-R122 / STATE-R120 acceptance checkpoint", () => {
     assert.equal(evaluateImp036fAcceptanceCheckpoint(acceptanceBase).ok, true);
   });
@@ -7996,6 +8045,89 @@ describe("IMP-036F Acceptance checkpoints", () => {
     assert.equal(
       isSupportedImp030GovernanceCheckpoint("GTM-R122", "STATE-R120", "imp036fImplementationStart"),
       false,
+    );
+  });
+
+  it("validates live accepted capability and product definition authorities", () => {
+    const capabilityText = readFileSync(
+      "docs/platform/capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md",
+      "utf8",
+    );
+    const productDefinitionText = readFileSync(
+      "docs/platform/product/IMP-036F/product-definition.md",
+      "utf8",
+    );
+    assert.deepEqual(evaluateImp036fAcceptanceArtifact(capabilityText), { ok: true });
+    assert.deepEqual(evaluateImp036fAcceptedProductDefinition(productDefinitionText), { ok: true });
+  });
+
+  it("rejects CURRENT F1 in progress claims", () => {
+    const result = evaluateImp036fAcceptanceArtifact(
+      `${acceptedCapabilityStub}\n\n## Current readiness\n\nF1 is in progress.\n`,
+    );
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036F_CAPABILITY_ACCEPTED_STALE_PROSE");
+  });
+
+  it("rejects CURRENT unaccepted claims", () => {
+    const result = evaluateImp036fAcceptanceArtifact(
+      `${acceptedCapabilityStub}\n\n## Current readiness\n\nIMP-036F remains unaccepted.\n`,
+    );
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036F_CAPABILITY_ACCEPTED_STALE_PROSE");
+  });
+
+  it("rejects CURRENT not-yet-implemented conformance claims", () => {
+    const result = evaluateImp036fAcceptedProductDefinition(
+      `${acceptedPdStub}\n\nImplementation conformance work NOT YET IMPLEMENTED — AUTHORIZED / STARTED.\n`,
+    );
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036F_PD_ACCEPTED_STALE_PROSE");
+  });
+
+  it("rejects stale Not executed acceptance evidence rows", () => {
+    const result = evaluateImp036fAcceptedProductDefinition(
+      `${acceptedPdStub}\n\n| US-001 | Planned after implementation execution | Not executed |\n`,
+    );
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036F_PD_ACCEPTED_STALE_PROSE");
+  });
+
+  it("rejects Founder UAT later as CURRENT evidence planning", () => {
+    const result = evaluateImp036fAcceptedCurrentAuthorityProse(
+      "Planned; Founder UAT later",
+      "product-definition",
+    );
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036F_PD_ACCEPTED_STALE_PROSE");
+  });
+
+  it("allows explicitly historical equivalent wording", () => {
+    assert.deepEqual(
+      evaluateImp036fAcceptedCurrentAuthorityProse(
+        `Historical GTM-R121 / STATE-R119 state: F1 was in progress.
+
+CURRENT (GTM-R122 / STATE-R120): IMP-036F is COMPLETE_AND_ACCEPTED.`,
+        "capability",
+      ),
+      { ok: true },
+    );
+    assert.deepEqual(
+      evaluateImp036fAcceptedProductDefinition(`${acceptedPdStub}
+
+## 3. Problem statement (Pre-IMP-036F baseline)
+
+Pre-IMP-036F baseline: coherent commercial UX was missing.
+Implementation conformance work NOT YET IMPLEMENTED at Fit time.
+F1 in progress at that checkpoint.
+Not executed before implementation.
+Founder UAT later was the planned gate.
+
+## 26. Definition of Ready
+
+CURRENT (GTM-R122 / STATE-R120): COMPLETE_AND_ACCEPTED.
+`),
+      { ok: true },
     );
   });
 });

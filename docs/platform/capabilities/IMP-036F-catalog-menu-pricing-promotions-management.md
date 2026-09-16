@@ -228,7 +228,9 @@ implementation boundaries are precise enough for independent review.
 Independent Architecture Fit review `5169723968` accepted this Fit. Canonical lock was persisted
 at GTM-R119 / STATE-R117. Architecture Fit PASS + lock alone did not grant implementation
 authorization; separate authorization was subsequently granted at GTM-R120 / STATE-R118.
-Implementation start is recorded at GTM-R121 / STATE-R119; IMP-036F remains unaccepted.
+Historical GTM-R121 / STATE-R119 state: implementation start was recorded and F1 was in progress.
+CURRENT (GTM-R122 / STATE-R120): IMP-036F is `COMPLETE_AND_ACCEPTED` (`IMP036F_ACCEPTED: YES`;
+Founder UAT PASS). Acceptance does **not** activate IMP-036G.
 
 ---
 
@@ -1235,9 +1237,11 @@ MISSING_MANDATORY_ACS = NONE
 NONMANDATORY_ACS_IDENTIFIED = 1 (AC-IMP-036F-014-02)
 unfit_stories = NONE
 stories_ready_under_current_lock = US-001…016 (AC-014-02 remains FOLLOW_UP)
-stories_still_blocked_after_lock = NONE for Fit; implementation authorized / started (F1 in progress)
+stories_still_blocked_after_lock = NONE for Fit
 implementation_authorized_for_any_story = YES
 implementation_started_for_any_story = YES
+Historical GTM-R121 / STATE-R119 state: F1 was in progress after lock + authorization.
+CURRENT (GTM-R122 / STATE-R120): IMP-036F COMPLETE_AND_ACCEPTED; Founder UAT PASS; formal acceptance recorded.
 ```
 
 ---
@@ -1400,19 +1404,23 @@ UI grouping must not redefine domain authority.
 
 ---
 
-## Evidence anchors (VERIFIED code/schema)
+## Evidence anchors (historical Fit / pre-implementation investigation; VERIFIED at Architecture Fit time)
+
+The following paths were Fit-era investigation anchors. They do **not** assert CURRENT
+unaccepted / incomplete IMP-036F lifecycle status. CURRENT accepted state is recorded in the
+header / End matter (`COMPLETE_AND_ACCEPTED`; Founder UAT PASS).
 
 - Permissions: `src/shared/access-control/catalog.ts`
-- Admin routes (no commercial handlers today): `src/server/operations/http/admin-routes.ts`
+- Admin routes (Fit-era: commercial handlers not yet present): `src/server/operations/http/admin-routes.ts`
 - Store Operations: `src/server/operations/http/store-routes.ts`
 - Catalog ACTIVE Product/Variant updates: `src/server/catalog/products.ts`, `variants.ts`
 - Catalog ACTIVE Modifier graph updates: `src/server/catalog/modifiers.ts`
-- Menu commands (non-atomic `activateMenu`): `src/server/catalog/menu/*`
+- Menu commands (Fit-era: non-atomic `activateMenu`): `src/server/catalog/menu/*`
 - Assortment: `src/server/assortment/rules.ts`
 - Pricing: `src/server/pricing/price-books.ts`, `resolve-delivery-charge.ts`
 - Promotions: `src/server/promotions/*`
-- Tariff columns without write path: `src/platform/database/schema/serviceability.ts`;
-  `updateServiceabilityConfig` omits tariff fields
+- Tariff columns (Fit-era: without write path): `src/platform/database/schema/serviceability.ts`;
+  `updateServiceabilityConfig` omitted tariff fields at Fit investigation time
 - Customer Menu one-active enforcement: `src/server/customer-commerce/menu/project-customer-menu.ts`
 - Customer modifier projection: `src/server/customer-commerce/menu/load-customer-menu-modifiers.ts`
 - Checkout merchandise revalidation: `src/server/checkout/adapters/catalog.ts`
