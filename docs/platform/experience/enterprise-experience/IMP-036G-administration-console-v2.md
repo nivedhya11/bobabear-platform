@@ -5,8 +5,8 @@ Current product slice: YES (see ROADMAP/STATE; IMP036G_ACTIVATED: YES)
 Formal ROADMAP lifecycle: PLANNED
 Product Definition:
   PD-IMP-036G-DRAFT-2
-  DRAFT
-  Gate NOT_PERFORMED
+  APPROVED
+  Gate PASS
   Founder product decisions: RESOLVED (7/7; 2026-09-16)
 Architecture: NOT_LOCKED
 Implementation: NOT_AUTHORIZED / NOT_STARTED
@@ -157,7 +157,7 @@ approval; generic review-token/workflow engine.
 
 Founder product decisions (2026-09-16) expanded IMP-036G only enough to complete the seven
 administration outcomes above. Technical mechanism selection remains Architecture Fit.
-Product Definition Gate and Architecture Fit remain NOT_PERFORMED; architecture NOT_LOCKED;
+Product Definition Gate = PASS; Architecture Fit remains NOT_PERFORMED; architecture NOT_LOCKED;
 implementation NOT_AUTHORIZED / NOT_STARTED.
 
 Figma is not required initially; later visual refinement may not redefine hierarchy, membership,

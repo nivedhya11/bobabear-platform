@@ -1,14 +1,14 @@
 <!-- governance-meta
 {
-  "status": "DRAFT",
+  "status": "APPROVED",
   "authority": "PRODUCT_DEFINITION",
   "capability": "IMP-036G",
   "productDefinitionVersion": "PD-IMP-036G-DRAFT-2",
   "process": "PD-1",
   "verificationPolicy": "TEST-1",
   "lastReviewed": "2026-09-16",
-  "productDefinitionGateExecution": "NOT_PERFORMED",
-  "productDefinitionGateResult": "NOT_PERFORMED",
+  "productDefinitionGateExecution": "PERFORMED",
+  "productDefinitionGateResult": "PASS",
   "architectureFitExecution": "NOT_PERFORMED",
   "architectureFit": "NOT_PERFORMED",
   "architectureLocked": "NO",
@@ -21,29 +21,30 @@
 
 # IMP-036G — Administration Console V2
 
-## Product Definition (PRE-GATE DRAFT — Gate NOT_PERFORMED)
+## Product Definition (APPROVED — Product Definition Gate PASS; Architecture Fit NOT_PERFORMED)
 
 ```text
-PRE-GATE DRAFT: YES
-PRODUCT_DEFINITION_GATE_EXECUTION: NOT_PERFORMED
-Gate Result: NOT_PERFORMED
+Document status: APPROVED
+PRODUCT_DEFINITION_VERSION: PD-IMP-036G-DRAFT-2
+PRE-GATE DRAFT: NO
+PRODUCT_DEFINITION_GATE_EXECUTION: PERFORMED
+Gate Result: PASS
 ARCHITECTURE_FIT_EXECUTION: NOT_PERFORMED
 ARCHITECTURE_FIT_RESULT: NOT_PERFORMED
+IMP036G_ARCHITECTURE_FIT: NOT_PERFORMED
 IMP036G_ARCHITECTURE_LOCKED: NO
 IMP036G_IMPLEMENTATION_AUTHORIZED: NO
 IMP036G_STARTED: NO
 IMP036G_ACCEPTED: NO
 IMP037_ACTIVATED: NO
-Document status: DRAFT
-PRODUCT_DEFINITION_VERSION: PD-IMP-036G-DRAFT-2
 ```
 
-This artifact is a **PRE-GATE DRAFT** Product Definition for candidate `PD-IMP-036G-DRAFT-2`
+This artifact is the **gate-passed Product Definition** for candidate `PD-IMP-036G-DRAFT-2`
 (supersedes predecessor draft `PD-IMP-036G-DRAFT-1` after Founder product decisions of 2026-09-16).
-It defines intended user/business behaviour for IMP-036G within existing accepted authority
-(IMP-035 / D-373 / ARCH-G25 and related CURRENT foundations). It does **not** claim Product
-Definition Gate PASS, Architecture Fit PASS, architecture lock, implementation authorization,
-IMP-036G acceptance, or IMP-037 activation.
+Product Definition Gate = PASS. It defines intended user/business behaviour for IMP-036G within
+existing accepted authority (IMP-035 / D-373 / ARCH-G25 and related CURRENT foundations). It does
+**not** claim Architecture Fit PASS, architecture lock, implementation authorization, IMP-036G
+acceptance, or IMP-037 activation.
 
 ```text
 PRODUCT_DELIVERY_PROCESS_EFFECTIVE_FROM = IMP-036F
@@ -52,11 +53,11 @@ IMP036E_LIFECYCLE_CHANGED = NO
 PD1_DID_NOT_ACTIVATE_IMP036F_AT_ADOPTION = YES
 ```
 
-Lifecycle truth remains ROADMAP/STATE only (`GTM-R125` / `STATE-R123`): `IMP036G_ACTIVATED: YES`
+Lifecycle truth remains ROADMAP/STATE only (`GTM-R126` / `STATE-R124`): `IMP036G_ACTIVATED: YES`
 as CURRENT product slice; formal ROADMAP lifecycle remains `PLANNED` /
-`NOT_AUTHORIZED` / `NOT_STARTED`; `IMP036G_PRODUCT_DEFINITION: DRAFT` /
-`PD-IMP-036G-DRAFT-2`; Product Definition Gate and Architecture Fit remain `NOT_PERFORMED`.
-This draft is not approved and does not authorize implementation.
+`NOT_AUTHORIZED` / `NOT_STARTED`; `IMP036G_PRODUCT_DEFINITION: APPROVED` /
+`PD-IMP-036G-DRAFT-2`; `IMP036G_PRODUCT_DEFINITION_GATE: PASS`; Architecture Fit remains
+`NOT_PERFORMED`. Gate PASS does not authorize implementation.
 
 Supporting planning input (not this Product Definition):  
 [`experience/enterprise-experience/IMP-036G-administration-console-v2.md`](../../experience/enterprise-experience/IMP-036G-administration-console-v2.md).
@@ -68,12 +69,12 @@ Supporting planning input (not this Product Definition):
 | Field | Definition |
 |---|---|
 | Capability / title | `IMP-036G — Administration Console V2` |
-| Product Definition version / document status | `PD-IMP-036G-DRAFT-2`; **Document status: DRAFT**; **PRE-GATE DRAFT: YES** |
-| Product owner / approval evidence | Founder / product governance human authority; **Product Definition Gate NOT_PERFORMED** — no approval evidence yet |
+| Product Definition version / document status | `PD-IMP-036G-DRAFT-2`; **Document status: APPROVED**; **PRE-GATE DRAFT: NO** |
+| Product owner / approval evidence | Founder / product governance human authority; Product Definition Gate **PASS** on 2026-09-16 after independent pre-gate review **PASS** of exact candidate head `1fe1737d8f05d6069b2073d9faf1142d21b91970` / tree `25412cbadf224ef709687fe067f2427784a414cc` (gate-persistence commit is a subsequent revision and is **not** the evaluated artifact) |
 | Process / verification policy | `PD-1` / `TEST-1` |
-| Canonical anchors | VISION-1; ROADMAP GTM-R125; STATE STATE-R123; ARCH-R19; DR-15; PD-1; TEST-1; PERSONA-1; GJ-1 |
-| Repository candidate | **Draft creation/base provenance only** (not the Product Definition Gate-evaluated candidate): canonical path `/home/ajoshi/repos/boba-bear-platform`; branch `governance/imp036g-resolve-product-decisions`; verified base `main` merge `475d0c46598c2bf512570469354b69a3d75b7817` / tree `4ee7687b0d77027caa67d6672eadc390c7c916f8`. Exact Product Definition Gate-evaluated candidate SHA/tree/fingerprint are recorded only when the Gate is performed (currently `NOT_PERFORMED`). |
-| Capability lifecycle / authorization | ROADMAP/STATE: `currentProductSlice = IMP-036G`; `IMP036G_ACTIVATED: YES`; formal lifecycle `PLANNED` / `NOT_AUTHORIZED` / `NOT_STARTED`; `IMP036G_PRODUCT_DEFINITION: DRAFT`; `IMP036G_PRODUCT_DEFINITION_VERSION: PD-IMP-036G-DRAFT-2`; `IMP036G_PRODUCT_DEFINITION_GATE: NOT_PERFORMED`; `IMP036G_ARCHITECTURE_FIT: NOT_PERFORMED`; `IMP036G_ARCHITECTURE_LOCKED: NO`; `IMP036G_IMPLEMENTATION_AUTHORIZED: NO`; `IMP036G_STARTED: NO`; `IMP036G_ACCEPTED: NO`; `IMP036G_FOUNDER_UAT_REQUIRED: YES`; `nextProductSlice = IMP-037` (**IMP037_ACTIVATED: NO**) |
+| Canonical anchors | VISION-1; ROADMAP GTM-R126; STATE STATE-R124; ARCH-R19; DR-15; PD-1; TEST-1; PERSONA-1; GJ-1 |
+| Repository candidate | Gate-evaluated candidate: canonical path `/home/ajoshi/repos/boba-bear-platform`; branch `governance/imp036g-resolve-product-decisions`; **GATE_EVALUATED_HEAD** `1fe1737d8f05d6069b2073d9faf1142d21b91970`; **GATE_EVALUATED_TREE** `25412cbadf224ef709687fe067f2427784a414cc`. Draft-creation/base provenance (not the gate-evaluated candidate): verified base `main` merge `475d0c46598c2bf512570469354b69a3d75b7817` / tree `4ee7687b0d77027caa67d6672eadc390c7c916f8`. Gate-persistence commit SHA/tree differ from the gate-evaluated candidate. |
+| Capability lifecycle / authorization | ROADMAP/STATE: `currentProductSlice = IMP-036G`; `IMP036G_ACTIVATED: YES`; formal lifecycle `PLANNED` / `NOT_AUTHORIZED` / `NOT_STARTED`; `IMP036G_PRODUCT_DEFINITION: APPROVED`; `IMP036G_PRODUCT_DEFINITION_VERSION: PD-IMP-036G-DRAFT-2`; `IMP036G_PRODUCT_DEFINITION_GATE: PASS`; `IMP036G_ARCHITECTURE_FIT: NOT_PERFORMED`; `IMP036G_ARCHITECTURE_LOCKED: NO`; `IMP036G_IMPLEMENTATION_AUTHORIZED: NO`; `IMP036G_STARTED: NO`; `IMP036G_ACCEPTED: NO`; `IMP036G_FOUNDER_UAT_REQUIRED: YES`; `nextProductSlice = IMP-037` (**IMP037_ACTIVATED: NO**) |
 | Relevant capability architecture / ADRs | Accepted IMP-035 capability [`capabilities/IMP-035-initial-administration-capabilities.md`](../../capabilities/IMP-035-initial-administration-capabilities.md); binding D-373; ARCH-G25 / ARCH-R19; Access Control + Organization domain authority; supporting plan [`IMP-036G-administration-console-v2.md`](../../experience/enterprise-experience/IMP-036G-administration-console-v2.md). **IMP-036G capability architecture: NOT_LOCKED / NOT_CREATED for Fit.** |
 | Founder UAT applicability | `FOUNDER_UAT_REQUIRED = YES` — materially changes operator-visible administration experience (ROADMAP/STATE; enterprise-experience programme rule) |
 
@@ -1376,12 +1377,12 @@ shapes, SQL, CAS field names, or page sizes.
 UNRESOLVED_COUNT = 0
 PRODUCT_DECISIONS: RESOLVED
 PRODUCT_DECISION_COUNT: 7
-PRODUCT_DEFINITION_GATE_EXECUTION: NOT_PERFORMED
-Gate Result: NOT_PERFORMED
+PRODUCT_DEFINITION_GATE_EXECUTION: PERFORMED
+Gate Result: PASS
 ARCHITECTURE_FIT_EXECUTION: NOT_PERFORMED
-Stories remain NOT_READY_FOR_IMPLEMENTATION because Gate/Fit are NOT_PERFORMED
-(not because unresolved product decisions).
-Do NOT treat Fit mechanism choices as ASSUMED in this draft.
+Stories remain NOT_READY_FOR_IMPLEMENTATION because Architecture Fit is NOT_PERFORMED
+(not because unresolved product decisions; Product Definition Gate = PASS).
+Do NOT treat Fit mechanism choices as ASSUMED in this Product Definition.
 UNRESOLVED_DECISION_REQUIRED remains classification vocabulary only; active count = 0.
 ```
 
@@ -1391,32 +1392,44 @@ UNRESOLVED_DECISION_REQUIRED remains classification vocabulary only; active coun
 
 | Story ID | Applicable fields complete / evidence | Open material product decisions | Readiness / blocker |
 |---|---|---|---|
-| `US-IMP-036G-001` | §9 fields defined; ACs defined; Overview mandatory (Founder-resolved) | NONE (product) | `NOT_READY_FOR_IMPLEMENTATION` — Gate/Fit NOT_PERFORMED |
-| `US-IMP-036G-002` | §9 fields defined; ACs defined; discoverability beyond 200 mandatory | NONE (product) | `NOT_READY_FOR_IMPLEMENTATION` — Gate/Fit NOT_PERFORMED |
-| `US-IMP-036G-003` | §9 fields defined; ACs defined; stale-write protection mandatory | NONE (product) | `NOT_READY_FOR_IMPLEMENTATION` — Gate/Fit NOT_PERFORMED |
-| `US-IMP-036G-004` | §9 fields defined; ACs defined; Expire + membership discoverability mandatory | NONE (product) | `NOT_READY_FOR_IMPLEMENTATION` — Gate/Fit NOT_PERFORMED |
-| `US-IMP-036G-005` | §9 fields defined; ACs defined | NONE material for ceiling semantics | `NOT_READY_FOR_IMPLEMENTATION` — Gate/Fit NOT_PERFORMED |
-| `US-IMP-036G-006` | §9 fields defined; ACs defined; subject-principal EP mandatory | NONE (product) | `NOT_READY_FOR_IMPLEMENTATION` — Gate/Fit NOT_PERFORMED |
-| `US-IMP-036G-007` | §9 fields defined; ACs defined; server-side filters + audit scale mandatory | NONE (product) | `NOT_READY_FOR_IMPLEMENTATION` — Gate/Fit NOT_PERFORMED |
-| `US-IMP-036G-008` | §9 fields defined; ACs defined | NONE material if Ops reuse confirmed in Fit | `NOT_READY_FOR_IMPLEMENTATION` — Gate/Fit NOT_PERFORMED |
+| `US-IMP-036G-001` | §9 fields defined; ACs defined; Overview mandatory (Founder-resolved) | NONE (product) | `NOT_READY_FOR_IMPLEMENTATION` — Architecture Fit NOT_PERFORMED |
+| `US-IMP-036G-002` | §9 fields defined; ACs defined; discoverability beyond 200 mandatory | NONE (product) | `NOT_READY_FOR_IMPLEMENTATION` — Architecture Fit NOT_PERFORMED |
+| `US-IMP-036G-003` | §9 fields defined; ACs defined; stale-write protection mandatory | NONE (product) | `NOT_READY_FOR_IMPLEMENTATION` — Architecture Fit NOT_PERFORMED |
+| `US-IMP-036G-004` | §9 fields defined; ACs defined; Expire + membership discoverability mandatory | NONE (product) | `NOT_READY_FOR_IMPLEMENTATION` — Architecture Fit NOT_PERFORMED |
+| `US-IMP-036G-005` | §9 fields defined; ACs defined | NONE material for ceiling semantics | `NOT_READY_FOR_IMPLEMENTATION` — Architecture Fit NOT_PERFORMED |
+| `US-IMP-036G-006` | §9 fields defined; ACs defined; subject-principal EP mandatory | NONE (product) | `NOT_READY_FOR_IMPLEMENTATION` — Architecture Fit NOT_PERFORMED |
+| `US-IMP-036G-007` | §9 fields defined; ACs defined; server-side filters + audit scale mandatory | NONE (product) | `NOT_READY_FOR_IMPLEMENTATION` — Architecture Fit NOT_PERFORMED |
+| `US-IMP-036G-008` | §9 fields defined; ACs defined | NONE material if Ops reuse confirmed in Fit | `NOT_READY_FOR_IMPLEMENTATION` — Architecture Fit NOT_PERFORMED |
 
-Product decisions for the former seven §25 gaps are **RESOLVED**. Stories remain
-**not** READY for implementation because Product Definition Gate NOT_PERFORMED; Architecture Fit
-NOT_PERFORMED; architecture NOT_LOCKED; implementation NOT_AUTHORIZED — **not** because unresolved
-product decisions. `STORY_COMPLETE != IMP_ACCEPTED` (and neither has started).
+Product decisions for the former seven §25 gaps are **RESOLVED**. Product Definition Gate = **PASS**.
+Stories remain **not** READY for implementation because Architecture Fit NOT_PERFORMED; architecture
+NOT_LOCKED; implementation NOT_AUTHORIZED — **not** because unresolved product decisions or missing
+Product Definition Gate. `STORY_COMPLETE != IMP_ACCEPTED` (and neither has started).
 
 ---
 
 ## 27. Product Definition Gate
 
 ```text
-PRE-GATE DRAFT: YES
-PRODUCT_DEFINITION_GATE_EXECUTION = NOT_PERFORMED
-Gate Result: NOT_PERFORMED
+PRODUCT_DEFINITION_GATE_EXECUTION: PERFORMED
+Gate Result: PASS
+```
 
-ACTUAL PRODUCT_DEFINITION_GATE EXECUTION:
-Gate Result: NOT_PERFORMED
-(No PASS or STOP evaluation has occurred. NOT_PERFORMED is not a third verdict; it means no evaluation.)
+Product Definition Gate execution was performed on 2026-09-16 against exact candidate
+`PD-IMP-036G-DRAFT-2`. Human Founder / product governance authority authorized Gate Result = PASS
+after independent pre-gate review returned `PRE_GATE_REVIEW: PASS` /
+`PRODUCT_DEFINITION_GATE_READY: YES` for the exact evaluated candidate below. No fabricated
+GitHub review ID, PR number, or CI run ID is recorded for this gate persistence revision.
+
+```text
+GATE_EVALUATED_HEAD = 1fe1737d8f05d6069b2073d9faf1142d21b91970
+GATE_EVALUATED_TREE = 25412cbadf224ef709687fe067f2427784a414cc
+GATE_PERSISTENCE_COMMIT = subsequent commit after this gate-pass persistence revision
+  (this persistence revision is NOT the artifact evaluated by the gate)
+Gate date: 2026-09-16
+Product approval authority: Founder / product governance human authority
+Independent pre-gate review: PASS
+Product Definition Gate result: PASS
 ```
 
 ```text
@@ -1424,7 +1437,7 @@ PRODUCT_DEFINITION_GATE
 
 Capability: IMP-036G — Administration Console V2
 Product Definition Version: PD-IMP-036G-DRAFT-2
-Document status: DRAFT
+Document status: APPROVED
 Business Outcome: Defined (authorized admin coherent Admin Console V2 within existing authority; Founder-resolved stronger V1 behaviours)
 Primary Personas: PERSONA-WORKFORCE-OPERATOR (primary); PERSONA-PLATFORM-OPERATOR (secondary)
 Journeys Defined: YES — current partial Admin + desired JOURNEY-G-ADMIN-CONTEXT / JOURNEY-G-ACCESS-MANAGEMENT / JOURNEY-G-ADMIN-INVESTIGATION
@@ -1451,8 +1464,8 @@ Architecture Fit Inputs (planning; not verdicts):
 - Confirm small-mobile functional parity for mandatory high-consequence actions (§25 item 4) and Expire affordance (§25 item 5)
 - Preserve non-goals: custom roles; permission editor; arbitrary grants; new tenancy/auth; new roles/permissions unless Fit escalates; new service unless Fit escalates; customer-account admin; secrets console; commercial duplication; Ops duplication; analytics programme; workforce-dashboard consolidation; hard delete; four-eyes; generic review-token engine
 - NEW_SERVICE/AUTH_MODEL/ROLE/PERMISSION/RBAC_SEMANTICS_EXPECTED: NO
-PRODUCT_DEFINITION_GATE_EXECUTION: NOT_PERFORMED
-Gate Result: NOT_PERFORMED
+PRODUCT_DEFINITION_GATE_EXECUTION: PERFORMED
+Gate Result: PASS
 ```
 
 ```text
@@ -1465,17 +1478,18 @@ IMP036G_STARTED: NO
 IMP036G_ACCEPTED: NO
 IMP037_ACTIVATED: NO
 
-CANONICAL_ANCHORS = VISION-1; GTM-R125; STATE-R123; ARCH-R19; DR-15; PD-1; TEST-1; PERSONA-1; GJ-1
-REPOSITORY_CANDIDATE_PROVENANCE = DRAFT_CREATION_BASE_ONLY (not Product Definition Gate-evaluated)
-REPOSITORY_CANDIDATE_BASE_MAIN_MERGE = 475d0c46598c2bf512570469354b69a3d75b7817
-REPOSITORY_CANDIDATE_BASE_TREE = 4ee7687b0d77027caa67d6672eadc390c7c916f8
+CANONICAL_ANCHORS = VISION-1; GTM-R126; STATE-R124; ARCH-R19; DR-15; PD-1; TEST-1; PERSONA-1; GJ-1
+GATE_EVALUATED_HEAD = 1fe1737d8f05d6069b2073d9faf1142d21b91970
+GATE_EVALUATED_TREE = 25412cbadf224ef709687fe067f2427784a414cc
+GATE_PERSISTENCE_COMMIT = subsequent commit after this gate-pass persistence revision
+REPOSITORY_CANDIDATE_DRAFT_CREATION_BASE_MAIN_MERGE = 475d0c46598c2bf512570469354b69a3d75b7817
+REPOSITORY_CANDIDATE_DRAFT_CREATION_BASE_TREE = 4ee7687b0d77027caa67d6672eadc390c7c916f8
 BRANCH = governance/imp036g-resolve-product-decisions
-NOTE = Exact Product Definition Gate-evaluated candidate SHA/tree/fingerprint are recorded only when the Gate is performed (currently NOT_PERFORMED)
 PREDECESSOR_DRAFT = PD-IMP-036G-DRAFT-1
 ```
 
-This draft does **not** authorize Architecture Fit PASS, architecture lock, implementation,
-acceptance, Founder UAT, or IMP-037 activation.
+Product Definition Gate PASS does **not** authorize Architecture Fit PASS, architecture lock,
+implementation, acceptance, Founder UAT, or IMP-037 activation.
 
 ---
 
@@ -1520,7 +1534,7 @@ do not invent analytics KPI / second truth stores; Fit may reuse or introduce bo
 
 ---
 
-## Appendix C — Counts (draft inventory)
+## Appendix C — Counts (gate-passed inventory)
 
 | Item | Count |
 |---|---|
@@ -1532,5 +1546,5 @@ do not invent analytics KPI / second truth stores; Fit may reuse or introduce bo
 | §25 Founder product decisions (RESOLVED) | 7 |
 | §25 unresolved items (active) | 0 |
 
-Evidence for all ACs: `NOT_EXECUTED` / pending implementation. Gate Result: **NOT_PERFORMED**.
-Predecessor draft: `PD-IMP-036G-DRAFT-1`.
+Evidence for all ACs: `NOT_EXECUTED` / pending implementation. Gate Result: **PASS**.
+Architecture Fit: **NOT_PERFORMED**. Predecessor draft: `PD-IMP-036G-DRAFT-1`.

@@ -111,7 +111,9 @@ import {
   evaluateImp036fActivationCheckpoint,
   evaluateImp036gActivationCheckpoint,
   evaluateImp036gProductDefinitionDraftCheckpoint,
+  evaluateImp036gProductDefinitionGatePassCheckpoint,
   evaluateImp036gUngatedProductDefinitionDraftCandidate,
+  evaluateImp036gApprovedProductDefinitionCandidate,
   evaluateImp036fProductDefinitionDraftAuthorizedCheckpoint,
   evaluateImp036fUngatedProductDefinitionDraftCandidate,
   evaluateImp036fProductDefinitionGatePassCheckpoint,
@@ -6501,7 +6503,15 @@ describe("canonical authority history compression", () => {
       true,
     );
     assert.equal(
+      isSupportedImp030GovernanceCheckpoint("GTM-R126", "STATE-R124", "imp036gProductDefinitionGatePass"),
+      true,
+    );
+    assert.equal(
       isSupportedImp030GovernanceCheckpoint("GTM-R124", "STATE-R122", "imp036gProductDefinitionDraft"),
+      false,
+    );
+    assert.equal(
+      isSupportedImp030GovernanceCheckpoint("GTM-R125", "STATE-R123", "imp036gProductDefinitionGatePass"),
       false,
     );
     assert.equal(
@@ -6522,8 +6532,8 @@ describe("canonical authority history compression", () => {
 
     const roadmap = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
     const state = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
-    assert.match(roadmap, /"roadmapVersion": "GTM-R125"/);
-    assert.match(state, /"stateVersion": "STATE-R123"/);
+    assert.match(roadmap, /"roadmapVersion": "GTM-R126"/);
+    assert.match(state, /"stateVersion": "STATE-R124"/);
     assert.match(state, /"acceptedThrough": "IMP-036F"/);
     assert.match(state, /"pendingAcceptance": "NONE"/);
     assert.match(state, /"currentProductSlice": "IMP-036G"/);
@@ -6546,11 +6556,11 @@ describe("canonical authority history compression", () => {
     assert.match(state, /IMP036F_ARCHITECTURE_LOCKED:\s*YES/);
     assert.match(roadmap, /IMP036G_ACTIVATED:\s*YES/);
     assert.match(state, /IMP036G_ACTIVATED:\s*YES/);
-    assert.match(roadmap, /IMP036G_PRODUCT_DEFINITION:\s*DRAFT/);
+    assert.match(roadmap, /IMP036G_PRODUCT_DEFINITION:\s*APPROVED/);
     assert.match(roadmap, /IMP036G_PRODUCT_DEFINITION_VERSION:\s*PD-IMP-036G-DRAFT-2/);
     assert.match(roadmap, /IMP036G_PRODUCT_DECISIONS:\s*RESOLVED/);
     assert.match(roadmap, /IMP036G_PRODUCT_DECISION_COUNT:\s*7/);
-    assert.match(roadmap, /IMP036G_PRODUCT_DEFINITION_GATE:\s*NOT_PERFORMED/);
+    assert.match(roadmap, /IMP036G_PRODUCT_DEFINITION_GATE:\s*PASS/);
     assert.match(roadmap, /IMP036G_ARCHITECTURE_FIT:\s*NOT_PERFORMED/);
     assert.match(roadmap, /IMP036G_ARCHITECTURE_LOCKED:\s*NO/);
     assert.match(roadmap, /IMP036G_IMPLEMENTATION_AUTHORIZED:\s*NO/);
@@ -6565,7 +6575,7 @@ describe("canonical authority history compression", () => {
     const current = currentAuthorityBlob({ text: roadmap }, { text: state });
     const evidence = authorityEvidenceBlob({ text: roadmap }, { text: state });
     assert.ok(evidence.includes(hist.roadmapText.slice(0, 80)));
-    assert.ok(current.includes("GTM-R125"));
+    assert.ok(current.includes("GTM-R126"));
     assert.ok(!current.includes('"roadmapVersion": "GTM-R113"'));
     // Stale historical claim may exist in snapshot evidence without overriding CURRENT metadata.
     assert.ok(/pendingAcceptance:\s*NONE/.test(hist.stateText) || /Pending Acceptance:\s+NONE/.test(hist.stateText));
@@ -6576,12 +6586,12 @@ describe("canonical authority history compression", () => {
     assert.ok(!/FOUNDER_STAGING_DEPLOYMENT:\s*NOT_PERFORMED/.test(current));
   });
 
-  it("passes CURRENT authority checks at the IMP-036G Product Definition draft checkpoint", () => {
+  it("passes CURRENT authority checks at the IMP-036G Product Definition Gate PASS checkpoint", () => {
     const findings = runProjectConsistency();
     const failures = findings.filter((f) => !f.ok);
     assert.equal(failures.length, 0, failures.map((f) => `[${f.code}] ${f.message}`).join("\n"));
     const messages = findings.filter((f) => f.ok).map((f) => f.message);
-    assert.ok(messages.some((m) => m.includes("IMP-036G Product Definition pre-gate DRAFT-2 valid")));
+    assert.ok(messages.some((m) => m.includes("IMP-036G Product Definition Gate PASS persistence valid")));
     assert.ok(messages.some((m) => m.includes("CURRENT authority anti-stale checks OK")));
     assert.ok(messages.some((m) => m.includes("historical authority corpus loaded")));
   });
@@ -8528,6 +8538,113 @@ PRODUCT_DECISION_COUNT: 7
         ...draftBase,
         productDefinitionText: validUngatedDraft,
         productDecisionCount: 0,
+      }).ok,
+      false,
+    );
+  });
+});
+
+describe("IMP-036G Product Definition Gate PASS checkpoints", () => {
+  const gatePassBase = {
+    roadmapVersion: "GTM-R126",
+    stateVersion: "STATE-R124",
+    acceptedThrough: "IMP-036F",
+    currentProductSlice: "IMP-036G",
+    nextProductSlice: "IMP-037",
+    pendingAcceptance: "NONE",
+    imp036f: "COMPLETE_AND_ACCEPTED",
+    imp036gFormalLifecycle: "PLANNED",
+    imp036gActivated: "YES",
+    productDefinition: "APPROVED",
+    productDefinitionVersion: "PD-IMP-036G-DRAFT-2",
+    productDecisions: "RESOLVED",
+    productDecisionCount: 7,
+    productDefinitionGate: "PASS",
+    architectureFit: "NOT_PERFORMED",
+    architectureLocked: "NO",
+    implementationAuthorized: "NO",
+    started: "NO",
+    accepted: "NO",
+    founderUatRequired: "YES",
+    imp037Activated: "NO",
+    architectureVersion: "ARCH-R19",
+    decisionRegisterVersion: "DR-15",
+    productDeliveryVersion: "PD-1",
+    productDefinitionExists: true,
+    architectureLockedYes: false,
+    implementationAuthorizedYes: false,
+    startedYes: false,
+    acceptedYes: false,
+    d374Exists: false,
+    archR20Exists: false,
+  };
+
+  const validApproved = `<!-- governance-meta
+{
+  "status": "APPROVED",
+  "authority": "PRODUCT_DEFINITION",
+  "capability": "IMP-036G",
+  "productDefinitionVersion": "PD-IMP-036G-DRAFT-2",
+  "process": "PD-1",
+  "verificationPolicy": "TEST-1",
+  "lastReviewed": "2026-09-16",
+  "productDefinitionGateExecution": "PERFORMED",
+  "productDefinitionGateResult": "PASS",
+  "architectureFitExecution": "NOT_PERFORMED",
+  "architectureFit": "NOT_PERFORMED",
+  "architectureLocked": "NO",
+  "implementationAuthorized": "NO",
+  "implementationStarted": "NO",
+  "impAccepted": "NO",
+  "imp037Activated": "NO"
+}
+-->
+Document status: APPROVED
+PRODUCT_DEFINITION_VERSION: PD-IMP-036G-DRAFT-2
+PRE-GATE DRAFT: NO
+PRODUCT_DEFINITION_GATE_EXECUTION: PERFORMED
+Gate Result: PASS
+ARCHITECTURE_FIT_EXECUTION: NOT_PERFORMED
+ARCHITECTURE_FIT_RESULT: NOT_PERFORMED
+IMP036G_ARCHITECTURE_LOCKED: NO
+IMP036G_IMPLEMENTATION_AUTHORIZED: NO
+IMP036G_STARTED: NO
+IMP036G_ACCEPTED: NO
+IMP037_ACTIVATED: NO
+GATE_EVALUATED_HEAD = 1fe1737d8f05d6069b2073d9faf1142d21b91970
+GATE_EVALUATED_TREE = 25412cbadf224ef709687fe067f2427784a414cc
+`;
+
+  it("passes GTM-R126 / STATE-R124 with required APPROVED Product Definition present", () => {
+    const result = evaluateImp036gProductDefinitionGatePassCheckpoint({
+      ...gatePassBase,
+      productDefinitionText: validApproved,
+    });
+    assert.deepEqual(result, { ok: true });
+    assert.deepEqual(evaluateImp036gApprovedProductDefinitionCandidate(validApproved), { ok: true });
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R126", "STATE-R124", "imp036gProductDefinitionGatePass"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R125", "STATE-R123", "imp036gProductDefinitionGatePass"), false);
+  });
+
+  it("rejects approved candidate that retains Gate Result NOT_PERFORMED", () => {
+    const bad = validApproved.replace("Gate Result: PASS", "Gate Result: NOT_PERFORMED").replace(
+      '"productDefinitionGateResult": "PASS"',
+      '"productDefinitionGateResult": "NOT_PERFORMED"',
+    );
+    const result = evaluateImp036gApprovedProductDefinitionCandidate(bad);
+    assert.equal(result.ok, false);
+  });
+
+  it("rejects architecture fit PASS / lock / implementation authorized", () => {
+    assert.equal(
+      evaluateImp036gApprovedProductDefinitionCandidate(`${validApproved}\nIMP036G_ARCHITECTURE_LOCKED: YES\n`).ok,
+      false,
+    );
+    assert.equal(
+      evaluateImp036gProductDefinitionGatePassCheckpoint({
+        ...gatePassBase,
+        productDefinitionText: validApproved,
+        implementationAuthorizedYes: true,
       }).ok,
       false,
     );
