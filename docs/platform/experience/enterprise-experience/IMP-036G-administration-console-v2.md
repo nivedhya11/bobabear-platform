@@ -1,16 +1,17 @@
 ---
-Status: PLANNED CAPABILITY CONTRACT (SUPPORTING planning/discovery input; not PD-1 Product Definition)
+Status: SUPPORTING planning/product-experience input (not PD-1 Product Definition; not architecture authority)
 Capability: IMP-036G — Administration Console V2
 Current product slice: YES (see ROADMAP/STATE; IMP036G_ACTIVATED: YES)
-Formal ROADMAP lifecycle: PLANNED
-Product Definition:
+Formal ROADMAP lifecycle: ARCHITECTURE_LOCKED
+Product Definition: APPROVED / Gate PASS
   PD-IMP-036G-DRAFT-2
-  APPROVED
-  Gate PASS
   Founder product decisions: RESOLVED (7/7; 2026-09-16)
-Architecture: NOT_LOCKED
+Architecture Fit: PASS
+Architecture: LOCKED
 Implementation: NOT_AUTHORIZED / NOT_STARTED
 Founder UAT required: YES
+Capability architecture authority:
+  docs/platform/capabilities/IMP-036G-administration-console-v2.md
 ---
 
 # IMP-036G — Administration Console V2
@@ -88,22 +89,30 @@ system roles, resource hierarchy, membership/assignment/permission projections, 
 operational status. The operations process may remain the host, but Admin and Operations retain
 distinct transport and experience boundaries.
 
-Planning posture (not Architecture Fit):
+Architecture Fit result (supporting summary only — technical authority is the locked capability
+architecture):
 
 ```text
-NEW_SERVICE_EXPECTED: NO
-NEW_AUTH_MODEL_EXPECTED: NO
-NEW_ROLE_EXPECTED: NO
-NEW_PERMISSION_EXPECTED: NO
-NEW_RBAC_SEMANTICS_EXPECTED: NO
-NEW_API_OR_API_EXTENSION: ARCHITECTURE_FIT_TO_DETERMINE_MINIMUM_REQUIRED
-SCHEMA_OR_DATA_CONTRACT_CHANGE: ARCHITECTURE_FIT_TO_DETERMINE_MINIMUM_REQUIRED
+NEW_SERVICE: NO
+NEW_AUTH_MODEL: NO
+NEW_ROLE: NO
+NEW_PERMISSION: NO
+NEW_RBAC_SEMANTICS: NO
+API_EXTENSION_REQUIRED: YES
+SCHEMA_OR_DATA_CONTRACT_CHANGE: YES
+MIGRATION_REQUIRED: YES
+DESTRUCTIVE_MIGRATION_REQUIRED: NO
+D374_REQUIRED_FOR_LOCK: NO
+ARCH_R20_REQUIRED: NO
 ```
 
-Architecture Fit owns minimum API/schema mechanisms for subject-principal effective permissions,
-Overview projections if needed, server-side audit filters, scalable discoverability, and
-stale-write protection. Hidden controls never substitute for server-side and direct-URL
-authorization. Sensitive principal/access/audit data is minimized.
+Technical mechanisms (managed-subject EP, Overview projection, Ops status reuse, audit filters,
+authorized-set cursor continuation, hierarchy revision/CAS, Expire mapping, mobile parity) are
+locked in
+[`docs/platform/capabilities/IMP-036G-administration-console-v2.md`](../../capabilities/IMP-036G-administration-console-v2.md).
+This experience document must not compete with that lock. Hidden controls never substitute for
+server-side and direct-URL authorization. Sensitive principal/access/audit data is minimized.
+Architecture lock does not authorize implementation.
 
 ## Responsive, accessibility, and state requirements
 
@@ -156,8 +165,8 @@ programme; workforce-dashboard consolidation; hard delete of hierarchy resources
 approval; generic review-token/workflow engine.
 
 Founder product decisions (2026-09-16) expanded IMP-036G only enough to complete the seven
-administration outcomes above. Technical mechanism selection remains Architecture Fit.
-Product Definition Gate = PASS; Architecture Fit remains NOT_PERFORMED; architecture NOT_LOCKED;
+administration outcomes above. Technical mechanism selection is recorded in the locked capability
+architecture. Product Definition Gate = PASS; Architecture Fit = PASS; Architecture: LOCKED;
 implementation NOT_AUTHORIZED / NOT_STARTED.
 
 Figma is not required initially; later visual refinement may not redefine hierarchy, membership,
