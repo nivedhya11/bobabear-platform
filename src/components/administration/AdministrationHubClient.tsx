@@ -24,11 +24,14 @@ type ViewState =
       overview: Record<string, unknown>;
     }>;
 
-function sampleCount(section: unknown): string {
-  if (!section || typeof section !== "object") return "—";
-  const record = section as { count?: number; more?: boolean };
-  if (typeof record.count !== "number") return "—";
-  return record.more ? `${record.count}+` : String(record.count);
+function hierarchyCountDisplay(section: unknown): Readonly<{ count: string; sampleHint: string | null }> {
+  if (!section || typeof section !== "object") return { count: "—", sampleHint: null };
+  const record = section as { count?: number; more?: boolean; sample?: unknown[] };
+  if (typeof record.count !== "number") return { count: "—", sampleHint: null };
+  const sampleLen = Array.isArray(record.sample) ? record.sample.length : null;
+  const sampleHint =
+    record.more === true && sampleLen !== null ? `sample of ${sampleLen}` : null;
+  return { count: String(record.count), sampleHint };
 }
 
 export function AdministrationHubClient() {
@@ -125,7 +128,7 @@ export function AdministrationHubClient() {
           Organization hierarchy
         </h2>
         <p className="text-sm text-[var(--enterprise-text-secondary,#5C4B24)]">
-          Counts are for your authorized set only and may be incomplete when more results exist.
+          Counts are the full authorized totals. Listed samples may be truncated.
         </p>
         <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {(
@@ -136,17 +139,22 @@ export function AdministrationHubClient() {
               ["Legal entities", hierarchy.legalEntities],
               ["Outlets", hierarchy.outlets],
             ] as const
-          ).map(([label, section]) => (
-            <li key={label} className="rounded border border-[var(--enterprise-border,#D6C39A)] px-3 py-2 text-sm">
-              <span className="font-medium">{label}</span>
-              <span className="ml-2 tabular-nums">{sampleCount(section)}</span>
-              {(section as { more?: boolean } | undefined)?.more ? (
-                <StatusBadge tone="info" className="ml-2">
-                  More available
-                </StatusBadge>
-              ) : null}
-            </li>
-          ))}
+          ).map(([label, section]) => {
+            const display = hierarchyCountDisplay(section);
+            return (
+              <li key={label} className="rounded border border-[var(--enterprise-border,#D6C39A)] px-3 py-2 text-sm">
+                <span className="font-medium">{label}</span>
+                <span className="ml-2 tabular-nums" data-testid={`admin-overview-count-${label.toLowerCase().replace(/\s+/g, "-")}`}>
+                  {display.count}
+                </span>
+                {display.sampleHint ? (
+                  <StatusBadge tone="info" className="ml-2">
+                    {display.sampleHint}
+                  </StatusBadge>
+                ) : null}
+              </li>
+            );
+          })}
         </ul>
         <Button asChild variant="secondary">
           <a href="/workforce/admin/resources/">Open Organization</a>

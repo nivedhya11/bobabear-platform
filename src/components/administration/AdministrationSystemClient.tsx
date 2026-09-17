@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { Alert } from "@/components/enterprise/Alert";
 import { LoadingState } from "@/components/enterprise/LoadingState";
@@ -21,34 +21,41 @@ type ViewState =
 
 export function AdministrationSystemClient() {
   const [view, setView] = useState<ViewState>({ kind: "loading" });
+  const [reloadToken, setReloadToken] = useState(0);
+
+  const loadStatus = useCallback(async (cancelled: () => boolean) => {
+    setView({ kind: "loading" });
+    const result = await getOperationalStatus();
+    if (cancelled()) return;
+    if (!result.ok) {
+      if (result.status === 401 || result.code === "WORKFORCE_AUTH_REQUIRED") {
+        setView({ kind: "unauthorized" });
+        return;
+      }
+      if (result.status === 403 || result.code === "ORDER_UNAUTHORIZED") {
+        setView({ kind: "forbidden" });
+        return;
+      }
+      setView({ kind: "error", message: "Operational status could not be loaded." });
+      return;
+    }
+    setView({
+      kind: "ready",
+      service: result.data.service,
+      uptimeSeconds: result.data.uptimeSeconds,
+    });
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
-    void (async () => {
-      const result = await getOperationalStatus();
-      if (cancelled) return;
-      if (!result.ok) {
-        if (result.status === 401 || result.code === "WORKFORCE_AUTH_REQUIRED") {
-          setView({ kind: "unauthorized" });
-          return;
-        }
-        if (result.status === 403 || result.code === "ORDER_UNAUTHORIZED") {
-          setView({ kind: "forbidden" });
-          return;
-        }
-        setView({ kind: "error", message: "Operational status could not be loaded." });
-        return;
-      }
-      setView({
-        kind: "ready",
-        service: result.data.service,
-        uptimeSeconds: result.data.uptimeSeconds,
-      });
-    })();
+    void loadStatus(() => cancelled);
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [loadStatus, reloadToken]);
+
+  const retry = () => setReloadToken((token) => token + 1);
+  const opsAuthorized = view.kind === "ready";
 
   return (
     <div data-testid="admin-system" className="space-y-6">
@@ -81,9 +88,20 @@ export function AdministrationSystemClient() {
           <p>Source: GET /api/operations/v1/operational-status (Ops-owned).</p>
         </div>
       ) : null}
-      <Button asChild>
-        <a href="/workforce/operations/">Open Operations</a>
-      </Button>
+      {view.kind === "error" || view.kind === "ready" ? (
+        <Button type="button" variant="secondary" data-testid="admin-system-retry" onClick={retry}>
+          {view.kind === "error" ? "Retry status" : "Reload status"}
+        </Button>
+      ) : null}
+      {opsAuthorized ? (
+        <Button asChild data-testid="admin-open-operations">
+          <a href="/workforce/operations/">Open Operations</a>
+        </Button>
+      ) : view.kind !== "loading" ? (
+        <p className="text-sm text-[var(--enterprise-text-secondary,#5C4B24)]" data-testid="admin-open-operations-unavailable">
+          Open Operations is unavailable until Ops operational-status authorization succeeds.
+        </p>
+      ) : null}
     </div>
   );
 }
