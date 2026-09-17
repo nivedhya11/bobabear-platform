@@ -206,6 +206,11 @@
       "tag": "0040_curvy_tomas",
       "path": "drizzle/0040_curvy_tomas.sql",
       "sha256": "fc0b72e96201771b1c99fbb30439ba3ba3fdfb05bdd6d3de0bfb040586d3ce41"
+    },
+    {
+      "tag": "0041_exotic_smasher",
+      "path": "drizzle/0041_exotic_smasher.sql",
+      "sha256": "5006acfa1679c9b9920d15142dfff6249b1a54dd4ce58efb1504a8cd77e66dd6"
     }
   ]
 }

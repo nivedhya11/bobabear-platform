@@ -7,6 +7,7 @@
  */
 import { sql } from "drizzle-orm";
 import {
+  bigint,
   check,
   foreignKey,
   text,
@@ -25,6 +26,7 @@ export const brandsTable = appSchema.table(
     code: text("code").notNull(),
     name: text("name").notNull(),
     status: text("status").notNull().default("active"),
+    revision: bigint("revision", { mode: "bigint" }).notNull().default(sql`1`),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
   },
@@ -34,6 +36,7 @@ export const brandsTable = appSchema.table(
     check("brands_updated_at_after_created_at_check", sql`${table.updatedAt} >= ${table.createdAt}`),
     check("brands_code_nonempty_check", sql`length(trim(${table.code})) > 0`),
     check("brands_name_nonempty_check", sql`length(trim(${table.name})) > 0`),
+    check("brands_revision_positive_check", sql`${table.revision} > 0`),
   ],
 );
 
@@ -47,6 +50,7 @@ export const organizationsTable = appSchema.table(
     code: text("code").notNull(),
     name: text("name").notNull(),
     status: text("status").notNull().default("active"),
+    revision: bigint("revision", { mode: "bigint" }).notNull().default(sql`1`),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
   },
@@ -60,6 +64,7 @@ export const organizationsTable = appSchema.table(
     ),
     check("organizations_code_nonempty_check", sql`length(trim(${table.code})) > 0`),
     check("organizations_name_nonempty_check", sql`length(trim(${table.name})) > 0`),
+    check("organizations_revision_positive_check", sql`${table.revision} > 0`),
   ],
 );
 
@@ -73,6 +78,7 @@ export const territoriesTable = appSchema.table(
     code: text("code").notNull(),
     name: text("name").notNull(),
     status: text("status").notNull().default("active"),
+    revision: bigint("revision", { mode: "bigint" }).notNull().default(sql`1`),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
   },
@@ -86,6 +92,7 @@ export const territoriesTable = appSchema.table(
     ),
     check("territories_code_nonempty_check", sql`length(trim(${table.code})) > 0`),
     check("territories_name_nonempty_check", sql`length(trim(${table.name})) > 0`),
+    check("territories_revision_positive_check", sql`${table.revision} > 0`),
   ],
 );
 
@@ -98,6 +105,7 @@ export const legalEntitiesTable = appSchema.table(
     code: text("code").notNull(),
     name: text("name").notNull(),
     status: text("status").notNull().default("active"),
+    revision: bigint("revision", { mode: "bigint" }).notNull().default(sql`1`),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
   },
@@ -117,6 +125,7 @@ export const legalEntitiesTable = appSchema.table(
     ),
     check("legal_entities_code_nonempty_check", sql`length(trim(${table.code})) > 0`),
     check("legal_entities_name_nonempty_check", sql`length(trim(${table.name})) > 0`),
+    check("legal_entities_revision_positive_check", sql`${table.revision} > 0`),
   ],
 );
 
@@ -131,6 +140,7 @@ export const outletsTable = appSchema.table(
     code: text("code").notNull(),
     name: text("name").notNull(),
     status: text("status").notNull().default("active"),
+    revision: bigint("revision", { mode: "bigint" }).notNull().default(sql`1`),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
   },
@@ -178,5 +188,6 @@ export const outletsTable = appSchema.table(
     check("outlets_updated_at_after_created_at_check", sql`${table.updatedAt} >= ${table.createdAt}`),
     check("outlets_code_nonempty_check", sql`length(trim(${table.code})) > 0`),
     check("outlets_name_nonempty_check", sql`length(trim(${table.name})) > 0`),
+    check("outlets_revision_positive_check", sql`${table.revision} > 0`),
   ],
 );
