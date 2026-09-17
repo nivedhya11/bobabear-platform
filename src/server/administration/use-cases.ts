@@ -22,6 +22,7 @@ import {
   accessScopeToProtectedResource,
   authorize,
   createMembership,
+  createWorkforcePrincipalFromTrustedIdentity,
   findMembershipById,
   findRoleAssignmentById,
   getEffectivePermissions,
@@ -33,6 +34,7 @@ import {
   requireAuthorization,
   revokeRole,
   transitionMembership,
+  WorkforcePrincipalError,
   type AccessAuditEvent,
   type AccessMembership,
   type AccessRoleAssignment,
@@ -41,7 +43,12 @@ import {
   type ProtectedResource,
   type WorkforcePrincipal,
 } from "../access-control";
+import { loadEffectiveGrants } from "../access-control/authorize";
+import { assignmentCoversResource } from "../access-control/scope";
 import { findWorkforceUserByEmail } from "../auth/workforce/operator/lifecycle";
+import { actorHasOrderCapability } from "../order/authorize";
+import { getMetricsSnapshot } from "../../platform/observability";
+import { loadOperationalQueueBacklog } from "../persistence/operational-counts";
 import {
   createBrand,
   createLegalEntity,
@@ -69,6 +76,12 @@ import {
   type Outlet,
   type Territory,
 } from "../organization";
+import {
+  pageByNameId,
+  pageByTimeIdDesc,
+  parseExpectedRevision,
+  type AdminContinuationPage,
+} from "./continuation";
 import { AdministrationError } from "./errors";
 
 const FORBIDDEN_BODY_KEYS = new Set([
@@ -159,7 +172,19 @@ const PORTAL_SESSION_CAPS = [
   ...ACCESS_CAPS,
 ] as const satisfies readonly PermissionKey[];
 
-const LIST_LIMIT = 200;
+const LIST_PAGE_DEFAULT = 50;
+
+export type AdministrationListQuery = Readonly<{
+  cursor?: string;
+}>;
+
+export type AdministrationAuditListQuery = Readonly<{
+  cursor?: string;
+  actorWorkforceUserId?: string;
+  action?: string;
+  occurredFrom?: string;
+  occurredTo?: string;
+}>;
 
 export function rejectForgedAuthorityFields(body: Readonly<Record<string, unknown>>): void {
   for (const key of Object.keys(body)) {
@@ -186,7 +211,7 @@ async function isAllowed(
   return decision.allowed;
 }
 
-async function filterByPermission<T>(
+async function authorizeEligibleSet<T>(
   context: PersistenceQueryContext,
   actor: WorkforcePrincipal,
   permission: PermissionKey,
@@ -195,7 +220,6 @@ async function filterByPermission<T>(
 ): Promise<T[]> {
   const out: T[] = [];
   for (const item of items) {
-    if (out.length >= LIST_LIMIT) break;
     const resource = resourceOf(item);
     if (!resource) continue;
     if (await isAllowed(context, actor, permission, resource)) out.push(item);
@@ -288,14 +312,25 @@ export async function getAdminSession(
   });
 }
 
-export async function adminListBrands(persistence: Persistence, actor: WorkforcePrincipal | null): Promise<Brand[]> {
+export async function adminListBrands(
+  persistence: Persistence,
+  actor: WorkforcePrincipal | null,
+  query: AdministrationListQuery = {},
+): Promise<AdminContinuationPage<Brand>> {
   const principal = requirePrincipal(actor);
-  return persistence.withContext(async (context) =>
-    filterByPermission(context, principal, "brand.read", await listBrands(context), (b) => ({
-      type: "brand",
-      brandId: b.id,
-    })),
-  );
+  return persistence.withContext(async (context) => {
+    const eligible = await authorizeEligibleSet(
+      context,
+      principal,
+      "brand.read",
+      await listBrands(context),
+      (b) => ({ type: "brand", brandId: b.id }),
+    );
+    return pageByNameId(eligible, (b) => ({ name: b.name, id: b.id }), {
+      cursor: query.cursor,
+      pageSize: LIST_PAGE_DEFAULT,
+    });
+  });
 }
 
 export async function adminGetBrand(
@@ -352,6 +387,7 @@ export async function adminUpdateBrand(
 ): Promise<Brand> {
   const principal = requirePrincipal(actor);
   rejectForgedAuthorityFields(body);
+  const expectedRevision = parseExpectedRevision(body);
   const name = body.name === undefined ? undefined : typeof body.name === "string" ? body.name : null;
   const status =
     body.status === undefined
@@ -370,6 +406,7 @@ export async function adminUpdateBrand(
     });
     return updateBrand(tx, {
       brandId,
+      expectedRevision,
       ...(name !== undefined ? { name } : {}),
       ...(status !== undefined ? { status } : {}),
       actorWorkforceUserId: principal.workforceUserId,
@@ -381,7 +418,7 @@ async function listFilteredOrganizations(
   context: PersistenceQueryContext,
   actor: WorkforcePrincipal,
 ): Promise<Organization[]> {
-  return filterByPermission(context, actor, "organization.read", await listOrganizations(context), (o) => ({
+  return authorizeEligibleSet(context, actor, "organization.read", await listOrganizations(context), (o) => ({
     type: "organization",
     brandId: o.brandId,
     organizationId: o.id,
@@ -391,9 +428,16 @@ async function listFilteredOrganizations(
 export async function adminListOrganizations(
   persistence: Persistence,
   actor: WorkforcePrincipal | null,
-): Promise<Organization[]> {
+  query: AdministrationListQuery = {},
+): Promise<AdminContinuationPage<Organization>> {
   const principal = requirePrincipal(actor);
-  return persistence.withContext(async (context) => listFilteredOrganizations(context, principal));
+  return persistence.withContext(async (context) => {
+    const eligible = await listFilteredOrganizations(context, principal);
+    return pageByNameId(eligible, (o) => ({ name: o.name, id: o.id }), {
+      cursor: query.cursor,
+      pageSize: LIST_PAGE_DEFAULT,
+    });
+  });
 }
 
 export async function adminGetOrganization(
@@ -478,6 +522,7 @@ export async function adminUpdateOrganization(
     }
     return updateOrganization(tx, {
       organizationId,
+      expectedRevision: parseExpectedRevision(body),
       ...(name !== undefined ? { name } : {}),
       ...(status !== undefined ? { status } : {}),
       actorWorkforceUserId: principal.workforceUserId,
@@ -488,15 +533,26 @@ export async function adminUpdateOrganization(
 export async function adminListTerritories(
   persistence: Persistence,
   actor: WorkforcePrincipal | null,
-): Promise<Territory[]> {
+  query: AdministrationListQuery = {},
+): Promise<AdminContinuationPage<Territory>> {
   const principal = requirePrincipal(actor);
-  return persistence.withContext(async (context) =>
-    filterByPermission(context, principal, "territory.read", await listTerritories(context), (t) => ({
-      type: "territory",
-      brandId: t.brandId,
-      territoryId: t.id,
-    })),
-  );
+  return persistence.withContext(async (context) => {
+    const eligible = await authorizeEligibleSet(
+      context,
+      principal,
+      "territory.read",
+      await listTerritories(context),
+      (t) => ({
+        type: "territory",
+        brandId: t.brandId,
+        territoryId: t.id,
+      }),
+    );
+    return pageByNameId(eligible, (t) => ({ name: t.name, id: t.id }), {
+      cursor: query.cursor,
+      pageSize: LIST_PAGE_DEFAULT,
+    });
+  });
 }
 
 export async function adminGetTerritory(
@@ -573,6 +629,7 @@ export async function adminUpdateTerritory(
     }
     return updateTerritory(tx, {
       territoryId,
+      expectedRevision: parseExpectedRevision(body),
       ...(name !== undefined ? { name } : {}),
       ...(status !== undefined ? { status } : {}),
       actorWorkforceUserId: principal.workforceUserId,
@@ -583,16 +640,27 @@ export async function adminUpdateTerritory(
 export async function adminListLegalEntities(
   persistence: Persistence,
   actor: WorkforcePrincipal | null,
-): Promise<LegalEntity[]> {
+  query: AdministrationListQuery = {},
+): Promise<AdminContinuationPage<LegalEntity>> {
   const principal = requirePrincipal(actor);
-  return persistence.withContext(async (context) =>
-    filterByPermission(context, principal, "legal_entity.read", await listLegalEntities(context), (e) => ({
-      type: "legal_entity",
-      brandId: e.brandId,
-      organizationId: e.organizationId,
-      legalEntityId: e.id,
-    })),
-  );
+  return persistence.withContext(async (context) => {
+    const eligible = await authorizeEligibleSet(
+      context,
+      principal,
+      "legal_entity.read",
+      await listLegalEntities(context),
+      (e) => ({
+        type: "legal_entity",
+        brandId: e.brandId,
+        organizationId: e.organizationId,
+        legalEntityId: e.id,
+      }),
+    );
+    return pageByNameId(eligible, (e) => ({ name: e.name, id: e.id }), {
+      cursor: query.cursor,
+      pageSize: LIST_PAGE_DEFAULT,
+    });
+  });
 }
 
 export async function adminGetLegalEntity(
@@ -684,6 +752,7 @@ export async function adminUpdateLegalEntity(
     }
     return updateLegalEntity(tx, {
       legalEntityId,
+      expectedRevision: parseExpectedRevision(body),
       ...(name !== undefined ? { name } : {}),
       ...(status !== undefined ? { status } : {}),
       actorWorkforceUserId: principal.workforceUserId,
@@ -694,17 +763,28 @@ export async function adminUpdateLegalEntity(
 export async function adminListOutlets(
   persistence: Persistence,
   actor: WorkforcePrincipal | null,
-): Promise<Outlet[]> {
+  query: AdministrationListQuery = {},
+): Promise<AdminContinuationPage<Outlet>> {
   const principal = requirePrincipal(actor);
-  return persistence.withContext(async (context) =>
-    filterByPermission(context, principal, "outlet.read", await listOutlets(context), (o) => ({
-      type: "outlet",
-      brandId: o.brandId,
-      organizationId: o.organizationId,
-      territoryId: o.territoryId,
-      outletId: o.id,
-    })),
-  );
+  return persistence.withContext(async (context) => {
+    const eligible = await authorizeEligibleSet(
+      context,
+      principal,
+      "outlet.read",
+      await listOutlets(context),
+      (o) => ({
+        type: "outlet",
+        brandId: o.brandId,
+        organizationId: o.organizationId,
+        territoryId: o.territoryId,
+        outletId: o.id,
+      }),
+    );
+    return pageByNameId(eligible, (o) => ({ name: o.name, id: o.id }), {
+      cursor: query.cursor,
+      pageSize: LIST_PAGE_DEFAULT,
+    });
+  });
 }
 
 export async function adminGetOutlet(
@@ -802,6 +882,7 @@ export async function adminUpdateOutlet(
     }
     return updateOutlet(tx, {
       outletId,
+      expectedRevision: parseExpectedRevision(body),
       ...(name !== undefined ? { name } : {}),
       ...(status !== undefined ? { status } : {}),
       actorWorkforceUserId: principal.workforceUserId,
@@ -812,14 +893,14 @@ export async function adminUpdateOutlet(
 export async function adminListMemberships(
   persistence: Persistence,
   actor: WorkforcePrincipal | null,
-  filter?: Readonly<{ outletId?: string }>,
-): Promise<AdministrationMembershipProjection[]> {
+  filter?: Readonly<{ outletId?: string; cursor?: string }>,
+): Promise<AdminContinuationPage<AdministrationMembershipProjection>> {
   const principal = requirePrincipal(actor);
   return persistence.withContext(async (context) => {
     const all = await listMemberships(context);
     let authorized: AccessMembership[];
     if (!filter?.outletId) {
-      authorized = await filterByPermission(
+      authorized = await authorizeEligibleSet(
         context,
         principal,
         "access.membership.read",
@@ -846,7 +927,7 @@ export async function adminListMemberships(
         (membership) =>
           membership.scopeType === "outlet" && membership.outletId === outlet.id,
       );
-      authorized = await filterByPermission(
+      authorized = await authorizeEligibleSet(
         context,
         principal,
         "access.membership.read",
@@ -854,7 +935,11 @@ export async function adminListMemberships(
         membershipResource,
       );
     }
-    return enrichMembershipsWithMemberLabel(context, authorized);
+    const enriched = await enrichMembershipsWithMemberLabel(context, authorized);
+    return pageByTimeIdDesc(enriched, (m) => ({ at: m.createdAt, id: m.id }), {
+      cursor: filter?.cursor,
+      pageSize: LIST_PAGE_DEFAULT,
+    });
   });
 }
 
@@ -1063,20 +1148,111 @@ export async function adminRevokeRole(
   });
 }
 
+export type AdministrationEffectivePermissionsProjection = Readonly<{
+  subject: Readonly<{
+    membershipId: string;
+    workforceUserId: string;
+    memberLabel: string;
+  }> | null;
+  resource: ProtectedResource;
+  permissions: PermissionKey[];
+}>;
+
 export async function adminGetEffectivePermissions(
   persistence: Persistence,
   actor: WorkforcePrincipal | null,
   query: Readonly<Record<string, string>>,
-): Promise<PermissionKey[]> {
+): Promise<AdministrationEffectivePermissionsProjection | PermissionKey[]> {
   const principal = requirePrincipal(actor);
+  const membershipId =
+    typeof query.membershipId === "string" && query.membershipId.length > 0
+      ? query.membershipId
+      : undefined;
+
   return persistence.withContext(async (context) => {
     const resource = parseResourceQuery(query);
+
+    if (!membershipId) {
+      // Caller-scoped compatibility (IMP-035).
+      await requireAuthorization(context, {
+        actor: principal,
+        permission: "access.effective_permissions.read",
+        resource,
+      });
+      const permissions = await getEffectivePermissions(context, { actor: principal, resource });
+      return permissions;
+    }
+
+    const membership = await findMembershipById(context, membershipId);
+    if (!membership) throw new AdministrationError("ADMIN_NOT_FOUND", "Membership not found.");
+    const membershipRes = membershipResource(membership);
+    if (!membershipRes) {
+      throw new AdministrationError("ADMIN_REQUEST_INVALID", "Membership scope is invalid.");
+    }
+
     await requireAuthorization(context, {
       actor: principal,
       permission: "access.effective_permissions.read",
       resource,
     });
-    return getEffectivePermissions(context, { actor: principal, resource });
+    await requireAuthorization(context, {
+      actor: principal,
+      permission: "access.membership.read",
+      resource: membershipRes,
+    });
+
+    const userRows = await context.db
+      .select({
+        id: workforceAuthUsers.id,
+        name: workforceAuthUsers.name,
+        email: workforceAuthUsers.email,
+        disabledAt: workforceAuthUsers.disabledAt,
+        passwordChangeRequired: workforceAuthUsers.passwordChangeRequired,
+        twoFactorEnabled: workforceAuthUsers.twoFactorEnabled,
+      })
+      .from(workforceAuthUsers)
+      .where(eq(workforceAuthUsers.id, membership.workforceUserId))
+      .limit(1);
+    const user = userRows[0];
+    if (!user) throw new AdministrationError("ADMIN_NOT_FOUND", "Workforce user not found.");
+
+    const subject = {
+      membershipId: membership.id,
+      workforceUserId: membership.workforceUserId,
+      memberLabel: resolveMemberLabel({ name: user.name, email: user.email }),
+    };
+
+    let permissions: PermissionKey[] = [];
+    try {
+      const subjectPrincipal = createWorkforcePrincipalFromTrustedIdentity({
+        workforceUserId: user.id,
+        disabledAt: user.disabledAt ? new Date(user.disabledAt) : null,
+        passwordChangeRequired: user.passwordChangeRequired,
+        twoFactorEnabled: user.twoFactorEnabled ?? false,
+      });
+      permissions = await getEffectivePermissions(context, {
+        actor: subjectPrincipal,
+        resource,
+      });
+    } catch (error) {
+      if (!(error instanceof WorkforcePrincipalError)) throw error;
+      // Prefer grant-load path when identity flags block a login principal.
+      const grants = await loadEffectiveGrants(context, {
+        workforceUserId: user.id,
+        disabledAt: null,
+        passwordChangeRequired: false,
+        twoFactorEnabled: true,
+      } as WorkforcePrincipal);
+      permissions = [
+        ...new Set(
+          grants
+            .filter((grant) => assignmentCoversResource(grant.scope, grant.inheritanceMode, resource))
+            .map((grant) => grant.permissionKey),
+        ),
+      ].sort();
+    }
+
+    return { subject, resource, permissions };
   });
 }
 
@@ -1116,12 +1292,215 @@ function parseResourceQuery(query: Readonly<Record<string, string>>): ProtectedR
   throw new AdministrationError("ADMIN_REQUEST_INVALID", "resourceType / resource ids are invalid.");
 }
 
+function parseOptionalIsoDate(value: string | undefined, field: string): Date | undefined {
+  if (value === undefined) return undefined;
+  const ms = Date.parse(value);
+  if (!Number.isFinite(ms)) {
+    throw new AdministrationError("ADMIN_REQUEST_INVALID", `${field} must be an ISO date-time.`, {
+      field,
+    });
+  }
+  return new Date(ms);
+}
+
 export async function adminListAuditEvents(
   persistence: Persistence,
   actor: WorkforcePrincipal | null,
-): Promise<AccessAuditEvent[]> {
+  query: AdministrationAuditListQuery = {},
+): Promise<AdminContinuationPage<AccessAuditEvent>> {
   const principal = requirePrincipal(actor);
-  return persistence.withContext(async (context) =>
-    filterByPermission(context, principal, "access.audit.read", await listAccessAuditEvents(context), auditResource),
-  );
+  const occurredFrom = parseOptionalIsoDate(query.occurredFrom, "occurredFrom");
+  const occurredTo = parseOptionalIsoDate(query.occurredTo, "occurredTo");
+  if (occurredFrom && occurredTo && occurredFrom.getTime() > occurredTo.getTime()) {
+    throw new AdministrationError("ADMIN_REQUEST_INVALID", "occurredFrom must be <= occurredTo.");
+  }
+
+  return persistence.withContext(async (context) => {
+    const all = await listAccessAuditEvents(context);
+    let eligible = await authorizeEligibleSet(
+      context,
+      principal,
+      "access.audit.read",
+      all,
+      auditResource,
+    );
+    if (query.actorWorkforceUserId) {
+      eligible = eligible.filter((event) => event.actorWorkforceUserId === query.actorWorkforceUserId);
+    }
+    if (query.action) {
+      eligible = eligible.filter((event) => event.action === query.action);
+    }
+    if (occurredFrom) {
+      eligible = eligible.filter((event) => event.occurredAt.getTime() >= occurredFrom.getTime());
+    }
+    if (occurredTo) {
+      eligible = eligible.filter((event) => event.occurredAt.getTime() <= occurredTo.getTime());
+    }
+    return pageByTimeIdDesc(eligible, (event) => ({ at: event.occurredAt, id: event.id }), {
+      cursor: query.cursor,
+      pageSize: LIST_PAGE_DEFAULT,
+    });
+  });
+}
+
+export type AdministrationOverview = Readonly<{
+  hierarchy: Readonly<{
+    brands: Readonly<{ count: number; sample: Brand[]; more: boolean }>;
+    organizations: Readonly<{ count: number; sample: Organization[]; more: boolean }>;
+    territories: Readonly<{ count: number; sample: Territory[]; more: boolean }>;
+    legalEntities: Readonly<{ count: number; sample: LegalEntity[]; more: boolean }>;
+    outlets: Readonly<{ count: number; sample: Outlet[]; more: boolean }>;
+  }>;
+  membershipAttention: Readonly<{
+    invited: number;
+    suspended: number;
+    active: number;
+    revoked: number;
+    expired: number;
+    sample: AdministrationMembershipProjection[];
+    more: boolean;
+  }>;
+  recentAudit: Readonly<{
+    items: AccessAuditEvent[];
+    more: boolean;
+  }>;
+  operationalHealth:
+    | Readonly<{ available: true; status: Readonly<Record<string, unknown>> }>
+    | Readonly<{ available: false; reason: "unauthorized" }>;
+}>;
+
+const OVERVIEW_SAMPLE = 5;
+
+export async function adminGetOverview(
+  persistence: Persistence,
+  actor: WorkforcePrincipal | null,
+): Promise<AdministrationOverview> {
+  const principal = requirePrincipal(actor);
+  return persistence.withContext(async (context) => {
+    const [brands, organizations, territories, legalEntities, outlets, memberships, audit] =
+      await Promise.all([
+        authorizeEligibleSet(
+          context,
+          principal,
+          "brand.read",
+          await listBrands(context),
+          (b) => ({ type: "brand", brandId: b.id }),
+        ),
+        listFilteredOrganizations(context, principal),
+        authorizeEligibleSet(
+          context,
+          principal,
+          "territory.read",
+          await listTerritories(context),
+          (t) => ({ type: "territory", brandId: t.brandId, territoryId: t.id }),
+        ),
+        authorizeEligibleSet(
+          context,
+          principal,
+          "legal_entity.read",
+          await listLegalEntities(context),
+          (e) => ({
+            type: "legal_entity",
+            brandId: e.brandId,
+            organizationId: e.organizationId,
+            legalEntityId: e.id,
+          }),
+        ),
+        authorizeEligibleSet(
+          context,
+          principal,
+          "outlet.read",
+          await listOutlets(context),
+          (o) => ({
+            type: "outlet",
+            brandId: o.brandId,
+            organizationId: o.organizationId,
+            territoryId: o.territoryId,
+            outletId: o.id,
+          }),
+        ),
+        authorizeEligibleSet(
+          context,
+          principal,
+          "access.membership.read",
+          await listMemberships(context),
+          membershipResource,
+        ),
+        authorizeEligibleSet(
+          context,
+          principal,
+          "access.audit.read",
+          await listAccessAuditEvents(context),
+          auditResource,
+        ),
+      ]);
+
+    const attentionStatuses = ["invited", "suspended"] as const;
+    const attention = memberships.filter((m) =>
+      (attentionStatuses as readonly string[]).includes(m.status),
+    );
+    const enrichedAttention = await enrichMembershipsWithMemberLabel(
+      context,
+      attention.slice(0, OVERVIEW_SAMPLE),
+    );
+
+    const canReadOps = await actorHasOrderCapability(context, principal, "order.read");
+    let operationalHealth: AdministrationOverview["operationalHealth"];
+    if (!canReadOps) {
+      operationalHealth = { available: false, reason: "unauthorized" };
+    } else {
+      const [queues, metrics] = await Promise.all([
+        loadOperationalQueueBacklog(persistence),
+        Promise.resolve(getMetricsSnapshot()),
+      ]);
+      operationalHealth = {
+        available: true,
+        status: {
+          service: "operations",
+          metrics,
+          queues,
+        },
+      };
+    }
+
+    const sortName = <T extends { name: string; id: string }>(items: T[]) =>
+      [...items].sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
+
+    const hierarchySlice = <T extends { name: string; id: string }>(items: T[]) => {
+      const sorted = sortName(items);
+      return {
+        count: sorted.length,
+        sample: sorted.slice(0, OVERVIEW_SAMPLE),
+        more: sorted.length > OVERVIEW_SAMPLE,
+      };
+    };
+
+    const recentAuditSorted = [...audit].sort(
+      (a, b) => b.occurredAt.getTime() - a.occurredAt.getTime() || b.id.localeCompare(a.id),
+    );
+
+    return {
+      hierarchy: {
+        brands: hierarchySlice(brands),
+        organizations: hierarchySlice(organizations),
+        territories: hierarchySlice(territories),
+        legalEntities: hierarchySlice(legalEntities),
+        outlets: hierarchySlice(outlets),
+      },
+      membershipAttention: {
+        invited: memberships.filter((m) => m.status === "invited").length,
+        suspended: memberships.filter((m) => m.status === "suspended").length,
+        active: memberships.filter((m) => m.status === "active").length,
+        revoked: memberships.filter((m) => m.status === "revoked").length,
+        expired: memberships.filter((m) => m.status === "expired").length,
+        sample: enrichedAttention,
+        more: attention.length > OVERVIEW_SAMPLE,
+      },
+      recentAudit: {
+        items: recentAuditSorted.slice(0, OVERVIEW_SAMPLE),
+        more: recentAuditSorted.length > OVERVIEW_SAMPLE,
+      },
+      operationalHealth,
+    };
+  });
 }

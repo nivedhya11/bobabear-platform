@@ -243,7 +243,7 @@ async function main(): Promise<void> {
   try {
     const actor = await resolveWorkforcePrincipalFromDatabase(persistence, args.actorId);
 
-    const memberships = await adminListMemberships(persistence, actor);
+    const memberships = (await adminListMemberships(persistence, actor)).items;
     const platformMembership = memberships.find(
       (m) =>
         m.workforceUserId === args.actorId &&
@@ -270,7 +270,7 @@ async function main(): Promise<void> {
       throw new Error("Canonical BOBA Bear brand identity mismatch.");
     }
 
-    let organization = (await adminListOrganizations(persistence, actor)).find(
+    let organization = (await adminListOrganizations(persistence, actor)).items.find(
       (o) => o.brandId === CANONICAL_BRAND_ID && o.code === ORG.code,
     );
     if (!organization) {
@@ -283,7 +283,7 @@ async function main(): Promise<void> {
       throw new Error(`Organization ${ORG.code} exists with unexpected name.`);
     }
 
-    let territory = (await adminListTerritories(persistence, actor)).find(
+    let territory = (await adminListTerritories(persistence, actor)).items.find(
       (t) => t.brandId === CANONICAL_BRAND_ID && t.code === TERRITORY.code,
     );
     if (!territory) {
@@ -296,7 +296,7 @@ async function main(): Promise<void> {
       throw new Error(`Territory ${TERRITORY.code} exists with unexpected name.`);
     }
 
-    let legalEntity = (await adminListLegalEntities(persistence, actor)).find(
+    let legalEntity = (await adminListLegalEntities(persistence, actor)).items.find(
       (e) =>
         e.brandId === CANONICAL_BRAND_ID &&
         e.organizationId === organization!.id &&
@@ -313,7 +313,7 @@ async function main(): Promise<void> {
       throw new Error(`Legal entity ${LEGAL_ENTITY.code} exists with unexpected name.`);
     }
 
-    let outlet = (await adminListOutlets(persistence, actor)).find(
+    let outlet = (await adminListOutlets(persistence, actor)).items.find(
       (o) => o.brandId === CANONICAL_BRAND_ID && o.code === OUTLET.code,
     );
     if (!outlet) {
@@ -411,10 +411,10 @@ async function main(): Promise<void> {
       resourceType: "platform",
     });
 
-    const finalOrgs = await adminListOrganizations(persistence, actor);
-    const finalTerritories = await adminListTerritories(persistence, actor);
-    const finalLegalEntities = await adminListLegalEntities(persistence, actor);
-    const finalOutlets = await adminListOutlets(persistence, actor);
+    const finalOrgs = (await adminListOrganizations(persistence, actor)).items;
+    const finalTerritories = (await adminListTerritories(persistence, actor)).items;
+    const finalLegalEntities = (await adminListLegalEntities(persistence, actor)).items;
+    const finalOutlets = (await adminListOutlets(persistence, actor)).items;
 
     process.stdout.write(
       `${JSON.stringify(
