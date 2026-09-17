@@ -18811,22 +18811,22 @@ function checkTechnicalInventory() {
   const journal = JSON.parse(readFileSync(journalPath, "utf8"));
   const entries = journal.entries || [];
   const latest = entries[entries.length - 1];
-  if (!latest || latest.tag !== "0040_curvy_tomas") {
+  if (!latest || latest.tag !== "0041_exotic_smasher") {
     fail(
       "LATEST_MIGRATION",
-      `Expected latest migration tag 0040_curvy_tomas, got ${latest && latest.tag}`,
+      `Expected latest migration tag 0041_exotic_smasher, got ${latest && latest.tag}`,
     );
   } else {
-    note("Latest migration tag 0040_curvy_tomas");
+    note("Latest migration tag 0041_exotic_smasher");
   }
   const sqlFiles = readdirSync(path.join(projectRoot, "drizzle")).filter((f) => f.endsWith(".sql"));
-  if (sqlFiles.length !== 41 || entries.length !== 41) {
+  if (sqlFiles.length !== 42 || entries.length !== 42) {
     fail(
       "MIGRATION_COUNT",
-      `Expected 41 migrations, got sql=${sqlFiles.length} journal=${entries.length}`,
+      `Expected 42 migrations, got sql=${sqlFiles.length} journal=${entries.length}`,
     );
   } else {
-    note("Migration count 41");
+    note("Migration count 42");
   }
 
   // Application tables
