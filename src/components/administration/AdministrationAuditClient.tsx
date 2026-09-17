@@ -73,6 +73,7 @@ export function AdministrationAuditClient() {
   );
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- external Admin HTTP sync
     void load();
   }, [load]);
 

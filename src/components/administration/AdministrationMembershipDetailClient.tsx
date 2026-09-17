@@ -104,6 +104,7 @@ export function AdministrationMembershipDetailClient() {
 
   useEffect(() => {
     if (!membershipId) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- external Admin HTTP sync
     void reload();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- initial load by membershipId
   }, [membershipId]);

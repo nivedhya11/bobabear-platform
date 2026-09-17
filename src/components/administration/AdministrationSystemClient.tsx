@@ -48,6 +48,7 @@ export function AdministrationSystemClient() {
 
   useEffect(() => {
     let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- external Ops HTTP sync
     void loadStatus(() => cancelled);
     return () => {
       cancelled = true;
