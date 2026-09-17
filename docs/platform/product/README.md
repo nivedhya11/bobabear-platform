@@ -2,7 +2,7 @@
 {
   "status": "CURRENT",
   "authority": "PRODUCT_ARTIFACT_INDEX",
-  "lastReviewed": "2026-09-16"
+  "lastReviewed": "2026-09-17"
 }
 -->
 
@@ -19,18 +19,17 @@ owned by [TESTING.md](../TESTING.md).
 | [Golden Journey registry](./golden-journeys.md) | Cross-capability business continuity references and their bounded status |
 | [Product Definition template](./templates/product-definition-template.md) | Required structure for a capability's product definition |
 | [IMP-036F Product Definition](./IMP-036F/product-definition.md) | First PD-1 per-IMP Product Definition (`PD-IMP-036F-DRAFT-1`); Product Definition Gate = PASS; Architecture Fit = PASS; Capability architecture = LOCKED; lifecycle = COMPLETE_AND_ACCEPTED / accepted (ROADMAP/STATE remain lifecycle authority) |
-| [IMP-036G Product Definition](./IMP-036G/product-definition.md) | Gate-passed Product Definition (`PD-IMP-036G-DRAFT-2`); Document status = APPROVED / Product Definition Gate = PASS; Founder product decisions RESOLVED (7/7); Architecture Fit = NOT_PERFORMED; architecture not locked; implementation not authorized / not started (ROADMAP/STATE remain lifecycle authority) |
+| [IMP-036G Product Definition](./IMP-036G/product-definition.md) | Product Definition = APPROVED (`PD-IMP-036G-DRAFT-2`); Product Definition Gate = PASS; Architecture Fit = PASS; Capability architecture = LOCKED ([`../capabilities/IMP-036G-administration-console-v2.md`](../capabilities/IMP-036G-administration-console-v2.md)); Implementation = NOT_AUTHORIZED / NOT_STARTED (ROADMAP/STATE remain lifecycle authority) |
 | Per-IMP Product Definition | Business outcome, journeys, acceptance slice, stories, scenarios, business rules, and explicit deferrals within existing authority |
 
 A per-IMP Product Definition is mandatory from **IMP-036F onward** for new substantial product
 work. Use `docs/platform/product/<IMP>/product-definition.md`, with its own identity, version,
 and gate record. IMP-036F has a gate-passed Product Definition at
 [`./IMP-036F/product-definition.md`](./IMP-036F/product-definition.md) (Product Definition Gate PASS /
-Architecture Fit PASS / architecture LOCKED / COMPLETE_AND_ACCEPTED). IMP-036G has a **gate-passed
-APPROVED** Product Definition at [`./IMP-036G/product-definition.md`](./IMP-036G/product-definition.md)
-(`PD-IMP-036G-DRAFT-2`; Document status = APPROVED; Product Definition Gate = PASS; Founder product
-decisions RESOLVED (7/7); Architecture Fit = NOT_PERFORMED; architecture not locked; implementation
-not authorized / not started).
+Architecture Fit PASS / architecture LOCKED / COMPLETE_AND_ACCEPTED). IMP-036G has an **APPROVED** Product Definition at [`./IMP-036G/product-definition.md`](./IMP-036G/product-definition.md)
+(`PD-IMP-036G-DRAFT-2`; Product Definition Gate = PASS; Architecture Fit = PASS; Capability
+architecture = LOCKED at [`../capabilities/IMP-036G-administration-console-v2.md`](../capabilities/IMP-036G-administration-console-v2.md);
+Implementation = NOT_AUTHORIZED / NOT_STARTED).
 Activation and formal lifecycle remain owned
 only by CURRENT ROADMAP/STATE, not by this index.
 Engineering-only changes without a product surface may remain specification-driven under the
