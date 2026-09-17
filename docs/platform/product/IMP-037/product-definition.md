@@ -190,7 +190,7 @@ No new persona is created.
 |---|---|---|---|---|
 | `JOURNEY-037-BACKUP-READINESS` | Authorized platform operator needs truthful recovery coverage | inspect backup posture → distinguish managed/PITR vs independent logical coverage → identify last successful evidence → identify overdue/failed/unverified → understand next operator action | Operator determines recovery readiness without raw cloud/DB internals or credential exposure | No evidence → NOT_READY; failed/overdue → visible degraded; secret-safe always |
 | `JOURNEY-037-INDEPENDENT-BACKUP` | Scheduled/manual independent backup due or required before high-risk op | preflight source/credentials → create consistent logical backup → encrypt/persist approved artifact → verify integrity → record safe evidence | Usable independent backup exists **or** operation visibly fails; false success prohibited | Source/destination failure → FAILED; interrupted → incomplete not last-known-good; repeat runs do not silently overwrite retained artifacts |
-| `JOURNEY-037-RESTORE-DRILL` | Prove recoverability without risking active DB | select recovery point/artifact → provision/select isolated target → restore → apply later repository migrations where required → start compatible application → validate critical authority → measure recovery → record findings | Restored data proven operationally usable; RPO/RTO evidence recorded | Source protection refuse; restore/validation FAILED; provider side-effects suppressed; findings preserved |
+| `JOURNEY-037-RESTORE-DRILL` | Prove recoverability without risking active DB | select recovery point/artifact → provision/select isolated target → restore → apply later repository migrations where required → start compatible application → validate critical authority → measure recovery → record findings | Restored data proven operationally usable; measured RPO <= 15m and RTO <= 2h (RTO includes application/business-integrity validation) required for recovery-readiness PASS; threshold breach → BLOCKED / NOT_READY / FAILED | Source protection refuse; restore/validation FAILED; RPO/RTO threshold exceeded → readiness cannot PASS; provider side-effects suppressed; findings preserved |
 | `JOURNEY-037-MIGRATION-READINESS` | Prove PostgreSQL portability | produce portable recovery artifact → restore/import into clean compatible PostgreSQL 18 target → reconcile migration/schema state → start compatible application → validate authoritative business state → record findings | Portability demonstrated without provider-specific business truth | Interrupted → target not ready; source remains authoritative |
 | `JOURNEY-037-HIGH-RISK-MIGRATION` | High-risk persistence change proposed | verify recovery health → identify valid recovery point → confirm independent backup evidence → review recovery procedure → rehearse against representative data → verify post-migration state → READY or BLOCKED | High-risk migration cannot be production-ready when recovery assumptions unproven | Missing/stale backup → BLOCKED; failed rehearsal → BLOCKED; restore ≠ routine app rollback |
 
@@ -215,7 +215,7 @@ No new persona is created.
 
 | Slice | Mandatory story IDs | Mandatory AC IDs | Required Golden Journeys | Observable acceptance boundary |
 |---|---|---|---|---|
-| `V1_ACCEPTANCE_SLICE` | `US-IMP-037-001` … `US-IMP-037-008` | All 50 ACs listed in §10 (50 total) | Protect continuity of `GJ-FIRST-ORDER`, `GJ-PERMITTED-OUTLET-ACCESS`, `GJ-PAYMENT-RECOVERY` via safe recovery validation (no new customer GJ) | Proven backup → isolated restore → business validation → portability rehearsal → high-risk readiness → runbook/evidence; measured RPO/RTO targets; Founder UAT on isolated rehearsal |
+| `V1_ACCEPTANCE_SLICE` | `US-IMP-037-001` … `US-IMP-037-008` | All 50 ACs listed in §10 (50 total) | Protect continuity of `GJ-FIRST-ORDER`, `GJ-PERMITTED-OUTLET-ACCESS`, `GJ-PAYMENT-RECOVERY` via safe recovery validation (no new customer GJ) | Proven backup → isolated restore → business validation → portability rehearsal → high-risk readiness → runbook/evidence; measured RPO <= 15m and RTO <= 2h required for recovery-readiness PASS (threshold breach blocks acceptance); Founder UAT on isolated rehearsal |
 | `FOLLOW_UP` | Production scheduler realization; HA provisioning; live cutover | N/A for IMP-037 acceptance | N/A | Owned by IMP-039 / IMP-040 |
 | `DEFERRED` | General backup/restore web UI; automatic failover; multi-region; major-version automation | N/A | N/A | Explicit non-goals §15 / §24 |
 
@@ -573,8 +573,9 @@ Mandatory in acceptance slice: YES (`V1_ACCEPTANCE_SLICE`)
 
 Story: `US-IMP-037-004`
 
-When validation completes
-Then the evidence records the selected recovery point, achieved restore/verification completion time, pass/fail outcome and material findings.
+Given restoration and required application/business-integrity validation are complete
+When recovery evidence is evaluated
+Then the achieved recovery point is calculated and recorded; the achieved end-to-end recovery/validation time is calculated and recorded (RTO includes required application/business-integrity validation, not merely PostgreSQL availability); recovery-readiness PASS requires measured RPO <= 15 minutes (FD-037-01) and measured RTO <= 2 hours (FD-037-02) for qualifying recovery scenarios; if either threshold is exceeded, the drill/readiness result is BLOCKED / NOT_READY / FAILED for IMP-037 acceptance; measured values and any threshold breach remain visible in evidence; and no PASS may be reported merely because restoration technically succeeded.
 
 Mandatory in acceptance slice: YES (`V1_ACCEPTANCE_SLICE`)
 
@@ -944,7 +945,7 @@ Planned is not proven. PostgreSQL integration claims use real PostgreSQL 18 rath
 | `BR-IMP-037-005` | Backup/restore administrative access must remain distinct from ordinary application runtime authority. | ADR-013 database roles / direct connections | Applicable US-IMP-037-001…008 / related ACs |
 | `BR-IMP-037-006` | Independent backup artifacts must be encrypted. | ADR-013 independent encrypted logical backup | Applicable US-IMP-037-001…008 / related ACs |
 | `BR-IMP-037-007` | Secrets and raw database credentials must not appear in backup/restore evidence, logs or user-visible output. | ADR-015; security boundary | Applicable US-IMP-037-001…008 / related ACs |
-| `BR-IMP-037-008` | Recovery validation proves meaningful business state, not only database command exit status. | FD-037-02; TEST-1 | Applicable US-IMP-037-001…008 / related ACs |
+| `BR-IMP-037-008` | Recovery validation proves meaningful business state, not only database command exit status; RTO measurement includes that validation, and recovery-readiness PASS also requires measured RPO/RTO within FD-037-01/02 targets (AC-IMP-037-004-08). | FD-037-01; FD-037-02; TEST-1 | Applicable US-IMP-037-001…008 / related ACs |
 | `BR-IMP-037-009` | A restore environment must prevent uncontrolled live provider side effects. | ADR-002 environment isolation | Applicable US-IMP-037-001…008 / related ACs |
 | `BR-IMP-037-010` | Production-classified restored data must retain production-appropriate protection and must not silently become ordinary staging data. | ADR-002 | Applicable US-IMP-037-001…008 / related ACs |
 | `BR-IMP-037-011` | A recovery point older than the application candidate may require later repository migrations before application validation. | ADR-013 migration discipline | Applicable US-IMP-037-001…008 / related ACs |
@@ -984,14 +985,14 @@ Considered for all five IMP-037 journeys. CLI/tooling operator experience (FD-03
 | EMPTY / FIRST USE | No valid independent backup → NOT_READY (never healthy by empty config alone) | AC-IMP-037-001-02, BR-IMP-037-030 |
 | HAPPY PATH | Backup succeeds with integrity; isolated restore; validation; portability; high-risk READY | AC-IMP-037-002-01, 003-03, 004-*, 006-01, 007-01…03 |
 | ALTERNATE VALID PATHS | On-demand backup before high-risk migration; later migrations after older recovery point | FD-037-03; AC-IMP-037-003-05 |
-| VALIDATION FAILURE | Validation fail → FAILED/NOT_READY even if restore command succeeded | AC-IMP-037-005-03; BR-IMP-037-008 |
+| VALIDATION FAILURE | Validation fail or RPO/RTO threshold breach → FAILED / NOT_READY / BLOCKED even if restore command succeeded | AC-IMP-037-005-03; AC-IMP-037-004-08; BR-IMP-037-008 |
 | AUTHORIZATION | Trusted operator/infrastructure authority only; no new app RBAC invented; Fit resolves exact auth | BR-IMP-037-005, 021, 022 |
 | NOT FOUND / STALE REFERENCE | Missing/stale backup evidence → NOT_READY / BLOCKED | AC-IMP-037-001-02/04; AC-IMP-037-007-04 |
 | SERVER / NETWORK ERROR | Source unavailable / destination failure → explicit FAILED; no success record | AC-IMP-037-002-05/06 |
 | RECOVERY | Interrupted backup/restore guidance; repeatability without source overwrite | US-IMP-037-005 |
 | CONCURRENCY | Overlapping ops must not corrupt shared target or overwrite retained backup/evidence (Fit locks mechanism) | §17; Architecture Fit |
 | DESTRUCTIVE ACTION | Cleanup identifies exact non-source target; refuse ambiguous source cleanup | AC-IMP-037-005-05; §11 destructive |
-| SUCCESS FEEDBACK | Verified artifact/evidence; measured recovery metrics; READY/VERIFIED | AC-IMP-037-002-01/02; AC-IMP-037-004-08; AC-IMP-037-008-04 |
+| SUCCESS FEEDBACK | Verified artifact/evidence; measured RPO/RTO within FD-037-01/02 targets → READY/VERIFIED; threshold breach → BLOCKED / NOT_READY / FAILED (never PASS on restore-only success) | AC-IMP-037-002-01/02; AC-IMP-037-004-08; AC-IMP-037-008-04 |
 | DOWNSTREAM EFFECT | Provider side-effects suppressed; Golden Journey continuity protected without live uncontrolled effects | AC-IMP-037-003-07; §20 |
 | REVISIT / RELOAD | Evidence/runbook reproducible; findings preserved across reruns | AC-IMP-037-005-06; AC-IMP-037-008-01 |
 | RESPONSIVE / MOBILE | **N/A** — approved V1 operator experience is CLI / one-shot tooling + runbook (FD-037-06), not a responsive web UI | FD-037-06 |
@@ -1013,8 +1014,9 @@ Operator surface = CLI / one-shot tooling + runbook + human-readable output (+ m
 | Backup failure | Failure during backup | Explicit failure; prior known-good remains identifiable | N/A | Retry / investigate | AC-IMP-037-002-05/06; AC-IMP-037-001-03 |
 | Restore running | Drill started | Target clearly ≠ source | N/A | Restore success/failure | AC-IMP-037-003-01 |
 | Restore success / validation pending | Import done | Not yet READY | N/A | Run validation | BR-IMP-037-008 |
-| Validation success | Critical-state checks pass | Measured VERIFIED; RPO/RTO evidence | N/A | Evidence package | AC-IMP-037-004-08 |
+| Validation success | Critical-state checks pass and measured RPO <= 15m / RTO <= 2h | Measured VERIFIED / PASS; RPO/RTO evidence recorded | N/A | Evidence package | AC-IMP-037-004-08 |
 | Validation failure | Checks fail | FAILED / NOT_READY | N/A | Preserve findings; retry | AC-IMP-037-005-03/06 |
+| RPO/RTO threshold exceeded | Validation complete but measured RPO > 15m or RTO > 2h | BLOCKED / NOT_READY / FAILED; measured values + breach visible; no restore-only PASS | N/A | Preserve findings; remediate; retry | AC-IMP-037-004-08 |
 | Migration rehearsal success | Portability checks pass | Evidence retained | N/A | Record READY evidence | US-IMP-037-006 |
 | Migration rehearsal failure | Fail/interrupt | Target not ready; source authoritative | N/A | BLOCKED / retry | AC-IMP-037-006-05; AC-IMP-037-007-05 |
 | Cleanup | Discard recovery target | Exact non-source target + consequence; cancel before destroy where meaningful | N/A | Complete cleanup without source risk | AC-IMP-037-005-05 |
@@ -1249,6 +1251,18 @@ IMP-039 = production infrastructure / release realization
 IMP-040 = live launch / cutover validation
 ```
 
+**Founder decision interpretation (unchanged decisions; acceptance binding):**
+
+```text
+MEASURED_RPO <= 15m AND MEASURED_RTO <= 2h → recovery objective PASS (qualifying scenarios)
+either threshold exceeded → readiness BLOCKED / NOT_READY → IMP-037 acceptance cannot PASS
+  on that evidence (AC-IMP-037-004-08)
+RPO/RTO remain targets for qualifying recovery scenarios, not a universal zero-data-loss
+  or universal-availability guarantee (FD-037-01 / FD-037-02)
+RTO timing includes required application/business-integrity validation
+  (not merely PostgreSQL availability)
+```
+
 ### Architecture Fit inputs (unresolved **technical** questions — not product decisions)
 
 ```text
@@ -1350,7 +1364,10 @@ critical domain-state validation
 signed-artifact recovery
 outbox/idempotency recovery
 provider-side-effect suppression
-measured recovery point/time (against RPO <= 15m / RTO <= 2h targets)
+measured recovery point/time against RPO <= 15m / RTO <= 2h targets
+(RTO includes application/business-integrity validation; either threshold exceeded →
+ readiness BLOCKED / NOT_READY / FAILED — IMP-037 acceptance cannot PASS on that evidence;
+ technical restore success alone is insufficient)
 portable clean-target migration
 migration interruption
 high-risk-migration readiness PASS
@@ -1380,7 +1397,8 @@ isolated backup
 restore
 application validation
 critical-state checks
-measured recovery evidence
+measured recovery evidence (RPO <= 15m and RTO <= 2h required for PASS;
+  threshold breach remains visible and blocks acceptance)
 operator runbook usability
 ```
 
