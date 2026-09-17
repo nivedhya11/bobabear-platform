@@ -31,10 +31,10 @@
     "note": "Protected evidence and generated reports are never classified as executable test source."
   },
   "counts": {
-    "trackedPathsConsidered": 1904,
-    "executableTestFiles": 389,
+    "trackedPathsConsidered": 1912,
+    "executableTestFiles": 394,
     "sourceTestFiles": 130,
-    "testsTreeExecutableFiles": 225,
+    "testsTreeExecutableFiles": 230,
     "scriptTestFiles": 34,
     "playwrightSpecs": 12,
     "vitestConfigs": 2,
@@ -191,7 +191,11 @@
     "tests/access-control/principal.test.ts",
     "tests/access-control/scope.test.ts",
     "tests/administration/AdminConfirmDialog.test.tsx",
+    "tests/administration/AdministrationAuditClient.test.tsx",
     "tests/administration/AdministrationHubClient.test.tsx",
+    "tests/administration/AdministrationMembershipDetailClient.test.tsx",
+    "tests/administration/AdministrationMembershipsClient.test.tsx",
+    "tests/administration/AdministrationResourcesClient.test.tsx",
     "tests/administration/AdministrationSystemClient.test.tsx",
     "tests/administration/AssortmentEditor.test.tsx",
     "tests/administration/CatalogEditor.test.tsx",
@@ -204,6 +208,7 @@
     "tests/administration/PricingEditor.test.tsx",
     "tests/administration/PromotionsEditor.test.tsx",
     "tests/administration/SellabilityDiagnosisPanel.test.tsx",
+    "tests/administration/admin-api-exhaustive.test.ts",
     "tests/administration/admin-assortment-http.integration.test.ts",
     "tests/administration/admin-catalog-http-customer-truth.integration.test.ts",
     "tests/administration/admin-catalog-http.integration.test.ts",
@@ -4372,7 +4377,87 @@
       "classificationConfidence": "HEURISTIC"
     },
     {
+      "path": "tests/administration/AdministrationAuditClient.test.tsx",
+      "runner": "vitest",
+      "domain": "administration",
+      "testType": "component-or-tsx",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test",
+        "test:administration",
+        "test:coverage",
+        "test:database:administration"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "2-component"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
       "path": "tests/administration/AdministrationHubClient.test.tsx",
+      "runner": "vitest",
+      "domain": "administration",
+      "testType": "component-or-tsx",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test",
+        "test:administration",
+        "test:coverage",
+        "test:database:administration"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "2-component"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/administration/AdministrationMembershipDetailClient.test.tsx",
+      "runner": "vitest",
+      "domain": "administration",
+      "testType": "component-or-tsx",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test",
+        "test:administration",
+        "test:coverage",
+        "test:database:administration"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "2-component"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/administration/AdministrationMembershipsClient.test.tsx",
+      "runner": "vitest",
+      "domain": "administration",
+      "testType": "component-or-tsx",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test",
+        "test:administration",
+        "test:coverage",
+        "test:database:administration"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "2-component"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/administration/AdministrationResourcesClient.test.tsx",
       "runner": "vitest",
       "domain": "administration",
       "testType": "component-or-tsx",
@@ -4628,6 +4713,26 @@
       "ciInclusion": "YES",
       "test1Layers": [
         "2-component"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/administration/admin-api-exhaustive.test.ts",
+      "runner": "vitest",
+      "domain": "administration",
+      "testType": "unit-or-domain",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test",
+        "test:administration",
+        "test:coverage",
+        "test:database:administration"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit"
       ],
       "classificationConfidence": "HEURISTIC"
     },
