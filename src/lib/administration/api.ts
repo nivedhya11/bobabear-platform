@@ -1,4 +1,4 @@
-import { adminRequest } from "./http";
+import { adminRequest, type AdminHttpResult } from "./http";
 
 export type AdminContinuation<T> = Readonly<{
   ok: true;
@@ -6,6 +6,34 @@ export type AdminContinuation<T> = Readonly<{
   nextCursor: string | null;
   more: boolean;
 }>;
+
+/**
+ * Walks `nextCursor` until the server reports `more === false`, concatenating
+ * items into a single exhausted continuation. The first failing page is
+ * returned as-is; partial results are never presented as a complete set.
+ */
+async function fetchAllAdminContinuationPages<T>(
+  fetchPage: (cursor?: string) => Promise<AdminHttpResult<AdminContinuation<T>>>,
+): Promise<AdminHttpResult<AdminContinuation<T>>> {
+  const items: T[] = [];
+  const seenCursors = new Set<string>();
+  let cursor: string | undefined;
+  let status = 200;
+
+  for (;;) {
+    const page = await fetchPage(cursor);
+    if (!page.ok) return page;
+    status = page.status;
+    items.push(...page.data.items);
+    const next = page.data.nextCursor;
+    // A repeated cursor would otherwise loop forever against a faulty server.
+    if (!page.data.more || next === null || seenCursors.has(next)) break;
+    seenCursors.add(next);
+    cursor = next;
+  }
+
+  return { ok: true, status, data: { ok: true, items, nextCursor: null, more: false } };
+}
 
 export type AdministrationResource = Readonly<{
   id: string;
@@ -53,25 +81,50 @@ export function fetchAdminOverview() {
   return adminRequest<{ ok: true; overview: Record<string, unknown> }>("/api/admin/v1/overview");
 }
 
+/** Exhaustive unless an explicit cursor requests a single page. */
 export function listAdminMemberships(query?: Readonly<{ outletId?: string; cursor?: string }>) {
-  return adminRequest<AdminContinuation<AdministrationMembership>>("/api/admin/v1/memberships", {
-    query,
-  });
-}
-
-/** Authorized outlets for Store outlet selection (IMP-036E). */
-export function listAdminOutlets(query?: Readonly<{ cursor?: string }>) {
-  return adminRequest<AdminContinuation<AdministrationResource>>(
-    "/api/admin/v1/resources/outlets",
-    { query },
+  if (query?.cursor !== undefined) {
+    return adminRequest<AdminContinuation<AdministrationMembership>>("/api/admin/v1/memberships", {
+      query,
+    });
+  }
+  return fetchAllAdminContinuationPages<AdministrationMembership>((cursor) =>
+    adminRequest<AdminContinuation<AdministrationMembership>>("/api/admin/v1/memberships", {
+      query: { outletId: query?.outletId, cursor },
+    }),
   );
 }
 
-/** Outlet-narrowed membership list (filter after authorization; outletId is not authority). */
+/** Authorized outlets for Store outlet selection (IMP-036E). Exhaustive unless cursored. */
+export function listAdminOutlets(query?: Readonly<{ cursor?: string }>) {
+  if (query?.cursor !== undefined) {
+    return adminRequest<AdminContinuation<AdministrationResource>>(
+      "/api/admin/v1/resources/outlets",
+      { query },
+    );
+  }
+  return fetchAllAdminContinuationPages<AdministrationResource>((cursor) =>
+    adminRequest<AdminContinuation<AdministrationResource>>("/api/admin/v1/resources/outlets", {
+      query: { cursor },
+    }),
+  );
+}
+
+/**
+ * Outlet-narrowed membership list (filter after authorization; outletId is not
+ * authority). Exhaustive unless an explicit cursor requests a single page.
+ */
 export function listAdminMembershipsFiltered(outletId: string, cursor?: string) {
-  return adminRequest<AdminContinuation<AdministrationMembership>>("/api/admin/v1/memberships", {
-    query: { outletId, cursor },
-  });
+  if (cursor !== undefined) {
+    return adminRequest<AdminContinuation<AdministrationMembership>>("/api/admin/v1/memberships", {
+      query: { outletId, cursor },
+    });
+  }
+  return fetchAllAdminContinuationPages<AdministrationMembership>((pageCursor) =>
+    adminRequest<AdminContinuation<AdministrationMembership>>("/api/admin/v1/memberships", {
+      query: { outletId, cursor: pageCursor },
+    }),
+  );
 }
 
 export function createAdminMembership(
@@ -92,10 +145,18 @@ export function createAdminMembership(
   );
 }
 
+/** Exhaustive unless an explicit cursor requests a single page. */
 export function listAdminBrands(query?: Readonly<{ cursor?: string }>) {
-  return adminRequest<AdminContinuation<AdministrationResource>>(
-    "/api/admin/v1/resources/brands",
-    { query },
+  if (query?.cursor !== undefined) {
+    return adminRequest<AdminContinuation<AdministrationResource>>(
+      "/api/admin/v1/resources/brands",
+      { query },
+    );
+  }
+  return fetchAllAdminContinuationPages<AdministrationResource>((cursor) =>
+    adminRequest<AdminContinuation<AdministrationResource>>("/api/admin/v1/resources/brands", {
+      query: { cursor },
+    }),
   );
 }
 
@@ -184,6 +245,7 @@ export async function getAdministrationSession() {
   };
 }
 
+/** Paged by design: the IMP-036G workspace UI drives its own Load more. */
 export const listAdministrationResourceClient = (
   kind: string,
   query?: Readonly<{ cursor?: string }>,

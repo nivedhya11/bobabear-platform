@@ -22,6 +22,50 @@ function encodeCursor(payload: CursorPayload): string {
   return Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
 }
 
+export function encodeNameIdCursor(key: NameIdCursorKey): string {
+  return encodeCursor({ k: "ni", a: key.name, b: key.id });
+}
+
+export function encodeTimeIdCursor(key: Readonly<{ at: Date; id: string }>): string {
+  return encodeCursor({ k: "ti", a: key.at.toISOString(), b: key.id });
+}
+
+export function decodeNameIdCursor(cursor: string): NameIdCursorKey {
+  const payload = decodeCursor(cursor);
+  if (payload.k !== "ni") {
+    throw new AdministrationError("ADMIN_REQUEST_INVALID", "cursor is invalid.", { field: "cursor" });
+  }
+  return { name: payload.a, id: payload.b };
+}
+
+export function decodeTimeIdCursor(cursor: string): Readonly<{ at: Date; id: string }> {
+  const payload = decodeCursor(cursor);
+  if (payload.k !== "ti") {
+    throw new AdministrationError("ADMIN_REQUEST_INVALID", "cursor is invalid.", { field: "cursor" });
+  }
+  const afterAt = Date.parse(payload.a);
+  if (!Number.isFinite(afterAt)) {
+    throw new AdministrationError("ADMIN_REQUEST_INVALID", "cursor is invalid.", { field: "cursor" });
+  }
+  return { at: new Date(afterAt), id: payload.b };
+}
+
+/** Build a continuation page from a SQL keyset fetch of pageSize+1 rows. */
+export function continuationFromOverflowPage<T>(
+  rows: readonly T[],
+  pageSize: number,
+  encodeNext: (last: T) => string,
+): AdminContinuationPage<T> {
+  const more = rows.length > pageSize;
+  const items = more ? rows.slice(0, pageSize) : [...rows];
+  const last = items[items.length - 1];
+  return {
+    items,
+    more,
+    nextCursor: more && last ? encodeNext(last) : null,
+  };
+}
+
 function decodeCursor(cursor: string): CursorPayload {
   try {
     const raw = Buffer.from(cursor, "base64url").toString("utf8");

@@ -116,6 +116,26 @@ function parseArgs(argv: readonly string[]): Readonly<{ actorId: string }> {
   return Object.freeze({ actorId });
 }
 
+/**
+ * Administration list use-cases return one continuation page. Bootstrap
+ * idempotency checks must see every authorized row, not just the first page.
+ */
+async function listAllPages<T>(
+  load: (cursor?: string) => Promise<{ items: T[]; nextCursor: string | null; more: boolean }>,
+): Promise<T[]> {
+  const all: T[] = [];
+  const seenCursors = new Set<string>();
+  let cursor: string | undefined;
+  for (;;) {
+    const page = await load(cursor);
+    all.push(...page.items);
+    // A repeated cursor would otherwise loop forever.
+    if (!page.more || page.nextCursor === null || seenCursors.has(page.nextCursor)) return all;
+    seenCursors.add(page.nextCursor);
+    cursor = page.nextCursor;
+  }
+}
+
 function isExpectedUatOperatingConfiguration(
   profile: Awaited<ReturnType<typeof findOutletOperatingProfile>>,
   intervals: Awaited<ReturnType<typeof listOutletOperatingIntervals>>,
@@ -243,7 +263,9 @@ async function main(): Promise<void> {
   try {
     const actor = await resolveWorkforcePrincipalFromDatabase(persistence, args.actorId);
 
-    const memberships = (await adminListMemberships(persistence, actor)).items;
+    const memberships = await listAllPages((cursor) =>
+      adminListMemberships(persistence, actor, { cursor }),
+    );
     const platformMembership = memberships.find(
       (m) =>
         m.workforceUserId === args.actorId &&
@@ -270,9 +292,9 @@ async function main(): Promise<void> {
       throw new Error("Canonical BOBA Bear brand identity mismatch.");
     }
 
-    let organization = (await adminListOrganizations(persistence, actor)).items.find(
-      (o) => o.brandId === CANONICAL_BRAND_ID && o.code === ORG.code,
-    );
+    let organization = (
+      await listAllPages((cursor) => adminListOrganizations(persistence, actor, { cursor }))
+    ).find((o) => o.brandId === CANONICAL_BRAND_ID && o.code === ORG.code);
     if (!organization) {
       organization = await adminCreateOrganization(persistence, actor, {
         brandId: CANONICAL_BRAND_ID,
@@ -283,9 +305,9 @@ async function main(): Promise<void> {
       throw new Error(`Organization ${ORG.code} exists with unexpected name.`);
     }
 
-    let territory = (await adminListTerritories(persistence, actor)).items.find(
-      (t) => t.brandId === CANONICAL_BRAND_ID && t.code === TERRITORY.code,
-    );
+    let territory = (
+      await listAllPages((cursor) => adminListTerritories(persistence, actor, { cursor }))
+    ).find((t) => t.brandId === CANONICAL_BRAND_ID && t.code === TERRITORY.code);
     if (!territory) {
       territory = await adminCreateTerritory(persistence, actor, {
         brandId: CANONICAL_BRAND_ID,
@@ -296,7 +318,9 @@ async function main(): Promise<void> {
       throw new Error(`Territory ${TERRITORY.code} exists with unexpected name.`);
     }
 
-    let legalEntity = (await adminListLegalEntities(persistence, actor)).items.find(
+    let legalEntity = (
+      await listAllPages((cursor) => adminListLegalEntities(persistence, actor, { cursor }))
+    ).find(
       (e) =>
         e.brandId === CANONICAL_BRAND_ID &&
         e.organizationId === organization!.id &&
@@ -313,9 +337,9 @@ async function main(): Promise<void> {
       throw new Error(`Legal entity ${LEGAL_ENTITY.code} exists with unexpected name.`);
     }
 
-    let outlet = (await adminListOutlets(persistence, actor)).items.find(
-      (o) => o.brandId === CANONICAL_BRAND_ID && o.code === OUTLET.code,
-    );
+    let outlet = (
+      await listAllPages((cursor) => adminListOutlets(persistence, actor, { cursor }))
+    ).find((o) => o.brandId === CANONICAL_BRAND_ID && o.code === OUTLET.code);
     if (!outlet) {
       outlet = await adminCreateOutlet(persistence, actor, {
         brandId: CANONICAL_BRAND_ID,
@@ -411,10 +435,18 @@ async function main(): Promise<void> {
       resourceType: "platform",
     });
 
-    const finalOrgs = (await adminListOrganizations(persistence, actor)).items;
-    const finalTerritories = (await adminListTerritories(persistence, actor)).items;
-    const finalLegalEntities = (await adminListLegalEntities(persistence, actor)).items;
-    const finalOutlets = (await adminListOutlets(persistence, actor)).items;
+    const finalOrgs = await listAllPages((cursor) =>
+      adminListOrganizations(persistence, actor, { cursor }),
+    );
+    const finalTerritories = await listAllPages((cursor) =>
+      adminListTerritories(persistence, actor, { cursor }),
+    );
+    const finalLegalEntities = await listAllPages((cursor) =>
+      adminListLegalEntities(persistence, actor, { cursor }),
+    );
+    const finalOutlets = await listAllPages((cursor) =>
+      adminListOutlets(persistence, actor, { cursor }),
+    );
 
     process.stdout.write(
       `${JSON.stringify(

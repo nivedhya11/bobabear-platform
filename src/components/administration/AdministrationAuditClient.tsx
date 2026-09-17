@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { LoadingState } from "@/components/enterprise/LoadingState";
 import { PageHeader } from "@/components/enterprise/PageHeader";
@@ -16,6 +16,13 @@ type AuditItem = Readonly<{
   actorWorkforceUserId?: string | null;
 }>;
 
+type AuditFilters = Readonly<{
+  actorWorkforceUserId: string;
+  action: string;
+  occurredFrom: string;
+  occurredTo: string;
+}>;
+
 type ViewState =
   | Readonly<{ kind: "loading" }>
   | Readonly<{ kind: "unauthorized" }>
@@ -28,53 +35,58 @@ type ViewState =
       nextCursor: string | null;
     }>;
 
+const EMPTY_FILTERS: AuditFilters = Object.freeze({
+  actorWorkforceUserId: "",
+  action: "",
+  occurredFrom: "",
+  occurredTo: "",
+});
+
 export function AdministrationAuditClient() {
   const [view, setView] = useState<ViewState>({ kind: "loading" });
-  const [filters, setFilters] = useState({
-    actorWorkforceUserId: "",
-    action: "",
-    occurredFrom: "",
-    occurredTo: "",
-  });
+  const [draftFilters, setDraftFilters] = useState<AuditFilters>(EMPTY_FILTERS);
+  const [appliedFilters, setAppliedFilters] = useState<AuditFilters>(EMPTY_FILTERS);
+  // Only the newest request may write to `view`; slower earlier responses are dropped.
+  const latestRequestId = useRef(0);
 
-  const load = useCallback(
-    async (cursor?: string, append = false) => {
-      if (!append) setView({ kind: "loading" });
-      const result = await listAdministrationAuditEventsClient({
-        cursor,
-        actorWorkforceUserId: filters.actorWorkforceUserId || undefined,
-        action: filters.action || undefined,
-        occurredFrom: filters.occurredFrom || undefined,
-        occurredTo: filters.occurredTo || undefined,
-      });
-      if (!result.ok) {
-        if (result.status === 401 || result.code === "WORKFORCE_AUTH_REQUIRED") {
-          setView({ kind: "unauthorized" });
-          return;
-        }
-        if (result.status === 403) {
-          setView({ kind: "forbidden" });
-          return;
-        }
-        setView({ kind: "error", message: "Audit events could not be loaded." });
+  const load = useCallback(async (filters: AuditFilters, cursor?: string, append = false) => {
+    latestRequestId.current += 1;
+    const requestId = latestRequestId.current;
+    if (!append) setView({ kind: "loading" });
+    const result = await listAdministrationAuditEventsClient({
+      cursor,
+      actorWorkforceUserId: filters.actorWorkforceUserId || undefined,
+      action: filters.action || undefined,
+      occurredFrom: filters.occurredFrom || undefined,
+      occurredTo: filters.occurredTo || undefined,
+    });
+    if (latestRequestId.current !== requestId) return;
+    if (!result.ok) {
+      if (result.status === 401 || result.code === "WORKFORCE_AUTH_REQUIRED") {
+        setView({ kind: "unauthorized" });
         return;
       }
-      setView((prev) => {
-        const prior = append && prev.kind === "ready" ? prev.items : [];
-        return {
-          kind: "ready",
-          items: [...prior, ...result.data.items],
-          more: result.data.more,
-          nextCursor: result.data.nextCursor,
-        };
-      });
-    },
-    [filters],
-  );
+      if (result.status === 403) {
+        setView({ kind: "forbidden" });
+        return;
+      }
+      setView({ kind: "error", message: "Audit events could not be loaded." });
+      return;
+    }
+    setView((prev) => {
+      const prior = append && prev.kind === "ready" ? prev.items : [];
+      return {
+        kind: "ready",
+        items: [...prior, ...result.data.items],
+        more: result.data.more,
+        nextCursor: result.data.nextCursor,
+      };
+    });
+  }, []);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- external Admin HTTP sync
-    void load();
+    void load(EMPTY_FILTERS);
   }, [load]);
 
   if (view.kind === "loading") return <LoadingState label="Loading audit…" />;
@@ -92,7 +104,19 @@ export function AdministrationAuditClient() {
     return <p data-testid="admin-audit-forbidden">Not authorized to read audit events.</p>;
   }
   if (view.kind === "error") {
-    return <p data-testid="admin-audit-error">{view.message}</p>;
+    return (
+      <div data-testid="admin-audit-error" className="space-y-3">
+        <p>{view.message}</p>
+        <Button
+          type="button"
+          variant="secondary"
+          data-testid="admin-audit-retry"
+          onClick={() => void load(appliedFilters)}
+        >
+          Retry
+        </Button>
+      </div>
+    );
   }
 
   return (
@@ -105,7 +129,9 @@ export function AdministrationAuditClient() {
         className="grid gap-2 sm:grid-cols-2"
         onSubmit={(event) => {
           event.preventDefault();
-          void load();
+          const snapshot = draftFilters;
+          setAppliedFilters(snapshot);
+          void load(snapshot);
         }}
       >
         <label className="text-sm" htmlFor="audit-actor">
@@ -113,9 +139,9 @@ export function AdministrationAuditClient() {
           <input
             id="audit-actor"
             className="mt-1 w-full border px-2 py-1"
-            value={filters.actorWorkforceUserId}
+            value={draftFilters.actorWorkforceUserId}
             onChange={(event) =>
-              setFilters({ ...filters, actorWorkforceUserId: event.target.value })
+              setDraftFilters({ ...draftFilters, actorWorkforceUserId: event.target.value })
             }
           />
         </label>
@@ -124,8 +150,8 @@ export function AdministrationAuditClient() {
           <input
             id="audit-action"
             className="mt-1 w-full border px-2 py-1"
-            value={filters.action}
-            onChange={(event) => setFilters({ ...filters, action: event.target.value })}
+            value={draftFilters.action}
+            onChange={(event) => setDraftFilters({ ...draftFilters, action: event.target.value })}
           />
         </label>
         <label className="text-sm" htmlFor="audit-from">
@@ -133,8 +159,10 @@ export function AdministrationAuditClient() {
           <input
             id="audit-from"
             className="mt-1 w-full border px-2 py-1"
-            value={filters.occurredFrom}
-            onChange={(event) => setFilters({ ...filters, occurredFrom: event.target.value })}
+            value={draftFilters.occurredFrom}
+            onChange={(event) =>
+              setDraftFilters({ ...draftFilters, occurredFrom: event.target.value })
+            }
           />
         </label>
         <label className="text-sm" htmlFor="audit-to">
@@ -142,8 +170,10 @@ export function AdministrationAuditClient() {
           <input
             id="audit-to"
             className="mt-1 w-full border px-2 py-1"
-            value={filters.occurredTo}
-            onChange={(event) => setFilters({ ...filters, occurredTo: event.target.value })}
+            value={draftFilters.occurredTo}
+            onChange={(event) =>
+              setDraftFilters({ ...draftFilters, occurredTo: event.target.value })
+            }
           />
         </label>
         <div className="sm:col-span-2">
@@ -167,7 +197,11 @@ export function AdministrationAuditClient() {
         </ul>
       )}
       {view.more && view.nextCursor ? (
-        <Button type="button" variant="secondary" onClick={() => void load(view.nextCursor!, true)}>
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={() => void load(appliedFilters, view.nextCursor!, true)}
+        >
           Load more
         </Button>
       ) : null}

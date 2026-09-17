@@ -42,6 +42,7 @@ import {
   getAdminSession,
 } from "../../administration";
 import { checkTrustedOrigin } from "../../workforce-auth/http/origin";
+import type { WorkerHealthReporter } from "../../../platform/observability/worker-health";
 import type { WorkforceAuthRuntime } from "../../auth/workforce";
 import type { Persistence } from "../../persistence";
 import { resolveOperationsWorkforcePrincipal } from "./auth";
@@ -53,6 +54,10 @@ export type AdminRouteDependencies = Readonly<{
   runtime: WorkforceAuthRuntime;
   persistence: Persistence;
   trustedOrigin: string;
+  /** Ops runtime identity so Admin overview composes the same status projection as Ops. */
+  serviceName?: string;
+  startedAt?: Date;
+  workers?: readonly WorkerHealthReporter[];
 }>;
 
 export type AdminRouteOutcome = Readonly<{
@@ -209,7 +214,13 @@ export async function routeAdminRequest(
       if (url.search !== "") {
         throw new AdministrationError("ADMIN_REQUEST_INVALID", "Query parameters are unsupported for this route.");
       }
-      const overview = dateJson(await adminGetOverview(deps.persistence, principal));
+      const overview = dateJson(
+        await adminGetOverview(deps.persistence, principal, {
+          ...(deps.serviceName ? { serviceName: deps.serviceName } : {}),
+          ...(deps.startedAt ? { startedAt: deps.startedAt } : {}),
+          ...(deps.workers ? { workers: deps.workers } : {}),
+        }),
+      );
       sendJson(res, { ok: true, overview }, { status: 200, requestId });
       return { operation, safeOutcomeCode: "OK", httpStatus: 200 };
     }

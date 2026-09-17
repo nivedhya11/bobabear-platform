@@ -2,13 +2,13 @@
 Status: SUPPORTING planning/product-experience input (not PD-1 Product Definition; not architecture authority)
 Capability: IMP-036G — Administration Console V2
 Current product slice: YES (see ROADMAP/STATE; IMP036G_ACTIVATED: YES)
-Formal ROADMAP lifecycle: ARCHITECTURE_LOCKED
+Formal ROADMAP lifecycle: IMPLEMENTATION_IN_PROGRESS
 Product Definition: APPROVED / Gate PASS
   PD-IMP-036G-DRAFT-2
   Founder product decisions: RESOLVED (7/7; 2026-09-16)
 Architecture Fit: PASS
 Architecture: LOCKED
-Implementation: NOT_AUTHORIZED / NOT_STARTED
+Implementation: AUTHORIZED / STARTED
 Founder UAT required: YES
 Capability architecture authority:
   docs/platform/capabilities/IMP-036G-administration-console-v2.md
@@ -167,7 +167,7 @@ approval; generic review-token/workflow engine.
 Founder product decisions (2026-09-16) expanded IMP-036G only enough to complete the seven
 administration outcomes above. Technical mechanism selection is recorded in the locked capability
 architecture. Product Definition Gate = PASS; Architecture Fit = PASS; Architecture: LOCKED;
-implementation NOT_AUTHORIZED / NOT_STARTED.
+implementation AUTHORIZED / STARTED (GTM-R128 / STATE-R126; not complete; not accepted).
 
 Figma is not required initially; later visual refinement may not redefine hierarchy, membership,
 RBAC, audit, API, or system authority.

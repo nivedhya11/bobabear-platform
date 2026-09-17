@@ -20,6 +20,12 @@ export {
   adminGetOverview,
   adminGetTerritory,
   adminGrantRole,
+  adminListAllBrands,
+  adminListAllLegalEntities,
+  adminListAllMemberships,
+  adminListAllOrganizations,
+  adminListAllOutlets,
+  adminListAllTerritories,
   adminListAuditEvents,
   adminListBrands,
   adminListLegalEntities,
@@ -43,6 +49,7 @@ export type {
   AdministrationEffectivePermissionsProjection,
   AdministrationListQuery,
   AdministrationMembershipProjection,
+  AdministrationOpsRuntime,
   AdministrationOverview,
 } from "./use-cases";
 export type { AdminContinuationPage } from "./continuation";
