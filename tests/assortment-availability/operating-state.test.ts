@@ -28,6 +28,7 @@ describe("outlet operating state", () => {
       await persistence.transaction((tx) =>
         updateOutlet(tx, {
           outletId: tree.outletA.id,
+          expectedRevision: tree.outletA.revision,
           status: "inactive",
         }),
       );
@@ -43,6 +44,7 @@ describe("outlet operating state", () => {
       await persistence.transaction((tx) =>
         updateOutlet(tx, {
           outletId: tree.outletA.id,
+          expectedRevision: tree.outletA.revision + BigInt(1),
           status: "active",
         }),
       );

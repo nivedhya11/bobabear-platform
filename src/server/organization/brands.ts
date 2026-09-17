@@ -1,9 +1,9 @@
 /**
- * Brand repository + commands (IMP-011).
+ * Brand repository + commands (IMP-011 / IMP-036G revision CAS).
  */
 import { randomUUID } from "node:crypto";
 
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import { brandsTable } from "../../platform/database/schema/organizations";
 import { insertAccessAuditEvent } from "../access-control/audit";
@@ -24,9 +24,14 @@ function rowToBrand(row: typeof brandsTable.$inferSelect): Brand {
     code: row.code,
     name: row.name,
     status: row.status as Brand["status"],
+    revision: row.revision,
     createdAt: new Date(row.createdAt),
     updatedAt: new Date(row.updatedAt),
   };
+}
+
+function staleBrandRevision(): never {
+  throw new OrganizationConflictError({ message: "Brand revision is stale." });
 }
 
 export async function findBrandById(
@@ -97,6 +102,9 @@ export async function updateBrand(
   if (typeof input.brandId !== "string" || input.brandId.length === 0) {
     throw new OrganizationValidationError({ message: "brandId must be a non-empty string." });
   }
+  if (typeof input.expectedRevision !== "bigint") {
+    throw new OrganizationValidationError({ message: "expectedRevision must be a bigint." });
+  }
   if (input.name === undefined && input.status === undefined) {
     throw new OrganizationValidationError({ message: "updateBrand requires name and/or status." });
   }
@@ -104,6 +112,9 @@ export async function updateBrand(
   const existing = await findBrandById(context, input.brandId);
   if (!existing) {
     throw new OrganizationNotFoundError("brand");
+  }
+  if (existing.revision !== input.expectedRevision) {
+    staleBrandRevision();
   }
 
   const name = input.name !== undefined ? normalizeNonEmptyName(input.name, "name") : existing.name;
@@ -113,10 +124,15 @@ export async function updateBrand(
   }
 
   const now = new Date();
-  await context.db
+  const nextRevision = existing.revision + BigInt(1);
+  const updatedRows = await context.db
     .update(brandsTable)
-    .set({ name, status, updatedAt: now })
-    .where(eq(brandsTable.id, input.brandId));
+    .set({ name, status, revision: nextRevision, updatedAt: now })
+    .where(and(eq(brandsTable.id, input.brandId), eq(brandsTable.revision, input.expectedRevision)))
+    .returning();
+  if (!updatedRows[0]) {
+    staleBrandRevision();
+  }
 
   await insertAccessAuditEvent(context, {
     actorWorkforceUserId: input.actorWorkforceUserId ?? null,

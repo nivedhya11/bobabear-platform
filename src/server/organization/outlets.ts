@@ -3,7 +3,7 @@
  */
 import { randomUUID } from "node:crypto";
 
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import { outletsTable } from "../../platform/database/schema/organizations";
 import { insertAccessAuditEvent } from "../access-control/audit";
@@ -32,9 +32,14 @@ function rowToOutlet(row: typeof outletsTable.$inferSelect): Outlet {
     code: row.code,
     name: row.name,
     status: row.status as Outlet["status"],
+    revision: row.revision,
     createdAt: new Date(row.createdAt),
     updatedAt: new Date(row.updatedAt),
   };
+}
+
+function staleOutletRevision(): never {
+  throw new OrganizationConflictError({ message: "Outlet revision is stale." });
 }
 
 export async function findOutletById(
@@ -154,6 +159,9 @@ export async function updateOutlet(
   if (typeof input.outletId !== "string" || input.outletId.length === 0) {
     throw new OrganizationValidationError({ message: "outletId must be a non-empty string." });
   }
+  if (typeof input.expectedRevision !== "bigint") {
+    throw new OrganizationValidationError({ message: "expectedRevision must be a bigint." });
+  }
   if (input.name === undefined && input.status === undefined) {
     throw new OrganizationValidationError({
       message: "updateOutlet requires name and/or status.",
@@ -164,6 +172,9 @@ export async function updateOutlet(
   if (!existing) {
     throw new OrganizationNotFoundError("outlet");
   }
+  if (existing.revision !== input.expectedRevision) {
+    staleOutletRevision();
+  }
 
   const name = input.name !== undefined ? normalizeNonEmptyName(input.name, "name") : existing.name;
   const status = input.status ?? existing.status;
@@ -172,10 +183,15 @@ export async function updateOutlet(
   }
 
   const now = new Date();
-  await context.db
+  const nextRevision = existing.revision + BigInt(1);
+  const updatedRows = await context.db
     .update(outletsTable)
-    .set({ name, status, updatedAt: now })
-    .where(eq(outletsTable.id, input.outletId));
+    .set({ name, status, revision: nextRevision, updatedAt: now })
+    .where(and(eq(outletsTable.id, input.outletId), eq(outletsTable.revision, input.expectedRevision)))
+    .returning();
+  if (!updatedRows[0]) {
+    staleOutletRevision();
+  }
 
   await insertAccessAuditEvent(context, {
     actorWorkforceUserId: input.actorWorkforceUserId ?? null,
