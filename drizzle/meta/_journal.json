@@ -288,6 +288,13 @@
       "when": 1789324331594,
       "tag": "0040_curvy_tomas",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1789629827555,
+      "tag": "0041_exotic_smasher",
+      "breakpoints": true
     }
   ]
 }

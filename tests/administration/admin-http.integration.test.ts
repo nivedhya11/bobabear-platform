@@ -271,11 +271,10 @@ describe("IMP-035 Administration HTTP", () => {
         const permissions = (await response.json()).permissions as string[];
         expect(permissions).toContain("access.membership.manage");
 
-        // audit access: kitchen operator has no access.audit.read
+        // audit access: kitchen operator has no access.audit.read → DENY
         const kitchenHeaders = await headersFor(outletBUser.id);
         response = await request("/api/admin/v1/audit-events", { headers: kitchenHeaders });
-        expect(response.status).toBe(200);
-        expect((await response.json()).items).toEqual([]);
+        expect([response.status, (await response.json()).code]).toEqual([403, "ADMIN_UNAUTHORIZED"]);
 
         const platformHeaders = await headersFor(platformAdmin.id);
         response = await request("/api/admin/v1/audit-events", { headers: platformHeaders });

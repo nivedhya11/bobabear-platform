@@ -1,5 +1,5 @@
 /**
- * Administration HTTP router (IMP-035 / D-373).
+ * Administration HTTP router (IMP-035 / IMP-036G / D-373).
  *
  * Thin transport only: trusted workforce session → administration use-cases.
  */
@@ -20,6 +20,7 @@ import {
   adminGetMembership,
   adminGetOrganization,
   adminGetOutlet,
+  adminGetOverview,
   adminGetTerritory,
   adminGrantRole,
   adminListAuditEvents,
@@ -41,6 +42,7 @@ import {
   getAdminSession,
 } from "../../administration";
 import { checkTrustedOrigin } from "../../workforce-auth/http/origin";
+import type { WorkerHealthReporter } from "../../../platform/observability/worker-health";
 import type { WorkforceAuthRuntime } from "../../auth/workforce";
 import type { Persistence } from "../../persistence";
 import { resolveOperationsWorkforcePrincipal } from "./auth";
@@ -52,6 +54,10 @@ export type AdminRouteDependencies = Readonly<{
   runtime: WorkforceAuthRuntime;
   persistence: Persistence;
   trustedOrigin: string;
+  /** Ops runtime identity so Admin overview composes the same status projection as Ops. */
+  serviceName?: string;
+  startedAt?: Date;
+  workers?: readonly WorkerHealthReporter[];
 }>;
 
 export type AdminRouteOutcome = Readonly<{
@@ -62,6 +68,7 @@ export type AdminRouteOutcome = Readonly<{
 
 type AdminRoute =
   | Readonly<{ kind: "session" }>
+  | Readonly<{ kind: "overview" }>
   | Readonly<{ kind: "resources"; resource: ResourceKind; id?: string }>
   | Readonly<{ kind: "memberships"; id?: string; action?: "transition" | "role-assignments" }>
   | Readonly<{ kind: "revoke-assignment"; id: string }>
@@ -89,6 +96,7 @@ export function classifyAdminRoute(pathname: string): AdminRoute | null {
   if (parts.length === 3) return null;
   const rest = parts.slice(3);
   if (rest.length === 1 && rest[0] === "session") return { kind: "session" };
+  if (rest.length === 1 && rest[0] === "overview") return { kind: "overview" };
   if (rest.length === 1 && rest[0] === "effective-permissions") return { kind: "effective-permissions" };
   if (rest.length === 1 && rest[0] === "audit-events") return { kind: "audit-events" };
   if (rest[0] === "resources" && rest[1]) {
@@ -120,8 +128,38 @@ function isMutation(method: string): boolean {
 
 function dateJson<T>(value: T): T {
   return JSON.parse(
-    JSON.stringify(value, (_k, v) => (v instanceof Date ? v.toISOString() : v)),
+    JSON.stringify(value, (_k, v) => {
+      if (v instanceof Date) return v.toISOString();
+      if (typeof v === "bigint") return v.toString(10);
+      return v;
+    }),
   ) as T;
+}
+
+function assertAllowedQueryKeys(
+  query: Readonly<Record<string, string>>,
+  allowed: ReadonlySet<string>,
+): void {
+  for (const key of Object.keys(query)) {
+    if (!allowed.has(key)) {
+      throw new AdministrationError("ADMIN_REQUEST_INVALID", "Unknown query parameter.", {
+        field: key,
+      });
+    }
+  }
+}
+
+function continuationEnvelope<T>(page: {
+  items: T;
+  nextCursor: string | null;
+  more: boolean;
+}): { ok: true; items: T; nextCursor: string | null; more: boolean } {
+  return {
+    ok: true,
+    items: page.items,
+    nextCursor: page.nextCursor,
+    more: page.more,
+  };
 }
 
 export async function routeAdminRequest(
@@ -146,14 +184,6 @@ export async function routeAdminRequest(
         : `admin_${route.kind}`;
 
   try {
-    if (url.search !== "" && route.kind !== "effective-permissions") {
-      // Memberships collection GET may filter by outletId (IMP-036E Store Team).
-      const membershipsCollectionGet =
-        route.kind === "memberships" && !route.id && method === "GET";
-      if (!membershipsCollectionGet) {
-        throw new AdministrationError("ADMIN_REQUEST_INVALID", "Query parameters are unsupported for this route.");
-      }
-    }
     if (isMutation(method)) {
       if (!checkTrustedOrigin(req.headers, deps.trustedOrigin).ok) {
         sendJson(res, { ok: false, code: "ADMIN_REQUEST_INVALID", requestId }, { status: 403, requestId });
@@ -168,8 +198,30 @@ export async function routeAdminRequest(
         sendMethodNotAllowed(res, requestId, "GET");
         return { operation, safeOutcomeCode: "METHOD_NOT_ALLOWED", httpStatus: 405 };
       }
+      if (url.search !== "") {
+        throw new AdministrationError("ADMIN_REQUEST_INVALID", "Query parameters are unsupported for this route.");
+      }
       const session = await getAdminSession(deps.persistence, principal);
       sendJson(res, { ok: true, session }, { status: 200, requestId });
+      return { operation, safeOutcomeCode: "OK", httpStatus: 200 };
+    }
+
+    if (route.kind === "overview") {
+      if (method !== "GET") {
+        sendMethodNotAllowed(res, requestId, "GET");
+        return { operation, safeOutcomeCode: "METHOD_NOT_ALLOWED", httpStatus: 405 };
+      }
+      if (url.search !== "") {
+        throw new AdministrationError("ADMIN_REQUEST_INVALID", "Query parameters are unsupported for this route.");
+      }
+      const overview = dateJson(
+        await adminGetOverview(deps.persistence, principal, {
+          ...(deps.serviceName ? { serviceName: deps.serviceName } : {}),
+          ...(deps.startedAt ? { startedAt: deps.startedAt } : {}),
+          ...(deps.workers ? { workers: deps.workers } : {}),
+        }),
+      );
+      sendJson(res, { ok: true, overview }, { status: 200, requestId });
       return { operation, safeOutcomeCode: "OK", httpStatus: 200 };
     }
 
@@ -178,12 +230,24 @@ export async function routeAdminRequest(
         sendMethodNotAllowed(res, requestId, "GET");
         return { operation, safeOutcomeCode: "METHOD_NOT_ALLOWED", httpStatus: 405 };
       }
-      const permissions = await adminGetEffectivePermissions(
-        deps.persistence,
-        principal,
-        queryObject(url),
+      const query = queryObject(url);
+      const result = dateJson(
+        await adminGetEffectivePermissions(deps.persistence, principal, query),
       );
-      sendJson(res, { ok: true, permissions }, { status: 200, requestId });
+      if (Array.isArray(result)) {
+        sendJson(res, { ok: true, permissions: result }, { status: 200, requestId });
+      } else {
+        sendJson(
+          res,
+          {
+            ok: true,
+            subject: result.subject,
+            resource: result.resource,
+            permissions: result.permissions,
+          },
+          { status: 200, requestId },
+        );
+      }
       return { operation, safeOutcomeCode: "OK", httpStatus: 200 };
     }
 
@@ -192,8 +256,21 @@ export async function routeAdminRequest(
         sendMethodNotAllowed(res, requestId, "GET");
         return { operation, safeOutcomeCode: "METHOD_NOT_ALLOWED", httpStatus: 405 };
       }
-      const items = dateJson(await adminListAuditEvents(deps.persistence, principal));
-      sendJson(res, { ok: true, items }, { status: 200, requestId });
+      const query = url.search !== "" ? queryObject(url) : {};
+      assertAllowedQueryKeys(
+        query,
+        new Set(["cursor", "actorWorkforceUserId", "action", "occurredFrom", "occurredTo"]),
+      );
+      const page = dateJson(
+        await adminListAuditEvents(deps.persistence, principal, {
+          cursor: query.cursor,
+          actorWorkforceUserId: query.actorWorkforceUserId,
+          action: query.action,
+          occurredFrom: query.occurredFrom,
+          occurredTo: query.occurredTo,
+        }),
+      );
+      sendJson(res, continuationEnvelope(page), { status: 200, requestId });
       return { operation, safeOutcomeCode: "OK", httpStatus: 200 };
     }
 
@@ -217,27 +294,20 @@ export async function routeAdminRequest(
     if (route.kind === "memberships") {
       if (!route.id && method === "GET") {
         const query = url.search !== "" ? queryObject(url) : {};
-        const allowedKeys = new Set(["outletId"]);
-        for (const key of Object.keys(query)) {
-          if (!allowedKeys.has(key)) {
-            throw new AdministrationError(
-              "ADMIN_REQUEST_INVALID",
-              "Unknown query parameter.",
-              { field: key },
-            );
-          }
-        }
+        assertAllowedQueryKeys(query, new Set(["outletId", "cursor"]));
         const filter =
           typeof query.outletId === "string" && query.outletId.length > 0
-            ? { outletId: query.outletId }
-            : undefined;
-        if (query.outletId !== undefined && filter === undefined) {
+            ? { outletId: query.outletId, cursor: query.cursor }
+            : query.cursor
+              ? { cursor: query.cursor }
+              : undefined;
+        if (query.outletId !== undefined && (!filter || !("outletId" in filter))) {
           throw new AdministrationError("ADMIN_REQUEST_INVALID", "outletId must be a non-empty string.", {
             field: "outletId",
           });
         }
-        const items = dateJson(await adminListMemberships(deps.persistence, principal, filter));
-        sendJson(res, { ok: true, items }, { status: 200, requestId });
+        const page = dateJson(await adminListMemberships(deps.persistence, principal, filter));
+        sendJson(res, continuationEnvelope(page), { status: 200, requestId });
         return { operation, safeOutcomeCode: "OK", httpStatus: 200 };
       }
       if (!route.id && method === "POST") {
@@ -297,18 +367,21 @@ export async function routeAdminRequest(
     // resources
     const resource = route.resource;
     if (!route.id && method === "GET") {
-      const items = dateJson(
+      const query = url.search !== "" ? queryObject(url) : {};
+      assertAllowedQueryKeys(query, new Set(["cursor"]));
+      const listQuery = query.cursor ? { cursor: query.cursor } : {};
+      const page = dateJson(
         resource === "brands"
-          ? await adminListBrands(deps.persistence, principal)
+          ? await adminListBrands(deps.persistence, principal, listQuery)
           : resource === "organizations"
-            ? await adminListOrganizations(deps.persistence, principal)
+            ? await adminListOrganizations(deps.persistence, principal, listQuery)
             : resource === "territories"
-              ? await adminListTerritories(deps.persistence, principal)
+              ? await adminListTerritories(deps.persistence, principal, listQuery)
               : resource === "legal-entities"
-                ? await adminListLegalEntities(deps.persistence, principal)
-                : await adminListOutlets(deps.persistence, principal),
+                ? await adminListLegalEntities(deps.persistence, principal, listQuery)
+                : await adminListOutlets(deps.persistence, principal, listQuery),
       );
-      sendJson(res, { ok: true, items }, { status: 200, requestId });
+      sendJson(res, continuationEnvelope(page), { status: 200, requestId });
       return { operation, safeOutcomeCode: "OK", httpStatus: 200 };
     }
     if (!route.id && method === "POST") {

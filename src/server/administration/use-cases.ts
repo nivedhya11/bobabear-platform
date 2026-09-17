@@ -20,19 +20,19 @@ import { resolveMemberLabel, resolveSignedInLabel } from "../../lib/workforce-hu
 import type { Persistence, PersistenceQueryContext } from "../persistence/types";
 import {
   accessScopeToProtectedResource,
-  authorize,
   createMembership,
+  createWorkforcePrincipalFromTrustedIdentity,
   findMembershipById,
   findRoleAssignmentById,
   getEffectivePermissions,
   grantRole,
-  listAccessAuditEvents,
-  listMemberships,
   listRoleAssignmentsForMembership,
   membershipToAccessScope,
   requireAuthorization,
   revokeRole,
   transitionMembership,
+  AuthorizationError,
+  WorkforcePrincipalError,
   type AccessAuditEvent,
   type AccessMembership,
   type AccessRoleAssignment,
@@ -41,7 +41,12 @@ import {
   type ProtectedResource,
   type WorkforcePrincipal,
 } from "../access-control";
+import { loadEffectiveGrants, type EffectiveGrant } from "../access-control/authorize";
+import { assignmentCoversResource } from "../access-control/scope";
 import { findWorkforceUserByEmail } from "../auth/workforce/operator/lifecycle";
+import { actorHasOrderCapability } from "../order/authorize";
+import { loadOperationalStatusProjection } from "../operations/operational-status";
+import type { WorkerHealthReporter } from "../../platform/observability/worker-health";
 import {
   createBrand,
   createLegalEntity,
@@ -53,11 +58,6 @@ import {
   findOrganizationById,
   findOutletById,
   findTerritoryById,
-  listBrands,
-  listLegalEntities,
-  listOrganizations,
-  listOutlets,
-  listTerritories,
   updateBrand,
   updateLegalEntity,
   updateOrganization,
@@ -69,6 +69,40 @@ import {
   type Outlet,
   type Territory,
 } from "../organization";
+import {
+  continuationFromOverflowPage,
+  decodeNameIdCursor,
+  decodeTimeIdCursor,
+  encodeNameIdCursor,
+  encodeTimeIdCursor,
+  parseExpectedRevision,
+  type AdminContinuationPage,
+} from "./continuation";
+import {
+  countEligibleBrands,
+  countEligibleLegalEntities,
+  countEligibleMembershipsByStatus,
+  countEligibleOrganizations,
+  countEligibleOutlets,
+  countEligibleTerritories,
+  listEligibleAuditEventsPage,
+  listEligibleBrandsPage,
+  listEligibleLegalEntitiesPage,
+  listEligibleMembershipsPage,
+  listEligibleOrganizationsPage,
+  listEligibleOutletsPage,
+  listEligibleTerritoriesPage,
+  sampleEligibleBrands,
+  sampleEligibleLegalEntities,
+  sampleEligibleOrganizations,
+  sampleEligibleOutlets,
+  sampleEligibleTerritories,
+} from "./eligible-queries";
+import {
+  compileEligibleScopePlan,
+  filterEligibleByGrants,
+  type EligibleScopePlan,
+} from "./eligible-set";
 import { AdministrationError } from "./errors";
 
 const FORBIDDEN_BODY_KEYS = new Set([
@@ -159,7 +193,19 @@ const PORTAL_SESSION_CAPS = [
   ...ACCESS_CAPS,
 ] as const satisfies readonly PermissionKey[];
 
-const LIST_LIMIT = 200;
+const LIST_PAGE_DEFAULT = 50;
+
+export type AdministrationListQuery = Readonly<{
+  cursor?: string;
+}>;
+
+export type AdministrationAuditListQuery = Readonly<{
+  cursor?: string;
+  actorWorkforceUserId?: string;
+  action?: string;
+  occurredFrom?: string;
+  occurredTo?: string;
+}>;
 
 export function rejectForgedAuthorityFields(body: Readonly<Record<string, unknown>>): void {
   for (const key of Object.keys(body)) {
@@ -176,31 +222,37 @@ function requirePrincipal(actor: WorkforcePrincipal | null): WorkforcePrincipal 
   return actor;
 }
 
-async function isAllowed(
+/** Load the actor's grant snapshot once and compile the eligible-set plan for one permission. */
+async function eligiblePlanFor(
   context: PersistenceQueryContext,
   actor: WorkforcePrincipal,
   permission: PermissionKey,
-  resource: ProtectedResource,
-): Promise<boolean> {
-  const decision = await authorize(context, { actor, permission, resource });
-  return decision.allowed;
+): Promise<{ grants: EffectiveGrant[]; plan: EligibleScopePlan }> {
+  const grants = await loadEffectiveGrants(context, actor);
+  return { grants, plan: compileEligibleScopePlan(grants, permission) };
 }
 
-async function filterByPermission<T>(
-  context: PersistenceQueryContext,
-  actor: WorkforcePrincipal,
+/**
+ * Defence in depth over the compiled SQL predicate: re-check the already-fetched
+ * page against the same grant snapshot. Cursor and `more` stay derived from the
+ * fetched rows so a dropped row can never make the set look exhausted.
+ */
+function defendPage<T>(
+  page: AdminContinuationPage<T>,
+  grants: readonly EffectiveGrant[],
   permission: PermissionKey,
-  items: readonly T[],
   resourceOf: (item: T) => ProtectedResource | null,
-): Promise<T[]> {
-  const out: T[] = [];
-  for (const item of items) {
-    if (out.length >= LIST_LIMIT) break;
-    const resource = resourceOf(item);
-    if (!resource) continue;
-    if (await isAllowed(context, actor, permission, resource)) out.push(item);
-  }
-  return out;
+): AdminContinuationPage<T> {
+  const items = filterEligibleByGrants(grants, permission, page.items, resourceOf);
+  return items.length === page.items.length ? page : { ...page, items };
+}
+
+function nameIdPage<T extends { name: string; id: string }>(
+  rows: readonly T[],
+): AdminContinuationPage<T> {
+  return continuationFromOverflowPage(rows, LIST_PAGE_DEFAULT, (last) =>
+    encodeNameIdCursor({ name: last.name, id: last.id }),
+  );
 }
 
 function membershipResource(membership: AccessMembership): ProtectedResource | null {
@@ -288,14 +340,25 @@ export async function getAdminSession(
   });
 }
 
-export async function adminListBrands(persistence: Persistence, actor: WorkforcePrincipal | null): Promise<Brand[]> {
+export async function adminListBrands(
+  persistence: Persistence,
+  actor: WorkforcePrincipal | null,
+  query: AdministrationListQuery = {},
+): Promise<AdminContinuationPage<Brand>> {
   const principal = requirePrincipal(actor);
-  return persistence.withContext(async (context) =>
-    filterByPermission(context, principal, "brand.read", await listBrands(context), (b) => ({
-      type: "brand",
-      brandId: b.id,
-    })),
-  );
+  return persistence.withContext(async (context) => {
+    const { grants, plan } = await eligiblePlanFor(context, principal, "brand.read");
+    const rows = await listEligibleBrandsPage(context, {
+      plan,
+      ...(query.cursor ? { after: decodeNameIdCursor(query.cursor) } : {}),
+      limit: LIST_PAGE_DEFAULT + 1,
+    });
+    return defendPage(nameIdPage(rows), grants, "brand.read", brandResource);
+  });
+}
+
+function brandResource(brand: Brand): ProtectedResource {
+  return { type: "brand", brandId: brand.id };
 }
 
 export async function adminGetBrand(
@@ -352,6 +415,7 @@ export async function adminUpdateBrand(
 ): Promise<Brand> {
   const principal = requirePrincipal(actor);
   rejectForgedAuthorityFields(body);
+  const expectedRevision = parseExpectedRevision(body);
   const name = body.name === undefined ? undefined : typeof body.name === "string" ? body.name : null;
   const status =
     body.status === undefined
@@ -370,6 +434,7 @@ export async function adminUpdateBrand(
     });
     return updateBrand(tx, {
       brandId,
+      expectedRevision,
       ...(name !== undefined ? { name } : {}),
       ...(status !== undefined ? { status } : {}),
       actorWorkforceUserId: principal.workforceUserId,
@@ -377,23 +442,29 @@ export async function adminUpdateBrand(
   });
 }
 
-async function listFilteredOrganizations(
-  context: PersistenceQueryContext,
-  actor: WorkforcePrincipal,
-): Promise<Organization[]> {
-  return filterByPermission(context, actor, "organization.read", await listOrganizations(context), (o) => ({
+function organizationResource(organization: Organization): ProtectedResource {
+  return {
     type: "organization",
-    brandId: o.brandId,
-    organizationId: o.id,
-  }));
+    brandId: organization.brandId,
+    organizationId: organization.id,
+  };
 }
 
 export async function adminListOrganizations(
   persistence: Persistence,
   actor: WorkforcePrincipal | null,
-): Promise<Organization[]> {
+  query: AdministrationListQuery = {},
+): Promise<AdminContinuationPage<Organization>> {
   const principal = requirePrincipal(actor);
-  return persistence.withContext(async (context) => listFilteredOrganizations(context, principal));
+  return persistence.withContext(async (context) => {
+    const { grants, plan } = await eligiblePlanFor(context, principal, "organization.read");
+    const rows = await listEligibleOrganizationsPage(context, {
+      plan,
+      ...(query.cursor ? { after: decodeNameIdCursor(query.cursor) } : {}),
+      limit: LIST_PAGE_DEFAULT + 1,
+    });
+    return defendPage(nameIdPage(rows), grants, "organization.read", organizationResource);
+  });
 }
 
 export async function adminGetOrganization(
@@ -478,6 +549,7 @@ export async function adminUpdateOrganization(
     }
     return updateOrganization(tx, {
       organizationId,
+      expectedRevision: parseExpectedRevision(body),
       ...(name !== undefined ? { name } : {}),
       ...(status !== undefined ? { status } : {}),
       actorWorkforceUserId: principal.workforceUserId,
@@ -488,15 +560,22 @@ export async function adminUpdateOrganization(
 export async function adminListTerritories(
   persistence: Persistence,
   actor: WorkforcePrincipal | null,
-): Promise<Territory[]> {
+  query: AdministrationListQuery = {},
+): Promise<AdminContinuationPage<Territory>> {
   const principal = requirePrincipal(actor);
-  return persistence.withContext(async (context) =>
-    filterByPermission(context, principal, "territory.read", await listTerritories(context), (t) => ({
-      type: "territory",
-      brandId: t.brandId,
-      territoryId: t.id,
-    })),
-  );
+  return persistence.withContext(async (context) => {
+    const { grants, plan } = await eligiblePlanFor(context, principal, "territory.read");
+    const rows = await listEligibleTerritoriesPage(context, {
+      plan,
+      ...(query.cursor ? { after: decodeNameIdCursor(query.cursor) } : {}),
+      limit: LIST_PAGE_DEFAULT + 1,
+    });
+    return defendPage(nameIdPage(rows), grants, "territory.read", territoryResource);
+  });
+}
+
+function territoryResource(territory: Territory): ProtectedResource {
+  return { type: "territory", brandId: territory.brandId, territoryId: territory.id };
 }
 
 export async function adminGetTerritory(
@@ -573,6 +652,7 @@ export async function adminUpdateTerritory(
     }
     return updateTerritory(tx, {
       territoryId,
+      expectedRevision: parseExpectedRevision(body),
       ...(name !== undefined ? { name } : {}),
       ...(status !== undefined ? { status } : {}),
       actorWorkforceUserId: principal.workforceUserId,
@@ -583,16 +663,27 @@ export async function adminUpdateTerritory(
 export async function adminListLegalEntities(
   persistence: Persistence,
   actor: WorkforcePrincipal | null,
-): Promise<LegalEntity[]> {
+  query: AdministrationListQuery = {},
+): Promise<AdminContinuationPage<LegalEntity>> {
   const principal = requirePrincipal(actor);
-  return persistence.withContext(async (context) =>
-    filterByPermission(context, principal, "legal_entity.read", await listLegalEntities(context), (e) => ({
-      type: "legal_entity",
-      brandId: e.brandId,
-      organizationId: e.organizationId,
-      legalEntityId: e.id,
-    })),
-  );
+  return persistence.withContext(async (context) => {
+    const { grants, plan } = await eligiblePlanFor(context, principal, "legal_entity.read");
+    const rows = await listEligibleLegalEntitiesPage(context, {
+      plan,
+      ...(query.cursor ? { after: decodeNameIdCursor(query.cursor) } : {}),
+      limit: LIST_PAGE_DEFAULT + 1,
+    });
+    return defendPage(nameIdPage(rows), grants, "legal_entity.read", legalEntityResource);
+  });
+}
+
+function legalEntityResource(entity: LegalEntity): ProtectedResource {
+  return {
+    type: "legal_entity",
+    brandId: entity.brandId,
+    organizationId: entity.organizationId,
+    legalEntityId: entity.id,
+  };
 }
 
 export async function adminGetLegalEntity(
@@ -684,6 +775,7 @@ export async function adminUpdateLegalEntity(
     }
     return updateLegalEntity(tx, {
       legalEntityId,
+      expectedRevision: parseExpectedRevision(body),
       ...(name !== undefined ? { name } : {}),
       ...(status !== undefined ? { status } : {}),
       actorWorkforceUserId: principal.workforceUserId,
@@ -694,17 +786,28 @@ export async function adminUpdateLegalEntity(
 export async function adminListOutlets(
   persistence: Persistence,
   actor: WorkforcePrincipal | null,
-): Promise<Outlet[]> {
+  query: AdministrationListQuery = {},
+): Promise<AdminContinuationPage<Outlet>> {
   const principal = requirePrincipal(actor);
-  return persistence.withContext(async (context) =>
-    filterByPermission(context, principal, "outlet.read", await listOutlets(context), (o) => ({
-      type: "outlet",
-      brandId: o.brandId,
-      organizationId: o.organizationId,
-      territoryId: o.territoryId,
-      outletId: o.id,
-    })),
-  );
+  return persistence.withContext(async (context) => {
+    const { grants, plan } = await eligiblePlanFor(context, principal, "outlet.read");
+    const rows = await listEligibleOutletsPage(context, {
+      plan,
+      ...(query.cursor ? { after: decodeNameIdCursor(query.cursor) } : {}),
+      limit: LIST_PAGE_DEFAULT + 1,
+    });
+    return defendPage(nameIdPage(rows), grants, "outlet.read", outletResource);
+  });
+}
+
+function outletResource(outlet: Outlet): ProtectedResource {
+  return {
+    type: "outlet",
+    brandId: outlet.brandId,
+    organizationId: outlet.organizationId,
+    territoryId: outlet.territoryId,
+    outletId: outlet.id,
+  };
 }
 
 export async function adminGetOutlet(
@@ -802,6 +905,7 @@ export async function adminUpdateOutlet(
     }
     return updateOutlet(tx, {
       outletId,
+      expectedRevision: parseExpectedRevision(body),
       ...(name !== undefined ? { name } : {}),
       ...(status !== undefined ? { status } : {}),
       actorWorkforceUserId: principal.workforceUserId,
@@ -812,21 +916,13 @@ export async function adminUpdateOutlet(
 export async function adminListMemberships(
   persistence: Persistence,
   actor: WorkforcePrincipal | null,
-  filter?: Readonly<{ outletId?: string }>,
-): Promise<AdministrationMembershipProjection[]> {
+  filter?: Readonly<{ outletId?: string; cursor?: string }>,
+): Promise<AdminContinuationPage<AdministrationMembershipProjection>> {
   const principal = requirePrincipal(actor);
   return persistence.withContext(async (context) => {
-    const all = await listMemberships(context);
-    let authorized: AccessMembership[];
-    if (!filter?.outletId) {
-      authorized = await filterByPermission(
-        context,
-        principal,
-        "access.membership.read",
-        all,
-        membershipResource,
-      );
-    } else {
+    const { grants, plan } = await eligiblePlanFor(context, principal, "access.membership.read");
+    let outletId: string | undefined;
+    if (filter?.outletId) {
       const outlet = await findOutletById(context, filter.outletId);
       if (!outlet) {
         throw new AdministrationError("ADMIN_NOT_FOUND", "Outlet not found.");
@@ -834,28 +930,36 @@ export async function adminListMemberships(
       await requireAuthorization(context, {
         actor: principal,
         permission: "access.membership.read",
-        resource: {
-          type: "outlet",
-          brandId: outlet.brandId,
-          organizationId: outlet.organizationId,
-          territoryId: outlet.territoryId,
-          outletId: outlet.id,
-        },
+        resource: outletResource(outlet),
       });
-      const narrowed = all.filter(
-        (membership) =>
-          membership.scopeType === "outlet" && membership.outletId === outlet.id,
-      );
-      authorized = await filterByPermission(
-        context,
-        principal,
-        "access.membership.read",
-        narrowed,
-        membershipResource,
-      );
+      outletId = outlet.id;
     }
-    return enrichMembershipsWithMemberLabel(context, authorized);
+    const rows = await listEligibleMembershipsPage(context, {
+      plan,
+      ...(outletId !== undefined ? { outletId } : {}),
+      ...(filter?.cursor ? { after: decodeTimeIdCursor(filter.cursor) } : {}),
+      limit: LIST_PAGE_DEFAULT + 1,
+    });
+    const page = defendPage(
+      membershipPage(rows),
+      grants,
+      "access.membership.read",
+      membershipResource,
+    );
+    return {
+      items: await enrichMembershipsWithMemberLabel(context, page.items),
+      nextCursor: page.nextCursor,
+      more: page.more,
+    };
   });
+}
+
+function membershipPage(
+  rows: readonly AccessMembership[],
+): AdminContinuationPage<AccessMembership> {
+  return continuationFromOverflowPage(rows, LIST_PAGE_DEFAULT, (last) =>
+    encodeTimeIdCursor({ at: last.createdAt, id: last.id }),
+  );
 }
 
 export async function adminGetMembership(
@@ -1063,20 +1167,111 @@ export async function adminRevokeRole(
   });
 }
 
+export type AdministrationEffectivePermissionsProjection = Readonly<{
+  subject: Readonly<{
+    membershipId: string;
+    workforceUserId: string;
+    memberLabel: string;
+  }> | null;
+  resource: ProtectedResource;
+  permissions: PermissionKey[];
+}>;
+
 export async function adminGetEffectivePermissions(
   persistence: Persistence,
   actor: WorkforcePrincipal | null,
   query: Readonly<Record<string, string>>,
-): Promise<PermissionKey[]> {
+): Promise<AdministrationEffectivePermissionsProjection | PermissionKey[]> {
   const principal = requirePrincipal(actor);
+  const membershipId =
+    typeof query.membershipId === "string" && query.membershipId.length > 0
+      ? query.membershipId
+      : undefined;
+
   return persistence.withContext(async (context) => {
     const resource = parseResourceQuery(query);
+
+    if (!membershipId) {
+      // Caller-scoped compatibility (IMP-035).
+      await requireAuthorization(context, {
+        actor: principal,
+        permission: "access.effective_permissions.read",
+        resource,
+      });
+      const permissions = await getEffectivePermissions(context, { actor: principal, resource });
+      return permissions;
+    }
+
+    const membership = await findMembershipById(context, membershipId);
+    if (!membership) throw new AdministrationError("ADMIN_NOT_FOUND", "Membership not found.");
+    const membershipRes = membershipResource(membership);
+    if (!membershipRes) {
+      throw new AdministrationError("ADMIN_REQUEST_INVALID", "Membership scope is invalid.");
+    }
+
     await requireAuthorization(context, {
       actor: principal,
       permission: "access.effective_permissions.read",
       resource,
     });
-    return getEffectivePermissions(context, { actor: principal, resource });
+    await requireAuthorization(context, {
+      actor: principal,
+      permission: "access.membership.read",
+      resource: membershipRes,
+    });
+
+    const userRows = await context.db
+      .select({
+        id: workforceAuthUsers.id,
+        name: workforceAuthUsers.name,
+        email: workforceAuthUsers.email,
+        disabledAt: workforceAuthUsers.disabledAt,
+        passwordChangeRequired: workforceAuthUsers.passwordChangeRequired,
+        twoFactorEnabled: workforceAuthUsers.twoFactorEnabled,
+      })
+      .from(workforceAuthUsers)
+      .where(eq(workforceAuthUsers.id, membership.workforceUserId))
+      .limit(1);
+    const user = userRows[0];
+    if (!user) throw new AdministrationError("ADMIN_NOT_FOUND", "Workforce user not found.");
+
+    const subject = {
+      membershipId: membership.id,
+      workforceUserId: membership.workforceUserId,
+      memberLabel: resolveMemberLabel({ name: user.name, email: user.email }),
+    };
+
+    let permissions: PermissionKey[] = [];
+    try {
+      const subjectPrincipal = createWorkforcePrincipalFromTrustedIdentity({
+        workforceUserId: user.id,
+        disabledAt: user.disabledAt ? new Date(user.disabledAt) : null,
+        passwordChangeRequired: user.passwordChangeRequired,
+        twoFactorEnabled: user.twoFactorEnabled ?? false,
+      });
+      permissions = await getEffectivePermissions(context, {
+        actor: subjectPrincipal,
+        resource,
+      });
+    } catch (error) {
+      if (!(error instanceof WorkforcePrincipalError)) throw error;
+      // Prefer grant-load path when identity flags block a login principal.
+      const grants = await loadEffectiveGrants(context, {
+        workforceUserId: user.id,
+        disabledAt: null,
+        passwordChangeRequired: false,
+        twoFactorEnabled: true,
+      } as WorkforcePrincipal);
+      permissions = [
+        ...new Set(
+          grants
+            .filter((grant) => assignmentCoversResource(grant.scope, grant.inheritanceMode, resource))
+            .map((grant) => grant.permissionKey),
+        ),
+      ].sort();
+    }
+
+    return { subject, resource, permissions };
   });
 }
 
@@ -1116,12 +1311,285 @@ function parseResourceQuery(query: Readonly<Record<string, string>>): ProtectedR
   throw new AdministrationError("ADMIN_REQUEST_INVALID", "resourceType / resource ids are invalid.");
 }
 
+function parseOptionalIsoDate(value: string | undefined, field: string): Date | undefined {
+  if (value === undefined) return undefined;
+  const ms = Date.parse(value);
+  if (!Number.isFinite(ms)) {
+    throw new AdministrationError("ADMIN_REQUEST_INVALID", `${field} must be an ISO date-time.`, {
+      field,
+    });
+  }
+  return new Date(ms);
+}
+
 export async function adminListAuditEvents(
   persistence: Persistence,
   actor: WorkforcePrincipal | null,
-): Promise<AccessAuditEvent[]> {
+  query: AdministrationAuditListQuery = {},
+): Promise<AdminContinuationPage<AccessAuditEvent>> {
   const principal = requirePrincipal(actor);
-  return persistence.withContext(async (context) =>
-    filterByPermission(context, principal, "access.audit.read", await listAccessAuditEvents(context), auditResource),
+  const occurredFrom = parseOptionalIsoDate(query.occurredFrom, "occurredFrom");
+  const occurredTo = parseOptionalIsoDate(query.occurredTo, "occurredTo");
+  if (occurredFrom && occurredTo && occurredFrom.getTime() > occurredTo.getTime()) {
+    throw new AdministrationError("ADMIN_REQUEST_INVALID", "occurredFrom must be <= occurredTo.");
+  }
+
+  return persistence.withContext(async (context) => {
+    const { grants, plan } = await eligiblePlanFor(context, principal, "access.audit.read");
+    if (plan.kind === "none") {
+      throw new AuthorizationError();
+    }
+
+    const rows = await listEligibleAuditEventsPage(context, {
+      plan,
+      ...(query.cursor ? { after: decodeTimeIdCursor(query.cursor) } : {}),
+      ...(query.actorWorkforceUserId
+        ? { actorWorkforceUserId: query.actorWorkforceUserId }
+        : {}),
+      ...(query.action ? { action: query.action } : {}),
+      ...(occurredFrom ? { occurredFrom } : {}),
+      ...(occurredTo ? { occurredTo } : {}),
+      limit: LIST_PAGE_DEFAULT + 1,
+    });
+    const page = continuationFromOverflowPage(rows, LIST_PAGE_DEFAULT, (last) =>
+      encodeTimeIdCursor({ at: last.occurredAt, id: last.id }),
+    );
+    return defendPage(page, grants, "access.audit.read", auditResource);
+  });
+}
+
+export type AdministrationOverview = Readonly<{
+  hierarchy: Readonly<{
+    brands: Readonly<{ count: number; sample: Brand[]; more: boolean }>;
+    organizations: Readonly<{ count: number; sample: Organization[]; more: boolean }>;
+    territories: Readonly<{ count: number; sample: Territory[]; more: boolean }>;
+    legalEntities: Readonly<{ count: number; sample: LegalEntity[]; more: boolean }>;
+    outlets: Readonly<{ count: number; sample: Outlet[]; more: boolean }>;
+  }>;
+  membershipAttention: Readonly<{
+    invited: number;
+    suspended: number;
+    active: number;
+    revoked: number;
+    expired: number;
+    sample: AdministrationMembershipProjection[];
+    more: boolean;
+  }>;
+  recentAudit: Readonly<{
+    items: AccessAuditEvent[];
+    more: boolean;
+  }>;
+  operationalHealth:
+    | Readonly<{ available: true; status: Readonly<Record<string, unknown>> }>
+    | Readonly<{ available: false; reason: "unauthorized" }>;
+}>;
+
+const OVERVIEW_SAMPLE = 5;
+
+const MEMBERSHIP_ATTENTION_STATUSES = ["invited", "suspended"] as const satisfies readonly AccessMembership["status"][];
+
+export type AdministrationOpsRuntime = Readonly<{
+  serviceName?: string;
+  startedAt?: Date;
+  workers?: readonly WorkerHealthReporter[];
+}>;
+
+/** Count + first-page sample over the actor's eligible set for one collection. */
+function hierarchySlice<T>(
+  count: number,
+  sample: readonly T[],
+): Readonly<{ count: number; sample: T[]; more: boolean }> {
+  return { count, sample: [...sample], more: count > OVERVIEW_SAMPLE };
+}
+
+export async function adminGetOverview(
+  persistence: Persistence,
+  actor: WorkforcePrincipal | null,
+  opsRuntime?: AdministrationOpsRuntime,
+): Promise<AdministrationOverview> {
+  const principal = requirePrincipal(actor);
+  return persistence.withContext(async (context) => {
+    const grants = await loadEffectiveGrants(context, principal);
+    const brandPlan = compileEligibleScopePlan(grants, "brand.read");
+    const organizationPlan = compileEligibleScopePlan(grants, "organization.read");
+    const territoryPlan = compileEligibleScopePlan(grants, "territory.read");
+    const legalEntityPlan = compileEligibleScopePlan(grants, "legal_entity.read");
+    const outletPlan = compileEligibleScopePlan(grants, "outlet.read");
+    const membershipPlan = compileEligibleScopePlan(grants, "access.membership.read");
+    const auditPlan = compileEligibleScopePlan(grants, "access.audit.read");
+
+    const [
+      brandCount,
+      brandSample,
+      organizationCount,
+      organizationSample,
+      territoryCount,
+      territorySample,
+      legalEntityCount,
+      legalEntitySample,
+      outletCount,
+      outletSample,
+      membershipCounts,
+      attentionRows,
+      auditRows,
+    ] = await Promise.all([
+      countEligibleBrands(context, brandPlan),
+      sampleEligibleBrands(context, brandPlan, OVERVIEW_SAMPLE),
+      countEligibleOrganizations(context, organizationPlan),
+      sampleEligibleOrganizations(context, organizationPlan, OVERVIEW_SAMPLE),
+      countEligibleTerritories(context, territoryPlan),
+      sampleEligibleTerritories(context, territoryPlan, OVERVIEW_SAMPLE),
+      countEligibleLegalEntities(context, legalEntityPlan),
+      sampleEligibleLegalEntities(context, legalEntityPlan, OVERVIEW_SAMPLE),
+      countEligibleOutlets(context, outletPlan),
+      sampleEligibleOutlets(context, outletPlan, OVERVIEW_SAMPLE),
+      countEligibleMembershipsByStatus(context, membershipPlan),
+      listEligibleMembershipsPage(context, {
+        plan: membershipPlan,
+        statuses: MEMBERSHIP_ATTENTION_STATUSES,
+        limit: OVERVIEW_SAMPLE,
+      }),
+      listEligibleAuditEventsPage(context, { plan: auditPlan, limit: OVERVIEW_SAMPLE + 1 }),
+    ]);
+
+    const attentionCount = MEMBERSHIP_ATTENTION_STATUSES.reduce(
+      (total, status) => total + membershipCounts[status],
+      0,
+    );
+    const enrichedAttention = await enrichMembershipsWithMemberLabel(
+      context,
+      filterEligibleByGrants(
+        grants,
+        "access.membership.read",
+        attentionRows,
+        membershipResource,
+      ),
+    );
+    const recentAudit = filterEligibleByGrants(
+      grants,
+      "access.audit.read",
+      auditRows,
+      auditResource,
+    );
+
+    const canReadOps = await actorHasOrderCapability(context, principal, "order.read");
+    let operationalHealth: AdministrationOverview["operationalHealth"];
+    if (!canReadOps) {
+      operationalHealth = { available: false, reason: "unauthorized" };
+    } else {
+      const status = await loadOperationalStatusProjection({
+        persistence,
+        serviceName: opsRuntime?.serviceName ?? "operations",
+        ...(opsRuntime?.startedAt ? { startedAt: opsRuntime.startedAt } : {}),
+        ...(opsRuntime?.workers ? { workers: opsRuntime.workers } : {}),
+      });
+      operationalHealth = {
+        available: true,
+        status: {
+          service: status.service,
+          uptimeSeconds: status.uptimeSeconds,
+          metrics: status.metrics,
+          workers: status.workers,
+          queues: status.queues,
+        },
+      };
+    }
+
+    return {
+      hierarchy: {
+        brands: hierarchySlice(brandCount, brandSample),
+        organizations: hierarchySlice(organizationCount, organizationSample),
+        territories: hierarchySlice(territoryCount, territorySample),
+        legalEntities: hierarchySlice(legalEntityCount, legalEntitySample),
+        outlets: hierarchySlice(outletCount, outletSample),
+      },
+      membershipAttention: {
+        invited: membershipCounts.invited,
+        suspended: membershipCounts.suspended,
+        active: membershipCounts.active,
+        revoked: membershipCounts.revoked,
+        expired: membershipCounts.expired,
+        sample: enrichedAttention,
+        more: attentionCount > OVERVIEW_SAMPLE,
+      },
+      recentAudit: {
+        items: recentAudit.slice(0, OVERVIEW_SAMPLE),
+        more: auditRows.length > OVERVIEW_SAMPLE,
+      },
+      operationalHealth,
+    };
+  });
+}
+
+/**
+ * Exhaustive eligible-set traversal for trusted server callers (bootstrap /
+ * reconciliation). HTTP callers must keep using the continuation pages.
+ */
+async function drainPages<T>(
+  loadPage: (cursor: string | undefined) => Promise<AdminContinuationPage<T>>,
+): Promise<T[]> {
+  const all: T[] = [];
+  let cursor: string | undefined;
+  for (;;) {
+    const page = await loadPage(cursor);
+    all.push(...page.items);
+    if (!page.more || !page.nextCursor) return all;
+    cursor = page.nextCursor;
+  }
+}
+
+export async function adminListAllBrands(
+  persistence: Persistence,
+  actor: WorkforcePrincipal | null,
+): Promise<Brand[]> {
+  return drainPages((cursor) => adminListBrands(persistence, actor, { ...(cursor ? { cursor } : {}) }));
+}
+
+export async function adminListAllOrganizations(
+  persistence: Persistence,
+  actor: WorkforcePrincipal | null,
+): Promise<Organization[]> {
+  return drainPages((cursor) =>
+    adminListOrganizations(persistence, actor, { ...(cursor ? { cursor } : {}) }),
+  );
+}
+
+export async function adminListAllTerritories(
+  persistence: Persistence,
+  actor: WorkforcePrincipal | null,
+): Promise<Territory[]> {
+  return drainPages((cursor) =>
+    adminListTerritories(persistence, actor, { ...(cursor ? { cursor } : {}) }),
+  );
+}
+
+export async function adminListAllLegalEntities(
+  persistence: Persistence,
+  actor: WorkforcePrincipal | null,
+): Promise<LegalEntity[]> {
+  return drainPages((cursor) =>
+    adminListLegalEntities(persistence, actor, { ...(cursor ? { cursor } : {}) }),
+  );
+}
+
+export async function adminListAllOutlets(
+  persistence: Persistence,
+  actor: WorkforcePrincipal | null,
+): Promise<Outlet[]> {
+  return drainPages((cursor) =>
+    adminListOutlets(persistence, actor, { ...(cursor ? { cursor } : {}) }),
+  );
+}
+
+export async function adminListAllMemberships(
+  persistence: Persistence,
+  actor: WorkforcePrincipal | null,
+  filter?: Readonly<{ outletId?: string }>,
+): Promise<AdministrationMembershipProjection[]> {
+  return drainPages((cursor) =>
+    adminListMemberships(persistence, actor, {
+      ...(filter?.outletId ? { outletId: filter.outletId } : {}),
+      ...(cursor ? { cursor } : {}),
+    }),
   );
 }

@@ -8,12 +8,11 @@ import "server-only";
 
 import type { IncomingMessage, ServerResponse } from "node:http";
 
-import { getMetricsSnapshot } from "../../../platform/observability";
 import type { WorkerHealthReporter } from "../../../platform/observability/worker-health";
 import { actorHasOrderCapability } from "../../order/authorize";
 import type { WorkforceAuthRuntime } from "../../auth/workforce";
 import type { Persistence } from "../../persistence";
-import { loadOperationalQueueBacklog } from "../../persistence/operational-counts";
+import { loadOperationalStatusProjection } from "../operational-status";
 import { resolveOperationsWorkforcePrincipal } from "./auth";
 import { sendJson, sendMethodNotAllowed } from "./response";
 
@@ -58,23 +57,22 @@ export async function handleOperationalStatusRequest(
     return { operation, safeOutcomeCode: "ORDER_UNAUTHORIZED", httpStatus: 403 };
   }
 
-  const [queues, metrics] = await Promise.all([
-    loadOperationalQueueBacklog(deps.persistence),
-    Promise.resolve(getMetricsSnapshot()),
-  ]);
-
-  const startedAt = deps.startedAt ?? new Date();
-  const serviceName = deps.serviceName ?? "operations";
+  const status = await loadOperationalStatusProjection({
+    persistence: deps.persistence,
+    serviceName: deps.serviceName,
+    startedAt: deps.startedAt,
+    workers: deps.workers,
+  });
 
   sendJson(
     res,
     {
       ok: true,
-      service: serviceName,
-      uptimeSeconds: Math.max(0, Math.floor((Date.now() - startedAt.getTime()) / 1000)),
-      metrics,
-      workers: (deps.workers ?? []).map((worker) => worker.getHealthSnapshot()),
-      queues,
+      service: status.service,
+      uptimeSeconds: status.uptimeSeconds,
+      metrics: status.metrics,
+      workers: status.workers,
+      queues: status.queues,
     },
     { status: 200, requestId },
   );

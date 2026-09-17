@@ -3,7 +3,7 @@
  */
 import { randomUUID } from "node:crypto";
 
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import { organizationsTable } from "../../platform/database/schema/organizations";
 import { insertAccessAuditEvent } from "../access-control/audit";
@@ -31,9 +31,14 @@ function rowToOrganization(row: typeof organizationsTable.$inferSelect): Organiz
     code: row.code,
     name: row.name,
     status: row.status as Organization["status"],
+    revision: row.revision,
     createdAt: new Date(row.createdAt),
     updatedAt: new Date(row.updatedAt),
   };
+}
+
+function staleOrganizationRevision(): never {
+  throw new OrganizationConflictError({ message: "Organization revision is stale." });
 }
 
 export async function findOrganizationById(
@@ -122,6 +127,9 @@ export async function updateOrganization(
       message: "organizationId must be a non-empty string.",
     });
   }
+  if (typeof input.expectedRevision !== "bigint") {
+    throw new OrganizationValidationError({ message: "expectedRevision must be a bigint." });
+  }
   if (input.name === undefined && input.status === undefined) {
     throw new OrganizationValidationError({
       message: "updateOrganization requires name and/or status.",
@@ -132,6 +140,9 @@ export async function updateOrganization(
   if (!existing) {
     throw new OrganizationNotFoundError("organization");
   }
+  if (existing.revision !== input.expectedRevision) {
+    staleOrganizationRevision();
+  }
 
   const name = input.name !== undefined ? normalizeNonEmptyName(input.name, "name") : existing.name;
   const status = input.status ?? existing.status;
@@ -140,10 +151,20 @@ export async function updateOrganization(
   }
 
   const now = new Date();
-  await context.db
+  const nextRevision = existing.revision + BigInt(1);
+  const updatedRows = await context.db
     .update(organizationsTable)
-    .set({ name, status, updatedAt: now })
-    .where(eq(organizationsTable.id, input.organizationId));
+    .set({ name, status, revision: nextRevision, updatedAt: now })
+    .where(
+      and(
+        eq(organizationsTable.id, input.organizationId),
+        eq(organizationsTable.revision, input.expectedRevision),
+      ),
+    )
+    .returning();
+  if (!updatedRows[0]) {
+    staleOrganizationRevision();
+  }
 
   await insertAccessAuditEvent(context, {
     actorWorkforceUserId: input.actorWorkforceUserId ?? null,

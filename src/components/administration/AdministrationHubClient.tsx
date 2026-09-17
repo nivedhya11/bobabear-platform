@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 
-import { Button } from "@/components/ui/Button";
-import { PageHeader } from "@/components/enterprise/PageHeader";
-import { LoadingState } from "@/components/enterprise/LoadingState";
 import { Alert } from "@/components/enterprise/Alert";
 import { ErrorState } from "@/components/enterprise/ErrorState";
-import { fetchAdminSession } from "@/lib/administration/api";
+import { LoadingState } from "@/components/enterprise/LoadingState";
+import { PageHeader } from "@/components/enterprise/PageHeader";
+import { StatusBadge } from "@/components/enterprise/StatusBadge";
+import { Button } from "@/components/ui/Button";
+import { fetchAdminOverview, fetchAdminSession } from "@/lib/administration/api";
 import { resolveSignedInLabel } from "@/lib/workforce-hub/identity";
 import { classifyPortalSessionResult } from "@/lib/workforce-hub/session-result";
 import { enterprisePanelClass } from "@/components/enterprise/enterprise-tokens";
@@ -20,8 +21,18 @@ type ViewState =
   | Readonly<{
       kind: "ready";
       signedInLabel: string;
-      capabilities: Record<string, boolean>;
+      overview: Record<string, unknown>;
     }>;
+
+function hierarchyCountDisplay(section: unknown): Readonly<{ count: string; sampleHint: string | null }> {
+  if (!section || typeof section !== "object") return { count: "—", sampleHint: null };
+  const record = section as { count?: number; more?: boolean; sample?: unknown[] };
+  if (typeof record.count !== "number") return { count: "—", sampleHint: null };
+  const sampleLen = Array.isArray(record.sample) ? record.sample.length : null;
+  const sampleHint =
+    record.more === true && sampleLen !== null ? `sample of ${sampleLen}` : null;
+  return { count: String(record.count), sampleHint };
+}
 
 export function AdministrationHubClient() {
   const [view, setView] = useState<ViewState>({ kind: "loading" });
@@ -29,25 +40,34 @@ export function AdministrationHubClient() {
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      const result = await fetchAdminSession();
+      const sessionResult = await fetchAdminSession();
       if (cancelled) return;
-      const outcome = classifyPortalSessionResult(result);
+      const outcome = classifyPortalSessionResult(sessionResult);
       if (outcome === "authentication_required") {
         setView({ kind: "unauthorized" });
         return;
       }
-      if (outcome === "service_failure" || !result.ok) {
+      if (outcome === "service_failure" || !sessionResult.ok) {
         setView({ kind: "error", message: "Administration session could not be loaded." });
         return;
       }
-      const projectedLabel = result.data.session.signedInLabel?.trim() ?? "";
+      const overviewResult = await fetchAdminOverview();
+      if (cancelled) return;
+      if (!overviewResult.ok) {
+        setView({
+          kind: "error",
+          message: "Administration overview could not be loaded.",
+        });
+        return;
+      }
+      const projectedLabel = sessionResult.data.session.signedInLabel?.trim() ?? "";
       setView({
         kind: "ready",
         signedInLabel: resolveSignedInLabel({
           email: projectedLabel.includes("@") ? projectedLabel : undefined,
-          workforceUserId: result.data.session.workforceUserId,
+          workforceUserId: sessionResult.data.session.workforceUserId,
         }),
-        capabilities: result.data.session.capabilities,
+        overview: overviewResult.data.overview,
       });
     })();
     return () => {
@@ -71,64 +91,143 @@ export function AdministrationHubClient() {
     );
   }
   if (view.kind === "error") {
-    return <ErrorState message={view.message} />;
+    return <ErrorState message={view.message} onRetry={() => window.location.reload()} />;
   }
 
-  const hasCommercialRead =
-    view.capabilities["catalog.read"] === true ||
-    view.capabilities["menu.read"] === true ||
-    view.capabilities["assortment.read"] === true ||
-    view.capabilities["pricing.read"] === true ||
-    view.capabilities["promotions.read"] === true ||
-    view.capabilities["coupons.read"] === true;
-
-  const links = [
-    { href: "/workforce/admin/resources/", label: "Resources", show: true },
-    {
-      href: "/workforce/admin/commercial/",
-      label: "Commercial",
-      show: hasCommercialRead,
-    },
-    {
-      href: "/workforce/admin/memberships/",
-      label: "Memberships",
-      show: view.capabilities["access.membership.read"] === true,
-    },
-    {
-      href: "/workforce/admin/audit/",
-      label: "Access audit",
-      show: view.capabilities["access.audit.read"] === true,
-    },
-  ];
+  const hierarchy = (view.overview.hierarchy ?? {}) as Record<string, unknown>;
+  const membershipAttention = (view.overview.membershipAttention ?? {}) as Record<
+    string,
+    unknown
+  >;
+  const recentAudit = (view.overview.recentAudit ?? {}) as {
+    items?: unknown[];
+    more?: boolean;
+  };
+  const operationalHealth = view.overview.operationalHealth as
+    | { available: true; status: Record<string, unknown> }
+    | { available: false; reason: string }
+    | undefined;
 
   return (
     <div data-testid="admin-hub" className="space-y-6">
       <PageHeader
         title="Administration overview"
-        description="Manage organization resources, memberships, and access audit from this workspace."
+        description="Authorized hierarchy, membership attention, recent access changes, and safe operational health."
       />
-      <p className="text-sm text-[var(--enterprise-text-secondary,#EBD9A6)]" data-testid="admin-hub-identity">
-        {view.signedInLabel === "Signed in" ? "Signed in" : `Signed in as ${view.signedInLabel}`}
+      <p
+        className="text-sm text-[var(--enterprise-text-secondary,#EBD9A6)]"
+        data-testid="admin-hub-identity"
+      >
+        {view.signedInLabel === "Signed in"
+          ? "Signed in"
+          : `Signed in as ${view.signedInLabel}`}
       </p>
-      <ul className="grid gap-3 sm:grid-cols-2">
-        {links
-          .filter((link) => link.show)
-          .map((link) => (
-            <li key={link.href}>
-              <a
-                className={cn(enterprisePanelClass, "block px-4 py-3 text-sm font-semibold hover:shadow-sm focus-ring")}
-                href={link.href}
-              >
-                {link.label}
-              </a>
-            </li>
-          ))}
-      </ul>
-      {!view.capabilities["access.membership.read"] && !view.capabilities["access.audit.read"] ? (
-        <Alert tone="info" title="Limited administration scope">
-          No membership or audit read capabilities are currently granted for your authorized scope.
-        </Alert>
-      ) : null}
+
+      <section className={cn(enterprisePanelClass, "space-y-3 p-4")} aria-labelledby="overview-hierarchy">
+        <h2 id="overview-hierarchy" className="text-base font-semibold">
+          Organization hierarchy
+        </h2>
+        <p className="text-sm text-[var(--enterprise-text-secondary,#5C4B24)]">
+          Counts are the full authorized totals. Listed samples may be truncated.
+        </p>
+        <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {(
+            [
+              ["Brands", hierarchy.brands],
+              ["Organizations", hierarchy.organizations],
+              ["Territories", hierarchy.territories],
+              ["Legal entities", hierarchy.legalEntities],
+              ["Outlets", hierarchy.outlets],
+            ] as const
+          ).map(([label, section]) => {
+            const display = hierarchyCountDisplay(section);
+            return (
+              <li key={label} className="rounded border border-[var(--enterprise-border,#D6C39A)] px-3 py-2 text-sm">
+                <span className="font-medium">{label}</span>
+                <span className="ml-2 tabular-nums" data-testid={`admin-overview-count-${label.toLowerCase().replace(/\s+/g, "-")}`}>
+                  {display.count}
+                </span>
+                {display.sampleHint ? (
+                  <StatusBadge tone="info" className="ml-2">
+                    {display.sampleHint}
+                  </StatusBadge>
+                ) : null}
+              </li>
+            );
+          })}
+        </ul>
+        <Button asChild variant="secondary">
+          <a href="/workforce/admin/resources/">Open Organization</a>
+        </Button>
+      </section>
+
+      <section className={cn(enterprisePanelClass, "space-y-3 p-4")} aria-labelledby="overview-membership">
+        <h2 id="overview-membership" className="text-base font-semibold">
+          Membership attention
+        </h2>
+        <ul className="flex flex-wrap gap-2 text-sm">
+          <li>
+            <StatusBadge tone="warning">Invited {String(membershipAttention.invited ?? 0)}</StatusBadge>
+          </li>
+          <li>
+            <StatusBadge tone="danger">Suspended {String(membershipAttention.suspended ?? 0)}</StatusBadge>
+          </li>
+          <li>
+            <StatusBadge tone="success">Active {String(membershipAttention.active ?? 0)}</StatusBadge>
+          </li>
+          <li>
+            <StatusBadge tone="neutral">Expired {String(membershipAttention.expired ?? 0)}</StatusBadge>
+          </li>
+        </ul>
+        {membershipAttention.more === true ? (
+          <p className="text-sm">More memberships need attention beyond this sample.</p>
+        ) : null}
+        <Button asChild variant="secondary">
+          <a href="/workforce/admin/memberships/">Open Workforce</a>
+        </Button>
+      </section>
+
+      <section className={cn(enterprisePanelClass, "space-y-3 p-4")} aria-labelledby="overview-audit">
+        <h2 id="overview-audit" className="text-base font-semibold">
+          Recent access changes
+        </h2>
+        {(recentAudit.items ?? []).length === 0 ? (
+          <p className="text-sm">No recent authorized audit events.</p>
+        ) : (
+          <ul className="space-y-1 text-sm">
+            {(recentAudit.items as Array<Record<string, unknown>>).map((event) => (
+              <li key={String(event.id)}>
+                {String(event.action)} · {String(event.targetType)} · {String(event.occurredAt)}
+              </li>
+            ))}
+          </ul>
+        )}
+        {recentAudit.more ? (
+          <StatusBadge tone="info">More audit history available</StatusBadge>
+        ) : null}
+        <Button asChild variant="secondary">
+          <a href="/workforce/admin/audit/">Open Audit</a>
+        </Button>
+      </section>
+
+      <section className={cn(enterprisePanelClass, "space-y-3 p-4")} aria-labelledby="overview-ops">
+        <h2 id="overview-ops" className="text-base font-semibold">
+          Operational health
+        </h2>
+        {!operationalHealth || operationalHealth.available === false ? (
+          <Alert tone="warning" title="Operational status unavailable">
+            Ops status requires order.read. Open System for hand-off navigation only.
+          </Alert>
+        ) : (
+          <p className="text-sm">
+            Ops service: {String(operationalHealth.status.service ?? "operations")} (composed read;
+            Admin does not own Ops workflows).
+          </p>
+        )}
+        <Button asChild variant="secondary">
+          <a href="/workforce/admin/system/">Open System</a>
+        </Button>
+      </section>
     </div>
   );
 }

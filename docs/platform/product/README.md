@@ -19,7 +19,7 @@ owned by [TESTING.md](../TESTING.md).
 | [Golden Journey registry](./golden-journeys.md) | Cross-capability business continuity references and their bounded status |
 | [Product Definition template](./templates/product-definition-template.md) | Required structure for a capability's product definition |
 | [IMP-036F Product Definition](./IMP-036F/product-definition.md) | First PD-1 per-IMP Product Definition (`PD-IMP-036F-DRAFT-1`); Product Definition Gate = PASS; Architecture Fit = PASS; Capability architecture = LOCKED; lifecycle = COMPLETE_AND_ACCEPTED / accepted (ROADMAP/STATE remain lifecycle authority) |
-| [IMP-036G Product Definition](./IMP-036G/product-definition.md) | Product Definition = APPROVED (`PD-IMP-036G-DRAFT-2`); Product Definition Gate = PASS; Architecture Fit = PASS; Capability architecture = LOCKED ([`../capabilities/IMP-036G-administration-console-v2.md`](../capabilities/IMP-036G-administration-console-v2.md)); Implementation = NOT_AUTHORIZED / NOT_STARTED (ROADMAP/STATE remain lifecycle authority) |
+| [IMP-036G Product Definition](./IMP-036G/product-definition.md) | Product Definition = APPROVED (`PD-IMP-036G-DRAFT-2`); Product Definition Gate = PASS; Architecture Fit = PASS; Capability architecture = LOCKED ([`../capabilities/IMP-036G-administration-console-v2.md`](../capabilities/IMP-036G-administration-console-v2.md)); Implementation = AUTHORIZED / STARTED / `IMPLEMENTATION_IN_PROGRESS` (ROADMAP/STATE remain lifecycle authority; not accepted) |
 | [IMP-037 Product Definition](./IMP-037/product-definition.md) | `PD-IMP-037-DRAFT-1`; **PRE-GATE DRAFT**; Product Definition Gate = **NOT_PERFORMED**; Architecture Fit = **NOT_PERFORMED**; Architecture = **NOT_LOCKED**; **IMP037_ACTIVATED: NO**; Implementation = NOT_AUTHORIZED / NOT_STARTED (ROADMAP/STATE remain lifecycle authority; `currentProductSlice` remains IMP-036G) |
 | Per-IMP Product Definition | Business outcome, journeys, acceptance slice, stories, scenarios, business rules, and explicit deferrals within existing authority |
 
@@ -30,7 +30,7 @@ and gate record. IMP-036F has a gate-passed Product Definition at
 Architecture Fit PASS / architecture LOCKED / COMPLETE_AND_ACCEPTED). IMP-036G has an **APPROVED** Product Definition at [`./IMP-036G/product-definition.md`](./IMP-036G/product-definition.md)
 (`PD-IMP-036G-DRAFT-2`; Product Definition Gate = PASS; Architecture Fit = PASS; Capability
 architecture = LOCKED at [`../capabilities/IMP-036G-administration-console-v2.md`](../capabilities/IMP-036G-administration-console-v2.md);
-Implementation = NOT_AUTHORIZED / NOT_STARTED). IMP-037 has a **PRE-GATE DRAFT** Product Definition at
+Implementation = AUTHORIZED / STARTED / `IMPLEMENTATION_IN_PROGRESS`; not accepted). IMP-037 has a **PRE-GATE DRAFT** Product Definition at
 [`./IMP-037/product-definition.md`](./IMP-037/product-definition.md) (`PD-IMP-037-DRAFT-1`; Product
 Definition Gate = NOT_PERFORMED; Architecture Fit = NOT_PERFORMED; **IMP037_ACTIVATED: NO**).
 Activation and formal lifecycle remain owned

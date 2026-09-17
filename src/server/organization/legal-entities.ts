@@ -3,7 +3,7 @@
  */
 import { randomUUID } from "node:crypto";
 
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import { legalEntitiesTable } from "../../platform/database/schema/organizations";
 import { insertAccessAuditEvent } from "../access-control/audit";
@@ -28,9 +28,14 @@ function rowToLegalEntity(row: typeof legalEntitiesTable.$inferSelect): LegalEnt
     code: row.code,
     name: row.name,
     status: row.status as LegalEntity["status"],
+    revision: row.revision,
     createdAt: new Date(row.createdAt),
     updatedAt: new Date(row.updatedAt),
   };
+}
+
+function staleLegalEntityRevision(): never {
+  throw new OrganizationConflictError({ message: "Legal entity revision is stale." });
 }
 
 export async function findLegalEntityById(
@@ -127,6 +132,9 @@ export async function updateLegalEntity(
       message: "legalEntityId must be a non-empty string.",
     });
   }
+  if (typeof input.expectedRevision !== "bigint") {
+    throw new OrganizationValidationError({ message: "expectedRevision must be a bigint." });
+  }
   if (input.name === undefined && input.status === undefined) {
     throw new OrganizationValidationError({
       message: "updateLegalEntity requires name and/or status.",
@@ -137,6 +145,9 @@ export async function updateLegalEntity(
   if (!existing) {
     throw new OrganizationNotFoundError("legal_entity");
   }
+  if (existing.revision !== input.expectedRevision) {
+    staleLegalEntityRevision();
+  }
 
   const name = input.name !== undefined ? normalizeNonEmptyName(input.name, "name") : existing.name;
   const status = input.status ?? existing.status;
@@ -145,10 +156,20 @@ export async function updateLegalEntity(
   }
 
   const now = new Date();
-  await context.db
+  const nextRevision = existing.revision + BigInt(1);
+  const updatedRows = await context.db
     .update(legalEntitiesTable)
-    .set({ name, status, updatedAt: now })
-    .where(eq(legalEntitiesTable.id, input.legalEntityId));
+    .set({ name, status, revision: nextRevision, updatedAt: now })
+    .where(
+      and(
+        eq(legalEntitiesTable.id, input.legalEntityId),
+        eq(legalEntitiesTable.revision, input.expectedRevision),
+      ),
+    )
+    .returning();
+  if (!updatedRows[0]) {
+    staleLegalEntityRevision();
+  }
 
   await insertAccessAuditEvent(context, {
     actorWorkforceUserId: input.actorWorkforceUserId ?? null,

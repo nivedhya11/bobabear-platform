@@ -42,7 +42,7 @@ import type {
 const DENY: AuthorizationDecision = Object.freeze({ allowed: false, code: "DENIED" });
 const ALLOW: AuthorizationDecision = Object.freeze({ allowed: true, code: "AUTHORIZED" });
 
-type EffectiveGrant = Readonly<{
+export type EffectiveGrant = Readonly<{
   permissionKey: PermissionKey;
   inheritanceMode: InheritanceMode;
   roleKey: RoleKey;

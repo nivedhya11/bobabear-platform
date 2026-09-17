@@ -32,14 +32,12 @@ type ShellState =
 
 function adminSectionItems(pathname: string, capabilities: Record<string, boolean>) {
   const normalized = normalizeWorkforcePath(pathname);
-  const items = [
-    { href: "/workforce/admin/", label: "Overview", current: normalized === "/workforce/admin/" },
-    {
-      href: "/workforce/admin/resources/",
-      label: "Resources",
-      current: normalized.startsWith("/workforce/admin/resources/"),
-    },
-  ];
+  const hasOrgRead =
+    capabilities["brand.read"] === true ||
+    capabilities["organization.read"] === true ||
+    capabilities["territory.read"] === true ||
+    capabilities["legal_entity.read"] === true ||
+    capabilities["outlet.read"] === true;
   const hasCommercialRead =
     capabilities["catalog.read"] === true ||
     capabilities["menu.read"] === true ||
@@ -47,25 +45,51 @@ function adminSectionItems(pathname: string, capabilities: Record<string, boolea
     capabilities["pricing.read"] === true ||
     capabilities["promotions.read"] === true ||
     capabilities["coupons.read"] === true;
-  if (hasCommercialRead) {
+
+  const items = [
+    { href: "/workforce/admin/", label: "Overview", current: normalized === "/workforce/admin/" },
+  ];
+  if (hasOrgRead) {
     items.push({
-      href: "/workforce/admin/commercial/",
-      label: "Commercial",
-      current: normalized.startsWith("/workforce/admin/commercial/"),
+      href: "/workforce/admin/resources/",
+      label: "Organization",
+      current: normalized.startsWith("/workforce/admin/resources/"),
     });
   }
   if (capabilities["access.membership.read"] === true) {
     items.push({
       href: "/workforce/admin/memberships/",
-      label: "Memberships",
+      label: "Workforce",
       current: normalized.startsWith("/workforce/admin/memberships/"),
+    });
+  }
+  if (
+    capabilities["access.role_assignment.read"] === true ||
+    capabilities["access.effective_permissions.read"] === true
+  ) {
+    items.push({
+      href: "/workforce/admin/access/",
+      label: "Access",
+      current: normalized.startsWith("/workforce/admin/access/"),
     });
   }
   if (capabilities["access.audit.read"] === true) {
     items.push({
       href: "/workforce/admin/audit/",
-      label: "Access audit",
+      label: "Audit",
       current: normalized.startsWith("/workforce/admin/audit/"),
+    });
+  }
+  items.push({
+    href: "/workforce/admin/system/",
+    label: "System",
+    current: normalized.startsWith("/workforce/admin/system/"),
+  });
+  if (hasCommercialRead) {
+    items.push({
+      href: "/workforce/admin/commercial/",
+      label: "Commercial",
+      current: normalized.startsWith("/workforce/admin/commercial/"),
     });
   }
   return items;

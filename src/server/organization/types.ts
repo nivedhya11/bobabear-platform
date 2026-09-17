@@ -1,5 +1,5 @@
 /**
- * Organization module domain types (IMP-011).
+ * Organization module domain types (IMP-011 / IMP-036G revision CAS).
  */
 import type { ResourceLifecycleStatus } from "../../shared/access-control";
 
@@ -8,6 +8,7 @@ export type Brand = Readonly<{
   code: string;
   name: string;
   status: ResourceLifecycleStatus;
+  revision: bigint;
   createdAt: Date;
   updatedAt: Date;
 }>;
@@ -18,6 +19,7 @@ export type Organization = Readonly<{
   code: string;
   name: string;
   status: ResourceLifecycleStatus;
+  revision: bigint;
   createdAt: Date;
   updatedAt: Date;
 }>;
@@ -28,6 +30,7 @@ export type Territory = Readonly<{
   code: string;
   name: string;
   status: ResourceLifecycleStatus;
+  revision: bigint;
   createdAt: Date;
   updatedAt: Date;
 }>;
@@ -39,6 +42,7 @@ export type LegalEntity = Readonly<{
   code: string;
   name: string;
   status: ResourceLifecycleStatus;
+  revision: bigint;
   createdAt: Date;
   updatedAt: Date;
 }>;
@@ -52,6 +56,7 @@ export type Outlet = Readonly<{
   code: string;
   name: string;
   status: ResourceLifecycleStatus;
+  revision: bigint;
   createdAt: Date;
   updatedAt: Date;
 }>;
@@ -65,6 +70,7 @@ export type CreateBrandInput = Readonly<{
 
 export type UpdateBrandInput = Readonly<{
   brandId: string;
+  expectedRevision: bigint;
   name?: string;
   status?: ResourceLifecycleStatus;
   actorWorkforceUserId?: string | null;
@@ -80,6 +86,7 @@ export type CreateOrganizationInput = Readonly<{
 
 export type UpdateOrganizationInput = Readonly<{
   organizationId: string;
+  expectedRevision: bigint;
   name?: string;
   status?: ResourceLifecycleStatus;
   actorWorkforceUserId?: string | null;
@@ -95,6 +102,7 @@ export type CreateTerritoryInput = Readonly<{
 
 export type UpdateTerritoryInput = Readonly<{
   territoryId: string;
+  expectedRevision: bigint;
   name?: string;
   status?: ResourceLifecycleStatus;
   actorWorkforceUserId?: string | null;
@@ -111,6 +119,7 @@ export type CreateLegalEntityInput = Readonly<{
 
 export type UpdateLegalEntityInput = Readonly<{
   legalEntityId: string;
+  expectedRevision: bigint;
   name?: string;
   status?: ResourceLifecycleStatus;
   actorWorkforceUserId?: string | null;
@@ -129,6 +138,7 @@ export type CreateOutletInput = Readonly<{
 
 export type UpdateOutletInput = Readonly<{
   outletId: string;
+  expectedRevision: bigint;
   name?: string;
   status?: ResourceLifecycleStatus;
   actorWorkforceUserId?: string | null;
