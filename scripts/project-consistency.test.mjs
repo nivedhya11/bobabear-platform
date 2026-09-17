@@ -128,6 +128,7 @@ import {
   evaluateImp036gImplementationCompletionCheckpoint,
   evaluateImp036gCompletedCapabilityArchitecture,
   evaluateImp036gCompletedProductDefinition,
+  evaluateImp036gCompletedProductIndex,
   evaluateImp036fImplementationAuthorizationCheckpoint,
   evaluateImp036fAuthorizedCapabilityArchitecture,
   evaluateImp036fAuthorizedProductDefinition,
@@ -6577,10 +6578,10 @@ describe("canonical authority history compression", () => {
 
     const roadmap = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
     const state = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
-    assert.match(roadmap, /"roadmapVersion": "GTM-R129"/);
-    assert.match(state, /"stateVersion": "STATE-R127"/);
+    assert.match(roadmap, /"roadmapVersion": "GTM-R128"/);
+    assert.match(state, /"stateVersion": "STATE-R126"/);
     assert.match(state, /"acceptedThrough": "IMP-036F"/);
-    assert.match(state, /"pendingAcceptance": "IMP-036G"/);
+    assert.match(state, /"pendingAcceptance": "NONE"/);
     assert.match(state, /"currentProductSlice": "IMP-036G"/);
     assert.match(state, /"nextProductSlice": "IMP-037"/);
     assert.match(roadmap, /IMP-036E_ACCEPTED:\s*YES/);
@@ -6608,26 +6609,12 @@ describe("canonical authority history compression", () => {
     assert.match(roadmap, /IMP036G_PRODUCT_DEFINITION_GATE:\s*PASS/);
     assert.match(roadmap, /IMP036G_ARCHITECTURE_FIT:\s*PASS/);
     assert.match(roadmap, /IMP036G_ARCHITECTURE_LOCKED:\s*YES/);
-    assert.match(roadmap, /IMP-036G:\s*IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE/);
-    assert.match(state, /IMP-036G:\s*IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE/);
-    assert.match(roadmap, /IMP036G_IMPLEMENTATION:\s*AUTHORIZED \/ STARTED \/ COMPLETE/);
+    assert.match(roadmap, /IMP-036G:\s*IMPLEMENTATION_IN_PROGRESS/);
+    assert.match(state, /IMP-036G:\s*IMPLEMENTATION_IN_PROGRESS/);
     assert.match(roadmap, /IMP036G_IMPLEMENTATION_AUTHORIZED:\s*YES/);
     assert.match(roadmap, /IMP036G_STARTED:\s*YES/);
-    assert.match(roadmap, /IMP036G_IMPLEMENTATION_COMPLETE:\s*YES/);
     assert.match(state, /IMP036G_IMPLEMENTATION_AUTHORIZED:\s*YES/);
     assert.match(state, /IMP036G_STARTED:\s*YES/);
-    assert.match(state, /IMP036G_IMPLEMENTATION_COMPLETE:\s*YES/);
-    assert.match(state, /IMP-036G_IMPLEMENTATION_COMPLETE:\s*YES/);
-    assert.match(roadmap, /IMP036G_IMPLEMENTATION_EVIDENCE:\s*COMPLETE/);
-    assert.match(roadmap, /IMP_036G_INDEPENDENT_IMPLEMENTATION_REVIEW:\s*PASS/);
-    assert.match(roadmap, /IMP036G_IMPLEMENTATION_MERGE_SHA:\s*c35c9eab6a30ec6ce745cefd75c523181326f360/);
-    assert.match(roadmap, /IMP036G_IMPLEMENTATION_TREE:\s*266fe3b07811f6942e76cac155d58ba07daabe56/);
-    assert.match(roadmap, /IMP036G_REVIEWED_CANDIDATE_HEAD:\s*7a013155a98529d4527e7b6c0358642e5cd9d806/);
-    assert.match(roadmap, /IMP036G_REVIEWED_CANDIDATE_TREE:\s*266fe3b07811f6942e76cac155d58ba07daabe56/);
-    assert.match(roadmap, /IMP036G_EXACT_MAIN_CI:\s*35214215500/);
-    assert.match(roadmap, /IMP036G_EXACT_MAIN_CI_RESULT:\s*SUCCESS/);
-    assert.match(state, /IMP036G_IMPLEMENTATION_EVIDENCE:\s*COMPLETE/);
-    assert.match(state, /IMP_036G_INDEPENDENT_IMPLEMENTATION_REVIEW:\s*PASS/);
     assert.match(roadmap, /IMP036G_ACCEPTED:\s*NO/);
     assert.match(roadmap, /IMP036G_FOUNDER_UAT:\s*NOT_PERFORMED/);
     assert.match(state, /Current Product Implementation:\s*IMP-036G/);
@@ -6641,23 +6628,23 @@ describe("canonical authority history compression", () => {
     const current = currentAuthorityBlob({ text: roadmap }, { text: state });
     const evidence = authorityEvidenceBlob({ text: roadmap }, { text: state });
     assert.ok(evidence.includes(hist.roadmapText.slice(0, 80)));
-    assert.ok(current.includes("GTM-R129"));
+    assert.ok(current.includes("GTM-R128"));
     assert.ok(!current.includes('"roadmapVersion": "GTM-R113"'));
     // Stale historical claim may exist in snapshot evidence without overriding CURRENT metadata.
     assert.ok(/pendingAcceptance:\s*NONE/.test(hist.stateText) || /Pending Acceptance:\s+NONE/.test(hist.stateText));
-    assert.match(state, /"pendingAcceptance": "IMP-036G"/);
+    assert.match(state, /"pendingAcceptance": "NONE"/);
     // Historical snapshots may retain pre-correction FOUNDER_STAGING_DEPLOYMENT: NOT_PERFORMED.
     assert.match(hist.roadmapText, /FOUNDER_STAGING_DEPLOYMENT:\s*NOT_PERFORMED/);
     assert.ok(current.includes("FOUNDER_STAGING_STATUS: FOUNDER_UAT_COMPLETE"));
     assert.ok(!/FOUNDER_STAGING_DEPLOYMENT:\s*NOT_PERFORMED/.test(current));
   });
 
-  it("passes CURRENT authority checks at the IMP-036G Implementation Completion checkpoint", () => {
+  it("passes CURRENT authority checks at the IMP-036G Implementation Start checkpoint", () => {
     const findings = runProjectConsistency();
     const failures = findings.filter((f) => !f.ok);
     assert.equal(failures.length, 0, failures.map((f) => `[${f.code}] ${f.message}`).join("\n"));
     const messages = findings.filter((f) => f.ok).map((f) => f.message);
-    assert.ok(messages.some((m) => m.includes("IMP-036G implementation completion persistence valid")));
+    assert.ok(messages.some((m) => m.includes("IMP-036G implementation authorization + start persistence valid")));
     assert.ok(messages.some((m) => m.includes("CURRENT authority anti-stale checks OK")));
     assert.ok(messages.some((m) => m.includes("historical authority corpus loaded")));
   });
@@ -9521,6 +9508,17 @@ CANONICAL_ANCHORS = VISION-1; GTM-R129; STATE-R127; ARCH-R19; DR-15; PD-1
 Readiness: READY_FOR_IMPLEMENTATION (Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation AUTHORIZED / STARTED / COMPLETE at GTM-R129 / STATE-R127)
 `;
 
+  const validCompletedProductIndex = `# Product artifacts
+
+| Artifact | Owns |
+|---|---|
+| [IMP-036G Product Definition](./IMP-036G/product-definition.md) | Product Definition = APPROVED (\`PD-IMP-036G-DRAFT-2\`); Implementation = AUTHORIZED / STARTED / COMPLETE / \`IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE\` (ROADMAP/STATE remain lifecycle authority; not accepted) |
+| [IMP-037 Product Definition](./IMP-037/product-definition.md) | \`PD-IMP-037-DRAFT-1\`; **PRE-GATE DRAFT**; **IMP037_ACTIVATED: NO**; Implementation = NOT_AUTHORIZED / NOT_STARTED |
+
+IMP-036G has an **APPROVED** Product Definition. Implementation = AUTHORIZED / STARTED / COMPLETE / \`IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE\`; not accepted.
+`;
+  completionBase.productIndexText = validCompletedProductIndex;
+
   it("registers GTM-R129 / STATE-R127 as implementation completion only", () => {
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R129", "STATE-R127", "imp036gCompletion"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R129", "STATE-R127", "imp036gImplementationStart"), false);
@@ -9722,5 +9720,60 @@ Readiness: READY_FOR_IMPLEMENTATION (Product Definition Gate PASS; Architecture 
       }).ok,
       false,
     );
+  });
+
+  it("requires the product index to record IMP-036G IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE", () => {
+    assert.deepEqual(evaluateImp036gCompletedProductIndex(validCompletedProductIndex), { ok: true });
+    assert.deepEqual(
+      evaluateImp036gImplementationCompletionCheckpoint({
+        ...completionBase,
+        productDefinitionText: validCompletedPd,
+        capabilityText: validCompletedCapability,
+        productIndexText: validCompletedProductIndex,
+      }),
+      { ok: true },
+    );
+  });
+
+  it("rejects a missing product index at the R129/S127 completion checkpoint", () => {
+    assert.equal(evaluateImp036gCompletedProductIndex("").ok, false);
+    assert.equal(
+      evaluateImp036gImplementationCompletionCheckpoint({
+        ...completionBase,
+        productDefinitionText: validCompletedPd,
+        capabilityText: validCompletedCapability,
+        productIndexText: "",
+      }).code,
+      "IMP036G_PRODUCT_INDEX_ABSENT",
+    );
+  });
+
+  it("rejects a stale IMP-036G IMPLEMENTATION_IN_PROGRESS product index at R129/S127", () => {
+    const liveIndex = readFileSync(new URL("../docs/platform/product/README.md", import.meta.url), "utf8");
+    const live = evaluateImp036gCompletedProductIndex(liveIndex);
+    assert.equal(live.ok, false);
+    assert.ok(
+      live.code === "IMP036G_PRODUCT_INDEX_STALE" || live.code === "IMP036G_PRODUCT_INDEX_LIFECYCLE",
+      live.code,
+    );
+    assert.equal(
+      evaluateImp036gImplementationCompletionCheckpoint({
+        ...completionBase,
+        productDefinitionText: validCompletedPd,
+        capabilityText: validCompletedCapability,
+        productIndexText: liveIndex,
+      }).ok,
+      false,
+    );
+    const mixedStale = validCompletedProductIndex.replace(
+      "Implementation = AUTHORIZED / STARTED / COMPLETE / `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`; not accepted.",
+      "Implementation = AUTHORIZED / STARTED / `IMPLEMENTATION_IN_PROGRESS`; not accepted.",
+    );
+    assert.equal(evaluateImp036gCompletedProductIndex(mixedStale).code, "IMP036G_PRODUCT_INDEX_STALE");
+  });
+
+  it("does not require IMP-037 activation in the completed product index", () => {
+    assert.match(validCompletedProductIndex, /IMP037_ACTIVATED: NO/);
+    assert.deepEqual(evaluateImp036gCompletedProductIndex(validCompletedProductIndex), { ok: true });
   });
 });

@@ -22675,6 +22675,10 @@ export function evaluateImp036gImplementationCompletionCheckpoint(checkpoint) {
     typeof checkpoint.productDefinitionText === "string" ? checkpoint.productDefinitionText : "",
   );
   if (!completedPd.ok) return completedPd;
+  const completedIndex = evaluateImp036gCompletedProductIndex(
+    typeof checkpoint.productIndexText === "string" ? checkpoint.productIndexText : "",
+  );
+  if (!completedIndex.ok) return completedIndex;
   return { ok: true };
 }
 
@@ -22843,6 +22847,62 @@ export function evaluateImp036gCompletedProductDefinition(text) {
   return { ok: true };
 }
 
+/**
+ * Validate the current product index at IMP-036G implementation completion (R129/S127).
+ * ROADMAP/STATE remain lifecycle authority; the index must not retain a stale
+ * IMPLEMENTATION_IN_PROGRESS description for IMP-036G. IMP-037 activation is unchanged.
+ * @param {string} text
+ */
+export function evaluateImp036gCompletedProductIndex(text) {
+  const body = String(text ?? "");
+  if (!body.trim()) {
+    return {
+      ok: false,
+      code: "IMP036G_PRODUCT_INDEX_ABSENT",
+      message: "product index must exist at IMP-036G implementation completion checkpoint",
+    };
+  }
+
+  const row = body.match(/^\| \[IMP-036G Product Definition\][^\n]*\|[^\n]*\|/m)?.[0] ?? "";
+  if (!row) {
+    return {
+      ok: false,
+      code: "IMP036G_PRODUCT_INDEX_ROW",
+      message: "product index must include a current IMP-036G Product Definition row",
+    };
+  }
+  if (!/IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE/.test(row)) {
+    return {
+      ok: false,
+      code: "IMP036G_PRODUCT_INDEX_LIFECYCLE",
+      message:
+        "at GTM-R129 / STATE-R127 the product index must record IMP-036G IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE",
+    };
+  }
+  if (/IMPLEMENTATION_IN_PROGRESS/.test(row)) {
+    return {
+      ok: false,
+      code: "IMP036G_PRODUCT_INDEX_STALE",
+      message:
+        "product index must not retain IMP-036G IMPLEMENTATION_IN_PROGRESS after implementation completion",
+    };
+  }
+
+  const staleLines = body.split(/\r?\n/).filter(
+    (line) => /IMP-036G/.test(line) && /IMPLEMENTATION_IN_PROGRESS/.test(line) && !/IMP-037/.test(line),
+  );
+  if (staleLines.length > 0) {
+    return {
+      ok: false,
+      code: "IMP036G_PRODUCT_INDEX_STALE",
+      message:
+        "product index must not retain IMP-036G IMPLEMENTATION_IN_PROGRESS after implementation completion",
+    };
+  }
+
+  return { ok: true };
+}
+
 function checkImp036gImplementationCompletion(roadmap, state, architecture, decision) {
   if (!isImp036gImplementationCompletionCheckpoint(roadmap, state)) return;
 
@@ -22868,6 +22928,10 @@ function checkImp036gImplementationCompletion(roadmap, state, architecture, deci
   const productDefRel = "docs/platform/product/IMP-036G/product-definition.md";
   const productDefAbs = resolveExactRelativeFile(productDefRel);
   const productDefinitionText = productDefAbs ? readFileSync(productDefAbs, "utf8") : "";
+
+  const productIndexRel = "docs/platform/product/README.md";
+  const productIndexAbs = resolveExactRelativeFile(productIndexRel);
+  const productIndexText = productIndexAbs ? readFileSync(productIndexAbs, "utf8") : "";
 
   const capabilityRel = "docs/platform/capabilities/IMP-036G-administration-console-v2.md";
   const capabilityAbs = resolveExactRelativeFile(capabilityRel);
@@ -23111,6 +23175,7 @@ function checkImp036gImplementationCompletion(roadmap, state, architecture, deci
     productDefinitionExists: productDefAbs !== null,
     capabilityArtifactExists: capabilityAbs !== null,
     productDefinitionText,
+    productIndexText,
     capabilityText,
     d374Exists: /\|\s*D-374\s*\|/.test(decision?.text ?? "") || /###\s*D-374\b/.test(decision?.text ?? ""),
     archR20Exists: /architectureVersion":\s*"ARCH-R20"/.test(architecture?.text ?? "") || architecture?.meta?.architectureVersion === "ARCH-R20",
