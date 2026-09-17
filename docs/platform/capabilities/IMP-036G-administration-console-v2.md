@@ -6,9 +6,10 @@
   "title": "Administration Console V2",
   "architectureLock": "ARCHITECTURE_LOCKED",
   "architectureFitResult": "PASS",
-  "implementation": "AUTHORIZED / STARTED",
+  "implementation": "AUTHORIZED / STARTED / COMPLETE",
   "implementationAuthorized": true,
   "implementationStarted": true,
+  "implementationComplete": true,
   "impAccepted": false,
   "founderUATRequired": true,
   "schemaChangeRequired": true,
@@ -21,13 +22,13 @@
 
 # IMP-036G — Administration Console V2
 
-## Capability Architecture — ARCHITECTURE_LOCKED / IMPLEMENTATION AUTHORIZED / STARTED
+## Capability Architecture — ARCHITECTURE_LOCKED / IMPLEMENTATION AUTHORIZED / STARTED / COMPLETE
 
 This document is the **locked capability architecture** for IMP-036G. It received Architecture Fit
 **PASS** and is the sole CURRENT capability-architecture authority for this slice. Implementation is
-separately **AUTHORIZED** and **STARTED** at GTM-R128 / STATE-R126 as a bounded autonomous
-implementation sprint; that start does **not** accept the IMP, perform Founder UAT, or activate
-IMP-037.
+**AUTHORIZED**, **STARTED**, and **COMPLETE** at GTM-R129 / STATE-R127
+(`IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`); that completion does **not** accept the IMP, perform
+Founder UAT, or activate IMP-037.
 
 Supporting experience planning must not compete with this lock:
 [`docs/platform/experience/enterprise-experience/IMP-036G-administration-console-v2.md`](../experience/enterprise-experience/IMP-036G-administration-console-v2.md)
@@ -41,34 +42,44 @@ IMP036G_ARCHITECTURE_LOCKED = YES
 ARCHITECTURE_LOCKED = YES
 IMPLEMENTATION_AUTHORIZED = YES
 IMPLEMENTATION_STARTED = YES
+IMPLEMENTATION_COMPLETE = YES
 IMP036G_IMPLEMENTATION_AUTHORIZED = YES
 IMP036G_STARTED = YES
-IMP036G_IMPLEMENTATION_COMPLETE = NO
+IMP036G_IMPLEMENTATION_COMPLETE = YES
 IMP036G_ACCEPTED = NO
 IMP036G_FOUNDER_UAT_REQUIRED = YES
 IMP036G_FOUNDER_UAT = NOT_PERFORMED
 IMP037_ACTIVATED = NO
-CANONICAL_ROADMAP_STATE = GTM-R128 / STATE-R126
+CANONICAL_ROADMAP_STATE = GTM-R129 / STATE-R127
 PRODUCT_DEFINITION = PD-IMP-036G-DRAFT-2 APPROVED (Gate PASS; Architecture Fit PASS; architecture LOCKED)
-AUTHORIZED + STARTED = IMPLEMENTATION_IN_PROGRESS (not complete; not accepted)
+AUTHORIZED + STARTED + COMPLETE = IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE (not accepted)
+IMP-036G: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
+IMP036G_IMPLEMENTATION_MERGE_SHA = c35c9eab6a30ec6ce745cefd75c523181326f360
+IMP036G_IMPLEMENTATION_TREE = 266fe3b07811f6942e76cac155d58ba07daabe56
+IMP036G_REVIEWED_CANDIDATE_HEAD = 7a013155a98529d4527e7b6c0358642e5cd9d806
+IMP036G_REVIEWED_CANDIDATE_TREE = 266fe3b07811f6942e76cac155d58ba07daabe56
+IMP036G_EXACT_MAIN_CI = 35214215500
+IMP036G_EXACT_MAIN_CI_RESULT = SUCCESS
+IMP036G_IMPLEMENTATION_EVIDENCE = COMPLETE
+IMP_036G_INDEPENDENT_IMPLEMENTATION_REVIEW = PASS
 ```
 
 | Field | Value |
 |---|---|
 | Architecture lock | `ARCHITECTURE_LOCKED` |
-| Formal ROADMAP lifecycle | `IMPLEMENTATION_IN_PROGRESS` (`AUTHORIZED` / `STARTED`) |
+| Formal ROADMAP lifecycle | `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` (`AUTHORIZED` / `STARTED` / `COMPLETE`) |
 | Product Definition | `PD-IMP-036G-DRAFT-2` **APPROVED**; Product Definition Gate **PASS** |
 | Architecture Fit | **PASS** (performed; locked) |
-| Implementation | **AUTHORIZED** / **STARTED** (not complete) |
+| Implementation | **AUTHORIZED** / **STARTED** / **COMPLETE** (not accepted) |
 | Accepted | **NO** |
 | Founder UAT required | **YES** |
 | Founder UAT | **NOT_PERFORMED** |
-| Schema change required (architecture conclusion) | **YES** (additive hierarchy revision CAS — future implementation only) |
+| Schema change required (architecture conclusion) | **YES** (additive hierarchy revision CAS — implemented under this lock) |
 | New D-number | **NO** (`D374_REQUIRED_FOR_LOCK = NO`) |
 | Global ARCH bump | **NO** (`ARCH_R20_REQUIRED = NO`) |
 | New permission / role / auth model / deployable | **NO** |
 | API extension required | **YES** |
-| Migration required | **YES** (forward-only additive — **not** created by this lock) |
+| Migration required | **YES** (forward-only additive) |
 
 ```text
 FITS_WITHIN_ARCH_R19: YES
@@ -112,13 +123,14 @@ The persistence commit that records this lock is a **subsequent governance commi
 the Fit-evaluated candidate above. Do not treat lock-persistence HEAD/tree/fingerprint as the Fit
 review candidate.
 
-Canonical anchors for CURRENT lock + implementation-start authority (GTM-R128 / STATE-R126; the
-architecture lock itself was persisted at the historical GTM-R127 / STATE-R125 predecessor tip):
+Canonical anchors for CURRENT lock + implementation-completion authority (GTM-R129 / STATE-R127;
+architecture lock itself was persisted at the historical GTM-R127 / STATE-R125 predecessor tip;
+implementation authorization/start at GTM-R128 / STATE-R126):
 
 ```text
 VISION = VISION-1
-ROADMAP = GTM-R128
-STATE = STATE-R126
+ROADMAP = GTM-R129
+STATE = STATE-R127
 ARCHITECTURE = ARCH-R19
 DECISION REGISTER = DR-15
 PRODUCT DELIVERY = PD-1
@@ -134,7 +146,7 @@ Depends on = IMP-011, IMP-010, IMP-029, IMP-030, IMP-035, IMP-036, IMP-036A, IMP
 IMP036G_ARCHITECTURE_LOCKED = YES
 IMP036G_IMPLEMENTATION_AUTHORIZED = YES
 IMP036G_STARTED = YES
-IMP036G_IMPLEMENTATION_COMPLETE = NO
+IMP036G_IMPLEMENTATION_COMPLETE = YES
 IMP036G_ACCEPTED = NO
 IMP037_ACTIVATED = NO
 ```
@@ -753,7 +765,7 @@ Architecture lock chooses mechanisms; it does not weaken mandatory ACs.
 
 ```text
 STORY_COMPLETE != IMP_ACCEPTED
-STORIES_IMPLEMENTED = IN_PROGRESS (implementation authorized and started; not complete; not accepted)
+STORIES_IMPLEMENTED = COMPLETE (implementation AUTHORIZED / STARTED / COMPLETE; not accepted; Founder UAT NOT_PERFORMED)
 ```
 
 ---
@@ -838,8 +850,8 @@ status hand-off).
 
 Founder UAT may occur **only after**:
 
-1. the authorized implementation (started at GTM-R128 / STATE-R126) is completed for the acceptance
-   candidate;
+1. the authorized implementation is completed for the acceptance candidate (recorded at
+   GTM-R129 / STATE-R127);
 2. independent technical acceptance passes for that exact candidate;
 3. UAT deployment is performed from the exact independently accepted candidate (canonical repository,
    branch/HEAD/tree/fingerprint rules per AGENTS.md Founder UAT gate).
@@ -853,40 +865,52 @@ This capability artifact does **not** perform, schedule, or satisfy Founder UAT.
 
 ---
 
-## 27. Implementation authorization and start boundary
+## 27. Implementation completion boundary
 
 ```text
 ARCHITECTURE_LOCKED = YES
 IMPLEMENTATION_AUTHORIZED = YES
 IMPLEMENTATION_STARTED = YES
+IMPLEMENTATION_COMPLETE = YES
 IMP036G_IMPLEMENTATION_AUTHORIZED = YES
 IMP036G_STARTED = YES
-IMP036G_IMPLEMENTATION_COMPLETE = NO
+IMP036G_IMPLEMENTATION_COMPLETE = YES
 IMP036G_ACCEPTED = NO
 IMP037_ACTIVATED = NO
-AUTHORIZED + STARTED = IMPLEMENTATION_IN_PROGRESS (not complete; not accepted)
+AUTHORIZED + STARTED + COMPLETE = IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE (not accepted)
+IMP036G_IMPLEMENTATION_MERGE_SHA = c35c9eab6a30ec6ce745cefd75c523181326f360
+IMP036G_IMPLEMENTATION_TREE = 266fe3b07811f6942e76cac155d58ba07daabe56
+IMP036G_REVIEWED_CANDIDATE_HEAD = 7a013155a98529d4527e7b6c0358642e5cd9d806
+IMP036G_REVIEWED_CANDIDATE_TREE = 266fe3b07811f6942e76cac155d58ba07daabe56
+IMP036G_EXACT_MAIN_CI = 35214215500
+IMP036G_EXACT_MAIN_CI_RESULT = SUCCESS
+IMP036G_IMPLEMENTATION_EVIDENCE = COMPLETE
+IMP_036G_INDEPENDENT_IMPLEMENTATION_REVIEW = PASS
+CANONICAL_ROADMAP_STATE = GTM-R129 / STATE-R127
 ```
 
-| Action | Covered by CURRENT ROADMAP/STATE authorization (GTM-R128 / STATE-R126)? |
+| Action | Covered by CURRENT ROADMAP/STATE completion (GTM-R129 / STATE-R127)? |
 |---|---|
 | Persist locked capability architecture | YES (governance artifact) |
-| Implement runtime code / migrations / UI within this lock | **YES** — bounded autonomous implementation sprint |
-| Claim `IMPLEMENTATION_COMPLETE` | **NO** — separate completion evidence + independent review |
+| Implement runtime code / migrations / UI within this lock | YES — completed under prior authorization |
+| Claim `IMPLEMENTATION_COMPLETE` | **YES** — evidenced; pending acceptance |
 | Accept IMP-036G | **NO** |
 | Activate IMP-037 | **NO** |
 | Founder UAT | **NO** / `NOT_PERFORMED` |
 
 No unresolved mutually exclusive architecture alternatives remain open for V1 lock. Future
-implementation must follow this lock; mechanism invention that contradicts locked models
+acceptance must follow this lock; mechanism invention that contradicts locked models
 (`AUTHORIZED_SET_CURSOR_CONTINUATION`, `EXTEND_EXISTING_ADMIN_EFFECTIVE_PERMISSIONS_READ`,
 `SERVER_ISSUED_REVISION_CAS`, Ops status reuse, Expire mapping) is out of bounds without a new Fit.
 
 ---
 
-## 28. Historical GTM-R127 architecture lock provenance (superseded predecessor tip; not CURRENT lifecycle)
+## 28. Historical GTM-R128 / GTM-R127 provenance (superseded predecessor tips; not CURRENT lifecycle)
 
-Historical GTM-R127 / STATE-R125 record. Preserved for lock provenance only. CURRENT lifecycle is
-`IMPLEMENTATION_IN_PROGRESS` at GTM-R128 / STATE-R126 (see §1 and §27).
+Historical GTM-R128 / STATE-R126 recorded implementation authorization and start. Historical
+GTM-R127 / STATE-R125 recorded Architecture Fit PASS / lock. Preserved for provenance only.
+CURRENT lifecycle is `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` at GTM-R129 / STATE-R127
+(see §1 and §27).
 
 ```text
 ARCHITECTURE_FIT = PASS
@@ -916,7 +940,8 @@ fingerprint `e8eb68ebf06aea7ab50305f8e8700d450f9c5e9fd1ae24c91d4d81cfd157eb2c`).
 
 ```text
 ARCHITECTURE_LOCKED != IMPLEMENTATION_AUTHORIZED
-This lock does not authorize implementation.
+Historical lock tip did not authorize implementation; authorization/start followed at GTM-R128 /
+STATE-R126; completion recorded at GTM-R129 / STATE-R127.
 ```
 
 ---
@@ -929,7 +954,7 @@ This lock does not authorize implementation.
 | Authority | `CAPABILITY_ARCHITECTURE` |
 | Status | `CURRENT` |
 | Architecture | `ARCHITECTURE_LOCKED` |
-| Implementation | `AUTHORIZED` / `STARTED` (not complete; not accepted) |
+| Implementation | `AUTHORIZED` / `STARTED` / `COMPLETE` (not accepted) |
 | Product Definition | `PD-IMP-036G-DRAFT-2` |
 | Binding decisions | ADR-005, D-358, D-372, D-373 |
 | Open mutually exclusive architecture alternatives | **NONE** |
