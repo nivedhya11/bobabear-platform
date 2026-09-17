@@ -34,6 +34,7 @@ import {
   requireAuthorization,
   revokeRole,
   transitionMembership,
+  AuthorizationError,
   WorkforcePrincipalError,
   type AccessAuditEvent,
   type AccessMembership,
@@ -47,8 +48,7 @@ import { loadEffectiveGrants } from "../access-control/authorize";
 import { assignmentCoversResource } from "../access-control/scope";
 import { findWorkforceUserByEmail } from "../auth/workforce/operator/lifecycle";
 import { actorHasOrderCapability } from "../order/authorize";
-import { getMetricsSnapshot } from "../../platform/observability";
-import { loadOperationalQueueBacklog } from "../persistence/operational-counts";
+import { loadOperationalStatusProjection } from "../operations/operational-status";
 import {
   createBrand,
   createLegalEntity,
@@ -1316,6 +1316,11 @@ export async function adminListAuditEvents(
   }
 
   return persistence.withContext(async (context) => {
+    const effective = await getEffectivePermissions(context, { actor: principal });
+    if (!effective.includes("access.audit.read")) {
+      throw new AuthorizationError();
+    }
+
     const all = await listAccessAuditEvents(context);
     let eligible = await authorizeEligibleSet(
       context,
@@ -1449,16 +1454,18 @@ export async function adminGetOverview(
     if (!canReadOps) {
       operationalHealth = { available: false, reason: "unauthorized" };
     } else {
-      const [queues, metrics] = await Promise.all([
-        loadOperationalQueueBacklog(persistence),
-        Promise.resolve(getMetricsSnapshot()),
-      ]);
+      const status = await loadOperationalStatusProjection({
+        persistence,
+        serviceName: "operations",
+      });
       operationalHealth = {
         available: true,
         status: {
-          service: "operations",
-          metrics,
-          queues,
+          service: status.service,
+          uptimeSeconds: status.uptimeSeconds,
+          metrics: status.metrics,
+          workers: status.workers,
+          queues: status.queues,
         },
       };
     }
