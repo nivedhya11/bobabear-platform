@@ -15,7 +15,7 @@
   "implementationAuthorized": "NO",
   "implementationStarted": "NO",
   "impAccepted": "NO",
-  "imp037Activated": "NO",
+  "imp037Activated": "YES",
   "founderUatRequired": "YES",
   "founderUatStatus": "NOT_PERFORMED",
   "productDecisions": 7,
@@ -43,7 +43,7 @@ Gate Result: NOT_PERFORMED
 ARCHITECTURE_FIT_EXECUTION: NOT_PERFORMED
 ARCHITECTURE_FIT: NOT_PERFORMED
 ARCHITECTURE_LOCKED: NO
-IMP037_ACTIVATED: NO
+IMP037_ACTIVATED: YES
 IMPLEMENTATION_AUTHORIZED: NO
 IMPLEMENTATION_STARTED: NO
 IMP037_ACCEPTED: NO
@@ -58,7 +58,7 @@ PRODUCT_DEFINITION_GATE_READY: candidate result subject to independent pre-gate 
 This artifact is the **gate-ready PRE-GATE Product Definition candidate** for
 `PD-IMP-037-DRAFT-1`. It persists Founder-approved product requirements for IMP-037
 (`APPROVE_ALL_7_RECOMMENDATIONS`, 2026-09-17) without executing the Product Definition Gate,
-Architecture Fit, architecture lock, activation, or implementation authorization.
+Architecture Fit, architecture lock, or implementation authorization.
 
 ```text
 PRODUCT REQUIREMENT
@@ -79,10 +79,13 @@ IMP036E_LIFECYCLE_CHANGED = NO
 PD1_DID_NOT_ACTIVATE_IMP036F_AT_ADOPTION = YES
 ```
 
-Lifecycle truth remains ROADMAP/STATE only (`GTM-R130` / `STATE-R128`):
-`acceptedThrough = IMP-036G`; `currentProductSlice = NONE`; `pendingAcceptance = NONE`;
-`nextProductSlice = IMP-037` (`PLANNED` / `NOT_ACTIVATED` / `NOT_AUTHORIZED` / `NOT_STARTED`;
-`IMP037_ACTIVATED: NO`). Presence of this PRE-GATE draft does **not** activate IMP-037.
+Lifecycle truth remains ROADMAP/STATE only (`GTM-R131` / `STATE-R129`):
+`acceptedThrough = IMP-036G`; `currentProductSlice = IMP-037`; `pendingAcceptance = NONE`;
+`nextProductSlice = IMP-038` (`PLANNED` / `NOT_ACTIVATED` / `NOT_AUTHORIZED` / `NOT_STARTED`;
+`IMP038_ACTIVATED: NO`). Formal IMP-037 lifecycle remains `PLANNED` /
+`NOT_AUTHORIZED` / `NOT_STARTED` with `IMP037_ACTIVATED: YES`. This PRE-GATE draft remains
+ungated (`Gate NOT_PERFORMED`; Architecture Fit NOT_PERFORMED; architecture NOT_LOCKED;
+implementation NOT_AUTHORIZED / NOT_STARTED).
 
 ---
 
@@ -94,9 +97,9 @@ Lifecycle truth remains ROADMAP/STATE only (`GTM-R130` / `STATE-R128`):
 | Product Definition version / document status | `PD-IMP-037-DRAFT-1`; **Document status: PRE-GATE DRAFT**; **PRE-GATE DRAFT: YES** |
 | Product owner / approval evidence | Founder / product governance human authority; Founder decisions FD-037-01…07 **APPROVED** via `APPROVE_ALL_7_RECOMMENDATIONS` (2026-09-17). Product Definition Gate **NOT_PERFORMED**. |
 | Process / verification policy | `PD-1` / `TEST-1` |
-| Canonical anchors | VISION-1; ROADMAP GTM-R130; STATE STATE-R128; ARCH-R19; DR-15; PD-1; TEST-1; PERSONA-1; GJ-1 |
-| Repository candidate | Canonical path `/home/ajoshi/repos/boba-bear-platform`; base `origin/main` `ee82a8cb783cc618f6f1f521964e72deaad677a0` / tree `1b1eaf138667e65bf4573988d62e176bb8be5949`; draft branch `governance/imp037-pre-gate-product-definition` (parallel governance lane; does not disturb IMP-036G implementation worktree) |
-| Capability lifecycle / authorization | ROADMAP/STATE: `nextProductSlice = IMP-037`; **IMP037_ACTIVATED: NO**; formal lifecycle `PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED`; Product Definition Gate NOT_PERFORMED; Architecture Fit NOT_PERFORMED; architecture NOT_LOCKED; implementation NOT_AUTHORIZED / NOT_STARTED; IMP037_ACCEPTED: NO. **currentProductSlice remains NONE (acceptedThrough IMP-036G).** |
+| Canonical anchors | VISION-1; ROADMAP GTM-R131; STATE STATE-R129; ARCH-R19; DR-15; PD-1; TEST-1; PERSONA-1; GJ-1 |
+| Repository candidate | Historical draft-creation provenance (not CURRENT activation base): canonical path `/home/ajoshi/repos/boba-bear-platform`; base `origin/main` `ee82a8cb783cc618f6f1f521964e72deaad677a0` / tree `1b1eaf138667e65bf4573988d62e176bb8be5949`; draft branch `governance/imp037-pre-gate-product-definition` (parallel governance lane at draft creation). CURRENT activation base is ROADMAP/STATE GTM-R131 / STATE-R129 (`6b1f2344d0184e29403b99adfea85c2e5dc8bf9a` / tree `5471ea8f72c635a365e9a78ea1394ec212dcad69`). |
+| Capability lifecycle / authorization | ROADMAP/STATE: `currentProductSlice = IMP-037`; **IMP037_ACTIVATED: YES**; formal lifecycle `PLANNED / NOT_AUTHORIZED / NOT_STARTED`; Product Definition PRE_GATE_DRAFT; Product Definition Gate NOT_PERFORMED; Architecture Fit NOT_PERFORMED; architecture NOT_LOCKED; implementation NOT_AUTHORIZED / NOT_STARTED; IMP037_ACCEPTED: NO. `nextProductSlice = IMP-038` (`IMP038_ACTIVATED: NO`). `acceptedThrough` remains IMP-036G. |
 | Relevant capability architecture / ADRs | ADR-001 (DigitalOcean foundation / portability / launch recovery); ADR-002 (environment isolation; migration/release/rollback; restore ≠ routine rollback); ADR-013 (PostgreSQL 18; managed PITR + independent encrypted logical backup; direct backup/restore connections; restore validation; high-risk migration prerequisites); ADR-015 (configuration/secrets); ARCH-R19. Persistence stack selection is **not** reopened. |
 | Founder UAT applicability | `FOUNDER_UAT_REQUIRED = YES`; `FOUNDER_UAT_STATUS = NOT_PERFORMED` — launch-critical, high-consequence recovery capability. UAT must use isolated recovery rehearsal of the exact candidate; **never** the active production/source DB as drill target. |
 
@@ -1151,7 +1154,7 @@ IMP-037 does **not** invent a new customer Golden Journey.
 | Dependency | Authority / verified state | Required before which story or gate? | Unresolved impact |
 |---|---|---|---|
 | ADR-001 / ADR-002 / ADR-013 / ADR-015 / ARCH-R19 | CURRENT accepted | All IMP-037 stories | NONE for product decisions |
-| IMP-036G completion / sequencing | CURRENT product slice; IMP-037 remains next / unactivated | Canonical IMP-037 activation | Activation blocked until sequencing permits — **out of this PRE-GATE persist task** |
+| IMP-036G completion / sequencing | IMP-036G `COMPLETE_AND_ACCEPTED`; IMP-037 activation satisfied (`currentProductSlice = IMP-037`; `IMP037_ACTIVATED: YES`) | SATISFIED — no remaining sequencing blocker to Product Definition Gate evaluation | NONE for activation sequencing; Product Definition Gate remains NOT_PERFORMED; Architecture Fit remains NOT_PERFORMED; implementation remains NOT_AUTHORIZED / NOT_STARTED |
 | Architecture Fit | NOT_PERFORMED | Implementation authorization | Mechanisms unresolved (see §16 Fit inputs) |
 | IMP-039 | ROADMAP future | Production scheduler/HA/credentials realization | Not required for IMP-037 acceptance |
 | IMP-040 | ROADMAP future | Live launch/cutover | Not required for IMP-037 acceptance |
@@ -1422,7 +1425,7 @@ PRODUCT_DEFINITION_GATE_EXECUTION: NOT_PERFORMED
 Gate Result: NOT_PERFORMED
 ARCHITECTURE_FIT: NOT_PERFORMED
 ARCHITECTURE_LOCKED: NO
-IMP037_ACTIVATED: NO
+IMP037_ACTIVATED: YES
 IMPLEMENTATION_AUTHORIZED: NO
 IMPLEMENTATION_STARTED: NO
 IMP037_ACCEPTED: NO
@@ -1431,4 +1434,7 @@ PRODUCT_DEFINITION_GATE_READY:
 candidate result subject to independent pre-gate review
 ```
 
-IMP-037 remains pre-gate and unactivated. `currentProductSlice` remains NONE (`acceptedThrough` IMP-036G).
+IMP-037 remains pre-gate. `currentProductSlice = IMP-037` (`IMP037_ACTIVATED: YES`;
+`acceptedThrough` IMP-036G; formal lifecycle PLANNED / NOT_AUTHORIZED / NOT_STARTED).
+Product Definition Gate remains NOT_PERFORMED; Architecture Fit NOT_PERFORMED; architecture
+NOT_LOCKED; implementation NOT_AUTHORIZED / NOT_STARTED.

@@ -28,9 +28,12 @@ PD1_DID_NOT_ACTIVATE_IMP036F_AT_ADOPTION = YES
 
 TEST-1 / PD-1 did not themselves activate IMP-036F when introduced. Current lifecycle and
 activation truth is owned by [`ROADMAP.md`](./ROADMAP.md) / [`STATE.md`](./STATE.md)
-(`IMP036F_ACTIVATED` / `IMP036G_ACTIVATED`). IMP-036G is `COMPLETE_AND_ACCEPTED`
-(`IMP036G_ACCEPTED: YES`; Founder UAT PASS); `currentProductSlice = NONE`. IMP-037 remains
-unactivated. TEST-1 remains the verification policy
+(`IMP036F_ACTIVATED` / `IMP036G_ACTIVATED` / `IMP037_ACTIVATED`). IMP-036G remains
+`COMPLETE_AND_ACCEPTED` (`IMP036G_ACCEPTED: YES`; Founder UAT PASS). IMP-037 is the activated
+CURRENT product slice (`IMP037_ACTIVATED: YES`; formal lifecycle `PLANNED` /
+`NOT_AUTHORIZED` / `NOT_STARTED`; Product Definition `PRE_GATE_DRAFT` / `PD-IMP-037-DRAFT-1`;
+Product Definition Gate NOT_PERFORMED; Architecture Fit NOT_PERFORMED; architecture NOT_LOCKED;
+implementation NOT_AUTHORIZED / NOT_STARTED). TEST-1 remains the verification policy
 for new story-based delivery from IMP-036F. Verification layers and delivery
 phases are not new ROADMAP lifecycle states. Session 1 established documentation policy; it
 changed no runtime, tests, CI configuration, staging deployment, or acceptance status.
