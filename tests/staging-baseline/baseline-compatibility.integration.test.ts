@@ -5,10 +5,11 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { afterEach, describe, expect, inject, it } from "vitest";
 
 import type { WebConfig } from "../../src/platform/config";
+import { assortmentRulesTable } from "../../src/platform/database/schema/assortment";
 import {
   catalogContentRevisionsTable,
   catalogModifierGroupsTable,
@@ -23,6 +24,10 @@ import {
   grantRole,
 } from "../../src/server/access-control";
 import { bootstrapExistingMenuAssortment } from "../../src/server/assortment/bootstrap";
+import {
+  excludeVariantAtScope,
+  retireAssortmentRule,
+} from "../../src/server/assortment/rules";
 import {
   bootstrapImp028cModifiers,
   validateImp028cModifiersArtifactStructure,
@@ -46,7 +51,10 @@ import {
   IMP028C_MODIFIER_GROUP_CODE,
   LEGACY_SLICE4_PRODUCT_ID,
 } from "../../src/shared/catalog/imp028c-modifiers/constants";
-import { EXISTING_MENU_MANIFEST_RELATIVE_PATH } from "../../src/shared/catalog/menu";
+import {
+  EXISTING_MENU_IMPORT_ID,
+  EXISTING_MENU_MANIFEST_RELATIVE_PATH,
+} from "../../src/shared/catalog/menu";
 import { BOOTSTRAP_PRICE_BOOK_ID } from "../../src/shared/pricing";
 import {
   createEligibleWorkforceUser,
@@ -377,6 +385,116 @@ describe("classifyStagingBaseline", () => {
         return rows[0]?.name;
       });
       expect(preservedName).toBe(mutatedName);
+    });
+  });
+
+  it("treats legitimate mutable Brand Assortment decisions as COMPLETE_COMPATIBLE", async () => {
+    await withMigratedPersistence(async (persistence) => {
+      await applyFullFounderSeedChain(persistence);
+      const before = await classifyStagingBaseline({ projectRoot, persistence });
+      expect(before.state).toBe("COMPLETE_COMPATIBLE");
+      expect(resolveStagingBootstrapAction(before.state)).toBe("PRESERVE");
+
+      const manifest = loadManifest();
+      const actor = await grantBrandAdminForImportedBrand(persistence, manifest.brand.id);
+      const seededVariantId = manifest.products[0]!.variant.id;
+
+      const seededInclude = await persistence.withContext(async (ctx) => {
+        const rows = await ctx.db
+          .select({
+            id: assortmentRulesTable.id,
+            revision: assortmentRulesTable.revision,
+            status: assortmentRulesTable.status,
+            reasonCode: assortmentRulesTable.reasonCode,
+            decision: assortmentRulesTable.decision,
+          })
+          .from(assortmentRulesTable)
+          .where(
+            and(
+              eq(assortmentRulesTable.brandId, manifest.brand.id),
+              eq(assortmentRulesTable.scopeType, "brand"),
+              eq(assortmentRulesTable.targetType, "variant"),
+              eq(assortmentRulesTable.variantId, seededVariantId),
+              eq(assortmentRulesTable.decision, "include"),
+              eq(assortmentRulesTable.status, "active"),
+              eq(assortmentRulesTable.reasonCode, EXISTING_MENU_IMPORT_ID),
+            ),
+          )
+          .limit(1);
+        return rows[0]!;
+      });
+      expect(seededInclude.reasonCode).toBe(EXISTING_MENU_IMPORT_ID);
+      expect(seededInclude.status).toBe("active");
+
+      const retired = await persistence.transaction((tx) =>
+        retireAssortmentRule(tx, {
+          actor,
+          brandId: manifest.brand.id,
+          ruleId: seededInclude.id,
+          expectedRuleRevision: seededInclude.revision,
+        }),
+      );
+      expect(retired.status).toBe("retired");
+
+      const exclusion = await persistence.transaction((tx) =>
+        excludeVariantAtScope(tx, {
+          actor,
+          brandId: manifest.brand.id,
+          variantId: seededVariantId,
+          scopeType: "brand",
+          expectedRuleRevision: null,
+          reasonCode: "staging-uat-exclude",
+        }),
+      );
+      expect(exclusion.status).toBe("active");
+      expect(exclusion.decision).toBe("exclude");
+
+      const afterMutation = await classifyStagingBaseline({ projectRoot, persistence });
+      expect(afterMutation.state).toBe("COMPLETE_COMPATIBLE");
+      expect(resolveStagingBootstrapAction(afterMutation.state)).toBe("PRESERVE");
+
+      const commercialState = await persistence.withContext(async (ctx) => {
+        const lineage = await ctx.db
+          .select({
+            id: assortmentRulesTable.id,
+            status: assortmentRulesTable.status,
+            decision: assortmentRulesTable.decision,
+            reasonCode: assortmentRulesTable.reasonCode,
+          })
+          .from(assortmentRulesTable)
+          .where(eq(assortmentRulesTable.id, seededInclude.id))
+          .limit(1);
+        const activeExclude = await ctx.db
+          .select({
+            id: assortmentRulesTable.id,
+            status: assortmentRulesTable.status,
+            decision: assortmentRulesTable.decision,
+          })
+          .from(assortmentRulesTable)
+          .where(eq(assortmentRulesTable.id, exclusion.id))
+          .limit(1);
+        const activeIncludes = await ctx.db
+          .select({ id: assortmentRulesTable.id })
+          .from(assortmentRulesTable)
+          .where(
+            and(
+              eq(assortmentRulesTable.brandId, manifest.brand.id),
+              eq(assortmentRulesTable.variantId, seededVariantId),
+              eq(assortmentRulesTable.decision, "include"),
+              eq(assortmentRulesTable.status, "active"),
+            ),
+          );
+        return {
+          lineage: lineage[0]!,
+          activeExclude: activeExclude[0]!,
+          activeIncludeCount: activeIncludes.length,
+        };
+      });
+      expect(commercialState.lineage.status).toBe("retired");
+      expect(commercialState.lineage.reasonCode).toBe(EXISTING_MENU_IMPORT_ID);
+      expect(commercialState.activeExclude.status).toBe("active");
+      expect(commercialState.activeExclude.decision).toBe("exclude");
+      expect(commercialState.activeIncludeCount).toBe(0);
     });
   });
 

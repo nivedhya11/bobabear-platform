@@ -5,7 +5,13 @@
  * using stable identity from checked-in seed artifacts. Does not require
  * mutable commercial/content fields that IMP-036F authoring may change
  * (names, descriptions, prices, modifier presentation, menu placement
- * including entry sectionId and section parentSectionId).
+ * including entry sectionId and section parentSectionId, or current Brand
+ * Assortment active include/exclude decisions).
+ *
+ * Assortment initialization is proved by bootstrap lineage rows
+ * (brand-scope variant include with reason_code existing-menu-v1), whether
+ * those rows are still active or have been retired — not by the current
+ * commercial assortment outcome.
  *
  * Never writes. Uses application Persistence withContext only.
  */
@@ -35,6 +41,7 @@ import {
 } from "../../platform/database/schema/pricing";
 import {
   BOBA_BEAR_BRAND_CODE,
+  EXISTING_MENU_IMPORT_ID,
   EXISTING_MENU_MANIFEST_RELATIVE_PATH,
 } from "../../shared/catalog/menu";
 import {
@@ -320,9 +327,12 @@ export async function classifyStagingBaseline(options: {
       : [];
     const optionByCode = new Map(modifierOptions.map((o) => [o.code, o]));
 
-    let assortmentIncludeCount = 0;
+    // Bootstrap lineage: brand-scope variant includes stamped by
+    // bootstrapExistingMenuAssortment (reason_code existing-menu-v1). Status may
+    // be active or retired — current commercial decision is mutable (IMP-036F).
+    let assortmentBootstrapVariantCount = 0;
     if (brand) {
-      const includes = await ctx.db
+      const bootstrapLineage = await ctx.db
         .select({ variantId: assortmentRulesTable.variantId })
         .from(assortmentRulesTable)
         .where(
@@ -331,7 +341,7 @@ export async function classifyStagingBaseline(options: {
             eq(assortmentRulesTable.scopeType, "brand"),
             eq(assortmentRulesTable.targetType, "variant"),
             eq(assortmentRulesTable.decision, "include"),
-            eq(assortmentRulesTable.status, "active"),
+            eq(assortmentRulesTable.reasonCode, EXISTING_MENU_IMPORT_ID),
             inArray(assortmentRulesTable.variantId, [...variantIds]),
             sql`${assortmentRulesTable.territoryId} is null`,
             sql`${assortmentRulesTable.organizationId} is null`,
@@ -340,7 +350,9 @@ export async function classifyStagingBaseline(options: {
             sql`${assortmentRulesTable.modifierOptionId} is null`,
           ),
         );
-      assortmentIncludeCount = new Set(includes.map((r) => r.variantId)).size;
+      assortmentBootstrapVariantCount = new Set(
+        bootstrapLineage.map((r) => r.variantId).filter((id): id is string => id !== null),
+      ).size;
     }
 
     const presence = {
@@ -352,7 +364,7 @@ export async function classifyStagingBaseline(options: {
       entries: entries.length > 0,
       priceBook: priceBook !== null,
       priceRows: priceRowCount > 0,
-      assortment: assortmentIncludeCount > 0,
+      assortment: assortmentBootstrapVariantCount > 0,
       modifiers: modifierGroups.length > 0 || modifierOptions.length > 0,
     };
     const anyPresent = Object.values(presence).some(Boolean);
@@ -453,8 +465,8 @@ export async function classifyStagingBaseline(options: {
       reasons.push("entry_count_incomplete");
     }
 
-    if (assortmentIncludeCount !== variantIds.length) {
-      reasons.push("assortment_include_incomplete");
+    if (assortmentBootstrapVariantCount !== variantIds.length) {
+      reasons.push("assortment_bootstrap_incomplete");
     }
 
     if (!priceBook) {
