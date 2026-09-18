@@ -77,3 +77,69 @@ test("tooling image packages IMP-028C modifier bootstrap script, artifact, and m
   assert.match(compose, /^  catalog-bootstrap-imp028c-modifiers:$/m);
   assert.match(compose, /target: tooling/);
 });
+
+/**
+ * True when a Dockerfile fragment contains a full-directory COPY of scripts/environment
+ * (optional trailing slashes; ordinary Docker whitespace). Individual files under that
+ * directory (e.g. staging-baseline-classify.ts) do not match.
+ */
+export function containsFullEnvironmentDirectoryCopy(dockerfileFragment) {
+  return /^COPY\s+scripts\/environment\/?\s+\.\/scripts\/environment\/?\s*$/m.test(
+    dockerfileFragment,
+  );
+}
+
+test("containsFullEnvironmentDirectoryCopy rejects full-tree forms and allows single-file COPY", () => {
+  assert.equal(
+    containsFullEnvironmentDirectoryCopy("COPY scripts/environment ./scripts/environment\n"),
+    true,
+    "slashless full-directory COPY must be rejected",
+  );
+  assert.equal(
+    containsFullEnvironmentDirectoryCopy("COPY scripts/environment/ ./scripts/environment/\n"),
+    true,
+    "trailing-slash full-directory COPY must be rejected",
+  );
+  assert.equal(
+    containsFullEnvironmentDirectoryCopy("COPY   scripts/environment   ./scripts/environment/\n"),
+    true,
+    "whitespace-variant full-directory COPY must be rejected",
+  );
+  assert.equal(
+    containsFullEnvironmentDirectoryCopy("COPY scripts/environment/ ./scripts/environment\n"),
+    true,
+    "mixed trailing-slash full-directory COPY must be rejected",
+  );
+  assert.equal(
+    containsFullEnvironmentDirectoryCopy(
+      "COPY scripts/environment/staging-baseline-classify.ts ./scripts/environment/staging-baseline-classify.ts\n",
+    ),
+    false,
+    "exact single-file classifier COPY must remain allowed",
+  );
+});
+
+test("tooling image packages staging baseline classifier entrypoint declared by package.json", () => {
+  const classifierScript = packageJson.scripts["staging:baseline-classify"];
+  assert.ok(classifierScript, "staging:baseline-classify must exist in package.json scripts");
+  assert.match(
+    classifierScript,
+    /scripts\/environment\/staging-baseline-classify\.ts/,
+    "staging:baseline-classify must invoke the classifier TypeScript entrypoint",
+  );
+
+  const dockerfile = readFileSync(path.join(projectRoot, "Dockerfile"), "utf8");
+  const toolingStage = dockerfile.split("FROM base AS tooling")[1]?.split(/^FROM /m)[0] ?? "";
+  assert.ok(toolingStage.length > 0, "Dockerfile must declare a tooling stage");
+  assert.match(
+    toolingStage,
+    /^COPY scripts\/environment\/staging-baseline-classify\.ts \.\/scripts\/environment\/staging-baseline-classify\.ts$/m,
+    "tooling stage must COPY the exact classifier entrypoint used by staging:baseline-classify",
+  );
+  // Least-scope packaging: do not ship host-side staging orchestration into the image.
+  assert.equal(
+    containsFullEnvironmentDirectoryCopy(toolingStage),
+    false,
+    "tooling stage must not COPY the entire scripts/environment directory",
+  );
+});
