@@ -11,6 +11,7 @@ import { afterEach, describe, expect, inject, it } from "vitest";
 import type { WebConfig } from "../../src/platform/config";
 import {
   catalogContentRevisionsTable,
+  catalogModifierGroupsTable,
   catalogProductsTable,
   catalogVariantsTable,
 } from "../../src/platform/database/schema/catalog";
@@ -30,6 +31,7 @@ import {
 import { runExistingMenuImport } from "../../src/server/catalog/menu-import";
 import {
   publishCatalogContentChange,
+  saveModifierGroupContentDraft,
   saveProductContentDraft,
 } from "../../src/server/catalog/publish";
 import { getApplicationPersistence } from "../../src/server/persistence";
@@ -41,6 +43,7 @@ import {
 } from "../../src/server/staging/baseline-compatibility";
 import {
   HONG_KONG_MILK_TEA_PRODUCT_CODE,
+  IMP028C_MODIFIER_GROUP_CODE,
   LEGACY_SLICE4_PRODUCT_ID,
 } from "../../src/shared/catalog/imp028c-modifiers/constants";
 import { EXISTING_MENU_MANIFEST_RELATIVE_PATH } from "../../src/shared/catalog/menu";
@@ -266,6 +269,59 @@ describe("classifyStagingBaseline", () => {
 
       const classification = await classifyStagingBaseline({ projectRoot, persistence });
       expect(classification.state).toBe("COMPLETE_COMPATIBLE");
+    });
+  });
+
+  it("treats legitimate mutable modifier-group presentation as COMPLETE_COMPATIBLE", async () => {
+    await withMigratedPersistence(async (persistence) => {
+      await applyFullFounderSeedChain(persistence);
+      const before = await classifyStagingBaseline({ projectRoot, persistence });
+      expect(before.state).toBe("COMPLETE_COMPATIBLE");
+
+      const manifest = loadManifest();
+      const actor = await grantBrandAdminForImportedBrand(persistence, manifest.brand.id);
+      const group = await persistence.withContext(async (ctx) => {
+        const rows = await ctx.db
+          .select()
+          .from(catalogModifierGroupsTable)
+          .where(eq(catalogModifierGroupsTable.code, IMP028C_MODIFIER_GROUP_CODE))
+          .limit(1);
+        return rows[0]!;
+      });
+      expect(group.code).toBe(IMP028C_MODIFIER_GROUP_CODE);
+      const mutatedName = `${group.name} [UAT-036F-modifier]`;
+
+      await persistence.transaction((tx) =>
+        saveModifierGroupContentDraft(tx, {
+          actor,
+          modifierGroupId: group.id,
+          expectedContentRevision: group.draftContentRevision,
+          name: mutatedName,
+        }),
+      );
+      const envelope = await readBrandContentRevision(persistence, manifest.brand.id);
+      await persistence.transaction((tx) =>
+        publishCatalogContentChange(tx, {
+          actor,
+          brandId: manifest.brand.id,
+          productId: LEGACY_SLICE4_PRODUCT_ID,
+          expectedContentRevision: envelope,
+        }),
+      );
+
+      const afterMutation = await classifyStagingBaseline({ projectRoot, persistence });
+      expect(afterMutation.state).toBe("COMPLETE_COMPATIBLE");
+      expect(resolveStagingBootstrapAction(afterMutation.state)).toBe("PRESERVE");
+
+      const preservedName = await persistence.withContext(async (ctx) => {
+        const rows = await ctx.db
+          .select({ name: catalogModifierGroupsTable.name })
+          .from(catalogModifierGroupsTable)
+          .where(eq(catalogModifierGroupsTable.code, IMP028C_MODIFIER_GROUP_CODE))
+          .limit(1);
+        return rows[0]?.name;
+      });
+      expect(preservedName).toBe(mutatedName);
     });
   });
 

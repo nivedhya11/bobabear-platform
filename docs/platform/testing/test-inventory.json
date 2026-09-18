@@ -31,10 +31,10 @@
     "note": "Protected evidence and generated reports are never classified as executable test source."
   },
   "counts": {
-    "trackedPathsConsidered": 1914,
-    "executableTestFiles": 394,
+    "trackedPathsConsidered": 1919,
+    "executableTestFiles": 395,
     "sourceTestFiles": 130,
-    "testsTreeExecutableFiles": 230,
+    "testsTreeExecutableFiles": 231,
     "scriptTestFiles": 34,
     "playwrightSpecs": 12,
     "vitestConfigs": 2,
@@ -404,6 +404,7 @@
     "tests/serviceability-concurrency/concurrency.test.ts",
     "tests/serviceability-security/security.test.ts",
     "tests/serviceability/domain.test.ts",
+    "tests/staging-baseline/baseline-compatibility.integration.test.ts",
     "tests/workforce-auth/http.integration.test.ts",
     "tests/workforce-auth/trusted-identity.integration.test.ts",
     "tests/workforce-hub/SideNavigation.test.tsx",
@@ -9176,6 +9177,24 @@
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/staging-baseline/baseline-compatibility.integration.test.ts",
+      "runner": "vitest",
+      "domain": "staging-baseline",
+      "testType": "integration",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:staging-baseline"
+      ],
+      "ciInclusion": "NO",
+      "test1Layers": [
+        "4-integration",
+        "5-database-integration"
       ],
       "classificationConfidence": "HEURISTIC"
     },
