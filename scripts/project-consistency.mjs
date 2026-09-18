@@ -22627,6 +22627,130 @@ function checkImp036gImplementationStart(roadmap, state, architecture, decision)
  * Does not claim ACCEPTED, Founder UAT PASS, or IMP-037 activation.
  * @param {Record<string, unknown>} checkpoint
  */
+
+/**
+ * Fail-closed check for IMP-036G human manual technical validation evidence.
+ * Required at GTM-R129 / STATE-R127 before IMP036G_IMPLEMENTATION_COMPLETE may stand.
+ * Does not depend on invented browser/AT version numbers.
+ * @param {string | null | undefined} text
+ */
+export function evaluateImp036gManualTechnicalValidation(text) {
+  const rel = "tests/administration/imp036g-manual-validation.md";
+  if (text == null) {
+    return {
+      ok: false,
+      code: "IMP036G_MANUAL_VALIDATION_ABSENT",
+      message: `${rel} must exist at IMP-036G implementation completion`,
+    };
+  }
+  const body = String(text);
+  if (!body.trim()) {
+    return {
+      ok: false,
+      code: "IMP036G_MANUAL_VALIDATION_ABSENT",
+      message: `${rel} must not be empty at IMP-036G implementation completion`,
+    };
+  }
+
+  if (/OVERALL_RESULT:\s*NOT_PERFORMED\b/.test(body)) {
+    return {
+      ok: false,
+      code: "IMP036G_MANUAL_VALIDATION_NOT_PERFORMED",
+      message: "IMP-036G manual technical validation OVERALL_RESULT must not remain NOT_PERFORMED",
+    };
+  }
+  if (/OVERALL_RESULT:\s*DEFECTS\b/.test(body)) {
+    return {
+      ok: false,
+      code: "IMP036G_MANUAL_VALIDATION_DEFECTS",
+      message: "IMP-036G manual technical validation OVERALL_RESULT must not be DEFECTS at completion",
+    };
+  }
+
+  const required = [
+    [/OVERALL_RESULT:\s*PASS\b/, "OVERALL_RESULT PASS"],
+    [/c35c9eab6a30ec6ce745cefd75c523181326f360/, "validated candidate SHA"],
+    [/266fe3b07811f6942e76cac155d58ba07daabe56/, "validated candidate tree"],
+    [/VALIDATED_IMPLEMENTATION_CANDIDATE_SHA:\s*c35c9eab6a30ec6ce745cefd75c523181326f360/, "VALIDATED_IMPLEMENTATION_CANDIDATE_SHA"],
+    [/VALIDATED_IMPLEMENTATION_CANDIDATE_TREE:\s*266fe3b07811f6942e76cac155d58ba07daabe56/, "VALIDATED_IMPLEMENTATION_CANDIDATE_TREE"],
+    [/Manual keyboard result\s*\|\s*PASS\b/, "Manual keyboard result PASS"],
+    [/Dialog \/ focus result\s*\|\s*PASS\b/, "Dialog / focus result PASS"],
+    [/Visible focus result\s*\|\s*PASS\b/, "Visible focus result PASS"],
+    [/Labels \/ semantics result\s*\|\s*PASS\b/, "Labels / semantics result PASS"],
+    [/AT sampling result\s*\|\s*PASS\b/, "AT sampling result PASS"],
+    [/Small-mobile result\s*\|\s*PASS\b/, "Small-mobile result PASS"],
+    [/Defects \/ observations\s*\|\s*NONE\b/, "Defects / observations NONE"],
+    [/\|\s*Tester\s*\|\s*Ashutosh\s*\|/, "Tester Ashutosh"],
+    [/\|\s*Date\s*\|\s*2026-09-18\s*\|/, "Date 2026-09-18"],
+    [/Enter Admin without mouse\s*\|\s*PASS\b/, "keyboard Enter Admin PASS"],
+    [/Traverse Overview and primary IA\s*\|\s*PASS\b/, "keyboard Overview PASS"],
+    [/Organization resource list \/ detail \/ form\s*\|\s*PASS\b/, "keyboard org PASS"],
+    [/Workforce membership list \/ detail\s*\|\s*PASS\b/, "keyboard membership PASS"],
+    [/Access \/ effective permissions\s*\|\s*PASS\b/, "keyboard access PASS"],
+    [/^\| Audit \| PASS \|/m, "keyboard Audit PASS"],
+    [/System operational status\s*\|\s*PASS\b/, "keyboard System status PASS"],
+    [/All mandatory high-consequence actions remain keyboard reachable\s*\|\s*PASS\b/, "keyboard high-consequence PASS"],
+    [/Deactivate org resource\s*\|\s*PASS\b/, "dialog/small-mobile Deactivate PASS"],
+    [/Suspend membership\s*\|\s*PASS\b/, "dialog/small-mobile Suspend PASS"],
+    [/Revoke membership\s*\|\s*PASS\b/, "dialog/small-mobile Revoke membership PASS"],
+    [/Expire invited membership\s*\|\s*PASS\b/, "dialog/small-mobile Expire PASS"],
+    [/Grant role\s*\|\s*PASS\b/, "dialog/small-mobile Grant role PASS"],
+    [/Revoke role\s*\|\s*PASS\b/, "dialog/small-mobile Revoke role PASS"],
+    [/^\| Navigation \| PASS \|/m, "visible focus Navigation PASS"],
+    [/^\| Buttons \| PASS \|/m, "visible focus Buttons PASS"],
+    [/^\| Links \| PASS \|/m, "visible focus Links PASS"],
+    [/^\| Form inputs \| PASS \|/m, "visible focus Form inputs PASS"],
+    [/Pagination \/ load-more\s*\|\s*PASS\b/, "visible focus Pagination PASS"],
+    [/^\| Dialogs \| PASS \|/m, "visible focus Dialogs PASS"],
+    [/Form fields have usable names\s*\|\s*PASS\b/, "labels usable names PASS"],
+    [/Headings are coherent\s*\|\s*PASS\b/, "labels headings PASS"],
+    [/Main navigation is understandable\s*\|\s*PASS\b/, "labels navigation PASS"],
+    [/Status is not communicated only by colour\s*\|\s*PASS\b/, "labels status PASS"],
+    [/Errors are understandable\s*\|\s*PASS\b/, "labels errors PASS"],
+    [/Success feedback is perceivable\s*\|\s*PASS\b/, "labels success PASS"],
+    [/Admin Overview\s*\|\s*PASS\b/, "AT Admin Overview PASS"],
+    [/One resource edit\s*\|\s*PASS\b/, "AT resource edit PASS"],
+    [/One destructive confirmation\s*\|\s*PASS\b/, "AT destructive confirmation PASS"],
+    [/Membership detail\s*\|\s*PASS\b/, "AT membership detail PASS"],
+    [/Effective Permissions\s*\|\s*PASS\b/, "AT Effective Permissions PASS"],
+    [/Audit filters\s*\|\s*PASS\b/, "AT Audit filters PASS"],
+    [/System status\s*\|\s*PASS\b/, "AT System status PASS"],
+    [/SCREEN_READER_USED:\s*NVDA \/ Narrator/, "SCREEN_READER_USED"],
+    [/BROWSER:\s*Chrome latest \/ Edge latest/, "BROWSER"],
+    [/OS:\s*Windows 11/, "OS"],
+    [/CANDIDATE_SHA:\s*c35c9eab6a30ec6ce745cefd75c523181326f360/, "CANDIDATE_SHA"],
+    [/DATE:\s*2026-09-18/, "DATE"],
+    [/SMALL_MOBILE_VIEWPORT:\s*375x667 @ 100% zoom/, "SMALL_MOBILE_VIEWPORT"],
+  ];
+  for (const [pattern, label] of required) {
+    if (!pattern.test(body)) {
+      return {
+        ok: false,
+        code: "IMP036G_MANUAL_VALIDATION",
+        message: `IMP-036G manual technical validation must record ${label}`,
+      };
+    }
+  }
+
+  const shaMatches = body.match(/c35c9eab6a30ec6ce745cefd75c523181326f360/g) || [];
+  if (shaMatches.length < 2) {
+    return {
+      ok: false,
+      code: "IMP036G_MANUAL_VALIDATION_CANDIDATE",
+      message: "IMP-036G manual validation must bind candidate SHA c35c9eab6a30ec6ce745cefd75c523181326f360",
+    };
+  }
+  if (!/266fe3b07811f6942e76cac155d58ba07daabe56/.test(body)) {
+    return {
+      ok: false,
+      code: "IMP036G_MANUAL_VALIDATION_CANDIDATE",
+      message: "IMP-036G manual validation must bind candidate tree 266fe3b07811f6942e76cac155d58ba07daabe56",
+    };
+  }
+
+  return { ok: true };
+}
+
 export function evaluateImp036gImplementationCompletionCheckpoint(checkpoint) {
   const expected = {
     roadmapVersion: "GTM-R129",
@@ -22679,6 +22803,14 @@ export function evaluateImp036gImplementationCompletionCheckpoint(checkpoint) {
     typeof checkpoint.productIndexText === "string" ? checkpoint.productIndexText : "",
   );
   if (!completedIndex.ok) return completedIndex;
+  const manual = evaluateImp036gManualTechnicalValidation(
+    checkpoint.manualValidationText === undefined
+      ? undefined
+      : checkpoint.manualValidationText == null
+        ? null
+        : String(checkpoint.manualValidationText),
+  );
+  if (!manual.ok) return manual;
   return { ok: true };
 }
 
@@ -22937,11 +23069,24 @@ function checkImp036gImplementationCompletion(roadmap, state, architecture, deci
   const capabilityAbs = resolveExactRelativeFile(capabilityRel);
   const capabilityText = capabilityAbs ? readFileSync(capabilityAbs, "utf8") : "";
 
+  const manualRel = "tests/administration/imp036g-manual-validation.md";
+  const manualAbs = resolveExactRelativeFile(manualRel);
+  const manualValidationText = manualAbs ? readFileSync(manualAbs, "utf8") : null;
+
   if (!productDefAbs) {
     fail("IMP036G_PD_APPROVED_ABSENT", "IMP-036G Product Definition must exist at implementation completion checkpoint");
   }
   if (!capabilityAbs) {
     fail("IMP036G_CAPABILITY_ABSENT", "IMP-036G locked capability architecture must exist at implementation completion checkpoint");
+  }
+  if (!manualAbs) {
+    fail(
+      "IMP036G_MANUAL_VALIDATION_ABSENT",
+      "tests/administration/imp036g-manual-validation.md must exist at IMP-036G implementation completion",
+    );
+  } else {
+    const manualCheck = evaluateImp036gManualTechnicalValidation(manualValidationText);
+    if (!manualCheck.ok) fail(manualCheck.code, manualCheck.message);
   }
 
   const experienceRel = "docs/platform/experience/enterprise-experience/IMP-036G-administration-console-v2.md";
@@ -22998,6 +23143,12 @@ function checkImp036gImplementationCompletion(roadmap, state, architecture, deci
     [/IMP036G_REVIEWED_CANDIDATE_TREE:\s*266fe3b07811f6942e76cac155d58ba07daabe56/, "IMP036G_REVIEWED_CANDIDATE_TREE"],
     [/IMP036G_EXACT_MAIN_CI:\s*35214215500/, "IMP036G_EXACT_MAIN_CI"],
     [/IMP036G_EXACT_MAIN_CI_RESULT:\s*SUCCESS/, "IMP036G_EXACT_MAIN_CI_RESULT: SUCCESS"],
+    [/IMP036G_MANUAL_TECHNICAL_VALIDATION:\s*PASS/, "IMP036G_MANUAL_TECHNICAL_VALIDATION: PASS"],
+    [/IMP036G_MANUAL_VALIDATION_CANDIDATE_SHA:\s*c35c9eab6a30ec6ce745cefd75c523181326f360/, "IMP036G_MANUAL_VALIDATION_CANDIDATE_SHA"],
+    [/IMP036G_MANUAL_VALIDATION_CANDIDATE_TREE:\s*266fe3b07811f6942e76cac155d58ba07daabe56/, "IMP036G_MANUAL_VALIDATION_CANDIDATE_TREE"],
+    [/IMP036G_MANUAL_VALIDATION_DATE:\s*2026-09-18/, "IMP036G_MANUAL_VALIDATION_DATE"],
+    [/IMP036G_MANUAL_VALIDATION_TESTER:\s*Ashutosh/, "IMP036G_MANUAL_VALIDATION_TESTER"],
+    [/IMP036G_MANUAL_VALIDATION_DEFECTS:\s*NONE/, "IMP036G_MANUAL_VALIDATION_DEFECTS: NONE"],
   ];
 
   const requiredTokens = [
@@ -23177,6 +23328,7 @@ function checkImp036gImplementationCompletion(roadmap, state, architecture, deci
     productDefinitionText,
     productIndexText,
     capabilityText,
+    manualValidationText,
     d374Exists: /\|\s*D-374\s*\|/.test(decision?.text ?? "") || /###\s*D-374\b/.test(decision?.text ?? ""),
     archR20Exists: /architectureVersion":\s*"ARCH-R20"/.test(architecture?.text ?? "") || architecture?.meta?.architectureVersion === "ARCH-R20",
   });

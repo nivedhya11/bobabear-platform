@@ -129,6 +129,7 @@ import {
   evaluateImp036gCompletedCapabilityArchitecture,
   evaluateImp036gCompletedProductDefinition,
   evaluateImp036gCompletedProductIndex,
+  evaluateImp036gManualTechnicalValidation,
   evaluateImp036fImplementationAuthorizationCheckpoint,
   evaluateImp036fAuthorizedCapabilityArchitecture,
   evaluateImp036fAuthorizedProductDefinition,
@@ -6578,10 +6579,10 @@ describe("canonical authority history compression", () => {
 
     const roadmap = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
     const state = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
-    assert.match(roadmap, /"roadmapVersion": "GTM-R128"/);
-    assert.match(state, /"stateVersion": "STATE-R126"/);
+    assert.match(roadmap, /"roadmapVersion": "GTM-R129"/);
+    assert.match(state, /"stateVersion": "STATE-R127"/);
     assert.match(state, /"acceptedThrough": "IMP-036F"/);
-    assert.match(state, /"pendingAcceptance": "NONE"/);
+    assert.match(state, /"pendingAcceptance": "IMP-036G"/);
     assert.match(state, /"currentProductSlice": "IMP-036G"/);
     assert.match(state, /"nextProductSlice": "IMP-037"/);
     assert.match(roadmap, /IMP-036E_ACCEPTED:\s*YES/);
@@ -6609,12 +6610,16 @@ describe("canonical authority history compression", () => {
     assert.match(roadmap, /IMP036G_PRODUCT_DEFINITION_GATE:\s*PASS/);
     assert.match(roadmap, /IMP036G_ARCHITECTURE_FIT:\s*PASS/);
     assert.match(roadmap, /IMP036G_ARCHITECTURE_LOCKED:\s*YES/);
-    assert.match(roadmap, /IMP-036G:\s*IMPLEMENTATION_IN_PROGRESS/);
-    assert.match(state, /IMP-036G:\s*IMPLEMENTATION_IN_PROGRESS/);
+    assert.match(roadmap, /IMP-036G:\s*IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE/);
+    assert.match(state, /IMP-036G:\s*IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE/);
     assert.match(roadmap, /IMP036G_IMPLEMENTATION_AUTHORIZED:\s*YES/);
     assert.match(roadmap, /IMP036G_STARTED:\s*YES/);
+    assert.match(roadmap, /IMP036G_IMPLEMENTATION_COMPLETE:\s*YES/);
     assert.match(state, /IMP036G_IMPLEMENTATION_AUTHORIZED:\s*YES/);
     assert.match(state, /IMP036G_STARTED:\s*YES/);
+    assert.match(state, /IMP036G_IMPLEMENTATION_COMPLETE:\s*YES/);
+    assert.match(roadmap, /IMP036G_MANUAL_TECHNICAL_VALIDATION:\s*PASS/);
+    assert.match(state, /IMP036G_MANUAL_TECHNICAL_VALIDATION:\s*PASS/);
     assert.match(roadmap, /IMP036G_ACCEPTED:\s*NO/);
     assert.match(roadmap, /IMP036G_FOUNDER_UAT:\s*NOT_PERFORMED/);
     assert.match(state, /Current Product Implementation:\s*IMP-036G/);
@@ -6628,23 +6633,23 @@ describe("canonical authority history compression", () => {
     const current = currentAuthorityBlob({ text: roadmap }, { text: state });
     const evidence = authorityEvidenceBlob({ text: roadmap }, { text: state });
     assert.ok(evidence.includes(hist.roadmapText.slice(0, 80)));
-    assert.ok(current.includes("GTM-R128"));
+    assert.ok(current.includes("GTM-R129"));
     assert.ok(!current.includes('"roadmapVersion": "GTM-R113"'));
     // Stale historical claim may exist in snapshot evidence without overriding CURRENT metadata.
     assert.ok(/pendingAcceptance:\s*NONE/.test(hist.stateText) || /Pending Acceptance:\s+NONE/.test(hist.stateText));
-    assert.match(state, /"pendingAcceptance": "NONE"/);
+    assert.match(state, /"pendingAcceptance": "IMP-036G"/);
     // Historical snapshots may retain pre-correction FOUNDER_STAGING_DEPLOYMENT: NOT_PERFORMED.
     assert.match(hist.roadmapText, /FOUNDER_STAGING_DEPLOYMENT:\s*NOT_PERFORMED/);
     assert.ok(current.includes("FOUNDER_STAGING_STATUS: FOUNDER_UAT_COMPLETE"));
     assert.ok(!/FOUNDER_STAGING_DEPLOYMENT:\s*NOT_PERFORMED/.test(current));
   });
 
-  it("passes CURRENT authority checks at the IMP-036G Implementation Start checkpoint", () => {
+  it("passes CURRENT authority checks at the IMP-036G Implementation Completion checkpoint", () => {
     const findings = runProjectConsistency();
     const failures = findings.filter((f) => !f.ok);
     assert.equal(failures.length, 0, failures.map((f) => `[${f.code}] ${f.message}`).join("\n"));
     const messages = findings.filter((f) => f.ok).map((f) => f.message);
-    assert.ok(messages.some((m) => m.includes("IMP-036G implementation authorization + start persistence valid")));
+    assert.ok(messages.some((m) => m.includes("IMP-036G implementation completion persistence valid")));
     assert.ok(messages.some((m) => m.includes("CURRENT authority anti-stale checks OK")));
     assert.ok(messages.some((m) => m.includes("historical authority corpus loaded")));
   });
@@ -9517,7 +9522,134 @@ Readiness: READY_FOR_IMPLEMENTATION (Product Definition Gate PASS; Architecture 
 
 IMP-036G has an **APPROVED** Product Definition. Implementation = AUTHORIZED / STARTED / COMPLETE / \`IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE\`; not accepted.
 `;
+
+  const validManualValidation = `# IMP-036G manual technical validation
+
+\`\`\`text
+OVERALL_RESULT: PASS
+\`\`\`
+
+## Candidate
+
+\`\`\`text
+MERGED_MAIN: c35c9eab6a30ec6ce745cefd75c523181326f360
+TREE:        266fe3b07811f6942e76cac155d58ba07daabe56
+\`\`\`
+
+\`\`\`text
+VALIDATED_IMPLEMENTATION_CANDIDATE_SHA:  c35c9eab6a30ec6ce745cefd75c523181326f360
+VALIDATED_IMPLEMENTATION_CANDIDATE_TREE: 266fe3b07811f6942e76cac155d58ba07daabe56
+CURRENT_MAIN_AT_EVIDENCE_PERSISTENCE:    129d4541237be2a227899ae288c299e768824db9
+\`\`\`
+
+| Field | Recorded value |
+|---|---|
+| Candidate SHA | \`c35c9eab6a30ec6ce745cefd75c523181326f360\` |
+| Candidate tree | \`266fe3b07811f6942e76cac155d58ba07daabe56\` |
+| Browser | Chrome latest / Edge latest |
+| OS | Windows 11 |
+| Viewport(s) | Desktop 1920x1080; small-mobile 375x667 @ 100% zoom |
+| Assistive technology | NVDA / Narrator |
+| Tester | Ashutosh |
+| Date | 2026-09-18 |
+| Manual keyboard result | PASS |
+| Dialog / focus result | PASS |
+| Desktop high-consequence actions | PASS |
+| Visible focus result | PASS |
+| Labels / semantics result | PASS |
+| AT sampling result | PASS |
+| Small-mobile result | PASS |
+| Defects / observations | NONE |
+| Overall result | PASS |
+
+## Keyboard
+
+| Journey | Result (\`PASS\` / \`DEFECT\` / \`NOT_PERFORMED\`) | Notes |
+|---|---|---|
+| Enter Admin without mouse | PASS | |
+| Traverse Overview and primary IA | PASS | |
+| Organization resource list / detail / form | PASS | |
+| Workforce membership list / detail | PASS | |
+| Access / effective permissions | PASS | |
+| Audit | PASS | |
+| System operational status | PASS | |
+| All mandatory high-consequence actions remain keyboard reachable | PASS | |
+
+## Dialog / focus
+
+| Action | Result | Notes |
+|---|---|---|
+| Deactivate org resource | PASS | |
+| Suspend membership | PASS | |
+| Revoke membership | PASS | |
+| Expire invited membership | PASS | |
+| Grant role | PASS | |
+| Revoke role | PASS | |
+
+## Visible focus
+
+| Surface | Result | Notes |
+|---|---|---|
+| Navigation | PASS | |
+| Buttons | PASS | |
+| Links | PASS | |
+| Form inputs | PASS | |
+| Pagination / load-more | PASS | |
+| Dialogs | PASS | |
+
+## Labels / semantics
+
+| Check | Result | Notes |
+|---|---|---|
+| Form fields have usable names | PASS | |
+| Headings are coherent | PASS | |
+| Main navigation is understandable | PASS | |
+| Status is not communicated only by colour | PASS | |
+| Errors are understandable | PASS | |
+| Success feedback is perceivable | PASS | |
+
+## Assistive-technology sampling
+
+| Sampled journey | Result | Notes |
+|---|---|---|
+| Admin Overview | PASS | |
+| One resource edit | PASS | |
+| One destructive confirmation | PASS | |
+| Membership detail | PASS | |
+| Effective Permissions | PASS | |
+| Audit filters | PASS | |
+| System status | PASS | |
+
+\`\`\`text
+SCREEN_READER_USED: NVDA / Narrator
+BROWSER: Chrome latest / Edge latest
+OS: Windows 11
+CANDIDATE_SHA: c35c9eab6a30ec6ce745cefd75c523181326f360
+DATE: 2026-09-18
+\`\`\`
+
+## Responsive / small-mobile functional parity
+
+| Action | Result | Notes |
+|---|---|---|
+| Deactivate org resource | PASS | |
+| Suspend membership | PASS | |
+| Revoke membership | PASS | |
+| Expire invited membership | PASS | |
+| Grant role | PASS | |
+| Revoke role | PASS | |
+
+\`\`\`text
+SMALL_MOBILE_VIEWPORT: 375x667 @ 100% zoom
+\`\`\`
+
+## Defects / observations
+
+NONE
+`;
+
   completionBase.productIndexText = validCompletedProductIndex;
+  completionBase.manualValidationText = validManualValidation;
 
   it("registers GTM-R129 / STATE-R127 as implementation completion only", () => {
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R129", "STATE-R127", "imp036gCompletion"), true);
@@ -9748,28 +9880,123 @@ IMP-036G has an **APPROVED** Product Definition. Implementation = AUTHORIZED / S
     );
   });
 
-  it("rejects a stale IMP-036G IMPLEMENTATION_IN_PROGRESS product index at R129/S127", () => {
+  it("requires the live product index to record IMP-036G IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE and rejects stale in-progress wording", () => {
     const liveIndex = readFileSync(new URL("../docs/platform/product/README.md", import.meta.url), "utf8");
-    const live = evaluateImp036gCompletedProductIndex(liveIndex);
-    assert.equal(live.ok, false);
-    assert.ok(
-      live.code === "IMP036G_PRODUCT_INDEX_STALE" || live.code === "IMP036G_PRODUCT_INDEX_LIFECYCLE",
-      live.code,
-    );
-    assert.equal(
+    assert.deepEqual(evaluateImp036gCompletedProductIndex(liveIndex), { ok: true });
+    assert.match(liveIndex, /IMP-040 Product Definition/);
+    assert.match(liveIndex, /PD-IMP-040-DRAFT-1/);
+    assert.match(liveIndex, /IMP040_ACTIVATED: NO/);
+    assert.deepEqual(
       evaluateImp036gImplementationCompletionCheckpoint({
         ...completionBase,
         productDefinitionText: validCompletedPd,
         capabilityText: validCompletedCapability,
         productIndexText: liveIndex,
-      }).ok,
-      false,
+        manualValidationText: validManualValidation,
+      }),
+      { ok: true },
     );
     const mixedStale = validCompletedProductIndex.replace(
       "Implementation = AUTHORIZED / STARTED / COMPLETE / `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`; not accepted.",
       "Implementation = AUTHORIZED / STARTED / `IMPLEMENTATION_IN_PROGRESS`; not accepted.",
     );
     assert.equal(evaluateImp036gCompletedProductIndex(mixedStale).code, "IMP036G_PRODUCT_INDEX_STALE");
+  });
+
+
+  it("passes recorded IMP-036G manual technical validation evidence", () => {
+    assert.deepEqual(evaluateImp036gManualTechnicalValidation(validManualValidation), { ok: true });
+    const liveManual = readFileSync(
+      new URL("../tests/administration/imp036g-manual-validation.md", import.meta.url),
+      "utf8",
+    );
+    assert.deepEqual(evaluateImp036gManualTechnicalValidation(liveManual), { ok: true });
+  });
+
+  it("rejects missing, NOT_PERFORMED, DEFECTS, or wrong-candidate manual validation at R129/S127", () => {
+    assert.equal(evaluateImp036gManualTechnicalValidation(null).code, "IMP036G_MANUAL_VALIDATION_ABSENT");
+    assert.equal(evaluateImp036gManualTechnicalValidation("").code, "IMP036G_MANUAL_VALIDATION_ABSENT");
+    assert.equal(
+      evaluateImp036gManualTechnicalValidation(
+        validManualValidation.replace("OVERALL_RESULT: PASS", "OVERALL_RESULT: NOT_PERFORMED"),
+      ).code,
+      "IMP036G_MANUAL_VALIDATION_NOT_PERFORMED",
+    );
+    assert.equal(
+      evaluateImp036gManualTechnicalValidation(
+        validManualValidation.replace("OVERALL_RESULT: PASS", "OVERALL_RESULT: DEFECTS"),
+      ).code,
+      "IMP036G_MANUAL_VALIDATION_DEFECTS",
+    );
+    assert.equal(
+      evaluateImp036gImplementationCompletionCheckpoint({
+        ...completionBase,
+        productDefinitionText: validCompletedPd,
+        capabilityText: validCompletedCapability,
+        manualValidationText: validManualValidation.replaceAll(
+          "c35c9eab6a30ec6ce745cefd75c523181326f360",
+          "0000000000000000000000000000000000000000",
+        ),
+      }).ok,
+      false,
+    );
+    assert.equal(
+      evaluateImp036gImplementationCompletionCheckpoint({
+        ...completionBase,
+        productDefinitionText: validCompletedPd,
+        capabilityText: validCompletedCapability,
+        manualValidationText: validManualValidation.replaceAll(
+          "266fe3b07811f6942e76cac155d58ba07daabe56",
+          "1111111111111111111111111111111111111111",
+        ),
+      }).ok,
+      false,
+    );
+    assert.equal(
+      evaluateImp036gImplementationCompletionCheckpoint({
+        ...completionBase,
+        productDefinitionText: validCompletedPd,
+        capabilityText: validCompletedCapability,
+        manualValidationText: validManualValidation.replace(
+          "Manual keyboard result | PASS",
+          "Manual keyboard result | NOT_PERFORMED",
+        ),
+      }).ok,
+      false,
+    );
+    assert.equal(
+      evaluateImp036gImplementationCompletionCheckpoint({
+        ...completionBase,
+        productDefinitionText: validCompletedPd,
+        capabilityText: validCompletedCapability,
+        manualValidationText: validManualValidation.replace(
+          "AT sampling result | PASS",
+          "AT sampling result | NOT_PERFORMED",
+        ),
+      }).ok,
+      false,
+    );
+    assert.equal(
+      evaluateImp036gImplementationCompletionCheckpoint({
+        ...completionBase,
+        productDefinitionText: validCompletedPd,
+        capabilityText: validCompletedCapability,
+        manualValidationText: validManualValidation.replace(
+          "Small-mobile result | PASS",
+          "Small-mobile result | NOT_PERFORMED",
+        ),
+      }).ok,
+      false,
+    );
+    assert.equal(
+      evaluateImp036gImplementationCompletionCheckpoint({
+        ...completionBase,
+        productDefinitionText: validCompletedPd,
+        capabilityText: validCompletedCapability,
+        manualValidationText: null,
+      }).ok,
+      false,
+    );
   });
 
   it("does not require IMP-037 activation in the completed product index", () => {
