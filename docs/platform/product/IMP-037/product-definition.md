@@ -80,9 +80,9 @@ PD1_DID_NOT_ACTIVATE_IMP036F_AT_ADOPTION = YES
 ```
 
 Lifecycle truth remains ROADMAP/STATE only (`GTM-R130` / `STATE-R128`):
-`acceptedThrough = IMP-036G`; `currentProductSlice = NONE` (ARCHITECTURE_LOCKED /
-NOT_AUTHORIZED / NOT_STARTED); `nextProductSlice = IMP-037`; **`IMP037_ACTIVATED: NO`**.
-Presence of this PRE-GATE draft does **not** activate IMP-037.
+`acceptedThrough = IMP-036G`; `currentProductSlice = NONE`; `pendingAcceptance = NONE`;
+`nextProductSlice = IMP-037` (`PLANNED` / `NOT_ACTIVATED` / `NOT_AUTHORIZED` / `NOT_STARTED`;
+`IMP037_ACTIVATED: NO`). Presence of this PRE-GATE draft does **not** activate IMP-037.
 
 ---
 
