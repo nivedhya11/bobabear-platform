@@ -3,7 +3,9 @@
  *
  * Distinguishes FRESH_EMPTY / COMPLETE_COMPATIBLE / PARTIAL_OR_INCOMPATIBLE
  * using stable identity from checked-in seed artifacts. Does not require
- * mutable commercial/content fields that IMP-036F authoring may change.
+ * mutable commercial/content fields that IMP-036F authoring may change
+ * (names, descriptions, prices, modifier presentation, menu placement
+ * including entry sectionId and section parentSectionId).
  *
  * Never writes. Uses application Persistence withContext only.
  */
@@ -238,7 +240,6 @@ export async function classifyStagingBaseline(options: {
         id: menuSectionsTable.id,
         brandId: menuSectionsTable.brandId,
         menuId: menuSectionsTable.menuId,
-        parentSectionId: menuSectionsTable.parentSectionId,
         code: menuSectionsTable.code,
       })
       .from(menuSectionsTable)
@@ -251,7 +252,6 @@ export async function classifyStagingBaseline(options: {
         id: menuEntriesTable.id,
         brandId: menuEntriesTable.brandId,
         menuId: menuEntriesTable.menuId,
-        sectionId: menuEntriesTable.sectionId,
         productId: menuEntriesTable.productId,
       })
       .from(menuEntriesTable)
@@ -430,9 +430,7 @@ export async function classifyStagingBaseline(options: {
       if (brandId && row.brandId !== brandId) reasons.push(`section_brand_mismatch:${section.code}`);
       if (row.menuId !== manifest.menu.id) reasons.push(`section_menu_mismatch:${section.code}`);
       if (row.code !== section.code) reasons.push(`section_code_mismatch:${section.code}`);
-      if ((row.parentSectionId ?? null) !== (section.parent_section_id ?? null)) {
-        reasons.push(`section_parent_mismatch:${section.code}`);
-      }
+      // parentSectionId is mutable menu placement (IMP-036F updateMenuSection), not seed identity.
     }
     if (sections.length !== manifest.sections.length) {
       reasons.push("section_count_incomplete");
@@ -446,9 +444,7 @@ export async function classifyStagingBaseline(options: {
       }
       if (brandId && row.brandId !== brandId) reasons.push(`entry_brand_mismatch:${entry.source_key}`);
       if (row.menuId !== manifest.menu.id) reasons.push(`entry_menu_mismatch:${entry.source_key}`);
-      if (row.sectionId !== entry.section_id) {
-        reasons.push(`entry_section_mismatch:${entry.source_key}`);
-      }
+      // sectionId is mutable menu placement (IMP-036F moveMenuEntry), not seed identity.
       if (row.productId !== entry.product_id) {
         reasons.push(`entry_product_mismatch:${entry.source_key}`);
       }

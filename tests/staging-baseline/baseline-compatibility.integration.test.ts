@@ -15,7 +15,7 @@ import {
   catalogProductsTable,
   catalogVariantsTable,
 } from "../../src/platform/database/schema/catalog";
-import { menuSectionsTable } from "../../src/platform/database/schema/menu";
+import { menuEntriesTable, menuSectionsTable } from "../../src/platform/database/schema/menu";
 import { priceBookVariantPricesTable } from "../../src/platform/database/schema/pricing";
 import {
   bootstrapPlatformSuperAdmin,
@@ -101,7 +101,8 @@ function loadManifest() {
   ) as {
     brand: { id: string };
     products: readonly { id: string; code: string; description: string | null; variant: { id: string } }[];
-    sections: readonly { id: string; name: string }[];
+    sections: readonly { id: string; name: string; parent_section_id: string | null }[];
+    entries: readonly { id: string; section_id: string; product_id: string }[];
   };
 }
 
@@ -269,6 +270,60 @@ describe("classifyStagingBaseline", () => {
 
       const classification = await classifyStagingBaseline({ projectRoot, persistence });
       expect(classification.state).toBe("COMPLETE_COMPATIBLE");
+    });
+  });
+
+  it("treats legitimate mutable menu placement as COMPLETE_COMPATIBLE", async () => {
+    await withMigratedPersistence(async (persistence) => {
+      await applyFullFounderSeedChain(persistence);
+      const before = await classifyStagingBaseline({ projectRoot, persistence });
+      expect(before.state).toBe("COMPLETE_COMPATIBLE");
+
+      const manifest = loadManifest();
+      expect(manifest.sections.length).toBeGreaterThanOrEqual(2);
+      expect(manifest.entries.length).toBeGreaterThanOrEqual(1);
+      const entry = manifest.entries[0]!;
+      const alternateSection = manifest.sections.find((section) => section.id !== entry.section_id);
+      expect(alternateSection).toBeDefined();
+      const childSection =
+        manifest.sections.find((section) => section.parent_section_id === null && section.id !== alternateSection!.id) ??
+        manifest.sections.find((section) => section.id !== alternateSection!.id);
+      expect(childSection).toBeDefined();
+
+      await persistence.withContext(async (ctx) => {
+        // Mirror IMP-036F moveMenuEntry / updateMenuSection placement mutations.
+        await ctx.db
+          .update(menuEntriesTable)
+          .set({ sectionId: alternateSection!.id })
+          .where(eq(menuEntriesTable.id, entry.id));
+        await ctx.db
+          .update(menuSectionsTable)
+          .set({ parentSectionId: alternateSection!.id })
+          .where(eq(menuSectionsTable.id, childSection!.id));
+      });
+
+      const afterPlacement = await classifyStagingBaseline({ projectRoot, persistence });
+      expect(afterPlacement.state).toBe("COMPLETE_COMPATIBLE");
+      expect(resolveStagingBootstrapAction(afterPlacement.state)).toBe("PRESERVE");
+
+      const preserved = await persistence.withContext(async (ctx) => {
+        const entryRows = await ctx.db
+          .select({ sectionId: menuEntriesTable.sectionId })
+          .from(menuEntriesTable)
+          .where(eq(menuEntriesTable.id, entry.id))
+          .limit(1);
+        const sectionRows = await ctx.db
+          .select({ parentSectionId: menuSectionsTable.parentSectionId })
+          .from(menuSectionsTable)
+          .where(eq(menuSectionsTable.id, childSection!.id))
+          .limit(1);
+        return {
+          entrySectionId: entryRows[0]?.sectionId,
+          sectionParentId: sectionRows[0]?.parentSectionId ?? null,
+        };
+      });
+      expect(preserved.entrySectionId).toBe(alternateSection!.id);
+      expect(preserved.sectionParentId).toBe(alternateSection!.id);
     });
   });
 
