@@ -2,7 +2,7 @@
 {
   "status": "CURRENT",
   "authority": "PRODUCT_ARTIFACT_INDEX",
-  "lastReviewed": "2026-09-17"
+  "lastReviewed": "2026-09-18"
 }
 -->
 
@@ -21,6 +21,7 @@ owned by [TESTING.md](../TESTING.md).
 | [IMP-036F Product Definition](./IMP-036F/product-definition.md) | First PD-1 per-IMP Product Definition (`PD-IMP-036F-DRAFT-1`); Product Definition Gate = PASS; Architecture Fit = PASS; Capability architecture = LOCKED; lifecycle = COMPLETE_AND_ACCEPTED / accepted (ROADMAP/STATE remain lifecycle authority) |
 | [IMP-036G Product Definition](./IMP-036G/product-definition.md) | Product Definition = APPROVED (`PD-IMP-036G-DRAFT-2`); Product Definition Gate = PASS; Architecture Fit = PASS; Capability architecture = LOCKED ([`../capabilities/IMP-036G-administration-console-v2.md`](../capabilities/IMP-036G-administration-console-v2.md)); Implementation = AUTHORIZED / STARTED / `IMPLEMENTATION_IN_PROGRESS` (ROADMAP/STATE remain lifecycle authority; not accepted) |
 | [IMP-037 Product Definition](./IMP-037/product-definition.md) | `PD-IMP-037-DRAFT-1`; **PRE-GATE DRAFT**; Product Definition Gate = **NOT_PERFORMED**; Architecture Fit = **NOT_PERFORMED**; Architecture = **NOT_LOCKED**; **IMP037_ACTIVATED: NO**; Implementation = NOT_AUTHORIZED / NOT_STARTED (ROADMAP/STATE remain lifecycle authority; `currentProductSlice` remains IMP-036G) |
+| [IMP-040 Product Definition](./IMP-040/product-definition.md) | `PD-IMP-040-DRAFT-1`; **PRE-GATE DRAFT**; Founder product decisions resolved; Product Definition Gate = **NOT_PERFORMED**; Architecture Fit = **NOT_PERFORMED**; Architecture = **NOT_LOCKED**; **IMP040_ACTIVATED: NO**; Implementation = NOT_AUTHORIZED / NOT_STARTED; Journey Gap Audit = **NOT_PERFORMED**; GO = **NO**; public launch = **NO** (ROADMAP/STATE remain lifecycle authority; intervening IMP-037/038/039 remain future hard dependencies; `currentProductSlice` remains IMP-036G) |
 | Per-IMP Product Definition | Business outcome, journeys, acceptance slice, stories, scenarios, business rules, and explicit deferrals within existing authority |
 
 A per-IMP Product Definition is mandatory from **IMP-036F onward** for new substantial product
@@ -33,8 +34,15 @@ architecture = LOCKED at [`../capabilities/IMP-036G-administration-console-v2.md
 Implementation = AUTHORIZED / STARTED / `IMPLEMENTATION_IN_PROGRESS`; not accepted). IMP-037 has a **PRE-GATE DRAFT** Product Definition at
 [`./IMP-037/product-definition.md`](./IMP-037/product-definition.md) (`PD-IMP-037-DRAFT-1`; Product
 Definition Gate = NOT_PERFORMED; Architecture Fit = NOT_PERFORMED; **IMP037_ACTIVATED: NO**).
-Activation and formal lifecycle remain owned
-only by CURRENT ROADMAP/STATE, not by this index.
+IMP-040 has a **PRE-GATE DRAFT** Product Definition at
+[`./IMP-040/product-definition.md`](./IMP-040/product-definition.md) (`PD-IMP-040-DRAFT-1`; Founder
+product decisions resolved; Product Definition Gate = NOT_PERFORMED; Architecture Fit =
+NOT_PERFORMED; Architecture = NOT_LOCKED; **IMP040_ACTIVATED: NO**; Implementation =
+NOT_AUTHORIZED / NOT_STARTED; Journey Gap Audit = NOT_PERFORMED; GO = NO; public launch = NO).
+Canonical Product Definitions for intervening IMP-038 / IMP-039 are not present on CURRENT main;
+those capabilities remain future hard dependencies for IMP-040 and must not be treated as accepted
+from this index. Activation and formal lifecycle remain owned only by CURRENT ROADMAP/STATE, not by
+this index.
 Engineering-only changes without a product surface may remain specification-driven under the
 [change workflow](../engineering/change-workflow.md).
 
