@@ -15,14 +15,14 @@
   "implementationAuthorized": "YES",
   "implementationStarted": "YES",
   "implementationComplete": "YES",
-  "impAccepted": "NO",
+  "impAccepted": "YES",
   "imp037Activated": "NO"
 }
 -->
 
 # IMP-036G — Administration Console V2
 
-## Product Definition (APPROVED — Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED)
+## Product Definition (APPROVED — Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; COMPLETE_AND_ACCEPTED)
 
 ```text
 Document status: APPROVED
@@ -38,7 +38,8 @@ IMP036G_ARCHITECTURE_LOCKED: YES
 IMP036G_IMPLEMENTATION_AUTHORIZED: YES
 IMP036G_STARTED: YES
 IMP036G_IMPLEMENTATION_COMPLETE: YES
-IMP036G_ACCEPTED: NO
+IMP036G_ACCEPTED: YES
+IMP036G_FOUNDER_UAT: PASS
 IMP037_ACTIVATED: NO
 ```
 
@@ -46,9 +47,9 @@ This artifact is the **gate-passed Product Definition** for candidate `PD-IMP-03
 (supersedes predecessor draft `PD-IMP-036G-DRAFT-1` after Founder product decisions of 2026-09-16).
 Product Definition Gate = PASS. It defines intended user/business behaviour for IMP-036G within
 existing accepted authority (IMP-035 / D-373 / ARCH-G25 and related CURRENT foundations). It
-records Architecture Fit PASS and architecture LOCKED. Implementation is authorized, started, and
-complete at GTM-R129 / STATE-R127 (`IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`). It does **not**
-claim IMP-036G acceptance, Founder UAT completion, or IMP-037 activation.
+records Architecture Fit PASS and architecture LOCKED. Formal acceptance is recorded at
+GTM-R130 / STATE-R128 (`IMP036G_ACCEPTED: YES`; `IMP036G_FOUNDER_UAT: PASS`). Acceptance does
+**not** activate IMP-037.
 
 ```text
 PRODUCT_DELIVERY_PROCESS_EFFECTIVE_FROM = IMP-036F
@@ -57,15 +58,15 @@ IMP036E_LIFECYCLE_CHANGED = NO
 PD1_DID_NOT_ACTIVATE_IMP036F_AT_ADOPTION = YES
 ```
 
-Lifecycle truth remains ROADMAP/STATE only (`GTM-R129` / `STATE-R127`): `IMP036G_ACTIVATED: YES`
-as CURRENT product slice; formal ROADMAP lifecycle is `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`
-(`IMP036G_IMPLEMENTATION_AUTHORIZED: YES`; `IMP036G_STARTED: YES`;
-`IMP036G_IMPLEMENTATION_COMPLETE: YES`); `IMP036G_PRODUCT_DEFINITION: APPROVED` /
-`PD-IMP-036G-DRAFT-2`; `IMP036G_PRODUCT_DEFINITION_GATE: PASS`; Architecture Fit = `PASS`;
-`IMP036G_ARCHITECTURE_LOCKED: YES`. Implementation completion does not accept IMP-036G, satisfy
-Founder UAT, or activate IMP-037. Manual technical validation required for implementation
-completion = PASS (see `tests/administration/imp036g-manual-validation.md`). Founder UAT
-remains a separate later interactive human gate and is still NOT_PERFORMED.
+Lifecycle truth remains ROADMAP/STATE only (`GTM-R130` / `STATE-R128`): `IMP036G_ACTIVATED: YES`;
+formal ROADMAP lifecycle is `COMPLETE_AND_ACCEPTED` (`IMP036G_IMPLEMENTATION_AUTHORIZED: YES`;
+`IMP036G_STARTED: YES`; `IMP036G_IMPLEMENTATION_COMPLETE: YES`; `IMP036G_ACCEPTED: YES`;
+`IMP036G_FOUNDER_UAT: PASS`); `IMP036G_PRODUCT_DEFINITION: APPROVED` / `PD-IMP-036G-DRAFT-2`;
+`IMP036G_PRODUCT_DEFINITION_GATE: PASS`; Architecture Fit = `PASS`;
+`IMP036G_ARCHITECTURE_LOCKED: YES`; `currentProductSlice = NONE`; `pendingAcceptance = NONE`;
+`nextProductSlice = IMP-037` (**IMP037_ACTIVATED: NO**). Accepted UAT candidate `fbf690a67cda51bd6bbc1bad4a9d26f574c4286e` / tree
+`84b6a502fcec646cb5a65f3257f19b85c64f49e1`. Manual technical validation PASS remains implementation provenance
+(see `tests/administration/imp036g-manual-validation.md`).
 
 Supporting planning input (not this Product Definition):
 [`experience/enterprise-experience/IMP-036G-administration-console-v2.md`](../../experience/enterprise-experience/IMP-036G-administration-console-v2.md).
@@ -83,9 +84,9 @@ Locked capability architecture (technical authority for Fit mechanisms):
 | Product Definition version / document status | `PD-IMP-036G-DRAFT-2`; **Document status: APPROVED**; **PRE-GATE DRAFT: NO** |
 | Product owner / approval evidence | Founder / product governance human authority; Product Definition Gate **PASS** on 2026-09-16 after independent pre-gate review **PASS** of exact candidate head `1fe1737d8f05d6069b2073d9faf1142d21b91970` / tree `25412cbadf224ef709687fe067f2427784a414cc` (gate-persistence commit is a subsequent revision and is **not** the evaluated artifact) |
 | Process / verification policy | `PD-1` / `TEST-1` |
-| Canonical anchors | VISION-1; ROADMAP GTM-R129; STATE STATE-R127; ARCH-R19; DR-15; PD-1; TEST-1; PERSONA-1; GJ-1 |
+| Canonical anchors | VISION-1; ROADMAP GTM-R130; STATE STATE-R128; ARCH-R19; DR-15; PD-1; TEST-1; PERSONA-1; GJ-1 |
 | Repository candidate | Gate-evaluated candidate: canonical path `/home/ajoshi/repos/boba-bear-platform`; branch `governance/imp036g-resolve-product-decisions`; **GATE_EVALUATED_HEAD** `1fe1737d8f05d6069b2073d9faf1142d21b91970`; **GATE_EVALUATED_TREE** `25412cbadf224ef709687fe067f2427784a414cc`; **GATE_EVALUATED_WORKING_TREE_FINGERPRINT** `123f56202a347db48d4ed14e0792d418edd6ac98165af2470af938c3e84f357e` (content-sensitive; reconstructed from clean exact gate-evaluated HEAD/tree via `npm run working-tree:fingerprint`). Draft-creation/base provenance (not the gate-evaluated candidate): verified base `main` merge `475d0c46598c2bf512570469354b69a3d75b7817` / tree `4ee7687b0d77027caa67d6672eadc390c7c916f8`. CURRENT_PR_HEAD / GATE_PERSISTENCE_COMMITS differ from the gate-evaluated candidate and are **not** the artifact that received Gate PASS. |
-| Capability lifecycle / authorization | ROADMAP/STATE: `currentProductSlice = IMP-036G`; `IMP036G_ACTIVATED: YES`; formal lifecycle `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`; `IMP036G_PRODUCT_DEFINITION: APPROVED`; `IMP036G_PRODUCT_DEFINITION_VERSION: PD-IMP-036G-DRAFT-2`; `IMP036G_PRODUCT_DEFINITION_GATE: PASS`; `IMP036G_ARCHITECTURE_FIT: PASS`; `IMP036G_ARCHITECTURE_LOCKED: YES`; `IMP036G_IMPLEMENTATION_AUTHORIZED: YES`; `IMP036G_STARTED: YES`; `IMP036G_IMPLEMENTATION_COMPLETE: YES`; `IMP036G_ACCEPTED: NO`; `IMP036G_FOUNDER_UAT_REQUIRED: YES`; `IMP036G_FOUNDER_UAT: NOT_PERFORMED`; `pendingAcceptance = IMP-036G`; `nextProductSlice = IMP-037` (**IMP037_ACTIVATED: NO**) |
+| Capability lifecycle / authorization | ROADMAP/STATE: `COMPLETE_AND_ACCEPTED`; `IMP036G_ACTIVATED: YES`; `currentProductSlice = NONE`; `pendingAcceptance = NONE`; `IMP036G_PRODUCT_DEFINITION: APPROVED`; `IMP036G_PRODUCT_DEFINITION_VERSION: PD-IMP-036G-DRAFT-2`; `IMP036G_PRODUCT_DEFINITION_GATE: PASS`; `IMP036G_ARCHITECTURE_FIT: PASS`; `IMP036G_ARCHITECTURE_LOCKED: YES`; `IMP036G_IMPLEMENTATION_AUTHORIZED: YES`; `IMP036G_STARTED: YES`; `IMP036G_IMPLEMENTATION_COMPLETE: YES`; `IMP036G_ACCEPTED: YES`; `IMP036G_FOUNDER_UAT_REQUIRED: YES`; `IMP036G_FOUNDER_UAT: PASS`; `nextProductSlice = IMP-037` (**IMP037_ACTIVATED: NO**) |
 | Relevant capability architecture / ADRs | Locked IMP-036G capability [`capabilities/IMP-036G-administration-console-v2.md`](../../capabilities/IMP-036G-administration-console-v2.md) (`ARCHITECTURE_LOCKED`); accepted IMP-035 capability [`capabilities/IMP-035-initial-administration-capabilities.md`](../../capabilities/IMP-035-initial-administration-capabilities.md); binding D-373; ARCH-G25 / ARCH-R19; Access Control + Organization domain authority; supporting plan [`IMP-036G-administration-console-v2.md`](../../experience/enterprise-experience/IMP-036G-administration-console-v2.md) (SUPPORTING only). |
 | Founder UAT applicability | `FOUNDER_UAT_REQUIRED = YES` — materially changes operator-visible administration experience (ROADMAP/STATE; enterprise-experience programme rule) |
 
@@ -145,7 +146,7 @@ separation from Customer and Operations.
 
 ---
 
-## 3. Problem statement
+## 3. Problem statement (Pre-IMP-036G baseline / historical)
 
 **Who:** Brand/business administrators (`PERSONA-WORKFORCE-OPERATOR` job context) and, where
 authorized, platform-level operators inspecting safe operational status
@@ -172,7 +173,7 @@ enterprise Admin job of “understand my scope → navigate hierarchy → manage
 | Operational status | `CURRENT_SUPPORTED` Ops-side only | Only `GET /api/operations/v1/operational-status` (`order.read`); Admin must not become Ops dashboard; Open Operations navigation OK if separately authorized |
 | Coherent Admin IA / consequence UX | `PLANNED_IMP036G` | Overview / Organization / Workforce / Access / Audit / System Operational Status as product IA (jobs/outcomes, not React lock) |
 
-Do not treat current UI incompleteness or implementation quirks as desired end-state behaviour.
+Historical pre-acceptance baseline: do not treat pre-IMP-036G UI incompleteness or implementation quirks as desired end-state behaviour.
 
 ---
 
@@ -269,7 +270,7 @@ Data implications: session/capability + authoritative domain projections for Ove
 Security implications: no client-supplied authority; no privilege gain via UI
 Architecture fit / applicable invariants: D-373; ARCH-G25; Resolved by locked IMP-036G capability architecture — `ADMIN_OVERVIEW = BOUNDED_ADMIN_OVERVIEW_COMPOSITION_PROJECTION`
 Open material decisions: NONE for Overview mandatory content (Founder-resolved §25 item 2); mechanism locked
-Readiness: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE (Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation AUTHORIZED / STARTED / COMPLETE at GTM-R129 / STATE-R127)
+Readiness: COMPLETE_AND_ACCEPTED (Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation AUTHORIZED / STARTED / COMPLETE at GTM-R130 / STATE-R128)
 ```
 
 ### US-IMP-036G-002 — Browse organization hierarchy
@@ -293,7 +294,7 @@ Data implications: existing Organization resource projections; Fit determines pa
 Security implications: scope filtering server-side on every result; no forged scope; no foreign leak
 Architecture fit / applicable invariants: D-373 collections authorize-first; Resolved by locked IMP-036G capability architecture — `AUTHORIZED_SET_CURSOR_CONTINUATION`
 Open material decisions: NONE for product requirement (Founder-resolved §25 item 6); mechanism locked
-Readiness: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE (Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation AUTHORIZED / STARTED / COMPLETE at GTM-R129 / STATE-R127)
+Readiness: COMPLETE_AND_ACCEPTED (Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation AUTHORIZED / STARTED / COMPLETE at GTM-R130 / STATE-R128)
 ```
 
 ### US-IMP-036G-003 — Maintain supported organization resources
@@ -317,7 +318,7 @@ Data implications: soft active/inactive; Fit determines revision/CAS/preconditio
 Security implications: consequence confirmation for deactivate; server denies unauthorized; server enforces concurrency
 Architecture fit / applicable invariants: Resolved by locked IMP-036G capability architecture — `SERVER_ISSUED_REVISION_CAS` (additive revision; future migration)
 Open material decisions: NONE for product requirement (Founder-resolved §25 item 7); mechanism locked
-Readiness: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE (Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation AUTHORIZED / STARTED / COMPLETE at GTM-R129 / STATE-R127)
+Readiness: COMPLETE_AND_ACCEPTED (Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation AUTHORIZED / STARTED / COMPLETE at GTM-R130 / STATE-R128)
 ```
 
 ### US-IMP-036G-004 — Manage workforce memberships
@@ -341,7 +342,7 @@ Data implications: invited|active|suspended|revoked|expired; no hard-delete; Fit
 Security implications: consequence confirmation for suspend/revoke/expire; distinguish Expire vs Revoke; no authority beyond actor
 Architecture fit / applicable invariants: Resolved by locked IMP-036G capability architecture — membership lists use `AUTHORIZED_SET_CURSOR_CONTINUATION`; Expire maps to existing invited→expired (architecture change NONE)
 Open material decisions: NONE for Expire or membership scale (Founder-resolved §25 items 5–6)
-Readiness: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE (Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation AUTHORIZED / STARTED / COMPLETE at GTM-R129 / STATE-R127)
+Readiness: COMPLETE_AND_ACCEPTED (Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation AUTHORIZED / STARTED / COMPLETE at GTM-R130 / STATE-R128)
 ```
 
 ### US-IMP-036G-005 — Manage existing role assignments safely
@@ -365,7 +366,7 @@ Data implications: existing assignment records; revoke soft semantics as CURRENT
 Security implications: self-elevation deny; ceiling enforce; consequence confirmation
 Architecture fit / applicable invariants: NEW_ROLE/PERMISSION/RBAC_SEMANTICS_EXPECTED: NO
 Open material decisions: NONE for core ceiling semantics (CURRENT_SUPPORTED)
-Readiness: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE (Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation AUTHORIZED / STARTED / COMPLETE at GTM-R129 / STATE-R127)
+Readiness: COMPLETE_AND_ACCEPTED (Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation AUTHORIZED / STARTED / COMPLETE at GTM-R130 / STATE-R128)
 ```
 
 ### US-IMP-036G-006 — Inspect effective permissions
@@ -389,7 +390,7 @@ Data implications: read-only projection; no persistence mutation from diagnostic
 Security implications: must not become covert privilege escalation or permission editor; caller authz enforced; no foreign leak; caller must not be mislabeled as member
 Architecture fit / applicable invariants: Resolved by locked IMP-036G capability architecture — `MANAGED_SUBJECT_DIAGNOSTIC = EXTEND_EXISTING_ADMIN_EFFECTIVE_PERMISSIONS_READ`
 Open material decisions: NONE for product requirement (Founder-resolved §25 item 1); mechanism locked
-Readiness: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE (Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation AUTHORIZED / STARTED / COMPLETE at GTM-R129 / STATE-R127)
+Readiness: COMPLETE_AND_ACCEPTED (Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation AUTHORIZED / STARTED / COMPLETE at GTM-R130 / STATE-R128)
 ```
 
 ### US-IMP-036G-007 — Investigate access audit history
@@ -413,7 +414,7 @@ Data implications: append-only read; no new audit store expected; Architecture F
 Security implications: minimize sensitive disclosure; authz/scope preserved on every filtered result
 Architecture fit / applicable invariants: Resolved by locked IMP-036G capability architecture — server-side actor/action/date-time filters over eligible set before page projection; `AUTHORIZED_SET_CURSOR_CONTINUATION`; `SCHEMA_CHANGE_FOR_AUDIT_FILTERING = NO`; index only if evidence requires. Technical detail lives in the capability architecture.
 Open material decisions: NONE for product requirement (Founder-resolved §25 items 3 and 6); mechanism locked
-Readiness: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE (Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation AUTHORIZED / STARTED / COMPLETE at GTM-R129 / STATE-R127)
+Readiness: COMPLETE_AND_ACCEPTED (Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation AUTHORIZED / STARTED / COMPLETE at GTM-R130 / STATE-R128)
 ```
 
 ### US-IMP-036G-008 — Inspect safe operational status and hand off to Operations
@@ -437,7 +438,7 @@ Data implications: reuse existing Ops projection; no new status store
 Security implications: no secrets; no privilege broaden via status UI
 Architecture fit / applicable invariants: Admin≠Ops boundary (D-373 vs D-372); Resolved by locked IMP-036G capability architecture — reuse `GET /api/operations/v1/operational-status` directly; no Admin health API
 Open material decisions: NONE; composition locked (Overview + direct Ops read; Open Operations = navigation only)
-Readiness: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE (Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation AUTHORIZED / STARTED / COMPLETE at GTM-R129 / STATE-R127)
+Readiness: COMPLETE_AND_ACCEPTED (Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation AUTHORIZED / STARTED / COMPLETE at GTM-R130 / STATE-R128)
 ```
 
 ---
@@ -1085,8 +1086,9 @@ Repository mandatory AC evidence is complete (`PARTIAL`/`UAT_REQUIRED`/`UNVERIFI
 `imp036g-ac-evidence.md`). Manual technical validation required for implementation completion =
 PASS (`tests/administration/imp036g-manual-validation.md`; candidate
 `c35c9eab6a30ec6ce745cefd75c523181326f360` / tree `266fe3b07811f6942e76cac155d58ba07daabe56`;
-2026-09-18; tester Ashutosh; defects NONE). Founder UAT remains a separate later interactive
-human gate and is still **NOT_PERFORMED**.
+2026-09-18; tester Ashutosh; defects NONE). Founder UAT is complete and recorded as **PASS**
+(decision date 2026-09-18; Founder authority; accepted UAT candidate
+`fbf690a67cda51bd6bbc1bad4a9d26f574c4286e` / tree `84b6a502fcec646cb5a65f3257f19b85c64f49e1`).
 
 ---
 
@@ -1122,7 +1124,7 @@ human gate and is still **NOT_PERFORMED**.
 | `BR-IMP-036G-026` | CURRENT Admin collection projections for brands, organizations, territories, legal entities, outlets, memberships, and audit events are capped at LIST_LIMIT=200 (gap); PLANNED MUST provide scalable discoverability (server pagination and/or search/filter); ≤200 is NOT an accepted V1 boundary; every result authorize-first; navigating must not broaden authority | VERIFIED CURRENT; Founder decision §25 item 6 | AC-002-10/11; AC-004-01; AC-007-03 |
 | `BR-IMP-036G-027` | CURRENT organization resource updates are update-by-ID without revision/CAS (LWW gap); PLANNED MUST detect stale writes with understandable conflict and reload/review/retry; no silent LWW as V1 target; server enforces concurrency; Fit chooses revision/CAS/precondition | VERIFIED CURRENT; Founder decision §25 item 7 | AC-003-09 |
 
-Product decisions for these rules are RESOLVED in §25 (`UNRESOLVED_COUNT = 0`). Architecture Fit = PASS; architecture LOCKED; implementation is AUTHORIZED / STARTED / COMPLETE (`IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`; not accepted).
+Product decisions for these rules are RESOLVED in §25 (`UNRESOLVED_COUNT = 0`). Architecture Fit = PASS; architecture LOCKED; implementation is AUTHORIZED / STARTED / COMPLETE (`COMPLETE_AND_ACCEPTED`).
 
 ---
 
@@ -1296,7 +1298,7 @@ Persona labels do **not** authorize. Unknown material authority → stop for dec
 
 | GJ ID / registry status | Affected steps / downstream behaviour | Mandatory for this acceptance? | Related story / AC IDs | Required proof / actual evidence |
 |---|---|---|---|---|
-| `GJ-PERMITTED-OUTLET-ACCESS` / `JOURNEY-PERMITTED-OUTLET-ACCESS` / `CURRENT` | Admin-side membership + role assignment continuity within delegation ceiling; other scopes remain denied; **no invitation delivery** | YES — protect continuity (do not break); do not re-litigate invitation delivery | US-004, US-005; AC-004-12; AC-005-02/03 | Repository continuity proof `VERIFIED` (AC-004-12 in `imp036g-ac-evidence.md`); Founder interactive sampling remains NOT_PERFORMED |
+| `GJ-PERMITTED-OUTLET-ACCESS` / `JOURNEY-PERMITTED-OUTLET-ACCESS` / `CURRENT` | Admin-side membership + role assignment continuity within delegation ceiling; other scopes remain denied; **no invitation delivery** | YES — protect continuity (do not break); do not re-litigate invitation delivery | US-004, US-005; AC-004-12; AC-005-02/03 | Repository continuity proof `VERIFIED` (AC-004-12 in `imp036g-ac-evidence.md`); Founder interactive sampling for GJ continuity was covered under IMP-036G Founder UAT PASS |
 | Other GJs (FIRST-ORDER, PRODUCT-MENU-LAUNCH, etc.) | Not primary Admin V2 acceptance; commercial Admin surfaces remain separate | NO as IMP-036G mandatory acceptance | N/A | Regression only if shared shell risk proven |
 
 ---
@@ -1310,7 +1312,7 @@ Persona labels do **not** authorize. Unknown material authority → stop for dec
 | IMP-036A portal foundation | Accepted | Entry/shell | NONE |
 | Ops operational-status endpoint | CURRENT Ops API | US-008 | NONE — locked: direct Ops reuse; no Admin health API |
 | Product Definition Gate | PASS / PERFORMED | Satisfied | NONE — gate complete |
-| Architecture Fit / lock | PASS / LOCKED | Satisfied; implementation AUTHORIZED / STARTED / COMPLETE at GTM-R129 / STATE-R127 | NONE for Fit/lock — formal acceptance and Founder UAT remain separate (`IMP036G_ACCEPTED: NO`; `IMP036G_FOUNDER_UAT: NOT_PERFORMED`) |
+| Architecture Fit / lock | PASS / LOCKED | Satisfied; implementation AUTHORIZED / STARTED / COMPLETE at GTM-R130 / STATE-R128 | NONE for Fit/lock — formal acceptance recorded (`IMP036G_ACCEPTED: YES`; `IMP036G_FOUNDER_UAT: PASS`) |
 | §25 Founder product decisions | RESOLVED 2026-09-16 (`UNRESOLVED_COUNT = 0`) | Binding product requirements for US-001…007 / §18 | Mechanisms locked in capability architecture — not unresolved product decisions |
 | IMP-037 | `nextProductSlice`; **IMP037_ACTIVATED: NO** | N/A — must not activate | NONE |
 
@@ -1325,7 +1327,7 @@ Persona labels do **not** authorize. Unknown material authority → stop for dec
 | System roles; ceiling; self-elevation deny | Existing verified | US-005 |
 | Partial Admin UI (hub, brands list, membership detail transitions/grant/revoke, audit list) | Existing verified PARTIAL | §3 |
 | Ops `GET /api/operations/v1/operational-status` | Existing verified (Ops) | US-008 |
-| Coherent Admin IA + useful Overview + full hierarchy CRUD UI + create membership UI + consequence UX + Admin status hand-off | V1 acceptance commitment (`PLANNED_IMP036G`) — implemented and pending acceptance (not accepted; Founder UAT NOT_PERFORMED) | US-001…008 |
+| Coherent Admin IA + useful Overview + full hierarchy CRUD UI + create membership UI + consequence UX + Admin status hand-off | V1 acceptance commitment (`PLANNED_IMP036G`) — implemented and COMPLETE_AND_ACCEPTED (Founder UAT PASS) | US-001…008 |
 | Scalable discoverability beyond LIST_LIMIT=200 for brands/orgs/territories/legal entities/outlets/memberships/audit | V1 acceptance commitment (`PLANNED_IMP036G`); CURRENT ≤200 is gap | US-002/004/007; BR-026 |
 | Server-side audit actor/action/date-range filters | V1 acceptance commitment (`PLANNED_IMP036G`); CURRENT no HTTP filters is gap | US-007; BR-017 |
 | Managed-subject effective permissions diagnostic | V1 acceptance commitment (`PLANNED_IMP036G`); CURRENT caller-only is gap | US-006; BR-015 |
@@ -1335,7 +1337,7 @@ Persona labels do **not** authorize. Unknown material authority → stop for dec
 | Caller-scoped effective permissions (CURRENT transport) | Existing verified CURRENT fact only — not sufficient desired V1 state alone | §3; US-006 |
 | GJ-PERMITTED-OUTLET-ACCESS continuity protection | Existing CURRENT GJ; V1 must not break | AC-004-12 |
 
-Proposed V1 UI behaviour is not accepted until canonical gates pass.
+Historical note: proposed V1 UI behaviour was not accepted until canonical gates passed.
 
 ---
 
@@ -1405,7 +1407,7 @@ ARCHITECTURE_FIT_EXECUTION: PERFORMED
 ARCHITECTURE_FIT_RESULT: PASS
 ARCHITECTURE_FIT: PASS
 IMP036G_ARCHITECTURE_LOCKED: YES
-Stories are IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
+Stories are COMPLETE_AND_ACCEPTED
 (Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation AUTHORIZED / STARTED / COMPLETE).
 UNRESOLVED_DECISION_REQUIRED remains classification vocabulary only; active count = 0.
 ```
@@ -1416,19 +1418,19 @@ UNRESOLVED_DECISION_REQUIRED remains classification vocabulary only; active coun
 
 | Story ID | Applicable fields complete / evidence | Open material product decisions | Readiness / blocker |
 |---|---|---|---|
-| `US-IMP-036G-001` | §9 fields defined; ACs defined; Overview mandatory (Founder-resolved) | NONE (product) | `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` — Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation AUTHORIZED / STARTED / COMPLETE |
-| `US-IMP-036G-002` | §9 fields defined; ACs defined; discoverability beyond 200 mandatory | NONE (product) | `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` — Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation AUTHORIZED / STARTED / COMPLETE |
-| `US-IMP-036G-003` | §9 fields defined; ACs defined; stale-write protection mandatory | NONE (product) | `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` — Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation AUTHORIZED / STARTED / COMPLETE |
-| `US-IMP-036G-004` | §9 fields defined; ACs defined; Expire + membership discoverability mandatory | NONE (product) | `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` — Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation AUTHORIZED / STARTED / COMPLETE |
-| `US-IMP-036G-005` | §9 fields defined; ACs defined | NONE material for ceiling semantics | `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` — Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation AUTHORIZED / STARTED / COMPLETE |
-| `US-IMP-036G-006` | §9 fields defined; ACs defined; subject-principal EP mandatory | NONE (product) | `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` — Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation AUTHORIZED / STARTED / COMPLETE |
-| `US-IMP-036G-007` | §9 fields defined; ACs defined; server-side filters + audit scale mandatory | NONE (product) | `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` — Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation AUTHORIZED / STARTED / COMPLETE |
-| `US-IMP-036G-008` | §9 fields defined; ACs defined | NONE material if Ops reuse confirmed in Fit | `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` — Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation AUTHORIZED / STARTED / COMPLETE |
+| `US-IMP-036G-001` | §9 fields defined; ACs defined; Overview mandatory (Founder-resolved) | NONE (product) | `COMPLETE_AND_ACCEPTED` — Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation AUTHORIZED / STARTED / COMPLETE |
+| `US-IMP-036G-002` | §9 fields defined; ACs defined; discoverability beyond 200 mandatory | NONE (product) | `COMPLETE_AND_ACCEPTED` — Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation AUTHORIZED / STARTED / COMPLETE |
+| `US-IMP-036G-003` | §9 fields defined; ACs defined; stale-write protection mandatory | NONE (product) | `COMPLETE_AND_ACCEPTED` — Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation AUTHORIZED / STARTED / COMPLETE |
+| `US-IMP-036G-004` | §9 fields defined; ACs defined; Expire + membership discoverability mandatory | NONE (product) | `COMPLETE_AND_ACCEPTED` — Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation AUTHORIZED / STARTED / COMPLETE |
+| `US-IMP-036G-005` | §9 fields defined; ACs defined | NONE material for ceiling semantics | `COMPLETE_AND_ACCEPTED` — Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation AUTHORIZED / STARTED / COMPLETE |
+| `US-IMP-036G-006` | §9 fields defined; ACs defined; subject-principal EP mandatory | NONE (product) | `COMPLETE_AND_ACCEPTED` — Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation AUTHORIZED / STARTED / COMPLETE |
+| `US-IMP-036G-007` | §9 fields defined; ACs defined; server-side filters + audit scale mandatory | NONE (product) | `COMPLETE_AND_ACCEPTED` — Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation AUTHORIZED / STARTED / COMPLETE |
+| `US-IMP-036G-008` | §9 fields defined; ACs defined | NONE material if Ops reuse confirmed in Fit | `COMPLETE_AND_ACCEPTED` — Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation AUTHORIZED / STARTED / COMPLETE |
 
 Product decisions for the former seven §25 gaps are **RESOLVED**. Product Definition Gate = **PASS**.
 Architecture Fit = **PASS**; architecture = **LOCKED**. Implementation is **AUTHORIZED**,
-**STARTED**, and **COMPLETE** at GTM-R129 / STATE-R127
-(`IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`). Stories were READY for implementation at the
+**STARTED**, and **COMPLETE** at GTM-R130 / STATE-R128
+(`COMPLETE_AND_ACCEPTED`). Stories were READY for implementation at the
 GTM-R128 / STATE-R126 start predecessor tip.
 `STORY_COMPLETE != IMP_ACCEPTED`: story-level completion does not accept IMP-036G.
 
@@ -1509,7 +1511,7 @@ IMP036G_ARCHITECTURE_LOCKED: YES
 IMP036G_IMPLEMENTATION_AUTHORIZED: YES
 IMP036G_STARTED: YES
 IMP036G_IMPLEMENTATION_COMPLETE: YES
-IMP036G_ACCEPTED: NO
+IMP036G_ACCEPTED: YES
 IMP037_ACTIVATED: NO
 
 ARCHITECTURE_FIT_EVALUATED_HEAD = 386a245cde223d87c19742753130113b21b4bb2f
@@ -1519,10 +1521,10 @@ ARCHITECTURE_FIT_DATE = 2026-09-17
 INDEPENDENT_ARCHITECTURE_FIT_REVIEW = PASS
 ARCHITECTURE_LOCK_PERSISTENCE_COMMIT = subsequent governance commit (NOT the Fit-evaluated candidate)
 
-CANONICAL_ANCHORS = VISION-1; GTM-R129; STATE-R127; ARCH-R19; DR-15; PD-1; TEST-1; PERSONA-1; GJ-1
+CANONICAL_ANCHORS = VISION-1; GTM-R130; STATE-R128; ARCH-R19; DR-15; PD-1; TEST-1; PERSONA-1; GJ-1
 ARCHITECTURE_LOCK_RECORDED_AT = GTM-R127 / STATE-R125 (historical predecessor tip)
 IMPLEMENTATION_AUTHORIZATION_AND_START_RECORDED_AT = GTM-R128 / STATE-R126 (historical predecessor tip)
-IMPLEMENTATION_COMPLETE_RECORDED_AT = GTM-R129 / STATE-R127
+IMPLEMENTATION_COMPLETE_RECORDED_AT = GTM-R130 / STATE-R128
 GATE_EVALUATED_HEAD = 1fe1737d8f05d6069b2073d9faf1142d21b91970
 GATE_EVALUATED_TREE = 25412cbadf224ef709687fe067f2427784a414cc
 GATE_EVALUATED_WORKING_TREE_FINGERPRINT = 123f56202a347db48d4ed14e0792d418edd6ac98165af2470af938c3e84f357e
@@ -1533,7 +1535,7 @@ PREDECESSOR_DRAFT = PD-IMP-036G-DRAFT-1
 
 Product Definition Gate PASS and Architecture Fit PASS / architecture LOCKED do **not** authorize
 acceptance, Founder UAT, or IMP-037 activation. Implementation completion is recorded at
-GTM-R129 / STATE-R127 and is **not** formal acceptance.
+GTM-R130 / STATE-R128 and is **not** formal acceptance.
 
 ---
 
@@ -1592,8 +1594,8 @@ do not invent analytics KPI / second truth stores; Fit may reuse or introduce bo
 
 Evidence for repository-testable mandatory ACs: `COMPLETE` per
 `tests/administration/imp036g-ac-evidence.md` (`PARTIAL`/`UAT_REQUIRED`/`UNVERIFIED` = 0).
-Manual technical validation required for implementation completion = PASS. Founder UAT remains
-a separate later interactive human gate and is still NOT_PERFORMED. Gate Result: **PASS**.
+Manual technical validation required for implementation completion = PASS. Founder UAT:
+**PASS** at GTM-R130 / STATE-R128 (`IMP036G_FORMAL_ACCEPTANCE: ACCEPTED`). Gate Result: **PASS**.
 Architecture Fit: **PASS**; architecture: **LOCKED**; implementation: **AUTHORIZED** / **STARTED** /
-**COMPLETE** (`IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`; not accepted;
-`IMP036G_FOUNDER_UAT: NOT_PERFORMED`). Predecessor draft: `PD-IMP-036G-DRAFT-1`.
+**COMPLETE** (`COMPLETE_AND_ACCEPTED`;
+`IMP036G_FOUNDER_UAT: PASS`). Predecessor draft: `PD-IMP-036G-DRAFT-1`.

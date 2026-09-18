@@ -79,8 +79,8 @@ IMP036E_LIFECYCLE_CHANGED = NO
 PD1_DID_NOT_ACTIVATE_IMP036F_AT_ADOPTION = YES
 ```
 
-Lifecycle truth remains ROADMAP/STATE only (`GTM-R127` / `STATE-R125`):
-`acceptedThrough = IMP-036F`; `currentProductSlice = IMP-036G` (ARCHITECTURE_LOCKED /
+Lifecycle truth remains ROADMAP/STATE only (`GTM-R130` / `STATE-R128`):
+`acceptedThrough = IMP-036G`; `currentProductSlice = NONE` (ARCHITECTURE_LOCKED /
 NOT_AUTHORIZED / NOT_STARTED); `nextProductSlice = IMP-037`; **`IMP037_ACTIVATED: NO`**.
 Presence of this PRE-GATE draft does **not** activate IMP-037.
 
@@ -94,9 +94,9 @@ Presence of this PRE-GATE draft does **not** activate IMP-037.
 | Product Definition version / document status | `PD-IMP-037-DRAFT-1`; **Document status: PRE-GATE DRAFT**; **PRE-GATE DRAFT: YES** |
 | Product owner / approval evidence | Founder / product governance human authority; Founder decisions FD-037-01…07 **APPROVED** via `APPROVE_ALL_7_RECOMMENDATIONS` (2026-09-17). Product Definition Gate **NOT_PERFORMED**. |
 | Process / verification policy | `PD-1` / `TEST-1` |
-| Canonical anchors | VISION-1; ROADMAP GTM-R127; STATE STATE-R125; ARCH-R19; DR-15; PD-1; TEST-1; PERSONA-1; GJ-1 |
+| Canonical anchors | VISION-1; ROADMAP GTM-R130; STATE STATE-R128; ARCH-R19; DR-15; PD-1; TEST-1; PERSONA-1; GJ-1 |
 | Repository candidate | Canonical path `/home/ajoshi/repos/boba-bear-platform`; base `origin/main` `ee82a8cb783cc618f6f1f521964e72deaad677a0` / tree `1b1eaf138667e65bf4573988d62e176bb8be5949`; draft branch `governance/imp037-pre-gate-product-definition` (parallel governance lane; does not disturb IMP-036G implementation worktree) |
-| Capability lifecycle / authorization | ROADMAP/STATE: `nextProductSlice = IMP-037`; **IMP037_ACTIVATED: NO**; formal lifecycle `PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED`; Product Definition Gate NOT_PERFORMED; Architecture Fit NOT_PERFORMED; architecture NOT_LOCKED; implementation NOT_AUTHORIZED / NOT_STARTED; IMP037_ACCEPTED: NO. **currentProductSlice remains IMP-036G.** |
+| Capability lifecycle / authorization | ROADMAP/STATE: `nextProductSlice = IMP-037`; **IMP037_ACTIVATED: NO**; formal lifecycle `PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED`; Product Definition Gate NOT_PERFORMED; Architecture Fit NOT_PERFORMED; architecture NOT_LOCKED; implementation NOT_AUTHORIZED / NOT_STARTED; IMP037_ACCEPTED: NO. **currentProductSlice remains NONE (acceptedThrough IMP-036G).** |
 | Relevant capability architecture / ADRs | ADR-001 (DigitalOcean foundation / portability / launch recovery); ADR-002 (environment isolation; migration/release/rollback; restore ≠ routine rollback); ADR-013 (PostgreSQL 18; managed PITR + independent encrypted logical backup; direct backup/restore connections; restore validation; high-risk migration prerequisites); ADR-015 (configuration/secrets); ARCH-R19. Persistence stack selection is **not** reopened. |
 | Founder UAT applicability | `FOUNDER_UAT_REQUIRED = YES`; `FOUNDER_UAT_STATUS = NOT_PERFORMED` — launch-critical, high-consequence recovery capability. UAT must use isolated recovery rehearsal of the exact candidate; **never** the active production/source DB as drill target. |
 
@@ -1431,4 +1431,4 @@ PRODUCT_DEFINITION_GATE_READY:
 candidate result subject to independent pre-gate review
 ```
 
-IMP-037 remains pre-gate and unactivated. `currentProductSlice` remains IMP-036G.
+IMP-037 remains pre-gate and unactivated. `currentProductSlice` remains NONE (`acceptedThrough` IMP-036G).

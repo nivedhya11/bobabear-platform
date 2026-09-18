@@ -6,11 +6,11 @@
   "title": "Administration Console V2",
   "architectureLock": "ARCHITECTURE_LOCKED",
   "architectureFitResult": "PASS",
-  "implementation": "AUTHORIZED / STARTED / COMPLETE",
+  "implementation": "COMPLETE_AND_ACCEPTED",
   "implementationAuthorized": true,
   "implementationStarted": true,
   "implementationComplete": true,
-  "impAccepted": false,
+  "impAccepted": true,
   "founderUATRequired": true,
   "schemaChangeRequired": true,
   "lastReviewed": "2026-09-18",
@@ -22,13 +22,12 @@
 
 # IMP-036G — Administration Console V2
 
-## Capability Architecture — ARCHITECTURE_LOCKED / IMPLEMENTATION AUTHORIZED / STARTED / COMPLETE
+## Capability Architecture — COMPLETE_AND_ACCEPTED
 
 This document is the **locked capability architecture** for IMP-036G. It received Architecture Fit
 **PASS** and is the sole CURRENT capability-architecture authority for this slice. Implementation is
-**AUTHORIZED**, **STARTED**, and **COMPLETE** at GTM-R129 / STATE-R127
-(`IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`); that completion does **not** accept the IMP, perform
-Founder UAT, or activate IMP-037.
+**AUTHORIZED**, **STARTED**, and **COMPLETE**, and IMP-036G is **COMPLETE_AND_ACCEPTED** at
+GTM-R130 / STATE-R128 after Founder UAT PASS. Acceptance does **not** activate IMP-037.
 
 Supporting experience planning must not compete with this lock:
 [`docs/platform/experience/enterprise-experience/IMP-036G-administration-console-v2.md`](../experience/enterprise-experience/IMP-036G-administration-console-v2.md)
@@ -46,9 +45,12 @@ IMPLEMENTATION_COMPLETE = YES
 IMP036G_IMPLEMENTATION_AUTHORIZED = YES
 IMP036G_STARTED = YES
 IMP036G_IMPLEMENTATION_COMPLETE = YES
-IMP036G_ACCEPTED = NO
+IMP036G_ACCEPTED = YES
 IMP036G_FOUNDER_UAT_REQUIRED = YES
-IMP036G_FOUNDER_UAT = NOT_PERFORMED
+IMP036G_FOUNDER_UAT = PASS
+IMP036G_FORMAL_ACCEPTANCE = ACCEPTED
+IMP036G_INDEPENDENT_ACCEPTANCE_EVIDENCE = ACCEPTED
+IMP036G_INDEPENDENT_TECHNICAL_ACCEPTANCE = PASS
 IMP036G_MANUAL_TECHNICAL_VALIDATION = PASS
 IMP036G_MANUAL_VALIDATION_CANDIDATE_SHA = c35c9eab6a30ec6ce745cefd75c523181326f360
 IMP036G_MANUAL_VALIDATION_CANDIDATE_TREE = 266fe3b07811f6942e76cac155d58ba07daabe56
@@ -56,30 +58,48 @@ IMP036G_MANUAL_VALIDATION_DATE = 2026-09-18
 IMP036G_MANUAL_VALIDATION_TESTER = Ashutosh
 IMP036G_MANUAL_VALIDATION_DEFECTS = NONE
 IMP037_ACTIVATED = NO
-CANONICAL_ROADMAP_STATE = GTM-R129 / STATE-R127
+CANONICAL_ROADMAP_STATE = GTM-R130 / STATE-R128
 PRODUCT_DEFINITION = PD-IMP-036G-DRAFT-2 APPROVED (Gate PASS; Architecture Fit PASS; architecture LOCKED)
-AUTHORIZED + STARTED + COMPLETE = IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE (not accepted)
-IMP-036G: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
+AUTHORIZED + STARTED + COMPLETE + ACCEPTED = COMPLETE_AND_ACCEPTED
+IMP-036G: COMPLETE_AND_ACCEPTED
+IMP036G_ACCEPTED_MAIN_SHA = fbf690a67cda51bd6bbc1bad4a9d26f574c4286e
+IMP036G_ACCEPTED_TREE = 84b6a502fcec646cb5a65f3257f19b85c64f49e1
+IMP036G_ACCEPTED_CANDIDATE = fbf690a67cda51bd6bbc1bad4a9d26f574c4286e
+IMP036G_FOUNDER_UAT_CANDIDATE_BRANCH = main
+IMP036G_FOUNDER_UAT_CANDIDATE_HEAD = fbf690a67cda51bd6bbc1bad4a9d26f574c4286e
+IMP036G_FOUNDER_UAT_CANDIDATE_TREE = 84b6a502fcec646cb5a65f3257f19b85c64f49e1
+IMP036G_FOUNDER_UAT_CANDIDATE_FINGERPRINT = 9f472ce6e1ccaa2fe914006c846fb3018d668b718f569b6d0cb4fa64c3013f9b
+IMP036G_FOUNDER_UAT_DECISION_DATE = 2026-09-18
+IMP036G_FOUNDER_UAT_ACCEPTANCE_AUTHORITY = Founder
+IMP036G_EXACT_MAIN_CI = 35366698302
+IMP036G_EXACT_MAIN_CI_RESULT = SUCCESS
+IMP036G_IMPLEMENTATION_EXACT_MAIN_CI = 35214215500
+IMP036G_IMPLEMENTATION_EXACT_MAIN_CI_RESULT = SUCCESS
 IMP036G_IMPLEMENTATION_MERGE_SHA = c35c9eab6a30ec6ce745cefd75c523181326f360
 IMP036G_IMPLEMENTATION_TREE = 266fe3b07811f6942e76cac155d58ba07daabe56
 IMP036G_REVIEWED_CANDIDATE_HEAD = 7a013155a98529d4527e7b6c0358642e5cd9d806
 IMP036G_REVIEWED_CANDIDATE_TREE = 266fe3b07811f6942e76cac155d58ba07daabe56
-IMP036G_EXACT_MAIN_CI = 35214215500
-IMP036G_EXACT_MAIN_CI_RESULT = SUCCESS
 IMP036G_IMPLEMENTATION_EVIDENCE = COMPLETE
 IMP_036G_INDEPENDENT_IMPLEMENTATION_REVIEW = PASS
+FOUNDER_STAGING_PROJECT = boba-staging
+IMP036G_FOUNDER_STAGING_CANDIDATE_MATCH = YES
+IMP036G_FOUNDER_STAGING_BASELINE_STATE = COMPLETE_COMPATIBLE
+IMP036G_FOUNDER_STAGING_BOOTSTRAP_ACTION = PRESERVE
+IMP036G_FOUNDER_STAGING_RUNNING_SHA = fbf690a67cda51bd6bbc1bad4a9d26f574c4286e
+IMP036G_FOUNDER_STAGING_STATUS = FOUNDER_UAT_COMPLETE
+IMP036G_FOUNDER_STAGING_UAT_ROUTE = /workforce/admin/
 ```
 
 | Field | Value |
 |---|---|
 | Architecture lock | `ARCHITECTURE_LOCKED` |
-| Formal ROADMAP lifecycle | `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` (`AUTHORIZED` / `STARTED` / `COMPLETE`) |
+| Formal ROADMAP lifecycle | `COMPLETE_AND_ACCEPTED` (`AUTHORIZED` / `STARTED` / `COMPLETE`) |
 | Product Definition | `PD-IMP-036G-DRAFT-2` **APPROVED**; Product Definition Gate **PASS** |
 | Architecture Fit | **PASS** (performed; locked) |
-| Implementation | **AUTHORIZED** / **STARTED** / **COMPLETE** (not accepted) |
-| Accepted | **NO** |
+| Implementation | **AUTHORIZED** / **STARTED** / **COMPLETE** |
+| Accepted | **YES** |
 | Founder UAT required | **YES** |
-| Founder UAT | **NOT_PERFORMED** |
+| Founder UAT | **PASS** |
 | Schema change required (architecture conclusion) | **YES** (additive hierarchy revision CAS — implemented under this lock) |
 | New D-number | **NO** (`D374_REQUIRED_FOR_LOCK = NO`) |
 | Global ARCH bump | **NO** (`ARCH_R20_REQUIRED = NO`) |
@@ -129,14 +149,14 @@ The persistence commit that records this lock is a **subsequent governance commi
 the Fit-evaluated candidate above. Do not treat lock-persistence HEAD/tree/fingerprint as the Fit
 review candidate.
 
-Canonical anchors for CURRENT lock + implementation-completion authority (GTM-R129 / STATE-R127;
+Canonical anchors for CURRENT acceptance authority (GTM-R130 / STATE-R128;
 architecture lock itself was persisted at the historical GTM-R127 / STATE-R125 predecessor tip;
-implementation authorization/start at GTM-R128 / STATE-R126):
+implementation authorization/start at GTM-R128 / STATE-R126; completion at GTM-R129 / STATE-R127):
 
 ```text
 VISION = VISION-1
-ROADMAP = GTM-R129
-STATE = STATE-R127
+ROADMAP = GTM-R130
+STATE = STATE-R128
 ARCHITECTURE = ARCH-R19
 DECISION REGISTER = DR-15
 PRODUCT DELIVERY = PD-1
@@ -153,7 +173,8 @@ IMP036G_ARCHITECTURE_LOCKED = YES
 IMP036G_IMPLEMENTATION_AUTHORIZED = YES
 IMP036G_STARTED = YES
 IMP036G_IMPLEMENTATION_COMPLETE = YES
-IMP036G_ACCEPTED = NO
+IMP036G_ACCEPTED = YES
+IMP036G_FOUNDER_UAT = PASS
 IMP037_ACTIVATED = NO
 ```
 
@@ -249,8 +270,9 @@ under ARCH-R19 / D-373 without a new service, auth model, role, permission, or R
 minimum API extensions and the additive hierarchy revision CAS data contract are locked; Overview,
 Ops status reuse, authorized-set cursor continuation, managed-subject effective-permission
 diagnostic, audit filtering, Expire mapping, and mobile high-consequence parity are resolved with
-**no** mutually exclusive open architecture alternatives; Founder UAT remains required after future
-implementation + independent technical acceptance + UAT deployment.
+**no** mutually exclusive open architecture alternatives. Historical Fit-era note: Founder UAT was
+required after implementation + independent technical acceptance + UAT deployment; CURRENT tip
+records `IMP036G_FOUNDER_UAT: PASS` / `COMPLETE_AND_ACCEPTED` at GTM-R130 / STATE-R128.
 
 ### Fit provenance (exact)
 
@@ -771,7 +793,7 @@ Architecture lock chooses mechanisms; it does not weaken mandatory ACs.
 
 ```text
 STORY_COMPLETE != IMP_ACCEPTED
-STORIES_IMPLEMENTED = COMPLETE (implementation AUTHORIZED / STARTED / COMPLETE; not accepted; Founder UAT NOT_PERFORMED)
+STORIES_IMPLEMENTED = COMPLETE (implementation AUTHORIZED / STARTED / COMPLETE; COMPLETE_AND_ACCEPTED; Founder UAT PASS)
 ```
 
 ---
@@ -847,31 +869,27 @@ NEW_RBAC_SEMANTICS: NO
 
 ```text
 IMP036G_FOUNDER_UAT_REQUIRED = YES
-IMP036G_FOUNDER_UAT = NOT_PERFORMED
+IMP036G_FOUNDER_UAT = PASS
+IMP036G_FOUNDER_UAT_DECISION_DATE = 2026-09-18
+IMP036G_FOUNDER_UAT_ACCEPTANCE_AUTHORITY = Founder
+IMP036G_FOUNDER_UAT_CANDIDATE_HEAD = fbf690a67cda51bd6bbc1bad4a9d26f574c4286e
+IMP036G_FOUNDER_UAT_CANDIDATE_TREE = 84b6a502fcec646cb5a65f3257f19b85c64f49e1
+IMP036G_FOUNDER_UAT_CANDIDATE_FINGERPRINT = 9f472ce6e1ccaa2fe914006c846fb3018d668b718f569b6d0cb4fa64c3013f9b
 ```
 
 Founder UAT is required because IMP-036G materially changes operator-visible administration
 behaviour (coherent Admin Console V2, hierarchy/membership/access safety, diagnostics, audit, and
-status hand-off).
-
-Founder UAT may occur **only after**:
-
-1. the authorized implementation is completed for the acceptance candidate (recorded at
-   GTM-R129 / STATE-R127);
-2. independent technical acceptance passes for that exact candidate;
-3. UAT deployment is performed from the exact independently accepted candidate (canonical repository,
-   branch/HEAD/tree/fingerprint rules per AGENTS.md Founder UAT gate).
+status hand-off). Founder UAT PASS was recorded on 2026-09-18 for the exact accepted UAT candidate
+above. Formal acceptance is recorded at GTM-R130 / STATE-R128.
 
 ```text
 FOUNDER_UAT_BEFORE_IMPLEMENTATION_COMPLETE = FORBIDDEN
 SELF_DECLARED_FOUNDER_UAT_PASS = FORBIDDEN
 ```
 
-This capability artifact does **not** perform, schedule, or satisfy Founder UAT.
-
 ---
 
-## 27. Implementation completion boundary
+## 27. Acceptance boundary
 
 ```text
 ARCHITECTURE_LOCKED = YES
@@ -881,28 +899,34 @@ IMPLEMENTATION_COMPLETE = YES
 IMP036G_IMPLEMENTATION_AUTHORIZED = YES
 IMP036G_STARTED = YES
 IMP036G_IMPLEMENTATION_COMPLETE = YES
-IMP036G_ACCEPTED = NO
+IMP036G_ACCEPTED = YES
+IMP036G_FOUNDER_UAT = PASS
+IMP036G_FORMAL_ACCEPTANCE = ACCEPTED
 IMP037_ACTIVATED = NO
-AUTHORIZED + STARTED + COMPLETE = IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE (not accepted)
+AUTHORIZED + STARTED + COMPLETE + ACCEPTED = COMPLETE_AND_ACCEPTED
+IMP036G_ACCEPTED_MAIN_SHA = fbf690a67cda51bd6bbc1bad4a9d26f574c4286e
+IMP036G_ACCEPTED_TREE = 84b6a502fcec646cb5a65f3257f19b85c64f49e1
+IMP036G_FOUNDER_UAT_CANDIDATE_FINGERPRINT = 9f472ce6e1ccaa2fe914006c846fb3018d668b718f569b6d0cb4fa64c3013f9b
+IMP036G_EXACT_MAIN_CI = 35366698302
+IMP036G_EXACT_MAIN_CI_RESULT = SUCCESS
+IMP036G_IMPLEMENTATION_EXACT_MAIN_CI = 35214215500
 IMP036G_IMPLEMENTATION_MERGE_SHA = c35c9eab6a30ec6ce745cefd75c523181326f360
 IMP036G_IMPLEMENTATION_TREE = 266fe3b07811f6942e76cac155d58ba07daabe56
 IMP036G_REVIEWED_CANDIDATE_HEAD = 7a013155a98529d4527e7b6c0358642e5cd9d806
 IMP036G_REVIEWED_CANDIDATE_TREE = 266fe3b07811f6942e76cac155d58ba07daabe56
-IMP036G_EXACT_MAIN_CI = 35214215500
-IMP036G_EXACT_MAIN_CI_RESULT = SUCCESS
 IMP036G_IMPLEMENTATION_EVIDENCE = COMPLETE
 IMP_036G_INDEPENDENT_IMPLEMENTATION_REVIEW = PASS
-CANONICAL_ROADMAP_STATE = GTM-R129 / STATE-R127
+CANONICAL_ROADMAP_STATE = GTM-R130 / STATE-R128
 ```
 
-| Action | Covered by CURRENT ROADMAP/STATE completion (GTM-R129 / STATE-R127)? |
+| Action | Covered by CURRENT ROADMAP/STATE acceptance (GTM-R130 / STATE-R128)? |
 |---|---|
 | Persist locked capability architecture | YES (governance artifact) |
 | Implement runtime code / migrations / UI within this lock | YES — completed under prior authorization |
-| Claim `IMPLEMENTATION_COMPLETE` | **YES** — evidenced; pending acceptance |
-| Accept IMP-036G | **NO** |
+| Claim `IMPLEMENTATION_COMPLETE` | **YES** — evidenced |
+| Accept IMP-036G | **YES** — Founder UAT PASS; formal acceptance recorded |
 | Activate IMP-037 | **NO** |
-| Founder UAT | **NO** / `NOT_PERFORMED` |
+| Founder UAT | **YES** / `PASS` |
 
 No unresolved mutually exclusive architecture alternatives remain open for V1 lock. Future
 acceptance must follow this lock; mechanism invention that contradicts locked models
@@ -911,12 +935,13 @@ acceptance must follow this lock; mechanism invention that contradicts locked mo
 
 ---
 
-## 28. Historical GTM-R128 / GTM-R127 provenance (superseded predecessor tips; not CURRENT lifecycle)
+## 28. Historical GTM-R129 / GTM-R128 / GTM-R127 provenance (superseded predecessor tips; not CURRENT lifecycle)
 
-Historical GTM-R128 / STATE-R126 recorded implementation authorization and start. Historical
-GTM-R127 / STATE-R125 recorded Architecture Fit PASS / lock. Preserved for provenance only.
-CURRENT lifecycle is `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` at GTM-R129 / STATE-R127
-(see §1 and §27).
+Historical GTM-R129 / STATE-R127 recorded `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` with
+`IMP036G_ACCEPTED: NO` and `IMP036G_FOUNDER_UAT: NOT_PERFORMED`. Historical GTM-R128 / STATE-R126
+recorded implementation authorization and start. Historical GTM-R127 / STATE-R125 recorded
+Architecture Fit PASS / lock. Preserved for provenance only.
+CURRENT lifecycle is `COMPLETE_AND_ACCEPTED` at GTM-R130 / STATE-R128 (see §1 and §27).
 
 ```text
 ARCHITECTURE_FIT = PASS
@@ -947,12 +972,39 @@ fingerprint `e8eb68ebf06aea7ab50305f8e8700d450f9c5e9fd1ae24c91d4d81cfd157eb2c`).
 ```text
 ARCHITECTURE_LOCKED != IMPLEMENTATION_AUTHORIZED
 Historical lock tip did not authorize implementation; authorization/start followed at GTM-R128 /
-STATE-R126; completion recorded at GTM-R129 / STATE-R127.
+STATE-R126; completion recorded at GTM-R129 / STATE-R127; acceptance at GTM-R130 / STATE-R128.
 ```
 
 ---
 
 ## End matter
+
+```text
+IMP-036G: COMPLETE_AND_ACCEPTED
+IMP-036G_ARCHITECTURE: LOCKED
+IMP036G_ARCHITECTURE_LOCKED = YES
+ARCHITECTURE_FIT = PASS
+IMPLEMENTATION_AUTHORIZED = YES
+IMPLEMENTATION_STARTED = YES
+IMP036G_IMPLEMENTATION_AUTHORIZED = YES
+IMP036G_STARTED = YES
+IMP036G_IMPLEMENTATION_COMPLETE = YES
+IMP036G_ACCEPTED = YES
+IMP036G_FOUNDER_UAT = PASS
+IMP036G_FORMAL_ACCEPTANCE = ACCEPTED
+IMP036G_INDEPENDENT_ACCEPTANCE_EVIDENCE = ACCEPTED
+IMP036G_ACCEPTED_MAIN_SHA = fbf690a67cda51bd6bbc1bad4a9d26f574c4286e
+IMP036G_ACCEPTED_TREE = 84b6a502fcec646cb5a65f3257f19b85c64f49e1
+IMP036G_ACCEPTED_CANDIDATE = fbf690a67cda51bd6bbc1bad4a9d26f574c4286e
+IMP036G_FOUNDER_UAT_CANDIDATE_FINGERPRINT = 9f472ce6e1ccaa2fe914006c846fb3018d668b718f569b6d0cb4fa64c3013f9b
+IMP036G_FOUNDER_UAT_DECISION_DATE = 2026-09-18
+IMP036G_FOUNDER_UAT_ACCEPTANCE_AUTHORITY = Founder
+IMP036G_EXACT_MAIN_CI = 35366698302
+IMP037_ACTIVATED = NO
+SCHEMA_CHANGE_REQUIRED = YES
+CANONICAL_ROADMAP_STATE = GTM-R130 / STATE-R128
+STOP = Do not activate IMP-037; ADVANCE is a separate Founder-authorized task
+```
 
 | Marker | Value |
 |---|---|
@@ -960,7 +1012,7 @@ STATE-R126; completion recorded at GTM-R129 / STATE-R127.
 | Authority | `CAPABILITY_ARCHITECTURE` |
 | Status | `CURRENT` |
 | Architecture | `ARCHITECTURE_LOCKED` |
-| Implementation | `AUTHORIZED` / `STARTED` / `COMPLETE` (not accepted) |
+| Implementation | `COMPLETE_AND_ACCEPTED` |
 | Product Definition | `PD-IMP-036G-DRAFT-2` |
 | Binding decisions | ADR-005, D-358, D-372, D-373 |
 | Open mutually exclusive architecture alternatives | **NONE** |

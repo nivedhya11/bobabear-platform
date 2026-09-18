@@ -1,14 +1,14 @@
 ---
-Status: PLANNED PROGRAMME CONTRACT
+Status: SUPPORTING PROGRAMME CONTRACT (Enterprise Experience suite IMP-036A→G accepted; ROADMAP/STATE remain lifecycle authority)
 Authority: SUPPORTING EXPERIENCE PLAN — ROADMAP owns identity and sequence; this artifact does not activate a slice
 Canonical vision: docs/platform/VISION.md
 Canonical sequence: docs/platform/ROADMAP.md
 Canonical accepted state: docs/platform/STATE.md
-Planned slices: IMP-036A → IMP-036G
-Architecture: NOT_LOCKED
-Implementation: NOT_AUTHORIZED / NOT_STARTED
-Founder UAT required: YES for every IMP-036A → IMP-036G slice
-Last reviewed: 2026-09-01
+Programme slices: IMP-036A → IMP-036G (COMPLETE_AND_ACCEPTED)
+Architecture: NOT a capability-architecture authority
+Implementation: owned by ROADMAP/STATE per slice (suite accepted through IMP-036G)
+Founder UAT required: YES for every IMP-036A → IMP-036G slice (all PASS for accepted slices)
+Last reviewed: 2026-09-18
 ---
 
 # Enterprise Experience Programme
@@ -21,19 +21,19 @@ prioritizes functional completeness, strong information architecture, usable wor
 interaction patterns, responsive behavior, accessibility, clear recovery, and professional baseline
 quality.
 
-This is a detailed **PLANNED** product/experience contract. It does not lock capability architecture,
+This is a detailed **supporting** product/experience contract. It does not lock capability architecture,
 authorize implementation, create a CURRENT decision, change accepted domain authority, or activate
-any slice. Before each slice starts, its capability architecture must be reviewed and locked under
-the repository lifecycle.
+any slice. ROADMAP/STATE remain lifecycle authority. IMP-036A → IMP-036G are
+`COMPLETE_AND_ACCEPTED`; IMP-037 remains unactivated.
 
 ```text
-acceptedThrough = IMP-036
+acceptedThrough = IMP-036G
 currentProductSlice = NONE
 pendingAcceptance = NONE
-nextProductSlice = IMP-036A
+nextProductSlice = IMP-037
 
-IMP-036A → IMP-036G = PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
-IMP-037 = PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
+IMP-036A → IMP-036G = COMPLETE_AND_ACCEPTED
+IMP-037 = PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED (IMP037_ACTIVATED: NO)
 ```
 
 ## 2. No-Figma product strategy
