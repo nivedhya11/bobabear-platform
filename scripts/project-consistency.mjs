@@ -8012,6 +8012,63 @@ const IMP037_GATE_EVALUATED_HEAD = "fccdf7ef606ca906bcdcd706a6de97f693bb88b4";
 const IMP037_GATE_EVALUATED_TREE = "1477d12b5c5b3b0ccb8d488757516d5b6e637674";
 const IMP037_GATE_EVALUATED_PD_BLOB = "eb792d02dbfede862a0bb104a754d14d875141aa";
 const IMP037_GATE_EVALUATED_FINGERPRINT = "9be2a43fe3881ccd28f169f60209cef3c78c991524e5e9d34a8b657e1b1f0c19";
+const IMP037_PRE_ACTIVATION_BASE_HEAD = "6b1f2344d0184e29403b99adfea85c2e5dc8bf9a";
+const IMP037_PRE_ACTIVATION_BASE_TREE = "5471ea8f72c635a365e9a78ea1394ec212dcad69";
+
+/**
+ * Label text immediately before a SHA/tree mention, bounded by sentence/clause separators.
+ * Used to detect which ROADMAP/STATE checkpoint a historical SHA is associated with.
+ * @param {string} text
+ * @param {number} index
+ */
+function imp037ProvenanceLabelPrefix(text, index) {
+  const start = Math.max(0, index - 180);
+  let prefix = text.slice(start, index);
+  const split = Math.max(prefix.lastIndexOf("."), prefix.lastIndexOf(";"), prefix.lastIndexOf("\n"));
+  if (split !== -1) prefix = prefix.slice(split + 1);
+  return prefix;
+}
+
+/**
+ * Canonical IMP-037 Product Definition provenance:
+ * `6b1f2344...` / tree `5471ea8...` = GTM-R130 / STATE-R128 pre-activation base.
+ * GTM-R131 / STATE-R129 is the later activation result, not that SHA/tree.
+ * @param {string} text
+ */
+export function evaluateImp037ProductDefinitionActivationProvenance(text) {
+  const body = String(text ?? "");
+  const tokens = [IMP037_PRE_ACTIVATION_BASE_HEAD, IMP037_PRE_ACTIVATION_BASE_TREE];
+  let mentionsBase = false;
+  let labelledCorrectly = false;
+  for (const token of tokens) {
+    let from = 0;
+    while (from < body.length) {
+      const idx = body.indexOf(token, from);
+      if (idx === -1) break;
+      mentionsBase = true;
+      const prefix = imp037ProvenanceLabelPrefix(body, idx);
+      if (/GTM-R131/.test(prefix) || /STATE-R129/.test(prefix)) {
+        return {
+          ok: false,
+          code: "IMP037_PD_PRE_ACTIVATION_SHA_VERSION",
+          message:
+            "IMP-037 Product Definition must not associate 6b1f2344... / tree 5471ea8... with GTM-R131 / STATE-R129; that SHA/tree is the GTM-R130 / STATE-R128 pre-activation base (GTM-R131 / STATE-R129 is the activation result)",
+        };
+      }
+      if (/GTM-R130/.test(prefix) && /STATE-R128/.test(prefix)) labelledCorrectly = true;
+      from = idx + token.length;
+    }
+  }
+  if (mentionsBase && !labelledCorrectly) {
+    return {
+      ok: false,
+      code: "IMP037_PD_PRE_ACTIVATION_SHA_REQUIRED_LABEL",
+      message:
+        "IMP-037 Product Definition must label 6b1f2344... / tree 5471ea8... as GTM-R130 / STATE-R128 pre-activation base",
+    };
+  }
+  return { ok: true };
+}
 
 /**
  * Validate IMP-037 Product Definition Gate PASS checkpoint (R132/S130).
@@ -8345,6 +8402,8 @@ export function evaluateImp037ApprovedProductDefinitionCandidate(text) {
         "Gate-passed IMP-037 Product Definition must not retain CURRENT pre-gate candidate review wording",
     };
   }
+  const activationProvenance = evaluateImp037ProductDefinitionActivationProvenance(body);
+  if (!activationProvenance.ok) return activationProvenance;
   return { ok: true };
 }
 

@@ -114,6 +114,7 @@ import {
   evaluateImp037ActivatedProductDefinitionDependencyAuthority,
   evaluateImp037ProductDefinitionGatePassCheckpoint,
   evaluateImp037ApprovedProductDefinitionCandidate,
+  evaluateImp037ProductDefinitionActivationProvenance,
   evaluateImp036gProductDefinitionDraftCheckpoint,
   evaluateImp036gProductDefinitionGatePassCheckpoint,
   evaluateImp036gUngatedProductDefinitionDraftCandidate,
@@ -8893,6 +8894,105 @@ Historical pre-gate provenance: Document status PRE-GATE DRAFT; Product Definiti
     const result = evaluateImp037ApprovedProductDefinitionCandidate(missingFingerprint);
     assert.equal(result.ok, false);
     assert.equal(result.code, "IMP037_PD_GATE_EVALUATED_FINGERPRINT");
+  });
+});
+
+describe("IMP-037 Product Definition activation provenance pairing", () => {
+  const preActivationHead = "6b1f2344d0184e29403b99adfea85c2e5dc8bf9a";
+  const preActivationTree = "5471ea8f72c635a365e9a78ea1394ec212dcad69";
+  const gateEvaluatedHead = "fccdf7ef606ca906bcdcd706a6de97f693bb88b4";
+  const gateEvaluatedTree = "1477d12b5c5b3b0ccb8d488757516d5b6e637674";
+  const correctPairing = `Historical pre-activation base: GTM-R130 / STATE-R128 (\`${preActivationHead}\` / tree \`${preActivationTree}\`). Activation result: GTM-R131 / STATE-R129. Later merged activated main / Product Definition gate-evaluated candidate: \`${gateEvaluatedHead}\` / tree \`${gateEvaluatedTree}\`.`;
+  const incorrectPairing = `Historical activation base GTM-R131 / STATE-R129 (\`${preActivationHead}\` / tree \`${preActivationTree}\`) remains predecessor provenance.`;
+
+  it("passes correct pre-activation base pairing GTM-R130 / STATE-R128", () => {
+    assert.deepEqual(evaluateImp037ProductDefinitionActivationProvenance(correctPairing), { ok: true });
+    assert.deepEqual(
+      evaluateImp037ProductDefinitionActivationProvenance(
+        `Historical pre-activation base: GTM-R130 / STATE-R128 (\`${preActivationHead}\` / tree \`${preActivationTree}\`).`,
+      ),
+      { ok: true },
+    );
+  });
+
+  it("rejects 6b1f2344 labelled GTM-R131 / STATE-R129", () => {
+    const result = evaluateImp037ProductDefinitionActivationProvenance(incorrectPairing);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP037_PD_PRE_ACTIVATION_SHA_VERSION");
+  });
+
+  it("distinguishes GTM-R131 / STATE-R129 as activation result, not the pre-activation SHA", () => {
+    const result = evaluateImp037ProductDefinitionActivationProvenance(correctPairing);
+    assert.deepEqual(result, { ok: true });
+    assert.match(correctPairing, /Activation result:\s*GTM-R131\s*\/\s*STATE-R129/);
+    assert.doesNotMatch(
+      correctPairing,
+      /GTM-R131\s*\/\s*STATE-R129[^\n.]{0,80}6b1f2344d0184e29403b99adfea85c2e5dc8bf9a/,
+    );
+  });
+
+  it("keeps gate-evaluated fccdf7ef identity unchanged when provenance is recorded", () => {
+    const live = readFileSync("docs/platform/product/IMP-037/product-definition.md", "utf8");
+    assert.match(live, /GATE_EVALUATED_HEAD\s*[=:]\s*fccdf7ef606ca906bcdcd706a6de97f693bb88b4/);
+    assert.match(live, /GATE_EVALUATED_TREE\s*[=:]\s*1477d12b5c5b3b0ccb8d488757516d5b6e637674/);
+    assert.match(live, /GATE_EVALUATED_PRODUCT_DEFINITION_BLOB\s*[=:]\s*eb792d02dbfede862a0bb104a754d14d875141aa/);
+    assert.match(live, /GATE_EVALUATED_WORKING_TREE_FINGERPRINT\s*[=:]\s*9be2a43fe3881ccd28f169f60209cef3c78c991524e5e9d34a8b657e1b1f0c19/);
+    const approved = `<!-- governance-meta
+{
+  "status": "APPROVED",
+  "authority": "PRODUCT_DEFINITION",
+  "capability": "IMP-037",
+  "productDefinitionVersion": "PD-IMP-037-DRAFT-1",
+  "process": "PD-1",
+  "verificationPolicy": "TEST-1",
+  "productDefinitionGateExecution": "PERFORMED",
+  "productDefinitionGateResult": "PASS",
+  "architectureFitExecution": "NOT_PERFORMED",
+  "architectureFit": "NOT_PERFORMED",
+  "architectureLocked": "NO",
+  "implementationAuthorized": "NO",
+  "implementationStarted": "NO",
+  "impAccepted": "NO",
+  "imp037Activated": "YES",
+  "founderUatRequired": "YES",
+  "founderUatStatus": "NOT_PERFORMED",
+  "preGateDraft": "NO"
+}
+-->
+Document status: APPROVED
+PRODUCT_DEFINITION_GATE_EXECUTION: PERFORMED
+Gate Result: PASS
+ARCHITECTURE_FIT: NOT_PERFORMED
+IMPLEMENTATION_AUTHORIZED: NO
+IMPLEMENTATION_STARTED: NO
+IMP037_ACCEPTED: NO
+GATE_EVALUATED_HEAD = fccdf7ef606ca906bcdcd706a6de97f693bb88b4
+GATE_EVALUATED_TREE = 1477d12b5c5b3b0ccb8d488757516d5b6e637674
+GATE_EVALUATED_PRODUCT_DEFINITION_BLOB = eb792d02dbfede862a0bb104a754d14d875141aa
+GATE_EVALUATED_WORKING_TREE_FINGERPRINT = 9be2a43fe3881ccd28f169f60209cef3c78c991524e5e9d34a8b657e1b1f0c19
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate PASS; Architecture Fit NOT_PERFORMED; architecture not locked; implementation not authorized)
+${correctPairing}
+`;
+    assert.deepEqual(evaluateImp037ApprovedProductDefinitionCandidate(approved), { ok: true });
+    assert.equal(evaluateImp037ApprovedProductDefinitionCandidate(`${approved}\n${incorrectPairing}`).ok, false);
+  });
+
+  it("requires live IMP-037 Product Definition to record the corrected lineage", () => {
+    const live = readFileSync("docs/platform/product/IMP-037/product-definition.md", "utf8");
+    assert.deepEqual(evaluateImp037ProductDefinitionActivationProvenance(live), { ok: true });
+    assert.deepEqual(evaluateImp037ApprovedProductDefinitionCandidate(live), { ok: true });
+    assert.match(
+      live,
+      /Historical pre-activation base:\s*GTM-R130\s*\/\s*STATE-R128\s*\(`6b1f2344d0184e29403b99adfea85c2e5dc8bf9a`\s*\/\s*tree\s*`5471ea8f72c635a365e9a78ea1394ec212dcad69`\)/,
+    );
+    assert.match(live, /Activation result:\s*GTM-R131\s*\/\s*STATE-R129/);
+    assert.doesNotMatch(
+      live,
+      /GTM-R131\s*\/\s*STATE-R129[^\n.]{0,80}6b1f2344d0184e29403b99adfea85c2e5dc8bf9a/,
+    );
+    assert.match(live, /GATE_EVALUATED_HEAD\s*[=:]\s*fccdf7ef606ca906bcdcd706a6de97f693bb88b4/);
+    assert.match(live, /ARCHITECTURE_FIT:\s*NOT_PERFORMED/);
+    assert.match(live, /IMPLEMENTATION_AUTHORIZED:\s*NO/);
   });
 });
 
