@@ -131,9 +131,9 @@ IMP036E_LIFECYCLE_CHANGED = NO
 PD1_DID_NOT_ACTIVATE_IMP036F_AT_ADOPTION = YES
 ```
 
-Lifecycle truth remains ROADMAP/STATE only (`GTM-R128` / `STATE-R126`):
-`acceptedThrough = IMP-036F`; `currentProductSlice = IMP-036G`
-(`IMPLEMENTATION_IN_PROGRESS`; `IMP036G_IMPLEMENTATION_COMPLETE = NO`; `IMP036G_ACCEPTED = NO`);
+Lifecycle truth remains ROADMAP/STATE only (`GTM-R130` / `STATE-R128`):
+`acceptedThrough = IMP-036G`; `currentProductSlice = NONE`
+(`COMPLETE_AND_ACCEPTED`; `IMP036G_IMPLEMENTATION_COMPLETE = YES`; `IMP036G_ACCEPTED = YES`);
 `nextProductSlice = IMP-037`; **`IMP040_ACTIVATED: NO`**. Presence of this PRE-GATE draft does
 **not** activate IMP-040 and does **not** advance ROADMAP/STATE lifecycle.
 
@@ -147,9 +147,9 @@ Lifecycle truth remains ROADMAP/STATE only (`GTM-R128` / `STATE-R126`):
 | Product Definition version / document status | `PD-IMP-040-DRAFT-1`; **Document status: PRE-GATE DRAFT**; **PRE-GATE DRAFT: YES** |
 | Product owner / approval evidence | Founder. FD-040-01…10 resolved 2026-09-18 via explicit `"proceed"` in response to the exact IMP-040 recommended-refinement approval package. Product Definition Gate **NOT_PERFORMED**. |
 | Process / verification policy | `PD-1` / `TEST-1` |
-| Canonical anchors | VISION-1; ROADMAP GTM-R128; STATE STATE-R126; ARCH-R19; DR-15; PD-1; TEST-1; PERSONA-1; GJ-1 |
+| Canonical anchors | VISION-1; ROADMAP GTM-R130; STATE STATE-R128; ARCH-R19; DR-15; PD-1; TEST-1; PERSONA-1; GJ-1 |
 | Repository candidate | Canonical path `/home/ajoshi/repos/boba-bear-platform`; base `origin/main` `c35c9eab6a30ec6ce745cefd75c523181326f360` / tree `266fe3b07811f6942e76cac155d58ba07daabe56`; draft branch `governance/imp040-pre-gate-product-definition` |
-| Capability lifecycle / authorization | ROADMAP/STATE: IMP-040 remains **PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED**; **IMP040_ACTIVATED: NO**; Product Definition Gate NOT_PERFORMED; Architecture Fit NOT_PERFORMED; architecture NOT_LOCKED; implementation NOT_AUTHORIZED / NOT_STARTED; IMP040_ACCEPTED: NO; GO_DECLARED: NO; PUBLIC_LAUNCH_APPROVED: NO. **currentProductSlice remains IMP-036G.** |
+| Capability lifecycle / authorization | ROADMAP/STATE: IMP-040 remains **PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED**; **IMP040_ACTIVATED: NO**; Product Definition Gate NOT_PERFORMED; Architecture Fit NOT_PERFORMED; architecture NOT_LOCKED; implementation NOT_AUTHORIZED / NOT_STARTED; IMP040_ACCEPTED: NO; GO_DECLARED: NO; PUBLIC_LAUNCH_APPROVED: NO. **currentProductSlice remains NONE (acceptedThrough IMP-036G).** |
 | Relevant capability architecture / ADRs | ADR-002 (Pages transition, rollback, incident); ADR-007 (tax/GST commercial gate); ADR-011 delivery; ADR-012 notifications; IMP-037/038/039 hard prerequisites (future accepted status required before GO — not claimed accepted by this draft); GJ-1 |
 | Founder UAT applicability | `FOUNDER_UAT_REQUIRED = YES`; `FOUNDER_UAT_STATUS = NOT_PERFORMED` — interactive exact-candidate UAT gate (separate from production GO / NO-GO / ABORT and from launch-stable; see §12.1 / §26) |
 
@@ -184,8 +184,8 @@ ARCH_R20_REQUIRED: do not create automatically
 | Source | Role | Classification |
 |---|---|---|
 | `docs/platform/VISION.md` VISION-1 | V1 GTM outcome / Non-Goals | VERIFIED |
-| `docs/platform/ROADMAP.md` GTM-R128 | IMP-040 identity; gtmBoundary; PLANNED | VERIFIED |
-| `docs/platform/STATE.md` STATE-R126 | acceptedThrough IMP-036F; current slice IMP-036G | VERIFIED |
+| `docs/platform/ROADMAP.md` GTM-R130 | IMP-040 identity; gtmBoundary; PLANNED | VERIFIED |
+| `docs/platform/STATE.md` STATE-R128 | acceptedThrough IMP-036G; currentProductSlice NONE | VERIFIED |
 | `docs/platform/PRODUCT-DELIVERY.md` PD-1 | Journey Gap Audit required before public GTM / IMP-040 acceptance | VERIFIED |
 | `docs/platform/TESTING.md` TEST-1 | Evidence policy; no silent-retry-as-pass | VERIFIED |
 | `docs/platform/ARCHITECTURE.md` ARCH-R19 | Deployment model | VERIFIED |
@@ -1578,7 +1578,7 @@ with Founder product decisions resolved
 and PD-1 story/AC/UX completeness corrected for gate evaluation
 ```
 
-IMP-040 remains pre-gate and unactivated. `currentProductSlice` remains IMP-036G.
+IMP-040 remains pre-gate and unactivated. `currentProductSlice` remains NONE (`acceptedThrough` IMP-036G).
 `nextProductSlice` remains IMP-037. ROADMAP/STATE are unchanged by this persistence.
 
 ```text

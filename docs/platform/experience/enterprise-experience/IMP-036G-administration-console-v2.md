@@ -1,8 +1,8 @@
 ---
 Status: SUPPORTING planning/product-experience input (not PD-1 Product Definition; not architecture authority)
 Capability: IMP-036G — Administration Console V2
-Current product slice: YES (see ROADMAP/STATE; IMP036G_ACTIVATED: YES)
-Formal ROADMAP lifecycle: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
+Current product slice: NO (accepted; see ROADMAP/STATE; IMP036G_ACTIVATED: YES; currentProductSlice NONE)
+Formal ROADMAP lifecycle: COMPLETE_AND_ACCEPTED
 Product Definition: APPROVED / Gate PASS
   PD-IMP-036G-DRAFT-2
   Founder product decisions: RESOLVED (7/7; 2026-09-16)
@@ -10,7 +10,7 @@ Architecture Fit: PASS
 Architecture: LOCKED
 Implementation: AUTHORIZED / STARTED / COMPLETE
 Founder UAT required: YES
-Founder UAT: NOT_PERFORMED
+Founder UAT: PASS
 Capability architecture authority:
   docs/platform/capabilities/IMP-036G-administration-console-v2.md
 ---
@@ -20,8 +20,9 @@ Capability architecture authority:
 ## Purpose, users, and problem
 
 Turn accepted IMP-035 administration capabilities into a coherent enterprise administration product
-for platform and brand administrators. The existing experience is minimum viable and needs clearer
-hierarchy, access workflow safety, auditability, and separation from Customer and Operations.
+for platform and brand administrators. Historical pre-IMP-036G baseline: the prior experience was
+minimum viable and needed clearer hierarchy, access workflow safety, auditability, and separation
+from Customer and Operations.
 
 Canonical intended behaviour is owned by the Product Definition
 [`product/IMP-036G/product-definition.md`](../../product/IMP-036G/product-definition.md)
@@ -154,8 +155,8 @@ as normal UX. This planned amendment does not redefine activation; CURRENT activ
 - No arbitrary permission editor, implicit superuser behavior, or Operations authority bleed exists.
 - Operational status is safe for the authorized audience.
 - Responsive/accessibility/recovery behaviours are required. Manual technical validation
-  required for implementation completion = **PASS**. Exact-candidate Founder UAT remains
-  **NOT_PERFORMED** (separate later interactive human gate).
+  required for implementation completion = **PASS**. Exact-candidate Founder UAT = **PASS**
+  (decision date 2026-09-18; Founder authority; formal acceptance ACCEPTED at GTM-R130 / STATE-R128).
 
 ## Dependencies, non-goals, and deferred decisions
 
@@ -170,8 +171,8 @@ approval; generic review-token/workflow engine.
 Founder product decisions (2026-09-16) expanded IMP-036G only enough to complete the seven
 administration outcomes above. Technical mechanism selection is recorded in the locked capability
 architecture. Product Definition Gate = PASS; Architecture Fit = PASS; Architecture: LOCKED;
-implementation AUTHORIZED / STARTED / COMPLETE (GTM-R129 / STATE-R127;
-`IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`; not accepted; Founder UAT NOT_PERFORMED).
+implementation AUTHORIZED / STARTED / COMPLETE (GTM-R130 / STATE-R128;
+`COMPLETE_AND_ACCEPTED`; Founder UAT PASS).
 
 Figma is not required initially; later visual refinement may not redefine hierarchy, membership,
 RBAC, audit, API, or system authority.
