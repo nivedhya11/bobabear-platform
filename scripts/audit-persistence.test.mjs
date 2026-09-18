@@ -83,6 +83,7 @@ test("isAllowedPersistenceImportPath allows the exact additional script consumer
   const allowedScriptPaths = [
     "scripts/catalog/bootstrap-imp028c-modifiers.ts",
     "scripts/catalog/bootstrap-imp036c-required-topping.ts",
+    "scripts/environment/staging-baseline-classify.ts",
     "scripts/e2e/seed-customer-ordering.ts",
     "scripts/e2e/seed-operations-lifecycle.ts",
     "scripts/e2e/seed-commercial-workspace.ts",
@@ -142,6 +143,7 @@ test("isAllowedPersistenceImportPath rejects financial-document and E2E siblings
 
 test("isAllowedPersistenceImportPath rejects other exact-allowlist siblings", () => {
   assert.equal(isAllowedPersistenceImportPath("scripts/catalog/not-authorized.ts"), false);
+  assert.equal(isAllowedPersistenceImportPath("scripts/environment/not-authorized.ts"), false);
   assert.equal(isAllowedPersistenceImportPath("scripts/order/not-authorized.ts"), false);
   assert.equal(isAllowedPersistenceImportPath("scripts/refund/not-authorized.ts"), false);
   assert.equal(

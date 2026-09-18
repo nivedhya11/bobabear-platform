@@ -44,6 +44,8 @@ export default defineConfig({
       "tests/catalog/**/*.test.ts",
       // IMP-013: menu import source/manifest/importer tests need Testcontainers inject.
       "tests/menu-import/**/*.test.ts",
+      // Founder staging seed-baseline compatibility classifier (persistent DB deploy gate).
+      "tests/staging-baseline/**/*.test.ts",
       // IMP-014: assortment / availability / operating domain tests need Testcontainers inject.
       "tests/assortment-availability/**/*.test.ts",
       // IMP-014: existing-menu Brand assortment bootstrap tests.

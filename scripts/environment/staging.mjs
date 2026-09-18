@@ -16,6 +16,11 @@ import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { extractValues, parseEnvFile } from "../database/lib/env-file.mjs";
+import {
+  parseStagingBaselineState,
+  resolveStagingBootstrapAction,
+  stagingBaselineDecisionLogLines,
+} from "./staging-baseline.mjs";
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = path.resolve(scriptDir, "..", "..");
@@ -691,6 +696,106 @@ function runBootstrapApply(buildDir, service, npmArgs) {
   ], { COMPOSE_PROFILES: "tools" });
 }
 
+function runLegacySeedBootstrapChain(buildDir) {
+  runBootstrapApply(buildDir, "menu-import-existing", ["menu:import-existing"]);
+  runBootstrapApply(buildDir, "assortment-bootstrap-existing-menu", ["assortment:bootstrap-existing-menu"]);
+  runBootstrapApply(buildDir, "pricing-bootstrap-existing-menu", ["pricing:bootstrap-existing-menu"]);
+  runBootstrapApply(buildDir, "catalog-bootstrap-imp028c-modifiers", ["catalog:bootstrap-imp028c-modifiers"]);
+  runBootstrapApply(buildDir, "catalog-bootstrap-imp036c-required-topping", ["catalog:bootstrap-imp036c-required-topping"]);
+}
+
+/**
+ * Read-only staging baseline classification via tooling image + application DB env.
+ * Captures stdout; never places secrets in argv/logs.
+ */
+function classifyStagingBaselineInTooling(
+  buildDir,
+  {
+    spawn = spawnIgnoringStdin,
+    publicBuildEnv = readRepositoryPublicBuildEnv(),
+  } = {},
+) {
+  const result = spawn(
+    "podman-compose",
+    [
+      "-f",
+      "compose.yaml",
+      "-p",
+      STAGING_PROJECT,
+      "run",
+      "--rm",
+      "--no-deps",
+      "--entrypoint",
+      "",
+      "menu-import-existing",
+      "npm",
+      "run",
+      "staging:baseline-classify",
+    ],
+    {
+      cwd: buildDir,
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        ...publicBuildEnv,
+        DOCKER_HOST: SOCKET,
+        COMPOSE_PROJECT_NAME: STAGING_PROJECT,
+        COMPOSE_PROFILES: "tools",
+      },
+    },
+  );
+  if (result.error) {
+    throw new Error(`Staging baseline classify failed to start: ${result.error.message}`);
+  }
+  const output = `${result.stdout ?? ""}${result.stderr ?? ""}`;
+  if (result.status !== 0) {
+    throw new Error("Staging baseline classify exited non-zero.");
+  }
+  return parseStagingBaselineState(output);
+}
+
+/**
+ * After migrate: classify → APPLY (fresh) / PRESERVE (compatible) / BLOCK (partial).
+ * Fresh apply re-checks and requires COMPLETE_COMPATIBLE before continuing.
+ */
+function decideAndApplyStagingBootstrap(
+  buildDir,
+  {
+    classify = classifyStagingBaselineInTooling,
+    applyLegacy = runLegacySeedBootstrapChain,
+    log = console.log,
+  } = {},
+) {
+  const initialState = classify(buildDir);
+  const action = resolveStagingBootstrapAction(initialState);
+  for (const line of stagingBaselineDecisionLogLines(initialState)) {
+    log(line);
+  }
+
+  if (action === "BLOCK") {
+    throw new Error(
+      "Staging persistent database is PARTIAL_OR_INCOMPATIBLE with the Founder seed baseline; refusing to start application services.",
+    );
+  }
+
+  if (action === "PRESERVE") {
+    return { initialState, action, finalState: initialState };
+  }
+
+  applyLegacy(buildDir);
+  const finalState = classify(buildDir);
+  log("STAGING_POST_BOOTSTRAP_CLASSIFY YES");
+  for (const line of stagingBaselineDecisionLogLines(finalState)) {
+    log(line);
+  }
+  if (finalState !== "COMPLETE_COMPATIBLE") {
+    throw new Error(
+      `Staging seed/bootstrap completed but baseline is ${finalState}; refusing to start application services.`,
+    );
+  }
+  return { initialState, action, finalState };
+}
+
 export function assertServiceabilitySmokeResponse(caseName, expectedStatus, response) {
   if (response.httpStatus !== 200 || response.decisionStatus !== expectedStatus) {
     throw new Error(
@@ -760,11 +865,7 @@ function deploy(candidate) {
     const initDir = materializeStagingPostgresInit(buildDir, candidate.head);
     ensurePersistentPostgres(buildDir, initDir);
     podmanCompose(buildDir, ["run", "--rm", "--no-deps", "migrate"], { COMPOSE_PROFILES: "tools" });
-    runBootstrapApply(buildDir, "menu-import-existing", ["menu:import-existing"]);
-    runBootstrapApply(buildDir, "assortment-bootstrap-existing-menu", ["assortment:bootstrap-existing-menu"]);
-    runBootstrapApply(buildDir, "pricing-bootstrap-existing-menu", ["pricing:bootstrap-existing-menu"]);
-    runBootstrapApply(buildDir, "catalog-bootstrap-imp028c-modifiers", ["catalog:bootstrap-imp028c-modifiers"]);
-    runBootstrapApply(buildDir, "catalog-bootstrap-imp036c-required-topping", ["catalog:bootstrap-imp036c-required-topping"]);
+    decideAndApplyStagingBootstrap(buildDir);
     upAndWait(buildDir, ["app", "customer-auth", "workforce-auth", "customer-commerce", "operations"], { BOBA_POSTGRES_INIT_DIR: initDir });
     for (const step of [
       { title: "app smoke", command: "node", args: ["scripts/docker/smoke.mjs"] },
@@ -848,4 +949,7 @@ export {
   ensureStagingEnvFiles,
   normalizeEnvAssignment,
   normalizeStagingAuthOriginEnv,
+  decideAndApplyStagingBootstrap,
+  classifyStagingBaselineInTooling,
+  runLegacySeedBootstrapChain,
 };
