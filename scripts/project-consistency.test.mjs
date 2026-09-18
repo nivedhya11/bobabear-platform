@@ -133,7 +133,9 @@ import {
   evaluateImp036gAcceptanceCheckpoint,
   evaluateImp036gAcceptanceArtifact,
   evaluateImp036gAcceptedProductDefinition,
+  evaluateImp036gAcceptedProductDefinitionPhaseProvenance,
   evaluateImp036gAcceptedCurrentAuthorityProse,
+  evaluateImp040PreGateProductDefinitionAuthority,
   stripImp036gHistoricalGovernanceSections,
   evaluateImp036fImplementationAuthorizationCheckpoint,
   evaluateImp036fAuthorizedCapabilityArchitecture,
@@ -8333,9 +8335,16 @@ CANONICAL_ROADMAP_STATE: GTM-R130 / STATE-R128
 
 # IMP-036G Product Definition
 
+| Canonical anchors | VISION-1; ROADMAP GTM-R130; STATE STATE-R128; ARCH-R19; DR-15; PD-1; TEST-1; PERSONA-1; GJ-1 |
+
 CURRENT (GTM-R130 / STATE-R128): IMP-036G is COMPLETE_AND_ACCEPTED.
 IMP036G_ACCEPTED: YES
 IMP037_ACTIVATED: NO
+
+\`\`\`text
+CANONICAL_ANCHORS = VISION-1; GTM-R130; STATE-R128; ARCH-R19; DR-15; PD-1; TEST-1; PERSONA-1; GJ-1
+IMPLEMENTATION_COMPLETE_RECORDED_AT = GTM-R129 / STATE-R127
+\`\`\`
 `;
 
   it("passes valid GTM-R130 / STATE-R128 acceptance checkpoint", () => {
@@ -8453,6 +8462,102 @@ CURRENT (GTM-R130 / STATE-R128): COMPLETE_AND_ACCEPTED.
 `),
       { ok: true },
     );
+  });
+
+  it("requires IMPLEMENTATION_COMPLETE_RECORDED_AT at GTM-R129 / STATE-R127", () => {
+    const live = readFileSync("docs/platform/product/IMP-036G/product-definition.md", "utf8");
+    assert.deepEqual(evaluateImp036gAcceptedProductDefinitionPhaseProvenance(live), { ok: true });
+    assert.match(live, /IMPLEMENTATION_COMPLETE_RECORDED_AT\s*=\s*GTM-R129\s*\/\s*STATE-R127/);
+  });
+
+  it("rejects IMPLEMENTATION_COMPLETE_RECORDED_AT at GTM-R130 / STATE-R128", () => {
+    const result = evaluateImp036gAcceptedProductDefinition(
+      acceptedPdStub.replace(
+        "IMPLEMENTATION_COMPLETE_RECORDED_AT = GTM-R129 / STATE-R127",
+        "IMPLEMENTATION_COMPLETE_RECORDED_AT = GTM-R130 / STATE-R128",
+      ),
+    );
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036G_PD_IMPLEMENTATION_COMPLETE_PROVENANCE");
+  });
+
+  it("rejects CURRENT prose claiming implementation completion at acceptance checkpoint", () => {
+    const result = evaluateImp036gAcceptedProductDefinitionPhaseProvenance(`${acceptedPdStub}
+
+Implementation completion is recorded at GTM-R130 / STATE-R128 and is not formal acceptance.
+`);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036G_PD_IMPLEMENTATION_COMPLETE_PROVENANCE");
+  });
+
+  it("rejects AUTHORIZED / STARTED / COMPLETE at GTM-R130 / STATE-R128", () => {
+    const result = evaluateImp036gAcceptedProductDefinitionPhaseProvenance(`${acceptedPdStub}
+
+Readiness: COMPLETE_AND_ACCEPTED (implementation AUTHORIZED / STARTED / COMPLETE at GTM-R130 / STATE-R128)
+`);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036G_PD_IMPLEMENTATION_COMPLETE_PROVENANCE");
+  });
+
+  it("allows clearly labelled historical R129/S127 predecessor completion prose", () => {
+    assert.deepEqual(
+      evaluateImp036gAcceptedProductDefinition(`${acceptedPdStub}
+
+## Historical pre-acceptance baseline
+
+Historical GTM-R129 / STATE-R127: IMPLEMENTATION_COMPLETE_RECORDED_AT = GTM-R129 / STATE-R127;
+implementation AUTHORIZED / STARTED / COMPLETE at GTM-R129 / STATE-R127 pending formal acceptance.
+`),
+      { ok: true },
+    );
+  });
+});
+
+describe("IMP-040 PRE-GATE Product Definition authority at GTM-R130 / STATE-R128", () => {
+  const preGateStub = `# IMP-040 Product Definition
+
+Document status: PRE-GATE DRAFT
+PRE-GATE DRAFT: YES
+IMP040_ACTIVATED: NO
+
+| Canonical anchors | VISION-1; ROADMAP GTM-R130; STATE STATE-R128; ARCH-R19 |
+
+## 2. Authority and provenance
+
+| Source | Role | Classification |
+|---|---|---|
+| docs/platform/ROADMAP.md GTM-R130 | IMP-040 identity; gtmBoundary; PLANNED | VERIFIED |
+| docs/platform/STATE.md STATE-R128 | acceptedThrough IMP-036G; currentProductSlice NONE | VERIFIED |
+`;
+
+  it("validates live IMP-040 PRE-GATE authority sources", () => {
+    const live = readFileSync("docs/platform/product/IMP-040/product-definition.md", "utf8");
+    assert.deepEqual(evaluateImp040PreGateProductDefinitionAuthority(live), { ok: true });
+    assert.match(live, /docs\/platform\/ROADMAP\.md`? GTM-R130/);
+    assert.doesNotMatch(live, /docs\/platform\/ROADMAP\.md`? GTM-R128/);
+  });
+
+  it("passes aligned PRE-GATE stub", () => {
+    assert.deepEqual(evaluateImp040PreGateProductDefinitionAuthority(preGateStub), { ok: true });
+  });
+
+  it("rejects stale verified ROADMAP GTM-R128 when CURRENT is GTM-R130", () => {
+    const result = evaluateImp040PreGateProductDefinitionAuthority(
+      preGateStub.replace(
+        "docs/platform/ROADMAP.md GTM-R130",
+        "docs/platform/ROADMAP.md GTM-R128",
+      ),
+    );
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP040_PD_STALE_ROADMAP_AUTHORITY");
+  });
+
+  it("rejects missing STATE-R128 verified authority", () => {
+    const result = evaluateImp040PreGateProductDefinitionAuthority(
+      preGateStub.replace("docs/platform/STATE.md STATE-R128", "docs/platform/STATE.md STATE-R127"),
+    );
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP040_PD_AUTHORITY");
   });
 });
 

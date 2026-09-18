@@ -23513,6 +23513,75 @@ export function evaluateImp036gAcceptanceArtifact(text) {
 }
 
 /**
+ * Validate IMP-036G accepted Product Definition phase provenance:
+ * CURRENT acceptance remains GTM-R130 / STATE-R128; implementation-complete predecessor is
+ * GTM-R129 / STATE-R127. Reject conflating acceptance with implementation completion.
+ * @param {string} text
+ */
+export function evaluateImp036gAcceptedProductDefinitionPhaseProvenance(text) {
+  const body = String(text ?? "");
+  const currentBody = stripImp036gHistoricalGovernanceSections(body).replace(/[*`]/g, "");
+
+  if (!/IMPLEMENTATION_COMPLETE_RECORDED_AT\s*=\s*GTM-R129\s*\/\s*STATE-R127/.test(body)) {
+    return {
+      ok: false,
+      code: "IMP036G_PD_IMPLEMENTATION_COMPLETE_PROVENANCE",
+      message:
+        "Accepted IMP-036G Product Definition must record IMPLEMENTATION_COMPLETE_RECORDED_AT = GTM-R129 / STATE-R127",
+    };
+  }
+  if (/IMPLEMENTATION_COMPLETE_RECORDED_AT\s*=\s*GTM-R130\s*\/\s*STATE-R128/.test(body)) {
+    return {
+      ok: false,
+      code: "IMP036G_PD_IMPLEMENTATION_COMPLETE_PROVENANCE",
+      message:
+        "Accepted IMP-036G Product Definition must not record IMPLEMENTATION_COMPLETE_RECORDED_AT at GTM-R130 / STATE-R128",
+    };
+  }
+
+  const requiredCurrentAnchors = [
+    [/CANONICAL_ANCHORS\s*=\s*[^\n]*GTM-R130[^\n]*STATE-R128/, "CANONICAL_ANCHORS GTM-R130 / STATE-R128"],
+    [/ROADMAP\s+GTM-R130/i, "ROADMAP GTM-R130"],
+    [/STATE\s+STATE-R128/i, "STATE STATE-R128"],
+  ];
+  for (const [pattern, label] of requiredCurrentAnchors) {
+    if (!pattern.test(currentBody)) {
+      return {
+        ok: false,
+        code: "IMP036G_PD_ACCEPTANCE_ANCHORS",
+        message: `Accepted IMP-036G Product Definition must retain CURRENT ${label}`,
+      };
+    }
+  }
+
+  const forbiddenCompletionAtAcceptance = [
+    [
+      /implementation completion is recorded at\s*GTM-R130\s*\/\s*STATE-R128/i,
+      "implementation completion recorded at GTM-R130 / STATE-R128",
+    ],
+    [
+      /AUTHORIZED\s*\/\s*STARTED\s*\/\s*COMPLETE at GTM-R130\s*\/\s*STATE-R128/i,
+      "AUTHORIZED / STARTED / COMPLETE at GTM-R130 / STATE-R128",
+    ],
+    [
+      /COMPLETE at GTM-R130\s*\/\s*STATE-R128[\s\S]{0,160}is not formal acceptance/i,
+      "GTM-R130 / STATE-R128 implementation completion described as not formal acceptance",
+    ],
+  ];
+  for (const [pattern, label] of forbiddenCompletionAtAcceptance) {
+    if (pattern.test(currentBody)) {
+      return {
+        ok: false,
+        code: "IMP036G_PD_IMPLEMENTATION_COMPLETE_PROVENANCE",
+        message: `Accepted IMP-036G Product Definition must not claim CURRENT ${label}`,
+      };
+    }
+  }
+
+  return { ok: true };
+}
+
+/**
  * Validate accepted IMP-036G Product Definition CURRENT authority prose at GTM-R130 / STATE-R128.
  * @param {string} text
  */
@@ -23544,7 +23613,73 @@ export function evaluateImp036gAcceptedProductDefinition(text) {
       message: "Accepted IMP-036G Product Definition must keep IMP037_ACTIVATED: NO",
     };
   }
+  const phase = evaluateImp036gAcceptedProductDefinitionPhaseProvenance(body);
+  if (!phase.ok) return phase;
   return evaluateImp036gAcceptedCurrentAuthorityProse(body, "product-definition");
+}
+
+/**
+ * Validate IMP-040 PRE-GATE Product Definition CURRENT authority sources at GTM-R130 / STATE-R128.
+ * Provenance-only: does not advance IMP-040 lifecycle or gate status.
+ * @param {string} text
+ */
+export function evaluateImp040PreGateProductDefinitionAuthority(text) {
+  if (!text || !String(text).trim()) {
+    return {
+      ok: false,
+      code: "IMP040_PD_ABSENT",
+      message: "IMP-040 PRE-GATE Product Definition must not be empty",
+    };
+  }
+  const body = String(text).replace(/[*`]/g, "");
+
+  const requiredAnchors = [
+    [/ROADMAP\s+GTM-R130/i, "canonical anchor ROADMAP GTM-R130"],
+    [/STATE\s+STATE-R128/i, "canonical anchor STATE STATE-R128"],
+  ];
+  for (const [pattern, label] of requiredAnchors) {
+    if (!pattern.test(body)) {
+      return {
+        ok: false,
+        code: "IMP040_PD_AUTHORITY",
+        message: `IMP-040 PRE-GATE Product Definition must record ${label}`,
+      };
+    }
+  }
+
+  if (/docs\/platform\/ROADMAP\.md\s+GTM-R128/.test(body)) {
+    return {
+      ok: false,
+      code: "IMP040_PD_STALE_ROADMAP_AUTHORITY",
+      message:
+        "IMP-040 PRE-GATE Product Definition must not retain verified ROADMAP authority GTM-R128 when CURRENT is GTM-R130",
+    };
+  }
+
+  const required = [
+    [
+      /docs\/platform\/ROADMAP\.md\s+GTM-R130/,
+      "verified authority table docs/platform/ROADMAP.md GTM-R130",
+    ],
+    [
+      /docs\/platform\/STATE\.md\s+STATE-R128/,
+      "verified authority table docs/platform/STATE.md STATE-R128",
+    ],
+    [/IMP040_ACTIVATED\s*[:=]\s*NO/, "IMP040_ACTIVATED NO"],
+    [/Document status\s*[:=]\s*PRE-GATE DRAFT/i, "Document status PRE-GATE DRAFT"],
+    [/PRE-GATE DRAFT\s*[:=]\s*YES/i, "PRE-GATE DRAFT YES"],
+  ];
+  for (const [pattern, label] of required) {
+    if (!pattern.test(body)) {
+      return {
+        ok: false,
+        code: "IMP040_PD_AUTHORITY",
+        message: `IMP-040 PRE-GATE Product Definition must record ${label}`,
+      };
+    }
+  }
+
+  return { ok: true };
 }
 
 function checkImp036gAcceptance(roadmap, state, architecture, decision) {
@@ -23577,6 +23712,15 @@ function checkImp036gAcceptance(roadmap, state, architecture, decision) {
   } else {
     const pdValidation = evaluateImp036gAcceptedProductDefinition(productDefText);
     if (!pdValidation.ok) fail(pdValidation.code, pdValidation.message);
+  }
+
+  const imp040PdRel = "docs/platform/product/IMP-040/product-definition.md";
+  const imp040Pd = resolveExactRelativeFile(imp040PdRel);
+  if (imp040Pd === null) {
+    fail("IMP040_PD_MISSING", "IMP-040 PRE-GATE Product Definition must exist at IMP-036G acceptance");
+  } else {
+    const imp040Validation = evaluateImp040PreGateProductDefinitionAuthority(readFileSync(imp040Pd, "utf8"));
+    if (!imp040Validation.ok) fail(imp040Validation.code, imp040Validation.message);
   }
 
   const experienceRel = "docs/platform/experience/enterprise-experience/IMP-036G-administration-console-v2.md";

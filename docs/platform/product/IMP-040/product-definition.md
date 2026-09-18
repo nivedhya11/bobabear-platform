@@ -184,7 +184,7 @@ ARCH_R20_REQUIRED: do not create automatically
 | Source | Role | Classification |
 |---|---|---|
 | `docs/platform/VISION.md` VISION-1 | V1 GTM outcome / Non-Goals | VERIFIED |
-| `docs/platform/ROADMAP.md` GTM-R128 | IMP-040 identity; gtmBoundary; PLANNED | VERIFIED |
+| `docs/platform/ROADMAP.md` GTM-R130 | IMP-040 identity; gtmBoundary; PLANNED | VERIFIED |
 | `docs/platform/STATE.md` STATE-R128 | acceptedThrough IMP-036G; currentProductSlice NONE | VERIFIED |
 | `docs/platform/PRODUCT-DELIVERY.md` PD-1 | Journey Gap Audit required before public GTM / IMP-040 acceptance | VERIFIED |
 | `docs/platform/TESTING.md` TEST-1 | Evidence policy; no silent-retry-as-pass | VERIFIED |
