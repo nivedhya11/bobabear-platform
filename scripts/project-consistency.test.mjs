@@ -110,6 +110,7 @@ import {
   runProjectConsistency,
   evaluateImp036fActivationCheckpoint,
   evaluateImp036gActivationCheckpoint,
+  evaluateImp037ActivationCheckpoint,
   evaluateImp036gProductDefinitionDraftCheckpoint,
   evaluateImp036gProductDefinitionGatePassCheckpoint,
   evaluateImp036gUngatedProductDefinitionDraftCandidate,
@@ -6367,6 +6368,7 @@ describe("PD-1 / TEST-1 product delivery process authorities", () => {
     assert.ok(
       messages.some(
         (m) =>
+          m === "supporting GJ/TEST lifecycle markers aligned with IMP-037 activation" ||
           m === "supporting GJ/TEST lifecycle markers aligned with IMP-036G activation" ||
           m === "supporting GJ/TEST lifecycle markers aligned with IMP-036F activation",
       ),
@@ -6374,6 +6376,7 @@ describe("PD-1 / TEST-1 product delivery process authorities", () => {
     assert.ok(
       messages.some(
         (m) =>
+          m === "IMP-036F-backed Golden Journey statuses aligned at activated-IMP-037 checkpoint" ||
           m === "IMP-036F-backed Golden Journey statuses aligned at activated-G checkpoint" ||
           m === "IMP-036F-backed Golden Journey statuses aligned at accepted-F checkpoint",
       ),
@@ -6598,12 +6601,12 @@ describe("canonical authority history compression", () => {
 
     const roadmap = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
     const state = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
-    assert.match(roadmap, /"roadmapVersion": "GTM-R130"/);
-    assert.match(state, /"stateVersion": "STATE-R128"/);
+    assert.match(roadmap, /"roadmapVersion": "GTM-R131"/);
+    assert.match(state, /"stateVersion": "STATE-R129"/);
     assert.match(state, /"acceptedThrough": "IMP-036G"/);
     assert.match(state, /"pendingAcceptance": "NONE"/);
-    assert.match(state, /"currentProductSlice": "NONE"/);
-    assert.match(state, /"nextProductSlice": "IMP-037"/);
+    assert.match(state, /"currentProductSlice": "IMP-037"/);
+    assert.match(state, /"nextProductSlice": "IMP-038"/);
     assert.match(roadmap, /IMP-036E_ACCEPTED:\s*YES/);
     assert.match(state, /IMP-036E_FOUNDER_UAT:\s*PASS/);
     assert.match(roadmap, /IMP-036F:\s*COMPLETE_AND_ACCEPTED/);
@@ -6648,7 +6651,12 @@ describe("canonical authority history compression", () => {
     assert.match(roadmap, /IMP036G_EXACT_MAIN_CI:\s*35366698302/);
     assert.match(roadmap, /IMP036G_IMPLEMENTATION_MERGE_SHA:\s*c35c9eab6a30ec6ce745cefd75c523181326f360/);
     assert.match(state, /Current Product Implementation:\s*NONE/);
-    assert.match(roadmap, /IMP037_ACTIVATED:\s*NO/);
+    assert.match(roadmap, /IMP037_ACTIVATED:\s*YES/);
+    assert.match(state, /IMP037_ACTIVATED:\s*YES/);
+    assert.match(roadmap, /IMP037_PRODUCT_DEFINITION:\s*PRE_GATE_DRAFT/);
+    assert.match(roadmap, /IMP038_ACTIVATED:\s*NO/);
+    assert.match(roadmap, /"currentProductSlice": "IMP-037"/);
+    assert.match(roadmap, /"nextProductSlice": "IMP-038"/);
     assert.match(roadmap, /IMP036E_ACCEPTED_MAIN_SHA:\s*05c534bac3d077f5ab89928495568bb63faf78df/);
     assert.match(roadmap, /FOUNDER_STAGING_INTERMEDIATE_CANDIDATE_SHA:\s*e9821271a29ae35ba6c921008b976cd2e8d15c50/);
     assert.match(state, /FOUNDER_STAGING_INTERMEDIATE_CANDIDATE_SHA:\s*e9821271a29ae35ba6c921008b976cd2e8d15c50/);
@@ -6669,12 +6677,12 @@ describe("canonical authority history compression", () => {
     assert.ok(!/FOUNDER_STAGING_DEPLOYMENT:\s*NOT_PERFORMED/.test(current));
   });
 
-  it("passes CURRENT authority checks at the IMP-036G Acceptance checkpoint", () => {
+  it("passes CURRENT authority checks at the IMP-037 Activation checkpoint", () => {
     const findings = runProjectConsistency();
     const failures = findings.filter((f) => !f.ok);
     assert.equal(failures.length, 0, failures.map((f) => `[${f.code}] ${f.message}`).join("\n"));
     const messages = findings.filter((f) => f.ok).map((f) => f.message);
-    assert.ok(messages.some((m) => m.includes("IMP-036G COMPLETE_AND_ACCEPTED")));
+    assert.ok(messages.some((m) => m.includes("IMP-037 product-slice activation lifecycle valid")));
     assert.ok(messages.some((m) => m.includes("CURRENT authority anti-stale checks OK")));
     assert.ok(messages.some((m) => m.includes("historical authority corpus loaded")));
   });
@@ -8513,51 +8521,138 @@ implementation AUTHORIZED / STARTED / COMPLETE at GTM-R129 / STATE-R127 pending 
   });
 });
 
-describe("IMP-040 PRE-GATE Product Definition authority at GTM-R130 / STATE-R128", () => {
+describe("IMP-040 PRE-GATE Product Definition authority at GTM-R131 / STATE-R129", () => {
   const preGateStub = `# IMP-040 Product Definition
 
 Document status: PRE-GATE DRAFT
 PRE-GATE DRAFT: YES
 IMP040_ACTIVATED: NO
 
-| Canonical anchors | VISION-1; ROADMAP GTM-R130; STATE STATE-R128; ARCH-R19 |
+| Canonical anchors | VISION-1; ROADMAP GTM-R131; STATE STATE-R129; ARCH-R19 |
 
 ## 2. Authority and provenance
 
 | Source | Role | Classification |
 |---|---|---|
-| docs/platform/ROADMAP.md GTM-R130 | IMP-040 identity; gtmBoundary; PLANNED | VERIFIED |
-| docs/platform/STATE.md STATE-R128 | acceptedThrough IMP-036G; currentProductSlice NONE | VERIFIED |
+| docs/platform/ROADMAP.md GTM-R131 | IMP-040 identity; gtmBoundary; PLANNED | VERIFIED |
+| docs/platform/STATE.md STATE-R129 | acceptedThrough IMP-036G; currentProductSlice IMP-037 | VERIFIED |
 `;
 
   it("validates live IMP-040 PRE-GATE authority sources", () => {
     const live = readFileSync("docs/platform/product/IMP-040/product-definition.md", "utf8");
     assert.deepEqual(evaluateImp040PreGateProductDefinitionAuthority(live), { ok: true });
-    assert.match(live, /docs\/platform\/ROADMAP\.md`? GTM-R130/);
-    assert.doesNotMatch(live, /docs\/platform\/ROADMAP\.md`? GTM-R128/);
+    assert.match(live, /docs\/platform\/ROADMAP\.md`? GTM-R131/);
+    assert.doesNotMatch(live, /docs\/platform\/ROADMAP\.md`? GTM-R130/);
   });
 
   it("passes aligned PRE-GATE stub", () => {
     assert.deepEqual(evaluateImp040PreGateProductDefinitionAuthority(preGateStub), { ok: true });
   });
 
-  it("rejects stale verified ROADMAP GTM-R128 when CURRENT is GTM-R130", () => {
+  it("rejects stale verified ROADMAP GTM-R130 when CURRENT is GTM-R131", () => {
     const result = evaluateImp040PreGateProductDefinitionAuthority(
       preGateStub.replace(
+        "docs/platform/ROADMAP.md GTM-R131",
         "docs/platform/ROADMAP.md GTM-R130",
-        "docs/platform/ROADMAP.md GTM-R128",
       ),
     );
     assert.equal(result.ok, false);
     assert.equal(result.code, "IMP040_PD_STALE_ROADMAP_AUTHORITY");
   });
 
-  it("rejects missing STATE-R128 verified authority", () => {
+  it("rejects missing STATE-R129 verified authority", () => {
     const result = evaluateImp040PreGateProductDefinitionAuthority(
-      preGateStub.replace("docs/platform/STATE.md STATE-R128", "docs/platform/STATE.md STATE-R127"),
+      preGateStub.replace("docs/platform/STATE.md STATE-R129", "docs/platform/STATE.md STATE-R128"),
     );
     assert.equal(result.ok, false);
     assert.equal(result.code, "IMP040_PD_AUTHORITY");
+  });
+});
+
+describe("IMP-037 product-slice activation checkpoints", () => {
+  const activationBase = {
+    roadmapVersion: "GTM-R131",
+    stateVersion: "STATE-R129",
+    acceptedThrough: "IMP-036G",
+    currentProductSlice: "IMP-037",
+    nextProductSlice: "IMP-038",
+    pendingAcceptance: "NONE",
+    imp036g: "COMPLETE_AND_ACCEPTED",
+    imp037FormalLifecycle: "PLANNED",
+    imp037Activated: "YES",
+    productDefinition: "PRE_GATE_DRAFT",
+    productDefinitionGate: "NOT_PERFORMED",
+    architectureFit: "NOT_PERFORMED",
+    architectureLocked: "NO",
+    implementationAuthorized: "NO",
+    started: "NO",
+    accepted: "NO",
+    founderUatRequired: "YES",
+    imp038Activated: "NO",
+    architectureVersion: "ARCH-R19",
+    decisionRegisterVersion: "DR-15",
+    productDeliveryVersion: "PD-1",
+    productDefinitionExists: true,
+    productDefinitionApproved: false,
+    productDefinitionGatePass: false,
+    architectureLockedYes: false,
+    implementationAuthorizedYes: false,
+    startedYes: false,
+    acceptedYes: false,
+    imp038ActivatedYes: false,
+  };
+
+  it("preserves GTM-R131 / STATE-R129 activation distinct from later gates", () => {
+    assert.deepEqual(evaluateImp037ActivationCheckpoint(activationBase), { ok: true });
+    assert.equal(
+      evaluateImp037ActivationCheckpoint({ ...activationBase, productDefinitionExists: false }).ok,
+      false,
+    );
+    assert.equal(
+      evaluateImp037ActivationCheckpoint({ ...activationBase, productDefinitionApproved: true }).ok,
+      false,
+    );
+    assert.equal(
+      evaluateImp037ActivationCheckpoint({ ...activationBase, productDefinitionGatePass: true }).ok,
+      false,
+    );
+    assert.equal(
+      evaluateImp037ActivationCheckpoint({ ...activationBase, architectureLockedYes: true }).ok,
+      false,
+    );
+    assert.equal(
+      evaluateImp037ActivationCheckpoint({ ...activationBase, implementationAuthorizedYes: true }).ok,
+      false,
+    );
+    assert.equal(evaluateImp037ActivationCheckpoint({ ...activationBase, startedYes: true }).ok, false);
+    assert.equal(evaluateImp037ActivationCheckpoint({ ...activationBase, acceptedYes: true }).ok, false);
+    assert.equal(
+      evaluateImp037ActivationCheckpoint({ ...activationBase, currentProductSlice: "NONE" }).ok,
+      false,
+    );
+    assert.equal(
+      evaluateImp037ActivationCheckpoint({ ...activationBase, nextProductSlice: "IMP-037" }).ok,
+      false,
+    );
+    assert.equal(
+      evaluateImp037ActivationCheckpoint({ ...activationBase, imp037Activated: "NO" }).ok,
+      false,
+    );
+    assert.equal(
+      evaluateImp037ActivationCheckpoint({ ...activationBase, imp038Activated: "YES" }).ok,
+      false,
+    );
+    assert.equal(
+      evaluateImp037ActivationCheckpoint({ ...activationBase, imp038ActivatedYes: true }).ok,
+      false,
+    );
+    assert.equal(
+      evaluateImp037ActivationCheckpoint({ ...activationBase, productDefinition: "NOT_CREATED" }).ok,
+      false,
+    );
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R131", "STATE-R129", "imp037Activation"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R130", "STATE-R128", "imp036gAcceptance"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R131", "STATE-R129", "imp036gAcceptance"), false);
   });
 });
 

@@ -24,16 +24,18 @@ quality.
 This is a detailed **supporting** product/experience contract. It does not lock capability architecture,
 authorize implementation, create a CURRENT decision, change accepted domain authority, or activate
 any slice. ROADMAP/STATE remain lifecycle authority. IMP-036A → IMP-036G are
-`COMPLETE_AND_ACCEPTED`; IMP-037 remains unactivated.
+`COMPLETE_AND_ACCEPTED`; IMP-037 is activated as CURRENT (`IMP037_ACTIVATED: YES`) with formal
+lifecycle remaining `PLANNED` / `NOT_AUTHORIZED` / `NOT_STARTED`.
 
 ```text
 acceptedThrough = IMP-036G
-currentProductSlice = NONE
+currentProductSlice = IMP-037
 pendingAcceptance = NONE
-nextProductSlice = IMP-037
+nextProductSlice = IMP-038
 
 IMP-036A → IMP-036G = COMPLETE_AND_ACCEPTED
-IMP-037 = PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED (IMP037_ACTIVATED: NO)
+IMP-037 = PLANNED / NOT_AUTHORIZED / NOT_STARTED (IMP037_ACTIVATED: YES; currentProductSlice)
+IMP-038 = PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED (IMP038_ACTIVATED: NO)
 ```
 
 ## 2. No-Figma product strategy

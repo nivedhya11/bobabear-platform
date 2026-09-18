@@ -2,10 +2,10 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R128",
+  "stateVersion": "STATE-R129",
   "acceptedThrough": "IMP-036G",
-  "currentProductSlice": "NONE",
-  "nextProductSlice": "IMP-037",
+  "currentProductSlice": "IMP-037",
+  "nextProductSlice": "IMP-038",
   "pendingAcceptance": "NONE",
   "governanceHealth": "ALIGNED",
   "lastReviewed": "2026-09-18"
@@ -34,26 +34,46 @@ Accepted Range:            IMP-001 → IMP-036G (including IMP-005A and IMP-026C
 ```text
 Current Product Implementation: NONE
 Pending Acceptance:             NONE
-Current Product Slice:          NONE
-Next Product Slice:             IMP-037 — Backup, Restore & Migration Readiness
-Current Governance Activity:    IMP-036G COMPLETE_AND_ACCEPTED
+Current Product Slice:          IMP-037 — Backup, Restore & Migration Readiness
+Next Product Slice:             IMP-038 — Security & Privacy Hardening
+Current Governance Activity:    IMP-037 activated as CURRENT product slice (GTM-R131 / STATE-R129);
+                              formal IMP-037 ROADMAP lifecycle remains PLANNED;
+                              IMP037_ACTIVATED: YES;
+                              IMP037_PRODUCT_DEFINITION: PRE_GATE_DRAFT (PD-IMP-037-DRAFT-1);
+                              IMP037_PRODUCT_DEFINITION_GATE: NOT_PERFORMED;
+                              IMP037_ARCHITECTURE_FIT: NOT_PERFORMED;
+                              IMP037_ARCHITECTURE_LOCKED: NO;
+                              IMP037_IMPLEMENTATION_AUTHORIZED: NO; IMP037_STARTED: NO;
+                              IMP037_ACCEPTED: NO; IMP037_FOUNDER_UAT_REQUIRED: YES;
+                              IMP038_ACTIVATED: NO;
+                              IMP-036G remains COMPLETE_AND_ACCEPTED
                               (GTM-R130 / STATE-R128);
                               Founder UAT PASS 2026-09-18; formal acceptance recorded;
                               accepted UAT candidate fbf690a67cda51bd6bbc1bad4a9d26f574c4286e /
                               tree 84b6a502fcec646cb5a65f3257f19b85c64f49e1 /
                               fingerprint 9f472ce6e1ccaa2fe914006c846fb3018d668b718f569b6d0cb4fa64c3013f9b;
                               exact-main CI 35366698302 SUCCESS;
+                              post-acceptance exact-main CI 35376477139 SUCCESS;
                               IMP036G_ACCEPTED: YES; IMP036G_FOUNDER_UAT: PASS;
                               IMP036G_FORMAL_ACCEPTANCE: ACCEPTED;
-                              IMP036G_INDEPENDENT_TECHNICAL_ACCEPTANCE: PASS;
-                              IMP037_ACTIVATED: NO
+                              IMP036G_INDEPENDENT_TECHNICAL_ACCEPTANCE: PASS
 IMP-036G:                 COMPLETE_AND_ACCEPTED
 IMP036G_ACTIVATED:        YES
 IMP036G_ACCEPTED:         YES
 IMP036G_FOUNDER_UAT:      PASS
 IMP036G_FORMAL_ACCEPTANCE: ACCEPTED
-IMP-037:                  PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
-IMP037_ACTIVATED:         NO
+IMP-037:                  PLANNED / NOT_AUTHORIZED / NOT_STARTED
+IMP037_ACTIVATED:         YES
+IMP037_PRODUCT_DEFINITION: PRE_GATE_DRAFT
+IMP037_PRODUCT_DEFINITION_GATE: NOT_PERFORMED
+IMP037_ARCHITECTURE_FIT:  NOT_PERFORMED
+IMP037_ARCHITECTURE_LOCKED: NO
+IMP037_IMPLEMENTATION_AUTHORIZED: NO
+IMP037_STARTED:           NO
+IMP037_ACCEPTED:          NO
+IMP037_FOUNDER_UAT_REQUIRED: YES
+IMP-038:                  PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
+IMP038_ACTIVATED:         NO
 ```
 
 Latest accepted locked capability architecture (IMP-036G; architecture LOCKED; implementation AUTHORIZED / STARTED / COMPLETE; COMPLETE_AND_ACCEPTED):
@@ -189,14 +209,15 @@ Cart → Checkout → Payment → Order
 | IMP-036D | Workforce & Franchise Operations Portal V2 | COMPLETE_AND_ACCEPTED |
 | IMP-036E | Store Operations Management | COMPLETE_AND_ACCEPTED |
 | IMP-036F | Catalog, Menu, Pricing & Promotions Management | COMPLETE_AND_ACCEPTED |
+| IMP-036G | Administration Console V2 | COMPLETE_AND_ACCEPTED |
 
 ## 5. Acceptance Position
 
 ```text
 acceptedThrough: IMP-036G
 pendingAcceptance: NONE
-currentProductSlice: NONE
-nextProductSlice: IMP-037 — Backup, Restore & Migration Readiness
+currentProductSlice: IMP-037 — Backup, Restore & Migration Readiness
+nextProductSlice: IMP-038 — Security & Privacy Hardening
 IMP-036F: COMPLETE_AND_ACCEPTED
 IMP-036F_ARCHITECTURE: LOCKED
 IMP036F_ARCHITECTURE_LOCKED: YES
@@ -368,8 +389,19 @@ IMP036G_FOUNDER_STAGING_BOOTSTRAP_ACTION: PRESERVE
 IMP036G_FOUNDER_STAGING_RUNNING_SHA: fbf690a67cda51bd6bbc1bad4a9d26f574c4286e
 IMP036G_FOUNDER_STAGING_STATUS: FOUNDER_UAT_COMPLETE
 IMP036G_FOUNDER_STAGING_UAT_ROUTE: /workforce/admin/
-IMP-037: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
-IMP037_ACTIVATED: NO
+IMP-037: PLANNED / NOT_AUTHORIZED / NOT_STARTED
+IMP037_ACTIVATED: YES
+IMP037_PRODUCT_DEFINITION: PRE_GATE_DRAFT
+IMP037_PRODUCT_DEFINITION_VERSION: PD-IMP-037-DRAFT-1
+IMP037_PRODUCT_DEFINITION_GATE: NOT_PERFORMED
+IMP037_ARCHITECTURE_FIT: NOT_PERFORMED
+IMP037_ARCHITECTURE_LOCKED: NO
+IMP037_IMPLEMENTATION_AUTHORIZED: NO
+IMP037_STARTED: NO
+IMP037_ACCEPTED: NO
+IMP037_FOUNDER_UAT_REQUIRED: YES
+IMP-038: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
+IMP038_ACTIVATED: NO
 architectureVersion: ARCH-R19
 decisionRegisterVersion: DR-15
 ```
@@ -388,8 +420,17 @@ Closed historical conflicts and prior STATE-Rxx progression narratives remain in
 
 ## 7. Acceptance Provenance
 
-Accepted product through IMP-036F is independently accepted after Founder UAT PASS on 2026-09-15 for
-exact candidate SHA `91d0b5e5e5815da6bf0bb325a3c6ab884dc06652` / tree
+Accepted product through IMP-036G is independently accepted after Founder UAT PASS on 2026-09-18 for
+exact candidate SHA `fbf690a67cda51bd6bbc1bad4a9d26f574c4286e` / tree
+`84b6a502fcec646cb5a65f3257f19b85c64f49e1` (fingerprint
+`9f472ce6e1ccaa2fe914006c846fb3018d668b718f569b6d0cb4fa64c3013f9b`; exact-main CI run
+`35366698302` SUCCESS; post-acceptance exact-main CI `35376477139` SUCCESS). Founder staging
+`boba-staging` recorded `CANDIDATE_MATCH: YES`; UAT route `/workforce/admin/`. Formal Founder
+acceptance: `ACCEPT IMP-036G`. Locked capability architecture:
+[`capabilities/IMP-036G-administration-console-v2.md`](./capabilities/IMP-036G-administration-console-v2.md).
+
+Prior accepted product through IMP-036F remains independently accepted after Founder UAT PASS on
+2026-09-15 for exact candidate SHA `91d0b5e5e5815da6bf0bb325a3c6ab884dc06652` / tree
 `ab41fc7f2bf6d0a52c3ea6c2b69ed331ca9540cf` (fingerprint
 `c689630cb9a4d002fda3376f949a1f324015776d392abfd2abde7b6f5b91f973`; exact-main CI run
 `34991901136` SUCCESS). Founder staging `boba-staging` recorded `CANDIDATE_MATCH: YES`, healthy,
@@ -424,8 +465,8 @@ Implementation/review provenance for IMP-036F is recorded in
 
 ## 8. Explicitly Not Yet Accepted
 
-- IMP-037 — Backup, Restore & Migration Readiness (`PLANNED` / `NOT_ACTIVATED`; `IMP037_ACTIVATED: NO`)
-- IMP-038 — Security & Privacy Hardening
+- IMP-037 — Backup, Restore & Migration Readiness (`PLANNED` / `NOT_AUTHORIZED` / `NOT_STARTED`; `IMP037_ACTIVATED: YES`; Product Definition PRE_GATE_DRAFT / `PD-IMP-037-DRAFT-1`; Gate NOT_PERFORMED; Architecture Fit NOT_PERFORMED; architecture NOT_LOCKED; implementation NOT_AUTHORIZED / NOT_STARTED; `IMP037_ACCEPTED: NO`)
+- IMP-038 — Security & Privacy Hardening (`PLANNED` / `NOT_ACTIVATED`; `IMP038_ACTIVATED: NO`)
 - IMP-039 — Production Infrastructure & Release Pipeline
 - IMP-040 — Launch Validation & Cutover
 
@@ -439,14 +480,48 @@ Implementation/review provenance for IMP-036F is recorded in
 | Why / Non-Goals | [`VISION.md`](./VISION.md) |
 | Durable architecture | [`ARCHITECTURE.md`](./ARCHITECTURE.md) |
 | Binding decision status | [`decision-register.md`](./decision-register.md) |
-| IMP-036F locked capability architecture (latest accepted) | [`capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md`](./capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md) |
+| IMP-036G locked capability architecture (latest accepted) | [`capabilities/IMP-036G-administration-console-v2.md`](./capabilities/IMP-036G-administration-console-v2.md) |
+| IMP-036F locked capability architecture | [`capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md`](./capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md) |
 | IMP-036E locked capability architecture | [`capabilities/IMP-036E-store-operations-management.md`](./capabilities/IMP-036E-store-operations-management.md) |
 | IMP-036D locked capability architecture | [`capabilities/IMP-036D-workforce-franchise-operations-v2.md`](./capabilities/IMP-036D-workforce-franchise-operations-v2.md) |
 
 Agents may propose a STATE delta in their report. Only independent acceptance updates this file's
 accepted position and may promote `governanceHealth` to `ALIGNED`.
 
-## 10. STATE-R128 record
+## 10. STATE-R129 record
+
+```text
+STATE-R129 = IMP-037_PRODUCT_SLICE_ACTIVATION
+acceptedThrough: IMP-036G
+pendingAcceptance: NONE
+currentProductSlice: IMP-037
+nextProductSlice: IMP-038
+Current Product Implementation: NONE
+Current Governance Activity: IMP-037 activated as CURRENT product slice
+IMP-036G: COMPLETE_AND_ACCEPTED
+IMP036G_ACCEPTED: YES
+IMP036G_FOUNDER_UAT: PASS
+IMP036G_FORMAL_ACCEPTANCE: ACCEPTED
+IMP-037: PLANNED / NOT_AUTHORIZED / NOT_STARTED
+IMP037_ACTIVATED: YES
+IMP037_PRODUCT_DEFINITION: PRE_GATE_DRAFT
+IMP037_PRODUCT_DEFINITION_VERSION: PD-IMP-037-DRAFT-1
+IMP037_PRODUCT_DEFINITION_GATE: NOT_PERFORMED
+IMP037_ARCHITECTURE_FIT: NOT_PERFORMED
+IMP037_ARCHITECTURE_LOCKED: NO
+IMP037_IMPLEMENTATION_AUTHORIZED: NO
+IMP037_STARTED: NO
+IMP037_ACCEPTED: NO
+IMP037_FOUNDER_UAT_REQUIRED: YES
+IMP-038: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
+IMP038_ACTIVATED: NO
+architectureVersion: ARCH-R19
+decisionRegisterVersion: DR-15
+productDeliveryVersion: PD-1
+supersedes: STATE-R128
+```
+
+## 11. STATE-R128 record
 
 ```text
 STATE-R128 = IMP-036G_COMPLETE_AND_ACCEPTED
@@ -520,7 +595,7 @@ Formal acceptance is recorded at GTM-R130 / STATE-R128 after Founder UAT PASS. T
 **not** activate IMP-037. Accepted UAT product candidate `fbf690a67cda51bd6bbc1bad4a9d26f574c4286e` is distinct from
 implementation merge `c35c9eab6a30ec6ce745cefd75c523181326f360`. Historical completion predecessor is GTM-R129 / STATE-R127.
 
-## 11. STATE-R127 record
+## 12. STATE-R127 record
 
 
 ```text
@@ -584,7 +659,7 @@ IMP-036G, does **not** perform Founder UAT, does **not** record a Founder UAT ve
 acceptance → UAT deployment → Founder UAT → acceptance reconciliation. Historical start predecessor
 is GTM-R128 / STATE-R126.
 
-## 12. STATE-R126 record
+## 13. STATE-R126 record
 
 ```text
 STATE-R126 = IMP-036G_IMPLEMENTATION_AUTHORIZATION_AND_START
@@ -630,7 +705,7 @@ STATE-R126. This record does **not** claim implementation completion or acceptan
 record a Founder UAT verdict, and does **not** activate IMP-037. Architecture remains
 `ARCHITECTURE_LOCKED` from the historical GTM-R127 / STATE-R125 predecessor tip.
 
-## 12. STATE-R125 record
+## 13. STATE-R125 record
 
 ```text
 STATE-R125 = IMP-036G_ARCHITECTURE_FIT_PASS_AND_LOCK
@@ -673,7 +748,7 @@ supersedes: STATE-R124
 ```
 
 
-## 13. STATE-R124 record
+## 14. STATE-R124 record
 
 ```text
 STATE-R124 = IMP-036G_PRODUCT_DEFINITION_GATE_PASS
@@ -713,7 +788,7 @@ independentPreGateReview: PASS
 supersedes: STATE-R123
 ```
 
-## 14. STATE-R123 record
+## 15. STATE-R123 record
 
 ```text
 STATE-R123 = IMP-036G_PRODUCT_DECISIONS_RESOLVED_DRAFT_2
@@ -748,7 +823,7 @@ productDeliveryVersion: PD-1
 supersedes: STATE-R122
 ```
 
-## 15. STATE-R122 record
+## 16. STATE-R122 record
 
 ```text
 STATE-R122 = IMP-036G_PRODUCT_DEFINITION_DRAFT
@@ -779,7 +854,7 @@ productDeliveryVersion: PD-1
 supersedes: STATE-R121
 ```
 
-## 16. STATE-R121 record
+## 17. STATE-R121 record
 
 ```text
 STATE-R121 = IMP-036G_PRODUCT_SLICE_ACTIVATION
@@ -807,7 +882,7 @@ productDeliveryVersion: PD-1
 supersedes: STATE-R120
 ```
 
-## 17. STATE-R120 record
+## 18. STATE-R120 record
 
 ```text
 STATE-R120 = IMP-036F_FORMAL_ACCEPTANCE
@@ -833,7 +908,7 @@ productDeliveryVersion: PD-1
 supersedes: STATE-R119
 ```
 
-## 18. STATE-R119 record
+## 19. STATE-R119 record
 
 ```text
 STATE-R119 = IMP-036F_IMPLEMENTATION_START
@@ -862,7 +937,7 @@ supersedes: STATE-R118
 STATE-R119 records IMP-036F implementation start. Implementation is in progress; not complete;
 not accepted. Authorization provenance remains GTM-R120 / STATE-R118.
 
-## 19. STATE-R118 record
+## 20. STATE-R118 record
 
 ```text
 STATE-R118 = IMP-036F_IMPLEMENTATION_AUTHORIZATION
@@ -901,7 +976,7 @@ lockedCapabilityArchitecture: docs/platform/capabilities/IMP-036F-catalog-menu-p
 supersedes: STATE-R117
 ```
 
-## 20. STATE-R117 record
+## 21. STATE-R117 record
 
 ```text
 STATE-R117 = IMP-036F_ARCHITECTURE_LOCK
@@ -940,7 +1015,7 @@ ARCH_R20_REQUIRED_FOR_IMP036F_LOCK: NO
 supersedes: STATE-R116
 ```
 
-## 21. STATE-R116 record
+## 22. STATE-R116 record
 
 ```text
 STATE-R116 = IMP-036F_PRODUCT_DEFINITION_GATE_PASS
@@ -971,7 +1046,7 @@ gateDate: 2026-09-10
 supersedes: STATE-R115
 ```
 
-## 22. STATE-R115 record
+## 23. STATE-R115 record
 
 ```text
 STATE-R115 = IMP-036F_PRODUCT_DEFINITION_DRAFT_AUTHORIZED
@@ -999,7 +1074,7 @@ productDeliveryVersion: PD-1
 supersedes: STATE-R114
 ```
 
-## 23. STATE-R114 record
+## 24. STATE-R114 record
 
 ```text
 STATE-R114 = IMP-036F_PRODUCT_SLICE_ACTIVATION
@@ -1026,7 +1101,7 @@ productDeliveryVersion: PD-1
 supersedes: STATE-R113
 ```
 
-## 24. STATE-R113 record
+## 25. STATE-R113 record
 
 
 ```text
@@ -1049,7 +1124,7 @@ decisionRegisterVersion: DR-15
 supersedes: STATE-R112
 ```
 
-## 25. STATE-R112 record (historical compression)
+## 26. STATE-R112 record (historical compression)
 
 ```text
 STATE-R112 = CANONICAL_AUTHORITY_CONTEXT_COMPRESSION_ONLY
