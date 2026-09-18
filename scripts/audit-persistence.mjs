@@ -63,6 +63,7 @@ const ALLOWED_PERSISTENCE_IMPORT_PREFIXES = [
   "src/server/customer-profiles/",
   "src/server/customer-addresses/",
   "src/server/serviceability/",
+  "src/server/staging/",
   "scripts/database/",
   "scripts/access/",
   "scripts/menu/",
@@ -93,11 +94,13 @@ const ALLOWED_PERSISTENCE_IMPORT_PREFIXES = [
   "tests/administration/",
   "tests/operations/",
   "tests/workforce-auth/",
+  "tests/staging-baseline/",
 ];
 
 const ALLOWED_PERSISTENCE_IMPORT_PATHS = new Set([
   "scripts/catalog/bootstrap-imp028c-modifiers.ts",
   "scripts/catalog/bootstrap-imp036c-required-topping.ts",
+  "scripts/environment/staging-baseline-classify.ts",
   "scripts/e2e/seed-customer-ordering.ts",
   "scripts/e2e/seed-operations-lifecycle.ts",
   "scripts/e2e/seed-commercial-workspace.ts",

@@ -18,6 +18,7 @@ import {
   assertServiceabilitySmokeResponse,
   closedStdinInherit,
   createStagingWorkforceUser,
+  decideAndApplyStagingBootstrap,
   discardMismatchedOperatorCandidateTag,
   ensureStagingEnvFiles,
   isFullGitSha,
@@ -30,6 +31,11 @@ import {
   stopAndRemoveLegacyPostgres,
   zeroSecretBuffer,
 } from "./staging.mjs";
+import {
+  parseStagingBaselineState,
+  resolveStagingBootstrapAction,
+  stagingBaselineDecisionLogLines,
+} from "./staging-baseline.mjs";
 
 const candidateSha = "6d925496deebcf19e5a82659e3e33dc81faccac3";
 
@@ -78,6 +84,11 @@ test("staging deploy retains the current-main Podman hardening safeguards", () =
   assert.match(source, /POSTGRES_INIT_MOUNT_REFRESH YES/);
   assert.match(source, /POSTGRES_VOLUME_PRESERVED YES/);
   assert.match(source, /\["run", "--rm", "--no-deps", "migrate"\]/);
+  assert.match(source, /decideAndApplyStagingBootstrap\(buildDir\)/);
+  assert.match(source, /classifyStagingBaselineInTooling/);
+  assert.match(source, /runLegacySeedBootstrapChain/);
+  assert.match(source, /stagingBaselineDecisionLogLines/);
+  assert.match(source, /PARTIAL_OR_INCOMPATIBLE/);
   assert.match(source, /"--no-deps"/);
   assert.match(source, /upAndWait\(buildDir, BOBA_RUNTIME_SERVICES, \{ BOBA_POSTGRES_INIT_DIR: initDir \}\)/);
   assert.doesNotMatch(source, /upAndWait\(buildDir, \["postgres"\]\)/);
@@ -673,4 +684,117 @@ test("staging auth-origin normalization never logs secrets", () => {
     source,
     /console\.(log|info|debug|warn|error)\([^)]*(AUTH_SECRET|PII_HASH_SECRET|password|PASSWORD)/,
   );
+});
+
+test("staging baseline actions map FRESH_EMPTY→APPLY, COMPLETE_COMPATIBLE→PRESERVE, PARTIAL→BLOCK", () => {
+  assert.equal(resolveStagingBootstrapAction("FRESH_EMPTY"), "APPLY");
+  assert.equal(resolveStagingBootstrapAction("COMPLETE_COMPATIBLE"), "PRESERVE");
+  assert.equal(resolveStagingBootstrapAction("PARTIAL_OR_INCOMPATIBLE"), "BLOCK");
+  assert.throws(() => resolveStagingBootstrapAction("UNKNOWN"), /Unknown staging baseline state/);
+});
+
+test("parseStagingBaselineState reads the authoritative marker and rejects missing markers", () => {
+  assert.equal(
+    parseStagingBaselineState("STAGING_BASELINE_STATE COMPLETE_COMPATIBLE\nSTAGING_BOOTSTRAP_ACTION PRESERVE\n"),
+    "COMPLETE_COMPATIBLE",
+  );
+  assert.throws(() => parseStagingBaselineState("no marker here"), /did not emit STAGING_BASELINE_STATE/);
+});
+
+test("stagingBaselineDecisionLogLines emit stable non-secret markers", () => {
+  assert.deepEqual(stagingBaselineDecisionLogLines("FRESH_EMPTY"), [
+    "STAGING_BASELINE_STATE FRESH_EMPTY",
+    "STAGING_BOOTSTRAP_ACTION APPLY",
+  ]);
+  assert.deepEqual(stagingBaselineDecisionLogLines("COMPLETE_COMPATIBLE"), [
+    "STAGING_BASELINE_STATE COMPLETE_COMPATIBLE",
+    "STAGING_BOOTSTRAP_ACTION PRESERVE",
+    "STAGING_PERSISTENT_BUSINESS_STATE_PRESERVED YES",
+  ]);
+  assert.deepEqual(stagingBaselineDecisionLogLines("PARTIAL_OR_INCOMPATIBLE"), [
+    "STAGING_BASELINE_STATE PARTIAL_OR_INCOMPATIBLE",
+    "STAGING_BOOTSTRAP_ACTION BLOCK",
+  ]);
+});
+
+test("decideAndApplyStagingBootstrap preserves COMPLETE_COMPATIBLE without calling legacy seed", () => {
+  const logs = [];
+  let applyCalled = false;
+  const result = decideAndApplyStagingBootstrap("/tmp/build", {
+    classify: () => "COMPLETE_COMPATIBLE",
+    applyLegacy: () => {
+      applyCalled = true;
+    },
+    log: (line) => logs.push(line),
+  });
+  assert.equal(applyCalled, false);
+  assert.deepEqual(result, {
+    initialState: "COMPLETE_COMPATIBLE",
+    action: "PRESERVE",
+    finalState: "COMPLETE_COMPATIBLE",
+  });
+  assert.equal(logs.includes("STAGING_BOOTSTRAP_ACTION PRESERVE"), true);
+  assert.equal(logs.includes("STAGING_PERSISTENT_BUSINESS_STATE_PRESERVED YES"), true);
+});
+
+test("decideAndApplyStagingBootstrap applies then re-checks FRESH_EMPTY", () => {
+  const logs = [];
+  let classifyCalls = 0;
+  let applyCalled = false;
+  const result = decideAndApplyStagingBootstrap("/tmp/build", {
+    classify: () => {
+      classifyCalls += 1;
+      return classifyCalls === 1 ? "FRESH_EMPTY" : "COMPLETE_COMPATIBLE";
+    },
+    applyLegacy: () => {
+      applyCalled = true;
+    },
+    log: (line) => logs.push(line),
+  });
+  assert.equal(applyCalled, true);
+  assert.equal(classifyCalls, 2);
+  assert.deepEqual(result, {
+    initialState: "FRESH_EMPTY",
+    action: "APPLY",
+    finalState: "COMPLETE_COMPATIBLE",
+  });
+  assert.equal(logs.includes("STAGING_BOOTSTRAP_ACTION APPLY"), true);
+  assert.equal(logs.includes("STAGING_POST_BOOTSTRAP_CLASSIFY YES"), true);
+});
+
+test("decideAndApplyStagingBootstrap blocks PARTIAL_OR_INCOMPATIBLE without opportunistic bootstrap", () => {
+  let applyCalled = false;
+  assert.throws(
+    () =>
+      decideAndApplyStagingBootstrap("/tmp/build", {
+        classify: () => "PARTIAL_OR_INCOMPATIBLE",
+        applyLegacy: () => {
+          applyCalled = true;
+        },
+        log: () => {},
+      }),
+    /PARTIAL_OR_INCOMPATIBLE/,
+  );
+  assert.equal(applyCalled, false);
+});
+
+test("decideAndApplyStagingBootstrap fails closed when fresh apply does not reach COMPLETE_COMPATIBLE", () => {
+  assert.throws(
+    () =>
+      decideAndApplyStagingBootstrap("/tmp/build", {
+        classify: () => "FRESH_EMPTY",
+        applyLegacy: () => {},
+        log: () => {},
+      }),
+    /baseline is FRESH_EMPTY/,
+  );
+});
+
+test("staging deploy uses hardened tooling run for baseline classify", () => {
+  const source = readFileSync(path.resolve("scripts/environment/staging.mjs"), "utf8");
+  assert.match(source, /staging:baseline-classify/);
+  assert.match(source, /menu-import-existing/);
+  assert.match(source, /COMPOSE_PROFILES: "tools"/);
+  assert.doesNotMatch(source, /catch\s*\([^)]*IMPORT_CONFLICT/);
+  assert.doesNotMatch(source, /IMPORT_CONFLICT[\s\S]{0,80}continue/);
 });
