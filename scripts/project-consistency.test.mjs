@@ -111,6 +111,7 @@ import {
   evaluateImp036fActivationCheckpoint,
   evaluateImp036gActivationCheckpoint,
   evaluateImp037ActivationCheckpoint,
+  evaluateImp037ActivatedProductDefinitionDependencyAuthority,
   evaluateImp036gProductDefinitionDraftCheckpoint,
   evaluateImp036gProductDefinitionGatePassCheckpoint,
   evaluateImp036gUngatedProductDefinitionDraftCandidate,
@@ -8653,6 +8654,103 @@ describe("IMP-037 product-slice activation checkpoints", () => {
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R131", "STATE-R129", "imp037Activation"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R130", "STATE-R128", "imp036gAcceptance"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R131", "STATE-R129", "imp036gAcceptance"), false);
+  });
+});
+
+describe("IMP-037 activated Product Definition dependency authority", () => {
+  const validActivatedDependencyRow = `| IMP-036G completion / sequencing | IMP-036G \`COMPLETE_AND_ACCEPTED\`; IMP-037 activation satisfied (\`currentProductSlice = IMP-037\`; \`IMP037_ACTIVATED: YES\`) | SATISFIED — no remaining sequencing blocker to Product Definition Gate evaluation | NONE for activation sequencing; Product Definition Gate remains NOT_PERFORMED; Architecture Fit remains NOT_PERFORMED; implementation remains NOT_AUTHORIZED / NOT_STARTED |`;
+  const validActivatedPd = `<!-- governance-meta
+{
+  "status": "PRE_GATE_DRAFT",
+  "imp037Activated": "YES",
+  "architectureFit": "NOT_PERFORMED",
+  "implementationAuthorized": "NO",
+  "implementationStarted": "NO"
+}
+-->
+IMP037_ACTIVATED: YES
+ARCHITECTURE_FIT: NOT_PERFORMED
+IMPLEMENTATION_AUTHORIZED: NO
+IMPLEMENTATION_STARTED: NO
+
+## 21. Dependencies
+
+| Dependency | Authority / verified state | Required before which story or gate? | Unresolved impact |
+|---|---|---|---|
+${validActivatedDependencyRow}
+| Architecture Fit | NOT_PERFORMED | Implementation authorization | Mechanisms unresolved |
+`;
+
+  it("passes a valid activated dependency row", () => {
+    assert.deepEqual(evaluateImp037ActivatedProductDefinitionDependencyAuthority(validActivatedPd), { ok: true });
+  });
+
+  it("passes live IMP-037 Product Definition after activation sequencing correction", () => {
+    const live = readFileSync("docs/platform/product/IMP-037/product-definition.md", "utf8");
+    assert.deepEqual(evaluateImp037ActivatedProductDefinitionDependencyAuthority(live), { ok: true });
+    assert.match(live, /IMP-036G `COMPLETE_AND_ACCEPTED`/);
+    assert.match(live, /IMP-037 activation satisfied/);
+    assert.match(live, /currentProductSlice = IMP-037/);
+    assert.doesNotMatch(live, /IMP-037 remains next \/ unactivated/);
+    assert.doesNotMatch(live, /Activation blocked until sequencing permits/);
+  });
+
+  it("rejects CURRENT 'IMP-037 remains next / unactivated'", () => {
+    const bad = validActivatedPd.replace(
+      validActivatedDependencyRow,
+      "| IMP-036G completion / sequencing | CURRENT product slice; IMP-037 remains next / unactivated | SATISFIED | NONE |",
+    );
+    const result = evaluateImp037ActivatedProductDefinitionDependencyAuthority(bad);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP037_PD_STALE_UNACTIVATED");
+  });
+
+  it("rejects CURRENT 'Activation blocked until sequencing permits'", () => {
+    const bad = validActivatedPd.replace(
+      "NONE for activation sequencing; Product Definition Gate remains NOT_PERFORMED; Architecture Fit remains NOT_PERFORMED; implementation remains NOT_AUTHORIZED / NOT_STARTED |",
+      "Activation blocked until sequencing permits — out of this PRE-GATE persist task |",
+    );
+    const result = evaluateImp037ActivatedProductDefinitionDependencyAuthority(bad);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP037_PD_STALE_ACTIVATION_BLOCKED");
+  });
+
+  it("rejects CURRENT activation requirement still pending", () => {
+    const bad = validActivatedPd.replace(
+      validActivatedDependencyRow,
+      "| IMP-036G completion / sequencing | IMP-036G COMPLETE_AND_ACCEPTED; currentProductSlice = IMP-037 | Canonical IMP-037 activation still required | NONE |",
+    );
+    const result = evaluateImp037ActivatedProductDefinitionDependencyAuthority(bad);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP037_PD_STALE_ACTIVATION_PENDING");
+  });
+
+  it("passes IMP-036G COMPLETE_AND_ACCEPTED / sequencing SATISFIED", () => {
+    assert.match(validActivatedPd, /COMPLETE_AND_ACCEPTED/);
+    assert.match(validActivatedPd, /SATISFIED/);
+    assert.deepEqual(evaluateImp037ActivatedProductDefinitionDependencyAuthority(validActivatedPd), { ok: true });
+  });
+
+  it("keeps Architecture Fit NOT_PERFORMED valid", () => {
+    assert.match(validActivatedPd, /Architecture Fit \| NOT_PERFORMED/);
+    assert.deepEqual(evaluateImp037ActivatedProductDefinitionDependencyAuthority(validActivatedPd), { ok: true });
+  });
+
+  it("keeps implementation unauthorized valid", () => {
+    assert.match(validActivatedPd, /IMPLEMENTATION_AUTHORIZED: NO/);
+    assert.deepEqual(evaluateImp037ActivatedProductDefinitionDependencyAuthority(validActivatedPd), { ok: true });
+  });
+
+  it("allows clearly labelled historical pre-activation wording", () => {
+    const historical = `${validActivatedPd}
+
+## Historical pre-activation provenance
+
+Historical pre-activation provenance: IMP-037 remains next / unactivated;
+Activation blocked until sequencing permits; Canonical IMP-037 activation still required;
+currentProductSlice = NONE.
+`;
+    assert.deepEqual(evaluateImp037ActivatedProductDefinitionDependencyAuthority(historical), { ok: true });
   });
 });
 

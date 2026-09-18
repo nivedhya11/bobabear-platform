@@ -1154,7 +1154,7 @@ IMP-037 does **not** invent a new customer Golden Journey.
 | Dependency | Authority / verified state | Required before which story or gate? | Unresolved impact |
 |---|---|---|---|
 | ADR-001 / ADR-002 / ADR-013 / ADR-015 / ARCH-R19 | CURRENT accepted | All IMP-037 stories | NONE for product decisions |
-| IMP-036G completion / sequencing | CURRENT product slice; IMP-037 remains next / unactivated | Canonical IMP-037 activation | Activation blocked until sequencing permits — **out of this PRE-GATE persist task** |
+| IMP-036G completion / sequencing | IMP-036G `COMPLETE_AND_ACCEPTED`; IMP-037 activation satisfied (`currentProductSlice = IMP-037`; `IMP037_ACTIVATED: YES`) | SATISFIED — no remaining sequencing blocker to Product Definition Gate evaluation | NONE for activation sequencing; Product Definition Gate remains NOT_PERFORMED; Architecture Fit remains NOT_PERFORMED; implementation remains NOT_AUTHORIZED / NOT_STARTED |
 | Architecture Fit | NOT_PERFORMED | Implementation authorization | Mechanisms unresolved (see §16 Fit inputs) |
 | IMP-039 | ROADMAP future | Production scheduler/HA/credentials realization | Not required for IMP-037 acceptance |
 | IMP-040 | ROADMAP future | Live launch/cutover | Not required for IMP-037 acceptance |

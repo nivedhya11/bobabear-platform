@@ -7998,6 +7998,119 @@ export function evaluateImp037ActivationCheckpoint(checkpoint) {
 }
 
 /**
+ * Drop clearly labelled historical pre-activation provenance so CURRENT IMP-037
+ * Product Definition checks read only current lifecycle / dependency authority.
+ * @param {string} text
+ */
+export function stripImp037HistoricalPreActivationProvenance(text) {
+  return String(text ?? "")
+    .split(/\n\s*\n/)
+    .filter((paragraph) => {
+      const trimmed = paragraph.trim();
+      if (/^Historical\s+pre[- ]activation(?:\s+provenance)?\s*:/i.test(trimmed)) return false;
+      if (/^Historical\s+note\s*\(\s*pre[- ]activation/i.test(trimmed)) return false;
+      if (/^Pre-IMP-037\s+activation\s+baseline\s*:/i.test(trimmed)) return false;
+      return true;
+    })
+    .join("\n\n")
+    .split(/\n(?=## )/)
+    .filter((section) => {
+      if (/^##[^\n]*[Hh]istorical[^\n]*pre[- ]activation/i.test(section)) return false;
+      if (/^##[^\n]*Pre-IMP-037\s+activation/i.test(section)) return false;
+      return true;
+    })
+    .join("\n");
+}
+
+/**
+ * CURRENT IMP-037 Product Definition may not record IMP037_ACTIVATED: YES while also
+ * claiming CURRENT activation sequencing is still pending / blocked / unactivated.
+ * Architecture Fit NOT_PERFORMED and implementation unauthorized remain valid.
+ * Clearly labelled historical pre-activation provenance is ignored.
+ * @param {string} text
+ */
+export function evaluateImp037ActivatedProductDefinitionDependencyAuthority(text) {
+  const raw = String(text ?? "");
+  const currentBody = stripImp037HistoricalPreActivationProvenance(raw).replace(/[*`]/g, "");
+  if (!/IMP037_ACTIVATED\s*[:=]\s*YES/.test(currentBody)) {
+    return { ok: true };
+  }
+
+  const dependencySection = currentBody.split(/^## 21\. Dependencies\s*$/m)[1]?.split(/^## /m)[0] ?? "";
+  const currentAuthority = currentBody;
+
+  if (/IMP-037 remains(?:\s+next\s*\/)?\s*unactivated/i.test(currentAuthority)) {
+    return {
+      ok: false,
+      code: "IMP037_PD_STALE_UNACTIVATED",
+      message:
+        "Activated IMP-037 Product Definition must not claim IMP-037 remains next / unactivated",
+    };
+  }
+  if (/activation blocked(?:\s+until\s+sequencing\s+permits)?/i.test(currentAuthority)) {
+    return {
+      ok: false,
+      code: "IMP037_PD_STALE_ACTIVATION_BLOCKED",
+      message:
+        "Activated IMP-037 Product Definition must not claim activation is blocked until sequencing permits",
+    };
+  }
+  if (
+    /canonical IMP-037 activation(?!\s+satisfied)/i.test(currentAuthority) ||
+    /(?:IMP-037\s+)?activation(?:\s+requirement)?\s+still\s+(?:required|pending)/i.test(currentAuthority) ||
+    /activation requirement still pending/i.test(currentAuthority)
+  ) {
+    return {
+      ok: false,
+      code: "IMP037_PD_STALE_ACTIVATION_PENDING",
+      message:
+        "Activated IMP-037 Product Definition must not treat canonical IMP-037 activation as still required / pending",
+    };
+  }
+  if (/currentProductSlice\s*=\s*NONE/i.test(currentAuthority)) {
+    return {
+      ok: false,
+      code: "IMP037_PD_STALE_CURRENT_SLICE_NONE",
+      message:
+        "Activated IMP-037 Product Definition must not claim currentProductSlice = NONE",
+    };
+  }
+
+  const sequencingRow = dependencySection.match(
+    /^\|\s*IMP-036G completion \/ sequencing\s*\|([^|\n]*)\|([^|\n]*)\|([^|\n]*)\|/im,
+  );
+  if (sequencingRow) {
+    const [, authority, requiredBefore, impact] = sequencingRow;
+    if (!/IMP-036G[\s\S]*COMPLETE_AND_ACCEPTED/.test(authority) && !/COMPLETE_AND_ACCEPTED/.test(authority)) {
+      return {
+        ok: false,
+        code: "IMP037_PD_STALE_ACTIVATION_DEPENDENCY",
+        message:
+          "Activated IMP-037 Product Definition §21 must record IMP-036G COMPLETE_AND_ACCEPTED",
+      };
+    }
+    if (!/SATISFIED/i.test(requiredBefore) && !/activation satisfied/i.test(authority)) {
+      return {
+        ok: false,
+        code: "IMP037_PD_STALE_ACTIVATION_PENDING",
+        message:
+          "Activated IMP-037 Product Definition §21 must record IMP-037 activation sequencing as SATISFIED",
+      };
+    }
+    if (/activation blocked/i.test(impact)) {
+      return {
+        ok: false,
+        code: "IMP037_PD_STALE_ACTIVATION_BLOCKED",
+        message:
+          "Activated IMP-037 Product Definition §21 must not record an activation sequencing blocker",
+      };
+    }
+  }
+
+  return { ok: true };
+}
+
+/**
  * Validate IMP-036G pre-gate Product Definition draft checkpoint (R125/S123) after Founder decisions.
  * Formal ROADMAP lifecycle remains PLANNED; Product Definition file must exist as ungated DRAFT-2.
  * Distinct from Product Definition Gate PASS, architecture lock, implementation authorization/start, and acceptance.
@@ -24068,6 +24181,8 @@ function checkImp037Activation(roadmap, state, architecture, decision) {
     if (!/ARCHITECTURE_FIT[^\n]*NOT_PERFORMED|architectureFit":\s*"NOT_PERFORMED"/i.test(pdTip)) {
       fail("IMP037_PD_FIT", "IMP-037 Product Definition must keep Architecture Fit NOT_PERFORMED");
     }
+    const depAuthority = evaluateImp037ActivatedProductDefinitionDependencyAuthority(productDefText);
+    if (!depAuthority.ok) fail(depAuthority.code, depAuthority.message);
   }
 
   const requiredTokens = [
