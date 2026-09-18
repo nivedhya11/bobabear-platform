@@ -26,6 +26,7 @@ import {
 import { bootstrapExistingMenuAssortment } from "../../src/server/assortment/bootstrap";
 import {
   excludeVariantAtScope,
+  includeBrandVariant,
   retireAssortmentRule,
 } from "../../src/server/assortment/rules";
 import {
@@ -407,6 +408,7 @@ describe("classifyStagingBaseline", () => {
             status: assortmentRulesTable.status,
             reasonCode: assortmentRulesTable.reasonCode,
             decision: assortmentRulesTable.decision,
+            createdByWorkforceUserId: assortmentRulesTable.createdByWorkforceUserId,
           })
           .from(assortmentRulesTable)
           .where(
@@ -424,6 +426,7 @@ describe("classifyStagingBaseline", () => {
         return rows[0]!;
       });
       expect(seededInclude.reasonCode).toBe(EXISTING_MENU_IMPORT_ID);
+      expect(seededInclude.createdByWorkforceUserId).toBeNull();
       expect(seededInclude.status).toBe("active");
 
       const retired = await persistence.transaction((tx) =>
@@ -460,6 +463,7 @@ describe("classifyStagingBaseline", () => {
             status: assortmentRulesTable.status,
             decision: assortmentRulesTable.decision,
             reasonCode: assortmentRulesTable.reasonCode,
+            createdByWorkforceUserId: assortmentRulesTable.createdByWorkforceUserId,
           })
           .from(assortmentRulesTable)
           .where(eq(assortmentRulesTable.id, seededInclude.id))
@@ -492,9 +496,58 @@ describe("classifyStagingBaseline", () => {
       });
       expect(commercialState.lineage.status).toBe("retired");
       expect(commercialState.lineage.reasonCode).toBe(EXISTING_MENU_IMPORT_ID);
+      expect(commercialState.lineage.createdByWorkforceUserId).toBeNull();
       expect(commercialState.activeExclude.status).toBe("active");
       expect(commercialState.activeExclude.decision).toBe("exclude");
       expect(commercialState.activeIncludeCount).toBe(0);
+    });
+  });
+
+  it("rejects workforce include that impersonates bootstrap reasonCode as incomplete lineage", async () => {
+    await withMigratedPersistence(async (persistence) => {
+      await applyFullFounderSeedChain(persistence);
+      const before = await classifyStagingBaseline({ projectRoot, persistence });
+      expect(before.state).toBe("COMPLETE_COMPATIBLE");
+
+      const manifest = loadManifest();
+      const actor = await grantBrandAdminForImportedBrand(persistence, manifest.brand.id);
+      const targetVariantId = manifest.products[0]!.variant.id;
+
+      // Remove genuine bootstrap-owned lineage for one expected seeded variant.
+      await persistence.withContext(async (ctx) => {
+        await ctx.db
+          .delete(assortmentRulesTable)
+          .where(
+            and(
+              eq(assortmentRulesTable.brandId, manifest.brand.id),
+              eq(assortmentRulesTable.scopeType, "brand"),
+              eq(assortmentRulesTable.targetType, "variant"),
+              eq(assortmentRulesTable.variantId, targetVariantId),
+              eq(assortmentRulesTable.decision, "include"),
+              eq(assortmentRulesTable.reasonCode, EXISTING_MENU_IMPORT_ID),
+            ),
+          );
+      });
+
+      const forged = await persistence.transaction((tx) =>
+        includeBrandVariant(tx, {
+          actor,
+          brandId: manifest.brand.id,
+          variantId: targetVariantId,
+          expectedRuleRevision: null,
+          reasonCode: EXISTING_MENU_IMPORT_ID,
+        }),
+      );
+      expect(forged.decision).toBe("include");
+      expect(forged.status).toBe("active");
+      expect(forged.reasonCode).toBe(EXISTING_MENU_IMPORT_ID);
+      expect(forged.createdByWorkforceUserId).not.toBeNull();
+      expect(forged.createdByWorkforceUserId).toBe(actor.workforceUserId);
+
+      const classification = await classifyStagingBaseline({ projectRoot, persistence });
+      expect(classification.state).toBe("PARTIAL_OR_INCOMPATIBLE");
+      expect(classification.reasons).toContain("assortment_bootstrap_incomplete");
+      expect(resolveStagingBootstrapAction(classification.state)).toBe("BLOCK");
     });
   });
 

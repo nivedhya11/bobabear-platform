@@ -8,17 +8,19 @@
  * including entry sectionId and section parentSectionId, or current Brand
  * Assortment active include/exclude decisions).
  *
- * Assortment initialization is proved by bootstrap lineage rows
- * (brand-scope variant include with reason_code existing-menu-v1), whether
- * those rows are still active or have been retired — not by the current
- * commercial assortment outcome.
+ * Assortment initialization is proved by bootstrap-owned lineage rows
+ * (brand-scope variant include with reason_code existing-menu-v1 and
+ * created_by_workforce_user_id IS NULL — the bootstrap path's creator stamp),
+ * whether those rows are still active or have been retired. Workforce-authored
+ * includes that reuse the same reason code do not count. Current commercial
+ * assortment decision/status is mutable outcome, not seed identity.
  *
  * Never writes. Uses application Persistence withContext only.
  */
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 
 import {
   catalogModifierGroupOptionsTable,
@@ -328,8 +330,11 @@ export async function classifyStagingBaseline(options: {
     const optionByCode = new Map(modifierOptions.map((o) => [o.code, o]));
 
     // Bootstrap lineage: brand-scope variant includes stamped by
-    // bootstrapExistingMenuAssortment (reason_code existing-menu-v1). Status may
-    // be active or retired — current commercial decision is mutable (IMP-036F).
+    // bootstrapExistingMenuAssortment (reason_code existing-menu-v1 AND
+    // created_by_workforce_user_id IS NULL). Workforce includeBrandVariant may
+    // reuse the same reason code but always records a workforce creator — those
+    // rows must not impersonate bootstrap provenance. Status may be active or
+    // retired — current commercial decision is mutable (IMP-036F).
     let assortmentBootstrapVariantCount = 0;
     if (brand) {
       const bootstrapLineage = await ctx.db
@@ -342,12 +347,14 @@ export async function classifyStagingBaseline(options: {
             eq(assortmentRulesTable.targetType, "variant"),
             eq(assortmentRulesTable.decision, "include"),
             eq(assortmentRulesTable.reasonCode, EXISTING_MENU_IMPORT_ID),
+            isNull(assortmentRulesTable.createdByWorkforceUserId),
+            inArray(assortmentRulesTable.status, ["active", "retired"]),
             inArray(assortmentRulesTable.variantId, [...variantIds]),
-            sql`${assortmentRulesTable.territoryId} is null`,
-            sql`${assortmentRulesTable.organizationId} is null`,
-            sql`${assortmentRulesTable.outletId} is null`,
-            sql`${assortmentRulesTable.productId} is null`,
-            sql`${assortmentRulesTable.modifierOptionId} is null`,
+            isNull(assortmentRulesTable.territoryId),
+            isNull(assortmentRulesTable.organizationId),
+            isNull(assortmentRulesTable.outletId),
+            isNull(assortmentRulesTable.productId),
+            isNull(assortmentRulesTable.modifierOptionId),
           ),
         );
       assortmentBootstrapVariantCount = new Set(
