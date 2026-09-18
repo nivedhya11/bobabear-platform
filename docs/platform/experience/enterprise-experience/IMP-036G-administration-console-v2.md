@@ -2,14 +2,15 @@
 Status: SUPPORTING planning/product-experience input (not PD-1 Product Definition; not architecture authority)
 Capability: IMP-036G — Administration Console V2
 Current product slice: YES (see ROADMAP/STATE; IMP036G_ACTIVATED: YES)
-Formal ROADMAP lifecycle: IMPLEMENTATION_IN_PROGRESS
+Formal ROADMAP lifecycle: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
 Product Definition: APPROVED / Gate PASS
   PD-IMP-036G-DRAFT-2
   Founder product decisions: RESOLVED (7/7; 2026-09-16)
 Architecture Fit: PASS
 Architecture: LOCKED
-Implementation: AUTHORIZED / STARTED
+Implementation: AUTHORIZED / STARTED / COMPLETE
 Founder UAT required: YES
+Founder UAT: NOT_PERFORMED
 Capability architecture authority:
   docs/platform/capabilities/IMP-036G-administration-console-v2.md
 ---
@@ -152,7 +153,9 @@ as normal UX. This planned amendment does not redefine activation; CURRENT activ
 - Expire is available for eligible invited memberships.
 - No arbitrary permission editor, implicit superuser behavior, or Operations authority bleed exists.
 - Operational status is safe for the authorized audience.
-- Responsive/accessibility/recovery and exact-candidate Founder UAT checks pass.
+- Responsive/accessibility/recovery behaviours are required. Manual technical validation
+  required for implementation completion = **PASS**. Exact-candidate Founder UAT remains
+  **NOT_PERFORMED** (separate later interactive human gate).
 
 ## Dependencies, non-goals, and deferred decisions
 
@@ -167,7 +170,8 @@ approval; generic review-token/workflow engine.
 Founder product decisions (2026-09-16) expanded IMP-036G only enough to complete the seven
 administration outcomes above. Technical mechanism selection is recorded in the locked capability
 architecture. Product Definition Gate = PASS; Architecture Fit = PASS; Architecture: LOCKED;
-implementation AUTHORIZED / STARTED (GTM-R128 / STATE-R126; not complete; not accepted).
+implementation AUTHORIZED / STARTED / COMPLETE (GTM-R129 / STATE-R127;
+`IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`; not accepted; Founder UAT NOT_PERFORMED).
 
 Figma is not required initially; later visual refinement may not redefine hierarchy, membership,
 RBAC, audit, API, or system authority.
