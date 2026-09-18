@@ -2,5 +2,5 @@
 2:I[64287,["8409","static/chunks/8409-6521fbaf4dd9a2b7.js","4225","static/chunks/app/workforce/(administration)/admin/system/page-0284ba86eb36e6f0.js"],"AdministrationSystemClient"]
 3:I[90484,[],"OutletBoundary"]
 4:"$Sreact.suspense"
-0:{"rsc":["$","$1","c",{"children":[["$","$L2",null,{}],null,["$","$L3",null,{"children":["$","$4",null,{"name":"Next.MetadataOutlet","children":"$@5"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"ub_a_ZGOGGuNeUzZuE82z"}
+0:{"rsc":["$","$1","c",{"children":[["$","$L2",null,{}],null,["$","$L3",null,{"children":["$","$4",null,{"name":"Next.MetadataOutlet","children":"$@5"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"DPgULlsu3Qw0IajymyAXv"}
 5:null
