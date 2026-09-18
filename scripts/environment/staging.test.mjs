@@ -18,6 +18,7 @@ import {
   assertServiceabilitySmokeResponse,
   closedStdinInherit,
   createStagingWorkforceUser,
+  classifyStagingBaselineInTooling,
   decideAndApplyStagingBootstrap,
   discardMismatchedOperatorCandidateTag,
   ensureStagingEnvFiles,
@@ -701,6 +702,38 @@ test("parseStagingBaselineState reads the authoritative marker and rejects missi
   assert.throws(() => parseStagingBaselineState("no marker here"), /did not emit STAGING_BASELINE_STATE/);
 });
 
+test("parseStagingBaselineState rejects TTY cursor-decorated markers without weakening the parser", () => {
+  // TEST-1 provenance: Founder-staging capture on 7ec7e51a had \x1b[1G\x1b[0K before the marker.
+  const ttyDecorated =
+    "\x1b[1G\x1b[0KSTAGING_BASELINE_STATE COMPLETE_COMPATIBLE\nSTAGING_BOOTSTRAP_ACTION PRESERVE\n";
+  assert.throws(
+    () => parseStagingBaselineState(ttyDecorated),
+    /did not emit STAGING_BASELINE_STATE/,
+  );
+});
+
+test("classifyStagingBaselineInTooling disables pseudo-TTY for machine-readable capture", () => {
+  let capturedArgs = null;
+  const result = classifyStagingBaselineInTooling("/tmp/build", {
+    spawn: (_command, args) => {
+      capturedArgs = args;
+      return {
+        status: 0,
+        stdout: "STAGING_BASELINE_STATE COMPLETE_COMPATIBLE\n",
+        stderr: "",
+        error: undefined,
+      };
+    },
+    publicBuildEnv: {},
+  });
+  assert.equal(result, "COMPLETE_COMPATIBLE");
+  assert.ok(capturedArgs, "expected classify spawn args to be captured");
+  const runIndex = capturedArgs.indexOf("run");
+  assert.ok(runIndex >= 0, "expected podman-compose run");
+  assert.equal(capturedArgs[runIndex + 1], "-T", "classifier run must disable pseudo-TTY with -T");
+  assert.equal(capturedArgs.includes("staging:baseline-classify"), true);
+});
+
 test("stagingBaselineDecisionLogLines emit stable non-secret markers", () => {
   assert.deepEqual(stagingBaselineDecisionLogLines("FRESH_EMPTY"), [
     "STAGING_BASELINE_STATE FRESH_EMPTY",
@@ -795,6 +828,10 @@ test("staging deploy uses hardened tooling run for baseline classify", () => {
   assert.match(source, /staging:baseline-classify/);
   assert.match(source, /menu-import-existing/);
   assert.match(source, /COMPOSE_PROFILES: "tools"/);
+  assert.match(
+    source,
+    /"run",\s*"-T",\s*"--rm",\s*"--no-deps",\s*"--entrypoint",\s*"",\s*"menu-import-existing"/,
+  );
   assert.doesNotMatch(source, /catch\s*\([^)]*IMPORT_CONFLICT/);
   assert.doesNotMatch(source, /IMPORT_CONFLICT[\s\S]{0,80}continue/);
 });

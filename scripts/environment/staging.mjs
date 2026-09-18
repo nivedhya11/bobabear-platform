@@ -715,6 +715,8 @@ function classifyStagingBaselineInTooling(
     publicBuildEnv = readRepositoryPublicBuildEnv(),
   } = {},
 ) {
+  // -T disables podman-compose run's default pseudo-TTY so captured classifier
+  // stdout stays machine-readable (no cursor ANSI before STAGING_BASELINE_STATE).
   const result = spawn(
     "podman-compose",
     [
@@ -723,6 +725,7 @@ function classifyStagingBaselineInTooling(
       "-p",
       STAGING_PROJECT,
       "run",
+      "-T",
       "--rm",
       "--no-deps",
       "--entrypoint",
