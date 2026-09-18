@@ -77,3 +77,28 @@ test("tooling image packages IMP-028C modifier bootstrap script, artifact, and m
   assert.match(compose, /^  catalog-bootstrap-imp028c-modifiers:$/m);
   assert.match(compose, /target: tooling/);
 });
+
+test("tooling image packages staging baseline classifier entrypoint declared by package.json", () => {
+  const classifierScript = packageJson.scripts["staging:baseline-classify"];
+  assert.ok(classifierScript, "staging:baseline-classify must exist in package.json scripts");
+  assert.match(
+    classifierScript,
+    /scripts\/environment\/staging-baseline-classify\.ts/,
+    "staging:baseline-classify must invoke the classifier TypeScript entrypoint",
+  );
+
+  const dockerfile = readFileSync(path.join(projectRoot, "Dockerfile"), "utf8");
+  const toolingStage = dockerfile.split("FROM base AS tooling")[1]?.split(/^FROM /m)[0] ?? "";
+  assert.ok(toolingStage.length > 0, "Dockerfile must declare a tooling stage");
+  assert.match(
+    toolingStage,
+    /^COPY scripts\/environment\/staging-baseline-classify\.ts \.\/scripts\/environment\/staging-baseline-classify\.ts$/m,
+    "tooling stage must COPY the exact classifier entrypoint used by staging:baseline-classify",
+  );
+  // Least-scope packaging: do not ship host-side staging orchestration into the image.
+  assert.doesNotMatch(
+    toolingStage,
+    /^COPY scripts\/environment\/ \.\/scripts\/environment\/$/m,
+    "tooling stage must not COPY the entire scripts/environment/ tree",
+  );
+});

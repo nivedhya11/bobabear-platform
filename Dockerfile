@@ -104,6 +104,10 @@ COPY scripts/workforce ./scripts/workforce
 COPY scripts/access ./scripts/access
 COPY scripts/serviceability ./scripts/serviceability
 COPY scripts/check-config.ts ./scripts/check-config.ts
+# Staging deploy invokes `npm run staging:baseline-classify` inside the tooling
+# image (via menu-import-existing). Package only the classifier entrypoint —
+# not the full scripts/environment/ tree (host-side staging orchestration).
+COPY scripts/environment/staging-baseline-classify.ts ./scripts/environment/staging-baseline-classify.ts
 COPY data/platform/imports ./data/platform/imports
 COPY data/platform/pricing ./data/platform/pricing
 COPY data/platform/catalog ./data/platform/catalog
