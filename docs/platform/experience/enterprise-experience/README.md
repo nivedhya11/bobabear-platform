@@ -8,7 +8,7 @@ Programme slices: IMP-036A → IMP-036G (COMPLETE_AND_ACCEPTED)
 Architecture: NOT a capability-architecture authority
 Implementation: owned by ROADMAP/STATE per slice (suite accepted through IMP-036G)
 Founder UAT required: YES for every IMP-036A → IMP-036G slice (all PASS for accepted slices)
-Last reviewed: 2026-09-18
+Last reviewed: 2026-09-19
 ---
 
 # Enterprise Experience Programme
@@ -25,7 +25,8 @@ This is a detailed **supporting** product/experience contract. It does not lock 
 authorize implementation, create a CURRENT decision, change accepted domain authority, or activate
 any slice. ROADMAP/STATE remain lifecycle authority. IMP-036A → IMP-036G are
 `COMPLETE_AND_ACCEPTED`; IMP-037 is activated as CURRENT (`IMP037_ACTIVATED: YES`) with formal
-lifecycle remaining `PLANNED` / `NOT_AUTHORIZED` / `NOT_STARTED`.
+lifecycle remaining `PLANNED` / `NOT_AUTHORIZED` / `NOT_STARTED` (Product Definition APPROVED;
+Product Definition Gate PASS; Architecture Fit NOT_PERFORMED).
 
 ```text
 acceptedThrough = IMP-036G
@@ -34,7 +35,7 @@ pendingAcceptance = NONE
 nextProductSlice = IMP-038
 
 IMP-036A → IMP-036G = COMPLETE_AND_ACCEPTED
-IMP-037 = PLANNED / NOT_AUTHORIZED / NOT_STARTED (IMP037_ACTIVATED: YES; currentProductSlice)
+IMP-037 = PLANNED / NOT_AUTHORIZED / NOT_STARTED (IMP037_ACTIVATED: YES; Product Definition APPROVED; Gate PASS; Architecture Fit NOT_PERFORMED; currentProductSlice)
 IMP-038 = PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED (IMP038_ACTIVATED: NO)
 ```
 
