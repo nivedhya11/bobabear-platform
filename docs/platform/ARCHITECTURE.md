@@ -2,8 +2,8 @@
 {
   "status": "CURRENT",
   "authority": "GLOBAL_ARCHITECTURE",
-  "architectureVersion": "ARCH-R19",
-  "lastReviewed": "2026-09-01"
+  "architectureVersion": "ARCH-R20",
+  "lastReviewed": "2026-09-19"
 }
 -->
 
@@ -86,9 +86,65 @@ migration). Refund Foundation ([D-364](./decision-register.md)) reuses the same 
 durable inbox for `refund.created` / `refund.processed` / `refund.failed` without a second public
 Razorpay webhook route; Refund implementation remains unauthorized until separately authorized.
 
-Local default runtime uses Docker Desktop Compose. Staging/production cloud topology remains governed
-by ADR-001 / ADR-002 and future production slices; those details must not contradict the static
-public frontend rule above without an explicit superseding decision.
+Local default runtime uses Docker Desktop Compose. **Pilot production cloud topology** is governed
+by [D-374](./decision-register.md) /
+[`decisions/ADR-016-cost-optimized-pilot-infrastructure.md`](./decisions/ADR-016-cost-optimized-pilot-infrastructure.md)
+(ARCH-R20) and must not contradict the static public frontend rule above without an explicit
+superseding decision.
+
+### 3.1 Cost-optimized pilot production topology (D-374 / ARCH-R20)
+
+CURRENT pilot production (self-funded, low-volume):
+
+```text
+PILOT_CLOUD_PROVIDER: DigitalOcean
+PILOT_PRIMARY_REGION: BLR1 / Bangalore where provider availability permits
+PILOT_COMPUTE_MODEL: single Basic Droplet
+PILOT_OS: Ubuntu 24.04 LTS
+PILOT_CONTAINER_RUNTIME: Docker Engine
+PILOT_ORCHESTRATION: Docker Compose (compose.yaml + compose.production.yaml direction)
+KUBERNETES: NO
+K3S: NO
+PODMAN_PRODUCTION_RUNTIME: NO
+DIGITALOCEAN_APP_PLATFORM: NO for pilot production
+MANAGED_POSTGRESQL: NO for pilot production
+SELF_HOSTED_POSTGRESQL: YES (PostgreSQL 18 on the same Droplet)
+OFF_HOST_BACKUP_DESTINATION: DigitalOcean Spaces
+PERMANENT_CLOUD_STAGING: NOT_REQUIRED_FOR_PILOT
+```
+
+Always-on production workload reuses the accepted Compose service set:
+
+```text
+app / Nginx static frontend + reverse proxy
+customer-auth
+workforce-auth
+customer-commerce
+operations
+postgres
+```
+
+Initial size target is a **cost target**, not an unconditional capacity promise:
+
+```text
+INITIAL_PILOT_SIZE_TARGET: 2 GiB / 1 vCPU (~$12/month at 2026-09-19 Droplet pricing)
+FIRST_SCALE_ACTION: vertical resize to 4 GiB / 2 vCPU
+STEADY_STATE_PILOT_INFRA_TARGET: approximately $17/month (Droplet + Spaces) before tax/overages
+```
+
+```text
+SINGLE_NODE_FAILURE_DOMAIN: ACCEPTED_FOR_PILOT
+HIGH_AVAILABILITY: NOT_PROVIDED
+ZERO_DOWNTIME_NODE_FAILURE: NOT_PROMISED
+```
+
+Off-host Spaces backups are mandatory. Managed-provider PITR is not CURRENT. Product RPO <= 15
+minutes / RTO <= 2 hours remain IMP-037 targets and are **not** claimed solved by D-374; IMP-037
+Architecture Fit must be performed fresh against ARCH-R20. Historical ADR-001 App Platform +
+Managed PostgreSQL topology is preserved but is not CURRENT pilot-production authority.
+
+Business domain authority, HTTP transport, authentication, RBAC, static frontend, commerce
+domains, and accepted service/process boundaries are unchanged by ARCH-R20.
 
 ## 4. Runtime Topology
 
@@ -412,6 +468,7 @@ Dynamic commerce must remain outside dynamic Next.js execution unless superseded
 | ARCH-G23 | Operations Console API (D-372): workforce business operations MUST use the dedicated `/api/operations/v1/*` trust surface, never customer `/api/v1/*` or the public workforce-auth router. A workforce principal MUST be constructed only from a server-validated workforce session and server-loaded eligible identity; caller-supplied roles, permissions, memberships, scopes, organization/outlet/territory authority, pre-authorized flags, or principal-shaped objects are not authority. Existing permission-and-server-derived-scope authorization and existing Order application/domain authority remain binding. |
 | ARCH-G24 | Delivery is the first-class provider-neutral authority for dispatch and delivery-execution truth. Order remains sole commercial lifecycle authority; Operations retains preparation/readiness and operational-handoff authority; Pricing/Checkout historical customer delivery charge remains distinct from Delivery provider cost. Provider observations are evidence, not automatic Delivery or Order truth, and must be normalized, validated, processed idempotently, and handled recoverably. Stable Delivery request/booking identity MUST suppress duplicate logical dispatch, ambiguous external booking outcomes MUST be reconciled before replacement rather than blindly retried, and at most one active booking may exist unless the prior booking has been explicitly reconciled inactive. Provider-specific contracts MUST remain in adapters/evidence boundaries. |
 | ARCH-G25 | Initial Administration API (D-373): workforce administration MUST use the dedicated `/api/admin/v1/*` trust surface hosted on the existing operations process, never customer `/api/v1/*`, the public workforce-auth router, or Operations Console `/api/operations/v1/*` Order routes. A workforce principal MUST be constructed only from a server-validated workforce session and server-loaded eligible identity; caller-supplied roles, permissions, memberships, scopes, organization/outlet/territory authority, pre-authorized flags, or principal-shaped objects are not authority. Existing Access Control and Organization application/domain authorities remain binding; no new permissions/roles and no new deployable admin service are introduced by this invariant. |
+| ARCH-G26 | Cost-optimized pilot infrastructure (D-374): pilot production MUST use a single DigitalOcean Basic Droplet with Docker Engine + Docker Compose, self-hosted PostgreSQL 18 on that Droplet, and DigitalOcean Spaces as mandatory off-host backup destination. Pilot production MUST NOT use Kubernetes/DOKS, k3s, Podman as production runtime, DigitalOcean App Platform, or Managed PostgreSQL. Permanent always-on cloud staging is not required for the pilot. Single-node failure domain is accepted for the pilot; HA and zero-downtime node failure are not promised. Recurring infrastructure cost must not be added without demonstrated operational need, measured capacity need, or explicit Founder approval; first routine scale action is vertical Droplet resize. Managed-provider PITR is not CURRENT; IMP-037 must re-Fit self-managed recovery against ARCH-R20 without claiming RPO/RTO solved by this invariant alone. |
 
 ## 15. Decision References
 
@@ -427,6 +484,7 @@ Dynamic commerce must remain outside dynamic Next.js execution unless superseded
 | Durable Cart Unit Sequence Authority | [D-371](./decision-register.md) (CURRENT internal Cart removal-order authority; coalesced lines and Cart quantity remain authoritative customer purchase intent) |
 | Operations Console API workforce-business transport | [D-372](./decision-register.md) (CURRENT architecture lock for dedicated `/api/operations/v1/*`; existing workforce session/principal, permission/scope, and Order authorities remain binding; IMP-029 implementation is not authorized) |
 | Initial Administration API workforce-admin transport | [D-373](./decision-register.md) (CURRENT architecture lock for dedicated `/api/admin/v1/*` on existing operations process; existing workforce session/principal and Access Control / Organization authorities remain binding; no new deployable service) |
+| Cost-optimized pilot infrastructure | [D-374](./decision-register.md); ADR-016; ARCH-G26 (CURRENT pilot production = single Droplet + Compose + self-hosted PostgreSQL 18 + Spaces; App Platform / Managed PostgreSQL / k8s / k3s rejected for pilot) |
 | Provider-Neutral Delivery Foundation | ARCH-R18 / ARCH-G24; capability architecture [`capabilities/IMP-031-provider-neutral-delivery-foundation.md`](./capabilities/IMP-031-provider-neutral-delivery-foundation.md) (`ARCHITECTURE_LOCKED`; implementation AUTHORIZED / STARTED / COMPLETE / COMPLETE_AND_ACCEPTED); no new CURRENT decision |
 | V1 production payment provider / collection surface | [D-361](./decision-register.md) (Razorpay / Razorpay Standard Checkout); capability lock [`capabilities/IMP-026-razorpay-productionization.md`](./capabilities/IMP-026-razorpay-productionization.md) |
 | Razorpay webhook acknowledgement / post-payment Order recovery | [D-362](./decision-register.md) (amends D-361 ack/post-payment effect only; D-361 remains CURRENT for provider selection; acknowledgement timing further amended by D-363) |
@@ -438,9 +496,11 @@ Dynamic commerce must remain outside dynamic Next.js execution unless superseded
 | Order high-level lifecycle vs deferred kitchen detail | [D-357](./decision-register.md), amends ADR-010 reading |
 | Role inventory ownership | [D-358](./decision-register.md); current count in STATE |
 | Invoice architecture intent | ADR-007 (implementation = IMP-028; authority locked by D-365 / D-366 / D-367) |
-| Persistence / outbox | ADR-013 |
+| Persistence / outbox | ADR-013 (AMENDED by D-374 for pilot hosting / managed PITR assumption; PostgreSQL 18 / Drizzle semantics remain) |
 | Auth foundations | ADR-004; accepted implementation IMP-008–010 |
 | Modular monolith | ADR-003 (read with D-356 / D-359 transport amendment) |
+| Pilot cloud hosting / deployment | ADR-001 (AMENDED by D-374); ADR-002 (AMENDED by D-374); ADR-016 / D-374 CURRENT |
+| Pilot production secrets storage | ADR-015 (AMENDED by D-374 for host-local pilot secrets; principles otherwise CURRENT) |
 
 ## 16. Authority Boundaries
 

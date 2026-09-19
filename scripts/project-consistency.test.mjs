@@ -115,6 +115,10 @@ import {
   evaluateImp037ProductDefinitionGatePassCheckpoint,
   evaluateImp037ApprovedProductDefinitionCandidate,
   evaluateImp037ProductDefinitionActivationProvenance,
+  evaluateD374CostOptimizedPilotInfrastructureCheckpoint,
+  evaluateD374AmendedHistoricalAdrPreservation,
+  evaluateImp037ProductDefinitionD374CurrentRecoveryRead,
+  stripImp037HistoricalManagedRecoveryAuthority,
   evaluateImp036gProductDefinitionDraftCheckpoint,
   evaluateImp036gProductDefinitionGatePassCheckpoint,
   evaluateImp036gUngatedProductDefinitionDraftCandidate,
@@ -6605,8 +6609,8 @@ describe("canonical authority history compression", () => {
 
     const roadmap = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
     const state = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
-    assert.match(roadmap, /"roadmapVersion": "GTM-R132"/);
-    assert.match(state, /"stateVersion": "STATE-R130"/);
+    assert.match(roadmap, /"roadmapVersion": "GTM-R133"/);
+    assert.match(state, /"stateVersion": "STATE-R131"/);
     assert.match(state, /"acceptedThrough": "IMP-036G"/);
     assert.match(state, /"pendingAcceptance": "NONE"/);
     assert.match(state, /"currentProductSlice": "IMP-037"/);
@@ -6682,12 +6686,12 @@ describe("canonical authority history compression", () => {
     assert.ok(!/FOUNDER_STAGING_DEPLOYMENT:\s*NOT_PERFORMED/.test(current));
   });
 
-  it("passes CURRENT authority checks at the IMP-037 Product Definition Gate PASS checkpoint", () => {
+  it("passes CURRENT authority checks at the GLOBAL_ARCHITECTURE_DECISION_D374 checkpoint", () => {
     const findings = runProjectConsistency();
     const failures = findings.filter((f) => !f.ok);
     assert.equal(failures.length, 0, failures.map((f) => `[${f.code}] ${f.message}`).join("\n"));
     const messages = findings.filter((f) => f.ok).map((f) => f.message);
-    assert.ok(messages.some((m) => m.includes("IMP-037 Product Definition Gate PASS persistence valid")));
+    assert.ok(messages.some((m) => m.includes("D-374 cost-optimized pilot infrastructure persistence valid")));
     assert.ok(messages.some((m) => m.includes("CURRENT authority anti-stale checks OK")));
     assert.ok(messages.some((m) => m.includes("historical authority corpus loaded")));
   });
@@ -8993,6 +8997,339 @@ ${correctPairing}
     assert.match(live, /GATE_EVALUATED_HEAD\s*[=:]\s*fccdf7ef606ca906bcdcd706a6de97f693bb88b4/);
     assert.match(live, /ARCHITECTURE_FIT:\s*NOT_PERFORMED/);
     assert.match(live, /IMPLEMENTATION_AUTHORIZED:\s*NO/);
+  });
+});
+
+describe("D-374 cost-optimized pilot infrastructure checkpoint", () => {
+  const base = Object.freeze({
+    roadmapVersion: "GTM-R133",
+    stateVersion: "STATE-R131",
+    acceptedThrough: "IMP-036G",
+    currentProductSlice: "IMP-037",
+    nextProductSlice: "IMP-038",
+    pendingAcceptance: "NONE",
+    d374Created: "YES",
+    archR20Created: "YES",
+    d374Exists: true,
+    d374Current: true,
+    architectureVersion: "ARCH-R20",
+    decisionRegisterVersion: "DR-16",
+    adr016Exists: true,
+    nextFreeDecisionId: "D-375",
+    pilotComputeSingleDroplet: true,
+    dockerCompose: true,
+    selfHostedPostgresql18: true,
+    spacesOffHostBackups: true,
+    k3s: "NO",
+    kubernetes: "NO",
+    appPlatformPilotProduction: "NO",
+    managedPostgresqlPilotProduction: "NO",
+    architectureFit: "NOT_PERFORMED",
+    architectureLocked: "NO",
+    implementationAuthorized: "NO",
+    started: "NO",
+    imp038Activated: "NO",
+    architectureFitReopenReasonMentionsD374ArchR20: true,
+    architectureFitPass: false,
+    architectureLockedYes: false,
+    implementationAuthorizedYes: false,
+    startedYes: false,
+    imp038ActivatedYes: false,
+    appPlatformCurrentPilotAuthority: false,
+    managedPostgresqlCurrentPilotAuthority: false,
+    k3sCurrentPilotAuthority: false,
+    managedPitrSatisfiesImp037: false,
+  });
+
+  it("passes valid GTM-R133 / STATE-R131 D-374 checkpoint", () => {
+    assert.deepEqual(evaluateD374CostOptimizedPilotInfrastructureCheckpoint(base), { ok: true });
+    assert.equal(
+      isSupportedImp030GovernanceCheckpoint("GTM-R133", "STATE-R131", "d374CostOptimizedPilotInfrastructure"),
+      true,
+    );
+    assert.equal(
+      isSupportedImp030GovernanceCheckpoint("GTM-R132", "STATE-R130", "d374CostOptimizedPilotInfrastructure"),
+      false,
+    );
+  });
+
+  it("requires D-374 CURRENT + DR-16 / ARCH-R20 pairing", () => {
+    assert.equal(
+      evaluateD374CostOptimizedPilotInfrastructureCheckpoint({ ...base, d374Current: false }).ok,
+      false,
+    );
+    assert.equal(
+      evaluateD374CostOptimizedPilotInfrastructureCheckpoint({ ...base, architectureVersion: "ARCH-R19" }).ok,
+      false,
+    );
+    assert.equal(
+      evaluateD374CostOptimizedPilotInfrastructureCheckpoint({ ...base, decisionRegisterVersion: "DR-15" }).ok,
+      false,
+    );
+  });
+
+  it("requires single-Droplet + Docker Compose + self-hosted PostgreSQL + Spaces", () => {
+    assert.equal(
+      evaluateD374CostOptimizedPilotInfrastructureCheckpoint({ ...base, pilotComputeSingleDroplet: false }).ok,
+      false,
+    );
+    assert.equal(evaluateD374CostOptimizedPilotInfrastructureCheckpoint({ ...base, dockerCompose: false }).ok, false);
+    assert.equal(
+      evaluateD374CostOptimizedPilotInfrastructureCheckpoint({ ...base, selfHostedPostgresql18: false }).ok,
+      false,
+    );
+    assert.equal(
+      evaluateD374CostOptimizedPilotInfrastructureCheckpoint({ ...base, spacesOffHostBackups: false }).ok,
+      false,
+    );
+  });
+
+  it("rejects managed PostgreSQL / App Platform / k3s as CURRENT pilot authority", () => {
+    assert.equal(
+      evaluateD374CostOptimizedPilotInfrastructureCheckpoint({
+        ...base,
+        managedPostgresqlPilotProduction: "YES",
+      }).ok,
+      false,
+    );
+    assert.equal(
+      evaluateD374CostOptimizedPilotInfrastructureCheckpoint({ ...base, appPlatformPilotProduction: "YES" }).ok,
+      false,
+    );
+    assert.equal(evaluateD374CostOptimizedPilotInfrastructureCheckpoint({ ...base, k3s: "YES" }).ok, false);
+    assert.equal(evaluateD374CostOptimizedPilotInfrastructureCheckpoint({ ...base, kubernetes: "YES" }).ok, false);
+    assert.equal(
+      evaluateD374CostOptimizedPilotInfrastructureCheckpoint({
+        ...base,
+        managedPostgresqlCurrentPilotAuthority: true,
+      }).code,
+      "D374_STALE_MANAGED_POSTGRESQL",
+    );
+    assert.equal(
+      evaluateD374CostOptimizedPilotInfrastructureCheckpoint({
+        ...base,
+        appPlatformCurrentPilotAuthority: true,
+      }).code,
+      "D374_STALE_APP_PLATFORM",
+    );
+    assert.equal(
+      evaluateD374CostOptimizedPilotInfrastructureCheckpoint({ ...base, k3sCurrentPilotAuthority: true }).code,
+      "D374_STALE_K3S",
+    );
+  });
+
+  it("keeps IMP-037 Fit NOT_PERFORMED and implementation unauthorized; IMP-038 unactivated", () => {
+    assert.equal(
+      evaluateD374CostOptimizedPilotInfrastructureCheckpoint({ ...base, architectureFitPass: true }).code,
+      "IMP037_ARCHITECTURE_FIT",
+    );
+    assert.equal(
+      evaluateD374CostOptimizedPilotInfrastructureCheckpoint({ ...base, implementationAuthorizedYes: true }).code,
+      "IMP037_IMPLEMENTATION_AUTHORIZED",
+    );
+    assert.equal(
+      evaluateD374CostOptimizedPilotInfrastructureCheckpoint({ ...base, imp038ActivatedYes: true }).code,
+      "IMP038_ACTIVATED",
+    );
+  });
+
+  it("preserves historical ADR-001/002/013/015 wording while requiring D-374 amendment", () => {
+    for (const [adrId, rel] of [
+      ["ADR-001", "docs/platform/decisions/ADR-001-digitalocean-platform.md"],
+      ["ADR-002", "docs/platform/decisions/ADR-002-environments-ci-cd-release-model.md"],
+      ["ADR-013", "docs/platform/decisions/ADR-013-postgresql-drizzle-migrations-persistence.md"],
+      ["ADR-015", "docs/platform/decisions/ADR-015-configuration-secrets-feature-flags.md"],
+    ]) {
+      const text = readFileSync(rel, "utf8");
+      assert.deepEqual(evaluateD374AmendedHistoricalAdrPreservation(text, adrId), { ok: true });
+      assert.match(text, /AMENDED/);
+      assert.match(text, /D-374/);
+      assert.match(text, /App Platform|Managed PostgreSQL/);
+    }
+  });
+
+  it("live authorities record D-374 / ARCH-R20 pilot topology without advancing IMP-037 Fit", () => {
+    const roadmap = readFileSync("docs/platform/ROADMAP.md", "utf8");
+    const state = readFileSync("docs/platform/STATE.md", "utf8");
+    const architecture = readFileSync("docs/platform/ARCHITECTURE.md", "utf8");
+    const decision = readFileSync("docs/platform/decision-register.md", "utf8");
+    const adr016 = readFileSync(
+      "docs/platform/decisions/ADR-016-cost-optimized-pilot-infrastructure.md",
+      "utf8",
+    );
+    assert.match(roadmap, /"roadmapVersion":\s*"GTM-R133"/);
+    assert.match(state, /"stateVersion":\s*"STATE-R131"/);
+    assert.match(architecture, /"architectureVersion":\s*"ARCH-R20"/);
+    assert.match(decision, /"decisionRegisterVersion":\s*"DR-16"/);
+    assert.match(decision, /\|\s*D-374\s*\|[^\n]*\|\s*CURRENT\s*\|/);
+    assert.match(decision, /Next free decision ID advanced to \*\*D-375\*\*/);
+    assert.match(architecture, /ARCH-G26/);
+    assert.match(architecture, /PILOT_COMPUTE_MODEL:\s*single Basic Droplet/);
+    assert.match(architecture, /Docker Compose/);
+    assert.match(architecture, /SELF_HOSTED_POSTGRESQL:\s*YES/);
+    assert.match(architecture, /OFF_HOST_BACKUP_DESTINATION:\s*DigitalOcean Spaces/);
+    assert.match(architecture, /DIGITALOCEAN_APP_PLATFORM:\s*NO/);
+    assert.match(architecture, /MANAGED_POSTGRESQL:\s*NO/);
+    assert.match(architecture, /KUBERNETES:\s*NO/);
+    assert.match(architecture, /K3S:\s*NO/);
+    assert.match(roadmap, /IMP037_ARCHITECTURE_FIT:\s*NOT_PERFORMED/);
+    assert.match(roadmap, /IMP037_IMPLEMENTATION_AUTHORIZED:\s*NO/);
+    assert.match(roadmap, /IMP038_ACTIVATED:\s*NO/);
+    assert.match(roadmap, /ARCHITECTURE_FIT_REOPEN_REASON:[\s\S]*D-374[\s\S]*ARCH-R20/);
+    assert.match(state, /STATE-R131 = GLOBAL_ARCHITECTURE_DECISION_D374/);
+    assert.match(adr016, /RPO_TARGET\s*<=\s*15 minutes/);
+    assert.match(adr016, /does \*\*not\*\* claim those targets are solved|are \*\*not\*\* claimed solved|not claimed solved by D-374/i);
+  });
+});
+
+describe("IMP-037 Product Definition D-374 CURRENT recovery-read reconciliation", () => {
+  const livePd = () => readFileSync("docs/platform/product/IMP-037/product-definition.md", "utf8");
+
+  const validSkeleton = `<!-- governance-meta
+{
+  "status": "APPROVED",
+  "productDefinitionGateResult": "PASS",
+  "architectureFit": "NOT_PERFORMED",
+  "architectureLocked": "NO",
+  "implementationAuthorized": "NO",
+  "implementationStarted": "NO"
+}
+-->
+Document status: APPROVED
+Gate Result: PASS
+ARCHITECTURE_FIT: NOT_PERFORMED
+ARCHITECTURE_LOCKED: NO
+IMPLEMENTATION_AUTHORIZED: NO
+IMPLEMENTATION_STARTED: NO
+IMP038_ACTIVATED: NO
+
+Two recovery layers remain mandatory:
+(1) PITR-capable continuous recovery
+(2) independent encrypted logical backup
+
+| PITR-capable continuous recovery layer | self-hosted PostgreSQL 18 under D-374 / ARCH-R20 | PLANNED_IMP037 / ARCHITECTURE_FIT_REQUIRED |
+| High-risk migration | Verify PITR-capable recovery-layer health; recovery point; independent backup evidence |
+Then applicable PITR-capable recovery-layer health/recovery-point evidence and independent backup evidence are checked.
+| DISCOVERY | Readiness status distinguishes PITR-capable continuous recovery vs independent logical backup layers |
+
+| Historical Managed PostgreSQL automated backups / PITR (provider layer) | **HISTORICAL** under ADR-013; **not** CURRENT after D-374 |
+`;
+
+  it("passes valid D-374 Product Definition CURRENT read", () => {
+    assert.deepEqual(evaluateImp037ProductDefinitionD374CurrentRecoveryRead(validSkeleton), { ok: true });
+    assert.deepEqual(evaluateImp037ProductDefinitionD374CurrentRecoveryRead(livePd()), { ok: true });
+  });
+
+  it("fails CURRENT Managed PostgreSQL/PITR supported claim", () => {
+    const text = validSkeleton.replace(
+      "| PITR-capable continuous recovery layer | self-hosted PostgreSQL 18 under D-374 / ARCH-R20 | PLANNED_IMP037 / ARCHITECTURE_FIT_REQUIRED |",
+      "| Managed PostgreSQL backup / PITR (ADR-013 first layer) | Managed DigitalOcean PostgreSQL | `CURRENT_SUPPORTED` |",
+    );
+    assert.equal(
+      evaluateImp037ProductDefinitionD374CurrentRecoveryRead(text).code,
+      "IMP037_PD_D374_STALE_MANAGED_POSTGRES_CURRENT",
+    );
+  });
+
+  it("fails CURRENT Managed DigitalOcean PostgreSQL source claim", () => {
+    const text = `${validSkeleton}\nEntry source: Managed DigitalOcean PostgreSQL for Layer 1\n`;
+    assert.equal(
+      evaluateImp037ProductDefinitionD374CurrentRecoveryRead(text).code,
+      "IMP037_PD_D374_STALE_MANAGED_DO_POSTGRES_CURRENT",
+    );
+  });
+
+  it("fails CURRENT managed-backup health AC", () => {
+    const text = validSkeleton.replace(
+      "PITR-capable recovery-layer health/recovery-point evidence",
+      "managed-backup health/recovery point",
+    );
+    assert.equal(
+      evaluateImp037ProductDefinitionD374CurrentRecoveryRead(text).code,
+      "IMP037_PD_D374_STALE_MANAGED_BACKUP_HEALTH",
+    );
+  });
+
+  it("fails CURRENT managed/PITR journey discovery wording", () => {
+    const text = validSkeleton.replace(
+      "PITR-capable continuous recovery vs independent logical backup layers",
+      "managed/PITR vs independent logical layers",
+    );
+    assert.equal(
+      evaluateImp037ProductDefinitionD374CurrentRecoveryRead(text).code,
+      "IMP037_PD_D374_STALE_MANAGED_PITR_DISCOVERY",
+    );
+  });
+
+  it("passes explicit HISTORICAL Managed PostgreSQL reference", () => {
+    const text = `${validSkeleton}\n| Historical Managed PostgreSQL | **HISTORICAL** pre-D-374 ADR-013 |\n`;
+    assert.deepEqual(evaluateImp037ProductDefinitionD374CurrentRecoveryRead(text), { ok: true });
+    const stripped = stripImp037HistoricalManagedRecoveryAuthority(text);
+    assert.doesNotMatch(stripped, /Historical Managed PostgreSQL/);
+  });
+
+  it("requires PITR-capable continuous recovery and independent logical backup wording", () => {
+    assert.equal(
+      evaluateImp037ProductDefinitionD374CurrentRecoveryRead(
+        validSkeleton.replace(/PITR-capable continuous recovery/g, "continuous recovery"),
+      ).code,
+      "IMP037_PD_D374_LAYER1_MISSING",
+    );
+    assert.equal(
+      evaluateImp037ProductDefinitionD374CurrentRecoveryRead(
+        validSkeleton.replace(/independent (?:encrypted )?logical backup/gi, "offsite copy"),
+      ).code,
+      "IMP037_PD_D374_LAYER2_MISSING",
+    );
+  });
+
+  it("preserves Product Definition APPROVED / Gate PASS and non-advancement", () => {
+    const live = livePd();
+    const result = evaluateImp037ProductDefinitionD374CurrentRecoveryRead(live);
+    assert.deepEqual(result, { ok: true });
+    assert.match(live, /"status":\s*"APPROVED"/);
+    assert.match(live, /"productDefinitionGateResult":\s*"PASS"/);
+    assert.match(live, /"architectureFit":\s*"NOT_PERFORMED"/);
+    assert.match(live, /"architectureLocked":\s*"NO"/);
+    assert.match(live, /"implementationAuthorized":\s*"NO"/);
+    assert.match(live, /"implementationStarted":\s*"NO"/);
+    assert.match(live, /ARCHITECTURE_FIT:\s*NOT_PERFORMED/);
+    assert.doesNotMatch(live, /IMP038_ACTIVATED:\s*YES/);
+    assert.match(live, /PITR-capable continuous recovery/);
+    assert.match(live, /independent encrypted logical backup|independent logical backup/);
+    assert.doesNotMatch(live, /managed-backup health/);
+    assert.doesNotMatch(live, /managed\/PITR vs independent/);
+    assert.doesNotMatch(
+      stripImp037HistoricalManagedRecoveryAuthority(live),
+      /Managed DigitalOcean PostgreSQL/,
+    );
+  });
+
+  it("rejects premature Fit lock / implementation / IMP-038 activation in PD CURRENT read", () => {
+    assert.equal(
+      evaluateImp037ProductDefinitionD374CurrentRecoveryRead(
+        validSkeleton.replace(/"architectureLocked": "NO"/, '"architectureLocked": "YES"'),
+      ).code,
+      "IMP037_PD_D374_ARCHITECTURE_LOCKED",
+    );
+    assert.equal(
+      evaluateImp037ProductDefinitionD374CurrentRecoveryRead(
+        validSkeleton.replace(/"implementationAuthorized": "NO"/, '"implementationAuthorized": "YES"'),
+      ).code,
+      "IMP037_PD_D374_IMPLEMENTATION_AUTHORIZED",
+    );
+    assert.equal(
+      evaluateImp037ProductDefinitionD374CurrentRecoveryRead(
+        validSkeleton.replace(/"implementationStarted": "NO"/, '"implementationStarted": "YES"'),
+      ).code,
+      "IMP037_PD_D374_IMPLEMENTATION_STARTED",
+    );
+    assert.equal(
+      evaluateImp037ProductDefinitionD374CurrentRecoveryRead(
+        validSkeleton.replace(/IMP038_ACTIVATED: NO/, "IMP038_ACTIVATED: YES"),
+      ).code,
+      "IMP037_PD_D374_IMP038_ACTIVATED",
+    );
   });
 });
 

@@ -1,14 +1,32 @@
 ---
-Status: Accepted
+Status: AMENDED
+Governance status: AMENDED
+Amended by: D-374 / ADR-016 (docs/platform/decision-register.md; docs/platform/decisions/ADR-016-cost-optimized-pilot-infrastructure.md)
 Decision date: 2026-08-02
-Last updated: 2026-08-02
+Last updated: 2026-09-19
 ---
 
 # ADR-001: DigitalOcean as the BOBA Bear Platform Cloud Foundation
 
 ## Status
 
-Accepted
+**AMENDED** (2026-09-19) by **[D-374](../decision-register.md)** /
+**[ADR-016](./ADR-016-cost-optimized-pilot-infrastructure.md)**.
+
+```text
+AMENDED_BY: D-374 / ADR-016
+```
+
+DigitalOcean remains the primary cloud provider. **Spaces** remains the object-storage /
+off-host backup destination. Portability requirements and India-region preference remain.
+
+Pilot-production hosting topology originally recorded here (DigitalOcean **App Platform** +
+**Managed PostgreSQL**) is **no longer CURRENT** pilot-production authority. CURRENT pilot
+production is a **single DigitalOcean Basic Droplet** running **Docker Engine + Docker Compose**
+with **self-hosted PostgreSQL 18** on the same Droplet (D-374 / ADR-016 / ARCH-R20).
+
+Do not erase the original App Platform / Managed PostgreSQL rationale below; prefer D-374 /
+ADR-016 / ARCHITECTURE.md for CURRENT pilot topology.
 
 ## Decision Date
 

@@ -1,14 +1,41 @@
 ---
-Status: Accepted
+Status: AMENDED
+Governance status: AMENDED
+Amended by: D-374 / ADR-016 (docs/platform/decision-register.md; docs/platform/decisions/ADR-016-cost-optimized-pilot-infrastructure.md)
 Decision date: 2026-08-02
-Last updated: 2026-08-02
+Last updated: 2026-09-19
 ---
 
 # ADR-013: Persistence, PostgreSQL, and Drizzle
 
 ## Status
 
-Accepted
+**AMENDED** (2026-09-19) by **[D-374](../decision-register.md)** /
+**[ADR-016](./ADR-016-cost-optimized-pilot-infrastructure.md)**.
+
+Preserved CURRENT principles:
+
+```text
+PostgreSQL 18
+Drizzle schema / migrations
+immutable forward migrations
+database role separation
+direct connections for tooling
+recovery-before-high-risk-migration principle
+no drizzle-kit push in shared environments
+```
+
+Amended for pilot production hosting / recovery assumptions only:
+
+```text
+DigitalOcean Managed PostgreSQL hosting → self-hosted PostgreSQL 18 on the pilot Droplet (D-374)
+provider-managed PITR assumption → removed; self-managed PITR / WAL archiving to Spaces
+  must be designed in a fresh IMP-037 Architecture Fit against ARCH-R20
+```
+
+Do not erase the original Managed PostgreSQL / managed PITR prose below; prefer D-374 / ADR-016
+for CURRENT pilot hosting. Product RPO <= 15 minutes / RTO <= 2 hours targets remain; they are
+**not** claimed solved by D-374.
 
 ## Decision Date
 

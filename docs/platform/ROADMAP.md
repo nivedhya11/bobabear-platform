@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R132",
+  "roadmapVersion": "GTM-R133",
   "acceptedThrough": "IMP-036G",
   "currentProductSlice": "IMP-037",
   "nextProductSlice": "IMP-038",
   "gtmBoundary": "IMP-040",
   "lastReviewed": "2026-09-19",
-  "supersedes": "GTM-R131"
+  "supersedes": "GTM-R132"
 }
 -->
 
@@ -210,9 +210,9 @@ NEW_PERMISSION: NO
 NEW_ROLE: NO
 NEW_SCOPE_MODEL: NO
 D374_REQUIRED_FOR_IMP036E_LOCK: NO
-D-374_CREATED: NO
+D-374_CREATED: YES
 ARCH_R20_REQUIRED_FOR_IMP036E_LOCK: NO
-ARCH_R20_CREATED: NO
+ARCH_R20_CREATED: YES
 IMP-036G: COMPLETE_AND_ACCEPTED
 IMP036G_ACTIVATED: YES
 IMP036G_PRODUCT_DEFINITION: APPROVED
@@ -295,6 +295,7 @@ IMP037_IMPLEMENTATION_AUTHORIZED: NO
 IMP037_STARTED: NO
 IMP037_ACCEPTED: NO
 IMP037_FOUNDER_UAT_REQUIRED: YES
+ARCHITECTURE_FIT_REOPEN_REASON: D-374 / ARCH-R20 replaces managed PostgreSQL/App Platform pilot infrastructure assumptions
 IMP-038: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
 IMP038_ACTIVATED: NO
 IMP-036D: COMPLETE_AND_ACCEPTED
@@ -303,18 +304,15 @@ IMP-036D_ACCEPTED: YES
 IMP-036D_FOUNDER_UAT: PASS
 ```
 
-**GTM-R132** persists independently executed Product Definition Gate PASS for IMP-037 candidate
-`PD-IMP-037-DRAFT-1` (`IMP037_PRODUCT_DEFINITION: APPROVED`;
-`IMP037_PRODUCT_DEFINITION_GATE: PASS`). Gate-evaluated candidate is exact `main` head
-`fccdf7ef606ca906bcdcd706a6de97f693bb88b4` / tree `1477d12b5c5b3b0ccb8d488757516d5b6e637674` /
-Product Definition blob `eb792d02dbfede862a0bb104a754d14d875141aa` / fingerprint
-`9be2a43fe3881ccd28f169f60209cef3c78c991524e5e9d34a8b657e1b1f0c19`; gate date 2026-09-19;
-Founder / product governance human authority authorized PASS after independent pre-gate review
-PASS. Exact-main CI run `35382560066` SUCCESS. The later gate-persistence commit is **not** the
-evaluated artifact. IMP-036G remains `COMPLETE_AND_ACCEPTED`. Locked capability architecture remains
-[`capabilities/IMP-036G-administration-console-v2.md`](./capabilities/IMP-036G-administration-console-v2.md).
-Product Definition for IMP-036G remains `PD-IMP-036G-DRAFT-2` (APPROVED; Gate PASS; Architecture Fit
-PASS). ARCH-R19 and DR-15 remain unchanged.
+**GTM-R133** persists global architecture decision **D-374** / ADR-016 / ARCH-R20 /
+DR-16 — Cost-Optimized Pilot Infrastructure (single DigitalOcean Basic Droplet + Docker Engine /
+Compose + self-hosted PostgreSQL 18 + Spaces off-host backups). This checkpoint is
+`GLOBAL_ARCHITECTURE_DECISION_D374` only. It does **not** perform IMP-037 Architecture Fit, lock
+architecture, authorize/start implementation, accept IMP-037, or activate IMP-038.
+`ARCHITECTURE_FIT_REOPEN_REASON: D-374 / ARCH-R20 replaces managed PostgreSQL/App Platform pilot
+infrastructure assumptions`. PR #169 predates D-374 / ARCH-R20; its Architecture Fit/lock candidate
+is not valid against the new infrastructure authority. Next gate after merge = fresh IMP-037
+Architecture Fit against ARCH-R20.
 `acceptedThrough` remains IMP-036G; `currentProductSlice = IMP-037`; `pendingAcceptance = NONE`;
 `nextProductSlice = IMP-038`. Formal IMP-037 ROADMAP lifecycle remains `PLANNED`
 (`IMP037_ACTIVATED: YES`; `IMP037_PRODUCT_DEFINITION: APPROVED`;
@@ -322,11 +320,11 @@ PASS). ARCH-R19 and DR-15 remain unchanged.
 `IMP037_PRODUCT_DECISION_COUNT: 7`; `IMP037_PRODUCT_DEFINITION_GATE: PASS`;
 `IMP037_ARCHITECTURE_FIT: NOT_PERFORMED`; `IMP037_ARCHITECTURE_LOCKED: NO`;
 `IMP037_IMPLEMENTATION_AUTHORIZED: NO`; `IMP037_STARTED: NO`; `IMP037_ACCEPTED: NO`;
-`IMP037_FOUNDER_UAT_REQUIRED: YES`). `IMP038_ACTIVATED: NO`. Gate PASS does **not** perform
-Architecture Fit, lock architecture, authorize/start implementation, accept IMP-037, or activate
-IMP-038.
+`IMP037_FOUNDER_UAT_REQUIRED: YES`). `IMP038_ACTIVATED: NO`. `D-374_CREATED: YES`;
+`ARCH_R20_CREATED: YES`. Product Definition Gate PASS (GTM-R132) remains historical authority for
+the APPROVED PD; ARCH-R20 / DR-16 are CURRENT global architecture / decision authority.
 
-Implementation / review provenance for accepted IMP-036G remains distinct from this ADVANCE:
+Implementation / review provenance for accepted IMP-036G remains distinct from this checkpoint:
 accepted UAT product candidate `fbf690a67cda51bd6bbc1bad4a9d26f574c4286e` / tree
 `84b6a502fcec646cb5a65f3257f19b85c64f49e1` (fingerprint
 `9f472ce6e1ccaa2fe914006c846fb3018d668b718f569b6d0cb4fa64c3013f9b`; Founder authority;
@@ -431,11 +429,14 @@ Supporting experience contract is historical after acceptance:
 Per-IMP Product Definition remains:
 [`product/IMP-036G/product-definition.md`](./product/IMP-036G/product-definition.md).
 Accepted UAT product candidate remains `fbf690a67cda51bd6bbc1bad4a9d26f574c4286e` / tree
-`84b6a502fcec646cb5a65f3257f19b85c64f49e1`. ARCH-R19 and DR-15 remain unchanged;
+`84b6a502fcec646cb5a65f3257f19b85c64f49e1`. ARCH-R20 and DR-16 are CURRENT
+(`D-374_CREATED: YES`; `ARCH_R20_CREATED: YES`);
 `SCHEMA_CHANGE_REQUIRED: YES` remains the architecture conclusion recorded for IMP-036G;
 `NEW_PERMISSION: NO`; `NEW_ROLE: NO`; `NEW_SCOPE_MODEL: NO`;
-`D374_REQUIRED_FOR_LOCK: NO`; `ARCH_R20_REQUIRED: NO`;
-`D-374_CREATED: NO`; `ARCH_R20_CREATED: NO`.
+`D374_REQUIRED_FOR_LOCK: NO`; `ARCH_R20_REQUIRED: NO`.
+`ARCHITECTURE_FIT_REOPEN_REASON: D-374 / ARCH-R20 replaces managed PostgreSQL/App Platform pilot
+infrastructure assumptions`. IMP-037 Architecture Fit remains `NOT_PERFORMED`; architecture lock
+`NO`; implementation unauthorized / unstarted.
 
 Next product slice is IMP-038 — Security & Privacy Hardening
 (`PLANNED` / `NOT_ACTIVATED` / `NOT_AUTHORIZED` / `NOT_STARTED`; `IMP038_ACTIVATED: NO`).
@@ -569,6 +570,30 @@ Current public GTM boundary is **IMP-040**, not IMP-035.
 
 Historical revision evidence for GTM-R1…GTM-R113 is preserved byte-for-byte in
 [`history/ROADMAP-GTM-R113-pre-compression.md`](./history/ROADMAP-GTM-R113-pre-compression.md).
+
+### GTM-R133 — 2026-09-19
+
+- Persist `GLOBAL_ARCHITECTURE_DECISION_D374`: register **D-374** / ADR-016; advance global
+  architecture to **ARCH-R20** (ARCH-G26) and decision register to **DR-16**.
+- Cost-optimized pilot infrastructure: single DigitalOcean Basic Droplet + Docker Engine / Compose
+  + self-hosted PostgreSQL 18 + Spaces off-host backups; App Platform / Managed PostgreSQL / k8s /
+  k3s / Podman production / always-on cloud staging rejected for pilot.
+- Preserves `acceptedThrough = IMP-036G`; `currentProductSlice = IMP-037`;
+  `pendingAcceptance = NONE`; `nextProductSlice = IMP-038`.
+- Preserves `IMP037_ACTIVATED: YES` while formal IMP-037 ROADMAP lifecycle remains `PLANNED`
+  (`IMP037_PRODUCT_DEFINITION: APPROVED`; `IMP037_PRODUCT_DEFINITION_GATE: PASS`;
+  `IMP037_ARCHITECTURE_FIT: NOT_PERFORMED`; `IMP037_ARCHITECTURE_LOCKED: NO`;
+  `IMP037_IMPLEMENTATION_AUTHORIZED: NO`; `IMP037_STARTED: NO`; `IMP037_ACCEPTED: NO`;
+  `IMP037_FOUNDER_UAT_REQUIRED: YES`).
+- Records `ARCHITECTURE_FIT_REOPEN_REASON: D-374 / ARCH-R20 replaces managed PostgreSQL/App Platform
+  pilot infrastructure assumptions`.
+- Records `D-374_CREATED: YES`; `ARCH_R20_CREATED: YES`.
+- Notes PR #169 predates D-374 / ARCH-R20 and is not valid Fit authority against this checkpoint.
+- Does **not** perform Architecture Fit, lock architecture, authorize/start implementation, accept
+  IMP-037, activate IMP-038, implement infrastructure, or authorize merge. Next phase = fresh
+  IMP-037 Architecture Fit against ARCH-R20 (separate auth).
+- PD-1 / TEST-1 / VISION-1 unchanged.
+- Supersedes GTM-R132.
 
 ### GTM-R132 — 2026-09-19
 

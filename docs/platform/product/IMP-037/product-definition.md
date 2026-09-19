@@ -29,6 +29,25 @@
 ## Product Definition (APPROVED — Product Definition Gate PASS)
 
 ```text
+CURRENT_READ_AMENDMENT (D-374 / ADR-016 / ARCH-R20 — 2026-09-19):
+  Managed DigitalOcean PostgreSQL hosting and provider-managed PITR are no longer CURRENT
+  pilot-production infrastructure authority (HISTORICAL under pre-D-374 ADR-013 only).
+  Product recovery targets remain binding and mechanism-neutral:
+    RPO_TARGET <= 15 minutes
+    RTO_TARGET <= 2 hours
+    independent encrypted logical backup (daily / 35-day retention / off-host)
+  RECOVERY_LAYER_1: PITR-capable continuous recovery
+    Architecture Fit direction under D-374 / ARCH-R20 is self-managed PostgreSQL
+    physical/base backup + continuous WAL archiving to DigitalOcean Spaces + PITR-capable recovery.
+    Exact tooling/layout remains Architecture Fit / not locked by this Product Definition.
+  RECOVERY_LAYER_2: independent encrypted logical backup (pg_dump/pg_restore) remains required.
+  Product Definition remains APPROVED; Product Definition Gate remains PASS.
+  Architecture Fit remains NOT_PERFORMED and must be performed fresh against ARCH-R20.
+  CURRENT sections below use the same mechanism-neutral Layer 1 / Layer 2 vocabulary;
+  do not treat historical ADR-013 managed-PITR prose as competing CURRENT pilot hosting authority.
+```
+
+```text
 Document status: APPROVED
 PRODUCT_DEFINITION_VERSION: PD-IMP-037-DRAFT-1
 PRE-GATE DRAFT: NO
@@ -80,13 +99,14 @@ IMP036E_LIFECYCLE_CHANGED = NO
 PD1_DID_NOT_ACTIVATE_IMP036F_AT_ADOPTION = YES
 ```
 
-Lifecycle truth remains ROADMAP/STATE only (`GTM-R132` / `STATE-R130`):
+Lifecycle truth remains ROADMAP/STATE only (CURRENT after D-374: `GTM-R133` / `STATE-R131`;
+Product Definition Gate PASS provenance remains GTM-R132 / STATE-R130):
 `acceptedThrough = IMP-036G`; `currentProductSlice = IMP-037`; `pendingAcceptance = NONE`;
 `nextProductSlice = IMP-038` (`PLANNED` / `NOT_ACTIVATED` / `NOT_AUTHORIZED` / `NOT_STARTED`;
 `IMP038_ACTIVATED: NO`). Formal IMP-037 lifecycle remains `PLANNED` /
 `NOT_AUTHORIZED` / `NOT_STARTED` with `IMP037_ACTIVATED: YES`. Product Definition is
-**APPROVED** (`Gate PASS`; Architecture Fit NOT_PERFORMED; architecture NOT_LOCKED;
-implementation NOT_AUTHORIZED / NOT_STARTED).
+**APPROVED** (`Gate PASS`; Architecture Fit NOT_PERFORMED / reopened under D-374; architecture
+NOT_LOCKED; implementation NOT_AUTHORIZED / NOT_STARTED).
 
 ---
 
@@ -98,10 +118,10 @@ implementation NOT_AUTHORIZED / NOT_STARTED).
 | Product Definition version / document status | `PD-IMP-037-DRAFT-1`; **Document status: APPROVED**; **PRE-GATE DRAFT: NO** |
 | Product owner / approval evidence | Founder / product governance human authority; Founder decisions FD-037-01…07 **APPROVED** via `APPROVE_ALL_7_RECOMMENDATIONS` (2026-09-17). Product Definition Gate **PASS** on 2026-09-19 after independent pre-gate review **PASS** of exact candidate head `fccdf7ef606ca906bcdcd706a6de97f693bb88b4` / tree `1477d12b5c5b3b0ccb8d488757516d5b6e637674` (gate-persistence commit is a subsequent revision and is **not** the evaluated artifact). |
 | Process / verification policy | `PD-1` / `TEST-1` |
-| Canonical anchors | VISION-1; ROADMAP GTM-R132; STATE STATE-R130; ARCH-R19; DR-15; PD-1; TEST-1; PERSONA-1; GJ-1 |
+| Canonical anchors | VISION-1; ROADMAP GTM-R133 (CURRENT; D-374); STATE STATE-R131 (CURRENT); ARCH-R20; DR-16; PD-1; TEST-1; PERSONA-1; GJ-1. Gate PASS provenance remains GTM-R132 / STATE-R130 / ARCH-R19 / DR-15 for the evaluated candidate. |
 | Repository candidate | Gate-evaluated candidate: canonical path `/home/ajoshi/repos/boba-bear-platform`; branch `main`; **GATE_EVALUATED_HEAD** `fccdf7ef606ca906bcdcd706a6de97f693bb88b4`; **GATE_EVALUATED_TREE** `1477d12b5c5b3b0ccb8d488757516d5b6e637674`; **GATE_EVALUATED_PRODUCT_DEFINITION_BLOB** `eb792d02dbfede862a0bb104a754d14d875141aa`; **GATE_EVALUATED_WORKING_TREE_FINGERPRINT** `9be2a43fe3881ccd28f169f60209cef3c78c991524e5e9d34a8b657e1b1f0c19` (content-sensitive; reconstructed from clean exact gate-evaluated HEAD/tree via `npm run working-tree:fingerprint`). Historical draft-creation provenance (not the gate-evaluated candidate): base `origin/main` `ee82a8cb783cc618f6f1f521964e72deaad677a0` / tree `1b1eaf138667e65bf4573988d62e176bb8be5949`; draft branch `governance/imp037-pre-gate-product-definition`. Historical pre-activation base: GTM-R130 / STATE-R128 (`6b1f2344d0184e29403b99adfea85c2e5dc8bf9a` / tree `5471ea8f72c635a365e9a78ea1394ec212dcad69`). Activation result: GTM-R131 / STATE-R129. Later merged activated main / Product Definition gate-evaluated candidate: `fccdf7ef606ca906bcdcd706a6de97f693bb88b4` / tree `1477d12b5c5b3b0ccb8d488757516d5b6e637674`. CURRENT_PR_HEAD / GATE_PERSISTENCE_COMMITS differ from the gate-evaluated candidate (`gate-persistence commit != gate-evaluated candidate`) and are **not** the artifact that received Gate PASS. |
-| Capability lifecycle / authorization | ROADMAP/STATE: `currentProductSlice = IMP-037`; **IMP037_ACTIVATED: YES**; formal lifecycle `PLANNED / NOT_AUTHORIZED / NOT_STARTED`; Product Definition APPROVED; Product Definition Gate PASS; Architecture Fit NOT_PERFORMED; architecture NOT_LOCKED; implementation NOT_AUTHORIZED / NOT_STARTED; IMP037_ACCEPTED: NO. `nextProductSlice = IMP-038` (`IMP038_ACTIVATED: NO`). `acceptedThrough` remains IMP-036G. |
-| Relevant capability architecture / ADRs | ADR-001 (DigitalOcean foundation / portability / launch recovery); ADR-002 (environment isolation; migration/release/rollback; restore ≠ routine rollback); ADR-013 (PostgreSQL 18; managed PITR + independent encrypted logical backup; direct backup/restore connections; restore validation; high-risk migration prerequisites); ADR-015 (configuration/secrets); ARCH-R19. Persistence stack selection is **not** reopened. |
+| Capability lifecycle / authorization | ROADMAP/STATE: `currentProductSlice = IMP-037`; **IMP037_ACTIVATED: YES**; formal lifecycle `PLANNED / NOT_AUTHORIZED / NOT_STARTED`; Product Definition APPROVED; Product Definition Gate PASS; Architecture Fit NOT_PERFORMED (reopened by D-374 / ARCH-R20); architecture NOT_LOCKED; implementation NOT_AUTHORIZED / NOT_STARTED; IMP037_ACCEPTED: NO. `nextProductSlice = IMP-038` (`IMP038_ACTIVATED: NO`). `acceptedThrough` remains IMP-036G. |
+| Relevant capability architecture / ADRs | ADR-001 (AMENDED by D-374 for pilot hosting); ADR-002 (AMENDED by D-374 for pilot production/staging target); ADR-013 (PostgreSQL 18 / Drizzle / migrations preserved; Managed PostgreSQL hosting + provider PITR amended by D-374); ADR-015 (AMENDED by D-374 for pilot secrets storage); ADR-016 / D-374 CURRENT pilot topology; ARCH-R20. Persistence application semantics are **not** reopened; pilot hosting/recovery Fit is. |
 | Founder UAT applicability | `FOUNDER_UAT_REQUIRED = YES`; `FOUNDER_UAT_STATUS = NOT_PERFORMED` — launch-critical, high-consequence recovery capability. UAT must use isolated recovery rehearsal of the exact candidate; **never** the active production/source DB as drill target. |
 
 Behaviour classification vocabulary:
@@ -181,10 +201,10 @@ No new persona is created.
 
 | Journey ID / evidence | Entry / preconditions | Activities today | Existing outcome / gap |
 |---|---|---|---|
-| Managed PostgreSQL backup / PITR (ADR-013 first layer) | Managed DigitalOcean PostgreSQL | Provider automated backups / PITR within managed window | `CURRENT_SUPPORTED` infrastructure capability; **not** independently proven BOBA Bear restore drill / business validation |
+| PITR-capable continuous recovery layer (Layer 1) | self-hosted PostgreSQL 18 under D-374 / ARCH-R20 | Required recovery layer is `PLANNED_IMP037` / `ARCHITECTURE_FIT_REQUIRED`; exact self-managed physical/base + continuous WAL mechanism awaits fresh Architecture Fit | Managed-provider PITR is **HISTORICAL** / no longer CURRENT after D-374; Layer 1 is **not** `CURRENT_SUPPORTED` until Architecture Fit selects and proves a self-managed PITR-capable mechanism |
 | Independent logical backup (ADR-013 second layer) | Required before broad public launch | Exact schedule/retention were open pending Founder decision; tooling path incomplete | `PLANNED_IMP037` — FD-037-03 now sets daily / 35-day product policy |
 | Staging DB volume repair command | Staging container/bind-mount failure | Repair preserving existing volume | **Not** data-loss recovery evidence |
-| High-risk migration prerequisites (ADR-013) | Before high-risk persistence change | Verify managed-backup health; recovery point; storage; recovery steps | Procedure authority exists; productized readiness gate / rehearsal evidence `PLANNED_IMP037` |
+| High-risk migration prerequisites (ADR-013) | Before high-risk persistence change | Verify PITR-capable recovery-layer health; recovery point; independent backup evidence; storage; recovery steps / rehearsal | Procedure authority exists; productized readiness gate / rehearsal evidence `PLANNED_IMP037` |
 
 ---
 
@@ -192,7 +212,7 @@ No new persona is created.
 
 | Journey ID | Entry / context | Ordered activities | Success / downstream outcome | Alternate / recovery paths |
 |---|---|---|---|---|
-| `JOURNEY-037-BACKUP-READINESS` | Authorized platform operator needs truthful recovery coverage | inspect backup posture → distinguish managed/PITR vs independent logical coverage → identify last successful evidence → identify overdue/failed/unverified → understand next operator action | Operator determines recovery readiness without raw cloud/DB internals or credential exposure | No evidence → NOT_READY; failed/overdue → visible degraded; secret-safe always |
+| `JOURNEY-037-BACKUP-READINESS` | Authorized platform operator needs truthful recovery coverage | inspect backup posture → distinguish PITR-capable continuous recovery vs independent logical backup coverage → identify last successful evidence → identify overdue/failed/unverified → understand next operator action | Operator determines recovery readiness without raw cloud/DB internals or credential exposure | No evidence → NOT_READY; failed/overdue → visible degraded; secret-safe always |
 | `JOURNEY-037-INDEPENDENT-BACKUP` | Scheduled/manual independent backup due or required before high-risk op | preflight source/credentials → create consistent logical backup → encrypt/persist approved artifact → verify integrity → record safe evidence | Usable independent backup exists **or** operation visibly fails; false success prohibited | Source/destination failure → FAILED; interrupted → incomplete not last-known-good; repeat runs do not silently overwrite retained artifacts |
 | `JOURNEY-037-RESTORE-DRILL` | Prove recoverability without risking active DB | select recovery point/artifact → provision/select isolated target → restore → apply later repository migrations where required → start compatible application → validate critical authority → measure recovery → record findings | Restored data proven operationally usable; measured RPO <= 15m and RTO <= 2h (RTO includes application/business-integrity validation) required for recovery-readiness PASS; threshold breach → BLOCKED / NOT_READY / FAILED | Source protection refuse; restore/validation FAILED; RPO/RTO threshold exceeded → readiness cannot PASS; provider side-effects suppressed; findings preserved |
 | `JOURNEY-037-MIGRATION-READINESS` | Prove PostgreSQL portability | produce portable recovery artifact → restore/import into clean compatible PostgreSQL 18 target → reconcile migration/schema state → start compatible application → validate authoritative business state → record findings | Portability demonstrated without provider-specific business truth | Interrupted → target not ready; source remains authoritative |
@@ -330,7 +350,7 @@ Mandatory in acceptance slice: YES (`V1_ACCEPTANCE_SLICE`)
 Story ID: US-IMP-037-002
 As a PERSONA-PLATFORM-OPERATOR
 I want to produce an independent protected backup
-so that recovery does not rely solely on the managed provider backup window.
+so that recovery does not rely solely on the PITR-capable continuous recovery layer.
 
 Journey / activity: JOURNEY-037-INDEPENDENT-BACKUP
 Preconditions: Authorized operator context; repository-supported recovery tooling/runbook per Architecture Fit; isolated targets for restore/migration drills; no active/source overwrite.
@@ -763,7 +783,7 @@ Story: `US-IMP-037-007`
 
 Given a high-risk migration is proposed
 When readiness is assessed
-Then applicable managed-backup health/recovery point and independent backup evidence are checked.
+Then applicable PITR-capable recovery-layer health/recovery-point evidence and independent backup evidence are checked.
 
 Mandatory in acceptance slice: YES (`V1_ACCEPTANCE_SLICE`)
 **AC-IMP-037-007-02 — Recovery steps**
@@ -944,7 +964,7 @@ Planned is not proven. PostgreSQL integration claims use real PostgreSQL 18 rath
 |---|---|---|---|
 | `BR-IMP-037-001` | A backup is not considered adequate until restoration has been successfully tested. | ADR-013 restore validation; FD-037-04 | Applicable US-IMP-037-001…008 / related ACs |
 | `BR-IMP-037-002` | A restore drill must never overwrite the active/source database. | ADR-013; FD-037-07 Founder UAT isolation | Applicable US-IMP-037-001…008 / related ACs |
-| `BR-IMP-037-003` | Managed provider backup/PITR and BOBA Bear's independent logical backup are separate recovery layers. | ADR-013; FD-037-03 | Applicable US-IMP-037-001…008 / related ACs |
+| `BR-IMP-037-003` | Two recovery layers remain mandatory: (1) PITR-capable continuous recovery and (2) independent encrypted logical backup. Under **D-374 / ARCH-R20**, Layer 1 is **self-managed** physical/base backup + WAL archiving to Spaces (not DigitalOcean Managed PostgreSQL provider PITR). Historical ADR-013 managed-PITR wording is not CURRENT pilot hosting authority. | ADR-013 (amended by D-374); ADR-016; FD-037-03 | Applicable US-IMP-037-001…008 / related ACs |
 | `BR-IMP-037-004` | Independent backup failure must never be recorded as success. | ADR-013 backup observability | Applicable US-IMP-037-001…008 / related ACs |
 | `BR-IMP-037-005` | Backup/restore administrative access must remain distinct from ordinary application runtime authority. | ADR-013 database roles / direct connections | Applicable US-IMP-037-001…008 / related ACs |
 | `BR-IMP-037-006` | Independent backup artifacts must be encrypted. | ADR-013 independent encrypted logical backup | Applicable US-IMP-037-001…008 / related ACs |
@@ -984,7 +1004,7 @@ Considered for all five IMP-037 journeys. CLI/tooling operator experience (FD-03
 | Journey dimension | Behaviour / applicability or N/A reason | Story / AC references |
 |---|---|---|
 | ENTRY | Operator invokes readiness/backup/restore/migration tooling or runbook entry with authorized context | US-IMP-037-001, 002, 003, 006, 007, 008 |
-| DISCOVERY | Readiness status distinguishes managed/PITR vs independent logical layers and last evidence | AC-IMP-037-001-01…05 |
+| DISCOVERY | Readiness status distinguishes PITR-capable continuous recovery vs independent logical backup layers and last evidence | AC-IMP-037-001-01…05 |
 | CONTEXT | Source vs isolated target identity; environment classification; recovery artifact/point | US-IMP-037-003, 006, 008 |
 | EMPTY / FIRST USE | No valid independent backup → NOT_READY (never healthy by empty config alone) | AC-IMP-037-001-02, BR-IMP-037-030 |
 | HAPPY PATH | Backup succeeds with integrity; isolated restore; validation; portability; high-risk READY | AC-IMP-037-002-01, 003-03, 004-*, 006-01, 007-01…03 |
@@ -1168,7 +1188,8 @@ IMP-037 does **not** invent a new customer Golden Journey.
 
 | Behaviour | Existing verified or V1 acceptance commitment? | Story / AC IDs / source |
 |---|---|---|
-| Managed PostgreSQL automated backups / PITR (provider layer) | Existing verified infrastructure authority (ADR-013 first layer) | ADR-013 |
+| Self-managed PITR-capable recovery (physical/base + WAL → Spaces) under D-374 / ARCH-R20 | **PLANNED_IMP037** Fit/implementation commitment (replaces Managed PostgreSQL provider PITR as CURRENT pilot Layer 1) | ADR-016 / D-374; ADR-013 amended; US-IMP-037-001…008 |
+| Historical Managed PostgreSQL automated backups / PITR (provider layer) | **HISTORICAL** under ADR-013; **not** CURRENT pilot production authority after D-374 | ADR-013 (amended); ADR-016 |
 | PostgreSQL 18 + Drizzle migration authority | CURRENT accepted | ADR-013 |
 | Staging volume-repair command | CURRENT — **not** data-loss recovery proof | Problem statement |
 | Independent logical backup + restore drill + validation + portability + high-risk gate + runbook | **PLANNED_IMP037** V1 acceptance commitment (this PD) | US-IMP-037-001…008 |
