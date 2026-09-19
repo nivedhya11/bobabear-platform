@@ -8533,6 +8533,10 @@ export function evaluateImp037LockedCapabilityArchitecture(text) {
     [body, /RESTORE_TO_ACTIVE_SOURCE:\s*FORBIDDEN/, "isolated restore target"],
     [body, /OUTBOUND_PROVIDER_INITIATION:\s*DISABLED/, "provider-side-effect suppression"],
     [body, /target-scoped lock/, "target serialization"],
+    [body, /CROSS_PROCESS_SERIALIZATION:\s*REQUIRED/, "cross-process target serialization"],
+    [body, /PROCESS_LOCAL_LOCK_ALONE:\s*FORBIDDEN/, "process-local lock insufficient"],
+    [body, /ENCRYPTION_KEY_VERSIONING:\s*REQUIRED/, "encryption key versioning"],
+    [body, /RETIRED_KEYS_MUST_REMAIN_RESOLVABLE_FOR_RETAINED_ARTIFACTS:\s*YES/, "retired keys remain resolvable"],
     [body, /SHA-256/, "artifact checksum"],
     [body, /RUN_ID:\s*unique per backup invocation/, "immutable run identity"],
     [body, /35-day rolling retention/, "35-day independent backup retention"],
@@ -8610,6 +8614,64 @@ export function evaluateImp037ArchitectureLockedProductDefinition(text) {
   }
   const body = String(text);
   const currentBody = stripImp037HistoricalPreGateProvenance(body);
+  const metaMatch = body.match(/<!--\s*governance-meta\s*([\s\S]*?)-->/);
+  if (metaMatch) {
+    let meta;
+    try {
+      meta = JSON.parse(metaMatch[1]);
+    } catch {
+      return {
+        ok: false,
+        code: "IMP037_PD_META_MALFORMED",
+        message: "Architecture-locked IMP-037 Product Definition governance-meta JSON is malformed",
+      };
+    }
+    const requiredMeta = {
+      status: "APPROVED",
+      architectureFitExecution: "PERFORMED",
+      architectureFit: "PASS",
+      architectureLocked: "YES",
+      implementationAuthorized: "NO",
+      implementationStarted: "NO",
+    };
+    for (const [key, expected] of Object.entries(requiredMeta)) {
+      if (!(key in meta) || meta[key] !== expected) {
+        return {
+          ok: false,
+          code: "IMP037_PD_META_CONFLICT",
+          message: `Architecture-locked IMP-037 Product Definition governance-meta.${key} must be ${JSON.stringify(expected)} (got ${JSON.stringify(meta[key])})`,
+        };
+      }
+    }
+    if ("productDefinitionGateExecution" in meta && meta.productDefinitionGateExecution !== "PERFORMED") {
+      return {
+        ok: false,
+        code: "IMP037_PD_META_CONFLICT",
+        message: "Architecture-locked IMP-037 Product Definition governance-meta.productDefinitionGateExecution must be PERFORMED",
+      };
+    }
+    if ("productDefinitionGateResult" in meta && meta.productDefinitionGateResult !== "PASS") {
+      return {
+        ok: false,
+        code: "IMP037_PD_META_CONFLICT",
+        message: "Architecture-locked IMP-037 Product Definition governance-meta.productDefinitionGateResult must be PASS",
+      };
+    }
+    if ("impAccepted" in meta && meta.impAccepted !== "NO" && meta.impAccepted !== false) {
+      return {
+        ok: false,
+        code: "IMP037_PD_META_CONFLICT",
+        message: "Architecture-locked IMP-037 Product Definition governance-meta.impAccepted must remain NO",
+      };
+    }
+    if (!("status" in meta) || meta.status !== "APPROVED") {
+      return {
+        ok: false,
+        code: "IMP037_PD_META_CONFLICT",
+        message: "Architecture-locked IMP-037 Product Definition governance-meta.status must be APPROVED",
+      };
+    }
+  }
   const hasApprovedStatus =
     /"status"\s*:\s*"APPROVED"/i.test(body) ||
     /Document status\s*[:=]\s*APPROVED/i.test(body);

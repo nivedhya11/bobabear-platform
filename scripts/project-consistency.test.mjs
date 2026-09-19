@@ -9013,6 +9013,10 @@ target-scoped lock
 SHA-256
 RUN_ID: unique per backup invocation
 35-day rolling retention
+ENCRYPTION_KEY_VERSIONING: REQUIRED
+RETIRED_KEYS_MUST_REMAIN_RESOLVABLE_FOR_RETAINED_ARTIFACTS: YES
+CROSS_PROCESS_SERIALIZATION: REQUIRED
+PROCESS_LOCAL_LOCK_ALONE: FORBIDDEN
 ARCHITECTURE_FIT_EVALUATED_HEAD = a64ef0eaa65cb5b10add68f7d39c730631246381
 ARCHITECTURE_FIT_EVALUATED_TREE = 5ddbd8be425d2bdd44fd08fb7d97f40f985649e6
 ARCHITECTURE_FIT_EVALUATED_WORKING_TREE_FINGERPRINT = 69a7e7d562b45c30553b3b3d0cd4d608341f43491457b0c8f8470f0e9f993851
@@ -9024,7 +9028,9 @@ ARCHITECTURE_FIT_EVALUATED_WORKING_TREE_FINGERPRINT = 69a7e7d562b45c30553b3b3d0c
   "authority": "PRODUCT_DEFINITION",
   "architectureFit": "PASS",
   "architectureFitExecution": "PERFORMED",
-  "architectureLocked": "YES"
+  "architectureLocked": "YES",
+  "implementationAuthorized": "NO",
+  "implementationStarted": "NO"
 }
 -->
 
@@ -9263,6 +9269,23 @@ Historical pre-gate provenance: ARCHITECTURE_FIT: NOT_PERFORMED; architecture no
       "",
     );
     assert.equal(evaluateImp037LockedCapabilityArchitecture(missingCapabilityFingerprint).ok, false);
+  });
+
+  it("rejects contradictory governance metadata even when prose markers remain PASS", () => {
+    const staleStatus = validFitPd.replace('"status": "APPROVED"', '"status": "PRE_GATE_DRAFT"');
+    const staleFit = validFitPd.replace('"architectureFitExecution": "PERFORMED"', '"architectureFitExecution": "NOT_PERFORMED"');
+    const authorized = validFitPd.replace('"implementationAuthorized": "NO"', '"implementationAuthorized": "YES"');
+    assert.equal(evaluateImp037ArchitectureLockedProductDefinition(staleStatus).ok, false);
+    assert.equal(evaluateImp037ArchitectureLockedProductDefinition(staleFit).ok, false);
+    assert.equal(evaluateImp037ArchitectureLockedProductDefinition(authorized).ok, false);
+  });
+
+  it("requires encryption key versioning and cross-process target serialization", () => {
+    assert.deepEqual(evaluateImp037LockedCapabilityArchitecture(validLockedCapability), { ok: true });
+    const missingKeyVersion = validLockedCapability.replace("ENCRYPTION_KEY_VERSIONING: REQUIRED\n", "");
+    const missingCrossProcess = validLockedCapability.replace("CROSS_PROCESS_SERIALIZATION: REQUIRED\n", "");
+    assert.equal(evaluateImp037LockedCapabilityArchitecture(missingKeyVersion).ok, false);
+    assert.equal(evaluateImp037LockedCapabilityArchitecture(missingCrossProcess).ok, false);
   });
 
   it("validates live locked capability and Product Definition", () => {

@@ -406,6 +406,22 @@ Locked mechanism class:
 - the key is never persisted beside the object
 - the key is never stored in the manifest, evidence, repository, browser, or application database
 
+```text
+ENCRYPTION_KEY_VERSIONING: REQUIRED
+ENCRYPTION_KEY_VERSION: non-secret version identifier recorded in the manifest/evidence
+RAW_ENCRYPTION_KEY_IN_MANIFEST: FORBIDDEN
+RETIRED_KEYS_MUST_REMAIN_RESOLVABLE_FOR_RETAINED_ARTIFACTS: YES
+KEY_REVOCATION_WHILE_RETAINED_COMPLETE_ARTIFACTS_REQUIRE_THAT_KEY: FORBIDDEN
+```
+
+A routine ADR-015 secret rotation must not silently destroy recoverability of still-retained
+`COMPLETE` independent artifacts. Any key that can decrypt a retained `COMPLETE` artifact MUST
+remain resolvable through ADR-015 secret authority for that artifact’s 35-day independent backup
+retention window (or until that artifact is superseded by a new uniquely identified
+re-encrypted artifact). Re-encryption, if performed, creates a **new** run identity / artifact;
+it never overwrites an earlier retained object. Non-secret key-version identifiers may appear in
+the manifest; raw keys must not.
+
 Implementation library choice remains local unless it changes these semantics.
 
 ---
@@ -451,6 +467,7 @@ PostgreSQL version
 backup format
 candidate / repository context
 storage object identity/version where available
+non-secret encryption key version
 ```
 
 Restore validation must recompute/verify the authoritative checksum before using an independent
@@ -498,6 +515,7 @@ repository/application candidate if applicable
 start/end timestamps
 result
 safe diagnostic category
+non-secret encryption key version
 ```
 
 Must exclude:
@@ -745,6 +763,29 @@ target-scoped lock
 +
 unique run IDs
 ```
+
+Cross-process contract (operator, CI, and one-shot tooling share it):
+
+```text
+TARGET_LOCK_SCOPE: trusted recovery-target identity fingerprint
+TARGET_LOCK_PLANE: exclusive lock marker in the independent backup-storage authority class
+  (same Spaces backup bucket/prefix class; not the application database;
+  not a new always-on lock service)
+TARGET_LOCK_ACQUISITION: exclusive; fail closed unless this run atomically becomes the sole owner
+TARGET_LOCK_OWNER: RUN_ID
+TARGET_LOCK_RELEASE: owning run releases after terminal SUCCEEDED / FAILED / BLOCKED / NOT_READY
+STALE_LOCK_BREAK_DEFAULT: FAIL_CLOSED
+STALE_LOCK_BREAK: explicit operator confirmation that the owning run is not executing
+PROCESS_LOCAL_LOCK_ALONE: FORBIDDEN as sole serialization
+CROSS_PROCESS_SERIALIZATION: REQUIRED
+```
+
+A process-local lock (in-memory mutex, one OS process flock, one CI job step) is **not** sufficient.
+Two one-shot invocations — operator and CI, or two CI runners — must not destructively restore or
+migrate the same recovery target concurrently. Exact atomic create/compare API is implementation
+detail only if it preserves exclusive fail-closed acquisition. If current Spaces capability cannot
+provide exclusive create for the lock marker, implementation must **STOP_ARCHITECTURE_MISMATCH**
+rather than invent a new distributed-lock platform or silently use a process-local lock.
 
 Backup creation with independent immutable run identities may execute separately if it cannot
 overwrite another run.
