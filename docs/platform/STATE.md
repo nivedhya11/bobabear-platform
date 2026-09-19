@@ -2,7 +2,7 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R130",
+  "stateVersion": "STATE-R131",
   "acceptedThrough": "IMP-036G",
   "currentProductSlice": "IMP-037",
   "nextProductSlice": "IMP-038",
@@ -36,15 +36,17 @@ Current Product Implementation: NONE
 Pending Acceptance:             NONE
 Current Product Slice:          IMP-037 — Backup, Restore & Migration Readiness
 Next Product Slice:             IMP-038 — Security & Privacy Hardening
-Current Governance Activity:    IMP-037 Product Definition Gate PASS (GTM-R132 / STATE-R130);
-                              PD-IMP-037-DRAFT-1 APPROVED;
-                              Architecture Fit NOT_PERFORMED;
-                              formal IMP-037 ROADMAP lifecycle remains PLANNED;
+Current Governance Activity:    IMP-037 Product Definition APPROVED / Gate PASS
+                              (GTM-R133 / STATE-R131);
+                              Architecture Fit PASS;
+                              Capability architecture LOCKED;
+                              Implementation NOT_AUTHORIZED / NOT_STARTED;
+                              formal IMP-037 ROADMAP lifecycle ARCHITECTURE_LOCKED;
                               IMP037_ACTIVATED: YES;
                               IMP037_PRODUCT_DEFINITION: APPROVED (PD-IMP-037-DRAFT-1);
                               IMP037_PRODUCT_DEFINITION_GATE: PASS;
-                              IMP037_ARCHITECTURE_FIT: NOT_PERFORMED;
-                              IMP037_ARCHITECTURE_LOCKED: NO;
+                              IMP037_ARCHITECTURE_FIT: PASS;
+                              IMP037_ARCHITECTURE_LOCKED: YES;
                               IMP037_IMPLEMENTATION_AUTHORIZED: NO; IMP037_STARTED: NO;
                               IMP037_ACCEPTED: NO; IMP037_FOUNDER_UAT_REQUIRED: YES;
                               IMP038_ACTIVATED: NO;
@@ -64,12 +66,12 @@ IMP036G_ACTIVATED:        YES
 IMP036G_ACCEPTED:         YES
 IMP036G_FOUNDER_UAT:      PASS
 IMP036G_FORMAL_ACCEPTANCE: ACCEPTED
-IMP-037:                  PLANNED / NOT_AUTHORIZED / NOT_STARTED
+IMP-037:                  ARCHITECTURE_LOCKED / NOT_AUTHORIZED / NOT_STARTED
 IMP037_ACTIVATED:         YES
 IMP037_PRODUCT_DEFINITION: APPROVED
 IMP037_PRODUCT_DEFINITION_GATE: PASS
-IMP037_ARCHITECTURE_FIT:  NOT_PERFORMED
-IMP037_ARCHITECTURE_LOCKED: NO
+IMP037_ARCHITECTURE_FIT:  PASS
+IMP037_ARCHITECTURE_LOCKED: YES
 IMP037_IMPLEMENTATION_AUTHORIZED: NO
 IMP037_STARTED:           NO
 IMP037_ACCEPTED:          NO
@@ -391,15 +393,15 @@ IMP036G_FOUNDER_STAGING_BOOTSTRAP_ACTION: PRESERVE
 IMP036G_FOUNDER_STAGING_RUNNING_SHA: fbf690a67cda51bd6bbc1bad4a9d26f574c4286e
 IMP036G_FOUNDER_STAGING_STATUS: FOUNDER_UAT_COMPLETE
 IMP036G_FOUNDER_STAGING_UAT_ROUTE: /workforce/admin/
-IMP-037: PLANNED / NOT_AUTHORIZED / NOT_STARTED
+IMP-037: ARCHITECTURE_LOCKED / NOT_AUTHORIZED / NOT_STARTED
 IMP037_ACTIVATED: YES
 IMP037_PRODUCT_DEFINITION: APPROVED
 IMP037_PRODUCT_DEFINITION_VERSION: PD-IMP-037-DRAFT-1
 IMP037_PRODUCT_DECISIONS: RESOLVED
 IMP037_PRODUCT_DECISION_COUNT: 7
 IMP037_PRODUCT_DEFINITION_GATE: PASS
-IMP037_ARCHITECTURE_FIT: NOT_PERFORMED
-IMP037_ARCHITECTURE_LOCKED: NO
+IMP037_ARCHITECTURE_FIT: PASS
+IMP037_ARCHITECTURE_LOCKED: YES
 IMP037_IMPLEMENTATION_AUTHORIZED: NO
 IMP037_STARTED: NO
 IMP037_ACCEPTED: NO
@@ -469,7 +471,7 @@ Implementation/review provenance for IMP-036F is recorded in
 
 ## 8. Explicitly Not Yet Accepted
 
-- IMP-037 — Backup, Restore & Migration Readiness (`PLANNED` / `NOT_AUTHORIZED` / `NOT_STARTED`; `IMP037_ACTIVATED: YES`; Product Definition APPROVED / `PD-IMP-037-DRAFT-1`; Gate PASS; Architecture Fit NOT_PERFORMED; architecture NOT_LOCKED; implementation NOT_AUTHORIZED / NOT_STARTED; `IMP037_ACCEPTED: NO`)
+- IMP-037 — Backup, Restore & Migration Readiness (`ARCHITECTURE_LOCKED` / `NOT_AUTHORIZED` / `NOT_STARTED`; `IMP037_ACTIVATED: YES`; Product Definition APPROVED / `PD-IMP-037-DRAFT-1`; Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation NOT_AUTHORIZED / NOT_STARTED; `IMP037_ACCEPTED: NO`)
 - IMP-038 — Security & Privacy Hardening (`PLANNED` / `NOT_ACTIVATED`; `IMP038_ACTIVATED: NO`)
 - IMP-039 — Production Infrastructure & Release Pipeline
 - IMP-040 — Launch Validation & Cutover
@@ -484,6 +486,7 @@ Implementation/review provenance for IMP-036F is recorded in
 | Why / Non-Goals | [`VISION.md`](./VISION.md) |
 | Durable architecture | [`ARCHITECTURE.md`](./ARCHITECTURE.md) |
 | Binding decision status | [`decision-register.md`](./decision-register.md) |
+| IMP-037 locked capability architecture (current product slice) | [`capabilities/IMP-037-backup-restore-migration-readiness.md`](./capabilities/IMP-037-backup-restore-migration-readiness.md) |
 | IMP-036G locked capability architecture (latest accepted) | [`capabilities/IMP-036G-administration-console-v2.md`](./capabilities/IMP-036G-administration-console-v2.md) |
 | IMP-036F locked capability architecture | [`capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md`](./capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md) |
 | IMP-036E locked capability architecture | [`capabilities/IMP-036E-store-operations-management.md`](./capabilities/IMP-036E-store-operations-management.md) |
@@ -491,6 +494,46 @@ Implementation/review provenance for IMP-036F is recorded in
 
 Agents may propose a STATE delta in their report. Only independent acceptance updates this file's
 accepted position and may promote `governanceHealth` to `ALIGNED`.
+
+## 10. STATE-R131 record
+
+```text
+STATE-R131 = IMP-037_ARCHITECTURE_LOCK
+acceptedThrough: IMP-036G
+pendingAcceptance: NONE
+currentProductSlice: IMP-037
+nextProductSlice: IMP-038
+Current Product Implementation: NONE
+Current Governance Activity: IMP-037 Product Definition APPROVED / Gate PASS; Architecture Fit PASS; Capability architecture LOCKED; Implementation NOT_AUTHORIZED / NOT_STARTED
+IMP-036G: COMPLETE_AND_ACCEPTED
+IMP036G_ACCEPTED: YES
+IMP036G_FOUNDER_UAT: PASS
+IMP036G_FORMAL_ACCEPTANCE: ACCEPTED
+IMP-037: ARCHITECTURE_LOCKED / NOT_AUTHORIZED / NOT_STARTED
+IMP037_ACTIVATED: YES
+IMP037_PRODUCT_DEFINITION: APPROVED
+IMP037_PRODUCT_DEFINITION_VERSION: PD-IMP-037-DRAFT-1
+IMP037_PRODUCT_DECISIONS: RESOLVED
+IMP037_PRODUCT_DECISION_COUNT: 7
+IMP037_PRODUCT_DEFINITION_GATE: PASS
+IMP037_ARCHITECTURE_FIT: PASS
+IMP037_ARCHITECTURE_LOCKED: YES
+IMP037_IMPLEMENTATION_AUTHORIZED: NO
+IMP037_STARTED: NO
+IMP037_ACCEPTED: NO
+IMP037_FOUNDER_UAT_REQUIRED: YES
+IMP-038: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
+IMP038_ACTIVATED: NO
+architectureVersion: ARCH-R19
+decisionRegisterVersion: DR-15
+productDeliveryVersion: PD-1
+fitEvaluatedHead: a64ef0eaa65cb5b10add68f7d39c730631246381
+fitEvaluatedTree: 5ddbd8be425d2bdd44fd08fb7d97f40f985649e6
+fitEvaluatedFingerprint: 69a7e7d562b45c30553b3b3d0cd4d608341f43491457b0c8f8470f0e9f993851
+fitDate: 2026-09-19
+fitResult: PASS
+fitExactMainCi: 35423266995
+```
 
 ## 10. STATE-R130 record
 

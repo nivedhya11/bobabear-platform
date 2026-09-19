@@ -131,9 +131,9 @@ IMP036E_LIFECYCLE_CHANGED = NO
 PD1_DID_NOT_ACTIVATE_IMP036F_AT_ADOPTION = YES
 ```
 
-Lifecycle truth remains ROADMAP/STATE only (`GTM-R132` / `STATE-R130`):
+Lifecycle truth remains ROADMAP/STATE only (`GTM-R133` / `STATE-R131`):
 `acceptedThrough = IMP-036G`; `currentProductSlice = IMP-037`
-(`IMP037_ACTIVATED: YES`; formal IMP-037 lifecycle remains PLANNED / NOT_AUTHORIZED / NOT_STARTED);
+(`IMP037_ACTIVATED: YES`; formal IMP-037 lifecycle remains ARCHITECTURE_LOCKED / NOT_AUTHORIZED / NOT_STARTED);
 `nextProductSlice = IMP-038`; **`IMP040_ACTIVATED: NO`**. Presence of this PRE-GATE draft does
 **not** activate IMP-040 and does **not** advance ROADMAP/STATE lifecycle.
 
@@ -147,7 +147,7 @@ Lifecycle truth remains ROADMAP/STATE only (`GTM-R132` / `STATE-R130`):
 | Product Definition version / document status | `PD-IMP-040-DRAFT-1`; **Document status: PRE-GATE DRAFT**; **PRE-GATE DRAFT: YES** |
 | Product owner / approval evidence | Founder. FD-040-01…10 resolved 2026-09-18 via explicit `"proceed"` in response to the exact IMP-040 recommended-refinement approval package. Product Definition Gate **NOT_PERFORMED**. |
 | Process / verification policy | `PD-1` / `TEST-1` |
-| Canonical anchors | VISION-1; ROADMAP GTM-R132; STATE STATE-R130; ARCH-R19; DR-15; PD-1; TEST-1; PERSONA-1; GJ-1 |
+| Canonical anchors | VISION-1; ROADMAP GTM-R133; STATE STATE-R131; ARCH-R19; DR-15; PD-1; TEST-1; PERSONA-1; GJ-1 |
 | Repository candidate | Canonical path `/home/ajoshi/repos/boba-bear-platform`; base `origin/main` `c35c9eab6a30ec6ce745cefd75c523181326f360` / tree `266fe3b07811f6942e76cac155d58ba07daabe56`; draft branch `governance/imp040-pre-gate-product-definition` |
 | Capability lifecycle / authorization | ROADMAP/STATE: IMP-040 remains **PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED**; **IMP040_ACTIVATED: NO**; Product Definition Gate NOT_PERFORMED; Architecture Fit NOT_PERFORMED; architecture NOT_LOCKED; implementation NOT_AUTHORIZED / NOT_STARTED; IMP040_ACCEPTED: NO; GO_DECLARED: NO; PUBLIC_LAUNCH_APPROVED: NO. **currentProductSlice = IMP-037** (`acceptedThrough` IMP-036G; `nextProductSlice` IMP-038). |
 | Relevant capability architecture / ADRs | ADR-002 (Pages transition, rollback, incident); ADR-007 (tax/GST commercial gate); ADR-011 delivery; ADR-012 notifications; IMP-037/038/039 hard prerequisites (future accepted status required before GO — not claimed accepted by this draft); GJ-1 |
@@ -184,8 +184,8 @@ ARCH_R20_REQUIRED: do not create automatically
 | Source | Role | Classification |
 |---|---|---|
 | `docs/platform/VISION.md` VISION-1 | V1 GTM outcome / Non-Goals | VERIFIED |
-| `docs/platform/ROADMAP.md` GTM-R132 | IMP-040 identity; gtmBoundary; PLANNED | VERIFIED |
-| `docs/platform/STATE.md` STATE-R130 | acceptedThrough IMP-036G; currentProductSlice IMP-037 | VERIFIED |
+| `docs/platform/ROADMAP.md` GTM-R133 | IMP-040 identity; gtmBoundary; PLANNED | VERIFIED |
+| `docs/platform/STATE.md` STATE-R131 | acceptedThrough IMP-036G; currentProductSlice IMP-037 | VERIFIED |
 | `docs/platform/PRODUCT-DELIVERY.md` PD-1 | Journey Gap Audit required before public GTM / IMP-040 acceptance | VERIFIED |
 | `docs/platform/TESTING.md` TEST-1 | Evidence policy; no silent-retry-as-pass | VERIFIED |
 | `docs/platform/ARCHITECTURE.md` ARCH-R19 | Deployment model | VERIFIED |
@@ -1322,7 +1322,7 @@ BOUNDARY: live Razorpay + apex DNS = IMP-040 (not IMP-039)
 
 | Capability | CURRENT canonical authority | This PD may claim | This PD must NOT claim |
 |---|---|---|---|
-| IMP-037 | Canonical APPROVED Product Definition exists at [`../IMP-037/product-definition.md`](../IMP-037/product-definition.md) (`PD-IMP-037-DRAFT-1`; Gate PASS; Architecture Fit NOT_PERFORMED) | Hard dependency; Product Definition APPROVED / Gate PASS; Architecture Fit / implementation / acceptance remain outstanding | Must not claim IMP-037 is COMPLETE_AND_ACCEPTED, implemented, Architecture Fit PASS, architecture LOCKED, or implementation-authorized |
+| IMP-037 | Canonical APPROVED Product Definition exists at [`../IMP-037/product-definition.md`](../IMP-037/product-definition.md) (`PD-IMP-037-DRAFT-1`; Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation NOT_AUTHORIZED / NOT_STARTED) | Hard dependency; Product Definition APPROVED / Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation / acceptance remain outstanding | Must not claim IMP-037 is COMPLETE_AND_ACCEPTED, implemented, or implementation-authorized |
 | IMP-038 | No canonical Product Definition on CURRENT main | Hard dependency requirement | Must not claim IMP-038 is COMPLETE_AND_ACCEPTED, Gate PASS, or that hardening is PASS as a present fact |
 | IMP-039 | No canonical Product Definition on CURRENT main | Hard dependency requirement; `prod.thebobabear.in` as Founder-approved **future IMP-039 planning input** | Must not claim IMP-039 is COMPLETE_AND_ACCEPTED or Gate PASS; must not claim production infrastructure currently exists or that `prod.thebobabear.in` is currently deployed |
 
@@ -1460,7 +1460,7 @@ image digest where applicable). See §12.1.
 
 Technical / sequence risks that are **not** open Founder product decisions:
 
-- Sequence not yet at IMP-040; IMP-036G COMPLETE_AND_ACCEPTED; IMP-037 Product Definition APPROVED / Gate PASS with Architecture Fit NOT_PERFORMED; IMP-038/039 not canonical
+- Sequence not yet at IMP-040; IMP-036G COMPLETE_AND_ACCEPTED; IMP-037 Product Definition APPROVED / Gate PASS with Architecture Fit PASS and architecture LOCKED; implementation NOT_AUTHORIZED / NOT_STARTED; IMP-038/039 not canonical
 - Meta WhatsApp production onboarding external
 - Actual GST registration facts + written adviser confirmation (future evidence under approved policy)
 - Exact launch calendar timestamp (later under FD-040-02)
