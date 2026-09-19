@@ -9,9 +9,9 @@
   "lastReviewed": "2026-09-19",
   "productDefinitionGateExecution": "PERFORMED",
   "productDefinitionGateResult": "PASS",
-  "architectureFitExecution": "NOT_PERFORMED",
-  "architectureFit": "NOT_PERFORMED",
-  "architectureLocked": "NO",
+  "architectureFitExecution": "PERFORMED",
+  "architectureFit": "PASS",
+  "architectureLocked": "YES",
   "implementationAuthorized": "NO",
   "implementationStarted": "NO",
   "impAccepted": "NO",
@@ -29,22 +29,23 @@
 ## Product Definition (APPROVED — Product Definition Gate PASS)
 
 ```text
-CURRENT_READ_AMENDMENT (D-374 / ADR-016 / ARCH-R20 — 2026-09-19):
+CURRENT_READ_AMENDMENT (D-374 / ADR-016 / ARCH-R20 — 2026-09-19; Fit lock GTM-R134 / STATE-R132):
   Managed DigitalOcean PostgreSQL hosting and provider-managed PITR are no longer CURRENT
   pilot-production infrastructure authority (HISTORICAL under pre-D-374 ADR-013 only).
-  Product recovery targets remain binding and mechanism-neutral:
+  Product recovery targets remain binding:
     RPO_TARGET <= 15 minutes
     RTO_TARGET <= 2 hours
     independent encrypted logical backup (daily / 35-day retention / off-host)
-  RECOVERY_LAYER_1: PITR-capable continuous recovery
-    Architecture Fit direction under D-374 / ARCH-R20 is self-managed PostgreSQL
-    physical/base backup + continuous WAL archiving to DigitalOcean Spaces + PITR-capable recovery.
-    Exact tooling/layout remains Architecture Fit / not locked by this Product Definition.
-  RECOVERY_LAYER_2: independent encrypted logical backup (pg_dump/pg_restore) remains required.
+  RECOVERY_LAYER_1: PITR-capable continuous recovery — Architecture Fit PASS selected
+    pgBackRest >= 2.55 (AES-256-CBC repo encryption; continuous WAL to Spaces physical bucket).
+  RECOVERY_LAYER_2: independent encrypted logical backup — Architecture Fit PASS selected
+    PostgreSQL 18 pg_dump -Fc + age public-key encryption to separate Spaces logical bucket.
   Product Definition remains APPROVED; Product Definition Gate remains PASS.
-  Architecture Fit remains NOT_PERFORMED and must be performed fresh against ARCH-R20.
-  CURRENT sections below use the same mechanism-neutral Layer 1 / Layer 2 vocabulary;
-  do not treat historical ADR-013 managed-PITR prose as competing CURRENT pilot hosting authority.
+  Architecture Fit = PASS; architecture LOCKED (independent Architecture Fit review PASS).
+  Locked capability architecture:
+    docs/platform/capabilities/IMP-037-backup-restore-migration-readiness.md
+  Founder product decisions / stories / ACs are unchanged by the Fit mechanism selection.
+  Do not treat historical ADR-013 managed-PITR prose or PR #169 as competing CURRENT authority.
 ```
 
 ```text
@@ -59,15 +60,27 @@ VERIFICATION_POLICY: TEST-1
 
 PRODUCT_DEFINITION_GATE_EXECUTION: PERFORMED
 Gate Result: PASS
-ARCHITECTURE_FIT_EXECUTION: NOT_PERFORMED
-ARCHITECTURE_FIT: NOT_PERFORMED
-ARCHITECTURE_LOCKED: NO
+ARCHITECTURE_FIT_EXECUTION: PERFORMED
+ARCHITECTURE_FIT: PASS
+ARCHITECTURE_FIT_RESULT: PASS
+ARCHITECTURE_LOCKED: YES
+IMP037_ARCHITECTURE_LOCKED: YES
 IMP037_ACTIVATED: YES
 IMPLEMENTATION_AUTHORIZED: NO
 IMPLEMENTATION_STARTED: NO
+IMP037_IMPLEMENTATION_AUTHORIZED: NO
+IMP037_STARTED: NO
 IMP037_ACCEPTED: NO
+IMP038_ACTIVATED: NO
 FOUNDER_UAT_REQUIRED: YES
 FOUNDER_UAT_STATUS: NOT_PERFORMED
+INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PASS
+INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_HEAD: d74ca9a30096fb14bca80643b75aa19d33093dde
+INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_TREE: 09c7e3bd6b7832944d07d527c149752ed3bbeb4d
+INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID: 5256273904
+ARCHITECTURE_FIT_EVALUATED_HEAD = 28e6dd15c48b8c19abbc7057c4dc7e0a7d7cc7ea
+ARCHITECTURE_FIT_EVALUATED_TREE = 5792c963166e8589751d2ba8c8928728e2c83526
+ARCHITECTURE_FIT_EVALUATED_WORKING_TREE_FINGERPRINT = 56fa9b5459fd8acceb2ccc3ab73c5d7d9583dbf4539b10a1ef75553dd5aff8ba
 
 PRODUCT_DECISIONS: 7
 UNRESOLVED_PRODUCT_DECISIONS: 0
@@ -76,9 +89,11 @@ UNRESOLVED_PRODUCT_DECISIONS: 0
 This artifact is the **gate-passed Product Definition** for candidate `PD-IMP-037-DRAFT-1`.
 Product Definition Gate = PASS (2026-09-19; Founder / product governance human authority after
 independent pre-gate review PASS). It persists Founder-approved product requirements for IMP-037
-(`APPROVE_ALL_7_RECOMMENDATIONS`, 2026-09-17). Architecture Fit, architecture lock, and
-implementation authorization remain **NOT_PERFORMED** / **NO**. The later gate-persistence
-commit is **not** the evaluated artifact (`gate-persistence commit != gate-evaluated candidate`).
+(`APPROVE_ALL_7_RECOMMENDATIONS`, 2026-09-17). Architecture Fit is **PASS** and architecture is **LOCKED** (independent Architecture Fit review PASS).
+Implementation authorization remains **NO**. The later gate-persistence commit is **not** the
+gate-evaluated artifact (`gate-persistence commit != gate-evaluated candidate`). The later
+architecture-lock persistence commit is **not** the Fit-evaluated candidate
+(`architecture-lock persistence commit != Architecture Fit evaluated candidate`).
 
 ```text
 PRODUCT REQUIREMENT
@@ -86,7 +101,7 @@ PRODUCT REQUIREMENT
 
 ARCHITECTURE MECHANISM
   = how Fit/implementation satisfies those requirements within ADR-001 / ADR-002 /
-    ADR-013 / ADR-015 / ARCH-R19
+    ADR-013 / ADR-015 / ADR-016 / D-374 / ARCH-R20
 
 This Product Definition defines PRODUCT REQUIREMENTS only.
 It does not invent or lock Architecture Fit mechanisms.
@@ -99,14 +114,15 @@ IMP036E_LIFECYCLE_CHANGED = NO
 PD1_DID_NOT_ACTIVATE_IMP036F_AT_ADOPTION = YES
 ```
 
-Lifecycle truth remains ROADMAP/STATE only (CURRENT after D-374: `GTM-R133` / `STATE-R131`;
-Product Definition Gate PASS provenance remains GTM-R132 / STATE-R130):
+Lifecycle truth remains ROADMAP/STATE only (CURRENT: `GTM-R134` / `STATE-R132`;
+Product Definition Gate PASS provenance remains GTM-R132 / STATE-R130; D-374 provenance GTM-R133 /
+STATE-R131):
 `acceptedThrough = IMP-036G`; `currentProductSlice = IMP-037`; `pendingAcceptance = NONE`;
 `nextProductSlice = IMP-038` (`PLANNED` / `NOT_ACTIVATED` / `NOT_AUTHORIZED` / `NOT_STARTED`;
-`IMP038_ACTIVATED: NO`). Formal IMP-037 lifecycle remains `PLANNED` /
+`IMP038_ACTIVATED: NO`). Formal IMP-037 lifecycle is `ARCHITECTURE_LOCKED` /
 `NOT_AUTHORIZED` / `NOT_STARTED` with `IMP037_ACTIVATED: YES`. Product Definition is
-**APPROVED** (`Gate PASS`; Architecture Fit NOT_PERFORMED / reopened under D-374; architecture
-NOT_LOCKED; implementation NOT_AUTHORIZED / NOT_STARTED).
+**APPROVED** (`Gate PASS`; Architecture Fit PASS; architecture LOCKED; implementation
+NOT_AUTHORIZED / NOT_STARTED; independent Architecture Fit review PASS).
 
 ---
 
@@ -118,9 +134,9 @@ NOT_LOCKED; implementation NOT_AUTHORIZED / NOT_STARTED).
 | Product Definition version / document status | `PD-IMP-037-DRAFT-1`; **Document status: APPROVED**; **PRE-GATE DRAFT: NO** |
 | Product owner / approval evidence | Founder / product governance human authority; Founder decisions FD-037-01…07 **APPROVED** via `APPROVE_ALL_7_RECOMMENDATIONS` (2026-09-17). Product Definition Gate **PASS** on 2026-09-19 after independent pre-gate review **PASS** of exact candidate head `fccdf7ef606ca906bcdcd706a6de97f693bb88b4` / tree `1477d12b5c5b3b0ccb8d488757516d5b6e637674` (gate-persistence commit is a subsequent revision and is **not** the evaluated artifact). |
 | Process / verification policy | `PD-1` / `TEST-1` |
-| Canonical anchors | VISION-1; ROADMAP GTM-R133 (CURRENT; D-374); STATE STATE-R131 (CURRENT); ARCH-R20; DR-16; PD-1; TEST-1; PERSONA-1; GJ-1. Gate PASS provenance remains GTM-R132 / STATE-R130 / ARCH-R19 / DR-15 for the evaluated candidate. |
+| Canonical anchors | VISION-1; ROADMAP GTM-R134 (CURRENT; IMP-037 Architecture Lock); STATE STATE-R132 (CURRENT); ARCH-R20; DR-16; PD-1; TEST-1; PERSONA-1; GJ-1. Locked capability: `capabilities/IMP-037-backup-restore-migration-readiness.md`. Gate PASS provenance remains GTM-R132 / STATE-R130 for the evaluated PD candidate. |
 | Repository candidate | Gate-evaluated candidate: canonical path `/home/ajoshi/repos/boba-bear-platform`; branch `main`; **GATE_EVALUATED_HEAD** `fccdf7ef606ca906bcdcd706a6de97f693bb88b4`; **GATE_EVALUATED_TREE** `1477d12b5c5b3b0ccb8d488757516d5b6e637674`; **GATE_EVALUATED_PRODUCT_DEFINITION_BLOB** `eb792d02dbfede862a0bb104a754d14d875141aa`; **GATE_EVALUATED_WORKING_TREE_FINGERPRINT** `9be2a43fe3881ccd28f169f60209cef3c78c991524e5e9d34a8b657e1b1f0c19` (content-sensitive; reconstructed from clean exact gate-evaluated HEAD/tree via `npm run working-tree:fingerprint`). Historical draft-creation provenance (not the gate-evaluated candidate): base `origin/main` `ee82a8cb783cc618f6f1f521964e72deaad677a0` / tree `1b1eaf138667e65bf4573988d62e176bb8be5949`; draft branch `governance/imp037-pre-gate-product-definition`. Historical pre-activation base: GTM-R130 / STATE-R128 (`6b1f2344d0184e29403b99adfea85c2e5dc8bf9a` / tree `5471ea8f72c635a365e9a78ea1394ec212dcad69`). Activation result: GTM-R131 / STATE-R129. Later merged activated main / Product Definition gate-evaluated candidate: `fccdf7ef606ca906bcdcd706a6de97f693bb88b4` / tree `1477d12b5c5b3b0ccb8d488757516d5b6e637674`. CURRENT_PR_HEAD / GATE_PERSISTENCE_COMMITS differ from the gate-evaluated candidate (`gate-persistence commit != gate-evaluated candidate`) and are **not** the artifact that received Gate PASS. |
-| Capability lifecycle / authorization | ROADMAP/STATE: `currentProductSlice = IMP-037`; **IMP037_ACTIVATED: YES**; formal lifecycle `PLANNED / NOT_AUTHORIZED / NOT_STARTED`; Product Definition APPROVED; Product Definition Gate PASS; Architecture Fit NOT_PERFORMED (reopened by D-374 / ARCH-R20); architecture NOT_LOCKED; implementation NOT_AUTHORIZED / NOT_STARTED; IMP037_ACCEPTED: NO. `nextProductSlice = IMP-038` (`IMP038_ACTIVATED: NO`). `acceptedThrough` remains IMP-036G. |
+| Capability lifecycle / authorization | ROADMAP/STATE: `currentProductSlice = IMP-037`; **IMP037_ACTIVATED: YES**; formal lifecycle `ARCHITECTURE_LOCKED / NOT_AUTHORIZED / NOT_STARTED`; Product Definition APPROVED; Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation NOT_AUTHORIZED / NOT_STARTED; IMP037_ACCEPTED: NO; independent Architecture Fit review PASS. `nextProductSlice = IMP-038` (`IMP038_ACTIVATED: NO`). `acceptedThrough` remains IMP-036G. |
 | Relevant capability architecture / ADRs | ADR-001 (AMENDED by D-374 for pilot hosting); ADR-002 (AMENDED by D-374 for pilot production/staging target); ADR-013 (PostgreSQL 18 / Drizzle / migrations preserved; Managed PostgreSQL hosting + provider PITR amended by D-374); ADR-015 (AMENDED by D-374 for pilot secrets storage); ADR-016 / D-374 CURRENT pilot topology; ARCH-R20. Persistence application semantics are **not** reopened; pilot hosting/recovery Fit is. |
 | Founder UAT applicability | `FOUNDER_UAT_REQUIRED = YES`; `FOUNDER_UAT_STATUS = NOT_PERFORMED` — launch-critical, high-consequence recovery capability. UAT must use isolated recovery rehearsal of the exact candidate; **never** the active production/source DB as drill target. |
 
@@ -137,14 +153,15 @@ PRODUCT_DECISION_REQUIRED
 UNRESOLVED_DECISION_REQUIRED
 ```
 
-Architecture Fit hypotheses only (not locked):
+Architecture Fit conclusions (LOCKED against ARCH-R20 / D-374; independent Architecture Fit review PASS):
 
 ```text
-NEW_SERVICE: likely NO
-NEW_APP_ROLE: likely NO
-NEW_PERMISSION: likely NO
-D374_REQUIRED_FOR_LOCK: do not create automatically
-ARCH_R20_REQUIRED: do not create automatically
+NEW_SERVICE: NO
+NEW_APP_ROLE: NO
+NEW_PERMISSION: NO
+D375_REQUIRED_FOR_LOCK: NO
+ARCH_R21_REQUIRED: NO
+FITS_WITHIN_ARCH_R20: YES
 ```
 
 ---
@@ -201,7 +218,7 @@ No new persona is created.
 
 | Journey ID / evidence | Entry / preconditions | Activities today | Existing outcome / gap |
 |---|---|---|---|
-| PITR-capable continuous recovery layer (Layer 1) | self-hosted PostgreSQL 18 under D-374 / ARCH-R20 | Required recovery layer is `PLANNED_IMP037` / `ARCHITECTURE_FIT_REQUIRED`; exact self-managed physical/base + continuous WAL mechanism awaits fresh Architecture Fit | Managed-provider PITR is **HISTORICAL** / no longer CURRENT after D-374; Layer 1 is **not** `CURRENT_SUPPORTED` until Architecture Fit selects and proves a self-managed PITR-capable mechanism |
+| PITR-capable continuous recovery layer (Layer 1) | self-hosted PostgreSQL 18 under D-374 / ARCH-R20 | Architecture Fit PASS selected **pgBackRest >= 2.55** (Spaces physical repo; continuous WAL; AES-256-CBC). Product targets remain obligations requiring drill evidence (`RPO_RTO_PROVEN: NO`) | Managed-provider PITR is **HISTORICAL** / no longer CURRENT after D-374; PR #169 NON_AUTHORITATIVE |
 | Independent logical backup (ADR-013 second layer) | Required before broad public launch | Exact schedule/retention were open pending Founder decision; tooling path incomplete | `PLANNED_IMP037` — FD-037-03 now sets daily / 35-day product policy |
 | Staging DB volume repair command | Staging container/bind-mount failure | Repair preserving existing volume | **Not** data-loss recovery evidence |
 | High-risk migration prerequisites (ADR-013) | Before high-risk persistence change | Verify PITR-capable recovery-layer health; recovery point; independent backup evidence; storage; recovery steps / rehearsal | Procedure authority exists; productized readiness gate / rehearsal evidence `PLANNED_IMP037` |
@@ -288,13 +305,13 @@ Business rules: See §11 (applicable BR-IMP-037-* invariants)
 UX states: CLI/operator tooling state matrix §13 (Ready / Running / Succeeded / Failed / NOT_READY / BLOCKED)
 Permission / resource context: Infrastructure/operator trusted execution authority — Architecture Fit; PERSONA ≠ ROLE ≠ PERMISSION ≠ AUTHORIZATION; no new app role/permission invented by this PD
 Error / recovery: Explicit FAILED / NOT_READY / BLOCKED; interrupted ops never SUCCEEDED; findings preserved (BR-IMP-037-020)
-Dependencies: ADR-001 / ADR-002 / ADR-013 / ADR-015 / ARCH-R19 / TEST-1; IMP-039/040 boundary for production realization/cutover
+Dependencies: ADR-001 / ADR-002 / ADR-013 / ADR-015 / ADR-016 / D-374 / ARCH-R20 / TEST-1; IMP-039/040 boundary for production realization/cutover
 Explicit non-goals: See §15 / §24
 Data implications: Authoritative PostgreSQL state including current signed-artifact bytes; no invented object-store recovery for CURRENT statutory artifacts
 Security implications: Encrypted independent backups; secret-safe evidence; provider side-effect suppression; production-classified restore protection
 Architecture fit / applicable invariants: ADR-013 backup/restore layers; direct DB connections for backup/restore; Fit questions §16 remain open (mechanisms)
 Open material decisions: NONE (FD-037-01…07 APPROVED)
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate PASS; Architecture Fit NOT_PERFORMED; architecture not locked; implementation not authorized)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation not authorized)
 ```
 
 #### Acceptance scenarios
@@ -359,13 +376,13 @@ Business rules: See §11 (applicable BR-IMP-037-* invariants)
 UX states: CLI/operator tooling state matrix §13 (Ready / Running / Succeeded / Failed / NOT_READY / BLOCKED)
 Permission / resource context: Infrastructure/operator trusted execution authority — Architecture Fit; PERSONA ≠ ROLE ≠ PERMISSION ≠ AUTHORIZATION; no new app role/permission invented by this PD
 Error / recovery: Explicit FAILED / NOT_READY / BLOCKED; interrupted ops never SUCCEEDED; findings preserved (BR-IMP-037-020)
-Dependencies: ADR-001 / ADR-002 / ADR-013 / ADR-015 / ARCH-R19 / TEST-1; IMP-039/040 boundary for production realization/cutover
+Dependencies: ADR-001 / ADR-002 / ADR-013 / ADR-015 / ADR-016 / D-374 / ARCH-R20 / TEST-1; IMP-039/040 boundary for production realization/cutover
 Explicit non-goals: See §15 / §24
 Data implications: Authoritative PostgreSQL state including current signed-artifact bytes; no invented object-store recovery for CURRENT statutory artifacts
 Security implications: Encrypted independent backups; secret-safe evidence; provider side-effect suppression; production-classified restore protection
 Architecture fit / applicable invariants: ADR-013 backup/restore layers; direct DB connections for backup/restore; Fit questions §16 remain open (mechanisms)
 Open material decisions: NONE (FD-037-01…07 APPROVED)
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate PASS; Architecture Fit NOT_PERFORMED; architecture not locked; implementation not authorized)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation not authorized)
 ```
 
 #### Acceptance scenarios
@@ -445,13 +462,13 @@ Business rules: See §11 (applicable BR-IMP-037-* invariants)
 UX states: CLI/operator tooling state matrix §13 (Ready / Running / Succeeded / Failed / NOT_READY / BLOCKED)
 Permission / resource context: Infrastructure/operator trusted execution authority — Architecture Fit; PERSONA ≠ ROLE ≠ PERMISSION ≠ AUTHORIZATION; no new app role/permission invented by this PD
 Error / recovery: Explicit FAILED / NOT_READY / BLOCKED; interrupted ops never SUCCEEDED; findings preserved (BR-IMP-037-020)
-Dependencies: ADR-001 / ADR-002 / ADR-013 / ADR-015 / ARCH-R19 / TEST-1; IMP-039/040 boundary for production realization/cutover
+Dependencies: ADR-001 / ADR-002 / ADR-013 / ADR-015 / ADR-016 / D-374 / ARCH-R20 / TEST-1; IMP-039/040 boundary for production realization/cutover
 Explicit non-goals: See §15 / §24
 Data implications: Authoritative PostgreSQL state including current signed-artifact bytes; no invented object-store recovery for CURRENT statutory artifacts
 Security implications: Encrypted independent backups; secret-safe evidence; provider side-effect suppression; production-classified restore protection
 Architecture fit / applicable invariants: ADR-013 backup/restore layers; direct DB connections for backup/restore; Fit questions §16 remain open (mechanisms)
 Open material decisions: NONE (FD-037-01…07 APPROVED)
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate PASS; Architecture Fit NOT_PERFORMED; architecture not locked; implementation not authorized)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation not authorized)
 ```
 
 #### Acceptance scenarios
@@ -531,13 +548,13 @@ Business rules: See §11 (applicable BR-IMP-037-* invariants)
 UX states: CLI/operator tooling state matrix §13 (Ready / Running / Succeeded / Failed / NOT_READY / BLOCKED)
 Permission / resource context: Infrastructure/operator trusted execution authority — Architecture Fit; PERSONA ≠ ROLE ≠ PERMISSION ≠ AUTHORIZATION; no new app role/permission invented by this PD
 Error / recovery: Explicit FAILED / NOT_READY / BLOCKED; interrupted ops never SUCCEEDED; findings preserved (BR-IMP-037-020)
-Dependencies: ADR-001 / ADR-002 / ADR-013 / ADR-015 / ARCH-R19 / TEST-1; IMP-039/040 boundary for production realization/cutover
+Dependencies: ADR-001 / ADR-002 / ADR-013 / ADR-015 / ADR-016 / D-374 / ARCH-R20 / TEST-1; IMP-039/040 boundary for production realization/cutover
 Explicit non-goals: See §15 / §24
 Data implications: Authoritative PostgreSQL state including current signed-artifact bytes; no invented object-store recovery for CURRENT statutory artifacts
 Security implications: Encrypted independent backups; secret-safe evidence; provider side-effect suppression; production-classified restore protection
 Architecture fit / applicable invariants: ADR-013 backup/restore layers; direct DB connections for backup/restore; Fit questions §16 remain open (mechanisms)
 Open material decisions: NONE (FD-037-01…07 APPROVED)
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate PASS; Architecture Fit NOT_PERFORMED; architecture not locked; implementation not authorized)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation not authorized)
 ```
 
 #### Acceptance scenarios
@@ -618,13 +635,13 @@ Business rules: See §11 (applicable BR-IMP-037-* invariants)
 UX states: CLI/operator tooling state matrix §13 (Ready / Running / Succeeded / Failed / NOT_READY / BLOCKED)
 Permission / resource context: Infrastructure/operator trusted execution authority — Architecture Fit; PERSONA ≠ ROLE ≠ PERMISSION ≠ AUTHORIZATION; no new app role/permission invented by this PD
 Error / recovery: Explicit FAILED / NOT_READY / BLOCKED; interrupted ops never SUCCEEDED; findings preserved (BR-IMP-037-020)
-Dependencies: ADR-001 / ADR-002 / ADR-013 / ADR-015 / ARCH-R19 / TEST-1; IMP-039/040 boundary for production realization/cutover
+Dependencies: ADR-001 / ADR-002 / ADR-013 / ADR-015 / ADR-016 / D-374 / ARCH-R20 / TEST-1; IMP-039/040 boundary for production realization/cutover
 Explicit non-goals: See §15 / §24
 Data implications: Authoritative PostgreSQL state including current signed-artifact bytes; no invented object-store recovery for CURRENT statutory artifacts
 Security implications: Encrypted independent backups; secret-safe evidence; provider side-effect suppression; production-classified restore protection
 Architecture fit / applicable invariants: ADR-013 backup/restore layers; direct DB connections for backup/restore; Fit questions §16 remain open (mechanisms)
 Open material decisions: NONE (FD-037-01…07 APPROVED)
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate PASS; Architecture Fit NOT_PERFORMED; architecture not locked; implementation not authorized)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation not authorized)
 ```
 
 #### Acceptance scenarios
@@ -693,13 +710,13 @@ Business rules: See §11 (applicable BR-IMP-037-* invariants)
 UX states: CLI/operator tooling state matrix §13 (Ready / Running / Succeeded / Failed / NOT_READY / BLOCKED)
 Permission / resource context: Infrastructure/operator trusted execution authority — Architecture Fit; PERSONA ≠ ROLE ≠ PERMISSION ≠ AUTHORIZATION; no new app role/permission invented by this PD
 Error / recovery: Explicit FAILED / NOT_READY / BLOCKED; interrupted ops never SUCCEEDED; findings preserved (BR-IMP-037-020)
-Dependencies: ADR-001 / ADR-002 / ADR-013 / ADR-015 / ARCH-R19 / TEST-1; IMP-039/040 boundary for production realization/cutover
+Dependencies: ADR-001 / ADR-002 / ADR-013 / ADR-015 / ADR-016 / D-374 / ARCH-R20 / TEST-1; IMP-039/040 boundary for production realization/cutover
 Explicit non-goals: See §15 / §24
 Data implications: Authoritative PostgreSQL state including current signed-artifact bytes; no invented object-store recovery for CURRENT statutory artifacts
 Security implications: Encrypted independent backups; secret-safe evidence; provider side-effect suppression; production-classified restore protection
 Architecture fit / applicable invariants: ADR-013 backup/restore layers; direct DB connections for backup/restore; Fit questions §16 remain open (mechanisms)
 Open material decisions: NONE (FD-037-01…07 APPROVED)
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate PASS; Architecture Fit NOT_PERFORMED; architecture not locked; implementation not authorized)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation not authorized)
 ```
 
 #### Acceptance scenarios
@@ -766,13 +783,13 @@ Business rules: See §11 (applicable BR-IMP-037-* invariants)
 UX states: CLI/operator tooling state matrix §13 (Ready / Running / Succeeded / Failed / NOT_READY / BLOCKED)
 Permission / resource context: Infrastructure/operator trusted execution authority — Architecture Fit; PERSONA ≠ ROLE ≠ PERMISSION ≠ AUTHORIZATION; no new app role/permission invented by this PD
 Error / recovery: Explicit FAILED / NOT_READY / BLOCKED; interrupted ops never SUCCEEDED; findings preserved (BR-IMP-037-020)
-Dependencies: ADR-001 / ADR-002 / ADR-013 / ADR-015 / ARCH-R19 / TEST-1; IMP-039/040 boundary for production realization/cutover
+Dependencies: ADR-001 / ADR-002 / ADR-013 / ADR-015 / ADR-016 / D-374 / ARCH-R20 / TEST-1; IMP-039/040 boundary for production realization/cutover
 Explicit non-goals: See §15 / §24
 Data implications: Authoritative PostgreSQL state including current signed-artifact bytes; no invented object-store recovery for CURRENT statutory artifacts
 Security implications: Encrypted independent backups; secret-safe evidence; provider side-effect suppression; production-classified restore protection
 Architecture fit / applicable invariants: ADR-013 backup/restore layers; direct DB connections for backup/restore; Fit questions §16 remain open (mechanisms)
 Open material decisions: NONE (FD-037-01…07 APPROVED)
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate PASS; Architecture Fit NOT_PERFORMED; architecture not locked; implementation not authorized)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation not authorized)
 ```
 
 #### Acceptance scenarios
@@ -839,13 +856,13 @@ Business rules: See §11 (applicable BR-IMP-037-* invariants)
 UX states: CLI/operator tooling state matrix §13 (Ready / Running / Succeeded / Failed / NOT_READY / BLOCKED)
 Permission / resource context: Infrastructure/operator trusted execution authority — Architecture Fit; PERSONA ≠ ROLE ≠ PERMISSION ≠ AUTHORIZATION; no new app role/permission invented by this PD
 Error / recovery: Explicit FAILED / NOT_READY / BLOCKED; interrupted ops never SUCCEEDED; findings preserved (BR-IMP-037-020)
-Dependencies: ADR-001 / ADR-002 / ADR-013 / ADR-015 / ARCH-R19 / TEST-1; IMP-039/040 boundary for production realization/cutover
+Dependencies: ADR-001 / ADR-002 / ADR-013 / ADR-015 / ADR-016 / D-374 / ARCH-R20 / TEST-1; IMP-039/040 boundary for production realization/cutover
 Explicit non-goals: See §15 / §24
 Data implications: Authoritative PostgreSQL state including current signed-artifact bytes; no invented object-store recovery for CURRENT statutory artifacts
 Security implications: Encrypted independent backups; secret-safe evidence; provider side-effect suppression; production-classified restore protection
 Architecture fit / applicable invariants: ADR-013 backup/restore layers; direct DB connections for backup/restore; Fit questions §16 remain open (mechanisms)
 Open material decisions: NONE (FD-037-01…07 APPROVED)
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate PASS; Architecture Fit NOT_PERFORMED; architecture not locked; implementation not authorized)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation not authorized)
 ```
 
 #### Acceptance scenarios
@@ -1174,10 +1191,10 @@ IMP-037 does **not** invent a new customer Golden Journey.
 
 | Dependency | Authority / verified state | Required before which story or gate? | Unresolved impact |
 |---|---|---|---|
-| ADR-001 / ADR-002 / ADR-013 / ADR-015 / ARCH-R19 | CURRENT accepted | All IMP-037 stories | NONE for product decisions |
-| IMP-036G completion / sequencing | IMP-036G `COMPLETE_AND_ACCEPTED`; IMP-037 activation satisfied (`currentProductSlice = IMP-037`; `IMP037_ACTIVATED: YES`) | SATISFIED — no remaining sequencing blocker | NONE for activation sequencing; Product Definition Gate PASS / SATISFIED; Architecture Fit remains NOT_PERFORMED; implementation remains NOT_AUTHORIZED / NOT_STARTED |
-| Product Definition Gate | PASS / SATISFIED | Satisfied before Architecture Fit | NONE — gate complete; Architecture Fit remains required before architecture lock / implementation authorization |
-| Architecture Fit | NOT_PERFORMED | required before architecture lock / implementation authorization | Mechanisms unresolved (see §16 Fit inputs); Product Definition Gate PASS / SATISFIED |
+| ADR-001 / ADR-002 / ADR-013 / ADR-015 / ADR-016 / D-374 / ARCH-R20 | CURRENT accepted | All IMP-037 stories | NONE for product decisions |
+| IMP-036G completion / sequencing | IMP-036G `COMPLETE_AND_ACCEPTED`; IMP-037 activation satisfied (`currentProductSlice = IMP-037`; `IMP037_ACTIVATED: YES`) | SATISFIED — no remaining sequencing blocker | NONE for activation sequencing; Product Definition Gate PASS / SATISFIED; Architecture Fit PASS; architecture LOCKED; implementation remains NOT_AUTHORIZED / NOT_STARTED |
+| Product Definition Gate | PASS / SATISFIED | Satisfied before Architecture Fit | NONE — gate complete; Architecture Fit PASS / architecture LOCKED; implementation authorization remains separate and NOT_GRANTED |
+| Architecture Fit / lock | PASS / LOCKED (independent Architecture Fit review PASS) | Satisfied before implementation authorization | NONE for Fit/lock — implementation authorization remains separate and NOT_GRANTED |
 | IMP-039 | ROADMAP future | Production scheduler/HA/credentials realization | Not required for IMP-037 acceptance |
 | IMP-040 | ROADMAP future | Live launch/cutover | Not required for IMP-037 acceptance |
 | IMP-038 privacy/retention | Future | Broader retention policy | Backup retention ≠ statutory retention |
@@ -1194,9 +1211,10 @@ IMP-037 does **not** invent a new customer Golden Journey.
 | Staging volume-repair command | CURRENT — **not** data-loss recovery proof | Problem statement |
 | Independent logical backup + restore drill + validation + portability + high-risk gate + runbook | **PLANNED_IMP037** V1 acceptance commitment (this PD) | US-IMP-037-001…008 |
 
-Proposed IMP-037 behaviour has Product Definition Gate **PASS**. Behaviour remains unaccepted and
-unimplemented pending Architecture Fit / lock, implementation authorization, IMPLEMENT / PROVE,
-independent review, Founder UAT, and formal acceptance.
+Proposed IMP-037 behaviour has Product Definition Gate **PASS** and Architecture Fit **PASS**
+(architecture LOCKED; independent Architecture Fit review PASS). Behaviour remains unaccepted and
+unimplemented pending implementation authorization, IMPLEMENT / PROVE, independent
+implementation review, Founder UAT, and formal acceptance.
 
 ---
 
@@ -1231,7 +1249,7 @@ independent review, Founder UAT, and formal acceptance.
 
 | `UNRESOLVED_DECISION_REQUIRED` item | Material user/business impact | Decision owner / evidence needed | Affected stories / gate |
 |---|---|---|---|
-| NONE | Founder product decisions FD-037-01…07 are APPROVED; `UNRESOLVED_PRODUCT_DECISIONS = 0` | N/A | Product-decision prerequisite SATISFIED; Architecture Fit is next |
+| NONE | Founder product decisions FD-037-01…07 are APPROVED; `UNRESOLVED_PRODUCT_DECISIONS = 0` | N/A | Product-decision prerequisite SATISFIED; Architecture Fit PASS / architecture LOCKED; next gate = independent architecture review then implementation authorization |
 
 ### Founder decisions (APPROVED) — product requirements
 
@@ -1290,36 +1308,35 @@ RTO timing includes required application/business-integrity validation
   (not merely PostgreSQL availability)
 ```
 
-### Architecture Fit inputs (unresolved **technical** questions — not product decisions)
+### Architecture Fit inputs (RESOLVED by locked capability architecture — not product decisions)
+
+Architecture Fit against ARCH-R20 / D-374 is **PASS**. Locked mechanism selections live in
+[`docs/platform/capabilities/IMP-037-backup-restore-migration-readiness.md`](../../capabilities/IMP-037-backup-restore-migration-readiness.md).
+The following were Fit inputs; they are no longer unresolved product or Fit blockers. Bounded
+engineering detail remains implementation-deferred inside that lock:
 
 ```text
-backup execution location
-restricted direct DB credential model
-logical backup encryption implementation
-Spaces integration
-local/CI/staging validation substitute
-artifact identity/checksum
-backup finalization lifecycle
-restore target safety mechanism
-source-target identity protection
-provider-side-effect suppression
-post-restore migration compatibility
-critical-state verification implementation
-signed-artifact verification mechanism
-backup observability/status mechanism
-production scheduling boundary
-retention-enforcement mechanism
-parallel-run serialization
-safe evidence format
-schema-change requirement
-new-service requirement
-application RBAC requirement
-D-374 requirement
-ARCH-R20 requirement
+backup execution location → one-shot tooling + host systemd timers / Compose (locked)
+restricted direct DB credential model → capability-scoped read-only logical-backup role (locked; grants deferred)
+logical backup encryption implementation → age public-key (locked)
+Spaces integration → two private buckets; no distributed mutex (locked)
+local/CI/staging validation substitute → synthetic/disposable + provider integration + Founder drill tiers (locked)
+artifact identity/checksum → RUN_ID + SHA-256 + COMPLETE-last (locked)
+backup finalization lifecycle → COMPLETE marker last (locked)
+restore target safety mechanism → fresh unique targets; RESTORE_TO_ACTIVE_SOURCE FORBIDDEN (locked)
+source-target identity protection → fail-closed (locked)
+provider-side-effect suppression → fail-closed isolated network (locked)
+post-restore migration compatibility → ADR-002/013 forward-only; Layer 2 portability (locked)
+critical-state verification / signed-artifact / observability → evidence obligations (locked; syntax deferred)
+production scheduling boundary → host timers; no always-on backup service (locked)
+retention-enforcement mechanism → Layer 1 pgBackRest-owned; Layer 2 age-based 35-day rolling COMPLETE runs (locked)
+parallel-run serialization → host-local flock for scheduled/heavy ops; WAL not blocked (locked)
+schema-change / new-service / application RBAC → NO (locked)
+D-374 / ARCH-R20 → already CURRENT; D375/ARCH-R21 not required (locked)
 ```
 
-Architecture Fit must reverify current DigitalOcean/PostgreSQL capabilities from official sources
-before implementation-pinning provider syntax. Do not create D-374 / ARCH-R20 automatically.
+Do not create D-375 / ARCH-R21 merely to document IMP-037 details. Implementation details remain
+deferred without reopening product decisions.
 
 ---
 
@@ -1327,7 +1344,7 @@ before implementation-pinning provider syntax. Do not create D-374 / ARCH-R20 au
 
 | Story ID | Applicable fields complete / evidence | Open material decisions | Readiness / blocker |
 |---|---|---|---|
-| `US-IMP-037-001` | Complete in §9 | NONE | Product Definition Gate PASS; NOT_READY_FOR_IMPLEMENTATION because Architecture Fit/lock and implementation authorization remain pending |
+| `US-IMP-037-001` | Complete in §9 | NONE | Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; NOT_READY_FOR_IMPLEMENTATION because implementation authorization remains pending |
 | `US-IMP-037-002` | Complete in §9 | NONE | Same |
 | `US-IMP-037-003` | Complete in §9 | NONE | Same |
 | `US-IMP-037-004` | Complete in §9 | NONE | Same |
@@ -1362,7 +1379,7 @@ Accessibility Considered: YES (docs/reports; responsive N/A with rationale)
 Golden Journeys Identified: YES (protect GJ-FIRST-ORDER / GJ-PERMITTED-OUTLET-ACCESS / GJ-PAYMENT-RECOVERY)
 Explicit Deferrals Recorded: YES (§23–24)
 Unresolved Product Decisions: 0
-Architecture Conflicts: NONE identified against ADR-001/002/013/015 / ARCH-R19 for product requirements
+Architecture Conflicts: NONE identified against ADR-001/002/013/015/016 / D-374 / ARCH-R20 for product requirements
 PRODUCT_DEFINITION_GATE_EXECUTION: PERFORMED
 Gate Result: PASS
 ```
@@ -1465,15 +1482,26 @@ UNRESOLVED_PRODUCT_DECISIONS: 0
 PRODUCT_DEFINITION_GATE_EXECUTION: PERFORMED
 Gate Result: PASS
 PRODUCT_DEFINITION: APPROVED
-ARCHITECTURE_FIT: NOT_PERFORMED
-ARCHITECTURE_LOCKED: NO
+ARCHITECTURE_FIT_EXECUTION: PERFORMED
+ARCHITECTURE_FIT: PASS
+ARCHITECTURE_FIT_RESULT: PASS
+ARCHITECTURE_LOCKED: YES
+IMP037_ARCHITECTURE_LOCKED: YES
 IMP037_ACTIVATED: YES
 IMPLEMENTATION_AUTHORIZED: NO
 IMPLEMENTATION_STARTED: NO
+IMP037_IMPLEMENTATION_AUTHORIZED: NO
+IMP037_STARTED: NO
 IMP037_ACCEPTED: NO
+IMP038_ACTIVATED: NO
+INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PASS
+INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_HEAD: d74ca9a30096fb14bca80643b75aa19d33093dde
+INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_TREE: 09c7e3bd6b7832944d07d527c149752ed3bbeb4d
+INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID: 5256273904
 ```
 
-Next phase: **ARCHITECTURE_FIT**. `currentProductSlice = IMP-037` (`IMP037_ACTIVATED: YES`;
-`acceptedThrough` IMP-036G; formal lifecycle PLANNED / NOT_AUTHORIZED / NOT_STARTED).
-Product Definition Gate = PASS; Architecture Fit NOT_PERFORMED; architecture NOT_LOCKED;
-implementation NOT_AUTHORIZED / NOT_STARTED.
+Next phase: **Founder R3 merge authorization** (independent Architecture Fit review already PASS).
+`currentProductSlice = IMP-037` (`IMP037_ACTIVATED: YES`; `acceptedThrough` IMP-036G; formal
+lifecycle ARCHITECTURE_LOCKED / NOT_AUTHORIZED / NOT_STARTED).
+Product Definition Gate = PASS; Architecture Fit PASS; architecture LOCKED;
+implementation NOT_AUTHORIZED / NOT_STARTED. Implementation remains separately unauthorized.

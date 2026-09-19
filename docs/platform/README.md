@@ -111,6 +111,7 @@ through metadata, targeted searches, and relevant ranges, as described in PD-1.
 | [`capabilities/IMP-036D-workforce-franchise-operations-v2.md`](./capabilities/IMP-036D-workforce-franchise-operations-v2.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-036D Workforce & Franchise Operations Portal V2; architecture LOCKED; COMPLETE_AND_ACCEPTED; AUTHORIZED / STARTED / COMPLETE (`IMP-036D_ACCEPTED: YES`; Founder UAT PASS) |
 | [`capabilities/IMP-036E-store-operations-management.md`](./capabilities/IMP-036E-store-operations-management.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-036E Store Operations Management; architecture LOCKED; COMPLETE_AND_ACCEPTED; AUTHORIZED / STARTED / COMPLETE (`IMP-036E_ACCEPTED: YES`; Founder UAT PASS) |
 | [`capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md`](./capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-036F Catalog, Menu, Pricing & Promotions Management; architecture LOCKED; COMPLETE_AND_ACCEPTED; AUTHORIZED / STARTED / COMPLETE (`IMP036F_ACCEPTED: YES`; Founder UAT PASS) |
+| [`capabilities/IMP-037-backup-restore-migration-readiness.md`](./capabilities/IMP-037-backup-restore-migration-readiness.md) | CURRENT / ARCHITECTURE_LOCKED | IMP-037 Backup, Restore & Migration Readiness; Architecture Fit PASS against ARCH-R20 / D-374; implementation NOT_AUTHORIZED / NOT_STARTED; independent Architecture Fit review PASS |
 
 ## Supporting documents
 

@@ -118,6 +118,9 @@ import {
   evaluateD374CostOptimizedPilotInfrastructureCheckpoint,
   evaluateD374AmendedHistoricalAdrPreservation,
   evaluateImp037ProductDefinitionD374CurrentRecoveryRead,
+  evaluateImp037ArchitectureLockCheckpoint,
+  evaluateImp037LockedCapabilityArchitecture,
+  evaluateImp037ArchitectureLockedProductDefinition,
   stripImp037HistoricalManagedRecoveryAuthority,
   evaluateImp036gProductDefinitionDraftCheckpoint,
   evaluateImp036gProductDefinitionGatePassCheckpoint,
@@ -6609,8 +6612,8 @@ describe("canonical authority history compression", () => {
 
     const roadmap = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
     const state = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
-    assert.match(roadmap, /"roadmapVersion": "GTM-R133"/);
-    assert.match(state, /"stateVersion": "STATE-R131"/);
+    assert.match(roadmap, /"roadmapVersion": "GTM-R134"/);
+    assert.match(state, /"stateVersion": "STATE-R132"/);
     assert.match(state, /"acceptedThrough": "IMP-036G"/);
     assert.match(state, /"pendingAcceptance": "NONE"/);
     assert.match(state, /"currentProductSlice": "IMP-037"/);
@@ -6663,6 +6666,11 @@ describe("canonical authority history compression", () => {
     assert.match(state, /IMP037_ACTIVATED:\s*YES/);
     assert.match(roadmap, /IMP037_PRODUCT_DEFINITION:\s*APPROVED/);
     assert.match(roadmap, /IMP037_PRODUCT_DEFINITION_GATE:\s*PASS/);
+    assert.match(roadmap, /IMP037_ARCHITECTURE_FIT:\s*PASS/);
+    assert.match(roadmap, /IMP037_ARCHITECTURE_LOCKED:\s*YES/);
+    assert.match(state, /IMP037_ARCHITECTURE_FIT:\s*PASS/);
+    assert.match(state, /IMP037_ARCHITECTURE_LOCKED:\s*YES/);
+    assert.match(state, /STATE-R132 = IMP-037_ARCHITECTURE_LOCK/);
     assert.match(roadmap, /IMP038_ACTIVATED:\s*NO/);
     assert.match(roadmap, /"currentProductSlice": "IMP-037"/);
     assert.match(roadmap, /"nextProductSlice": "IMP-038"/);
@@ -6686,14 +6694,16 @@ describe("canonical authority history compression", () => {
     assert.ok(!/FOUNDER_STAGING_DEPLOYMENT:\s*NOT_PERFORMED/.test(current));
   });
 
-  it("passes CURRENT authority checks at the GLOBAL_ARCHITECTURE_DECISION_D374 checkpoint", () => {
+  it("passes CURRENT authority checks at the IMP-037 Architecture Lock checkpoint", () => {
     const findings = runProjectConsistency();
     const failures = findings.filter((f) => !f.ok);
     assert.equal(failures.length, 0, failures.map((f) => `[${f.code}] ${f.message}`).join("\n"));
     const messages = findings.filter((f) => f.ok).map((f) => f.message);
-    assert.ok(messages.some((m) => m.includes("D-374 cost-optimized pilot infrastructure persistence valid")));
+    assert.ok(messages.some((m) => m.includes("IMP-037 Architecture Lock persistence valid")));
     assert.ok(messages.some((m) => m.includes("CURRENT authority anti-stale checks OK")));
     assert.ok(messages.some((m) => m.includes("historical authority corpus loaded")));
+    // GTM-R133 / STATE-R131 D-374 persistence is historical from GTM-R134 onward.
+    assert.ok(!messages.some((m) => m.includes("D-374 cost-optimized pilot infrastructure persistence valid")));
   });
 
   it("preserves accepted IMP-036E customer-commerce cohesion and dark-only policy in CURRENT capability", () => {
@@ -8764,7 +8774,8 @@ Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate PASS; Architect
 
   it("requires APPROVED Product Definition with PERFORMED/PASS and preGateDraft NO", () => {
     const live = readFileSync("docs/platform/product/IMP-037/product-definition.md", "utf8");
-    assert.deepEqual(evaluateImp037ApprovedProductDefinitionCandidate(live), { ok: true });
+    // The live PD has advanced past the R132/S130 gate-pass posture to the R134/S132 lock posture.
+    assert.deepEqual(evaluateImp037ArchitectureLockedProductDefinition(live), { ok: true });
     assert.match(live, /Document status:\s*APPROVED/);
     assert.match(live, /PRODUCT_DEFINITION_GATE_EXECUTION:\s*PERFORMED/);
     assert.match(live, /Gate Result:\s*PASS/);
@@ -8984,7 +8995,7 @@ ${correctPairing}
   it("requires live IMP-037 Product Definition to record the corrected lineage", () => {
     const live = readFileSync("docs/platform/product/IMP-037/product-definition.md", "utf8");
     assert.deepEqual(evaluateImp037ProductDefinitionActivationProvenance(live), { ok: true });
-    assert.deepEqual(evaluateImp037ApprovedProductDefinitionCandidate(live), { ok: true });
+    assert.deepEqual(evaluateImp037ArchitectureLockedProductDefinition(live), { ok: true });
     assert.match(
       live,
       /Historical pre-activation base:\s*GTM-R130\s*\/\s*STATE-R128\s*\(`6b1f2344d0184e29403b99adfea85c2e5dc8bf9a`\s*\/\s*tree\s*`5471ea8f72c635a365e9a78ea1394ec212dcad69`\)/,
@@ -8995,7 +9006,7 @@ ${correctPairing}
       /GTM-R131\s*\/\s*STATE-R129[^\n.]{0,80}6b1f2344d0184e29403b99adfea85c2e5dc8bf9a/,
     );
     assert.match(live, /GATE_EVALUATED_HEAD\s*[=:]\s*fccdf7ef606ca906bcdcd706a6de97f693bb88b4/);
-    assert.match(live, /ARCHITECTURE_FIT:\s*NOT_PERFORMED/);
+    assert.match(live, /ARCHITECTURE_FIT:\s*PASS/);
     assert.match(live, /IMPLEMENTATION_AUTHORIZED:\s*NO/);
   });
 });
@@ -9148,7 +9159,7 @@ describe("D-374 cost-optimized pilot infrastructure checkpoint", () => {
     }
   });
 
-  it("live authorities record D-374 / ARCH-R20 pilot topology without advancing IMP-037 Fit", () => {
+  it("live authorities keep D-374 / ARCH-R20 pilot topology CURRENT after the IMP-037 lock", () => {
     const roadmap = readFileSync("docs/platform/ROADMAP.md", "utf8");
     const state = readFileSync("docs/platform/STATE.md", "utf8");
     const architecture = readFileSync("docs/platform/ARCHITECTURE.md", "utf8");
@@ -9157,8 +9168,8 @@ describe("D-374 cost-optimized pilot infrastructure checkpoint", () => {
       "docs/platform/decisions/ADR-016-cost-optimized-pilot-infrastructure.md",
       "utf8",
     );
-    assert.match(roadmap, /"roadmapVersion":\s*"GTM-R133"/);
-    assert.match(state, /"stateVersion":\s*"STATE-R131"/);
+    assert.match(roadmap, /"roadmapVersion":\s*"GTM-R134"/);
+    assert.match(state, /"stateVersion":\s*"STATE-R132"/);
     assert.match(architecture, /"architectureVersion":\s*"ARCH-R20"/);
     assert.match(decision, /"decisionRegisterVersion":\s*"DR-16"/);
     assert.match(decision, /\|\s*D-374\s*\|[^\n]*\|\s*CURRENT\s*\|/);
@@ -9172,13 +9183,481 @@ describe("D-374 cost-optimized pilot infrastructure checkpoint", () => {
     assert.match(architecture, /MANAGED_POSTGRESQL:\s*NO/);
     assert.match(architecture, /KUBERNETES:\s*NO/);
     assert.match(architecture, /K3S:\s*NO/);
-    assert.match(roadmap, /IMP037_ARCHITECTURE_FIT:\s*NOT_PERFORMED/);
+    // The D-374 Fit reopen is now satisfied: GTM-R134 records Fit PASS, still unauthorized.
+    assert.match(roadmap, /IMP037_ARCHITECTURE_FIT:\s*PASS/);
     assert.match(roadmap, /IMP037_IMPLEMENTATION_AUTHORIZED:\s*NO/);
     assert.match(roadmap, /IMP038_ACTIVATED:\s*NO/);
-    assert.match(roadmap, /ARCHITECTURE_FIT_REOPEN_REASON:[\s\S]*D-374[\s\S]*ARCH-R20/);
+    assert.match(state, /ARCHITECTURE_FIT_REOPEN_REASON:[\s\S]*D-374[\s\S]*ARCH-R20/);
     assert.match(state, /STATE-R131 = GLOBAL_ARCHITECTURE_DECISION_D374/);
+    assert.match(state, /STATE-R132 = IMP-037_ARCHITECTURE_LOCK/);
     assert.match(adr016, /RPO_TARGET\s*<=\s*15 minutes/);
     assert.match(adr016, /does \*\*not\*\* claim those targets are solved|are \*\*not\*\* claimed solved|not claimed solved by D-374/i);
+  });
+});
+
+describe("IMP-037 Architecture Lock checkpoints", () => {
+  const FIT_HEAD = "28e6dd15c48b8c19abbc7057c4dc7e0a7d7cc7ea";
+  const FIT_TREE = "5792c963166e8589751d2ba8c8928728e2c83526";
+  const FIT_FINGERPRINT = "56fa9b5459fd8acceb2ccc3ab73c5d7d9583dbf4539b10a1ef75553dd5aff8ba";
+  const REVIEW_HEAD = "d74ca9a30096fb14bca80643b75aa19d33093dde";
+  const REVIEW_TREE = "09c7e3bd6b7832944d07d527c149752ed3bbeb4d";
+  const REVIEW_ID = "5256273904";
+
+  const lockedCapability = [
+    "<!-- governance-meta",
+    "{",
+    '  "status": "CURRENT",',
+    '  "authority": "CAPABILITY_ARCHITECTURE",',
+    '  "capability": "IMP-037",',
+    '  "architectureLock": "ARCHITECTURE_LOCKED",',
+    '  "architectureFit": "PASS",',
+    '  "implementationAuthorized": false,',
+    '  "implementationStarted": false,',
+    '  "impAccepted": false,',
+    '  "schemaChangeRequired": false,',
+    '  "architectureBase": "ARCH-R20"',
+    "}",
+    "-->",
+    "",
+    "# IMP-037 — Backup, Restore & Migration Readiness",
+    "",
+    "```text",
+    "ARCHITECTURE_FIT: PASS",
+    "ARCHITECTURE_FIT_EXECUTION: PERFORMED",
+    "IMP037_ARCHITECTURE_LOCKED: YES",
+    "INDEPENDENT_ARCHITECTURE_FIT_REVIEW = PASS",
+    `INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_HEAD = ${REVIEW_HEAD}`,
+    `INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_TREE = ${REVIEW_TREE}`,
+    `INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID = ${REVIEW_ID}`,
+    "IMPLEMENTATION_AUTHORIZED: NO",
+    "IMPLEMENTATION_STARTED: NO",
+    "IMP037_IMPLEMENTATION_AUTHORIZED: NO",
+    "IMP037_STARTED: NO",
+    "IMP037_ACCEPTED: NO",
+    "IMP038_ACTIVATED: NO",
+    "FITS_WITHIN_ARCH_R20: YES",
+    "D-374_CREATED: YES (already CURRENT; not created by this Fit)",
+    "D375_REQUIRED_FOR_LOCK: NO",
+    "D-375_CREATED: NO",
+    "ARCH_R21_REQUIRED: NO",
+    "ARCH_R21_CREATED: NO",
+    "NEW_DEPLOYABLE_SERVICE: NO",
+    "NEW_ALWAYS_ON_RECOVERY_SERVICE: NO",
+    "APPLICATION_SCHEMA_CHANGE_REQUIRED: NO",
+    "NEW_APPLICATION_PERMISSION: NO",
+    "NEW_APPLICATION_ROLE: NO",
+    "MANAGED_POSTGRESQL: NO (CURRENT pilot)",
+    "APP_PLATFORM: NO (CURRENT pilot)",
+    "KUBERNETES: NO",
+    "K3S: NO",
+    "RPO_TARGET <= 15 minutes",
+    "RTO_TARGET <= 2 hours",
+    "RPO_RTO_PROVEN: NO",
+    "DROPLET_2GIB_RTO_VALIDATED: NO",
+    "```",
+    "",
+    "```text",
+    "EXECUTION_MODEL: one-shot tooling execution plane",
+    "RECOVERY_LAYER_1: self-hosted PostgreSQL physical backup + continuous WAL archiving to Spaces",
+    "RECOVERY_LAYER_1_TOOL: pgBackRest (version >= 2.55)",
+    "RECOVERY_LAYER_1_REPO_ENCRYPTION: AES-256-CBC",
+    "RECOVERY_LAYER_2: independent PostgreSQL logical backup / pg_dump -Fc / age public-key encryption",
+    "RECOVERY_LAYER_2_INTEGRITY: SHA-256",
+    "RECOVERY_LAYER_2_RETENTION: 35-day rolling retention (age-based; COMPLETE runs only)",
+    "RUN_ID: unique per backup invocation",
+    "REMOTE_ARTIFACT_VERIFICATION_BEFORE_COMPLETE: REQUIRED",
+    "ENCRYPTION_KEY_VERSIONING: REQUIRED",
+    "RETIRED_KEYS_MUST_REMAIN_RESOLVABLE_FOR_RETAINED_ARTIFACTS: YES",
+    "RECOVERY_CRITICAL_ENCRYPTION_SECRET_OFF_HOST_CUSTODY: REQUIRED",
+    "PGBACKREST_CIPHER_ROTATION_IN_PLACE: FORBIDDEN",
+    "PGBACKREST_KEY_ROTATION_MODEL: NEW_ENCRYPTED_REPOSITORY_GENERATION",
+    "Layer 1 key version is BOBA capability / recovery metadata associated with the encrypted repository generation",
+    "SPACES_VERSIONING: ENABLED",
+    "SPACES_VERSIONING_IS_IMMUTABILITY: NO",
+    "SPACES_OBJECT_LOCK_WORM_REQUIRED: NO",
+    "Provider lifecycle rules MUST NOT independently expire current pgBackRest repository objects",
+    "CAPACITY_COST_OBSERVATION: REQUIRED",
+    "STORAGE_CAPACITY_VALIDATED: NO",
+    "Layer 1 physical / base backup storage",
+    "Retained WAL / archive storage",
+    "Layer 2 logical backup storage",
+    "Material version-history storage",
+    "Projected 35-day retained footprint",
+    "HOST_LOCAL_FLOCK_SERIALIZATION: REQUIRED (for scheduled/heavy ops)",
+    "CONTINUOUS_WAL_NOT_BLOCKED_BY_SCHEDULED_JOB_LOCK: YES",
+    "DISTRIBUTED_SPACES_LOCK: FORBIDDEN",
+    "SPACES_CONDITIONAL_CREATE_MUTEX: FORBIDDEN",
+    "RESTORE_TO_ACTIVE_SOURCE: FORBIDDEN",
+    "OUTBOUND_PROVIDER_INITIATION: DISABLED",
+    "PR_169_AUTHORITY: NON_AUTHORITATIVE / SUPERSEDED",
+    "```",
+    "",
+    "```text",
+    `ARCHITECTURE_FIT_EVALUATED_HEAD = ${FIT_HEAD}`,
+    `ARCHITECTURE_FIT_EVALUATED_TREE = ${FIT_TREE}`,
+    `ARCHITECTURE_FIT_EVALUATED_WORKING_TREE_FINGERPRINT = ${FIT_FINGERPRINT}`,
+    "```",
+  ].join("\n");
+
+  const lockedProductDefinition = [
+    "<!-- governance-meta",
+    "{",
+    '  "status": "APPROVED",',
+    '  "authority": "PRODUCT_DEFINITION",',
+    '  "capability": "IMP-037",',
+    '  "productDefinitionGateExecution": "PERFORMED",',
+    '  "productDefinitionGateResult": "PASS",',
+    '  "architectureFitExecution": "PERFORMED",',
+    '  "architectureFit": "PASS",',
+    '  "architectureLocked": "YES",',
+    '  "implementationAuthorized": "NO",',
+    '  "implementationStarted": "NO",',
+    '  "impAccepted": "NO"',
+    "}",
+    "-->",
+    "",
+    "```text",
+    "Document status: APPROVED",
+    "PRODUCT_DEFINITION_GATE_EXECUTION: PERFORMED",
+    "Gate Result: PASS",
+    "ARCHITECTURE_FIT_EXECUTION: PERFORMED",
+    "ARCHITECTURE_FIT: PASS",
+    "ARCHITECTURE_FIT_RESULT: PASS",
+    "IMP037_ARCHITECTURE_LOCKED: YES",
+    "INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PASS",
+    `INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_HEAD: ${REVIEW_HEAD}`,
+    `INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_TREE: ${REVIEW_TREE}`,
+    `INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID: ${REVIEW_ID}`,
+    "IMP037_IMPLEMENTATION_AUTHORIZED: NO",
+    "IMP037_STARTED: NO",
+    "IMP037_ACCEPTED: NO",
+    "IMP038_ACTIVATED: NO",
+    `ARCHITECTURE_FIT_EVALUATED_HEAD = ${FIT_HEAD}`,
+    `ARCHITECTURE_FIT_EVALUATED_TREE = ${FIT_TREE}`,
+    `ARCHITECTURE_FIT_EVALUATED_WORKING_TREE_FINGERPRINT = ${FIT_FINGERPRINT}`,
+    "```",
+    "",
+    "Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation not authorized)",
+  ].join("\n");
+
+  const base = Object.freeze({
+    roadmapVersion: "GTM-R134",
+    stateVersion: "STATE-R132",
+    acceptedThrough: "IMP-036G",
+    currentProductSlice: "IMP-037",
+    nextProductSlice: "IMP-038",
+    pendingAcceptance: "NONE",
+    imp036g: "COMPLETE_AND_ACCEPTED",
+    imp037FormalLifecycle: "ARCHITECTURE_LOCKED",
+    imp037Activated: "YES",
+    productDefinition: "APPROVED",
+    productDefinitionGate: "PASS",
+    architectureFit: "PASS",
+    architectureLocked: "YES",
+    implementationAuthorized: "NO",
+    started: "NO",
+    accepted: "NO",
+    founderUatRequired: "YES",
+    imp038Activated: "NO",
+    architectureVersion: "ARCH-R20",
+    decisionRegisterVersion: "DR-16",
+    productDeliveryVersion: "PD-1",
+    productDefinitionExists: true,
+    capabilityArtifactExists: true,
+    d374Created: "YES",
+    archR20Created: "YES",
+    d374Exists: true,
+    d375Exists: false,
+    archR21Exists: false,
+    implementationAuthorizedYes: false,
+    startedYes: false,
+    acceptedYes: false,
+    imp038ActivatedYes: false,
+    managedPostgresqlCurrentPilotAuthority: false,
+    appPlatformCurrentPilotAuthority: false,
+    spacesDistributedLockCanonicalized: false,
+    pr169Authoritative: false,
+    capabilityText: lockedCapability,
+    productDefinitionText: lockedProductDefinition,
+  });
+
+  it("passes a valid GTM-R134 / STATE-R132 architecture lock against ARCH-R20 / D-374", () => {
+    assert.deepEqual(evaluateImp037ArchitectureLockCheckpoint(base), { ok: true });
+  });
+
+  it("recognizes the lock checkpoint kind exclusively at GTM-R134 / STATE-R132", () => {
+    assert.equal(
+      isSupportedImp030GovernanceCheckpoint("GTM-R134", "STATE-R132", "imp037ArchitectureLock"),
+      true,
+    );
+    assert.equal(
+      isSupportedImp030GovernanceCheckpoint("GTM-R134", "STATE-R132", "d374CostOptimizedPilotInfrastructure"),
+      false,
+    );
+    assert.equal(
+      isSupportedImp030GovernanceCheckpoint("GTM-R133", "STATE-R131", "imp037ArchitectureLock"),
+      false,
+    );
+    assert.equal(
+      isSupportedImp030GovernanceCheckpoint("GTM-R133", "STATE-R131", "d374CostOptimizedPilotInfrastructure"),
+      true,
+    );
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R134", "STATE-R131", "imp037ArchitectureLock"), false);
+  });
+
+  it("requires ARCH-R20 / DR-16 / PD-1 and the existing D-374 decision", () => {
+    for (const override of [
+      { architectureVersion: "ARCH-R19" },
+      { architectureVersion: "ARCH-R21" },
+      { decisionRegisterVersion: "DR-15" },
+      { productDeliveryVersion: "PD-2" },
+      { d374Exists: false },
+      { d374Created: "NO" },
+      { archR20Created: "NO" },
+      { capabilityArtifactExists: false },
+      { productDefinitionExists: false },
+    ]) {
+      const result = evaluateImp037ArchitectureLockCheckpoint({ ...base, ...override });
+      assert.equal(result.ok, false, `expected failure for ${JSON.stringify(override)}`);
+    }
+  });
+
+  it("rejects premature progression and reintroduced pre-D-374 infrastructure", () => {
+    assert.equal(
+      evaluateImp037ArchitectureLockCheckpoint({ ...base, implementationAuthorizedYes: true }).code,
+      "IMP037_IMPLEMENTATION_AUTHORIZED",
+    );
+    assert.equal(evaluateImp037ArchitectureLockCheckpoint({ ...base, startedYes: true }).code, "IMP037_STARTED");
+    assert.equal(evaluateImp037ArchitectureLockCheckpoint({ ...base, acceptedYes: true }).code, "IMP037_ACCEPTED");
+    assert.equal(
+      evaluateImp037ArchitectureLockCheckpoint({ ...base, imp038ActivatedYes: true }).code,
+      "IMP038_ACTIVATED",
+    );
+    assert.equal(evaluateImp037ArchitectureLockCheckpoint({ ...base, d375Exists: true }).code, "IMP037_D375");
+    assert.equal(evaluateImp037ArchitectureLockCheckpoint({ ...base, archR21Exists: true }).code, "IMP037_ARCH_R21");
+    assert.equal(
+      evaluateImp037ArchitectureLockCheckpoint({ ...base, managedPostgresqlCurrentPilotAuthority: true }).code,
+      "IMP037_STALE_MANAGED_POSTGRESQL",
+    );
+    assert.equal(
+      evaluateImp037ArchitectureLockCheckpoint({ ...base, appPlatformCurrentPilotAuthority: true }).code,
+      "IMP037_STALE_APP_PLATFORM",
+    );
+    assert.equal(
+      evaluateImp037ArchitectureLockCheckpoint({ ...base, spacesDistributedLockCanonicalized: true }).code,
+      "IMP037_SPACES_MUTEX",
+    );
+    assert.equal(
+      evaluateImp037ArchitectureLockCheckpoint({ ...base, pr169Authoritative: true }).code,
+      "IMP037_PR169_AUTHORITY",
+    );
+  });
+
+  it("validates the locked capability architecture markers", () => {
+    assert.deepEqual(evaluateImp037LockedCapabilityArchitecture(lockedCapability), { ok: true });
+    assert.equal(evaluateImp037LockedCapabilityArchitecture("").code, "IMP037_CAPABILITY_ABSENT");
+    for (const [from, to] of [
+      ["FITS_WITHIN_ARCH_R20: YES", "FITS_WITHIN_ARCH_R20: NO"],
+      ["D375_REQUIRED_FOR_LOCK: NO", "D375_REQUIRED_FOR_LOCK: MAYBE"],
+      ["ARCH_R21_REQUIRED: NO", "ARCH_R21_REQUIRED: MAYBE"],
+      ["RPO_TARGET <= 15 minutes", "RPO_TARGET <= 60 minutes"],
+      ["RTO_TARGET <= 2 hours", "RTO_TARGET <= 8 hours"],
+      ["DISTRIBUTED_SPACES_LOCK: FORBIDDEN", "DISTRIBUTED_SPACES_LOCK: ALLOWED"],
+      ["PR_169_AUTHORITY: NON_AUTHORITATIVE / SUPERSEDED", "PR_169_AUTHORITY: AUTHORITATIVE"],
+      ["ENCRYPTION_KEY_VERSIONING: REQUIRED", "ENCRYPTION_KEY_VERSIONING: OPTIONAL"],
+      ["RECOVERY_CRITICAL_ENCRYPTION_SECRET_OFF_HOST_CUSTODY: REQUIRED", "RECOVERY_CRITICAL_ENCRYPTION_SECRET_OFF_HOST_CUSTODY: OPTIONAL"],
+      ["REMOTE_ARTIFACT_VERIFICATION_BEFORE_COMPLETE: REQUIRED", "REMOTE_ARTIFACT_VERIFICATION_BEFORE_COMPLETE: OPTIONAL"],
+      ["SPACES_VERSIONING: ENABLED", "SPACES_VERSIONING: DISABLED"],
+      ["SPACES_VERSIONING_IS_IMMUTABILITY: NO", "SPACES_VERSIONING_IS_IMMUTABILITY: YES"],
+      ["SPACES_OBJECT_LOCK_WORM_REQUIRED: NO", "SPACES_OBJECT_LOCK_WORM_REQUIRED: YES"],
+      ["CAPACITY_COST_OBSERVATION: REQUIRED", "CAPACITY_COST_OBSERVATION: OPTIONAL"],
+      ["STORAGE_CAPACITY_VALIDATED: NO", "STORAGE_CAPACITY_VALIDATED: YES"],
+      ["PGBACKREST_CIPHER_ROTATION_IN_PLACE: FORBIDDEN", "PGBACKREST_CIPHER_ROTATION_IN_PLACE: ALLOWED"],
+      ["PGBACKREST_KEY_ROTATION_MODEL: NEW_ENCRYPTED_REPOSITORY_GENERATION", "PGBACKREST_KEY_ROTATION_MODEL: IN_PLACE"],
+      ["CONTINUOUS_WAL_NOT_BLOCKED_BY_SCHEDULED_JOB_LOCK: YES", "CONTINUOUS_WAL_NOT_BLOCKED_BY_SCHEDULED_JOB_LOCK: NO"],
+      ["HOST_LOCAL_FLOCK_SERIALIZATION: REQUIRED (for scheduled/heavy ops)", "HOST_LOCAL_FLOCK_SERIALIZATION: OPTIONAL"],
+      ["RPO_RTO_PROVEN: NO", "RPO_RTO_PROVEN: YES"],
+      ["RECOVERY_LAYER_1_TOOL: pgBackRest (version >= 2.55)", "RECOVERY_LAYER_1_TOOL: custom script"],
+      [FIT_HEAD, "0000000000000000000000000000000000000000"],
+      [FIT_FINGERPRINT, "0".repeat(64)],
+    ]) {
+      const mutated = lockedCapability.replace(from, to);
+      assert.notEqual(mutated, lockedCapability, `fixture must contain ${from}`);
+      assert.equal(
+        evaluateImp037LockedCapabilityArchitecture(mutated).ok,
+        false,
+        `expected failure after replacing ${from}`,
+      );
+    }
+  });
+
+  it("rejects removal of restored independent-review recovery invariants", () => {
+    for (const removed of [
+      "SPACES_VERSIONING: ENABLED",
+      "SPACES_VERSIONING_IS_IMMUTABILITY: NO",
+      "Provider lifecycle rules MUST NOT independently expire current pgBackRest repository objects",
+      "RECOVERY_CRITICAL_ENCRYPTION_SECRET_OFF_HOST_CUSTODY: REQUIRED",
+      "REMOTE_ARTIFACT_VERIFICATION_BEFORE_COMPLETE: REQUIRED",
+      "CAPACITY_COST_OBSERVATION: REQUIRED",
+      "STORAGE_CAPACITY_VALIDATED: NO",
+      "PGBACKREST_CIPHER_ROTATION_IN_PLACE: FORBIDDEN",
+      "PGBACKREST_KEY_ROTATION_MODEL: NEW_ENCRYPTED_REPOSITORY_GENERATION",
+      "Layer 1 key version is BOBA capability / recovery metadata associated with the encrypted repository generation",
+      "Material version-history storage",
+      "Projected 35-day retained footprint",
+    ]) {
+      const mutated = lockedCapability.replace(`${removed}\n`, "");
+      assert.notEqual(mutated, lockedCapability, `fixture must contain ${removed}`);
+      assert.equal(
+        evaluateImp037LockedCapabilityArchitecture(mutated).ok,
+        false,
+        `expected failure after removing ${removed}`,
+      );
+    }
+  });
+
+  it("rejects a capability artifact that reopens rejected PR #169 mechanisms", () => {
+    assert.equal(
+      evaluateImp037LockedCapabilityArchitecture(
+        lockedCapability.replace("IMP037_IMPLEMENTATION_AUTHORIZED: NO", "IMP037_IMPLEMENTATION_AUTHORIZED: YES"),
+      ).code,
+      "IMP037_CAPABILITY_PREMATURE_PROGRESSION",
+    );
+    assert.equal(
+      evaluateImp037LockedCapabilityArchitecture(
+        lockedCapability.replace("IMP037_STARTED: NO", "IMP037_STARTED: YES"),
+      ).code,
+      "IMP037_CAPABILITY_PREMATURE_PROGRESSION",
+    );
+    assert.equal(
+      evaluateImp037LockedCapabilityArchitecture(
+        lockedCapability.replace("IMP038_ACTIVATED: NO", "IMP038_ACTIVATED: YES"),
+      ).code,
+      "IMP037_CAPABILITY_PREMATURE_PROGRESSION",
+    );
+    assert.equal(
+      evaluateImp037LockedCapabilityArchitecture(
+        `${lockedCapability}\nRECOVERY_LAYER_1: Managed PostgreSQL PITR (provider-managed)\n`,
+      ).code,
+      "IMP037_CAPABILITY_STALE_MANAGED_POSTGRESQL",
+    );
+    assert.equal(
+      evaluateImp037LockedCapabilityArchitecture(
+        `${lockedCapability}\nSPACES_CONDITIONAL_CREATE_MUTEX: REQUIRED\n`,
+      ).code,
+      "IMP037_CAPABILITY_SPACES_MUTEX",
+    );
+    assert.equal(
+      evaluateImp037LockedCapabilityArchitecture(
+        `${lockedCapability}\nSPACES_VERSIONING: DISABLED\nSPACES_VERSIONING_IS_IMMUTABILITY: YES\n`,
+      ).code,
+      "IMP037_CAPABILITY_SPACES_VERSIONING",
+    );
+    assert.equal(
+      evaluateImp037LockedCapabilityArchitecture(
+        `${lockedCapability}\nPGBACKREST_CIPHER_ROTATION_IN_PLACE: ALLOWED\n`,
+      ).code,
+      "IMP037_CAPABILITY_PGBACKREST_ROTATION",
+    );
+    assert.equal(
+      evaluateImp037LockedCapabilityArchitecture(
+        `${lockedCapability}\nREMOTE_ARTIFACT_VERIFICATION_BEFORE_COMPLETE: OPTIONAL\n`,
+      ).code,
+      "IMP037_CAPABILITY_RECOVERY_INVARIANT_WEAKENED",
+    );
+    assert.equal(
+      evaluateImp037LockedCapabilityArchitecture(
+        `${lockedCapability}\nRECOVERY_CRITICAL_ENCRYPTION_SECRET_OFF_HOST_CUSTODY: OPTIONAL\n`,
+      ).code,
+      "IMP037_CAPABILITY_RECOVERY_INVARIANT_WEAKENED",
+    );
+    assert.equal(
+      evaluateImp037LockedCapabilityArchitecture(
+        `${lockedCapability}\nCAPACITY_COST_OBSERVATION: OPTIONAL\nSTORAGE_CAPACITY_VALIDATED: YES\n`,
+      ).code,
+      "IMP037_CAPABILITY_RECOVERY_INVARIANT_WEAKENED",
+    );
+    assert.equal(
+      evaluateImp037LockedCapabilityArchitecture(
+        lockedCapability.replace('"architectureLock": "ARCHITECTURE_LOCKED"', '"architectureLock": "NOT_LOCKED"'),
+      ).ok,
+      false,
+    );
+    assert.equal(
+      evaluateImp037LockedCapabilityArchitecture(
+        lockedCapability.replace(
+          "INDEPENDENT_ARCHITECTURE_FIT_REVIEW = PASS",
+          "INDEPENDENT_ARCHITECTURE_FIT_REVIEW = PENDING",
+        ),
+      ).code,
+      "IMP037_CAPABILITY_LOCK",
+    );
+    assert.equal(
+      evaluateImp037LockedCapabilityArchitecture(`${lockedCapability}\nINDEPENDENT_ARCHITECTURE_FIT_REVIEW = PENDING\n`).code,
+      "IMP037_INDEPENDENT_REVIEW_STALE",
+    );
+  });
+
+  it("validates the architecture-locked Product Definition", () => {
+    assert.deepEqual(evaluateImp037ArchitectureLockedProductDefinition(lockedProductDefinition), { ok: true });
+    assert.equal(evaluateImp037ArchitectureLockedProductDefinition("").code, "IMP037_PD_FIT_ABSENT");
+    assert.equal(
+      evaluateImp037ArchitectureLockedProductDefinition(
+        lockedProductDefinition.replace('"architectureFit": "PASS"', '"architectureFit": "NOT_PERFORMED"'),
+      ).code,
+      "IMP037_PD_META_CONFLICT",
+    );
+    assert.equal(
+      evaluateImp037ArchitectureLockedProductDefinition(
+        lockedProductDefinition.replace('"architectureLocked": "YES"', '"architectureLocked": "NO"'),
+      ).code,
+      "IMP037_PD_META_CONFLICT",
+    );
+    assert.equal(
+      evaluateImp037ArchitectureLockedProductDefinition(
+        lockedProductDefinition.replace("Gate Result: PASS", "Gate Result: NOT_PERFORMED"),
+      ).ok,
+      false,
+    );
+    assert.equal(
+      evaluateImp037ArchitectureLockedProductDefinition(
+        `${lockedProductDefinition}\nARCHITECTURE_FIT: NOT_PERFORMED\n`,
+      ).code,
+      "IMP037_PD_STALE_FIT_MARKER",
+    );
+    assert.equal(
+      evaluateImp037ArchitectureLockedProductDefinition(
+        `${lockedProductDefinition}\nIMP037_IMPLEMENTATION_AUTHORIZED: YES\n`,
+      ).code,
+      "IMP037_PD_PREMATURE_PROGRESSION",
+    );
+    assert.equal(
+      evaluateImp037ArchitectureLockedProductDefinition(lockedProductDefinition.replace(FIT_TREE, "0".repeat(40))).code,
+      "IMP037_PD_FIT_PROVENANCE",
+    );
+    assert.equal(
+      evaluateImp037ArchitectureLockedProductDefinition(
+        lockedProductDefinition.replace(
+          "INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PASS",
+          "INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PENDING",
+        ),
+      ).code,
+      "IMP037_PD_INDEPENDENT_REVIEW_PASS",
+    );
+  });
+
+  it("accepts the live IMP-037 capability artifact and Product Definition", () => {
+    const capability = readFileSync(
+      "docs/platform/capabilities/IMP-037-backup-restore-migration-readiness.md",
+      "utf8",
+    );
+    const productDefinition = readFileSync("docs/platform/product/IMP-037/product-definition.md", "utf8");
+    assert.deepEqual(evaluateImp037LockedCapabilityArchitecture(capability), { ok: true });
+    assert.deepEqual(evaluateImp037ArchitectureLockedProductDefinition(productDefinition), { ok: true });
+    assert.deepEqual(
+      evaluateImp037ArchitectureLockCheckpoint({ ...base, capabilityText: capability, productDefinitionText: productDefinition }),
+      { ok: true },
+    );
   });
 });
 
@@ -9215,9 +9694,10 @@ Then applicable PITR-capable recovery-layer health/recovery-point evidence and i
 | Historical Managed PostgreSQL automated backups / PITR (provider layer) | **HISTORICAL** under ADR-013; **not** CURRENT after D-374 |
 `;
 
+  // The live PD advanced past this GTM-R133 / STATE-R131 posture at the GTM-R134 lock,
+  // so these remain fixture-driven checks of the historical D-374 recovery read.
   it("passes valid D-374 Product Definition CURRENT read", () => {
     assert.deepEqual(evaluateImp037ProductDefinitionD374CurrentRecoveryRead(validSkeleton), { ok: true });
-    assert.deepEqual(evaluateImp037ProductDefinitionD374CurrentRecoveryRead(livePd()), { ok: true });
   });
 
   it("fails CURRENT Managed PostgreSQL/PITR supported claim", () => {
@@ -9285,15 +9765,16 @@ Then applicable PITR-capable recovery-layer health/recovery-point evidence and i
 
   it("preserves Product Definition APPROVED / Gate PASS and non-advancement", () => {
     const live = livePd();
-    const result = evaluateImp037ProductDefinitionD374CurrentRecoveryRead(live);
-    assert.deepEqual(result, { ok: true });
+    assert.deepEqual(evaluateImp037ProductDefinitionD374CurrentRecoveryRead(validSkeleton), { ok: true });
+    assert.match(validSkeleton, /"architectureFit":\s*"NOT_PERFORMED"/);
+    assert.match(validSkeleton, /"architectureLocked":\s*"NO"/);
+    // The live PD now records the GTM-R134 lock posture while keeping APPROVED / Gate PASS.
     assert.match(live, /"status":\s*"APPROVED"/);
     assert.match(live, /"productDefinitionGateResult":\s*"PASS"/);
-    assert.match(live, /"architectureFit":\s*"NOT_PERFORMED"/);
-    assert.match(live, /"architectureLocked":\s*"NO"/);
+    assert.match(live, /"architectureFit":\s*"PASS"/);
+    assert.match(live, /"architectureLocked":\s*"YES"/);
     assert.match(live, /"implementationAuthorized":\s*"NO"/);
     assert.match(live, /"implementationStarted":\s*"NO"/);
-    assert.match(live, /ARCHITECTURE_FIT:\s*NOT_PERFORMED/);
     assert.doesNotMatch(live, /IMP038_ACTIVATED:\s*YES/);
     assert.match(live, /PITR-capable continuous recovery/);
     assert.match(live, /independent encrypted logical backup|independent logical backup/);

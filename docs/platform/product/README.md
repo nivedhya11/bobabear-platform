@@ -20,7 +20,7 @@ owned by [TESTING.md](../TESTING.md).
 | [Product Definition template](./templates/product-definition-template.md) | Required structure for a capability's product definition |
 | [IMP-036F Product Definition](./IMP-036F/product-definition.md) | First PD-1 per-IMP Product Definition (`PD-IMP-036F-DRAFT-1`); Product Definition Gate = PASS; Architecture Fit = PASS; Capability architecture = LOCKED; lifecycle = COMPLETE_AND_ACCEPTED / accepted (ROADMAP/STATE remain lifecycle authority) |
 | [IMP-036G Product Definition](./IMP-036G/product-definition.md) | Product Definition = APPROVED (`PD-IMP-036G-DRAFT-2`); Product Definition Gate = PASS; Architecture Fit = PASS; Capability architecture = LOCKED ([`../capabilities/IMP-036G-administration-console-v2.md`](../capabilities/IMP-036G-administration-console-v2.md)); lifecycle = COMPLETE_AND_ACCEPTED / accepted (ROADMAP/STATE remain lifecycle authority; Founder UAT PASS) |
-| [IMP-037 Product Definition](./IMP-037/product-definition.md) | `PD-IMP-037-DRAFT-1`; **APPROVED**; Product Definition Gate = **PASS**; Architecture Fit = **NOT_PERFORMED**; Architecture = **NOT_LOCKED**; **IMP037_ACTIVATED: YES**; `currentProductSlice` = IMP-037; Implementation = NOT_AUTHORIZED / NOT_STARTED (ROADMAP/STATE remain lifecycle authority; `acceptedThrough` = IMP-036G; `nextProductSlice` = IMP-038) |
+| [IMP-037 Product Definition](./IMP-037/product-definition.md) | `PD-IMP-037-DRAFT-1`; **APPROVED**; Product Definition Gate = **PASS**; Architecture Fit = **PASS**; Architecture = **LOCKED**; **IMP037_ACTIVATED: YES**; `currentProductSlice` = IMP-037; Implementation = NOT_AUTHORIZED / NOT_STARTED; independent Architecture Fit review PASS (ROADMAP/STATE remain lifecycle authority; `acceptedThrough` = IMP-036G; `nextProductSlice` = IMP-038) |
 | [IMP-040 Product Definition](./IMP-040/product-definition.md) | `PD-IMP-040-DRAFT-1`; **PRE-GATE DRAFT**; Founder product decisions resolved; Product Definition Gate = **NOT_PERFORMED**; Architecture Fit = **NOT_PERFORMED**; Architecture = **NOT_LOCKED**; **IMP040_ACTIVATED: NO**; Implementation = NOT_AUTHORIZED / NOT_STARTED; Journey Gap Audit = **NOT_PERFORMED**; GO = **NO**; public launch = **NO** (ROADMAP/STATE remain lifecycle authority; intervening IMP-037/038/039 remain future hard dependencies; `acceptedThrough` = IMP-036G; `currentProductSlice` = IMP-037) |
 | Per-IMP Product Definition | Business outcome, journeys, acceptance slice, stories, scenarios, business rules, and explicit deferrals within existing authority |
 
@@ -33,7 +33,7 @@ Architecture Fit PASS / architecture LOCKED / COMPLETE_AND_ACCEPTED). IMP-036G h
 architecture = LOCKED at [`../capabilities/IMP-036G-administration-console-v2.md`](../capabilities/IMP-036G-administration-console-v2.md);
 lifecycle = COMPLETE_AND_ACCEPTED; Founder UAT PASS). IMP-037 has an **APPROVED** Product Definition at
 [`./IMP-037/product-definition.md`](./IMP-037/product-definition.md) (`PD-IMP-037-DRAFT-1`; Product
-Definition Gate = PASS; Architecture Fit = NOT_PERFORMED; Architecture = NOT_LOCKED;
+Definition Gate = PASS; Architecture Fit = PASS; Architecture = LOCKED;
 **IMP037_ACTIVATED: YES**; `currentProductSlice` = IMP-037; Implementation = NOT_AUTHORIZED /
 NOT_STARTED).
 IMP-040 has a **PRE-GATE DRAFT** Product Definition at
