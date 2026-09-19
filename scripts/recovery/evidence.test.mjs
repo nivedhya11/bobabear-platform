@@ -6,7 +6,7 @@ import { test } from "node:test";
 import { OPERATION_STATUS, RECOVERY_LAYER } from "./constants.mjs";
 import { createEvidence, isSuccessfulLayerEvidence, validateEvidence } from "./evidence.mjs";
 import { generateRunId } from "./run-id.mjs";
-import { listEvidence, persistEvidence, readRunEvidence } from "./store.mjs";
+import { inspectEvidence, listEvidence, persistEvidence, readRunEvidence } from "./store.mjs";
 
 function tempRoot() {
   return mkdtempSync(path.join(os.tmpdir(), "boba-recovery-evidence-"));
@@ -102,6 +102,10 @@ test("malformed on-disk JSON is not listed as valid evidence", () => {
     writeFileSync(path.join(root, runId, "evidence.json"), "{not-json", "utf8");
     assert.equal(readRunEvidence(root, runId).ok, false);
     assert.equal(listEvidence(root).length, 0);
+    const inspected = inspectEvidence(root);
+    assert.equal(inspected.valid.length, 0);
+    assert.equal(inspected.invalid.length, 1);
+    assert.equal(inspected.invalid[0].runId, runId);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

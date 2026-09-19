@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { test } from "node:test";
@@ -47,6 +47,36 @@ test("evidence validate fails on empty directory", () => {
     const result = run(["evidence", "validate", "--evidence-dir", root]);
     assert.equal(result.status, CLI_EXIT.FAILURE);
     assert.match(result.stdout, /NO valid records|not implemented|NOT_READY|No valid/i);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("evidence validate fails closed when malformed evidence is present", () => {
+  const root = mkdtempSync(path.join(os.tmpdir(), "boba-recovery-cli-"));
+  try {
+    const validId = generateRunId({ now: new Date(Date.UTC(2026, 8, 20, 5, 0, 0)), randomHex: "1111111111111111" });
+    persistEvidence(root, {
+      runId: validId,
+      operationType: "status",
+      recoveryLayer: RECOVERY_LAYER.LAYER_1,
+      status: OPERATION_STATUS.SUCCEEDED,
+      endedAt: "2026-09-20T05:00:00.000Z",
+    });
+    const badId = generateRunId({ now: new Date(Date.UTC(2026, 8, 20, 5, 1, 0)), randomHex: "2222222222222222" });
+    mkdirSync(path.join(root, badId));
+    writeFileSync(path.join(root, badId, "evidence.json"), "{truncated", "utf8");
+    const validate = run(["evidence", "validate", "--json", "--evidence-dir", root]);
+    assert.equal(validate.status, CLI_EXIT.FAILURE);
+    const payload = JSON.parse(validate.stdout);
+    assert.equal(payload.valid, false);
+    assert.equal(payload.invalidCount >= 1, true);
+    const status = run(["status", "--json", "--evidence-dir", root]);
+    assert.equal(status.status, CLI_EXIT.FAILURE);
+    const statusPayload = JSON.parse(status.stdout);
+    assert.equal(statusPayload.overall, "NOT_READY");
+    assert.equal(statusPayload.latestAttempt.runId, badId);
+    assert.equal(statusPayload.latestAttempt.status, "UNVERIFIABLE");
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

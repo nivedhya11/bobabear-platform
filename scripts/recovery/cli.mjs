@@ -12,7 +12,7 @@ import { generateRunId } from "./run-id.mjs";
 import { createEvidence, validateEvidence } from "./evidence.mjs";
 import { evaluateTargetIdentitySafety } from "./identity.mjs";
 import { evaluateReadiness } from "./readiness.mjs";
-import { listEvidence, persistEvidence, readRunEvidence } from "./store.mjs";
+import { inspectEvidence, persistEvidence, readRunEvidence } from "./store.mjs";
 import { redactText, safeJson } from "./redact.mjs";
 
 const IMPLEMENTED_COMMANDS = new Set(["status", "evidence", "target", "help"]);
@@ -123,9 +123,10 @@ export function runCli(argv, io = {}) {
 
 function runStatus({ flags, env, json, stdout }) {
   const evidenceDir = resolveEvidenceDir(flags, env);
-  const records = listEvidence(evidenceDir);
+  const inspected = inspectEvidence(evidenceDir);
   const readiness = evaluateReadiness({
-    evidenceRecords: records,
+    evidenceRecords: inspected.valid,
+    invalidEvidence: inspected.invalid,
     configurationPresent: flags.configuration === true || flags["config-present"] === true,
     credentialsPresent: flags["credentials-present"] === true,
     bucketPresent: flags["bucket-present"] === true,
@@ -139,6 +140,8 @@ function runStatus({ flags, env, json, stdout }) {
     layers: readiness.layers,
     latestAttempt: readiness.latestAttempt,
     findings: readiness.findings,
+    malformedCount: readiness.malformedCount,
+    unverifiableEvidence: readiness.unverifiableEvidence,
     configurationOnly: readiness.configurationOnly,
     note: readiness.note,
   };
@@ -158,27 +161,28 @@ function runEvidenceValidate({ flags, env, json, stdout, stderr }) {
     const result = readRunEvidence(evidenceDir, runId);
     return reportValidation(result, json, stdout);
   }
-  const records = listEvidence(evidenceDir);
-  if (records.length === 0) {
-    const payload = { valid: false, count: 0, reason: "No valid evidence records found" };
+  const inspected = inspectEvidence(evidenceDir);
+  if (inspected.valid.length === 0 && inspected.invalid.length === 0) {
+    const payload = { valid: false, count: 0, invalidCount: 0, reason: "No valid evidence records found" };
     emit(stdout, json, payload, "Evidence validation: NO valid records (NOT_READY)");
     return CLI_EXIT.FAILURE;
   }
-  const results = records.map((record) => validateEvidence(record));
-  const allOk = results.every((result) => result.ok);
+  const results = inspected.valid.map((record) => validateEvidence(record));
+  const allOk = results.every((result) => result.ok) && inspected.invalid.length === 0;
   const payload = {
     valid: allOk,
-    count: records.length,
-    invalidCount: results.filter((result) => !result.ok).length,
-    runIds: records.map((record) => record.runId),
+    count: inspected.valid.length,
+    invalidCount: inspected.invalid.length + results.filter((result) => !result.ok).length,
+    runIds: inspected.valid.map((record) => record.runId),
+    unverifiable: inspected.invalid,
   };
   emit(
     stdout,
     json,
     payload,
     allOk
-      ? `Evidence validation: ${records.length} valid record(s)`
-      : `Evidence validation: ${payload.invalidCount} invalid of ${records.length}`,
+      ? `Evidence validation: ${inspected.valid.length} valid record(s)`
+      : `Evidence validation: ${payload.invalidCount} invalid of ${inspected.valid.length + inspected.invalid.length}`,
   );
   return allOk ? CLI_EXIT.OK : CLI_EXIT.FAILURE;
 }

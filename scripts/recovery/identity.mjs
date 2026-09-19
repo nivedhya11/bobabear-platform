@@ -2,6 +2,7 @@
  * Fail-closed source/target identity guard for IMP-037 recovery.
  * This tranche does not restore. There is no --force-production override.
  */
+import path from "node:path";
 import { DEFAULT_KNOWN_PRODUCTION_PGDATA_PATHS, ENVIRONMENT_CLASSIFICATION } from "./constants.mjs";
 
 const ALLOWED_TARGET_CLASSIFICATIONS = new Set([ENVIRONMENT_CLASSIFICATION.RECOVERY]);
@@ -53,9 +54,11 @@ export function evaluateTargetIdentitySafety(input) {
     );
   }
 
-  const productionPaths = (input.knownProductionPgdataPaths ?? DEFAULT_KNOWN_PRODUCTION_PGDATA_PATHS).map(normalizePath);
-  const targetPgdata = normalizePath(input.targetPgdataPath);
-  if (targetPgdata && productionPaths.includes(targetPgdata)) {
+  const productionPaths = (input.knownProductionPgdataPaths ?? DEFAULT_KNOWN_PRODUCTION_PGDATA_PATHS).map(
+    canonicalizePath,
+  );
+  const targetPgdata = canonicalizePath(input.targetPgdataPath);
+  if (targetPgdata && productionPaths.some((known) => isProductionPgdataPath(targetPgdata, known))) {
     return deny("PRODUCTION_PGDATA_FORBIDDEN", "Known production PGDATA identity/path is forbidden as a recovery target");
   }
 
@@ -78,7 +81,19 @@ function normalizeClassification(value) {
   return trimmed;
 }
 
-function normalizePath(value) {
+/**
+ * Resolve `.` / `..` and trailing slashes without requiring the path to exist.
+ * @param {unknown} value
+ * @returns {string}
+ */
+export function canonicalizePath(value) {
   if (typeof value !== "string") return "";
-  return value.trim().replace(/\/+$/, "").toLowerCase();
+  const trimmed = value.trim().replace(/\\/g, "/");
+  if (!trimmed) return "";
+  return path.posix.normalize(trimmed).replace(/\/+$/, "").toLowerCase() || "/";
+}
+
+function isProductionPgdataPath(candidate, knownProduction) {
+  if (!candidate || !knownProduction) return false;
+  return candidate === knownProduction || candidate.startsWith(`${knownProduction}/`);
 }

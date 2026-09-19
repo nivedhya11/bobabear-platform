@@ -102,3 +102,21 @@ test("explicit overdue policy marks a layer NOT_READY without inventing a defaul
   assert.equal(result.layers.LAYER_2.readiness, READINESS_LEVEL.NOT_READY);
   assert.equal(result.overall, READINESS_LEVEL.NOT_READY);
 });
+
+test("malformed latest evidence blocks READY and remains visible", () => {
+  const layer1 = layerEvidence(RECOVERY_LAYER.LAYER_1, OPERATION_STATUS.SUCCEEDED, {
+    runId: generateRunId({ now: new Date(Date.UTC(2026, 8, 20, 4, 0, 0)), randomHex: "aaaaaaaaaaaaaaaa" }),
+  });
+  const layer2 = layerEvidence(RECOVERY_LAYER.LAYER_2, OPERATION_STATUS.SUCCEEDED, {
+    runId: generateRunId({ now: new Date(Date.UTC(2026, 8, 20, 4, 1, 0)), randomHex: "bbbbbbbbbbbbbbbb" }),
+  });
+  const malformedId = generateRunId({ now: new Date(Date.UTC(2026, 8, 20, 4, 2, 0)), randomHex: "cccccccccccccccc" });
+  const result = evaluateReadiness({
+    evidenceRecords: [layer1, layer2],
+    invalidEvidence: [{ runId: malformedId, reason: "Evidence file is not valid JSON" }],
+  });
+  assert.equal(result.overall, READINESS_LEVEL.NOT_READY);
+  assert.equal(result.latestAttempt.runId, malformedId);
+  assert.equal(result.latestAttempt.status, "UNVERIFIABLE");
+  assert.equal(result.malformedCount, 1);
+});

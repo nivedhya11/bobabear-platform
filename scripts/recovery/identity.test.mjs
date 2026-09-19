@@ -68,3 +68,15 @@ test("known production PGDATA path is denied", () => {
   assert.equal(result.allowed, false);
   assert.equal(result.code, "PRODUCTION_PGDATA_FORBIDDEN");
 });
+
+test("equivalent production PGDATA paths with . or .. are denied", () => {
+  for (const targetPgdataPath of [
+    "/var/lib/postgresql/data/.",
+    "/var/lib/postgresql/data/sub/..",
+    "/var/lib/postgresql/data/base",
+  ]) {
+    const result = evaluateTargetIdentitySafety({ ...allowed, targetPgdataPath });
+    assert.equal(result.allowed, false, targetPgdataPath);
+    assert.equal(result.code, "PRODUCTION_PGDATA_FORBIDDEN", targetPgdataPath);
+  }
+});

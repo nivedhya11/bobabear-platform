@@ -81,21 +81,32 @@ export function readRunEvidence(evidenceRoot, runId) {
 
 /**
  * @param {string} evidenceRoot
- * @returns {import("./evidence.mjs").RecoveryEvidence[]}
+ * @returns {{ valid: import("./evidence.mjs").RecoveryEvidence[], invalid: { runId: string, reason: string }[] }}
  */
-export function listEvidence(evidenceRoot) {
+export function inspectEvidence(evidenceRoot) {
+  /** @type {import("./evidence.mjs").RecoveryEvidence[]} */
+  const valid = [];
+  /** @type {{ runId: string, reason: string }[]} */
+  const invalid = [];
   if (typeof evidenceRoot !== "string" || evidenceRoot.length === 0 || !existsSync(evidenceRoot)) {
-    return [];
+    return { valid, invalid };
   }
   const names = readdirSync(evidenceRoot, { withFileTypes: true })
     .filter((entry) => entry.isDirectory() && isValidRunId(entry.name))
     .map((entry) => entry.name)
     .sort();
-  /** @type {import("./evidence.mjs").RecoveryEvidence[]} */
-  const records = [];
   for (const runId of names) {
     const result = readRunEvidence(evidenceRoot, runId);
-    if (result.ok) records.push(result.evidence);
+    if (result.ok) valid.push(result.evidence);
+    else invalid.push({ runId, reason: result.reason });
   }
-  return records;
+  return { valid, invalid };
+}
+
+/**
+ * @param {string} evidenceRoot
+ * @returns {import("./evidence.mjs").RecoveryEvidence[]}
+ */
+export function listEvidence(evidenceRoot) {
+  return inspectEvidence(evidenceRoot).valid;
 }

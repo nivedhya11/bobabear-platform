@@ -18,6 +18,7 @@ import { runIdInstant } from "./run-id.mjs";
 /**
  * @param {object} input
  * @param {unknown[]} [input.evidenceRecords]
+ * @param {{ runId?: string, reason?: string }[]} [input.invalidEvidence]
  * @param {ReadinessPolicy} [input.policy]
  * @param {boolean} [input.configurationPresent]
  * @param {boolean} [input.credentialsPresent]
@@ -29,12 +30,19 @@ export function evaluateReadiness(input = {}) {
   const requiredLayers = policy.requiredLayers ?? [...REQUIRED_RECOVERY_LAYERS];
   const now = resolveNow(policy.now);
   const records = Array.isArray(input.evidenceRecords) ? input.evidenceRecords : [];
+  const invalidEvidence = Array.isArray(input.invalidEvidence) ? input.invalidEvidence : [];
   const validRecords = [];
   const malformed = [];
   for (const record of records) {
     const parsed = validateEvidence(record);
     if (parsed.ok) validRecords.push(parsed.evidence);
-    else malformed.push(parsed.reason);
+    else malformed.push({ runId: typeof record?.runId === "string" ? record.runId : null, reason: parsed.reason });
+  }
+  for (const entry of invalidEvidence) {
+    malformed.push({
+      runId: typeof entry?.runId === "string" ? entry.runId : null,
+      reason: typeof entry?.reason === "string" ? entry.reason : "unreadable evidence",
+    });
   }
 
   const layerResults = {};
@@ -43,33 +51,31 @@ export function evaluateReadiness(input = {}) {
   }
 
   const findings = validRecords.flatMap((record) => record.findings ?? []);
-  const latestAttempt = latestRecord(validRecords);
+  const latestAttempt = latestAttemptFrom(validRecords, malformed);
+  const unverifiable = malformed.length > 0;
   const anyRequiredNotReady = requiredLayers.some((layer) => layerResults[layer].readiness !== READINESS_LEVEL.READY);
-  const overall = anyRequiredNotReady || validRecords.length === 0 ? READINESS_LEVEL.NOT_READY : READINESS_LEVEL.READY;
+  const overall =
+    unverifiable || anyRequiredNotReady || validRecords.length === 0 ? READINESS_LEVEL.NOT_READY : READINESS_LEVEL.READY;
 
   return {
     overall,
     layers: layerResults,
-    latestAttempt: latestAttempt
-      ? {
-          runId: latestAttempt.runId,
-          status: latestAttempt.status,
-          recoveryLayer: latestAttempt.recoveryLayer,
-          incomplete: latestAttempt.incomplete === true,
-          failureBlockReason: latestAttempt.failureBlockReason ?? null,
-        }
-      : null,
+    latestAttempt,
     findings,
     malformedCount: malformed.length,
+    unverifiableEvidence: malformed,
     configurationOnly:
       Boolean(input.configurationPresent || input.credentialsPresent || input.bucketPresent || input.timerPresent) &&
-      validRecords.length === 0,
+      validRecords.length === 0 &&
+      malformed.length === 0,
     note:
-      validRecords.length === 0
-        ? "No valid recovery evidence; configuration, credentials, buckets, or timers are not success"
-        : anyRequiredNotReady
-          ? "One or more required recovery layers lack valid successful evidence"
-          : "Required layers have valid successful evidence",
+      unverifiable
+        ? "Unverifiable or malformed evidence is present and blocks readiness"
+        : validRecords.length === 0
+          ? "No valid recovery evidence; configuration, credentials, buckets, or timers are not success"
+          : anyRequiredNotReady
+            ? "One or more required recovery layers lack valid successful evidence"
+            : "Required layers have valid successful evidence",
   };
 }
 
@@ -149,6 +155,42 @@ function recordAppliesToLayer(record, layer) {
 function latestRecord(records) {
   if (records.length === 0) return null;
   return [...records].sort((a, b) => compareEvidenceRecency(a, b)).at(-1) ?? null;
+}
+
+function latestAttemptFrom(validRecords, malformed) {
+  /** @type {{ runId: string | null, status: string, recoveryLayer?: string, incomplete?: boolean, failureBlockReason?: string | null, recency: number }[]} */
+  const candidates = [];
+  for (const record of validRecords) {
+    candidates.push({
+      runId: record.runId,
+      status: record.status,
+      recoveryLayer: record.recoveryLayer,
+      incomplete: record.incomplete === true,
+      failureBlockReason: record.failureBlockReason ?? null,
+      recency: timestampOf(record),
+    });
+  }
+  for (const entry of malformed) {
+    candidates.push({
+      runId: entry.runId,
+      status: "UNVERIFIABLE",
+      failureBlockReason: entry.reason,
+      recency: entry.runId ? timestampOf({ runId: entry.runId }) : 0,
+    });
+  }
+  if (candidates.length === 0) return null;
+  const latest = candidates.sort((a, b) => {
+    if (a.recency !== b.recency) return a.recency - b.recency;
+    return String(a.runId ?? "").localeCompare(String(b.runId ?? ""));
+  }).at(-1);
+  if (!latest) return null;
+  return {
+    runId: latest.runId,
+    status: latest.status,
+    recoveryLayer: latest.recoveryLayer ?? null,
+    incomplete: latest.incomplete === true,
+    failureBlockReason: latest.failureBlockReason ?? null,
+  };
 }
 
 function compareEvidenceRecency(a, b) {

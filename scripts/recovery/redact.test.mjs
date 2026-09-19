@@ -53,3 +53,13 @@ test("failure messages are redacted", () => {
   assert.equal(containsSecret(out, SECRETS.password), false);
   assert.equal(containsSecret(out, SECRETS.token), false);
 });
+
+test("redacts passwordless database URIs and signed object-store query credentials", () => {
+  const passwordless = "postgresql://boba_bear_app@postgres:5432/boba_bear";
+  const signature = "TOPSECRETAMZSIGNATUREVALUE";
+  const signed = `https://bucket.nyc3.digitaloceanspaces.com/artifact?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Signature=${signature}`;
+  const out = redactText(`${passwordless} ${signed}`);
+  assert.equal(out.includes("postgresql://boba_bear_app@postgres:5432/boba_bear"), false);
+  assert.equal(containsSecret(out, signature), false);
+  assert.match(out, /\[REDACTED\]/);
+});

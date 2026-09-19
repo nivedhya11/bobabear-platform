@@ -10,6 +10,10 @@ const SENSITIVE_KEY_PATTERN =
 
 const AGE_SECRET_KEY_PATTERN = /AGE-SECRET-KEY-[0-9A-Z]+/g;
 const URI_USERINFO_PATTERN = /([a-z][a-z0-9+.-]*:\/\/)([^/@\s:]+):([^@\s]+)@/gi;
+const CONNECTION_URI_PATTERN =
+  /\b(?:postgres(?:ql)?|mysql|mongodb(?:\+srv)?|redis|amqp|cockroach(?:db)?):\/\/[^\s"'\\]+/gi;
+const SIGNED_QUERY_PATTERN =
+  /([?&](?:X-Amz-(?:Algorithm|Credential|Date|Expires|SignedHeaders|Signature|Security-Token)|AWSAccessKeyId|Signature|Expires|token|access_token|auth(?:entication)?_token)=)([^&\s"']+)/gi;
 const BEARER_PATTERN = /\bBearer\s+[A-Za-z0-9\-._~+/]+=*/gi;
 const GENERIC_TOKEN_ASSIGN_PATTERN =
   /\b((?:password|passwd|secret|token|passphrase|access[_-]?key|secret[_-]?key|PGBACKREST_CIPHER_PASS|AWS_SECRET_ACCESS_KEY|SPACES_SECRET(?:_KEY)?|AGE_SECRET_KEY)["'\s:=]+)([^\s"',;]+)/gi;
@@ -23,6 +27,8 @@ export function redactText(value) {
   let text = typeof value === "string" ? value : stringifyUnsafe(value);
   text = text.replace(AGE_SECRET_KEY_PATTERN, REDACTED);
   text = text.replace(URI_USERINFO_PATTERN, `$1$2:${REDACTED}@`);
+  text = text.replace(CONNECTION_URI_PATTERN, REDACTED);
+  text = text.replace(SIGNED_QUERY_PATTERN, `$1${REDACTED}`);
   text = text.replace(BEARER_PATTERN, `Bearer ${REDACTED}`);
   text = text.replace(GENERIC_TOKEN_ASSIGN_PATTERN, `$1${REDACTED}`);
   return text;
