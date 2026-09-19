@@ -9256,7 +9256,7 @@ describe("IMP-037 Architecture Lock checkpoints", () => {
     "RECOVERY_LAYER_1_REPO_ENCRYPTION: AES-256-CBC",
     "RECOVERY_LAYER_2: independent PostgreSQL logical backup / pg_dump -Fc / age public-key encryption",
     "RECOVERY_LAYER_2_INTEGRITY: SHA-256",
-    "RECOVERY_LAYER_2_RETENTION: 35 completed daily runs (35-day rolling retention)",
+    "RECOVERY_LAYER_2_RETENTION: 35-day rolling retention (age-based; COMPLETE runs only)",
     "RUN_ID: unique per backup invocation",
     "ENCRYPTION_KEY_VERSIONING: REQUIRED",
     "RETIRED_KEYS_MUST_REMAIN_RESOLVABLE_FOR_RETAINED_ARTIFACTS: YES",
