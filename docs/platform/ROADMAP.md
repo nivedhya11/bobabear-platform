@@ -306,14 +306,17 @@ IMP-036D_FOUNDER_UAT: PASS
 ```
 
 **GTM-R134** persists Architecture Fit PASS and locks IMP-037 capability architecture against
-ARCH-R20 / D-374 (`IMP037_ARCHITECTURE_FIT: PASS`; `IMP037_ARCHITECTURE_LOCKED: YES`). This is the
-**independent-review candidate** for ChatGPT review (`INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PENDING`).
-Fit-evaluated candidate is exact `main` head `28e6dd15c48b8c19abbc7057c4dc7e0a7d7cc7ea` / tree
+ARCH-R20 / D-374 (`IMP037_ARCHITECTURE_FIT: PASS`; `IMP037_ARCHITECTURE_LOCKED: YES`). Independent
+Architecture Fit review is **PASS** (`INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PASS`; reviewed technical
+candidate head `d74ca9a30096fb14bca80643b75aa19d33093dde` / tree
+`09c7e3bd6b7832944d07d527c149752ed3bbeb4d`; GitHub review `5256273904`). Fit-evaluated candidate
+remains exact `main` head `28e6dd15c48b8c19abbc7057c4dc7e0a7d7cc7ea` / tree
 `5792c963166e8589751d2ba8c8928728e2c83526` / fingerprint
 `56fa9b5459fd8acceb2ccc3ab73c5d7d9583dbf4539b10a1ef75553dd5aff8ba`; Fit date 2026-09-19;
-Architecture Fit result PASS (founder-approved for persistence). The later lock-persistence commit
-is **not** the evaluated artifact (`architecture-lock persistence commit != Architecture Fit
-evaluated candidate`). Locked capability architecture for IMP-037:
+Architecture Fit result PASS (founder-approved for persistence). The later lock-persistence /
+review-reconciliation commits are **not** the Fit-evaluated artifact (`architecture-lock persistence
+commit != Architecture Fit evaluated candidate`; `independent-review evidence != Fit-evaluated
+artifact`). Locked capability architecture for IMP-037:
 [`capabilities/IMP-037-backup-restore-migration-readiness.md`](./capabilities/IMP-037-backup-restore-migration-readiness.md).
 Layer 1 = pgBackRest >= 2.55 (AES-256-CBC repo encryption; continuous WAL; Spaces physical bucket).
 Layer 2 = independent daily `pg_dump -Fc` + age encryption (separate Spaces logical bucket).
@@ -331,8 +334,8 @@ Fit. `acceptedThrough` remains IMP-036G; `currentProductSlice = IMP-037`; `pendi
 `IMP037_IMPLEMENTATION_AUTHORIZED: NO`; `IMP037_STARTED: NO`; `IMP037_ACCEPTED: NO`;
 `IMP037_FOUNDER_UAT_REQUIRED: YES`). `IMP038_ACTIVATED: NO`. Architecture lock persistence does
 **not** authorize/start implementation, accept IMP-037, create production resources, or activate
-IMP-038. Implementation remains explicitly unauthorized. Next gate = ChatGPT independent review
-(not merge; green CI does not authorize merge).
+IMP-038. Implementation remains explicitly unauthorized. Next gate = human R3 merge decision
+(green CI and independent review PASS do not themselves authorize merge).
 
 Implementation / review provenance for accepted IMP-036G remains distinct from this checkpoint:
 accepted UAT product candidate `fbf690a67cda51bd6bbc1bad4a9d26f574c4286e` / tree
@@ -445,8 +448,9 @@ Accepted UAT product candidate remains `fbf690a67cda51bd6bbc1bad4a9d26f574c4286e
 `SCHEMA_CHANGE_REQUIRED: YES` remains the architecture conclusion recorded for IMP-036G;
 `NEW_PERMISSION: NO`; `NEW_ROLE: NO`; `NEW_SCOPE_MODEL: NO`;
 `D374_REQUIRED_FOR_LOCK: NO`; `ARCH_R20_REQUIRED: NO`.
-IMP-037 Architecture Fit against ARCH-R20 is `PASS`; architecture lock is `YES` (independent review
-PENDING; PR #169 NON_AUTHORITATIVE / SUPERSEDED). Implementation remains unauthorized / unstarted.
+IMP-037 Architecture Fit against ARCH-R20 is `PASS`; architecture lock is `YES` (independent
+Architecture Fit review PASS; PR #169 NON_AUTHORITATIVE / SUPERSEDED). Implementation remains
+unauthorized / unstarted.
 
 Next product slice is IMP-038 — Security & Privacy Hardening
 (`PLANNED` / `NOT_ACTIVATED` / `NOT_AUTHORIZED` / `NOT_STARTED`; `IMP038_ACTIVATED: NO`).
@@ -584,13 +588,16 @@ Historical revision evidence for GTM-R1…GTM-R113 is preserved byte-for-byte in
 ### GTM-R134 — 2026-09-19
 
 - Persist Architecture Fit PASS and lock IMP-037 capability architecture against ARCH-R20 / D-374
-  (`IMP037_ARCHITECTURE_FIT: PASS`; `IMP037_ARCHITECTURE_LOCKED: YES`) as the independent-review
-  candidate (`INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PENDING`).
+  (`IMP037_ARCHITECTURE_FIT: PASS`; `IMP037_ARCHITECTURE_LOCKED: YES`). Independent Architecture Fit
+  review is recorded as `INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PASS` for reviewed technical candidate
+  head `d74ca9a30096fb14bca80643b75aa19d33093dde` / tree `09c7e3bd6b7832944d07d527c149752ed3bbeb4d`
+  (GitHub review `5256273904`). Review PASS is evidence reconciliation inside this architecture-lock
+  checkpoint; it is not a new ROADMAP lifecycle state and does not authorize implementation.
 - Fit-evaluated candidate: branch `main` head `28e6dd15c48b8c19abbc7057c4dc7e0a7d7cc7ea` / tree
   `5792c963166e8589751d2ba8c8928728e2c83526` / fingerprint
   `56fa9b5459fd8acceb2ccc3ab73c5d7d9583dbf4539b10a1ef75553dd5aff8ba`; Fit date 2026-09-19;
-  Architecture Fit result PASS (founder-approved for persistence). Lock-persistence commit is not
-  the evaluated artifact.
+  Architecture Fit result PASS (founder-approved for persistence). Lock-persistence / review-
+  reconciliation commits are not the Fit-evaluated artifact.
 - Adds locked capability architecture
   [`capabilities/IMP-037-backup-restore-migration-readiness.md`](./capabilities/IMP-037-backup-restore-migration-readiness.md)
   (Layer 1 pgBackRest >= 2.55; Layer 2 pg_dump -Fc + age; two Spaces buckets; no Spaces mutex;
@@ -601,11 +608,11 @@ Historical revision evidence for GTM-R1…GTM-R113 is preserved byte-for-byte in
 - Preserves Product Definition Gate PASS for `PD-IMP-037-DRAFT-1` and `acceptedThrough = IMP-036G`.
 - Preserves ARCH-R20 / DR-16 / D-374 CURRENT (`D375_REQUIRED_FOR_LOCK: NO`; no ARCH-R21).
 - Current Product Implementation remains `NONE`. Current governance activity: IMP-037 Architecture
-  Fit PASS / capability architecture LOCKED (review candidate); implementation authorization
-  NOT_GRANTED.
+  Fit PASS / capability architecture LOCKED; independent Architecture Fit review PASS;
+  implementation authorization NOT_GRANTED.
 - Does **not** authorize/start implementation, accept IMP-037, perform Founder UAT, create D-375,
-  create ARCH-R21, mutate cloud/production resources, or activate IMP-038. Next gate = ChatGPT
-  independent review (not merge).
+  create ARCH-R21, mutate cloud/production resources, or activate IMP-038. Next gate = human R3
+  merge decision (not implementation authorization).
 - PD-1 / TEST-1 / VISION-1 unchanged.
 - Supersedes GTM-R133.
 

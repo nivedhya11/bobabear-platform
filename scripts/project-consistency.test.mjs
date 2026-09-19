@@ -9199,6 +9199,9 @@ describe("IMP-037 Architecture Lock checkpoints", () => {
   const FIT_HEAD = "28e6dd15c48b8c19abbc7057c4dc7e0a7d7cc7ea";
   const FIT_TREE = "5792c963166e8589751d2ba8c8928728e2c83526";
   const FIT_FINGERPRINT = "56fa9b5459fd8acceb2ccc3ab73c5d7d9583dbf4539b10a1ef75553dd5aff8ba";
+  const REVIEW_HEAD = "d74ca9a30096fb14bca80643b75aa19d33093dde";
+  const REVIEW_TREE = "09c7e3bd6b7832944d07d527c149752ed3bbeb4d";
+  const REVIEW_ID = "5256273904";
 
   const lockedCapability = [
     "<!-- governance-meta",
@@ -9222,6 +9225,10 @@ describe("IMP-037 Architecture Lock checkpoints", () => {
     "ARCHITECTURE_FIT: PASS",
     "ARCHITECTURE_FIT_EXECUTION: PERFORMED",
     "IMP037_ARCHITECTURE_LOCKED: YES",
+    "INDEPENDENT_ARCHITECTURE_FIT_REVIEW = PASS",
+    `INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_HEAD = ${REVIEW_HEAD}`,
+    `INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_TREE = ${REVIEW_TREE}`,
+    `INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID = ${REVIEW_ID}`,
     "IMPLEMENTATION_AUTHORIZED: NO",
     "IMPLEMENTATION_STARTED: NO",
     "IMP037_IMPLEMENTATION_AUTHORIZED: NO",
@@ -9317,6 +9324,10 @@ describe("IMP-037 Architecture Lock checkpoints", () => {
     "ARCHITECTURE_FIT: PASS",
     "ARCHITECTURE_FIT_RESULT: PASS",
     "IMP037_ARCHITECTURE_LOCKED: YES",
+    "INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PASS",
+    `INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_HEAD: ${REVIEW_HEAD}`,
+    `INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_TREE: ${REVIEW_TREE}`,
+    `INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID: ${REVIEW_ID}`,
     "IMP037_IMPLEMENTATION_AUTHORIZED: NO",
     "IMP037_STARTED: NO",
     "IMP037_ACCEPTED: NO",
@@ -9572,6 +9583,19 @@ describe("IMP-037 Architecture Lock checkpoints", () => {
       ).ok,
       false,
     );
+    assert.equal(
+      evaluateImp037LockedCapabilityArchitecture(
+        lockedCapability.replace(
+          "INDEPENDENT_ARCHITECTURE_FIT_REVIEW = PASS",
+          "INDEPENDENT_ARCHITECTURE_FIT_REVIEW = PENDING",
+        ),
+      ).code,
+      "IMP037_CAPABILITY_LOCK",
+    );
+    assert.equal(
+      evaluateImp037LockedCapabilityArchitecture(`${lockedCapability}\nINDEPENDENT_ARCHITECTURE_FIT_REVIEW = PENDING\n`).code,
+      "IMP037_INDEPENDENT_REVIEW_STALE",
+    );
   });
 
   it("validates the architecture-locked Product Definition", () => {
@@ -9610,6 +9634,15 @@ describe("IMP-037 Architecture Lock checkpoints", () => {
     assert.equal(
       evaluateImp037ArchitectureLockedProductDefinition(lockedProductDefinition.replace(FIT_TREE, "0".repeat(40))).code,
       "IMP037_PD_FIT_PROVENANCE",
+    );
+    assert.equal(
+      evaluateImp037ArchitectureLockedProductDefinition(
+        lockedProductDefinition.replace(
+          "INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PASS",
+          "INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PENDING",
+        ),
+      ).code,
+      "IMP037_PD_INDEPENDENT_REVIEW_PASS",
     );
   });
 

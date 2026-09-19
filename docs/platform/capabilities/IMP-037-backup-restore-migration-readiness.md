@@ -22,16 +22,16 @@
 
 # IMP-037 — Backup, Restore & Migration Readiness
 
-## Capability Architecture — ARCHITECTURE_LOCKED (lock-persistence candidate)
+## Capability Architecture — ARCHITECTURE_LOCKED
 
 This document is the **locked capability architecture** for IMP-037. It records a **fresh**
 Architecture Fit performed against **ARCH-R20 / D-374 / ADR-016** (cost-optimized pilot
 infrastructure: single DigitalOcean Basic Droplet + Docker Engine/Compose + self-hosted
 PostgreSQL 18 + DigitalOcean Spaces off-host backups).
 
-This artifact is the **independent-review candidate** for that Fit. Independent (ChatGPT)
-architecture-fit review is **PENDING**. Nothing in this document authorizes implementation,
-provisions infrastructure, or accepts IMP-037.
+Independent (ChatGPT) Architecture Fit review is **PASS** for the architecture-persistence
+candidate (distinct from the Fit-evaluated `main` artifact below). Nothing in this document
+authorizes implementation, provisions infrastructure, or accepts IMP-037.
 
 ```text
 ARCHITECTURE_FIT: PASS
@@ -39,7 +39,10 @@ ARCHITECTURE_FIT_EXECUTION: PERFORMED
 ARCHITECTURE_FIT_RESULT: PASS
 IMP037_ARCHITECTURE_LOCKED: YES
 ARCHITECTURE_LOCKED = YES
-INDEPENDENT_ARCHITECTURE_FIT_REVIEW = PENDING
+INDEPENDENT_ARCHITECTURE_FIT_REVIEW = PASS
+INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_HEAD = d74ca9a30096fb14bca80643b75aa19d33093dde
+INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_TREE = 09c7e3bd6b7832944d07d527c149752ed3bbeb4d
+INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID = 5256273904
 
 IMPLEMENTATION_AUTHORIZED: NO
 IMPLEMENTATION_STARTED: NO
@@ -76,7 +79,7 @@ this capability document never overrides them.
 | Capability / title | `IMP-037 — Backup, Restore & Migration Readiness` |
 | Authority | `CAPABILITY_ARCHITECTURE` (`CURRENT`) |
 | Architecture base | `ARCH-R20` / `D-374` / `ADR-016` (`ARCH-G26`) |
-| Architecture lock | `ARCHITECTURE_LOCKED` (lock-persistence candidate; independent review **PENDING**) |
+| Architecture lock | `ARCHITECTURE_LOCKED` (independent Architecture Fit review **PASS**) |
 | Architecture Fit | **PASS** (performed fresh against ARCH-R20) |
 | Product Definition | `PD-IMP-037-DRAFT-1` **APPROVED**; Product Definition Gate **PASS** |
 | Formal ROADMAP lifecycle | `ARCHITECTURE_LOCKED` / `NOT_AUTHORIZED` / `NOT_STARTED` (`IMP037_ACTIVATED: YES`) |
@@ -123,12 +126,18 @@ ARCHITECTURE_FIT_EVALUATED_TREE = 5792c963166e8589751d2ba8c8928728e2c83526
 ARCHITECTURE_FIT_EVALUATED_WORKING_TREE_FINGERPRINT = 56fa9b5459fd8acceb2ccc3ab73c5d7d9583dbf4539b10a1ef75553dd5aff8ba
 ARCHITECTURE_FIT_DATE = 2026-09-19
 ARCHITECTURE_FIT_RESULT = PASS
-INDEPENDENT_ARCHITECTURE_FIT_REVIEW = PENDING
+INDEPENDENT_ARCHITECTURE_FIT_REVIEW = PASS
+INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_HEAD = d74ca9a30096fb14bca80643b75aa19d33093dde
+INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_TREE = 09c7e3bd6b7832944d07d527c149752ed3bbeb4d
+INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID = 5256273904
 ```
 
 The persistence commit that records this lock is a **subsequent governance commit** and is **NOT**
 the Fit-evaluated candidate above (`lock-persistence commit != Fit-evaluated candidate`). Do not
-treat lock-persistence HEAD / tree / fingerprint as the reviewed Fit candidate.
+treat lock-persistence HEAD / tree / fingerprint as the Fit-evaluated artifact. Independent review
+PASS applies to the architecture-persistence technical candidate
+(`d74ca9a30096fb14bca80643b75aa19d33093dde` / tree `09c7e3bd6b7832944d07d527c149752ed3bbeb4d`;
+GitHub review `5256273904`), which is also distinct from the Fit-evaluated `main` candidate.
 
 ### 1.2 PR #169 is non-authoritative
 
@@ -956,7 +965,10 @@ IMP037_ARCHITECTURE_LOCKED: YES
 ARCHITECTURE_FIT: PASS
 ARCHITECTURE_FIT_EXECUTION: PERFORMED
 ARCHITECTURE_FIT_RESULT: PASS
-INDEPENDENT_ARCHITECTURE_FIT_REVIEW = PENDING
+INDEPENDENT_ARCHITECTURE_FIT_REVIEW = PASS
+INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_HEAD = d74ca9a30096fb14bca80643b75aa19d33093dde
+INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_TREE = 09c7e3bd6b7832944d07d527c149752ed3bbeb4d
+INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID = 5256273904
 
 IMPLEMENTATION_AUTHORIZED: NO
 IMPLEMENTATION_STARTED: NO
@@ -1010,9 +1022,11 @@ ARCH_R21_CREATED: NO
 ### 21.3 Gate sequence from here
 
 ```text
-1. ARCHITECTURE_FIT (performed) .................... PASS  [this document]
-2. INDEPENDENT_ARCHITECTURE_FIT_REVIEW ............. PENDING (independent ChatGPT review;
-                                                     this persistence is the review candidate)
+1. ARCHITECTURE_FIT (performed) .................... PASS  [Fit-evaluated main candidate]
+2. INDEPENDENT_ARCHITECTURE_FIT_REVIEW ............. PASS
+   REVIEWED_HEAD = d74ca9a30096fb14bca80643b75aa19d33093dde
+   REVIEWED_TREE = 09c7e3bd6b7832944d07d527c149752ed3bbeb4d
+   REVIEW_ID = 5256273904
 3. FOUNDER R3 AUTHORIZATION + MERGE ................ NOT_PERFORMED
 4. IMPLEMENTATION_AUTHORIZATION .................... SEPARATE, NOT GRANTED
 5. IMPLEMENT / PROVE ............................... NOT_STARTED
@@ -1021,9 +1035,9 @@ ARCH_R21_CREATED: NO
 8. ACCEPTANCE + RECONCILIATION (R3) ................ NOT_PERFORMED
 ```
 
-The next gate after **independent review PASS** and **Founder R3 authorization** is **merge of this
-lock persistence**. Merge of this document locks the architecture only. **Implementation remains
-separately unauthorized** and requires its own explicit authorization task.
+The next gate is **Founder R3 merge authorization**. Independent Architecture Fit review is already
+**PASS**. Merge of this document locks the architecture only. **Implementation remains separately
+unauthorized** and requires its own explicit authorization task.
 
 ```text
 ARCHITECTURE_LOCKED != IMPLEMENTATION_AUTHORIZED
@@ -1048,7 +1062,7 @@ recovery rehearsal**. The active production/source database must **never** be a 
 
 ```text
 IMP-037: ARCHITECTURE_LOCKED / NOT_AUTHORIZED / NOT_STARTED / NOT_ACCEPTED
-IMP-037_ARCHITECTURE: LOCKED (lock-persistence candidate; independent review PENDING)
+IMP-037_ARCHITECTURE: LOCKED (independent Architecture Fit review PASS)
 IMP037_ARCHITECTURE_LOCKED: YES
 ARCHITECTURE_FIT: PASS
 ARCHITECTURE_FIT_EXECUTION: PERFORMED
@@ -1088,7 +1102,10 @@ CANONICAL_ROADMAP_STATE = GTM-R134 / STATE-R132
 ARCHITECTURE_FIT_EVALUATED_HEAD = 28e6dd15c48b8c19abbc7057c4dc7e0a7d7cc7ea
 ARCHITECTURE_FIT_EVALUATED_TREE = 5792c963166e8589751d2ba8c8928728e2c83526
 ARCHITECTURE_FIT_EVALUATED_WORKING_TREE_FINGERPRINT = 56fa9b5459fd8acceb2ccc3ab73c5d7d9583dbf4539b10a1ef75553dd5aff8ba
-INDEPENDENT_ARCHITECTURE_FIT_REVIEW = PENDING
+INDEPENDENT_ARCHITECTURE_FIT_REVIEW = PASS
+INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_HEAD = d74ca9a30096fb14bca80643b75aa19d33093dde
+INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_TREE = 09c7e3bd6b7832944d07d527c149752ed3bbeb4d
+INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID = 5256273904
 STOP = Do not implement, provision, schedule, or restore anything; implementation authorization is a separate gate
 ```
 
@@ -1098,7 +1115,7 @@ STOP = Do not implement, provision, schedule, or restore anything; implementatio
 | Authority | `CAPABILITY_ARCHITECTURE` |
 | Status | `CURRENT` |
 | Architecture base | `ARCH-R20` / `D-374` / `ADR-016` (`ARCH-G26`) |
-| Architecture | `ARCHITECTURE_LOCKED` (independent review **PENDING**) |
+| Architecture | `ARCHITECTURE_LOCKED` (independent Architecture Fit review **PASS**) |
 | Implementation | `NOT_AUTHORIZED` / `NOT_STARTED` / `NOT_PERFORMED` |
 | Accepted | **NO** |
 | Product Definition | `PD-IMP-037-DRAFT-1` |

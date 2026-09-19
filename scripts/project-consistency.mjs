@@ -8325,6 +8325,9 @@ export function evaluateD374AmendedHistoricalAdrPreservation(text, adrId) {
 const IMP037_FIT_EVALUATED_HEAD = "28e6dd15c48b8c19abbc7057c4dc7e0a7d7cc7ea";
 const IMP037_FIT_EVALUATED_TREE = "5792c963166e8589751d2ba8c8928728e2c83526";
 const IMP037_FIT_EVALUATED_FINGERPRINT = "56fa9b5459fd8acceb2ccc3ab73c5d7d9583dbf4539b10a1ef75553dd5aff8ba";
+const IMP037_INDEPENDENT_REVIEW_HEAD = "d74ca9a30096fb14bca80643b75aa19d33093dde";
+const IMP037_INDEPENDENT_REVIEW_TREE = "09c7e3bd6b7832944d07d527c149752ed3bbeb4d";
+const IMP037_INDEPENDENT_REVIEW_ID = "5256273904";
 const IMP037_LOCKED_CAPABILITY_REL = "docs/platform/capabilities/IMP-037-backup-restore-migration-readiness.md";
 
 /**
@@ -8577,6 +8580,22 @@ export function evaluateImp037LockedCapabilityArchitecture(text) {
       new RegExp(`ARCHITECTURE_FIT_EVALUATED_WORKING_TREE_FINGERPRINT\\s*[:=]\\s*${IMP037_FIT_EVALUATED_FINGERPRINT}`),
       "Fit evaluated fingerprint",
     ],
+    [body, /INDEPENDENT_ARCHITECTURE_FIT_REVIEW\s*[:=]\s*PASS/, "independent Fit review PASS"],
+    [
+      body,
+      new RegExp(`INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_HEAD\\s*[:=]\\s*${IMP037_INDEPENDENT_REVIEW_HEAD}`),
+      "independent Fit reviewed head",
+    ],
+    [
+      body,
+      new RegExp(`INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_TREE\\s*[:=]\\s*${IMP037_INDEPENDENT_REVIEW_TREE}`),
+      "independent Fit reviewed tree",
+    ],
+    [
+      body,
+      new RegExp(`INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID\\s*[:=]\\s*${IMP037_INDEPENDENT_REVIEW_ID}`),
+      "independent Fit review id",
+    ],
   ];
   for (const [haystack, pattern, label] of required) {
     if (!pattern.test(haystack)) {
@@ -8586,6 +8605,16 @@ export function evaluateImp037LockedCapabilityArchitecture(text) {
         message: `IMP-037 capability artifact must record ${label}`,
       };
     }
+  }
+  if (
+    /INDEPENDENT_ARCHITECTURE_FIT_REVIEW\s*[:=]\s*(?:PENDING|NOT_PERFORMED|FAILED)\b/.test(body)
+  ) {
+    return {
+      ok: false,
+      code: "IMP037_INDEPENDENT_REVIEW_STALE",
+      message:
+        "Locked IMP-037 capability must not retain INDEPENDENT_ARCHITECTURE_FIT_REVIEW PENDING / NOT_PERFORMED / FAILED",
+    };
   }
   if (/"status"\s*:\s*"DRAFT"/.test(meta)) {
     return {
@@ -8790,6 +8819,38 @@ export function evaluateImp037ArchitectureLockedProductDefinition(text) {
       ok: false,
       code: "IMP037_PD_ARCHITECTURE_LOCKED",
       message: "Architecture-locked IMP-037 Product Definition must record IMP037_ARCHITECTURE_LOCKED: YES",
+    };
+  }
+  if (!/INDEPENDENT_ARCHITECTURE_FIT_REVIEW\s*[:=]\s*PASS/.test(currentBody)) {
+    return {
+      ok: false,
+      code: "IMP037_PD_INDEPENDENT_REVIEW_PASS",
+      message:
+        "Architecture-locked IMP-037 Product Definition must record INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PASS",
+    };
+  }
+  if (
+    !new RegExp(`INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_HEAD\\s*[:=]\\s*${IMP037_INDEPENDENT_REVIEW_HEAD}`).test(
+      currentBody,
+    ) ||
+    !new RegExp(`INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_TREE\\s*[:=]\\s*${IMP037_INDEPENDENT_REVIEW_TREE}`).test(
+      currentBody,
+    ) ||
+    !new RegExp(`INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID\\s*[:=]\\s*${IMP037_INDEPENDENT_REVIEW_ID}`).test(currentBody)
+  ) {
+    return {
+      ok: false,
+      code: "IMP037_PD_INDEPENDENT_REVIEW_PROVENANCE",
+      message:
+        "Architecture-locked IMP-037 Product Definition must record independent Architecture Fit review HEAD/TREE/REVIEW_ID provenance",
+    };
+  }
+  if (/INDEPENDENT_ARCHITECTURE_FIT_REVIEW\s*[:=]\s*(?:PENDING|NOT_PERFORMED|FAILED)\b/.test(currentBody)) {
+    return {
+      ok: false,
+      code: "IMP037_PD_INDEPENDENT_REVIEW_STALE",
+      message:
+        "Architecture-locked IMP-037 Product Definition must not retain INDEPENDENT_ARCHITECTURE_FIT_REVIEW PENDING / NOT_PERFORMED / FAILED",
     };
   }
   if (/"architectureFit"\s*:\s*"NOT_PERFORMED"/.test(body)) {
@@ -26307,6 +26368,26 @@ function checkImp037ArchitectureLock(roadmap, state, architecture, decision) {
       "STATE must record Fit-evaluated working-tree fingerprint",
     ],
     [state.text, /STATE-R132 = IMP-037_ARCHITECTURE_LOCK/, "STATE must record STATE-R132 architecture-lock identity"],
+    [
+      currentStateActivity,
+      /INDEPENDENT_ARCHITECTURE_FIT_REVIEW:\s*PASS/,
+      "STATE must record independent Architecture Fit review PASS",
+    ],
+    [
+      currentStateActivity,
+      new RegExp(IMP037_INDEPENDENT_REVIEW_HEAD),
+      "STATE must record independent Architecture Fit reviewed head",
+    ],
+    [
+      currentRoadmapSection,
+      /INDEPENDENT_ARCHITECTURE_FIT_REVIEW:\s*PASS/,
+      "ROADMAP must record independent Architecture Fit review PASS",
+    ],
+    [
+      currentRoadmapSection,
+      new RegExp(IMP037_INDEPENDENT_REVIEW_HEAD),
+      "ROADMAP must record independent Architecture Fit reviewed head",
+    ],
   ];
   for (const [haystack, pattern, message] of requiredTokens) {
     if (!pattern.test(haystack)) fail("IMP037_ARCHITECTURE_LOCK", message);
@@ -26317,6 +26398,15 @@ function checkImp037ArchitectureLock(roadmap, state, architecture, decision) {
   }
   if (/IMP037_ARCHITECTURE_FIT:\s*NOT_PERFORMED/.test(currentBlob) || /Architecture Fit NOT_PERFORMED/i.test(currentStateActivity)) {
     fail("IMP037_ARCHITECTURE_FIT_STALE", "CURRENT ROADMAP/STATE must not claim Architecture Fit NOT_PERFORMED after lock");
+  }
+  if (
+    /INDEPENDENT_ARCHITECTURE_FIT_REVIEW:\s*(?:PENDING|NOT_PERFORMED|FAILED)\b/.test(currentBlob) ||
+    /independentArchitectureFitReview:\s*(?:PENDING|NOT_PERFORMED|FAILED)\b/.test(state.text)
+  ) {
+    fail(
+      "IMP037_INDEPENDENT_REVIEW_STALE",
+      "CURRENT ROADMAP/STATE must not retain independent Architecture Fit review PENDING / NOT_PERFORMED / FAILED after review PASS",
+    );
   }
   if (/IMP-037:\s*PLANNED \/ NOT_AUTHORIZED \/ NOT_STARTED/.test(currentRoadmapSection) || /IMP-037:\s*PLANNED \/ NOT_AUTHORIZED \/ NOT_STARTED/.test(currentStateAcceptance)) {
     fail("IMP037_LIFECYCLE_STALE", "CURRENT ROADMAP/STATE must not retain IMP-037 PLANNED lifecycle after architecture lock");
@@ -26405,6 +26495,12 @@ function checkImp037ArchitectureLock(roadmap, state, architecture, decision) {
     if (/IMP-037[\s\S]{0,400}Architecture Fit NOT_PERFORMED/.test(testingText) || /IMP-037[\s\S]{0,400}architecture NOT_LOCKED/.test(testingText)) {
       fail("TESTING_IMP037_FIT_STALE", "TESTING.md must not retain IMP-037 Architecture Fit NOT_PERFORMED / architecture NOT_LOCKED after lock");
     }
+    if (/IMP-037[\s\S]{0,500}independent review PENDING/.test(testingText)) {
+      fail(
+        "TESTING_IMP037_INDEPENDENT_REVIEW_STALE",
+        "TESTING.md must not retain IMP-037 independent review PENDING after independent Architecture Fit review PASS",
+      );
+    }
   }
 
   const checkpoint = evaluateImp037ArchitectureLockCheckpoint({
@@ -26452,7 +26548,7 @@ function checkImp037ArchitectureLock(roadmap, state, architecture, decision) {
   if (!checkpoint.ok) fail(checkpoint.code, checkpoint.message);
   else {
     note(
-      "IMP-037 Architecture Lock persistence valid (Fit PASS against ARCH-R20 / D-374; no new D-375 / ARCH-R21; no Spaces distributed mutex; implementation unauthorized/unstarted; IMP-038 unactivated)",
+      "IMP-037 Architecture Lock persistence valid (Fit PASS against ARCH-R20 / D-374; independent Architecture Fit review PASS; no new D-375 / ARCH-R21; no Spaces distributed mutex; implementation unauthorized/unstarted; IMP-038 unactivated)",
     );
   }
 }

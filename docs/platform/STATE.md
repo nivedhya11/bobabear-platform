@@ -37,9 +37,14 @@ Pending Acceptance:             NONE
 Current Product Slice:          IMP-037 — Backup, Restore & Migration Readiness
 Next Product Slice:             IMP-038 — Security & Privacy Hardening
 Current Governance Activity:    IMP-037 Architecture Fit PASS / capability architecture LOCKED
-                              (GTM-R134 / STATE-R132; independent-review candidate);
+                              (GTM-R134 / STATE-R132; independent Architecture Fit review PASS);
                               Architecture base ARCH-R20 / D-374;
-                              INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PENDING;
+                              INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PASS;
+                              INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_HEAD:
+                              d74ca9a30096fb14bca80643b75aa19d33093dde;
+                              INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_TREE:
+                              09c7e3bd6b7832944d07d527c149752ed3bbeb4d;
+                              INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID: 5256273904;
                               PR #169 NON_AUTHORITATIVE / SUPERSEDED;
                               formal IMP-037 ROADMAP lifecycle ARCHITECTURE_LOCKED;
                               IMP037_ACTIVATED: YES;
@@ -421,7 +426,10 @@ fitEvaluatedTree: 5792c963166e8589751d2ba8c8928728e2c83526
 fitEvaluatedFingerprint: 56fa9b5459fd8acceb2ccc3ab73c5d7d9583dbf4539b10a1ef75553dd5aff8ba
 fitDate: 2026-09-19
 fitResult: PASS
-independentArchitectureFitReview: PENDING
+independentArchitectureFitReview: PASS
+independentArchitectureFitReviewedHead: d74ca9a30096fb14bca80643b75aa19d33093dde
+independentArchitectureFitReviewedTree: 09c7e3bd6b7832944d07d527c149752ed3bbeb4d
+independentArchitectureFitReviewId: 5256273904
 ```
 
 Detailed per-accepted-IMP marker inventories, SHA/tree/UAT histories, and closed progression
@@ -483,7 +491,7 @@ Implementation/review provenance for IMP-036F is recorded in
 
 ## 8. Explicitly Not Yet Accepted
 
-- IMP-037 — Backup, Restore & Migration Readiness (`ARCHITECTURE_LOCKED` / `NOT_AUTHORIZED` / `NOT_STARTED`; `IMP037_ACTIVATED: YES`; Product Definition APPROVED / `PD-IMP-037-DRAFT-1`; Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation NOT_AUTHORIZED / NOT_STARTED; `IMP037_ACCEPTED: NO`; independent review PENDING)
+- IMP-037 — Backup, Restore & Migration Readiness (`ARCHITECTURE_LOCKED` / `NOT_AUTHORIZED` / `NOT_STARTED`; `IMP037_ACTIVATED: YES`; Product Definition APPROVED / `PD-IMP-037-DRAFT-1`; Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation NOT_AUTHORIZED / NOT_STARTED; `IMP037_ACCEPTED: NO`; independent Architecture Fit review PASS)
 - IMP-038 — Security & Privacy Hardening (`PLANNED` / `NOT_ACTIVATED`; `IMP038_ACTIVATED: NO`)
 - IMP-039 — Production Infrastructure & Release Pipeline
 - IMP-040 — Launch Validation & Cutover
@@ -498,7 +506,7 @@ Implementation/review provenance for IMP-036F is recorded in
 | Why / Non-Goals | [`VISION.md`](./VISION.md) |
 | Durable architecture | [`ARCHITECTURE.md`](./ARCHITECTURE.md) |
 | Binding decision status | [`decision-register.md`](./decision-register.md) |
-| IMP-037 locked capability architecture (Fit PASS; lock candidate; independent review PENDING) | [`capabilities/IMP-037-backup-restore-migration-readiness.md`](./capabilities/IMP-037-backup-restore-migration-readiness.md) |
+| IMP-037 locked capability architecture (Fit PASS; independent Architecture Fit review PASS) | [`capabilities/IMP-037-backup-restore-migration-readiness.md`](./capabilities/IMP-037-backup-restore-migration-readiness.md) |
 | IMP-036G locked capability architecture (latest accepted) | [`capabilities/IMP-036G-administration-console-v2.md`](./capabilities/IMP-036G-administration-console-v2.md) |
 | IMP-036F locked capability architecture | [`capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md`](./capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md) |
 | IMP-036E locked capability architecture | [`capabilities/IMP-036E-store-operations-management.md`](./capabilities/IMP-036E-store-operations-management.md) |
@@ -516,7 +524,7 @@ pendingAcceptance: NONE
 currentProductSlice: IMP-037
 nextProductSlice: IMP-038
 Current Product Implementation: NONE
-Current Governance Activity: IMP-037 Architecture Fit PASS; capability architecture LOCKED (independent-review candidate); implementation NOT_AUTHORIZED / NOT_STARTED
+Current Governance Activity: IMP-037 Architecture Fit PASS; capability architecture LOCKED; independent Architecture Fit review PASS; implementation NOT_AUTHORIZED / NOT_STARTED
 IMP-036G: COMPLETE_AND_ACCEPTED
 IMP036G_ACCEPTED: YES
 IMP036G_FOUNDER_UAT: PASS
@@ -546,14 +554,17 @@ fitEvaluatedTree: 5792c963166e8589751d2ba8c8928728e2c83526
 fitEvaluatedFingerprint: 56fa9b5459fd8acceb2ccc3ab73c5d7d9583dbf4539b10a1ef75553dd5aff8ba
 fitDate: 2026-09-19
 fitResult: PASS
-independentArchitectureFitReview: PENDING
+independentArchitectureFitReview: PASS
+independentArchitectureFitReviewedHead: d74ca9a30096fb14bca80643b75aa19d33093dde
+independentArchitectureFitReviewedTree: 09c7e3bd6b7832944d07d527c149752ed3bbeb4d
+independentArchitectureFitReviewId: 5256273904
 PR169_NOTE: NON_AUTHORITATIVE / SUPERSEDED for ARCH-R20 Fit
 supersedes: STATE-R131
 ```
 
-STATE-R132 records IMP-037 Architecture Fit PASS and architecture lock candidate against ARCH-R20 /
-D-374. It does **not** claim implementation authorization/start, acceptance, IMP-038 activation,
-production resource creation, or independent review PASS.
+STATE-R132 records IMP-037 Architecture Fit PASS, architecture lock, and independent Architecture
+Fit review PASS against ARCH-R20 / D-374. It does **not** claim implementation authorization/start,
+acceptance, IMP-038 activation, or production resource creation.
 
 ## 11. STATE-R131 record
 

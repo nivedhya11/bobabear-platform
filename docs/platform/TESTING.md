@@ -33,7 +33,7 @@ activation truth is owned by [`ROADMAP.md`](./ROADMAP.md) / [`STATE.md`](./STATE
 CURRENT product slice (`IMP037_ACTIVATED: YES`; formal lifecycle `ARCHITECTURE_LOCKED` /
 `NOT_AUTHORIZED` / `NOT_STARTED`; Product Definition `APPROVED` / `PD-IMP-037-DRAFT-1`;
 Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED;
-implementation NOT_AUTHORIZED / NOT_STARTED; independent review PENDING). TEST-1 remains the verification policy
+implementation NOT_AUTHORIZED / NOT_STARTED; independent Architecture Fit review PASS). TEST-1 remains the verification policy
 for new story-based delivery from IMP-036F. Verification layers and delivery
 phases are not new ROADMAP lifecycle states. Session 1 established documentation policy; it
 changed no runtime, tests, CI configuration, staging deployment, or acceptance status.
