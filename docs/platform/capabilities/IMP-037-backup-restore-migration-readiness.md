@@ -79,7 +79,7 @@ this capability document never overrides them.
 | Architecture lock | `ARCHITECTURE_LOCKED` (lock-persistence candidate; independent review **PENDING**) |
 | Architecture Fit | **PASS** (performed fresh against ARCH-R20) |
 | Product Definition | `PD-IMP-037-DRAFT-1` **APPROVED**; Product Definition Gate **PASS** |
-| Formal ROADMAP lifecycle | `PLANNED` / `NOT_AUTHORIZED` / `NOT_STARTED` (`IMP037_ACTIVATED: YES`) |
+| Formal ROADMAP lifecycle | `ARCHITECTURE_LOCKED` / `NOT_AUTHORIZED` / `NOT_STARTED` (`IMP037_ACTIVATED: YES`) |
 | Implementation | **NOT AUTHORIZED** / **NOT STARTED** / **NOT PERFORMED** |
 | Accepted | **NO** |
 | Founder UAT required | **YES** (`FOUNDER_UAT_STATUS = NOT_PERFORMED`) |
@@ -382,7 +382,8 @@ RECOVERY_LAYER_2_FREQUENCY: daily (at least)
 RECOVERY_LAYER_2_DESTINATION: private DigitalOcean Spaces bucket 2 (separate from the pgBackRest repository)
 RECOVERY_LAYER_2_ENCRYPTION: age public-key encryption (encryption key material need not exist on the backup host)
 RECOVERY_LAYER_2_INTEGRITY: SHA-256
-RECOVERY_LAYER_2_RETENTION: 35 completed daily runs (35-day rolling retention)
+RECOVERY_LAYER_2_RETENTION: 35-day rolling retention (age-based; COMPLETE runs only)
+RECOVERY_LAYER_2_RETENTION_ELIGIBILITY: COMPLETE marker required
 RECOVERY_LAYER_2_COMPLETION: COMPLETE marker written last
 ```
 
@@ -392,7 +393,7 @@ RECOVERY_LAYER_2_COMPLETION: COMPLETE marker written last
 | Independence | Separate tool, separate credentials path, separate bucket, separate encryption scheme | A defect, misconfiguration, credential compromise, or retention error in Layer 1 must not silently destroy Layer 2 |
 | Encryption | **age** public-key encryption | Public-key encryption lets the backup host encrypt without holding decryption authority; reduces blast radius of host compromise |
 | Integrity | `SHA-256` over the encrypted artifact | Distinguishes a complete artifact from a truncated/corrupt one (`AC-IMP-037-002-02`) |
-| Retention | **35 completed daily runs** (`35-day rolling retention`) | Directly implements `FD-037-03`; counted in **completed** runs so failed/partial runs cannot consume the retention window |
+| Retention | **35-day rolling retention** (age-based calendar window; `FD-037-03`) | Binding product window is **35 calendar days**, not “keep N run objects.” Extra same-day COMPLETE runs (manual / retry / pre-migration) remain recoverable for the full age window; incomplete runs never count as eligible backups |
 | Completion semantics | `COMPLETE` marker written **last** | An artifact becomes last-known-good only after payload + checksum + metadata are durably stored |
 
 ### 7.1 Run identity and completion protocol (locked)
@@ -922,7 +923,7 @@ recovery rehearsal**. The active production/source database must **never** be a 
 ## End matter
 
 ```text
-IMP-037: PLANNED / NOT_AUTHORIZED / NOT_STARTED / NOT_ACCEPTED
+IMP-037: ARCHITECTURE_LOCKED / NOT_AUTHORIZED / NOT_STARTED / NOT_ACCEPTED
 IMP-037_ARCHITECTURE: LOCKED (lock-persistence candidate; independent review PENDING)
 IMP037_ARCHITECTURE_LOCKED: YES
 ARCHITECTURE_FIT: PASS

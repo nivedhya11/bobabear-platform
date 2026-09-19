@@ -1190,7 +1190,7 @@ IMP-037 does **not** invent a new customer Golden Journey.
 |---|---|---|---|
 | ADR-001 / ADR-002 / ADR-013 / ADR-015 / ADR-016 / D-374 / ARCH-R20 | CURRENT accepted | All IMP-037 stories | NONE for product decisions |
 | IMP-036G completion / sequencing | IMP-036G `COMPLETE_AND_ACCEPTED`; IMP-037 activation satisfied (`currentProductSlice = IMP-037`; `IMP037_ACTIVATED: YES`) | SATISFIED — no remaining sequencing blocker | NONE for activation sequencing; Product Definition Gate PASS / SATISFIED; Architecture Fit PASS; architecture LOCKED; implementation remains NOT_AUTHORIZED / NOT_STARTED |
-| Product Definition Gate | PASS / SATISFIED | Satisfied before Architecture Fit | NONE — gate complete; Architecture Fit remains required before architecture lock / implementation authorization |
+| Product Definition Gate | PASS / SATISFIED | Satisfied before Architecture Fit | NONE — gate complete; Architecture Fit PASS / architecture LOCKED; implementation authorization remains separate and NOT_GRANTED |
 | Architecture Fit / lock | PASS / LOCKED (independent review PENDING) | Satisfied before implementation authorization | NONE for Fit/lock — implementation authorization remains separate and NOT_GRANTED |
 | IMP-039 | ROADMAP future | Production scheduler/HA/credentials realization | Not required for IMP-037 acceptance |
 | IMP-040 | ROADMAP future | Live launch/cutover | Not required for IMP-037 acceptance |
@@ -1208,9 +1208,10 @@ IMP-037 does **not** invent a new customer Golden Journey.
 | Staging volume-repair command | CURRENT — **not** data-loss recovery proof | Problem statement |
 | Independent logical backup + restore drill + validation + portability + high-risk gate + runbook | **PLANNED_IMP037** V1 acceptance commitment (this PD) | US-IMP-037-001…008 |
 
-Proposed IMP-037 behaviour has Product Definition Gate **PASS**. Behaviour remains unaccepted and
-unimplemented pending Architecture Fit / lock, implementation authorization, IMPLEMENT / PROVE,
-independent review, Founder UAT, and formal acceptance.
+Proposed IMP-037 behaviour has Product Definition Gate **PASS** and Architecture Fit **PASS**
+(architecture LOCKED; independent review PENDING). Behaviour remains unaccepted and
+unimplemented pending implementation authorization, IMPLEMENT / PROVE, independent
+implementation review, Founder UAT, and formal acceptance.
 
 ---
 
@@ -1245,7 +1246,7 @@ independent review, Founder UAT, and formal acceptance.
 
 | `UNRESOLVED_DECISION_REQUIRED` item | Material user/business impact | Decision owner / evidence needed | Affected stories / gate |
 |---|---|---|---|
-| NONE | Founder product decisions FD-037-01…07 are APPROVED; `UNRESOLVED_PRODUCT_DECISIONS = 0` | N/A | Product-decision prerequisite SATISFIED; Architecture Fit is next |
+| NONE | Founder product decisions FD-037-01…07 are APPROVED; `UNRESOLVED_PRODUCT_DECISIONS = 0` | N/A | Product-decision prerequisite SATISFIED; Architecture Fit PASS / architecture LOCKED; next gate = independent architecture review then implementation authorization |
 
 ### Founder decisions (APPROVED) — product requirements
 
@@ -1304,36 +1305,35 @@ RTO timing includes required application/business-integrity validation
   (not merely PostgreSQL availability)
 ```
 
-### Architecture Fit inputs (unresolved **technical** questions — not product decisions)
+### Architecture Fit inputs (RESOLVED by locked capability architecture — not product decisions)
+
+Architecture Fit against ARCH-R20 / D-374 is **PASS**. Locked mechanism selections live in
+[`docs/platform/capabilities/IMP-037-backup-restore-migration-readiness.md`](../../capabilities/IMP-037-backup-restore-migration-readiness.md).
+The following were Fit inputs; they are no longer unresolved product or Fit blockers. Bounded
+engineering detail remains implementation-deferred inside that lock:
 
 ```text
-backup execution location
-restricted direct DB credential model
-logical backup encryption implementation
-Spaces integration
-local/CI/staging validation substitute
-artifact identity/checksum
-backup finalization lifecycle
-restore target safety mechanism
-source-target identity protection
-provider-side-effect suppression
-post-restore migration compatibility
-critical-state verification implementation
-signed-artifact verification mechanism
-backup observability/status mechanism
-production scheduling boundary
-retention-enforcement mechanism
-parallel-run serialization
-safe evidence format
-schema-change requirement
-new-service requirement
-application RBAC requirement
-D-374 requirement
-ARCH-R20 requirement
+backup execution location → one-shot tooling + host systemd timers / Compose (locked)
+restricted direct DB credential model → capability-scoped read-only logical-backup role (locked; grants deferred)
+logical backup encryption implementation → age public-key (locked)
+Spaces integration → two private buckets; no distributed mutex (locked)
+local/CI/staging validation substitute → synthetic/disposable + provider integration + Founder drill tiers (locked)
+artifact identity/checksum → RUN_ID + SHA-256 + COMPLETE-last (locked)
+backup finalization lifecycle → COMPLETE marker last (locked)
+restore target safety mechanism → fresh unique targets; RESTORE_TO_ACTIVE_SOURCE FORBIDDEN (locked)
+source-target identity protection → fail-closed (locked)
+provider-side-effect suppression → fail-closed isolated network (locked)
+post-restore migration compatibility → ADR-002/013 forward-only; Layer 2 portability (locked)
+critical-state verification / signed-artifact / observability → evidence obligations (locked; syntax deferred)
+production scheduling boundary → host timers; no always-on backup service (locked)
+retention-enforcement mechanism → Layer 1 pgBackRest-owned; Layer 2 age-based 35-day rolling COMPLETE runs (locked)
+parallel-run serialization → host-local flock for scheduled/heavy ops; WAL not blocked (locked)
+schema-change / new-service / application RBAC → NO (locked)
+D-374 / ARCH-R20 → already CURRENT; D375/ARCH-R21 not required (locked)
 ```
 
-Architecture Fit must reverify current DigitalOcean/PostgreSQL capabilities from official sources
-before implementation-pinning provider syntax. Do not create D-374 / ARCH-R20 automatically.
+Do not create D-375 / ARCH-R21 merely to document IMP-037 details. Implementation details remain
+deferred without reopening product decisions.
 
 ---
 
@@ -1341,7 +1341,7 @@ before implementation-pinning provider syntax. Do not create D-374 / ARCH-R20 au
 
 | Story ID | Applicable fields complete / evidence | Open material decisions | Readiness / blocker |
 |---|---|---|---|
-| `US-IMP-037-001` | Complete in §9 | NONE | Product Definition Gate PASS; NOT_READY_FOR_IMPLEMENTATION because Architecture Fit/lock and implementation authorization remain pending |
+| `US-IMP-037-001` | Complete in §9 | NONE | Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; NOT_READY_FOR_IMPLEMENTATION because implementation authorization remains pending |
 | `US-IMP-037-002` | Complete in §9 | NONE | Same |
 | `US-IMP-037-003` | Complete in §9 | NONE | Same |
 | `US-IMP-037-004` | Complete in §9 | NONE | Same |
