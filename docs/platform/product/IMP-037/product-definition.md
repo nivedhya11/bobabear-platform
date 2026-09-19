@@ -29,6 +29,23 @@
 ## Product Definition (APPROVED — Product Definition Gate PASS)
 
 ```text
+CURRENT_READ_AMENDMENT (D-374 / ADR-016 / ARCH-R20 — 2026-09-19):
+  Managed DigitalOcean PostgreSQL hosting and provider-managed PITR are no longer CURRENT
+  pilot-production infrastructure authority.
+  Product recovery targets remain binding:
+    RPO_TARGET <= 15 minutes
+    RTO_TARGET <= 2 hours
+    independent encrypted logical backup (daily / 35-day retention / off-host)
+  Layer-1 recovery direction for Architecture Fit is now self-managed PostgreSQL physical/base
+  backup + continuous WAL archiving to DigitalOcean Spaces + PITR-capable recovery.
+  Layer-2 independent logical backup (pg_dump/pg_restore) remains required.
+  Product Definition remains APPROVED; Product Definition Gate remains PASS.
+  Architecture Fit remains NOT_PERFORMED and must be performed fresh against ARCH-R20.
+  Do not treat historical ADR-013 managed-PITR prose or pre-D-374 PD wording as competing
+  CURRENT pilot hosting authority.
+```
+
+```text
 Document status: APPROVED
 PRODUCT_DEFINITION_VERSION: PD-IMP-037-DRAFT-1
 PRE-GATE DRAFT: NO
@@ -80,13 +97,14 @@ IMP036E_LIFECYCLE_CHANGED = NO
 PD1_DID_NOT_ACTIVATE_IMP036F_AT_ADOPTION = YES
 ```
 
-Lifecycle truth remains ROADMAP/STATE only (`GTM-R132` / `STATE-R130`):
+Lifecycle truth remains ROADMAP/STATE only (CURRENT after D-374: `GTM-R133` / `STATE-R131`;
+Product Definition Gate PASS provenance remains GTM-R132 / STATE-R130):
 `acceptedThrough = IMP-036G`; `currentProductSlice = IMP-037`; `pendingAcceptance = NONE`;
 `nextProductSlice = IMP-038` (`PLANNED` / `NOT_ACTIVATED` / `NOT_AUTHORIZED` / `NOT_STARTED`;
 `IMP038_ACTIVATED: NO`). Formal IMP-037 lifecycle remains `PLANNED` /
 `NOT_AUTHORIZED` / `NOT_STARTED` with `IMP037_ACTIVATED: YES`. Product Definition is
-**APPROVED** (`Gate PASS`; Architecture Fit NOT_PERFORMED; architecture NOT_LOCKED;
-implementation NOT_AUTHORIZED / NOT_STARTED).
+**APPROVED** (`Gate PASS`; Architecture Fit NOT_PERFORMED / reopened under D-374; architecture
+NOT_LOCKED; implementation NOT_AUTHORIZED / NOT_STARTED).
 
 ---
 
@@ -98,10 +116,10 @@ implementation NOT_AUTHORIZED / NOT_STARTED).
 | Product Definition version / document status | `PD-IMP-037-DRAFT-1`; **Document status: APPROVED**; **PRE-GATE DRAFT: NO** |
 | Product owner / approval evidence | Founder / product governance human authority; Founder decisions FD-037-01…07 **APPROVED** via `APPROVE_ALL_7_RECOMMENDATIONS` (2026-09-17). Product Definition Gate **PASS** on 2026-09-19 after independent pre-gate review **PASS** of exact candidate head `fccdf7ef606ca906bcdcd706a6de97f693bb88b4` / tree `1477d12b5c5b3b0ccb8d488757516d5b6e637674` (gate-persistence commit is a subsequent revision and is **not** the evaluated artifact). |
 | Process / verification policy | `PD-1` / `TEST-1` |
-| Canonical anchors | VISION-1; ROADMAP GTM-R132; STATE STATE-R130; ARCH-R19; DR-15; PD-1; TEST-1; PERSONA-1; GJ-1 |
+| Canonical anchors | VISION-1; ROADMAP GTM-R133 (CURRENT; D-374); STATE STATE-R131 (CURRENT); ARCH-R20; DR-16; PD-1; TEST-1; PERSONA-1; GJ-1. Gate PASS provenance remains GTM-R132 / STATE-R130 / ARCH-R19 / DR-15 for the evaluated candidate. |
 | Repository candidate | Gate-evaluated candidate: canonical path `/home/ajoshi/repos/boba-bear-platform`; branch `main`; **GATE_EVALUATED_HEAD** `fccdf7ef606ca906bcdcd706a6de97f693bb88b4`; **GATE_EVALUATED_TREE** `1477d12b5c5b3b0ccb8d488757516d5b6e637674`; **GATE_EVALUATED_PRODUCT_DEFINITION_BLOB** `eb792d02dbfede862a0bb104a754d14d875141aa`; **GATE_EVALUATED_WORKING_TREE_FINGERPRINT** `9be2a43fe3881ccd28f169f60209cef3c78c991524e5e9d34a8b657e1b1f0c19` (content-sensitive; reconstructed from clean exact gate-evaluated HEAD/tree via `npm run working-tree:fingerprint`). Historical draft-creation provenance (not the gate-evaluated candidate): base `origin/main` `ee82a8cb783cc618f6f1f521964e72deaad677a0` / tree `1b1eaf138667e65bf4573988d62e176bb8be5949`; draft branch `governance/imp037-pre-gate-product-definition`. Historical pre-activation base: GTM-R130 / STATE-R128 (`6b1f2344d0184e29403b99adfea85c2e5dc8bf9a` / tree `5471ea8f72c635a365e9a78ea1394ec212dcad69`). Activation result: GTM-R131 / STATE-R129. Later merged activated main / Product Definition gate-evaluated candidate: `fccdf7ef606ca906bcdcd706a6de97f693bb88b4` / tree `1477d12b5c5b3b0ccb8d488757516d5b6e637674`. CURRENT_PR_HEAD / GATE_PERSISTENCE_COMMITS differ from the gate-evaluated candidate (`gate-persistence commit != gate-evaluated candidate`) and are **not** the artifact that received Gate PASS. |
-| Capability lifecycle / authorization | ROADMAP/STATE: `currentProductSlice = IMP-037`; **IMP037_ACTIVATED: YES**; formal lifecycle `PLANNED / NOT_AUTHORIZED / NOT_STARTED`; Product Definition APPROVED; Product Definition Gate PASS; Architecture Fit NOT_PERFORMED; architecture NOT_LOCKED; implementation NOT_AUTHORIZED / NOT_STARTED; IMP037_ACCEPTED: NO. `nextProductSlice = IMP-038` (`IMP038_ACTIVATED: NO`). `acceptedThrough` remains IMP-036G. |
-| Relevant capability architecture / ADRs | ADR-001 (DigitalOcean foundation / portability / launch recovery); ADR-002 (environment isolation; migration/release/rollback; restore ≠ routine rollback); ADR-013 (PostgreSQL 18; managed PITR + independent encrypted logical backup; direct backup/restore connections; restore validation; high-risk migration prerequisites); ADR-015 (configuration/secrets); ARCH-R19. Persistence stack selection is **not** reopened. |
+| Capability lifecycle / authorization | ROADMAP/STATE: `currentProductSlice = IMP-037`; **IMP037_ACTIVATED: YES**; formal lifecycle `PLANNED / NOT_AUTHORIZED / NOT_STARTED`; Product Definition APPROVED; Product Definition Gate PASS; Architecture Fit NOT_PERFORMED (reopened by D-374 / ARCH-R20); architecture NOT_LOCKED; implementation NOT_AUTHORIZED / NOT_STARTED; IMP037_ACCEPTED: NO. `nextProductSlice = IMP-038` (`IMP038_ACTIVATED: NO`). `acceptedThrough` remains IMP-036G. |
+| Relevant capability architecture / ADRs | ADR-001 (AMENDED by D-374 for pilot hosting); ADR-002 (AMENDED by D-374 for pilot production/staging target); ADR-013 (PostgreSQL 18 / Drizzle / migrations preserved; Managed PostgreSQL hosting + provider PITR amended by D-374); ADR-015 (AMENDED by D-374 for pilot secrets storage); ADR-016 / D-374 CURRENT pilot topology; ARCH-R20. Persistence application semantics are **not** reopened; pilot hosting/recovery Fit is. |
 | Founder UAT applicability | `FOUNDER_UAT_REQUIRED = YES`; `FOUNDER_UAT_STATUS = NOT_PERFORMED` — launch-critical, high-consequence recovery capability. UAT must use isolated recovery rehearsal of the exact candidate; **never** the active production/source DB as drill target. |
 
 Behaviour classification vocabulary:
@@ -944,7 +962,7 @@ Planned is not proven. PostgreSQL integration claims use real PostgreSQL 18 rath
 |---|---|---|---|
 | `BR-IMP-037-001` | A backup is not considered adequate until restoration has been successfully tested. | ADR-013 restore validation; FD-037-04 | Applicable US-IMP-037-001…008 / related ACs |
 | `BR-IMP-037-002` | A restore drill must never overwrite the active/source database. | ADR-013; FD-037-07 Founder UAT isolation | Applicable US-IMP-037-001…008 / related ACs |
-| `BR-IMP-037-003` | Managed provider backup/PITR and BOBA Bear's independent logical backup are separate recovery layers. | ADR-013; FD-037-03 | Applicable US-IMP-037-001…008 / related ACs |
+| `BR-IMP-037-003` | Two recovery layers remain mandatory: (1) PITR-capable continuous recovery and (2) independent encrypted logical backup. Under **D-374 / ARCH-R20**, Layer 1 is **self-managed** physical/base backup + WAL archiving to Spaces (not DigitalOcean Managed PostgreSQL provider PITR). Historical ADR-013 managed-PITR wording is not CURRENT pilot hosting authority. | ADR-013 (amended by D-374); ADR-016; FD-037-03 | Applicable US-IMP-037-001…008 / related ACs |
 | `BR-IMP-037-004` | Independent backup failure must never be recorded as success. | ADR-013 backup observability | Applicable US-IMP-037-001…008 / related ACs |
 | `BR-IMP-037-005` | Backup/restore administrative access must remain distinct from ordinary application runtime authority. | ADR-013 database roles / direct connections | Applicable US-IMP-037-001…008 / related ACs |
 | `BR-IMP-037-006` | Independent backup artifacts must be encrypted. | ADR-013 independent encrypted logical backup | Applicable US-IMP-037-001…008 / related ACs |
@@ -1168,7 +1186,8 @@ IMP-037 does **not** invent a new customer Golden Journey.
 
 | Behaviour | Existing verified or V1 acceptance commitment? | Story / AC IDs / source |
 |---|---|---|
-| Managed PostgreSQL automated backups / PITR (provider layer) | Existing verified infrastructure authority (ADR-013 first layer) | ADR-013 |
+| Self-managed PITR-capable recovery (physical/base + WAL → Spaces) under D-374 / ARCH-R20 | **PLANNED_IMP037** Fit/implementation commitment (replaces Managed PostgreSQL provider PITR as CURRENT pilot Layer 1) | ADR-016 / D-374; ADR-013 amended; US-IMP-037-001…008 |
+| Historical Managed PostgreSQL automated backups / PITR (provider layer) | **HISTORICAL** under ADR-013; **not** CURRENT pilot production authority after D-374 | ADR-013 (amended); ADR-016 |
 | PostgreSQL 18 + Drizzle migration authority | CURRENT accepted | ADR-013 |
 | Staging volume-repair command | CURRENT — **not** data-loss recovery proof | Problem statement |
 | Independent logical backup + restore drill + validation + portability + high-risk gate + runbook | **PLANNED_IMP037** V1 acceptance commitment (this PD) | US-IMP-037-001…008 |
