@@ -31,19 +31,19 @@
     "note": "Protected evidence and generated reports are never classified as executable test source."
   },
   "counts": {
-    "trackedPathsConsidered": 1921,
-    "executableTestFiles": 395,
+    "trackedPathsConsidered": 1936,
+    "executableTestFiles": 401,
     "sourceTestFiles": 130,
     "testsTreeExecutableFiles": 231,
-    "scriptTestFiles": 34,
+    "scriptTestFiles": 40,
     "playwrightSpecs": 12,
     "vitestConfigs": 2,
     "playwrightConfigs": 7,
     "testSupportScripts": 50,
-    "packageTestCommands": 78,
+    "packageTestCommands": 79,
     "packageAuditCommands": 23,
     "packageE2eCommands": 9,
-    "packageCheckCommands": 12,
+    "packageCheckCommands": 13,
     "packageCoverageCommands": 1,
     "packageInventoryCommands": 2,
     "ciWorkflowFiles": 3,
@@ -447,6 +447,12 @@
     "scripts/lib/vitest-result-validation.test.mjs",
     "scripts/nginx-origin-redirect.test.mjs",
     "scripts/project-consistency.test.mjs",
+    "scripts/recovery/cli.test.mjs",
+    "scripts/recovery/evidence.test.mjs",
+    "scripts/recovery/identity.test.mjs",
+    "scripts/recovery/readiness.test.mjs",
+    "scripts/recovery/redact.test.mjs",
+    "scripts/recovery/run-id.test.mjs",
     "scripts/serve-static-export.test.mjs",
     "scripts/testing-inventory.test.mjs",
     "scripts/workforce/cli-support.test.mjs",
@@ -603,6 +609,7 @@
       "test:promotion-coupons",
       "test:promotion-pricing-parity",
       "test:promotions",
+      "test:recovery",
       "test:scripts",
       "test:serviceability",
       "test:serviceability-auth-integration",
@@ -660,6 +667,7 @@
       "governance:fingerprint",
       "lint",
       "project:consistency",
+      "recovery:target:check",
       "typecheck"
     ],
     "coverage": [
@@ -706,6 +714,7 @@
     "governance:fingerprint": "node scripts/governance-fingerprint.mjs",
     "lint": "eslint",
     "project:consistency": "node scripts/project-consistency.mjs",
+    "recovery:target:check": "node scripts/recovery/cli.mjs target check",
     "test": "node scripts/run-vitest.mjs run",
     "test:access-control": "node scripts/run-vitest.mjs run tests/access-control",
     "test:access-control:cli": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/access-control/cli",
@@ -786,6 +795,7 @@
     "test:promotion-coupons": "node scripts/run-vitest.mjs run tests/promotion-coupons",
     "test:promotion-pricing-parity": "node scripts/run-vitest.mjs run tests/promotion-pricing-parity",
     "test:promotions": "node scripts/run-vitest.mjs run tests/promotions",
+    "test:recovery": "node --test scripts/recovery/*.test.mjs",
     "test:scripts": "find scripts -name \"*.test.mjs\" -print0 | xargs -0 node --test",
     "test:serviceability": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/serviceability/",
     "test:serviceability-auth-integration": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/serviceability-auth-integration",
@@ -1767,6 +1777,114 @@
       "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "scripts/recovery/cli.test.mjs",
+      "runner": "node:test",
+      "domain": "scripts",
+      "testType": "script-unit",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:scripts"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit",
+        "9-recovery-idempotency"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "scripts/recovery/evidence.test.mjs",
+      "runner": "node:test",
+      "domain": "scripts",
+      "testType": "script-unit",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:scripts"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit",
+        "9-recovery-idempotency"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "scripts/recovery/identity.test.mjs",
+      "runner": "node:test",
+      "domain": "scripts",
+      "testType": "script-unit",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:scripts"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit",
+        "9-recovery-idempotency"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "scripts/recovery/readiness.test.mjs",
+      "runner": "node:test",
+      "domain": "scripts",
+      "testType": "script-unit",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:scripts"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit",
+        "9-recovery-idempotency"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "scripts/recovery/redact.test.mjs",
+      "runner": "node:test",
+      "domain": "scripts",
+      "testType": "script-unit",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:scripts"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit",
+        "9-recovery-idempotency"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "scripts/recovery/run-id.test.mjs",
+      "runner": "node:test",
+      "domain": "scripts",
+      "testType": "script-unit",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:scripts"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit",
+        "9-recovery-idempotency"
       ],
       "classificationConfidence": "HEURISTIC"
     },

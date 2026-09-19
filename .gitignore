@@ -71,3 +71,6 @@ next-env.d.ts
 
 # operations service build output (IMP-029 — scripts/operations/build.mjs)
 /dist-operations
+
+# IMP-037 local/disposable recovery evidence (operator-owned; never commit)
+.recovery-evidence/

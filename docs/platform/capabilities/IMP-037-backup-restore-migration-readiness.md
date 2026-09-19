@@ -8,7 +8,8 @@
   "architectureFit": "PASS",
   "architectureFitResult": "PASS",
   "implementationAuthorized": true,
-  "implementationStarted": false,
+  "implementationStarted": true,
+  "implementation": "AUTHORIZED / STARTED",
   "impAccepted": false,
   "founderUatRequired": true,
   "schemaChangeRequired": false,
@@ -31,9 +32,10 @@ PostgreSQL 18 + DigitalOcean Spaces off-host backups).
 
 Independent (ChatGPT) Architecture Fit review is **PASS** for the architecture-persistence
 candidate (distinct from the Fit-evaluated `main` artifact below). Implementation is now
-**AUTHORIZED** / **NOT_STARTED** (authorization evidence PR#171/5743814105). Authorization does
-**not** start implementation, provision infrastructure, or accept IMP-037.
-`AUTHORIZED` + `NOT_STARTED` ≠ `IMPLEMENTATION_IN_PROGRESS`.
+**AUTHORIZED** / **STARTED** (`IMPLEMENTATION_IN_PROGRESS`; authorization evidence
+PR#171/5743814105; start evidence PR#172/5744869269). Start does **not** complete implementation,
+provision production infrastructure, or accept IMP-037. Recovery foundation tooling is in
+progress; Layer 1/Layer 2 backup and restore execution remain `IMPLEMENTATION_PERFORMED: NO`.
 
 ```text
 ARCHITECTURE_FIT: PASS
@@ -47,9 +49,9 @@ INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_TREE = 09c7e3bd6b7832944d07d527c149752ed3b
 INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID = 5256273904
 
 IMPLEMENTATION_AUTHORIZED: YES
-IMPLEMENTATION_STARTED: NO
+IMPLEMENTATION_STARTED: YES
 IMP037_IMPLEMENTATION_AUTHORIZED: YES
-IMP037_STARTED: NO
+IMP037_STARTED: YES
 IMP037_ACCEPTED: NO
 IMP038_ACTIVATED: NO
 IMPLEMENTATION_PERFORMED: NO
@@ -64,16 +66,18 @@ ARCH_R21_REQUIRED: NO
 ARCH_R21_CREATED: NO
 NEW_GLOBAL_DECISION_REQUIRED: NO
 
-CANONICAL_ROADMAP_STATE = GTM-R135 / STATE-R133
+CANONICAL_ROADMAP_STATE = GTM-R136 / STATE-R134
 ARCHITECTURE_BASE = ARCH-R20 / D-374
 PRODUCT_DEFINITION = PD-IMP-037-DRAFT-1 (APPROVED; Product Definition Gate PASS)
 FOUNDER_UAT_REQUIRED = YES
 FOUNDER_UAT_STATUS = NOT_PERFORMED
 IMPLEMENTATION_AUTHORIZATION_EVIDENCE = PR#171/5743814105
+IMPLEMENTATION_START_EVIDENCE = PR#172/5744869269
 ```
 
-`CANONICAL_ROADMAP_STATE = GTM-R135 / STATE-R133` is the **implementation-authorization
-reconciliation target** for this artifact. Architecture Fit/lock provenance remains GTM-R134 /
+`CANONICAL_ROADMAP_STATE = GTM-R136 / STATE-R134` is the **implementation-start
+reconciliation target** for this artifact. Authorization provenance remains GTM-R135 /
+STATE-R133; Architecture Fit/lock provenance remains GTM-R134 /
 STATE-R132; Fit evaluation was against GTM-R133 / STATE-R131 / ARCH-R20 / DR-16. ROADMAP and STATE
 remain the sole lifecycle authority; this capability document never overrides them.
 
@@ -85,8 +89,8 @@ remain the sole lifecycle authority; this capability document never overrides th
 | Architecture lock | `ARCHITECTURE_LOCKED` (independent Architecture Fit review **PASS**) |
 | Architecture Fit | **PASS** (performed fresh against ARCH-R20) |
 | Product Definition | `PD-IMP-037-DRAFT-1` **APPROVED**; Product Definition Gate **PASS** |
-| Formal ROADMAP lifecycle | `ARCHITECTURE_LOCKED` / `AUTHORIZED` / `NOT_STARTED` (`IMP037_ACTIVATED: YES`) |
-| Implementation | **AUTHORIZED** / **NOT STARTED** / **NOT PERFORMED** |
+| Formal ROADMAP lifecycle | `IMPLEMENTATION_IN_PROGRESS` (`IMP037_ACTIVATED: YES`) |
+| Implementation | **AUTHORIZED** / **STARTED** / **NOT COMPLETE** / **NOT PERFORMED** (backup/restore execution) |
 | Accepted | **NO** |
 | Founder UAT required | **YES** (`FOUNDER_UAT_STATUS = NOT_PERFORMED`) |
 | Application schema change required | **NO** |
@@ -198,7 +202,7 @@ PRODUCT_DEFINITION_GATE = PASS
 ARCHITECTURE_FIT: PASS
 ARCHITECTURE_LOCKED = YES
 IMPLEMENTATION_AUTHORIZED: YES
-IMPLEMENTATION_STARTED: NO
+IMPLEMENTATION_STARTED: YES
 ```
 
 ---
@@ -975,9 +979,9 @@ INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_TREE = 09c7e3bd6b7832944d07d527c149752ed3b
 INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID = 5256273904
 
 IMPLEMENTATION_AUTHORIZED: YES
-IMPLEMENTATION_STARTED: NO
+IMPLEMENTATION_STARTED: YES
 IMP037_IMPLEMENTATION_AUTHORIZED: YES
-IMP037_STARTED: NO
+IMP037_STARTED: YES
 IMP037_ACCEPTED: NO
 IMP038_ACTIVATED: NO
 IMPLEMENTATION_PERFORMED: NO
@@ -987,6 +991,7 @@ PRODUCTION_RESTORE_AUTHORIZED: NO
 FOUNDER_UAT_REQUIRED = YES
 FOUNDER_UAT_STATUS = NOT_PERFORMED
 IMPLEMENTATION_AUTHORIZATION_EVIDENCE = PR#171/5743814105
+IMPLEMENTATION_START_EVIDENCE = PR#172/5744869269
 ```
 
 ### 21.1 Decision-surface test (no new global decision)
@@ -1013,8 +1018,11 @@ ARCH_R21_CREATED: NO
 
 ### 21.2 What has **not** happened
 
-- **No implementation has occurred.** `IMPLEMENTATION_PERFORMED: NO`. No scripts, tooling,
-  configuration, Compose services, systemd units, or code were created by this Fit.
+- **Backup/restore execution has not been performed.** `IMPLEMENTATION_PERFORMED: NO`. Recovery
+  foundation tooling (status/readiness, evidence, identity guard, secret-safe CLI, runbook at
+  `docs/platform/operations/imp037-recovery-runbook.md`) has **started**; pgBackRest, WAL archival,
+  Layer 2 pg_dump+age, Spaces, restore, systemd, and production resources were **not** created by
+  this start checkpoint.
 - **No production resources were created.** `PRODUCTION_RESOURCES_CREATED: NO`. No Droplet, no
   Spaces bucket, no credential, no key, no schedule exists as a result of this document.
 - **No production restore is authorized.** `PRODUCTION_RESTORE_AUTHORIZED: NO`.
@@ -1034,18 +1042,22 @@ ARCH_R21_CREATED: NO
    REVIEW_ID = 5256273904
 3. ARCHITECTURE LOCK MERGE ......................... PERFORMED (PR #171)
 4. IMPLEMENTATION_AUTHORIZATION .................... GRANTED (PR#171/5743814105)
-5. IMPLEMENT / PROVE ............................... NOT_STARTED
-6. INDEPENDENT_REVIEW (implementation) ............. NOT_PERFORMED
-7. UAT_DEPLOYMENT + FOUNDER_UAT .................... NOT_PERFORMED (FOUNDER_UAT_REQUIRED = YES)
-8. ACCEPTANCE + RECONCILIATION (R3) ................ NOT_PERFORMED
+5. IMPLEMENTATION START ............................ YES (PR#172/5744869269)
+6. IMPLEMENT / PROVE ............................... IN_PROGRESS (recovery foundation tranche)
+7. INDEPENDENT_REVIEW (implementation) ............. NOT_PERFORMED
+8. UAT_DEPLOYMENT + FOUNDER_UAT .................... NOT_PERFORMED (FOUNDER_UAT_REQUIRED = YES)
+9. ACCEPTANCE + RECONCILIATION (R3) ................ NOT_PERFORMED
 ```
 
-Implementation is **AUTHORIZED** / **NOT_STARTED** (evidence PR#171/5743814105). Authorization does
-**not** start coding, provision infrastructure, or accept IMP-037. The next gate is **explicit
-implementation start / execution authorization**.
+Implementation is **AUTHORIZED** / **STARTED** (`IMPLEMENTATION_IN_PROGRESS`; authorization
+evidence PR#171/5743814105; start evidence PR#172/5744869269). Start does **not** complete
+implementation, accept IMP-037, or activate IMP-038. Next gate is continued bounded IMP-037
+implementation, then independent implementation review — **not** acceptance.
 
 ```text
-AUTHORIZED + NOT_STARTED != IMPLEMENTATION_IN_PROGRESS
+STARTED != COMPLETE
+STARTED != ACCEPTED
+IMPLEMENTATION_PERFORMED: NO
 ```
 
 ### 21.4 Founder UAT applicability
@@ -1066,16 +1078,16 @@ recovery rehearsal**. The active production/source database must **never** be a 
 ## End matter
 
 ```text
-IMP-037: ARCHITECTURE_LOCKED / AUTHORIZED / NOT_STARTED / NOT_ACCEPTED
+IMP-037: IMPLEMENTATION_IN_PROGRESS / AUTHORIZED / STARTED / NOT_ACCEPTED
 IMP-037_ARCHITECTURE: LOCKED (independent Architecture Fit review PASS)
 IMP037_ARCHITECTURE_LOCKED: YES
 ARCHITECTURE_FIT: PASS
 ARCHITECTURE_FIT_EXECUTION: PERFORMED
 ARCHITECTURE_FIT_RESULT: PASS
 IMPLEMENTATION_AUTHORIZED: YES
-IMPLEMENTATION_STARTED: NO
+IMPLEMENTATION_STARTED: YES
 IMP037_IMPLEMENTATION_AUTHORIZED: YES
-IMP037_STARTED: NO
+IMP037_STARTED: YES
 IMP037_ACCEPTED: NO
 IMP038_ACTIVATED: NO
 IMPLEMENTATION_PERFORMED: NO
@@ -1103,8 +1115,9 @@ NEW_ALWAYS_ON_RECOVERY_SERVICE: NO
 NEW_APPLICATION_ROLE: NO
 NEW_APPLICATION_PERMISSION: NO
 PR_169_AUTHORITY: NON_AUTHORITATIVE / SUPERSEDED
-CANONICAL_ROADMAP_STATE = GTM-R135 / STATE-R133
+CANONICAL_ROADMAP_STATE = GTM-R136 / STATE-R134
 IMPLEMENTATION_AUTHORIZATION_EVIDENCE = PR#171/5743814105
+IMPLEMENTATION_START_EVIDENCE = PR#172/5744869269
 ARCHITECTURE_FIT_EVALUATED_HEAD = 28e6dd15c48b8c19abbc7057c4dc7e0a7d7cc7ea
 ARCHITECTURE_FIT_EVALUATED_TREE = 5792c963166e8589751d2ba8c8928728e2c83526
 ARCHITECTURE_FIT_EVALUATED_WORKING_TREE_FINGERPRINT = 56fa9b5459fd8acceb2ccc3ab73c5d7d9583dbf4539b10a1ef75553dd5aff8ba
@@ -1112,7 +1125,7 @@ INDEPENDENT_ARCHITECTURE_FIT_REVIEW = PASS
 INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_HEAD = d74ca9a30096fb14bca80643b75aa19d33093dde
 INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_TREE = 09c7e3bd6b7832944d07d527c149752ed3bbeb4d
 INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID = 5256273904
-STOP = Do not start implementation without explicit implementation-start / execution authorization; AUTHORIZED != STARTED
+STOP = Do not accept IMP-037 or activate IMP-038; STARTED != COMPLETE; STARTED != ACCEPTED
 ```
 
 | Marker | Value |
@@ -1122,7 +1135,7 @@ STOP = Do not start implementation without explicit implementation-start / execu
 | Status | `CURRENT` |
 | Architecture base | `ARCH-R20` / `D-374` / `ADR-016` (`ARCH-G26`) |
 | Architecture | `ARCHITECTURE_LOCKED` (independent Architecture Fit review **PASS**) |
-| Implementation | `AUTHORIZED` / `NOT_STARTED` / `NOT_PERFORMED` |
+| Implementation | `AUTHORIZED` / `STARTED` / `NOT_PERFORMED` (backup/restore execution) |
 | Accepted | **NO** |
 | Product Definition | `PD-IMP-037-DRAFT-1` |
 | Binding decisions | D-374, ADR-016, ADR-002, ADR-013, ADR-015 |
