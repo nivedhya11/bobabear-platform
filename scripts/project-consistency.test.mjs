@@ -9258,8 +9258,24 @@ describe("IMP-037 Architecture Lock checkpoints", () => {
     "RECOVERY_LAYER_2_INTEGRITY: SHA-256",
     "RECOVERY_LAYER_2_RETENTION: 35-day rolling retention (age-based; COMPLETE runs only)",
     "RUN_ID: unique per backup invocation",
+    "REMOTE_ARTIFACT_VERIFICATION_BEFORE_COMPLETE: REQUIRED",
     "ENCRYPTION_KEY_VERSIONING: REQUIRED",
     "RETIRED_KEYS_MUST_REMAIN_RESOLVABLE_FOR_RETAINED_ARTIFACTS: YES",
+    "RECOVERY_CRITICAL_ENCRYPTION_SECRET_OFF_HOST_CUSTODY: REQUIRED",
+    "PGBACKREST_CIPHER_ROTATION_IN_PLACE: FORBIDDEN",
+    "PGBACKREST_KEY_ROTATION_MODEL: NEW_ENCRYPTED_REPOSITORY_GENERATION",
+    "Layer 1 key version is BOBA capability / recovery metadata associated with the encrypted repository generation",
+    "SPACES_VERSIONING: ENABLED",
+    "SPACES_VERSIONING_IS_IMMUTABILITY: NO",
+    "SPACES_OBJECT_LOCK_WORM_REQUIRED: NO",
+    "Provider lifecycle rules MUST NOT independently expire current pgBackRest repository objects",
+    "CAPACITY_COST_OBSERVATION: REQUIRED",
+    "STORAGE_CAPACITY_VALIDATED: NO",
+    "Layer 1 physical / base backup storage",
+    "Retained WAL / archive storage",
+    "Layer 2 logical backup storage",
+    "Material version-history storage",
+    "Projected 35-day retained footprint",
     "HOST_LOCAL_FLOCK_SERIALIZATION: REQUIRED (for scheduled/heavy ops)",
     "CONTINUOUS_WAL_NOT_BLOCKED_BY_SCHEDULED_JOB_LOCK: YES",
     "DISTRIBUTED_SPACES_LOCK: FORBIDDEN",
@@ -9438,6 +9454,15 @@ describe("IMP-037 Architecture Lock checkpoints", () => {
       ["DISTRIBUTED_SPACES_LOCK: FORBIDDEN", "DISTRIBUTED_SPACES_LOCK: ALLOWED"],
       ["PR_169_AUTHORITY: NON_AUTHORITATIVE / SUPERSEDED", "PR_169_AUTHORITY: AUTHORITATIVE"],
       ["ENCRYPTION_KEY_VERSIONING: REQUIRED", "ENCRYPTION_KEY_VERSIONING: OPTIONAL"],
+      ["RECOVERY_CRITICAL_ENCRYPTION_SECRET_OFF_HOST_CUSTODY: REQUIRED", "RECOVERY_CRITICAL_ENCRYPTION_SECRET_OFF_HOST_CUSTODY: OPTIONAL"],
+      ["REMOTE_ARTIFACT_VERIFICATION_BEFORE_COMPLETE: REQUIRED", "REMOTE_ARTIFACT_VERIFICATION_BEFORE_COMPLETE: OPTIONAL"],
+      ["SPACES_VERSIONING: ENABLED", "SPACES_VERSIONING: DISABLED"],
+      ["SPACES_VERSIONING_IS_IMMUTABILITY: NO", "SPACES_VERSIONING_IS_IMMUTABILITY: YES"],
+      ["SPACES_OBJECT_LOCK_WORM_REQUIRED: NO", "SPACES_OBJECT_LOCK_WORM_REQUIRED: YES"],
+      ["CAPACITY_COST_OBSERVATION: REQUIRED", "CAPACITY_COST_OBSERVATION: OPTIONAL"],
+      ["STORAGE_CAPACITY_VALIDATED: NO", "STORAGE_CAPACITY_VALIDATED: YES"],
+      ["PGBACKREST_CIPHER_ROTATION_IN_PLACE: FORBIDDEN", "PGBACKREST_CIPHER_ROTATION_IN_PLACE: ALLOWED"],
+      ["PGBACKREST_KEY_ROTATION_MODEL: NEW_ENCRYPTED_REPOSITORY_GENERATION", "PGBACKREST_KEY_ROTATION_MODEL: IN_PLACE"],
       ["CONTINUOUS_WAL_NOT_BLOCKED_BY_SCHEDULED_JOB_LOCK: YES", "CONTINUOUS_WAL_NOT_BLOCKED_BY_SCHEDULED_JOB_LOCK: NO"],
       ["HOST_LOCAL_FLOCK_SERIALIZATION: REQUIRED (for scheduled/heavy ops)", "HOST_LOCAL_FLOCK_SERIALIZATION: OPTIONAL"],
       ["RPO_RTO_PROVEN: NO", "RPO_RTO_PROVEN: YES"],
@@ -9451,6 +9476,31 @@ describe("IMP-037 Architecture Lock checkpoints", () => {
         evaluateImp037LockedCapabilityArchitecture(mutated).ok,
         false,
         `expected failure after replacing ${from}`,
+      );
+    }
+  });
+
+  it("rejects removal of restored independent-review recovery invariants", () => {
+    for (const removed of [
+      "SPACES_VERSIONING: ENABLED",
+      "SPACES_VERSIONING_IS_IMMUTABILITY: NO",
+      "Provider lifecycle rules MUST NOT independently expire current pgBackRest repository objects",
+      "RECOVERY_CRITICAL_ENCRYPTION_SECRET_OFF_HOST_CUSTODY: REQUIRED",
+      "REMOTE_ARTIFACT_VERIFICATION_BEFORE_COMPLETE: REQUIRED",
+      "CAPACITY_COST_OBSERVATION: REQUIRED",
+      "STORAGE_CAPACITY_VALIDATED: NO",
+      "PGBACKREST_CIPHER_ROTATION_IN_PLACE: FORBIDDEN",
+      "PGBACKREST_KEY_ROTATION_MODEL: NEW_ENCRYPTED_REPOSITORY_GENERATION",
+      "Layer 1 key version is BOBA capability / recovery metadata associated with the encrypted repository generation",
+      "Material version-history storage",
+      "Projected 35-day retained footprint",
+    ]) {
+      const mutated = lockedCapability.replace(`${removed}\n`, "");
+      assert.notEqual(mutated, lockedCapability, `fixture must contain ${removed}`);
+      assert.equal(
+        evaluateImp037LockedCapabilityArchitecture(mutated).ok,
+        false,
+        `expected failure after removing ${removed}`,
       );
     }
   });
@@ -9485,6 +9535,36 @@ describe("IMP-037 Architecture Lock checkpoints", () => {
         `${lockedCapability}\nSPACES_CONDITIONAL_CREATE_MUTEX: REQUIRED\n`,
       ).code,
       "IMP037_CAPABILITY_SPACES_MUTEX",
+    );
+    assert.equal(
+      evaluateImp037LockedCapabilityArchitecture(
+        `${lockedCapability}\nSPACES_VERSIONING: DISABLED\nSPACES_VERSIONING_IS_IMMUTABILITY: YES\n`,
+      ).code,
+      "IMP037_CAPABILITY_SPACES_VERSIONING",
+    );
+    assert.equal(
+      evaluateImp037LockedCapabilityArchitecture(
+        `${lockedCapability}\nPGBACKREST_CIPHER_ROTATION_IN_PLACE: ALLOWED\n`,
+      ).code,
+      "IMP037_CAPABILITY_PGBACKREST_ROTATION",
+    );
+    assert.equal(
+      evaluateImp037LockedCapabilityArchitecture(
+        `${lockedCapability}\nREMOTE_ARTIFACT_VERIFICATION_BEFORE_COMPLETE: OPTIONAL\n`,
+      ).code,
+      "IMP037_CAPABILITY_RECOVERY_INVARIANT_WEAKENED",
+    );
+    assert.equal(
+      evaluateImp037LockedCapabilityArchitecture(
+        `${lockedCapability}\nRECOVERY_CRITICAL_ENCRYPTION_SECRET_OFF_HOST_CUSTODY: OPTIONAL\n`,
+      ).code,
+      "IMP037_CAPABILITY_RECOVERY_INVARIANT_WEAKENED",
+    );
+    assert.equal(
+      evaluateImp037LockedCapabilityArchitecture(
+        `${lockedCapability}\nCAPACITY_COST_OBSERVATION: OPTIONAL\nSTORAGE_CAPACITY_VALIDATED: YES\n`,
+      ).code,
+      "IMP037_CAPABILITY_RECOVERY_INVARIANT_WEAKENED",
     );
     assert.equal(
       evaluateImp037LockedCapabilityArchitecture(

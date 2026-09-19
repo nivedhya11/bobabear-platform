@@ -8506,6 +8506,54 @@ export function evaluateImp037LockedCapabilityArchitecture(text) {
       /RETIRED_KEYS_MUST_REMAIN_RESOLVABLE_FOR_RETAINED_ARTIFACTS:\s*YES/,
       "retired keys remain resolvable",
     ],
+    [
+      body,
+      /RECOVERY_CRITICAL_ENCRYPTION_SECRET_OFF_HOST_CUSTODY:\s*REQUIRED/,
+      "off-host recovery custody for encryption secrets",
+    ],
+    [
+      body,
+      /REMOTE_ARTIFACT_VERIFICATION_BEFORE_COMPLETE:\s*REQUIRED/,
+      "remote artifact verification before COMPLETE",
+    ],
+    [body, /SPACES_VERSIONING:\s*ENABLED/, "Spaces versioning enabled for recovery buckets"],
+    [
+      body,
+      /SPACES_VERSIONING_IS_IMMUTABILITY:\s*NO/,
+      "Spaces versioning is not immutability",
+    ],
+    [
+      body,
+      /SPACES_OBJECT_LOCK_WORM_REQUIRED:\s*NO/,
+      "Spaces Object Lock / WORM not required",
+    ],
+    [
+      body,
+      /MUST NOT[\s\S]{0,80}independently expire current pgBackRest|provider lifecycle[\s\S]{0,120}MUST NOT[\s\S]{0,80}current pgBackRest/i,
+      "provider lifecycle must not expire current pgBackRest objects",
+    ],
+    [body, /CAPACITY_COST_OBSERVATION:\s*REQUIRED/, "capacity/cost observation required"],
+    [body, /STORAGE_CAPACITY_VALIDATED:\s*NO/, "storage capacity unvalidated"],
+    [
+      body,
+      /Layer 1 physical[\s\S]{0,80}base backup storage[\s\S]{0,200}WAL[\s\S]{0,120}Layer 2 logical[\s\S]{0,120}version-history[\s\S]{0,120}projected 35-day/i,
+      "capacity observation measures Layer 1, WAL, Layer 2, version-history, and projected 35-day footprint",
+    ],
+    [
+      body,
+      /PGBACKREST_CIPHER_ROTATION_IN_PLACE:\s*FORBIDDEN/,
+      "pgBackRest in-place cipher rotation forbidden",
+    ],
+    [
+      body,
+      /PGBACKREST_KEY_ROTATION_MODEL:\s*NEW_ENCRYPTED_REPOSITORY_GENERATION/,
+      "pgBackRest key rotation via new encrypted repository generation",
+    ],
+    [
+      body,
+      /BOBA capability[\s\S]{0,40}recovery metadata|key version[\s\S]{0,80}BOBA[\s\S]{0,40}metadata/i,
+      "Layer 1 key version is BOBA recovery metadata, not native per-object key versioning",
+    ],
     [body, /HOST_LOCAL_FLOCK_SERIALIZATION:\s*REQUIRED/, "host-local flock serialization"],
     [
       body,
@@ -8598,6 +8646,42 @@ export function evaluateImp037LockedCapabilityArchitecture(text) {
       ok: false,
       code: "IMP037_CAPABILITY_SPACES_MUTEX",
       message: "Locked IMP-037 capability must not require a Spaces distributed mutex / conditional-create lock",
+    };
+  }
+  if (
+    /SPACES_VERSIONING_IS_IMMUTABILITY:\s*YES/.test(body) ||
+    /SPACES_OBJECT_LOCK_WORM_REQUIRED:\s*YES/.test(body) ||
+    /SPACES_VERSIONING:\s*(?:DISABLED|NO|OPTIONAL)/.test(body)
+  ) {
+    return {
+      ok: false,
+      code: "IMP037_CAPABILITY_SPACES_VERSIONING",
+      message:
+        "Locked IMP-037 capability must keep Spaces versioning ENABLED without claiming immutability/WORM",
+    };
+  }
+  if (
+    /PGBACKREST_CIPHER_ROTATION_IN_PLACE:\s*(?:ALLOWED|REQUIRED|YES|PERMITTED)/.test(body) ||
+    /PGBACKREST_KEY_ROTATION_MODEL:\s*IN_PLACE/.test(body)
+  ) {
+    return {
+      ok: false,
+      code: "IMP037_CAPABILITY_PGBACKREST_ROTATION",
+      message:
+        "Locked IMP-037 capability must forbid in-place pgBackRest cipher rotation and require a new encrypted repository generation",
+    };
+  }
+  if (
+    /REMOTE_ARTIFACT_VERIFICATION_BEFORE_COMPLETE:\s*(?:OPTIONAL|NO|FORBIDDEN)/.test(body) ||
+    /RECOVERY_CRITICAL_ENCRYPTION_SECRET_OFF_HOST_CUSTODY:\s*(?:OPTIONAL|NO|FORBIDDEN)/.test(body) ||
+    /CAPACITY_COST_OBSERVATION:\s*(?:OPTIONAL|NO|FORBIDDEN)/.test(body) ||
+    /STORAGE_CAPACITY_VALIDATED:\s*YES/.test(body)
+  ) {
+    return {
+      ok: false,
+      code: "IMP037_CAPABILITY_RECOVERY_INVARIANT_WEAKENED",
+      message:
+        "Locked IMP-037 capability must not weaken remote verification, off-host encryption-secret custody, or capacity-observation obligations",
     };
   }
   return { ok: true };

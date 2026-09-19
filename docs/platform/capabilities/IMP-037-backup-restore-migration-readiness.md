@@ -346,6 +346,9 @@ RECOVERY_LAYER_1_REPO_ENCRYPTION: AES-256-CBC (pgBackRest repository cipher)
 RECOVERY_LAYER_1_SCHEDULE: weekly full + daily differential + continuous WAL
 RECOVERY_LAYER_1_WAL_BOUND: archive_timeout = 5 minutes
 RECOVERY_LAYER_1_RETENTION: >= 35 days, owned and enforced by pgBackRest
+RECOVERY_CRITICAL_ENCRYPTION_SECRET_OFF_HOST_CUSTODY: REQUIRED
+PGBACKREST_CIPHER_ROTATION_IN_PLACE: FORBIDDEN
+PGBACKREST_KEY_ROTATION_MODEL: NEW_ENCRYPTED_REPOSITORY_GENERATION
 ```
 
 | Decision | Locked value | Rationale |
@@ -380,39 +383,55 @@ Locked constraints:
 RECOVERY_LAYER_2: independent PostgreSQL logical backup / pg_dump -Fc / age public-key encryption
 RECOVERY_LAYER_2_FREQUENCY: daily (at least)
 RECOVERY_LAYER_2_DESTINATION: private DigitalOcean Spaces bucket 2 (separate from the pgBackRest repository)
-RECOVERY_LAYER_2_ENCRYPTION: age public-key encryption (encryption key material need not exist on the backup host)
+RECOVERY_LAYER_2_ENCRYPTION: age public-key encryption (RECOVERY_CRITICAL_ENCRYPTION_SECRET_OFF_HOST_CUSTODY: REQUIRED)
 RECOVERY_LAYER_2_INTEGRITY: SHA-256
 RECOVERY_LAYER_2_RETENTION: 35-day rolling retention (age-based; COMPLETE runs only)
 RECOVERY_LAYER_2_RETENTION_ELIGIBILITY: COMPLETE marker required
 RECOVERY_LAYER_2_COMPLETION: COMPLETE marker written last
+REMOTE_ARTIFACT_VERIFICATION_BEFORE_COMPLETE: REQUIRED
 ```
 
 | Decision | Locked value | Rationale |
 |---|---|---|
 | Format | `pg_dump -Fc` (custom format) | Portable, selectively restorable, independent of the physical cluster layout and of pgBackRest |
 | Independence | Separate tool, separate credentials path, separate bucket, separate encryption scheme | A defect, misconfiguration, credential compromise, or retention error in Layer 1 must not silently destroy Layer 2 |
-| Encryption | **age** public-key encryption | Public-key encryption lets the backup host encrypt without holding decryption authority; reduces blast radius of host compromise |
-| Integrity | `SHA-256` over the encrypted artifact | Distinguishes a complete artifact from a truncated/corrupt one (`AC-IMP-037-002-02`) |
+| Encryption | **age** public-key encryption | Public-key encryption lets the backup host encrypt without holding decryption authority; private identity must remain recoverable off-host |
+| Integrity | `SHA-256` over the encrypted artifact, verified against the **stored remote object** before `COMPLETE` | Distinguishes a complete artifact from a truncated/corrupt one (`AC-IMP-037-002-02`); PUT success alone is insufficient |
 | Retention | **35-day rolling retention** (age-based calendar window; `FD-037-03`) | Binding product window is **35 calendar days**, not “keep N run objects.” Extra same-day COMPLETE runs (manual / retry / pre-migration) remain recoverable for the full age window; incomplete runs never count as eligible backups |
-| Completion semantics | `COMPLETE` marker written **last** | An artifact becomes last-known-good only after payload + checksum + metadata are durably stored |
+| Completion semantics | Remote verification then `COMPLETE` marker written **last** | An artifact becomes last-known-good only after payload + remote SHA-256 verification + metadata are durably stored |
 
 ### 7.1 Run identity and completion protocol (locked)
 
 ```text
 RUN_ID: unique per backup invocation
 COMPLETE marker LAST
+REMOTE_ARTIFACT_VERIFICATION_BEFORE_COMPLETE: REQUIRED
 ```
 
-Every Layer 2 invocation:
+Every Layer 2 invocation follows this exact completion order:
 
 1. Allocates a **unique `RUN_ID`** (`RUN_ID: unique per backup invocation`). Object keys are
    namespaced by run identity, so two runs — including concurrent or retried runs — can never
    collide on a key.
-2. Streams `pg_dump -Fc` output through `age` encryption to the run-scoped object key.
-3. Computes and stores the `SHA-256` digest of the stored encrypted artifact.
-4. Stores run metadata (source identity classification, recovery point, tool versions, key version,
-   sizes, timings, result) with no secrets.
-5. Writes the `COMPLETE` marker **last**, only after every preceding step has durably succeeded.
+2. Creates a `pg_dump -Fc` logical dump.
+3. Encrypts the dump with `age` public-key encryption.
+4. Uploads the encrypted artifact to the run-scoped object key in bucket 2.
+5. Computes the expected `SHA-256` digest of the encrypted artifact.
+6. **Verifies the stored remote artifact** against that expected `SHA-256`
+   (`REMOTE_ARTIFACT_VERIFICATION_BEFORE_COMPLETE: REQUIRED`). A successful PUT/upload alone is
+   **not** sufficient.
+7. Persists required run metadata and integrity evidence (source identity classification, recovery
+   point, tool versions, key version / recipient identity reference, sizes, timings, result) with
+   no secrets.
+8. Writes the `COMPLETE` marker **last**, only after every preceding step — including remote
+   stored-object integrity verification — has succeeded.
+
+An artifact becomes last-known-good / retention-eligible / restore-selectable **only after** remote
+stored-object integrity has been verified and the `COMPLETE` marker is written last. Restore-time
+verification alone does **not** satisfy this completion invariant. The exact remote-verification
+mechanism (for example re-GET + digest, or an equivalent provider integrity check that proves the
+stored object matches the expected digest) is implementation-deferred (§17); the semantic must not
+be weakened.
 
 Consequences:
 
@@ -445,18 +464,61 @@ APPLICATION_RUNTIME_AS_BACKUP_AUTHORITY: FORBIDDEN
 | Object-store credentials | Two distinct credential sets, one per bucket, host-local protected material under ADR-015 (as amended by D-374); never in repository, OCI image, or evidence |
 | Application RBAC | Unchanged. The Platform Operator persona creates **no** application role or permission (`BR-IMP-037-021`) |
 
-### 8.1 Encryption key versioning (locked)
+### 8.1 Off-host recovery custody for encryption secrets (locked)
+
+```text
+RECOVERY_CRITICAL_ENCRYPTION_SECRET_OFF_HOST_CUSTODY: REQUIRED
+```
+
+Droplet loss must **not** destroy the only copy of any secret required to decrypt retained recovery
+artifacts. Exact custody mechanism remains implementation-deferred under ADR-015 (host-local
+protected files / OS mechanism for on-host material; approved off-host recovery custody for
+recoverable copies). This Fit does **not** invent a new SaaS secret manager or global architecture
+service.
+
+| Layer | Binding custody rule |
+|---|---|
+| Layer 1 | The pgBackRest repository cipher passphrase **MUST** have a recoverable **off-host** custody copy. The production Droplet must not be the sole location of the repository decryption secret. |
+| Layer 2 | Normal backup creation uses `age` **recipient / public-key** material on the backup host. The `age` **private identity MUST NOT** depend solely on the production Droplet; private decryption identity must be retained in approved off-host recovery custody. |
+
+Old Layer 1 passphrases and old Layer 2 private identities **MUST** remain available in off-host
+recovery custody for as long as retained artifacts depend on them.
+
+### 8.2 Encryption key versioning and rotation (locked)
 
 ```text
 ENCRYPTION_KEY_VERSIONING: REQUIRED
 RETIRED_KEYS_MUST_REMAIN_RESOLVABLE_FOR_RETAINED_ARTIFACTS: YES
+PGBACKREST_CIPHER_ROTATION_IN_PLACE: FORBIDDEN
+PGBACKREST_KEY_ROTATION_MODEL: NEW_ENCRYPTED_REPOSITORY_GENERATION
 ```
 
-- Every encrypted artifact records the **key version** used, for both the Layer 1 repository cipher
-  (`AES-256-CBC`) and Layer 2 `age` recipients.
-- Key rotation is permitted and expected, but rotation MUST NOT orphan retained artifacts. A retired
-  key version MUST remain resolvable for as long as any artifact encrypted under it is still within
-  its retention window.
+**Layer 1 (pgBackRest repository cipher):**
+
+- Once an encrypted pgBackRest repository/stanza has been initialized, repository encryption
+  configuration **cannot** be changed in place. Therefore
+  `PGBACKREST_CIPHER_ROTATION_IN_PLACE: FORBIDDEN`.
+- A Layer 1 passphrase change creates a **new encrypted repository / repository generation**
+  (`PGBACKREST_KEY_ROTATION_MODEL: NEW_ENCRYPTED_REPOSITORY_GENERATION`). Exact repository
+  numbering, path, or stanza mechanics remain implementation-deferred (§17).
+- The previous repository remains readable and retained for its required retention / evidence
+  window; its old passphrase remains available in off-host recovery custody for the same period.
+- New backups/WAL transition onto the new generation only under a controlled migration procedure
+  that preserves recovery coverage; rotation must not create a gap in RPO / recovery evidence.
+- A recorded Layer 1 "**key version**" is **BOBA capability / recovery metadata** associated with
+  the encrypted repository generation. This Fit does **not** claim that pgBackRest natively
+  provides per-object encryption-key versioning.
+
+**Layer 2 (`age` recipients):**
+
+- New backups may use a new recipient / public key.
+- Old private identities remain available in off-host recovery custody while retained artifacts
+  require them (`RETIRED_KEYS_MUST_REMAIN_RESOLVABLE_FOR_RETAINED_ARTIFACTS: YES`).
+
+Shared rules:
+
+- Every encrypted artifact records the **key version** (Layer 1: repository-generation metadata;
+  Layer 2: `age` recipient identity reference) used to encrypt it.
 - Readiness output MUST treat "retained artifact whose key version is no longer resolvable" as a
   recovery-coverage defect, not as healthy coverage.
 - Key material itself is never written to evidence, logs, or status output (`BR-IMP-037-007`).
@@ -471,23 +533,46 @@ BUCKET_1: pgBackRest repository (Layer 1) — AES-256-CBC repo encryption
 BUCKET_2: independent logical backups (Layer 2) — age-encrypted artifacts + SHA-256 + metadata + COMPLETE marker
 PUBLIC_ACCESS: NONE (both buckets private)
 CROSS_LAYER_WRITE: FORBIDDEN
+SPACES_VERSIONING: ENABLED
+SPACES_VERSIONING_IS_IMMUTABILITY: NO
+SPACES_OBJECT_LOCK_WORM_REQUIRED: NO
 ```
 
 Locked constraints:
 
 - **TWO private DigitalOcean Spaces buckets** with separate credentials. Layer 1 tooling never writes
   to bucket 2; Layer 2 tooling never writes to bucket 1.
+- **`SPACES_VERSIONING: ENABLED` for BOTH recovery buckets.** Versioning is an architecture
+  requirement for later infrastructure realization. Purpose: recover from accidental
+  overwrite/delete, preserve prior object versions, and provide an additional recovery defense.
+- **`SPACES_VERSIONING_IS_IMMUTABILITY: NO`.** Spaces versioning is **not** immutability,
+  **not** WORM, and **not** tamper-proof storage. `SPACES_OBJECT_LOCK_WORM_REQUIRED: NO`. Do not
+  claim Object Lock / WORM semantics.
 - Layer 1 integrity is pgBackRest-native (repository manifests and checksums plus
-  `pgbackrest verify`). Layer 2 integrity is `SHA-256` over the stored encrypted artifact.
+  `pgbackrest verify`). Layer 2 integrity is `SHA-256` over the stored encrypted artifact, with
+  remote verification required before `COMPLETE` (§7.1).
 - Artifact identity is run-scoped (`RUN_ID: unique per backup invocation`); no "latest" object is
   ever mutated in place to represent the current good backup.
-- **Spaces MUST NOT be described or relied upon as immutable, WORM, or tamper-proof storage.** The
-  protections locked here are private buckets, separated credentials, encryption at rest under
-  capability-owned keys, run-scoped immutable-by-convention keys, and checksum verification. Object
-  lock / WORM semantics are **not** claimed, **not** assumed, and **not** part of this Fit.
 - Deletion authority is narrow: pgBackRest `expire` for bucket 1, and retention pruning limited to
   `COMPLETE`-marked expired runs for bucket 2. No broad object-deletion capability is wired into
   routine tooling.
+
+### 9.1 Provider lifecycle boundary (locked)
+
+**Layer 1:**
+
+- pgBackRest owns **CURRENT** repository object retention and dependency semantics.
+- Provider lifecycle rules **MUST NOT** independently expire current pgBackRest repository objects.
+- Safe provider lifecycle uses may include:
+  - abandoned / incomplete multipart-upload cleanup
+  - bounded cleanup of **non-current** object versions
+  only when they cannot invalidate required recovery evidence.
+
+**Layer 2:**
+
+- Capability-owned age-based **35-day** `COMPLETE`-run retention remains authoritative.
+- Non-current version cleanup may be separately bounded without shortening the required recovery
+  window.
 
 ---
 
@@ -657,6 +742,8 @@ EMPTY_DESTINATION_AS_HEALTHY: FORBIDDEN
 SECRETS_IN_EVIDENCE: FORBIDDEN
 EVIDENCE_FORMAT: human-readable report + machine-readable record (FD-037-06)
 FAILURE_EVIDENCE: preserved; later success never erases the first failure
+STORAGE_CAPACITY_VALIDATED: NO
+CAPACITY_COST_OBSERVATION: REQUIRED
 ```
 
 Locked constraints:
@@ -676,6 +763,26 @@ Locked constraints:
 - Drill findings remain visible in evidence after a later successful rerun (`BR-IMP-037-020`;
   TEST-1).
 
+### 16.1 Storage capacity / cost observation (locked; D-374)
+
+`CAPACITY_COST_OBSERVATION: REQUIRED`. The capability must measure and report:
+
+- Layer 1 physical / base backup storage
+- Retained WAL / archive storage
+- Layer 2 logical backup storage
+- Material version-history storage (from `SPACES_VERSIONING: ENABLED`)
+- Projected 35-day retained footprint
+
+```text
+STORAGE_CAPACITY_VALIDATED: NO
+```
+
+The included Spaces allowance is **not** assumed sufficient. Exceeding the included storage
+allowance is an **operating-cost / capacity observation**; it does **not** automatically invalidate
+this architecture. Material capacity overrun must be surfaced before production / public reliance
+where relevant. Do **not** hardcode provider pricing into timeless architectural invariants;
+pricing remains time-sensitive operating evidence under D-374.
+
 ---
 
 # D. Implementation-deferred details
@@ -691,7 +798,11 @@ requires a new decision record.
 | Exact pgBackRest **>= 2.55** acquisition/pinning path (upstream repo, vendored build, or pinned image layer) | Reproducible, version-pinned, verifiable; stock Ubuntu 24.04 2.50 is not acceptable |
 | Exact `pgbackrest.conf` stanza name, process-max, compression type/level, bundling options | Must preserve weekly full + daily differential + continuous WAL, `AES-256-CBC` repo encryption, and `>= 35 days` pgBackRest-owned retention |
 | Exact object key naming and prefix scheme in both buckets | Run-scoped, unique per `RUN_ID`, no in-place mutation of a "latest" pointer |
-| Exact `age` recipient set, key storage mechanism, and rotation runbook steps | `ENCRYPTION_KEY_VERSIONING: REQUIRED`; retired keys resolvable for retained artifacts; no key material in evidence |
+| Exact `age` recipient set, key storage mechanism, and rotation runbook steps | `ENCRYPTION_KEY_VERSIONING: REQUIRED`; `RECOVERY_CRITICAL_ENCRYPTION_SECRET_OFF_HOST_CUSTODY: REQUIRED`; retired keys resolvable for retained artifacts; no key material in evidence; no new SaaS secret-manager service |
+| Exact Layer 1 repository-generation / stanza path mechanics for cipher rotation | `PGBACKREST_CIPHER_ROTATION_IN_PLACE: FORBIDDEN`; `PGBACKREST_KEY_ROTATION_MODEL: NEW_ENCRYPTED_REPOSITORY_GENERATION`; prior repository + passphrase retained through required window; no RPO gap |
+| Exact remote stored-object SHA-256 verification mechanism before Layer 2 `COMPLETE` | `REMOTE_ARTIFACT_VERIFICATION_BEFORE_COMPLETE: REQUIRED`; PUT/upload success alone insufficient |
+| Exact Spaces versioning enablement and safe provider lifecycle rule configuration | `SPACES_VERSIONING: ENABLED` on both buckets; `SPACES_VERSIONING_IS_IMMUTABILITY: NO`; provider lifecycle must not expire current pgBackRest objects |
+| Exact capacity / cost observation reporting format | Measure Layer 1 base, WAL/archive, Layer 2 logical, material version-history, projected 35-day footprint; `STORAGE_CAPACITY_VALIDATED: NO`; no hardcoded pricing invariants |
 | Exact systemd unit/timer names, calendar expressions, and jitter | Host systemd timers invoking one-shot Compose operations; scheduled/heavy ops under host-local `flock`; WAL archiving unaffected |
 | Exact `flock` lock-file paths and lock granularity within "scheduled/heavy ops" | Continuous WAL must remain unblocked; contention reports skipped/deferred, never `SUCCEEDED` |
 | Exact CLI command names, flags, and output formatting | CLI / one-shot tooling + runbook; no web UI; secret-safe output |
@@ -728,6 +839,9 @@ NEW_APPLICATION_PERMISSION: NO
 NEW_APPLICATION_ROLE: NO
 PRODUCTION_RESTORE_AUTHORIZED: NO
 PR_169_AUTHORITY: NON_AUTHORITATIVE / SUPERSEDED
+SPACES_VERSIONING_IS_IMMUTABILITY: NO
+SPACES_OBJECT_LOCK_WORM_REQUIRED: NO
+PGBACKREST_CIPHER_ROTATION_IN_PLACE: FORBIDDEN
 ```
 
 | Prohibition | Reason |
@@ -738,7 +852,11 @@ PR_169_AUTHORITY: NON_AUTHORITATIVE / SUPERSEDED
 | Provider-managed PITR, Managed PostgreSQL, App Platform as CURRENT | `ARCH-G26` / D-374; historical ADR-001/ADR-013 topology is HISTORICAL only |
 | Kubernetes / DOKS / k3s / Podman production runtime for recovery tooling | `ARCH-G26` / D-374 |
 | A permanently running backup service, daemon, sidecar, or in-container cron | `ARCH-G26` cost constraint; one-shot tooling execution plane is locked |
-| Treating Spaces as immutable / WORM / tamper-proof | Not claimed by the provider configuration locked here; overstating durability would be false safety evidence |
+| Treating Spaces versioning as immutable / WORM / tamper-proof | `SPACES_VERSIONING_IS_IMMUTABILITY: NO`; `SPACES_OBJECT_LOCK_WORM_REQUIRED: NO`; overstating durability would be false safety evidence |
+| Provider lifecycle independently expiring current pgBackRest repository objects | pgBackRest owns CURRENT repository retention/dependency semantics |
+| In-place pgBackRest repository cipher / passphrase rotation | `PGBACKREST_CIPHER_ROTATION_IN_PLACE: FORBIDDEN`; rotation requires a new encrypted repository generation |
+| Declaring Layer 2 `COMPLETE` after PUT/upload success without remote SHA-256 verification | `REMOTE_ARTIFACT_VERIFICATION_BEFORE_COMPLETE: REQUIRED` |
+| Keeping the only Layer 1 passphrase or Layer 2 private identity solely on the production Droplet | `RECOVERY_CRITICAL_ENCRYPTION_SECRET_OFF_HOST_CUSTODY: REQUIRED` |
 | Describing an existing configuration, timer, bucket, or credential as recovery coverage | `BR-IMP-037-030`; readiness must be evidence-based |
 | Declaring an artifact usable before its `COMPLETE` marker is written last | `AC-IMP-037-005-01`; prevents false last-known-good |
 | Plaintext production backup material as the durable result | `BR-IMP-037-006`; `AC-IMP-037-002-03` |
@@ -758,6 +876,7 @@ PR_169_AUTHORITY: NON_AUTHORITATIVE / SUPERSEDED
 ```text
 RPO_RTO_PROVEN: NO
 DROPLET_2GIB_RTO_VALIDATED: NO
+STORAGE_CAPACITY_VALIDATED: NO
 IMPLEMENTATION_PERFORMED: NO
 ```
 
@@ -767,7 +886,11 @@ authorized IMPLEMENT / PROVE phase under [TEST-1](../TESTING.md).
 | Obligation | Required evidence | Product authority |
 |---|---|---|
 | Layer 1 continuous recovery works | pgBackRest full + differential + WAL archiving verified; `pgbackrest verify` clean; PITR restore to a selected point into a fresh target | `BR-IMP-037-003` |
-| Layer 2 independent backup works | `pg_dump -Fc` + `age` artifact with `SHA-256` and `COMPLETE` marker; successful decrypt + `pg_restore` into a fresh target | `AC-IMP-037-002-01/02/03` |
+| Layer 2 independent backup works | `pg_dump -Fc` + `age` artifact with remote SHA-256 verification, metadata, and `COMPLETE` marker last; successful decrypt + `pg_restore` into a fresh target | `AC-IMP-037-002-01/02/03` |
+| Remote verification before COMPLETE | Layer 2 run refuses `COMPLETE` until stored remote object matches expected SHA-256; PUT-only success is insufficient | §7.1 |
+| Off-host encryption-secret custody | Recoverable off-host copy of Layer 1 passphrase and Layer 2 private identity; Droplet-only custody rejected | §8.1 |
+| Spaces versioning | Both recovery buckets have versioning enabled; accidental overwrite/delete recoverable via prior versions without claiming WORM | §9 |
+| Capacity / cost observation | Measured Layer 1 base, WAL/archive, Layer 2 logical, material version-history, and projected 35-day footprint reported; overrun surfaced as operating cost | §16.1; D-374 |
 | Measured recovery point | Achieved RPO recorded per drill; `RPO_TARGET <= 15 minutes` required for qualifying scenarios | `FD-037-01`; `AC-IMP-037-004-08` |
 | Measured recovery time | Achieved end-to-end recovery **including** business-integrity validation; `RTO_TARGET <= 2 hours` required | `FD-037-02`; `AC-IMP-037-004-08` |
 | Recovery timing on the pilot size target | Drill evidence on the actual pilot Droplet size; **not** claimed validated by this lock | `ARCH-G26`; `FD-037-02` |
@@ -781,7 +904,7 @@ authorized IMPLEMENT / PROVE phase under [TEST-1](../TESTING.md).
 | Negative: secret leakage | Status, logs, evidence contain no credentials, URIs, tokens, or key material | `AC-IMP-037-001-05`; `AC-IMP-037-008-03` |
 | Negative: empty/missing/stale evidence | `NOT_READY` / `BLOCKED`, never healthy | `AC-IMP-037-001-02/04`; `AC-IMP-037-007-04` |
 | Concurrency | Overlapping scheduled/heavy ops serialized by host-local `flock`; WAL archiving demonstrably continues during a running backup/drill | §10; PD §17 |
-| Key versioning | Rotation exercised; artifacts under a retired key version still restorable within retention | §8.1 |
+| Key versioning / Layer 1 rotation | Layer 1 passphrase change creates a new encrypted repository generation; prior generation + passphrase remain recoverable; Layer 2 recipient rotation keeps old private identities available | §8.2 |
 | Restored business integrity | Identity/customer, commerce, operational, reliability, financial-document + signed-artifact bytes, authorization state validated | `AC-IMP-037-004-01` … `07` |
 | Post-restore migrations | Later repository migrations applied through existing authority before validation | `AC-IMP-037-003-05` |
 | Portability | Clean PostgreSQL 18 target import + same validations + interruption handling + evidence | `AC-IMP-037-006-01` … `06` |
@@ -812,12 +935,13 @@ DISABLED`).
 | `RTO_TARGET <= 2 hours` on a 2 GiB / 1 vCPU Droplet is unproven | **Open** — `DROPLET_2GIB_RTO_VALIDATED: NO` | Drill evidence required; `ARCH-G26` first scale action is vertical resize to 4 GiB if evidence demands it |
 | `RPO_TARGET <= 15 minutes` is a design bound, not a measurement | **Open** — `RPO_RTO_PROVEN: NO` | `archive_timeout = 5 minutes` + continuous WAL; measured per drill |
 | pgBackRest **>= 2.55** exceeds the Ubuntu 24.04 stock package (2.50) | **Carried** | Reproducible pinned acquisition path is implementation-deferred (§17) and must not silently degrade to 2.50 |
-| Spaces is not immutable/WORM; a compromised host credential could delete backups | **Carried; not overstated** | Two buckets, separate credentials, narrow deletion authority, run-scoped keys; WORM is explicitly **not** claimed |
-| `age` private-key custody is an operational responsibility outside the backup host | **Carried** | Key versioning required; retired keys must remain resolvable for retained artifacts; custody runbook is implementation-deferred |
+| Spaces is not immutable/WORM; a compromised host credential could delete backups | **Carried; not overstated** | `SPACES_VERSIONING: ENABLED` on both buckets for accidental overwrite/delete defense; two buckets, separate credentials, narrow deletion authority, run-scoped keys; `SPACES_VERSIONING_IS_IMMUTABILITY: NO` |
+| Encryption-secret custody outside the Droplet is an operational responsibility | **Carried / binding** | `RECOVERY_CRITICAL_ENCRYPTION_SECRET_OFF_HOST_CUSTODY: REQUIRED`; Layer 1 passphrase + Layer 2 private identity must remain recoverable off-host; custody mechanism deferred under ADR-015 |
+| Layer 1 cipher rotation cannot be performed in place | **Locked / carried** | `PGBACKREST_KEY_ROTATION_MODEL: NEW_ENCRYPTED_REPOSITORY_GENERATION`; prior repository + passphrase retained through required window |
 | Host-local `flock` does not protect against a second host operating on the same buckets | **Accepted for pilot** | Single production host under `ARCH-G26`; revisit only if a genuine multi-host topology is ever decided |
 | Continuous WAL archiving failure could silently degrade the recovery point | **Mitigated, must be proven** | Readiness must surface WAL/archive health; drill evidence required |
 | Layer 2 retention (`35-day rolling retention`) is not statutory retention | **Explicitly distinct** | `FD-037-03`; IMP-038 / privacy owns statutory, customer, audit, and financial retention |
-| Backup/repository storage growth could drift cost above the pilot target | **Carried** | pgBackRest-owned retention + `35 completed daily runs`; cost observation belongs to operations, not to a new service |
+| Backup/repository storage growth could drift cost above the pilot Spaces allowance | **Carried; observation required** | `CAPACITY_COST_OBSERVATION: REQUIRED`; `STORAGE_CAPACITY_VALIDATED: NO`; exceeding allowance is an operating-cost signal, not automatic architecture invalidation |
 | Drill cadence discipline (pre-launch, quarterly, after material change) is procedural | **Carried** | `FD-037-04`; readiness reporting makes staleness visible |
 | Production infrastructure realization and live cutover are not proven by IMP-037 | **Out of scope by design** | IMP-039 / IMP-040 (`BR-IMP-037-023/024/025`) |
 
@@ -940,6 +1064,15 @@ PRODUCTION_RESOURCES_CREATED: NO
 PRODUCTION_RESTORE_AUTHORIZED: NO
 RPO_RTO_PROVEN: NO
 DROPLET_2GIB_RTO_VALIDATED: NO
+STORAGE_CAPACITY_VALIDATED: NO
+SPACES_VERSIONING: ENABLED
+SPACES_VERSIONING_IS_IMMUTABILITY: NO
+SPACES_OBJECT_LOCK_WORM_REQUIRED: NO
+RECOVERY_CRITICAL_ENCRYPTION_SECRET_OFF_HOST_CUSTODY: REQUIRED
+REMOTE_ARTIFACT_VERIFICATION_BEFORE_COMPLETE: REQUIRED
+CAPACITY_COST_OBSERVATION: REQUIRED
+PGBACKREST_CIPHER_ROTATION_IN_PLACE: FORBIDDEN
+PGBACKREST_KEY_ROTATION_MODEL: NEW_ENCRYPTED_REPOSITORY_GENERATION
 FITS_WITHIN_ARCH_R20: YES
 D375_REQUIRED_FOR_LOCK: NO
 D-375_CREATED: NO
@@ -955,6 +1088,7 @@ CANONICAL_ROADMAP_STATE = GTM-R134 / STATE-R132
 ARCHITECTURE_FIT_EVALUATED_HEAD = 28e6dd15c48b8c19abbc7057c4dc7e0a7d7cc7ea
 ARCHITECTURE_FIT_EVALUATED_TREE = 5792c963166e8589751d2ba8c8928728e2c83526
 ARCHITECTURE_FIT_EVALUATED_WORKING_TREE_FINGERPRINT = 56fa9b5459fd8acceb2ccc3ab73c5d7d9583dbf4539b10a1ef75553dd5aff8ba
+INDEPENDENT_ARCHITECTURE_FIT_REVIEW = PENDING
 STOP = Do not implement, provision, schedule, or restore anything; implementation authorization is a separate gate
 ```
 
