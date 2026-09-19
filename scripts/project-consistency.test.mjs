@@ -112,6 +112,9 @@ import {
   evaluateImp036gActivationCheckpoint,
   evaluateImp037ActivationCheckpoint,
   evaluateImp037ActivatedProductDefinitionDependencyAuthority,
+  evaluateImp037ProductDefinitionGatePassCheckpoint,
+  evaluateImp037ApprovedProductDefinitionCandidate,
+  evaluateImp037ProductDefinitionActivationProvenance,
   evaluateImp036gProductDefinitionDraftCheckpoint,
   evaluateImp036gProductDefinitionGatePassCheckpoint,
   evaluateImp036gUngatedProductDefinitionDraftCandidate,
@@ -6602,8 +6605,8 @@ describe("canonical authority history compression", () => {
 
     const roadmap = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
     const state = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
-    assert.match(roadmap, /"roadmapVersion": "GTM-R131"/);
-    assert.match(state, /"stateVersion": "STATE-R129"/);
+    assert.match(roadmap, /"roadmapVersion": "GTM-R132"/);
+    assert.match(state, /"stateVersion": "STATE-R130"/);
     assert.match(state, /"acceptedThrough": "IMP-036G"/);
     assert.match(state, /"pendingAcceptance": "NONE"/);
     assert.match(state, /"currentProductSlice": "IMP-037"/);
@@ -6654,7 +6657,8 @@ describe("canonical authority history compression", () => {
     assert.match(state, /Current Product Implementation:\s*NONE/);
     assert.match(roadmap, /IMP037_ACTIVATED:\s*YES/);
     assert.match(state, /IMP037_ACTIVATED:\s*YES/);
-    assert.match(roadmap, /IMP037_PRODUCT_DEFINITION:\s*PRE_GATE_DRAFT/);
+    assert.match(roadmap, /IMP037_PRODUCT_DEFINITION:\s*APPROVED/);
+    assert.match(roadmap, /IMP037_PRODUCT_DEFINITION_GATE:\s*PASS/);
     assert.match(roadmap, /IMP038_ACTIVATED:\s*NO/);
     assert.match(roadmap, /"currentProductSlice": "IMP-037"/);
     assert.match(roadmap, /"nextProductSlice": "IMP-038"/);
@@ -6678,12 +6682,12 @@ describe("canonical authority history compression", () => {
     assert.ok(!/FOUNDER_STAGING_DEPLOYMENT:\s*NOT_PERFORMED/.test(current));
   });
 
-  it("passes CURRENT authority checks at the IMP-037 Activation checkpoint", () => {
+  it("passes CURRENT authority checks at the IMP-037 Product Definition Gate PASS checkpoint", () => {
     const findings = runProjectConsistency();
     const failures = findings.filter((f) => !f.ok);
     assert.equal(failures.length, 0, failures.map((f) => `[${f.code}] ${f.message}`).join("\n"));
     const messages = findings.filter((f) => f.ok).map((f) => f.message);
-    assert.ok(messages.some((m) => m.includes("IMP-037 product-slice activation lifecycle valid")));
+    assert.ok(messages.some((m) => m.includes("IMP-037 Product Definition Gate PASS persistence valid")));
     assert.ok(messages.some((m) => m.includes("CURRENT authority anti-stale checks OK")));
     assert.ok(messages.some((m) => m.includes("historical authority corpus loaded")));
   });
@@ -8522,48 +8526,48 @@ implementation AUTHORIZED / STARTED / COMPLETE at GTM-R129 / STATE-R127 pending 
   });
 });
 
-describe("IMP-040 PRE-GATE Product Definition authority at GTM-R131 / STATE-R129", () => {
+describe("IMP-040 PRE-GATE Product Definition authority at GTM-R132 / STATE-R130", () => {
   const preGateStub = `# IMP-040 Product Definition
 
 Document status: PRE-GATE DRAFT
 PRE-GATE DRAFT: YES
 IMP040_ACTIVATED: NO
 
-| Canonical anchors | VISION-1; ROADMAP GTM-R131; STATE STATE-R129; ARCH-R19 |
+| Canonical anchors | VISION-1; ROADMAP GTM-R132; STATE STATE-R130; ARCH-R19 |
 
 ## 2. Authority and provenance
 
 | Source | Role | Classification |
 |---|---|---|
-| docs/platform/ROADMAP.md GTM-R131 | IMP-040 identity; gtmBoundary; PLANNED | VERIFIED |
-| docs/platform/STATE.md STATE-R129 | acceptedThrough IMP-036G; currentProductSlice IMP-037 | VERIFIED |
+| docs/platform/ROADMAP.md GTM-R132 | IMP-040 identity; gtmBoundary; PLANNED | VERIFIED |
+| docs/platform/STATE.md STATE-R130 | acceptedThrough IMP-036G; currentProductSlice IMP-037 | VERIFIED |
 `;
 
   it("validates live IMP-040 PRE-GATE authority sources", () => {
     const live = readFileSync("docs/platform/product/IMP-040/product-definition.md", "utf8");
     assert.deepEqual(evaluateImp040PreGateProductDefinitionAuthority(live), { ok: true });
-    assert.match(live, /docs\/platform\/ROADMAP\.md`? GTM-R131/);
-    assert.doesNotMatch(live, /docs\/platform\/ROADMAP\.md`? GTM-R130/);
+    assert.match(live, /docs\/platform\/ROADMAP\.md`? GTM-R132/);
+    assert.doesNotMatch(live, /docs\/platform\/ROADMAP\.md`? GTM-R131/);
   });
 
   it("passes aligned PRE-GATE stub", () => {
     assert.deepEqual(evaluateImp040PreGateProductDefinitionAuthority(preGateStub), { ok: true });
   });
 
-  it("rejects stale verified ROADMAP GTM-R130 when CURRENT is GTM-R131", () => {
+  it("rejects stale verified ROADMAP GTM-R131 when CURRENT is GTM-R132", () => {
     const result = evaluateImp040PreGateProductDefinitionAuthority(
       preGateStub.replace(
+        "docs/platform/ROADMAP.md GTM-R132",
         "docs/platform/ROADMAP.md GTM-R131",
-        "docs/platform/ROADMAP.md GTM-R130",
       ),
     );
     assert.equal(result.ok, false);
     assert.equal(result.code, "IMP040_PD_STALE_ROADMAP_AUTHORITY");
   });
 
-  it("rejects missing STATE-R129 verified authority", () => {
+  it("rejects missing STATE-R130 verified authority", () => {
     const result = evaluateImp040PreGateProductDefinitionAuthority(
-      preGateStub.replace("docs/platform/STATE.md STATE-R129", "docs/platform/STATE.md STATE-R128"),
+      preGateStub.replace("docs/platform/STATE.md STATE-R130", "docs/platform/STATE.md STATE-R129"),
     );
     assert.equal(result.ok, false);
     assert.equal(result.code, "IMP040_PD_AUTHORITY");
@@ -8652,8 +8656,343 @@ describe("IMP-037 product-slice activation checkpoints", () => {
       false,
     );
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R131", "STATE-R129", "imp037Activation"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R132", "STATE-R130", "imp037ProductDefinitionGatePass"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R131", "STATE-R129", "imp037ProductDefinitionGatePass"), false);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R132", "STATE-R130", "imp037Activation"), false);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R130", "STATE-R128", "imp036gAcceptance"), true);
     assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R131", "STATE-R129", "imp036gAcceptance"), false);
+  });
+});
+
+describe("IMP-037 Product Definition Gate PASS checkpoints", () => {
+  const gatePassBase = {
+    roadmapVersion: "GTM-R132",
+    stateVersion: "STATE-R130",
+    acceptedThrough: "IMP-036G",
+    currentProductSlice: "IMP-037",
+    nextProductSlice: "IMP-038",
+    pendingAcceptance: "NONE",
+    imp036g: "COMPLETE_AND_ACCEPTED",
+    imp037FormalLifecycle: "PLANNED",
+    imp037Activated: "YES",
+    productDefinition: "APPROVED",
+    productDefinitionVersion: "PD-IMP-037-DRAFT-1",
+    productDecisions: "RESOLVED",
+    productDecisionCount: 7,
+    productDefinitionGate: "PASS",
+    architectureFit: "NOT_PERFORMED",
+    architectureLocked: "NO",
+    implementationAuthorized: "NO",
+    started: "NO",
+    accepted: "NO",
+    founderUatRequired: "YES",
+    imp038Activated: "NO",
+    architectureVersion: "ARCH-R19",
+    decisionRegisterVersion: "DR-15",
+    productDeliveryVersion: "PD-1",
+    productDefinitionExists: true,
+    architectureFitPass: false,
+    architectureLockedYes: false,
+    implementationAuthorizedYes: false,
+    startedYes: false,
+    acceptedYes: false,
+    imp038ActivatedYes: false,
+  };
+
+  const validApproved = `<!-- governance-meta
+{
+  "status": "APPROVED",
+  "authority": "PRODUCT_DEFINITION",
+  "capability": "IMP-037",
+  "productDefinitionVersion": "PD-IMP-037-DRAFT-1",
+  "process": "PD-1",
+  "verificationPolicy": "TEST-1",
+  "lastReviewed": "2026-09-19",
+  "productDefinitionGateExecution": "PERFORMED",
+  "productDefinitionGateResult": "PASS",
+  "architectureFitExecution": "NOT_PERFORMED",
+  "architectureFit": "NOT_PERFORMED",
+  "architectureLocked": "NO",
+  "implementationAuthorized": "NO",
+  "implementationStarted": "NO",
+  "impAccepted": "NO",
+  "imp037Activated": "YES",
+  "founderUatRequired": "YES",
+  "founderUatStatus": "NOT_PERFORMED",
+  "preGateDraft": "NO"
+}
+-->
+Document status: APPROVED
+PRODUCT_DEFINITION_VERSION: PD-IMP-037-DRAFT-1
+PRE-GATE DRAFT: NO
+PRODUCT_DEFINITION_GATE_EXECUTION: PERFORMED
+Gate Result: PASS
+ARCHITECTURE_FIT_EXECUTION: NOT_PERFORMED
+ARCHITECTURE_FIT: NOT_PERFORMED
+ARCHITECTURE_LOCKED: NO
+IMPLEMENTATION_AUTHORIZED: NO
+IMPLEMENTATION_STARTED: NO
+IMP037_ACCEPTED: NO
+IMP038_ACTIVATED: NO
+GATE_EVALUATED_HEAD = fccdf7ef606ca906bcdcd706a6de97f693bb88b4
+GATE_EVALUATED_TREE = 1477d12b5c5b3b0ccb8d488757516d5b6e637674
+GATE_EVALUATED_PRODUCT_DEFINITION_BLOB = eb792d02dbfede862a0bb104a754d14d875141aa
+GATE_EVALUATED_WORKING_TREE_FINGERPRINT = 9be2a43fe3881ccd28f169f60209cef3c78c991524e5e9d34a8b657e1b1f0c19
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate PASS; Architecture Fit NOT_PERFORMED; architecture not locked; implementation not authorized)
+
+## 21. Dependencies
+| Dependency | Authority / verified state | Required before which story or gate? | Unresolved impact |
+|---|---|---|---|
+| Product Definition Gate | PASS / SATISFIED | Satisfied before Architecture Fit | NONE — gate complete; Architecture Fit remains required before architecture lock / implementation authorization |
+| Architecture Fit | NOT_PERFORMED | required before architecture lock / implementation authorization | Product Definition Gate PASS / SATISFIED |
+`;
+
+  it("passes valid GTM-R132 / STATE-R130 Gate PASS checkpoint", () => {
+    const result = evaluateImp037ProductDefinitionGatePassCheckpoint({
+      ...gatePassBase,
+      productDefinitionText: validApproved,
+    });
+    assert.deepEqual(result, { ok: true });
+    assert.deepEqual(evaluateImp037ApprovedProductDefinitionCandidate(validApproved), { ok: true });
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R132", "STATE-R130", "imp037ProductDefinitionGatePass"), true);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R131", "STATE-R129", "imp037ProductDefinitionGatePass"), false);
+  });
+
+  it("requires APPROVED Product Definition with PERFORMED/PASS and preGateDraft NO", () => {
+    const live = readFileSync("docs/platform/product/IMP-037/product-definition.md", "utf8");
+    assert.deepEqual(evaluateImp037ApprovedProductDefinitionCandidate(live), { ok: true });
+    assert.match(live, /Document status:\s*APPROVED/);
+    assert.match(live, /PRODUCT_DEFINITION_GATE_EXECUTION:\s*PERFORMED/);
+    assert.match(live, /Gate Result:\s*PASS/);
+    assert.match(live, /"preGateDraft":\s*"NO"/);
+    assert.match(live, /GATE_EVALUATED_HEAD\s*[=:]\s*fccdf7ef606ca906bcdcd706a6de97f693bb88b4/);
+    assert.match(live, /GATE_EVALUATED_TREE\s*[=:]\s*1477d12b5c5b3b0ccb8d488757516d5b6e637674/);
+    assert.match(live, /GATE_EVALUATED_PRODUCT_DEFINITION_BLOB\s*[=:]\s*eb792d02dbfede862a0bb104a754d14d875141aa/);
+    assert.match(live, /GATE_EVALUATED_WORKING_TREE_FINGERPRINT\s*[=:]\s*9be2a43fe3881ccd28f169f60209cef3c78c991524e5e9d34a8b657e1b1f0c19/);
+  });
+
+  it("requires story readiness to reflect Gate PASS", () => {
+    const result = evaluateImp037ApprovedProductDefinitionCandidate(validApproved);
+    assert.deepEqual(result, { ok: true });
+    assert.match(
+      validApproved,
+      /Readiness:\s*NOT_READY_FOR_IMPLEMENTATION\s*\(Product Definition Gate PASS; Architecture Fit NOT_PERFORMED/,
+    );
+  });
+
+  it("rejects stale Product Definition Gate NOT_PERFORMED in story readiness", () => {
+    const bad = `${validApproved}\nReadiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate NOT_PERFORMED; Architecture Fit NOT_PERFORMED)\n`;
+    const result = evaluateImp037ApprovedProductDefinitionCandidate(bad);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP037_PD_STALE_STORY_READINESS_GATE");
+  });
+
+  it("rejects stale READY for gate evaluation", () => {
+    const bad = `${validApproved}\nReadiness: READY for Product Definition Gate evaluation (gate NOT_PERFORMED)\n`;
+    const result = evaluateImp037ApprovedProductDefinitionCandidate(bad);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP037_PD_STALE_STORY_READINESS_GATE_READY");
+  });
+
+  it("rejects stale CURRENT PRE-GATE status", () => {
+    const bad = validApproved.replace("Document status: APPROVED", "Document status: PRE-GATE DRAFT").replace(
+      "PRE-GATE DRAFT: NO",
+      "PRE-GATE DRAFT: YES",
+    );
+    const result = evaluateImp037ApprovedProductDefinitionCandidate(bad);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP037_PD_STALE_PRE_GATE");
+  });
+
+  it("rejects productDefinitionGateExecution NOT_PERFORMED", () => {
+    const bad = validApproved.replace(
+      '"productDefinitionGateExecution": "PERFORMED"',
+      '"productDefinitionGateExecution": "NOT_PERFORMED"',
+    );
+    const result = evaluateImp037ApprovedProductDefinitionCandidate(bad);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP037_PD_META_VALUE");
+  });
+
+  it("rejects Gate Result NOT_PERFORMED", () => {
+    const bad = validApproved.replace("Gate Result: PASS", "Gate Result: NOT_PERFORMED").replace(
+      '"productDefinitionGateResult": "PASS"',
+      '"productDefinitionGateResult": "NOT_PERFORMED"',
+    );
+    const result = evaluateImp037ApprovedProductDefinitionCandidate(bad);
+    assert.equal(result.ok, false);
+  });
+
+  it("rejects Architecture Fit PASS / architecture locked YES / implementation authorized YES / started YES / accepted YES / IMP038 activated YES", () => {
+    assert.equal(
+      evaluateImp037ApprovedProductDefinitionCandidate(`${validApproved}\nARCHITECTURE_FIT: PASS\n`).ok,
+      false,
+    );
+    assert.equal(
+      evaluateImp037ProductDefinitionGatePassCheckpoint({
+        ...gatePassBase,
+        productDefinitionText: validApproved,
+        architectureFitPass: true,
+      }).ok,
+      false,
+    );
+    assert.equal(
+      evaluateImp037ProductDefinitionGatePassCheckpoint({
+        ...gatePassBase,
+        productDefinitionText: validApproved,
+        architectureLockedYes: true,
+      }).ok,
+      false,
+    );
+    assert.equal(
+      evaluateImp037ProductDefinitionGatePassCheckpoint({
+        ...gatePassBase,
+        productDefinitionText: validApproved,
+        implementationAuthorizedYes: true,
+      }).ok,
+      false,
+    );
+    assert.equal(
+      evaluateImp037ProductDefinitionGatePassCheckpoint({
+        ...gatePassBase,
+        productDefinitionText: validApproved,
+        startedYes: true,
+      }).ok,
+      false,
+    );
+    assert.equal(
+      evaluateImp037ProductDefinitionGatePassCheckpoint({
+        ...gatePassBase,
+        productDefinitionText: validApproved,
+        acceptedYes: true,
+      }).ok,
+      false,
+    );
+    assert.equal(
+      evaluateImp037ProductDefinitionGatePassCheckpoint({
+        ...gatePassBase,
+        productDefinitionText: validApproved,
+        imp038ActivatedYes: true,
+      }).ok,
+      false,
+    );
+  });
+
+  it("allows clearly labelled historical pre-gate provenance", () => {
+    const historical = `${validApproved}
+
+Historical pre-gate provenance: Document status PRE-GATE DRAFT; Product Definition Gate NOT_PERFORMED; READY for Product Definition Gate evaluation; candidate subject to pre-gate review.
+`;
+    assert.deepEqual(evaluateImp037ApprovedProductDefinitionCandidate(historical), { ok: true });
+  });
+
+  it("requires gate evaluated head/tree/blob/fingerprint provenance", () => {
+    const missingFingerprint = validApproved.replace(
+      "GATE_EVALUATED_WORKING_TREE_FINGERPRINT = 9be2a43fe3881ccd28f169f60209cef3c78c991524e5e9d34a8b657e1b1f0c19\n",
+      "",
+    );
+    const result = evaluateImp037ApprovedProductDefinitionCandidate(missingFingerprint);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP037_PD_GATE_EVALUATED_FINGERPRINT");
+  });
+});
+
+describe("IMP-037 Product Definition activation provenance pairing", () => {
+  const preActivationHead = "6b1f2344d0184e29403b99adfea85c2e5dc8bf9a";
+  const preActivationTree = "5471ea8f72c635a365e9a78ea1394ec212dcad69";
+  const gateEvaluatedHead = "fccdf7ef606ca906bcdcd706a6de97f693bb88b4";
+  const gateEvaluatedTree = "1477d12b5c5b3b0ccb8d488757516d5b6e637674";
+  const correctPairing = `Historical pre-activation base: GTM-R130 / STATE-R128 (\`${preActivationHead}\` / tree \`${preActivationTree}\`). Activation result: GTM-R131 / STATE-R129. Later merged activated main / Product Definition gate-evaluated candidate: \`${gateEvaluatedHead}\` / tree \`${gateEvaluatedTree}\`.`;
+  const incorrectPairing = `Historical activation base GTM-R131 / STATE-R129 (\`${preActivationHead}\` / tree \`${preActivationTree}\`) remains predecessor provenance.`;
+
+  it("passes correct pre-activation base pairing GTM-R130 / STATE-R128", () => {
+    assert.deepEqual(evaluateImp037ProductDefinitionActivationProvenance(correctPairing), { ok: true });
+    assert.deepEqual(
+      evaluateImp037ProductDefinitionActivationProvenance(
+        `Historical pre-activation base: GTM-R130 / STATE-R128 (\`${preActivationHead}\` / tree \`${preActivationTree}\`).`,
+      ),
+      { ok: true },
+    );
+  });
+
+  it("rejects 6b1f2344 labelled GTM-R131 / STATE-R129", () => {
+    const result = evaluateImp037ProductDefinitionActivationProvenance(incorrectPairing);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP037_PD_PRE_ACTIVATION_SHA_VERSION");
+  });
+
+  it("distinguishes GTM-R131 / STATE-R129 as activation result, not the pre-activation SHA", () => {
+    const result = evaluateImp037ProductDefinitionActivationProvenance(correctPairing);
+    assert.deepEqual(result, { ok: true });
+    assert.match(correctPairing, /Activation result:\s*GTM-R131\s*\/\s*STATE-R129/);
+    assert.doesNotMatch(
+      correctPairing,
+      /GTM-R131\s*\/\s*STATE-R129[^\n.]{0,80}6b1f2344d0184e29403b99adfea85c2e5dc8bf9a/,
+    );
+  });
+
+  it("keeps gate-evaluated fccdf7ef identity unchanged when provenance is recorded", () => {
+    const live = readFileSync("docs/platform/product/IMP-037/product-definition.md", "utf8");
+    assert.match(live, /GATE_EVALUATED_HEAD\s*[=:]\s*fccdf7ef606ca906bcdcd706a6de97f693bb88b4/);
+    assert.match(live, /GATE_EVALUATED_TREE\s*[=:]\s*1477d12b5c5b3b0ccb8d488757516d5b6e637674/);
+    assert.match(live, /GATE_EVALUATED_PRODUCT_DEFINITION_BLOB\s*[=:]\s*eb792d02dbfede862a0bb104a754d14d875141aa/);
+    assert.match(live, /GATE_EVALUATED_WORKING_TREE_FINGERPRINT\s*[=:]\s*9be2a43fe3881ccd28f169f60209cef3c78c991524e5e9d34a8b657e1b1f0c19/);
+    const approved = `<!-- governance-meta
+{
+  "status": "APPROVED",
+  "authority": "PRODUCT_DEFINITION",
+  "capability": "IMP-037",
+  "productDefinitionVersion": "PD-IMP-037-DRAFT-1",
+  "process": "PD-1",
+  "verificationPolicy": "TEST-1",
+  "productDefinitionGateExecution": "PERFORMED",
+  "productDefinitionGateResult": "PASS",
+  "architectureFitExecution": "NOT_PERFORMED",
+  "architectureFit": "NOT_PERFORMED",
+  "architectureLocked": "NO",
+  "implementationAuthorized": "NO",
+  "implementationStarted": "NO",
+  "impAccepted": "NO",
+  "imp037Activated": "YES",
+  "founderUatRequired": "YES",
+  "founderUatStatus": "NOT_PERFORMED",
+  "preGateDraft": "NO"
+}
+-->
+Document status: APPROVED
+PRODUCT_DEFINITION_GATE_EXECUTION: PERFORMED
+Gate Result: PASS
+ARCHITECTURE_FIT: NOT_PERFORMED
+IMPLEMENTATION_AUTHORIZED: NO
+IMPLEMENTATION_STARTED: NO
+IMP037_ACCEPTED: NO
+GATE_EVALUATED_HEAD = fccdf7ef606ca906bcdcd706a6de97f693bb88b4
+GATE_EVALUATED_TREE = 1477d12b5c5b3b0ccb8d488757516d5b6e637674
+GATE_EVALUATED_PRODUCT_DEFINITION_BLOB = eb792d02dbfede862a0bb104a754d14d875141aa
+GATE_EVALUATED_WORKING_TREE_FINGERPRINT = 9be2a43fe3881ccd28f169f60209cef3c78c991524e5e9d34a8b657e1b1f0c19
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate PASS; Architecture Fit NOT_PERFORMED; architecture not locked; implementation not authorized)
+${correctPairing}
+`;
+    assert.deepEqual(evaluateImp037ApprovedProductDefinitionCandidate(approved), { ok: true });
+    assert.equal(evaluateImp037ApprovedProductDefinitionCandidate(`${approved}\n${incorrectPairing}`).ok, false);
+  });
+
+  it("requires live IMP-037 Product Definition to record the corrected lineage", () => {
+    const live = readFileSync("docs/platform/product/IMP-037/product-definition.md", "utf8");
+    assert.deepEqual(evaluateImp037ProductDefinitionActivationProvenance(live), { ok: true });
+    assert.deepEqual(evaluateImp037ApprovedProductDefinitionCandidate(live), { ok: true });
+    assert.match(
+      live,
+      /Historical pre-activation base:\s*GTM-R130\s*\/\s*STATE-R128\s*\(`6b1f2344d0184e29403b99adfea85c2e5dc8bf9a`\s*\/\s*tree\s*`5471ea8f72c635a365e9a78ea1394ec212dcad69`\)/,
+    );
+    assert.match(live, /Activation result:\s*GTM-R131\s*\/\s*STATE-R129/);
+    assert.doesNotMatch(
+      live,
+      /GTM-R131\s*\/\s*STATE-R129[^\n.]{0,80}6b1f2344d0184e29403b99adfea85c2e5dc8bf9a/,
+    );
+    assert.match(live, /GATE_EVALUATED_HEAD\s*[=:]\s*fccdf7ef606ca906bcdcd706a6de97f693bb88b4/);
+    assert.match(live, /ARCHITECTURE_FIT:\s*NOT_PERFORMED/);
+    assert.match(live, /IMPLEMENTATION_AUTHORIZED:\s*NO/);
   });
 });
 

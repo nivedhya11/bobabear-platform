@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R129",
+  "stateVersion": "STATE-R130",
   "acceptedThrough": "IMP-036G",
   "currentProductSlice": "IMP-037",
   "nextProductSlice": "IMP-038",
   "pendingAcceptance": "NONE",
   "governanceHealth": "ALIGNED",
-  "lastReviewed": "2026-09-18"
+  "lastReviewed": "2026-09-19"
 }
 -->
 
@@ -36,11 +36,13 @@ Current Product Implementation: NONE
 Pending Acceptance:             NONE
 Current Product Slice:          IMP-037 — Backup, Restore & Migration Readiness
 Next Product Slice:             IMP-038 — Security & Privacy Hardening
-Current Governance Activity:    IMP-037 activated as CURRENT product slice (GTM-R131 / STATE-R129);
+Current Governance Activity:    IMP-037 Product Definition Gate PASS (GTM-R132 / STATE-R130);
+                              PD-IMP-037-DRAFT-1 APPROVED;
+                              Architecture Fit NOT_PERFORMED;
                               formal IMP-037 ROADMAP lifecycle remains PLANNED;
                               IMP037_ACTIVATED: YES;
-                              IMP037_PRODUCT_DEFINITION: PRE_GATE_DRAFT (PD-IMP-037-DRAFT-1);
-                              IMP037_PRODUCT_DEFINITION_GATE: NOT_PERFORMED;
+                              IMP037_PRODUCT_DEFINITION: APPROVED (PD-IMP-037-DRAFT-1);
+                              IMP037_PRODUCT_DEFINITION_GATE: PASS;
                               IMP037_ARCHITECTURE_FIT: NOT_PERFORMED;
                               IMP037_ARCHITECTURE_LOCKED: NO;
                               IMP037_IMPLEMENTATION_AUTHORIZED: NO; IMP037_STARTED: NO;
@@ -64,8 +66,8 @@ IMP036G_FOUNDER_UAT:      PASS
 IMP036G_FORMAL_ACCEPTANCE: ACCEPTED
 IMP-037:                  PLANNED / NOT_AUTHORIZED / NOT_STARTED
 IMP037_ACTIVATED:         YES
-IMP037_PRODUCT_DEFINITION: PRE_GATE_DRAFT
-IMP037_PRODUCT_DEFINITION_GATE: NOT_PERFORMED
+IMP037_PRODUCT_DEFINITION: APPROVED
+IMP037_PRODUCT_DEFINITION_GATE: PASS
 IMP037_ARCHITECTURE_FIT:  NOT_PERFORMED
 IMP037_ARCHITECTURE_LOCKED: NO
 IMP037_IMPLEMENTATION_AUTHORIZED: NO
@@ -391,9 +393,11 @@ IMP036G_FOUNDER_STAGING_STATUS: FOUNDER_UAT_COMPLETE
 IMP036G_FOUNDER_STAGING_UAT_ROUTE: /workforce/admin/
 IMP-037: PLANNED / NOT_AUTHORIZED / NOT_STARTED
 IMP037_ACTIVATED: YES
-IMP037_PRODUCT_DEFINITION: PRE_GATE_DRAFT
+IMP037_PRODUCT_DEFINITION: APPROVED
 IMP037_PRODUCT_DEFINITION_VERSION: PD-IMP-037-DRAFT-1
-IMP037_PRODUCT_DEFINITION_GATE: NOT_PERFORMED
+IMP037_PRODUCT_DECISIONS: RESOLVED
+IMP037_PRODUCT_DECISION_COUNT: 7
+IMP037_PRODUCT_DEFINITION_GATE: PASS
 IMP037_ARCHITECTURE_FIT: NOT_PERFORMED
 IMP037_ARCHITECTURE_LOCKED: NO
 IMP037_IMPLEMENTATION_AUTHORIZED: NO
@@ -465,7 +469,7 @@ Implementation/review provenance for IMP-036F is recorded in
 
 ## 8. Explicitly Not Yet Accepted
 
-- IMP-037 — Backup, Restore & Migration Readiness (`PLANNED` / `NOT_AUTHORIZED` / `NOT_STARTED`; `IMP037_ACTIVATED: YES`; Product Definition PRE_GATE_DRAFT / `PD-IMP-037-DRAFT-1`; Gate NOT_PERFORMED; Architecture Fit NOT_PERFORMED; architecture NOT_LOCKED; implementation NOT_AUTHORIZED / NOT_STARTED; `IMP037_ACCEPTED: NO`)
+- IMP-037 — Backup, Restore & Migration Readiness (`PLANNED` / `NOT_AUTHORIZED` / `NOT_STARTED`; `IMP037_ACTIVATED: YES`; Product Definition APPROVED / `PD-IMP-037-DRAFT-1`; Gate PASS; Architecture Fit NOT_PERFORMED; architecture NOT_LOCKED; implementation NOT_AUTHORIZED / NOT_STARTED; `IMP037_ACCEPTED: NO`)
 - IMP-038 — Security & Privacy Hardening (`PLANNED` / `NOT_ACTIVATED`; `IMP038_ACTIVATED: NO`)
 - IMP-039 — Production Infrastructure & Release Pipeline
 - IMP-040 — Launch Validation & Cutover
@@ -488,7 +492,50 @@ Implementation/review provenance for IMP-036F is recorded in
 Agents may propose a STATE delta in their report. Only independent acceptance updates this file's
 accepted position and may promote `governanceHealth` to `ALIGNED`.
 
-## 10. STATE-R129 record
+## 10. STATE-R130 record
+
+```text
+STATE-R130 = IMP-037_PRODUCT_DEFINITION_GATE_PASS
+acceptedThrough: IMP-036G
+pendingAcceptance: NONE
+currentProductSlice: IMP-037
+nextProductSlice: IMP-038
+Current Product Implementation: NONE
+Current Governance Activity: IMP-037 Product Definition Gate PASS; PD-IMP-037-DRAFT-1 APPROVED; Architecture Fit NOT_PERFORMED
+IMP-036G: COMPLETE_AND_ACCEPTED
+IMP036G_ACCEPTED: YES
+IMP036G_FOUNDER_UAT: PASS
+IMP036G_FORMAL_ACCEPTANCE: ACCEPTED
+IMP-037: PLANNED / NOT_AUTHORIZED / NOT_STARTED
+IMP037_ACTIVATED: YES
+IMP037_PRODUCT_DEFINITION: APPROVED
+IMP037_PRODUCT_DEFINITION_VERSION: PD-IMP-037-DRAFT-1
+IMP037_PRODUCT_DECISIONS: RESOLVED
+IMP037_PRODUCT_DECISION_COUNT: 7
+IMP037_PRODUCT_DEFINITION_GATE: PASS
+IMP037_ARCHITECTURE_FIT: NOT_PERFORMED
+IMP037_ARCHITECTURE_LOCKED: NO
+IMP037_IMPLEMENTATION_AUTHORIZED: NO
+IMP037_STARTED: NO
+IMP037_ACCEPTED: NO
+IMP037_FOUNDER_UAT_REQUIRED: YES
+IMP-038: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
+IMP038_ACTIVATED: NO
+architectureVersion: ARCH-R19
+decisionRegisterVersion: DR-15
+productDeliveryVersion: PD-1
+gateEvaluatedHead: fccdf7ef606ca906bcdcd706a6de97f693bb88b4
+gateEvaluatedTree: 1477d12b5c5b3b0ccb8d488757516d5b6e637674
+gateEvaluatedProductDefinitionBlob: eb792d02dbfede862a0bb104a754d14d875141aa
+gateEvaluatedFingerprint: 9be2a43fe3881ccd28f169f60209cef3c78c991524e5e9d34a8b657e1b1f0c19
+gateExactMainCi: 35382560066
+gateDate: 2026-09-19
+gateApprovalAuthority: Founder / product governance human authority
+independentPreGateReview: PASS
+supersedes: STATE-R129
+```
+
+## 11. STATE-R129 record
 
 ```text
 STATE-R129 = IMP-037_PRODUCT_SLICE_ACTIVATION
@@ -521,7 +568,7 @@ productDeliveryVersion: PD-1
 supersedes: STATE-R128
 ```
 
-## 11. STATE-R128 record
+## 12. STATE-R128 record
 
 ```text
 STATE-R128 = IMP-036G_COMPLETE_AND_ACCEPTED
@@ -595,7 +642,7 @@ Formal acceptance is recorded at GTM-R130 / STATE-R128 after Founder UAT PASS. T
 **not** activate IMP-037. Accepted UAT product candidate `fbf690a67cda51bd6bbc1bad4a9d26f574c4286e` is distinct from
 implementation merge `c35c9eab6a30ec6ce745cefd75c523181326f360`. Historical completion predecessor is GTM-R129 / STATE-R127.
 
-## 12. STATE-R127 record
+## 13. STATE-R127 record
 
 
 ```text

@@ -31,8 +31,8 @@ activation truth is owned by [`ROADMAP.md`](./ROADMAP.md) / [`STATE.md`](./STATE
 (`IMP036F_ACTIVATED` / `IMP036G_ACTIVATED` / `IMP037_ACTIVATED`). IMP-036G remains
 `COMPLETE_AND_ACCEPTED` (`IMP036G_ACCEPTED: YES`; Founder UAT PASS). IMP-037 is the activated
 CURRENT product slice (`IMP037_ACTIVATED: YES`; formal lifecycle `PLANNED` /
-`NOT_AUTHORIZED` / `NOT_STARTED`; Product Definition `PRE_GATE_DRAFT` / `PD-IMP-037-DRAFT-1`;
-Product Definition Gate NOT_PERFORMED; Architecture Fit NOT_PERFORMED; architecture NOT_LOCKED;
+`NOT_AUTHORIZED` / `NOT_STARTED`; Product Definition `APPROVED` / `PD-IMP-037-DRAFT-1`;
+Product Definition Gate PASS; Architecture Fit NOT_PERFORMED; architecture NOT_LOCKED;
 implementation NOT_AUTHORIZED / NOT_STARTED). TEST-1 remains the verification policy
 for new story-based delivery from IMP-036F. Verification layers and delivery
 phases are not new ROADMAP lifecycle states. Session 1 established documentation policy; it
