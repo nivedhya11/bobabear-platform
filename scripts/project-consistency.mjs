@@ -1528,7 +1528,7 @@ function isImp031AcceptanceCheckpoint(roadmap, state) {
   return isSupportedImp030GovernanceCheckpoint(roadmap?.meta.roadmapVersion, state?.meta.stateVersion, "imp031Acceptance");
 }
 
-/** @param {string} roadmapVersion @param {string} stateVersion @param {"activation" | "lock" | "authorization" | "start" | "routeAmendment" | "consistencyRepair" | "acceptance" | "imp031Activation" | "imp031Draft" | "imp031Lock" | "imp031Authorization" | "imp031Start" | "imp031Completion" | "imp031Acceptance" | "imp032Activation" | "imp032Draft" | "imp032Lock" | "imp032Authorization" | "imp032Start" | "imp032BoundaryClarification" | "imp032Completion" | "imp032Acceptance" | "imp033Activation" | "imp033Completion" | "imp033Acceptance" | "imp034Completion" | "imp034Acceptance" | "imp035Completion" | "imp035Acceptance" | "imp036Completion" | "imp036Acceptance" | "enterpriseExperiencePlan" | "imp036dActivation" | "imp036dLock" | "imp036dAuthorization" | "imp036dStart" | "imp036dCompletion" | "imp036dAcceptance" | "imp036eActivation" | "imp036eLock" | "imp036eAuthorization" | "imp036eStart" | "imp036eCompletion" | "imp036eAcceptance" | "imp036fActivation" | "imp036fProductDefinitionDraftAuthorized" | "imp036fProductDefinitionGatePass" | "imp036fArchitectureLock" | "imp036fImplementationAuthorization" | "imp036fImplementationStart" | "imp036fAcceptance" | "imp036gActivation" | "imp036gProductDefinitionDraft" | "imp036gProductDefinitionGatePass" | "imp036gArchitectureLock" | "imp036gImplementationStart" | "imp036gCompletion" | "imp036gAcceptance" | "imp037Activation" | "imp037ProductDefinitionGatePass"} [kind] */
+/** @param {string} roadmapVersion @param {string} stateVersion @param {"activation" | "lock" | "authorization" | "start" | "routeAmendment" | "consistencyRepair" | "acceptance" | "imp031Activation" | "imp031Draft" | "imp031Lock" | "imp031Authorization" | "imp031Start" | "imp031Completion" | "imp031Acceptance" | "imp032Activation" | "imp032Draft" | "imp032Lock" | "imp032Authorization" | "imp032Start" | "imp032BoundaryClarification" | "imp032Completion" | "imp032Acceptance" | "imp033Activation" | "imp033Completion" | "imp033Acceptance" | "imp034Completion" | "imp034Acceptance" | "imp035Completion" | "imp035Acceptance" | "imp036Completion" | "imp036Acceptance" | "enterpriseExperiencePlan" | "imp036dActivation" | "imp036dLock" | "imp036dAuthorization" | "imp036dStart" | "imp036dCompletion" | "imp036dAcceptance" | "imp036eActivation" | "imp036eLock" | "imp036eAuthorization" | "imp036eStart" | "imp036eCompletion" | "imp036eAcceptance" | "imp036fActivation" | "imp036fProductDefinitionDraftAuthorized" | "imp036fProductDefinitionGatePass" | "imp036fArchitectureLock" | "imp036fImplementationAuthorization" | "imp036fImplementationStart" | "imp036fAcceptance" | "imp036gActivation" | "imp036gProductDefinitionDraft" | "imp036gProductDefinitionGatePass" | "imp036gArchitectureLock" | "imp036gImplementationStart" | "imp036gCompletion" | "imp036gAcceptance" | "imp037Activation" | "imp037ProductDefinitionGatePass" | "d374CostOptimizedPilotInfrastructure"} [kind] */
 export function isSupportedImp030GovernanceCheckpoint(roadmapVersion, stateVersion, kind) {
   const activation = roadmapVersion === "GTM-R66" && stateVersion === "STATE-R64";
   const lock = roadmapVersion === "GTM-R67" && stateVersion === "STATE-R65";
@@ -1604,6 +1604,7 @@ export function isSupportedImp030GovernanceCheckpoint(roadmapVersion, stateVersi
   const imp036gAcceptance = roadmapVersion === "GTM-R130" && stateVersion === "STATE-R128";
   const imp037Activation = roadmapVersion === "GTM-R131" && stateVersion === "STATE-R129";
   const imp037ProductDefinitionGatePass = roadmapVersion === "GTM-R132" && stateVersion === "STATE-R130";
+  const d374CostOptimizedPilotInfrastructure = roadmapVersion === "GTM-R133" && stateVersion === "STATE-R131";
   if (kind === "activation") return activation;
   if (kind === "lock") return lock;
   if (kind === "authorization") return authorization;
@@ -1671,7 +1672,8 @@ export function isSupportedImp030GovernanceCheckpoint(roadmapVersion, stateVersi
   if (kind === "imp036gAcceptance") return imp036gAcceptance;
   if (kind === "imp037Activation") return imp037Activation;
   if (kind === "imp037ProductDefinitionGatePass") return imp037ProductDefinitionGatePass;
-  return activation || lock || authorization || start || routeAmendment || consistencyRepair || acceptance || imp031Activation || imp031Draft || imp031Lock || imp031Authorization || imp031Start || imp031Completion || imp031Acceptance || imp032Activation || imp032Draft || imp032Lock || imp032Authorization || imp032Start || imp032BoundaryClarification || imp032Completion || imp032Acceptance || imp033Activation || imp033Completion || imp033Acceptance || imp034Completion || imp034Acceptance || imp035Completion || imp035Acceptance || imp036Completion || imp036Acceptance || enterpriseExperiencePlan || imp036aCompletion || imp036aAcceptance || imp036bCompletion || imp036bAcceptance || imp036cCompletion || imp036cAcceptance || imp036dActivation || imp036dLock || imp036dAuthorization || imp036dStart || imp036dCompletion || imp036dAcceptance || imp036eActivation || imp036eLock || imp036eAuthorization || imp036eStart || imp036eCompletion || authorityCompression || imp036eAcceptance || imp036fActivation || imp036fProductDefinitionDraftAuthorized || imp036fProductDefinitionGatePass || imp036fArchitectureLock || imp036fImplementationAuthorization || imp036fImplementationStart || imp036fAcceptance || imp036gActivation || imp036gProductDefinitionDraft || imp036gProductDefinitionGatePass || imp036gArchitectureLock || imp036gImplementationStart || imp036gCompletion || imp036gAcceptance || imp037Activation || imp037ProductDefinitionGatePass;
+  if (kind === "d374CostOptimizedPilotInfrastructure") return d374CostOptimizedPilotInfrastructure;
+  return activation || lock || authorization || start || routeAmendment || consistencyRepair || acceptance || imp031Activation || imp031Draft || imp031Lock || imp031Authorization || imp031Start || imp031Completion || imp031Acceptance || imp032Activation || imp032Draft || imp032Lock || imp032Authorization || imp032Start || imp032BoundaryClarification || imp032Completion || imp032Acceptance || imp033Activation || imp033Completion || imp033Acceptance || imp034Completion || imp034Acceptance || imp035Completion || imp035Acceptance || imp036Completion || imp036Acceptance || enterpriseExperiencePlan || imp036aCompletion || imp036aAcceptance || imp036bCompletion || imp036bAcceptance || imp036cCompletion || imp036cAcceptance || imp036dActivation || imp036dLock || imp036dAuthorization || imp036dStart || imp036dCompletion || imp036dAcceptance || imp036eActivation || imp036eLock || imp036eAuthorization || imp036eStart || imp036eCompletion || authorityCompression || imp036eAcceptance || imp036fActivation || imp036fProductDefinitionDraftAuthorized || imp036fProductDefinitionGatePass || imp036fArchitectureLock || imp036fImplementationAuthorization || imp036fImplementationStart || imp036fAcceptance || imp036gActivation || imp036gProductDefinitionDraft || imp036gProductDefinitionGatePass || imp036gArchitectureLock || imp036gImplementationStart || imp036gCompletion || imp036gAcceptance || imp037Activation || imp037ProductDefinitionGatePass || d374CostOptimizedPilotInfrastructure;
 }
 
 function isImp032ArchitectureActivationCheckpoint(roadmap, state) {
@@ -1948,6 +1950,14 @@ function isImp037ProductDefinitionGatePassCheckpoint(roadmap, state) {
   );
 }
 
+function isD374CostOptimizedPilotInfrastructureCheckpoint(roadmap, state) {
+  return isSupportedImp030GovernanceCheckpoint(
+    roadmap?.meta.roadmapVersion,
+    state?.meta.stateVersion,
+    "d374CostOptimizedPilotInfrastructure",
+  );
+}
+
 function isImp030ArchitectureCheckpoint(roadmap, state) {
   return isImp030ArchitectureActivationCheckpoint(roadmap, state) || isImp030ArchitectureLockCheckpoint(roadmap, state);
 }
@@ -2020,7 +2030,8 @@ function isImp030GovernanceCheckpoint(roadmap, state) {
     isImp036gImplementationCompletionCheckpoint(roadmap, state) ||
     isImp036gAcceptanceCheckpoint(roadmap, state) ||
     isImp037ActivationCheckpoint(roadmap, state) ||
-    isImp037ProductDefinitionGatePassCheckpoint(roadmap, state)
+    isImp037ProductDefinitionGatePassCheckpoint(roadmap, state) ||
+    isD374CostOptimizedPilotInfrastructureCheckpoint(roadmap, state)
   );
 }
 
@@ -8139,6 +8150,168 @@ export function evaluateImp037ProductDefinitionGatePassCheckpoint(checkpoint) {
 }
 
 /**
+ * Validate GLOBAL_ARCHITECTURE_DECISION_D374 checkpoint (GTM-R133 / STATE-R131).
+ * Registers D-374 / ADR-016 / ARCH-R20 / DR-16 cost-optimized pilot infrastructure.
+ * Does NOT perform IMP-037 Architecture Fit, lock, authorization, start, or IMP-038 activation.
+ * @param {Record<string, unknown>} checkpoint
+ */
+export function evaluateD374CostOptimizedPilotInfrastructureCheckpoint(checkpoint) {
+  const expected = {
+    roadmapVersion: "GTM-R133",
+    stateVersion: "STATE-R131",
+    acceptedThrough: "IMP-036G",
+    currentProductSlice: "IMP-037",
+    nextProductSlice: "IMP-038",
+    pendingAcceptance: "NONE",
+    d374Created: "YES",
+    archR20Created: "YES",
+    d374Exists: true,
+    d374Current: true,
+    architectureVersion: "ARCH-R20",
+    decisionRegisterVersion: "DR-16",
+    adr016Exists: true,
+    nextFreeDecisionId: "D-375",
+    pilotComputeSingleDroplet: true,
+    dockerCompose: true,
+    selfHostedPostgresql18: true,
+    spacesOffHostBackups: true,
+    k3s: "NO",
+    kubernetes: "NO",
+    appPlatformPilotProduction: "NO",
+    managedPostgresqlPilotProduction: "NO",
+    architectureFit: "NOT_PERFORMED",
+    architectureLocked: "NO",
+    implementationAuthorized: "NO",
+    started: "NO",
+    imp038Activated: "NO",
+    architectureFitReopenReasonMentionsD374ArchR20: true,
+  };
+  for (const [key, value] of Object.entries(expected)) {
+    if (checkpoint[key] !== value) {
+      return { ok: false, code: "D374_COST_OPTIMIZED_PILOT", message: `${key} must be ${value}` };
+    }
+  }
+  if (checkpoint.architectureFitPass) {
+    return {
+      ok: false,
+      code: "IMP037_ARCHITECTURE_FIT",
+      message: "IMP-037 Architecture Fit must remain NOT_PERFORMED at GLOBAL_ARCHITECTURE_DECISION_D374",
+    };
+  }
+  if (checkpoint.architectureLockedYes) {
+    return {
+      ok: false,
+      code: "IMP037_ARCHITECTURE_LOCKED",
+      message: "IMP-037 architecture must not be locked at GLOBAL_ARCHITECTURE_DECISION_D374",
+    };
+  }
+  if (checkpoint.implementationAuthorizedYes) {
+    return {
+      ok: false,
+      code: "IMP037_IMPLEMENTATION_AUTHORIZED",
+      message: "IMP-037 implementation must not be authorized at GLOBAL_ARCHITECTURE_DECISION_D374",
+    };
+  }
+  if (checkpoint.startedYes) {
+    return {
+      ok: false,
+      code: "IMP037_STARTED",
+      message: "IMP-037 implementation must not be started at GLOBAL_ARCHITECTURE_DECISION_D374",
+    };
+  }
+  if (checkpoint.imp038ActivatedYes) {
+    return {
+      ok: false,
+      code: "IMP038_ACTIVATED",
+      message: "IMP-038 must not be activated during GLOBAL_ARCHITECTURE_DECISION_D374",
+    };
+  }
+  if (checkpoint.appPlatformCurrentPilotAuthority) {
+    return {
+      ok: false,
+      code: "D374_STALE_APP_PLATFORM",
+      message: "App Platform must not be CURRENT pilot production authority after D-374",
+    };
+  }
+  if (checkpoint.managedPostgresqlCurrentPilotAuthority) {
+    return {
+      ok: false,
+      code: "D374_STALE_MANAGED_POSTGRESQL",
+      message: "Managed PostgreSQL must not be CURRENT pilot production authority after D-374",
+    };
+  }
+  if (checkpoint.k3sCurrentPilotAuthority) {
+    return {
+      ok: false,
+      code: "D374_STALE_K3S",
+      message: "k3s must not be CURRENT pilot production authority after D-374",
+    };
+  }
+  if (checkpoint.managedPitrSatisfiesImp037) {
+    return {
+      ok: false,
+      code: "D374_STALE_MANAGED_PITR",
+      message: "Managed-provider PITR must not be claimed to satisfy CURRENT IMP-037 after D-374",
+    };
+  }
+  return { ok: true };
+}
+
+/**
+ * Validate that amended ADR-001/002/013/015 preserve historical wording without overriding CURRENT D-374.
+ * Historical App Platform / Managed PostgreSQL / managed PITR prose is allowed when clearly AMENDED.
+ * @param {string} text
+ * @param {"ADR-001" | "ADR-002" | "ADR-013" | "ADR-015"} adrId
+ */
+export function evaluateD374AmendedHistoricalAdrPreservation(text, adrId) {
+  const body = String(text ?? "");
+  if (!/AMENDED/i.test(body) || !/\bD-374\b/.test(body) || !/\bADR-016\b/.test(body)) {
+    return {
+      ok: false,
+      code: "D374_ADR_AMENDMENT",
+      message: `${adrId} must record AMENDED by D-374 / ADR-016`,
+    };
+  }
+  if (/Status:\s*CURRENT\b/i.test(body) && !/AMENDED/i.test(body.split("\n").slice(0, 20).join("\n"))) {
+    return {
+      ok: false,
+      code: "D374_ADR_STALE_CURRENT",
+      message: `${adrId} must not claim unamended CURRENT status after D-374`,
+    };
+  }
+  const historicalRequired = {
+    "ADR-001": [/App Platform/, /Managed PostgreSQL/],
+    "ADR-002": [/App Platform/],
+    "ADR-013": [/Managed PostgreSQL/, /PITR|point[- ]in[- ]time/i],
+    "ADR-015": [/App Platform/],
+  }[adrId];
+  if (!historicalRequired) {
+    return { ok: false, code: "D374_ADR_UNKNOWN", message: `Unknown ADR id ${adrId}` };
+  }
+  for (const pattern of historicalRequired) {
+    if (!pattern.test(body)) {
+      return {
+        ok: false,
+        code: "D374_ADR_HISTORICAL_ERASED",
+        message: `${adrId} must preserve historical ${pattern} wording (do not erase amended history)`,
+      };
+    }
+  }
+  if (
+    !/no longer CURRENT|not CURRENT|prefer D-374|amended by|AMENDED_BY:\s*D-374|prefer D-374 \/ ADR-016/i.test(
+      body,
+    )
+  ) {
+    return {
+      ok: false,
+      code: "D374_ADR_CURRENT_OVERRIDE",
+      message: `${adrId} must clarify historical hosting prose is not CURRENT after D-374`,
+    };
+  }
+  return { ok: true };
+}
+
+/**
  * Required canonical governance-meta values for a gate-passed IMP-037 Product Definition.
  */
 const IMP037_APPROVED_PD_GOVERNANCE_META_REQUIRED = Object.freeze({
@@ -11004,6 +11177,7 @@ function checkDecisionRegister(decision, roadmap, state) {
       "013-postgresql-drizzle-migrations-persistence",
       "014-http-api-route-handlers-contracts",
       "015-configuration-secrets-feature-flags",
+      "016-cost-optimized-pilot-infrastructure",
     ];
     const slug = known.find((k) => k.startsWith(`${num}-`));
     const candidate = slug
@@ -11030,6 +11204,11 @@ function checkDecisionRegister(decision, roadmap, state) {
   if (isImp035ImplementationCompletionCheckpoint(roadmap, state)) {
     requiredIds.push("D-372");
     requiredIds.push("D-373");
+  }
+  if (isD374CostOptimizedPilotInfrastructureCheckpoint(roadmap, state)) {
+    requiredIds.push("D-372");
+    requiredIds.push("D-373");
+    requiredIds.push("D-374");
   }
   for (const id of requiredIds) {
     if (!seen.has(id)) {
@@ -11100,7 +11279,43 @@ function checkDecisionRegister(decision, roadmap, state) {
       "D-364 must lock Refund Foundation independent of Payment SUCCEEDED collection truth for IMP-027",
     );
   }
-  if (isImp035ImplementationCompletionCheckpoint(roadmap, state)) {
+  if (isD374CostOptimizedPilotInfrastructureCheckpoint(roadmap, state)) {
+    const d374Row = [...globalSection.split("\n")].find((line) => /^\|\s*D-374\s*\|/.test(line));
+    if (
+      !d374Row ||
+      !/\|\s*CURRENT\s*\|/.test(d374Row) ||
+      !/Cost-Optimized Pilot Infrastructure|single DigitalOcean|Docker Compose|Self-Hosted PostgreSQL|Spaces/i.test(
+        d374Row,
+      )
+    ) {
+      fail(
+        "D374_CONTRACT",
+        "D-374 must be CURRENT and lock cost-optimized pilot infrastructure (single Droplet + Compose + self-hosted PostgreSQL + Spaces)",
+      );
+    } else {
+      note("D-374 registered as CURRENT (Cost-Optimized Pilot Infrastructure)");
+    }
+    if (!/Next free decision ID advanced to \*\*D-375\*\*/.test(text)) {
+      fail("NEXT_DECISION_ID", "Decision register must advance next free ID to D-375 after D-374");
+    } else {
+      note("Next free decision ID D-375 recorded");
+    }
+    if (!/next ID \*\*D-375\*\*/.test(text)) {
+      fail("NEXT_DECISION_ID_RULES", "Decision register ID rules must advance next ID to D-375 after D-374");
+    }
+    const adrRows = [
+      ...text.matchAll(/^\|\s*(ADR-\d{3})\s*\|[^|\n]*\|\s*(CURRENT|AMENDED|SUPERSEDED|HISTORICAL|REJECTED)\b/gm),
+    ];
+    const adrStatus = Object.fromEntries(adrRows.map((m) => [m[1], m[2]]));
+    for (const amendedId of ["ADR-001", "ADR-002", "ADR-013", "ADR-015"]) {
+      if (adrStatus[amendedId] !== "AMENDED") {
+        fail("D374_ADR_INVENTORY", `Decision register ADR inventory must mark ${amendedId} AMENDED under D-374`);
+      }
+    }
+    if (adrStatus["ADR-016"] !== "CURRENT") {
+      fail("D374_ADR_INVENTORY", "Decision register ADR inventory must mark ADR-016 CURRENT");
+    }
+  } else if (isImp035ImplementationCompletionCheckpoint(roadmap, state)) {
     const d373Row = [...globalSection.split("\n")].find((line) => /^\|\s*D-373\s*\|/.test(line));
     if (
       !d373Row ||
@@ -12660,7 +12875,9 @@ function checkImp028ArchitectureLock(roadmap, state, architecture, decision) {
     } else {
       note("ARCHITECTURE.md records ARCH-G16 / ARCH-G17 / ARCH-G18 / D-365 / D-366 / D-367");
     }
-    const expectedArchitectureVersion = isImp031ArchitectureDraftCheckpoint(roadmap, state) ||
+    const expectedArchitectureVersion = isD374CostOptimizedPilotInfrastructureCheckpoint(roadmap, state)
+      ? "ARCH-R20"
+      : isImp031ArchitectureDraftCheckpoint(roadmap, state) ||
       isImp031ArchitectureLockCheckpoint(roadmap, state) ||
       isImp031ImplementationAuthorizationCheckpoint(roadmap, state) ||
       isImp031ImplementationStartCheckpoint(roadmap, state) ||
@@ -12759,10 +12976,50 @@ function checkImp028ArchitectureLock(roadmap, state, architecture, decision) {
     } else {
       note("ARCHITECTURE.md records ARCH-G22 / D-371");
     }
+    if (isD374CostOptimizedPilotInfrastructureCheckpoint(roadmap, state)) {
+      if (!/ARCH-G26/.test(architecture.text) || !/D-374/.test(architecture.text)) {
+        fail(
+          "D374_ARCH_INVARIANTS",
+          "ARCHITECTURE.md must record ARCH-G26 and D-374 for Cost-Optimized Pilot Infrastructure",
+        );
+      } else {
+        note("ARCHITECTURE.md records ARCH-G26 / D-374");
+      }
+      if (
+        !/single Basic Droplet|single DigitalOcean Basic Droplet|PILOT_COMPUTE_MODEL:\s*single Basic Droplet/i.test(
+          architecture.text,
+        ) ||
+        !/Docker Compose/i.test(architecture.text) ||
+        !/SELF_HOSTED_POSTGRESQL:\s*YES|self-hosted PostgreSQL 18/i.test(architecture.text) ||
+        !/OFF_HOST_BACKUP_DESTINATION:\s*DigitalOcean Spaces|Spaces as mandatory off-host/i.test(architecture.text)
+      ) {
+        fail(
+          "D374_PILOT_TOPOLOGY",
+          "ARCHITECTURE.md must lock single-Droplet + Docker Compose + self-hosted PostgreSQL 18 + Spaces off-host backups",
+        );
+      }
+      if (
+        !/DIGITALOCEAN_APP_PLATFORM:\s*NO|App Platform.*NO for pilot|App Platform \/ Managed PostgreSQL \/ k8s/i.test(
+          architecture.text,
+        ) ||
+        !/MANAGED_POSTGRESQL:\s*NO|Managed PostgreSQL.*rejected for pilot|MANAGED_POSTGRESQL:\s*NO for pilot/i.test(
+          architecture.text,
+        ) ||
+        !/KUBERNETES:\s*NO/.test(architecture.text) ||
+        !/K3S:\s*NO/.test(architecture.text)
+      ) {
+        fail(
+          "D374_REJECTED_PILOT_STACK",
+          "ARCHITECTURE.md must reject App Platform, Managed PostgreSQL, Kubernetes, and k3s for pilot production",
+        );
+      }
+    }
   }
 
   if (decision) {
-    const expectedDecisionRegisterVersion = isArchR17GovernanceCheckpoint(roadmap, state) ||
+    const expectedDecisionRegisterVersion = isD374CostOptimizedPilotInfrastructureCheckpoint(roadmap, state)
+      ? "DR-16"
+      : isArchR17GovernanceCheckpoint(roadmap, state) ||
       isImp031ArchitectureDraftCheckpoint(roadmap, state) ||
       isImp031ArchitectureLockCheckpoint(roadmap, state) ||
       isImp031ImplementationAuthorizationCheckpoint(roadmap, state) ||
@@ -19744,7 +20001,8 @@ function checkProductDeliveryProcessAuthorities() {
     /IMP037_ACTIVATED:\s*YES/.test(stateText) &&
     (
       (roadmapMeta?.roadmapVersion === "GTM-R131" && stateMeta?.stateVersion === "STATE-R129") ||
-      (roadmapMeta?.roadmapVersion === "GTM-R132" && stateMeta?.stateVersion === "STATE-R130")
+      (roadmapMeta?.roadmapVersion === "GTM-R132" && stateMeta?.stateVersion === "STATE-R130") ||
+      (roadmapMeta?.roadmapVersion === "GTM-R133" && stateMeta?.stateVersion === "STATE-R131")
     );
   const atActivatedGCheckpoint =
     ((roadmapMeta?.roadmapVersion === "GTM-R123" && stateMeta?.stateVersion === "STATE-R121") ||
@@ -20087,7 +20345,8 @@ export function runProjectConsistency() {
       !isImp036gImplementationCompletionCheckpoint(roadmap, state) &&
       !isImp036gAcceptanceCheckpoint(roadmap, state) &&
       !isImp037ActivationCheckpoint(roadmap, state) &&
-      !isImp037ProductDefinitionGatePassCheckpoint(roadmap, state)
+      !isImp037ProductDefinitionGatePassCheckpoint(roadmap, state) &&
+      !isD374CostOptimizedPilotInfrastructureCheckpoint(roadmap, state)
     ) {
       fail("UNSUPPORTED_GOVERNANCE_CHECKPOINT", "Governance revisions at or beyond GTM-R66 / STATE-R64 require an exact supported canonical checkpoint");
     }
@@ -20205,6 +20464,7 @@ export function runProjectConsistency() {
   checkImp036gAcceptance(roadmap, state, architecture, decision);
   checkImp037Activation(roadmap, state, architecture, decision);
   checkImp037ProductDefinitionGatePass(roadmap, state, architecture, decision);
+  checkD374CostOptimizedPilotInfrastructure(roadmap, state, architecture, decision);
   checkTechnicalInventory();
   checkStaticWeb();
   checkAgentsPointer();
@@ -24978,6 +25238,240 @@ function checkImp037ProductDefinitionGatePass(roadmap, state, architecture, deci
   else {
     note(
       "IMP-037 Product Definition Gate PASS persistence valid (APPROVED PD; gate PERFORMED/PASS; Architecture Fit NOT_PERFORMED; architecture unlocked; implementation unauthorized/unstarted; IMP-038 unactivated)",
+    );
+  }
+}
+
+/**
+ * CURRENT checkpoint: GLOBAL_ARCHITECTURE_DECISION_D374 (GTM-R133 / STATE-R131).
+ * Registers D-374 / ADR-016 / ARCH-R20 / DR-16. Does not advance IMP-037 Fit/lock/auth/start.
+ */
+function checkD374CostOptimizedPilotInfrastructure(roadmap, state, architecture, decision) {
+  if (!isD374CostOptimizedPilotInfrastructureCheckpoint(roadmap, state)) return;
+
+  const currentRoadmapSection = roadmap.text.slice(roadmap.text.indexOf("## 2."), roadmap.text.indexOf("## 3."));
+  const currentStateAcceptance = (() => {
+    const start = state.text.indexOf("## 5. Acceptance Position");
+    const end = state.text.indexOf("\n## ", start + 1);
+    return start === -1 ? "" : state.text.slice(start, end === -1 ? undefined : end);
+  })();
+  const currentStateActivity = (() => {
+    const start = state.text.indexOf("## 2. Current Work Position");
+    const end = state.text.indexOf("\n## ", start + 1);
+    return start === -1 ? "" : state.text.slice(start, end === -1 ? undefined : end);
+  })();
+  const currentSliceSection = roadmap.text.split("## 4. Current Product Slice")[1]?.split("## 5.")[0] || "";
+  const futureSection = roadmap.text.split("## 5. Future GTM Slices")[1]?.split("## 6.")[0] || "";
+  const currentBlob = `${currentRoadmapSection}\n${currentStateAcceptance}\n${currentStateActivity}\n${currentSliceSection}`;
+  const archText = architecture?.text ?? "";
+  const decisionText = decision?.text ?? "";
+
+  const adr016Rel = "docs/platform/decisions/ADR-016-cost-optimized-pilot-infrastructure.md";
+  const adr016Abs = resolveExactRelativeFile(adr016Rel) ?? resolvePlatformDoc(adr016Rel);
+  const adr016Text = adr016Abs ? readFileSync(adr016Abs, "utf8") : "";
+  if (!adr016Abs) {
+    fail("D374_ADR016_MISSING", "ADR-016 cost-optimized pilot infrastructure must exist at GTM-R133 / STATE-R131");
+  }
+
+  const requiredTokens = [
+    [currentRoadmapSection, /GLOBAL_ARCHITECTURE_DECISION_D374/, "ROADMAP must identify GLOBAL_ARCHITECTURE_DECISION_D374"],
+    [currentRoadmapSection, /D-374_CREATED:\s*YES/, "ROADMAP must record D-374_CREATED: YES"],
+    [currentRoadmapSection, /ARCH_R20_CREATED:\s*YES/, "ROADMAP must record ARCH_R20_CREATED: YES"],
+    [currentRoadmapSection, /IMP-036G:\s*COMPLETE_AND_ACCEPTED/, "ROADMAP must preserve IMP-036G COMPLETE_AND_ACCEPTED"],
+    [currentRoadmapSection, /IMP-037:\s*PLANNED \/ NOT_AUTHORIZED \/ NOT_STARTED/, "ROADMAP must keep IMP-037 formal lifecycle PLANNED"],
+    [currentRoadmapSection, /IMP037_ACTIVATED:\s*YES/, "ROADMAP must record IMP037_ACTIVATED: YES"],
+    [currentRoadmapSection, /IMP037_PRODUCT_DEFINITION:\s*APPROVED/, "ROADMAP must preserve Product Definition APPROVED"],
+    [currentRoadmapSection, /IMP037_PRODUCT_DEFINITION_GATE:\s*PASS/, "ROADMAP must preserve Product Definition Gate PASS"],
+    [currentRoadmapSection, /IMP037_ARCHITECTURE_FIT:\s*NOT_PERFORMED/, "ROADMAP must record Architecture Fit NOT_PERFORMED"],
+    [currentRoadmapSection, /IMP037_ARCHITECTURE_LOCKED:\s*NO/, "ROADMAP must record architecture not locked"],
+    [currentRoadmapSection, /IMP037_IMPLEMENTATION_AUTHORIZED:\s*NO/, "ROADMAP must record implementation not authorized"],
+    [currentRoadmapSection, /IMP037_STARTED:\s*NO/, "ROADMAP must record IMP-037 not started"],
+    [currentRoadmapSection, /IMP037_ACCEPTED:\s*NO/, "ROADMAP must record IMP-037 unaccepted"],
+    [currentRoadmapSection, /IMP038_ACTIVATED:\s*NO/, "ROADMAP must keep IMP-038 unactivated"],
+    [
+      currentRoadmapSection,
+      /ARCHITECTURE_FIT_REOPEN_REASON:[\s\S]*D-374[\s\S]*ARCH-R20/,
+      "ROADMAP must record ARCHITECTURE_FIT_REOPEN_REASON with D-374 / ARCH-R20",
+    ],
+    [currentStateAcceptance, /D-374_CREATED:\s*YES/, "STATE acceptance must record D-374_CREATED: YES"],
+    [currentStateAcceptance, /ARCH_R20_CREATED:\s*YES/, "STATE acceptance must record ARCH_R20_CREATED: YES"],
+    [currentStateAcceptance, /architectureVersion:\s*ARCH-R20/, "STATE acceptance must record ARCH-R20"],
+    [currentStateAcceptance, /decisionRegisterVersion:\s*DR-16/, "STATE acceptance must record DR-16"],
+    [currentStateAcceptance, /IMP037_ARCHITECTURE_FIT:\s*NOT_PERFORMED/, "STATE must record Architecture Fit NOT_PERFORMED"],
+    [currentStateAcceptance, /IMP037_ARCHITECTURE_LOCKED:\s*NO/, "STATE must record architecture not locked"],
+    [currentStateAcceptance, /IMP037_IMPLEMENTATION_AUTHORIZED:\s*NO/, "STATE must record implementation not authorized"],
+    [currentStateAcceptance, /IMP037_STARTED:\s*NO/, "STATE must record not started"],
+    [currentStateAcceptance, /IMP038_ACTIVATED:\s*NO/, "STATE must keep IMP-038 unactivated"],
+    [
+      currentStateAcceptance,
+      /ARCHITECTURE_FIT_REOPEN_REASON:[\s\S]*D-374[\s\S]*ARCH-R20/,
+      "STATE must record ARCHITECTURE_FIT_REOPEN_REASON with D-374 / ARCH-R20",
+    ],
+    [currentStateActivity, /GLOBAL_ARCHITECTURE_DECISION_D374/, "STATE current activity must record GLOBAL_ARCHITECTURE_DECISION_D374"],
+    [currentStateActivity, /Architecture Fit NOT_PERFORMED|IMP037_ARCHITECTURE_FIT:\s*NOT_PERFORMED/i, "STATE activity must record Fit NOT_PERFORMED"],
+    [state.text, /STATE-R131 = GLOBAL_ARCHITECTURE_DECISION_D374/, "STATE must record STATE-R131 = GLOBAL_ARCHITECTURE_DECISION_D374"],
+    [roadmap.text, /### GTM-R133/, "ROADMAP must record GTM-R133 change log"],
+    [roadmap.text, /GLOBAL_ARCHITECTURE_DECISION_D374/, "ROADMAP change log must name GLOBAL_ARCHITECTURE_DECISION_D374"],
+    [archText, /ARCH-G26/, "ARCHITECTURE must record ARCH-G26"],
+    [archText, /PILOT_COMPUTE_MODEL:\s*single Basic Droplet|single DigitalOcean Basic Droplet/i, "ARCHITECTURE must lock single Basic Droplet"],
+    [archText, /Docker Compose/, "ARCHITECTURE must lock Docker Compose"],
+    [archText, /SELF_HOSTED_POSTGRESQL:\s*YES|self-hosted PostgreSQL 18/i, "ARCHITECTURE must lock self-hosted PostgreSQL 18"],
+    [archText, /OFF_HOST_BACKUP_DESTINATION:\s*DigitalOcean Spaces|Spaces as mandatory off-host/i, "ARCHITECTURE must require Spaces off-host backups"],
+    [archText, /KUBERNETES:\s*NO/, "ARCHITECTURE must set KUBERNETES: NO"],
+    [archText, /K3S:\s*NO/, "ARCHITECTURE must set K3S: NO"],
+    [archText, /DIGITALOCEAN_APP_PLATFORM:\s*NO/, "ARCHITECTURE must set App Platform NO for pilot"],
+    [archText, /MANAGED_POSTGRESQL:\s*NO/, "ARCHITECTURE must set Managed PostgreSQL NO for pilot"],
+    [decisionText, /\|\s*D-374\s*\|/, "decision register must include D-374 row"],
+    [decisionText, /Next free decision ID advanced to \*\*D-375\*\*/, "decision register must advance next free ID to D-375"],
+    [adr016Text, /D-374/, "ADR-016 must reference D-374"],
+    [adr016Text, /single Basic Droplet|PILOT_COMPUTE_MODEL:\s*single Basic Droplet/i, "ADR-016 must lock single Basic Droplet"],
+    [adr016Text, /Docker Compose/, "ADR-016 must lock Docker Compose"],
+    [adr016Text, /SELF_HOSTED_POSTGRESQL:\s*YES|self-hosted PostgreSQL 18/i, "ADR-016 must lock self-hosted PostgreSQL"],
+    [adr016Text, /OFF_HOST_BACKUP_DESTINATION:\s*DigitalOcean Spaces/, "ADR-016 must require Spaces off-host backups"],
+    [adr016Text, /RPO_TARGET\s*<=\s*15 minutes/, "ADR-016 must preserve RPO target"],
+    [adr016Text, /RTO_TARGET\s*<=\s*2 hours/, "ADR-016 must preserve RTO target"],
+    [adr016Text, /does \*\*not\*\* claim those targets are solved|not claimed solved by D-374|are \*\*not\*\* claimed solved/i, "ADR-016 must not falsely claim RPO/RTO solved"],
+  ];
+  for (const [haystack, pattern, message] of requiredTokens) {
+    if (!pattern.test(haystack)) fail("D374_COST_OPTIMIZED_PILOT", message);
+  }
+
+  const forbidden = [
+    /IMP037_IMPLEMENTATION_AUTHORIZED:\s*YES/,
+    /IMP037_STARTED:\s*YES/,
+    /IMP037_ARCHITECTURE_LOCKED:\s*YES/,
+    /IMP037_ARCHITECTURE_FIT:\s*PASS/,
+    /IMP037_ACCEPTED:\s*YES/,
+    /IMP-037:\s*ARCHITECTURE_LOCKED/,
+    /IMP-037:\s*IMPLEMENTATION_IN_PROGRESS/,
+    /IMP-037:\s*COMPLETE_AND_ACCEPTED/,
+    /IMP038_ACTIVATED:\s*YES/,
+  ];
+  for (const haystack of [currentRoadmapSection, currentStateAcceptance, currentStateActivity, currentSliceSection]) {
+    if (forbidden.some((pattern) => pattern.test(haystack))) {
+      fail(
+        "D374_PREMATURE_IMP037_PROGRESSION",
+        "D-374 checkpoint must not claim IMP-037 Fit PASS, lock, authorize/start implementation, accept IMP-037, or activate IMP-038",
+      );
+      break;
+    }
+  }
+
+  if (!/IMP-037\s*\|\s*Backup, Restore & Migration Readiness\s*\|\s*PLANNED/.test(futureSection)) {
+    fail("IMP037_ROADMAP_LIFECYCLE", "ROADMAP future ledger must keep IMP-037 PLANNED");
+  }
+  if (!/IMP-038\s*\|\s*Security & Privacy Hardening\s*\|\s*PLANNED/.test(futureSection)) {
+    fail("IMP038_ROADMAP_NOT_PLANNED", "ROADMAP future ledger must keep IMP-038 PLANNED");
+  }
+
+  if (
+    state.meta.acceptedThrough !== "IMP-036G" ||
+    state.meta.currentProductSlice !== "IMP-037" ||
+    state.meta.pendingAcceptance !== "NONE" ||
+    state.meta.nextProductSlice !== "IMP-038"
+  ) {
+    fail(
+      "D374_STATE_POSITION",
+      "STATE must record acceptedThrough IMP-036G, currentProductSlice IMP-037, nextProductSlice IMP-038, pendingAcceptance NONE",
+    );
+  }
+  if (roadmap.meta.roadmapVersion !== "GTM-R133" || state.meta.stateVersion !== "STATE-R131") {
+    fail("D374_VERSION", "ROADMAP/STATE must be GTM-R133 / STATE-R131 at GLOBAL_ARCHITECTURE_DECISION_D374");
+  }
+  if (architecture?.meta.architectureVersion !== "ARCH-R20") {
+    fail("D374_ARCH_VERSION", "ARCHITECTURE must be ARCH-R20 at GLOBAL_ARCHITECTURE_DECISION_D374");
+  }
+  if (decision?.meta.decisionRegisterVersion !== "DR-16") {
+    fail("D374_DR_VERSION", "decision register must be DR-16 at GLOBAL_ARCHITECTURE_DECISION_D374");
+  }
+
+  // Reject stale CURRENT claims (CURRENT authority blobs / ADR-016), not historical amended ADR bodies.
+  const currentAuthoritySurfaces = `${currentBlob}\n${archText}\n${adr016Text}\n${decisionText}`;
+  if (
+    /DIGITALOCEAN_APP_PLATFORM:\s*YES\b/.test(currentAuthoritySurfaces) ||
+    /App Platform is CURRENT pilot production/i.test(currentAuthoritySurfaces)
+  ) {
+    fail("D374_STALE_APP_PLATFORM", "CURRENT authority must not claim App Platform as pilot production");
+  }
+  if (
+    /MANAGED_POSTGRESQL:\s*YES\b/.test(currentAuthoritySurfaces) ||
+    /Managed PostgreSQL is CURRENT pilot/i.test(currentAuthoritySurfaces) ||
+    /managed-provider PITR satisfies current IMP-037/i.test(currentAuthoritySurfaces) ||
+    /managed PITR satisfies IMP-037/i.test(currentAuthoritySurfaces)
+  ) {
+    fail(
+      "D374_STALE_MANAGED_POSTGRES",
+      "CURRENT authority must not claim Managed PostgreSQL / managed PITR as CURRENT pilot recovery authority",
+    );
+  }
+
+  for (const adrId of /** @type {const} */ (["ADR-001", "ADR-002", "ADR-013", "ADR-015"])) {
+    const slug = {
+      "ADR-001": "001-digitalocean-platform",
+      "ADR-002": "002-environments-ci-cd-release-model",
+      "ADR-013": "013-postgresql-drizzle-migrations-persistence",
+      "ADR-015": "015-configuration-secrets-feature-flags",
+    }[adrId];
+    const abs = resolvePlatformDoc(`docs/platform/decisions/ADR-${slug}.md`);
+    if (!abs) {
+      fail("D374_ADR_MISSING", `${adrId} file missing during D-374 reconciliation`);
+      continue;
+    }
+    const preserved = evaluateD374AmendedHistoricalAdrPreservation(readFileSync(abs, "utf8"), adrId);
+    if (!preserved.ok) fail(preserved.code, preserved.message);
+  }
+
+  const d374Row = [...(decisionText.split("## 2. Current Global Decisions")[1]?.split("## 3.")[0] || "").split("\n")].find(
+    (line) => /^\|\s*D-374\s*\|/.test(line),
+  );
+  const checkpoint = evaluateD374CostOptimizedPilotInfrastructureCheckpoint({
+    roadmapVersion: roadmap.meta.roadmapVersion,
+    stateVersion: state.meta.stateVersion,
+    acceptedThrough: state.meta.acceptedThrough,
+    currentProductSlice: state.meta.currentProductSlice,
+    nextProductSlice: state.meta.nextProductSlice,
+    pendingAcceptance: state.meta.pendingAcceptance,
+    d374Created: /D-374_CREATED:\s*YES/.test(currentRoadmapSection) ? "YES" : "",
+    archR20Created: /ARCH_R20_CREATED:\s*YES/.test(currentRoadmapSection) ? "YES" : "",
+    d374Exists: /\|\s*D-374\s*\|/.test(decisionText),
+    d374Current: Boolean(d374Row && /\|\s*CURRENT\s*\|/.test(d374Row)),
+    architectureVersion: architecture?.meta.architectureVersion,
+    decisionRegisterVersion: decision?.meta.decisionRegisterVersion,
+    adr016Exists: Boolean(adr016Abs),
+    nextFreeDecisionId: /Next free decision ID advanced to \*\*D-375\*\*/.test(decisionText) ? "D-375" : "",
+    pilotComputeSingleDroplet: /PILOT_COMPUTE_MODEL:\s*single Basic Droplet|single DigitalOcean Basic Droplet/i.test(
+      `${archText}\n${adr016Text}`,
+    ),
+    dockerCompose: /Docker Compose/.test(`${archText}\n${adr016Text}`),
+    selfHostedPostgresql18: /SELF_HOSTED_POSTGRESQL:\s*YES|self-hosted PostgreSQL 18/i.test(`${archText}\n${adr016Text}`),
+    spacesOffHostBackups: /OFF_HOST_BACKUP_DESTINATION:\s*DigitalOcean Spaces/.test(`${archText}\n${adr016Text}`),
+    k3s: /K3S:\s*NO/.test(`${archText}\n${adr016Text}`) ? "NO" : "",
+    kubernetes: /KUBERNETES:\s*NO/.test(`${archText}\n${adr016Text}`) ? "NO" : "",
+    appPlatformPilotProduction: /DIGITALOCEAN_APP_PLATFORM:\s*NO/.test(`${archText}\n${adr016Text}`) ? "NO" : "",
+    managedPostgresqlPilotProduction: /MANAGED_POSTGRESQL:\s*NO/.test(`${archText}\n${adr016Text}`) ? "NO" : "",
+    architectureFit: /IMP037_ARCHITECTURE_FIT:\s*NOT_PERFORMED/.test(currentRoadmapSection) ? "NOT_PERFORMED" : "",
+    architectureLocked: /IMP037_ARCHITECTURE_LOCKED:\s*NO/.test(currentRoadmapSection) ? "NO" : "",
+    implementationAuthorized: /IMP037_IMPLEMENTATION_AUTHORIZED:\s*NO/.test(currentRoadmapSection) ? "NO" : "",
+    started: /IMP037_STARTED:\s*NO/.test(currentRoadmapSection) ? "NO" : "",
+    imp038Activated: /IMP038_ACTIVATED:\s*NO/.test(currentRoadmapSection) ? "NO" : "",
+    architectureFitReopenReasonMentionsD374ArchR20:
+      /ARCHITECTURE_FIT_REOPEN_REASON:[\s\S]*D-374[\s\S]*ARCH-R20/.test(currentBlob),
+    architectureFitPass: /IMP037_ARCHITECTURE_FIT:\s*PASS/.test(currentBlob),
+    architectureLockedYes: /IMP037_ARCHITECTURE_LOCKED:\s*YES/.test(currentBlob),
+    implementationAuthorizedYes: /IMP037_IMPLEMENTATION_AUTHORIZED:\s*YES/.test(currentBlob),
+    startedYes: /IMP037_STARTED:\s*YES/.test(currentBlob),
+    imp038ActivatedYes: /IMP038_ACTIVATED:\s*YES/.test(currentBlob),
+    appPlatformCurrentPilotAuthority: /DIGITALOCEAN_APP_PLATFORM:\s*YES/.test(`${archText}\n${adr016Text}`),
+    managedPostgresqlCurrentPilotAuthority: /MANAGED_POSTGRESQL:\s*YES/.test(`${archText}\n${adr016Text}`),
+    k3sCurrentPilotAuthority: /K3S:\s*YES/.test(`${archText}\n${adr016Text}`),
+    managedPitrSatisfiesImp037: /managed-provider PITR satisfies current IMP-037|managed PITR satisfies IMP-037/i.test(
+      currentBlob,
+    ),
+  });
+  if (!checkpoint.ok) fail(checkpoint.code, checkpoint.message);
+  else {
+    note(
+      "D-374 cost-optimized pilot infrastructure persistence valid (ARCH-R20 / DR-16; Fit NOT_PERFORMED; IMP-037 unauthorized/unstarted; IMP-038 unactivated)",
     );
   }
 }

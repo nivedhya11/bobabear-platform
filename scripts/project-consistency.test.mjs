@@ -115,6 +115,8 @@ import {
   evaluateImp037ProductDefinitionGatePassCheckpoint,
   evaluateImp037ApprovedProductDefinitionCandidate,
   evaluateImp037ProductDefinitionActivationProvenance,
+  evaluateD374CostOptimizedPilotInfrastructureCheckpoint,
+  evaluateD374AmendedHistoricalAdrPreservation,
   evaluateImp036gProductDefinitionDraftCheckpoint,
   evaluateImp036gProductDefinitionGatePassCheckpoint,
   evaluateImp036gUngatedProductDefinitionDraftCandidate,
@@ -6605,8 +6607,8 @@ describe("canonical authority history compression", () => {
 
     const roadmap = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
     const state = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
-    assert.match(roadmap, /"roadmapVersion": "GTM-R132"/);
-    assert.match(state, /"stateVersion": "STATE-R130"/);
+    assert.match(roadmap, /"roadmapVersion": "GTM-R133"/);
+    assert.match(state, /"stateVersion": "STATE-R131"/);
     assert.match(state, /"acceptedThrough": "IMP-036G"/);
     assert.match(state, /"pendingAcceptance": "NONE"/);
     assert.match(state, /"currentProductSlice": "IMP-037"/);
@@ -6682,12 +6684,12 @@ describe("canonical authority history compression", () => {
     assert.ok(!/FOUNDER_STAGING_DEPLOYMENT:\s*NOT_PERFORMED/.test(current));
   });
 
-  it("passes CURRENT authority checks at the IMP-037 Product Definition Gate PASS checkpoint", () => {
+  it("passes CURRENT authority checks at the GLOBAL_ARCHITECTURE_DECISION_D374 checkpoint", () => {
     const findings = runProjectConsistency();
     const failures = findings.filter((f) => !f.ok);
     assert.equal(failures.length, 0, failures.map((f) => `[${f.code}] ${f.message}`).join("\n"));
     const messages = findings.filter((f) => f.ok).map((f) => f.message);
-    assert.ok(messages.some((m) => m.includes("IMP-037 Product Definition Gate PASS persistence valid")));
+    assert.ok(messages.some((m) => m.includes("D-374 cost-optimized pilot infrastructure persistence valid")));
     assert.ok(messages.some((m) => m.includes("CURRENT authority anti-stale checks OK")));
     assert.ok(messages.some((m) => m.includes("historical authority corpus loaded")));
   });
@@ -8993,6 +8995,188 @@ ${correctPairing}
     assert.match(live, /GATE_EVALUATED_HEAD\s*[=:]\s*fccdf7ef606ca906bcdcd706a6de97f693bb88b4/);
     assert.match(live, /ARCHITECTURE_FIT:\s*NOT_PERFORMED/);
     assert.match(live, /IMPLEMENTATION_AUTHORIZED:\s*NO/);
+  });
+});
+
+describe("D-374 cost-optimized pilot infrastructure checkpoint", () => {
+  const base = Object.freeze({
+    roadmapVersion: "GTM-R133",
+    stateVersion: "STATE-R131",
+    acceptedThrough: "IMP-036G",
+    currentProductSlice: "IMP-037",
+    nextProductSlice: "IMP-038",
+    pendingAcceptance: "NONE",
+    d374Created: "YES",
+    archR20Created: "YES",
+    d374Exists: true,
+    d374Current: true,
+    architectureVersion: "ARCH-R20",
+    decisionRegisterVersion: "DR-16",
+    adr016Exists: true,
+    nextFreeDecisionId: "D-375",
+    pilotComputeSingleDroplet: true,
+    dockerCompose: true,
+    selfHostedPostgresql18: true,
+    spacesOffHostBackups: true,
+    k3s: "NO",
+    kubernetes: "NO",
+    appPlatformPilotProduction: "NO",
+    managedPostgresqlPilotProduction: "NO",
+    architectureFit: "NOT_PERFORMED",
+    architectureLocked: "NO",
+    implementationAuthorized: "NO",
+    started: "NO",
+    imp038Activated: "NO",
+    architectureFitReopenReasonMentionsD374ArchR20: true,
+    architectureFitPass: false,
+    architectureLockedYes: false,
+    implementationAuthorizedYes: false,
+    startedYes: false,
+    imp038ActivatedYes: false,
+    appPlatformCurrentPilotAuthority: false,
+    managedPostgresqlCurrentPilotAuthority: false,
+    k3sCurrentPilotAuthority: false,
+    managedPitrSatisfiesImp037: false,
+  });
+
+  it("passes valid GTM-R133 / STATE-R131 D-374 checkpoint", () => {
+    assert.deepEqual(evaluateD374CostOptimizedPilotInfrastructureCheckpoint(base), { ok: true });
+    assert.equal(
+      isSupportedImp030GovernanceCheckpoint("GTM-R133", "STATE-R131", "d374CostOptimizedPilotInfrastructure"),
+      true,
+    );
+    assert.equal(
+      isSupportedImp030GovernanceCheckpoint("GTM-R132", "STATE-R130", "d374CostOptimizedPilotInfrastructure"),
+      false,
+    );
+  });
+
+  it("requires D-374 CURRENT + DR-16 / ARCH-R20 pairing", () => {
+    assert.equal(
+      evaluateD374CostOptimizedPilotInfrastructureCheckpoint({ ...base, d374Current: false }).ok,
+      false,
+    );
+    assert.equal(
+      evaluateD374CostOptimizedPilotInfrastructureCheckpoint({ ...base, architectureVersion: "ARCH-R19" }).ok,
+      false,
+    );
+    assert.equal(
+      evaluateD374CostOptimizedPilotInfrastructureCheckpoint({ ...base, decisionRegisterVersion: "DR-15" }).ok,
+      false,
+    );
+  });
+
+  it("requires single-Droplet + Docker Compose + self-hosted PostgreSQL + Spaces", () => {
+    assert.equal(
+      evaluateD374CostOptimizedPilotInfrastructureCheckpoint({ ...base, pilotComputeSingleDroplet: false }).ok,
+      false,
+    );
+    assert.equal(evaluateD374CostOptimizedPilotInfrastructureCheckpoint({ ...base, dockerCompose: false }).ok, false);
+    assert.equal(
+      evaluateD374CostOptimizedPilotInfrastructureCheckpoint({ ...base, selfHostedPostgresql18: false }).ok,
+      false,
+    );
+    assert.equal(
+      evaluateD374CostOptimizedPilotInfrastructureCheckpoint({ ...base, spacesOffHostBackups: false }).ok,
+      false,
+    );
+  });
+
+  it("rejects managed PostgreSQL / App Platform / k3s as CURRENT pilot authority", () => {
+    assert.equal(
+      evaluateD374CostOptimizedPilotInfrastructureCheckpoint({
+        ...base,
+        managedPostgresqlPilotProduction: "YES",
+      }).ok,
+      false,
+    );
+    assert.equal(
+      evaluateD374CostOptimizedPilotInfrastructureCheckpoint({ ...base, appPlatformPilotProduction: "YES" }).ok,
+      false,
+    );
+    assert.equal(evaluateD374CostOptimizedPilotInfrastructureCheckpoint({ ...base, k3s: "YES" }).ok, false);
+    assert.equal(evaluateD374CostOptimizedPilotInfrastructureCheckpoint({ ...base, kubernetes: "YES" }).ok, false);
+    assert.equal(
+      evaluateD374CostOptimizedPilotInfrastructureCheckpoint({
+        ...base,
+        managedPostgresqlCurrentPilotAuthority: true,
+      }).code,
+      "D374_STALE_MANAGED_POSTGRESQL",
+    );
+    assert.equal(
+      evaluateD374CostOptimizedPilotInfrastructureCheckpoint({
+        ...base,
+        appPlatformCurrentPilotAuthority: true,
+      }).code,
+      "D374_STALE_APP_PLATFORM",
+    );
+    assert.equal(
+      evaluateD374CostOptimizedPilotInfrastructureCheckpoint({ ...base, k3sCurrentPilotAuthority: true }).code,
+      "D374_STALE_K3S",
+    );
+  });
+
+  it("keeps IMP-037 Fit NOT_PERFORMED and implementation unauthorized; IMP-038 unactivated", () => {
+    assert.equal(
+      evaluateD374CostOptimizedPilotInfrastructureCheckpoint({ ...base, architectureFitPass: true }).code,
+      "IMP037_ARCHITECTURE_FIT",
+    );
+    assert.equal(
+      evaluateD374CostOptimizedPilotInfrastructureCheckpoint({ ...base, implementationAuthorizedYes: true }).code,
+      "IMP037_IMPLEMENTATION_AUTHORIZED",
+    );
+    assert.equal(
+      evaluateD374CostOptimizedPilotInfrastructureCheckpoint({ ...base, imp038ActivatedYes: true }).code,
+      "IMP038_ACTIVATED",
+    );
+  });
+
+  it("preserves historical ADR-001/002/013/015 wording while requiring D-374 amendment", () => {
+    for (const [adrId, rel] of [
+      ["ADR-001", "docs/platform/decisions/ADR-001-digitalocean-platform.md"],
+      ["ADR-002", "docs/platform/decisions/ADR-002-environments-ci-cd-release-model.md"],
+      ["ADR-013", "docs/platform/decisions/ADR-013-postgresql-drizzle-migrations-persistence.md"],
+      ["ADR-015", "docs/platform/decisions/ADR-015-configuration-secrets-feature-flags.md"],
+    ]) {
+      const text = readFileSync(rel, "utf8");
+      assert.deepEqual(evaluateD374AmendedHistoricalAdrPreservation(text, adrId), { ok: true });
+      assert.match(text, /AMENDED/);
+      assert.match(text, /D-374/);
+      assert.match(text, /App Platform|Managed PostgreSQL/);
+    }
+  });
+
+  it("live authorities record D-374 / ARCH-R20 pilot topology without advancing IMP-037 Fit", () => {
+    const roadmap = readFileSync("docs/platform/ROADMAP.md", "utf8");
+    const state = readFileSync("docs/platform/STATE.md", "utf8");
+    const architecture = readFileSync("docs/platform/ARCHITECTURE.md", "utf8");
+    const decision = readFileSync("docs/platform/decision-register.md", "utf8");
+    const adr016 = readFileSync(
+      "docs/platform/decisions/ADR-016-cost-optimized-pilot-infrastructure.md",
+      "utf8",
+    );
+    assert.match(roadmap, /"roadmapVersion":\s*"GTM-R133"/);
+    assert.match(state, /"stateVersion":\s*"STATE-R131"/);
+    assert.match(architecture, /"architectureVersion":\s*"ARCH-R20"/);
+    assert.match(decision, /"decisionRegisterVersion":\s*"DR-16"/);
+    assert.match(decision, /\|\s*D-374\s*\|[^\n]*\|\s*CURRENT\s*\|/);
+    assert.match(decision, /Next free decision ID advanced to \*\*D-375\*\*/);
+    assert.match(architecture, /ARCH-G26/);
+    assert.match(architecture, /PILOT_COMPUTE_MODEL:\s*single Basic Droplet/);
+    assert.match(architecture, /Docker Compose/);
+    assert.match(architecture, /SELF_HOSTED_POSTGRESQL:\s*YES/);
+    assert.match(architecture, /OFF_HOST_BACKUP_DESTINATION:\s*DigitalOcean Spaces/);
+    assert.match(architecture, /DIGITALOCEAN_APP_PLATFORM:\s*NO/);
+    assert.match(architecture, /MANAGED_POSTGRESQL:\s*NO/);
+    assert.match(architecture, /KUBERNETES:\s*NO/);
+    assert.match(architecture, /K3S:\s*NO/);
+    assert.match(roadmap, /IMP037_ARCHITECTURE_FIT:\s*NOT_PERFORMED/);
+    assert.match(roadmap, /IMP037_IMPLEMENTATION_AUTHORIZED:\s*NO/);
+    assert.match(roadmap, /IMP038_ACTIVATED:\s*NO/);
+    assert.match(roadmap, /ARCHITECTURE_FIT_REOPEN_REASON:[\s\S]*D-374[\s\S]*ARCH-R20/);
+    assert.match(state, /STATE-R131 = GLOBAL_ARCHITECTURE_DECISION_D374/);
+    assert.match(adr016, /RPO_TARGET\s*<=\s*15 minutes/);
+    assert.match(adr016, /does \*\*not\*\* claim those targets are solved|are \*\*not\*\* claimed solved|not claimed solved by D-374/i);
   });
 });
 

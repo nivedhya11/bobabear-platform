@@ -2,8 +2,8 @@
 {
   "status": "CURRENT",
   "authority": "DECISION_AUTHORITY",
-  "decisionRegisterVersion": "DR-15",
-  "lastReviewed": "2026-09-01"
+  "decisionRegisterVersion": "DR-16",
+  "lastReviewed": "2026-09-19"
 }
 -->
 
@@ -35,7 +35,7 @@ Only **CURRENT** decisions are fully binding. **AMENDED** decisions must identif
   [`decision-register-historical.md`](./decision-register-historical.md) (D-001–D-355) remain
   interpretable history under that **HISTORICAL** document. They are not independently CURRENT
   sequencing or transport authority.
-- New decisions continue after the highest CURRENT/AMENDED register ID: next ID **D-374**.
+- New decisions continue after the highest CURRENT/AMENDED register ID: next ID **D-375**.
 - ADR files keep `ADR-xxx` identities. This register references them in the Record column.
   Mapping ADR-014 ↔ D-014 is **not** used here because historical `decision-register-historical.md`
   already assigned D-014 to a different decision (Next.js evolution-in-place).
@@ -72,6 +72,7 @@ notices; keep history interpretable.
 
 | D-372 | Operations Console API uses a dedicated workforce business transport backed by shared trusted workforce-session authority: IMP-029 locks a dedicated dynamic Node workforce-business façade at `/api/operations/v1/*`, separate from customer-commerce `/api/v1/*` and public workforce-auth endpoints. Existing workforce authentication/session authority remains authoritative; no second authentication system is created. A shared trusted server-side adapter may resolve an authenticated `boba-workforce.session_token` session, server-load workforce lifecycle identity, validate valid session / existing non-disabled user / cleared password-change requirement / enabled MFA or two-factor eligibility, and only then create `WorkforcePrincipal` from trusted identity. Client-supplied role, permission, membership, organization, territory, outlet, scope, pre-authorized boolean, or principal-shaped object is never authorization authority. Existing persisted memberships, role assignments, role-permission mappings, allowed scopes, server-loaded resource ancestry, and `authorize()` / `requireAuthorization()` remain binding; role names create no bypass. The façade is transport only and reuses existing `searchWorkforceOrders`, `getWorkforceOrder`, `acceptOrder`, `fulfilOrder`, and `cancelOrder` authority rather than creating a second Order model, lifecycle, repository, mutation, or scope authority. Customer and workforce transports remain separately authenticated trust surfaces even when internal modules are shared. No workforce-auth HTTP hop is required for trusted session resolution. IMP-029 owns Operations API; IMP-030 owns Operations Console UI. V1 exposes only workforce Order read/list/detail and ACCEPT / FULFIL / CANCEL commands; Refund, Financial Document, RefundStatutoryDecision, SignatureArtifact, generic business audit, delivery, notifications, and new administration transport remain deferred. | Workforce / Operations API / Order / IMP-029 | CURRENT | This register + [`ARCHITECTURE.md`](./ARCHITECTURE.md) + [`capabilities/IMP-029-operations-console-api.md`](./capabilities/IMP-029-operations-console-api.md) | Customer-facing workforce business routes; workforce-auth public router as business API; caller-manufactured authority; role-name bypass; a duplicate authentication system or Order authority; mandatory internal workforce-auth HTTP session hop | — | ARCH-G01, ARCH-G02, ARCH-G05, ARCH-G10, ARCH-G12, ARCH-G23, D-357, D-358, D-364, D-365, D-366, D-367 |
 | D-373 | Initial Administration API uses a dedicated workforce-admin transport hosted on the existing operations process: IMP-035 locks `/api/admin/v1/*` as the distinct administration trust surface, separate from customer `/api/v1/*`, public workforce-auth, and Operations Console `/api/operations/v1/*`. The façade is hosted in the existing `operations` Node process (no new deployable service). Existing workforce authentication/session authority remains authoritative; no second authentication system is created. A shared trusted server-side adapter may resolve an authenticated `boba-workforce.session_token` session, server-load workforce lifecycle identity, validate eligibility, and only then create `WorkforcePrincipal` from trusted identity. Client-supplied role, permission, membership, organization, territory, outlet, scope, pre-authorized boolean, or principal-shaped object is never authorization authority. Existing Access Control and Organization application/domain commands remain binding; role names create no bypass. V1 exposes resource hierarchy administration (brand/organization/territory/legal entity/outlet list/get/create/update), workforce membership lifecycle, role assignment grant/revoke, effective-permission projection, and access-audit read over existing authorities. No new permissions/roles; no custom roles; no permission-editor UI; no customer-account/Meta-credential/secrets administration; observability remains IMP-036. | Workforce / Administration API / Access Control / Organization / IMP-035 | CURRENT | This register + [`ARCHITECTURE.md`](./ARCHITECTURE.md) + [`capabilities/IMP-035-initial-administration-capabilities.md`](./capabilities/IMP-035-initial-administration-capabilities.md) | Customer-facing admin routes; workforce-auth public router as admin API; caller-manufactured authority; role-name bypass; a duplicate authentication system or Access Control authority; a new deployable admin service | — | ARCH-G01, ARCH-G02, ARCH-G05, ARCH-G08, ARCH-G12, ARCH-G23, ARCH-G25, D-358, D-372, ADR-005 |
+| D-374 | Cost-Optimized Pilot Infrastructure: Single DigitalOcean Droplet + Docker Compose + Self-Hosted PostgreSQL + Spaces Backups. BOBA Direct pilot production uses one Basic Droplet (BLR1/Bangalore where available; Ubuntu 24.04 LTS; Docker Engine + Compose; initial cost target 2 GiB / 1 vCPU ≈ $12/month at 2026-09-19 pricing, vertical resize to 4 GiB first if needed), self-hosted PostgreSQL 18 on the same Droplet (local persistent volume; single-node failure domain accepted for pilot), DigitalOcean Spaces as mandatory off-host backup destination (~$5/month), steady-state pilot infra target ≈ $17/month. Rejects for pilot: Kubernetes/DOKS, k3s, Podman production, App Platform production, Managed PostgreSQL production, always-on cloud staging, paid LB, multi-node HA. Preserves immutable OCI/GHCR/manual production gate/serialized migrations/rollback discipline. Amends infrastructure-hosting portions of ADR-001 / ADR-002 / ADR-013 / ADR-015; does not change business domain, HTTP transport, auth/RBAC, or static frontend. Managed PITR removed; IMP-037 Architecture Fit reopened against ARCH-R20 (RPO<=15m / RTO<=2h targets preserved, not claimed solved). PR #169 predates D-374 and is not valid Fit authority. | Global / Infrastructure / Deployment / Persistence Hosting | CURRENT | This register + [`ARCHITECTURE.md`](./ARCHITECTURE.md) + [`decisions/ADR-016-cost-optimized-pilot-infrastructure.md`](./decisions/ADR-016-cost-optimized-pilot-infrastructure.md) | Competing CURRENT readings of ADR-001 App Platform + Managed PostgreSQL as pilot production topology; ADR-002 permanent App Platform production / always-on hosted staging for pilot; ADR-013 managed-provider PITR as CURRENT pilot recovery layer; ADR-015 App Platform secret storage as CURRENT pilot production secret authority | — | ARCH-G13, ARCH-G14, ARCH-G26, ADR-001, ADR-002, ADR-013, ADR-015 |
 
 ## 3. Current Capability / Cross-Capability Decisions
 
@@ -106,8 +107,8 @@ CURRENT binding reads:
 
 | ADR | Title | Register status | Notes |
 |---|---|---|---|
-| ADR-001 | DigitalOcean platform | CURRENT | Cloud hosting foundation |
-| ADR-002 | Environments / CI-CD / release | CURRENT | Environment and release model |
+| ADR-001 | DigitalOcean platform | AMENDED | DigitalOcean + Spaces remain; App Platform + Managed PostgreSQL pilot production topology amended by **D-374** / ADR-016 |
+| ADR-002 | Environments / CI-CD / release | AMENDED | Trunk-based / CI / immutable OCI / GHCR / manual production / migrations / rollback remain; App Platform production target + permanent hosted staging amended for pilot by **D-374** / ADR-016 |
 | ADR-003 | Modular monolith Node/TS | AMENDED | Module boundaries remain; HTTP host reading constrained by D-356 / D-359 |
 | ADR-004 | Identity / authentication / sessions | CURRENT | Distinct customer/workforce trust; see accepted IMP-008–010 refinements in STATE |
 | ADR-005 | Organization / outlet authorization | AMENDED | Scoped RBAC CURRENT; role-count inventory → D-358 / STATE |
@@ -118,9 +119,10 @@ CURRENT binding reads:
 | ADR-010 | Order lifecycle / operations console | AMENDED | High-level Order ownership CURRENT via D-357 + IMP-023; detailed kitchen workflow and Operations Console implementation are future / deferred |
 | ADR-011 | Delivery providers | HISTORICAL / future-binding intent | Not implemented; ROADMAP IMP-031+ |
 | ADR-012 | Notifications / WhatsApp | HISTORICAL / future-binding intent | Not implemented; ROADMAP IMP-033+ |
-| ADR-013 | PostgreSQL / Drizzle / persistence | CURRENT | Persistence foundation |
+| ADR-013 | PostgreSQL / Drizzle / persistence | AMENDED | PostgreSQL 18 / Drizzle / immutable migrations / role separation remain; Managed PostgreSQL hosting + provider PITR assumption amended for pilot by **D-374** / ADR-016 |
 | ADR-014 | HTTP API / Route Handlers / contracts | SUPERSEDED (canonical HTTP=Route Handlers) | Historical body preserved; superseded by D-356 for transport host; IMP-024 commerce contract refined by D-359 / D-360 without restoring Route Handlers |
-| ADR-015 | Configuration / secrets / feature flags | CURRENT | Config boundary; accepted via IMP-003 |
+| ADR-015 | Configuration / secrets / feature flags | AMENDED | No-secrets-in-repo/OCI, build/runtime and browser/server separation remain; App Platform production secret storage amended for pilot by **D-374** / ADR-016 |
+| ADR-016 | Cost-optimized pilot infrastructure | CURRENT | Single Droplet + Docker Compose + self-hosted PostgreSQL 18 + Spaces backups; **D-374** |
 
 Where repository evidence was insufficient to assert a finer semantic split inside an ADR without
 guessing, status is limited to the rows above rather than inventing a full taxonomy.
@@ -129,7 +131,11 @@ guessing, status is limited to the rows above rather than inventing a full taxon
 
 | ID / Record | Amendment | Binding remainder |
 |---|---|---|
+| ADR-001 | **D-374** / ADR-016 | DigitalOcean provider + Spaces + portability remain; pilot production = single Droplet + Compose + self-hosted PostgreSQL 18 |
+| ADR-002 | **D-374** / ADR-016 | CI / immutable OCI / GHCR / manual production / migrations / rollback remain; pilot production target = Compose Droplet; permanent cloud staging not required for pilot |
 | ADR-003 | D-356 / D-359 | Modular monolith and module boundaries remain; Route Handler as product HTTP host does not; IMP-024 host is `customer-commerce` |
+| ADR-013 | **D-374** / ADR-016 | PostgreSQL 18 / Drizzle / immutable migrations / role separation remain; hosting = self-hosted on pilot Droplet; managed PITR replaced by self-managed recovery Fit |
+| ADR-015 | **D-374** / ADR-016 | Secrets principles remain; pilot production secrets = host-local protected files / OS mechanism |
 | ADR-005 | D-358 | Scoped RBAC model remains; current role **count** is STATE/code. |
 | ADR-008 | Accepted IMP-018–021 + **D-370** | Prefer STATE/accepted code for cart/checkout/serviceability specifics that drifted from early ADR prose. **D-370** qualifies future-facing silent whole-cart winner and Checkout-only identity-transition readings; accepted Cart aggregate / XOR / configured-line identity / revision concurrency remain. |
 | ADR-009 | **D-361** + **D-362** + **D-363** + **D-364** + **D-365** + **D-366** + **D-367** + ROADMAP IMP-026/027/028 + accepted IMP-022 | Payment domain foundation accepted; Cashfree V1 provider/surface selection superseded for current authority; Razorpay GTM (IMP-026) architecture locked / pending acceptance; webhook acknowledgement / missing-Order recovery locked by D-362; durable webhook inbox / asynchronous Payment processing locked by D-363; Refund Foundation architecture locked by D-364; Financial Document architecture locked by D-365; refund statutory-reversal decision authority locked by D-366; statutory signing / signed artifact authority locked by D-367 (implementation authorized / started / in progress / not accepted). |
@@ -155,6 +161,17 @@ No new REJECTED entries are introduced by DR-2. Historical rejections inside ADR
 ADR bodies.
 
 ## 7. Decision Change Log
+
+### DR-16 — 2026-09-19
+
+- Registered **D-374**: Cost-Optimized Pilot Infrastructure — single DigitalOcean Basic Droplet +
+  Docker Engine / Compose + self-hosted PostgreSQL 18 + Spaces off-host backups (ADR-016).
+- Amends infrastructure-hosting portions of ADR-001, ADR-002, ADR-013, and ADR-015 for the
+  self-funded pilot; preserves unrelated accepted principles.
+- Global architecture → ARCH-R20 (ARCH-G26). Does **not** perform IMP-037 Architecture Fit/lock or
+  authorize implementation. IMP-037 Fit reopened against ARCH-R20; PR #169 Fit candidate not valid
+  against this authority.
+- Next free decision ID advanced to **D-375**.
 
 ### DR-15 — 2026-09-01
 

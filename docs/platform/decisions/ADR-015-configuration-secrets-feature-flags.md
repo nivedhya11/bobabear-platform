@@ -1,14 +1,38 @@
 ---
-Status: Accepted
+Status: AMENDED
+Governance status: AMENDED
+Amended by: D-374 / ADR-016 (docs/platform/decision-register.md; docs/platform/decisions/ADR-016-cost-optimized-pilot-infrastructure.md)
 Decision date: 2026-08-03
-Last updated: 2026-08-03
+Last updated: 2026-09-19
 ---
 
 # ADR-015: Configuration, Secrets, and Feature Flags
 
 ## Status
 
-Accepted
+**AMENDED** (2026-09-19) by **[D-374](../decision-register.md)** /
+**[ADR-016](./ADR-016-cost-optimized-pilot-infrastructure.md)**.
+
+Preserved CURRENT principles:
+
+```text
+no secrets in repository
+no secrets in OCI layers
+build/runtime separation
+browser/server secret separation
+startup validation
+```
+
+Amended for pilot production secret storage only:
+
+```text
+App Platform-managed encrypted runtime variables → host-local protected secret files /
+  equivalent OS-level mechanism on the production Droplet (suggested /etc/bobabear/; IMP-039 layout)
+```
+
+Credential separation remains mandatory (runtime ≠ migration ≠ backup/recovery). Do not require a
+paid secret manager for the pilot. Do not erase the original App Platform variable-scope prose
+below; prefer D-374 / ADR-016 for CURRENT pilot production secret storage.
 
 ## Decision Date
 

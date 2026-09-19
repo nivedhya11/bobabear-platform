@@ -1,14 +1,41 @@
 ---
-Status: Accepted
+Status: AMENDED
+Governance status: AMENDED
+Amended by: D-374 / ADR-016 (docs/platform/decision-register.md; docs/platform/decisions/ADR-016-cost-optimized-pilot-infrastructure.md)
 Decision date: 2026-08-02
-Last updated: 2026-08-02
+Last updated: 2026-09-19
 ---
 
 # ADR-002: Environments, CI/CD, Release, Migration, Secrets, and Rollback Model
 
 ## Status
 
-Accepted
+**AMENDED** (2026-09-19) by **[D-374](../decision-register.md)** /
+**[ADR-016](./ADR-016-cost-optimized-pilot-infrastructure.md)**.
+
+Preserved CURRENT principles:
+
+```text
+trunk-based workflow
+CI
+immutable OCI image
+GHCR
+manual production gate
+serialized migrations
+same-image deployment
+rollback discipline (image redeploy; not routine DB down-migration)
+```
+
+Amended for the self-funded pilot stage only:
+
+```text
+permanent App Platform production target → single Docker Compose Droplet (D-374)
+permanent always-on hosted cloud staging requirement → NOT_REQUIRED_FOR_PILOT
+  (Founder local staging remains valid; ephemeral cloud validation allowed)
+```
+
+Do not erase the original App Platform / hosted-staging prose below; prefer D-374 / ADR-016 /
+ARCHITECTURE.md for CURRENT pilot production / staging cost model.
 
 ## Decision Date
 
