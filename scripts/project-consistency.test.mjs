@@ -121,6 +121,9 @@ import {
   evaluateImp037ArchitectureLockCheckpoint,
   evaluateImp037LockedCapabilityArchitecture,
   evaluateImp037ArchitectureLockedProductDefinition,
+  evaluateImp037ImplementationAuthorizationCheckpoint,
+  evaluateImp037AuthorizedCapabilityArchitecture,
+  evaluateImp037AuthorizedProductDefinition,
   stripImp037HistoricalManagedRecoveryAuthority,
   evaluateImp036gProductDefinitionDraftCheckpoint,
   evaluateImp036gProductDefinitionGatePassCheckpoint,
@@ -6612,8 +6615,8 @@ describe("canonical authority history compression", () => {
 
     const roadmap = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
     const state = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
-    assert.match(roadmap, /"roadmapVersion": "GTM-R134"/);
-    assert.match(state, /"stateVersion": "STATE-R132"/);
+    assert.match(roadmap, /"roadmapVersion": "GTM-R135"/);
+    assert.match(state, /"stateVersion": "STATE-R133"/);
     assert.match(state, /"acceptedThrough": "IMP-036G"/);
     assert.match(state, /"pendingAcceptance": "NONE"/);
     assert.match(state, /"currentProductSlice": "IMP-037"/);
@@ -6694,16 +6697,17 @@ describe("canonical authority history compression", () => {
     assert.ok(!/FOUNDER_STAGING_DEPLOYMENT:\s*NOT_PERFORMED/.test(current));
   });
 
-  it("passes CURRENT authority checks at the IMP-037 Architecture Lock checkpoint", () => {
+  it("passes CURRENT authority checks at the IMP-037 Implementation Authorization checkpoint", () => {
     const findings = runProjectConsistency();
     const failures = findings.filter((f) => !f.ok);
     assert.equal(failures.length, 0, failures.map((f) => `[${f.code}] ${f.message}`).join("\n"));
     const messages = findings.filter((f) => f.ok).map((f) => f.message);
-    assert.ok(messages.some((m) => m.includes("IMP-037 Architecture Lock persistence valid")));
+    assert.ok(messages.some((m) => m.includes("IMP-037 implementation authorization persistence valid")));
     assert.ok(messages.some((m) => m.includes("CURRENT authority anti-stale checks OK")));
     assert.ok(messages.some((m) => m.includes("historical authority corpus loaded")));
-    // GTM-R133 / STATE-R131 D-374 persistence is historical from GTM-R134 onward.
+    // GTM-R133 / STATE-R131 D-374 and GTM-R134 / STATE-R132 lock persistence are historical from GTM-R135 onward.
     assert.ok(!messages.some((m) => m.includes("D-374 cost-optimized pilot infrastructure persistence valid")));
+    assert.ok(!messages.some((m) => m.includes("IMP-037 Architecture Lock persistence valid")));
   });
 
   it("preserves accepted IMP-036E customer-commerce cohesion and dark-only policy in CURRENT capability", () => {
@@ -8774,8 +8778,8 @@ Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate PASS; Architect
 
   it("requires APPROVED Product Definition with PERFORMED/PASS and preGateDraft NO", () => {
     const live = readFileSync("docs/platform/product/IMP-037/product-definition.md", "utf8");
-    // The live PD has advanced past the R132/S130 gate-pass posture to the R134/S132 lock posture.
-    assert.deepEqual(evaluateImp037ArchitectureLockedProductDefinition(live), { ok: true });
+    // The live PD has advanced past the R134/S132 lock posture to the R135/S133 authorization posture.
+    assert.deepEqual(evaluateImp037AuthorizedProductDefinition(live), { ok: true });
     assert.match(live, /Document status:\s*APPROVED/);
     assert.match(live, /PRODUCT_DEFINITION_GATE_EXECUTION:\s*PERFORMED/);
     assert.match(live, /Gate Result:\s*PASS/);
@@ -8995,7 +8999,7 @@ ${correctPairing}
   it("requires live IMP-037 Product Definition to record the corrected lineage", () => {
     const live = readFileSync("docs/platform/product/IMP-037/product-definition.md", "utf8");
     assert.deepEqual(evaluateImp037ProductDefinitionActivationProvenance(live), { ok: true });
-    assert.deepEqual(evaluateImp037ArchitectureLockedProductDefinition(live), { ok: true });
+    assert.deepEqual(evaluateImp037AuthorizedProductDefinition(live), { ok: true });
     assert.match(
       live,
       /Historical pre-activation base:\s*GTM-R130\s*\/\s*STATE-R128\s*\(`6b1f2344d0184e29403b99adfea85c2e5dc8bf9a`\s*\/\s*tree\s*`5471ea8f72c635a365e9a78ea1394ec212dcad69`\)/,
@@ -9007,7 +9011,7 @@ ${correctPairing}
     );
     assert.match(live, /GATE_EVALUATED_HEAD\s*[=:]\s*fccdf7ef606ca906bcdcd706a6de97f693bb88b4/);
     assert.match(live, /ARCHITECTURE_FIT:\s*PASS/);
-    assert.match(live, /IMPLEMENTATION_AUTHORIZED:\s*NO/);
+    assert.match(live, /IMPLEMENTATION_AUTHORIZED:\s*YES/);
   });
 });
 
@@ -9168,8 +9172,8 @@ describe("D-374 cost-optimized pilot infrastructure checkpoint", () => {
       "docs/platform/decisions/ADR-016-cost-optimized-pilot-infrastructure.md",
       "utf8",
     );
-    assert.match(roadmap, /"roadmapVersion":\s*"GTM-R134"/);
-    assert.match(state, /"stateVersion":\s*"STATE-R132"/);
+    assert.match(roadmap, /"roadmapVersion":\s*"GTM-R135"/);
+    assert.match(state, /"stateVersion":\s*"STATE-R133"/);
     assert.match(architecture, /"architectureVersion":\s*"ARCH-R20"/);
     assert.match(decision, /"decisionRegisterVersion":\s*"DR-16"/);
     assert.match(decision, /\|\s*D-374\s*\|[^\n]*\|\s*CURRENT\s*\|/);
@@ -9183,9 +9187,9 @@ describe("D-374 cost-optimized pilot infrastructure checkpoint", () => {
     assert.match(architecture, /MANAGED_POSTGRESQL:\s*NO/);
     assert.match(architecture, /KUBERNETES:\s*NO/);
     assert.match(architecture, /K3S:\s*NO/);
-    // The D-374 Fit reopen is now satisfied: GTM-R134 records Fit PASS, still unauthorized.
+    // The D-374 Fit reopen is satisfied; GTM-R135 records Fit PASS and implementation AUTHORIZED / NOT_STARTED.
     assert.match(roadmap, /IMP037_ARCHITECTURE_FIT:\s*PASS/);
-    assert.match(roadmap, /IMP037_IMPLEMENTATION_AUTHORIZED:\s*NO/);
+    assert.match(roadmap, /IMP037_IMPLEMENTATION_AUTHORIZED:\s*YES/);
     assert.match(roadmap, /IMP038_ACTIVATED:\s*NO/);
     assert.match(state, /ARCHITECTURE_FIT_REOPEN_REASON:[\s\S]*D-374[\s\S]*ARCH-R20/);
     assert.match(state, /STATE-R131 = GLOBAL_ARCHITECTURE_DECISION_D374/);
@@ -9652,11 +9656,401 @@ describe("IMP-037 Architecture Lock checkpoints", () => {
       "utf8",
     );
     const productDefinition = readFileSync("docs/platform/product/IMP-037/product-definition.md", "utf8");
-    assert.deepEqual(evaluateImp037LockedCapabilityArchitecture(capability), { ok: true });
-    assert.deepEqual(evaluateImp037ArchitectureLockedProductDefinition(productDefinition), { ok: true });
+    // Live tip is GTM-R135 / STATE-R133 authorization; lock-era fixtures remain covered above.
+    assert.deepEqual(evaluateImp037AuthorizedCapabilityArchitecture(capability), { ok: true });
+    assert.deepEqual(evaluateImp037AuthorizedProductDefinition(productDefinition), { ok: true });
+  });
+});
+
+describe("IMP-037 Implementation Authorization checkpoints", () => {
+  const FIT_HEAD = "28e6dd15c48b8c19abbc7057c4dc7e0a7d7cc7ea";
+  const FIT_TREE = "5792c963166e8589751d2ba8c8928728e2c83526";
+  const FIT_FINGERPRINT = "56fa9b5459fd8acceb2ccc3ab73c5d7d9583dbf4539b10a1ef75553dd5aff8ba";
+  const REVIEW_HEAD = "d74ca9a30096fb14bca80643b75aa19d33093dde";
+  const REVIEW_TREE = "09c7e3bd6b7832944d07d527c149752ed3bbeb4d";
+  const REVIEW_ID = "5256273904";
+
+  const validAuthorizedCapability = [
+    "<!-- governance-meta",
+    "{",
+    '  "status": "CURRENT",',
+    '  "authority": "CAPABILITY_ARCHITECTURE",',
+    '  "capability": "IMP-037",',
+    '  "architectureLock": "ARCHITECTURE_LOCKED",',
+    '  "architectureFit": "PASS",',
+    '  "implementationAuthorized": true,',
+    '  "implementationStarted": false,',
+    '  "impAccepted": false,',
+    '  "schemaChangeRequired": false,',
+    '  "architectureBase": "ARCH-R20"',
+    "}",
+    "-->",
+    "",
+    "# IMP-037 — Backup, Restore & Migration Readiness",
+    "",
+    "```text",
+    "ARCHITECTURE_FIT: PASS",
+    "ARCHITECTURE_FIT_EXECUTION: PERFORMED",
+    "IMP037_ARCHITECTURE_LOCKED: YES",
+    "INDEPENDENT_ARCHITECTURE_FIT_REVIEW = PASS",
+    `INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_HEAD = ${REVIEW_HEAD}`,
+    `INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_TREE = ${REVIEW_TREE}`,
+    `INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID = ${REVIEW_ID}`,
+    "IMPLEMENTATION_AUTHORIZED: YES",
+    "IMPLEMENTATION_STARTED: NO",
+    "IMP037_IMPLEMENTATION_AUTHORIZED: YES",
+    "IMP037_STARTED: NO",
+    "IMP037_ACCEPTED: NO",
+    "IMP038_ACTIVATED: NO",
+    "FITS_WITHIN_ARCH_R20: YES",
+    "D-374_CREATED: YES (already CURRENT; not created by this Fit)",
+    "D375_REQUIRED_FOR_LOCK: NO",
+    "D-375_CREATED: NO",
+    "ARCH_R21_REQUIRED: NO",
+    "ARCH_R21_CREATED: NO",
+    "NEW_DEPLOYABLE_SERVICE: NO",
+    "NEW_ALWAYS_ON_RECOVERY_SERVICE: NO",
+    "APPLICATION_SCHEMA_CHANGE_REQUIRED: NO",
+    "NEW_APPLICATION_PERMISSION: NO",
+    "NEW_APPLICATION_ROLE: NO",
+    "MANAGED_POSTGRESQL: NO (CURRENT pilot)",
+    "APP_PLATFORM: NO (CURRENT pilot)",
+    "KUBERNETES: NO",
+    "K3S: NO",
+    "RPO_TARGET <= 15 minutes",
+    "RTO_TARGET <= 2 hours",
+    "RPO_RTO_PROVEN: NO",
+    "DROPLET_2GIB_RTO_VALIDATED: NO",
+    "```",
+    "",
+    "```text",
+    "EXECUTION_MODEL: one-shot tooling execution plane",
+    "RECOVERY_LAYER_1: self-hosted PostgreSQL physical backup + continuous WAL archiving to Spaces",
+    "RECOVERY_LAYER_1_TOOL: pgBackRest (version >= 2.55)",
+    "RECOVERY_LAYER_1_REPO_ENCRYPTION: AES-256-CBC",
+    "RECOVERY_LAYER_2: independent PostgreSQL logical backup / pg_dump -Fc / age public-key encryption",
+    "RECOVERY_LAYER_2_INTEGRITY: SHA-256",
+    "RECOVERY_LAYER_2_RETENTION: 35-day rolling retention (age-based; COMPLETE runs only)",
+    "RUN_ID: unique per backup invocation",
+    "REMOTE_ARTIFACT_VERIFICATION_BEFORE_COMPLETE: REQUIRED",
+    "ENCRYPTION_KEY_VERSIONING: REQUIRED",
+    "RETIRED_KEYS_MUST_REMAIN_RESOLVABLE_FOR_RETAINED_ARTIFACTS: YES",
+    "RECOVERY_CRITICAL_ENCRYPTION_SECRET_OFF_HOST_CUSTODY: REQUIRED",
+    "PGBACKREST_CIPHER_ROTATION_IN_PLACE: FORBIDDEN",
+    "PGBACKREST_KEY_ROTATION_MODEL: NEW_ENCRYPTED_REPOSITORY_GENERATION",
+    "Layer 1 key version is BOBA capability / recovery metadata associated with the encrypted repository generation",
+    "SPACES_VERSIONING: ENABLED",
+    "SPACES_VERSIONING_IS_IMMUTABILITY: NO",
+    "SPACES_OBJECT_LOCK_WORM_REQUIRED: NO",
+    "Provider lifecycle rules MUST NOT independently expire current pgBackRest repository objects",
+    "CAPACITY_COST_OBSERVATION: REQUIRED",
+    "STORAGE_CAPACITY_VALIDATED: NO",
+    "Layer 1 physical / base backup storage",
+    "Retained WAL / archive storage",
+    "Layer 2 logical backup storage",
+    "Material version-history storage",
+    "Projected 35-day retained footprint",
+    "HOST_LOCAL_FLOCK_SERIALIZATION: REQUIRED (for scheduled/heavy ops)",
+    "CONTINUOUS_WAL_NOT_BLOCKED_BY_SCHEDULED_JOB_LOCK: YES",
+    "DISTRIBUTED_SPACES_LOCK: FORBIDDEN",
+    "SPACES_CONDITIONAL_CREATE_MUTEX: FORBIDDEN",
+    "RESTORE_TO_ACTIVE_SOURCE: FORBIDDEN",
+    "OUTBOUND_PROVIDER_INITIATION: DISABLED",
+    "PR_169_AUTHORITY: NON_AUTHORITATIVE / SUPERSEDED",
+    "CANONICAL_ROADMAP_STATE = GTM-R135 / STATE-R133",
+    "```",
+    "",
+    "```text",
+    `ARCHITECTURE_FIT_EVALUATED_HEAD = ${FIT_HEAD}`,
+    `ARCHITECTURE_FIT_EVALUATED_TREE = ${FIT_TREE}`,
+    `ARCHITECTURE_FIT_EVALUATED_WORKING_TREE_FINGERPRINT = ${FIT_FINGERPRINT}`,
+    "```",
+  ].join("\n");
+
+  const validAuthorizedPd = [
+    "<!-- governance-meta",
+    "{",
+    '  "status": "APPROVED",',
+    '  "authority": "PRODUCT_DEFINITION",',
+    '  "capability": "IMP-037",',
+    '  "productDefinitionGateExecution": "PERFORMED",',
+    '  "productDefinitionGateResult": "PASS",',
+    '  "architectureFitExecution": "PERFORMED",',
+    '  "architectureFit": "PASS",',
+    '  "architectureLocked": "YES",',
+    '  "implementationAuthorized": "YES",',
+    '  "implementationStarted": "NO",',
+    '  "impAccepted": "NO"',
+    "}",
+    "-->",
+    "",
+    "```text",
+    "Document status: APPROVED",
+    "PRODUCT_DEFINITION_GATE_EXECUTION: PERFORMED",
+    "Gate Result: PASS",
+    "ARCHITECTURE_FIT_EXECUTION: PERFORMED",
+    "ARCHITECTURE_FIT: PASS",
+    "ARCHITECTURE_FIT_RESULT: PASS",
+    "IMP037_ARCHITECTURE_LOCKED: YES",
+    "INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PASS",
+    `INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_HEAD: ${REVIEW_HEAD}`,
+    `INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_TREE: ${REVIEW_TREE}`,
+    `INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID: ${REVIEW_ID}`,
+    "IMP037_IMPLEMENTATION_AUTHORIZED: YES",
+    "IMP037_STARTED: NO",
+    "IMP037_ACCEPTED: NO",
+    "IMP038_ACTIVATED: NO",
+    `ARCHITECTURE_FIT_EVALUATED_HEAD = ${FIT_HEAD}`,
+    `ARCHITECTURE_FIT_EVALUATED_TREE = ${FIT_TREE}`,
+    `ARCHITECTURE_FIT_EVALUATED_WORKING_TREE_FINGERPRINT = ${FIT_FINGERPRINT}`,
+    "CANONICAL_ANCHORS = GTM-R135 / STATE-R133",
+    "```",
+    "",
+    "Readiness: READY_FOR_IMPLEMENTATION_START (Product Definition Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation authorized / not started)",
+    "",
+    "## Dependencies",
+    "",
+    "| Dependency | Authority | Required before | Unresolved impact |",
+    "|---|---|---|---|",
+    "| Architecture Fit | PD-1 phase | Before implementation readiness | PERFORMED / PASS — locked capability architecture |",
+    "| Implementation authorization | ROADMAP/STATE | Before coding | YES / PERFORMED / AUTHORIZED |",
+  ].join("\n");
+
+  const authBase = Object.freeze({
+    roadmapVersion: "GTM-R135",
+    stateVersion: "STATE-R133",
+    acceptedThrough: "IMP-036G",
+    currentProductSlice: "IMP-037",
+    nextProductSlice: "IMP-038",
+    pendingAcceptance: "NONE",
+    imp036g: "COMPLETE_AND_ACCEPTED",
+    imp037FormalLifecycle: "ARCHITECTURE_LOCKED",
+    imp037Activated: "YES",
+    productDefinition: "APPROVED",
+    productDefinitionGate: "PASS",
+    architectureFit: "PASS",
+    architectureLocked: "YES",
+    implementationAuthorized: "YES",
+    started: "NO",
+    accepted: "NO",
+    founderUatRequired: "YES",
+    imp038Activated: "NO",
+    architectureVersion: "ARCH-R20",
+    decisionRegisterVersion: "DR-16",
+    productDeliveryVersion: "PD-1",
+    productDefinitionExists: true,
+    capabilityArtifactExists: true,
+    d374Created: "YES",
+    archR20Created: "YES",
+    d374Exists: true,
+    d375Exists: false,
+    archR21Exists: false,
+    startedYes: false,
+    acceptedYes: false,
+    imp038ActivatedYes: false,
+    capabilityText: validAuthorizedCapability,
+    productDefinitionText: validAuthorizedPd,
+  });
+
+  it("passes valid GTM-R135 / STATE-R133 authorization checkpoint", () => {
+    assert.deepEqual(evaluateImp037ImplementationAuthorizationCheckpoint(authBase), { ok: true });
+  });
+
+  it("recognizes the authorization checkpoint kind exclusively at GTM-R135 / STATE-R133", () => {
+    assert.equal(
+      isSupportedImp030GovernanceCheckpoint("GTM-R135", "STATE-R133", "imp037ImplementationAuthorization"),
+      true,
+    );
+    assert.equal(
+      isSupportedImp030GovernanceCheckpoint("GTM-R135", "STATE-R133", "imp037ArchitectureLock"),
+      false,
+    );
+    assert.equal(
+      isSupportedImp030GovernanceCheckpoint("GTM-R134", "STATE-R132", "imp037ImplementationAuthorization"),
+      false,
+    );
+    assert.equal(
+      isSupportedImp030GovernanceCheckpoint("GTM-R134", "STATE-R132", "imp037ArchitectureLock"),
+      true,
+    );
+    assert.equal(
+      isSupportedImp030GovernanceCheckpoint("GTM-R135", "STATE-R132", "imp037ImplementationAuthorization"),
+      false,
+    );
+  });
+
+  it("fails when implementation authorized is NO at R135/S133", () => {
+    const result = evaluateImp037ImplementationAuthorizationCheckpoint({
+      ...authBase,
+      implementationAuthorized: "NO",
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP037_IMPLEMENTATION_AUTHORIZATION");
+  });
+
+  it("fails when implementation started is YES", () => {
+    const result = evaluateImp037ImplementationAuthorizationCheckpoint({
+      ...authBase,
+      started: "YES",
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP037_IMPLEMENTATION_AUTHORIZATION");
+  });
+
+  it("fails when accepted is YES or IMP-038 activated is YES", () => {
+    assert.equal(
+      evaluateImp037ImplementationAuthorizationCheckpoint({ ...authBase, accepted: "YES" }).code,
+      "IMP037_IMPLEMENTATION_AUTHORIZATION",
+    );
+    assert.equal(
+      evaluateImp037ImplementationAuthorizationCheckpoint({ ...authBase, acceptedYes: true }).code,
+      "IMP037_ACCEPTED",
+    );
+    assert.equal(
+      evaluateImp037ImplementationAuthorizationCheckpoint({ ...authBase, imp038Activated: "YES" }).code,
+      "IMP037_IMPLEMENTATION_AUTHORIZATION",
+    );
+    assert.equal(
+      evaluateImp037ImplementationAuthorizationCheckpoint({ ...authBase, imp038ActivatedYes: true }).code,
+      "IMP038_ACTIVATED",
+    );
+  });
+
+  it("fails when capability remains unauthorized", () => {
+    const staleCap = validAuthorizedCapability
+      .replace(/"implementationAuthorized": true/, '"implementationAuthorized": false')
+      .replace(/IMPLEMENTATION_AUTHORIZED: YES/g, "IMPLEMENTATION_AUTHORIZED: NO")
+      .replace(/IMP037_IMPLEMENTATION_AUTHORIZED: YES/g, "IMP037_IMPLEMENTATION_AUTHORIZED: NO");
+    const result = evaluateImp037ImplementationAuthorizationCheckpoint({
+      ...authBase,
+      capabilityText: staleCap,
+    });
+    assert.equal(result.ok, false);
+    assert.ok(
+      result.code === "IMP037_CAPABILITY_AUTHORIZATION" ||
+        result.code === "IMP037_CAPABILITY_STALE_UNAUTHORIZED",
+    );
+  });
+
+  it("fails when Architecture Fit/lock regresses", () => {
+    const result = evaluateImp037ImplementationAuthorizationCheckpoint({
+      ...authBase,
+      architectureFit: "NOT_PERFORMED",
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP037_IMPLEMENTATION_AUTHORIZATION");
+
+    const result2 = evaluateImp037ImplementationAuthorizationCheckpoint({
+      ...authBase,
+      architectureLocked: "NO",
+    });
+    assert.equal(result2.ok, false);
+    assert.equal(result2.code, "IMP037_IMPLEMENTATION_AUTHORIZATION");
+  });
+
+  it("fails when ROADMAP/STATE versions mismatch", () => {
+    const result = evaluateImp037ImplementationAuthorizationCheckpoint({
+      ...authBase,
+      roadmapVersion: "GTM-R134",
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP037_IMPLEMENTATION_AUTHORIZATION");
+
+    const result2 = evaluateImp037ImplementationAuthorizationCheckpoint({
+      ...authBase,
+      stateVersion: "STATE-R132",
+    });
+    assert.equal(result2.ok, false);
+    assert.equal(result2.code, "IMP037_IMPLEMENTATION_AUTHORIZATION");
+  });
+
+  it("fails when D-375 or ARCH-R21 is created", () => {
+    assert.equal(
+      evaluateImp037ImplementationAuthorizationCheckpoint({ ...authBase, d375Exists: true }).code,
+      "IMP037_D375",
+    );
+    assert.equal(
+      evaluateImp037ImplementationAuthorizationCheckpoint({ ...authBase, archR21Exists: true }).code,
+      "IMP037_ARCH_R21",
+    );
+  });
+
+  it("validates authorized capability markers and rejects premature progression", () => {
+    assert.deepEqual(evaluateImp037AuthorizedCapabilityArchitecture(validAuthorizedCapability), { ok: true });
+    assert.equal(evaluateImp037AuthorizedCapabilityArchitecture("").code, "IMP037_CAPABILITY_ABSENT");
+    assert.equal(
+      evaluateImp037AuthorizedCapabilityArchitecture(
+        validAuthorizedCapability.replace("IMPLEMENTATION_STARTED: NO", "IMPLEMENTATION_STARTED: NO\nIMP-037: IMPLEMENTATION_IN_PROGRESS"),
+      ).code,
+      "IMP037_CAPABILITY_PREMATURE_PROGRESSION",
+    );
+    assert.equal(
+      evaluateImp037AuthorizedCapabilityArchitecture(
+        validAuthorizedCapability.replace("IMP037_STARTED: NO", "IMP037_STARTED: YES"),
+      ).code,
+      "IMP037_CAPABILITY_PREMATURE_PROGRESSION",
+    );
+  });
+
+  it("validates authorized Product Definition markers", () => {
+    assert.deepEqual(evaluateImp037AuthorizedProductDefinition(validAuthorizedPd), { ok: true });
+    assert.equal(evaluateImp037AuthorizedProductDefinition("").code, "IMP037_PD_AUTH_ABSENT");
+    const stalePd = validAuthorizedPd
+      .replace(/"implementationAuthorized": "YES"/, '"implementationAuthorized": "NO"')
+      .replace(/IMP037_IMPLEMENTATION_AUTHORIZED: YES/, "IMP037_IMPLEMENTATION_AUTHORIZED: NO");
+    const staleCode = evaluateImp037AuthorizedProductDefinition(stalePd).code;
+    assert.ok(
+      staleCode === "IMP037_PD_IMPLEMENTATION_AUTHORIZED" ||
+        staleCode === "IMP037_PD_STALE_UNAUTHORIZED",
+    );
+    assert.equal(
+      evaluateImp037AuthorizedProductDefinition(
+        `${validAuthorizedPd}\nIMP037_IMPLEMENTATION_AUTHORIZED: YES\nIMP-037: IMPLEMENTATION_IN_PROGRESS\n`,
+      ).code,
+      "IMP037_PD_PREMATURE_PROGRESSION",
+    );
+  });
+
+  it("rejects current unauthorized prose while allowing historical pre-R135 provenance", () => {
+    assert.equal(
+      evaluateImp037AuthorizedCapabilityArchitecture(
+        `${validAuthorizedCapability}\n\n## Current story status\n\nimplementation remains unauthorized\n`,
+      ).code,
+      "IMP037_CAPABILITY_STALE_UNAUTHORIZED_PROSE",
+    );
     assert.deepEqual(
-      evaluateImp037ArchitectureLockCheckpoint({ ...base, capabilityText: capability, productDefinitionText: productDefinition }),
+      evaluateImp037AuthorizedCapabilityArchitecture(`${validAuthorizedCapability}
+
+## 29. Architecture-lock persistence record (historical GTM-R134 / STATE-R132 provenance)
+
+implementation remains unauthorized
+IMP037_IMPLEMENTATION_AUTHORIZED = NO
+
+## 30. Current implementation status
+
+IMPLEMENTATION_AUTHORIZED = YES
+IMPLEMENTATION_STARTED = NO`),
       { ok: true },
+    );
+    assert.equal(
+      evaluateImp037AuthorizedProductDefinition(
+        `${validAuthorizedPd}\n\n| Current story | NOT_READY_FOR_IMPLEMENTATION |\n`,
+      ).code,
+      "IMP037_PD_STALE_UNAUTHORIZED_PROSE",
+    );
+    assert.deepEqual(
+      evaluateImp037AuthorizedProductDefinition(
+        `${validAuthorizedPd}\n\nHistorical pre-R135 lifecycle provenance: NOT_READY_FOR_IMPLEMENTATION; implementation remains unauthorized.`,
+      ),
+      { ok: true },
+    );
+  });
+
+  it("preserves prior R134/S132 architecture-lock checkpoint support", () => {
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R134", "STATE-R132", "imp037ArchitectureLock"), true);
+    assert.equal(
+      isSupportedImp030GovernanceCheckpoint("GTM-R135", "STATE-R133", "imp037ImplementationAuthorization"),
+      true,
     );
   });
 });
@@ -9768,12 +10162,12 @@ Then applicable PITR-capable recovery-layer health/recovery-point evidence and i
     assert.deepEqual(evaluateImp037ProductDefinitionD374CurrentRecoveryRead(validSkeleton), { ok: true });
     assert.match(validSkeleton, /"architectureFit":\s*"NOT_PERFORMED"/);
     assert.match(validSkeleton, /"architectureLocked":\s*"NO"/);
-    // The live PD now records the GTM-R134 lock posture while keeping APPROVED / Gate PASS.
+    // The live PD now records the GTM-R135 authorization posture while keeping APPROVED / Gate PASS.
     assert.match(live, /"status":\s*"APPROVED"/);
     assert.match(live, /"productDefinitionGateResult":\s*"PASS"/);
     assert.match(live, /"architectureFit":\s*"PASS"/);
     assert.match(live, /"architectureLocked":\s*"YES"/);
-    assert.match(live, /"implementationAuthorized":\s*"NO"/);
+    assert.match(live, /"implementationAuthorized":\s*"YES"/);
     assert.match(live, /"implementationStarted":\s*"NO"/);
     assert.doesNotMatch(live, /IMP038_ACTIVATED:\s*YES/);
     assert.match(live, /PITR-capable continuous recovery/);
