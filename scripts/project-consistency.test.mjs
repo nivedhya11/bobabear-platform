@@ -117,6 +117,8 @@ import {
   evaluateImp037ProductDefinitionActivationProvenance,
   evaluateD374CostOptimizedPilotInfrastructureCheckpoint,
   evaluateD374AmendedHistoricalAdrPreservation,
+  evaluateImp037ProductDefinitionD374CurrentRecoveryRead,
+  stripImp037HistoricalManagedRecoveryAuthority,
   evaluateImp036gProductDefinitionDraftCheckpoint,
   evaluateImp036gProductDefinitionGatePassCheckpoint,
   evaluateImp036gUngatedProductDefinitionDraftCandidate,
@@ -9177,6 +9179,157 @@ describe("D-374 cost-optimized pilot infrastructure checkpoint", () => {
     assert.match(state, /STATE-R131 = GLOBAL_ARCHITECTURE_DECISION_D374/);
     assert.match(adr016, /RPO_TARGET\s*<=\s*15 minutes/);
     assert.match(adr016, /does \*\*not\*\* claim those targets are solved|are \*\*not\*\* claimed solved|not claimed solved by D-374/i);
+  });
+});
+
+describe("IMP-037 Product Definition D-374 CURRENT recovery-read reconciliation", () => {
+  const livePd = () => readFileSync("docs/platform/product/IMP-037/product-definition.md", "utf8");
+
+  const validSkeleton = `<!-- governance-meta
+{
+  "status": "APPROVED",
+  "productDefinitionGateResult": "PASS",
+  "architectureFit": "NOT_PERFORMED",
+  "architectureLocked": "NO",
+  "implementationAuthorized": "NO",
+  "implementationStarted": "NO"
+}
+-->
+Document status: APPROVED
+Gate Result: PASS
+ARCHITECTURE_FIT: NOT_PERFORMED
+ARCHITECTURE_LOCKED: NO
+IMPLEMENTATION_AUTHORIZED: NO
+IMPLEMENTATION_STARTED: NO
+IMP038_ACTIVATED: NO
+
+Two recovery layers remain mandatory:
+(1) PITR-capable continuous recovery
+(2) independent encrypted logical backup
+
+| PITR-capable continuous recovery layer | self-hosted PostgreSQL 18 under D-374 / ARCH-R20 | PLANNED_IMP037 / ARCHITECTURE_FIT_REQUIRED |
+| High-risk migration | Verify PITR-capable recovery-layer health; recovery point; independent backup evidence |
+Then applicable PITR-capable recovery-layer health/recovery-point evidence and independent backup evidence are checked.
+| DISCOVERY | Readiness status distinguishes PITR-capable continuous recovery vs independent logical backup layers |
+
+| Historical Managed PostgreSQL automated backups / PITR (provider layer) | **HISTORICAL** under ADR-013; **not** CURRENT after D-374 |
+`;
+
+  it("passes valid D-374 Product Definition CURRENT read", () => {
+    assert.deepEqual(evaluateImp037ProductDefinitionD374CurrentRecoveryRead(validSkeleton), { ok: true });
+    assert.deepEqual(evaluateImp037ProductDefinitionD374CurrentRecoveryRead(livePd()), { ok: true });
+  });
+
+  it("fails CURRENT Managed PostgreSQL/PITR supported claim", () => {
+    const text = validSkeleton.replace(
+      "| PITR-capable continuous recovery layer | self-hosted PostgreSQL 18 under D-374 / ARCH-R20 | PLANNED_IMP037 / ARCHITECTURE_FIT_REQUIRED |",
+      "| Managed PostgreSQL backup / PITR (ADR-013 first layer) | Managed DigitalOcean PostgreSQL | `CURRENT_SUPPORTED` |",
+    );
+    assert.equal(
+      evaluateImp037ProductDefinitionD374CurrentRecoveryRead(text).code,
+      "IMP037_PD_D374_STALE_MANAGED_POSTGRES_CURRENT",
+    );
+  });
+
+  it("fails CURRENT Managed DigitalOcean PostgreSQL source claim", () => {
+    const text = `${validSkeleton}\nEntry source: Managed DigitalOcean PostgreSQL for Layer 1\n`;
+    assert.equal(
+      evaluateImp037ProductDefinitionD374CurrentRecoveryRead(text).code,
+      "IMP037_PD_D374_STALE_MANAGED_DO_POSTGRES_CURRENT",
+    );
+  });
+
+  it("fails CURRENT managed-backup health AC", () => {
+    const text = validSkeleton.replace(
+      "PITR-capable recovery-layer health/recovery-point evidence",
+      "managed-backup health/recovery point",
+    );
+    assert.equal(
+      evaluateImp037ProductDefinitionD374CurrentRecoveryRead(text).code,
+      "IMP037_PD_D374_STALE_MANAGED_BACKUP_HEALTH",
+    );
+  });
+
+  it("fails CURRENT managed/PITR journey discovery wording", () => {
+    const text = validSkeleton.replace(
+      "PITR-capable continuous recovery vs independent logical backup layers",
+      "managed/PITR vs independent logical layers",
+    );
+    assert.equal(
+      evaluateImp037ProductDefinitionD374CurrentRecoveryRead(text).code,
+      "IMP037_PD_D374_STALE_MANAGED_PITR_DISCOVERY",
+    );
+  });
+
+  it("passes explicit HISTORICAL Managed PostgreSQL reference", () => {
+    const text = `${validSkeleton}\n| Historical Managed PostgreSQL | **HISTORICAL** pre-D-374 ADR-013 |\n`;
+    assert.deepEqual(evaluateImp037ProductDefinitionD374CurrentRecoveryRead(text), { ok: true });
+    const stripped = stripImp037HistoricalManagedRecoveryAuthority(text);
+    assert.doesNotMatch(stripped, /Historical Managed PostgreSQL/);
+  });
+
+  it("requires PITR-capable continuous recovery and independent logical backup wording", () => {
+    assert.equal(
+      evaluateImp037ProductDefinitionD374CurrentRecoveryRead(
+        validSkeleton.replace(/PITR-capable continuous recovery/g, "continuous recovery"),
+      ).code,
+      "IMP037_PD_D374_LAYER1_MISSING",
+    );
+    assert.equal(
+      evaluateImp037ProductDefinitionD374CurrentRecoveryRead(
+        validSkeleton.replace(/independent (?:encrypted )?logical backup/gi, "offsite copy"),
+      ).code,
+      "IMP037_PD_D374_LAYER2_MISSING",
+    );
+  });
+
+  it("preserves Product Definition APPROVED / Gate PASS and non-advancement", () => {
+    const live = livePd();
+    const result = evaluateImp037ProductDefinitionD374CurrentRecoveryRead(live);
+    assert.deepEqual(result, { ok: true });
+    assert.match(live, /"status":\s*"APPROVED"/);
+    assert.match(live, /"productDefinitionGateResult":\s*"PASS"/);
+    assert.match(live, /"architectureFit":\s*"NOT_PERFORMED"/);
+    assert.match(live, /"architectureLocked":\s*"NO"/);
+    assert.match(live, /"implementationAuthorized":\s*"NO"/);
+    assert.match(live, /"implementationStarted":\s*"NO"/);
+    assert.match(live, /ARCHITECTURE_FIT:\s*NOT_PERFORMED/);
+    assert.doesNotMatch(live, /IMP038_ACTIVATED:\s*YES/);
+    assert.match(live, /PITR-capable continuous recovery/);
+    assert.match(live, /independent encrypted logical backup|independent logical backup/);
+    assert.doesNotMatch(live, /managed-backup health/);
+    assert.doesNotMatch(live, /managed\/PITR vs independent/);
+    assert.doesNotMatch(
+      stripImp037HistoricalManagedRecoveryAuthority(live),
+      /Managed DigitalOcean PostgreSQL/,
+    );
+  });
+
+  it("rejects premature Fit lock / implementation / IMP-038 activation in PD CURRENT read", () => {
+    assert.equal(
+      evaluateImp037ProductDefinitionD374CurrentRecoveryRead(
+        validSkeleton.replace(/"architectureLocked": "NO"/, '"architectureLocked": "YES"'),
+      ).code,
+      "IMP037_PD_D374_ARCHITECTURE_LOCKED",
+    );
+    assert.equal(
+      evaluateImp037ProductDefinitionD374CurrentRecoveryRead(
+        validSkeleton.replace(/"implementationAuthorized": "NO"/, '"implementationAuthorized": "YES"'),
+      ).code,
+      "IMP037_PD_D374_IMPLEMENTATION_AUTHORIZED",
+    );
+    assert.equal(
+      evaluateImp037ProductDefinitionD374CurrentRecoveryRead(
+        validSkeleton.replace(/"implementationStarted": "NO"/, '"implementationStarted": "YES"'),
+      ).code,
+      "IMP037_PD_D374_IMPLEMENTATION_STARTED",
+    );
+    assert.equal(
+      evaluateImp037ProductDefinitionD374CurrentRecoveryRead(
+        validSkeleton.replace(/IMP038_ACTIVATED: NO/, "IMP038_ACTIVATED: YES"),
+      ).code,
+      "IMP037_PD_D374_IMP038_ACTIVATED",
+    );
   });
 });
 

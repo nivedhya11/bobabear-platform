@@ -8312,6 +8312,182 @@ export function evaluateD374AmendedHistoricalAdrPreservation(text, adrId) {
 }
 
 /**
+ * Drop lines that are explicitly historical / not-CURRENT / pre-D-374 / amendment
+ * provenance so CURRENT IMP-037 Product Definition recovery-read checks ignore
+ * legitimate Managed PostgreSQL history.
+ * Also drops the CURRENT_READ_AMENDMENT fenced block (it names managed hosting only
+ * to declare it no longer CURRENT).
+ * @param {string} text
+ */
+export function stripImp037HistoricalManagedRecoveryAuthority(text) {
+  const withoutAmendment = String(text ?? "").replace(
+    /```text\s*\nCURRENT_READ_AMENDMENT[\s\S]*?```/g,
+    "\n",
+  );
+  return withoutAmendment
+    .split("\n")
+    .filter((line) => {
+      if (/\bHISTORICAL\b/i.test(line)) return false;
+      if (/\bno longer CURRENT\b/i.test(line)) return false;
+      if (/\bpre-D-374\b/i.test(line)) return false;
+      if (/\bamended by D-374\b/i.test(line)) return false;
+      if (/\bHistorical ADR-013\b/i.test(line)) return false;
+      if (/\breplaces Managed PostgreSQL\b/i.test(line)) return false;
+      if (/\bnot\b.{0,120}\bCURRENT\b/i.test(line) && /[Mm]anaged|[Pp]ITR/.test(line)) return false;
+      if (/\(not DigitalOcean Managed PostgreSQL provider PITR\)/i.test(line)) return false;
+      if (/\bNOT CURRENT\b/i.test(line) && /[Mm]anaged|[Pp]ITR/.test(line)) return false;
+      return true;
+    })
+    .join("\n");
+}
+
+/**
+ * At the D-374 checkpoint, CURRENT IMP-037 Product Definition must use
+ * mechanism-neutral recovery-layer vocabulary (PITR-capable continuous recovery +
+ * independent logical backup). Reject stale CURRENT Managed PostgreSQL / managed
+ * PITR / managed-backup claims while preserving explicitly historical provenance
+ * and Product Definition Gate PASS / Fit NOT_PERFORMED lifecycle.
+ * @param {string} text
+ */
+export function evaluateImp037ProductDefinitionD374CurrentRecoveryRead(text) {
+  const body = String(text ?? "");
+  if (!body.trim()) {
+    return {
+      ok: false,
+      code: "IMP037_PD_D374_ABSENT",
+      message: "IMP-037 Product Definition must exist for D-374 CURRENT recovery-read validation",
+    };
+  }
+
+  if (!/"status":\s*"APPROVED"/.test(body) && !/Document status:\s*APPROVED/.test(body)) {
+    return {
+      ok: false,
+      code: "IMP037_PD_D374_APPROVED",
+      message: "D-374 CURRENT read requires Product Definition status APPROVED",
+    };
+  }
+  if (!/"productDefinitionGateResult":\s*"PASS"/.test(body) && !/Gate Result:\s*PASS\b/.test(body)) {
+    return {
+      ok: false,
+      code: "IMP037_PD_D374_GATE_PASS",
+      message: "D-374 CURRENT read requires Product Definition Gate PASS",
+    };
+  }
+  if (
+    !/"architectureFit":\s*"NOT_PERFORMED"/.test(body) &&
+    !/ARCHITECTURE_FIT:\s*NOT_PERFORMED/.test(body)
+  ) {
+    return {
+      ok: false,
+      code: "IMP037_PD_D374_FIT_NOT_PERFORMED",
+      message: "D-374 CURRENT read requires Architecture Fit NOT_PERFORMED",
+    };
+  }
+  if (
+    /"architectureLocked":\s*"YES"/.test(body) ||
+    /ARCHITECTURE_LOCKED:\s*YES/.test(body)
+  ) {
+    return {
+      ok: false,
+      code: "IMP037_PD_D374_ARCHITECTURE_LOCKED",
+      message: "D-374 CURRENT read must keep architectureLocked NO",
+    };
+  }
+  if (
+    /"implementationAuthorized":\s*"YES"/.test(body) ||
+    /IMPLEMENTATION_AUTHORIZED:\s*YES/.test(body)
+  ) {
+    return {
+      ok: false,
+      code: "IMP037_PD_D374_IMPLEMENTATION_AUTHORIZED",
+      message: "D-374 CURRENT read must keep implementationAuthorized NO",
+    };
+  }
+  if (
+    /"implementationStarted":\s*"YES"/.test(body) ||
+    /IMPLEMENTATION_STARTED:\s*YES/.test(body)
+  ) {
+    return {
+      ok: false,
+      code: "IMP037_PD_D374_IMPLEMENTATION_STARTED",
+      message: "D-374 CURRENT read must keep implementationStarted NO",
+    };
+  }
+  if (/IMP038_ACTIVATED:\s*YES/.test(body)) {
+    return {
+      ok: false,
+      code: "IMP037_PD_D374_IMP038_ACTIVATED",
+      message: "D-374 CURRENT read must keep IMP038_ACTIVATED NO",
+    };
+  }
+
+  if (!/PITR-capable continuous recovery/i.test(body)) {
+    return {
+      ok: false,
+      code: "IMP037_PD_D374_LAYER1_MISSING",
+      message:
+        "D-374 CURRENT Product Definition must name PITR-capable continuous recovery (Layer 1)",
+    };
+  }
+  if (!/independent (?:encrypted )?logical backup/i.test(body)) {
+    return {
+      ok: false,
+      code: "IMP037_PD_D374_LAYER2_MISSING",
+      message:
+        "D-374 CURRENT Product Definition must retain independent logical backup (Layer 2)",
+    };
+  }
+
+  const current = stripImp037HistoricalManagedRecoveryAuthority(body);
+
+  if (
+    /Managed PostgreSQL backup\s*\/\s*PITR/i.test(current) ||
+    (/Managed PostgreSQL/i.test(current) && /CURRENT_SUPPORTED/.test(current))
+  ) {
+    return {
+      ok: false,
+      code: "IMP037_PD_D374_STALE_MANAGED_POSTGRES_CURRENT",
+      message:
+        "CURRENT IMP-037 Product Definition must not claim Managed PostgreSQL backup/PITR as CURRENT_SUPPORTED after D-374",
+    };
+  }
+  if (/Managed DigitalOcean PostgreSQL/i.test(current)) {
+    return {
+      ok: false,
+      code: "IMP037_PD_D374_STALE_MANAGED_DO_POSTGRES_CURRENT",
+      message:
+        "CURRENT IMP-037 Product Definition must not treat Managed DigitalOcean PostgreSQL as current recovery source after D-374",
+    };
+  }
+  if (/managed-backup health/i.test(current)) {
+    return {
+      ok: false,
+      code: "IMP037_PD_D374_STALE_MANAGED_BACKUP_HEALTH",
+      message:
+        "CURRENT IMP-037 Product Definition must not require managed-backup health after D-374; use PITR-capable recovery-layer health",
+    };
+  }
+  if (/managed\/PITR\s+vs\s+independent/i.test(current)) {
+    return {
+      ok: false,
+      code: "IMP037_PD_D374_STALE_MANAGED_PITR_DISCOVERY",
+      message:
+        "CURRENT IMP-037 Product Definition journey discovery must distinguish PITR-capable continuous recovery vs independent logical backup (not managed/PITR)",
+    };
+  }
+  if (/provider[- ]managed PITR/i.test(current)) {
+    return {
+      ok: false,
+      code: "IMP037_PD_D374_STALE_PROVIDER_PITR_CURRENT",
+      message:
+        "CURRENT IMP-037 Product Definition must not retain provider-managed PITR as CURRENT authority after D-374",
+    };
+  }
+
+  return { ok: true };
+}
+
+/**
  * Required canonical governance-meta values for a gate-passed IMP-037 Product Definition.
  */
 const IMP037_APPROVED_PD_GOVERNANCE_META_REQUIRED = Object.freeze({
@@ -25473,6 +25649,21 @@ function checkD374CostOptimizedPilotInfrastructure(roadmap, state, architecture,
     note(
       "D-374 cost-optimized pilot infrastructure persistence valid (ARCH-R20 / DR-16; Fit NOT_PERFORMED; IMP-037 unauthorized/unstarted; IMP-038 unactivated)",
     );
+  }
+
+  const pd037Rel = "docs/platform/product/IMP-037/product-definition.md";
+  const pd037Abs = resolveExactRelativeFile(pd037Rel) ?? resolvePlatformDoc(pd037Rel);
+  if (!pd037Abs) {
+    fail("IMP037_PD_D374_ABSENT", "IMP-037 Product Definition must exist at D-374 checkpoint");
+  } else {
+    const pd037Text = readFileSync(pd037Abs, "utf8");
+    const pd037Recovery = evaluateImp037ProductDefinitionD374CurrentRecoveryRead(pd037Text);
+    if (!pd037Recovery.ok) fail(pd037Recovery.code, pd037Recovery.message);
+    else {
+      note(
+        "IMP-037 Product Definition CURRENT recovery read reconciled with D-374 (mechanism-neutral Layer 1/2; Gate PASS; Fit NOT_PERFORMED)",
+      );
+    }
   }
 }
 

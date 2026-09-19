@@ -31,18 +31,20 @@
 ```text
 CURRENT_READ_AMENDMENT (D-374 / ADR-016 / ARCH-R20 — 2026-09-19):
   Managed DigitalOcean PostgreSQL hosting and provider-managed PITR are no longer CURRENT
-  pilot-production infrastructure authority.
-  Product recovery targets remain binding:
+  pilot-production infrastructure authority (HISTORICAL under pre-D-374 ADR-013 only).
+  Product recovery targets remain binding and mechanism-neutral:
     RPO_TARGET <= 15 minutes
     RTO_TARGET <= 2 hours
     independent encrypted logical backup (daily / 35-day retention / off-host)
-  Layer-1 recovery direction for Architecture Fit is now self-managed PostgreSQL physical/base
-  backup + continuous WAL archiving to DigitalOcean Spaces + PITR-capable recovery.
-  Layer-2 independent logical backup (pg_dump/pg_restore) remains required.
+  RECOVERY_LAYER_1: PITR-capable continuous recovery
+    Architecture Fit direction under D-374 / ARCH-R20 is self-managed PostgreSQL
+    physical/base backup + continuous WAL archiving to DigitalOcean Spaces + PITR-capable recovery.
+    Exact tooling/layout remains Architecture Fit / not locked by this Product Definition.
+  RECOVERY_LAYER_2: independent encrypted logical backup (pg_dump/pg_restore) remains required.
   Product Definition remains APPROVED; Product Definition Gate remains PASS.
   Architecture Fit remains NOT_PERFORMED and must be performed fresh against ARCH-R20.
-  Do not treat historical ADR-013 managed-PITR prose or pre-D-374 PD wording as competing
-  CURRENT pilot hosting authority.
+  CURRENT sections below use the same mechanism-neutral Layer 1 / Layer 2 vocabulary;
+  do not treat historical ADR-013 managed-PITR prose as competing CURRENT pilot hosting authority.
 ```
 
 ```text
@@ -199,10 +201,10 @@ No new persona is created.
 
 | Journey ID / evidence | Entry / preconditions | Activities today | Existing outcome / gap |
 |---|---|---|---|
-| Managed PostgreSQL backup / PITR (ADR-013 first layer) | Managed DigitalOcean PostgreSQL | Provider automated backups / PITR within managed window | `CURRENT_SUPPORTED` infrastructure capability; **not** independently proven BOBA Bear restore drill / business validation |
+| PITR-capable continuous recovery layer (Layer 1) | self-hosted PostgreSQL 18 under D-374 / ARCH-R20 | Required recovery layer is `PLANNED_IMP037` / `ARCHITECTURE_FIT_REQUIRED`; exact self-managed physical/base + continuous WAL mechanism awaits fresh Architecture Fit | Managed-provider PITR is **HISTORICAL** / no longer CURRENT after D-374; Layer 1 is **not** `CURRENT_SUPPORTED` until Architecture Fit selects and proves a self-managed PITR-capable mechanism |
 | Independent logical backup (ADR-013 second layer) | Required before broad public launch | Exact schedule/retention were open pending Founder decision; tooling path incomplete | `PLANNED_IMP037` — FD-037-03 now sets daily / 35-day product policy |
 | Staging DB volume repair command | Staging container/bind-mount failure | Repair preserving existing volume | **Not** data-loss recovery evidence |
-| High-risk migration prerequisites (ADR-013) | Before high-risk persistence change | Verify managed-backup health; recovery point; storage; recovery steps | Procedure authority exists; productized readiness gate / rehearsal evidence `PLANNED_IMP037` |
+| High-risk migration prerequisites (ADR-013) | Before high-risk persistence change | Verify PITR-capable recovery-layer health; recovery point; independent backup evidence; storage; recovery steps / rehearsal | Procedure authority exists; productized readiness gate / rehearsal evidence `PLANNED_IMP037` |
 
 ---
 
@@ -210,7 +212,7 @@ No new persona is created.
 
 | Journey ID | Entry / context | Ordered activities | Success / downstream outcome | Alternate / recovery paths |
 |---|---|---|---|---|
-| `JOURNEY-037-BACKUP-READINESS` | Authorized platform operator needs truthful recovery coverage | inspect backup posture → distinguish managed/PITR vs independent logical coverage → identify last successful evidence → identify overdue/failed/unverified → understand next operator action | Operator determines recovery readiness without raw cloud/DB internals or credential exposure | No evidence → NOT_READY; failed/overdue → visible degraded; secret-safe always |
+| `JOURNEY-037-BACKUP-READINESS` | Authorized platform operator needs truthful recovery coverage | inspect backup posture → distinguish PITR-capable continuous recovery vs independent logical backup coverage → identify last successful evidence → identify overdue/failed/unverified → understand next operator action | Operator determines recovery readiness without raw cloud/DB internals or credential exposure | No evidence → NOT_READY; failed/overdue → visible degraded; secret-safe always |
 | `JOURNEY-037-INDEPENDENT-BACKUP` | Scheduled/manual independent backup due or required before high-risk op | preflight source/credentials → create consistent logical backup → encrypt/persist approved artifact → verify integrity → record safe evidence | Usable independent backup exists **or** operation visibly fails; false success prohibited | Source/destination failure → FAILED; interrupted → incomplete not last-known-good; repeat runs do not silently overwrite retained artifacts |
 | `JOURNEY-037-RESTORE-DRILL` | Prove recoverability without risking active DB | select recovery point/artifact → provision/select isolated target → restore → apply later repository migrations where required → start compatible application → validate critical authority → measure recovery → record findings | Restored data proven operationally usable; measured RPO <= 15m and RTO <= 2h (RTO includes application/business-integrity validation) required for recovery-readiness PASS; threshold breach → BLOCKED / NOT_READY / FAILED | Source protection refuse; restore/validation FAILED; RPO/RTO threshold exceeded → readiness cannot PASS; provider side-effects suppressed; findings preserved |
 | `JOURNEY-037-MIGRATION-READINESS` | Prove PostgreSQL portability | produce portable recovery artifact → restore/import into clean compatible PostgreSQL 18 target → reconcile migration/schema state → start compatible application → validate authoritative business state → record findings | Portability demonstrated without provider-specific business truth | Interrupted → target not ready; source remains authoritative |
@@ -348,7 +350,7 @@ Mandatory in acceptance slice: YES (`V1_ACCEPTANCE_SLICE`)
 Story ID: US-IMP-037-002
 As a PERSONA-PLATFORM-OPERATOR
 I want to produce an independent protected backup
-so that recovery does not rely solely on the managed provider backup window.
+so that recovery does not rely solely on the PITR-capable continuous recovery layer.
 
 Journey / activity: JOURNEY-037-INDEPENDENT-BACKUP
 Preconditions: Authorized operator context; repository-supported recovery tooling/runbook per Architecture Fit; isolated targets for restore/migration drills; no active/source overwrite.
@@ -781,7 +783,7 @@ Story: `US-IMP-037-007`
 
 Given a high-risk migration is proposed
 When readiness is assessed
-Then applicable managed-backup health/recovery point and independent backup evidence are checked.
+Then applicable PITR-capable recovery-layer health/recovery-point evidence and independent backup evidence are checked.
 
 Mandatory in acceptance slice: YES (`V1_ACCEPTANCE_SLICE`)
 **AC-IMP-037-007-02 — Recovery steps**
@@ -1002,7 +1004,7 @@ Considered for all five IMP-037 journeys. CLI/tooling operator experience (FD-03
 | Journey dimension | Behaviour / applicability or N/A reason | Story / AC references |
 |---|---|---|
 | ENTRY | Operator invokes readiness/backup/restore/migration tooling or runbook entry with authorized context | US-IMP-037-001, 002, 003, 006, 007, 008 |
-| DISCOVERY | Readiness status distinguishes managed/PITR vs independent logical layers and last evidence | AC-IMP-037-001-01…05 |
+| DISCOVERY | Readiness status distinguishes PITR-capable continuous recovery vs independent logical backup layers and last evidence | AC-IMP-037-001-01…05 |
 | CONTEXT | Source vs isolated target identity; environment classification; recovery artifact/point | US-IMP-037-003, 006, 008 |
 | EMPTY / FIRST USE | No valid independent backup → NOT_READY (never healthy by empty config alone) | AC-IMP-037-001-02, BR-IMP-037-030 |
 | HAPPY PATH | Backup succeeds with integrity; isolated restore; validation; portability; high-risk READY | AC-IMP-037-002-01, 003-03, 004-*, 006-01, 007-01…03 |
