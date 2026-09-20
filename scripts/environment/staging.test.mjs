@@ -116,11 +116,14 @@ test("all final BOBA image targets persist the OCI revision label", () => {
 test("Compose forwards BOBA_BUILD_SHA to every BOBA build, never PostgreSQL", () => {
   const source = readFileSync(path.resolve("compose.yaml"), "utf8");
   const builds = [...source.matchAll(/    build:\n([\s\S]*?)(?=    image:)/g)].map((match) => match[1]);
-  assert.equal(builds.length, 16);
-  for (const build of builds) {
+  const bobaBuilds = builds.filter((build) => !/dockerfile:\s*docker\/postgres\/Dockerfile/.test(build));
+  assert.equal(bobaBuilds.length, 16);
+  for (const build of bobaBuilds) {
     assert.match(build, /BOBA_BUILD_SHA: "\$\{BOBA_BUILD_SHA:-unversioned-local\}"/);
   }
   const postgres = source.match(/  postgres:\n([\s\S]*?)(?=\n  [a-z-]+:)/)?.[1] ?? "";
+  assert.match(postgres, /dockerfile:\s*docker\/postgres\/Dockerfile/);
+  assert.match(postgres, /image:\s*boba-bear-postgres:local/);
   assert.doesNotMatch(postgres, /BOBA_BUILD_SHA|org\.opencontainers\.image\.revision/);
 });
 

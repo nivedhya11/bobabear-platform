@@ -2,14 +2,24 @@ name: boba-bear
 
 services:
   postgres:
-    image: docker.io/library/postgres:18.4-trixie
+    # IMP-037: PostgreSQL 18 + pinned pgBackRest (>= 2.55). Default archive off
+    # (BOBA_PGBACKREST_ARCHIVE=0) so existing local/dev db workflows stay unchanged.
+    build:
+      context: .
+      dockerfile: docker/postgres/Dockerfile
+    image: boba-bear-postgres:local
     env_file:
       - .env.docker.local
+    environment:
+      BOBA_PGBACKREST_ARCHIVE: "${BOBA_PGBACKREST_ARCHIVE:-0}"
+      BOBA_PGBACKREST_STANZA: "${BOBA_PGBACKREST_STANZA:-boba}"
+      BOBA_PGBACKREST_ARCHIVE_TIMEOUT: "${BOBA_PGBACKREST_ARCHIVE_TIMEOUT:-300}"
     ports:
       - "${POSTGRES_HOST_PORT:-5433}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql
       - ${BOBA_POSTGRES_INIT_DIR:-./docker/postgres/init}:/docker-entrypoint-initdb.d:ro
+      - ${BOBA_PGBACKREST_REPO_DIR:-pgbackrest-repo}:/var/lib/pgbackrest
     healthcheck:
       test:
         [
@@ -504,3 +514,4 @@ services:
 
 volumes:
   postgres-data:
+  pgbackrest-repo:

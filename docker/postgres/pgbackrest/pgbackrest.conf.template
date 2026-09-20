@@ -1,0 +1,28 @@
+# IMP-037 pgBackRest configuration template (repository generation 1).
+# Operators render a concrete conf via scripts/recovery/layer1/config.mjs
+# (renderPgbackrestConf) for the active repository generation.
+#
+# Locked:
+# - AES-256-CBC repository encryption
+# - >= 35-day pgBackRest-owned retention
+# - continuous WAL via archive_command (NOT under heavy flock)
+# - archive_timeout = 5 minutes is set in postgresql.conf, not here
+#
+# Cipher passphrase is supplied via PGBACKREST_CIPHER_PASS (host-local secret).
+# Never commit a filled passphrase.
+
+[global]
+repo1-type=posix
+repo1-path=/var/lib/pgbackrest/repo-gen-1
+repo1-cipher-type=aes-256-cbc
+repo1-cipher-pass=${PGBACKREST_CIPHER_PASS}
+repo1-retention-full=5
+repo1-retention-diff=35
+start-fast=y
+compress-type=zst
+log-level-console=info
+log-path=/var/log/pgbackrest
+spool-path=/var/spool/pgbackrest
+
+[boba]
+pg1-path=/var/lib/postgresql/data
