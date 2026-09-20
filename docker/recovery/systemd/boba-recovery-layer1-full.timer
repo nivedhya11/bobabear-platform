@@ -1,0 +1,13 @@
+# IMP-037 Layer 1 weekly full backup timer.
+# Install is operator/R3 — see README.md. Not performed by the implementation packet.
+[Unit]
+Description=Timer for BOBA Bear IMP-037 Layer 1 weekly full backup
+
+[Timer]
+OnCalendar=Sun *-*-* 02:15:00
+RandomizedDelaySec=15m
+Persistent=true
+Unit=boba-recovery-layer1-full.service
+
+[Install]
+WantedBy=timers.target

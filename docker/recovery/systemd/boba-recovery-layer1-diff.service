@@ -1,0 +1,21 @@
+# IMP-037 Layer 1 daily differential backup (oneshot).
+# Install is operator/R3 — see README.md in this directory. Not performed by the implementation packet.
+[Unit]
+Description=BOBA Bear IMP-037 Layer 1 daily differential backup
+Documentation=file:%h/boba-bear-platform/docs/platform/operations/imp037-recovery-runbook.md
+After=docker.service network-online.target
+Wants=network-online.target
+ConditionPathExists=%h/boba-bear-platform/compose.yaml
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/boba-bear-platform
+EnvironmentFile=-%h/boba-bear-platform/.env.recovery.local
+Environment=BOBA_RECOVERY_HEAVY_LOCK_PATH=/var/lock/boba-recovery-heavy.lock
+ExecStart=%h/boba-bear-platform/scripts/recovery/systemd/run-with-flock.sh /usr/bin/npm run recovery -- backup layer1 --type diff
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+
+[Install]
+WantedBy=multi-user.target

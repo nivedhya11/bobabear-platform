@@ -3,7 +3,8 @@
 Operator runbook for **IMP-037 — Backup, Restore & Migration Readiness**.
 
 This document describes **repository-supported tooling that exists now** and names
-**work that is not yet implemented**. Do not treat unimplemented commands as working.
+**proof that has not been performed**. Do not treat missing production proof as
+acceptance.
 
 Canonical product requirements:
 [`docs/platform/product/IMP-037/product-definition.md`](../product/IMP-037/product-definition.md)
@@ -11,20 +12,28 @@ Canonical product requirements:
 Locked architecture:
 [`docs/platform/capabilities/IMP-037-backup-restore-migration-readiness.md`](../capabilities/IMP-037-backup-restore-migration-readiness.md)
 
+Supporting automated-proof notes (not lifecycle authority):
+[`docs/platform/operations/imp037-implementation-evidence.md`](./imp037-implementation-evidence.md)
+
 ```text
+LIFECYCLE: IN_PROGRESS
+IMPLEMENTATION_PERFORMED: repository tooling advanced; production backup/restore NOT performed
 RPO_TARGET <= 15 minutes
 RTO_TARGET <= 2 hours
 RPO_RTO_PROVEN: NO
 DROPLET_2GIB_RTO_VALIDATED: NO
 STORAGE_CAPACITY_VALIDATED: NO
-IMPLEMENTATION_PERFORMED: NO
+REAL_SPACES: NOT_PERFORMED
+SYSTEMD_INSTALL: NOT_PERFORMED
+FOUNDER_UAT: NOT_PERFORMED
 ```
 
-`IMPLEMENTATION_PERFORMED: NO` remains truthful for backup/restore/pgBackRest/age/Spaces
-execution. This runbook covers the **recovery foundation** only (status, evidence, identity
-safety). Implementation start does not mean Layer 1 or Layer 2 backup coverage exists.
+`IMPLEMENTATION_PERFORMED` here means the repository now contains runnable Layer 1 /
+Layer 2 / restore / gate / capacity / systemd **modules and CLI wiring**. It does
+**not** mean production backup coverage, Spaces verification, Droplet RTO proof, or
+acceptance.
 
-## IMPLEMENTED NOW
+## IMPLEMENTED NOW (repository)
 
 Operator entry point:
 
@@ -33,7 +42,7 @@ npm run recovery -- help
 node scripts/recovery/cli.mjs help
 ```
 
-Machine-readable JSON: add `--json` to any implemented command.
+Machine-readable JSON: add `--json` to any command.
 
 Exit codes:
 
@@ -42,127 +51,104 @@ Exit codes:
 | 0 | ok |
 | 1 | failure / NOT_READY |
 | 2 | blocked (fail-closed safety) |
-| 3 | command not implemented |
+| 3 | unavailable (reserved; implemented commands must not use this for “not wired”) |
 
-No secrets, credentials, URIs with passwords, tokens, age private identities, or pgBackRest
-passphrases are printed. Do not pass raw environment dumps into this tooling.
+Missing docker/pgBackRest/credentials exit **BLOCKED** or **FAILURE** with a clear
+reason. Commands must **never** emit placeholder `SUCCEEDED`.
 
-### Status / readiness foundation
+No secrets, credentials, URIs with passwords, tokens, age private identities, or
+pgBackRest passphrases are printed.
+
+### Status / evidence / target safety
 
 ```bash
 npm run recovery:status
-npm run recovery:status -- --json --evidence-dir /path/to/disposable-evidence
-```
-
-Semantics:
-
-- Layer 1 (pgBackRest / continuous WAL) and Layer 2 (logical dump) are evaluated independently.
-- No valid evidence ⇒ `NOT_READY`.
-- Configuration, credentials, buckets, or timers alone are never success.
-- Interrupted / `RUNNING` / malformed evidence is never success.
-- A later success does not erase a prior failed run (runs are unique `RUN_ID` directories).
-- Schema-valid `SUCCEEDED` evidence alone is **insufficient**.
-- **RECOVERY READY** requires **qualifying layer-specific recovery proof** for every required
-  applicable layer, plus freshness policy. Evidence-schema validity ≠ recovery-proof validity;
-  operation `SUCCEEDED` ≠ layer `READY`.
-
-For this foundation tranche:
-
-- no qualifying Layer 1 / Layer 2 proof producer exists yet
-  (`layer1_pgbackrest`, `layer2_pg_dump_age`, `remote_sha_verification`, and `complete_marker`
-  remain `NOT_IMPLEMENTED`)
-- default operational posture is `NOT_READY`
-- generic/foundation/status/evidence-validation records never establish Layer 1 or Layer 2 READY
-
-A clean repository with no qualifying evidence **must** report `NOT_READY`. That is the
-expected foundation result until Layer 1 and Layer 2 execution exist.
-
-Freshness policy:
-
-- Missing freshness policy never means infinite age; a layer cannot be `READY` without an
-  applicable freshness rule.
-- Layer 2 applies the locked product default of **at least daily** when `--layer2-max-age-ms`
-  is omitted.
-- Layer 1 has no locked health-age mapping yet; without an explicit `--layer1-max-age-ms` (and
-  without qualifying Layer 1 health proof), Layer 1 remains `NOT_READY`.
-
-```bash
-npm run recovery:status -- --evidence-dir DIR --layer1-max-age-ms 900000 --layer2-max-age-ms 86400000
-```
-
-### Evidence inspection / validation
-
-```bash
 npm run recovery:evidence:validate -- --evidence-dir DIR
-npm run recovery:evidence:validate -- --json --evidence-dir DIR --run-id 20260920T010203Z-aaaaaaaaaaaaaaaa
+npm run recovery:target:check -- --source ... --target ... --source-class production --target-class recovery
 ```
 
-Validates the machine-readable evidence schema (`imp037-evidence-v1`). Incomplete or
-malformed files are not success.
+`--force-production` remains **forbidden**.
 
-Local evidence layout (disposable / test / later remote-backed operations):
-
-```text
-<evidence-dir>/<RUN_ID>/evidence.json
-```
-
-Rules: unique `RUN_ID` path; never overwrite; preserve failed evidence; atomic write;
-caller owns cleanup. This is **not** the production Spaces object layout and does **not**
-claim provider verification or Layer 2 `COMPLETE` markers.
-
-### Source / target identity safety check
+### Layer 1 / Layer 2 backup CLI
 
 ```bash
-npm run recovery:target:check -- \
-  --source prod-postgres-volume \
-  --target recovery-postgres-volume \
-  --source-class production \
-  --target-class recovery \
-  --target-pgdata /tmp/boba-recovery/pgdata
+npm run recovery:backup:layer1 -- --type full --generation 1 --evidence-dir DIR
+npm run recovery:backup:layer1 -- --type diff --generation 1 --evidence-dir DIR
+npm run recovery:backup:layer2 -- --local-store DIR --recipient age1... --evidence-dir DIR
 ```
 
-Fail-closed. Refuses:
+Layer 1 requires a reachable `pgbackrest` (local or `boba-bear-postgres:local`) and
+`--generation` / `BOBA_PGBACKREST_GENERATION`. After a successful backup, verify runs
+by default so health proof can include `PGBACKREST_VERIFY_OK`.
 
-- target identity equal to source identity
-- missing target identity
-- unresolved / ambiguous environment classification
-- production / authoritative target (recovery target required)
-- known production `PGDATA` paths when supplied
+Layer 2 requires age, a dump source (`DATABASE_URL` or compose postgres), recipients,
+and `--local-store` for disposable object-store runs. Live Spaces remains
+`NOT_PERFORMED` unless separately authorized.
 
-There is **no** `--force-production` override. This check does **not** restore anything.
+### Restore / drill
 
-Allowed target classification for this foundation: `recovery` only.
+```bash
+npm run recovery -- restore pitr --source ID --target-time "..."
+npm run recovery -- restore logical --run-id RUN_ID --source ID --identity-file PATH --local-store DIR
+npm run recovery -- drill --run-id-to-restore RUN_ID --source ID --identity-file PATH --local-store DIR
+```
 
-## NOT YET IMPLEMENTED
+Restore/drill refuse `--force-production`. Without real artifacts/executables they
+fail closed — they do not fabricate success.
 
-The following are **unavailable**. The CLI exits non-zero (`3`) rather than reporting
-placeholder success:
+### High-risk gate / capacity / Spaces config / key rotation plans
 
-- pgBackRest Layer 1 install/configure/backup
-- continuous WAL archival (`archive_command` / `archive_timeout`)
-- Layer 2 `pg_dump -Fc` + age upload
-- remote Spaces SHA-256 verification
-- `COMPLETE`-last backup finalization
-- actual restore
-- PITR selection
-- migration rehearsal
-- high-risk migration gate
-- systemd scheduling / timers
-- capacity / cost collection
-- key rotation
-- real DigitalOcean Spaces / production database provider integration
+```bash
+npm run recovery:gate -- high-risk --evidence-dir DIR
+npm run recovery:capacity -- --json
+npm run recovery -- spaces config-check --bucket NAME --local-root DIR --credential-env-prefix BOBA_SPACES
+npm run recovery -- rotate-keys layer1 --generation 1 --new-passphrase-present --json
+npm run recovery -- rotate-keys layer2 --recipient age1... --old-identities-retained --json
+```
 
-Do not run those operations from this runbook. Do not create Spaces buckets, mutate
-production PostgreSQL, install production age keys, or deploy from this document.
+Rotation commands print a **plan JSON only** — no production secret mutation.
 
-## Safety invariants (locked; still binding)
+### systemd templates (install NOT performed)
+
+Templates live under `docker/recovery/systemd/`. Validate:
+
+```bash
+npm run recovery:systemd:validate
+```
+
+Installing/enabling timers is an **operator R3** action and is **not** performed by
+this packet. See `docker/recovery/systemd/README.md`.
+
+### Compose
+
+- `compose.yaml` postgres builds `docker/postgres/Dockerfile` → image
+  `boba-bear-postgres:local`, with optional `pgbackrest-repo` volume.
+- `BOBA_PGBACKREST_ARCHIVE` defaults to `0` (existing local/dev unchanged).
+- Overlay: `compose.recovery.yaml` (`recovery-layer1-backup`, `recovery-layer2-backup`,
+  tools profile oneshots).
+
+## Safety boundaries (locked; still binding)
 
 ```text
 RESTORE_TO_ACTIVE_SOURCE: FORBIDDEN
 RESTORE_INTO_PRODUCTION_PGDATA: FORBIDDEN
 FORCE_PRODUCTION_FLAG: FORBIDDEN
 SECRETS_IN_EVIDENCE: FORBIDDEN
+CONTINUOUS_WAL_NOT_BLOCKED_BY_SCHEDULED_JOB_LOCK: YES
 ```
+
+## Explicitly NOT performed / NOT proven
+
+| Marker | Status |
+|---|---|
+| Real DigitalOcean Spaces provider run | `NOT_PERFORMED` |
+| Production PostgreSQL backup/restore | `NOT_PERFORMED` |
+| systemd timer install/enable | `NOT_PERFORMED` |
+| `RPO_RTO_PROVEN` | `NO` |
+| `STORAGE_CAPACITY_VALIDATED` | `NO` |
+| `DROPLET_2GIB_RTO_VALIDATED` | `NO` |
+| `FOUNDER_UAT` | `NOT_PERFORMED` |
+| Lifecycle acceptance | **not claimed** (`IN_PROGRESS`) |
 
 ## Tests
 
@@ -170,4 +156,9 @@ SECRETS_IN_EVIDENCE: FORBIDDEN
 npm run test:recovery
 ```
 
-No cloud credentials and no live network are required for the foundation suite.
+Unit tests do not require cloud credentials. Integration tests skip gracefully when
+docker/age/image build flags are absent. Optional heavy build:
+
+```bash
+BOBA_RECOVERY_BUILD_POSTGRES=1 npm run test:recovery
+```

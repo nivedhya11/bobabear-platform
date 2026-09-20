@@ -795,7 +795,7 @@
     "test:promotion-coupons": "node scripts/run-vitest.mjs run tests/promotion-coupons",
     "test:promotion-pricing-parity": "node scripts/run-vitest.mjs run tests/promotion-pricing-parity",
     "test:promotions": "node scripts/run-vitest.mjs run tests/promotions",
-    "test:recovery": "node --test scripts/recovery/*.test.mjs",
+    "test:recovery": "node --test $(find scripts/recovery -name '*.test.mjs')",
     "test:scripts": "find scripts -name \"*.test.mjs\" -print0 | xargs -0 node --test",
     "test:serviceability": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/serviceability/",
     "test:serviceability-auth-integration": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/serviceability-auth-integration",

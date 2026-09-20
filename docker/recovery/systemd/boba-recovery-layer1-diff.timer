@@ -1,0 +1,12 @@
+# IMP-037 Layer 1 daily differential backup timer.
+# Install is operator/R3 — see README.md. Not performed by the implementation packet.
+[Unit]
+Description=Timer for BOBA Bear IMP-037 Layer 1 daily differential backup
+
+[Timer]
+OnCalendar=*-*-* 02:45:00
+Persistent=true
+Unit=boba-recovery-layer1-diff.service
+
+[Install]
+WantedBy=timers.target
