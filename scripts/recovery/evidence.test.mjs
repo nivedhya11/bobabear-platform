@@ -147,3 +147,61 @@ test("malformed on-disk JSON is not listed as valid evidence", () => {
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("Layer 2 qualifies when remote+COMPLETE markers and chain fields are present", () => {
+  const evidence = createEvidence({
+    runId: generateRunId(),
+    operationType: "layer2-logical-backup",
+    recoveryLayer: RECOVERY_LAYER.LAYER_2,
+    status: OPERATION_STATUS.SUCCEEDED,
+    endedAt: new Date().toISOString(),
+    recoveryPoint: "2026-09-20T00:00:00Z",
+    recoveryArtifactReference: "logical/run/dump.age",
+    checksumIntegrityStatus: CHECKSUM_INTEGRITY_STATUS.MATCHED,
+    candidate: { commitSha: "abc", tree: "def" },
+    sourceEnvironmentClassification: "production",
+    sourceIdentityMarker: "prod-db-1",
+    validationResults: [
+      { code: "REMOTE_ARTIFACT_SHA256_VERIFIED" },
+      { code: "COMPLETE_MARKER_WRITTEN_LAST" },
+    ],
+  });
+  const proof = evaluateQualifyingRecoveryProof(evidence, { layer: RECOVERY_LAYER.LAYER_2 });
+  assert.equal(proof.ok, true);
+});
+
+test("Layer 1 qualifies with health + recovery point + repository generation proof", () => {
+  const evidence = createEvidence({
+    runId: generateRunId(),
+    operationType: "layer1-backup",
+    recoveryLayer: RECOVERY_LAYER.LAYER_1,
+    status: OPERATION_STATUS.SUCCEEDED,
+    endedAt: new Date().toISOString(),
+    recoveryPoint: "2026-09-20T00:00:00Z",
+    validationResults: [
+      { code: "PGBACKREST_INFO_OK" },
+      { code: "LAYER1_RECOVERY_POINT" },
+      { code: "REPOSITORY_GENERATION", repositoryGeneration: "1", keyVersion: "repo-gen-1" },
+    ],
+  });
+  const proof = evaluateQualifyingRecoveryProof(evidence, { layer: RECOVERY_LAYER.LAYER_1 });
+  assert.equal(proof.ok, true);
+});
+
+test("synthetic magic-only markers without chain fields still fail Layer 2", () => {
+  const evidence = createEvidence({
+    runId: generateRunId(),
+    operationType: "layer2-logical-backup",
+    recoveryLayer: RECOVERY_LAYER.LAYER_2,
+    status: OPERATION_STATUS.SUCCEEDED,
+    endedAt: new Date().toISOString(),
+    checksumIntegrityStatus: CHECKSUM_INTEGRITY_STATUS.MATCHED,
+    validationResults: [
+      { code: "REMOTE_ARTIFACT_SHA256_VERIFIED" },
+      { code: "COMPLETE_MARKER_WRITTEN_LAST" },
+    ],
+  });
+  const proof = evaluateQualifyingRecoveryProof(evidence, { layer: RECOVERY_LAYER.LAYER_2 });
+  assert.equal(proof.ok, false);
+  assert.match(proof.reason, /recovery point|artifact|context/i);
+});
