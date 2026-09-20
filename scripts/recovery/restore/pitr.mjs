@@ -46,6 +46,17 @@ export async function runPitrRestore(options) {
     return fail(options, runId, startedAt, targetIdentity, "PITR target must be time, lsn, or name with a non-empty value");
   }
 
+  if (!options.targetPgdataPath || typeof options.targetPgdataPath !== "string" || !options.targetPgdataPath.trim()) {
+    return fail(
+      options,
+      runId,
+      startedAt,
+      targetIdentity,
+      "isolated --target-pgdata is required for PITR; refusing stanza default PGDATA (active source)",
+      "TARGET_PGDATA_REQUIRED",
+    );
+  }
+
   if (options.sourcePgdataPath && options.targetPgdataPath && options.sourcePgdataPath === options.targetPgdataPath) {
     return fail(options, runId, startedAt, targetIdentity, "PITR must never target source PGDATA");
   }
@@ -80,7 +91,7 @@ export async function runPitrRestore(options) {
     "restore",
     typeFlag,
     targetFlag,
-    ...(options.targetPgdataPath ? [`--pg1-path=${options.targetPgdataPath}`] : []),
+    `--pg1-path=${options.targetPgdataPath}`,
   ]);
   if (restoreResult.status !== 0) {
     return fail(

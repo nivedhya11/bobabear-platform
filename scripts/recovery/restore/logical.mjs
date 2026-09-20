@@ -85,13 +85,33 @@ export async function runLogicalRestore(options) {
     plaintext = decrypted.plaintext;
   }
 
+  if (!options.restoreFn && (typeof options.databaseUrl !== "string" || !options.databaseUrl.trim())) {
+    return fail(
+      options,
+      runId,
+      startedAt,
+      targetIdentity,
+      "logical restore requires --database-url (or restoreFn) for a fresh recovery database; refusing localhost/postgres default",
+    );
+  }
+  const databaseUrl = typeof options.databaseUrl === "string" ? options.databaseUrl.trim() : "";
+  if (databaseUrl && isForbiddenActiveDatabaseUrl(databaseUrl)) {
+    return fail(
+      options,
+      runId,
+      startedAt,
+      targetIdentity,
+      "databaseUrl resolves to a forbidden active/default endpoint; refuse restore",
+    );
+  }
+
   const dumpPath = path.join(tmpdir(), `boba-restore-${runId}.dump`);
   writeFileSync(dumpPath, plaintext);
   try {
     const restoreFn =
       options.restoreFn ??
       ((filePath) => {
-        const result = spawnSync("pg_restore", ["-d", options.databaseUrl ?? "postgresql://localhost/postgres", filePath], {
+        const result = spawnSync("pg_restore", ["-d", databaseUrl, filePath], {
           encoding: "utf8",
         });
         return {
@@ -148,4 +168,18 @@ function fail(options, runId, startedAt, targetIdentity, reason) {
     }
   }
   return { ok: false, status: OPERATION_STATUS.FAILED, runId, targetIdentity, reason: redactText(reason), evidence };
+}
+
+/**
+ * @param {string} databaseUrl
+ * @returns {boolean}
+ */
+function isForbiddenActiveDatabaseUrl(databaseUrl) {
+  const normalized = databaseUrl.trim().toLowerCase();
+  if (!normalized) return true;
+  // Fail closed on ambiguous localhost defaults that may hit an active cluster.
+  if (/\/\/([^/@]*@)?(localhost|127\.0\.0\.1)(:|\/|$)/.test(normalized) && /\/postgres(\?|$)/.test(normalized)) {
+    return true;
+  }
+  return false;
 }

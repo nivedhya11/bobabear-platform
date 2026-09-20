@@ -73,6 +73,32 @@ test("high-risk gate READY on positive evidence path", () => {
   assert.equal(gate.reasons.length, 0);
 });
 
+test("high-risk gate BLOCKED when Layer evidence is stale", () => {
+  const stale = evaluateHighRiskMigrationGate({
+    layer1Evidence: createEvidence({
+      ...layer1Proof(),
+      endedAt: "2020-01-01T00:00:00.000Z",
+      startedAt: "2020-01-01T00:00:00.000Z",
+    }),
+    layer2Evidence: layer2Proof(),
+    drillEvidence: createEvidence({
+      runId: generateRunId(),
+      operationType: "portability-rehearsal",
+      status: OPERATION_STATUS.SUCCEEDED,
+      endedAt: new Date().toISOString(),
+    }),
+    validationEvidence: createEvidence({
+      runId: generateRunId(),
+      operationType: "portability-rehearsal",
+      status: OPERATION_STATUS.SUCCEEDED,
+      endedAt: new Date().toISOString(),
+      validationResults: [{ code: PROOF_CODE.BUSINESS_INTEGRITY_VALIDATED, ok: true }],
+    }),
+  });
+  assert.equal(stale.result, "BLOCKED");
+  assert.match(stale.reasons.join(" "), /stale/i);
+});
+
 test("high-risk gate BLOCKED on missing or failed evidence", () => {
   const missing = evaluateHighRiskMigrationGate({});
   assert.equal(missing.result, "BLOCKED");

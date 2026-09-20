@@ -31,11 +31,11 @@
     "note": "Protected evidence and generated reports are never classified as executable test source."
   },
   "counts": {
-    "trackedPathsConsidered": 1936,
-    "executableTestFiles": 401,
+    "trackedPathsConsidered": 1985,
+    "executableTestFiles": 412,
     "sourceTestFiles": 130,
     "testsTreeExecutableFiles": 231,
-    "scriptTestFiles": 40,
+    "scriptTestFiles": 51,
     "playwrightSpecs": 12,
     "vitestConfigs": 2,
     "playwrightConfigs": 7,
@@ -447,12 +447,23 @@
     "scripts/lib/vitest-result-validation.test.mjs",
     "scripts/nginx-origin-redirect.test.mjs",
     "scripts/project-consistency.test.mjs",
+    "scripts/recovery/capacity/observe.test.mjs",
     "scripts/recovery/cli.test.mjs",
     "scripts/recovery/evidence.test.mjs",
+    "scripts/recovery/flock.test.mjs",
+    "scripts/recovery/gate/high-risk.test.mjs",
     "scripts/recovery/identity.test.mjs",
+    "scripts/recovery/integration/layer1-pgbackrest.integration.test.mjs",
+    "scripts/recovery/integration/postgres18.integration.test.mjs",
+    "scripts/recovery/layer1/config.test.mjs",
+    "scripts/recovery/layer2/backup.test.mjs",
     "scripts/recovery/readiness.test.mjs",
     "scripts/recovery/redact.test.mjs",
     "scripts/recovery/run-id.test.mjs",
+    "scripts/recovery/spaces/local.test.mjs",
+    "scripts/recovery/systemd/validate.test.mjs",
+    "scripts/recovery/validate/business-integrity.test.mjs",
+    "scripts/recovery/validate/isolation.test.mjs",
     "scripts/serve-static-export.test.mjs",
     "scripts/testing-inventory.test.mjs",
     "scripts/workforce/cli-support.test.mjs",
@@ -1781,6 +1792,24 @@
       "classificationConfidence": "HEURISTIC"
     },
     {
+      "path": "scripts/recovery/capacity/observe.test.mjs",
+      "runner": "node:test",
+      "domain": "scripts",
+      "testType": "script-unit",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:scripts"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit",
+        "9-recovery-idempotency"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
       "path": "scripts/recovery/cli.test.mjs",
       "runner": "node:test",
       "domain": "scripts",
@@ -1817,7 +1846,119 @@
       "classificationConfidence": "HEURISTIC"
     },
     {
+      "path": "scripts/recovery/flock.test.mjs",
+      "runner": "node:test",
+      "domain": "scripts",
+      "testType": "script-unit",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:scripts"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit",
+        "9-recovery-idempotency"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "scripts/recovery/gate/high-risk.test.mjs",
+      "runner": "node:test",
+      "domain": "scripts",
+      "testType": "script-unit",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:scripts"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit",
+        "9-recovery-idempotency"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
       "path": "scripts/recovery/identity.test.mjs",
+      "runner": "node:test",
+      "domain": "scripts",
+      "testType": "script-unit",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:scripts"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit",
+        "9-recovery-idempotency"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "scripts/recovery/integration/layer1-pgbackrest.integration.test.mjs",
+      "runner": "node:test",
+      "domain": "scripts",
+      "testType": "integration",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:scripts"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit",
+        "4-integration",
+        "5-database-integration",
+        "9-recovery-idempotency"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "scripts/recovery/integration/postgres18.integration.test.mjs",
+      "runner": "node:test",
+      "domain": "scripts",
+      "testType": "integration",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:scripts"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit",
+        "4-integration",
+        "5-database-integration",
+        "9-recovery-idempotency"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "scripts/recovery/layer1/config.test.mjs",
+      "runner": "node:test",
+      "domain": "scripts",
+      "testType": "script-unit",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:scripts"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit",
+        "9-recovery-idempotency"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "scripts/recovery/layer2/backup.test.mjs",
       "runner": "node:test",
       "domain": "scripts",
       "testType": "script-unit",
@@ -1872,6 +2013,78 @@
     },
     {
       "path": "scripts/recovery/run-id.test.mjs",
+      "runner": "node:test",
+      "domain": "scripts",
+      "testType": "script-unit",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:scripts"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit",
+        "9-recovery-idempotency"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "scripts/recovery/spaces/local.test.mjs",
+      "runner": "node:test",
+      "domain": "scripts",
+      "testType": "script-unit",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:scripts"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit",
+        "9-recovery-idempotency"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "scripts/recovery/systemd/validate.test.mjs",
+      "runner": "node:test",
+      "domain": "scripts",
+      "testType": "script-unit",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:scripts"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit",
+        "9-recovery-idempotency"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "scripts/recovery/validate/business-integrity.test.mjs",
+      "runner": "node:test",
+      "domain": "scripts",
+      "testType": "script-unit",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:scripts"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit",
+        "9-recovery-idempotency"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "scripts/recovery/validate/isolation.test.mjs",
       "runner": "node:test",
       "domain": "scripts",
       "testType": "script-unit",

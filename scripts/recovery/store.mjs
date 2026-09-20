@@ -10,6 +10,7 @@ import { isValidRunId } from "./run-id.mjs";
 import { redactValue, safeJson } from "./redact.mjs";
 
 const EVIDENCE_FILE = "evidence.json";
+const COMPLETE_MARKER_FILE = "complete-marker.json";
 
 /**
  * @param {string} evidenceRoot
@@ -75,6 +76,20 @@ export function readRunEvidence(evidenceRoot, runId) {
     parsedJson = JSON.parse(readFileSync(filePath, "utf8"));
   } catch {
     return { ok: false, reason: `Evidence file for RUN_ID ${runId} is not valid JSON` };
+  }
+  const markerPath = path.join(runEvidenceDirectory(evidenceRoot, runId), COMPLETE_MARKER_FILE);
+  if (existsSync(markerPath)) {
+    try {
+      const marker = JSON.parse(readFileSync(markerPath, "utf8"));
+      const results = Array.isArray(parsedJson.validationResults) ? [...parsedJson.validationResults] : [];
+      const code = typeof marker.code === "string" ? marker.code : "COMPLETE_MARKER_WRITTEN_LAST";
+      if (!results.some((entry) => entry && typeof entry === "object" && entry.code === code)) {
+        results.push({ ...marker, code });
+      }
+      parsedJson = { ...parsedJson, validationResults: results };
+    } catch {
+      return { ok: false, reason: `COMPLETE marker for RUN_ID ${runId} is not valid JSON` };
+    }
   }
   return validateEvidence(parsedJson);
 }

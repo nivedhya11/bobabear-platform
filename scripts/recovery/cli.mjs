@@ -320,7 +320,7 @@ async function runBackupLayer1({ flags, env, json, stdout, stderr }) {
     sourceIdentity: stringFlag(flags.source) ?? env.BOBA_RECOVERY_SOURCE_IDENTITY ?? "unspecified-source",
     sourceClassification: stringFlag(flags["source-class"]) ?? "production",
     env,
-    skipLock: flags["skip-lock"] === true,
+    skipLock: flags["skip-lock"] === true || env.BOBA_RECOVERY_LOCK_ALREADY_HELD === "1",
   });
 
   emit(
@@ -403,7 +403,7 @@ async function runBackupLayer2({ flags, env, json, stdout, stderr }) {
       ok: false,
       status: OPERATION_STATUS.BLOCKED,
       reason:
-        "pg_dump / docker compose postgres unavailable — set DATABASE_URL or ensure docker compose postgres is reachable",
+        "pg_dump / docker compose postgres unavailable — set BOBA_LOGICAL_BACKUP_DATABASE_URL (not application DATABASE_URL) or ensure compose postgres + boba_bear_logical_backup role are reachable",
     };
     emit(stdout, json, payload, `Layer 2 backup BLOCKED: ${payload.reason}`);
     return CLI_EXIT.BLOCKED;
@@ -418,6 +418,10 @@ async function runBackupLayer2({ flags, env, json, stdout, stderr }) {
     candidate: resolveCandidateProvenance({ env }),
     ageBin,
     dumpFn,
+    withHeavyOpLock:
+      env.BOBA_RECOVERY_LOCK_ALREADY_HELD === "1" || flags["skip-lock"] === true
+        ? async (_opts, fn) => ({ ok: true, status: "ACQUIRED", result: await fn() })
+        : undefined,
   });
 
   emit(
@@ -819,7 +823,7 @@ function readPgbackrestVersionText(env, flags) {
  * @returns {null | (() => Promise<Buffer>)}
  */
 function buildDumpFn(env, flags) {
-  const databaseUrl = stringFlag(flags["database-url"]) ?? env.DATABASE_URL ?? env.BOBA_LOGICAL_BACKUP_DATABASE_URL;
+  const databaseUrl = stringFlag(flags["database-url"]) ?? env.BOBA_LOGICAL_BACKUP_DATABASE_URL;
   if (databaseUrl) {
     return async () => {
       const result = spawnSync("pg_dump", ["-Fc", databaseUrl], {
@@ -834,21 +838,33 @@ function buildDumpFn(env, flags) {
     };
   }
 
+  // Never fall back to application runtime DATABASE_URL as backup authority.
+  if (env.DATABASE_URL && !env.BOBA_LOGICAL_BACKUP_DATABASE_URL) {
+    return null;
+  }
+
   const composeProbe = dockerComposeExecPostgres({
     args: ["pg_isready"],
     env,
   });
   if (!composeProbe.ok) return null;
 
+  const dumpUser =
+    env.BOBA_LOGICAL_BACKUP_DB_USER ??
+    env.POSTGRES_LOGICAL_BACKUP_USER ??
+    "boba_bear_logical_backup";
+  const dumpDb = env.POSTGRES_DB ?? "boba_bear_local";
+
   return async () => {
     const result = dockerComposeExecPostgres({
-      args: ["pg_dump", "-Fc", "-U", env.POSTGRES_USER ?? "postgres", env.POSTGRES_DB ?? "boba_bear_local"],
+      args: ["pg_dump", "-Fc", "-U", dumpUser, dumpDb],
       env,
+      encoding: "buffer",
     });
     if (!result.ok) {
       throw new Error(result.reason ?? "docker compose pg_dump failed");
     }
-    return Buffer.from(result.stdout ?? "", "utf8");
+    return Buffer.isBuffer(result.stdout) ? result.stdout : Buffer.from(result.stdout ?? "");
   };
 }
 

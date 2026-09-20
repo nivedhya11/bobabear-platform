@@ -4,7 +4,12 @@
  * Restore is never recommended as routine rollback.
  */
 import { evaluateQualifyingRecoveryProof } from "../evidence.mjs";
-import { READINESS_LEVEL, RECOVERY_LAYER } from "../constants.mjs";
+import {
+  LAYER_1_MAX_AGE_MS_DEFAULT,
+  LAYER_2_MAX_AGE_MS_DEFAULT,
+  READINESS_LEVEL,
+  RECOVERY_LAYER,
+} from "../constants.mjs";
 
 export const RESTORE_AS_ROUTINE_ROLLBACK = false;
 
@@ -26,6 +31,8 @@ export function evaluateHighRiskMigrationGate(input = {}) {
     drillRunId: null,
     validationRunId: null,
   };
+  const policy = input.policy ?? {};
+  const now = resolveNow(policy.now);
 
   if (RESTORE_AS_ROUTINE_ROLLBACK !== false) {
     reasons.push("RESTORE_AS_ROUTINE_ROLLBACK invariant violated");
@@ -39,6 +46,8 @@ export function evaluateHighRiskMigrationGate(input = {}) {
     const proof = evaluateQualifyingRecoveryProof(layer1, { layer: RECOVERY_LAYER.LAYER_1 });
     if (!proof.ok) {
       reasons.push(`Layer 1 evidence not qualifying: ${proof.reason}`);
+    } else if (!isFresh(layer1, policy.layer1MaxAgeMs ?? LAYER_1_MAX_AGE_MS_DEFAULT, now)) {
+      reasons.push("Layer 1 evidence is stale relative to freshness policy");
     } else {
       reliedOn.layer1RunId = /** @type {any} */ (layer1).runId ?? null;
     }
@@ -50,12 +59,13 @@ export function evaluateHighRiskMigrationGate(input = {}) {
     const proof = evaluateQualifyingRecoveryProof(layer2, { layer: RECOVERY_LAYER.LAYER_2 });
     if (!proof.ok) {
       reasons.push(`Layer 2 evidence not qualifying: ${proof.reason}`);
+    } else if (!isFresh(layer2, policy.layer2MaxAgeMs ?? LAYER_2_MAX_AGE_MS_DEFAULT, now)) {
+      reasons.push("Layer 2 evidence is stale relative to freshness policy");
     } else {
       reliedOn.layer2RunId = /** @type {any} */ (layer2).runId ?? null;
     }
   }
 
-  const policy = input.policy ?? {};
   const requireDrill = policy.requireDrill !== false;
   const requireValidation = policy.requireValidation !== false;
 
@@ -66,6 +76,8 @@ export function evaluateHighRiskMigrationGate(input = {}) {
       const drill = /** @type {any} */ (input.drillEvidence);
       if (drill.status !== "SUCCEEDED" || drill.incomplete === true) {
         reasons.push("representative rehearsal/drill did not succeed");
+      } else if (!isFresh(drill, policy.layer2MaxAgeMs ?? LAYER_2_MAX_AGE_MS_DEFAULT, now)) {
+        reasons.push("representative rehearsal/drill evidence is stale");
       } else {
         reliedOn.drillRunId = drill.runId ?? null;
       }
@@ -90,7 +102,6 @@ export function evaluateHighRiskMigrationGate(input = {}) {
     }
   }
 
-  // Never recommend restore-as-rollback in gate output.
   const result = reasons.length === 0 ? READINESS_LEVEL.READY : "BLOCKED";
   return {
     result: result === READINESS_LEVEL.READY ? "READY" : "BLOCKED",
@@ -102,4 +113,21 @@ export function evaluateHighRiskMigrationGate(input = {}) {
         ? "High-risk migration recovery readiness READY based on qualifying evidence"
         : "High-risk migration recovery readiness BLOCKED; restore is not routine rollback",
   };
+}
+
+function resolveNow(value) {
+  if (value instanceof Date) return value;
+  if (typeof value === "string") {
+    const parsed = Date.parse(value);
+    if (Number.isFinite(parsed)) return new Date(parsed);
+  }
+  return new Date();
+}
+
+function isFresh(evidence, maxAgeMs, now) {
+  if (typeof maxAgeMs !== "number" || !Number.isFinite(maxAgeMs) || maxAgeMs < 0) return false;
+  const endedAt = /** @type {any} */ (evidence).endedAt ?? /** @type {any} */ (evidence).startedAt;
+  const ts = Date.parse(String(endedAt ?? ""));
+  if (!Number.isFinite(ts)) return false;
+  return now.getTime() - ts <= maxAgeMs;
 }

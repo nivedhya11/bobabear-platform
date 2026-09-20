@@ -1,7 +1,12 @@
 # IMP-037 recovery overlay — oneshot backup tool services (tools profile).
 #
 # Usage:
-#   docker compose -f compose.yaml -f compose.recovery.yaml run --rm recovery-layer1-backup
+#   # Layer 1 must execute in the PostgreSQL container context (pgBackRest + PGDATA):
+#   docker compose exec -T postgres pgbackrest --stanza=boba backup --type=full
+#   # Or via host CLI with image/exec probe against boba-bear-postgres:local:
+#   npm run recovery -- backup layer1 --type full --generation 1
+#
+#   # Layer 2 oneshot tooling (age + node orchestration; dump via logical-backup role):
 #   docker compose -f compose.yaml -f compose.recovery.yaml run --rm recovery-layer2-backup
 #
 # These services do NOT start with ordinary `docker compose up`. They require the
@@ -12,35 +17,9 @@
 # timers are templates only and are NOT installed by this packet.
 
 services:
-  recovery-layer1-backup:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: tooling
-      args:
-        BOBA_BUILD_SHA: "${BOBA_BUILD_SHA:-unversioned-local}"
-    image: boba-bear-tooling:local
-    profiles: ["tools"]
-    working_dir: /app
-    volumes:
-      - .:/app:ro
-      - ${BOBA_RECOVERY_EVIDENCE_DIR:-./.recovery-evidence}:/recovery-evidence
-    environment:
-      BOBA_RECOVERY_EVIDENCE_DIR: /recovery-evidence
-      BOBA_PGBACKREST_GENERATION: "${BOBA_PGBACKREST_GENERATION:-1}"
-      BOBA_PGBACKREST_STANZA: "${BOBA_PGBACKREST_STANZA:-boba}"
-    # Type=oneshot equivalent: compose `run --rm` exits after the command.
-    # Override type at run-time: docker compose run -e BOBA_RECOVERY_LAYER1_TYPE=diff ...
-    command:
-      [
-        "sh",
-        "-c",
-        "npm run recovery -- backup layer1 --type \"$${BOBA_RECOVERY_LAYER1_TYPE:-full}\"",
-      ]
-    depends_on:
-      postgres:
-        condition: service_healthy
-    restart: "no"
+  # Layer 1 is intentionally NOT a tooling-image service: pgBackRest must run in
+  # the PostgreSQL container context. Use `docker compose exec postgres pgbackrest ...`
+  # or `npm run recovery -- backup layer1` with BOBA_POSTGRES_IMAGE=boba-bear-postgres:local.
 
   recovery-layer2-backup:
     build:
@@ -60,6 +39,7 @@ services:
       BOBA_RECOVERY_EVIDENCE_DIR: /recovery-evidence
       BOBA_RECOVERY_LOCAL_STORE: /recovery-local-store
       BOBA_RECOVERY_AGE_RECIPIENT: "${BOBA_RECOVERY_AGE_RECIPIENT:-}"
+      BOBA_LOGICAL_BACKUP_DB_USER: "${BOBA_LOGICAL_BACKUP_DB_USER:-boba_bear_logical_backup}"
     command:
       [
         "npm",

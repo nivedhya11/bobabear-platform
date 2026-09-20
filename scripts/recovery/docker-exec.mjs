@@ -40,32 +40,51 @@ export function dockerComposeExecPostgres(options) {
   }
   args.push("exec", "-T", service, ...(Array.isArray(options.args) ? options.args : []));
 
+  const encoding = options.encoding === "buffer" ? "buffer" : "utf8";
   const execFn =
     options.execFn ??
     ((command, commandArgs, opts) => {
       const result = spawnSync(command, commandArgs, {
         cwd: opts?.cwd,
         env: opts?.env ?? process.env,
-        encoding: "utf8",
+        encoding: opts?.encoding ?? encoding,
+        maxBuffer: opts?.maxBuffer ?? 512 * 1024 * 1024,
       });
       return {
         status: typeof result.status === "number" ? result.status : 1,
-        stdout: typeof result.stdout === "string" ? result.stdout : "",
-        stderr: typeof result.stderr === "string" ? result.stderr : "",
+        stdout: result.stdout ?? (encoding === "buffer" ? Buffer.alloc(0) : ""),
+        stderr: result.stderr ?? (encoding === "buffer" ? Buffer.alloc(0) : ""),
       };
     });
 
   const cli = options.containerCli ?? resolveContainerCli() ?? "docker";
-  const result = execFn(cli, args, { cwd: options.cwd, env: options.env });
+  const result = execFn(cli, args, {
+    cwd: options.cwd,
+    env: options.env,
+    encoding,
+    maxBuffer: options.maxBuffer,
+  });
+  if (encoding === "buffer") {
+    return {
+      ok: result.status === 0,
+      status: result.status,
+      stdout: Buffer.isBuffer(result.stdout) ? result.stdout : Buffer.from(result.stdout ?? ""),
+      stderr: Buffer.isBuffer(result.stderr) ? result.stderr : Buffer.from(result.stderr ?? ""),
+      reason:
+        result.status === 0
+          ? undefined
+          : redactText(String(result.stderr || `${cli} compose exec exited ${result.status}`)),
+    };
+  }
   return {
     ok: result.status === 0,
     status: result.status,
-    stdout: redactText(result.stdout ?? ""),
-    stderr: redactText(result.stderr ?? ""),
+    stdout: redactText(String(result.stdout ?? "")),
+    stderr: redactText(String(result.stderr ?? "")),
     reason:
       result.status === 0
         ? undefined
-        : redactText(result.stderr || `${cli} compose exec exited ${result.status}`),
+        : redactText(String(result.stderr || `${cli} compose exec exited ${result.status}`)),
   };
 }
 

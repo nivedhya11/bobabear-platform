@@ -232,39 +232,6 @@ async function executeLogicalBackupChain(options) {
         : recipientFingerprints[0];
     const endedAt = new Date().toISOString();
 
-    // Persist evidence BEFORE COMPLETE marker (step 7 then 8).
-    const evidence = createEvidence({
-      runId,
-      operationType: OPERATION_TYPE.LAYER2_LOGICAL_BACKUP,
-      recoveryLayer: RECOVERY_LAYER.LAYER_2,
-      status: OPERATION_STATUS.SUCCEEDED,
-      startedAt,
-      endedAt,
-      incomplete: false,
-      candidate: options.candidate ?? {},
-      sourceEnvironmentClassification: options.sourceClassification ?? null,
-      sourceIdentityMarker: options.sourceIdentity ?? null,
-      recoveryArtifactReference: artifactKey,
-      recoveryPoint: startedAt,
-      checksumIntegrityStatus: CHECKSUM_INTEGRITY_STATUS.MATCHED,
-      findings: [
-        ...findings,
-        {
-          code: "LAYER2_METADATA",
-          keyVersion,
-          recipientFingerprints,
-          encryptedBytes: ciphertext.length,
-        },
-      ],
-      validationResults: [
-        ...validationResults,
-        // COMPLETE marker code added only after object write below; placeholder omitted on purpose.
-      ],
-      timings: {
-        encryptedBytes: ciphertext.length,
-      },
-    });
-
     if (typeof options.evidenceDir !== "string" || options.evidenceDir.length === 0) {
       return fail(options, {
         runId,
@@ -277,7 +244,40 @@ async function executeLogicalBackupChain(options) {
       });
     }
 
-    // Write COMPLETE last, then finalize evidence with COMPLETE code.
+    // Step 7: persist metadata/evidence BEFORE remote COMPLETE (LOCKED §7.1).
+    // This record intentionally omits COMPLETE_MARKER_WRITTEN_LAST so it cannot
+    // qualify as Layer 2 READY until the COMPLETE marker is written last.
+    const preCompleteEvidence = createEvidence({
+      runId,
+      operationType: OPERATION_TYPE.LAYER2_LOGICAL_BACKUP,
+      recoveryLayer: RECOVERY_LAYER.LAYER_2,
+      status: OPERATION_STATUS.SUCCEEDED,
+      startedAt,
+      endedAt,
+      candidate: options.candidate ?? {},
+      sourceEnvironmentClassification: options.sourceClassification ?? null,
+      sourceIdentityMarker: options.sourceIdentity ?? null,
+      recoveryArtifactReference: artifactKey,
+      recoveryPoint: options.recoveryPoint ?? startedAt,
+      checksumIntegrityStatus: CHECKSUM_INTEGRITY_STATUS.MATCHED,
+      findings: [
+        ...findings,
+        {
+          code: "LAYER2_METADATA",
+          keyVersion,
+          recipientFingerprints,
+          encryptedBytes: ciphertext.length,
+        },
+        { code: "LAYER2_EVIDENCE_PERSISTED_BEFORE_COMPLETE", ok: true },
+      ],
+      validationResults: [...validationResults],
+      timings: {
+        encryptedBytes: ciphertext.length,
+      },
+    });
+    persistEvidence(options.evidenceDir, preCompleteEvidence);
+
+    // Step 8: COMPLETE marker written LAST (remote object + local complete-marker.json).
     await options.objectStore.putObject({
       key: completeKey,
       body: Buffer.from(
@@ -295,15 +295,18 @@ async function executeLogicalBackupChain(options) {
       code: PROOF_CODE.COMPLETE_MARKER_WRITTEN_LAST,
       key: completeKey,
     });
-
-    const finalEvidence = createEvidence({
-      ...evidence,
-      validationResults: [
-        ...validationResults,
-      ],
-      endedAt: new Date().toISOString(),
+    writeCompleteMarker(options.evidenceDir, runId, {
+      code: PROOF_CODE.COMPLETE_MARKER_WRITTEN_LAST,
+      key: completeKey,
+      sha256Hex,
+      writtenAt: new Date().toISOString(),
     });
-    persistEvidence(options.evidenceDir, finalEvidence);
+
+    const finalEvidence = {
+      ...preCompleteEvidence,
+      validationResults: [...validationResults],
+      endedAt: new Date().toISOString(),
+    };
 
     return {
       ok: true,
@@ -500,4 +503,21 @@ function fail(options, failure) {
 function errorMessage(error) {
   if (error instanceof Error) return error.message;
   return String(error);
+}
+
+/**
+ * Local COMPLETE sidecar written AFTER evidence.json and AFTER remote COMPLETE object.
+ * Merged into evidence on read so Layer 2 can qualify without overwriting evidence.json.
+ *
+ * @param {string} evidenceDir
+ * @param {string} runId
+ * @param {Record<string, unknown>} marker
+ */
+function writeCompleteMarker(evidenceDir, runId, marker) {
+  const directory = path.join(path.resolve(evidenceDir), runId);
+  mkdirSync(directory, { recursive: true });
+  writeFileSync(path.join(directory, "complete-marker.json"), `${JSON.stringify(marker, null, 2)}\n`, {
+    encoding: "utf8",
+    flag: "wx",
+  });
 }
