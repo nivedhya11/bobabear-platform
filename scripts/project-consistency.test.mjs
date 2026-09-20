@@ -124,6 +124,9 @@ import {
   evaluateImp037ImplementationAuthorizationCheckpoint,
   evaluateImp037AuthorizedCapabilityArchitecture,
   evaluateImp037AuthorizedProductDefinition,
+  evaluateImp037ImplementationStartCheckpoint,
+  evaluateImp037StartedCapabilityArchitecture,
+  evaluateImp037StartedProductDefinition,
   stripImp037HistoricalManagedRecoveryAuthority,
   evaluateImp036gProductDefinitionDraftCheckpoint,
   evaluateImp036gProductDefinitionGatePassCheckpoint,
@@ -6615,8 +6618,8 @@ describe("canonical authority history compression", () => {
 
     const roadmap = readFileSync(new URL("../docs/platform/ROADMAP.md", import.meta.url), "utf8");
     const state = readFileSync(new URL("../docs/platform/STATE.md", import.meta.url), "utf8");
-    assert.match(roadmap, /"roadmapVersion": "GTM-R135"/);
-    assert.match(state, /"stateVersion": "STATE-R133"/);
+    assert.match(roadmap, /"roadmapVersion": "GTM-R136"/);
+    assert.match(state, /"stateVersion": "STATE-R134"/);
     assert.match(state, /"acceptedThrough": "IMP-036G"/);
     assert.match(state, /"pendingAcceptance": "NONE"/);
     assert.match(state, /"currentProductSlice": "IMP-037"/);
@@ -6697,17 +6700,19 @@ describe("canonical authority history compression", () => {
     assert.ok(!/FOUNDER_STAGING_DEPLOYMENT:\s*NOT_PERFORMED/.test(current));
   });
 
-  it("passes CURRENT authority checks at the IMP-037 Implementation Authorization checkpoint", () => {
+  it("passes CURRENT authority checks at the IMP-037 Implementation Start checkpoint", () => {
     const findings = runProjectConsistency();
     const failures = findings.filter((f) => !f.ok);
     assert.equal(failures.length, 0, failures.map((f) => `[${f.code}] ${f.message}`).join("\n"));
     const messages = findings.filter((f) => f.ok).map((f) => f.message);
-    assert.ok(messages.some((m) => m.includes("IMP-037 implementation authorization persistence valid")));
+    assert.ok(messages.some((m) => m.includes("IMP-037 implementation start persistence valid")));
     assert.ok(messages.some((m) => m.includes("CURRENT authority anti-stale checks OK")));
     assert.ok(messages.some((m) => m.includes("historical authority corpus loaded")));
-    // GTM-R133 / STATE-R131 D-374 and GTM-R134 / STATE-R132 lock persistence are historical from GTM-R135 onward.
+    // GTM-R133 / STATE-R131 D-374, GTM-R134 / STATE-R132 lock, and GTM-R135 / STATE-R133
+    // authorization persistence are historical from GTM-R136 onward.
     assert.ok(!messages.some((m) => m.includes("D-374 cost-optimized pilot infrastructure persistence valid")));
     assert.ok(!messages.some((m) => m.includes("IMP-037 Architecture Lock persistence valid")));
+    assert.ok(!messages.some((m) => m.includes("IMP-037 implementation authorization persistence valid")));
   });
 
   it("preserves accepted IMP-036E customer-commerce cohesion and dark-only policy in CURRENT capability", () => {
@@ -8778,8 +8783,8 @@ Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate PASS; Architect
 
   it("requires APPROVED Product Definition with PERFORMED/PASS and preGateDraft NO", () => {
     const live = readFileSync("docs/platform/product/IMP-037/product-definition.md", "utf8");
-    // The live PD has advanced past the R134/S132 lock posture to the R135/S133 authorization posture.
-    assert.deepEqual(evaluateImp037AuthorizedProductDefinition(live), { ok: true });
+    // The live PD has advanced past the R135/S133 authorization posture to the R136/S134 start posture.
+    assert.deepEqual(evaluateImp037StartedProductDefinition(live), { ok: true });
     assert.match(live, /Document status:\s*APPROVED/);
     assert.match(live, /PRODUCT_DEFINITION_GATE_EXECUTION:\s*PERFORMED/);
     assert.match(live, /Gate Result:\s*PASS/);
@@ -8999,7 +9004,7 @@ ${correctPairing}
   it("requires live IMP-037 Product Definition to record the corrected lineage", () => {
     const live = readFileSync("docs/platform/product/IMP-037/product-definition.md", "utf8");
     assert.deepEqual(evaluateImp037ProductDefinitionActivationProvenance(live), { ok: true });
-    assert.deepEqual(evaluateImp037AuthorizedProductDefinition(live), { ok: true });
+    assert.deepEqual(evaluateImp037StartedProductDefinition(live), { ok: true });
     assert.match(
       live,
       /Historical pre-activation base:\s*GTM-R130\s*\/\s*STATE-R128\s*\(`6b1f2344d0184e29403b99adfea85c2e5dc8bf9a`\s*\/\s*tree\s*`5471ea8f72c635a365e9a78ea1394ec212dcad69`\)/,
@@ -9172,8 +9177,8 @@ describe("D-374 cost-optimized pilot infrastructure checkpoint", () => {
       "docs/platform/decisions/ADR-016-cost-optimized-pilot-infrastructure.md",
       "utf8",
     );
-    assert.match(roadmap, /"roadmapVersion":\s*"GTM-R135"/);
-    assert.match(state, /"stateVersion":\s*"STATE-R133"/);
+    assert.match(roadmap, /"roadmapVersion":\s*"GTM-R136"/);
+    assert.match(state, /"stateVersion":\s*"STATE-R134"/);
     assert.match(architecture, /"architectureVersion":\s*"ARCH-R20"/);
     assert.match(decision, /"decisionRegisterVersion":\s*"DR-16"/);
     assert.match(decision, /\|\s*D-374\s*\|[^\n]*\|\s*CURRENT\s*\|/);
@@ -9187,7 +9192,7 @@ describe("D-374 cost-optimized pilot infrastructure checkpoint", () => {
     assert.match(architecture, /MANAGED_POSTGRESQL:\s*NO/);
     assert.match(architecture, /KUBERNETES:\s*NO/);
     assert.match(architecture, /K3S:\s*NO/);
-    // The D-374 Fit reopen is satisfied; GTM-R135 records Fit PASS and implementation AUTHORIZED / NOT_STARTED.
+    // The D-374 Fit reopen is satisfied; GTM-R136 records Fit PASS and implementation STARTED / IN_PROGRESS.
     assert.match(roadmap, /IMP037_ARCHITECTURE_FIT:\s*PASS/);
     assert.match(roadmap, /IMP037_IMPLEMENTATION_AUTHORIZED:\s*YES/);
     assert.match(roadmap, /IMP038_ACTIVATED:\s*NO/);
@@ -9656,9 +9661,9 @@ describe("IMP-037 Architecture Lock checkpoints", () => {
       "utf8",
     );
     const productDefinition = readFileSync("docs/platform/product/IMP-037/product-definition.md", "utf8");
-    // Live tip is GTM-R135 / STATE-R133 authorization; lock-era fixtures remain covered above.
-    assert.deepEqual(evaluateImp037AuthorizedCapabilityArchitecture(capability), { ok: true });
-    assert.deepEqual(evaluateImp037AuthorizedProductDefinition(productDefinition), { ok: true });
+    // Live tip is GTM-R136 / STATE-R134 implementation start; lock-era fixtures remain covered above.
+    assert.deepEqual(evaluateImp037StartedCapabilityArchitecture(capability), { ok: true });
+    assert.deepEqual(evaluateImp037StartedProductDefinition(productDefinition), { ok: true });
   });
 });
 
@@ -9877,6 +9882,18 @@ describe("IMP-037 Implementation Authorization checkpoints", () => {
       isSupportedImp030GovernanceCheckpoint("GTM-R135", "STATE-R132", "imp037ImplementationAuthorization"),
       false,
     );
+    assert.equal(
+      isSupportedImp030GovernanceCheckpoint("GTM-R136", "STATE-R134", "imp037ImplementationStart"),
+      true,
+    );
+    assert.equal(
+      isSupportedImp030GovernanceCheckpoint("GTM-R135", "STATE-R133", "imp037ImplementationStart"),
+      false,
+    );
+    assert.equal(
+      isSupportedImp030GovernanceCheckpoint("GTM-R136", "STATE-R134", "imp037ImplementationAuthorization"),
+      false,
+    );
   });
 
   it("fails when implementation authorized is NO at R135/S133", () => {
@@ -10052,6 +10069,97 @@ IMPLEMENTATION_STARTED = NO`),
       isSupportedImp030GovernanceCheckpoint("GTM-R135", "STATE-R133", "imp037ImplementationAuthorization"),
       true,
     );
+    assert.equal(
+      isSupportedImp030GovernanceCheckpoint("GTM-R136", "STATE-R134", "imp037ImplementationStart"),
+      true,
+    );
+  });
+});
+
+describe("IMP-037 Implementation Start checkpoints", () => {
+  const startBase = Object.freeze({
+    roadmapVersion: "GTM-R136",
+    stateVersion: "STATE-R134",
+    acceptedThrough: "IMP-036G",
+    currentProductSlice: "IMP-037",
+    nextProductSlice: "IMP-038",
+    pendingAcceptance: "NONE",
+    currentProductImplementation: "IMP-037",
+    imp036g: "COMPLETE_AND_ACCEPTED",
+    imp037FormalLifecycle: "IMPLEMENTATION_IN_PROGRESS",
+    imp037Activated: "YES",
+    productDefinition: "APPROVED",
+    productDefinitionGate: "PASS",
+    architectureFit: "PASS",
+    architectureLocked: "YES",
+    implementationAuthorized: "YES",
+    started: "YES",
+    accepted: "NO",
+    founderUatRequired: "YES",
+    imp038Activated: "NO",
+    architectureVersion: "ARCH-R20",
+    decisionRegisterVersion: "DR-16",
+    productDeliveryVersion: "PD-1",
+    productDefinitionExists: true,
+    capabilityArtifactExists: true,
+    d374Created: "YES",
+    archR20Created: "YES",
+    d374Exists: true,
+    d375Exists: false,
+    archR21Exists: false,
+    startedNo: false,
+    acceptedYes: false,
+    imp038ActivatedYes: false,
+    independentArchitectureFitReview: "PASS",
+    implementationAuthorizationEvidence: "PR#171/5743814105",
+    implementationStartEvidence: "PR#172/5744869269",
+    capabilityText: readFileSync("docs/platform/capabilities/IMP-037-backup-restore-migration-readiness.md", "utf8"),
+    productDefinitionText: readFileSync("docs/platform/product/IMP-037/product-definition.md", "utf8"),
+  });
+
+  it("passes valid GTM-R136 / STATE-R134 start checkpoint", () => {
+    assert.deepEqual(evaluateImp037ImplementationStartCheckpoint(startBase), { ok: true });
+  });
+
+  it("fails when implementationStarted is NO at the start checkpoint", () => {
+    const result = evaluateImp037ImplementationStartCheckpoint({ ...startBase, started: "NO", startedNo: true });
+    assert.equal(result.ok, false);
+  });
+
+  it("fails when accepted is YES or IMP-038 is activated", () => {
+    assert.equal(evaluateImp037ImplementationStartCheckpoint({ ...startBase, acceptedYes: true }).code, "IMP037_ACCEPTED");
+    assert.equal(
+      evaluateImp037ImplementationStartCheckpoint({ ...startBase, imp038ActivatedYes: true }).code,
+      "IMP038_ACTIVATED",
+    );
+  });
+
+  it("fails when D-375 or ARCH-R21 exists", () => {
+    assert.equal(evaluateImp037ImplementationStartCheckpoint({ ...startBase, d375Exists: true }).code, "IMP037_D375");
+    assert.equal(evaluateImp037ImplementationStartCheckpoint({ ...startBase, archR21Exists: true }).code, "IMP037_ARCH_R21");
+  });
+
+  it("fails when Current Product Implementation is NONE", () => {
+    assert.equal(
+      evaluateImp037ImplementationStartCheckpoint({ ...startBase, currentProductImplementation: "NONE" }).code,
+      "IMP037_IMPLEMENTATION_START",
+    );
+  });
+
+  it("rejects architecture/PD regression", () => {
+    assert.equal(
+      evaluateImp037ImplementationStartCheckpoint({ ...startBase, architectureFit: "NOT_PERFORMED" }).code,
+      "IMP037_IMPLEMENTATION_START",
+    );
+    assert.equal(
+      evaluateImp037ImplementationStartCheckpoint({ ...startBase, architectureLocked: "NO" }).code,
+      "IMP037_IMPLEMENTATION_START",
+    );
+  });
+
+  it("does not treat GTM-R135 / STATE-R133 as the start checkpoint", () => {
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R135", "STATE-R133", "imp037ImplementationStart"), false);
+    assert.equal(isSupportedImp030GovernanceCheckpoint("GTM-R135", "STATE-R133", "imp037ImplementationAuthorization"), true);
   });
 });
 
@@ -10162,13 +10270,13 @@ Then applicable PITR-capable recovery-layer health/recovery-point evidence and i
     assert.deepEqual(evaluateImp037ProductDefinitionD374CurrentRecoveryRead(validSkeleton), { ok: true });
     assert.match(validSkeleton, /"architectureFit":\s*"NOT_PERFORMED"/);
     assert.match(validSkeleton, /"architectureLocked":\s*"NO"/);
-    // The live PD now records the GTM-R135 authorization posture while keeping APPROVED / Gate PASS.
+    // The live PD now records the GTM-R136 implementation-start posture while keeping APPROVED / Gate PASS.
     assert.match(live, /"status":\s*"APPROVED"/);
     assert.match(live, /"productDefinitionGateResult":\s*"PASS"/);
     assert.match(live, /"architectureFit":\s*"PASS"/);
     assert.match(live, /"architectureLocked":\s*"YES"/);
     assert.match(live, /"implementationAuthorized":\s*"YES"/);
-    assert.match(live, /"implementationStarted":\s*"NO"/);
+    assert.match(live, /"implementationStarted":\s*"YES"/);
     assert.doesNotMatch(live, /IMP038_ACTIVATED:\s*YES/);
     assert.match(live, /PITR-capable continuous recovery/);
     assert.match(live, /independent encrypted logical backup|independent logical backup/);

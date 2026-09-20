@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R135",
+  "roadmapVersion": "GTM-R136",
   "acceptedThrough": "IMP-036G",
   "currentProductSlice": "IMP-037",
   "nextProductSlice": "IMP-038",
   "gtmBoundary": "IMP-040",
-  "lastReviewed": "2026-09-19",
-  "supersedes": "GTM-R134"
+  "lastReviewed": "2026-09-20",
+  "supersedes": "GTM-R135"
 }
 -->
 
@@ -282,7 +282,7 @@ IMP036G_FOUNDER_STAGING_BOOTSTRAP_ACTION: PRESERVE
 IMP036G_FOUNDER_STAGING_RUNNING_SHA: fbf690a67cda51bd6bbc1bad4a9d26f574c4286e
 IMP036G_FOUNDER_STAGING_STATUS: FOUNDER_UAT_COMPLETE
 IMP036G_FOUNDER_STAGING_UAT_ROUTE: /workforce/admin/
-IMP-037: ARCHITECTURE_LOCKED / AUTHORIZED / NOT_STARTED
+IMP-037: IMPLEMENTATION_IN_PROGRESS
 IMP037_ACTIVATED: YES
 IMP037_PRODUCT_DEFINITION: APPROVED
 IMP037_PRODUCT_DEFINITION_VERSION: PD-IMP-037-DRAFT-1
@@ -292,7 +292,7 @@ IMP037_PRODUCT_DEFINITION_GATE: PASS
 IMP037_ARCHITECTURE_FIT: PASS
 IMP037_ARCHITECTURE_LOCKED: YES
 IMP037_IMPLEMENTATION_AUTHORIZED: YES
-IMP037_STARTED: NO
+IMP037_STARTED: YES
 IMP037_ACCEPTED: NO
 IMP037_FOUNDER_UAT_REQUIRED: YES
 IMP-038: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
@@ -305,14 +305,12 @@ IMP-036D_ACCEPTED: YES
 IMP-036D_FOUNDER_UAT: PASS
 ```
 
-**GTM-R135** persists IMP-037 implementation authorization after Implementation Authorization Gate
-PASS (PR #171 issue comment `5743814105`). Authorization applies to locked Product Definition
-`PD-IMP-037-DRAFT-1` (APPROVED / Gate PASS) and locked capability architecture
-[`capabilities/IMP-037-backup-restore-migration-readiness.md`](./capabilities/IMP-037-backup-restore-migration-readiness.md)
-(Architecture Fit PASS against ARCH-R20 / D-374; independent Architecture Fit review PASS). Sets
-formal IMP-037 ROADMAP lifecycle to `ARCHITECTURE_LOCKED` / `AUTHORIZED` / `NOT_STARTED`
-(`IMP037_IMPLEMENTATION_AUTHORIZED: YES`; `IMP037_STARTED: NO`). Preserves
-`acceptedThrough = IMP-036G`; `currentProductSlice = IMP-037`; `pendingAcceptance = NONE`;
+**GTM-R136** persists IMP-037 implementation START after explicit human R3 start / execution
+authorization (PR #172 issue comment `5744869269`) and accompanies the first bounded recovery
+foundation engineering tranche. Authorization remains PR#171/5743814105. Sets formal IMP-037
+ROADMAP lifecycle to `IMPLEMENTATION_IN_PROGRESS` (`IMP037_IMPLEMENTATION_AUTHORIZED: YES`;
+`IMP037_STARTED: YES`; `IMP037_ACCEPTED: NO`). Current Product Implementation is IMP-037.
+Preserves `acceptedThrough = IMP-036G`; `currentProductSlice = IMP-037`; `pendingAcceptance = NONE`;
 `nextProductSlice = IMP-038`. Preserves `IMP037_ACTIVATED: YES`; `IMP037_PRODUCT_DEFINITION: APPROVED`;
 `IMP037_PRODUCT_DEFINITION_VERSION: PD-IMP-037-DRAFT-1`; `IMP037_PRODUCT_DECISIONS: RESOLVED`;
 `IMP037_PRODUCT_DECISION_COUNT: 7`; `IMP037_PRODUCT_DEFINITION_GATE: PASS`;
@@ -322,13 +320,14 @@ formal IMP-037 ROADMAP lifecycle to `ARCHITECTURE_LOCKED` / `AUTHORIZED` / `NOT_
 review `5256273904`); Fit-evaluated candidate remains
 `28e6dd15c48b8c19abbc7057c4dc7e0a7d7cc7ea` / tree `5792c963166e8589751d2ba8c8928728e2c83526` /
 fingerprint `56fa9b5459fd8acceb2ccc3ab73c5d7d9583dbf4539b10a1ef75553dd5aff8ba`;
-`IMP037_ACCEPTED: NO`; `IMP037_FOUNDER_UAT_REQUIRED: YES`; `IMP038_ACTIVATED: NO`. ARCH-R20 and
+implementationAuthorizationEvidence: PR#171/5743814105; implementationStartEvidence:
+PR#172/5744869269; `IMP037_FOUNDER_UAT_REQUIRED: YES`; `IMP038_ACTIVATED: NO`. ARCH-R20 and
 DR-16 remain CURRENT (`D-374_CREATED: YES`; `ARCH_R20_CREATED: YES`). `D-375_CREATED: NO`;
-`ARCH_R21_CREATED: NO`. No implementation accompanies GTM-R135. Implementation remains
-`AUTHORIZED` / `NOT_STARTED` — **not** `IMPLEMENTATION_IN_PROGRESS`. Does **not** start
-implementation, accept IMP-037, activate IMP-038, create production resources, mutate cloud/database,
-or authorize merge. Next gate = explicit implementation start / execution authorization (after
-merge/reconciliation).
+`ARCH_R21_CREATED: NO`. This is START only — not implementation complete, not acceptance, not
+Founder UAT, not IMP-038 activation. Does **not** accept IMP-037, activate IMP-038, create
+production resources, mutate cloud/database, deploy, or authorize merge. Next gate after this
+start checkpoint is continued bounded IMP-037 implementation, then independent implementation
+review — **not** acceptance.
 
 Implementation / review provenance for accepted IMP-036G remains distinct from this checkpoint:
 accepted UAT product candidate `fbf690a67cda51bd6bbc1bad4a9d26f574c4286e` / tree
@@ -412,18 +411,17 @@ IMP-036D remains `COMPLETE_AND_ACCEPTED`. Concise acceptance identity: UAT candi
 
 Current product slice is IMP-037 — Backup, Restore & Migration Readiness
 (`currentProductSlice = IMP-037`; `pendingAcceptance = NONE`; `IMP037_ACTIVATED: YES`).
-Formal ROADMAP lifecycle for IMP-037 is `ARCHITECTURE_LOCKED` (`AUTHORIZED` / `NOT_STARTED`;
-`IMP037_PRODUCT_DEFINITION: APPROVED`; Product Definition `PD-IMP-037-DRAFT-1`;
+Formal ROADMAP lifecycle for IMP-037 is `IMPLEMENTATION_IN_PROGRESS`
+(`AUTHORIZED` / `STARTED`; `IMP037_PRODUCT_DEFINITION: APPROVED`; Product Definition `PD-IMP-037-DRAFT-1`;
 `IMP037_PRODUCT_DECISIONS: RESOLVED`; `IMP037_PRODUCT_DECISION_COUNT: 7`;
 `IMP037_PRODUCT_DEFINITION_GATE: PASS`; `IMP037_ARCHITECTURE_FIT: PASS`;
 `IMP037_ARCHITECTURE_LOCKED: YES`; `IMP037_IMPLEMENTATION_AUTHORIZED: YES`;
-`IMP037_STARTED: NO`; `IMP037_ACCEPTED: NO`; `IMP037_FOUNDER_UAT_REQUIRED: YES`). Per-IMP
+`IMP037_STARTED: YES`; `IMP037_ACCEPTED: NO`; `IMP037_FOUNDER_UAT_REQUIRED: YES`). Per-IMP
 APPROVED Product Definition:
 [`product/IMP-037/product-definition.md`](./product/IMP-037/product-definition.md).
 Locked capability architecture:
 [`capabilities/IMP-037-backup-restore-migration-readiness.md`](./capabilities/IMP-037-backup-restore-migration-readiness.md).
-Implementation authorization does **not** start implementation
-(`AUTHORIZED` + `NOT_STARTED` ≠ `IMPLEMENTATION_IN_PROGRESS`).
+Implementation is **STARTED** (`IMPLEMENTATION_IN_PROGRESS`). This is not completion or acceptance.
 
 IMP-036G — Administration Console V2 remains `COMPLETE_AND_ACCEPTED` with architecture
 `ARCHITECTURE_LOCKED` and implementation `AUTHORIZED` / `STARTED` / `COMPLETE`
@@ -444,7 +442,8 @@ Accepted UAT product candidate remains `fbf690a67cda51bd6bbc1bad4a9d26f574c4286e
 `D374_REQUIRED_FOR_LOCK: NO`; `ARCH_R20_REQUIRED: NO`.
 IMP-037 Architecture Fit against ARCH-R20 is `PASS`; architecture lock is `YES` (independent
 Architecture Fit review PASS; PR #169 NON_AUTHORITATIVE / SUPERSEDED). Implementation is
-`AUTHORIZED` / `NOT_STARTED` (authorization evidence PR#171/5743814105).
+`AUTHORIZED` / `STARTED` / `IMPLEMENTATION_IN_PROGRESS` (authorization evidence PR#171/5743814105;
+start evidence PR#172/5744869269).
 
 Next product slice is IMP-038 — Security & Privacy Hardening
 (`PLANNED` / `NOT_ACTIVATED` / `NOT_AUTHORIZED` / `NOT_STARTED`; `IMP038_ACTIVATED: NO`).
@@ -504,7 +503,7 @@ not future identities. Historical Food Direct insertion narration remains in
 | IMP-036E | Store Operations Management | COMPLETE_AND_ACCEPTED |
 | IMP-036F | Catalog, Menu, Pricing & Promotions Management | COMPLETE_AND_ACCEPTED |
 | IMP-036G | Administration Console V2 | COMPLETE_AND_ACCEPTED |
-| IMP-037 | Backup, Restore & Migration Readiness | ARCHITECTURE_LOCKED / AUTHORIZED / NOT_STARTED |
+| IMP-037 | Backup, Restore & Migration Readiness | IMPLEMENTATION_IN_PROGRESS |
 | IMP-038 | Security & Privacy Hardening | PLANNED |
 | IMP-039 | Production Infrastructure & Release Pipeline | PLANNED |
 | IMP-040 | Launch Validation & Cutover | PLANNED |
@@ -518,7 +517,7 @@ IMP-036A → B → C → D → E → F → G → IMP-037.
 ```text
 FIGMA_REQUIRED_FOR_INITIAL_IMPLEMENTATION: NO
 IMP-036A → IMP-036G: COMPLETE_AND_ACCEPTED
-IMP-037: ARCHITECTURE_LOCKED / AUTHORIZED / NOT_STARTED (IMP037_ACTIVATED: YES; currentProductSlice)
+IMP-037: IMPLEMENTATION_IN_PROGRESS (IMP037_ACTIVATED: YES; IMP037_STARTED: YES; currentProductSlice)
 IMP-038: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED (IMP038_ACTIVATED: NO)
 FOUNDER_UAT_REQUIRED: YES for each Enterprise Experience slice
 ```
@@ -578,6 +577,25 @@ Current public GTM boundary is **IMP-040**, not IMP-035.
 
 Historical revision evidence for GTM-R1…GTM-R113 is preserved byte-for-byte in
 [`history/ROADMAP-GTM-R113-pre-compression.md`](./history/ROADMAP-GTM-R113-pre-compression.md).
+
+### GTM-R136 — 2026-09-20
+
+- Persist IMP-037 implementation START (`IMP-037_IMPLEMENTATION_START`) after explicit human R3
+  start / execution authorization (PR #172 issue comment `5744869269`).
+- Preserves implementation authorization evidence PR#171/5743814105.
+- Sets formal IMP-037 ROADMAP lifecycle to `IMPLEMENTATION_IN_PROGRESS`
+  (`IMP037_IMPLEMENTATION_AUTHORIZED: YES`; `IMP037_STARTED: YES`; `IMP037_ACCEPTED: NO`).
+- Current Product Implementation becomes IMP-037. Accompanying recovery-foundation engineering
+  tranche (status/readiness, evidence model, identity guard, secret-safe CLI, runbook) does **not**
+  complete Layer 1/Layer 2 backup, restore, Spaces, pgBackRest, age, systemd, or Founder UAT.
+- Preserves `acceptedThrough = IMP-036G`; `currentProductSlice = IMP-037`;
+  `pendingAcceptance = NONE`; `nextProductSlice = IMP-038`.
+- Preserves `IMP037_ACTIVATED: YES`; Product Definition APPROVED / Gate PASS; Architecture Fit PASS;
+  architecture LOCKED; independent Architecture Fit review PASS; `IMP038_ACTIVATED: NO`.
+- Preserves ARCH-R20 / DR-16 / D-374 CURRENT (`D-375_CREATED: NO`; `ARCH_R21_CREATED: NO`).
+- Does **not** accept IMP-037, activate IMP-038, claim RPO/RTO proven, or create D-375 / ARCH-R21.
+- VISION-1 / PD-1 / TEST-1 unchanged.
+- Supersedes GTM-R135.
 
 ### GTM-R135 — 2026-09-19
 
