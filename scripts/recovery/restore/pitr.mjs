@@ -1,6 +1,9 @@
 /**
  * Layer 1 PITR restore to a fresh uniquely identified target.
  * Fail closed. Never restores into source / production PGDATA.
+ *
+ * Prefer repository-provisioned disposable PGDATA derived from RUN_ID.
+ * Arbitrary operator paths are refused unless already provisioned/owned.
  */
 import { spawnSync } from "node:child_process";
 import { OPERATION_STATUS, OPERATION_TYPE, RECOVERY_LAYER } from "../constants.mjs";
@@ -8,6 +11,11 @@ import { createEvidence } from "../evidence.mjs";
 import { generateRunId } from "../run-id.mjs";
 import { persistEvidence } from "../store.mjs";
 import { redactText } from "../redact.mjs";
+import {
+  cleanupProvisionedTarget,
+  provisionPitrTarget,
+  targetEvidenceFields,
+} from "./provision.mjs";
 import { assertFreshTarget, createRestoreTargetId } from "./target.mjs";
 
 /**
@@ -17,6 +25,9 @@ import { assertFreshTarget, createRestoreTargetId } from "./target.mjs";
  * @param {string} [options.targetIdentity]
  * @param {string} [options.sourceClassification]
  * @param {string} [options.targetPgdataPath]
+ * @param {string} [options.sourcePgdataPath]
+ * @param {string} [options.workspaceRoot]
+ * @param {boolean} [options.provisionTarget]
  * @param {string} [options.evidenceDir]
  * @param {string} [options.stanza]
  * @param {Function} [options.execFn]
@@ -26,54 +37,68 @@ import { assertFreshTarget, createRestoreTargetId } from "./target.mjs";
 export async function runPitrRestore(options) {
   const runId = options.runId ?? generateRunId({ now: options.now });
   const startedAt = (options.now instanceof Date ? options.now : new Date()).toISOString();
-  const targetIdentity = options.targetIdentity ?? createRestoreTargetId(runId);
 
-  const fresh = assertFreshTarget({
-    sourceIdentity: options.sourceIdentity,
-    targetIdentity,
-    sourceClassification: options.sourceClassification,
-    targetClassification: "recovery",
-    targetPgdataPath: options.targetPgdataPath,
-    forceProduction: options.forceProduction,
-    reuseExistingTarget: options.reuseExistingTarget,
-  });
-  if (!fresh.ok) {
-    return fail(options, runId, startedAt, targetIdentity, fresh.reason, fresh.code);
+  /** @type {import("./provision.mjs").ProvisionedPitrTarget | null} */
+  let provisioned = null;
+  let targetIdentity = options.targetIdentity ?? createRestoreTargetId(runId);
+  let targetPgdataPath = options.targetPgdataPath;
+
+  const shouldProvision = options.provisionTarget !== false && !options.targetPgdataPath;
+  if (shouldProvision) {
+    const provisionedResult = provisionPitrTarget({
+      runId,
+      workspaceRoot: options.workspaceRoot,
+      sourceIdentity: options.sourceIdentity,
+      sourceClassification: options.sourceClassification,
+      sourcePgdataPath: options.sourcePgdataPath,
+    });
+    if (!provisionedResult.ok) {
+      return fail(options, runId, startedAt, targetIdentity, provisionedResult.reason, provisionedResult.code);
+    }
+    provisioned = provisionedResult.target;
+    targetIdentity = provisioned.targetIdentity;
+    targetPgdataPath = provisioned.pgdataPath;
+  } else {
+    const fresh = assertFreshTarget({
+      sourceIdentity: options.sourceIdentity,
+      targetIdentity,
+      sourceClassification: options.sourceClassification,
+      targetClassification: "recovery",
+      targetPgdataPath,
+      forceProduction: options.forceProduction,
+      reuseExistingTarget: options.reuseExistingTarget,
+    });
+    if (!fresh.ok) {
+      return fail(options, runId, startedAt, targetIdentity, fresh.reason, fresh.code);
+    }
   }
 
   const target = options.target;
   if (!target || !["time", "lsn", "name"].includes(target.type) || typeof target.value !== "string" || !target.value.trim()) {
+    if (provisioned) cleanupProvisionedTarget(provisioned);
     return fail(options, runId, startedAt, targetIdentity, "PITR target must be time, lsn, or name with a non-empty value");
   }
 
-  if (!options.targetPgdataPath || typeof options.targetPgdataPath !== "string" || !options.targetPgdataPath.trim()) {
+  if (!targetPgdataPath || typeof targetPgdataPath !== "string" || !targetPgdataPath.trim()) {
     return fail(
       options,
       runId,
       startedAt,
       targetIdentity,
-      "isolated --target-pgdata is required for PITR; refusing stanza default PGDATA (active source)",
+      "isolated fresh --target-pgdata / provisioned PGDATA is required for PITR; refusing stanza default PGDATA (active source)",
       "TARGET_PGDATA_REQUIRED",
     );
   }
 
-  if (options.sourcePgdataPath && options.targetPgdataPath && options.sourcePgdataPath === options.targetPgdataPath) {
+  if (options.sourcePgdataPath && targetPgdataPath && options.sourcePgdataPath === targetPgdataPath) {
+    if (provisioned) cleanupProvisionedTarget(provisioned);
     return fail(options, runId, startedAt, targetIdentity, "PITR must never target source PGDATA");
   }
 
   const stanza = options.stanza ?? "boba";
   const typeFlag =
-    target.type === "time"
-      ? `--type=time`
-      : target.type === "lsn"
-        ? `--type=lsn`
-        : `--type=name`;
-  const targetFlag =
-    target.type === "time"
-      ? `--target=${target.value}`
-      : target.type === "lsn"
-        ? `--target=${target.value}`
-        : `--target=${target.value}`;
+    target.type === "time" ? `--type=time` : target.type === "lsn" ? `--type=lsn` : `--type=name`;
+  const targetFlag = `--target=${target.value}`;
 
   const execFn =
     options.execFn ??
@@ -91,9 +116,10 @@ export async function runPitrRestore(options) {
     "restore",
     typeFlag,
     targetFlag,
-    `--pg1-path=${options.targetPgdataPath}`,
+    `--pg1-path=${targetPgdataPath}`,
   ]);
   if (restoreResult.status !== 0) {
+    if (provisioned) cleanupProvisionedTarget(provisioned);
     return fail(
       options,
       runId,
@@ -104,6 +130,7 @@ export async function runPitrRestore(options) {
   }
 
   const endedAt = new Date().toISOString();
+  const provisionFields = provisioned ? targetEvidenceFields(provisioned) : { findings: [] };
   const evidence = createEvidence({
     runId,
     operationType: OPERATION_TYPE.RESTORE_PITR,
@@ -114,10 +141,21 @@ export async function runPitrRestore(options) {
     sourceIdentityMarker: options.sourceIdentity,
     targetIdentityMarker: targetIdentity,
     recoveryPoint: target.value,
-    findings: [{ code: "PITR_RESTORE", targetType: target.type }],
+    findings: [
+      { code: "PITR_RESTORE", targetType: target.type, targetPgdataPath },
+      ...(provisionFields.findings ?? []),
+    ],
   });
   if (options.evidenceDir) persistEvidence(options.evidenceDir, evidence);
-  return { ok: true, status: OPERATION_STATUS.SUCCEEDED, runId, targetIdentity, evidence };
+  return {
+    ok: true,
+    status: OPERATION_STATUS.SUCCEEDED,
+    runId,
+    targetIdentity,
+    targetPgdataPath,
+    provisioned,
+    evidence,
+  };
 }
 
 function fail(options, runId, startedAt, targetIdentity, reason, code) {

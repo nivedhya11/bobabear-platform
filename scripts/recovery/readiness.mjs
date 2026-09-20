@@ -17,8 +17,10 @@ import {
   READINESS_LEVEL,
   RECOVERY_LAYER,
   REQUIRED_RECOVERY_LAYERS,
+  RPO_TARGET_MS_DEFAULT,
 } from "./constants.mjs";
 import { evaluateQualifyingRecoveryProof, validateEvidence } from "./evidence.mjs";
+import { evaluateRecoveryPointFreshness } from "./freshness.mjs";
 import { runIdInstant } from "./run-id.mjs";
 
 /**
@@ -26,6 +28,7 @@ import { runIdInstant } from "./run-id.mjs";
  * @property {string[]} [requiredLayers]
  * @property {number} [layer1MaxAgeMs]
  * @property {number} [layer2MaxAgeMs]
+ * @property {number} [rpoTargetMs]
  * @property {string | Date} [now]
  * @property {(evidence: import("./evidence.mjs").RecoveryEvidence, layer: string) => { ok: boolean, reason?: string } | boolean} [qualifyProof]
  */
@@ -179,6 +182,24 @@ function evaluateLayer(layer, records, policy, now) {
       runId: latest.runId,
       overdue: true,
     };
+  }
+
+  if (layer === RECOVERY_LAYER.LAYER_1) {
+    const rpoTargetMs =
+      typeof policy.rpoTargetMs === "number" && Number.isFinite(policy.rpoTargetMs) && policy.rpoTargetMs >= 0
+        ? policy.rpoTargetMs
+        : RPO_TARGET_MS_DEFAULT;
+    const rpo = evaluateRecoveryPointFreshness(latest.recoveryPoint, rpoTargetMs, now);
+    if (!rpo.ok) {
+      return {
+        layer,
+        readiness: READINESS_LEVEL.NOT_READY,
+        reason: `Layer 1 recovery point violates RPO freshness: ${rpo.reason}`,
+        latestStatus: latest.status,
+        runId: latest.runId,
+        overdue: true,
+      };
+    }
   }
 
   return {

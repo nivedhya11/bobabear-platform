@@ -1,5 +1,9 @@
 /**
  * Layer 1 physical backup runner (full / differential) with heavy flock + evidence.
+ *
+ * Health proof path (fail closed):
+ *   backup → pgbackrest check → info --output=json → derive recovery point → verify
+ * Never substitutes wrapper/start/current time as a recovery point.
  */
 import {
   CHECKSUM_INTEGRITY_STATUS,
@@ -12,7 +16,15 @@ import { withHeavyOpLock } from "../flock.mjs";
 import { generateRunId } from "../run-id.mjs";
 import { persistEvidence } from "../store.mjs";
 import { redactText } from "../redact.mjs";
-import { backupDiff, backupFull, buildLayer1HealthProof, info, verify } from "./pgbackrest.mjs";
+import {
+  backupDiff,
+  backupFull,
+  buildLayer1HealthProof,
+  check,
+  info,
+  parsePgbackrestInfoJson,
+  verify,
+} from "./pgbackrest.mjs";
 
 /**
  * @param {object} options
@@ -39,11 +51,17 @@ export async function runLayer1Backup(options) {
   const startedAt = (options.now instanceof Date ? options.now : new Date()).toISOString();
 
   const execute = async () => {
-    const backupResult = type === "full"
-      ? backupFull({ stanza: options.stanza, execFn: options.execFn, env: options.env })
-      : backupDiff({ stanza: options.stanza, execFn: options.execFn, env: options.env });
+    const backupResult =
+      type === "full"
+        ? backupFull({ stanza: options.stanza, execFn: options.execFn, env: options.env })
+        : backupDiff({ stanza: options.stanza, execFn: options.execFn, env: options.env });
     if (!backupResult.ok) {
       return persistFailure(options, runId, startedAt, backupResult.reason ?? "pgBackRest backup failed");
+    }
+
+    const checkResult = check({ stanza: options.stanza, execFn: options.execFn, env: options.env });
+    if (!checkResult.ok) {
+      return persistFailure(options, runId, startedAt, checkResult.reason ?? "pgBackRest check failed");
     }
 
     const infoResult = info({ stanza: options.stanza, execFn: options.execFn, env: options.env });
@@ -51,8 +69,19 @@ export async function runLayer1Backup(options) {
       return persistFailure(options, runId, startedAt, infoResult.reason ?? "pgBackRest info failed");
     }
 
+    const parsedPoint = parsePgbackrestInfoJson(infoResult.stdout);
+    if (!parsedPoint.ok) {
+      return persistFailure(
+        options,
+        runId,
+        startedAt,
+        parsedPoint.reason ?? "unable to derive recovery point from pgBackRest info JSON",
+      );
+    }
+
     // Default: run verify after backup so Layer 1 health proof includes PGBACKREST_VERIFY_OK.
-    // Callers may set skipVerify=true (or verifyOk explicitly) for injectable/unit tests.
+    // Callers may set skipVerify=true only for injectable unit tests that still fail closed
+    // unless verifyOk is explicitly forced true AND all other proofs are present.
     let verifyOk = options.verifyOk === true;
     if (options.verifyOk !== true && options.skipVerify !== true) {
       const verifyResult = verify({ stanza: options.stanza, execFn: options.execFn, env: options.env });
@@ -61,11 +90,15 @@ export async function runLayer1Backup(options) {
       }
       verifyOk = true;
     }
+    if (!verifyOk) {
+      return persistFailure(options, runId, startedAt, "pgBackRest verify is required for Layer 1 health proof");
+    }
 
-    const recoveryPoint = extractRecoveryPoint(infoResult.stdout) ?? startedAt;
+    const recoveryPoint = parsedPoint.recoveryPoint;
     const proof = buildLayer1HealthProof({
+      checkOk: true,
       infoOutput: infoResult.stdout,
-      verifyOk,
+      verifyOk: true,
       recoveryPoint,
       repositoryGeneration: options.repositoryGeneration,
       keyVersion: options.keyVersion,
@@ -95,6 +128,7 @@ export async function runLayer1Backup(options) {
           type,
           repositoryGeneration: String(options.repositoryGeneration),
           keyVersion: options.keyVersion ?? `repo-gen-${options.repositoryGeneration}`,
+          recoveryPointSource: parsedPoint.source,
         },
       ],
     });
@@ -140,20 +174,6 @@ export async function runLayer1Backup(options) {
     };
   }
   return /** @type {any} */ (locked.result);
-}
-
-/**
- * @param {string} infoOutput
- * @returns {string | null}
- */
-function extractRecoveryPoint(infoOutput) {
-  const timestamp = /timestamp(?:\s+start)?[^0-9]*([0-9]{4}-[0-9]{2}-[0-9]{2}[ T][0-9:.]+Z?)/i.exec(
-    infoOutput,
-  );
-  if (timestamp) return timestamp[1];
-  const lsn = /\b([0-9A-F]+\/[0-9A-F]+)\b/.exec(infoOutput);
-  if (lsn) return lsn[1];
-  return null;
 }
 
 /**

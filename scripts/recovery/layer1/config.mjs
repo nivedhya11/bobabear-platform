@@ -5,16 +5,24 @@
  * - stanza default `boba`
  * - archive_timeout = 5 minutes (300s) — design bound
  * - repo cipher AES-256-CBC
- * - retention >= 35 days via repo1-retention-full=5 (weeks) + repo1-retention-diff=35
+ * - retention >= 35 days via pgBackRest time-based full retention
+ *   (repo1-retention-full-type=time, repo1-retention-full>=35)
  * - schedule: weekly full + daily differential + continuous WAL (documented)
  * - PGBACKREST_VERSION_MIN = 2.55.0; stock Ubuntu 2.50 FORBIDDEN
  * - repository generation path pattern `repo-gen-{N}` for cipher rotation
+ *
+ * pgBackRest semantics (do not mislabel):
+ * - repo-retention-full-type defaults to COUNT (number of full backups)
+ * - repo-retention-diff is a NUMBER OF DIFFERENTIAL BACKUPS, not days
+ * - time-based retention requires repo1-retention-full-type=time with days
  */
 export const PGBACKREST_VERSION_MIN = "2.55.0";
 export const PGBACKREST_FORBIDDEN_STOCK_UBUNTU = "2.50";
 export const DEFAULT_STANZA = "boba";
 export const ARCHIVE_TIMEOUT_SECONDS = 300;
 export const REPO_CIPHER = "aes-256-cbc";
+/** Locked Layer 1 recovery-window floor (calendar days). */
+export const LAYER1_RETENTION_DAYS_MIN = 35;
 
 /**
  * Schedule documentation (host systemd timers invoke one-shot Compose ops):
@@ -37,8 +45,7 @@ export const LAYER1_SCHEDULE_DOC = Object.freeze({
  * @param {string} [options.cipherPassEnvVar]
  * @param {string} [options.pgData]
  * @param {string} [options.pgHost]
- * @param {number} [options.retentionFullWeeks]
- * @param {number} [options.retentionDiffDays]
+ * @param {number} [options.retentionFullDays]
  * @param {string} [options.repoType]
  * @param {string} [options.repoS3Bucket]
  * @param {string} [options.repoS3Endpoint]
@@ -62,26 +69,31 @@ export function renderPgbackrestConf(options) {
     }
   }
   const cipherPassEnvVar = options.cipherPassEnvVar ?? "PGBACKREST_CIPHER_PASS";
-  const retentionFullWeeks =
-    typeof options.retentionFullWeeks === "number" ? options.retentionFullWeeks : 5;
-  const retentionDiffDays =
-    typeof options.retentionDiffDays === "number" ? options.retentionDiffDays : 35;
-  if (retentionFullWeeks * 7 < 35 && retentionDiffDays < 35) {
-    throw new Error("pgBackRest retention must enforce >= 35 days");
+  const retentionFullDays =
+    typeof options.retentionFullDays === "number" ? options.retentionFullDays : LAYER1_RETENTION_DAYS_MIN;
+  if (!Number.isInteger(retentionFullDays) || retentionFullDays < LAYER1_RETENTION_DAYS_MIN) {
+    throw new Error(
+      `pgBackRest time retention must enforce >= ${LAYER1_RETENTION_DAYS_MIN} days (repo1-retention-full-type=time)`,
+    );
   }
 
   const lines = [
     `# IMP-037 pgBackRest configuration (generation ${generation})`,
     `# Schedule: ${LAYER1_SCHEDULE_DOC.full} full + ${LAYER1_SCHEDULE_DOC.differential} differential + ${LAYER1_SCHEDULE_DOC.wal} WAL`,
     `# archive_timeout design bound: ${ARCHIVE_TIMEOUT_SECONDS}s (set in postgresql.conf)`,
+    `# Retention: time-based full >= ${LAYER1_RETENTION_DAYS_MIN} days (NOT count; NOT differential-count-as-days)`,
+    `# repo1-retention-diff omitted so count-based differential expiry cannot shorten the recovery window`,
+    `# Archive/WAL expiry follows time retention so PITR for the oldest retained full remains available`,
     ``,
     `[global]`,
     `repo1-type=${options.repoType ?? "posix"}`,
     `repo1-path=${repoPath}`,
     `repo1-cipher-type=${REPO_CIPHER}`,
     `repo1-cipher-pass=\${${cipherPassEnvVar}}`,
-    `repo1-retention-full=${retentionFullWeeks}`,
-    `repo1-retention-diff=${retentionDiffDays}`,
+    `repo1-retention-full-type=time`,
+    `repo1-retention-full=${retentionFullDays}`,
+    `repo1-retention-archive-type=time`,
+    `repo1-retention-archive=${retentionFullDays}`,
     `start-fast=y`,
     `compress-type=zst`,
   ];

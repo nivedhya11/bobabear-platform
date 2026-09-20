@@ -14,7 +14,7 @@
  * PUT success alone must NOT write COMPLETE.
  */
 import { createHash } from "node:crypto";
-import { mkdirSync, readFileSync, rmSync, writeFileSync, existsSync } from "node:fs";
+import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import {
@@ -278,34 +278,70 @@ async function executeLogicalBackupChain(options) {
     persistEvidence(options.evidenceDir, preCompleteEvidence);
 
     // Step 8: COMPLETE marker written LAST (remote object + local complete-marker.json).
+    // Remote COMPLETE is the authoritative finalization marker. Local sidecar is
+    // reconciled on later inspection when the local write fails after remote success.
+    const completeBody = {
+      runId,
+      artifactKey,
+      sha256Hex,
+      keyVersion,
+      completedAt: endedAt,
+    };
     await options.objectStore.putObject({
       key: completeKey,
-      body: Buffer.from(
-        JSON.stringify({
-          runId,
-          artifactKey,
-          sha256Hex,
-          keyVersion,
-          completedAt: endedAt,
-        }),
-        "utf8",
-      ),
+      body: Buffer.from(JSON.stringify(completeBody), "utf8"),
     });
     validationResults.push({
       code: PROOF_CODE.COMPLETE_MARKER_WRITTEN_LAST,
       key: completeKey,
     });
-    writeCompleteMarker(options.evidenceDir, runId, {
-      code: PROOF_CODE.COMPLETE_MARKER_WRITTEN_LAST,
-      key: completeKey,
-      sha256Hex,
-      writtenAt: new Date().toISOString(),
-    });
+
+    let localCompleteMarkerOk = true;
+    let localCompleteMarkerReason = null;
+    try {
+      writeCompleteMarker(options.evidenceDir, runId, {
+        code: PROOF_CODE.COMPLETE_MARKER_WRITTEN_LAST,
+        key: completeKey,
+        sha256Hex,
+        writtenAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      localCompleteMarkerOk = false;
+      localCompleteMarkerReason = redactText(errorMessage(error));
+      // Fail-open on local sidecar only: remote COMPLETE already exists and is
+      // authoritative. Later inspect/reconcile reconstructs local qualification.
+      try {
+        writeCompleteMarker(options.evidenceDir, runId, {
+          code: PROOF_CODE.COMPLETE_MARKER_WRITTEN_LAST,
+          key: completeKey,
+          sha256Hex,
+          writtenAt: new Date().toISOString(),
+          reconciledFromRemote: true,
+          priorLocalWriteError: localCompleteMarkerReason,
+        });
+        localCompleteMarkerOk = true;
+        localCompleteMarkerReason = null;
+      } catch {
+        // still ok overall — remote COMPLETE remains authoritative
+      }
+    }
 
     const finalEvidence = {
       ...preCompleteEvidence,
       validationResults: [...validationResults],
       endedAt: new Date().toISOString(),
+      findings: [
+        ...(Array.isArray(preCompleteEvidence.findings) ? preCompleteEvidence.findings : []),
+        ...(localCompleteMarkerOk
+          ? []
+          : [
+              {
+                code: "LOCAL_COMPLETE_MARKER_PENDING_RECONCILE",
+                detail: localCompleteMarkerReason,
+                remoteCompleteKey: completeKey,
+              },
+            ]),
+      ],
     };
 
     return {
@@ -316,6 +352,8 @@ async function executeLogicalBackupChain(options) {
       completeKey,
       sha256Hex,
       evidence: finalEvidence,
+      localCompleteMarkerOk,
+      remoteCompleteAuthoritative: true,
     };
   } catch (error) {
     return fail(options, {
@@ -509,6 +547,9 @@ function errorMessage(error) {
  * Local COMPLETE sidecar written AFTER evidence.json and AFTER remote COMPLETE object.
  * Merged into evidence on read so Layer 2 can qualify without overwriting evidence.json.
  *
+ * Uses exclusive create (wx). If the marker already exists with matching COMPLETE code,
+ * treat as success (idempotent reconcile). Remote COMPLETE remains authoritative.
+ *
  * @param {string} evidenceDir
  * @param {string} runId
  * @param {Record<string, unknown>} marker
@@ -516,8 +557,97 @@ function errorMessage(error) {
 function writeCompleteMarker(evidenceDir, runId, marker) {
   const directory = path.join(path.resolve(evidenceDir), runId);
   mkdirSync(directory, { recursive: true });
-  writeFileSync(path.join(directory, "complete-marker.json"), `${JSON.stringify(marker, null, 2)}\n`, {
+  const destination = path.join(directory, "complete-marker.json");
+  if (existsSync(destination)) {
+    try {
+      const existing = JSON.parse(readFileSync(destination, "utf8"));
+      const code = typeof existing.code === "string" ? existing.code : "";
+      if (code === PROOF_CODE.COMPLETE_MARKER_WRITTEN_LAST || code === PROOF_CODE.LAYER2_COMPLETE) {
+        return;
+      }
+    } catch {
+      // fall through to rewrite attempt via temp+rename when corrupt
+    }
+  }
+  const tempPath = `${destination}.${process.pid}.${Date.now()}.tmp`;
+  writeFileSync(tempPath, `${JSON.stringify(marker, null, 2)}\n`, {
     encoding: "utf8",
     flag: "wx",
   });
+  try {
+    renameSync(tempPath, destination);
+  } catch (error) {
+    try {
+      rmSync(tempPath, { force: true });
+    } catch {
+      // ignore
+    }
+    // If destination appeared concurrently with a valid marker, accept it.
+    if (existsSync(destination)) {
+      try {
+        const existing = JSON.parse(readFileSync(destination, "utf8"));
+        const code = typeof existing.code === "string" ? existing.code : "";
+        if (code === PROOF_CODE.COMPLETE_MARKER_WRITTEN_LAST || code === PROOF_CODE.LAYER2_COMPLETE) {
+          return;
+        }
+      } catch {
+        // ignore
+      }
+    }
+    throw error;
+  }
+}
+
+/**
+ * Reconcile local COMPLETE sidecar from an authoritative remote COMPLETE object.
+ * Does not weaken remote verification — only reconstructs local readiness qualification.
+ *
+ * @param {object} options
+ * @param {string} options.evidenceDir
+ * @param {string} options.runId
+ * @param {{ headObject?: Function, getObject: Function }} options.objectStore
+ */
+export async function reconcileLocalCompleteMarker(options) {
+  const runId = options?.runId;
+  const evidenceDir = options?.evidenceDir;
+  if (!runId || !evidenceDir || !options.objectStore) {
+    return { ok: false, reason: "evidenceDir, runId, and objectStore are required for COMPLETE reconcile" };
+  }
+  const completeKey = `logical/${runId}/COMPLETE`;
+  let remoteExists = false;
+  let remoteBody = null;
+  if (typeof options.objectStore.headObject === "function") {
+    const head = await options.objectStore.headObject({ key: completeKey });
+    remoteExists = head?.exists === true;
+  }
+  try {
+    const remote = await options.objectStore.getObject({ key: completeKey });
+    remoteExists = true;
+    remoteBody = remote?.body;
+  } catch {
+    if (!remoteExists) {
+      return { ok: false, reason: "remote COMPLETE marker missing; cannot reconcile" };
+    }
+  }
+
+  let parsedRemote = {};
+  try {
+    const text = Buffer.isBuffer(remoteBody) ? remoteBody.toString("utf8") : String(remoteBody ?? "{}");
+    parsedRemote = JSON.parse(text);
+  } catch {
+    parsedRemote = {};
+  }
+
+  try {
+    writeCompleteMarker(evidenceDir, runId, {
+      code: PROOF_CODE.COMPLETE_MARKER_WRITTEN_LAST,
+      key: completeKey,
+      sha256Hex: parsedRemote.sha256Hex ?? null,
+      writtenAt: new Date().toISOString(),
+      reconciledFromRemote: true,
+    });
+  } catch (error) {
+    return { ok: false, reason: redactText(errorMessage(error)) };
+  }
+  return { ok: true, completeKey, reconciledFromRemote: true };
 }

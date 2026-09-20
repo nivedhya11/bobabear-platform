@@ -1,5 +1,8 @@
 /**
  * Layer 2 logical restore: download COMPLETE artifact only → age decrypt → pg_restore to fresh target.
+ *
+ * Prefer repository-provisioned disposable PostgreSQL 18 targets.
+ * Arbitrary database URLs require positive source/target binding and fail closed when unresolved.
  */
 import { spawnSync } from "node:child_process";
 import { writeFileSync, unlinkSync, existsSync } from "node:fs";
@@ -11,6 +14,12 @@ import { decryptFromAge } from "../layer2/age.mjs";
 import { generateRunId, isValidRunId } from "../run-id.mjs";
 import { persistEvidence } from "../store.mjs";
 import { redactText } from "../redact.mjs";
+import {
+  assertLogicalTargetNotSource,
+  cleanupProvisionedTarget,
+  provisionLogicalTarget,
+  targetEvidenceFields,
+} from "./provision.mjs";
 import { assertFreshTarget, createRestoreTargetId } from "./target.mjs";
 
 /**
@@ -20,6 +29,9 @@ import { assertFreshTarget, createRestoreTargetId } from "./target.mjs";
  * @param {string} options.identityFile
  * @param {string} options.sourceIdentity
  * @param {string} [options.targetIdentity]
+ * @param {string} [options.databaseUrl]
+ * @param {string} [options.sourceDatabaseUrl]
+ * @param {boolean} [options.provisionTarget]
  * @param {string} [options.evidenceDir]
  * @param {Function} [options.restoreFn]
  * @param {Function} [options.decryptFn]
@@ -28,22 +40,45 @@ import { assertFreshTarget, createRestoreTargetId } from "./target.mjs";
 export async function runLogicalRestore(options) {
   const runId = options.runId ?? generateRunId({ now: options.now });
   const startedAt = (options.now instanceof Date ? options.now : new Date()).toISOString();
-  const targetIdentity = options.targetIdentity ?? createRestoreTargetId(runId);
 
-  const fresh = assertFreshTarget({
-    sourceIdentity: options.sourceIdentity,
-    targetIdentity,
-    sourceClassification: options.sourceClassification,
-    targetClassification: "recovery",
-    targetPgdataPath: options.targetPgdataPath,
-    forceProduction: options.forceProduction,
-  });
-  if (!fresh.ok) {
-    return fail(options, runId, startedAt, targetIdentity, fresh.reason);
+  /** @type {import("./provision.mjs").ProvisionedLogicalTarget | null} */
+  let provisioned = null;
+  let targetIdentity = options.targetIdentity ?? createRestoreTargetId(runId);
+  let databaseUrl = typeof options.databaseUrl === "string" ? options.databaseUrl.trim() : "";
+
+  const shouldProvision = options.provisionTarget === true || (!databaseUrl && !options.restoreFn);
+  if (shouldProvision && !options.restoreFn) {
+    const provisionedResult = await provisionLogicalTarget({
+      runId,
+      sourceIdentity: options.sourceIdentity,
+      sourceClassification: options.sourceClassification,
+      sourceDatabaseUrl: options.sourceDatabaseUrl,
+      image: options.image,
+      execFn: options.containerExecFn,
+    });
+    if (!provisionedResult.ok) {
+      return fail(options, runId, startedAt, targetIdentity, provisionedResult.reason);
+    }
+    provisioned = provisionedResult.target;
+    targetIdentity = provisioned.targetIdentity;
+    databaseUrl = provisioned.databaseUrl;
+  } else {
+    const fresh = assertFreshTarget({
+      sourceIdentity: options.sourceIdentity,
+      targetIdentity,
+      sourceClassification: options.sourceClassification,
+      targetClassification: "recovery",
+      targetPgdataPath: options.targetPgdataPath,
+      forceProduction: options.forceProduction,
+    });
+    if (!fresh.ok) {
+      return fail(options, runId, startedAt, targetIdentity, fresh.reason);
+    }
   }
 
   const sourceRunId = options.runIdToRestore;
   if (!isValidRunId(sourceRunId)) {
+    if (provisioned) await cleanupProvisionedTarget(provisioned);
     return fail(options, runId, startedAt, targetIdentity, "runIdToRestore must be a valid RUN_ID");
   }
 
@@ -53,12 +88,14 @@ export async function runLogicalRestore(options) {
   if (typeof options.objectStore?.headObject === "function") {
     const head = await options.objectStore.headObject({ key: completeKey });
     if (!head?.exists) {
+      if (provisioned) await cleanupProvisionedTarget(provisioned);
       return fail(options, runId, startedAt, targetIdentity, "COMPLETE marker missing; refuse incomplete Layer 2 artifact");
     }
   } else {
     try {
       await options.objectStore.getObject({ key: completeKey });
     } catch {
+      if (provisioned) await cleanupProvisionedTarget(provisioned);
       return fail(options, runId, startedAt, targetIdentity, "COMPLETE marker missing; refuse incomplete Layer 2 artifact");
     }
   }
@@ -70,6 +107,7 @@ export async function runLogicalRestore(options) {
   if (typeof options.decryptFn === "function") {
     const decrypted = await options.decryptFn({ ciphertext, identityFile: options.identityFile });
     if (!decrypted?.ok || !decrypted.plaintext) {
+      if (provisioned) await cleanupProvisionedTarget(provisioned);
       return fail(options, runId, startedAt, targetIdentity, decrypted?.reason ?? "age decrypt failed");
     }
     plaintext = decrypted.plaintext;
@@ -80,29 +118,39 @@ export async function runLogicalRestore(options) {
       ageBin: options.ageBin,
     });
     if (!decrypted.ok) {
+      if (provisioned) await cleanupProvisionedTarget(provisioned);
       return fail(options, runId, startedAt, targetIdentity, decrypted.reason);
     }
     plaintext = decrypted.plaintext;
   }
 
-  if (!options.restoreFn && (typeof options.databaseUrl !== "string" || !options.databaseUrl.trim())) {
+  if (!options.restoreFn && !databaseUrl) {
+    if (provisioned) await cleanupProvisionedTarget(provisioned);
     return fail(
       options,
       runId,
       startedAt,
       targetIdentity,
-      "logical restore requires --database-url (or restoreFn) for a fresh recovery database; refusing localhost/postgres default",
+      "logical restore requires a provisioned fresh recovery database or --database-url bound to that target",
     );
   }
-  const databaseUrl = typeof options.databaseUrl === "string" ? options.databaseUrl.trim() : "";
-  if (databaseUrl && isForbiddenActiveDatabaseUrl(databaseUrl)) {
-    return fail(
-      options,
-      runId,
-      startedAt,
-      targetIdentity,
-      "databaseUrl resolves to a forbidden active/default endpoint; refuse restore",
-    );
+
+  if (databaseUrl) {
+    if (isForbiddenActiveDatabaseUrl(databaseUrl)) {
+      if (provisioned) await cleanupProvisionedTarget(provisioned);
+      return fail(
+        options,
+        runId,
+        startedAt,
+        targetIdentity,
+        "databaseUrl resolves to a forbidden active/default endpoint; refuse restore",
+      );
+    }
+    const notSource = assertLogicalTargetNotSource(databaseUrl, options.sourceDatabaseUrl);
+    if (!notSource.ok) {
+      if (provisioned) await cleanupProvisionedTarget(provisioned);
+      return fail(options, runId, startedAt, targetIdentity, notSource.reason);
+    }
   }
 
   const dumpPath = path.join(tmpdir(), `boba-restore-${runId}.dump`);
@@ -111,7 +159,7 @@ export async function runLogicalRestore(options) {
     const restoreFn =
       options.restoreFn ??
       ((filePath) => {
-        const result = spawnSync("pg_restore", ["-d", databaseUrl, filePath], {
+        const result = spawnSync("pg_restore", ["-d", databaseUrl, "--clean", "--if-exists", filePath], {
           encoding: "utf8",
         });
         return {
@@ -121,6 +169,7 @@ export async function runLogicalRestore(options) {
       });
     const restored = await restoreFn(dumpPath);
     if (!restored?.ok) {
+      if (provisioned) await cleanupProvisionedTarget(provisioned);
       return fail(options, runId, startedAt, targetIdentity, restored?.reason ?? "pg_restore failed");
     }
   } finally {
@@ -131,6 +180,7 @@ export async function runLogicalRestore(options) {
     }
   }
 
+  const provisionFields = provisioned ? targetEvidenceFields(provisioned) : { findings: [] };
   const evidence = createEvidence({
     runId,
     operationType: OPERATION_TYPE.RESTORE_LOGICAL,
@@ -142,10 +192,26 @@ export async function runLogicalRestore(options) {
     targetIdentityMarker: targetIdentity,
     recoveryArtifactReference: artifactKey,
     recoveryPoint: sourceRunId,
-    findings: [{ code: "LOGICAL_RESTORE", completeKey, artifactKey }],
+    findings: [
+      {
+        code: "LOGICAL_RESTORE",
+        completeKey,
+        artifactKey,
+        volumeOrPathId: provisioned?.volumeOrPathId ?? null,
+      },
+      ...(provisionFields.findings ?? []),
+    ],
   });
   if (options.evidenceDir) persistEvidence(options.evidenceDir, evidence);
-  return { ok: true, status: OPERATION_STATUS.SUCCEEDED, runId, targetIdentity, evidence };
+  return {
+    ok: true,
+    status: OPERATION_STATUS.SUCCEEDED,
+    runId,
+    targetIdentity,
+    databaseUrl: databaseUrl || null,
+    provisioned,
+    evidence,
+  };
 }
 
 function fail(options, runId, startedAt, targetIdentity, reason) {

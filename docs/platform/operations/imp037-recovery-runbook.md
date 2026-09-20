@@ -88,13 +88,37 @@ and `--local-store` for disposable object-store runs. Live Spaces remains
 ### Restore / drill
 
 ```bash
-npm run recovery -- restore pitr --source ID --target-time "..."
-npm run recovery -- restore logical --run-id RUN_ID --source ID --identity-file PATH --local-store DIR
-npm run recovery -- drill --run-id-to-restore RUN_ID --source ID --identity-file PATH --local-store DIR
+# PITR — provisions a fresh RUN_ID-owned PGDATA under the recovery workspace by default.
+# Pass --target-pgdata only for an already-provisioned isolated path; never the active source.
+npm run recovery -- restore pitr \
+  --source prod-pgdata-1 \
+  --source-pgdata /var/lib/postgresql/data \
+  --target-time "2026-09-20 12:00:00+00" \
+  --workspace-root /var/tmp/boba-recovery-targets \
+  --evidence-dir DIR
+
+# Logical restore — provisions a fresh disposable PostgreSQL 18 target by default
+# (or bind --database-url to a provisioner-issued recovery database).
+npm run recovery -- restore logical \
+  --run-id RUN_ID \
+  --source prod-db-1 \
+  --identity-file PATH \
+  --local-store DIR \
+  --evidence-dir DIR
+
+# Portability rehearsal — finalized Layer 2 → decrypt → fresh PG18 → pg_restore →
+# existing migration authority (npm run db:migrate) → business validation on THAT target.
+npm run recovery -- drill \
+  --run-id-to-restore RUN_ID \
+  --source prod-db-1 \
+  --identity-file PATH \
+  --local-store DIR \
+  --evidence-dir DIR
 ```
 
-Restore/drill refuse `--force-production`. Without real artifacts/executables they
-fail closed — they do not fabricate success.
+Restore/drill refuse `--force-production`. Missing artifacts, executables, or migration
+authority fail closed — they do not fabricate success. Fresh targets are run-owned and
+cleaned up after successful disposable rehearsals.
 
 ### High-risk gate / capacity / Spaces config / key rotation plans
 

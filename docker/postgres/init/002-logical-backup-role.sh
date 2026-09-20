@@ -38,8 +38,12 @@ psql -v ON_ERROR_STOP=1 \
 	GRANT CONNECT ON DATABASE boba_bear_local TO boba_bear_logical_backup;
 	GRANT USAGE ON SCHEMA app TO boba_bear_logical_backup;
 	GRANT SELECT ON ALL TABLES IN SCHEMA app TO boba_bear_logical_backup;
+	GRANT SELECT ON ALL SEQUENCES IN SCHEMA app TO boba_bear_logical_backup;
+	GRANT USAGE ON ALL SEQUENCES IN SCHEMA app TO boba_bear_logical_backup;
 	ALTER DEFAULT PRIVILEGES FOR ROLE boba_bear_migrator IN SCHEMA app
 	  GRANT SELECT ON TABLES TO boba_bear_logical_backup;
+	ALTER DEFAULT PRIVILEGES FOR ROLE boba_bear_migrator IN SCHEMA app
+	  GRANT SELECT, USAGE ON SEQUENCES TO boba_bear_logical_backup;
 	ALTER ROLE boba_bear_logical_backup IN DATABASE boba_bear_local SET search_path = app, public;
 SQL
 

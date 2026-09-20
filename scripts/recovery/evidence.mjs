@@ -245,31 +245,50 @@ export function isQualifyingRecoveryProof(value, options = {}) {
 }
 
 /**
- * Layer 1 qualifies when health + recovery-point + repository-generation proof codes
- * (or equivalent recoveryPoint / generation metadata fields) are present.
+ * Layer 1 qualifies only when ALL required proof codes are present:
+ *   PGBACKREST_CHECK_OK
+ *   PGBACKREST_INFO_OK
+ *   LAYER1_RECOVERY_POINT (+ non-empty recoveryPoint field)
+ *   REPOSITORY_GENERATION (or equivalent generation metadata)
+ *   PGBACKREST_VERIFY_OK
+ *
+ * Absence of any required proof fails closed (NOT_READY).
  *
  * @param {import("./evidence.mjs").RecoveryEvidence} evidence
  * @returns {QualifyingProofResult}
  */
 function evaluateLayer1QualifyingProof(evidence) {
   const codes = validationCodes(evidence);
-  const hasHealth = codes.has("PGBACKREST_INFO_OK") || codes.has("LAYER1_HEALTH_OK");
+  const hasCheck = codes.has("PGBACKREST_CHECK_OK");
+  const hasInfo = codes.has("PGBACKREST_INFO_OK");
+  const hasVerify = codes.has("PGBACKREST_VERIFY_OK");
   const hasRecoveryPointCode = codes.has("LAYER1_RECOVERY_POINT");
   const hasRecoveryPointField = hasNonEmptyString(evidence.recoveryPoint);
   const hasGenerationCode = codes.has("REPOSITORY_GENERATION");
   const hasGenerationMeta = hasLayer1GenerationMetadata(evidence);
 
-  if (!hasRecoveryPointCode && !hasRecoveryPointField) {
+  if (!hasCheck) {
+    return {
+      ok: false,
+      reason: "qualifying Layer 1 recovery proof unavailable (missing PGBACKREST_CHECK_OK)",
+    };
+  }
+  if (!hasInfo) {
+    return {
+      ok: false,
+      reason: "qualifying Layer 1 recovery proof unavailable (missing PGBACKREST_INFO_OK)",
+    };
+  }
+  if (!hasVerify) {
+    return {
+      ok: false,
+      reason: "qualifying Layer 1 recovery proof unavailable (missing PGBACKREST_VERIFY_OK)",
+    };
+  }
+  if (!hasRecoveryPointCode || !hasRecoveryPointField) {
     return {
       ok: false,
       reason: "missing recovery point cannot establish Layer 1 recovery readiness",
-    };
-  }
-  if (!hasHealth) {
-    return {
-      ok: false,
-      reason:
-        "qualifying Layer 1 recovery/health proof unavailable (missing PGBACKREST_INFO_OK or LAYER1_HEALTH_OK)",
     };
   }
   if (!hasGenerationCode && !hasGenerationMeta) {

@@ -1,6 +1,11 @@
 /**
- * Portability rehearsal: Layer 2 artifact → decrypt → pg_restore fresh PG18 → migrations → business validation.
+ * Portability rehearsal: Layer 2 artifact → decrypt → fresh PG18 → pg_restore →
+ * existing migration authority → business validation against THAT SAME target.
+ *
+ * Missing migration authority FAILS CLOSED (never defaults to success).
+ * Injected restoreFn/queryFn/migrateFn remain appropriate for unit tests only.
  */
+import { spawnSync } from "node:child_process";
 import {
   CHECKSUM_INTEGRITY_STATUS,
   OPERATION_STATUS,
@@ -12,8 +17,13 @@ import { generateRunId } from "../run-id.mjs";
 import { persistEvidence } from "../store.mjs";
 import { redactText } from "../redact.mjs";
 import { runLogicalRestore } from "../restore/logical.mjs";
+import { cleanupProvisionedTarget } from "../restore/provision.mjs";
 import { createRestoreTargetId, assertFreshTarget } from "../restore/target.mjs";
 import { runPostRestoreMigrations } from "../migrate/post-restore.mjs";
+import {
+  assertMigrationAuthorityPresent,
+  createExistingMigrationAuthority,
+} from "../migrate/authority.mjs";
 import { runBusinessIntegrityValidation } from "../validate/business-integrity.mjs";
 import { evaluateProviderSuppression } from "../validate/isolation.mjs";
 
@@ -50,12 +60,18 @@ export async function runPortabilityRehearsal(options) {
     return interrupt(options, runId, startedAt, targetIdentity, "rehearsal interrupted before restore");
   }
 
+  /** @type {import("../restore/provision.mjs").ProvisionedLogicalTarget | null} */
+  let provisioned = null;
   let restoreOk = false;
   let restoreReason = "logical restore not executed";
+  let databaseUrl = typeof options.databaseUrl === "string" ? options.databaseUrl.trim() : "";
+
   if (typeof options.restoreStepFn === "function") {
     const step = await options.restoreStepFn({ runId, targetIdentity });
     restoreOk = step?.ok === true;
     restoreReason = step?.reason ?? restoreReason;
+    if (typeof step?.databaseUrl === "string") databaseUrl = step.databaseUrl;
+    if (step?.provisioned) provisioned = step.provisioned;
   } else if (options.objectStore && options.runIdToRestore && options.identityFile) {
     const nestedRunId = generateRunId({ now: options.now });
     const restored = await runLogicalRestore({
@@ -64,13 +80,26 @@ export async function runPortabilityRehearsal(options) {
       objectStore: options.objectStore,
       identityFile: options.identityFile,
       sourceIdentity: options.sourceIdentity,
+      sourceClassification: options.sourceClassification,
+      sourceDatabaseUrl: options.sourceDatabaseUrl,
       targetIdentity,
+      databaseUrl: databaseUrl || undefined,
+      // Default production path provisions a fresh PG18 target when no URL/restoreFn given.
+      provisionTarget: options.provisionTarget !== false && !databaseUrl && !options.restoreFn,
       decryptFn: options.decryptFn,
       restoreFn: options.restoreFn,
       ageBin: options.ageBin,
+      image: options.image,
+      containerExecFn: options.containerExecFn,
+      forceProduction: false,
     });
     restoreOk = restored.ok === true;
     restoreReason = restored.reason ?? restoreReason;
+    if (restored.databaseUrl) databaseUrl = restored.databaseUrl;
+    if (restored.provisioned) provisioned = restored.provisioned;
+    if (restored.targetIdentity) {
+      // Keep rehearsal target identity aligned with provisioned restore target.
+    }
   } else {
     return interrupt(
       options,
@@ -82,28 +111,62 @@ export async function runPortabilityRehearsal(options) {
   }
 
   if (!restoreOk) {
+    if (provisioned) cleanupProvisionedTarget(provisioned);
     return interrupt(options, runId, startedAt, targetIdentity, restoreReason);
   }
 
   if (options.interruptAfterRestore === true) {
+    if (provisioned) cleanupProvisionedTarget(provisioned);
     return interrupt(options, runId, startedAt, targetIdentity, "rehearsal interrupted after restore");
   }
 
+  // Migration authority: injected migrateFn for unit tests only; production path uses existing authority.
+  let migrateFn = options.migrateFn;
+  if (typeof migrateFn !== "function") {
+    const present = assertMigrationAuthorityPresent();
+    if (!present.ok) {
+      if (provisioned) cleanupProvisionedTarget(provisioned);
+      return interrupt(options, runId, startedAt, targetIdentity, present.reason);
+    }
+    if (!databaseUrl) {
+      if (provisioned) cleanupProvisionedTarget(provisioned);
+      return interrupt(
+        options,
+        runId,
+        startedAt,
+        targetIdentity,
+        "fresh target databaseUrl required to invoke existing migration authority",
+      );
+    }
+    migrateFn = createExistingMigrationAuthority({
+      databaseUrl,
+      env: options.env,
+      execFn: options.migrateExecFn,
+    });
+  }
+
   const migrated = await runPostRestoreMigrations({
-    migrateFn: options.migrateFn ?? (async () => ({ ok: true })),
+    migrateFn,
     targetIdentity,
     sourceAuthoritative: true,
   });
   if (!migrated.ok) {
+    if (provisioned) cleanupProvisionedTarget(provisioned);
     return interrupt(options, runId, startedAt, targetIdentity, migrated.reason ?? "post-restore migration failed");
   }
 
-  if (typeof options.queryFn !== "function") {
-    return interrupt(options, runId, startedAt, targetIdentity, "queryFn is required for business validation");
+  let queryFn = options.queryFn;
+  if (typeof queryFn !== "function") {
+    if (!databaseUrl) {
+      if (provisioned) cleanupProvisionedTarget(provisioned);
+      return interrupt(options, runId, startedAt, targetIdentity, "queryFn or target databaseUrl required for business validation");
+    }
+    queryFn = createTargetQueryFn(databaseUrl, options.env);
   }
 
-  const validation = await runBusinessIntegrityValidation({ queryFn: options.queryFn });
+  const validation = await runBusinessIntegrityValidation({ queryFn });
   if (!validation.ok) {
+    if (provisioned) cleanupProvisionedTarget(provisioned);
     return interrupt(
       options,
       runId,
@@ -126,13 +189,68 @@ export async function runPortabilityRehearsal(options) {
     recoveryArtifactReference: options.runIdToRestore
       ? `logical/${options.runIdToRestore}/dump.age`
       : null,
-    recoveryPoint: options.runIdToRestore ?? startedAt,
+    recoveryPoint: options.runIdToRestore ?? null,
     checksumIntegrityStatus: CHECKSUM_INTEGRITY_STATUS.MATCHED,
     validationResults: validation.results,
-    findings: [{ code: "PORTABILITY_REHEARSAL_OK", targetIdentity }],
+    findings: [
+      {
+        code: "PORTABILITY_REHEARSAL_OK",
+        targetIdentity,
+        volumeOrPathId: provisioned?.volumeOrPathId ?? null,
+        databaseUrlBound: Boolean(databaseUrl),
+      },
+    ],
   });
   if (options.evidenceDir) persistEvidence(options.evidenceDir, evidence);
-  return { ok: true, status: OPERATION_STATUS.SUCCEEDED, runId, targetIdentity, evidence, validation };
+
+  // Cleanup run-owned disposable target after successful evidence persistence unless caller retains it.
+  if (provisioned && options.retainTarget !== true) {
+    cleanupProvisionedTarget(provisioned);
+  }
+
+  return {
+    ok: true,
+    status: OPERATION_STATUS.SUCCEEDED,
+    runId,
+    targetIdentity,
+    databaseUrl: databaseUrl || null,
+    provisioned: options.retainTarget === true ? provisioned : null,
+    evidence,
+    validation,
+  };
+}
+
+/**
+ * @param {string} databaseUrl
+ * @param {NodeJS.ProcessEnv} [env]
+ */
+function createTargetQueryFn(databaseUrl, env) {
+  return async (sql, params = []) => {
+    let text = sql;
+    for (let i = 0; i < params.length; i += 1) {
+      const value = params[i];
+      const literal =
+        typeof value === "number" ? String(value) : `'${String(value).replaceAll("'", "''")}'`;
+      text = text.replace(`$${i + 1}`, literal);
+    }
+    const result = spawnSync("psql", [databaseUrl, "-v", "ON_ERROR_STOP=1", "-t", "-A", "-F", ",", "-c", text], {
+      encoding: "utf8",
+      env: env ?? process.env,
+      timeout: 60_000,
+    });
+    if (result.status !== 0) {
+      throw new Error(redactText(result.stderr || `psql exited ${result.status}`));
+    }
+    const lines = String(result.stdout ?? "")
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+    if (lines.length === 0) return [];
+    if (/^\d+$/.test(lines[0])) {
+      return [{ count: Number(lines[0]) }];
+    }
+    return lines.map((line) => ({ ok: line }));
+  };
 }
 
 function interrupt(options, runId, startedAt, targetIdentity, reason, validationResults = []) {

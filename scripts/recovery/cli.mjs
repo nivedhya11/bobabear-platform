@@ -25,7 +25,7 @@ import { planAgeRecipientRotation } from "./layer2/rotation.mjs";
 import { runPitrRestore } from "./restore/pitr.mjs";
 import { runLogicalRestore } from "./restore/logical.mjs";
 import { runPortabilityRehearsal } from "./portability/rehearse.mjs";
-import { evaluateHighRiskMigrationGate } from "./gate/high-risk.mjs";
+import { evaluateHighRiskMigrationGate, selectLatestAttemptEvidence } from "./gate/high-risk.mjs";
 import { observeCapacity } from "./capacity/observe.mjs";
 import { createLocalObjectStore, validateSpacesBucketConfig } from "./spaces/index.mjs";
 import { validateSystemdUnits } from "./systemd/validate.mjs";
@@ -467,7 +467,11 @@ async function runRestorePitr({ flags, env, json, stdout }) {
     target,
     sourceIdentity: source,
     sourceClassification: stringFlag(flags["source-class"]) ?? "production",
-    targetPgdataPath: stringFlag(flags["target-pgdata"]),
+    targetPgdataPath: stringFlag(flags["target-pgdata"]) || undefined,
+    sourcePgdataPath: stringFlag(flags["source-pgdata"]) || undefined,
+    workspaceRoot: stringFlag(flags["workspace-root"]) || env.BOBA_RECOVERY_TARGET_ROOT || undefined,
+    // Default: provision a fresh RUN_ID-owned PGDATA when --target-pgdata is omitted.
+    provisionTarget: flags["target-pgdata"] ? false : flags["no-provision"] !== true,
     evidenceDir: resolveEvidenceDir(flags, env) || undefined,
     stanza: stringFlag(flags.stanza) ?? env.BOBA_PGBACKREST_STANZA ?? "boba",
     forceProduction: false,
@@ -505,14 +509,15 @@ async function runRestoreLogical({ flags, env, json, stdout }) {
 
   const objectStore = createLocalObjectStore({ localRoot: localStore });
   const databaseUrl = stringFlag(flags["database-url"]) ?? env.BOBA_RECOVERY_TARGET_DATABASE_URL;
-  if (!databaseUrl) {
+  const provisionTarget = flags["no-provision"] === true ? false : !databaseUrl;
+  if (!databaseUrl && flags["no-provision"] === true) {
     emit(
       stdout,
       json,
       {
         ok: false,
         status: OPERATION_STATUS.BLOCKED,
-        reason: "logical restore requires --database-url (or BOBA_RECOVERY_TARGET_DATABASE_URL) for a fresh recovery database",
+        reason: "logical restore requires --database-url or default fresh-target provisioning",
       },
       "Logical restore BLOCKED: missing recovery database URL",
     );
@@ -524,8 +529,10 @@ async function runRestoreLogical({ flags, env, json, stdout }) {
     identityFile,
     sourceIdentity: source,
     sourceClassification: stringFlag(flags["source-class"]) ?? "production",
+    sourceDatabaseUrl: stringFlag(flags["source-database-url"]) ?? env.BOBA_LOGICAL_BACKUP_DATABASE_URL,
     targetPgdataPath: stringFlag(flags["target-pgdata"]),
-    databaseUrl,
+    databaseUrl: databaseUrl || undefined,
+    provisionTarget,
     evidenceDir: resolveEvidenceDir(flags, env) || undefined,
     forceProduction: false,
   });
@@ -561,12 +568,16 @@ async function runDrill({ flags, env, json, stdout }) {
   }
 
   const objectStore = createLocalObjectStore({ localRoot: localStore });
+  const databaseUrl = stringFlag(flags["database-url"]) ?? env.BOBA_RECOVERY_TARGET_DATABASE_URL;
   const result = await runPortabilityRehearsal({
     runIdToRestore,
     objectStore,
     identityFile,
     sourceIdentity: source,
     sourceClassification: stringFlag(flags["source-class"]) ?? "production",
+    sourceDatabaseUrl: stringFlag(flags["source-database-url"]) ?? env.BOBA_LOGICAL_BACKUP_DATABASE_URL,
+    databaseUrl: databaseUrl || undefined,
+    provisionTarget: flags["no-provision"] !== true,
     evidenceDir: resolveEvidenceDir(flags, env) || undefined,
     env,
     networkIsolated: flags["network-isolated"] === true,
@@ -593,7 +604,7 @@ function runHighRiskGate({ flags, env, json, stdout, stderr }) {
     return CLI_EXIT.FAILURE;
   }
   const inspected = inspectEvidence(evidenceDir);
-  const selected = selectGateEvidence(inspected.valid);
+  const selected = selectLatestAttemptEvidence(inspected.valid, { invalid: inspected.invalid });
   const gate = evaluateHighRiskMigrationGate({
     layer1Evidence: selected.layer1,
     layer2Evidence: selected.layer2,
@@ -758,46 +769,11 @@ function hasRehearsalFlags(flags) {
 }
 
 /**
+ * @deprecated Use selectLatestAttemptEvidence — kept as alias for tests that imported the old name.
  * @param {unknown[]} records
  */
 function selectGateEvidence(records) {
-  const list = Array.isArray(records) ? records : [];
-  /** @type {any} */
-  let layer1 = null;
-  /** @type {any} */
-  let layer2 = null;
-  /** @type {any} */
-  let drill = null;
-  /** @type {any} */
-  let validation = null;
-
-  for (const record of list) {
-    const evidence = /** @type {any} */ (record);
-    if (
-      evidence.recoveryLayer === RECOVERY_LAYER.LAYER_1 &&
-      evaluateQualifyingRecoveryProof(evidence, { layer: RECOVERY_LAYER.LAYER_1 }).ok
-    ) {
-      if (!layer1 || String(evidence.endedAt ?? "") > String(layer1.endedAt ?? "")) layer1 = evidence;
-    }
-    if (
-      evidence.recoveryLayer === RECOVERY_LAYER.LAYER_2 &&
-      evaluateQualifyingRecoveryProof(evidence, { layer: RECOVERY_LAYER.LAYER_2 }).ok
-    ) {
-      if (!layer2 || String(evidence.endedAt ?? "") > String(layer2.endedAt ?? "")) layer2 = evidence;
-    }
-    if (evidence.operationType === OPERATION_TYPE.PORTABILITY_REHEARSAL && evidence.status === OPERATION_STATUS.SUCCEEDED) {
-      if (!drill || String(evidence.endedAt ?? "") > String(drill.endedAt ?? "")) drill = evidence;
-    }
-    const codes = new Set(
-      (Array.isArray(evidence.validationResults) ? evidence.validationResults : [])
-        .map((entry) => (entry && typeof entry === "object" ? String(entry.code ?? "") : ""))
-        .filter(Boolean),
-    );
-    if (evidence.status === OPERATION_STATUS.SUCCEEDED && codes.has("BUSINESS_INTEGRITY_VALIDATED")) {
-      if (!validation || String(evidence.endedAt ?? "") > String(validation.endedAt ?? "")) validation = evidence;
-    }
-  }
-  return { layer1, layer2, drill, validation };
+  return selectLatestAttemptEvidence(records);
 }
 
 function probePgbackrest(env) {

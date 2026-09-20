@@ -74,10 +74,18 @@ export const REQUIRED_RECOVERY_LAYERS = Object.freeze([
 export const LAYER_2_MAX_AGE_MS_DEFAULT = 24 * 60 * 60 * 1000;
 
 /**
- * Locked Layer 1 health-age default: 36 hours.
+ * Locked Layer 1 health-evidence age default: 36 hours (daily differential + margin).
  * Used when an explicit Layer 1 max-age policy flag is omitted.
+ * This bounds evidence.endedAt age only — it must NOT mask a stale recovery point.
+ * Recovery-point freshness is enforced separately via RPO_TARGET_MS_DEFAULT.
  */
 export const LAYER_1_MAX_AGE_MS_DEFAULT = 36 * 60 * 60 * 1000;
+
+/**
+ * Locked RPO target (FD-037-01): recovery point must be within 15 minutes.
+ * Applied to Layer 1 evidence.recoveryPoint at readiness / high-risk gate time.
+ */
+export const RPO_TARGET_MS_DEFAULT = 15 * 60 * 1000;
 
 /**
  * Spaces / object-store locked architecture flags (IMP-037 §9).
@@ -95,6 +103,7 @@ export const PROOF_CODE = Object.freeze({
   REMOTE_STORED_ARTIFACT_VERIFIED: "REMOTE_STORED_ARTIFACT_VERIFIED",
   COMPLETE_MARKER_WRITTEN_LAST: "COMPLETE_MARKER_WRITTEN_LAST",
   LAYER2_COMPLETE: "LAYER2_COMPLETE",
+  PGBACKREST_CHECK_OK: "PGBACKREST_CHECK_OK",
   PGBACKREST_INFO_OK: "PGBACKREST_INFO_OK",
   PGBACKREST_VERIFY_OK: "PGBACKREST_VERIFY_OK",
   LAYER1_HEALTH_OK: "LAYER1_HEALTH_OK",

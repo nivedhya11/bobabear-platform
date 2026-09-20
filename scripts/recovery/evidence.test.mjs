@@ -170,7 +170,7 @@ test("Layer 2 qualifies when remote+COMPLETE markers and chain fields are presen
   assert.equal(proof.ok, true);
 });
 
-test("Layer 1 qualifies with health + recovery point + repository generation proof", () => {
+test("Layer 1 qualifies with check + info + verify + recovery point + repository generation proof", () => {
   const evidence = createEvidence({
     runId: generateRunId(),
     operationType: "layer1-backup",
@@ -179,13 +179,42 @@ test("Layer 1 qualifies with health + recovery point + repository generation pro
     endedAt: new Date().toISOString(),
     recoveryPoint: "2026-09-20T00:00:00Z",
     validationResults: [
+      { code: "PGBACKREST_CHECK_OK" },
       { code: "PGBACKREST_INFO_OK" },
+      { code: "PGBACKREST_VERIFY_OK" },
       { code: "LAYER1_RECOVERY_POINT" },
       { code: "REPOSITORY_GENERATION", repositoryGeneration: "1", keyVersion: "repo-gen-1" },
     ],
   });
   const proof = evaluateQualifyingRecoveryProof(evidence, { layer: RECOVERY_LAYER.LAYER_1 });
   assert.equal(proof.ok, true);
+});
+
+test("Layer 1 does NOT qualify when any required proof code is absent", () => {
+  const base = {
+    runId: generateRunId(),
+    operationType: "layer1-backup",
+    recoveryLayer: RECOVERY_LAYER.LAYER_1,
+    status: OPERATION_STATUS.SUCCEEDED,
+    endedAt: new Date().toISOString(),
+    recoveryPoint: "2026-09-20T00:00:00Z",
+  };
+  const required = [
+    "PGBACKREST_CHECK_OK",
+    "PGBACKREST_INFO_OK",
+    "PGBACKREST_VERIFY_OK",
+    "LAYER1_RECOVERY_POINT",
+    "REPOSITORY_GENERATION",
+  ];
+  const full = required.map((code) =>
+    code === "REPOSITORY_GENERATION" ? { code, repositoryGeneration: "1" } : { code },
+  );
+  for (const missing of required) {
+    const stripped = full.filter((entry) => entry.code !== missing);
+    const evidence = createEvidence({ ...base, validationResults: stripped });
+    const proof = evaluateQualifyingRecoveryProof(evidence, { layer: RECOVERY_LAYER.LAYER_1 });
+    assert.equal(proof.ok, false, `missing ${missing} must NOT_READY`);
+  }
 });
 
 test("synthetic magic-only markers without chain fields still fail Layer 2", () => {

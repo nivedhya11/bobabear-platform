@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { test } from "node:test";
@@ -12,8 +12,9 @@ import {
 import { evaluateQualifyingRecoveryProof } from "../evidence.mjs";
 import { RECOVERY_LAYER } from "../constants.mjs";
 import { createLocalObjectStore } from "../spaces/local.mjs";
-import { listCompleteRuns, pruneExpiredCompleteRuns, runLogicalBackup } from "./backup.mjs";
+import { listCompleteRuns, pruneExpiredCompleteRuns, reconcileLocalCompleteMarker, runLogicalBackup } from "./backup.mjs";
 import { generateRunId } from "../run-id.mjs";
+import { readRunEvidence } from "../store.mjs";
 
 function tempDirs() {
   const root = mkdtempSync(path.join(os.tmpdir(), "boba-layer2-"));
@@ -89,6 +90,58 @@ test("PUT success alone does not write COMPLETE when remote verify fails", async
     assert.equal(result.ok, false);
     const complete = await objectStore.headObject({ key: `logical/${runId}/COMPLETE` });
     assert.equal(complete.exists, false);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("local COMPLETE write failure after remote COMPLETE still succeeds and reconciles", async () => {
+  const { root, storeRoot, evidenceDir } = tempDirs();
+  try {
+    const objectStore = createLocalObjectStore({ localRoot: storeRoot });
+    const runId = generateRunId({ now: new Date(Date.UTC(2026, 8, 20, 12, 2, 0)), randomHex: "cccccccccccccccc" });
+
+    // First create a successful backup normally.
+    const result = await runLogicalBackup({
+      runId,
+      objectStore,
+      evidenceDir,
+      recipients: ["age1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq3waw4h"],
+      sourceIdentity: "prod-db-1",
+      sourceClassification: "production",
+      candidate: { commitSha: "abc123", tree: "def456", repositoryPath: "/repo" },
+      keyVersion: "kv1",
+      dumpFn: async () => Buffer.from("PGDUMP-FC-FAKE"),
+      encryptFn: async (_opts, plaintext) => ({
+        ok: true,
+        ciphertext: Buffer.concat([Buffer.from("AGEENC:"), plaintext]),
+      }),
+    });
+    assert.equal(result.ok, true);
+    assert.equal(result.remoteCompleteAuthoritative, true);
+
+    // Simulate crash window: delete local complete-marker after remote COMPLETE exists.
+    const markerPath = path.join(evidenceDir, runId, "complete-marker.json");
+    if (existsSync(markerPath)) {
+      rmSync(markerPath);
+    }
+    const before = readRunEvidence(evidenceDir, runId);
+    assert.equal(before.ok, true);
+    if (before.ok) {
+      const codes = new Set((before.evidence.validationResults ?? []).map((e) => e.code));
+      assert.equal(codes.has(PROOF_CODE.COMPLETE_MARKER_WRITTEN_LAST), false);
+    }
+
+    const reconciled = await reconcileLocalCompleteMarker({ evidenceDir, runId, objectStore });
+    assert.equal(reconciled.ok, true);
+    const after = readRunEvidence(evidenceDir, runId);
+    assert.equal(after.ok, true);
+    if (after.ok) {
+      const codes = new Set((after.evidence.validationResults ?? []).map((e) => e.code));
+      assert.equal(codes.has(PROOF_CODE.COMPLETE_MARKER_WRITTEN_LAST), true);
+      const proof = evaluateQualifyingRecoveryProof(after.evidence, { layer: RECOVERY_LAYER.LAYER_2 });
+      assert.equal(proof.ok, true);
+    }
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
