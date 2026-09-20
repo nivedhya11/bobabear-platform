@@ -31,11 +31,11 @@
     "note": "Protected evidence and generated reports are never classified as executable test source."
   },
   "counts": {
-    "trackedPathsConsidered": 1992,
-    "executableTestFiles": 416,
+    "trackedPathsConsidered": 1994,
+    "executableTestFiles": 417,
     "sourceTestFiles": 130,
     "testsTreeExecutableFiles": 231,
-    "scriptTestFiles": 55,
+    "scriptTestFiles": 56,
     "playwrightSpecs": 12,
     "vitestConfigs": 2,
     "playwrightConfigs": 7,
@@ -465,6 +465,7 @@
     "scripts/recovery/restore/provision.test.mjs",
     "scripts/recovery/run-id.test.mjs",
     "scripts/recovery/spaces/local.test.mjs",
+    "scripts/recovery/spaces/s3.test.mjs",
     "scripts/recovery/systemd/validate.test.mjs",
     "scripts/recovery/validate/business-integrity.test.mjs",
     "scripts/recovery/validate/isolation.test.mjs",
@@ -2109,6 +2110,24 @@
     },
     {
       "path": "scripts/recovery/spaces/local.test.mjs",
+      "runner": "node:test",
+      "domain": "scripts",
+      "testType": "script-unit",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:scripts"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit",
+        "9-recovery-idempotency"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "scripts/recovery/spaces/s3.test.mjs",
       "runner": "node:test",
       "domain": "scripts",
       "testType": "script-unit",

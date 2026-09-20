@@ -180,10 +180,10 @@ test("postgres18: boba_bear_logical_backup role dump + portability restore/migra
       networkIsolated: true,
       productionDnsAbsent: true,
       productionCredentialsAbsent: true,
-      // Use a migrateFn that proves authority invocation against the restored target
-      // without requiring full drizzle migrator config against disposable PG.
+      // Injected migrateFn is a unit/integration seam only.
+      // Classification: migration authority wiring = PROVEN (see authority tests);
+      // full disposable migration execution = IMPLEMENTED_NOT_EXTERNALLY_PROVEN here.
       migrateFn: async () => {
-        // Prove the migration authority adapter path is used (not silent success default).
         return { ok: true };
       },
       // Validate against the provisioned target via queryFn bound in rehearsal after restore.

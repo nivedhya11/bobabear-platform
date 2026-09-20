@@ -33,7 +33,7 @@ import { evaluateProviderSuppression } from "../validate/isolation.mjs";
 export async function runPortabilityRehearsal(options) {
   const runId = options.runId ?? generateRunId({ now: options.now });
   const startedAt = (options.now instanceof Date ? options.now : new Date()).toISOString();
-  const targetIdentity = options.targetIdentity ?? createRestoreTargetId(runId);
+  let targetIdentity = options.targetIdentity ?? createRestoreTargetId(runId);
 
   const fresh = assertFreshTarget({
     sourceIdentity: options.sourceIdentity,
@@ -72,6 +72,9 @@ export async function runPortabilityRehearsal(options) {
     restoreReason = step?.reason ?? restoreReason;
     if (typeof step?.databaseUrl === "string") databaseUrl = step.databaseUrl;
     if (step?.provisioned) provisioned = step.provisioned;
+    if (typeof step?.targetIdentity === "string" && step.targetIdentity.trim()) {
+      targetIdentity = step.targetIdentity.trim();
+    }
   } else if (options.objectStore && options.runIdToRestore && options.identityFile) {
     const nestedRunId = generateRunId({ now: options.now });
     const restored = await runLogicalRestore({
@@ -98,7 +101,9 @@ export async function runPortabilityRehearsal(options) {
     if (restored.databaseUrl) databaseUrl = restored.databaseUrl;
     if (restored.provisioned) provisioned = restored.provisioned;
     if (restored.targetIdentity) {
-      // Keep rehearsal target identity aligned with provisioned restore target.
+      // Authoritative target identity is the actual restored/provisioned target —
+      // never retain an outer synthetic label as evidence/migration/cleanup authority.
+      targetIdentity = restored.targetIdentity;
     }
   } else {
     return interrupt(

@@ -49,3 +49,8 @@ export function createObjectStore(config) {
 export { validateSpacesBucketConfig } from "./config.mjs";
 export { createLocalObjectStore } from "./local.mjs";
 export { createS3SpacesClient, assertVersioningSemantics } from "./s3.mjs";
+export {
+  createLogicalSpacesObjectStore,
+  resolveLogicalSpacesConfig,
+  LOGICAL_SPACES_CREDENTIAL_PREFIX_DEFAULT,
+} from "./logical.mjs";

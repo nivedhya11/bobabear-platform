@@ -600,12 +600,22 @@ function writeCompleteMarker(evidenceDir, runId, marker) {
 
 /**
  * Reconcile local COMPLETE sidecar from an authoritative remote COMPLETE object.
- * Does not weaken remote verification — only reconstructs local readiness qualification.
+ * Explicit operator path only — ordinary status/inspect must not silently live-call
+ * the provider. A remote COMPLETE alone MUST NOT manufacture READY.
+ *
+ * Before writing local complete-marker.json, verify:
+ * 1. persisted pre-COMPLETE evidence exists
+ * 2. operation is Layer 2 backup
+ * 3. evidence contains REMOTE_ARTIFACT_SHA256_VERIFIED
+ * 4–5. remote COMPLETE exists and parses
+ * 6–8. COMPLETE.runId / artifactKey / sha256Hex bind to evidence
+ * 9. re-verify objectStore.verifyRemoteSha256 against that expected SHA
+ * 10. only then write local complete-marker.json
  *
  * @param {object} options
  * @param {string} options.evidenceDir
  * @param {string} options.runId
- * @param {{ headObject?: Function, getObject: Function }} options.objectStore
+ * @param {{ headObject?: Function, getObject: Function, verifyRemoteSha256: Function }} options.objectStore
  */
 export async function reconcileLocalCompleteMarker(options) {
   const runId = options?.runId;
@@ -613,41 +623,164 @@ export async function reconcileLocalCompleteMarker(options) {
   if (!runId || !evidenceDir || !options.objectStore) {
     return { ok: false, reason: "evidenceDir, runId, and objectStore are required for COMPLETE reconcile" };
   }
-  const completeKey = `logical/${runId}/COMPLETE`;
-  let remoteExists = false;
-  let remoteBody = null;
-  if (typeof options.objectStore.headObject === "function") {
-    const head = await options.objectStore.headObject({ key: completeKey });
-    remoteExists = head?.exists === true;
-  }
-  try {
-    const remote = await options.objectStore.getObject({ key: completeKey });
-    remoteExists = true;
-    remoteBody = remote?.body;
-  } catch {
-    if (!remoteExists) {
-      return { ok: false, reason: "remote COMPLETE marker missing; cannot reconcile" };
-    }
+  if (!parseRunId(runId).ok) {
+    return { ok: false, reason: "runId must be a valid RUN_ID", code: "RUN_ID_INVALID" };
   }
 
-  let parsedRemote = {};
+  const evidencePath = path.join(path.resolve(evidenceDir), runId, "evidence.json");
+  if (!existsSync(evidencePath)) {
+    return {
+      ok: false,
+      reason: "persisted pre-COMPLETE evidence missing; remote COMPLETE alone cannot manufacture READY",
+      code: "PRECOMPLETE_EVIDENCE_MISSING",
+    };
+  }
+
+  let evidence;
   try {
-    const text = Buffer.isBuffer(remoteBody) ? remoteBody.toString("utf8") : String(remoteBody ?? "{}");
+    evidence = JSON.parse(readFileSync(evidencePath, "utf8"));
+  } catch {
+    return { ok: false, reason: "persisted evidence is not valid JSON", code: "EVIDENCE_INVALID" };
+  }
+
+  if (evidence?.recoveryLayer !== RECOVERY_LAYER.LAYER_2) {
+    return {
+      ok: false,
+      reason: "reconcile-layer2 requires Layer 2 backup evidence",
+      code: "NOT_LAYER2_BACKUP",
+    };
+  }
+  if (evidence?.operationType !== OPERATION_TYPE.LAYER2_LOGICAL_BACKUP) {
+    return {
+      ok: false,
+      reason: "reconcile-layer2 requires LAYER2_LOGICAL_BACKUP operation evidence",
+      code: "NOT_LAYER2_BACKUP",
+    };
+  }
+  if (evidence?.runId !== runId) {
+    return {
+      ok: false,
+      reason: "persisted evidence runId does not match requested run",
+      code: "EVIDENCE_RUN_MISMATCH",
+    };
+  }
+
+  const validationResults = Array.isArray(evidence.validationResults) ? evidence.validationResults : [];
+  const remoteProof = validationResults.find(
+    (entry) =>
+      entry &&
+      typeof entry === "object" &&
+      (entry.code === PROOF_CODE.REMOTE_ARTIFACT_SHA256_VERIFIED ||
+        entry.code === PROOF_CODE.REMOTE_STORED_ARTIFACT_VERIFIED),
+  );
+  if (!remoteProof) {
+    return {
+      ok: false,
+      reason: "missing REMOTE_ARTIFACT_SHA256_VERIFIED pre-COMPLETE proof; refuse reconcile",
+      code: "REMOTE_SHA_PROOF_MISSING",
+    };
+  }
+
+  const expectedSha = String(remoteProof.sha256Hex ?? "")
+    .trim()
+    .toLowerCase();
+  if (!/^[0-9a-f]{64}$/.test(expectedSha)) {
+    return {
+      ok: false,
+      reason: "pre-COMPLETE remote SHA proof is missing or malformed",
+      code: "REMOTE_SHA_PROOF_INVALID",
+    };
+  }
+
+  const expectedArtifactKey =
+    typeof evidence.recoveryArtifactReference === "string" ? evidence.recoveryArtifactReference.trim() : "";
+  if (!expectedArtifactKey) {
+    return {
+      ok: false,
+      reason: "evidence.recoveryArtifactReference missing; refuse reconcile",
+      code: "ARTIFACT_KEY_MISSING",
+    };
+  }
+
+  const completeKey = `logical/${runId}/COMPLETE`;
+  let remoteBody = null;
+  try {
+    const remote = await options.objectStore.getObject({ key: completeKey });
+    remoteBody = remote?.body;
+  } catch {
+    return {
+      ok: false,
+      reason: "remote COMPLETE marker missing; cannot reconcile",
+      code: "REMOTE_COMPLETE_MISSING",
+    };
+  }
+
+  let parsedRemote;
+  try {
+    const text = Buffer.isBuffer(remoteBody) ? remoteBody.toString("utf8") : String(remoteBody ?? "");
     parsedRemote = JSON.parse(text);
   } catch {
-    parsedRemote = {};
+    return {
+      ok: false,
+      reason: "remote COMPLETE marker does not parse as JSON",
+      code: "REMOTE_COMPLETE_INVALID",
+    };
+  }
+
+  if (parsedRemote?.runId !== runId) {
+    return {
+      ok: false,
+      reason: "remote COMPLETE.runId does not match evidence runId",
+      code: "COMPLETE_RUN_MISMATCH",
+    };
+  }
+  if (parsedRemote?.artifactKey !== expectedArtifactKey) {
+    return {
+      ok: false,
+      reason: "remote COMPLETE.artifactKey does not match evidence.recoveryArtifactReference",
+      code: "COMPLETE_ARTIFACT_MISMATCH",
+    };
+  }
+  const completeSha = String(parsedRemote?.sha256Hex ?? "")
+    .trim()
+    .toLowerCase();
+  if (completeSha !== expectedSha) {
+    return {
+      ok: false,
+      reason: "remote COMPLETE.sha256Hex does not equal evidence remote-verification SHA",
+      code: "COMPLETE_SHA_MISMATCH",
+    };
+  }
+
+  if (typeof options.objectStore.verifyRemoteSha256 !== "function") {
+    return {
+      ok: false,
+      reason: "objectStore.verifyRemoteSha256 is required before reconcile qualifies READY",
+      code: "VERIFY_FN_REQUIRED",
+    };
+  }
+  const verified = await options.objectStore.verifyRemoteSha256({
+    key: expectedArtifactKey,
+    expectedSha256Hex: expectedSha,
+  });
+  if (!verified?.ok) {
+    return {
+      ok: false,
+      reason: verified?.reason ?? "remote artifact SHA-256 re-verification failed during reconcile",
+      code: "REMOTE_ARTIFACT_TAMPERED",
+    };
   }
 
   try {
     writeCompleteMarker(evidenceDir, runId, {
       code: PROOF_CODE.COMPLETE_MARKER_WRITTEN_LAST,
       key: completeKey,
-      sha256Hex: parsedRemote.sha256Hex ?? null,
+      sha256Hex: expectedSha,
       writtenAt: new Date().toISOString(),
       reconciledFromRemote: true,
     });
   } catch (error) {
-    return { ok: false, reason: redactText(errorMessage(error)) };
+    return { ok: false, reason: redactText(errorMessage(error)), code: "LOCAL_MARKER_WRITE_FAILED" };
   }
-  return { ok: true, completeKey, reconciledFromRemote: true };
+  return { ok: true, completeKey, reconciledFromRemote: true, sha256Hex: expectedSha };
 }

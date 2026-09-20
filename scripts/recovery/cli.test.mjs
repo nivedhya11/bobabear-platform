@@ -194,6 +194,8 @@ test("help lists implemented backup and gate commands", () => {
   assert.match(result.stdout, /backup layer2/);
   assert.match(result.stdout, /gate\|readiness-gate high-risk|readiness-gate/);
   assert.match(result.stdout, /systemd validate/);
+  assert.match(result.stdout, /reconcile-layer2/);
+  assert.match(result.stdout, /BOBA_RECOVERY_LOGICAL_SPACES_BUCKET|LOGICAL_SPACES/);
   assert.doesNotMatch(result.stdout, /Not yet implemented \(explicitly unavailable\)/);
 });
 

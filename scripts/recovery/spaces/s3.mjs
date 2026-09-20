@@ -56,9 +56,12 @@ export function createS3SpacesClient(config) {
     putObject,
     getObject,
     headObject,
+    deleteObject,
     listObjectsV2,
     listObjects: listObjectsV2,
     verifyRemoteSha256,
+    getBucketVersioning,
+    verifyBucketVersioning,
   };
 
   /**
@@ -124,6 +127,91 @@ export function createS3SpacesClient(config) {
       key,
       etag: stripQuotes(response.headers.etag),
       size: Number(response.headers["content-length"] ?? 0),
+    };
+  }
+
+  /**
+   * Ordinary S3-compatible DELETE for Layer 2 retention prune.
+   * No object-lock / WORM assumptions.
+   *
+   * @param {{ key: string }} input
+   */
+  async function deleteObject(input) {
+    const key = requireString(input?.key, "key");
+    const response = await signedRequest({ method: "DELETE", key });
+    if (response.statusCode === 404) {
+      return { deleted: true, key, alreadyAbsent: true };
+    }
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw new Error(redactText(`S3 deleteObject failed with status ${response.statusCode}`));
+    }
+    return { deleted: true, key };
+  }
+
+  /**
+   * GET Bucket Versioning (Spaces-compatible). Distinguishes ENABLED / NOT_ENABLED / UNKNOWN.
+   * Versioning is NOT immutability and NOT WORM.
+   *
+   * @returns {Promise<{ status: "ENABLED" | "NOT_ENABLED" | "UNKNOWN" | "FAILED", rawStatus?: string, reason?: string }>}
+   */
+  async function getBucketVersioning() {
+    try {
+      const response = await signedRequest({
+        method: "GET",
+        key: "",
+        query: { versioning: "" },
+      });
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        return {
+          status: "FAILED",
+          reason: redactText(`getBucketVersioning failed with status ${response.statusCode}`),
+        };
+      }
+      const xml = response.body.toString("utf8");
+      const match = /<Status>\s*([^<]+)\s*<\/Status>/i.exec(xml);
+      if (!match) {
+        // Empty versioning configuration means versioning was never enabled.
+        return { status: "NOT_ENABLED", rawStatus: "" };
+      }
+      const rawStatus = match[1].trim();
+      if (/^enabled$/i.test(rawStatus)) {
+        return { status: "ENABLED", rawStatus };
+      }
+      if (/^suspended$/i.test(rawStatus)) {
+        return { status: "NOT_ENABLED", rawStatus };
+      }
+      return { status: "UNKNOWN", rawStatus };
+    } catch (error) {
+      return {
+        status: "FAILED",
+        reason: redactText(error instanceof Error ? error.message : String(error)),
+      };
+    }
+  }
+
+  /**
+   * Production-shaped preflight: fail closed unless versioning is confirmed ENABLED.
+   * Does not claim versioning means WORM/immutability.
+   */
+  async function verifyBucketVersioning() {
+    const semantics = assertVersioningSemantics();
+    const result = await getBucketVersioning();
+    if (result.status === "ENABLED") {
+      return {
+        ok: true,
+        status: "ENABLED",
+        versioningIsImmutability: semantics.versioningIsImmutability,
+        objectLockWormRequired: semantics.objectLockWormRequired,
+      };
+    }
+    return {
+      ok: false,
+      status: result.status,
+      reason:
+        result.reason ??
+        `Spaces bucket versioning must be ENABLED for production Layer 2 (got ${result.status})`,
+      versioningIsImmutability: semantics.versioningIsImmutability,
+      objectLockWormRequired: semantics.objectLockWormRequired,
     };
   }
 
@@ -220,7 +308,7 @@ export function createS3SpacesClient(config) {
         ...headers,
         authorization,
       },
-      body: method === "GET" || method === "HEAD" ? undefined : body,
+      body: method === "GET" || method === "HEAD" || method === "DELETE" ? undefined : body,
     });
   }
 }

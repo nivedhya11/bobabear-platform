@@ -2,21 +2,25 @@
  * Layer 1 PITR restore to a fresh uniquely identified target.
  * Fail closed. Never restores into source / production PGDATA.
  *
- * Prefer repository-provisioned disposable PGDATA derived from RUN_ID.
- * Arbitrary operator paths are refused unless already provisioned/owned.
+ * Default path: repository-provisioned disposable PGDATA derived from RUN_ID.
+ * Manual --target-pgdata is accepted ONLY with a provisioner-issued
+ * TARGET_OWNED_BY_RUN ownership marker binding runId + targetIdentity + pgdataPath.
+ * Arbitrary paths without positive ownership proof are BLOCKED.
  */
 import { spawnSync } from "node:child_process";
 import { OPERATION_STATUS, OPERATION_TYPE, RECOVERY_LAYER } from "../constants.mjs";
 import { createEvidence } from "../evidence.mjs";
+import { canonicalizePath } from "../identity.mjs";
 import { generateRunId } from "../run-id.mjs";
 import { persistEvidence } from "../store.mjs";
 import { redactText } from "../redact.mjs";
 import {
+  assertOwnedPitrTarget,
   cleanupProvisionedTarget,
   provisionPitrTarget,
   targetEvidenceFields,
 } from "./provision.mjs";
-import { assertFreshTarget, createRestoreTargetId } from "./target.mjs";
+import { createRestoreTargetId } from "./target.mjs";
 
 /**
  * @param {object} options
@@ -58,19 +62,30 @@ export async function runPitrRestore(options) {
     provisioned = provisionedResult.target;
     targetIdentity = provisioned.targetIdentity;
     targetPgdataPath = provisioned.pgdataPath;
-  } else {
-    const fresh = assertFreshTarget({
+  } else if (options.targetPgdataPath) {
+    // Manual path: require positive provisioner ownership proof — no generic escape hatch.
+    const owned = assertOwnedPitrTarget({
+      runId,
+      targetPgdataPath: options.targetPgdataPath,
+      targetIdentity: options.targetIdentity,
+      sourcePgdataPath: options.sourcePgdataPath,
       sourceIdentity: options.sourceIdentity,
-      targetIdentity,
       sourceClassification: options.sourceClassification,
-      targetClassification: "recovery",
-      targetPgdataPath,
-      forceProduction: options.forceProduction,
-      reuseExistingTarget: options.reuseExistingTarget,
     });
-    if (!fresh.ok) {
-      return fail(options, runId, startedAt, targetIdentity, fresh.reason, fresh.code);
+    if (!owned.ok) {
+      return fail(options, runId, startedAt, targetIdentity, owned.reason, owned.code);
     }
+    targetIdentity = owned.targetIdentity;
+    targetPgdataPath = owned.pgdataPath;
+  } else {
+    return fail(
+      options,
+      runId,
+      startedAt,
+      targetIdentity,
+      "PITR requires repository-provisioned target or owned --target-pgdata; refusing stanza default PGDATA",
+      "TARGET_PGDATA_REQUIRED",
+    );
   }
 
   const target = options.target;
@@ -85,14 +100,18 @@ export async function runPitrRestore(options) {
       runId,
       startedAt,
       targetIdentity,
-      "isolated fresh --target-pgdata / provisioned PGDATA is required for PITR; refusing stanza default PGDATA (active source)",
+      "isolated fresh provisioned PGDATA is required for PITR; refusing stanza default PGDATA (active source)",
       "TARGET_PGDATA_REQUIRED",
     );
   }
 
-  if (options.sourcePgdataPath && targetPgdataPath && options.sourcePgdataPath === targetPgdataPath) {
-    if (provisioned) cleanupProvisionedTarget(provisioned);
-    return fail(options, runId, startedAt, targetIdentity, "PITR must never target source PGDATA");
+  if (options.sourcePgdataPath && targetPgdataPath) {
+    const sourceCanon = canonicalizePath(options.sourcePgdataPath);
+    const targetCanon = canonicalizePath(targetPgdataPath);
+    if (sourceCanon && targetCanon && sourceCanon === targetCanon) {
+      if (provisioned) cleanupProvisionedTarget(provisioned);
+      return fail(options, runId, startedAt, targetIdentity, "PITR must never target source PGDATA", "SOURCE_EQUALS_TARGET");
+    }
   }
 
   const stanza = options.stanza ?? "boba";

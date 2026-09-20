@@ -19,7 +19,7 @@ import { resolveCandidateProvenance } from "./candidate.mjs";
 import { runLayer1Backup } from "./layer1/backup.mjs";
 import { assertPgbackrestVersion } from "./layer1/config.mjs";
 import { planRepositoryGenerationRotation } from "./layer1/rotation.mjs";
-import { runLogicalBackup } from "./layer2/backup.mjs";
+import { reconcileLocalCompleteMarker, runLogicalBackup } from "./layer2/backup.mjs";
 import { resolveAgeBinary } from "./layer2/age.mjs";
 import { planAgeRecipientRotation } from "./layer2/rotation.mjs";
 import { runPitrRestore } from "./restore/pitr.mjs";
@@ -27,7 +27,7 @@ import { runLogicalRestore } from "./restore/logical.mjs";
 import { runPortabilityRehearsal } from "./portability/rehearse.mjs";
 import { evaluateHighRiskMigrationGate, selectLatestAttemptEvidence } from "./gate/high-risk.mjs";
 import { observeCapacity } from "./capacity/observe.mjs";
-import { createLocalObjectStore, validateSpacesBucketConfig } from "./spaces/index.mjs";
+import { createLocalObjectStore, createLogicalSpacesObjectStore, validateSpacesBucketConfig } from "./spaces/index.mjs";
 import { validateSystemdUnits } from "./systemd/validate.mjs";
 import { dockerComposeExecPostgres } from "./docker-exec.mjs";
 
@@ -87,11 +87,12 @@ export function usage() {
     "Implemented:",
     "  recovery status [--json] [--evidence-dir DIR]",
     "  recovery evidence validate [--json] [--evidence-dir DIR] [--run-id RUN_ID]",
+    "  recovery evidence reconcile-layer2 --run-id RUN_ID --evidence-dir DIR (--local-store DIR | Spaces env) [--json]",
     "  recovery target check --source ID --target ID --source-class CLASS --target-class CLASS [--target-pgdata PATH] [--json]",
     "  recovery backup layer1 --type full|diff [--evidence-dir DIR] [--generation N] [--json]",
     "  recovery backup layer2 [--evidence-dir DIR] [--local-store DIR] [--recipient AGE_RECIPIENT] [--json]",
-    "  recovery restore pitr --source ID --target-time|--target-lsn|--target-name VALUE [--evidence-dir DIR] [--json]",
-    "  recovery restore logical --run-id RUN_ID --source ID --identity-file PATH [--local-store DIR] [--evidence-dir DIR] [--json]",
+    "  recovery restore pitr --source ID --target-time|--target-lsn|--target-name VALUE [--workspace-root DIR] [--target-pgdata OWNED_PATH] [--evidence-dir DIR] [--json]",
+    "  recovery restore logical --run-id RUN_ID --source ID --identity-file PATH [--local-store DIR] [--database-url URL --target-ownership FILE] [--evidence-dir DIR] [--json]",
     "  recovery drill|rehearsal --run-id-to-restore RUN_ID --source ID --identity-file PATH [--local-store DIR] [--evidence-dir DIR] [--json]",
     "  recovery gate|readiness-gate high-risk [--evidence-dir DIR] [--json]",
     "  recovery capacity [--layer1-base-bytes N] [--layer1-wal-bytes N] [--layer2-bytes N] [--json]",
@@ -100,7 +101,14 @@ export function usage() {
     "  recovery rotate-keys layer1|layer2 [--generation N] [--recipient AGE] [--json]",
     "  recovery spaces config-check [--bucket NAME] [--endpoint URL|--local-root DIR] [--credential-env-prefix PREFIX] [--json]",
     "",
+    "Layer 2 Spaces env (logical bucket — distinct from physical/pgBackRest):",
+    "  BOBA_RECOVERY_LOGICAL_SPACES_BUCKET / _ENDPOINT / _REGION",
+    "  BOBA_LOGICAL_SPACES_ACCESS_KEY_ID + BOBA_LOGICAL_SPACES_SECRET_ACCESS_KEY",
+    "  Live provider calls: BOBA_RECOVERY_REAL_SPACES=1 (versioning must be ENABLED; not WORM)",
+    "",
     "Safety: --force-production is forbidden on all restore/drill paths.",
+    "PITR --target-pgdata requires TARGET_OWNED_BY_RUN ownership proof; arbitrary paths are BLOCKED.",
+    "Logical --database-url requires --target-ownership descriptor + resolved source endpoint.",
     "Missing docker/pgBackRest/credentials exit BLOCKED or FAILURE — never placeholder SUCCEEDED.",
     "",
     "Exit codes: 0 ok, 1 failure, 2 blocked, 3 unavailable",
@@ -130,6 +138,9 @@ export async function runCli(argv, io = {}) {
   }
   if (command === "evidence" && positionals[1] === "validate") {
     return runEvidenceValidate({ flags, env, json, stdout, stderr });
+  }
+  if (command === "evidence" && positionals[1] === "reconcile-layer2") {
+    return runEvidenceReconcileLayer2({ flags, env, json, stdout, stderr });
   }
   if (command === "target" && positionals[1] === "check") {
     return runTargetCheck({ flags, json, stdout, stderr });
@@ -343,12 +354,15 @@ async function runBackupLayer2({ flags, env, json, stdout, stderr }) {
     stringFlag(flags["age-recipient"]) ??
     env.BOBA_RECOVERY_AGE_RECIPIENT ??
     null;
+  const hasLogicalSpaces =
+    Boolean(env.BOBA_RECOVERY_LOGICAL_SPACES_BUCKET) || Boolean(env.BOBA_RECOVERY_SPACES_BUCKET);
 
-  if (!localStore && !env.BOBA_RECOVERY_SPACES_BUCKET) {
+  if (!localStore && !hasLogicalSpaces) {
     const payload = {
       ok: false,
       status: OPERATION_STATUS.BLOCKED,
-      reason: "Layer 2 requires --local-store DIR or Spaces bucket env (BOBA_RECOVERY_SPACES_BUCKET)",
+      reason:
+        "Layer 2 requires --local-store DIR or logical Spaces env (BOBA_RECOVERY_LOGICAL_SPACES_BUCKET)",
     };
     emit(stdout, json, payload, `Layer 2 backup BLOCKED: ${payload.reason}`);
     return CLI_EXIT.BLOCKED;
@@ -378,11 +392,28 @@ async function runBackupLayer2({ flags, env, json, stdout, stderr }) {
     }
   }
 
-  let objectStore;
+  /** @type {{ putObject: Function, getObject: Function, verifyRemoteSha256: Function } | null} */
+  let objectStore = null;
   try {
-    objectStore = localStore
-      ? createLocalObjectStore({ localRoot: localStore })
-      : null;
+    if (localStore) {
+      objectStore = createLocalObjectStore({ localRoot: localStore });
+    } else {
+      const spaces = await createLogicalSpacesObjectStore(env, flags, {
+        // Production-shaped Spaces path requires live flag + versioning ENABLED.
+        requireVersioning: env.BOBA_RECOVERY_REAL_SPACES === "1",
+      });
+      if (!spaces.ok) {
+        const payload = {
+          ok: false,
+          status: OPERATION_STATUS.BLOCKED,
+          reason: spaces.reason,
+          code: spaces.code,
+        };
+        emit(stdout, json, payload, `Layer 2 backup BLOCKED: ${payload.reason}`);
+        return CLI_EXIT.BLOCKED;
+      }
+      objectStore = spaces.objectStore;
+    }
   } catch (error) {
     stderr(redactText(error instanceof Error ? error.message : String(error)));
     return CLI_EXIT.FAILURE;
@@ -391,7 +422,7 @@ async function runBackupLayer2({ flags, env, json, stdout, stderr }) {
     const payload = {
       ok: false,
       status: OPERATION_STATUS.BLOCKED,
-      reason: "Spaces object store not configured for this CLI path; use --local-store for disposable runs",
+      reason: "Layer 2 object store could not be configured",
     };
     emit(stdout, json, payload, `Layer 2 backup BLOCKED: ${payload.reason}`);
     return CLI_EXIT.BLOCKED;
@@ -470,7 +501,7 @@ async function runRestorePitr({ flags, env, json, stdout }) {
     targetPgdataPath: stringFlag(flags["target-pgdata"]) || undefined,
     sourcePgdataPath: stringFlag(flags["source-pgdata"]) || undefined,
     workspaceRoot: stringFlag(flags["workspace-root"]) || env.BOBA_RECOVERY_TARGET_ROOT || undefined,
-    // Default: provision a fresh RUN_ID-owned PGDATA when --target-pgdata is omitted.
+    // Default: provision a fresh RUN_ID-owned PGDATA. Manual --target-pgdata requires ownership marker.
     provisionTarget: flags["target-pgdata"] ? false : flags["no-provision"] !== true,
     evidenceDir: resolveEvidenceDir(flags, env) || undefined,
     stanza: stringFlag(flags.stanza) ?? env.BOBA_PGBACKREST_STANZA ?? "boba",
@@ -509,6 +540,24 @@ async function runRestoreLogical({ flags, env, json, stdout }) {
 
   const objectStore = createLocalObjectStore({ localRoot: localStore });
   const databaseUrl = stringFlag(flags["database-url"]) ?? env.BOBA_RECOVERY_TARGET_DATABASE_URL;
+  const targetOwnership =
+    stringFlag(flags["target-ownership"]) ??
+    stringFlag(flags["ownership-descriptor"]) ??
+    undefined;
+  if (databaseUrl && !targetOwnership) {
+    emit(
+      stdout,
+      json,
+      {
+        ok: false,
+        status: OPERATION_STATUS.BLOCKED,
+        reason:
+          "external --database-url requires --target-ownership descriptor issued by the recovery provisioner",
+      },
+      "Logical restore BLOCKED: missing target ownership proof",
+    );
+    return CLI_EXIT.BLOCKED;
+  }
   const provisionTarget = flags["no-provision"] === true ? false : !databaseUrl;
   if (!databaseUrl && flags["no-provision"] === true) {
     emit(
@@ -517,7 +566,7 @@ async function runRestoreLogical({ flags, env, json, stdout }) {
       {
         ok: false,
         status: OPERATION_STATUS.BLOCKED,
-        reason: "logical restore requires --database-url or default fresh-target provisioning",
+        reason: "logical restore requires default fresh-target provisioning or owned --database-url",
       },
       "Logical restore BLOCKED: missing recovery database URL",
     );
@@ -532,6 +581,7 @@ async function runRestoreLogical({ flags, env, json, stdout }) {
     sourceDatabaseUrl: stringFlag(flags["source-database-url"]) ?? env.BOBA_LOGICAL_BACKUP_DATABASE_URL,
     targetPgdataPath: stringFlag(flags["target-pgdata"]),
     databaseUrl: databaseUrl || undefined,
+    targetOwnership,
     provisionTarget,
     evidenceDir: resolveEvidenceDir(flags, env) || undefined,
     forceProduction: false,
@@ -723,11 +773,22 @@ function runRotateKeys({ layer, flags, json, stdout }) {
 
 function runSpacesConfigCheck({ flags, env, json, stdout }) {
   const config = {
-    bucket: stringFlag(flags.bucket) ?? env.BOBA_RECOVERY_SPACES_BUCKET ?? "",
-    endpoint: stringFlag(flags.endpoint) ?? env.BOBA_RECOVERY_SPACES_ENDPOINT ?? undefined,
+    bucket:
+      stringFlag(flags.bucket) ??
+      env.BOBA_RECOVERY_LOGICAL_SPACES_BUCKET ??
+      env.BOBA_RECOVERY_SPACES_BUCKET ??
+      "",
+    endpoint:
+      stringFlag(flags.endpoint) ??
+      env.BOBA_RECOVERY_LOGICAL_SPACES_ENDPOINT ??
+      env.BOBA_RECOVERY_SPACES_ENDPOINT ??
+      undefined,
     localRoot: stringFlag(flags["local-root"]) ?? env.BOBA_RECOVERY_LOCAL_STORE ?? undefined,
     credentialEnvPrefix:
-      stringFlag(flags["credential-env-prefix"]) ?? env.BOBA_RECOVERY_SPACES_CREDENTIAL_PREFIX ?? "BOBA_SPACES",
+      stringFlag(flags["credential-env-prefix"]) ??
+      env.BOBA_RECOVERY_LOGICAL_SPACES_CREDENTIAL_PREFIX ??
+      env.BOBA_RECOVERY_SPACES_CREDENTIAL_PREFIX ??
+      "BOBA_LOGICAL_SPACES",
     versioningEnabled: flags["versioning-enabled"] !== false,
     objectLockWorm: flags.worm === true || flags["object-lock-worm"] === true,
   };
@@ -739,6 +800,58 @@ function runSpacesConfigCheck({ flags, env, json, stdout }) {
     result.ok ? `Spaces config-check OK bucket=${result.config.bucket}` : `Spaces config-check FAILED: ${result.reason}`,
   );
   return result.ok ? CLI_EXIT.OK : CLI_EXIT.FAILURE;
+}
+
+async function runEvidenceReconcileLayer2({ flags, env, json, stdout, stderr }) {
+  const evidenceDir = resolveEvidenceDir(flags, env);
+  const runId = stringFlag(flags["run-id"]);
+  if (!evidenceDir || !runId) {
+    emit(
+      stdout,
+      json,
+      {
+        ok: false,
+        status: OPERATION_STATUS.BLOCKED,
+        reason: "reconcile-layer2 requires --run-id and --evidence-dir (or BOBA_RECOVERY_EVIDENCE_DIR)",
+      },
+      "Layer 2 reconcile BLOCKED: missing run-id/evidence-dir",
+    );
+    return CLI_EXIT.BLOCKED;
+  }
+
+  const localStore = stringFlag(flags["local-store"]) ?? env.BOBA_RECOVERY_LOCAL_STORE ?? null;
+  let objectStore;
+  try {
+    if (localStore) {
+      objectStore = createLocalObjectStore({ localRoot: localStore });
+    } else {
+      const spaces = await createLogicalSpacesObjectStore(env, flags, { requireVersioning: false });
+      if (!spaces.ok) {
+        emit(
+          stdout,
+          json,
+          { ok: false, status: OPERATION_STATUS.BLOCKED, reason: spaces.reason },
+          `Layer 2 reconcile BLOCKED: ${spaces.reason}`,
+        );
+        return CLI_EXIT.BLOCKED;
+      }
+      objectStore = spaces.objectStore;
+    }
+  } catch (error) {
+    stderr(redactText(error instanceof Error ? error.message : String(error)));
+    return CLI_EXIT.FAILURE;
+  }
+
+  const result = await reconcileLocalCompleteMarker({ evidenceDir, runId, objectStore });
+  emit(
+    stdout,
+    json,
+    result,
+    result.ok
+      ? `Layer 2 reconcile SUCCEEDED runId=${runId}`
+      : `Layer 2 reconcile BLOCKED: ${result.reason}`,
+  );
+  return result.ok ? CLI_EXIT.OK : CLI_EXIT.BLOCKED;
 }
 
 function reportValidation(result, json, stdout) {

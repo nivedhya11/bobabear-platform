@@ -8,7 +8,10 @@
 #   (repo1-retention-full-type=time, repo1-retention-full=35)
 # - repo1-retention-diff is intentionally OMITTED: it is a differential COUNT,
 #   not days, and must not shorten the >=35-day recovery window
-# - archive/WAL expiry follows time retention for PITR of the oldest retained full
+# - repo1-retention-archive-type / repo1-retention-archive are intentionally
+#   OMITTED: archive-type is a backup type (full|diff|incr), NOT a time mode.
+#   With time-based full retention, pgBackRest expires archive WAL earlier than
+#   the oldest retained full after satisfying full retention (PITR window intact).
 # - continuous WAL via archive_command (NOT under heavy flock)
 # - archive_timeout = 5 minutes is set in postgresql.conf, not here
 #
@@ -22,8 +25,6 @@ repo1-cipher-type=aes-256-cbc
 repo1-cipher-pass=${PGBACKREST_CIPHER_PASS}
 repo1-retention-full-type=time
 repo1-retention-full=35
-repo1-retention-archive-type=time
-repo1-retention-archive=35
 start-fast=y
 compress-type=zst
 log-level-console=info

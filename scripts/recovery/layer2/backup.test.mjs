@@ -147,6 +147,131 @@ test("local COMPLETE write failure after remote COMPLETE still succeeds and reco
   }
 });
 
+test("reconcile refuses tampered remote COMPLETE / missing precomplete / SHA mismatch", async () => {
+  const { root, storeRoot, evidenceDir } = tempDirs();
+  try {
+    const objectStore = createLocalObjectStore({ localRoot: storeRoot });
+    const runId = generateRunId({ now: new Date(Date.UTC(2026, 8, 20, 12, 3, 0)), randomHex: "dddddddddddddddd" });
+    const result = await runLogicalBackup({
+      runId,
+      objectStore,
+      evidenceDir,
+      recipients: ["age1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq3waw4h"],
+      sourceIdentity: "prod-db-1",
+      sourceClassification: "production",
+      candidate: { commitSha: "abc123", tree: "def456", repositoryPath: "/repo" },
+      keyVersion: "kv1",
+      dumpFn: async () => Buffer.from("PGDUMP-FC-FAKE"),
+      encryptFn: async (_opts, plaintext) => ({
+        ok: true,
+        ciphertext: Buffer.concat([Buffer.from("AGEENC:"), plaintext]),
+      }),
+    });
+    assert.equal(result.ok, true);
+    const markerPath = path.join(evidenceDir, runId, "complete-marker.json");
+    rmSync(markerPath, { force: true });
+
+    const wrongRun = await reconcileLocalCompleteMarker({
+      evidenceDir,
+      runId,
+      objectStore: {
+        getObject: async ({ key }) => {
+          if (key.endsWith("/COMPLETE")) {
+            return {
+              body: Buffer.from(
+                JSON.stringify({
+                  runId: "20260920T120000Z-aaaaaaaaaaaaaaaa",
+                  artifactKey: result.artifactKey,
+                  sha256Hex: result.sha256Hex,
+                }),
+              ),
+            };
+          }
+          return objectStore.getObject({ key });
+        },
+        verifyRemoteSha256: (input) => objectStore.verifyRemoteSha256(input),
+      },
+    });
+    assert.equal(wrongRun.ok, false);
+    assert.match(wrongRun.reason ?? "", /runId/i);
+
+    const wrongArtifact = await reconcileLocalCompleteMarker({
+      evidenceDir,
+      runId,
+      objectStore: {
+        getObject: async ({ key }) => {
+          if (key.endsWith("/COMPLETE")) {
+            return {
+              body: Buffer.from(
+                JSON.stringify({
+                  runId,
+                  artifactKey: "logical/other/dump.age",
+                  sha256Hex: result.sha256Hex,
+                }),
+              ),
+            };
+          }
+          return objectStore.getObject({ key });
+        },
+        verifyRemoteSha256: (input) => objectStore.verifyRemoteSha256(input),
+      },
+    });
+    assert.equal(wrongArtifact.ok, false);
+    assert.match(wrongArtifact.reason ?? "", /artifactKey/i);
+
+    const wrongSha = await reconcileLocalCompleteMarker({
+      evidenceDir,
+      runId,
+      objectStore: {
+        getObject: async ({ key }) => {
+          if (key.endsWith("/COMPLETE")) {
+            return {
+              body: Buffer.from(
+                JSON.stringify({
+                  runId,
+                  artifactKey: result.artifactKey,
+                  sha256Hex: "0".repeat(64),
+                }),
+              ),
+            };
+          }
+          return objectStore.getObject({ key });
+        },
+        verifyRemoteSha256: (input) => objectStore.verifyRemoteSha256(input),
+      },
+    });
+    assert.equal(wrongSha.ok, false);
+    assert.match(wrongSha.reason ?? "", /sha256/i);
+
+    await objectStore.putObject({ key: result.artifactKey, body: Buffer.from("TAMPERED-ARTIFACT") });
+    const tampered = await reconcileLocalCompleteMarker({ evidenceDir, runId, objectStore });
+    assert.equal(tampered.ok, false);
+    assert.match(tampered.reason ?? "", /mismatch|tamper|SHA/i);
+
+    // Restore matching artifact + COMPLETE, then wipe evidence → missing precomplete.
+    await objectStore.putObject({
+      key: result.artifactKey,
+      body: Buffer.concat([Buffer.from("AGEENC:"), Buffer.from("PGDUMP-FC-FAKE")]),
+    });
+    await objectStore.putObject({
+      key: result.completeKey,
+      body: Buffer.from(
+        JSON.stringify({
+          runId,
+          artifactKey: result.artifactKey,
+          sha256Hex: result.sha256Hex,
+        }),
+      ),
+    });
+    rmSync(path.join(evidenceDir, runId), { recursive: true, force: true });
+    const missingPre = await reconcileLocalCompleteMarker({ evidenceDir, runId, objectStore });
+    assert.equal(missingPre.ok, false);
+    assert.match(missingPre.reason ?? "", /pre-COMPLETE|evidence missing/i);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("retention prunes COMPLETE runs only and refuses coverage-destroying prune", async () => {
   const { root, storeRoot } = tempDirs();
   try {

@@ -2,7 +2,8 @@
  * Layer 2 logical restore: download COMPLETE artifact only → age decrypt → pg_restore to fresh target.
  *
  * Prefer repository-provisioned disposable PostgreSQL 18 targets.
- * Arbitrary database URLs require positive source/target binding and fail closed when unresolved.
+ * External --database-url requires a provisioner-issued ownership descriptor and a
+ * resolved source endpoint. Arbitrary URLs without positive ownership proof are BLOCKED.
  */
 import { spawnSync } from "node:child_process";
 import { writeFileSync, unlinkSync, existsSync } from "node:fs";
@@ -15,7 +16,7 @@ import { generateRunId, isValidRunId } from "../run-id.mjs";
 import { persistEvidence } from "../store.mjs";
 import { redactText } from "../redact.mjs";
 import {
-  assertLogicalTargetNotSource,
+  assertOwnedLogicalTarget,
   cleanupProvisionedTarget,
   provisionLogicalTarget,
   targetEvidenceFields,
@@ -31,6 +32,7 @@ import { assertFreshTarget, createRestoreTargetId } from "./target.mjs";
  * @param {string} [options.targetIdentity]
  * @param {string} [options.databaseUrl]
  * @param {string} [options.sourceDatabaseUrl]
+ * @param {object | string} [options.targetOwnership]
  * @param {boolean} [options.provisionTarget]
  * @param {string} [options.evidenceDir]
  * @param {Function} [options.restoreFn]
@@ -62,13 +64,27 @@ export async function runLogicalRestore(options) {
     provisioned = provisionedResult.target;
     targetIdentity = provisioned.targetIdentity;
     databaseUrl = provisioned.databaseUrl;
-  } else {
+  } else if (databaseUrl) {
+    const owned = assertOwnedLogicalTarget({
+      runId,
+      databaseUrl,
+      sourceDatabaseUrl: options.sourceDatabaseUrl,
+      ownershipDescriptor: options.targetOwnership,
+      targetIdentity: options.targetIdentity,
+      sourceIdentity: options.sourceIdentity,
+      sourceClassification: options.sourceClassification,
+    });
+    if (!owned.ok) {
+      return fail(options, runId, startedAt, targetIdentity, owned.reason);
+    }
+    targetIdentity = owned.targetIdentity;
+  } else if (options.restoreFn) {
+    // Injected restoreFn is a unit/integration seam only — still refuse production force.
     const fresh = assertFreshTarget({
       sourceIdentity: options.sourceIdentity,
       targetIdentity,
       sourceClassification: options.sourceClassification,
       targetClassification: "recovery",
-      targetPgdataPath: options.targetPgdataPath,
       forceProduction: options.forceProduction,
     });
     if (!fresh.ok) {
@@ -131,26 +147,19 @@ export async function runLogicalRestore(options) {
       runId,
       startedAt,
       targetIdentity,
-      "logical restore requires a provisioned fresh recovery database or --database-url bound to that target",
+      "logical restore requires a provisioned fresh recovery database (or owned --database-url with ownership descriptor)",
     );
   }
 
-  if (databaseUrl) {
-    if (isForbiddenActiveDatabaseUrl(databaseUrl)) {
-      if (provisioned) await cleanupProvisionedTarget(provisioned);
-      return fail(
-        options,
-        runId,
-        startedAt,
-        targetIdentity,
-        "databaseUrl resolves to a forbidden active/default endpoint; refuse restore",
-      );
-    }
-    const notSource = assertLogicalTargetNotSource(databaseUrl, options.sourceDatabaseUrl);
-    if (!notSource.ok) {
-      if (provisioned) await cleanupProvisionedTarget(provisioned);
-      return fail(options, runId, startedAt, targetIdentity, notSource.reason);
-    }
+  if (databaseUrl && isForbiddenActiveDatabaseUrl(databaseUrl)) {
+    if (provisioned) await cleanupProvisionedTarget(provisioned);
+    return fail(
+      options,
+      runId,
+      startedAt,
+      targetIdentity,
+      "databaseUrl resolves to a forbidden active/default endpoint; refuse restore",
+    );
   }
 
   const dumpPath = path.join(tmpdir(), `boba-restore-${runId}.dump`);

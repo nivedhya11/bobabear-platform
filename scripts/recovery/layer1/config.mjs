@@ -15,6 +15,8 @@
  * - repo-retention-full-type defaults to COUNT (number of full backups)
  * - repo-retention-diff is a NUMBER OF DIFFERENTIAL BACKUPS, not days
  * - time-based retention requires repo1-retention-full-type=time with days
+ * - repo-retention-archive-type is a backup type (full|diff|incr), NOT time;
+ *   omit archive retention options when using time-based full retention
  */
 export const PGBACKREST_VERSION_MIN = "2.55.0";
 export const PGBACKREST_FORBIDDEN_STOCK_UBUNTU = "2.50";
@@ -83,7 +85,8 @@ export function renderPgbackrestConf(options) {
     `# archive_timeout design bound: ${ARCHIVE_TIMEOUT_SECONDS}s (set in postgresql.conf)`,
     `# Retention: time-based full >= ${LAYER1_RETENTION_DAYS_MIN} days (NOT count; NOT differential-count-as-days)`,
     `# repo1-retention-diff omitted so count-based differential expiry cannot shorten the recovery window`,
-    `# Archive/WAL expiry follows time retention so PITR for the oldest retained full remains available`,
+    `# repo1-retention-archive-type/archive omitted: archive-type is full|diff|incr, not time;`,
+    `#   pgBackRest expires WAL earlier than the oldest retained full after full time retention`,
     ``,
     `[global]`,
     `repo1-type=${options.repoType ?? "posix"}`,
@@ -92,8 +95,6 @@ export function renderPgbackrestConf(options) {
     `repo1-cipher-pass=\${${cipherPassEnvVar}}`,
     `repo1-retention-full-type=time`,
     `repo1-retention-full=${retentionFullDays}`,
-    `repo1-retention-archive-type=time`,
-    `repo1-retention-archive=${retentionFullDays}`,
     `start-fast=y`,
     `compress-type=zst`,
   ];
