@@ -504,6 +504,20 @@ async function runRestoreLogical({ flags, env, json, stdout }) {
   }
 
   const objectStore = createLocalObjectStore({ localRoot: localStore });
+  const databaseUrl = stringFlag(flags["database-url"]) ?? env.BOBA_RECOVERY_TARGET_DATABASE_URL;
+  if (!databaseUrl) {
+    emit(
+      stdout,
+      json,
+      {
+        ok: false,
+        status: OPERATION_STATUS.BLOCKED,
+        reason: "logical restore requires --database-url (or BOBA_RECOVERY_TARGET_DATABASE_URL) for a fresh recovery database",
+      },
+      "Logical restore BLOCKED: missing recovery database URL",
+    );
+    return CLI_EXIT.BLOCKED;
+  }
   const result = await runLogicalRestore({
     runIdToRestore,
     objectStore,
@@ -511,6 +525,7 @@ async function runRestoreLogical({ flags, env, json, stdout }) {
     sourceIdentity: source,
     sourceClassification: stringFlag(flags["source-class"]) ?? "production",
     targetPgdataPath: stringFlag(flags["target-pgdata"]),
+    databaseUrl,
     evidenceDir: resolveEvidenceDir(flags, env) || undefined,
     forceProduction: false,
   });
