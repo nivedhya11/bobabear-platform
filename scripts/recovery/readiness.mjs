@@ -1,10 +1,23 @@
 /**
  * Evidence-based Layer 1 / Layer 2 readiness evaluation.
  * Configuration, credentials, buckets, or timers alone are never success.
- * Policy (freshness) is explicit input; missing policy does not invent overdue semantics.
+ *
+ * Schema-valid SUCCEEDED evidence alone is never READY.
+ * RECOVERY READY requires qualifying layer-specific recovery proof plus freshness policy.
+ *
+ * Freshness:
+ * - Layer 2 uses the locked daily default when an explicit max-age is omitted.
+ * - Layer 1 has no locked health-age mapping yet; missing Layer 1 freshness fails closed.
+ * Missing freshness policy never silently means infinite age.
  */
-import { OPERATION_STATUS, READINESS_LEVEL, RECOVERY_LAYER, REQUIRED_RECOVERY_LAYERS } from "./constants.mjs";
-import { isSuccessfulLayerEvidence, validateEvidence } from "./evidence.mjs";
+import {
+  LAYER_2_MAX_AGE_MS_DEFAULT,
+  OPERATION_STATUS,
+  READINESS_LEVEL,
+  RECOVERY_LAYER,
+  REQUIRED_RECOVERY_LAYERS,
+} from "./constants.mjs";
+import { evaluateQualifyingRecoveryProof, validateEvidence } from "./evidence.mjs";
 import { runIdInstant } from "./run-id.mjs";
 
 /**
@@ -13,6 +26,7 @@ import { runIdInstant } from "./run-id.mjs";
  * @property {number} [layer1MaxAgeMs]
  * @property {number} [layer2MaxAgeMs]
  * @property {string | Date} [now]
+ * @property {(evidence: import("./evidence.mjs").RecoveryEvidence, layer: string) => { ok: boolean, reason?: string } | boolean} [qualifyProof]
  */
 
 /**
@@ -74,8 +88,8 @@ export function evaluateReadiness(input = {}) {
         : validRecords.length === 0
           ? "No valid recovery evidence; configuration, credentials, buckets, or timers are not success"
           : anyRequiredNotReady
-            ? "One or more required recovery layers lack valid successful evidence"
-            : "Required layers have valid successful evidence",
+            ? "One or more required recovery layers lack qualifying recovery proof (schema-valid SUCCEEDED alone is insufficient)"
+            : "Required layers have qualifying recovery proof",
   };
 }
 
@@ -113,38 +127,88 @@ function evaluateLayer(layer, records, policy, now) {
       overdue: false,
     };
   }
-  if (!isSuccessfulLayerEvidence(latest)) {
+
+  const qualification = evaluateQualifyingRecoveryProof(latest, {
+    layer,
+    qualifyProof: policy.qualifyProof,
+  });
+  if (!qualification.ok) {
     return {
       layer,
       readiness: READINESS_LEVEL.NOT_READY,
-      reason: "latest evidence is not a successful recoverable result",
+      reason: qualification.reason,
       latestStatus: latest.status,
       runId: latest.runId,
       overdue: false,
     };
   }
-  const maxAgeMs = layer === RECOVERY_LAYER.LAYER_1 ? policy.layer1MaxAgeMs : policy.layer2MaxAgeMs;
-  if (typeof maxAgeMs === "number" && maxAgeMs >= 0) {
-    const ageMs = now.getTime() - Date.parse(latest.endedAt ?? latest.startedAt);
-    if (Number.isFinite(ageMs) && ageMs > maxAgeMs) {
-      return {
-        layer,
-        readiness: READINESS_LEVEL.NOT_READY,
-        reason: "successful evidence is overdue relative to supplied policy",
-        latestStatus: latest.status,
-        runId: latest.runId,
-        overdue: true,
-      };
-    }
+
+  const maxAgeMs = resolveMaxAgeMs(layer, policy);
+  if (maxAgeMs == null) {
+    return {
+      layer,
+      readiness: READINESS_LEVEL.NOT_READY,
+      reason:
+        layer === RECOVERY_LAYER.LAYER_1
+          ? "qualifying Layer 1 freshness/health proof unavailable"
+          : "required freshness policy unavailable; layer cannot be READY",
+      latestStatus: latest.status,
+      runId: latest.runId,
+      overdue: false,
+    };
   }
+
+  const ageMs = now.getTime() - Date.parse(latest.endedAt ?? latest.startedAt);
+  if (!Number.isFinite(ageMs) || ageMs < 0) {
+    return {
+      layer,
+      readiness: READINESS_LEVEL.NOT_READY,
+      reason: "required freshness policy unavailable; evidence age is unverifiable",
+      latestStatus: latest.status,
+      runId: latest.runId,
+      overdue: false,
+    };
+  }
+  if (ageMs > maxAgeMs) {
+    return {
+      layer,
+      readiness: READINESS_LEVEL.NOT_READY,
+      reason: "successful evidence is overdue relative to freshness policy",
+      latestStatus: latest.status,
+      runId: latest.runId,
+      overdue: true,
+    };
+  }
+
   return {
     layer,
     readiness: READINESS_LEVEL.READY,
-    reason: "valid successful evidence",
+    reason: "qualifying recovery proof within freshness policy",
     latestStatus: latest.status,
     runId: latest.runId,
     overdue: false,
   };
+}
+
+/**
+ * @param {string} layer
+ * @param {ReadinessPolicy} policy
+ * @returns {number | null}
+ */
+function resolveMaxAgeMs(layer, policy) {
+  if (layer === RECOVERY_LAYER.LAYER_1) {
+    const explicit = policy.layer1MaxAgeMs;
+    if (typeof explicit === "number" && Number.isFinite(explicit) && explicit >= 0) return explicit;
+    // No locked Layer 1 health-age mapping in this foundation tranche.
+    return null;
+  }
+  if (layer === RECOVERY_LAYER.LAYER_2) {
+    const explicit = policy.layer2MaxAgeMs;
+    if (typeof explicit === "number" && Number.isFinite(explicit) && explicit >= 0) return explicit;
+    // Locked product requirement: independent logical backup at least daily.
+    return LAYER_2_MAX_AGE_MS_DEFAULT;
+  }
+  return null;
 }
 
 function recordAppliesToLayer(record, layer) {

@@ -61,12 +61,30 @@ Semantics:
 - Configuration, credentials, buckets, or timers alone are never success.
 - Interrupted / `RUNNING` / malformed evidence is never success.
 - A later success does not erase a prior failed run (runs are unique `RUN_ID` directories).
-- Overall `READY` requires valid successful evidence for **every required applicable layer**.
+- Schema-valid `SUCCEEDED` evidence alone is **insufficient**.
+- **RECOVERY READY** requires **qualifying layer-specific recovery proof** for every required
+  applicable layer, plus freshness policy. Evidence-schema validity ≠ recovery-proof validity;
+  operation `SUCCEEDED` ≠ layer `READY`.
+
+For this foundation tranche:
+
+- no qualifying Layer 1 / Layer 2 proof producer exists yet
+  (`layer1_pgbackrest`, `layer2_pg_dump_age`, `remote_sha_verification`, and `complete_marker`
+  remain `NOT_IMPLEMENTED`)
+- default operational posture is `NOT_READY`
+- generic/foundation/status/evidence-validation records never establish Layer 1 or Layer 2 READY
 
 A clean repository with no qualifying evidence **must** report `NOT_READY`. That is the
 expected foundation result until Layer 1 and Layer 2 execution exist.
 
-Optional freshness policy (explicit flags only; no invented default overdue window):
+Freshness policy:
+
+- Missing freshness policy never means infinite age; a layer cannot be `READY` without an
+  applicable freshness rule.
+- Layer 2 applies the locked product default of **at least daily** when `--layer2-max-age-ms`
+  is omitted.
+- Layer 1 has no locked health-age mapping yet; without an explicit `--layer1-max-age-ms` (and
+  without qualifying Layer 1 health proof), Layer 1 remains `NOT_READY`.
 
 ```bash
 npm run recovery:status -- --evidence-dir DIR --layer1-max-age-ms 900000 --layer2-max-age-ms 86400000

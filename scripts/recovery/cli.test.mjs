@@ -24,6 +24,34 @@ test("status human output is NOT_READY with no evidence and non-zero exit", () =
   assert.doesNotMatch(result.stdout, /READY_FOR_PRODUCTION|SUCCEEDED/);
 });
 
+test("CLI default status remains NOT_READY even with generic SUCCEEDED evidence and no freshness flags", () => {
+  const root = mkdtempSync(path.join(os.tmpdir(), "boba-recovery-cli-status-"));
+  try {
+    persistEvidence(root, {
+      runId: generateRunId({ now: new Date(Date.UTC(2026, 8, 20, 7, 0, 0)), randomHex: "aaaaaaaaaaaaaaaa" }),
+      operationType: "status",
+      recoveryLayer: RECOVERY_LAYER.LAYER_1,
+      status: OPERATION_STATUS.SUCCEEDED,
+      endedAt: "2026-09-20T07:00:00.000Z",
+    });
+    persistEvidence(root, {
+      runId: generateRunId({ now: new Date(Date.UTC(2026, 8, 20, 7, 1, 0)), randomHex: "bbbbbbbbbbbbbbbb" }),
+      operationType: "status",
+      recoveryLayer: RECOVERY_LAYER.LAYER_2,
+      status: OPERATION_STATUS.SUCCEEDED,
+      endedAt: "2026-09-20T07:01:00.000Z",
+    });
+    const result = run(["status", "--json", "--evidence-dir", root]);
+    assert.equal(result.status, CLI_EXIT.FAILURE);
+    const payload = JSON.parse(result.stdout);
+    assert.equal(payload.overall, "NOT_READY");
+    assert.equal(payload.layers.LAYER_1.readiness, "NOT_READY");
+    assert.equal(payload.layers.LAYER_2.readiness, "NOT_READY");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("status JSON output is machine-readable and secret-free", () => {
   const secret = "super-secret-db-pass";
   const result = run(["status", "--json"], {

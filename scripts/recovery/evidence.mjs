@@ -1,10 +1,15 @@
 /**
  * Machine-readable IMP-037 recovery evidence model (foundation).
  * Status is never SUCCEEDED merely because a command started.
+ *
+ * Evidence-schema validity and recovery-readiness qualification are separate:
+ *   schema valid != recovery proof valid
+ *   operation SUCCEEDED != recovery layer READY
  */
 import {
   CHECKSUM_INTEGRITY_STATUS,
   EVIDENCE_SCHEMA_VERSION,
+  NON_QUALIFYING_FOUNDATION_OPERATION_TYPES,
   OPERATION_STATUS,
   READINESS_LEVEL,
   RECOVERY_LAYER,
@@ -16,6 +21,7 @@ const OPERATION_STATUSES = new Set(Object.values(OPERATION_STATUS));
 const READINESS_LEVELS = new Set(Object.values(READINESS_LEVEL));
 const RECOVERY_LAYERS = new Set([...Object.values(RECOVERY_LAYER), "NONE", "BOTH"]);
 const CHECKSUM_STATUSES = new Set(Object.values(CHECKSUM_INTEGRITY_STATUS));
+const FOUNDATION_NON_QUALIFYING_OPS = new Set(NON_QUALIFYING_FOUNDATION_OPERATION_TYPES);
 
 /**
  * @typedef {object} RecoveryEvidence
@@ -130,7 +136,8 @@ export function validateEvidence(value) {
 }
 
 /**
- * Interrupted / incomplete records are never successful coverage.
+ * Schema-valid operational SUCCEEDED record (not interrupted).
+ * This is NOT qualifying recovery proof and MUST NOT establish Layer READY alone.
  * @param {unknown} value
  * @returns {boolean}
  */
@@ -142,6 +149,220 @@ export function isSuccessfulLayerEvidence(value) {
   if (evidence.incomplete === true) return false;
   if (evidence.readiness === READINESS_LEVEL.NOT_READY) return false;
   return true;
+}
+
+/**
+ * @typedef {object} QualifyingProofResult
+ * @property {boolean} ok
+ * @property {string} reason
+ */
+
+/**
+ * Qualifying recovery-proof predicate.
+ *
+ * Schema-valid SUCCEEDED evidence may be operationally valid and still fail this predicate.
+ * Foundation / status / evidence-validation records never establish Layer 1 or Layer 2 READY.
+ *
+ * Later Layer 1 (pgBackRest) / Layer 2 (pg_dump + age + remote SHA + COMPLETE-last) producers
+ * plug in via `options.qualifyProof` without weakening the default fail-closed posture.
+ *
+ * @param {unknown} value
+ * @param {{ layer?: string, qualifyProof?: (evidence: import("./evidence.mjs").RecoveryEvidence, layer: string) => QualifyingProofResult | boolean }} [options]
+ * @returns {QualifyingProofResult}
+ */
+export function evaluateQualifyingRecoveryProof(value, options = {}) {
+  const parsed = validateEvidence(value);
+  if (!parsed.ok) {
+    return { ok: false, reason: parsed.reason };
+  }
+  const evidence = parsed.evidence;
+  const layer = options.layer ?? String(evidence.recoveryLayer);
+
+  if (evidence.status !== OPERATION_STATUS.SUCCEEDED) {
+    return { ok: false, reason: "operation SUCCEEDED is required for recovery proof qualification" };
+  }
+  if (evidence.incomplete === true) {
+    return { ok: false, reason: "incomplete evidence cannot qualify as recovery proof" };
+  }
+  if (evidence.readiness === READINESS_LEVEL.NOT_READY) {
+    return { ok: false, reason: "evidence readiness is NOT_READY" };
+  }
+
+  if (typeof options.qualifyProof === "function") {
+    const injected = options.qualifyProof(evidence, layer);
+    if (injected && typeof injected === "object" && "ok" in injected) {
+      return {
+        ok: injected.ok === true,
+        reason:
+          typeof injected.reason === "string" && injected.reason.length > 0
+            ? injected.reason
+            : injected.ok
+              ? "injected qualifying recovery proof accepted"
+              : "injected qualifying recovery proof rejected",
+      };
+    }
+    return {
+      ok: Boolean(injected),
+      reason: injected
+        ? "injected qualifying recovery proof accepted"
+        : "injected qualifying recovery proof rejected",
+    };
+  }
+
+  if (FOUNDATION_NON_QUALIFYING_OPS.has(String(evidence.operationType))) {
+    return {
+      ok: false,
+      reason:
+        "generic/foundation/status/evidence-validation records cannot establish Layer 1 or Layer 2 READY",
+    };
+  }
+
+  if (layer === RECOVERY_LAYER.LAYER_1) {
+    return evaluateLayer1QualifyingProof(evidence);
+  }
+  if (layer === RECOVERY_LAYER.LAYER_2) {
+    return evaluateLayer2QualifyingProof(evidence);
+  }
+  if (layer === "BOTH") {
+    const layer1 = evaluateLayer1QualifyingProof(evidence);
+    if (!layer1.ok) return layer1;
+    return evaluateLayer2QualifyingProof(evidence);
+  }
+
+  return {
+    ok: false,
+    reason: "arbitrary or unrecognized recovery layer cannot establish qualifying recovery proof",
+  };
+}
+
+/**
+ * @param {unknown} value
+ * @param {{ layer?: string, qualifyProof?: (evidence: import("./evidence.mjs").RecoveryEvidence, layer: string) => QualifyingProofResult | boolean }} [options]
+ * @returns {boolean}
+ */
+export function isQualifyingRecoveryProof(value, options = {}) {
+  return evaluateQualifyingRecoveryProof(value, options).ok;
+}
+
+/**
+ * @param {import("./evidence.mjs").RecoveryEvidence} evidence
+ * @returns {QualifyingProofResult}
+ */
+function evaluateLayer1QualifyingProof(evidence) {
+  if (!hasNonEmptyString(evidence.recoveryPoint)) {
+    return {
+      ok: false,
+      reason: "missing recovery point cannot establish Layer 1 recovery readiness",
+    };
+  }
+  // pgBackRest health / identifiable recovery-point proof is not implemented in this tranche.
+  return {
+    ok: false,
+    reason:
+      "qualifying Layer 1 recovery/health proof unavailable (pgBackRest proof not implemented in this tranche)",
+  };
+}
+
+/**
+ * Layer 2 MUST NOT qualify until a later producer proves the locked finalization chain:
+ * pg_dump -Fc → age encryption → remote upload → SHA-256 → verify REMOTE stored artifact →
+ * evidence persistence → COMPLETE marker written LAST.
+ * This foundation tranche has no such producer; fail closed after rejecting incomplete fields.
+ *
+ * @param {import("./evidence.mjs").RecoveryEvidence} evidence
+ * @returns {QualifyingProofResult}
+ */
+function evaluateLayer2QualifyingProof(evidence) {
+  const checksum = evidence.checksumIntegrityStatus ?? CHECKSUM_INTEGRITY_STATUS.NOT_CHECKED;
+  if (checksum === CHECKSUM_INTEGRITY_STATUS.NOT_CHECKED) {
+    return {
+      ok: false,
+      reason:
+        "checksumIntegrityStatus NOT_CHECKED cannot establish qualifying Layer 2 recovery proof",
+    };
+  }
+  if (checksum !== CHECKSUM_INTEGRITY_STATUS.MATCHED) {
+    return {
+      ok: false,
+      reason: "Layer 2 checksumIntegrityStatus must be MATCHED for qualifying recovery proof",
+    };
+  }
+  if (!hasNonEmptyString(evidence.recoveryPoint)) {
+    return {
+      ok: false,
+      reason: "missing recovery point cannot establish Layer 2 recovery readiness",
+    };
+  }
+  if (!hasNonEmptyString(evidence.recoveryArtifactReference)) {
+    return {
+      ok: false,
+      reason: "missing recovery artifact reference cannot establish Layer 2 recovery readiness",
+    };
+  }
+  if (!hasRequiredLayer2Context(evidence)) {
+    return {
+      ok: false,
+      reason:
+        "missing required candidate/source/artifact/validation context cannot establish Layer 2 recovery readiness",
+    };
+  }
+  if (!hasLayer2RemoteCompleteProof(evidence)) {
+    return {
+      ok: false,
+      reason:
+        "Layer 2 cannot qualify without remote stored-artifact verification and COMPLETE marker written last",
+    };
+  }
+  // Even structurally rich records cannot become READY here: no foundation producer implements
+  // the locked chain. Future producers plug in via qualifyProof.
+  return {
+    ok: false,
+    reason:
+      "Layer 2 finalization-chain proof producer is not implemented in this foundation tranche",
+  };
+}
+
+/**
+ * @param {import("./evidence.mjs").RecoveryEvidence} evidence
+ * @returns {boolean}
+ */
+function hasRequiredLayer2Context(evidence) {
+  const candidate = evidence.candidate ?? {};
+  const hasCandidate =
+    hasNonEmptyString(candidate.commitSha) || hasNonEmptyString(candidate.tree) || hasNonEmptyString(candidate.repositoryPath);
+  const hasSource =
+    hasNonEmptyString(evidence.sourceEnvironmentClassification) ||
+    hasNonEmptyString(evidence.sourceIdentityMarker);
+  const hasValidation = Array.isArray(evidence.validationResults) && evidence.validationResults.length > 0;
+  return hasCandidate && hasSource && hasValidation;
+}
+
+/**
+ * Detects future Layer 2 remote-verification + COMPLETE-last proof markers when present.
+ * Foundation never fabricates these markers; absence fails closed.
+ *
+ * @param {import("./evidence.mjs").RecoveryEvidence} evidence
+ * @returns {boolean}
+ */
+function hasLayer2RemoteCompleteProof(evidence) {
+  const results = Array.isArray(evidence.validationResults) ? evidence.validationResults : [];
+  const codes = new Set(
+    results
+      .map((entry) => (entry && typeof entry === "object" ? String(entry.code ?? entry.check ?? "") : ""))
+      .filter((code) => code.length > 0),
+  );
+  const hasRemoteVerification =
+    codes.has("REMOTE_ARTIFACT_SHA256_VERIFIED") || codes.has("REMOTE_STORED_ARTIFACT_VERIFIED");
+  const hasCompleteLast = codes.has("COMPLETE_MARKER_WRITTEN_LAST") || codes.has("LAYER2_COMPLETE");
+  return hasRemoteVerification && hasCompleteLast;
+}
+
+/**
+ * @param {unknown} value
+ * @returns {boolean}
+ */
+function hasNonEmptyString(value) {
+  return typeof value === "string" && value.trim().length > 0;
 }
 
 /**

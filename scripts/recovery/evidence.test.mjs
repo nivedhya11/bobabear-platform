@@ -3,8 +3,13 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { test } from "node:test";
-import { OPERATION_STATUS, RECOVERY_LAYER } from "./constants.mjs";
-import { createEvidence, isSuccessfulLayerEvidence, validateEvidence } from "./evidence.mjs";
+import { CHECKSUM_INTEGRITY_STATUS, OPERATION_STATUS, RECOVERY_LAYER } from "./constants.mjs";
+import {
+  createEvidence,
+  evaluateQualifyingRecoveryProof,
+  isSuccessfulLayerEvidence,
+  validateEvidence,
+} from "./evidence.mjs";
 import { generateRunId } from "./run-id.mjs";
 import { inspectEvidence, listEvidence, persistEvidence, readRunEvidence } from "./store.mjs";
 
@@ -28,6 +33,8 @@ test("valid evidence is accepted and incomplete evidence is not success", () => 
   });
   assert.equal(validateEvidence(valid).ok, true);
   assert.equal(isSuccessfulLayerEvidence(valid), true);
+  // Schema-valid SUCCEEDED is not qualifying recovery proof.
+  assert.equal(evaluateQualifyingRecoveryProof(valid, { layer: RECOVERY_LAYER.LAYER_2 }).ok, false);
 
   const running = createEvidence({
     runId: generateRunId(),
@@ -47,6 +54,36 @@ test("valid evidence is accepted and incomplete evidence is not success", () => 
     }).ok,
     false,
   );
+});
+
+test("generic SUCCEEDED and NOT_CHECKED checksum never qualify as recovery proof", () => {
+  const generic = createEvidence({
+    runId: generateRunId(),
+    operationType: "status",
+    recoveryLayer: RECOVERY_LAYER.LAYER_1,
+    status: OPERATION_STATUS.SUCCEEDED,
+    endedAt: new Date().toISOString(),
+  });
+  assert.equal(validateEvidence(generic).ok, true);
+  assert.equal(isSuccessfulLayerEvidence(generic), true);
+  assert.equal(evaluateQualifyingRecoveryProof(generic, { layer: RECOVERY_LAYER.LAYER_1 }).ok, false);
+
+  const unchecked = createEvidence({
+    runId: generateRunId(),
+    operationType: "layer2-logical-backup",
+    recoveryLayer: RECOVERY_LAYER.LAYER_2,
+    status: OPERATION_STATUS.SUCCEEDED,
+    endedAt: new Date().toISOString(),
+    recoveryPoint: "2026-09-20T00:00:00Z",
+    recoveryArtifactReference: "bucket/a",
+    checksumIntegrityStatus: CHECKSUM_INTEGRITY_STATUS.NOT_CHECKED,
+    candidate: { commitSha: "abc" },
+    sourceEnvironmentClassification: "production",
+    validationResults: [{ code: "UPLOAD_OK" }],
+  });
+  const proof = evaluateQualifyingRecoveryProof(unchecked, { layer: RECOVERY_LAYER.LAYER_2 });
+  assert.equal(proof.ok, false);
+  assert.match(proof.reason, /NOT_CHECKED/);
 });
 
 test("persistEvidence never overwrites and preserves earlier failures after later success", () => {

@@ -58,3 +58,21 @@ export const REQUIRED_RECOVERY_LAYERS = Object.freeze([
   RECOVERY_LAYER.LAYER_1,
   RECOVERY_LAYER.LAYER_2,
 ]);
+
+/**
+ * Locked product frequency for Layer 2 independent logical backup: at least daily (FD-037-03).
+ * Used as the canonical freshness default when an explicit Layer 2 max-age flag is omitted.
+ * Layer 1 has no locked health-age mapping in this foundation tranche — missing Layer 1
+ * freshness policy fails closed rather than inventing a window.
+ */
+export const LAYER_2_MAX_AGE_MS_DEFAULT = 24 * 60 * 60 * 1000;
+
+/**
+ * Foundation CLI / schema-validation operation types. Schema-valid SUCCEEDED records of these
+ * types are never qualifying Layer 1 or Layer 2 recovery proof.
+ */
+export const NON_QUALIFYING_FOUNDATION_OPERATION_TYPES = Object.freeze([
+  OPERATION_TYPE.STATUS,
+  OPERATION_TYPE.EVIDENCE_VALIDATE,
+  OPERATION_TYPE.TARGET_CHECK,
+]);
