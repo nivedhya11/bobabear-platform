@@ -1608,6 +1608,7 @@ export function isSupportedImp030GovernanceCheckpoint(roadmapVersion, stateVersi
   const imp037ArchitectureLock = roadmapVersion === "GTM-R134" && stateVersion === "STATE-R132";
   const imp037ImplementationAuthorization = roadmapVersion === "GTM-R135" && stateVersion === "STATE-R133";
   const imp037ImplementationStart = roadmapVersion === "GTM-R136" && stateVersion === "STATE-R134";
+  const imp037PostMergeReconciliation = roadmapVersion === "GTM-R137" && stateVersion === "STATE-R135";
   if (kind === "activation") return activation;
   if (kind === "lock") return lock;
   if (kind === "authorization") return authorization;
@@ -1679,7 +1680,8 @@ export function isSupportedImp030GovernanceCheckpoint(roadmapVersion, stateVersi
   if (kind === "imp037ArchitectureLock") return imp037ArchitectureLock;
   if (kind === "imp037ImplementationAuthorization") return imp037ImplementationAuthorization;
   if (kind === "imp037ImplementationStart") return imp037ImplementationStart;
-  return activation || lock || authorization || start || routeAmendment || consistencyRepair || acceptance || imp031Activation || imp031Draft || imp031Lock || imp031Authorization || imp031Start || imp031Completion || imp031Acceptance || imp032Activation || imp032Draft || imp032Lock || imp032Authorization || imp032Start || imp032BoundaryClarification || imp032Completion || imp032Acceptance || imp033Activation || imp033Completion || imp033Acceptance || imp034Completion || imp034Acceptance || imp035Completion || imp035Acceptance || imp036Completion || imp036Acceptance || enterpriseExperiencePlan || imp036aCompletion || imp036aAcceptance || imp036bCompletion || imp036bAcceptance || imp036cCompletion || imp036cAcceptance || imp036dActivation || imp036dLock || imp036dAuthorization || imp036dStart || imp036dCompletion || imp036dAcceptance || imp036eActivation || imp036eLock || imp036eAuthorization || imp036eStart || imp036eCompletion || authorityCompression || imp036eAcceptance || imp036fActivation || imp036fProductDefinitionDraftAuthorized || imp036fProductDefinitionGatePass || imp036fArchitectureLock || imp036fImplementationAuthorization || imp036fImplementationStart || imp036fAcceptance || imp036gActivation || imp036gProductDefinitionDraft || imp036gProductDefinitionGatePass || imp036gArchitectureLock || imp036gImplementationStart || imp036gCompletion || imp036gAcceptance || imp037Activation || imp037ProductDefinitionGatePass || d374CostOptimizedPilotInfrastructure || imp037ArchitectureLock || imp037ImplementationAuthorization || imp037ImplementationStart;
+  if (kind === "imp037PostMergeReconciliation") return imp037PostMergeReconciliation;
+  return activation || lock || authorization || start || routeAmendment || consistencyRepair || acceptance || imp031Activation || imp031Draft || imp031Lock || imp031Authorization || imp031Start || imp031Completion || imp031Acceptance || imp032Activation || imp032Draft || imp032Lock || imp032Authorization || imp032Start || imp032BoundaryClarification || imp032Completion || imp032Acceptance || imp033Activation || imp033Completion || imp033Acceptance || imp034Completion || imp034Acceptance || imp035Completion || imp035Acceptance || imp036Completion || imp036Acceptance || enterpriseExperiencePlan || imp036aCompletion || imp036aAcceptance || imp036bCompletion || imp036bAcceptance || imp036cCompletion || imp036cAcceptance || imp036dActivation || imp036dLock || imp036dAuthorization || imp036dStart || imp036dCompletion || imp036dAcceptance || imp036eActivation || imp036eLock || imp036eAuthorization || imp036eStart || imp036eCompletion || authorityCompression || imp036eAcceptance || imp036fActivation || imp036fProductDefinitionDraftAuthorized || imp036fProductDefinitionGatePass || imp036fArchitectureLock || imp036fImplementationAuthorization || imp036fImplementationStart || imp036fAcceptance || imp036gActivation || imp036gProductDefinitionDraft || imp036gProductDefinitionGatePass || imp036gArchitectureLock || imp036gImplementationStart || imp036gCompletion || imp036gAcceptance || imp037Activation || imp037ProductDefinitionGatePass || d374CostOptimizedPilotInfrastructure || imp037ArchitectureLock || imp037ImplementationAuthorization || imp037ImplementationStart || imp037PostMergeReconciliation;
 }
 
 function isImp032ArchitectureActivationCheckpoint(roadmap, state) {
@@ -1988,6 +1990,14 @@ function isImp037ImplementationStartCheckpoint(roadmap, state) {
   );
 }
 
+function isImp037PostMergeReconciliationCheckpoint(roadmap, state) {
+  return isSupportedImp030GovernanceCheckpoint(
+    roadmap?.meta.roadmapVersion,
+    state?.meta.stateVersion,
+    "imp037PostMergeReconciliation",
+  );
+}
+
 function isImp030ArchitectureCheckpoint(roadmap, state) {
   return isImp030ArchitectureActivationCheckpoint(roadmap, state) || isImp030ArchitectureLockCheckpoint(roadmap, state);
 }
@@ -2064,7 +2074,8 @@ function isImp030GovernanceCheckpoint(roadmap, state) {
     isD374CostOptimizedPilotInfrastructureCheckpoint(roadmap, state) ||
     isImp037ArchitectureLockCheckpoint(roadmap, state) ||
     isImp037ImplementationAuthorizationCheckpoint(roadmap, state) ||
-    isImp037ImplementationStartCheckpoint(roadmap, state)
+    isImp037ImplementationStartCheckpoint(roadmap, state) ||
+    isImp037PostMergeReconciliationCheckpoint(roadmap, state)
   );
 }
 
@@ -9593,8 +9604,8 @@ export function evaluateImp037StartedProductDefinition(text) {
     [body, /IMP037_STARTED\s*[:=]\s*YES/, "IMP037_STARTED YES"],
     [body, /IMP037_ACCEPTED\s*[:=]\s*NO/, "IMP037_ACCEPTED NO"],
     [body, /IMP038_ACTIVATED\s*[:=]\s*NO/, "IMP038_ACTIVATED NO"],
-    [body, /GTM-R136/, "GTM-R136 anchor"],
-    [body, /STATE-R134/, "STATE-R134 anchor"],
+    [body, /GTM-R137|GTM-R136/, "GTM-R137 or GTM-R136 anchor"],
+    [body, /STATE-R135|STATE-R134/, "STATE-R135 or STATE-R134 anchor"],
     [body, /IMPLEMENTATION_START_EVIDENCE:\s*PR#172\/5744869269/, "start evidence PR#172/5744869269"],
     [body, /IMPLEMENTATION_AUTHORIZATION_EVIDENCE:\s*PR#171\/5743814105/, "authorization evidence PR#171/5743814105"],
     [body, /INDEPENDENT_ARCHITECTURE_FIT_REVIEW\s*[:=]\s*PASS/, "independent Fit review PASS"],
@@ -9623,6 +9634,274 @@ export function evaluateImp037StartedProductDefinition(text) {
       message: "Started IMP-037 Product Definition must not retain CURRENT IMP037_STARTED: NO",
     };
   }
+  return { ok: true };
+}
+
+/**
+ * Shape post-merge IMP-037 capability into started (GTM-R136 / STATE-R134) markers for reuse.
+ * @param {string} text
+ */
+function toImp037StartedShapedPostMergeCapability(text) {
+  return String(text)
+    .replace(/GTM-R137\s*\/\s*STATE-R135/g, "GTM-R136 / STATE-R134")
+    .replace(/GTM-R137/g, "GTM-R136")
+    .replace(/STATE-R135/g, "STATE-R134");
+}
+
+/**
+ * Shape post-merge IMP-037 Product Definition into started anchors for reuse.
+ * @param {string} text
+ */
+function toImp037StartedShapedPostMergeProductDefinition(text) {
+  return String(text)
+    .replace(/GTM-R137\s*\/\s*STATE-R135/g, "GTM-R136 / STATE-R134")
+    .replace(/GTM-R137/g, "GTM-R136")
+    .replace(/STATE-R135/g, "STATE-R134");
+}
+
+/**
+ * Validate post-merge IMP-037 capability architecture (GTM-R137 / STATE-R135 tip).
+ * Shapes down to GTM-R136 / STATE-R134 then reuses the started capability evaluator.
+ * @param {string} text
+ */
+export function evaluateImp037PostMergedCapabilityArchitecture(text) {
+  if (!text || !String(text).trim()) {
+    return {
+      ok: false,
+      code: "IMP037_CAPABILITY_ABSENT",
+      message: "IMP-037 post-merge capability architecture must not be empty",
+    };
+  }
+  const body = String(text);
+  const required = [
+    [body, /IMP037_REPOSITORY_IMPLEMENTATION_MERGED\s*[:=]\s*YES/, "IMP037_REPOSITORY_IMPLEMENTATION_MERGED YES"],
+    [body, /IMP037_IMPLEMENTATION_PR\s*[:=]\s*174/, "IMP037_IMPLEMENTATION_PR 174"],
+    [body, /IMP037_IMPLEMENTATION_REVIEWED_HEAD\s*[:=]\s*ae7328efe1add11a9a4299150251fe14c71b2730/, "reviewed head"],
+    [body, /IMP037_IMPLEMENTATION_REVIEWED_TREE\s*[:=]\s*4ff19a31db947cafadf690cf6bf1b6d2f1de14ac/, "reviewed tree"],
+    [body, /IMP037_INDEPENDENT_IMPLEMENTATION_REVIEW\s*[:=]\s*PASS/, "independent implementation review PASS"],
+    [body, /IMP037_INDEPENDENT_IMPLEMENTATION_REVIEW_ID\s*[:=]\s*5265354130/, "independent implementation review id"],
+    [body, /IMP037_IMPLEMENTATION_MERGE_SHA\s*[:=]\s*f77a54819f51ad5648dda8acb3a7c93345cd5d6c/, "merge SHA"],
+    [body, /IMP037_IMPLEMENTATION_MERGE_TREE\s*[:=]\s*4ff19a31db947cafadf690cf6bf1b6d2f1de14ac/, "merge tree"],
+    [body, /IMP037_POST_MERGE_CI\s*[:=]\s*35587376968/, "post-merge CI"],
+    [body, /IMP037_POST_MERGE_CI_RESULT\s*[:=]\s*SUCCESS/, "post-merge CI SUCCESS"],
+    [body, /IMP037_REPOSITORY_IMPLEMENTATION\s*[:=]\s*MERGED/, "repository implementation MERGED"],
+    [body, /IMP037_EXTERNAL_RECOVERY_PROOF\s*[:=]\s*NOT_PERFORMED/, "external recovery proof NOT_PERFORMED"],
+    [body, /IMP037_IMPLEMENTATION_COMPLETE\s*[:=]\s*NO/, "implementation complete NO"],
+    [body, /IMPLEMENTATION_PERFORMED\s*[:=]\s*NO/, "IMPLEMENTATION_PERFORMED NO"],
+    [body, /GTM-R137\s*\/\s*STATE-R135/, "canonical GTM-R137 / STATE-R135"],
+  ];
+  for (const [haystack, pattern, label] of required) {
+    if (!pattern.test(haystack)) {
+      return {
+        ok: false,
+        code: "IMP037_CAPABILITY_POST_MERGE",
+        message: `Post-merge IMP-037 capability must record ${label}`,
+      };
+    }
+  }
+  if (
+    /IMP037_ACCEPTED\s*[:=]\s*YES/.test(body) ||
+    /IMP038_ACTIVATED\s*[:=]\s*YES/.test(body) ||
+    /IMP037_IMPLEMENTATION_COMPLETE\s*[:=]\s*YES/.test(body) ||
+    /IMP037_EXTERNAL_RECOVERY_PROOF\s*[:=]\s*PASS/.test(body) ||
+    /IMPLEMENTATION_PERFORMED\s*[:=]\s*YES/.test(body)
+  ) {
+    return {
+      ok: false,
+      code: "IMP037_CAPABILITY_PREMATURE_PROGRESSION",
+      message:
+        "Post-merge IMP-037 capability must not claim external recovery proof, implementation complete, acceptance, or IMP-038 activation",
+    };
+  }
+  const startedShaped = toImp037StartedShapedPostMergeCapability(body);
+  const started = evaluateImp037StartedCapabilityArchitecture(startedShaped);
+  if (!started.ok) return started;
+  return { ok: true };
+}
+
+/**
+ * Validate post-merge IMP-037 Product Definition markers (GTM-R137 / STATE-R135 tip).
+ * Requires tip anchors, then shapes to start anchors and reuses the started PD evaluator.
+ * @param {string} text
+ */
+export function evaluateImp037PostMergedProductDefinition(text) {
+  if (!text || !String(text).trim()) {
+    return { ok: false, code: "IMP037_PD_ABSENT", message: "Post-merge IMP-037 Product Definition must not be empty" };
+  }
+  const body = String(text);
+  // Require CURRENT tip to be explicitly paired with R137/R135 on the same tip statement,
+  // not merely a historical footnote that mentions those revisions elsewhere.
+  if (
+    !/CURRENT tip[^\n]{0,160}GTM-R137/.test(body) &&
+    !/CURRENT tip:\s*`GTM-R137`/.test(body) &&
+    !/ROADMAP GTM-R137\s*\(CURRENT tip/.test(body)
+  ) {
+    return {
+      ok: false,
+      code: "IMP037_PD_POST_MERGE",
+      message:
+        "Post-merge IMP-037 Product Definition must pair CURRENT tip anchors GTM-R137 / STATE-R135 (not merely mention them historically)",
+    };
+  }
+  if (!/STATE-R135/.test(body) || !/GTM-R137/.test(body)) {
+    return {
+      ok: false,
+      code: "IMP037_PD_POST_MERGE",
+      message: "Post-merge IMP-037 Product Definition must record CURRENT anchors GTM-R137 / STATE-R135",
+    };
+  }
+  if (!/GTM-R136/.test(body) || !/STATE-R134/.test(body)) {
+    return {
+      ok: false,
+      code: "IMP037_PD_POST_MERGE",
+      message: "Post-merge IMP-037 Product Definition must retain start provenance GTM-R136 / STATE-R134",
+    };
+  }
+  if (!/IMPLEMENTATION_START_EVIDENCE:\s*PR#172\/5744869269/.test(body)) {
+    return {
+      ok: false,
+      code: "IMP037_PD_POST_MERGE",
+      message: "Post-merge IMP-037 Product Definition must retain start evidence PR#172/5744869269",
+    };
+  }
+  const requiredPostMergeMarkers = [
+    [/IMP037_REPOSITORY_IMPLEMENTATION\s*[:=]\s*MERGED/, "IMP037_REPOSITORY_IMPLEMENTATION: MERGED"],
+    [/IMP037_EXTERNAL_RECOVERY_PROOF\s*[:=]\s*NOT_PERFORMED/, "IMP037_EXTERNAL_RECOVERY_PROOF: NOT_PERFORMED"],
+    [/IMPLEMENTATION_PERFORMED\s*[:=]\s*NO/, "IMPLEMENTATION_PERFORMED: NO"],
+    [/IMP037_IMPLEMENTATION_COMPLETE\s*[:=]\s*NO|IMPLEMENTATION_COMPLETE\s*[:=]\s*NO/, "IMPLEMENTATION_COMPLETE: NO"],
+    [/IMP037_ACCEPTED\s*[:=]\s*NO/, "IMP037_ACCEPTED: NO"],
+    [/IMP038_ACTIVATED\s*[:=]\s*NO/, "IMP038_ACTIVATED: NO"],
+  ];
+  for (const [pattern, label] of requiredPostMergeMarkers) {
+    if (!pattern.test(body)) {
+      return {
+        ok: false,
+        code: "IMP037_PD_POST_MERGE",
+        message: `Post-merge IMP-037 Product Definition must record ${label}`,
+      };
+    }
+  }
+  if (
+    /IMP037_ACCEPTED\s*[:=]\s*YES/.test(body) ||
+    /IMP038_ACTIVATED\s*[:=]\s*YES/.test(body) ||
+    /IMP037_IMPLEMENTATION_COMPLETE\s*[:=]\s*YES/.test(body) ||
+    /IMP037_EXTERNAL_RECOVERY_PROOF\s*[:=]\s*PASS/.test(body) ||
+    /IMPLEMENTATION_PERFORMED\s*[:=]\s*YES/.test(body)
+  ) {
+    return {
+      ok: false,
+      code: "IMP037_PD_PREMATURE_PROGRESSION",
+      message:
+        "Post-merge IMP-037 Product Definition must not claim external recovery proof, implementation complete, acceptance, or IMP-038 activation",
+    };
+  }
+  const startedShaped = toImp037StartedShapedPostMergeProductDefinition(body);
+  return evaluateImp037StartedProductDefinition(startedShaped);
+}
+
+/**
+ * Validate IMP-037 post-merge repository-implementation reconciliation (GTM-R137 / STATE-R135).
+ * Same core lifecycle as implementation start; records merge provenance without completing
+ * external recovery proof or advancing formal lifecycle beyond IMPLEMENTATION_IN_PROGRESS.
+ * @param {Record<string, unknown>} checkpoint
+ */
+export function evaluateImp037PostMergeReconciliationCheckpoint(checkpoint) {
+  const expected = {
+    roadmapVersion: "GTM-R137",
+    stateVersion: "STATE-R135",
+    acceptedThrough: "IMP-036G",
+    currentProductSlice: "IMP-037",
+    nextProductSlice: "IMP-038",
+    pendingAcceptance: "NONE",
+    currentProductImplementation: "IMP-037",
+    imp036g: "COMPLETE_AND_ACCEPTED",
+    imp037FormalLifecycle: "IMPLEMENTATION_IN_PROGRESS",
+    imp037Activated: "YES",
+    productDefinition: "APPROVED",
+    productDefinitionGate: "PASS",
+    architectureFit: "PASS",
+    architectureLocked: "YES",
+    implementationAuthorized: "YES",
+    started: "YES",
+    repositoryImplementationMerged: "YES",
+    implementationPr: "174",
+    implementationReviewedHead: "ae7328efe1add11a9a4299150251fe14c71b2730",
+    implementationReviewedTree: "4ff19a31db947cafadf690cf6bf1b6d2f1de14ac",
+    independentImplementationReview: "PASS",
+    independentImplementationReviewId: "5265354130",
+    implementationMergeSha: "f77a54819f51ad5648dda8acb3a7c93345cd5d6c",
+    implementationMergeTree: "4ff19a31db947cafadf690cf6bf1b6d2f1de14ac",
+    postMergeCi: "35587376968",
+    postMergeCiResult: "SUCCESS",
+    repositoryImplementation: "MERGED",
+    externalRecoveryProof: "NOT_PERFORMED",
+    implementationComplete: "NO",
+    accepted: "NO",
+    founderUatRequired: "YES",
+    founderUat: "NOT_PERFORMED",
+    imp038Activated: "NO",
+    architectureVersion: "ARCH-R20",
+    decisionRegisterVersion: "DR-16",
+    productDeliveryVersion: "PD-1",
+    productDefinitionExists: true,
+    capabilityArtifactExists: true,
+    d374Created: "YES",
+    archR20Created: "YES",
+    d374Exists: true,
+    independentArchitectureFitReview: "PASS",
+    implementationAuthorizationEvidence: "PR#171/5743814105",
+    implementationStartEvidence: "PR#172/5744869269",
+  };
+  for (const [key, value] of Object.entries(expected)) {
+    if (checkpoint[key] !== value) {
+      return { ok: false, code: "IMP037_POST_MERGE_RECONCILIATION", message: `${key} must be ${value}` };
+    }
+  }
+  if (checkpoint.started !== "YES" || checkpoint.startedNo) {
+    return { ok: false, code: "IMP037_STARTED", message: "IMP-037 implementation must remain started at post-merge reconciliation" };
+  }
+  if (checkpoint.acceptedYes) {
+    return { ok: false, code: "IMP037_ACCEPTED", message: "IMP-037 must not be accepted at post-merge reconciliation" };
+  }
+  if (checkpoint.imp038ActivatedYes) {
+    return { ok: false, code: "IMP038_ACTIVATED", message: "IMP-038 must not be activated during IMP-037 post-merge reconciliation" };
+  }
+  if (checkpoint.implementationCompleteYes) {
+    return {
+      ok: false,
+      code: "IMP037_IMPLEMENTATION_COMPLETE",
+      message: "IMP-037 must not claim IMPLEMENTATION_COMPLETE at post-merge reconciliation",
+    };
+  }
+  if (checkpoint.d375Exists) {
+    return {
+      ok: false,
+      code: "IMP037_D375",
+      message: "D-375 must not be created as a CURRENT decision by IMP-037 post-merge reconciliation",
+    };
+  }
+  if (checkpoint.archR21Exists) {
+    return {
+      ok: false,
+      code: "IMP037_ARCH_R21",
+      message: "ARCH-R21 must not be created by IMP-037 post-merge reconciliation",
+    };
+  }
+  if (checkpoint.currentProductImplementation === "NONE") {
+    return {
+      ok: false,
+      code: "IMP037_CURRENT_IMPLEMENTATION_NONE",
+      message: "Current Product Implementation must be IMP-037 at post-merge reconciliation",
+    };
+  }
+  const postMergedCap = evaluateImp037PostMergedCapabilityArchitecture(
+    typeof checkpoint.capabilityText === "string" ? checkpoint.capabilityText : "",
+  );
+  if (!postMergedCap.ok) return postMergedCap;
+  const postMergedPd = evaluateImp037PostMergedProductDefinition(
+    typeof checkpoint.productDefinitionText === "string" ? checkpoint.productDefinitionText : "",
+  );
+  if (!postMergedPd.ok) return postMergedPd;
   return { ok: true };
 }
 
@@ -12700,7 +12979,8 @@ function checkDecisionRegister(decision, roadmap, state) {
     isD374CostOptimizedPilotInfrastructureCheckpoint(roadmap, state) ||
     isImp037ArchitectureLockCheckpoint(roadmap, state) ||
     isImp037ImplementationAuthorizationCheckpoint(roadmap, state) ||
-    isImp037ImplementationStartCheckpoint(roadmap, state)
+    isImp037ImplementationStartCheckpoint(roadmap, state) ||
+    isImp037PostMergeReconciliationCheckpoint(roadmap, state)
   ) {
     requiredIds.push("D-372");
     requiredIds.push("D-373");
@@ -14374,7 +14654,8 @@ function checkImp028ArchitectureLock(roadmap, state, architecture, decision) {
     const expectedArchitectureVersion = isD374CostOptimizedPilotInfrastructureCheckpoint(roadmap, state) ||
     isImp037ArchitectureLockCheckpoint(roadmap, state) ||
     isImp037ImplementationAuthorizationCheckpoint(roadmap, state) ||
-    isImp037ImplementationStartCheckpoint(roadmap, state)
+    isImp037ImplementationStartCheckpoint(roadmap, state) ||
+    isImp037PostMergeReconciliationCheckpoint(roadmap, state)
       ? "ARCH-R20"
       : isImp031ArchitectureDraftCheckpoint(roadmap, state) ||
       isImp031ArchitectureLockCheckpoint(roadmap, state) ||
@@ -14519,7 +14800,8 @@ function checkImp028ArchitectureLock(roadmap, state, architecture, decision) {
     const expectedDecisionRegisterVersion = isD374CostOptimizedPilotInfrastructureCheckpoint(roadmap, state) ||
     isImp037ArchitectureLockCheckpoint(roadmap, state) ||
     isImp037ImplementationAuthorizationCheckpoint(roadmap, state) ||
-    isImp037ImplementationStartCheckpoint(roadmap, state)
+    isImp037ImplementationStartCheckpoint(roadmap, state) ||
+    isImp037PostMergeReconciliationCheckpoint(roadmap, state)
       ? "DR-16"
       : isArchR17GovernanceCheckpoint(roadmap, state) ||
       isImp031ArchitectureDraftCheckpoint(roadmap, state) ||
@@ -21507,7 +21789,8 @@ function checkProductDeliveryProcessAuthorities() {
       (roadmapMeta?.roadmapVersion === "GTM-R133" && stateMeta?.stateVersion === "STATE-R131") ||
       (roadmapMeta?.roadmapVersion === "GTM-R134" && stateMeta?.stateVersion === "STATE-R132") ||
       (roadmapMeta?.roadmapVersion === "GTM-R135" && stateMeta?.stateVersion === "STATE-R133") ||
-      (roadmapMeta?.roadmapVersion === "GTM-R136" && stateMeta?.stateVersion === "STATE-R134")
+      (roadmapMeta?.roadmapVersion === "GTM-R136" && stateMeta?.stateVersion === "STATE-R134") ||
+      (roadmapMeta?.roadmapVersion === "GTM-R137" && stateMeta?.stateVersion === "STATE-R135")
     );
   const atActivatedGCheckpoint =
     ((roadmapMeta?.roadmapVersion === "GTM-R123" && stateMeta?.stateVersion === "STATE-R121") ||
@@ -21854,7 +22137,8 @@ export function runProjectConsistency() {
       !isD374CostOptimizedPilotInfrastructureCheckpoint(roadmap, state) &&
       !isImp037ArchitectureLockCheckpoint(roadmap, state) &&
       !isImp037ImplementationAuthorizationCheckpoint(roadmap, state) &&
-      !isImp037ImplementationStartCheckpoint(roadmap, state)
+      !isImp037ImplementationStartCheckpoint(roadmap, state) &&
+      !isImp037PostMergeReconciliationCheckpoint(roadmap, state)
     ) {
       fail("UNSUPPORTED_GOVERNANCE_CHECKPOINT", "Governance revisions at or beyond GTM-R66 / STATE-R64 require an exact supported canonical checkpoint");
     }
@@ -21976,6 +22260,7 @@ export function runProjectConsistency() {
   checkImp037ArchitectureLock(roadmap, state, architecture, decision);
   checkImp037ImplementationAuthorization(roadmap, state, architecture, decision);
   checkImp037ImplementationStart(roadmap, state, architecture, decision);
+  checkImp037PostMergeReconciliation(roadmap, state, architecture, decision);
   checkTechnicalInventory();
   checkStaticWeb();
   checkAgentsPointer();
@@ -27656,6 +27941,281 @@ function checkImp037ImplementationStart(roadmap, state, architecture, decision) 
   else {
     note(
       "IMP-037 implementation start persistence valid (IMPLEMENTATION_IN_PROGRESS; started; not accepted; IMP-038 unactivated).",
+    );
+  }
+}
+
+/**
+ * CURRENT checkpoint: IMP-037 post-merge repository-implementation reconciliation (R137/S135).
+ * Requires merge provenance while keeping IMPLEMENTATION_IN_PROGRESS and rejecting
+ * external recovery proof / implementation complete / acceptance / IMP-038.
+ */
+function checkImp037PostMergeReconciliation(roadmap, state, architecture, decision) {
+  if (!isImp037PostMergeReconciliationCheckpoint(roadmap, state)) return;
+
+  const currentRoadmapSection = roadmap.text.slice(roadmap.text.indexOf("## 2."), roadmap.text.indexOf("## 3."));
+  const currentStateAcceptance = (() => {
+    const start = state.text.indexOf("## 5. Acceptance Position");
+    const end = state.text.indexOf("\n## ", start + 1);
+    return start === -1 ? "" : state.text.slice(start, end === -1 ? undefined : end);
+  })();
+  const currentStateActivity = (() => {
+    const start = state.text.indexOf("## 2. Current Work Position");
+    const end = state.text.indexOf("\n## ", start + 1);
+    return start === -1 ? "" : state.text.slice(start, end === -1 ? undefined : end);
+  })();
+  const futureSection = roadmap.text.split("## 5. Future GTM Slices")[1]?.split("## 6.")[0] || "";
+  const currentSliceSection = roadmap.text.split("## 4. Current Product Slice")[1]?.split("## 5.")[0] || "";
+  const currentBlob = `${currentRoadmapSection}\n${currentStateAcceptance}\n${currentStateActivity}\n${currentSliceSection}`;
+
+  const productDefRel = "docs/platform/product/IMP-037/product-definition.md";
+  const productDefAbs = resolveExactRelativeFile(productDefRel);
+  const productDefinitionText = productDefAbs ? readFileSync(productDefAbs, "utf8") : "";
+  if (!productDefAbs) {
+    fail("IMP037_PD_APPROVED_ABSENT", "IMP-037 Product Definition must exist at post-merge reconciliation checkpoint");
+  }
+
+  const capabilityAbs = resolveExactRelativeFile(IMP037_LOCKED_CAPABILITY_REL);
+  const capabilityText = capabilityAbs ? readFileSync(capabilityAbs, "utf8") : "";
+  if (!capabilityAbs) {
+    fail("IMP037_CAPABILITY_ABSENT", "IMP-037 locked capability architecture must exist at post-merge reconciliation checkpoint");
+  }
+
+  const requiredTokens = [
+    [currentRoadmapSection, /IMP-036G:\s*COMPLETE_AND_ACCEPTED/, "ROADMAP must preserve IMP-036G COMPLETE_AND_ACCEPTED"],
+    [currentRoadmapSection, /IMP-037:\s*IMPLEMENTATION_IN_PROGRESS/, "ROADMAP must record IMP-037 IMPLEMENTATION_IN_PROGRESS"],
+    [currentRoadmapSection, /IMP037_ACTIVATED:\s*YES/, "ROADMAP must record IMP037_ACTIVATED: YES"],
+    [currentRoadmapSection, /IMP037_PRODUCT_DEFINITION:\s*APPROVED/, "ROADMAP must record Product Definition APPROVED"],
+    [currentRoadmapSection, /IMP037_PRODUCT_DEFINITION_GATE:\s*PASS/, "ROADMAP must record Product Definition Gate PASS"],
+    [currentRoadmapSection, /IMP037_ARCHITECTURE_FIT:\s*PASS/, "ROADMAP must record Architecture Fit PASS"],
+    [currentRoadmapSection, /IMP037_ARCHITECTURE_LOCKED:\s*YES/, "ROADMAP must record architecture locked"],
+    [currentRoadmapSection, /IMP037_IMPLEMENTATION_AUTHORIZED:\s*YES/, "ROADMAP must record implementation authorized"],
+    [currentRoadmapSection, /IMP037_STARTED:\s*YES/, "ROADMAP must record IMP-037 started"],
+    [currentRoadmapSection, /IMP037_REPOSITORY_IMPLEMENTATION_MERGED:\s*YES/, "ROADMAP must record repository implementation merged"],
+    [currentRoadmapSection, /IMP037_IMPLEMENTATION_PR:\s*174/, "ROADMAP must record implementation PR 174"],
+    [currentRoadmapSection, /IMP037_IMPLEMENTATION_REVIEWED_HEAD:\s*ae7328efe1add11a9a4299150251fe14c71b2730/, "ROADMAP must record reviewed head"],
+    [currentRoadmapSection, /IMP037_IMPLEMENTATION_REVIEWED_TREE:\s*4ff19a31db947cafadf690cf6bf1b6d2f1de14ac/, "ROADMAP must record reviewed tree"],
+    [currentRoadmapSection, /IMP037_INDEPENDENT_IMPLEMENTATION_REVIEW:\s*PASS/, "ROADMAP must record independent implementation review PASS"],
+    [currentRoadmapSection, /IMP037_INDEPENDENT_IMPLEMENTATION_REVIEW_ID:\s*5265354130/, "ROADMAP must record independent implementation review id"],
+    [currentRoadmapSection, /IMP037_IMPLEMENTATION_MERGE_SHA:\s*f77a54819f51ad5648dda8acb3a7c93345cd5d6c/, "ROADMAP must record merge SHA"],
+    [currentRoadmapSection, /IMP037_IMPLEMENTATION_MERGE_TREE:\s*4ff19a31db947cafadf690cf6bf1b6d2f1de14ac/, "ROADMAP must record merge tree"],
+    [currentRoadmapSection, /IMP037_POST_MERGE_CI:\s*35587376968/, "ROADMAP must record post-merge CI"],
+    [currentRoadmapSection, /IMP037_POST_MERGE_CI_RESULT:\s*SUCCESS/, "ROADMAP must record post-merge CI SUCCESS"],
+    [currentRoadmapSection, /IMP037_REPOSITORY_IMPLEMENTATION:\s*MERGED/, "ROADMAP must record repository implementation MERGED"],
+    [currentRoadmapSection, /IMP037_EXTERNAL_RECOVERY_PROOF:\s*NOT_PERFORMED/, "ROADMAP must record external recovery proof NOT_PERFORMED"],
+    [currentRoadmapSection, /IMP037_IMPLEMENTATION_COMPLETE:\s*NO/, "ROADMAP must record implementation complete NO"],
+    [currentRoadmapSection, /IMP037_ACCEPTED:\s*NO/, "ROADMAP must record IMP-037 unaccepted"],
+    [currentRoadmapSection, /IMP037_FOUNDER_UAT_REQUIRED:\s*YES/, "ROADMAP must record Founder UAT required"],
+    [currentRoadmapSection, /IMP037_FOUNDER_UAT:\s*NOT_PERFORMED/, "ROADMAP must record Founder UAT NOT_PERFORMED"],
+    [currentRoadmapSection, /IMP038_ACTIVATED:\s*NO/, "ROADMAP must keep IMP-038 unactivated"],
+    [currentRoadmapSection, /IMP-038:\s*PLANNED \/ NOT_ACTIVATED \/ NOT_AUTHORIZED \/ NOT_STARTED/, "ROADMAP must keep IMP-038 planned/not activated"],
+    [currentRoadmapSection, /D-374_CREATED:\s*YES/, "ROADMAP must preserve D-374_CREATED: YES"],
+    [currentRoadmapSection, /ARCH_R20_CREATED:\s*YES/, "ROADMAP must preserve ARCH_R20_CREATED: YES"],
+    [currentRoadmapSection, /5743814105/, "ROADMAP must record implementation-authorization evidence comment 5743814105"],
+    [currentRoadmapSection, /5744869269/, "ROADMAP must record implementation-start evidence comment 5744869269"],
+    [currentStateAcceptance, /IMP-036G:\s*COMPLETE_AND_ACCEPTED/, "STATE must preserve IMP-036G COMPLETE_AND_ACCEPTED"],
+    [currentStateActivity, /IMP037_ACTIVATED:\s*YES/, "STATE must record IMP037_ACTIVATED: YES"],
+    [currentStateActivity, /IMP-037:\s*IMPLEMENTATION_IN_PROGRESS/, "STATE must record IMP-037 IMPLEMENTATION_IN_PROGRESS"],
+    [currentStateActivity, /IMP037_PRODUCT_DEFINITION:\s*APPROVED/, "STATE must record Product Definition APPROVED"],
+    [currentStateActivity, /IMP037_PRODUCT_DEFINITION_GATE:\s*PASS/, "STATE must record Product Definition Gate PASS"],
+    [currentStateActivity, /IMP037_ARCHITECTURE_FIT:\s*PASS/, "STATE must record Architecture Fit PASS"],
+    [currentStateActivity, /IMP037_ARCHITECTURE_LOCKED:\s*YES/, "STATE must record architecture locked"],
+    [currentStateActivity, /IMP037_IMPLEMENTATION_AUTHORIZED:\s*YES/, "STATE must record implementation authorized"],
+    [currentStateActivity, /IMP037_STARTED:\s*YES/, "STATE must record started"],
+    [currentStateActivity, /IMP037_REPOSITORY_IMPLEMENTATION_MERGED:\s*YES/, "STATE must record repository implementation merged"],
+    [currentStateActivity, /IMP037_IMPLEMENTATION_PR:\s*174/, "STATE must record implementation PR 174"],
+    [currentStateActivity, /IMP037_IMPLEMENTATION_REVIEWED_HEAD:\s*ae7328efe1add11a9a4299150251fe14c71b2730/, "STATE must record reviewed head"],
+    [currentStateActivity, /IMP037_IMPLEMENTATION_REVIEWED_TREE:\s*4ff19a31db947cafadf690cf6bf1b6d2f1de14ac/, "STATE must record reviewed tree"],
+    [currentStateActivity, /IMP037_INDEPENDENT_IMPLEMENTATION_REVIEW:\s*PASS/, "STATE must record independent implementation review PASS"],
+    [currentStateActivity, /IMP037_INDEPENDENT_IMPLEMENTATION_REVIEW_ID:\s*5265354130/, "STATE must record independent implementation review id"],
+    [currentStateActivity, /IMP037_IMPLEMENTATION_MERGE_SHA:\s*f77a54819f51ad5648dda8acb3a7c93345cd5d6c/, "STATE must record merge SHA"],
+    [currentStateActivity, /IMP037_IMPLEMENTATION_MERGE_TREE:\s*4ff19a31db947cafadf690cf6bf1b6d2f1de14ac/, "STATE must record merge tree"],
+    [currentStateActivity, /IMP037_POST_MERGE_CI:\s*35587376968/, "STATE must record post-merge CI"],
+    [currentStateActivity, /IMP037_POST_MERGE_CI_RESULT:\s*SUCCESS/, "STATE must record post-merge CI SUCCESS"],
+    [currentStateActivity, /IMP037_REPOSITORY_IMPLEMENTATION:\s*MERGED/, "STATE must record repository implementation MERGED"],
+    [currentStateActivity, /IMP037_EXTERNAL_RECOVERY_PROOF:\s*NOT_PERFORMED/, "STATE must record external recovery proof NOT_PERFORMED"],
+    [currentStateActivity, /IMP037_IMPLEMENTATION_COMPLETE:\s*NO/, "STATE must record implementation complete NO"],
+    [currentStateActivity, /IMP037_ACCEPTED:\s*NO/, "STATE must record unaccepted"],
+    [currentStateActivity, /IMP037_FOUNDER_UAT:\s*NOT_PERFORMED/, "STATE must record Founder UAT NOT_PERFORMED"],
+    [currentStateActivity, /IMP038_ACTIVATED:\s*NO/, "STATE must keep IMP-038 unactivated"],
+    [currentStateActivity, /GTM-R137\s*\/\s*STATE-R135/, "STATE current governance activity must record GTM-R137 / STATE-R135"],
+    [currentStateActivity, /IMPLEMENTATION_IN_PROGRESS/, "STATE current governance activity must record IMPLEMENTATION_IN_PROGRESS"],
+    [currentStateActivity, /Current Product Implementation:\s*IMP-037/, "STATE must record Current Product Implementation IMP-037"],
+    [currentSliceSection, /IMP037_ARCHITECTURE_LOCKED:\s*YES/, "ROADMAP current slice must record architecture locked"],
+    [currentSliceSection, /IMP037_ARCHITECTURE_FIT:\s*PASS/, "ROADMAP current slice must record Architecture Fit PASS"],
+    [currentSliceSection, /IMP037_IMPLEMENTATION_AUTHORIZED:\s*YES/, "ROADMAP current slice must record implementation authorized"],
+    [currentSliceSection, /IMP037_STARTED:\s*YES/, "ROADMAP current slice must record implementation started"],
+    [state.text, /STATE-R135 = IMP-037_POST_MERGE_REPOSITORY_IMPLEMENTATION_RECONCILIATION/, "STATE must record STATE-R135 post-merge reconciliation identity"],
+  ];
+  for (const [haystack, pattern, message] of requiredTokens) {
+    if (!pattern.test(haystack)) fail("IMP037_POST_MERGE_RECONCILIATION", message);
+  }
+
+  // Exact merge provenance must agree across ROADMAP §2 and STATE §2 (not ROADMAP-only).
+  const exactProvenancePairs = [
+    [/IMP037_IMPLEMENTATION_PR:\s*174/, "IMP037_IMPLEMENTATION_PR"],
+    [/IMP037_IMPLEMENTATION_REVIEWED_HEAD:\s*ae7328efe1add11a9a4299150251fe14c71b2730/, "IMP037_IMPLEMENTATION_REVIEWED_HEAD"],
+    [/IMP037_IMPLEMENTATION_REVIEWED_TREE:\s*4ff19a31db947cafadf690cf6bf1b6d2f1de14ac/, "IMP037_IMPLEMENTATION_REVIEWED_TREE"],
+    [/IMP037_INDEPENDENT_IMPLEMENTATION_REVIEW_ID:\s*5265354130/, "IMP037_INDEPENDENT_IMPLEMENTATION_REVIEW_ID"],
+    [/IMP037_IMPLEMENTATION_MERGE_SHA:\s*f77a54819f51ad5648dda8acb3a7c93345cd5d6c/, "IMP037_IMPLEMENTATION_MERGE_SHA"],
+    [/IMP037_IMPLEMENTATION_MERGE_TREE:\s*4ff19a31db947cafadf690cf6bf1b6d2f1de14ac/, "IMP037_IMPLEMENTATION_MERGE_TREE"],
+    [/IMP037_POST_MERGE_CI:\s*35587376968/, "IMP037_POST_MERGE_CI"],
+    [/IMP037_POST_MERGE_CI_RESULT:\s*SUCCESS/, "IMP037_POST_MERGE_CI_RESULT"],
+  ];
+  for (const [pattern, label] of exactProvenancePairs) {
+    const inRoadmap = pattern.test(currentRoadmapSection);
+    const inState = pattern.test(currentStateActivity);
+    if (inRoadmap !== inState || !inRoadmap) {
+      fail(
+        "IMP037_POST_MERGE_PROVENANCE_MISMATCH",
+        `ROADMAP and STATE current sections must both record identical ${label}`,
+      );
+    }
+  }
+
+  if (
+    /IMP037_STARTED:\s*NO/.test(currentRoadmapSection) ||
+    /IMP037_STARTED:\s*NO/.test(currentStateActivity) ||
+    /IMP-037:\s*ARCHITECTURE_LOCKED \/ AUTHORIZED \/ NOT_STARTED/.test(currentRoadmapSection) ||
+    /IMP-037:\s*ARCHITECTURE_LOCKED \/ AUTHORIZED \/ NOT_STARTED/.test(currentStateActivity)
+  ) {
+    fail(
+      "IMP037_STALE_NOT_STARTED",
+      "CURRENT ROADMAP/STATE must not retain IMP-037 AUTHORIZED / NOT_STARTED after R137/S135 post-merge reconciliation",
+    );
+  }
+
+  const forbidden = [
+    /IMP037_ACCEPTED:\s*YES/,
+    /IMP-037:\s*IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE/,
+    /IMP-037:\s*COMPLETE_AND_ACCEPTED/,
+    /IMP037_IMPLEMENTATION_COMPLETE:\s*YES/,
+    /IMP037_EXTERNAL_RECOVERY_PROOF:\s*PASS/,
+    /IMP038_ACTIVATED:\s*YES/,
+    /IMP-038:\s*ARCHITECTURE_IN_PROGRESS/,
+  ];
+  for (const haystack of [currentRoadmapSection, currentStateAcceptance, currentStateActivity, currentSliceSection]) {
+    if (forbidden.some((pattern) => pattern.test(haystack))) {
+      fail(
+        "IMP037_PREMATURE_PROGRESSION",
+        "IMP-037 post-merge reconciliation must not complete, accept IMP-037, claim external recovery proof, or activate IMP-038",
+      );
+      break;
+    }
+  }
+
+  if (!/IMP-037\s*\|\s*Backup, Restore & Migration Readiness\s*\|\s*IMPLEMENTATION_IN_PROGRESS/.test(futureSection)) {
+    fail("IMP037_ROADMAP_LIFECYCLE", "ROADMAP future ledger must list IMP-037 as IMPLEMENTATION_IN_PROGRESS");
+  }
+  if (!/IMP-038\s*\|\s*Security & Privacy Hardening\s*\|\s*PLANNED/.test(futureSection)) {
+    fail("IMP038_ROADMAP_NOT_PLANNED", "ROADMAP future ledger must keep IMP-038 PLANNED");
+  }
+
+  if (
+    state.meta.acceptedThrough !== "IMP-036G" ||
+    state.meta.currentProductSlice !== "IMP-037" ||
+    state.meta.pendingAcceptance !== "NONE" ||
+    state.meta.nextProductSlice !== "IMP-038"
+  ) {
+    fail(
+      "IMP037_STATE_POSITION",
+      "STATE must record acceptedThrough IMP-036G, currentProductSlice IMP-037, nextProductSlice IMP-038, pendingAcceptance NONE",
+    );
+  }
+  if (roadmap.meta.roadmapVersion !== "GTM-R137" || state.meta.stateVersion !== "STATE-R135") {
+    fail("IMP037_POST_MERGE_VERSION", "ROADMAP/STATE must be GTM-R137 / STATE-R135 at post-merge reconciliation checkpoint");
+  }
+  if (architecture?.meta.architectureVersion !== "ARCH-R20") {
+    fail("IMP037_ARCH_VERSION", "ARCHITECTURE must remain ARCH-R20 during IMP-037 post-merge reconciliation");
+  }
+  if (decision?.meta.decisionRegisterVersion !== "DR-16") {
+    fail("IMP037_DR_VERSION", "decision register must remain DR-16 during IMP-037 post-merge reconciliation");
+  }
+
+  const decisionText = decision?.text ?? "";
+  const decisionGlobalSection = decisionText.split("## 2. Current Global Decisions")[1]?.split("## 3.")[0] || "";
+  const d374Row = [...decisionGlobalSection.split("\n")].find((line) => /^\|\s*D-374\s*\|/.test(line));
+  if (!d374Row || !/\|\s*CURRENT\s*\|/.test(d374Row)) {
+    fail("IMP037_D374_REQUIRED", "D-374 must remain a CURRENT decision at IMP-037 post-merge reconciliation");
+  }
+  const d375Exists = decisionGlobalSection.split("\n").some((line) => /^\|\s*D-375\s*\|/.test(line));
+  const archR21Exists =
+    architecture?.meta.architectureVersion === "ARCH-R21" ||
+    /"architectureVersion"\s*:\s*"ARCH-R21"/.test(architecture?.text ?? "");
+
+  const productDelivery = loadCanonical("docs/platform/PRODUCT-DELIVERY.md", "PRODUCT_DELIVERY_PROCESS", ["version"]);
+  if (productDelivery && productDelivery.meta.version !== "PD-1") {
+    fail("IMP037_PD_VERSION", "PRODUCT-DELIVERY must remain PD-1 during IMP-037 post-merge reconciliation");
+  }
+
+  const checkpoint = evaluateImp037PostMergeReconciliationCheckpoint({
+    roadmapVersion: roadmap.meta.roadmapVersion,
+    stateVersion: state.meta.stateVersion,
+    acceptedThrough: state.meta.acceptedThrough,
+    currentProductSlice: state.meta.currentProductSlice,
+    nextProductSlice: state.meta.nextProductSlice,
+    pendingAcceptance: state.meta.pendingAcceptance,
+    currentProductImplementation: /Current Product Implementation:\s*IMP-037/.test(currentStateActivity) ? "IMP-037" : "",
+    imp036g: /IMP-036G:\s*COMPLETE_AND_ACCEPTED/.test(currentRoadmapSection) ? "COMPLETE_AND_ACCEPTED" : "",
+    imp037FormalLifecycle: /IMP-037:\s*IMPLEMENTATION_IN_PROGRESS/.test(currentRoadmapSection) ? "IMPLEMENTATION_IN_PROGRESS" : "",
+    imp037Activated: /IMP037_ACTIVATED:\s*YES/.test(currentRoadmapSection) ? "YES" : "",
+    productDefinition: /IMP037_PRODUCT_DEFINITION:\s*APPROVED/.test(currentRoadmapSection) ? "APPROVED" : "",
+    productDefinitionGate: /IMP037_PRODUCT_DEFINITION_GATE:\s*PASS/.test(currentRoadmapSection) ? "PASS" : "",
+    architectureFit: /IMP037_ARCHITECTURE_FIT:\s*PASS/.test(currentRoadmapSection) ? "PASS" : "",
+    architectureLocked: /IMP037_ARCHITECTURE_LOCKED:\s*YES/.test(currentRoadmapSection) ? "YES" : "",
+    implementationAuthorized: /IMP037_IMPLEMENTATION_AUTHORIZED:\s*YES/.test(currentRoadmapSection) ? "YES" : "",
+    started: /IMP037_STARTED:\s*YES/.test(currentRoadmapSection) ? "YES" : "",
+    repositoryImplementationMerged: /IMP037_REPOSITORY_IMPLEMENTATION_MERGED:\s*YES/.test(currentRoadmapSection) ? "YES" : "",
+    implementationPr: /IMP037_IMPLEMENTATION_PR:\s*174/.test(currentRoadmapSection) ? "174" : "",
+    implementationReviewedHead: /IMP037_IMPLEMENTATION_REVIEWED_HEAD:\s*ae7328efe1add11a9a4299150251fe14c71b2730/.test(currentRoadmapSection)
+      ? "ae7328efe1add11a9a4299150251fe14c71b2730"
+      : "",
+    implementationReviewedTree: /IMP037_IMPLEMENTATION_REVIEWED_TREE:\s*4ff19a31db947cafadf690cf6bf1b6d2f1de14ac/.test(currentRoadmapSection)
+      ? "4ff19a31db947cafadf690cf6bf1b6d2f1de14ac"
+      : "",
+    independentImplementationReview: /IMP037_INDEPENDENT_IMPLEMENTATION_REVIEW:\s*PASS/.test(currentRoadmapSection) ? "PASS" : "",
+    independentImplementationReviewId: /IMP037_INDEPENDENT_IMPLEMENTATION_REVIEW_ID:\s*5265354130/.test(currentRoadmapSection)
+      ? "5265354130"
+      : "",
+    implementationMergeSha: /IMP037_IMPLEMENTATION_MERGE_SHA:\s*f77a54819f51ad5648dda8acb3a7c93345cd5d6c/.test(currentRoadmapSection)
+      ? "f77a54819f51ad5648dda8acb3a7c93345cd5d6c"
+      : "",
+    implementationMergeTree: /IMP037_IMPLEMENTATION_MERGE_TREE:\s*4ff19a31db947cafadf690cf6bf1b6d2f1de14ac/.test(currentRoadmapSection)
+      ? "4ff19a31db947cafadf690cf6bf1b6d2f1de14ac"
+      : "",
+    postMergeCi: /IMP037_POST_MERGE_CI:\s*35587376968/.test(currentRoadmapSection) ? "35587376968" : "",
+    postMergeCiResult: /IMP037_POST_MERGE_CI_RESULT:\s*SUCCESS/.test(currentRoadmapSection) ? "SUCCESS" : "",
+    repositoryImplementation: /IMP037_REPOSITORY_IMPLEMENTATION:\s*MERGED/.test(currentRoadmapSection) ? "MERGED" : "",
+    externalRecoveryProof: /IMP037_EXTERNAL_RECOVERY_PROOF:\s*NOT_PERFORMED/.test(currentRoadmapSection) ? "NOT_PERFORMED" : "",
+    implementationComplete: /IMP037_IMPLEMENTATION_COMPLETE:\s*NO/.test(currentRoadmapSection) ? "NO" : "",
+    accepted: /IMP037_ACCEPTED:\s*NO/.test(currentRoadmapSection) ? "NO" : "",
+    founderUatRequired: /IMP037_FOUNDER_UAT_REQUIRED:\s*YES/.test(currentRoadmapSection) ? "YES" : "",
+    founderUat: /IMP037_FOUNDER_UAT:\s*NOT_PERFORMED/.test(currentRoadmapSection) ? "NOT_PERFORMED" : "",
+    imp038Activated: /IMP038_ACTIVATED:\s*NO/.test(currentRoadmapSection) ? "NO" : "",
+    architectureVersion: architecture?.meta.architectureVersion,
+    decisionRegisterVersion: decision?.meta.decisionRegisterVersion,
+    productDeliveryVersion: productDelivery?.meta.version ?? "",
+    productDefinitionExists: productDefAbs !== null,
+    capabilityArtifactExists: capabilityAbs !== null,
+    productDefinitionText,
+    capabilityText,
+    d374Created: /D-374_CREATED:\s*YES/.test(currentRoadmapSection) ? "YES" : "",
+    archR20Created: /ARCH_R20_CREATED:\s*YES/.test(currentRoadmapSection) ? "YES" : "",
+    d374Exists: Boolean(d374Row),
+    d375Exists,
+    archR21Exists,
+    startedNo: /IMP037_STARTED:\s*NO/.test(currentRoadmapSection) || /IMP037_STARTED:\s*NO/.test(currentStateActivity),
+    acceptedYes: /IMP037_ACCEPTED:\s*YES/.test(currentBlob) || /IMP-037:\s*COMPLETE_AND_ACCEPTED/.test(currentBlob),
+    imp038ActivatedYes: /IMP038_ACTIVATED:\s*YES/.test(currentBlob),
+    implementationCompleteYes: /IMP037_IMPLEMENTATION_COMPLETE:\s*YES/.test(currentBlob),
+    independentArchitectureFitReview: /INDEPENDENT_ARCHITECTURE_FIT_REVIEW:\s*PASS/.test(currentStateActivity) ? "PASS" : "",
+    implementationAuthorizationEvidence: /PR#171\/5743814105/.test(currentBlob) ? "PR#171/5743814105" : "",
+    implementationStartEvidence: /PR#172\/5744869269/.test(currentBlob) ? "PR#172/5744869269" : "",
+  });
+  if (!checkpoint.ok) fail(checkpoint.code, checkpoint.message);
+  else {
+    note(
+      "IMP-037 post-merge reconciliation persistence valid (IMPLEMENTATION_IN_PROGRESS; repository merged; external proof NOT_PERFORMED; not accepted; IMP-038 unactivated).",
     );
   }
 }

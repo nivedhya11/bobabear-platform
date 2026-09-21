@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R134",
+  "stateVersion": "STATE-R135",
   "acceptedThrough": "IMP-036G",
   "currentProductSlice": "IMP-037",
   "nextProductSlice": "IMP-038",
   "pendingAcceptance": "NONE",
   "governanceHealth": "ALIGNED",
-  "lastReviewed": "2026-09-20"
+  "lastReviewed": "2026-09-21"
 }
 -->
 
@@ -36,13 +36,21 @@ Current Product Implementation: IMP-037
 Pending Acceptance:             NONE
 Current Product Slice:          IMP-037 — Backup, Restore & Migration Readiness
 Next Product Slice:             IMP-038 — Security & Privacy Hardening
-Current Governance Activity:    IMP-037 Implementation START (GTM-R136 / STATE-R134;
-                              IMPLEMENTATION_IN_PROGRESS);
+Current Governance Activity:    IMP-037 post-merge repository implementation reconciliation
+                              (GTM-R137 / STATE-R135; IMPLEMENTATION_IN_PROGRESS;
+                              REPOSITORY_IMPLEMENTATION: MERGED;
+                              EXTERNAL_RECOVERY_PROOF: NOT_PERFORMED;
+                              IMPLEMENTATION_COMPLETE: NO);
                               implementationAuthorizationEvidence: PR#171/5743814105;
                               implementationStartEvidence: PR#172/5744869269;
+                              implementationMergeEvidence: PR#174 /
+                              f77a54819f51ad5648dda8acb3a7c93345cd5d6c /
+                              CI 35587376968 SUCCESS;
+                              independentImplementationReview: 5265354130 PASS;
+                              reviewedHead: ae7328efe1add11a9a4299150251fe14c71b2730;
+                              reviewedTree: 4ff19a31db947cafadf690cf6bf1b6d2f1de14ac;
                               authorizationAppliesTo: PD-IMP-037-DRAFT-1 + locked IMP-037
                               capability architecture;
-                              implementationAccompanied: YES (recovery foundation tranche only);
                               Architecture base ARCH-R20 / D-374;
                               INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PASS;
                               INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_HEAD:
@@ -59,12 +67,17 @@ Current Governance Activity:    IMP-037 Implementation START (GTM-R136 / STATE-R
                               IMP037_ARCHITECTURE_FIT: PASS;
                               IMP037_ARCHITECTURE_LOCKED: YES;
                               IMP037_IMPLEMENTATION_AUTHORIZED: YES; IMP037_STARTED: YES;
+                              IMP037_REPOSITORY_IMPLEMENTATION_MERGED: YES;
+                              IMP037_IMPLEMENTATION_COMPLETE: NO;
+                              IMP037_EXTERNAL_RECOVERY_PROOF: NOT_PERFORMED;
                               IMP037_ACCEPTED: NO; IMP037_FOUNDER_UAT_REQUIRED: YES;
+                              IMP037_FOUNDER_UAT: NOT_PERFORMED;
                               IMP038_ACTIVATED: NO;
                               D-374_CREATED: YES; ARCH_R20_CREATED: YES;
                               D-375_CREATED: NO; ARCH_R21_CREATED: NO;
-                              nextGate: continued bounded IMP-037 implementation / independent
-                              implementation review (not acceptance);
+                              nextGate: ChatGPT batch review of reconciliation +
+                              external-proof readiness, then explicit R3 external proof
+                              (not acceptance);
                               IMP-036G remains COMPLETE_AND_ACCEPTED
                               (GTM-R130 / STATE-R128);
                               Founder UAT PASS 2026-09-18; formal acceptance recorded;
@@ -89,8 +102,22 @@ IMP037_ARCHITECTURE_FIT:  PASS
 IMP037_ARCHITECTURE_LOCKED: YES
 IMP037_IMPLEMENTATION_AUTHORIZED: YES
 IMP037_STARTED:           YES
+IMP037_REPOSITORY_IMPLEMENTATION_MERGED: YES
+IMP037_IMPLEMENTATION_PR: 174
+IMP037_IMPLEMENTATION_REVIEWED_HEAD: ae7328efe1add11a9a4299150251fe14c71b2730
+IMP037_IMPLEMENTATION_REVIEWED_TREE: 4ff19a31db947cafadf690cf6bf1b6d2f1de14ac
+IMP037_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
+IMP037_INDEPENDENT_IMPLEMENTATION_REVIEW_ID: 5265354130
+IMP037_IMPLEMENTATION_MERGE_SHA: f77a54819f51ad5648dda8acb3a7c93345cd5d6c
+IMP037_IMPLEMENTATION_MERGE_TREE: 4ff19a31db947cafadf690cf6bf1b6d2f1de14ac
+IMP037_POST_MERGE_CI: 35587376968
+IMP037_POST_MERGE_CI_RESULT: SUCCESS
+IMP037_REPOSITORY_IMPLEMENTATION: MERGED
+IMP037_EXTERNAL_RECOVERY_PROOF: NOT_PERFORMED
+IMP037_IMPLEMENTATION_COMPLETE: NO
 IMP037_ACCEPTED:          NO
 IMP037_FOUNDER_UAT_REQUIRED: YES
+IMP037_FOUNDER_UAT:       NOT_PERFORMED
 IMP-038:                  PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
 IMP038_ACTIVATED:         NO
 D-374_CREATED:            YES
@@ -424,8 +451,22 @@ IMP037_ARCHITECTURE_FIT: PASS
 IMP037_ARCHITECTURE_LOCKED: YES
 IMP037_IMPLEMENTATION_AUTHORIZED: YES
 IMP037_STARTED: YES
+IMP037_REPOSITORY_IMPLEMENTATION_MERGED: YES
+IMP037_IMPLEMENTATION_PR: 174
+IMP037_IMPLEMENTATION_REVIEWED_HEAD: ae7328efe1add11a9a4299150251fe14c71b2730
+IMP037_IMPLEMENTATION_REVIEWED_TREE: 4ff19a31db947cafadf690cf6bf1b6d2f1de14ac
+IMP037_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
+IMP037_INDEPENDENT_IMPLEMENTATION_REVIEW_ID: 5265354130
+IMP037_IMPLEMENTATION_MERGE_SHA: f77a54819f51ad5648dda8acb3a7c93345cd5d6c
+IMP037_IMPLEMENTATION_MERGE_TREE: 4ff19a31db947cafadf690cf6bf1b6d2f1de14ac
+IMP037_POST_MERGE_CI: 35587376968
+IMP037_POST_MERGE_CI_RESULT: SUCCESS
+IMP037_REPOSITORY_IMPLEMENTATION: MERGED
+IMP037_EXTERNAL_RECOVERY_PROOF: NOT_PERFORMED
+IMP037_IMPLEMENTATION_COMPLETE: NO
 IMP037_ACCEPTED: NO
 IMP037_FOUNDER_UAT_REQUIRED: YES
+IMP037_FOUNDER_UAT: NOT_PERFORMED
 IMP-038: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
 IMP038_ACTIVATED: NO
 D-374_CREATED: YES
@@ -519,7 +560,7 @@ Implementation/review provenance for IMP-036F is recorded in
 | Why / Non-Goals | [`VISION.md`](./VISION.md) |
 | Durable architecture | [`ARCHITECTURE.md`](./ARCHITECTURE.md) |
 | Binding decision status | [`decision-register.md`](./decision-register.md) |
-| IMP-037 locked capability architecture (Fit PASS; independent Architecture Fit review PASS) | [`capabilities/IMP-037-backup-restore-migration-readiness.md`](./capabilities/IMP-037-backup-restore-migration-readiness.md) |
+| IMP-037 locked capability architecture (Fit PASS; independent Architecture Fit review PASS; repository implementation MERGED; external proof NOT_PERFORMED) | [`capabilities/IMP-037-backup-restore-migration-readiness.md`](./capabilities/IMP-037-backup-restore-migration-readiness.md) |
 | IMP-036G locked capability architecture (latest accepted) | [`capabilities/IMP-036G-administration-console-v2.md`](./capabilities/IMP-036G-administration-console-v2.md) |
 | IMP-036F locked capability architecture | [`capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md`](./capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md) |
 | IMP-036E locked capability architecture | [`capabilities/IMP-036E-store-operations-management.md`](./capabilities/IMP-036E-store-operations-management.md) |
@@ -528,7 +569,80 @@ Implementation/review provenance for IMP-036F is recorded in
 Agents may propose a STATE delta in their report. Only independent acceptance updates this file's
 accepted position and may promote `governanceHealth` to `ALIGNED`.
 
-## 10. STATE-R134 record
+## 10. STATE-R135 record
+
+```text
+STATE-R135 = IMP-037_POST_MERGE_REPOSITORY_IMPLEMENTATION_RECONCILIATION
+acceptedThrough: IMP-036G
+pendingAcceptance: NONE
+currentProductSlice: IMP-037
+nextProductSlice: IMP-038
+Current Product Implementation: IMP-037
+Current Governance Activity: IMP-037 post-merge repository implementation reconciliation; IMPLEMENTATION_IN_PROGRESS; REPOSITORY_IMPLEMENTATION: MERGED; EXTERNAL_RECOVERY_PROOF: NOT_PERFORMED; IMPLEMENTATION_COMPLETE: NO
+IMP-036G: COMPLETE_AND_ACCEPTED
+IMP036G_ACCEPTED: YES
+IMP036G_FOUNDER_UAT: PASS
+IMP036G_FORMAL_ACCEPTANCE: ACCEPTED
+IMP-037: IMPLEMENTATION_IN_PROGRESS
+IMP037_ACTIVATED: YES
+IMP037_PRODUCT_DEFINITION: APPROVED
+IMP037_PRODUCT_DEFINITION_VERSION: PD-IMP-037-DRAFT-1
+IMP037_PRODUCT_DECISIONS: RESOLVED
+IMP037_PRODUCT_DECISION_COUNT: 7
+IMP037_PRODUCT_DEFINITION_GATE: PASS
+IMP037_ARCHITECTURE_FIT: PASS
+IMP037_ARCHITECTURE_LOCKED: YES
+IMP037_IMPLEMENTATION_AUTHORIZED: YES
+IMP037_STARTED: YES
+IMP037_REPOSITORY_IMPLEMENTATION_MERGED: YES
+IMP037_IMPLEMENTATION_PR: 174
+IMP037_IMPLEMENTATION_REVIEWED_HEAD: ae7328efe1add11a9a4299150251fe14c71b2730
+IMP037_IMPLEMENTATION_REVIEWED_TREE: 4ff19a31db947cafadf690cf6bf1b6d2f1de14ac
+IMP037_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
+IMP037_INDEPENDENT_IMPLEMENTATION_REVIEW_ID: 5265354130
+IMP037_IMPLEMENTATION_MERGE_SHA: f77a54819f51ad5648dda8acb3a7c93345cd5d6c
+IMP037_IMPLEMENTATION_MERGE_TREE: 4ff19a31db947cafadf690cf6bf1b6d2f1de14ac
+IMP037_POST_MERGE_CI: 35587376968
+IMP037_POST_MERGE_CI_RESULT: SUCCESS
+IMP037_REPOSITORY_IMPLEMENTATION: MERGED
+IMP037_EXTERNAL_RECOVERY_PROOF: NOT_PERFORMED
+IMP037_IMPLEMENTATION_COMPLETE: NO
+IMP037_ACCEPTED: NO
+IMP037_FOUNDER_UAT_REQUIRED: YES
+IMP037_FOUNDER_UAT: NOT_PERFORMED
+IMP-038: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
+IMP038_ACTIVATED: NO
+D-374_CREATED: YES
+ARCH_R20_CREATED: YES
+D-375_CREATED: NO
+ARCH_R21_CREATED: NO
+architectureVersion: ARCH-R20
+decisionRegisterVersion: DR-16
+productDeliveryVersion: PD-1
+implementationAuthorizationGate: PASS
+implementationAuthorizationEvidence: PR#171/5743814105
+implementationStartEvidence: PR#172/5744869269
+authorizationAppliesTo: PD-IMP-037-DRAFT-1 + locked IMP-037 capability architecture
+nextGate: ChatGPT batch review of reconciliation + external-proof readiness, then explicit R3 external proof (not acceptance)
+fitEvaluatedHead: 28e6dd15c48b8c19abbc7057c4dc7e0a7d7cc7ea
+fitEvaluatedTree: 5792c963166e8589751d2ba8c8928728e2c83526
+fitEvaluatedFingerprint: 56fa9b5459fd8acceb2ccc3ab73c5d7d9583dbf4539b10a1ef75553dd5aff8ba
+fitDate: 2026-09-19
+fitResult: PASS
+independentArchitectureFitReview: PASS
+independentArchitectureFitReviewedHead: d74ca9a30096fb14bca80643b75aa19d33093dde
+independentArchitectureFitReviewedTree: 09c7e3bd6b7832944d07d527c149752ed3bbeb4d
+independentArchitectureFitReviewId: 5256273904
+PR169_NOTE: NON_AUTHORITATIVE / SUPERSEDED for ARCH-R20 Fit
+supersedes: STATE-R134
+```
+
+STATE-R135 records IMP-037 repository implementation merged to `main` after independent
+implementation review PASS and post-merge CI SUCCESS. Formal lifecycle remains
+`IMPLEMENTATION_IN_PROGRESS`. It does **not** claim implementation complete, external recovery
+proof, acceptance, IMP-038 activation, production resource creation, Founder UAT, or RPO/RTO proof.
+
+## 11. STATE-R134 record
 
 ```text
 STATE-R134 = IMP-037_IMPLEMENTATION_START
@@ -586,8 +700,10 @@ supersedes: STATE-R133
 STATE-R134 records IMP-037 implementation START. Formal lifecycle is
 `IMPLEMENTATION_IN_PROGRESS`. It does **not** claim implementation complete, acceptance,
 IMP-038 activation, production resource creation, Founder UAT, or RPO/RTO proof.
+(Superseded as CURRENT tip by STATE-R135 for repository-merge provenance; external proof remains
+outstanding.)
 
-## 11. STATE-R133 record
+## 12. STATE-R133 record
 
 ```text
 STATE-R133 = IMP-037_IMPLEMENTATION_AUTHORIZATION

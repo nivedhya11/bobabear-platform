@@ -11,7 +11,27 @@ ARCHITECTURE_LOCK_CHANGED: NO
 IMP037_ACCEPTED: NO
 IMP038_ACTIVATED: NO
 IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE: NO
+IMP037_IMPLEMENTATION_COMPLETE: NO
+
+REPOSITORY_IMPLEMENTATION: MERGED
+IMP037_REPOSITORY_IMPLEMENTATION_MERGED: YES
+IMP037_IMPLEMENTATION_PR: 174
+IMP037_IMPLEMENTATION_REVIEWED_HEAD: ae7328efe1add11a9a4299150251fe14c71b2730
+IMP037_IMPLEMENTATION_REVIEWED_TREE: 4ff19a31db947cafadf690cf6bf1b6d2f1de14ac
+IMP037_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
+IMP037_INDEPENDENT_IMPLEMENTATION_REVIEW_ID: 5265354130
+IMP037_IMPLEMENTATION_MERGE_SHA: f77a54819f51ad5648dda8acb3a7c93345cd5d6c
+IMP037_IMPLEMENTATION_MERGE_TREE: 4ff19a31db947cafadf690cf6bf1b6d2f1de14ac
+IMP037_POST_MERGE_CI: 35587376968
+IMP037_POST_MERGE_CI_RESULT: SUCCESS
+
+EXTERNAL_RECOVERY_PROOF: NOT_PERFORMED
+IMPLEMENTATION_PERFORMED: NO
 ```
+
+`IMPLEMENTATION_PERFORMED: NO` refers to **required backup/restore/provider proof execution**,
+not to absence of repository tooling. Repository Layer 1/Layer 2/restore modules exist and are
+merged; live Spaces/provider/host proof has **not** been performed.
 
 ## Automated proof performed (repository)
 
@@ -42,7 +62,13 @@ DROPLET_2GIB_RTO_VALIDATED: NO
 FOUNDER_UAT: NOT_PERFORMED
 PRODUCTION_BACKUP_RESTORE: NOT_PERFORMED
 OFF_HOST_SECRET_CUSTODY: DOCUMENTED_NOT_EXECUTED
+EXTERNAL_RECOVERY_PROOF: NOT_PERFORMED
 ```
+
+## Future external-proof campaign
+
+Planning-only (does **not** authorize live action):
+[`imp037-external-proof-plan.md`](./imp037-external-proof-plan.md)
 
 ## AC coverage classification (repository packet)
 
@@ -53,7 +79,7 @@ Classifications:
 - `NOT_PERFORMED_REQUIRES_PROVIDER` — needs real DigitalOcean Spaces
 - `NOT_PERFORMED_REQUIRES_PILOT_ENV` — needs 2 GiB pilot Droplet measurement
 - `NOT_PERFORMED_REQUIRES_FOUNDER_UAT` — Founder interactive UAT
-- `GAP` — repository implementation gap (none expected after this packet)
+- `GAP` — repository implementation gap (none expected after merge)
 
 | AC | Classification |
 |---|---|
@@ -113,3 +139,6 @@ Provider / pilot / Founder overlays that apply in addition to the table above:
 - Spaces provider verification of both buckets → `NOT_PERFORMED_REQUIRES_PROVIDER`
 - 2 GiB Droplet RTO measurement → `NOT_PERFORMED_REQUIRES_PILOT_ENV`
 - Founder UAT of recovery drill → `NOT_PERFORMED_REQUIRES_FOUNDER_UAT`
+
+Full 50-AC proof-campaign matrix (including qualifying evidence artifacts):
+[`imp037-external-proof-plan.md`](./imp037-external-proof-plan.md#50-ac-proof-matrix).

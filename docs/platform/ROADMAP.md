@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R136",
+  "roadmapVersion": "GTM-R137",
   "acceptedThrough": "IMP-036G",
   "currentProductSlice": "IMP-037",
   "nextProductSlice": "IMP-038",
   "gtmBoundary": "IMP-040",
-  "lastReviewed": "2026-09-20",
-  "supersedes": "GTM-R135"
+  "lastReviewed": "2026-09-21",
+  "supersedes": "GTM-R136"
 }
 -->
 
@@ -293,8 +293,22 @@ IMP037_ARCHITECTURE_FIT: PASS
 IMP037_ARCHITECTURE_LOCKED: YES
 IMP037_IMPLEMENTATION_AUTHORIZED: YES
 IMP037_STARTED: YES
+IMP037_REPOSITORY_IMPLEMENTATION_MERGED: YES
+IMP037_IMPLEMENTATION_PR: 174
+IMP037_IMPLEMENTATION_REVIEWED_HEAD: ae7328efe1add11a9a4299150251fe14c71b2730
+IMP037_IMPLEMENTATION_REVIEWED_TREE: 4ff19a31db947cafadf690cf6bf1b6d2f1de14ac
+IMP037_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
+IMP037_INDEPENDENT_IMPLEMENTATION_REVIEW_ID: 5265354130
+IMP037_IMPLEMENTATION_MERGE_SHA: f77a54819f51ad5648dda8acb3a7c93345cd5d6c
+IMP037_IMPLEMENTATION_MERGE_TREE: 4ff19a31db947cafadf690cf6bf1b6d2f1de14ac
+IMP037_POST_MERGE_CI: 35587376968
+IMP037_POST_MERGE_CI_RESULT: SUCCESS
+IMP037_REPOSITORY_IMPLEMENTATION: MERGED
+IMP037_EXTERNAL_RECOVERY_PROOF: NOT_PERFORMED
+IMP037_IMPLEMENTATION_COMPLETE: NO
 IMP037_ACCEPTED: NO
 IMP037_FOUNDER_UAT_REQUIRED: YES
+IMP037_FOUNDER_UAT: NOT_PERFORMED
 IMP-038: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
 IMP038_ACTIVATED: NO
 D-374_CREATED: YES
@@ -305,11 +319,16 @@ IMP-036D_ACCEPTED: YES
 IMP-036D_FOUNDER_UAT: PASS
 ```
 
-**GTM-R136** persists IMP-037 implementation START after explicit human R3 start / execution
-authorization (PR #172 issue comment `5744869269`) and accompanies the first bounded recovery
-foundation engineering tranche. Authorization remains PR#171/5743814105. Sets formal IMP-037
-ROADMAP lifecycle to `IMPLEMENTATION_IN_PROGRESS` (`IMP037_IMPLEMENTATION_AUTHORIZED: YES`;
-`IMP037_STARTED: YES`; `IMP037_ACCEPTED: NO`). Current Product Implementation is IMP-037.
+**GTM-R137** reconciles post-merge IMP-037 repository implementation provenance after PR #174
+merged to `main` (`f77a54819f51ad5648dda8acb3a7c93345cd5d6c` / tree
+`4ff19a31db947cafadf690cf6bf1b6d2f1de14ac`; independently reviewed head
+`ae7328efe1add11a9a4299150251fe14c71b2730`; independent implementation review `5265354130`
+PASS; post-merge exact-main CI `35587376968` SUCCESS). Formal IMP-037 ROADMAP lifecycle remains
+`IMPLEMENTATION_IN_PROGRESS` (`IMP037_IMPLEMENTATION_AUTHORIZED: YES`; `IMP037_STARTED: YES`;
+`IMP037_REPOSITORY_IMPLEMENTATION_MERGED: YES`; `IMP037_IMPLEMENTATION_COMPLETE: NO`;
+`IMP037_ACCEPTED: NO`; `IMP037_EXTERNAL_RECOVERY_PROOF: NOT_PERFORMED`;
+`IMP037_FOUNDER_UAT: NOT_PERFORMED`). Repository merge ≠ external recovery proof ≠
+implementation complete ≠ acceptance. Current Product Implementation remains IMP-037.
 Preserves `acceptedThrough = IMP-036G`; `currentProductSlice = IMP-037`; `pendingAcceptance = NONE`;
 `nextProductSlice = IMP-038`. Preserves `IMP037_ACTIVATED: YES`; `IMP037_PRODUCT_DEFINITION: APPROVED`;
 `IMP037_PRODUCT_DEFINITION_VERSION: PD-IMP-037-DRAFT-1`; `IMP037_PRODUCT_DECISIONS: RESOLVED`;
@@ -323,11 +342,10 @@ fingerprint `56fa9b5459fd8acceb2ccc3ab73c5d7d9583dbf4539b10a1ef75553dd5aff8ba`;
 implementationAuthorizationEvidence: PR#171/5743814105; implementationStartEvidence:
 PR#172/5744869269; `IMP037_FOUNDER_UAT_REQUIRED: YES`; `IMP038_ACTIVATED: NO`. ARCH-R20 and
 DR-16 remain CURRENT (`D-374_CREATED: YES`; `ARCH_R20_CREATED: YES`). `D-375_CREATED: NO`;
-`ARCH_R21_CREATED: NO`. This is START only — not implementation complete, not acceptance, not
-Founder UAT, not IMP-038 activation. Does **not** accept IMP-037, activate IMP-038, create
-production resources, mutate cloud/database, deploy, or authorize merge. Next gate after this
-start checkpoint is continued bounded IMP-037 implementation, then independent implementation
-review — **not** acceptance.
+`ARCH_R21_CREATED: NO`. Does **not** claim `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`,
+acceptance, Founder UAT, RPO/RTO proof, Spaces/provider proof, systemd host install, or IMP-038
+activation. Next gate is ChatGPT batch review of reconciliation + external-proof readiness, then
+explicit R3 external recovery proof — **not** acceptance.
 
 Implementation / review provenance for accepted IMP-036G remains distinct from this checkpoint:
 accepted UAT product candidate `fbf690a67cda51bd6bbc1bad4a9d26f574c4286e` / tree
@@ -578,6 +596,29 @@ Current public GTM boundary is **IMP-040**, not IMP-035.
 Historical revision evidence for GTM-R1…GTM-R113 is preserved byte-for-byte in
 [`history/ROADMAP-GTM-R113-pre-compression.md`](./history/ROADMAP-GTM-R113-pre-compression.md).
 
+### GTM-R137 — 2026-09-21
+
+- Reconcile IMP-037 post-merge repository implementation provenance after PR #174 merge to `main`
+  (`IMP037_REPOSITORY_IMPLEMENTATION_MERGED: YES`; merge SHA
+  `f77a54819f51ad5648dda8acb3a7c93345cd5d6c` / tree `4ff19a31db947cafadf690cf6bf1b6d2f1de14ac`;
+  reviewed head `ae7328efe1add11a9a4299150251fe14c71b2730`; independent implementation review
+  `5265354130` PASS; post-merge CI `35587376968` SUCCESS).
+- Formal IMP-037 ROADMAP lifecycle remains `IMPLEMENTATION_IN_PROGRESS`
+  (`IMP037_IMPLEMENTATION_COMPLETE: NO`; `IMP037_ACCEPTED: NO`;
+  `IMP037_EXTERNAL_RECOVERY_PROOF: NOT_PERFORMED`; `IMP037_FOUNDER_UAT: NOT_PERFORMED`).
+- Clarifies: repository Layer 1/Layer 2/restore tooling is **merged**; required external
+  Spaces/provider backup/restore proof, systemd host install, off-host custody execution,
+  RPO/RTO measurement, and Founder UAT remain **NOT_PERFORMED**.
+- Preserves `acceptedThrough = IMP-036G`; `currentProductSlice = IMP-037`;
+  `pendingAcceptance = NONE`; `nextProductSlice = IMP-038`; `IMP038_ACTIVATED: NO`.
+- Preserves ARCH-R20 / DR-16 / D-374 CURRENT (`D-375_CREATED: NO`; `ARCH_R21_CREATED: NO`).
+- Does **not** move to `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`, accept IMP-037, activate
+  IMP-038, claim RPO/RTO proven, or create production resources.
+- Supporting external-proof readiness plan:
+  [`operations/imp037-external-proof-plan.md`](./operations/imp037-external-proof-plan.md).
+- VISION-1 / PD-1 / TEST-1 unchanged.
+- Supersedes GTM-R136.
+
 ### GTM-R136 — 2026-09-20
 
 - Persist IMP-037 implementation START (`IMP-037_IMPLEMENTATION_START`) after explicit human R3
@@ -588,6 +629,7 @@ Historical revision evidence for GTM-R1…GTM-R113 is preserved byte-for-byte in
 - Current Product Implementation becomes IMP-037. Accompanying recovery-foundation engineering
   tranche (status/readiness, evidence model, identity guard, secret-safe CLI, runbook) does **not**
   complete Layer 1/Layer 2 backup, restore, Spaces, pgBackRest, age, systemd, or Founder UAT.
+  (Later superseded for repository-merge provenance by GTM-R137; external proof remains outstanding.)
 - Preserves `acceptedThrough = IMP-036G`; `currentProductSlice = IMP-037`;
   `pendingAcceptance = NONE`; `nextProductSlice = IMP-038`.
 - Preserves `IMP037_ACTIVATED: YES`; Product Definition APPROVED / Gate PASS; Architecture Fit PASS;
