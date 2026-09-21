@@ -25,6 +25,11 @@ REAL_SPACES: NOT_PERFORMED
 SYSTEMD_HOST_INSTALL: NOT_PERFORMED
 PRODUCTION_BACKUP_RESTORE: NOT_PERFORMED
 OFF_HOST_SECRET_CUSTODY: NOT_PERFORMED
+
+PHASE1_ATTEMPTED: YES
+PHASE1_RESULT: BLOCKED
+PHASE1_BLOCK_STATUS: BLOCKED_SECRET_CUSTODY_DECISION
+PHASE1_EVIDENCE: docs/platform/operations/evidence/imp037-phase1-provider-custody-2026-09-21.md
 ```
 
 This plan defines the future **explicit R3** proof campaign. It does **not** authorize or
@@ -74,6 +79,29 @@ Required before Phase 2:
 
 Exit criteria (planning): custody checklist completed under R3 authorization; credentials/secrets
 never committed to the repository; evidence paths record presence/absence without secret material.
+
+### Phase 1 attempt (2026-09-21) — BLOCKED
+
+Under R3 authorization PR #175 comment `5759504746`, Gate 0 exact-main CI run
+`35592155769` on `6e5553257fbd2498a606cda27b9ec9c6aebda7f9` was verified **SUCCESS**.
+
+Phase 1 did **not** PASS. Secret-safe evidence:
+
+[`evidence/imp037-phase1-provider-custody-2026-09-21.md`](./evidence/imp037-phase1-provider-custody-2026-09-21.md)
+
+```text
+PHASE1_RESULT: BLOCKED
+BLOCKED_SECRET_CUSTODY_DECISION: YES
+  (off-host custody mechanism still deferred under ADR-015 / locked §8.1;
+   no existing approved custody_reference found; none invented)
+SECONDARY: ENVIRONMENT_BLOCKER
+  (no DigitalOcean API/Spaces credentials or doctl/aws CLI on operator host;
+   Spaces inventory/create/versioning/credential isolation NOT_VERIFIED)
+LIVE_MUTATIONS: NONE
+BACKUP_RESTORE: NOT_PERFORMED
+```
+
+Do **not** start Phase 2 until Phase 1 PASS is recorded under a subsequent R3 gate.
 
 ---
 
