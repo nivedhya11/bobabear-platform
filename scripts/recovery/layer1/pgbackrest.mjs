@@ -163,9 +163,197 @@ export function stanzaCreate(options = {}) {
 }
 
 /**
- * Initialize a new repository generation: stanza-create then check.
- * Fail closed if either step fails. Uses the same compose postgres backend,
- * runtime config path, stanza, and repository secret authority as backup.
+ * Extract repository generation from a pgBackRest repo1-path value.
+ * Accepts posix (`/var/lib/pgbackrest/repo-gen-N`) and S3 (`/repo-gen-N`) forms.
+ * @param {unknown} repoPath
+ * @returns {string|null}
+ */
+export function parseGenerationFromRepoPath(repoPath) {
+  if (repoPath == null) return null;
+  const text = String(repoPath).trim();
+  if (!text) return null;
+  const match = text.match(/(?:^|\/)repo-gen-([1-9][0-9]*)(?=\/|$)/);
+  return match ? match[1] : null;
+}
+
+/**
+ * Inspect ACTIVE postgres container pgBackRest generation binding via the same
+ * `docker compose exec -T postgres` backend used for stanza/backup ops.
+ * Reads only BOBA_PGBACKREST_GENERATION and repo1-path — never dumps secret values.
+ *
+ * @param {object} [options]
+ * @returns {{
+ *   ok: boolean,
+ *   via: string,
+ *   activeGeneration?: string,
+ *   repoPathGeneration?: string,
+ *   repo1PathPresent?: boolean,
+ *   reason?: string,
+ * }}
+ */
+export function inspectActivePgbackrestGeneration(options = {}) {
+  const inspectFn =
+    typeof options?.inspectActiveGenerationFn === "function"
+      ? options.inspectActiveGenerationFn
+      : null;
+  if (inspectFn) {
+    try {
+      return normalizeActiveGenerationInspect(inspectFn(), "compose-exec");
+    } catch (error) {
+      return {
+        ok: false,
+        via: "compose-exec",
+        reason: redactText(error instanceof Error ? error.message : String(error)),
+      };
+    }
+  }
+
+  const script = [
+    'gen="${BOBA_PGBACKREST_GENERATION:-}"',
+    'path=""',
+    `if [ -r "${PGBACKREST_RUNTIME_CONFIG_PATH}" ]; then`,
+    `  path=$(sed -n 's/^repo1-path=//p' "${PGBACKREST_RUNTIME_CONFIG_PATH}" | head -n 1)`,
+    "fi",
+    'printf "BOBA_PGBACKREST_GENERATION=%s\\n" "$gen"',
+    'printf "repo1-path=%s\\n" "$path"',
+  ].join("; ");
+
+  try {
+    const result = dockerComposeExecPostgres({
+      args: ["sh", "-c", script],
+      env: options.env,
+      service: options.service ?? "postgres",
+      composeFile: options.composeFile,
+      cwd: options.cwd,
+      containerCli: options.containerCli,
+      execFn: options.composeExecFn,
+    });
+    if (!result.ok) {
+      return {
+        ok: false,
+        via: "compose-exec",
+        reason: redactText(
+          `active postgres pgBackRest generation/config unavailable (${result.reason || result.stderr || "compose exec failed"})`,
+        ),
+      };
+    }
+    return normalizeActiveGenerationInspect(parseActiveGenerationInspectStdout(result.stdout), "compose-exec");
+  } catch (error) {
+    return {
+      ok: false,
+      via: "compose-exec",
+      reason: redactText(error instanceof Error ? error.message : String(error)),
+    };
+  }
+}
+
+/**
+ * Positively prove active container generation + repo1-path bind to requested N.
+ * @param {string|number} requestedGeneration
+ * @param {object} [options]
+ * @returns {{
+ *   ok: boolean,
+ *   status: "BOUND"|"BLOCKED",
+ *   via: string,
+ *   requestedGeneration: string,
+ *   verifiedGeneration?: string,
+ *   activeGeneration?: string,
+ *   repoPathGeneration?: string,
+ *   reason?: string,
+ * }}
+ */
+export function verifyActiveRepositoryGenerationBinding(requestedGeneration, options = {}) {
+  const requested = String(requestedGeneration ?? "").trim();
+  const inspected = inspectActivePgbackrestGeneration(options);
+  if (!inspected.ok) {
+    return {
+      ok: false,
+      status: "BLOCKED",
+      via: inspected.via,
+      requestedGeneration: requested,
+      reason:
+        inspected.reason ??
+        "active postgres pgBackRest generation/config unavailable; stanza-create blocked",
+    };
+  }
+
+  const activeGeneration = inspected.activeGeneration;
+  const repoPathGeneration = inspected.repoPathGeneration;
+  if (!activeGeneration || !/^[1-9][0-9]*$/.test(activeGeneration)) {
+    return {
+      ok: false,
+      status: "BLOCKED",
+      via: inspected.via,
+      requestedGeneration: requested,
+      activeGeneration,
+      repoPathGeneration,
+      reason:
+        "active BOBA_PGBACKREST_GENERATION unavailable or invalid in postgres container; stanza-create blocked",
+    };
+  }
+  if (!repoPathGeneration || !/^[1-9][0-9]*$/.test(repoPathGeneration)) {
+    return {
+      ok: false,
+      status: "BLOCKED",
+      via: inspected.via,
+      requestedGeneration: requested,
+      activeGeneration,
+      repoPathGeneration,
+      reason:
+        "active pgbackrest.conf repo1-path generation unavailable or invalid; stanza-create blocked",
+    };
+  }
+  if (activeGeneration !== requested) {
+    return {
+      ok: false,
+      status: "BLOCKED",
+      via: inspected.via,
+      requestedGeneration: requested,
+      activeGeneration,
+      repoPathGeneration,
+      reason: `active generation ${activeGeneration} does not match requested generation ${requested}; stanza-create blocked`,
+    };
+  }
+  if (repoPathGeneration !== requested) {
+    return {
+      ok: false,
+      status: "BLOCKED",
+      via: inspected.via,
+      requestedGeneration: requested,
+      activeGeneration,
+      repoPathGeneration,
+      reason: `active repo1-path generation ${repoPathGeneration} does not match requested generation ${requested}; stanza-create blocked`,
+    };
+  }
+  if (activeGeneration !== repoPathGeneration) {
+    return {
+      ok: false,
+      status: "BLOCKED",
+      via: inspected.via,
+      requestedGeneration: requested,
+      activeGeneration,
+      repoPathGeneration,
+      reason: `active env generation ${activeGeneration} disagrees with repo1-path generation ${repoPathGeneration}; stanza-create blocked`,
+    };
+  }
+
+  return {
+    ok: true,
+    status: "BOUND",
+    via: inspected.via,
+    requestedGeneration: requested,
+    verifiedGeneration: activeGeneration,
+    activeGeneration,
+    repoPathGeneration,
+  };
+}
+
+/**
+ * Initialize a new repository generation: prove active container binding to N,
+ * then stanza-create then check. Fail closed if binding, create, or check fails.
+ * Uses the same compose postgres backend, runtime config path, stanza, and
+ * repository secret authority as backup. Returned repositoryGeneration is the
+ * positively verified active generation — not merely the CLI argument.
  *
  * @param {object} [options]
  * @param {number|string} [options.repositoryGeneration]
@@ -183,6 +371,7 @@ export function stanzaCreate(options = {}) {
  */
 export function initializeRepositoryStanza(options = {}) {
   const stanza = options.stanza ?? DEFAULT_STANZA;
+  const viaHint = typeof options?.execFn === "function" ? "injected" : "compose-exec";
   const generationRaw = options.repositoryGeneration ?? options.generation;
   const generation =
     generationRaw == null || String(generationRaw).trim() === ""
@@ -192,7 +381,7 @@ export function initializeRepositoryStanza(options = {}) {
     return {
       ok: false,
       status: "BLOCKED",
-      via: typeof options?.execFn === "function" ? "injected" : "compose-exec",
+      via: viaHint,
       stanza,
       configPath: PGBACKREST_RUNTIME_CONFIG_PATH,
       steps: [],
@@ -202,6 +391,30 @@ export function initializeRepositoryStanza(options = {}) {
 
   /** @type {Array<Record<string, unknown>>} */
   const steps = [];
+  const binding = verifyActiveRepositoryGenerationBinding(generation, options);
+  steps.push({
+    step: "generation-binding",
+    ok: binding.ok,
+    via: binding.via,
+    requestedGeneration: generation,
+    verifiedGeneration: binding.verifiedGeneration,
+    activeGeneration: binding.activeGeneration,
+    repoPathGeneration: binding.repoPathGeneration,
+    configPath: PGBACKREST_RUNTIME_CONFIG_PATH,
+  });
+  if (!binding.ok || !binding.verifiedGeneration) {
+    return {
+      ok: false,
+      status: "BLOCKED",
+      via: binding.via ?? viaHint,
+      stanza,
+      configPath: PGBACKREST_RUNTIME_CONFIG_PATH,
+      steps,
+      reason: binding.reason ?? "active pgBackRest generation binding failed; stanza-create blocked",
+    };
+  }
+
+  const verifiedGeneration = binding.verifiedGeneration;
   const created = stanzaCreate({ ...options, stanza });
   steps.push({
     step: "stanza-create",
@@ -209,6 +422,7 @@ export function initializeRepositoryStanza(options = {}) {
     via: created.via,
     configPath: PGBACKREST_RUNTIME_CONFIG_PATH,
     stanza,
+    repositoryGeneration: verifiedGeneration,
   });
   if (!created.ok) {
     return {
@@ -216,7 +430,7 @@ export function initializeRepositoryStanza(options = {}) {
       status: "FAILED",
       via: created.via,
       stanza,
-      repositoryGeneration: generation,
+      repositoryGeneration: verifiedGeneration,
       configPath: PGBACKREST_RUNTIME_CONFIG_PATH,
       steps,
       reason: created.reason ?? "pgBackRest stanza-create failed",
@@ -230,6 +444,7 @@ export function initializeRepositoryStanza(options = {}) {
     via: checked.via,
     configPath: PGBACKREST_RUNTIME_CONFIG_PATH,
     stanza,
+    repositoryGeneration: verifiedGeneration,
   });
   if (!checked.ok) {
     return {
@@ -237,7 +452,7 @@ export function initializeRepositoryStanza(options = {}) {
       status: "FAILED",
       via: checked.via,
       stanza,
-      repositoryGeneration: generation,
+      repositoryGeneration: verifiedGeneration,
       configPath: PGBACKREST_RUNTIME_CONFIG_PATH,
       steps,
       reason: checked.reason ?? "pgBackRest check failed after stanza-create",
@@ -249,9 +464,87 @@ export function initializeRepositoryStanza(options = {}) {
     status: "SUCCEEDED",
     via: checked.via,
     stanza,
-    repositoryGeneration: generation,
+    repositoryGeneration: verifiedGeneration,
     configPath: PGBACKREST_RUNTIME_CONFIG_PATH,
     steps,
+  };
+}
+
+/**
+ * @param {string} stdout
+ * @returns {{ activeGeneration?: string, repoPathGeneration?: string, repo1PathPresent: boolean }}
+ */
+function parseActiveGenerationInspectStdout(stdout) {
+  const text = typeof stdout === "string" ? stdout : "";
+  /** @type {string|undefined} */
+  let activeGeneration;
+  /** @type {string|undefined} */
+  let repoPath;
+  for (const line of text.split(/\r?\n/)) {
+    const genMatch = line.match(/^BOBA_PGBACKREST_GENERATION=(.*)$/);
+    if (genMatch) {
+      activeGeneration = String(genMatch[1] ?? "").trim() || undefined;
+      continue;
+    }
+    const pathMatch = line.match(/^repo1-path=(.*)$/);
+    if (pathMatch) {
+      repoPath = String(pathMatch[1] ?? "").trim() || undefined;
+    }
+  }
+  const repoPathGeneration = parseGenerationFromRepoPath(repoPath);
+  return {
+    activeGeneration,
+    repoPathGeneration: repoPathGeneration ?? undefined,
+    repo1PathPresent: Boolean(repoPath),
+  };
+}
+
+/**
+ * @param {unknown} raw
+ * @param {string} via
+ */
+function normalizeActiveGenerationInspect(raw, via) {
+  if (!raw || typeof raw !== "object") {
+    return {
+      ok: false,
+      via,
+      reason: "active postgres pgBackRest generation inspect returned no usable result",
+    };
+  }
+  const record = /** @type {Record<string, unknown>} */ (raw);
+  if (record.ok === false) {
+    return {
+      ok: false,
+      via: typeof record.via === "string" ? record.via : via,
+      reason:
+        typeof record.reason === "string"
+          ? record.reason
+          : "active postgres pgBackRest generation/config unavailable",
+    };
+  }
+  const activeGeneration =
+    record.activeGeneration == null ? undefined : String(record.activeGeneration).trim() || undefined;
+  const repoPathGeneration =
+    record.repoPathGeneration == null
+      ? parseGenerationFromRepoPath(record.repo1Path) ?? undefined
+      : String(record.repoPathGeneration).trim() || undefined;
+  const repo1PathPresent =
+    typeof record.repo1PathPresent === "boolean"
+      ? record.repo1PathPresent
+      : Boolean(record.repo1Path) || Boolean(repoPathGeneration);
+  if (!activeGeneration && !repoPathGeneration) {
+    return {
+      ok: false,
+      via,
+      reason: "active postgres pgBackRest generation/config unavailable",
+    };
+  }
+  return {
+    ok: true,
+    via,
+    activeGeneration,
+    repoPathGeneration,
+    repo1PathPresent,
   };
 }
 

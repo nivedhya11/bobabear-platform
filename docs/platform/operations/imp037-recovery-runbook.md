@@ -112,6 +112,7 @@ real Spaces.
 # 1. Render/start configured postgres (archive on + generation + physical Spaces env)
 # 2. Initialize stanza for that generation (compose postgres backend):
 npm run recovery -- pgbackrest init --generation N --json
+#    → prove ACTIVE postgres BOBA_PGBACKREST_GENERATION + repo1-path bind to N (else BLOCKED)
 #    → docker compose exec -T postgres pgbackrest \
 #         --config=/etc/pgbackrest/pgbackrest.conf --stanza=boba stanza-create
 #    → then pgbackrest ... check  (fail closed if either fails)

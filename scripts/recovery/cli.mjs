@@ -110,7 +110,7 @@ export function usage() {
     "",
     "Layer 1 runs pgBackRest inside the postgres service (docker compose exec -T postgres).",
     "Host pgBackRest is not required. Physical Spaces config is distinct from logical Spaces.",
-    "Fresh repository generations require `recovery pgbackrest init --generation N` (stanza-create + check)",
+    "Fresh repository generations require `recovery pgbackrest init --generation N` (bind active repo-gen-N, then stanza-create + check)",
     "before scheduled backup; do not auto-run against real Spaces from CI.",
     "",
     "Safety: --force-production is forbidden on all restore/drill paths.",
