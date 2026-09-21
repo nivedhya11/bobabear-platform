@@ -44,9 +44,21 @@ CUSTODY_EXECUTION: NOT_PERFORMED
 OFF_HOST_SECRET_CUSTODY: NOT_PERFORMED
 
 PROVIDER_ACCESS: BLOCKED
+PROVIDER_DEPENDENT_PROOF: DEFERRED_PENDING_PROVIDER_ACCESS
+PROVIDER_DEFERRAL_HUMAN_EVIDENCE: PR#176/5760581348
 REAL_SPACES: NOT_PERFORMED
 
+RESUME_CONDITION:
+  DIGITALOCEAN_OPERATOR_ACCESS_AVAILABLE
+  +
+  FRESH_EXPLICIT_R3_PHASE1_CONTINUATION
+
 DO_NOT_START_PHASE_2
+DO_NOT_START_QUALIFYING_PHASE2_PROVIDER_PROOF
+
+NOTE:
+  Provider-dependent proof is deferred.
+  IMP-037 itself is NOT deferred, NOT accepted, and remains IMPLEMENTATION_IN_PROGRESS.
 ```
 
 This plan defines the future **explicit R3** proof campaign. It does **not** authorize or
@@ -248,8 +260,16 @@ Demonstrate:
 
 ## PHASE 6 — FOUNDER UAT (planning only)
 
+```text
+FOUNDER_UAT: NOT_PERFORMED
+```
+
 Founder UAT MUST use the **exact** independently technically accepted candidate produced after
 qualifying proof (canonical path, branch, `HEAD`, `WORKING_TREE_FINGERPRINT`).
+
+Operator checklist (preparation only — do **not** execute UAT from this plan):
+
+See [`imp037-founder-uat-checklist.md`](./imp037-founder-uat-checklist.md).
 
 Founder should be able to verify at minimum:
 

@@ -350,6 +350,10 @@ committed.
 
 ```text
 PHASE1_PASS: NO
+PROVIDER_DEPENDENT_PROOF: DEFERRED_PENDING_PROVIDER_ACCESS
+PROVIDER_DEFERRAL_HUMAN_EVIDENCE: PR#176/5760581348
+PHASE1_RESULT: BLOCKED
+PHASE1_BLOCK_STATUS: BLOCKED_PROVIDER_ACCESS
 REAL_SPACES: NOT_PERFORMED
 OFF_HOST_SECRET_CUSTODY_EXECUTED: NO
 RPO_RTO_PROVEN: NO
@@ -358,12 +362,34 @@ PRODUCTION_BACKUP_RESTORE: NOT_PERFORMED
 FOUNDER_UAT: NOT_PERFORMED
 IMP037_ACCEPTED: NO
 IMP038_ACTIVATED: NO
+IMP037_LIFECYCLE: IMPLEMENTATION_IN_PROGRESS
 ```
+
+### Human provider deferral (2026-09-21)
+
+```text
+PROVIDER_DEPENDENT_PROOF: DEFERRED_PENDING_PROVIDER_ACCESS
+PROVIDER_DEFERRAL_HUMAN_EVIDENCE: PR#176/5760581348
+RESUME_CONDITION:
+  DIGITALOCEAN_OPERATOR_ACCESS_AVAILABLE
+  +
+  FRESH_EXPLICIT_R3_PHASE1_CONTINUATION
+DO_NOT_START_QUALIFYING_PHASE2_PROVIDER_PROOF: YES
+```
+
+Clarification (binding for supporting evidence):
+
+- Provider-dependent DigitalOcean / Spaces proof is **deferred**.
+- IMP-037 itself is **not** deferred and is **not** accepted.
+- Formal lifecycle remains `IMPLEMENTATION_IN_PROGRESS` under GTM-R137 / STATE-R135.
+- Authorized interim work: local/disposable prequalification only
+  (`docs/platform/operations/evidence/imp037-local-prequalification-2026-09-21.md`).
 
 ### Next gate
 
 ```text
-CHATGPT_PHASE1_FINAL_INDEPENDENT_REVIEW
+WHILE_PROVIDER_DEFERRED: local prequalification batch review (ChatGPT)
+WHEN_PROVIDER_ACCESS_RETURNS: fresh explicit R3 Phase-1 continuation
 HUMAN_ACTION_REQUIRED: supply DigitalOcean API / Spaces administration authority
   out-of-band to the operator environment (env / protected local credential file /
   authenticated provider CLI / other approved operator-local mechanism)

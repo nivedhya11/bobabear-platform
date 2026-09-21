@@ -168,13 +168,66 @@ export async function runLogicalRestore(options) {
     const restoreFn =
       options.restoreFn ??
       ((filePath) => {
-        const result = spawnSync("pg_restore", ["-d", databaseUrl, "--clean", "--if-exists", filePath], {
-          encoding: "utf8",
-        });
-        return {
-          ok: result.status === 0,
-          reason: result.status === 0 ? undefined : redactText(result.stderr || `pg_restore exited ${result.status}`),
-        };
+        // Prefer in-container restore against a provisioned disposable target
+        // when host pg_restore is absent (common on agent workstations).
+        if (provisioned?.containerName && provisioned?.containerCli) {
+          const remoteDump = `/tmp/boba-restore-${runId}.dump`;
+          const copy = spawnSync(
+            provisioned.containerCli,
+            ["cp", filePath, `${provisioned.containerName}:${remoteDump}`],
+            { encoding: "utf8", timeout: 120_000 },
+          );
+          if (copy.status !== 0) {
+            return {
+              ok: false,
+              reason: redactText(copy.stderr || "failed to copy dump into recovery target container"),
+            };
+          }
+          // Prefer migrator role when provisioned so restored objects are owned by the
+          // same repository migration authority used for post-restore migrate.ts.
+          let restoreUser = "boba_recovery";
+          let restorePassword = null;
+          if (typeof provisioned.migratorDatabaseUrl === "string" && provisioned.migratorDatabaseUrl.trim()) {
+            try {
+              const parsed = new URL(provisioned.migratorDatabaseUrl);
+              if (parsed.username) restoreUser = decodeURIComponent(parsed.username);
+              if (parsed.password) restorePassword = decodeURIComponent(parsed.password);
+            } catch {
+              // keep boba_recovery fallback
+            }
+          }
+          const execEnv = ["exec"];
+          if (restorePassword) {
+            execEnv.push("-e", `PGPASSWORD=${restorePassword}`);
+          }
+          execEnv.push(
+            provisioned.containerName,
+            "pg_restore",
+            "-U",
+            restoreUser,
+            "-d",
+            "boba_recovery",
+            "--exit-on-error",
+            "--clean",
+            "--if-exists",
+            "--no-owner",
+            "--no-acl",
+            remoteDump,
+          );
+          const result = spawnSync(provisioned.containerCli, execEnv, {
+            encoding: "utf8",
+            timeout: 300_000,
+          });
+          return evaluatePgRestoreResult(result);
+        }
+        const result = spawnSync(
+          "pg_restore",
+          ["-d", databaseUrl, "--exit-on-error", "--clean", "--if-exists", filePath],
+          {
+            encoding: "utf8",
+          },
+        );
+        return evaluatePgRestoreResult(result);
       });
     const restored = await restoreFn(dumpPath);
     if (!restored?.ok) {
@@ -220,6 +273,26 @@ export async function runLogicalRestore(options) {
     databaseUrl: databaseUrl || null,
     provisioned,
     evidence,
+  };
+}
+
+/**
+ * Process exit status is authoritative for pg_restore.
+ * status == 0 → success; every nonzero status → failure.
+ * Never infer restore success from stderr wording (WARNING / ERROR / FATAL).
+ *
+ * @param {{ status?: number | null, stdout?: string, stderr?: string }} result
+ * @returns {{ ok: true } | { ok: false, reason: string }}
+ */
+export function evaluatePgRestoreResult(result) {
+  const status = typeof result?.status === "number" ? result.status : 1;
+  if (status === 0) {
+    return { ok: true };
+  }
+  const errText = String(result?.stderr || result?.stdout || "");
+  return {
+    ok: false,
+    reason: redactText(errText || `pg_restore exited ${status}`),
   };
 }
 

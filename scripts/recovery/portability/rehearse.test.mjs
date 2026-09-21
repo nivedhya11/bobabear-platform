@@ -38,7 +38,7 @@ test("missing migrateFn without authority binding fails closed (never defaults t
       provisionTarget: false,
       networkIsolated: true,
       productionDnsAbsent: true,
-      productionCredentialsAbsent: true,
+      env: { BOBA_BEAR_ENV: "local", PATH: process.env.PATH },
     });
     assert.equal(result.ok, false);
     assert.equal(result.status, OPERATION_STATUS.FAILED);
@@ -53,7 +53,7 @@ test("repository migration authority script is present", () => {
   assert.equal(present.ok, true, present.reason);
 });
 
-test("createExistingMigrationAuthority binds DATABASE_URL to provisioned target and invokes migrate.ts", async () => {
+test("createExistingMigrationAuthority binds BOBA_BEAR_DATABASE_MIGRATION_URL to provisioned target and invokes migrate.ts", async () => {
   const targetUrl = "postgresql://boba_recovery:x@127.0.0.1:55432/boba_recovery";
   const sourceUrl = "postgresql://app:y@10.0.0.8:5432/boba_prod";
   /** @type {{ command?: string, args?: string[], env?: NodeJS.ProcessEnv }} */
@@ -63,6 +63,8 @@ test("createExistingMigrationAuthority binds DATABASE_URL to provisioned target 
     env: {
       ...process.env,
       DATABASE_URL: sourceUrl,
+      BOBA_BEAR_DATABASE_URL: sourceUrl,
+      BOBA_BEAR_DATABASE_MIGRATION_URL: sourceUrl,
       BOBA_APP_DATABASE_URL: sourceUrl,
     },
     execFn: (command, args, opts) => {
@@ -73,9 +75,11 @@ test("createExistingMigrationAuthority binds DATABASE_URL to provisioned target 
   const result = await migrateFn();
   assert.equal(result.ok, true);
   assert.ok(captured.args?.some((arg) => String(arg).endsWith("scripts/database/migrate.ts") || arg === MIGRATE_SCRIPT));
+  assert.equal(captured.env?.BOBA_BEAR_DATABASE_MIGRATION_URL, targetUrl);
   assert.equal(captured.env?.DATABASE_URL, targetUrl);
-  assert.notEqual(captured.env?.DATABASE_URL, sourceUrl);
+  assert.notEqual(captured.env?.BOBA_BEAR_DATABASE_MIGRATION_URL, sourceUrl);
   assert.equal(captured.env?.BOBA_APP_DATABASE_URL, undefined);
+  assert.equal(captured.env?.BOBA_BEAR_DATABASE_URL, undefined);
 });
 
 test("injected migrateFn is a unit seam only — not claimed as proven migrator execution", async () => {
@@ -91,7 +95,7 @@ test("injected migrateFn is a unit seam only — not claimed as proven migrator 
       provisionTarget: false,
       networkIsolated: true,
       productionDnsAbsent: true,
-      productionCredentialsAbsent: true,
+      env: { BOBA_BEAR_ENV: "local", PATH: process.env.PATH },
     });
     assert.equal(result.ok, false);
     assert.match(result.reason ?? "", /migration/i);
@@ -133,19 +137,23 @@ test("portability binds evidence/migration/cleanup to restored provisioned targe
           containerName: "boba-rec-tgt-test",
           containerCli: "docker",
           volumeOrPathId: "docker:boba-rec-tgt-test",
+          networkName: "boba-rec-net-test",
+          networkInternalVerified: true,
+          productionDnsAbsentVerified: true,
           created: true,
         },
       }),
       migrateExecFn: (command, args, opts) => {
-        migrateDatabaseUrl = opts?.env?.DATABASE_URL ?? null;
+        migrateDatabaseUrl = opts?.env?.BOBA_BEAR_DATABASE_MIGRATION_URL ?? opts?.env?.DATABASE_URL ?? null;
         assert.ok(args?.some((arg) => String(arg).includes("scripts/database/migrate.ts")));
         return { status: 0, stdout: "ok", stderr: "" };
       },
       queryFn: async () => [{ count: 1 }],
       retainTarget: true,
-      networkIsolated: true,
-      productionDnsAbsent: true,
-      productionCredentialsAbsent: true,
+      // Caller claims ignored when provisioned proof is present — isolation derived from target.
+      networkIsolated: false,
+      productionDnsAbsent: false,
+      env: { BOBA_BEAR_ENV: "local", PATH: process.env.PATH },
     });
 
     assert.equal(result.ok, true, result.reason);

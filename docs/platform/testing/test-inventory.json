@@ -31,11 +31,11 @@
     "note": "Protected evidence and generated reports are never classified as executable test source."
   },
   "counts": {
-    "trackedPathsConsidered": 2000,
-    "executableTestFiles": 420,
+    "trackedPathsConsidered": 2005,
+    "executableTestFiles": 421,
     "sourceTestFiles": 130,
     "testsTreeExecutableFiles": 231,
-    "scriptTestFiles": 59,
+    "scriptTestFiles": 60,
     "playwrightSpecs": 12,
     "vitestConfigs": 2,
     "playwrightConfigs": 7,
@@ -463,6 +463,7 @@
     "scripts/recovery/portability/rehearse.test.mjs",
     "scripts/recovery/readiness.test.mjs",
     "scripts/recovery/redact.test.mjs",
+    "scripts/recovery/restore/logical-pg-restore.test.mjs",
     "scripts/recovery/restore/logical-target-hardening.test.mjs",
     "scripts/recovery/restore/provision.test.mjs",
     "scripts/recovery/run-id.test.mjs",
@@ -2077,6 +2078,24 @@
     },
     {
       "path": "scripts/recovery/redact.test.mjs",
+      "runner": "node:test",
+      "domain": "scripts",
+      "testType": "script-unit",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:scripts"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit",
+        "9-recovery-idempotency"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "scripts/recovery/restore/logical-pg-restore.test.mjs",
       "runner": "node:test",
       "domain": "scripts",
       "testType": "script-unit",
