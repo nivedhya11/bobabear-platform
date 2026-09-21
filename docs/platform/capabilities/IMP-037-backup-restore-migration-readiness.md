@@ -13,7 +13,7 @@
   "impAccepted": false,
   "founderUatRequired": true,
   "schemaChangeRequired": false,
-  "lastReviewed": "2026-09-19",
+  "lastReviewed": "2026-09-21",
   "productDefinition": "PD-IMP-037-DRAFT-1",
   "bindingDecisions": ["D-374", "ADR-016", "ADR-002", "ADR-013", "ADR-015"],
   "dependsOn": ["IMP-004", "IMP-005", "IMP-005A", "IMP-036G"],
@@ -31,11 +31,14 @@ infrastructure: single DigitalOcean Basic Droplet + Docker Engine/Compose + self
 PostgreSQL 18 + DigitalOcean Spaces off-host backups).
 
 Independent (ChatGPT) Architecture Fit review is **PASS** for the architecture-persistence
-candidate (distinct from the Fit-evaluated `main` artifact below). Implementation is now
+candidate (distinct from the Fit-evaluated `main` artifact below). Implementation is
 **AUTHORIZED** / **STARTED** (`IMPLEMENTATION_IN_PROGRESS`; authorization evidence
-PR#171/5743814105; start evidence PR#172/5744869269). Start does **not** complete implementation,
-provision production infrastructure, or accept IMP-037. Recovery foundation tooling is in
-progress; Layer 1/Layer 2 backup and restore execution remain `IMPLEMENTATION_PERFORMED: NO`.
+PR#171/5743814105; start evidence PR#172/5744869269). Repository recovery tooling — including
+Layer 1 pgBackRest runners, Layer 2 pg_dump+age, restore/PITR/logical modules, readiness gate,
+capacity, systemd templates, and CLI — has **merged** to `main` via PR #174
+(`IMP037_REPOSITORY_IMPLEMENTATION_MERGED: YES`). Merge does **not** complete external recovery
+proof, accept IMP-037, or activate IMP-038. Required provider/host backup/restore execution
+remains `IMPLEMENTATION_PERFORMED: NO` / `EXTERNAL_RECOVERY_PROOF: NOT_PERFORMED`.
 
 ```text
 ARCHITECTURE_FIT: PASS
@@ -52,6 +55,19 @@ IMPLEMENTATION_AUTHORIZED: YES
 IMPLEMENTATION_STARTED: YES
 IMP037_IMPLEMENTATION_AUTHORIZED: YES
 IMP037_STARTED: YES
+IMP037_REPOSITORY_IMPLEMENTATION_MERGED: YES
+IMP037_IMPLEMENTATION_PR: 174
+IMP037_IMPLEMENTATION_REVIEWED_HEAD: ae7328efe1add11a9a4299150251fe14c71b2730
+IMP037_IMPLEMENTATION_REVIEWED_TREE: 4ff19a31db947cafadf690cf6bf1b6d2f1de14ac
+IMP037_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
+IMP037_INDEPENDENT_IMPLEMENTATION_REVIEW_ID: 5265354130
+IMP037_IMPLEMENTATION_MERGE_SHA: f77a54819f51ad5648dda8acb3a7c93345cd5d6c
+IMP037_IMPLEMENTATION_MERGE_TREE: 4ff19a31db947cafadf690cf6bf1b6d2f1de14ac
+IMP037_POST_MERGE_CI: 35587376968
+IMP037_POST_MERGE_CI_RESULT: SUCCESS
+IMP037_REPOSITORY_IMPLEMENTATION: MERGED
+IMP037_EXTERNAL_RECOVERY_PROOF: NOT_PERFORMED
+IMP037_IMPLEMENTATION_COMPLETE: NO
 IMP037_ACCEPTED: NO
 IMP038_ACTIVATED: NO
 IMPLEMENTATION_PERFORMED: NO
@@ -66,7 +82,7 @@ ARCH_R21_REQUIRED: NO
 ARCH_R21_CREATED: NO
 NEW_GLOBAL_DECISION_REQUIRED: NO
 
-CANONICAL_ROADMAP_STATE = GTM-R136 / STATE-R134
+CANONICAL_ROADMAP_STATE = GTM-R137 / STATE-R135
 ARCHITECTURE_BASE = ARCH-R20 / D-374
 PRODUCT_DEFINITION = PD-IMP-037-DRAFT-1 (APPROVED; Product Definition Gate PASS)
 FOUNDER_UAT_REQUIRED = YES
@@ -75,11 +91,11 @@ IMPLEMENTATION_AUTHORIZATION_EVIDENCE = PR#171/5743814105
 IMPLEMENTATION_START_EVIDENCE = PR#172/5744869269
 ```
 
-`CANONICAL_ROADMAP_STATE = GTM-R136 / STATE-R134` is the **implementation-start
-reconciliation target** for this artifact. Authorization provenance remains GTM-R135 /
-STATE-R133; Architecture Fit/lock provenance remains GTM-R134 /
-STATE-R132; Fit evaluation was against GTM-R133 / STATE-R131 / ARCH-R20 / DR-16. ROADMAP and STATE
-remain the sole lifecycle authority; this capability document never overrides them.
+`CANONICAL_ROADMAP_STATE = GTM-R137 / STATE-R135` is the **post-merge repository-implementation
+reconciliation target** for this artifact. Start provenance remains GTM-R136 / STATE-R134;
+authorization provenance remains GTM-R135 / STATE-R133; Architecture Fit/lock provenance remains
+GTM-R134 / STATE-R132; Fit evaluation was against GTM-R133 / STATE-R131 / ARCH-R20 / DR-16.
+ROADMAP and STATE remain the sole lifecycle authority; this capability document never overrides them.
 
 | Field | Value |
 |---|---|
@@ -90,7 +106,7 @@ remain the sole lifecycle authority; this capability document never overrides th
 | Architecture Fit | **PASS** (performed fresh against ARCH-R20) |
 | Product Definition | `PD-IMP-037-DRAFT-1` **APPROVED**; Product Definition Gate **PASS** |
 | Formal ROADMAP lifecycle | `IMPLEMENTATION_IN_PROGRESS` (`IMP037_ACTIVATED: YES`) |
-| Implementation | **AUTHORIZED** / **STARTED** / **NOT COMPLETE** / **NOT PERFORMED** (backup/restore execution) |
+| Implementation | **AUTHORIZED** / **STARTED** / **REPOSITORY MERGED** / **NOT COMPLETE** / **EXTERNAL PROOF NOT PERFORMED** (`IMPLEMENTATION_PERFORMED: NO` = backup/restore execution) |
 | Accepted | **NO** |
 | Founder UAT required | **YES** (`FOUNDER_UAT_STATUS = NOT_PERFORMED`) |
 | Application schema change required | **NO** |
@@ -982,6 +998,19 @@ IMPLEMENTATION_AUTHORIZED: YES
 IMPLEMENTATION_STARTED: YES
 IMP037_IMPLEMENTATION_AUTHORIZED: YES
 IMP037_STARTED: YES
+IMP037_REPOSITORY_IMPLEMENTATION_MERGED: YES
+IMP037_IMPLEMENTATION_PR: 174
+IMP037_IMPLEMENTATION_REVIEWED_HEAD: ae7328efe1add11a9a4299150251fe14c71b2730
+IMP037_IMPLEMENTATION_REVIEWED_TREE: 4ff19a31db947cafadf690cf6bf1b6d2f1de14ac
+IMP037_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
+IMP037_INDEPENDENT_IMPLEMENTATION_REVIEW_ID: 5265354130
+IMP037_IMPLEMENTATION_MERGE_SHA: f77a54819f51ad5648dda8acb3a7c93345cd5d6c
+IMP037_IMPLEMENTATION_MERGE_TREE: 4ff19a31db947cafadf690cf6bf1b6d2f1de14ac
+IMP037_POST_MERGE_CI: 35587376968
+IMP037_POST_MERGE_CI_RESULT: SUCCESS
+IMP037_REPOSITORY_IMPLEMENTATION: MERGED
+IMP037_EXTERNAL_RECOVERY_PROOF: NOT_PERFORMED
+IMP037_IMPLEMENTATION_COMPLETE: NO
 IMP037_ACCEPTED: NO
 IMP038_ACTIVATED: NO
 IMPLEMENTATION_PERFORMED: NO
@@ -1018,11 +1047,12 @@ ARCH_R21_CREATED: NO
 
 ### 21.2 What has **not** happened
 
-- **Backup/restore execution has not been performed.** `IMPLEMENTATION_PERFORMED: NO`. Recovery
-  foundation tooling (status/readiness, evidence, identity guard, secret-safe CLI, runbook at
-  `docs/platform/operations/imp037-recovery-runbook.md`) has **started**; pgBackRest, WAL archival,
-  Layer 2 pg_dump+age, Spaces, restore, systemd, and production resources were **not** created by
-  this start checkpoint.
+- **Required external backup/restore proof has not been performed.** `IMPLEMENTATION_PERFORMED: NO`
+  / `EXTERNAL_RECOVERY_PROOF: NOT_PERFORMED`. Repository tooling for Layer 1 pgBackRest, Layer 2
+  pg_dump+age, restore, readiness, capacity, and systemd **templates** has **merged**
+  (`IMP037_REPOSITORY_IMPLEMENTATION: MERGED`); real Spaces buckets, live provider backups,
+  production restore, systemd **host install**, and off-host custody **execution** were **not**
+  performed by this reconciliation.
 - **No production resources were created.** `PRODUCTION_RESOURCES_CREATED: NO`. No Droplet, no
   Spaces bucket, no credential, no key, no schedule exists as a result of this document.
 - **No production restore is authorized.** `PRODUCTION_RESTORE_AUTHORIZED: NO`.
@@ -1043,21 +1073,25 @@ ARCH_R21_CREATED: NO
 3. ARCHITECTURE LOCK MERGE ......................... PERFORMED (PR #171)
 4. IMPLEMENTATION_AUTHORIZATION .................... GRANTED (PR#171/5743814105)
 5. IMPLEMENTATION START ............................ YES (PR#172/5744869269)
-6. IMPLEMENT / PROVE ............................... IN_PROGRESS (recovery foundation tranche)
-7. INDEPENDENT_REVIEW (implementation) ............. NOT_PERFORMED
+6. REPOSITORY IMPLEMENT / MERGE .................... MERGED (PR #174 / f77a5481… / CI 35587376968)
+   INDEPENDENT_IMPLEMENTATION_REVIEW ............... PASS (5265354130)
+7. EXTERNAL RECOVERY PROOF (R3) .................... NOT_PERFORMED
 8. UAT_DEPLOYMENT + FOUNDER_UAT .................... NOT_PERFORMED (FOUNDER_UAT_REQUIRED = YES)
 9. ACCEPTANCE + RECONCILIATION (R3) ................ NOT_PERFORMED
 ```
 
-Implementation is **AUTHORIZED** / **STARTED** (`IMPLEMENTATION_IN_PROGRESS`; authorization
-evidence PR#171/5743814105; start evidence PR#172/5744869269). Start does **not** complete
-implementation, accept IMP-037, or activate IMP-038. Next gate is continued bounded IMP-037
-implementation, then independent implementation review — **not** acceptance.
+Implementation is **AUTHORIZED** / **STARTED** / **REPOSITORY MERGED**
+(`IMPLEMENTATION_IN_PROGRESS`; authorization evidence PR#171/5743814105; start evidence
+PR#172/5744869269; merge evidence PR#174). Repository merge does **not** complete external proof,
+accept IMP-037, or activate IMP-038. Next gate is ChatGPT batch review of this reconciliation +
+external-proof readiness plan, then explicit R3 external proof — **not** acceptance.
 
 ```text
-STARTED != COMPLETE
-STARTED != ACCEPTED
+MERGED != COMPLETE
+MERGED != ACCEPTED
+MERGED != EXTERNAL_RECOVERY_PROOF
 IMPLEMENTATION_PERFORMED: NO
+IMP037_IMPLEMENTATION_COMPLETE: NO
 ```
 
 ### 21.4 Founder UAT applicability
@@ -1078,7 +1112,7 @@ recovery rehearsal**. The active production/source database must **never** be a 
 ## End matter
 
 ```text
-IMP-037: IMPLEMENTATION_IN_PROGRESS / AUTHORIZED / STARTED / NOT_ACCEPTED
+IMP-037: IMPLEMENTATION_IN_PROGRESS / AUTHORIZED / STARTED / REPOSITORY_MERGED / NOT_ACCEPTED
 IMP-037_ARCHITECTURE: LOCKED (independent Architecture Fit review PASS)
 IMP037_ARCHITECTURE_LOCKED: YES
 ARCHITECTURE_FIT: PASS
@@ -1088,6 +1122,10 @@ IMPLEMENTATION_AUTHORIZED: YES
 IMPLEMENTATION_STARTED: YES
 IMP037_IMPLEMENTATION_AUTHORIZED: YES
 IMP037_STARTED: YES
+IMP037_REPOSITORY_IMPLEMENTATION_MERGED: YES
+IMP037_REPOSITORY_IMPLEMENTATION: MERGED
+IMP037_EXTERNAL_RECOVERY_PROOF: NOT_PERFORMED
+IMP037_IMPLEMENTATION_COMPLETE: NO
 IMP037_ACCEPTED: NO
 IMP038_ACTIVATED: NO
 IMPLEMENTATION_PERFORMED: NO

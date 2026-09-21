@@ -16,8 +16,11 @@ Supporting automated-proof notes (not lifecycle authority):
 [`docs/platform/operations/imp037-implementation-evidence.md`](./imp037-implementation-evidence.md)
 
 ```text
-LIFECYCLE: IN_PROGRESS
-IMPLEMENTATION_PERFORMED: repository tooling advanced; production backup/restore NOT performed
+LIFECYCLE: IMPLEMENTATION_IN_PROGRESS
+REPOSITORY_IMPLEMENTATION: MERGED
+EXTERNAL_RECOVERY_PROOF: NOT_PERFORMED
+IMPLEMENTATION_COMPLETE: NO
+IMPLEMENTATION_PERFORMED: NO (backup/restore/provider proof execution)
 RPO_TARGET <= 15 minutes
 RTO_TARGET <= 2 hours
 RPO_RTO_PROVEN: NO
@@ -26,12 +29,17 @@ STORAGE_CAPACITY_VALIDATED: NO
 REAL_SPACES: NOT_PERFORMED
 SYSTEMD_INSTALL: NOT_PERFORMED
 FOUNDER_UAT: NOT_PERFORMED
+IMP037_ACCEPTED: NO
+IMP038_ACTIVATED: NO
 ```
 
-`IMPLEMENTATION_PERFORMED` here means the repository now contains runnable Layer 1 /
-Layer 2 / restore / gate / capacity / systemd **modules and CLI wiring**. It does
-**not** mean production backup coverage, Spaces verification, Droplet RTO proof, or
-acceptance.
+`IMPLEMENTATION_PERFORMED: NO` means required **provider/host backup and restore proof** has not
+been executed. Repository Layer 1 / Layer 2 / restore / gate / capacity / systemd **modules and
+CLI** are merged and callable. It does **not** mean production backup coverage, Spaces
+verification, Droplet RTO proof, or acceptance.
+
+Future R3 proof sequence (planning only):
+[`imp037-external-proof-plan.md`](./imp037-external-proof-plan.md)
 
 ## IMPLEMENTED NOW (repository)
 
