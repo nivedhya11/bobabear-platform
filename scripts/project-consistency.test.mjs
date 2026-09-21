@@ -10314,6 +10314,30 @@ describe("IMP-037 post-merge reconciliation checkpoints", () => {
       "IMP038_ACTIVATED",
     );
   });
+
+  it("rejects Product Definition that only appends GTM-R137 / STATE-R135 without post-merge markers", () => {
+    const startShaped = readFileSync("docs/platform/product/IMP-037/product-definition.md", "utf8")
+      .replace(/GTM-R137\s*\/\s*STATE-R135/g, "GTM-R136 / STATE-R134")
+      .replace(/GTM-R137/g, "GTM-R136")
+      .replace(/STATE-R135/g, "STATE-R134")
+      .replace(/IMP037_REPOSITORY_IMPLEMENTATION\s*[:=]\s*MERGED/g, "IMP037_REPOSITORY_IMPLEMENTATION: NOT_MERGED")
+      .replace(/IMP037_EXTERNAL_RECOVERY_PROOF\s*[:=]\s*NOT_PERFORMED/g, "")
+      .replace(/IMP037_IMPLEMENTATION_COMPLETE\s*[:=]\s*NO/g, "");
+    const fake = `${startShaped}\n\nHistorical note only: GTM-R137 / STATE-R135 mentioned without CURRENT tip pairing.\n`;
+    assert.equal(evaluateImp037PostMergedProductDefinition(fake).code, "IMP037_PD_POST_MERGE");
+  });
+
+  it("requires live Product Definition post-merge semantic markers", () => {
+    const live = readFileSync("docs/platform/product/IMP-037/product-definition.md", "utf8");
+    assert.deepEqual(evaluateImp037PostMergedProductDefinition(live), { ok: true });
+    assert.match(live, /CURRENT tip/);
+    assert.match(live, /GTM-R137/);
+    assert.match(live, /STATE-R135/);
+    assert.match(live, /IMP037_REPOSITORY_IMPLEMENTATION\s*[:=]\s*MERGED/);
+    assert.match(live, /IMP037_EXTERNAL_RECOVERY_PROOF\s*[:=]\s*NOT_PERFORMED/);
+    assert.match(live, /IMPLEMENTATION_PERFORMED\s*[:=]\s*NO/);
+    assert.match(live, /IMP037_IMPLEMENTATION_COMPLETE\s*[:=]\s*NO|IMPLEMENTATION_COMPLETE\s*[:=]\s*NO/);
+  });
 });
 
 describe("IMP-037 Product Definition D-374 CURRENT recovery-read reconciliation", () => {

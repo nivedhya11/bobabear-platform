@@ -9729,7 +9729,21 @@ export function evaluateImp037PostMergedProductDefinition(text) {
     return { ok: false, code: "IMP037_PD_ABSENT", message: "Post-merge IMP-037 Product Definition must not be empty" };
   }
   const body = String(text);
-  if (!/GTM-R137/.test(body) || !/STATE-R135/.test(body)) {
+  // Require CURRENT tip to be explicitly paired with R137/R135 on the same tip statement,
+  // not merely a historical footnote that mentions those revisions elsewhere.
+  if (
+    !/CURRENT tip[^\n]{0,160}GTM-R137/.test(body) &&
+    !/CURRENT tip:\s*`GTM-R137`/.test(body) &&
+    !/ROADMAP GTM-R137\s*\(CURRENT tip/.test(body)
+  ) {
+    return {
+      ok: false,
+      code: "IMP037_PD_POST_MERGE",
+      message:
+        "Post-merge IMP-037 Product Definition must pair CURRENT tip anchors GTM-R137 / STATE-R135 (not merely mention them historically)",
+    };
+  }
+  if (!/STATE-R135/.test(body) || !/GTM-R137/.test(body)) {
     return {
       ok: false,
       code: "IMP037_PD_POST_MERGE",
@@ -9748,6 +9762,37 @@ export function evaluateImp037PostMergedProductDefinition(text) {
       ok: false,
       code: "IMP037_PD_POST_MERGE",
       message: "Post-merge IMP-037 Product Definition must retain start evidence PR#172/5744869269",
+    };
+  }
+  const requiredPostMergeMarkers = [
+    [/IMP037_REPOSITORY_IMPLEMENTATION\s*[:=]\s*MERGED/, "IMP037_REPOSITORY_IMPLEMENTATION: MERGED"],
+    [/IMP037_EXTERNAL_RECOVERY_PROOF\s*[:=]\s*NOT_PERFORMED/, "IMP037_EXTERNAL_RECOVERY_PROOF: NOT_PERFORMED"],
+    [/IMPLEMENTATION_PERFORMED\s*[:=]\s*NO/, "IMPLEMENTATION_PERFORMED: NO"],
+    [/IMP037_IMPLEMENTATION_COMPLETE\s*[:=]\s*NO|IMPLEMENTATION_COMPLETE\s*[:=]\s*NO/, "IMPLEMENTATION_COMPLETE: NO"],
+    [/IMP037_ACCEPTED\s*[:=]\s*NO/, "IMP037_ACCEPTED: NO"],
+    [/IMP038_ACTIVATED\s*[:=]\s*NO/, "IMP038_ACTIVATED: NO"],
+  ];
+  for (const [pattern, label] of requiredPostMergeMarkers) {
+    if (!pattern.test(body)) {
+      return {
+        ok: false,
+        code: "IMP037_PD_POST_MERGE",
+        message: `Post-merge IMP-037 Product Definition must record ${label}`,
+      };
+    }
+  }
+  if (
+    /IMP037_ACCEPTED\s*[:=]\s*YES/.test(body) ||
+    /IMP038_ACTIVATED\s*[:=]\s*YES/.test(body) ||
+    /IMP037_IMPLEMENTATION_COMPLETE\s*[:=]\s*YES/.test(body) ||
+    /IMP037_EXTERNAL_RECOVERY_PROOF\s*[:=]\s*PASS/.test(body) ||
+    /IMPLEMENTATION_PERFORMED\s*[:=]\s*YES/.test(body)
+  ) {
+    return {
+      ok: false,
+      code: "IMP037_PD_PREMATURE_PROGRESSION",
+      message:
+        "Post-merge IMP-037 Product Definition must not claim external recovery proof, implementation complete, acceptance, or IMP-038 activation",
     };
   }
   const startedShaped = toImp037StartedShapedPostMergeProductDefinition(body);
@@ -27978,6 +28023,16 @@ function checkImp037PostMergeReconciliation(roadmap, state, architecture, decisi
     [currentStateActivity, /IMP037_IMPLEMENTATION_AUTHORIZED:\s*YES/, "STATE must record implementation authorized"],
     [currentStateActivity, /IMP037_STARTED:\s*YES/, "STATE must record started"],
     [currentStateActivity, /IMP037_REPOSITORY_IMPLEMENTATION_MERGED:\s*YES/, "STATE must record repository implementation merged"],
+    [currentStateActivity, /IMP037_IMPLEMENTATION_PR:\s*174/, "STATE must record implementation PR 174"],
+    [currentStateActivity, /IMP037_IMPLEMENTATION_REVIEWED_HEAD:\s*ae7328efe1add11a9a4299150251fe14c71b2730/, "STATE must record reviewed head"],
+    [currentStateActivity, /IMP037_IMPLEMENTATION_REVIEWED_TREE:\s*4ff19a31db947cafadf690cf6bf1b6d2f1de14ac/, "STATE must record reviewed tree"],
+    [currentStateActivity, /IMP037_INDEPENDENT_IMPLEMENTATION_REVIEW:\s*PASS/, "STATE must record independent implementation review PASS"],
+    [currentStateActivity, /IMP037_INDEPENDENT_IMPLEMENTATION_REVIEW_ID:\s*5265354130/, "STATE must record independent implementation review id"],
+    [currentStateActivity, /IMP037_IMPLEMENTATION_MERGE_SHA:\s*f77a54819f51ad5648dda8acb3a7c93345cd5d6c/, "STATE must record merge SHA"],
+    [currentStateActivity, /IMP037_IMPLEMENTATION_MERGE_TREE:\s*4ff19a31db947cafadf690cf6bf1b6d2f1de14ac/, "STATE must record merge tree"],
+    [currentStateActivity, /IMP037_POST_MERGE_CI:\s*35587376968/, "STATE must record post-merge CI"],
+    [currentStateActivity, /IMP037_POST_MERGE_CI_RESULT:\s*SUCCESS/, "STATE must record post-merge CI SUCCESS"],
+    [currentStateActivity, /IMP037_REPOSITORY_IMPLEMENTATION:\s*MERGED/, "STATE must record repository implementation MERGED"],
     [currentStateActivity, /IMP037_EXTERNAL_RECOVERY_PROOF:\s*NOT_PERFORMED/, "STATE must record external recovery proof NOT_PERFORMED"],
     [currentStateActivity, /IMP037_IMPLEMENTATION_COMPLETE:\s*NO/, "STATE must record implementation complete NO"],
     [currentStateActivity, /IMP037_ACCEPTED:\s*NO/, "STATE must record unaccepted"],
@@ -27994,6 +28049,28 @@ function checkImp037PostMergeReconciliation(roadmap, state, architecture, decisi
   ];
   for (const [haystack, pattern, message] of requiredTokens) {
     if (!pattern.test(haystack)) fail("IMP037_POST_MERGE_RECONCILIATION", message);
+  }
+
+  // Exact merge provenance must agree across ROADMAP §2 and STATE §2 (not ROADMAP-only).
+  const exactProvenancePairs = [
+    [/IMP037_IMPLEMENTATION_PR:\s*174/, "IMP037_IMPLEMENTATION_PR"],
+    [/IMP037_IMPLEMENTATION_REVIEWED_HEAD:\s*ae7328efe1add11a9a4299150251fe14c71b2730/, "IMP037_IMPLEMENTATION_REVIEWED_HEAD"],
+    [/IMP037_IMPLEMENTATION_REVIEWED_TREE:\s*4ff19a31db947cafadf690cf6bf1b6d2f1de14ac/, "IMP037_IMPLEMENTATION_REVIEWED_TREE"],
+    [/IMP037_INDEPENDENT_IMPLEMENTATION_REVIEW_ID:\s*5265354130/, "IMP037_INDEPENDENT_IMPLEMENTATION_REVIEW_ID"],
+    [/IMP037_IMPLEMENTATION_MERGE_SHA:\s*f77a54819f51ad5648dda8acb3a7c93345cd5d6c/, "IMP037_IMPLEMENTATION_MERGE_SHA"],
+    [/IMP037_IMPLEMENTATION_MERGE_TREE:\s*4ff19a31db947cafadf690cf6bf1b6d2f1de14ac/, "IMP037_IMPLEMENTATION_MERGE_TREE"],
+    [/IMP037_POST_MERGE_CI:\s*35587376968/, "IMP037_POST_MERGE_CI"],
+    [/IMP037_POST_MERGE_CI_RESULT:\s*SUCCESS/, "IMP037_POST_MERGE_CI_RESULT"],
+  ];
+  for (const [pattern, label] of exactProvenancePairs) {
+    const inRoadmap = pattern.test(currentRoadmapSection);
+    const inState = pattern.test(currentStateActivity);
+    if (inRoadmap !== inState || !inRoadmap) {
+      fail(
+        "IMP037_POST_MERGE_PROVENANCE_MISMATCH",
+        `ROADMAP and STATE current sections must both record identical ${label}`,
+      );
+    }
   }
 
   if (

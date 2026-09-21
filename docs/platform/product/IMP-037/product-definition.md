@@ -44,7 +44,9 @@ CURRENT_READ_AMENDMENT (D-374 / ADR-016 / ARCH-R20 — 2026-09-20; CURRENT tip G
   Architecture Fit = PASS; architecture LOCKED (independent Architecture Fit review PASS).
   Implementation Authorization = GRANTED (PR#171/5743814105); Implementation Start = YES / PERFORMED (PR#172/5744869269).
   Repository recovery tooling MERGED to main (PR #174; IMP037_REPOSITORY_IMPLEMENTATION: MERGED);
-    external recovery proof remains NOT_PERFORMED (IMPLEMENTATION_PERFORMED: NO).
+    external recovery proof remains NOT_PERFORMED
+    (IMPLEMENTATION_PERFORMED: NO; IMP037_EXTERNAL_RECOVERY_PROOF: NOT_PERFORMED;
+    IMP037_IMPLEMENTATION_COMPLETE: NO).
   Stories readiness = IMPLEMENTATION_IN_PROGRESS (coding started; stories not complete).
   Locked capability architecture:
     docs/platform/capabilities/IMP-037-backup-restore-migration-readiness.md
@@ -74,6 +76,10 @@ IMPLEMENTATION_AUTHORIZED: YES
 IMPLEMENTATION_STARTED: YES
 IMP037_IMPLEMENTATION_AUTHORIZED: YES
 IMP037_STARTED: YES
+IMP037_REPOSITORY_IMPLEMENTATION: MERGED
+IMP037_EXTERNAL_RECOVERY_PROOF: NOT_PERFORMED
+IMP037_IMPLEMENTATION_COMPLETE: NO
+IMPLEMENTATION_PERFORMED: NO
 IMP037_ACCEPTED: NO
 IMP038_ACTIVATED: NO
 FOUNDER_UAT_REQUIRED: YES
@@ -1231,7 +1237,8 @@ Proposed IMP-037 behaviour has Product Definition Gate **PASS**, Architecture Fi
 tooling (Layer 1/Layer 2 backup/restore modules, Spaces wiring, pgBackRest, age, systemd templates,
 CLI) is **MERGED** to `main` (`IMP037_REPOSITORY_IMPLEMENTATION: MERGED`); external provider/host
 backup, restore, and Founder UAT remain `NOT_PERFORMED` (`IMPLEMENTATION_PERFORMED: NO`;
-`IMP037_EXTERNAL_RECOVERY_PROOF: NOT_PERFORMED`; `IMP037_FOUNDER_UAT: NOT_PERFORMED`). Merge does
+`IMP037_EXTERNAL_RECOVERY_PROOF: NOT_PERFORMED`; `IMP037_IMPLEMENTATION_COMPLETE: NO`;
+`IMP037_ACCEPTED: NO`; `IMP038_ACTIVATED: NO`; `IMP037_FOUNDER_UAT: NOT_PERFORMED`). Merge does
 not complete stories or prove RPO/RTO.
 
 ---
