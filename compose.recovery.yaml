@@ -1,6 +1,8 @@
 # IMP-037 recovery overlay — oneshot backup tool services (tools profile).
 #
 # Usage:
+#   # Fresh repository generation (operator/live-provider only — not CI vs real Spaces):
+#   npm run recovery -- pgbackrest init --generation 1
 #   # Layer 1 executes in the PostgreSQL container context (same path as the CLI):
 #   docker compose exec -T postgres pgbackrest --config=/etc/pgbackrest/pgbackrest.conf --stanza=boba backup --type=full
 #   npm run recovery -- backup layer1 --type full --generation 1

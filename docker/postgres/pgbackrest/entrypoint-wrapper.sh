@@ -35,11 +35,20 @@ if [ "${ARCHIVE_ENABLED}" = "1" ]; then
   chown postgres:postgres "${CONFIG_PATH}"
   chmod 640 "${CONFIG_PATH}"
 
-  # Map host-local secrets into pgBackRest env names. Do not write them into the conf file.
-  export PGBACKREST_REPO1_CIPHER_PASS="${PGBACKREST_CIPHER_PASS}"
+  # Map host-local secrets into pgBackRest env names for archive-push children.
+  # Prefer compose service environment (PGBACKREST_REPO1_*) so compose-exec
+  # backups inherit the same authority without relying solely on PID1 exports.
+  # Do not write secrets into the conf file.
+  if [ -z "${PGBACKREST_REPO1_CIPHER_PASS:-}" ] && [ -n "${PGBACKREST_CIPHER_PASS:-}" ]; then
+    export PGBACKREST_REPO1_CIPHER_PASS="${PGBACKREST_CIPHER_PASS}"
+  fi
   if [ "${BOBA_PGBACKREST_REPO_MODE:-s3}" != "posix" ] && [ "${BOBA_PGBACKREST_REPO_MODE:-s3}" != "local" ]; then
-    export PGBACKREST_REPO1_S3_KEY="${BOBA_PHYSICAL_SPACES_ACCESS_KEY_ID}"
-    export PGBACKREST_REPO1_S3_KEY_SECRET="${BOBA_PHYSICAL_SPACES_SECRET_ACCESS_KEY}"
+    if [ -z "${PGBACKREST_REPO1_S3_KEY:-}" ] && [ -n "${BOBA_PHYSICAL_SPACES_ACCESS_KEY_ID:-}" ]; then
+      export PGBACKREST_REPO1_S3_KEY="${BOBA_PHYSICAL_SPACES_ACCESS_KEY_ID}"
+    fi
+    if [ -z "${PGBACKREST_REPO1_S3_KEY_SECRET:-}" ] && [ -n "${BOBA_PHYSICAL_SPACES_SECRET_ACCESS_KEY:-}" ]; then
+      export PGBACKREST_REPO1_S3_KEY_SECRET="${BOBA_PHYSICAL_SPACES_SECRET_ACCESS_KEY}"
+    fi
   fi
 
   ARCHIVE_CMD="pgbackrest --config=${CONFIG_PATH} --stanza=${STANZA} archive-push %p"

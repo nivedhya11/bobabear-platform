@@ -91,6 +91,37 @@ call this CLI under the host flock. Continuous WAL archive-push does **not** tak
 postgres entrypoint renders `/etc/pgbackrest/pgbackrest.conf` **before** `archive_command`
 can fire. Archive-push and scheduled backup use that same file.
 
+The postgres compose service also maps host recovery secrets onto pgBackRest-native
+names so **compose-exec** and **archive-push** share the same repository authority:
+
+```text
+PGBACKREST_REPO1_CIPHER_PASS       ← PGBACKREST_CIPHER_PASS
+PGBACKREST_REPO1_S3_KEY            ← BOBA_PHYSICAL_SPACES_ACCESS_KEY_ID
+PGBACKREST_REPO1_S3_KEY_SECRET     ← BOBA_PHYSICAL_SPACES_SECRET_ACCESS_KEY
+```
+
+Secrets remain environment-only (never in `pgbackrest.conf`, logs, or evidence).
+
+### Fresh repository generation bootstrap
+
+A new pgBackRest repository generation requires `stanza-create` before check/backup/archive.
+This is an **explicit operator / live-provider** action — do **not** auto-run it in CI against
+real Spaces.
+
+```bash
+# 1. Render/start configured postgres (archive on + generation + physical Spaces env)
+# 2. Initialize stanza for that generation (compose postgres backend):
+npm run recovery -- pgbackrest init --generation N --json
+#    → docker compose exec -T postgres pgbackrest \
+#         --config=/etc/pgbackrest/pgbackrest.conf --stanza=boba stanza-create
+#    → then pgbackrest ... check  (fail closed if either fails)
+# 3. Enable/confirm scheduled backup operation
+npm run recovery:backup:layer1 -- --type full --generation N --evidence-dir DIR
+```
+
+Key rotation to a **new** repository generation uses the same initialization path after
+rendering/starting postgres for `repo-gen-{N}` (`rotate-keys layer1` prints the plan only).
+
 Production-shaped Layer 1 (the default when archive is on) is physical Spaces:
 
 ```text
@@ -194,9 +225,12 @@ npm run recovery:capacity -- --json
 npm run recovery -- spaces config-check --bucket NAME --local-root DIR --credential-env-prefix BOBA_SPACES
 npm run recovery -- rotate-keys layer1 --generation 1 --new-passphrase-present --json
 npm run recovery -- rotate-keys layer2 --recipient age1... --old-identities-retained --json
+npm run recovery -- pgbackrest init --generation N --json
 ```
 
 Rotation commands print a **plan JSON only** — no production secret mutation.
+After rotating Layer 1 to a new generation, follow the fresh-repository bootstrap
+(`pgbackrest init`) before enabling scheduled backups.
 
 ### systemd templates (install NOT performed)
 

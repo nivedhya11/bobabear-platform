@@ -18,7 +18,7 @@ import { redactText, safeJson } from "./redact.mjs";
 import { resolveCandidateProvenance } from "./candidate.mjs";
 import { runLayer1Backup } from "./layer1/backup.mjs";
 import { assertPgbackrestVersion } from "./layer1/config.mjs";
-import { runPgbackrest } from "./layer1/pgbackrest.mjs";
+import { runPgbackrest, initializeRepositoryStanza } from "./layer1/pgbackrest.mjs";
 import { planRepositoryGenerationRotation } from "./layer1/rotation.mjs";
 import { reconcileLocalCompleteMarker, runLogicalBackup } from "./layer2/backup.mjs";
 import { resolveAgeBinary } from "./layer2/age.mjs";
@@ -99,6 +99,7 @@ export function usage() {
     "  recovery capacity [--layer1-base-bytes N] [--layer1-wal-bytes N] [--layer2-bytes N] [--json]",
     "  recovery systemd validate [--unit-dir DIR] [--json]",
     "  recovery pgbackrest version [--json]",
+    "  recovery pgbackrest init --generation N [--stanza NAME] [--json]",
     "  recovery rotate-keys layer1|layer2 [--generation N] [--recipient AGE] [--json]",
     "  recovery spaces config-check [--bucket NAME] [--endpoint URL|--local-root DIR] [--credential-env-prefix PREFIX] [--json]",
     "",
@@ -109,6 +110,8 @@ export function usage() {
     "",
     "Layer 1 runs pgBackRest inside the postgres service (docker compose exec -T postgres).",
     "Host pgBackRest is not required. Physical Spaces config is distinct from logical Spaces.",
+    "Fresh repository generations require `recovery pgbackrest init --generation N` (stanza-create + check)",
+    "before scheduled backup; do not auto-run against real Spaces from CI.",
     "",
     "Safety: --force-production is forbidden on all restore/drill paths.",
     "PITR --target-pgdata requires TARGET_OWNED_BY_RUN ownership proof; arbitrary paths are BLOCKED.",
@@ -179,6 +182,9 @@ export async function runCli(argv, io = {}) {
   }
   if (command === "pgbackrest" && positionals[1] === "version") {
     return runPgbackrestVersion({ flags, env, json, stdout, stderr });
+  }
+  if (command === "pgbackrest" && positionals[1] === "init") {
+    return runPgbackrestInit({ flags, env, json, stdout, stderr });
   }
   if (command === "rotate-keys" && (positionals[1] === "layer1" || positionals[1] === "layer2")) {
     return runRotateKeys({ layer: positionals[1], flags, json, stdout, stderr });
@@ -751,6 +757,56 @@ function runPgbackrestVersion({ flags, env, json, stdout }) {
       : `pgBackRest version FAILED: ${asserted.reason}`,
   );
   return asserted.ok ? CLI_EXIT.OK : CLI_EXIT.FAILURE;
+}
+
+/**
+ * Fresh repository generation bootstrap: stanza-create then check.
+ * Explicit operator / live-provider action — not CI against real Spaces.
+ */
+function runPgbackrestInit({ flags, env, json, stdout }) {
+  const generation =
+    stringFlag(flags.generation) ??
+    stringFlag(flags["repository-generation"]) ??
+    env.BOBA_PGBACKREST_GENERATION ??
+    null;
+  if (!generation || !/^[1-9][0-9]*$/.test(String(generation).trim())) {
+    const payload = {
+      ok: false,
+      status: OPERATION_STATUS.BLOCKED,
+      reason: "repository generation required (--generation or BOBA_PGBACKREST_GENERATION)",
+    };
+    emit(stdout, json, payload, `pgBackRest init BLOCKED: ${payload.reason}`);
+    return CLI_EXIT.BLOCKED;
+  }
+
+  const stanza = stringFlag(flags.stanza) ?? env.BOBA_PGBACKREST_STANZA ?? "boba";
+  const result = initializeRepositoryStanza({
+    repositoryGeneration: String(generation).trim(),
+    stanza,
+    env,
+    containerCli: resolveContainerCli() ?? undefined,
+  });
+  const payload = {
+    ok: result.ok,
+    status: result.status,
+    via: result.via,
+    stanza: result.stanza,
+    repositoryGeneration: result.repositoryGeneration,
+    configPath: result.configPath,
+    steps: result.steps,
+    reason: result.reason,
+    note: "Explicit operator path; do not auto-run against real Spaces from CI",
+  };
+  emit(
+    stdout,
+    json,
+    payload,
+    result.ok
+      ? `pgBackRest init OK: stanza=${result.stanza} generation=${result.repositoryGeneration} (stanza-create + check)`
+      : `pgBackRest init ${result.status}: ${result.reason ?? "failed"}`,
+  );
+  if (result.status === OPERATION_STATUS.BLOCKED) return CLI_EXIT.BLOCKED;
+  return result.ok ? CLI_EXIT.OK : CLI_EXIT.FAILURE;
 }
 
 function runRotateKeys({ layer, flags, json, stdout }) {

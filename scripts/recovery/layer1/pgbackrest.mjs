@@ -153,6 +153,109 @@ export function expire(options = {}) {
 }
 
 /**
+ * Fresh-repository stanza bootstrap. Operator/live-provider path only —
+ * never auto-run against real Spaces from CI.
+ * @param {object} [options]
+ */
+export function stanzaCreate(options = {}) {
+  const stanza = options.stanza ?? DEFAULT_STANZA;
+  return runPgbackrest({ ...options, args: ["--stanza", stanza, "stanza-create"] });
+}
+
+/**
+ * Initialize a new repository generation: stanza-create then check.
+ * Fail closed if either step fails. Uses the same compose postgres backend,
+ * runtime config path, stanza, and repository secret authority as backup.
+ *
+ * @param {object} [options]
+ * @param {number|string} [options.repositoryGeneration]
+ * @param {string} [options.stanza]
+ * @returns {{
+ *   ok: boolean,
+ *   status: "SUCCEEDED"|"FAILED"|"BLOCKED",
+ *   via: string,
+ *   stanza: string,
+ *   repositoryGeneration?: string,
+ *   configPath: string,
+ *   steps: Array<Record<string, unknown>>,
+ *   reason?: string,
+ * }}
+ */
+export function initializeRepositoryStanza(options = {}) {
+  const stanza = options.stanza ?? DEFAULT_STANZA;
+  const generationRaw = options.repositoryGeneration ?? options.generation;
+  const generation =
+    generationRaw == null || String(generationRaw).trim() === ""
+      ? undefined
+      : String(generationRaw).trim();
+  if (!generation || !/^[1-9][0-9]*$/.test(generation)) {
+    return {
+      ok: false,
+      status: "BLOCKED",
+      via: typeof options?.execFn === "function" ? "injected" : "compose-exec",
+      stanza,
+      configPath: PGBACKREST_RUNTIME_CONFIG_PATH,
+      steps: [],
+      reason: "repository generation required for stanza initialization (--generation N)",
+    };
+  }
+
+  /** @type {Array<Record<string, unknown>>} */
+  const steps = [];
+  const created = stanzaCreate({ ...options, stanza });
+  steps.push({
+    step: "stanza-create",
+    ok: created.ok,
+    via: created.via,
+    configPath: PGBACKREST_RUNTIME_CONFIG_PATH,
+    stanza,
+  });
+  if (!created.ok) {
+    return {
+      ok: false,
+      status: "FAILED",
+      via: created.via,
+      stanza,
+      repositoryGeneration: generation,
+      configPath: PGBACKREST_RUNTIME_CONFIG_PATH,
+      steps,
+      reason: created.reason ?? "pgBackRest stanza-create failed",
+    };
+  }
+
+  const checked = check({ ...options, stanza });
+  steps.push({
+    step: "check",
+    ok: checked.ok,
+    via: checked.via,
+    configPath: PGBACKREST_RUNTIME_CONFIG_PATH,
+    stanza,
+  });
+  if (!checked.ok) {
+    return {
+      ok: false,
+      status: "FAILED",
+      via: checked.via,
+      stanza,
+      repositoryGeneration: generation,
+      configPath: PGBACKREST_RUNTIME_CONFIG_PATH,
+      steps,
+      reason: checked.reason ?? "pgBackRest check failed after stanza-create",
+    };
+  }
+
+  return {
+    ok: true,
+    status: "SUCCEEDED",
+    via: checked.via,
+    stanza,
+    repositoryGeneration: generation,
+    configPath: PGBACKREST_RUNTIME_CONFIG_PATH,
+    steps,
+  };
+}
+
+/**
  * Continuous WAL archive-push. MUST NOT be wrapped in heavy-ops flock.
  * @param {object} [options]
  */

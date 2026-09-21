@@ -45,6 +45,48 @@ export const PHYSICAL_SPACES_ENV = Object.freeze({
 });
 
 /**
+ * Compose postgres service must map host recovery secrets onto pgBackRest-native
+ * variable names so BOTH archive-push (PID1 children) and
+ * `docker compose exec -T postgres pgbackrest ...` inherit the same repository
+ * authority. Values must never be written into pgbackrest.conf.
+ *
+ * Host (source) → container (pgBackRest-native):
+ *   PGBACKREST_CIPHER_PASS                 → PGBACKREST_REPO1_CIPHER_PASS
+ *   BOBA_PHYSICAL_SPACES_ACCESS_KEY_ID     → PGBACKREST_REPO1_S3_KEY
+ *   BOBA_PHYSICAL_SPACES_SECRET_ACCESS_KEY → PGBACKREST_REPO1_S3_KEY_SECRET
+ */
+export const PGBACKREST_REPO_SECRET_ENV = Object.freeze({
+  cipherPass: "PGBACKREST_REPO1_CIPHER_PASS",
+  s3Key: "PGBACKREST_REPO1_S3_KEY",
+  s3KeySecret: "PGBACKREST_REPO1_S3_KEY_SECRET",
+});
+
+/**
+ * Compose environment bindings that keep archive-push and scheduled compose-exec
+ * on the same secret authority without embedding secrets in conf or CLI argv.
+ * @returns {ReadonlyArray<{ container: string, host: string, requiredFor: "cipher"|"s3" }>}
+ */
+export function layer1ComposePgbackrestSecretBindings() {
+  return Object.freeze([
+    {
+      container: PGBACKREST_REPO_SECRET_ENV.cipherPass,
+      host: PHYSICAL_SPACES_ENV.cipherPass,
+      requiredFor: "cipher",
+    },
+    {
+      container: PGBACKREST_REPO_SECRET_ENV.s3Key,
+      host: PHYSICAL_SPACES_ENV.accessKeyId,
+      requiredFor: "s3",
+    },
+    {
+      container: PGBACKREST_REPO_SECRET_ENV.s3KeySecret,
+      host: PHYSICAL_SPACES_ENV.secretAccessKey,
+      requiredFor: "s3",
+    },
+  ]);
+}
+
+/**
  * Schedule documentation (host systemd timers invoke one-shot Compose ops):
  * - weekly full backup
  * - daily differential backup

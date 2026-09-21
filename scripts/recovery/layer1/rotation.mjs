@@ -53,6 +53,8 @@ export function planRepositoryGenerationRotation(input) {
       keyVersion: `repo-gen-${nextGeneration}`,
       priorKeyVersion: `repo-gen-${current}`,
       note: "Old passphrase remains required in off-host custody for retained prior-generation artifacts",
+      bootstrapAfterRotation:
+        "After rendering/starting postgres for the new generation, run `recovery pgbackrest init --generation N` (stanza-create + check) before scheduled backup",
     },
   };
 }

@@ -22,6 +22,11 @@ services:
       BOBA_PHYSICAL_SPACES_ACCESS_KEY_ID: "${BOBA_PHYSICAL_SPACES_ACCESS_KEY_ID:-}"
       BOBA_PHYSICAL_SPACES_SECRET_ACCESS_KEY: "${BOBA_PHYSICAL_SPACES_SECRET_ACCESS_KEY:-}"
       PGBACKREST_CIPHER_PASS: "${PGBACKREST_CIPHER_PASS:-}"
+      # pgBackRest-native names for compose-exec and archive-push (same repository authority).
+      # Secrets stay environment-only — never written into pgbackrest.conf.
+      PGBACKREST_REPO1_CIPHER_PASS: "${PGBACKREST_CIPHER_PASS:-}"
+      PGBACKREST_REPO1_S3_KEY: "${BOBA_PHYSICAL_SPACES_ACCESS_KEY_ID:-}"
+      PGBACKREST_REPO1_S3_KEY_SECRET: "${BOBA_PHYSICAL_SPACES_SECRET_ACCESS_KEY:-}"
     ports:
       - "${POSTGRES_HOST_PORT:-5433}:5432"
     volumes:

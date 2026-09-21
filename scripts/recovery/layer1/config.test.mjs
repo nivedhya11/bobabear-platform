@@ -7,13 +7,16 @@ import { test } from "node:test";
 import {
   assertPgbackrestVersion,
   layer1ArchiveCommand,
+  layer1ComposePgbackrestSecretBindings,
   parseVersion,
   renderAuthoritativePgbackrestConf,
   renderPgbackrestConf,
   significantPgbackrestLines,
   LAYER1_RETENTION_DAYS_MIN,
+  PGBACKREST_REPO_SECRET_ENV,
   PGBACKREST_RUNTIME_CONFIG_PATH,
   PGBACKREST_VERSION_MIN,
+  PHYSICAL_SPACES_ENV,
 } from "./config.mjs";
 
 test("pgBackRest version assert accepts >= 2.55 and forbids 2.50", () => {
@@ -190,4 +193,17 @@ test("entrypoint refuses archive start without concrete config render", () => {
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+test("archive-push and scheduled commands share config path and repo secret authority names", () => {
+  assert.equal(layer1ArchiveCommand("boba"), `pgbackrest --config=${PGBACKREST_RUNTIME_CONFIG_PATH} --stanza=boba archive-push %p`);
+  const bindings = layer1ComposePgbackrestSecretBindings();
+  assert.deepEqual(
+    bindings.map((b) => [b.container, b.host, b.requiredFor]),
+    [
+      [PGBACKREST_REPO_SECRET_ENV.cipherPass, PHYSICAL_SPACES_ENV.cipherPass, "cipher"],
+      [PGBACKREST_REPO_SECRET_ENV.s3Key, PHYSICAL_SPACES_ENV.accessKeyId, "s3"],
+      [PGBACKREST_REPO_SECRET_ENV.s3KeySecret, PHYSICAL_SPACES_ENV.secretAccessKey, "s3"],
+    ],
+  );
 });

@@ -274,4 +274,17 @@ test("rotate-keys layer1 prints plan without mutating secrets", () => {
   assert.equal(payload.plan.nextGeneration, 2);
   assert.equal(payload.plan.model, "NEW_ENCRYPTED_REPOSITORY_GENERATION");
   assert.equal(payload.plan.preservePriorGeneration, true);
+  assert.match(payload.plan.bootstrapAfterRotation ?? "", /pgbackrest init/i);
+});
+
+test("pgbackrest init without generation is BLOCKED", () => {
+  const result = run(["pgbackrest", "init", "--json"], {
+    env: { ...process.env, BOBA_PGBACKREST_GENERATION: "" },
+  });
+  assert.equal(result.status, CLI_EXIT.BLOCKED);
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.ok, false);
+  assert.equal(payload.status, OPERATION_STATUS.BLOCKED);
+  assert.match(payload.reason ?? "", /generation/i);
+  assert.doesNotMatch(result.stdout, /SUCCEEDED/);
 });
