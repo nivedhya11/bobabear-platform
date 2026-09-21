@@ -35,6 +35,7 @@ import { createRestoreTargetId } from "./target.mjs";
  * @param {string} [options.evidenceDir]
  * @param {string} [options.stanza]
  * @param {Function} [options.execFn]
+ * @param {Function} [options.afterRestoreFn] optional post-restore step (e.g. start recovered PG + verify). Failure → FAILED evidence, never SUCCEEDED.
  * @param {boolean} [options.forceProduction]
  * @param {Date} [options.now]
  */
@@ -145,7 +146,44 @@ export async function runPitrRestore(options) {
       startedAt,
       targetIdentity,
       redactText(restoreResult.stderr || `pgbackrest restore exited ${restoreResult.status}`),
+      "PGBACKREST_RESTORE_NONZERO",
     );
+  }
+
+  /** @type {object | undefined} */
+  let afterRestore;
+  if (typeof options.afterRestoreFn === "function") {
+    try {
+      afterRestore = await options.afterRestoreFn({
+        runId,
+        targetIdentity,
+        targetPgdataPath,
+        target,
+        provisioned,
+        stanza,
+      });
+    } catch (error) {
+      if (provisioned) cleanupProvisionedTarget(provisioned);
+      return fail(
+        options,
+        runId,
+        startedAt,
+        targetIdentity,
+        redactText(error instanceof Error ? error.message : String(error)),
+        "RESTORED_POSTGRES_START_FAILED",
+      );
+    }
+    if (!afterRestore || afterRestore.ok !== true) {
+      if (provisioned) cleanupProvisionedTarget(provisioned);
+      return fail(
+        options,
+        runId,
+        startedAt,
+        targetIdentity,
+        redactText(afterRestore?.reason ?? "restored PostgreSQL post-restore step failed"),
+        afterRestore?.code ?? "RESTORED_POSTGRES_START_FAILED",
+      );
+    }
   }
 
   const endedAt = new Date().toISOString();
@@ -162,6 +200,7 @@ export async function runPitrRestore(options) {
     recoveryPoint: target.value,
     findings: [
       { code: "PITR_RESTORE", targetType: target.type, targetPgdataPath },
+      ...(afterRestore?.findings ?? []),
       ...(provisionFields.findings ?? []),
     ],
   });
@@ -173,6 +212,7 @@ export async function runPitrRestore(options) {
     targetIdentity,
     targetPgdataPath,
     provisioned,
+    afterRestore,
     evidence,
   };
 }

@@ -59,3 +59,50 @@ test("contention returns SKIPPED_LOCK_HELD, never success", async () => {
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("after release a subsequent operation can acquire", async () => {
+  const { root, lockPath } = tempLock();
+  try {
+    const first = await withHeavyOpLock({ lockPath, waitMs: 0, operation: "first" }, async () => "done");
+    assert.equal(first.status, "ACQUIRED");
+    const second = await withHeavyOpLock({ lockPath, waitMs: 0, operation: "second" }, async () => "again");
+    assert.equal(second.status, "ACQUIRED");
+    assert.equal(second.result, "again");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("callback failure releases lock safely; next acquire succeeds", async () => {
+  const { root, lockPath } = tempLock();
+  try {
+    const failed = await withHeavyOpLock({ lockPath, waitMs: 0, operation: "boom" }, async () => {
+      throw new Error("callback exploded");
+    });
+    assert.equal(failed.ok, false);
+    assert.equal(failed.status, "FAILED");
+    assert.match(failed.reason ?? "", /callback exploded/);
+
+    const after = await withHeavyOpLock({ lockPath, waitMs: 0, operation: "after-fail" }, async () => "ok");
+    assert.equal(after.status, "ACQUIRED");
+    assert.equal(after.result, "ok");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("lock result contains no secret material", async () => {
+  const { root, lockPath } = tempLock();
+  try {
+    const secret = "PGBACKREST_CIPHER_PASS=super-secret-cipher";
+    const result = await withHeavyOpLock({ lockPath, waitMs: 0, operation: "scan" }, async () => ({
+      note: "ok",
+    }));
+    const serialized = JSON.stringify(result);
+    assert.equal(serialized.includes(secret), false);
+    assert.equal(serialized.includes("super-secret"), false);
+    assert.equal(result.status, "ACQUIRED");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

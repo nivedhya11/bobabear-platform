@@ -42,6 +42,9 @@ export const LOGICAL_OWNERSHIP_MARKER = "LOGICAL_TARGET_OWNED_BY_RUN";
  * @property {string} runId
  * @property {string} targetIdentity
  * @property {string} databaseUrl
+ * @property {string} [migratorDatabaseUrl]
+ * @property {string} [appDatabaseUrl]
+ * @property {string} [appDatabaseUrlInternal]
  * @property {string} containerName
  * @property {string} containerCli
  * @property {string} volumeOrPathId
@@ -528,6 +531,10 @@ export async function provisionLogicalTarget(options) {
   }
 
   const migratorDatabaseUrl = `postgresql://boba_bear_migrator:${migratorPassword}@127.0.0.1:${hostPort}/${dbName}`;
+  // Host-loopback app URL for host-side tools; internal URL for recovered app
+  // containers attached to the run-owned recovery network (never source/prod DNS).
+  const appDatabaseUrl = `postgresql://boba_bear_app:${appPassword}@127.0.0.1:${hostPort}/${dbName}`;
+  const appDatabaseUrlInternal = `postgresql://boba_bear_app:${appPassword}@${containerName}:5432/${dbName}`;
 
   const ownershipDescriptor = {
     runId,
@@ -549,6 +556,8 @@ export async function provisionLogicalTarget(options) {
       targetIdentity,
       databaseUrl,
       migratorDatabaseUrl,
+      appDatabaseUrl,
+      appDatabaseUrlInternal,
       containerName,
       containerCli: cli,
       volumeOrPathId: `${cli}:${containerName}`,
