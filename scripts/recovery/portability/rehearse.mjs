@@ -25,7 +25,10 @@ import {
   createExistingMigrationAuthority,
 } from "../migrate/authority.mjs";
 import { runBusinessIntegrityValidation } from "../validate/business-integrity.mjs";
-import { evaluateProviderSuppression } from "../validate/isolation.mjs";
+import {
+  evaluateProviderSuppression,
+  resolveProviderSuppressionInput,
+} from "../validate/isolation.mjs";
 
 /**
  * @param {object} options
@@ -44,16 +47,6 @@ export async function runPortabilityRehearsal(options) {
   });
   if (!fresh.ok) {
     return interrupt(options, runId, startedAt, targetIdentity, fresh.reason);
-  }
-
-  const suppression = evaluateProviderSuppression({
-    env: options.env,
-    networkIsolated: options.networkIsolated === true,
-    productionDnsAbsent: options.productionDnsAbsent === true,
-    productionCredentialsAbsent: options.productionCredentialsAbsent === true,
-  });
-  if (!suppression.ok) {
-    return interrupt(options, runId, startedAt, targetIdentity, suppression.reason);
   }
 
   if (options.interruptBeforeRestore === true) {
@@ -118,6 +111,20 @@ export async function runPortabilityRehearsal(options) {
   if (!restoreOk) {
     if (provisioned) cleanupProvisionedTarget(provisioned);
     return interrupt(options, runId, startedAt, targetIdentity, restoreReason);
+  }
+
+  // Derive isolation from observed provisioned-network proof when present.
+  // Do not hard-code true for disposable targets; inject-path unit seams may supply claims.
+  const suppressionInput = resolveProviderSuppressionInput({
+    env: options.env,
+    provisioned,
+    networkIsolatedClaim: options.networkIsolated,
+    productionDnsAbsentClaim: options.productionDnsAbsent,
+  });
+  const suppression = evaluateProviderSuppression(suppressionInput);
+  if (!suppression.ok) {
+    if (provisioned) cleanupProvisionedTarget(provisioned);
+    return interrupt(options, runId, startedAt, targetIdentity, suppression.reason);
   }
 
   if (options.interruptAfterRestore === true) {
@@ -207,6 +214,9 @@ export async function runPortabilityRehearsal(options) {
         targetIdentity,
         volumeOrPathId: provisioned?.volumeOrPathId ?? null,
         databaseUrlBound: Boolean(databaseUrl),
+        networkName: provisioned?.networkName ?? null,
+        networkInternalVerified: provisioned?.networkInternalVerified === true,
+        localProviderSuppression: suppression.mode,
       },
     ],
   });

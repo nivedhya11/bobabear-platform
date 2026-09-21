@@ -5,16 +5,21 @@ DOCUMENT_ROLE: SUPPORTING_OPS_EVIDENCE
 QUALIFYING_EXTERNAL_PROOF: NO
 PROVIDER_ACCESS_DEFERRED: YES
 REAL_SPACES: NOT_PERFORMED
+PHASE1_PASS: NO
 RPO_RTO_PROVEN: NO
 DROPLET_2GIB_RTO_VALIDATED: NO
 STORAGE_CAPACITY_VALIDATED: NO
 FOUNDER_UAT: NOT_PERFORMED
 IMP037_ACCEPTED: NO
+IMP038_ACTIVATED: NO
 LIFECYCLE_AUTHORITY: NO
 ```
 
 Supporting **LOCAL_PREQUALIFICATION** evidence only. This is **not** qualifying
 external / DigitalOcean Spaces proof.
+
+Remediation packet (PR #177 review findings): pg_restore nonzero fail-closed,
+run-owned internal-network isolation proof, Founder UAT checklist provenance.
 
 ---
 
@@ -68,19 +73,16 @@ AGE_IDENTITIES: disposable test-only; destroyed in cleanup; NOT Founder custody
 ## Commands executed (summary)
 
 ```text
-git fetch origin
-# Gate 0: origin/main == 3d9751c… / tree c421ec45… / CI 35599957212 SUCCESS
-BOBA_RECOVERY_BUILD_POSTGRES=1 / BOBA_RECOVERY_LAYER1_POSIX=1
-  node --test scripts/recovery/integration/layer1-pgbackrest.integration.test.mjs
+npm run test:recovery
+BOBA_RECOVERY_BUILD_POSTGRES=1 node --test scripts/recovery/integration/layer1-pgbackrest.integration.test.mjs
 node --test scripts/recovery/integration/postgres18.integration.test.mjs
 node --test scripts/recovery/integration/portability-e2e.integration.test.mjs
-npm run test:recovery
 npm run recovery:systemd:validate
-npm run recovery:capacity
 npm run project:consistency
 node --test scripts/project-consistency.test.mjs
 npm run testing:inventory:check
 git diff --check
+# plus targeted unit tests for pg_restore exit handling + network ownership/proof
 ```
 
 ## Results
@@ -88,8 +90,8 @@ git diff --check
 ### Baseline `npm run test:recovery`
 
 ```text
-tests: 139
-pass: 137
+tests: 153
+pass: 151
 fail: 0
 skipped: 2
 ```
@@ -108,18 +110,14 @@ REAL_SPACES: NOT_PERFORMED
 image_build: PASS (pgBackRest 2.56.0)
 stanza_create: PASS
 check: PASS
-full_backup: PASS (~28–33s local)
+full_backup: PASS
 wal_mutation_and_archive: PASS (local posix; not Spaces)
-differential: PASS (~3–4s local)
+differential: PASS
 info_json: PASS
 verify: PASS
 local_restore_or_pitr: NOT_PERFORMED_IN_THIS_PACKET (logical/portability path covered separately)
 source_unchanged: PASS (disposable container identity retained through backup ops)
 ```
-
-Defect fixed in-scope: entrypoint left `umask 077` after rendering pgBackRest
-conf, which blocked PostgreSQL 18 PGDATA mkdir under archive mode. Restored
-`umask 022` after secret-safe conf write.
 
 ### Layer 2 local COMPLETE chain
 
@@ -134,32 +132,53 @@ checksum_verify: PASS
 complete_last: PASS
 ```
 
-### Portability + real migration authority
+### Portability + real migration authority + runtime isolation
 
 ```text
 LOCAL_REAL_MIGRATION_AFTER_RESTORE: PASS
 fresh_pg18: PASS
 decrypt: PASS
-pg_restore: PASS (in-container as migrator)
+pg_restore: PASS (in-container as migrator; --exit-on-error; exit status authoritative)
 real_migration_authority: PASS (scripts/database/migrate.ts / BOBA_BEAR_DATABASE_MIGRATION_URL)
 business_validation: PASS (BUSINESS_INTEGRITY_VALIDATED)
-provider_suppression: PASS (networkIsolated + DNS/credentials absent invariants)
 source_unchanged: PASS (post-dump source-only marker retained)
-cleanup: PASS (run-owned target removed)
+cleanup: PASS (run-owned target + run-owned internal network removed)
 ```
 
-Defects fixed in-scope:
+#### Isolation / provider suppression (runtime-proven)
 
-- Migration authority now binds `BOBA_BEAR_DATABASE_MIGRATION_URL` (was incorrectly
-  only `DATABASE_URL`, which would not retarget `migrate.ts`).
-- Disposable target bootstrap grants `CREATE ON DATABASE` to migrator and exposes
-  `migratorDatabaseUrl`.
-- Logical restore uses provisioned container `pg_restore` (host client absent) as
-  migrator when available.
-- Stable `pg_isready` wait (consecutive successes) to avoid PostgreSQL 18 init race.
-- Containerized age tools when host `age`/`age-keygen` absent (uses recovery image).
+```text
+internal_network_created: YES (unique RUN_ID-owned Podman network, --internal)
+network_internal_verified: YES (podman network inspect → Internal/internal = true)
+network_proof_source: provisionLogicalTarget inspectNetworkInternal after create + after attach; E2E re-inspect
+loopback_host_publish: YES (127.0.0.1::5432 for migration authority / validation)
+production_credentials_absent_verified: YES (controlled env strips forbidden provider keys; assertProductionProviderCredentialsAbsent)
+production_dns_absent: YES (provisioner introduces no production DNS/host mapping; productionDnsAbsentVerified=true)
+networkIsolated_derived_from_runtime_proof: YES (not hard-coded true)
+LOCAL_PROVIDER_SUPPRESSION: PASS
+```
 
-### Negative paths / readiness / isolation
+Unit fail-closed coverage also proves:
+
+- internal verified → isolation eligible
+- default/non-internal network → BLOCKED
+- missing network proof → BLOCKED
+- wrong/unowned network cannot be removed
+- target cleanup removes only its own network
+
+### pg_restore exit handling (remediation)
+
+```text
+exit_on_error: YES (--exit-on-error on in-container and host invocations)
+nonzero_fails: YES (process exit status authoritative; no stderr WARNING→success path)
+warning_status1_test: PASS (status=1 WARNING-only → FAIL)
+mixed_warning_error_test: PASS (status=1 WARNING+ERROR → FAIL)
+error_status1_test: PASS
+migration_after_failed_restore_prevented: PASS
+secret_redaction: PASS
+```
+
+### Negative paths / readiness
 
 Covered by existing unit suite under `npm run test:recovery` (source==target refuse,
 target reuse, interruption, COMPLETE absent on failure, failure evidence retained,
@@ -168,7 +187,6 @@ high-risk READY-shaped local fixtures + BLOCKED missing/stale/newer-failure/fail
 ```text
 LOCAL_GATE_MECHANICS_READY: YES
 PRODUCTION_HIGH_RISK_READINESS: NOT_PROVEN
-LOCAL_PROVIDER_SUPPRESSION: PASS
 ```
 
 ### Systemd
@@ -182,11 +200,11 @@ SYSTEMD_HOST_INSTALL: NOT_PERFORMED
 
 ```text
 NON_QUALIFYING_LOCAL_TIMING_OBSERVATIONS:
-  layer1_full_ms: ~28228–32795
-  layer1_diff_ms: ~3260–3788
-  source_migration_ms: ~20054
-  logical_backup_ms: ~1300
-  full_portability_rehearsal_ms: ~136538
+  layer1_full_ms: ~8627
+  layer1_diff_ms: ~2837
+  source_migration_ms: ~18310
+  logical_backup_ms: ~1036
+  full_portability_rehearsal_ms: ~103718–110735
 RPO_RTO_PROVEN: NO
 DROPLET_2GIB_RTO_VALIDATED: NO
 
@@ -197,12 +215,17 @@ STORAGE_CAPACITY_VALIDATED: NO
 
 ### Founder UAT preparation
 
-Checklist updated/created:
+Checklist updated:
 
 `docs/platform/operations/imp037-founder-uat-checklist.md`
 
+Mandatory merged-main / PODMAN_WSL / `boba-staging` / exact-git-tree build /
+fresh-image / running-image verification preconditions encoded. Conditional
+“UAT deployment (if required)” wording removed.
+
 ```text
 FOUNDER_UAT: NOT_PERFORMED
+FOUNDER_UAT_REQUIRED: YES
 ```
 
 ### Cleanup / secret scan

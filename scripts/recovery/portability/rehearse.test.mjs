@@ -38,7 +38,7 @@ test("missing migrateFn without authority binding fails closed (never defaults t
       provisionTarget: false,
       networkIsolated: true,
       productionDnsAbsent: true,
-      productionCredentialsAbsent: true,
+      env: { BOBA_BEAR_ENV: "local", PATH: process.env.PATH },
     });
     assert.equal(result.ok, false);
     assert.equal(result.status, OPERATION_STATUS.FAILED);
@@ -95,7 +95,7 @@ test("injected migrateFn is a unit seam only — not claimed as proven migrator 
       provisionTarget: false,
       networkIsolated: true,
       productionDnsAbsent: true,
-      productionCredentialsAbsent: true,
+      env: { BOBA_BEAR_ENV: "local", PATH: process.env.PATH },
     });
     assert.equal(result.ok, false);
     assert.match(result.reason ?? "", /migration/i);
@@ -137,6 +137,9 @@ test("portability binds evidence/migration/cleanup to restored provisioned targe
           containerName: "boba-rec-tgt-test",
           containerCli: "docker",
           volumeOrPathId: "docker:boba-rec-tgt-test",
+          networkName: "boba-rec-net-test",
+          networkInternalVerified: true,
+          productionDnsAbsentVerified: true,
           created: true,
         },
       }),
@@ -147,9 +150,10 @@ test("portability binds evidence/migration/cleanup to restored provisioned targe
       },
       queryFn: async () => [{ count: 1 }],
       retainTarget: true,
-      networkIsolated: true,
-      productionDnsAbsent: true,
-      productionCredentialsAbsent: true,
+      // Caller claims ignored when provisioned proof is present — isolation derived from target.
+      networkIsolated: false,
+      productionDnsAbsent: false,
+      env: { BOBA_BEAR_ENV: "local", PATH: process.env.PATH },
     });
 
     assert.equal(result.ok, true, result.reason);

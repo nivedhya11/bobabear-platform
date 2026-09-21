@@ -46,9 +46,15 @@ export const LOGICAL_OWNERSHIP_MARKER = "LOGICAL_TARGET_OWNED_BY_RUN";
  * @property {string} containerCli
  * @property {string} volumeOrPathId
  * @property {number} [hostPort]
+ * @property {string} [networkName]
+ * @property {boolean} [networkInternalVerified]
+ * @property {boolean} [productionDnsAbsentVerified]
  * @property {boolean} created
  * @property {object} ownershipDescriptor
  */
+
+export const NETWORK_OWNERSHIP_LABEL_RUN_ID = "boba.recovery.run_id";
+export const NETWORK_OWNERSHIP_LABEL_OWNED = "boba.recovery.owned";
 
 /**
  * Provision a fresh PITR PGDATA workspace derived from RUN_ID.
@@ -298,7 +304,9 @@ export async function provisionLogicalTarget(options) {
   }
 
   const targetIdentity = createRestoreTargetId(runId);
-  const containerName = `boba-rec-tgt-${runId.replace(/[^a-zA-Z0-9_-]/g, "").slice(-24)}`;
+  const runToken = runId.replace(/[^a-zA-Z0-9_-]/g, "").slice(-24);
+  const containerName = `boba-rec-tgt-${runToken}`;
+  const networkName = `boba-rec-net-${runToken}`;
   const image = options.image ?? DISPOSABLE_POSTGRES_IMAGE;
   const password = generateRecoveryPassword();
   const dbUser = "boba_recovery";
@@ -318,6 +326,15 @@ export async function provisionLogicalTarget(options) {
       };
     });
 
+  const abortProvision = () => {
+    execFn(cli, ["rm", "-f", containerName], { timeout: 30_000 });
+    const owned = removeOwnedNetwork(execFn, cli, { networkName, runId });
+    if (!owned.ok) {
+      // Mid-provision abort of the exact network name we created in this call.
+      execFn(cli, ["network", "rm", networkName], { timeout: 30_000 });
+    }
+  };
+
   // Confirm container name does not already exist.
   const inspect = execFn(cli, ["inspect", containerName], { timeout: 15_000 });
   if (inspect.status === 0) {
@@ -328,22 +345,70 @@ export async function provisionLogicalTarget(options) {
     };
   }
 
+  // Unique RUN_ID-owned internal network (no external routing).
+  const existingNet = execFn(cli, ["network", "inspect", networkName], { timeout: 15_000 });
+  if (existingNet.status === 0) {
+    return {
+      ok: false,
+      reason: `recovery target network already exists (reuse forbidden): ${networkName}`,
+      code: "TARGET_REUSE_FORBIDDEN",
+    };
+  }
+
+  const netCreate = execFn(
+    cli,
+    [
+      "network",
+      "create",
+      "--internal",
+      "--label",
+      `${NETWORK_OWNERSHIP_LABEL_RUN_ID}=${runId}`,
+      "--label",
+      `${NETWORK_OWNERSHIP_LABEL_OWNED}=1`,
+      networkName,
+    ],
+    { timeout: 30_000 },
+  );
+  if (netCreate.status !== 0) {
+    return {
+      ok: false,
+      reason: redactText(netCreate.stderr || `failed to create internal recovery network ${networkName}`),
+      code: "TARGET_NETWORK_PROVISION_FAILED",
+    };
+  }
+
+  const networkProof = inspectNetworkInternal(execFn, cli, networkName);
+  if (!networkProof.ok || networkProof.internal !== true) {
+    removeOwnedNetwork(execFn, cli, { networkName, runId });
+    return {
+      ok: false,
+      reason:
+        networkProof.reason ??
+        `recovery network is not internal after create (refusing default/non-isolated network): ${networkName}`,
+      code: "NETWORK_NOT_INTERNAL",
+    };
+  }
+
   const run = execFn(cli, [
     "run",
     "-d",
     "--name",
     containerName,
+    "--network",
+    networkName,
     "-e",
     `POSTGRES_PASSWORD=${password}`,
     "-e",
     `POSTGRES_USER=${dbUser}`,
     "-e",
     `POSTGRES_DB=${dbName}`,
+    // Loopback-only host publish for repository migration authority / validation.
     "-p",
     "127.0.0.1::5432",
     image,
   ]);
   if (run.status !== 0) {
+    abortProvision();
     return {
       ok: false,
       reason: redactText(run.stderr || `failed to start recovery postgres (${image})`),
@@ -353,7 +418,7 @@ export async function provisionLogicalTarget(options) {
 
   const published = resolvePublishedEndpoint(execFn, cli, containerName);
   if (!published) {
-    execFn(cli, ["rm", "-f", containerName], { timeout: 30_000 });
+    abortProvision();
     return {
       ok: false,
       reason: "recovery target publish is not loopback-only; refusing a public endpoint",
@@ -364,7 +429,7 @@ export async function provisionLogicalTarget(options) {
 
   const databaseUrl = `postgresql://${dbUser}:${password}@127.0.0.1:${hostPort}/${dbName}`;
   if (options.sourceDatabaseUrl && normalizeDbEndpoint(options.sourceDatabaseUrl) === normalizeDbEndpoint(databaseUrl)) {
-    execFn(cli, ["rm", "-f", containerName], { timeout: 30_000 });
+    abortProvision();
     return {
       ok: false,
       reason: "provisioned logical target resolves to the active/source database endpoint",
@@ -381,7 +446,7 @@ export async function provisionLogicalTarget(options) {
     reuseExistingTarget: false,
   });
   if (!fresh.ok) {
-    execFn(cli, ["rm", "-f", containerName], { timeout: 30_000 });
+    abortProvision();
     return { ok: false, reason: fresh.reason, code: fresh.code };
   }
 
@@ -395,7 +460,7 @@ export async function provisionLogicalTarget(options) {
     execFn,
   });
   if (!ready) {
-    execFn(cli, ["rm", "-f", containerName], { timeout: 30_000 });
+    abortProvision();
     return {
       ok: false,
       reason: "provisioned recovery postgres did not become ready",
@@ -441,11 +506,24 @@ export async function provisionLogicalTarget(options) {
     { timeout: 60_000 },
   );
   if (bootstrap.status !== 0) {
-    execFn(cli, ["rm", "-f", containerName], { timeout: 30_000 });
+    abortProvision();
     return {
       ok: false,
       reason: redactText(bootstrap.stderr || "failed to bootstrap recovery migrator roles"),
       code: "TARGET_PROVISION_FAILED",
+    };
+  }
+
+  // Re-inspect after container attach — isolation claim must come from observed runtime state.
+  const postAttachProof = inspectNetworkInternal(execFn, cli, networkName);
+  if (!postAttachProof.ok || postAttachProof.internal !== true) {
+    abortProvision();
+    return {
+      ok: false,
+      reason:
+        postAttachProof.reason ??
+        `recovery network internal proof missing after attach: ${networkName}`,
+      code: "NETWORK_NOT_INTERNAL",
     };
   }
 
@@ -458,6 +536,7 @@ export async function provisionLogicalTarget(options) {
     endpoint: normalizeDbEndpoint(databaseUrl),
     environment: ENVIRONMENT_CLASSIFICATION.RECOVERY,
     containerName,
+    networkName,
     volumeOrPathId: `${cli}:${containerName}`,
     createdAt: new Date().toISOString(),
   };
@@ -474,6 +553,10 @@ export async function provisionLogicalTarget(options) {
       containerCli: cli,
       volumeOrPathId: `${cli}:${containerName}`,
       hostPort,
+      networkName,
+      networkInternalVerified: true,
+      // No production DNS/host mapping is introduced by this provisioner.
+      productionDnsAbsentVerified: true,
       created: true,
       ownershipDescriptor,
     },
@@ -658,12 +741,38 @@ export function cleanupProvisionedTarget(target, options = {}) {
     }
   }
   if (target.kind === "logical") {
+    const cli = target.containerCli ?? resolveContainerCli() ?? "docker";
+    const execFn =
+      options.execFn ??
+      ((command, args, opts = {}) => {
+        const result = spawnSync(command, args, {
+          encoding: "utf8",
+          timeout: opts.timeout ?? 30_000,
+        });
+        return {
+          status: typeof result.status === "number" ? result.status : 1,
+          stdout: result.stdout ?? "",
+          stderr: result.stderr ?? "",
+        };
+      });
     const stopped = stopEphemeralPostgres({
       containerName: target.containerName,
-      containerCli: target.containerCli,
-      execFn: options.execFn,
+      containerCli: cli,
+      execFn,
     });
-    return stopped;
+    if (!stopped.ok) {
+      return stopped;
+    }
+    if (typeof target.networkName === "string" && target.networkName.trim()) {
+      const netRemoved = removeOwnedNetwork(execFn, cli, {
+        networkName: target.networkName.trim(),
+        runId: target.runId,
+      });
+      if (!netRemoved.ok) {
+        return netRemoved;
+      }
+    }
+    return { ok: true };
   }
   return { ok: false, reason: "unknown provisioned target kind" };
 }
@@ -673,17 +782,28 @@ export function cleanupProvisionedTarget(target, options = {}) {
  * @param {ProvisionedPitrTarget | ProvisionedLogicalTarget} target
  */
 export function targetEvidenceFields(target) {
+  /** @type {Record<string, unknown>} */
+  const finding = {
+    code: "FRESH_TARGET_PROVISIONED",
+    kind: target.kind,
+    targetIdentity: target.targetIdentity,
+    volumeOrPathId: target.volumeOrPathId,
+    runId: target.runId,
+  };
+  if (target.kind === "logical") {
+    if (typeof target.networkName === "string" && target.networkName.trim()) {
+      finding.networkName = target.networkName.trim();
+    }
+    if (typeof target.networkInternalVerified === "boolean") {
+      finding.networkInternalVerified = target.networkInternalVerified;
+    }
+    if (typeof target.productionDnsAbsentVerified === "boolean") {
+      finding.productionDnsAbsentVerified = target.productionDnsAbsentVerified;
+    }
+  }
   return {
     targetIdentityMarker: target.targetIdentity,
-    findings: [
-      {
-        code: "FRESH_TARGET_PROVISIONED",
-        kind: target.kind,
-        targetIdentity: target.targetIdentity,
-        volumeOrPathId: target.volumeOrPathId,
-        runId: target.runId,
-      },
-    ],
+    findings: [finding],
   };
 }
 
@@ -713,6 +833,115 @@ export function assertLogicalTargetNotSource(databaseUrl, sourceDatabaseUrl) {
 }
 
 export { normalizeDbEndpoint };
+
+/**
+ * Positively inspect a Podman/Docker network and report whether it is internal.
+ *
+ * @param {Function} execFn
+ * @param {string} cli
+ * @param {string} networkName
+ * @returns {{ ok: true, internal: boolean, networkName: string, raw?: object } | { ok: false, reason: string, internal?: false }}
+ */
+export function inspectNetworkInternal(execFn, cli, networkName) {
+  if (typeof networkName !== "string" || !networkName.trim()) {
+    return { ok: false, reason: "network name required for internal proof", internal: false };
+  }
+  const result = execFn(cli, ["network", "inspect", networkName.trim()], { timeout: 15_000 });
+  if (result.status !== 0) {
+    return {
+      ok: false,
+      reason: redactText(result.stderr || `network inspect failed for ${networkName}`),
+      internal: false,
+    };
+  }
+  let parsed;
+  try {
+    parsed = JSON.parse(String(result.stdout ?? ""));
+  } catch {
+    return { ok: false, reason: "network inspect returned invalid JSON", internal: false };
+  }
+  const entry = Array.isArray(parsed) ? parsed[0] : parsed;
+  if (!entry || typeof entry !== "object") {
+    return { ok: false, reason: "network inspect returned empty result", internal: false };
+  }
+  const internal = entry.Internal === true || entry.internal === true;
+  const observedName =
+    (typeof entry.Name === "string" && entry.Name) ||
+    (typeof entry.name === "string" && entry.name) ||
+    networkName.trim();
+  return { ok: true, internal, networkName: observedName, raw: entry };
+}
+
+/**
+ * Remove a network only when ownership labels prove it belongs to this RUN_ID.
+ * Ambiguous / missing ownership → refuse cleanup.
+ *
+ * @param {Function} execFn
+ * @param {string} cli
+ * @param {{ networkName: string, runId: string }} ownership
+ * @returns {{ ok: true } | { ok: false, reason: string, code?: string }}
+ */
+export function removeOwnedNetwork(execFn, cli, ownership) {
+  const networkName = typeof ownership?.networkName === "string" ? ownership.networkName.trim() : "";
+  const runId = ownership?.runId;
+  if (!networkName || !isValidRunId(runId)) {
+    return {
+      ok: false,
+      reason: "refusing network cleanup without unambiguous run-owned network identity",
+      code: "NETWORK_CLEANUP_OWNERSHIP_AMBIGUOUS",
+    };
+  }
+
+  const inspected = inspectNetworkInternal(execFn, cli, networkName);
+  if (!inspected.ok) {
+    // Already gone is acceptable after container removal.
+    if (/no such|not found/i.test(inspected.reason ?? "")) {
+      return { ok: true };
+    }
+    return {
+      ok: false,
+      reason: inspected.reason,
+      code: "NETWORK_CLEANUP_OWNERSHIP_AMBIGUOUS",
+    };
+  }
+
+  const labels = readNetworkLabels(inspected.raw);
+  const ownedFlag = labels[NETWORK_OWNERSHIP_LABEL_OWNED];
+  const ownedRun = labels[NETWORK_OWNERSHIP_LABEL_RUN_ID];
+  if (ownedFlag !== "1" || ownedRun !== runId) {
+    return {
+      ok: false,
+      reason: `refusing cleanup of unowned or ambiguous network ${networkName}`,
+      code: "NETWORK_CLEANUP_OWNERSHIP_AMBIGUOUS",
+    };
+  }
+
+  const removed = execFn(cli, ["network", "rm", networkName], { timeout: 30_000 });
+  if (removed.status !== 0) {
+    return {
+      ok: false,
+      reason: redactText(removed.stderr || `failed to remove run-owned network ${networkName}`),
+      code: "NETWORK_CLEANUP_FAILED",
+    };
+  }
+  return { ok: true };
+}
+
+/**
+ * @param {object | undefined} raw
+ * @returns {Record<string, string>}
+ */
+function readNetworkLabels(raw) {
+  if (!raw || typeof raw !== "object") return {};
+  const labels = raw.Labels ?? raw.labels;
+  if (!labels || typeof labels !== "object" || Array.isArray(labels)) return {};
+  /** @type {Record<string, string>} */
+  const out = {};
+  for (const [key, value] of Object.entries(labels)) {
+    out[String(key)] = String(value);
+  }
+  return out;
+}
 
 /**
  * @param {Function} execFn

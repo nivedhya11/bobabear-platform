@@ -25,6 +25,11 @@ import { PROOF_CODE } from "../constants.mjs";
 import { createExistingMigrationAuthority } from "../migrate/authority.mjs";
 import { cleanupAgeTools, resolveAgeTools } from "../tools/age-tools.mjs";
 import { waitForPostgresReady } from "../tools/postgres-ready.mjs";
+import { cleanupProvisionedTarget } from "../restore/provision.mjs";
+import {
+  FORBIDDEN_PRODUCTION_PROVIDER_ENV_KEYS,
+  assertProductionProviderCredentialsAbsent,
+} from "../validate/isolation.mjs";
 
 function execInContainer(cli, name, args, options = {}) {
   return spawnSync(cli, ["exec", name, ...args], {
@@ -273,8 +278,27 @@ test("postgres18: restricted-role dump + real migrate authority + portability re
 
     writeFileSync(path.join(work, "source-marker"), sourceContainer, "utf8");
 
+    // Controlled disposable validation env: production provider credentials absent;
+    // no production DNS/host mapping introduced by this rehearsal.
+    const controlledEnv = { ...process.env };
+    for (const key of FORBIDDEN_PRODUCTION_PROVIDER_ENV_KEYS) {
+      delete controlledEnv[key];
+    }
+    delete controlledEnv.BOBA_RECOVERY_ALLOW_LIVE_PROVIDERS;
+    delete controlledEnv.BOBA_PAYMENT_INITIATE;
+    delete controlledEnv.BOBA_NOTIFICATION_INITIATE;
+    controlledEnv.BOBA_BEAR_ENV = process.env.BOBA_BEAR_ENV || "local";
+    controlledEnv.BOBA_BEAR_PUBLIC_ORIGIN = process.env.BOBA_BEAR_PUBLIC_ORIGIN || "http://localhost:3000";
+    controlledEnv.BOBA_BEAR_LOG_LEVEL = process.env.BOBA_BEAR_LOG_LEVEL || "error";
+    controlledEnv.BOBA_BEAR_ALLOW_UNSAFE_ADAPTERS = "true";
+    controlledEnv.BOBA_BEAR_DATABASE_SSL_MODE = "disable";
+
+    const credentialsAbsent = assertProductionProviderCredentialsAbsent(controlledEnv);
+    assert.equal(credentialsAbsent.ok, true, credentialsAbsent.reason);
+
     const rehearsalStart = Date.now();
     // No migrateFn inject — must exercise existing repository migration authority.
+    // Isolation flags are NOT hard-coded true: provisioned target supplies runtime network proof.
     const rehearsal = await runPortabilityRehearsal({
       runIdToRestore: backupRunId,
       objectStore,
@@ -286,17 +310,7 @@ test("postgres18: restricted-role dump + real migrate authority + portability re
       ageBin: ageTools.ageBin,
       provisionTarget: true,
       retainTarget: true,
-      networkIsolated: true,
-      productionDnsAbsent: true,
-      productionCredentialsAbsent: true,
-      env: {
-        ...process.env,
-        BOBA_BEAR_ENV: process.env.BOBA_BEAR_ENV || "local",
-        BOBA_BEAR_PUBLIC_ORIGIN: process.env.BOBA_BEAR_PUBLIC_ORIGIN || "http://localhost:3000",
-        BOBA_BEAR_LOG_LEVEL: process.env.BOBA_BEAR_LOG_LEVEL || "error",
-        BOBA_BEAR_ALLOW_UNSAFE_ADAPTERS: "true",
-        BOBA_BEAR_DATABASE_SSL_MODE: "disable",
-      },
+      env: controlledEnv,
     });
     timings.portabilityMs = Date.now() - rehearsalStart;
 
@@ -304,6 +318,9 @@ test("postgres18: restricted-role dump + real migrate authority + portability re
     assert.ok(rehearsal.databaseUrl);
     assert.ok(rehearsal.provisioned?.volumeOrPathId);
     assert.ok(rehearsal.provisioned?.migratorDatabaseUrl);
+    assert.ok(rehearsal.provisioned?.networkName);
+    assert.equal(rehearsal.provisioned?.networkInternalVerified, true);
+    assert.equal(rehearsal.provisioned?.productionDnsAbsentVerified, true);
     assert.equal(
       (rehearsal.validation?.results ?? []).some(
         (entry) => entry.code === PROOF_CODE.BUSINESS_INTEGRITY_VALIDATED && entry.ok,
@@ -311,6 +328,22 @@ test("postgres18: restricted-role dump + real migrate authority + portability re
       true,
       JSON.stringify(rehearsal.validation?.results ?? [], null, 2),
     );
+    assert.equal(
+      (rehearsal.evidence?.findings ?? []).some(
+        (f) => f.code === "PORTABILITY_REHEARSAL_OK" && f.networkInternalVerified === true && f.localProviderSuppression === "SUPPRESSED",
+      ),
+      true,
+    );
+
+    // Positively re-inspect the run-owned network is still internal before cleanup.
+    const netInspect = spawnSync(cli, ["network", "inspect", rehearsal.provisioned.networkName], {
+      encoding: "utf8",
+      timeout: 15_000,
+    });
+    assert.equal(netInspect.status, 0, netInspect.stderr);
+    const netJson = JSON.parse(netInspect.stdout);
+    const netEntry = Array.isArray(netJson) ? netJson[0] : netJson;
+    assert.equal(netEntry.Internal === true || netEntry.internal === true, true);
 
     // Source container still exists and retains post-dump marker (unchanged by restore).
     const inspect = spawnSync(cli, ["inspect", sourceContainer], { encoding: "utf8" });
@@ -346,9 +379,15 @@ test("postgres18: restricted-role dump + real migrate authority + portability re
     // Keep timings readable in test output without failing.
     process.stdout.write(`LOCAL_PORTABILITY_TIMINGS ${readFileSync(path.join(work, "local-timings.json"), "utf8")}\n`);
 
-    // Cleanup only run-owned target.
-    if (rehearsal.provisioned?.containerName) {
-      spawnSync(cli, ["rm", "-f", rehearsal.provisioned.containerName], { encoding: "utf8" });
+    // Cleanup only run-owned target + its network.
+    if (rehearsal.provisioned) {
+      const cleaned = cleanupProvisionedTarget(rehearsal.provisioned);
+      assert.equal(cleaned.ok, true, cleaned.reason);
+      const netGone = spawnSync(cli, ["network", "inspect", rehearsal.provisioned.networkName], {
+        encoding: "utf8",
+        timeout: 15_000,
+      });
+      assert.notEqual(netGone.status, 0);
     }
   } finally {
     spawnSync(cli, ["rm", "-f", sourceContainer], { encoding: "utf8" });

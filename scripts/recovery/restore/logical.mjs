@@ -207,6 +207,7 @@ export async function runLogicalRestore(options) {
             restoreUser,
             "-d",
             "boba_recovery",
+            "--exit-on-error",
             "--clean",
             "--if-exists",
             "--no-owner",
@@ -217,29 +218,16 @@ export async function runLogicalRestore(options) {
             encoding: "utf8",
             timeout: 300_000,
           });
-          // pg_restore can exit 1 with non-fatal warnings; treat only hard failures as errors
-          // when stderr indicates a fatal condition. Prefer status 0 when possible.
-          if (result.status === 0) return { ok: true };
-          const errText = String(result.stderr || result.stdout || "");
-          if (/FATAL|could not|error:/i.test(errText) && !/WARNING:/i.test(errText)) {
-            return { ok: false, reason: redactText(errText || `pg_restore exited ${result.status}`) };
-          }
-          // Exit code 1 with only warnings is accepted for disposable restores of role-stripped dumps.
-          if (result.status === 1 && /WARNING/i.test(errText) && !/FATAL/i.test(errText)) {
-            return { ok: true };
-          }
-          return {
-            ok: result.status === 0,
-            reason: result.status === 0 ? undefined : redactText(errText || `pg_restore exited ${result.status}`),
-          };
+          return evaluatePgRestoreResult(result);
         }
-        const result = spawnSync("pg_restore", ["-d", databaseUrl, "--clean", "--if-exists", filePath], {
-          encoding: "utf8",
-        });
-        return {
-          ok: result.status === 0,
-          reason: result.status === 0 ? undefined : redactText(result.stderr || `pg_restore exited ${result.status}`),
-        };
+        const result = spawnSync(
+          "pg_restore",
+          ["-d", databaseUrl, "--exit-on-error", "--clean", "--if-exists", filePath],
+          {
+            encoding: "utf8",
+          },
+        );
+        return evaluatePgRestoreResult(result);
       });
     const restored = await restoreFn(dumpPath);
     if (!restored?.ok) {
@@ -285,6 +273,26 @@ export async function runLogicalRestore(options) {
     databaseUrl: databaseUrl || null,
     provisioned,
     evidence,
+  };
+}
+
+/**
+ * Process exit status is authoritative for pg_restore.
+ * status == 0 → success; every nonzero status → failure.
+ * Never infer restore success from stderr wording (WARNING / ERROR / FATAL).
+ *
+ * @param {{ status?: number | null, stdout?: string, stderr?: string }} result
+ * @returns {{ ok: true } | { ok: false, reason: string }}
+ */
+export function evaluatePgRestoreResult(result) {
+  const status = typeof result?.status === "number" ? result.status : 1;
+  if (status === 0) {
+    return { ok: true };
+  }
+  const errText = String(result?.stderr || result?.stdout || "");
+  return {
+    ok: false,
+    reason: redactText(errText || `pg_restore exited ${status}`),
   };
 }
 
