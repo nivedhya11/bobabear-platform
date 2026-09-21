@@ -16,6 +16,7 @@ IMP037_EXTERNAL_RECOVERY_PROOF: NOT_PERFORMED
 IMP037_IMPLEMENTATION_COMPLETE: NO
 IMP037_ACCEPTED: NO
 IMP037_FOUNDER_UAT: NOT_PERFORMED
+FOUNDER_UAT: NOT_PERFORMED
 IMP038_ACTIVATED: NO
 
 RPO_RTO_PROVEN: NO
@@ -25,6 +26,27 @@ REAL_SPACES: NOT_PERFORMED
 SYSTEMD_HOST_INSTALL: NOT_PERFORMED
 PRODUCTION_BACKUP_RESTORE: NOT_PERFORMED
 OFF_HOST_SECRET_CUSTODY: NOT_PERFORMED
+
+PHASE1_ATTEMPTED: YES
+PHASE1_RESULT: BLOCKED
+PHASE1_BLOCK_STATUS: BLOCKED_PROVIDER_ACCESS
+PHASE1_EVIDENCE: docs/platform/operations/evidence/imp037-phase1-provider-custody-2026-09-21.md
+
+ATTEMPT_1_RESULT: BLOCKED_SECRET_CUSTODY_DECISION
+ATTEMPT_1_INDEPENDENT_REVIEW: 5266114565
+ATTEMPT_2_RESULT: BLOCKED_PROVIDER_ACCESS
+ATTEMPT_2_R3_AUTHORIZATION: 5759893209
+ATTEMPT_2_CUSTODY_MODEL: FOUNDER_CONTROLLED_OFFLINE_RECOVERY_KIT
+
+CUSTODY_DECISION_RESOLVED: YES
+CUSTODY_MODEL_APPROVED: YES
+CUSTODY_EXECUTION: NOT_PERFORMED
+OFF_HOST_SECRET_CUSTODY: NOT_PERFORMED
+
+PROVIDER_ACCESS: BLOCKED
+REAL_SPACES: NOT_PERFORMED
+
+DO_NOT_START_PHASE_2
 ```
 
 This plan defines the future **explicit R3** proof campaign. It does **not** authorize or
@@ -74,6 +96,67 @@ Required before Phase 2:
 
 Exit criteria (planning): custody checklist completed under R3 authorization; credentials/secrets
 never committed to the repository; evidence paths record presence/absence without secret material.
+
+### Phase 1 attempts (2026-09-21) — BLOCKED
+
+Secret-safe evidence (authoritative detail):
+
+[`evidence/imp037-phase1-provider-custody-2026-09-21.md`](./evidence/imp037-phase1-provider-custody-2026-09-21.md)
+
+```text
+PHASE1_ATTEMPTED: YES
+PHASE1_RESULT: BLOCKED
+PHASE1_BLOCK_STATUS: BLOCKED_PROVIDER_ACCESS
+DO_NOT_START_PHASE_2
+```
+
+#### Attempt 1 (historical) — `BLOCKED_SECRET_CUSTODY_DECISION`
+
+Under R3 authorization PR #175 comment `5759504746`, Gate 0 exact-main CI run
+`35592155769` on `6e5553257fbd2498a606cda27b9ec9c6aebda7f9` was verified **SUCCESS**.
+
+```text
+ATTEMPT_1_RESULT: BLOCKED_SECRET_CUSTODY_DECISION
+ATTEMPT_1_INDEPENDENT_REVIEW: 5266114565
+BLOCKED_SECRET_CUSTODY_DECISION: YES
+  (historical — off-host custody mechanism was still deferred under ADR-015 /
+   locked §8.1 at Attempt 1; no existing approved custody_reference found;
+   none invented)
+SECONDARY: ENVIRONMENT_BLOCKER
+  (no DigitalOcean API/Spaces credentials or doctl/aws CLI on operator host;
+   Spaces inventory/create/versioning/credential isolation NOT_VERIFIED)
+LIVE_MUTATIONS: NONE
+BACKUP_RESTORE: NOT_PERFORMED
+```
+
+#### Attempt 2 — `BLOCKED_PROVIDER_ACCESS` (current)
+
+Human R3 continuation authorization PR #176 comment `5759893209` resolved the
+custody decision and approved `FOUNDER_CONTROLLED_OFFLINE_RECOVERY_KIT`.
+
+```text
+ATTEMPT_2_RESULT: BLOCKED_PROVIDER_ACCESS
+ATTEMPT_2_R3_AUTHORIZATION: 5759893209
+ATTEMPT_2_CUSTODY_MODEL: FOUNDER_CONTROLLED_OFFLINE_RECOVERY_KIT
+
+CUSTODY_DECISION_RESOLVED: YES
+CUSTODY_MODEL_APPROVED: YES
+CUSTODY_EXECUTION: NOT_PERFORMED
+OFF_HOST_SECRET_CUSTODY: NOT_PERFORMED
+  (no custody kits created; no Layer 1 passphrase generated;
+   no Layer 2 age identity generated)
+
+PROVIDER_ACCESS: BLOCKED
+REAL_SPACES: NOT_PERFORMED
+  (no provider inventory; no provider mutations)
+CURRENT_BLOCKER: DigitalOcean operator access unavailable on the operator host
+LIVE_MUTATIONS: NONE
+BACKUP_RESTORE: NOT_PERFORMED
+```
+
+Phase 1 did **not** PASS. Current blocker is provider access, not the custody
+decision. Do **not** start Phase 2 until Phase 1 PASS is recorded under a
+subsequent R3 gate.
 
 ---
 
