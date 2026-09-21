@@ -40,10 +40,20 @@ export function createExistingMigrationAuthority(options) {
     const cwd = options.cwd ?? REPO_ROOT;
     const env = {
       ...(options.env ?? process.env),
+      // Canonical migration authority reads BOBA_BEAR_DATABASE_MIGRATION_URL
+      // (scripts/database/migrate.ts → loadConfig processKind=migration).
+      BOBA_BEAR_DATABASE_MIGRATION_URL: databaseUrl,
+      // Compatibility alias only — not authoritative for migrate.ts.
       DATABASE_URL: databaseUrl,
+      BOBA_BEAR_DATABASE_SSL_MODE:
+        typeof (options.env ?? process.env).BOBA_BEAR_DATABASE_SSL_MODE === "string" &&
+        String((options.env ?? process.env).BOBA_BEAR_DATABASE_SSL_MODE).trim()
+          ? String((options.env ?? process.env).BOBA_BEAR_DATABASE_SSL_MODE).trim()
+          : "disable",
     };
-    // Never inherit application runtime URL accidentally over the target binding.
+    // Never inherit application / prior migration URLs over the bound recovery target.
     delete env.BOBA_APP_DATABASE_URL;
+    delete env.BOBA_BEAR_DATABASE_URL;
 
     const execFn =
       options.execFn ??

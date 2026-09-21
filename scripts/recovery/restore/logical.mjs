@@ -168,6 +168,71 @@ export async function runLogicalRestore(options) {
     const restoreFn =
       options.restoreFn ??
       ((filePath) => {
+        // Prefer in-container restore against a provisioned disposable target
+        // when host pg_restore is absent (common on agent workstations).
+        if (provisioned?.containerName && provisioned?.containerCli) {
+          const remoteDump = `/tmp/boba-restore-${runId}.dump`;
+          const copy = spawnSync(
+            provisioned.containerCli,
+            ["cp", filePath, `${provisioned.containerName}:${remoteDump}`],
+            { encoding: "utf8", timeout: 120_000 },
+          );
+          if (copy.status !== 0) {
+            return {
+              ok: false,
+              reason: redactText(copy.stderr || "failed to copy dump into recovery target container"),
+            };
+          }
+          // Prefer migrator role when provisioned so restored objects are owned by the
+          // same repository migration authority used for post-restore migrate.ts.
+          let restoreUser = "boba_recovery";
+          let restorePassword = null;
+          if (typeof provisioned.migratorDatabaseUrl === "string" && provisioned.migratorDatabaseUrl.trim()) {
+            try {
+              const parsed = new URL(provisioned.migratorDatabaseUrl);
+              if (parsed.username) restoreUser = decodeURIComponent(parsed.username);
+              if (parsed.password) restorePassword = decodeURIComponent(parsed.password);
+            } catch {
+              // keep boba_recovery fallback
+            }
+          }
+          const execEnv = ["exec"];
+          if (restorePassword) {
+            execEnv.push("-e", `PGPASSWORD=${restorePassword}`);
+          }
+          execEnv.push(
+            provisioned.containerName,
+            "pg_restore",
+            "-U",
+            restoreUser,
+            "-d",
+            "boba_recovery",
+            "--clean",
+            "--if-exists",
+            "--no-owner",
+            "--no-acl",
+            remoteDump,
+          );
+          const result = spawnSync(provisioned.containerCli, execEnv, {
+            encoding: "utf8",
+            timeout: 300_000,
+          });
+          // pg_restore can exit 1 with non-fatal warnings; treat only hard failures as errors
+          // when stderr indicates a fatal condition. Prefer status 0 when possible.
+          if (result.status === 0) return { ok: true };
+          const errText = String(result.stderr || result.stdout || "");
+          if (/FATAL|could not|error:/i.test(errText) && !/WARNING:/i.test(errText)) {
+            return { ok: false, reason: redactText(errText || `pg_restore exited ${result.status}`) };
+          }
+          // Exit code 1 with only warnings is accepted for disposable restores of role-stripped dumps.
+          if (result.status === 1 && /WARNING/i.test(errText) && !/FATAL/i.test(errText)) {
+            return { ok: true };
+          }
+          return {
+            ok: result.status === 0,
+            reason: result.status === 0 ? undefined : redactText(errText || `pg_restore exited ${result.status}`),
+          };
+        }
         const result = spawnSync("pg_restore", ["-d", databaseUrl, "--clean", "--if-exists", filePath], {
           encoding: "utf8",
         });

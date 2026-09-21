@@ -19,6 +19,7 @@ import {
 import { canonicalizePath, evaluateTargetIdentitySafety } from "../identity.mjs";
 import { isValidRunId } from "../run-id.mjs";
 import { redactText } from "../redact.mjs";
+import { waitForPostgresReady } from "../tools/postgres-ready.mjs";
 import { assertFreshTarget, createRestoreTargetId } from "./target.mjs";
 
 export const PITR_OWNERSHIP_MARKER = "TARGET_OWNED_BY_RUN";
@@ -384,18 +385,15 @@ export async function provisionLogicalTarget(options) {
     return { ok: false, reason: fresh.reason, code: fresh.code };
   }
 
-  // Wait for readiness (fail closed).
-  let ready = false;
-  for (let i = 0; i < 60; i += 1) {
-    const probe = execFn(cli, ["exec", containerName, "pg_isready", "-U", dbUser, "-d", dbName], {
-      timeout: 10_000,
-    });
-    if (probe.status === 0) {
-      ready = true;
-      break;
-    }
-    spawnSync(process.execPath, ["-e", "Atomics.wait(new Int32Array(new SharedArrayBuffer(4)),0,0,500)"]);
-  }
+  // Wait for stable readiness (fail closed). A single pg_isready during init
+  // can race the post-init restart on PostgreSQL 18 images.
+  const ready = waitForPostgresReady({
+    cli,
+    containerName,
+    user: dbUser,
+    db: dbName,
+    execFn,
+  });
   if (!ready) {
     execFn(cli, ["rm", "-f", containerName], { timeout: 30_000 });
     return {
@@ -404,6 +402,54 @@ export async function provisionLogicalTarget(options) {
       code: "TARGET_PROVISION_FAILED",
     };
   }
+
+  // Bootstrap migrator/app roles so post-restore migration uses the same
+  // repository authority (scripts/database/migrate.ts) as production recovery.
+  const migratorPassword = generateRecoveryPassword();
+  const appPassword = generateRecoveryPassword();
+  const bootstrapSql = [
+    `CREATE ROLE boba_bear_migrator WITH LOGIN PASSWORD '${migratorPassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION;`,
+    `CREATE ROLE boba_bear_app WITH LOGIN PASSWORD '${appPassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION;`,
+    `GRANT CONNECT ON DATABASE ${dbName} TO boba_bear_migrator;`,
+    `GRANT CREATE ON DATABASE ${dbName} TO boba_bear_migrator;`,
+    `GRANT CONNECT ON DATABASE ${dbName} TO boba_bear_app;`,
+    `CREATE SCHEMA IF NOT EXISTS app AUTHORIZATION boba_bear_migrator;`,
+    `CREATE SCHEMA IF NOT EXISTS drizzle AUTHORIZATION boba_bear_migrator;`,
+    `REVOKE ALL ON SCHEMA app FROM PUBLIC;`,
+    `REVOKE ALL ON SCHEMA drizzle FROM PUBLIC;`,
+    `GRANT USAGE ON SCHEMA app TO boba_bear_app;`,
+    `ALTER ROLE boba_bear_migrator IN DATABASE ${dbName} SET search_path = app, public;`,
+    `ALTER ROLE boba_bear_app IN DATABASE ${dbName} SET search_path = app, public;`,
+    `ALTER DEFAULT PRIVILEGES FOR ROLE boba_bear_migrator IN SCHEMA app GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO boba_bear_app;`,
+    `ALTER DEFAULT PRIVILEGES FOR ROLE boba_bear_migrator IN SCHEMA app GRANT USAGE, SELECT, UPDATE ON SEQUENCES TO boba_bear_app;`,
+  ].join("\n");
+  const bootstrap = execFn(
+    cli,
+    [
+      "exec",
+      containerName,
+      "psql",
+      "-U",
+      dbUser,
+      "-d",
+      dbName,
+      "-v",
+      "ON_ERROR_STOP=1",
+      "-c",
+      bootstrapSql,
+    ],
+    { timeout: 60_000 },
+  );
+  if (bootstrap.status !== 0) {
+    execFn(cli, ["rm", "-f", containerName], { timeout: 30_000 });
+    return {
+      ok: false,
+      reason: redactText(bootstrap.stderr || "failed to bootstrap recovery migrator roles"),
+      code: "TARGET_PROVISION_FAILED",
+    };
+  }
+
+  const migratorDatabaseUrl = `postgresql://boba_bear_migrator:${migratorPassword}@127.0.0.1:${hostPort}/${dbName}`;
 
   const ownershipDescriptor = {
     runId,
@@ -423,6 +469,7 @@ export async function provisionLogicalTarget(options) {
       runId,
       targetIdentity,
       databaseUrl,
+      migratorDatabaseUrl,
       containerName,
       containerCli: cli,
       volumeOrPathId: `${cli}:${containerName}`,

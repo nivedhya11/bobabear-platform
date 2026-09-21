@@ -133,7 +133,11 @@ export async function runPortabilityRehearsal(options) {
       if (provisioned) cleanupProvisionedTarget(provisioned);
       return interrupt(options, runId, startedAt, targetIdentity, present.reason);
     }
-    if (!databaseUrl) {
+    const migrationUrl =
+      (typeof options.migrationDatabaseUrl === "string" && options.migrationDatabaseUrl.trim()) ||
+      (typeof provisioned?.migratorDatabaseUrl === "string" && provisioned.migratorDatabaseUrl.trim()) ||
+      databaseUrl;
+    if (!migrationUrl) {
       if (provisioned) cleanupProvisionedTarget(provisioned);
       return interrupt(
         options,
@@ -144,7 +148,7 @@ export async function runPortabilityRehearsal(options) {
       );
     }
     migrateFn = createExistingMigrationAuthority({
-      databaseUrl,
+      databaseUrl: migrationUrl,
       env: options.env,
       execFn: options.migrateExecFn,
     });
@@ -162,11 +166,11 @@ export async function runPortabilityRehearsal(options) {
 
   let queryFn = options.queryFn;
   if (typeof queryFn !== "function") {
-    if (!databaseUrl) {
+    if (!databaseUrl && !provisioned?.containerName) {
       if (provisioned) cleanupProvisionedTarget(provisioned);
       return interrupt(options, runId, startedAt, targetIdentity, "queryFn or target databaseUrl required for business validation");
     }
-    queryFn = createTargetQueryFn(databaseUrl, options.env);
+    queryFn = createTargetQueryFn(databaseUrl, options.env, provisioned);
   }
 
   const validation = await runBusinessIntegrityValidation({ queryFn });
@@ -228,8 +232,9 @@ export async function runPortabilityRehearsal(options) {
 /**
  * @param {string} databaseUrl
  * @param {NodeJS.ProcessEnv} [env]
+ * @param {import("../restore/provision.mjs").ProvisionedLogicalTarget | null} [provisioned]
  */
-function createTargetQueryFn(databaseUrl, env) {
+function createTargetQueryFn(databaseUrl, env, provisioned = null) {
   return async (sql, params = []) => {
     let text = sql;
     for (let i = 0; i < params.length; i += 1) {
@@ -238,11 +243,41 @@ function createTargetQueryFn(databaseUrl, env) {
         typeof value === "number" ? String(value) : `'${String(value).replaceAll("'", "''")}'`;
       text = text.replace(`$${i + 1}`, literal);
     }
-    const result = spawnSync("psql", [databaseUrl, "-v", "ON_ERROR_STOP=1", "-t", "-A", "-F", ",", "-c", text], {
-      encoding: "utf8",
-      env: env ?? process.env,
-      timeout: 60_000,
-    });
+
+    /** @type {{ status: number | null, stdout?: string, stderr?: string, error?: Error }} */
+    let result;
+    if (provisioned?.containerName && provisioned?.containerCli) {
+      result = spawnSync(
+        provisioned.containerCli,
+        [
+          "exec",
+          provisioned.containerName,
+          "psql",
+          "-U",
+          "boba_recovery",
+          "-d",
+          "boba_recovery",
+          "-v",
+          "ON_ERROR_STOP=1",
+          "-t",
+          "-A",
+          "-F",
+          ",",
+          "-c",
+          text,
+        ],
+        { encoding: "utf8", env: env ?? process.env, timeout: 60_000 },
+      );
+    } else {
+      result = spawnSync("psql", [databaseUrl, "-v", "ON_ERROR_STOP=1", "-t", "-A", "-F", ",", "-c", text], {
+        encoding: "utf8",
+        env: env ?? process.env,
+        timeout: 60_000,
+      });
+    }
+    if (result.error && /ENOENT/i.test(String(result.error.message ?? result.error))) {
+      throw new Error("psql unavailable on host and no provisioned container query path");
+    }
     if (result.status !== 0) {
       throw new Error(redactText(result.stderr || `psql exited ${result.status}`));
     }

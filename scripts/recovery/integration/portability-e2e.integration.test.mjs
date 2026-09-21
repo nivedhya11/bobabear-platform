@@ -1,10 +1,17 @@
 /**
  * Disposable PostgreSQL 18 end-to-end portability rehearsal + logical-backup role proof.
- * Skips when docker/age unavailable. Never touches production volumes.
+ *
+ * LOCAL_PREQUALIFICATION path:
+ *   source PG18 → restricted-role pg_dump -Fc → age → local object store
+ *   → decrypt → fresh PG18 target → pg_restore → existing migrate.ts authority
+ *   → business-integrity validation → cleanup
+ *
+ * Never touches production volumes. Skips only when container runtime is absent.
+ * Prefer containerized age when host age is absent (via recovery image).
  */
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync, readFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { randomBytes } from "node:crypto";
@@ -15,8 +22,9 @@ import { runLogicalBackup } from "../layer2/backup.mjs";
 import { runPortabilityRehearsal } from "../portability/rehearse.mjs";
 import { generateRunId } from "../run-id.mjs";
 import { PROOF_CODE } from "../constants.mjs";
-import { resolveAgeBinary } from "../layer2/age.mjs";
-import { BUSINESS_INTEGRITY_CHECKS } from "../validate/business-integrity.mjs";
+import { createExistingMigrationAuthority } from "../migrate/authority.mjs";
+import { cleanupAgeTools, resolveAgeTools } from "../tools/age-tools.mjs";
+import { waitForPostgresReady } from "../tools/postgres-ready.mjs";
 
 function execInContainer(cli, name, args, options = {}) {
   return spawnSync(cli, ["exec", name, ...args], {
@@ -26,34 +34,73 @@ function execInContainer(cli, name, args, options = {}) {
   });
 }
 
-function waitForReady(cli, name, user, db, attempts = 60) {
-  for (let i = 0; i < attempts; i += 1) {
-    const ready = execInContainer(cli, name, ["pg_isready", "-U", user, "-d", db]);
-    if (ready.status === 0) return true;
-    spawnSync(process.execPath, ["-e", "Atomics.wait(new Int32Array(new SharedArrayBuffer(4)),0,0,500)"]);
-  }
-  return false;
+function resolvePublishedPort(cli, containerName) {
+  const result = spawnSync(cli, ["port", containerName, "5432"], {
+    encoding: "utf8",
+    timeout: 15_000,
+  });
+  if (result.status !== 0) return null;
+  const match = String(result.stdout ?? "").match(/127\.0\.0\.1:(\d+)/);
+  return match ? Number(match[1]) : null;
 }
 
-test("postgres18: boba_bear_logical_backup role dump + portability restore/migrate/validate", async (t) => {
+function bootstrapSourceRoles(cli, container, { migratorPassword, appPassword, logicalPassword }) {
+  const sql = [
+    `CREATE ROLE boba_bear_migrator WITH LOGIN PASSWORD '${migratorPassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION;`,
+    `CREATE ROLE boba_bear_app WITH LOGIN PASSWORD '${appPassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION;`,
+    `CREATE ROLE boba_bear_logical_backup WITH LOGIN PASSWORD '${logicalPassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION;`,
+    "GRANT CONNECT ON DATABASE boba_recovery TO boba_bear_migrator;",
+    "GRANT CREATE ON DATABASE boba_recovery TO boba_bear_migrator;",
+    "GRANT CONNECT ON DATABASE boba_recovery TO boba_bear_app;",
+    "GRANT CONNECT ON DATABASE boba_recovery TO boba_bear_logical_backup;",
+    "CREATE SCHEMA IF NOT EXISTS app AUTHORIZATION boba_bear_migrator;",
+    "CREATE SCHEMA IF NOT EXISTS drizzle AUTHORIZATION boba_bear_migrator;",
+    "REVOKE ALL ON SCHEMA app FROM PUBLIC;",
+    "REVOKE ALL ON SCHEMA drizzle FROM PUBLIC;",
+    "GRANT USAGE ON SCHEMA app TO boba_bear_app;",
+    "GRANT USAGE ON SCHEMA app TO boba_bear_logical_backup;",
+    "ALTER ROLE boba_bear_migrator IN DATABASE boba_recovery SET search_path = app, public;",
+    "ALTER ROLE boba_bear_app IN DATABASE boba_recovery SET search_path = app, public;",
+    "ALTER DEFAULT PRIVILEGES FOR ROLE boba_bear_migrator IN SCHEMA app GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO boba_bear_app;",
+    "ALTER DEFAULT PRIVILEGES FOR ROLE boba_bear_migrator IN SCHEMA app GRANT SELECT ON TABLES TO boba_bear_logical_backup;",
+    "ALTER DEFAULT PRIVILEGES FOR ROLE boba_bear_migrator IN SCHEMA app GRANT USAGE, SELECT, UPDATE ON SEQUENCES TO boba_bear_app;",
+    "ALTER DEFAULT PRIVILEGES FOR ROLE boba_bear_migrator IN SCHEMA app GRANT SELECT, USAGE ON SEQUENCES TO boba_bear_logical_backup;",
+  ].join("\n");
+  return execInContainer(cli, container, [
+    "psql",
+    "-U",
+    "boba_recovery",
+    "-d",
+    "boba_recovery",
+    "-v",
+    "ON_ERROR_STOP=1",
+    "-c",
+    sql,
+  ]);
+}
+
+test("postgres18: restricted-role dump + real migrate authority + portability restore/validate", async (t) => {
   const cli = resolveContainerCli();
   if (!cli) {
     t.skip("docker/podman unavailable");
     return;
   }
-  const ageBin = resolveAgeBinary();
-  const ageProbe = spawnSync(ageBin, ["--version"], { encoding: "utf8", timeout: 10_000 });
-  if (ageProbe.error || (ageProbe.status !== 0 && !String(ageProbe.stdout ?? "").toLowerCase().includes("age"))) {
-    t.skip("age binary unavailable");
+  const ageTools = resolveAgeTools();
+  if (!ageTools.ok) {
+    t.skip(ageTools.reason);
     return;
   }
 
   const suffix = randomBytes(4).toString("hex");
   const sourceContainer = `boba-src-pg-${suffix}`;
   const work = mkdtempSync(path.join(os.tmpdir(), "boba-port-e2e-"));
+  const migratorPassword = `mig-${suffix}`;
+  const appPassword = `app-${suffix}`;
   const logicalPassword = `logical-${suffix}`;
+  const timings = {};
 
   try {
+    const t0 = Date.now();
     const run = spawnSync(
       cli,
       [
@@ -67,6 +114,8 @@ test("postgres18: boba_bear_logical_backup role dump + portability restore/migra
         "POSTGRES_USER=boba_recovery",
         "-e",
         "POSTGRES_DB=boba_recovery",
+        "-p",
+        "127.0.0.1::5432",
         DISPOSABLE_POSTGRES_IMAGE,
       ],
       { encoding: "utf8", timeout: 180_000 },
@@ -75,22 +124,60 @@ test("postgres18: boba_bear_logical_backup role dump + portability restore/migra
       t.skip(`failed to start source postgres: ${run.stderr || run.stdout}`);
       return;
     }
-    assert.equal(waitForReady(cli, sourceContainer, "boba_recovery", "boba_recovery"), true);
+    assert.equal(
+      waitForPostgresReady({
+        cli,
+        containerName: sourceContainer,
+        user: "boba_recovery",
+        db: "boba_recovery",
+      }),
+      true,
+    );
+    const sourcePort = resolvePublishedPort(cli, sourceContainer);
+    assert.ok(sourcePort, "source publish must be loopback");
 
-    // Seed schema + restricted logical-backup role (NOSUPERUSER).
-    const seedSql = [
-      "CREATE SCHEMA IF NOT EXISTS app;",
-      ...BUSINESS_INTEGRITY_CHECKS.flatMap((check) =>
-        check.tables.map((table) => `CREATE TABLE IF NOT EXISTS app.${table} (id integer);`),
-      ),
-      "CREATE SEQUENCE IF NOT EXISTS app.demo_seq;",
-      `CREATE ROLE boba_bear_logical_backup WITH LOGIN PASSWORD '${logicalPassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION;`,
-      "GRANT CONNECT ON DATABASE boba_recovery TO boba_bear_logical_backup;",
-      "GRANT USAGE ON SCHEMA app TO boba_bear_logical_backup;",
-      "GRANT SELECT ON ALL TABLES IN SCHEMA app TO boba_bear_logical_backup;",
-      "GRANT SELECT, USAGE ON ALL SEQUENCES IN SCHEMA app TO boba_bear_logical_backup;",
-    ].join("\n");
-    const seed = execInContainer(cli, sourceContainer, [
+    const seed = bootstrapSourceRoles(cli, sourceContainer, {
+      migratorPassword,
+      appPassword,
+      logicalPassword,
+    });
+    assert.equal(seed.status, 0, seed.stderr || seed.stdout);
+
+    // Restricted-role attribute proof.
+    const roleAttrs = execInContainer(cli, sourceContainer, [
+      "psql",
+      "-U",
+      "boba_recovery",
+      "-d",
+      "boba_recovery",
+      "-t",
+      "-A",
+      "-F",
+      ",",
+      "-c",
+      "SELECT rolsuper, rolcreatedb, rolcreaterole, rolreplication FROM pg_roles WHERE rolname = 'boba_bear_logical_backup';",
+    ]);
+    assert.equal(roleAttrs.status, 0);
+    assert.equal(String(roleAttrs.stdout ?? "").trim(), "f,f,f,f");
+
+    const sourceMigratorUrl = `postgresql://boba_bear_migrator:${migratorPassword}@127.0.0.1:${sourcePort}/boba_recovery`;
+    const migrateSource = createExistingMigrationAuthority({
+      databaseUrl: sourceMigratorUrl,
+      env: {
+        ...process.env,
+        BOBA_BEAR_ENV: process.env.BOBA_BEAR_ENV || "local",
+        BOBA_BEAR_PUBLIC_ORIGIN: process.env.BOBA_BEAR_PUBLIC_ORIGIN || "http://localhost:3000",
+        BOBA_BEAR_LOG_LEVEL: process.env.BOBA_BEAR_LOG_LEVEL || "error",
+        BOBA_BEAR_ALLOW_UNSAFE_ADAPTERS: "true",
+        BOBA_BEAR_DATABASE_SSL_MODE: "disable",
+      },
+    });
+    const migratedSource = await migrateSource();
+    assert.equal(migratedSource.ok, true, migratedSource.reason);
+    timings.migrationMs = Date.now() - t0;
+
+    // Ensure logical role can SELECT application + migration-history objects for a complete dump.
+    const grants = execInContainer(cli, sourceContainer, [
       "psql",
       "-U",
       "boba_recovery",
@@ -99,47 +186,68 @@ test("postgres18: boba_bear_logical_backup role dump + portability restore/migra
       "-v",
       "ON_ERROR_STOP=1",
       "-c",
-      seedSql,
+      [
+        "GRANT USAGE ON SCHEMA app TO boba_bear_logical_backup;",
+        "GRANT USAGE ON SCHEMA drizzle TO boba_bear_logical_backup;",
+        "GRANT SELECT ON ALL TABLES IN SCHEMA app TO boba_bear_logical_backup;",
+        "GRANT SELECT ON ALL TABLES IN SCHEMA drizzle TO boba_bear_logical_backup;",
+        "GRANT SELECT, USAGE ON ALL SEQUENCES IN SCHEMA app TO boba_bear_logical_backup;",
+        "GRANT SELECT, USAGE ON ALL SEQUENCES IN SCHEMA drizzle TO boba_bear_logical_backup;",
+      ].join("\n"),
     ]);
-    assert.equal(seed.status, 0, seed.stderr || seed.stdout);
+    assert.equal(grants.status, 0, grants.stderr || grants.stdout);
 
-    // Prove role is not superuser.
-    const superCheck = execInContainer(cli, sourceContainer, [
+    const dumpStart = Date.now();
+    const dump = execInContainer(
+      cli,
+      sourceContainer,
+      ["pg_dump", "-Fc", "-U", "boba_bear_logical_backup", "boba_recovery"],
+      { encoding: "buffer", timeout: 180_000 },
+    );
+    assert.equal(dump.status, 0, String(dump.stderr ?? ""));
+    const dumpBuffer = Buffer.isBuffer(dump.stdout) ? dump.stdout : Buffer.from(dump.stdout ?? "");
+    assert.ok(dumpBuffer.length > 0);
+    timings.logicalBackupMs = Date.now() - dumpStart;
+
+    // Source marker content for post-rehearsal unchanged proof.
+    const sourceMarker = `source-marker-${suffix}`;
+    execInContainer(cli, sourceContainer, [
       "psql",
       "-U",
       "boba_recovery",
       "-d",
       "boba_recovery",
-      "-t",
-      "-A",
+      "-v",
+      "ON_ERROR_STOP=1",
       "-c",
-      "SELECT rolsuper FROM pg_roles WHERE rolname = 'boba_bear_logical_backup';",
+      `CREATE TABLE IF NOT EXISTS app.recovery_source_marker (id text PRIMARY KEY); INSERT INTO app.recovery_source_marker(id) VALUES ('${sourceMarker}') ON CONFLICT DO NOTHING;`,
     ]);
-    assert.equal(superCheck.status, 0);
-    assert.equal(String(superCheck.stdout ?? "").trim(), "f");
-
-    // Dump as boba_bear_logical_backup (not superuser).
-    const dump = execInContainer(
-      cli,
-      sourceContainer,
-      ["pg_dump", "-Fc", "-U", "boba_bear_logical_backup", "boba_recovery"],
-      { encoding: "buffer", timeout: 120_000 },
-    );
-    assert.equal(dump.status, 0, String(dump.stderr ?? ""));
-    const dumpBuffer = Buffer.isBuffer(dump.stdout) ? dump.stdout : Buffer.from(dump.stdout ?? "");
-    assert.ok(dumpBuffer.length > 0);
+    // Re-dump after marker so restore includes it? Marker is for SOURCE survival only —
+    // insert after dump so restored target intentionally lacks it while source retains it.
+    const postDumpMarker = execInContainer(cli, sourceContainer, [
+      "psql",
+      "-U",
+      "boba_recovery",
+      "-d",
+      "boba_recovery",
+      "-v",
+      "ON_ERROR_STOP=1",
+      "-c",
+      `CREATE TABLE IF NOT EXISTS public.source_only_marker (id text PRIMARY KEY); INSERT INTO public.source_only_marker(id) VALUES ('${sourceMarker}');`,
+    ]);
+    assert.equal(postDumpMarker.status, 0, postDumpMarker.stderr || postDumpMarker.stdout);
 
     const identityPath = path.join(work, "age-identity");
-    const keygen = spawnSync("age-keygen", ["-o", identityPath], { encoding: "utf8", timeout: 10_000 });
-    let recipient = String(keygen.stdout ?? keygen.stderr ?? "")
+    const keygen = spawnSync(ageTools.ageKeygenBin, ["-o", identityPath], {
+      encoding: "utf8",
+      timeout: 30_000,
+    });
+    let recipient = `${keygen.stdout ?? ""}\n${keygen.stderr ?? ""}`
       .split(/\r?\n/)
       .map((line) => line.trim())
       .find((line) => line.startsWith("Public key:") || line.startsWith("age1"));
     if (recipient?.startsWith("Public key:")) recipient = recipient.replace("Public key:", "").trim();
-    if (!recipient?.startsWith("age1")) {
-      t.skip("unable to generate age recipient");
-      return;
-    }
+    assert.ok(recipient?.startsWith("age1"), `disposable age recipient required: ${keygen.stderr || keygen.stdout}`);
 
     const storeRoot = path.join(work, "store");
     const evidenceDir = path.join(work, "evidence");
@@ -158,75 +266,93 @@ test("postgres18: boba_bear_logical_backup role dump + portability restore/migra
         commitSha: "integration",
         tree: "integration",
       },
-      ageBin,
+      ageBin: ageTools.ageBin,
       dumpFn: async () => dumpBuffer,
     });
     assert.equal(backup.ok, true, backup.reason);
 
-    // Marker file so source container identity remains distinguishable.
     writeFileSync(path.join(work, "source-marker"), sourceContainer, "utf8");
 
+    const rehearsalStart = Date.now();
+    // No migrateFn inject — must exercise existing repository migration authority.
     const rehearsal = await runPortabilityRehearsal({
       runIdToRestore: backupRunId,
       objectStore,
       identityFile: identityPath,
       sourceIdentity: "integration-source-pg",
       sourceClassification: "production",
-      sourceDatabaseUrl: "postgresql://boba_recovery:recovery-test-only@127.0.0.1:1/boba_recovery",
+      sourceDatabaseUrl: `postgresql://boba_recovery:recovery-test-only@127.0.0.1:${sourcePort}/boba_recovery`,
       evidenceDir: path.join(work, "rehearsal-evidence"),
-      ageBin,
+      ageBin: ageTools.ageBin,
       provisionTarget: true,
       retainTarget: true,
       networkIsolated: true,
       productionDnsAbsent: true,
       productionCredentialsAbsent: true,
-      // Injected migrateFn is a unit/integration seam only.
-      // Classification: migration authority wiring = PROVEN (see authority tests);
-      // full disposable migration execution = IMPLEMENTED_NOT_EXTERNALLY_PROVEN here.
-      migrateFn: async () => {
-        return { ok: true };
+      env: {
+        ...process.env,
+        BOBA_BEAR_ENV: process.env.BOBA_BEAR_ENV || "local",
+        BOBA_BEAR_PUBLIC_ORIGIN: process.env.BOBA_BEAR_PUBLIC_ORIGIN || "http://localhost:3000",
+        BOBA_BEAR_LOG_LEVEL: process.env.BOBA_BEAR_LOG_LEVEL || "error",
+        BOBA_BEAR_ALLOW_UNSAFE_ADAPTERS: "true",
+        BOBA_BEAR_DATABASE_SSL_MODE: "disable",
       },
-      // Validate against the provisioned target via queryFn bound in rehearsal after restore.
-      // Override queryFn to hit the restored target using psql through the provisioned URL
-      // returned by restore — rehearsal creates queryFn from databaseUrl when omitted.
     });
-
-    // If full provision+restore path failed (pg_restore/age), fail closed rather than skip-as-pass.
-    if (!rehearsal.ok) {
-      // Age decrypt + pg_restore into provisioned target may fail in constrained CI;
-      // still prove migration cannot silently succeed when omitted.
-      const missingMigrate = await runPortabilityRehearsal({
-        sourceIdentity: "integration-source-pg",
-        sourceClassification: "production",
-        evidenceDir: path.join(work, "rehearsal-evidence-2"),
-        restoreStepFn: async () => ({ ok: true, databaseUrl: "" }),
-        queryFn: async () => [{ count: 1 }],
-        provisionTarget: false,
-        networkIsolated: true,
-        productionDnsAbsent: true,
-        productionCredentialsAbsent: true,
-      });
-      assert.equal(missingMigrate.ok, false);
-      assert.match(missingMigrate.reason ?? "", /migration|databaseUrl/i);
-      // Role dump proof already succeeded above.
-      return;
-    }
+    timings.portabilityMs = Date.now() - rehearsalStart;
 
     assert.equal(rehearsal.ok, true, rehearsal.reason);
     assert.ok(rehearsal.databaseUrl);
     assert.ok(rehearsal.provisioned?.volumeOrPathId);
+    assert.ok(rehearsal.provisioned?.migratorDatabaseUrl);
     assert.equal(
       (rehearsal.validation?.results ?? []).some(
         (entry) => entry.code === PROOF_CODE.BUSINESS_INTEGRITY_VALIDATED && entry.ok,
       ),
       true,
+      JSON.stringify(rehearsal.validation?.results ?? [], null, 2),
     );
 
-    // Source container still exists (untouched).
+    // Source container still exists and retains post-dump marker (unchanged by restore).
     const inspect = spawnSync(cli, ["inspect", sourceContainer], { encoding: "utf8" });
     assert.equal(inspect.status, 0);
+    const sourceMarkerCheck = execInContainer(cli, sourceContainer, [
+      "psql",
+      "-U",
+      "boba_recovery",
+      "-d",
+      "boba_recovery",
+      "-t",
+      "-A",
+      "-c",
+      "SELECT id FROM public.source_only_marker LIMIT 1;",
+    ]);
+    assert.equal(sourceMarkerCheck.status, 0);
+    assert.equal(String(sourceMarkerCheck.stdout ?? "").trim(), sourceMarker);
+
+    writeFileSync(
+      path.join(work, "local-timings.json"),
+      JSON.stringify(
+        {
+          QUALIFYING: false,
+          NON_QUALIFYING_LOCAL_TIMING_OBSERVATIONS: timings,
+          RPO_RTO_PROVEN: "NO",
+          DROPLET_2GIB_RTO_VALIDATED: "NO",
+        },
+        null,
+        2,
+      ),
+      "utf8",
+    );
+    // Keep timings readable in test output without failing.
+    process.stdout.write(`LOCAL_PORTABILITY_TIMINGS ${readFileSync(path.join(work, "local-timings.json"), "utf8")}\n`);
+
+    // Cleanup only run-owned target.
+    if (rehearsal.provisioned?.containerName) {
+      spawnSync(cli, ["rm", "-f", rehearsal.provisioned.containerName], { encoding: "utf8" });
+    }
   } finally {
     spawnSync(cli, ["rm", "-f", sourceContainer], { encoding: "utf8" });
+    cleanupAgeTools(ageTools.cleanupDir);
     rmSync(work, { recursive: true, force: true });
   }
 });

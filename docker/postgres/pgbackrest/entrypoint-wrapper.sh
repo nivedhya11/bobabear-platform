@@ -34,6 +34,7 @@ if [ "${ARCHIVE_ENABLED}" = "1" ]; then
   printf '%s\n' "${rendered}" > "${CONFIG_PATH}"
   chown postgres:postgres "${CONFIG_PATH}"
   chmod 640 "${CONFIG_PATH}"
+  umask 022
 
   # Map host-local secrets into pgBackRest env names for archive-push children.
   # Prefer compose service environment (PGBACKREST_REPO1_*) so compose-exec

@@ -18,6 +18,7 @@ import {
   PGBACKREST_VERSION_MIN,
   PHYSICAL_SPACES_ENV,
 } from "./config.mjs";
+import { resolveContainerCli } from "../docker-exec.mjs";
 
 test("pgBackRest version assert accepts >= 2.55 and forbids 2.50", () => {
   assert.equal(PGBACKREST_VERSION_MIN, "2.55.0");
@@ -61,15 +62,35 @@ test("rendered pgBackRest retention options are accepted by pinned image when av
   assert.doesNotMatch(conf, /repo1-retention-archive-type=time/);
 
   const image = process.env.BOBA_POSTGRES_IMAGE ?? "boba-bear-postgres:local";
-  const versionProbe = spawnSync("docker", ["run", "--rm", image, "pgbackrest", "version"], {
-    encoding: "utf8",
-    timeout: 60_000,
-  });
+  const cli = resolveContainerCli();
+  if (!cli) {
+    t.skip(`pinned pgBackRest image unavailable (${image}); config content assertions above still apply`);
+    return;
+  }
+  const imageCandidates = image === "boba-bear-postgres:local"
+    ? ["boba-bear-postgres:local", "localhost/boba-bear-postgres:local"]
+    : [image];
+  let versionProbe = { status: 1, stdout: "", stderr: "" };
+  for (const candidate of imageCandidates) {
+    versionProbe = spawnSync(cli, ["run", "--rm", candidate, "pgbackrest", "version"], {
+      encoding: "utf8",
+      timeout: 60_000,
+    });
+    if (versionProbe.status === 0) break;
+  }
   if (versionProbe.status !== 0) {
     t.skip(`pinned pgBackRest image unavailable (${image}); config content assertions above still apply`);
     return;
   }
   assert.equal(assertPgbackrestVersion(versionProbe.stdout ?? "").ok, true);
+  const resolvedImage =
+    imageCandidates.find((candidate) => {
+      const probe = spawnSync(cli, ["image", "inspect", candidate], {
+        encoding: "utf8",
+        timeout: 20_000,
+      });
+      return probe.status === 0;
+    }) ?? image;
 
   const root = mkdtempSync(path.join(os.tmpdir(), "boba-pgbackrest-conf-"));
   try {
@@ -77,8 +98,8 @@ test("rendered pgBackRest retention options are accepted by pinned image when av
     // Cipher pass placeholder must be concrete for parser acceptance.
     writeFileSync(confPath, conf.replace("${PGBACKREST_CIPHER_PASS}", "test-cipher-pass-not-for-prod"), "utf8");
     const help = spawnSync(
-      "docker",
-      ["run", "--rm", "-v", `${root}:/conf:ro`, image, "pgbackrest", `--config=/conf/pgbackrest.conf`, "help", "backup"],
+      cli,
+      ["run", "--rm", "-v", `${root}:/conf:ro,Z`, resolvedImage, "pgbackrest", `--config=/conf/pgbackrest.conf`, "help", "backup"],
       { encoding: "utf8", timeout: 60_000 },
     );
     // help exits 0 when config path/options are accepted by the binary.
