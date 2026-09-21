@@ -25,6 +25,24 @@ export const ARCHIVE_TIMEOUT_SECONDS = 300;
 export const REPO_CIPHER = "aes-256-cbc";
 /** Locked Layer 1 recovery-window floor (calendar days). */
 export const LAYER1_RETENTION_DAYS_MIN = 35;
+/** Concrete runtime file inside the PostgreSQL container. Not the image template. */
+export const PGBACKREST_RUNTIME_CONFIG_PATH = "/etc/pgbackrest/pgbackrest.conf";
+
+/**
+ * Physical Spaces credentials are distinct from Layer 2 logical Spaces credentials.
+ * Values are read from the environment at render time and are never written into
+ * the repository or into pgbackrest.conf.
+ */
+export const PHYSICAL_SPACES_ENV = Object.freeze({
+  bucket: "BOBA_RECOVERY_PHYSICAL_SPACES_BUCKET",
+  endpoint: "BOBA_RECOVERY_PHYSICAL_SPACES_ENDPOINT",
+  region: "BOBA_RECOVERY_PHYSICAL_SPACES_REGION",
+  accessKeyId: "BOBA_PHYSICAL_SPACES_ACCESS_KEY_ID",
+  secretAccessKey: "BOBA_PHYSICAL_SPACES_SECRET_ACCESS_KEY",
+  cipherPass: "PGBACKREST_CIPHER_PASS",
+  generation: "BOBA_PGBACKREST_GENERATION",
+  repoMode: "BOBA_PGBACKREST_REPO_MODE",
+});
 
 /**
  * Schedule documentation (host systemd timers invoke one-shot Compose ops):
@@ -87,22 +105,26 @@ export function renderPgbackrestConf(options) {
     `# repo1-retention-diff omitted so count-based differential expiry cannot shorten the recovery window`,
     `# repo1-retention-archive-type/archive omitted: archive-type is full|diff|incr, not time;`,
     `#   pgBackRest expires WAL earlier than the oldest retained full after full time retention`,
+    `# Cipher passphrase and Spaces keys are supplied via environment, not this file.`,
     ``,
     `[global]`,
     `repo1-type=${options.repoType ?? "posix"}`,
     `repo1-path=${repoPath}`,
     `repo1-cipher-type=${REPO_CIPHER}`,
-    `repo1-cipher-pass=\${${cipherPassEnvVar}}`,
-    `repo1-retention-full-type=time`,
-    `repo1-retention-full=${retentionFullDays}`,
-    `start-fast=y`,
-    `compress-type=zst`,
   ];
+  if (options.includeCipherPassLine !== false) {
+    lines.push(`repo1-cipher-pass=\${${cipherPassEnvVar}}`);
+  }
+  lines.push(`repo1-retention-full-type=time`);
+  lines.push(`repo1-retention-full=${retentionFullDays}`);
+  lines.push(`start-fast=y`);
+  lines.push(`compress-type=zst`);
 
   if (options.repoType === "s3") {
     lines.push(`repo1-s3-bucket=${options.repoS3Bucket ?? ""}`);
     lines.push(`repo1-s3-endpoint=${options.repoS3Endpoint ?? ""}`);
     lines.push(`repo1-s3-region=${options.repoS3Region ?? "us-east-1"}`);
+    lines.push(`repo1-s3-uri-style=${options.repoS3UriStyle ?? "path"}`);
   }
 
   lines.push(``);
@@ -178,4 +200,145 @@ function pathBasename(repoPath) {
   const normalized = String(repoPath).replace(/\\/g, "/");
   const parts = normalized.split("/").filter(Boolean);
   return parts.at(-1) ?? normalized;
+}
+
+/**
+ * Archive-push and scheduled backup must name this same container config file.
+ * @param {string} [stanza]
+ * @returns {string}
+ */
+export function layer1ArchiveCommand(stanza = DEFAULT_STANZA) {
+  return `pgbackrest --config=${PGBACKREST_RUNTIME_CONFIG_PATH} --stanza=${stanza} archive-push %p`;
+}
+
+/**
+ * Non-comment configuration lines, for comparing shell and node renderers.
+ * @param {string} conf
+ * @returns {string}
+ */
+export function significantPgbackrestLines(conf) {
+  return String(conf)
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0 && !line.startsWith("#"))
+    .join("\n");
+}
+
+/**
+ * Production-shaped Layer 1 config.
+ * Default mode is physical Spaces (s3). POSIX is only an explicit disposable/local-test mode
+ * (`BOBA_PGBACKREST_REPO_MODE=posix`). Secrets are required to exist but are not embedded.
+ *
+ * @param {NodeJS.ProcessEnv} [env]
+ * @returns {{ ok: true, conf: string, configPath: string, archiveCommand: string, stanza: string, repoMode: "s3"|"posix", repoPath: string } | { ok: false, reason: string }}
+ */
+export function renderAuthoritativePgbackrestConf(env = {}) {
+  const modeRaw = String(env.BOBA_PGBACKREST_REPO_MODE ?? "s3").trim().toLowerCase();
+  const repoMode = modeRaw === "posix" || modeRaw === "local" ? "posix" : modeRaw === "s3" || modeRaw === "" ? "s3" : null;
+  if (!repoMode) {
+    return { ok: false, reason: `unsupported BOBA_PGBACKREST_REPO_MODE=${modeRaw}` };
+  }
+
+  const generationText = String(env.BOBA_PGBACKREST_GENERATION ?? "").trim();
+  if (!/^[1-9][0-9]*$/.test(generationText)) {
+    return { ok: false, reason: "BOBA_PGBACKREST_GENERATION must be a positive integer" };
+  }
+  const cipherPass = String(env.PGBACKREST_CIPHER_PASS ?? "");
+  if (!cipherPass.trim()) {
+    return {
+      ok: false,
+      reason: "PGBACKREST_CIPHER_PASS is required to render pgBackRest config and is not written into the file",
+    };
+  }
+
+  const stanza = String(env.BOBA_PGBACKREST_STANZA ?? DEFAULT_STANZA).trim() || DEFAULT_STANZA;
+  const pgData = String(env.PGDATA ?? env.BOBA_PGBACKREST_PGDATA ?? "/var/lib/postgresql/data").trim();
+  const generation = Number(generationText);
+
+  /** @type {string} */
+  let repoPath;
+  /** @type {Record<string, string>} */
+  const s3 = {};
+
+  if (repoMode === "posix") {
+    repoPath = `/var/lib/pgbackrest/repo-gen-${generation}`;
+  } else {
+    const bucket = String(env.BOBA_RECOVERY_PHYSICAL_SPACES_BUCKET ?? "").trim();
+    const endpoint = stripEndpointScheme(String(env.BOBA_RECOVERY_PHYSICAL_SPACES_ENDPOINT ?? "").trim());
+    const region = String(env.BOBA_RECOVERY_PHYSICAL_SPACES_REGION ?? "").trim();
+    const accessKeyId = String(env.BOBA_PHYSICAL_SPACES_ACCESS_KEY_ID ?? "").trim();
+    const secretAccessKey = String(env.BOBA_PHYSICAL_SPACES_SECRET_ACCESS_KEY ?? "").trim();
+    if (!bucket || !endpoint || !region || !accessKeyId || !secretAccessKey) {
+      return {
+        ok: false,
+        reason:
+          "production-shaped Layer 1 requires physical Spaces bucket, endpoint, region, and distinct BOBA_PHYSICAL_SPACES credentials",
+      };
+    }
+    const logicalKey = String(env.BOBA_LOGICAL_SPACES_ACCESS_KEY_ID ?? env.BOBA_LOGICAL_SPACES_KEY ?? "").trim();
+    const logicalSecret = String(
+      env.BOBA_LOGICAL_SPACES_SECRET_ACCESS_KEY ?? env.BOBA_LOGICAL_SPACES_SECRET ?? "",
+    ).trim();
+    const logicalBucket = String(
+      env.BOBA_RECOVERY_LOGICAL_SPACES_BUCKET ?? env.BOBA_RECOVERY_SPACES_BUCKET ?? "",
+    ).trim();
+    if (
+      (logicalKey && logicalKey === accessKeyId) ||
+      (logicalSecret && logicalSecret === secretAccessKey) ||
+      (logicalBucket && logicalBucket === bucket)
+    ) {
+      return {
+        ok: false,
+        reason: "Layer 1 physical Spaces credentials/bucket must be distinct from Layer 2 logical Spaces",
+      };
+    }
+    repoPath = `/repo-gen-${generation}`;
+    s3.repoS3Bucket = bucket;
+    s3.repoS3Endpoint = endpoint;
+    s3.repoS3Region = region;
+  }
+
+  let conf;
+  try {
+    conf = renderPgbackrestConf({
+      generation,
+      stanza,
+      repoType: repoMode === "s3" ? "s3" : "posix",
+      repoPath,
+      pgData,
+      includeCipherPassLine: false,
+      ...s3,
+    });
+  } catch (error) {
+    return { ok: false, reason: error instanceof Error ? error.message : String(error) };
+  }
+
+  if (conf.includes(cipherPass)) {
+    return { ok: false, reason: "refusing to render cipher passphrase into pgbackrest.conf" };
+  }
+  if (repoMode === "s3") {
+    const accessKeyId = String(env.BOBA_PHYSICAL_SPACES_ACCESS_KEY_ID ?? "");
+    const secretAccessKey = String(env.BOBA_PHYSICAL_SPACES_SECRET_ACCESS_KEY ?? "");
+    if ((accessKeyId && conf.includes(accessKeyId)) || (secretAccessKey && conf.includes(secretAccessKey))) {
+      return { ok: false, reason: "refusing to render physical Spaces credentials into pgbackrest.conf" };
+    }
+  }
+
+  return {
+    ok: true,
+    conf,
+    configPath: PGBACKREST_RUNTIME_CONFIG_PATH,
+    archiveCommand: layer1ArchiveCommand(stanza),
+    stanza,
+    repoMode,
+    repoPath,
+  };
+}
+
+/**
+ * @param {string} endpoint
+ * @returns {string}
+ */
+function stripEndpointScheme(endpoint) {
+  return endpoint.replace(/^https?:\/\//i, "").replace(/\/+$/, "");
 }

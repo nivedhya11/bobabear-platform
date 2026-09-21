@@ -5,6 +5,7 @@
  * Label-only inequality is insufficient — filesystem / database identity
  * must be bound into evidence and compared against the active source.
  */
+import { randomBytes } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync, readFileSync } from "node:fs";
 import path from "node:path";
 import os from "node:os";
@@ -298,7 +299,7 @@ export async function provisionLogicalTarget(options) {
   const targetIdentity = createRestoreTargetId(runId);
   const containerName = `boba-rec-tgt-${runId.replace(/[^a-zA-Z0-9_-]/g, "").slice(-24)}`;
   const image = options.image ?? DISPOSABLE_POSTGRES_IMAGE;
-  const password = `rec-${runId.slice(-12)}`;
+  const password = generateRecoveryPassword();
   const dbUser = "boba_recovery";
   const dbName = "boba_recovery";
 
@@ -337,7 +338,8 @@ export async function provisionLogicalTarget(options) {
     `POSTGRES_USER=${dbUser}`,
     "-e",
     `POSTGRES_DB=${dbName}`,
-    "-P",
+    "-p",
+    "127.0.0.1::5432",
     image,
   ]);
   if (run.status !== 0) {
@@ -348,15 +350,16 @@ export async function provisionLogicalTarget(options) {
     };
   }
 
-  const hostPort = resolvePublishedPort(execFn, cli, containerName);
-  if (!hostPort) {
+  const published = resolvePublishedEndpoint(execFn, cli, containerName);
+  if (!published) {
     execFn(cli, ["rm", "-f", containerName], { timeout: 30_000 });
     return {
       ok: false,
-      reason: "unable to resolve published host port for recovery target",
-      code: "TARGET_IDENTITY_UNRESOLVED",
+      reason: "recovery target publish is not loopback-only; refusing a public endpoint",
+      code: "TARGET_PUBLISH_NOT_LOOPBACK",
     };
   }
+  const hostPort = published.port;
 
   const databaseUrl = `postgresql://${dbUser}:${password}@127.0.0.1:${hostPort}/${dbName}`;
   if (options.sourceDatabaseUrl && normalizeDbEndpoint(options.sourceDatabaseUrl) === normalizeDbEndpoint(databaseUrl)) {
@@ -668,17 +671,27 @@ export { normalizeDbEndpoint };
  * @param {Function} execFn
  * @param {string} cli
  * @param {string} containerName
- * @returns {number | null}
+ * @returns {{ host: "127.0.0.1", port: number } | null}
  */
-function resolvePublishedPort(execFn, cli, containerName) {
+function resolvePublishedEndpoint(execFn, cli, containerName) {
   const result = execFn(cli, ["port", containerName, "5432/tcp"], { timeout: 15_000 });
   if (result.status !== 0) return null;
-  const match = /(\d+)\s*$/.exec(String(result.stdout ?? "").trim());
-  if (!match) {
-    const alt = /:(\d+)/.exec(String(result.stdout ?? ""));
-    return alt ? Number(alt[1]) : null;
-  }
-  return Number(match[1]);
+  const line = String(result.stdout ?? "")
+    .trim()
+    .split(/\s+/)[0];
+  const match = /^127\.0\.0\.1:(\d+)$/.exec(line);
+  if (!match) return null;
+  const port = Number(match[1]);
+  if (!Number.isInteger(port) || port <= 0) return null;
+  return { host: "127.0.0.1", port };
+}
+
+/**
+ * Crypto-random disposable target password. RUN_ID is provenance, not a secret.
+ * @returns {string}
+ */
+function generateRecoveryPassword() {
+  return randomBytes(24).toString("base64url");
 }
 
 /**

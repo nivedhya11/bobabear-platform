@@ -51,20 +51,18 @@ export async function runLayer1Backup(options) {
   const startedAt = (options.now instanceof Date ? options.now : new Date()).toISOString();
 
   const execute = async () => {
-    const backupResult =
-      type === "full"
-        ? backupFull({ stanza: options.stanza, execFn: options.execFn, env: options.env })
-        : backupDiff({ stanza: options.stanza, execFn: options.execFn, env: options.env });
+    const pgOptions = layer1PgbackrestOptions(options);
+    const backupResult = type === "full" ? backupFull(pgOptions) : backupDiff(pgOptions);
     if (!backupResult.ok) {
       return persistFailure(options, runId, startedAt, backupResult.reason ?? "pgBackRest backup failed");
     }
 
-    const checkResult = check({ stanza: options.stanza, execFn: options.execFn, env: options.env });
+    const checkResult = check(pgOptions);
     if (!checkResult.ok) {
       return persistFailure(options, runId, startedAt, checkResult.reason ?? "pgBackRest check failed");
     }
 
-    const infoResult = info({ stanza: options.stanza, execFn: options.execFn, env: options.env });
+    const infoResult = info(pgOptions);
     if (!infoResult.ok) {
       return persistFailure(options, runId, startedAt, infoResult.reason ?? "pgBackRest info failed");
     }
@@ -84,7 +82,7 @@ export async function runLayer1Backup(options) {
     // unless verifyOk is explicitly forced true AND all other proofs are present.
     let verifyOk = options.verifyOk === true;
     if (options.verifyOk !== true && options.skipVerify !== true) {
-      const verifyResult = verify({ stanza: options.stanza, execFn: options.execFn, env: options.env });
+      const verifyResult = verify(pgOptions);
       if (!verifyResult.ok) {
         return persistFailure(options, runId, startedAt, verifyResult.reason ?? "pgBackRest verify failed");
       }
@@ -174,6 +172,23 @@ export async function runLayer1Backup(options) {
     };
   }
   return /** @type {any} */ (locked.result);
+}
+
+/**
+ * Same fields for every Layer 1 pgBackRest invocation in one backup run.
+ * @param {object} options
+ */
+function layer1PgbackrestOptions(options) {
+  return {
+    stanza: options.stanza,
+    execFn: options.execFn,
+    env: options.env,
+    containerCli: options.containerCli,
+    composeFile: options.composeFile,
+    cwd: options.cwd,
+    composeExecFn: options.composeExecFn,
+    service: options.service,
+  };
 }
 
 /**

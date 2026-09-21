@@ -75,8 +75,9 @@ RUN mkdir -p /etc/pgbackrest /var/lib/pgbackrest /var/log/pgbackrest /var/spool/
     && chmod 750 /etc/pgbackrest /var/lib/pgbackrest /var/log/pgbackrest /var/spool/pgbackrest
 
 COPY docker/postgres/pgbackrest/pgbackrest.conf.template /etc/pgbackrest/pgbackrest.conf.template
+COPY docker/postgres/pgbackrest/render-conf.sh /usr/local/bin/boba-render-pgbackrest-conf
 COPY docker/postgres/pgbackrest/entrypoint-wrapper.sh /usr/local/bin/boba-postgres-entrypoint
-RUN chmod 755 /usr/local/bin/boba-postgres-entrypoint
+RUN chmod 755 /usr/local/bin/boba-render-pgbackrest-conf /usr/local/bin/boba-postgres-entrypoint
 
 ENTRYPOINT ["boba-postgres-entrypoint"]
 CMD ["postgres"]

@@ -1,22 +1,20 @@
-# IMP-037 pgBackRest configuration template (repository generation 1).
-# Operators render a concrete conf via scripts/recovery/layer1/config.mjs
-# (renderPgbackrestConf) for the active repository generation.
+# IMP-037 pgBackRest configuration TEMPLATE (not the runtime file).
+# The image must not treat this template as /etc/pgbackrest/pgbackrest.conf.
+# When BOBA_PGBACKREST_ARCHIVE=1, boba-postgres-entrypoint renders a concrete
+# conf via boba-render-pgbackrest-conf before archive_command can fire.
+# Production-shaped render is repo1-type=s3 (physical Spaces). POSIX is only
+# BOBA_PGBACKREST_REPO_MODE=posix (disposable/local test).
 #
 # Locked:
 # - AES-256-CBC repository encryption
 # - >= 35-day pgBackRest-owned retention via TIME semantics
 #   (repo1-retention-full-type=time, repo1-retention-full=35)
-# - repo1-retention-diff is intentionally OMITTED: it is a differential COUNT,
-#   not days, and must not shorten the >=35-day recovery window
-# - repo1-retention-archive-type / repo1-retention-archive are intentionally
-#   OMITTED: archive-type is a backup type (full|diff|incr), NOT a time mode.
-#   With time-based full retention, pgBackRest expires archive WAL earlier than
-#   the oldest retained full after satisfying full retention (PITR window intact).
+# - repo1-retention-diff is intentionally OMITTED
+# - repo1-retention-archive-type / repo1-retention-archive are intentionally OMITTED
 # - continuous WAL via archive_command (NOT under heavy flock)
 # - archive_timeout = 5 minutes is set in postgresql.conf, not here
 #
-# Cipher passphrase is supplied via PGBACKREST_CIPHER_PASS (host-local secret).
-# Never commit a filled passphrase.
+# Cipher passphrase and Spaces keys are environment-only. Never commit them.
 
 [global]
 repo1-type=posix

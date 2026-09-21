@@ -29,6 +29,7 @@ import { generateRunId, parseRunId } from "../run-id.mjs";
 import { persistEvidence } from "../store.mjs";
 import { redactText } from "../redact.mjs";
 import { encryptToAge, fingerprintRecipient, resolveAgeBinary } from "./age.mjs";
+import { assertS3StoreLiveAuthorized } from "../spaces/logical.mjs";
 
 const RETENTION_DAYS_DEFAULT = 35;
 
@@ -102,6 +103,39 @@ async function executeLogicalBackupChain(options) {
   const findings = [];
 
   try {
+    const liveGate = assertS3StoreLiveAuthorized(options.objectStore);
+    if (!liveGate.ok) {
+      return {
+        ok: false,
+        status: OPERATION_STATUS.BLOCKED,
+        runId,
+        reason: liveGate.reason,
+        code: liveGate.code,
+      };
+    }
+    if (options.objectStore?.backend === "s3" && options.objectStore.versioningVerified !== true) {
+      if (typeof options.objectStore.verifyBucketVersioning !== "function") {
+        return {
+          ok: false,
+          status: OPERATION_STATUS.BLOCKED,
+          runId,
+          reason: "object store cannot verify bucket versioning before upload",
+          code: "VERSIONING_VERIFY_UNAVAILABLE",
+        };
+      }
+      const versioning = await options.objectStore.verifyBucketVersioning();
+      if (!versioning?.ok) {
+        return {
+          ok: false,
+          status: OPERATION_STATUS.BLOCKED,
+          runId,
+          reason: versioning?.reason ?? "Spaces bucket versioning must be ENABLED before upload",
+          code: "SPACES_VERSIONING_NOT_ENABLED",
+        };
+      }
+      options.objectStore.versioningVerified = true;
+    }
+
     if (typeof options.dumpFn !== "function") {
       return fail(options, {
         runId,
@@ -413,6 +447,15 @@ export async function listCompleteRuns(options) {
  * @param {number} [options.requiredCoverageDays]
  */
 export async function pruneExpiredCompleteRuns(options) {
+  const liveGate = assertS3StoreLiveAuthorized(options?.objectStore);
+  if (!liveGate.ok) {
+    return {
+      ok: false,
+      status: OPERATION_STATUS.BLOCKED,
+      reason: liveGate.reason,
+      code: liveGate.code,
+    };
+  }
   const now = options.now instanceof Date ? options.now : new Date(options.now ?? Date.now());
   const retentionDays =
     typeof options.retentionDays === "number" && Number.isFinite(options.retentionDays)
@@ -622,6 +665,10 @@ export async function reconcileLocalCompleteMarker(options) {
   const evidenceDir = options?.evidenceDir;
   if (!runId || !evidenceDir || !options.objectStore) {
     return { ok: false, reason: "evidenceDir, runId, and objectStore are required for COMPLETE reconcile" };
+  }
+  const liveGate = assertS3StoreLiveAuthorized(options.objectStore);
+  if (!liveGate.ok) {
+    return { ok: false, status: OPERATION_STATUS.BLOCKED, reason: liveGate.reason, code: liveGate.code };
   }
   if (!parseRunId(runId).ok) {
     return { ok: false, reason: "runId must be a valid RUN_ID", code: "RUN_ID_INVALID" };

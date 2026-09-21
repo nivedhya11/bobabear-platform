@@ -22,6 +22,7 @@ import { redactText } from "../redact.mjs";
  * @property {string} region
  * @property {string} endpoint
  * @property {string} bucket
+ * @property {(url: URL, options: { method: string, headers: Record<string, string>, body?: Buffer }) => Promise<{ statusCode: number, headers: Record<string, string>, body: Buffer }>} [transport]
  */
 
 /**
@@ -46,6 +47,7 @@ export function createS3SpacesClient(config) {
   const endpoint = requireString(config?.endpoint, "endpoint");
   const bucket = requireString(config?.bucket, "bucket");
   const endpointUrl = normalizeEndpoint(endpoint);
+  const requestTransport = typeof config?.transport === "function" ? config.transport : httpsRequest;
 
   return {
     backend: "s3",
@@ -302,7 +304,7 @@ export function createS3SpacesClient(config) {
     const authorization = `AWS4-HMAC-SHA256 Credential=${accessKeyId}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
 
     const requestUrl = new URL(canonicalUri + (canonicalQuery ? `?${canonicalQuery}` : ""), endpointUrl);
-    return httpsRequest(requestUrl, {
+    return requestTransport(requestUrl, {
       method,
       headers: {
         ...headers,

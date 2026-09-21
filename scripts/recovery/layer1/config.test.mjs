@@ -6,9 +6,13 @@ import path from "node:path";
 import { test } from "node:test";
 import {
   assertPgbackrestVersion,
+  layer1ArchiveCommand,
   parseVersion,
+  renderAuthoritativePgbackrestConf,
   renderPgbackrestConf,
+  significantPgbackrestLines,
   LAYER1_RETENTION_DAYS_MIN,
+  PGBACKREST_RUNTIME_CONFIG_PATH,
   PGBACKREST_VERSION_MIN,
 } from "./config.mjs";
 
@@ -87,4 +91,103 @@ test("renderPgbackrestConf rejects retention below 35 days", () => {
     () => renderPgbackrestConf({ generation: 1, retentionFullDays: 34 }),
     /35 days/,
   );
+});
+
+test("authoritative Layer 1 render is physical Spaces and fail-closed without it", () => {
+  const missing = renderAuthoritativePgbackrestConf({
+    BOBA_PGBACKREST_GENERATION: "1",
+    PGBACKREST_CIPHER_PASS: "cipher-test-only",
+  });
+  assert.equal(missing.ok, false);
+  assert.match(missing.reason ?? "", /physical Spaces/i);
+
+  const reused = renderAuthoritativePgbackrestConf({
+    BOBA_PGBACKREST_GENERATION: "2",
+    PGBACKREST_CIPHER_PASS: "cipher-test-only",
+    BOBA_RECOVERY_PHYSICAL_SPACES_BUCKET: "shared-bucket",
+    BOBA_RECOVERY_PHYSICAL_SPACES_ENDPOINT: "nyc3.digitaloceanspaces.com",
+    BOBA_RECOVERY_PHYSICAL_SPACES_REGION: "nyc3",
+    BOBA_PHYSICAL_SPACES_ACCESS_KEY_ID: "same-key",
+    BOBA_PHYSICAL_SPACES_SECRET_ACCESS_KEY: "same-secret",
+    BOBA_RECOVERY_LOGICAL_SPACES_BUCKET: "shared-bucket",
+    BOBA_LOGICAL_SPACES_ACCESS_KEY_ID: "same-key",
+    BOBA_LOGICAL_SPACES_SECRET_ACCESS_KEY: "same-secret",
+  });
+  assert.equal(reused.ok, false);
+  assert.match(reused.reason ?? "", /distinct/i);
+
+  const ok = renderAuthoritativePgbackrestConf({
+    BOBA_PGBACKREST_GENERATION: "3",
+    PGBACKREST_CIPHER_PASS: "cipher-test-only-do-not-embed",
+    BOBA_RECOVERY_PHYSICAL_SPACES_BUCKET: "boba-physical",
+    BOBA_RECOVERY_PHYSICAL_SPACES_ENDPOINT: "https://nyc3.digitaloceanspaces.com",
+    BOBA_RECOVERY_PHYSICAL_SPACES_REGION: "nyc3",
+    BOBA_PHYSICAL_SPACES_ACCESS_KEY_ID: "phys-key",
+    BOBA_PHYSICAL_SPACES_SECRET_ACCESS_KEY: "phys-secret",
+  });
+  assert.equal(ok.ok, true);
+  assert.equal(ok.repoMode, "s3");
+  assert.equal(ok.configPath, PGBACKREST_RUNTIME_CONFIG_PATH);
+  assert.match(ok.conf, /repo1-type=s3/);
+  assert.match(ok.conf, /repo1-path=\/repo-gen-3/);
+  assert.match(ok.conf, /repo1-s3-bucket=boba-physical/);
+  assert.match(ok.conf, /repo1-s3-endpoint=nyc3\.digitaloceanspaces\.com/);
+  assert.match(ok.conf, /repo1-retention-full-type=time/);
+  assert.match(ok.conf, /repo1-retention-full=35/);
+  assert.doesNotMatch(ok.conf, /^repo1-retention-diff=/m);
+  assert.doesNotMatch(ok.conf, /^repo1-retention-archive(?:-type)?=/m);
+  assert.doesNotMatch(ok.conf, /cipher-test-only-do-not-embed|phys-key|phys-secret/);
+  assert.match(ok.archiveCommand, new RegExp(`--config=${PGBACKREST_RUNTIME_CONFIG_PATH}`));
+
+  const posix = renderAuthoritativePgbackrestConf({
+    BOBA_PGBACKREST_REPO_MODE: "posix",
+    BOBA_PGBACKREST_GENERATION: "1",
+    PGBACKREST_CIPHER_PASS: "cipher-test-only",
+  });
+  assert.equal(posix.ok, true);
+  assert.equal(posix.repoMode, "posix");
+  assert.match(posix.conf, /repo1-type=posix/);
+});
+
+test("shell render-conf matches node authoritative config for archive-push consistency", () => {
+  const env = {
+    BOBA_PGBACKREST_GENERATION: "1",
+    PGBACKREST_CIPHER_PASS: "cipher-test-only",
+    BOBA_RECOVERY_PHYSICAL_SPACES_BUCKET: "boba-physical",
+    BOBA_RECOVERY_PHYSICAL_SPACES_ENDPOINT: "https://nyc3.digitaloceanspaces.com",
+    BOBA_RECOVERY_PHYSICAL_SPACES_REGION: "nyc3",
+    BOBA_PHYSICAL_SPACES_ACCESS_KEY_ID: "phys-key",
+    BOBA_PHYSICAL_SPACES_SECRET_ACCESS_KEY: "phys-secret",
+  };
+  const node = renderAuthoritativePgbackrestConf(env);
+  assert.equal(node.ok, true);
+  const shell = spawnSync("bash", ["docker/postgres/pgbackrest/render-conf.sh"], {
+    encoding: "utf8",
+    env: { ...process.env, ...env },
+  });
+  assert.equal(shell.status, 0, shell.stderr);
+  assert.equal(significantPgbackrestLines(node.conf), significantPgbackrestLines(shell.stdout));
+  assert.equal(layer1ArchiveCommand("boba"), node.archiveCommand);
+});
+
+test("entrypoint refuses archive start without concrete config render", () => {
+  const root = mkdtempSync(path.join(os.tmpdir(), "boba-entry-"));
+  try {
+    const renderBin = path.join(root, "render.sh");
+    writeFileSync(renderBin, "#!/usr/bin/env bash\necho fail closed >&2\nexit 1\n", "utf8");
+    spawnSync("chmod", ["+x", renderBin]);
+    const result = spawnSync("bash", ["docker/postgres/pgbackrest/entrypoint-wrapper.sh", "true"], {
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        BOBA_PGBACKREST_ARCHIVE: "1",
+        BOBA_PGBACKREST_RENDER_BIN: renderBin,
+        PATH: `${root}:${process.env.PATH}`,
+      },
+    });
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /concrete config render failed|refusing to start/i);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });

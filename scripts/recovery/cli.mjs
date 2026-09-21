@@ -18,6 +18,7 @@ import { redactText, safeJson } from "./redact.mjs";
 import { resolveCandidateProvenance } from "./candidate.mjs";
 import { runLayer1Backup } from "./layer1/backup.mjs";
 import { assertPgbackrestVersion } from "./layer1/config.mjs";
+import { runPgbackrest } from "./layer1/pgbackrest.mjs";
 import { planRepositoryGenerationRotation } from "./layer1/rotation.mjs";
 import { reconcileLocalCompleteMarker, runLogicalBackup } from "./layer2/backup.mjs";
 import { resolveAgeBinary } from "./layer2/age.mjs";
@@ -27,9 +28,9 @@ import { runLogicalRestore } from "./restore/logical.mjs";
 import { runPortabilityRehearsal } from "./portability/rehearse.mjs";
 import { evaluateHighRiskMigrationGate, selectLatestAttemptEvidence } from "./gate/high-risk.mjs";
 import { observeCapacity } from "./capacity/observe.mjs";
-import { createLocalObjectStore, createLogicalSpacesObjectStore, validateSpacesBucketConfig } from "./spaces/index.mjs";
+import { resolveLayer2ObjectStore, validateSpacesBucketConfig } from "./spaces/index.mjs";
 import { validateSystemdUnits } from "./systemd/validate.mjs";
-import { dockerComposeExecPostgres } from "./docker-exec.mjs";
+import { dockerComposeExecPostgres, resolveContainerCli } from "./docker-exec.mjs";
 
 const IMPLEMENTED_COMMANDS = new Set([
   "status",
@@ -90,10 +91,10 @@ export function usage() {
     "  recovery evidence reconcile-layer2 --run-id RUN_ID --evidence-dir DIR (--local-store DIR | Spaces env) [--json]",
     "  recovery target check --source ID --target ID --source-class CLASS --target-class CLASS [--target-pgdata PATH] [--json]",
     "  recovery backup layer1 --type full|diff [--evidence-dir DIR] [--generation N] [--json]",
-    "  recovery backup layer2 [--evidence-dir DIR] [--local-store DIR] [--recipient AGE_RECIPIENT] [--json]",
+    "  recovery backup layer2 [--evidence-dir DIR] (--local-store DIR | logical Spaces env) [--recipient AGE_RECIPIENT] [--json]",
     "  recovery restore pitr --source ID --target-time|--target-lsn|--target-name VALUE [--workspace-root DIR] [--target-pgdata OWNED_PATH] [--evidence-dir DIR] [--json]",
-    "  recovery restore logical --run-id RUN_ID --source ID --identity-file PATH [--local-store DIR] [--database-url URL --target-ownership FILE] [--evidence-dir DIR] [--json]",
-    "  recovery drill|rehearsal --run-id-to-restore RUN_ID --source ID --identity-file PATH [--local-store DIR] [--evidence-dir DIR] [--json]",
+    "  recovery restore logical --run-id RUN_ID --source ID --identity-file PATH (--local-store DIR | logical Spaces env) [--database-url URL --target-ownership FILE] [--evidence-dir DIR] [--json]",
+    "  recovery drill|rehearsal --run-id-to-restore RUN_ID --source ID --identity-file PATH (--local-store DIR | logical Spaces env) --network-isolated --production-dns-absent --production-credentials-absent [--evidence-dir DIR] [--json]",
     "  recovery gate|readiness-gate high-risk [--evidence-dir DIR] [--json]",
     "  recovery capacity [--layer1-base-bytes N] [--layer1-wal-bytes N] [--layer2-bytes N] [--json]",
     "  recovery systemd validate [--unit-dir DIR] [--json]",
@@ -104,7 +105,10 @@ export function usage() {
     "Layer 2 Spaces env (logical bucket — distinct from physical/pgBackRest):",
     "  BOBA_RECOVERY_LOGICAL_SPACES_BUCKET / _ENDPOINT / _REGION",
     "  BOBA_LOGICAL_SPACES_ACCESS_KEY_ID + BOBA_LOGICAL_SPACES_SECRET_ACCESS_KEY",
-    "  Live provider calls: BOBA_RECOVERY_REAL_SPACES=1 (versioning must be ENABLED; not WORM)",
+    "  Live provider calls: BOBA_RECOVERY_REAL_SPACES=1 (versioning must be ENABLED before any write; not WORM)",
+    "",
+    "Layer 1 runs pgBackRest inside the postgres service (docker compose exec -T postgres).",
+    "Host pgBackRest is not required. Physical Spaces config is distinct from logical Spaces.",
     "",
     "Safety: --force-production is forbidden on all restore/drill paths.",
     "PITR --target-pgdata requires TARGET_OWNED_BY_RUN ownership proof; arbitrary paths are BLOCKED.",
@@ -161,7 +165,7 @@ export async function runCli(argv, io = {}) {
     return runDrill({ flags, env, json, stdout, stderr });
   }
   if (command === "drill" || command === "rehearsal") {
-    stderr(redactText(`Usage: recovery ${command} --run-id-to-restore RUN_ID --source ID --identity-file PATH [--local-store DIR]`));
+    stderr(redactText(`Usage: recovery ${command} --run-id-to-restore RUN_ID --source ID --identity-file PATH (--local-store DIR | Spaces env) --network-isolated --production-dns-absent --production-credentials-absent`));
     return CLI_EXIT.FAILURE;
   }
   if ((command === "gate" || command === "readiness-gate") && positionals[1] === "high-risk") {
@@ -311,12 +315,14 @@ async function runBackupLayer1({ flags, env, json, stdout, stderr }) {
   }
 
   const evidenceDir = resolveEvidenceDir(flags, env);
-  const pgbackrestProbe = probePgbackrest(env);
+  const containerCli = resolveContainerCli();
+  const pgbackrestProbe = probePgbackrest(env, containerCli);
   if (!pgbackrestProbe.ok && !flags["allow-missing-exec"]) {
     const payload = {
       ok: false,
       status: OPERATION_STATUS.BLOCKED,
-      reason: pgbackrestProbe.reason ?? "pgBackRest executable unavailable",
+      reason: pgbackrestProbe.reason ?? "pgBackRest executable unavailable in the postgres container",
+      via: pgbackrestProbe.via ?? "compose-exec",
     };
     emit(stdout, json, payload, `Layer 1 backup BLOCKED: ${payload.reason}`);
     return CLI_EXIT.BLOCKED;
@@ -331,6 +337,7 @@ async function runBackupLayer1({ flags, env, json, stdout, stderr }) {
     sourceIdentity: stringFlag(flags.source) ?? env.BOBA_RECOVERY_SOURCE_IDENTITY ?? "unspecified-source",
     sourceClassification: stringFlag(flags["source-class"]) ?? "production",
     env,
+    containerCli: containerCli ?? undefined,
     skipLock: flags["skip-lock"] === true || env.BOBA_RECOVERY_LOCK_ALREADY_HELD === "1",
   });
 
@@ -354,19 +361,6 @@ async function runBackupLayer2({ flags, env, json, stdout, stderr }) {
     stringFlag(flags["age-recipient"]) ??
     env.BOBA_RECOVERY_AGE_RECIPIENT ??
     null;
-  const hasLogicalSpaces =
-    Boolean(env.BOBA_RECOVERY_LOGICAL_SPACES_BUCKET) || Boolean(env.BOBA_RECOVERY_SPACES_BUCKET);
-
-  if (!localStore && !hasLogicalSpaces) {
-    const payload = {
-      ok: false,
-      status: OPERATION_STATUS.BLOCKED,
-      reason:
-        "Layer 2 requires --local-store DIR or logical Spaces env (BOBA_RECOVERY_LOGICAL_SPACES_BUCKET)",
-    };
-    emit(stdout, json, payload, `Layer 2 backup BLOCKED: ${payload.reason}`);
-    return CLI_EXIT.BLOCKED;
-  }
   if (!recipient) {
     const payload = {
       ok: false,
@@ -375,6 +369,25 @@ async function runBackupLayer2({ flags, env, json, stdout, stderr }) {
     };
     emit(stdout, json, payload, `Layer 2 backup BLOCKED: ${payload.reason}`);
     return CLI_EXIT.BLOCKED;
+  }
+
+  let objectStore;
+  try {
+    const resolved = await resolveLayer2ObjectStore(env, flags, { localStore: localStore ?? undefined });
+    if (!resolved.ok) {
+      const payload = {
+        ok: false,
+        status: OPERATION_STATUS.BLOCKED,
+        reason: resolved.reason,
+        code: resolved.code,
+      };
+      emit(stdout, json, payload, `Layer 2 backup BLOCKED: ${payload.reason}`);
+      return CLI_EXIT.BLOCKED;
+    }
+    objectStore = resolved.objectStore;
+  } catch (error) {
+    stderr(redactText(error instanceof Error ? error.message : String(error)));
+    return CLI_EXIT.FAILURE;
   }
 
   const ageBin = resolveAgeBinary(env);
@@ -390,42 +403,6 @@ async function runBackupLayer2({ flags, env, json, stdout, stderr }) {
       emit(stdout, json, payload, `Layer 2 backup BLOCKED: ${payload.reason}`);
       return CLI_EXIT.BLOCKED;
     }
-  }
-
-  /** @type {{ putObject: Function, getObject: Function, verifyRemoteSha256: Function } | null} */
-  let objectStore = null;
-  try {
-    if (localStore) {
-      objectStore = createLocalObjectStore({ localRoot: localStore });
-    } else {
-      const spaces = await createLogicalSpacesObjectStore(env, flags, {
-        // Production-shaped Spaces path requires live flag + versioning ENABLED.
-        requireVersioning: env.BOBA_RECOVERY_REAL_SPACES === "1",
-      });
-      if (!spaces.ok) {
-        const payload = {
-          ok: false,
-          status: OPERATION_STATUS.BLOCKED,
-          reason: spaces.reason,
-          code: spaces.code,
-        };
-        emit(stdout, json, payload, `Layer 2 backup BLOCKED: ${payload.reason}`);
-        return CLI_EXIT.BLOCKED;
-      }
-      objectStore = spaces.objectStore;
-    }
-  } catch (error) {
-    stderr(redactText(error instanceof Error ? error.message : String(error)));
-    return CLI_EXIT.FAILURE;
-  }
-  if (!objectStore) {
-    const payload = {
-      ok: false,
-      status: OPERATION_STATUS.BLOCKED,
-      reason: "Layer 2 object store could not be configured",
-    };
-    emit(stdout, json, payload, `Layer 2 backup BLOCKED: ${payload.reason}`);
-    return CLI_EXIT.BLOCKED;
   }
 
   const dumpFn = buildDumpFn(env, flags);
@@ -524,21 +501,42 @@ async function runRestoreLogical({ flags, env, json, stdout }) {
   const source = stringFlag(flags.source);
   const identityFile = stringFlag(flags["identity-file"]);
   const localStore = stringFlag(flags["local-store"]) ?? env.BOBA_RECOVERY_LOCAL_STORE ?? null;
-  if (!runIdToRestore || !source || !identityFile || !localStore) {
+  if (!runIdToRestore || !source || !identityFile) {
     emit(
       stdout,
       json,
       {
         ok: false,
         status: OPERATION_STATUS.BLOCKED,
-        reason: "logical restore requires --run-id, --source, --identity-file, and --local-store",
+        reason: "logical restore requires --run-id, --source, --identity-file, and --local-store or logical Spaces env",
       },
       "Logical restore BLOCKED: missing required flags",
     );
     return CLI_EXIT.BLOCKED;
   }
 
-  const objectStore = createLocalObjectStore({ localRoot: localStore });
+  let objectStore;
+  try {
+    const resolved = await resolveLayer2ObjectStore(env, flags, { localStore: localStore ?? undefined });
+    if (!resolved.ok) {
+      emit(
+        stdout,
+        json,
+        { ok: false, status: OPERATION_STATUS.BLOCKED, reason: resolved.reason, code: resolved.code },
+        `Logical restore BLOCKED: ${resolved.reason}`,
+      );
+      return CLI_EXIT.BLOCKED;
+    }
+    objectStore = resolved.objectStore;
+  } catch (error) {
+    emit(
+      stdout,
+      json,
+      { ok: false, reason: error instanceof Error ? error.message : String(error) },
+      "Logical restore FAILED",
+    );
+    return CLI_EXIT.FAILURE;
+  }
   const databaseUrl = stringFlag(flags["database-url"]) ?? env.BOBA_RECOVERY_TARGET_DATABASE_URL;
   const targetOwnership =
     stringFlag(flags["target-ownership"]) ??
@@ -603,21 +601,43 @@ async function runDrill({ flags, env, json, stdout }) {
   const source = stringFlag(flags.source);
   const identityFile = stringFlag(flags["identity-file"]);
   const localStore = stringFlag(flags["local-store"]) ?? env.BOBA_RECOVERY_LOCAL_STORE ?? null;
-  if (!runIdToRestore || !source || !identityFile || !localStore) {
+  if (!runIdToRestore || !source || !identityFile) {
     emit(
       stdout,
       json,
       {
         ok: false,
         status: OPERATION_STATUS.BLOCKED,
-        reason: "rehearsal requires --run-id-to-restore, --source, --identity-file, and --local-store",
+        reason:
+          "rehearsal requires --run-id-to-restore, --source, --identity-file, and --local-store or logical Spaces env",
       },
       "Portability rehearsal BLOCKED: missing required flags",
     );
     return CLI_EXIT.BLOCKED;
   }
 
-  const objectStore = createLocalObjectStore({ localRoot: localStore });
+  let objectStore;
+  try {
+    const resolved = await resolveLayer2ObjectStore(env, flags, { localStore: localStore ?? undefined });
+    if (!resolved.ok) {
+      emit(
+        stdout,
+        json,
+        { ok: false, status: OPERATION_STATUS.BLOCKED, reason: resolved.reason, code: resolved.code },
+        `Portability rehearsal BLOCKED: ${resolved.reason}`,
+      );
+      return CLI_EXIT.BLOCKED;
+    }
+    objectStore = resolved.objectStore;
+  } catch (error) {
+    emit(
+      stdout,
+      json,
+      { ok: false, reason: error instanceof Error ? error.message : String(error) },
+      "Portability rehearsal FAILED",
+    );
+    return CLI_EXIT.FAILURE;
+  }
   const databaseUrl = stringFlag(flags["database-url"]) ?? env.BOBA_RECOVERY_TARGET_DATABASE_URL;
   const result = await runPortabilityRehearsal({
     runIdToRestore,
@@ -822,21 +842,17 @@ async function runEvidenceReconcileLayer2({ flags, env, json, stdout, stderr }) 
   const localStore = stringFlag(flags["local-store"]) ?? env.BOBA_RECOVERY_LOCAL_STORE ?? null;
   let objectStore;
   try {
-    if (localStore) {
-      objectStore = createLocalObjectStore({ localRoot: localStore });
-    } else {
-      const spaces = await createLogicalSpacesObjectStore(env, flags, { requireVersioning: false });
-      if (!spaces.ok) {
-        emit(
-          stdout,
-          json,
-          { ok: false, status: OPERATION_STATUS.BLOCKED, reason: spaces.reason },
-          `Layer 2 reconcile BLOCKED: ${spaces.reason}`,
-        );
-        return CLI_EXIT.BLOCKED;
-      }
-      objectStore = spaces.objectStore;
+    const resolved = await resolveLayer2ObjectStore(env, flags, { localStore: localStore ?? undefined });
+    if (!resolved.ok) {
+      emit(
+        stdout,
+        json,
+        { ok: false, status: OPERATION_STATUS.BLOCKED, reason: resolved.reason, code: resolved.code },
+        `Layer 2 reconcile BLOCKED: ${resolved.reason}`,
+      );
+      return CLI_EXIT.BLOCKED;
     }
+    objectStore = resolved.objectStore;
   } catch (error) {
     stderr(redactText(error instanceof Error ? error.message : String(error)));
     return CLI_EXIT.FAILURE;
@@ -877,7 +893,8 @@ function hasRehearsalFlags(flags) {
   return Boolean(
     stringFlag(flags["run-id-to-restore"]) ||
       stringFlag(flags["identity-file"]) ||
-      stringFlag(flags["local-store"]),
+      stringFlag(flags["local-store"]) ||
+      stringFlag(flags.bucket),
   );
 }
 
@@ -889,35 +906,31 @@ function selectGateEvidence(records) {
   return selectLatestAttemptEvidence(records);
 }
 
-function probePgbackrest(env) {
-  const local = spawnSync("pgbackrest", ["version"], { encoding: "utf8", env, timeout: 15_000 });
-  if (local.status === 0) return { ok: true, via: "local" };
-  const image = env.BOBA_POSTGRES_IMAGE ?? "boba-bear-postgres:local";
-  const docker = spawnSync("docker", ["run", "--rm", image, "pgbackrest", "version"], {
-    encoding: "utf8",
+function probePgbackrest(env, containerCli) {
+  const result = runPgbackrest({
+    args: ["version"],
     env,
-    timeout: 60_000,
+    containerCli: containerCli ?? undefined,
   });
-  if (docker.status === 0) return { ok: true, via: "docker" };
+  if (result.ok) return { ok: true, via: result.via ?? "compose-exec", versionText: result.stdout };
   return {
     ok: false,
+    via: "compose-exec",
     reason:
-      "pgBackRest executable not found locally and docker image probe failed — build boba-bear-postgres:local or install pgbackrest >= 2.55",
+      result.reason ??
+      "pgBackRest is not reachable via docker compose exec -T postgres (host pgBackRest is not used)",
   };
 }
 
 function readPgbackrestVersionText(env, flags) {
   const forced = stringFlag(flags.version);
   if (forced) return forced;
-  const local = spawnSync("pgbackrest", ["version"], { encoding: "utf8", env, timeout: 15_000 });
-  if (local.status === 0 && local.stdout) return local.stdout;
-  const image = stringFlag(flags.image) ?? env.BOBA_POSTGRES_IMAGE ?? "boba-bear-postgres:local";
-  const docker = spawnSync("docker", ["run", "--rm", image, "pgbackrest", "version"], {
-    encoding: "utf8",
+  const result = runPgbackrest({
+    args: ["version"],
     env,
-    timeout: 120_000,
+    containerCli: resolveContainerCli() ?? undefined,
   });
-  if (docker.status === 0 && docker.stdout) return docker.stdout;
+  if (result.ok && result.stdout) return result.stdout;
   return null;
 }
 

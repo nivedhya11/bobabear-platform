@@ -32,7 +32,9 @@ export function createObjectStore(config) {
       throw new Error(validated.reason);
     }
     if (process.env.BOBA_RECOVERY_REAL_SPACES !== "1") {
-      // Documented guard: live Spaces provider tests must set BOBA_RECOVERY_REAL_SPACES=1.
+      throw new Error(
+        "REAL_SPACES_FLAG_REQUIRED: live Spaces client creation requires BOBA_RECOVERY_REAL_SPACES=1 before any network request",
+      );
     }
     return createS3SpacesClient({
       accessKeyId: String(config.accessKeyId ?? ""),
@@ -52,5 +54,7 @@ export { createS3SpacesClient, assertVersioningSemantics } from "./s3.mjs";
 export {
   createLogicalSpacesObjectStore,
   resolveLogicalSpacesConfig,
+  resolveLayer2ObjectStore,
+  assertS3StoreLiveAuthorized,
   LOGICAL_SPACES_CREDENTIAL_PREFIX_DEFAULT,
 } from "./logical.mjs";

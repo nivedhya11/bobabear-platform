@@ -12,6 +12,7 @@ Type=oneshot
 WorkingDirectory=%h/boba-bear-platform
 EnvironmentFile=-%h/boba-bear-platform/.env.recovery.local
 Environment=BOBA_RECOVERY_HEAVY_LOCK_PATH=/var/lock/boba-recovery-heavy.lock
+# The CLI runs pgBackRest via `docker compose exec -T postgres` (not a host binary).
 ExecStart=%h/boba-bear-platform/scripts/recovery/systemd/run-with-flock.sh /usr/bin/env BOBA_RECOVERY_LOCK_ALREADY_HELD=1 /usr/bin/npm run recovery -- backup layer1 --type diff
 Nice=10
 IOSchedulingClass=best-effort

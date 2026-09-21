@@ -77,15 +77,50 @@ npm run recovery:backup:layer1 -- --type diff --generation 1 --evidence-dir DIR
 npm run recovery:backup:layer2 -- --local-store DIR --recipient age1... --evidence-dir DIR
 ```
 
-Layer 1 requires a reachable `pgbackrest` (local or `boba-bear-postgres:local`) and
-`--generation` / `BOBA_PGBACKREST_GENERATION`. After a successful backup, verify runs
-by default so health proof can include `PGBACKREST_VERIFY_OK`.
+Layer 1 does **not** use a host `pgbackrest` binary. Preflight and backup/check/info/verify
+all run in the PostgreSQL service:
 
-Layer 2 requires age, a dump source (`DATABASE_URL` or compose postgres), recipients,
-and `--local-store` for disposable object-store runs. Live Spaces remains
-`NOT_PERFORMED` unless separately authorized.
+```bash
+docker compose exec -T postgres pgbackrest --config=/etc/pgbackrest/pgbackrest.conf --stanza=boba backup --type=full
+```
+
+`npm run recovery -- backup layer1` is that same container backend. systemd full/diff units
+call this CLI under the host flock. Continuous WAL archive-push does **not** take that lock.
+
+`BOBA_PGBACKREST_ARCHIVE` defaults to `0` (local/dev unchanged). When it is `1`, the
+postgres entrypoint renders `/etc/pgbackrest/pgbackrest.conf` **before** `archive_command`
+can fire. Archive-push and scheduled backup use that same file.
+
+Production-shaped Layer 1 (the default when archive is on) is physical Spaces:
+
+```text
+BOBA_PGBACKREST_GENERATION
+BOBA_RECOVERY_PHYSICAL_SPACES_BUCKET
+BOBA_RECOVERY_PHYSICAL_SPACES_ENDPOINT
+BOBA_RECOVERY_PHYSICAL_SPACES_REGION
+BOBA_PHYSICAL_SPACES_ACCESS_KEY_ID
+BOBA_PHYSICAL_SPACES_SECRET_ACCESS_KEY
+PGBACKREST_CIPHER_PASS
+```
+
+Those credentials are **not** the Layer 2 logical Spaces keys. Missing physical config
+fail-closes (PostgreSQL will not start with archive enabled). Secrets are environment-only
+and are not written into the conf file or this repository.
+
+Disposable local Layer 1 tests must opt in explicitly:
+
+```text
+BOBA_PGBACKREST_REPO_MODE=posix
+```
+
+Layer 2 disposable runs use `--local-store`. Production-shaped Layer 2 uses logical Spaces
+env and does **not** require copying artifacts onto a local disk first. It performs **no**
+provider network request unless `BOBA_RECOVERY_REAL_SPACES=1`, and then only after bucket
+versioning is confirmed `ENABLED`. Real Spaces proof remains `NOT_PERFORMED`.
 
 ### Restore / drill
+
+Disposable local rehearsal (no provider):
 
 ```bash
 # PITR — provisions a fresh RUN_ID-owned PGDATA under the recovery workspace by default.
@@ -97,8 +132,9 @@ npm run recovery -- restore pitr \
   --workspace-root /var/tmp/boba-recovery-targets \
   --evidence-dir DIR
 
-# Logical restore — provisions a fresh disposable PostgreSQL 18 target by default
-# (or bind --database-url to a provisioner-issued recovery database).
+# Logical restore into a fresh disposable PostgreSQL 18 target.
+# The target password is crypto-random (not derived from RUN_ID) and is not printed.
+# The published port is bound to 127.0.0.1 only.
 npm run recovery -- restore logical \
   --run-id RUN_ID \
   --source prod-db-1 \
@@ -106,19 +142,49 @@ npm run recovery -- restore logical \
   --local-store DIR \
   --evidence-dir DIR
 
-# Portability rehearsal — finalized Layer 2 → decrypt → fresh PG18 → pg_restore →
-# existing migration authority (npm run db:migrate) → business validation on THAT target.
+# Portability rehearsal. runDrill() refuses the run without the suppression flags.
 npm run recovery -- drill \
   --run-id-to-restore RUN_ID \
   --source prod-db-1 \
   --identity-file PATH \
   --local-store DIR \
+  --network-isolated \
+  --production-dns-absent \
+  --production-credentials-absent \
   --evidence-dir DIR
 ```
 
-Restore/drill refuse `--force-production`. Missing artifacts, executables, or migration
-authority fail closed — they do not fabricate success. Fresh targets are run-owned and
-cleaned up after successful disposable rehearsals.
+Production-shaped Spaces path (explicit live authorization required). This runbook does
+**not** claim a real DigitalOcean call was performed:
+
+```bash
+# Set logical Spaces env (distinct from physical/pgBackRest credentials), then:
+BOBA_RECOVERY_REAL_SPACES=1 npm run recovery -- restore logical \
+  --run-id RUN_ID \
+  --source prod-db-1 \
+  --identity-file PATH \
+  --evidence-dir DIR
+
+BOBA_RECOVERY_REAL_SPACES=1 npm run recovery -- drill \
+  --run-id-to-restore RUN_ID \
+  --source prod-db-1 \
+  --identity-file PATH \
+  --network-isolated \
+  --production-dns-absent \
+  --production-credentials-absent \
+  --evidence-dir DIR
+
+BOBA_RECOVERY_REAL_SPACES=1 npm run recovery -- evidence reconcile-layer2 \
+  --run-id RUN_ID \
+  --evidence-dir DIR
+```
+
+Without `BOBA_RECOVERY_REAL_SPACES=1` those commands are **BLOCKED** and issue zero
+Spaces requests. With the flag, backup verifies bucket versioning `ENABLED` before upload.
+Restore still requires a COMPLETE artifact, decryptable payload, verified integrity, and a
+fresh owned target. It does not restore into the source.
+
+`--force-production` remains forbidden.
 
 ### High-risk gate / capacity / Spaces config / key rotation plans
 
@@ -148,8 +214,11 @@ this packet. See `docker/recovery/systemd/README.md`.
 - `compose.yaml` postgres builds `docker/postgres/Dockerfile` → image
   `boba-bear-postgres:local`, with optional `pgbackrest-repo` volume.
 - `BOBA_PGBACKREST_ARCHIVE` defaults to `0` (existing local/dev unchanged).
-- Overlay: `compose.recovery.yaml` (`recovery-layer1-backup`, `recovery-layer2-backup`,
-  tools profile oneshots).
+- When archive is `1`, missing physical Spaces config fail-closes unless
+  `BOBA_PGBACKREST_REPO_MODE=posix`.
+- Overlay: `compose.recovery.yaml` documents container-context Layer 1
+  (`docker compose exec -T postgres pgbackrest`) and the Layer 2 tools-profile oneshot.
+  There is no Layer 1 backup sidecar.
 
 ## Safety boundaries (locked; still binding)
 

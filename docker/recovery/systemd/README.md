@@ -22,11 +22,9 @@ optional `EnvironmentFile=-%h/boba-bear-platform/.env.recovery.local`, and runs
 through `scripts/recovery/systemd/run-with-flock.sh` so heavy ops share the
 host-local flock. Continuous WAL archive-push must **never** use that flock.
 
-Alternative ExecStart (documented; swap if preferred):
-
-```text
-/usr/bin/docker compose -f compose.yaml -f compose.recovery.yaml run --rm recovery-layer1-backup
-```
+Layer 1 units invoke `npm run recovery -- backup layer1`. That CLI runs
+`docker compose exec -T postgres pgbackrest` inside the PostgreSQL service.
+Do not point ExecStart at a host `pgbackrest` binary or a backup sidecar.
 
 ## Operator install (R3 only — do not automate from CI)
 

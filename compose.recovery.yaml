@@ -1,9 +1,8 @@
 # IMP-037 recovery overlay — oneshot backup tool services (tools profile).
 #
 # Usage:
-#   # Layer 1 must execute in the PostgreSQL container context (pgBackRest + PGDATA):
-#   docker compose exec -T postgres pgbackrest --stanza=boba backup --type=full
-#   # Or via host CLI with image/exec probe against boba-bear-postgres:local:
+#   # Layer 1 executes in the PostgreSQL container context (same path as the CLI):
+#   docker compose exec -T postgres pgbackrest --config=/etc/pgbackrest/pgbackrest.conf --stanza=boba backup --type=full
 #   npm run recovery -- backup layer1 --type full --generation 1
 #
 #   # Layer 2 oneshot tooling (age + node orchestration; dump via logical-backup role):
@@ -17,9 +16,9 @@
 # timers are templates only and are NOT installed by this packet.
 
 services:
-  # Layer 1 is intentionally NOT a tooling-image service: pgBackRest must run in
-  # the PostgreSQL container context. Use `docker compose exec postgres pgbackrest ...`
-  # or `npm run recovery -- backup layer1` with BOBA_POSTGRES_IMAGE=boba-bear-postgres:local.
+  # Layer 1 is intentionally NOT a tooling-image sidecar. pgBackRest runs in the
+  # PostgreSQL service: `docker compose exec -T postgres pgbackrest ...`
+  # `npm run recovery -- backup layer1` uses that same container backend.
 
   recovery-layer2-backup:
     build:

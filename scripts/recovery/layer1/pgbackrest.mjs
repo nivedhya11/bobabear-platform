@@ -11,44 +11,40 @@
  *   repository generation / key metadata
  *   pgbackrest verify
  */
-import { spawnSync } from "node:child_process";
 import { PROOF_CODE } from "../constants.mjs";
+import { dockerComposeExecPostgres } from "../docker-exec.mjs";
 import { redactText } from "../redact.mjs";
-import { assertPgbackrestVersion, DEFAULT_STANZA } from "./config.mjs";
+import { assertPgbackrestVersion, DEFAULT_STANZA, PGBACKREST_RUNTIME_CONFIG_PATH } from "./config.mjs";
 
 /**
  * @param {object} options
  * @param {string[]} options.args
  * @param {(command: string, args: string[], opts?: object) => { status: number, stdout: string, stderr: string }} [options.execFn]
+ * Injected pgBackRest executor for unit tests. The default operator path does NOT use this
+ * and never spawns a host `pgbackrest` binary.
  * @param {string} [options.pgbackrestBin]
  * @param {NodeJS.ProcessEnv} [options.env]
- * @returns {{ ok: boolean, status: number, stdout: string, stderr: string, reason?: string }}
+ * @param {string} [options.containerCli]
+ * @param {string} [options.service]
+ * @param {string} [options.composeFile]
+ * @param {string} [options.cwd]
+ * @param {Function} [options.composeExecFn]
+ * @returns {{ ok: boolean, status: number, stdout: string, stderr: string, via: string, reason?: string }}
  */
 export function runPgbackrest(options) {
-  const args = Array.isArray(options?.args) ? options.args : [];
-  const bin = options.pgbackrestBin ?? "pgbackrest";
-  const execFn =
-    options.execFn ??
-    ((command, commandArgs, opts) => {
-      const result = spawnSync(command, commandArgs, {
-        encoding: "utf8",
-        env: opts?.env ?? process.env,
-        timeout: opts?.timeout ?? 600_000,
-      });
-      return {
-        status: typeof result.status === "number" ? result.status : 1,
-        stdout: typeof result.stdout === "string" ? result.stdout : "",
-        stderr: typeof result.stderr === "string" ? result.stderr : "",
-      };
-    });
+  const args = withRuntimeConfig(Array.isArray(options?.args) ? options.args : []);
+  const via = typeof options?.execFn === "function" ? "injected" : "compose-exec";
+  const execFn = typeof options?.execFn === "function" ? options.execFn : defaultComposePgbackrestExec(options);
+  const bin = options?.pgbackrestBin ?? "pgbackrest";
   try {
-    const result = execFn(bin, args, { env: options.env ?? process.env });
+    const result = execFn(bin, args, { env: options?.env ?? process.env });
     const ok = result.status === 0;
     return {
       ok,
       status: result.status,
       stdout: redactText(result.stdout ?? ""),
       stderr: redactText(result.stderr ?? ""),
+      via,
       reason: ok ? undefined : redactText(result.stderr || `pgbackrest exited ${result.status}`),
     };
   } catch (error) {
@@ -57,9 +53,54 @@ export function runPgbackrest(options) {
       status: 1,
       stdout: "",
       stderr: "",
+      via,
       reason: redactText(error instanceof Error ? error.message : String(error)),
     };
   }
+}
+
+/**
+ * Scheduled backup/check/info/verify and archive-push share one config path.
+ * `pgbackrest version` does not require the file.
+ * @param {string[]} args
+ * @returns {string[]}
+ */
+export function withRuntimeConfig(args) {
+  const list = Array.isArray(args) ? [...args] : [];
+  if (list.length === 1 && list[0] === "version") return list;
+  if (list.some((arg) => arg === "--config" || String(arg).startsWith("--config="))) return list;
+  return ["--config", PGBACKREST_RUNTIME_CONFIG_PATH, ...list];
+}
+
+/**
+ * `docker compose exec -T postgres pgbackrest ...`
+ * Host `pgbackrest` is never invoked.
+ * @param {object} [options]
+ */
+export function defaultComposePgbackrestExec(options = {}) {
+  return (command, commandArgs) => {
+    if (command !== "pgbackrest") {
+      return {
+        status: 1,
+        stdout: "",
+        stderr: `Layer 1 refuses host command ${command}; pgBackRest must run via docker compose exec -T postgres`,
+      };
+    }
+    const result = dockerComposeExecPostgres({
+      args: ["pgbackrest", ...(Array.isArray(commandArgs) ? commandArgs : [])],
+      env: options.env,
+      service: options.service ?? "postgres",
+      composeFile: options.composeFile,
+      cwd: options.cwd,
+      containerCli: options.containerCli,
+      execFn: options.composeExecFn,
+    });
+    return {
+      status: result.status,
+      stdout: typeof result.stdout === "string" ? result.stdout : "",
+      stderr: typeof result.stderr === "string" ? result.stderr : "",
+    };
+  };
 }
 
 /**
