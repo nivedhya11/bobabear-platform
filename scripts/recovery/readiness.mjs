@@ -7,17 +7,20 @@
  *
  * Freshness:
  * - Layer 2 uses the locked daily default when an explicit max-age is omitted.
- * - Layer 1 has no locked health-age mapping yet; missing Layer 1 freshness fails closed.
+ * - Layer 1 uses the locked 36-hour health-age default when an explicit max-age is omitted.
  * Missing freshness policy never silently means infinite age.
  */
 import {
+  LAYER_1_MAX_AGE_MS_DEFAULT,
   LAYER_2_MAX_AGE_MS_DEFAULT,
   OPERATION_STATUS,
   READINESS_LEVEL,
   RECOVERY_LAYER,
   REQUIRED_RECOVERY_LAYERS,
+  RPO_TARGET_MS_DEFAULT,
 } from "./constants.mjs";
 import { evaluateQualifyingRecoveryProof, validateEvidence } from "./evidence.mjs";
+import { evaluateRecoveryPointFreshness } from "./freshness.mjs";
 import { runIdInstant } from "./run-id.mjs";
 
 /**
@@ -25,6 +28,7 @@ import { runIdInstant } from "./run-id.mjs";
  * @property {string[]} [requiredLayers]
  * @property {number} [layer1MaxAgeMs]
  * @property {number} [layer2MaxAgeMs]
+ * @property {number} [rpoTargetMs]
  * @property {string | Date} [now]
  * @property {(evidence: import("./evidence.mjs").RecoveryEvidence, layer: string) => { ok: boolean, reason?: string } | boolean} [qualifyProof]
  */
@@ -180,6 +184,24 @@ function evaluateLayer(layer, records, policy, now) {
     };
   }
 
+  if (layer === RECOVERY_LAYER.LAYER_1) {
+    const rpoTargetMs =
+      typeof policy.rpoTargetMs === "number" && Number.isFinite(policy.rpoTargetMs) && policy.rpoTargetMs >= 0
+        ? policy.rpoTargetMs
+        : RPO_TARGET_MS_DEFAULT;
+    const rpo = evaluateRecoveryPointFreshness(latest.recoveryPoint, rpoTargetMs, now);
+    if (!rpo.ok) {
+      return {
+        layer,
+        readiness: READINESS_LEVEL.NOT_READY,
+        reason: `Layer 1 recovery point violates RPO freshness: ${rpo.reason}`,
+        latestStatus: latest.status,
+        runId: latest.runId,
+        overdue: true,
+      };
+    }
+  }
+
   return {
     layer,
     readiness: READINESS_LEVEL.READY,
@@ -199,8 +221,7 @@ function resolveMaxAgeMs(layer, policy) {
   if (layer === RECOVERY_LAYER.LAYER_1) {
     const explicit = policy.layer1MaxAgeMs;
     if (typeof explicit === "number" && Number.isFinite(explicit) && explicit >= 0) return explicit;
-    // No locked Layer 1 health-age mapping in this foundation tranche.
-    return null;
+    return LAYER_1_MAX_AGE_MS_DEFAULT;
   }
   if (layer === RECOVERY_LAYER.LAYER_2) {
     const explicit = policy.layer2MaxAgeMs;

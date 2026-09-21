@@ -169,13 +169,6 @@ test("target check allows isolated recovery target", () => {
   assert.equal(JSON.parse(result.stdout).allowed, true);
 });
 
-test("unsupported backup command is unavailable rather than success", () => {
-  const result = run(["backup"]);
-  assert.equal(result.status, CLI_EXIT.UNAVAILABLE);
-  assert.match(result.stdout, /UNAVAILABLE|not implemented/);
-  assert.doesNotMatch(result.stdout, /\bSUCCEEDED\b/);
-});
-
 test("force-production is rejected", () => {
   const result = run([
     "target",
@@ -192,4 +185,106 @@ test("force-production is rejected", () => {
   ]);
   assert.equal(result.status, CLI_EXIT.BLOCKED);
   assert.match(result.stdout, /force-production/i);
+});
+
+test("help lists implemented backup and gate commands", () => {
+  const result = run(["help"]);
+  assert.equal(result.status, CLI_EXIT.OK);
+  assert.match(result.stdout, /backup layer1/);
+  assert.match(result.stdout, /backup layer2/);
+  assert.match(result.stdout, /gate\|readiness-gate high-risk|readiness-gate/);
+  assert.match(result.stdout, /systemd validate/);
+  assert.match(result.stdout, /reconcile-layer2/);
+  assert.match(result.stdout, /BOBA_RECOVERY_LOGICAL_SPACES_BUCKET|LOGICAL_SPACES/);
+  assert.doesNotMatch(result.stdout, /Not yet implemented \(explicitly unavailable\)/);
+});
+
+test("implemented backup without required config is blocked or failed, not unavailable", () => {
+  const result = run(["backup", "layer1", "--type", "full", "--json"]);
+  assert.notEqual(result.status, CLI_EXIT.UNAVAILABLE);
+  assert.ok(result.status === CLI_EXIT.BLOCKED || result.status === CLI_EXIT.FAILURE);
+  assert.doesNotMatch(result.stdout, /\bSUCCEEDED\b/);
+});
+
+test("implemented capacity command returns observation JSON", () => {
+  const result = run(["capacity", "--json", "--layer1-base-bytes", "100"]);
+  assert.equal(result.status, CLI_EXIT.OK);
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.STORAGE_CAPACITY_VALIDATED, "NO");
+  assert.equal(payload.layers.layer1BaseBytes, 100);
+});
+
+test("restore pitr refuses force-production", () => {
+  const result = run([
+    "restore",
+    "pitr",
+    "--source",
+    "prod",
+    "--target-time",
+    "2026-09-20 00:00:00",
+    "--force-production",
+  ]);
+  assert.equal(result.status, CLI_EXIT.BLOCKED);
+  assert.match(result.stdout, /force-production/i);
+});
+
+test("gate high-risk without evidence dir fails closed", () => {
+  const result = run(["gate", "high-risk", "--json"]);
+  assert.notEqual(result.status, CLI_EXIT.UNAVAILABLE);
+  assert.ok(result.status === CLI_EXIT.FAILURE || result.status === CLI_EXIT.BLOCKED);
+});
+
+test("systemd validate passes on repository templates", () => {
+  const result = run(["systemd", "validate", "--json"]);
+  assert.equal(result.status, CLI_EXIT.OK);
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.ok, true);
+});
+
+test("spaces config-check rejects worm claims", () => {
+  const result = run([
+    "spaces",
+    "config-check",
+    "--json",
+    "--bucket",
+    "boba-recovery",
+    "--local-root",
+    "/tmp/store",
+    "--credential-env-prefix",
+    "BOBA_SPACES",
+    "--worm",
+  ]);
+  assert.equal(result.status, CLI_EXIT.FAILURE);
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.ok, false);
+});
+
+test("rotate-keys layer1 prints plan without mutating secrets", () => {
+  const result = run([
+    "rotate-keys",
+    "layer1",
+    "--json",
+    "--generation",
+    "1",
+    "--new-passphrase-present",
+  ]);
+  assert.equal(result.status, CLI_EXIT.OK);
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.ok, true);
+  assert.equal(payload.plan.nextGeneration, 2);
+  assert.equal(payload.plan.model, "NEW_ENCRYPTED_REPOSITORY_GENERATION");
+  assert.equal(payload.plan.preservePriorGeneration, true);
+  assert.match(payload.plan.bootstrapAfterRotation ?? "", /pgbackrest init/i);
+});
+
+test("pgbackrest init without generation is BLOCKED", () => {
+  const result = run(["pgbackrest", "init", "--json"], {
+    env: { ...process.env, BOBA_PGBACKREST_GENERATION: "" },
+  });
+  assert.equal(result.status, CLI_EXIT.BLOCKED);
+  const payload = JSON.parse(result.stdout);
+  assert.equal(payload.ok, false);
+  assert.equal(payload.status, OPERATION_STATUS.BLOCKED);
+  assert.match(payload.reason ?? "", /generation/i);
+  assert.doesNotMatch(result.stdout, /SUCCEEDED/);
 });

@@ -2,14 +2,37 @@ name: boba-bear
 
 services:
   postgres:
-    image: docker.io/library/postgres:18.4-trixie
+    # IMP-037: PostgreSQL 18 + pinned pgBackRest (>= 2.55). Default archive off
+    # (BOBA_PGBACKREST_ARCHIVE=0) so existing local/dev db workflows stay unchanged.
+    build:
+      context: .
+      dockerfile: docker/postgres/Dockerfile
+    image: boba-bear-postgres:local
     env_file:
       - .env.docker.local
+    environment:
+      BOBA_PGBACKREST_ARCHIVE: "${BOBA_PGBACKREST_ARCHIVE:-0}"
+      BOBA_PGBACKREST_STANZA: "${BOBA_PGBACKREST_STANZA:-boba}"
+      BOBA_PGBACKREST_ARCHIVE_TIMEOUT: "${BOBA_PGBACKREST_ARCHIVE_TIMEOUT:-300}"
+      BOBA_PGBACKREST_GENERATION: "${BOBA_PGBACKREST_GENERATION:-}"
+      BOBA_PGBACKREST_REPO_MODE: "${BOBA_PGBACKREST_REPO_MODE:-}"
+      BOBA_RECOVERY_PHYSICAL_SPACES_BUCKET: "${BOBA_RECOVERY_PHYSICAL_SPACES_BUCKET:-}"
+      BOBA_RECOVERY_PHYSICAL_SPACES_ENDPOINT: "${BOBA_RECOVERY_PHYSICAL_SPACES_ENDPOINT:-}"
+      BOBA_RECOVERY_PHYSICAL_SPACES_REGION: "${BOBA_RECOVERY_PHYSICAL_SPACES_REGION:-}"
+      BOBA_PHYSICAL_SPACES_ACCESS_KEY_ID: "${BOBA_PHYSICAL_SPACES_ACCESS_KEY_ID:-}"
+      BOBA_PHYSICAL_SPACES_SECRET_ACCESS_KEY: "${BOBA_PHYSICAL_SPACES_SECRET_ACCESS_KEY:-}"
+      PGBACKREST_CIPHER_PASS: "${PGBACKREST_CIPHER_PASS:-}"
+      # pgBackRest-native names for compose-exec and archive-push (same repository authority).
+      # Secrets stay environment-only — never written into pgbackrest.conf.
+      PGBACKREST_REPO1_CIPHER_PASS: "${PGBACKREST_CIPHER_PASS:-}"
+      PGBACKREST_REPO1_S3_KEY: "${BOBA_PHYSICAL_SPACES_ACCESS_KEY_ID:-}"
+      PGBACKREST_REPO1_S3_KEY_SECRET: "${BOBA_PHYSICAL_SPACES_SECRET_ACCESS_KEY:-}"
     ports:
       - "${POSTGRES_HOST_PORT:-5433}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql
       - ${BOBA_POSTGRES_INIT_DIR:-./docker/postgres/init}:/docker-entrypoint-initdb.d:ro
+      - ${BOBA_PGBACKREST_REPO_DIR:-pgbackrest-repo}:/var/lib/pgbackrest
     healthcheck:
       test:
         [
@@ -504,3 +527,4 @@ services:
 
 volumes:
   postgres-data:
+  pgbackrest-repo:

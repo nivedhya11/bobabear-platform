@@ -245,29 +245,69 @@ export function isQualifyingRecoveryProof(value, options = {}) {
 }
 
 /**
+ * Layer 1 qualifies only when ALL required proof codes are present:
+ *   PGBACKREST_CHECK_OK
+ *   PGBACKREST_INFO_OK
+ *   LAYER1_RECOVERY_POINT (+ non-empty recoveryPoint field)
+ *   REPOSITORY_GENERATION (or equivalent generation metadata)
+ *   PGBACKREST_VERIFY_OK
+ *
+ * Absence of any required proof fails closed (NOT_READY).
+ *
  * @param {import("./evidence.mjs").RecoveryEvidence} evidence
  * @returns {QualifyingProofResult}
  */
 function evaluateLayer1QualifyingProof(evidence) {
-  if (!hasNonEmptyString(evidence.recoveryPoint)) {
+  const codes = validationCodes(evidence);
+  const hasCheck = codes.has("PGBACKREST_CHECK_OK");
+  const hasInfo = codes.has("PGBACKREST_INFO_OK");
+  const hasVerify = codes.has("PGBACKREST_VERIFY_OK");
+  const hasRecoveryPointCode = codes.has("LAYER1_RECOVERY_POINT");
+  const hasRecoveryPointField = hasNonEmptyString(evidence.recoveryPoint);
+  const hasGenerationCode = codes.has("REPOSITORY_GENERATION");
+  const hasGenerationMeta = hasLayer1GenerationMetadata(evidence);
+
+  if (!hasCheck) {
+    return {
+      ok: false,
+      reason: "qualifying Layer 1 recovery proof unavailable (missing PGBACKREST_CHECK_OK)",
+    };
+  }
+  if (!hasInfo) {
+    return {
+      ok: false,
+      reason: "qualifying Layer 1 recovery proof unavailable (missing PGBACKREST_INFO_OK)",
+    };
+  }
+  if (!hasVerify) {
+    return {
+      ok: false,
+      reason: "qualifying Layer 1 recovery proof unavailable (missing PGBACKREST_VERIFY_OK)",
+    };
+  }
+  if (!hasRecoveryPointCode || !hasRecoveryPointField) {
     return {
       ok: false,
       reason: "missing recovery point cannot establish Layer 1 recovery readiness",
     };
   }
-  // pgBackRest health / identifiable recovery-point proof is not implemented in this tranche.
+  if (!hasGenerationCode && !hasGenerationMeta) {
+    return {
+      ok: false,
+      reason:
+        "qualifying Layer 1 recovery proof unavailable (missing REPOSITORY_GENERATION or keyVersion/repositoryGeneration metadata)",
+    };
+  }
   return {
-    ok: false,
-    reason:
-      "qualifying Layer 1 recovery/health proof unavailable (pgBackRest proof not implemented in this tranche)",
+    ok: true,
+    reason: "Layer 1 qualifying recovery/health proof accepted",
   };
 }
 
 /**
- * Layer 2 MUST NOT qualify until a later producer proves the locked finalization chain:
- * pg_dump -Fc → age encryption → remote upload → SHA-256 → verify REMOTE stored artifact →
- * evidence persistence → COMPLETE marker written LAST.
- * This foundation tranche has no such producer; fail closed after rejecting incomplete fields.
+ * Layer 2 qualifies when field checks pass AND remote SHA verification + COMPLETE-last markers
+ * are present in validationResults. Synthetic magic-only records without the required chain
+ * fields still fail closed.
  *
  * @param {import("./evidence.mjs").RecoveryEvidence} evidence
  * @returns {QualifyingProofResult}
@@ -313,12 +353,9 @@ function evaluateLayer2QualifyingProof(evidence) {
         "Layer 2 cannot qualify without remote stored-artifact verification and COMPLETE marker written last",
     };
   }
-  // Even structurally rich records cannot become READY here: no foundation producer implements
-  // the locked chain. Future producers plug in via qualifyProof.
   return {
-    ok: false,
-    reason:
-      "Layer 2 finalization-chain proof producer is not implemented in this foundation tranche",
+    ok: true,
+    reason: "Layer 2 qualifying finalization-chain proof accepted",
   };
 }
 
@@ -338,23 +375,66 @@ function hasRequiredLayer2Context(evidence) {
 }
 
 /**
- * Detects future Layer 2 remote-verification + COMPLETE-last proof markers when present.
- * Foundation never fabricates these markers; absence fails closed.
+ * Detects Layer 2 remote-verification + COMPLETE-last proof markers when present.
+ * Absence fails closed.
  *
  * @param {import("./evidence.mjs").RecoveryEvidence} evidence
  * @returns {boolean}
  */
 function hasLayer2RemoteCompleteProof(evidence) {
-  const results = Array.isArray(evidence.validationResults) ? evidence.validationResults : [];
-  const codes = new Set(
-    results
-      .map((entry) => (entry && typeof entry === "object" ? String(entry.code ?? entry.check ?? "") : ""))
-      .filter((code) => code.length > 0),
-  );
+  const codes = validationCodes(evidence);
   const hasRemoteVerification =
     codes.has("REMOTE_ARTIFACT_SHA256_VERIFIED") || codes.has("REMOTE_STORED_ARTIFACT_VERIFIED");
   const hasCompleteLast = codes.has("COMPLETE_MARKER_WRITTEN_LAST") || codes.has("LAYER2_COMPLETE");
   return hasRemoteVerification && hasCompleteLast;
+}
+
+/**
+ * @param {import("./evidence.mjs").RecoveryEvidence} evidence
+ * @returns {Set<string>}
+ */
+function validationCodes(evidence) {
+  const results = Array.isArray(evidence.validationResults) ? evidence.validationResults : [];
+  return new Set(
+    results
+      .map((entry) => (entry && typeof entry === "object" ? String(entry.code ?? entry.check ?? "") : ""))
+      .filter((code) => code.length > 0),
+  );
+}
+
+/**
+ * @param {import("./evidence.mjs").RecoveryEvidence} evidence
+ * @returns {boolean}
+ */
+function hasLayer1GenerationMetadata(evidence) {
+  const findings = Array.isArray(evidence.findings) ? evidence.findings : [];
+  for (const entry of findings) {
+    if (!entry || typeof entry !== "object") continue;
+    const record = /** @type {Record<string, unknown>} */ (entry);
+    if (hasNonEmptyString(record.repositoryGeneration) || hasNonEmptyString(record.keyVersion)) {
+      return true;
+    }
+    if (record.metadata && typeof record.metadata === "object" && !Array.isArray(record.metadata)) {
+      const meta = /** @type {Record<string, unknown>} */ (record.metadata);
+      if (hasNonEmptyString(meta.repositoryGeneration) || hasNonEmptyString(meta.keyVersion)) {
+        return true;
+      }
+    }
+  }
+  for (const entry of Array.isArray(evidence.validationResults) ? evidence.validationResults : []) {
+    if (!entry || typeof entry !== "object") continue;
+    const record = /** @type {Record<string, unknown>} */ (entry);
+    if (hasNonEmptyString(record.repositoryGeneration) || hasNonEmptyString(record.keyVersion)) {
+      return true;
+    }
+    if (record.metadata && typeof record.metadata === "object" && !Array.isArray(record.metadata)) {
+      const meta = /** @type {Record<string, unknown>} */ (record.metadata);
+      if (hasNonEmptyString(meta.repositoryGeneration) || hasNonEmptyString(meta.keyVersion)) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 /**

@@ -1,0 +1,12 @@
+# IMP-037 Layer 2 daily logical backup timer.
+# Install is operator/R3 — see README.md. Not performed by the implementation packet.
+[Unit]
+Description=Timer for BOBA Bear IMP-037 Layer 2 daily logical backup
+
+[Timer]
+OnCalendar=*-*-* 03:15:00
+Persistent=true
+Unit=boba-recovery-layer2-logical.service
+
+[Install]
+WantedBy=timers.target

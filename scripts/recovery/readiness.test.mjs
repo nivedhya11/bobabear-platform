@@ -2,8 +2,10 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   CHECKSUM_INTEGRITY_STATUS,
+  LAYER_1_MAX_AGE_MS_DEFAULT,
   LAYER_2_MAX_AGE_MS_DEFAULT,
   OPERATION_STATUS,
+  PROOF_CODE,
   READINESS_LEVEL,
   RECOVERY_LAYER,
 } from "./constants.mjs";
@@ -140,8 +142,14 @@ test("Layer 2 without remote-verification/COMPLETE proof cannot qualify", () => 
 
 test("missing recovery point cannot qualify where required", () => {
   const layer1 = layerEvidence(RECOVERY_LAYER.LAYER_1, OPERATION_STATUS.SUCCEEDED, {
-    operationType: "layer1-pgbackrest",
+    operationType: "layer1-backup",
     runId: generateRunId({ now: new Date(Date.UTC(2026, 8, 20, 4, 3, 0)), randomHex: "ffffffffffffffff" }),
+    validationResults: [
+      { code: PROOF_CODE.PGBACKREST_CHECK_OK },
+      { code: PROOF_CODE.PGBACKREST_INFO_OK },
+      { code: PROOF_CODE.PGBACKREST_VERIFY_OK },
+      { code: PROOF_CODE.REPOSITORY_GENERATION, repositoryGeneration: "1" },
+    ],
   });
   const layer1Proof = evaluateQualifyingRecoveryProof(layer1, { layer: RECOVERY_LAYER.LAYER_1 });
   assert.equal(layer1Proof.ok, false);
@@ -163,25 +171,27 @@ test("missing recovery point cannot qualify where required", () => {
   assert.match(layer2Proof.reason, /recovery point/i);
 });
 
-test("missing freshness policy cannot produce READY", () => {
+test("Layer 1 uses default 36h freshness when explicit max-age omitted", () => {
   const layer1 = layerEvidence(RECOVERY_LAYER.LAYER_1, OPERATION_STATUS.SUCCEEDED, {
     runId: generateRunId({ now: new Date(Date.UTC(2026, 8, 20, 5, 0, 0)), randomHex: "1111111111111111" }),
     endedAt: "2026-09-20T05:00:00.000Z",
+    recoveryPoint: "2026-09-20T05:00:00.000Z",
   });
   const layer2 = layerEvidence(RECOVERY_LAYER.LAYER_2, OPERATION_STATUS.SUCCEEDED, {
     runId: generateRunId({ now: new Date(Date.UTC(2026, 8, 20, 5, 1, 0)), randomHex: "2222222222222222" }),
     endedAt: "2026-09-20T05:01:00.000Z",
   });
-  const withoutFlags = evaluateReadiness({
+  const withDefaults = evaluateReadiness({
     evidenceRecords: [layer1, layer2],
     policy: {
       now: "2026-09-20T05:02:00.000Z",
       qualifyProof: acceptInjectedProof,
     },
   });
-  assert.equal(withoutFlags.layers.LAYER_1.readiness, READINESS_LEVEL.NOT_READY);
-  assert.match(withoutFlags.layers.LAYER_1.reason, /freshness|health proof unavailable/i);
-  assert.equal(withoutFlags.overall, READINESS_LEVEL.NOT_READY);
+  assert.equal(withDefaults.layers.LAYER_1.readiness, READINESS_LEVEL.READY);
+  assert.equal(withDefaults.layers.LAYER_2.readiness, READINESS_LEVEL.READY);
+  assert.equal(withDefaults.overall, READINESS_LEVEL.READY);
+  assert.equal(LAYER_1_MAX_AGE_MS_DEFAULT, 36 * 60 * 60 * 1000);
 });
 
 test("stale otherwise-qualifying evidence is NOT_READY", () => {
@@ -247,6 +257,7 @@ test("injected future qualifier can READY only with freshness; production defaul
   const layer1 = layerEvidence(RECOVERY_LAYER.LAYER_1, OPERATION_STATUS.SUCCEEDED, {
     runId: generateRunId({ now: new Date(Date.UTC(2026, 8, 20, 6, 0, 0)), randomHex: "4444444444444444" }),
     endedAt: "2026-09-20T06:00:00.000Z",
+    recoveryPoint: "2026-09-20T06:00:00.000Z",
   });
   const layer2 = layerEvidence(RECOVERY_LAYER.LAYER_2, OPERATION_STATUS.SUCCEEDED, {
     runId: generateRunId({ now: new Date(Date.UTC(2026, 8, 20, 6, 1, 0)), randomHex: "5555555555555555" }),
@@ -269,4 +280,81 @@ test("injected future qualifier can READY only with freshness; production defaul
     policy: { now: "2026-09-20T06:02:00.000Z" },
   });
   assert.equal(productionDefault.overall, READINESS_LEVEL.NOT_READY);
+});
+
+test("real Layer 1/Layer 2 qualifying proof can READY under default freshness", () => {
+  const now = "2026-09-20T07:02:00.000Z";
+  const layer1 = layerEvidence(RECOVERY_LAYER.LAYER_1, OPERATION_STATUS.SUCCEEDED, {
+    operationType: "layer1-backup",
+    runId: generateRunId({ now: new Date(Date.UTC(2026, 8, 20, 7, 0, 0)), randomHex: "6666666666666666" }),
+    endedAt: "2026-09-20T07:00:00.000Z",
+    recoveryPoint: "2026-09-20T07:00:00.000Z",
+    validationResults: [
+      { code: PROOF_CODE.PGBACKREST_CHECK_OK },
+      { code: PROOF_CODE.PGBACKREST_INFO_OK },
+      { code: PROOF_CODE.PGBACKREST_VERIFY_OK },
+      { code: PROOF_CODE.LAYER1_RECOVERY_POINT },
+      { code: PROOF_CODE.REPOSITORY_GENERATION, repositoryGeneration: "1" },
+    ],
+  });
+  const layer2 = layerEvidence(RECOVERY_LAYER.LAYER_2, OPERATION_STATUS.SUCCEEDED, {
+    operationType: "layer2-logical-backup",
+    runId: generateRunId({ now: new Date(Date.UTC(2026, 8, 20, 7, 1, 0)), randomHex: "7777777777777777" }),
+    endedAt: "2026-09-20T07:01:00.000Z",
+    recoveryPoint: "2026-09-20T07:01:00.000Z",
+    recoveryArtifactReference: "logical/run/dump.age",
+    checksumIntegrityStatus: CHECKSUM_INTEGRITY_STATUS.MATCHED,
+    candidate: { commitSha: "abc" },
+    sourceEnvironmentClassification: "production",
+    sourceIdentityMarker: "prod-db-1",
+    validationResults: [
+      { code: PROOF_CODE.REMOTE_ARTIFACT_SHA256_VERIFIED },
+      { code: PROOF_CODE.COMPLETE_MARKER_WRITTEN_LAST },
+    ],
+  });
+  const result = evaluateReadiness({
+    evidenceRecords: [layer1, layer2],
+    policy: { now },
+  });
+  assert.equal(result.layers.LAYER_1.readiness, READINESS_LEVEL.READY);
+  assert.equal(result.layers.LAYER_2.readiness, READINESS_LEVEL.READY);
+  assert.equal(result.overall, READINESS_LEVEL.READY);
+});
+
+test("Layer 1 READY blocked when recovery point violates RPO despite fresh evidence age", () => {
+  const layer1 = layerEvidence(RECOVERY_LAYER.LAYER_1, OPERATION_STATUS.SUCCEEDED, {
+    operationType: "layer1-backup",
+    runId: generateRunId({ now: new Date(Date.UTC(2026, 8, 20, 7, 0, 0)), randomHex: "8888888888888888" }),
+    endedAt: "2026-09-20T07:00:00.000Z",
+    recoveryPoint: "2026-09-20T06:00:00.000Z",
+    validationResults: [
+      { code: PROOF_CODE.PGBACKREST_CHECK_OK },
+      { code: PROOF_CODE.PGBACKREST_INFO_OK },
+      { code: PROOF_CODE.PGBACKREST_VERIFY_OK },
+      { code: PROOF_CODE.LAYER1_RECOVERY_POINT },
+      { code: PROOF_CODE.REPOSITORY_GENERATION, repositoryGeneration: "1" },
+    ],
+  });
+  const layer2 = layerEvidence(RECOVERY_LAYER.LAYER_2, OPERATION_STATUS.SUCCEEDED, {
+    operationType: "layer2-logical-backup",
+    runId: generateRunId({ now: new Date(Date.UTC(2026, 8, 20, 7, 1, 0)), randomHex: "9999999999999999" }),
+    endedAt: "2026-09-20T07:01:00.000Z",
+    recoveryPoint: "2026-09-20T07:01:00.000Z",
+    recoveryArtifactReference: "logical/run/dump.age",
+    checksumIntegrityStatus: CHECKSUM_INTEGRITY_STATUS.MATCHED,
+    candidate: { commitSha: "abc" },
+    sourceEnvironmentClassification: "production",
+    sourceIdentityMarker: "prod-db-1",
+    validationResults: [
+      { code: PROOF_CODE.REMOTE_ARTIFACT_SHA256_VERIFIED },
+      { code: PROOF_CODE.COMPLETE_MARKER_WRITTEN_LAST },
+    ],
+  });
+  const result = evaluateReadiness({
+    evidenceRecords: [layer1, layer2],
+    policy: { now: "2026-09-20T07:02:00.000Z" },
+  });
+  assert.equal(result.layers.LAYER_1.readiness, READINESS_LEVEL.NOT_READY);
+  assert.match(result.layers.LAYER_1.reason, /RPO/i);
+  assert.equal(result.overall, READINESS_LEVEL.NOT_READY);
 });

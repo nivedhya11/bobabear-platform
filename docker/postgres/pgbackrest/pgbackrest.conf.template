@@ -1,0 +1,33 @@
+# IMP-037 pgBackRest configuration TEMPLATE (not the runtime file).
+# The image must not treat this template as /etc/pgbackrest/pgbackrest.conf.
+# When BOBA_PGBACKREST_ARCHIVE=1, boba-postgres-entrypoint renders a concrete
+# conf via boba-render-pgbackrest-conf before archive_command can fire.
+# Production-shaped render is repo1-type=s3 (physical Spaces). POSIX is only
+# BOBA_PGBACKREST_REPO_MODE=posix (disposable/local test).
+#
+# Locked:
+# - AES-256-CBC repository encryption
+# - >= 35-day pgBackRest-owned retention via TIME semantics
+#   (repo1-retention-full-type=time, repo1-retention-full=35)
+# - repo1-retention-diff is intentionally OMITTED
+# - repo1-retention-archive-type / repo1-retention-archive are intentionally OMITTED
+# - continuous WAL via archive_command (NOT under heavy flock)
+# - archive_timeout = 5 minutes is set in postgresql.conf, not here
+#
+# Cipher passphrase and Spaces keys are environment-only. Never commit them.
+
+[global]
+repo1-type=posix
+repo1-path=/var/lib/pgbackrest/repo-gen-1
+repo1-cipher-type=aes-256-cbc
+repo1-cipher-pass=${PGBACKREST_CIPHER_PASS}
+repo1-retention-full-type=time
+repo1-retention-full=35
+start-fast=y
+compress-type=zst
+log-level-console=info
+log-path=/var/log/pgbackrest
+spool-path=/var/spool/pgbackrest
+
+[boba]
+pg1-path=/var/lib/postgresql/data

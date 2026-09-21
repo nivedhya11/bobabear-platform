@@ -103,8 +103,31 @@ function checkComposeFile() {
     return;
   }
 
-  if (!contents.includes("postgres:18.4-trixie")) {
-    findings.push('compose.yaml must pin the PostgreSQL image to exactly "postgres:18.4-trixie".');
+  const usesStockPin = /image:\s*docker\.io\/library\/postgres:18\.4-trixie/.test(contents);
+  const usesRecoveryImage =
+    /image:\s*boba-bear-postgres:local/.test(contents) &&
+    /dockerfile:\s*docker\/postgres\/Dockerfile/.test(contents);
+  if (!usesStockPin && !usesRecoveryImage) {
+    findings.push(
+      'compose.yaml must pin PostgreSQL via image "docker.io/library/postgres:18.4-trixie" or build boba-bear-postgres:local from docker/postgres/Dockerfile.',
+    );
+  }
+  if (usesRecoveryImage) {
+    let dockerfile = "";
+    try {
+      dockerfile = readFileSync(path.join(projectRoot, "docker/postgres/Dockerfile"), "utf8");
+    } catch {
+      findings.push("docker/postgres/Dockerfile is required when compose builds boba-bear-postgres:local.");
+    }
+    if (
+      dockerfile &&
+      !dockerfile.includes("postgres:18.4-trixie") &&
+      !dockerfile.includes("POSTGRES_BASE_IMAGE=docker.io/library/postgres:18.4-trixie")
+    ) {
+      findings.push(
+        'docker/postgres/Dockerfile must pin the PostgreSQL base image to postgres:18.4-trixie.',
+      );
+    }
   }
   if (/postgres:latest/.test(contents)) {
     findings.push('compose.yaml must not use "postgres:latest".');
@@ -285,7 +308,9 @@ if (findings.length > 0) {
   console.log(`${findings.length} problem(s) found.`);
   process.exitCode = 1;
 } else {
-  console.log("  ✓  PostgreSQL image pinned to postgres:18.4-trixie; no postgres:latest.");
+  console.log(
+    "  ✓  PostgreSQL image pinned to postgres:18.4-trixie (direct or via boba-bear-postgres Dockerfile); no postgres:latest.",
+  );
   console.log("  ✓  Data volume targets /var/lib/postgresql; no application container.");
   console.log("  ✓  No drizzle-kit push in package scripts.");
   console.log("  ✓  No pg / drizzle-orm/node-postgres imports outside the database boundary.");
