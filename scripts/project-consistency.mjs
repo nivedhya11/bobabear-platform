@@ -10863,6 +10863,10 @@ export function evaluateImp038LockedCapabilityArchitecture(text) {
       "Fit evaluated fingerprint",
     ],
     [body, /D-375|ADR-017/, "binding D-375 / ADR-017"],
+    [body, /challenges\.cloudflare\.com/, "Turnstile CSP host challenges.cloudflare.com"],
+    [body, /maps\.gstatic\.com/, "Maps CSP host maps.gstatic.com"],
+    [body, /ORIGIN_BYPASS_EVIDENCE_SPLIT/, "origin-bypass evidence split (no IMP-039 deadlock)"],
+    [body, /PUBLIC_GTM_IMP040[\s\S]{0,120}FAIL_CLOSED|IMP040[\s\S]{0,80}FAIL_CLOSED/, "IMP-040 fail-closed without production realization"],
   ];
   for (const [haystack, pattern, label] of required) {
     if (!pattern.test(haystack)) {
@@ -10918,9 +10922,13 @@ export function evaluateImp038ArchitectureLockedProductDefinition(text) {
     };
   }
   // Drop historical Gate-PASS provenance that still records Fit NOT_PERFORMED / unlocked Cloudflare.
+  // Limit historical-section stripping to that section only (do not consume through EOF).
   const body = raw
     .replace(/```text\s*\nGATE_EVALUATED_HEAD[\s\S]*?```/g, "\n")
-    .replace(/## Architecture-fit inputs \(non-binding; Fit NOT_PERFORMED\)[\s\S]*/g, "\n")
+    .replace(
+      /## Architecture-fit inputs \(non-binding; Fit NOT_PERFORMED\)[\s\S]*?(?=\n## |\n# |\n---\s*\n|$)/g,
+      "\n",
+    )
     .replace(/Cloudflare locked as architecture:\s*NO[^\n]*/g, "")
     .replace(/^IMP038_ARCHITECTURE_FIT:\s*NOT_PERFORMED\s*$/gm, "")
     .replace(/^IMP038_ARCHITECTURE_LOCKED:\s*NO\s*$/gm, "");

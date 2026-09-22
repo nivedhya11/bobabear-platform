@@ -401,16 +401,29 @@ SCRIPT_SRC_WILDCARDS: FORBIDDEN
 
 ### 8.2 CSP allowlist (minimal explicit approved integrations)
 
-| Source class | Allow |
-|---|---|
-| Self | `'self'`; `/_next/static` |
-| Razorpay | `checkout.razorpay.com`; `api.razorpay.com`; `lumberjack.razorpay.com` |
-| Maps | `maps.googleapis.com` |
-| Analytics | optional `googletagmanager.com` **only when GA enabled** |
-| Fonts | self-hosted via `next/font` (no third-party font CDN required) |
+Directive-specific origins (no wildcards). Implementation must map each host to the correct CSP
+directive (`script-src`, `frame-src`, `connect-src`, `img-src`, `style-src`, `worker-src` as
+applicable) during report-only tuning; the table is the locked host inventory, not a single-bucket
+dump.
 
-No wildcard `script-src`. Payment and Maps embeds must continue to function under the allowlist
-(`FD-038-05`). Disallowed hosts must fail closed under enforcement (`AC-001-03`).
+| Source class | Allow (hosts) | Typical directives |
+|---|---|---|
+| Self | `'self'`; `/_next/static` | default-src / script-src / style-src / img-src / font-src / connect-src |
+| Razorpay Checkout | `checkout.razorpay.com`; `api.razorpay.com`; `lumberjack.razorpay.com` | script-src / frame-src / connect-src |
+| Cloudflare Turnstile | `challenges.cloudflare.com` | script-src / frame-src / connect-src |
+| Google Maps JS | `maps.googleapis.com`; `maps.gstatic.com` | script-src / img-src / connect-src / style-src as required by Maps assets |
+| Analytics | optional `www.googletagmanager.com` / `www.google-analytics.com` **only when GA enabled** | script-src / connect-src / img-src |
+| Fonts | self-hosted via `next/font` (no third-party font CDN required) | font-src `'self'` |
+
+```text
+CSP_TURNSTILE_HOST: challenges.cloudflare.com
+CSP_MAPS_HOSTS: maps.googleapis.com + maps.gstatic.com
+CSP_WILDCARD_SCRIPT_SRC: FORBIDDEN
+```
+
+No wildcard `script-src`. Payment, Maps, and Turnstile embeds must continue to function under the
+allowlist (`FD-038-05`). Disallowed hosts must fail closed under enforcement (`AC-001-03`).
+Report-only tuning must prove auth-challenge and address/Maps journeys before final enforcement.
 
 ---
 
@@ -660,9 +673,9 @@ INDEPENDENT_EXTERNAL_WEB_API_SECURITY_ASSESSMENT_BEFORE_IMP038_ACCEPTANCE: REQUI
 | External assessment report | Founder-commissioned | Required before acceptance |
 | Incident pack / templates | Ops | Internal IR required; external notify = legal trigger |
 
-### 16.2 IMP-039 provisioning interface (contract only)
+### 16.2 IMP-039 provisioning interface (contract only — no deadlock)
 
-IMP-039 (not activated) owns production realization of:
+IMP-039 (not activated by this Fit) owns **production cloud mutation** for:
 
 1. Cloudflare zone DNS proxy enablement for public hostnames  
 2. DO Cloud Firewall Cloudflare CIDR allowlists on app ports  
@@ -673,9 +686,29 @@ IMP-039 (not activated) owns production realization of:
 ```text
 IMP039_ACTIVATED: NO
 IMP038_LOCKS_DESIGN: YES
-IMP039_OWNS_PROVISIONING: YES
+IMP039_OWNS_PRODUCTION_CLOUD_MUTATION: YES
+
+ORIGIN_BYPASS_EVIDENCE_SPLIT:
+  IMP038_OWNS:
+    - version-controlled Nginx / AOP / firewall / real_ip contracts
+    - CI/lab/staging negative probes proving the locked trust-chain config rejects direct-origin
+      when applied in an authorized non-production or Founder-staging representation
+    - Acceptance Pack design+lab rows for US-023
+  IMP039_OWNS:
+    - live Cloudflare orange-cloud DNS, live DO firewall apply, live AOP cert install on pilot Droplet
+  IMP038_ACCEPTANCE:
+    - REQUIRES design+lab evidence for the locked trust chain
+    - DOES NOT require IMP-039 activation as a prerequisite
+    - MAY record residual PRODUCTION_REALIZATION_PENDING owned by IMP-039 with Founder-visible
+      Acceptance Pack row + expiry
+  PUBLIC_GTM_IMP040:
+    - FAIL_CLOSED without production realization of the origin-trust chain
+    - prevents launch-with-bypass-theater even if IMP-038 accepted on design+lab evidence
 ```
 
+This split removes the false sequence “IMP-038 acceptance requires live IMP-039 output → IMP-039
+activates only after IMP-038 acceptance.” IMP-038 Fit/lock does **not** activate IMP-039; later
+human gates may authorize IMP-039 when needed for production realization without reopening this Fit.
 ---
 
 # D. Implementation-deferred details
@@ -759,7 +792,7 @@ technical evidence exists.
 | Workforce auth abuse | Existing limits + challenge; enumeration-safe failures; MFA cooldown classified temporary |
 | Step-up | Proof table behaviour; TTL; single-use/action-bound; replay rejected; audits; class allowlist |
 | Trusted client IP | `real_ip` config; hops=1; spoofed CF header ineffective when direct-origin blocked |
-| Origin trust chain | Firewall allowlist + AOP + Full strict proofs (may be IMP-039 provisioning evidence) |
+| Origin trust chain | Design+lab proofs of locked Nginx/AOP/firewall/real_ip contracts (§16.2). Live production mutation evidence is IMP-039-owned; IMP-038 acceptance does **not** require IMP-039 activation; public GTM/IMP-040 fails closed without production realization |
 | BOLA/BFLA | Real-path negatives customer/outlet/territory/org |
 | Payment/webhook | Signature + inbox + 64k + no webhook IP RL; PAN/CVV absence evidence |
 | Secure SDLC | CI green for SAST/SCA/secret/container; SHA-pinned Actions; exception register |
@@ -812,7 +845,7 @@ Do **not** invent DPDP / CERT-In / PCI applicability findings in implementation.
 | Legal windows unknown | Matrices with LEGAL_REVIEW markers; no silent numeric invention |
 | Turnstile UX friction | Limited to escalated auth abuse (`FD-038-21`); checkout default NO |
 | Independent review still PENDING | Lock recorded; independent Architecture Fit review must complete before R3 promotion reliance |
-| AOP/firewall not yet provisioned | Design locked; IMP-039 provisions; until then production bypass resistance unproven |
+| AOP/firewall not yet live-provisioned | Design+lab evidence path unlocked for IMP-038 (§16.2); production realization owned by IMP-039; IMP-040 fail-closed |
 
 ---
 
@@ -870,8 +903,9 @@ Independent Architecture Fit review
   → Independent technical acceptance
   → Founder UAT (exact candidate)
   → IMP-037 acceptance/reconciliation (blocking predecessor)
-  → IMP-038 acceptance reconciliation
-  → IMP-039 activation (separate) for production edge/origin provisioning if not already done under authorized infra work
+  → IMP-038 acceptance reconciliation (design+lab origin-trust evidence sufficient per §16.2;
+      production realization may remain PENDING for IMP-039 / fail-closed at IMP-040)
+  → IMP-039 activation (separate human gate) when production cloud mutation is authorized
 ```
 
 ### 21.4 Founder UAT applicability
