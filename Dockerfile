@@ -41,6 +41,12 @@ ARG BOBA_BUILD_SHA=unversioned-local
 FROM ${NODE_IMAGE} AS base
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
+# Apply available Debian security updates so Trivy image scans see patched
+# OS packages (IMP-038 §15). Unfixed CVEs are handled by --ignore-unfixed.
+USER root
+RUN apt-get update \
+  && DEBIAN_FRONTEND=noninteractive apt-get upgrade -y --no-install-recommends \
+  && rm -rf /var/lib/apt/lists/*
 
 # ── dependencies ─────────────────────────────────────────────────────────
 # Copied and installed before any other repository file so this layer is
@@ -130,10 +136,12 @@ RUN npm run customer-auth:build
 # ── customer-auth-dependencies ───────────────────────────────────────────
 # Production-only install for the customer-auth runtime image — no
 # `typescript`, `tsx`, `vitest`, `playwright`, `eslint`, or other
-# devDependency reaches `customer-auth-runtime`.
+# devDependency reaches `customer-auth-runtime`. Also omit optional
+# peer tooling (e.g. better-auth's optional drizzle-kit/vitest peers)
+# so Go esbuild binaries are not shipped in the runtime image.
 FROM base AS customer-auth-dependencies
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+RUN npm ci --omit=dev --omit=optional
 
 # ── customer-auth-runtime ─────────────────────────────────────────────────
 # Compiled output only — no TypeScript source, no tests, no `tsx`, no
@@ -177,7 +185,7 @@ RUN npm run workforce-auth:build
 # devDependency reaches `workforce-auth-runtime`.
 FROM base AS workforce-auth-dependencies
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+RUN npm ci --omit=dev --omit=optional
 
 # ── workforce-auth-runtime ───────────────────────────────────────────────
 # Compiled output only — no TypeScript source, no tests, no `tsx`, no
@@ -215,7 +223,7 @@ RUN npm run customer-commerce:build
 # ── customer-commerce-dependencies ───────────────────────────────────────
 FROM base AS customer-commerce-dependencies
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+RUN npm ci --omit=dev --omit=optional
 
 # ── customer-commerce-runtime ────────────────────────────────────────────
 # Thin customer ordering transport façade (IMP-024 / D-359). Internal port
@@ -246,7 +254,7 @@ RUN npm run operations:build
 # ── operations-dependencies ──────────────────────────────────────────────
 FROM base AS operations-dependencies
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+RUN npm ci --omit=dev --omit=optional
 
 # ── operations-runtime ───────────────────────────────────────────────────
 # Thin Operations Console API façade (IMP-029 / D-372). Internal port 8084
@@ -279,6 +287,10 @@ ARG BOBA_BUILD_SHA
 # (IMP-038 §8.2). Default committed file omits GA hosts.
 ARG NEXT_PUBLIC_GA_MEASUREMENT_ID=""
 LABEL org.opencontainers.image.revision=${BOBA_BUILD_SHA}
+
+USER root
+# Patch Alpine OS packages in the pinned nginx base (openssl/expat/util-linux).
+RUN apk upgrade --no-cache
 
 RUN rm -f /etc/nginx/conf.d/default.conf
 COPY docker/nginx/nginx.conf /etc/nginx/nginx.conf

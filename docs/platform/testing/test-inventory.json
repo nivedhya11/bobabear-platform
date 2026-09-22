@@ -47,7 +47,7 @@
     "packageCoverageCommands": 1,
     "packageInventoryCommands": 2,
     "ciWorkflowFiles": 4,
-    "ciValidationSteps": 111,
+    "ciValidationSteps": 112,
     "protectedEvidenceTrackedFiles": 3,
     "archiveTrackedFiles": 92
   },
@@ -1132,10 +1132,14 @@
         },
         {
           "name": "Detect container scan paths",
-          "run": "set -euo pipefail\nif [ \"${{ github.event_name }}\" = \"push\" ] && [ \"${{ github.ref }}\" = \"refs/heads/main\" ]; then\necho \"container_scan=true\" >> \"$GITHUB_OUTPUT\"\necho \"container_scan=true (exact-main always runs Trivy)\"\nexit 0\nfi\nnode scripts/ci-container-scan-paths.mjs"
+          "run": "set -euo pipefail\nif [ \"${{ github.event_name }}\" = \"push\" ] && [ \"${{ github.ref }}\" = \"refs/heads/main\" ]; then\necho \"container_scan=true\" >> \"$GITHUB_OUTPUT\"\necho \"container_scan=true (exact-main always runs Trivy image scan)\"\nexit 0\nfi\nnode scripts/ci-container-scan-paths.mjs"
         },
         {
-          "name": "Trivy filesystem scan (CRITICAL,HIGH)",
+          "name": "Ensure rootless Podman socket",
+          "run": "set -euo pipefail\nsocket=\"/run/user/$(id -u)/podman/podman.sock\"\ncommand -v podman\nif [ ! -S \"$socket\" ]; then\nsystemctl --user start podman.socket\nfi\ntest -S \"$socket\"\npodman --version"
+        },
+        {
+          "name": "Trivy production image scan (CRITICAL,HIGH)",
           "run": "npm run audit:container"
         }
       ]

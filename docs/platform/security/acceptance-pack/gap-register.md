@@ -18,10 +18,10 @@ this register.
 | GAP-ORIGIN-LIVE-001 | GAP | Live Cloudflare DNS proxy + DO firewall + AOP cert on pilot Droplet | IMP-039 (provision); Platform ops (accept evidence) | YES for public GTM/IMP-040; **not** for IMP-038 design+lab acceptance | `PRODUCTION_REALIZATION_PENDING`; see origin-trust handoff |
 | GAP-EXT-ASSESS-001 | GAP | Independent external web/API security assessment + Critical/High retest | Founder-commissioned assessor | YES before IMP-038 acceptance | FD-038-18 |
 | GAP-FOUNDER-UAT-001 | GAP | Founder UAT interactive verdict on exact candidate fingerprint | Founder | YES before COMPLETE_AND_ACCEPTED | Agents must not self-declare PASS |
-| GAP-TABLETOP-001 | GAP | Incident / CERT-In readiness tabletop exercise record | Ops lead | Soft for pack completeness | Templates exist in IR pack |
-| GAP-ASSET-INV-001 | GAP | Full asset inventory beyond data-class retention rows | Platform security | Soft | Retention matrix covers data classes only |
-| GAP-DATAFLOW-001 | GAP | Explicit data-flow map artifact | Platform security + privacy | Soft | Do not invent flows; derive from architecture when authored |
-| GAP-SECRETS-REVIEW-001 | GAP | Client-bundle secret allowlist review evidence snapshot | Platform security | Soft | gitleaks gate PASS; allowlist review still owed |
+| GAP-TABLETOP-001 | CLOSED | Incident / CERT-In readiness tabletop exercise record | Ops lead | Soft for pack completeness | [`tabletop-tt-038-001.md`](./tabletop-tt-038-001.md) |
+| GAP-ASSET-INV-001 | CLOSED | Full asset inventory beyond data-class retention rows | Platform security | Soft | [`asset-inventory.md`](./asset-inventory.md) |
+| GAP-DATAFLOW-001 | CLOSED | Explicit data-flow map artifact | Platform security + privacy | Soft | [`data-flow-map.md`](./data-flow-map.md) |
+| GAP-SECRETS-REVIEW-001 | CLOSED | Client-bundle secret allowlist review evidence snapshot | Platform security | Soft | [`client-bundle-secrets-review.md`](./client-bundle-secrets-review.md) |
 | LEGAL-DPDP-001 | LEGAL_REVIEW_REQUIRED | DPDP applicability interpretation | Legal | YES for compliance statements; product locks stand | Topic 1 |
 | LEGAL-RIGHTS-001 | LEGAL_REVIEW_REQUIRED | Launch-blocking rights-handling controls beyond operator-mediated model | Legal + product | Conditional launch block | Topic 2 |
 | LEGAL-RETENTION-001 | LEGAL_REVIEW_REQUIRED | Numeric statutory / operational / security-log retention windows | Legal | YES for numeric claims | Topics 3, 7 |

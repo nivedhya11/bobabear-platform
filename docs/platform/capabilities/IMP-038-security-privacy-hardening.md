@@ -907,20 +907,27 @@ FOUNDER_UAT_STATUS: NOT_PERFORMED
 
 ### 21.2 What has **not** happened
 
-- Product/security tranche implementation (A–F COMPLETE as implementation/evidence; acceptance NOT claimed)  
-- Cloudflare / DO firewall / AOP provisioning (IMP-039)  
-- CI security gates wired as acceptance evidence  
+- IMP-038 implementation complete / PROVE complete / independent technical acceptance  
+- Cloudflare / DO firewall / AOP production provisioning (IMP-039)  
 - Founder UAT  
-- IMP-038 acceptance  
+- IMP-038 formal acceptance  
 - IMP-039 activation  
 - Any DPDP / CERT-In / PCI / ASVS compliance claim  
+- Independent external web/API security assessment (`GAP-EXT-ASSESS-001`)  
+
+```text
+A–F_IMPLEMENTATION_EVIDENCE: COMPLETE
+IMP038_IMPLEMENTATION_COMPLETE: NO
+PROVE_COMPLETE: NO
+INDEPENDENT_TECHNICAL_ACCEPTANCE: NO
+FOUNDER_UAT: NOT_PERFORMED
+IMP038_ACCEPTED: NO
+```
 
 ### 21.3 Gate sequence from here
 
 ```text
-  → Implementation authorization (separate human gate after merge/verification)
-  → IMPLEMENT tranches A–F (§21.5)
-  → PROVE / Acceptance Pack + external assessment
+  → PROVE / Acceptance Pack completion + external assessment
   → Independent technical acceptance
   → Founder UAT (exact candidate)
   → IMP-037 acceptance/reconciliation (blocking predecessor)
@@ -947,12 +954,15 @@ self-declare `FOUNDER_UAT = PASS`.
 | **A** | Nginx headers/CSP; trusted `real_ip`; TRUST_PROXY_HOPS=1 alignment | COMPLETE (CSP Report-Only; enforce deferred until challenge/Maps journey proof) |
 | **B** | Customer + workforce abuse extensions + Turnstile siteverify | COMPLETE (merged; Administration/Ops HTTP proofs updated for enforcement) |
 | **C** | Step-up proof schema + class enforcement + audits | COMPLETE (merged; missing/expired/replay/class-mismatch HTTP negatives retained) |
-| **D** | Secure SDLC CI gates + exception register + domain audit extensions | COMPLETE (CodeQL/SCA/gitleaks/Trivy-binary/Dependabot + SHA-pinned Actions) |
+| **D** | Secure SDLC CI gates + exception register + domain audit extensions | COMPLETE (CodeQL/SCA/gitleaks/Trivy-binary **image** scan/Dependabot + SHA-pinned Actions; image-scan + SCA advisory-level matching remediated post bulk review) |
 | **E** | Threat model / ASVS / privacy-retention / vendor / legal matrices + Acceptance Pack scaffolding | COMPLETE (Acceptance Pack candidate under `docs/platform/security/acceptance-pack/`) |
 | **F** | Origin-trust design verification hooks + IMP-039 interface checklist (no IMP-039 activation) | COMPLETE (design/lab; `PRODUCTION_REALIZATION_PENDING` owner IMP-039) |
 
 ```text
-TRANCHES_EXECUTED: PARTIAL (A–F implementation/evidence COMPLETE; acceptance NOT claimed)
+TRANCHES_A_F_IMPLEMENTATION_EVIDENCE: COMPLETE
+TRANCHES_ACCEPTANCE_CLAIMED: NO
+IMP038_IMPLEMENTATION_COMPLETE: NO
+PROVE_COMPLETE: NO
 ```
 
 ---

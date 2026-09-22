@@ -51,6 +51,21 @@ Dockerfile
 .dockerignore
 compose.yaml
 
+# Test sources are not part of any production runtime image. Excluding them
+# from the build context keeps `next build` / image typecheck from requiring
+# vitest matcher types inside the container (IMP-038 image scan gate).
+**/*.test.ts
+**/*.test.tsx
+**/*.test.mts
+**/*.test.mjs
+**/*.spec.ts
+**/*.spec.tsx
+**/__tests__/
+**/__mocks__/
+vitest.config.*
+vitest.*.config.*
+playwright.config.*
+
 # Historical design archive and any remaining root-level design images — not
 # used by the build, no reason to ship them into the build context. Anchored
 # to the context root (leading "/") so this does NOT also match the real

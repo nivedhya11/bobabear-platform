@@ -6,8 +6,9 @@
 #   actions/upload-artifact@v4.6.2      -> ea165f8d65b6e75b540449e92b4886f43607fa02
 #   github/codeql-action@v3.28.19       -> fca7ace96b7d713c7035871441bd52efbe39e27e
 #   peaceiris/actions-gh-pages@v4.0.0   -> 4f9cc6602d3f66b9c108549d475ec49e8ef4d45e
-# Container scan: scripts/run-trivy.mjs (pinned Trivy binary v0.69.3) — not
-# aquasecurity/trivy-action (2026 Actions tag-compromise advisories).
+# Container scan: scripts/run-trivy.mjs (pinned Trivy binary v0.69.3) builds and
+# scans production runtime images — not aquasecurity/trivy-action (2026 Actions
+# tag-compromise advisories).
 name: CI
 
 on:
@@ -478,8 +479,9 @@ jobs:
       - name: Customer phone-auth audit
         run: npm run audit:customer-phone-auth
 
-  # IMP-038 §15 Secure SDLC — SCA + secrets (+ Trivy when container paths change / always on main).
-  # SAST is CodeQL in .github/workflows/codeql.yml. Does not claim compliance.
+  # IMP-038 §15 Secure SDLC — SCA + secrets (+ Trivy image scan when container
+  # paths change / always on main). SAST is CodeQL in .github/workflows/codeql.yml.
+  # Does not claim compliance.
   security-sdlc:
     name: Security SDLC
     runs-on: ubuntu-latest
@@ -513,11 +515,25 @@ jobs:
           set -euo pipefail
           if [ "${{ github.event_name }}" = "push" ] && [ "${{ github.ref }}" = "refs/heads/main" ]; then
             echo "container_scan=true" >> "$GITHUB_OUTPUT"
-            echo "container_scan=true (exact-main always runs Trivy)"
+            echo "container_scan=true (exact-main always runs Trivy image scan)"
             exit 0
           fi
           node scripts/ci-container-scan-paths.mjs
 
-      - name: Trivy filesystem scan (CRITICAL,HIGH)
+      - name: Ensure rootless Podman socket
         if: steps.container.outputs.container_scan == 'true'
+        run: |
+          set -euo pipefail
+          socket="/run/user/$(id -u)/podman/podman.sock"
+          command -v podman
+          if [ ! -S "$socket" ]; then
+            systemctl --user start podman.socket
+          fi
+          test -S "$socket"
+          podman --version
+
+      - name: Trivy production image scan (CRITICAL,HIGH)
+        if: steps.container.outputs.container_scan == 'true'
+        env:
+          BOBA_TRIVY_CONTAINER_CLI: podman
         run: npm run audit:container

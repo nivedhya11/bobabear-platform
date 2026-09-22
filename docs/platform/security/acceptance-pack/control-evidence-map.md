@@ -26,7 +26,10 @@ Vocabulary for `status`: `PASS` | `GAP` | `N/A_WITH_REASON` | `LEGAL_REVIEW_REQU
 | C-EXC-01 | Vulnerability exceptions with authority + expiry | [`../vulnerability-exception-register.md`](../vulnerability-exception-register.md); `.trivyignore` | PASS (npm empty; VEX-TRIVY-001 DS-0002 ≤30d) | Founder / security |
 | C-ORIGIN-01 | Origin trust chain design + lab probes | [`../origin-trust/README.md`](../origin-trust/README.md); `scripts/origin-trust/` | PRODUCTION_REALIZATION_PENDING (live = IMP-039) | IMP-038 design; IMP-039 live |
 | C-EDGE-01 | Cloudflare Free supplemental edge (WAF/DDoS/Turnstile) | ADR-017; capability §5; vendor register | PRODUCTION_REALIZATION_PENDING | IMP-039 |
-| C-IR-01 | Internal incident response templates | [`incident-response.md`](./incident-response.md) | PARTIAL — templates; tabletop pending | Ops |
+| C-IR-01 | Internal incident response templates + tabletop | [`incident-response.md`](./incident-response.md); [`tabletop-tt-038-001.md`](./tabletop-tt-038-001.md) | PASS (templates + TT-038-001) | Ops |
+| C-ASSET-01 | Explicit asset inventory | [`asset-inventory.md`](./asset-inventory.md) | PASS | Platform security |
+| C-FLOW-01 | Explicit data-flow map | [`data-flow-map.md`](./data-flow-map.md) | PASS | Platform security + privacy |
+| C-SECRET-01 | Client-bundle secret allowlist review | [`client-bundle-secrets-review.md`](./client-bundle-secrets-review.md) | PASS | Platform security |
 | C-PRIV-01 | Operator-mediated privacy; profile delete ≠ erasure | [`dpdp-review-matrix.md`](./dpdp-review-matrix.md); [`privacy-retention-matrix.md`](./privacy-retention-matrix.md) | LEGAL_REVIEW_REQUIRED (applicability) | Privacy + legal |
 | C-RET-01 | Data-class retention matrix structure | [`privacy-retention-matrix.md`](./privacy-retention-matrix.md) | LEGAL_REVIEW_REQUIRED (statutory windows) | Privacy + legal |
 | C-REG-DPDP | DPDP applicability / rights controls | [`dpdp-review-matrix.md`](./dpdp-review-matrix.md) | LEGAL_REVIEW_REQUIRED | Legal |

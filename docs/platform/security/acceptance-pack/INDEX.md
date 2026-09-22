@@ -43,17 +43,22 @@ regulatory compliance, or Founder UAT pass.
 | Auth abuse + step-up evidence | [`auth-abuse-step-up-evidence.md`](./auth-abuse-step-up-evidence.md) | Auth owners | Fail-closed proofs | PRESENT (mapped) |
 | Payment / webhook security evidence | [`payment-webhook-security-evidence.md`](./payment-webhook-security-evidence.md) | Payments | Signature + inbox; no webhook IP RL | PRESENT (mapped) |
 | Secure SDLC evidence | [`secure-sdlc-evidence.md`](./secure-sdlc-evidence.md) | Platform security | CI gates + exception register | PRESENT (Tranche D) |
+| Asset inventory | [`asset-inventory.md`](./asset-inventory.md) | Platform security | Explicit inventory | PRESENT |
+| Data-flow map | [`data-flow-map.md`](./data-flow-map.md) | Platform security + privacy | Architecture-derived | PRESENT |
+| Client-bundle secrets review | [`client-bundle-secrets-review.md`](./client-bundle-secrets-review.md) | Platform security | Allowlist + gates | PRESENT |
 | Incident response pack | [`incident-response.md`](./incident-response.md) | Ops | Internal IR required; external notify = `LEGAL_TRIGGER_DEPENDENT` | PRESENT (templates) |
+| Tabletop exercise | [`tabletop-tt-038-001.md`](./tabletop-tt-038-001.md) | Ops lead | Soft pack completeness | PRESENT (TT-038-001) |
 | Legal review topics (exactly 9) | [`legal-review-topics.md`](./legal-review-topics.md) | Legal + Founder | Open topics only; no invented findings | PRESENT |
 | Origin-trust design + lab (US-023) | [`../origin-trust/README.md`](../origin-trust/README.md) | IMP-038 design/lab; live = IMP-039 | `PRODUCTION_REALIZATION_PENDING` | PRESENT (design+lab; not live) |
 | External assessment report | — | Founder-commissioned | Required before IMP-038 acceptance | **GAP** — see gap-register `GAP-EXT-ASSESS-001` |
+| External assessment briefing (prep only) | [`external-assessment-briefing.md`](./external-assessment-briefing.md) | Platform security | Assessor prep; does **not** close GAP-EXT-ASSESS-001 | PRESENT (briefing only) |
 
 ## US-024 minimum index (crosswalk)
 
 | US-024 entry | Pack artifact / pointer | Status |
 |---|---|---|
-| asset/data inventory | [`privacy-retention-matrix.md`](./privacy-retention-matrix.md) (data classes) + gap `GAP-ASSET-INV-001` for full asset inventory | PARTIAL |
-| data-flow map | gap `GAP-DATAFLOW-001` (structure owed; not invented here) | **GAP** |
+| asset/data inventory | [`asset-inventory.md`](./asset-inventory.md) + [`privacy-retention-matrix.md`](./privacy-retention-matrix.md) | PRESENT |
+| data-flow map | [`data-flow-map.md`](./data-flow-map.md) | PRESENT |
 | threat model (incl. US-015) | [`threat-model.md`](./threat-model.md) + [`business-abuse-evidence.md`](./business-abuse-evidence.md) | PRESENT |
 | DPDP matrix (US-020) | [`dpdp-review-matrix.md`](./dpdp-review-matrix.md) | PRESENT |
 | CERT-In matrix (US-018) | [`cert-in-readiness-matrix.md`](./cert-in-readiness-matrix.md) | PRESENT |
@@ -64,12 +69,12 @@ regulatory compliance, or Founder UAT pass.
 | bot/API/business abuse (US-014/015) | [`business-abuse-evidence.md`](./business-abuse-evidence.md) | PRESENT |
 | edge/origin (US-014/023) | [`../origin-trust/`](../origin-trust/) | Design+lab PRESENT; live PENDING |
 | CSP/header (US-001) | [`csp-header-evidence.md`](./csp-header-evidence.md) | Report-Only PRESENT; enforce PENDING |
-| secrets/crypto evidence | [`secure-sdlc-evidence.md`](./secure-sdlc-evidence.md) (gitleaks + secret minimization notes) | PARTIAL |
+| secrets/crypto evidence | [`client-bundle-secrets-review.md`](./client-bundle-secrets-review.md) + [`secure-sdlc-evidence.md`](./secure-sdlc-evidence.md) (gitleaks) | PRESENT |
 | secure-SDLC (US-006) | [`secure-sdlc-evidence.md`](./secure-sdlc-evidence.md) | PRESENT |
 | vendor/processor/script (US-022) | [`vendor-processor-client-script-register.md`](./vendor-processor-client-script-register.md) | PRESENT |
 | retention/deletion (US-005) | [`privacy-retention-matrix.md`](./privacy-retention-matrix.md) | PRESENT (statutory = LEGAL_REVIEW) |
 | security logging/privacy (US-019) | [`privacy-retention-matrix.md`](./privacy-retention-matrix.md) + IR pack | PARTIAL |
-| incident + tabletop (US-008/018) | [`incident-response.md`](./incident-response.md) | Templates PRESENT; tabletop PENDING |
+| incident + tabletop (US-008/018) | [`incident-response.md`](./incident-response.md) + [`tabletop-tt-038-001.md`](./tabletop-tt-038-001.md) | PRESENT (templates + TT-038-001) |
 | vulnerability/exception (US-016) | [`exception-register.md`](./exception-register.md) | PRESENT |
 | independent assessment (FD-038-18) | gap `GAP-EXT-ASSESS-001` | **GAP** |
 | Critical/High retest/closure | [`gap-register.md`](./gap-register.md) + exception register | PROCESS SCAFFOLD |
