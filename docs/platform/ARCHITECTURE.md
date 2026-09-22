@@ -2,8 +2,9 @@
 {
   "status": "CURRENT",
   "authority": "GLOBAL_ARCHITECTURE",
-  "architectureVersion": "ARCH-R20",
-  "lastReviewed": "2026-09-19"
+  "architectureVersion": "ARCH-R21",
+  "lastReviewed": "2026-09-22",
+  "supersedes": "ARCH-R20"
 }
 -->
 
@@ -145,6 +146,41 @@ Managed PostgreSQL topology is preserved but is not CURRENT pilot-production aut
 
 Business domain authority, HTTP transport, authentication, RBAC, static frontend, commerce
 domains, and accepted service/process boundaries are unchanged by ARCH-R20.
+
+### 3.2 Edge, origin trust, and application-authoritative security (D-375 / ARCH-R21)
+
+CURRENT V1 production ingress trust model (mechanism lock; provisioning interface owned by
+IMP-039; not provisioned by this architecture revision alone):
+
+```text
+EDGE_VENDOR: Cloudflare
+EDGE_PLAN: Free
+EDGE_ROLE: SUPPLEMENTAL_DEFENSE
+APPLICATION_ROLE: AUTHORITATIVE_SECURITY_CONTROL
+
+Internet
+  → Cloudflare proxied DNS / edge (Free Managed Ruleset + DDoS)
+  → optional Turnstile challenge on escalated auth abuse paths
+  → TLS Full (strict) + Authenticated Origin Pulls (zone-level preferred)
+  → DigitalOcean Cloud Firewall (Cloudflare IP allowlist only on public app ports)
+  → BOBA Nginx (CSP + security headers authority; real_ip from CF-Connecting-IP)
+  → internal Compose services (customer-auth / workforce-auth / customer-commerce / operations)
+```
+
+```text
+BOT_FIGHT_MODE: SUPPLEMENTAL_ONLY / NOT_ACCEPTANCE_CRITICAL
+EDGE_RATE_LIMIT: SUPPLEMENTAL (Free plan limits) — auth application limits remain authoritative
+TRUSTED_CLIENT_IP: Nginx real_ip normalization then TRUST_PROXY_HOPS=1
+CSP_AUTHORITY: Nginx on real static+proxy serving path (Next headers() no-op under static export)
+STEP_UP: reuse workforce-auth session + short-lived server-side proofs (no second identity system)
+PERMANENT_ATTACKER_TRIGGERED_LOCKOUT: FORBIDDEN
+BOBA_RAW_PAN_STORAGE: NO
+BOBA_RAW_CVV_STORAGE: NO
+```
+
+Compose host-port exposure used in local development is **not** the production ingress design.
+Capability architecture:
+[`capabilities/IMP-038-security-privacy-hardening.md`](./capabilities/IMP-038-security-privacy-hardening.md).
 
 ## 4. Runtime Topology
 
@@ -469,6 +505,7 @@ Dynamic commerce must remain outside dynamic Next.js execution unless superseded
 | ARCH-G24 | Delivery is the first-class provider-neutral authority for dispatch and delivery-execution truth. Order remains sole commercial lifecycle authority; Operations retains preparation/readiness and operational-handoff authority; Pricing/Checkout historical customer delivery charge remains distinct from Delivery provider cost. Provider observations are evidence, not automatic Delivery or Order truth, and must be normalized, validated, processed idempotently, and handled recoverably. Stable Delivery request/booking identity MUST suppress duplicate logical dispatch, ambiguous external booking outcomes MUST be reconciled before replacement rather than blindly retried, and at most one active booking may exist unless the prior booking has been explicitly reconciled inactive. Provider-specific contracts MUST remain in adapters/evidence boundaries. |
 | ARCH-G25 | Initial Administration API (D-373): workforce administration MUST use the dedicated `/api/admin/v1/*` trust surface hosted on the existing operations process, never customer `/api/v1/*`, the public workforce-auth router, or Operations Console `/api/operations/v1/*` Order routes. A workforce principal MUST be constructed only from a server-validated workforce session and server-loaded eligible identity; caller-supplied roles, permissions, memberships, scopes, organization/outlet/territory authority, pre-authorized flags, or principal-shaped objects are not authority. Existing Access Control and Organization application/domain authorities remain binding; no new permissions/roles and no new deployable admin service are introduced by this invariant. |
 | ARCH-G26 | Cost-optimized pilot infrastructure (D-374): pilot production MUST use a single DigitalOcean Basic Droplet with Docker Engine + Docker Compose, self-hosted PostgreSQL 18 on that Droplet, and DigitalOcean Spaces as mandatory off-host backup destination. Pilot production MUST NOT use Kubernetes/DOKS, k3s, Podman as production runtime, DigitalOcean App Platform, or Managed PostgreSQL. Permanent always-on cloud staging is not required for the pilot. Single-node failure domain is accepted for the pilot; HA and zero-downtime node failure are not promised. Recurring infrastructure cost must not be added without demonstrated operational need, measured capacity need, or explicit Founder approval; first routine scale action is vertical Droplet resize. Managed-provider PITR is not CURRENT; IMP-037 must re-Fit self-managed recovery against ARCH-R20 without claiming RPO/RTO solved by this invariant alone. |
+| ARCH-G27 | Edge / origin trust / application-authoritative security (D-375): V1 production public application traffic MUST traverse the locked Cloudflare Free supplemental edge before reaching the Droplet origin; Authenticated Origin Pulls + Full (strict) TLS + DigitalOcean Cloud Firewall Cloudflare-IP allowlisting MUST prevent trivial direct-origin bypass of intended edge controls on public app ports. Nginx owns CSP and browser security headers on the real static-export serving path. Application auth abuse controls, authorization, and payment/webhook verification remain authoritative even if edge controls are absent or bypassed. Trusted client IP derivation MUST use Nginx `real_ip` from Cloudflare (`CF-Connecting-IP`) with production `TRUST_PROXY_HOPS=1` after XFF replacement. Permanent attacker-triggered account lockout is forbidden. BOBA MUST NOT store or process raw PAN/CVV. Bot Fight Mode and Free edge rate limits are supplemental only. High-consequence workforce/admin mutations require server-enforced step-up proofs that reuse workforce-auth session authority (no second identity system). |
 
 ## 15. Decision References
 
@@ -485,6 +522,7 @@ Dynamic commerce must remain outside dynamic Next.js execution unless superseded
 | Operations Console API workforce-business transport | [D-372](./decision-register.md) (CURRENT architecture lock for dedicated `/api/operations/v1/*`; existing workforce session/principal, permission/scope, and Order authorities remain binding; IMP-029 implementation is not authorized) |
 | Initial Administration API workforce-admin transport | [D-373](./decision-register.md) (CURRENT architecture lock for dedicated `/api/admin/v1/*` on existing operations process; existing workforce session/principal and Access Control / Organization authorities remain binding; no new deployable service) |
 | Cost-optimized pilot infrastructure | [D-374](./decision-register.md); ADR-016; ARCH-G26 (CURRENT pilot production = single Droplet + Compose + self-hosted PostgreSQL 18 + Spaces; App Platform / Managed PostgreSQL / k8s / k3s rejected for pilot) |
+| Edge / origin trust / application-authoritative security | [D-375](./decision-register.md); ADR-017; ARCH-G27 (CURRENT V1 = Cloudflare Free supplemental edge + AOP/Full-strict + DO firewall allowlist + Nginx CSP/real_ip; application controls authoritative; capability lock [`capabilities/IMP-038-security-privacy-hardening.md`](./capabilities/IMP-038-security-privacy-hardening.md); IMP-038 implementation NOT_AUTHORIZED by this architecture alone) |
 | Provider-Neutral Delivery Foundation | ARCH-R18 / ARCH-G24; capability architecture [`capabilities/IMP-031-provider-neutral-delivery-foundation.md`](./capabilities/IMP-031-provider-neutral-delivery-foundation.md) (`ARCHITECTURE_LOCKED`; implementation AUTHORIZED / STARTED / COMPLETE / COMPLETE_AND_ACCEPTED); no new CURRENT decision |
 | V1 production payment provider / collection surface | [D-361](./decision-register.md) (Razorpay / Razorpay Standard Checkout); capability lock [`capabilities/IMP-026-razorpay-productionization.md`](./capabilities/IMP-026-razorpay-productionization.md) |
 | Razorpay webhook acknowledgement / post-payment Order recovery | [D-362](./decision-register.md) (amends D-361 ack/post-payment effect only; D-361 remains CURRENT for provider selection; acknowledgement timing further amended by D-363) |

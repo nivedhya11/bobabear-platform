@@ -29,7 +29,7 @@
 ## Product Definition (APPROVED — Product Definition Gate PASS)
 
 ```text
-CURRENT_READ_AMENDMENT (D-374 / ADR-016 / ARCH-R20 — 2026-09-22; CURRENT tip GTM-R138 / STATE-R136 controlled continuation IMP037_PROVIDER_BLOCKED_TO_IMP038; prior tip GTM-R137 / STATE-R135 post-merge reconciliation; implementation start provenance GTM-R136 / STATE-R134; authorization GTM-R135 / STATE-R133; Fit lock GTM-R134 / STATE-R132):
+CURRENT_READ_AMENDMENT (D-374 / ADR-016 / ARCH-R20 — 2026-09-22; CURRENT tip GTM-R139 / STATE-R137 IMP-038 Architecture Fit PASS / lock; prior tip GTM-R138 / STATE-R136 controlled continuation IMP037_PROVIDER_BLOCKED_TO_IMP038; prior tip GTM-R137 / STATE-R135 post-merge reconciliation; implementation start provenance GTM-R136 / STATE-R134; authorization GTM-R135 / STATE-R133; Fit lock GTM-R134 / STATE-R132):
   Managed DigitalOcean PostgreSQL hosting and provider-managed PITR are no longer CURRENT
   pilot-production infrastructure authority (HISTORICAL under pre-D-374 ADR-013 only).
   Product recovery targets remain binding:
@@ -49,16 +49,19 @@ CURRENT_READ_AMENDMENT (D-374 / ADR-016 / ARCH-R20 — 2026-09-22; CURRENT tip G
     IMP037_IMPLEMENTATION_COMPLETE: NO; IMP037_ACCEPTED: NO;
     PHASE1_BLOCK_STATUS: BLOCKED_PROVIDER_ACCESS;
     PROVIDER_DEPENDENT_PROOF: DEFERRED_PENDING_PROVIDER_ACCESS).
-  GTM-R138 / STATE-R136 records NEW controlled continuation
+  GTM-R139 / STATE-R137 records IMP-038 Architecture Fit PASS / architecture LOCKED
+    (capability IMP-038-security-privacy-hardening.md; D-375 / ADR-017 / ARCH-R21;
+    INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PENDING; implementation NOT_AUTHORIZED).
+  Prior tip GTM-R138 / STATE-R136 recorded NEW controlled continuation
     CONTINUATION_EXCEPTION: IMP037_PROVIDER_BLOCKED_TO_IMP038
     CONTINUATION_EXCEPTION_AUTHORITY: PR#179/5771367844
     HISTORICAL_IMP026_TO_IMP028_CONTINUATION: CLOSED
     IMP037_PROVIDER_BLOCKED_TO_IMP038: YES
-    IMP038_ACTIVATED: YES (Product Definition APPROVED / Gate PASS; PD-IMP-038-DRAFT-2; Fit NOT_PERFORMED)
+    IMP038_ACTIVATED: YES (Product Definition APPROVED / Gate PASS; PD-IMP-038-DRAFT-2;
+      Fit PASS / LOCKED at CURRENT tip; implementation NOT_AUTHORIZED)
     IMP038_ACCEPTANCE_BLOCKED_BY_IMP037: YES
     currentProductSlice: IMP-038; nextProductSlice: IMP-039; acceptedThrough: IMP-036G
-  This does NOT accept IMP-037, complete IMP-037, perform IMP-038 Architecture Fit, lock
-  IMP-038 architecture, authorize IMP-038 implementation, or activate IMP-039.
+  This does NOT accept IMP-037, complete IMP-037, authorize IMP-038 implementation, or activate IMP-039.
   Stories readiness = IMPLEMENTATION_IN_PROGRESS (coding started; stories not complete).
   Locked capability architecture:
     docs/platform/capabilities/IMP-037-backup-restore-migration-readiness.md
@@ -144,13 +147,15 @@ IMP036E_LIFECYCLE_CHANGED = NO
 PD1_DID_NOT_ACTIVATE_IMP036F_AT_ADOPTION = YES
 ```
 
-Lifecycle truth remains ROADMAP/STATE only (CURRENT tip: `GTM-R138` / `STATE-R136` controlled
+Lifecycle truth remains ROADMAP/STATE only (CURRENT tip: `GTM-R139` / `STATE-R137` IMP-038
+Architecture Fit PASS / LOCK; prior tip `GTM-R138` / `STATE-R136` controlled
 continuation `IMP037_PROVIDER_BLOCKED_TO_IMP038`; prior tip `GTM-R137` / `STATE-R135` post-merge
 repository-implementation reconciliation; start provenance `GTM-R136` / `STATE-R134`;
 authorization provenance GTM-R135 / STATE-R133; Product Definition Gate PASS provenance remains
 GTM-R132 / STATE-R130; D-374 provenance GTM-R133 / STATE-R131; Fit/lock provenance GTM-R134 /
 STATE-R132):
-`acceptedThrough = IMP-036G`; `currentProductSlice = IMP-038` (controlled continuation);
+`acceptedThrough = IMP-036G`; `currentProductSlice = IMP-038` (controlled continuation;
+IMP-038 Architecture Fit PASS / LOCKED; implementation NOT_AUTHORIZED);
 `pendingAcceptance = NONE`; `nextProductSlice = IMP-039` (`IMP039_ACTIVATED: NO`);
 `IMP038_ACTIVATED: YES`; `IMP038_ACCEPTANCE_BLOCKED_BY_IMP037: YES`. Formal IMP-037 lifecycle is
 `IMPLEMENTATION_IN_PROGRESS` with `IMP037_ACTIVATED: YES` (unresolved predecessor; provider-blocked).
@@ -168,9 +173,9 @@ NOT_PERFORMED; independent Architecture Fit review PASS).
 | Product Definition version / document status | `PD-IMP-037-DRAFT-1`; **Document status: APPROVED**; **PRE-GATE DRAFT: NO** |
 | Product owner / approval evidence | Founder / product governance human authority; Founder decisions FD-037-01…07 **APPROVED** via `APPROVE_ALL_7_RECOMMENDATIONS` (2026-09-17). Product Definition Gate **PASS** on 2026-09-19 after independent pre-gate review **PASS** of exact candidate head `fccdf7ef606ca906bcdcd706a6de97f693bb88b4` / tree `1477d12b5c5b3b0ccb8d488757516d5b6e637674` (gate-persistence commit is a subsequent revision and is **not** the evaluated artifact). |
 | Process / verification policy | `PD-1` / `TEST-1` |
-| Canonical anchors | VISION-1; ROADMAP GTM-R138 (CURRENT tip; IMP-038 controlled continuation + Product Definition Gate PASS); STATE STATE-R136 (CURRENT tip); ARCH-R20; DR-16; PD-1; TEST-1; PERSONA-1; GJ-1. Locked capability: `capabilities/IMP-037-backup-restore-migration-readiness.md`. Prior tip GTM-R137 / STATE-R135 post-merge; start provenance GTM-R136 / STATE-R134; authorization provenance GTM-R135 / STATE-R133; Fit/lock provenance GTM-R134 / STATE-R132; Gate PASS provenance remains GTM-R132 / STATE-R130 for the evaluated PD candidate. |
+| Canonical anchors | VISION-1; ROADMAP GTM-R139 (CURRENT tip; IMP-038 Architecture Fit PASS / LOCK); STATE STATE-R137 (CURRENT tip); ARCH-R21 / DR-17 (IMP-038 Fit base; pilot ARCH-R20 / DR-16 preserved); PD-1; TEST-1; PERSONA-1; GJ-1. Locked capability: `capabilities/IMP-037-backup-restore-migration-readiness.md`. Prior tip GTM-R138 / STATE-R136 controlled continuation; prior tip GTM-R137 / STATE-R135 post-merge; start provenance GTM-R136 / STATE-R134; authorization provenance GTM-R135 / STATE-R133; Fit/lock provenance GTM-R134 / STATE-R132; Gate PASS provenance remains GTM-R132 / STATE-R130 for the evaluated PD candidate. |
 | Repository candidate | Gate-evaluated candidate: canonical path `/home/ajoshi/repos/boba-bear-platform`; branch `main`; **GATE_EVALUATED_HEAD** `fccdf7ef606ca906bcdcd706a6de97f693bb88b4`; **GATE_EVALUATED_TREE** `1477d12b5c5b3b0ccb8d488757516d5b6e637674`; **GATE_EVALUATED_PRODUCT_DEFINITION_BLOB** `eb792d02dbfede862a0bb104a754d14d875141aa`; **GATE_EVALUATED_WORKING_TREE_FINGERPRINT** `9be2a43fe3881ccd28f169f60209cef3c78c991524e5e9d34a8b657e1b1f0c19` (content-sensitive; reconstructed from clean exact gate-evaluated HEAD/tree via `npm run working-tree:fingerprint`). Historical draft-creation provenance (not the gate-evaluated candidate): base `origin/main` `ee82a8cb783cc618f6f1f521964e72deaad677a0` / tree `1b1eaf138667e65bf4573988d62e176bb8be5949`; draft branch `governance/imp037-pre-gate-product-definition`. Historical pre-activation base: GTM-R130 / STATE-R128 (`6b1f2344d0184e29403b99adfea85c2e5dc8bf9a` / tree `5471ea8f72c635a365e9a78ea1394ec212dcad69`). Activation result: GTM-R131 / STATE-R129. Later merged activated main / Product Definition gate-evaluated candidate: `fccdf7ef606ca906bcdcd706a6de97f693bb88b4` / tree `1477d12b5c5b3b0ccb8d488757516d5b6e637674`. CURRENT_PR_HEAD / GATE_PERSISTENCE_COMMITS differ from the gate-evaluated candidate (`gate-persistence commit != gate-evaluated candidate`) and are **not** the artifact that received Gate PASS. |
-| Capability lifecycle / authorization | ROADMAP/STATE: IMP-037 remains unresolved predecessor `IMPLEMENTATION_IN_PROGRESS` (**IMP037_ACTIVATED: YES**); Product Definition APPROVED; Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation AUTHORIZED / STARTED (PR#171/5743814105; PR#172/5744869269); repository tooling MERGED (PR #174); external recovery proof NOT_PERFORMED; IMP037_ACCEPTED: NO; PHASE1_BLOCK_STATUS: BLOCKED_PROVIDER_ACCESS. Under CONTINUATION_EXCEPTION IMP037_PROVIDER_BLOCKED_TO_IMP038 (PR#179/5771367844), `currentProductSlice = IMP-038` (`IMP038_ACTIVATED: YES`; PD APPROVED / Gate PASS; Fit NOT_PERFORMED; `IMP038_ACCEPTANCE_BLOCKED_BY_IMP037: YES`); `nextProductSlice = IMP-039` (`IMP039_ACTIVATED: NO`). `acceptedThrough` remains IMP-036G. |
+| Capability lifecycle / authorization | ROADMAP/STATE: IMP-037 remains unresolved predecessor `IMPLEMENTATION_IN_PROGRESS` (**IMP037_ACTIVATED: YES**); Product Definition APPROVED; Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation AUTHORIZED / STARTED (PR#171/5743814105; PR#172/5744869269); repository tooling MERGED (PR #174); external recovery proof NOT_PERFORMED; IMP037_ACCEPTED: NO; PHASE1_BLOCK_STATUS: BLOCKED_PROVIDER_ACCESS. Under CONTINUATION_EXCEPTION IMP037_PROVIDER_BLOCKED_TO_IMP038 (PR#179/5771367844), `currentProductSlice = IMP-038` (`IMP038_ACTIVATED: YES`; PD APPROVED / Gate PASS; Fit PASS / LOCKED; independent Architecture Fit review PENDING; implementation NOT_AUTHORIZED; `IMP038_ACCEPTANCE_BLOCKED_BY_IMP037: YES`); `nextProductSlice = IMP-039` (`IMP039_ACTIVATED: NO`). `acceptedThrough` remains IMP-036G. |
 | Relevant capability architecture / ADRs | ADR-001 (AMENDED by D-374 for pilot hosting); ADR-002 (AMENDED by D-374 for pilot production/staging target); ADR-013 (PostgreSQL 18 / Drizzle / migrations preserved; Managed PostgreSQL hosting + provider PITR amended by D-374); ADR-015 (AMENDED by D-374 for pilot secrets storage); ADR-016 / D-374 CURRENT pilot topology; ARCH-R20. Persistence application semantics are **not** reopened; pilot hosting/recovery Fit is. |
 | Founder UAT applicability | `FOUNDER_UAT_REQUIRED = YES`; `FOUNDER_UAT_STATUS = NOT_PERFORMED` — launch-critical, high-consequence recovery capability. UAT must use isolated recovery rehearsal of the exact candidate; **never** the active production/source DB as drill target. |
 
