@@ -31,11 +31,11 @@
     "note": "Protected evidence and generated reports are never classified as executable test source."
   },
   "counts": {
-    "trackedPathsConsidered": 2095,
-    "executableTestFiles": 436,
+    "trackedPathsConsidered": 2101,
+    "executableTestFiles": 437,
     "sourceTestFiles": 134,
     "testsTreeExecutableFiles": 233,
-    "scriptTestFiles": 69,
+    "scriptTestFiles": 70,
     "playwrightSpecs": 12,
     "vitestConfigs": 2,
     "playwrightConfigs": 7,
@@ -488,6 +488,7 @@
     "scripts/recovery/validate/business-integrity.test.mjs",
     "scripts/recovery/validate/isolation.test.mjs",
     "scripts/recovery/validate/recovered-app.test.mjs",
+    "scripts/run-trivy.test.mjs",
     "scripts/serve-static-export.test.mjs",
     "scripts/testing-inventory.test.mjs",
     "scripts/workforce/cli-support.test.mjs",
@@ -2498,6 +2499,23 @@
       "test1Layers": [
         "1-unit",
         "9-recovery-idempotency"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "scripts/run-trivy.test.mjs",
+      "runner": "node:test",
+      "domain": "scripts",
+      "testType": "script-unit",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:scripts"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit"
       ],
       "classificationConfidence": "HEURISTIC"
     },
