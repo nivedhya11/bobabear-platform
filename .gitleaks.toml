@@ -1,0 +1,16 @@
+# IMP-038 §15 — gitleaks config (OSS). Fail closed on real secrets.
+# Allowlist entries are documented false positives only — not a compliance claim.
+title = "BOBA Bear Platform"
+
+[allowlist]
+description = "Non-secret identifiers, test fixtures, and evidence prose"
+paths = [
+  # Intentional fake JWT / token strings used only in unit tests
+  '''(^|/)notifications\.domain\.test\.ts$''',
+]
+regexes = [
+  # Browser sessionStorage key names (not credentials)
+  '''boba\.delivery-(?:pin|context)\.v1''',
+  # GitHub CLI evidence note ("gh secret list: unavailable/empty")
+  '''secret list:\s*unavailable/empty''',
+]

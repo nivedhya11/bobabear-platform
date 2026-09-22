@@ -41,13 +41,13 @@
     "playwrightConfigs": 7,
     "testSupportScripts": 50,
     "packageTestCommands": 80,
-    "packageAuditCommands": 23,
+    "packageAuditCommands": 26,
     "packageE2eCommands": 9,
     "packageCheckCommands": 13,
     "packageCoverageCommands": 1,
     "packageInventoryCommands": 2,
     "ciWorkflowFiles": 3,
-    "ciValidationSteps": 106,
+    "ciValidationSteps": 110,
     "protectedEvidenceTrackedFiles": 3,
     "archiveTrackedFiles": 92
   },
@@ -668,12 +668,15 @@
       "audit:docker",
       "audit:menu-images",
       "audit:menu-import",
+      "audit:npm-sca",
       "audit:order",
       "audit:outbox-idempotency",
       "audit:payment",
       "audit:persistence",
       "audit:pricing-tax",
       "audit:promotions",
+      "audit:secrets",
+      "audit:security-sdlc",
       "audit:serviceability",
       "audit:workforce-auth"
     ],
@@ -728,12 +731,15 @@
     "audit:docker": "node scripts/audit-docker-runtime.mjs",
     "audit:menu-images": "node scripts/audit-menu-images.mjs",
     "audit:menu-import": "node scripts/audit-menu-import.mjs",
+    "audit:npm-sca": "node scripts/audit-npm-sca.mjs",
     "audit:order": "node scripts/audit-order.mjs",
     "audit:outbox-idempotency": "node scripts/audit-outbox-idempotency.mjs",
     "audit:payment": "node scripts/audit-payment.mjs",
     "audit:persistence": "node scripts/audit-persistence.mjs",
     "audit:pricing-tax": "node scripts/audit-pricing-tax.mjs",
     "audit:promotions": "node scripts/audit-promotions.mjs",
+    "audit:secrets": "node scripts/run-gitleaks.mjs",
+    "audit:security-sdlc": "npm run audit:npm-sca && npm run audit:secrets",
     "audit:serviceability": "node scripts/audit-serviceability.mjs",
     "audit:workforce-auth": "node scripts/audit-workforce-auth.mjs",
     "auth:schema:check": "tsx scripts/auth-schema-check.ts",
@@ -1106,6 +1112,22 @@
         {
           "name": "Customer phone-auth audit",
           "run": "npm run audit:customer-phone-auth"
+        },
+        {
+          "name": "Install dependencies",
+          "run": "npm ci"
+        },
+        {
+          "name": "SCA (npm audit high+)",
+          "run": "npm run audit:npm-sca"
+        },
+        {
+          "name": "Secret scan (gitleaks)",
+          "run": "npm run audit:secrets"
+        },
+        {
+          "name": "Detect container scan paths",
+          "run": "set -euo pipefail\nif [ \"${{ github.event_name }}\" = \"push\" ] && [ \"${{ github.ref }}\" = \"refs/heads/main\" ]; then\necho \"container_scan=true\" >> \"$GITHUB_OUTPUT\"\necho \"container_scan=true (exact-main always runs Trivy)\"\nexit 0\nfi\nnode scripts/ci-container-scan-paths.mjs"
         }
       ]
     },

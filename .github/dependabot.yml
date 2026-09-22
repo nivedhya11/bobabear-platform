@@ -1,0 +1,24 @@
+# Dependabot — IMP-038 §15 dependency update automation (free GitHub feature).
+# Does not authorize automatic merges; PRs still require CI + review policy.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 10
+    labels:
+      - dependencies
+      - security-sdlc
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - github-actions
+      - security-sdlc

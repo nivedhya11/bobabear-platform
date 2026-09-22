@@ -1,5 +1,12 @@
 # TEST-1 verification CI for BOBA Bear Platform (Session 3B2).
 # Does not deploy, release, or mutate product lifecycle state.
+# Action pin map (immutable commit SHAs; IMP-038 §15):
+#   actions/checkout@v4.2.2             -> 11bd71901bbe5b1630ceea73d27597364c9af683
+#   actions/setup-node@v4.4.0           -> 49933ea5288caeca8642d1e84afbd3f7d6820020
+#   actions/upload-artifact@v4.6.2      -> ea165f8d65b6e75b540449e92b4886f43607fa02
+#   aquasecurity/trivy-action@v0.30.0   -> 6c175e9c4083a92bbca2f9724c8a5e33bc2d97a5
+#   github/codeql-action@v3.28.19       -> fca7ace96b7d713c7035871441bd52efbe39e27e
+#   peaceiris/actions-gh-pages@v4.0.0   -> 4f9cc6602d3f66b9c108549d475ec49e8ef4d45e
 name: CI
 
 on:
@@ -14,10 +21,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
         with:
           node-version: "22.23.1"
           cache: npm
@@ -48,10 +55,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
         with:
           node-version: "22.23.1"
           cache: npm
@@ -67,12 +74,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
         with:
           fetch-depth: 0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
         with:
           node-version: "22.23.1"
           cache: npm
@@ -88,10 +95,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
         with:
           node-version: "22.23.1"
           cache: npm
@@ -135,10 +142,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
         with:
           node-version: "22.23.1"
           cache: npm
@@ -167,10 +174,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
         with:
           node-version: "22.23.1"
           cache: npm
@@ -189,10 +196,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
         with:
           node-version: "22.23.1"
           cache: npm
@@ -225,10 +232,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
         with:
           node-version: "22.23.1"
           cache: npm
@@ -270,10 +277,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
         with:
           node-version: "22.23.1"
           cache: npm
@@ -312,10 +319,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
         with:
           node-version: "22.23.1"
           cache: npm
@@ -362,7 +369,7 @@ jobs:
       security_sensitive: ${{ steps.detect.outputs.security_sensitive }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
         with:
           fetch-depth: 0
 
@@ -389,10 +396,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
         with:
           node-version: "22.23.1"
           cache: npm
@@ -453,10 +460,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
         with:
           node-version: "22.23.1"
           cache: npm
@@ -469,3 +476,57 @@ jobs:
 
       - name: Customer phone-auth audit
         run: npm run audit:customer-phone-auth
+
+  # IMP-038 §15 Secure SDLC — SCA + secrets (+ Trivy when container paths change / always on main).
+  # SAST is CodeQL in .github/workflows/codeql.yml. Does not claim compliance.
+  security-sdlc:
+    name: Security SDLC
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22.23.1"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: SCA (npm audit high+)
+        run: npm run audit:npm-sca
+
+      - name: Secret scan (gitleaks)
+        run: npm run audit:secrets
+
+      - name: Detect container scan paths
+        id: container
+        env:
+          GITHUB_BASE_SHA: ${{ github.event.pull_request.base.sha || '' }}
+          GITHUB_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "push" ] && [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            echo "container_scan=true" >> "$GITHUB_OUTPUT"
+            echo "container_scan=true (exact-main always runs Trivy)"
+            exit 0
+          fi
+          node scripts/ci-container-scan-paths.mjs
+
+      - name: Trivy filesystem scan (CRITICAL,HIGH)
+        if: steps.container.outputs.container_scan == 'true'
+        uses: aquasecurity/trivy-action@6c175e9c4083a92bbca2f9724c8a5e33bc2d97a5 # v0.30.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          ignore-unfixed: false
+          format: table
+          # JS dependency vulns are owned by audit:npm-sca; Trivy covers Dockerfile/IaC + non-npm FS.
+          skip-dirs: node_modules,.git,.next,out,coverage,.cache,dist-customer-auth,dist-workforce-auth,dist-customer-commerce,dist-operations
+          scanners: vuln,misconfig

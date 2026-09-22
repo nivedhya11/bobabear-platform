@@ -35,6 +35,9 @@
 .DS_Store
 *.pem
 
+# Local tool caches (e.g. pinned gitleaks binary for audit:secrets)
+.cache/
+
 # debug
 npm-debug.log*
 yarn-debug.log*
