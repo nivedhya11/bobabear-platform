@@ -20,6 +20,7 @@ import {
   withRefundReadyHarness,
   type RefundReadyHarness,
 } from "../database/support/refund-fixtures";
+import { headersWithFinancialReversalStepUp } from "../support/workforce-step-up";
 
 type InternalAdapter = { createSession: (userId: string) => Promise<{ token: string }> };
 
@@ -91,7 +92,11 @@ async function withOperationsServer(
   run: (value: {
     request: (path: string, init?: RequestInit) => Promise<Response>;
     adapter: InternalAdapter;
-    headers: (token: string, extra?: HeadersInit) => Promise<HeadersInit>;
+    headers: (token: string, extra?: HeadersInit) => Promise<Record<string, string>>;
+    withFinancialStepUp: (
+      workforceUserId: string,
+      headers: Record<string, string>,
+    ) => Promise<Record<string, string>>;
   }) => Promise<void>,
 ): Promise<void> {
   const runtime = getWorkforceAuthRuntime({
@@ -99,6 +104,7 @@ async function withOperationsServer(
     persistence: applicationConfig(h.connectionString),
   });
   const adapter = await adapterFor(runtime);
+  const stepUpSecret = workforceAuthConfig().workforce.secret;
   const server = createServer((req, res) => {
     void routeOperationsRequest(
       req,
@@ -107,7 +113,7 @@ async function withOperationsServer(
         runtime,
         persistence: h.persistence,
         trustedOrigin: workforceAuthConfig().workforce.baseURL.origin,
-            stepUpSessionHashSecret: workforceAuthConfig().workforce.secret,
+        stepUpSessionHashSecret: stepUpSecret,
       },
       "operations-refund-request",
     );
@@ -125,6 +131,13 @@ async function withOperationsServer(
         "content-type": "application/json",
         ...extra,
       }),
+      withFinancialStepUp: (workforceUserId, headers) =>
+        headersWithFinancialReversalStepUp({
+          persistence: h.persistence,
+          sessionHashSecret: stepUpSecret,
+          workforceUserId,
+          headers,
+        }),
     });
   } finally {
     await new Promise<void>((resolve, reject) =>
@@ -147,7 +160,7 @@ describe("IMP-036D Operations Refund HTTP", () => {
       const kitchenId = await grantScopedUser(h, "kitchen_operator");
       const refundRequestId = randomUUID();
 
-      await withOperationsServer(h, async ({ request, adapter, headers }) => {
+      await withOperationsServer(h, async ({ request, adapter, headers, withFinancialStepUp }) => {
         const kitchenToken = (await adapter.createSession(kitchenId)).token;
         const denied = await request(`/api/operations/v1/orders/${h.order.id}/refunds`, {
           headers: await headers(kitchenToken),
@@ -156,8 +169,9 @@ describe("IMP-036D Operations Refund HTTP", () => {
         expect((await denied.json()).code).toBe("REFUND_UNAUTHORIZED");
 
         const financeToken = (await adapter.createSession(financeId)).token;
+        const financeHeaders = await headers(financeToken);
         const listed = await request(`/api/operations/v1/orders/${h.order.id}/refunds`, {
-          headers: await headers(financeToken),
+          headers: financeHeaders,
         });
         expect(listed.status).toBe(200);
         const listBody = await listed.json();
@@ -167,7 +181,7 @@ describe("IMP-036D Operations Refund HTTP", () => {
 
         const financePost = await request(`/api/operations/v1/orders/${h.order.id}/refunds`, {
           method: "POST",
-          headers: await headers(financeToken),
+          headers: await withFinancialStepUp(financeId, financeHeaders),
           body: JSON.stringify({
             refundRequestId,
             amountPaise: Number(h.grandTotalPaise / BigInt(2)),
@@ -177,9 +191,10 @@ describe("IMP-036D Operations Refund HTTP", () => {
         expect(financePost.status).toBe(403);
 
         const supportToken = (await adapter.createSession(supportId)).token;
+        const supportHeaders = await headers(supportToken);
         const created = await request(`/api/operations/v1/orders/${h.order.id}/refunds`, {
           method: "POST",
-          headers: await headers(supportToken),
+          headers: await withFinancialStepUp(supportId, supportHeaders),
           body: JSON.stringify({
             refundRequestId,
             amountPaise: Number(h.grandTotalPaise / BigInt(2)),
@@ -194,7 +209,7 @@ describe("IMP-036D Operations Refund HTTP", () => {
 
         const reserved = await request(`/api/operations/v1/orders/${h.order.id}/refunds`, {
           method: "POST",
-          headers: await headers(supportToken),
+          headers: await withFinancialStepUp(supportId, supportHeaders),
           body: JSON.stringify({
             refundRequestId,
             amountPaise: Number(h.grandTotalPaise / BigInt(2)),
@@ -217,7 +232,7 @@ describe("IMP-036D Operations Refund HTTP", () => {
 
         const replay = await request(`/api/operations/v1/orders/${h.order.id}/refunds`, {
           method: "POST",
-          headers: await headers(supportToken),
+          headers: await withFinancialStepUp(supportId, supportHeaders),
           body: JSON.stringify({
             refundRequestId,
             amountPaise: Number(h.grandTotalPaise / BigInt(2)),
@@ -229,7 +244,7 @@ describe("IMP-036D Operations Refund HTTP", () => {
 
         const conflict = await request(`/api/operations/v1/orders/${h.order.id}/refunds`, {
           method: "POST",
-          headers: await headers(supportToken),
+          headers: await withFinancialStepUp(supportId, supportHeaders),
           body: JSON.stringify({
             refundRequestId,
             amountPaise: Number(h.grandTotalPaise / BigInt(4)),
@@ -256,11 +271,12 @@ describe("IMP-036D Operations Refund HTTP", () => {
       const supportB = await grantScopedUser(h, "support_refund_operator", "B");
       const refundRequestId = randomUUID();
 
-      await withOperationsServer(h, async ({ request, adapter, headers }) => {
+      await withOperationsServer(h, async ({ request, adapter, headers, withFinancialStepUp }) => {
         const tokenA = (await adapter.createSession(supportA)).token;
+        const headersA = await headers(tokenA);
         const created = await request(`/api/operations/v1/orders/${h.order.id}/refunds`, {
           method: "POST",
-          headers: await headers(tokenA),
+          headers: await withFinancialStepUp(supportA, headersA),
           body: JSON.stringify({
             refundRequestId,
             amountPaise: Number(h.grandTotalPaise / BigInt(2)),
@@ -270,14 +286,15 @@ describe("IMP-036D Operations Refund HTTP", () => {
         expect(created.status).toBe(200);
 
         const tokenB = (await adapter.createSession(supportB)).token;
+        const headersB = await headers(tokenB);
         const listDenied = await request(`/api/operations/v1/orders/${h.order.id}/refunds`, {
-          headers: await headers(tokenB),
+          headers: headersB,
         });
         expect(listDenied.status).toBe(404);
 
         const replayDenied = await request(`/api/operations/v1/orders/${h.order.id}/refunds`, {
           method: "POST",
-          headers: await headers(tokenB),
+          headers: await withFinancialStepUp(supportB, headersB),
           body: JSON.stringify({
             refundRequestId,
             amountPaise: Number(h.grandTotalPaise / BigInt(2)),
@@ -298,7 +315,7 @@ describe("IMP-036D Operations Refund HTTP", () => {
       const refundRequestId = randomUUID();
       const amount = Number(h.grandTotalPaise / BigInt(2));
 
-      await withOperationsServer(h, async ({ request, adapter, headers }) => {
+      await withOperationsServer(h, async ({ request, adapter, headers, withFinancialStepUp }) => {
         const token = (await adapter.createSession(supportId)).token;
         const hdrs = await headers(token);
         const body = JSON.stringify({
@@ -306,15 +323,19 @@ describe("IMP-036D Operations Refund HTTP", () => {
           amountPaise: amount,
           reason: "concurrent refund",
         });
+        const [hdrsA, hdrsB] = await Promise.all([
+          withFinancialStepUp(supportId, hdrs),
+          withFinancialStepUp(supportId, hdrs),
+        ]);
         const [a, b] = await Promise.all([
           request(`/api/operations/v1/orders/${h.order.id}/refunds`, {
             method: "POST",
-            headers: hdrs,
+            headers: hdrsA,
             body,
           }),
           request(`/api/operations/v1/orders/${h.order.id}/refunds`, {
             method: "POST",
-            headers: hdrs,
+            headers: hdrsB,
             body,
           }),
         ]);
@@ -347,11 +368,12 @@ describe("IMP-036D Operations Refund HTTP", () => {
       const reason = "idempotency proof refund";
       const operatorNote = "first note";
 
-      await withOperationsServer(h, async ({ request, adapter, headers }) => {
+      await withOperationsServer(h, async ({ request, adapter, headers, withFinancialStepUp }) => {
         const tokenA = (await adapter.createSession(supportA)).token;
+        const headersA = await headers(tokenA);
         const created = await request(`/api/operations/v1/orders/${h.order.id}/refunds`, {
           method: "POST",
-          headers: await headers(tokenA),
+          headers: await withFinancialStepUp(supportA, headersA),
           body: JSON.stringify({
             refundRequestId,
             amountPaise: amount,
@@ -364,7 +386,7 @@ describe("IMP-036D Operations Refund HTTP", () => {
 
         const exactReplay = await request(`/api/operations/v1/orders/${h.order.id}/refunds`, {
           method: "POST",
-          headers: await headers(tokenA),
+          headers: await withFinancialStepUp(supportA, headersA),
           body: JSON.stringify({
             refundRequestId,
             amountPaise: amount,
@@ -377,7 +399,7 @@ describe("IMP-036D Operations Refund HTTP", () => {
 
         const amountConflict = await request(`/api/operations/v1/orders/${h.order.id}/refunds`, {
           method: "POST",
-          headers: await headers(tokenA),
+          headers: await withFinancialStepUp(supportA, headersA),
           body: JSON.stringify({
             refundRequestId,
             amountPaise: amount + 1,
@@ -390,7 +412,7 @@ describe("IMP-036D Operations Refund HTTP", () => {
 
         const reasonConflict = await request(`/api/operations/v1/orders/${h.order.id}/refunds`, {
           method: "POST",
-          headers: await headers(tokenA),
+          headers: await withFinancialStepUp(supportA, headersA),
           body: JSON.stringify({
             refundRequestId,
             amountPaise: amount,
@@ -403,7 +425,7 @@ describe("IMP-036D Operations Refund HTTP", () => {
 
         const noteConflict = await request(`/api/operations/v1/orders/${h.order.id}/refunds`, {
           method: "POST",
-          headers: await headers(tokenA),
+          headers: await withFinancialStepUp(supportA, headersA),
           body: JSON.stringify({
             refundRequestId,
             amountPaise: amount,
@@ -415,9 +437,10 @@ describe("IMP-036D Operations Refund HTTP", () => {
         expect((await noteConflict.json()).code).toBe("REFUND_IDEMPOTENCY_CONFLICT");
 
         const tokenA2 = (await adapter.createSession(supportA2)).token;
+        const headersA2 = await headers(tokenA2);
         const actorConflict = await request(`/api/operations/v1/orders/${h.order.id}/refunds`, {
           method: "POST",
-          headers: await headers(tokenA2),
+          headers: await withFinancialStepUp(supportA2, headersA2),
           body: JSON.stringify({
             refundRequestId,
             amountPaise: amount,

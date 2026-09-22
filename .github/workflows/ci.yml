@@ -354,9 +354,38 @@ jobs:
       - name: Promotions tests
         run: npm run test:promotions
 
+  # IMP-038: security-sensitive PRs must not merge with Admin/Ops/Auth HTTP suites skipped.
+  detect-security-sensitive:
+    name: Detect security-sensitive paths
+    runs-on: ubuntu-latest
+    outputs:
+      security_sensitive: ${{ steps.detect.outputs.security_sensitive }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect security-sensitive path changes
+        id: detect
+        env:
+          GITHUB_BASE_SHA: ${{ github.event.pull_request.base.sha || '' }}
+          GITHUB_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "push" ] && [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            echo "security_sensitive=true" >> "$GITHUB_OUTPUT"
+            echo "security_sensitive=true (exact-main always runs HTTP surfaces)"
+            exit 0
+          fi
+          node scripts/ci-security-sensitive-paths.mjs
+
   http-surfaces:
     name: HTTP surfaces
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # Exact-main always; PRs when Admin/Ops/Auth/security surfaces change.
+    if: needs.detect-security-sensitive.outputs.security_sensitive == 'true'
+    needs:
+      - detect-security-sensitive
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -389,6 +418,34 @@ jobs:
 
       - name: Administration tests
         run: npm run test:administration
+
+      - name: Operations HTTP tests
+        run: npm run test:operations:http
+
+  # Fail-closed gate: sensitive PR cannot be green if HTTP surfaces were skipped or failed.
+  security-http-gate:
+    name: Security HTTP gate
+    if: always() && github.event_name == 'pull_request'
+    needs:
+      - detect-security-sensitive
+      - http-surfaces
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enforce SECURITY_SENSITIVE_PR_CANNOT_MERGE_WITH_RELEVANT_HTTP_INTEGRATION_SUITE_SKIPPED
+        env:
+          SENSITIVE: ${{ needs.detect-security-sensitive.outputs.security_sensitive }}
+          HTTP_RESULT: ${{ needs.http-surfaces.result }}
+        run: |
+          set -euo pipefail
+          echo "security_sensitive=${SENSITIVE}"
+          echo "http_surfaces_result=${HTTP_RESULT}"
+          if [ "${SENSITIVE}" = "true" ]; then
+            if [ "${HTTP_RESULT}" != "success" ]; then
+              echo "::error::Security-sensitive PR requires http-surfaces success (got ${HTTP_RESULT})."
+              exit 1
+            fi
+          fi
+          echo "Security HTTP gate passed."
 
   audits:
     name: Audits

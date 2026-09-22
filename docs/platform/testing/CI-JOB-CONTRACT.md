@@ -309,21 +309,42 @@ DISPOSITION = IMPLEMENT_IN_3B2
 
 ```text
 JOB_ID = http-surfaces
-TRIGGER = push to main
+TRIGGER = push to main; pull_request when security-sensitive paths change
+  (detect-security-sensitive job + scripts/ci-security-sensitive-paths.mjs;
+   invariant SECURITY_SENSITIVE_PR_CANNOT_MERGE_WITH_RELEVANT_HTTP_INTEGRATION_SUITE_SKIPPED
+   enforced by security-http-gate on pull_request)
 EXACT_COMMANDS =
   npm run test:customer-auth:http
   npm run test:workforce-auth:http
   npm run test:administration
+  npm run test:operations:http
 DB_REQUIREMENT = YES
   (customer-auth:http and workforce-auth:http use vitest.database.config.mts;
    test:administration runs tests/administration then
-   npm run test:database:administration via vitest.database.config.mts)
+   npm run test:database:administration via vitest.database.config.mts;
+   test:operations:http runs store + refunds HTTP integration suites)
 BROWSER_REQUIREMENT = NO
 COST = MEDIUM
 BLOCKING_SEMANTICS = YES
 ARTIFACTS = logs
 FAILURE_BEHAVIOR = fail job; no silent retry
-DISPOSITION = IMPLEMENT_IN_3B2
+DISPOSITION = IMPLEMENT_IN_3B2; IMP-038 PR gate strengthening
+```
+
+### JOB `security-http-gate`
+
+```text
+JOB_ID = security-http-gate
+TRIGGER = pull_request (always() after detect + http-surfaces)
+EXACT_COMMANDS =
+  enforce: if security_sensitive=true then http-surfaces.result must be success
+DB_REQUIREMENT = NO
+BROWSER_REQUIREMENT = NO
+COST = FAST
+BLOCKING_SEMANTICS = YES
+ARTIFACTS = logs
+FAILURE_BEHAVIOR = fail job when sensitive PR skipped/failed HTTP surfaces
+DISPOSITION = IMP-038
 ```
 
 ### JOB `audits`

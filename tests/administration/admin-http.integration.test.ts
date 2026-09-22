@@ -20,6 +20,7 @@ import {
   seedBrandTree,
 } from "../database/support/access-control-fixtures";
 import { applyMigrations, withIsolatedTestDatabase } from "../database/support/test-database";
+import { headersWithAccessMutationStepUp } from "../support/workforce-step-up";
 import { inject } from "vitest";
 
 type InternalAdapter = { createSession: (userId: string) => Promise<{ token: string }> };
@@ -155,15 +156,23 @@ describe("IMP-035 Administration HTTP", () => {
           origin: workforceAuthConfig().workforce.baseURL.origin,
           "content-type": "application/json",
           ...extra,
-        };
+        } as Record<string, string>;
       };
+      const stepUpSecret = workforceAuthConfig().workforce.secret;
+      const withAccessStepUp = (userId: string, headers: Record<string, string>) =>
+        headersWithAccessMutationStepUp({
+          persistence,
+          sessionHashSecret: stepUpSecret,
+          workforceUserId: userId,
+          headers,
+        });
 
       try {
         // unauthorized
         let response = await request("/api/admin/v1/session");
         expect([response.status, (await response.json()).code]).toEqual([401, "WORKFORCE_AUTH_REQUIRED"]);
 
-        // same-origin mutation enforcement
+        // same-origin mutation enforcement (origin fails before step-up)
         const managerHeaders = await headersFor(outletAManager.id);
         response = await request("/api/admin/v1/memberships", {
           method: "POST",
@@ -179,10 +188,25 @@ describe("IMP-035 Administration HTTP", () => {
         });
         expect([response.status, (await response.json()).code]).toEqual([403, "ADMIN_REQUEST_INVALID"]);
 
-        // body/scope forgery denial
+        // missing step-up fails closed before domain validation
         response = await request("/api/admin/v1/memberships", {
           method: "POST",
           headers: managerHeaders,
+          body: JSON.stringify({
+            workforceUserId: subject.id,
+            scopeType: "outlet",
+            brandId: tree.brand.id,
+            organizationId: tree.orgA.id,
+            territoryId: tree.terrA.id,
+            outletId: tree.outletA.id,
+          }),
+        });
+        expect([response.status, (await response.json()).code]).toEqual([401, "STEP_UP_REQUIRED"]);
+
+        // body/scope forgery denial (valid step-up so domain antiforgery remains proven)
+        response = await request("/api/admin/v1/memberships", {
+          method: "POST",
+          headers: await withAccessStepUp(outletAManager.id, managerHeaders),
           body: JSON.stringify({
             workforceUserId: subject.id,
             scopeType: "outlet",
@@ -201,7 +225,7 @@ describe("IMP-035 Administration HTTP", () => {
         // and cannot create membership on outlet B
         response = await request("/api/admin/v1/memberships", {
           method: "POST",
-          headers: managerHeaders,
+          headers: await withAccessStepUp(outletAManager.id, managerHeaders),
           body: JSON.stringify({
             workforceUserId: subject.id,
             scopeType: "outlet",
@@ -216,7 +240,7 @@ describe("IMP-035 Administration HTTP", () => {
         // membership lifecycle authorization (in-scope create + transition)
         response = await request("/api/admin/v1/memberships", {
           method: "POST",
-          headers: managerHeaders,
+          headers: await withAccessStepUp(outletAManager.id, managerHeaders),
           body: JSON.stringify({
             workforceUserId: subject.id,
             scopeType: "outlet",
@@ -233,7 +257,7 @@ describe("IMP-035 Administration HTTP", () => {
 
         response = await request(`/api/admin/v1/memberships/${membershipId}/transition`, {
           method: "POST",
-          headers: managerHeaders,
+          headers: await withAccessStepUp(outletAManager.id, managerHeaders),
           body: JSON.stringify({ toStatus: "active" }),
         });
         expect(response.status).toBe(200);
@@ -242,14 +266,14 @@ describe("IMP-035 Administration HTTP", () => {
         // role grant/revoke + privilege escalation prevention
         response = await request(`/api/admin/v1/memberships/${membershipId}/role-assignments`, {
           method: "POST",
-          headers: managerHeaders,
+          headers: await withAccessStepUp(outletAManager.id, managerHeaders),
           body: JSON.stringify({ roleKey: "platform_super_admin" }),
         });
         expect([response.status, (await response.json()).code]).toEqual([403, "ADMIN_FORBIDDEN"]);
 
         response = await request(`/api/admin/v1/memberships/${membershipId}/role-assignments`, {
           method: "POST",
-          headers: managerHeaders,
+          headers: await withAccessStepUp(outletAManager.id, managerHeaders),
           body: JSON.stringify({ roleKey: "kitchen_operator" }),
         });
         expect(response.status).toBe(200);
@@ -257,7 +281,7 @@ describe("IMP-035 Administration HTTP", () => {
 
         response = await request(`/api/admin/v1/role-assignments/${assignmentId}/revoke`, {
           method: "POST",
-          headers: managerHeaders,
+          headers: await withAccessStepUp(outletAManager.id, managerHeaders),
           body: JSON.stringify({}),
         });
         expect(response.status).toBe(200);
