@@ -357,18 +357,44 @@ OFF_HOST_CUSTODY_EXECUTED: NO
 
 ### Recovered application startup
 
+Historical tranche-2 note (pre-remediation): an earlier candidate recorded
+`LOCAL_RECOVERED_APP_STARTUP: PASS` after fresh-schema migrate + `/health/live`
+only. That classification is **superseded** by the restored-target remediation
+below and must not be treated as qualifying recovered-app proof.
+
 ```text
 LOCAL_RECOVERED_APP_STARTUP: PASS
 QUALIFYING_APP_RECOVERY: NO
+actual_restore: PASS
+  (disposable source PG18 → migrate → seed provenance marker →
+   restricted-role pg_dump -Fc → age → local object store → decrypt →
+   pg_restore → fresh provisioned PG18 target)
+restored_source_marker: PASS
+SOURCE_MARKER_IN_BACKUP: YES
+SOURCE_MARKER_ON_RESTORED_TARGET: YES
+  (app.imp037_restore_provenance seeded BEFORE dump; present on restored
+   target; not created by post-restore migrations)
+post_restore_migration: PASS (existing migrate.ts authority on restored target)
+business_validation: PASS (BUSINESS_INTEGRITY_VALIDATED on same target)
+app_readiness_db_backed: PASS
+provider_suppression: PASS (SUPPRESSED)
+source_untouched: PASS
+  (disposable source container retained + provenance marker verified after
+   backup, restore, target migrations, and application startup — not hard-coded)
+health_live: informational only (/health/live — process liveness; insufficient alone)
+health_ready: PASS (HTTP 200 /health/ready on 127.0.0.1 loopback publish)
+readiness_path: /health/ready
+restored_db_bound: VERIFIED (appDatabaseUrlInternal → restored target only)
+actual_restored_target: YES
 startup: boba-bear-customer-auth:local on run-owned internal network
-health: HTTP 200 /health/live on 127.0.0.1 loopback publish
-restored_db_bound: YES (appDatabaseUrlInternal → recovered target only)
-provider_suppression: SUPPRESSED
-source_untouched: YES
-migrations: existing migrate.ts authority on provisioned target before start
-business_validation: BUSINESS_INTEGRITY_VALIDATED prior to app start
-negatives: ambiguous target / DB unavailable / migration incomplete /
-  production credentials / missing network isolation → refuse (unit)
+prerequisites_fail_closed:
+  databaseAvailable must be exactly true (omit/null → DB_READINESS_UNPROVEN;
+  false → DB_UNAVAILABLE)
+  migrationsComplete must be exactly true (omit/null → MIGRATION_READINESS_UNPROVEN;
+  false → MIGRATION_INCOMPLETE)
+negatives (unit): omitted/false prerequisites; readiness 503; readiness timeout;
+  readiness exception; ambiguous target; production credentials; missing network
+  isolation → refuse; app container cleaned up on readiness failure
 ```
 
 ### Repeatability
@@ -388,6 +414,10 @@ failure_evidence_preserved: YES (prior FAILED.json retained across later success
 - New recovered-app startup module (repository-owned customer-auth candidate)
 - Tranche-2 integration: real PITR named restore point, flock+WAL, repo-gen rotation
 - Layer-1/2 rotation unit proofs; flock callback-failure + secret-scan coverage
+- Remediation (PR #178 review): fail-closed databaseAvailable/migrationsComplete
+  (exact true required); /health/ready persistence-backed readiness before STARTED;
+  recovered-app integration uses actual Layer-2 restored target + provenance marker;
+  source_untouched requires independent post-startup verification (not hard-coded)
 ```
 
 ### Explicit non-claims (preserved)

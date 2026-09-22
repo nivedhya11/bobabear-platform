@@ -3,8 +3,11 @@
  *
  * Starts a repository-owned application runtime bound ONLY to a recovered
  * PostgreSQL target on a run-owned internal network. Fail-closed on missing
- * provider suppression, ambiguous target identity, unavailable DB, incomplete
- * migration readiness, or production provider credentials.
+ * provider suppression, ambiguous target identity, unavailable/unproven DB,
+ * incomplete/unproven migration readiness, or production provider credentials.
+ *
+ * Process liveness alone is insufficient — readiness must succeed against the
+ * restored database before STARTED / restoredDbBound / PASS may be recorded.
  *
  * QUALIFYING_APP_RECOVERY remains NO for local disposable runs — this is not
  * external / Founder UAT proof.
@@ -24,7 +27,11 @@ export const RECOVERED_APP_IMAGE_CANDIDATES = Object.freeze([
   "localhost/boba-bear-customer-auth:local",
 ]);
 
-export const RECOVERED_APP_HEALTH_PATH = "/health/live";
+/** Informational process-liveness path — never sufficient for recovered-app PASS. */
+export const RECOVERED_APP_LIVENESS_PATH = "/health/live";
+
+/** Persistence-backed readiness path required before STARTED / restoredDbBound. */
+export const RECOVERED_APP_READINESS_PATH = "/health/ready";
 
 /**
  * @param {object} options
@@ -36,10 +43,11 @@ export const RECOVERED_APP_HEALTH_PATH = "/health/live";
  * @param {string} [options.containerCli]
  * @param {Function} [options.execFn]
  * @param {Function} [options.fetchFn]
- * @param {boolean} [options.migrationsComplete]
- * @param {boolean} [options.databaseAvailable]
+ * @param {boolean} [options.migrationsComplete] must be exactly true
+ * @param {boolean} [options.databaseAvailable] must be exactly true
  * @param {number} [options.healthTimeoutMs]
  * @param {boolean} [options.skipStart] when true, only evaluate gates (unit seams)
+ * @param {boolean} [options.sourceUntouchedVerified] optional positive source evidence
  */
 export async function startRecoveredApplication(options) {
   const provisioned = options?.provisioned;
@@ -53,12 +61,24 @@ export async function startRecoveredApplication(options) {
   ) {
     return fail("recovered app target identity is ambiguous or mismatched", "TARGET_AMBIGUOUS");
   }
-  if (options.databaseAvailable === false) {
-    return fail("restored database is unavailable; refusing application startup", "DB_UNAVAILABLE");
-  }
-  if (options.migrationsComplete === false) {
-    return fail("post-restore migrations incomplete; refusing application startup", "MIGRATION_INCOMPLETE");
-  }
+
+  const dbGate = requireExactTrue(
+    options.databaseAvailable,
+    "restored database is unavailable; refusing application startup",
+    "DB_UNAVAILABLE",
+    "databaseAvailable must be exactly true; DB readiness unproven",
+    "DB_READINESS_UNPROVEN",
+  );
+  if (dbGate) return dbGate;
+
+  const migrationGate = requireExactTrue(
+    options.migrationsComplete,
+    "post-restore migrations incomplete; refusing application startup",
+    "MIGRATION_INCOMPLETE",
+    "migrationsComplete must be exactly true; migration readiness unproven",
+    "MIGRATION_READINESS_UNPROVEN",
+  );
+  if (migrationGate) return migrationGate;
 
   const appUrlInternal =
     typeof provisioned.appDatabaseUrlInternal === "string" && provisioned.appDatabaseUrlInternal.trim()
@@ -87,14 +107,20 @@ export async function startRecoveredApplication(options) {
   }
 
   if (options.skipStart === true) {
-    return {
+    /** @type {Record<string, unknown>} */
+    const gateResult = {
       ok: true,
       status: "GATES_PASSED",
       providerSuppression: suppression.mode,
       restoredDbBound: true,
       targetIdentity: provisioned.targetIdentity,
+      readinessPath: RECOVERED_APP_READINESS_PATH,
       findings: [{ code: "RECOVERED_APP_GATES_OK", skipStart: true }],
     };
+    if (options.sourceUntouchedVerified === true) {
+      gateResult.sourceUntouched = true;
+    }
+    return gateResult;
   }
 
   const cli = options.containerCli ?? resolveContainerCli();
@@ -170,27 +196,39 @@ export async function startRecoveredApplication(options) {
     return fail("recovered app loopback publish missing", "RECOVERED_APP_HEALTH_UNREACHABLE");
   }
 
-  const healthUrl = `http://127.0.0.1:${hostPort}${RECOVERED_APP_HEALTH_PATH}`;
+  const readinessUrl = `http://127.0.0.1:${hostPort}${RECOVERED_APP_READINESS_PATH}`;
+  const livenessUrl = `http://127.0.0.1:${hostPort}${RECOVERED_APP_LIVENESS_PATH}`;
   const healthTimeoutMs =
     typeof options.healthTimeoutMs === "number" && Number.isFinite(options.healthTimeoutMs)
       ? Math.max(1_000, options.healthTimeoutMs)
       : 60_000;
-  const healthy = await waitForHealth(healthUrl, options.fetchFn, healthTimeoutMs);
-  if (!healthy.ok) {
+  const ready = await waitForReadiness(readinessUrl, options.fetchFn, healthTimeoutMs);
+  if (!ready.ok) {
     cleanupAppContainer(cli, execFn, appContainer);
-    return fail(healthy.reason ?? "recovered app health check failed", "RECOVERED_APP_HEALTH_FAILED");
+    return {
+      ...fail(ready.reason ?? "recovered app readiness check failed", ready.code ?? "RECOVERED_APP_READINESS_FAILED"),
+      readinessPath: RECOVERED_APP_READINESS_PATH,
+      readinessStatus: ready.status ?? null,
+      livenessPath: RECOVERED_APP_LIVENESS_PATH,
+    };
   }
 
-  return {
+  /** @type {Record<string, unknown>} */
+  const started = {
     ok: true,
     status: "STARTED",
     providerSuppression: suppression.mode,
     restoredDbBound: true,
-    sourceUntouched: true,
     targetIdentity: provisioned.targetIdentity,
     appContainerName: appContainer,
-    healthUrl,
-    healthStatus: healthy.status,
+    readinessPath: RECOVERED_APP_READINESS_PATH,
+    readinessStatus: ready.status,
+    readinessUrl,
+    livenessPath: RECOVERED_APP_LIVENESS_PATH,
+    livenessUrl,
+    // Informational alias only — process liveness is not recovery compatibility.
+    healthUrl: readinessUrl,
+    healthStatus: ready.status,
     QUALIFYING_APP_RECOVERY: "NO",
     findings: [
       {
@@ -198,11 +236,29 @@ export async function startRecoveredApplication(options) {
         image,
         networkName: provisioned.networkName,
         loopbackOnly: true,
-        healthPath: RECOVERED_APP_HEALTH_PATH,
+        readinessPath: RECOVERED_APP_READINESS_PATH,
+        livenessPath: RECOVERED_APP_LIVENESS_PATH,
       },
     ],
     cleanup: () => cleanupAppContainer(cli, execFn, appContainer),
   };
+  if (options.sourceUntouchedVerified === true) {
+    started.sourceUntouched = true;
+  }
+  return started;
+}
+
+/**
+ * @param {unknown} value
+ * @param {string} falseReason
+ * @param {string} falseCode
+ * @param {string} unprovenReason
+ * @param {string} unprovenCode
+ */
+function requireExactTrue(value, falseReason, falseCode, unprovenReason, unprovenCode) {
+  if (value === true) return null;
+  if (value === false) return fail(falseReason, falseCode);
+  return fail(unprovenReason, unprovenCode);
 }
 
 /**
@@ -260,30 +316,65 @@ function resolvePublishedPort(cli, execFn, containerName, containerPort) {
 }
 
 /**
+ * Poll persistence-backed readiness. Non-OK HTTP (including 503), timeouts, and
+ * request exceptions all fail closed — process liveness alone cannot pass.
+ *
  * @param {string} url
  * @param {Function} [fetchFn]
  * @param {number} timeoutMs
  */
-async function waitForHealth(url, fetchFn, timeoutMs) {
+async function waitForReadiness(url, fetchFn, timeoutMs) {
   const fetchImpl = fetchFn ?? globalThis.fetch;
   if (typeof fetchImpl !== "function") {
-    return { ok: false, reason: "fetch unavailable for recovered app health check" };
+    return {
+      ok: false,
+      reason: "fetch unavailable for recovered app readiness check",
+      code: "RECOVERED_APP_READINESS_FAILED",
+    };
   }
   const deadline = Date.now() + timeoutMs;
-  let lastReason = "health check not attempted";
+  let lastReason = "readiness check not attempted";
+  let lastStatus = null;
+  /** @type {"http" | "exception" | "none"} */
+  let lastKind = "none";
   while (Date.now() < deadline) {
     try {
       const response = await fetchImpl(url, { method: "GET" });
+      lastStatus = response?.status ?? null;
+      lastKind = "http";
       if (response && response.ok) {
         return { ok: true, status: response.status };
       }
-      lastReason = `health returned ${response?.status ?? "unknown"}`;
+      lastReason = `readiness returned ${response?.status ?? "unknown"}`;
     } catch (error) {
+      lastKind = "exception";
+      lastStatus = null;
       lastReason = error instanceof Error ? error.message : String(error);
     }
     await delay(500);
   }
-  return { ok: false, reason: redactText(lastReason) };
+  if (lastKind === "exception") {
+    return {
+      ok: false,
+      reason: redactText(`readiness request exception: ${lastReason}`),
+      status: null,
+      code: "RECOVERED_APP_READINESS_EXCEPTION",
+    };
+  }
+  if (lastKind === "http" && lastStatus === 503) {
+    return {
+      ok: false,
+      reason: redactText(`readiness returned 503 (DB unavailable or persistence incompatible)`),
+      status: 503,
+      code: "RECOVERED_APP_READINESS_UNAVAILABLE",
+    };
+  }
+  return {
+    ok: false,
+    reason: redactText(`readiness timeout after ${timeoutMs}ms: ${lastReason}`),
+    status: lastStatus,
+    code: "RECOVERED_APP_READINESS_TIMEOUT",
+  };
 }
 
 /**

@@ -10,7 +10,8 @@
  *   - real local Layer-1 PITR (named restore point)
  *   - heavy flock contention + WAL continuity while lock held
  *   - Layer-1 NEW_ENCRYPTED_REPOSITORY_GENERATION rotation
- *   - recovered application startup against disposable restored logical target
+ *   - recovered application startup against an *actual* Layer-2 restored target
+ *     (dump → age → restore → migrate → marker proof → /health/ready)
  *   - repeatability across distinct RUN_IDs
  */
 import assert from "node:assert/strict";
@@ -31,16 +32,22 @@ import { setTimeout as delay } from "node:timers/promises";
 import { assertPgbackrestVersion } from "../layer1/config.mjs";
 import { planRepositoryGenerationRotation } from "../layer1/rotation.mjs";
 import { withHeavyOpLock } from "../flock.mjs";
-import { resolveContainerCli } from "../docker-exec.mjs";
+import { DISPOSABLE_POSTGRES_IMAGE, resolveContainerCli } from "../docker-exec.mjs";
 import { waitForPostgresReady } from "../tools/postgres-ready.mjs";
 import { generateRunId } from "../run-id.mjs";
 import { provisionLogicalTarget, cleanupProvisionedTarget } from "../restore/provision.mjs";
-import { runPostRestoreMigrations } from "../migrate/post-restore.mjs";
 import { createExistingMigrationAuthority } from "../migrate/authority.mjs";
-import { runBusinessIntegrityValidation } from "../validate/business-integrity.mjs";
-import { startRecoveredApplication } from "../validate/recovered-app.mjs";
+import { startRecoveredApplication, RECOVERED_APP_READINESS_PATH } from "../validate/recovered-app.mjs";
 import { runPitrRestore } from "../restore/pitr.mjs";
-import { OPERATION_STATUS } from "../constants.mjs";
+import { OPERATION_STATUS, PROOF_CODE } from "../constants.mjs";
+import { createLocalObjectStore } from "../spaces/local.mjs";
+import { runLogicalBackup } from "../layer2/backup.mjs";
+import { runPortabilityRehearsal } from "../portability/rehearse.mjs";
+import { cleanupAgeTools, resolveAgeTools } from "../tools/age-tools.mjs";
+import {
+  FORBIDDEN_PRODUCTION_PROVIDER_ENV_KEYS,
+  assertProductionProviderCredentialsAbsent,
+} from "../validate/isolation.mjs";
 
 const IMAGE_CANDIDATES = ["boba-bear-postgres:local", "localhost/boba-bear-postgres:local"];
 const RESTORE_POINT_NAME = "boba_pitr_marker_a";
@@ -622,7 +629,15 @@ test("local Layer-1 PITR + WAL-during-lock + generation rotation (NOT Spaces)", 
   }
 });
 
-test("recovered application startup against disposable restored target (QUALIFYING_APP_RECOVERY=NO)", async (t) => {
+/**
+ * Actual restored-target recovered-app path (NOT fresh-schema-only).
+ *
+ * Chain: disposable source PG18 → migrate → seed provenance marker → restricted
+ * pg_dump -Fc → age → local store → decrypt → pg_restore → fresh PG18 target →
+ * existing migration authority → business integrity → verify marker on SAME
+ * target → start customer-auth → /health/ready → verify source untouched.
+ */
+test("recovered application startup against actual Layer-2 restored target (QUALIFYING_APP_RECOVERY=NO)", async (t) => {
   if (!heavyEnabled() && process.env.BOBA_RECOVERY_APP_STARTUP !== "1") {
     t.skip("set BOBA_RECOVERY_BUILD_POSTGRES=1, BOBA_RECOVERY_LAYER1_POSIX=1, or BOBA_RECOVERY_APP_STARTUP=1");
     return;
@@ -630,6 +645,11 @@ test("recovered application startup against disposable restored target (QUALIFYI
   const cli = resolveContainerCli();
   if (!cli) {
     t.skip("docker/podman unavailable");
+    return;
+  }
+  const ageTools = resolveAgeTools();
+  if (!ageTools.ok) {
+    t.skip(ageTools.reason);
     return;
   }
   const authImages = ["boba-bear-customer-auth:local", "localhost/boba-bear-customer-auth:local"];
@@ -646,73 +666,286 @@ test("recovered application startup against disposable restored target (QUALIFYI
     return;
   }
 
-  const runId = generateRunId();
-  const evidenceDir = mkdtempSync(path.join(os.tmpdir(), "boba-rec-app-ev-"));
+  const suffix = randomBytes(4).toString("hex");
+  const sourceContainer = `boba-t2-src-${suffix}`;
+  const work = mkdtempSync(path.join(os.tmpdir(), "boba-t2-rec-app-"));
+  const migratorPassword = `mig-${suffix}`;
+  const appPassword = `app-${suffix}`;
+  const logicalPassword = `logical-${suffix}`;
+  const provenanceMarker = `imp037-restore-marker-${suffix}`;
   let provisioned = null;
   let appCleanup = null;
+
+  function execInContainer(name, args, options = {}) {
+    return spawnSync(cli, ["exec", name, ...args], {
+      encoding: options.encoding ?? "utf8",
+      timeout: options.timeout ?? 60_000,
+      maxBuffer: 64 * 1024 * 1024,
+    });
+  }
+
+  function resolvePublishedPort(containerName) {
+    const result = spawnSync(cli, ["port", containerName, "5432"], {
+      encoding: "utf8",
+      timeout: 15_000,
+    });
+    if (result.status !== 0) return null;
+    const match = String(result.stdout ?? "").match(/127\.0\.0\.1:(\d+)/);
+    return match ? Number(match[1]) : null;
+  }
+
+  function queryContainer(containerName, sql) {
+    return execInContainer(containerName, [
+      "psql",
+      "-U",
+      "boba_recovery",
+      "-d",
+      "boba_recovery",
+      "-t",
+      "-A",
+      "-c",
+      sql,
+    ]);
+  }
+
   try {
-    const provisionedResult = await provisionLogicalTarget({
-      runId,
-      sourceIdentity: "disposable-source-app",
-      sourceClassification: "recovery",
-      sourceDatabaseUrl: "postgresql://boba_recovery:x@10.255.255.1:5432/source_only",
-    });
-    assert.equal(provisionedResult.ok, true, provisionedResult.reason);
-    provisioned = provisionedResult.target;
-    assert.ok(provisioned.appDatabaseUrlInternal);
-    assert.ok(provisioned.appDatabaseUrl);
-
-    const migrateFn = createExistingMigrationAuthority({
-      databaseUrl: provisioned.migratorDatabaseUrl,
-    });
-    const migrated = await runPostRestoreMigrations({
-      migrateFn,
-      targetIdentity: provisioned.targetIdentity,
-      sourceAuthoritative: true,
-    });
-    assert.equal(migrated.ok, true, migrated.reason);
-
-    const queryFn = async (sql, params = []) => {
-      let text = sql;
-      for (let i = 0; i < params.length; i += 1) {
-        const value = params[i];
-        const literal =
-          typeof value === "number" ? String(value) : `'${String(value).replaceAll("'", "''")}'`;
-        text = text.replace(`$${i + 1}`, literal);
-      }
-      const result = spawnSync(
+    const run = spawnSync(
+      cli,
+      [
+        "run",
+        "-d",
+        "--name",
+        sourceContainer,
+        "-e",
+        "POSTGRES_PASSWORD=recovery-test-only",
+        "-e",
+        "POSTGRES_USER=boba_recovery",
+        "-e",
+        "POSTGRES_DB=boba_recovery",
+        "-p",
+        "127.0.0.1::5432",
+        DISPOSABLE_POSTGRES_IMAGE,
+      ],
+      { encoding: "utf8", timeout: 180_000 },
+    );
+    if (run.status !== 0) {
+      t.skip(`failed to start source postgres: ${run.stderr || run.stdout}`);
+      return;
+    }
+    assert.equal(
+      waitForPostgresReady({
         cli,
-        [
-          "exec",
-          provisioned.containerName,
-          "psql",
-          "-U",
-          "boba_recovery",
-          "-d",
-          "boba_recovery",
-          "-v",
-          "ON_ERROR_STOP=1",
-          "-t",
-          "-A",
-          "-F",
-          ",",
-          "-c",
-          text,
-        ],
-        { encoding: "utf8", timeout: 60_000 },
-      );
-      if (result.status !== 0) throw new Error(result.stderr || `psql exited ${result.status}`);
-      const lines = String(result.stdout ?? "")
-        .split(/\r?\n/)
-        .map((line) => line.trim())
-        .filter(Boolean);
-      if (lines.length === 0) return [];
-      if (/^\d+$/.test(lines[0])) return [{ count: Number(lines[0]) }];
-      return lines.map((line) => ({ ok: line }));
-    };
+        containerName: sourceContainer,
+        user: "boba_recovery",
+        db: "boba_recovery",
+      }),
+      true,
+    );
+    const sourcePort = resolvePublishedPort(sourceContainer);
+    assert.ok(sourcePort, "source publish must be loopback");
 
-    const validation = await runBusinessIntegrityValidation({ queryFn });
-    assert.equal(validation.ok, true, JSON.stringify(validation.results ?? validation));
+    const bootstrapSql = [
+      `CREATE ROLE boba_bear_migrator WITH LOGIN PASSWORD '${migratorPassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION;`,
+      `CREATE ROLE boba_bear_app WITH LOGIN PASSWORD '${appPassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION;`,
+      `CREATE ROLE boba_bear_logical_backup WITH LOGIN PASSWORD '${logicalPassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION;`,
+      "GRANT CONNECT ON DATABASE boba_recovery TO boba_bear_migrator;",
+      "GRANT CREATE ON DATABASE boba_recovery TO boba_bear_migrator;",
+      "GRANT CONNECT ON DATABASE boba_recovery TO boba_bear_app;",
+      "GRANT CONNECT ON DATABASE boba_recovery TO boba_bear_logical_backup;",
+      "CREATE SCHEMA IF NOT EXISTS app AUTHORIZATION boba_bear_migrator;",
+      "CREATE SCHEMA IF NOT EXISTS drizzle AUTHORIZATION boba_bear_migrator;",
+      "REVOKE ALL ON SCHEMA app FROM PUBLIC;",
+      "REVOKE ALL ON SCHEMA drizzle FROM PUBLIC;",
+      "GRANT USAGE ON SCHEMA app TO boba_bear_app;",
+      "GRANT USAGE ON SCHEMA app TO boba_bear_logical_backup;",
+      "ALTER ROLE boba_bear_migrator IN DATABASE boba_recovery SET search_path = app, public;",
+      "ALTER ROLE boba_bear_app IN DATABASE boba_recovery SET search_path = app, public;",
+      "ALTER DEFAULT PRIVILEGES FOR ROLE boba_bear_migrator IN SCHEMA app GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO boba_bear_app;",
+      "ALTER DEFAULT PRIVILEGES FOR ROLE boba_bear_migrator IN SCHEMA app GRANT SELECT ON TABLES TO boba_bear_logical_backup;",
+      "ALTER DEFAULT PRIVILEGES FOR ROLE boba_bear_migrator IN SCHEMA app GRANT USAGE, SELECT, UPDATE ON SEQUENCES TO boba_bear_app;",
+      "ALTER DEFAULT PRIVILEGES FOR ROLE boba_bear_migrator IN SCHEMA app GRANT SELECT, USAGE ON SEQUENCES TO boba_bear_logical_backup;",
+    ].join("\n");
+    const seed = execInContainer(sourceContainer, [
+      "psql",
+      "-U",
+      "boba_recovery",
+      "-d",
+      "boba_recovery",
+      "-v",
+      "ON_ERROR_STOP=1",
+      "-c",
+      bootstrapSql,
+    ]);
+    assert.equal(seed.status, 0, seed.stderr || seed.stdout);
+
+    const sourceMigratorUrl = `postgresql://boba_bear_migrator:${migratorPassword}@127.0.0.1:${sourcePort}/boba_recovery`;
+    const migrateSource = createExistingMigrationAuthority({
+      databaseUrl: sourceMigratorUrl,
+      env: {
+        ...process.env,
+        BOBA_BEAR_ENV: process.env.BOBA_BEAR_ENV || "local",
+        BOBA_BEAR_PUBLIC_ORIGIN: process.env.BOBA_BEAR_PUBLIC_ORIGIN || "http://localhost:3000",
+        BOBA_BEAR_LOG_LEVEL: process.env.BOBA_BEAR_LOG_LEVEL || "error",
+        BOBA_BEAR_ALLOW_UNSAFE_ADAPTERS: "true",
+        BOBA_BEAR_DATABASE_SSL_MODE: "disable",
+      },
+    });
+    const migratedSource = await migrateSource();
+    assert.equal(migratedSource.ok, true, migratedSource.reason);
+
+    const grants = execInContainer(sourceContainer, [
+      "psql",
+      "-U",
+      "boba_recovery",
+      "-d",
+      "boba_recovery",
+      "-v",
+      "ON_ERROR_STOP=1",
+      "-c",
+      [
+        "GRANT USAGE ON SCHEMA app TO boba_bear_logical_backup;",
+        "GRANT USAGE ON SCHEMA drizzle TO boba_bear_logical_backup;",
+        "GRANT SELECT ON ALL TABLES IN SCHEMA app TO boba_bear_logical_backup;",
+        "GRANT SELECT ON ALL TABLES IN SCHEMA drizzle TO boba_bear_logical_backup;",
+        "GRANT SELECT, USAGE ON ALL SEQUENCES IN SCHEMA app TO boba_bear_logical_backup;",
+        "GRANT SELECT, USAGE ON ALL SEQUENCES IN SCHEMA drizzle TO boba_bear_logical_backup;",
+      ].join("\n"),
+    ]);
+    assert.equal(grants.status, 0, grants.stderr || grants.stdout);
+
+    // Provenance marker seeded BEFORE dump — must travel through backup/restore,
+    // and must NOT be introduced by post-restore migrations. Use app schema so
+    // migrator-owned pg_restore (no CREATE on public in PG15+) can recreate it.
+    const markerSeed = execInContainer(sourceContainer, [
+      "psql",
+      "-U",
+      "boba_recovery",
+      "-d",
+      "boba_recovery",
+      "-v",
+      "ON_ERROR_STOP=1",
+      "-c",
+      [
+        "CREATE TABLE IF NOT EXISTS app.imp037_restore_provenance (",
+        "  marker_id text PRIMARY KEY,",
+        "  seeded_before_dump boolean NOT NULL DEFAULT true",
+        ");",
+        "ALTER TABLE app.imp037_restore_provenance OWNER TO boba_bear_migrator;",
+        `INSERT INTO app.imp037_restore_provenance(marker_id, seeded_before_dump)`,
+        `VALUES ('${provenanceMarker}', true);`,
+        "GRANT SELECT ON TABLE app.imp037_restore_provenance TO boba_bear_logical_backup;",
+      ].join("\n"),
+    ]);
+    assert.equal(markerSeed.status, 0, markerSeed.stderr || markerSeed.stdout);
+
+    const sourceMarkerBefore = queryContainer(
+      sourceContainer,
+      "SELECT marker_id FROM app.imp037_restore_provenance LIMIT 1;",
+    );
+    assert.equal(sourceMarkerBefore.status, 0, sourceMarkerBefore.stderr);
+    assert.equal(String(sourceMarkerBefore.stdout ?? "").trim(), provenanceMarker);
+
+    const dump = execInContainer(
+      sourceContainer,
+      ["pg_dump", "-Fc", "-U", "boba_bear_logical_backup", "boba_recovery"],
+      { encoding: "buffer", timeout: 180_000 },
+    );
+    assert.equal(dump.status, 0, String(dump.stderr ?? ""));
+    const dumpBuffer = Buffer.isBuffer(dump.stdout) ? dump.stdout : Buffer.from(dump.stdout ?? "");
+    assert.ok(dumpBuffer.length > 0);
+
+    const identityPath = path.join(work, "age-identity");
+    const keygen = spawnSync(ageTools.ageKeygenBin, ["-o", identityPath], {
+      encoding: "utf8",
+      timeout: 30_000,
+    });
+    let recipient = `${keygen.stdout ?? ""}\n${keygen.stderr ?? ""}`
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .find((line) => line.startsWith("Public key:") || line.startsWith("age1"));
+    if (recipient?.startsWith("Public key:")) recipient = recipient.replace("Public key:", "").trim();
+    assert.ok(recipient?.startsWith("age1"), `disposable age recipient required: ${keygen.stderr || keygen.stdout}`);
+
+    const storeRoot = path.join(work, "store");
+    const evidenceDir = path.join(work, "evidence");
+    const objectStore = createLocalObjectStore({ localRoot: storeRoot });
+    const backupRunId = generateRunId();
+    const backup = await runLogicalBackup({
+      runId: backupRunId,
+      objectStore,
+      evidenceDir,
+      recipients: [recipient],
+      sourceIdentity: "tranche2-restored-app-source",
+      sourceClassification: "production",
+      candidate: {
+        repositoryPath: "/home/ajoshi/repos/boba-bear-platform",
+        branch: "test",
+        commitSha: "tranche2-restored-app",
+        tree: "tranche2-restored-app",
+      },
+      ageBin: ageTools.ageBin,
+      dumpFn: async () => dumpBuffer,
+    });
+    assert.equal(backup.ok, true, backup.reason);
+
+    const controlledEnv = { ...process.env };
+    for (const key of FORBIDDEN_PRODUCTION_PROVIDER_ENV_KEYS) {
+      delete controlledEnv[key];
+    }
+    delete controlledEnv.BOBA_RECOVERY_ALLOW_LIVE_PROVIDERS;
+    delete controlledEnv.BOBA_PAYMENT_INITIATE;
+    delete controlledEnv.BOBA_NOTIFICATION_INITIATE;
+    controlledEnv.BOBA_BEAR_ENV = process.env.BOBA_BEAR_ENV || "local";
+    controlledEnv.BOBA_BEAR_PUBLIC_ORIGIN = process.env.BOBA_BEAR_PUBLIC_ORIGIN || "http://localhost:3000";
+    controlledEnv.BOBA_BEAR_LOG_LEVEL = process.env.BOBA_BEAR_LOG_LEVEL || "error";
+    controlledEnv.BOBA_BEAR_ALLOW_UNSAFE_ADAPTERS = "true";
+    controlledEnv.BOBA_BEAR_DATABASE_SSL_MODE = "disable";
+
+    const credentialsAbsent = assertProductionProviderCredentialsAbsent(controlledEnv);
+    assert.equal(credentialsAbsent.ok, true, credentialsAbsent.reason);
+
+    const rehearsal = await runPortabilityRehearsal({
+      runIdToRestore: backupRunId,
+      objectStore,
+      identityFile: identityPath,
+      sourceIdentity: "tranche2-restored-app-source",
+      sourceClassification: "production",
+      sourceDatabaseUrl: `postgresql://boba_recovery:recovery-test-only@127.0.0.1:${sourcePort}/boba_recovery`,
+      evidenceDir: path.join(work, "rehearsal-evidence"),
+      ageBin: ageTools.ageBin,
+      provisionTarget: true,
+      retainTarget: true,
+      env: controlledEnv,
+    });
+    assert.equal(rehearsal.ok, true, rehearsal.reason);
+    provisioned = rehearsal.provisioned;
+    assert.ok(provisioned?.appDatabaseUrlInternal, "restored target must expose appDatabaseUrlInternal");
+    assert.equal(provisioned.networkInternalVerified, true);
+    assert.equal(
+      (rehearsal.validation?.results ?? []).some(
+        (entry) => entry.code === PROOF_CODE.BUSINESS_INTEGRITY_VALIDATED && entry.ok,
+      ),
+      true,
+      JSON.stringify(rehearsal.validation?.results ?? [], null, 2),
+    );
+
+    // Positive restore provenance: same marker on restored target (from dump, not migrations).
+    const restoredMarker = queryContainer(
+      provisioned.containerName,
+      "SELECT marker_id FROM app.imp037_restore_provenance LIMIT 1;",
+    );
+    assert.equal(restoredMarker.status, 0, restoredMarker.stderr || restoredMarker.stdout);
+    assert.equal(String(restoredMarker.stdout ?? "").trim(), provenanceMarker);
+
+    // Source still present with expected marker before app start.
+    const sourceInspectPre = spawnSync(cli, ["inspect", sourceContainer], { encoding: "utf8" });
+    assert.equal(sourceInspectPre.status, 0);
+    const sourceMarkerPreApp = queryContainer(
+      sourceContainer,
+      "SELECT marker_id FROM app.imp037_restore_provenance LIMIT 1;",
+    );
+    assert.equal(sourceMarkerPreApp.status, 0);
+    assert.equal(String(sourceMarkerPreApp.stdout ?? "").trim(), provenanceMarker);
 
     const started = await startRecoveredApplication({
       provisioned,
@@ -720,38 +953,68 @@ test("recovered application startup against disposable restored target (QUALIFYI
       migrationsComplete: true,
       databaseAvailable: true,
       image: authImage,
-      env: { BOBA_BEAR_ENV: "local" },
+      env: controlledEnv,
       healthTimeoutMs: 90_000,
+      sourceUntouchedVerified: false,
     });
     assert.equal(started.ok, true, started.reason);
     assert.equal(started.QUALIFYING_APP_RECOVERY, "NO");
     assert.equal(started.restoredDbBound, true);
     assert.equal(started.providerSuppression, "SUPPRESSED");
+    assert.equal(started.readinessPath, RECOVERED_APP_READINESS_PATH);
+    assert.equal(started.readinessStatus, 200);
+    assert.equal(started.sourceUntouched, undefined);
     appCleanup = started.cleanup;
 
-    writeFileSync(
-      path.join(evidenceDir, "recovered-app-result.json"),
-      JSON.stringify(
-        {
-          LOCAL_RECOVERED_APP_STARTUP: "PASS",
-          QUALIFYING_APP_RECOVERY: "NO",
-          health: started.healthStatus,
-          restored_db_bound: true,
-          provider_suppression: started.providerSuppression,
-          source_untouched: true,
-        },
-        null,
-        2,
-      ),
-      "utf8",
+    // Independently verify disposable source remains present and retains marker
+    // after backup, restore, target migrations, and application startup.
+    const sourceInspectPost = spawnSync(cli, ["inspect", sourceContainer], { encoding: "utf8" });
+    assert.equal(sourceInspectPost.status, 0);
+    const sourceMarkerPost = queryContainer(
+      sourceContainer,
+      "SELECT marker_id FROM app.imp037_restore_provenance LIMIT 1;",
     );
-    process.stdout.write(
-      `TRANCHE2_RECOVERED_APP ${readFileSync(path.join(evidenceDir, "recovered-app-result.json"), "utf8")}\n`,
+    assert.equal(sourceMarkerPost.status, 0);
+    assert.equal(String(sourceMarkerPost.stdout ?? "").trim(), provenanceMarker);
+    const sourceUntouched = true;
+
+    // Marker still on restored target after app readiness (same target).
+    const restoredMarkerPost = queryContainer(
+      provisioned.containerName,
+      "SELECT marker_id FROM app.imp037_restore_provenance LIMIT 1;",
     );
+    assert.equal(restoredMarkerPost.status, 0);
+    assert.equal(String(restoredMarkerPost.stdout ?? "").trim(), provenanceMarker);
+
+    const evidencePayload = {
+      LOCAL_RECOVERED_APP_STARTUP: "PASS",
+      QUALIFYING_APP_RECOVERY: "NO",
+      actual_restore: "PASS",
+      restored_source_marker: "PASS",
+      SOURCE_MARKER_IN_BACKUP: "YES",
+      SOURCE_MARKER_ON_RESTORED_TARGET: "YES",
+      post_restore_migration: "PASS",
+      business_validation: "PASS",
+      app_readiness_db_backed: "PASS",
+      provider_suppression: "PASS",
+      source_untouched: sourceUntouched ? "PASS" : "FAIL",
+      health_live: "informational only",
+      health_ready: "PASS",
+      readiness_path: started.readinessPath,
+      readiness_status: started.readinessStatus,
+      restored_db_bound: "VERIFIED",
+      actual_restored_target: "YES",
+      encrypted_artifact: "YES",
+      source_backup_created: "YES",
+    };
+    writeFileSync(path.join(work, "recovered-app-result.json"), JSON.stringify(evidencePayload, null, 2), "utf8");
+    process.stdout.write(`TRANCHE2_RECOVERED_APP ${JSON.stringify(evidencePayload)}\n`);
   } finally {
     if (typeof appCleanup === "function") appCleanup();
     if (provisioned) cleanupProvisionedTarget(provisioned);
-    rmSync(evidenceDir, { recursive: true, force: true });
+    spawnSync(cli, ["rm", "-f", sourceContainer], { encoding: "utf8" });
+    cleanupAgeTools(ageTools.cleanupDir);
+    rmSync(work, { recursive: true, force: true });
   }
 });
 
