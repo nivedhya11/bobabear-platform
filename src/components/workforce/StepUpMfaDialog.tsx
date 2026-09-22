@@ -19,31 +19,26 @@ export type StepUpMfaDialogProps = Readonly<{
   onConfirm: (totpCode: string) => void;
 }>;
 
-/**
- * Collects a TOTP code for IMP-038 step-up re-authentication before
- * high-consequence admin/ops mutations.
- */
-export function StepUpMfaDialog(props: StepUpMfaDialogProps) {
+function StepUpMfaDialogBody(props: Readonly<{
+  title: string;
+  description: string;
+  busy?: boolean;
+  error?: string | null;
+  onCancel: () => void;
+  onConfirm: (totpCode: string) => void;
+}>) {
   const titleId = useId();
   const inputId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
   const restoreFocusRef = useRef<HTMLElement | null>(null);
   const busyRef = useRef(props.busy === true);
   const [code, setCode] = useState("");
-  const title = props.title ?? "Confirm with authenticator";
-  const description =
-    props.description ??
-    "Enter the current code from your authenticator app to continue this privileged action.";
 
   useEffect(() => {
     busyRef.current = props.busy === true;
   }, [props.busy]);
 
   useEffect(() => {
-    if (!props.open) {
-      setCode("");
-      return;
-    }
     restoreFocusRef.current = document.activeElement as HTMLElement | null;
     const dialog = dialogRef.current;
     if (!dialog) return;
@@ -84,9 +79,8 @@ export function StepUpMfaDialog(props: StepUpMfaDialogProps) {
       document.removeEventListener("keydown", onKey);
       restoreFocusRef.current?.focus();
     };
-  }, [props.open, props.onCancel]);
-
-  if (!props.open) return null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- open-scoped focus trap
+  }, []);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
@@ -102,9 +96,9 @@ export function StepUpMfaDialog(props: StepUpMfaDialogProps) {
           id={titleId}
           className="text-lg font-semibold text-[var(--enterprise-fg,#F5F0E8)]"
         >
-          {title}
+          {props.title}
         </h2>
-        <p className="text-sm text-[var(--enterprise-muted,#C9C2B4)]">{description}</p>
+        <p className="text-sm text-[var(--enterprise-muted,#C9C2B4)]">{props.description}</p>
         <label htmlFor={inputId} className="text-sm font-medium text-[var(--enterprise-fg,#F5F0E8)]">
           Authenticator code
         </label>
@@ -154,5 +148,26 @@ export function StepUpMfaDialog(props: StepUpMfaDialogProps) {
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * Collects a TOTP code for IMP-038 step-up re-authentication before
+ * high-consequence admin/ops mutations.
+ */
+export function StepUpMfaDialog(props: StepUpMfaDialogProps) {
+  if (!props.open) return null;
+  return (
+    <StepUpMfaDialogBody
+      title={props.title ?? "Confirm with authenticator"}
+      description={
+        props.description ??
+        "Enter the current code from your authenticator app to continue this privileged action."
+      }
+      busy={props.busy}
+      error={props.error}
+      onCancel={props.onCancel}
+      onConfirm={props.onConfirm}
+    />
   );
 }

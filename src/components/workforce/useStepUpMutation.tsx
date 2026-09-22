@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 
 import { StepUpMfaDialog } from "@/components/workforce/StepUpMfaDialog";
 import { withStepUpProof } from "@/lib/workforce-auth/step-up";
@@ -15,13 +15,12 @@ type PromptState = Readonly<{
  */
 export function useStepUpMutation() {
   const [prompt, setPrompt] = useState<PromptState | null>(null);
-  const promptRef = useRef<PromptState | null>(null);
-  promptRef.current = prompt;
 
   const closePrompt = useCallback((code: string | null) => {
-    const current = promptRef.current;
-    setPrompt(null);
-    current?.resolve(code);
+    setPrompt((current) => {
+      current?.resolve(code);
+      return null;
+    });
   }, []);
 
   const runWithStepUp = useCallback(
