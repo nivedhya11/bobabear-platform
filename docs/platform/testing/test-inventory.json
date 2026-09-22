@@ -31,9 +31,9 @@
     "note": "Protected evidence and generated reports are never classified as executable test source."
   },
   "counts": {
-    "trackedPathsConsidered": 2045,
-    "executableTestFiles": 430,
-    "sourceTestFiles": 133,
+    "trackedPathsConsidered": 2049,
+    "executableTestFiles": 431,
+    "sourceTestFiles": 134,
     "testsTreeExecutableFiles": 232,
     "scriptTestFiles": 65,
     "playwrightSpecs": 12,
@@ -165,6 +165,7 @@
     "src/server/persistence/outbox/validation.test.ts",
     "src/server/refund/replay-authorization.test.ts",
     "src/server/security/step-up/hash.test.ts",
+    "src/server/security/step-up/session-token.test.ts",
     "src/server/security/turnstile/siteverify.test.ts",
     "src/server/workforce-auth/auth-state.test.ts",
     "src/server/workforce-auth/password-policy.test.ts",
@@ -4506,6 +4507,26 @@
     },
     {
       "path": "src/server/security/step-up/hash.test.ts",
+      "runner": "vitest",
+      "domain": "server/security",
+      "testType": "unit-or-domain",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test",
+        "test:coverage"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit",
+        "3-domain-use-case",
+        "7-authorization-security"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "src/server/security/step-up/session-token.test.ts",
       "runner": "vitest",
       "domain": "server/security",
       "testType": "unit-or-domain",

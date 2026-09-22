@@ -153,12 +153,14 @@ export async function consumeWorkforceAuthRateLimit(
 
   const windowStartedAt = windowExpired ? now : new Date(existing!.window_started_at);
   const requestCount = windowExpired ? 1 : Number(existing!.request_count) + 1;
-  let violationCount = windowExpired ? 0 : Number(existing!.violation_count ?? 0);
+  // Preserve violation ladder across expired request windows (customer store
+  // precedent). Resetting to zero on window expiry would permanently stall
+  // progressive cooldown at the first ladder step.
+  let violationCount = existing ? Number(existing.violation_count ?? 0) : 0;
   let blockedUntil: Date | null = null;
-  let challengeRequiredUntil: Date | null =
-    !windowExpired && existing?.challenge_required_until
-      ? new Date(existing.challenge_required_until)
-      : null;
+  let challengeRequiredUntil: Date | null = existing?.challenge_required_until
+    ? new Date(existing.challenge_required_until)
+    : null;
 
   if (challengeRequiredUntil && challengeRequiredUntil.getTime() <= now.getTime()) {
     challengeRequiredUntil = null;

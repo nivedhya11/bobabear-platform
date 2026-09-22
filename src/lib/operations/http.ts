@@ -3,6 +3,7 @@
  *
  * No business rules. No `src/server/**` imports.
  */
+import { WORKFORCE_STEP_UP_PROOF_HEADER } from "@/shared/workforce-auth/contracts";
 import { parseOperationsErrorBody, type OperationsFailure } from "./errors";
 
 const JSON_CONTENT_TYPE = "application/json";
@@ -11,6 +12,8 @@ export type OperationsRequestOptions = Readonly<{
   method?: "GET" | "POST";
   query?: Readonly<Record<string, string | undefined>>;
   body?: Readonly<Record<string, unknown>>;
+  /** IMP-038 single-use step-up proof id for high-consequence mutations. */
+  stepUpProofId?: string;
 }>;
 
 export type OperationsHttpResult<T> =
@@ -45,13 +48,24 @@ export async function operationsRequest<T>(
   options: OperationsRequestOptions = {},
 ): Promise<OperationsHttpResult<T>> {
   const method = options.method ?? "GET";
+  const headers: Record<string, string> = {};
   const init: RequestInit = {
     method,
     credentials: "same-origin",
   };
   if (method === "POST" && options.body !== undefined) {
-    init.headers = { "Content-Type": JSON_CONTENT_TYPE };
-    init.body = JSON.stringify(options.body);
+    headers["Content-Type"] = JSON_CONTENT_TYPE;
+    const body: Record<string, unknown> = { ...options.body };
+    if (typeof options.stepUpProofId === "string" && options.stepUpProofId.length > 0) {
+      body.stepUpProofId = options.stepUpProofId;
+      headers[WORKFORCE_STEP_UP_PROOF_HEADER] = options.stepUpProofId;
+    }
+    init.body = JSON.stringify(body);
+  } else if (typeof options.stepUpProofId === "string" && options.stepUpProofId.length > 0) {
+    headers[WORKFORCE_STEP_UP_PROOF_HEADER] = options.stepUpProofId;
+  }
+  if (Object.keys(headers).length > 0) {
+    init.headers = headers;
   }
 
   let response: Response;

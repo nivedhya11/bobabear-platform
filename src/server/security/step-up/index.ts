@@ -33,6 +33,7 @@ export {
   grantStepUpProof,
   consumeStepUpProof,
   requireStepUpProof,
+  buildStepUpDenyAuditInput,
   type GrantStepUpProofInput,
   type GrantStepUpProofResult,
   type ConsumeStepUpProofInput,

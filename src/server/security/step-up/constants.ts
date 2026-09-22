@@ -3,7 +3,10 @@
  */
 import "server-only";
 
-import { WORKFORCE_STEP_UP_ACTION_CLASSES } from "../../../shared/workforce-auth/contracts";
+import {
+  WORKFORCE_STEP_UP_ACTION_CLASSES,
+  WORKFORCE_STEP_UP_PROOF_HEADER,
+} from "../../../shared/workforce-auth/contracts";
 
 /** TTL within locked 5–15 minute band (capability §11.1). */
 export const STEP_UP_TTL_SECONDS = 600 as const;
@@ -25,7 +28,7 @@ export const STEP_UP_AUDIT_EVENT_TYPES = Object.freeze(["grant", "consume", "den
 export type StepUpAuditEventType = (typeof STEP_UP_AUDIT_EVENT_TYPES)[number];
 
 /** Request header carrying a granted proof id for admin/ops mutations. */
-export const STEP_UP_PROOF_HEADER = "x-boba-step-up-proof" as const;
+export const STEP_UP_PROOF_HEADER = WORKFORCE_STEP_UP_PROOF_HEADER;
 
 export const STEP_UP_SESSION_HASH_DOMAIN = "workforce-step-up-session:v1:" as const;
 

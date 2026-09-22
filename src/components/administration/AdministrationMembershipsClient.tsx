@@ -7,6 +7,7 @@ import { LoadingState } from "@/components/enterprise/LoadingState";
 import { PageHeader } from "@/components/enterprise/PageHeader";
 import { StatusBadge } from "@/components/enterprise/StatusBadge";
 import { Button } from "@/components/ui/Button";
+import { useStepUpMutation } from "@/components/workforce/useStepUpMutation";
 import {
   createAdminMembership,
   listAdministrationMembershipsClient,
@@ -47,6 +48,7 @@ export function AdministrationMembershipsClient() {
   });
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const { runWithStepUp, dialog: stepUpDialog } = useStepUpMutation();
 
   const load = useCallback(async (cursor?: string, append = false) => {
     if (!append) setView({ kind: "loading" });
@@ -83,14 +85,19 @@ export function AdministrationMembershipsClient() {
   async function onCreate() {
     setBusy(true);
     setActionError(null);
-    const result = await createAdminMembership({
-      workforceEmail: form.workforceEmail,
-      scopeType: form.scopeType,
-      brandId: form.brandId || undefined,
-      organizationId: form.organizationId || undefined,
-      territoryId: form.territoryId || undefined,
-      outletId: form.outletId || undefined,
-      status: form.status,
+    const result = await runWithStepUp("CLASS_ACCESS_MUTATION", (proofId) => {
+      const body = {
+        workforceEmail: form.workforceEmail,
+        scopeType: form.scopeType,
+        brandId: form.brandId || undefined,
+        organizationId: form.organizationId || undefined,
+        territoryId: form.territoryId || undefined,
+        outletId: form.outletId || undefined,
+        status: form.status,
+      };
+      return proofId
+        ? createAdminMembership(body, { stepUpProofId: proofId })
+        : createAdminMembership(body);
     });
     setBusy(false);
     if (!result.ok) {
@@ -254,6 +261,7 @@ export function AdministrationMembershipsClient() {
           </Button>
         ) : null}
       </section>
+      {stepUpDialog}
     </div>
   );
 }

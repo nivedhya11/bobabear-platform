@@ -45,12 +45,16 @@ import {
   type WorkforceAuthSessionAuthority,
 } from "../../auth/workforce/trusted-identity";
 import {
+  buildStepUpDenyAuditInput,
   enforceCredentialSecurityStepUp,
   extractWorkforceSessionTokenFromIncomingHeaders,
   grantStepUpProof,
   hashStepUpSessionToken,
   isStepUpActionClass,
   isStepUpError,
+  recordStepUpAudit,
+  StepUpError,
+  STEP_UP_ERROR_CODES,
   type StepUpGrantMethod,
 } from "../../security/step-up";
 import { verifyTurnstileToken, type TurnstileConfig } from "../../security/turnstile";
@@ -792,7 +796,7 @@ async function handleChangePassword(
   const requestHeaders = buildBetterAuthRequestHeaders(req.headers);
   const auth = await deps.getAuth();
   const session = await requireLimitedSession(auth, requestHeaders);
-  if (!session.ok || !session.user.passwordChangeRequired) {
+  if (!session.ok) {
     const body: WorkforceAuthChangePasswordFailure = {
       authenticated: false,
       code: "FORBIDDEN",
@@ -801,10 +805,12 @@ async function handleChangePassword(
     return { operation, safeOutcomeCode: "FORBIDDEN", httpStatus: 403 };
   }
 
+  const forcedPasswordChange = session.user.passwordChangeRequired === true;
+
   // CLASS_CREDENTIAL_SECURITY: required once MFA is established for voluntary
   // password changes. Forced passwordChangeRequired onboarding uses the MFA
   // challenge that just completed as recent-auth (TOTP step-up is redundant).
-  if (session.user.twoFactorEnabled === true && !session.user.passwordChangeRequired) {
+  if (!forcedPasswordChange && session.user.twoFactorEnabled === true) {
     const stepUp = await consumeCredentialSecurityStepUpForRequest(deps, req, {
       proofId: bodyResult.value.stepUpProofId,
       workforceUserId: session.user.id,
@@ -1441,29 +1447,68 @@ async function consumeCredentialSecurityStepUpForRequest(
     }>
 > {
   const sessionToken = extractWorkforceSessionTokenFromIncomingHeaders(req.headers);
+  const now = deps.now();
+  const proofId =
+    typeof input.proofId === "string" && input.proofId.trim().length > 0
+      ? input.proofId.trim()
+      : null;
   if (!sessionToken) {
+    try {
+      await deps.persistence.transaction((tx) =>
+        recordStepUpAudit(
+          tx,
+          buildStepUpDenyAuditInput(
+            {
+              proofId: proofId ?? "",
+              sessionTokenHash: "0".repeat(64),
+              actionClass: "CLASS_CREDENTIAL_SECURITY",
+              now,
+              workforceUserId: input.workforceUserId,
+            },
+            new StepUpError(STEP_UP_ERROR_CODES.STEP_UP_REQUIRED),
+          ),
+        ),
+      );
+    } catch {
+      // ignore audit failure
+    }
     return { ok: false, code: "STEP_UP_REQUIRED", httpStatus: 401 };
   }
   const sessionTokenHash = hashStepUpSessionToken(
     deps.stepUpSessionHashSecret,
     sessionToken,
   );
-  const proofId =
-    typeof input.proofId === "string" && input.proofId.trim().length > 0
-      ? input.proofId.trim()
-      : null;
   try {
     await deps.persistence.transaction((tx) =>
       enforceCredentialSecurityStepUp(tx, {
         proofId,
         sessionTokenHash,
-        now: deps.now(),
+        now,
         workforceUserId: input.workforceUserId,
       }),
     );
     return { ok: true };
   } catch (error) {
     if (isStepUpError(error)) {
+      try {
+        await deps.persistence.transaction((tx) =>
+          recordStepUpAudit(
+            tx,
+            buildStepUpDenyAuditInput(
+              {
+                proofId: proofId ?? "",
+                sessionTokenHash,
+                actionClass: "CLASS_CREDENTIAL_SECURITY",
+                now,
+                workforceUserId: input.workforceUserId,
+              },
+              error,
+            ),
+          ),
+        );
+      } catch {
+        // ignore audit failure
+      }
       return {
         ok: false,
         code: error.code === "STEP_UP_REQUIRED" ? "STEP_UP_REQUIRED" : "STEP_UP_INVALID",

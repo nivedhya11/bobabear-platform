@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
+import { useStepUpMutation } from "@/components/workforce/useStepUpMutation";
 import {
   createAdminMembership,
   listAdminMembershipsFiltered,
@@ -51,6 +52,7 @@ export function StoreTeamMembersClient() {
   const [pending, setPending] = useState(false);
   const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
+  const { runWithStepUp, dialog: stepUpDialog } = useStepUpMutation();
 
   useEffect(() => {
     if (!outletId || staleOutletId) return;
@@ -92,14 +94,19 @@ export function StoreTeamMembersClient() {
     setPending(true);
     setActionError(null);
     announce("Creating membership…");
-    const result = await createAdminMembership({
-      workforceEmail: email,
-      scopeType: "outlet",
-      brandId: selectedOutlet.brandId,
-      organizationId: selectedOutlet.organizationId,
-      territoryId: selectedOutlet.territoryId,
-      outletId: selectedOutlet.id,
-      status: "invited",
+    const result = await runWithStepUp("CLASS_ACCESS_MUTATION", (proofId) => {
+      const body = {
+        workforceEmail: email,
+        scopeType: "outlet" as const,
+        brandId: selectedOutlet.brandId,
+        organizationId: selectedOutlet.organizationId,
+        territoryId: selectedOutlet.territoryId,
+        outletId: selectedOutlet.id,
+        status: "invited",
+      };
+      return proofId
+        ? createAdminMembership(body, { stepUpProofId: proofId })
+        : createAdminMembership(body);
     });
     setPending(false);
     if (!result.ok) {
@@ -118,7 +125,11 @@ export function StoreTeamMembersClient() {
     setPending(true);
     setActionError(null);
     announce("Updating membership…");
-    const result = await transitionMembership(membershipId, toStatus);
+    const result = await runWithStepUp("CLASS_ACCESS_MUTATION", (proofId) =>
+      proofId
+        ? transitionMembership(membershipId, toStatus, { stepUpProofId: proofId })
+        : transitionMembership(membershipId, toStatus),
+    );
     setPending(false);
     if (!result.ok) {
       const message = "Membership status could not be updated.";
@@ -306,6 +317,7 @@ export function StoreTeamMembersClient() {
           }}
         />
       ) : null}
+      {stepUpDialog}
     </div>
   );
 }

@@ -85,6 +85,7 @@ export async function createOrderRefund(
     amountPaise: string;
     reason: string;
     operatorNote?: string;
+    stepUpProofId?: string;
   }>,
 ): Promise<
   OperationsHttpResult<{
@@ -105,6 +106,7 @@ export async function createOrderRefund(
           ? { operatorNote: input.operatorNote }
           : {}),
       },
+      stepUpProofId: input.stepUpProofId,
     },
   );
   if (!result.ok) return result;

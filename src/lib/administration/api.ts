@@ -138,10 +138,11 @@ export function createAdminMembership(
     outletId?: string;
     status?: string;
   }>,
+  options?: Readonly<{ stepUpProofId?: string }>,
 ) {
   return adminRequest<{ ok: true; membership: AdministrationMembership }>(
     "/api/admin/v1/memberships",
-    { method: "POST", body },
+    { method: "POST", body, stepUpProofId: options?.stepUpProofId },
   );
 }
 
@@ -193,24 +194,35 @@ export function listMembershipRoleAssignments(membershipId: string) {
   );
 }
 
-export function transitionMembership(membershipId: string, toStatus: string) {
+export function transitionMembership(
+  membershipId: string,
+  toStatus: string,
+  options?: Readonly<{ stepUpProofId?: string }>,
+) {
   return adminRequest<{ ok: true; membership: Record<string, unknown> }>(
     `/api/admin/v1/memberships/${membershipId}/transition`,
-    { method: "POST", body: { toStatus } },
+    { method: "POST", body: { toStatus }, stepUpProofId: options?.stepUpProofId },
   );
 }
 
-export function grantMembershipRole(membershipId: string, roleKey: string) {
+export function grantMembershipRole(
+  membershipId: string,
+  roleKey: string,
+  options?: Readonly<{ stepUpProofId?: string }>,
+) {
   return adminRequest<{ ok: true; assignment: Record<string, unknown> }>(
     `/api/admin/v1/memberships/${membershipId}/role-assignments`,
-    { method: "POST", body: { roleKey } },
+    { method: "POST", body: { roleKey }, stepUpProofId: options?.stepUpProofId },
   );
 }
 
-export function revokeRoleAssignment(assignmentId: string) {
+export function revokeRoleAssignment(
+  assignmentId: string,
+  options?: Readonly<{ stepUpProofId?: string }>,
+) {
   return adminRequest<{ ok: true; assignment: Record<string, unknown> }>(
     `/api/admin/v1/role-assignments/${assignmentId}/revoke`,
-    { method: "POST", body: {} },
+    { method: "POST", body: {}, stepUpProofId: options?.stepUpProofId },
   );
 }
 

@@ -205,17 +205,10 @@ export async function consumeStepUpProof(
 
   const consumed = updated[0];
   if (!consumed) {
-    const error = await diagnoseConsumeFailure(tx, input);
-    await recordStepUpAudit(tx, {
-      eventType: "deny",
-      actionClass: input.actionClass,
-      workforceUserId: input.workforceUserId ?? "unknown",
-      sessionTokenHash: input.sessionTokenHash,
-      proofId: input.proofId,
-      reasonCode: error.code,
-      now: input.now,
-    });
-    throw error;
+    // Do not record deny inside this transaction — callers that wrap consume
+    // in Persistence.transaction() would roll the deny back on throw.
+    // Wrappers must call persistStepUpDenyAudit after the failed transaction.
+    throw await diagnoseConsumeFailure(tx, input);
   }
 
   await recordStepUpAudit(tx, {
@@ -232,6 +225,10 @@ export async function consumeStepUpProof(
 
 /**
  * Fail-closed wrapper: consume a proof or throw {@link StepUpError}.
+ *
+ * Deny audits are intentionally not written here so they survive when the
+ * surrounding transaction rolls back. Call {@link buildStepUpDenyAuditInput}
+ * + {@link recordStepUpAudit} in a committed transaction after catching.
  */
 export async function requireStepUpProof(
   tx: PersistenceTransactionContext,
@@ -243,22 +240,36 @@ export async function requireStepUpProof(
     typeof input.sessionTokenHash !== "string" ||
     input.sessionTokenHash.length === 0
   ) {
-    await recordStepUpAudit(tx, {
-      eventType: "deny",
-      actionClass: isStepUpActionClass(input.actionClass)
-        ? input.actionClass
-        : "CLASS_ACCESS_MUTATION",
-      workforceUserId: input.workforceUserId ?? "unknown",
-      sessionTokenHash:
-        typeof input.sessionTokenHash === "string" && /^[0-9a-f]{64}$/.test(input.sessionTokenHash)
-          ? input.sessionTokenHash
-          : "0".repeat(64),
-      proofId: typeof input.proofId === "string" ? input.proofId : null,
-      reasonCode: STEP_UP_ERROR_CODES.STEP_UP_REQUIRED,
-      now: input.now instanceof Date && !Number.isNaN(input.now.getTime()) ? input.now : new Date(),
-    }).catch(() => undefined);
     throw new StepUpError(STEP_UP_ERROR_CODES.STEP_UP_REQUIRED);
   }
 
   await consumeStepUpProof(tx, input);
+}
+
+/**
+ * Build a deny-audit payload for a failed step-up consume. Safe to persist
+ * in a separate committed transaction after the consume transaction rolls back.
+ */
+export function buildStepUpDenyAuditInput(
+  input: ConsumeStepUpProofInput,
+  error: StepUpError,
+): Parameters<typeof recordStepUpAudit>[1] {
+  const sessionTokenHash =
+    typeof input.sessionTokenHash === "string" && /^[0-9a-f]{64}$/.test(input.sessionTokenHash)
+      ? input.sessionTokenHash
+      : "0".repeat(64);
+  return {
+    eventType: "deny",
+    actionClass: isStepUpActionClass(input.actionClass)
+      ? input.actionClass
+      : "CLASS_ACCESS_MUTATION",
+    workforceUserId:
+      typeof input.workforceUserId === "string" && input.workforceUserId.length > 0
+        ? input.workforceUserId
+        : "unknown",
+    sessionTokenHash,
+    proofId: typeof input.proofId === "string" ? input.proofId : null,
+    reasonCode: error.code,
+    now: input.now instanceof Date && !Number.isNaN(input.now.getTime()) ? input.now : new Date(),
+  };
 }

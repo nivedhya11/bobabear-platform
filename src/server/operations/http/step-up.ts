@@ -11,14 +11,17 @@ import type { IncomingHttpHeaders } from "node:http";
 import type { WorkforceAuthSecret } from "../../auth/shared/types";
 import type { Persistence } from "../../persistence";
 import {
+  buildStepUpDenyAuditInput,
   enforceAccessMutationStepUp,
   enforceFinancialReversalStepUp,
   extractWorkforceSessionTokenFromIncomingHeaders,
   hashStepUpSessionToken,
   isStepUpError,
+  recordStepUpAudit,
   resolveStepUpProofId,
   StepUpError,
   STEP_UP_ERROR_CODES,
+  type StepUpActionClass,
 } from "../../security/step-up";
 
 export type OpsStepUpDependencies = Readonly<{
@@ -38,6 +41,38 @@ function resolveSessionTokenHash(
   return hashStepUpSessionToken(secret, token);
 }
 
+async function persistDenyAfterRollback(
+  persistence: Persistence,
+  input: Readonly<{
+    proofId: string | null;
+    sessionTokenHash: string;
+    actionClass: StepUpActionClass;
+    now: Date;
+    workforceUserId: string;
+  }>,
+  error: StepUpError,
+): Promise<void> {
+  try {
+    await persistence.transaction((tx) =>
+      recordStepUpAudit(
+        tx,
+        buildStepUpDenyAuditInput(
+          {
+            proofId: input.proofId ?? "",
+            sessionTokenHash: input.sessionTokenHash,
+            actionClass: input.actionClass,
+            now: input.now,
+            workforceUserId: input.workforceUserId,
+          },
+          error,
+        ),
+      ),
+    );
+  } catch {
+    // Audit failure must not mask the authoritative step-up denial.
+  }
+}
+
 /**
  * Require and consume CLASS_ACCESS_MUTATION for admin membership/role mutations.
  */
@@ -48,16 +83,51 @@ export async function consumeAccessMutationStepUpForOpsRequest(
   workforceUserId: string,
 ): Promise<void> {
   const proofId = resolveStepUpProofId({ headers, body: body ?? undefined });
-  const sessionTokenHash = resolveSessionTokenHash(headers, deps.stepUpSessionHashSecret);
+  let sessionTokenHash: string;
+  try {
+    sessionTokenHash = resolveSessionTokenHash(headers, deps.stepUpSessionHashSecret);
+  } catch (error) {
+    if (isStepUpError(error)) {
+      await persistDenyAfterRollback(
+        deps.persistence,
+        {
+          proofId,
+          sessionTokenHash: "0".repeat(64),
+          actionClass: "CLASS_ACCESS_MUTATION",
+          now: deps.now?.() ?? new Date(),
+          workforceUserId,
+        },
+        error,
+      );
+    }
+    throw error;
+  }
   const now = deps.now?.() ?? new Date();
-  await deps.persistence.transaction((tx) =>
-    enforceAccessMutationStepUp(tx, {
-      proofId,
-      sessionTokenHash,
-      now,
-      workforceUserId,
-    }),
-  );
+  try {
+    await deps.persistence.transaction((tx) =>
+      enforceAccessMutationStepUp(tx, {
+        proofId,
+        sessionTokenHash,
+        now,
+        workforceUserId,
+      }),
+    );
+  } catch (error) {
+    if (isStepUpError(error)) {
+      await persistDenyAfterRollback(
+        deps.persistence,
+        {
+          proofId,
+          sessionTokenHash,
+          actionClass: "CLASS_ACCESS_MUTATION",
+          now,
+          workforceUserId,
+        },
+        error,
+      );
+    }
+    throw error;
+  }
 }
 
 /**
@@ -70,16 +140,51 @@ export async function consumeFinancialReversalStepUpForOpsRequest(
   workforceUserId: string,
 ): Promise<void> {
   const proofId = resolveStepUpProofId({ headers, body: body ?? undefined });
-  const sessionTokenHash = resolveSessionTokenHash(headers, deps.stepUpSessionHashSecret);
+  let sessionTokenHash: string;
+  try {
+    sessionTokenHash = resolveSessionTokenHash(headers, deps.stepUpSessionHashSecret);
+  } catch (error) {
+    if (isStepUpError(error)) {
+      await persistDenyAfterRollback(
+        deps.persistence,
+        {
+          proofId,
+          sessionTokenHash: "0".repeat(64),
+          actionClass: "CLASS_FINANCIAL_REVERSAL",
+          now: deps.now?.() ?? new Date(),
+          workforceUserId,
+        },
+        error,
+      );
+    }
+    throw error;
+  }
   const now = deps.now?.() ?? new Date();
-  await deps.persistence.transaction((tx) =>
-    enforceFinancialReversalStepUp(tx, {
-      proofId,
-      sessionTokenHash,
-      now,
-      workforceUserId,
-    }),
-  );
+  try {
+    await deps.persistence.transaction((tx) =>
+      enforceFinancialReversalStepUp(tx, {
+        proofId,
+        sessionTokenHash,
+        now,
+        workforceUserId,
+      }),
+    );
+  } catch (error) {
+    if (isStepUpError(error)) {
+      await persistDenyAfterRollback(
+        deps.persistence,
+        {
+          proofId,
+          sessionTokenHash,
+          actionClass: "CLASS_FINANCIAL_REVERSAL",
+          now,
+          workforceUserId,
+        },
+        error,
+      );
+    }
+    throw error;
+  }
 }
 
 export { isStepUpError, StepUpError, STEP_UP_ERROR_CODES };

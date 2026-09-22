@@ -4,6 +4,7 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { formatPaise } from "@/components/ordering/format-money";
+import { useStepUpMutation } from "@/components/workforce/useStepUpMutation";
 import {
   bindPendingRefundCommand,
   buildPendingRefundCommandFacts,
@@ -51,6 +52,17 @@ function errorMessage(code: string): string {
   if (code === "REFUND_INVALID_INPUT" || code === "REFUND_REASON_REQUIRED") {
     return "Check the refund amount and reason, then try again.";
   }
+  if (
+    code === "STEP_UP_REQUIRED" ||
+    code === "STEP_UP_INVALID" ||
+    code === "STEP_UP_EXPIRED" ||
+    code === "STEP_UP_REPLAY" ||
+    code === "STEP_UP_CLASS_MISMATCH" ||
+    code === "STEP_UP_DENIED" ||
+    code === "MFA_INVALID_CODE"
+  ) {
+    return "Authenticator confirmation is required before this refund can proceed.";
+  }
   if (isAmbiguousRefundTransportFailure(code)) {
     return "The network connection was interrupted before the result was confirmed. Check refund status or retry this same request — do not start a different refund yet.";
   }
@@ -73,6 +85,7 @@ export function OperationsRefundPanel({
   const [statusMessage, setStatusMessage] = useState("");
   const [pendingAmbiguous, setPendingAmbiguous] = useState(false);
   const mountedRef = useRef(true);
+  const { runWithStepUp, dialog: stepUpDialog } = useStepUpMutation();
 
   useEffect(() => {
     mountedRef.current = true;
@@ -224,12 +237,15 @@ export function OperationsRefundPanel({
     const command = bound.command;
     setBusy(true);
     setStatusMessage("Submitting refund…");
-    const result = await createOrderRefund(orderId, {
-      refundRequestId: command.refundRequestId,
-      amountPaise: facts.amountPaise,
-      reason: facts.reason,
-      ...(facts.operatorNote !== null ? { operatorNote: facts.operatorNote } : {}),
-    });
+    const result = await runWithStepUp("CLASS_FINANCIAL_REVERSAL", (proofId) =>
+      createOrderRefund(orderId, {
+        refundRequestId: command.refundRequestId,
+        amountPaise: facts.amountPaise,
+        reason: facts.reason,
+        ...(facts.operatorNote !== null ? { operatorNote: facts.operatorNote } : {}),
+        ...(proofId ? { stepUpProofId: proofId } : {}),
+      }),
+    );
     if (!mountedRef.current) return;
     setBusy(false);
     if (!result.ok) {
@@ -424,6 +440,7 @@ export function OperationsRefundPanel({
           </div>
         </form>
       ) : null}
+      {stepUpDialog}
     </section>
   );
 }

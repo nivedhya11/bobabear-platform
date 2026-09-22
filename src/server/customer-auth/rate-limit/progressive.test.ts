@@ -23,8 +23,22 @@ describe("escalateProgressiveCooldown", () => {
     });
     expect(result.violationCount).toBe(1);
     expect(result.blockedUntil.toISOString()).toBe(WINDOW_END.toISOString());
-    expect(result.challengeRequiredUntil.toISOString()).toBe(
-      result.blockedUntil.toISOString(),
+    // Challenge must linger after cooldown so Siteverify is reachable.
+    expect(result.challengeRequiredUntil.getTime()).toBe(
+      result.blockedUntil.getTime() + 300_000,
+    );
+  });
+
+  it("keeps challengeRequiredUntil after blockedUntil so Turnstile can run", () => {
+    const result = escalateProgressiveCooldown({
+      ladderSeconds: CUSTOMER_OTP_PROGRESSIVE_COOLDOWN_LADDER_SECONDS,
+      previousViolationCount: 1,
+      now: NOW,
+      windowEndsAt: WINDOW_END,
+    });
+    expect(result.blockedUntil.getTime()).toBe(NOW.getTime() + 300_000);
+    expect(result.challengeRequiredUntil.getTime()).toBeGreaterThan(
+      result.blockedUntil.getTime(),
     );
   });
 

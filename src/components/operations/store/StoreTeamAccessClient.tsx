@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
+import { useStepUpMutation } from "@/components/workforce/useStepUpMutation";
 import {
   grantMembershipRole,
   listAdminMembershipsFiltered,
@@ -85,6 +86,7 @@ export function StoreTeamAccessClient() {
   const [pending, setPending] = useState(false);
   const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
+  const { runWithStepUp, dialog: stepUpDialog } = useStepUpMutation();
 
   const membersLoadKey = useMemo(
     () => `${outletId ?? ""}:${reloadToken}`,
@@ -169,7 +171,11 @@ export function StoreTeamAccessClient() {
     setPending(true);
     setActionError(null);
     announce("Granting role…");
-    const result = await grantMembershipRole(membershipId, roleKey);
+    const result = await runWithStepUp("CLASS_ACCESS_MUTATION", (proofId) =>
+      proofId
+        ? grantMembershipRole(membershipId, roleKey, { stepUpProofId: proofId })
+        : grantMembershipRole(membershipId, roleKey),
+    );
     setPending(false);
     if (!result.ok) {
       const message = "Role could not be granted.";
@@ -186,7 +192,11 @@ export function StoreTeamAccessClient() {
     setPending(true);
     setActionError(null);
     announce("Revoking role…");
-    const result = await revokeRoleAssignment(assignmentId);
+    const result = await runWithStepUp("CLASS_ACCESS_MUTATION", (proofId) =>
+      proofId
+        ? revokeRoleAssignment(assignmentId, { stepUpProofId: proofId })
+        : revokeRoleAssignment(assignmentId),
+    );
     setPending(false);
     if (!result.ok) {
       const message = "Role could not be revoked.";
@@ -204,7 +214,11 @@ export function StoreTeamAccessClient() {
     if (!membershipId || !canManageMembership || !selectedBelongsToFilteredSet()) return;
     setPending(true);
     setActionError(null);
-    const result = await transitionMembership(membershipId, toStatus);
+    const result = await runWithStepUp("CLASS_ACCESS_MUTATION", (proofId) =>
+      proofId
+        ? transitionMembership(membershipId, toStatus, { stepUpProofId: proofId })
+        : transitionMembership(membershipId, toStatus),
+    );
     setPending(false);
     if (!result.ok) {
       setActionError("Membership status could not be updated.");
@@ -425,6 +439,7 @@ export function StoreTeamAccessClient() {
           }}
         />
       ) : null}
+      {stepUpDialog}
     </div>
   );
 }

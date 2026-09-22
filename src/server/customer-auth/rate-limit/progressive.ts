@@ -4,6 +4,13 @@
  * Shared ladder semantics for customer OTP and workforce auth rate limits.
  * Never produces a permanent lockout.
  */
+
+/**
+ * Challenge linger after cooldown ends so Turnstile can actually be verified.
+ * Matches Turnstile token TTL band (capability §9 / siteverify short TTL).
+ */
+export const AUTH_ABUSE_CHALLENGE_LINGER_SECONDS = 300 as const;
+
 export function escalateProgressiveCooldown(input: Readonly<{
   ladderSeconds: readonly number[];
   previousViolationCount: number;
@@ -26,10 +33,17 @@ export function escalateProgressiveCooldown(input: Readonly<{
     input.now.getTime() + ladderSeconds * 1000,
   );
   const blockedUntil = new Date(blockedUntilMs);
+  // Challenge must outlive cooldown: while blocked, routers return 429 before
+  // Siteverify; after cooldown lifts, challengeRequiredUntil must still be
+  // future so the next allowed request requires Turnstile.
+  const challengeRequiredUntil = new Date(
+    Math.max(blockedUntil.getTime(), input.now.getTime()) +
+      AUTH_ABUSE_CHALLENGE_LINGER_SECONDS * 1000,
+  );
   return Object.freeze({
     violationCount,
     blockedUntil,
-    challengeRequiredUntil: blockedUntil,
+    challengeRequiredUntil,
   });
 }
 

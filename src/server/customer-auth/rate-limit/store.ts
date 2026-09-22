@@ -199,6 +199,13 @@ export async function consumeCustomerOtpRateLimit(
       priorWindowStartedAt.getTime() + priorWindowSeconds * 1000 <= now.getTime();
 
     if (windowExpired) {
+      const priorChallenge = existing.challenge_required_until
+        ? new Date(existing.challenge_required_until)
+        : null;
+      const activeChallenge =
+        priorChallenge !== null && priorChallenge.getTime() > now.getTime()
+          ? priorChallenge
+          : null;
       await transactionContext.db.execute(sql`
         update ${t}
         set
@@ -206,7 +213,7 @@ export async function consumeCustomerOtpRateLimit(
           window_seconds = ${rule.windowSeconds},
           request_count = 1,
           blocked_until = null,
-          challenge_required_until = null,
+          challenge_required_until = ${activeChallenge},
           updated_at = ${now}
         where ${t.scope} = ${rule.scope}
           and ${t.keyHash} = ${keyHash}
@@ -215,7 +222,7 @@ export async function consumeCustomerOtpRateLimit(
       windowStartedAt = now;
       windowSeconds = rule.windowSeconds;
       violationCount = priorViolationCount;
-      challengeRequiredUntil = null;
+      challengeRequiredUntil = activeChallenge;
     } else {
       const nextCount = Number(existing.request_count) + 1;
       await transactionContext.db.execute(sql`

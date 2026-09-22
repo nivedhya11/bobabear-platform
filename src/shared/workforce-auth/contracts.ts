@@ -205,6 +205,9 @@ export const WORKFORCE_STEP_UP_ACTION_CLASSES = [
 export type WorkforceStepUpActionClass =
   (typeof WORKFORCE_STEP_UP_ACTION_CLASSES)[number];
 
+/** Request header carrying a granted proof id for admin/ops mutations. */
+export const WORKFORCE_STEP_UP_PROOF_HEADER = "x-boba-step-up-proof" as const;
+
 export type WorkforceAuthStepUpRequest = Readonly<{
   actionClass: WorkforceStepUpActionClass;
   /** TOTP code for recent MFA re-auth. */

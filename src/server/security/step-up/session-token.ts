@@ -9,14 +9,22 @@ import type { IncomingHttpHeaders } from "node:http";
 
 import { WORKFORCE_AUTH_SESSION_COOKIE_NAME } from "../../auth/workforce/trusted-identity";
 
+/** Better Auth prefixes secure cookies with `__Secure-` when useSecureCookies is true. */
+const SECURE_SESSION_COOKIE_NAME = `__Secure-${WORKFORCE_AUTH_SESSION_COOKIE_NAME}` as const;
+
 function firstHeaderValue(value: string | readonly string[] | undefined): string | undefined {
   if (typeof value === "string") return value;
   if (Array.isArray(value)) return value[0];
   return undefined;
 }
 
+function isWorkforceSessionCookieName(name: string): boolean {
+  return name === WORKFORCE_AUTH_SESSION_COOKIE_NAME || name === SECURE_SESSION_COOKIE_NAME;
+}
+
 /**
- * Parse `boba-workforce.session_token` from a Cookie header string.
+ * Parse `boba-workforce.session_token` (or `__Secure-` production variant)
+ * from a Cookie header string.
  */
 export function extractWorkforceSessionTokenFromCookieHeader(
   cookieHeader: string | undefined | null,
@@ -28,7 +36,7 @@ export function extractWorkforceSessionTokenFromCookieHeader(
     const eq = trimmed.indexOf("=");
     if (eq <= 0) continue;
     const name = trimmed.slice(0, eq).trim();
-    if (name !== WORKFORCE_AUTH_SESSION_COOKIE_NAME) continue;
+    if (!isWorkforceSessionCookieName(name)) continue;
     const raw = trimmed.slice(eq + 1).trim();
     if (raw.length === 0) return null;
     try {
