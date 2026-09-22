@@ -49,7 +49,7 @@ jobs:
 
       - name: Upload customer-ordering evidence
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: nightly-e2e-customer-ordering
           path: test-results-customer-ordering/**
@@ -89,7 +89,7 @@ jobs:
 
       - name: Upload customer-auth evidence
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: nightly-e2e-customer-auth
           path: |
@@ -131,7 +131,7 @@ jobs:
 
       - name: Upload workforce-auth evidence
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: nightly-e2e-workforce-auth
           path: |
@@ -181,7 +181,7 @@ jobs:
 
       - name: Upload operations-lifecycle evidence
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: nightly-e2e-operations-lifecycle
           path: test-results-operations-lifecycle/**
@@ -229,7 +229,7 @@ jobs:
 
       - name: Upload commercial-workspace evidence
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: nightly-e2e-commercial-workspace
           path: |
@@ -271,7 +271,7 @@ jobs:
 
       - name: Upload location-serviceability evidence
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: nightly-e2e-location-serviceability
           path: test-results-location-selector-layout/**
