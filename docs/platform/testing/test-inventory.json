@@ -807,7 +807,7 @@
     "test:e2e:workforce-auth": "npm run build && npm run workforce-auth:build && node scripts/e2e/run-workforce-auth-e2e.mjs",
     "test:menu-import": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/menu-import",
     "test:menu-parity": "node scripts/run-vitest.mjs run tests/menu-parity",
-    "test:operations:http": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/operations/store-http.integration.test.ts tests/operations/refunds-http.integration.test.ts",
+    "test:operations:http": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/operations/store-http.integration.test.ts tests/operations/refunds-http.integration.test.ts tests/operations/orders-read-http.integration.test.ts tests/operations/orders-mutation-http.integration.test.ts tests/operations/notifications-http.integration.test.ts",
     "test:order": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/order/",
     "test:order-auth-integration": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/order-auth-integration",
     "test:order-concurrency": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/order-concurrency",

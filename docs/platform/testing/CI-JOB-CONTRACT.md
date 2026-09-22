@@ -322,7 +322,7 @@ DB_REQUIREMENT = YES
   (customer-auth:http and workforce-auth:http use vitest.database.config.mts;
    test:administration runs tests/administration then
    npm run test:database:administration via vitest.database.config.mts;
-   test:operations:http runs store + refunds HTTP integration suites)
+   test:operations:http runs store + refunds + orders-read + orders-mutation + notifications HTTP integration suites)
 BROWSER_REQUIREMENT = NO
 COST = MEDIUM
 BLOCKING_SEMANTICS = YES
