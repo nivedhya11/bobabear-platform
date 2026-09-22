@@ -97,7 +97,7 @@ IMPLEMENTATION_AUTHORIZATION_EVIDENCE = PR#171/5743814105
 IMPLEMENTATION_START_EVIDENCE = PR#172/5744869269
 ```
 
-`CANONICAL_ROADMAP_STATE = GTM-R138 / STATE-R136` is the **controlled-continuation tip** (IMP-038 pre-gate activation while IMP-037 remains unresolved). Prior tip `GTM-R137 / STATE-R135` remains the **post-merge repository-implementation
+`CANONICAL_ROADMAP_STATE = GTM-R138 / STATE-R136` is the **controlled-continuation tip** (IMP-038 Product Definition Gate PASS while IMP-037 remains unresolved). Prior tip `GTM-R137 / STATE-R135` remains the **post-merge repository-implementation
 reconciliation target** for this artifact. Start provenance remains GTM-R136 / STATE-R134;
 authorization provenance remains GTM-R135 / STATE-R133; Architecture Fit/lock provenance remains
 GTM-R134 / STATE-R132; Fit evaluation was against GTM-R133 / STATE-R131 / ARCH-R20 / DR-16.

@@ -135,7 +135,7 @@ Lifecycle truth remains ROADMAP/STATE only. **CURRENT tip** (verify against ROAD
 treat this draft as lifecycle authority): `GTM-R138` / `STATE-R136` —
 `acceptedThrough = IMP-036G`; `currentProductSlice = IMP-038` under
 `CONTINUATION_EXCEPTION: IMP037_PROVIDER_BLOCKED_TO_IMP038` (`IMP038_ACTIVATED: YES`; formal
-IMP-038 lifecycle PLANNED; PD DRAFT / PRE-GATE; Gate NOT_PERFORMED; implementation NOT_AUTHORIZED);
+IMP-038 lifecycle PLANNED; PD APPROVED / Gate PASS; Fit NOT_PERFORMED; implementation NOT_AUTHORIZED);
 IMP-037 remains unresolved `IMPLEMENTATION_IN_PROGRESS` / provider-blocked;
 `nextProductSlice = IMP-039`; **`IMP040_ACTIVATED: NO`**. Presence of this PRE-GATE draft does
 **not** activate IMP-040 and does **not** advance ROADMAP/STATE lifecycle.

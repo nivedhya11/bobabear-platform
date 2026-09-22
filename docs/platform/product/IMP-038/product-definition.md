@@ -1,14 +1,15 @@
 <!-- governance-meta
 {
-  "status": "DRAFT",
+  "status": "APPROVED",
   "authority": "PRODUCT_DEFINITION",
   "capability": "IMP-038",
   "productDefinitionVersion": "PD-IMP-038-DRAFT-2",
   "process": "PD-1",
   "verificationPolicy": "TEST-1",
   "lastReviewed": "2026-09-22",
-  "productDefinitionGateExecution": "NOT_PERFORMED",
-  "productDefinitionGateResult": "NOT_PERFORMED",
+  "productDefinitionGateExecution": "PERFORMED",
+  "productDefinitionGateResult": "PASS",
+  "productDefinitionApprovalEvidence": "PR#180/5773885848",
   "architectureFitExecution": "NOT_PERFORMED",
   "architectureFit": "NOT_PERFORMED",
   "architectureLocked": "NO",
@@ -16,7 +17,7 @@
   "implementationStarted": "NO",
   "impAccepted": "NO",
   "imp038Activated": "YES",
-  "preGateDraft": "YES",
+  "preGateDraft": "NO",
   "founderUatRequired": "YES",
   "founderUatStatus": "NOT_PERFORMED",
   "productDecisions": 21,
@@ -36,20 +37,21 @@
 
 # IMP-038 — Security & Privacy Hardening
 
-## Product Definition (PRE-GATE DRAFT — Product Definition Gate NOT_PERFORMED)
+## Product Definition (APPROVED — Product Definition Gate PASS)
 
 ```text
-Document status: DRAFT
+Document status: APPROVED
 PRODUCT_DEFINITION_VERSION: PD-IMP-038-DRAFT-2
-PRE-GATE DRAFT: YES
+PRE-GATE DRAFT: NO
 CAPABILITY: IMP-038
 TITLE: Security & Privacy Hardening
 AUTHORITY: PRODUCT_DEFINITION
 PROCESS: PD-1
 VERIFICATION_POLICY: TEST-1
 
-PRODUCT_DEFINITION_GATE_EXECUTION: NOT_PERFORMED
-Gate Result: NOT_PERFORMED
+PRODUCT_DEFINITION_GATE_EXECUTION: PERFORMED
+Gate Result: PASS
+PRODUCT_DEFINITION_APPROVAL_EVIDENCE: PR#180/5773885848
 ARCHITECTURE_FIT_EXECUTION: NOT_PERFORMED
 ARCHITECTURE_FIT: NOT_PERFORMED
 ARCHITECTURE_LOCKED: NO
@@ -61,8 +63,9 @@ IMP038_STARTED: NO
 IMP038_IMPLEMENTATION_COMPLETE: NO
 IMP038_ACCEPTED: NO
 IMP038_ACCEPTANCE_BLOCKED_BY_IMP037: YES
-IMP038_PRODUCT_DEFINITION: DRAFT
-IMP038_PRODUCT_DEFINITION_GATE: NOT_PERFORMED
+IMP038_PRODUCT_DEFINITION: APPROVED
+IMP038_PRODUCT_DEFINITION_VERSION: PD-IMP-038-DRAFT-2
+IMP038_PRODUCT_DEFINITION_GATE: PASS
 IMP038_ARCHITECTURE_FIT: NOT_PERFORMED
 IMP038_ARCHITECTURE_LOCKED: NO
 FOUNDER_UAT_REQUIRED: YES
@@ -94,7 +97,7 @@ COMPLIANCE_CLAIMS: NONE
 stories: 24
 v1_acceptance_stories: 20
 follow_up_or_deferred_stories: 4
-acceptance_scenarios: see §10 (FD-dependent final mandatory set)
+acceptance_scenarios: see §10 (Founder decisions reconciled; final acceptance scenarios subject only to legal-review / Architecture-Fit dependencies where explicitly recorded)
 
 Canonical anchors (verify against CURRENT ROADMAP/STATE):
   ROADMAP: GTM-R138
@@ -110,17 +113,20 @@ Canonical anchors (verify against CURRENT ROADMAP/STATE):
   pendingAcceptance: NONE
 ```
 
-This artifact is a **pre-gate Product Definition draft** for IMP-038. It does **not** execute the
-Product Definition Gate, Architecture Fit, architecture lock, implementation authorization,
-implementation start, Founder UAT, or IMP acceptance. It incorporates Founder security/privacy
-discovery requirements as first-class Product Definition scope (stories, ACs, business/security
-rules, evidence requirements, deferrals, and unresolved decisions). It does **not** claim DPDP,
-CERT-In, PCI DSS, GST, OWASP Top 10, or ASVS certification/compliance.
+This artifact is the **approved Product Definition** for IMP-038 after Product Definition Gate PASS
+(`PD-IMP-038-DRAFT-2`; approval evidence PR#180/5773885848). It does **not** perform Architecture
+Fit, architecture lock, implementation authorization, implementation start, Founder UAT, or IMP
+acceptance. It incorporates Founder security/privacy discovery requirements as first-class Product
+Definition scope (stories, ACs, business/security rules, evidence requirements, and deferrals).
+Founder product decisions FD-038-01…21 are reconciled (authority PR#180/5773472988). It does **not**
+claim DPDP, CERT-In, PCI DSS, GST, OWASP Top 10, or ASVS certification/compliance.
 
 ```text
-PRE-GATE DRAFT
+PRODUCT_DEFINITION_GATE PASS
   !=
-Product Definition Gate PASS
+Architecture Fit PASS
+  !=
+implementation authorization / start / acceptance
 
 NO CONTROL WITHOUT EVIDENCE
 NO GAP WITHOUT OWNER
@@ -142,12 +148,12 @@ authoritative even if edge controls are absent or bypassed.
 | Field | Definition |
 |---|---|
 | Capability / title | IMP-038 — Security & Privacy Hardening |
-| Product Definition version / document status | `PD-IMP-038-DRAFT-2` (advances `PD-IMP-038-DRAFT-1`); **DRAFT**; **PRE-GATE DRAFT: YES**; Founder decisions FD-038-01…21 reconciled per PR#180/5773472988 |
-| Product owner / approval evidence | Founder/human controlled-continuation activation via PR#179 comment `5771367844` + instruction “proceed with next IMP”; Founder security/privacy requirements incorporated as binding discovery inputs (independent review `5274597723` on PR #180); Product Definition Gate **not** performed |
+| Product Definition version / document status | `PD-IMP-038-DRAFT-2` (advances `PD-IMP-038-DRAFT-1`); **Document status: APPROVED**; **PRE-GATE DRAFT: NO**; Founder decisions FD-038-01…21 reconciled per PR#180/5773472988; Product Definition Gate PASS (approval PR#180/5773885848) |
+| Product owner / approval evidence | Founder/human controlled-continuation activation via PR#179 comment `5771367844` + instruction “proceed with next IMP”; Founder security/privacy requirements incorporated as binding discovery inputs; Founder decisions PR#180/5773472988; independent Product Definition Gate readiness review `5276033742` PASS; Product Definition Gate PASS authorized PR#180/5773885848 |
 | Process / verification policy | PD-1 / TEST-1 |
 | Canonical anchors | VISION-1; ROADMAP GTM-R138; STATE STATE-R136; ARCH-R20; DR-16; PD-1; TEST-1 |
-| Repository candidate | Canonical path `/home/ajoshi/repos/boba-bear-platform`; branch `governance/imp038-activation-product-definition` (pre-merge); HEAD/tree/fingerprint recorded at PR publication |
-| Capability lifecycle / authorization | ROADMAP/STATE: `IMP038_ACTIVATED: YES`; formal lifecycle **PLANNED**; PD = DRAFT; Gate = NOT_PERFORMED; Architecture Fit = NOT_PERFORMED; Architecture Locked = NO; Implementation = NOT_AUTHORIZED / NOT_STARTED; `IMP038_ACCEPTANCE_BLOCKED_BY_IMP037: YES`; `acceptedThrough` remains IMP-036G |
+| Repository candidate | Gate-evaluated candidate lineage: canonical path `/home/ajoshi/repos/boba-bear-platform`; branch `governance/imp038-activation-product-definition`; **GATE_EVALUATED_HEAD** `2ade7b305d7a1c552b56a709dbf8723d356979bf`; **GATE_EVALUATED_TREE** `b8565bba474627ddf3974b329c7d6038ee1bf97c`; exact-head CI `35706440171` SUCCESS; gate-persistence commits after this Gate PASS are not the evaluated artifact |
+| Capability lifecycle / authorization | ROADMAP/STATE: `IMP038_ACTIVATED: YES`; formal lifecycle **PLANNED**; PD = APPROVED (`PD-IMP-038-DRAFT-2`); Gate = PASS; Architecture Fit = NOT_PERFORMED; Architecture Locked = NO; Implementation = NOT_AUTHORIZED / NOT_STARTED; `IMP038_ACCEPTANCE_BLOCKED_BY_IMP037: YES`; `acceptedThrough` remains IMP-036G |
 | Relevant capability architecture / ADRs | No IMP-038 capability architecture yet (forbidden until Gate PASS + Architecture Fit). Binding baselines: ARCH §§6–7,12; ADR-004; ADR-005; ADR-015 (amended by D-374 for host-local pilot secrets → IMP-039 boundary); IMP-036B §6.1 Maps supersession record; IMP-037 FD-037-03 retention distinction |
 | Founder UAT applicability | `FOUNDER_UAT_REQUIRED = YES` — customer-visible location/auth gating, security headers, auth-abuse/bot challenges affecting storefront, and operator-visible security/privacy/acceptance-pack outcomes |
 
@@ -1351,7 +1357,7 @@ Mandatory: YES
 | US-001 / AC-001-* | Headers/CSP | HTTP integration + config | nginx/static header assertions | Planned only |
 | US-002 / AC-002-* | Maps auth gate | Unit + HTTP + browser | Deny anonymous I/O; allow authed | Planned only |
 | US-003 / AC-003-* | Customer auth/OTP abuse | Unit + HTTP + abuse tests | Throttle/challenge/enumeration negatives | Planned only |
-| US-004 / AC-004-* | Privacy labeling/erasure | Unit + HTTP + UX | FD-dependent | Planned only |
+| US-004 / AC-004-* | Privacy labeling/erasure | Unit + HTTP + UX | Founder product policy resolved; legal applicability evidence remains required | Planned only |
 | US-005 / AC-005-* | Retention matrix | Doc + selective tests | Policy artifact + FD immutability | Planned only |
 | US-006 / AC-006-* | Secure SDLC scans | CI/scripts | SAST/SCA/secret/container/SBOM posture | Planned only |
 | US-007 / AC-007-* | Bypass + BOLA/BFLA | Security smoke + access tests | Cross-scope/object/function negatives | Planned only |
@@ -1490,7 +1496,7 @@ as applicable to deletion only (US-004/005).
 |---|---|---|---|---|---|
 | Location tools signed-out | Guest | Default Dehradun; CTA to sign in to change location | Focus on sign-in CTA | Auth then location | AC-002-* |
 | Location tools signed-in | Authed | Maps/Places available per policy | Existing patterns | Serviceability | AC-002-03 |
-| Customer OTP / login abused | Threshold crossed | Safe error / retry-later / challenge if FD-selected | Focus on recovery CTA | Cooldown then retry | AC-003-* |
+| Customer OTP / login abused | Threshold crossed | Safe error / retry-later / risk-based challenge (policy resolved; provider/mechanism Architecture Fit dependent) | Focus on recovery CTA | Cooldown then retry | AC-003-* |
 | Workforce login / MFA abused | Threshold crossed | Safe error / cooldown / challenge | Focus on recovery | Cooldown then retry | AC-013-* |
 | Profile delete | Authed | Copy states PROFILE_DELETE_EQUALS_LEGAL_ERASURE = NO | Confirm control | Success/error | AC-004-01 |
 | Privacy request | OPERATOR_MEDIATED channel | Status / denied / hold | Confirm destructive | Recovery | FD-038-01/04 RESOLVED |
@@ -1629,7 +1635,7 @@ Journey Gap Audit remains IMP-040 requirement — not performed here.
 | Config boundary / placeholder secret rejection | Existing verified | ADR-015; audits |
 | Baseline nosniff/Referrer-Policy/XFO/HSTS/Permissions-Policy | Existing partial | next.config.ts |
 | Razorpay-hosted payment (no intentional PAN/CVV handling) | Existing verified pattern; scope matrix still required | payment flows; US-021 |
-| Maps auth-gate + CSP + abuse/bot/ASVS L2 + DPDP/CERT-In/PCI matrices + SDLC + Acceptance Pack | V1 commitment **Founder-locked in DRAFT-2** (not Gate-passed / not accepted) | this PD; PR#180/5773472988 |
+| Maps auth-gate + CSP + abuse/bot/ASVS L2 + DPDP/CERT-In/PCI matrices + SDLC + Acceptance Pack | V1 commitment **Founder-locked in DRAFT-2** (Gate PASS; Fit NOT_PERFORMED; not accepted) | this PD; PR#180/5773472988; Gate approval PR#180/5773885848 |
 
 ---
 
@@ -1722,9 +1728,10 @@ Do **not** claim: DPDP_COMPLIANT, CERT_IN_COMPLIANT, PCI_DSS_COMPLIANT, OWASP_CE
 - Bot/human challenge provider/mechanism (FD-038-21)
 - Step-up / abuse-control implementation details within locked policy (FD-038-06/15)
 
-`PRODUCT_DEFINITION_GATE` is **NOT_PERFORMED** in this draft. Product decisions are no longer an
-unresolved-FD stop set. Gate review may still STOP for incomplete story readiness, Architecture Fit
-gaps after Gate, or legal-review topics that materially affect acceptance semantics.
+`PRODUCT_DEFINITION_GATE` is **PERFORMED** with **Gate Result: PASS** (approval evidence
+PR#180/5773885848). Product decisions are not an unresolved-FD stop set. Legal-review topics remain
+external acceptance / implementation dependencies where already defined — they are **not** converted
+into product-decision blockers. Architecture Fit remains **NOT_PERFORMED**.
 
 ---
 
@@ -1735,37 +1742,37 @@ Founder product-policy decisions FD-038-01…21 are reconciled. Stories are **no
 
 Stories remain `NOT_READY_FOR_IMPLEMENTATION` because:
 
-- Product Definition Gate has not passed
 - Architecture Fit has not run / architecture is not locked
 - legal review materially affects acceptance semantics where marked
 - technical mechanism remains Architecture Fit / IMP-039 responsibility
+- implementation is not authorized
 
 | Story ID | Fields complete? | Open dependencies (precise) | Readiness |
 |---|---|---|---|
-| US-IMP-038-001 | Draft complete | Gate; Fit (CSP/header mechanism) | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-002 | Draft complete | Gate; Fit; legal retention windows for location class | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-003 | Draft complete | Gate; Fit (challenge mechanism) | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-004 | Draft complete | Gate; Fit; legal rights-control applicability | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-005 | Draft complete | Gate; Fit; legal numeric retention windows | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-006 | Draft complete | Gate; Fit | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-007 | Draft complete | Gate; Fit | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-008 | Draft complete | Gate; Fit; legal external-notification triggers | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-001 | Complete in §9 | Fit (CSP/header mechanism) | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-002 | Complete in §9 | Fit; legal retention windows for location class | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-003 | Complete in §9 | Fit (challenge mechanism) | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-004 | Complete in §9 | Fit; legal rights-control applicability | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-005 | Complete in §9 | Fit; legal numeric retention windows | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-006 | Complete in §9 | Fit | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-007 | Complete in §9 | Fit | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-008 | Complete in §9 | Fit; legal external-notification triggers | NOT_READY_FOR_IMPLEMENTATION |
 | US-IMP-038-009 | Follow-up (step-up owned by US-013) | Broader session UX deferred | FOLLOW_UP |
 | US-IMP-038-010 | Deferred | IMP-039 adjacency | DEFERRED |
 | US-IMP-038-011 | Deferred by Founder | Portal = NO; matrix remains US-020 | DEFERRED_BY_FOUNDER |
 | US-IMP-038-012 | Deferred by Founder | Marketing consent center | DEFERRED_BY_FOUNDER |
-| US-IMP-038-013 | Draft complete | Gate; Fit (step-up/challenge mechanism) | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-014 | Draft complete | Gate; Fit / IMP-039 (edge/challenge mechanism) | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-015 | Draft complete | Gate; Fit | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-016 | Draft complete | Gate; Fit; external assessment is acceptance evidence | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-017 | Draft complete | Gate; Fit (applicable-control evidence selection) | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-018 | Draft complete | Gate; Fit; CERT-In legal applicability | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-019 | Draft complete | Gate; Fit; legal security-log retention windows | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-020 | Draft complete | Gate; Fit; DPDP/child-data legal applicability | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-021 | Draft complete | Gate; Fit; PCI validation-path legal review | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-022 | Draft complete | Gate; Fit (vendor rows after edge selection) | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-023 | Draft complete | Gate; Fit / IMP-039 (bypass-resistance mechanism) | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-024 | Draft complete | Gate; Fit; pack assembled from implementation evidence | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-013 | Complete in §9 | Fit (step-up/challenge mechanism) | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-014 | Complete in §9 | Fit / IMP-039 (edge/challenge mechanism) | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-015 | Complete in §9 | Fit | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-016 | Complete in §9 | Fit; external assessment is acceptance evidence | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-017 | Complete in §9 | Fit (applicable-control evidence selection) | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-018 | Complete in §9 | Fit; CERT-In legal applicability | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-019 | Complete in §9 | Fit; legal security-log retention windows | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-020 | Complete in §9 | Fit; DPDP/child-data legal applicability | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-021 | Complete in §9 | Fit; PCI validation-path legal review | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-022 | Complete in §9 | Fit (vendor rows after edge selection) | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-023 | Complete in §9 | Fit / IMP-039 (bypass-resistance mechanism) | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-024 | Complete in §9 | Fit; pack assembled from implementation evidence | NOT_READY_FOR_IMPLEMENTATION |
 
 `STORY_COMPLETE != IMP_ACCEPTED`. `IMP038_ACCEPTED` remains blocked by IMP-037 contiguity even after later implementation.
 
@@ -1774,36 +1781,49 @@ Stories remain `NOT_READY_FOR_IMPLEMENTATION` because:
 ## 27. Product Definition Gate
 
 ```text
-PRE-GATE DRAFT:
-PRODUCT_DEFINITION_GATE_EXECUTION = NOT_PERFORMED
-Gate Result: NOT_PERFORMED
-
 PRODUCT_DEFINITION_GATE
 
 Capability: IMP-038 — Security & Privacy Hardening
 Product Definition Version: PD-IMP-038-DRAFT-2
-Historical provenance: PD-IMP-038-DRAFT-1
-Founder decision authority: PR#180/5773472988
-Business Outcome: defined (draft; Founder security/privacy requirements incorporated and FD-reconciled)
-Primary Personas: PERSONA-CUSTOMER, PERSONA-WORKFORCE-OPERATOR, PERSONA-PLATFORM-OPERATOR
-Journeys Defined: YES (draft; expanded)
-Story Map Complete: YES (draft; 24 stories / 20 V1)
-Acceptance Slice Defined: YES (draft; Founder FDs reconciled)
-Happy Paths Defined: YES (draft)
-Alternate Paths Defined: YES (draft)
+Business Outcome: DEFINED
+Primary Personas: DEFINED
+Journeys Defined: YES
+Story Map Complete: YES
+Acceptance Slice Defined: YES
+Happy Paths Defined: YES
+Alternate Paths Defined: YES
 Empty / First-Use States Defined: YES where applicable
-Error / Recovery Paths Defined: YES (draft)
-Authorization Variants Defined: YES (draft; BOLA/BFLA; no invented roles)
+Error / Recovery Paths Defined: YES
+Authorization Variants Defined: YES
 Cross-Scope Scenarios Defined: YES
 Concurrency Considered: YES
-Destructive Actions Defined: YES (privacy)
-UX State Matrix Complete: YES (draft)
-Accessibility Considered: YES (draft)
+Destructive Actions Defined: YES
+UX State Matrix Complete: YES
+Accessibility Considered: YES
 Golden Journeys Identified: YES
-Explicit Deferrals Recorded: YES (incl. DEFERRED_BY_FOUNDER for portal + marketing consent)
-Regulatory matrices required: DPDP (US-020), CERT-In (US-018), PCI/payment (US-021)
-Verification baseline: OWASP ASVS v5.0.0 LEVEL_2_APPLICABLE_CONTROLS (US-017)
-Acceptance Pack required: YES (US-024) — consumable by IMP-040
+Explicit Deferrals Recorded: YES
+Unresolved Product Decisions: 0
+Architecture Conflicts: NONE IDENTIFIED
+PRODUCT_DEFINITION_GATE_EXECUTION: PERFORMED
+Gate Result: PASS
+```
+
+Product Definition Gate execution was performed against exact independently reviewed candidate
+`PD-IMP-038-DRAFT-2`. Human Founder / product governance authority authorized Gate Result = PASS
+(PR#180/5773885848) after independent readiness review PASS (`5276033742`). Founder decisions
+FD-038-01…21 remain reconciled (PR#180/5773472988). Legal-review dependencies are **not** converted
+into product-decision blockers. The later gate-persistence commit is **not** the evaluated artifact
+(`gate-persistence commit != gate-evaluated candidate`).
+
+```text
+GATE_EVALUATED_HEAD = 2ade7b305d7a1c552b56a709dbf8723d356979bf
+GATE_EVALUATED_TREE = b8565bba474627ddf3974b329c7d6038ee1bf97c
+EXACT_HEAD_CI = 35706440171 SUCCESS
+INDEPENDENT_PRODUCT_DEFINITION_GATE_READINESS_REVIEW = 5276033742 PASS — READY_FOR_PRODUCT_DEFINITION_GATE_PASS
+GATE_APPROVAL_AUTHORITY = PR#180/5773885848
+FOUNDER_DECISION_AUTHORITY = PR#180/5773472988
+GATE_DATE = 2026-09-22
+Historical provenance: PD-IMP-038-DRAFT-1
 PRODUCT_DECISIONS: RESOLVED
 PRODUCT_DECISION_COUNT: 21
 UNRESOLVED_PRODUCT_DECISIONS: 0
@@ -1811,9 +1831,11 @@ LEGAL_REVIEW_REQUIRED: YES
 LEGAL_REVIEW_OPEN_TOPICS: 9
 COMPLIANCE_CLAIMS: NONE
 Cloudflare locked as architecture: NO (preferred low-TCO Fit candidate only)
-Architecture Conflicts: NONE identified vs ARCH-R20 (Fit NOT_PERFORMED)
-PRODUCT_DEFINITION_GATE_EXECUTION: NOT_PERFORMED
-Gate Result: NOT_PERFORMED
+IMP038_ARCHITECTURE_FIT: NOT_PERFORMED
+IMP038_ARCHITECTURE_LOCKED: NO
+IMP038_IMPLEMENTATION_AUTHORIZED: NO
+IMP038_STARTED: NO
+IMP038_ACCEPTED: NO
 ```
 
 ---
@@ -1868,17 +1890,18 @@ PHASE1_BLOCK_STATUS: BLOCKED_PROVIDER_ACCESS
 acceptedThrough: IMP-036G (unchanged)
 pendingAcceptance: NONE (IMP-037 not yet IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE)
 
-IMP-038 may later progress through Gate → Fit → implementation/proof when separately authorized,
-but MUST NOT become COMPLETE_AND_ACCEPTED before IMP-037 is formally accepted and reconciled.
+IMP-038 Product Definition Gate = PASS. Next authorized phase is Architecture Fit when separately
+authorized. IMP-038 MUST NOT become COMPLETE_AND_ACCEPTED before IMP-037 is formally accepted and
+reconciled.
 ```
 
 ---
 
-## Explicit non-goals (this draft)
+## Explicit non-goals (this approved Product Definition)
 
+- Perform Architecture Fit / lock capability architecture / create `docs/platform/capabilities/IMP-038-*.md`
+- Authorize or start IMP-038 implementation
 - Implement IMP-038 behaviour
-- Pass Product Definition Gate
-- Lock capability architecture / create `docs/platform/capabilities/IMP-038-*.md`
 - Lock Cloudflare or any WAF/CDN/bot vendor as architecture
 - Activate IMP-039
 - Accept IMP-037 or advance `acceptedThrough`

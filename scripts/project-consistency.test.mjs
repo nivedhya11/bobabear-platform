@@ -134,6 +134,7 @@ import {
   evaluateImp037ContinuationProductDefinition,
   evaluateImp038ControlledContinuationActivationCheckpoint,
   evaluateImp038DraftProductDefinition,
+  evaluateImp038ApprovedProductDefinition,
   stripImp037HistoricalManagedRecoveryAuthority,
   evaluateImp036gProductDefinitionDraftCheckpoint,
   evaluateImp036gProductDefinitionGatePassCheckpoint,
@@ -6732,7 +6733,7 @@ describe("canonical authority history compression", () => {
     assert.equal(failures.length, 0, failures.map((f) => `[${f.code}] ${f.message}`).join("\n"));
     const messages = findings.filter((f) => f.ok).map((f) => f.message);
     if (tipIsControlledContinuation) {
-      assert.ok(messages.some((m) => m.includes("IMP-038 controlled-continuation activation persistence valid")));
+      assert.ok(messages.some((m) => m.includes("IMP-038 controlled-continuation tip persistence valid") || m.includes("IMP-038 controlled-continuation activation persistence valid")));
       assert.ok(!messages.some((m) => m.includes("IMP-037 post-merge reconciliation persistence valid")));
     } else {
       // Until docs land R138/S136, live tip remains the historical post-merge checkpoint.
@@ -10511,9 +10512,9 @@ PHASE1_BLOCK_STATUS: BLOCKED_PROVIDER_ACCESS
     continuationAuthority: "PR#179/5771367844",
     imp038Activated: "YES",
     imp038FormalLifecycle: "PLANNED",
-    imp038ProductDefinition: "DRAFT",
+    imp038ProductDefinition: "APPROVED",
     imp038ProductDefinitionVersion: "PD-IMP-038-DRAFT-2",
-    imp038ProductDefinitionGate: "NOT_PERFORMED",
+    imp038ProductDefinitionGate: "PASS",
     imp038ArchitectureFit: "NOT_PERFORMED",
     imp038ArchitectureLocked: "NO",
     imp038ImplementationAuthorized: "NO",
@@ -10535,7 +10536,7 @@ PHASE1_BLOCK_STATUS: BLOCKED_PROVIDER_ACCESS
     historicalImp026To028ReopenedAsCurrent: false,
     imp037AcceptedYes: false,
     imp037ImplementationCompleteYes: false,
-    imp038ProductDefinitionGatePass: false,
+    imp038ProductDefinitionGatePass: true,
     imp038ArchitectureFitPass: false,
     imp038ArchitectureLockedYes: false,
     imp038ImplementationAuthorizedYes: false,
@@ -10551,30 +10552,35 @@ PHASE1_BLOCK_STATUS: BLOCKED_PROVIDER_ACCESS
     assert.deepEqual(evaluateImp038ControlledContinuationActivationCheckpoint(continuationBase), { ok: true });
   });
 
-  it("validates live IMP-038 Product Definition draft markers", () => {
-    assert.deepEqual(evaluateImp038DraftProductDefinition(continuationBase.imp038ProductDefinitionText), { ok: true });
+  it("validates live IMP-038 approved Product Definition markers", () => {
+    assert.deepEqual(evaluateImp038ApprovedProductDefinition(continuationBase.imp038ProductDefinitionText), { ok: true });
   });
 
-  it("rejects empty or premature IMP-038 Product Definition draft", () => {
-    assert.equal(evaluateImp038DraftProductDefinition("").code, "IMP038_PD_DRAFT_EMPTY");
+  it("rejects empty or Fit-premature IMP-038 approved Product Definition", () => {
+    assert.equal(evaluateImp038ApprovedProductDefinition("").code, "IMP038_PD_APPROVED_EMPTY");
     assert.equal(
-      evaluateImp038DraftProductDefinition(`${continuationBase.imp038ProductDefinitionText}\nGate Result: PASS\n`).code,
-      "IMP038_PD_PREMATURE_PROGRESSION",
+      evaluateImp038ApprovedProductDefinition(
+        continuationBase.imp038ProductDefinitionText.replace(
+          /ARCHITECTURE_FIT:\s*NOT_PERFORMED/g,
+          "ARCHITECTURE_FIT: PASS",
+        ).replace(/"architectureFit":\s*"NOT_PERFORMED"/g, '"architectureFit": "PASS"'),
+      ).code,
+      "IMP038_PD_APPROVED",
     );
   });
 
-  it("rejects IMP-038 Product Definition draft missing Founder security/privacy scope", () => {
+  it("rejects IMP-038 approved Product Definition missing Founder security/privacy scope", () => {
     const stripped = continuationBase.imp038ProductDefinitionText
       .replace(/DPDP applicability[\s\S]*?US-IMP-038-020/g, "privacy portal deferred")
       .replace(/DPDP_APPLICABILITY_CONTROL_MATRIX/g, "PORTAL_ONLY")
       .replace(/US-IMP-038-020/g, "US-IMP-038-011")
       .replace(/JOURNEY-DPDP-APPLICABILITY/g, "JOURNEY-PRIVACY-REQUEST");
-    assert.equal(evaluateImp038DraftProductDefinition(stripped).code, "IMP038_PD_DRAFT");
+    assert.equal(evaluateImp038ApprovedProductDefinition(stripped).code, "IMP038_PD_APPROVED");
   });
 
-  it("rejects regression to unresolved Founder decisions or ASVS Level 1 target", () => {
+  it("rejects regression to unresolved Founder decisions, DRAFT markers, or ASVS Level 1 target", () => {
     assert.equal(
-      evaluateImp038DraftProductDefinition(
+      evaluateImp038ApprovedProductDefinition(
         continuationBase.imp038ProductDefinitionText.replace(
           /UNRESOLVED_PRODUCT_DECISIONS:\s*0/,
           "UNRESOLVED_PRODUCT_DECISIONS: 21",
@@ -10583,7 +10589,20 @@ PHASE1_BLOCK_STATUS: BLOCKED_PROVIDER_ACCESS
       "IMP038_PD_UNRESOLVED_DECISIONS",
     );
     assert.equal(
-      evaluateImp038DraftProductDefinition(
+      evaluateImp038ApprovedProductDefinition(
+        continuationBase.imp038ProductDefinitionText
+          .replace(/Document status:\s*APPROVED/g, "Document status: DRAFT")
+          .replace(/"status":\s*"APPROVED"/g, '"status": "DRAFT"')
+          .replace(/PRE-GATE DRAFT:\s*NO/g, "PRE-GATE DRAFT: YES")
+          .replace(/PRODUCT_DEFINITION_GATE_EXECUTION:\s*PERFORMED/g, "PRODUCT_DEFINITION_GATE_EXECUTION: NOT_PERFORMED")
+          .replace(/Gate Result:\s*PASS/g, "Gate Result: NOT_PERFORMED")
+          .replace(/IMP038_PRODUCT_DEFINITION:\s*APPROVED/g, "IMP038_PRODUCT_DEFINITION: DRAFT")
+          .replace(/IMP038_PRODUCT_DEFINITION_GATE:\s*PASS/g, "IMP038_PRODUCT_DEFINITION_GATE: NOT_PERFORMED"),
+      ).code,
+      "IMP038_PD_APPROVED",
+    );
+    assert.equal(
+      evaluateImp038ApprovedProductDefinition(
         continuationBase.imp038ProductDefinitionText.replace(
           /OWASP_ASVS_TARGET\s*=\s*LEVEL_2_APPLICABLE_CONTROLS/g,
           "OWASP_ASVS_TARGET = LEVEL_1",
@@ -10595,7 +10614,7 @@ PHASE1_BLOCK_STATUS: BLOCKED_PROVIDER_ACCESS
 
   it("rejects self-service privacy portal, raw card storage, permanent lockout, and Cloudflare architecture lock regressions", () => {
     assert.equal(
-      evaluateImp038DraftProductDefinition(
+      evaluateImp038ApprovedProductDefinition(
         continuationBase.imp038ProductDefinitionText.replace(
           /FULL_SELF_SERVICE_PRIVACY_PORTAL_V1\s*=\s*NO/g,
           "FULL_SELF_SERVICE_PRIVACY_PORTAL_V1 = YES",
@@ -10604,13 +10623,13 @@ PHASE1_BLOCK_STATUS: BLOCKED_PROVIDER_ACCESS
       "IMP038_PD_PRIVACY_PORTAL",
     );
     assert.equal(
-      evaluateImp038DraftProductDefinition(
+      evaluateImp038ApprovedProductDefinition(
         continuationBase.imp038ProductDefinitionText.replace(/BOBA_RAW_PAN_STORAGE\s*=\s*NO/g, "BOBA_RAW_PAN_STORAGE = YES"),
       ).code,
       "IMP038_PD_RAW_CARD",
     );
     assert.equal(
-      evaluateImp038DraftProductDefinition(
+      evaluateImp038ApprovedProductDefinition(
         continuationBase.imp038ProductDefinitionText.replace(
           /PERMANENT_ATTACKER_TRIGGERED_LOCKOUT\s*=\s*FORBIDDEN/g,
           "PERMANENT_ATTACKER_TRIGGERED_LOCKOUT = ALLOWED",
@@ -10619,7 +10638,7 @@ PHASE1_BLOCK_STATUS: BLOCKED_PROVIDER_ACCESS
       "IMP038_PD_PERMANENT_LOCKOUT",
     );
     assert.equal(
-      evaluateImp038DraftProductDefinition(
+      evaluateImp038ApprovedProductDefinition(
         continuationBase.imp038ProductDefinitionText.replace(
           /CLOUDFLARE_ARCHITECTURE_LOCKED\s*=\s*NO/g,
           "CLOUDFLARE_ARCHITECTURE_LOCKED = YES",
@@ -10668,13 +10687,14 @@ PHASE1_BLOCK_STATUS: BLOCKED_PROVIDER_ACCESS
     );
   });
 
-  it("rejects IMP-038 gate/fit/lock/auth/start/accept and IMP-039 activation", () => {
+  it("rejects missing IMP-038 Gate PASS and Fit/lock/auth/start/accept / IMP-039 activation", () => {
     assert.equal(
       evaluateImp038ControlledContinuationActivationCheckpoint({
         ...continuationBase,
-        imp038ProductDefinitionGatePass: true,
+        imp038ProductDefinitionGate: "NOT_PERFORMED",
+        imp038ProductDefinitionGatePass: false,
       }).code,
-      "IMP038_PRODUCT_DEFINITION_GATE",
+      "IMP038_CONTROLLED_CONTINUATION",
     );
     assert.equal(
       evaluateImp038ControlledContinuationActivationCheckpoint({
