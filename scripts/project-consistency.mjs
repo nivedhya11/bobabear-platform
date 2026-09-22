@@ -10131,7 +10131,7 @@ export function evaluateImp038ControlledContinuationActivationCheckpoint(checkpo
     imp038Activated: "YES",
     imp038FormalLifecycle: "PLANNED",
     imp038ProductDefinition: "DRAFT",
-    imp038ProductDefinitionVersion: "PD-IMP-038-DRAFT-1",
+    imp038ProductDefinitionVersion: "PD-IMP-038-DRAFT-2",
     imp038ProductDefinitionGate: "NOT_PERFORMED",
     imp038ArchitectureFit: "NOT_PERFORMED",
     imp038ArchitectureLocked: "NO",
@@ -10252,9 +10252,10 @@ export function evaluateImp038ControlledContinuationActivationCheckpoint(checkpo
 }
 
 /**
- * Validate IMP-038 pre-gate Product Definition draft markers (PD-IMP-038-DRAFT-1).
- * Requires DRAFT / PRE-GATE / Gate NOT_PERFORMED and rejects premature Gate PASS,
- * architecture lock, implementation authorization/start, or acceptance claims.
+ * Validate IMP-038 pre-gate Product Definition draft markers (PD-IMP-038-DRAFT-2).
+ * Requires DRAFT / PRE-GATE / Gate NOT_PERFORMED, Founder FD reconciliation, and rejects
+ * premature Gate PASS, architecture lock, implementation authorization/start, acceptance,
+ * or regression to unresolved FDs / ASVS L1 / self-service portal / raw card / permanent lockout.
  * @param {string} text
  */
 export function evaluateImp038DraftProductDefinition(text) {
@@ -10267,7 +10268,7 @@ export function evaluateImp038DraftProductDefinition(text) {
     };
   }
   const required = [
-    [/PD-IMP-038-DRAFT-1/, "PD-IMP-038-DRAFT-1"],
+    [/PD-IMP-038-DRAFT-2/, "PD-IMP-038-DRAFT-2"],
     [/PRE-GATE DRAFT:\s*YES|\"preGateDraft\":\s*\"YES\"/, "PRE-GATE DRAFT: YES"],
     [/PRODUCT_DEFINITION_GATE_EXECUTION:\s*NOT_PERFORMED|\"productDefinitionGateExecution\":\s*\"NOT_PERFORMED\"/, "PRODUCT_DEFINITION_GATE_EXECUTION: NOT_PERFORMED"],
     [/Gate Result:\s*NOT_PERFORMED|\"productDefinitionGateResult\":\s*\"NOT_PERFORMED\"/, "Gate Result: NOT_PERFORMED"],
@@ -10281,14 +10282,28 @@ export function evaluateImp038DraftProductDefinition(text) {
     [/IMP038_ACCEPTED:\s*NO|\"impAccepted\":\s*\"NO\"/, "IMP038_ACCEPTED: NO"],
     [/Document status:\s*DRAFT|\"status\":\s*\"DRAFT\"/, "Document status DRAFT"],
     [/LEGAL_REVIEW_REQUIRED:\s*YES|\"legalReviewRequired\":\s*\"YES\"/, "LEGAL_REVIEW_REQUIRED: YES"],
-    [/DPDP applicability|JOURNEY-DPDP-APPLICABILITY|US-IMP-038-020/, "DPDP applicability/control/evidence scope"],
+    [/UNRESOLVED_PRODUCT_DECISIONS:\s*0|\"unresolvedProductDecisions\":\s*0/, "UNRESOLVED_PRODUCT_DECISIONS: 0"],
+    [/PRODUCT_DECISION_COUNT:\s*21|\"productDecisions\":\s*21|\"productDecisionsResolved\":\s*21/, "PRODUCT_DECISION_COUNT: 21"],
+    [/FOUNDER_DECISION_PACKAGE:\s*APPROVED|PR#180\/5773472988/, "Founder decision package APPROVED"],
+    [/V1_PRIVACY_REQUEST_MODEL\s*=\s*OPERATOR_MEDIATED|OPERATOR_MEDIATED/, "operator-mediated privacy request model"],
+    [/FULL_SELF_SERVICE_PRIVACY_PORTAL_V1\s*=/, "FULL_SELF_SERVICE_PRIVACY_PORTAL_V1 marker"],
+    [/PROFILE_DELETE_EQUALS_LEGAL_ERASURE\s*=\s*NO/, "PROFILE_DELETE_EQUALS_LEGAL_ERASURE = NO"],
+    [/DPDP applicability|JOURNEY-DPDP-APPLICABILITY|US-IMP-038-020|DPDP_APPLICABILITY_CONTROL_MATRIX/, "DPDP applicability/control/evidence scope"],
     [/CERT-In applicability|JOURNEY-CERTIN-READINESS|US-IMP-038-018/, "CERT-In applicability/control/evidence scope"],
     [/PCI|payment-security|JOURNEY-PAYMENT-PCI-SCOPE|US-IMP-038-021/, "payment/PCI scope assessment"],
-    [/OWASP ASVS v5\.0\.0|JOURNEY-ASVS-VERIFICATION|US-IMP-038-017/, "OWASP ASVS v5.0.0 verification matrix"],
+    [/BOBA_RAW_PAN_STORAGE\s*=/, "BOBA_RAW_PAN_STORAGE marker"],
+    [/BOBA_RAW_CVV_STORAGE\s*=/, "BOBA_RAW_CVV_STORAGE marker"],
+    [/OWASP_ASVS_TARGET\s*=|LEVEL_2_APPLICABLE_CONTROLS/, "OWASP ASVS target marker"],
+    [/OWASP ASVS v5\.0\.0|JOURNEY-ASVS-VERIFICATION|US-IMP-038-017|OWASP_ASVS_VERSION\s*=\s*5\.0\.0/, "OWASP ASVS v5.0.0 verification matrix"],
+    [/HIGH_CONSEQUENCE_ADMIN_STEP_UP\s*=\s*REQUIRED/, "HIGH_CONSEQUENCE_ADMIN_STEP_UP = REQUIRED"],
+    [/PERMANENT_ATTACKER_TRIGGERED_LOCKOUT\s*=|no permanent attacker/, "permanent attacker-triggered lockout policy marker"],
+    [/INDEPENDENT_EXTERNAL_WEB_API_SECURITY_ASSESSMENT_BEFORE_IMP038_ACCEPTANCE\s*=\s*REQUIRED|independent external web\/API (penetration\/)?security assessment/i, "independent external security assessment required"],
+    [/UNRESOLVED_CRITICAL_AT_ACCEPTANCE\s*=\s*ZERO/, "UNRESOLVED_CRITICAL_AT_ACCEPTANCE = ZERO"],
+    [/CLOUDFLARE_ARCHITECTURE_LOCKED\s*=|Cloudflare locked as architecture:/i, "CLOUDFLARE_ARCHITECTURE_LOCKED marker"],
     [/\bBOLA\b/, "BOLA authorization-negative coverage"],
     [/\bBFLA\b/, "BFLA authorization-negative coverage"],
     [/Security &\s*Privacy Acceptance Pack|JOURNEY-SECURITY-PRIVACY-ACCEPTANCE-PACK|US-IMP-038-024/, "Security & Privacy Acceptance Pack"],
-    [/edge-to-origin|JOURNEY-EDGE-ORIGIN-DEFENSE|US-IMP-038-023/, "edge-to-origin bypass protection"],
+    [/edge-to-origin|JOURNEY-EDGE-ORIGIN-DEFENSE|US-IMP-038-023|EDGE_TO_ORIGIN_BYPASS_RESISTANCE_REQUIRED/, "edge-to-origin bypass protection"],
     [/Cloudflare Free/, "Cloudflare Free preferred low-TCO Fit candidate"],
     [/FD-038-21/, "Founder decision set covering newly surfaced policy choices"],
     [/US-IMP-038-013/, "workforce auth/MFA abuse story"],
@@ -10326,10 +10341,87 @@ export function evaluateImp038DraftProductDefinition(text) {
         "IMP-038 Product Definition draft must not claim Gate PASS, Architecture Fit PASS, architecture lock, implementation authorization/start, or acceptance",
     };
   }
+  // Live draft must not regress to unresolved Founder product decisions.
+  if (
+    /UNRESOLVED_PRODUCT_DECISIONS:\s*[1-9]\d*/.test(body) ||
+    /\"unresolvedProductDecisions\":\s*[1-9]\d*/.test(body)
+  ) {
+    return {
+      ok: false,
+      code: "IMP038_PD_UNRESOLVED_DECISIONS",
+      message:
+        "IMP-038 Product Definition DRAFT-2 must keep UNRESOLVED_PRODUCT_DECISIONS = 0 after Founder decision reconciliation",
+    };
+  }
+  // Reject ASVS Level 1 as the V1 target (Level 2 applicable controls are locked).
+  if (
+    /OWASP_ASVS_TARGET\s*=\s*LEVEL_1\b/.test(body) ||
+    (!/LEVEL_2_APPLICABLE_CONTROLS/.test(body) && /ASVS[^\n]{0,80}Level\s*1/i.test(body))
+  ) {
+    return {
+      ok: false,
+      code: "IMP038_PD_ASVS_LEVEL",
+      message: "IMP-038 Product Definition must target OWASP ASVS Level 2 applicable controls, not Level 1",
+    };
+  }
+  if (!/LEVEL_2_APPLICABLE_CONTROLS/.test(body)) {
+    return {
+      ok: false,
+      code: "IMP038_PD_ASVS_LEVEL",
+      message: "IMP-038 Product Definition must record OWASP_ASVS_TARGET = LEVEL_2_APPLICABLE_CONTROLS",
+    };
+  }
+  // Reject mandatory full self-service privacy portal as V1.
+  if (
+    /FULL_SELF_SERVICE_PRIVACY_PORTAL_V1\s*=\s*YES/.test(body) ||
+    !/FULL_SELF_SERVICE_PRIVACY_PORTAL_V1\s*=\s*NO/.test(body)
+  ) {
+    return {
+      ok: false,
+      code: "IMP038_PD_PRIVACY_PORTAL",
+      message: "IMP-038 Product Definition must not require a full self-service privacy portal in V1",
+    };
+  }
+  // Reject raw PAN/CVV handling.
+  if (
+    /BOBA_RAW_PAN_STORAGE\s*=\s*YES/.test(body) ||
+    /BOBA_RAW_CVV_STORAGE\s*=\s*YES/.test(body) ||
+    !/BOBA_RAW_PAN_STORAGE\s*=\s*NO/.test(body) ||
+    !/BOBA_RAW_CVV_STORAGE\s*=\s*NO/.test(body)
+  ) {
+    return {
+      ok: false,
+      code: "IMP038_PD_RAW_CARD",
+      message: "IMP-038 Product Definition must forbid raw PAN/CVV storage",
+    };
+  }
+  // Reject permanent attacker-triggered lockout as allowed.
+  if (
+    /PERMANENT_ATTACKER_TRIGGERED_LOCKOUT\s*=\s*(ALLOWED|REQUIRED|YES)/.test(body) ||
+    !/PERMANENT_ATTACKER_TRIGGERED_LOCKOUT\s*=\s*FORBIDDEN/.test(body)
+  ) {
+    return {
+      ok: false,
+      code: "IMP038_PD_PERMANENT_LOCKOUT",
+      message: "IMP-038 Product Definition must forbid permanent attacker-triggered lockout",
+    };
+  }
+  // Reject missing Security & Privacy Acceptance Pack (already required above; explicit fail code).
+  if (!/Security &\s*Privacy Acceptance Pack|JOURNEY-SECURITY-PRIVACY-ACCEPTANCE-PACK|US-IMP-038-024/.test(body)) {
+    return {
+      ok: false,
+      code: "IMP038_PD_ACCEPTANCE_PACK",
+      message: "IMP-038 Product Definition must require the Security & Privacy Acceptance Pack",
+    };
+  }
   // Product Definition must not lock Cloudflare (or any WAF vendor) as architecture.
   if (
-    /Cloudflare[\s\S]{0,120}(architecture locked|ARCHITECTURE_LOCKED:\s*YES|locked as architecture)/i.test(body) &&
-    !/must not lock Cloudflare|does NOT lock Cloudflare|Cloudflare locked as architecture:\s*NO/i.test(body)
+    /CLOUDFLARE_ARCHITECTURE_LOCKED\s*=\s*YES/.test(body) ||
+    !/CLOUDFLARE_ARCHITECTURE_LOCKED\s*=\s*NO|Cloudflare locked as architecture:\s*NO/i.test(body) ||
+    (/Cloudflare[\s\S]{0,120}(architecture locked|ARCHITECTURE_LOCKED:\s*YES|locked as architecture)/i.test(body) &&
+      !/must not lock Cloudflare|does NOT lock Cloudflare|Cloudflare locked as architecture:\s*NO|CLOUDFLARE_ARCHITECTURE_LOCKED\s*=\s*NO/i.test(
+        body,
+      ))
   ) {
     return {
       ok: false,
@@ -28771,7 +28863,7 @@ function checkImp038ControlledContinuationActivation(roadmap, state, architectur
     [currentRoadmapSection, /IMP038_ACTIVATED:\s*YES/, "ROADMAP must record IMP038_ACTIVATED: YES"],
     [currentRoadmapSection, /IMP-038:\s*PLANNED/, "ROADMAP must keep IMP-038 formal lifecycle PLANNED"],
     [currentRoadmapSection, /IMP038_PRODUCT_DEFINITION:\s*DRAFT/, "ROADMAP must record IMP-038 Product Definition DRAFT"],
-    [currentRoadmapSection, /IMP038_PRODUCT_DEFINITION_VERSION:\s*PD-IMP-038-DRAFT-1/, "ROADMAP must record PD-IMP-038-DRAFT-1"],
+    [currentRoadmapSection, /IMP038_PRODUCT_DEFINITION_VERSION:\s*PD-IMP-038-DRAFT-2/, "ROADMAP must record PD-IMP-038-DRAFT-2"],
     [currentRoadmapSection, /IMP038_PRODUCT_DEFINITION_GATE:\s*NOT_PERFORMED/, "ROADMAP must record IMP-038 Gate NOT_PERFORMED"],
     [currentRoadmapSection, /IMP038_ARCHITECTURE_FIT:\s*NOT_PERFORMED/, "ROADMAP must record IMP-038 Architecture Fit NOT_PERFORMED"],
     [currentRoadmapSection, /IMP038_ARCHITECTURE_LOCKED:\s*NO/, "ROADMAP must record IMP-038 architecture not locked"],
@@ -28797,7 +28889,7 @@ function checkImp038ControlledContinuationActivation(roadmap, state, architectur
     [currentSliceSection, /IMP038_ACTIVATED:\s*YES/, "ROADMAP current slice must record IMP-038 activated"],
     [
       currentSliceSection,
-      /IMP038_PRODUCT_DEFINITION:\s*DRAFT|PD-IMP-038-DRAFT-1[^\n]{0,40}DRAFT|Product Definition[^\n]{0,80}DRAFT/,
+      /IMP038_PRODUCT_DEFINITION:\s*DRAFT|PD-IMP-038-DRAFT-2[^\n]{0,40}DRAFT|Product Definition[^\n]{0,80}DRAFT/,
       "ROADMAP current slice must record IMP-038 Product Definition DRAFT",
     ],
     [state.text, /STATE-R136 = IMP-038_CONTROLLED_CONTINUATION_ACTIVATION|STATE-R136 = IMP038_CONTROLLED_CONTINUATION/, "STATE must record STATE-R136 controlled-continuation identity"],
@@ -28922,8 +29014,8 @@ function checkImp038ControlledContinuationActivation(roadmap, state, architectur
     imp038Activated: /IMP038_ACTIVATED:\s*YES/.test(currentRoadmapSection) ? "YES" : "",
     imp038FormalLifecycle: /IMP-038:\s*PLANNED/.test(currentRoadmapSection) ? "PLANNED" : "",
     imp038ProductDefinition: /IMP038_PRODUCT_DEFINITION:\s*DRAFT/.test(currentRoadmapSection) ? "DRAFT" : "",
-    imp038ProductDefinitionVersion: /IMP038_PRODUCT_DEFINITION_VERSION:\s*PD-IMP-038-DRAFT-1/.test(currentRoadmapSection)
-      ? "PD-IMP-038-DRAFT-1"
+    imp038ProductDefinitionVersion: /IMP038_PRODUCT_DEFINITION_VERSION:\s*PD-IMP-038-DRAFT-2/.test(currentRoadmapSection)
+      ? "PD-IMP-038-DRAFT-2"
       : "",
     imp038ProductDefinitionGate: /IMP038_PRODUCT_DEFINITION_GATE:\s*NOT_PERFORMED/.test(currentRoadmapSection) ? "NOT_PERFORMED" : "",
     imp038ArchitectureFit: /IMP038_ARCHITECTURE_FIT:\s*NOT_PERFORMED/.test(currentRoadmapSection) ? "NOT_PERFORMED" : "",

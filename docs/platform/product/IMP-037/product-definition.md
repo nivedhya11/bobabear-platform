@@ -54,7 +54,7 @@ CURRENT_READ_AMENDMENT (D-374 / ADR-016 / ARCH-R20 — 2026-09-22; CURRENT tip G
     CONTINUATION_EXCEPTION_AUTHORITY: PR#179/5771367844
     HISTORICAL_IMP026_TO_IMP028_CONTINUATION: CLOSED
     IMP037_PROVIDER_BLOCKED_TO_IMP038: YES
-    IMP038_ACTIVATED: YES (pre-gate Product Definition only; PD-IMP-038-DRAFT-1 DRAFT)
+    IMP038_ACTIVATED: YES (pre-gate Product Definition only; PD-IMP-038-DRAFT-2 DRAFT)
     IMP038_ACCEPTANCE_BLOCKED_BY_IMP037: YES
     currentProductSlice: IMP-038; nextProductSlice: IMP-039; acceptedThrough: IMP-036G
   This does NOT accept IMP-037, complete IMP-037, pass IMP-038 Product Definition Gate, lock
@@ -1553,5 +1553,5 @@ Product Definition Gate = PASS; Architecture Fit PASS; architecture LOCKED;
 implementation AUTHORIZED / STARTED (authorization evidence PR#171/5743814105; start evidence
 PR#172/5744869269). Stories are not complete.
 IMP-038 is activated for pre-gate Product Definition only (`IMP038_ACTIVATED: YES`;
-`PD-IMP-038-DRAFT-1` DRAFT; Gate NOT_PERFORMED; implementation NOT_AUTHORIZED / NOT_STARTED;
+`PD-IMP-038-DRAFT-2` DRAFT; Gate NOT_PERFORMED; implementation NOT_AUTHORIZED / NOT_STARTED;
 `IMP038_ACCEPTANCE_BLOCKED_BY_IMP037: YES`).

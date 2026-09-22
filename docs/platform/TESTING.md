@@ -32,7 +32,7 @@ activation truth is owned by [`ROADMAP.md`](./ROADMAP.md) / [`STATE.md`](./STATE
 `COMPLETE_AND_ACCEPTED` (`IMP036G_ACCEPTED: YES`; Founder UAT PASS). Under
 `CONTINUATION_EXCEPTION: IMP037_PROVIDER_BLOCKED_TO_IMP038`, IMP-038 is the activated
 `currentProductSlice` for PD-1 pre-gate Product Definition work (`IMP038_ACTIVATED: YES`; formal
-lifecycle `PLANNED`; Product Definition `DRAFT` / `PD-IMP-038-DRAFT-1`; Product Definition Gate
+lifecycle `PLANNED`; Product Definition `DRAFT` / `PD-IMP-038-DRAFT-2`; Product Definition Gate
 NOT_PERFORMED; Architecture Fit NOT_PERFORMED; architecture unlocked; implementation NOT_AUTHORIZED /
 NOT_STARTED; `IMP038_ACCEPTANCE_BLOCKED_BY_IMP037: YES`). IMP-037 remains an unresolved
 `IMPLEMENTATION_IN_PROGRESS` predecessor (`IMP037_ACTIVATED: YES`; Product Definition `APPROVED` /

@@ -3,7 +3,7 @@
   "status": "DRAFT",
   "authority": "PRODUCT_DEFINITION",
   "capability": "IMP-038",
-  "productDefinitionVersion": "PD-IMP-038-DRAFT-1",
+  "productDefinitionVersion": "PD-IMP-038-DRAFT-2",
   "process": "PD-1",
   "verificationPolicy": "TEST-1",
   "lastReviewed": "2026-09-22",
@@ -20,7 +20,11 @@
   "founderUatRequired": "YES",
   "founderUatStatus": "NOT_PERFORMED",
   "productDecisions": 21,
-  "unresolvedProductDecisions": 21,
+  "unresolvedProductDecisions": 0,
+  "productDecisionsResolved": 21,
+  "founderDecisionAuthority": "PR#180/5773472988",
+  "founderDecisionPackage": "APPROVED",
+  "legalReviewOpenTopics": 9,
   "v1AcceptanceStories": 20,
   "totalStories": 24,
   "acceptanceBlockedByImp037": "YES",
@@ -36,7 +40,7 @@
 
 ```text
 Document status: DRAFT
-PRODUCT_DEFINITION_VERSION: PD-IMP-038-DRAFT-1
+PRODUCT_DEFINITION_VERSION: PD-IMP-038-DRAFT-2
 PRE-GATE DRAFT: YES
 CAPABILITY: IMP-038
 TITLE: Security & Privacy Hardening
@@ -72,12 +76,19 @@ IMP037_IMPLEMENTATION_COMPLETE: NO
 IMP037_EXTERNAL_RECOVERY_PROOF: NOT_PERFORMED
 PHASE1_BLOCK_STATUS: BLOCKED_PROVIDER_ACCESS
 
-UNRESOLVED_PRODUCT_DECISIONS: 21
+PRODUCT_DECISIONS: RESOLVED
+PRODUCT_DECISION_COUNT: 21
+UNRESOLVED_PRODUCT_DECISIONS: 0
+FOUNDER_DECISION_PACKAGE: APPROVED
+FOUNDER_DECISION_AUTHORITY: PR#180/5773472988
+HISTORICAL_PROVENANCE: PD-IMP-038-DRAFT-1 (pre-decision candidate)
 LEGAL_REVIEW_REQUIRED: YES
+LEGAL_REVIEW_OPEN_TOPICS: 9
 COMPLIANCE_CLAIMS: NONE
   — does NOT claim DPDP Act compliance
   — does NOT claim CERT-In compliance
   — does NOT claim PCI DSS compliance
+  — does NOT claim OWASP ASVS certification
   — does NOT claim OWASP Top 10 / ASVS “certified” compliance
 
 stories: 24
@@ -131,7 +142,7 @@ authoritative even if edge controls are absent or bypassed.
 | Field | Definition |
 |---|---|
 | Capability / title | IMP-038 — Security & Privacy Hardening |
-| Product Definition version / document status | `PD-IMP-038-DRAFT-1`; **DRAFT**; **PRE-GATE DRAFT: YES** |
+| Product Definition version / document status | `PD-IMP-038-DRAFT-2` (advances `PD-IMP-038-DRAFT-1`); **DRAFT**; **PRE-GATE DRAFT: YES**; Founder decisions FD-038-01…21 reconciled per PR#180/5773472988 |
 | Product owner / approval evidence | Founder/human controlled-continuation activation via PR#179 comment `5771367844` + instruction “proceed with next IMP”; Founder security/privacy requirements incorporated as binding discovery inputs (independent review `5274597723` on PR #180); Product Definition Gate **not** performed |
 | Process / verification policy | PD-1 / TEST-1 |
 | Canonical anchors | VISION-1; ROADMAP GTM-R138; STATE STATE-R136; ARCH-R20; DR-16; PD-1; TEST-1 |
@@ -241,18 +252,18 @@ workforce/platform operators (inconsistent incident/regulatory readiness); Found
 | `JOURNEY-PRIVACY-REQUEST` | Customer or operator handles personal-data request | Follow Founder-decided V1 model | Disposition recorded; DPDP matrix evidence retained | Legal-hold stops destructive path |
 | `JOURNEY-DPDP-APPLICABILITY` | Platform operator / legal | Inventory data flows; map requirements → controls → evidence | Matrix complete; **no compliance claim** | LEGAL_REVIEW_REQUIRED markers |
 | `JOURNEY-CERTIN-READINESS` | Suspected cyber incident / regulatory obligation assessment | Applicability matrix; PoC; time-sync; log retention; reporting readiness | Controls/evidence mapped; **no compliance claim** | LEGAL_REVIEW_REQUIRED |
-| `JOURNEY-PAYMENT-PCI-SCOPE` | Payment flows | Assess PAN/CVV touch; Razorpay integration type; shared responsibility | Scope matrix + evidence; prefer no raw card credentials | LEGAL_REVIEW / FD-038-12 |
-| `JOURNEY-ASVS-VERIFICATION` | Security verification | Trace ASVS v5.0.0 requirements → BOBA control → proof → PASS/GAP/N/A | Baseline measurable | FD-038-16 target level |
+| `JOURNEY-PAYMENT-PCI-SCOPE` | Payment flows | Assess PAN/CVV touch; Razorpay integration type; shared responsibility | Scope matrix + evidence; BOBA_RAW_PAN/CVV_STORAGE = NO | LEGAL_REVIEW for PCI validation path; product lock RESOLVED |
+| `JOURNEY-ASVS-VERIFICATION` | Security verification | Trace ASVS v5.0.0 Level 2 applicable controls → BOBA control → proof → PASS/GAP/N/A | Baseline measurable | OWASP_ASVS_TARGET = LEVEL_2_APPLICABLE_CONTROLS |
 | `JOURNEY-AUTHORIZATION-NEGATIVE` | Cross-scope / BOLA / BFLA attempts | Customer/workforce/outlet/territory/org negatives | Unauthorized denied; evidence retained | Existing ADR-005 catalogue |
 | `JOURNEY-EDGE-ORIGIN-DEFENSE` | Internet client | Intended edge security layer cannot be trivially bypassed to origin | Property proven or residual risk owned | Mechanism = Fit / IMP-039 |
-| `JOURNEY-SECURE-SDLC` | CI / PR / release | SAST, SCA, secret, container, SBOM/provenance feasibility, pinning | Findings dispositioned; exception register expiring | FD-038-09/17 thresholds |
+| `JOURNEY-SECURE-SDLC` | CI / PR / release | SAST, SCA, secret, container, SBOM/provenance feasibility, pinning | Critical = ZERO unresolved; High exceptions time-bounded | UNRESOLVED_CRITICAL_AT_ACCEPTANCE = ZERO; High default ≤30d |
 | `JOURNEY-VENDOR-REGISTER` | Material third parties + browser scripts | Register data/purpose/access/retention/incident/shared-responsibility/exit | Register complete for V1 providers | Update when Fit adds edge vendor |
 | `JOURNEY-SECURITY-LOGGING` | Security-relevant events | Log with PII/secret minimization; retention per FD | Usable for incident/CERT-In readiness without secret leakage | Conflicts → HUMAN |
 | `JOURNEY-RETENTION-DISPOSITION` | Operator/platform reviews data classes | Apply decided retention windows | Backup vs statutory vs operational distinguished | Conflicts → LEGAL_REVIEW |
 | `JOURNEY-SECURITY-HEADERS` | Any public/admin browser hit | CSP + security headers on actual serving path | Headers present; embeds per FD | Misconfig fails closed / documented exception |
-| `JOURNEY-SECURITY-INCIDENT-VISIBILITY` | Suspected incident | Bounded investigation pack | Actionable visibility without inventing SIEM | Customer breach comms per FD-038-03 |
+| `JOURNEY-SECURITY-INCIDENT-VISIBILITY` | Suspected incident | Bounded investigation pack + templates | Actionable visibility without inventing SIEM | EXTERNAL notice = LEGAL_TRIGGER_DEPENDENT |
 | `JOURNEY-SECURITY-PRIVACY-ACCEPTANCE-PACK` | IMP-038 acceptance → IMP-040 handoff | Assemble durable Acceptance Pack index | IMP-040 can consume without re-deriving | Residual risk + Founder UAT evidence |
-| `JOURNEY-PRIVILEGED-ADMIN` | High-consequence admin action | RBAC + audits; optional step-up if Founder selects | Unauthorized denied; authorized audited | Cross-scope denial preserved |
+| `JOURNEY-PRIVILEGED-ADMIN` | High-consequence admin action | RBAC + audits + HIGH_CONSEQUENCE_ADMIN_STEP_UP = REQUIRED | Unauthorized denied; authorized audited | Cross-scope denial preserved |
 
 ---
 
@@ -263,14 +274,14 @@ workforce/platform operators (inconsistent incident/regulatory readiness); Found
 | Launch-safe browser posture | PLATFORM / CUSTOMER | `JOURNEY-SECURITY-HEADERS` | Enforce CSP/headers on serving path | US-IMP-038-001 | V1_ACCEPTANCE_SLICE |
 | Auth-gated location I/O | CUSTOMER | `JOURNEY-AUTH-GATED-LOCATION` | Supersede anonymous Google location I/O | US-IMP-038-002 | V1_ACCEPTANCE_SLICE |
 | Customer auth/OTP abuse resistance | CUSTOMER / PLATFORM | `JOURNEY-CUSTOMER-AUTH-ABUSE` | Signup/login/OTP bot, brute-force, bombing, enumeration controls | US-IMP-038-003 | V1_ACCEPTANCE_SLICE |
-| Honest profile vs erasure | CUSTOMER | `JOURNEY-PRIVACY-REQUEST` | Clarify/label profile delete vs erasure | US-IMP-038-004 | V1_ACCEPTANCE_SLICE (labeling); erasure mechanics depend on FD-038-01 |
+| Honest profile vs erasure | CUSTOMER | `JOURNEY-PRIVACY-REQUEST` | Operator-mediated privacy requests; profile delete ≠ legal erasure | US-IMP-038-004 | V1_ACCEPTANCE_SLICE (OPERATOR_MEDIATED; FULL_SELF_SERVICE_PRIVACY_PORTAL_V1 = NO) |
 | Retention class policy | PLATFORM / WORKFORCE | `JOURNEY-RETENTION-DISPOSITION` | Publish V1 retention matrix | US-IMP-038-005 | V1_ACCEPTANCE_SLICE (policy); automation may FOLLOW_UP |
 | Secure SDLC / supply chain | PLATFORM | `JOURNEY-SECURE-SDLC` | SAST, SCA, secret, container, SBOM/provenance, pinning | US-IMP-038-006 | V1_ACCEPTANCE_SLICE |
 | BOLA/BFLA + cross-scope negatives | PLATFORM / WORKFORCE / CUSTOMER | `JOURNEY-AUTHORIZATION-NEGATIVE` | Authorization-negative proof across boundaries | US-IMP-038-007 | V1_ACCEPTANCE_SLICE |
-| Incident investigation pack | PLATFORM | `JOURNEY-SECURITY-INCIDENT-VISIBILITY` | Bounded security investigation evidence pack | US-IMP-038-008 | V1_ACCEPTANCE_SLICE (internal); customer breach comms FD-038-03 |
-| Secure session posture review | CUSTOMER / WORKFORCE | `JOURNEY-SECURE-CUSTOMER-SESSION` | Confirm/extend session revocation & flags | US-IMP-038-009 | FOLLOW_UP unless FD-038-06 elevates |
+| Incident investigation pack | PLATFORM | `JOURNEY-SECURITY-INCIDENT-VISIBILITY` | Internal IR + prepared notification templates; external notice legal-trigger-dependent | US-IMP-038-008 | V1_ACCEPTANCE_SLICE (INTERNAL_INCIDENT_RESPONSE_V1 = REQUIRED) |
+| Secure session posture review | CUSTOMER / WORKFORCE | `JOURNEY-SECURE-CUSTOMER-SESSION` | Broader session-revocation UX beyond step-up | US-IMP-038-009 | FOLLOW_UP (step-up locked into US-013 via FD-038-06 = REQUIRED) |
 | Secrets console UX | PLATFORM | secrets adjacency | Operator secrets console | US-IMP-038-010 | DEFERRED (IMP-039 host-local secrets boundary) |
-| Full automated DPDP portal | CUSTOMER | privacy portal | Automated rights portal | US-IMP-038-011 | DEFERRED (LEGAL_REVIEW); does **not** replace US-020 matrix |
+| Full automated DPDP portal | CUSTOMER | privacy portal | Automated rights portal | US-IMP-038-011 | DEFERRED_BY_FOUNDER (FULL_SELF_SERVICE_PRIVACY_PORTAL_V1 = NO); does **not** replace US-020 matrix |
 | Marketing consent center | CUSTOMER | preferences | Marketing preference center | US-IMP-038-012 | DEFERRED / NOT_SUPPORTED if no marketing system in V1 |
 | Workforce auth/MFA abuse resistance | WORKFORCE / PLATFORM | `JOURNEY-WORKFORCE-AUTH-ABUSE` | Login/MFA brute-force, stuffing, MFA abuse/bypass | US-IMP-038-013 | V1_ACCEPTANCE_SLICE |
 | Platform-wide layered bot/API abuse | PLATFORM | `JOURNEY-PLATFORM-BOT-API-ABUSE` | Edge WAF/bot/challenge candidate + app controls | US-IMP-038-014 | V1_ACCEPTANCE_SLICE |
@@ -291,8 +302,8 @@ workforce/platform operators (inconsistent incident/regulatory readiness); Found
 
 | Slice | Mandatory story IDs | Mandatory AC IDs | Required Golden Journeys | Observable acceptance boundary |
 |---|---|---|---|---|
-| `V1_ACCEPTANCE_SLICE` | US-IMP-038-001…008, 013…024 | AC-IMP-038-001-01…024-xx (see §10; final set after Founder FDs) | `GJ-FIRST-ORDER`, `GJ-ADDRESS-SERVICEABILITY`, `GJ-PERMITTED-OUTLET-ACCESS`, `GJ-PAYMENT-RECOVERY` (regression) | Hardening outcomes enforced and proven; regulatory matrices complete without compliance claims; Acceptance Pack ready for IMP-040 |
-| `FOLLOW_UP` | US-IMP-038-009; parts of US-005 automation; US-008 customer breach playbooks if deferred | TBD | — | After V1 or legal review |
+| `V1_ACCEPTANCE_SLICE` | US-IMP-038-001…008, 013…024 | AC-IMP-038-001-01…024-xx (see §10; Founder FDs reconciled in DRAFT-2) | `GJ-FIRST-ORDER`, `GJ-ADDRESS-SERVICEABILITY`, `GJ-PERMITTED-OUTLET-ACCESS`, `GJ-PAYMENT-RECOVERY` (regression) | Hardening outcomes enforced and proven; regulatory matrices complete without compliance claims; Acceptance Pack ready for IMP-040 |
+| `FOLLOW_UP` | US-IMP-038-009 (session UX beyond step-up); parts of US-005 automation; external breach notice execution (templates are V1) | TBD | — | After V1 or legal trigger |
 | `DEFERRED` | US-IMP-038-010…012 | — | — | IMP-039/040/legal |
 
 Every possibility also classified in §§22–25.
@@ -311,14 +322,15 @@ Preconditions: Static export + nginx (or CURRENT serving path) is the authority 
 Acceptance scenarios: AC-IMP-038-001-01…03
 Business rules: BR-IMP-038-001
 Permission / resource context: N/A (platform config); must not invent new roles
-Error / recovery: Misconfiguration fails closed or documented accepted exception per FD-038-05
-Dependencies: FD-038-05; must not disable for IMP-040 cutover
+Error / recovery: Misconfiguration fails closed or documented accepted exception (report-only tuning may precede final enforcement)
+Dependencies: CSP_ENFORCED_ON_REAL_SERVING_PATH = YES; must not disable for IMP-040 cutover
 Explicit non-goals: Locking a CDN/WAF vendor; reinventing CDN product; IMP-039 provisioning
 Data implications: None beyond config
 Security implications: Primary
-Architecture fit / applicable invariants: ARCH §12; static frontend rule
-Open material decisions: FD-038-05
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Gate + Fit + FDs pending)
+Architecture fit / applicable invariants: ARCH §12; static frontend rule; exact header/CSP mechanism is Architecture Fit
+Founder decision status: FD-038-05 = RESOLVED_WITH_ARCHITECTURE_FIT_MECHANISM
+Open material decisions: NONE (product property locked; Fit selects mechanism)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Product Definition Gate + Architecture Fit pending)
 ```
 
 ```text
@@ -333,8 +345,9 @@ Business rules: BR-IMP-038-002
 Permission / resource context: Customer session realm only
 Dependencies: Founder §6.1 markers already approved as future direction; confirm V1 inclusion
 Explicit non-goals: Rewriting accepted IMP-036B history; new maps provider
-Open material decisions: confirm V1 include (strongly evidenced YES); FD-038-08 location retention
-Readiness: NOT_READY_FOR_IMPLEMENTATION
+Founder decision status: FD-038-08 = RESOLVED_WITH_LEGAL_REVIEW_DEPENDENCY (LOCATION_DATA_MINIMIZATION_REQUIRED = YES; RAW_LOCATION_TELEMETRY_RETENTION_BY_DEFAULT = NO)
+Open material decisions: NONE for product policy; numeric retention windows = LEGAL_REVIEW_REQUIRED
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Gate + Fit + legal retention windows)
 ```
 
 ```text
@@ -347,14 +360,22 @@ so that authentication alone is not treated as complete abuse protection.
 Journey: JOURNEY-CUSTOMER-AUTH-ABUSE
 Acceptance scenarios: AC-IMP-038-003-01…05
 Business rules: BR-IMP-038-011, BR-IMP-038-012, BR-IMP-038-013
-Open material decisions: FD-038-15 (throttle/challenge/lockout policy); FD-038-21 (challenge surfaces)
+Founder decision status: FD-038-15 = RESOLVED; FD-038-21 = RESOLVED_WITH_ARCHITECTURE_FIT_MECHANISM
+Locked policy:
+  AUTH_ABUSE_RESPONSE = PROGRESSIVE_THROTTLE + TEMPORARY_COOLDOWN + RISK_BASED_CHALLENGE
+  PERMANENT_ATTACKER_TRIGGERED_LOCKOUT = FORBIDDEN
+  LAYERED_ABUSE_SIGNALS = IP + ACCOUNT_PRINCIPAL + PHONE_OTP_TARGET + SESSION_DEVICE_RISK_WHERE_JUSTIFIED
+  NON_ENUMERATING_FAILURES = REQUIRED
+  BOT_CHALLENGE_PRIORITY = CUSTOMER_SIGNUP_LOGIN_OTP_AND_WORKFORCE_AUTH
+  ORDINARY_CHECKOUT_CHALLENGE_DEFAULT = NO
 Requirements:
   - principal/phone/account-level throttles in addition to IP controls
   - safe/non-enumerating responses
   - server-side throttling remains authoritative; edge/bot challenge is defense-in-depth only
   - no permanent lockout design that lets attackers DoS legitimate accounts
   - password/reset/recovery abuse covered if/when those surfaces exist; else N/A with rationale
-Readiness: NOT_READY_FOR_IMPLEMENTATION
+Open material decisions: NONE (challenge provider/mechanism remains Architecture Fit)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Gate + Architecture Fit for challenge mechanism)
 ```
 
 ```text
@@ -364,9 +385,15 @@ I want profile delete and any privacy erasure action labeled and behaved accordi
 so that I am not misled that domain profile delete equals legal erasure (OQ-005).
 Journey: JOURNEY-PRIVACY-REQUEST
 Acceptance scenarios: AC-IMP-038-004-01…03
-Open material decisions: FD-038-01, FD-038-04, FD-038-10
-LEGAL_REVIEW_REQUIRED: YES
-Readiness: NOT_READY_FOR_IMPLEMENTATION
+Founder decision status: FD-038-01/04/10 = RESOLVED_WITH_LEGAL_REVIEW_DEPENDENCY
+Locked policy:
+  V1_PRIVACY_REQUEST_MODEL = OPERATOR_MEDIATED
+  FULL_SELF_SERVICE_PRIVACY_PORTAL_V1 = NO
+  PROFILE_DELETE_EQUALS_LEGAL_ERASURE = NO
+  DPDP_APPLICABILITY_CONTROL_MATRIX = MANDATORY
+LEGAL_REVIEW_REQUIRED: YES (applicability + any launch-blocking user-facing rights controls)
+Open material decisions: NONE for product model; legal applicability may still block launch semantics
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Gate + Fit + legal review of applicability/rights controls)
 ```
 
 ```text
@@ -376,9 +403,16 @@ I want an explicit V1 retention matrix by data class
 so that backup retention (IMP-037) is not confused with statutory/customer/audit retention.
 Journey: JOURNEY-RETENTION-DISPOSITION
 Acceptance scenarios: AC-IMP-038-005-01…02
-Open material decisions: FD-038-02, FD-038-08, FD-038-19
-LEGAL_REVIEW_REQUIRED: YES
-Readiness: NOT_READY_FOR_IMPLEMENTATION
+Founder decision status: FD-038-02/08/19 = RESOLVED_WITH_LEGAL_REVIEW_DEPENDENCY
+Locked policy:
+  DATA_CLASS_RETENTION_MATRIX_REQUIRED = YES
+  LOCATION_DATA_MINIMIZATION_REQUIRED = YES
+  RAW_LOCATION_TELEMETRY_RETENTION_BY_DEFAULT = NO
+  SECURITY_LOG_SECRET_MINIMIZATION = REQUIRED
+  SECURITY_LOG_PII_MINIMIZATION = REQUIRED
+LEGAL_REVIEW_REQUIRED: YES (numeric statutory windows)
+Open material decisions: NONE for product policy; statutory periods = LEGAL_REVIEW_REQUIRED
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Gate + Fit + legal retention windows)
 ```
 
 ```text
@@ -390,9 +424,14 @@ dependency pinning
 so that supply-chain launch risk is visible before IMP-040.
 Journey: JOURNEY-SECURE-SDLC
 Acceptance scenarios: AC-IMP-038-006-01…04
-Open material decisions: FD-038-09 (launch thresholds); FD-038-17 (remediation/exception policy)
-Explicit non-goals: Inventing arbitrary remediation SLA numbers without Founder decision
-Readiness: NOT_READY_FOR_IMPLEMENTATION
+Founder decision status: FD-038-09/17 = RESOLVED
+Locked policy:
+  UNRESOLVED_CRITICAL_AT_ACCEPTANCE = ZERO
+  KNOWN_EXPLOITABLE_HIGH = NO_SILENT_ACCEPTANCE (Founder R3 + compensating controls + expiry)
+  HIGH_RISK_EXCEPTION_DEFAULT_MAX_DAYS = 30 (unless Founder overrides)
+Explicit non-goals: Inventing arbitrary remediation SLA numbers beyond the locked exception policy
+Open material decisions: NONE
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Gate + Fit pending)
 ```
 
 ```text
@@ -403,8 +442,8 @@ across customer, workforce, outlet, territory, and org boundaries
 so that deny-by-default authorization remains proven for launch.
 Journey: JOURNEY-AUTHORIZATION-NEGATIVE / JOURNEY-PRIVILEGED-ADMIN
 Acceptance scenarios: AC-IMP-038-007-01…04
-Open material decisions: NONE for existing ADR-005 catalogue review scope (new permissions only if an FD requires)
-Readiness: NOT_READY_FOR_IMPLEMENTATION
+Open material decisions: NONE for existing ADR-005 catalogue review scope (privacy remains operator-mediated; no new self-service permission invented)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Gate + Fit pending)
 ```
 
 ```text
@@ -414,20 +453,30 @@ I want a bounded security/privacy incident investigation evidence pack
 so that operators can investigate without inventing SIEM or claiming breach-law compliance.
 Journey: JOURNEY-SECURITY-INCIDENT-VISIBILITY
 Acceptance scenarios: AC-IMP-038-008-01…02
-Open material decisions: FD-038-03
-LEGAL_REVIEW_REQUIRED: YES for customer-facing breach communication
-Note: This is NOT the Security & Privacy Acceptance Pack (see US-IMP-038-024).
-Readiness: NOT_READY_FOR_IMPLEMENTATION
+Founder decision status: FD-038-03 = RESOLVED_WITH_LEGAL_REVIEW_DEPENDENCY
+Locked policy:
+  INTERNAL_INCIDENT_RESPONSE_V1 = REQUIRED
+  REGULATOR_CUSTOMER_NOTIFICATION_TEMPLATES = PREPARED
+  ACTUAL_EXTERNAL_NOTIFICATION = LEGAL_TRIGGER_DEPENDENT
+  TIME_SYNC_READINESS = REQUIRED
+  EVIDENCE_PRESERVATION = REQUIRED
+  SECURITY_LOGGING = REQUIRED
+  INCIDENT_OWNER_CONTACT = REQUIRED
+LEGAL_REVIEW_REQUIRED: YES for external notification triggers/applicability (does not reopen product locks)
+Note: This is NOT the Security & Privacy Acceptance Pack (see US-IMP-038-024). No CERT-In compliance claim.
+Open material decisions: NONE for product readiness model
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Gate + Fit + legal trigger review)
 ```
 
 ```text
 Story ID: US-IMP-038-009
 As a PERSONA-WORKFORCE-OPERATOR / CUSTOMER
-I want clearer session revocation / privileged-session policy if Founder elevates it
+I want clearer session revocation / privileged-session UX beyond the locked step-up requirement
 so that high-consequence sessions match agreed policy.
-Slice: FOLLOW_UP unless FD-038-06 elevates to V1
-Open material decisions: FD-038-06
-Readiness: NOT_READY_FOR_IMPLEMENTATION
+Slice: FOLLOW_UP (FD-038-06 step-up is REQUIRED and owned by US-013; broader session-revocation UX remains FOLLOW_UP)
+Founder decision status: FD-038-06 = RESOLVED (HIGH_CONSEQUENCE_ADMIN_STEP_UP = REQUIRED → US-013)
+Open material decisions: NONE for V1 step-up; broader session UX deferred
+Readiness: FOLLOW_UP / NOT_READY_FOR_IMPLEMENTATION
 ```
 
 ```text
@@ -437,13 +486,16 @@ Secrets console UX — DEFERRED (host-local pilot secrets / IMP-039 adjacency; A
 
 ```text
 Story ID: US-IMP-038-011
-Full automated privacy-rights portal — DEFERRED; LEGAL_REVIEW_REQUIRED.
+Full automated privacy-rights portal — DEFERRED_BY_FOUNDER (FULL_SELF_SERVICE_PRIVACY_PORTAL_V1 = NO).
 Does NOT remove the V1 mandatory DPDP applicability/control/evidence matrix (US-IMP-038-020).
+If legal review requires a specific user-facing rights control for launch, that control is V1 launch-blocking without converting this portal deferral into a full self-service portal by assumption.
 ```
 
 ```text
 Story ID: US-IMP-038-012
-Marketing consent center — DEFERRED / possibly NOT_SUPPORTED_BY_DESIGN if no V1 marketing system.
+Marketing consent center — DEFERRED_BY_FOUNDER (MARKETING_CONSENT_CENTER_V1 = DEFERRED).
+Reopen when first-party marketing automation/profiling is introduced.
+Deferral does not waive legally required consent/notice for existing processing.
 ```
 
 ```text
@@ -453,12 +505,20 @@ I want workforce login and MFA protected against brute force, credential stuffin
 distributed attempts, and account enumeration
 so that workforce ATO risk is explicitly threat-modeled and accepted separately from customer auth.
 Journey: JOURNEY-WORKFORCE-AUTH-ABUSE
-Acceptance scenarios: AC-IMP-038-013-01…04
+Acceptance scenarios: AC-IMP-038-013-01…05
 Business rules: BR-IMP-038-011, BR-IMP-038-012, BR-IMP-038-013
-Open material decisions: FD-038-15; FD-038-06 (if step-up elevated)
+Founder decision status: FD-038-06 = RESOLVED; FD-038-15 = RESOLVED; FD-038-21 = RESOLVED_WITH_ARCHITECTURE_FIT_MECHANISM
+Locked policy:
+  HIGH_CONSEQUENCE_ADMIN_STEP_UP = REQUIRED
+  AUTH_ABUSE_RESPONSE = PROGRESSIVE_THROTTLE + TEMPORARY_COOLDOWN + RISK_BASED_CHALLENGE
+  PERMANENT_ATTACKER_TRIGGERED_LOCKOUT = FORBIDDEN
+  NON_ENUMERATING_FAILURES = REQUIRED
+  BOT_CHALLENGE_PRIORITY includes WORKFORCE_AUTH
 Requirements: server-side authoritative; edge challenge defense-in-depth only; no permanent
-attacker-driven lockout DoS; safe/non-enumerating responses; principal/account + IP throttles.
-Readiness: NOT_READY_FOR_IMPLEMENTATION
+attacker-driven lockout DoS; safe/non-enumerating responses; principal/account + IP throttles;
+step-up/re-auth for selected high-consequence workforce/admin actions.
+Open material decisions: NONE (challenge/step-up mechanism details = Architecture Fit)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Gate + Architecture Fit)
 ```
 
 ```text
@@ -471,11 +531,19 @@ so that bot/API abuse is a first-class launch property.
 Journey: JOURNEY-PLATFORM-BOT-API-ABUSE
 Acceptance scenarios: AC-IMP-038-014-01…04
 Business rules: BR-IMP-038-014, BR-IMP-038-015
-Open material decisions: FD-038-13 (edge vendor posture); FD-038-21 (challenge surfaces)
+Founder decision status: FD-038-13/21 = RESOLVED_WITH_ARCHITECTURE_FIT_MECHANISM
+Locked product properties:
+  LAYERED_EDGE_SECURITY_REQUIRED = YES
+  APPLICATION_SECURITY_REMAINS_AUTHORITATIVE = YES
+  CLOUDFLARE_FREE = PREFERRED_LOW_TCO_ARCHITECTURE_FIT_CANDIDATE
+  CLOUDFLARE_ARCHITECTURE_LOCKED = NO
+  BOT_CHALLENGE_PRIORITY = CUSTOMER_SIGNUP_LOGIN_OTP_AND_WORKFORCE_AUTH
+  ORDINARY_CHECKOUT_CHALLENGE_DEFAULT = NO
 Architecture note: Cloudflare Free is the preferred low-TCO Architecture Fit candidate; Product
 Definition does NOT lock Cloudflare. Free-tier limitations must be recorded; server-side defense
-must remain if edge controls are bypassed or unavailable.
-Readiness: NOT_READY_FOR_IMPLEMENTATION
+must remain if edge controls are bypassed or unavailable. Fit / IMP-039 selects mechanism.
+Open material decisions: NONE for product properties; edge/challenge mechanism = Architecture Fit
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Gate + Architecture Fit / IMP-039 mechanism)
 ```
 
 ```text
@@ -487,8 +555,9 @@ spoofing/replay, refund abuse, scraping, and resource exhaustion
 so that each abuse case has attacker goal → entry point → control → detection → response → evidence.
 Journey: JOURNEY-BUSINESS-LOGIC-ABUSE
 Acceptance scenarios: AC-IMP-038-015-01…02
-Open material decisions: residual-risk acceptance via FD-038-09 where needed
-Readiness: NOT_READY_FOR_IMPLEMENTATION
+Founder decision status: FD-038-09 = RESOLVED (residual High requires Founder R3 + expiry; Critical = ZERO)
+Open material decisions: NONE
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Gate + Fit pending)
 ```
 
 ```text
@@ -499,9 +568,17 @@ and an expiring security exception register (owner, rationale, expiry, authority
 so that gaps cannot silently persist past launch handoff.
 Journey: JOURNEY-SECURE-SDLC
 Acceptance scenarios: AC-IMP-038-016-01…03
-Open material decisions: FD-038-09; FD-038-17; FD-038-18 (pen-test/assessment scope)
-Do not invent arbitrary remediation SLA numbers without Founder/security-policy decision.
-Readiness: NOT_READY_FOR_IMPLEMENTATION
+Founder decision status: FD-038-09/17/18 = RESOLVED
+Locked policy:
+  UNRESOLVED_CRITICAL_AT_ACCEPTANCE = ZERO
+  KNOWN_EXPLOITABLE_HIGH = NO_SILENT_ACCEPTANCE
+  High-risk exception requires Founder R3 risk acceptance, owner, rationale, compensating controls,
+  retest requirement, and expiry (default maximum 30 days unless Founder overrides)
+  INDEPENDENT_EXTERNAL_WEB_API_SECURITY_ASSESSMENT_BEFORE_IMP038_ACCEPTANCE = REQUIRED
+  CRITICAL_HIGH_RETEST_AND_CLOSURE = REQUIRED
+  CERT_IN_EMPANELLED_ASSESSOR = PREFERRED_WHERE_COMMERCIALLY_PRACTICAL (not a certification claim)
+Open material decisions: NONE
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Gate + Fit pending; assessment is acceptance evidence)
 ```
 
 ```text
@@ -513,9 +590,14 @@ risks as threat inputs only
 so that application security verification is measurable without claiming “Top 10 compliance.”
 Journey: JOURNEY-ASVS-VERIFICATION
 Acceptance scenarios: AC-IMP-038-017-01…02
-Open material decisions: FD-038-16 (target ASVS level / selected controls)
-COMPLIANCE_CLAIMS: NONE (matrix ≠ certification)
-Readiness: NOT_READY_FOR_IMPLEMENTATION
+Founder decision status: FD-038-16 = RESOLVED
+Locked policy:
+  OWASP_ASVS_VERSION = 5.0.0
+  OWASP_ASVS_TARGET = LEVEL_2_APPLICABLE_CONTROLS
+  Evidence per applicable selected requirement: PASS | GAP | N/A_WITH_REASON
+COMPLIANCE_CLAIMS: NONE (matrix ≠ ASVS certification)
+Open material decisions: NONE (exact applicable-control selection is Fit/implementation evidence work)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Gate + Fit pending)
 ```
 
 ```text
@@ -527,11 +609,20 @@ and evidence
 so that India cybersecurity regulatory readiness is explicit without claiming CERT-In compliance.
 Journey: JOURNEY-CERTIN-READINESS
 Acceptance scenarios: AC-IMP-038-018-01…03
-Open material decisions: FD-038-11
-LEGAL_REVIEW_REQUIRED: YES
-COMPLIANCE_CLAIMS: NONE
+Founder decision status: FD-038-11 = RESOLVED_WITH_LEGAL_REVIEW_DEPENDENCY
+Locked engineering readiness:
+  INTERNAL_INCIDENT_RESPONSE_V1 = REQUIRED
+  TIME_SYNC_READINESS = REQUIRED
+  EVIDENCE_PRESERVATION = REQUIRED
+  SECURITY_LOGGING = REQUIRED
+  INCIDENT_OWNER_CONTACT = REQUIRED
+  REGULATOR_CUSTOMER_NOTIFICATION_TEMPLATES = PREPARED
+  ACTUAL_EXTERNAL_NOTIFICATION = LEGAL_TRIGGER_DEPENDENT
+LEGAL_REVIEW_REQUIRED: YES (CERT-In applicability / reporting triggers — does not reopen product locks)
+COMPLIANCE_CLAIMS: NONE (does NOT claim CERT-In compliance)
 Security-log design must minimize secrets/PII even when security retention is required (US-019).
-Readiness: NOT_READY_FOR_IMPLEMENTATION
+Open material decisions: NONE for product readiness model
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Gate + Fit + legal applicability)
 ```
 
 ```text
@@ -542,9 +633,14 @@ while minimizing secrets and unnecessary PII
 so that retention requirements do not become a second privacy failure mode.
 Journey: JOURNEY-SECURITY-LOGGING
 Acceptance scenarios: AC-IMP-038-019-01…02
-Open material decisions: FD-038-19; FD-038-02
-LEGAL_REVIEW_REQUIRED: YES where retention intersects personal data
-Readiness: NOT_READY_FOR_IMPLEMENTATION
+Founder decision status: FD-038-19/02 = RESOLVED_WITH_LEGAL_REVIEW_DEPENDENCY
+Locked policy:
+  SECURITY_LOG_SECRET_MINIMIZATION = REQUIRED
+  SECURITY_LOG_PII_MINIMIZATION = REQUIRED
+  DATA_CLASS_RETENTION_MATRIX_REQUIRED = YES
+LEGAL_REVIEW_REQUIRED: YES (numeric statutory/security-log retention windows)
+Open material decisions: NONE for minimization policy; windows = LEGAL_REVIEW_REQUIRED
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Gate + Fit + legal windows)
 ```
 
 ```text
@@ -559,12 +655,20 @@ so that BOBA understands what applies, implements applicable controls, and retai
 without claiming DPDP compliance and without requiring a full automated privacy portal in V1.
 Journey: JOURNEY-DPDP-APPLICABILITY
 Acceptance scenarios: AC-IMP-038-020-01…04
-Open material decisions: FD-038-01, FD-038-04, FD-038-10, FD-038-20
+Founder decision status: FD-038-01/04/10 = RESOLVED_WITH_LEGAL_REVIEW_DEPENDENCY; FD-038-20 = RESOLVED_WITH_LEGAL_REVIEW_DEPENDENCY
+Locked policy:
+  DPDP_APPLICABILITY_CONTROL_MATRIX = MANDATORY
+  V1_PRIVACY_REQUEST_MODEL = OPERATOR_MEDIATED
+  FULL_SELF_SERVICE_PRIVACY_PORTAL_V1 = NO
+  PROFILE_DELETE_EQUALS_LEGAL_ERASURE = NO
+  Child-data / age-gate / parental-consent applicability = LEGAL_REVIEW_REQUIRED;
+  if legally required for BOBA V1 then AGE_OR_PARENTAL_CONTROL = LAUNCH_BLOCKING
 LEGAL_REVIEW_REQUIRED: YES
-COMPLIANCE_CLAIMS: NONE
+COMPLIANCE_CLAIMS: NONE (does NOT claim DPDP compliance)
 Matrix row shape (mandatory): requirement → current/future applicability → rationale →
 product/process/technical control → evidence → owner → LEGAL_REVIEW marker
-Readiness: NOT_READY_FOR_IMPLEMENTATION
+Open material decisions: NONE for product model; applicability interpretation = legal review
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Gate + Fit + legal applicability / child-data finding)
 ```
 
 ```text
@@ -578,10 +682,18 @@ so that payment scope is understood without claiming PCI compliance, while prese
 architectural preference that BOBA does not handle raw card credentials.
 Journey: JOURNEY-PAYMENT-PCI-SCOPE
 Acceptance scenarios: AC-IMP-038-021-01…03
-Open material decisions: FD-038-12
-LEGAL_REVIEW_REQUIRED: YES for any compliance-adjacent interpretation
-COMPLIANCE_CLAIMS: NONE
-Readiness: NOT_READY_FOR_IMPLEMENTATION
+Founder decision status: FD-038-12 = RESOLVED_WITH_LEGAL_REVIEW_DEPENDENCY
+Locked policy:
+  BOBA_RAW_PAN_STORAGE = NO
+  BOBA_RAW_CVV_STORAGE = NO
+  BOBA_RAW_CARD_PROCESSING = NO_BY_DESIGN
+  CARD_CAPTURE = RAZORPAY_OR_PROVIDER_CONTROLLED
+  PAYMENT_SHARED_RESPONSIBILITY_MATRIX = MANDATORY
+  PCI_VALIDATION_PATH = LEGAL_COMPLIANCE_REVIEW_REQUIRED
+LEGAL_REVIEW_REQUIRED: YES for PCI merchant validation scope (does not reopen raw-card ban)
+COMPLIANCE_CLAIMS: NONE (does NOT claim PCI DSS compliance)
+Open material decisions: NONE for product card-handling model
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Gate + Fit + PCI validation-path legal review)
 ```
 
 ```text
@@ -594,8 +706,9 @@ shared-responsibility/exit fields
 so that third-party and client-side compromise risk is explicit.
 Journey: JOURNEY-VENDOR-REGISTER
 Acceptance scenarios: AC-IMP-038-022-01…02
-Open material decisions: FD-038-13 may add/remove edge vendor rows after Fit
-Readiness: NOT_READY_FOR_IMPLEMENTATION
+Founder decision status: FD-038-13 = RESOLVED_WITH_ARCHITECTURE_FIT_MECHANISM (CLOUDFLARE_ARCHITECTURE_LOCKED = NO)
+Open material decisions: NONE for product policy; Fit may add/remove edge vendor rows after mechanism selection
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Gate + Architecture Fit)
 ```
 
 ```text
@@ -607,11 +720,13 @@ so that edge controls are defense-in-depth rather than theater.
 Journey: JOURNEY-EDGE-ORIGIN-DEFENSE
 Acceptance scenarios: AC-IMP-038-023-01…02
 Business rules: BR-IMP-038-015
-Open material decisions: FD-038-14 (mechanism class)
+Founder decision status: FD-038-14 = RESOLVED_WITH_ARCHITECTURE_FIT_MECHANISM
+Locked product property: EDGE_TO_ORIGIN_BYPASS_RESISTANCE_REQUIRED = YES
 Architecture note: Mechanism selection (origin firewall allowlist, authenticated origin, tunnel,
 etc.) belongs to Architecture Fit / IMP-039 where infrastructure mutation is involved.
 Application authorization/validation/throttling remains authoritative regardless.
-Readiness: NOT_READY_FOR_IMPLEMENTATION
+Open material decisions: NONE for product property; mechanism = Architecture Fit / IMP-039
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Gate + Architecture Fit / IMP-039)
 ```
 
 ```text
@@ -621,29 +736,36 @@ I want a slice-wide Security & Privacy Acceptance Pack consumable by IMP-040
 so that launch validation can rely on durable evidence rather than re-deriving IMP-038 posture.
 Journey: JOURNEY-SECURITY-PRIVACY-ACCEPTANCE-PACK
 Acceptance scenarios: AC-IMP-038-024-01…02
-Pack index (minimum):
-  - asset/data inventory + flows
+Pack index (minimum / mandatory):
+  - asset/data inventory
+  - data-flow map
   - threat model (incl. US-015 abuse matrix)
   - DPDP applicability/control matrix (US-020)
   - CERT-In applicability/control matrix (US-018)
   - PCI/payment-scope assessment (US-021)
-  - ASVS control matrix (US-017)
-  - auth/ATO/bot/abuse proof (US-003/013/014)
-  - authorization/BOLA/BFLA proof (US-007)
-  - edge/origin-control proof (US-014/023)
-  - secrets/crypto proof
-  - supply-chain scan/provenance evidence (US-006)
-  - vendor register (US-022)
+  - ASVS L2 applicable-control matrix (US-017)
+  - auth abuse evidence (US-003/013)
+  - BOLA/BFLA evidence (US-007)
+  - bot/API/business-abuse evidence (US-014/015)
+  - edge/origin evidence (US-014/023)
+  - CSP/header evidence (US-001)
+  - secrets/crypto evidence
+  - secure-SDLC evidence (US-006)
+  - vendor/processor/script register (US-022)
   - retention/deletion matrix (US-005)
   - security logging/privacy matrix (US-019)
-  - incident-response runbook/tabletop evidence (US-008 + US-018)
+  - incident response + tabletop evidence (US-008 + US-018)
   - vulnerability/exception register (US-016)
-  - penetration/security-assessment findings and closure (FD-038-18)
-  - residual risk and Founder UAT evidence where applicable
+  - independent security-assessment findings (FD-038-18)
+  - Critical/High retest/closure
+  - residual risks
+  - Founder UAT evidence where applicable
 Binding principles: NO CONTROL WITHOUT EVIDENCE; NO GAP WITHOUT OWNER;
 NO EXCEPTION WITHOUT AUTHORITY; NO COMPLIANCE CLAIM WITHOUT APPLICABILITY / LEGAL REVIEW
-Open material decisions: FD-038-09 residual risk thresholds
-Readiness: NOT_READY_FOR_IMPLEMENTATION
+Founder decision status: FD-038-09/17/18 = RESOLVED (Critical ZERO; High no silent acceptance; external assessment REQUIRED)
+Open material decisions: NONE
+IMP040_CONSUMABLE: YES (required)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Gate + Fit + pack assembly after implementation evidence)
 ```
 
 ---
@@ -655,9 +777,9 @@ AC-IMP-038-001-01 — Security headers present on public order surface
 Story: US-IMP-038-001
 Given the CURRENT static public site serving path
 When a browser requests a customer ordering document
-Then decided security headers (incl. CSP per FD-038-05) are present
+Then enforced security headers (incl. CSP with minimal explicit approved-integration allowlist) are present
 And IMP-040 cutover planning must not disable them
-Mandatory in acceptance slice: YES (pending FD-038-05)
+Mandatory in acceptance slice: YES
 ```
 
 ```text
@@ -666,7 +788,7 @@ Story: US-IMP-038-001
 Given workforce admin static/document path
 When loaded
 Then decided headers apply without inventing a second auth system
-Mandatory: YES (pending FD-038-05)
+Mandatory: YES
 ```
 
 ```text
@@ -675,7 +797,7 @@ Story: US-IMP-038-001
 Given CSP policy
 When a disallowed script origin is attempted
 Then it is blocked (or explicitly accepted exception documented)
-Mandatory: YES (pending FD-038-05)
+Mandatory: YES (FINAL_V1_CSP_ENFORCEMENT = REQUIRED; report-only tuning may precede enforcement)
 ```
 
 ```text
@@ -730,8 +852,8 @@ AC-IMP-038-003-02 — Customer login/signup abuse resisted (bot/brute/stuffing/m
 Story: US-IMP-038-003
 Given automated or distributed login/signup abuse
 When application and (if Fit-selected) edge controls apply
-Then abuse is throttled/challenged; legitimate recovery path remains without permanent lockout DoS
-Mandatory: YES (pending FD-038-15)
+Then abuse is progressively throttled / temporarily cooled down / risk-challenged; legitimate recovery path remains without permanent attacker-triggered lockout
+Mandatory: YES
 ```
 
 ```text
@@ -762,13 +884,14 @@ Mandatory: YES
 ```
 
 ```text
-AC-IMP-038-004-01 — Profile delete copy does not claim legal erasure unless FD says so
+AC-IMP-038-004-01 — Profile delete copy does not claim legal erasure
 Story: US-IMP-038-004
 Given customer profile delete UI/API
 When delete succeeds
-Then user-visible meaning matches FD-038-01
+Then user-visible meaning states PROFILE_DELETE_EQUALS_LEGAL_ERASURE = NO
+And privacy rights requests use OPERATOR_MEDIATED process (no full self-service portal in V1)
 And audit/history immutability rules are preserved where already authoritative
-Mandatory: YES (after FD-038-01)
+Mandatory: YES
 ```
 
 ```text
@@ -786,7 +909,7 @@ Story: US-IMP-038-004
 Given conflicting statutory retention
 When privacy deletion requested
 Then destructive path stops with explicit outcome (no silent partial delete)
-Mandatory: YES (after FD-038-01/02)
+Mandatory: YES (statutory holds per legal review; destructive path never silent)
 ```
 
 ```text
@@ -795,7 +918,7 @@ Story: US-IMP-038-005
 Given published V1 matrix
 When compared to IMP-037 35-day backup retention
 Then backup retention is not redefined as privacy law compliance
-Mandatory: YES (after FD-038-02)
+Mandatory: YES (DATA_CLASS_RETENTION_MATRIX_REQUIRED = YES)
 ```
 
 ```text
@@ -821,8 +944,8 @@ AC-IMP-038-006-02 — SCA / dependency vulnerability scan executed with disposit
 Story: US-IMP-038-006
 Given dependency scan
 When high/critical findings exist
-Then disposition meets FD-038-09 / FD-038-17 policy
-Mandatory: YES (after FD-038-09/17)
+Then disposition meets locked Critical=ZERO / High no-silent-acceptance / exception-with-expiry policy
+Mandatory: YES
 ```
 
 ```text
@@ -889,11 +1012,13 @@ Mandatory: YES (internal pack)
 ```
 
 ```text
-AC-IMP-038-008-02 — Customer breach communication path explicit or deferred
+AC-IMP-038-008-02 — Notification templates prepared; external notice legal-trigger-dependent
 Story: US-IMP-038-008
-Given FD-038-03
-When personal-data incident requires customer notice
-Then either V1 procedure exists or EXPLICITLY_DEFERRED with owner (no invented legal duty claim)
+Given INTERNAL_INCIDENT_RESPONSE_V1 = REQUIRED and REGULATOR_CUSTOMER_NOTIFICATION_TEMPLATES = PREPARED
+When a personal-data / security incident occurs
+Then templates and escalation paths exist in V1
+And ACTUAL_EXTERNAL_NOTIFICATION occurs only when LEGAL_TRIGGER_DEPENDENT review requires it
+And no CERT-In / breach-law compliance claim is asserted from templates alone
 Mandatory: YES
 ```
 
@@ -903,7 +1028,7 @@ Story: US-IMP-038-013
 Given repeated workforce login failures / stuffing patterns
 When threshold crossed
 Then fail-closed with safe errors; no permanent attacker-driven lockout DoS
-Mandatory: YES (pending FD-038-15)
+Mandatory: YES
 ```
 
 ```text
@@ -930,6 +1055,16 @@ Story: US-IMP-038-013
 Given edge controls unavailable/bypassed
 When abuse continues
 Then application-side workforce auth controls still enforce
+Mandatory: YES
+```
+
+```text
+AC-IMP-038-013-05 — High-consequence admin step-up required
+Story: US-IMP-038-013
+Given HIGH_CONSEQUENCE_ADMIN_STEP_UP = REQUIRED
+When a selected high-consequence workforce/admin action is attempted
+Then step-up / re-authentication is required before the action succeeds
+And ordinary MFA login alone is not treated as sufficient for those selected actions
 Mandatory: YES
 ```
 
@@ -964,12 +1099,13 @@ Mandatory: YES
 ```
 
 ```text
-AC-IMP-038-014-04 — Bot/human challenge escalation path explicit or deferred with owner
+AC-IMP-038-014-04 — Bot/human challenge prioritizes auth surfaces; checkout not default
 Story: US-IMP-038-014
-Given FD-038-21
-When challenge is required on selected surfaces
-Then challenge provider/mechanism is Fit-selected (Turnstile-class allowed as candidate)
-Or EXPLICITLY_DEFERRED with owner and residual risk
+Given BOT_CHALLENGE_PRIORITY = CUSTOMER_SIGNUP_LOGIN_OTP_AND_WORKFORCE_AUTH
+And ORDINARY_CHECKOUT_CHALLENGE_DEFAULT = NO
+When challenge is applied
+Then challenge provider/mechanism is Architecture Fit-selected (Turnstile-class allowed as candidate)
+And ordinary checkout is not challenged by default unless risk signals or measured abuse justify it
 Mandatory: YES
 ```
 
@@ -1006,8 +1142,8 @@ AC-IMP-038-016-02 — Vulnerability ownership and retest evidence
 Story: US-IMP-038-016
 Given open findings from SAST/SCA/secret/container/assessment
 When dispositioned
-Then owner and retest/closure evidence exist per FD-038-17
-Mandatory: YES (after FD-038-17)
+Then owner, Founder R3 authority (for High), compensating controls, retest requirement, and expiry (default ≤30 days) exist
+Mandatory: YES
 ```
 
 ```text
@@ -1020,13 +1156,13 @@ Mandatory: YES
 ```
 
 ```text
-AC-IMP-038-017-01 — ASVS v5.0.0 matrix exists with PASS/GAP/N/A
+AC-IMP-038-017-01 — ASVS v5.0.0 Level 2 applicable-control matrix exists with PASS/GAP/N/A
 Story: US-IMP-038-017
-Given FD-038-16 target level / selected controls
+Given OWASP_ASVS_VERSION = 5.0.0 and OWASP_ASVS_TARGET = LEVEL_2_APPLICABLE_CONTROLS
 When verification matrix published
-Then each in-scope requirement maps to BOBA control → proof → PASS/GAP/N/A
-And no “OWASP Top 10 compliant” claim is made
-Mandatory: YES (after FD-038-16)
+Then each applicable selected requirement maps to BOBA control → proof → PASS/GAP/N/A_WITH_REASON
+And no ASVS certification or “OWASP Top 10 compliant” claim is made
+Mandatory: YES
 ```
 
 ```text
@@ -1041,7 +1177,7 @@ Mandatory: YES
 ```text
 AC-IMP-038-018-01 — CERT-In applicability/control/evidence matrix published
 Story: US-IMP-038-018
-Given FD-038-11 / LEGAL_REVIEW_REQUIRED
+Given CERT-In readiness locks (IR/templates/time-sync/logging/PoC) / LEGAL_REVIEW_REQUIRED for applicability
 When matrix assembled
 Then incident-reporting, Point-of-Contact, time-sync, and log-retention obligations are mapped to
 controls/evidence or marked N/A with rationale
@@ -1072,14 +1208,14 @@ AC-IMP-038-019-01 — Security logs minimize secrets and unnecessary PII
 Story: US-IMP-038-019
 Given security-relevant logging design
 When sample events inspected
-Then secrets are absent; PII minimized to what FD-038-19 allows
-Mandatory: YES (after FD-038-19)
+Then secrets are absent; PII minimized per SECURITY_LOG_SECRET_MINIMIZATION and SECURITY_LOG_PII_MINIMIZATION
+Mandatory: YES
 ```
 
 ```text
 AC-IMP-038-019-02 — Security-log retention coherent with privacy retention matrix
 Story: US-IMP-038-019
-Given FD-038-02 and FD-038-19
+Given DATA_CLASS_RETENTION_MATRIX_REQUIRED = YES and security-log minimization locks
 When retention compared
 Then conflicts are resolved by Founder/legal decision, not silent overwrite
 Mandatory: YES
@@ -1107,7 +1243,7 @@ Mandatory: YES
 ```text
 AC-IMP-038-020-03 — Child-data applicability assessed
 Story: US-IMP-038-020
-Given FD-038-20
+Given FD-038-20 child-data / age-gate posture (LEGAL_REVIEW_REQUIRED; launch-blocking if legally required)
 When matrix inspected
 Then child-data / age-gate applicability is assessed with control or explicit N/A + legal marker
 Mandatory: YES
@@ -1119,7 +1255,7 @@ Story: US-IMP-038-020
 Given matrix complete
 When Acceptance Pack / public statements reviewed
 Then no DPDP compliance claim is made
-And US-011 full automated portal may remain DEFERRED if rights-handling model (FD-038-01/10) does not require it
+And US-011 full automated portal remains DEFERRED_BY_FOUNDER (FULL_SELF_SERVICE_PRIVACY_PORTAL_V1 = NO); legal review may still require specific launch-blocking rights controls without converting to a full portal by assumption
 Mandatory: YES
 ```
 
@@ -1128,9 +1264,10 @@ AC-IMP-038-021-01 — PAN/CVV touch assessment recorded
 Story: US-IMP-038-021
 Given Razorpay payment flows
 When assessment completes
-Then evidence states whether BOBA stores/processes/transmits raw PAN/CVV (expected: no)
-And architectural preference to avoid raw card credentials is preserved
+Then evidence states BOBA_RAW_PAN_STORAGE = NO and BOBA_RAW_CVV_STORAGE = NO (NO_BY_DESIGN)
+And CARD_CAPTURE remains RAZORPAY_OR_PROVIDER_CONTROLLED
 Mandatory: YES
+
 ```
 
 ```text
@@ -1139,13 +1276,14 @@ Story: US-IMP-038-021
 Given payment integration
 When matrix published
 Then integration type is identified; merchant vs provider responsibilities and evidence are listed
-Mandatory: YES (pending FD-038-12)
+And PAYMENT_SHARED_RESPONSIBILITY_MATRIX = MANDATORY is satisfied
+Mandatory: YES
 ```
 
 ```text
 AC-IMP-038-021-03 — Validation path / ASV implications identified or N/A
 Story: US-IMP-038-021
-Given FD-038-12 scope
+Given locked NO raw PAN/CVV handling and PAYMENT_SHARED_RESPONSIBILITY_MATRIX = MANDATORY
 When applicable
 Then validation path / ASV implications are identified, or N/A with rationale
 And no PCI DSS compliance claim is made
@@ -1182,7 +1320,7 @@ Mandatory: YES
 ```text
 AC-IMP-038-023-02 — Mechanism non-binding; application controls remain authoritative
 Story: US-IMP-038-023
-Given FD-038-14 / Architecture Fit / IMP-039
+Given EDGE_TO_ORIGIN_BYPASS_RESISTANCE_REQUIRED = YES / Architecture Fit / IMP-039
 When mechanism chosen (allowlist / authenticated origin / tunnel / etc.)
 Then Product Definition remains mechanism-neutral
 And application authorization/validation/throttling remains authoritative
@@ -1244,7 +1382,7 @@ Mandatory: YES
 | BR-IMP-038-005 | Backup retention ≠ statutory/customer/audit retention | IMP-037 FD-037-03 | US-005 |
 | BR-IMP-038-006 | Issued Financial Documents remain immutable statutory authority | D-365–D-367 | US-005 |
 | BR-IMP-038-007 | No secrets in client bundles without allowlist + review; no secret logging | ARCH §12; ADR-015 | US-006/019 |
-| BR-IMP-038-008 | Profile delete meaning must match Founder privacy decision; no silent legal claim | OQ-005; FD-038-01 | US-004 |
+| BR-IMP-038-008 | PROFILE_DELETE_EQUALS_LEGAL_ERASURE = NO; V1 privacy requests are OPERATOR_MEDIATED; no silent legal claim | OQ-005; FD-038-01/04/10 RESOLVED | US-004 |
 | BR-IMP-038-009 | IMP-038 acceptance blocked until IMP-037 formally accepted/reconciled | CONTINUATION_EXCEPTION + contiguity | lifecycle |
 | BR-IMP-038-010 | This PD asserts **no** DPDP / CERT-In / PCI / OWASP-certification compliance claim | Legal safety | all |
 | BR-IMP-038-011 | Server-side throttling/authorization/validation remain authoritative; edge/bot challenge is defense-in-depth only | Founder layered-defense requirement | US-003/013/014/023 |
@@ -1253,12 +1391,12 @@ Mandatory: YES
 | BR-IMP-038-014 | Platform bot/API abuse defense is layered (edge candidate + application controls) on critical surfaces | Founder bot-protection requirement | US-014 |
 | BR-IMP-038-015 | Arbitrary direct Internet access must not trivially bypass the intended edge security layer; mechanism is Fit/IMP-039 | Founder edge-to-origin requirement | US-023/014 |
 | BR-IMP-038-016 | DPDP/CERT-In/PCI topics require applicability/control/evidence matrices; portal automation is separate and may defer | Founder regulatory-readiness requirement | US-018/020/021 |
-| BR-IMP-038-017 | OWASP ASVS v5.0.0 is the primary traceable technical-control baseline; Top 10/API lists are threat inputs only | Founder verification baseline | US-017 |
+| BR-IMP-038-017 | OWASP ASVS v5.0.0 LEVEL_2_APPLICABLE_CONTROLS is the primary traceable baseline; Top 10/API lists are threat inputs only; not certification | FD-038-16 RESOLVED | US-017 |
 | BR-IMP-038-018 | Every V1 control needs evidence; every gap needs owner; every exception needs authority + expiry | Acceptance principles | US-016/024 |
 | BR-IMP-038-019 | Cloudflare Free may be preferred low-TCO Fit candidate; Product Definition must not lock Cloudflare | Founder TCO + Fit boundary | US-014/023 |
-| BR-IMP-038-020 | Architectural preference: BOBA does not handle raw card PAN/CVV credentials | Payment architecture + FD-038-12 | US-021 |
+| BR-IMP-038-020 | BOBA_RAW_PAN_STORAGE = NO; BOBA_RAW_CVV_STORAGE = NO; CARD_CAPTURE = RAZORPAY_OR_PROVIDER_CONTROLLED | FD-038-12 RESOLVED | US-021 |
 
-Unresolved material rules → §25.
+Founder product-policy rules for FD-038-01…21 are reconciled in §25; remaining open items are legal-review topics and Architecture Fit mechanisms.
 
 ---
 
@@ -1308,7 +1446,7 @@ Unresolved material rules → §25.
 | DISCOVERY | N/A — not a user-discovered feature | — |
 | CONTEXT | Public vs admin paths | AC-001-01/02 |
 | HAPPY PATH | Headers present | AC-001-01 |
-| ALTERNATE VALID PATHS | Accepted embed exceptions only if FD lists them | FD-038-05 |
+| ALTERNATE VALID PATHS | Accepted embed exceptions only for MINIMAL_EXPLICIT_APPROVED_INTEGRATIONS | FD-038-05 RESOLVED |
 | RECOVERY | Config rollback | US-001 |
 | SUCCESS FEEDBACK | Operator verification evidence | US-001 |
 | DOWNSTREAM EFFECT | Payment/maps embeds must still work per FD | US-001 |
@@ -1319,11 +1457,11 @@ Unresolved material rules → §25.
 
 | Journey dimension | Behaviour / N/A | Refs |
 |---|---|---|
-| ENTRY | Customer or operator enters privacy request path (FD defines channel) | US-004 |
-| DISCOVERY | If self-service exists, discoverable; else operator-mediated only | FD-038-04 |
+| ENTRY | Customer or operator enters OPERATOR_MEDIATED privacy request path | US-004 |
+| DISCOVERY | Operator-mediated channel only in V1 (FULL_SELF_SERVICE_PRIVACY_PORTAL_V1 = NO) | FD-038-04 RESOLVED |
 | CONTEXT | Subject identity server-derived | US-004 |
-| HAPPY PATH | Request accepted/dispositioned per FD; matrix evidence retained | AC-004-01; US-020 |
-| ALTERNATE VALID PATHS | Operator-mediated vs self-service | FD-038-01/04/10 |
+| HAPPY PATH | Request accepted/dispositioned via operator process; matrix evidence retained | AC-004-01; US-020 |
+| ALTERNATE VALID PATHS | Operator-mediated only in V1; full self-service portal deferred | FD-038-01/04/10 RESOLVED |
 | AUTHORIZATION | Cross-subject denied | AC-004-02 |
 | NOT FOUND / STALE | Unknown subject → non-enumerating response | US-004 |
 | CONCURRENCY | No double-delete corruption; statutory hold wins when required | AC-004-03 |
@@ -1354,8 +1492,8 @@ as applicable to deletion only (US-004/005).
 | Location tools signed-in | Authed | Maps/Places available per policy | Existing patterns | Serviceability | AC-002-03 |
 | Customer OTP / login abused | Threshold crossed | Safe error / retry-later / challenge if FD-selected | Focus on recovery CTA | Cooldown then retry | AC-003-* |
 | Workforce login / MFA abused | Threshold crossed | Safe error / cooldown / challenge | Focus on recovery | Cooldown then retry | AC-013-* |
-| Profile delete | Authed | Copy matches FD-038-01 (not overclaiming erasure) | Confirm control | Success/error | AC-004-01 |
-| Privacy request (if V1 UI) | Per FD-038-04 | Status / denied / hold | Confirm destructive | Recovery | FD-dependent |
+| Profile delete | Authed | Copy states PROFILE_DELETE_EQUALS_LEGAL_ERASURE = NO | Confirm control | Success/error | AC-004-01 |
+| Privacy request | OPERATOR_MEDIATED channel | Status / denied / hold | Confirm destructive | Recovery | FD-038-01/04 RESOLVED |
 | Bot challenge (if Fit/FD selects) | Abuse threshold | Challenge UI (Turnstile-class candidate) | Focus challenge control | Complete then retry | AC-014-04 |
 | Headers | N/A user UI | Operator evidence only | N/A | N/A | US-001 |
 | Incident pack / Acceptance Pack | Operator | Runbook checklist; redacted exports; pack index | N/A | Escalate | US-008/024 |
@@ -1371,10 +1509,10 @@ as applicable to deletion only (US-004/005).
 | Customer object access | Customer session subject | Own orders/addresses/etc. | BOLA denied cross-subject | AC-007-03 |
 | Location Google I/O | Customer session | Authed customer | Anonymous denied | AC-002-* |
 | Workforce privileged function | ADR-005 catalogue | Scoped outlet/territory/org | BFLA / cross-scope denied | AC-007-02/04 |
-| Privacy erasure (if any) | FD-038-01 may require new permission — **must not invent** until decided | TBD | STOP if undefined | FD-038-01 |
+| Privacy erasure (operator-mediated) | Reuse existing operator/admin catalogue; **must not invent** self-service portal roles | Operator process | Legal holds stop destructive path | FD-038-01 RESOLVED |
 | Scan / pack execution | Platform operator process / CI | Repo/CI/ops | N/A RBAC UI | US-006/024 |
 
-Do not invent roles. If FD-038-01 requires new permission keys, Architecture Fit must follow Gate PASS.
+Do not invent roles. Operator-mediated privacy does not invent a self-service portal permission set; any new permission keys require Architecture Fit after Gate PASS.
 
 ---
 
@@ -1472,9 +1610,9 @@ Journey Gap Audit remains IMP-040 requirement — not performed here.
 |---|---|---|---|
 | IMP-037 formal acceptance + reconciliation | IMPLEMENTATION_IN_PROGRESS; provider-blocked | **IMP-038 COMPLETE_AND_ACCEPTED** | `IMP038_ACCEPTANCE_BLOCKED_BY_IMP037` |
 | Controlled continuation activation | PR#179/5771367844; GTM-R138/STATE-R136 | This draft exists | NONE for drafting |
-| Founder FDs FD-038-01…21 | Unresolved | Product Definition Gate PASS | STOP Gate if material unresolved |
-| Legal review (DPDP/CERT-In/PCI/erasure/retention/breach/child-data) | Not performed | US-004/005/008/018/019/020/021 | LEGAL_REVIEW_REQUIRED |
-| Architecture Fit / lock | NOT_PERFORMED | Implementation authorization | STOP; Cloudflare Free is preferred candidate only |
+| Founder FDs FD-038-01…21 | RESOLVED (PR#180/5773472988); UNRESOLVED_PRODUCT_DECISIONS = 0 | Product Definition Gate review | Product decisions no longer block Gate for unresolved-FD reasons |
+| Legal review (DPDP/CERT-In/PCI/erasure/retention/breach/child-data) | Not performed | US-004/005/008/018/019/020/021 acceptance semantics | LEGAL_REVIEW_REQUIRED (does not reopen product locks) |
+| Architecture Fit / lock | NOT_PERFORMED | Implementation authorization | STOP; Cloudflare Free preferred candidate only; mechanisms for FD-038-05/13/14/21 open |
 | IMP-039 infra | PLANNED not activated | Edge-to-origin mechanism if infra mutation required | Boundary only |
 | IMP-040 cutover | PRE-GATE draft | Requires IMP-038 accepted later + Acceptance Pack | Soft planning dependency |
 
@@ -1491,7 +1629,7 @@ Journey Gap Audit remains IMP-040 requirement — not performed here.
 | Config boundary / placeholder secret rejection | Existing verified | ADR-015; audits |
 | Baseline nosniff/Referrer-Policy/XFO/HSTS/Permissions-Policy | Existing partial | next.config.ts |
 | Razorpay-hosted payment (no intentional PAN/CVV handling) | Existing verified pattern; scope matrix still required | payment flows; US-021 |
-| Maps auth-gate + CSP + abuse/bot/ASVS/DPDP/CERT-In/PCI matrices + SDLC + Acceptance Pack | V1 commitment **proposed** (not accepted) | this PD |
+| Maps auth-gate + CSP + abuse/bot/ASVS L2 + DPDP/CERT-In/PCI matrices + SDLC + Acceptance Pack | V1 commitment **Founder-locked in DRAFT-2** (not Gate-passed / not accepted) | this PD; PR#180/5773472988 |
 
 ---
 
@@ -1499,15 +1637,15 @@ Journey Gap Audit remains IMP-040 requirement — not performed here.
 
 | Behaviour | FOLLOW_UP or DEFERRED | Reason | Revisit |
 |---|---|---|---|
-| Full DPDP automated portal | DEFERRED | Legal + product undecided; matrix remains V1 mandatory (US-020) | Legal review + Founder |
+| Full DPDP automated portal | DEFERRED_BY_FOUNDER | FULL_SELF_SERVICE_PRIVACY_PORTAL_V1 = NO; matrix remains V1 mandatory (US-020) | Legal review may add launch-blocking rights controls without inventing a full portal |
 | Secrets console UX | DEFERRED | IMP-039 host-local secrets adjacency | IMP-039 / later |
-| Marketing consent center | DEFERRED | No V1 marketing system evidenced | Product |
+| Marketing consent center | DEFERRED_BY_FOUNDER | MARKETING_CONSENT_CENTER_V1 = DEFERRED (FD-038-07) | First-party marketing automation/profiling introduction |
 | Customer MFA / WebAuthn | DEFERRED | Not in CURRENT deferral-to-038 evidence as mandatory | Future |
 | SIEM / WORM log product | DEFERRED | Out of V1 pack | Future |
-| Customer breach SMS/email factory | FOLLOW_UP or DEFERRED | FD-038-03 | Legal + Founder |
-| Automated retention job engine | FOLLOW_UP | Policy first | After FD-038-02 |
+| Actual external customer/regulator notification execution | LEGAL_TRIGGER_DEPENDENT | Templates prepared in V1; actual send depends on legal trigger | Legal review |
+| Automated retention job engine | FOLLOW_UP | Matrix required in V1; automation engine may follow | After matrix + legal windows |
 | Locking Cloudflare (or any WAF/CDN) as architecture | NOT in PD | Fit decides; Free preferred candidate only | Architecture Fit |
-| Invented remediation SLA hours/days without Founder policy | NOT supported | FD-038-17 must decide | Founder |
+| Invented remediation SLA hours/days beyond locked exception policy | NOT supported | High-risk exception default max = 30 days unless Founder overrides | Founder override only |
 
 ---
 
@@ -1526,63 +1664,108 @@ Journey Gap Audit remains IMP-040 requirement — not performed here.
 
 ---
 
-## 25. Unresolved / decision required
+## 25. Founder decision reconciliation (FD-038-01…21)
 
-| DECISION_ID | QUESTION | WHY IT MATTERS | AFFECTED | OPTIONS SUPPORTED BY CURRENT ARCHITECTURE | RECOMMENDED DEFAULT (evidence-backed only) | WHAT REMAINS HUMAN AUTHORITY |
-|---|---|---|---|---|---|---|
-| FD-038-01 | What is V1 customer privacy request / erasure model? | OQ-005; profile delete ≠ erasure | US-004; JOURNEY-PRIVACY-REQUEST | (A) Label-only clarify profile delete; (B) operator-mediated erasure runbook; (C) limited self-service erasure with statutory holds | **None strong enough** without legal review | Founder + LEGAL_REVIEW |
-| FD-038-02 | Retention windows by data class (customer PII, workforce, logs/audits, location, financial/statutory)? | Conflicts with backup vs statutory | US-005/019 | Matrix with “retain / delete / anonymize / legal-hold” per class; must preserve FD immutability | Backup 35-day already decided for **backups only** (IMP-037) — do not extend by assumption | Founder + LEGAL_REVIEW |
-| FD-038-03 | Breach/security incident customer & operator communication for V1? | IMP-040 references IMP-038 pack | US-008/018/024 | (A) Internal pack only; (B) internal + Founder-approved customer template; (C) defer customer notice procedure | Internal pack in V1 is evidenced need; customer notice **not** assumed | Founder + LEGAL_REVIEW |
-| FD-038-04 | Any customer privacy self-service in V1? | Scope of UX | US-004/011/020 | Yes limited / No operator-only | Prefer operator-only until FD-038-01 | Founder |
-| FD-038-05 | CSP/security-header policy (strictness; Razorpay/Maps/admin exceptions)? | Static export path; payment embeds | US-001 | Enforce via nginx/static; exception allowlist for known payment/maps origins | Enforce CSP with explicit payment/maps allowlist (tests already mention Razorpay CSP origins) | Founder confirms strictness |
-| FD-038-06 | Privileged-session / step-up beyond existing workforce MFA for V1? | Admin high-consequence | US-009/013 | Keep MFA-only / add step-up for selected actions | Keep MFA-only for V1 unless Founder elevates | Founder |
-| FD-038-07 | Marketing/communication consent preferences in V1? | Privacy UX sprawl | US-012 | Defer / out of design if no marketing system | **DEFER** (no marketing system evidenced) | Founder confirm defer |
-| FD-038-08 | Location-data retention after Maps gating? | Location PII | US-002/005 | Reuse address retention; shorter ephemeral telemetry; etc. | No default without FD-038-02 | Founder |
-| FD-038-09 | Security launch thresholds (scan severities; residual risk acceptance) for IMP-040 handoff? | Blocks GO inputs | US-006/015/016/024 | Document severity gates | Require disposition of critical secrets; dependency criticals dispositioned before claiming IMP-038 complete | Founder |
-| FD-038-10 | DPDP V1 rights-handling model relative to applicability matrix (matrix always mandatory; portal optional)? | Separates matrix from portal deferral | US-020/011 | Matrix-only + operator-mediated rights / limited self-service / defer portal | Matrix mandatory; portal deferred unless FD-038-01 requires self-service | Founder + LEGAL_REVIEW |
-| FD-038-11 | CERT-In applicable obligations interpretation (reporting, PoC, time-sync, log retention) for V1? | Engineering must not invent legal duties | US-018/019 | Map applicable / N/A with legal markers; implement engineering-ready controls only where decided | No compliance claim; LEGAL_REVIEW before asserting obligations | Founder + LEGAL_REVIEW |
-| FD-038-12 | Payment/PCI merchant scope classification and Razorpay integration-type acceptance? | Shared responsibility + ASV path | US-021 | Confirm no PAN/CVV touch; document integration type; merchant vs provider matrix | Prefer architecture that never handles raw card credentials | Founder + LEGAL_REVIEW |
-| FD-038-13 | Edge/WAF/bot vendor posture for V1 (Cloudflare Free preferred candidate vs alternatives vs defer edge)? | Layered defense without PD lock | US-014/022/023 | Evaluate Cloudflare Free first; alternatives allowed; defer edge only with residual risk owner | Prefer Cloudflare Free as Fit candidate; do not lock in PD | Founder (policy) + Fit (mechanism) |
-| FD-038-14 | Edge-to-origin bypass protection mechanism class? | Defense-in-depth property | US-023 | Origin allowlist / authenticated origin / tunnel / equivalent; or staged with IMP-039 | Mechanism not chosen in PD; property mandatory | Founder + Architecture Fit / IMP-039 |
-| FD-038-15 | Auth abuse response policy (throttle / temporary cool-down / challenge; permanent lockout forbidden)? | Customer + workforce ATO vs DoS | US-003/013 | Throttle + cool-down ± challenge; no permanent attacker-driven lockout | Prefer throttle/cool-down/challenge over permanent lockout | Founder |
-| FD-038-16 | OWASP ASVS v5.0.0 target level / selected control set for V1? | Verification scope | US-017 | Level 1 baseline / selected Level 2 controls / custom in-scope set | Prefer Level 1 + explicitly selected higher controls tied to BOBA risks | Founder / security policy |
-| FD-038-17 | Vulnerability remediation / exception expiry policy (without inventing SLAs)? | Exception register validity | US-016 | Severity classes + max exception duration + retest rules | Require owner+expiry+authority; no silent perpetual exceptions | Founder |
-| FD-038-18 | Penetration / security-assessment scope required before IMP-038 acceptance? | Acceptance Pack completeness | US-016/024 | Internal assessment only / external pen-test / defer with residual risk | No default invented; Founder chooses scope | Founder |
-| FD-038-19 | Security-log retention windows vs privacy minimization tradeoff? | CERT-In utility vs PII | US-019/005/018 | Distinct security-log class in retention matrix | Minimize PII/secrets; retain security utility per legal guidance | Founder + LEGAL_REVIEW |
-| FD-038-20 | Child-data / age-gate applicability posture for V1 ordering? | DPDP matrix completeness | US-020 | N/A with rationale / soft notice / hard age-gate | No default without legal review | Founder + LEGAL_REVIEW |
-| FD-038-21 | Bot/human challenge surfaces for V1 (which endpoints; Turnstile-class candidate)? | Abuse UX + Fit | US-003/013/014 | Challenge on auth only / auth+checkout / broader; or defer with residual risk | Prefer auth (+ OTP) first if challenge adopted | Founder + Fit |
+Authority: PR #180 comment 5773472988 — `FOUNDER_DECISION_PACKAGE: APPROVED`.
 
-`PRODUCT_DEFINITION_GATE` must **STOP** while these material decisions remain unresolved (or Founder
-explicitly defers each with coherent V1 boundary).
+`PRODUCT_DECISIONS = RESOLVED`. `PRODUCT_DECISION_COUNT = 21`. `UNRESOLVED_PRODUCT_DECISIONS = 0`.
+
+Legal applicability findings remain `LEGAL_REVIEW_REQUIRED` and must not be converted into
+self-certified compliance claims. Architecture Fit / IMP-039 still selects technical mechanisms
+where classified below.
+
+| DECISION_ID | CLASSIFICATION | LOCKED PRODUCT OUTCOME | REMAINING OPEN (non-product) |
+|---|---|---|---|
+| FD-038-01 | RESOLVED_WITH_LEGAL_REVIEW_DEPENDENCY | V1_PRIVACY_REQUEST_MODEL = OPERATOR_MEDIATED; PROFILE_DELETE_EQUALS_LEGAL_ERASURE = NO | Rights-control applicability if legal review requires additional user-facing controls → launch-blocking |
+| FD-038-02 | RESOLVED_WITH_LEGAL_REVIEW_DEPENDENCY | DATA_CLASS_RETENTION_MATRIX_REQUIRED = YES | Numeric statutory retention windows |
+| FD-038-03 | RESOLVED_WITH_LEGAL_REVIEW_DEPENDENCY | INTERNAL_INCIDENT_RESPONSE_V1 = REQUIRED; REGULATOR_CUSTOMER_NOTIFICATION_TEMPLATES = PREPARED; ACTUAL_EXTERNAL_NOTIFICATION = LEGAL_TRIGGER_DEPENDENT | External notification triggers / applicability |
+| FD-038-04 | RESOLVED_WITH_LEGAL_REVIEW_DEPENDENCY | FULL_SELF_SERVICE_PRIVACY_PORTAL_V1 = NO (operator-mediated only) | Same legal rights-control dependency as FD-038-01 |
+| FD-038-05 | RESOLVED_WITH_ARCHITECTURE_FIT_MECHANISM | CSP_ENFORCED_ON_REAL_SERVING_PATH = YES; CSP_ALLOWLIST = MINIMAL_EXPLICIT_APPROVED_INTEGRATIONS; REPORT_ONLY_TUNING_ALLOWED_BEFORE_ENFORCEMENT = YES; FINAL_V1_CSP_ENFORCEMENT = REQUIRED | Exact header/CSP serving-path mechanism |
+| FD-038-06 | RESOLVED | HIGH_CONSEQUENCE_ADMIN_STEP_UP = REQUIRED | Step-up UX/mechanism details at Fit |
+| FD-038-07 | DEFERRED_BY_FOUNDER | MARKETING_CONSENT_CENTER_V1 = DEFERRED; reopen when first-party marketing automation/profiling introduced; does not waive legally required consent/notice for existing processing | — |
+| FD-038-08 | RESOLVED_WITH_LEGAL_REVIEW_DEPENDENCY | LOCATION_DATA_MINIMIZATION_REQUIRED = YES; RAW_LOCATION_TELEMETRY_RETENTION_BY_DEFAULT = NO | Numeric location retention windows |
+| FD-038-09 | RESOLVED | UNRESOLVED_CRITICAL_AT_ACCEPTANCE = ZERO; KNOWN_EXPLOITABLE_HIGH = NO_SILENT_ACCEPTANCE (Founder R3 + compensating controls + expiry) | Per-finding exceptions under policy |
+| FD-038-10 | RESOLVED_WITH_LEGAL_REVIEW_DEPENDENCY | DPDP_APPLICABILITY_CONTROL_MATRIX = MANDATORY; portal not required for V1 | DPDP applicability interpretation |
+| FD-038-11 | RESOLVED_WITH_LEGAL_REVIEW_DEPENDENCY | TIME_SYNC_READINESS / EVIDENCE_PRESERVATION / SECURITY_LOGGING / INCIDENT_OWNER_CONTACT = REQUIRED; templates prepared; no CERT-In compliance claim | CERT-In applicability / reporting triggers / log-retention legal windows |
+| FD-038-12 | RESOLVED_WITH_LEGAL_REVIEW_DEPENDENCY | BOBA_RAW_PAN_STORAGE = NO; BOBA_RAW_CVV_STORAGE = NO; BOBA_RAW_CARD_PROCESSING = NO_BY_DESIGN; CARD_CAPTURE = RAZORPAY_OR_PROVIDER_CONTROLLED; PAYMENT_SHARED_RESPONSIBILITY_MATRIX = MANDATORY | PCI_VALIDATION_PATH legal/compliance review |
+| FD-038-13 | RESOLVED_WITH_ARCHITECTURE_FIT_MECHANISM | LAYERED_EDGE_SECURITY_REQUIRED = YES; CLOUDFLARE_FREE = PREFERRED_LOW_TCO_ARCHITECTURE_FIT_CANDIDATE; CLOUDFLARE_ARCHITECTURE_LOCKED = NO; APPLICATION_SECURITY_REMAINS_AUTHORITATIVE = YES | Edge vendor/mechanism selection |
+| FD-038-14 | RESOLVED_WITH_ARCHITECTURE_FIT_MECHANISM | EDGE_TO_ORIGIN_BYPASS_RESISTANCE_REQUIRED = YES | Mechanism class (allowlist / authenticated origin / tunnel / equivalent) via Fit / IMP-039 |
+| FD-038-15 | RESOLVED | AUTH_ABUSE_RESPONSE = PROGRESSIVE_THROTTLE + TEMPORARY_COOLDOWN + RISK_BASED_CHALLENGE; PERMANENT_ATTACKER_TRIGGERED_LOCKOUT = FORBIDDEN; LAYERED_ABUSE_SIGNALS = IP + ACCOUNT_PRINCIPAL + PHONE_OTP_TARGET + SESSION_DEVICE_RISK_WHERE_JUSTIFIED; NON_ENUMERATING_FAILURES = REQUIRED | Threshold tuning at Fit/implementation |
+| FD-038-16 | RESOLVED | OWASP_ASVS_VERSION = 5.0.0; OWASP_ASVS_TARGET = LEVEL_2_APPLICABLE_CONTROLS; evidence PASS/GAP/N/A_WITH_REASON; no ASVS certification claim | Exact applicable-control selection evidence |
+| FD-038-17 | RESOLVED | Exception register requires owner, rationale, approval authority, compensating controls, retest, expiry; High-risk default max = 30 days unless Founder overrides | Per-exception Founder overrides |
+| FD-038-18 | RESOLVED | INDEPENDENT_EXTERNAL_WEB_API_SECURITY_ASSESSMENT_BEFORE_IMP038_ACCEPTANCE = REQUIRED; CRITICAL_HIGH_RETEST_AND_CLOSURE = REQUIRED; CERT_IN_EMPANELLED_ASSESSOR preferred where commercially practical (not certification) | Assessor commercial selection |
+| FD-038-19 | RESOLVED_WITH_LEGAL_REVIEW_DEPENDENCY | SECURITY_LOG_SECRET_MINIMIZATION = REQUIRED; SECURITY_LOG_PII_MINIMIZATION = REQUIRED | Legally required security-log retention windows |
+| FD-038-20 | RESOLVED_WITH_LEGAL_REVIEW_DEPENDENCY | Child-data / age-gate / parental-consent applicability = LEGAL_REVIEW_REQUIRED; if legally required for BOBA V1 → AGE_OR_PARENTAL_CONTROL = LAUNCH_BLOCKING | Legal applicability finding |
+| FD-038-21 | RESOLVED_WITH_ARCHITECTURE_FIT_MECHANISM | BOT_CHALLENGE_PRIORITY = CUSTOMER_SIGNUP_LOGIN_OTP_AND_WORKFORCE_AUTH; ORDINARY_CHECKOUT_CHALLENGE_DEFAULT = NO | Challenge provider/mechanism at Fit |
+
+### Legal review open topics (not unresolved product decisions)
+
+`LEGAL_REVIEW_REQUIRED = YES`. `LEGAL_REVIEW_OPEN_TOPICS = 9` (minimum):
+
+1. DPDP applicability
+2. Rights-handling controls required for launch (beyond operator-mediated model)
+3. Retention windows (statutory / operational / security-log)
+4. Child data / age gating / parental consent
+5. CERT-In applicability
+6. Reporting / breach-notification triggers
+7. Security-log retention legal requirements
+8. PCI merchant validation scope / path
+9. Customer/regulator breach notification trigger interpretation
+
+Do **not** claim: DPDP_COMPLIANT, CERT_IN_COMPLIANT, PCI_DSS_COMPLIANT, OWASP_CERTIFIED.
+
+### Architecture Fit open mechanisms (not unresolved product decisions)
+
+- CSP/header enforcement mechanism on the real serving path (FD-038-05)
+- Edge WAF/bot vendor and Free-tier limitation recording (FD-038-13)
+- Edge-to-origin bypass resistance mechanism (FD-038-14)
+- Bot/human challenge provider/mechanism (FD-038-21)
+- Step-up / abuse-control implementation details within locked policy (FD-038-06/15)
+
+`PRODUCT_DEFINITION_GATE` is **NOT_PERFORMED** in this draft. Product decisions are no longer an
+unresolved-FD stop set. Gate review may still STOP for incomplete story readiness, Architecture Fit
+gaps after Gate, or legal-review topics that materially affect acceptance semantics.
 
 ---
 
 ## 26. Definition of Ready
 
-| Story ID | Fields complete? | Open material decisions | Readiness |
+Founder product-policy decisions FD-038-01…21 are reconciled. Stories are **not** kept
+`NOT_READY_FOR_IMPLEMENTATION` merely because an FD is unresolved.
+
+Stories remain `NOT_READY_FOR_IMPLEMENTATION` because:
+
+- Product Definition Gate has not passed
+- Architecture Fit has not run / architecture is not locked
+- legal review materially affects acceptance semantics where marked
+- technical mechanism remains Architecture Fit / IMP-039 responsibility
+
+| Story ID | Fields complete? | Open dependencies (precise) | Readiness |
 |---|---|---|---|
-| US-IMP-038-001 | Draft complete | FD-038-05 | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-002 | Draft complete | Confirm V1 (evidenced); FD-038-08 | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-003 | Draft complete | FD-038-15; FD-038-21 | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-004 | Draft complete | FD-038-01, FD-038-04, FD-038-10 | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-005 | Draft complete | FD-038-02, FD-038-08, FD-038-19 | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-006 | Draft complete | FD-038-09, FD-038-17 | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-007 | Draft complete | NONE material | NOT_READY_FOR_IMPLEMENTATION (Gate/Fit still required) |
-| US-IMP-038-008 | Draft complete | FD-038-03 | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-009 | Follow-up | FD-038-06 | NOT_READY / FOLLOW_UP |
-| US-IMP-038-010…012 | Deferred | as listed | DEFERRED |
-| US-IMP-038-013 | Draft complete | FD-038-15; FD-038-06 | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-014 | Draft complete | FD-038-13; FD-038-21 | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-015 | Draft complete | FD-038-09 residual | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-016 | Draft complete | FD-038-09/17/18 | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-017 | Draft complete | FD-038-16 | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-018 | Draft complete | FD-038-11 | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-019 | Draft complete | FD-038-19; FD-038-02 | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-020 | Draft complete | FD-038-01/04/10/20 | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-021 | Draft complete | FD-038-12 | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-022 | Draft complete | FD-038-13 (vendor row updates) | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-023 | Draft complete | FD-038-14 | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-024 | Draft complete | FD-038-09 | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-001 | Draft complete | Gate; Fit (CSP/header mechanism) | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-002 | Draft complete | Gate; Fit; legal retention windows for location class | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-003 | Draft complete | Gate; Fit (challenge mechanism) | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-004 | Draft complete | Gate; Fit; legal rights-control applicability | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-005 | Draft complete | Gate; Fit; legal numeric retention windows | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-006 | Draft complete | Gate; Fit | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-007 | Draft complete | Gate; Fit | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-008 | Draft complete | Gate; Fit; legal external-notification triggers | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-009 | Follow-up (step-up owned by US-013) | Broader session UX deferred | FOLLOW_UP |
+| US-IMP-038-010 | Deferred | IMP-039 adjacency | DEFERRED |
+| US-IMP-038-011 | Deferred by Founder | Portal = NO; matrix remains US-020 | DEFERRED_BY_FOUNDER |
+| US-IMP-038-012 | Deferred by Founder | Marketing consent center | DEFERRED_BY_FOUNDER |
+| US-IMP-038-013 | Draft complete | Gate; Fit (step-up/challenge mechanism) | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-014 | Draft complete | Gate; Fit / IMP-039 (edge/challenge mechanism) | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-015 | Draft complete | Gate; Fit | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-016 | Draft complete | Gate; Fit; external assessment is acceptance evidence | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-017 | Draft complete | Gate; Fit (applicable-control evidence selection) | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-018 | Draft complete | Gate; Fit; CERT-In legal applicability | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-019 | Draft complete | Gate; Fit; legal security-log retention windows | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-020 | Draft complete | Gate; Fit; DPDP/child-data legal applicability | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-021 | Draft complete | Gate; Fit; PCI validation-path legal review | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-022 | Draft complete | Gate; Fit (vendor rows after edge selection) | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-023 | Draft complete | Gate; Fit / IMP-039 (bypass-resistance mechanism) | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-024 | Draft complete | Gate; Fit; pack assembled from implementation evidence | NOT_READY_FOR_IMPLEMENTATION |
 
 `STORY_COMPLETE != IMP_ACCEPTED`. `IMP038_ACCEPTED` remains blocked by IMP-037 contiguity even after later implementation.
 
@@ -1598,12 +1781,14 @@ Gate Result: NOT_PERFORMED
 PRODUCT_DEFINITION_GATE
 
 Capability: IMP-038 — Security & Privacy Hardening
-Product Definition Version: PD-IMP-038-DRAFT-1
-Business Outcome: defined (draft; Founder security/privacy requirements incorporated)
+Product Definition Version: PD-IMP-038-DRAFT-2
+Historical provenance: PD-IMP-038-DRAFT-1
+Founder decision authority: PR#180/5773472988
+Business Outcome: defined (draft; Founder security/privacy requirements incorporated and FD-reconciled)
 Primary Personas: PERSONA-CUSTOMER, PERSONA-WORKFORCE-OPERATOR, PERSONA-PLATFORM-OPERATOR
 Journeys Defined: YES (draft; expanded)
 Story Map Complete: YES (draft; 24 stories / 20 V1)
-Acceptance Slice Defined: YES (draft; FD-dependent)
+Acceptance Slice Defined: YES (draft; Founder FDs reconciled)
 Happy Paths Defined: YES (draft)
 Alternate Paths Defined: YES (draft)
 Empty / First-Use States Defined: YES where applicable
@@ -1615,12 +1800,15 @@ Destructive Actions Defined: YES (privacy)
 UX State Matrix Complete: YES (draft)
 Accessibility Considered: YES (draft)
 Golden Journeys Identified: YES
-Explicit Deferrals Recorded: YES
+Explicit Deferrals Recorded: YES (incl. DEFERRED_BY_FOUNDER for portal + marketing consent)
 Regulatory matrices required: DPDP (US-020), CERT-In (US-018), PCI/payment (US-021)
-Verification baseline: OWASP ASVS v5.0.0 (US-017)
+Verification baseline: OWASP ASVS v5.0.0 LEVEL_2_APPLICABLE_CONTROLS (US-017)
 Acceptance Pack required: YES (US-024) — consumable by IMP-040
-Unresolved Product Decisions: 21 (FD-038-01…21) — material
+PRODUCT_DECISIONS: RESOLVED
+PRODUCT_DECISION_COUNT: 21
+UNRESOLVED_PRODUCT_DECISIONS: 0
 LEGAL_REVIEW_REQUIRED: YES
+LEGAL_REVIEW_OPEN_TOPICS: 9
 COMPLIANCE_CLAIMS: NONE
 Cloudflare locked as architecture: NO (preferred low-TCO Fit candidate only)
 Architecture Conflicts: NONE identified vs ARCH-R20 (Fit NOT_PERFORMED)
@@ -1643,7 +1831,7 @@ Gate Result: NOT_PERFORMED
   dispositioned evidence, not a named tool lock.
 - No new deployable service assumed by default; no IMP-039 host provisioning claimed done; no
   D-375/ARCH-R21 assumed.
-- Permission changes only if FD-038-01 requires — otherwise reuse catalogue.
+- Permission changes: operator-mediated privacy reuses catalogue; do not invent self-service portal roles.
 
 ---
 

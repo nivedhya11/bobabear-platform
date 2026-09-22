@@ -10512,7 +10512,7 @@ PHASE1_BLOCK_STATUS: BLOCKED_PROVIDER_ACCESS
     imp038Activated: "YES",
     imp038FormalLifecycle: "PLANNED",
     imp038ProductDefinition: "DRAFT",
-    imp038ProductDefinitionVersion: "PD-IMP-038-DRAFT-1",
+    imp038ProductDefinitionVersion: "PD-IMP-038-DRAFT-2",
     imp038ProductDefinitionGate: "NOT_PERFORMED",
     imp038ArchitectureFit: "NOT_PERFORMED",
     imp038ArchitectureLocked: "NO",
@@ -10566,9 +10566,67 @@ PHASE1_BLOCK_STATUS: BLOCKED_PROVIDER_ACCESS
   it("rejects IMP-038 Product Definition draft missing Founder security/privacy scope", () => {
     const stripped = continuationBase.imp038ProductDefinitionText
       .replace(/DPDP applicability[\s\S]*?US-IMP-038-020/g, "privacy portal deferred")
+      .replace(/DPDP_APPLICABILITY_CONTROL_MATRIX/g, "PORTAL_ONLY")
       .replace(/US-IMP-038-020/g, "US-IMP-038-011")
       .replace(/JOURNEY-DPDP-APPLICABILITY/g, "JOURNEY-PRIVACY-REQUEST");
     assert.equal(evaluateImp038DraftProductDefinition(stripped).code, "IMP038_PD_DRAFT");
+  });
+
+  it("rejects regression to unresolved Founder decisions or ASVS Level 1 target", () => {
+    assert.equal(
+      evaluateImp038DraftProductDefinition(
+        continuationBase.imp038ProductDefinitionText.replace(
+          /UNRESOLVED_PRODUCT_DECISIONS:\s*0/,
+          "UNRESOLVED_PRODUCT_DECISIONS: 21",
+        ).replace(/"unresolvedProductDecisions":\s*0/, '"unresolvedProductDecisions": 21'),
+      ).code,
+      "IMP038_PD_UNRESOLVED_DECISIONS",
+    );
+    assert.equal(
+      evaluateImp038DraftProductDefinition(
+        continuationBase.imp038ProductDefinitionText.replace(
+          /OWASP_ASVS_TARGET\s*=\s*LEVEL_2_APPLICABLE_CONTROLS/g,
+          "OWASP_ASVS_TARGET = LEVEL_1",
+        ),
+      ).code,
+      "IMP038_PD_ASVS_LEVEL",
+    );
+  });
+
+  it("rejects self-service privacy portal, raw card storage, permanent lockout, and Cloudflare architecture lock regressions", () => {
+    assert.equal(
+      evaluateImp038DraftProductDefinition(
+        continuationBase.imp038ProductDefinitionText.replace(
+          /FULL_SELF_SERVICE_PRIVACY_PORTAL_V1\s*=\s*NO/g,
+          "FULL_SELF_SERVICE_PRIVACY_PORTAL_V1 = YES",
+        ),
+      ).code,
+      "IMP038_PD_PRIVACY_PORTAL",
+    );
+    assert.equal(
+      evaluateImp038DraftProductDefinition(
+        continuationBase.imp038ProductDefinitionText.replace(/BOBA_RAW_PAN_STORAGE\s*=\s*NO/g, "BOBA_RAW_PAN_STORAGE = YES"),
+      ).code,
+      "IMP038_PD_RAW_CARD",
+    );
+    assert.equal(
+      evaluateImp038DraftProductDefinition(
+        continuationBase.imp038ProductDefinitionText.replace(
+          /PERMANENT_ATTACKER_TRIGGERED_LOCKOUT\s*=\s*FORBIDDEN/g,
+          "PERMANENT_ATTACKER_TRIGGERED_LOCKOUT = ALLOWED",
+        ),
+      ).code,
+      "IMP038_PD_PERMANENT_LOCKOUT",
+    );
+    assert.equal(
+      evaluateImp038DraftProductDefinition(
+        continuationBase.imp038ProductDefinitionText.replace(
+          /CLOUDFLARE_ARCHITECTURE_LOCKED\s*=\s*NO/g,
+          "CLOUDFLARE_ARCHITECTURE_LOCKED = YES",
+        ),
+      ).code,
+      "IMP038_PD_CLOUDFLARE_LOCK",
+    );
   });
 
   it("recognizes the continuation checkpoint kind exclusively at GTM-R138 / STATE-R136", () => {
