@@ -31,11 +31,11 @@
     "note": "Protected evidence and generated reports are never classified as executable test source."
   },
   "counts": {
-    "trackedPathsConsidered": 2053,
-    "executableTestFiles": 433,
+    "trackedPathsConsidered": 2063,
+    "executableTestFiles": 435,
     "sourceTestFiles": 134,
     "testsTreeExecutableFiles": 233,
-    "scriptTestFiles": 66,
+    "scriptTestFiles": 68,
     "playwrightSpecs": 12,
     "vitestConfigs": 2,
     "playwrightConfigs": 7,
@@ -46,7 +46,7 @@
     "packageCheckCommands": 13,
     "packageCoverageCommands": 1,
     "packageInventoryCommands": 2,
-    "ciWorkflowFiles": 3,
+    "ciWorkflowFiles": 4,
     "ciValidationSteps": 110,
     "protectedEvidenceTrackedFiles": 3,
     "archiveTrackedFiles": 92
@@ -431,10 +431,12 @@
     "scripts/audit-database.test.mjs",
     "scripts/audit-docker-runtime.test.mjs",
     "scripts/audit-menu-import.test.mjs",
+    "scripts/audit-npm-sca.test.mjs",
     "scripts/audit-outbox-idempotency.test.mjs",
     "scripts/audit-persistence.test.mjs",
     "scripts/audit-pricing-tax.test.mjs",
     "scripts/audit-workforce-auth.test.mjs",
+    "scripts/ci-container-scan-paths.test.mjs",
     "scripts/ci-security-sensitive-paths.test.mjs",
     "scripts/customer-commerce/build.test.mjs",
     "scripts/database/lib/migration-history.test.mjs",
@@ -1132,6 +1134,11 @@
       ]
     },
     {
+      "path": ".github/workflows/codeql.yml",
+      "name": "CodeQL",
+      "validationSteps": []
+    },
+    {
       "path": ".github/workflows/deploy.yml",
       "name": "Deploy to GitHub Pages",
       "validationSteps": [
@@ -1474,6 +1481,23 @@
       "classificationConfidence": "HEURISTIC"
     },
     {
+      "path": "scripts/audit-npm-sca.test.mjs",
+      "runner": "node:test",
+      "domain": "scripts",
+      "testType": "script-unit",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:scripts"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
       "path": "scripts/audit-outbox-idempotency.test.mjs",
       "runner": "node:test",
       "domain": "scripts",
@@ -1527,6 +1551,23 @@
     },
     {
       "path": "scripts/audit-workforce-auth.test.mjs",
+      "runner": "node:test",
+      "domain": "scripts",
+      "testType": "script-unit",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:scripts"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "scripts/ci-container-scan-paths.test.mjs",
       "runner": "node:test",
       "domain": "scripts",
       "testType": "script-unit",

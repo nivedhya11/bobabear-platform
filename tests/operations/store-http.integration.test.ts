@@ -32,7 +32,7 @@ import { seedActiveVariantWithModifier } from "../database/support/cart-fixtures
 import {
   TEST_SERVICE_ORIGIN,
 } from "../database/support/serviceability-fixtures";
-import { headersWithAccessMutationStepUp } from "../support/workforce-step-up";
+import { headersWithAccessMutationStepUp } from "../administration/support/workforce-step-up";
 
 type InternalAdapter = { createSession: (userId: string) => Promise<{ token: string }> };
 
