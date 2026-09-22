@@ -10280,6 +10280,24 @@ export function evaluateImp038DraftProductDefinition(text) {
     [/CONTINUATION_EXCEPTION:\s*IMP037_PROVIDER_BLOCKED_TO_IMP038|\"continuationException\":\s*\"IMP037_PROVIDER_BLOCKED_TO_IMP038\"/, "CONTINUATION_EXCEPTION"],
     [/IMP038_ACCEPTED:\s*NO|\"impAccepted\":\s*\"NO\"/, "IMP038_ACCEPTED: NO"],
     [/Document status:\s*DRAFT|\"status\":\s*\"DRAFT\"/, "Document status DRAFT"],
+    [/LEGAL_REVIEW_REQUIRED:\s*YES|\"legalReviewRequired\":\s*\"YES\"/, "LEGAL_REVIEW_REQUIRED: YES"],
+    [/DPDP applicability|JOURNEY-DPDP-APPLICABILITY|US-IMP-038-020/, "DPDP applicability/control/evidence scope"],
+    [/CERT-In applicability|JOURNEY-CERTIN-READINESS|US-IMP-038-018/, "CERT-In applicability/control/evidence scope"],
+    [/PCI|payment-security|JOURNEY-PAYMENT-PCI-SCOPE|US-IMP-038-021/, "payment/PCI scope assessment"],
+    [/OWASP ASVS v5\.0\.0|JOURNEY-ASVS-VERIFICATION|US-IMP-038-017/, "OWASP ASVS v5.0.0 verification matrix"],
+    [/\bBOLA\b/, "BOLA authorization-negative coverage"],
+    [/\bBFLA\b/, "BFLA authorization-negative coverage"],
+    [/Security &\s*Privacy Acceptance Pack|JOURNEY-SECURITY-PRIVACY-ACCEPTANCE-PACK|US-IMP-038-024/, "Security & Privacy Acceptance Pack"],
+    [/edge-to-origin|JOURNEY-EDGE-ORIGIN-DEFENSE|US-IMP-038-023/, "edge-to-origin bypass protection"],
+    [/Cloudflare Free/, "Cloudflare Free preferred low-TCO Fit candidate"],
+    [/FD-038-21/, "Founder decision set covering newly surfaced policy choices"],
+    [/US-IMP-038-013/, "workforce auth/MFA abuse story"],
+    [/US-IMP-038-014/, "platform-wide bot/API abuse story"],
+    [/US-IMP-038-015/, "business-logic abuse/fraud story"],
+    [/US-IMP-038-016/, "vulnerability management / exception register story"],
+    [/US-IMP-038-019/, "security logging / privacy-retention design story"],
+    [/US-IMP-038-022/, "vendor/processor/client-side dependency register story"],
+    [/COMPLIANCE_CLAIMS:\s*NONE|does NOT claim DPDP|no DPDP compliance claim/i, "explicit non-claim of regulatory compliance"],
   ];
   for (const [pattern, label] of required) {
     if (!pattern.test(body)) {
@@ -10306,6 +10324,18 @@ export function evaluateImp038DraftProductDefinition(text) {
       code: "IMP038_PD_PREMATURE_PROGRESSION",
       message:
         "IMP-038 Product Definition draft must not claim Gate PASS, Architecture Fit PASS, architecture lock, implementation authorization/start, or acceptance",
+    };
+  }
+  // Product Definition must not lock Cloudflare (or any WAF vendor) as architecture.
+  if (
+    /Cloudflare[\s\S]{0,120}(architecture locked|ARCHITECTURE_LOCKED:\s*YES|locked as architecture)/i.test(body) &&
+    !/must not lock Cloudflare|does NOT lock Cloudflare|Cloudflare locked as architecture:\s*NO/i.test(body)
+  ) {
+    return {
+      ok: false,
+      code: "IMP038_PD_CLOUDFLARE_LOCK",
+      message:
+        "IMP-038 Product Definition must not lock Cloudflare as architecture; Cloudflare Free may only be a preferred Fit candidate",
     };
   }
   return { ok: true };

@@ -10563,6 +10563,14 @@ PHASE1_BLOCK_STATUS: BLOCKED_PROVIDER_ACCESS
     );
   });
 
+  it("rejects IMP-038 Product Definition draft missing Founder security/privacy scope", () => {
+    const stripped = continuationBase.imp038ProductDefinitionText
+      .replace(/DPDP applicability[\s\S]*?US-IMP-038-020/g, "privacy portal deferred")
+      .replace(/US-IMP-038-020/g, "US-IMP-038-011")
+      .replace(/JOURNEY-DPDP-APPLICABILITY/g, "JOURNEY-PRIVACY-REQUEST");
+    assert.equal(evaluateImp038DraftProductDefinition(stripped).code, "IMP038_PD_DRAFT");
+  });
+
   it("recognizes the continuation checkpoint kind exclusively at GTM-R138 / STATE-R136", () => {
     assert.equal(
       isSupportedImp030GovernanceCheckpoint("GTM-R138", "STATE-R136", "imp038ControlledContinuationActivation"),
