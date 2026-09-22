@@ -217,6 +217,8 @@ describe("Nginx directory redirects", { skip: !dockerAvailable() }, () => {
     assert.match(csp, /https:\/\/challenges\.cloudflare\.com/);
     assert.match(csp, /https:\/\/maps\.googleapis\.com/);
     assert.match(csp, /https:\/\/maps\.gstatic\.com/);
+    assert.match(csp, /https:\/\/www\.googletagmanager\.com/);
+    assert.match(csp, /https:\/\/www\.google-analytics\.com/);
     assert.doesNotMatch(csp, /script-src[^;]*\*/);
     assert.equal(response.headers.get("x-content-type-options"), "nosniff");
     assert.equal(response.headers.get("referrer-policy"), "strict-origin-when-cross-origin");
