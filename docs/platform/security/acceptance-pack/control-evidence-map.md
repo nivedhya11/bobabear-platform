@@ -23,7 +23,7 @@ Vocabulary for `status`: `PASS` | `GAP` | `N/A_WITH_REASON` | `LEGAL_REVIEW_REQU
 | C-PAY-01 | Razorpay webhook signature + durable inbox; no naive webhook IP RL | `tests/customer-commerce/razorpay.http.integration.test.ts`; `tests/payment-security/payment.security.test.ts`; `tests/refund-webhook/*` | PASS (signature/inbox/negatives) | Payments |
 | C-PAY-02 | No BOBA raw PAN/CVV storage | [`pci-shared-responsibility-matrix.md`](./pci-shared-responsibility-matrix.md); payment adapters | PASS (by design; no raw card fields) | Payments |
 | C-SDLC-01 | SAST / SCA / secrets / container / Actions pin / Dependabot | [`secure-sdlc-evidence.md`](./secure-sdlc-evidence.md); [`../README.md`](../README.md) | PASS (CI gates present) | Platform security |
-| C-EXC-01 | Vulnerability exceptions with authority + expiry | [`../vulnerability-exception-register.md`](../vulnerability-exception-register.md) | PASS (schema; currently empty) | Founder / security |
+| C-EXC-01 | Vulnerability exceptions with authority + expiry | [`../vulnerability-exception-register.md`](../vulnerability-exception-register.md); `.trivyignore` | PASS (npm empty; VEX-TRIVY-001 DS-0002 ≤30d) | Founder / security |
 | C-ORIGIN-01 | Origin trust chain design + lab probes | [`../origin-trust/README.md`](../origin-trust/README.md); `scripts/origin-trust/` | PRODUCTION_REALIZATION_PENDING (live = IMP-039) | IMP-038 design; IMP-039 live |
 | C-EDGE-01 | Cloudflare Free supplemental edge (WAF/DDoS/Turnstile) | ADR-017; capability §5; vendor register | PRODUCTION_REALIZATION_PENDING | IMP-039 |
 | C-IR-01 | Internal incident response templates | [`incident-response.md`](./incident-response.md) | PARTIAL — templates; tabletop pending | Ops |

@@ -31,11 +31,11 @@
     "note": "Protected evidence and generated reports are never classified as executable test source."
   },
   "counts": {
-    "trackedPathsConsidered": 2063,
-    "executableTestFiles": 435,
+    "trackedPathsConsidered": 2094,
+    "executableTestFiles": 436,
     "sourceTestFiles": 134,
     "testsTreeExecutableFiles": 233,
-    "scriptTestFiles": 68,
+    "scriptTestFiles": 69,
     "playwrightSpecs": 12,
     "vitestConfigs": 2,
     "playwrightConfigs": 7,
@@ -456,6 +456,7 @@
     "scripts/governance-fingerprint.test.mjs",
     "scripts/lib/vitest-result-validation.test.mjs",
     "scripts/nginx-origin-redirect.test.mjs",
+    "scripts/origin-trust/verify-contracts.test.mjs",
     "scripts/project-consistency.test.mjs",
     "scripts/recovery/capacity/observe.test.mjs",
     "scripts/recovery/cli.test.mjs",
@@ -1899,6 +1900,23 @@
     },
     {
       "path": "scripts/nginx-origin-redirect.test.mjs",
+      "runner": "node:test",
+      "domain": "scripts",
+      "testType": "script-unit",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:scripts"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "scripts/origin-trust/verify-contracts.test.mjs",
       "runner": "node:test",
       "domain": "scripts",
       "testType": "script-unit",

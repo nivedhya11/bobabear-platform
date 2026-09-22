@@ -83,6 +83,8 @@ async function main() {
     "vuln,misconfig",
     "--skip-dirs",
     "node_modules,.git,.next,out,coverage,.cache,dist-customer-auth,dist-workforce-auth,dist-customer-commerce,dist-operations",
+    "--ignorefile",
+    path.join(projectRoot, ".trivyignore"),
   ];
   console.log(`Running ${bin} ${args.join(" ")}`);
   const result = spawnSync(bin, args, {
