@@ -131,11 +131,18 @@ IMP036E_LIFECYCLE_CHANGED = NO
 PD1_DID_NOT_ACTIVATE_IMP036F_AT_ADOPTION = YES
 ```
 
-Lifecycle truth remains ROADMAP/STATE only (`GTM-R132` / `STATE-R130`):
-`acceptedThrough = IMP-036G`; `currentProductSlice = IMP-037`
-(`IMP037_ACTIVATED: YES`; formal IMP-037 lifecycle remains PLANNED / NOT_AUTHORIZED / NOT_STARTED);
-`nextProductSlice = IMP-038`; **`IMP040_ACTIVATED: NO`**. Presence of this PRE-GATE draft does
+Lifecycle truth remains ROADMAP/STATE only. **CURRENT tip** (verify against ROADMAP/STATE; do not
+treat this draft as lifecycle authority): `GTM-R138` / `STATE-R136` —
+`acceptedThrough = IMP-036G`; `currentProductSlice = IMP-038` under
+`CONTINUATION_EXCEPTION: IMP037_PROVIDER_BLOCKED_TO_IMP038` (`IMP038_ACTIVATED: YES`; formal
+IMP-038 lifecycle PLANNED; PD APPROVED / Gate PASS; Fit NOT_PERFORMED; implementation NOT_AUTHORIZED);
+IMP-037 remains unresolved `IMPLEMENTATION_IN_PROGRESS` / provider-blocked;
+`nextProductSlice = IMP-039`; **`IMP040_ACTIVATED: NO`**. Presence of this PRE-GATE draft does
 **not** activate IMP-040 and does **not** advance ROADMAP/STATE lifecycle.
+
+Historical draft-time anchors (when this PRE-GATE draft was first authored): `GTM-R132` /
+`STATE-R130` with then-`currentProductSlice = IMP-037` — superseded as CURRENT tip by later
+ROADMAP/STATE revisions; retained only as provenance of this draft's original write.
 
 ---
 
@@ -147,9 +154,9 @@ Lifecycle truth remains ROADMAP/STATE only (`GTM-R132` / `STATE-R130`):
 | Product Definition version / document status | `PD-IMP-040-DRAFT-1`; **Document status: PRE-GATE DRAFT**; **PRE-GATE DRAFT: YES** |
 | Product owner / approval evidence | Founder. FD-040-01…10 resolved 2026-09-18 via explicit `"proceed"` in response to the exact IMP-040 recommended-refinement approval package. Product Definition Gate **NOT_PERFORMED**. |
 | Process / verification policy | `PD-1` / `TEST-1` |
-| Canonical anchors | VISION-1; ROADMAP GTM-R132; STATE STATE-R130; ARCH-R19; DR-15; PD-1; TEST-1; PERSONA-1; GJ-1 |
-| Repository candidate | Canonical path `/home/ajoshi/repos/boba-bear-platform`; base `origin/main` `c35c9eab6a30ec6ce745cefd75c523181326f360` / tree `266fe3b07811f6942e76cac155d58ba07daabe56`; draft branch `governance/imp040-pre-gate-product-definition` |
-| Capability lifecycle / authorization | ROADMAP/STATE: IMP-040 remains **PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED**; **IMP040_ACTIVATED: NO**; Product Definition Gate NOT_PERFORMED; Architecture Fit NOT_PERFORMED; architecture NOT_LOCKED; implementation NOT_AUTHORIZED / NOT_STARTED; IMP040_ACCEPTED: NO; GO_DECLARED: NO; PUBLIC_LAUNCH_APPROVED: NO. **currentProductSlice = IMP-037** (`acceptedThrough` IMP-036G; `nextProductSlice` IMP-038). |
+| Canonical anchors | VISION-1; ROADMAP GTM-R132; STATE STATE-R130 (historical draft-time anchors; CURRENT tip is GTM-R138 / STATE-R136 — see lifecycle note above); ARCH-R20 / DR-16 CURRENT (draft originally cited ARCH-R19 / DR-15); PD-1; TEST-1; PERSONA-1; GJ-1 |
+| Repository candidate | Canonical path `/home/ajoshi/repos/boba-bear-platform`; base at draft authoring `origin/main` `c35c9eab6a30ec6ce745cefd75c523181326f360` / tree `266fe3b07811f6942e76cac155d58ba07daabe56`; draft branch `governance/imp040-pre-gate-product-definition` |
+| Capability lifecycle / authorization | ROADMAP/STATE: IMP-040 remains **PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED**; **IMP040_ACTIVATED: NO**; Product Definition Gate NOT_PERFORMED; Architecture Fit NOT_PERFORMED; architecture NOT_LOCKED; implementation NOT_AUTHORIZED / NOT_STARTED; IMP040_ACCEPTED: NO; GO_DECLARED: NO; PUBLIC_LAUNCH_APPROVED: NO. CURRENT tip: **currentProductSlice = IMP-038** under controlled continuation (`acceptedThrough` IMP-036G; `nextProductSlice` IMP-039; IMP-037 unresolved predecessor). |
 | Relevant capability architecture / ADRs | ADR-002 (Pages transition, rollback, incident); ADR-007 (tax/GST commercial gate); ADR-011 delivery; ADR-012 notifications; IMP-037/038/039 hard prerequisites (future accepted status required before GO — not claimed accepted by this draft); GJ-1 |
 | Founder UAT applicability | `FOUNDER_UAT_REQUIRED = YES`; `FOUNDER_UAT_STATUS = NOT_PERFORMED` — interactive exact-candidate UAT gate (separate from production GO / NO-GO / ABORT and from launch-stable; see §12.1 / §26) |
 
