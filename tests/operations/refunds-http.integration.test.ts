@@ -92,7 +92,7 @@ async function withOperationsServer(
   run: (value: {
     request: (path: string, init?: RequestInit) => Promise<Response>;
     adapter: InternalAdapter;
-    headers: (token: string, extra?: HeadersInit) => Promise<Record<string, string>>;
+    headers: (token: string, extra?: Record<string, string>) => Promise<Record<string, string>>;
     withFinancialStepUp: (
       workforceUserId: string,
       headers: Record<string, string>,
