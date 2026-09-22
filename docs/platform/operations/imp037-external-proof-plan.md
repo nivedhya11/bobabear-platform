@@ -37,6 +37,8 @@ ATTEMPT_1_INDEPENDENT_REVIEW: 5266114565
 ATTEMPT_2_RESULT: BLOCKED_PROVIDER_ACCESS
 ATTEMPT_2_R3_AUTHORIZATION: 5759893209
 ATTEMPT_2_CUSTODY_MODEL: FOUNDER_CONTROLLED_OFFLINE_RECOVERY_KIT
+ATTEMPT_3_RESULT: BLOCKED_PROVIDER_ACCESS
+ATTEMPT_3_R3_AUTHORIZATION: PR#178/5770975119
 
 CUSTODY_DECISION_RESOLVED: YES
 CUSTODY_MODEL_APPROVED: YES
@@ -52,6 +54,8 @@ RESUME_CONDITION:
   DIGITALOCEAN_OPERATOR_ACCESS_AVAILABLE
   +
   FRESH_EXPLICIT_R3_PHASE1_CONTINUATION
+  (Attempt 3 consumed PR#178/5770975119; still blocked on provider access —
+   a further R3 Phase-1 continuation is required when access returns)
 
 DO_NOT_START_PHASE_2
 DO_NOT_START_QUALIFYING_PHASE2_PROVIDER_PROOF
@@ -141,7 +145,7 @@ LIVE_MUTATIONS: NONE
 BACKUP_RESTORE: NOT_PERFORMED
 ```
 
-#### Attempt 2 — `BLOCKED_PROVIDER_ACCESS` (current)
+#### Attempt 2 — `BLOCKED_PROVIDER_ACCESS` (preserved)
 
 Human R3 continuation authorization PR #176 comment `5759893209` resolved the
 custody decision and approved `FOUNDER_CONTROLLED_OFFLINE_RECOVERY_KIT`.
@@ -166,7 +170,27 @@ LIVE_MUTATIONS: NONE
 BACKUP_RESTORE: NOT_PERFORMED
 ```
 
-Phase 1 did **not** PASS. Current blocker is provider access, not the custody
+#### Attempt 3 — `BLOCKED_PROVIDER_ACCESS` (current)
+
+Human R3 Phase-1 re-attempt authorization PR #178 comment `5770975119` on base
+`08e7e7566802e0767d5e7554b80aa4f0a89b6301` / tree `f0afd5f9c42be7300a99bb1dc0d3326d2818d276`
+(exact-main CI `35683980091` SUCCESS). Preflight did **not** assume access was present.
+
+```text
+ATTEMPT_3_RESULT: BLOCKED_PROVIDER_ACCESS
+ATTEMPT_3_R3_AUTHORIZATION: PR#178/5770975119
+DIGITALOCEAN_API_AUTHORITY_PRESENT: NO
+SPACES_ADMIN_AUTHORITY_PRESENT: NO
+AUTHORITY_SOURCE: NONE
+CLOUD_MUTATIONS: ZERO
+CUSTODY_EXECUTION: NOT_PERFORMED
+CURRENT_BLOCKER: DigitalOcean / Spaces administration authority still unavailable
+  on the operator host after Attempt 3 preflight
+LIVE_MUTATIONS: NONE
+BACKUP_RESTORE: NOT_PERFORMED
+```
+
+Phase 1 did **not** PASS. Current blocker remains provider access, not the custody
 decision. Do **not** start Phase 2 until Phase 1 PASS is recorded under a
 subsequent R3 gate.
 
