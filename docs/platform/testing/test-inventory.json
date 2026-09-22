@@ -31,11 +31,11 @@
     "note": "Protected evidence and generated reports are never classified as executable test source."
   },
   "counts": {
-    "trackedPathsConsidered": 2005,
-    "executableTestFiles": 421,
+    "trackedPathsConsidered": 2010,
+    "executableTestFiles": 425,
     "sourceTestFiles": 130,
     "testsTreeExecutableFiles": 231,
-    "scriptTestFiles": 60,
+    "scriptTestFiles": 64,
     "playwrightSpecs": 12,
     "vitestConfigs": 2,
     "playwrightConfigs": 7,
@@ -456,10 +456,13 @@
     "scripts/recovery/integration/layer1-pgbackrest.integration.test.mjs",
     "scripts/recovery/integration/portability-e2e.integration.test.mjs",
     "scripts/recovery/integration/postgres18.integration.test.mjs",
+    "scripts/recovery/integration/tranche2-local.integration.test.mjs",
     "scripts/recovery/layer1/config.test.mjs",
     "scripts/recovery/layer1/container-exec.test.mjs",
     "scripts/recovery/layer1/pgbackrest.test.mjs",
+    "scripts/recovery/layer1/rotation.test.mjs",
     "scripts/recovery/layer2/backup.test.mjs",
+    "scripts/recovery/layer2/rotation.test.mjs",
     "scripts/recovery/portability/rehearse.test.mjs",
     "scripts/recovery/readiness.test.mjs",
     "scripts/recovery/redact.test.mjs",
@@ -473,6 +476,7 @@
     "scripts/recovery/systemd/validate.test.mjs",
     "scripts/recovery/validate/business-integrity.test.mjs",
     "scripts/recovery/validate/isolation.test.mjs",
+    "scripts/recovery/validate/recovered-app.test.mjs",
     "scripts/serve-static-export.test.mjs",
     "scripts/testing-inventory.test.mjs",
     "scripts/workforce/cli-support.test.mjs",
@@ -1969,6 +1973,26 @@
       "classificationConfidence": "HEURISTIC"
     },
     {
+      "path": "scripts/recovery/integration/tranche2-local.integration.test.mjs",
+      "runner": "node:test",
+      "domain": "scripts",
+      "testType": "integration",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:scripts"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit",
+        "4-integration",
+        "5-database-integration",
+        "9-recovery-idempotency"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
       "path": "scripts/recovery/layer1/config.test.mjs",
       "runner": "node:test",
       "domain": "scripts",
@@ -2023,7 +2047,43 @@
       "classificationConfidence": "HEURISTIC"
     },
     {
+      "path": "scripts/recovery/layer1/rotation.test.mjs",
+      "runner": "node:test",
+      "domain": "scripts",
+      "testType": "script-unit",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:scripts"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit",
+        "9-recovery-idempotency"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
       "path": "scripts/recovery/layer2/backup.test.mjs",
+      "runner": "node:test",
+      "domain": "scripts",
+      "testType": "script-unit",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:scripts"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit",
+        "9-recovery-idempotency"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "scripts/recovery/layer2/rotation.test.mjs",
       "runner": "node:test",
       "domain": "scripts",
       "testType": "script-unit",
@@ -2258,6 +2318,24 @@
     },
     {
       "path": "scripts/recovery/validate/isolation.test.mjs",
+      "runner": "node:test",
+      "domain": "scripts",
+      "testType": "script-unit",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:scripts"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit",
+        "9-recovery-idempotency"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "scripts/recovery/validate/recovered-app.test.mjs",
       "runner": "node:test",
       "domain": "scripts",
       "testType": "script-unit",

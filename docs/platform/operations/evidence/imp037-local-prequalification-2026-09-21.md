@@ -251,3 +251,187 @@ IMP037_ACCEPTED: NO
 IMP038_ACTIVATED: NO
 PRODUCTION_HIGH_RISK_READINESS: NOT_PROVEN
 ```
+
+---
+
+## LOCAL_PREQUALIFICATION_TRANCHE_2
+
+Supporting continuation while DigitalOcean / provider access remains deferred.
+**Not** qualifying external recovery proof. Does **not** claim Phase-1 PASS.
+
+### Post-merge gate (before this tranche)
+
+```text
+POST_MERGE_MAIN_SHA: 02b49a69a08ca53ff44afed5071bab05b465de64
+POST_MERGE_MAIN_TREE: e9451be410212c0915a54bf387d7d1c1ad7c267e
+POST_MERGE_CI_RUN: 35633883270
+POST_MERGE_CI_RESULT: SUCCESS (all 12 required jobs terminal success)
+GATE_0: PASS
+```
+
+### Commands (tranche 2)
+
+```text
+BOBA_RECOVERY_LAYER1_POSIX=1 node --test scripts/recovery/integration/tranche2-local.integration.test.mjs
+BOBA_RECOVERY_LAYER1_POSIX=1 BOBA_RECOVERY_APP_STARTUP=1 node --test scripts/recovery/integration/tranche2-local.integration.test.mjs
+npm run test:recovery
+npm run project:consistency
+node --test scripts/project-consistency.test.mjs
+npm run testing:inventory:check
+npm run recovery:systemd:validate
+git diff --check
+# secret scan: evidence + new outputs checked for private age identities, Spaces secrets, Founder custody material
+```
+
+### Layer-1 real local PITR
+
+```text
+LOCAL_LAYER1_PITR: PASS
+REAL_SPACES_LAYER1: NOT_PERFORMED
+actual_pgbackrest_restore: YES (pgbackrest restore --type=name --target-action=promote)
+target_type: name
+target_value_safe_reference: boba_pitr_marker_a
+fresh_target: YES (RUN_ID/suffix-owned host path; never source PGDATA)
+postgres_started: YES (restored PG18 via explicit postgres -D on disposable PGDATA)
+recovered_state_verified: YES (public.pitr_markers = A only at named restore point)
+source_unchanged: YES (source retained A+B while recovered had A only)
+cleanup: run-owned target/repo worktrees removed via container helper
+QUALIFYING_EXTERNAL_PROOF: NO
+```
+
+### PITR negative paths
+
+```text
+source_equals_target: BLOCKED (existing unit coverage)
+target_already_exists / reuse: BLOCKED
+missing_ownership_marker: BLOCKED
+ownership_runId_mismatch: BLOCKED
+wrong_target_identity / path: BLOCKED
+invalid_target_point: FAILED evidence (never SUCCEEDED)
+pgbackrest_restore_nonzero: FAILED evidence (code PGBACKREST_RESTORE_NONZERO)
+restored_postgres_startup_failure: FAILED evidence (afterRestoreFn fail-closed)
+ambiguous_cleanup_ownership: cleanup REFUSED
+```
+
+### Heavy-op flock + WAL continuity
+
+```text
+heavy_lock_acquired: YES
+contender_blocked: YES (SKIPPED_LOCK_HELD; never success)
+lock_released: YES (including after callback failure)
+wal_generated_while_locked: YES
+wal_archived_while_locked: YES (archive file count increased under flock)
+LOCAL_WAL_CONTINUITY_DURING_HEAVY_LOCK: PASS
+CONTINUOUS_WAL_NOT_BLOCKED_BY_SCHEDULED_JOB_LOCK: YES
+lock_evidence_secret_scan: PASS (no cipher/passphrase material in lock results)
+```
+
+### Layer-1 generation rotation
+
+```text
+LOCAL_LAYER1_GENERATION_ROTATION: PASS
+generation_1: repo-gen-1 (disposable passphrase A; full backup)
+generation_2: repo-gen-2 (disposable passphrase B; stanza-create/check/full backup)
+in_place_rotation_refused: YES
+prior_generation_preserved: YES
+new_generation_backup: YES
+prior_generation_readable: YES (pgbackrest info --output=json with passphrase A)
+active_generation_binding: 2
+OFF_HOST_CUSTODY_EXECUTED: NO
+REAL_SPACES: NOT_PERFORMED
+```
+
+### Layer-2 age recipient rotation
+
+```text
+LOCAL_LAYER2_RECIPIENT_ROTATION: PASS
+recipient_A / recipient_B: disposable age1… identities (destroyed in cleanup)
+artifact_A_with_A: PASS
+artifact_B_with_B: PASS
+old_artifact_still_decryptable: PASS (Identity A)
+private_key_on_backup_path: REFUSED (assertPrivateKeyNotOnBackupPath)
+falsely_discarded_old_identities: REFUSED
+metadata_fingerprints_only: YES
+OFF_HOST_CUSTODY_EXECUTED: NO
+```
+
+### Recovered application startup
+
+Historical tranche-2 note (pre-remediation): an earlier candidate recorded
+`LOCAL_RECOVERED_APP_STARTUP: PASS` after fresh-schema migrate + `/health/live`
+only. That classification is **superseded** by the restored-target remediation
+below and must not be treated as qualifying recovered-app proof.
+
+```text
+LOCAL_RECOVERED_APP_STARTUP: PASS
+QUALIFYING_APP_RECOVERY: NO
+actual_restore: PASS
+  (disposable source PG18 → migrate → seed provenance marker →
+   restricted-role pg_dump -Fc → age → local object store → decrypt →
+   pg_restore → fresh provisioned PG18 target)
+restored_source_marker: PASS
+SOURCE_MARKER_IN_BACKUP: YES
+SOURCE_MARKER_ON_RESTORED_TARGET: YES
+  (app.imp037_restore_provenance seeded BEFORE dump; present on restored
+   target; not created by post-restore migrations)
+post_restore_migration: PASS (existing migrate.ts authority on restored target)
+business_validation: PASS (BUSINESS_INTEGRITY_VALIDATED on same target)
+app_readiness_db_backed: PASS
+provider_suppression: PASS (SUPPRESSED)
+source_untouched: PASS
+  (disposable source container retained + provenance marker verified after
+   backup, restore, target migrations, and application startup — not hard-coded)
+health_live: informational only (/health/live — process liveness; insufficient alone)
+health_ready: PASS (HTTP 200 /health/ready on 127.0.0.1 loopback publish)
+readiness_path: /health/ready
+restored_db_bound: VERIFIED (appDatabaseUrlInternal → restored target only)
+actual_restored_target: YES
+startup: boba-bear-customer-auth:local on run-owned internal network
+prerequisites_fail_closed:
+  databaseAvailable must be exactly true (omit/null → DB_READINESS_UNPROVEN;
+  false → DB_UNAVAILABLE)
+  migrationsComplete must be exactly true (omit/null → MIGRATION_READINESS_UNPROVEN;
+  false → MIGRATION_INCOMPLETE)
+negatives (unit): omitted/false prerequisites; readiness 503; readiness timeout;
+  readiness exception; ambiguous target; production credentials; missing network
+  isolation → refuse; app container cleaned up on readiness failure
+```
+
+### Repeatability
+
+```text
+runs: >=2 distinct RUN_IDs for logical targets
+unique_targets: YES (container + network + identity)
+cross_run_collision: NO
+failure_evidence_preserved: YES (prior FAILED.json retained across later success)
+```
+
+### Findings / same-scope fixes
+
+```text
+- Expose appDatabaseUrl + appDatabaseUrlInternal from provisionLogicalTarget
+- runPitrRestore afterRestoreFn fail-closed (startup failure never SUCCEEDED)
+- New recovered-app startup module (repository-owned customer-auth candidate)
+- Tranche-2 integration: real PITR named restore point, flock+WAL, repo-gen rotation
+- Layer-1/2 rotation unit proofs; flock callback-failure + secret-scan coverage
+- Remediation (PR #178 review): fail-closed databaseAvailable/migrationsComplete
+  (exact true required); /health/ready persistence-backed readiness before STARTED;
+  recovered-app integration uses actual Layer-2 restored target + provenance marker;
+  source_untouched requires independent post-startup verification (not hard-coded)
+```
+
+### Explicit non-claims (preserved)
+
+```text
+QUALIFYING_EXTERNAL_PROOF: NO
+REAL_SPACES: NOT_PERFORMED
+PHASE1_PASS: NO
+RPO_RTO_PROVEN: NO
+DROPLET_2GIB_RTO_VALIDATED: NO
+STORAGE_CAPACITY_VALIDATED: NO
+FOUNDER_UAT: NOT_PERFORMED
+IMP037_IMPLEMENTATION_COMPLETE: NO
+IMP037_ACCEPTED: NO
+IMP038_ACTIVATED: NO
+PROVIDER_DEPENDENT_PROOF: DEFERRED_PENDING_PROVIDER_ACCESS
+```

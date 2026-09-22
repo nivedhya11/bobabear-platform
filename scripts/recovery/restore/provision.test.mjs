@@ -268,3 +268,37 @@ test("logical ownership: missing source / same endpoint / arbitrary URL BLOCKED;
   assert.equal(ownedOk.ok, true);
   assert.equal(ownedOk.targetIdentity, ownership.targetIdentity);
 });
+
+test("PITR ambiguous cleanup ownership is refused", () => {
+  const root = mkdtempSync(path.join(os.tmpdir(), "boba-pitr-clean-"));
+  const runId = generateRunId({
+    now: new Date(Date.UTC(2026, 8, 21, 15, 0, 0)),
+    randomHex: "eeeeeeeeeeeeeeee",
+  });
+  try {
+    const provisioned = provisionPitrTarget({
+      runId,
+      workspaceRoot: root,
+      sourceIdentity: "prod",
+      sourceClassification: "production",
+      sourcePgdataPath: "/var/lib/postgresql/data",
+    });
+    assert.equal(provisioned.ok, true);
+
+    writeFileSync(
+      path.join(path.dirname(provisioned.target.pgdataPath), "TARGET_OWNED_BY_RUN"),
+      JSON.stringify({
+        runId: "run-20260921T000000Z-ffffffffffffffff",
+        targetIdentity: provisioned.target.targetIdentity,
+        pgdataPath: provisioned.target.pgdataPath,
+        environment: "recovery",
+      }),
+    );
+    const refused = cleanupProvisionedTarget(provisioned.target);
+    assert.equal(refused.ok, false);
+    assert.match(refused.reason ?? "", /ownership|mismatch|refused/i);
+    assert.equal(existsSync(provisioned.target.pgdataPath), true);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
