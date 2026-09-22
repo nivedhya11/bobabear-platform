@@ -593,10 +593,11 @@ start evidence PR#172/5744869269).
 
 Next product slice is IMP-039 — Production Infrastructure & Release Pipeline
 (`PLANNED` / `NOT_ACTIVATED` / `NOT_AUTHORIZED` / `NOT_STARTED`; `IMP039_ACTIVATED: NO`).
-IMP-038 is activated with Architecture Fit PASS / architecture LOCKED (`IMP038_ACTIVATED: YES`;
-`IMP038_ARCHITECTURE_FIT: PASS`; `IMP038_ARCHITECTURE_LOCKED: YES`; independent Architecture Fit
-review PASS on reviewed technical candidate `3b03164d6581c5a98a893c24e92eaddece004e90`; implementation NOT_AUTHORIZED /
-NOT_STARTED). ARCH-R21 / DR-17 are CURRENT
+IMP-038 is activated with Architecture Fit PASS / architecture LOCKED and implementation
+AUTHORIZED / STARTED (`IMP038_ACTIVATED: YES`; `IMP038_ARCHITECTURE_FIT: PASS`;
+`IMP038_ARCHITECTURE_LOCKED: YES`; independent Architecture Fit review PASS on reviewed technical
+candidate `3b03164d6581c5a98a893c24e92eaddece004e90`; `IMP038_IMPLEMENTATION_AUTHORIZED: YES`;
+`IMP038_STARTED: YES`; formal lifecycle `IMPLEMENTATION_IN_PROGRESS`). ARCH-R21 / DR-17 are CURRENT
 (`D-375_CREATED: YES`; `ARCH_R21_CREATED: YES`); ARCH-R20 / D-374 remain preserved pilot base.
 
 IMP-036F — Catalog, Menu, Pricing & Promotions Management remains `COMPLETE_AND_ACCEPTED` with

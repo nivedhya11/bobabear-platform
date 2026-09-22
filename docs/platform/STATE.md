@@ -166,7 +166,7 @@ D-375_CREATED:            YES
 ARCH_R21_CREATED:         YES
 ```
 
-Current locked (implementation NOT_AUTHORIZED) capability architecture (IMP-038):
+Current locked capability architecture (IMP-038; implementation AUTHORIZED / STARTED):
 [`capabilities/IMP-038-security-privacy-hardening.md`](./capabilities/IMP-038-security-privacy-hardening.md).
 Latest accepted locked capability architecture (IMP-036G; architecture LOCKED; implementation AUTHORIZED / STARTED / COMPLETE; COMPLETE_AND_ACCEPTED):
 [`capabilities/IMP-036G-administration-console-v2.md`](./capabilities/IMP-036G-administration-console-v2.md).

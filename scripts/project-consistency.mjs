@@ -11353,6 +11353,29 @@ export function evaluateImp038AuthorizedStartedProductDefinition(text) {
       message: "Authorized+started IMP-038 Product Definition must not accept IMP-038 or activate IMP-039",
     };
   }
+  // Reject stale live pre-authorization language (historical Gate-evaluated / superseded sections
+  // may still mention prior NOT_AUTHORIZED tips; strip common historical blocks before checking).
+  const liveBody = body
+    .replace(/```text\s*\nGATE_EVALUATED_HEAD[\s\S]*?```/g, "\n")
+    .replace(/## Architecture-fit inputs[\s\S]*?(?=\n## |\n# |\n---\s*\n|$)/g, "\n")
+    .replace(/Historical prior tip[\s\S]*?(?=\n## |\n# |\n---\s*\n|$)/gi, "\n");
+  if (
+    /Implementation\s*=\s*NOT_AUTHORIZED\s*\/\s*NOT_STARTED/.test(liveBody) ||
+    /formal lifecycle\s+\*\*ARCHITECTURE_LOCKED\*\*/.test(liveBody) ||
+    /implementation remains\s+\*\*NOT_AUTHORIZED\*\*/.test(liveBody) ||
+    /implementation NOT_AUTHORIZED/.test(liveBody) ||
+    /NOT_READY_FOR_IMPLEMENTATION\s*\([^)]*implementation NOT_AUTHORIZED/.test(liveBody) ||
+    /Stories remain `NOT_READY_FOR_IMPLEMENTATION` because:/.test(liveBody) ||
+    /Authorize or start IMP-038 implementation \(do not start until separately authorized/.test(liveBody) ||
+    /Next authorized phase is human R3 merge decision for architecture-lock/.test(liveBody)
+  ) {
+    return {
+      ok: false,
+      code: "IMP038_PD_STALE_PREAUTH",
+      message:
+        "Authorized+started IMP-038 Product Definition must not retain live NOT_AUTHORIZED / ARCHITECTURE_LOCKED-as-current-lifecycle / NOT_READY_FOR_IMPLEMENTATION-due-to-authorization language",
+    };
+  }
   const lockedPd = evaluateImp038ArchitectureLockedProductDefinition(
     toImp038LockShapedAuthorizedStartedProductDefinition(body),
   );
@@ -30476,6 +30499,20 @@ function checkImp038ImplementationAuthorizeStart(roadmap, state, architecture, d
   ];
   for (const [haystack, pattern, message] of requiredTokens) {
     if (!pattern.test(haystack)) fail("IMP038_IMPLEMENTATION_AUTHORIZE_START", message);
+  }
+
+  const stateBeforeHistorical = state.text.split("## 10.")[0] || state.text;
+  if (/Current locked \(implementation NOT_AUTHORIZED\)/.test(stateBeforeHistorical)) {
+    fail(
+      "IMP038_STATE_STALE_PREAUTH",
+      "STATE current summary must not label IMP-038 as implementation NOT_AUTHORIZED after authorize+start",
+    );
+  }
+  if (/implementation NOT_AUTHORIZED\s*\/\s*NOT_STARTED/.test(currentSliceSection)) {
+    fail(
+      "IMP038_ROADMAP_STALE_PREAUTH",
+      "ROADMAP current product-slice discussion must not retain IMP-038 implementation NOT_AUTHORIZED / NOT_STARTED after authorize+start",
+    );
   }
 
   const forbidden = [
