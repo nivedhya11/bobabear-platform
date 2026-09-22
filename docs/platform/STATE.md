@@ -581,10 +581,10 @@ Implementation/review provenance for IMP-036F is recorded in
 
 ## 8. Explicitly Not Yet Accepted
 
-- IMP-037 — Backup, Restore & Migration Readiness (`IMPLEMENTATION_IN_PROGRESS`; `IMP037_ACTIVATED: YES`; Product Definition APPROVED / `PD-IMP-037-DRAFT-1`; Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation AUTHORIZED / STARTED; `IMP037_ACCEPTED: NO`; independent Architecture Fit review PASS; authorization evidence PR#171/5743814105; start evidence PR#172/5744869269)
-- IMP-038 — Security & Privacy Hardening (`PLANNED` / `NOT_ACTIVATED`; `IMP038_ACTIVATED: NO`)
-- IMP-039 — Production Infrastructure & Release Pipeline
-- IMP-040 — Launch Validation & Cutover
+- IMP-037 — Backup, Restore & Migration Readiness (`IMPLEMENTATION_IN_PROGRESS`; `IMP037_ACTIVATED: YES`; Product Definition APPROVED / `PD-IMP-037-DRAFT-1`; Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation AUTHORIZED / STARTED; `IMP037_ACCEPTED: NO`; independent Architecture Fit review PASS; authorization evidence PR#171/5743814105; start evidence PR#172/5744869269; `PHASE1_BLOCK_STATUS: BLOCKED_PROVIDER_ACCESS`)
+- IMP-038 — Security & Privacy Hardening (`PLANNED`; `IMP038_ACTIVATED: YES` under `CONTINUATION_EXCEPTION: IMP037_PROVIDER_BLOCKED_TO_IMP038`; Product Definition DRAFT / `PD-IMP-038-DRAFT-1` PRE-GATE; Gate NOT_PERFORMED; Architecture Fit NOT_PERFORMED; architecture unlocked; implementation NOT_AUTHORIZED / NOT_STARTED; `IMP038_ACCEPTED: NO`; `IMP038_ACCEPTANCE_BLOCKED_BY_IMP037: YES`)
+- IMP-039 — Production Infrastructure & Release Pipeline (`PLANNED` / `NOT_ACTIVATED`; `IMP039_ACTIVATED: NO`)
+- IMP-040 — Launch Validation & Cutover (`PLANNED` / `NOT_ACTIVATED`; `IMP040_ACTIVATED: NO`)
 
 ## 9. Authority Boundaries
 

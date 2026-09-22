@@ -133,6 +133,7 @@ import {
   evaluateImp037ContinuationCapabilityArchitecture,
   evaluateImp037ContinuationProductDefinition,
   evaluateImp038ControlledContinuationActivationCheckpoint,
+  evaluateImp038DraftProductDefinition,
   stripImp037HistoricalManagedRecoveryAuthority,
   evaluateImp036gProductDefinitionDraftCheckpoint,
   evaluateImp036gProductDefinitionGatePassCheckpoint,
@@ -10543,10 +10544,23 @@ PHASE1_BLOCK_STATUS: BLOCKED_PROVIDER_ACCESS
     imp039ActivatedYes: false,
     imp037CapabilityText: continuationCapability,
     imp037ProductDefinitionText: continuationPd,
+    imp038ProductDefinitionText: readFileSync("docs/platform/product/IMP-038/product-definition.md", "utf8"),
   });
 
   it("passes valid GTM-R138 / STATE-R136 controlled-continuation activation checkpoint", () => {
     assert.deepEqual(evaluateImp038ControlledContinuationActivationCheckpoint(continuationBase), { ok: true });
+  });
+
+  it("validates live IMP-038 Product Definition draft markers", () => {
+    assert.deepEqual(evaluateImp038DraftProductDefinition(continuationBase.imp038ProductDefinitionText), { ok: true });
+  });
+
+  it("rejects empty or premature IMP-038 Product Definition draft", () => {
+    assert.equal(evaluateImp038DraftProductDefinition("").code, "IMP038_PD_DRAFT_EMPTY");
+    assert.equal(
+      evaluateImp038DraftProductDefinition(`${continuationBase.imp038ProductDefinitionText}\nGate Result: PASS\n`).code,
+      "IMP038_PD_PREMATURE_PROGRESSION",
+    );
   });
 
   it("recognizes the continuation checkpoint kind exclusively at GTM-R138 / STATE-R136", () => {

@@ -1545,9 +1545,13 @@ INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_TREE: 09c7e3bd6b7832944d07d527c149752ed3bb
 INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID: 5256273904
 ```
 
-Next phase: **continued bounded IMP-037 implementation**, then independent implementation review.
-`IMP037_ACTIVATED: YES` remains; under continuation `currentProductSlice = IMP-038` (`acceptedThrough` IMP-036G; formal
-lifecycle IMPLEMENTATION_IN_PROGRESS).
+Next phase for IMP-037: **continued external/provider recovery proof when operator access exists**,
+then independent acceptance — **not** waived by controlled continuation.
+`IMP037_ACTIVATED: YES` remains; under continuation `currentProductSlice = IMP-038`
+(`acceptedThrough` IMP-036G; IMP-037 formal lifecycle IMPLEMENTATION_IN_PROGRESS; provider-blocked).
 Product Definition Gate = PASS; Architecture Fit PASS; architecture LOCKED;
 implementation AUTHORIZED / STARTED (authorization evidence PR#171/5743814105; start evidence
-PR#172/5744869269). Stories are not complete. IMP-038 remains inactive.
+PR#172/5744869269). Stories are not complete.
+IMP-038 is activated for pre-gate Product Definition only (`IMP038_ACTIVATED: YES`;
+`PD-IMP-038-DRAFT-1` DRAFT; Gate NOT_PERFORMED; implementation NOT_AUTHORIZED / NOT_STARTED;
+`IMP038_ACCEPTANCE_BLOCKED_BY_IMP037: YES`).

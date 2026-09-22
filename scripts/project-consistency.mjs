@@ -10244,6 +10244,70 @@ export function evaluateImp038ControlledContinuationActivationCheckpoint(checkpo
     typeof checkpoint.imp037ProductDefinitionText === "string" ? checkpoint.imp037ProductDefinitionText : "",
   );
   if (!continuationPd.ok) return continuationPd;
+  const draft038 = evaluateImp038DraftProductDefinition(
+    typeof checkpoint.imp038ProductDefinitionText === "string" ? checkpoint.imp038ProductDefinitionText : "",
+  );
+  if (!draft038.ok) return draft038;
+  return { ok: true };
+}
+
+/**
+ * Validate IMP-038 pre-gate Product Definition draft markers (PD-IMP-038-DRAFT-1).
+ * Requires DRAFT / PRE-GATE / Gate NOT_PERFORMED and rejects premature Gate PASS,
+ * architecture lock, implementation authorization/start, or acceptance claims.
+ * @param {string} text
+ */
+export function evaluateImp038DraftProductDefinition(text) {
+  const body = String(text ?? "");
+  if (!body.trim()) {
+    return {
+      ok: false,
+      code: "IMP038_PD_DRAFT_EMPTY",
+      message: "IMP-038 Product Definition draft must be non-empty",
+    };
+  }
+  const required = [
+    [/PD-IMP-038-DRAFT-1/, "PD-IMP-038-DRAFT-1"],
+    [/PRE-GATE DRAFT:\s*YES|\"preGateDraft\":\s*\"YES\"/, "PRE-GATE DRAFT: YES"],
+    [/PRODUCT_DEFINITION_GATE_EXECUTION:\s*NOT_PERFORMED|\"productDefinitionGateExecution\":\s*\"NOT_PERFORMED\"/, "PRODUCT_DEFINITION_GATE_EXECUTION: NOT_PERFORMED"],
+    [/Gate Result:\s*NOT_PERFORMED|\"productDefinitionGateResult\":\s*\"NOT_PERFORMED\"/, "Gate Result: NOT_PERFORMED"],
+    [/ARCHITECTURE_FIT:\s*NOT_PERFORMED|\"architectureFit\":\s*\"NOT_PERFORMED\"/, "ARCHITECTURE_FIT: NOT_PERFORMED"],
+    [/ARCHITECTURE_LOCKED:\s*NO|\"architectureLocked\":\s*\"NO\"/, "ARCHITECTURE_LOCKED: NO"],
+    [/IMPLEMENTATION_AUTHORIZED:\s*NO|\"implementationAuthorized\":\s*\"NO\"/, "IMPLEMENTATION_AUTHORIZED: NO"],
+    [/IMPLEMENTATION_STARTED:\s*NO|\"implementationStarted\":\s*\"NO\"/, "IMPLEMENTATION_STARTED: NO"],
+    [/IMP038_ACTIVATED:\s*YES|\"imp038Activated\":\s*\"YES\"/, "IMP038_ACTIVATED: YES"],
+    [/IMP038_ACCEPTANCE_BLOCKED_BY_IMP037:\s*YES|\"acceptanceBlockedByImp037\":\s*\"YES\"/, "IMP038_ACCEPTANCE_BLOCKED_BY_IMP037: YES"],
+    [/CONTINUATION_EXCEPTION:\s*IMP037_PROVIDER_BLOCKED_TO_IMP038|\"continuationException\":\s*\"IMP037_PROVIDER_BLOCKED_TO_IMP038\"/, "CONTINUATION_EXCEPTION"],
+    [/IMP038_ACCEPTED:\s*NO|\"impAccepted\":\s*\"NO\"/, "IMP038_ACCEPTED: NO"],
+    [/Document status:\s*DRAFT|\"status\":\s*\"DRAFT\"/, "Document status DRAFT"],
+  ];
+  for (const [pattern, label] of required) {
+    if (!pattern.test(body)) {
+      return {
+        ok: false,
+        code: "IMP038_PD_DRAFT",
+        message: `IMP-038 Product Definition draft must record ${label}`,
+      };
+    }
+  }
+  if (
+    /PRODUCT_DEFINITION_GATE_EXECUTION:\s*PERFORMED/.test(body) ||
+    /Gate Result:\s*PASS/.test(body) ||
+    /\"productDefinitionGateResult\":\s*\"PASS\"/.test(body) ||
+    /ARCHITECTURE_FIT:\s*PASS/.test(body) ||
+    /ARCHITECTURE_LOCKED:\s*YES/.test(body) ||
+    /IMPLEMENTATION_AUTHORIZED:\s*YES/.test(body) ||
+    /IMPLEMENTATION_STARTED:\s*YES/.test(body) ||
+    /IMP038_ACCEPTED:\s*YES/.test(body) ||
+    /IMP-038:\s*COMPLETE_AND_ACCEPTED/.test(body)
+  ) {
+    return {
+      ok: false,
+      code: "IMP038_PD_PREMATURE_PROGRESSION",
+      message:
+        "IMP-038 Product Definition draft must not claim Gate PASS, Architecture Fit PASS, architecture lock, implementation authorization/start, or acceptance",
+    };
+  }
   return { ok: true };
 }
 
@@ -28645,6 +28709,7 @@ function checkImp038ControlledContinuationActivation(roadmap, state, architectur
 
   const imp038ProductDefRel = "docs/platform/product/IMP-038/product-definition.md";
   const imp038ProductDefAbs = resolveExactRelativeFile(imp038ProductDefRel);
+  const imp038ProductDefinitionText = imp038ProductDefAbs ? readFileSync(imp038ProductDefAbs, "utf8") : "";
   if (!imp038ProductDefAbs) {
     fail("IMP038_PD_DRAFT_ABSENT", "IMP-038 Product Definition draft must exist at controlled-continuation activation");
   }
@@ -28848,6 +28913,7 @@ function checkImp038ControlledContinuationActivation(roadmap, state, architectur
     imp038CapabilityArtifactExists: imp038CapabilityAbs !== null,
     imp037ProductDefinitionText,
     imp037CapabilityText,
+    imp038ProductDefinitionText,
     d374Exists: Boolean(d374Row),
     d375Exists,
     archR21Exists,
