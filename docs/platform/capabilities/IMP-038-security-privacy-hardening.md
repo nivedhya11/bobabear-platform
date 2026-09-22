@@ -31,9 +31,12 @@ application-authoritative abuse/step-up/privacy hardening), within the pilot inf
 **ARCH-R20 / D-374 / ADR-016** (single DigitalOcean Basic Droplet + Docker Engine/Compose +
 self-hosted PostgreSQL 18).
 
-Independent (ChatGPT) Architecture Fit review is **PENDING**. Implementation is **NOT AUTHORIZED**
-and **NOT STARTED**. This lock does **not** accept IMP-038, authorize implementation, activate
-IMP-039, or claim DPDP / CERT-In / PCI / OWASP certification compliance.
+Independent (ChatGPT) Architecture Fit review is **PASS** (reviewed technical candidate head
+`3b03164d6581c5a98a893c24e92eaddece004e90` / tree `5bb499fa84a5bf02682b30518f2bf898ddb23540`; review
+`5279884548`). The later review-status reconciliation commit is **not** the independently
+reviewed technical candidate and is **not** the Fit-evaluated artifact. Implementation is
+**NOT AUTHORIZED** and **NOT STARTED**. This lock does **not** accept IMP-038, authorize
+implementation, activate IMP-039, or claim DPDP / CERT-In / PCI / OWASP certification compliance.
 
 ```text
 ARCHITECTURE_FIT: PASS
@@ -41,7 +44,10 @@ ARCHITECTURE_FIT_EXECUTION: PERFORMED
 ARCHITECTURE_FIT_RESULT: PASS
 IMP038_ARCHITECTURE_LOCKED: YES
 ARCHITECTURE_LOCKED = YES
-INDEPENDENT_ARCHITECTURE_FIT_REVIEW = PENDING
+INDEPENDENT_ARCHITECTURE_FIT_REVIEW = PASS
+INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_HEAD = 3b03164d6581c5a98a893c24e92eaddece004e90
+INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_TREE = 5bb499fa84a5bf02682b30518f2bf898ddb23540
+INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID = 5279884548
 IMPLEMENTATION_AUTHORIZED: NO
 IMPLEMENTATION_STARTED: NO
 IMP038_IMPLEMENTATION_AUTHORIZED: NO
@@ -82,7 +88,7 @@ this capability document never overrides them.
 | Capability / title | `IMP-038 — Security & Privacy Hardening` |
 | Authority | `CAPABILITY_ARCHITECTURE` (`CURRENT`) |
 | Architecture base | `ARCH-R21` / `D-375` / `ADR-017` (`ARCH-G27`); inherits `ARCH-R20` / `D-374` / `ADR-016` (`ARCH-G26`) |
-| Architecture lock | `ARCHITECTURE_LOCKED` (independent Architecture Fit review **PENDING**) |
+| Architecture lock | `ARCHITECTURE_LOCKED` (independent Architecture Fit review **PASS**) |
 | Architecture Fit | **PASS** (performed against Fit-evaluated candidate §1.1) |
 | Product Definition | `PD-IMP-038-DRAFT-2` **APPROVED**; Product Definition Gate **PASS** |
 | Formal ROADMAP lifecycle | Controlled continuation under `IMP037_PROVIDER_BLOCKED_TO_IMP038`; Fit/lock recorded; implementation **NOT_AUTHORIZED** |
@@ -129,12 +135,19 @@ ARCHITECTURE_FIT_EVALUATED_TREE = 581fb23631df40044ec7b9c449545959a90b9998
 ARCHITECTURE_FIT_EVALUATED_WORKING_TREE_FINGERPRINT = ab00d1ab23f3c7d8b140feefcd1a0787f1fedf90ab08a9934c9a892a77c8184d
 ARCHITECTURE_FIT_DATE = 2026-09-22
 ARCHITECTURE_FIT_RESULT = PASS
-INDEPENDENT_ARCHITECTURE_FIT_REVIEW = PENDING
+INDEPENDENT_ARCHITECTURE_FIT_REVIEW = PASS
+INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_HEAD = 3b03164d6581c5a98a893c24e92eaddece004e90
+INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_TREE = 5bb499fa84a5bf02682b30518f2bf898ddb23540
+INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID = 5279884548
 ```
 
 The persistence commit that records this lock is a **subsequent governance commit** and is **NOT**
-the Fit-evaluated candidate above (`lock-persistence commit != Fit-evaluated candidate`). Do not
-treat lock-persistence HEAD / tree / fingerprint as the Fit-evaluated artifact.
+the Fit-evaluated candidate above (`lock-persistence commit != Fit-evaluated candidate`). The later
+independent-review evidence commit / review-status reconciliation commit is likewise **NOT** the
+Fit-evaluated candidate and is **NOT** the independently reviewed technical candidate
+(`fit-evaluated artifact != independently reviewed technical candidate != review-status
+reconciliation commit`). Do not treat lock-persistence or review-reconciliation HEAD / tree /
+fingerprint as the Fit-evaluated artifact.
 
 ### 1.2 Product Definition does not lock Cloudflare
 
@@ -844,7 +857,7 @@ Do **not** invent DPDP / CERT-In / PCI applicability findings in implementation.
 | IMP-037 external recovery unfinished | `IMP038_ACCEPTANCE_BLOCKED_BY_IMP037: YES` |
 | Legal windows unknown | Matrices with LEGAL_REVIEW markers; no silent numeric invention |
 | Turnstile UX friction | Limited to escalated auth abuse (`FD-038-21`); checkout default NO |
-| Independent review still PENDING | Lock recorded; independent Architecture Fit review must complete before R3 promotion reliance |
+| Independent Architecture Fit review PASS recorded | Reviewed technical candidate reconciled; human R3 merge decision remains separate |
 | AOP/firewall not yet live-provisioned | Design+lab evidence path unlocked for IMP-038 (§16.2); production realization owned by IMP-039; IMP-040 fail-closed |
 
 ---
@@ -859,7 +872,10 @@ ARCHITECTURE_FIT: PASS
 ARCHITECTURE_FIT_EXECUTION: PERFORMED
 ARCHITECTURE_FIT_RESULT: PASS
 ARCHITECTURE_LOCKED: YES
-INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PENDING
+INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PASS
+INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_HEAD: 3b03164d6581c5a98a893c24e92eaddece004e90
+INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_TREE: 5bb499fa84a5bf02682b30518f2bf898ddb23540
+INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID: 5279884548
 IMPLEMENTATION_AUTHORIZED: NO
 IMPLEMENTATION_STARTED: NO
 IMP038_IMPLEMENTATION_COMPLETE: NO
@@ -884,7 +900,6 @@ FOUNDER_UAT_STATUS: NOT_PERFORMED
 
 ### 21.2 What has **not** happened
 
-- Independent Architecture Fit review PASS  
 - Implementation authorization or start  
 - Cloudflare / DO firewall / AOP provisioning (IMP-039)  
 - CI security gates wired as acceptance evidence  
@@ -896,8 +911,8 @@ FOUNDER_UAT_STATUS: NOT_PERFORMED
 ### 21.3 Gate sequence from here
 
 ```text
-Independent Architecture Fit review
-  → Implementation authorization (human R2/R3 as required)
+Human R3 merge decision for architecture-lock PR #182
+  → Implementation authorization (separate human gate after merge/verification)
   → IMPLEMENT tranches A–F (§21.5)
   → PROVE / Acceptance Pack + external assessment
   → Independent technical acceptance
@@ -963,7 +978,10 @@ IMP038_ARCHITECTURE_LOCKED: YES
 ARCHITECTURE_FIT: PASS
 ARCHITECTURE_FIT_EXECUTION: PERFORMED
 ARCHITECTURE_FIT_RESULT: PASS
-INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PENDING
+INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PASS
+INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_HEAD: 3b03164d6581c5a98a893c24e92eaddece004e90
+INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_TREE: 5bb499fa84a5bf02682b30518f2bf898ddb23540
+INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID: 5279884548
 IMPLEMENTATION_AUTHORIZED: NO
 IMPLEMENTATION_STARTED: NO
 IMP038_IMPLEMENTATION_AUTHORIZED: NO

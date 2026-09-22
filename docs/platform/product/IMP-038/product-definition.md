@@ -68,7 +68,10 @@ IMP038_PRODUCT_DEFINITION_VERSION: PD-IMP-038-DRAFT-2
 IMP038_PRODUCT_DEFINITION_GATE: PASS
 IMP038_ARCHITECTURE_FIT: PASS
 IMP038_ARCHITECTURE_LOCKED: YES
-INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PENDING
+INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PASS
+INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_HEAD: 3b03164d6581c5a98a893c24e92eaddece004e90
+INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_TREE: 5bb499fa84a5bf02682b30518f2bf898ddb23540
+INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID: 5279884548
 CLOUDFLARE_ARCHITECTURE_LOCKED: YES
 BINDING_DECISIONS: D-375 / ADR-017 / ARCH-R21 (Fit lock); D-374 / ADR-016 / ARCH-R20 (pilot base)
 FOUNDER_UAT_REQUIRED: YES
@@ -118,7 +121,7 @@ Canonical anchors (verify against CURRENT ROADMAP/STATE):
 
 This artifact is the **approved Product Definition** for IMP-038 after Product Definition Gate PASS
 (`PD-IMP-038-DRAFT-2`; approval evidence PR#180/5773885848) and Architecture Fit PASS / architecture
-LOCKED (D-375 / ADR-017 / ARCH-R21; independent Architecture Fit review PENDING). It does **not**
+LOCKED (D-375 / ADR-017 / ARCH-R21; independent Architecture Fit review PASS). It does **not**
 authorize implementation, start implementation, perform Founder UAT, or accept the IMP. It incorporates Founder security/privacy discovery requirements as first-class Product
 Definition scope (stories, ACs, business/security rules, evidence requirements, and deferrals).
 Founder product decisions FD-038-01…21 are reconciled (authority PR#180/5773472988). It does **not**
@@ -156,7 +159,7 @@ authoritative even if edge controls are absent or bypassed.
 | Process / verification policy | PD-1 / TEST-1 |
 | Canonical anchors | VISION-1; ROADMAP GTM-R139; STATE STATE-R137; ARCH-R21; DR-17; PD-1; TEST-1 |
 | Repository candidate | Gate-evaluated candidate lineage: canonical path `/home/ajoshi/repos/boba-bear-platform`; branch `governance/imp038-activation-product-definition`; **GATE_EVALUATED_HEAD** `2ade7b305d7a1c552b56a709dbf8723d356979bf`; **GATE_EVALUATED_TREE** `b8565bba474627ddf3974b329c7d6038ee1bf97c`; exact-head CI `35706440171` SUCCESS; gate-persistence commits after this Gate PASS are not the evaluated artifact |
-| Capability lifecycle / authorization | ROADMAP/STATE: `IMP038_ACTIVATED: YES`; formal lifecycle **ARCHITECTURE_LOCKED**; PD = APPROVED (`PD-IMP-038-DRAFT-2`); Gate = PASS; Architecture Fit = PASS; Architecture Locked = YES; Independent Architecture Fit review = PENDING; Implementation = NOT_AUTHORIZED / NOT_STARTED; `IMP038_ACCEPTANCE_BLOCKED_BY_IMP037: YES`; `acceptedThrough` remains IMP-036G |
+| Capability lifecycle / authorization | ROADMAP/STATE: `IMP038_ACTIVATED: YES`; formal lifecycle **ARCHITECTURE_LOCKED**; PD = APPROVED (`PD-IMP-038-DRAFT-2`); Gate = PASS; Architecture Fit = PASS; Architecture Locked = YES; Independent Architecture Fit review = PASS; Implementation = NOT_AUTHORIZED / NOT_STARTED; `IMP038_ACCEPTANCE_BLOCKED_BY_IMP037: YES`; `acceptedThrough` remains IMP-036G |
 | Relevant capability architecture / ADRs | Locked capability: [`../../capabilities/IMP-038-security-privacy-hardening.md`](../../capabilities/IMP-038-security-privacy-hardening.md) (D-375 / ADR-017 / ARCH-R21). Binding baselines: ARCH §§6–7,12; ADR-004; ADR-005; ADR-015 (amended by D-374 for host-local pilot secrets → IMP-039 boundary); IMP-036B §6.1 Maps supersession record; IMP-037 FD-037-03 retention distinction |
 | Founder UAT applicability | `FOUNDER_UAT_REQUIRED = YES` — customer-visible location/auth gating, security headers, auth-abuse/bot challenges affecting storefront, and operator-visible security/privacy/acceptance-pack outcomes |
 
@@ -339,7 +342,7 @@ Security implications: Primary
 Architecture fit / applicable invariants: ARCH §12; static frontend rule; exact header/CSP mechanism is Architecture Fit
 Founder decision status: FD-038-05 = RESOLVED_WITH_ARCHITECTURE_FIT_MECHANISM
 Open material decisions: NONE (product property locked; Fit selects mechanism)
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Fit PASS/LOCKED; independent review PENDING; implementation NOT_AUTHORIZED)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Fit PASS/LOCKED; independent Architecture Fit review PASS; implementation NOT_AUTHORIZED)
 ```
 
 ```text
@@ -356,7 +359,7 @@ Dependencies: Founder §6.1 markers already approved as future direction; confir
 Explicit non-goals: Rewriting accepted IMP-036B history; new maps provider
 Founder decision status: FD-038-08 = RESOLVED_WITH_LEGAL_REVIEW_DEPENDENCY (LOCATION_DATA_MINIMIZATION_REQUIRED = YES; RAW_LOCATION_TELEMETRY_RETENTION_BY_DEFAULT = NO)
 Open material decisions: NONE for product policy; numeric retention windows = LEGAL_REVIEW_REQUIRED
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Fit PASS/LOCKED; independent review PENDING; implementation NOT_AUTHORIZED; legal retention windows)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Fit PASS/LOCKED; independent Architecture Fit review PASS; implementation NOT_AUTHORIZED; legal retention windows)
 ```
 
 ```text
@@ -384,7 +387,7 @@ Requirements:
   - no permanent lockout design that lets attackers DoS legitimate accounts
   - password/reset/recovery abuse covered if/when those surfaces exist; else N/A with rationale
 Open material decisions: NONE (challenge provider/mechanism remains Architecture Fit)
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Fit PASS/LOCKED; independent review PENDING; implementation NOT_AUTHORIZED)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Fit PASS/LOCKED; independent Architecture Fit review PASS; implementation NOT_AUTHORIZED)
 ```
 
 ```text
@@ -402,7 +405,7 @@ Locked policy:
   DPDP_APPLICABILITY_CONTROL_MATRIX = MANDATORY
 LEGAL_REVIEW_REQUIRED: YES (applicability + any launch-blocking user-facing rights controls)
 Open material decisions: NONE for product model; legal applicability may still block launch semantics
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Fit PASS/LOCKED; independent review PENDING; implementation NOT_AUTHORIZED; legal review of applicability/rights controls)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Fit PASS/LOCKED; independent Architecture Fit review PASS; implementation NOT_AUTHORIZED; legal review of applicability/rights controls)
 ```
 
 ```text
@@ -421,7 +424,7 @@ Locked policy:
   SECURITY_LOG_PII_MINIMIZATION = REQUIRED
 LEGAL_REVIEW_REQUIRED: YES (numeric statutory windows)
 Open material decisions: NONE for product policy; statutory periods = LEGAL_REVIEW_REQUIRED
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Fit PASS/LOCKED; independent review PENDING; implementation NOT_AUTHORIZED; legal retention windows)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Fit PASS/LOCKED; independent Architecture Fit review PASS; implementation NOT_AUTHORIZED; legal retention windows)
 ```
 
 ```text
@@ -440,7 +443,7 @@ Locked policy:
   HIGH_RISK_EXCEPTION_DEFAULT_MAX_DAYS = 30 (unless Founder overrides)
 Explicit non-goals: Inventing arbitrary remediation SLA numbers beyond the locked exception policy
 Open material decisions: NONE
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Fit PASS/LOCKED; independent review PENDING; implementation NOT_AUTHORIZED)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Fit PASS/LOCKED; independent Architecture Fit review PASS; implementation NOT_AUTHORIZED)
 ```
 
 ```text
@@ -452,7 +455,7 @@ so that deny-by-default authorization remains proven for launch.
 Journey: JOURNEY-AUTHORIZATION-NEGATIVE / JOURNEY-PRIVILEGED-ADMIN
 Acceptance scenarios: AC-IMP-038-007-01…04
 Open material decisions: NONE for existing ADR-005 catalogue review scope (privacy remains operator-mediated; no new self-service permission invented)
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Fit PASS/LOCKED; independent review PENDING; implementation NOT_AUTHORIZED)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Fit PASS/LOCKED; independent Architecture Fit review PASS; implementation NOT_AUTHORIZED)
 ```
 
 ```text
@@ -474,7 +477,7 @@ Locked policy:
 LEGAL_REVIEW_REQUIRED: YES for external notification triggers/applicability (does not reopen product locks)
 Note: This is NOT the Security & Privacy Acceptance Pack (see US-IMP-038-024). No CERT-In compliance claim.
 Open material decisions: NONE for product readiness model
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Fit PASS/LOCKED; independent review PENDING; implementation NOT_AUTHORIZED; legal trigger review)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Fit PASS/LOCKED; independent Architecture Fit review PASS; implementation NOT_AUTHORIZED; legal trigger review)
 ```
 
 ```text
@@ -527,7 +530,7 @@ Requirements: server-side authoritative; edge challenge defense-in-depth only; n
 attacker-driven lockout DoS; safe/non-enumerating responses; principal/account + IP throttles;
 step-up/re-auth for selected high-consequence workforce/admin actions.
 Open material decisions: NONE (challenge/step-up mechanism details = Architecture Fit)
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Fit PASS/LOCKED; independent review PENDING; implementation NOT_AUTHORIZED)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Fit PASS/LOCKED; independent Architecture Fit review PASS; implementation NOT_AUTHORIZED)
 ```
 
 ```text
@@ -552,7 +555,7 @@ Architecture note: Cloudflare Free is the preferred low-TCO Architecture Fit can
 Definition does NOT lock Cloudflare. Free-tier limitations must be recorded; server-side defense
 must remain if edge controls are bypassed or unavailable. Fit / IMP-039 selects mechanism.
 Open material decisions: NONE for product properties; edge/challenge mechanism = Architecture Fit
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Fit PASS/LOCKED Cloudflare Free; independent review PENDING; implementation NOT_AUTHORIZED; IMP-039 may still provision)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Fit PASS/LOCKED Cloudflare Free; independent Architecture Fit review PASS; implementation NOT_AUTHORIZED; IMP-039 may still provision)
 ```
 
 ```text
@@ -566,7 +569,7 @@ Journey: JOURNEY-BUSINESS-LOGIC-ABUSE
 Acceptance scenarios: AC-IMP-038-015-01…02
 Founder decision status: FD-038-09 = RESOLVED (residual High requires Founder R3 + expiry; Critical = ZERO)
 Open material decisions: NONE
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Fit PASS/LOCKED; independent review PENDING; implementation NOT_AUTHORIZED)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Fit PASS/LOCKED; independent Architecture Fit review PASS; implementation NOT_AUTHORIZED)
 ```
 
 ```text
@@ -587,7 +590,7 @@ Locked policy:
   CRITICAL_HIGH_RETEST_AND_CLOSURE = REQUIRED
   CERT_IN_EMPANELLED_ASSESSOR = PREFERRED_WHERE_COMMERCIALLY_PRACTICAL (not a certification claim)
 Open material decisions: NONE
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Fit PASS/LOCKED; independent review PENDING; implementation NOT_AUTHORIZED; assessment is acceptance evidence)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Fit PASS/LOCKED; independent Architecture Fit review PASS; implementation NOT_AUTHORIZED; assessment is acceptance evidence)
 ```
 
 ```text
@@ -606,7 +609,7 @@ Locked policy:
   Evidence per applicable selected requirement: PASS | GAP | N/A_WITH_REASON
 COMPLIANCE_CLAIMS: NONE (matrix ≠ ASVS certification)
 Open material decisions: NONE (exact applicable-control selection is Fit/implementation evidence work)
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Fit PASS/LOCKED; independent review PENDING; implementation NOT_AUTHORIZED)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Fit PASS/LOCKED; independent Architecture Fit review PASS; implementation NOT_AUTHORIZED)
 ```
 
 ```text
@@ -631,7 +634,7 @@ LEGAL_REVIEW_REQUIRED: YES (CERT-In applicability / reporting triggers — does 
 COMPLIANCE_CLAIMS: NONE (does NOT claim CERT-In compliance)
 Security-log design must minimize secrets/PII even when security retention is required (US-019).
 Open material decisions: NONE for product readiness model
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Fit PASS/LOCKED; independent review PENDING; implementation NOT_AUTHORIZED; legal applicability)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Fit PASS/LOCKED; independent Architecture Fit review PASS; implementation NOT_AUTHORIZED; legal applicability)
 ```
 
 ```text
@@ -649,7 +652,7 @@ Locked policy:
   DATA_CLASS_RETENTION_MATRIX_REQUIRED = YES
 LEGAL_REVIEW_REQUIRED: YES (numeric statutory/security-log retention windows)
 Open material decisions: NONE for minimization policy; windows = LEGAL_REVIEW_REQUIRED
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Fit PASS/LOCKED; independent review PENDING; implementation NOT_AUTHORIZED; legal windows)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Fit PASS/LOCKED; independent Architecture Fit review PASS; implementation NOT_AUTHORIZED; legal windows)
 ```
 
 ```text
@@ -677,7 +680,7 @@ COMPLIANCE_CLAIMS: NONE (does NOT claim DPDP compliance)
 Matrix row shape (mandatory): requirement → current/future applicability → rationale →
 product/process/technical control → evidence → owner → LEGAL_REVIEW marker
 Open material decisions: NONE for product model; applicability interpretation = legal review
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Fit PASS/LOCKED; independent review PENDING; implementation NOT_AUTHORIZED; legal applicability / child-data finding)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Fit PASS/LOCKED; independent Architecture Fit review PASS; implementation NOT_AUTHORIZED; legal applicability / child-data finding)
 ```
 
 ```text
@@ -717,7 +720,7 @@ Journey: JOURNEY-VENDOR-REGISTER
 Acceptance scenarios: AC-IMP-038-022-01…02
 Founder decision status: FD-038-13 = RESOLVED_WITH_ARCHITECTURE_FIT_MECHANISM (Fit locked Cloudflare Free; CLOUDFLARE_ARCHITECTURE_LOCKED = YES)
 Open material decisions: NONE for product policy; Fit may add/remove edge vendor rows after mechanism selection
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Fit PASS/LOCKED; independent review PENDING; implementation NOT_AUTHORIZED)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Fit PASS/LOCKED; independent Architecture Fit review PASS; implementation NOT_AUTHORIZED)
 ```
 
 ```text
@@ -735,7 +738,7 @@ Architecture note: Mechanism selection (origin firewall allowlist, authenticated
 etc.) belongs to Architecture Fit / IMP-039 where infrastructure mutation is involved.
 Application authorization/validation/throttling remains authoritative regardless.
 Open material decisions: NONE for product property; mechanism = Architecture Fit / IMP-039
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Fit PASS/LOCKED; independent review PENDING; implementation NOT_AUTHORIZED; IMP-039 may still provision)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Fit PASS/LOCKED; independent Architecture Fit review PASS; implementation NOT_AUTHORIZED; IMP-039 may still provision)
 ```
 
 ```text
@@ -774,7 +777,7 @@ NO EXCEPTION WITHOUT AUTHORITY; NO COMPLIANCE CLAIM WITHOUT APPLICABILITY / LEGA
 Founder decision status: FD-038-09/17/18 = RESOLVED (Critical ZERO; High no silent acceptance; external assessment REQUIRED)
 Open material decisions: NONE
 IMP040_CONSUMABLE: YES (required)
-Readiness: NOT_READY_FOR_IMPLEMENTATION (Fit PASS/LOCKED; independent review PENDING; implementation NOT_AUTHORIZED; pack assembly after implementation evidence)
+Readiness: NOT_READY_FOR_IMPLEMENTATION (Fit PASS/LOCKED; independent Architecture Fit review PASS; implementation NOT_AUTHORIZED; pack assembly after implementation evidence)
 ```
 
 ---
@@ -1621,7 +1624,7 @@ Journey Gap Audit remains IMP-040 requirement — not performed here.
 | Controlled continuation activation | PR#179/5771367844; GTM-R138/STATE-R136 (prior tip); CURRENT GTM-R139/STATE-R137 | This draft exists | NONE for drafting |
 | Founder FDs FD-038-01…21 | RESOLVED (PR#180/5773472988); UNRESOLVED_PRODUCT_DECISIONS = 0 | Product Definition Gate review | Product decisions no longer block Gate for unresolved-FD reasons |
 | Legal review (DPDP/CERT-In/PCI/erasure/retention/breach/child-data) | Not performed | US-004/005/008/018/019/020/021 acceptance semantics | LEGAL_REVIEW_REQUIRED (does not reopen product locks) |
-| Architecture Fit / lock | PASS / LOCKED (independent review PENDING) | Implementation authorization | STOP until independent Architecture Fit review PASS + explicit implementation authorization; Cloudflare Free locked via D-375 |
+| Architecture Fit / lock | PASS / LOCKED (independent Architecture Fit review PASS) | Implementation authorization | STOP until explicit implementation authorization after architecture-lock merge; Cloudflare Free locked via D-375 |
 | IMP-039 infra | PLANNED not activated | Edge-to-origin mechanism if infra mutation required | Boundary only |
 | IMP-040 cutover | PRE-GATE draft | Requires IMP-038 accepted later + Acceptance Pack | Soft planning dependency |
 
@@ -1653,7 +1656,7 @@ Journey Gap Audit remains IMP-040 requirement — not performed here.
 | SIEM / WORM log product | DEFERRED | Out of V1 pack | Future |
 | Actual external customer/regulator notification execution | LEGAL_TRIGGER_DEPENDENT | Templates prepared in V1; actual send depends on legal trigger | Legal review |
 | Automated retention job engine | FOLLOW_UP | Matrix required in V1; automation engine may follow | After matrix + legal windows |
-| Locking Cloudflare (or any WAF/CDN) as architecture | LOCKED via Fit / D-375 | Architecture Fit selected Cloudflare Free; PD Gate did not lock | Architecture Fit (done; independent review PENDING) |
+| Locking Cloudflare (or any WAF/CDN) as architecture | LOCKED via Fit / D-375 | Architecture Fit selected Cloudflare Free; PD Gate did not lock | Architecture Fit (done; independent Architecture Fit review PASS) |
 | Invented remediation SLA hours/days beyond locked exception policy | NOT supported | High-risk exception default max = 30 days unless Founder overrides | Founder override only |
 
 ---
@@ -1735,7 +1738,7 @@ Do **not** claim: DPDP_COMPLIANT, CERT_IN_COMPLIANT, PCI_DSS_COMPLIANT, OWASP_CE
 PR#180/5773885848). Product decisions are not an unresolved-FD stop set. Legal-review topics remain
 external acceptance / implementation dependencies where already defined — they are **not** converted
 into product-decision blockers. Architecture Fit is **PASS** / architecture **LOCKED**;
-independent Architecture Fit review remains **PENDING**; implementation remains **NOT_AUTHORIZED**.
+independent Architecture Fit review is **PASS**; implementation remains **NOT_AUTHORIZED**.
 
 ---
 
@@ -1753,30 +1756,30 @@ Stories remain `NOT_READY_FOR_IMPLEMENTATION` because:
 
 | Story ID | Fields complete? | Open dependencies (precise) | Readiness |
 |---|---|---|---|
-| US-IMP-038-001 | Complete in §9 | Independent Fit review + authorization (CSP/header mechanism locked) | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-002 | Complete in §9 | Independent Fit review + authorization; legal retention windows for location class | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-003 | Complete in §9 | Independent Fit review + authorization (challenge mechanism locked) | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-004 | Complete in §9 | Independent Fit review + authorization; legal rights-control applicability | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-005 | Complete in §9 | Independent Fit review + authorization; legal numeric retention windows | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-006 | Complete in §9 | Independent Fit review + authorization | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-007 | Complete in §9 | Independent Fit review + authorization | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-008 | Complete in §9 | Independent Fit review + authorization; legal external-notification triggers | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-001 | Complete in §9 | Implementation authorization (CSP/header mechanism locked) | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-002 | Complete in §9 | Implementation authorization; legal retention windows for location class | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-003 | Complete in §9 | Implementation authorization (challenge mechanism locked) | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-004 | Complete in §9 | Implementation authorization; legal rights-control applicability | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-005 | Complete in §9 | Implementation authorization; legal numeric retention windows | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-006 | Complete in §9 | Implementation authorization | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-007 | Complete in §9 | Implementation authorization | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-008 | Complete in §9 | Implementation authorization; legal external-notification triggers | NOT_READY_FOR_IMPLEMENTATION |
 | US-IMP-038-009 | Follow-up (step-up owned by US-013) | Broader session UX deferred | FOLLOW_UP |
 | US-IMP-038-010 | Deferred | IMP-039 adjacency | DEFERRED |
 | US-IMP-038-011 | Deferred by Founder | Portal = NO; matrix remains US-020 | DEFERRED_BY_FOUNDER |
 | US-IMP-038-012 | Deferred by Founder | Marketing consent center | DEFERRED_BY_FOUNDER |
-| US-IMP-038-013 | Complete in §9 | Independent Fit review + authorization (step-up/challenge locked) | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-014 | Complete in §9 | Independent Fit review + authorization / IMP-039 (edge locked Cloudflare Free) | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-015 | Complete in §9 | Independent Fit review + authorization | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-016 | Complete in §9 | Independent Fit review + authorization; external assessment is acceptance evidence | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-017 | Complete in §9 | Independent Fit review + authorization (applicable-control evidence) | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-018 | Complete in §9 | Independent Fit review + authorization; CERT-In legal applicability | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-019 | Complete in §9 | Independent Fit review + authorization; legal security-log retention windows | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-020 | Complete in §9 | Independent Fit review + authorization; DPDP/child-data legal applicability | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-021 | Complete in §9 | Independent Fit review + authorization; PCI validation-path legal review | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-022 | Complete in §9 | Independent Fit review + authorization (vendor rows; edge selected) | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-023 | Complete in §9 | Independent Fit review + authorization / IMP-039 (bypass-resistance locked) | NOT_READY_FOR_IMPLEMENTATION |
-| US-IMP-038-024 | Complete in §9 | Independent Fit review + authorization; pack assembled from implementation evidence | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-013 | Complete in §9 | Implementation authorization (step-up/challenge locked) | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-014 | Complete in §9 | Implementation authorization / IMP-039 (edge locked Cloudflare Free) | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-015 | Complete in §9 | Implementation authorization | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-016 | Complete in §9 | Implementation authorization; external assessment is acceptance evidence | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-017 | Complete in §9 | Implementation authorization (applicable-control evidence) | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-018 | Complete in §9 | Implementation authorization; CERT-In legal applicability | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-019 | Complete in §9 | Implementation authorization; legal security-log retention windows | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-020 | Complete in §9 | Implementation authorization; DPDP/child-data legal applicability | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-021 | Complete in §9 | Implementation authorization; PCI validation-path legal review | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-022 | Complete in §9 | Implementation authorization (vendor rows; edge selected) | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-023 | Complete in §9 | Implementation authorization / IMP-039 (bypass-resistance locked) | NOT_READY_FOR_IMPLEMENTATION |
+| US-IMP-038-024 | Complete in §9 | Implementation authorization; pack assembled from implementation evidence | NOT_READY_FOR_IMPLEMENTATION |
 
 `STORY_COMPLETE != IMP_ACCEPTED`. `IMP038_ACCEPTED` remains blocked by IMP-037 contiguity even after later implementation.
 
@@ -1894,18 +1897,18 @@ PHASE1_BLOCK_STATUS: BLOCKED_PROVIDER_ACCESS
 acceptedThrough: IMP-036G (unchanged)
 pendingAcceptance: NONE (IMP-037 not yet IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE)
 
-IMP-038 Product Definition Gate = PASS; Architecture Fit = PASS; architecture = LOCKED.
-Next authorized phase is independent Architecture Fit review, then implementation authorization when separately
-authorized. IMP-038 MUST NOT become COMPLETE_AND_ACCEPTED before IMP-037 is formally accepted and
-reconciled.
+IMP-038 Product Definition Gate = PASS; Architecture Fit = PASS; architecture = LOCKED;
+independent Architecture Fit review = PASS.
+Next authorized phase is human R3 merge decision for architecture-lock PR #182, then implementation
+authorization when separately authorized after merge/verification. IMP-038 MUST NOT become
+COMPLETE_AND_ACCEPTED before IMP-037 is formally accepted and reconciled.
 ```
 
 ---
 
 ## Explicit non-goals (this approved Product Definition)
 
-- Complete independent Architecture Fit review; then authorize implementation (do not start until authorized)
-- Authorize or start IMP-038 implementation
+- Authorize or start IMP-038 implementation (do not start until separately authorized after merge)
 - Implement IMP-038 behaviour
 - Lock Cloudflare or any WAF/CDN/bot vendor as architecture
 - Activate IMP-039

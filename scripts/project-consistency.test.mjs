@@ -10536,6 +10536,10 @@ PHASE1_BLOCK_STATUS: BLOCKED_PROVIDER_ACCESS
     .replace(/ARCHITECTURE_LOCKED:\s*YES/g, "ARCHITECTURE_LOCKED: NO")
     .replace(/IMP038_ARCHITECTURE_FIT:\s*PASS/g, "IMP038_ARCHITECTURE_FIT: NOT_PERFORMED")
     .replace(/IMP038_ARCHITECTURE_LOCKED:\s*YES/g, "IMP038_ARCHITECTURE_LOCKED: NO")
+    .replace(/INDEPENDENT_ARCHITECTURE_FIT_REVIEW:\s*PASS\n?/g, "")
+    .replace(/INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_HEAD:\s*\S+\n?/g, "")
+    .replace(/INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_TREE:\s*\S+\n?/g, "")
+    .replace(/INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID:\s*\S+\n?/g, "")
     .replace(/INDEPENDENT_ARCHITECTURE_FIT_REVIEW:\s*PENDING\n?/g, "")
     .replace(/CLOUDFLARE_ARCHITECTURE_LOCKED:\s*YES/g, "CLOUDFLARE_ARCHITECTURE_LOCKED: NO")
     .replace(/CLOUDFLARE_ARCHITECTURE_LOCKED\s*=\s*YES/g, "CLOUDFLARE_ARCHITECTURE_LOCKED = NO")
@@ -10878,7 +10882,7 @@ describe("IMP-038 Architecture Fit lock checkpoints", () => {
     imp038ProductDefinitionGate: "PASS",
     imp038ArchitectureFit: "PASS",
     imp038ArchitectureLocked: "YES",
-    independentArchitectureFitReview: "PENDING",
+    independentArchitectureFitReview: "PASS",
     imp038ImplementationAuthorized: "NO",
     imp038Started: "NO",
     imp038Accepted: "NO",
@@ -10918,6 +10922,68 @@ describe("IMP-038 Architecture Fit lock checkpoints", () => {
     assert.deepEqual(evaluateImp038ArchitectureLockedProductDefinition(lockedPd), { ok: true });
   });
 
+  it("fails when independent Architecture Fit review provenance is wrong or PENDING", () => {
+    const pendingCapability = lockedCapability
+      .replaceAll(
+        "INDEPENDENT_ARCHITECTURE_FIT_REVIEW = PASS",
+        "INDEPENDENT_ARCHITECTURE_FIT_REVIEW = PENDING",
+      )
+      .replaceAll(
+        "INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PASS",
+        "INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PENDING",
+      );
+    assert.equal(
+      evaluateImp038LockedCapabilityArchitecture(pendingCapability).code,
+      "IMP038_CAPABILITY_LOCK",
+    );
+    assert.equal(
+      evaluateImp038LockedCapabilityArchitecture(
+        `${lockedCapability}\nINDEPENDENT_ARCHITECTURE_FIT_REVIEW = PENDING\n`,
+      ).code,
+      "IMP038_INDEPENDENT_REVIEW_STALE",
+    );
+    assert.equal(
+      evaluateImp038LockedCapabilityArchitecture(
+        lockedCapability.replaceAll(
+          "3b03164d6581c5a98a893c24e92eaddece004e90",
+          "0".repeat(40),
+        ),
+      ).code,
+      "IMP038_CAPABILITY_LOCK",
+    );
+    assert.equal(
+      evaluateImp038LockedCapabilityArchitecture(
+        lockedCapability.replaceAll(
+          "5bb499fa84a5bf02682b30518f2bf898ddb23540",
+          "0".repeat(40),
+        ),
+      ).code,
+      "IMP038_CAPABILITY_LOCK",
+    );
+    assert.equal(
+      evaluateImp038LockedCapabilityArchitecture(
+        lockedCapability.replaceAll("5279884548", "0000000000"),
+      ).code,
+      "IMP038_CAPABILITY_LOCK",
+    );
+    assert.equal(
+      evaluateImp038ArchitectureLockedProductDefinition(
+        lockedPd.replaceAll(
+          "INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PASS",
+          "INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PENDING",
+        ),
+      ).code,
+      "IMP038_PD_LOCKED",
+    );
+    assert.equal(
+      evaluateImp038ArchitectureLockCheckpoint({
+        ...lockBase,
+        independentArchitectureFitReview: "PENDING",
+      }).code,
+      "IMP038_INDEPENDENT_REVIEW_STALE",
+    );
+  });
+
   it("fails when implementation is authorized or started", () => {
     assert.equal(
       evaluateImp038ArchitectureLockCheckpoint({ ...lockBase, imp038ImplementationAuthorizedYes: true }).code,
@@ -10926,6 +10992,21 @@ describe("IMP-038 Architecture Fit lock checkpoints", () => {
     assert.equal(
       evaluateImp038ArchitectureLockCheckpoint({ ...lockBase, imp038StartedYes: true }).code,
       "IMP038_STARTED",
+    );
+  });
+
+  it("fails when IMP-039 is activated or acceptedThrough advances", () => {
+    assert.equal(
+      evaluateImp038ArchitectureLockCheckpoint({ ...lockBase, imp039ActivatedYes: true }).code,
+      "IMP039_ACTIVATED",
+    );
+    assert.equal(
+      evaluateImp038ArchitectureLockCheckpoint({ ...lockBase, acceptedThrough: "IMP-038" }).code,
+      "IMP038_ARCHITECTURE_LOCK",
+    );
+    assert.equal(
+      evaluateImp038ArchitectureLockCheckpoint({ ...lockBase, imp038AcceptedYes: true }).code,
+      "IMP038_ACCEPTED",
     );
   });
 

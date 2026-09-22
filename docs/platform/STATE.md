@@ -47,7 +47,12 @@ Current Governance Activity:    IMP-038 Architecture Fit PASS + architecture LOC
                               IMP038_PRODUCT_DEFINITION_GATE: PASS;
                               IMP038_ARCHITECTURE_FIT: PASS;
                               IMP038_ARCHITECTURE_LOCKED: YES;
-                              INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PENDING;
+                              INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PASS;
+                              INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_HEAD:
+                              3b03164d6581c5a98a893c24e92eaddece004e90;
+                              INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_TREE:
+                              5bb499fa84a5bf02682b30518f2bf898ddb23540;
+                              INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID: 5279884548;
                               IMP038_IMPLEMENTATION_AUTHORIZED: NO; IMP038_STARTED: NO;
                               IMP038_ACCEPTED: NO;
                               IMP038_ACCEPTANCE_BLOCKED_BY_IMP037: YES;
@@ -79,8 +84,8 @@ Current Governance Activity:    IMP-038 Architecture Fit PASS + architecture LOC
                               Architecture base ARCH-R21 / D-375 (pilot base ARCH-R20 / D-374);
                               D-374_CREATED: YES; ARCH_R20_CREATED: YES;
                               D-375_CREATED: YES; ARCH_R21_CREATED: YES;
-                              nextGate: IMP-038 independent Architecture Fit review (then
-                              implementation authorization) — NOT implementation;
+                              nextGate: human R3 merge decision for architecture-lock PR #182
+                              — NOT implementation authorization;
                               IMP-036G remains COMPLETE_AND_ACCEPTED
                               (GTM-R130 / STATE-R128);
                               Founder UAT PASS 2026-09-18; formal acceptance recorded;
@@ -135,7 +140,10 @@ IMP038_ACCEPTED:          NO
 IMP038_ACCEPTANCE_BLOCKED_BY_IMP037: YES
 IMP038_FOUNDER_UAT_REQUIRED: YES
 IMP038_FOUNDER_UAT:       NOT_PERFORMED
-INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PENDING
+INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PASS
+INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_HEAD: 3b03164d6581c5a98a893c24e92eaddece004e90
+INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_TREE: 5bb499fa84a5bf02682b30518f2bf898ddb23540
+INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID: 5279884548
 ARCHITECTURE_FIT_EVALUATED_HEAD: 43007808849f093d84cbe710f32a728b41a9e5a2
 ARCHITECTURE_FIT_EVALUATED_TREE: 581fb23631df40044ec7b9c449545959a90b9998
 ARCHITECTURE_FIT_EVALUATED_WORKING_TREE_FINGERPRINT: ab00d1ab23f3c7d8b140feefcd1a0787f1fedf90ab08a9934c9a892a77c8184d
@@ -506,7 +514,10 @@ IMP038_IMPLEMENTATION_AUTHORIZED: NO
 IMP038_STARTED: NO
 IMP038_IMPLEMENTATION_COMPLETE: NO
 IMP038_ACCEPTED: NO
-INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PENDING
+INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PASS
+INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_HEAD: 3b03164d6581c5a98a893c24e92eaddece004e90
+INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_TREE: 5bb499fa84a5bf02682b30518f2bf898ddb23540
+INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID: 5279884548
 D-375_CREATED: YES
 ARCH_R21_CREATED: YES
 IMP038_ACCEPTANCE_BLOCKED_BY_IMP037: YES
@@ -596,7 +607,7 @@ Implementation/review provenance for IMP-036F is recorded in
 ## 8. Explicitly Not Yet Accepted
 
 - IMP-037 — Backup, Restore & Migration Readiness (`IMPLEMENTATION_IN_PROGRESS`; `IMP037_ACTIVATED: YES`; Product Definition APPROVED / `PD-IMP-037-DRAFT-1`; Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation AUTHORIZED / STARTED; `IMP037_ACCEPTED: NO`; independent Architecture Fit review PASS; authorization evidence PR#171/5743814105; start evidence PR#172/5744869269; `PHASE1_BLOCK_STATUS: BLOCKED_PROVIDER_ACCESS`)
-- IMP-038 — Security & Privacy Hardening (`ARCHITECTURE_LOCKED`; `IMP038_ACTIVATED: YES` under `CONTINUATION_EXCEPTION: IMP037_PROVIDER_BLOCKED_TO_IMP038`; Product Definition APPROVED / `PD-IMP-038-DRAFT-2`; Gate PASS; Architecture Fit PASS; architecture LOCKED; independent Architecture Fit review PENDING; implementation NOT_AUTHORIZED / NOT_STARTED; `IMP038_ACCEPTED: NO`; `IMP038_ACCEPTANCE_BLOCKED_BY_IMP037: YES`; `D-375_CREATED: YES`; `ARCH_R21_CREATED: YES`)
+- IMP-038 — Security & Privacy Hardening (`ARCHITECTURE_LOCKED`; `IMP038_ACTIVATED: YES` under `CONTINUATION_EXCEPTION: IMP037_PROVIDER_BLOCKED_TO_IMP038`; Product Definition APPROVED / `PD-IMP-038-DRAFT-2`; Gate PASS; Architecture Fit PASS; architecture LOCKED; independent Architecture Fit review PASS (reviewed head `3b03164d6581c5a98a893c24e92eaddece004e90`); implementation NOT_AUTHORIZED / NOT_STARTED; `IMP038_ACCEPTED: NO`; `IMP038_ACCEPTANCE_BLOCKED_BY_IMP037: YES`; `D-375_CREATED: YES`; `ARCH_R21_CREATED: YES`)
 - IMP-039 — Production Infrastructure & Release Pipeline (`PLANNED` / `NOT_ACTIVATED`; `IMP039_ACTIVATED: NO`)
 - IMP-040 — Launch Validation & Cutover (`PLANNED` / `NOT_ACTIVATED`; `IMP040_ACTIVATED: NO`)
 
@@ -610,7 +621,7 @@ Implementation/review provenance for IMP-036F is recorded in
 | Why / Non-Goals | [`VISION.md`](./VISION.md) |
 | Durable architecture | [`ARCHITECTURE.md`](./ARCHITECTURE.md) |
 | Binding decision status | [`decision-register.md`](./decision-register.md) |
-| IMP-038 locked capability architecture (Fit PASS; independent Architecture Fit review PENDING; implementation NOT_AUTHORIZED) | [`capabilities/IMP-038-security-privacy-hardening.md`](./capabilities/IMP-038-security-privacy-hardening.md) |
+| IMP-038 locked capability architecture (Fit PASS; independent Architecture Fit review PASS; implementation NOT_AUTHORIZED) | [`capabilities/IMP-038-security-privacy-hardening.md`](./capabilities/IMP-038-security-privacy-hardening.md) |
 | IMP-037 locked capability architecture (Fit PASS; independent Architecture Fit review PASS; repository implementation MERGED; external proof NOT_PERFORMED) | [`capabilities/IMP-037-backup-restore-migration-readiness.md`](./capabilities/IMP-037-backup-restore-migration-readiness.md) |
 | IMP-036G locked capability architecture (latest accepted) | [`capabilities/IMP-036G-administration-console-v2.md`](./capabilities/IMP-036G-administration-console-v2.md) |
 | IMP-036F locked capability architecture | [`capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md`](./capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md) |
@@ -666,10 +677,17 @@ IMP038_ACCEPTED: NO
 IMP038_ACCEPTANCE_BLOCKED_BY_IMP037: YES
 IMP038_FOUNDER_UAT_REQUIRED: YES
 IMP038_FOUNDER_UAT: NOT_PERFORMED
-INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PENDING
+INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PASS
+INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_HEAD: 3b03164d6581c5a98a893c24e92eaddece004e90
+INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_TREE: 5bb499fa84a5bf02682b30518f2bf898ddb23540
+INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID: 5279884548
 fitEvaluatedHead: 43007808849f093d84cbe710f32a728b41a9e5a2
 fitEvaluatedTree: 581fb23631df40044ec7b9c449545959a90b9998
 fitEvaluatedFingerprint: ab00d1ab23f3c7d8b140feefcd1a0787f1fedf90ab08a9934c9a892a77c8184d
+independentArchitectureFitReview: PASS
+independentArchitectureFitReviewedHead: 3b03164d6581c5a98a893c24e92eaddece004e90
+independentArchitectureFitReviewedTree: 5bb499fa84a5bf02682b30518f2bf898ddb23540
+independentArchitectureFitReviewId: 5279884548
 IMP-039: PLANNED / NOT_ACTIVATED
 IMP039_ACTIVATED: NO
 CONTINUATION_EXCEPTION: IMP037_PROVIDER_BLOCKED_TO_IMP038
@@ -678,7 +696,7 @@ D-374_CREATED: YES
 ARCH_R20_CREATED: YES
 D-375_CREATED: YES
 ARCH_R21_CREATED: YES
-nextGate: IMP-038 independent Architecture Fit review (then implementation authorization) — NOT implementation
+nextGate: human R3 merge decision for architecture-lock PR #182 — NOT implementation authorization
 ```
 
 Historical prior tip record (STATE-R136; superseded as CURRENT tip by STATE-R137; preserved):

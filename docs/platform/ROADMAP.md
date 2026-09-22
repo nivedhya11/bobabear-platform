@@ -342,7 +342,10 @@ IMP038_ACCEPTED: NO
 IMP038_ACCEPTANCE_BLOCKED_BY_IMP037: YES
 IMP038_FOUNDER_UAT_REQUIRED: YES
 IMP038_FOUNDER_UAT: NOT_PERFORMED
-INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PENDING
+INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PASS
+INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_HEAD: 3b03164d6581c5a98a893c24e92eaddece004e90
+INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_TREE: 5bb499fa84a5bf02682b30518f2bf898ddb23540
+INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID: 5279884548
 ARCHITECTURE_FIT_EVALUATED_HEAD: 43007808849f093d84cbe710f32a728b41a9e5a2
 ARCHITECTURE_FIT_EVALUATED_TREE: 581fb23631df40044ec7b9c449545959a90b9998
 ARCHITECTURE_FIT_EVALUATED_WORKING_TREE_FINGERPRINT: ab00d1ab23f3c7d8b140feefcd1a0787f1fedf90ab08a9934c9a892a77c8184d
@@ -369,7 +372,9 @@ ARCH-R21 / D-375 / ADR-017 (capability
 Preserves `CONTINUATION_EXCEPTION: IMP037_PROVIDER_BLOCKED_TO_IMP038` (authority PR#179/5771367844)
 and IMP-037 as unresolved `IMPLEMENTATION_IN_PROGRESS` / provider-blocked. Sets formal IMP-038
 lifecycle to `ARCHITECTURE_LOCKED`; `IMP038_ARCHITECTURE_FIT: PASS`;
-`IMP038_ARCHITECTURE_LOCKED: YES`; `INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PENDING`;
+`IMP038_ARCHITECTURE_LOCKED: YES`; `INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PASS` (reviewed
+technical candidate head `3b03164d6581c5a98a893c24e92eaddece004e90` / tree
+`5bb499fa84a5bf02682b30518f2bf898ddb23540`; GitHub review `5279884548`);
 `IMP038_IMPLEMENTATION_AUTHORIZED: NO`; `IMP038_STARTED: NO`; `IMP038_ACCEPTED: NO`;
 `IMP038_ACCEPTANCE_BLOCKED_BY_IMP037: YES`. Preserves `acceptedThrough = IMP-036G`;
 `currentProductSlice = IMP-038`; `nextProductSlice = IMP-039`; `pendingAcceptance = NONE`;
@@ -378,10 +383,14 @@ Records Fit-evaluated candidate HEAD `43007808849f093d84cbe710f32a728b41a9e5a2` 
 `581fb23631df40044ec7b9c449545959a90b9998` / fingerprint
 `ab00d1ab23f3c7d8b140feefcd1a0787f1fedf90ab08a9934c9a892a77c8184d`. Records
 `D-375_CREATED: YES`; `ARCH_R21_CREATED: YES` (preserves `D-374_CREATED: YES`;
-`ARCH_R20_CREATED: YES`). Does **not** authorize/start IMP-038 implementation; does **not**
+`ARCH_R20_CREATED: YES`). Review PASS is evidence reconciliation inside this architecture-lock
+checkpoint; the review-status reconciliation commit is **not** the independently reviewed
+technical candidate and is **not** the Fit-evaluated artifact
+(`fit-evaluated artifact != independently reviewed technical candidate != review-status
+reconciliation commit`). Does **not** authorize/start IMP-038 implementation; does **not**
 accept IMP-037 or IMP-038; does **not** activate IMP-039; does **not** claim legal compliance.
-Next gate = IMP-038 independent Architecture Fit review (then implementation authorization) —
-**not** implementation.
+Next gate = human R3 merge decision for architecture-lock PR #182 —
+**not** implementation authorization.
 
 **GTM-R138** activates a **NEW** Founder-authorized controlled continuation
 `CONTINUATION_EXCEPTION: IMP037_PROVIDER_BLOCKED_TO_IMP038` (authority PR#179/5771367844) while
@@ -517,7 +526,7 @@ Under `CONTINUATION_EXCEPTION: IMP037_PROVIDER_BLOCKED_TO_IMP038`, the active pr
 is IMP-038 — Security & Privacy Hardening
 (`currentProductSlice = IMP-038`; `IMP038_ACTIVATED: YES`; formal lifecycle `ARCHITECTURE_LOCKED`;
 Product Definition `PD-IMP-038-DRAFT-2` APPROVED; Gate PASS; Architecture Fit PASS; architecture
-LOCKED; independent Architecture Fit review PENDING; implementation NOT_AUTHORIZED / NOT_STARTED;
+LOCKED; independent Architecture Fit review PASS; implementation NOT_AUTHORIZED / NOT_STARTED;
 `pendingAcceptance = NONE`; `nextProductSlice = IMP-039`; `IMP039_ACTIVATED: NO`;
 `IMP038_ACCEPTANCE_BLOCKED_BY_IMP037: YES`; `D-375_CREATED: YES`; `ARCH_R21_CREATED: YES`).
 Locked capability architecture:
@@ -565,7 +574,8 @@ Next product slice is IMP-039 — Production Infrastructure & Release Pipeline
 (`PLANNED` / `NOT_ACTIVATED` / `NOT_AUTHORIZED` / `NOT_STARTED`; `IMP039_ACTIVATED: NO`).
 IMP-038 is activated with Architecture Fit PASS / architecture LOCKED (`IMP038_ACTIVATED: YES`;
 `IMP038_ARCHITECTURE_FIT: PASS`; `IMP038_ARCHITECTURE_LOCKED: YES`; independent Architecture Fit
-review PENDING; implementation NOT_AUTHORIZED / NOT_STARTED). ARCH-R21 / DR-17 are CURRENT
+review PASS on reviewed technical candidate `3b03164d6581c5a98a893c24e92eaddece004e90`; implementation NOT_AUTHORIZED /
+NOT_STARTED). ARCH-R21 / DR-17 are CURRENT
 (`D-375_CREATED: YES`; `ARCH_R21_CREATED: YES`); ARCH-R20 / D-374 remain preserved pilot base.
 
 IMP-036F — Catalog, Menu, Pricing & Promotions Management remains `COMPLETE_AND_ACCEPTED` with
@@ -705,12 +715,18 @@ Historical revision evidence for GTM-R1…GTM-R113 is preserved byte-for-byte in
   `ARCHITECTURE_LOCKED`) against ARCH-R21 / D-375 / ADR-017.
 - Capability architecture:
   [`capabilities/IMP-038-security-privacy-hardening.md`](./capabilities/IMP-038-security-privacy-hardening.md).
-- Sets `IMP038_ARCHITECTURE_FIT: PASS`; `IMP038_ARCHITECTURE_LOCKED: YES`;
-  `INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PENDING`; keeps `IMP038_IMPLEMENTATION_AUTHORIZED: NO`;
-  `IMP038_STARTED: NO`; `IMP038_ACCEPTED: NO`; `IMP038_ACCEPTANCE_BLOCKED_BY_IMP037: YES`.
+- Sets `IMP038_ARCHITECTURE_FIT: PASS`; `IMP038_ARCHITECTURE_LOCKED: YES`. Independent
+  Architecture Fit review is recorded as `INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PASS` for reviewed
+  technical candidate head `3b03164d6581c5a98a893c24e92eaddece004e90` / tree `5bb499fa84a5bf02682b30518f2bf898ddb23540`
+  (GitHub review `5279884548`). Review PASS is evidence reconciliation inside this
+  architecture-lock checkpoint; it is not a new ROADMAP lifecycle state and does not authorize
+  implementation. Keeps `IMP038_IMPLEMENTATION_AUTHORIZED: NO`; `IMP038_STARTED: NO`;
+  `IMP038_ACCEPTED: NO`; `IMP038_ACCEPTANCE_BLOCKED_BY_IMP037: YES`.
 - Records Fit-evaluated candidate HEAD `43007808849f093d84cbe710f32a728b41a9e5a2` / tree
   `581fb23631df40044ec7b9c449545959a90b9998` / fingerprint
-  `ab00d1ab23f3c7d8b140feefcd1a0787f1fedf90ab08a9934c9a892a77c8184d`.
+  `ab00d1ab23f3c7d8b140feefcd1a0787f1fedf90ab08a9934c9a892a77c8184d`. Lock-persistence /
+  review-reconciliation commits are not the Fit-evaluated artifact; the review-status
+  reconciliation commit is not the independently reviewed technical candidate.
 - Records `D-375_CREATED: YES`; `ARCH_R21_CREATED: YES` (preserves `D-374_CREATED: YES`;
   `ARCH_R20_CREATED: YES`).
 - Preserves `CONTINUATION_EXCEPTION: IMP037_PROVIDER_BLOCKED_TO_IMP038`; IMP-037
@@ -718,8 +734,8 @@ Historical revision evidence for GTM-R1…GTM-R113 is preserved byte-for-byte in
   `currentProductSlice = IMP-038`; `nextProductSlice = IMP-039`; `IMP039_ACTIVATED: NO`.
 - Does **not** authorize/start IMP-038 implementation; does **not** accept IMP-037/038; does
   **not** activate IMP-039; does **not** claim legal compliance.
-- Next gate = IMP-038 independent Architecture Fit review (then implementation authorization) —
-  **not** implementation.
+- Next gate = human R3 merge decision for architecture-lock PR #182 — **not** implementation
+  authorization.
 - Supersedes GTM-R138.
 
 ### GTM-R138 — 2026-09-22
