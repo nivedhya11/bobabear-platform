@@ -31,11 +31,11 @@
     "note": "Protected evidence and generated reports are never classified as executable test source."
   },
   "counts": {
-    "trackedPathsConsidered": 2095,
-    "executableTestFiles": 436,
+    "trackedPathsConsidered": 2101,
+    "executableTestFiles": 437,
     "sourceTestFiles": 134,
     "testsTreeExecutableFiles": 233,
-    "scriptTestFiles": 69,
+    "scriptTestFiles": 70,
     "playwrightSpecs": 12,
     "vitestConfigs": 2,
     "playwrightConfigs": 7,
@@ -47,7 +47,7 @@
     "packageCoverageCommands": 1,
     "packageInventoryCommands": 2,
     "ciWorkflowFiles": 4,
-    "ciValidationSteps": 111,
+    "ciValidationSteps": 112,
     "protectedEvidenceTrackedFiles": 3,
     "archiveTrackedFiles": 92
   },
@@ -488,6 +488,7 @@
     "scripts/recovery/validate/business-integrity.test.mjs",
     "scripts/recovery/validate/isolation.test.mjs",
     "scripts/recovery/validate/recovered-app.test.mjs",
+    "scripts/run-trivy.test.mjs",
     "scripts/serve-static-export.test.mjs",
     "scripts/testing-inventory.test.mjs",
     "scripts/workforce/cli-support.test.mjs",
@@ -1132,10 +1133,14 @@
         },
         {
           "name": "Detect container scan paths",
-          "run": "set -euo pipefail\nif [ \"${{ github.event_name }}\" = \"push\" ] && [ \"${{ github.ref }}\" = \"refs/heads/main\" ]; then\necho \"container_scan=true\" >> \"$GITHUB_OUTPUT\"\necho \"container_scan=true (exact-main always runs Trivy)\"\nexit 0\nfi\nnode scripts/ci-container-scan-paths.mjs"
+          "run": "set -euo pipefail\nif [ \"${{ github.event_name }}\" = \"push\" ] && [ \"${{ github.ref }}\" = \"refs/heads/main\" ]; then\necho \"container_scan=true\" >> \"$GITHUB_OUTPUT\"\necho \"container_scan=true (exact-main always runs Trivy image scan)\"\nexit 0\nfi\nnode scripts/ci-container-scan-paths.mjs"
         },
         {
-          "name": "Trivy filesystem scan (CRITICAL,HIGH)",
+          "name": "Ensure rootless Podman socket",
+          "run": "set -euo pipefail\nsocket=\"/run/user/$(id -u)/podman/podman.sock\"\ncommand -v podman\nif [ ! -S \"$socket\" ]; then\nsystemctl --user start podman.socket\nfi\ntest -S \"$socket\"\npodman --version"
+        },
+        {
+          "name": "Trivy production image scan (CRITICAL,HIGH)",
           "run": "npm run audit:container"
         }
       ]
@@ -2494,6 +2499,23 @@
       "test1Layers": [
         "1-unit",
         "9-recovery-idempotency"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "scripts/run-trivy.test.mjs",
+      "runner": "node:test",
+      "domain": "scripts",
+      "testType": "script-unit",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:scripts"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit"
       ],
       "classificationConfidence": "HEURISTIC"
     },

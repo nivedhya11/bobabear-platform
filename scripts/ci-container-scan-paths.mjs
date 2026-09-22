@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Detect whether a PR touches Dockerfile / docker runtime paths that should
- * trigger the Trivy container/filesystem scan (IMP-038 §15).
+ * trigger the Trivy production-image scan (IMP-038 §15).
  *
  * Usage:
  *   node scripts/ci-container-scan-paths.mjs
@@ -63,6 +63,7 @@ export function isContainerScanPath(filePath) {
     normalized === "Dockerfile" ||
     normalized === "Containerfile" ||
     normalized === ".dockerignore" ||
+    normalized === ".trivyignore" ||
     normalized === "compose.yaml" ||
     normalized === "compose.yml"
   ) {
@@ -70,6 +71,9 @@ export function isContainerScanPath(filePath) {
   }
   if (normalized.startsWith("docker/")) return true;
   if (normalized.startsWith("docker-compose")) return true;
+  if (normalized === "scripts/run-trivy.mjs") return true;
+  if (normalized === "scripts/run-trivy.test.mjs") return true;
+  if (normalized === "scripts/ci-container-scan-paths.mjs") return true;
   if (/(^|\/)Dockerfile$/.test(normalized)) return true;
   if (/(^|\/)Containerfile$/.test(normalized)) return true;
   if (/(^|\/)\.dockerignore$/.test(normalized)) return true;

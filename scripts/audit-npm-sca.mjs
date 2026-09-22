@@ -143,7 +143,44 @@ export function tokenizePackageCve(cell) {
 }
 
 /**
- * Collect match keys from an npm audit vulnerability entry.
+ * Extract GHSA / CVE / source identity tokens from a via object or string.
+ * Does **not** include the npm package name — package-name coverage is separate
+ * (register contract) so one advisory identity cannot blanket another.
+ * @param {unknown} via
+ * @returns {Set<string>}
+ */
+export function collectAdvisoryIdentityKeys(via) {
+  const keys = new Set();
+  if (typeof via === "string") {
+    const lowered = via.toLowerCase();
+    const ghsa = lowered.match(/ghsa-[a-z0-9-]+/);
+    if (ghsa) keys.add(ghsa[0]);
+    const cve = lowered.match(/cve-\d{4}-\d+/);
+    if (cve) keys.add(cve[0]);
+    if (ghsa || cve) keys.add(lowered);
+    return keys;
+  }
+  if (!via || typeof via !== "object") return keys;
+  const obj = /** @type {Record<string, unknown>} */ (via);
+  for (const field of ["source", "url", "cve", "title", "name", "id"]) {
+    const val = obj[field];
+    if (typeof val === "string" && val) {
+      keys.add(val.toLowerCase());
+      const ghsa = val.match(/GHSA-[a-z0-9-]+/i);
+      if (ghsa) keys.add(ghsa[0].toLowerCase());
+      const cve = val.match(/CVE-\d{4}-\d+/i);
+      if (cve) keys.add(cve[0].toLowerCase());
+    }
+  }
+  if (typeof obj.source === "number") {
+    keys.add(String(obj.source));
+  }
+  return keys;
+}
+
+/**
+ * Collect match keys from an npm audit vulnerability entry (legacy aggregate).
+ * Prefer {@link extractPolicyAdvisories} for gate evaluation.
  * @param {string} packageName
  * @param {{ via?: unknown[], severity?: string }} entry
  * @returns {Set<string>}
@@ -152,27 +189,61 @@ export function collectFindingKeys(packageName, entry) {
   const keys = new Set([packageName.toLowerCase()]);
   for (const via of entry.via || []) {
     if (typeof via === "string") {
-      keys.add(via.toLowerCase());
+      // Dependency-path strings are not advisory identities for coverage.
       continue;
     }
-    if (via && typeof via === "object") {
-      const obj = /** @type {Record<string, unknown>} */ (via);
-      for (const field of ["source", "url", "cve", "title", "name"]) {
-        const val = obj[field];
-        if (typeof val === "string" && val) {
-          keys.add(val.toLowerCase());
-          const ghsa = val.match(/GHSA-[a-z0-9-]+/i);
-          if (ghsa) keys.add(ghsa[0].toLowerCase());
-          const cve = val.match(/CVE-\d{4}-\d+/i);
-          if (cve) keys.add(cve[0].toLowerCase());
-        }
-      }
-      if (typeof obj.source === "number") {
-        keys.add(String(obj.source));
-      }
-    }
+    for (const k of collectAdvisoryIdentityKeys(via)) keys.add(k);
   }
   return keys;
+}
+
+/**
+ * Expand a package audit entry into individual High/Critical advisories.
+ * String `via` entries are dependency references and are ignored.
+ * When no structured advisory objects exist, the package-level severity is
+ * treated as a single advisory keyed only by package name.
+ *
+ * @param {string} packageName
+ * @param {{ via?: unknown[], severity?: string, range?: string }} entry
+ * @returns {Array<{ packageName: string, severity: string, range?: string, identityKeys: Set<string>, label: string }>}
+ */
+export function extractPolicyAdvisories(packageName, entry) {
+  /** @type {Array<{ packageName: string, severity: string, range?: string, identityKeys: Set<string>, label: string }>} */
+  const advisories = [];
+  const viaList = Array.isArray(entry.via) ? entry.via : [];
+  const objectVias = viaList.filter((v) => v && typeof v === "object");
+
+  if (objectVias.length === 0) {
+    const severity = String(entry.severity || "").toLowerCase();
+    if (!POLICY_LEVELS.has(severity)) return advisories;
+    advisories.push({
+      packageName,
+      severity,
+      range: entry.range,
+      identityKeys: new Set(),
+      label: `${packageName}@package`,
+    });
+    return advisories;
+  }
+
+  for (const via of objectVias) {
+    const obj = /** @type {Record<string, unknown>} */ (via);
+    const severity = String(obj.severity || entry.severity || "").toLowerCase();
+    if (!POLICY_LEVELS.has(severity)) continue;
+    const identityKeys = collectAdvisoryIdentityKeys(via);
+    const labelParts = [...identityKeys].filter((k) => k.startsWith("ghsa-") || k.startsWith("cve-"));
+    const label =
+      labelParts[0] ||
+      (typeof obj.source === "number" ? `source:${obj.source}` : `${packageName}@advisory`);
+    advisories.push({
+      packageName,
+      severity,
+      range: typeof obj.range === "string" ? obj.range : entry.range,
+      identityKeys,
+      label,
+    });
+  }
+  return advisories;
 }
 
 /**
@@ -184,6 +255,30 @@ export function activeExceptions(rows, todayIso) {
 }
 
 /**
+ * Cover an advisory when an ACTIVE exception token matches its advisory
+ * identity (GHSA/CVE/source) **or** exactly equals the package name
+ * (register contract: package-name rows cover that package's advisories).
+ *
+ * One matched GHSA/CVE never covers a different advisory in the same package.
+ *
+ * @param {{ packageName: string, identityKeys: Set<string> }} advisory
+ * @param {Array<Record<string, string>>} activeRows
+ */
+export function findCoveringExceptionForAdvisory(advisory, activeRows) {
+  const pkg = advisory.packageName.toLowerCase();
+  for (const row of activeRows) {
+    const tokens = tokenizePackageCve(row["package/cve"]);
+    for (const token of tokens) {
+      if (advisory.identityKeys.has(token)) return row;
+      if (token === pkg) return row;
+    }
+  }
+  return null;
+}
+
+/**
+ * @deprecated Prefer findCoveringExceptionForAdvisory — aggregate key matching
+ * can suppress sibling advisories. Kept for transitional unit tests.
  * @param {Set<string>} findingKeys
  * @param {Array<Record<string, string>>} activeRows
  */
@@ -198,29 +293,35 @@ export function findCoveringException(findingKeys, activeRows) {
 }
 
 /**
+ * Fail-closed filter: every High/Critical advisory must be individually covered.
+ *
  * @param {Record<string, { severity?: string, via?: unknown[], range?: string }>} vulnerabilities
  * @param {Array<Record<string, string>>} activeRows
  */
 export function filterUncoveredPolicyFindings(vulnerabilities, activeRows) {
-  /** @type {Array<{ packageName: string, severity: string, range?: string, keys: string[] }>} */
+  /** @type {Array<{ packageName: string, severity: string, range?: string, keys: string[], label: string }>} */
   const uncovered = [];
   for (const [packageName, entry] of Object.entries(vulnerabilities || {})) {
-    const severity = String(entry.severity || "").toLowerCase();
-    if (!POLICY_LEVELS.has(severity)) continue;
-    const keys = collectFindingKeys(packageName, entry);
-    const cover = findCoveringException(keys, activeRows);
-    if (!cover) {
-      uncovered.push({
-        packageName,
-        severity,
-        range: entry.range,
-        keys: [...keys].sort(),
-      });
+    const advisories = extractPolicyAdvisories(packageName, entry);
+    for (const advisory of advisories) {
+      const cover = findCoveringExceptionForAdvisory(advisory, activeRows);
+      if (!cover) {
+        uncovered.push({
+          packageName,
+          severity: advisory.severity,
+          range: advisory.range,
+          keys: [...advisory.identityKeys].sort(),
+          label: advisory.label,
+        });
+      }
     }
   }
   uncovered.sort((a, b) => {
     if (a.severity !== b.severity) return a.severity === "critical" ? -1 : 1;
-    return a.packageName < b.packageName ? -1 : a.packageName > b.packageName ? 1 : 0;
+    if (a.packageName !== b.packageName) {
+      return a.packageName < b.packageName ? -1 : 1;
+    }
+    return a.label < b.label ? -1 : a.label > b.label ? 1 : 0;
   });
   return uncovered;
 }
@@ -296,10 +397,10 @@ function main() {
   );
 
   if (uncovered.length > 0) {
-    console.error(`FAIL: ${uncovered.length} uncovered high/critical finding(s):`);
+    console.error(`FAIL: ${uncovered.length} uncovered high/critical advisory(ies):`);
     for (const finding of uncovered) {
       console.error(
-        `  - ${finding.severity.toUpperCase()} ${finding.packageName} range=${finding.range || "?"} keys=${finding.keys.slice(0, 8).join(",")}`,
+        `  - ${finding.severity.toUpperCase()} ${finding.packageName} advisory=${finding.label} range=${finding.range || "?"} keys=${finding.keys.slice(0, 8).join(",")}`,
       );
     }
     console.error(

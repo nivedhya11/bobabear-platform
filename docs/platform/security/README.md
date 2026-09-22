@@ -49,7 +49,7 @@ IMP039_ACTIVATED: NO
 | SAST | CodeQL (`javascript-typescript`) | `.github/workflows/codeql.yml` |
 | SCA | `npm audit` High+ fail-closed | `npm run audit:npm-sca` → `scripts/audit-npm-sca.mjs` |
 | Secrets | gitleaks (pinned OSS binary) | `npm run audit:secrets` → `scripts/run-gitleaks.mjs` |
-| Containers | Trivy fs scan (CRITICAL+HIGH), pinned binary | `npm run audit:container` → `scripts/run-trivy.mjs` (not GitHub Action) |
+| Containers | Trivy production **image** scan (CRITICAL+HIGH), pinned binary | `npm run audit:container` → `scripts/run-trivy.mjs` (not GitHub Action) |
 | Actions pinning | Commit SHA pins | Comments in `.github/workflows/*.yml` |
 | Dependency updates | Dependabot weekly | `.github/dependabot.yml` |
 | Exceptions | Founder-authorized, expiring | [`vulnerability-exception-register.md`](./vulnerability-exception-register.md) |
@@ -73,5 +73,6 @@ npm run audit:security-sdlc
 npm run origin-trust:verify
 ```
 
-Container scanning uses a **pinned Trivy OSS binary** (`scripts/run-trivy.mjs`) rather than
+Container scanning uses a **pinned Trivy OSS binary** (`scripts/run-trivy.mjs`) to
+**build and scan V1 production runtime images** (including base/OS layers), rather than
 `aquasecurity/trivy-action`, after 2026 Actions tag-compromise advisories. CI is the durable gate.

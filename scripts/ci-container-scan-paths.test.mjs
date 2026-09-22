@@ -7,6 +7,8 @@ test("isContainerScanPath matches Dockerfile and docker/ tree", () => {
   assert.equal(isContainerScanPath("Dockerfile"), true);
   assert.equal(isContainerScanPath("docker/nginx/default.conf"), true);
   assert.equal(isContainerScanPath(".dockerignore"), true);
+  assert.equal(isContainerScanPath(".trivyignore"), true);
+  assert.equal(isContainerScanPath("scripts/run-trivy.mjs"), true);
   assert.equal(isContainerScanPath("compose.yml"), true);
   assert.equal(isContainerScanPath("docker-compose.yml"), true);
   assert.equal(isContainerScanPath("src/app/page.tsx"), false);

@@ -13,7 +13,7 @@ Parent index: [`../README.md`](../README.md)
 | SAST | CodeQL `javascript-typescript` | `.github/workflows/codeql.yml` |
 | SCA | `npm audit` High+ fail-closed | `npm run audit:npm-sca` → `scripts/audit-npm-sca.mjs` |
 | Secrets | gitleaks (pinned OSS binary) | `npm run audit:secrets` → `scripts/run-gitleaks.mjs` |
-| Containers | Trivy fs scan CRITICAL+HIGH (pinned binary + `.trivyignore`) | `npm run audit:container` → `scripts/run-trivy.mjs`; CI `security-sdlc` |
+| Containers | Trivy **production image** scan CRITICAL+HIGH (pinned binary; `--ignore-unfixed`; `.trivyignore`) | `npm run audit:container` → `scripts/run-trivy.mjs`; CI `security-sdlc` |
 | Combined local | SCA + secrets | `npm run audit:security-sdlc` |
 | Actions pinning | Commit SHA pins | Comments / pins in `.github/workflows/*.yml` |
 | Dependency updates | Dependabot weekly | `.github/dependabot.yml` |

@@ -20,7 +20,7 @@ ACTUAL_EXTERNAL_NOTIFICATION: LEGAL_TRIGGER_DEPENDENT
 | Security logging | PII/secret minimization required | Capability §14.3; auth HMAC keys; payment secret absence tests | PASS (design + selective tests) | Security |
 | Evidence preservation | IR pack preserve checklist | [`incident-response.md`](./incident-response.md) | PASS (template) | Ops |
 | Incident owner / contact | Named in IR pack | [`incident-response.md`](./incident-response.md) | PASS (template fields) | Ops |
-| PoC / tabletop | Required for readiness evidence | gap `GAP-TABLETOP-001` | GAP | Ops lead |
+| PoC / tabletop | Required for readiness evidence | [`tabletop-tt-038-001.md`](./tabletop-tt-038-001.md) (`GAP-TABLETOP-001` CLOSED) | PASS (exercise recorded; no compliance claim) | Ops lead |
 | Log retention legal window | Numeric window open | LEGAL-SECLOG-001 | LEGAL_REVIEW_REQUIRED | Legal |
 
 ## Explicit non-claims

@@ -75,4 +75,4 @@ triggers remains [`legal-review-topics.md`](./legal-review-topics.md) topics 5â€
 
 ## 6. Tabletop
 
-Record exercises under gap `GAP-TABLETOP-001`. Template only until first exercise logged.
+Record exercises under gap `GAP-TABLETOP-001`. First exercise: [`tabletop-tt-038-001.md`](./tabletop-tt-038-001.md) (`CLOSED`).
