@@ -17,15 +17,21 @@
 ARG POSTGRES_BASE_IMAGE=docker.io/library/postgres:18.4-trixie
 ARG GOSU_GO_IMAGE=docker.io/library/golang:1.26.8-bookworm
 ARG GOSU_VERSION=1.19
+# Immutable content pin for tianon/gosu@1.19 (do not resolve mutable tags at build).
+ARG GOSU_GIT_SHA=6456aaa0f3c854d199d0f037f068eb97515b7513
 
 # ── gosu rebuild (patched Go stdlib) ─────────────────────────────────────
 FROM ${GOSU_GO_IMAGE} AS gosu-builder
 ARG GOSU_VERSION
+ARG GOSU_GIT_SHA
 WORKDIR /src
 RUN apt-get update \
   && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends git ca-certificates \
   && rm -rf /var/lib/apt/lists/* \
-  && git clone --depth 1 --branch "${GOSU_VERSION}" https://github.com/tianon/gosu.git . \
+  && git clone --filter=blob:none https://github.com/tianon/gosu.git . \
+  && git fetch --depth 1 origin "${GOSU_GIT_SHA}" \
+  && git checkout --detach "${GOSU_GIT_SHA}" \
+  && test "$(git rev-parse HEAD)" = "${GOSU_GIT_SHA}" \
   && CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.Version=${GOSU_VERSION}" -o /gosu .
 
 FROM ${POSTGRES_BASE_IMAGE}
