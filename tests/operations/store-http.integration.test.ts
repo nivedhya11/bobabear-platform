@@ -32,6 +32,7 @@ import { seedActiveVariantWithModifier } from "../database/support/cart-fixtures
 import {
   TEST_SERVICE_ORIGIN,
 } from "../database/support/serviceability-fixtures";
+import { headersWithAccessMutationStepUp } from "../support/workforce-step-up";
 
 type InternalAdapter = { createSession: (userId: string) => Promise<{ token: string }> };
 
@@ -228,8 +229,16 @@ describe("IMP-036E Store Operations HTTP", () => {
           origin: workforceAuthConfig().workforce.baseURL.origin,
           "content-type": "application/json",
           ...extra,
-        };
+        } as Record<string, string>;
       };
+      const stepUpSecret = workforceAuthConfig().workforce.secret;
+      const withAccessStepUp = (userId: string, headers: Record<string, string>) =>
+        headersWithAccessMutationStepUp({
+          persistence,
+          sessionHashSecret: stepUpSecret,
+          workforceUserId: userId,
+          headers,
+        });
 
       const outletPath = (outletId: string, suffix: string) =>
         `/api/operations/v1/outlets/${outletId}${suffix}`;
@@ -677,7 +686,7 @@ describe("IMP-036E Store Operations HTTP", () => {
 
         response = await request("/api/admin/v1/memberships", {
           method: "POST",
-          headers: managerHeaders,
+          headers: await withAccessStepUp(outletAManager.id, managerHeaders),
           body: JSON.stringify({
             workforceUserId: subject.id,
             scopeType: "outlet",
@@ -699,7 +708,7 @@ describe("IMP-036E Store Operations HTTP", () => {
         });
         response = await request("/api/admin/v1/memberships", {
           method: "POST",
-          headers: siblingHeaders,
+          headers: await withAccessStepUp(outletBManager.id, siblingHeaders),
           body: JSON.stringify({
             workforceEmail: invitee.email,
             scopeType: "outlet",
@@ -714,7 +723,7 @@ describe("IMP-036E Store Operations HTTP", () => {
 
         response = await request("/api/admin/v1/memberships", {
           method: "POST",
-          headers: managerHeaders,
+          headers: await withAccessStepUp(outletAManager.id, managerHeaders),
           body: JSON.stringify({
             workforceEmail: invitee.email,
             scopeType: "outlet",
@@ -737,7 +746,7 @@ describe("IMP-036E Store Operations HTTP", () => {
 
         response = await request("/api/admin/v1/memberships", {
           method: "POST",
-          headers: managerHeaders,
+          headers: await withAccessStepUp(outletAManager.id, managerHeaders),
           body: JSON.stringify({
             workforceEmail: outletAManager.email,
             scopeType: "outlet",
@@ -752,7 +761,7 @@ describe("IMP-036E Store Operations HTTP", () => {
 
         response = await request("/api/admin/v1/memberships", {
           method: "POST",
-          headers: managerHeaders,
+          headers: await withAccessStepUp(outletAManager.id, managerHeaders),
           body: JSON.stringify({
             workforceUserId: subject.id,
             scopeType: "outlet",

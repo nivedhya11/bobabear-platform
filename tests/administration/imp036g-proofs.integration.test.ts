@@ -38,6 +38,7 @@ import {
   seedBrandTree,
 } from "../database/support/access-control-fixtures";
 import { applyMigrations, withIsolatedTestDatabase } from "../database/support/test-database";
+import { headersWithAccessMutationStepUp } from "../support/workforce-step-up";
 
 type InternalAdapter = { createSession: (userId: string) => Promise<{ token: string }> };
 
@@ -109,6 +110,10 @@ async function withAdminServer(
   run: (ctx: {
     request: (path: string, init?: RequestInit) => Promise<Response>;
     headersFor: (userId: string) => Promise<Record<string, string>>;
+    withAccessStepUp: (
+      userId: string,
+      headers: Record<string, string>,
+    ) => Promise<Record<string, string>>;
     persistence: ReturnType<typeof getApplicationPersistence>;
   }) => Promise<void>,
   opsRuntime: OpsRuntimeDeps = {},
@@ -121,6 +126,7 @@ async function withAdminServer(
   });
   openHandles.push(runtime);
   const adapter = await adapterFor(runtime);
+  const stepUpSecret = workforceAuthConfig().workforce.secret;
   const server = createServer((req, res) => {
     void routeOperationsRequest(
       req,
@@ -129,7 +135,7 @@ async function withAdminServer(
         runtime,
         persistence,
         trustedOrigin: workforceAuthConfig().workforce.baseURL.origin,
-            stepUpSessionHashSecret: workforceAuthConfig().workforce.secret,
+        stepUpSessionHashSecret: stepUpSecret,
         ...(opsRuntime.serviceName ? { serviceName: opsRuntime.serviceName } : {}),
         ...(opsRuntime.startedAt ? { startedAt: opsRuntime.startedAt } : {}),
         ...(opsRuntime.workers ? { workers: opsRuntime.workers } : {}),
@@ -152,6 +158,13 @@ async function withAdminServer(
           "content-type": "application/json",
         };
       },
+      withAccessStepUp: (userId, headers) =>
+        headersWithAccessMutationStepUp({
+          persistence,
+          sessionHashSecret: stepUpSecret,
+          workforceUserId: userId,
+          headers,
+        }),
       persistence,
     });
   } finally {
@@ -382,7 +395,7 @@ describe("IMP-036G administration proofs", () => {
   it("filters audit server-side and supports managed-subject EP + expire + overview ops auth", async () => {
     await withIsolatedTestDatabase(adminConnectionInfo(), async (database) => {
       await applyMigrations(database.connectionString);
-      await withAdminServer(database.connectionString, async ({ request, headersFor, persistence }) => {
+      await withAdminServer(database.connectionString, async ({ request, headersFor, withAccessStepUp, persistence }) => {
         const platformAdmin = await createEligibleWorkforceUser(persistence);
         const subject = await createEligibleWorkforceUser(persistence);
         let invitedMembershipId = "";
@@ -414,7 +427,7 @@ describe("IMP-036G administration proofs", () => {
         // Expire invited → expired
         const expire = await request(`/api/admin/v1/memberships/${invitedMembershipId}/transition`, {
           method: "POST",
-          headers: platformHeaders,
+          headers: await withAccessStepUp(platformAdmin.id, platformHeaders),
           body: JSON.stringify({ toStatus: "expired" }),
         });
         expect(expire.status).toBe(200);
@@ -553,7 +566,7 @@ describe("IMP-036G administration proofs", () => {
   it("rejects managed-subject EP negatives and proves post-grant permission change", async () => {
     await withIsolatedTestDatabase(adminConnectionInfo(), async (database) => {
       await applyMigrations(database.connectionString);
-      await withAdminServer(database.connectionString, async ({ request, headersFor, persistence }) => {
+      await withAdminServer(database.connectionString, async ({ request, headersFor, withAccessStepUp, persistence }) => {
         const platformAdmin = await createEligibleWorkforceUser(persistence);
         const subject = await createEligibleWorkforceUser(persistence);
         const outsider = await createEligibleWorkforceUser(persistence);
@@ -612,7 +625,7 @@ describe("IMP-036G administration proofs", () => {
 
         const grant = await request(`/api/admin/v1/memberships/${membershipId}/role-assignments`, {
           method: "POST",
-          headers: platformHeaders,
+          headers: await withAccessStepUp(platformAdmin.id, platformHeaders),
           body: JSON.stringify({ roleKey: "kitchen_operator" }),
         });
         expect(grant.status).toBe(200);
@@ -632,7 +645,7 @@ describe("IMP-036G administration proofs", () => {
   it("protects GJ-PERMITTED-OUTLET-ACCESS continuity within ceiling and denies cross-scope", async () => {
     await withIsolatedTestDatabase(adminConnectionInfo(), async (database) => {
       await applyMigrations(database.connectionString);
-      await withAdminServer(database.connectionString, async ({ request, headersFor, persistence }) => {
+      await withAdminServer(database.connectionString, async ({ request, headersFor, withAccessStepUp, persistence }) => {
         const platformAdmin = await createEligibleWorkforceUser(persistence);
         const member = await createEligibleWorkforceUser(persistence);
         let membershipId = "";
@@ -649,7 +662,7 @@ describe("IMP-036G administration proofs", () => {
         const platformHeaders = await headersFor(platformAdmin.id);
         const create = await request("/api/admin/v1/memberships", {
           method: "POST",
-          headers: platformHeaders,
+          headers: await withAccessStepUp(platformAdmin.id, platformHeaders),
           body: JSON.stringify({
             workforceUserId: member.id,
             scopeType: "outlet",
@@ -665,7 +678,7 @@ describe("IMP-036G administration proofs", () => {
 
         const grant = await request(`/api/admin/v1/memberships/${membershipId}/role-assignments`, {
           method: "POST",
-          headers: platformHeaders,
+          headers: await withAccessStepUp(platformAdmin.id, platformHeaders),
           body: JSON.stringify({ roleKey: "kitchen_operator" }),
         });
         expect(grant.status).toBe(200);
@@ -917,7 +930,7 @@ describe("IMP-036G administration proofs", () => {
   it("closes empty-set, not-found, illegal-transition, self-deny, stale-revoke, and empty-audit paths", async () => {
     await withIsolatedTestDatabase(adminConnectionInfo(), async (database) => {
       await applyMigrations(database.connectionString);
-      await withAdminServer(database.connectionString, async ({ request, headersFor, persistence }) => {
+      await withAdminServer(database.connectionString, async ({ request, headersFor, withAccessStepUp, persistence }) => {
         const platformAdmin = await createPlatformAdmin(persistence);
         const subject = await createEligibleWorkforceUser(persistence);
         const mover = await createEligibleWorkforceUser(persistence);
@@ -1003,7 +1016,7 @@ describe("IMP-036G administration proofs", () => {
           `/api/admin/v1/memberships/${subjectMembershipId}/role-assignments`,
           {
             method: "POST",
-            headers: platformHeaders,
+            headers: await withAccessStepUp(platformAdmin.id, platformHeaders),
             body: JSON.stringify({ roleKey: "kitchen_operator" }),
           },
         );
@@ -1011,12 +1024,20 @@ describe("IMP-036G administration proofs", () => {
         const assignmentId = (await grant.json()).assignment.id as string;
         const firstRevoke = await request(
           `/api/admin/v1/role-assignments/${assignmentId}/revoke`,
-          { method: "POST", headers: platformHeaders, body: JSON.stringify({}) },
+          {
+            method: "POST",
+            headers: await withAccessStepUp(platformAdmin.id, platformHeaders),
+            body: JSON.stringify({}),
+          },
         );
         expect(firstRevoke.status).toBe(200);
         const staleRevoke = await request(
           `/api/admin/v1/role-assignments/${assignmentId}/revoke`,
-          { method: "POST", headers: platformHeaders, body: JSON.stringify({}) },
+          {
+            method: "POST",
+            headers: await withAccessStepUp(platformAdmin.id, platformHeaders),
+            body: JSON.stringify({}),
+          },
         );
         expect([staleRevoke.status, (await staleRevoke.json()).code]).toEqual([
           400,
@@ -1024,7 +1045,11 @@ describe("IMP-036G administration proofs", () => {
         ]);
         const unknownRevoke = await request(
           `/api/admin/v1/role-assignments/${randomUUID()}/revoke`,
-          { method: "POST", headers: platformHeaders, body: JSON.stringify({}) },
+          {
+            method: "POST",
+            headers: await withAccessStepUp(platformAdmin.id, platformHeaders),
+            body: JSON.stringify({}),
+          },
         );
         expect([unknownRevoke.status, (await unknownRevoke.json()).code]).toEqual([
           404,
@@ -1036,7 +1061,7 @@ describe("IMP-036G administration proofs", () => {
           `/api/admin/v1/memberships/${moverMembershipId}/transition`,
           {
             method: "POST",
-            headers: platformHeaders,
+            headers: await withAccessStepUp(platformAdmin.id, platformHeaders),
             body: JSON.stringify({ toStatus: "expired" }),
           },
         );
@@ -1049,7 +1074,7 @@ describe("IMP-036G administration proofs", () => {
           `/api/admin/v1/memberships/${moverMembershipId}/transition`,
           {
             method: "POST",
-            headers: platformHeaders,
+            headers: await withAccessStepUp(platformAdmin.id, platformHeaders),
             body: JSON.stringify({ toStatus: "revoked" }),
           },
         );
@@ -1059,7 +1084,7 @@ describe("IMP-036G administration proofs", () => {
             `/api/admin/v1/memberships/${moverMembershipId}/transition`,
             {
               method: "POST",
-              headers: platformHeaders,
+              headers: await withAccessStepUp(platformAdmin.id, platformHeaders),
               body: JSON.stringify({ toStatus }),
             },
           );
@@ -1075,7 +1100,7 @@ describe("IMP-036G administration proofs", () => {
           `/api/admin/v1/memberships/${platformAdmin.membershipId}/transition`,
           {
             method: "POST",
-            headers: platformHeaders,
+            headers: await withAccessStepUp(platformAdmin.id, platformHeaders),
             body: JSON.stringify({ toStatus: "suspended" }),
           },
         );
@@ -1086,7 +1111,7 @@ describe("IMP-036G administration proofs", () => {
 
         const selfCreate = await request("/api/admin/v1/memberships", {
           method: "POST",
-          headers: platformHeaders,
+          headers: await withAccessStepUp(platformAdmin.id, platformHeaders),
           body: JSON.stringify({
             workforceUserId: platformAdmin.id,
             scopeType: "brand",
@@ -1102,7 +1127,7 @@ describe("IMP-036G administration proofs", () => {
           `/api/admin/v1/memberships/${platformAdmin.membershipId}/role-assignments`,
           {
             method: "POST",
-            headers: platformHeaders,
+            headers: await withAccessStepUp(platformAdmin.id, platformHeaders),
             body: JSON.stringify({ roleKey: "platform_super_admin" }),
           },
         );
