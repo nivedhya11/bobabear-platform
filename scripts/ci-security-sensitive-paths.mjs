@@ -38,7 +38,7 @@ const SECURITY_SENSITIVE_PREFIXES = [
   "tests/database/workforce-",
   "tests/database/access-control",
   "tests/database/customer-phone-auth",
-  "tests/support/workforce-step-up",
+  "tests/administration/support/workforce-step-up",
   "docker/nginx/",
   "drizzle/",
   ".github/workflows/ci.yml",

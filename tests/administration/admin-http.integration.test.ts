@@ -20,7 +20,7 @@ import {
   seedBrandTree,
 } from "../database/support/access-control-fixtures";
 import { applyMigrations, withIsolatedTestDatabase } from "../database/support/test-database";
-import { headersWithAccessMutationStepUp } from "../support/workforce-step-up";
+import { headersWithAccessMutationStepUp } from "./support/workforce-step-up";
 import { inject } from "vitest";
 
 type InternalAdapter = { createSession: (userId: string) => Promise<{ token: string }> };

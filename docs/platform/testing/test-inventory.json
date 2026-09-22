@@ -31,23 +31,23 @@
     "note": "Protected evidence and generated reports are never classified as executable test source."
   },
   "counts": {
-    "trackedPathsConsidered": 2053,
-    "executableTestFiles": 433,
+    "trackedPathsConsidered": 2095,
+    "executableTestFiles": 436,
     "sourceTestFiles": 134,
     "testsTreeExecutableFiles": 233,
-    "scriptTestFiles": 66,
+    "scriptTestFiles": 69,
     "playwrightSpecs": 12,
     "vitestConfigs": 2,
     "playwrightConfigs": 7,
     "testSupportScripts": 50,
     "packageTestCommands": 80,
-    "packageAuditCommands": 23,
+    "packageAuditCommands": 27,
     "packageE2eCommands": 9,
     "packageCheckCommands": 13,
     "packageCoverageCommands": 1,
     "packageInventoryCommands": 2,
-    "ciWorkflowFiles": 3,
-    "ciValidationSteps": 106,
+    "ciWorkflowFiles": 4,
+    "ciValidationSteps": 111,
     "protectedEvidenceTrackedFiles": 3,
     "archiveTrackedFiles": 92
   },
@@ -431,10 +431,12 @@
     "scripts/audit-database.test.mjs",
     "scripts/audit-docker-runtime.test.mjs",
     "scripts/audit-menu-import.test.mjs",
+    "scripts/audit-npm-sca.test.mjs",
     "scripts/audit-outbox-idempotency.test.mjs",
     "scripts/audit-persistence.test.mjs",
     "scripts/audit-pricing-tax.test.mjs",
     "scripts/audit-workforce-auth.test.mjs",
+    "scripts/ci-container-scan-paths.test.mjs",
     "scripts/ci-security-sensitive-paths.test.mjs",
     "scripts/customer-commerce/build.test.mjs",
     "scripts/database/lib/migration-history.test.mjs",
@@ -454,6 +456,7 @@
     "scripts/governance-fingerprint.test.mjs",
     "scripts/lib/vitest-result-validation.test.mjs",
     "scripts/nginx-origin-redirect.test.mjs",
+    "scripts/origin-trust/verify-contracts.test.mjs",
     "scripts/project-consistency.test.mjs",
     "scripts/recovery/capacity/observe.test.mjs",
     "scripts/recovery/cli.test.mjs",
@@ -661,6 +664,7 @@
       "audit:catalog",
       "audit:checkout",
       "audit:config",
+      "audit:container",
       "audit:customer-addresses",
       "audit:customer-phone-auth",
       "audit:customer-profiles",
@@ -668,12 +672,15 @@
       "audit:docker",
       "audit:menu-images",
       "audit:menu-import",
+      "audit:npm-sca",
       "audit:order",
       "audit:outbox-idempotency",
       "audit:payment",
       "audit:persistence",
       "audit:pricing-tax",
       "audit:promotions",
+      "audit:secrets",
+      "audit:security-sdlc",
       "audit:serviceability",
       "audit:workforce-auth"
     ],
@@ -721,6 +728,7 @@
     "audit:catalog": "node scripts/audit-catalog.mjs",
     "audit:checkout": "node scripts/audit-checkout.mjs",
     "audit:config": "node scripts/audit-config-boundary.mjs",
+    "audit:container": "node scripts/run-trivy.mjs",
     "audit:customer-addresses": "node scripts/audit-customer-addresses.mjs",
     "audit:customer-phone-auth": "node scripts/audit-customer-phone-auth.mjs",
     "audit:customer-profiles": "node scripts/audit-customer-profiles.mjs",
@@ -728,12 +736,15 @@
     "audit:docker": "node scripts/audit-docker-runtime.mjs",
     "audit:menu-images": "node scripts/audit-menu-images.mjs",
     "audit:menu-import": "node scripts/audit-menu-import.mjs",
+    "audit:npm-sca": "node scripts/audit-npm-sca.mjs",
     "audit:order": "node scripts/audit-order.mjs",
     "audit:outbox-idempotency": "node scripts/audit-outbox-idempotency.mjs",
     "audit:payment": "node scripts/audit-payment.mjs",
     "audit:persistence": "node scripts/audit-persistence.mjs",
     "audit:pricing-tax": "node scripts/audit-pricing-tax.mjs",
     "audit:promotions": "node scripts/audit-promotions.mjs",
+    "audit:secrets": "node scripts/run-gitleaks.mjs",
+    "audit:security-sdlc": "npm run audit:npm-sca && npm run audit:secrets",
     "audit:serviceability": "node scripts/audit-serviceability.mjs",
     "audit:workforce-auth": "node scripts/audit-workforce-auth.mjs",
     "auth:schema:check": "tsx scripts/auth-schema-check.ts",
@@ -1106,8 +1117,33 @@
         {
           "name": "Customer phone-auth audit",
           "run": "npm run audit:customer-phone-auth"
+        },
+        {
+          "name": "Install dependencies",
+          "run": "npm ci"
+        },
+        {
+          "name": "SCA (npm audit high+)",
+          "run": "npm run audit:npm-sca"
+        },
+        {
+          "name": "Secret scan (gitleaks)",
+          "run": "npm run audit:secrets"
+        },
+        {
+          "name": "Detect container scan paths",
+          "run": "set -euo pipefail\nif [ \"${{ github.event_name }}\" = \"push\" ] && [ \"${{ github.ref }}\" = \"refs/heads/main\" ]; then\necho \"container_scan=true\" >> \"$GITHUB_OUTPUT\"\necho \"container_scan=true (exact-main always runs Trivy)\"\nexit 0\nfi\nnode scripts/ci-container-scan-paths.mjs"
+        },
+        {
+          "name": "Trivy filesystem scan (CRITICAL,HIGH)",
+          "run": "npm run audit:container"
         }
       ]
+    },
+    {
+      "path": ".github/workflows/codeql.yml",
+      "name": "CodeQL",
+      "validationSteps": []
     },
     {
       "path": ".github/workflows/deploy.yml",
@@ -1452,6 +1488,23 @@
       "classificationConfidence": "HEURISTIC"
     },
     {
+      "path": "scripts/audit-npm-sca.test.mjs",
+      "runner": "node:test",
+      "domain": "scripts",
+      "testType": "script-unit",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:scripts"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
       "path": "scripts/audit-outbox-idempotency.test.mjs",
       "runner": "node:test",
       "domain": "scripts",
@@ -1505,6 +1558,23 @@
     },
     {
       "path": "scripts/audit-workforce-auth.test.mjs",
+      "runner": "node:test",
+      "domain": "scripts",
+      "testType": "script-unit",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:scripts"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "scripts/ci-container-scan-paths.test.mjs",
       "runner": "node:test",
       "domain": "scripts",
       "testType": "script-unit",
@@ -1830,6 +1900,23 @@
     },
     {
       "path": "scripts/nginx-origin-redirect.test.mjs",
+      "runner": "node:test",
+      "domain": "scripts",
+      "testType": "script-unit",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:scripts"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "scripts/origin-trust/verify-contracts.test.mjs",
       "runner": "node:test",
       "domain": "scripts",
       "testType": "script-unit",

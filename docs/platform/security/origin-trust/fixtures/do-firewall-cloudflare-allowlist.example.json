@@ -1,0 +1,17 @@
+{
+  "description": "IMP-038 lab fixture — DigitalOcean Cloud Firewall allowlist shape for Cloudflare-only public app ports. NOT applied live by IMP-038. PRODUCTION_REALIZATION_PENDING owner IMP-039.",
+  "default_inbound": "deny",
+  "public_app_port": 443,
+  "allow_sources": [
+    { "description": "Cloudflare IPv4 example (replace wholesale from published list)", "cidr": "173.245.48.0/20" },
+    { "description": "Cloudflare IPv6 example", "cidr": "2400:cb00::/32" }
+  ],
+  "deny_probe_examples": [
+    { "description": "Arbitrary non-Cloudflare host", "ip": "203.0.113.10" },
+    { "description": "RFC5737 test-net", "ip": "198.51.100.20" }
+  ],
+  "notes": [
+    "Full production allowlist must use current Cloudflare published ranges (same family as docker/nginx/cloudflare-real-ip.conf).",
+    "SSH/jump path must remain distinct from public app ports."
+  ]
+}

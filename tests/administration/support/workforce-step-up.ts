@@ -9,9 +9,9 @@ import {
   grantStepUpProof,
   hashStepUpSessionToken,
   type StepUpActionClass,
-} from "../../src/server/security/step-up";
-import { WORKFORCE_STEP_UP_PROOF_HEADER } from "../../src/shared/workforce-auth/contracts";
-import type { Persistence } from "../../src/server/persistence";
+} from "../../../src/server/security/step-up";
+import { WORKFORCE_STEP_UP_PROOF_HEADER } from "../../../src/shared/workforce-auth/contracts";
+import type { Persistence } from "../../../src/server/persistence";
 
 export { WORKFORCE_STEP_UP_PROOF_HEADER };
 

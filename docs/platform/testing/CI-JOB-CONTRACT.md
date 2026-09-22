@@ -20,12 +20,15 @@ SESSION_3B2_COVERAGE_JOB_READY = NO
 BRANCH_PROTECTION = UNCHANGED / separately authorized
 ```
 
-## Current workflow facts (pre-3B2)
+## Current workflow facts
 
 | Workflow | Role |
 |---|---|
-| `.github/workflows/ci.yml` | Single `validate` job on `pull_request` + `push` to `main` / `imp-**` |
+| `.github/workflows/ci.yml` | TEST-1 jobs on `pull_request` + `push` to `main`, including IMP-038 `security-sdlc` |
+| `.github/workflows/codeql.yml` | IMP-038 §15 SAST (CodeQL javascript-typescript) on PR + main |
+| `.github/workflows/nightly-verification.yml` | Expensive E2E / concurrency / recovery verification |
 | `.github/workflows/deploy.yml` | GitHub Pages static export on `main` — **not** verification CI |
+| `.github/dependabot.yml` | Weekly npm + github-actions update PRs (IMP-038 §15) |
 
 ## PostgreSQL in CI (resolved)
 
@@ -49,7 +52,7 @@ states which jobs **should** be treated as blocking once wired and green.
 
 | Cadence | Blocking (should) | Not wired in initial 3B2 |
 |---|---|---|
-| PR | `quality`, `unit-component`, `scripts`, `commerce-core`, `security-smoke`, `build` | Coverage |
+| PR | `quality`, `unit-component`, `scripts`, `commerce-core`, `security-smoke`, `build`, `security-sdlc`; CodeQL `analyze` (workflow `codeql.yml`) | Coverage |
 | Main push | All PR blocking jobs + `database-foundation`, `database-commerce`, `security-matrix`, `domain-extended`, `http-surfaces`, `audits` | Coverage |
 | Nightly verification (`schedule` `0 2 * * *` or `workflow_dispatch`) | Exact E2E / concurrency / recovery jobs listed below | `golden-journey-evidence` job; IMP-036B location precert beyond `test:e2e:location-selector-layout` |
 
@@ -183,6 +186,59 @@ FAILURE_BEHAVIOR = fail job; no silent retry
 DISPOSITION = IMPLEMENT_IN_3B2
 ```
 
+### JOB `security-sdlc`
+
+IMP-038 §15 Secure SDLC minimum (SCA + secrets + conditional container scan).
+SAST is the separate CodeQL workflow (see below). Prefer free/OSS; Actions pinned by
+immutable commit SHA. Does **not** claim compliance certification.
+
+```text
+JOB_ID = security-sdlc
+WORKFLOW = .github/workflows/ci.yml
+TRIGGER = pull_request; push to main
+EXACT_COMMANDS =
+  npm run audit:npm-sca
+  npm run audit:secrets
+  # Trivy filesystem scan (CRITICAL,HIGH) when:
+  #   - push to main, OR
+  #   - PR changes Dockerfile / docker/** / compose / .dockerignore
+  #   (detect via scripts/ci-container-scan-paths.mjs)
+DB_REQUIREMENT = NO
+BROWSER_REQUIREMENT = NO
+COST = MEDIUM
+BLOCKING_SEMANTICS = YES
+ARTIFACTS = logs; gitleaks / Trivy console output
+FAILURE_BEHAVIOR = fail job; no silent retry; SCA fail-closed unless ACTIVE exception row
+DISPOSITION = IMP-038
+POLICY =
+  SCA = npm audit high+ with deterministic exception filter
+        (docs/platform/security/vulnerability-exception-register.md)
+  Secrets = pinned gitleaks OSS binary (scripts/run-gitleaks.mjs)
+  Containers = scripts/run-trivy.mjs pinned Trivy binary v0.69.3 fs scan CRITICAL,HIGH
+               (not aquasecurity/trivy-action; post-2026 Actions compromise)
+               (skip node_modules; npm SCA owns JS dependency vulns)
+               path-filtered on PR via scripts/ci-container-scan-paths.mjs; always on main
+```
+
+### JOB `codeql` / `analyze` (SAST)
+
+```text
+JOB_ID = analyze
+WORKFLOW = .github/workflows/codeql.yml
+TRIGGER = pull_request; push to main
+LANGUAGE = javascript-typescript
+EXACT_COMMANDS =
+  github/codeql-action/init (languages: javascript-typescript)
+  github/codeql-action/analyze
+DB_REQUIREMENT = NO
+BROWSER_REQUIREMENT = NO
+COST = MEDIUM
+BLOCKING_SEMANTICS = YES (treat as required Secure SDLC check once branch protection updated)
+ARTIFACTS = CodeQL SARIF via security-events
+FAILURE_BEHAVIOR = fail job; no silent retry
+DISPOSITION = IMP-038
+```
+
 ### Coverage on PR
 
 ```text
@@ -217,8 +273,8 @@ Trigger: `push` to `main`
 Cadence: every main push  
 
 Includes all PR-equivalent blocking jobs (`quality`, `unit-component`,
-`scripts`, `commerce-core`, `security-smoke`, `build`) with the same
-`EXACT_COMMANDS` as above, plus:
+`scripts`, `commerce-core`, `security-smoke`, `build`, `security-sdlc`) plus CodeQL
+`analyze`, with the same `EXACT_COMMANDS` as above, plus:
 
 ### JOB `database-foundation`
 

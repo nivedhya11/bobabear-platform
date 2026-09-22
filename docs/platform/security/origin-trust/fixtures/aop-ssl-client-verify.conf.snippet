@@ -1,0 +1,8 @@
+# IMP-038 lab fixture — Authenticated Origin Pulls (AOP) TLS client verify.
+# NOT applied to live production by IMP-038 scripts.
+# PRODUCTION_REALIZATION_PENDING — owner IMP-039.
+#
+# Required directives for contract verification:
+
+ssl_verify_client on;
+ssl_client_certificate /etc/nginx/certs/cloudflare-aop-origin-ca.pem;

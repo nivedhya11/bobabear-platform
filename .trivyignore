@@ -1,0 +1,6 @@
+# IMP-038 Trivy ignore — documented container misconfig exceptions.
+# Official PostgreSQL entrypoint requires root at start to drop privileges;
+# this image extends postgres:18 and inherits that runtime model.
+# Compensating: DB not publicly exposed; DO firewall + AOP path (IMP-039).
+# Owner: platform-security; Review: before IMP-038 acceptance.
+DS-0002

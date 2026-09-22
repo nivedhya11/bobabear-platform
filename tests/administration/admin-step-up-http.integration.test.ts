@@ -33,7 +33,7 @@ import {
   mintStepUpProofId,
   withStepUpProofHeader,
   WORKFORCE_STEP_UP_PROOF_HEADER,
-} from "../support/workforce-step-up";
+} from "./support/workforce-step-up";
 
 type InternalAdapter = { createSession: (userId: string) => Promise<{ token: string }> };
 

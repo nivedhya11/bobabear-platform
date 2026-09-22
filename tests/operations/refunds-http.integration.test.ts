@@ -20,7 +20,7 @@ import {
   withRefundReadyHarness,
   type RefundReadyHarness,
 } from "../database/support/refund-fixtures";
-import { headersWithFinancialReversalStepUp } from "../support/workforce-step-up";
+import { headersWithFinancialReversalStepUp } from "../administration/support/workforce-step-up";
 
 type InternalAdapter = { createSession: (userId: string) => Promise<{ token: string }> };
 
