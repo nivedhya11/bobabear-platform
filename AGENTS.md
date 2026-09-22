@@ -80,14 +80,47 @@ order when they prove applicable authority; whole-document repasting is not requ
 ## Operating planes
 
 ```text
-PLANNING / GOVERNANCE / CONTROL  = Human + designated planning/governance agent (currently ChatGPT)
-EXECUTION                        = Coding agent
-DURABLE VERIFICATION             = GitHub / CI
-CONSEQUENTIAL TRANSITIONS        = Human only (R3)
+Cursor  = senior delivery owner (execution + routine delivery ownership)
+ChatGPT = product + architecture authority / milestone reviewer
+Human   = product/architecture risk authority and consequential production/acceptance authority
+
+DURABLE VERIFICATION = GitHub / CI
 ```
 
 Autonomy never permits guessed product, security, payment, or business decisions. Escalation is by
-decision/risk boundary, not every Git command.
+decision/risk boundary, not every Git command. Governance effort is proportional to risk. Do **not**
+add ChatGPT approval gates to GREEN/AMBER work. Escalate to ChatGPT only when canonical authority
+cannot resolve a material product/architecture decision.
+
+### Risk-tier delivery overlay (GREEN / AMBER / RED)
+
+Maps onto the R0–R3 model below. GREEN/AMBER are authorized R1/R2 delivery under a locked contract;
+RED aligns with `DECISION_REQUIRED` / human R3 gates.
+
+| Tier | Scope | Delivery ownership |
+|---|---|---|
+| **GREEN** | Routine implementation, tests, refactors, fixes, documentation, deterministic governance reconciliation, CI/review fixes, normal PRs/merges | Cursor autonomous |
+| **AMBER** | Security/auth/payment/persistence/infrastructure implementation already covered by locked Product Definition + architecture | Cursor autonomous while contract/invariant unchanged |
+| **RED** | New/changed product behavior; architecture invariant; authority/service/role/permission/data-ownership/provider/material security policy; legal interpretation; controlled continuation; major risk acceptance; launch/acceptance; destructive production | Escalate with `DECISION_REQUIRED` template |
+
+For an active locked slice with explicit Founder delivery authorization (example: IMP-038 under locked
+`PD-IMP-038-DRAFT-2` + ARCH-R21 / D-375 / ADR-017), Cursor may merge routine conforming GREEN/AMBER
+implementation PRs after required quality gates (CI green + self-review) when the task contract /
+Founder delivery authorization explicitly permits it.
+
+### Escalation template (RED / unresolved material decision)
+
+```text
+DECISION_REQUIRED
+question:
+why_current_authority_is_insufficient:
+option_a:
+option_b:
+cursor_recommendation:
+decision_owner:
+blocked_scope:
+work_continuing_elsewhere:
+```
 
 ## Risk-bounded autonomy
 
@@ -95,8 +128,8 @@ decision/risk boundary, not every Git command.
 |---|---|---|
 | **R0** | `READ/ANALYZE` | Autonomous read, search, diagnosis, and analysis. No source mutation. |
 | **R1** | `BOUNDED_ENGINEERING` | Implementation agent owns inspect → plan → edit → test → diagnose → same-scope repair → validate within authorized scope. Do not stop for every newly exposed same-class defect inside that scope. Use compact R1 alignment and completion reporting. |
-| **R2** | `CONTRACT_SENSITIVE` | Product behaviour, public/domain contracts, payment, auth/security, persistence authority / schema strategy, concurrency semantics, provider policy, architecture/topology. Investigate autonomously; implement only when intended binding semantics are explicitly defined by canonical authority and the current authorized task; stop before inventing undefined binding behaviour or resolving canonical conflicts by assumption. Independent review required before R3 promotion/merge/acceptance. Full alignment and session-close reporting. |
-| **R3** | `CONSEQUENTIAL` | Merge; deployment/release; production or destructive data operations; force push / history rewrite; lifecycle or product acceptance; Founder UAT verdict. Require explicit human authorization. |
+| **R2** | `CONTRACT_SENSITIVE` | Product behaviour, public/domain contracts, payment, auth/security, persistence authority / schema strategy, concurrency semantics, provider policy, architecture/topology. Investigate autonomously; implement only when intended binding semantics are explicitly defined by canonical authority and the current authorized task; stop before inventing undefined binding behaviour or resolving canonical conflicts by assumption. Independent review required before R3 promotion/acceptance. Full alignment and session-close reporting. |
+| **R3** | `CONSEQUENTIAL` | Force push / history rewrite; production or destructive data operations; lifecycle or product acceptance; Founder UAT verdict; activating next IMPs; accepting IMPs; deployment/release that is not covered by an explicit Founder delivery authorization. Require explicit human authorization. Routine GREEN/AMBER PR merges may proceed autonomously when the task contract / Founder delivery authorization for an active locked slice explicitly permits them (after required quality gates). |
 
 ### Risk escalation
 
@@ -413,7 +446,9 @@ Bundle authorized machine work until the next genuine human decision boundary:
   short-lived task branch (create from verified base if needed) → normal push → PR → wait for
   exact-head PR CI terminal state → report final outcome → return once.
   `NO_COMMIT` + `PUBLISH_PR` is a task-contract conflict (STOP).
-- Merge, deploy, acceptance, and Founder UAT remain separate R3 human gates.
+- Deploy, acceptance, and Founder UAT remain separate R3 human gates. Routine GREEN/AMBER PR
+  merges may be autonomous when an explicit Founder delivery authorization for an active locked
+  slice permits them.
 
 Efficiency must never permit guessed product, security, payment, or business decisions.
 
@@ -473,8 +508,10 @@ DEFAULT_DEVELOPMENT_BRANCH = main
 - `PUBLISH_PR` authorizes short-lived-branch commit(s) + push + PR + wait for exact-head PR CI
   terminal state with reporting of the final outcome; do not re-require separate mid-run push/PR
   authorization for that sequence. Do not return while exact-head PR CI is only started or pending.
-- Merge, tag/release, deployment, force push, history rewrite, destructive data ops, lifecycle
-  acceptance, and Founder UAT each require explicit human R3 authorization.
+- Tag/release, deployment, force push, history rewrite, destructive data ops, lifecycle
+  acceptance, Founder UAT, activating next IMPs, and accepting IMPs each require explicit human R3
+  authorization. Routine GREEN/AMBER PR merges may proceed autonomously when the task contract /
+  Founder delivery authorization for an active locked slice explicitly permits them.
 - Only one product slice is normally active; never start a slice whose dependencies are unresolved.
   Historical controlled-continuation exceptions for the IMP-026 → IMP-028 period are CLOSED and
   MUST NOT be applied to future slices without an explicit new Founder/governance decision.
