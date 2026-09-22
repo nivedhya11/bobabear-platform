@@ -136,6 +136,7 @@ describe("IMP-029 Operations Order read HTTP", () => {
           runtime,
           persistence: h.persistence,
           trustedOrigin: workforceAuthConfig().workforce.baseURL.origin,
+            stepUpSessionHashSecret: workforceAuthConfig().workforce.secret,
         }, "operations-test-request");
       });
       await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));

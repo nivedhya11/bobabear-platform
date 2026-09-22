@@ -15,6 +15,7 @@ import {
 import { createLocalCustomerOtpProviderForTests } from "../../../src/server/customer-auth/provider/local";
 import { CustomerAuthService } from "../../../src/server/customer-auth/service";
 import { validateCustomerAuthConfig } from "../../../src/server/auth/shared/config";
+import { loadTurnstileConfig } from "../../../src/server/security/turnstile";
 
 export const CUSTOMER_AUTH_HTTP_TEST_ORIGIN = "http://localhost:3100";
 export const CUSTOMER_AUTH_HTTP_TEST_SECRET =
@@ -72,6 +73,7 @@ export async function withCustomerAuthHttpService<T>(
     otpProvider,
     identityDeriver,
     piiHashSecret: CUSTOMER_AUTH_HTTP_TEST_PII_SECRET,
+    turnstile: loadTurnstileConfig({}, "test"),
     trustedOrigin: authResult.config.baseURL.origin,
     trustProxyHops: 0,
     host: "127.0.0.1",

@@ -12,6 +12,10 @@ import { AuthFoundationConfigurationError } from "../auth/shared/errors";
 import type { WorkforceAuthConfig } from "../auth/shared/types";
 import type { AppEnvironment } from "../../platform/config";
 import {
+  loadTurnstileConfig,
+  type TurnstileConfig,
+} from "../security/turnstile";
+import {
   loadWorkforceAuthServiceHostConfig,
   type WorkforceAuthServiceHostConfig,
 } from "./pii";
@@ -22,6 +26,7 @@ export type WorkforceAuthServiceConfig = Readonly<{
   environmentType: AppEnvironment;
   auth: WorkforceAuthConfig;
   service: WorkforceAuthServiceHostConfig;
+  turnstile: TurnstileConfig;
 }>;
 
 /**
@@ -53,5 +58,6 @@ export function loadWorkforceAuthServiceConfig(
     environmentType,
     auth,
     service,
+    turnstile: loadTurnstileConfig(source, environmentType),
   });
 }

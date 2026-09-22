@@ -26,6 +26,11 @@ const AUTH_FOUNDATION_TABLES = [
   // IMP-010: workforce MFA + durable rate-limit tables.
   "workforce_auth_two_factors",
   "workforce_auth_rate_limits",
+  // IMP-038: Turnstile single-use redemption ledger.
+  "turnstile_token_redemptions",
+  // IMP-038: workforce step-up proofs + audit.
+  "workforce_step_up_proofs",
+  "workforce_step_up_audit_events",
 ];
 
 export interface AuthFoundationRoleFixture {

@@ -1,5 +1,5 @@
 /**
- * Drizzle schema for `app.workforce_auth_rate_limits` (IMP-010).
+ * Drizzle schema for `app.workforce_auth_rate_limits` (IMP-010 / IMP-038).
  *
  * Technical rate-limit counters only. Never stores raw email, raw IP,
  * password, TOTP, backup code, session token, cookie, or user ID.
@@ -18,6 +18,10 @@ export const workforceAuthRateLimitsTable = appSchema.table(
     windowSeconds: integer("window_seconds").notNull(),
     requestCount: integer("request_count").notNull(),
     blockedUntil: timestamp("blocked_until", { withTimezone: true }),
+    violationCount: integer("violation_count").notNull().default(0),
+    challengeRequiredUntil: timestamp("challenge_required_until", {
+      withTimezone: true,
+    }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
   },
@@ -36,6 +40,10 @@ export const workforceAuthRateLimitsTable = appSchema.table(
       sql`${table.requestCount} >= 0`,
     ),
     check(
+      "workforce_auth_rate_limits_violation_count_non_negative_check",
+      sql`${table.violationCount} >= 0`,
+    ),
+    check(
       "workforce_auth_rate_limits_updated_at_after_created_at_check",
       sql`${table.updatedAt} >= ${table.createdAt}`,
     ),
@@ -49,7 +57,10 @@ export const workforceAuthRateLimitsTable = appSchema.table(
         'workforce_sign_in_email_15m',
         'workforce_sign_in_ip_10m',
         'workforce_mfa_ip_10m',
-        'workforce_security_change_ip_10m'
+        'workforce_security_change_ip_10m',
+        'workforce_sign_in_email_ip_15m',
+        'workforce_abuse_email_1d',
+        'workforce_abuse_ip_1d'
       )`,
     ),
   ],

@@ -295,6 +295,20 @@
       "when": 1789629827555,
       "tag": "0041_exotic_smasher",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1790098649776,
+      "tag": "0042_imp038_step_up",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1790098724666,
+      "tag": "0043_imp038_auth_abuse_turnstile",
+      "breakpoints": true
     }
   ]
 }

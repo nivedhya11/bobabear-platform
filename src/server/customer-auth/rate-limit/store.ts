@@ -1,9 +1,9 @@
 /**
- * Durable customer OTP rate-limit store (IMP-009).
+ * Durable customer OTP rate-limit store (IMP-009 / IMP-038).
  *
  * Atomic PostgreSQL upserts via an application-role transaction context.
  * Never acquires a pool, never uses migration credentials, never stores
- * raw phone or IP values.
+ * raw phone or IP values. Progressive cooldown is temporary only.
  */
 import "server-only";
 
@@ -17,6 +17,11 @@ import type {
 } from "../../persistence/types";
 import { CustomerAuthServiceError } from "../errors";
 import {
+  escalateProgressiveCooldown,
+  retryAfterSecondsFrom,
+} from "./progressive";
+import {
+  CUSTOMER_OTP_PROGRESSIVE_COOLDOWN_LADDER_SECONDS,
   CUSTOMER_OTP_RATE_LIMIT_CLEANUP_MAX,
   CUSTOMER_OTP_RATE_LIMIT_RULES,
   type CustomerOtpRateLimitOutcome,
@@ -69,16 +74,30 @@ function assertKeyHash(keyHash: string): void {
   }
 }
 
-interface ConsumeRow extends Record<string, unknown> {
+interface RateLimitRow extends Record<string, unknown> {
   request_count: number;
   window_started_at: Date;
   window_seconds: number;
-  maximum_requests: number;
+  blocked_until: Date | null;
+  challenge_required_until: Date | null;
+  violation_count: number;
+}
+
+function challengeRequiredAt(
+  challengeRequiredUntil: Date | null | undefined,
+  now: Date,
+): boolean {
+  return (
+    challengeRequiredUntil instanceof Date &&
+    !Number.isNaN(challengeRequiredUntil.getTime()) &&
+    challengeRequiredUntil.getTime() > now.getTime()
+  );
 }
 
 /**
  * Atomically consume one request against a single durable rate-limit rule.
- * Always records the attempt (increments) even when the outcome is limited.
+ * Always records the attempt (increments) even when the outcome is limited,
+ * unless a progressive cooldown `blocked_until` is still active.
  */
 export async function consumeCustomerOtpRateLimit(
   transactionContext: PersistenceTransactionContext,
@@ -103,8 +122,46 @@ export async function consumeCustomerOtpRateLimit(
   const { rule, keyHash, now } = input;
   const t = customerOtpRateLimitsTable;
 
-  const rows = await transactionContext.db.execute<ConsumeRow>(sql`
-    with upserted as (
+  const existingRows = await transactionContext.db.execute<RateLimitRow>(sql`
+    select
+      ${t.requestCount} as request_count,
+      ${t.windowStartedAt} as window_started_at,
+      ${t.windowSeconds} as window_seconds,
+      ${t.blockedUntil} as blocked_until,
+      ${t.challengeRequiredUntil} as challenge_required_until,
+      ${t.violationCount} as violation_count
+    from ${t}
+    where ${t.scope} = ${rule.scope}
+      and ${t.keyHash} = ${keyHash}
+    for update
+  `);
+
+  const existing = existingRows.rows[0];
+
+  if (existing) {
+    const blockedUntil = existing.blocked_until
+      ? new Date(existing.blocked_until)
+      : null;
+    if (blockedUntil && blockedUntil.getTime() > now.getTime()) {
+      const challengeUntil = existing.challenge_required_until
+        ? new Date(existing.challenge_required_until)
+        : null;
+      return {
+        outcome: "limited",
+        retryAfterSeconds: retryAfterSecondsFrom(blockedUntil, now),
+        challengeRequired: challengeRequiredAt(challengeUntil, now),
+      };
+    }
+  }
+
+  let requestCount: number;
+  let windowStartedAt: Date;
+  let windowSeconds: number;
+  let violationCount: number;
+  let challengeRequiredUntil: Date | null;
+
+  if (!existing) {
+    await transactionContext.db.execute(sql`
       insert into ${t} (
         scope,
         key_hash,
@@ -112,6 +169,8 @@ export async function consumeCustomerOtpRateLimit(
         window_seconds,
         request_count,
         blocked_until,
+        violation_count,
+        challenge_required_until,
         created_at,
         updated_at
       ) values (
@@ -121,68 +180,92 @@ export async function consumeCustomerOtpRateLimit(
         ${rule.windowSeconds},
         1,
         null,
+        0,
+        null,
         ${now},
         ${now}
       )
-      on conflict (scope, key_hash) do update set
-        window_started_at = case
-          when ${t.windowStartedAt} + make_interval(secs => ${t.windowSeconds}) <= excluded.window_started_at
-            then excluded.window_started_at
-          else ${t.windowStartedAt}
-        end,
-        window_seconds = excluded.window_seconds,
-        request_count = case
-          when ${t.windowStartedAt} + make_interval(secs => ${t.windowSeconds}) <= excluded.window_started_at
-            then 1
-          else ${t.requestCount} + 1
-        end,
-        blocked_until = case
-          when ${t.windowStartedAt} + make_interval(secs => ${t.windowSeconds}) <= excluded.window_started_at
-            then null
-          when ${t.requestCount} + 1 > ${rule.maximumRequests}
-            then ${t.windowStartedAt} + make_interval(secs => ${t.windowSeconds})
-          else ${t.blockedUntil}
-        end,
-        updated_at = excluded.updated_at
-      returning
-        ${t.requestCount} as request_count,
-        ${t.windowStartedAt} as window_started_at,
-        ${t.windowSeconds} as window_seconds
-    )
-    select
-      request_count,
-      window_started_at,
-      window_seconds,
-      ${rule.maximumRequests}::integer as maximum_requests
-    from upserted
-  `);
+    `);
+    requestCount = 1;
+    windowStartedAt = now;
+    windowSeconds = rule.windowSeconds;
+    violationCount = 0;
+    challengeRequiredUntil = null;
+  } else {
+    const priorWindowStartedAt = new Date(existing.window_started_at);
+    const priorWindowSeconds = Number(existing.window_seconds);
+    const priorViolationCount = Number(existing.violation_count);
+    const windowExpired =
+      priorWindowStartedAt.getTime() + priorWindowSeconds * 1000 <= now.getTime();
 
-  const row = rows.rows[0];
-  if (!row) {
-    throw new CustomerAuthServiceError({
-      message: "Customer OTP rate-limit consume returned no row.",
-      code: "CUSTOMER_OTP_RATE_LIMIT_CONSUME_FAILED",
-      httpStatus: 500,
-    });
+    if (windowExpired) {
+      await transactionContext.db.execute(sql`
+        update ${t}
+        set
+          window_started_at = ${now},
+          window_seconds = ${rule.windowSeconds},
+          request_count = 1,
+          blocked_until = null,
+          challenge_required_until = null,
+          updated_at = ${now}
+        where ${t.scope} = ${rule.scope}
+          and ${t.keyHash} = ${keyHash}
+      `);
+      requestCount = 1;
+      windowStartedAt = now;
+      windowSeconds = rule.windowSeconds;
+      violationCount = priorViolationCount;
+      challengeRequiredUntil = null;
+    } else {
+      const nextCount = Number(existing.request_count) + 1;
+      await transactionContext.db.execute(sql`
+        update ${t}
+        set
+          window_seconds = ${rule.windowSeconds},
+          request_count = ${nextCount},
+          updated_at = ${now}
+        where ${t.scope} = ${rule.scope}
+          and ${t.keyHash} = ${keyHash}
+      `);
+      requestCount = nextCount;
+      windowStartedAt = priorWindowStartedAt;
+      windowSeconds = rule.windowSeconds;
+      violationCount = priorViolationCount;
+      challengeRequiredUntil = existing.challenge_required_until
+        ? new Date(existing.challenge_required_until)
+        : null;
+    }
   }
 
-  const requestCount = Number(row.request_count);
-  const windowStartedAt = new Date(row.window_started_at);
-  const windowSeconds = Number(row.window_seconds);
-  const maximumRequests = Number(row.maximum_requests);
-
-  if (requestCount > maximumRequests) {
-    const windowEndsAtMs = windowStartedAt.getTime() + windowSeconds * 1000;
-    const retryAfterSeconds = Math.max(
-      1,
-      Math.ceil((windowEndsAtMs - now.getTime()) / 1000),
-    );
-    return { outcome: "limited", retryAfterSeconds };
+  if (requestCount > rule.maximumRequests) {
+    const windowEndsAt = new Date(windowStartedAt.getTime() + windowSeconds * 1000);
+    const escalated = escalateProgressiveCooldown({
+      ladderSeconds: CUSTOMER_OTP_PROGRESSIVE_COOLDOWN_LADDER_SECONDS,
+      previousViolationCount: violationCount,
+      now,
+      windowEndsAt,
+    });
+    await transactionContext.db.execute(sql`
+      update ${t}
+      set
+        violation_count = ${escalated.violationCount},
+        blocked_until = ${escalated.blockedUntil},
+        challenge_required_until = ${escalated.challengeRequiredUntil},
+        updated_at = ${now}
+      where ${t.scope} = ${rule.scope}
+        and ${t.keyHash} = ${keyHash}
+    `);
+    return {
+      outcome: "limited",
+      retryAfterSeconds: retryAfterSecondsFrom(escalated.blockedUntil, now),
+      challengeRequired: true,
+    };
   }
 
   return {
     outcome: "allowed",
-    remaining: Math.max(0, maximumRequests - requestCount),
+    remaining: Math.max(0, rule.maximumRequests - requestCount),
+    challengeRequired: challengeRequiredAt(challengeRequiredUntil, now),
   };
 }
 
@@ -195,20 +278,29 @@ export async function consumeCustomerOtpRateLimits(
   transactionContext: PersistenceTransactionContext,
   input: Readonly<{
     rules: readonly CustomerOtpRateLimitRule[];
-    keyHashes: Readonly<Record<CustomerOtpRateLimitScope, string>>;
+    keyHashes: Readonly<Partial<Record<CustomerOtpRateLimitScope, string>>>;
     now: Date;
   }>,
 ): Promise<CustomerOtpRateLimitOutcome> {
   let limitedRetryAfter = 0;
   let allowedRemaining = Number.POSITIVE_INFINITY;
+  let challengeRequired = false;
 
   for (const rule of input.rules) {
     const keyHash = input.keyHashes[rule.scope];
+    if (typeof keyHash !== "string") {
+      throw new CustomerAuthServiceError({
+        message: "Customer OTP rate-limit key hash is missing for a requested scope.",
+        code: "CUSTOMER_OTP_RATE_LIMIT_KEY_INVALID",
+        httpStatus: 500,
+      });
+    }
     const outcome = await consumeCustomerOtpRateLimit(transactionContext, {
       rule,
       keyHash,
       now: input.now,
     });
+    challengeRequired = challengeRequired || outcome.challengeRequired;
     if (outcome.outcome === "limited") {
       limitedRetryAfter = Math.max(limitedRetryAfter, outcome.retryAfterSeconds);
     } else {
@@ -217,13 +309,18 @@ export async function consumeCustomerOtpRateLimits(
   }
 
   if (limitedRetryAfter > 0) {
-    return { outcome: "limited", retryAfterSeconds: limitedRetryAfter };
+    return {
+      outcome: "limited",
+      retryAfterSeconds: limitedRetryAfter,
+      challengeRequired,
+    };
   }
 
   return {
     outcome: "allowed",
     remaining:
       allowedRemaining === Number.POSITIVE_INFINITY ? 0 : allowedRemaining,
+    challengeRequired,
   };
 }
 
@@ -248,6 +345,7 @@ export async function deleteExpiredCustomerOtpRateLimits(
       select scope, key_hash
       from ${t}
       where window_started_at + make_interval(secs => window_seconds) < ${cutoff}
+        and (blocked_until is null or blocked_until < ${cutoff})
       order by window_started_at asc, scope asc, key_hash asc
       limit ${limit}
     )

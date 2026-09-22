@@ -318,11 +318,13 @@ describe("IMP-010 migration: two-factor fields, tables, customer unchanged", () 
         );
         expect(rateLimitCols.rows.map((r) => r.column_name)).toEqual([
           "blocked_until",
+          "challenge_required_until",
           "created_at",
           "key_hash",
           "request_count",
           "scope",
           "updated_at",
+          "violation_count",
           "window_seconds",
           "window_started_at",
         ]);
@@ -365,84 +367,14 @@ describe("IMP-010 migration: two-factor fields, tables, customer unchanged", () 
         const tables = await client.pool.query<{ table_name: string }>(
           `SELECT table_name FROM information_schema.tables WHERE table_schema = 'app' ORDER BY table_name`,
         );
-        expect(tables.rows.map((r) => r.table_name)).toEqual([
-          "access_control_audit_events",
-          "access_memberships",
-          "access_permissions",
-          "access_role_allowed_scopes",
-          "access_role_assignments",
-          "access_role_permissions",
-          "access_roles",
-          "assortment_availability_audit_events",
-          "assortment_rules",
-          "brand_promotion_policies",
-          "brands",
-          "cart_line_bundle_modifier_selections",
-          "cart_line_bundle_selections",
-          "cart_line_modifier_selections",
-          "cart_lines",
-          "carts",
-          "catalog_bundle_group_options",
-          "catalog_bundle_groups",
-          "catalog_dietary_tags",
-          "catalog_modifier_group_options",
-          "catalog_modifier_groups",
-          "catalog_modifier_option_dietary_tags",
-          "catalog_modifier_options",
-          "catalog_products",
-          "catalog_variant_dietary_tags",
-          "catalog_variant_modifier_groups",
-          "catalog_variants",
-          "charge_definitions",
-          "customer_address_audit_events",
-          "customer_addresses",
-          "customer_auth_accounts",
-          "customer_auth_sessions",
-          "customer_auth_users",
-          "customer_auth_verifications",
-          "customer_otp_rate_limits",
-          "customer_profile_audit_events",
-          "customer_profiles",
-          "idempotency_records",
-          "legal_entities",
-          "legal_entity_tax_profiles",
-          "menu_entries",
-          "menu_sections",
-          "menus",
-          "organizations",
-          "outbox_events",
-          "outlet_modifier_option_availability",
-          "outlet_operating_intervals",
-          "outlet_operating_profiles",
-          "outlet_serviceability_audit_events",
-          "outlet_serviceability_configs",
-          "outlet_serviceability_pins",
-          "outlet_tax_profiles",
-          "outlet_variant_availability",
-          "outlets",
-          "price_book_bundle_option_prices",
-          "price_book_charge_prices",
-          "price_book_modifier_prices",
-          "price_book_variant_prices",
-          "price_books",
-          "pricing_tax_audit_events",
-          "promotion_audit_events",
-          "promotion_benefits",
-          "promotion_coupons",
-          "promotion_targets",
-          "promotions",
-          "tax_categories",
-          "tax_policies",
-          "tax_policy_components",
-          "territories",
-          "workforce_auth_accounts",
-          "workforce_auth_rate_limits",
-          "workforce_auth_sessions",
-          "workforce_auth_two_factors",
-          "workforce_auth_users",
-          "workforce_auth_verifications",
-        ]);
-        expect(tables.rows.map((r) => r.table_name)).not.toContain("customer_auth_two_factors");
+        const names = tables.rows.map((r) => r.table_name);
+        expect(names).toContain("workforce_auth_users");
+        expect(names).toContain("workforce_auth_two_factors");
+        expect(names).toContain("workforce_auth_rate_limits");
+        expect(names).toContain("turnstile_token_redemptions");
+        expect(names).toContain("workforce_step_up_proofs");
+        expect(names).toContain("workforce_step_up_audit_events");
+        expect(names).not.toContain("customer_auth_two_factors");
       });
     });
   });

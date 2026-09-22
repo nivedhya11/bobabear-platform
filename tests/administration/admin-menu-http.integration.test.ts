@@ -302,6 +302,7 @@ describe("IMP-036F F3B Menu commercial Admin HTTP", () => {
             runtime,
             persistence,
             trustedOrigin: workforceAuthConfig().workforce.baseURL.origin,
+            stepUpSessionHashSecret: workforceAuthConfig().workforce.secret,
           },
           "menu-admin-http-request",
         );
@@ -1234,6 +1235,7 @@ describe("IMP-036F F3B Menu commercial Admin HTTP", () => {
             runtime,
             persistence,
             trustedOrigin: workforceAuthConfig().workforce.baseURL.origin,
+            stepUpSessionHashSecret: workforceAuthConfig().workforce.secret,
           },
           "menu-admin-one-active",
         );
@@ -1409,6 +1411,7 @@ describe("IMP-036F F3B Menu commercial Admin HTTP", () => {
             runtime,
             persistence,
             trustedOrigin: workforceAuthConfig().workforce.baseURL.origin,
+            stepUpSessionHashSecret: workforceAuthConfig().workforce.secret,
           },
           "menu-admin-read-only",
         );
@@ -1593,6 +1596,7 @@ describe("IMP-036F F3B Menu commercial Admin HTTP", () => {
             runtime,
             persistence,
             trustedOrigin: workforceAuthConfig().workforce.baseURL.origin,
+            stepUpSessionHashSecret: workforceAuthConfig().workforce.secret,
           },
           "menu-admin-http-anti-oracle",
         );

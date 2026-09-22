@@ -107,6 +107,7 @@ async function withOperationsServer(
         runtime,
         persistence: h.persistence,
         trustedOrigin: workforceAuthConfig().workforce.baseURL.origin,
+            stepUpSessionHashSecret: workforceAuthConfig().workforce.secret,
       },
       "operations-refund-request",
     );

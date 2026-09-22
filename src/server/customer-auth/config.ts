@@ -22,6 +22,10 @@ import { AuthFoundationConfigurationError } from "../auth/shared/errors";
 import type { CustomerAuthConfig } from "../auth/shared/types";
 import type { AppEnvironment } from "../../platform/config";
 import {
+  loadTurnstileConfig,
+  type TurnstileConfig,
+} from "../security/turnstile";
+import {
   loadCustomerPhoneAuthServiceConfig,
   type CustomerPhoneAuthServiceConfig,
 } from "./pii";
@@ -32,6 +36,7 @@ export type CustomerAuthServiceConfig = Readonly<{
   environmentType: AppEnvironment;
   auth: CustomerAuthConfig;
   phone: CustomerPhoneAuthServiceConfig;
+  turnstile: TurnstileConfig;
 }>;
 
 /**
@@ -65,5 +70,6 @@ export function loadCustomerAuthServiceConfig(
     environmentType,
     auth,
     phone,
+    turnstile: loadTurnstileConfig(source, environmentType),
   });
 }

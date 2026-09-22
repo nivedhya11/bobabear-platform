@@ -14,6 +14,7 @@ export const WORKFORCE_AUTH_PUBLIC_PATHS = Object.freeze({
   mfaVerifyEnrollment: "/api/workforce-auth/mfa/verify-enrollment",
   mfaVerify: "/api/workforce-auth/mfa/verify",
   mfaVerifyBackupCode: "/api/workforce-auth/mfa/verify-backup-code",
+  stepUp: "/api/workforce-auth/step-up",
   session: "/api/workforce-auth/session",
   signOut: "/api/workforce-auth/sign-out",
 } as const);
@@ -27,6 +28,8 @@ export type WorkforceAuthNextStep =
 export type WorkforceAuthSignInRequest = Readonly<{
   email: string;
   password: string;
+  /** Cloudflare Turnstile token when challengeRequired was signaled. */
+  turnstileToken?: string;
 }>;
 
 export type WorkforceAuthSignInSuccess = Readonly<{
@@ -36,8 +39,13 @@ export type WorkforceAuthSignInSuccess = Readonly<{
 
 export type WorkforceAuthSignInFailure = Readonly<{
   authenticated: false;
-  code: "AUTHENTICATION_FAILED" | "RATE_LIMITED" | "INVALID_REQUEST";
+  code:
+    | "AUTHENTICATION_FAILED"
+    | "RATE_LIMITED"
+    | "CHALLENGE_REQUIRED"
+    | "INVALID_REQUEST";
   retryAfterSeconds?: number;
+  challengeRequired?: boolean;
 }>;
 
 export type WorkforceAuthSignInResponse =
@@ -47,6 +55,8 @@ export type WorkforceAuthSignInResponse =
 export type WorkforceAuthChangePasswordRequest = Readonly<{
   currentPassword: string;
   newPassword: string;
+  /** IMP-038 step-up proof id (CLASS_CREDENTIAL_SECURITY). */
+  stepUpProofId?: string;
 }>;
 
 export type WorkforceAuthChangePasswordSuccess =
@@ -65,7 +75,9 @@ export type WorkforceAuthChangePasswordFailure = Readonly<{
     | "PASSWORD_POLICY_VIOLATION"
     | "RATE_LIMITED"
     | "INVALID_REQUEST"
-    | "FORBIDDEN";
+    | "FORBIDDEN"
+    | "STEP_UP_REQUIRED"
+    | "STEP_UP_INVALID";
   retryAfterSeconds?: number;
 }>;
 
@@ -75,6 +87,8 @@ export type WorkforceAuthChangePasswordResponse =
 
 export type WorkforceAuthMfaEnrollRequest = Readonly<{
   password: string;
+  /** IMP-038 step-up proof id (CLASS_CREDENTIAL_SECURITY). */
+  stepUpProofId?: string;
 }>;
 
 export type WorkforceAuthMfaEnrollSuccess = Readonly<{
@@ -88,7 +102,9 @@ export type WorkforceAuthMfaEnrollFailure = Readonly<{
     | "AUTHENTICATION_FAILED"
     | "FORBIDDEN"
     | "RATE_LIMITED"
-    | "INVALID_REQUEST";
+    | "INVALID_REQUEST"
+    | "STEP_UP_REQUIRED"
+    | "STEP_UP_INVALID";
   retryAfterSeconds?: number;
 }>;
 
@@ -98,6 +114,8 @@ export type WorkforceAuthMfaEnrollResponse =
 
 export type WorkforceAuthMfaVerifyEnrollmentRequest = Readonly<{
   code: string;
+  /** IMP-038 step-up proof id (CLASS_CREDENTIAL_SECURITY). */
+  stepUpProofId?: string;
 }>;
 
 export type WorkforceAuthMfaVerifyEnrollmentSuccess = Readonly<{
@@ -112,7 +130,9 @@ export type WorkforceAuthMfaVerifyEnrollmentFailure = Readonly<{
     | "MFA_LOCKED"
     | "FORBIDDEN"
     | "RATE_LIMITED"
-    | "INVALID_REQUEST";
+    | "INVALID_REQUEST"
+    | "STEP_UP_REQUIRED"
+    | "STEP_UP_INVALID";
   retryAfterSeconds?: number;
 }>;
 
@@ -173,3 +193,47 @@ export type WorkforceAuthSessionResponse =
 export type WorkforceAuthSignOutResponse = Readonly<{
   authenticated: false;
 }>;
+
+/** IMP-038 step-up action classes (capability §11.2). */
+export const WORKFORCE_STEP_UP_ACTION_CLASSES = [
+  "CLASS_ACCESS_MUTATION",
+  "CLASS_CREDENTIAL_SECURITY",
+  "CLASS_PRIVACY_DESTRUCTIVE",
+  "CLASS_FINANCIAL_REVERSAL",
+] as const;
+
+export type WorkforceStepUpActionClass =
+  (typeof WORKFORCE_STEP_UP_ACTION_CLASSES)[number];
+
+export type WorkforceAuthStepUpRequest = Readonly<{
+  actionClass: WorkforceStepUpActionClass;
+  /** TOTP code for recent MFA re-auth. */
+  code?: string;
+  /** Optional password re-auth (combined with TOTP when both supplied). */
+  password?: string;
+}>;
+
+export type WorkforceAuthStepUpSuccess = Readonly<{
+  ok: true;
+  proofId: string;
+  expiresAt: string;
+  actionClass: WorkforceStepUpActionClass;
+}>;
+
+export type WorkforceAuthStepUpFailure = Readonly<{
+  ok: false;
+  code:
+    | "AUTHENTICATION_FAILED"
+    | "MFA_INVALID_CODE"
+    | "MFA_LOCKED"
+    | "FORBIDDEN"
+    | "RATE_LIMITED"
+    | "INVALID_REQUEST"
+    | "STEP_UP_DENIED";
+  retryAfterSeconds?: number;
+}>;
+
+export type WorkforceAuthStepUpResponse =
+  | WorkforceAuthStepUpSuccess
+  | WorkforceAuthStepUpFailure;
+

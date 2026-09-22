@@ -211,6 +211,7 @@ describe("IMP-036E Store Operations HTTP", () => {
             runtime,
             persistence,
             trustedOrigin: workforceAuthConfig().workforce.baseURL.origin,
+            stepUpSessionHashSecret: workforceAuthConfig().workforce.secret,
           },
           "store-http-request",
         );

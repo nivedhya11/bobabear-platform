@@ -62,6 +62,7 @@ async function main(): Promise<void> {
     otpProvider,
     identityDeriver: serviceConfig.phone.identityDeriver,
     piiHashSecret: serviceConfig.phone.piiHashSecret,
+    turnstile: serviceConfig.turnstile,
     trustedOrigin: serviceConfig.phone.trustedOrigin,
     trustProxyHops: serviceConfig.phone.trustProxyHops,
     host: serviceConfig.phone.serviceHost || DEFAULT_SERVICE_HOST,

@@ -128,7 +128,7 @@ work_continuing_elsewhere:
 |---|---|---|
 | **R0** | `READ/ANALYZE` | Autonomous read, search, diagnosis, and analysis. No source mutation. |
 | **R1** | `BOUNDED_ENGINEERING` | Implementation agent owns inspect → plan → edit → test → diagnose → same-scope repair → validate within authorized scope. Do not stop for every newly exposed same-class defect inside that scope. Use compact R1 alignment and completion reporting. |
-| **R2** | `CONTRACT_SENSITIVE` | Product behaviour, public/domain contracts, payment, auth/security, persistence authority / schema strategy, concurrency semantics, provider policy, architecture/topology. Investigate autonomously; implement only when intended binding semantics are explicitly defined by canonical authority and the current authorized task; stop before inventing undefined binding behaviour or resolving canonical conflicts by assumption. Independent review required before R3 promotion/acceptance. Full alignment and session-close reporting. |
+| **R2** | `CONTRACT_SENSITIVE` | Product behaviour, public/domain contracts, payment, auth/security, persistence authority / schema strategy, concurrency semantics, provider policy, architecture/topology. Investigate autonomously; implement only when intended binding semantics are explicitly defined by canonical authority and the current authorized task; stop before inventing undefined binding behaviour or resolving canonical conflicts by assumption. Independent ChatGPT review is for material milestones, RED decisions, and pre-acceptance / consequential promotion — not every conforming GREEN/AMBER implementation PR. Full alignment and session-close reporting. |
 | **R3** | `CONSEQUENTIAL` | Force push / history rewrite; production or destructive data operations; lifecycle or product acceptance; Founder UAT verdict; activating next IMPs; accepting IMPs; deployment/release that is not covered by an explicit Founder delivery authorization. Require explicit human authorization. Routine GREEN/AMBER PR merges may proceed autonomously when the task contract / Founder delivery authorization for an active locked slice explicitly permits them (after required quality gates). |
 
 ### Risk escalation
@@ -315,7 +315,9 @@ Undefined gaps produce `DECISION_REQUIRED` or `PRODUCT_DECISION_REQUIRED`. Archi
 not resolve `PRODUCT_DECISION_REQUIRED` by inventing product behaviour. A Product Definition must
 not silently override global architecture, security/financial/persistence authority, concurrency
 semantics, accepted STATE, or binding decisions. Stop affected work on conflict for human
-resolution. R2 still requires independent review before R3 promotion, merge, or acceptance.
+resolution. Independent ChatGPT review remains required before R3 promotion / acceptance and for
+material milestones or RED decisions; it is not a gate on every routine conforming GREEN/AMBER
+implementation PR merge under an explicit Founder delivery authorization.
 
 ## Anti-hallucination vocabulary
 

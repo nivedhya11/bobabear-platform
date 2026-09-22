@@ -17,6 +17,7 @@ import { APIError } from "better-auth";
 
 import {
   CUSTOMER_AUTH_PUBLIC_PATHS,
+  type CustomerAuthSendOtpChallengeRequired,
   type CustomerAuthSendOtpInvalidPhone,
   type CustomerAuthSendOtpRateLimited,
   type CustomerAuthSendOtpSuccess,
@@ -29,6 +30,7 @@ import {
 } from "../../../shared/customer-auth/contracts";
 import { normalizeIndianMobileNumber } from "../../../shared/customer-auth/phone";
 import type { Persistence } from "../../persistence";
+import { verifyTurnstileToken, type TurnstileConfig } from "../../security/turnstile";
 import { CustomerOtpProviderError } from "../errors";
 import type { CustomerPiiHashSecret } from "../pii";
 import {
@@ -40,6 +42,7 @@ import {
   consumeCustomerOtpRateLimits,
   CUSTOMER_OTP_RATE_LIMIT_RULES,
   hashCustomerOtpIpKey,
+  hashCustomerOtpPhoneIpKey,
   hashCustomerOtpPhoneKey,
   type CustomerOtpRateLimitScope,
 } from "../rate-limit";
@@ -87,6 +90,7 @@ export type CustomerAuthRouteDependencies = Readonly<{
   persistence: Persistence;
   otpProvider: CustomerOtpProvider;
   piiHashSecret: CustomerPiiHashSecret;
+  turnstile: TurnstileConfig;
   trustedOrigin: string;
   trustProxyHops: number;
   now: () => Date;
@@ -114,6 +118,44 @@ function resolveClientIp(
 ): string {
   const result = deriveClientIp(req.headers, req.socket.remoteAddress, trustProxyHops);
   return result.ok ? result.canonicalIp : UNKNOWN_CLIENT_IP_BUCKET;
+}
+
+function readOptionalTurnstileToken(raw: unknown): string | null {
+  if (typeof raw !== "string") return null;
+  const token = raw.trim();
+  return token.length > 0 ? token : null;
+}
+
+/**
+ * Fail-closed Turnstile enforcement when rate-limit escalation signals
+ * `challengeRequired`. Verifies with Cloudflare Siteverify + local redemption
+ * ledger inside a persistence transaction.
+ */
+async function enforceCustomerTurnstileChallenge(
+  deps: CustomerAuthRouteDependencies,
+  input: Readonly<{
+    challengeRequired: boolean;
+    turnstileToken: unknown;
+    remoteIp: string;
+    now: Date;
+  }>,
+): Promise<"ok" | "missing" | "failed"> {
+  if (!input.challengeRequired) return "ok";
+
+  const token = readOptionalTurnstileToken(input.turnstileToken);
+  if (!token) return "missing";
+
+  try {
+    const outcome = await deps.persistence.transaction((tx) =>
+      verifyTurnstileToken(
+        { config: deps.turnstile, redemptionTransaction: tx },
+        { token, remoteIp: input.remoteIp, now: input.now },
+      ),
+    );
+    return outcome.ok ? "ok" : "failed";
+  } catch {
+    return "failed";
+  }
 }
 
 function extractApiErrorCode(error: unknown): string | null {
@@ -176,7 +218,7 @@ async function handleSendOtp(
     };
   }
 
-  const bodyResult = await readJsonObjectBody(req, ["phoneNumber"]);
+  const bodyResult = await readJsonObjectBody(req, ["phoneNumber", "turnstileToken"]);
   if (!bodyResult.ok) {
     sendJson(res, { ok: false, code: "INVALID_REQUEST" }, { status: 400, requestId });
     return { operation, safeOutcomeCode: `BODY_${bodyResult.reason.toUpperCase()}`, httpStatus: 400 };
@@ -194,12 +236,19 @@ async function handleSendOtp(
   const now = deps.now();
   const phoneKeyHash = hashCustomerOtpPhoneKey(deps.piiHashSecret, phoneNumber);
   const ipKeyHash = hashCustomerOtpIpKey(deps.piiHashSecret, canonicalIp);
+  const phoneIpKeyHash = hashCustomerOtpPhoneIpKey(
+    deps.piiHashSecret,
+    phoneNumber,
+    canonicalIp,
+  );
 
-  const keyHashes: Record<CustomerOtpRateLimitScope, string> = {
+  const keyHashes: Partial<Record<CustomerOtpRateLimitScope, string>> = {
     otp_send_phone_60s: phoneKeyHash,
     otp_send_phone_1h: phoneKeyHash,
     otp_send_ip_10m: ipKeyHash,
-    otp_verify_ip_10m: ipKeyHash,
+    otp_send_phone_ip_10m: phoneIpKeyHash,
+    otp_abuse_phone_1d: phoneKeyHash,
+    otp_abuse_ip_1d: ipKeyHash,
   };
 
   let rateLimitOutcome;
@@ -210,6 +259,9 @@ async function handleSendOtp(
           CUSTOMER_OTP_RATE_LIMIT_RULES.otp_send_phone_60s,
           CUSTOMER_OTP_RATE_LIMIT_RULES.otp_send_phone_1h,
           CUSTOMER_OTP_RATE_LIMIT_RULES.otp_send_ip_10m,
+          CUSTOMER_OTP_RATE_LIMIT_RULES.otp_send_phone_ip_10m,
+          CUSTOMER_OTP_RATE_LIMIT_RULES.otp_abuse_phone_1d,
+          CUSTOMER_OTP_RATE_LIMIT_RULES.otp_abuse_ip_1d,
         ],
         keyHashes,
         now,
@@ -226,6 +278,7 @@ async function handleSendOtp(
       ok: false,
       code: "OTP_RATE_LIMITED",
       retryAfterSeconds: rateLimitOutcome.retryAfterSeconds,
+      ...(rateLimitOutcome.challengeRequired ? { challengeRequired: true } : {}),
     };
     sendJson(res, body, {
       status: 429,
@@ -238,6 +291,22 @@ async function handleSendOtp(
       httpStatus: 429,
       rateLimitScope: "otp_send",
     };
+  }
+
+  const challengeResult = await enforceCustomerTurnstileChallenge(deps, {
+    challengeRequired: rateLimitOutcome.challengeRequired,
+    turnstileToken: bodyResult.value.turnstileToken,
+    remoteIp: canonicalIp,
+    now,
+  });
+  if (challengeResult !== "ok") {
+    const body: CustomerAuthSendOtpChallengeRequired = {
+      ok: false,
+      code: "OTP_CHALLENGE_REQUIRED",
+      challengeRequired: true,
+    };
+    sendJson(res, body, { status: 403, requestId });
+    return { operation, safeOutcomeCode: "OTP_CHALLENGE_REQUIRED", httpStatus: 403 };
   }
 
   const generatedCode = generateNumericOtp(CUSTOMER_OTP_LENGTH);
@@ -303,7 +372,7 @@ async function handleVerifyOtp(
     };
   }
 
-  const bodyResult = await readJsonObjectBody(req, ["phoneNumber", "code"]);
+  const bodyResult = await readJsonObjectBody(req, ["phoneNumber", "code", "turnstileToken"]);
   if (!bodyResult.ok) {
     sendJson(res, { authenticated: false, code: "INVALID_REQUEST" }, { status: 400, requestId });
     return { operation, safeOutcomeCode: `BODY_${bodyResult.reason.toUpperCase()}`, httpStatus: 400 };
@@ -328,14 +397,30 @@ async function handleVerifyOtp(
 
   const canonicalIp = resolveClientIp(req, deps.trustProxyHops);
   const now = deps.now();
+  const phoneKeyHash = hashCustomerOtpPhoneKey(deps.piiHashSecret, phoneNumber);
   const ipKeyHash = hashCustomerOtpIpKey(deps.piiHashSecret, canonicalIp);
+  const phoneIpKeyHash = hashCustomerOtpPhoneIpKey(
+    deps.piiHashSecret,
+    phoneNumber,
+    canonicalIp,
+  );
 
   let rateLimitOutcome;
   try {
     rateLimitOutcome = await deps.persistence.transaction((tx) =>
       consumeCustomerOtpRateLimits(tx, {
-        rules: [CUSTOMER_OTP_RATE_LIMIT_RULES.otp_verify_ip_10m],
-        keyHashes: { otp_verify_ip_10m: ipKeyHash } as Record<CustomerOtpRateLimitScope, string>,
+        rules: [
+          CUSTOMER_OTP_RATE_LIMIT_RULES.otp_verify_ip_10m,
+          CUSTOMER_OTP_RATE_LIMIT_RULES.otp_verify_phone_ip_10m,
+          CUSTOMER_OTP_RATE_LIMIT_RULES.otp_abuse_phone_1d,
+          CUSTOMER_OTP_RATE_LIMIT_RULES.otp_abuse_ip_1d,
+        ],
+        keyHashes: {
+          otp_verify_ip_10m: ipKeyHash,
+          otp_verify_phone_ip_10m: phoneIpKeyHash,
+          otp_abuse_phone_1d: phoneKeyHash,
+          otp_abuse_ip_1d: ipKeyHash,
+        },
         now,
       }),
     );
@@ -353,6 +438,7 @@ async function handleVerifyOtp(
       authenticated: false,
       code: "OTP_RATE_LIMITED",
       retryAfterSeconds: rateLimitOutcome.retryAfterSeconds,
+      ...(rateLimitOutcome.challengeRequired ? { challengeRequired: true } : {}),
     };
     sendJson(res, body, {
       status: 429,
@@ -365,6 +451,22 @@ async function handleVerifyOtp(
       httpStatus: 429,
       rateLimitScope: "otp_verify",
     };
+  }
+
+  const challengeResult = await enforceCustomerTurnstileChallenge(deps, {
+    challengeRequired: rateLimitOutcome.challengeRequired,
+    turnstileToken: bodyResult.value.turnstileToken,
+    remoteIp: canonicalIp,
+    now,
+  });
+  if (challengeResult !== "ok") {
+    const body: CustomerAuthVerifyOtpFailure = {
+      authenticated: false,
+      code: "OTP_CHALLENGE_REQUIRED",
+      challengeRequired: true,
+    };
+    sendJson(res, body, { status: 403, requestId });
+    return { operation, safeOutcomeCode: "OTP_CHALLENGE_REQUIRED", httpStatus: 403 };
   }
 
   const requestHeaders = buildBetterAuthRequestHeaders(req.headers);

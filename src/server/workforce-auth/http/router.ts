@@ -1,11 +1,10 @@
 /**
- * Exact-path HTTP router for the workforce-auth service (IMP-010).
+ * Exact-path HTTP router for the workforce-auth service (IMP-010 / IMP-038).
  *
- * Only ten endpoints exist (eight public façade paths + two health checks).
- * Every other path is `404`; a known path with the wrong method is `405`
- * with an `Allow` header. Nothing in this module calls `console.*` — it
- * only returns safe, allowlisted outcome metadata for the service layer
- * (`../service.ts`) to log.
+ * Public façade paths + two health checks. Every other path is `404`; a known
+ * path with the wrong method is `405` with an `Allow` header. Nothing in this
+ * module calls `console.*` — it only returns safe, allowlisted outcome
+ * metadata for the service layer (`../service.ts`) to log.
  *
  * Never logs email, password, IP, TOTP, backup codes, tokens, cookies,
  * user IDs, or request bodies.
@@ -33,14 +32,28 @@ import {
   type WorkforceAuthSignInFailure,
   type WorkforceAuthSignInSuccess,
   type WorkforceAuthSignOutResponse,
+  type WorkforceAuthStepUpFailure,
+  type WorkforceAuthStepUpSuccess,
+  type WorkforceStepUpActionClass,
 } from "../../../shared/workforce-auth/contracts";
 import { normalizeWorkforceEmail } from "../../../shared/workforce-auth/email";
+import type { WorkforceAuthSecret } from "../../auth/shared/types";
 import type { Persistence } from "../../persistence";
 import {
   loadWorkforceLifecycleUser,
   resolveWorkforceSessionFromHeaders,
   type WorkforceAuthSessionAuthority,
 } from "../../auth/workforce/trusted-identity";
+import {
+  enforceCredentialSecurityStepUp,
+  extractWorkforceSessionTokenFromIncomingHeaders,
+  grantStepUpProof,
+  hashStepUpSessionToken,
+  isStepUpActionClass,
+  isStepUpError,
+  type StepUpGrantMethod,
+} from "../../security/step-up";
+import { verifyTurnstileToken, type TurnstileConfig } from "../../security/turnstile";
 import {
   isFullyAuthenticated,
   resolveWorkforceAuthLifecycle,
@@ -50,6 +63,7 @@ import { validateWorkforcePassword } from "../password-policy";
 import type { WorkforcePiiHashSecret } from "../pii";
 import {
   consumeWorkforceAuthRateLimits,
+  hashWorkforceAuthEmailIpKey,
   hashWorkforceAuthEmailKey,
   hashWorkforceAuthIpKey,
   WORKFORCE_AUTH_RATE_LIMIT_RULES,
@@ -137,6 +151,11 @@ export interface WorkforceAuthHandle extends WorkforceAuthSessionAuthority {
       headers: Headers;
       response: { success: boolean };
     }>;
+
+    verifyPassword(input: {
+      body: Readonly<{ password: string }>;
+      headers: Headers;
+    }): Promise<{ status: boolean }>;
   };
 
   $context: Promise<{
@@ -159,6 +178,9 @@ export type WorkforceAuthRouteDependencies = Readonly<{
   getAuth: () => Promise<WorkforceAuthHandle>;
   persistence: Persistence;
   piiHashSecret: WorkforcePiiHashSecret;
+  /** WORKFORCE_AUTH_SECRET — shared with ops for step-up session binding. */
+  stepUpSessionHashSecret: WorkforceAuthSecret;
+  turnstile: TurnstileConfig;
   trustedOrigin: string;
   trustProxyHops: number;
   now: () => Date;
@@ -186,6 +208,44 @@ const UNKNOWN_CLIENT_IP_BUCKET = "unknown";
 function resolveClientIp(req: IncomingMessage, trustProxyHops: number): string {
   const result = deriveClientIp(req.headers, req.socket.remoteAddress, trustProxyHops);
   return result.ok ? result.canonicalIp : UNKNOWN_CLIENT_IP_BUCKET;
+}
+
+function readOptionalTurnstileToken(raw: unknown): string | null {
+  if (typeof raw !== "string") return null;
+  const token = raw.trim();
+  return token.length > 0 ? token : null;
+}
+
+/**
+ * Fail-closed Turnstile enforcement when rate-limit escalation signals
+ * `challengeRequired`. Verifies with Cloudflare Siteverify + local redemption
+ * ledger inside a persistence transaction.
+ */
+async function enforceWorkforceTurnstileChallenge(
+  deps: WorkforceAuthRouteDependencies,
+  input: Readonly<{
+    challengeRequired: boolean;
+    turnstileToken: unknown;
+    remoteIp: string;
+    now: Date;
+  }>,
+): Promise<"ok" | "missing" | "failed"> {
+  if (!input.challengeRequired) return "ok";
+
+  const token = readOptionalTurnstileToken(input.turnstileToken);
+  if (!token) return "missing";
+
+  try {
+    const outcome = await deps.persistence.transaction((tx) =>
+      verifyTurnstileToken(
+        { config: deps.turnstile, redemptionTransaction: tx },
+        { token, remoteIp: input.remoteIp, now: input.now },
+      ),
+    );
+    return outcome.ok ? "ok" : "failed";
+  } catch {
+    return "failed";
+  }
 }
 
 function extractApiErrorCode(error: unknown): string | null {
@@ -286,6 +346,7 @@ function sessionBodyForLifecycle(
   return { authenticated: false };
 }
 
+
 async function handleSignIn(
   req: IncomingMessage,
   res: ServerResponse,
@@ -324,7 +385,7 @@ async function handleSignIn(
     };
   }
 
-  const bodyResult = await readJsonObjectBody(req, ["email", "password"]);
+  const bodyResult = await readJsonObjectBody(req, ["email", "password", "turnstileToken"]);
   if (!bodyResult.ok) {
     const body: WorkforceAuthSignInFailure = {
       authenticated: false,
@@ -350,10 +411,18 @@ async function handleSignIn(
   const now = deps.now();
   const emailKeyHash = hashWorkforceAuthEmailKey(deps.piiHashSecret, email);
   const ipKeyHash = hashWorkforceAuthIpKey(deps.piiHashSecret, canonicalIp);
+  const emailIpKeyHash = hashWorkforceAuthEmailIpKey(
+    deps.piiHashSecret,
+    email,
+    canonicalIp,
+  );
 
   const keyHashes: Partial<Record<WorkforceAuthRateLimitScope, string>> = {
     workforce_sign_in_email_15m: emailKeyHash,
     workforce_sign_in_ip_10m: ipKeyHash,
+    workforce_sign_in_email_ip_15m: emailIpKeyHash,
+    workforce_abuse_email_1d: emailKeyHash,
+    workforce_abuse_ip_1d: ipKeyHash,
   };
 
   let rateLimitOutcome;
@@ -363,6 +432,9 @@ async function handleSignIn(
         rules: [
           WORKFORCE_AUTH_RATE_LIMIT_RULES.workforce_sign_in_email_15m,
           WORKFORCE_AUTH_RATE_LIMIT_RULES.workforce_sign_in_ip_10m,
+          WORKFORCE_AUTH_RATE_LIMIT_RULES.workforce_sign_in_email_ip_15m,
+          WORKFORCE_AUTH_RATE_LIMIT_RULES.workforce_abuse_email_1d,
+          WORKFORCE_AUTH_RATE_LIMIT_RULES.workforce_abuse_ip_1d,
         ],
         keyHashes,
         now,
@@ -382,6 +454,7 @@ async function handleSignIn(
       authenticated: false,
       code: "RATE_LIMITED",
       retryAfterSeconds: rateLimitOutcome.retryAfterSeconds,
+      ...(rateLimitOutcome.challengeRequired ? { challengeRequired: true } : {}),
     };
     sendJson(res, body, {
       status: 429,
@@ -394,6 +467,22 @@ async function handleSignIn(
       httpStatus: 429,
       rateLimitScope: "workforce_sign_in",
     };
+  }
+
+  const challengeResult = await enforceWorkforceTurnstileChallenge(deps, {
+    challengeRequired: rateLimitOutcome.challengeRequired,
+    turnstileToken: bodyResult.value.turnstileToken,
+    remoteIp: canonicalIp,
+    now,
+  });
+  if (challengeResult !== "ok") {
+    const body: WorkforceAuthSignInFailure = {
+      authenticated: false,
+      code: "CHALLENGE_REQUIRED",
+      challengeRequired: true,
+    };
+    sendJson(res, body, { status: 403, requestId });
+    return { operation, safeOutcomeCode: "CHALLENGE_REQUIRED", httpStatus: 403 };
   }
 
   const requestHeaders = buildBetterAuthRequestHeaders(req.headers);
@@ -667,7 +756,11 @@ async function handleChangePassword(
     return { operation, safeOutcomeCode: "RATE_LIMIT_STORE_UNAVAILABLE", httpStatus: 503 };
   }
 
-  const bodyResult = await readJsonObjectBody(req, ["currentPassword", "newPassword"]);
+  const bodyResult = await readJsonObjectBody(req, [
+    "currentPassword",
+    "newPassword",
+    "stepUpProofId",
+  ]);
   if (!bodyResult.ok) {
     const body: WorkforceAuthChangePasswordFailure = {
       authenticated: false,
@@ -706,6 +799,28 @@ async function handleChangePassword(
     };
     sendJson(res, body, { status: 403, requestId });
     return { operation, safeOutcomeCode: "FORBIDDEN", httpStatus: 403 };
+  }
+
+  // CLASS_CREDENTIAL_SECURITY: required once MFA is established for voluntary
+  // password changes. Forced passwordChangeRequired onboarding uses the MFA
+  // challenge that just completed as recent-auth (TOTP step-up is redundant).
+  if (session.user.twoFactorEnabled === true && !session.user.passwordChangeRequired) {
+    const stepUp = await consumeCredentialSecurityStepUpForRequest(deps, req, {
+      proofId: bodyResult.value.stepUpProofId,
+      workforceUserId: session.user.id,
+    });
+    if (!stepUp.ok) {
+      const body: WorkforceAuthChangePasswordFailure = {
+        authenticated: false,
+        code: stepUp.code,
+      };
+      sendJson(res, body, { status: stepUp.httpStatus, requestId });
+      return {
+        operation,
+        safeOutcomeCode: stepUp.code,
+        httpStatus: stepUp.httpStatus,
+      };
+    }
   }
 
   try {
@@ -855,7 +970,7 @@ async function handleMfaEnroll(
     return { operation, safeOutcomeCode: "RATE_LIMIT_STORE_UNAVAILABLE", httpStatus: 503 };
   }
 
-  const bodyResult = await readJsonObjectBody(req, ["password"]);
+  const bodyResult = await readJsonObjectBody(req, ["password", "stepUpProofId"]);
   if (!bodyResult.ok || typeof bodyResult.value.password !== "string") {
     const body: WorkforceAuthMfaEnrollFailure = {
       authenticated: false,
@@ -880,6 +995,10 @@ async function handleMfaEnroll(
     sendJson(res, body, { status: 403, requestId });
     return { operation, safeOutcomeCode: "FORBIDDEN", httpStatus: 403 };
   }
+
+  // First MFA enrollment: this endpoint only runs when twoFactorEnabled is
+  // false, so a TOTP step-up proof cannot exist yet. Password in the body is
+  // the recent-auth gate (CLASS_CREDENTIAL_SECURITY for initial enroll).
 
   try {
     const { response } = await auth.api.enableTwoFactor({
@@ -971,7 +1090,7 @@ async function handleMfaVerifyEnrollment(
     return { operation, safeOutcomeCode: "RATE_LIMIT_STORE_UNAVAILABLE", httpStatus: 503 };
   }
 
-  const bodyResult = await readJsonObjectBody(req, ["code"]);
+  const bodyResult = await readJsonObjectBody(req, ["code", "stepUpProofId"]);
   if (!bodyResult.ok || typeof bodyResult.value.code !== "string") {
     const body: WorkforceAuthMfaVerifyEnrollmentFailure = {
       authenticated: false,
@@ -997,6 +1116,7 @@ async function handleMfaVerifyEnrollment(
     return { operation, safeOutcomeCode: "FORBIDDEN", httpStatus: 403 };
   }
 
+  // Completing first enrollment — step-up proofs require existing MFA.
   const userId = session.user.id;
 
   try {
@@ -1304,6 +1424,237 @@ async function handleSignOut(
   return { operation, safeOutcomeCode: "SIGNED_OUT", httpStatus: 200 };
 }
 
+/**
+ * Consume CLASS_CREDENTIAL_SECURITY proof for workforce-auth credential
+ * mutations. Fail-closed.
+ */
+async function consumeCredentialSecurityStepUpForRequest(
+  deps: WorkforceAuthRouteDependencies,
+  req: IncomingMessage,
+  input: Readonly<{ proofId: unknown; workforceUserId: string }>,
+): Promise<
+  | Readonly<{ ok: true }>
+  | Readonly<{
+      ok: false;
+      code: "STEP_UP_REQUIRED" | "STEP_UP_INVALID";
+      httpStatus: 401 | 403;
+    }>
+> {
+  const sessionToken = extractWorkforceSessionTokenFromIncomingHeaders(req.headers);
+  if (!sessionToken) {
+    return { ok: false, code: "STEP_UP_REQUIRED", httpStatus: 401 };
+  }
+  const sessionTokenHash = hashStepUpSessionToken(
+    deps.stepUpSessionHashSecret,
+    sessionToken,
+  );
+  const proofId =
+    typeof input.proofId === "string" && input.proofId.trim().length > 0
+      ? input.proofId.trim()
+      : null;
+  try {
+    await deps.persistence.transaction((tx) =>
+      enforceCredentialSecurityStepUp(tx, {
+        proofId,
+        sessionTokenHash,
+        now: deps.now(),
+        workforceUserId: input.workforceUserId,
+      }),
+    );
+    return { ok: true };
+  } catch (error) {
+    if (isStepUpError(error)) {
+      return {
+        ok: false,
+        code: error.code === "STEP_UP_REQUIRED" ? "STEP_UP_REQUIRED" : "STEP_UP_INVALID",
+        httpStatus: error.httpStatus,
+      };
+    }
+    return { ok: false, code: "STEP_UP_INVALID", httpStatus: 403 };
+  }
+}
+
+async function handleStepUp(
+  req: IncomingMessage,
+  res: ServerResponse,
+  deps: WorkforceAuthRouteDependencies,
+  requestId: string,
+  method: string,
+  url: URL,
+): Promise<WorkforceAuthRouteOutcome> {
+  const operation = "step_up";
+
+  if (method !== "POST") {
+    sendMethodNotAllowed(res, ["POST"], requestId);
+    return { operation, safeOutcomeCode: "METHOD_NOT_ALLOWED", httpStatus: 405 };
+  }
+
+  if (hasDisallowedQueryParams(url, QUERY_STRING_DISALLOWED_FIELDS)) {
+    const body: WorkforceAuthStepUpFailure = { ok: false, code: "INVALID_REQUEST" };
+    sendJson(res, body, { status: 400, requestId });
+    return { operation, safeOutcomeCode: "QUERY_STRING_REJECTED", httpStatus: 400 };
+  }
+
+  const originResult = checkTrustedOrigin(req.headers, deps.trustedOrigin);
+  if (!originResult.ok) {
+    const body: WorkforceAuthStepUpFailure = { ok: false, code: "INVALID_REQUEST" };
+    sendJson(res, body, { status: 403, requestId });
+    return {
+      operation,
+      safeOutcomeCode: `ORIGIN_${originResult.reason.toUpperCase()}`,
+      httpStatus: 403,
+    };
+  }
+
+  const rate = await consumeMfaRateLimit(deps, req);
+  if (!rate.ok && rate.kind === "limited") {
+    const body: WorkforceAuthStepUpFailure = {
+      ok: false,
+      code: "RATE_LIMITED",
+      retryAfterSeconds: rate.retryAfterSeconds,
+    };
+    sendJson(res, body, {
+      status: 429,
+      requestId,
+      retryAfterSeconds: rate.retryAfterSeconds,
+    });
+    return {
+      operation,
+      safeOutcomeCode: "RATE_LIMITED",
+      httpStatus: 429,
+      rateLimitScope: "workforce_mfa",
+    };
+  }
+  if (!rate.ok) {
+    const body: WorkforceAuthStepUpFailure = { ok: false, code: "AUTHENTICATION_FAILED" };
+    sendJson(res, body, { status: 503, requestId });
+    return { operation, safeOutcomeCode: "RATE_LIMIT_STORE_UNAVAILABLE", httpStatus: 503 };
+  }
+
+  const bodyResult = await readJsonObjectBody(req, ["actionClass", "code", "password"]);
+  if (!bodyResult.ok) {
+    const body: WorkforceAuthStepUpFailure = { ok: false, code: "INVALID_REQUEST" };
+    sendJson(res, body, { status: 400, requestId });
+    return { operation, safeOutcomeCode: "INVALID_REQUEST", httpStatus: 400 };
+  }
+
+  const actionClassRaw = bodyResult.value.actionClass;
+  if (!isStepUpActionClass(actionClassRaw)) {
+    const body: WorkforceAuthStepUpFailure = { ok: false, code: "INVALID_REQUEST" };
+    sendJson(res, body, { status: 400, requestId });
+    return { operation, safeOutcomeCode: "INVALID_ACTION_CLASS", httpStatus: 400 };
+  }
+  const actionClass = actionClassRaw as WorkforceStepUpActionClass;
+
+  const code =
+    typeof bodyResult.value.code === "string" ? bodyResult.value.code : undefined;
+  const password =
+    typeof bodyResult.value.password === "string" ? bodyResult.value.password : undefined;
+  if (!code && !password) {
+    const body: WorkforceAuthStepUpFailure = { ok: false, code: "INVALID_REQUEST" };
+    sendJson(res, body, { status: 400, requestId });
+    return { operation, safeOutcomeCode: "MISSING_CHALLENGE", httpStatus: 400 };
+  }
+
+  const requestHeaders = buildBetterAuthRequestHeaders(req.headers);
+  const auth = await deps.getAuth();
+  const session = await requireLimitedSession(auth, requestHeaders);
+  if (!session.ok) {
+    const body: WorkforceAuthStepUpFailure = { ok: false, code: "AUTHENTICATION_FAILED" };
+    sendJson(res, body, { status: 401, requestId });
+    return { operation, safeOutcomeCode: "UNAUTHENTICATED", httpStatus: 401 };
+  }
+
+  const sessionToken = extractWorkforceSessionTokenFromIncomingHeaders(req.headers);
+  if (!sessionToken) {
+    const body: WorkforceAuthStepUpFailure = { ok: false, code: "AUTHENTICATION_FAILED" };
+    sendJson(res, body, { status: 401, requestId });
+    return { operation, safeOutcomeCode: "SESSION_TOKEN_MISSING", httpStatus: 401 };
+  }
+
+  let grantMethod: StepUpGrantMethod;
+  if (password && code) {
+    grantMethod = "password_and_totp";
+  } else if (code) {
+    grantMethod = "totp";
+  } else {
+    grantMethod = "password";
+  }
+
+  try {
+    if (password) {
+      const verified = await auth.api.verifyPassword({
+        body: { password },
+        headers: requestHeaders,
+      });
+      if (!verified?.status) {
+        const body: WorkforceAuthStepUpFailure = { ok: false, code: "AUTHENTICATION_FAILED" };
+        sendJson(res, body, { status: 401, requestId });
+        return { operation, safeOutcomeCode: "PASSWORD_INVALID", httpStatus: 401 };
+      }
+    }
+
+    if (code) {
+      if (session.user.twoFactorEnabled !== true) {
+        const body: WorkforceAuthStepUpFailure = { ok: false, code: "FORBIDDEN" };
+        sendJson(res, body, { status: 403, requestId });
+        return { operation, safeOutcomeCode: "MFA_NOT_ENABLED", httpStatus: 403 };
+      }
+      await auth.api.verifyTOTP({
+        body: { code, trustDevice: false },
+        headers: requestHeaders,
+        returnHeaders: true,
+      });
+    }
+  } catch (error) {
+    const mfaMapped = mapMfaError(error);
+    if (mfaMapped) {
+      const body: WorkforceAuthStepUpFailure = {
+        ok: false,
+        code: mfaMapped.code === "MFA_LOCKED" ? "MFA_LOCKED" : "MFA_INVALID_CODE",
+      };
+      sendJson(res, body, { status: mfaMapped.httpStatus, requestId });
+      return {
+        operation,
+        safeOutcomeCode: mfaMapped.code,
+        httpStatus: mfaMapped.httpStatus,
+      };
+    }
+    const body: WorkforceAuthStepUpFailure = { ok: false, code: "AUTHENTICATION_FAILED" };
+    sendJson(res, body, { status: 401, requestId });
+    return { operation, safeOutcomeCode: "AUTHENTICATION_FAILED", httpStatus: 401 };
+  }
+
+  const sessionTokenHash = hashStepUpSessionToken(
+    deps.stepUpSessionHashSecret,
+    sessionToken,
+  );
+
+  try {
+    const granted = await deps.persistence.transaction((tx) =>
+      grantStepUpProof(tx, {
+        sessionTokenHash,
+        workforceUserId: session.user.id,
+        actionClass,
+        grantMethod,
+        now: deps.now(),
+      }),
+    );
+    const body: WorkforceAuthStepUpSuccess = {
+      ok: true,
+      proofId: granted.proofId,
+      expiresAt: granted.expiresAt.toISOString(),
+      actionClass,
+    };
+    sendJson(res, body, { status: 200, requestId });
+    return { operation, safeOutcomeCode: "STEP_UP_GRANTED", httpStatus: 200 };
+  } catch {
+    const body: WorkforceAuthStepUpFailure = { ok: false, code: "STEP_UP_DENIED" };
+    sendJson(res, body, { status: 403, requestId });
+    return { operation, safeOutcomeCode: "STEP_UP_DENIED", httpStatus: 403 };
+  }
+}
+
 function handleHealthLive(
   res: ServerResponse,
   requestId: string,
@@ -1381,6 +1732,9 @@ export async function routeWorkforceAuthRequest(
   }
   if (pathname === WORKFORCE_AUTH_PUBLIC_PATHS.mfaVerifyBackupCode) {
     return handleMfaVerify(req, res, deps, requestId, method, url, "backup");
+  }
+  if (pathname === WORKFORCE_AUTH_PUBLIC_PATHS.stepUp) {
+    return handleStepUp(req, res, deps, requestId, method, url);
   }
   if (pathname === WORKFORCE_AUTH_PUBLIC_PATHS.session) {
     return handleSession(req, res, deps, requestId, method);

@@ -11,6 +11,7 @@ import { evaluateReadiness } from "../../../platform/observability/health";
 import type { WorkerHealthReporter } from "../../../platform/observability/worker-health";
 
 import type { WorkforceAuthRuntime } from "../../auth/workforce";
+import type { WorkforceAuthSecret } from "../../auth/shared/types";
 import {
   acceptOrder,
   cancelOrder,
@@ -66,6 +67,7 @@ export type OperationsRouteDependencies = Readonly<{
   runtime: WorkforceAuthRuntime;
   persistence: Persistence;
   trustedOrigin: string;
+  stepUpSessionHashSecret: WorkforceAuthSecret;
   startedAt?: Date;
   serviceName?: string;
   workers?: readonly WorkerHealthReporter[];

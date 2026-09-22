@@ -24,6 +24,7 @@ async function start() {
       runtime: {} as never,
       persistence: {} as never,
       trustedOrigin: "https://admin.example.test",
+      stepUpSessionHashSecret: "workforce-test-step-up-secret-32chars-xx" as never,
     }, "admin-test-request");
   });
   servers.push(server);

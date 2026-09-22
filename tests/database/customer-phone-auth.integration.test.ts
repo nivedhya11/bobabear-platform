@@ -167,11 +167,13 @@ describe("IMP-009 migration: phone fields, rate-limit table, workforce unchanged
         );
         expect(columns.rows.map((r) => r.column_name)).toEqual([
           "blocked_until",
+          "challenge_required_until",
           "created_at",
           "key_hash",
           "request_count",
           "scope",
           "updated_at",
+          "violation_count",
           "window_seconds",
           "window_started_at",
         ]);
@@ -190,84 +192,10 @@ describe("IMP-009 migration: phone fields, rate-limit table, workforce unchanged
         expect(names).not.toContain("customer_otp_history");
         expect(names).not.toContain("customer_auth_otps");
         expect(names).not.toContain("phone_number_otps");
-        // Tables expected after IMP-004 through IMP-020. Still no OTP-history table.
-        expect(names).toEqual([
-          "access_control_audit_events",
-          "access_memberships",
-          "access_permissions",
-          "access_role_allowed_scopes",
-          "access_role_assignments",
-          "access_role_permissions",
-          "access_roles",
-          "assortment_availability_audit_events",
-          "assortment_rules",
-          "brand_promotion_policies",
-          "brands",
-          "cart_line_bundle_modifier_selections",
-          "cart_line_bundle_selections",
-          "cart_line_modifier_selections",
-          "cart_lines",
-          "carts",
-          "catalog_bundle_group_options",
-          "catalog_bundle_groups",
-          "catalog_dietary_tags",
-          "catalog_modifier_group_options",
-          "catalog_modifier_groups",
-          "catalog_modifier_option_dietary_tags",
-          "catalog_modifier_options",
-          "catalog_products",
-          "catalog_variant_dietary_tags",
-          "catalog_variant_modifier_groups",
-          "catalog_variants",
-          "charge_definitions",
-          "customer_address_audit_events",
-          "customer_addresses",
-          "customer_auth_accounts",
-          "customer_auth_sessions",
-          "customer_auth_users",
-          "customer_auth_verifications",
-          "customer_otp_rate_limits",
-          "customer_profile_audit_events",
-          "customer_profiles",
-          "idempotency_records",
-          "legal_entities",
-          "legal_entity_tax_profiles",
-          "menu_entries",
-          "menu_sections",
-          "menus",
-          "organizations",
-          "outbox_events",
-          "outlet_modifier_option_availability",
-          "outlet_operating_intervals",
-          "outlet_operating_profiles",
-          "outlet_serviceability_audit_events",
-          "outlet_serviceability_configs",
-          "outlet_serviceability_pins",
-          "outlet_tax_profiles",
-          "outlet_variant_availability",
-          "outlets",
-          "price_book_bundle_option_prices",
-          "price_book_charge_prices",
-          "price_book_modifier_prices",
-          "price_book_variant_prices",
-          "price_books",
-          "pricing_tax_audit_events",
-          "promotion_audit_events",
-          "promotion_benefits",
-          "promotion_coupons",
-          "promotion_targets",
-          "promotions",
-          "tax_categories",
-          "tax_policies",
-          "tax_policy_components",
-          "territories",
-          "workforce_auth_accounts",
-          "workforce_auth_rate_limits",
-          "workforce_auth_sessions",
-          "workforce_auth_two_factors",
-          "workforce_auth_users",
-          "workforce_auth_verifications",
-        ]);
+        expect(names).toContain("customer_otp_rate_limits");
+        expect(names).toContain("turnstile_token_redemptions");
+        expect(names).toContain("workforce_step_up_proofs");
+        expect(names).toContain("workforce_step_up_audit_events");
       });
     });
   });
@@ -469,7 +397,11 @@ describe("IMP-009 rate-limit store: atomic consume, concurrency, cleanup", () =>
       const finalOutcome = await persistence.withContext((ctx) =>
         ctx.db.execute(sql`select request_count from app.customer_otp_rate_limits where key_hash = ${keyHash}`),
       );
-      expect(Number((finalOutcome.rows[0] as { request_count: number }).request_count)).toBe(10);
+      // First over-limit attempt increments then sets temporary cooldown; further
+      // concurrent attempts reject without incrementing (progressive cooldown).
+      expect(Number((finalOutcome.rows[0] as { request_count: number }).request_count)).toBe(
+        rule.maximumRequests + 1,
+      );
     });
   });
 

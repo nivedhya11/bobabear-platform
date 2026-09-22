@@ -211,6 +211,16 @@
       "tag": "0041_exotic_smasher",
       "path": "drizzle/0041_exotic_smasher.sql",
       "sha256": "5006acfa1679c9b9920d15142dfff6249b1a54dd4ce58efb1504a8cd77e66dd6"
+    },
+    {
+      "tag": "0042_imp038_step_up",
+      "path": "drizzle/0042_imp038_step_up.sql",
+      "sha256": "d4caee948fe19ca95981049c1cd93859250e3d429d204f04dec588661f59ac2a"
+    },
+    {
+      "tag": "0043_imp038_auth_abuse_turnstile",
+      "path": "drizzle/0043_imp038_auth_abuse_turnstile.sql",
+      "sha256": "db1ea44024b21893fe68fcf461f28190d8be15af03a28775325c01130f6687ac"
     }
   ]
 }

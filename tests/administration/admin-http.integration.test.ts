@@ -138,6 +138,7 @@ describe("IMP-035 Administration HTTP", () => {
             runtime,
             persistence,
             trustedOrigin: workforceAuthConfig().workforce.baseURL.origin,
+            stepUpSessionHashSecret: workforceAuthConfig().workforce.secret,
           },
           "admin-http-request",
         );

@@ -1,9 +1,10 @@
 /**
- * Durable workforce-auth rate-limit store (IMP-010).
+ * Durable workforce-auth rate-limit store (IMP-010 / IMP-038).
  *
  * Atomic PostgreSQL upserts via an application-role transaction context.
  * Never acquires a pool, never uses migration credentials, never stores
- * raw email or IP values.
+ * raw email or IP values. Progressive cooldown is temporary only —
+ * permanent attacker-triggered lockout is forbidden.
  */
 import "server-only";
 
@@ -17,6 +18,11 @@ import type {
 } from "../../persistence/types";
 import { WorkforceAuthServiceError } from "../errors";
 import {
+  escalateProgressiveCooldown,
+  retryAfterSecondsFrom,
+} from "./progressive";
+import {
+  WORKFORCE_AUTH_PROGRESSIVE_COOLDOWN_LADDER_SECONDS,
   WORKFORCE_AUTH_RATE_LIMIT_CLEANUP_MAX,
   WORKFORCE_AUTH_RATE_LIMIT_RULES,
   type WorkforceAuthRateLimitOutcome,
@@ -69,16 +75,21 @@ function assertKeyHash(keyHash: string): void {
   }
 }
 
-interface ConsumeRow extends Record<string, unknown> {
-  request_count: number;
+interface ExistingRow extends Record<string, unknown> {
+  scope: string;
+  key_hash: string;
   window_started_at: Date;
   window_seconds: number;
-  maximum_requests: number;
+  request_count: number;
+  blocked_until: Date | null;
+  violation_count: number;
+  challenge_required_until: Date | null;
 }
 
 /**
  * Atomically consume one request against a single durable rate-limit rule.
- * Always records the attempt (increments) even when the outcome is limited.
+ * Always records the attempt (increments) even when the outcome is limited,
+ * except when already inside an active temporary cooldown.
  */
 export async function consumeWorkforceAuthRateLimit(
   transactionContext: PersistenceTransactionContext,
@@ -103,94 +114,120 @@ export async function consumeWorkforceAuthRateLimit(
   const { rule, keyHash, now } = input;
   const t = workforceAuthRateLimitsTable;
 
-  const rows = await transactionContext.db.execute<ConsumeRow>(sql`
-    with upserted as (
-      insert into ${t} (
-        scope,
-        key_hash,
-        window_started_at,
-        window_seconds,
-        request_count,
-        blocked_until,
-        created_at,
-        updated_at
-      ) values (
-        ${rule.scope},
-        ${keyHash},
-        ${now},
-        ${rule.windowSeconds},
-        1,
-        null,
-        ${now},
-        ${now}
-      )
-      on conflict (scope, key_hash) do update set
-        window_started_at = case
-          when ${t.windowStartedAt} + make_interval(secs => ${t.windowSeconds}) <= excluded.window_started_at
-            then excluded.window_started_at
-          else ${t.windowStartedAt}
-        end,
-        window_seconds = excluded.window_seconds,
-        request_count = case
-          when ${t.windowStartedAt} + make_interval(secs => ${t.windowSeconds}) <= excluded.window_started_at
-            then 1
-          else ${t.requestCount} + 1
-        end,
-        blocked_until = case
-          when ${t.windowStartedAt} + make_interval(secs => ${t.windowSeconds}) <= excluded.window_started_at
-            then null
-          when ${t.requestCount} + 1 > ${rule.maximumRequests}
-            then ${t.windowStartedAt} + make_interval(secs => ${t.windowSeconds})
-          else ${t.blockedUntil}
-        end,
-        updated_at = excluded.updated_at
-      returning
-        ${t.requestCount} as request_count,
-        ${t.windowStartedAt} as window_started_at,
-        ${t.windowSeconds} as window_seconds
-    )
+  const existingRows = await transactionContext.db.execute<ExistingRow>(sql`
     select
-      request_count,
+      scope,
+      key_hash,
       window_started_at,
       window_seconds,
-      ${rule.maximumRequests}::integer as maximum_requests
-    from upserted
+      request_count,
+      blocked_until,
+      violation_count,
+      challenge_required_until
+    from ${t}
+    where scope = ${rule.scope}
+      and key_hash = ${keyHash}
+    for update
   `);
 
-  const row = rows.rows[0];
-  if (!row) {
-    throw new WorkforceAuthServiceError({
-      message: "Workforce auth rate-limit consume returned no row.",
-      code: "WORKFORCE_AUTH_RATE_LIMIT_CONSUME_FAILED",
-      httpStatus: 500,
-    });
+  const existing = existingRows.rows[0] ?? null;
+
+  if (existing?.blocked_until) {
+    const blockedUntil = new Date(existing.blocked_until);
+    if (blockedUntil.getTime() > now.getTime()) {
+      const challengeUntil = existing.challenge_required_until
+        ? new Date(existing.challenge_required_until)
+        : null;
+      return {
+        outcome: "limited",
+        retryAfterSeconds: retryAfterSecondsFrom(blockedUntil, now),
+        challengeRequired: challengeUntil !== null && challengeUntil.getTime() > now.getTime(),
+      };
+    }
   }
 
-  const requestCount = Number(row.request_count);
-  const windowStartedAt = new Date(row.window_started_at);
-  const windowSeconds = Number(row.window_seconds);
-  const maximumRequests = Number(row.maximum_requests);
+  const windowExpired =
+    !existing ||
+    new Date(existing.window_started_at).getTime() + Number(existing.window_seconds) * 1000 <=
+      now.getTime();
 
-  if (requestCount > maximumRequests) {
-    const windowEndsAtMs = windowStartedAt.getTime() + windowSeconds * 1000;
-    const retryAfterSeconds = Math.max(
-      1,
-      Math.ceil((windowEndsAtMs - now.getTime()) / 1000),
-    );
-    return { outcome: "limited", retryAfterSeconds };
+  const windowStartedAt = windowExpired ? now : new Date(existing!.window_started_at);
+  const requestCount = windowExpired ? 1 : Number(existing!.request_count) + 1;
+  let violationCount = windowExpired ? 0 : Number(existing!.violation_count ?? 0);
+  let blockedUntil: Date | null = null;
+  let challengeRequiredUntil: Date | null =
+    !windowExpired && existing?.challenge_required_until
+      ? new Date(existing.challenge_required_until)
+      : null;
+
+  if (challengeRequiredUntil && challengeRequiredUntil.getTime() <= now.getTime()) {
+    challengeRequiredUntil = null;
+  }
+
+  const limited = requestCount > rule.maximumRequests;
+  if (limited) {
+    const windowEndsAt = new Date(windowStartedAt.getTime() + rule.windowSeconds * 1000);
+    const escalated = escalateProgressiveCooldown({
+      ladderSeconds: WORKFORCE_AUTH_PROGRESSIVE_COOLDOWN_LADDER_SECONDS,
+      previousViolationCount: violationCount,
+      now,
+      windowEndsAt,
+    });
+    violationCount = escalated.violationCount;
+    blockedUntil = escalated.blockedUntil;
+    challengeRequiredUntil = escalated.challengeRequiredUntil;
+  }
+
+  await transactionContext.db.execute(sql`
+    insert into ${t} (
+      scope,
+      key_hash,
+      window_started_at,
+      window_seconds,
+      request_count,
+      blocked_until,
+      violation_count,
+      challenge_required_until,
+      created_at,
+      updated_at
+    ) values (
+      ${rule.scope},
+      ${keyHash},
+      ${windowStartedAt},
+      ${rule.windowSeconds},
+      ${requestCount},
+      ${blockedUntil},
+      ${violationCount},
+      ${challengeRequiredUntil},
+      ${now},
+      ${now}
+    )
+    on conflict (scope, key_hash) do update set
+      window_started_at = excluded.window_started_at,
+      window_seconds = excluded.window_seconds,
+      request_count = excluded.request_count,
+      blocked_until = excluded.blocked_until,
+      violation_count = excluded.violation_count,
+      challenge_required_until = excluded.challenge_required_until,
+      updated_at = excluded.updated_at
+  `);
+
+  if (limited && blockedUntil) {
+    return {
+      outcome: "limited",
+      retryAfterSeconds: retryAfterSecondsFrom(blockedUntil, now),
+      challengeRequired: true,
+    };
   }
 
   return {
     outcome: "allowed",
-    remaining: Math.max(0, maximumRequests - requestCount),
+    remaining: Math.max(0, rule.maximumRequests - requestCount),
+    challengeRequired:
+      challengeRequiredUntil !== null && challengeRequiredUntil.getTime() > now.getTime(),
   };
 }
 
-/**
- * Consume multiple rate-limit rules in one transaction. Every applicable
- * counter records the attempt; the returned retry interval is the maximum
- * among limited outcomes.
- */
 export async function consumeWorkforceAuthRateLimits(
   transactionContext: PersistenceTransactionContext,
   input: Readonly<{
@@ -201,6 +238,7 @@ export async function consumeWorkforceAuthRateLimits(
 ): Promise<WorkforceAuthRateLimitOutcome> {
   let limitedRetryAfter = 0;
   let allowedRemaining = Number.POSITIVE_INFINITY;
+  let challengeRequired = false;
 
   for (const rule of input.rules) {
     const keyHash = input.keyHashes[rule.scope];
@@ -216,6 +254,7 @@ export async function consumeWorkforceAuthRateLimits(
       keyHash,
       now: input.now,
     });
+    challengeRequired = challengeRequired || outcome.challengeRequired;
     if (outcome.outcome === "limited") {
       limitedRetryAfter = Math.max(limitedRetryAfter, outcome.retryAfterSeconds);
     } else {
@@ -224,13 +263,13 @@ export async function consumeWorkforceAuthRateLimits(
   }
 
   if (limitedRetryAfter > 0) {
-    return { outcome: "limited", retryAfterSeconds: limitedRetryAfter };
+    return { outcome: "limited", retryAfterSeconds: limitedRetryAfter, challengeRequired };
   }
 
   return {
     outcome: "allowed",
-    remaining:
-      allowedRemaining === Number.POSITIVE_INFINITY ? 0 : allowedRemaining,
+    remaining: allowedRemaining === Number.POSITIVE_INFINITY ? 0 : allowedRemaining,
+    challengeRequired,
   };
 }
 
@@ -255,6 +294,8 @@ export async function deleteExpiredWorkforceAuthRateLimits(
       select scope, key_hash
       from ${t}
       where window_started_at + make_interval(secs => window_seconds) < ${cutoff}
+        and (blocked_until is null or blocked_until < ${cutoff})
+        and (challenge_required_until is null or challenge_required_until < ${cutoff})
       order by window_started_at asc, scope asc, key_hash asc
       limit ${limit}
     )

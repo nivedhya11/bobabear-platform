@@ -6,7 +6,11 @@ import { describe, expect, it } from "vitest";
 
 import type { NormalizedWorkforceEmail } from "../../../shared/workforce-auth/email";
 import type { WorkforcePiiHashSecret } from "../pii";
-import { hashWorkforceAuthEmailKey, hashWorkforceAuthIpKey } from "./hashing";
+import {
+  hashWorkforceAuthEmailIpKey,
+  hashWorkforceAuthEmailKey,
+  hashWorkforceAuthIpKey,
+} from "./hashing";
 
 const EMAIL_A = "ops@example.test" as NormalizedWorkforceEmail;
 const EMAIL_B = "kitchen@example.test" as NormalizedWorkforceEmail;
@@ -70,5 +74,23 @@ describe("hashWorkforceAuthIpKey", () => {
 
   it("never contains the raw IP address", () => {
     expect(hashWorkforceAuthIpKey(SECRET_A, IP_A)).not.toContain(IP_A);
+  });
+});
+
+describe("hashWorkforceAuthEmailIpKey", () => {
+  it("returns a lowercase 64-character hex digest", () => {
+    expect(hashWorkforceAuthEmailIpKey(SECRET_A, EMAIL_A, IP_A)).toMatch(HEX64_PATTERN);
+  });
+
+  it("differs from email-only and ip-only hashes", () => {
+    const combined = hashWorkforceAuthEmailIpKey(SECRET_A, EMAIL_A, IP_A);
+    expect(combined).not.toBe(hashWorkforceAuthEmailKey(SECRET_A, EMAIL_A));
+    expect(combined).not.toBe(hashWorkforceAuthIpKey(SECRET_A, IP_A));
+  });
+
+  it("never contains the raw email or IP", () => {
+    const hash = hashWorkforceAuthEmailIpKey(SECRET_A, EMAIL_A, IP_A);
+    expect(hash).not.toContain("ops");
+    expect(hash).not.toContain(IP_A);
   });
 });

@@ -164,6 +164,7 @@ describe("IMP-036F F5 Delivery tariff Admin HTTP", () => {
             runtime,
             persistence,
             trustedOrigin: workforceAuthConfig().workforce.baseURL.origin,
+            stepUpSessionHashSecret: workforceAuthConfig().workforce.secret,
           },
           "tariff-admin-http-request",
         );

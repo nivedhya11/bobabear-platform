@@ -274,17 +274,29 @@ CMD ["node", "--conditions=react-server", "dist-operations/server/operations/mai
 # db-check / db-check-migration Compose services.
 FROM ${NGINX_IMAGE} AS web-runtime
 ARG BOBA_BUILD_SHA
+# Same public GA build-arg as `builder`. When non-empty, install the GA-on
+# CSP variant so Analytics hosts are trusted only when GA is enabled
+# (IMP-038 §8.2). Default committed file omits GA hosts.
+ARG NEXT_PUBLIC_GA_MEASUREMENT_ID=""
 LABEL org.opencontainers.image.revision=${BOBA_BUILD_SHA}
 
 RUN rm -f /etc/nginx/conf.d/default.conf
 COPY docker/nginx/nginx.conf /etc/nginx/nginx.conf
 COPY docker/nginx/cloudflare-real-ip.conf /etc/nginx/boba/cloudflare-real-ip.conf
 COPY docker/nginx/security-headers.conf /etc/nginx/boba/security-headers.conf
+COPY docker/nginx/security-headers.ga.conf /tmp/security-headers.ga.conf
 # Portable runtime DNS: official image entrypoint runs *.sh under
 # /docker-entrypoint.d/ before nginx; this script writes
 # /tmp/boba-nginx-resolver.conf from the container's /etc/resolv.conf.
 COPY docker/nginx/40-boba-runtime-resolver.sh /docker-entrypoint.d/40-boba-runtime-resolver.sh
 COPY --from=builder /app/out /usr/share/nginx/html
+RUN if [ -n "${NEXT_PUBLIC_GA_MEASUREMENT_ID}" ]; then \
+      cp /tmp/security-headers.ga.conf /etc/nginx/boba/security-headers.conf \
+      && grep -q googletagmanager /etc/nginx/boba/security-headers.conf; \
+    else \
+      ! grep -q googletagmanager /etc/nginx/boba/security-headers.conf; \
+    fi \
+  && rm -f /tmp/security-headers.ga.conf
 
 # The image's built-in "nginx" user (uid 101) already owns
 # /var/cache/nginx, /var/log/nginx, and /var/run; the html root is the only

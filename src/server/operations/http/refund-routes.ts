@@ -8,15 +8,26 @@ import "server-only";
 import type { IncomingMessage } from "node:http";
 
 import type { WorkforceAuthRuntime } from "../../auth/workforce";
+import type { WorkforceAuthSecret } from "../../auth/shared/types";
 import type { Persistence } from "../../persistence";
 import { getOrderRefundSupport, reserveOrderRefund } from "../../refund";
 import { resolveOperationsWorkforcePrincipal } from "./auth";
 import { readOperationsJsonObjectBody } from "./body";
 import { mapRefundOperationsError } from "./refund-error-map";
+import {
+  consumeFinancialReversalStepUpForOpsRequest,
+  isStepUpError,
+} from "./step-up";
 
 export type RefundRoute =
   | Readonly<{ kind: "list_refunds"; orderId: string }>
   | Readonly<{ kind: "create_refund"; orderId: string }>;
+
+export type RefundRouteDependencies = Readonly<{
+  runtime: WorkforceAuthRuntime;
+  persistence: Persistence;
+  stepUpSessionHashSecret: WorkforceAuthSecret;
+}>;
 
 function serializeBigInt(value: bigint): string {
   return value.toString(10);
@@ -93,7 +104,7 @@ export function classifyRefundRoute(pathname: string): RefundRoute | null {
 export async function handleRefundRoute(
   req: IncomingMessage,
   route: RefundRoute,
-  deps: Readonly<{ runtime: WorkforceAuthRuntime; persistence: Persistence }>,
+  deps: RefundRouteDependencies,
   requestId: string,
 ): Promise<{ status: number; body: Record<string, unknown>; operation: string; code: string }> {
   const method = (req.method ?? "GET").toUpperCase();
@@ -140,7 +151,7 @@ export async function handleRefundRoute(
 async function handleCreateRefund(
   req: IncomingMessage,
   orderId: string,
-  deps: Readonly<{ runtime: WorkforceAuthRuntime; persistence: Persistence }>,
+  deps: RefundRouteDependencies,
   requestId: string,
 ): Promise<{ status: number; body: Record<string, unknown>; operation: string; code: string }> {
   const operation = "create_refund";
@@ -155,6 +166,23 @@ async function handleCreateRefund(
         body: { ok: false, code: "REFUND_INVALID_INPUT", requestId },
       };
     }
+    if (!principal) {
+      return {
+        status: 401,
+        operation,
+        code: "WORKFORCE_AUTH_REQUIRED",
+        body: { ok: false, code: "WORKFORCE_AUTH_REQUIRED", requestId },
+      };
+    }
+    await consumeFinancialReversalStepUpForOpsRequest(
+      {
+        persistence: deps.persistence,
+        stepUpSessionHashSecret: deps.stepUpSessionHashSecret,
+      },
+      req.headers,
+      body.value,
+      principal.workforceUserId,
+    );
     const result = await reserveOrderRefund(deps.persistence, principal, {
       ...body.value,
       orderId,
@@ -171,6 +199,14 @@ async function handleCreateRefund(
       },
     };
   } catch (error) {
+    if (isStepUpError(error)) {
+      return {
+        status: error.httpStatus,
+        operation,
+        code: error.code,
+        body: { ok: false, code: error.code, requestId },
+      };
+    }
     const mapped = mapRefundOperationsError(error, requestId);
     return {
       status: mapped.status,

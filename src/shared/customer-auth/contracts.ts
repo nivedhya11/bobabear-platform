@@ -15,23 +15,35 @@ export const CUSTOMER_AUTH_PUBLIC_PATHS = Object.freeze({
 
 export type CustomerAuthSendOtpRequest = Readonly<{
   phoneNumber: string;
+  /** Cloudflare Turnstile token when challengeRequired was signaled. */
+  turnstileToken?: string;
 }>;
 
 export type CustomerAuthVerifyOtpRequest = Readonly<{
   phoneNumber: string;
   code: string;
+  /** Cloudflare Turnstile token when challengeRequired was signaled. */
+  turnstileToken?: string;
 }>;
 
 export type CustomerAuthSendOtpSuccess = Readonly<{
   ok: true;
   code: "OTP_REQUEST_ACCEPTED";
   retryAfterSeconds: number;
+  challengeRequired?: boolean;
 }>;
 
 export type CustomerAuthSendOtpRateLimited = Readonly<{
   ok: false;
   code: "OTP_RATE_LIMITED";
   retryAfterSeconds: number;
+  challengeRequired?: boolean;
+}>;
+
+export type CustomerAuthSendOtpChallengeRequired = Readonly<{
+  ok: false;
+  code: "OTP_CHALLENGE_REQUIRED";
+  challengeRequired: true;
 }>;
 
 export type CustomerAuthSendOtpUnavailable = Readonly<{
@@ -47,6 +59,7 @@ export type CustomerAuthSendOtpInvalidPhone = Readonly<{
 export type CustomerAuthSendOtpResponse =
   | CustomerAuthSendOtpSuccess
   | CustomerAuthSendOtpRateLimited
+  | CustomerAuthSendOtpChallengeRequired
   | CustomerAuthSendOtpUnavailable
   | CustomerAuthSendOtpInvalidPhone;
 
@@ -60,10 +73,12 @@ export type CustomerAuthVerifyOtpFailure = Readonly<{
     | "OTP_INVALID_OR_EXPIRED"
     | "OTP_ATTEMPTS_EXHAUSTED"
     | "OTP_RATE_LIMITED"
+    | "OTP_CHALLENGE_REQUIRED"
     | "OTP_DELIVERY_UNAVAILABLE"
     | "INVALID_PHONE_NUMBER"
     | "INVALID_REQUEST";
   retryAfterSeconds?: number;
+  challengeRequired?: boolean;
 }>;
 
 export type CustomerAuthVerifyOtpResponse =
