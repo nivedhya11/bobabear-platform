@@ -7,9 +7,9 @@
   "architectureLock": "ARCHITECTURE_LOCKED",
   "architectureFit": "PASS",
   "architectureFitResult": "PASS",
-  "implementationAuthorized": false,
-  "implementationStarted": false,
-  "implementation": "NOT_AUTHORIZED / NOT_STARTED",
+  "implementationAuthorized": true,
+  "implementationStarted": true,
+  "implementation": "AUTHORIZED / STARTED",
   "impAccepted": false,
   "founderUatRequired": true,
   "schemaChangeRequired": true,
@@ -35,8 +35,9 @@ Independent (ChatGPT) Architecture Fit review is **PASS** (reviewed technical ca
 `3b03164d6581c5a98a893c24e92eaddece004e90` / tree `5bb499fa84a5bf02682b30518f2bf898ddb23540`; review
 `5279884548`). The later review-status reconciliation commit is **not** the independently
 reviewed technical candidate and is **not** the Fit-evaluated artifact. Implementation is
-**NOT AUTHORIZED** and **NOT STARTED**. This lock does **not** accept IMP-038, authorize
-implementation, activate IMP-039, or claim DPDP / CERT-In / PCI / OWASP certification compliance.
+**AUTHORIZED** and **STARTED** under Founder delivery authorization
+(`FOUNDER_IMP038_IMPLEMENTATION_AUTHORIZATION: CURSOR_SESSION_MANDATE`). This does **not** accept
+IMP-038, activate IMP-039, or claim DPDP / CERT-In / PCI / OWASP certification compliance.
 
 ```text
 ARCHITECTURE_FIT: PASS
@@ -48,10 +49,11 @@ INDEPENDENT_ARCHITECTURE_FIT_REVIEW = PASS
 INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_HEAD = 3b03164d6581c5a98a893c24e92eaddece004e90
 INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_TREE = 5bb499fa84a5bf02682b30518f2bf898ddb23540
 INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID = 5279884548
-IMPLEMENTATION_AUTHORIZED: NO
-IMPLEMENTATION_STARTED: NO
-IMP038_IMPLEMENTATION_AUTHORIZED: NO
-IMP038_STARTED: NO
+IMPLEMENTATION_AUTHORIZED: YES
+IMPLEMENTATION_STARTED: YES
+IMP038_IMPLEMENTATION_AUTHORIZED: YES
+IMP038_STARTED: YES
+FOUNDER_IMP038_IMPLEMENTATION_AUTHORIZATION: CURSOR_SESSION_MANDATE
 IMP038_IMPLEMENTATION_COMPLETE: NO
 IMP038_ACCEPTED: NO
 IMP038_ACCEPTANCE_BLOCKED_BY_IMP037: YES
@@ -78,8 +80,9 @@ LEGAL_REVIEW_OPEN_TOPICS: 9
 COMPLIANCE_CLAIMS: NONE
 ```
 
-`CANONICAL_ROADMAP_STATE = GTM-R139 / STATE-R137` is the **lock-persistence tip** target after this
-artifact is reconciled with ROADMAP / STATE / ARCHITECTURE / decision-register. Fit evaluation was
+`CANONICAL_ROADMAP_STATE = GTM-R140 / STATE-R138` is the **CURRENT tip** (combined implementation
+AUTHORIZE + START). Prior tip `GTM-R139 / STATE-R137` remains the **Architecture Fit PASS /
+architecture LOCK** provenance tip. Fit evaluation was
 against the exact `main` candidate in §1.1. ROADMAP and STATE remain the sole lifecycle authority;
 this capability document never overrides them.
 
@@ -91,8 +94,8 @@ this capability document never overrides them.
 | Architecture lock | `ARCHITECTURE_LOCKED` (independent Architecture Fit review **PASS**) |
 | Architecture Fit | **PASS** (performed against Fit-evaluated candidate §1.1) |
 | Product Definition | `PD-IMP-038-DRAFT-2` **APPROVED**; Product Definition Gate **PASS** |
-| Formal ROADMAP lifecycle | Controlled continuation under `IMP037_PROVIDER_BLOCKED_TO_IMP038`; Fit/lock recorded; implementation **NOT_AUTHORIZED** |
-| Implementation | **NOT AUTHORIZED** / **NOT STARTED** / **NOT COMPLETE** / **NOT ACCEPTED** |
+| Formal ROADMAP lifecycle | Controlled continuation under `IMP037_PROVIDER_BLOCKED_TO_IMP038`; Fit/lock recorded; implementation **AUTHORIZED** / **STARTED** (`IMPLEMENTATION_IN_PROGRESS`) |
+| Implementation | **AUTHORIZED** / **STARTED** / **NOT COMPLETE** / **NOT ACCEPTED** (`FOUNDER_IMP038_IMPLEMENTATION_AUTHORIZATION: CURSOR_SESSION_MANDATE`) |
 | Accepted | **NO** (`IMP038_ACCEPTANCE_BLOCKED_BY_IMP037: YES`) |
 | Founder UAT required | **YES** (`FOUNDER_UAT_STATUS = NOT_PERFORMED`) |
 | Application schema change required | **YES** for step-up proofs (`STEP_UP_PROOF_SCHEMA_CHANGE = YES`); abuse extends existing tables (`AUTH_ABUSE_EXTENDS_EXISTING_TABLES = YES`) |
@@ -166,8 +169,9 @@ authority; this document supplies mechanisms only.
 
 ```text
 VISION = VISION-1
-ROADMAP = GTM-R139 (lock-persistence reconciliation tip; verify CURRENT at read time)
-STATE = STATE-R137 (lock-persistence reconciliation tip; verify CURRENT at read time)
+ROADMAP = GTM-R140 (CURRENT tip — authorize+start; verify CURRENT at read time)
+STATE = STATE-R138 (CURRENT tip — authorize+start; verify CURRENT at read time)
+PRIOR_LOCK_TIP = GTM-R139 / STATE-R137
 ARCHITECTURE = ARCH-R21 (ARCH-G27; inherits ARCH-R20 / ARCH-G26)
 DECISION REGISTER = DR-17 (D-375; ADR-017; prior DR-16 / D-374 remain CURRENT for pilot infra)
 PRODUCT DELIVERY = PD-1
@@ -876,8 +880,11 @@ INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PASS
 INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_HEAD: 3b03164d6581c5a98a893c24e92eaddece004e90
 INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_TREE: 5bb499fa84a5bf02682b30518f2bf898ddb23540
 INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID: 5279884548
-IMPLEMENTATION_AUTHORIZED: NO
-IMPLEMENTATION_STARTED: NO
+IMPLEMENTATION_AUTHORIZED: YES
+IMPLEMENTATION_STARTED: YES
+IMP038_IMPLEMENTATION_AUTHORIZED: YES
+IMP038_STARTED: YES
+FOUNDER_IMP038_IMPLEMENTATION_AUTHORIZATION: CURSOR_SESSION_MANDATE
 IMP038_IMPLEMENTATION_COMPLETE: NO
 IMP038_ACCEPTED: NO
 IMP038_ACCEPTANCE_BLOCKED_BY_IMP037: YES
@@ -900,7 +907,7 @@ FOUNDER_UAT_STATUS: NOT_PERFORMED
 
 ### 21.2 What has **not** happened
 
-- Implementation authorization or start  
+- Product/security tranche implementation (A–F remain NOT_STARTED in this artifact)  
 - Cloudflare / DO firewall / AOP provisioning (IMP-039)  
 - CI security gates wired as acceptance evidence  
 - Founder UAT  
@@ -911,7 +918,6 @@ FOUNDER_UAT_STATUS: NOT_PERFORMED
 ### 21.3 Gate sequence from here
 
 ```text
-Human R3 merge decision for architecture-lock PR #182
   → Implementation authorization (separate human gate after merge/verification)
   → IMPLEMENT tranches A–F (§21.5)
   → PROVE / Acceptance Pack + external assessment
@@ -973,7 +979,7 @@ is **not** required to lock IMP-038.
 ## End matter
 
 ```text
-IMP-038: ARCHITECTURE_LOCKED / NOT_AUTHORIZED / NOT_STARTED / NOT_ACCEPTED
+IMP-038: IMPLEMENTATION_IN_PROGRESS / AUTHORIZED / STARTED / NOT_ACCEPTED
 IMP038_ARCHITECTURE_LOCKED: YES
 ARCHITECTURE_FIT: PASS
 ARCHITECTURE_FIT_EXECUTION: PERFORMED
@@ -982,10 +988,11 @@ INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PASS
 INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_HEAD: 3b03164d6581c5a98a893c24e92eaddece004e90
 INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_TREE: 5bb499fa84a5bf02682b30518f2bf898ddb23540
 INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID: 5279884548
-IMPLEMENTATION_AUTHORIZED: NO
-IMPLEMENTATION_STARTED: NO
-IMP038_IMPLEMENTATION_AUTHORIZED: NO
-IMP038_STARTED: NO
+IMPLEMENTATION_AUTHORIZED: YES
+IMPLEMENTATION_STARTED: YES
+IMP038_IMPLEMENTATION_AUTHORIZED: YES
+IMP038_STARTED: YES
+FOUNDER_IMP038_IMPLEMENTATION_AUTHORIZATION: CURSOR_SESSION_MANDATE
 IMP038_IMPLEMENTATION_COMPLETE: NO
 IMP038_ACCEPTED: NO
 IMP038_ACCEPTANCE_BLOCKED_BY_IMP037: YES
@@ -1009,10 +1016,11 @@ BOBA_RAW_PAN_STORAGE: NO
 BOBA_RAW_CVV_STORAGE: NO
 LEGAL_REVIEW_OPEN_TOPICS: 9
 COMPLIANCE_CLAIMS: NONE
-CANONICAL_TIP_AFTER_LOCK: GTM-R139 / STATE-R137 / ARCH-R21 / DR-17
+CANONICAL_TIP: GTM-R140 / STATE-R138 / ARCH-R21 / DR-17
+PRIOR_LOCK_TIP: GTM-R139 / STATE-R137
 PRODUCT_DEFINITION: PD-IMP-038-DRAFT-2 APPROVED
 BINDING: D-375 / ADR-017; ADR-004; ADR-005; ADR-009; D-361..D-363; D-374 / ADR-016
 ```
 
-Independent Architecture Fit review, implementation authorization, IMP-039 activation, Founder UAT,
-and IMP acceptance remain **outside** this artifact’s authority.
+IMP-039 activation, Founder UAT, and IMP acceptance remain **outside** this artifact’s authority.
+Tranche implementation proceeds under locked PD + architecture and Founder delivery authorization.

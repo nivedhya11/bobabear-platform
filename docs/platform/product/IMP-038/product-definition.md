@@ -13,8 +13,8 @@
   "architectureFitExecution": "PERFORMED",
   "architectureFit": "PASS",
   "architectureLocked": "YES",
-  "implementationAuthorized": "NO",
-  "implementationStarted": "NO",
+  "implementationAuthorized": "YES",
+  "implementationStarted": "YES",
   "impAccepted": "NO",
   "imp038Activated": "YES",
   "preGateDraft": "NO",
@@ -56,10 +56,11 @@ ARCHITECTURE_FIT_EXECUTION: PERFORMED
 ARCHITECTURE_FIT: PASS
 ARCHITECTURE_LOCKED: YES
 IMP038_ACTIVATED: YES
-IMPLEMENTATION_AUTHORIZED: NO
-IMPLEMENTATION_STARTED: NO
-IMP038_IMPLEMENTATION_AUTHORIZED: NO
-IMP038_STARTED: NO
+IMPLEMENTATION_AUTHORIZED: YES
+IMPLEMENTATION_STARTED: YES
+IMP038_IMPLEMENTATION_AUTHORIZED: YES
+IMP038_STARTED: YES
+FOUNDER_IMP038_IMPLEMENTATION_AUTHORIZATION: CURSOR_SESSION_MANDATE
 IMP038_IMPLEMENTATION_COMPLETE: NO
 IMP038_ACCEPTED: NO
 IMP038_ACCEPTANCE_BLOCKED_BY_IMP037: YES
@@ -106,8 +107,8 @@ follow_up_or_deferred_stories: 4
 acceptance_scenarios: see §10 (Founder decisions reconciled; final acceptance scenarios subject only to legal-review / Architecture-Fit dependencies where explicitly recorded)
 
 Canonical anchors (verify against CURRENT ROADMAP/STATE):
-  ROADMAP: GTM-R139
-  STATE: STATE-R137
+  ROADMAP: GTM-R140
+  STATE: STATE-R138
   ARCHITECTURE: ARCH-R21
   decision-register: DR-17
   PRODUCT-DELIVERY: PD-1
@@ -157,7 +158,7 @@ authoritative even if edge controls are absent or bypassed.
 | Product Definition version / document status | `PD-IMP-038-DRAFT-2` (advances `PD-IMP-038-DRAFT-1`); **Document status: APPROVED**; **PRE-GATE DRAFT: NO**; Founder decisions FD-038-01…21 reconciled per PR#180/5773472988; Product Definition Gate PASS (approval PR#180/5773885848) |
 | Product owner / approval evidence | Founder/human controlled-continuation activation via PR#179 comment `5771367844` + instruction “proceed with next IMP”; Founder security/privacy requirements incorporated as binding discovery inputs; Founder decisions PR#180/5773472988; independent Product Definition Gate readiness review `5276033742` PASS; Product Definition Gate PASS authorized PR#180/5773885848 |
 | Process / verification policy | PD-1 / TEST-1 |
-| Canonical anchors | VISION-1; ROADMAP GTM-R139; STATE STATE-R137; ARCH-R21; DR-17; PD-1; TEST-1 |
+| Canonical anchors | VISION-1; ROADMAP GTM-R140; STATE STATE-R138; ARCH-R21; DR-17; PD-1; TEST-1 |
 | Repository candidate | Gate-evaluated candidate lineage: canonical path `/home/ajoshi/repos/boba-bear-platform`; branch `governance/imp038-activation-product-definition`; **GATE_EVALUATED_HEAD** `2ade7b305d7a1c552b56a709dbf8723d356979bf`; **GATE_EVALUATED_TREE** `b8565bba474627ddf3974b329c7d6038ee1bf97c`; exact-head CI `35706440171` SUCCESS; gate-persistence commits after this Gate PASS are not the evaluated artifact |
 | Capability lifecycle / authorization | ROADMAP/STATE: `IMP038_ACTIVATED: YES`; formal lifecycle **ARCHITECTURE_LOCKED**; PD = APPROVED (`PD-IMP-038-DRAFT-2`); Gate = PASS; Architecture Fit = PASS; Architecture Locked = YES; Independent Architecture Fit review = PASS; Implementation = NOT_AUTHORIZED / NOT_STARTED; `IMP038_ACCEPTANCE_BLOCKED_BY_IMP037: YES`; `acceptedThrough` remains IMP-036G |
 | Relevant capability architecture / ADRs | Locked capability: [`../../capabilities/IMP-038-security-privacy-hardening.md`](../../capabilities/IMP-038-security-privacy-hardening.md) (D-375 / ADR-017 / ARCH-R21). Binding baselines: ARCH §§6–7,12; ADR-004; ADR-005; ADR-015 (amended by D-374 for host-local pilot secrets → IMP-039 boundary); IMP-036B §6.1 Maps supersession record; IMP-037 FD-037-03 retention distinction |
@@ -1621,7 +1622,7 @@ Journey Gap Audit remains IMP-040 requirement — not performed here.
 | Dependency | Authority / verified state | Required before | Unresolved impact |
 |---|---|---|---|
 | IMP-037 formal acceptance + reconciliation | IMPLEMENTATION_IN_PROGRESS; provider-blocked | **IMP-038 COMPLETE_AND_ACCEPTED** | `IMP038_ACCEPTANCE_BLOCKED_BY_IMP037` |
-| Controlled continuation activation | PR#179/5771367844; GTM-R138/STATE-R136 (prior tip); CURRENT GTM-R139/STATE-R137 | This draft exists | NONE for drafting |
+| Controlled continuation activation | PR#179/5771367844; GTM-R138/STATE-R136 (prior tip); prior tip GTM-R139/STATE-R137; CURRENT GTM-R140/STATE-R138 | This draft exists | NONE for drafting |
 | Founder FDs FD-038-01…21 | RESOLVED (PR#180/5773472988); UNRESOLVED_PRODUCT_DECISIONS = 0 | Product Definition Gate review | Product decisions no longer block Gate for unresolved-FD reasons |
 | Legal review (DPDP/CERT-In/PCI/erasure/retention/breach/child-data) | Not performed | US-004/005/008/018/019/020/021 acceptance semantics | LEGAL_REVIEW_REQUIRED (does not reopen product locks) |
 | Architecture Fit / lock | PASS / LOCKED (independent Architecture Fit review PASS) | Implementation authorization | STOP until explicit implementation authorization after architecture-lock merge; Cloudflare Free locked via D-375 |
