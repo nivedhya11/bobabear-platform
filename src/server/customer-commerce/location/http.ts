@@ -30,6 +30,9 @@ function outcome(
 }
 
 function clientKey(req: IncomingMessage): string {
+  // After IMP-038 Nginx XFF replace, this header is the verified client IP only
+  // (TRUST_PROXY_HOPS=1). Fall back to the TCP peer when the header is absent
+  // (direct local calls without the Nginx hop).
   const forwarded = req.headers["x-forwarded-for"];
   if (typeof forwarded === "string" && forwarded.trim().length > 0) {
     return forwarded.split(",")[0]!.trim();

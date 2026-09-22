@@ -18,13 +18,12 @@ const projectRoot = dirname(fileURLToPath(import.meta.url));
 const isProd = process.env.NODE_ENV === "production";
 void isProd; // referenced below for clarity; both branches are ""
 
-// Baseline security headers applied to every route. These are the broadly-safe
-// ones that don't risk breaking inline scripts/styles or Google Fonts. A strict
-// Content-Security-Policy is intentionally NOT set here — Next.js emits inline
-// bootstrap scripts and the page uses inline <style>/JSON-LD, so a real CSP
-// needs per-request nonces (middleware). Add that as a dedicated follow-up.
+// Baseline security headers applied to every route when Next.js can emit them.
+// A strict Content-Security-Policy is NOT set here — Next.js `headers()` is a
+// no-op under `output: "export"`. IMP-038 Nginx (`docker/nginx/security-headers.conf`)
+// is the sole CSP/security-header authority on the real serving path.
 // IMP-026B: official Razorpay Checkout.js is https://checkout.razorpay.com/v1/checkout.js.
-// Documented origins for a future CSP are in src/lib/razorpay/types.ts. Do not add
+// Documented origins for CSP live in src/lib/razorpay/types.ts. Do not add
 // wildcard script-src / frame-src / connect-src merely to allow Checkout.js.
 //
 // NOTE: headers() is a no-op in static export mode. Kept here so the same

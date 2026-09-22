@@ -10,13 +10,30 @@ const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url))
 const nginxImage = "docker.io/library/nginx:1.30.4-alpine3.24";
 const directoryRoutes = ["/order", "/login", "/order/cart", "/privacy"];
 
+function resolveContainerCli() {
+  for (const cli of ["docker", "podman"]) {
+    try {
+      execFileSync(cli, ["info"], {
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "pipe"],
+      });
+      return cli;
+    } catch {
+      // try next
+    }
+  }
+  return null;
+}
+
+const containerCli = resolveContainerCli();
+
 function docker(args) {
-  return execFileSync("docker", args, { encoding: "utf8" }).trim();
+  return execFileSync(containerCli, args, { encoding: "utf8" }).trim();
 }
 
 function dockerDiagnostic(args) {
   try {
-    return execFileSync("docker", args, {
+    return execFileSync(containerCli, args, {
       encoding: "utf8",
       stdio: ["ignore", "pipe", "pipe"],
     }).trim();
@@ -44,12 +61,7 @@ function readContainerLogs(containerId) {
 }
 
 function dockerAvailable() {
-  try {
-    docker(["info"]);
-    return true;
-  } catch {
-    return false;
-  }
+  return containerCli !== null;
 }
 
 async function waitForNginx(origin, containerId) {
@@ -158,6 +170,8 @@ describe("Nginx directory redirects", { skip: !dockerAvailable() }, () => {
       "run", "--rm", "-d", "-p", "127.0.0.1::8080",
       "--tmpfs", "/tmp", "--tmpfs", "/var/cache/nginx", "--tmpfs", "/var/run",
       "-v", `${path.join(repositoryRoot, "docker/nginx/nginx.conf")}:/etc/nginx/nginx.conf:ro`,
+      "-v", `${path.join(repositoryRoot, "docker/nginx/cloudflare-real-ip.conf")}:/etc/nginx/boba/cloudflare-real-ip.conf:ro`,
+      "-v", `${path.join(repositoryRoot, "docker/nginx/security-headers.conf")}:/etc/nginx/boba/security-headers.conf:ro`,
       "-v", `${resolverBootstrap}:/docker-entrypoint.d/40-boba-runtime-resolver.sh:ro`,
       "-v", `${fixtureRoot}:/usr/share/nginx/html:ro`,
       nginxImage,
@@ -172,7 +186,7 @@ describe("Nginx directory redirects", { skip: !dockerAvailable() }, () => {
   after(() => {
     if (containerId) {
       try {
-        execFileSync("docker", ["rm", "-f", containerId], {
+        execFileSync(containerCli, ["rm", "-f", containerId], {
           stdio: "ignore",
         });
       } catch {
@@ -192,4 +206,33 @@ describe("Nginx directory redirects", { skip: !dockerAvailable() }, () => {
       assert.doesNotMatch(location, /:8080(?:\/|$)/);
     });
   }
+
+  it("serves IMP-038 security headers and CSP Report-Only on the static path", async () => {
+    const response = await fetch(`${origin}/order/`, { redirect: "manual" });
+    assert.equal(response.status, 200);
+    const csp = response.headers.get("content-security-policy-report-only");
+    assert.ok(csp, "expected Content-Security-Policy-Report-Only");
+    assert.match(csp, /frame-ancestors 'self'/);
+    assert.match(csp, /https:\/\/checkout\.razorpay\.com/);
+    assert.match(csp, /https:\/\/challenges\.cloudflare\.com/);
+    assert.match(csp, /https:\/\/maps\.googleapis\.com/);
+    assert.match(csp, /https:\/\/maps\.gstatic\.com/);
+    assert.doesNotMatch(csp, /script-src[^;]*\*/);
+    assert.equal(response.headers.get("x-content-type-options"), "nosniff");
+    assert.equal(response.headers.get("referrer-policy"), "strict-origin-when-cross-origin");
+    assert.equal(response.headers.get("x-frame-options"), "SAMEORIGIN");
+    assert.match(response.headers.get("strict-transport-security") ?? "", /max-age=63072000/);
+    assert.match(response.headers.get("permissions-policy") ?? "", /camera=\(\)/);
+  });
+
+  it("config replaces X-Forwarded-For with verified remote_addr (not append)", () => {
+    const conf = fs.readFileSync(
+      path.join(repositoryRoot, "docker/nginx/nginx.conf"),
+      "utf8",
+    );
+    assert.match(conf, /proxy_set_header X-Forwarded-For \$remote_addr;/);
+    assert.doesNotMatch(conf, /proxy_add_x_forwarded_for/);
+    assert.match(conf, /include \/etc\/nginx\/boba\/cloudflare-real-ip\.conf;/);
+    assert.match(conf, /include \/etc\/nginx\/boba\/security-headers\.conf;/);
+  });
 });
