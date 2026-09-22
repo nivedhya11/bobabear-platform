@@ -74,8 +74,10 @@ Current Governance Activity:    IMP-038 controlled-continuation activation + Pro
                               Architecture base ARCH-R20 / D-374;
                               D-374_CREATED: YES; ARCH_R20_CREATED: YES;
                               D-375_CREATED: NO; ARCH_R21_CREATED: NO;
-                              nextGate: ChatGPT IMP-038 pre-gate review + Founder product
-                              decisions (not Product Definition Gate PASS; not acceptance);
+                              nextGate: IMP-038 Architecture Fit (Product Definition Gate
+                              PASS already recorded; Architecture Fit NOT_PERFORMED; not
+                              architecture lock; not implementation authorization; not
+                              Founder UAT; not acceptance);
                               IMP-036G remains COMPLETE_AND_ACCEPTED
                               (GTM-R130 / STATE-R128);
                               Founder UAT PASS 2026-09-18; formal acceptance recorded;
@@ -664,6 +666,7 @@ architectureVersion: ARCH-R20
 decisionRegisterVersion: DR-16
 productDeliveryVersion: PD-1
 testingPolicyVersion: TEST-1
+nextGate: IMP-038 Architecture Fit (Product Definition Gate PASS already recorded; Architecture Fit NOT_PERFORMED; not architecture lock; not implementation authorization; not Founder UAT; not acceptance)
 ```
 
 Historical prior tip record (STATE-R135; superseded as CURRENT tip by STATE-R136; preserved):
