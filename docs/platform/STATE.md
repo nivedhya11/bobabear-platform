@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R135",
+  "stateVersion": "STATE-R136",
   "acceptedThrough": "IMP-036G",
-  "currentProductSlice": "IMP-037",
-  "nextProductSlice": "IMP-038",
+  "currentProductSlice": "IMP-038",
+  "nextProductSlice": "IMP-039",
   "pendingAcceptance": "NONE",
   "governanceHealth": "ALIGNED",
-  "lastReviewed": "2026-09-21"
+  "lastReviewed": "2026-09-22"
 }
 -->
 
@@ -32,35 +32,26 @@ Accepted Range:            IMP-001 → IMP-036G (including IMP-005A and IMP-026C
 ## 2. Current Work Position
 
 ```text
-Current Product Implementation: IMP-037
+Current Product Implementation: IMP-037 (unresolved predecessor; provider-blocked; not acceptance)
 Pending Acceptance:             NONE
-Current Product Slice:          IMP-037 — Backup, Restore & Migration Readiness
-Next Product Slice:             IMP-038 — Security & Privacy Hardening
-Current Governance Activity:    IMP-037 post-merge repository implementation reconciliation
-                              (GTM-R137 / STATE-R135; IMPLEMENTATION_IN_PROGRESS;
-                              REPOSITORY_IMPLEMENTATION: MERGED;
-                              EXTERNAL_RECOVERY_PROOF: NOT_PERFORMED;
-                              IMPLEMENTATION_COMPLETE: NO);
-                              implementationAuthorizationEvidence: PR#171/5743814105;
-                              implementationStartEvidence: PR#172/5744869269;
-                              implementationMergeEvidence: PR#174 /
-                              f77a54819f51ad5648dda8acb3a7c93345cd5d6c /
-                              CI 35587376968 SUCCESS;
-                              independentImplementationReview: 5265354130 PASS;
-                              reviewedHead: ae7328efe1add11a9a4299150251fe14c71b2730;
-                              reviewedTree: 4ff19a31db947cafadf690cf6bf1b6d2f1de14ac;
-                              authorizationAppliesTo: PD-IMP-037-DRAFT-1 + locked IMP-037
-                              capability architecture;
-                              Architecture base ARCH-R20 / D-374;
-                              INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PASS;
-                              INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_HEAD:
-                              d74ca9a30096fb14bca80643b75aa19d33093dde;
-                              INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_TREE:
-                              09c7e3bd6b7832944d07d527c149752ed3bbeb4d;
-                              INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID: 5256273904;
-                              PR #169 NON_AUTHORITATIVE / SUPERSEDED;
-                              formal IMP-037 ROADMAP lifecycle
-                              IMPLEMENTATION_IN_PROGRESS;
+Current Product Slice:          IMP-038 — Security & Privacy Hardening
+Next Product Slice:             IMP-039 — Production Infrastructure & Release Pipeline
+Unresolved Predecessor:         IMP-037 — Backup, Restore & Migration Readiness
+Current Governance Activity:    IMP-038 controlled-continuation activation + pre-gate Product
+                              Definition (GTM-R138 / STATE-R136;
+                              CONTINUATION_EXCEPTION: IMP037_PROVIDER_BLOCKED_TO_IMP038;
+                              CONTINUATION_EXCEPTION_AUTHORITY: PR#179/5771367844;
+                              HISTORICAL_IMP026_TO_IMP028_CONTINUATION: CLOSED;
+                              IMP038_ACTIVATED: YES; formal lifecycle PLANNED;
+                              IMP038_PRODUCT_DEFINITION: DRAFT (PD-IMP-038-DRAFT-1);
+                              IMP038_PRODUCT_DEFINITION_GATE: NOT_PERFORMED;
+                              IMP038_ARCHITECTURE_FIT: NOT_PERFORMED;
+                              IMP038_ARCHITECTURE_LOCKED: NO;
+                              IMP038_IMPLEMENTATION_AUTHORIZED: NO; IMP038_STARTED: NO;
+                              IMP038_ACCEPTED: NO;
+                              IMP038_ACCEPTANCE_BLOCKED_BY_IMP037: YES;
+                              IMP039_ACTIVATED: NO;
+                              IMP-037 remains IMPLEMENTATION_IN_PROGRESS;
                               IMP037_ACTIVATED: YES;
                               IMP037_PRODUCT_DEFINITION: APPROVED (PD-IMP-037-DRAFT-1);
                               IMP037_PRODUCT_DEFINITION_GATE: PASS;
@@ -72,12 +63,19 @@ Current Governance Activity:    IMP-037 post-merge repository implementation rec
                               IMP037_EXTERNAL_RECOVERY_PROOF: NOT_PERFORMED;
                               IMP037_ACCEPTED: NO; IMP037_FOUNDER_UAT_REQUIRED: YES;
                               IMP037_FOUNDER_UAT: NOT_PERFORMED;
-                              IMP038_ACTIVATED: NO;
+                              PHASE1_BLOCK_STATUS: BLOCKED_PROVIDER_ACCESS;
+                              PROVIDER_DEPENDENT_PROOF: DEFERRED_PENDING_PROVIDER_ACCESS;
+                              preserved IMP-037 merge provenance: PR#174 /
+                              f77a54819f51ad5648dda8acb3a7c93345cd5d6c /
+                              CI 35587376968 SUCCESS;
+                              implementationAuthorizationEvidence: PR#171/5743814105;
+                              implementationStartEvidence: PR#172/5744869269;
+                              independentImplementationReview: 5265354130 PASS;
+                              Architecture base ARCH-R20 / D-374;
                               D-374_CREATED: YES; ARCH_R20_CREATED: YES;
                               D-375_CREATED: NO; ARCH_R21_CREATED: NO;
-                              nextGate: ChatGPT batch review of reconciliation +
-                              external-proof readiness, then explicit R3 external proof
-                              (not acceptance);
+                              nextGate: ChatGPT IMP-038 pre-gate review + Founder product
+                              decisions (not Product Definition Gate PASS; not acceptance);
                               IMP-036G remains COMPLETE_AND_ACCEPTED
                               (GTM-R130 / STATE-R128);
                               Founder UAT PASS 2026-09-18; formal acceptance recorded;
@@ -118,8 +116,27 @@ IMP037_IMPLEMENTATION_COMPLETE: NO
 IMP037_ACCEPTED:          NO
 IMP037_FOUNDER_UAT_REQUIRED: YES
 IMP037_FOUNDER_UAT:       NOT_PERFORMED
-IMP-038:                  PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
-IMP038_ACTIVATED:         NO
+IMP-038:                  PLANNED
+IMP038_ACTIVATED:         YES
+IMP038_PRODUCT_DEFINITION: DRAFT
+IMP038_PRODUCT_DEFINITION_VERSION: PD-IMP-038-DRAFT-1
+IMP038_PRODUCT_DEFINITION_GATE: NOT_PERFORMED
+IMP038_ARCHITECTURE_FIT:  NOT_PERFORMED
+IMP038_ARCHITECTURE_LOCKED: NO
+IMP038_IMPLEMENTATION_AUTHORIZED: NO
+IMP038_STARTED:           NO
+IMP038_IMPLEMENTATION_COMPLETE: NO
+IMP038_ACCEPTED:          NO
+IMP038_ACCEPTANCE_BLOCKED_BY_IMP037: YES
+IMP038_FOUNDER_UAT_REQUIRED: YES
+IMP038_FOUNDER_UAT:       NOT_PERFORMED
+IMP-039:                  PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
+IMP039_ACTIVATED:         NO
+CONTINUATION_EXCEPTION:   IMP037_PROVIDER_BLOCKED_TO_IMP038
+CONTINUATION_EXCEPTION_AUTHORITY: PR#179/5771367844
+IMP037_PROVIDER_BLOCKED_TO_IMP038: YES
+PHASE1_BLOCK_STATUS:      BLOCKED_PROVIDER_ACCESS
+PROVIDER_DEPENDENT_PROOF: DEFERRED_PENDING_PROVIDER_ACCESS
 D-374_CREATED:            YES
 ARCH_R20_CREATED:         YES
 D-375_CREATED:            NO
@@ -467,8 +484,27 @@ IMP037_IMPLEMENTATION_COMPLETE: NO
 IMP037_ACCEPTED: NO
 IMP037_FOUNDER_UAT_REQUIRED: YES
 IMP037_FOUNDER_UAT: NOT_PERFORMED
-IMP-038: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
-IMP038_ACTIVATED: NO
+IMP-038: PLANNED
+IMP038_ACTIVATED: YES
+IMP038_PRODUCT_DEFINITION: DRAFT
+IMP038_PRODUCT_DEFINITION_VERSION: PD-IMP-038-DRAFT-1
+IMP038_PRODUCT_DEFINITION_GATE: NOT_PERFORMED
+IMP038_ARCHITECTURE_FIT: NOT_PERFORMED
+IMP038_ARCHITECTURE_LOCKED: NO
+IMP038_IMPLEMENTATION_AUTHORIZED: NO
+IMP038_STARTED: NO
+IMP038_IMPLEMENTATION_COMPLETE: NO
+IMP038_ACCEPTED: NO
+IMP038_ACCEPTANCE_BLOCKED_BY_IMP037: YES
+IMP038_FOUNDER_UAT_REQUIRED: YES
+IMP038_FOUNDER_UAT: NOT_PERFORMED
+IMP-039: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
+IMP039_ACTIVATED: NO
+CONTINUATION_EXCEPTION: IMP037_PROVIDER_BLOCKED_TO_IMP038
+CONTINUATION_EXCEPTION_AUTHORITY: PR#179/5771367844
+IMP037_PROVIDER_BLOCKED_TO_IMP038: YES
+PHASE1_BLOCK_STATUS: BLOCKED_PROVIDER_ACCESS
+PROVIDER_DEPENDENT_PROOF: DEFERRED_PENDING_PROVIDER_ACCESS
 D-374_CREATED: YES
 ARCH_R20_CREATED: YES
 D-375_CREATED: NO
@@ -569,7 +605,68 @@ Implementation/review provenance for IMP-036F is recorded in
 Agents may propose a STATE delta in their report. Only independent acceptance updates this file's
 accepted position and may promote `governanceHealth` to `ALIGNED`.
 
-## 10. STATE-R135 record
+## 10. STATE-R136 record
+
+```text
+STATE-R136 = IMP038_CONTROLLED_CONTINUATION_ACTIVATION_AND_PRE_GATE_PRODUCT_DEFINITION
+acceptedThrough: IMP-036G
+pendingAcceptance: NONE
+currentProductSlice: IMP-038
+nextProductSlice: IMP-039
+Current Product Implementation: IMP-037 (unresolved predecessor; provider-blocked)
+Unresolved Predecessor: IMP-037
+Current Governance Activity: IMP-038 controlled-continuation activation + pre-gate Product Definition; CONTINUATION_EXCEPTION: IMP037_PROVIDER_BLOCKED_TO_IMP038; CONTINUATION_EXCEPTION_AUTHORITY: PR#179/5771367844; HISTORICAL_IMP026_TO_IMP028_CONTINUATION: CLOSED
+IMP-036G: COMPLETE_AND_ACCEPTED
+IMP036G_ACCEPTED: YES
+IMP036G_FOUNDER_UAT: PASS
+IMP036G_FORMAL_ACCEPTANCE: ACCEPTED
+IMP-037: IMPLEMENTATION_IN_PROGRESS
+IMP037_ACTIVATED: YES
+IMP037_PRODUCT_DEFINITION: APPROVED
+IMP037_PRODUCT_DEFINITION_VERSION: PD-IMP-037-DRAFT-1
+IMP037_PRODUCT_DEFINITION_GATE: PASS
+IMP037_ARCHITECTURE_FIT: PASS
+IMP037_ARCHITECTURE_LOCKED: YES
+IMP037_IMPLEMENTATION_AUTHORIZED: YES
+IMP037_STARTED: YES
+IMP037_REPOSITORY_IMPLEMENTATION_MERGED: YES
+IMP037_EXTERNAL_RECOVERY_PROOF: NOT_PERFORMED
+IMP037_IMPLEMENTATION_COMPLETE: NO
+IMP037_ACCEPTED: NO
+IMP037_FOUNDER_UAT_REQUIRED: YES
+IMP037_FOUNDER_UAT: NOT_PERFORMED
+PHASE1_BLOCK_STATUS: BLOCKED_PROVIDER_ACCESS
+PROVIDER_DEPENDENT_PROOF: DEFERRED_PENDING_PROVIDER_ACCESS
+IMP-038: PLANNED
+IMP038_ACTIVATED: YES
+IMP038_PRODUCT_DEFINITION: DRAFT
+IMP038_PRODUCT_DEFINITION_VERSION: PD-IMP-038-DRAFT-1
+IMP038_PRODUCT_DEFINITION_GATE: NOT_PERFORMED
+IMP038_ARCHITECTURE_FIT: NOT_PERFORMED
+IMP038_ARCHITECTURE_LOCKED: NO
+IMP038_IMPLEMENTATION_AUTHORIZED: NO
+IMP038_STARTED: NO
+IMP038_IMPLEMENTATION_COMPLETE: NO
+IMP038_ACCEPTED: NO
+IMP038_ACCEPTANCE_BLOCKED_BY_IMP037: YES
+IMP038_FOUNDER_UAT_REQUIRED: YES
+IMP038_FOUNDER_UAT: NOT_PERFORMED
+IMP-039: PLANNED / NOT_ACTIVATED
+IMP039_ACTIVATED: NO
+CONTINUATION_EXCEPTION: IMP037_PROVIDER_BLOCKED_TO_IMP038
+CONTINUATION_EXCEPTION_AUTHORITY: PR#179/5771367844
+IMP037_PROVIDER_BLOCKED_TO_IMP038: YES
+D-374_CREATED: YES
+ARCH_R20_CREATED: YES
+D-375_CREATED: NO
+ARCH_R21_CREATED: NO
+architectureVersion: ARCH-R20
+decisionRegisterVersion: DR-16
+productDeliveryVersion: PD-1
+testingPolicyVersion: TEST-1
+```
+
+Historical prior tip record (STATE-R135; superseded as CURRENT tip by STATE-R136; preserved):
 
 ```text
 STATE-R135 = IMP-037_POST_MERGE_REPOSITORY_IMPLEMENTATION_RECONCILIATION
