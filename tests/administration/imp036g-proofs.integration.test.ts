@@ -129,6 +129,7 @@ async function withAdminServer(
         runtime,
         persistence,
         trustedOrigin: workforceAuthConfig().workforce.baseURL.origin,
+            stepUpSessionHashSecret: workforceAuthConfig().workforce.secret,
         ...(opsRuntime.serviceName ? { serviceName: opsRuntime.serviceName } : {}),
         ...(opsRuntime.startedAt ? { startedAt: opsRuntime.startedAt } : {}),
         ...(opsRuntime.workers ? { workers: opsRuntime.workers } : {}),

@@ -9,6 +9,7 @@
  */
 import type { WebConfig } from "../../../src/platform/config";
 import { validateWorkforceAuthConfig } from "../../../src/server/auth/shared/config";
+import { loadTurnstileConfig } from "../../../src/server/security/turnstile";
 import { WorkforceAuthService } from "../../../src/server/workforce-auth/service";
 import type { WorkforcePiiHashSecret } from "../../../src/server/workforce-auth/pii";
 
@@ -61,6 +62,7 @@ export async function withWorkforceAuthHttpService<T>(
     auth: authResult.config,
     persistenceConfig: applicationConfig(databaseConnectionString),
     piiHashSecret: WORKFORCE_AUTH_HTTP_TEST_PII_SECRET,
+    turnstile: loadTurnstileConfig({}, "test"),
     trustedOrigin: authResult.config.baseURL.origin,
     trustProxyHops: 0,
     host: "127.0.0.1",

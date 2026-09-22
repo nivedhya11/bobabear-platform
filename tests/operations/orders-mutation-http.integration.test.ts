@@ -125,6 +125,7 @@ async function withOperationsServer(h: Harness, run: (value: {
   const server = createServer((req, res) => {
     void routeOperationsRequest(req, res, {
       runtime, persistence: h.persistence, trustedOrigin: workforceAuthConfig().workforce.baseURL.origin,
+            stepUpSessionHashSecret: workforceAuthConfig().workforce.secret,
     }, "operations-mutation-request");
   });
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));

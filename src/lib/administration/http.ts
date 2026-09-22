@@ -1,12 +1,16 @@
 /**
  * Same-origin `/api/admin/v1/*` fetch wrapper (IMP-035).
  */
+import { WORKFORCE_STEP_UP_PROOF_HEADER } from "@/shared/workforce-auth/contracts";
+
 const JSON_CONTENT_TYPE = "application/json";
 
 export type AdminRequestOptions = Readonly<{
   method?: "GET" | "POST" | "PATCH";
   query?: Readonly<Record<string, string | undefined>>;
   body?: Readonly<Record<string, unknown>>;
+  /** IMP-038 single-use step-up proof id for high-consequence mutations. */
+  stepUpProofId?: string;
 }>;
 
 export type AdminHttpResult<T> =
@@ -35,10 +39,21 @@ export async function adminRequest<T>(
   options: AdminRequestOptions = {},
 ): Promise<AdminHttpResult<T>> {
   const method = options.method ?? "GET";
+  const headers: Record<string, string> = {};
   const init: RequestInit = { method, credentials: "same-origin" };
   if ((method === "POST" || method === "PATCH") && options.body !== undefined) {
-    init.headers = { "Content-Type": JSON_CONTENT_TYPE };
-    init.body = JSON.stringify(options.body);
+    headers["Content-Type"] = JSON_CONTENT_TYPE;
+    const body: Record<string, unknown> = { ...options.body };
+    if (typeof options.stepUpProofId === "string" && options.stepUpProofId.length > 0) {
+      body.stepUpProofId = options.stepUpProofId;
+      headers[WORKFORCE_STEP_UP_PROOF_HEADER] = options.stepUpProofId;
+    }
+    init.body = JSON.stringify(body);
+  } else if (typeof options.stepUpProofId === "string" && options.stepUpProofId.length > 0) {
+    headers[WORKFORCE_STEP_UP_PROOF_HEADER] = options.stepUpProofId;
+  }
+  if (Object.keys(headers).length > 0) {
+    init.headers = headers;
   }
   let response: Response;
   try {

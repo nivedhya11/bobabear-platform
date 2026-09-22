@@ -231,6 +231,7 @@ describe("IMP-036F F4 Assortment commercial Admin HTTP", () => {
             runtime,
             persistence,
             trustedOrigin: workforceAuthConfig().workforce.baseURL.origin,
+            stepUpSessionHashSecret: workforceAuthConfig().workforce.secret,
           },
           "assortment-admin-http-request",
         );

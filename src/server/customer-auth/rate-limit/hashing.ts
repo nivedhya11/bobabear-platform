@@ -1,5 +1,5 @@
 /**
- * HMAC key hashing for durable customer OTP rate limits (IMP-009).
+ * HMAC key hashing for durable customer OTP rate limits (IMP-009 / IMP-038).
  *
  * Persists only lowercase 64-character HMAC-SHA256 hex digests. Never log
  * hashes as stable identifiers.
@@ -24,5 +24,16 @@ export function hashCustomerOtpIpKey(
 ): string {
   return createHmac("sha256", secret)
     .update(`otp-ip:v1:${canonicalIp}`, "utf8")
+    .digest("hex");
+}
+
+/** Combined phone+IP scope key — never persists raw phone or IP. */
+export function hashCustomerOtpPhoneIpKey(
+  secret: CustomerPiiHashSecret,
+  phoneNumber: E164IndianMobileNumber,
+  canonicalIp: string,
+): string {
+  return createHmac("sha256", secret)
+    .update(`otp-phone-ip:v1:${phoneNumber}:${canonicalIp}`, "utf8")
     .digest("hex");
 }

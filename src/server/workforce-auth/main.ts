@@ -52,6 +52,7 @@ async function main(): Promise<void> {
     auth: serviceConfig.auth,
     persistenceConfig: workerConfig,
     piiHashSecret: serviceConfig.service.piiHashSecret,
+    turnstile: serviceConfig.turnstile,
     trustedOrigin: serviceConfig.service.trustedOrigin,
     trustProxyHops: serviceConfig.service.trustProxyHops,
     host: serviceConfig.service.serviceHost || DEFAULT_SERVICE_HOST,

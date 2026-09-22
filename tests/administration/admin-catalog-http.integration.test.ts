@@ -138,6 +138,7 @@ describe("IMP-036F F2 Catalog commercial Admin HTTP", () => {
             runtime,
             persistence,
             trustedOrigin: workforceAuthConfig().workforce.baseURL.origin,
+            stepUpSessionHashSecret: workforceAuthConfig().workforce.secret,
           },
           "catalog-admin-http-request",
         );
@@ -799,6 +800,7 @@ describe("IMP-036F F2 Catalog commercial Admin HTTP", () => {
             runtime,
             persistence,
             trustedOrigin: workforceAuthConfig().workforce.baseURL.origin,
+            stepUpSessionHashSecret: workforceAuthConfig().workforce.secret,
           },
           "catalog-admin-http-r4",
         );
@@ -989,6 +991,7 @@ describe("IMP-036F F2 Catalog commercial Admin HTTP", () => {
             runtime,
             persistence,
             trustedOrigin: workforceAuthConfig().workforce.baseURL.origin,
+            stepUpSessionHashSecret: workforceAuthConfig().workforce.secret,
           },
           "catalog-admin-http-r26",
         );
@@ -1155,6 +1158,7 @@ describe("IMP-036F F2 Catalog commercial Admin HTTP", () => {
             runtime,
             persistence,
             trustedOrigin: workforceAuthConfig().workforce.baseURL.origin,
+            stepUpSessionHashSecret: workforceAuthConfig().workforce.secret,
           },
           "catalog-admin-http-read-only",
         );

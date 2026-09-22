@@ -257,6 +257,7 @@ describe("IMP-036F F2 R7 — HTTP authoring to customer Menu projection", () => 
             runtime,
             persistence,
             trustedOrigin: workforceAuthConfig().workforce.baseURL.origin,
+            stepUpSessionHashSecret: workforceAuthConfig().workforce.secret,
           },
           "catalog-admin-http-r7",
         );

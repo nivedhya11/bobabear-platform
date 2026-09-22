@@ -35,6 +35,7 @@ import {
   type StructuredLogger,
 } from "../../platform/observability";
 import { getApplicationPersistence, type Persistence } from "../persistence";
+import type { TurnstileConfig } from "../security/turnstile";
 import { createCustomerAuthRequestListener, type CustomerAuthRequestEvent } from "./http/app";
 import type { CustomerAuthApi } from "./http/router";
 import type { CustomerPiiHashSecret, CustomerTemporaryIdentityDeriver } from "./pii";
@@ -50,6 +51,7 @@ export type CustomerAuthServiceOptions = Readonly<{
   otpProvider: CustomerOtpProvider;
   identityDeriver: CustomerTemporaryIdentityDeriver;
   piiHashSecret: CustomerPiiHashSecret;
+  turnstile: TurnstileConfig;
   trustedOrigin: string;
   trustProxyHops: number;
   host: string;
@@ -99,6 +101,7 @@ export class CustomerAuthService {
         persistence: this.persistence,
         otpProvider: config.otpProvider,
         piiHashSecret: config.piiHashSecret,
+        turnstile: config.turnstile,
         trustedOrigin: config.trustedOrigin,
         trustProxyHops: config.trustProxyHops,
         now: () => new Date(),

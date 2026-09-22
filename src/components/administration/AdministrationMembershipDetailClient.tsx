@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { AdminConfirmDialog } from "@/components/administration/AdminConfirmDialog";
+import { useStepUpMutation } from "@/components/workforce/useStepUpMutation";
 import { Alert } from "@/components/enterprise/Alert";
 import { StatusBadge } from "@/components/enterprise/StatusBadge";
 import { Button } from "@/components/ui/Button";
@@ -50,6 +51,7 @@ export function AdministrationMembershipDetailClient() {
   const [roleKey, setRoleKey] = useState("outlet_manager");
   const [pending, setPending] = useState<PendingAction>(null);
   const [busy, setBusy] = useState(false);
+  const { runWithStepUp, dialog: stepUpDialog } = useStepUpMutation();
 
   async function reload() {
     if (!membershipId) return;
@@ -143,7 +145,11 @@ export function AdministrationMembershipDetailClient() {
     if (!membershipId || !pending || view.kind !== "ready") return;
     setBusy(true);
     if (pending.type === "transition") {
-      const result = await transitionMembership(membershipId, pending.toStatus);
+      const result = await runWithStepUp("CLASS_ACCESS_MUTATION", (proofId) =>
+        proofId
+          ? transitionMembership(membershipId, pending.toStatus, { stepUpProofId: proofId })
+          : transitionMembership(membershipId, pending.toStatus),
+      );
       setBusy(false);
       if (!result.ok) {
         setView({ ...view, actionError: result.code });
@@ -159,7 +165,11 @@ export function AdministrationMembershipDetailClient() {
       return;
     }
     if (pending.type === "grant") {
-      const result = await grantMembershipRole(membershipId, pending.roleKey);
+      const result = await runWithStepUp("CLASS_ACCESS_MUTATION", (proofId) =>
+        proofId
+          ? grantMembershipRole(membershipId, pending.roleKey, { stepUpProofId: proofId })
+          : grantMembershipRole(membershipId, pending.roleKey),
+      );
       setBusy(false);
       if (!result.ok) {
         setView({ ...view, actionError: result.code });
@@ -172,7 +182,11 @@ export function AdministrationMembershipDetailClient() {
       );
       return;
     }
-    const result = await revokeRoleAssignment(pending.assignmentId);
+    const result = await runWithStepUp("CLASS_ACCESS_MUTATION", (proofId) =>
+      proofId
+        ? revokeRoleAssignment(pending.assignmentId, { stepUpProofId: proofId })
+        : revokeRoleAssignment(pending.assignmentId),
+    );
     setBusy(false);
     if (!result.ok) {
       setView({ ...view, actionError: result.code });
@@ -421,6 +435,7 @@ export function AdministrationMembershipDetailClient() {
         }}
         onConfirm={() => void runPending()}
       />
+      {stepUpDialog}
     </div>
   );
 }

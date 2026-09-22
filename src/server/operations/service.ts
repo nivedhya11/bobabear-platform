@@ -78,6 +78,7 @@ export class OperationsService {
         runtime: this.runtime,
         persistence: this.persistence,
         trustedOrigin: config.trustedOrigin,
+        stepUpSessionHashSecret: config.auth.secret,
         startedAt: this.startedAt,
         serviceName: OPERATIONS_SERVICE_NAME,
         workers: this.notificationProcessor ? [this.notificationProcessor] : [],

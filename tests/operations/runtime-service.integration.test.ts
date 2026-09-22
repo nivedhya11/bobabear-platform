@@ -168,7 +168,9 @@ describe("OperationsService", () => {
       const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
       const service = new OperationsService({
         auth: authConfig(), persistenceConfig: applicationConfig(h.connectionString),
-        trustedOrigin: authConfig().baseURL.origin, host: "127.0.0.1", port: 0,
+        trustedOrigin: authConfig().baseURL.origin,
+        host: "127.0.0.1",
+        port: 0,
       });
       try {
         await service.start();
@@ -202,6 +204,7 @@ describe("OperationsService", () => {
       runtime: {} as never,
       persistence: {} as never,
       trustedOrigin: "http://localhost:3200",
+      stepUpSessionHashSecret: "workforce-test-step-up-secret-32chars-xx" as never,
       startedAt: new Date(),
       serviceName: "operations",
     });

@@ -30,6 +30,7 @@ import {
   type StructuredLogger,
 } from "../../platform/observability";
 import { getApplicationPersistence, type Persistence } from "../persistence";
+import type { TurnstileConfig } from "../security/turnstile";
 import { createWorkforceAuthRequestListener, type WorkforceAuthRequestEvent } from "./http/app";
 import type { WorkforceAuthHandle } from "./http/router";
 import type { WorkforcePiiHashSecret } from "./pii";
@@ -43,6 +44,7 @@ export type WorkforceAuthServiceOptions = Readonly<{
   auth: WorkforceAuthConfig;
   persistenceConfig: WebConfig | WorkerConfig;
   piiHashSecret: WorkforcePiiHashSecret;
+  turnstile: TurnstileConfig;
   trustedOrigin: string;
   trustProxyHops: number;
   host: string;
@@ -85,6 +87,8 @@ export class WorkforceAuthService {
         },
         persistence: this.persistence,
         piiHashSecret: config.piiHashSecret,
+        stepUpSessionHashSecret: config.auth.secret,
+        turnstile: config.turnstile,
         trustedOrigin: config.trustedOrigin,
         trustProxyHops: config.trustProxyHops,
         now: () => new Date(),

@@ -6,7 +6,11 @@ import { describe, expect, it } from "vitest";
 
 import type { E164IndianMobileNumber } from "../../../shared/customer-auth/phone";
 import type { CustomerPiiHashSecret } from "../pii";
-import { hashCustomerOtpIpKey, hashCustomerOtpPhoneKey } from "./hashing";
+import {
+  hashCustomerOtpIpKey,
+  hashCustomerOtpPhoneIpKey,
+  hashCustomerOtpPhoneKey,
+} from "./hashing";
 
 const PHONE_A = "+919876543210" as E164IndianMobileNumber;
 const PHONE_B = "+919000000001" as E164IndianMobileNumber;
@@ -74,5 +78,32 @@ describe("hashCustomerOtpIpKey", () => {
     const v4Hash = hashCustomerOtpIpKey(SECRET_A, "127.0.0.1");
     const v6Hash = hashCustomerOtpIpKey(SECRET_A, "::1");
     expect(v4Hash).not.toBe(v6Hash);
+  });
+});
+
+describe("hashCustomerOtpPhoneIpKey", () => {
+  it("returns a lowercase 64-character hex digest", () => {
+    expect(hashCustomerOtpPhoneIpKey(SECRET_A, PHONE_A, IP_A)).toMatch(HEX64_PATTERN);
+  });
+
+  it("differs from phone-only and ip-only hashes", () => {
+    const combined = hashCustomerOtpPhoneIpKey(SECRET_A, PHONE_A, IP_A);
+    expect(combined).not.toBe(hashCustomerOtpPhoneKey(SECRET_A, PHONE_A));
+    expect(combined).not.toBe(hashCustomerOtpIpKey(SECRET_A, IP_A));
+  });
+
+  it("never contains the raw phone or IP", () => {
+    const hash = hashCustomerOtpPhoneIpKey(SECRET_A, PHONE_A, IP_A);
+    expect(hash).not.toContain("9876543210");
+    expect(hash).not.toContain(IP_A);
+  });
+
+  it("differs when either phone or IP changes", () => {
+    expect(hashCustomerOtpPhoneIpKey(SECRET_A, PHONE_A, IP_A)).not.toBe(
+      hashCustomerOtpPhoneIpKey(SECRET_A, PHONE_B, IP_A),
+    );
+    expect(hashCustomerOtpPhoneIpKey(SECRET_A, PHONE_A, IP_A)).not.toBe(
+      hashCustomerOtpPhoneIpKey(SECRET_A, PHONE_A, IP_B),
+    );
   });
 });

@@ -210,6 +210,7 @@ describe("IMP-036F F5 Promotions commercial Admin HTTP", () => {
             runtime,
             persistence,
             trustedOrigin: workforceAuthConfig().workforce.baseURL.origin,
+            stepUpSessionHashSecret: workforceAuthConfig().workforce.secret,
           },
           "promotions-admin-http-request",
         );

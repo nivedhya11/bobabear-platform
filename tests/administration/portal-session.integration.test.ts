@@ -133,6 +133,7 @@ describe("IMP-036A portal session destination projection", () => {
             runtime,
             persistence,
             trustedOrigin: workforceAuthConfig().workforce.baseURL.origin,
+            stepUpSessionHashSecret: workforceAuthConfig().workforce.secret,
           },
           "portal-session-request",
         );

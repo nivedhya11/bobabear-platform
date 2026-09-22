@@ -44,16 +44,22 @@ import {
 import { checkTrustedOrigin } from "../../workforce-auth/http/origin";
 import type { WorkerHealthReporter } from "../../../platform/observability/worker-health";
 import type { WorkforceAuthRuntime } from "../../auth/workforce";
+import type { WorkforceAuthSecret } from "../../auth/shared/types";
 import type { Persistence } from "../../persistence";
 import { resolveOperationsWorkforcePrincipal } from "./auth";
 import { readOperationsJsonObjectBody } from "./body";
 import { mapAdminError } from "./admin-error-map";
 import { sendJson, sendMethodNotAllowed, sendNotFound } from "./response";
+import {
+  consumeAccessMutationStepUpForOpsRequest,
+  isStepUpError,
+} from "./step-up";
 
 export type AdminRouteDependencies = Readonly<{
   runtime: WorkforceAuthRuntime;
   persistence: Persistence;
   trustedOrigin: string;
+  stepUpSessionHashSecret: WorkforceAuthSecret;
   /** Ops runtime identity so Admin overview composes the same status projection as Ops. */
   serviceName?: string;
   startedAt?: Date;
@@ -284,6 +290,18 @@ export async function routeAdminRequest(
         sendJson(res, { ok: false, code: "ADMIN_REQUEST_INVALID", requestId }, { status: 400, requestId });
         return { operation, safeOutcomeCode: "ADMIN_REQUEST_INVALID", httpStatus: 400 };
       }
+      if (!principal) {
+        throw new AdministrationError("WORKFORCE_AUTH_REQUIRED", "Workforce authentication required.");
+      }
+      await consumeAccessMutationStepUpForOpsRequest(
+        {
+          persistence: deps.persistence,
+          stepUpSessionHashSecret: deps.stepUpSessionHashSecret,
+        },
+        req.headers,
+        body.value,
+        principal.workforceUserId,
+      );
       const assignment = dateJson(
         await adminRevokeRole(deps.persistence, principal, route.id, body.value),
       );
@@ -316,6 +334,18 @@ export async function routeAdminRequest(
           sendJson(res, { ok: false, code: "ADMIN_REQUEST_INVALID", requestId }, { status: 400, requestId });
           return { operation, safeOutcomeCode: "ADMIN_REQUEST_INVALID", httpStatus: 400 };
         }
+        if (!principal) {
+          throw new AdministrationError("WORKFORCE_AUTH_REQUIRED", "Workforce authentication required.");
+        }
+        await consumeAccessMutationStepUpForOpsRequest(
+          {
+            persistence: deps.persistence,
+            stepUpSessionHashSecret: deps.stepUpSessionHashSecret,
+          },
+          req.headers,
+          body.value,
+          principal.workforceUserId,
+        );
         const membership = dateJson(
           await adminCreateMembership(deps.persistence, principal, body.value),
         );
@@ -335,6 +365,18 @@ export async function routeAdminRequest(
           sendJson(res, { ok: false, code: "ADMIN_REQUEST_INVALID", requestId }, { status: 400, requestId });
           return { operation, safeOutcomeCode: "ADMIN_REQUEST_INVALID", httpStatus: 400 };
         }
+        if (!principal) {
+          throw new AdministrationError("WORKFORCE_AUTH_REQUIRED", "Workforce authentication required.");
+        }
+        await consumeAccessMutationStepUpForOpsRequest(
+          {
+            persistence: deps.persistence,
+            stepUpSessionHashSecret: deps.stepUpSessionHashSecret,
+          },
+          req.headers,
+          body.value,
+          principal.workforceUserId,
+        );
         const membership = dateJson(
           await adminTransitionMembership(deps.persistence, principal, route.id, body.value),
         );
@@ -354,6 +396,18 @@ export async function routeAdminRequest(
           sendJson(res, { ok: false, code: "ADMIN_REQUEST_INVALID", requestId }, { status: 400, requestId });
           return { operation, safeOutcomeCode: "ADMIN_REQUEST_INVALID", httpStatus: 400 };
         }
+        if (!principal) {
+          throw new AdministrationError("WORKFORCE_AUTH_REQUIRED", "Workforce authentication required.");
+        }
+        await consumeAccessMutationStepUpForOpsRequest(
+          {
+            persistence: deps.persistence,
+            stepUpSessionHashSecret: deps.stepUpSessionHashSecret,
+          },
+          req.headers,
+          body.value,
+          principal.workforceUserId,
+        );
         const assignment = dateJson(
           await adminGrantRole(deps.persistence, principal, route.id, body.value),
         );
@@ -443,6 +497,14 @@ export async function routeAdminRequest(
     sendMethodNotAllowed(res, requestId, "GET, POST, PATCH");
     return { operation, safeOutcomeCode: "METHOD_NOT_ALLOWED", httpStatus: 405 };
   } catch (error) {
+    if (isStepUpError(error)) {
+      sendJson(
+        res,
+        { ok: false, code: error.code, requestId },
+        { status: error.httpStatus, requestId },
+      );
+      return { operation, safeOutcomeCode: error.code, httpStatus: error.httpStatus };
+    }
     const mapped = mapAdminError(error, requestId);
     sendJson(res, mapped.body, { status: mapped.status, requestId });
     return { operation, safeOutcomeCode: mapped.body.code, httpStatus: mapped.status };

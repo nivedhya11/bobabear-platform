@@ -258,12 +258,16 @@ export async function signInWorkforce(
 export async function changeWorkforcePassword(
   currentPassword: string,
   newPassword: string,
+  options?: Readonly<{ stepUpProofId?: string }>,
 ): Promise<WorkforceAuthChangePasswordResult> {
   let response: Response;
   try {
     response = await postJson(WORKFORCE_AUTH_PUBLIC_PATHS.changePassword, {
       currentPassword,
       newPassword,
+      ...(typeof options?.stepUpProofId === "string" && options.stepUpProofId.length > 0
+        ? { stepUpProofId: options.stepUpProofId }
+        : {}),
     });
   } catch {
     return { ok: false, code: "NETWORK_ERROR" };

@@ -214,6 +214,7 @@ describe("IMP-036F F4 Pricing commercial Admin HTTP", () => {
             runtime,
             persistence,
             trustedOrigin: workforceAuthConfig().workforce.baseURL.origin,
+            stepUpSessionHashSecret: workforceAuthConfig().workforce.secret,
           },
           "pricing-admin-http-request",
         );

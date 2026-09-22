@@ -31,11 +31,11 @@
     "note": "Protected evidence and generated reports are never classified as executable test source."
   },
   "counts": {
-    "trackedPathsConsidered": 2016,
-    "executableTestFiles": 425,
-    "sourceTestFiles": 130,
-    "testsTreeExecutableFiles": 231,
-    "scriptTestFiles": 64,
+    "trackedPathsConsidered": 2049,
+    "executableTestFiles": 431,
+    "sourceTestFiles": 134,
+    "testsTreeExecutableFiles": 232,
+    "scriptTestFiles": 65,
     "playwrightSpecs": 12,
     "vitestConfigs": 2,
     "playwrightConfigs": 7,
@@ -142,6 +142,7 @@
     "src/server/customer-auth/pii.test.ts",
     "src/server/customer-auth/provider/local.test.ts",
     "src/server/customer-auth/rate-limit/hashing.test.ts",
+    "src/server/customer-auth/rate-limit/progressive.test.ts",
     "src/server/customer-commerce/http/helpers.test.ts",
     "src/server/customer-commerce/menu/project-customer-menu.test.ts",
     "src/server/notifications/channels/non-sending.test.ts",
@@ -163,6 +164,9 @@
     "src/server/persistence/outbox/store.test.ts",
     "src/server/persistence/outbox/validation.test.ts",
     "src/server/refund/replay-authorization.test.ts",
+    "src/server/security/step-up/hash.test.ts",
+    "src/server/security/step-up/session-token.test.ts",
+    "src/server/security/turnstile/siteverify.test.ts",
     "src/server/workforce-auth/auth-state.test.ts",
     "src/server/workforce-auth/password-policy.test.ts",
     "src/server/workforce-auth/pii.test.ts",
@@ -316,6 +320,7 @@
     "tests/database/refund.integration.test.ts",
     "tests/database/serviceability.integration.test.ts",
     "tests/database/workforce-auth.integration.test.ts",
+    "tests/database/workforce-step-up.integration.test.ts",
     "tests/delivery-application/delivery.application.test.ts",
     "tests/delivery-concurrency/delivery.concurrency.test.ts",
     "tests/delivery-manual/delivery.manual.test.ts",
@@ -443,6 +448,7 @@
     "scripts/environment/hygiene.test.mjs",
     "scripts/environment/podman-compose.test.mjs",
     "scripts/environment/staging.test.mjs",
+    "scripts/generate-nginx-security-headers.test.mjs",
     "scripts/governance-fingerprint.test.mjs",
     "scripts/lib/vitest-result-validation.test.mjs",
     "scripts/nginx-origin-redirect.test.mjs",
@@ -1733,6 +1739,24 @@
       "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "scripts/generate-nginx-security-headers.test.mjs",
+      "runner": "node:test",
+      "domain": "scripts",
+      "testType": "script-unit",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:scripts"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit",
+        "7-authorization-security"
       ],
       "classificationConfidence": "HEURISTIC"
     },
@@ -4060,6 +4084,25 @@
       "classificationConfidence": "HEURISTIC"
     },
     {
+      "path": "src/server/customer-auth/rate-limit/progressive.test.ts",
+      "runner": "vitest",
+      "domain": "server/customer-auth",
+      "testType": "unit-or-domain",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test",
+        "test:coverage"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit",
+        "3-domain-use-case"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
       "path": "src/server/customer-commerce/http/helpers.test.ts",
       "runner": "vitest",
       "domain": "server/customer-commerce",
@@ -4459,6 +4502,66 @@
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "src/server/security/step-up/hash.test.ts",
+      "runner": "vitest",
+      "domain": "server/security",
+      "testType": "unit-or-domain",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test",
+        "test:coverage"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit",
+        "3-domain-use-case",
+        "7-authorization-security"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "src/server/security/step-up/session-token.test.ts",
+      "runner": "vitest",
+      "domain": "server/security",
+      "testType": "unit-or-domain",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test",
+        "test:coverage"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit",
+        "3-domain-use-case",
+        "7-authorization-security"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "src/server/security/turnstile/siteverify.test.ts",
+      "runner": "vitest",
+      "domain": "server/security",
+      "testType": "unit-or-domain",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test",
+        "test:coverage"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit",
+        "3-domain-use-case",
+        "7-authorization-security"
       ],
       "classificationConfidence": "HEURISTIC"
     },
@@ -8166,6 +8269,43 @@
       "path": "tests/database/workforce-auth.integration.test.ts",
       "runner": "vitest",
       "domain": "database/workforce-auth",
+      "testType": "integration",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:administration",
+        "test:database:access-control",
+        "test:database:assortment-availability",
+        "test:database:auth-foundation",
+        "test:database:cart",
+        "test:database:catalog",
+        "test:database:checkout",
+        "test:database:customer-addresses",
+        "test:database:customer-phone-auth",
+        "test:database:customer-profiles",
+        "test:database:menu-import",
+        "test:database:notifications",
+        "test:database:order",
+        "test:database:outbox-idempotency",
+        "test:database:payment",
+        "test:database:persistence",
+        "test:database:pricing-tax",
+        "test:database:promotions",
+        "test:database:serviceability",
+        "test:database:workforce-auth"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "4-integration",
+        "5-database-integration"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/database/workforce-step-up.integration.test.ts",
+      "runner": "vitest",
+      "domain": "database/workforce-step-up",
       "testType": "integration",
       "dbRequired": "YES",
       "browserRequired": "NO",

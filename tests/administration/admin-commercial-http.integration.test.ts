@@ -409,6 +409,7 @@ describe("IMP-036F F6A commercial composition Admin HTTP", () => {
             runtime,
             persistence,
             trustedOrigin: "http://localhost:3000",
+            stepUpSessionHashSecret: "workforce-test-step-up-secret-32chars-xx" as never,
           },
           req.headers["x-request-id"]?.toString() ?? "f6a-req",
         );
@@ -1053,6 +1054,7 @@ describe("IMP-036F F6A commercial composition Admin HTTP", () => {
             runtime,
             persistence,
             trustedOrigin: "http://localhost:3000",
+            stepUpSessionHashSecret: "workforce-test-step-up-secret-32chars-xx" as never,
           },
           req.headers["x-request-id"]?.toString() ?? "f6c-req",
         );
