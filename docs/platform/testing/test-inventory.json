@@ -31,11 +31,11 @@
     "note": "Protected evidence and generated reports are never classified as executable test source."
   },
   "counts": {
-    "trackedPathsConsidered": 2049,
-    "executableTestFiles": 431,
+    "trackedPathsConsidered": 2053,
+    "executableTestFiles": 433,
     "sourceTestFiles": 134,
-    "testsTreeExecutableFiles": 232,
-    "scriptTestFiles": 65,
+    "testsTreeExecutableFiles": 233,
+    "scriptTestFiles": 66,
     "playwrightSpecs": 12,
     "vitestConfigs": 2,
     "playwrightConfigs": 7,
@@ -222,6 +222,7 @@
     "tests/administration/admin-pricing-http.integration.test.ts",
     "tests/administration/admin-promotions-http.integration.test.ts",
     "tests/administration/admin-route-classify.test.ts",
+    "tests/administration/admin-step-up-http.integration.test.ts",
     "tests/administration/admin-tariff-http.integration.test.ts",
     "tests/administration/admin-transport.test.ts",
     "tests/administration/admin-ui.test.tsx",
@@ -434,6 +435,7 @@
     "scripts/audit-persistence.test.mjs",
     "scripts/audit-pricing-tax.test.mjs",
     "scripts/audit-workforce-auth.test.mjs",
+    "scripts/ci-security-sensitive-paths.test.mjs",
     "scripts/customer-commerce/build.test.mjs",
     "scripts/database/lib/migration-history.test.mjs",
     "scripts/database/lib/migration-integrity.test.mjs",
@@ -1515,6 +1517,24 @@
       "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "scripts/ci-security-sensitive-paths.test.mjs",
+      "runner": "node:test",
+      "domain": "scripts",
+      "testType": "script-unit",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:scripts"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit",
+        "7-authorization-security"
       ],
       "classificationConfidence": "HEURISTIC"
     },
@@ -5614,6 +5634,26 @@
       "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/administration/admin-step-up-http.integration.test.ts",
+      "runner": "vitest",
+      "domain": "administration",
+      "testType": "integration",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:administration",
+        "test:database:administration"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "4-integration",
+        "5-database-integration",
+        "6-http-api-contract"
       ],
       "classificationConfidence": "HEURISTIC"
     },
