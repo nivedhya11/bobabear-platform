@@ -907,7 +907,7 @@ FOUNDER_UAT_STATUS: NOT_PERFORMED
 
 ### 21.2 What has **not** happened
 
-- Product/security tranche implementation (A–C COMPLETE; D IN_PROGRESS; E–F NOT_STARTED in this artifact)  
+- Product/security tranche implementation (A–F COMPLETE as implementation/evidence; acceptance NOT claimed)  
 - Cloudflare / DO firewall / AOP provisioning (IMP-039)  
 - CI security gates wired as acceptance evidence  
 - Founder UAT  
@@ -947,12 +947,12 @@ self-declare `FOUNDER_UAT = PASS`.
 | **A** | Nginx headers/CSP; trusted `real_ip`; TRUST_PROXY_HOPS=1 alignment | COMPLETE (CSP Report-Only; enforce deferred until challenge/Maps journey proof) |
 | **B** | Customer + workforce abuse extensions + Turnstile siteverify | COMPLETE (merged; Administration/Ops HTTP proofs updated for enforcement) |
 | **C** | Step-up proof schema + class enforcement + audits | COMPLETE (merged; missing/expired/replay/class-mismatch HTTP negatives retained) |
-| **D** | Secure SDLC CI gates + exception register + domain audit extensions | IN_PROGRESS (CodeQL/SCA/gitleaks/Trivy/Dependabot + SHA-pinned Actions) |
-| **E** | Threat model / ASVS / privacy-retention / vendor / legal matrices + Acceptance Pack scaffolding | NOT_STARTED |
-| **F** | Origin-trust design verification hooks + IMP-039 interface checklist (no IMP-039 activation) | NOT_STARTED |
+| **D** | Secure SDLC CI gates + exception register + domain audit extensions | COMPLETE (CodeQL/SCA/gitleaks/Trivy-binary/Dependabot + SHA-pinned Actions) |
+| **E** | Threat model / ASVS / privacy-retention / vendor / legal matrices + Acceptance Pack scaffolding | COMPLETE (Acceptance Pack candidate under `docs/platform/security/acceptance-pack/`) |
+| **F** | Origin-trust design verification hooks + IMP-039 interface checklist (no IMP-039 activation) | COMPLETE (design/lab; `PRODUCTION_REALIZATION_PENDING` owner IMP-039) |
 
 ```text
-TRANCHES_EXECUTED: PARTIAL (A–C complete; D in progress; E–F not started)
+TRANCHES_EXECUTED: PARTIAL (A–F implementation/evidence COMPLETE; acceptance NOT claimed)
 ```
 
 ---

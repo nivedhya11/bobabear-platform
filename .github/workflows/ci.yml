@@ -4,9 +4,10 @@
 #   actions/checkout@v4.2.2             -> 11bd71901bbe5b1630ceea73d27597364c9af683
 #   actions/setup-node@v4.4.0           -> 49933ea5288caeca8642d1e84afbd3f7d6820020
 #   actions/upload-artifact@v4.6.2      -> ea165f8d65b6e75b540449e92b4886f43607fa02
-#   aquasecurity/trivy-action@v0.30.0   -> 6c175e9c4083a92bbca2f9724c8a5e33bc2d97a5
 #   github/codeql-action@v3.28.19       -> fca7ace96b7d713c7035871441bd52efbe39e27e
 #   peaceiris/actions-gh-pages@v4.0.0   -> 4f9cc6602d3f66b9c108549d475ec49e8ef4d45e
+# Container scan: scripts/run-trivy.mjs (pinned Trivy binary v0.69.3) — not
+# aquasecurity/trivy-action (2026 Actions tag-compromise advisories).
 name: CI
 
 on:
@@ -519,14 +520,4 @@ jobs:
 
       - name: Trivy filesystem scan (CRITICAL,HIGH)
         if: steps.container.outputs.container_scan == 'true'
-        uses: aquasecurity/trivy-action@6c175e9c4083a92bbca2f9724c8a5e33bc2d97a5 # v0.30.0
-        with:
-          scan-type: fs
-          scan-ref: .
-          severity: CRITICAL,HIGH
-          exit-code: "1"
-          ignore-unfixed: false
-          format: table
-          # JS dependency vulns are owned by audit:npm-sca; Trivy covers Dockerfile/IaC + non-npm FS.
-          skip-dirs: node_modules,.git,.next,out,coverage,.cache,dist-customer-auth,dist-workforce-auth,dist-customer-commerce,dist-operations
-          scanners: vuln,misconfig
+        run: npm run audit:container

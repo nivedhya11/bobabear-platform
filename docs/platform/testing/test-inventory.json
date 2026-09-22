@@ -41,13 +41,13 @@
     "playwrightConfigs": 7,
     "testSupportScripts": 50,
     "packageTestCommands": 80,
-    "packageAuditCommands": 26,
+    "packageAuditCommands": 27,
     "packageE2eCommands": 9,
     "packageCheckCommands": 13,
     "packageCoverageCommands": 1,
     "packageInventoryCommands": 2,
     "ciWorkflowFiles": 4,
-    "ciValidationSteps": 110,
+    "ciValidationSteps": 111,
     "protectedEvidenceTrackedFiles": 3,
     "archiveTrackedFiles": 92
   },
@@ -663,6 +663,7 @@
       "audit:catalog",
       "audit:checkout",
       "audit:config",
+      "audit:container",
       "audit:customer-addresses",
       "audit:customer-phone-auth",
       "audit:customer-profiles",
@@ -726,6 +727,7 @@
     "audit:catalog": "node scripts/audit-catalog.mjs",
     "audit:checkout": "node scripts/audit-checkout.mjs",
     "audit:config": "node scripts/audit-config-boundary.mjs",
+    "audit:container": "node scripts/run-trivy.mjs",
     "audit:customer-addresses": "node scripts/audit-customer-addresses.mjs",
     "audit:customer-phone-auth": "node scripts/audit-customer-phone-auth.mjs",
     "audit:customer-profiles": "node scripts/audit-customer-profiles.mjs",
@@ -1130,6 +1132,10 @@
         {
           "name": "Detect container scan paths",
           "run": "set -euo pipefail\nif [ \"${{ github.event_name }}\" = \"push\" ] && [ \"${{ github.ref }}\" = \"refs/heads/main\" ]; then\necho \"container_scan=true\" >> \"$GITHUB_OUTPUT\"\necho \"container_scan=true (exact-main always runs Trivy)\"\nexit 0\nfi\nnode scripts/ci-container-scan-paths.mjs"
+        },
+        {
+          "name": "Trivy filesystem scan (CRITICAL,HIGH)",
+          "run": "npm run audit:container"
         }
       ]
     },
