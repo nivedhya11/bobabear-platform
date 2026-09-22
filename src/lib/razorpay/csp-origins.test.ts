@@ -19,8 +19,17 @@ describe("Razorpay Checkout security policy boundary", () => {
   it("does not introduce a wildcard CSP in Next or Nginx", () => {
     const nextConfig = readFileSync(path.join(process.cwd(), "next.config.ts"), "utf8");
     const nginx = readFileSync(path.join(process.cwd(), "docker/nginx/nginx.conf"), "utf8");
+    const headers = readFileSync(
+      path.join(process.cwd(), "docker/nginx/security-headers.conf"),
+      "utf8",
+    );
     expect(nextConfig).not.toMatch(/script-src[^;\n]*\*/);
     expect(nginx).not.toMatch(/Content-Security-Policy[^;\n]*\*/);
     expect(nginx).not.toMatch(/script-src\s+[^;\n]*\*/);
+    expect(headers).toMatch(/Content-Security-Policy-Report-Only/);
+    expect(headers).toContain("https://checkout.razorpay.com");
+    expect(headers).toContain("https://api.razorpay.com");
+    expect(headers).toContain("https://lumberjack.razorpay.com");
+    expect(headers).not.toMatch(/script-src[^;]*\*/);
   });
 });

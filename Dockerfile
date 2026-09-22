@@ -278,6 +278,8 @@ LABEL org.opencontainers.image.revision=${BOBA_BUILD_SHA}
 
 RUN rm -f /etc/nginx/conf.d/default.conf
 COPY docker/nginx/nginx.conf /etc/nginx/nginx.conf
+COPY docker/nginx/cloudflare-real-ip.conf /etc/nginx/boba/cloudflare-real-ip.conf
+COPY docker/nginx/security-headers.conf /etc/nginx/boba/security-headers.conf
 # Portable runtime DNS: official image entrypoint runs *.sh under
 # /docker-entrypoint.d/ before nginx; this script writes
 # /tmp/boba-nginx-resolver.conf from the container's /etc/resolv.conf.
@@ -292,7 +294,8 @@ COPY --from=builder /app/out /usr/share/nginx/html
 # under /tmp needs to be prepared or chowned at build time.
 RUN chmod 755 /docker-entrypoint.d/40-boba-runtime-resolver.sh \
   && chown -R nginx:nginx /usr/share/nginx/html \
-  && chmod -R a+rX /usr/share/nginx/html
+  && chmod -R a+rX /usr/share/nginx/html \
+  && chmod -R a+rX /etc/nginx/boba
 
 USER nginx
 EXPOSE 8080

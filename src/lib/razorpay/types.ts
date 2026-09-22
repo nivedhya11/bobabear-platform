@@ -7,7 +7,7 @@ export const RAZORPAY_CHECKOUT_SCRIPT_URL = "https://checkout.razorpay.com/v1/ch
 
 export const RAZORPAY_STANDARD_CHECKOUT_KIND = "razorpay_standard_checkout" as const;
 
-/** Documented origins for a future CSP. Not applied: static export currently has no CSP. */
+/** Documented origins for Nginx CSP allowlist (IMP-038). Applied via docker/nginx/security-headers.conf. */
 export const RAZORPAY_CHECKOUT_DOCUMENTED_ORIGINS = Object.freeze({
   scriptSrc: Object.freeze(["https://checkout.razorpay.com"]),
   frameSrc: Object.freeze(["https://api.razorpay.com", "https://checkout.razorpay.com"]),

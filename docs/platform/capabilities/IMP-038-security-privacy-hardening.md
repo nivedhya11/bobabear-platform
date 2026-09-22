@@ -944,7 +944,7 @@ self-declare `FOUNDER_UAT = PASS`.
 
 | Tranche | Scope | Status |
 |---|---|---|
-| **A** | Nginx headers/CSP; trusted `real_ip`; TRUST_PROXY_HOPS=1 alignment | NOT_STARTED |
+| **A** | Nginx headers/CSP; trusted `real_ip`; TRUST_PROXY_HOPS=1 alignment | COMPLETE (CSP Report-Only; enforce deferred until challenge/Maps journey proof) |
 | **B** | Customer + workforce abuse extensions + Turnstile siteverify | NOT_STARTED |
 | **C** | Step-up proof schema + class enforcement + audits | NOT_STARTED |
 | **D** | Secure SDLC CI gates + exception register + domain audit extensions | NOT_STARTED |
@@ -952,7 +952,7 @@ self-declare `FOUNDER_UAT = PASS`.
 | **F** | Origin-trust design verification hooks + IMP-039 interface checklist (no IMP-039 activation) | NOT_STARTED |
 
 ```text
-TRANCHES_EXECUTED: NO
+TRANCHES_EXECUTED: PARTIAL (A complete; B–F not started)
 ```
 
 ---
