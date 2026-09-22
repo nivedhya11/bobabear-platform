@@ -214,7 +214,8 @@ POLICY =
   SCA = npm audit high+ with deterministic exception filter
         (docs/platform/security/vulnerability-exception-register.md)
   Secrets = pinned gitleaks OSS binary (scripts/run-gitleaks.mjs)
-  Containers = aquasecurity/trivy-action fs scan severity CRITICAL,HIGH
+  Containers = scripts/run-trivy.mjs pinned Trivy binary v0.69.3 fs scan CRITICAL,HIGH
+               (not aquasecurity/trivy-action; post-2026 Actions compromise)
                (skip node_modules; npm SCA owns JS dependency vulns)
                path-filtered on PR via scripts/ci-container-scan-paths.mjs; always on main
 ```
