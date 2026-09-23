@@ -4,7 +4,7 @@
   "authority": "VERIFICATION_POLICY",
   "version": "TEST-1",
   "effectiveFrom": "IMP-036F for new story-based delivery",
-  "lastReviewed": "2026-09-17"
+  "lastReviewed": "2026-09-23"
 }
 -->
 
@@ -28,16 +28,24 @@ PD1_DID_NOT_ACTIVATE_IMP036F_AT_ADOPTION = YES
 
 TEST-1 / PD-1 did not themselves activate IMP-036F when introduced. Current lifecycle and
 activation truth is owned by [`ROADMAP.md`](./ROADMAP.md) / [`STATE.md`](./STATE.md)
-(`IMP036F_ACTIVATED` / `IMP036G_ACTIVATED` / `IMP037_ACTIVATED` / `IMP038_ACTIVATED`). IMP-036G remains
-`COMPLETE_AND_ACCEPTED` (`IMP036G_ACCEPTED: YES`; Founder UAT PASS). Under
-`CONTINUATION_EXCEPTION: IMP037_PROVIDER_BLOCKED_TO_IMP038`, IMP-038 is the activated
-`currentProductSlice` (`IMP038_ACTIVATED: YES`; formal lifecycle `IMPLEMENTATION_IN_PROGRESS`; Product
-Definition `APPROVED` / `PD-IMP-038-DRAFT-2`; Product Definition Gate PASS; Architecture Fit PASS;
-architecture LOCKED; independent Architecture Fit review PASS; implementation AUTHORIZED /
-STARTED; `IMP038_ACCEPTANCE_BLOCKED_BY_IMP037: YES`). IMP-037 remains an unresolved
-`IMPLEMENTATION_IN_PROGRESS` predecessor (`IMP037_ACTIVATED: YES`; Product Definition `APPROVED` /
-`PD-IMP-037-DRAFT-1`; Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation
-AUTHORIZED / STARTED; `IMP037_ACCEPTED: NO`; provider-blocked external recovery proof). TEST-1 remains the verification policy
+(`IMP036F_ACTIVATED` / `IMP036G_ACTIVATED` / `IMP036H_ACTIVATED` / `IMP037_ACTIVATED` /
+`IMP038_ACTIVATED`). IMP-036G remains `COMPLETE_AND_ACCEPTED` (`IMP036G_ACCEPTED: YES`; Founder UAT
+PASS). Under `PROGRAM_PAUSE: PRE_GTM_PRODUCT_INSERTION_PROVIDER_BLOCKED` (**D-377**), IMP-036H is
+the activated `currentProductSlice` (`IMP036H_ACTIVATED: YES`; formal lifecycle `PLANNED`; Product
+Definition `PD-IMP-036H-DRAFT-1` = `APPROVED`; Product Definition Gate
+`PASS`; Architecture Fit `NOT_PERFORMED`; architecture `NOT_LOCKED`; implementation
+`NOT_AUTHORIZED` / `NOT_STARTED`; `IMP036H_ACCEPTED: NO`; `nextProductSlice` = IMP-036I;
+`IMP036I_ACTIVATED: NO`). IMP-038 remains held (`IMP038_HOLD: YES`;
+`IMPLEMENTATION_IN_PROGRESS (HOLD — IMPLEMENTATION_COMPLETE / NOT_ACCEPTED)`; Product Definition
+`APPROVED` / `PD-IMP-038-DRAFT-2`; Gate PASS; Architecture Fit PASS; architecture LOCKED;
+`IMP038_IMPLEMENTATION_COMPLETE: YES`; `IMP038_ACCEPTED: NO`;
+`IMP038_ACCEPTANCE_BLOCKED_BY_IMP037: YES`;
+`IMP038_EXTERNAL_ASSESSMENT: DEFERRED_UNTIL_PRE_GTM_APPLICATION_SCOPE_STABILIZES`) and is **not**
+CURRENT `currentProductSlice`. IMP-037 remains an unresolved held
+`IMPLEMENTATION_IN_PROGRESS` predecessor (`IMP037_HOLD: YES`; `IMP037_ACTIVATED: YES`; Product
+Definition `APPROVED` / `PD-IMP-037-DRAFT-1`; Gate PASS; Architecture Fit PASS; architecture LOCKED;
+implementation AUTHORIZED / STARTED; `IMP037_IMPLEMENTATION_COMPLETE: NO`; `IMP037_ACCEPTED: NO`;
+`PHASE1_BLOCK_STATUS: BLOCKED_PROVIDER_ACCESS`). TEST-1 remains the verification policy
 for new story-based delivery from IMP-036F. Verification layers and delivery
 phases are not new ROADMAP lifecycle states. Session 1 established documentation policy; it
 changed no runtime, tests, CI configuration, staging deployment, or acceptance status.

@@ -75,6 +75,9 @@ IMP038_ARCHITECTURE_FIT: PASS
 IMP038_ARCHITECTURE_LOCKED: YES
 IMP038_IMPLEMENTATION_AUTHORIZED: YES
 IMP038_STARTED: YES
+IMP038_IMPLEMENTATION_COMPLETE: YES
+IMP038_HOLD: YES
+IMP037_HOLD: YES
 IMP038_ACCEPTANCE_BLOCKED_BY_IMP037: YES
 CONTINUATION_EXCEPTION: IMP037_PROVIDER_BLOCKED_TO_IMP038
 IMP037_PROVIDER_BLOCKED_TO_IMP038: YES
@@ -84,6 +87,8 @@ PROVIDER_DEPENDENT_PROOF: DEFERRED_PENDING_PROVIDER_ACCESS
 IMPLEMENTATION_PERFORMED: NO
 PRODUCTION_RESOURCES_CREATED: NO
 PRODUCTION_RESTORE_AUTHORIZED: NO
+PROGRAM_PAUSE: PRE_GTM_PRODUCT_INSERTION_PROVIDER_BLOCKED
+PROGRAM_PAUSE_AUTHORITY: D-377
 
 FITS_WITHIN_ARCH_R20: YES
 D-374_CREATED: YES (already CURRENT; not created by this Fit)
@@ -93,7 +98,7 @@ ARCH_R21_REQUIRED: NO
 ARCH_R21_CREATED: NO
 NEW_GLOBAL_DECISION_REQUIRED: NO
 
-CANONICAL_ROADMAP_STATE = GTM-R140 / STATE-R138
+CANONICAL_ROADMAP_STATE = GTM-R142 / STATE-R140
 ARCHITECTURE_BASE = ARCH-R20 / D-374
 PRODUCT_DEFINITION = PD-IMP-037-DRAFT-1 (APPROVED; Product Definition Gate PASS)
 FOUNDER_UAT_REQUIRED = YES
@@ -102,11 +107,14 @@ IMPLEMENTATION_AUTHORIZATION_EVIDENCE = PR#171/5743814105
 IMPLEMENTATION_START_EVIDENCE = PR#172/5744869269
 ```
 
-`CANONICAL_ROADMAP_STATE = GTM-R139 / STATE-R137` is the **CURRENT tip** (IMP-038 Architecture Fit
-PASS / architecture LOCKED while IMP-037 remains unresolved / provider-blocked). Prior tip
-`GTM-R138 / STATE-R136` remains the **controlled-continuation / Product Definition Gate PASS**
-provenance tip. Prior tip `GTM-R137 / STATE-R135` remains the **post-merge repository-implementation
-reconciliation target** for this artifact. Start provenance remains GTM-R136 / STATE-R134;
+`CANONICAL_ROADMAP_STATE = GTM-R142 / STATE-R140` is the **CURRENT tip** (IMP-036H Product
+Definition Gate PASS under `PROGRAM_PAUSE` D-377; prior tip GTM-R141 / STATE-R139 activation; IMP-037/038 held; `IMP038_IMPLEMENTATION_COMPLETE: YES`
+without acceptance). Prior tip `GTM-R140 / STATE-R138` remains the **IMP-038 AUTHORIZE + START**
+provenance tip. Prior tip `GTM-R139 / STATE-R137` remains the **IMP-038 Architecture Fit PASS /
+architecture LOCK** provenance tip. Prior tip `GTM-R138 / STATE-R136` remains the
+**controlled-continuation / Product Definition Gate PASS** provenance tip. Prior tip
+`GTM-R137 / STATE-R135` remains the **post-merge repository-implementation reconciliation target**
+for this artifact. Start provenance remains GTM-R136 / STATE-R134;
 authorization provenance remains GTM-R135 / STATE-R133; Architecture Fit/lock provenance remains
 GTM-R134 / STATE-R132; Fit evaluation was against GTM-R133 / STATE-R131 / ARCH-R20 / DR-16.
 ROADMAP and STATE remain the sole lifecycle authority; this capability document never overrides them.
