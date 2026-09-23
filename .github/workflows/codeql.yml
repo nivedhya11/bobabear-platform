@@ -2,7 +2,7 @@
 # Does not claim compliance certification.
 #
 # Action pin map (immutable commit SHAs; IMP-038 §15):
-#   actions/checkout@v4.2.2       -> 11bd71901bbe5b1630ceea73d27597364c9af683
+#   actions/checkout@v7.0.1       -> 3d3c42e5aac5ba805825da76410c181273ba90b1
 #   github/codeql-action@v3.28.19 -> fca7ace96b7d713c7035871441bd52efbe39e27e
 name: CodeQL
 
@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@fca7ace96b7d713c7035871441bd52efbe39e27e # v3.28.19
