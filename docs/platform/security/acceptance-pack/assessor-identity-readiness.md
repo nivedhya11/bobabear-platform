@@ -9,13 +9,17 @@ Secrets: ABSENT (credentials delivered OOB only)
 
 ```text
 ASSESSMENT_WINDOW_STARTED: YES
-ASSESSMENT_HEAD: 0990c91e428a8dea2dd3387cd6f7f1cb6425a1a1
-ASSESSMENT_TREE: d426ee4e947b6f3eb0559f93eb8b1d008f15696e
-ASSESSMENT_FINGERPRINT: 0d017621d37eb6439db854cfdc5dd6bd9689f61636b10d3d6a1689e63e61ea90
+ASSESSMENT_HEAD: dc6b19e6f88d4084e424d927e6467c374596fb0a
+ASSESSMENT_TREE: c3aefb57f3f6c941d7f14907b6c095c4aa7f0547
+ASSESSMENT_FINGERPRINT: 2800fe11397ee2a01e9decf572f85adf5c3a8b244ca34b1f53d579e05feac589
 ASSESSMENT_URL: https://cradling-unenvied-sapling.ngrok-free.dev
+STAGING_CANDIDATE_MATCH: YES
 ASSESSMENT_CREDENTIAL_PACKAGE_READY: YES
 CSP_ENFORCE: YES
+FINAL_ASSESSMENT_CANDIDATE: FROZEN
+SUPERSEDES_PRIOR_ASSESSMENT_CANDIDATE: 0990c91e428a8dea2dd3387cd6f7f1cb6425a1a1
 OOB_PACKAGE_LOCATION: .env.staging/assessment-oob-credentials.txt (gitignored)
+REPROVED_UTC: 2026-09-23T13:41:00Z (against newly deployed exact candidate; internal smoke only)
 ```
 
 ## Identity matrix (no secrets)
@@ -65,6 +69,7 @@ DURABLE_FIX: Dockerfile tooling COPY --chown=node:node + materializeExactGitTree
 | External HTTPS reachable | PASS |
 | `GET /` | PASS 200 |
 | `GET /order/` | PASS 200 |
+| `GET /privacy/` | PASS 200 |
 | `GET /workforce/login/` | PASS 200 |
 | CSP | ENFORCE (not Report-Only) |
 | Customer auth origin | assessment URL (running container) |
@@ -74,8 +79,10 @@ DURABLE_FIX: Dockerfile tooling COPY --chown=node:node + materializeExactGitTree
 | Step-up | PASS (`/api/workforce-auth/step-up` → proofId) |
 | Operations | PASS (`/api/operations/v1/orders`, `operational-status`) |
 | Administration | PASS (`/api/admin/v1/overview`) |
+| Refund identity session | PASS (MFA session ready) |
 | Razorpay | sandbox/test only (`rzp_test_*`) |
 | Production customer data | ABSENT (Founder staging counts only) |
+| Staging candidate match | PASS (`DEPLOYED_HEAD`/`TREE` = frozen `dc6b19e6…` / `c3aefb57…`) |
 
 ## Independence reminder
 

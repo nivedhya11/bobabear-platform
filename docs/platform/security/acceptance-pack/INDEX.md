@@ -51,8 +51,8 @@ regulatory compliance, or Founder UAT pass.
 | Legal review topics (exactly 9) | [`legal-review-topics.md`](./legal-review-topics.md) | Legal + Founder | Open topics only; no invented findings | PRESENT |
 | Origin-trust design + lab (US-023) | [`../origin-trust/README.md`](../origin-trust/README.md) | IMP-038 design/lab; live = IMP-039 | `PRODUCTION_REALIZATION_PENDING` | PRESENT (design+lab; not live) |
 | External assessment report | — | Founder-commissioned | Required before IMP-038 acceptance | **GAP** — see gap-register `GAP-EXT-ASSESS-001` |
-| External assessment briefing (prep only) | [`external-assessment-briefing.md`](./external-assessment-briefing.md) | Platform security | Assessor prep; does **not** close GAP-EXT-ASSESS-001 | PRESENT (briefing only; window started) |
-| Assessor identity readiness (non-secret) | [`assessor-identity-readiness.md`](./assessor-identity-readiness.md) | Platform security | Credential package OOB; smoke PASS | PRESENT (does **not** close GAP-EXT-ASSESS-001) |
+| External assessment briefing (prep only) | [`external-assessment-briefing.md`](./external-assessment-briefing.md) | Platform security | Assessor prep; does **not** close GAP-EXT-ASSESS-001 | PRESENT (briefing only; window started; candidate `dc6b19e6…` frozen) |
+| Assessor identity readiness (non-secret) | [`assessor-identity-readiness.md`](./assessor-identity-readiness.md) | Platform security | Credential package OOB; smoke PASS on frozen candidate | PRESENT (does **not** close GAP-EXT-ASSESS-001) |
 
 ## US-024 minimum index (crosswalk)
 
