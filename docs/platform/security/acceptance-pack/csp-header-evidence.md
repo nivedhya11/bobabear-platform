@@ -49,20 +49,22 @@ No `*.googleapis.com` / `*.gstatic.com` / other Google wildcards.
 ## Founder-staging journey proof — 2026-09-23
 
 ```text
-BASE_CANDIDATE_HEAD: 663b355cea7aab2571c43ed4c1f3e50c39012af8
+MERGED_MAIN_HEAD: 20f9cd593929a39edc5a9abf4d2abdf1e93c5921
+TREE: 01794832b54050b65b374ab8a89d7a7d3c001363
 STAGING_URL: http://localhost:8080
+STAGING_CANDIDATE_MATCH: YES
+STAGING_ARTIFACT_SOURCE: EXACT_MERGED_GIT_TREE (git archive HEAD)
 PROOF_RUNTIME: Playwright Chromium + SecurityPolicyViolationEvent
-CSP_HEADER_APPLICATION: bind-mount updated security-headers.conf onto running
-  boba-staging app (exact app image unchanged; CSP fragment only) for interim proof;
-  formal exact-main redeploy follows merge of this change set
+PR: https://github.com/nivedhya11/bobabear-platform/pull/203
+CI_RUN: 35806961444 SUCCESS
 ```
 
-### Report-Only re-proof (post D-376 fonts) — PASS
+### Report-Only re-proof (post D-376 fonts; pre-merge bind-mount) — PASS
 
 Maps/address confirmation loaded Maps JS + Maps-injected Google Fonts CDN hosts with
 **zero unauthorized Report-Only violations**. Negative `evil.example` script reported only.
 
-### Enforce proof — PASS (required Maps + negative)
+### Enforce proof on exact merged-main staging — PASS
 
 | Journey | Result | CSP notes |
 |---|---|---|
@@ -84,7 +86,7 @@ No additional non-inventoried hosts were observed on exercised journeys.
 
 | Probe | Result |
 |---|---|
-| `https://evil.example/blocked.js` script-src | **BLOCKED** — `SecurityPolicyViolationEvent` disposition=`enforce` |
+| `https://evil.example/x.js` script-src | **BLOCKED** — `SecurityPolicyViolationEvent` disposition=`enforce` (post-redeploy proof) |
 
 ## Decision record
 
