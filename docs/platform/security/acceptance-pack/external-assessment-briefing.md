@@ -32,26 +32,31 @@ independent external assessment.
 ```text
 CANONICAL_REPOSITORY_PATH: /home/ajoshi/repos/boba-bear-platform
 BRANCH: main
-HEAD: 663b355cea7aab2571c43ed4c1f3e50c39012af8
-TREE: 19dfeac3ab47d2ddc4bc1b0750e039fe8332237f
-WORKING_TREE_FINGERPRINT_AT_DEPLOY: 6cf0b074ec468b530ce0687ec53cc6d2c8c9534b05fef2b62aeb6031d0b0a802
-CI_RUN: 35799714546 SUCCESS
-CODEQL_RUN: 35799714560 SUCCESS
+ASSESSMENT_HEAD: a4680c983934bbf0c889952af19bd99bf3a43ed4
+ASSESSMENT_TREE: 9d3fc540a1305f0974dab3098ef59f45310a9a18
+WORKING_TREE_FINGERPRINT: 715e9529101310e13b44f153f7c910394cb82aad8082dde5d4d5056591cbc87d
+CI_PR: https://github.com/nivedhya11/bobabear-platform/pull/205 (exact-head CI SUCCESS; merged)
 DEPLOYED_ENVIRONMENT: Founder staging (boba-staging / PODMAN_WSL)
 STAGING_ARTIFACT_SOURCE: EXACT_MERGED_GIT_TREE (git archive HEAD)
 STAGING_CANDIDATE_MATCH: YES
-DEPLOYMENT_IDENTIFIER: boba-staging @ HEAD 663b355cea7aab2571c43ed4c1f3e50c39012af8
-ASSESSMENT_URL: http://localhost:8080
-ASSESSMENT_URL_CUSTOMER: http://localhost:8080/order/
-ASSESSMENT_URL_WORKFORCE: http://localhost:8080/workforce/login/
-DEPLOYMENT_TIMESTAMP_UTC: 2026-09-23T01:07:03Z (status/health verified after deploy)
+DEPLOYMENT_IDENTIFIER: boba-staging @ HEAD a4680c983934bbf0c889952af19bd99bf3a43ed4
+ASSESSMENT_URL: https://cradling-unenvied-sapling.ngrok-free.dev
+ASSESSMENT_URL_CUSTOMER: https://cradling-unenvied-sapling.ngrok-free.dev/order/
+ASSESSMENT_URL_WORKFORCE: https://cradling-unenvied-sapling.ngrok-free.dev/workforce/login/
+DEPLOYMENT_TIMESTAMP_UTC: 2026-09-23T05:34:59Z (staging deploy complete; CANDIDATE_MATCH YES)
+EXTERNAL_EXPOSURE_MECHANISM: TEMPORARY_NGROK_TUNNEL
+CSP_PHASE: ENFORCE
+D376_RATIFIED: YES
 ```
 
 Pinned assessment runtime identity is **HEAD + TREE + deploy-time fingerprint** above.
 Later local Acceptance Pack doc edits change the live worktree fingerprint but do **not**
 alter the Podman images (exact `git archive` artifact). Do **not** redeploy mid-window.
 
-Do **not** allow candidate drift during an active assessment window. Redeploy only
+Assessment browser/API origin for this window is the HTTPS ngrok URL above. Auth
+`CUSTOMER_AUTH_BASE_URL` / `WORKFORCE_AUTH_BASE_URL` / `BOBA_BEAR_PUBLIC_ORIGIN` are temporarily
+aligned to that origin for the assessment window only (not committed; restored to localhost
+on teardown). Do **not** allow candidate drift during an active assessment window. Redeploy only
 an exact new pinned candidate after the window is closed or explicitly re-baselined.
 
 ### Reachability note (Founder staging path)
