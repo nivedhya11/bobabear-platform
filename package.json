@@ -244,7 +244,7 @@
     "better-auth": "1.6.25",
     "clsx": "^2.1.1",
     "drizzle-orm": "0.45.2",
-    "framer-motion": "^12.38.0",
+    "framer-motion": "^13.4.0",
     "html2pdfsmith": "0.2.9",
     "libphonenumber-js": "1.13.10",
     "lucide-react": "^1.8.0",
