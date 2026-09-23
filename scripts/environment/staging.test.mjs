@@ -200,6 +200,7 @@ test("staging workforce operator uses direct Podman without Compose dependency r
   assert.match(source, /"--label",\s*\n\s*`\$\{OCI_REVISION_LABEL\}=\$\{candidate\.head\}`/);
   assert.match(source, /LOCAL_OPERATOR_BASE_IMAGE_REQUIRED/);
   assert.match(source, /discardStaleTag\(image, candidate\.head\)/);
+  assert.match(source, /umask 022; git -C .* archive .* \| tar -x/);
   assert.doesNotMatch(source.match(/function createStagingWorkforceUser\(args, deps = \{\}\) \{([\s\S]*?)\n\}/)?.[1] ?? "", /--no-cache/);
   assert.match(source, /runOperator\(runArgs, secretBuffer/);
   assert.match(source, /--env-file/);

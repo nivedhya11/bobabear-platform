@@ -97,27 +97,31 @@ ARG BOBA_BUILD_SHA
 RUN printf '%s\n' "${BOBA_BUILD_SHA}" > /tmp/boba-build-sha
 LABEL org.opencontainers.image.revision=${BOBA_BUILD_SHA}
 ENV NODE_ENV=production
-COPY --from=dependencies /app/node_modules ./node_modules
-COPY package.json package-lock.json tsconfig.json drizzle.config.ts ./
-COPY src ./src
-COPY drizzle ./drizzle
-COPY scripts/database ./scripts/database
-COPY scripts/menu ./scripts/menu
-COPY scripts/assortment ./scripts/assortment
-COPY scripts/pricing ./scripts/pricing
-COPY scripts/catalog ./scripts/catalog
-COPY scripts/workforce ./scripts/workforce
-COPY scripts/access ./scripts/access
-COPY scripts/serviceability ./scripts/serviceability
-COPY scripts/check-config.ts ./scripts/check-config.ts
+# Ownership must be `node` before USER switch. Build-context umask (e.g. 077
+# from an operator shell) can otherwise COPY files as mode 0600 root-owned,
+# which makes `USER node` hit EACCES on /app/package.json during one-shot
+# staging workforce operator runs.
+COPY --from=dependencies --chown=node:node /app/node_modules ./node_modules
+COPY --chown=node:node package.json package-lock.json tsconfig.json drizzle.config.ts ./
+COPY --chown=node:node src ./src
+COPY --chown=node:node drizzle ./drizzle
+COPY --chown=node:node scripts/database ./scripts/database
+COPY --chown=node:node scripts/menu ./scripts/menu
+COPY --chown=node:node scripts/assortment ./scripts/assortment
+COPY --chown=node:node scripts/pricing ./scripts/pricing
+COPY --chown=node:node scripts/catalog ./scripts/catalog
+COPY --chown=node:node scripts/workforce ./scripts/workforce
+COPY --chown=node:node scripts/access ./scripts/access
+COPY --chown=node:node scripts/serviceability ./scripts/serviceability
+COPY --chown=node:node scripts/check-config.ts ./scripts/check-config.ts
 # Staging deploy invokes `npm run staging:baseline-classify` inside the tooling
 # image (via menu-import-existing). Package only the classifier entrypoint —
 # not the full scripts/environment/ tree (host-side staging orchestration).
-COPY scripts/environment/staging-baseline-classify.ts ./scripts/environment/staging-baseline-classify.ts
-COPY data/platform/imports ./data/platform/imports
-COPY data/platform/pricing ./data/platform/pricing
-COPY data/platform/catalog ./data/platform/catalog
-COPY public/assets/menu ./public/assets/menu
+COPY --chown=node:node scripts/environment/staging-baseline-classify.ts ./scripts/environment/staging-baseline-classify.ts
+COPY --chown=node:node data/platform/imports ./data/platform/imports
+COPY --chown=node:node data/platform/pricing ./data/platform/pricing
+COPY --chown=node:node data/platform/catalog ./data/platform/catalog
+COPY --chown=node:node public/assets/menu ./public/assets/menu
 USER node
 
 # ── customer-auth-builder ────────────────────────────────────────────────
