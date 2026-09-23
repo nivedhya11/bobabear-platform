@@ -56,14 +56,22 @@ an exact new pinned candidate after the window is closed or explicitly re-baseli
 
 ### Reachability note (Founder staging path)
 
-Current repository Founder staging serves on the operator host at
-`http://localhost:8080` (Nginx published port). It is **not** an Internet-facing
-origin and must **not** be confused with IMP-039 production edge realization
+Founder staging (`boba-staging` / PODMAN_WSL) serves Nginx on the operator host at
+`http://localhost:8080`. For the bounded independent assessment window, Founder authorizes a
+**temporary assessment-only** externally reachable endpoint using the repository's already-used
+Founder-staging reverse-tunnel capability (**ngrok**, historically proven for provider-originated
+Razorpay Test Mode webhook acceptance). This is **not** IMP-039 production edge realization
 (`GAP-ORIGIN-LIVE-001` remains OPEN; `IMP039_ACTIVATED: NO`).
 
-If the independent assessor requires a remote attack surface beyond Founder-local
-WSL access, Founder must authorize a bounded exposure mechanism that does **not**
-activate IMP-039 production infrastructure (see §5).
+```text
+EXTERNAL_EXPOSURE_MECHANISM: TEMPORARY_NGROK_TUNNEL (Founder-authorized; assessment-only)
+PRODUCTION_EDGE: NOT_USED
+IMP039_ACTIVATED: NO
+TEARDOWN: disable ngrok agent + restore localhost auth origins after assessment window
+```
+
+Pinned `ASSESSMENT_URL` in §2 is updated when the tunnel is live for the frozen candidate.
+Assessor credentials are delivered out-of-band; never committed.
 
 ### Data / secrets boundaries
 
@@ -109,20 +117,20 @@ not production Droplet data.
 - Silently broadening CSP / wildcards
 - Closing `GAP-IMP037-001` or accepting IMP-038/039
 
-### External reachability (if remote assessor)
+### External reachability (assessment window)
 
 ```text
-DECISION_REQUIRED (exposure method — if assessor is remote)
-question: How to expose Founder staging for a bounded independent assessment window without activating IMP-039 production edge?
-why_current_authority_is_insufficient: Existing Founder staging authority is localhost:8080 on PODMAN_WSL; Founder authorized assessment staging but not a specific remote exposure architecture
-option_a: Assessor operates on Founder workstation / controlled local network to localhost:8080
-option_b: Temporary Founder-authorized reverse tunnel / allowlisted remote path that preserves auth controls and does not provision IMP-039 Cloudflare/DO production edge
-option_c: Defer remote assessment until IMP-039 origin realization
-cursor_recommendation: option_a for immediate window; option_b only with explicit Founder exposure SOP; never option that mutates production
-decision_owner: Founder
-blocked_scope: remote GAP-EXT-ASSESS-001 execution if assessor cannot reach localhost
-work_continuing_elsewhere: CSP Enforce proof complete (D-376); pack prep; Dependabot triage off frozen candidate; GAP-EXT-ASSESS-001 awaiting independent assessor
+FOUNDER_EXTERNAL_ASSESSMENT_STAGING_AUTHORIZATION: YES
+EXTERNAL_EXPOSURE_MECHANISM: TEMPORARY_NGROK_TUNNEL
+IMP039_ACTIVATED: NO
+PRODUCTION_MUTATION_AUTHORIZED: NO
 ```
+
+Founder authorized a temporary, assessment-only externally reachable Founder-staging endpoint.
+Cursor selected the existing Founder-staging **ngrok** reverse-tunnel path (already used for
+IMP-026 provider-originated webhook proof) rather than inventing a new provider/edge architecture.
+No Cloudflare/DO production firewall/AOP/DNS migration is performed. Tunnel teardown after the
+assessment window restores localhost-only operator access.
 
 ## 6. Threat-model / control pointers
 
