@@ -9259,9 +9259,10 @@ describe("D-374 cost-optimized pilot infrastructure checkpoint", () => {
     assert.match(roadmap, /"roadmapVersion":\s*"GTM-R1(?:37|38|39|40)"/);
     assert.match(state, /"stateVersion":\s*"STATE-R1(?:35|36|37|38)"/);
     assert.match(architecture, /"architectureVersion":\s*"ARCH-R2[01]"/);
-    assert.match(decision, /"decisionRegisterVersion":\s*"DR-1[67]"/);
+    assert.match(decision, /"decisionRegisterVersion":\s*"DR-1[678]"/);
     assert.match(decision, /\|\s*D-374\s*\|[^\n]*\|\s*CURRENT\s*\|/);
     assert.match(decision, /D-375/);
+    assert.match(decision, /D-376/);
     assert.match(architecture, /ARCH-G26/);
     assert.match(architecture, /PILOT_COMPUTE_MODEL:\s*single Basic Droplet/);
     assert.match(architecture, /Docker Compose/);
@@ -11195,7 +11196,7 @@ describe("IMP-038 Implementation Authorize+Start checkpoints", () => {
     imp038AcceptanceBlockedByImp037: "YES",
     imp039Activated: "NO",
     architectureVersion: "ARCH-R21",
-    decisionRegisterVersion: "DR-17",
+    decisionRegisterVersion: "DR-18",
     productDeliveryVersion: "PD-1",
     testingPolicyVersion: "TEST-1",
     imp038ProductDefinitionExists: true,
