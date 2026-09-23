@@ -289,7 +289,7 @@
     "playwright": "1.61.1",
     "tailwindcss": "4.3.3",
     "tsx": "4.23.1",
-    "typescript": "^5",
+    "typescript": "^7",
     "vite-tsconfig-paths": "6.1.1",
     "vitest": "4.1.10"
   }
