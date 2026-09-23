@@ -31,7 +31,7 @@ import {
   createLegalEntityTaxProfile,
 } from "../../src/server/pricing";
 import {
-  addOutletServiceabilityPins,
+  setOutletServiceabilityDistancePolicy,
   setOutletServiceabilityRoutingPriority,
 } from "../../src/server/serviceability";
 import {
@@ -46,7 +46,13 @@ import {
 } from "../../tests/database/support/access-control-fixtures";
 
 const GSTIN_UT = "05AAAAA0000A1Z5";
-const CHECKOUT_PIN = "248001";
+
+/** BOBA-Dehradun-aligned origin (matches test/bootstrap OUTLET_DISTANCE_SERVICEABILITY_V1). */
+const SERVICE_ORIGIN = Object.freeze({
+  latitude: "30.2868286",
+  longitude: "77.9991566",
+  maxServiceDistanceMeters: 9_000,
+});
 
 async function seedAlwaysAcceptingOutlet(
   persistence: Persistence,
@@ -71,22 +77,28 @@ async function seedAlwaysAcceptingOutlet(
   });
 }
 
-async function seedServiceablePin(
+/**
+ * OUTLET_DISTANCE_SERVICEABILITY_V1 (IMP-036B): runtime evaluation is
+ * coordinate + distance-policy authoritative. PIN-only seeding yields
+ * zero geographic candidates → CHECKOUT_SERVICEABILITY_INDETERMINATE.
+ */
+async function seedServiceableOutlet(
   persistence: Persistence,
   actor: unknown,
   outletId: string,
-  postalCode: string,
 ): Promise<void> {
   await seedAlwaysAcceptingOutlet(persistence, actor, outletId);
-  await setOutletServiceabilityRoutingPriority(persistence, actor, {
+  const created = await setOutletServiceabilityRoutingPriority(persistence, actor, {
     outletId,
     routingPriority: 1,
     expectedRevision: null,
   });
-  await addOutletServiceabilityPins(persistence, actor, {
+  await setOutletServiceabilityDistancePolicy(persistence, actor, {
     outletId,
-    postalCodes: [postalCode],
-    expectedRevision: BigInt(1),
+    expectedRevision: created.revision,
+    serviceOriginLatitude: SERVICE_ORIGIN.latitude,
+    serviceOriginLongitude: SERVICE_ORIGIN.longitude,
+    maxServiceDistanceMeters: SERVICE_ORIGIN.maxServiceDistanceMeters,
   });
 }
 
@@ -189,7 +201,7 @@ export async function seedCustomerOrderingCommerce(workerConfig: WorkerConfig): 
       return { org, territory, legalEntity, outlet };
     });
 
-    await seedServiceablePin(persistence, actor, tree.outlet.id, CHECKOUT_PIN);
+    await seedServiceableOutlet(persistence, actor, tree.outlet.id);
 
     await persistence.transaction(async (tx) => {
       const profile = await createLegalEntityTaxProfile(tx, {

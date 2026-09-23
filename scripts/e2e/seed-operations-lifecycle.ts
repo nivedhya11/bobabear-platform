@@ -31,6 +31,12 @@ import { normalizeIndianMobileNumber } from "../../src/shared/customer-auth/phon
 import { createEligibleWorkforceUser, principalFor } from "../../tests/database/support/access-control-fixtures";
 import { seedCustomerOrderingCommerce } from "./seed-customer-ordering";
 
+/** Inside TEST_SERVICE_ORIGIN 9km radius — matches maps E2E mock + Dehradun bootstrap. */
+const SERVICEABLE_COORDS = Object.freeze({
+  latitude: "30.3256000",
+  longitude: "78.0436000",
+});
+
 const manifestPath = process.env.OPERATIONS_E2E_FIXTURE_MANIFEST;
 const email = process.env.WORKFORCE_E2E_EMAIL;
 const temporaryPassword = process.env.WORKFORCE_E2E_TEMP_PASSWORD;
@@ -102,6 +108,8 @@ async function placeOrder(persistence: ReturnType<typeof getApplicationPersisten
     city: "Dehradun",
     stateCode: "IN-UT",
     postalCode: "248001",
+    // Required for OUTLET_DISTANCE_SERVICEABILITY_V1 (matches E2E map mock + test origin).
+    coordinates: SERVICEABLE_COORDS,
   });
   const checkoutPolicy = { checkoutTtlMs: 15 * 60 * 1000 };
   const draft = await startCheckout(persistence, actor, { cartId: cart.cart.id }, { policy: checkoutPolicy });

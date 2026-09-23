@@ -100,9 +100,13 @@ async function reachReadyForPayment(page: Page, phoneNumber: string): Promise<vo
   await expect(page.getByRole("heading", { name: "Checkout" })).toBeVisible({ timeout: 20_000 });
   await completeCheckoutDestination(page, phoneNumber);
 
+  // Review → payment is an explicit step (checkout-review → Continue to payment → checkout-ready).
+  await expect(page.getByTestId("checkout-review")).toBeVisible({ timeout: 20_000 });
+  await page.getByRole("button", { name: /Continue to payment/i }).click();
+
   await expect(page.getByTestId("checkout-ready")).toBeVisible({ timeout: 20_000 });
   await expect(page.getByTestId("checkout-line-review")).toBeVisible();
-  await expect(page.getByText(/total payable/i)).toBeVisible();
+  await expect(page.getByTestId("checkout-ready").getByText(/total payable/i).first()).toBeVisible();
   await expect(page.getByTestId("payment-start")).toBeVisible();
 }
 
@@ -117,7 +121,10 @@ test("guest can complete owned ordering through Razorpay Standard Checkout and o
   await expect(page.getByTestId("order-confirmation")).toBeVisible({ timeout: 30_000 });
   await expect(page.getByTestId("order-status")).toHaveText(/order received/i);
   await page.getByRole("link", { name: /order history/i }).click();
-  await expect(page.getByTestId("orders-list")).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole("heading", { name: /My Orders/i, level: 1 })).toBeVisible({
+    timeout: 15_000,
+  });
+  await expect(page.getByTestId("order-history-item").first()).toBeVisible();
   await page.getByRole("link", { name: /ORD-/i }).first().click();
   await expect(page.getByTestId("order-detail")).toBeVisible();
   await expect(page.getByTestId("order-status")).toHaveText(/order received/i);
