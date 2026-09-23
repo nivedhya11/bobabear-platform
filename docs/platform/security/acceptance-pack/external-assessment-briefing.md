@@ -37,28 +37,36 @@ independent external assessment.
 ```text
 CANONICAL_REPOSITORY_PATH: /home/ajoshi/repos/boba-bear-platform
 BRANCH: main
-ASSESSMENT_HEAD: 0990c91e428a8dea2dd3387cd6f7f1cb6425a1a1
-ASSESSMENT_TREE: d426ee4e947b6f3eb0559f93eb8b1d008f15696e
-WORKING_TREE_FINGERPRINT: 0d017621d37eb6439db854cfdc5dd6bd9689f61636b10d3d6a1689e63e61ea90
-CI_PR: https://github.com/nivedhya11/bobabear-platform/pull/210 (exact-head CI SUCCESS; merged)
-NIGHTLY_VERIFICATION: https://github.com/nivedhya11/bobabear-platform/actions/runs/35849864740 (SUCCESS @ HEAD 0990c91e)
+ASSESSMENT_HEAD: dc6b19e6f88d4084e424d927e6467c374596fb0a
+ASSESSMENT_TREE: c3aefb57f3f6c941d7f14907b6c095c4aa7f0547
+ASSESSMENT_FINGERPRINT: 2800fe11397ee2a01e9decf572f85adf5c3a8b244ca34b1f53d579e05feac589
+WORKING_TREE_FINGERPRINT: 2800fe11397ee2a01e9decf572f85adf5c3a8b244ca34b1f53d579e05feac589
+CI: https://github.com/nivedhya11/bobabear-platform/actions/runs/35862548426 (SUCCESS @ HEAD dc6b19e6)
+CODEQL: https://github.com/nivedhya11/bobabear-platform/actions/runs/35862548207 (SUCCESS)
+NIGHTLY_VERIFICATION: https://github.com/nivedhya11/bobabear-platform/actions/runs/35862563472 (SUCCESS @ HEAD dc6b19e6)
+SECURITY_SDLC: PASS
 DEPLOYED_ENVIRONMENT: Founder staging (boba-staging / PODMAN_WSL)
 STAGING_ARTIFACT_SOURCE: EXACT_MERGED_GIT_TREE (git archive HEAD)
 STAGING_CANDIDATE_MATCH: YES
-DEPLOYMENT_IDENTIFIER: boba-staging @ HEAD 0990c91e428a8dea2dd3387cd6f7f1cb6425a1a1
+DEPLOYMENT_IDENTIFIER: boba-staging @ HEAD dc6b19e6f88d4084e424d927e6467c374596fb0a
 ASSESSMENT_URL: https://cradling-unenvied-sapling.ngrok-free.dev
 ASSESSMENT_URL_CUSTOMER: https://cradling-unenvied-sapling.ngrok-free.dev/order/
 ASSESSMENT_URL_WORKFORCE: https://cradling-unenvied-sapling.ngrok-free.dev/workforce/login/
-DEPLOYMENT_TIMESTAMP_UTC: 2026-09-23T10:51:06Z (staging deploy complete; CANDIDATE_MATCH YES)
+DEPLOYMENT_TIMESTAMP_UTC: 2026-09-23T13:30:40Z (staging deploy complete; CANDIDATE_MATCH YES)
 EXTERNAL_EXPOSURE_MECHANISM: TEMPORARY_NGROK_TUNNEL
 CSP_PHASE: ENFORCE
 D376_RATIFIED: YES
-SUPERSEDES_PRIOR_CANDIDATE: a4680c983934bbf0c889952af19bd99bf3a43ed4
+FINAL_ASSESSMENT_CANDIDATE: FROZEN
+ASSESSMENT_RUNTIME_DRIFT: FORBIDDEN
+SUPERSEDES_PRIOR_ASSESSMENT_CANDIDATE: 0990c91e428a8dea2dd3387cd6f7f1cb6425a1a1
+SUPERSEDES_PRIOR_CANDIDATE: 0990c91e428a8dea2dd3387cd6f7f1cb6425a1a1
 ```
 
-Pinned assessment runtime identity is **HEAD + TREE + deploy-time fingerprint** above.
-Later local Acceptance Pack doc edits change the live worktree fingerprint but do **not**
-alter the Podman images (exact `git archive` artifact). Do **not** redeploy mid-window.
+Pinned assessment **runtime** identity is **HEAD + TREE + deploy-time fingerprint** above.
+Later documentation-only persistence commits on `main` may advance `CANONICAL_DOCS_TIP` but
+must be recorded as `PROVENANCE_ONLY` / `RUNTIME_CANDIDATE_UNCHANGED`. The independent assessor
+tests `dc6b19e6…`, not a later docs-only tip. Do **not** merge dependency or runtime changes
+during the active assessment window.
 
 Assessment browser/API origin for this window is the HTTPS ngrok URL above. Auth
 `CUSTOMER_AUTH_BASE_URL` / `WORKFORCE_AUTH_BASE_URL` / `BOBA_BEAR_PUBLIC_ORIGIN` are temporarily
