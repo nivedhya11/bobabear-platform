@@ -31,7 +31,7 @@ Rows cover **applicable** L2-oriented controls for BOBA's V1 surfaces. Status us
 | V4.2 | Operation-level access control (BFLA) | YES | PASS | Admin/ops HTTP + order-security workforce negatives |
 | V4.3 | Other access control (BOLA/IDOR) | YES | PASS | `tests/*-security/` cross-customer suites |
 | V5.1 | Input validation | YES | PASS | Domain validators + HTTP contract tests across commerce/admin |
-| V5.2 | Sanitization / encoding | YES | GAP | CSP Report-Only; enforce pending journey proof (owner: platform ops) |
+| V5.2 | Sanitization / encoding | YES | PASS | CSP Enforce on Nginx serving path (D-376 Maps Fonts; Maps + negative proven) |
 | V5.3 | Output encoding / XSS | YES | GAP | Same as V5.2 until CSP enforce (owner: platform ops) |
 | V6.x | Stored cryptography | YES (limited) | PASS | Provider/webhook HMAC; no BOBA raw card crypto surface |
 | V7.x | Error handling / logging | YES | PASS | Safe errors in access-control; secret absence in payment-security |

@@ -1,9 +1,10 @@
 ---
 Status: Accepted
 Decision date: 2026-09-22
-Last updated: 2026-09-22
+Last updated: 2026-09-23
 Decision ID: D-375
 Amends: none (layers on ADR-016 / D-374 pilot infrastructure; ADR-004; ADR-005; ADR-009)
+Amended by: D-376 (CSP Maps Fonts inventory hosts only; no topology change)
 ---
 
 # ADR-017: Edge, Origin Trust, and Application-Authoritative Security Hardening
@@ -126,6 +127,22 @@ OWASP ASVS certification: NOT CLAIMED (ASVS 5.0.0 L2 applicable-control matrix i
 
 This decision **locks architecture only**. It does **not** authorize IMP-038 implementation,
 start implementation, provision Cloudflare/DigitalOcean resources, or activate IMP-039.
+
+## Amendments
+
+### D-376 — CSP Maps Fonts inventory (2026-09-23)
+
+Narrow locked-security-inventory amendment under ARCH-R21 / D-375 / this ADR / IMP-038 §8.2:
+
+```text
+style-src: + https://fonts.googleapis.com
+font-src:  + https://fonts.gstatic.com
+NEW_GLOBAL_ARCHITECTURE_MODEL: NO
+ARCH_R22_REQUIRED: NO
+```
+
+Does **not** authorize Google host wildcards or any other directive expansions. Subsequent
+non-inventoried hosts remain RED decisions.
 
 ## References
 

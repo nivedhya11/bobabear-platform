@@ -2,13 +2,18 @@
 /**
  * IMP-038 — emit Nginx CSP/security-headers with optional GA hosts.
  *
- * Locked policy (ARCH-R21 / capability §8.2): Analytics hosts
- * `www.googletagmanager.com` / `www.google-analytics.com` are trusted only
- * when GA is enabled. Default output omits them. Pass `--ga` or set
- * `NEXT_PUBLIC_GA_MEASUREMENT_ID` to a non-empty value to include them.
+ * Locked policy (ARCH-R21 / capability §8.2 / D-376):
+ * - Analytics hosts `www.googletagmanager.com` / `www.google-analytics.com` are
+ *   trusted only when GA is enabled. Default output omits them. Pass `--ga` or
+ *   set `NEXT_PUBLIC_GA_MEASUREMENT_ID` to a non-empty value to include them.
+ * - Maps Fonts CDN hosts (D-376): `fonts.googleapis.com` (style-src) and
+ *   `fonts.gstatic.com` (font-src) are always included. No Google wildcards.
+ *
+ * CSP phase (FD-038-05): default REPORT_ONLY. Pass `--enforce` or set
+ * `BOBA_CSP_ENFORCE=1` to emit enforcing `Content-Security-Policy`.
  *
  * Usage:
- *   node scripts/generate-nginx-security-headers.mjs [--ga] [--write PATH]
+ *   node scripts/generate-nginx-security-headers.mjs [--ga] [--enforce] [--write PATH]
  *   NEXT_PUBLIC_GA_MEASUREMENT_ID=G-xxx node scripts/generate-nginx-security-headers.mjs --write docker/nginx/security-headers.conf
  */
 import fs from "node:fs";
@@ -20,11 +25,16 @@ const defaultWritePath = path.join(repositoryRoot, "docker/nginx/security-header
 
 function parseArgs(argv) {
   let includeGa = false;
+  let enforce = false;
   let writePath = null;
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === "--ga") {
       includeGa = true;
+      continue;
+    }
+    if (arg === "--enforce") {
+      enforce = true;
       continue;
     }
     if (arg === "--write") {
@@ -37,7 +47,7 @@ function parseArgs(argv) {
     }
     if (arg === "--help" || arg === "-h") {
       process.stdout.write(
-        "Usage: generate-nginx-security-headers.mjs [--ga] [--write PATH]\n",
+        "Usage: generate-nginx-security-headers.mjs [--ga] [--enforce] [--write PATH]\n",
       );
       process.exit(0);
     }
@@ -47,14 +57,19 @@ function parseArgs(argv) {
   if (envGa.length > 0) {
     includeGa = true;
   }
-  return { includeGa, writePath };
+  const envEnforce = (process.env.BOBA_CSP_ENFORCE ?? "").trim();
+  if (envEnforce === "1" || envEnforce.toLowerCase() === "true") {
+    enforce = true;
+  }
+  return { includeGa, enforce, writePath };
 }
 
 /**
  * @param {boolean} includeGa
+ * @param {boolean} [enforce=false]
  * @returns {string}
  */
-export function buildSecurityHeadersConf(includeGa) {
+export function buildSecurityHeadersConf(includeGa, enforce = false) {
   const gaScript = includeGa ? " https://www.googletagmanager.com" : "";
   const gaImg = includeGa
     ? " https://www.google-analytics.com https://www.googletagmanager.com"
@@ -70,9 +85,9 @@ export function buildSecurityHeadersConf(includeGa) {
     "frame-ancestors 'self'",
     "form-action 'self'",
     `script-src 'self' 'unsafe-inline' https://checkout.razorpay.com https://challenges.cloudflare.com https://maps.googleapis.com https://maps.gstatic.com${gaScript}`,
-    "style-src 'self' 'unsafe-inline' https://maps.googleapis.com https://maps.gstatic.com",
+    "style-src 'self' 'unsafe-inline' https://maps.googleapis.com https://maps.gstatic.com https://fonts.googleapis.com",
     `img-src 'self' data: blob: https://maps.googleapis.com https://maps.gstatic.com${gaImg}`,
-    "font-src 'self'",
+    "font-src 'self' https://fonts.gstatic.com",
     `connect-src 'self' https://api.razorpay.com https://lumberjack.razorpay.com https://checkout.razorpay.com https://challenges.cloudflare.com https://maps.googleapis.com${gaConnect}`,
     "frame-src 'self' https://api.razorpay.com https://checkout.razorpay.com https://challenges.cloudflare.com",
     "worker-src 'self' blob:",
@@ -81,19 +96,25 @@ export function buildSecurityHeadersConf(includeGa) {
   const gaNote = includeGa
     ? "# GA hosts included (NEXT_PUBLIC_GA_MEASUREMENT_ID / --ga).\n"
     : "# GA hosts omitted (GA not enabled). Generate with --ga or GA env to include.\n";
+  const phase = enforce ? "ENFORCE" : "REPORT_ONLY";
+  const cspHeader = enforce
+    ? "Content-Security-Policy"
+    : "Content-Security-Policy-Report-Only";
+  const phaseNote = enforce
+    ? "# CSP_PHASE: ENFORCE (FD-038-05). Report-Only journey proof completed; enforcing allowlist.\n"
+    : "# CSP_PHASE: REPORT_ONLY (FD-038-05). Flip with --enforce / BOBA_CSP_ENFORCE=1 after\n# report-only proves auth-challenge + Maps/address journeys under the allowlist.\n";
 
   return `# IMP-038 Tranche A — Nginx is the sole CSP/security-header authority on the
 # real serving path (static export makes Next.js headers() a no-op).
 #
-# CSP_PHASE: REPORT_ONLY (FD-038-05). Flip to Content-Security-Policy after
-# report-only proves auth-challenge + Maps/address journeys under the allowlist.
-# No script-src wildcards. No nonces (static export). 'unsafe-inline' is required
+${phaseNote}# No script-src wildcards. No nonces (static export). 'unsafe-inline' is required
 # for Next.js static bootstrap without per-request nonces (documented residual).
+# D-376: fonts.googleapis.com (style-src) + fonts.gstatic.com (font-src) for Maps UI.
 #
 # Generated by scripts/generate-nginx-security-headers.mjs — do not hand-edit
 # the CSP host inventory without updating that generator.
-${gaNote}
-add_header Content-Security-Policy-Report-Only "${csp};" always;
+${gaNote}# CSP_PHASE=${phase}
+add_header ${cspHeader} "${csp};" always;
 add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;
 add_header X-Content-Type-Options "nosniff" always;
 add_header Referrer-Policy "strict-origin-when-cross-origin" always;
@@ -103,15 +124,15 @@ add_header X-Frame-Options "SAMEORIGIN" always;
 }
 
 function main() {
-  const { includeGa, writePath } = parseArgs(process.argv.slice(2));
-  const contents = buildSecurityHeadersConf(includeGa);
+  const { includeGa, enforce, writePath } = parseArgs(process.argv.slice(2));
+  const contents = buildSecurityHeadersConf(includeGa, enforce);
   if (writePath) {
     const resolved = path.isAbsolute(writePath)
       ? writePath
       : path.join(repositoryRoot, writePath);
     fs.writeFileSync(resolved, contents, "utf8");
     process.stdout.write(
-      `Wrote ${resolved} (ga=${includeGa ? "included" : "omitted"})\n`,
+      `Wrote ${resolved} (ga=${includeGa ? "included" : "omitted"}; csp=${enforce ? "enforce" : "report-only"})\n`,
     );
     return;
   }
@@ -134,7 +155,12 @@ if (isDirectRun) {
 }
 
 // Default committed file is GA-off (minimal allowlist). Docker web-runtime
-// regenerates with build-arg GA when enabled.
+// regenerates with build-arg GA when enabled. CSP phase follows --enforce /
+// BOBA_CSP_ENFORCE when syncing.
 if (process.argv.includes("--sync-default")) {
-  fs.writeFileSync(defaultWritePath, buildSecurityHeadersConf(false), "utf8");
+  const enforce =
+    (process.env.BOBA_CSP_ENFORCE ?? "").trim() === "1" ||
+    (process.env.BOBA_CSP_ENFORCE ?? "").trim().toLowerCase() === "true" ||
+    process.argv.includes("--enforce");
+  fs.writeFileSync(defaultWritePath, buildSecurityHeadersConf(false, enforce), "utf8");
 }

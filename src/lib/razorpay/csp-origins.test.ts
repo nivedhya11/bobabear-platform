@@ -26,10 +26,13 @@ describe("Razorpay Checkout security policy boundary", () => {
     expect(nextConfig).not.toMatch(/script-src[^;\n]*\*/);
     expect(nginx).not.toMatch(/Content-Security-Policy[^;\n]*\*/);
     expect(nginx).not.toMatch(/script-src\s+[^;\n]*\*/);
-    expect(headers).toMatch(/Content-Security-Policy-Report-Only/);
+    expect(headers).toMatch(/Content-Security-Policy "/);
+    expect(headers).not.toMatch(/Content-Security-Policy-Report-Only/);
     expect(headers).toContain("https://checkout.razorpay.com");
     expect(headers).toContain("https://api.razorpay.com");
     expect(headers).toContain("https://lumberjack.razorpay.com");
+    expect(headers).toContain("https://fonts.googleapis.com");
+    expect(headers).toContain("https://fonts.gstatic.com");
     expect(headers).not.toMatch(/script-src[^;]*\*/);
   });
 });

@@ -41,7 +41,7 @@ sending external notices.
 | Containment | Rate-limit / challenge / webhook reject paths | Confirmed controls exist in auth abuse + payment webhook evidence maps |
 | Legal notify gate | `LEGAL_TRIGGER_DEPENDENT` | **Held** — no customer/regulator message sent; topics 5–6–9 remain open |
 | Recovery | Resume normal ops after abuse subsides | Documented; no production action taken |
-| Postmortem stub | Link + follow-ups | Follow-ups: keep CSP Report-Only until journey proof; preserve `GAP-EXT-ASSESS-001` |
+| Postmortem stub | Link + follow-ups | Follow-ups: CSP Enforce after D-376 Maps Fonts proof; preserve `GAP-EXT-ASSESS-001` |
 
 ## Timeline (exercise clock)
 

@@ -12,7 +12,7 @@ Vocabulary for `status`: `PASS` | `GAP` | `N/A_WITH_REASON` | `LEGAL_REVIEW_REQU
 
 | Control ID | Control | Evidence pointer | Status | Owner |
 |---|---|---|---|---|
-| C-CSP-01 | Nginx CSP + browser security headers on real serving path | `docker/nginx/security-headers.conf`; `scripts/nginx-origin-redirect.test.mjs` (Report-Only assertion); `scripts/generate-nginx-security-headers.mjs` | PARTIAL — Report-Only; enforce journey proof pending | Platform ops |
+| C-CSP-01 | Nginx CSP + browser security headers on real serving path | `docker/nginx/security-headers.conf`; `scripts/nginx-origin-redirect.test.mjs` (Enforce assertion); `scripts/generate-nginx-security-headers.mjs`; [`csp-header-evidence.md`](./csp-header-evidence.md) | PASS — Enforce active; D-376 Maps Fonts; Maps journey + AC-001-03 negative proven | Platform ops |
 | C-IP-01 | Trusted client IP via Cloudflare `real_ip` + XFF replace | `docker/nginx/cloudflare-real-ip.conf`; `docker/nginx/nginx.conf`; `scripts/refresh-cloudflare-real-ip.mjs`; origin-trust contracts | PARTIAL — config locked; live edge PENDING | Platform ops |
 | C-HOPS-01 | Production `TRUST_PROXY_HOPS=1` after Nginx normalization | `.env.example`; compose staging env proofs in `scripts/environment/staging.test.mjs` | PASS (config contract) | Auth / commerce owners |
 | C-AUTH-CUST-01 | Customer OTP / phone abuse limits + progressive cooldown + Turnstile | `tests/customer-auth/http.integration.test.ts`; Turnstile loader `src/server/security/turnstile`; harnesses under `tests/customer-auth/support/` | PARTIAL — existing limits proven; full progressive ladder evidence selective | Customer-auth |

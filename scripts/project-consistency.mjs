@@ -11419,7 +11419,7 @@ export function evaluateImp038ImplementationAuthorizeStartCheckpoint(checkpoint)
     imp038AcceptanceBlockedByImp037: "YES",
     imp039Activated: "NO",
     architectureVersion: "ARCH-R21",
-    decisionRegisterVersion: "DR-17",
+    decisionRegisterVersion: "DR-18",
     productDeliveryVersion: "PD-1",
     testingPolicyVersion: "TEST-1",
     imp038ProductDefinitionExists: true,
@@ -16366,8 +16366,9 @@ function checkImp028ArchitectureLock(roadmap, state, architecture, decision) {
   }
 
   if (decision) {
-    const expectedDecisionRegisterVersion = isImp038ArchitectureLockCheckpoint(roadmap, state) ||
-      isImp038ImplementationAuthorizeStartCheckpoint(roadmap, state)
+    const expectedDecisionRegisterVersion = isImp038ImplementationAuthorizeStartCheckpoint(roadmap, state)
+      ? "DR-18"
+      : isImp038ArchitectureLockCheckpoint(roadmap, state)
       ? "DR-17"
       : isD374CostOptimizedPilotInfrastructureCheckpoint(roadmap, state) ||
     isImp037ArchitectureLockCheckpoint(roadmap, state) ||
@@ -30559,8 +30560,8 @@ function checkImp038ImplementationAuthorizeStart(roadmap, state, architecture, d
   if (architecture?.meta.architectureVersion !== "ARCH-R21") {
     fail("IMP038_ARCH_VERSION", "ARCHITECTURE must be ARCH-R21 during IMP-038 authorize+start");
   }
-  if (decision?.meta.decisionRegisterVersion !== "DR-17") {
-    fail("IMP038_DR_VERSION", "decision register must be DR-17 during IMP-038 authorize+start");
+  if (decision?.meta.decisionRegisterVersion !== "DR-18") {
+    fail("IMP038_DR_VERSION", "decision register must be DR-18 during IMP-038 authorize+start (D-376 CSP Maps Fonts amendment)");
   }
 
   const decisionText = decision?.text ?? "";
@@ -30572,6 +30573,10 @@ function checkImp038ImplementationAuthorizeStart(roadmap, state, architecture, d
   const d375Row = [...decisionGlobalSection.split("\n")].find((line) => /^\|\s*D-375\s*\|/.test(line));
   if (!d375Row || !/\|\s*CURRENT\s*\|/.test(d375Row)) {
     fail("IMP038_D375_REQUIRED", "D-375 must be a CURRENT decision at IMP-038 authorize+start");
+  }
+  const d376Row = [...decisionGlobalSection.split("\n")].find((line) => /^\|\s*D-376\s*\|/.test(line));
+  if (!d376Row || !/\|\s*CURRENT\s*\|/.test(d376Row)) {
+    fail("IMP038_D376_REQUIRED", "D-376 must be a CURRENT decision at IMP-038 authorize+start (CSP Maps Fonts inventory)");
   }
 
   const productDelivery = loadCanonical("docs/platform/PRODUCT-DELIVERY.md", "PRODUCT_DELIVERY_PROCESS", ["version"]);
