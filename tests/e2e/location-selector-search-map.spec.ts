@@ -382,7 +382,9 @@ test("permanent Maps readiness failure shows safe fallback", async ({ page }) =>
   await page.getByPlaceholder("Search area, street or landmark").fill("ISBT");
   await page.getByRole("option", { name: /ISBT/i }).click();
   await expect(page.getByTestId("delivery-location-map-confirmation")).toBeVisible({ timeout: 15_000 });
-  await expect(page.getByText(/We couldn't load the map right now/i)).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText(/We couldn't load the map\. Try again\./i)).toBeVisible({
+    timeout: 15_000,
+  });
   await expect(page.getByTestId("delivery-map-init-error")).toHaveText("MAP_LIBRARY_NOT_READY");
 });
 

@@ -59,9 +59,10 @@ async function completeCheckoutDestination(page: Page, phoneNumber: string): Pro
   await page.getByRole("button", { name: "Confirm location" }).click();
 
   await expect(checkout.getByTestId("checkout-destination-details")).toBeVisible({ timeout: 15_000 });
-  await checkout.getByLabel("Flat / House / Building", { exact: true }).fill("12 Mall Road");
-  await checkout.getByLabel("Recipient name", { exact: true }).fill("E2E Guest");
-  await checkout.getByLabel("Mobile number", { exact: true }).fill(`+91${phoneNumber}`);
+  // Accessible names include FieldLabel " (required)" / " (Optional)" suffixes.
+  await checkout.getByRole("textbox", { name: /Flat \/ House \/ Building/i }).fill("12 Mall Road");
+  await checkout.getByRole("textbox", { name: /Recipient name/i }).fill("E2E Guest");
+  await checkout.getByRole("textbox", { name: /Mobile number/i }).fill(`+91${phoneNumber}`);
   await checkout.getByRole("button", { name: "Save address" }).click();
 }
 
