@@ -61,9 +61,10 @@ IMPLEMENTATION_STARTED: YES
 IMP038_IMPLEMENTATION_AUTHORIZED: YES
 IMP038_STARTED: YES
 FOUNDER_IMP038_IMPLEMENTATION_AUTHORIZATION: CURSOR_SESSION_MANDATE
-IMP038_IMPLEMENTATION_COMPLETE: NO
+IMP038_IMPLEMENTATION_COMPLETE: YES
 IMP038_ACCEPTED: NO
 IMP038_ACCEPTANCE_BLOCKED_BY_IMP037: YES
+IMP038_HOLD: YES
 IMP038_PRODUCT_DEFINITION: APPROVED
 IMP038_PRODUCT_DEFINITION_VERSION: PD-IMP-038-DRAFT-2
 IMP038_PRODUCT_DEFINITION_GATE: PASS
@@ -81,9 +82,12 @@ FOUNDER_UAT_STATUS: NOT_PERFORMED
 CONTINUATION_EXCEPTION: IMP037_PROVIDER_BLOCKED_TO_IMP038
 CONTINUATION_EXCEPTION_AUTHORITY: PR#179/5771367844
 HISTORICAL_IMP026_TO_IMP028_CONTINUATION: CLOSED
+PROGRAM_PAUSE: PRE_GTM_PRODUCT_INSERTION_PROVIDER_BLOCKED
+PROGRAM_PAUSE_AUTHORITY: D-377
 IMP037_ACCEPTED: NO
 IMP037_IMPLEMENTATION_COMPLETE: NO
 IMP037_EXTERNAL_RECOVERY_PROOF: NOT_PERFORMED
+IMP037_HOLD: YES
 PHASE1_BLOCK_STATUS: BLOCKED_PROVIDER_ACCESS
 
 PRODUCT_DECISIONS: RESOLVED
@@ -107,17 +111,19 @@ follow_up_or_deferred_stories: 4
 acceptance_scenarios: see §10 (Founder decisions reconciled; final acceptance scenarios subject only to legal-review / Architecture-Fit dependencies where explicitly recorded)
 
 Canonical anchors (verify against CURRENT ROADMAP/STATE):
-  ROADMAP: GTM-R140
-  STATE: STATE-R138
+  ROADMAP: GTM-R141
+  STATE: STATE-R139
   ARCHITECTURE: ARCH-R21
-  decision-register: DR-17
+  decision-register: DR-19
   PRODUCT-DELIVERY: PD-1
   TESTING: TEST-1
   VISION: VISION-1
   acceptedThrough: IMP-036G
-  currentProductSlice: IMP-038
-  nextProductSlice: IMP-039
+  currentProductSlice: IMP-036H
+  nextProductSlice: IMP-036I
   pendingAcceptance: NONE
+  priorAuthorizeStartTip: GTM-R140 / STATE-R138
+  PROGRAM_PAUSE: PRE_GTM_PRODUCT_INSERTION_PROVIDER_BLOCKED (D-377)
 ```
 
 This artifact is the **approved Product Definition** for IMP-038 after Product Definition Gate PASS
@@ -158,9 +164,9 @@ authoritative even if edge controls are absent or bypassed.
 | Product Definition version / document status | `PD-IMP-038-DRAFT-2` (advances `PD-IMP-038-DRAFT-1`); **Document status: APPROVED**; **PRE-GATE DRAFT: NO**; Founder decisions FD-038-01…21 reconciled per PR#180/5773472988; Product Definition Gate PASS (approval PR#180/5773885848) |
 | Product owner / approval evidence | Founder/human controlled-continuation activation via PR#179 comment `5771367844` + instruction “proceed with next IMP”; Founder security/privacy requirements incorporated as binding discovery inputs; Founder decisions PR#180/5773472988; independent Product Definition Gate readiness review `5276033742` PASS; Product Definition Gate PASS authorized PR#180/5773885848 |
 | Process / verification policy | PD-1 / TEST-1 |
-| Canonical anchors | VISION-1; ROADMAP GTM-R140; STATE STATE-R138; ARCH-R21; DR-17; PD-1; TEST-1 |
+| Canonical anchors | VISION-1; ROADMAP GTM-R141 (CURRENT tip; IMP-036H Product Definition activation under PROGRAM_PAUSE D-377); STATE STATE-R139; ARCH-R21; DR-19 (D-377; prior DR-18/17/16 retained); PD-1; TEST-1. Prior tip GTM-R140 / STATE-R138 IMP-038 AUTHORIZE + START. |
 | Repository candidate | Gate-evaluated candidate lineage: canonical path `/home/ajoshi/repos/boba-bear-platform`; branch `governance/imp038-activation-product-definition`; **GATE_EVALUATED_HEAD** `2ade7b305d7a1c552b56a709dbf8723d356979bf`; **GATE_EVALUATED_TREE** `b8565bba474627ddf3974b329c7d6038ee1bf97c`; exact-head CI `35706440171` SUCCESS; gate-persistence commits after this Gate PASS are not the evaluated artifact |
-| Capability lifecycle / authorization | ROADMAP/STATE: `IMP038_ACTIVATED: YES`; formal lifecycle **IMPLEMENTATION_IN_PROGRESS**; PD = APPROVED (`PD-IMP-038-DRAFT-2`); Gate = PASS; Architecture Fit = PASS; Architecture Locked = YES; Independent Architecture Fit review = PASS; Implementation = AUTHORIZED / STARTED (`GTM-R140` / `STATE-R138`; `FOUNDER_IMP038_IMPLEMENTATION_AUTHORIZATION: CURSOR_SESSION_MANDATE`); `IMP038_ACCEPTANCE_BLOCKED_BY_IMP037: YES`; `acceptedThrough` remains IMP-036G |
+| Capability lifecycle / authorization | ROADMAP/STATE: `IMP038_ACTIVATED: YES`; `IMP038_HOLD: YES`; formal lifecycle **IMPLEMENTATION_IN_PROGRESS (HOLD — IMPLEMENTATION_COMPLETE / NOT_ACCEPTED)**; PD = APPROVED (`PD-IMP-038-DRAFT-2`); Gate = PASS; Architecture Fit = PASS; Architecture Locked = YES; Independent Architecture Fit review = PASS; Implementation = AUTHORIZED / STARTED / COMPLETE (`GTM-R140` / `STATE-R138` authorize+start provenance; `FOUNDER_IMP038_IMPLEMENTATION_AUTHORIZATION: CURSOR_SESSION_MANDATE`; `IMP038_IMPLEMENTATION_COMPLETE: YES`); `IMP038_ACCEPTED: NO`; `IMP038_ACCEPTANCE_BLOCKED_BY_IMP037: YES`; CURRENT tip `GTM-R141` / `STATE-R139` program pause (`currentProductSlice = IMP-036H`); `acceptedThrough` remains IMP-036G |
 | Relevant capability architecture / ADRs | Locked capability: [`../../capabilities/IMP-038-security-privacy-hardening.md`](../../capabilities/IMP-038-security-privacy-hardening.md) (D-375 / ADR-017 / ARCH-R21). Binding baselines: ARCH §§6–7,12; ADR-004; ADR-005; ADR-015 (amended by D-374 for host-local pilot secrets → IMP-039 boundary); IMP-036B §6.1 Maps supersession record; IMP-037 FD-037-03 retention distinction |
 | Founder UAT applicability | `FOUNDER_UAT_REQUIRED = YES` — customer-visible location/auth gating, security headers, auth-abuse/bot challenges affecting storefront, and operator-visible security/privacy/acceptance-pack outcomes |
 
