@@ -9,6 +9,10 @@
 #
 # Passwords use psql -v / :'name' binding (same pattern as 001-bootstrap.sh).
 # Do NOT use DO $$ blocks: psql does not interpolate :'vars' inside dollar-quotes.
+#
+# Must be executable so docker-entrypoint *runs* it in a subprocess. Non-executable
+# `.sh` files are *sourced*; an early `exit` would then terminate the entrypoint and
+# leave Postgres exited after init (Nightly operations/commercial E2E failure mode).
 set -eu
 
 if [ -z "${POSTGRES_LOGICAL_BACKUP_PASSWORD:-}" ]; then

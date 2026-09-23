@@ -37,7 +37,9 @@ OOB_PACKAGE_LOCATION: .env.staging/assessment-oob-credentials.txt (gitignored)
 ```text
 workforce_create: boba-bear-tooling:local on boba-staging_default network
   (existing npm run workforce:user:create operator CLI)
-role_grants: Administration use-cases (adminCreateMembership + adminGrantRole)
+role_grants: Administration use-cases via access:grant-assessment-roles
+  (resolve Dehradun hierarchy by stable business codes — never staging row UUIDs;
+   idempotent membership + role ensure; fail closed on incompatible state)
   actor: existing MFA-enrolled platform_super_admin principal from DB
   script: npm run access:grant-assessment-roles -- --actor-id=<psa-id>
 MFA_enroll: normal workforce UX/API (change-password → mfa/enroll → verify-enrollment)

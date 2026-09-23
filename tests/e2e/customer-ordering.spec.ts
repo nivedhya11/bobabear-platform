@@ -1,5 +1,9 @@
 import { test, expect, type Page } from "@playwright/test";
 
+import {
+  installLocationProviderMocks,
+  installMockGoogleMaps,
+} from "./support/maps-location-mocks";
 import { installRazorpayCheckoutMock } from "./support/razorpay-checkout-mock";
 
 /**
@@ -37,7 +41,34 @@ function codeField(page: Page) {
   return page.getByLabel("6-digit code", { exact: true });
 }
 
+async function completeCheckoutDestination(page: Page, phoneNumber: string): Promise<void> {
+  const checkout = page.locator("#main-content");
+  await expect(checkout.getByTestId("checkout-destination-select")).toBeVisible({ timeout: 20_000 });
+  await checkout.getByRole("button", { name: "Add new address" }).click();
+
+  await expect(checkout.getByTestId("checkout-destination-location")).toBeVisible();
+  await checkout.getByPlaceholder("Search area, street or nearby landmark").fill("Rajpur");
+  await expect(checkout.getByRole("option", { name: "Rajpur Road, Dehradun" })).toBeVisible({
+    timeout: 15_000,
+  });
+  await checkout.getByRole("option", { name: "Rajpur Road, Dehradun" }).click();
+
+  await expect(page.getByTestId("delivery-location-map-confirmation")).toBeVisible({
+    timeout: 20_000,
+  });
+  await page.getByRole("button", { name: "Confirm location" }).click();
+
+  await expect(checkout.getByTestId("checkout-destination-details")).toBeVisible({ timeout: 15_000 });
+  await checkout.getByLabel("Flat / House / Building", { exact: true }).fill("12 Mall Road");
+  await checkout.getByLabel("Recipient name", { exact: true }).fill("E2E Guest");
+  await checkout.getByLabel("Mobile number", { exact: true }).fill(`+91${phoneNumber}`);
+  await checkout.getByRole("button", { name: "Save address" }).click();
+}
+
 async function reachReadyForPayment(page: Page, phoneNumber: string): Promise<void> {
+  await installMockGoogleMaps(page);
+  await installLocationProviderMocks(page);
+
   await page.goto("/order/");
   await expect(page.getByRole("heading", { name: /^the bar$/i, level: 1 })).toBeVisible();
   await expect(page.getByTestId("deliver-to-header-orientation")).toBeVisible();
@@ -66,14 +97,7 @@ async function reachReadyForPayment(page: Page, phoneNumber: string): Promise<vo
   await page.getByRole("button", { name: /verify code/i }).click();
 
   await expect(page.getByRole("heading", { name: "Checkout" })).toBeVisible({ timeout: 20_000 });
-  const checkout = page.locator("#main-content");
-  await checkout.getByLabel("Recipient name", { exact: true }).fill("E2E Guest");
-  await checkout.getByLabel("Mobile number", { exact: true }).fill(`+91${phoneNumber}`);
-  await checkout.getByLabel("Address line 1", { exact: true }).fill("12 Mall Road");
-  await checkout.getByLabel("City", { exact: true }).fill("Dehradun");
-  await checkout.getByRole("combobox", { name: /^State$/i }).selectOption({ label: "Uttarakhand" });
-  await checkout.getByLabel("PIN code", { exact: true }).fill("248001");
-  await checkout.getByRole("button", { name: /continue to payment/i }).click();
+  await completeCheckoutDestination(page, phoneNumber);
 
   await expect(page.getByTestId("checkout-ready")).toBeVisible({ timeout: 20_000 });
   await expect(page.getByTestId("checkout-line-review")).toBeVisible();

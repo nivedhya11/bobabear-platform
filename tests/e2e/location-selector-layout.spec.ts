@@ -66,10 +66,6 @@ for (const viewport of VIEWPORTS) {
 }
 
 test("location selector layout desktop with mocked Maps capability", async ({ page }) => {
-  await page.addInitScript(() => {
-    (window as Window & { __BOBA_MAPS_JS_CONFIGURED__?: boolean }).__BOBA_MAPS_JS_CONFIGURED__ =
-      true;
-  });
   await page.route("**/api/v1/location/status", async (route) => {
     await route.fulfill({
       status: 200,

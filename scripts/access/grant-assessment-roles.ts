@@ -4,6 +4,9 @@
  * workforce identities using the existing Platform Super Admin principal and
  * Administration use-cases (no forged identity flags).
  *
+ * Hierarchy is resolved by stable Dehradun bootstrap codes — never hard-coded
+ * staging row UUIDs. Provisioning is idempotent / resumable.
+ *
  * Secrets are never printed. Not a second identity authority.
  *
  * Usage (host, with staging Postgres published on 5433):
@@ -18,35 +21,13 @@ import { loadEnvConfig } from "@next/env";
 
 import { loadConfig } from "../../src/platform/config/load-config";
 import { extractValues, parseEnvFile } from "../database/lib/env-file.mjs";
-import {
-  adminCreateMembership,
-  adminGrantRole,
-} from "../../src/server/administration/use-cases";
 import { getApplicationPersistence } from "../../src/server/persistence";
+import {
+  ASSESSMENT_GRANTS,
+  ensureAssessmentGrant,
+  resolveAssessmentHierarchy,
+} from "./assessment-role-provisioning";
 import { resolveWorkforcePrincipalFromDatabase } from "./resolve-workforce-principal-from-db";
-
-const BRAND_ID = "56ff7724-d511-5ef4-b5d5-d629cbfb2388";
-const ORGANIZATION_ID = "b0e00acf-0180-434c-9081-4ed72718bde8";
-const TERRITORY_ID = "64e3aac1-bf92-4f1b-bae9-17a1353e0471";
-const OUTLET_ID = "36096e68-3ab8-4ee7-b369-afa5d1b4e2b2";
-
-const GRANTS = [
-  {
-    email: "assessor.ops@bobabear.assessment.test",
-    scopeType: "outlet" as const,
-    roleKey: "outlet_manager" as const,
-  },
-  {
-    email: "assessor.admin@bobabear.assessment.test",
-    scopeType: "brand" as const,
-    roleKey: "brand_admin" as const,
-  },
-  {
-    email: "assessor.refund@bobabear.assessment.test",
-    scopeType: "outlet" as const,
-    roleKey: "support_refund_operator" as const,
-  },
-] as const;
 
 function parseArgs(argv: readonly string[]): Readonly<{ actorId: string }> {
   let actorId: string | undefined;
@@ -115,32 +96,30 @@ async function main(): Promise<void> {
   const persistence = getApplicationPersistence(workerConfig);
   try {
     const actor = await resolveWorkforcePrincipalFromDatabase(persistence, actorId);
-    for (const grant of GRANTS) {
-      const body: Record<string, unknown> = {
-        workforceEmail: grant.email,
-        scopeType: grant.scopeType,
-        status: "active",
-        brandId: BRAND_ID,
-      };
-      if (grant.scopeType === "outlet") {
-        body.organizationId = ORGANIZATION_ID;
-        body.territoryId = TERRITORY_ID;
-        body.outletId = OUTLET_ID;
-      }
+    const hierarchy = await resolveAssessmentHierarchy(persistence, actor);
+    process.stdout.write(
+      `${JSON.stringify({
+        ok: true,
+        hierarchyResolved: true,
+        brandId: hierarchy.brandId,
+        organizationId: hierarchy.organizationId,
+        territoryId: hierarchy.territoryId,
+        outletId: hierarchy.outletId,
+      })}\n`,
+    );
 
-      const membership = await adminCreateMembership(persistence, actor, body);
-      const assignment = await adminGrantRole(persistence, actor, membership.id, {
-        roleKey: grant.roleKey,
-      });
-
+    for (const grant of ASSESSMENT_GRANTS) {
+      const result = await ensureAssessmentGrant(persistence, actor, hierarchy, grant);
       process.stdout.write(
         `${JSON.stringify({
           ok: true,
-          email: grant.email,
-          membershipId: membership.id,
-          membershipStatus: membership.status,
-          roleKey: assignment.roleKey,
-          assignmentId: assignment.id,
+          email: result.email,
+          membershipId: result.membershipId,
+          membershipStatus: result.membershipStatus,
+          membershipReused: result.membershipReused,
+          roleKey: result.roleKey,
+          assignmentId: result.assignmentId,
+          assignmentReused: result.assignmentReused,
         })}\n`,
       );
     }

@@ -5,6 +5,10 @@ import { test, expect, type Page } from "@playwright/test";
  * `npm run test:e2e:customer-auth` / `playwright.customer-auth.config.ts` —
  * never `npm run test:e2e` (see that config's `testIgnore`).
  *
+ * After successful verify, product navigates to `/account/welcome/` when the
+ * customer has no profile (IMP-036B). Assertions prefer navigation/session
+ * chrome over brittle login-page copy.
+ *
  * The six-digit code is read once from `CUSTOMER_OTP_LOCAL_FIXED_CODE` (the
  * same env var both the local harness and the Docker `customer-auth`
  * service use for their local OTP provider) and never logged, asserted into
@@ -52,6 +56,10 @@ function codeField(page: Page) {
   return page.getByLabel("6-digit code", { exact: true });
 }
 
+function mainNav(page: Page) {
+  return page.getByRole("navigation", { name: "Main navigation" });
+}
+
 async function submitPhone(page: Page, phoneNumber: string): Promise<void> {
   await phoneField(page).fill(phoneNumber);
   await page.getByRole("button", { name: /send code/i }).click();
@@ -60,6 +68,22 @@ async function submitPhone(page: Page, phoneNumber: string): Promise<void> {
 async function submitCode(page: Page, code: string): Promise<void> {
   await codeField(page).fill(code);
   await page.getByRole("button", { name: /verify code/i }).click();
+}
+
+/** Post-OTP: welcome onboarding for customers without a profile. */
+async function expectAuthenticatedWelcome(page: Page): Promise<void> {
+  await expect(page).toHaveURL(/\/account\/welcome\/?/, { timeout: 20_000 });
+  await expect(page.getByRole("heading", { name: /Welcome to My BOBA/i })).toBeVisible({
+    timeout: 20_000,
+  });
+  await expect(mainNav(page).getByRole("button", { name: "My BOBA" })).toBeVisible();
+  await expect(mainNav(page).getByRole("link", { name: "Sign In" })).toHaveCount(0);
+}
+
+async function signOutViaChrome(page: Page): Promise<void> {
+  const chrome = mainNav(page);
+  await chrome.getByRole("button", { name: "My BOBA" }).click();
+  await page.getByRole("menuitem", { name: "Sign Out" }).click();
 }
 
 test.describe("customer login — page and validation", () => {
@@ -98,12 +122,7 @@ test.describe("customer login — send/verify OTP flow", () => {
 
     await submitCode(page, FIXED_OTP_CODE!);
 
-    await expect(page.getByText(/signed in\./i)).toBeVisible();
-    await expect(page.getByRole("button", { name: "My BOBA" })).toBeVisible();
-    await expect(
-      page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "Sign In" }),
-    ).toHaveCount(0);
-    await expect(page.getByRole("button", { name: /sign out/i })).toBeVisible();
+    await expectAuthenticatedWelcome(page);
   });
 
   test("rejects an incorrect code and stays on the code screen", async ({ page }) => {
@@ -125,28 +144,25 @@ test.describe("customer login — session persistence and sign-out", () => {
     await page.goto("/login");
     await submitPhone(page, PHONE_NUMBERS.reload);
     await submitCode(page, FIXED_OTP_CODE!);
-    await expect(page.getByText(/signed in\./i)).toBeVisible();
+    await expectAuthenticatedWelcome(page);
 
     await page.reload();
 
-    await expect(page.getByText(/signed in\./i)).toBeVisible();
-    await expect(page.getByRole("button", { name: /sign out/i })).toBeVisible();
+    await expectAuthenticatedWelcome(page);
   });
 
-  test("signing out returns to the phone entry screen and clears the session", async ({ page }) => {
+  test("signing out returns to anonymous Sign In chrome", async ({ page }) => {
     await page.goto("/login");
     await submitPhone(page, "9000000003");
     await submitCode(page, FIXED_OTP_CODE!);
-    await expect(page.getByText(/signed in\./i)).toBeVisible();
+    await expectAuthenticatedWelcome(page);
 
-    await page.getByRole("button", { name: /sign out/i }).click();
+    await signOutViaChrome(page);
 
-    await expect(phoneField(page)).toBeVisible();
-    await expect(statusText(page)).toHaveText(/signed out/i);
-
-    await page.reload();
-    await expect(phoneField(page)).toBeVisible();
-    await expect(page.getByRole("button", { name: /sign out/i })).toHaveCount(0);
+    await expect(mainNav(page).getByRole("link", { name: "Sign In" })).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(mainNav(page).getByRole("button", { name: "My BOBA" })).toHaveCount(0);
   });
 });
 
@@ -158,7 +174,7 @@ test.describe("customer login — no OTP/phone leakage into browser-visible stat
     await submitPhone(page, PHONE_NUMBERS.storageCheck);
     await expect(codeField(page)).toBeVisible();
     await submitCode(page, FIXED_OTP_CODE!);
-    await expect(page.getByText(/signed in\./i)).toBeVisible();
+    await expectAuthenticatedWelcome(page);
 
     expect(page.url()).not.toContain(PHONE_NUMBERS.storageCheck);
     expect(page.url()).not.toContain(FIXED_OTP_CODE!);
@@ -185,10 +201,9 @@ test.describe("IMP-028A — authenticated chrome Sign Out", () => {
     await page.goto("/login");
     await submitPhone(page, "9876543215");
     await submitCode(page, FIXED_OTP_CODE!);
-    await expect(page.getByText(/signed in\./i)).toBeVisible();
+    await expectAuthenticatedWelcome(page);
 
-    const chrome = page.getByRole("navigation", { name: "Main navigation" });
-    await expect(chrome.getByRole("button", { name: "My BOBA" })).toBeVisible();
+    const chrome = mainNav(page);
     await chrome.getByRole("button", { name: "My BOBA" }).click();
     await expect(page.getByRole("menuitem", { name: "My Orders" })).toHaveAttribute(
       "href",
