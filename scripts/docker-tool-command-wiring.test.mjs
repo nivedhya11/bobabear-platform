@@ -68,10 +68,10 @@ test("tooling image packages IMP-028C modifier bootstrap script, artifact, and m
   const dockerfile = readFileSync(path.join(projectRoot, "Dockerfile"), "utf8");
   const toolingStage = dockerfile.split("FROM base AS tooling")[1]?.split(/^FROM /m)[0] ?? "";
   assert.ok(toolingStage.length > 0, "Dockerfile must declare a tooling stage");
-  assert.match(toolingStage, /^COPY scripts\/catalog \.\/scripts\/catalog$/m);
-  assert.match(toolingStage, /^COPY data\/platform\/catalog \.\/data\/platform\/catalog$/m);
-  assert.match(toolingStage, /^COPY data\/platform\/imports \.\/data\/platform\/imports$/m);
-  assert.match(toolingStage, /^COPY src \.\/src$/m);
+  assert.match(toolingStage, /^COPY(?: --chown=node:node)? scripts\/catalog \.\/scripts\/catalog$/m);
+  assert.match(toolingStage, /^COPY(?: --chown=node:node)? data\/platform\/catalog \.\/data\/platform\/catalog$/m);
+  assert.match(toolingStage, /^COPY(?: --chown=node:node)? data\/platform\/imports \.\/data\/platform\/imports$/m);
+  assert.match(toolingStage, /^COPY(?: --chown=node:node)? src \.\/src$/m);
 
   const compose = readFileSync(path.join(projectRoot, "compose.yaml"), "utf8");
   assert.match(compose, /^  catalog-bootstrap-imp028c-modifiers:$/m);
@@ -133,7 +133,7 @@ test("tooling image packages staging baseline classifier entrypoint declared by 
   assert.ok(toolingStage.length > 0, "Dockerfile must declare a tooling stage");
   assert.match(
     toolingStage,
-    /^COPY scripts\/environment\/staging-baseline-classify\.ts \.\/scripts\/environment\/staging-baseline-classify\.ts$/m,
+    /^COPY(?: --chown=node:node)? scripts\/environment\/staging-baseline-classify\.ts \.\/scripts\/environment\/staging-baseline-classify\.ts$/m,
     "tooling stage must COPY the exact classifier entrypoint used by staging:baseline-classify",
   );
   // Least-scope packaging: do not ship host-side staging orchestration into the image.

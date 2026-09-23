@@ -194,9 +194,12 @@ function podmanCompose(buildDir, args, extraEnv = {}) {
 
 function materializeExactGitTree(sha) {
   const buildDir = mkdtempSync(path.join(os.tmpdir(), "boba-staging-build-"));
+  // Force umask 022 so archived files are world-readable in the build context.
+  // A restrictive operator-shell umask (e.g. 077) previously produced mode 0600
+  // COPY layers and EACCES under `USER node` in the tooling/workforce operator image.
   const result = spawnIgnoringStdin(
     "bash",
-    ["-lc", `git -C "${repositoryRoot}" archive "${sha}" | tar -x -C "${buildDir}"`],
+    ["-lc", `umask 022; git -C "${repositoryRoot}" archive "${sha}" | tar -x -C "${buildDir}"`],
   );
   if (result.status !== 0) {
     rmSync(buildDir, { recursive: true, force: true });

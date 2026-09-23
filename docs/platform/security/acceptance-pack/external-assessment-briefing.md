@@ -16,6 +16,11 @@ FOUNDER_EXTERNAL_ASSESSMENT_STAGING_AUTHORIZATION: YES
 PRODUCTION_MUTATION_AUTHORIZED: NO
 IMP039_ACTIVATED: NO
 IMP038_ACCEPTANCE_AUTHORIZED: NO
+
+ASSESSMENT_WINDOW_STARTED: YES
+ASSESSMENT_CREDENTIAL_PACKAGE_READY: YES
+CSP_ENFORCE: YES
+ASSESSOR_IDENTITY_READINESS: docs/platform/security/acceptance-pack/assessor-identity-readiness.md
 ```
 
 ## 1. Purpose
@@ -108,9 +113,10 @@ not production Droplet data.
 
 | Realm | Process |
 |---|---|
-| Customer | Founder-provisioned staging phone OTP path only. Do not use production phones. OTP delivery depends on staging provider config; abuse/Turnstile controls remain enabled. |
-| Workforce | Create via `npm run env:staging:workforce:user:create` against running `boba-staging` only (stdin password; exact-main operator image). Do not share production workforce credentials. |
-| Roles / scopes | Closed permission catalogue (ADR-005); see BOLA/BFLA map. Assessor may request outlet/brand scoped accounts — Founder provisions; do not invent roles. |
+| Customer | Staging phone OTP path only (`CUSTOMER_OTP_PROVIDER=local` on Founder staging). Dedicated assessor test phone delivered OOB. Do not use production phones. Abuse/Turnstile controls remain enabled. |
+| Workforce | Assessor identities provisioned via existing `workforce:user:create` operator CLI against `boba-staging` + closed-catalog role grants via Administration use-cases. MFA enrolled. Credentials OOB only (`.env.staging/assessment-oob-credentials.txt`, gitignored). |
+| Roles / scopes | Closed permission catalogue (ADR-005): ops=`outlet_manager`, admin=`brand_admin`, refund=`support_refund_operator`. See BOLA/BFLA map. Do not invent roles. |
+| Readiness evidence | Non-secret matrix: [`assessor-identity-readiness.md`](./assessor-identity-readiness.md) |
 
 ## 5. Explicit out of scope / constraints
 
