@@ -2,8 +2,9 @@
 {
   "status": "CURRENT",
   "authority": "DECISION_AUTHORITY",
-  "decisionRegisterVersion": "DR-19",
-  "lastReviewed": "2026-09-23"
+  "decisionRegisterVersion": "DR-20",
+  "lastReviewed": "2026-09-24",
+  "supersedes": "DR-19"
 }
 -->
 
@@ -35,7 +36,7 @@ Only **CURRENT** decisions are fully binding. **AMENDED** decisions must identif
   [`decision-register-historical.md`](./decision-register-historical.md) (D-001–D-355) remain
   interpretable history under that **HISTORICAL** document. They are not independently CURRENT
   sequencing or transport authority.
-- New decisions continue after the highest CURRENT/AMENDED register ID: next ID **D-378**.
+- New decisions continue after the highest CURRENT/AMENDED/PROPOSED register ID: next ID **D-379**.
 - ADR files keep `ADR-xxx` identities. This register references them in the Record column.
   Mapping ADR-014 ↔ D-014 is **not** used here because historical `decision-register-historical.md`
   already assigned D-014 to a different decision (Next.js evolution-in-place).
@@ -75,7 +76,8 @@ notices; keep history interpretable.
 | D-374 | Cost-Optimized Pilot Infrastructure: Single DigitalOcean Droplet + Docker Compose + Self-Hosted PostgreSQL + Spaces Backups. BOBA Direct pilot production uses one Basic Droplet (BLR1/Bangalore where available; Ubuntu 24.04 LTS; Docker Engine + Compose; initial cost target 2 GiB / 1 vCPU ≈ $12/month at 2026-09-19 pricing, vertical resize to 4 GiB first if needed), self-hosted PostgreSQL 18 on the same Droplet (local persistent volume; single-node failure domain accepted for pilot), DigitalOcean Spaces as mandatory off-host backup destination (~$5/month), steady-state pilot infra target ≈ $17/month. Rejects for pilot: Kubernetes/DOKS, k3s, Podman production, App Platform production, Managed PostgreSQL production, always-on cloud staging, paid LB, multi-node HA. Preserves immutable OCI/GHCR/manual production gate/serialized migrations/rollback discipline. Amends infrastructure-hosting portions of ADR-001 / ADR-002 / ADR-013 / ADR-015; does not change business domain, HTTP transport, auth/RBAC, or static frontend. Managed PITR removed; IMP-037 Architecture Fit reopened against ARCH-R20 (RPO<=15m / RTO<=2h targets preserved, not claimed solved). PR #169 predates D-374 and is not valid Fit authority. | Global / Infrastructure / Deployment / Persistence Hosting | CURRENT | This register + [`ARCHITECTURE.md`](./ARCHITECTURE.md) + [`decisions/ADR-016-cost-optimized-pilot-infrastructure.md`](./decisions/ADR-016-cost-optimized-pilot-infrastructure.md) | Competing CURRENT readings of ADR-001 App Platform + Managed PostgreSQL as pilot production topology; ADR-002 permanent App Platform production / always-on hosted staging for pilot; ADR-013 managed-provider PITR as CURRENT pilot recovery layer; ADR-015 App Platform secret storage as CURRENT pilot production secret authority | — | ARCH-G13, ARCH-G14, ARCH-G26, ADR-001, ADR-002, ADR-013, ADR-015 |
 | D-375 | Edge / Origin Trust / Application-Authoritative Security Hardening: V1 selects Cloudflare Free as supplemental edge (Free Managed Ruleset + DDoS; Turnstile for escalated customer/workforce auth challenges; Bot Fight Mode and Free edge rate limits supplemental only / not acceptance-critical). Production trust chain = Cloudflare proxied DNS → edge → Full (strict) TLS + Authenticated Origin Pulls (zone-level preferred) → DigitalOcean Cloud Firewall Cloudflare-IP allowlist → Nginx (CSP/security-header authority + real_ip from CF-Connecting-IP; XFF replaced) → Compose services with TRUST_PROXY_HOPS=1. Application auth abuse, authorization, and payment/webhook controls remain authoritative if edge is bypassed. Permanent attacker-triggered lockout forbidden. No raw PAN/CVV. Step-up reuses workforce-auth session with short-lived server proofs. Does not authorize IMP-038 implementation or activate IMP-039 provisioning. CSP host inventory under locked IMP-038 §8.2 is narrowly amended by **D-376** (Maps Fonts CDN hosts only). | Security / Edge / Origin / Privacy / IMP-038 | CURRENT | This register + [`ARCHITECTURE.md`](./ARCHITECTURE.md) + [`decisions/ADR-017-edge-origin-security-privacy-hardening.md`](./decisions/ADR-017-edge-origin-security-privacy-hardening.md) + [`capabilities/IMP-038-security-privacy-hardening.md`](./capabilities/IMP-038-security-privacy-hardening.md) | Undecided edge/origin/CSP/challenge/abuse/step-up mechanism clauses left open by PD-IMP-038-DRAFT-2 Architecture Fit items; paid Cloudflare required for V1 Fit | — | ARCH-G01, ARCH-G04, ARCH-G08, ARCH-G14, ARCH-G26, ARCH-G27, ADR-004, ADR-005, ADR-009, D-361, D-362, D-363, D-374 |
 | D-376 | IMP-038 CSP Maps Fonts inventory amendment: authorize exactly `https://fonts.googleapis.com` under `style-src` and `https://fonts.gstatic.com` under `font-src` as Google Maps JavaScript API UI dependencies proven on the required Maps/address journey. Does **not** authorize `*.googleapis.com`, `*.gstatic.com`, `*.google.com`, `*.googleusercontent.com`, or any wildcard script-src / connect-src / font-src / style-src. Preserves minimal explicit-host CSP architecture under ARCH-R21 / D-375 / ADR-017 / IMP-038 §8.2. Any subsequent non-inventoried host remains a RED decision. No new global architecture model, ARCH-R22, deployable service, role, or permission. | Security / CSP inventory / IMP-038 | CURRENT | This register + [`ARCHITECTURE.md`](./ARCHITECTURE.md) + [`decisions/ADR-017-edge-origin-security-privacy-hardening.md`](./decisions/ADR-017-edge-origin-security-privacy-hardening.md) + [`capabilities/IMP-038-security-privacy-hardening.md`](./capabilities/IMP-038-security-privacy-hardening.md) | — (narrowly amends locked IMP-038 §8.2 CSP host inventory under **D-375** / ADR-017; does not supersede D-375) | — | ARCH-G27 CSP inventory (Maps Fonts hosts); IMP-038 §8.2; D-375 / ADR-017 |
-| D-377 | Pre-GTM Product Insertion + GTM Infrastructure Program Pause: Founder-authorized insertion of **IMP-036H** (Customer Pickup / Takeaway) as `currentProductSlice` with `PD-IMP-036H-DRAFT-1` = `DRAFT_READY_FOR_GATE` (`IMP036H_ACTIVATED: YES`; Gate / Fit / lock / implementation authorization **not** performed). Reserves **IMP-036I** Scheduled Fulfilment as `PLANNED` only (`IMP036I_ACTIVATED: NO`; `nextProductSlice`). Establishes `PROGRAM_PAUSE: PRE_GTM_PRODUCT_INSERTION_PROVIDER_BLOCKED`. Holds **IMP-037** (`IMP037_HOLD: YES`; `IMPLEMENTATION_IN_PROGRESS`; `PHASE1_BLOCK_STATUS: BLOCKED_PROVIDER_ACCESS`; `IMP037_IMPLEMENTATION_COMPLETE: NO`; `IMP037_ACCEPTED: NO`) and **IMP-038** (`IMP038_HOLD: YES`; `IMPLEMENTATION_COMPLETE` / `NOT_ACCEPTED`; `IMP038_EXTERNAL_ASSESSMENT: DEFERRED_UNTIL_PRE_GTM_APPLICATION_SCOPE_STABILIZES`; frozen runtime evidence preserved; `GAP-EXT-ASSESS-001: NOT_CLOSED`). Does **not** activate IMP-039/040; does **not** accept IMP-037/038; does **not** authorize IMP-036H implementation; does **not** create an ARCH revision. Preserves historical `CONTINUATION_EXCEPTION: IMP037_PROVIDER_BLOCKED_TO_IMP038` as history; does **not** reopen IMP-026→028 exception; does **not** reopen IMP-038 implementation. | Roadmap / Program / IMP-036H / IMP-036I / IMP-037 / IMP-038 | CURRENT | This register + [`ROADMAP.md`](./ROADMAP.md) + [`STATE.md`](./STATE.md) + [`product/IMP-036H/product-definition.md`](./product/IMP-036H/product-definition.md) | — | — | GTM-R141 / STATE-R139 activation; CURRENT tip GTM-R142 / STATE-R140 Gate PASS; PROGRAM_PAUSE; IMP-036H Product Definition; IMP-037/038 HOLD |
+| D-377 | Pre-GTM Product Insertion + GTM Infrastructure Program Pause: Founder-authorized insertion of **IMP-036H** (Customer Pickup / Takeaway) as `currentProductSlice` with `PD-IMP-036H-DRAFT-1` = `DRAFT_READY_FOR_GATE` (`IMP036H_ACTIVATED: YES`; Gate / Fit / lock / implementation authorization **not** performed). Reserves **IMP-036I** Scheduled Fulfilment as `PLANNED` only (`IMP036I_ACTIVATED: NO`; `nextProductSlice`). Establishes `PROGRAM_PAUSE: PRE_GTM_PRODUCT_INSERTION_PROVIDER_BLOCKED`. Holds **IMP-037** (`IMP037_HOLD: YES`; `IMPLEMENTATION_IN_PROGRESS`; `PHASE1_BLOCK_STATUS: BLOCKED_PROVIDER_ACCESS`; `IMP037_IMPLEMENTATION_COMPLETE: NO`; `IMP037_ACCEPTED: NO`) and **IMP-038** (`IMP038_HOLD: YES`; `IMPLEMENTATION_COMPLETE` / `NOT_ACCEPTED`; `IMP038_EXTERNAL_ASSESSMENT: DEFERRED_UNTIL_PRE_GTM_APPLICATION_SCOPE_STABILIZES`; frozen runtime evidence preserved; `GAP-EXT-ASSESS-001: NOT_CLOSED`). Does **not** activate IMP-039/040; does **not** accept IMP-037/038; does **not** authorize IMP-036H implementation; does **not** create an ARCH revision. Preserves historical `CONTINUATION_EXCEPTION: IMP037_PROVIDER_BLOCKED_TO_IMP038` as history; does **not** reopen IMP-026→028 exception; does **not** reopen IMP-038 implementation. | Roadmap / Program / IMP-036H / IMP-036I / IMP-037 / IMP-038 | CURRENT | This register + [`ROADMAP.md`](./ROADMAP.md) + [`STATE.md`](./STATE.md) + [`product/IMP-036H/product-definition.md`](./product/IMP-036H/product-definition.md) | — | — | GTM-R141 / STATE-R139 activation; prior tip GTM-R142 / STATE-R140 Gate PASS; CURRENT tip GTM-R143 / STATE-R141 Architecture Fit PASS + lock; PROGRAM_PAUSE; IMP-036H Product Definition; IMP-037/038 HOLD |
+| D-378 | Checkout Fulfilment Mode + Pickup Execution Boundary: Checkout Snapshot owns immutable fulfilment commitment (`DELIVERY` \| `PICKUP`); DELIVERY requires destination/serviceability and may create Delivery execution; PICKUP binds eligible selected Outlet, requires no customer delivery destination/serviceability, never creates/invokes Delivery; mutable Checkout owns pre-payment mode + `pickupOutletId`; commercial evaluation must not apply delivery charges for PICKUP; OutletPickupProfile is bounded mutable outlet configuration under existing `outlet.read`/`outlet.update`; no new Order lifecycle, payment model, role, permission, deployable service, or scheduled-fulfilment schema (IMP-036I). Financial Document adapters remain D-365 compliant (corrected Option A): Pickup does **not** invent a Delivery destination; does **not** classify Pickup location as recipient/customer address; does **not** reconstruct recipient facts from mutable customer state; optional Pickup recipient fields remain absent (`null`) unless immutable accepted recipient authority already exists. Place-of-supply remains under existing D-365 issuer/profile policy. No new legal claim. Binding ARCH-G28 / ARCH-R22 / ADR-018. Does **not** authorize IMP-036H implementation. | Checkout / Fulfilment / Pickup / Delivery boundary / IMP-036H | CURRENT | This register + [`ARCHITECTURE.md`](./ARCHITECTURE.md) + [`decisions/ADR-018-customer-fulfilment-mode-and-pickup-boundary.md`](./decisions/ADR-018-customer-fulfilment-mode-and-pickup-boundary.md) + [`capabilities/IMP-036H-customer-pickup-takeaway.md`](./capabilities/IMP-036H-customer-pickup-takeaway.md) | — | — | ARCH-G28; IMP-036H Architecture Fit PASS + lock (implementation NOT_AUTHORIZED) |
 
 ## 3. Current Capability / Cross-Capability Decisions
 
@@ -127,6 +129,7 @@ CURRENT binding reads:
 | ADR-015 | Configuration / secrets / feature flags | AMENDED | No-secrets-in-repo/OCI, build/runtime and browser/server separation remain; App Platform production secret storage amended for pilot by **D-374** / ADR-016 |
 | ADR-016 | Cost-optimized pilot infrastructure | CURRENT | Single Droplet + Docker Compose + self-hosted PostgreSQL 18 + Spaces backups; **D-374** |
 | ADR-017 | Edge / origin trust / application-authoritative security hardening | CURRENT | Cloudflare Free supplemental edge + origin trust chain + Nginx CSP/real_ip + Turnstile challenge + abuse/step-up layering; **D-375**; CSP §8.2 Maps Fonts hosts narrowly amended by **D-376** |
+| ADR-018 | Customer fulfilment mode and Pickup boundary | CURRENT | Checkout Snapshot owns immutable `DELIVERY` \| `PICKUP`; Pickup fail-closed vs Delivery; Financial Document Option A; **D-378**; ARCH-G28 / ARCH-R22 |
 
 Where repository evidence was insufficient to assert a finer semantic split inside an ADR without
 guessing, status is limited to the rows above rather than inventing a full taxonomy.
@@ -166,6 +169,21 @@ ADR bodies.
 
 ## 7. Decision Change Log
 
+### DR-20 — 2026-09-24
+
+- Promoted **D-378** from PROPOSED → **CURRENT**: Checkout Fulfilment Mode + Pickup Execution
+  Boundary (ADR-018 Accepted; ARCH-R22 / ARCH-G28). Preserves corrected Financial Document Option A
+  (Pickup recipient fields null unless immutable accepted recipient authority exists; no invented
+  Delivery destination; no Pickup-location-as-recipientAddress; no mutable customer-profile
+  reconstruction; `NO_NEW_LEGAL_CLAIM`).
+- Capability architecture locked at
+  [`capabilities/IMP-036H-customer-pickup-takeaway.md`](./capabilities/IMP-036H-customer-pickup-takeaway.md)
+  after independent Architecture Fit PASS (PR #239 review `5295149318`; evaluated HEAD
+  `aab814c238c499367ee921e9f8ffb03ff7b1b373`).
+- Does **not** authorize IMP-036H implementation, start implementation, execute schema migration,
+  activate IMP-036I / IMP-039 / IMP-040, or accept IMP-036H / IMP-037 / IMP-038.
+- Next free decision ID remains **D-379**.
+
 ### DR-19 — 2026-09-23
 
 - Registered **D-377**: Pre-GTM Product Insertion + GTM Infrastructure Program Pause —
@@ -178,6 +196,12 @@ ADR bodies.
   an ARCH revision. Preserves historical `CONTINUATION_EXCEPTION: IMP037_PROVIDER_BLOCKED_TO_IMP038`.
 - Next free decision ID advanced to **D-378**.
 - Activation authority remains D-377 at GTM-R141 / STATE-R139 (`STATE-R139 = IMP036H_PRODUCT_DEFINITION_ACTIVATION`). CURRENT tip after Product Definition Gate PASS is GTM-R142 / STATE-R140 (`STATE-R140 = IMP036H_PRODUCT_DEFINITION_GATE_PASS`) without changing D-377 decision text meaning.
+- **Architecture Fit candidate reservation (2026-09-23; same DR-19 tip):** Registered **D-378** as
+  **PROPOSED** (Checkout Fulfilment Mode + Pickup Execution Boundary) with Proposed ADR-018 and
+  proposed ARCH-G28 / ARCH-R22 lock delta recorded in the IMP-036H capability Fit candidate. Does
+  **not** promote D-378 to CURRENT, does **not** bump register version, does **not** advance
+  ARCHITECTURE meta beyond ARCH-R21, does **not** claim Architecture Fit PASS, and does **not**
+  authorize implementation. Next free decision ID advanced to **D-379**.
 
 ### DR-18 — 2026-09-23
 
