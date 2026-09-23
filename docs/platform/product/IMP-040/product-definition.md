@@ -132,10 +132,10 @@ PD1_DID_NOT_ACTIVATE_IMP036F_AT_ADOPTION = YES
 ```
 
 Lifecycle truth remains ROADMAP/STATE only. **CURRENT tip** (verify against ROADMAP/STATE; do not
-treat this draft as lifecycle authority): `GTM-R141` / `STATE-R139` —
+treat this draft as lifecycle authority): `GTM-R142` / `STATE-R140` —
 `acceptedThrough = IMP-036G`; `currentProductSlice = IMP-036H` under
 `PROGRAM_PAUSE: PRE_GTM_PRODUCT_INSERTION_PROVIDER_BLOCKED` (**D-377**)
-(`IMP036H_ACTIVATED: YES`; formal IMP-036H lifecycle PLANNED; PD `DRAFT_READY_FOR_GATE` /
+(`IMP036H_ACTIVATED: YES`; formal IMP-036H lifecycle PLANNED; PD `APPROVED` /
 Gate NOT_PERFORMED; Fit NOT_PERFORMED; implementation NOT_AUTHORIZED);
 IMP-037/038 remain held (`IMP037_HOLD` / `IMP038_HOLD`);
 `nextProductSlice = IMP-036I`; **`IMP040_ACTIVATED: NO`**. Presence of this PRE-GATE draft does
@@ -146,7 +146,7 @@ Historical draft-time anchors (when this PRE-GATE draft was first authored): `GT
 ROADMAP/STATE revisions; retained only as provenance of this draft's original write.
 Intermediate tip anchors claiming `currentProductSlice = IMP-038` under controlled continuation
 (`GTM-R138` / `STATE-R136` and successors through GTM-R140 / STATE-R138) are likewise historical
-relative to CURRENT GTM-R141 / STATE-R139.
+relative to CURRENT GTM-R142 / STATE-R140.
 
 ---
 
@@ -158,7 +158,7 @@ relative to CURRENT GTM-R141 / STATE-R139.
 | Product Definition version / document status | `PD-IMP-040-DRAFT-1`; **Document status: PRE-GATE DRAFT**; **PRE-GATE DRAFT: YES** |
 | Product owner / approval evidence | Founder. FD-040-01…10 resolved 2026-09-18 via explicit `"proceed"` in response to the exact IMP-040 recommended-refinement approval package. Product Definition Gate **NOT_PERFORMED**. |
 | Process / verification policy | `PD-1` / `TEST-1` |
-| Canonical anchors | VISION-1; ROADMAP GTM-R132; STATE STATE-R130 (historical draft-time anchors; CURRENT tip is GTM-R141 / STATE-R139 — see lifecycle note above); ARCH-R20 / DR-16 CURRENT (draft originally cited ARCH-R19 / DR-15); PD-1; TEST-1; PERSONA-1; GJ-1 |
+| Canonical anchors | VISION-1; ROADMAP GTM-R132; STATE STATE-R130 (historical draft-time anchors; CURRENT tip is GTM-R142 / STATE-R140 — see lifecycle note above); ARCH-R20 / DR-16 CURRENT (draft originally cited ARCH-R19 / DR-15); PD-1; TEST-1; PERSONA-1; GJ-1 |
 | Repository candidate | Canonical path `/home/ajoshi/repos/boba-bear-platform`; base at draft authoring `origin/main` `c35c9eab6a30ec6ce745cefd75c523181326f360` / tree `266fe3b07811f6942e76cac155d58ba07daabe56`; draft branch `governance/imp040-pre-gate-product-definition` |
 | Capability lifecycle / authorization | ROADMAP/STATE: IMP-040 remains **PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED**; **IMP040_ACTIVATED: NO**; Product Definition Gate NOT_PERFORMED; Architecture Fit NOT_PERFORMED; architecture NOT_LOCKED; implementation NOT_AUTHORIZED / NOT_STARTED; IMP040_ACCEPTED: NO; GO_DECLARED: NO; PUBLIC_LAUNCH_APPROVED: NO. CURRENT tip: **currentProductSlice = IMP-036H** under `PROGRAM_PAUSE: PRE_GTM_PRODUCT_INSERTION_PROVIDER_BLOCKED` (**D-377**) (`acceptedThrough` IMP-036G; `nextProductSlice` IMP-036I; IMP-037/038 held predecessors). |
 | Relevant capability architecture / ADRs | ADR-002 (Pages transition, rollback, incident); ADR-007 (tax/GST commercial gate); ADR-011 delivery; ADR-012 notifications; IMP-037/038/039 hard prerequisites (future accepted status required before GO — not claimed accepted by this draft); GJ-1 |

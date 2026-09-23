@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R141",
+  "roadmapVersion": "GTM-R142",
   "acceptedThrough": "IMP-036G",
   "currentProductSlice": "IMP-036H",
   "nextProductSlice": "IMP-036I",
   "gtmBoundary": "IMP-040",
   "lastReviewed": "2026-09-23",
-  "supersedes": "GTM-R140"
+  "supersedes": "GTM-R141"
 }
 -->
 
@@ -34,7 +34,7 @@
   change) before the next slice begins: **ACCEPT → RECONCILE → ADVANCE**.
 - The historical IMP-026 → IMP-028 controlled-continuation exception (GTM-R15 onward) is **CLOSED**.
   It does **not** generalize to future slices and is **not** reopened by GTM-R138 / GTM-R139 /
-  GTM-R140 / GTM-R141.
+  GTM-R140 / GTM-R141 / GTM-R142.
 - **GTM-R138** records a **NEW**, Founder-authorized one-off exception
   `CONTINUATION_EXCEPTION: IMP037_PROVIDER_BLOCKED_TO_IMP038` (authority PR#179/5771367844) so
   IMP-038 may activate for PD-1 Product Definition work while IMP-037 remains an
@@ -44,7 +44,7 @@
   implementation, or activate IMP-039.
 - **GTM-R141** records a **NEW**, Founder-authorized program decision **D-377**
   (`PROGRAM_PAUSE: PRE_GTM_PRODUCT_INSERTION_PROVIDER_BLOCKED`) that inserts pre-GTM product
-  slices IMP-036H (active Product Definition draft) and IMP-036I (planned only) after accepted
+  slices IMP-036H (APPROVED Product Definition; Gate PASS) and IMP-036I (planned only) after accepted
   IMP-036G, while holding IMP-037 / IMP-038 and keeping IMP-039 / IMP-040 unactivated. Historical
   `CONTINUATION_EXCEPTION: IMP037_PROVIDER_BLOCKED_TO_IMP038` remains interpretable history and is
   **not** erased. This decision does **not** accept IMP-037 or IMP-038, does **not** close
@@ -382,9 +382,9 @@ ARCHITECTURE_FIT_EVALUATED_TREE: 581fb23631df40044ec7b9c449545959a90b9998
 ARCHITECTURE_FIT_EVALUATED_WORKING_TREE_FINGERPRINT: ab00d1ab23f3c7d8b140feefcd1a0787f1fedf90ab08a9934c9a892a77c8184d
 IMP-036H: PLANNED
 IMP036H_ACTIVATED: YES
-IMP036H_PRODUCT_DEFINITION: DRAFT_READY_FOR_GATE
+IMP036H_PRODUCT_DEFINITION: APPROVED
 IMP036H_PRODUCT_DEFINITION_VERSION: PD-IMP-036H-DRAFT-1
-IMP036H_PRODUCT_DEFINITION_GATE: NOT_PERFORMED
+IMP036H_PRODUCT_DEFINITION_GATE: PASS
 IMP036H_ARCHITECTURE_FIT: NOT_PERFORMED
 IMP036H_ARCHITECTURE_LOCKED: NO
 IMP036H_IMPLEMENTATION_AUTHORIZED: NO
@@ -417,14 +417,31 @@ IMP-036D_ACCEPTED: YES
 IMP-036D_FOUNDER_UAT: PASS
 ```
 
-**GTM-R141** activates Founder-authorized pre-GTM product insertion under **D-377** /
-`PROGRAM_PAUSE: PRE_GTM_PRODUCT_INSERTION_PROVIDER_BLOCKED`. Sets `currentProductSlice = IMP-036H`
-(Customer Pickup / Takeaway) with formal lifecycle `PLANNED` and `IMP036H_ACTIVATED: YES`;
-Product Definition `PD-IMP-036H-DRAFT-1` = `DRAFT_READY_FOR_GATE`;
-`IMP036H_PRODUCT_DEFINITION_GATE: NOT_PERFORMED`; Architecture Fit `NOT_PERFORMED`; architecture
-`NOT_LOCKED`; implementation `NOT_AUTHORIZED` / `NOT_STARTED`; `IMP036H_ACCEPTED: NO`;
-`IMP036H_FOUNDER_UAT_REQUIRED: YES`. Reserves `IMP-036I — Scheduled Fulfilment` as `PLANNED` only
-(`IMP036I_ACTIVATED: NO`; `nextProductSlice = IMP-036I`). Holds IMP-037
+**GTM-R142** persists independently executed Product Definition Gate PASS for IMP-036H candidate
+`PD-IMP-036H-DRAFT-1` (`IMP036H_PRODUCT_DEFINITION: APPROVED`;
+`IMP036H_PRODUCT_DEFINITION_GATE: PASS`). Gate-evaluated candidate HEAD
+`91d3714a9efba59c309db159d112fdbb6c46dc72` / tree `3f8459cfc88c97f4267528fe5b8c3e8773692245` /
+fingerprint `81395a83ca492a791ee1faca3fdbf627b985c30adf00d2163693b3ccd6523664`; independent gate
+evidence PR#238 comment `5797812536` — Gate Result PASS. The later gate-persistence commit is
+**not** the evaluated artifact. Preserves `PROGRAM_PAUSE: PRE_GTM_PRODUCT_INSERTION_PROVIDER_BLOCKED`
+(**D-377**); `acceptedThrough = IMP-036G`; `currentProductSlice = IMP-036H`;
+`nextProductSlice = IMP-036I`; `pendingAcceptance = NONE`; `gtmBoundary = IMP-040`. Formal IMP-036H
+ROADMAP lifecycle remains `PLANNED` (`IMP036H_ACTIVATED: YES`; Architecture Fit `NOT_PERFORMED`;
+architecture `NOT_LOCKED`; implementation `NOT_AUTHORIZED` / `NOT_STARTED`; `IMP036H_ACCEPTED: NO`;
+`IMP036H_FOUNDER_UAT_REQUIRED: YES`; `IMP036I_ACTIVATED: NO`). Holds IMP-037 / IMP-038 unchanged
+(including frozen IMP-038 runtime evidence). Does **not** perform Architecture Fit, lock
+architecture, authorize/start implementation, accept IMP-036H, activate IMP-036I / IMP-039 /
+IMP-040, accept IMP-037/038, or close `GAP-EXT-ASSESS-001`. ARCH-R21 / DR-19 unchanged. Next gate =
+Architecture Fit — **not** implementation.
+
+**GTM-R141** (historical prior tip; superseded by GTM-R142) activated Founder-authorized pre-GTM
+product insertion under **D-377** / `PROGRAM_PAUSE: PRE_GTM_PRODUCT_INSERTION_PROVIDER_BLOCKED`.
+Set `currentProductSlice = IMP-036H` with formal lifecycle `PLANNED` and `IMP036H_ACTIVATED: YES`;
+Product Definition candidate `PD-IMP-036H-DRAFT-1` was ungated / ready for gate evaluation at that
+tip (Product Definition Gate had not yet been performed; Architecture Fit had not yet been
+performed; architecture not locked; implementation not authorized / not started;
+`IMP036H_ACCEPTED: NO`; `IMP036H_FOUNDER_UAT_REQUIRED: YES`). Reserved `IMP-036I — Scheduled
+Fulfilment` as `PLANNED` only (`IMP036I_ACTIVATED: NO`; `nextProductSlice = IMP-036I`). Held IMP-037
 (`IMP037_HOLD: YES`; remains `IMPLEMENTATION_IN_PROGRESS`; `PHASE1_BLOCK_STATUS: BLOCKED_PROVIDER_ACCESS`;
 `IMP037_IMPLEMENTATION_COMPLETE: NO`; `IMP037_ACCEPTED: NO`) and IMP-038
 (`IMP038_HOLD: YES`; `IMPLEMENTATION_IN_PROGRESS (HOLD — IMPLEMENTATION_COMPLETE / NOT_ACCEPTED)`;
@@ -432,14 +449,15 @@ Product Definition `PD-IMP-036H-DRAFT-1` = `DRAFT_READY_FOR_GATE`;
 `IMP038_EXTERNAL_ASSESSMENT: DEFERRED_UNTIL_PRE_GTM_APPLICATION_SCOPE_STABILIZES`; frozen runtime
 `dc6b19e6f88d4084e424d927e6467c374596fb0a` / tree `c3aefb57f3f6c941d7f14907b6c095c4aa7f0547` /
 fingerprint `2800fe11397ee2a01e9decf572f85adf5c3a8b244ca34b1f53d579e05feac589`;
-`GAP-EXT-ASSESS-001: NOT_CLOSED`). Preserves historical
+`GAP-EXT-ASSESS-001: NOT_CLOSED`). Preserved historical
 `CONTINUATION_EXCEPTION: IMP037_PROVIDER_BLOCKED_TO_IMP038` (authority PR#179/5771367844) without
-keeping IMP-038 as `currentProductSlice`. Keeps `acceptedThrough = IMP-036G`;
-`pendingAcceptance = NONE`; `IMP039_ACTIVATED: NO`; `IMP040_ACTIVATED: NO`. Does **not** create an
-ARCH revision (ARCH-R21 unchanged); does **not** authorize IMP-036H implementation; does **not**
-activate IMP-036I / IMP-039 / IMP-040; does **not** accept IMP-037 or IMP-038; does **not** reopen
-IMP-038 implementation; does **not** close `GAP-EXT-ASSESS-001`. Next gate = Product Definition Gate
-for `PD-IMP-036H-DRAFT-1` — **not** Architecture Fit / implementation.
+keeping IMP-038 as `currentProductSlice`. Kept `acceptedThrough = IMP-036G`;
+`pendingAcceptance = NONE`; `IMP039_ACTIVATED: NO`; `IMP040_ACTIVATED: NO`. Did **not** create an
+ARCH revision (ARCH-R21 unchanged); did **not** authorize IMP-036H implementation; did **not**
+activate IMP-036I / IMP-039 / IMP-040; did **not** accept IMP-037 or IMP-038; did **not** reopen
+IMP-038 implementation; did **not** close `GAP-EXT-ASSESS-001`. Historical next gate at that tip =
+Product Definition Gate for `PD-IMP-036H-DRAFT-1` — **not** Architecture Fit / implementation.
+Superseded as CURRENT tip by GTM-R142.
 
 **GTM-R140** records a combined Founder-authorized IMP-038 implementation **AUTHORIZE + START**
 checkpoint (intentional combine; no separate authorize-only tip). Sets formal IMP-038 lifecycle to
@@ -457,7 +475,7 @@ does **not** activate IMP-039; does **not** claim legal compliance. Under the se
 operating model, Cursor may merge routine conforming GREEN/AMBER IMP-038 implementation PRs after
 CI green + self-review while locked PD/architecture invariants hold. Historical next gate at that tip
 = continue locked IMP-038 implementation (tranches) — **not** acceptance. Superseded as CURRENT tip
-by GTM-R141.
+by GTM-R141 (later superseded as CURRENT tip by GTM-R142).
 
 **GTM-R139** persists IMP-038 Architecture Fit **PASS** and architecture **LOCKED** against
 ARCH-R21 / D-375 / ADR-017 (capability
@@ -618,12 +636,14 @@ IMP-036D remains `COMPLETE_AND_ACCEPTED`. Concise acceptance identity: UAT candi
 Under `PROGRAM_PAUSE: PRE_GTM_PRODUCT_INSERTION_PROVIDER_BLOCKED` (**D-377**), the active product
 slice is IMP-036H — Customer Pickup / Takeaway
 (`currentProductSlice = IMP-036H`; `IMP036H_ACTIVATED: YES`; formal lifecycle `PLANNED`;
-Product Definition `PD-IMP-036H-DRAFT-1` = `DRAFT_READY_FOR_GATE`;
-`IMP036H_PRODUCT_DEFINITION_GATE: NOT_PERFORMED`; Architecture Fit `NOT_PERFORMED`; architecture
+Product Definition `PD-IMP-036H-DRAFT-1` = **APPROVED**;
+`IMP036H_PRODUCT_DEFINITION_GATE: PASS`; Architecture Fit `NOT_PERFORMED`; architecture
 `NOT_LOCKED`; implementation `NOT_AUTHORIZED` / `NOT_STARTED`; `IMP036H_ACCEPTED: NO`;
 `IMP036H_FOUNDER_UAT_REQUIRED: YES`; `pendingAcceptance = NONE`; `nextProductSlice = IMP-036I`;
-`IMP036I_ACTIVATED: NO`). Per-IMP PRE-GATE Product Definition:
+`IMP036I_ACTIVATED: NO`). Per-IMP APPROVED Product Definition:
 [`product/IMP-036H/product-definition.md`](./product/IMP-036H/product-definition.md).
+Gate PASS does **not** perform Architecture Fit, lock architecture, or authorize/start
+implementation. Next gate = Architecture Fit.
 
 Paused GTM infrastructure predecessors remain historically progressed and explicitly held:
 
@@ -660,7 +680,7 @@ Per-IMP Product Definition remains:
 Accepted UAT product candidate remains `fbf690a67cda51bd6bbc1bad4a9d26f574c4286e` / tree
 `84b6a502fcec646cb5a65f3257f19b85c64f49e1`. ARCH-R21 / DR-19 are CURRENT
 (`D-374_CREATED: YES`; `ARCH_R20_CREATED: YES`; `D-375_CREATED: YES`; `ARCH_R21_CREATED: YES`;
-`D-377_CREATED: YES`); no ARCH revision is created for this Product Definition activation tip.
+`D-377_CREATED: YES`); no ARCH revision is created for this Product Definition Gate PASS tip.
 `SCHEMA_CHANGE_REQUIRED: YES` remains the architecture conclusion recorded for IMP-036G;
 `NEW_PERMISSION: NO`; `NEW_ROLE: NO`; `NEW_SCOPE_MODEL: NO` for that accepted slice.
 
@@ -726,7 +746,7 @@ Historical Food Direct insertion narration remains in
 | IMP-036E | Store Operations Management | COMPLETE_AND_ACCEPTED |
 | IMP-036F | Catalog, Menu, Pricing & Promotions Management | COMPLETE_AND_ACCEPTED |
 | IMP-036G | Administration Console V2 | COMPLETE_AND_ACCEPTED |
-| IMP-036H | Customer Pickup / Takeaway | PLANNED (IMP036H_ACTIVATED: YES; PD DRAFT_READY_FOR_GATE; Gate NOT_PERFORMED; Fit NOT_PERFORMED; NOT_LOCKED; NOT_AUTHORIZED / NOT_STARTED) |
+| IMP-036H | Customer Pickup / Takeaway | PLANNED (IMP036H_ACTIVATED: YES; PD APPROVED; Gate PASS; Fit NOT_PERFORMED; NOT_LOCKED; NOT_AUTHORIZED / NOT_STARTED) |
 | IMP-036I | Scheduled Fulfilment | PLANNED (IMP036I_ACTIVATED: NO) |
 | IMP-037 | Backup, Restore & Migration Readiness | IMPLEMENTATION_IN_PROGRESS (IMP037_HOLD: YES; BLOCKED_PROVIDER_ACCESS) |
 | IMP-038 | Security & Privacy Hardening | IMPLEMENTATION_IN_PROGRESS (IMP038_HOLD: YES; IMPLEMENTATION_COMPLETE / NOT_ACCEPTED; external assessment deferred) |
@@ -743,7 +763,7 @@ IMP-036G → IMP-036H → IMP-036I (planned) → IMP-037 (held) without reopenin
 ```text
 FIGMA_REQUIRED_FOR_INITIAL_IMPLEMENTATION: NO
 IMP-036A → IMP-036G: COMPLETE_AND_ACCEPTED
-IMP-036H: PLANNED (IMP036H_ACTIVATED: YES; currentProductSlice; PD DRAFT_READY_FOR_GATE)
+IMP-036H: PLANNED (IMP036H_ACTIVATED: YES; currentProductSlice; PD APPROVED; Gate PASS)
 IMP-036I: PLANNED / NOT_ACTIVATED (IMP036I_ACTIVATED: NO; nextProductSlice)
 IMP-037: IMPLEMENTATION_IN_PROGRESS (IMP037_HOLD: YES; IMP037_ACTIVATED: YES; provider-blocked)
 IMP-038: IMPLEMENTATION_IN_PROGRESS (IMP038_HOLD: YES; IMP038_ACTIVATED: YES; IMPLEMENTATION_COMPLETE / NOT_ACCEPTED; external assessment deferred)
@@ -808,6 +828,43 @@ Current public GTM boundary is **IMP-040**, not IMP-035.
 
 Historical revision evidence for GTM-R1…GTM-R113 is preserved byte-for-byte in
 [`history/ROADMAP-GTM-R113-pre-compression.md`](./history/ROADMAP-GTM-R113-pre-compression.md).
+
+### GTM-R142 — 2026-09-23
+
+- Persist independently executed Product Definition Gate PASS for IMP-036H candidate
+  `PD-IMP-036H-DRAFT-1` (`IMP036H_PRODUCT_DEFINITION: APPROVED`;
+  `IMP036H_PRODUCT_DEFINITION_GATE: PASS`).
+- Gate-evaluated candidate HEAD `91d3714a9efba59c309db159d112fdbb6c46dc72` / tree
+  `3f8459cfc88c97f4267528fe5b8c3e8773692245` / fingerprint
+  `81395a83ca492a791ee1faca3fdbf627b985c30adf00d2163693b3ccd6523664`; independent gate evidence
+  PR#238 comment `5797812536` — Gate Result PASS. Post-gate persistence commit is not the evaluated
+  artifact.
+- Preserves `acceptedThrough = IMP-036G`; `currentProductSlice = IMP-036H`;
+  `pendingAcceptance = NONE`; `nextProductSlice = IMP-036I`; `gtmBoundary = IMP-040`.
+- Preserves `PROGRAM_PAUSE: PRE_GTM_PRODUCT_INSERTION_PROVIDER_BLOCKED` (**D-377**) and IMP-037/038
+  HOLD / freeze markers (including IMP-038 frozen runtime evidence).
+- Preserves `IMP036H_ACTIVATED: YES` while formal IMP-036H ROADMAP lifecycle remains `PLANNED`
+  (`IMP036H_ARCHITECTURE_FIT: NOT_PERFORMED`; `IMP036H_ARCHITECTURE_LOCKED: NO`;
+  `IMP036H_IMPLEMENTATION_AUTHORIZED: NO`; `IMP036H_STARTED: NO`; `IMP036H_ACCEPTED: NO`;
+  `IMP036H_FOUNDER_UAT_REQUIRED: YES`; `IMP036I_ACTIVATED: NO`).
+- Does **not** perform Architecture Fit, lock architecture, authorize/start implementation, accept
+  IMP-036H, activate IMP-036I / IMP-039 / IMP-040, accept IMP-037/038, or close
+  `GAP-EXT-ASSESS-001`. Next phase = Architecture Fit (separate auth).
+- ARCH-R21 / DR-19 / PD-1 / TEST-1 / VISION-1 unchanged.
+- Supersedes GTM-R141.
+
+### GTM-R141 — 2026-09-23
+
+- ADVANCE / activate IMP-036H Product Definition under Founder-authorized **D-377** /
+  `PROGRAM_PAUSE: PRE_GTM_PRODUCT_INSERTION_PROVIDER_BLOCKED`.
+- Sets `currentProductSlice = IMP-036H`; `nextProductSlice = IMP-036I`;
+  `IMP036H_ACTIVATED: YES`; formal lifecycle `PLANNED`; Product Definition
+  `PD-IMP-036H-DRAFT-1` = `DRAFT_READY_FOR_GATE`; Gate NOT_PERFORMED; Fit NOT_PERFORMED;
+  architecture NOT_LOCKED; implementation NOT_AUTHORIZED / NOT_STARTED.
+- Holds IMP-037 / IMP-038; preserves historical continuation exception; does not activate
+  IMP-036I / IMP-039 / IMP-040; does not accept IMP-037/038; ARCH-R21 unchanged.
+- Historical next gate = Product Definition Gate — **not** Architecture Fit / implementation.
+- Supersedes GTM-R140.
 
 ### GTM-R140 — 2026-09-22
 

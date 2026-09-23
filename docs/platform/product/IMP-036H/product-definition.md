@@ -1,14 +1,15 @@
 <!-- governance-meta
 {
-  "status": "PRE_GATE_DRAFT",
+  "status": "APPROVED",
   "authority": "PRODUCT_DEFINITION",
   "capability": "IMP-036H",
   "productDefinitionVersion": "PD-IMP-036H-DRAFT-1",
   "process": "PD-1",
   "verificationPolicy": "TEST-1",
   "lastReviewed": "2026-09-23",
-  "productDefinitionGateExecution": "NOT_PERFORMED",
-  "productDefinitionGateResult": "NOT_PERFORMED",
+  "productDefinitionGateExecution": "PERFORMED",
+  "productDefinitionGateResult": "PASS",
+  "productDefinitionApprovalEvidence": "PR#238/5797812536",
   "architectureFitExecution": "NOT_PERFORMED",
   "architectureFit": "NOT_PERFORMED",
   "architectureLocked": "NO",
@@ -22,44 +23,58 @@
   "founderDecisions": 23,
   "unresolvedProductDecisions": 0,
   "readyForProductDefinitionGate": "YES",
-  "preGateDraft": "YES",
-  "documentStatus": "DRAFT_READY_FOR_GATE"
+  "preGateDraft": "NO",
+  "documentStatus": "APPROVED"
 }
 -->
 
 # IMP-036H — Customer Pickup / Takeaway
 
-## Product Definition (PRE-GATE DRAFT — Product Definition Gate NOT_PERFORMED)
+## Product Definition (APPROVED — Product Definition Gate PASS)
 
 ```text
-Document status: PRE-GATE DRAFT / DRAFT_READY_FOR_GATE
+Document status: APPROVED
 PRODUCT_DEFINITION_VERSION: PD-IMP-036H-DRAFT-1
-PRE-GATE DRAFT: YES
+PRE-GATE DRAFT: NO
 CAPABILITY: IMP-036H
 TITLE: Customer Pickup / Takeaway
 AUTHORITY: PRODUCT_DEFINITION
 PROCESS: PD-1
 VERIFICATION_POLICY: TEST-1
 
-PRODUCT_DEFINITION_GATE_EXECUTION: NOT_PERFORMED
-Gate Result: NOT_PERFORMED
+PRODUCT_DEFINITION_GATE_EXECUTION: PERFORMED
+PRODUCT_DEFINITION_GATE_RESULT: PASS
+Gate Result: PASS
+IMP036H_PRODUCT_DEFINITION: APPROVED
+IMP036H_PRODUCT_DEFINITION_GATE: PASS
+UNRESOLVED_PRODUCT_DECISIONS: 0
+FOUNDER_DECISIONS: 23
+IMP036H_ARCHITECTURE_FIT: NOT_PERFORMED
+IMP036H_ARCHITECTURE_LOCKED: NO
+IMP036H_IMPLEMENTATION_AUTHORIZED: NO
+IMP036H_STARTED: NO
+IMP036H_ACCEPTED: NO
+FOUNDER_UAT_STATUS: NOT_PERFORMED
+
 ARCHITECTURE_FIT_EXECUTION: NOT_PERFORMED
 ARCHITECTURE_FIT: NOT_PERFORMED
 ARCHITECTURE_LOCKED: NO
 IMP036H_ACTIVATED: YES
 IMPLEMENTATION_AUTHORIZED: NO
 IMPLEMENTATION_STARTED: NO
-IMP036H_ACCEPTED: NO
 IMP036I_ACTIVATED: NO
 FOUNDER_UAT_REQUIRED: YES
-FOUNDER_UAT_STATUS: NOT_PERFORMED
 
 PRODUCT_DECISIONS: 23
 FOUNDER_DECISIONS: 23 (FD-036H-01 … FD-036H-23)
 UNRESOLVED_MATERIAL_PRODUCT_DECISIONS: 0
-UNRESOLVED_PRODUCT_DECISIONS: 0
 OPEN_FOUNDER_DECISIONS: 0
-READY_FOR_PRODUCT_DEFINITION_GATE: YES
+
+Product Definition: APPROVED
+Product Definition Gate: PASS
+Architecture Fit: NOT_PERFORMED
+Architecture Lock: NO
+Implementation Authorization: NO
 
 FOUNDER_APPROVAL_PROVENANCE:
   DATE: 2026-09-23
@@ -68,28 +83,37 @@ FOUNDER_APPROVAL_PROVENANCE:
                 FD-036H-01…23 in the IMP-036H Product Definition + governance
                 activation mandate (Cursor session)
 
+INDEPENDENT_PRODUCT_DEFINITION_GATE: PASS
+INDEPENDENT_PRODUCT_DEFINITION_GATE_EVIDENCE: PR#238 comment 5797812536
+GATE_EVALUATED_HEAD: 91d3714a9efba59c309db159d112fdbb6c46dc72
+GATE_EVALUATED_TREE: 3f8459cfc88c97f4267528fe5b8c3e8773692245
+GATE_EVALUATED_FINGERPRINT: 81395a83ca492a791ee1faca3fdbf627b985c30adf00d2163693b3ccd6523664
+
 stories: 9
 acceptance_scenarios: 42
 business_rules: 13
 ```
 
-This artifact is the **gate-ready PRE-GATE Product Definition candidate** for
-`PD-IMP-036H-DRAFT-1`, with Founder product decisions FD-036H-01…23 resolved. It persists
-Founder-approved pickup / takeaway product requirements without executing the Product Definition
-Gate, Architecture Fit, architecture lock, implementation authorization, schema/API design, or
-Founder UAT.
+This artifact is the **APPROVED** Product Definition for `PD-IMP-036H-DRAFT-1` after independently
+executed Product Definition Gate **PASS** (evidence PR#238 comment 5797812536). Founder product
+decisions FD-036H-01…23 remain resolved. Gate PASS does **not** perform Architecture Fit, lock
+architecture, authorize/start implementation, accept IMP-036H, or activate IMP-036I.
 
 ```text
 Founder decision resolution
   !=
 Product Definition Gate PASS
+  !=
+Architecture Fit PASS
 ```
 
 ```text
 IMP036H_ACTIVATED: YES
   (ROADMAP / STATE activation authority)
-  !=
-Product Definition Gate PASS
+  +
+Product Definition: APPROVED
+  +
+Product Definition Gate: PASS
   !=
 Architecture Fit PASS
   !=
@@ -106,7 +130,7 @@ ARCHITECTURE CANDIDATE
   = hypothesized Fit mechanism within existing ADRs / ARCH-R21 — not locked; not authoritative
 
 IMPLEMENTATION DETAIL
-  = schema fields, API shapes, UI components, transport paths — out of scope for this draft
+  = schema fields, API shapes, UI components, transport paths — out of scope until Architecture Fit
 ```
 
 This Product Definition defines **PRODUCT REQUIREMENTS** only. It does **not** invent or lock
@@ -119,17 +143,17 @@ IMP036E_LIFECYCLE_CHANGED = NO
 PD1_DID_NOT_ACTIVATE_IMP036F_AT_ADOPTION = YES
 ```
 
-### Program context (CURRENT tip targets — verify against ROADMAP/STATE)
+### Program context (CURRENT tip — verify against ROADMAP/STATE)
 
-Lifecycle truth remains ROADMAP/STATE only. Intended CURRENT tip for this activation tranche
-(persisted by companion governance PR; this Product Definition is **not** lifecycle authority):
+Lifecycle truth remains ROADMAP/STATE only. CURRENT tip for this gate-pass persistence tranche
+(this Product Definition is **not** lifecycle authority):
 
 ```text
 acceptedThrough = IMP-036G
 currentProductSlice = IMP-036H
 IMP036H_ACTIVATED: YES
-IMP036H_PRODUCT_DEFINITION: DRAFT_READY_FOR_GATE (PD-IMP-036H-DRAFT-1)
-IMP036H_PRODUCT_DEFINITION_GATE: NOT_PERFORMED
+IMP036H_PRODUCT_DEFINITION: APPROVED (PD-IMP-036H-DRAFT-1)
+IMP036H_PRODUCT_DEFINITION_GATE: PASS
 IMP036H_ARCHITECTURE_FIT: NOT_PERFORMED
 IMP036H_ARCHITECTURE_LOCKED: NO
 IMP036H_IMPLEMENTATION_AUTHORIZED: NO
@@ -141,17 +165,18 @@ IMP037: HOLD / BLOCKED_PROVIDER_ACCESS (historical progress preserved; not accep
 IMP038: HOLD / IMPLEMENTATION_COMPLETE / NOT_ACCEPTED
        external assessment: DEFERRED_UNTIL_PRE_GTM_APPLICATION_SCOPE_STABILIZES
        frozen runtime dc6b19e6… remains historical evidence only
-       GAP-EXT-ASSESS-001: NOT closed by this draft
+       GAP-EXT-ASSESS-001: NOT closed by this gate pass
 IMP039: NOT_ACTIVATED / HOLD
 IMP040: NOT_ACTIVATED / HOLD
 
-D-377: program pause / pre-GTM insertion authority (DR-19 target)
-Canonical anchors for this draft: VISION-1; ROADMAP GTM-R141; STATE STATE-R139;
+D-377: program pause / pre-GTM insertion authority (DR-19)
+Canonical anchors: VISION-1; ROADMAP GTM-R142; STATE STATE-R140;
 ARCHITECTURE ARCH-R21; decision-register DR-19 (D-377); PD-1; TEST-1; PERSONA-1; GJ-1
 ```
 
-Presence of this PRE-GATE draft does **not** claim Product Definition Gate PASS, Architecture Fit
-PASS, architecture lock, implementation authorization, or IMP acceptance.
+Historical pre-gate provenance (superseded; not CURRENT status): Document status PRE-GATE DRAFT /
+DRAFT_READY_FOR_GATE; PRODUCT_DEFINITION_GATE_EXECUTION NOT_PERFORMED; Gate Result NOT_PERFORMED;
+canonical tip GTM-R141 / STATE-R139 (`IMP036H_PRODUCT_DEFINITION_ACTIVATION`).
 
 ---
 
@@ -159,13 +184,13 @@ PASS, architecture lock, implementation authorization, or IMP acceptance.
 
 | Field | Definition |
 |---|---|
-| Capability / title | `IMP-036H — Customer Pickup / Takeaway` (ROADMAP identity; activated product slice; Product Definition still PRE-GATE DRAFT) |
-| Product Definition version / document status | `PD-IMP-036H-DRAFT-1`; **Document status: PRE-GATE DRAFT / DRAFT_READY_FOR_GATE**; **PRE-GATE DRAFT: YES** |
-| Product owner / approval evidence | Founder. FD-036H-01…23 resolved 2026-09-23 (FD-036H-22/23 added in gate remediation) via Founder-authorized pre-GTM Product Definition + governance activation mandate. Product Definition Gate **NOT_PERFORMED**. |
+| Capability / title | `IMP-036H — Customer Pickup / Takeaway` (ROADMAP identity; activated product slice; Product Definition **APPROVED**; Gate **PASS**) |
+| Product Definition version / document status | `PD-IMP-036H-DRAFT-1`; **Document status: APPROVED**; **PRE-GATE DRAFT: NO** |
+| Product owner / approval evidence | Founder. FD-036H-01…23 resolved 2026-09-23 (FD-036H-22/23 added in gate remediation). Independent Product Definition Gate **PASS** — PR#238 comment 5797812536. Gate-evaluated HEAD `91d3714a9efba59c309db159d112fdbb6c46dc72` / tree `3f8459cfc88c97f4267528fe5b8c3e8773692245` / fingerprint `81395a83ca492a791ee1faca3fdbf627b985c30adf00d2163693b3ccd6523664`. |
 | Process / verification policy | `PD-1` / `TEST-1` |
-| Canonical anchors | VISION-1; ROADMAP GTM-R141; STATE STATE-R139; ARCH-R21; DR-19 (D-377); PD-1; TEST-1; PERSONA-1; GJ-1 |
-| Repository candidate | Activation draft on branch `governance/imp036h-product-definition-activation`; verified base `main` HEAD `c1540f61dcb39a67226ff3a17170c7391d20c019` (pre-PR base). Final HEAD / tree / content-sensitive fingerprint will differ after this PR lands — treat those as post-merge authority, not this draft's fixed candidate identity. Canonical path `/home/ajoshi/repos/boba-bear-platform`. |
-| Capability lifecycle / authorization | ROADMAP/STATE (target): `IMP036H_ACTIVATED: YES`; `currentProductSlice = IMP-036H`; Product Definition `DRAFT_READY_FOR_GATE`; Gate **NOT_PERFORMED**; Architecture Fit **NOT_PERFORMED**; architecture **NOT_LOCKED**; implementation **NOT_AUTHORIZED** / **NOT_STARTED**; `IMP036H_ACCEPTED: NO`. |
+| Canonical anchors | VISION-1; ROADMAP GTM-R142; STATE STATE-R140; ARCH-R21; DR-19 (D-377); PD-1; TEST-1; PERSONA-1; GJ-1 |
+| Repository candidate | Gate-evaluated candidate HEAD `91d3714a9efba59c309db159d112fdbb6c46dc72` / tree `3f8459cfc88c97f4267528fe5b8c3e8773692245` / fingerprint `81395a83ca492a791ee1faca3fdbf627b985c30adf00d2163693b3ccd6523664` on branch `governance/imp036h-product-definition-activation`. Later gate-persistence commit is **not** the evaluated artifact. Canonical path `/home/ajoshi/repos/boba-bear-platform`. |
+| Capability lifecycle / authorization | ROADMAP/STATE: `IMP036H_ACTIVATED: YES`; `currentProductSlice = IMP-036H`; Product Definition **APPROVED**; Gate **PASS**; Architecture Fit **NOT_PERFORMED**; architecture **NOT_LOCKED**; implementation **NOT_AUTHORIZED** / **NOT_STARTED**; `IMP036H_ACCEPTED: NO`. |
 | Relevant capability architecture / ADRs | No locked IMP-036H capability architecture yet. Binding foundations (reference only): ADR-008 serviceability/cart/checkout; ADR-011 delivery providers/dispatch/fulfilment; ADR-007 tax/GST; ADR-012 notifications; accepted IMP-036B/C/D order/payment/delivery commerce; ARCH-R21. **Architecture Fit must produce the locked capability artifact before implementation.** |
 | Founder UAT applicability | `FOUNDER_UAT_REQUIRED = YES`; `FOUNDER_UAT_STATUS = NOT_PERFORMED` — materially changes customer checkout/fulfilment and workforce handover (customer-visible Pickup path + Ops fulfilment). |
 
@@ -375,7 +400,7 @@ Data implications: Selected outlet visible pre-payment; immutable for paid comme
 Security implications: Do not expose unauthorized outlet internals beyond customer-facing pickup info
 Architecture fit / applicable invariants: Eligibility representation; outlet profile boundary; bind to snapshot/order
 Open material decisions: NONE
-Readiness: READY for PD Gate; NOT_READY_FOR_IMPLEMENTATION until Fit/lock + authorization
+Readiness: Product Definition Gate PASS; NOT_READY_FOR_IMPLEMENTATION until Fit/lock + authorization
 ```
 
 ### US-036H-003 — Commercial rules (fee, packaging, tax, promotions)
@@ -399,7 +424,7 @@ Data implications: Commercial snapshot must encode fulfilment-aware charges with
 Security implications: No client-trusted fee suppression — server-authoritative commercial truth
 Architecture fit / applicable invariants: Structural exclusion of delivery charges for Pickup
 Open material decisions: NONE
-Readiness: READY for PD Gate; NOT_READY_FOR_IMPLEMENTATION until Fit/lock + authorization
+Readiness: Product Definition Gate PASS; NOT_READY_FOR_IMPLEMENTATION until Fit/lock + authorization
 ```
 
 ### US-036H-004 — Pickup payment & Order materialization
@@ -423,7 +448,7 @@ Data implications: Single Order with fulfilment mode; no PickupOrder aggregate; 
 Security implications: Existing payment trust boundaries; fail closed if Delivery invoked for Pickup
 Architecture fit / applicable invariants: Delivery fail-closed; Order identity; financial documents correctness
 Open material decisions: NONE
-Readiness: READY for PD Gate; NOT_READY_FOR_IMPLEMENTATION until Fit/lock + authorization
+Readiness: Product Definition Gate PASS; NOT_READY_FOR_IMPLEMENTATION until Fit/lock + authorization
 ```
 
 ### US-036H-005 — Pre-pay confirmation & post-order Pickup clarity
@@ -447,7 +472,7 @@ Data implications: Customer-facing pickup info: display name, address, city/stat
 Security implications: Privacy minimization — no forced delivery address/GPS/Maps for Pickup
 Architecture fit / applicable invariants: Projection/fulfilment-aware customer views; optional coordinates policy
 Open material decisions: NONE
-Readiness: READY for PD Gate; NOT_READY_FOR_IMPLEMENTATION until Fit/lock + authorization
+Readiness: Product Definition Gate PASS; NOT_READY_FOR_IMPLEMENTATION until Fit/lock + authorization
 ```
 
 ### US-036H-006 — Workforce Pickup badge, detail, handover
@@ -471,7 +496,7 @@ Data implications: Handover → existing FULFILLED; audit/provenance preserved
 Security implications: Authorization must be server-enforced; negative AC for unauthorized fulfil
 Architecture fit / applicable invariants: Confirm order.fulfil coverage; Ops projections fulfilment-aware
 Open material decisions: NONE (permission reuse is Fit verification, not open product choice)
-Readiness: READY for PD Gate; NOT_READY_FOR_IMPLEMENTATION until Fit/lock + authorization
+Readiness: Product Definition Gate PASS; NOT_READY_FOR_IMPLEMENTATION until Fit/lock + authorization
 ```
 
 ### US-036H-007 — Fulfilment-aware notifications
@@ -495,7 +520,7 @@ Data implications: Content must be fulfilment-aware; mechanism = Fit
 Security implications: Do not leak unnecessary location/provider data
 Architecture fit / applicable invariants: How notifications distinguish modes
 Open material decisions: NONE
-Readiness: READY for PD Gate; NOT_READY_FOR_IMPLEMENTATION until Fit/lock + authorization
+Readiness: Product Definition Gate PASS; NOT_READY_FOR_IMPLEMENTATION until Fit/lock + authorization
 ```
 
 ### US-036H-008 — Pre-payment fulfilment mode switching
@@ -519,7 +544,7 @@ Data implications: Delivery-only information must not affect Pickup commercial r
 Security implications: Server re-evaluation required — no client-only fee hide
 Architecture fit / applicable invariants: Conditional destination without corrupting delivery history
 Open material decisions: NONE
-Readiness: READY for PD Gate; NOT_READY_FOR_IMPLEMENTATION until Fit/lock + authorization
+Readiness: Product Definition Gate PASS; NOT_READY_FOR_IMPLEMENTATION until Fit/lock + authorization
 ```
 
 ### US-036H-009 — Payment-pending mutation safety
@@ -543,7 +568,7 @@ Data implications: Paid snapshot outlet/mode immutability
 Security implications: Prevent commercial tampering after payment bind
 Architecture fit / applicable invariants: Align with existing immutable snapshot / payment concurrency authority
 Open material decisions: NONE
-Readiness: READY for PD Gate; NOT_READY_FOR_IMPLEMENTATION until Fit/lock + authorization
+Readiness: Product Definition Gate PASS; NOT_READY_FOR_IMPLEMENTATION until Fit/lock + authorization
 ```
 
 ---
@@ -1194,7 +1219,7 @@ Registry status is not a test verdict.
 
 | Dependency | Authority / verified state | Required before which story or gate? | Unresolved impact |
 |---|---|---|---|
-| ROADMAP/STATE activation IMP-036H + program pause D-377 | GTM-R141 / STATE-R139 / DR-19 targets | This draft assumes activation markers exist or land with companion governance PR | Companion governance must not claim Gate PASS |
+| ROADMAP/STATE activation IMP-036H + program pause D-377 | GTM-R142 / STATE-R140 / DR-19 (activation provenance GTM-R141 / STATE-R139) | SATISFIED — activation + Gate PASS persisted | Architecture Fit remains NOT_PERFORMED; implementation NOT_AUTHORIZED |
 | Accepted commerce foundations IMP-036B/C/D | COMPLETE_AND_ACCEPTED through IMP-036G commercial/ops bases | All stories | NONE |
 | Product Definition Gate PASS | NOT_PERFORMED | Before Architecture Fit | Gate not yet run |
 | Architecture Fit PASS + locked capability | NOT_PERFORMED | Before implementation authorization | Fit questions 1–14 open (Appendix A) |
@@ -1281,7 +1306,7 @@ Proposed PLANNED behaviour is not accepted until gates pass.
 
 ```text
 UNRESOLVED_MATERIAL_PRODUCT_DECISIONS: 0
-READY_FOR_PRODUCT_DEFINITION_GATE: YES
+READY_FOR_PRODUCT_DEFINITION_GATE: YES (satisfied — Gate PASS recorded)
 ```
 
 Architecture Fit questions (§21) are **mechanism** questions, not unresolved product decisions.
@@ -1320,15 +1345,15 @@ Architecture Fit questions (§21) are **mechanism** questions, not unresolved pr
 
 | Story ID | Applicable fields complete / evidence | Open material decisions | Readiness / blocker |
 |---|---|---|---|
-| US-036H-001 | §9 complete; ACs/BRs linked | NONE | READY for PD Gate; NOT_READY_FOR_IMPLEMENTATION until Fit/lock + auth |
-| US-036H-002 | §9 complete | NONE | READY for PD Gate; NOT_READY_FOR_IMPLEMENTATION until Fit/lock + auth |
-| US-036H-003 | §9 complete | NONE | READY for PD Gate; NOT_READY_FOR_IMPLEMENTATION until Fit/lock + auth |
-| US-036H-004 | §9 complete | NONE | READY for PD Gate; NOT_READY_FOR_IMPLEMENTATION until Fit/lock + auth |
-| US-036H-005 | §9 complete | NONE | READY for PD Gate; NOT_READY_FOR_IMPLEMENTATION until Fit/lock + auth |
-| US-036H-006 | §9 complete; permission reuse Fit-verified later | NONE (product); Fit verification pending | READY for PD Gate; NOT_READY_FOR_IMPLEMENTATION until Fit/lock + auth |
-| US-036H-007 | §9 complete | NONE | READY for PD Gate; NOT_READY_FOR_IMPLEMENTATION until Fit/lock + auth |
-| US-036H-008 | §9 complete | NONE | READY for PD Gate; NOT_READY_FOR_IMPLEMENTATION until Fit/lock + auth |
-| US-036H-009 | §9 complete | NONE | READY for PD Gate; NOT_READY_FOR_IMPLEMENTATION until Fit/lock + auth |
+| US-036H-001 | §9 complete; ACs/BRs linked | NONE | Product Definition Gate PASS; NOT_READY_FOR_IMPLEMENTATION until Fit/lock + auth |
+| US-036H-002 | §9 complete | NONE | Product Definition Gate PASS; NOT_READY_FOR_IMPLEMENTATION until Fit/lock + auth |
+| US-036H-003 | §9 complete | NONE | Product Definition Gate PASS; NOT_READY_FOR_IMPLEMENTATION until Fit/lock + auth |
+| US-036H-004 | §9 complete | NONE | Product Definition Gate PASS; NOT_READY_FOR_IMPLEMENTATION until Fit/lock + auth |
+| US-036H-005 | §9 complete | NONE | Product Definition Gate PASS; NOT_READY_FOR_IMPLEMENTATION until Fit/lock + auth |
+| US-036H-006 | §9 complete; permission reuse Fit-verified later | NONE (product); Fit verification pending | Product Definition Gate PASS; NOT_READY_FOR_IMPLEMENTATION until Fit/lock + auth |
+| US-036H-007 | §9 complete | NONE | Product Definition Gate PASS; NOT_READY_FOR_IMPLEMENTATION until Fit/lock + auth |
+| US-036H-008 | §9 complete | NONE | Product Definition Gate PASS; NOT_READY_FOR_IMPLEMENTATION until Fit/lock + auth |
+| US-036H-009 | §9 complete | NONE | Product Definition Gate PASS; NOT_READY_FOR_IMPLEMENTATION until Fit/lock + auth |
 
 `STORY_COMPLETE != IMP_ACCEPTED`. Product Definition Gate precedes Architecture Fit/lock; final implementation readiness requires Fit + authorization.
 
@@ -1337,12 +1362,18 @@ Architecture Fit questions (§21) are **mechanism** questions, not unresolved pr
 ## 27. Product Definition Gate
 
 ```text
-PRE-GATE DRAFT:
-PRODUCT_DEFINITION_GATE_EXECUTION = NOT_PERFORMED
-Gate Result: NOT_PERFORMED
-
-ACTUAL PRODUCT_DEFINITION_GATE EXECUTION:
-Gate Result: (not executed — do not claim PASS or STOP)
+Document status: APPROVED
+PRE-GATE DRAFT: NO
+PRODUCT_DEFINITION_GATE_EXECUTION: PERFORMED
+Gate Result: PASS
+IMP036H_PRODUCT_DEFINITION: APPROVED
+IMP036H_PRODUCT_DEFINITION_GATE: PASS
+IMP036H_ARCHITECTURE_FIT: NOT_PERFORMED
+IMP036H_ARCHITECTURE_LOCKED: NO
+IMP036H_IMPLEMENTATION_AUTHORIZED: NO
+IMP036H_STARTED: NO
+IMP036H_ACCEPTED: NO
+FOUNDER_UAT_STATUS: NOT_PERFORMED
 ```
 
 ```text
@@ -1369,13 +1400,25 @@ Golden Journeys Identified: YES (§20) — GJ-FIRST-ORDER extend + delivery non-
 Explicit Deferrals Recorded: YES (§23–24) including IMP-036I
 Unresolved Product Decisions: 0
 Architecture Conflicts: NONE identified at product layer; Fit questions handed off
-PRODUCT_DEFINITION_GATE_EXECUTION: NOT_PERFORMED
-Gate Result: NOT_PERFORMED
+PRODUCT_DEFINITION_GATE_EXECUTION: PERFORMED
+Gate Result: PASS
 ```
 
-`NOT_PERFORMED` is not a third gate verdict; it means no evaluation has occurred.
-`READY_FOR_PRODUCT_DEFINITION_GATE: YES` means this draft is prepared for an independent gate —
-**not** that the gate has passed.
+Product Definition Gate execution was performed against exact candidate `PD-IMP-036H-DRAFT-1`.
+Independent gate evidence: PR#238 comment 5797812536 — Gate Result **PASS**. The later
+gate-persistence commit is **not** the evaluated artifact.
+
+```text
+GATE_EVALUATED_HEAD: 91d3714a9efba59c309db159d112fdbb6c46dc72
+GATE_EVALUATED_TREE: 3f8459cfc88c97f4267528fe5b8c3e8773692245
+GATE_EVALUATED_FINGERPRINT: 81395a83ca492a791ee1faca3fdbf627b985c30adf00d2163693b3ccd6523664
+INDEPENDENT_PRODUCT_DEFINITION_GATE: PASS
+INDEPENDENT_PRODUCT_DEFINITION_GATE_EVIDENCE: PR#238 comment 5797812536
+CURRENT tip anchors: GTM-R142 / STATE-R140
+```
+
+Next phase: **ARCHITECTURE_FIT**. Architecture Fit remains NOT_PERFORMED; architecture NOT_LOCKED;
+implementation NOT_AUTHORIZED / NOT_STARTED; IMP-036H not accepted.
 
 ---
 
