@@ -1,6 +1,6 @@
 # Dependabot — IMP-038 §15 dependency update automation (free GitHub feature).
 # Does not authorize automatic merges; PRs still require CI + review policy.
-# Grouping reduces weekly PR backlog while keeping majors independently reviewable.
+# Grouping reduces weekly PR backlog while keeping majors / auth independently reviewable.
 version: 2
 updates:
   - package-ecosystem: npm
@@ -22,7 +22,16 @@ updates:
         update-types:
           - "minor"
           - "patch"
-      # Routine compatible npm patch/minor maintenance (excludes majors).
+      # Keep Playwright test runner and browser package aligned.
+      playwright:
+        patterns:
+          - "@playwright/test"
+          - "playwright"
+          - "playwright-core"
+        update-types:
+          - "minor"
+          - "patch"
+      # Routine compatible npm patch/minor maintenance (excludes majors + sensitive pkgs).
       npm-patch-minor:
         patterns:
           - "*"
@@ -30,15 +39,25 @@ updates:
           - "tailwindcss"
           - "@tailwindcss/*"
           - "tailwind-merge"
+          - "@playwright/test"
+          - "playwright"
+          - "playwright-core"
           - "react"
           - "react-dom"
           - "@types/react"
           - "@types/react-dom"
-          - "@playwright/test"
-          - "playwright"
           - "eslint"
           - "@types/node"
           - "next"
+          - "typescript"
+          - "jsdom"
+          - "framer-motion"
+          - "vitest"
+          - "@vitest/*"
+          # Auth stack — AMBER; require deliberate review (better-auth 1.7 broke types).
+          - "better-auth"
+          - "@better-auth/*"
+          - "auth"
         update-types:
           - "minor"
           - "patch"
@@ -46,10 +65,19 @@ updates:
       # Keep @types/node aligned with supported CI/runtime Node 22.x line.
       - dependency-name: "@types/node"
         versions: [">=23"]
-      # ESLint major requires deliberate ecosystem/plugin/config validation.
+      # Majors require deliberate ecosystem validation windows.
       - dependency-name: "eslint"
         update-types: ["version-update:semver-major"]
-      # React / Playwright majors-and-minors stay independently visible (Batch C style).
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "jsdom"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "framer-motion"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "vitest"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@vitest/*"
+        update-types: ["version-update:semver-major"]
       - dependency-name: "react"
         update-types: ["version-update:semver-major"]
       - dependency-name: "react-dom"
@@ -57,6 +85,11 @@ updates:
       - dependency-name: "@playwright/test"
         update-types: ["version-update:semver-major"]
       - dependency-name: "playwright"
+        update-types: ["version-update:semver-major"]
+      # Auth majors/minors remain independently visible (not grouped above).
+      - dependency-name: "better-auth"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@better-auth/*"
         update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
@@ -70,10 +103,16 @@ updates:
       - github-actions
       - security-sdlc
     groups:
-      github-actions:
+      github-actions-patch-minor:
         patterns:
           - "*"
+        exclude-patterns:
+          - "github/codeql-action*"
         update-types:
           - "minor"
           - "patch"
-    # Majors remain ungrouped so checkout/setup-node/upload-artifact majors stay reviewable.
+      # Keep CodeQL init + analyze on the same action SHA/version.
+      codeql-action:
+        patterns:
+          - "github/codeql-action*"
+    # Action majors remain independently reviewable except CodeQL paired group.
