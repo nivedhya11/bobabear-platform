@@ -14467,12 +14467,78 @@ function isImp029ImplementationStartCheckpoint(roadmap, state) {
   );
 }
 
+/** Canonical Current Global Decisions table: ID|Title|Scope|Status|Record|Supersedes|Superseded By|Governs */
+const DECISION_REGISTER_GLOBAL_COLUMN_COUNT = 8;
+
+/**
+ * Count data columns in a markdown table row (unescaped pipes only).
+ * Returns null for separator / non-data rows.
+ */
+export function countDecisionRegisterTableColumns(line) {
+  const trimmed = String(line ?? "").trim();
+  if (!trimmed.startsWith("|") || !trimmed.endsWith("|")) return null;
+  if (/^\|\s*-+/.test(trimmed)) return null; // separator
+  if (/^\|\s*ID\s*\|/i.test(trimmed)) return null; // header
+  const inner = trimmed.slice(1, -1);
+  const cells = [];
+  let buf = "";
+  for (let i = 0; i < inner.length; i += 1) {
+    if (inner[i] === "\\" && inner[i + 1] === "|") {
+      buf += "\\|";
+      i += 1;
+      continue;
+    }
+    if (inner[i] === "|") {
+      cells.push(buf);
+      buf = "";
+      continue;
+    }
+    buf += inner[i];
+  }
+  cells.push(buf);
+  return cells.length;
+}
+
+/**
+ * Fail when any Current Global Decisions data row has the wrong column count.
+ * Exported for deterministic unit tests.
+ */
+export function assertDecisionRegisterGlobalTableColumnCounts(decisionText, report) {
+  const failFn = report?.fail ?? fail;
+  const noteFn = report?.note ?? note;
+  const globalSection =
+    String(decisionText ?? "").split("## 2. Current Global Decisions")[1]?.split("## 3.")[0] || "";
+  const dataRows = globalSection
+    .split("\n")
+    .map((line) => line.trimEnd())
+    .filter((line) => /^\|\s*D-\d+\s*\|/.test(line));
+  let bad = 0;
+  for (const line of dataRows) {
+    const cols = countDecisionRegisterTableColumns(line);
+    if (cols !== DECISION_REGISTER_GLOBAL_COLUMN_COUNT) {
+      const id = line.match(/^\|\s*(D-\d+)\s*\|/)?.[1] ?? "UNKNOWN";
+      failFn(
+        "DECISION_REGISTER_COLUMN_COUNT",
+        `Current Global Decisions row ${id} has ${cols ?? "unparseable"} columns; expected ${DECISION_REGISTER_GLOBAL_COLUMN_COUNT}`,
+      );
+      bad += 1;
+    }
+  }
+  if (bad === 0) {
+    noteFn(
+      `Decision register Current Global Decisions table column count OK (${dataRows.length} rows × ${DECISION_REGISTER_GLOBAL_COLUMN_COUNT})`,
+    );
+  }
+  return { rowCount: dataRows.length, badCount: bad };
+}
+
 function checkDecisionRegister(decision, roadmap, state) {
   if (!decision) return;
   const text = decision.text;
   // Unique decision IDs from the Current Global Decisions table only.
   const globalSection =
     text.split("## 2. Current Global Decisions")[1]?.split("## 3.")[0] || text;
+  assertDecisionRegisterGlobalTableColumnCounts(text);
   const ids = [...globalSection.matchAll(/\|\s*(D-\d+)\s*\|/g)].map((m) => m[1]);
   const seen = new Set();
   for (const id of ids) {
