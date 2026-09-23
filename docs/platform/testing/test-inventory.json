@@ -31,15 +31,15 @@
     "note": "Protected evidence and generated reports are never classified as executable test source."
   },
   "counts": {
-    "trackedPathsConsidered": 2104,
-    "executableTestFiles": 438,
+    "trackedPathsConsidered": 2107,
+    "executableTestFiles": 439,
     "sourceTestFiles": 134,
-    "testsTreeExecutableFiles": 233,
+    "testsTreeExecutableFiles": 234,
     "scriptTestFiles": 71,
     "playwrightSpecs": 12,
     "vitestConfigs": 2,
     "playwrightConfigs": 7,
-    "testSupportScripts": 50,
+    "testSupportScripts": 51,
     "packageTestCommands": 80,
     "packageAuditCommands": 27,
     "packageE2eCommands": 9,
@@ -191,6 +191,7 @@
     "tests/access-control/authorize.service.test.ts",
     "tests/access-control/catalog.test.ts",
     "tests/access-control/cli/bootstrap-platform-admin.test.ts",
+    "tests/access-control/cli/grant-assessment-roles.test.ts",
     "tests/access-control/platform-admin-lock-staging.test.ts",
     "tests/access-control/principal.test.ts",
     "tests/access-control/scope.test.ts",
@@ -569,6 +570,7 @@
     "tests/database/support/serviceability-fixtures.ts",
     "tests/database/support/test-container.ts",
     "tests/database/support/test-database.ts",
+    "tests/e2e/support/maps-location-mocks.ts",
     "tests/e2e/support/razorpay-checkout-mock.ts",
     "tests/e2e/support/stub-customer-session.ts",
     "tests/setup/server-only-stub.ts",
@@ -5129,6 +5131,24 @@
     },
     {
       "path": "tests/access-control/cli/bootstrap-platform-admin.test.ts",
+      "runner": "vitest",
+      "domain": "access-control",
+      "testType": "unit-or-domain",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:access-control",
+        "test:access-control:cli"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "7-authorization-security"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/access-control/cli/grant-assessment-roles.test.ts",
       "runner": "vitest",
       "domain": "access-control",
       "testType": "unit-or-domain",
