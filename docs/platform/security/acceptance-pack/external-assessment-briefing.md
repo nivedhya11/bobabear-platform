@@ -37,21 +37,23 @@ independent external assessment.
 ```text
 CANONICAL_REPOSITORY_PATH: /home/ajoshi/repos/boba-bear-platform
 BRANCH: main
-ASSESSMENT_HEAD: a4680c983934bbf0c889952af19bd99bf3a43ed4
-ASSESSMENT_TREE: 9d3fc540a1305f0974dab3098ef59f45310a9a18
-WORKING_TREE_FINGERPRINT: 715e9529101310e13b44f153f7c910394cb82aad8082dde5d4d5056591cbc87d
-CI_PR: https://github.com/nivedhya11/bobabear-platform/pull/205 (exact-head CI SUCCESS; merged)
+ASSESSMENT_HEAD: 0990c91e428a8dea2dd3387cd6f7f1cb6425a1a1
+ASSESSMENT_TREE: d426ee4e947b6f3eb0559f93eb8b1d008f15696e
+WORKING_TREE_FINGERPRINT: 0d017621d37eb6439db854cfdc5dd6bd9689f61636b10d3d6a1689e63e61ea90
+CI_PR: https://github.com/nivedhya11/bobabear-platform/pull/210 (exact-head CI SUCCESS; merged)
+NIGHTLY_VERIFICATION: https://github.com/nivedhya11/bobabear-platform/actions/runs/35849864740 (SUCCESS @ HEAD 0990c91e)
 DEPLOYED_ENVIRONMENT: Founder staging (boba-staging / PODMAN_WSL)
 STAGING_ARTIFACT_SOURCE: EXACT_MERGED_GIT_TREE (git archive HEAD)
 STAGING_CANDIDATE_MATCH: YES
-DEPLOYMENT_IDENTIFIER: boba-staging @ HEAD a4680c983934bbf0c889952af19bd99bf3a43ed4
+DEPLOYMENT_IDENTIFIER: boba-staging @ HEAD 0990c91e428a8dea2dd3387cd6f7f1cb6425a1a1
 ASSESSMENT_URL: https://cradling-unenvied-sapling.ngrok-free.dev
 ASSESSMENT_URL_CUSTOMER: https://cradling-unenvied-sapling.ngrok-free.dev/order/
 ASSESSMENT_URL_WORKFORCE: https://cradling-unenvied-sapling.ngrok-free.dev/workforce/login/
-DEPLOYMENT_TIMESTAMP_UTC: 2026-09-23T05:34:59Z (staging deploy complete; CANDIDATE_MATCH YES)
+DEPLOYMENT_TIMESTAMP_UTC: 2026-09-23T10:51:06Z (staging deploy complete; CANDIDATE_MATCH YES)
 EXTERNAL_EXPOSURE_MECHANISM: TEMPORARY_NGROK_TUNNEL
 CSP_PHASE: ENFORCE
 D376_RATIFIED: YES
+SUPERSEDES_PRIOR_CANDIDATE: a4680c983934bbf0c889952af19bd99bf3a43ed4
 ```
 
 Pinned assessment runtime identity is **HEAD + TREE + deploy-time fingerprint** above.
