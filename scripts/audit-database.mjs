@@ -25,7 +25,7 @@
  *      from tests/database/** (IMP-005) — never from production source.
  */
 import { execFileSync } from "node:child_process";
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
@@ -137,6 +137,20 @@ function checkComposeFile() {
   }
   if (/\/var\/lib\/postgresql\/data:/.test(contents)) {
     findings.push("compose.yaml must not mount only /var/lib/postgresql/data.");
+  }
+
+  // docker-entrypoint sources non-executable *.sh under initdb.d; an early `exit`
+  // in a sourced 002 would kill the entrypoint (Nightly ops/commercial postgres exit).
+  const logicalBackupInit = path.join(projectRoot, "docker/postgres/init/002-logical-backup-role.sh");
+  try {
+    const mode = statSync(logicalBackupInit).mode;
+    if ((mode & 0o111) === 0) {
+      findings.push(
+        "docker/postgres/init/002-logical-backup-role.sh must be executable so docker-entrypoint runs it in a subprocess.",
+      );
+    }
+  } catch {
+    findings.push("docker/postgres/init/002-logical-backup-role.sh is required.");
   }
 
   const serviceNames = [];

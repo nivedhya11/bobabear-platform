@@ -77,9 +77,6 @@ async function openSelector(page: Page): Promise<void> {
 
 test("search selection enters map confirmation when Maps JS is configured", async ({ page }) => {
   await installMockGoogleMaps(page);
-  await page.addInitScript(() => {
-    (window as Window & { __BOBA_MAPS_JS_CONFIGURED__?: boolean }).__BOBA_MAPS_JS_CONFIGURED__ = true;
-  });
 
   await page.route("**/api/v1/location/status", async (route) => {
     await route.fulfill({
@@ -155,9 +152,6 @@ test("search selection enters map confirmation when Maps JS is configured", asyn
 });
 
 test("provider readiness race: early ISBT query auto-searches once status resolves", async ({ page }) => {
-  await page.addInitScript(() => {
-    (window as Window & { __BOBA_MAPS_JS_CONFIGURED__?: boolean }).__BOBA_MAPS_JS_CONFIGURED__ = true;
-  });
 
   let releaseStatus: () => void = () => {};
   const statusGate = new Promise<void>((resolve) => {
@@ -195,9 +189,6 @@ test("current location enters map confirmation on mobile viewport", async ({ pag
   await context.grantPermissions(["geolocation"]);
   await context.setGeolocation({ latitude: 30.3256, longitude: 78.0436 });
 
-  await page.addInitScript(() => {
-    (window as Window & { __BOBA_MAPS_JS_CONFIGURED__?: boolean }).__BOBA_MAPS_JS_CONFIGURED__ = true;
-  });
 
   await page.route("**/api/v1/location/status", async (route) => {
     await route.fulfill({
@@ -254,9 +245,6 @@ test("delayed Google bootstrap readiness: ISBT map renders without fallback", as
       contentType: "application/javascript",
       body: "window.bobaGoogleMapsBootstrapReady && window.bobaGoogleMapsBootstrapReady();",
     });
-  });
-  await page.addInitScript(() => {
-    (window as Window & { __BOBA_MAPS_JS_CONFIGURED__?: boolean }).__BOBA_MAPS_JS_CONFIGURED__ = true;
   });
 
   await page.route("**/api/v1/location/status", async (route) => {
@@ -337,9 +325,6 @@ test("permanent Maps readiness failure shows safe fallback", async ({ page }) =>
       body: "window.bobaGoogleMapsBootstrapReady && window.bobaGoogleMapsBootstrapReady();",
     });
   });
-  await page.addInitScript(() => {
-    (window as Window & { __BOBA_MAPS_JS_CONFIGURED__?: boolean }).__BOBA_MAPS_JS_CONFIGURED__ = true;
-  });
 
   await page.route("**/api/v1/location/status", async (route) => {
     await route.fulfill({
@@ -403,9 +388,6 @@ test("permanent Maps readiness failure shows safe fallback", async ({ page }) =>
 
 test("Back from map refreshes autocomplete with a new session token", async ({ page }) => {
   await installMockGoogleMaps(page);
-  await page.addInitScript(() => {
-    (window as Window & { __BOBA_MAPS_JS_CONFIGURED__?: boolean }).__BOBA_MAPS_JS_CONFIGURED__ = true;
-  });
 
   const autocompleteTokens: string[] = [];
   const placeTokens: string[] = [];
