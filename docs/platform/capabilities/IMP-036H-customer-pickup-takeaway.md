@@ -8,8 +8,8 @@
   "architectureFit": "PASS",
   "architectureFitResult": "PASS",
   "architectureFitExecution": "PERFORMED",
-  "implementation": "NOT_AUTHORIZED / NOT_STARTED",
-  "implementationAuthorized": false,
+  "implementation": "AUTHORIZED / NOT_STARTED",
+  "implementationAuthorized": true,
   "implementationStarted": false,
   "impAccepted": false,
   "schemaChangeRequired": true,
@@ -31,8 +31,9 @@ This document is the **locked capability architecture** for IMP-036H. It records
 PASS against **ARCH-R22 / D-378 / ADR-018 / ARCH-G28** for ASAP Customer Pickup / Takeaway.
 
 Independent Architecture Fit review = **PASS** (PR #239 review `5295149318`). Implementation is
-**NOT AUTHORIZED** and **NOT STARTED**. Architecture lock does **not** authorize implementation,
-schema migration execution, Founder UAT, or IMP acceptance.
+**AUTHORIZED** and **NOT STARTED**. Authorization does **not** start implementation, execute
+schema migration, Founder UAT, or IMP acceptance. Historical architecture-lock tip was
+GTM-R143 / STATE-R141.
 
 ```text
 ARCHITECTURE_FIT = PASS
@@ -48,10 +49,11 @@ INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_TREE = 93d4e83d4a73c61c9439bcaae2799920fcc
 ARCHITECTURE_FIT_EVALUATED_HEAD = aab814c238c499367ee921e9f8ffb03ff7b1b373
 ARCHITECTURE_FIT_EVALUATED_TREE = 93d4e83d4a73c61c9439bcaae2799920fcca46db
 ARCHITECTURE_FIT_EVALUATED_WORKING_TREE_FINGERPRINT = 74b1254f22c9131a6e073522cf9310f264866e442cc074775ad5f4b214f0e51e
-IMPLEMENTATION_AUTHORIZED = NO
+IMPLEMENTATION_AUTHORIZED = YES
 IMPLEMENTATION_STARTED = NO
-IMP036H_IMPLEMENTATION_AUTHORIZED = NO
+IMP036H_IMPLEMENTATION_AUTHORIZED = YES
 IMP036H_STARTED = NO
+IMP036H_IMPLEMENTATION_STARTED = NO
 IMP036H_ACCEPTED = NO
 IMP036I_ACTIVATED = NO
 PRODUCT_DEFINITION = PD-IMP-036H-DRAFT-1 APPROVED
@@ -63,11 +65,11 @@ ARCH_R22_CREATED = YES
 ARCH_G28_CREATED = YES
 SCHEMA_CHANGE_REQUIRED = YES
 MIGRATION_REQUIRED = YES
-SCHEMA_MIGRATION_EXECUTION = NOT_AUTHORIZED
+SCHEMA_MIGRATION_EXECUTION = AUTHORIZED_NOT_EXECUTED
 OPEN_ARCHITECTURE_QUESTIONS = NONE
 RED_DECISIONS_REQUIRED = NONE
 AF-036H-01 … AF-036H-14 = RESOLVED (AF-036H-12 = corrected Option A)
-CANONICAL_ROADMAP_STATE = GTM-R143 / STATE-R141
+CANONICAL_ROADMAP_STATE = GTM-R144 / STATE-R142
 ```
 
 | Field | Value |
@@ -76,8 +78,8 @@ CANONICAL_ROADMAP_STATE = GTM-R143 / STATE-R141
 | Formal ROADMAP lifecycle | `ARCHITECTURE_LOCKED` (`IMP036H_ACTIVATED: YES`) |
 | Product Definition | `PD-IMP-036H-DRAFT-1` **APPROVED**; Gate **PASS** |
 | Architecture Fit | **PASS** (independent review PR #239 / `5295149318`) |
-| Implementation | **NOT_AUTHORIZED** / **NOT_STARTED** |
-| Schema change / migration | **YES** (design locked; execution **not** authorized) |
+| Implementation | **AUTHORIZED** / **NOT_STARTED** |
+| Schema change / migration | **YES** (design locked; migration execution **AUTHORIZED_NOT_EXECUTED** — not yet created) |
 | Binding D-number | **D-378** (`CURRENT`) |
 | Binding ADR | **ADR-018** (`Accepted`) |
 | Global ARCH | **ARCH-R22** / **ARCH-G28** |
@@ -88,14 +90,14 @@ CANONICAL_ROADMAP_STATE = GTM-R143 / STATE-R141
 
 ## 1. Authority / status
 
-Verified lock-persistence tip target:
+Verified implementation-authorization tip target:
 
 ```text
 Repository: /home/ajoshi/repos/boba-bear-platform
 Remote: nivedhya11/bobabear-platform
 VISION = VISION-1
-ROADMAP = GTM-R143
-STATE = STATE-R141
+ROADMAP = GTM-R144
+STATE = STATE-R142
 ARCHITECTURE = ARCH-R22
 DECISION REGISTER = DR-20
 PRODUCT DELIVERY = PD-1
@@ -105,9 +107,10 @@ GOLDEN JOURNEYS = GJ-1
 Product Definition = docs/platform/product/IMP-036H/product-definition.md (APPROVED)
 Product Definition Gate evidence = PR#238 comment 5797812536
 Independent Architecture Fit evidence = PR #239 review 5295149318
+Implementation plan = docs/platform/product/IMP-036H/implementation-plan.md
 ```
 
-Exact Fit-evaluated candidate (independent PASS; no semantic drift permitted after review):
+Exact Fit-evaluated candidate (independent PASS; preserved unchanged at authorization):
 
 ```text
 FIT_EVALUATED_HEAD = aab814c238c499367ee921e9f8ffb03ff7b1b373
@@ -115,17 +118,20 @@ FIT_EVALUATED_TREE = 93d4e83d4a73c61c9439bcaae2799920fcca46db
 FIT_EVALUATED_FINGERPRINT = 74b1254f22c9131a6e073522cf9310f264866e442cc074775ad5f4b214f0e51e
 ```
 
-Canonical ROADMAP/STATE tip markers after lock persistence:
+Canonical ROADMAP/STATE tip markers after implementation authorization:
 
 ```text
 IMP036H_ARCHITECTURE_FIT: PASS
 IMP036H_ARCHITECTURE_LOCKED: YES
-IMP036H_IMPLEMENTATION_AUTHORIZED: NO
+IMP036H_IMPLEMENTATION_AUTHORIZED: YES
 IMP036H_STARTED: NO
+IMP036H_IMPLEMENTATION_STARTED: NO
+IMP036H_IMPLEMENTATION_COMPLETE: NO
 IMP036H_ACCEPTED: NO
 PROGRAM_PAUSE_AUTHORITY: D-377
 ```
 
+Historical architecture-lock tip (pre-authorization; superseded): GTM-R143 / STATE-R141.
 Historical Fit-candidate tip (pre-lock; superseded): GTM-R142 / STATE-R140 / ARCH-R21 / DR-19
 (D-378 was PROPOSED / ADR-018 Proposed at that tip only).
 ---
@@ -951,7 +957,7 @@ mechanism under ARCH-R21 alone.
 
 ---
 
-## 29. Applied architecture-lock delta
+## 29. Historical pre-R144 / GTM-R143 provenance — applied architecture-lock delta
 
 Persisted at tip **GTM-R143 / STATE-R141**:
 
@@ -996,7 +1002,7 @@ PROGRAM_PAUSE_AUTHORITY: D-377
 
 ---
 
-## 31. Explicit implementation unauthorized statement
+## 31. Historical pre-R144 / GTM-R143 provenance — explicit implementation unauthorized statement
 
 ```text
 IMPLEMENTATION_AUTHORIZED = NO
@@ -1010,6 +1016,42 @@ IMP_ACCEPTANCE = NOT_AUTHORIZED
 
 All schema/API/command shapes above are **architecture design only** until a separate
 implementation-authorization tranche.
+
+---
+
+
+## 33. Applied implementation-authorization delta
+
+Persisted at tip **GTM-R144 / STATE-R142**:
+
+```text
+ROADMAP: GTM-R143 → GTM-R144
+STATE: STATE-R141 → STATE-R142
+ARCHITECTURE: ARCH-R22 unchanged
+DECISION_REGISTER: DR-20 unchanged; D-378 remains CURRENT
+ADR-018: Accepted (unchanged)
+ARCH-G28: CURRENT (unchanged)
+
+IMP036H_PRODUCT_DEFINITION = APPROVED
+IMP036H_PRODUCT_DEFINITION_GATE = PASS
+IMP036H_ARCHITECTURE_FIT = PASS
+IMP036H_ARCHITECTURE_LOCKED = YES
+IMP036H_IMPLEMENTATION_AUTHORIZED = YES
+IMP036H_STARTED = NO
+IMP036H_IMPLEMENTATION_STARTED = NO
+IMP036H_IMPLEMENTATION_COMPLETE = NO
+IMP036H_ACCEPTED = NO
+SCHEMA_MIGRATION_EXECUTION = AUTHORIZED_NOT_EXECUTED
+
+PROGRAM_PAUSE preserved (D-377)
+IMP037 HOLD / BLOCKED_PROVIDER_ACCESS preserved
+IMP038 HOLD / IMPLEMENTATION_COMPLETE / NOT_ACCEPTED preserved
+IMP036I PLANNED / NOT_ACTIVATED preserved
+IMP039 / IMP040 NOT_ACTIVATED preserved
+```
+
+Authorization does **not** start implementation. Execution plan:
+[`../product/IMP-036H/implementation-plan.md`](../product/IMP-036H/implementation-plan.md).
 
 ---
 
