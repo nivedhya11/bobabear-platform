@@ -1,5 +1,6 @@
 # Dependabot — IMP-038 §15 dependency update automation (free GitHub feature).
 # Does not authorize automatic merges; PRs still require CI + review policy.
+# Grouping reduces weekly PR backlog while keeping majors independently reviewable.
 version: 2
 updates:
   - package-ecosystem: npm
@@ -11,6 +12,52 @@ updates:
     labels:
       - dependencies
       - security-sdlc
+    groups:
+      # Semantically coupled Tailwind toolchain — always upgrade together.
+      tailwind:
+        patterns:
+          - "tailwindcss"
+          - "@tailwindcss/*"
+          - "tailwind-merge"
+        update-types:
+          - "minor"
+          - "patch"
+      # Routine compatible npm patch/minor maintenance (excludes majors).
+      npm-patch-minor:
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "tailwindcss"
+          - "@tailwindcss/*"
+          - "tailwind-merge"
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
+          - "@playwright/test"
+          - "playwright"
+          - "eslint"
+          - "@types/node"
+          - "next"
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      # Keep @types/node aligned with supported CI/runtime Node 22.x line.
+      - dependency-name: "@types/node"
+        versions: [">=23"]
+      # ESLint major requires deliberate ecosystem/plugin/config validation.
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
+      # React / Playwright majors-and-minors stay independently visible (Batch C style).
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@playwright/test"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "playwright"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: "/"
@@ -22,3 +69,11 @@ updates:
       - dependencies
       - github-actions
       - security-sdlc
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    # Majors remain ungrouped so checkout/setup-node/upload-artifact majors stay reviewable.
