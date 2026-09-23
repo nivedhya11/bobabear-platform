@@ -143,6 +143,9 @@ import {
   evaluateImp038ApprovedProductDefinition,
   evaluateImp036hProductDefinitionActivationCheckpoint,
   evaluateImp036hUngatedProductDefinitionDraftCandidate,
+  collectCurrentImp038ImplementationCompleteValues,
+  evaluateCurrentImp038ImplementationCompleteMarkerConsistency,
+  stripExplicitlyHistoricalImp038CompletionContext,
   stripImp037HistoricalManagedRecoveryAuthority,
   evaluateImp036gProductDefinitionDraftCheckpoint,
   evaluateImp036gProductDefinitionGatePassCheckpoint,
@@ -11697,6 +11700,97 @@ IMP036H_ACCEPTED: NO
         validUngatedDraft.replace(/UNRESOLVED_MATERIAL_PRODUCT_DECISIONS: 0/, "UNRESOLVED_MATERIAL_PRODUCT_DECISIONS: 1"),
       ).code,
       "IMP036H_PD_UNRESOLVED",
+    );
+  });
+});
+
+describe("IMP-038 CURRENT implementation-complete marker consistency", () => {
+  it("passes consistent CURRENT YES-only markers", () => {
+    const text = `
+IMP038_IMPLEMENTATION_COMPLETE: YES
+IMP038_ACCEPTED: NO
+IMP038_HOLD: YES
+`;
+    assert.deepEqual(collectCurrentImp038ImplementationCompleteValues(text), ["YES"]);
+    assert.deepEqual(
+      evaluateCurrentImp038ImplementationCompleteMarkerConsistency([{ name: "fixture", text }]),
+      { ok: true },
+    );
+  });
+
+  it("fails mixed CURRENT YES and NO markers", () => {
+    const text = `
+IMP038_IMPLEMENTATION_COMPLETE: YES
+IMP038_IMPLEMENTATION_COMPLETE: NO
+`;
+    assert.deepEqual(collectCurrentImp038ImplementationCompleteValues(text), ["NO", "YES"]);
+    const result = evaluateCurrentImp038ImplementationCompleteMarkerConsistency([
+      { name: "mixed fixture", text },
+    ]);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP038_IMPLEMENTATION_COMPLETE_CURRENT_CONTRADICTION");
+  });
+
+  it("allows historical explicitly-classified prior checkpoint NO beside CURRENT YES", () => {
+    const text = `
+IMP038_IMPLEMENTATION_COMPLETE: YES
+IMP038_ACCEPTED: NO
+
+Historical prior tip record (STATE-R138; superseded as CURRENT tip by STATE-R139; preserved):
+
+## 10a. STATE-R138 record
+
+\`\`\`text
+IMP038_IMPLEMENTATION_COMPLETE: NO
+IMP038_ACCEPTED: NO
+\`\`\`
+
+\`\`\`text
+HISTORICAL_CHECKPOINT: STATE-R138
+HISTORICAL_AT_THAT_CHECKPOINT: YES
+IMP038_IMPLEMENTATION_COMPLETE: NO
+\`\`\`
+`;
+    const stripped = stripExplicitlyHistoricalImp038CompletionContext(text);
+    assert.match(stripped, /IMP038_IMPLEMENTATION_COMPLETE: YES/);
+    assert.doesNotMatch(stripped, /IMP038_IMPLEMENTATION_COMPLETE: NO/);
+    assert.deepEqual(collectCurrentImp038ImplementationCompleteValues(text), ["YES"]);
+    assert.deepEqual(
+      evaluateCurrentImp038ImplementationCompleteMarkerConsistency([{ name: "historical fixture", text }]),
+      { ok: true },
+    );
+  });
+
+  it("allows narrative prior-tip NO when line situates marker historically", () => {
+    const text = `
+IMP038_IMPLEMENTATION_COMPLETE: YES
+\`IMP038_ACCEPTED: NO\`; \`IMP038_IMPLEMENTATION_COMPLETE: NO\` at that tip. Does **not** accept.
+`;
+    assert.deepEqual(collectCurrentImp038ImplementationCompleteValues(text), ["YES"]);
+    assert.deepEqual(
+      evaluateCurrentImp038ImplementationCompleteMarkerConsistency([{ name: "narrative fixture", text }]),
+      { ok: true },
+    );
+  });
+
+  it("live CURRENT IMP-038 capability / PD / tip authorities are consistent", () => {
+    const capability = readFileSync(
+      "docs/platform/capabilities/IMP-038-security-privacy-hardening.md",
+      "utf8",
+    );
+    const pd = readFileSync("docs/platform/product/IMP-038/product-definition.md", "utf8");
+    const roadmap = readFileSync("docs/platform/ROADMAP.md", "utf8");
+    const state = readFileSync("docs/platform/STATE.md", "utf8");
+    const roadmapSection = roadmap.slice(roadmap.indexOf("## 2."), roadmap.indexOf("## 3."));
+    const stateCurrent = state.slice(0, state.search(/\nHistorical prior tip/i));
+    assert.deepEqual(
+      evaluateCurrentImp038ImplementationCompleteMarkerConsistency([
+        { name: "IMP-038 capability architecture", text: capability },
+        { name: "IMP-038 Product Definition", text: pd },
+        { name: "ROADMAP Current Position", text: roadmapSection },
+        { name: "STATE CURRENT tip authority", text: stateCurrent },
+      ]),
+      { ok: true },
     );
   });
 });

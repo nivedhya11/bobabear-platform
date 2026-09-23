@@ -143,6 +143,65 @@ export function currentAuthorityBlob(roadmap, state) {
 }
 
 /**
+ * Strip explicitly classified historical IMP-038 completion context so CURRENT
+ * surfaces can be checked for contradictory YES/NO markers without treating
+ * preserved prior-tip records as live authority.
+ * @param {string} text
+ */
+export function stripExplicitlyHistoricalImp038CompletionContext(text) {
+  return String(text ?? "")
+    .replace(/\nHistorical prior tip[\s\S]*$/i, "\n")
+    .replace(/Historical prior tip[\s\S]*?(?=\n## |\n# |\n---\s*\n|$)/gi, "\n")
+    .replace(/```text\s*\nHISTORICAL_(?:CHECKPOINT|AT_THAT_CHECKPOINT|PRIOR_TIP|AT_THAT_TIP)[\s\S]*?```/gi, "\n")
+    .replace(/<!--\s*HISTORICAL_(?:CHECKPOINT|AT_THAT_CHECKPOINT|PRIOR_TIP|AT_THAT_TIP)[\s\S]*?-->/gi, "\n");
+}
+
+/**
+ * Collect IMP038_IMPLEMENTATION_COMPLETE YES/NO values from CURRENT-facing text.
+ * Skips lines that explicitly situate the marker as a historical prior tip.
+ * @param {string} text
+ * @returns {string[]}
+ */
+export function collectCurrentImp038ImplementationCompleteValues(text) {
+  const stripped = stripExplicitlyHistoricalImp038CompletionContext(text);
+  const values = new Set();
+  for (const line of stripped.split(/\r?\n/)) {
+    if (
+      /at that tip|historical prior|HISTORICAL_(?:CHECKPOINT|AT_THAT_CHECKPOINT|PRIOR_TIP|AT_THAT_TIP)|superseded as CURRENT|prior tip record/i.test(
+        line,
+      )
+    ) {
+      continue;
+    }
+    const match = line.match(/IMP038_IMPLEMENTATION_COMPLETE\s*[:=]\s*(YES|NO)/i);
+    if (match) values.add(match[1].toUpperCase());
+  }
+  return [...values].sort();
+}
+
+/**
+ * Reject mixed CURRENT IMP038_IMPLEMENTATION_COMPLETE YES vs NO markers.
+ * Historical explicitly-classified prior checkpoints may retain NO alongside a
+ * CURRENT YES when stripped/classified correctly.
+ * @param {Array<{ name: string, text: string }>} surfaces
+ * @returns {{ ok: true } | { ok: false, code: string, message: string }}
+ */
+export function evaluateCurrentImp038ImplementationCompleteMarkerConsistency(surfaces) {
+  for (const surface of surfaces) {
+    const values = collectCurrentImp038ImplementationCompleteValues(surface?.text ?? "");
+    if (values.includes("YES") && values.includes("NO")) {
+      return {
+        ok: false,
+        code: "IMP038_IMPLEMENTATION_COMPLETE_CURRENT_CONTRADICTION",
+        message: `${surface.name} CURRENT authority claims both IMP038_IMPLEMENTATION_COMPLETE YES and NO`,
+      };
+    }
+  }
+  return { ok: true };
+}
+
+
+/**
  * CURRENT + historical snapshot evidence for accepted-history invariants.
  * Stale historical claims must not override CURRENT metadata.
  * @param {{ text?: string } | null | undefined} roadmap
@@ -24184,6 +24243,7 @@ export function runProjectConsistency() {
   checkImp038ArchitectureLock(roadmap, state, architecture, decision);
   checkImp038ImplementationAuthorizeStart(roadmap, state, architecture, decision);
   checkImp036hProductDefinitionActivation(roadmap, state, architecture, decision);
+  checkImp038CurrentImplementationCompleteMarkerConsistency(roadmap, state);
   checkTechnicalInventory();
   checkStaticWeb();
   checkAgentsPointer();
@@ -31203,6 +31263,42 @@ export function evaluateImp036hUngatedProductDefinitionDraftCandidate(text) {
  * CURRENT checkpoint: IMP-036H Product Definition + program-pause activation (GTM-R141 / STATE-R139).
  * Requires ungated PD draft, ledger rows for IMP-036H/I, D-377 CURRENT / DR-19, ARCH-R21 unchanged.
  */
+
+/**
+ * CURRENT surfaces must not simultaneously claim IMP038_IMPLEMENTATION_COMPLETE YES and NO.
+ */
+function checkImp038CurrentImplementationCompleteMarkerConsistency(roadmap, state) {
+  const capabilityPath = "docs/platform/capabilities/IMP-038-security-privacy-hardening.md";
+  const pdPath = "docs/platform/product/IMP-038/product-definition.md";
+  const capabilityFile = resolveExactRelativeFile(capabilityPath);
+  const pdFile = resolveExactRelativeFile(pdPath);
+  const capabilityText = capabilityFile ? readFileSync(capabilityFile, "utf8") : "";
+  const pdText = pdFile ? readFileSync(pdFile, "utf8") : "";
+
+  const roadmapSectionStart = roadmap.text.indexOf("## 2.");
+  const roadmapSectionEnd = roadmap.text.indexOf("## 3.");
+  const currentRoadmapSection =
+    roadmapSectionStart === -1
+      ? roadmap.text
+      : roadmap.text.slice(roadmapSectionStart, roadmapSectionEnd === -1 ? undefined : roadmapSectionEnd);
+
+  const stateHistoricalIdx = state.text.search(/\nHistorical prior tip/i);
+  const currentStateAuthority =
+    stateHistoricalIdx === -1 ? state.text : state.text.slice(0, stateHistoricalIdx);
+
+  const result = evaluateCurrentImp038ImplementationCompleteMarkerConsistency([
+    { name: "IMP-038 capability architecture", text: capabilityText },
+    { name: "IMP-038 Product Definition", text: pdText },
+    { name: "ROADMAP Current Position", text: currentRoadmapSection },
+    { name: "STATE CURRENT tip authority", text: currentStateAuthority },
+  ]);
+  if (!result.ok) {
+    fail(result.code, result.message);
+  } else {
+    note("CURRENT IMP038_IMPLEMENTATION_COMPLETE markers are consistent (no YES/NO mix)");
+  }
+}
+
 function checkImp036hProductDefinitionActivation(roadmap, state, architecture, decision) {
   if (!isImp036hProductDefinitionActivationCheckpoint(roadmap, state)) return;
 

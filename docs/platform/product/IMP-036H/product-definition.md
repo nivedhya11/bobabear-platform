@@ -19,7 +19,7 @@
   "imp036iActivated": "NO",
   "founderUatRequired": "YES",
   "founderUatStatus": "NOT_PERFORMED",
-  "founderDecisions": 21,
+  "founderDecisions": 23,
   "unresolvedProductDecisions": 0,
   "readyForProductDefinitionGate": "YES",
   "preGateDraft": "YES",
@@ -54,8 +54,8 @@ IMP036I_ACTIVATED: NO
 FOUNDER_UAT_REQUIRED: YES
 FOUNDER_UAT_STATUS: NOT_PERFORMED
 
-PRODUCT_DECISIONS: 21
-FOUNDER_DECISIONS: 21 (FD-036H-01 … FD-036H-21)
+PRODUCT_DECISIONS: 23
+FOUNDER_DECISIONS: 23 (FD-036H-01 … FD-036H-23)
 UNRESOLVED_MATERIAL_PRODUCT_DECISIONS: 0
 UNRESOLVED_PRODUCT_DECISIONS: 0
 OPEN_FOUNDER_DECISIONS: 0
@@ -65,16 +65,16 @@ FOUNDER_APPROVAL_PROVENANCE:
   DATE: 2026-09-23
   AUTHORITY: Founder
   CONFIRMATION: Founder-authorized pre-GTM insertion + resolved product decisions
-                FD-036H-01…21 in the IMP-036H Product Definition + governance
+                FD-036H-01…23 in the IMP-036H Product Definition + governance
                 activation mandate (Cursor session)
 
 stories: 9
-acceptance_scenarios: 31
-business_rules: 12
+acceptance_scenarios: 42
+business_rules: 13
 ```
 
 This artifact is the **gate-ready PRE-GATE Product Definition candidate** for
-`PD-IMP-036H-DRAFT-1`, with Founder product decisions FD-036H-01…21 resolved. It persists
+`PD-IMP-036H-DRAFT-1`, with Founder product decisions FD-036H-01…23 resolved. It persists
 Founder-approved pickup / takeaway product requirements without executing the Product Definition
 Gate, Architecture Fit, architecture lock, implementation authorization, schema/API design, or
 Founder UAT.
@@ -161,7 +161,7 @@ PASS, architecture lock, implementation authorization, or IMP acceptance.
 |---|---|
 | Capability / title | `IMP-036H — Customer Pickup / Takeaway` (ROADMAP identity; activated product slice; Product Definition still PRE-GATE DRAFT) |
 | Product Definition version / document status | `PD-IMP-036H-DRAFT-1`; **Document status: PRE-GATE DRAFT / DRAFT_READY_FOR_GATE**; **PRE-GATE DRAFT: YES** |
-| Product owner / approval evidence | Founder. FD-036H-01…21 resolved 2026-09-23 via Founder-authorized pre-GTM Product Definition + governance activation mandate. Product Definition Gate **NOT_PERFORMED**. |
+| Product owner / approval evidence | Founder. FD-036H-01…23 resolved 2026-09-23 (FD-036H-22/23 added in gate remediation) via Founder-authorized pre-GTM Product Definition + governance activation mandate. Product Definition Gate **NOT_PERFORMED**. |
 | Process / verification policy | `PD-1` / `TEST-1` |
 | Canonical anchors | VISION-1; ROADMAP GTM-R141; STATE STATE-R139; ARCH-R21; DR-19 (D-377); PD-1; TEST-1; PERSONA-1; GJ-1 |
 | Repository candidate | Activation draft on branch `governance/imp036h-product-definition-activation`; verified base `main` HEAD `c1540f61dcb39a67226ff3a17170c7391d20c019` (pre-PR base). Final HEAD / tree / content-sensitive fingerprint will differ after this PR lands — treat those as post-merge authority, not this draft's fixed candidate identity. Canonical path `/home/ajoshi/repos/boba-bear-platform`. |
@@ -319,7 +319,7 @@ Central product concept:
 
 | Slice | Mandatory story IDs | Mandatory AC IDs | Required Golden Journeys | Observable acceptance boundary |
 |---|---|---|---|---|
-| `V1_ACCEPTANCE_SLICE` | `US-036H-001` … `US-036H-009` | `AC-036H-001` … `AC-036H-031` (all mandatory YES unless noted) | `GJ-FIRST-ORDER` extended for Pickup path; Delivery path must not regress; `GJ-PAYMENT-RECOVERY` continuity where payment pending; `GJ-CANCELLATION-REFUND` continuity | Customer completes ASAP Pickup (single or multi outlet) with correct commercial/privacy/confirmation outcomes; Ops hands over to FULFILLED; Delivery remains green; no Delivery aggregate for Pickup |
+| `V1_ACCEPTANCE_SLICE` | `US-036H-001` … `US-036H-009` | `AC-036H-001` … `AC-036H-042` (all mandatory YES unless noted) | `GJ-FIRST-ORDER` extended for Pickup path; Delivery path must not regress; `GJ-PAYMENT-RECOVERY` continuity where payment pending; `GJ-CANCELLATION-REFUND` continuity | Customer completes ASAP Pickup (single or multi outlet) with correct commercial/privacy/confirmation outcomes; Ops hands over to FULFILLED; Delivery remains green; no Delivery aggregate for Pickup |
 | `FOLLOW_UP` | Pickup UX polish beyond mandatory clarity; optional coordinates display if Fit justifies | As defined later | N/A unless GJ impacted | Not silently required for V1 |
 | `DEFERRED` | Scheduled Pickup/Delivery (IMP-036I); kitchen prep statuses; OTP/QR proof; no-show penalties; pickup-specific discounts | N/A | N/A | Explicit non-goals / future Product Definition |
 
@@ -340,7 +340,7 @@ so that I can collect from BOBA Bear when delivery is unnecessary.
 
 Journey / activity: JOURNEY-H-A / JOURNEY-H-B; fulfilment mode selection
 Preconditions: Authenticated customer; non-empty cart; checkout entered
-Acceptance scenarios: AC-036H-001, AC-036H-002, AC-036H-021, AC-036H-022, AC-036H-031
+Acceptance scenarios: AC-036H-001, AC-036H-002, AC-036H-021, AC-036H-022, AC-036H-031, AC-036H-032, AC-036H-041
 Business rules: BR-036H-001, BR-036H-002, BR-036H-012
 UX states: Fulfilment choice ready; loading; validation (no eligible pickup); error/recovery
 Permission / resource context: Existing customer checkout identity; no new role
@@ -364,12 +364,12 @@ so that I know where to collect and merchandise can actually be fulfilled there.
 
 Journey / activity: JOURNEY-H-B / C / D
 Preconditions: Pickup chosen; one or more eligible pickup-enabled active outlets
-Acceptance scenarios: AC-036H-003, AC-036H-004, AC-036H-005, AC-036H-006, AC-036H-007
+Acceptance scenarios: AC-036H-003, AC-036H-004, AC-036H-005, AC-036H-006, AC-036H-007, AC-036H-032, AC-036H-033, AC-036H-034, AC-036H-035, AC-036H-036, AC-036H-037, AC-036H-038
 Business rules: BR-036H-006, BR-036H-007, BR-036H-011
-UX states: Auto-selected display; multi-select list; outlet-cannot-fulfil recoverable; stale/ineligible outlet
+UX states: Auto-selected display; multi-select list; zero-eligible unavailable; operating-state exclusions; outlet-cannot-fulfil recoverable; stale/ineligible outlet
 Permission / resource context: Customer checkout; outlet eligibility is server-authoritative
-Error / recovery: Inactive/pickup-disabled excluded; cannot-fulfil → choose other outlet / modify cart / switch to Delivery if valid; no silent outlet switch; no silent item removal
-Dependencies: FD-036H-05, FD-036H-06, FD-036H-16; outlet profile/config authority (Fit)
+Error / recovery: Inactive/pickup-disabled/non-accepting operating states excluded; zero eligible → unavailable; cannot-fulfil / operating-state change before pay → choose other outlet / modify cart / switch to Delivery if valid; no silent outlet switch; no silent item removal
+Dependencies: FD-036H-05, FD-036H-06, FD-036H-16, FD-036H-22; outlet profile/config authority (Fit); accepted effective operating-state semantics
 Explicit non-goals: Curbside; lockers; drive-through; forced Maps selection
 Data implications: Selected outlet visible pre-payment; immutable for paid commercial snapshot (product requirement)
 Security implications: Do not expose unauthorized outlet internals beyond customer-facing pickup info
@@ -460,13 +460,13 @@ so that Ops can fulfil Pickup under the existing Order lifecycle.
 
 Journey / activity: JOURNEY-H-OPS-LIST / DETAIL / HANDOVER
 Preconditions: Authorized Ops session; Pickup Order in eligible lifecycle state
-Acceptance scenarios: AC-036H-017, AC-036H-018, AC-036H-019, AC-036H-020
+Acceptance scenarios: AC-036H-017, AC-036H-018, AC-036H-019, AC-036H-020, AC-036H-039, AC-036H-040, AC-036H-042
 Business rules: BR-036H-010, BR-036H-008
 UX states: List badge; detail ready; handover confirmation; unauthorized deny; success FULFILLED
 Permission / resource context: Reuse existing order.fulfil if Fit confirms; no new role by default (FD-036H-14)
 Error / recovery: Unauthorized cannot fulfil; Delivery Orders retain existing fulfilment UX
-Dependencies: FD-036H-11, FD-036H-12, FD-036H-13, FD-036H-14; IMP-036D Ops
-Explicit non-goals: PREPARING/READY_FOR_PICKUP statuses; fake Delivery completion; rider booking on Pickup
+Dependencies: FD-036H-11, FD-036H-12, FD-036H-13, FD-036H-14, FD-036H-23; IMP-036D Ops
+Explicit non-goals: Pickup OTP/PIN/QR/signature/government-ID proof systems; new PickupProof aggregate; PREPARING/READY_FOR_PICKUP statuses; fake Delivery completion; rider booking on Pickup
 Data implications: Handover → existing FULFILLED; audit/provenance preserved
 Security implications: Authorization must be server-enforced; negative AC for unauthorized fulfil
 Architecture fit / applicable invariants: Confirm order.fulfil coverage; Ops projections fulfilment-aware
@@ -852,17 +852,148 @@ Then existing Delivery E2E remains green (no regression)
 Mandatory in acceptance slice: YES
 ```
 
+```text
+AC-036H-032 — Zero eligible pickup outlets
+Story: US-036H-001 / US-036H-002
+Given the customer chooses Pickup
+And zero outlets satisfy Pickup eligibility
+When Pickup availability is evaluated
+Then Pickup cannot proceed to payment
+And clear Pickup-unavailable messaging is shown
+And no outlet is silently invented or selected
+And no delivery destination is requested merely because Pickup is unavailable
+And Delivery remains selectable where Delivery itself is valid
+And the customer may return to cart / modify the order as appropriate
+Mandatory in acceptance slice: YES
+```
+
+```text
+AC-036H-033 — ASAP Pickup eligible when accepting and fulfils cart
+Story: US-036H-002
+Given an outlet with lifecycle = active, Pickup = enabled, effective operating state = accepting, and it can fulfil the selected cart merchandise
+When Pickup eligibility is evaluated
+Then that outlet is eligible for ASAP Pickup subject to the other eligibility checks
+Mandatory in acceptance slice: YES
+```
+
+```text
+AC-036H-034 — Paused operating state excludes Pickup eligibility
+Story: US-036H-002
+Given an otherwise pickup-capable outlet whose effective operating state = paused
+When Pickup eligibility is evaluated / payment is attempted for Pickup at that outlet
+Then the outlet is NOT_ELIGIBLE / excluded
+And Pickup payment for that outlet is blocked
+Mandatory in acceptance slice: YES
+```
+
+```text
+AC-036H-035 — Suspended operating state excludes Pickup eligibility
+Story: US-036H-002
+Given an otherwise pickup-capable outlet whose effective operating state = suspended
+When Pickup eligibility is evaluated / payment is attempted for Pickup at that outlet
+Then the outlet is NOT_ELIGIBLE / excluded
+And Pickup payment for that outlet is blocked
+Mandatory in acceptance slice: YES
+```
+
+```text
+AC-036H-036 — closed_by_schedule operating state excludes Pickup eligibility
+Story: US-036H-002
+Given an otherwise pickup-capable outlet whose effective operating state = closed_by_schedule
+When Pickup eligibility is evaluated / payment is attempted for Pickup at that outlet
+Then the outlet is NOT_ELIGIBLE / excluded
+And Pickup payment for that outlet is blocked
+Mandatory in acceptance slice: YES
+```
+
+```text
+AC-036H-037 — Selected outlet leaves accepting before payment
+Story: US-036H-002 / US-036H-009
+Given a selected Pickup outlet that was accepting
+And before payment its effective operating state becomes non-accepting (paused, suspended, or closed_by_schedule)
+When eligibility is revalidated before payment / commercial-snapshot bind
+Then payment is blocked
+And a recoverable outcome is offered (choose another eligible Pickup outlet / modify cart / switch to Delivery where valid)
+And another outlet is not silently substituted
+And merchandise is not silently removed
+Mandatory in acceptance slice: YES
+```
+
+```text
+AC-036H-038 — Accepting outlet merchandise becomes unavailable before payment
+Story: US-036H-002
+Given a selected Pickup outlet that remains accepting
+And one or more cart merchandise items become unavailable / not fulfilable at that outlet before payment
+When eligibility / fulfilment is revalidated before payment
+Then existing merchandise-eligibility recovery applies
+And merchandise is not silently removed
+And another outlet is not silently substituted
+Mandatory in acceptance slice: YES
+```
+
+```text
+AC-036H-039 — V1 Pickup handover verification
+Story: US-036H-006
+Given an ACCEPTED Pickup Order
+And authorized workforce
+And the customer presents the matching BOBA Bear order confirmation / order number
+When workforce verifies the matching Order number and authorized customer details already available on the Order detail
+And chooses Handed to customer / Mark as picked up
+Then the existing Order becomes FULFILLED under existing Order fulfil authority
+And audit/provenance is preserved
+And no Delivery completion is created
+And no OTP / QR / PIN / signature / government-ID workflow is required
+Mandatory in acceptance slice: YES
+```
+
+```text
+AC-036H-040 — Handover mismatch must not fulfil a different Order
+Story: US-036H-006
+Given authorized workforce and a presented Order confirmation / order number that cannot be confidently matched to the Order being actioned
+When handover / Mark as picked up is considered
+Then workforce must not mark a different Order fulfilled merely to continue
+And no new fraud engine is required for V1
+Mandatory in acceptance slice: YES
+```
+
+```text
+AC-036H-041 — Customer checkout fulfilment controls accessibility
+Story: US-036H-001 / US-036H-002
+Given customer checkout fulfilment-mode controls and Pickup outlet selection
+When exercised with keyboard and assistive technology expectations
+Then controls are keyboard reachable
+And have accessible names
+And show visible focus
+And communicate selected state programmatically
+And Pickup eligibility / error messaging is programmatically associated or announced appropriately
+And messaging does not rely solely on colour
+Mandatory in acceptance slice: YES
+```
+
+```text
+AC-036H-042 — Workforce Pickup handover controls accessibility
+Story: US-036H-006
+Given Ops Pickup handover controls (Handed to customer / Mark as picked up)
+When exercised with keyboard and assistive technology expectations
+Then controls are keyboard operable
+And have an accessible name
+And show visible focus
+And provide understandable confirmation / error feedback
+Mandatory in acceptance slice: YES
+```
+
 ### Planned proof matrix (TEST-1)
 
 | Story / AC ID | Required behaviour / risk | Applicable test layers | Planned proof | Actual evidence / candidate / result |
 |---|---|---|---|---|
 | AC-036H-001, 031 | Delivery non-regression | E2E / Golden Journey | Existing Delivery E2E + GJ-FIRST-ORDER delivery path | Planned only — NOT_PERFORMED |
-| AC-036H-002…007 | Pickup path + outlet eligibility | Domain + API + E2E | New Pickup journey proofs after implementation authorization | Planned only |
+| AC-036H-002…007, 032…038 | Pickup path + outlet / operating-state eligibility + empty state | Domain + API + E2E | New Pickup journey proofs after implementation authorization | Planned only |
 | AC-036H-008…011 | Commercial invariants | Domain / commercial unit + checkout integration | Fee absence; packaging/tax/promo continuity | Planned only |
 | AC-036H-012…016, 028 | Payment / Order / Delivery fail-closed / financial docs | Payment + Order + negative Delivery | Idempotent place; no Delivery aggregate; reject Delivery invoke | Planned only |
-| AC-036H-017…020 | Ops badge/detail/handover + authz negative | Ops API/UI + authorization | Positive handover; unauthorized deny | Planned only |
+| AC-036H-017…020, 039, 040 | Ops badge/detail/handover verification + authz + mismatch safety | Ops API/UI + authorization | Positive handover; verification without OTP/QR; unauthorized deny; mismatch non-fulfil | Planned only |
 | AC-036H-021…023, 029, 030 | Confirmation, privacy, notifications | E2E + notification content assertions | Pickup language; no Maps force; no rider copy | Planned only |
 | AC-036H-024…027 | Mode switch + payment-pending safety + cancel/refund | Checkout concurrency + payment recovery | Switch recalcs; pending mutation fail-closed; refund continuity | Planned only |
+| AC-036H-041, 042 | Customer checkout + workforce handover accessibility | Component/accessibility assertions + real-browser interactive accessibility proof where material | Keyboard reachability; accessible names; visible focus; selected-state; programmatic error association; confirmation/error feedback. Automated a11y scanning alone does **not** prove the experience. | Planned only |
 
 Planned is **not** proven. Evidence populates after authorized implementation under TEST-1 (no silent-retry-as-pass).
 
@@ -877,13 +1008,14 @@ Planned is **not** proven. Evidence populates after authorized implementation un
 | `BR-036H-003` | PICKUP must not incur a delivery charge (business invariant). | FD-036H-07 | US-036H-003; AC-036H-008/024 |
 | `BR-036H-004` | PICKUP must not require a delivery destination. | FD-036H-04, FD-036H-20 | US-036H-005; AC-036H-030 |
 | `BR-036H-005` | DELIVERY continues to require valid delivery destination/serviceability. | Existing ADR-008 / IMP-036B/C; FD-036H-04 | US-036H-001/008; AC-036H-001/025 |
-| `BR-036H-006` | PICKUP requires a valid enabled pickup outlet. | FD-036H-05, FD-036H-06 | US-036H-002; AC-036H-003…006 |
+| `BR-036H-006` | PICKUP requires a valid enabled pickup outlet that is accepting and can fulfil the cart. | FD-036H-05, FD-036H-06, FD-036H-22 | US-036H-002; AC-036H-003…006, 032…038 |
 | `BR-036H-007` | The selected pickup outlet is immutable for the paid commercial snapshot. | FD-036H-06; payment immutability foundations | US-036H-002/009; AC-036H-014/026 |
 | `BR-036H-008` | Pickup Orders never invoke Delivery-provider execution. | FD-036H-13 | US-036H-004/006; AC-036H-015/016 |
 | `BR-036H-009` | Existing commercial/payment/order truth remains authoritative. | FD-036H-09, FD-036H-18 | US-036H-003/004/009; AC-036H-010…013/027/028 |
-| `BR-036H-010` | Pickup handover completes the existing Order lifecycle; no separate Pickup Order. | FD-036H-10…12 | US-036H-006; AC-036H-014/018/019 |
+| `BR-036H-010` | Pickup handover completes the existing Order lifecycle; no separate Pickup Order; V1 verification uses order confirmation + existing Order detail (no OTP/QR/PIN). | FD-036H-10…12, FD-036H-23 | US-036H-006; AC-036H-014/018/019/039/040 |
 | `BR-036H-011` | No unnecessary delivery-location data is required for Pickup. | FD-036H-20 | US-036H-005; AC-036H-030 |
 | `BR-036H-012` | Scheduled fulfilment is not part of IMP-036H (`IMP036H_SCHEDULED_FULFILMENT: NO`). | FD-036H-02, FD-036H-21; IMP-036I reservation | US-036H-001; non-goals |
+| `BR-036H-013` | ASAP Pickup eligibility requires active + Pickup enabled + effective operating state accepting + merchandise fulfilable; revalidate before payment; never silently substitute outlet or remove items. | FD-036H-06, FD-036H-22; accepted operating-state authority | US-036H-002; AC-036H-032…038 |
 
 ---
 
@@ -896,21 +1028,21 @@ Applies primarily to `JOURNEY-H-B` / `JOURNEY-H-C` (Pickup). Delivery Journey A 
 | ENTRY | Authenticated customer enters checkout from cart | US-036H-001; AC-036H-002 |
 | DISCOVERY | Fulfilment choice presents Delivery + Pickup (customer term Pickup; supporting “Take away from BOBA Bear”) | US-036H-001; FD-036H-01 |
 | CONTEXT | Selected mode + outlet + commercials shown before pay | US-036H-002/003/005; AC-036H-021 |
-| EMPTY / FIRST USE | No eligible pickup outlet → clear empty/unavailable; Delivery may remain | US-036H-001/002 |
+| EMPTY / FIRST USE | No eligible pickup outlet → clear empty/unavailable; Delivery may remain; no invented outlet; no forced delivery destination | US-036H-001/002; AC-036H-032 |
 | HAPPY PATH | Single-outlet AUTO_SELECT or multi-select → pay → Ops accept → handover → FULFILLED | AC-036H-002…004/012/018/019 |
 | ALTERNATE VALID PATHS | Mode switch E/F; zero-payable; multi-outlet | AC-036H-013/024/025 |
-| VALIDATION FAILURE | Outlet cannot fulfil; packaging/tax/promo evaluation failures use existing patterns | AC-036H-007 |
+| VALIDATION FAILURE | Outlet cannot fulfil; operating-state exclusions; packaging/tax/promo evaluation failures use existing patterns | AC-036H-007, 033…038 |
 | AUTHORIZATION | Customer owns checkout; Ops fulfil requires authority; unauthorized deny | AC-036H-020 |
-| NOT FOUND / STALE REFERENCE | Stale outlet / ineligible after change → recoverable; no silent switch | AC-036H-005…007/026 |
+| NOT FOUND / STALE REFERENCE | Stale outlet / ineligible after change (incl. operating-state) → recoverable; no silent switch | AC-036H-005…007/026/037/038 |
 | SERVER / NETWORK ERROR | Existing checkout/payment error/retry patterns | US-036H-004; GJ-PAYMENT-RECOVERY |
-| RECOVERY | Other outlet / modify cart / switch mode / payment retry / cancel | AC-036H-007/026/027 |
+| RECOVERY | Other outlet / modify cart / switch mode / payment retry / cancel | AC-036H-007/026/027/032/037 |
 | CONCURRENCY | Payment-pending mutation safety; paid snapshot immutability | AC-036H-026; US-036H-009 |
 | DESTRUCTIVE ACTION | Cancellation/refund under existing authority; no V1 no-show penalty | AC-036H-027 |
 | SUCCESS FEEDBACK | Confirmation + history show Pickup; Ops badge/detail | AC-036H-017/021/022 |
 | DOWNSTREAM EFFECT | No Delivery aggregate; fulfilment-aware notifications; financial docs correct | AC-036H-015/016/028/029 |
 | REVISIT / RELOAD | Reload preserves authoritative mode/outlet/payment state | US-036H-005/009 |
 | RESPONSIVE / MOBILE | Checkout + Ops usable on supported mobile/desktop viewports | §18 |
-| ACCESSIBILITY | Labels for mode, outlet, handover controls; focus on errors | §18 |
+| ACCESSIBILITY | Labels for mode, outlet, handover controls; focus on errors; keyboard + programmatic selected/error state | §18; AC-036H-041/042 |
 
 Workforce journeys (list/detail/handover) share AUTHORIZATION, SUCCESS FEEDBACK, DOWNSTREAM EFFECT rows via AC-036H-017…020.
 
@@ -922,17 +1054,17 @@ Workforce journeys (list/detail/handover) share AUTHORIZATION, SUCCESS FEEDBACK,
 |---|---|---|---|---|---|
 | Checkout / fulfilment choice ready | Checkout loaded | Delivery and Pickup options; Pickup supporting text allowed | Focusable choice controls | Selected mode path | AC-036H-001/002 |
 | Checkout / fulfilment choice loading | Evaluating eligibility | Loading indicator; no premature pay | Focus retained / announced busy | Ready or empty/error | N/A pattern |
-| Checkout / no eligible pickup | Zero eligible outlets | Clear unavailable messaging; Delivery if valid | Focus error/help | Stay or choose Delivery | US-036H-001 |
+| Checkout / no eligible pickup | Zero eligible outlets | Clear unavailable messaging; Delivery if valid; no invented outlet; no forced delivery destination | Focus error/help | Stay or choose Delivery / return to cart | AC-036H-032 |
 | Pickup outlet AUTO_SELECT | Exactly one eligible | Selected outlet + instructions visible | Focus continues to review | Review/pay | AC-036H-003 |
 | Pickup outlet select | Multiple eligible | List/select required before pay | Keyboard-selectable list | Review/pay | AC-036H-004 |
-| Outlet cannot fulfil | Validation fail | Recoverable options; no silent remove | Focus error + actions | Other outlet / cart / Delivery | AC-036H-007 |
+| Outlet cannot fulfil / non-accepting | Validation fail / operating-state change | Recoverable options; no silent remove / substitute | Focus error + actions | Other outlet / cart / Delivery | AC-036H-007/034…038 |
 | Commercial review Pickup | Snapshot ready | Total; packaging; explicit no delivery fee | Focus review CTA | Payment | AC-036H-008/009/021 |
 | Payment pending | Payment started | Existing pending UX; mode mutation blocked | Focus status | Success / fail / recover | AC-036H-012/026 |
 | Payment success / confirmation | Order placed | Pickup confirmation language | Focus confirmation | History/detail | AC-036H-021/022 |
 | Customer history Pickup | Order owned | Pickup label; no delivery tracking | Focus order row/detail | Detail | AC-036H-022/023 |
 | Ops list badge | Authorized Ops | DELIVERY / PICKUP badge per Order | Focusable rows | Detail | AC-036H-017 |
 | Ops Pickup detail | Pickup Order | Required fields; no rider/provider/tracking/proof | Focus lifecycle actions | Accept / handover | AC-036H-018 |
-| Ops handover confirm | ACCEPTED Pickup | Handed to customer / Mark as picked up | Confirm control focusable | FULFILLED success | AC-036H-019 |
+| Ops handover confirm | ACCEPTED Pickup; customer presents matching order confirmation | Handed to customer / Mark as picked up after Order/detail match; no OTP/QR/PIN | Confirm control focusable; accessible name + feedback | FULFILLED success | AC-036H-019/039/042 |
 | Ops unauthorized | Missing permission | Deny; no state change | Focus deny message | Exit / other orders | AC-036H-020 |
 | Server/network error | Transport fail | Existing retry messaging | Focus retry | Prior ready state | Existing patterns |
 | Mode switch recalculating | Pre-pay switch | Temporary recalculating; then updated commercials | Announce update | Coherent mode path | AC-036H-024/025 |
@@ -945,11 +1077,11 @@ Workforce journeys (list/detail/handover) share AUTHORIZATION, SUCCESS FEEDBACK,
 |---|---|---|---|---|
 | Choose fulfilment mode / pay Pickup | Existing customer authenticated checkout identity | Customer-owned cart/checkout | Anonymous checkout NOT_SUPPORTED for Pickup | AC-036H-012; FD-036H-17 |
 | Ops accept Pickup Order | Existing Ops order accept authority | Order resource in operator scope | Cross-scope deny per existing Ops rules | AC-036H-018 |
-| Ops handover / fulfil Pickup | **ARCHITECTURE CANDIDATE:** reuse `order.fulfill` if Fit confirms against CURRENT access-control authority; **no new role** by default (FD-036H-14). If a new permission is genuinely necessary → escalate (Architecture/Product), do not invent in implementation | Order resource in operator scope | Unauthorized deny (negative AC) | AC-036H-019/020 |
+| Ops handover / fulfil Pickup | **ARCHITECTURE CANDIDATE:** reuse `order.fulfil` if Fit confirms against CURRENT access-control authority; **no new role** by default (FD-036H-14). If a new permission is genuinely necessary → escalate (Architecture/Product), do not invent in implementation | Order resource in operator scope | Unauthorized deny (negative AC) | AC-036H-019/020 |
 | Invoke Delivery on Pickup Order | Must fail closed for all actors | Pickup Order | Always denied for Pickup | AC-036H-016 |
 | Cancel / refund | Existing cancellation/refund permissions | Existing resource rules | No V1 no-show penalty path | AC-036H-027 |
 
-Do not derive authorization from persona labels. Fit verification of `order.fulfill` is mandatory before implementation claims “no new permission.”
+Do not derive authorization from persona labels. Fit verification of `order.fulfil` is mandatory before implementation claims “no new permission.”
 
 ---
 
@@ -991,7 +1123,7 @@ Unresolved security product decisions: **NONE**. Mechanism choices remain Fit.
 | Pre-payment mode switch | Recalculate; coherent destination/fee requirements | US-036H-008; AC-036H-024/025 |
 | Payment pending / bound snapshot | Fulfilment mutation that invalidates snapshot fails safely; recovery via existing payment authority | US-036H-009; AC-036H-026; GJ-PAYMENT-RECOVERY |
 | Duplicate placement retries | Idempotent single Order | AC-036H-014 |
-| Outlet becomes ineligible after selection (pre-pay) | Recoverable; no silent switch | AC-036H-007 |
+| Outlet becomes ineligible after selection (pre-pay), including operating-state change to non-accepting | Payment blocked; recoverable; no silent switch/remove | AC-036H-007/037/038; FD-036H-22 |
 | Partial payment failure | Existing retry/fail paths | GJ-PAYMENT-RECOVERY |
 | Cancellation/refund | Existing authorities; no no-show penalties | AC-036H-027; FD-036H-18 |
 
@@ -1003,8 +1135,10 @@ Do not invent new retry/idempotency semantics; align to accepted payment/order c
 
 - Supported contexts: existing customer checkout and Ops surfaces on mobile and desktop viewports already targeted by IMP-036B/C/D.
 - Fulfilment mode choice, outlet selection, confirmation summaries, and Ops handover controls must be keyboard reachable with visible focus and accessible names.
-- Error/recovery messages (no eligible outlet; cannot fulfil; payment-pending mutation denied) must be programmatically associated with controls.
-- Do not rely solely on automated a11y scans; include interactive scenarios in proof where material (TEST-1).
+- Customer fulfilment-mode controls and Pickup outlet selection must communicate selected state programmatically (AC-036H-041).
+- Error/recovery messages (no eligible outlet; cannot fulfil; operating-state ineligibility; payment-pending mutation denied) must be programmatically associated or announced appropriately and must not rely solely on colour (AC-036H-032/041).
+- Workforce Pickup handover controls must be keyboard operable, named, visibly focused, and provide understandable confirmation/error feedback (AC-036H-042).
+- TEST-1 planned proof requires component/accessibility assertions **and** real-browser interactive accessibility proof where material. Automated a11y scanning alone does **not** prove the experience (AC-036H-041/042).
 
 ---
 
@@ -1078,7 +1212,7 @@ Registry status is not a test verdict.
 6. How does selected pickup outlet bind to snapshot/order?
 7. How are delivery charges excluded structurally for pickup?
 8. How does Delivery fail closed for pickup Orders?
-9. Can `order.fulfill` be reused without new permissions?
+9. Can `order.fulfil` be reused without new permissions?
 10. How do customer/workforce projections become fulfilment-aware?
 11. How should notifications distinguish pickup/delivery?
 12. How do financial documents remain correct?
@@ -1131,7 +1265,9 @@ Proposed PLANNED behaviour is not accepted until gates pass.
 | New payment provider / auth realm / loyalty system | Non-goals | Unchanged |
 | Delivery provider redesign | Non-goals | Delivery path preserved |
 | Scheduled fulfilment in IMP-036H | FD-036H-21; BR-036H-012 | No schedule UI; ASAP only |
-| Silent outlet switch / silent merchandise removal | FD-036H-06 | AC-036H-007 |
+| Silent outlet switch / silent merchandise removal | FD-036H-06, FD-036H-22 | AC-036H-007/032/037 |
+| Pickup OTP / PIN / QR / signature / government-ID proof / PickupProof aggregate | FD-036H-23 | AC-036H-039/040 |
+| Treating outlet `active` alone as Pickup-eligible while operating state is non-accepting | FD-036H-22 | AC-036H-034…037 |
 | Rider arriving / delivery tracking for Pickup | FD-036H-19 | AC-036H-023/029 |
 | Forced Maps/geo/delivery address for Pickup | FD-036H-20 | AC-036H-030 |
 
@@ -1141,7 +1277,7 @@ Proposed PLANNED behaviour is not accepted until gates pass.
 
 | `UNRESOLVED_DECISION_REQUIRED` item | Material user/business impact | Decision owner / evidence needed | Affected stories / gate |
 |---|---|---|---|
-| NONE | — | All FD-036H-01…21 resolved | — |
+| NONE | — | All FD-036H-01…23 resolved | — |
 
 ```text
 UNRESOLVED_MATERIAL_PRODUCT_DECISIONS: 0
@@ -1159,7 +1295,7 @@ Architecture Fit questions (§21) are **mechanism** questions, not unresolved pr
 | FD-036H-03 | Online payment only; no cash/COD/pay-at-counter | RESOLVED |
 | FD-036H-04 | Pickup does not require delivery address/GPS/Maps/PIN | RESOLVED |
 | FD-036H-05 | AUTO_SELECT if one eligible; CUSTOMER_SELECTS if multiple; visible before payment | RESOLVED |
-| FD-036H-06 | Inactive/pickup-disabled cannot accept; merchandise must be fulfillable; no silent outlet switch | RESOLVED |
+| FD-036H-06 | Inactive/pickup-disabled cannot accept; merchandise must be fulfilable; no silent outlet switch (operating-state detail in FD-036H-22) | RESOLVED |
 | FD-036H-07 | PICKUP never charged delivery fee (business invariant) | RESOLVED |
 | FD-036H-08 | Packaging charge still applies | RESOLVED |
 | FD-036H-09 | Existing pricing/tax/promotions authorities; no separate pricing engine | RESOLVED |
@@ -1167,7 +1303,7 @@ Architecture Fit questions (§21) are **mechanism** questions, not unresolved pr
 | FD-036H-11 | Existing PLACED→ACCEPTED→FULFILLED\|CANCELLED; no PREPARING/READY_FOR_PICKUP etc. | RESOLVED |
 | FD-036H-12 | Handover = Handed to customer / Mark as picked up → FULFILLED; no fake Delivery completion | RESOLVED |
 | FD-036H-13 | Pickup must not create/use Delivery aggregate | RESOLVED |
-| FD-036H-14 | No new role; reuse order.fulfill if Architecture Fit confirms | RESOLVED (Fit verification remaining) |
+| FD-036H-14 | No new role by default; reuse existing `order.fulfil` if Architecture Fit confirms it covers Pickup handover; escalate rather than inventing a permission | RESOLVED (Fit verification remaining) |
 | FD-036H-15 | Pre-payment confirmation requirements (mode, location, instructions, total, no delivery fee) | RESOLVED |
 | FD-036H-16 | Pickup location info: display name, address, city/state/postal, instructions; coordinates optional | RESOLVED |
 | FD-036H-17 | Authenticated customer checkout preserved | RESOLVED |
@@ -1175,6 +1311,8 @@ Architecture Fit questions (§21) are **mechanism** questions, not unresolved pr
 | FD-036H-19 | Fulfilment-aware notifications; no rider/delivery tracking for Pickup | RESOLVED |
 | FD-036H-20 | Privacy minimization — no forced Maps/geo/delivery address for Pickup | RESOLVED |
 | FD-036H-21 | Scheduling readiness: extensible but `IMP036H_SCHEDULED_FULFILMENT: NO` | RESOLVED |
+| FD-036H-22 | ASAP Pickup operating eligibility: active + Pickup enabled + effective operating state accepting + fulfils cart; paused/suspended/closed_by_schedule = NOT_ELIGIBLE; revalidate before payment; block payment with recoverable paths; never silent outlet substitute or item removal; reuse accepted operating-state authority (no new open/closed domain) | RESOLVED |
+| FD-036H-23 | V1 Pickup handover verification: customer presents BOBA Bear order confirmation / order number; workforce verifies matching Order number + authorized customer details on Order detail; then Handed to customer / Mark as picked up → FULFILLED via existing Order fulfil authority. No OTP/PIN/QR/signature/government-ID / PickupProof / new auth realm. Mismatch → do not fulfil a different Order | RESOLVED |
 
 ---
 
@@ -1226,7 +1364,7 @@ Cross-Scope Scenarios Defined: YES (Ops scope deny; Delivery fail-closed on Pick
 Concurrency Considered: YES (§17; AC-036H-026)
 Destructive Actions Defined: YES (cancel/refund; no no-show penalty)
 UX State Matrix Complete: YES (§13)
-Accessibility Considered: YES (§18)
+Accessibility Considered: YES (§18; AC-036H-041/042 mandatory)
 Golden Journeys Identified: YES (§20) — GJ-FIRST-ORDER extend + delivery non-regression
 Explicit Deferrals Recorded: YES (§23–24) including IMP-036I
 Unresolved Product Decisions: 0

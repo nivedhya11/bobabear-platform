@@ -1911,7 +1911,7 @@ COMPLETE_AND_ACCEPTED before IMP-037 is formally accepted and reconciled.
 
 ## Explicit non-goals (this approved Product Definition)
 
-- Accept IMP-038 or claim implementation complete (this document authorizes/starts; it does not accept)
+- Accept IMP-038 or claim PROVE / independent technical acceptance / Founder UAT complete (program tip may record `IMP038_IMPLEMENTATION_COMPLETE: YES` while `IMP038_ACCEPTED: NO`; this Product Definition does not accept)
 - Activate IMP-039
 - Accept IMP-037 or advance `acceptedThrough`
 - Invent or claim DPDP / CERT-In / PCI / OWASP certification compliance
