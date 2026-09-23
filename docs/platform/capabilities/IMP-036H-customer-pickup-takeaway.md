@@ -1,12 +1,13 @@
 <!-- governance-meta
 {
-  "status": "DRAFT",
-  "authority": "CAPABILITY_ARCHITECTURE_CANDIDATE",
+  "status": "CURRENT",
+  "authority": "CAPABILITY_ARCHITECTURE",
   "capability": "IMP-036H",
   "title": "Customer Pickup / Takeaway",
-  "architectureLock": "NOT_LOCKED",
-  "architectureFitCandidateStatus": "CANDIDATE_READY_FOR_INDEPENDENT_REVIEW",
-  "architectureFitCandidateResult": "NOT_DECLARED",
+  "architectureLock": "ARCHITECTURE_LOCKED",
+  "architectureFit": "PASS",
+  "architectureFitResult": "PASS",
+  "architectureFitExecution": "PERFORMED",
   "implementation": "NOT_AUTHORIZED / NOT_STARTED",
   "implementationAuthorized": false,
   "implementationStarted": false,
@@ -14,54 +15,72 @@
   "schemaChangeRequired": true,
   "migrationRequired": true,
   "founderUatRequired": true,
-  "lastReviewed": "2026-09-23",
+  "lastReviewed": "2026-09-24",
   "productDefinition": "PD-IMP-036H-DRAFT-1",
-  "proposedBindingDecisions": ["D-378", "ADR-018"],
-  "proposedArchitectureRevision": "ARCH-R22",
-  "proposedInvariant": "ARCH-G28",
-  "bindingFoundations": ["ADR-005", "ADR-007", "ADR-008", "ADR-011", "ADR-012", "D-357", "D-359", "D-360", "D-365", "D-372", "D-377", "ARCH-R21"],
-  "dependsOn": ["IMP-021", "IMP-023", "IMP-024", "IMP-028", "IMP-029", "IMP-030", "IMP-031", "IMP-033", "IMP-036B", "IMP-036C", "IMP-036D", "IMP-036E"]
+  "bindingDecisions": ["D-378", "ADR-018", "D-357", "D-359", "D-360", "D-365", "D-372", "D-377", "ADR-005", "ADR-007", "ADR-008", "ADR-011", "ADR-012"],
+  "dependsOn": ["IMP-021", "IMP-023", "IMP-024", "IMP-028", "IMP-029", "IMP-030", "IMP-031", "IMP-033", "IMP-036B", "IMP-036C", "IMP-036D", "IMP-036E"],
+  "architectureBase": "ARCH-R22"
 }
 -->
 
 # IMP-036H — Customer Pickup / Takeaway
 
-## Capability Architecture — ARCHITECTURE FIT CANDIDATE / NOT LOCKED
+## Capability Architecture — ARCHITECTURE_LOCKED
 
-This document is an **Architecture Fit review candidate** for IMP-036H. It is **not** the
-canonically locked capability architecture. It does **not** self-declare Architecture Fit PASS.
+This document is the **locked capability architecture** for IMP-036H. It records Architecture Fit
+PASS against **ARCH-R22 / D-378 / ADR-018 / ARCH-G28** for ASAP Customer Pickup / Takeaway.
+
+Independent Architecture Fit review = **PASS** (PR #239 review `5295149318`). Implementation is
+**NOT AUTHORIZED** and **NOT STARTED**. Architecture lock does **not** authorize implementation,
+schema migration execution, Founder UAT, or IMP acceptance.
 
 ```text
-ARCHITECTURE_FIT_CANDIDATE_STATUS = CANDIDATE_READY_FOR_INDEPENDENT_REVIEW
-ARCHITECTURE_FIT_CANDIDATE_RESULT = NOT_DECLARED
-CANDIDATE_STATUS = ARCHITECTURE_FIT_CANDIDATE / INDEPENDENT_REVIEW_REQUIRED
-IMP036H_ARCHITECTURE_LOCKED = NO
-ARCHITECTURE_LOCKED = NO
+ARCHITECTURE_FIT = PASS
+ARCHITECTURE_FIT_EXECUTION = PERFORMED
+ARCHITECTURE_FIT_RESULT = PASS
+IMP036H_ARCHITECTURE_FIT = PASS
+IMP036H_ARCHITECTURE_LOCKED = YES
+ARCHITECTURE_LOCKED = YES
+INDEPENDENT_ARCHITECTURE_FIT_REVIEW = PASS
+INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID = 5295149318
+INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_HEAD = aab814c238c499367ee921e9f8ffb03ff7b1b373
+INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_TREE = 93d4e83d4a73c61c9439bcaae2799920fcca46db
+ARCHITECTURE_FIT_EVALUATED_HEAD = aab814c238c499367ee921e9f8ffb03ff7b1b373
+ARCHITECTURE_FIT_EVALUATED_TREE = 93d4e83d4a73c61c9439bcaae2799920fcca46db
+ARCHITECTURE_FIT_EVALUATED_WORKING_TREE_FINGERPRINT = 74b1254f22c9131a6e073522cf9310f264866e442cc074775ad5f4b214f0e51e
 IMPLEMENTATION_AUTHORIZED = NO
 IMPLEMENTATION_STARTED = NO
+IMP036H_IMPLEMENTATION_AUTHORIZED = NO
+IMP036H_STARTED = NO
 IMP036H_ACCEPTED = NO
 IMP036I_ACTIVATED = NO
-CANONICAL_ROADMAP_STATE_CLAIM = UNCHANGED (GTM-R142 / STATE-R140)
-PRODUCT_DEFINITION = PD-IMP-036H-DRAFT-1 APPROVED (Gate PASS; ARCHITECTURE_FIT remains NOT_PERFORMED in ROADMAP/STATE until separate lock persistence)
+PRODUCT_DEFINITION = PD-IMP-036H-DRAFT-1 APPROVED
+PRODUCT_DEFINITION_GATE = PASS
+D-378_CREATED = YES
+D378_STATUS = CURRENT
+ADR018_STATUS = Accepted
+ARCH_R22_CREATED = YES
+ARCH_G28_CREATED = YES
+SCHEMA_CHANGE_REQUIRED = YES
+MIGRATION_REQUIRED = YES
+SCHEMA_MIGRATION_EXECUTION = NOT_AUTHORIZED
+OPEN_ARCHITECTURE_QUESTIONS = NONE
+RED_DECISIONS_REQUIRED = NONE
+AF-036H-01 … AF-036H-14 = RESOLVED (AF-036H-12 = corrected Option A)
+CANONICAL_ROADMAP_STATE = GTM-R143 / STATE-R141
 ```
-
-Independent Architecture Fit review is required. Formal Architecture Fit PASS + lock persistence are
-separate authorized governance tasks. This candidate does **not** authorize implementation, schema
-migration execution, merge as lock, deployment, Founder UAT, or IMP acceptance.
 
 | Field | Value |
 |---|---|
-| Architecture lock | `NOT_LOCKED` (candidate only) |
-| Formal ROADMAP lifecycle | `PLANNED` / `NOT_AUTHORIZED` / `NOT_STARTED` (`IMP036H_ACTIVATED: YES`) |
+| Architecture lock | `ARCHITECTURE_LOCKED` |
+| Formal ROADMAP lifecycle | `ARCHITECTURE_LOCKED` (`IMP036H_ACTIVATED: YES`) |
 | Product Definition | `PD-IMP-036H-DRAFT-1` **APPROVED**; Gate **PASS** |
-| Canonical Architecture Fit (ROADMAP/STATE/PD) | Still `NOT_PERFORMED` until lock persistence |
-| Candidate readiness | **CANDIDATE_READY_FOR_INDEPENDENT_REVIEW** |
-| Candidate Fit PASS claim | **NOT_DECLARED** (independent review owns PASS) |
+| Architecture Fit | **PASS** (independent review PR #239 / `5295149318`) |
 | Implementation | **NOT_AUTHORIZED** / **NOT_STARTED** |
-| Schema change / migration | **YES** (design only; not authorized to execute) |
-| Proposed D-number | **D-378** (`PROPOSED`; not CURRENT) |
-| Proposed ADR | **ADR-018** (`Proposed`) |
-| Proposed global ARCH bump | **ARCH-R22** / **ARCH-G28** (proposed lock delta; ARCHITECTURE.md tip remains ARCH-R21) |
+| Schema change / migration | **YES** (design locked; execution **not** authorized) |
+| Binding D-number | **D-378** (`CURRENT`) |
+| Binding ADR | **ADR-018** (`Accepted`) |
+| Global ARCH | **ARCH-R22** / **ARCH-G28** |
 | New permission / role / auth model / deployable | **NO** |
 | Founder UAT required (future acceptance) | **YES** |
 
@@ -69,37 +88,46 @@ migration execution, merge as lock, deployment, Founder UAT, or IMP acceptance.
 
 ## 1. Authority / status
 
-Verified starting authority for this candidate:
+Verified lock-persistence tip target:
 
 ```text
 Repository: /home/ajoshi/repos/boba-bear-platform
 Remote: nivedhya11/bobabear-platform
-origin/main HEAD: 3f1a5bf6b84e48752d586b58f475d73b5413cc04
-origin/main tree: 4e879d6b12df883db7c608545a73d7b7be1e8e97
 VISION = VISION-1
-ROADMAP = GTM-R142
-STATE = STATE-R140
-ARCHITECTURE = ARCH-R21
-DECISION REGISTER = DR-19
+ROADMAP = GTM-R143
+STATE = STATE-R141
+ARCHITECTURE = ARCH-R22
+DECISION REGISTER = DR-20
 PRODUCT DELIVERY = PD-1
 TESTING = TEST-1
 PERSONA = PERSONA-1
 GOLDEN JOURNEYS = GJ-1
 Product Definition = docs/platform/product/IMP-036H/product-definition.md (APPROVED)
 Product Definition Gate evidence = PR#238 comment 5797812536
+Independent Architecture Fit evidence = PR #239 review 5295149318
 ```
 
-Canonical ROADMAP/STATE tip markers remain unchanged by this candidate:
+Exact Fit-evaluated candidate (independent PASS; no semantic drift permitted after review):
 
 ```text
-IMP036H_ARCHITECTURE_FIT: NOT_PERFORMED
-IMP036H_ARCHITECTURE_LOCKED: NO
+FIT_EVALUATED_HEAD = aab814c238c499367ee921e9f8ffb03ff7b1b373
+FIT_EVALUATED_TREE = 93d4e83d4a73c61c9439bcaae2799920fcca46db
+FIT_EVALUATED_FINGERPRINT = 74b1254f22c9131a6e073522cf9310f264866e442cc074775ad5f4b214f0e51e
+```
+
+Canonical ROADMAP/STATE tip markers after lock persistence:
+
+```text
+IMP036H_ARCHITECTURE_FIT: PASS
+IMP036H_ARCHITECTURE_LOCKED: YES
 IMP036H_IMPLEMENTATION_AUTHORIZED: NO
 IMP036H_STARTED: NO
 IMP036H_ACCEPTED: NO
 PROGRAM_PAUSE_AUTHORITY: D-377
 ```
 
+Historical Fit-candidate tip (pre-lock; superseded): GTM-R142 / STATE-R140 / ARCH-R21 / DR-19
+(D-378 was PROPOSED / ADR-018 Proposed at that tip only).
 ---
 
 ## 2. Purpose and approved Product Definition reference
@@ -163,27 +191,30 @@ MIGRATION_REQUIRED: YES
 
 ---
 
-## 4. Architecture-fit candidate verdict (not formal PASS)
+## 4. Architecture-fit verdict (locked)
 
 ```text
-ARCHITECTURE_FIT_CANDIDATE_STATUS = CANDIDATE_READY_FOR_INDEPENDENT_REVIEW
-ARCHITECTURE_FIT_CANDIDATE_RESULT = NOT_DECLARED
-FORMAL_ARCHITECTURE_FIT = NOT_PERFORMED (ROADMAP/STATE/PD remain authoritative)
-IMP036H_ARCHITECTURE_LOCKED = NO
+ARCHITECTURE_FIT_CANDIDATE_STATUS = SUPERSEDED_BY_LOCK (historical Fit candidate only)
+ARCHITECTURE_FIT = PASS
+ARCHITECTURE_FIT_EXECUTION = PERFORMED
+ARCHITECTURE_FIT_RESULT = PASS
+IMP036H_ARCHITECTURE_LOCKED = YES
+INDEPENDENT_ARCHITECTURE_FIT_REVIEW = PASS
+INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID = 5295149318
 ```
 
-All fourteen Product Definition Fit questions (§28 matrix) are answered **RESOLVED** with explicit
-evidence. No `RED_DECISION_REQUIRED`. Independent review may still reject or require remediation.
+All fourteen Product Definition Fit questions are **RESOLVED** (AF-036H-12 = corrected Option A).
+`OPEN_ARCHITECTURE_QUESTIONS: NONE`. `RED_DECISIONS_REQUIRED: NONE`.
 
 ---
 
-## 5. Proposed global decision (D-378 / ARCH-G28 / ARCH-R22)
+## 5. Binding global decision (D-378 / ARCH-G28 / ARCH-R22)
 
-### 5.1 Proposed decision identity
+### 5.1 Decision identity
 
 ```text
 D-378 — Checkout Fulfilment Mode + Pickup Execution Boundary
-STATUS: PROPOSED (decision-register row; not CURRENT)
+STATUS: CURRENT
 ADR-018 — Customer Fulfilment Mode and Pickup Boundary (Status: Proposed)
 ARCH-G28 — proposed invariant text (below)
 ARCH-R22 — proposed architecture revision on lock persistence only
@@ -907,27 +938,28 @@ D378_REQUIRED_FOR_IMP036H_LOCK = YES
 ARCH_R22_REQUIRED_FOR_IMP036H_LOCK = YES
 ARCH_G28_REQUIRED_FOR_IMP036H_LOCK = YES
 ADR018_REQUIRED_FOR_IMP036H_LOCK = YES
+
+D-378 = CURRENT
+ADR-018 = Accepted
+ARCH-R22 = CURRENT
+ARCH-G28 = CURRENT
 ```
 
 Rationale: cross-domain fulfilment-mode invariant spanning Checkout, Pricing, Snapshot, Delivery
 fail-closed, Ops projections, and FD issuance adapters. Not expressible as capability-local
 mechanism under ARCH-R21 alone.
 
-Candidate persistence of D-378 is **PROPOSED** only. CURRENT promotion waits for independent Fit
-PASS + authorized lock persistence.
-
 ---
 
-## 29. Proposed architecture-lock delta (REPORT ONLY — DO NOT APPLY TO CURRENT TIP)
+## 29. Applied architecture-lock delta
 
-If independent review accepts this candidate, a **separate** authorized governance task may persist
-approximately:
+Persisted at tip **GTM-R143 / STATE-R141**:
 
 ```text
-ROADMAP: future tip after lock (not claimed here)
-STATE: future tip after lock (not claimed here)
+ROADMAP: GTM-R142 → GTM-R143
+STATE: STATE-R140 → STATE-R141
 ARCHITECTURE: ARCH-R21 → ARCH-R22 (add ARCH-G28)
-DECISION_REGISTER: DR-19 → next DR; D-378 PROPOSED → CURRENT
+DECISION_REGISTER: DR-19 → DR-20; D-378 PROPOSED → CURRENT
 ADR-018: Proposed → Accepted
 This capability: DRAFT / CANDIDATE → CURRENT / ARCHITECTURE_LOCKED
 
@@ -946,8 +978,7 @@ IMP036I PLANNED / NOT_ACTIVATED preserved
 IMP039 / IMP040 NOT_ACTIVATED preserved
 ```
 
-Exact version numbers follow repository convention at persistence time. This candidate does **not**
-edit ROADMAP/STATE/`ARCHITECTURE.md` meta to claim Fit PASS or ARCH-R22 CURRENT.
+Architecture lock does **not** authorize implementation.
 
 ---
 
@@ -972,14 +1003,13 @@ IMPLEMENTATION_AUTHORIZED = NO
 IMPLEMENTATION_STARTED = NO
 SCHEMA_MIGRATION_EXECUTION = NOT_AUTHORIZED
 APPLICATION_CODE_IMPLEMENTATION = NOT_AUTHORIZED
-ARCHITECTURE_FIT_PASS_SELF_DECLARED = NO
-MERGE_AS_LOCK = NOT_AUTHORIZED
 DEPLOYMENT = NOT_AUTHORIZED
 FOUNDER_UAT = NOT_AUTHORIZED
 IMP_ACCEPTANCE = NOT_AUTHORIZED
 ```
 
-All schema/API/command shapes above are **architecture design only**.
+All schema/API/command shapes above are **architecture design only** until a separate
+implementation-authorization tranche.
 
 ---
 
@@ -989,6 +1019,7 @@ All schema/API/command shapes above are **architecture design only**.
 OPEN_ARCHITECTURE_QUESTIONS: NONE
 RED_DECISIONS_REQUIRED: NONE
 AF-036H-01 … AF-036H-14: all RESOLVED (AF-036H-12 = corrected Option A)
-Independent Architecture Fit re-review of this corrected exact candidate is required before PASS.
-Architecture Fit PASS / lock / implementation authorization are NOT claimed here.
+INDEPENDENT_ARCHITECTURE_FIT: PASS (PR #239 review 5295149318)
+ARCHITECTURE_FIT_PASS / LOCK: PERSISTED
+IMPLEMENTATION_AUTHORIZATION: NOT_CLAIMED
 ```

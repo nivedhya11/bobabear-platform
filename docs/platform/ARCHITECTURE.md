@@ -2,9 +2,9 @@
 {
   "status": "CURRENT",
   "authority": "GLOBAL_ARCHITECTURE",
-  "architectureVersion": "ARCH-R21",
-  "lastReviewed": "2026-09-22",
-  "supersedes": "ARCH-R20"
+  "architectureVersion": "ARCH-R22",
+  "lastReviewed": "2026-09-24",
+  "supersedes": "ARCH-R21"
 }
 -->
 
@@ -212,8 +212,9 @@ Other domains may reference or project it but must not establish competing mutab
 
 | Domain | Owns | Notes |
 |---|---|---|
-| Cart | Mutable shopping intent | Not commercial finality |
-| Checkout Snapshot | Immutable accepted commercial transaction | Historical purchased commerce derives from this |
+| Cart | Mutable shopping intent | Not commercial finality; may carry mutable fulfilment-mode intent before payment |
+| Checkout | Mutable pre-payment commercial intent | Owns mutable `fulfilmentMode` (`DELIVERY` \| `PICKUP`) and mode-conditional Pickup outlet selection; not purchased truth |
+| Checkout Snapshot | Immutable accepted commercial transaction | Historical purchased commerce derives from this; owns immutable fulfilment commitment ([D-378](./decision-register.md) / ARCH-G28) |
 | Payment | Original financial collection truth | Provider observations are not automatic Payment truth; remains `SUCCEEDED` after Refund |
 | Order | Post-purchase business lifecycle | Accepted lifecycle: `PLACED` \| `ACCEPTED` \| `FULFILLED` \| `CANCELLED` |
 | Refund | Financial reversal truth for returned funds | First-class aggregate (IMP-027 ARCHITECTURE_LOCKED; implementation COMPLETE_AND_ACCEPTED); does not rewrite Payment collection truth ([D-364](./decision-register.md)) |
@@ -222,14 +223,36 @@ Other domains may reference or project it but must not establish competing mutab
 | SignatureArtifact | Durable signature state and exact-byte signed statutory artifact authority | First-class aggregate under IMP-028 ([D-367](./decision-register.md)); exactly one authority per signing-required Financial Document; does not rewrite Financial Document sealed issuance facts or Payment/Order commercial truth |
 | Customer Menu Projection | Customer-facing storefront **READ MODEL** composed from existing catalog/menu, pricing, assortment/availability, modifier, and bundle authorities | CURRENT serving architecture ([D-368](./decision-register.md)); implemented and accepted under IMP-028B; not a new commercial authority |
 | Operations | Preparation, readiness, workforce action, and operational handoff facts | Delivery references confirmed Operations facts; it does not replace their authority |
-| Delivery | Provider-neutral dispatch and delivery-execution truth, including delivery proof, failure/return, and provider-cost reconciliation facts | First-class domain; capability architecture LOCKED under IMP-031; implementation AUTHORIZED / STARTED / COMPLETE / COMPLETE_AND_ACCEPTED; does not rewrite Order lifecycle or historical customer delivery charge |
+| Delivery | Provider-neutral dispatch and delivery-execution truth, including delivery proof, failure/return, and provider-cost reconciliation facts | First-class domain; capability architecture LOCKED under IMP-031; implementation AUTHORIZED / STARTED / COMPLETE / COMPLETE_AND_ACCEPTED; does not rewrite Order lifecycle or historical customer delivery charge; **must not** be created/invoked when Checkout Snapshot `fulfilmentMode = PICKUP` ([D-378](./decision-register.md) / ARCH-G28) |
 | Notification | FUTURE / NOT_IMPLEMENTED | IMP-033 architecture in progress; roadmapped foundation at [`capabilities/IMP-033-notification-foundation.md`](./capabilities/IMP-033-notification-foundation.md) |
 
 Accepted chain:
 
 ```text
-Cart → Checkout → Payment → Order
+Cart
+→ Checkout
+→ Checkout Snapshot
+     fulfilmentMode = DELIVERY | PICKUP
+→ Payment
+→ Order
 ```
+
+Fulfilment-mode branch (ARCH-R22 / D-378 / ARCH-G28; IMP-036H architecture LOCKED;
+implementation NOT_AUTHORIZED):
+
+```text
+DELIVERY
+→ Serviceability
+→ Delivery execution (may create)
+
+PICKUP
+→ selected eligible Outlet (selectedOutletId)
+→ no Delivery aggregate
+```
+
+Checkout remains mutable pre-payment intent. Checkout Snapshot remains the sole immutable purchased
+fulfilment truth. Order does not duplicate mutable fulfilment-mode authority. No `PickupOrder`.
+Scheduled fulfilment timing remains exclusive to IMP-036I (not activated).
 
 Refund relationship (independent reversal):
 
@@ -272,15 +295,23 @@ Refund PROCESSED
 
 Refund money truth (D-364) and issued Financial Document immutability (D-365) remain unchanged.
 
-Delivery relationship (ARCH-R18; capability architecture `ARCHITECTURE_LOCKED`):
+Delivery relationship (ARCH-R18; capability architecture `ARCHITECTURE_LOCKED`; mode-gated by
+ARCH-G28 / D-378):
 
 ```text
-Payment / Order / Serviceability / Operations prerequisites
-→ Delivery request
-→ provider-neutral booking and execution truth
-→ proof, failure/return, and provider-cost reconciliation facts
-→ authorized downstream Order/Refund/Operations workflows (never direct authority rewrite)
+Order → Checkout Snapshot → fulfilmentMode
+  DELIVERY:
+    Payment / Order / Serviceability / Operations prerequisites
+    → Delivery request
+    → provider-neutral booking and execution truth
+    → proof, failure/return, and provider-cost reconciliation facts
+    → authorized downstream Order/Refund/Operations workflows (never direct authority rewrite)
+  PICKUP:
+    Delivery create / request / dispatch = REJECT
 ```
+
+Authoritative Delivery request boundary MUST inspect Checkout Snapshot `fulfilmentMode` and fail
+closed for `PICKUP`.
 
 Order remains sole commercial lifecycle authority. Operations remains preparation/readiness and
 operational-handoff authority. Delivery references those confirmed facts and owns only neutral
@@ -506,6 +537,7 @@ Dynamic commerce must remain outside dynamic Next.js execution unless superseded
 | ARCH-G25 | Initial Administration API (D-373): workforce administration MUST use the dedicated `/api/admin/v1/*` trust surface hosted on the existing operations process, never customer `/api/v1/*`, the public workforce-auth router, or Operations Console `/api/operations/v1/*` Order routes. A workforce principal MUST be constructed only from a server-validated workforce session and server-loaded eligible identity; caller-supplied roles, permissions, memberships, scopes, organization/outlet/territory authority, pre-authorized flags, or principal-shaped objects are not authority. Existing Access Control and Organization application/domain authorities remain binding; no new permissions/roles and no new deployable admin service are introduced by this invariant. |
 | ARCH-G26 | Cost-optimized pilot infrastructure (D-374): pilot production MUST use a single DigitalOcean Basic Droplet with Docker Engine + Docker Compose, self-hosted PostgreSQL 18 on that Droplet, and DigitalOcean Spaces as mandatory off-host backup destination. Pilot production MUST NOT use Kubernetes/DOKS, k3s, Podman as production runtime, DigitalOcean App Platform, or Managed PostgreSQL. Permanent always-on cloud staging is not required for the pilot. Single-node failure domain is accepted for the pilot; HA and zero-downtime node failure are not promised. Recurring infrastructure cost must not be added without demonstrated operational need, measured capacity need, or explicit Founder approval; first routine scale action is vertical Droplet resize. Managed-provider PITR is not CURRENT; IMP-037 must re-Fit self-managed recovery against ARCH-R20 without claiming RPO/RTO solved by this invariant alone. |
 | ARCH-G27 | Edge / origin trust / application-authoritative security (D-375): V1 production public application traffic MUST traverse the locked Cloudflare Free supplemental edge before reaching the Droplet origin; Authenticated Origin Pulls + Full (strict) TLS + DigitalOcean Cloud Firewall Cloudflare-IP allowlisting MUST prevent trivial direct-origin bypass of intended edge controls on public app ports. Nginx owns CSP and browser security headers on the real static-export serving path. Application auth abuse controls, authorization, and payment/webhook verification remain authoritative even if edge controls are absent or bypassed. Trusted client IP derivation MUST use Nginx `real_ip` from Cloudflare (`CF-Connecting-IP`) with production `TRUST_PROXY_HOPS=1` after XFF replacement. Permanent attacker-triggered account lockout is forbidden. BOBA MUST NOT store or process raw PAN/CVV. Bot Fight Mode and Free edge rate limits are supplemental only. High-consequence workforce/admin mutations require server-enforced step-up proofs that reuse workforce-auth session authority (no second identity system). |
+| ARCH-G28 | Checkout fulfilment mode (D-378): Checkout Snapshot owns the immutable fulfilment commitment for a purchased order. `DELIVERY` and `PICKUP` are mutually exclusive modes. DELIVERY requires delivery destination/serviceability and may create Delivery execution. PICKUP binds an eligible selected Outlet, requires no customer delivery destination/serviceability, and must never create or invoke a Delivery aggregate. Mutable Checkout owns pre-payment mode intent; Order does not duplicate mutable fulfilment-mode authority; no PickupOrder; ASAP only (scheduled fulfilment remains IMP-036I). |
 
 ## 15. Decision References
 
@@ -523,7 +555,8 @@ Dynamic commerce must remain outside dynamic Next.js execution unless superseded
 | Initial Administration API workforce-admin transport | [D-373](./decision-register.md) (CURRENT architecture lock for dedicated `/api/admin/v1/*` on existing operations process; existing workforce session/principal and Access Control / Organization authorities remain binding; no new deployable service) |
 | Cost-optimized pilot infrastructure | [D-374](./decision-register.md); ADR-016; ARCH-G26 (CURRENT pilot production = single Droplet + Compose + self-hosted PostgreSQL 18 + Spaces; App Platform / Managed PostgreSQL / k8s / k3s rejected for pilot) |
 | Edge / origin trust / application-authoritative security | [D-375](./decision-register.md); ADR-017; ARCH-G27 (CURRENT V1 = Cloudflare Free supplemental edge + AOP/Full-strict + DO firewall allowlist + Nginx CSP/real_ip; application controls authoritative; capability lock [`capabilities/IMP-038-security-privacy-hardening.md`](./capabilities/IMP-038-security-privacy-hardening.md); IMP-038 implementation NOT_AUTHORIZED by this architecture alone) |
-| Provider-Neutral Delivery Foundation | ARCH-R18 / ARCH-G24; capability architecture [`capabilities/IMP-031-provider-neutral-delivery-foundation.md`](./capabilities/IMP-031-provider-neutral-delivery-foundation.md) (`ARCHITECTURE_LOCKED`; implementation AUTHORIZED / STARTED / COMPLETE / COMPLETE_AND_ACCEPTED); no new CURRENT decision |
+| Checkout fulfilment mode + Pickup boundary | [D-378](./decision-register.md); ADR-018; ARCH-G28 (CURRENT = Checkout Snapshot owns immutable `DELIVERY` \| `PICKUP`; Pickup fail-closed vs Delivery; capability lock [`capabilities/IMP-036H-customer-pickup-takeaway.md`](./capabilities/IMP-036H-customer-pickup-takeaway.md); IMP-036H implementation NOT_AUTHORIZED by this architecture alone) |
+| Provider-Neutral Delivery Foundation | ARCH-R18 / ARCH-G24; capability architecture [`capabilities/IMP-031-provider-neutral-delivery-foundation.md`](./capabilities/IMP-031-provider-neutral-delivery-foundation.md) (`ARCHITECTURE_LOCKED`; implementation AUTHORIZED / STARTED / COMPLETE / COMPLETE_AND_ACCEPTED); no new CURRENT decision; Delivery create/request gated by ARCH-G28 / D-378 when Snapshot `fulfilmentMode = PICKUP` |
 | V1 production payment provider / collection surface | [D-361](./decision-register.md) (Razorpay / Razorpay Standard Checkout); capability lock [`capabilities/IMP-026-razorpay-productionization.md`](./capabilities/IMP-026-razorpay-productionization.md) |
 | Razorpay webhook acknowledgement / post-payment Order recovery | [D-362](./decision-register.md) (amends D-361 ack/post-payment effect only; D-361 remains CURRENT for provider selection; acknowledgement timing further amended by D-363) |
 | Razorpay durable webhook inbox / asynchronous Payment processing | [D-363](./decision-register.md) (amends D-362 acknowledgement timing only; D-362 remains CURRENT for Order materialization outside provider-ack path, missing-Order recovery, secondary reconciliation, and no new deployable service) |

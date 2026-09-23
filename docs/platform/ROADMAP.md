@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R142",
+  "roadmapVersion": "GTM-R143",
   "acceptedThrough": "IMP-036G",
   "currentProductSlice": "IMP-036H",
   "nextProductSlice": "IMP-036I",
   "gtmBoundary": "IMP-040",
-  "lastReviewed": "2026-09-23",
-  "supersedes": "GTM-R141"
+  "lastReviewed": "2026-09-24",
+  "supersedes": "GTM-R142"
 }
 -->
 
@@ -34,7 +34,7 @@
   change) before the next slice begins: **ACCEPT → RECONCILE → ADVANCE**.
 - The historical IMP-026 → IMP-028 controlled-continuation exception (GTM-R15 onward) is **CLOSED**.
   It does **not** generalize to future slices and is **not** reopened by GTM-R138 / GTM-R139 /
-  GTM-R140 / GTM-R141 / GTM-R142.
+  GTM-R140 / GTM-R141 / GTM-R142 / GTM-R143.
 - **GTM-R138** records a **NEW**, Founder-authorized one-off exception
   `CONTINUATION_EXCEPTION: IMP037_PROVIDER_BLOCKED_TO_IMP038` (authority PR#179/5771367844) so
   IMP-038 may activate for PD-1 Product Definition work while IMP-037 remains an
@@ -373,24 +373,33 @@ IMP038_IMPLEMENTATION_AUTHORIZATION_BASE_HEAD: d14c3678b92a87052682b9559764654f5
 IMP038_IMPLEMENTATION_AUTHORIZATION_BASE_TREE: 682f1597a6f991cddde7d41e9e6705c1bed335b1
 IMP038_FOUNDER_UAT_REQUIRED: YES
 IMP038_FOUNDER_UAT: NOT_PERFORMED
-INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PASS
-INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_HEAD: 3b03164d6581c5a98a893c24e92eaddece004e90
-INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_TREE: 5bb499fa84a5bf02682b30518f2bf898ddb23540
-INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID: 5279884548
-ARCHITECTURE_FIT_EVALUATED_HEAD: 43007808849f093d84cbe710f32a728b41a9e5a2
-ARCHITECTURE_FIT_EVALUATED_TREE: 581fb23631df40044ec7b9c449545959a90b9998
-ARCHITECTURE_FIT_EVALUATED_WORKING_TREE_FINGERPRINT: ab00d1ab23f3c7d8b140feefcd1a0787f1fedf90ab08a9934c9a892a77c8184d
-IMP-036H: PLANNED
+IMP038_INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PASS
+IMP038_INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_HEAD: 3b03164d6581c5a98a893c24e92eaddece004e90
+IMP038_INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_TREE: 5bb499fa84a5bf02682b30518f2bf898ddb23540
+IMP038_INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID: 5279884548
+IMP038_ARCHITECTURE_FIT_EVALUATED_HEAD: 43007808849f093d84cbe710f32a728b41a9e5a2
+IMP038_ARCHITECTURE_FIT_EVALUATED_TREE: 581fb23631df40044ec7b9c449545959a90b9998
+IMP038_ARCHITECTURE_FIT_EVALUATED_WORKING_TREE_FINGERPRINT: ab00d1ab23f3c7d8b140feefcd1a0787f1fedf90ab08a9934c9a892a77c8184d
+IMP-036H: ARCHITECTURE_LOCKED
 IMP036H_ACTIVATED: YES
 IMP036H_PRODUCT_DEFINITION: APPROVED
 IMP036H_PRODUCT_DEFINITION_VERSION: PD-IMP-036H-DRAFT-1
 IMP036H_PRODUCT_DEFINITION_GATE: PASS
-IMP036H_ARCHITECTURE_FIT: NOT_PERFORMED
-IMP036H_ARCHITECTURE_LOCKED: NO
+IMP036H_ARCHITECTURE_FIT: PASS
+IMP036H_ARCHITECTURE_LOCKED: YES
 IMP036H_IMPLEMENTATION_AUTHORIZED: NO
 IMP036H_STARTED: NO
 IMP036H_ACCEPTED: NO
 IMP036H_FOUNDER_UAT_REQUIRED: YES
+INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PASS
+INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_HEAD: aab814c238c499367ee921e9f8ffb03ff7b1b373
+INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_TREE: 93d4e83d4a73c61c9439bcaae2799920fcca46db
+INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID: 5295149318
+ARCHITECTURE_FIT_EVALUATED_HEAD: aab814c238c499367ee921e9f8ffb03ff7b1b373
+ARCHITECTURE_FIT_EVALUATED_TREE: 93d4e83d4a73c61c9439bcaae2799920fcca46db
+ARCHITECTURE_FIT_EVALUATED_WORKING_TREE_FINGERPRINT: 74b1254f22c9131a6e073522cf9310f264866e442cc074775ad5f4b214f0e51e
+D-378_CREATED: YES
+ARCH_R22_CREATED: YES
 IMP-036I: PLANNED
 IMP036I_ACTIVATED: NO
 IMP-039: PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED
@@ -417,22 +426,42 @@ IMP-036D_ACCEPTED: YES
 IMP-036D_FOUNDER_UAT: PASS
 ```
 
-**GTM-R142** persists independently executed Product Definition Gate PASS for IMP-036H candidate
+**GTM-R143** persists Architecture Fit PASS and capability architecture lock for IMP-036H against
+exact evaluated candidate HEAD `aab814c238c499367ee921e9f8ffb03ff7b1b373` / tree
+`93d4e83d4a73c61c9439bcaae2799920fcca46db` / fingerprint
+`74b1254f22c9131a6e073522cf9310f264866e442cc074775ad5f4b214f0e51e`; independent Architecture Fit
+evidence PR #239 review `5295149318` — Fit Result PASS. Promotes **D-378** PROPOSED → CURRENT;
+ADR-018 Proposed → Accepted; ARCH-R21 → **ARCH-R22** (adds **ARCH-G28**); DR-19 → **DR-20**.
+Formal IMP-036H ROADMAP lifecycle → `ARCHITECTURE_LOCKED`
+(`IMP036H_ARCHITECTURE_FIT: PASS`; `IMP036H_ARCHITECTURE_LOCKED: YES`). Preserves
+`PROGRAM_PAUSE: PRE_GTM_PRODUCT_INSERTION_PROVIDER_BLOCKED` (**D-377**); `acceptedThrough = IMP-036G`;
+`currentProductSlice = IMP-036H`; `nextProductSlice = IMP-036I`; `pendingAcceptance = NONE`;
+`gtmBoundary = IMP-040`. Implementation remains `NOT_AUTHORIZED` / `NOT_STARTED`
+(`IMP036H_ACCEPTED: NO`; `IMP036H_FOUNDER_UAT_REQUIRED: YES`; `IMP036I_ACTIVATED: NO`). Holds
+IMP-037 / IMP-038 unchanged (including frozen IMP-038 runtime evidence). Does **not** authorize/start
+implementation, execute schema migration, accept IMP-036H, activate IMP-036I / IMP-039 / IMP-040,
+accept IMP-037/038, or close `GAP-EXT-ASSESS-001`. Locked capability:
+[`capabilities/IMP-036H-customer-pickup-takeaway.md`](./capabilities/IMP-036H-customer-pickup-takeaway.md).
+Next gate = Implementation Authorization — **not** automatic implementation start.
+
+**GTM-R142** (historical prior tip; superseded by GTM-R143) persisted independently executed Product
+Definition Gate PASS for IMP-036H candidate
 `PD-IMP-036H-DRAFT-1` (`IMP036H_PRODUCT_DEFINITION: APPROVED`;
 `IMP036H_PRODUCT_DEFINITION_GATE: PASS`). Gate-evaluated candidate HEAD
 `91d3714a9efba59c309db159d112fdbb6c46dc72` / tree `3f8459cfc88c97f4267528fe5b8c3e8773692245` /
 fingerprint `81395a83ca492a791ee1faca3fdbf627b985c30adf00d2163693b3ccd6523664`; independent gate
 evidence PR#238 comment `5797812536` — Gate Result PASS. The later gate-persistence commit is
-**not** the evaluated artifact. Preserves `PROGRAM_PAUSE: PRE_GTM_PRODUCT_INSERTION_PROVIDER_BLOCKED`
+**not** the evaluated artifact. Preserved `PROGRAM_PAUSE: PRE_GTM_PRODUCT_INSERTION_PROVIDER_BLOCKED`
 (**D-377**); `acceptedThrough = IMP-036G`; `currentProductSlice = IMP-036H`;
 `nextProductSlice = IMP-036I`; `pendingAcceptance = NONE`; `gtmBoundary = IMP-040`. Formal IMP-036H
-ROADMAP lifecycle remains `PLANNED` (`IMP036H_ACTIVATED: YES`; Architecture Fit `NOT_PERFORMED`;
+ROADMAP lifecycle remained `PLANNED` (`IMP036H_ACTIVATED: YES`; Architecture Fit `NOT_PERFORMED`;
 architecture `NOT_LOCKED`; implementation `NOT_AUTHORIZED` / `NOT_STARTED`; `IMP036H_ACCEPTED: NO`;
-`IMP036H_FOUNDER_UAT_REQUIRED: YES`; `IMP036I_ACTIVATED: NO`). Holds IMP-037 / IMP-038 unchanged
-(including frozen IMP-038 runtime evidence). Does **not** perform Architecture Fit, lock
+`IMP036H_FOUNDER_UAT_REQUIRED: YES`; `IMP036I_ACTIVATED: NO`). Held IMP-037 / IMP-038 unchanged
+(including frozen IMP-038 runtime evidence). Did **not** perform Architecture Fit, lock
 architecture, authorize/start implementation, accept IMP-036H, activate IMP-036I / IMP-039 /
-IMP-040, accept IMP-037/038, or close `GAP-EXT-ASSESS-001`. ARCH-R21 / DR-19 unchanged. Next gate =
-Architecture Fit — **not** implementation.
+IMP-040, accept IMP-037/038, or close `GAP-EXT-ASSESS-001`. ARCH-R21 / DR-19 unchanged at that tip.
+Historical next gate = Architecture Fit — **not** implementation. Superseded as CURRENT tip by
+GTM-R143.
 
 **GTM-R141** (historical prior tip; superseded by GTM-R142) activated Founder-authorized pre-GTM
 product insertion under **D-377** / `PROGRAM_PAUSE: PRE_GTM_PRODUCT_INSERTION_PROVIDER_BLOCKED`.
@@ -635,15 +664,17 @@ IMP-036D remains `COMPLETE_AND_ACCEPTED`. Concise acceptance identity: UAT candi
 
 Under `PROGRAM_PAUSE: PRE_GTM_PRODUCT_INSERTION_PROVIDER_BLOCKED` (**D-377**), the active product
 slice is IMP-036H — Customer Pickup / Takeaway
-(`currentProductSlice = IMP-036H`; `IMP036H_ACTIVATED: YES`; formal lifecycle `PLANNED`;
+(`currentProductSlice = IMP-036H`; `IMP036H_ACTIVATED: YES`; formal lifecycle `ARCHITECTURE_LOCKED`;
 Product Definition `PD-IMP-036H-DRAFT-1` = **APPROVED**;
-`IMP036H_PRODUCT_DEFINITION_GATE: PASS`; Architecture Fit `NOT_PERFORMED`; architecture
-`NOT_LOCKED`; implementation `NOT_AUTHORIZED` / `NOT_STARTED`; `IMP036H_ACCEPTED: NO`;
+`IMP036H_PRODUCT_DEFINITION_GATE: PASS`; Architecture Fit `PASS`; architecture
+`LOCKED`; implementation `NOT_AUTHORIZED` / `NOT_STARTED`; `IMP036H_ACCEPTED: NO`;
 `IMP036H_FOUNDER_UAT_REQUIRED: YES`; `pendingAcceptance = NONE`; `nextProductSlice = IMP-036I`;
 `IMP036I_ACTIVATED: NO`). Per-IMP APPROVED Product Definition:
 [`product/IMP-036H/product-definition.md`](./product/IMP-036H/product-definition.md).
-Gate PASS does **not** perform Architecture Fit, lock architecture, or authorize/start
-implementation. Next gate = Architecture Fit.
+Locked capability architecture:
+[`capabilities/IMP-036H-customer-pickup-takeaway.md`](./capabilities/IMP-036H-customer-pickup-takeaway.md)
+(D-378 / ADR-018 / ARCH-R22 / ARCH-G28). Architecture lock does **not** authorize or start
+implementation. Next gate = Implementation Authorization.
 
 Paused GTM infrastructure predecessors remain historically progressed and explicitly held:
 
@@ -678,9 +709,9 @@ Supporting experience contract is historical after acceptance:
 Per-IMP Product Definition remains:
 [`product/IMP-036G/product-definition.md`](./product/IMP-036G/product-definition.md).
 Accepted UAT product candidate remains `fbf690a67cda51bd6bbc1bad4a9d26f574c4286e` / tree
-`84b6a502fcec646cb5a65f3257f19b85c64f49e1`. ARCH-R21 / DR-19 are CURRENT
+`84b6a502fcec646cb5a65f3257f19b85c64f49e1`. ARCH-R22 / DR-20 are CURRENT
 (`D-374_CREATED: YES`; `ARCH_R20_CREATED: YES`; `D-375_CREATED: YES`; `ARCH_R21_CREATED: YES`;
-`D-377_CREATED: YES`); no ARCH revision is created for this Product Definition Gate PASS tip.
+`D-377_CREATED: YES`; `D-378_CREATED: YES`; `ARCH_R22_CREATED: YES`).
 `SCHEMA_CHANGE_REQUIRED: YES` remains the architecture conclusion recorded for IMP-036G;
 `NEW_PERMISSION: NO`; `NEW_ROLE: NO`; `NEW_SCOPE_MODEL: NO` for that accepted slice.
 
@@ -746,7 +777,7 @@ Historical Food Direct insertion narration remains in
 | IMP-036E | Store Operations Management | COMPLETE_AND_ACCEPTED |
 | IMP-036F | Catalog, Menu, Pricing & Promotions Management | COMPLETE_AND_ACCEPTED |
 | IMP-036G | Administration Console V2 | COMPLETE_AND_ACCEPTED |
-| IMP-036H | Customer Pickup / Takeaway | PLANNED (IMP036H_ACTIVATED: YES; PD APPROVED; Gate PASS; Fit NOT_PERFORMED; NOT_LOCKED; NOT_AUTHORIZED / NOT_STARTED) |
+| IMP-036H | Customer Pickup / Takeaway | ARCHITECTURE_LOCKED (IMP036H_ACTIVATED: YES; PD APPROVED; Gate PASS; Fit PASS; LOCKED; NOT_AUTHORIZED / NOT_STARTED) |
 | IMP-036I | Scheduled Fulfilment | PLANNED (IMP036I_ACTIVATED: NO) |
 | IMP-037 | Backup, Restore & Migration Readiness | IMPLEMENTATION_IN_PROGRESS (IMP037_HOLD: YES; BLOCKED_PROVIDER_ACCESS) |
 | IMP-038 | Security & Privacy Hardening | IMPLEMENTATION_IN_PROGRESS (IMP038_HOLD: YES; IMPLEMENTATION_COMPLETE / NOT_ACCEPTED; external assessment deferred) |
@@ -763,7 +794,7 @@ IMP-036G → IMP-036H → IMP-036I (planned) → IMP-037 (held) without reopenin
 ```text
 FIGMA_REQUIRED_FOR_INITIAL_IMPLEMENTATION: NO
 IMP-036A → IMP-036G: COMPLETE_AND_ACCEPTED
-IMP-036H: PLANNED (IMP036H_ACTIVATED: YES; currentProductSlice; PD APPROVED; Gate PASS)
+IMP-036H: ARCHITECTURE_LOCKED (IMP036H_ACTIVATED: YES; currentProductSlice; PD APPROVED; Gate PASS; Fit PASS; LOCKED; NOT_AUTHORIZED)
 IMP-036I: PLANNED / NOT_ACTIVATED (IMP036I_ACTIVATED: NO; nextProductSlice)
 IMP-037: IMPLEMENTATION_IN_PROGRESS (IMP037_HOLD: YES; IMP037_ACTIVATED: YES; provider-blocked)
 IMP-038: IMPLEMENTATION_IN_PROGRESS (IMP038_HOLD: YES; IMP038_ACTIVATED: YES; IMPLEMENTATION_COMPLETE / NOT_ACCEPTED; external assessment deferred)
@@ -828,6 +859,25 @@ Current public GTM boundary is **IMP-040**, not IMP-035.
 
 Historical revision evidence for GTM-R1…GTM-R113 is preserved byte-for-byte in
 [`history/ROADMAP-GTM-R113-pre-compression.md`](./history/ROADMAP-GTM-R113-pre-compression.md).
+
+### GTM-R143 — 2026-09-24
+
+- Persist Architecture Fit PASS and capability architecture lock for IMP-036H
+  (`IMP036H_ARCHITECTURE_FIT: PASS`; `IMP036H_ARCHITECTURE_LOCKED: YES`; formal lifecycle
+  `ARCHITECTURE_LOCKED`).
+- Exact Fit-evaluated candidate HEAD `aab814c238c499367ee921e9f8ffb03ff7b1b373` / tree
+  `93d4e83d4a73c61c9439bcaae2799920fcca46db` / fingerprint
+  `74b1254f22c9131a6e073522cf9310f264866e442cc074775ad5f4b214f0e51e`; independent Fit evidence
+  PR #239 review `5295149318`.
+- Promote D-378 PROPOSED → CURRENT; ADR-018 Proposed → Accepted; ARCH-R21 → ARCH-R22 (ARCH-G28);
+  DR-19 → DR-20.
+- Preserves `acceptedThrough = IMP-036G`; `currentProductSlice = IMP-036H`;
+  `nextProductSlice = IMP-036I`; `pendingAcceptance = NONE`; `PROGRAM_PAUSE` / D-377;
+  IMP-037/038 HOLD; IMP-036I / IMP-039 / IMP-040 NOT_ACTIVATED.
+- Preserves `IMP036H_IMPLEMENTATION_AUTHORIZED: NO`; `IMP036H_STARTED: NO`; `IMP036H_ACCEPTED: NO`.
+- Does **not** authorize/start implementation, execute schema migration, accept IMP-036H, activate
+  IMP-036I / IMP-039 / IMP-040, accept IMP-037/038, or close `GAP-EXT-ASSESS-001`.
+- Next gate = Implementation Authorization.
 
 ### GTM-R142 — 2026-09-23
 

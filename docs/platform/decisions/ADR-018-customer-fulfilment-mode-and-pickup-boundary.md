@@ -1,8 +1,8 @@
 ---
-Status: Proposed
+Status: Accepted
 Decision date: 2026-09-23
-Last updated: 2026-09-23
-Decision ID: D-378 (PROPOSED — not CURRENT)
+Last updated: 2026-09-24
+Decision ID: D-378
 Amends: none (layers on ADR-008 serviceability/cart/checkout; ADR-007 pricing; ADR-011 delivery; D-357 order lifecycle; D-365 financial documents; D-372 operations transport)
 Amended by: none
 ---
@@ -11,22 +11,34 @@ Amended by: none
 
 ## Status
 
-**Proposed** (2026-09-23). Register identity **[D-378](../decision-register.md)** is **PROPOSED** only.
-Global architecture tip remains **ARCH-R21**. Proposed invariant **ARCH-G28** and architecture
-revision **ARCH-R22** are recorded in this ADR and the IMP-036H Architecture Fit candidate; they
-are **not** CURRENT until independent Architecture Fit review PASS and authorized lock persistence.
+**Accepted** (2026-09-24). Binding CURRENT decision **[D-378](../decision-register.md)**.
+Global architecture tip is **ARCH-R22** (**ARCH-G28**). IMP-036H Architecture Fit = **PASS**;
+architecture = **LOCKED**. Implementation remains **NOT AUTHORIZED**.
 
 ```text
-D-378_STATUS: PROPOSED
-ARCH-R22_STATUS: PROPOSED_LOCK_DELTA (not applied to ARCHITECTURE.md meta)
-ARCH-G28_STATUS: PROPOSED
-IMP036H_ARCHITECTURE_LOCKED: NO
+D-378_STATUS: CURRENT
+ARCH-R22_STATUS: CURRENT
+ARCH-G28_STATUS: CURRENT
+IMP036H_ARCHITECTURE_FIT: PASS
+IMP036H_ARCHITECTURE_LOCKED: YES
 IMP036H_IMPLEMENTATION_AUTHORIZED: NO
 ```
 
-Capability Fit candidate:
+Locked capability architecture:
 
 [`../capabilities/IMP-036H-customer-pickup-takeaway.md`](../capabilities/IMP-036H-customer-pickup-takeaway.md)
+
+Independent Architecture Fit evidence (exact evaluated candidate):
+
+```text
+FIT_EVALUATED_HEAD: aab814c238c499367ee921e9f8ffb03ff7b1b373
+FIT_EVALUATED_TREE: 93d4e83d4a73c61c9439bcaae2799920fcca46db
+FIT_EVALUATED_FINGERPRINT: 74b1254f22c9131a6e073522cf9310f264866e442cc074775ad5f4b214f0e51e
+INDEPENDENT_ARCHITECTURE_FIT: PASS
+INDEPENDENT_ARCHITECTURE_FIT_EVIDENCE: PR #239 review 5295149318
+```
+
+Historical Fit-candidate authoring tip (pre-lock): GTM-R142 / STATE-R140 / ARCH-R21 / DR-19.
 
 ## Context
 
@@ -35,17 +47,7 @@ Takeaway as a peer to Delivery without a separate PickupOrder, new Order lifecyc
 model, new Delivery model, new auth realm, new deployable service, new queue/worker, new role, or
 new permission. Scheduled fulfilment remains exclusive to IMP-036I.
 
-Verified CURRENT tip at Fit candidate authoring:
-
-```text
-ROADMAP = GTM-R142
-STATE = STATE-R140
-ARCHITECTURE = ARCH-R21
-DECISION_REGISTER = DR-19
-MAIN_HEAD = 3f1a5bf6b84e48752d586b58f475d73b5413cc04
-```
-
-Evidence constraints from repository inspection (Fit candidate):
+Verified repository evidence at Fit candidate authoring (retained):
 
 - Checkout Snapshot destination fields and `serviceabilityEvaluatedAt` are Delivery-shaped NOT NULL
   (`drizzle/0015_checkout.sql`).
@@ -80,7 +82,7 @@ PICKUP:
   commercial evaluation must not apply delivery charge definitions
 ```
 
-Proposed global invariant **ARCH-G28**:
+Binding global invariant **ARCH-G28**:
 
 > Checkout Snapshot owns the immutable fulfilment commitment for a purchased order. `DELIVERY` and
 > `PICKUP` are mutually exclusive modes. DELIVERY requires delivery destination/serviceability and
@@ -100,11 +102,12 @@ Proposed global invariant **ARCH-G28**:
 
 ### Negative / accepted constraints
 
-- Schema migration required (forward-only; no `drizzle-kit push`).
-- Financial Document issuance adapters must become fulfilment-mode aware (see Fit AF-036H-12).
+- Schema migration required (forward-only; no `drizzle-kit push`). Migration is **not** executed by
+  architecture lock alone.
+- Financial Document issuance adapters must become fulfilment-mode aware (AF-036H-12).
 - Notification wording for Delivery-only semantic types must remain Delivery-gated.
 
-### Financial Document consequence (AF-036H-12)
+### Financial Document consequence (AF-036H-12 — corrected Option A)
 
 PICKUP Financial Document issuance is fulfilment-aware.
 
@@ -119,6 +122,7 @@ authority already sealed on the purchased Snapshot. DELIVERY continues to map re
 the sealed Delivery destination. Place-of-supply continues under existing issuer/profile policy.
 `NO_NEW_LEGAL_CLAIM` — nullable ≠ a legal conclusion that recipient particulars can never be
 required; D-365 fail-closed remains if a required sealed fact cannot be produced.
+D-366 / D-367 remain unchanged.
 
 ### Deferred
 
@@ -128,10 +132,9 @@ required; D-365 fail-closed remains if a required sealed fact cannot be produced
 
 ## Non-decisions
 
-This Proposed ADR does **not**:
+This Accepted ADR does **not**:
 
 - authorize IMP-036H implementation or schema execution
-- lock ARCH-R22 / ARCH-G28 as CURRENT
 - activate IMP-036I / IMP-039 / IMP-040
 - accept or reopen IMP-037 / IMP-038
 - invent GST / legal place-of-supply or recipient-particular claims beyond mapping sealed
@@ -140,5 +143,5 @@ This Proposed ADR does **not**:
 ## References
 
 - Product Definition: [`../product/IMP-036H/product-definition.md`](../product/IMP-036H/product-definition.md)
-- Capability Fit candidate: [`../capabilities/IMP-036H-customer-pickup-takeaway.md`](../capabilities/IMP-036H-customer-pickup-takeaway.md)
-- ADR-007, ADR-008, ADR-011; D-357, D-365, D-372, D-377
+- Locked capability: [`../capabilities/IMP-036H-customer-pickup-takeaway.md`](../capabilities/IMP-036H-customer-pickup-takeaway.md)
+- ADR-007, ADR-008, ADR-011; D-357, D-365, D-372, D-377, D-378
