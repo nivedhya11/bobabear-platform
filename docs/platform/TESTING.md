@@ -34,7 +34,7 @@ PASS). Under `PROGRAM_PAUSE: PRE_GTM_PRODUCT_INSERTION_PROVIDER_BLOCKED` (**D-37
 the activated `currentProductSlice` (`IMP036H_ACTIVATED: YES`; formal lifecycle `ARCHITECTURE_LOCKED`; Product
 Definition `PD-IMP-036H-DRAFT-1` = `APPROVED`; Product Definition Gate
 `PASS`; Architecture Fit `PASS`; architecture `LOCKED`; implementation
-`NOT_AUTHORIZED` / `NOT_STARTED`; `IMP036H_ACCEPTED: NO`; `nextProductSlice` = IMP-036I;
+`AUTHORIZED` / `NOT_STARTED` at tip GTM-R144 / STATE-R142; `IMP036H_ACCEPTED: NO`; `nextProductSlice` = IMP-036I;
 `IMP036I_ACTIVATED: NO`). IMP-038 remains held (`IMP038_HOLD: YES`;
 `IMPLEMENTATION_IN_PROGRESS (HOLD — IMPLEMENTATION_COMPLETE / NOT_ACCEPTED)`; Product Definition
 `APPROVED` / `PD-IMP-038-DRAFT-2`; Gate PASS; Architecture Fit PASS; architecture LOCKED;
