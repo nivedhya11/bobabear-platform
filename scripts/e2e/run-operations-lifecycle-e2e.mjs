@@ -87,6 +87,7 @@ try {
     BOBA_BEAR_ALLOW_UNSAFE_ADAPTERS: "true",
     BOBA_BEAR_DATABASE_SSL_MODE: "disable",
     BOBA_BEAR_DATABASE_MIGRATION_URL: hostMigrationDatabaseUrl,
+    BOBA_BEAR_PUBLIC_ORIGIN: origin,
   };
   const seedEnv = {
     BOBA_BEAR_ENV: "test",
