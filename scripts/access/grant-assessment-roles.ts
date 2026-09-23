@@ -75,35 +75,43 @@ function parseArgs(argv: readonly string[]): Readonly<{ actorId: string }> {
   return Object.freeze({ actorId });
 }
 
-function applyStagingDatabaseUrlFromEnvFiles(projectRoot: string): void {
-  if (process.env.BOBA_BEAR_DATABASE_URL) return;
+/**
+ * Build a config `source` from staging env files with Compose hostname rewritten
+ * for host-side execution. Pass the object to `loadConfig` — never mutate
+ * `process.env.BOBA_BEAR_DATABASE_*` (database audit boundary).
+ */
+function buildStagingWorkerConfigSource(
+  projectRoot: string,
+): Record<string, string | undefined> {
   const runtimePath = path.join(projectRoot, ".env.staging", ".env.runtime.docker.local");
   const parsed = parseEnvFile(readFileSync(runtimePath, "utf8"));
   const extracted = extractValues(parsed);
-  if (!extracted.ok) {
+  if (!extracted.ok || extracted.values === undefined) {
     throw new Error("Unable to parse .env.staging/.env.runtime.docker.local");
   }
-  const url = String(extracted.values.BOBA_BEAR_DATABASE_URL ?? "").replace(
+  const values = extracted.values;
+  const databaseUrl = String(values.BOBA_BEAR_DATABASE_URL ?? "").replace(
     "@postgres:5432",
     "@127.0.0.1:5433",
   );
-  process.env.BOBA_BEAR_DATABASE_URL = url;
-  process.env.BOBA_BEAR_DATABASE_SSL_MODE =
-    extracted.values.BOBA_BEAR_DATABASE_SSL_MODE ?? "disable";
-  process.env.BOBA_BEAR_ENV = extracted.values.BOBA_BEAR_ENV ?? "local";
-  if (extracted.values.BOBA_BEAR_PUBLIC_ORIGIN) {
-    process.env.BOBA_BEAR_PUBLIC_ORIGIN = extracted.values.BOBA_BEAR_PUBLIC_ORIGIN;
-  }
+  return {
+    ...process.env,
+    BOBA_BEAR_DATABASE_URL: databaseUrl,
+    BOBA_BEAR_DATABASE_SSL_MODE: values.BOBA_BEAR_DATABASE_SSL_MODE ?? "disable",
+    BOBA_BEAR_ENV: values.BOBA_BEAR_ENV ?? "local",
+    BOBA_BEAR_PUBLIC_ORIGIN: values.BOBA_BEAR_PUBLIC_ORIGIN,
+    NODE_ENV: values.NODE_ENV ?? process.env.NODE_ENV ?? "production",
+  };
 }
 
 async function main(): Promise<void> {
   const scriptDir = path.dirname(fileURLToPath(import.meta.url));
   const projectRoot = path.resolve(scriptDir, "..", "..");
-  applyStagingDatabaseUrlFromEnvFiles(projectRoot);
   loadEnvConfig(projectRoot, true);
 
   const { actorId } = parseArgs(process.argv.slice(2));
-  const workerConfig = loadConfig({ processKind: "worker", source: process.env });
+  const source = buildStagingWorkerConfigSource(projectRoot);
+  const workerConfig = loadConfig({ processKind: "worker", source });
   const persistence = getApplicationPersistence(workerConfig);
   try {
     const actor = await resolveWorkforcePrincipalFromDatabase(persistence, actorId);
