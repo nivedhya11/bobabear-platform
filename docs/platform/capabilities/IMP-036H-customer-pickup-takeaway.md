@@ -663,37 +663,112 @@ D-365 Financial Document model:
 - Issued FD stores optional `recipient_display_name`, `recipient_phone_e164`, `recipient_address`,
   `place_of_supply_state_code` (nullable in `drizzle/0020_financial_document.sql`).
 - FD consumes Checkout Snapshot commercial lines; does not rewrite Snapshot.
+- ARCH-G16 / D-365: issued documents must not be reconstructed from mutable current customer
+  profile, catalog, tax configuration, Payment state, Refund state, or Order state.
 
 Current adapters (`tax-invoice-from-order.ts`, `receipt-voucher-from-payment.ts`) read
-`snapshot.destination` for recipient particulars. Place-of-supply already falls back to issuer
-profile `stateCode` when destination state is not a GST 2-digit code — restaurant performance
-location is already the practical seal path.
+`snapshot.destination` for recipient particulars (Delivery-shaped coupling). Place-of-supply
+already falls back to issuer profile `stateCode` when destination state is not a GST 2-digit
+code — restaurant performance location remains the practical seal path under existing accepted
+issuer/profile policy.
 
-### Verdict: Option A
+Checkout/Order ownership currently seals `customerAuthUserId` but does **not** seal immutable
+customer name, phone, or recipient address for Pickup. Mutable `customer_auth_users` / customer
+profile must never be queried at Receipt Voucher or Tax Invoice issuance to manufacture recipient
+particulars.
+
+### Verdict: Option A (corrected)
 
 ```text
-A. Existing financial-document model can issue correctly from a PICKUP snapshot without a
-   Delivery destination.
+A. Existing financial-document model supports Pickup without a Delivery destination.
+   Optional recipient particulars remain structurally nullable; no new FD aggregate or statutory
+   type is required.
 ```
 
-Architecture Fit mechanism (implementation-time; not legal advice):
+```text
+NO_NEW_LEGAL_CLAIM
+nullable under current architecture
+  !=
+legal conclusion that recipient particulars can never be required
+```
 
-| FD command field | DELIVERY source (preserve) | PICKUP source |
-|---|---|---|
-| recipientDisplayName / phone | sealed destination recipient | authenticated customer identity already on Order/checkout ownership |
-| recipientAddress | sealed destination address | sealed Pickup location snapshot address string |
-| placeOfSupplyStateCode | existing adapter logic (numeric dest state else issuer profile) | issuer profile / existing fallback (no fake Delivery destination) |
+Existing D-365 fail-closed principle remains: if an applicable statutory/document policy requires
+a fact that cannot be produced from authoritative sealed data, issuance fails closed rather than
+inventing that fact. IMP-036H merely avoids inventing recipient facts.
+
+### Mode-aware mapping (implementation-time; not legal advice)
+
+#### DELIVERY (preserve — no regression)
+
+| FD command field | Source |
+|---|---|
+| recipientDisplayName | sealed Delivery destination `recipientName` |
+| recipientPhoneE164 | sealed Delivery destination `recipientPhone` |
+| recipientAddress | sealed Delivery destination address |
+| placeOfSupplyStateCode | existing accepted D-365 / issuer-profile logic |
+
+#### PICKUP (IMP-036H V1)
+
+| FD command field | Source |
+|---|---|
+| recipientDisplayName | `null` unless a genuinely immutable recipient fact already exists in the purchased Snapshot under separate accepted authority |
+| recipientPhoneE164 | `null` (same rule) |
+| recipientAddress | `null` (same rule) |
+| placeOfSupplyStateCode | existing D-365 issuer/profile policy (no fake Delivery destination) |
 
 ```text
-Do NOT invent a fake customer Delivery address solely to satisfy a renderer.
-Do NOT claim GST legal correctness beyond mapping sealed commercial facts into existing FD fields.
+Do NOT obtain recipient fields from mutable current customer-auth / customer profile / other
+mutable customer state at issuance.
+Do NOT use OutletPickupProfile address, Pickup Snapshot location, selected Outlet address, or
+serviceability origin as recipientAddress.
+Do NOT invent a fake customer Delivery destination solely to satisfy a renderer or validator.
+Do NOT introduce speculative immutable purchaser name / phone / email / billing-address Snapshot
+fields solely to make FD recipient fields non-null (FD-036H-20 data minimization; recipient
+fields are structurally optional; IMP-036H does not require new customer billing/recipient data).
+Prefer absence over speculative PII persistence.
+```
+
+Pickup-location facts remain independently sealed on Checkout Snapshot for fulfilment, customer
+confirmation, Order projection, Ops projection, and historical pickup instructions. They are
+**not** Financial Document recipient-address authority.
+
+If later legal review, product requirement, B2B/GST customer requirement, or document policy
+requires Pickup recipient particulars, that must be separately authorized and the necessary
+immutable customer facts must be sealed before issuance — never reconstructed from mutable
+current customer state.
+
+### Issuance paths covered
+
+**Receipt Voucher** (`Payment SUCCEEDED` → `RECEIPT_VOUCHER`):
+
+- May issue before an Order exists.
+- Pickup mapping depends only on Payment + Checkout + Checkout Snapshot + effective
+  issuer/profile authority — never on Order presence.
+- When `snapshot.fulfilmentMode = PICKUP`: recipient fields `null` as above;
+  `placeOfSupplyStateCode` = existing issuer/profile policy; no Pickup-location substitution.
+
+**Tax Invoice** (`Order FULFILLED` → `TAX_INVOICE`):
+
+- When `snapshot.fulfilmentMode = PICKUP`: recipient fields `null` as above;
+  `placeOfSupplyStateCode` = existing issuer/profile policy.
+- Do not load current customer name/phone to populate issued immutable document truth.
+
+### Refund / statutory reversal continuity
+
+IMP-036H does **not** alter D-366 `RefundStatutoryDecision`, D-367 `SignatureArtifact`, Refund
+Voucher, Credit Note, or existing immutable prior-document semantics. Where those paths inherit
+recipient facts from an existing Financial Document, preserve existing authority. No
+Pickup-specific reversal semantics.
+
+```text
 Payment / tax / issuer truth unchanged (D-365).
+Refund statutory / signing authorities unchanged (D-366 / D-367).
 ```
 
-Not Option B — no genuine immutable D-365 dependency on Delivery destination columns; dependency is
-adapter coupling, remediated by fulfilment-aware issuance adapters.
+Not Option B — no genuine immutable D-365 dependency on Delivery destination columns; dependency
+is adapter coupling, remediated by fulfilment-aware issuance adapters under corrected Option A.
 
-**AF-036H-12: RESOLVED** (Option A; no RED)
+**AF-036H-12: RESOLVED — corrected Option A** (no RED)
 
 ---
 
@@ -813,13 +888,14 @@ No DigitalOcean access required for Architecture Fit or later application implem
 | AF-036H-09 | order.fulfil reuse | **RESOLVED** | §16 |
 | AF-036H-10 | customer/workforce projections | **RESOLVED** | §18 |
 | AF-036H-11 | notification semantics | **RESOLVED** | §20 |
-| AF-036H-12 | Financial Document compatibility | **RESOLVED** (Option A) | §21 |
+| AF-036H-12 | Financial Document compatibility | **RESOLVED — corrected Option A** | §21 |
 | AF-036H-13 | historical backward compatibility | **RESOLVED** | §22 |
 | AF-036H-14 | IMP-036I extensibility without speculative scheduling | **RESOLVED** | §23 |
 
 ```text
 HIDDEN_TODO: NONE
-RED_DECISION_REQUIRED: NONE
+RED_DECISIONS_REQUIRED: NONE
+OPEN_ARCHITECTURE_QUESTIONS: NONE
 ```
 
 ---
@@ -910,10 +986,9 @@ All schema/API/command shapes above are **architecture design only**.
 ## 32. Open architecture questions
 
 ```text
-NONE material for Fit questions AF-036H-01…14.
-Independent review may still require remediation before PASS.
-```
-
-```text
+OPEN_ARCHITECTURE_QUESTIONS: NONE
 RED_DECISIONS_REQUIRED: NONE
+AF-036H-01 … AF-036H-14: all RESOLVED (AF-036H-12 = corrected Option A)
+Independent Architecture Fit re-review of this corrected exact candidate is required before PASS.
+Architecture Fit PASS / lock / implementation authorization are NOT claimed here.
 ```

@@ -101,9 +101,24 @@ Proposed global invariant **ARCH-G28**:
 ### Negative / accepted constraints
 
 - Schema migration required (forward-only; no `drizzle-kit push`).
-- Financial Document issuance adapters must become fulfilment-mode aware without inventing a fake
-  Delivery destination (see Fit AF-036H-12).
+- Financial Document issuance adapters must become fulfilment-mode aware (see Fit AF-036H-12).
 - Notification wording for Delivery-only semantic types must remain Delivery-gated.
+
+### Financial Document consequence (AF-036H-12)
+
+PICKUP Financial Document issuance is fulfilment-aware.
+
+It must not:
+
+- require a fake Delivery destination;
+- query mutable customer identity to reconstruct recipient facts;
+- classify Pickup location as recipient/customer address.
+
+Optional recipient fields remain absent (`null`) unless backed by immutable accepted recipient
+authority already sealed on the purchased Snapshot. DELIVERY continues to map recipient facts from
+the sealed Delivery destination. Place-of-supply continues under existing issuer/profile policy.
+`NO_NEW_LEGAL_CLAIM` — nullable ≠ a legal conclusion that recipient particulars can never be
+required; D-365 fail-closed remains if a required sealed fact cannot be produced.
 
 ### Deferred
 
@@ -119,8 +134,8 @@ This Proposed ADR does **not**:
 - lock ARCH-R22 / ARCH-G28 as CURRENT
 - activate IMP-036I / IMP-039 / IMP-040
 - accept or reopen IMP-037 / IMP-038
-- invent GST / legal place-of-supply claims beyond mapping sealed commercial facts into existing
-  Financial Document command fields
+- invent GST / legal place-of-supply or recipient-particular claims beyond mapping sealed
+  commercial facts into existing Financial Document command fields (`NO_NEW_LEGAL_CLAIM`)
 
 ## References
 
