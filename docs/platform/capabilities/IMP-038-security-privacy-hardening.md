@@ -15,7 +15,7 @@
   "schemaChangeRequired": true,
   "lastReviewed": "2026-09-22",
   "productDefinition": "PD-IMP-038-DRAFT-2",
-  "bindingDecisions": ["D-375", "ADR-017", "D-374", "ADR-016", "ADR-004", "ADR-005", "ADR-009", "D-361", "D-362", "D-363"],
+  "bindingDecisions": ["D-376", "D-375", "ADR-017", "D-374", "ADR-016", "ADR-004", "ADR-005", "ADR-009", "D-361", "D-362", "D-363"],
   "dependsOn": ["IMP-008", "IMP-009", "IMP-010", "IMP-011", "IMP-024", "IMP-026", "IMP-035", "IMP-036B", "IMP-036G", "IMP-037"],
   "architectureBase": "ARCH-R21"
 }
@@ -173,13 +173,13 @@ ROADMAP = GTM-R140 (CURRENT tip — authorize+start; verify CURRENT at read time
 STATE = STATE-R138 (CURRENT tip — authorize+start; verify CURRENT at read time)
 PRIOR_LOCK_TIP = GTM-R139 / STATE-R137
 ARCHITECTURE = ARCH-R21 (ARCH-G27; inherits ARCH-R20 / ARCH-G26)
-DECISION REGISTER = DR-17 (D-375; ADR-017; prior DR-16 / D-374 remain CURRENT for pilot infra)
+DECISION REGISTER = DR-18 (D-376 CSP Maps Fonts amendment; D-375; ADR-017; prior DR-16 / D-374 remain CURRENT for pilot infra)
 PRODUCT DELIVERY = PD-1
 TESTING = TEST-1
 PERSONA = PERSONA-1
 GOLDEN JOURNEYS = GJ-1
 Product Definition = docs/platform/product/IMP-038/product-definition.md (APPROVED; PD-IMP-038-DRAFT-2)
-Binding decisions = D-375, ADR-017, D-374, ADR-016, ADR-004, ADR-005, ADR-009, D-361, D-362, D-363
+Binding decisions = D-376, D-375, ADR-017, D-374, ADR-016, ADR-004, ADR-005, ADR-009, D-361, D-362, D-363
 Depends on = IMP-008, IMP-009, IMP-010, IMP-011, IMP-024, IMP-026, IMP-035, IMP-036B, IMP-036G, IMP-037
 ```
 
@@ -429,18 +429,24 @@ dump.
 | Razorpay Checkout | `checkout.razorpay.com`; `api.razorpay.com`; `lumberjack.razorpay.com` | script-src / frame-src / connect-src |
 | Cloudflare Turnstile | `challenges.cloudflare.com` | script-src / frame-src / connect-src |
 | Google Maps JS | `maps.googleapis.com`; `maps.gstatic.com` | script-src / img-src / connect-src / style-src as required by Maps assets |
+| Google Maps Fonts CDN (D-376) | `fonts.googleapis.com` (**style-src only**); `fonts.gstatic.com` (**font-src only**) | Maps JS UI chrome typography; no wildcard Google hosts |
 | Analytics | optional `www.googletagmanager.com` / `www.google-analytics.com` **only when GA enabled** | script-src / connect-src / img-src |
-| Fonts | self-hosted via `next/font` (no third-party font CDN required) | font-src `'self'` |
+| Fonts (app) | self-hosted via `next/font` for first-party UI | font-src `'self'` (+ D-376 Maps Fonts hosts above) |
 
 ```text
 CSP_TURNSTILE_HOST: challenges.cloudflare.com
 CSP_MAPS_HOSTS: maps.googleapis.com + maps.gstatic.com
+CSP_MAPS_FONTS_STYLE_SRC: fonts.googleapis.com
+CSP_MAPS_FONTS_FONT_SRC: fonts.gstatic.com
 CSP_WILDCARD_SCRIPT_SRC: FORBIDDEN
+CSP_WILDCARD_GOOGLE_HOSTS: FORBIDDEN
 ```
 
 No wildcard `script-src`. Payment, Maps, and Turnstile embeds must continue to function under the
 allowlist (`FD-038-05`). Disallowed hosts must fail closed under enforcement (`AC-001-03`).
 Report-only tuning must prove auth-challenge and address/Maps journeys before final enforcement.
+**D-376** (2026-09-23) narrowly amends this inventory for Maps-required Google Fonts CDN hosts only;
+subsequent non-inventoried hosts remain RED decisions.
 
 ---
 
@@ -1009,9 +1015,11 @@ IMP038_ACCEPTANCE_BLOCKED_BY_IMP037: YES
 IMP039_ACTIVATED: NO
 CONTINUATION_EXCEPTION: IMP037_PROVIDER_BLOCKED_TO_IMP038
 D-375_CREATED: YES
+D-376_CREATED: YES
 D375_REQUIRED_FOR_LOCK: YES
 ARCH_R21_REQUIRED: YES
 ARCH_R21_CREATED: YES
+ARCH_R22_REQUIRED: NO
 FITS_WITHIN_ARCH_R20_PLUS_ARCH_G27: YES
 CLOUDFLARE_FREE_SELECTED: YES
 CLOUDFLARE_ARCHITECTURE_LOCKED: YES
@@ -1021,15 +1029,17 @@ STEP_UP_PROOF_SCHEMA_CHANGE: YES
 AUTH_ABUSE_EXTENDS_EXISTING_TABLES: YES
 NEW_DEPLOYABLE_SERVICE: NO
 NEW_APPLICATION_PERMISSION: NO
+NEW_GLOBAL_ARCHITECTURE_MODEL: NO
+CSP_MAPS_FONTS_INVENTORY_AMENDMENT: D-376
 NEW_APPLICATION_ROLE: NO
 BOBA_RAW_PAN_STORAGE: NO
 BOBA_RAW_CVV_STORAGE: NO
 LEGAL_REVIEW_OPEN_TOPICS: 9
 COMPLIANCE_CLAIMS: NONE
-CANONICAL_TIP: GTM-R140 / STATE-R138 / ARCH-R21 / DR-17
+CANONICAL_TIP: GTM-R140 / STATE-R138 / ARCH-R21 / DR-18
 PRIOR_LOCK_TIP: GTM-R139 / STATE-R137
 PRODUCT_DEFINITION: PD-IMP-038-DRAFT-2 APPROVED
-BINDING: D-375 / ADR-017; ADR-004; ADR-005; ADR-009; D-361..D-363; D-374 / ADR-016
+BINDING: D-376 / D-375 / ADR-017; ADR-004; ADR-005; ADR-009; D-361..D-363; D-374 / ADR-016
 ```
 
 IMP-039 activation, Founder UAT, and IMP acceptance remain **outside** this artifact’s authority.

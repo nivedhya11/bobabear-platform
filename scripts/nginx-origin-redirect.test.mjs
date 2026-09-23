@@ -207,16 +207,19 @@ describe("Nginx directory redirects", { skip: !dockerAvailable() }, () => {
     });
   }
 
-  it("serves IMP-038 security headers and CSP Report-Only on the static path", async () => {
+  it("serves IMP-038 security headers and enforcing CSP on the static path", async () => {
     const response = await fetch(`${origin}/order/`, { redirect: "manual" });
     assert.equal(response.status, 200);
-    const csp = response.headers.get("content-security-policy-report-only");
-    assert.ok(csp, "expected Content-Security-Policy-Report-Only");
+    const csp = response.headers.get("content-security-policy");
+    assert.ok(csp, "expected Content-Security-Policy");
+    assert.equal(response.headers.get("content-security-policy-report-only"), null);
     assert.match(csp, /frame-ancestors 'self'/);
     assert.match(csp, /https:\/\/checkout\.razorpay\.com/);
     assert.match(csp, /https:\/\/challenges\.cloudflare\.com/);
     assert.match(csp, /https:\/\/maps\.googleapis\.com/);
     assert.match(csp, /https:\/\/maps\.gstatic\.com/);
+    assert.match(csp, /https:\/\/fonts\.googleapis\.com/);
+    assert.match(csp, /https:\/\/fonts\.gstatic\.com/);
     // Default committed CSP omits GA hosts (GA disabled). Generator unit
     // tests cover the GA-enabled allowlist variant.
     assert.doesNotMatch(csp, /googletagmanager/);

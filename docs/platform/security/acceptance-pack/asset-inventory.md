@@ -59,7 +59,7 @@ developer workstation.
 
 | Asset ID | Surface | Notes |
 |---|---|---|
-| A-UI-STATIC | Static export under Nginx | CSP Report-Only until `GAP-CSP-ENFORCE-001` |
+| A-UI-STATIC | Static export under Nginx | CSP Enforce (`GAP-CSP-ENFORCE-001` CLOSED; D-376) |
 | A-SCRIPT-RP | Razorpay Checkout scripts | Allowlisted hosts |
 | A-SCRIPT-MAPS | Google Maps / Places | Auth-gated; allowlisted |
 | A-SCRIPT-TS | Cloudflare Turnstile | Challenge paths |

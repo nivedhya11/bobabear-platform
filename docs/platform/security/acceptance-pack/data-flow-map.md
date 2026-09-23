@@ -23,7 +23,7 @@ IMP-039.
 Browser
   → [PENDING live] Cloudflare Free edge (WAF/DDoS supplemental)
   → DO firewall allowlist (Cloudflare IPs) [PENDING live]
-  → Nginx (CSP Report-Only, security headers, real_ip from CF-Connecting-IP)
+  → Nginx (CSP Enforce, security headers, real_ip from CF-Connecting-IP)
        ├─ static assets / Next export (A-WEB)
        ├─ /api/customer-auth/* → customer-auth:8081 (OTP/session)
        ├─ /api/v1/* → customer-commerce:8083 (menu/cart/checkout/order)

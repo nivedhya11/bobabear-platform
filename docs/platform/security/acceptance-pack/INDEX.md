@@ -39,7 +39,7 @@ regulatory compliance, or Founder UAT pass.
 | Privacy / retention matrix | [`privacy-retention-matrix.md`](./privacy-retention-matrix.md) | Security + legal | Statutory windows = `LEGAL_REVIEW_REQUIRED` | PRESENT |
 | BOLA/BFLA evidence | [`bola-bfla-evidence.md`](./bola-bfla-evidence.md) | Authz owners | Real-path negatives; ADR-005 deny-by-default | PRESENT (mapped to existing tests) |
 | Business-abuse evidence | [`business-abuse-evidence.md`](./business-abuse-evidence.md) | Security / commerce | Locked US-015 threats | PRESENT (mapped) |
-| CSP / header evidence | [`csp-header-evidence.md`](./csp-header-evidence.md) | Platform ops | Real serving-path proof; enforce still pending | PRESENT (Report-Only) |
+| CSP / header evidence | [`csp-header-evidence.md`](./csp-header-evidence.md) | Platform ops | Real serving-path Enforce proof; D-376 Maps Fonts | PRESENT (Enforce) |
 | Auth abuse + step-up evidence | [`auth-abuse-step-up-evidence.md`](./auth-abuse-step-up-evidence.md) | Auth owners | Fail-closed proofs | PRESENT (mapped) |
 | Payment / webhook security evidence | [`payment-webhook-security-evidence.md`](./payment-webhook-security-evidence.md) | Payments | Signature + inbox; no webhook IP RL | PRESENT (mapped) |
 | Secure SDLC evidence | [`secure-sdlc-evidence.md`](./secure-sdlc-evidence.md) | Platform security | CI gates + exception register | PRESENT (Tranche D) |
@@ -68,7 +68,7 @@ regulatory compliance, or Founder UAT pass.
 | BOLA/BFLA (US-007) | [`bola-bfla-evidence.md`](./bola-bfla-evidence.md) | PRESENT |
 | bot/API/business abuse (US-014/015) | [`business-abuse-evidence.md`](./business-abuse-evidence.md) | PRESENT |
 | edge/origin (US-014/023) | [`../origin-trust/`](../origin-trust/) | Design+lab PRESENT; live PENDING |
-| CSP/header (US-001) | [`csp-header-evidence.md`](./csp-header-evidence.md) | Report-Only PRESENT; enforce PENDING |
+| CSP/header (US-001) | [`csp-header-evidence.md`](./csp-header-evidence.md) | Enforce PRESENT; GAP-CSP-ENFORCE-001 CLOSED |
 | secrets/crypto evidence | [`client-bundle-secrets-review.md`](./client-bundle-secrets-review.md) + [`secure-sdlc-evidence.md`](./secure-sdlc-evidence.md) (gitleaks) | PRESENT |
 | secure-SDLC (US-006) | [`secure-sdlc-evidence.md`](./secure-sdlc-evidence.md) | PRESENT |
 | vendor/processor/script (US-022) | [`vendor-processor-client-script-register.md`](./vendor-processor-client-script-register.md) | PRESENT |
