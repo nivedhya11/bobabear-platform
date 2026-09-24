@@ -98,7 +98,7 @@ ARCH_R21_REQUIRED: NO
 ARCH_R21_CREATED: NO
 NEW_GLOBAL_DECISION_REQUIRED: NO
 
-CANONICAL_ROADMAP_STATE = GTM-R151 / STATE-R149
+CANONICAL_ROADMAP_STATE = GTM-R152 / STATE-R150
 ARCHITECTURE_BASE = ARCH-R20 / D-374
 PRODUCT_DEFINITION = PD-IMP-037-DRAFT-1 (APPROVED; Product Definition Gate PASS)
 FOUNDER_UAT_REQUIRED = YES
@@ -107,7 +107,7 @@ IMPLEMENTATION_AUTHORIZATION_EVIDENCE = PR#171/5743814105
 IMPLEMENTATION_START_EVIDENCE = PR#172/5744869269
 ```
 
-`CANONICAL_ROADMAP_STATE = GTM-R151 / STATE-R149` is the **CURRENT tip** (IMP-036I Product Definition DRAFT_READY_FOR_GATE under PROGRAM_PAUSE D-377; `currentProductSlice = IMP-036I`; `IMP036I_ACTIVATED: YES`; `acceptedThrough = IMP-036H`; prior tip GTM-R150 / STATE-R148; prior tip GTM-R150 / STATE-R148 IMP-036I Product Definition DRAFT-2 DRAFT_READY; prior tip GTM-R149 / STATE-R147 IMP-036I Product Definition DRAFT_READY; prior tip GTM-R148 / STATE-R146 IMP-036I Product Definition activation; prior tip GTM-R147 / STATE-R145 IMP-036H COMPLETE_AND_ACCEPTED; prior tip GTM-R146 / STATE-R144 Implementation COMPLETE pending acceptance; prior tip GTM-R145 / STATE-R143 Implementation AUTHORIZED / STARTED; prior tip GTM-R144 / STATE-R142 Implementation AUTHORIZED / NOT_STARTED; prior tip GTM-R143 / STATE-R141 Architecture Fit PASS + architecture lock; prior tip GTM-R142 / STATE-R140 IMP-036H Product Definition Gate PASS under `PROGRAM_PAUSE` D-377; prior tip GTM-R141 / STATE-R139 activation; IMP-037/038 held; `IMP038_IMPLEMENTATION_COMPLETE: YES` without acceptance). Prior tip `GTM-R140 / STATE-R138` remains the **IMP-038 AUTHORIZE + START**
+`CANONICAL_ROADMAP_STATE = GTM-R152 / STATE-R150` is the **CURRENT tip** (IMP-036I Product Definition DRAFT_READY_FOR_GATE under PROGRAM_PAUSE D-377; `currentProductSlice = IMP-036I`; `IMP036I_ACTIVATED: YES`; `acceptedThrough = IMP-036H`; prior tip GTM-R151 / STATE-R149; prior tip GTM-R150 / STATE-R148; prior tip GTM-R150 / STATE-R148 IMP-036I Product Definition DRAFT-2 DRAFT_READY; prior tip GTM-R149 / STATE-R147 IMP-036I Product Definition DRAFT_READY; prior tip GTM-R148 / STATE-R146 IMP-036I Product Definition activation; prior tip GTM-R147 / STATE-R145 IMP-036H COMPLETE_AND_ACCEPTED; prior tip GTM-R146 / STATE-R144 Implementation COMPLETE pending acceptance; prior tip GTM-R145 / STATE-R143 Implementation AUTHORIZED / STARTED; prior tip GTM-R144 / STATE-R142 Implementation AUTHORIZED / NOT_STARTED; prior tip GTM-R143 / STATE-R141 Architecture Fit PASS + architecture lock; prior tip GTM-R142 / STATE-R140 IMP-036H Product Definition Gate PASS under `PROGRAM_PAUSE` D-377; prior tip GTM-R141 / STATE-R139 activation; IMP-037/038 held; `IMP038_IMPLEMENTATION_COMPLETE: YES` without acceptance). Prior tip `GTM-R140 / STATE-R138` remains the **IMP-038 AUTHORIZE + START**
 provenance tip. Prior tip `GTM-R139 / STATE-R137` remains the **IMP-038 Architecture Fit PASS /
 architecture LOCK** provenance tip. Prior tip `GTM-R138 / STATE-R136` remains the
 **controlled-continuation / Product Definition Gate PASS** provenance tip. Prior tip

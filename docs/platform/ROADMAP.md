@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R151",
+  "roadmapVersion": "GTM-R152",
   "acceptedThrough": "IMP-036H",
   "currentProductSlice": "IMP-036I",
   "nextProductSlice": "IMP-037",
   "gtmBoundary": "IMP-040",
   "lastReviewed": "2026-09-24",
-  "supersedes": "GTM-R150"
+  "supersedes": "GTM-R151"
 }
 -->
 
@@ -34,7 +34,7 @@
   change) before the next slice begins: **ACCEPT → RECONCILE → ADVANCE**.
 - The historical IMP-026 → IMP-028 controlled-continuation exception (GTM-R15 onward) is **CLOSED**.
   It does **not** generalize to future slices and is **not** reopened by GTM-R138 / GTM-R139 /
-  GTM-R140 / GTM-R141 / GTM-R142 / GTM-R143 / GTM-R144 / GTM-R145 / GTM-R146 / GTM-R147 / GTM-R148 / GTM-R149 / GTM-R150 / GTM-R151.
+  GTM-R140 / GTM-R141 / GTM-R142 / GTM-R143 / GTM-R144 / GTM-R145 / GTM-R146 / GTM-R147 / GTM-R148 / GTM-R149 / GTM-R150 / GTM-R151 / GTM-R152.
 - **GTM-R138** records a **NEW**, Founder-authorized one-off exception
   `CONTINUATION_EXCEPTION: IMP037_PROVIDER_BLOCKED_TO_IMP038` (authority PR#179/5771367844) so
   IMP-038 may activate for PD-1 Product Definition work while IMP-037 remains an
@@ -431,7 +431,7 @@ ARCH_R22_CREATED: YES
 IMP-036I: PLANNED
 IMP036I_ACTIVATED: YES
 IMP036I_PRODUCT_DEFINITION: DRAFT_READY_FOR_GATE
-IMP036I_PRODUCT_DEFINITION_VERSION: PD-IMP-036I-DRAFT-3
+IMP036I_PRODUCT_DEFINITION_VERSION: PD-IMP-036I-DRAFT-4
 IMP036I_PRODUCT_DEFINITION_GATE: NOT_PERFORMED
 IMP036I_ARCHITECTURE_FIT: NOT_PERFORMED
 IMP036I_ARCHITECTURE_LOCKED: NO
@@ -464,7 +464,40 @@ IMP-036D_ACCEPTED: YES
 IMP-036D_FOUNDER_UAT: PASS
 ```
 
-**GTM-R151** records Product Definition Gate STOP remediation for **IMP-036I — Scheduled Fulfilment**
+**GTM-R152** records Product Definition Gate STOP remediation for **IMP-036I — Scheduled Fulfilment**
+after independent Gate review `5306868578` STOPped `PD-IMP-036I-DRAFT-3` (candidate HEAD
+`0af84959edbe910183797b76d4d2228835d9040f` / TREE `21fc00b2045095fc0288bd941d2d17dfe2b89db6` /
+fingerprint `78933afecd6b6e1022298303710da1ed9f38262c969e958515098380a05d953e`). Creates CURRENT
+gate candidate `PD-IMP-036I-DRAFT-4` = `DRAFT_READY_FOR_GATE` (`READY_FOR_PRODUCT_DEFINITION_GATE: YES`;
+`OPEN_FOUNDER_DECISIONS: 0`; `UNRESOLVED_MATERIAL_PRODUCT_DECISIONS: 0`) with no Founder
+product-semantic change — FD-036I-09 sealing / checkout revalidation policy remains complete
+(Pickup 30 / Delivery 60; Brand-level; 0–240; no Outlet override; no fee; per-Order sealed from
+payment-bound Checkout Snapshot; later Brand changes affect future purchases only; stale
+checkout revalidation). Remediation restores STATE-R148→DRAFT-2 provenance, product-index
+CURRENT pointer, paired CURRENT tip anchors, independent visible version authorities, and
+bounded Gate STOP history validation. Preserves historical DRAFT-1 Gate execution as
+**PERFORMED** / **STOP** (review `5305796113`), historical DRAFT-2 Gate execution as
+**PERFORMED** / **STOP** (review `5306341697`), and historical DRAFT-3 Gate execution as
+**PERFORMED** / **STOP** (review `5306868578`) — not PASS; not overwritten as NOT_PERFORMED.
+CURRENT DRAFT-4 Gate remains `IMP036I_PRODUCT_DEFINITION_GATE: NOT_PERFORMED`.
+Preserves `IMP036I_ACTIVATED: YES`; formal ROADMAP lifecycle remains `PLANNED`;
+`IMP036I_ARCHITECTURE_FIT: NOT_PERFORMED`; `IMP036I_ARCHITECTURE_LOCKED: NO`;
+`IMP036I_IMPLEMENTATION_AUTHORIZED: NO`; `IMP036I_STARTED: NO`;
+`IMP036I_IMPLEMENTATION_STARTED: NO`; `IMP036I_IMPLEMENTATION_COMPLETE: NO`; `IMP036I_ACCEPTED: NO`.
+Preserves `acceptedThrough = IMP-036H`; `currentProductSlice = IMP-036I`;
+`pendingAcceptance = NONE`; `nextProductSlice = IMP-037` (ledger successor; remains
+`IMP037_HOLD: YES` / `BLOCKED_PROVIDER_ACCESS`). Preserves
+`PROGRAM_PAUSE: PRE_GTM_PRODUCT_INSERTION_PROVIDER_BLOCKED` (**D-377**); holds IMP-037 / IMP-038
+unchanged (including frozen IMP-038 runtime evidence). Preserves **ARCH-R22** / **DR-20** /
+**D-378** CURRENT / **ADR-018** Accepted / **ARCH-G28** unchanged — no new D-number and no ARCH
+revision. Does **not** execute Product Definition Gate against DRAFT-4, Architecture Fit,
+architecture lock, implementation authorization, or implementation start for IMP-036I. Does **not**
+accept IMP-036I / IMP-037/038 or close `GAP-EXT-ASSESS-001`. Per-IMP Product Definition:
+[`product/IMP-036I/product-definition.md`](./product/IMP-036I/product-definition.md).
+Semantic checkpoint: `IMP036I_PRODUCT_DEFINITION_DRAFT_READY`. Next gate = Independent Product
+Definition Gate review of exact DRAFT-4 merged candidate (NOT performed here). Supersedes GTM-R151.
+
+**GTM-R151** (historical prior tip; superseded by GTM-R152) records Product Definition Gate STOP remediation for **IMP-036I — Scheduled Fulfilment**
 after independent Gate review `5306341697` STOPped `PD-IMP-036I-DRAFT-2` (candidate HEAD
 `421fc76869812384df2018b9ffae86de4c33cdc3` / TREE `ba33220c06beede81af9fe15ea053df01e470503` /
 fingerprint `eeeed322c8bbe799c7fc245553d5585210108b797226ded9a84f105d0d3ef8fd`). Creates CURRENT
@@ -490,8 +523,9 @@ revision. Does **not** execute Product Definition Gate against DRAFT-3, Architec
 architecture lock, implementation authorization, or implementation start for IMP-036I. Does **not**
 accept IMP-036I / IMP-037/038 or close `GAP-EXT-ASSESS-001`. Per-IMP Product Definition:
 [`product/IMP-036I/product-definition.md`](./product/IMP-036I/product-definition.md).
-Semantic checkpoint: `IMP036I_PRODUCT_DEFINITION_DRAFT_READY`. Next gate = Independent Product
-Definition Gate review of exact DRAFT-3 merged candidate (NOT performed here). Supersedes GTM-R150.
+Semantic checkpoint: `IMP036I_PRODUCT_DEFINITION_DRAFT_READY`. Independent Product Definition Gate
+for DRAFT-3 was later PERFORMED and resulted in **STOP** (review `5306868578`) — recorded under
+GTM-R152 remediation; this tip itself did not claim Gate PASS. Supersedes GTM-R150.
 
 **GTM-R150** (historical prior tip; superseded by GTM-R151) records Product Definition Gate STOP remediation for **IMP-036I — Scheduled Fulfilment**
 after independent Gate review `5305796113` STOPped `PD-IMP-036I-DRAFT-1` (candidate HEAD
@@ -900,7 +934,7 @@ IMP-036D remains `COMPLETE_AND_ACCEPTED`. Concise acceptance identity: UAT candi
 Under `PROGRAM_PAUSE: PRE_GTM_PRODUCT_INSERTION_PROVIDER_BLOCKED` (**D-377**), the active product
 slice is **IMP-036I — Scheduled Fulfilment** (`currentProductSlice = IMP-036I`;
 `pendingAcceptance = NONE`; formal ROADMAP lifecycle `PLANNED`; `IMP036I_ACTIVATED: YES`;
-Product Definition `PD-IMP-036I-DRAFT-3` = `DRAFT_READY_FOR_GATE`; Gate / Fit / lock / implementation
+Product Definition `PD-IMP-036I-DRAFT-4` = `DRAFT_READY_FOR_GATE`; Gate / Fit / lock / implementation
 authorization **not** performed; historical DRAFT-1 Gate = STOP). Per-IMP Product Definition draft:
 [`product/IMP-036I/product-definition.md`](./product/IMP-036I/product-definition.md).
 
@@ -1036,7 +1070,7 @@ Historical Food Direct insertion narration remains in
 The [Enterprise Experience Programme](./experience/enterprise-experience/README.md) defines supporting
 UX/workflow contracts (not locked capability architecture). Accepted Enterprise Experience order
 remains IMP-036A → B → C → D → E → F → G. Founder-authorized pre-GTM product insertions continue
-IMP-036G → IMP-036H → IMP-036I (current; DRAFT_READY_FOR_GATE / DRAFT-3) → IMP-037 (held) without reopening accepted EE slices.
+IMP-036G → IMP-036H → IMP-036I (current; DRAFT_READY_FOR_GATE / DRAFT-4) → IMP-037 (held) without reopening accepted EE slices.
 
 ```text
 FIGMA_REQUIRED_FOR_INITIAL_IMPLEMENTATION: NO
@@ -1106,6 +1140,27 @@ Current public GTM boundary is **IMP-040**, not IMP-035.
 Historical revision evidence for GTM-R1…GTM-R113 is preserved byte-for-byte in
 [`history/ROADMAP-GTM-R113-pre-compression.md`](./history/ROADMAP-GTM-R113-pre-compression.md).
 
+### GTM-R152 — 2026-09-24
+
+- Product Definition Gate STOP remediation: creates CURRENT candidate `PD-IMP-036I-DRAFT-4`
+  (`DRAFT_READY_FOR_GATE`; `READY_FOR_PRODUCT_DEFINITION_GATE: YES`; open/unresolved = 0) after
+  DRAFT-3 Gate STOP (review `5306868578`). No Founder product-semantic change; FD-036I-09
+  sealing / checkout revalidation remains complete. Restores STATE-R148→DRAFT-2 provenance,
+  product-index CURRENT pointer, paired CURRENT tip anchors, independent visible version
+  authorities, and bounded Gate STOP history validation.
+- Preserves historical DRAFT-1 Gate STOP (review `5305796113`), DRAFT-2 Gate STOP
+  (review `5306341697`), and DRAFT-3 Gate STOP (review `5306868578`) — not overwritten as
+  NOT_PERFORMED.
+- CURRENT DRAFT-4 Gate / Fit / lock / implementation remain NOT performed.
+- Semantic checkpoint: `IMP036I_PRODUCT_DEFINITION_DRAFT_READY`.
+- Preserves `acceptedThrough = IMP-036H`; `currentProductSlice = IMP-036I`;
+  `pendingAcceptance = NONE`; `nextProductSlice = IMP-037`; `PROGRAM_PAUSE` / D-377;
+  ARCH-R22 / DR-20 / D-378 unchanged — no new D-number; no ARCH revision.
+- Does **not** accept IMP-036I / IMP-037/038 or close `GAP-EXT-ASSESS-001`.
+- Next gate = Independent Product Definition Gate review of exact DRAFT-4 merged candidate
+  (NOT performed here).
+- Supersedes GTM-R151.
+
 ### GTM-R151 — 2026-09-24
 
 - Product Definition Gate STOP remediation: creates CURRENT candidate `PD-IMP-036I-DRAFT-3`
@@ -1115,14 +1170,14 @@ Historical revision evidence for GTM-R1…GTM-R113 is preserved byte-for-byte in
   future purchases only; stale checkout revalidation/reconfirm before payment binding).
 - Preserves historical DRAFT-1 Gate STOP (review `5305796113`) and DRAFT-2 Gate STOP
   (review `5306341697`) — not overwritten as NOT_PERFORMED.
-- CURRENT DRAFT-3 Gate / Fit / lock / implementation remain NOT performed.
+- CURRENT DRAFT-3 Gate / Fit / lock / implementation remain NOT performed at this tip.
 - Semantic checkpoint: `IMP036I_PRODUCT_DEFINITION_DRAFT_READY`.
 - Preserves `acceptedThrough = IMP-036H`; `currentProductSlice = IMP-036I`;
   `pendingAcceptance = NONE`; `nextProductSlice = IMP-037`; `PROGRAM_PAUSE` / D-377;
   ARCH-R22 / DR-20 / D-378 unchanged — no new D-number; no ARCH revision.
 - Does **not** accept IMP-036I / IMP-037/038 or close `GAP-EXT-ASSESS-001`.
-- Next gate = Independent Product Definition Gate review of exact DRAFT-3 merged candidate
-  (NOT performed here).
+- Independent Product Definition Gate for DRAFT-3 later STOPPED (review `5306868578`) —
+  remediated under GTM-R152; this tip did not claim Gate PASS.
 - Supersedes GTM-R150.
 
 ### GTM-R150 — 2026-09-24
