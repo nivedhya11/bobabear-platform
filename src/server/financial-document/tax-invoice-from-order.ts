@@ -281,7 +281,11 @@ export async function issueTaxInvoiceForFulfilledOrder(
   );
 
   const lines = buildTaxInvoiceLinesFromSnapshot(snapshot);
-  const destination = snapshot.destination;
+
+  // IMP-036H Option A: PICKUP recipients are structurally null. Never look up
+  // mutable customer profile and never substitute pickup location as recipient.
+  const isPickup = snapshot.fulfilmentMode === "PICKUP";
+  const destination = isPickup ? null : snapshot.destination;
 
   // Place of supply must be a GST 2-digit state code. Checkout destination
   // stores ISO subdivision codes (e.g. IN-UT). Restaurant taxation uses
@@ -323,6 +327,7 @@ export async function issueTaxInvoiceForFulfilledOrder(
     recipientPhoneE164: destination?.recipientPhone ?? null,
     recipientAddress:
       destination !== null ? formatRecipientAddress(destination) : null,
+    ...(isPickup ? { allowAbsentRecipientParticulars: true } : {}),
   };
 
   try {

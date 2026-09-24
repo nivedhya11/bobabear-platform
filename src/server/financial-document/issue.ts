@@ -385,6 +385,8 @@ export async function issueFinancialDocument(
       documentType,
       recipientDisplayName: command.recipientDisplayName,
       recipientAddress: command.recipientAddress,
+      allowAbsentRecipientParticulars:
+        command.allowAbsentRecipientParticulars === true,
     });
     assertSupportedPlaceOfSupplyPath({
       documentType,

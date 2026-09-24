@@ -143,12 +143,20 @@ export function documentRequiresRecipientNameAddress(
 /**
  * Type-aware recipient name/address gate for new issuance.
  * Does not invent GSTIN capture (B2C boundary retained).
+ *
+ * IMP-036H Option A: when `allowAbsentRecipientParticulars` is true (sealed
+ * Checkout Snapshot fulfilmentMode = PICKUP), recipient name/address may be
+ * intentionally absent — never invent from mutable customer or pickup location.
  */
 export function assertRecipientParticularsForIssuance(input: {
   documentType: FinancialDocumentStatutoryType;
   recipientDisplayName: string | null | undefined;
   recipientAddress: string | null | undefined;
+  allowAbsentRecipientParticulars?: boolean;
 }): void {
+  if (input.allowAbsentRecipientParticulars === true) {
+    return;
+  }
   if (!documentRequiresRecipientNameAddress(input.documentType)) {
     return;
   }

@@ -10,6 +10,12 @@ import {
 } from "../../../src/server/access-control";
 import type { CustomerActor } from "../../../src/server/cart";
 import {
+  evaluateCheckout,
+  setCheckoutFulfilment,
+  startCheckout,
+} from "../../../src/server/checkout";
+import { upsertOutletPickupProfile } from "../../../src/server/outlet-pickup-profile/repository";
+import {
   completeZeroPayableCheckout,
   startPayment,
 } from "../../../src/server/payment";
@@ -29,7 +35,13 @@ import {
   withCheckoutReadyHarness,
   withPaymentReadyHarness,
   type PaymentReadyHarness,
+  type ReadyCheckout,
 } from "./payment-fixtures";
+import {
+  CHECKOUT_PIN,
+  checkoutOpts,
+} from "./checkout-fixtures";
+import { configureAlwaysAcceptingOutlet } from "./serviceability-fixtures";
 import {
   createEligibleWorkforceUser,
   principalFor,
@@ -468,6 +480,262 @@ export async function withCompletedZeroOrderHarness<T>(
     );
     if (order.paymentProvenanceKind !== "NO_PAYMENT_REQUIRED") {
       throw new Error("Expected NO_PAYMENT_REQUIRED Order from zero path");
+    }
+
+    const workforce = await seedDefaultWorkforce(
+      h.persistence,
+      h.actors.tree,
+      outletId,
+    );
+
+    return fn({
+      persistence: h.persistence,
+      actor: h.actors.customerA,
+      actors: h.actors,
+      tree: h.actors.tree,
+      order,
+      checkoutId: ready.checkoutId,
+      snapshotId: ready.snapshotId,
+      paymentId: null,
+      cartId: cart.id,
+      brandId,
+      outletId,
+      connectionString: h.database.connectionString,
+      workforce,
+      provider,
+      grandTotalPaise: BigInt(0),
+    });
+  });
+}
+
+/**
+ * IMP-036H — seed an enabled OutletPickupProfile + always-accepting operating
+ * state so Checkout may select PICKUP for the outlet.
+ */
+export async function seedPickupEligibleOutlet(
+  persistence: Persistence,
+  actor: unknown,
+  outletId: string,
+  overrides: Partial<{
+    displayName: string;
+    instructions: string;
+  }> = {},
+): Promise<void> {
+  await configureAlwaysAcceptingOutlet(persistence, actor, outletId);
+  await persistence.transaction(async (tx) => {
+    await upsertOutletPickupProfile(tx, {
+      outletId,
+      enabled: true,
+      displayName: overrides.displayName ?? "Pickup Counter",
+      addressLine1: "12 Mall Road",
+      addressLine2: null,
+      locality: "Rajpur",
+      city: "Dehradun",
+      stateCode: "IN-UT",
+      postalCode: CHECKOUT_PIN,
+      latitude: null,
+      longitude: null,
+      instructions:
+        overrides.instructions ?? "Ask at counter for BOBA order.",
+    });
+  });
+}
+
+/**
+ * Bring an owned cart through start → PICKUP fulfilment → evaluate to
+ * READY_FOR_PAYMENT (no Delivery destination).
+ */
+export async function bringCheckoutToPickupReady(
+  persistence: Persistence,
+  actor: CustomerActor,
+  cartId: string,
+  pickupOutletId: string,
+  clock = { now: () => new Date(FIXED_NOW.getTime()) },
+): Promise<ReadyCheckout> {
+  const opts = checkoutOpts(clock);
+  const started = await startCheckout(persistence, actor, { cartId }, opts);
+  const withFulfilment = await setCheckoutFulfilment(
+    persistence,
+    actor,
+    {
+      checkoutId: started.id,
+      expectedCheckoutRevision: started.revision,
+      fulfilmentMode: "PICKUP",
+      pickupOutletId,
+    },
+    opts,
+  );
+  const ready = await evaluateCheckout(
+    persistence,
+    actor,
+    {
+      checkoutId: withFulfilment.id,
+      expectedCheckoutRevision: withFulfilment.revision,
+    },
+    opts,
+  );
+  if (ready.checkout.status !== "READY_FOR_PAYMENT") {
+    throw new Error(
+      `Expected READY_FOR_PAYMENT for Pickup, got ${ready.checkout.status}`,
+    );
+  }
+  if (!ready.checkout.activeSnapshotId || !ready.snapshot) {
+    throw new Error("READY Pickup Checkout missing active snapshot.");
+  }
+  if (ready.snapshot.fulfilmentMode !== "PICKUP") {
+    throw new Error(
+      `Expected PICKUP snapshot, got ${ready.snapshot.fulfilmentMode}`,
+    );
+  }
+  return Object.freeze({
+    checkoutId: ready.checkout.id,
+    revision: ready.checkout.revision,
+    snapshotId: ready.checkout.activeSnapshotId,
+    grandTotalPaise: ready.snapshot.grandTotalPaise,
+    status: ready.checkout.status,
+  });
+}
+
+/**
+ * Positive grand-total Pickup path: PICKUP checkout → startPayment + webhook →
+ * Order (no Delivery destination sealed).
+ */
+export async function withCompletedPositivePickupOrderHarness<T>(
+  fn: (harness: CompletedOrderHarness) => Promise<T>,
+): Promise<T> {
+  return withCheckoutReadyHarness(async (h) => {
+    const outletId = h.actors.tree.outletA.id;
+    await seedPickupEligibleOutlet(
+      h.persistence,
+      h.actors.brandAdminActor,
+      outletId,
+    );
+    const ready = await bringCheckoutToPickupReady(
+      h.persistence,
+      h.actors.customerA,
+      h.cartId,
+      outletId,
+    );
+    if (ready.grandTotalPaise <= BigInt(0)) {
+      throw new Error(
+        `Expected positive grand total for Pickup order harness, got ${ready.grandTotalPaise}`,
+      );
+    }
+
+    const provider = createFakePaymentProvider({ defaultOutcome: "pending" });
+    const opts = paymentOpts(provider);
+    const started = await startPayment(
+      h.persistence,
+      h.actors.customerA,
+      {
+        checkoutId: ready.checkoutId,
+        expectedCheckoutRevision: ready.revision,
+        paymentMethodIntent: "upi",
+        idempotencyKey: newIdempotencyKey("ord-pickup-pos"),
+      },
+      opts,
+    );
+    await verifyAndProcessWebhook(
+      h.persistence,
+      provider,
+      {
+        executionIdentity: started.attempt.providerExecutionIdentity,
+        outcome: "succeed",
+        amountPaise: started.payment.expectedAmountPaise,
+      },
+      opts,
+    );
+
+    const order = await loadOrderForCheckout(h.persistence, ready.checkoutId);
+    if (order.paymentProvenanceKind !== "PAYMENT" || !order.paymentId) {
+      throw new Error(
+        "Expected PAYMENT provenance Pickup Order from positive path",
+      );
+    }
+
+    const workforce = await seedDefaultWorkforce(
+      h.persistence,
+      h.actors.tree,
+      outletId,
+    );
+
+    return fn({
+      persistence: h.persistence,
+      actor: h.actors.customerA,
+      actors: h.actors,
+      tree: h.actors.tree,
+      order,
+      checkoutId: ready.checkoutId,
+      snapshotId: ready.snapshotId,
+      paymentId: order.paymentId,
+      cartId: h.cartId,
+      brandId: h.actors.tree.brand.id,
+      outletId,
+      connectionString: h.database.connectionString,
+      workforce,
+      provider,
+      grandTotalPaise: ready.grandTotalPaise,
+    });
+  });
+}
+
+/**
+ * Zero-payable Pickup path: full-discount → PICKUP evaluate →
+ * completeZeroPayableCheckout → NO_PAYMENT_REQUIRED Order.
+ */
+export async function withCompletedZeroPickupOrderHarness<T>(
+  fn: (harness: CompletedOrderHarness) => Promise<T>,
+): Promise<T> {
+  return withCheckoutReadyHarness(async (h) => {
+    const brandId = h.actors.tree.brand.id;
+    const outletId = h.actors.tree.outletA.id;
+    await seedPickupEligibleOutlet(
+      h.persistence,
+      h.actors.brandAdminActor,
+      outletId,
+    );
+
+    const coupon = await seedFullDiscountCoupon(
+      h.persistence,
+      brandId,
+      h.actors.brandAdminActor,
+    );
+    const cart = await applyCouponToCustomerCart(
+      h.persistence,
+      h.actors.customerA,
+      brandId,
+      h.cartRevision,
+      coupon.canonicalCode,
+    );
+    const ready = await bringCheckoutToPickupReady(
+      h.persistence,
+      h.actors.customerA,
+      cart.id,
+      outletId,
+    );
+    if (ready.grandTotalPaise !== BigInt(0)) {
+      throw new Error(
+        `Expected zero grand total for Pickup zero Order harness, got ${ready.grandTotalPaise}`,
+      );
+    }
+
+    const provider = createFakePaymentProvider({ defaultOutcome: "succeed" });
+    await completeZeroPayableCheckout(
+      h.persistence,
+      h.actors.customerA,
+      {
+        checkoutId: ready.checkoutId,
+        expectedCheckoutRevision: ready.revision,
+        idempotencyKey: newIdempotencyKey("ord-pickup-zero"),
+      },
+      paymentOpts(provider),
+    );
+
+    const order = await loadOrderForCheckout(h.persistence, ready.checkoutId);
+    if (order.paymentProvenanceKind !== "NO_PAYMENT_REQUIRED") {
+      throw new Error(
+        "Expected NO_PAYMENT_REQUIRED Pickup Order from zero path",
+      );
     }
 
     const workforce = await seedDefaultWorkforce(

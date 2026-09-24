@@ -74,7 +74,10 @@ export async function getCustomerOrder(
     if (!outlet) {
       throw new OrderError("ORDER_NOT_FOUND", "Order not found.");
     }
-    const deliveryProjection = await buildCustomerDeliveryProjection(ctx, parsed.orderId);
+    const deliveryProjection =
+      snapshot.fulfilmentMode === "PICKUP"
+        ? null
+        : await buildCustomerDeliveryProjection(ctx, parsed.orderId);
     return toCustomerOrderDetail(
       mapOrderRow(row),
       outletSummaryFromOutlet(outlet),

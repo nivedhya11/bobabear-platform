@@ -61,6 +61,7 @@ import {
   insertProviderCost,
   insertProviderReferences,
   insertReturn,
+  loadSnapshotFulfilmentModeForDelivery,
   lockDeliveryForUpdate,
   lockOrderForDelivery,
   lockReturnForUpdate,
@@ -160,6 +161,27 @@ export async function createDelivery(
         throw new DeliveryError(
           "DELIVERY_ORDER_NOT_ELIGIBLE",
           "Order is not eligible for a new Delivery request.",
+          { field: "orderId" },
+        );
+      }
+
+      // IMP-036H / ARCH-G28: fail closed when sealed Snapshot is PICKUP —
+      // before Delivery insert and before any provider I/O.
+      const fulfilmentMode = await loadSnapshotFulfilmentModeForDelivery(
+        tx,
+        order.checkoutSnapshotId,
+      );
+      if (fulfilmentMode === "PICKUP") {
+        throw new DeliveryError(
+          "DELIVERY_ORDER_NOT_ELIGIBLE",
+          "Delivery cannot be created for a Pickup Order.",
+          { field: "orderId" },
+        );
+      }
+      if (fulfilmentMode !== "DELIVERY") {
+        throw new DeliveryError(
+          "DELIVERY_ORDER_NOT_ELIGIBLE",
+          "Order Checkout Snapshot fulfilment mode is missing or invalid.",
           { field: "orderId" },
         );
       }
