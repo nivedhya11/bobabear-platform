@@ -10,6 +10,11 @@ PRODUCT_DEFINITION_GATE: NOT_PERFORMED
 ARCHITECTURE_FIT: NOT_PERFORMED
 IMPLEMENTATION_AUTHORIZED: NO
 
+FOUNDER_DISCOVERY_DIRECTION: APPROVED
+FOUNDER_DISCOVERY_DECISION_DATE: 2026-09-24
+FOUNDER_DISCOVERY_DECISIONS: ODC-01..ODC-14
+OPEN_FOUNDER_DISCOVERY_DECISIONS: 0
+
 WORKING_CAPABILITY_NAME: Offers, Deals & Campaigns
 CANDIDATE_WORKING_LABEL: "IMP-036J" — CANDIDATE / WORKING LABEL / NOT GOVERNANCE IDENTITY
 
@@ -20,6 +25,10 @@ ACCEPTANCE_EXAMPLES: labelled DISCOVERY_ACCEPTANCE_EXAMPLE only
 PROCESS: ANCHOR → DISCOVER → STORY_MAP (this artifact)
 PARALLEL_TO: IMP-036I — do not interfere
 Companion discovery: offers-deals-campaigns.md
+```
+
+```text
+FOUNDER_APPROVED_DISCOVERY_DIRECTION ≠ FORMAL_PRODUCT_DEFINITION_APPROVAL
 ```
 
 Hierarchy used:
@@ -43,11 +52,11 @@ operator** (workforce administration). No new roles/permissions.
 |---|---|---|
 | ODC-BO-01 | Increase direct-order conversion via browsable Deals | Merchandising |
 | ODC-BO-02 | Increase AOV via combos / multi-item Deals | Deal composition |
-| ODC-BO-03 | Acquire first-time direct customers via Offers | Eligibility decision ODC-06 |
+| ODC-BO-03 | Acquire first-time direct customers via Offers | Eligibility ODC-06 approved |
 | ODC-BO-04 | Shift fulfilment mode (Pickup / scheduled) via incentives | Coordinate with IMP-036H/I |
 | ODC-BO-05 | Make Promotions/Coupons operable and explainable end-to-end | Close UX gap on existing engine |
 | ODC-BO-06 | Coordinate sales initiatives as Campaigns with measurable redemption | Orchestration, not second money engine |
-| ODC-BO-07 | Protect margin via explicit stacking / limits / truthful savings | Founder decisions ODC-07…11 |
+| ODC-BO-07 | Protect margin via explicit stacking / limits / truthful savings | ODC-07…11 approved |
 
 ---
 
@@ -185,9 +194,9 @@ operator** (workforce administration). No new roles/permissions.
 |---|---|---|---|
 | First-order eligible | ODC-US-090 | As a first-time direct customer, I can receive a first-order Offer when authenticated and eligible. | V1_CANDIDATE |
 | Returning blocked | ODC-US-091 | As a returning customer, I cannot redeem a first-order-only Offer. | V1_CANDIDATE |
-| Definition of first order | ODC-US-092 | System definition of “first order” is explicit and consistent at evaluation and redemption. | UNRESOLVED_DECISION_REQUIRED |
+| Definition of first order | ODC-US-092 | First-order eligibility uses the Founder-approved discovery definition: no previous successfully purchased direct BOBA Bear Order for that authenticated customer identity; failed/abandoned payments do not consume status; later cancel/refund of a successful Order does not restore it. Exact query/concurrency = Fit. | V1_CANDIDATE |
 
-**Depends on:** ODC-06 (engine gap today).
+**Depends on:** ODC-06 (approved direction; engine gap today remains Fit-owned).
 
 ---
 
@@ -238,8 +247,8 @@ operator** (workforce administration). No new roles/permissions.
 
 | Activity | Story ID | Story | Class |
 |---|---|---|---|
-| Conflict resolution | ODC-US-130 | As a customer, when incentives conflict, I see which benefit applied and why the other did not. | UNRESOLVED_DECISION_REQUIRED |
-| Coupon vs automatic | ODC-US-131 | As a customer, coupon vs automatic interaction follows the Founder-approved policy (ODC-10). | UNRESOLVED_DECISION_REQUIRED |
+| Conflict resolution | ODC-US-130 | As a customer, when incentives conflict, I see which benefit applied and why the other did not, following approved stacking (one primary merchandise/order Offer + one compatible delivery incentive, subject to Deal compatibility) and best-value selection. | V1_CANDIDATE |
+| Coupon vs automatic | ODC-US-131 | As a customer, an entered Coupon competes with the applicable automatic Offer; best compatible value wins; I am not made worse off merely by entering a coupon; incompatible Coupon + automatic benefits are never silently stacked. | V1_CANDIDATE |
 | Cannot stack disallowed pair | ODC-US-132 | As a customer, disallowed stacks never silently deepen discount. | V1_CANDIDATE |
 
 ---
@@ -254,7 +263,7 @@ operator** (workforce administration). No new roles/permissions.
 | Empty / signed-out | ODC-US-141 | As a guest, I see sign-in CTA rather than a fake personalised list. | FOLLOW_UP |
 | Navigate to redeem | ODC-US-142 | As a customer, I can move from an Offer detail into Menu/cart with context. | FOLLOW_UP |
 
-**Note:** Food-direct foundation currently omits Offers nav — elevating this may be V1 or FOLLOW_UP per Founder (lean FOLLOW_UP if cart messaging ships first).
+**Note:** Remains FOLLOW_UP — Founder-approved V1 does not require My BOBA / Offers for You when cart messaging, Deals discovery, and coupon field ship first.
 
 ---
 
@@ -286,7 +295,7 @@ operator** (workforce administration). No new roles/permissions.
 | Choose scope | Scope | ODC-US-230 | As an operator, I can set Brand/Outlet (and product/variant) scope consistently with IMP-036F. | V1_CANDIDATE |
 | Choose eligibility | Rules | ODC-US-231 | As an operator, I can configure time window, min basket, and V1 customer eligibility fields. | V1_CANDIDATE |
 | Configure limits | Caps | ODC-US-232 | As an operator, I can set max discount and coupon redemption caps. | V1_CANDIDATE |
-| Configure stacking | Policy | ODC-US-233 | As an operator, I can declare Deal/Offer compatibility and stacking class per approved policy. | UNRESOLVED_DECISION_REQUIRED |
+| Configure stacking | Policy | ODC-US-233 | As an operator, I can declare Deal/Offer compatibility and stacking consistent with approved V1 policy: one primary merchandise/order Offer + one compatible delivery incentive, subject to Deal compatibility. Exact engine mapping = Fit. | V1_CANDIDATE |
 | Schedule Campaign | Schedule | ODC-US-240 | As an operator, I can schedule Campaign start/end without inventing illegal Promotion states. | V1_CANDIDATE |
 | Preview consequence | Review | ODC-US-241 | As an operator, I must preview customer commercial consequence before activate/effect (IMP-036F pattern). | V1_CANDIDATE |
 | Activate / pause | Lifecycle | ODC-US-250 | As an operator, I can activate or pause a Campaign and understand child Offer/Deal effect. | V1_CANDIDATE |
@@ -321,38 +330,46 @@ Unauthorized access remains denied via existing permissions — no new persona i
 
 | Class | Count (approx.) |
 |---|---|
-| V1_CANDIDATE | ~55 |
-| FOLLOW_UP | ~12 |
-| DEFERRED | ~3 |
-| UNRESOLVED_DECISION_REQUIRED | ~5 |
+| V1_CANDIDATE | ~72 |
+| FOLLOW_UP | ~10 |
+| DEFERRED | ~4 |
+| UNRESOLVED_DECISION_REQUIRED | 0 |
 | NOT_SUPPORTED_BY_DESIGN | 1 (second money engine) |
 
 Exact counts are discovery estimates; remapping at Product Definition time is expected.
+Founder decisions ODC-01…14 resolved product questions previously marked
+`UNRESOLVED_DECISION_REQUIRED` (ODC-US-092, ODC-US-130, ODC-US-131, ODC-US-233).
 
 ---
 
 ## 6. Mapping to Founder decisions
 
-| Decision | Primarily unblocks |
-|---|---|
-| ODC-01 | Journeys A–C vocabulary; admin Deal vs Offer |
-| ODC-02 | ODC-US-200…280 Campaign ops |
-| ODC-03 | Journeys B–C, ODC-US-210 |
-| ODC-04 | Journeys D–E |
-| ODC-05 | Journeys D/K + Offer authoring |
-| ODC-06 | Journey J + eligibility stories |
-| ODC-07/08 | Journeys M–N |
-| ODC-09/10 | Journey N |
-| ODC-11 | Journey L |
-| ODC-12 | Journeys B/I |
-| ODC-13 | ODC-US-260/280 |
-| ODC-14 | ODC-US-520 deferred confirmation |
+| Decision | Status | Primarily unblocks |
+|---|---|---|
+| ODC-01 | FOUNDER_APPROVED_DISCOVERY_DIRECTION | Journeys A–C vocabulary; admin Deal vs Offer |
+| ODC-02 | FOUNDER_APPROVED_DISCOVERY_DIRECTION | ODC-US-200…280 Campaign ops |
+| ODC-03 | FOUNDER_APPROVED_DISCOVERY_DIRECTION | Journeys B–C, ODC-US-210 |
+| ODC-04 | FOUNDER_APPROVED_DISCOVERY_DIRECTION | Journeys D–E |
+| ODC-05 | FOUNDER_APPROVED_DISCOVERY_DIRECTION | Journeys D/K + Offer authoring |
+| ODC-06 | FOUNDER_APPROVED_DISCOVERY_DIRECTION | Journey J + eligibility stories |
+| ODC-07/08 | FOUNDER_APPROVED_DISCOVERY_DIRECTION | Journeys M–N; ODC-US-233 |
+| ODC-09/10 | FOUNDER_APPROVED_DISCOVERY_DIRECTION | Journey N |
+| ODC-11 | FOUNDER_APPROVED_DISCOVERY_DIRECTION | Journey L |
+| ODC-12 | FOUNDER_APPROVED_DISCOVERY_DIRECTION | Journeys B/I |
+| ODC-13 | FOUNDER_APPROVED_DISCOVERY_DIRECTION | ODC-US-260/280 |
+| ODC-14 | FOUNDER_APPROVED_DISCOVERY_DIRECTION | ODC-US-520 deferred confirmation |
+
+```text
+OPEN_FOUNDER_DISCOVERY_DECISIONS = 0
+UNRESOLVED_DECISION_REQUIRED stories remaining = 0
+```
 
 ---
 
 ## 7. Explicit non-goals for this story map
 
 - Formal IMP story IDs / AC-IMP scenarios
+- Conversion of DISCOVERY_ACCEPTANCE_EXAMPLE into formal acceptance criteria
 - Product Definition Gate evidence
 - Architecture Fit answers
 - Runtime implementation
@@ -363,6 +380,10 @@ Exact counts are discovery estimates; remapping at Product Definition time is ex
 
 ## 8. Recommended next action
 
-Founder reviews ODC-01…ODC-14 while IMP-036I continues. After Founder direction, a **future**
-Product Definition slice may remap `ODC-US-*` → formal stories — only when ROADMAP assigns identity
-and activates that slice.
+```text
+FOUNDER_DISCOVERY_DIRECTION = APPROVED (ODC-01..ODC-14, 2026-09-24)
+
+Continue discovery safely in parallel with IMP-036I.
+Do NOT create formal Product Definition until ROADMAP assigns and activates a future slice.
+Do NOT perform Product Definition Gate / Architecture Fit / implementation.
+```

@@ -10,6 +10,14 @@ PRODUCT_DEFINITION_GATE: NOT_PERFORMED
 ARCHITECTURE_FIT: NOT_PERFORMED
 IMPLEMENTATION_AUTHORIZED: NO
 
+FOUNDER_DISCOVERY_DIRECTION: APPROVED
+FOUNDER_DISCOVERY_DECISION_DATE: 2026-09-24
+FOUNDER_DISCOVERY_DECISIONS: ODC-01..ODC-14
+OPEN_FOUNDER_DISCOVERY_DECISIONS: 0
+ODC_TOTAL: 14
+FOUNDER_APPROVED_DISCOVERY_DIRECTION: 14
+OPEN_DISCOVERY_DECISIONS: 0
+
 WORKING_CAPABILITY_NAME: Offers, Deals & Campaigns
 CANDIDATE_WORKING_LABEL: "IMP-036J" — CANDIDATE / WORKING LABEL / NOT GOVERNANCE IDENTITY
   (must never be presented as allocated, activated, planned in ROADMAP, or authorized)
@@ -21,10 +29,23 @@ PARALLEL_TO: IMP-036I — Scheduled Fulfilment (active Product Definition slice;
 RUNTIME_SEMANTIC_DRIFT: NONE (documentation only)
 ```
 
+```text
+FOUNDER_APPROVED_DISCOVERY_DIRECTION
+  ≠
+FORMAL_PRODUCT_DEFINITION_APPROVAL
+  ≠
+ROADMAP_IDENTITY / ACTIVATION / GATE / FIT / IMPLEMENTATION_AUTHORIZED
+```
+
 This document is **isolated discovery**. It does not amend VISION, ROADMAP, STATE,
 ARCHITECTURE, decision-register, PRODUCT-DELIVERY, TESTING, accepted Product Definitions,
 capability architectures, or IMP-036I artifacts. Companion story map:
 [`offers-deals-campaigns-story-map.md`](./offers-deals-campaigns-story-map.md).
+
+Founder approved discovery recommendations **ODC-01…ODC-14** on **2026-09-24**. That
+approval records product direction for a future slice only. It does **not** assign IMP
+identity, activate the capability, create or approve a Product Definition, pass a Gate,
+perform Architecture Fit, or authorize implementation.
 
 ---
 
@@ -69,21 +90,24 @@ Product Definition and **not** a mandate to clone McDelivery IA.
 
 ---
 
-## 2. Working vocabulary (candidate — not locked)
+## 2. Working vocabulary (Founder-approved discovery direction)
 
-| Term | Working meaning | Repository evidence |
+Status: `FOUNDER_APPROVED_DISCOVERY_DIRECTION` (2026-09-24). Not formal Product Definition.
+Do **not** collapse Deal and Offer into one generic Promotion concept.
+
+| Term | Approved discovery meaning | Repository evidence |
 |---|---|---|
-| **DEAL** | Customer-browsable and directly purchasable value proposition. | **NOT_SUPPORTED** as commerce entity. Catalog has `productKind=bundle` + bundle groups/options schema (**VERIFIED** ADR-006 + `catalog.ts`); customer Menu projection / Deals browse **NOT_FOUND**. Whether Deal = Catalog bundle, Menu placement, Pricing construct, or new aggregate is **Architecture Fit**. |
-| **OFFER** | Conditional commercial benefit applied to an eligible customer/cart/order. | **NOT_SUPPORTED** as named entity. Closest CURRENT authority is **Promotion** (automatic or coupon-triggered). Customer “Offers” page **ABSENT** (experience gap map / EXP-WD-028). |
-| **COUPON** | Code/token that may activate an Offer. Not every Offer requires a Coupon. | **CURRENT_SUPPORTED** (`promotion_coupons`, trigger `coupon`, cart API `POST /api/v1/cart/coupon`). Customer coupon entry UI **NOT_SUPPORTED**. |
-| **PROMOTION** | Existing BOBA Bear internal commercial/money authority (IMP-016 / ADR-007 / IMP-036F). | **CURRENT_SUPPORTED**. Do **not** redefine Promotion as the whole customer-facing sales-growth concept. |
-| **CAMPAIGN** | Sales initiative coordinating Deals and/or Offers, timing, merchandising, objectives, measurement. | **NOT_SUPPORTED** as domain entity. Marketing “campaign” language exists in experience docs only. |
+| **DEAL** | Customer-browsable and directly purchasable value proposition. May include customer title, image, composition, choices/customisation, Deal price, truthful reference/value comparison, and direct Add-to-cart. | **NOT_SUPPORTED** as commerce entity. Catalog has `productKind=bundle` + bundle groups/options schema (**VERIFIED** ADR-006 + `catalog.ts`); customer Menu projection / Deals browse **NOT_FOUND**. Prefer reuse of Catalog bundle / Menu / Pricing unless Fit proves insufficient. Whether Deal needs a new aggregate is **Architecture Fit**. |
+| **OFFER** | Conditional commercial benefit applied to an eligible customer, cart, or order. | **NOT_SUPPORTED** as named entity. Closest CURRENT authority is **Promotion** (automatic or coupon-triggered). Customer “Offers” page **ABSENT** (experience gap map / EXP-WD-028). |
+| **COUPON** | Activation mechanism for an Offer. Coupon ≠ Offer. Not every Offer requires a code. | **CURRENT_SUPPORTED** (`promotion_coupons`, trigger `coupon`, cart API `POST /api/v1/cart/coupon`). Customer coupon entry UI **NOT_SUPPORTED**. |
+| **PROMOTION** | Existing BOBA Bear internal monetary/commercial authority (IMP-016 / ADR-007 / IMP-036F). | **CURRENT_SUPPORTED**. Remains the money authority; not redefined as the whole customer-facing sales-growth vocabulary. |
+| **CAMPAIGN** | First-class **business / operator** concept. V1 intent: lightweight orchestration of Deals, Offers, timing, scope, merchandising, objective, redemption visibility, and measurement. Must **not** become a second Pricing authority, Promotion engine, or Checkout evaluator. | **NOT_SUPPORTED** as domain entity. Whether Campaign needs durable domain identity or can remain orchestration metadata is **Architecture Fit**. |
 | **DROP** | BOBA brand / newness / scarcity concept. May participate in a Campaign; is **not** a discount engine. | **PARTIALLY_SUPPORTED** as static marketing (`/#drops`, `SignatureDrops`); BrandDrop commerce authority **NOT_SUPPORTED** (food-direct lock). |
 
-**Boundary hypothesis (discovery only):**
+**Boundary (Founder-approved direction):**
 
 ```text
-Campaign
+Campaign (orchestration — not money authority)
    ↓
 Deal / Offer
    ↓
@@ -92,11 +116,12 @@ existing Promotion / Coupon / Pricing / Catalog / Menu authorities
 Checkout evaluation / commercial snapshot
 ```
 
-Hard discovery constraints:
+Hard discovery constraints (approved):
 
-- Do **not** create a second pricing engine.
+- Do **not** create a second pricing / monetary engine (`NO_SECOND_MONEY_ENGINE`).
 - Do **not** create a second promotion engine.
-- Do **not** assume Deal must be a new aggregate (Fit question).
+- Do **not** pre-decide a new Deal aggregate (Fit question).
+- Do **not** silently substitute Deal components.
 
 ---
 
@@ -250,7 +275,7 @@ Add-to-cart, customisation, V1/follow-up, material questions. **No schema design
 |---|---|
 | Customer value | Incentive to shift fulfilment mode |
 | Example | Extra side free on Pickup |
-| Class | **V1_CANDIDATE** as fulfilment-scoped Offer **or** Deal eligibility; depends on ODC-07 |
+| Class | **V1_CANDIDATE** as fulfilment-scoped Offer **or** Deal eligibility (ODC-06/07 approved) |
 | Questions | Deal-only-on-Pickup vs Offer on Pickup cart? IMP-036H pickup continuity exists. |
 
 ### 4.9 Scheduled-order Deal
@@ -271,66 +296,83 @@ Add-to-cart, customisation, V1/follow-up, material questions. **No schema design
 | Class | **FOLLOW_UP** — Drop remains brand concept; linking is Campaign merchandising |
 | Questions | Avoid making Drop a pricing authority (existing lock). |
 
-**Candidate Deal component availability principle (not locked):**
+**Deal component availability (FOUNDER_APPROVED_DISCOVERY_DIRECTION — ODC-12):**
 
-- If a **mandatory** Deal component has no eligible selection → Deal unavailable.
-- If a choice group still has another valid selection → customer may switch.
-- Never silently substitute after customer selection/payment (ADR-006 already locks this).
+- If a **mandatory** Deal component has no eligible selection → Deal = unavailable.
+- If a configured choice group still contains another valid option → customer may **explicitly**
+  choose another eligible option.
+- Never silently substitute before payment, after selection, or after payment.
+- Preserve Catalog / Assortment / Availability truth (ADR-006 alignment).
 
 ---
 
 ## 5. Offer benefit taxonomy
 
-| Benefit | Customer gets | Qualification (typical) | Customer appearance | Engine today | Extension likely? |
+| Benefit | Customer gets | Qualification (typical) | Customer appearance | Engine today | V1 direction (Founder) |
 |---|---|---|---|---|---|
-| Percentage off | % off qualifying merchandise/order | Min basket / targets / window | Badge + savings line | CURRENT_SUPPORTED | Admin UI completeness |
-| Flat ₹ off | Fixed paise off | Min basket / targets | Savings line | CURRENT_SUPPORTED | Admin UI completeness |
-| Fixed promotional price | Item/Deal sold at set price | Assortment + Deal/item | Deal/item price | NOT_SUPPORTED | **Likely** (Pricing or new benefit) — Fit |
-| Free menu item | Complementary item | Qualifier items / min spend | Free line / cart gift | NOT_SUPPORTED as non-BOGO | **Likely** or model via BOGO |
-| Buy X Get Y | Reward units | Qualifier qty | BOGO messaging | CURRENT_SUPPORTED (engine) | Admin UI + customer messaging |
-| Free delivery | ₹0 delivery charge | Min subtotal / mode | Progress + unlocked copy | PARTIALLY (threshold / charge target) | Named Offer UX; policy Fit |
-| Reduced delivery fee | Partial delivery discount | Same | Savings on delivery line | PARTIALLY (`charge` target) | Product clarity vs tariff |
-| Future physical merchandise reward | Non-food reward | Campaign rules | Claim / post-order | NOT_SUPPORTED | **DEFERRED** — conceptual compatibility only; no inventory/fulfilment in V1 |
+| Percentage off | % off qualifying merchandise/order | Min basket / targets / window | Badge + savings line | CURRENT_SUPPORTED | **V1** — admin UI completeness |
+| Flat ₹ off | Fixed paise off | Min basket / targets | Savings line | CURRENT_SUPPORTED | **V1** — admin UI completeness |
+| Fixed promotional price | Item/Deal sold at set price | Assortment + Deal/item | Deal/item price | NOT_SUPPORTED | Prefer **Deal / Pricing** treatment; do not invent parallel Offer benefit unless Fit proves Promotion representation required |
+| Free menu item | Complementary item | Qualifier items / min spend | Free line / cart gift | NOT_SUPPORTED as non-BOGO | **V1** where safely expressible through approved commercial authority (BOGO or Fit-justified extension) |
+| Buy X Get Y | Reward units | Qualifier qty | BOGO messaging | CURRENT_SUPPORTED (engine) | **V1** — admin UI + customer messaging |
+| Free delivery | ₹0 delivery charge | Min subtotal / mode / campaign | Progress + unlocked copy | PARTIALLY (threshold / charge target) | **V1** temporary/campaign incentive via Offer/Promotion; standing threshold stays tariff (see §11.1) |
+| Reduced delivery fee | Partial delivery discount | Same | Savings on delivery line | PARTIALLY (`charge` target) | Covered by delivery-incentive class under stacking policy |
+| Future physical merchandise reward | Non-food reward | Campaign rules | Claim / post-order | NOT_SUPPORTED | **DEFERRED** — conceptual compatibility (ODC-14); no inventory/fulfilment in V1 |
 
 ---
 
 ## 6. Offer eligibility taxonomy
 
+Founder-approved V1 eligibility direction (ODC-06). Exact query/concurrency mechanics = Fit.
+
 | Dimension | Candidates | V1 / follow-up / deferred |
 |---|---|---|
 | **TIME** start/end | Absolute window on Promotion | **V1_CANDIDATE** (exists) |
-| **TIME** day-of-week / daypart | Happy hour | **FOLLOW_UP** |
+| **TIME** day-of-week / daypart | Happy hour | **FOLLOW_UP** (not required by Founder V1 direction) |
 | **SCOPE** Brand / Outlet | Promotion scope | **V1_CANDIDATE** (exists) |
 | **SCOPE** Product / Variant | Targets | **V1_CANDIDATE** (exists) |
-| **SCOPE** Menu/category | Category target | **FOLLOW_UP** (not in engine) |
-| **SCOPE** Deal | Offer applies only with Deal | **FOLLOW_UP** / decision ODC-07 — Deal identity Fit |
+| **SCOPE** Menu/category | Category target | **FOLLOW_UP** (not in engine; not required by Founder V1) |
+| **SCOPE** Deal compatibility | Offer applies with Deal only when explicitly compatible | **V1** product policy (ODC-07); representation = Fit |
 | **BASKET** min subtotal | Exists | **V1_CANDIDATE** |
 | **BASKET** qualifying item/qty | Targets + min qty | **V1_CANDIDATE** |
-| **FULFILMENT** DELIVERY / PICKUP | Not first-class promo field today | **V1_CANDIDATE** product need; **UNKNOWN_REQUIRES_FIT** mechanics |
-| **FULFILMENT** ASAP / SCHEDULED | Depends on IMP-036I | **FOLLOW_UP** until 036I product lock |
-| **CUSTOMER** authenticated | Limited coupon identity | **V1_CANDIDATE** |
-| **CUSTOMER** first order | Not in engine | **V1_CANDIDATE** product desire; extension **likely** |
+| **FULFILMENT** DELIVERY / PICKUP | Not first-class promo field today | **V1_CANDIDATE** (ODC-06); mechanics = Fit |
+| **FULFILMENT** ASAP / SCHEDULED | Depends on IMP-036I | Inherit final accepted IMP-036I model when applicable — **do not independently define Scheduled semantics here** |
+| **CUSTOMER** authenticated | Limited coupon identity | **V1_CANDIDATE** — all authenticated customers may be targeted |
+| **CUSTOMER** first order | Not in engine | **V1_CANDIDATE** — see approved definition below |
 | **CUSTOMER** transaction count | Not in engine | **FOLLOW_UP** |
 | **CUSTOMER** advanced segments | RFM, propensity, etc. | **DEFERRED** (explicit) |
-| **LIMITS** max discount | % benefits | **V1_CANDIDATE** |
-| **LIMITS** per-customer / global coupon redemptions | Exists on coupons | **V1_CANDIDATE** |
-| **LIMITS** per-day / campaign caps | Partial / absent | **FOLLOW_UP** |
-| **LIMITS** promotion-level (non-coupon) caps | Absent | **FOLLOW_UP** / Fit |
+| **LIMITS** max discount | % benefits | **V1_CANDIDATE** (ODC-11) |
+| **LIMITS** per-customer / global coupon redemptions | Exists on coupons | **V1_CANDIDATE** — reuse where they fit |
+| **LIMITS** per-customer / global **Offer** redemption caps | Absent at promotion level today | **V1_CANDIDATE** product desire (ODC-11); concurrency-safe global Offer limits = Fit |
+| **LIMITS** per-day / campaign monetary budget / pacing | Partial / absent | **FOLLOW_UP** unless a future Product Definition proves V1 necessity |
+
+### First-order definition (FOUNDER_APPROVED_DISCOVERY_DIRECTION — ODC-06)
+
+```text
+A customer is first-order eligible only when there is no previous successfully purchased
+direct BOBA Bear Order for that authenticated customer identity.
+
+- Failed / abandoned payment attempts do NOT consume first-order status.
+- A later cancellation/refund of a successfully purchased Order does NOT restore
+  first-order eligibility.
+
+Architecture Fit must determine exact authoritative query and concurrency mechanics.
+```
 
 ---
 
 ## 7. Activation
 
-### Candidate V1
+### Founder-approved V1 (ODC-04)
 
 | Mode | Meaning | Repo today |
 |---|---|---|
 | **AUTOMATIC OFFER** | Eligible → evaluated and may auto-apply | CURRENT_SUPPORTED (engine) |
 | **COUPON-ACTIVATED OFFER** | Code activates Offer/Promotion | CURRENT_SUPPORTED (API); UI NOT_SUPPORTED |
 
-Do **not** equate Offer with Coupon.
+Coupon ≠ Offer. Not every Offer requires a code.
 
-### Future activation (not V1)
+### Follow-up activation (not Founder-approved for V1)
 
 | Mode | Notes |
 |---|---|
@@ -341,15 +383,24 @@ Do **not** equate Offer with Coupon.
 
 ---
 
-## 8. Campaign model (discovery)
+## 8. Campaign model (FOUNDER_APPROVED_DISCOVERY_DIRECTION — ODC-02)
 
-Campaign is explored as a **first-class business/operations concept**, not necessarily a monetary
-authority.
+Campaign is a **first-class business / operator concept**. V1 intent: **lightweight
+orchestration only**.
+
+Campaign may coordinate: Deals; Offers; timing; scope; merchandising; objective; redemption
+visibility; measurement.
+
+Campaign must **not** become: a second Pricing authority; a second Promotion engine; a second
+Checkout evaluator.
+
+Architecture Fit later determines whether Campaign needs durable domain identity or can remain
+orchestration metadata.
 
 ### Candidate attributes (product level)
 
 name; optional public title; business objective; start/end; Outlet/Brand scope; attached Deals;
-attached Offers; merchandising hooks; redemption controls; reporting.
+attached Offers; merchandising hooks; redemption visibility; reporting.
 
 ### Candidate objectives (metadata — not pricing math)
 
@@ -367,7 +418,7 @@ not assumed.
 
 ---
 
-## 9. Stacking discovery (material — not approved)
+## 9. Stacking (FOUNDER_APPROVED_DISCOVERY_DIRECTION — ODC-07 / ODC-08)
 
 ### Incentive classes (candidates)
 
@@ -379,55 +430,73 @@ not assumed.
 | DELIVERY_OFFER | Delivery charge reduction / free delivery |
 | COUPON | Code-activated Promotion |
 
-### Candidate V1 policy (DISCOVERY_RECOMMENDATION_ONLY)
+### Approved V1 product policy
 
 ```text
-one primary merchandise/order incentive
-+
-one compatible delivery incentive
-Deal compatibility explicitly declared
+maximum:
+  ONE primary merchandise/order Offer
+  +
+  ONE compatible delivery incentive
+subject to Deal compatibility.
+
+Deals are NOT automatically stackable with merchandise/order Offers.
+Default posture: Deal built-in value + delivery incentive may be compatible.
+Additional Deal + Offer combinations require explicit compatibility.
+No silent deep-discount stacking.
 ```
 
-### Example analysis
+Exact representation is Architecture Fit–owned. Existing engine `exclusive` / `combinable`
+mechanics are **implementation authority only** and must be reconciled to this product policy
+during Fit. Do **not** rewrite runtime behaviour in discovery.
 
-| Combo | Risk / note |
+### Example analysis (product intent)
+
+| Combo | Approved posture |
 |---|---|
-| Deal + free delivery | Usually desired; delivery class separate |
-| Deal + %-off coupon | Margin risk if Deal already discounted — needs explicit compatibility |
-| Item discount + order discount | Engine combinable path exists; product may want stricter V1 |
-| Automatic + entered coupon | Today: submitted coupon participates in selection; outcomes include `VALID_BUT_NOT_SELECTED` |
-| Two automatic offers | Engine may combinable-stack or exclusive-compete — product may want “one primary” |
-| BOGO + flat order discount | BOGO forced exclusive today — conflicts with naive stack |
+| Deal + Free Delivery | Potentially valid (delivery class separate; default compatible) |
+| Order-level ₹100 off + 20% order discount | Not simultaneously applied by default |
+| BOGO + another merchandise discount | Not simultaneous unless later explicitly supported |
+| Deal + %-off coupon | Requires explicit compatibility (margin risk) |
+| Automatic + entered coupon | Compete for best compatible value (ODC-10) — not silent stack of incompatibles |
 
-**Margin risks:** double-dipping Deal built-in value + order %; delivery threshold + delivery promo
-charge discount; unlimited combinable stacks.
-
-**Status:** stacking policy **not approved**. Founder decisions ODC-07…ODC-10.
+**Margin risks still Fit-owned to prevent:** double-dipping Deal built-in value + order %;
+delivery threshold + delivery promo charge discount; unlimited combinable stacks.
 
 ---
 
-## 10. Best-offer discovery (Founder decision)
+## 10. Best-offer policy (FOUNDER_APPROVED_DISCOVERY_DIRECTION — ODC-09 / ODC-10)
 
-When multiple automatic Offers qualify:
+### Multiple automatic Offers (ODC-09)
 
-| Option | Notes |
-|---|---|
-| A Customer chooses | High trust; more UI; abuse of confusion risk |
-| B Highest monetary saving | Close to CURRENT engine (grand-total optimisation) |
-| C Configured priority | Operator control; may not maximise customer saving |
-| D Compatibility + priority system | Flexible; complex |
+When multiple compatible automatic Offers qualify:
 
-Entered Coupon vs automatic:
+```text
+Select the deterministic Offer producing the best customer monetary outcome /
+lowest payable total.
+Preserve deterministic tie-breaking.
+```
 
-| Option | Notes |
-|---|---|
-| Replace automatic | Simple mental model |
-| Stack | Margin risk |
-| Reject if worse | Protects customer but surprising |
-| Customer chooses | Transparent; UI cost |
+CURRENT `select.ts` behaviour appears directionally aligned, but runtime behaviour is **not**
+itself Founder product authority. Future Product Definition must make the outcome explainable to
+the customer. Do not rewrite runtime in discovery.
 
-**Keep OPEN until Founder resolves ODC-09 / ODC-10.** Note: CURRENT code already auto-selects
-best candidate set by post-tax total — changing this is product+Fit consequential.
+### Entered Coupon vs automatic Offer (ODC-10)
+
+An entered Coupon **competes** with the applicable automatic Offer.
+
+```text
+The customer must NOT become worse off merely because they entered a coupon.
+V1 desired outcome: best compatible value wins.
+
+- If automatic Offer is better than entered Coupon:
+  retain/apply the better outcome + explain that the automatic Offer gives the better saving.
+- If Coupon is better:
+  Coupon-backed Offer wins.
+
+Do NOT silently stack incompatible Coupon + automatic benefits.
+```
+
+Detailed UX and evaluator mapping belong to Product Definition / Architecture Fit.
 
 ---
 
@@ -445,22 +514,59 @@ Preserve Pricing + Checkout Snapshot authority. No tax/legal claims.
 | Payment-bound snapshot | Immutable; promo effects already snapshotted |
 | Refunds | Reuse original allocations (ADR-007) |
 
+### 11.1 Truthful reference price / savings (approved discovery principle)
+
+```text
+TRUTHFUL_SAVINGS_REQUIRED = YES
+No deceptive reference-price presentation.
+```
+
+Deal strike-through price, reference price, percentage saved, and “You saved” **must** derive
+from authoritative commercial truth. Operators must **not** be allowed to enter arbitrary
+fictional “was ₹499” solely to manufacture a larger apparent discount.
+
+Candidate reference basis (exact policy = Product Definition + Fit):
+
+- authoritative sum of normal component prices
+- authoritative prior/current price basis
+- other legally/product-approved basis
+
+### 11.2 Free delivery authority split (approved product distinction)
+
+| Kind | Authority | Example |
+|---|---|---|
+| **STANDING FREE-DELIVERY POLICY** | Delivery Tariff | Free delivery for all qualifying orders above a configured threshold as normal delivery pricing policy |
+| **TEMPORARY / CAMPAIGN FREE-DELIVERY INCENTIVE** | Offer / Promotion | Free delivery this weekend; free delivery using coupon; free delivery for first order |
+
+Do **not** create duplicate calculation logic. Architecture Fit must resolve how temporary
+free-delivery Offer effects interact with the existing tariff threshold and charge-target
+promotion path. Customer must receive **one coherent delivery-charge result**.
+
 Stacking / Deal behaviour that changes explainable money requires future Product Definition
-decisions before Fit.
+before Fit implements.
 
 ---
 
-## 12. Limit / abuse control
+## 12. Limit / abuse control (FOUNDER_APPROVED_DISCOVERY_DIRECTION — ODC-11)
 
-### V1-oriented controls (many partially exist)
+### V1 controls
 
-minimum order value; max discount; per-customer use; global redemption; coupon use count;
-start/end windows.
+- max discount where applicable
+- per-customer redemption cap
+- global Offer redemption cap
+- reuse existing coupon global/per-customer limits where they fit
 
-### Later concerns (do not scope advanced anti-fraud platform into V1)
+Architecture Fit must determine concurrency-safe global Offer limits.
 
-fraud/abuse; multi-account abuse; budget caps; budget pacing; per-day soft caps beyond coupon
-model.
+### FOLLOW_UP (unless Product Definition later proves V1 necessity)
+
+- campaign-level monetary budget
+- budget pacing
+- advanced per-day control
+
+### Explicitly not V1 platform scope
+
+fraud/abuse platform; multi-account abuse machinery beyond existing redemption claims.
 
 ---
 
@@ -491,40 +597,55 @@ badge; headline; image; saving; terms; expiry; progress (“Add ₹82 more to un
 
 ---
 
-## 14. Measurement
+## 14. Measurement (FOUNDER_APPROVED_DISCOVERY_DIRECTION — ODC-13)
 
-### Candidate V1 metrics
+### V1 — descriptive measurement only
 
-Deal impressions / ATC / purchases; Offer eligibility / application / redemption; Orders; Gross
-sales; Discount spend; Net sales after discount; AOV; Units; Fulfilment mode; New vs returning.
+Candidate metrics:
 
-Campaign aggregates of the above.
+- Deal views; Deal add-to-cart; Deal purchases
+- Offer eligibility; Offer application; Offer redemption
+- Orders; Gross sales; Discount spend; Net sales after discount; AOV; Units sold
+- Fulfilment mode; New vs returning customer
+
+Campaign aggregates may summarize these.
 
 ```text
-NO causal "incremental revenue" claim in V1 unless measurement design supports it.
-Advanced experimentation / control groups = FOLLOW_UP.
+Do NOT call sales:
+  incremental revenue | causal lift | incremental orders
+unless future experimentation methodology proves causality.
+
+Advanced experimentation = FOLLOW_UP.
 ```
 
 Analytics events must not become commercial truth (snapshot remains authority).
 
 ---
 
-## 15. V1 candidate (challenged against repository)
+## 15. Founder-directed V1 candidate
 
-### Recommended narrow V1 (discovery recommendation)
+Status: `FOUNDER_APPROVED_DISCOVERY_DIRECTION` (2026-09-24). Still discovery-only —
+**not** Product Definition, Gate, Fit, or implementation authorization.
 
-| Area | Candidate |
+| Area | Founder-directed V1 candidate |
 |---|---|
-| **DEALS** | Fixed-price combo; choice-based combo; multi-item Deal — **prefer composing Catalog bundle + Pricing + Menu merchandising** before new aggregate |
-| **OFFERS** | % off; flat ₹; BOGO; free delivery (threshold and/or charge-target clarity); free menu item only if expressible via BOGO or explicit extension |
-| **ELIGIBILITY** | Date/time window; Outlet/Brand scope; product/variant; min basket; authenticated + coupon limits; first-order **if** Founder accepts engine extension |
+| **DEALS** | Fixed combo; choice-based combo; multi-item Deal (meal for one/two as merchandising specialisations). Prefer reuse/composition of Catalog bundle + Menu + Pricing unless Fit proves insufficient. Do not pre-decide a new Deal aggregate. |
+| **OFFERS** | Percentage discount; flat ₹ discount; BOGO / Buy X Get Y; free menu item where safely expressible through approved commercial authority; free-delivery incentive (Offer/Promotion path). Fixed promotional price → prefer Deal/Pricing treatment. |
+| **ELIGIBILITY** | Existing time window; Brand/Outlet; product/variant; min basket; authenticated customer; first order (approved definition); fulfilment mode `DELIVERY \| PICKUP`; redemption limits. Scheduled timing inherits accepted IMP-036I model when applicable. |
 | **ACTIVATION** | Automatic + Coupon |
-| **CONTROLS** | Max discount; customer/global coupon caps; stacking/compatibility policy (Founder) |
-| **CAMPAIGN** | Lightweight orchestration (objective, timing, grouping, merchandising, reporting) — **not** second money engine |
-| **CUSTOMER** | Deals discovery + cart/checkout Offer messaging + coupon field |
-| **MEASUREMENT** | Core sales/redemption metrics only |
+| **CONTROLS** | Max discount; per-customer cap; global Offer cap; approved stacking (one primary + compatible delivery); Deal compatibility |
+| **CAMPAIGN** | Lightweight first-class business concept: objective, schedule, scope, Deal/Offer grouping, merchandising, descriptive reporting — not a second money engine |
+| **CUSTOMER EXPERIENCE** | Deals discovery; Deal configuration; coupon field; auto-Offer messaging; threshold progress; truthful savings; conflict / best-offer explanation |
+| **ADMIN** | Complete commercially relevant gaps in PromotionsEditor; Campaign management; Deal composition/configuration; Offer configuration; consequence preview; diagnosis |
+| **MEASUREMENT** | Descriptive only |
 
-### Challenge from repository evidence (prefer smaller if Founder agrees)
+### Remains FOLLOW_UP (not silently expanded into V1)
+
+daypart recurrence; category targeting; mix-and-match Deal; My BOBA / Offers for You;
+Campaign landing page; claimable/targeted/loyalty activation; campaign monetary budget /
+pacing / advanced per-day control; advanced experimentation.
+
+### Challenge from repository evidence (still valid)
 
 1. **Engine already covers** automatic + coupon + % / flat / BOGO + min spend + windows + scope +
    exclusive/combinable selection + snapshot + redemption claims.
@@ -532,16 +653,11 @@ Analytics events must not become commercial truth (snapshot remains authority).
    messaging, Campaign ops concept, fulfilment-scoped rules, first-order eligibility, and Deal
    composition UX — not a greenfield promo engine.
 3. **Admin UI lag:** BOGO / charge targets / stacking / windows / min-spend may be API-complete but
-   commercially hard to operate — V1 may be “complete PromotionsEditor” before new domain nouns.
-4. **Free delivery** already has a tariff-threshold path; inventing a parallel free-delivery promo
-   without policy Fit risks double logic.
-5. **Fulfilment-mode and scheduled eligibility** should wait for IMP-036I product lock where they
-   touch promised time.
-6. **Category targeting and daypart** are FOLLOW_UP, not required to prove Deal+Offer GTM value.
-
-**Revised discovery bias:** V1 = *customer-visible Offers/Deals merchandising + coupon UX +
-Campaign orchestration metadata + Founder stacking policy*, reusing IMP-016/036F money authority;
-defer new Deal aggregate unless Fit proves Catalog bundle insufficient.
+   commercially hard to operate — V1 includes completing PromotionsEditor gaps.
+4. **Free delivery** already has a tariff-threshold path; temporary incentives must Fit against it
+   without duplicate calculation logic (§11.2).
+5. **Scheduled eligibility** must inherit IMP-036I — do not invent Scheduled semantics here.
+6. **Category targeting and daypart** remain FOLLOW_UP.
 
 ---
 
@@ -566,172 +682,188 @@ defer new Deal aggregate unless Fit proves Catalog bundle insufficient.
 | Advanced experimentation / causal lift | Needs design | After V1 metrics |
 | Daypart recurrence | Engine gap; ops complexity | FOLLOW_UP Offer eligibility |
 | Category targets | Engine gap | FOLLOW_UP |
+| Mix-and-match Deal | Pricing + eligibility complexity | FOLLOW_UP |
+| My BOBA / Offers for You | Not required by Founder V1 direction | FOLLOW_UP |
+| Campaign landing page | Public campaign surface | FOLLOW_UP |
+| Claimable / targeted activation | Beyond automatic + coupon | FOLLOW_UP |
 
 ---
 
 ## 17. Founder decision register (discovery)
 
-All statuses: `OPEN` / `DISCOVERY_RECOMMENDATION_ONLY`. No Founder approval recorded.
+```text
+ODC_TOTAL = 14
+FOUNDER_APPROVED_DISCOVERY_DIRECTION = 14
+OPEN_DISCOVERY_DECISIONS = 0
+DECISION_DATE = 2026-09-24
+AUTHORITY = Founder
+
+FOUNDER_APPROVED_DISCOVERY_DIRECTION
+  ≠
+FORMAL_PRODUCT_DEFINITION_APPROVAL
+
+No canonical decision-register D-number is created by this discovery.
+```
+
+All statuses below: `FOUNDER_APPROVED_DISCOVERY_DIRECTION`.
 
 ### ODC-01 — Deal vs Offer semantic boundary
 
-- **Question:** Adopt Deal = purchasable merchandise proposition; Offer = conditional benefit?
-- **Why it matters:** Vocabulary drives IA, admin model, and whether Deal is Catalog vs Promo.
-- **Options:** (A) Adopt as stated (B) Collapse both into Promotion (C) Deal-only merchandising label
-- **Recommended:** A
-- **Trade-offs:** A clarifies customer language; risks inventing nouns without aggregates.
-- **Dependencies:** ODC-03, architecture Fit
-- **If deferred:** Ambiguous PRD language; duplicated concepts
+- **Status:** `FOUNDER_APPROVED_DISCOVERY_DIRECTION` (2026-09-24, Founder)
+- **Approved direction:** Deal = customer-browsable and directly purchasable value proposition
+  (title, image, composition, choices, Deal price, truthful reference comparison, direct ATC).
+  Offer = conditional commercial benefit on eligible customer/cart/order. Do **not** collapse into
+  one generic Promotion. Promotion remains internal monetary authority. Coupon remains Offer
+  activation mechanism.
+- **Dependencies:** ODC-03; Architecture Fit for Deal identity
 
-### ODC-02 — Campaign first-class business concept?
+### ODC-02 — Campaign first-class business concept
 
-- **Question:** Is Campaign a first-class ops object (orchestration) in V1?
-- **Options:** (A) Yes, lightweight (B) Name-only grouping in admin (C) Defer entirely
-- **Recommended:** A lightweight orchestration (no money authority)
-- **Trade-offs:** Ops clarity vs build cost; IMP-036F warns against promo lifecycle invention
+- **Status:** `FOUNDER_APPROVED_DISCOVERY_DIRECTION` (2026-09-24, Founder)
+- **Approved direction:** Campaign is a first-class business/operator concept. V1 = lightweight
+  orchestration only (Deals, Offers, timing, scope, merchandising, objective, redemption
+  visibility, measurement). Must not become second Pricing / Promotion / Checkout evaluator.
+  Durable domain vs orchestration metadata = Fit.
 - **Dependencies:** ODC-13
-- **If deferred:** Operators manage bare Promotions/Coupons only
 
-### ODC-03 — Deal composition: fixed + customer-choice combos?
+### ODC-03 — Deal composition
 
-- **Question:** V1 Deals include fixed-price and choice-based combos?
-- **Options:** (A) Both (B) Fixed only (C) Merchandising of existing products only
-- **Recommended:** A, preferentially via Catalog bundle model
-- **Trade-offs:** Choice UX cost; ADR-006 already points this direction
-- **Dependencies:** Catalog/Menu readiness; Pricing for bundle price
-- **If deferred:** Offers-only growth; weaker “meal” merchandising
+- **Status:** `FOUNDER_APPROVED_DISCOVERY_DIRECTION` (2026-09-24, Founder)
+- **Approved direction:** V1 includes fixed Deals + customer-choice Deals (fixed combo, meal for
+  one/two, multi-item Deal, choice-based combo). Prefer reuse of Catalog bundle / Menu / Pricing.
+  Do not pre-decide a new Deal aggregate.
+- **Dependencies:** Catalog/Menu readiness; Pricing; Fit
 
-### ODC-04 — Offer activation: automatic + Coupon?
+### ODC-04 — Offer activation
 
-- **Question:** Confirm both activation modes for V1?
-- **Options:** (A) Both (B) Automatic only (C) Coupon only
-- **Recommended:** A (matches CURRENT engine)
-- **Trade-offs:** Coupon UI still missing
+- **Status:** `FOUNDER_APPROVED_DISCOVERY_DIRECTION` (2026-09-24, Founder)
+- **Approved direction:** V1 supports AUTOMATIC OFFER + COUPON-ACTIVATED OFFER. Coupon ≠ Offer.
+  Not every Offer requires a code. Claimable / targeted / loyalty activation = follow-up unless
+  separately approved later.
 - **Dependencies:** Customer coupon field story
-- **If deferred:** Leaves half of IMP-016 dark to customers
 
 ### ODC-05 — V1 benefit types
 
-- **Question:** Which benefits are in V1?
-- **Options:** subsets of % / flat / BOGO / free item / free delivery / fixed promo price
-- **Recommended:** % , flat , BOGO , free delivery (clarify threshold vs promo); fixed promo price
-  only if Deal price owned by Pricing; free item via BOGO unless extension justified
-- **Trade-offs:** Over-scoping benefits delays merchandising value
-- **Dependencies:** ODC-03, delivery policy Fit
-- **If deferred:** Narrower growth toolkit
+- **Status:** `FOUNDER_APPROVED_DISCOVERY_DIRECTION` (2026-09-24, Founder)
+- **Approved direction:** percentage discount; flat ₹ discount; BOGO / Buy X Get Y; free menu item
+  where safely expressible through approved commercial authority; free delivery (temporary/
+  campaign incentive). Fixed promotional price → prefer Deal/Pricing. Do not invent a second
+  monetary engine.
+- **Dependencies:** ODC-03; delivery policy Fit (§11.2)
 
 ### ODC-06 — V1 customer eligibility / targeting
 
-- **Question:** Include first-order and fulfilment-mode in V1?
-- **Options:** (A) Windows+scope+basket+auth/limits only (B) + first-order (C) + fulfilment mode
-  (D) B+C
-- **Recommended:** A + first-order if high Founder priority; fulfilment-mode after IMP-036I clarity
-- **Trade-offs:** Engine extension vs waiting
-- **Dependencies:** IMP-036I for scheduled; identity for first-order
-- **If deferred:** Weaker acquisition offers
+- **Status:** `FOUNDER_APPROVED_DISCOVERY_DIRECTION` (2026-09-24, Founder)
+- **Approved direction:** V1 may include all authenticated customers; first-order eligibility
+  (approved definition in §6); existing redemption/usage limits; fulfilment-mode eligibility
+  `DELIVERY | PICKUP`. Scheduled timing eligibility inherits final accepted IMP-036I model —
+  do not independently define Scheduled semantics here. First-order query/concurrency = Fit.
+- **Dependencies:** IMP-036I acceptance for scheduled; identity for first-order
 
-### ODC-07 — Deal compatibility with Offers
+### ODC-07 — Deal + Offer compatibility
 
-- **Question:** Can Offers apply on carts containing Deals? Declarative matrix?
-- **Options:** (A) Never (B) Delivery-only (C) Explicit per-Campaign/Deal flags (D) Full stack
-- **Recommended:** C with default cautious (delivery-compatible)
-- **Trade-offs:** Margin vs conversion
+- **Status:** `FOUNDER_APPROVED_DISCOVERY_DIRECTION` (2026-09-24, Founder)
+- **Approved direction:** Deals are not automatically stackable with merchandise/order Offers.
+  Default: Deal built-in value + delivery incentive may be compatible. Additional combinations
+  require explicit compatibility. No silent deep-discount stacking. Exact representation = Fit.
 - **Dependencies:** ODC-08
-- **If deferred:** Ambiguous checkout behaviour
 
 ### ODC-08 — Stacking model
 
-- **Question:** Adopt “one primary merchandise/order + one delivery” for V1?
-- **Options:** (A) That policy (B) Keep CURRENT exclusive/combinable engine as-is (C) Customer
-  chooses
-- **Recommended:** A as product policy **if** it can map cleanly onto existing engine without a
-  second evaluator — else B until Fit proves mapping
-- **Trade-offs:** Product simplicity vs engine rewrite risk
+- **Status:** `FOUNDER_APPROVED_DISCOVERY_DIRECTION` (2026-09-24, Founder)
+- **Approved direction:** V1 maximum = one primary merchandise/order Offer + one compatible
+  delivery incentive, subject to Deal compatibility. Examples: Deal + Free Delivery potentially
+  valid; two merchandise discounts not simultaneous by default; BOGO + another merchandise
+  discount not simultaneous unless later explicitly supported. Engine exclusive/combinable
+  mechanics reconcile to this product policy at Fit — do not rewrite runtime in discovery.
 - **Dependencies:** Fit; ODC-09/10
-- **If deferred:** Operators confused; margin leaks
 
 ### ODC-09 — Multiple automatic Offers / best-offer policy
 
-- **Question:** Keep monetary best-total selection, or change?
-- **Options:** A choose / B highest saving / C priority / D hybrid
-- **Recommended:** B (aligns with CURRENT `select.ts`) unless Founder wants transparency UX (A)
-- **Trade-offs:** Changing selection is R2 money behaviour
-- **Dependencies:** Explainability requirements
-- **If deferred:** Default remains CURRENT engine behaviour
+- **Status:** `FOUNDER_APPROVED_DISCOVERY_DIRECTION` (2026-09-24, Founder)
+- **Approved direction:** When multiple compatible automatic Offers qualify, select the
+  deterministic Offer producing the best customer monetary outcome / lowest payable total.
+  Preserve deterministic tie-breaking. `select.ts` appears directionally aligned but is not
+  Founder product authority. Future Product Definition must make outcome explainable.
+- **Dependencies:** Explainability in Product Definition / Fit
 
 ### ODC-10 — Entered Coupon vs automatic Offer
 
-- **Question:** Interaction policy when both present?
-- **Options:** replace / stack / reject-if-worse / customer chooses
-- **Recommended:** Customer-visible outcome consistent with engine selection; prefer **replace or
-  choose** over silent stack for V1 clarity
-- **Trade-offs:** vs CURRENT candidate model
+- **Status:** `FOUNDER_APPROVED_DISCOVERY_DIRECTION` (2026-09-24, Founder)
+- **Approved direction:** Entered Coupon competes with applicable automatic Offer. Customer must
+  not become worse off merely for entering a coupon. Best compatible value wins. If automatic is
+  better: retain it and explain. If Coupon is better: Coupon-backed Offer wins. Do not silently
+  stack incompatible Coupon + automatic benefits. UX/evaluator mapping = PD / Fit.
 - **Dependencies:** ODC-08/09; coupon UI
-- **If deferred:** Surprising totals
 
 ### ODC-11 — Redemption / max-discount limits
 
-- **Question:** Are coupon-level caps + % max discount enough for V1?
-- **Options:** (A) Yes (B) Add promotion-level and campaign caps (C) Add per-day caps
-- **Recommended:** A for V1; B as FOLLOW_UP
-- **Trade-offs:** Abuse residual
-- **Dependencies:** Payment redemption claims (exist)
-- **If deferred:** OK short-term with monitoring
+- **Status:** `FOUNDER_APPROVED_DISCOVERY_DIRECTION` (2026-09-24, Founder)
+- **Approved direction:** V1 controls = max discount where applicable; per-customer redemption
+  cap; global Offer redemption cap. Reuse existing coupon global/per-customer limits where they
+  fit. Campaign-level monetary budget, budget pacing, advanced per-day control = FOLLOW_UP
+  unless PD later proves V1 necessity. Concurrency-safe global Offer limits = Fit.
+- **Dependencies:** Payment redemption claims; Fit for global Offer caps
 
 ### ODC-12 — Unavailable Deal component behaviour
 
-- **Question:** Confirm mandatory-unavailable → Deal unavailable; no silent substitute?
-- **Options:** (A) Confirm ADR-006 alignment (B) Allow substitute with consent (C) Partial Deal
-- **Recommended:** A
-- **Trade-offs:** Fewer orderable Deals during stockouts
-- **Dependencies:** Assortment/Availability
-- **If deferred:** Risk of silent substitution regressions
+- **Status:** `FOUNDER_APPROVED_DISCOVERY_DIRECTION` (2026-09-24, Founder)
+- **Approved direction:** Mandatory component with no eligible selection → Deal unavailable. If
+  choice group still has a valid option → customer may explicitly choose it. Never silently
+  substitute before/after selection or after payment. Preserve Catalog / Assortment /
+  Availability truth.
+- **Dependencies:** Assortment/Availability; ADR-006
 
 ### ODC-13 — V1 campaign measurement
 
-- **Question:** Accept descriptive metrics only (no causal lift)?
-- **Options:** (A) Descriptive only (B) Require experimentation
-- **Recommended:** A
-- **Trade-offs:** Weaker ROI narrative
+- **Status:** `FOUNDER_APPROVED_DISCOVERY_DIRECTION` (2026-09-24, Founder)
+- **Approved direction:** Descriptive measurement only (Deal views/ATC/purchases; Offer
+  eligibility/application/redemption; Orders; Gross/Net sales; Discount spend; AOV; Units;
+  Fulfilment mode; New vs returning; Campaign aggregates). Do not claim incremental revenue /
+  causal lift / incremental orders without proven experimentation methodology. Advanced
+  experimentation = FOLLOW_UP.
 - **Dependencies:** Event taxonomy Fit
-- **If deferred:** Still need basic redemption counters
 
 ### ODC-14 — Physical merchandise future compatibility
 
-- **Question:** Keep conceptual hook only (no V1 inventory)?
-- **Options:** (A) Conceptual compatibility only (B) Scope merch fulfilment
-- **Recommended:** A
-- **Trade-offs:** None material for food GTM
+- **Status:** `FOUNDER_APPROVED_DISCOVERY_DIRECTION` (2026-09-24, Founder)
+- **Approved direction:** Maintain future conceptual compatibility for `FREE_MERCHANDISE` reward
+  (e.g. stickers, collectibles, apparel). V1 explicitly excludes merchandise inventory, stock
+  reservation, fulfilment, shipping, warehouse logic. Future separate capability required.
 - **Dependencies:** Future merch commerce
-- **If deferred:** N/A — already deferred
 
 ---
 
-## 18. Future Architecture Fit questions (questions only)
+## 18. Future Architecture Fit questions (questions only — all OPEN)
 
-Do not answer Fit-owned questions here except by stating CURRENT verified behaviour.
+Do not answer Fit-owned questions here. Founder decisions refine the questions; they do not
+close them. `ANSWERED = 0`.
 
-1. Does Deal require new domain identity or compose existing Menu/Catalog bundle?
-2. How does choice-based Deal pricing fit Pricing authority (bundle price vs promotion vs both)?
-3. Can existing Promotion benefits represent all V1 Offer types Founder selects?
-4. How should named free-delivery Offers relate to serviceability free-delivery thresholds?
-5. How are automatic Offers selected/evaluated if product policy diverges from CURRENT
-   `select.ts`?
-6. Where do promotion-level and campaign-level redemption limits live if added?
-7. How are global limits concurrency-safe beyond existing coupon claim rows?
-8. How does Deal value / reference price remain truthful in Menu projection and snapshots?
-9. How is stacking evaluated deterministically under a “one primary + delivery” product policy?
-10. How is best-offer selection deterministic and explainable to customers?
-11. How are Campaign and Promotion lifecycles related without inventing promo states?
-12. Can Campaign remain orchestration rather than monetary authority?
-13. How do scheduled Campaign dates interact with outlet timezone?
-14. How does Scheduled Fulfilment (IMP-036I) affect Offer eligibility (order time vs promised time)?
+1. Can the current Catalog bundle model satisfy fixed and choice-based Deals for V1?
+2. Where does authoritative Deal price live (Price book vs promotion vs bundle price)?
+3. How is truthful reference price derived and persisted without allowing fictional “was” prices?
+4. Can existing Promotion benefits represent all Founder-approved V1 Offer types (including free
+   menu item where safely expressible)?
+5. How do temporary free-delivery Offers interact with the existing tariff threshold and
+   charge-target promotion path so the customer receives one coherent delivery charge?
+6. How does one-primary + compatible-delivery stacking map onto the current evaluator without a
+   second money engine?
+7. How is Coupon-vs-automatic best-compatible-value explained without divergent money calculation?
+8. How are global Offer caps concurrency-safe beyond existing coupon claim rows?
+9. How is first-order eligibility evaluated atomically / safely / privately against order history?
+10. How does fulfilment-mode eligibility (`DELIVERY | PICKUP`) extend Promotion safely?
+11. After IMP-036I acceptance, how does Scheduled timing eligibility participate without
+    duplicating scheduling authority?
+12. How are Campaign and Promotion lifecycles related without inventing illegal promo states?
+13. Can Campaign remain orchestration metadata rather than durable monetary domain authority?
+14. How do scheduled Campaign dates interact with outlet timezone?
 15. How are analytics events recorded without becoming commercial truth?
 16. How are existing Checkout Snapshots extended for Deal identity without losing immutability?
-17. How does fulfilment-mode eligibility attach without forking the promotion evaluator?
-18. How does first-order eligibility join customer order history safely and privately?
-19. How should Admin commercial workspace evolve without breaking IMP-036F coherence?
-20. How do Mix-and-match Deals price under ADR-007 calculation order?
+17. How should Admin commercial workspace evolve without breaking IMP-036F coherence?
+18. How do Mix-and-match Deals (FOLLOW_UP) price under ADR-007 calculation order if ever scoped?
+19. How is Deal compatibility with Offers represented declaratively for operators?
+20. How is best-offer selection deterministic, explainable, and reconciled if product policy and
+    CURRENT `select.ts` diverge?
 
 ---
 
@@ -762,7 +894,17 @@ Likely permission reuse: `promotions.*` / `coupons.*` / `pricing.*` / `catalog.*
 
 ## 21. Recommended next action
 
-Founder reviews discovery decisions **ODC-01…ODC-14** while IMP-036I continues independently.
+```text
+FOUNDER_DISCOVERY_DIRECTION = APPROVED (ODC-01..ODC-14, 2026-09-24)
+OPEN_FOUNDER_DISCOVERY_DECISIONS = 0
 
-Do **not** assign formal IMP identity. Do **not** activate another slice. Do **not** create Product
-Definition. Do **not** perform Architecture Fit. Do **not** implement runtime behaviour.
+Continue discovery safely in parallel with IMP-036I.
+Do NOT assign formal IMP identity.
+Do NOT activate the capability.
+Do NOT create Product Definition.
+Do NOT perform Product Definition Gate.
+Do NOT perform Architecture Fit.
+Do NOT implement.
+
+Create formal Product Definition only when ROADMAP assigns and activates a future slice.
+```
