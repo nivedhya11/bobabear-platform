@@ -1,8 +1,10 @@
 /**
- * Internal prepareCheckoutForPayment (IMP-021).
+ * Internal prepareCheckoutForPayment (IMP-021 / IMP-036H-B).
  *
  * Freshly validates the active READY snapshot against current truth.
  * Does NOT create Payment or call a payment provider.
+ *
+ * PICKUP revalidates eligibility + commercial terms without serviceability.
  */
 
 import {
@@ -11,6 +13,7 @@ import {
   parsePrepareCheckoutForPaymentInput,
   requireCheckoutTtlMs,
   type CheckoutSnapshot,
+  type FulfilmentMode,
 } from "../../shared/checkout";
 import type { Persistence } from "../persistence/types";
 import { requireCustomerActor } from "../cart/actor";
@@ -24,6 +27,11 @@ import { buildCheckoutCommercialResult } from "./adapters/pricing";
 import { resolveCheckoutServiceability } from "./adapters/serviceability";
 import { systemCheckoutClock } from "./clock";
 import type { CheckoutOperationOptions } from "./operations";
+import {
+  assertPickupOutletEligible,
+  pickupLocationFromProfile,
+} from "./pickup-eligibility";
+import { loadOutletPickupProfileByOutletId } from "../outlet-pickup-profile/repository";
 import {
   findCheckoutRowById,
   findDestinationByCheckoutId,
@@ -86,11 +94,21 @@ export async function prepareCheckoutForPayment(
         "Active snapshot could not be loaded.",
       );
     }
+    const fulfilmentMode = (row.fulfilmentMode ?? "DELIVERY") as FulfilmentMode;
+    const pickupOutletId = row.pickupOutletId ?? null;
     const destRow = await findDestinationByCheckoutId(ctx, row.id);
-    if (!destRow) {
+    const destination = destRow ? mapDestinationRow(destRow) : null;
+    if (fulfilmentMode === "DELIVERY" && !destination) {
       throw new CheckoutError(
         "CHECKOUT_DESTINATION_REQUIRED",
         "Checkout destination is required.",
+      );
+    }
+    if (fulfilmentMode === "PICKUP" && !pickupOutletId) {
+      throw new CheckoutError(
+        "PICKUP_OUTLET_REQUIRED",
+        "Pickup outlet is required.",
+        { field: "pickupOutletId" },
       );
     }
     const cartRow = await findCartRowById(ctx, row.cartId);
@@ -101,7 +119,9 @@ export async function prepareCheckoutForPayment(
     return Object.freeze({
       row,
       snapshot,
-      destination: mapDestinationRow(destRow),
+      fulfilmentMode,
+      pickupOutletId,
+      destination,
       cart,
     });
   });
@@ -119,12 +139,66 @@ export async function prepareCheckoutForPayment(
     );
   }
 
-  const serviceability = await resolveCheckoutServiceability(
-    persistence,
-    preload.row.brandId,
-    preload.destination,
-    clock,
-  );
+  let selectedOutletId: string;
+  let serviceabilityEvaluatedAt: Date | null = null;
+  let pickupLocation = null as ReturnType<typeof pickupLocationFromProfile> | null;
+
+  if (preload.fulfilmentMode === "DELIVERY") {
+    const serviceability = await resolveCheckoutServiceability(
+      persistence,
+      preload.row.brandId,
+      preload.destination!,
+      clock,
+    );
+    selectedOutletId = serviceability.selectedOutletId;
+    serviceabilityEvaluatedAt = serviceability.evaluatedAt;
+  } else {
+    selectedOutletId = preload.pickupOutletId!;
+  }
+
+  try {
+    await persistence.withContext(async (ctx) => {
+      if (preload.fulfilmentMode === "PICKUP") {
+        await assertPickupOutletEligible(ctx, {
+          brandId: preload.row.brandId,
+          outletId: selectedOutletId,
+          cart: preload.cart,
+          now,
+        });
+        const profile = await loadOutletPickupProfileByOutletId(
+          ctx,
+          selectedOutletId,
+        );
+        if (!profile) {
+          throw new CheckoutError(
+            "PICKUP_OUTLET_NOT_ELIGIBLE",
+            "Pickup profile is missing.",
+            { field: "pickupOutletId" },
+          );
+        }
+        pickupLocation = pickupLocationFromProfile(profile);
+      }
+    });
+  } catch (error) {
+    if (
+      error instanceof CheckoutError &&
+      (error.code === "PICKUP_OUTLET_NOT_ELIGIBLE" ||
+        error.code === "PICKUP_OUTLET_REQUIRED" ||
+        error.code === "PICKUP_NOT_AVAILABLE")
+    ) {
+      await persistence.transaction(async (tx) => {
+        const row = await lockCheckoutForUpdate(tx, preload.row.id);
+        if (row && row.status === "READY_FOR_PAYMENT") {
+          await invalidateReadyToDraft(tx, row, now);
+        }
+      });
+      throw new CheckoutError(
+        "CHECKOUT_REPRICED",
+        "Pickup eligibility changed; Checkout must be re-evaluated.",
+      );
+    }
+    throw error;
+  }
 
   const problems = await persistence.withContext(async (ctx) => {
     const catalogProblems = await validateCheckoutCartMerchandise(
@@ -136,7 +210,7 @@ export async function prepareCheckoutForPayment(
     return collectAssortmentAvailabilityProblems(
       ctx,
       preload.cart,
-      serviceability.selectedOutletId,
+      selectedOutletId,
       now,
     );
   });
@@ -161,12 +235,16 @@ export async function prepareCheckoutForPayment(
   const commercial = await persistence.withContext((ctx) =>
     buildCheckoutCommercialResult(ctx, {
       brandId: preload.row.brandId,
-      outletId: serviceability.selectedOutletId,
+      outletId: selectedOutletId,
       at: now,
       cart: preload.cart,
       customerAuthUserId: customer.authUserId,
       labels,
-      destination: preload.destination,
+      destination:
+        preload.fulfilmentMode === "DELIVERY"
+          ? preload.destination ?? undefined
+          : undefined,
+      fulfilmentMode: preload.fulfilmentMode,
     }),
   );
 
@@ -174,11 +252,15 @@ export async function prepareCheckoutForPayment(
     checkoutId: preload.row.id,
     checkoutRevision: preload.row.revision + BigInt(1),
     sourceCartRevision: preload.cart.revision,
-    selectedOutletId: serviceability.selectedOutletId,
+    selectedOutletId,
     evaluatedAt: now,
-    serviceabilityEvaluatedAt: serviceability.evaluatedAt,
+    fulfilmentMode: preload.fulfilmentMode,
+    serviceabilityEvaluatedAt,
     manualCouponCode: preload.cart.manualCouponCode,
-    destination: preload.destination,
+    destination:
+      preload.fulfilmentMode === "DELIVERY" ? preload.destination : null,
+    pickupLocation:
+      preload.fulfilmentMode === "PICKUP" ? pickupLocation : null,
     commercial,
     expiresAt: preload.row.expiresAt,
     updatedAt: now,

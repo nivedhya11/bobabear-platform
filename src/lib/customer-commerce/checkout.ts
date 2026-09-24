@@ -104,3 +104,72 @@ export async function evaluateCheckout(input: {
     data: { checkout: result.data.checkout, snapshot: result.data.snapshot },
   };
 }
+
+export type CommercePickupOption = Readonly<{
+  outletId: string;
+  displayName: string;
+  addressLine1: string;
+  addressLine2: string | null;
+  locality: string | null;
+  city: string;
+  stateCode: string;
+  postalCode: string;
+  instructions: string;
+  coordinates: Readonly<{ latitude: string; longitude: string }> | null;
+}>;
+
+type PickupOptionsEnvelope = Readonly<{
+  ok: true;
+  outlets: readonly CommercePickupOption[];
+  selectionPolicy: "UNAVAILABLE" | "AUTO_SELECT" | "CUSTOMER_SELECT";
+}>;
+
+export async function listCheckoutPickupOptions(input: {
+  checkoutId: string;
+}): Promise<
+  CommerceHttpResult<{
+    outlets: readonly CommercePickupOption[];
+    selectionPolicy: "UNAVAILABLE" | "AUTO_SELECT" | "CUSTOMER_SELECT";
+  }>
+> {
+  const result = await commerceRequest<PickupOptionsEnvelope>(
+    `/api/v1/checkouts/${input.checkoutId}/pickup-options`,
+    { method: "GET" },
+  );
+  if (!result.ok) return result;
+  return {
+    ok: true,
+    status: result.status,
+    data: {
+      outlets: result.data.outlets,
+      selectionPolicy: result.data.selectionPolicy,
+    },
+  };
+}
+
+export async function setCheckoutFulfilment(input: {
+  checkoutId: string;
+  expectedCheckoutRevision: string;
+  fulfilmentMode: "DELIVERY" | "PICKUP";
+  pickupOutletId?: string | null;
+}): Promise<CommerceHttpResult<{ checkout: CommerceCheckout }>> {
+  const body: Record<string, unknown> = {
+    expectedCheckoutRevision: input.expectedCheckoutRevision,
+    fulfilmentMode: input.fulfilmentMode,
+  };
+  if (input.pickupOutletId !== undefined) {
+    body.pickupOutletId = input.pickupOutletId;
+  }
+  const result = await commerceRequest<CheckoutEnvelope>(
+    `/api/v1/checkouts/${input.checkoutId}/fulfilment`,
+    {
+      method: "POST",
+      body,
+    },
+  );
+  if (!result.ok) return result;
+  if (!result.data.checkout) {
+    return { ok: false, code: "INVALID_RESPONSE", status: result.status };
+  }
+  return { ok: true, status: result.status, data: { checkout: result.data.checkout } };
+}

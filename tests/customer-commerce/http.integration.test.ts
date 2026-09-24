@@ -644,6 +644,131 @@ describe("IMP-024 HTTP: checkout transport", () => {
       });
     });
   });
+
+  it("IMP-036H-B: pickup-options + fulfilment + PICKUP evaluate (BOLA + no delivery charge)", async () => {
+    await withCheckoutReadyHarness(async (harness) => {
+      const { persistence, actors, cartId } = harness;
+      const { connectionString } = harness.database;
+      const cookie = await authCookie(connectionString, actors.customerAId);
+      const otherCookie = await authCookie(connectionString, actors.customerBId);
+
+      const { upsertOutletPickupProfile } = await import(
+        "../../src/server/outlet-pickup-profile/repository"
+      );
+      const { configureAlwaysAcceptingOutlet } = await import(
+        "../database/support/serviceability-fixtures"
+      );
+      const { seedChargePricesOnBook, CHECKOUT_PIN } = await import(
+        "../database/support/checkout-fixtures"
+      );
+      const { sql } = await import("drizzle-orm");
+
+      await configureAlwaysAcceptingOutlet(
+        persistence,
+        actors.brandAdminActor,
+        actors.tree.outletA.id,
+      );
+      await persistence.transaction(async (tx) => {
+        await upsertOutletPickupProfile(tx, {
+          outletId: actors.tree.outletA.id,
+          enabled: true,
+          displayName: "HTTP Pickup Counter",
+          addressLine1: "12 Mall Road",
+          city: "Dehradun",
+          stateCode: "IN-UT",
+          postalCode: CHECKOUT_PIN,
+          instructions: "Counter pickup",
+        });
+      });
+      await persistence.withContext(async (ctx) => {
+        const book = await ctx.db.execute(sql`
+          select id::text as id from app.price_books
+          where brand_id = ${actors.tree.brand.id}::uuid
+            and lifecycle_status = 'active'
+          limit 1
+        `);
+        await seedChargePricesOnBook(persistence, {
+          brandId: actors.tree.brand.id,
+          priceBookId: book.rows[0]!.id as string,
+          packagingPaise: BigInt(2_000),
+          deliveryPaise: BigInt(4_000),
+        });
+      });
+
+      await withCustomerCommerceHttpService(connectionString, async ({ baseUrl }) => {
+        const started = await fetch(`${baseUrl}/api/v1/checkouts`, {
+          method: "POST",
+          headers: jsonHeaders(cookie),
+          body: JSON.stringify({ cartId }),
+        });
+        expect(started.status).toBe(200);
+        const startedBody = await started.json();
+        const checkoutId = startedBody.checkout.id as string;
+        let revision = startedBody.checkout.revision as string;
+
+        const bola = await fetch(
+          `${baseUrl}/api/v1/checkouts/${checkoutId}/pickup-options`,
+          { headers: { cookie: otherCookie } },
+        );
+        expect(bola.status).toBe(404);
+        expect((await bola.json()).code).toBe("CHECKOUT_NOT_FOUND");
+
+        const options = await fetch(
+          `${baseUrl}/api/v1/checkouts/${checkoutId}/pickup-options`,
+          { headers: { cookie } },
+        );
+        expect(options.status).toBe(200);
+        const optionsBody = await options.json();
+        expect(optionsBody.ok).toBe(true);
+        expect(optionsBody.selectionPolicy).toBe("AUTO_SELECT");
+        expect(optionsBody.outlets).toHaveLength(1);
+        expect(optionsBody.outlets[0].displayName).toBe("HTTP Pickup Counter");
+        expect(optionsBody.outlets[0]).not.toHaveProperty("enabled");
+        expect(optionsBody.outlets[0]).not.toHaveProperty("revision");
+
+        const fulfilment = await fetch(
+          `${baseUrl}/api/v1/checkouts/${checkoutId}/fulfilment`,
+          {
+            method: "POST",
+            headers: jsonHeaders(cookie),
+            body: JSON.stringify({
+              expectedCheckoutRevision: revision,
+              fulfilmentMode: "PICKUP",
+              pickupOutletId: actors.tree.outletA.id,
+            }),
+          },
+        );
+        expect(fulfilment.status).toBe(200);
+        const fulfilmentBody = await fulfilment.json();
+        expect(fulfilmentBody.checkout.fulfilmentMode).toBe("PICKUP");
+        expect(fulfilmentBody.checkout.pickupOutletId).toBe(
+          actors.tree.outletA.id,
+        );
+        revision = fulfilmentBody.checkout.revision;
+
+        const evaluated = await fetch(
+          `${baseUrl}/api/v1/checkouts/${checkoutId}/evaluate`,
+          {
+            method: "POST",
+            headers: jsonHeaders(cookie),
+            body: JSON.stringify({ expectedCheckoutRevision: revision }),
+          },
+        );
+        expect(evaluated.status).toBe(200);
+        const evalBody = await evaluated.json();
+        expect(evalBody.checkout.status).toBe("READY_FOR_PAYMENT");
+        expect(evalBody.snapshot.fulfilmentMode).toBe("PICKUP");
+        expect(evalBody.snapshot.destination).toBeNull();
+        expect(evalBody.snapshot.pickupLocation?.displayName).toBe(
+          "HTTP Pickup Counter",
+        );
+        const charges = (evalBody.snapshot.charges ?? []) as Array<{
+          chargeCode: string;
+        }>;
+        expect(charges.every((c) => c.chargeCode !== "delivery")).toBe(true);
+      });
+    });
+  });
 });
 
 describe("IMP-024 HTTP: payment transport", () => {

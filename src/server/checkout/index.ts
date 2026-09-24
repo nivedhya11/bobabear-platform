@@ -40,6 +40,19 @@ export {
   clearCheckoutDestination,
 } from "./destination";
 
+export { setCheckoutFulfilment } from "./fulfilment";
+
+export {
+  listCheckoutPickupOptions,
+  type ListPickupOptionsResult,
+} from "./pickup-options";
+
+export {
+  listEligiblePickupOutletsForCheckout,
+  assertPickupOutletEligible,
+  type EligiblePickupOutlet,
+} from "./pickup-eligibility";
+
 export { evaluateCheckout } from "./evaluate";
 
 /**

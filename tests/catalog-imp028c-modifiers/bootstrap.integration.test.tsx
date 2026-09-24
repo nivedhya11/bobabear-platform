@@ -683,9 +683,11 @@ describe("IMP-028C modifier bootstrap (Slice 4)", () => {
       sourceCartRevision: BigInt(1),
       selectedOutletId: "outlet-1",
       evaluatedAt: AT,
+      fulfilmentMode: "DELIVERY",
       serviceabilityEvaluatedAt: AT,
       manualCouponCode: null,
       destination,
+      pickupLocation: null,
       commercial: {
         quote: {
           calculatedAt: AT.toISOString(),

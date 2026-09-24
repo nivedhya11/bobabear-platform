@@ -1,12 +1,14 @@
 /**
- * Build immutable Checkout snapshot candidate (IMP-021).
+ * Build immutable Checkout snapshot candidate (IMP-021 / IMP-036H-B).
  */
 
 import { randomUUID } from "node:crypto";
 
 import type {
   CheckoutDestination,
+  CheckoutPickupLocation,
   CheckoutSnapshot,
+  FulfilmentMode,
 } from "../../shared/checkout";
 import type { CheckoutCommercialResult } from "./adapters/pricing";
 import type { SnapshotCommitPayload } from "./repository";
@@ -22,15 +24,27 @@ export function buildSnapshotCandidate(input: {
   sourceCartRevision: bigint;
   selectedOutletId: string;
   evaluatedAt: Date;
-  serviceabilityEvaluatedAt: Date;
+  fulfilmentMode: FulfilmentMode;
+  /** Required for DELIVERY; null for PICKUP. */
+  serviceabilityEvaluatedAt: Date | null;
   manualCouponCode: string | null;
-  destination: CheckoutDestination;
+  /** Required for DELIVERY; null for PICKUP. */
+  destination: CheckoutDestination | null;
+  /** Required for PICKUP; null for DELIVERY. */
+  pickupLocation: CheckoutPickupLocation | null;
   commercial: CheckoutCommercialResult;
   expiresAt: Date;
   updatedAt: Date;
 }): SnapshotCandidate {
   const snapshotId = randomUUID();
   const createdAt = input.evaluatedAt;
+  const fulfilmentMode = input.fulfilmentMode;
+  const destination =
+    fulfilmentMode === "DELIVERY" ? input.destination : null;
+  const pickupLocation =
+    fulfilmentMode === "PICKUP" ? input.pickupLocation : null;
+  const serviceabilityEvaluatedAt =
+    fulfilmentMode === "DELIVERY" ? input.serviceabilityEvaluatedAt : null;
 
   const lines = input.commercial.lines.map((line) => {
     const lineId = randomUUID();
@@ -91,12 +105,12 @@ export function buildSnapshotCandidate(input: {
     sourceCartRevision: input.sourceCartRevision,
     selectedOutletId: input.selectedOutletId,
     evaluatedAt: input.evaluatedAt,
-    fulfilmentMode: "DELIVERY",
-    serviceabilityEvaluatedAt: input.serviceabilityEvaluatedAt,
+    fulfilmentMode,
+    serviceabilityEvaluatedAt,
     currency: "INR",
     manualCouponCode: input.manualCouponCode,
-    destination: input.destination,
-    pickupLocation: null,
+    destination,
+    pickupLocation,
     basePaise: q.basePaise,
     modifierAdjustmentsPaise: q.modifierAdjustmentsPaise,
     bundleAdjustmentsPaise: q.bundleAdjustmentsPaise,
@@ -120,12 +134,12 @@ export function buildSnapshotCandidate(input: {
     sourceCartRevision: input.sourceCartRevision,
     selectedOutletId: input.selectedOutletId,
     evaluatedAt: input.evaluatedAt,
-    fulfilmentMode: "DELIVERY",
-    serviceabilityEvaluatedAt: input.serviceabilityEvaluatedAt,
+    fulfilmentMode,
+    serviceabilityEvaluatedAt,
     currency: "INR",
     manualCouponCode: input.manualCouponCode,
-    destination: input.destination,
-    pickupLocation: null,
+    destination,
+    pickupLocation,
     basePaise: q.basePaise,
     modifierAdjustmentsPaise: q.modifierAdjustmentsPaise,
     bundleAdjustmentsPaise: q.bundleAdjustmentsPaise,

@@ -11,13 +11,16 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   evaluateCheckout,
   setCheckoutDestination,
+  setCheckoutFulfilment,
   startCheckout,
 } from "../../src/server/checkout";
+import { upsertOutletPickupProfile } from "../../src/server/outlet-pickup-profile/repository";
 import { getApplicationPersistence } from "../../src/server/persistence";
 import {
   CHECKOUT_PIN,
   checkoutOpts,
   closeTrackedPersistenceHandles,
+  seedChargePricesOnBook,
   withCheckoutReadyHarness,
 } from "./support/checkout-fixtures";
 import {
@@ -25,6 +28,7 @@ import {
   applicationConfig,
   trackPersistenceHandle,
 } from "./support/cart-fixtures";
+import { configureAlwaysAcceptingOutlet } from "./support/serviceability-fixtures";
 import {
   applyMigrations,
   withIsolatedTestDatabase,
@@ -859,5 +863,96 @@ describe("IMP-021 checkout constraints", () => {
         });
       },
     );
+  });
+});
+
+describe("IMP-036H-B checkout Postgres — pickup fulfilment", () => {
+  it("persists PICKUP mode, seals pickup location, omits delivery charge rows", async () => {
+    await withCheckoutReadyHarness(async ({ persistence, actors, cartId }) => {
+      const opts = checkoutOpts();
+      await configureAlwaysAcceptingOutlet(
+        persistence,
+        actors.brandAdminActor,
+        actors.tree.outletA.id,
+      );
+      await persistence.transaction(async (tx) => {
+        await upsertOutletPickupProfile(tx, {
+          outletId: actors.tree.outletA.id,
+          enabled: true,
+          displayName: "DB Pickup",
+          addressLine1: "12 Mall Road",
+          city: "Dehradun",
+          stateCode: "IN-UT",
+          postalCode: CHECKOUT_PIN,
+          instructions: "Counter",
+        });
+      });
+      await persistence.withContext(async (ctx) => {
+        const book = await ctx.db.execute(sql`
+          select id::text as id from app.price_books
+          where brand_id = ${actors.tree.brand.id}::uuid
+            and lifecycle_status = 'active'
+          limit 1
+        `);
+        await seedChargePricesOnBook(persistence, {
+          brandId: actors.tree.brand.id,
+          priceBookId: book.rows[0]!.id as string,
+        });
+      });
+
+      let checkout = await startCheckout(
+        persistence,
+        actors.customerA,
+        { cartId },
+        opts,
+      );
+      checkout = await setCheckoutFulfilment(
+        persistence,
+        actors.customerA,
+        {
+          checkoutId: checkout.id,
+          expectedCheckoutRevision: checkout.revision,
+          fulfilmentMode: "PICKUP",
+          pickupOutletId: actors.tree.outletA.id,
+        },
+        opts,
+      );
+      const ready = await evaluateCheckout(
+        persistence,
+        actors.customerA,
+        {
+          checkoutId: checkout.id,
+          expectedCheckoutRevision: checkout.revision,
+        },
+        opts,
+      );
+
+      await persistence.withContext(async (ctx) => {
+        const row = await ctx.db.execute(sql`
+          select c.fulfilment_mode, c.pickup_outlet_id::text as poid,
+                 s.fulfilment_mode as s_mode,
+                 s.pickup_display_name,
+                 s.destination_kind,
+                 s.serviceability_evaluated_at
+          from app.checkouts c
+          join app.checkout_snapshots s on s.id = c.active_snapshot_id
+          where c.id = ${ready.checkout.id}::uuid
+        `);
+        expect(row.rows[0]?.fulfilment_mode).toBe("PICKUP");
+        expect(row.rows[0]?.poid).toBe(actors.tree.outletA.id);
+        expect(row.rows[0]?.s_mode).toBe("PICKUP");
+        expect(row.rows[0]?.pickup_display_name).toBe("DB Pickup");
+        expect(row.rows[0]?.destination_kind).toBeNull();
+        expect(row.rows[0]?.serviceability_evaluated_at).toBeNull();
+
+        const charges = await ctx.db.execute(sql`
+          select charge_code from app.checkout_snapshot_charges
+          where snapshot_id = ${ready.snapshot.id}::uuid
+        `);
+        const codes = charges.rows.map((r) => r.charge_code);
+        expect(codes).not.toContain("delivery");
+        expect(codes).toContain("packaging");
+      });
+    });
   });
 });

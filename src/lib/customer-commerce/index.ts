@@ -58,8 +58,11 @@ export {
   clearCheckoutDestination,
   evaluateCheckout,
   getActiveCheckout,
+  listCheckoutPickupOptions,
   setCheckoutDestination,
+  setCheckoutFulfilment,
   startCheckout,
+  type CommercePickupOption,
 } from "./checkout";
 export {
   completeZeroPayableCheckout,

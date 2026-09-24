@@ -168,3 +168,14 @@ export const CHECKOUT_PICKUP_OUTLET_INPUT_FIELDS = [
   "expectedCheckoutRevision",
   "pickupOutletId",
 ] as const;
+
+/**
+ * IMP-036H — combined fulfilment mutation body
+ * (`POST /api/v1/checkouts/{id}/fulfilment`).
+ */
+export const CHECKOUT_FULFILMENT_INPUT_FIELDS = [
+  "checkoutId",
+  "expectedCheckoutRevision",
+  "fulfilmentMode",
+  "pickupOutletId",
+] as const;
