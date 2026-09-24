@@ -376,6 +376,7 @@ export function Nav() {
               )}
             >
               <Bag aria-hidden="true" size={18} strokeWidth={1.8} />
+              <span className="sr-only">{cartLabel}</span>
               <span aria-hidden="true" className="inline-flex min-w-5 items-center justify-center rounded-full bg-[var(--interactive-secondary)] px-1 text-[11px] font-bold text-[var(--text-on-secondary)]">{cartCount}</span>
             </a>
           </div>

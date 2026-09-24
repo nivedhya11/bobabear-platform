@@ -300,6 +300,12 @@ describe("Nav — IMP-028A Food Direct chrome", () => {
     const user = userEvent.setup();
     render(<Nav />);
     await waitFor(() => expect(within(desktopNav()).getByRole("link", { name: "Cart (3)" })).toBeInTheDocument());
+    // Mobile chrome cart icon must expose the same accessible name (sr-only), not only the drawer.
+    await waitFor(() => {
+      expect(
+        within(screen.getByRole("banner")).getAllByRole("link", { name: "Cart (3)" }).length,
+      ).toBeGreaterThanOrEqual(2);
+    });
     await user.click(screen.getByRole("button", { name: "Open navigation menu" }));
     expect(within(screen.getByRole("dialog", { name: "Navigation menu" })).getByRole("link", { name: "Cart (3)" })).toBeInTheDocument();
     publishCartCount(0);
