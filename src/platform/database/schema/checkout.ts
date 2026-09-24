@@ -9,6 +9,7 @@ import { sql } from "drizzle-orm";
 import {
   type AnyPgColumn,
   bigint,
+  boolean,
   check,
   foreignKey,
   index,
@@ -126,6 +127,10 @@ export const checkoutsTable = appSchema.table(
     sourceCartRevision: bigint("source_cart_revision", { mode: "bigint" }).notNull(),
     revision: bigint("revision", { mode: "bigint" }).notNull(),
     status: text("status").notNull(),
+    /** IMP-036H — mutable fulfilment intent; historical default DELIVERY. */
+    fulfilmentMode: text("fulfilment_mode").notNull().default("DELIVERY"),
+    /** IMP-036H — mutable Pickup outlet intent; NULL for DELIVERY; may be NULL on early PICKUP DRAFT. */
+    pickupOutletId: uuid("pickup_outlet_id"),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     // Forward-ref composite ownership FK is declared in extraConfig below
     // (ExtraConfigBuilder runs after checkout_snapshots is initialized).
@@ -159,6 +164,11 @@ export const checkoutsTable = appSchema.table(
       columns: [table.cartId],
       foreignColumns: [cartsTable.id],
     }).onDelete("restrict"),
+    foreignKey({
+      name: "checkouts_pickup_outlet_fk",
+      columns: [table.pickupOutletId],
+      foreignColumns: [outletsTable.id],
+    }).onDelete("restrict"),
     check(
       "checkouts_revision_positive_check",
       sql`${table.revision} > 0`,
@@ -176,6 +186,23 @@ export const checkoutsTable = appSchema.table(
         'COMPLETED',
         'CANCELLED',
         'EXPIRED'
+      )`,
+    ),
+    check(
+      "checkouts_fulfilment_mode_check",
+      sql`${table.fulfilmentMode} in ('DELIVERY', 'PICKUP')`,
+    ),
+    check(
+      "checkouts_fulfilment_mode_pickup_outlet_check",
+      sql`(
+        (
+          ${table.fulfilmentMode} = 'DELIVERY'
+          and ${table.pickupOutletId} is null
+        )
+        or
+        (
+          ${table.fulfilmentMode} = 'PICKUP'
+        )
       )`,
     ),
     check(
@@ -205,6 +232,7 @@ export const checkoutsTable = appSchema.table(
     index("checkouts_customer_auth_user_id_idx").on(table.customerAuthUserId),
     index("checkouts_cart_id_idx").on(table.cartId),
     index("checkouts_expires_at_idx").on(table.expiresAt),
+    index("checkouts_pickup_outlet_id_idx").on(table.pickupOutletId),
   ],
 );
 
@@ -291,25 +319,40 @@ export const checkoutSnapshotsTable = appSchema.table(
     sourceCartRevision: bigint("source_cart_revision", { mode: "bigint" }).notNull(),
     selectedOutletId: uuid("selected_outlet_id").notNull(),
     evaluatedAt: timestamp("evaluated_at", { withTimezone: true }).notNull(),
+    /** Required for DELIVERY snapshots; NULL for PICKUP (IMP-036H). */
     serviceabilityEvaluatedAt: timestamp("serviceability_evaluated_at", {
       withTimezone: true,
-    }).notNull(),
+    }),
     currency: text("currency").notNull(),
     manualCouponCode: text("manual_coupon_code"),
-    destinationKind: text("destination_kind").notNull(),
+    /** IMP-036H — immutable purchased fulfilment mode. */
+    fulfilmentMode: text("fulfilment_mode").notNull().default("DELIVERY"),
+    /** Delivery destination fields — required under DELIVERY; all NULL under PICKUP. */
+    destinationKind: text("destination_kind"),
     sourceSavedAddressId: uuid("source_saved_address_id"),
-    recipientName: text("recipient_name").notNull(),
-    recipientPhone: text("recipient_phone").notNull(),
-    addressLine1: text("address_line_1").notNull(),
+    recipientName: text("recipient_name"),
+    recipientPhone: text("recipient_phone"),
+    addressLine1: text("address_line_1"),
     addressLine2: text("address_line_2"),
     landmark: text("landmark"),
     locality: text("locality"),
-    city: text("city").notNull(),
-    stateCode: text("state_code").notNull(),
-    postalCode: text("postal_code").notNull(),
+    city: text("city"),
+    stateCode: text("state_code"),
+    postalCode: text("postal_code"),
     latitude: numeric("latitude", { precision: 10, scale: 7 }),
     longitude: numeric("longitude", { precision: 10, scale: 7 }),
     label: text("label"),
+    /** Pickup location commitment — required under PICKUP; all NULL under DELIVERY. */
+    pickupDisplayName: text("pickup_display_name"),
+    pickupAddressLine1: text("pickup_address_line_1"),
+    pickupAddressLine2: text("pickup_address_line_2"),
+    pickupLocality: text("pickup_locality"),
+    pickupCity: text("pickup_city"),
+    pickupStateCode: text("pickup_state_code"),
+    pickupPostalCode: text("pickup_postal_code"),
+    pickupInstructions: text("pickup_instructions"),
+    pickupLatitude: numeric("pickup_latitude", { precision: 10, scale: 7 }),
+    pickupLongitude: numeric("pickup_longitude", { precision: 10, scale: 7 }),
     basePaise: paise("base_paise").notNull(),
     modifierAdjustmentsPaise: paise("modifier_adjustments_paise").notNull(),
     bundleAdjustmentsPaise: paise("bundle_adjustments_paise").notNull(),
@@ -356,8 +399,12 @@ export const checkoutSnapshotsTable = appSchema.table(
       sql`${table.currency} = 'INR'`,
     ),
     check(
+      "checkout_snapshots_fulfilment_mode_check",
+      sql`${table.fulfilmentMode} in ('DELIVERY', 'PICKUP')`,
+    ),
+    check(
       "checkout_snapshots_destination_kind_check",
-      sql`${table.destinationKind} in ('SAVED_ADDRESS', 'ONE_TIME_ADDRESS')`,
+      sql`${table.destinationKind} is null or ${table.destinationKind} in ('SAVED_ADDRESS', 'ONE_TIME_ADDRESS')`,
     ),
     check(
       "checkout_snapshots_tax_inclusion_mode_check",
@@ -367,6 +414,7 @@ export const checkoutSnapshotsTable = appSchema.table(
       "checkout_snapshots_manual_coupon_code_nonempty_check",
       sql`${table.manualCouponCode} is null or length(trim(${table.manualCouponCode})) > 0`,
     ),
+    // Soft length/format checks — NULL-tolerant; mode CHECKs enforce presence.
     ADDRESS_FIELD_CHECKS.recipientName(table.recipientName, "checkout_snapshots"),
     ADDRESS_FIELD_CHECKS.recipientPhone(table.recipientPhone, "checkout_snapshots"),
     ADDRESS_FIELD_CHECKS.addressLine1(table.addressLine1, "checkout_snapshots"),
@@ -380,6 +428,101 @@ export const checkoutSnapshotsTable = appSchema.table(
     ADDRESS_FIELD_CHECKS.coordPair(table.latitude, table.longitude, "checkout_snapshots"),
     ADDRESS_FIELD_CHECKS.latRange(table.latitude, "checkout_snapshots"),
     ADDRESS_FIELD_CHECKS.lngRange(table.longitude, "checkout_snapshots"),
+    check(
+      "checkout_snapshots_pickup_display_name_length_check",
+      sql`${table.pickupDisplayName} is null or char_length(${table.pickupDisplayName}) between 1 and 200`,
+    ),
+    check(
+      "checkout_snapshots_pickup_address_line_1_length_check",
+      sql`${table.pickupAddressLine1} is null or char_length(${table.pickupAddressLine1}) between 1 and 200`,
+    ),
+    check(
+      "checkout_snapshots_pickup_address_line_2_length_check",
+      sql`${table.pickupAddressLine2} is null or char_length(${table.pickupAddressLine2}) between 1 and 200`,
+    ),
+    check(
+      "checkout_snapshots_pickup_locality_length_check",
+      sql`${table.pickupLocality} is null or char_length(${table.pickupLocality}) between 1 and 120`,
+    ),
+    check(
+      "checkout_snapshots_pickup_city_length_check",
+      sql`${table.pickupCity} is null or char_length(${table.pickupCity}) between 1 and 100`,
+    ),
+    check(
+      "checkout_snapshots_pickup_state_code_nonempty_check",
+      sql`${table.pickupStateCode} is null or length(trim(${table.pickupStateCode})) > 0`,
+    ),
+    check(
+      "checkout_snapshots_pickup_postal_code_check",
+      sql`${table.pickupPostalCode} is null or ${table.pickupPostalCode} ~ '^[1-9][0-9]{5}$'`,
+    ),
+    check(
+      "checkout_snapshots_pickup_instructions_nonempty_check",
+      sql`${table.pickupInstructions} is null or length(trim(${table.pickupInstructions})) > 0`,
+    ),
+    ADDRESS_FIELD_CHECKS.coordPair(
+      table.pickupLatitude,
+      table.pickupLongitude,
+      "checkout_snapshots_pickup",
+    ),
+    ADDRESS_FIELD_CHECKS.latRange(table.pickupLatitude, "checkout_snapshots_pickup"),
+    ADDRESS_FIELD_CHECKS.lngRange(table.pickupLongitude, "checkout_snapshots_pickup"),
+    check(
+      "checkout_snapshots_delivery_mode_shape_check",
+      sql`(
+        ${table.fulfilmentMode} <> 'DELIVERY'
+        or (
+          ${table.serviceabilityEvaluatedAt} is not null
+          and ${table.destinationKind} is not null
+          and ${table.recipientName} is not null
+          and ${table.recipientPhone} is not null
+          and ${table.addressLine1} is not null
+          and ${table.city} is not null
+          and ${table.stateCode} is not null
+          and ${table.postalCode} is not null
+          and ${table.pickupDisplayName} is null
+          and ${table.pickupAddressLine1} is null
+          and ${table.pickupAddressLine2} is null
+          and ${table.pickupLocality} is null
+          and ${table.pickupCity} is null
+          and ${table.pickupStateCode} is null
+          and ${table.pickupPostalCode} is null
+          and ${table.pickupInstructions} is null
+          and ${table.pickupLatitude} is null
+          and ${table.pickupLongitude} is null
+        )
+      )`,
+    ),
+    check(
+      "checkout_snapshots_pickup_mode_shape_check",
+      sql`(
+        ${table.fulfilmentMode} <> 'PICKUP'
+        or (
+          ${table.serviceabilityEvaluatedAt} is null
+          and ${table.destinationKind} is null
+          and ${table.sourceSavedAddressId} is null
+          and ${table.recipientName} is null
+          and ${table.recipientPhone} is null
+          and ${table.addressLine1} is null
+          and ${table.addressLine2} is null
+          and ${table.landmark} is null
+          and ${table.locality} is null
+          and ${table.city} is null
+          and ${table.stateCode} is null
+          and ${table.postalCode} is null
+          and ${table.latitude} is null
+          and ${table.longitude} is null
+          and ${table.label} is null
+          and ${table.selectedOutletId} is not null
+          and ${table.pickupDisplayName} is not null
+          and ${table.pickupAddressLine1} is not null
+          and ${table.pickupCity} is not null
+          and ${table.pickupStateCode} is not null
+          and ${table.pickupPostalCode} is not null
+          and ${table.pickupInstructions} is not null
+        )
+      )`,
+    ),
     check(
       "checkout_snapshots_base_paise_nonnegative_check",
       sql`${table.basePaise} >= 0`,

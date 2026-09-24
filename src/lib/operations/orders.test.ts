@@ -156,7 +156,7 @@ describe("operations order detail client adapter", () => {
     );
     if (!result.ok) return;
     expect(result.data.order.orderId).toBe(orderId);
-    expect(result.data.order.destination.recipientName).toBe("E2E Guest");
+    expect(result.data.order.destination?.recipientName).toBe("E2E Guest");
   });
 
   it("rejects a summary-shaped HTTP 200 detail payload as INVALID_RESPONSE", async () => {

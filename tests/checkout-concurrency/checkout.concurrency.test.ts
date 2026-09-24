@@ -291,7 +291,7 @@ describe("IMP-021 checkout concurrency races", () => {
         expect(final).not.toBeNull();
         if (final!.status === "READY_FOR_PAYMENT") {
           expect(final!.destination?.destinationKind).toBe("SAVED_ADDRESS");
-          expect(final!.activeSnapshot?.destination.destinationKind).toBe(
+          expect(final!.activeSnapshot?.destination?.destinationKind).toBe(
             "SAVED_ADDRESS",
           );
         } else {
@@ -668,7 +668,7 @@ describe("IMP-021 checkout concurrency races", () => {
         );
         if (final!.status === "READY_FOR_PAYMENT") {
           expect(final!.destination?.destinationKind).toBe("SAVED_ADDRESS");
-          expect(final!.activeSnapshot?.destination.destinationKind).toBe(
+          expect(final!.activeSnapshot?.destination?.destinationKind).toBe(
             "SAVED_ADDRESS",
           );
         } else {

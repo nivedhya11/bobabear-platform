@@ -143,6 +143,18 @@ export type CommerceCheckoutDestination = Readonly<{
   label: string | null;
 }>;
 
+export type CommerceCheckoutPickupLocation = Readonly<{
+  displayName: string;
+  addressLine1: string;
+  addressLine2: string | null;
+  locality: string | null;
+  city: string;
+  stateCode: string;
+  postalCode: string;
+  instructions: string;
+  coordinates: Readonly<{ latitude: string; longitude: string }> | null;
+}>;
+
 export type CommerceCheckoutSnapshot = Readonly<{
   id: string;
   checkoutId: string;
@@ -150,6 +162,8 @@ export type CommerceCheckoutSnapshot = Readonly<{
   sourceCartRevision: string;
   selectedOutletId: string;
   evaluatedAt: string;
+  fulfilmentMode: "DELIVERY" | "PICKUP";
+  serviceabilityEvaluatedAt: string | null;
   currency: string;
   basePaise: string;
   chargesPaise: string;
@@ -159,7 +173,8 @@ export type CommerceCheckoutSnapshot = Readonly<{
   taxPaise: string;
   grandTotalPaise: string;
   taxInclusionMode: string;
-  destination: CommerceCheckoutDestination;
+  destination: CommerceCheckoutDestination | null;
+  pickupLocation: CommerceCheckoutPickupLocation | null;
   lines: readonly unknown[];
   charges: readonly unknown[];
   promotionEffects: readonly unknown[];
@@ -175,6 +190,8 @@ export type CommerceCheckout = Readonly<{
   revision: string;
   status: string;
   expiresAt: string;
+  fulfilmentMode: "DELIVERY" | "PICKUP";
+  pickupOutletId: string | null;
   activeSnapshotId: string | null;
   createdAt: string;
   updatedAt: string;
@@ -349,7 +366,18 @@ export type CommerceOrderDetail = CommerceOrderSummary &
     fulfilledAt: string | null;
     cancelledAt: string | null;
     cancellationReasonCode: string | null;
-    destination: CommerceOrderDestination;
+    fulfilmentMode: "DELIVERY" | "PICKUP";
+    destination: CommerceOrderDestination | null;
+    pickupLocation?: Readonly<{
+      displayName: string;
+      addressLine1: string;
+      addressLine2: string | null;
+      locality: string | null;
+      city: string;
+      stateCode: string;
+      postalCode: string;
+      instructions: string;
+    }> | null;
     lines: readonly CommerceOrderLine[];
     moneySummary: Readonly<{
       prePromotionSubtotalMinor: string;

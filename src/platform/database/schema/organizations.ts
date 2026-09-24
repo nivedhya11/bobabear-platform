@@ -8,8 +8,11 @@
 import { sql } from "drizzle-orm";
 import {
   bigint,
+  boolean,
   check,
   foreignKey,
+  integer,
+  numeric,
   text,
   timestamp,
   unique,
@@ -189,5 +192,89 @@ export const outletsTable = appSchema.table(
     check("outlets_code_nonempty_check", sql`length(trim(${table.code})) > 0`),
     check("outlets_name_nonempty_check", sql`length(trim(${table.name})) > 0`),
     check("outlets_revision_positive_check", sql`${table.revision} > 0`),
+  ],
+);
+
+/**
+ * IMP-036H — customer-facing Pickup configuration authority (1:1 Outlet).
+ * No profile or enabled=false → PICKUP_NOT_AVAILABLE.
+ */
+export const outletPickupProfilesTable = appSchema.table(
+  "outlet_pickup_profiles",
+  {
+    outletId: uuid("outlet_id").primaryKey(),
+    enabled: boolean("enabled").notNull().default(false),
+    displayName: text("display_name").notNull(),
+    addressLine1: text("address_line_1").notNull(),
+    addressLine2: text("address_line_2"),
+    locality: text("locality"),
+    city: text("city").notNull(),
+    stateCode: text("state_code").notNull(),
+    postalCode: text("postal_code").notNull(),
+    latitude: numeric("latitude", { precision: 10, scale: 7 }),
+    longitude: numeric("longitude", { precision: 10, scale: 7 }),
+    instructions: text("instructions").notNull(),
+    revision: integer("revision").notNull().default(1),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "outlet_pickup_profiles_outlet_fk",
+      columns: [table.outletId],
+      foreignColumns: [outletsTable.id],
+    }).onDelete("restrict"),
+    check(
+      "outlet_pickup_profiles_display_name_length_check",
+      sql`char_length(${table.displayName}) between 1 and 200`,
+    ),
+    check(
+      "outlet_pickup_profiles_address_line_1_length_check",
+      sql`char_length(${table.addressLine1}) between 1 and 200`,
+    ),
+    check(
+      "outlet_pickup_profiles_address_line_2_length_check",
+      sql`${table.addressLine2} is null or char_length(${table.addressLine2}) between 1 and 200`,
+    ),
+    check(
+      "outlet_pickup_profiles_locality_length_check",
+      sql`${table.locality} is null or char_length(${table.locality}) between 1 and 120`,
+    ),
+    check(
+      "outlet_pickup_profiles_city_length_check",
+      sql`char_length(${table.city}) between 1 and 100`,
+    ),
+    check(
+      "outlet_pickup_profiles_state_code_nonempty_check",
+      sql`length(trim(${table.stateCode})) > 0`,
+    ),
+    check(
+      "outlet_pickup_profiles_postal_code_check",
+      sql`${table.postalCode} ~ '^[1-9][0-9]{5}$'`,
+    ),
+    check(
+      "outlet_pickup_profiles_instructions_nonempty_check",
+      sql`length(trim(${table.instructions})) > 0`,
+    ),
+    check(
+      "outlet_pickup_profiles_coordinates_pair_check",
+      sql`(${table.latitude} is null) = (${table.longitude} is null)`,
+    ),
+    check(
+      "outlet_pickup_profiles_latitude_range_check",
+      sql`${table.latitude} is null or (${table.latitude} >= -90 and ${table.latitude} <= 90)`,
+    ),
+    check(
+      "outlet_pickup_profiles_longitude_range_check",
+      sql`${table.longitude} is null or (${table.longitude} >= -180 and ${table.longitude} <= 180)`,
+    ),
+    check(
+      "outlet_pickup_profiles_revision_positive_check",
+      sql`${table.revision} > 0`,
+    ),
+    check(
+      "outlet_pickup_profiles_updated_at_after_created_at_check",
+      sql`${table.updatedAt} >= ${table.createdAt}`,
+    ),
   ],
 );

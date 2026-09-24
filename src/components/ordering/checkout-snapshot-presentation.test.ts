@@ -14,6 +14,8 @@ const snapshot: CommerceCheckoutSnapshot = {
   sourceCartRevision: "2",
   selectedOutletId: "outlet-1",
   evaluatedAt: "2026-08-13T00:10:00.000Z",
+  fulfilmentMode: "DELIVERY",
+  serviceabilityEvaluatedAt: "2026-08-13T00:10:00.000Z",
   currency: "INR",
   basePaise: "19900",
   chargesPaise: "6000",
@@ -38,6 +40,7 @@ const snapshot: CommerceCheckoutSnapshot = {
     coordinates: null,
     label: null,
   },
+  pickupLocation: null,
   lines: [],
   charges: [
     { chargeCode: "packaging", amountPaise: "2000", name: "Packaging fee" },

@@ -505,35 +505,65 @@ function OrderDetail({
 
       <section aria-labelledby="operations-destination">
         <h2 id="operations-destination" className="font-body text-[18px] font-semibold">
-          Destination
+          {destination ? "Destination" : order.pickupLocation ? "Pickup location" : "Destination"}
         </h2>
-        <dl className="mt-3 grid gap-2 font-body text-[14px]">
-          <div>
-            <dt className="text-[var(--text-secondary)]">Recipient</dt>
-            <dd>{destination.recipientName}</dd>
-          </div>
-          <div>
-            <dt className="text-[var(--text-secondary)]">Contact</dt>
-            <dd>{destination.recipientPhone}</dd>
-          </div>
-          <div>
-            <dt className="text-[var(--text-secondary)]">Address</dt>
-            <dd>
-              {[
-                destination.addressLine1,
-                destination.addressLine2,
-                destination.landmark,
-                destination.locality,
-                `${destination.city}, ${destination.stateCode} ${destination.postalCode}`,
-                destination.label,
-              ]
-                .filter(Boolean)
-                .map((part) => (
-                  <div key={part}>{part}</div>
-                ))}
-            </dd>
-          </div>
-        </dl>
+        {destination ? (
+          <dl className="mt-3 grid gap-2 font-body text-[14px]">
+            <div>
+              <dt className="text-[var(--text-secondary)]">Recipient</dt>
+              <dd>{destination.recipientName}</dd>
+            </div>
+            <div>
+              <dt className="text-[var(--text-secondary)]">Contact</dt>
+              <dd>{destination.recipientPhone}</dd>
+            </div>
+            <div>
+              <dt className="text-[var(--text-secondary)]">Address</dt>
+              <dd>
+                {[
+                  destination.addressLine1,
+                  destination.addressLine2,
+                  destination.landmark,
+                  destination.locality,
+                  `${destination.city}, ${destination.stateCode} ${destination.postalCode}`,
+                  destination.label,
+                ]
+                  .filter(Boolean)
+                  .map((part) => (
+                    <div key={part}>{part}</div>
+                  ))}
+              </dd>
+            </div>
+          </dl>
+        ) : order.pickupLocation ? (
+          <dl className="mt-3 grid gap-2 font-body text-[14px]">
+            <div>
+              <dt className="text-[var(--text-secondary)]">Location</dt>
+              <dd>{order.pickupLocation.displayName}</dd>
+            </div>
+            <div>
+              <dt className="text-[var(--text-secondary)]">Address</dt>
+              <dd>
+                {[
+                  order.pickupLocation.addressLine1,
+                  order.pickupLocation.addressLine2,
+                  order.pickupLocation.locality,
+                  `${order.pickupLocation.city}, ${order.pickupLocation.stateCode} ${order.pickupLocation.postalCode}`,
+                ]
+                  .filter(Boolean)
+                  .map((part) => (
+                    <div key={part}>{part}</div>
+                  ))}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-[var(--text-secondary)]">Instructions</dt>
+              <dd>{order.pickupLocation.instructions}</dd>
+            </div>
+          </dl>
+        ) : (
+          <p className="mt-3 font-body text-[14px] text-[var(--text-secondary)]">Not available</p>
+        )}
       </section>
 
       <OperationsDeliveryPanel orderId={order.orderId} />

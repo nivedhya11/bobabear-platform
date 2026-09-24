@@ -71,6 +71,18 @@ export type OrderDestinationProjection = Readonly<{
   label: string | null;
 }>;
 
+/** IMP-036H — customer-facing pickup location on order detail (tranche C wires fully). */
+export type OrderPickupLocationProjection = Readonly<{
+  displayName: string;
+  addressLine1: string;
+  addressLine2: string | null;
+  locality: string | null;
+  city: string;
+  stateCode: string;
+  postalCode: string;
+  instructions: string;
+}>;
+
 export type OrderLineProjection = Readonly<{
   productName: string;
   variantName: string;
@@ -101,7 +113,12 @@ export type CustomerOrderDetail = CustomerOrderSummary &
     fulfilledAt: Date | null;
     cancelledAt: Date | null;
     cancellationReasonCode: OrderCancellationReasonCode | null;
-    destination: OrderDestinationProjection;
+    /** IMP-036H — DELIVERY | PICKUP from sealed checkout snapshot. */
+    fulfilmentMode: "DELIVERY" | "PICKUP";
+    /** Null when fulfilmentMode is PICKUP. */
+    destination: OrderDestinationProjection | null;
+    /** Present when fulfilmentMode is PICKUP; otherwise null/absent. */
+    pickupLocation?: OrderPickupLocationProjection | null;
     lines: readonly OrderLineProjection[];
     moneySummary: OrderMoneySummary;
     delivery: Readonly<{
@@ -133,7 +150,12 @@ export type WorkforceOrderDetail = WorkforceOrderSummary &
     fulfilledByWorkforceUserId: string | null;
     cancelledByWorkforceUserId: string | null;
     cancellationReasonCode: OrderCancellationReasonCode | null;
-    destination: OrderDestinationProjection;
+    /** IMP-036H — DELIVERY | PICKUP from sealed checkout snapshot. */
+    fulfilmentMode: "DELIVERY" | "PICKUP";
+    /** Null when fulfilmentMode is PICKUP. */
+    destination: OrderDestinationProjection | null;
+    /** Present when fulfilmentMode is PICKUP; otherwise null/absent. */
+    pickupLocation?: OrderPickupLocationProjection | null;
     lines: readonly OrderLineProjection[];
   }>;
 

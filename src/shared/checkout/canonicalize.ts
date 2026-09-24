@@ -3,7 +3,12 @@
  */
 
 import { CheckoutError } from "./errors";
-import type { CheckoutDestination, CheckoutPolicy } from "./types";
+import type {
+  CheckoutDestination,
+  CheckoutPickupLocation,
+  CheckoutPolicy,
+  CheckoutSnapshot,
+} from "./types";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -67,6 +72,66 @@ export function destinationsEqual(
     a.label === b.label &&
     coordinatesEqual(a.coordinates, b.coordinates)
   );
+}
+
+export function pickupLocationsEqual(
+  a: CheckoutPickupLocation,
+  b: CheckoutPickupLocation,
+): boolean {
+  return (
+    a.displayName === b.displayName &&
+    a.addressLine1 === b.addressLine1 &&
+    a.addressLine2 === b.addressLine2 &&
+    a.locality === b.locality &&
+    a.city === b.city &&
+    a.stateCode === b.stateCode &&
+    a.postalCode === b.postalCode &&
+    a.instructions === b.instructions &&
+    coordinatesEqual(a.coordinates, b.coordinates)
+  );
+}
+
+/**
+ * Structural equality of mode-aware snapshot fulfilment fields
+ * (mode + destination/pickup/serviceability shape). Commercial totals are not compared.
+ */
+export function snapshotFulfilmentShapesEqual(
+  a: Pick<
+    CheckoutSnapshot,
+    | "fulfilmentMode"
+    | "serviceabilityEvaluatedAt"
+    | "destination"
+    | "pickupLocation"
+  >,
+  b: Pick<
+    CheckoutSnapshot,
+    | "fulfilmentMode"
+    | "serviceabilityEvaluatedAt"
+    | "destination"
+    | "pickupLocation"
+  >,
+): boolean {
+  if (a.fulfilmentMode !== b.fulfilmentMode) return false;
+  if (
+    (a.serviceabilityEvaluatedAt?.getTime() ?? null) !==
+    (b.serviceabilityEvaluatedAt?.getTime() ?? null)
+  ) {
+    return false;
+  }
+  if (a.destination === null && b.destination === null) {
+    // both absent
+  } else if (a.destination === null || b.destination === null) {
+    return false;
+  } else if (!destinationsEqual(a.destination, b.destination)) {
+    return false;
+  }
+  if (a.pickupLocation === null && b.pickupLocation === null) {
+    return true;
+  }
+  if (a.pickupLocation === null || b.pickupLocation === null) {
+    return false;
+  }
+  return pickupLocationsEqual(a.pickupLocation, b.pickupLocation);
 }
 
 function coordinatesEqual(

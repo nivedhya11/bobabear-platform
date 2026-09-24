@@ -70,7 +70,18 @@ export type OperationsOrderDetail = OperationsOrderSummary & Readonly<{
   fulfilledByWorkforceUserId: string | null;
   cancelledByWorkforceUserId: string | null;
   cancellationReasonCode: string | null;
-  destination: OperationsOrderDestination;
+  fulfilmentMode?: "DELIVERY" | "PICKUP";
+  destination: OperationsOrderDestination | null;
+  pickupLocation?: Readonly<{
+    displayName: string;
+    addressLine1: string;
+    addressLine2: string | null;
+    locality: string | null;
+    city: string;
+    stateCode: string;
+    postalCode: string;
+    instructions: string;
+  }> | null;
   lines: readonly OperationsOrderLine[];
 }>;
 

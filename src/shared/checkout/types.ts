@@ -6,6 +6,7 @@ import type {
   CheckoutDestinationKind,
   CheckoutPromotionEffectKind,
   CheckoutStatus,
+  FulfilmentMode,
 } from "./constants";
 
 export type CheckoutPolicy = Readonly<{
@@ -36,6 +37,22 @@ export type CheckoutDestination = Readonly<{
   postalCode: string;
   coordinates: CheckoutDestinationCoordinates | null;
   label: string | null;
+}>;
+
+/**
+ * Immutable Pickup location commitment on a READY snapshot (IMP-036H).
+ * Invariant: present iff snapshot.fulfilmentMode === "PICKUP"; null for DELIVERY.
+ */
+export type CheckoutPickupLocation = Readonly<{
+  displayName: string;
+  addressLine1: string;
+  addressLine2: string | null;
+  locality: string | null;
+  city: string;
+  stateCode: string;
+  postalCode: string;
+  instructions: string;
+  coordinates: CheckoutDestinationCoordinates | null;
 }>;
 
 export type CheckoutSnapshotModifierSelection = Readonly<{
@@ -129,6 +146,13 @@ export type CheckoutSnapshotTaxComponent = Readonly<{
   sortOrder: number;
 }>;
 
+/**
+ * Mode-aware commercial snapshot (IMP-036H).
+ *
+ * Invariants (enforced by DB CHECKs + domain writers):
+ * - DELIVERY: destination non-null; serviceabilityEvaluatedAt non-null; pickupLocation null
+ * - PICKUP: pickupLocation non-null; destination null; serviceabilityEvaluatedAt null
+ */
 export type CheckoutSnapshot = Readonly<{
   id: string;
   checkoutId: string;
@@ -136,10 +160,15 @@ export type CheckoutSnapshot = Readonly<{
   sourceCartRevision: bigint;
   selectedOutletId: string;
   evaluatedAt: Date;
-  serviceabilityEvaluatedAt: Date;
+  fulfilmentMode: FulfilmentMode;
+  /** Required for DELIVERY; null for PICKUP. */
+  serviceabilityEvaluatedAt: Date | null;
   currency: "INR";
   manualCouponCode: string | null;
-  destination: CheckoutDestination;
+  /** Required for DELIVERY; null for PICKUP. */
+  destination: CheckoutDestination | null;
+  /** Required for PICKUP; null for DELIVERY. */
+  pickupLocation: CheckoutPickupLocation | null;
   basePaise: bigint;
   modifierAdjustmentsPaise: bigint;
   bundleAdjustmentsPaise: bigint;
@@ -166,6 +195,10 @@ export type Checkout = Readonly<{
   revision: bigint;
   status: CheckoutStatus;
   expiresAt: Date;
+  /** Mutable fulfilment intent (IMP-036H). */
+  fulfilmentMode: FulfilmentMode;
+  /** Mutable Pickup outlet intent; null for DELIVERY. */
+  pickupOutletId: string | null;
   activeSnapshotId: string | null;
   createdAt: Date;
   updatedAt: Date;

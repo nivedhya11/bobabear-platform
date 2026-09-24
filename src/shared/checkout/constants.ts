@@ -2,6 +2,10 @@
  * Shared constants for Checkout (IMP-021).
  */
 
+export const FULFILMENT_MODES = ["DELIVERY", "PICKUP"] as const;
+
+export type FulfilmentMode = (typeof FULFILMENT_MODES)[number];
+
 export const CHECKOUT_ERROR_CODES = [
   "CUSTOMER_AUTH_REQUIRED",
   "CHECKOUT_NOT_FOUND",
@@ -27,6 +31,9 @@ export const CHECKOUT_ERROR_CODES = [
   "CHECKOUT_TAX_INDETERMINATE",
   "CHECKOUT_REPRICED",
   "CHECKOUT_DEPENDENCY_INDETERMINATE",
+  "PICKUP_NOT_AVAILABLE",
+  "PICKUP_OUTLET_NOT_ELIGIBLE",
+  "PICKUP_OUTLET_REQUIRED",
 ] as const;
 
 export type CheckoutErrorCode = (typeof CHECKOUT_ERROR_CODES)[number];
@@ -146,4 +153,18 @@ export const CHECKOUT_CANCEL_INPUT_FIELDS = [
 export const CHECKOUT_PREPARE_INPUT_FIELDS = [
   "checkoutId",
   "expectedCheckoutRevision",
+] as const;
+
+/** IMP-036H — fulfilment-mode mutation input (tranche B). */
+export const CHECKOUT_FULFILMENT_MODE_INPUT_FIELDS = [
+  "checkoutId",
+  "expectedCheckoutRevision",
+  "fulfilmentMode",
+] as const;
+
+/** IMP-036H — pickup-outlet mutation input (tranche B). */
+export const CHECKOUT_PICKUP_OUTLET_INPUT_FIELDS = [
+  "checkoutId",
+  "expectedCheckoutRevision",
+  "pickupOutletId",
 ] as const;

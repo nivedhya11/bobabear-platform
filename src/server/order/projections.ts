@@ -35,6 +35,7 @@ function moneyFromSnapshot(snapshot: {
 
 function destinationFromSnapshot(snapshot: CheckoutSnapshot) {
   const dest = snapshot.destination;
+  if (dest === null) return null;
   return Object.freeze({
     recipientName: dest.recipientName,
     recipientPhone: dest.recipientPhone,
@@ -46,6 +47,21 @@ function destinationFromSnapshot(snapshot: CheckoutSnapshot) {
     stateCode: dest.stateCode,
     postalCode: dest.postalCode,
     label: dest.label,
+  });
+}
+
+function pickupLocationFromSnapshot(snapshot: CheckoutSnapshot) {
+  const pickup = snapshot.pickupLocation;
+  if (pickup === null) return null;
+  return Object.freeze({
+    displayName: pickup.displayName,
+    addressLine1: pickup.addressLine1,
+    addressLine2: pickup.addressLine2,
+    locality: pickup.locality,
+    city: pickup.city,
+    stateCode: pickup.stateCode,
+    postalCode: pickup.postalCode,
+    instructions: pickup.instructions,
   });
 }
 
@@ -103,7 +119,9 @@ export function toCustomerOrderDetail(
     fulfilledAt: order.fulfilledAt,
     cancelledAt: order.cancelledAt,
     cancellationReasonCode: order.cancellationReasonCode,
+    fulfilmentMode: snapshot.fulfilmentMode,
     destination: destinationFromSnapshot(snapshot),
+    pickupLocation: pickupLocationFromSnapshot(snapshot),
     lines: linesFromSnapshot(snapshot),
     moneySummary: moneySummaryFromSnapshot(snapshot),
     delivery,
@@ -142,7 +160,9 @@ export function toWorkforceOrderDetail(
     fulfilledByWorkforceUserId: order.fulfilledByWorkforceUserId,
     cancelledByWorkforceUserId: order.cancelledByWorkforceUserId,
     cancellationReasonCode: order.cancellationReasonCode,
+    fulfilmentMode: snapshot.fulfilmentMode,
     destination: destinationFromSnapshot(snapshot),
+    pickupLocation: pickupLocationFromSnapshot(snapshot),
     lines: linesFromSnapshot(snapshot),
   });
 }
