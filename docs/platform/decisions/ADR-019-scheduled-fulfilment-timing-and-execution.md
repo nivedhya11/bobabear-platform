@@ -43,7 +43,11 @@ slot capacity engines, automatic Delivery booking, or new deployable schedulers.
 
 Independent Architecture Fit review `5309072645` returned **STOP**. This Proposed ADR was updated
 only as needed to encode Fit remediation for Brand missing-row defaults and the full
-`SCHEDULED_FULFILMENT_REMINDER` notification contract. Status remains **Proposed**.
+`SCHEDULED_FULFILMENT_REMINDER` notification contract. A subsequent independent Fit review
+`5309240283` returned **STOP** on reminder vs `OUT_FOR_DELIVERY` ordering; this Proposed ADR was
+further remediated so `SCHEDULED_FULFILMENT_REMINDER` co-stages at rank **40** with
+`OUT_FOR_DELIVERY` under the existing strict-greater-than staleness model. Status remains
+**Proposed**.
 
 Verified CURRENT tip markers (unchanged by Fit remediation):
 
@@ -123,10 +127,20 @@ Execution:
 Reminder (full Notification semantic contract under ADR-012 / IMP-033 / IMP-034):
   NotificationSemanticType = SCHEDULED_FULFILMENT_REMINDER
   Purpose                  = ORDER_UPDATES
-  Recommended order rank   = 35
+    (not DELIVERY_UPDATES; orthogonal time-bound communication for Pickup and Delivery)
+  Recommended order rank   = 40
+    INTENTIONAL co-stage with OUT_FOR_DELIVERY under existing strict-greater-than staleness
     (ORDER_RECEIVED=10, PAYMENT_CONFIRMED=20, ORDER_ACCEPTED=30,
-     SCHEDULED_FULFILMENT_REMINDER=35, OUT_FOR_DELIVERY=40, DELIVERED=50,
+     SCHEDULED_FULFILMENT_REMINDER=40, OUT_FOR_DELIVERY=40, DELIVERED=50,
      ORDER_CANCELLED=60)
+  Co-stage semantics:
+    ORDER_ACCEPTED(30) never suppresses reminder(40)
+    OUT_FOR_DELIVERY(40) already sent MUST NOT suppress reminder(40)
+    Reminder(40) already sent MUST NOT suppress later OUT_FOR_DELIVERY(40)
+    DELIVERED(50) / ORDER_CANCELLED(60) may suppress reminder not yet sent
+    Either-order Delivery example (both valid):
+      T-45 OUT_FOR_DELIVERY then T-30 reminder; or T-30 reminder then T-20 OUT_FOR_DELIVERY
+  Reminder is NOT a Delivery lifecycle transition; tied to immutable Scheduled window promise
   Stable domainEventRef    = order:<orderId>:scheduled_fulfilment_reminder
                              (or repository-native deterministic equivalent)
   Exactly one logical reminder per Order; no generic Scheduled-business event family
@@ -137,8 +151,14 @@ Reminder (full Notification semantic contract under ADR-012 / IMP-033 / IMP-034)
     expire / suppress once now >= scheduled_window_start_at
   Send-time eligibility (re-read Order/Snapshot; do not mutate Order; no cancel/refund):
     suppress if CANCELLED / FULFILLED / window started / missing-inconsistent / not SCHEDULED
+    co-stage ordering MUST NOT bypass these gates
   Content: immutable Checkout Snapshot (mode, window, sealed timezone, Pickup location context)
   No new notification provider; template registry gains semantic under IMP-033/034
+  Later implementation proof expectations (Fit remediation; not runtime tests here):
+    A accepted→reminder eligible; B early OUT_FOR_DELIVERY→reminder eligible;
+    C reminder→later OUT_FOR_DELIVERY eligible; D DELIVERED suppresses;
+    E CANCELLED suppresses; F FULFILLED Pickup suppresses; G window start suppresses;
+    H in-window purchase never enqueued
 
 Topology: no new deployable service / queue / broker / workflow engine / external provider
 Auth: no new role / permission / auth realm
@@ -197,6 +217,12 @@ fulfilment timing; Scheduled timing is governed by D-379 / ARCH-G29.
 - Globally raising transactional notification max age for all semantics to accommodate reminders
 - Dedicating a standalone Reminder user story (reminder remains AC-036I-044 under
   US-036I-007 / US-036I-010)
+- Placing `SCHEDULED_FULFILMENT_REMINDER` at rank 35 (between `ORDER_ACCEPTED` and
+  `OUT_FOR_DELIVERY`) — early Delivery dispatch would suppress the mandatory reminder under
+  existing strict-greater-than staleness; rejected in favour of intentional co-stage rank 40
+- Changing Purpose to `DELIVERY_UPDATES` (Pickup requires the same reminder without Delivery events)
+- Inventing reminder-specific browser/UI ordering exceptions or changing global staleness beyond
+  the co-stage rank assignment
 
 ## Consequences
 

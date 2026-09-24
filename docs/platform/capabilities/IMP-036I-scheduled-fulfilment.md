@@ -135,6 +135,7 @@ GOLDEN JOURNEYS = GJ-1
 Product Definition = docs/platform/product/IMP-036I/product-definition.md (APPROVED)
 Product Definition Gate evidence = independent review 5307761142
 Independent Architecture Fit review (STOP): 5309072645
+Independent Architecture Fit review (STOP #2 reminder ordering): 5309240283
 acceptedThrough = IMP-036H
 currentProductSlice = IMP-036I
 nextProductSlice = IMP-037
@@ -144,8 +145,9 @@ PROGRAM_PAUSE_AUTHORITY = D-377
 ```
 
 This remediation repairs the existing Fit candidate only (Blockers A / B / B1 / B2 / B3 + §28
-traceability). It does **not** claim Architecture Fit PASS, lock architecture, promote D-379,
-accept ADR-019, create ARCH-R23, or authorize implementation.
+traceability; STOP #2 reminder co-stage ordering with `OUT_FOR_DELIVERY` at rank 40). It does **not**
+claim Architecture Fit PASS, lock architecture, promote D-379, accept ADR-019, create ARCH-R23, or
+authorize implementation.
 
 Canonical ROADMAP/STATE tip markers remain unchanged by this candidate:
 
@@ -785,6 +787,12 @@ existing outbox / idempotency authority
 Exactly one logical reminder per Order. No duplicate reminder. No generic “schedule retry” state.
 No duplicate Delivery booking, Order, or silent timing mutation.
 
+Co-stage reminder / progress ordering (AF-036I-16): `SCHEDULED_FULFILMENT_REMINDER` and
+`OUT_FOR_DELIVERY` share rank 40 under the existing strict-greater-than staleness model. Either may
+dispatch in either order without creating a schedule-retry state, a second logical reminder, or a
+staleness-driven suppression of the other. Dedup remains `domainEventRef`-scoped (one reminder per
+Order); Delivery progress notifications remain their own semantic identities.
+
 If the Order is materialized **within** the reminder window (authoritative purchase /
 Order-materialization timing vs immutable Scheduled window start):
 
@@ -802,6 +810,31 @@ Product: exactly one proactive reminder ≈30 minutes before window start (`AC-0
 authority `US-036I-007` / `US-036I-010`). Suppress when Order was purchased inside the reminder
 window. No standalone Reminder story.
 
+### Orthogonal communication (not a Delivery lifecycle transition)
+
+`SCHEDULED_FULFILMENT_REMINDER` is **not** a Delivery lifecycle transition. It is a time-bound
+transactional communication tied to the immutable Scheduled fulfilment promise (Checkout Snapshot
+window). Purpose remains `ORDER_UPDATES` (not `DELIVERY_UPDATES`) because the same reminder semantic
+applies to Scheduled Pickup (no Delivery event required) and Scheduled Delivery.
+
+For Scheduled Delivery, `OUT_FOR_DELIVERY` and the Scheduled reminder may legitimately **both**
+occur, in either order:
+
+```text
+Example A (early dispatch):
+  T-45  OUT_FOR_DELIVERY
+  T-30  SCHEDULED_FULFILMENT_REMINDER
+  → both valid
+
+Example B (reminder first):
+  T-30  SCHEDULED_FULFILMENT_REMINDER
+  T-20  OUT_FOR_DELIVERY
+  → both valid
+```
+
+Do not special-case browser/UI behaviour. Do not change existing global notification ordering
+semantics merely for IMP-036I beyond the intentional co-stage rank below.
+
 ### Notification semantic contract (required)
 
 Verified CURRENT ranks (`src/shared/notifications/constants.ts`
@@ -816,18 +849,51 @@ DELIVERED           = 50
 ORDER_CANCELLED     = 60
 ```
 
-Locked IMP-036I addition:
+Locked IMP-036I addition (co-stage with Delivery progress):
 
 ```text
 NotificationSemanticType: SCHEDULED_FULFILMENT_REMINDER
 Purpose:                ORDER_UPDATES
-Recommended order rank: 35
+Recommended order rank: 40
 ```
 
-Rank reason (repository-aligned): place the reminder **after** `ORDER_ACCEPTED` (30) and
-**before** `OUT_FOR_DELIVERY` (40) / `DELIVERED` (50) / `ORDER_CANCELLED` (60). Later Delivery /
-completion / cancellation progress supersedes a stale reminder; `ORDER_ACCEPTED` alone must
-**not** suppress the planned reminder.
+Candidate rank table after Fit remediation:
+
+```text
+ORDER_RECEIVED                 = 10
+PAYMENT_CONFIRMED              = 20
+ORDER_ACCEPTED                 = 30
+SCHEDULED_FULFILMENT_REMINDER  = 40
+OUT_FOR_DELIVERY               = 40
+DELIVERED                      = 50
+ORDER_CANCELLED                = 60
+```
+
+**Equal rank 40 is INTENTIONAL.** Accepted CURRENT staleness
+(`isStaleSemantic` / `SUPERSEDED_BY_LATER_SEMANTIC`) suppresses only when an already-dispatched
+semantic has a **strictly higher** rank. Therefore:
+
+```text
+ORDER_ACCEPTED (30)
+  → never suppresses reminder (40)
+
+OUT_FOR_DELIVERY (40) already sent
+  → MUST NOT suppress reminder (40)
+
+Reminder (40) already sent
+  → MUST NOT suppress later OUT_FOR_DELIVERY (40)
+
+DELIVERED (50)
+  → may suppress reminder not yet sent
+
+ORDER_CANCELLED (60)
+  → may suppress reminder not yet sent
+```
+
+A prior rank-35 placement is **rejected**: early `OUT_FOR_DELIVERY` (40) would suppress the
+mandatory reminder and violate `AC-036I-044`. Co-staging at 40 preserves the existing
+strict-greater-than staleness model without inventing a reminder-specific UI or ordering exception
+path.
 
 ```text
 Purpose = ORDER_UPDATES
@@ -927,7 +993,8 @@ eligible. Exact enum spelling may be implementation-local (for example
 or mapping to an equivalent reason; the **suppression outcome** is locked.
 
 Existing notification ordering / staleness (`SUPERSEDED_BY_LATER_SEMANTIC`) and consent /
-preference rules remain applicable.
+preference rules remain applicable. Co-stage rank 40 does **not** bypass send-time gates, expiry,
+consent/preference, or domainEventRef dedup.
 
 ### Blocker B3 — reminder content / template
 
@@ -951,6 +1018,37 @@ No mutable current Outlet profile may rewrite the purchased promise. Do not put 
 new scheduling persistence. Notification template registry gains the new semantic under existing
 IMP-033 / IMP-034 authority. Exact customer copy / Meta template id = implementation / deployment
 detail. No new notification provider.
+
+### Architecture proof expectations (later implementation tranches)
+
+No runtime tests are required in this Architecture Fit remediation. Future authorized
+implementation MUST prove:
+
+```text
+A. ORDER_ACCEPTED sent
+   → reminder remains eligible (rank 30 does not suppress rank 40)
+
+B. OUT_FOR_DELIVERY sent before reminder due
+   → reminder remains eligible (equal rank 40; either-order Example A)
+
+C. Reminder sent before OUT_FOR_DELIVERY
+   → later OUT_FOR_DELIVERY remains eligible (equal rank 40; either-order Example B)
+
+D. DELIVERED before reminder
+   → reminder suppressed (rank 50 > 40)
+
+E. ORDER_CANCELLED before reminder
+   → reminder suppressed (rank 60 > 40)
+
+F. FULFILLED Pickup before reminder
+   → reminder suppressed (send-time Order = FULFILLED gate)
+
+G. Window start reached
+   → reminder suppressed (send-time / semantic-specific expiry)
+
+H. Order purchased inside reminder window
+   → reminder was never enqueued
+```
 
 **AF-036I-16: RESOLVED**
 
@@ -1095,10 +1193,10 @@ NEW_EXTERNAL_PROVIDER = NO
 | AF-036I-10 | Future action trigger? | Outbox `available_at`; notification processor; 24h max-age | Reminder only via notification outbox; semantic-specific window-start expiry (no global 24h raise); no generic scheduler | ADR-012 / ARCH-G14 | §15 / §19 | NO |
 | AF-036I-11 | Scheduled Pickup prep release? | Ops projections; D-357 | Immediate visibility; derived cues; no release state | D-357 | §16 | NO |
 | AF-036I-12 | Scheduled Delivery booking begin? | IMP-032 manual | Operator-approved existing Delivery path; no auto-book | IMP-032 / ADR-011 | §17 | NO |
-| AF-036I-13 | Retries/idempotency? | Checkout/Payment/Delivery/outbox | Reuse accepted authorities; atomic reminder intent with Order materialization; stable domainEventRef dedup; no schedule-retry state | existing | §18 | NO |
+| AF-036I-13 | Retries/idempotency? | Checkout/Payment/Delivery/outbox | Reuse accepted authorities; atomic reminder intent with Order materialization; stable domainEventRef dedup; no schedule-retry state; co-stage rank 40 with OUT_FOR_DELIVERY does not invent retry/suppression of the peer semantic | existing | §18 | NO |
 | AF-036I-14 | Scheduling ↔ Delivery coordination? | IMP-031/032 | Timing informs priority; no second Delivery lifecycle | ADR-011 | §17 | NO |
 | AF-036I-15 | Order/workforce projections? | `projections.ts` | Extend with timing + derived cues; ASAP history clean | D-357 | §20 | NO |
-| AF-036I-16 | Notifications scheduled? | Notification semantic ranks/purposes/24h expiry; outbox family | Full `SCHEDULED_FULFILMENT_REMINDER` contract (type/purpose/rank 35/ref/expiry/send-gate/Snapshot content) | ADR-012 | §19 | NO |
+| AF-036I-16 | Notifications scheduled? | Notification semantic ranks/purposes/24h expiry; outbox family | Full `SCHEDULED_FULFILMENT_REMINDER` contract (type/purpose/co-stage rank 40 with OUT_FOR_DELIVERY/ref/expiry/send-gate/Snapshot content; either-order proof expectations) | ADR-012 | §19 | NO |
 | AF-036I-17 | Migrations/backfills for ASAP? | Migration 0044 tip | Forward-only; ASAP defaults; CHECK constraints; Brand policy absent-row defaults (no eager backfill required) | ARCH-G13 | §22 | NO |
 | AF-036I-18 | Historical ASAP representation? | Existing rows mode-only | Timing ASAP + null scheduled fields; Order unchanged; Brand policy effective defaults when absent | D-378 | §22 | NO |
 | AF-036I-19 | New D/ADR/ARCH? | D-378 ASAP reservation | D-379 PROPOSED + ADR-019 Proposed + ARCH-G29/R23 proposed | D-378 amend-on-lock | §4 | NO |
@@ -1196,7 +1294,7 @@ Approved Product Definition semantics are **not** modified by this candidate.
 |---|---|
 | Pickup release | NONE (immediate visibility + derived cues) |
 | Delivery dispatch | Manual IMP-032 operator-approved |
-| Reminder | `SCHEDULED_FULFILMENT_REMINDER` semantic contract; atomic intent; window-start expiry; send-time eligibility; Snapshot-derived content |
+| Reminder | `SCHEDULED_FULFILMENT_REMINDER` semantic contract; co-stage rank 40 with `OUT_FOR_DELIVERY`; atomic intent; window-start expiry; send-time eligibility; Snapshot-derived content |
 
 ---
 
