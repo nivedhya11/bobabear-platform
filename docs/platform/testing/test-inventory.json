@@ -31,9 +31,9 @@
     "note": "Protected evidence and generated reports are never classified as executable test source."
   },
   "counts": {
-    "trackedPathsConsidered": 2128,
-    "executableTestFiles": 446,
-    "sourceTestFiles": 134,
+    "trackedPathsConsidered": 2129,
+    "executableTestFiles": 447,
+    "sourceTestFiles": 135,
     "testsTreeExecutableFiles": 241,
     "scriptTestFiles": 71,
     "playwrightSpecs": 12,
@@ -70,6 +70,7 @@
     "src/components/ordering/CartClient.test.tsx",
     "src/components/ordering/CartLineList.test.tsx",
     "src/components/ordering/CheckoutClient.destination.test.tsx",
+    "src/components/ordering/CheckoutFulfilmentChoice.test.tsx",
     "src/components/ordering/MenuItemCustomizationDialog.test.tsx",
     "src/components/ordering/OrderConfirmationClient.test.tsx",
     "src/components/ordering/OrderDetailClient.test.tsx",
@@ -2922,6 +2923,24 @@
     },
     {
       "path": "src/components/ordering/CheckoutClient.destination.test.tsx",
+      "runner": "vitest",
+      "domain": "components/ordering",
+      "testType": "component-or-tsx",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test",
+        "test:coverage"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "2-component"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "src/components/ordering/CheckoutFulfilmentChoice.test.tsx",
       "runner": "vitest",
       "domain": "components/ordering",
       "testType": "component-or-tsx",
