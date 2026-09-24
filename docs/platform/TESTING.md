@@ -39,8 +39,10 @@ Definition `PD-IMP-036H-DRAFT-1` = `APPROVED`; Product Definition Gate
 (acceptance provenance GTM-R147 / STATE-R145); CURRENT tip GTM-R153 / STATE-R151 (prior tip GTM-R152 / STATE-R150; prior tip GTM-R151 / STATE-R149; prior tip GTM-R150 / STATE-R148; prior tip GTM-R149 / STATE-R147);
 `acceptedThrough` = IMP-036H; `currentProductSlice` = IMP-036I;
 `pendingAcceptance` = NONE; `nextProductSlice` = IMP-037; `IMP036I_ACTIVATED: YES`;
-`IMP036I_PRODUCT_DEFINITION: DRAFT_READY_FOR_GATE` (`PD-IMP-036I-DRAFT-4`); Gate / Fit / lock /
-implementation for IMP-036I all **NOT** performed). IMP-038 remains held (`IMP038_HOLD: YES`;
+`IMP036I_PRODUCT_DEFINITION: APPROVED` (`PD-IMP-036I-DRAFT-4`);
+`IMP036I_PRODUCT_DEFINITION_GATE: PASS` (independent review `5307761142`); Architecture Fit
+`NOT_PERFORMED`; architecture `NOT_LOCKED` / `NO`; implementation `NOT_AUTHORIZED` /
+`NOT_STARTED`). IMP-038 remains held (`IMP038_HOLD: YES`;
 `IMPLEMENTATION_IN_PROGRESS (HOLD — IMPLEMENTATION_COMPLETE / NOT_ACCEPTED)`; Product Definition
 `APPROVED` / `PD-IMP-038-DRAFT-2`; Gate PASS; Architecture Fit PASS; architecture LOCKED;
 `IMP038_IMPLEMENTATION_COMPLETE: YES`; `IMP038_ACCEPTED: NO`;

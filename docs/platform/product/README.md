@@ -43,12 +43,13 @@ Architecture Fit = PASS; Architecture = LOCKED at
 COMPLETE; **IMP036H_ACTIVATED: YES**; formal lifecycle = `COMPLETE_AND_ACCEPTED`;
 `IMP036H_ACCEPTED: YES`; under
 `PROGRAM_PAUSE: PRE_GTM_PRODUCT_INSERTION_PROVIDER_BLOCKED` (**D-377**); CURRENT tip
-`currentProductSlice` = IMP-036I — IMP-036H is **not** CURRENT slice). IMP-036I has a
-**DRAFT READY FOR GATE** Product Definition at
+`currentProductSlice` = IMP-036I — IMP-036H is **not** CURRENT slice). IMP-036I has an
+**APPROVED** Product Definition at
 [`./IMP-036I/product-definition.md`](./IMP-036I/product-definition.md)
-(`PD-IMP-036I-DRAFT-4`; **APPROVED**; Gate **PASS**; **IMP036I_ACTIVATED: YES**; formal lifecycle = `PLANNED`;
-Gate / Fit / lock / implementation all **NOT** performed for CURRENT DRAFT-4; CURRENT `currentProductSlice`
-under D-377 program pause; tip GTM-R153 / STATE-R151).
+(`PD-IMP-036I-DRAFT-4`; Product Definition Gate = **PASS**; independent review `5307761142`;
+**IMP036I_ACTIVATED: YES**; formal lifecycle = `PLANNED`; Architecture Fit = **NOT_PERFORMED**;
+Architecture = **NOT_LOCKED**; Implementation = NOT_AUTHORIZED / NOT_STARTED; CURRENT
+`currentProductSlice` under D-377 program pause; tip GTM-R153 / STATE-R151).
 IMP-037 has an **APPROVED** Product Definition at
 [`./IMP-037/product-definition.md`](./IMP-037/product-definition.md) (`PD-IMP-037-DRAFT-1`; Product
 Definition Gate = PASS; Architecture Fit = PASS; Architecture = LOCKED;
