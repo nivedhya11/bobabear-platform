@@ -12966,6 +12966,22 @@ CURRENT REQUIREMENTS CONTINUE AFTER HISTORY
     );
   });
 
+  it("P2 fails when a later duplicate visible primary PRODUCT_DEFINITION_VERSION is stale DRAFT-3", () => {
+    const mutated = `${validDraftReady}\nPRODUCT_DEFINITION_VERSION: PD-IMP-036I-DRAFT-3\n`;
+    assert.equal(
+      evaluateImp036iUngatedProductDefinitionDraftCandidate(mutated).code,
+      "IMP036I_PD_DRAFT_VERSION",
+    );
+  });
+
+  it("P2 fails when a later duplicate visible Product Definition Version is stale DRAFT-3", () => {
+    const mutated = `${validDraftReady}\nProduct Definition Version: PD-IMP-036I-DRAFT-3\n`;
+    assert.equal(
+      evaluateImp036iUngatedProductDefinitionDraftCandidate(mutated).code,
+      "IMP036I_PD_DRAFT_VERSION",
+    );
+  });
+
   it("fails DRAFT_READY checkpoint when Product Definition remains PRE_GATE_DRAFT", () => {
     assert.equal(
       evaluateImp036iProductDefinitionDraftReadyCheckpoint({
