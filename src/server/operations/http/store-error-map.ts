@@ -1,4 +1,4 @@
-/** Store Operations error → safe HTTP envelope (IMP-036E). */
+/** Store Operations error → safe HTTP envelope (IMP-036E / IMP-036H-E). */
 import "server-only";
 
 import { AuthorizationError } from "../../access-control";
@@ -8,7 +8,11 @@ import {
   AssortmentNotFoundError,
   AssortmentValidationError,
 } from "../../assortment";
-import { OrganizationNotFoundError } from "../../organization";
+import {
+  OrganizationConflictError,
+  OrganizationNotFoundError,
+  OrganizationValidationError,
+} from "../../organization";
 import { ServiceabilityError } from "../../serviceability";
 
 export type StoreOperationsErrorBody = Readonly<{
@@ -64,11 +68,17 @@ export function mapStoreOperationsError(error: unknown, requestId: string): Mapp
     return { status: 404, body: { ok: false, code: "STORE_NOT_FOUND", requestId } };
   }
 
-  if (error instanceof AssortmentValidationError) {
+  if (
+    error instanceof AssortmentValidationError ||
+    error instanceof OrganizationValidationError
+  ) {
     return { status: 400, body: { ok: false, code: "STORE_REQUEST_INVALID", requestId } };
   }
 
-  if (error instanceof AssortmentConflictError) {
+  if (
+    error instanceof AssortmentConflictError ||
+    error instanceof OrganizationConflictError
+  ) {
     return { status: 409, body: { ok: false, code: "STORE_CONFLICT", requestId } };
   }
 

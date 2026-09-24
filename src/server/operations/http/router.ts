@@ -372,7 +372,7 @@ export async function routeOperationsRequest(
       sendJson(res, { ok: false, code: "STORE_REQUEST_INVALID", requestId }, { status: 400, requestId });
       return { operation: storeRoute.kind, safeOutcomeCode: "STORE_REQUEST_INVALID", httpStatus: 400 };
     }
-    if (method === "POST") {
+    if (method === "POST" || method === "PUT") {
       if (!checkTrustedOrigin(req.headers, deps.trustedOrigin).ok) {
         sendJson(res, { ok: false, code: "STORE_REQUEST_INVALID", requestId }, { status: 403, requestId });
         return { operation: storeRoute.kind, safeOutcomeCode: "STORE_REQUEST_INVALID", httpStatus: 403 };

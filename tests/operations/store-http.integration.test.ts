@@ -649,6 +649,77 @@ describe("IMP-036E Store Operations HTTP", () => {
         );
         expect(response.status).toBe(404);
 
+        // --- PICKUP PROFILE (IMP-036H-E) ---
+        response = await request(outletPath(tree.outletA.id, "/pickup-profile"), {
+          headers: managerHeaders,
+        });
+        expect(response.status).toBe(200);
+        expect((await response.json()).profile).toBeNull();
+
+        const pickupBody = {
+          enabled: true,
+          displayName: "BOBA Bear Mall Road",
+          addressLine1: "12 Mall Road",
+          addressLine2: null,
+          locality: null,
+          city: "Dehradun",
+          stateCode: "IN-UT",
+          postalCode: "248001",
+          latitude: null,
+          longitude: null,
+          instructions: "Collect from counter 2",
+          expectedRevision: 0,
+        };
+
+        response = await request(outletPath(tree.outletA.id, "/pickup-profile"), {
+          method: "PUT",
+          headers: managerHeaders,
+          body: JSON.stringify(pickupBody),
+        });
+        expect(response.status).toBe(200);
+        const createdPickup = (await response.json()).profile as {
+          enabled: boolean;
+          displayName: string;
+          revision: number;
+          instructions: string;
+        };
+        expect(createdPickup.enabled).toBe(true);
+        expect(createdPickup.displayName).toBe("BOBA Bear Mall Road");
+        expect(createdPickup.instructions).toBe("Collect from counter 2");
+        expect(createdPickup.revision).toBe(1);
+
+        response = await request(outletPath(tree.outletA.id, "/pickup-profile"), {
+          headers: managerHeaders,
+        });
+        expect(response.status).toBe(200);
+        expect((await response.json()).profile.revision).toBe(1);
+
+        response = await request(outletPath(tree.outletB.id, "/pickup-profile"), {
+          method: "PUT",
+          headers: managerHeaders,
+          body: JSON.stringify(pickupBody),
+        });
+        expect([response.status, (await response.json()).code]).toEqual([403, "STORE_UNAUTHORIZED"]);
+
+        response = await request(outletPath(tree.outletA.id, "/pickup-profile"), {
+          method: "PUT",
+          headers: managerHeaders,
+          body: JSON.stringify({ ...pickupBody, expectedRevision: 0 }),
+        });
+        expect([response.status, (await response.json()).code]).toEqual([409, "STORE_CONFLICT"]);
+
+        response = await request(outletPath(tree.outletA.id, "/pickup-profile"), {
+          method: "PUT",
+          headers: managerHeaders,
+          body: JSON.stringify({
+            ...pickupBody,
+            expectedRevision: createdPickup.revision,
+            instructions: "Ask for order number at the bar",
+          }),
+        });
+        expect(response.status).toBe(200);
+        expect((await response.json()).profile.instructions).toBe("Ask for order number at the bar");
+
         // --- TEAM (admin memberships reuse) ---
         response = await request(
           `/api/admin/v1/memberships?outletId=${tree.outletA.id}`,

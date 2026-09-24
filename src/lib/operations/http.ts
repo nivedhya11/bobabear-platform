@@ -9,7 +9,7 @@ import { parseOperationsErrorBody, type OperationsFailure } from "./errors";
 const JSON_CONTENT_TYPE = "application/json";
 
 export type OperationsRequestOptions = Readonly<{
-  method?: "GET" | "POST";
+  method?: "GET" | "POST" | "PUT";
   query?: Readonly<Record<string, string | undefined>>;
   body?: Readonly<Record<string, unknown>>;
   /** IMP-038 single-use step-up proof id for high-consequence mutations. */
@@ -53,7 +53,7 @@ export async function operationsRequest<T>(
     method,
     credentials: "same-origin",
   };
-  if (method === "POST" && options.body !== undefined) {
+  if ((method === "POST" || method === "PUT") && options.body !== undefined) {
     headers["Content-Type"] = JSON_CONTENT_TYPE;
     const body: Record<string, unknown> = { ...options.body };
     if (typeof options.stepUpProofId === "string" && options.stepUpProofId.length > 0) {

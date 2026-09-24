@@ -36,6 +36,27 @@ function genericErrorMessage(code: string): string {
   return "The order list could not be loaded. Try again.";
 }
 
+function fulfilmentModeLabel(mode: string | undefined): string {
+  if (mode === "PICKUP") return "Pickup";
+  return "Delivery";
+}
+
+function FulfilmentBadge({
+  mode,
+  orderId,
+}: Readonly<{ mode: string | undefined; orderId: string }>) {
+  const label = fulfilmentModeLabel(mode);
+  return (
+    <span
+      data-testid={`order-fulfilment-${orderId}`}
+      className="inline-block font-mono text-[11px] uppercase tracking-[0.12em] text-[var(--text-secondary)]"
+      aria-label={`Fulfilment mode ${label}`}
+    >
+      {mode === "PICKUP" ? "PICKUP" : "DELIVERY"}
+    </span>
+  );
+}
+
 export function OperationsOrderListClient() {
   const statusFilterId = useId();
   const orderNumberFilterId = useId();
@@ -278,6 +299,9 @@ export function OperationsOrderListClient() {
                       Order
                     </th>
                     <th scope="col" className="py-3 pr-4 font-semibold text-[var(--text-primary)]">
+                      Fulfilment
+                    </th>
+                    <th scope="col" className="py-3 pr-4 font-semibold text-[var(--text-primary)]">
                       Status
                     </th>
                     <th scope="col" className="py-3 pr-4 font-semibold text-[var(--text-primary)]">
@@ -302,6 +326,9 @@ export function OperationsOrderListClient() {
                         >
                           {order.orderNumber}
                         </a>
+                      </td>
+                      <td className="py-3 pr-4">
+                        <FulfilmentBadge mode={order.fulfilmentMode} orderId={order.orderId} />
                       </td>
                       <td className="py-3 pr-4" data-testid={`order-status-${order.orderId}`}>
                         {orderStatusLabel(order.status)}

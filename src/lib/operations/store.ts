@@ -250,6 +250,55 @@ export async function setStoreDistancePolicy(
   });
 }
 
+export type StorePickupProfile = Readonly<{
+  outletId: string;
+  enabled: boolean;
+  displayName: string;
+  addressLine1: string;
+  addressLine2: string | null;
+  locality: string | null;
+  city: string;
+  stateCode: string;
+  postalCode: string;
+  latitude: string | null;
+  longitude: string | null;
+  instructions: string;
+  revision: number;
+  createdAt: string;
+  updatedAt: string;
+}>;
+
+export type StorePickupProfileInput = Readonly<{
+  enabled: boolean;
+  displayName: string;
+  addressLine1: string;
+  addressLine2?: string | null;
+  locality?: string | null;
+  city: string;
+  stateCode: string;
+  postalCode: string;
+  latitude?: string | null;
+  longitude?: string | null;
+  instructions: string;
+  expectedRevision?: number;
+}>;
+
+export async function getStorePickupProfile(
+  outletId: string,
+): Promise<OperationsHttpResult<{ ok: true; profile: StorePickupProfile | null }>> {
+  return operationsRequest(outletPath(outletId, "/pickup-profile"));
+}
+
+export async function setStorePickupProfile(
+  outletId: string,
+  body: StorePickupProfileInput,
+): Promise<OperationsHttpResult<{ ok: true; profile: StorePickupProfile }>> {
+  return operationsRequest(outletPath(outletId, "/pickup-profile"), {
+    method: "PUT",
+    body,
+  });
+}
+
 export function availabilityStateLabel(state: string): string {
   if (state === "available") return "Available";
   if (state === "temporarily_unavailable") return "Temporarily unavailable";

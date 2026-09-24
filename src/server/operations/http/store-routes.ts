@@ -10,7 +10,12 @@ import type { IncomingMessage } from "node:http";
 
 import type { PermissionKey } from "../../../shared/access-control";
 import { isAvailabilityState } from "../../../shared/assortment";
-import { authorize, type WorkforcePrincipal } from "../../access-control";
+import {
+  authorize,
+  insertAccessAuditEvent,
+  requireAuthorization,
+  type WorkforcePrincipal,
+} from "../../access-control";
 import {
   configureOutletOperatingProfile,
   findOutletOperatingProfile,
@@ -32,6 +37,11 @@ import { AssortmentNotFoundError, AssortmentValidationError } from "../../assort
 import type { OperatingIntervalInput } from "../../assortment/types";
 import type { WorkforceAuthRuntime } from "../../auth/workforce";
 import { findOutletById } from "../../organization/outlets";
+import {
+  loadOutletPickupProfileByOutletId,
+  upsertOutletPickupProfile,
+  type OutletPickupProfile,
+} from "../../outlet-pickup-profile/repository";
 import type { Persistence } from "../../persistence";
 import {
   getOutletServiceabilityConfiguration,
@@ -63,7 +73,9 @@ export type StoreRouteKind =
   | "operating_schedule_get"
   | "operating_schedule_set"
   | "serviceability_get"
-  | "serviceability_distance_policy";
+  | "serviceability_distance_policy"
+  | "pickup_profile_get"
+  | "pickup_profile_set";
 
 export type StoreRoute = Readonly<{
   kind: StoreRouteKind;
@@ -92,6 +104,7 @@ const FORBIDDEN_BODY_KEYS = new Set([
 
 const OUTLET_CAPABILITY_KEYS = [
   "outlet.read",
+  "outlet.update",
   "availability.read",
   "availability.manage",
   "outlet.operating_state.read",
@@ -205,6 +218,158 @@ function projectServiceability(
   };
 }
 
+const POSTAL_CODE_RE = /^[1-9][0-9]{5}$/;
+
+function requireNonEmptyTrimmedString(
+  value: unknown,
+  field: string,
+  maxLength: number,
+): string {
+  if (typeof value !== "string") {
+    throw new AssortmentValidationError({ message: `${field} must be a string.` });
+  }
+  const trimmed = value.trim();
+  if (trimmed.length === 0 || trimmed.length > maxLength) {
+    throw new AssortmentValidationError({
+      message: `${field} must be between 1 and ${maxLength} characters.`,
+    });
+  }
+  return trimmed;
+}
+
+function requireOptionalTrimmedString(
+  value: unknown,
+  field: string,
+  maxLength: number,
+): string | null {
+  if (value === undefined || value === null) return null;
+  if (typeof value !== "string") {
+    throw new AssortmentValidationError({ message: `${field} must be a string or null.` });
+  }
+  const trimmed = value.trim();
+  if (trimmed.length === 0) return null;
+  if (trimmed.length > maxLength) {
+    throw new AssortmentValidationError({
+      message: `${field} must be at most ${maxLength} characters.`,
+    });
+  }
+  return trimmed;
+}
+
+function parseOptionalCoordinate(value: unknown, field: string): string | null {
+  if (value === undefined || value === null || value === "") return null;
+  if (typeof value !== "string" && typeof value !== "number") {
+    throw new AssortmentValidationError({ message: `${field} must be a number string or null.` });
+  }
+  const asString = typeof value === "number" ? String(value) : value.trim();
+  if (asString.length === 0) return null;
+  const num = Number(asString);
+  if (!Number.isFinite(num)) {
+    throw new AssortmentValidationError({ message: `${field} must be a finite number.` });
+  }
+  if (field === "latitude" && (num < -90 || num > 90)) {
+    throw new AssortmentValidationError({ message: "latitude must be between -90 and 90." });
+  }
+  if (field === "longitude" && (num < -180 || num > 180)) {
+    throw new AssortmentValidationError({ message: "longitude must be between -180 and 180." });
+  }
+  return asString;
+}
+
+function projectPickupProfile(profile: OutletPickupProfile): Record<string, unknown> {
+  return dateJson({
+    outletId: profile.outletId,
+    enabled: profile.enabled,
+    displayName: profile.displayName,
+    addressLine1: profile.addressLine1,
+    addressLine2: profile.addressLine2,
+    locality: profile.locality,
+    city: profile.city,
+    stateCode: profile.stateCode,
+    postalCode: profile.postalCode,
+    latitude: profile.latitude,
+    longitude: profile.longitude,
+    instructions: profile.instructions,
+    revision: profile.revision,
+    createdAt: profile.createdAt,
+    updatedAt: profile.updatedAt,
+  }) as Record<string, unknown>;
+}
+
+function parsePickupProfileBody(body: Readonly<Record<string, unknown>>): Readonly<{
+  enabled: boolean;
+  displayName: string;
+  addressLine1: string;
+  addressLine2: string | null;
+  locality: string | null;
+  city: string;
+  stateCode: string;
+  postalCode: string;
+  latitude: string | null;
+  longitude: string | null;
+  instructions: string;
+  expectedRevision: number | undefined;
+}> {
+  if (typeof body.enabled !== "boolean") {
+    throw new AssortmentValidationError({ message: "enabled must be a boolean." });
+  }
+  const displayName = requireNonEmptyTrimmedString(body.displayName, "displayName", 200);
+  const addressLine1 = requireNonEmptyTrimmedString(body.addressLine1, "addressLine1", 200);
+  const addressLine2 = requireOptionalTrimmedString(body.addressLine2, "addressLine2", 200);
+  const locality = requireOptionalTrimmedString(body.locality, "locality", 120);
+  const city = requireNonEmptyTrimmedString(body.city, "city", 100);
+  const stateCode = requireNonEmptyTrimmedString(body.stateCode, "stateCode", 32);
+  const postalCode = requireNonEmptyTrimmedString(body.postalCode, "postalCode", 6);
+  if (!POSTAL_CODE_RE.test(postalCode)) {
+    throw new AssortmentValidationError({
+      message: "postalCode must be a valid 6-digit Indian PIN.",
+    });
+  }
+  const instructions = requireNonEmptyTrimmedString(body.instructions, "instructions", 2000);
+  const latitude = parseOptionalCoordinate(body.latitude, "latitude");
+  const longitude = parseOptionalCoordinate(body.longitude, "longitude");
+  if ((latitude === null) !== (longitude === null)) {
+    throw new AssortmentValidationError({
+      message: "latitude and longitude must both be set or both be null.",
+    });
+  }
+
+  let expectedRevision: number | undefined;
+  if (body.expectedRevision !== undefined && body.expectedRevision !== null) {
+    if (
+      typeof body.expectedRevision === "number" &&
+      Number.isInteger(body.expectedRevision) &&
+      body.expectedRevision >= 0
+    ) {
+      expectedRevision = body.expectedRevision;
+    } else if (
+      typeof body.expectedRevision === "string" &&
+      /^\d+$/.test(body.expectedRevision)
+    ) {
+      expectedRevision = Number(body.expectedRevision);
+    } else {
+      throw new AssortmentValidationError({
+        message: "expectedRevision must be a non-negative integer.",
+      });
+    }
+  }
+
+  return {
+    enabled: body.enabled,
+    displayName,
+    addressLine1,
+    addressLine2,
+    locality,
+    city,
+    stateCode,
+    postalCode,
+    latitude,
+    longitude,
+    instructions,
+    expectedRevision,
+  };
+}
+
 export function classifyStoreRoute(pathname: string): StoreRoute | null {
   const segments = pathname.split("/");
   if (segments.slice(1, 5).join("/") !== "api/operations/v1/outlets" || !segments[5]) {
@@ -256,10 +421,13 @@ export function classifyStoreRoute(pathname: string): StoreRoute | null {
   if (rest.length === 2 && rest[0] === "serviceability" && rest[1] === "distance-policy") {
     return { kind: "serviceability_distance_policy", outletId };
   }
+  if (rest.length === 1 && rest[0] === "pickup-profile") {
+    return { kind: "pickup_profile_get", outletId };
+  }
   return null;
 }
 
-/** Dual-method paths are classified as GET kinds; POST upgrades to set kinds. */
+/** Dual-method paths are classified as GET kinds; POST(/PUT for pickup) upgrades to set kinds. */
 function resolveRouteForMethod(route: StoreRoute, method: string): StoreRoute {
   if (method === "POST") {
     if (route.kind === "availability_variant_get" && route.variantId) {
@@ -282,11 +450,17 @@ function resolveRouteForMethod(route: StoreRoute, method: string): StoreRoute {
     if (route.kind === "operating_schedule_get") {
       return { kind: "operating_schedule_set", outletId: route.outletId };
     }
+    if (route.kind === "pickup_profile_get") {
+      return { kind: "pickup_profile_set", outletId: route.outletId };
+    }
+  }
+  if (method === "PUT" && route.kind === "pickup_profile_get") {
+    return { kind: "pickup_profile_set", outletId: route.outletId };
   }
   return route;
 }
 
-function allowedMethodFor(kind: StoreRouteKind): "GET" | "POST" {
+function allowedMethodsFor(kind: StoreRouteKind): readonly ("GET" | "POST" | "PUT")[] {
   switch (kind) {
     case "availability_variant_set":
     case "availability_modifier_set":
@@ -297,14 +471,16 @@ function allowedMethodFor(kind: StoreRouteKind): "GET" | "POST" {
     case "operating_profile_set":
     case "operating_schedule_set":
     case "serviceability_distance_policy":
-      return "POST";
+      return ["POST"];
+    case "pickup_profile_set":
+      return ["POST", "PUT"];
     default:
-      return "GET";
+      return ["GET"];
   }
 }
 
 function isMutationKind(kind: StoreRouteKind): boolean {
-  return allowedMethodFor(kind) === "POST";
+  return allowedMethodsFor(kind).some((method) => method === "POST" || method === "PUT");
 }
 
 export async function handleStoreRoute(
@@ -316,9 +492,9 @@ export async function handleStoreRoute(
   const method = (req.method ?? "GET").toUpperCase();
   const effective = resolveRouteForMethod(route, method);
   const operation = effective.kind;
-  const allowed = allowedMethodFor(effective.kind);
+  const allowed = allowedMethodsFor(effective.kind);
 
-  if (method !== allowed) {
+  if (!(allowed as readonly string[]).includes(method)) {
     return {
       status: 405,
       operation,
@@ -491,6 +667,25 @@ async function dispatchRead(
       });
       return { serviceability: projectServiceability(config) };
     }
+
+    case "pickup_profile_get":
+      return persistence.withContext(async (context) => {
+        const outlet = await findOutletById(context, route.outletId);
+        if (!outlet) throw new AssortmentNotFoundError("outlet");
+        await requireAuthorization(context, {
+          actor: principal,
+          permission: "outlet.read",
+          resource: {
+            type: "outlet",
+            brandId: outlet.brandId,
+            organizationId: outlet.organizationId,
+            territoryId: outlet.territoryId,
+            outletId: outlet.id,
+          },
+        });
+        const profile = await loadOutletPickupProfileByOutletId(context, route.outletId);
+        return { profile: profile ? projectPickupProfile(profile) : null };
+      });
 
     default:
       throw new AssortmentValidationError({ message: "Unsupported store read route." });
@@ -673,6 +868,60 @@ async function dispatchMutation(
         outletId: route.outletId,
       });
       return { serviceability: projectServiceability(config) };
+    }
+
+    case "pickup_profile_set": {
+      const parsed = parsePickupProfileBody(body);
+      const profile = await persistence.transaction(async (tx) => {
+        const outlet = await findOutletById(tx, route.outletId);
+        if (!outlet) throw new AssortmentNotFoundError("outlet");
+        await requireAuthorization(tx, {
+          actor: principal,
+          permission: "outlet.update",
+          resource: {
+            type: "outlet",
+            brandId: outlet.brandId,
+            organizationId: outlet.organizationId,
+            territoryId: outlet.territoryId,
+            outletId: outlet.id,
+          },
+        });
+        const saved = await upsertOutletPickupProfile(tx, {
+          outletId: route.outletId,
+          enabled: parsed.enabled,
+          displayName: parsed.displayName,
+          addressLine1: parsed.addressLine1,
+          addressLine2: parsed.addressLine2,
+          locality: parsed.locality,
+          city: parsed.city,
+          stateCode: parsed.stateCode,
+          postalCode: parsed.postalCode,
+          latitude: parsed.latitude,
+          longitude: parsed.longitude,
+          instructions: parsed.instructions,
+          ...(parsed.expectedRevision !== undefined
+            ? { expectedRevision: parsed.expectedRevision }
+            : {}),
+        });
+        await insertAccessAuditEvent(tx, {
+          actorWorkforceUserId: principal.workforceUserId,
+          action: "outlet.updated",
+          targetType: "outlet_pickup_profile",
+          targetId: route.outletId,
+          scopeType: "outlet",
+          brandId: outlet.brandId,
+          organizationId: outlet.organizationId,
+          territoryId: outlet.territoryId,
+          outletId: outlet.id,
+          metadata: {
+            aspect: "pickup_profile",
+            enabled: saved.enabled,
+            revision: saved.revision,
+          },
+        });
+        return saved;
+      });
+      return { profile: projectPickupProfile(profile) };
     }
 
     default:

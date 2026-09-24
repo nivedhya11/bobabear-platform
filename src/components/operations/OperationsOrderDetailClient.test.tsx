@@ -604,4 +604,44 @@ describe("OperationsOrderDetailClient", () => {
     await Promise.resolve();
     expect(screen.queryByTestId("operations-order-detail")).not.toBeInTheDocument();
   });
+
+  it("IMP-036H: Pickup detail shows location, hides Delivery panel, and uses handover copy (AC-036H-039/042)", async () => {
+    const user = userEvent.setup();
+    const pickupOrder = baseOrder({
+      fulfilmentMode: "PICKUP",
+      destination: null,
+      pickupLocation: {
+        displayName: "BOBA Bear Mall Road",
+        addressLine1: "12 Mall Road",
+        addressLine2: null,
+        locality: null,
+        city: "Dehradun",
+        stateCode: "IN-UT",
+        postalCode: "248001",
+        instructions: "Collect from counter 2",
+        latitude: null,
+        longitude: null,
+      },
+    });
+    await renderReady(pickupOrder);
+
+    expect(screen.getByRole("heading", { name: /pickup location/i })).toBeInTheDocument();
+    expect(screen.getByText("BOBA Bear Mall Road")).toBeInTheDocument();
+    expect(screen.getByText("Collect from counter 2")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /^Delivery$/i })).not.toBeInTheDocument();
+
+    const fulfilButton = screen.getByRole("button", { name: /mark as picked up/i });
+    expect(fulfilButton).toHaveAttribute("data-testid", "operations-order-fulfil");
+    await user.tab();
+    // Button remains keyboard-reachable and named.
+    expect(fulfilButton).toHaveAccessibleName(/mark as picked up/i);
+
+    await user.click(fulfilButton);
+    const dialog = screen.getByRole("dialog", { name: /handed to customer/i });
+    expect(dialog).toBeInTheDocument();
+    expect(within(dialog).getByText(/presented matching order confirmation/i)).toBeInTheDocument();
+    expect(
+      within(dialog).getByRole("button", { name: /confirm handed to customer/i }),
+    ).toBeInTheDocument();
+  });
 });
