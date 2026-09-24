@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /** Isolated actual-Nginx E2E runner for IMP-030. */
 import { spawnSync } from "node:child_process";
-import { randomBytes, randomUUID } from "node:crypto";
+import { randomBytes } from "node:crypto";
 import { chmodSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import net from "node:net";
 import os from "node:os";
@@ -62,7 +62,7 @@ try {
   const containerApplicationDatabaseUrl = `postgresql://boba_bear_app:${app}@postgres:5432/boba_bear_local`;
   const workforceAuthSecret = secret("workforce");
   const workforceAuthPiiHashSecret = secret("workforce-pii");
-  const workforceE2eEmail = `ops-${randomUUID()}@example.test`;
+  // Emails are generated inside the seed (one identity per Playwright onboarding path).
   const workforceE2eTempPassword = secret("temp");
   const workforceE2ePermanentPassword = secret("permanent");
   [admin, migrator, app, customerAuthSecret, customerAuthPiiHashSecret, workforceAuthSecret, workforceAuthPiiHashSecret, workforceE2eTempPassword, workforceE2ePermanentPassword].forEach((value) => sensitiveValues.add(value));
@@ -102,14 +102,12 @@ try {
     WORKFORCE_AUTH_SECRET: workforceAuthSecret,
     WORKFORCE_AUTH_PII_HASH_SECRET: workforceAuthPiiHashSecret,
     WORKFORCE_AUTH_BASE_URL: origin,
-    WORKFORCE_E2E_EMAIL: workforceE2eEmail,
     WORKFORCE_E2E_TEMP_PASSWORD: workforceE2eTempPassword,
     WORKFORCE_E2E_PERMANENT_PASSWORD: workforceE2ePermanentPassword,
     OPERATIONS_E2E_FIXTURE_MANIFEST: manifest,
   };
   const e2eEnv = {
     OPERATIONS_E2E_BASE_URL: origin,
-    WORKFORCE_E2E_EMAIL: workforceE2eEmail,
     WORKFORCE_E2E_TEMP_PASSWORD: workforceE2eTempPassword,
     WORKFORCE_E2E_PERMANENT_PASSWORD: workforceE2ePermanentPassword,
     OPERATIONS_E2E_FIXTURE_MANIFEST: manifest,

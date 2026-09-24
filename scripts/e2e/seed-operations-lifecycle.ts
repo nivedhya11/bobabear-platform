@@ -38,12 +38,17 @@ const SERVICEABLE_COORDS = Object.freeze({
 });
 
 const manifestPath = process.env.OPERATIONS_E2E_FIXTURE_MANIFEST;
-const email = process.env.WORKFORCE_E2E_EMAIL;
 const temporaryPassword = process.env.WORKFORCE_E2E_TEMP_PASSWORD;
-if (!manifestPath || !email || !temporaryPassword) throw new Error("Missing private E2E fixture configuration.");
+if (!manifestPath || !temporaryPassword) throw new Error("Missing private E2E fixture configuration.");
 const fixtureManifestPath: string = manifestPath;
-const workforceEmail: string = email;
 const workforceTemporaryPassword: string = temporaryPassword;
+
+/** One-time password-change + TOTP enrollment is per-user mutable state. */
+const workforceEmails = Object.freeze({
+  lifecycle: `ops-lifecycle-${crypto.randomUUID()}@example.test`,
+  pickupDesktop: `ops-pickup-desktop-${crypto.randomUUID()}@example.test`,
+  pickupMobile: `ops-pickup-mobile-${crypto.randomUUID()}@example.test`,
+});
 
 const orderPhoneNumbers = [
   "+919876543211",
@@ -267,11 +272,35 @@ async function main() {
       if (!outlet) throw new Error("Seeded outlet disappeared.");
       return outlet;
     });
-    const operator = await createWorkforceOperatorUser(runtime, { email: workforceEmail, name: "Operations E2E Manager", temporaryPassword: workforceTemporaryPassword });
-    await persistence.transaction(async (tx) => {
-      const membership = await createMembership(tx, { workforceUserId: operator.userId, status: "active", scope: { scopeType: "outlet", brandId: commerce.brandId, organizationId: scope.organization_id, territoryId: scope.territory_id, outletId: commerce.outletId } });
-      await grantRole(tx, { membershipId: membership.id, roleKey: "outlet_manager" });
-    });
+    async function seedAuthorizedWorkforceUser(email: string, name: string) {
+      const operator = await createWorkforceOperatorUser(runtime, {
+        email,
+        name,
+        temporaryPassword: workforceTemporaryPassword,
+      });
+      await persistence.transaction(async (tx) => {
+        const membership = await createMembership(tx, {
+          workforceUserId: operator.userId,
+          status: "active",
+          scope: {
+            scopeType: "outlet",
+            brandId: commerce.brandId,
+            organizationId: scope.organization_id,
+            territoryId: scope.territory_id,
+            outletId: commerce.outletId,
+          },
+        });
+        await grantRole(tx, { membershipId: membership.id, roleKey: "outlet_manager" });
+      });
+      return operator;
+    }
+
+    // Separate identities: each Playwright test independently performs first-login
+    // password change + TOTP enrollment (one-time mutable auth state per user).
+    await seedAuthorizedWorkforceUser(workforceEmails.lifecycle, "Operations E2E Lifecycle Manager");
+    await seedAuthorizedWorkforceUser(workforceEmails.pickupDesktop, "Operations E2E Pickup Desktop Manager");
+    await seedAuthorizedWorkforceUser(workforceEmails.pickupMobile, "Operations E2E Pickup Mobile Manager");
+
     const preseedUser = await createEligibleWorkforceUser(persistence, { name: "Operations E2E Preseed Actor" });
     await persistence.transaction(async (tx) => {
       const membership = await createMembership(tx, { workforceUserId: preseedUser.id, status: "active", scope: { scopeType: "outlet", brandId: commerce.brandId, organizationId: scope.organization_id, territoryId: scope.territory_id, outletId: commerce.outletId } });
@@ -301,7 +330,11 @@ async function main() {
     await writeFile(
       fixtureManifestPath,
       JSON.stringify({
-        email: workforceEmail,
+        workforce: {
+          lifecycle: { email: workforceEmails.lifecycle },
+          pickupDesktop: { email: workforceEmails.pickupDesktop },
+          pickupMobile: { email: workforceEmails.pickupMobile },
+        },
         orders: {
           accept: { id: a.orderId, number: a.orderNumber, status: "PLACED", revision: a.revision },
           fulfil: { id: b.orderId, number: b.orderNumber, status: accepted.status, revision: accepted.revision },

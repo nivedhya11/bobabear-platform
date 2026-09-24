@@ -1,19 +1,23 @@
 /**
  * IMP-036H-F — Delivery golden journey (same Order continuity).
  *
- * withCompletedPositiveOrderHarness → acceptOrder → createDelivery → fulfilOrder
- * on the SAME orderId; destination/serviceability semantics unchanged.
+ * Canonical Delivery execution path on one paid DELIVERY Order:
+ * accept → createDelivery → beginBooking (provider) → BOOKED → confirmPickup
+ * → confirmDeliveryWithFulfilCoordination → Order FULFILLED via Delivery
+ * coordination (never calling fulfilOrder directly from this proof).
  */
 import { sql } from "drizzle-orm";
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
+  beginBooking,
+  confirmDeliveryWithFulfilCoordination,
+  confirmPickup,
   createDelivery,
   createFakeDeliveryProvider,
 } from "../../src/server/delivery";
 import {
   acceptOrder,
-  fulfilOrder,
   getCustomerOrder,
   getWorkforceOrder,
 } from "../../src/server/order";
@@ -28,7 +32,7 @@ afterEach(async () => {
 });
 
 describe("IMP-036H-F Delivery golden journey (same Order continuity)", () => {
-  it("accept → createDelivery → fulfil on the same orderId", async () => {
+  it("accept → book → deliver → fulfil coordination on the same orderId", async () => {
     await withCompletedPositiveOrderHarness(async (h) => {
       const orderId = h.order.id;
       const before = await getCustomerOrder(h.persistence, h.actor, { orderId });
@@ -49,7 +53,7 @@ describe("IMP-036H-F Delivery golden journey (same Order continuity)", () => {
       expect(accepted.orderId).toBe(orderId);
 
       const provider = createFakeDeliveryProvider({ defaultOutcome: "booked" });
-      const delivery = await createDelivery(
+      const created = await createDelivery(
         h.persistence,
         {
           orderId,
@@ -57,22 +61,45 @@ describe("IMP-036H-F Delivery golden journey (same Order continuity)", () => {
         },
         { provider },
       );
-      expect(delivery.orderId).toBe(orderId);
-      expect(delivery.status).toBe("REQUESTED");
-      // createDelivery persists the row; booking I/O is a separate beginBooking step.
+      expect(created.orderId).toBe(orderId);
+      expect(created.status).toBe("REQUESTED");
       expect(provider.createBookingCallCount).toBe(0);
 
-      const fulfilled = await fulfilOrder(
+      const booked = await beginBooking(
         h.persistence,
-        h.workforce.kitchen,
         {
-          orderId,
-          expectedOrderRevision: BigInt(accepted.revision),
+          deliveryId: created.id,
+          expectedRevision: created.revision,
+          provider: provider.name,
         },
-        orderOpts(),
+        { provider },
       );
-      expect(fulfilled.status).toBe("FULFILLED");
-      expect(fulfilled.orderId).toBe(orderId);
+      expect(booked.delivery.orderId).toBe(orderId);
+      expect(booked.delivery.status).toBe("BOOKED");
+      expect(provider.createBookingCallCount).toBe(1);
+
+      const picked = await confirmPickup(h.persistence, {
+        deliveryId: booked.delivery.id,
+        expectedRevision: booked.delivery.revision,
+        handoffReference: `handoff-golden-${orderId}`,
+      });
+      expect(picked.orderId).toBe(orderId);
+      expect(picked.status).toBe("PICKED_UP");
+
+      const coordinated = await confirmDeliveryWithFulfilCoordination(
+        h.persistence,
+        h.workforce.delivery,
+        {
+          deliveryId: picked.id,
+          expectedRevision: picked.revision,
+          proofReference: `proof-golden-${orderId}`,
+        },
+      );
+      expect(coordinated.delivery.orderId).toBe(orderId);
+      expect(coordinated.delivery.status).toBe("DELIVERED");
+      expect(coordinated.fulfilAttempted).toBe(true);
+      expect(coordinated.fulfilSucceeded).toBe(true);
+      expect(coordinated.orderStatus).toBe("FULFILLED");
 
       const after = await getCustomerOrder(h.persistence, h.actor, { orderId });
       expect(after.status).toBe("FULFILLED");
@@ -90,12 +117,16 @@ describe("IMP-036H-F Delivery golden journey (same Order continuity)", () => {
 
       const deliveryRows = await h.persistence.withContext(async (ctx) => {
         const rows = await ctx.db.execute(sql`
-          select count(*)::text as c from app.deliveries
+          select id::text as id, status::text as status, order_id::text as order_id
+          from app.deliveries
           where order_id = ${orderId}::uuid
         `);
-        return Number(rows.rows[0]?.c ?? 0);
+        return rows.rows;
       });
-      expect(deliveryRows).toBe(1);
+      expect(deliveryRows).toHaveLength(1);
+      expect(deliveryRows[0]?.order_id).toBe(orderId);
+      expect(deliveryRows[0]?.id).toBe(created.id);
+      expect(deliveryRows[0]?.status).toBe("DELIVERED");
     });
   });
 });
