@@ -31,10 +31,10 @@
     "note": "Protected evidence and generated reports are never classified as executable test source."
   },
   "counts": {
-    "trackedPathsConsidered": 2115,
-    "executableTestFiles": 440,
+    "trackedPathsConsidered": 2120,
+    "executableTestFiles": 442,
     "sourceTestFiles": 134,
-    "testsTreeExecutableFiles": 235,
+    "testsTreeExecutableFiles": 237,
     "scriptTestFiles": 71,
     "playwrightSpecs": 12,
     "vitestConfigs": 2,
@@ -263,6 +263,8 @@
     "tests/checkout-concurrency/checkout.concurrency.test.ts",
     "tests/checkout-security/checkout.security.test.ts",
     "tests/checkout/checkout.domain.test.ts",
+    "tests/checkout/checkout.pickup.domain.test.ts",
+    "tests/checkout/parse-fulfilment-input.test.ts",
     "tests/customer-address-auth-integration/auth-integration.test.ts",
     "tests/customer-address-concurrency/concurrency.test.ts",
     "tests/customer-address-security/security.test.ts",
@@ -6525,6 +6527,47 @@
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/checkout/checkout.pickup.domain.test.ts",
+      "runner": "vitest",
+      "domain": "checkout",
+      "testType": "unit-or-domain",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:checkout",
+        "test:checkout-auth-integration",
+        "test:checkout-concurrency",
+        "test:checkout-security"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit",
+        "3-domain-use-case"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/checkout/parse-fulfilment-input.test.ts",
+      "runner": "vitest",
+      "domain": "checkout",
+      "testType": "unit-or-domain",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:checkout",
+        "test:checkout-auth-integration",
+        "test:checkout-concurrency",
+        "test:checkout-security"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit"
       ],
       "classificationConfidence": "HEURISTIC"
     },

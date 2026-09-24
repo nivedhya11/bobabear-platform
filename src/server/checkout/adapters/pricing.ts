@@ -19,7 +19,10 @@ import type {
   PromotionDefinition,
 } from "../../../shared/promotions";
 import type { Cart } from "../../../shared/cart";
-import type { CheckoutDestination } from "../../../shared/checkout";
+import type {
+  CheckoutDestination,
+  FulfilmentMode,
+} from "../../../shared/checkout";
 import { CheckoutError } from "../../../shared/checkout";
 import type { PersistenceQueryContext } from "../../persistence/types";
 import { buildDirectPricingQuote } from "../../pricing/quote";
@@ -240,9 +243,12 @@ export async function buildCheckoutCommercialResult(
     customerAuthUserId: string;
     labels: ReadonlyMap<string, CatalogLineLabels>;
     destination?: CheckoutDestination;
+    /** IMP-036H — defaults DELIVERY. PICKUP structurally omits delivery charge. */
+    fulfilmentMode?: FulfilmentMode;
   },
 ): Promise<CheckoutCommercialResult> {
   assertApplicationRole(context, "buildCheckoutCommercialResult");
+  const fulfilmentMode = input.fulfilmentMode ?? "DELIVERY";
 
   let chargeDefs;
   try {
@@ -302,22 +308,23 @@ export async function buildCheckoutCommercialResult(
       preliminaryQuote.modifierAdjustmentsPaise +
       preliminaryQuote.bundleAdjustmentsPaise;
 
-    let resolvedDeliveryPaise: bigint | null = null;
-    if (deliveryDef && input.destination) {
-      const resolved = await resolveCustomerDeliveryCharge(context, {
-        brandId: input.brandId,
-        outletId: input.outletId,
-        destination: input.destination,
-        at: input.at,
-        prePromotionSubtotalPaise: itemsSubtotalPaise,
-      });
-      resolvedDeliveryPaise = resolved?.amountPaise ?? deliveryDef.amountPaise;
-    } else if (deliveryDef) {
-      resolvedDeliveryPaise = deliveryDef.amountPaise;
-    }
-
+    // AF-036H-07: PICKUP structurally omits delivery — no calculate-then-hide,
+    // no else-if deliveryDef fallback arm.
     const finalCharges = [...packagingDefs];
-    if (deliveryDef && resolvedDeliveryPaise !== null) {
+    if (fulfilmentMode === "DELIVERY" && deliveryDef) {
+      let resolvedDeliveryPaise: bigint;
+      if (input.destination) {
+        const resolved = await resolveCustomerDeliveryCharge(context, {
+          brandId: input.brandId,
+          outletId: input.outletId,
+          destination: input.destination,
+          at: input.at,
+          prePromotionSubtotalPaise: itemsSubtotalPaise,
+        });
+        resolvedDeliveryPaise = resolved?.amountPaise ?? deliveryDef.amountPaise;
+      } else {
+        resolvedDeliveryPaise = deliveryDef.amountPaise;
+      }
       finalCharges.push({
         ...deliveryDef,
         amountPaise: resolvedDeliveryPaise,

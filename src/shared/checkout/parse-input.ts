@@ -17,12 +17,15 @@ import {
   CHECKOUT_COORDINATES_INPUT_FIELDS,
   CHECKOUT_DESTINATION_INPUT_FIELDS,
   CHECKOUT_EVALUATE_INPUT_FIELDS,
+  CHECKOUT_FULFILMENT_INPUT_FIELDS,
   CHECKOUT_GET_ACTIVE_INPUT_FIELDS,
   CHECKOUT_ID_REVISION_INPUT_FIELDS,
   CHECKOUT_ONE_TIME_ADDRESS_DESTINATION_FIELDS,
   CHECKOUT_PREPARE_INPUT_FIELDS,
   CHECKOUT_SAVED_ADDRESS_DESTINATION_FIELDS,
   CHECKOUT_START_INPUT_FIELDS,
+  FULFILMENT_MODES,
+  type FulfilmentMode,
 } from "./constants";
 import {
   assertUuid,
@@ -256,6 +259,65 @@ function parseOneTimeAddressDestination(
     postalCode: canonical.postalCode,
     coordinates: canonical.coordinates,
     label: canonical.label,
+  });
+}
+
+export type ParsedSetCheckoutFulfilmentInput = Readonly<{
+  checkoutId: string;
+  expectedCheckoutRevision: bigint;
+  fulfilmentMode: FulfilmentMode;
+  /** Present when provided; null clears; undefined leaves unchanged for PICKUP drafts. */
+  pickupOutletId?: string | null;
+}>;
+
+export function parseSetCheckoutFulfilmentInput(
+  input: unknown,
+): ParsedSetCheckoutFulfilmentInput {
+  const obj = assertPlainObject(input, "input");
+  rejectForbiddenRecursively(obj, "input");
+  rejectUnknownAndForbiddenFields(obj, CHECKOUT_FULFILMENT_INPUT_FIELDS, "input");
+  if (!("fulfilmentMode" in obj)) {
+    throw new CheckoutError(
+      "CHECKOUT_INVALID_INPUT",
+      "fulfilmentMode is required.",
+      { field: "fulfilmentMode" },
+    );
+  }
+  if (
+    typeof obj.fulfilmentMode !== "string" ||
+    !(FULFILMENT_MODES as readonly string[]).includes(obj.fulfilmentMode)
+  ) {
+    throw new CheckoutError(
+      "CHECKOUT_INVALID_INPUT",
+      'fulfilmentMode must be "DELIVERY" or "PICKUP".',
+      { field: "fulfilmentMode" },
+    );
+  }
+  const fulfilmentMode = obj.fulfilmentMode as FulfilmentMode;
+
+  let pickupOutletId: string | null | undefined = undefined;
+  if ("pickupOutletId" in obj) {
+    if (obj.pickupOutletId === null) {
+      pickupOutletId = null;
+    } else {
+      pickupOutletId = assertUuid(obj.pickupOutletId, "pickupOutletId");
+    }
+  }
+  if (fulfilmentMode === "DELIVERY" && pickupOutletId !== undefined && pickupOutletId !== null) {
+    throw new CheckoutError(
+      "CHECKOUT_INVALID_INPUT",
+      "pickupOutletId must be omitted or null for DELIVERY.",
+      { field: "pickupOutletId" },
+    );
+  }
+
+  return Object.freeze({
+    checkoutId: assertUuid(obj.checkoutId, "checkoutId"),
+    expectedCheckoutRevision: parseExpectedCheckoutRevision(
+      obj.expectedCheckoutRevision,
+    ),
+    fulfilmentMode,
+    ...(pickupOutletId !== undefined ? { pickupOutletId } : {}),
   });
 }
 

@@ -480,6 +480,37 @@ export async function bumpCheckoutRevisionAfterDestinationChange(
   return rows[0]!;
 }
 
+/**
+ * Bump revision after fulfilment mode / pickup outlet mutation (IMP-036H-B).
+ * Invalidates READY → DRAFT when clearReady is true (mode or outlet changed).
+ */
+export async function bumpCheckoutRevisionAfterFulfilmentChange(
+  context: PersistenceTransactionContext,
+  row: CheckoutRow,
+  now: Date,
+  clearReady: boolean,
+  fulfilment: Readonly<{
+    fulfilmentMode: FulfilmentMode;
+    pickupOutletId: string | null;
+  }>,
+): Promise<CheckoutRow> {
+  assertTransactionContext(context, "bumpCheckoutRevisionAfterFulfilmentChange");
+  const rows = await context.db
+    .update(checkoutsTable)
+    .set({
+      revision: row.revision + BigInt(1),
+      updatedAt: now,
+      fulfilmentMode: fulfilment.fulfilmentMode,
+      pickupOutletId: fulfilment.pickupOutletId,
+      ...(clearReady
+        ? { status: "DRAFT" as const, activeSnapshotId: null }
+        : {}),
+    })
+    .where(eq(checkoutsTable.id, row.id))
+    .returning();
+  return rows[0]!;
+}
+
 export async function commitReadySnapshot(
   context: PersistenceTransactionContext,
   checkout: CheckoutRow,

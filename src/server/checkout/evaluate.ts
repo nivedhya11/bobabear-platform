@@ -1,8 +1,12 @@
 /**
- * evaluateCheckout orchestration (IMP-021).
+ * evaluateCheckout orchestration (IMP-021 / IMP-036H-B).
  *
  * Preferred flow: read coherent state → evaluate outside long lock →
  * short commit transaction with rechecks.
+ *
+ * DELIVERY: destination + serviceability (unchanged).
+ * PICKUP: eligible pickup outlet; MUST NOT call resolveCheckoutServiceability;
+ * destination is not sealed into the snapshot.
  */
 
 import {
@@ -13,6 +17,7 @@ import {
   type Checkout,
   type CheckoutEvaluationSuccess,
   type CheckoutMerchandiseProblem,
+  type FulfilmentMode,
 } from "../../shared/checkout";
 import type { Persistence } from "../persistence/types";
 import { requireCustomerActor } from "../cart/actor";
@@ -31,6 +36,11 @@ import { resolveCheckoutServiceability } from "./adapters/serviceability";
 import { systemCheckoutClock } from "./clock";
 import { checkoutSnapshotsStructurallyEqual } from "./compare-snapshots";
 import type { CheckoutOperationOptions } from "./operations";
+import {
+  assertPickupOutletEligible,
+  pickupLocationFromProfile,
+} from "./pickup-eligibility";
+import { loadOutletPickupProfileByOutletId } from "../outlet-pickup-profile/repository";
 import {
   commitReadySnapshot,
   findCheckoutRowById,
@@ -93,14 +103,24 @@ export async function evaluateCheckout(
       );
     }
 
+    const fulfilmentMode = (row.fulfilmentMode ?? "DELIVERY") as FulfilmentMode;
+    const pickupOutletId = row.pickupOutletId ?? null;
+
     const destRow = await findDestinationByCheckoutId(ctx, row.id);
-    if (!destRow) {
+    const destination = destRow ? mapDestinationRow(destRow) : null;
+    if (fulfilmentMode === "DELIVERY" && !destination) {
       throw new CheckoutError(
         "CHECKOUT_DESTINATION_REQUIRED",
         "Checkout destination is required before evaluation.",
       );
     }
-    const destination = mapDestinationRow(destRow);
+    if (fulfilmentMode === "PICKUP" && !pickupOutletId) {
+      throw new CheckoutError(
+        "PICKUP_OUTLET_REQUIRED",
+        "Pickup outlet is required before evaluation.",
+        { field: "pickupOutletId" },
+      );
+    }
 
     const cartRow = await findCartRowById(ctx, row.cartId);
     if (!cartRow || cartRow.customerAuthUserId !== customer.authUserId) {
@@ -114,12 +134,6 @@ export async function evaluateCheckout(
       );
     }
     if (cart.revision !== row.sourceCartRevision) {
-      // Cart changed since Checkout was bound — evaluate still uses current cart
-      // only after detecting mismatch for READY rebuild; for DRAFT we accept
-      // current cart and update sourceCartRevision on commit. For READY with
-      // mismatch vs stored source, signal CHECKOUT_CART_CHANGED when the
-      // bound revision no longer matches and caller expected continuity.
-      // Spec: if current Cart becomes revision N+1 → CHECKOUT_CART_CHANGED.
       if (row.status === "READY_FOR_PAYMENT") {
         throw new CheckoutError(
           "CHECKOUT_CART_CHANGED",
@@ -129,21 +143,59 @@ export async function evaluateCheckout(
     }
 
     const checkout = await loadCheckoutAggregate(ctx, row);
-    return Object.freeze({ row, destination, cart, checkout });
+    return Object.freeze({
+      row,
+      fulfilmentMode,
+      pickupOutletId,
+      destination,
+      cart,
+      checkout,
+    });
   });
 
-  const serviceability = await resolveCheckoutServiceability(
-    persistence,
-    preload.row.brandId,
-    preload.destination,
-    clock,
-  );
+  let selectedOutletId: string;
+  let serviceabilityEvaluatedAt: Date | null = null;
+
+  if (preload.fulfilmentMode === "DELIVERY") {
+    const serviceability = await resolveCheckoutServiceability(
+      persistence,
+      preload.row.brandId,
+      preload.destination!,
+      clock,
+    );
+    selectedOutletId = serviceability.selectedOutletId;
+    serviceabilityEvaluatedAt = serviceability.evaluatedAt;
+  } else {
+    // PICKUP MUST NOT call resolveCheckoutServiceability.
+    selectedOutletId = preload.pickupOutletId!;
+  }
 
   const merchandiseProblems: CheckoutMerchandiseProblem[] = [];
+  let pickupLocation = null as ReturnType<typeof pickupLocationFromProfile> | null;
+
   await persistence.withContext(async (ctx) => {
-    // Collect every safely determinable merchandise problem in one evaluation
-    // (catalog structural/lifecycle and assortment/availability). Do not stop
-    // after the first failing collector — CO-17 requires aggregation.
+    if (preload.fulfilmentMode === "PICKUP") {
+      const eligible = await assertPickupOutletEligible(ctx, {
+        brandId: preload.row.brandId,
+        outletId: selectedOutletId,
+        cart: preload.cart,
+        now,
+      });
+      void eligible;
+      const profile = await loadOutletPickupProfileByOutletId(
+        ctx,
+        selectedOutletId,
+      );
+      if (!profile) {
+        throw new CheckoutError(
+          "PICKUP_OUTLET_NOT_ELIGIBLE",
+          "Pickup profile is missing.",
+          { field: "pickupOutletId" },
+        );
+      }
+      pickupLocation = pickupLocationFromProfile(profile);
+    }
+
     merchandiseProblems.push(
       ...(await validateCheckoutCartMerchandise(
         ctx,
@@ -155,7 +207,7 @@ export async function evaluateCheckout(
       ...(await collectAssortmentAvailabilityProblems(
         ctx,
         preload.cart,
-        serviceability.selectedOutletId,
+        selectedOutletId,
         now,
       )),
     );
@@ -176,12 +228,16 @@ export async function evaluateCheckout(
   const commercial = await persistence.withContext((ctx) =>
     buildCheckoutCommercialResult(ctx, {
       brandId: preload.row.brandId,
-      outletId: serviceability.selectedOutletId,
+      outletId: selectedOutletId,
       at: now,
       cart: preload.cart,
       customerAuthUserId: customer.authUserId,
       labels,
-      destination: preload.destination,
+      destination:
+        preload.fulfilmentMode === "DELIVERY"
+          ? preload.destination ?? undefined
+          : undefined,
+      fulfilmentMode: preload.fulfilmentMode,
     }),
   );
 
@@ -190,11 +246,15 @@ export async function evaluateCheckout(
     checkoutId: preload.row.id,
     checkoutRevision: nextRevision,
     sourceCartRevision: preload.cart.revision,
-    selectedOutletId: serviceability.selectedOutletId,
+    selectedOutletId,
     evaluatedAt: now,
-    serviceabilityEvaluatedAt: serviceability.evaluatedAt,
+    fulfilmentMode: preload.fulfilmentMode,
+    serviceabilityEvaluatedAt,
     manualCouponCode: preload.cart.manualCouponCode,
-    destination: preload.destination,
+    destination:
+      preload.fulfilmentMode === "DELIVERY" ? preload.destination : null,
+    pickupLocation:
+      preload.fulfilmentMode === "PICKUP" ? pickupLocation : null,
     commercial,
     expiresAt: new Date(now.getTime() + ttlMs),
     updatedAt: now,
@@ -240,7 +300,6 @@ export async function evaluateCheckout(
         { field: "expectedCheckoutRevision" },
       );
     }
-    // Re-read clock at commit so concurrent expiry races observe the boundary.
     const commitNow = clock.now();
     if (isLogicallyExpired(row.expiresAt, commitNow)) {
       throw new CheckoutError("CHECKOUT_EXPIRED", "Checkout has expired.");
@@ -252,11 +311,25 @@ export async function evaluateCheckout(
       );
     }
 
-    const destRow = await findDestinationByCheckoutId(tx, row.id);
-    if (!destRow) {
+    const commitMode = (row.fulfilmentMode ?? "DELIVERY") as FulfilmentMode;
+    if (commitMode !== preload.fulfilmentMode) {
       throw new CheckoutError(
-        "CHECKOUT_DESTINATION_REQUIRED",
-        "Checkout destination is required before evaluation.",
+        "CHECKOUT_CONFLICT",
+        "Fulfilment mode changed during evaluation.",
+      );
+    }
+    if (commitMode === "DELIVERY") {
+      const destRow = await findDestinationByCheckoutId(tx, row.id);
+      if (!destRow) {
+        throw new CheckoutError(
+          "CHECKOUT_DESTINATION_REQUIRED",
+          "Checkout destination is required before evaluation.",
+        );
+      }
+    } else if ((row.pickupOutletId ?? null) !== preload.pickupOutletId) {
+      throw new CheckoutError(
+        "CHECKOUT_CONFLICT",
+        "Pickup outlet changed during evaluation.",
       );
     }
 

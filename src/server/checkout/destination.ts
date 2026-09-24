@@ -1,5 +1,9 @@
 /**
- * Checkout destination mutations (IMP-021).
+ * Checkout destination mutations (IMP-021 / IMP-036H-B).
+ *
+ * Destination remains the Delivery commitment path. When fulfilmentMode is
+ * PICKUP, destination MAY remain as draft convenience for a later switch back
+ * to DELIVERY; it is never sealed into a Pickup READY snapshot.
  */
 
 import {

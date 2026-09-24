@@ -30,7 +30,9 @@ import {
   clearCheckoutDestination,
   evaluateCheckout,
   getActiveCheckout,
+  listCheckoutPickupOptions,
   setCheckoutDestination,
+  setCheckoutFulfilment,
   startCheckout,
 } from "../../checkout";
 import {
@@ -797,6 +799,54 @@ export async function routeCustomerCommerceRequest(
       if (clearParams) {
         sendMethodNotAllowed(res, ["POST"], requestId);
         return outcome("clear_checkout_destination", 405, "METHOD_NOT_ALLOWED");
+      }
+    }
+
+    {
+      const pickupParams = matchPath(
+        pathname,
+        "/api/v1/checkouts/{checkoutId}/pickup-options",
+      );
+      if (pickupParams && method === "GET") {
+        const identity = await requireTrustedIdentity(deps.runtime, req.headers);
+        const actor = toCartCustomerActor(identity);
+        const result = await listCheckoutPickupOptions(
+          deps.persistence,
+          actor,
+          { checkoutId: pickupParams.checkoutId },
+          { policy: CUSTOMER_COMMERCE_CHECKOUT_POLICY },
+        );
+        sendJson(res, { ok: true, ...result }, { status: 200, requestId });
+        return outcome("list_checkout_pickup_options", 200, "OK");
+      }
+      if (pickupParams) {
+        sendMethodNotAllowed(res, ["GET"], requestId);
+        return outcome("list_checkout_pickup_options", 405, "METHOD_NOT_ALLOWED");
+      }
+    }
+
+    {
+      const fulfilmentParams = matchPath(
+        pathname,
+        "/api/v1/checkouts/{checkoutId}/fulfilment",
+      );
+      if (fulfilmentParams && method === "POST") {
+        const body = await readBody(req, requestId, res);
+        if (!body) return outcome("set_checkout_fulfilment", 400, "INVALID_REQUEST");
+        const identity = await requireTrustedIdentity(deps.runtime, req.headers);
+        const actor = toCartCustomerActor(identity);
+        const checkout = await setCheckoutFulfilment(
+          deps.persistence,
+          actor,
+          { ...body, checkoutId: fulfilmentParams.checkoutId },
+          { policy: CUSTOMER_COMMERCE_CHECKOUT_POLICY },
+        );
+        sendJson(res, { ok: true, checkout }, { status: 200, requestId });
+        return outcome("set_checkout_fulfilment", 200, "OK");
+      }
+      if (fulfilmentParams) {
+        sendMethodNotAllowed(res, ["POST"], requestId);
+        return outcome("set_checkout_fulfilment", 405, "METHOD_NOT_ALLOWED");
       }
     }
 
