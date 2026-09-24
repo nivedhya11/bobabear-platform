@@ -147,7 +147,7 @@ ROADMAP/STATE revisions; retained only as provenance of this draft's original wr
 Intermediate tip anchors claiming `currentProductSlice = IMP-038` under controlled continuation
 (`GTM-R138` / `STATE-R136` and successors through GTM-R140 / STATE-R138), and later tips claiming
 `currentProductSlice = IMP-036H` (through GTM-R146) or `NONE` (GTM-R147), are likewise historical
-relative to CURRENT GTM-R149 / STATE-R147.
+relative to CURRENT GTM-R150 / STATE-R148.
 
 ---
 
@@ -159,9 +159,9 @@ relative to CURRENT GTM-R149 / STATE-R147.
 | Product Definition version / document status | `PD-IMP-040-DRAFT-1`; **Document status: PRE-GATE DRAFT**; **PRE-GATE DRAFT: YES** |
 | Product owner / approval evidence | Founder. FD-040-01…10 resolved 2026-09-18 via explicit `"proceed"` in response to the exact IMP-040 recommended-refinement approval package. Product Definition Gate **NOT_PERFORMED**. |
 | Process / verification policy | `PD-1` / `TEST-1` |
-| Canonical anchors | VISION-1; ROADMAP GTM-R132; STATE STATE-R130 (historical draft-time anchors; CURRENT tip is GTM-R149 / STATE-R147 — see lifecycle note above); ARCH-R20 / DR-16 CURRENT (draft originally cited ARCH-R19 / DR-15); PD-1; TEST-1; PERSONA-1; GJ-1 |
+| Canonical anchors | VISION-1; ROADMAP GTM-R132; STATE STATE-R130 (historical draft-time anchors; CURRENT tip is GTM-R150 / STATE-R148 — see lifecycle note above); ARCH-R20 / DR-16 CURRENT (draft originally cited ARCH-R19 / DR-15); PD-1; TEST-1; PERSONA-1; GJ-1 |
 | Repository candidate | Canonical path `/home/ajoshi/repos/boba-bear-platform`; base at draft authoring `origin/main` `c35c9eab6a30ec6ce745cefd75c523181326f360` / tree `266fe3b07811f6942e76cac155d58ba07daabe56`; draft branch `governance/imp040-pre-gate-product-definition` |
-| Capability lifecycle / authorization | ROADMAP/STATE: IMP-040 remains **PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED**; **IMP040_ACTIVATED: NO**; Product Definition Gate NOT_PERFORMED; Architecture Fit NOT_PERFORMED; architecture NOT_LOCKED; implementation NOT_AUTHORIZED / NOT_STARTED; IMP040_ACCEPTED: NO; GO_DECLARED: NO; PUBLIC_LAUNCH_APPROVED: NO. CURRENT tip: **currentProductSlice = IMP-036I** under `PROGRAM_PAUSE: PRE_GTM_PRODUCT_INSERTION_PROVIDER_BLOCKED` (**D-377**) (`acceptedThrough` IMP-036H; `nextProductSlice` IMP-037; IMP-037/038 held predecessors; tip GTM-R149 / STATE-R147). |
+| Capability lifecycle / authorization | ROADMAP/STATE: IMP-040 remains **PLANNED / NOT_ACTIVATED / NOT_AUTHORIZED / NOT_STARTED**; **IMP040_ACTIVATED: NO**; Product Definition Gate NOT_PERFORMED; Architecture Fit NOT_PERFORMED; architecture NOT_LOCKED; implementation NOT_AUTHORIZED / NOT_STARTED; IMP040_ACCEPTED: NO; GO_DECLARED: NO; PUBLIC_LAUNCH_APPROVED: NO. CURRENT tip: **currentProductSlice = IMP-036I** under `PROGRAM_PAUSE: PRE_GTM_PRODUCT_INSERTION_PROVIDER_BLOCKED` (**D-377**) (`acceptedThrough` IMP-036H; `nextProductSlice` IMP-037; IMP-037/038 held predecessors; tip GTM-R150 / STATE-R148). |
 | Relevant capability architecture / ADRs | ADR-002 (Pages transition, rollback, incident); ADR-007 (tax/GST commercial gate); ADR-011 delivery; ADR-012 notifications; IMP-037/038/039 hard prerequisites (future accepted status required before GO — not claimed accepted by this draft); GJ-1 |
 | Founder UAT applicability | `FOUNDER_UAT_REQUIRED = YES`; `FOUNDER_UAT_STATUS = NOT_PERFORMED` — interactive exact-candidate UAT gate (separate from production GO / NO-GO / ABORT and from launch-stable; see §12.1 / §26) |
 
@@ -1591,7 +1591,7 @@ and PD-1 story/AC/UX completeness corrected for gate evaluation
 ```
 
 IMP-040 remains pre-gate and unactivated. CURRENT tip `currentProductSlice` is IMP-036I
-(`acceptedThrough` IMP-036H; `nextProductSlice` IMP-037; tip GTM-R149 / STATE-R147).
+(`acceptedThrough` IMP-036H; `nextProductSlice` IMP-037; tip GTM-R150 / STATE-R148).
 ROADMAP/STATE lifecycle for IMP-040 remains unactivated PRE-GATE.
 
 ```text
