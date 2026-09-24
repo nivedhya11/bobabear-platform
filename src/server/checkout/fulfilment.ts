@@ -84,7 +84,7 @@ export async function setCheckoutFulfilment(
       | "PICKUP";
     const currentOutletId = row.pickupOutletId ?? null;
 
-    let nextMode = parsed.fulfilmentMode;
+    const nextMode = parsed.fulfilmentMode;
     let nextOutletId: string | null;
 
     if (nextMode === "DELIVERY") {
