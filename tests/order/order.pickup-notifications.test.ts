@@ -1,13 +1,18 @@
 /**
- * IMP-036H-F — Notification gating for Pickup (AC-036H-029 / AF-036H-11).
+ * IMP-036H-F — Notification gating + Pickup-aware wording (AC-036H-029 / AF-036H-11).
  *
  * Pickup Orders must never enqueue OUT_FOR_DELIVERY / DELIVERED (Delivery-lifecycle
- * only). Accept / fulfil emit ORDER_ACCEPTED — no rider / delivery-progress templates.
+ * only). Accept / fulfil emit ORDER_ACCEPTED — wording must be Pickup-aware and must
+ * not claim rider / delivery progress.
  */
 import { sql } from "drizzle-orm";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { acceptOrder, fulfilOrder } from "../../src/server/order";
+import {
+  renderCustomerVisibleNotificationContent,
+  summaryClaimsRiderOrDeliveryProgress,
+} from "../../src/shared/notifications";
+import { acceptOrder, fulfilOrder, getWorkforceOrder } from "../../src/server/order";
 import type { Persistence } from "../../src/server/persistence/types";
 import { closeTrackedPersistenceHandles } from "../database/support/cart-fixtures";
 import {
@@ -38,7 +43,7 @@ async function notificationEventTypesForOrder(
   });
 }
 
-describe("IMP-036H-F Pickup notification gating (AC-036H-029)", () => {
+describe("IMP-036H-F Pickup notification gating + wording (AC-036H-029)", () => {
   it("accept + fulfil Pickup never enqueue out_for_delivery / delivered", async () => {
     await withCompletedPositivePickupOrderHarness(async (h) => {
       const accepted = await acceptOrder(
@@ -79,6 +84,34 @@ describe("IMP-036H-F Pickup notification gating (AC-036H-029)", () => {
         return Number(rows.rows[0]?.c ?? 0);
       });
       expect(deliveryRows).toBe(0);
+
+      // Content assertions — platform customer-visible wording from fulfilmentMode.
+      const workforce = await getWorkforceOrder(
+        h.persistence,
+        h.workforce.outletManager,
+        { orderId: h.order.id },
+      );
+      const acceptedContent = renderCustomerVisibleNotificationContent({
+        semanticType: "ORDER_ACCEPTED",
+        fulfilmentMode: "PICKUP",
+        pickupLocationDisplayName: workforce.pickupLocation?.displayName ?? null,
+      });
+      expect(acceptedContent.summary).toMatch(/Pickup order has been accepted/i);
+      expect(summaryClaimsRiderOrDeliveryProgress(acceptedContent.summary)).toBe(
+        false,
+      );
+      for (const semanticType of [
+        "ORDER_RECEIVED",
+        "PAYMENT_CONFIRMED",
+        "ORDER_CANCELLED",
+      ] as const) {
+        const content = renderCustomerVisibleNotificationContent({
+          semanticType,
+          fulfilmentMode: "PICKUP",
+        });
+        expect(content.summary).toMatch(/Pickup/i);
+        expect(summaryClaimsRiderOrDeliveryProgress(content.summary)).toBe(false);
+      }
     });
   });
 

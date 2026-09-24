@@ -221,27 +221,29 @@ All fourteen Product Definition Fit questions are **RESOLVED** (AF-036H-12 = cor
 ```text
 D-378 — Checkout Fulfilment Mode + Pickup Execution Boundary
 STATUS: CURRENT
-ADR-018 — Customer Fulfilment Mode and Pickup Boundary (Status: Proposed)
-ARCH-G28 — proposed invariant text (below)
-ARCH-R22 — proposed architecture revision on lock persistence only
+ADR-018 — Customer Fulfilment Mode and Pickup Boundary (Status: Accepted)
+ARCH-G28 — CURRENT invariant
+ARCH-R22 — CURRENT architecture revision
 ```
 
-### 5.2 Proposed ARCH-G28 (semantic authority)
+### 5.2 ARCH-G28 (semantic authority)
 
 > Checkout Snapshot owns the immutable fulfilment commitment for a purchased order. `DELIVERY` and
 > `PICKUP` are mutually exclusive modes. DELIVERY requires delivery destination/serviceability and
 > may create Delivery execution. PICKUP binds an eligible selected Outlet, requires no customer
 > delivery destination/serviceability, and must never create or invoke a Delivery aggregate.
 
-### 5.3 Why a new global decision is required
+### 5.3 Why a new global decision was required (historical)
 
 IMP-036H changes a cross-domain invariant (Checkout / Pricing / Order / Delivery / Ops / FD
-issuance adapters). That exceeds capability-local mechanism selection under ARCH-R21 alone
-(contrast IMP-036F, which required no new D/ARCH). Lock persistence (separate task) must advance
-`ARCH-R21 → ARCH-R22` and promote D-378 / ADR-018 / ARCH-G28 to CURRENT.
+issuance adapters). That exceeded capability-local mechanism selection under ARCH-R21 alone
+(contrast IMP-036F, which required no new D/ARCH). Lock persistence advanced
+`ARCH-R21 → ARCH-R22` and promoted D-378 / ADR-018 / ARCH-G28 to CURRENT.
 
-This candidate **does not** mutate `ARCHITECTURE.md` `architectureVersion` meta (must remain
-ARCH-R21 while tip is GTM-R142 / STATE-R140 Product Definition Gate PASS).
+**Historical Fit-candidate note (superseded):** while tip was GTM-R142 / STATE-R140 Product
+Definition Gate PASS only, Architecture tip remained ARCH-R21 and ADR-018 / ARCH-G28 were still
+Proposed. That candidate-era state is closed; CURRENT authority is ARCH-R22 / D-378 / ADR-018
+Accepted / ARCH-G28 CURRENT.
 
 ---
 
@@ -614,7 +616,7 @@ This check belongs at the authoritative Delivery application boundary, not UI hi
 Once no Delivery exists, booking/assignment/provider flows remain unavailable.
 Do not create a fake `DELIVERED` event for Pickup. Delivery Orders remain untouched.
 
-Authority: FD-036H-13; AC-036H-015/016; ARCH-G24 + proposed ARCH-G28.
+Authority: FD-036H-13; AC-036H-015/016; ARCH-G24 + ARCH-G28.
 
 **AF-036H-08: RESOLVED**
 

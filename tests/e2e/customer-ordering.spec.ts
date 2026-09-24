@@ -26,6 +26,7 @@ const PHONE_NUMBERS = {
   retry: "9876500254",
   scriptLoadFailure: "9876500255",
   pickupSuccess: "9876500256",
+  pickupMobile: "9876500257",
 } as const;
 
 async function selectCheckoutFulfilmentDelivery(page: Page): Promise<void> {
@@ -136,11 +137,31 @@ async function reachReadyForPayment(page: Page, phoneNumber: string): Promise<vo
  */
 async function reachPickupReadyForPayment(page: Page, phoneNumber: string): Promise<void> {
   const mapsOrPlacesRequests: string[] = [];
+  await page.addInitScript(() => {
+    const g = globalThis as typeof globalThis & {
+      __bobaGeoGetCurrentPositionCalls?: number;
+      __bobaGeoWatchPositionCalls?: number;
+    };
+    g.__bobaGeoGetCurrentPositionCalls = 0;
+    g.__bobaGeoWatchPositionCalls = 0;
+    const geo = navigator.geolocation;
+    if (!geo) return;
+    const originalGet = geo.getCurrentPosition.bind(geo);
+    const originalWatch = geo.watchPosition.bind(geo);
+    geo.getCurrentPosition = ((...args: Parameters<Geolocation["getCurrentPosition"]>) => {
+      g.__bobaGeoGetCurrentPositionCalls = (g.__bobaGeoGetCurrentPositionCalls ?? 0) + 1;
+      return originalGet(...args);
+    }) as Geolocation["getCurrentPosition"];
+    geo.watchPosition = ((...args: Parameters<Geolocation["watchPosition"]>) => {
+      g.__bobaGeoWatchPositionCalls = (g.__bobaGeoWatchPositionCalls ?? 0) + 1;
+      return originalWatch(...args);
+    }) as Geolocation["watchPosition"];
+  });
+
   page.on("request", (request) => {
     const url = request.url();
     if (
-      /maps\.googleapis\.com|places\.googleapis\.com|maps\.gstatic\.com/i.test(url) ||
-      /geolocation|GeolocationPosition/i.test(url)
+      /maps\.googleapis\.com|places\.googleapis\.com|maps\.gstatic\.com/i.test(url)
     ) {
       mapsOrPlacesRequests.push(url);
     }
@@ -168,14 +189,29 @@ async function reachPickupReadyForPayment(page: Page, phoneNumber: string): Prom
   await expect(page.getByRole("heading", { name: "Checkout" })).toBeVisible({ timeout: 20_000 });
   const checkout = page.locator("#main-content");
   await expect(checkout.getByTestId("checkout-fulfilment-choice")).toBeVisible({ timeout: 20_000 });
-  await checkout.getByTestId("checkout-fulfilment-pickup").click();
+
+  // AC-036H-041 — real keyboard: Tab from Delivery to Pickup, Enter to activate.
+  const delivery = checkout.getByTestId("checkout-fulfilment-delivery");
+  const pickup = checkout.getByTestId("checkout-fulfilment-pickup");
+  await delivery.focus();
+  await expect(delivery).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(pickup).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(pickup).toHaveAttribute("aria-pressed", "true");
+  await expect(delivery).toHaveAttribute("aria-pressed", "false");
+  // Space also activates when focused (toggle stays selected).
+  await page.keyboard.press("Space");
+  await expect(pickup).toHaveAttribute("aria-pressed", "true");
 
   await expect(checkout.getByTestId("checkout-pickup-outlet")).toBeVisible({ timeout: 20_000 });
   // Single eligible outlet → AUTO_SELECT (AC-036H-003).
   await expect(checkout.getByTestId("checkout-pickup-outlet-auto")).toBeVisible();
   await expect(checkout.getByTestId("checkout-destination-select")).toHaveCount(0);
   await expect(checkout.getByTestId("checkout-destination-location")).toHaveCount(0);
-  await checkout.getByTestId("checkout-pickup-continue").click();
+  await checkout.getByTestId("checkout-pickup-continue").focus();
+  await expect(checkout.getByTestId("checkout-pickup-continue")).toBeFocused();
+  await page.keyboard.press("Enter");
 
   await expect(page.getByTestId("checkout-review")).toBeVisible({ timeout: 20_000 });
   await expect(page.getByTestId("checkout-review-pickup")).toBeVisible();
@@ -186,6 +222,18 @@ async function reachPickupReadyForPayment(page: Page, phoneNumber: string): Prom
   await expect(page.getByTestId("payment-start")).toBeVisible();
 
   expect(mapsOrPlacesRequests, "Pickup must not call Maps/Places (AC-036H-030)").toEqual([]);
+  const geoCounts = await page.evaluate(() => {
+    const g = globalThis as typeof globalThis & {
+      __bobaGeoGetCurrentPositionCalls?: number;
+      __bobaGeoWatchPositionCalls?: number;
+    };
+    return {
+      getCurrentPosition: g.__bobaGeoGetCurrentPositionCalls ?? 0,
+      watchPosition: g.__bobaGeoWatchPositionCalls ?? 0,
+    };
+  });
+  expect(geoCounts.getCurrentPosition, "geolocation.getCurrentPosition").toBe(0);
+  expect(geoCounts.watchPosition, "geolocation.watchPosition").toBe(0);
 }
 
 test("guest can complete owned ordering through Razorpay Standard Checkout and order history", async ({
@@ -325,13 +373,15 @@ test("Razorpay script load failure stays recoverable", async ({ page }) => {
 
 test("guest can complete ASAP Pickup journey without Maps (AC-036H-002/030/041)", async ({
   page,
-}) => {
+}, testInfo) => {
+  test.skip(
+    testInfo.project.name === "mobile-chromium",
+    "Desktop Pickup evidence; mobile has a focused counterpart",
+  );
   test.setTimeout(180_000);
   await installRazorpayCheckoutMock(page, "succeed");
   await reachPickupReadyForPayment(page, PHONE_NUMBERS.pickupSuccess);
 
-  // AC-036H-041 — fulfilment controls remain keyboard-reachable with accessible names.
-  // (Choice already passed; assert payment CTA remains named.)
   await expect(page.getByTestId("payment-start")).toBeVisible();
   await expect(page.getByTestId("payment-start")).toBeEnabled();
 
@@ -353,4 +403,25 @@ test("guest can complete ASAP Pickup journey without Maps (AC-036H-002/030/041)"
   await expect(page.getByTestId("order-fulfilment-mode")).toContainText(/pickup/i);
   await expect(page.getByTestId("order-pickup-location")).toBeVisible();
   await expect(page.getByTestId("order-delivery")).toHaveCount(0);
+});
+
+test("mobile: ASAP Pickup happy path remains usable (AC-036H mobile evidence)", async ({
+  page,
+}, testInfo) => {
+  test.skip(
+    testInfo.project.name !== "mobile-chromium",
+    "Mobile viewport evidence only",
+  );
+  test.setTimeout(180_000);
+  const viewport = page.viewportSize();
+  expect(viewport, "persist mobile viewport identity").toEqual({
+    width: 390,
+    height: 844,
+  });
+  await installRazorpayCheckoutMock(page, "succeed");
+  await reachPickupReadyForPayment(page, PHONE_NUMBERS.pickupMobile);
+  await page.getByTestId("payment-start").click();
+  await expect(page.getByTestId("order-confirmation")).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByTestId("order-fulfilment-mode")).toContainText(/pickup/i);
+  await expect(page.getByTestId("order-pickup-location")).toBeVisible();
 });

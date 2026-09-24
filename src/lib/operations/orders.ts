@@ -141,6 +141,25 @@ function parsePickupLocation(
   };
 }
 
+function parseCustomerVerification(
+  value: unknown,
+): NonNullable<OperationsOrderDetail["customer"]> | null {
+  if (!isPlainObject(value)) return null;
+  if (typeof value.displayName !== "string" || value.displayName.trim() === "") {
+    return null;
+  }
+  if (
+    value.verifiedPhoneE164 !== null &&
+    typeof value.verifiedPhoneE164 !== "string"
+  ) {
+    return null;
+  }
+  return {
+    displayName: value.displayName,
+    verifiedPhoneE164: value.verifiedPhoneE164,
+  };
+}
+
 function parseModifier(
   value: unknown,
 ): Readonly<{ groupName: string; optionName: string; quantity: number }> | null {
@@ -232,6 +251,14 @@ export function parseOperationsOrderDetail(value: unknown): OperationsOrderDetai
     return null;
   }
 
+  const customer =
+    value.customer === null || value.customer === undefined
+      ? null
+      : parseCustomerVerification(value.customer);
+  if (value.customer !== null && value.customer !== undefined && !customer) {
+    return null;
+  }
+
   const fulfilmentMode =
     value.fulfilmentMode === "DELIVERY" || value.fulfilmentMode === "PICKUP"
       ? value.fulfilmentMode
@@ -264,6 +291,7 @@ export function parseOperationsOrderDetail(value: unknown): OperationsOrderDetai
     fulfilmentMode,
     destination,
     pickupLocation,
+    customer,
     lines,
   };
 }

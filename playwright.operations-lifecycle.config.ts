@@ -13,5 +13,20 @@ export default defineConfig({
   reporter: [["line"]],
   outputDir: "test-results-operations-lifecycle",
   use: { baseURL, trace: "on-first-retry", screenshot: "only-on-failure", video: "retain-on-failure" },
-  projects: [{ name: "desktop-chromium", use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } } }],
+  projects: [
+    {
+      name: "desktop-chromium",
+      testIgnore: [/mobile:/],
+      use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } },
+    },
+    {
+      name: "mobile-chromium",
+      grep: /mobile:/,
+      use: {
+        ...devices["Pixel 7"],
+        browserName: "chromium",
+        viewport: { width: 390, height: 844 },
+      },
+    },
+  ],
 });

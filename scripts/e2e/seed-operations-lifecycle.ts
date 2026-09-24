@@ -20,7 +20,7 @@ import {
   createCustomerTemporaryIdentityDeriver,
   loadCustomerPiiHashSecret,
 } from "../../src/server/customer-auth";
-import { evaluateCheckout, setCheckoutDestination, startCheckout } from "../../src/server/checkout";
+import { evaluateCheckout, setCheckoutDestination, setCheckoutFulfilment, startCheckout } from "../../src/server/checkout";
 import { acceptOrder, listCustomerOrders } from "../../src/server/order";
 import { processVerifiedProviderEvent, startPayment } from "../../src/server/payment";
 import { createFakePaymentProvider, FAKE_PAYMENT_SIGNATURE_HEADER } from "../../src/server/payment/provider/fake";
@@ -49,9 +49,15 @@ const orderPhoneNumbers = [
   "+919876543211",
   "+919876543212",
   "+919876543213",
+  "+919876543214",
+  "+919876543215",
 ] as const;
 
-async function placeOrder(persistence: ReturnType<typeof getApplicationPersistence>, brandId: string, phoneIndex: 0 | 1 | 2) {
+async function placeOrder(
+  persistence: ReturnType<typeof getApplicationPersistence>,
+  brandId: string,
+  phoneIndex: 0 | 1 | 2 | 3 | 4,
+) {
   const config = loadConfig({ processKind: "worker", source: process.env });
   const otpProvider = createCustomerOtpProvider({ kind: "local", environmentType: "test", fixedCode: "123456" });
   const runtime = getCustomerAuthRuntime(
@@ -135,6 +141,117 @@ async function placeOrder(persistence: ReturnType<typeof getApplicationPersisten
   return order;
 }
 
+async function placePickupOrder(
+  persistence: ReturnType<typeof getApplicationPersistence>,
+  brandId: string,
+  outletId: string,
+  phoneIndex: 0 | 1 | 2 | 3 | 4,
+) {
+  const config = loadConfig({ processKind: "worker", source: process.env });
+  const otpProvider = createCustomerOtpProvider({ kind: "local", environmentType: "test", fixedCode: "123456" });
+  const runtime = getCustomerAuthRuntime(
+    {
+      auth: loadAuthFoundationConfig(process.env, "test").customer,
+      persistence: config,
+    },
+    {
+      otpProvider,
+      identityDeriver: createCustomerTemporaryIdentityDeriver(
+        loadCustomerPiiHashSecret(process.env, {
+          customerAuthSecret: process.env.CUSTOMER_AUTH_SECRET,
+          workforceAuthSecret: process.env.WORKFORCE_AUTH_SECRET,
+        }),
+      ),
+    },
+  );
+  let actor: ReturnType<typeof customerActorFromTrustedCustomerAuthIdentity>;
+  try {
+    const normalizedPhone = normalizeIndianMobileNumber(orderPhoneNumbers[phoneIndex]);
+    if (!normalizedPhone.ok) throw new Error("operations lifecycle E2E pickup phone fixture is invalid");
+    const phoneNumber = normalizedPhone.phoneNumber;
+    const auth = await runtime.getAuth();
+    const now = new Date();
+    await otpProvider.startVerification({ phoneNumber, generatedCode: "123456", now, expiresAt: new Date(now.getTime() + 5 * 60_000) });
+    const verification = await auth.api.verifyPhoneNumber({
+      body: { phoneNumber, code: "123456", disableSession: false, updatePhoneNumber: false },
+      returnHeaders: true,
+    });
+    const sessionCookie = verification.headers.getSetCookie()
+      .map((cookie) => cookie.split(";", 1)[0]!)
+      .find((cookie) => cookie.includes("session_token"));
+    if (!sessionCookie) throw new Error("Customer auth did not issue a session.");
+    const identity = await resolveTrustedCustomerAuthIdentity(runtime, { headers: new Headers({ cookie: sessionCookie }) });
+    if (!identity) throw new Error("Customer auth session did not resolve.");
+    actor = customerActorFromTrustedCustomerAuthIdentity(identity);
+  } finally {
+    await runtime.close();
+    await otpProvider.close();
+  }
+  const variant = await persistence.withContext(async (ctx) => {
+    const result = await ctx.db.execute<{ id: string }>("select id from app.catalog_variants where lifecycle_status = 'active' limit 1");
+    const id = result.rows[0]?.id;
+    if (!id) throw new Error("No active variant after commerce seed.");
+    return id;
+  });
+  const cart = await addCartLine(persistence, { kind: "customer", actor, brandId }, { variantId: variant, quantity: 1 });
+  const checkoutPolicy = { checkoutTtlMs: 15 * 60 * 1000 };
+  const draft = await startCheckout(persistence, actor, { cartId: cart.cart.id }, { policy: checkoutPolicy });
+  const withFulfilment = await setCheckoutFulfilment(
+    persistence,
+    actor,
+    {
+      checkoutId: draft.id,
+      expectedCheckoutRevision: draft.revision,
+      fulfilmentMode: "PICKUP",
+      pickupOutletId: outletId,
+    },
+    { policy: checkoutPolicy },
+  );
+  const ready = await evaluateCheckout(
+    persistence,
+    actor,
+    {
+      checkoutId: withFulfilment.id,
+      expectedCheckoutRevision: withFulfilment.revision,
+    },
+    { policy: checkoutPolicy },
+  );
+  const provider = createFakePaymentProvider({ defaultOutcome: "pending" });
+  const paymentOptions = { provider, policy: {}, checkoutPolicy };
+  const started = await startPayment(
+    persistence,
+    actor,
+    {
+      checkoutId: ready.checkout.id,
+      expectedCheckoutRevision: ready.checkout.revision,
+      paymentMethodIntent: "upi",
+      idempotencyKey: `operations-e2e-pickup-${phoneIndex}-${crypto.randomUUID()}`,
+    },
+    paymentOptions,
+  );
+  const rawBody = new TextEncoder().encode(
+    JSON.stringify({
+      executionIdentity: started.attempt.providerExecutionIdentity,
+      outcome: "succeed",
+      amountPaise: started.payment.expectedAmountPaise.toString(),
+      providerEventId: `operations-e2e-pickup-${phoneIndex}-${started.attempt.id}`,
+    }),
+  );
+  const headers = Object.freeze({
+    [FAKE_PAYMENT_SIGNATURE_HEADER]: provider.computeWebhookSignature(rawBody),
+  });
+  const evidence = await provider.verifyWebhook({ rawBody, headers });
+  if ("family" in evidence) throw new Error("Payment provider returned refund evidence.");
+  await processVerifiedProviderEvent(
+    persistence,
+    sealVerifiedProviderEvent({ provider: provider.name, rawBody, headers, evidence }),
+    paymentOptions,
+  );
+  const order = (await listCustomerOrders(persistence, actor, { limit: 1 })).items[0];
+  if (!order) throw new Error("Pickup order placement did not create an order.");
+  return order;
+}
+
 async function main() {
   const config = loadConfig({ processKind: "worker", source: process.env });
   const commerce = await seedCustomerOrderingCommerce(config);
@@ -163,9 +280,49 @@ async function main() {
     const a = await placeOrder(persistence, commerce.brandId, 0);
     const b = await placeOrder(persistence, commerce.brandId, 1);
     const c = await placeOrder(persistence, commerce.brandId, 2);
+    const pickupDesktop = await placePickupOrder(persistence, commerce.brandId, commerce.outletId, 3);
+    const pickupMobile = await placePickupOrder(persistence, commerce.brandId, commerce.outletId, 4);
     const accepted = await acceptOrder(persistence, principalFor(preseedUser.id), { orderId: b.orderId, expectedOrderRevision: BigInt(b.revision) });
     if (accepted.status !== "ACCEPTED") throw new Error("Preseed Order B did not become ACCEPTED.");
-    await writeFile(fixtureManifestPath, JSON.stringify({ email: workforceEmail, orders: { accept: { id: a.orderId, number: a.orderNumber, status: "PLACED", revision: a.revision }, fulfil: { id: b.orderId, number: b.orderNumber, status: accepted.status, revision: accepted.revision }, cancel: { id: c.orderId, number: c.orderNumber, status: "PLACED", revision: c.revision } }, outletId: commerce.outletId }), { mode: 0o600 });
+    const acceptedPickupDesktop = await acceptOrder(persistence, principalFor(preseedUser.id), {
+      orderId: pickupDesktop.orderId,
+      expectedOrderRevision: BigInt(pickupDesktop.revision),
+    });
+    if (acceptedPickupDesktop.status !== "ACCEPTED") {
+      throw new Error("Preseed Pickup desktop Order did not become ACCEPTED.");
+    }
+    const acceptedPickupMobile = await acceptOrder(persistence, principalFor(preseedUser.id), {
+      orderId: pickupMobile.orderId,
+      expectedOrderRevision: BigInt(pickupMobile.revision),
+    });
+    if (acceptedPickupMobile.status !== "ACCEPTED") {
+      throw new Error("Preseed Pickup mobile Order did not become ACCEPTED.");
+    }
+    await writeFile(
+      fixtureManifestPath,
+      JSON.stringify({
+        email: workforceEmail,
+        orders: {
+          accept: { id: a.orderId, number: a.orderNumber, status: "PLACED", revision: a.revision },
+          fulfil: { id: b.orderId, number: b.orderNumber, status: accepted.status, revision: accepted.revision },
+          cancel: { id: c.orderId, number: c.orderNumber, status: "PLACED", revision: c.revision },
+          pickupFulfil: {
+            id: pickupDesktop.orderId,
+            number: pickupDesktop.orderNumber,
+            status: acceptedPickupDesktop.status,
+            revision: acceptedPickupDesktop.revision,
+          },
+          pickupFulfilMobile: {
+            id: pickupMobile.orderId,
+            number: pickupMobile.orderNumber,
+            status: acceptedPickupMobile.status,
+            revision: acceptedPickupMobile.revision,
+          },
+        },
+        outletId: commerce.outletId,
+      }),
+      { mode: 0o600 },
+    );
   } finally {
     await runtime.close();
     await persistence.close();

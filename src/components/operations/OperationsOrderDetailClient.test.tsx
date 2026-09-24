@@ -605,7 +605,7 @@ describe("OperationsOrderDetailClient", () => {
     expect(screen.queryByTestId("operations-order-detail")).not.toBeInTheDocument();
   });
 
-  it("IMP-036H: Pickup detail shows location, hides Delivery panel, and uses handover copy (AC-036H-039/042)", async () => {
+  it("IMP-036H: Pickup detail shows location, verification, and handover copy (AC-036H-039/042)", async () => {
     const user = userEvent.setup();
     const pickupOrder = baseOrder({
       fulfilmentMode: "PICKUP",
@@ -622,6 +622,10 @@ describe("OperationsOrderDetailClient", () => {
         latitude: null,
         longitude: null,
       },
+      customer: {
+        displayName: "E2E Guest",
+        verifiedPhoneE164: "+919876500256",
+      },
     });
     await renderReady(pickupOrder);
 
@@ -630,16 +634,27 @@ describe("OperationsOrderDetailClient", () => {
     expect(screen.getByText("Collect from counter 2")).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: /^Delivery$/i })).not.toBeInTheDocument();
 
+    expect(screen.getByTestId("operations-pickup-verification")).toBeInTheDocument();
+    expect(screen.getByTestId("operations-pickup-verification-order")).toHaveTextContent(
+      "ORD-0123456789AB",
+    );
+    expect(screen.getByTestId("operations-pickup-verification-customer")).toHaveTextContent(
+      "E2E Guest",
+    );
+    expect(screen.getByTestId("operations-pickup-verification-contact")).toHaveTextContent(
+      "+919876500256",
+    );
+
     const fulfilButton = screen.getByRole("button", { name: /mark as picked up/i });
     expect(fulfilButton).toHaveAttribute("data-testid", "operations-order-fulfil");
-    await user.tab();
-    // Button remains keyboard-reachable and named.
-    expect(fulfilButton).toHaveAccessibleName(/mark as picked up/i);
-
-    await user.click(fulfilButton);
+    fulfilButton.focus();
+    expect(document.activeElement).toBe(fulfilButton);
+    await user.keyboard("{Enter}");
     const dialog = screen.getByRole("dialog", { name: /handed to customer/i });
     expect(dialog).toBeInTheDocument();
-    expect(within(dialog).getByText(/presented matching order confirmation/i)).toBeInTheDocument();
+    expect(
+      within(dialog).getByText(/matching order confirmation and customer identity/i),
+    ).toBeInTheDocument();
     expect(
       within(dialog).getByRole("button", { name: /confirm handed to customer/i }),
     ).toBeInTheDocument();

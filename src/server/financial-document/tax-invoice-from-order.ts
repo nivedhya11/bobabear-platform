@@ -327,7 +327,6 @@ export async function issueTaxInvoiceForFulfilledOrder(
     recipientPhoneE164: destination?.recipientPhone ?? null,
     recipientAddress:
       destination !== null ? formatRecipientAddress(destination) : null,
-    ...(isPickup ? { allowAbsentRecipientParticulars: true } : {}),
   };
 
   try {

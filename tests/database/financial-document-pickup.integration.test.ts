@@ -5,9 +5,11 @@
  * must seal null recipients for PICKUP (no mutable customer lookup; no pickup
  * location → recipientAddress substitution). DELIVERY recipients preserved.
  */
+import { randomUUID } from "node:crypto";
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
+  issueFinancialDocument,
   issueReceiptVoucherForSucceededPayment,
   issueTaxInvoiceForFulfilledOrder,
   loadFinancialDocument,
@@ -25,6 +27,7 @@ import {
   withCompletedPositiveOrderHarness,
   withCompletedPositivePickupOrderHarness,
 } from "./support/order-fixtures";
+import { standardTaxInvoiceLines } from "./support/financial-document-issuance-fixtures";
 import { seedTaxInvoiceWorkflowConfig } from "./support/financial-document-workflow-fixtures";
 
 afterEach(async () => {
@@ -172,6 +175,36 @@ describe("IMP-036H-C financial documents — Pickup Option A", () => {
       expect(taxOutcome.document.recipientDisplayName).toBeTruthy();
       expect(taxOutcome.document.recipientPhoneE164).toBeTruthy();
       expect(taxOutcome.document.recipientAddress).toBeTruthy();
+    });
+  });
+
+  it("DELIVERY snapshot + absent recipients → RECIPIENT_PARTICULARS_REQUIRED", async () => {
+    await withCompletedPositiveOrderHarness(async (h) => {
+      const cfg = await seedTaxInvoiceWorkflowConfig(h.persistence, {
+        brandId: h.brandId,
+        organizationId: h.tree.orgA.id,
+        legalEntityId: h.tree.leA.id,
+      });
+
+      await expect(
+        issueFinancialDocument(h.persistence, {
+          logicalIssuanceKey: `fd-delivery-absent-${randomUUID()}`,
+          documentType: "TAX_INVOICE",
+          legalEntityId: h.tree.leA.id,
+          financialYear: cfg.financialYear,
+          numberingSeriesId: cfg.taxInvoiceSeriesId,
+          issueAt: new Date(),
+          lines: standardTaxInvoiceLines(),
+          checkoutId: h.checkoutId,
+          checkoutSnapshotId: h.snapshotId,
+          paymentId: h.paymentId,
+          orderId: h.order.id,
+          placeOfSupplyStateCode: "05",
+          recipientDisplayName: null,
+          recipientPhoneE164: null,
+          recipientAddress: null,
+        }),
+      ).rejects.toMatchObject({ code: "RECIPIENT_PARTICULARS_REQUIRED" });
     });
   });
 });

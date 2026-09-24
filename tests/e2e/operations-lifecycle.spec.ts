@@ -3,7 +3,13 @@ import { base32 } from "@better-auth/utils/base32";
 import { expect, test, type Page, type Response } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 
-type Fixture = { email: string; orders: Record<"accept" | "fulfil" | "cancel", { id: string; number: string }> };
+type Fixture = {
+  email: string;
+  orders: Record<"accept" | "fulfil" | "cancel", { id: string; number: string }> &
+    Partial<
+      Record<"pickupFulfil" | "pickupFulfilMobile", { id: string; number: string }>
+    >;
+};
 const fixturePath = process.env.OPERATIONS_E2E_FIXTURE_MANIFEST;
 const temporaryPassword = process.env.WORKFORCE_E2E_TEMP_PASSWORD;
 const permanentPassword = process.env.WORKFORCE_E2E_PERMANENT_PASSWORD;
@@ -143,4 +149,73 @@ test("workforce login through Nginx performs Accept, Fulfil, and Cancel", async 
   await mutate(page, "accept", "Accept", "Accepted", "ACCEPTED");
   await mutate(page, "fulfil", "Fulfil", "Fulfilled", "FULFILLED");
   await mutate(page, "cancel", "Cancel", "Cancelled", "CANCELLED");
+});
+
+async function pickupHandoverViaKeyboard(
+  page: Page,
+  orderKey: "pickupFulfil" | "pickupFulfilMobile",
+) {
+  const order = fixture.orders[orderKey];
+  if (!order) {
+    throw new Error(`Fixture missing ${orderKey} order — re-run operations lifecycle seed.`);
+  }
+  await login(page);
+  await page.goto("/workforce/operations/orders/");
+  const ordersMain = page.locator("#main-content");
+  await expect(ordersMain.getByLabel("Order number", { exact: true })).toBeVisible();
+  await ordersMain.getByLabel("Order number", { exact: true }).fill(order.number);
+  await ordersMain.getByRole("button", { name: "Apply filters" }).click();
+  await ordersMain.getByRole("link", { name: new RegExp(order.number) }).click();
+  await expect(page).toHaveURL(new RegExp(`orders/detail/\\?orderId=${order.id}`));
+
+  await expect(page.getByTestId("operations-pickup-verification")).toBeVisible();
+  await expect(page.getByTestId("operations-pickup-verification-order")).toHaveText(order.number);
+  await expect(page.getByTestId("operations-pickup-verification-customer")).not.toHaveText(
+    "Not available",
+  );
+
+  const markPickedUp = page.getByRole("button", { name: /mark as picked up/i });
+  await expect(markPickedUp).toBeVisible();
+  await markPickedUp.focus();
+  await expect(markPickedUp).toBeFocused();
+  const responsePromise = page.waitForResponse(
+    (response) =>
+      response.url().endsWith(`/api/operations/v1/orders/${encodeURIComponent(order.id)}/fulfil`) &&
+      response.request().method() === "POST",
+  );
+  await page.keyboard.press("Enter");
+  const confirm = page.getByRole("button", { name: /confirm handed to customer/i });
+  await expect(confirm).toBeVisible();
+  await expect(confirm).toBeFocused();
+  await page.keyboard.press("Enter");
+  const response = await responsePromise;
+  expect(response.ok()).toBeTruthy();
+  await expect(
+    page.getByTestId("operations-mutation-alert").or(page.getByText("Fulfilled", { exact: true })),
+  ).toBeVisible();
+  await expect(page.getByText("Fulfilled", { exact: true })).toBeVisible();
+  await assertPostMutationListFreshness(page, order, "FULFILLED");
+}
+
+test("Pickup handover Mark as picked up via keyboard (AC-036H-042)", async ({ page }, testInfo) => {
+  test.skip(
+    testInfo.project.name === "mobile-chromium",
+    "Desktop Pickup keyboard path; mobile covered separately",
+  );
+  await pickupHandoverViaKeyboard(page, "pickupFulfil");
+});
+
+test("mobile: Pickup handover Mark as picked up via keyboard (AC-036H-042)", async ({
+  page,
+}, testInfo) => {
+  test.skip(
+    testInfo.project.name !== "mobile-chromium",
+    "Mobile Ops Pickup handover evidence only",
+  );
+  const viewport = page.viewportSize();
+  expect(viewport, "persist mobile viewport identity").toEqual({
+    width: 390,
+    height: 844,
+  });
+  await pickupHandoverViaKeyboard(page, "pickupFulfilMobile");
 });

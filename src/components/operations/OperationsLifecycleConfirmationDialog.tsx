@@ -61,7 +61,7 @@ function actionSummary(
   }
   if (action === "FULFIL") {
     if (fulfilmentMode === "PICKUP") {
-      return `Mark order ${orderNumber} as picked up. Confirm the customer presented matching order confirmation, then hand over. This moves the order from Accepted to Fulfilled.`;
+      return `Mark order ${orderNumber} as picked up. Confirm matching order confirmation and customer identity have been verified, then hand over. This moves the order from Accepted to Fulfilled.`;
     }
     return `Fulfil order ${orderNumber}. This moves the order from Accepted to Fulfilled.`;
   }

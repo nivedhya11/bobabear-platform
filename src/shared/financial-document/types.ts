@@ -264,10 +264,4 @@ export type IssueFinancialDocumentCommand = Readonly<{
   recipientDisplayName?: string | null;
   recipientPhoneE164?: string | null;
   recipientAddress?: string | null;
-  /**
-   * IMP-036H Option A — when sealed Checkout Snapshot fulfilmentMode is PICKUP,
-   * recipient name/address may be intentionally absent. DELIVERY must omit/false
-   * so recipient assert remains fail-closed.
-   */
-  allowAbsentRecipientParticulars?: boolean;
 }>;

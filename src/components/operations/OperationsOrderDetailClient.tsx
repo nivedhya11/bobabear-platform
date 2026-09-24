@@ -571,6 +571,42 @@ function OrderDetail({
         )}
       </section>
 
+      {order.fulfilmentMode === "PICKUP" || order.pickupLocation ? (
+        <section
+          aria-labelledby="operations-pickup-verification"
+          data-testid="operations-pickup-verification"
+        >
+          <h2
+            id="operations-pickup-verification"
+            className="font-body text-[18px] font-semibold"
+          >
+            Pickup verification
+          </h2>
+          <dl className="mt-3 grid gap-2 font-body text-[14px]">
+            <div>
+              <dt className="text-[var(--text-secondary)]">Order</dt>
+              <dd data-testid="operations-pickup-verification-order">
+                {order.orderNumber}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-[var(--text-secondary)]">Customer</dt>
+              <dd data-testid="operations-pickup-verification-customer">
+                {order.customer?.displayName ?? "Not available"}
+              </dd>
+            </div>
+            {order.customer?.verifiedPhoneE164 ? (
+              <div>
+                <dt className="text-[var(--text-secondary)]">Contact</dt>
+                <dd data-testid="operations-pickup-verification-contact">
+                  {order.customer.verifiedPhoneE164}
+                </dd>
+              </div>
+            ) : null}
+          </dl>
+        </section>
+      ) : null}
+
       {order.fulfilmentMode !== "PICKUP" && !order.pickupLocation ? (
         <OperationsDeliveryPanel orderId={order.orderId} />
       ) : null}

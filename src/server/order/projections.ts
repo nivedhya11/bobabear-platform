@@ -12,6 +12,7 @@ import {
   type OrderLineProjection,
   type OrderMutationResult,
   type OrderOutletSummary,
+  type WorkforceOrderCustomerVerification,
   type WorkforceOrderDetail,
   type WorkforceOrderSummary,
 } from "../../shared/order";
@@ -162,7 +163,9 @@ export function toWorkforceOrderDetail(
   order: Order,
   outlet: OrderOutletSummary,
   snapshot: CheckoutSnapshot,
+  customer: WorkforceOrderCustomerVerification | null = null,
 ): WorkforceOrderDetail {
+  const isPickup = snapshot.fulfilmentMode === "PICKUP";
   return Object.freeze({
     ...toWorkforceOrderSummary(order, outlet, {
       grandTotalPaise: snapshot.grandTotalPaise,
@@ -177,6 +180,8 @@ export function toWorkforceOrderDetail(
     cancellationReasonCode: order.cancellationReasonCode,
     destination: destinationFromSnapshot(snapshot),
     pickupLocation: pickupLocationFromSnapshot(snapshot),
+    // Pickup handover verification only — Delivery uses destination recipient.
+    customer: isPickup ? customer : null,
     lines: linesFromSnapshot(snapshot),
   });
 }
