@@ -3,7 +3,7 @@
   "status": "DRAFT_READY_FOR_GATE",
   "authority": "PRODUCT_DEFINITION",
   "capability": "IMP-036I",
-  "productDefinitionVersion": "PD-IMP-036I-DRAFT-3",
+  "productDefinitionVersion": "PD-IMP-036I-DRAFT-4",
   "process": "PD-1",
   "verificationPolicy": "TEST-1",
   "lastReviewed": "2026-09-24",
@@ -45,7 +45,7 @@
 
 ```text
 Document status: DRAFT_READY_FOR_GATE
-PRODUCT_DEFINITION_VERSION: PD-IMP-036I-DRAFT-3
+PRODUCT_DEFINITION_VERSION: PD-IMP-036I-DRAFT-4
 PRE-GATE DRAFT: NO
 CAPABILITY: IMP-036I
 TITLE: Scheduled Fulfilment
@@ -88,14 +88,14 @@ PRODUCT_DECISIONS / FOUNDER_DECISIONS:
 
 PRODUCT_DEFINITION_GATE_READY: YES — Founder FD-036I-01…15 resolved 2026-09-24
   (including FD-036I-09 sealing amendment); Product Definition Gate remains NOT_PERFORMED
-  for CURRENT DRAFT-3 (not Gate PASS / not APPROVED)
+  for CURRENT DRAFT-4 (not Gate PASS / not APPROVED)
 
 stories: 16
 acceptance_scenarios: 66
 business_rules: 19
 architecture_fit_questions: 19
 
-Canonical tip AFTER DRAFT-2 Gate STOP remediation / DRAFT-3 gate-ready tip (write as CURRENT
+Canonical tip AFTER DRAFT-3 Gate STOP remediation / DRAFT-4 gate-ready tip (write as CURRENT
 in this draft — verify against ROADMAP/STATE; this Product Definition is NOT lifecycle authority):
   acceptedThrough = IMP-036H
   currentProductSlice = IMP-036I
@@ -111,8 +111,8 @@ in this draft — verify against ROADMAP/STATE; this Product Definition is NOT l
   IMP036I_IMPLEMENTATION_STARTED = NO
   IMP036I_IMPLEMENTATION_COMPLETE = NO
   IMP036I_ACCEPTED = NO
-  ROADMAP = GTM-R151
-  STATE = STATE-R149
+  ROADMAP = GTM-R152
+  STATE = STATE-R150
   ARCHITECTURE = ARCH-R22
   decision-register = DR-20
   PROGRAM_PAUSE = D-377
@@ -121,11 +121,11 @@ Formal lifecycle for IMP-036I: PLANNED (activated for Product Definition only)
 ```
 
 This artifact is the **DRAFT READY FOR GATE** Product Definition candidate for
-`PD-IMP-036I-DRAFT-3`. Founder decisions FD-036I-01…15 are resolved (2026-09-24),
+`PD-IMP-036I-DRAFT-4`. Founder decisions FD-036I-01…15 are resolved (2026-09-24),
 including the Founder-approved FD-036I-09 amendment binding V1 cancellation-cutoff
 defaults, range, Brand-level scope, **per-Order sealing**, and **pre-payment checkout
 revalidation**. It persists product requirements for Scheduled Fulfilment without
-executing the Product Definition Gate against CURRENT DRAFT-3, Architecture Fit,
+executing the Product Definition Gate against CURRENT DRAFT-4, Architecture Fit,
 architecture lock, implementation authorization, implementation start, or IMP-036I
 acceptance.
 
@@ -193,7 +193,7 @@ nextProductSlice = IMP-037
 
 IMP036H: COMPLETE_AND_ACCEPTED
 IMP036I_ACTIVATED: YES
-IMP036I_PRODUCT_DEFINITION: DRAFT_READY_FOR_GATE (PD-IMP-036I-DRAFT-3)
+IMP036I_PRODUCT_DEFINITION: DRAFT_READY_FOR_GATE (PD-IMP-036I-DRAFT-4)
 IMP036I_PRODUCT_DEFINITION_GATE: NOT_PERFORMED
 IMP036I_ARCHITECTURE_FIT: NOT_PERFORMED
 IMP036I_ARCHITECTURE_LOCKED: NO
@@ -213,8 +213,8 @@ IMP039: NOT_ACTIVATED / HOLD
 IMP040: NOT_ACTIVATED / HOLD
 
 PROGRAM_PAUSE_AUTHORITY = D-377
-ROADMAP = GTM-R151
-STATE = STATE-R149
+ROADMAP = GTM-R152
+STATE = STATE-R150
 ARCHITECTURE = ARCH-R22
 decision-register = DR-20
 ```
@@ -229,19 +229,19 @@ IMP-039/040, close `GAP-EXT-ASSESS-001`, or authorize implementation.
 | Field | Definition |
 |---|---|
 | Capability / title | `IMP-036I — Scheduled Fulfilment` (ROADMAP identity; activated for Product Definition only; formal lifecycle **PLANNED**) |
-| Product Definition version / document status | `PD-IMP-036I-DRAFT-3`; **Document status: DRAFT READY FOR GATE**; **PRE-GATE DRAFT: NO**; **READY_FOR_PRODUCT_DEFINITION_GATE: YES** |
-| Product owner / approval evidence | Founder. Activation authorized for Product Definition only. Founder decisions FD-036I-01…15 **RESOLVED** 2026-09-24 (including FD-036I-09 sealing amendment). Product Definition Gate for CURRENT DRAFT-3 **NOT_PERFORMED** (not APPROVED / not Gate PASS). Historical DRAFT-1 Gate = **STOP**; historical DRAFT-2 Gate = **STOP** (see §1.1). |
+| Product Definition version / document status | `PD-IMP-036I-DRAFT-4`; **Document status: DRAFT READY FOR GATE**; **PRE-GATE DRAFT: NO**; **READY_FOR_PRODUCT_DEFINITION_GATE: YES** |
+| Product owner / approval evidence | Founder. Activation authorized for Product Definition only. Founder decisions FD-036I-01…15 **RESOLVED** 2026-09-24 (including FD-036I-09 sealing amendment). Product Definition Gate for CURRENT DRAFT-4 **NOT_PERFORMED** (not APPROVED / not Gate PASS). Historical DRAFT-1 Gate = **STOP**; historical DRAFT-2 Gate = **STOP**; historical DRAFT-3 Gate = **STOP** (see §1.1). |
 | Process / verification policy | `PD-1` / `TEST-1` |
-| Canonical anchors | VISION-1; ROADMAP GTM-R151; STATE STATE-R149; ARCH-R22; DR-20 (D-377, D-378); PD-1; TEST-1; PERSONA-1; GJ-1; accepted IMP-036H Product Definition `PD-IMP-036H-DRAFT-1`; Founder FD-036I-01…15 resolution 2026-09-24; FD-036I-09 sealing amendment 2026-09-24 |
+| Canonical anchors | VISION-1; ROADMAP GTM-R152; STATE STATE-R150; ARCH-R22; DR-20 (D-377, D-378); PD-1; TEST-1; PERSONA-1; GJ-1; accepted IMP-036H Product Definition `PD-IMP-036H-DRAFT-1`; Founder FD-036I-01…15 resolution 2026-09-24; FD-036I-09 sealing amendment 2026-09-24 |
 | Repository candidate | Canonical path `/home/ajoshi/repos/boba-bear-platform`; exact HEAD/tree recorded at activation/PR time — verify against CURRENT tip |
-| Capability lifecycle / authorization | ROADMAP/STATE: `IMP036I_ACTIVATED: YES`; `currentProductSlice = IMP-036I`; formal lifecycle **PLANNED**; Product Definition **DRAFT_READY_FOR_GATE** (`PD-IMP-036I-DRAFT-3`); Gate for CURRENT DRAFT-3 **NOT_PERFORMED**; Architecture Fit **NOT_PERFORMED**; architecture **NOT_LOCKED**; implementation **NOT_AUTHORIZED** / **NOT_STARTED**; `IMP036I_ACCEPTED: NO`; `pendingAcceptance = NONE`; `acceptedThrough = IMP-036H`; `nextProductSlice = IMP-037` |
+| Capability lifecycle / authorization | ROADMAP/STATE: `IMP036I_ACTIVATED: YES`; `currentProductSlice = IMP-036I`; formal lifecycle **PLANNED**; Product Definition **DRAFT_READY_FOR_GATE** (`PD-IMP-036I-DRAFT-4`); Gate for CURRENT DRAFT-4 **NOT_PERFORMED**; Architecture Fit **NOT_PERFORMED**; architecture **NOT_LOCKED**; implementation **NOT_AUTHORIZED** / **NOT_STARTED**; `IMP036I_ACCEPTED: NO`; `pendingAcceptance = NONE`; `acceptedThrough = IMP-036H`; `nextProductSlice = IMP-037` |
 | Relevant capability architecture / ADRs | Foundations: ADR-008; ADR-011; ADR-007; ADR-012; ADR-018 / D-378 (fulfilment mode); D-365 / D-366 / D-367 (financial documents); D-357; D-361–D-364 (payment/refund); D-377 (program pause). No IMP-036I capability lock yet. |
 | Founder UAT applicability | `FOUNDER_UAT_REQUIRED = YES`; `FOUNDER_UAT_STATUS = NOT_PERFORMED` — materially changes customer checkout timing and workforce operational timing when implemented |
 
 ### 1.1 Draft history — Product Definition Gate
 
-CURRENT candidate is `PD-IMP-036I-DRAFT-3`. Gate execution against CURRENT DRAFT-3 is
-**NOT_PERFORMED**. Do **not** treat DRAFT-1 or DRAFT-2 as Gate PASS. Historical blocks
+CURRENT candidate is `PD-IMP-036I-DRAFT-4`. Gate execution against CURRENT DRAFT-4 is
+**NOT_PERFORMED**. Do **not** treat DRAFT-1, DRAFT-2, or DRAFT-3 as Gate PASS. Historical blocks
 below are bounded evidence only — they must not contaminate CURRENT status evaluation.
 
 #### Historical — `PD-IMP-036I-DRAFT-1` (Gate STOP)
@@ -293,6 +293,31 @@ payment-bound Checkout Snapshot and requires stale-checkout revalidation (FD-036
 BR-036I-019 amended 2026-09-24).
 ```
 <!-- historical-gate-evidence:end PD-IMP-036I-DRAFT-2 -->
+
+#### Historical — `PD-IMP-036I-DRAFT-3` (Gate STOP)
+
+<!-- historical-gate-evidence:begin PD-IMP-036I-DRAFT-3 -->
+```text
+PRODUCT_DEFINITION_VERSION: PD-IMP-036I-DRAFT-3
+PRODUCT_DEFINITION_GATE_EXECUTION: PERFORMED
+Gate Result: STOP
+Evidence: PR review 5306868578
+Candidate HEAD / main: 0af84959edbe910183797b76d4d2228835d9040f
+Candidate TREE: 21fc00b2045095fc0288bd941d2d17dfe2b89db6
+WORKING_TREE_FINGERPRINT: 78933afecd6b6e1022298303710da1ed9f38262c969e958515098380a05d953e
+
+STOP findings (DRAFT-3):
+  1. STATE.md historical STATE-R148 incorrectly recorded PD-IMP-036I-DRAFT-3 (must be DRAFT-2)
+  2. product/README.md advertised DRAFT-2 / GTM-R150 / STATE-R148 instead of current candidate
+  3. Supporting IMP-037/038 anchors paired GTM-R151 with stale STATE-R148
+  4. Consistency collapsed visible version authorities with || masking
+  5. Historical DRAFT-2 STOP not scoped to bounded evidence block
+
+DRAFT-3 is historical STOP evidence only — not PASS, not APPROVED, not CURRENT.
+Remediation into PD-IMP-036I-DRAFT-4 restores STATE-R148→DRAFT-2 provenance, product-index CURRENT pointer, paired CURRENT anchors, independent visible version authorities, and bounded Gate STOP history validation. No Founder product-semantic change; FD-036I-09 remains complete.
+```
+<!-- historical-gate-evidence:end PD-IMP-036I-DRAFT-3 -->
+
 
 Behaviour classification vocabulary:
 
@@ -1838,7 +1863,7 @@ Registry status is not a test verdict.
 
 | Dependency | Authority / verified state | Required before which story or gate? | Unresolved impact |
 |---|---|---|---|
-| ROADMAP/STATE activation IMP-036I (PD only) + program pause D-377 | GTM-R151 / STATE-R149 expected tip | SATISFIED for drafting this PD | Fit/impl still blocked; Gate ready to be performed |
+| ROADMAP/STATE activation IMP-036I (PD only) + program pause D-377 | GTM-R152 / STATE-R150 expected tip | SATISFIED for drafting this PD | Fit/impl still blocked; Gate ready to be performed |
 | Accepted commerce foundations through IMP-036H | COMPLETE_AND_ACCEPTED through IMP-036H | All stories | NONE for ASAP baselines |
 | Founder resolution of FD-036I-01…15 | RESOLVED 2026-09-24 | Before Product Definition Gate | SATISFIED — Gate ready (NOT_PERFORMED) |
 | Product Definition Gate PASS | NOT_PERFORMED | Before Architecture Fit | Blocked |
@@ -2198,7 +2223,7 @@ FOUNDER_UAT_STATUS: NOT_PERFORMED
 PRODUCT_DEFINITION_GATE
 
 Capability: IMP-036I — Scheduled Fulfilment
-Product Definition Version: PD-IMP-036I-DRAFT-3
+Product Definition Version: PD-IMP-036I-DRAFT-4
 Business Outcome: Defined (§2)
 Primary Personas: PERSONA-CUSTOMER; PERSONA-WORKFORCE-OPERATOR (Outlet Manager / Kitchen / Delivery Coordinator contexts); PERSONA-PLATFORM-OPERATOR where config needs it (§4)
 Journeys Defined: ASAP protect + Scheduled Pickup/Delivery + switches + Ops (§6)
@@ -2224,14 +2249,15 @@ READY_FOR_PRODUCT_DEFINITION_GATE: YES
 ```
 
 Product Definition Gate is ready to be performed independently against CURRENT
-`PD-IMP-036I-DRAFT-3`. Historical `PD-IMP-036I-DRAFT-1` Gate Result was **STOP**
-(review `5305796113`) and historical `PD-IMP-036I-DRAFT-2` Gate Result was **STOP**
-(review `5306341697`) — §1.1 — not PASS. Gate PASS on DRAFT-3 would still not perform
+`PD-IMP-036I-DRAFT-4`. Historical `PD-IMP-036I-DRAFT-1` Gate Result was **STOP**
+(review `5305796113`), historical `PD-IMP-036I-DRAFT-2` Gate Result was **STOP**
+(review `5306341697`), and historical `PD-IMP-036I-DRAFT-3` Gate Result was **STOP**
+(review `5306868578`) — §1.1 — not PASS. Gate PASS on DRAFT-4 would still not perform
 Architecture Fit, lock architecture, authorize implementation, or accept IMP-036I. This
 draft does **not** claim APPROVED or Gate PASS.
 
 ```text
-CURRENT tip anchors (this draft): GTM-R151 / STATE-R149
+CURRENT tip anchors (this draft): GTM-R152 / STATE-R150
 acceptedThrough = IMP-036H
 currentProductSlice = IMP-036I
 pendingAcceptance = NONE
