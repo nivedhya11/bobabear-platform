@@ -33,14 +33,17 @@ required before acceptance reconciliation.
 ```text
 CANONICAL_REPOSITORY_PATH = /home/ajoshi/repos/boba-bear-platform
 BRANCH = imp036h-f-evidence-candidate
-HEAD = caf58fb204174f8526659194d7572adb2d12473f
-TREE = 3a75a78ed9079484c1feb25ef0fc87a1db20da26
-WORKING_TREE_FINGERPRINT = ac1f7c2938a23f120cac87f8848c4db62c54fab0593d8119508349814803f8b0
+HEAD = d8419eee5c1c3c1ba681958a7d1dc27ca309807d
+TREE = 5f74b022b1fdcc9796146866df2ba4e3a04468e4
+WORKING_TREE_FINGERPRINT = de6d1019670b3a81a7097c7c466e768329be85a6687fc5f530e701a6b0789e69
 PR = https://github.com/nivedhya11/bobabear-platform/pull/246
 PRIOR_REVIEWED_HEAD = 7cb910b0a3cc36cab05e4e7d0ee0fd59ddf8c607
 PRIOR_INDEPENDENT_REVIEW = 5300490595
 BASE_MAIN = 9df6b7ae
 ```
+
+Note: after this provenance sync commit, tip HEAD advances again — treat the
+pushed tip after sync as authoritative for independent re-review.
 
 ## AC coverage matrix (honest candidate status)
 
