@@ -3,7 +3,7 @@
   "status": "DRAFT_READY_FOR_GATE",
   "authority": "PRODUCT_DEFINITION",
   "capability": "IMP-036I",
-  "productDefinitionVersion": "PD-IMP-036I-DRAFT-2",
+  "productDefinitionVersion": "PD-IMP-036I-DRAFT-3",
   "process": "PD-1",
   "verificationPolicy": "TEST-1",
   "lastReviewed": "2026-09-24",
@@ -45,7 +45,7 @@
 
 ```text
 Document status: DRAFT_READY_FOR_GATE
-PRODUCT_DEFINITION_VERSION: PD-IMP-036I-DRAFT-2
+PRODUCT_DEFINITION_VERSION: PD-IMP-036I-DRAFT-3
 PRE-GATE DRAFT: NO
 CAPABILITY: IMP-036I
 TITLE: Scheduled Fulfilment
@@ -83,19 +83,20 @@ PRODUCT_DECISIONS / FOUNDER_DECISIONS:
   OPEN_FOUNDER_DECISIONS: 0
   RESOLVED_BY_EXISTING_AUTHORITY: 7 (FD-036I-16 … FD-036I-22)
   FOUNDER_RESOLVED_DATE: 2026-09-24
-  FD-036I-09_AMENDMENT: Founder-approved binding V1 cancellation-cutoff defaults/range/scope 2026-09-24
+  FD-036I-09_AMENDMENT: Founder-approved binding V1 cancellation-cutoff defaults/range/scope
+    + per-Order sealing / checkout revalidation (amended 2026-09-24)
 
 PRODUCT_DEFINITION_GATE_READY: YES — Founder FD-036I-01…15 resolved 2026-09-24
-  (including FD-036I-09 amendment); Product Definition Gate remains NOT_PERFORMED
-  for CURRENT DRAFT-2 (not Gate PASS / not APPROVED)
+  (including FD-036I-09 sealing amendment); Product Definition Gate remains NOT_PERFORMED
+  for CURRENT DRAFT-3 (not Gate PASS / not APPROVED)
 
 stories: 16
-acceptance_scenarios: 59
+acceptance_scenarios: 66
 business_rules: 19
 architecture_fit_questions: 19
 
-Canonical tip AFTER DRAFT-2 remediation / gate-ready tip (write as CURRENT in this draft —
-verify against ROADMAP/STATE; this Product Definition is NOT lifecycle authority):
+Canonical tip AFTER DRAFT-2 Gate STOP remediation / DRAFT-3 gate-ready tip (write as CURRENT
+in this draft — verify against ROADMAP/STATE; this Product Definition is NOT lifecycle authority):
   acceptedThrough = IMP-036H
   currentProductSlice = IMP-036I
   pendingAcceptance = NONE
@@ -110,8 +111,8 @@ verify against ROADMAP/STATE; this Product Definition is NOT lifecycle authority
   IMP036I_IMPLEMENTATION_STARTED = NO
   IMP036I_IMPLEMENTATION_COMPLETE = NO
   IMP036I_ACCEPTED = NO
-  ROADMAP = GTM-R150
-  STATE = STATE-R148
+  ROADMAP = GTM-R151
+  STATE = STATE-R149
   ARCHITECTURE = ARCH-R22
   decision-register = DR-20
   PROGRAM_PAUSE = D-377
@@ -120,12 +121,13 @@ Formal lifecycle for IMP-036I: PLANNED (activated for Product Definition only)
 ```
 
 This artifact is the **DRAFT READY FOR GATE** Product Definition candidate for
-`PD-IMP-036I-DRAFT-2`. Founder decisions FD-036I-01…15 are resolved (2026-09-24),
+`PD-IMP-036I-DRAFT-3`. Founder decisions FD-036I-01…15 are resolved (2026-09-24),
 including the Founder-approved FD-036I-09 amendment binding V1 cancellation-cutoff
-defaults, range, and Brand-level scope. It persists product requirements for Scheduled
-Fulfilment without executing the Product Definition Gate against CURRENT DRAFT-2,
-Architecture Fit, architecture lock, implementation authorization, implementation
-start, or IMP-036I acceptance.
+defaults, range, Brand-level scope, **per-Order sealing**, and **pre-payment checkout
+revalidation**. It persists product requirements for Scheduled Fulfilment without
+executing the Product Definition Gate against CURRENT DRAFT-3, Architecture Fit,
+architecture lock, implementation authorization, implementation start, or IMP-036I
+acceptance.
 
 ```text
 Founder decision RESOLVED
@@ -191,7 +193,7 @@ nextProductSlice = IMP-037
 
 IMP036H: COMPLETE_AND_ACCEPTED
 IMP036I_ACTIVATED: YES
-IMP036I_PRODUCT_DEFINITION: DRAFT_READY_FOR_GATE (PD-IMP-036I-DRAFT-2)
+IMP036I_PRODUCT_DEFINITION: DRAFT_READY_FOR_GATE (PD-IMP-036I-DRAFT-3)
 IMP036I_PRODUCT_DEFINITION_GATE: NOT_PERFORMED
 IMP036I_ARCHITECTURE_FIT: NOT_PERFORMED
 IMP036I_ARCHITECTURE_LOCKED: NO
@@ -211,8 +213,8 @@ IMP039: NOT_ACTIVATED / HOLD
 IMP040: NOT_ACTIVATED / HOLD
 
 PROGRAM_PAUSE_AUTHORITY = D-377
-ROADMAP = GTM-R150
-STATE = STATE-R148
+ROADMAP = GTM-R151
+STATE = STATE-R149
 ARCHITECTURE = ARCH-R22
 decision-register = DR-20
 ```
@@ -227,22 +229,24 @@ IMP-039/040, close `GAP-EXT-ASSESS-001`, or authorize implementation.
 | Field | Definition |
 |---|---|
 | Capability / title | `IMP-036I — Scheduled Fulfilment` (ROADMAP identity; activated for Product Definition only; formal lifecycle **PLANNED**) |
-| Product Definition version / document status | `PD-IMP-036I-DRAFT-2`; **Document status: DRAFT READY FOR GATE**; **PRE-GATE DRAFT: NO**; **READY_FOR_PRODUCT_DEFINITION_GATE: YES** |
-| Product owner / approval evidence | Founder. Activation authorized for Product Definition only. Founder decisions FD-036I-01…15 **RESOLVED** 2026-09-24 (including FD-036I-09 amendment). Product Definition Gate for CURRENT DRAFT-2 **NOT_PERFORMED** (not APPROVED / not Gate PASS). Historical DRAFT-1 Gate = **STOP** (see §1.1). |
+| Product Definition version / document status | `PD-IMP-036I-DRAFT-3`; **Document status: DRAFT READY FOR GATE**; **PRE-GATE DRAFT: NO**; **READY_FOR_PRODUCT_DEFINITION_GATE: YES** |
+| Product owner / approval evidence | Founder. Activation authorized for Product Definition only. Founder decisions FD-036I-01…15 **RESOLVED** 2026-09-24 (including FD-036I-09 sealing amendment). Product Definition Gate for CURRENT DRAFT-3 **NOT_PERFORMED** (not APPROVED / not Gate PASS). Historical DRAFT-1 Gate = **STOP**; historical DRAFT-2 Gate = **STOP** (see §1.1). |
 | Process / verification policy | `PD-1` / `TEST-1` |
-| Canonical anchors | VISION-1; ROADMAP GTM-R150; STATE STATE-R148; ARCH-R22; DR-20 (D-377, D-378); PD-1; TEST-1; PERSONA-1; GJ-1; accepted IMP-036H Product Definition `PD-IMP-036H-DRAFT-1`; Founder FD-036I-01…15 resolution 2026-09-24; FD-036I-09 amendment 2026-09-24 |
+| Canonical anchors | VISION-1; ROADMAP GTM-R151; STATE STATE-R149; ARCH-R22; DR-20 (D-377, D-378); PD-1; TEST-1; PERSONA-1; GJ-1; accepted IMP-036H Product Definition `PD-IMP-036H-DRAFT-1`; Founder FD-036I-01…15 resolution 2026-09-24; FD-036I-09 sealing amendment 2026-09-24 |
 | Repository candidate | Canonical path `/home/ajoshi/repos/boba-bear-platform`; exact HEAD/tree recorded at activation/PR time — verify against CURRENT tip |
-| Capability lifecycle / authorization | ROADMAP/STATE: `IMP036I_ACTIVATED: YES`; `currentProductSlice = IMP-036I`; formal lifecycle **PLANNED**; Product Definition **DRAFT_READY_FOR_GATE** (`PD-IMP-036I-DRAFT-2`); Gate for CURRENT DRAFT-2 **NOT_PERFORMED**; Architecture Fit **NOT_PERFORMED**; architecture **NOT_LOCKED**; implementation **NOT_AUTHORIZED** / **NOT_STARTED**; `IMP036I_ACCEPTED: NO`; `pendingAcceptance = NONE`; `acceptedThrough = IMP-036H`; `nextProductSlice = IMP-037` |
+| Capability lifecycle / authorization | ROADMAP/STATE: `IMP036I_ACTIVATED: YES`; `currentProductSlice = IMP-036I`; formal lifecycle **PLANNED**; Product Definition **DRAFT_READY_FOR_GATE** (`PD-IMP-036I-DRAFT-3`); Gate for CURRENT DRAFT-3 **NOT_PERFORMED**; Architecture Fit **NOT_PERFORMED**; architecture **NOT_LOCKED**; implementation **NOT_AUTHORIZED** / **NOT_STARTED**; `IMP036I_ACCEPTED: NO`; `pendingAcceptance = NONE`; `acceptedThrough = IMP-036H`; `nextProductSlice = IMP-037` |
 | Relevant capability architecture / ADRs | Foundations: ADR-008; ADR-011; ADR-007; ADR-012; ADR-018 / D-378 (fulfilment mode); D-365 / D-366 / D-367 (financial documents); D-357; D-361–D-364 (payment/refund); D-377 (program pause). No IMP-036I capability lock yet. |
 | Founder UAT applicability | `FOUNDER_UAT_REQUIRED = YES`; `FOUNDER_UAT_STATUS = NOT_PERFORMED` — materially changes customer checkout timing and workforce operational timing when implemented |
 
 ### 1.1 Draft history — Product Definition Gate
 
-CURRENT candidate is `PD-IMP-036I-DRAFT-2`. Gate execution against CURRENT DRAFT-2 is
-**NOT_PERFORMED**. Do **not** treat DRAFT-1 as Gate PASS.
+CURRENT candidate is `PD-IMP-036I-DRAFT-3`. Gate execution against CURRENT DRAFT-3 is
+**NOT_PERFORMED**. Do **not** treat DRAFT-1 or DRAFT-2 as Gate PASS. Historical blocks
+below are bounded evidence only — they must not contaminate CURRENT status evaluation.
 
 #### Historical — `PD-IMP-036I-DRAFT-1` (Gate STOP)
 
+<!-- historical-gate-evidence:begin PD-IMP-036I-DRAFT-1 -->
 ```text
 PRODUCT_DEFINITION_VERSION: PD-IMP-036I-DRAFT-1
 PRODUCT_DEFINITION_GATE_EXECUTION: PERFORMED
@@ -259,9 +263,36 @@ STOP findings (DRAFT-1):
      by this Product Definition content alone)
 
 DRAFT-1 is historical STOP evidence only — not PASS, not APPROVED, not CURRENT.
-Remediation into PD-IMP-036I-DRAFT-2 includes Founder-approved FD-036I-09 amendment
-(2026-09-24) binding V1 cancellation-cutoff policy (BR-036I-019).
+Remediation into PD-IMP-036I-DRAFT-2 (later also STOPPED) persisted Founder-approved
+FD-036I-09 defaults/range/scope (BR-036I-019).
 ```
+<!-- historical-gate-evidence:end PD-IMP-036I-DRAFT-1 -->
+
+#### Historical — `PD-IMP-036I-DRAFT-2` (Gate STOP)
+
+<!-- historical-gate-evidence:begin PD-IMP-036I-DRAFT-2 -->
+```text
+PRODUCT_DEFINITION_VERSION: PD-IMP-036I-DRAFT-2
+PRODUCT_DEFINITION_GATE_EXECUTION: PERFORMED
+Gate Result: STOP
+Evidence: PR review 5306341697
+Candidate HEAD / main: 421fc76869812384df2018b9ffae86de4c33cdc3
+Candidate TREE: ba33220c06beede81af9fe15ea053df01e470503
+WORKING_TREE_FINGERPRINT: eeeed322c8bbe799c7fc245553d5585210108b797226ded9a84f105d0d3ef8fd
+
+STOP findings (DRAFT-2):
+  A. Product: existing paid Scheduled Orders did not define whether later Brand cutoff
+     changes retroactively alter cancellation eligibility
+  B. Consistency: historical DRAFT-1 removal truncated content after the historical heading
+  C. Consistency: version check accepted DRAFT-2 when only one Product Definition version
+     authority agreed
+
+DRAFT-2 is historical STOP evidence only — not PASS, not APPROVED, not CURRENT.
+Remediation into PD-IMP-036I-DRAFT-3 seals per-Order cancellation cutoff from the
+payment-bound Checkout Snapshot and requires stale-checkout revalidation (FD-036I-09 /
+BR-036I-019 amended 2026-09-24).
+```
+<!-- historical-gate-evidence:end PD-IMP-036I-DRAFT-2 -->
 
 Behaviour classification vocabulary:
 
@@ -430,7 +461,7 @@ Central product concept:
 | Payment | Online **PAY NOW** (FD-036I-06); preserve Razorpay, payment before Order materialization, zero-payable where applicable; no cash/COD/pay later/deposit/partial |
 | Confirmation | States Scheduled + mode + timing + location/destination summary |
 | History/detail | Distinguishes ASAP vs Scheduled; shows timing promise; Pickup has no delivery tracking |
-| Cancellation | Binding V1 cutoff (FD-036I-09 / BR-036I-019): SCHEDULED PICKUP default **30 minutes** before selected slot start; SCHEDULED DELIVERY default **60 minutes** before selected slot start; Brand-level config per fulfilment mode (Pickup minutes / Delivery minutes independently); allowed range **0–240** inclusive; V1 Outlet override **NO**; cutoff instant = `slot_start − configured minutes` (outlet local-time semantics); self-service cancel allowed **ONLY BEFORE** cutoff (and otherwise eligible); **AT OR AFTER** cutoff denied with support/Outlet recovery guidance; V1 **NO** cancellation/penalty fee; **0 minutes** = cancel allowed before slot start, unavailable at/after slot start; no fuzzy/grace in cancellation cutoff (does **not** change FD-036I-13 early/late Pickup grace). Deterministic product evidence only (not hard-coded system values): Pickup slot 18:00–18:30 → cutoff 17:30; Delivery same slot → cutoff 17:00 under defaults. Architecture Fit owns storage/admin surface/RBAC/validation/runtime enforcement — must **not** change this business policy. |
+| Cancellation | Binding V1 cutoff (FD-036I-09 / BR-036I-019): SCHEDULED PICKUP default **30 minutes** before selected slot start; SCHEDULED DELIVERY default **60 minutes** before selected slot start; Brand-level config per fulfilment mode (Pickup minutes / Delivery minutes independently); allowed range **0–240** inclusive; V1 Outlet override **NO**; cutoff instant = `slot_start − sealed_cutoff_minutes` (outlet local-time semantics). **Sealing:** for every successfully purchased Scheduled Order, the effective cutoff minutes are sealed from the payment-bound Checkout Snapshot (Brand + fulfilment mode policy evaluated for that Snapshot) and are **immutable** for that Order — later Brand config changes MUST NOT shorten, extend, grant, remove, or otherwise alter that Order’s self-service cancellation right; later Brand changes affect future eligible purchase attempts only. **Checkout revalidation:** before a payment attempt becomes bound to a Checkout Snapshot, currently effective cancellation policy must be revalidated; if Brand/mode cutoff changed since the customer last reviewed checkout, stale checkout must not silently continue — updated terms must be shown and reconfirmed. Once payment-bound, that Snapshot’s cutoff is immutable for that attempt; success → Order inherits sealed value; fail/expire/abandon → next payment attempt re-evaluates current Brand/mode policy. Self-service cancel allowed **ONLY BEFORE** sealed cutoff (and otherwise eligible); **AT OR AFTER** cutoff denied with support/Outlet recovery guidance; V1 **NO** cancellation/penalty fee; **0 minutes** = cancel allowed before slot start, unavailable at/after slot start; no fuzzy/grace in cancellation cutoff (does **not** change FD-036I-13 early/late Pickup grace). **Customer-facing terms:** before purchase, checkout must communicate the applicable cancellation cutoff meaningfully (e.g. “Free cancellation until 5:30 PM” or equivalent derived from selected slot + effective cutoff); exact copy/design = UX Fit. Deterministic product evidence only (not hard-coded system values): Pickup slot 18:00–18:30 → cutoff 17:30; Delivery same slot → cutoff 17:00 under defaults. Architecture Fit owns storage/admin/snapshot/CAS/retry mechanism and **must not** change this business outcome. |
 | Reschedule | **NO** customer self-service rescheduling in V1 (FD-036I-08); another time → cancel (if permitted) + new Order |
 | Time becomes unavailable | Pre-pay: block + recover; post-pay: notify + cancel/refund + allow new Order; no silent substitution (FD-036I-10) |
 | Reminders | Confirmation required; one proactive pre-fulfilment reminder (~30 min before window; skip if ordered inside reminder window); mode-aware wording (FD-036I-11) |
@@ -468,7 +499,7 @@ Central product concept:
 
 | Slice | Mandatory story IDs | Mandatory AC IDs | Required Golden Journeys | Observable acceptance boundary |
 |---|---|---|---|---|
-| `V1_ACCEPTANCE_SLICE` | `US-036I-001` … `US-036I-016` | `AC-036I-001` … `AC-036I-059` (all mandatory YES; Founder FD-036I-01…15 resolved incl. FD-036I-09 amendment) | `GJ-FIRST-ORDER` ASAP Delivery + ASAP Pickup non-regression; Scheduled Pickup + Scheduled Delivery extensions; `GJ-PAYMENT-RECOVERY`; `GJ-CANCELLATION-REFUND` continuity | Customer completes Scheduled Pickup and Scheduled Delivery with correct mode×timing×commercial/privacy outcomes; Ops fulfils both; ASAP remains green; no Delivery aggregate for Scheduled Pickup; Brand cancellation-cutoff policy proven per BR-036I-019 |
+| `V1_ACCEPTANCE_SLICE` | `US-036I-001` … `US-036I-016` | `AC-036I-001` … `AC-036I-066` (all mandatory YES; Founder FD-036I-01…15 resolved incl. FD-036I-09 sealing amendment) | `GJ-FIRST-ORDER` ASAP Delivery + ASAP Pickup non-regression; Scheduled Pickup + Scheduled Delivery extensions; `GJ-PAYMENT-RECOVERY`; `GJ-CANCELLATION-REFUND` continuity | Customer completes Scheduled Pickup and Scheduled Delivery with correct mode×timing×commercial/privacy outcomes; Ops fulfils both; ASAP remains green; no Delivery aggregate for Scheduled Pickup; Brand cancellation-cutoff policy + per-Order sealing proven per BR-036I-019 |
 | `FOLLOW_UP` | Capacity advanced models; UX polish beyond mandatory clarity; optional calendar flourishes | As defined later | N/A unless GJ impacted | Not silently required for V1 |
 | `DEFERRED` | Recurring; subscriptions; catering; labour/driver shift scheduling; AI prep prediction | N/A | N/A | Explicit non-goals |
 
@@ -725,27 +756,26 @@ Readiness: READY for Product Definition Gate; NOT_READY_FOR_IMPLEMENTATION until
 Story ID: US-036I-011
 As a PERSONA-CUSTOMER
 I want clear cancellation outcomes for Scheduled Orders (no self-service reschedule)
-so that I can change plans without hidden fees or silent commercial mutations.
-
-Journey / activity: Cancel (want another time → cancel if permitted + new Order)
-Preconditions: Paid Scheduled Order; relative to Brand-configured cancellation cutoff
-  (FD-036I-09 / BR-036I-019: Pickup default 30 / Delivery default 60; 0–240; outlet local time)
+So that I can cancel when still eligible under my Order’s sealed cutoff, or understand
+  when self-service is closed
+Preconditions: Paid Scheduled Order; relative to that Order’s sealed cancellation cutoff
+  (FD-036I-09 / BR-036I-019: sealed from payment-bound Checkout Snapshot; Pickup default 30 /
+  Delivery default 60; 0–240; outlet local time; later Brand changes do not mutate this Order)
 Acceptance scenarios: AC-036I-039, AC-036I-045, AC-036I-046, AC-036I-053, AC-036I-054,
-  AC-036I-055, AC-036I-059
+  AC-036I-055, AC-036I-059, AC-036I-060, AC-036I-061, AC-036I-062, AC-036I-063
 Business rules: BR-036I-018, BR-036I-019
 UX states: Cancel confirm; cutoff denied (at/after) + support/Outlet recovery guidance;
-  refund continuity messaging
+  no self-service reschedule path
 Permission / resource context: Existing cancellation/refund permissions
-Error / recovery: AT OR AFTER cutoff → clear deny + support/Outlet recovery guidance;
+Error / recovery: AT OR AFTER sealed cutoff → clear deny + support/Outlet recovery guidance;
   V1 NO cancellation/penalty fee; no fuzzy/grace on cancellation cutoff
-Dependencies: FD-036I-08 NO self-service reschedule; FD-036I-09 cutoff RESOLVED (amended);
-  FD-036H-18 continuity; D-364 refunds; BR-036I-019
-Explicit non-goals: In-place change-slot mutation; commercial reprice of paid Order;
-  schedule history engine; no-show penalties; cancellation fee; changing FD-036I-13 grace
-Data implications: Refund/financial docs remain D-365/366/367
-Security implications: Customer may cancel only own Orders
-Architecture fit / applicable invariants: Cutoff storage/enforcement = Fit; must not change
-  BR-036I-019 business policy; align to existing cancel/refund
+Dependencies: FD-036I-08 NO self-service reschedule; FD-036I-09 cutoff RESOLVED (sealing
+  amendment); FD-036H-18 continuity; D-364 refunds; BR-036I-019
+Out of scope: In-place reschedule; change-slot mutation; commercial reprice of paid Order;
+  schedule history engine; no-show penalties; cancellation fee; changing FD-036I-13 grace;
+  retroactive Brand cutoff mutation of purchased Orders
+Data implications: Product requires sealed per-Order cutoff minutes as commercial/fulfilment
+  policy truth; storage/representation = Architecture Fit (must not change BR-036I-019)
 Open material decisions: NONE
 Readiness: READY for Product Definition Gate; NOT_READY_FOR_IMPLEMENTATION until Gate + Fit/lock + authorization
 ```
@@ -827,21 +857,32 @@ Readiness: READY for Product Definition Gate; NOT_READY_FOR_IMPLEMENTATION until
 ```text
 Story ID: US-036I-015
 As a PERSONA-CUSTOMER
-I want to pay online for a Scheduled Order against a confirmed commercial result
-so that prices/fees do not silently change after purchase, and cash/COD is never offered.
+I want to pay online for a Scheduled Order against confirmed commercial and cancellation terms
+so that prices/fees and my cancellation cutoff do not silently change after I reviewed them
+  or after purchase, and cash/COD is never offered.
 
 Journey / activity: Payment → Order materialization
-Preconditions: Valid Scheduled commercial snapshot; online payment authority
-Acceptance scenarios: AC-036I-020, AC-036I-021, AC-036I-022, AC-036I-023, AC-036I-024, AC-036I-025, AC-036I-030
-Business rules: BR-036I-009, BR-036I-010, BR-036I-016, BR-036I-017
-UX states: Payment pending; success; failure/retry per GJ-PAYMENT-RECOVERY
+Preconditions: Valid Scheduled commercial snapshot; online payment authority; applicable
+  cancellation cutoff communicated before purchase
+Acceptance scenarios: AC-036I-020, AC-036I-021, AC-036I-022, AC-036I-023, AC-036I-024,
+  AC-036I-025, AC-036I-030, AC-036I-064, AC-036I-065, AC-036I-066
+Business rules: BR-036I-009, BR-036I-010, BR-036I-016, BR-036I-017, BR-036I-019
+UX states: Payment pending; success; failure/retry per GJ-PAYMENT-RECOVERY; stale cancellation
+  terms require reconfirm before new payment-bound attempt
 Permission / resource context: Existing payment identity
-Error / recovery: Existing payment failure/retry; never invent cash/COD/deposit/partial
-Dependencies: FD-036H-03 inheritance; FD-036I-06 PAY NOW; FD-036I-07 commercials sealed at purchase
-Explicit non-goals: Pay later; COD; pay at pickup; deposit; partial payment; new payment provider; new financial document type
-Data implications: Single Order; D-365/366/367 continuity; Checkout Snapshot commercial authority preserved
-Security implications: Server-authoritative commercials; payment-bound immutability
-Architecture fit / applicable invariants: Snapshot timing fields; financial adapters remain D-365 compliant
+Error / recovery: Existing payment failure/retry; never invent cash/COD/deposit/partial;
+  Brand cutoff change before payment binding → show updated terms and require reconfirm
+Dependencies: FD-036H-03 inheritance; FD-036I-06 PAY NOW; FD-036I-07 commercials sealed at
+  purchase; FD-036I-09 sealing / checkout revalidation
+Explicit non-goals: Pay later; COD; pay at pickup; deposit; partial payment; new payment
+  provider; new financial document type; silently binding changed cancellation terms
+Data implications: Single Order; D-365/366/367 continuity; Checkout Snapshot commercial
+  authority preserved; sealed cancellation cutoff minutes inherited on successful payment
+Security implications: Server-authoritative commercials and cancellation policy;
+  payment-bound immutability
+Architecture fit / applicable invariants: Snapshot timing/cutoff fields; financial adapters
+  remain D-365 compliant; revalidation/CAS/retry mechanism = Fit (must not change product
+  outcome)
 Open material decisions: NONE
 Readiness: READY for Product Definition Gate; NOT_READY_FOR_IMPLEMENTATION until Gate + Fit/lock + authorization
 ```
@@ -860,21 +901,23 @@ Journey / activity: Config / operability
 Preconditions: Authorized actors under existing Brand/platform commercial/operations admin
   context (no new role)
 Acceptance scenarios: AC-036I-034, AC-036I-042, AC-036I-053, AC-036I-054, AC-036I-056,
-  AC-036I-057, AC-036I-058, AC-036I-059
+  AC-036I-057, AC-036I-058, AC-036I-059, AC-036I-060, AC-036I-061, AC-036I-062, AC-036I-063
 Business rules: BR-036I-005, BR-036I-015, BR-036I-019
 UX states: Existing outlet/hours/operating controls remain authoritative inputs to eligibility;
   Brand-level Pickup cancellation cutoff minutes and Delivery cancellation cutoff minutes
-  configurable independently within 0–240 inclusive (defaults 30 / 60)
+  configurable independently within 0–240 inclusive (defaults 30 / 60); later Brand changes
+  affect future purchases only — not already-purchased Orders
 Permission / resource context: Existing Brand/platform commercial/operations admin permissions;
   no new role; V1 Outlet override of cancellation cutoff = NO
 Error / recovery: Unauthorized deny; invalid cutoff (<0 or >240) rejected clearly
 Dependencies: IMP-035 / outlet profile / operating-state foundations; FD-036I-02, FD-036I-04,
-  FD-036I-09 (amended), FD-036I-15 RESOLVED; BR-036I-019
+  FD-036I-09 (sealing amendment), FD-036I-15 RESOLVED; BR-036I-019
 Explicit non-goals: New “Scheduler Admin” role; labour scheduling product; V1 capacity engine;
-  V1 Outlet-level cancellation-cutoff override; inventing cutoff values outside 0–240
-Data implications: Product requires eligibility inputs + Brand per-mode cutoff minutes;
-  temporary PAUSED ≠ auto-delete future slots; storage/admin surface = Fit (must not change
-  BR-036I-019 business policy)
+  V1 Outlet-level cancellation-cutoff override; inventing cutoff values outside 0–240;
+  retroactive mutation of purchased Order cancellation rights
+Data implications: Product requires eligibility inputs + Brand per-mode cutoff minutes for
+  future purchases; purchased Orders retain sealed cutoff; temporary PAUSED ≠ auto-delete
+  future slots; storage/admin surface = Fit (must not change BR-036I-019 business policy)
 Security implications: No client-trusted eligibility or cutoff
 Architecture fit / applicable invariants: Eligibility composition, cutoff storage/admin surface/
   RBAC/validation/runtime enforcement = Fit; business policy remains BR-036I-019
@@ -1264,9 +1307,9 @@ Mandatory in acceptance slice: YES
 ```text
 AC-036I-039 — Customer cancellation before cutoff succeeds when eligible
 Story: US-036I-011
-Given a paid Scheduled Order whose current time (outlet local) is BEFORE the cancellation
-  cutoff instant for that Order’s fulfilment mode (FD-036I-09 / BR-036I-019;
-  cutoff = slot_start − configured Brand minutes for that mode)
+Given a paid Scheduled Order whose current time (outlet local) is BEFORE the sealed
+  cancellation cutoff instant for that Order (FD-036I-09 / BR-036I-019;
+  cutoff = slot_start − sealed_cutoff_minutes for that Order’s fulfilment mode)
 When the customer cancels and the Order is otherwise eligible under existing cancel/refund authority
 Then cancellation proceeds under existing cancel/refund authority
 And V1 applies NO cancellation/penalty fee
@@ -1478,9 +1521,89 @@ AC-036I-059 — Zero-minute cancellation-cutoff semantics
 Story: US-036I-011 / US-036I-016
 Given Brand cancellation cutoff minutes for a fulfilment mode configured to 0
 When a customer attempts self-service cancel on a Scheduled Order of that mode
+  whose sealed cutoff minutes are 0
 Then cancel is allowed only while current time (outlet local) is BEFORE selected slot start
 And at or after slot start, self-service cancel is denied with support/Outlet recovery guidance
 And V1 applies NO cancellation/penalty fee
+And later Brand changes to a non-zero cutoff do not alter this Order’s sealed 0-minute policy
+Mandatory in acceptance slice: YES
+```
+
+```text
+AC-036I-060 — Existing Pickup Order unaffected by later Brand cutoff increase
+Story: US-036I-011 / US-036I-016
+Given a successfully purchased Scheduled Pickup Order whose sealed cancellation cutoff is 30
+When Brand Pickup cancellation cutoff later changes to 60
+Then that existing Order remains governed by sealed cutoff 30
+And self-service cancellation eligibility continues to use slot_start − 30
+And the Brand change does not grant additional cancellation time for that Order
+Mandatory in acceptance slice: YES
+```
+
+```text
+AC-036I-061 — Existing Pickup Order unaffected by later Brand cutoff decrease
+Story: US-036I-011 / US-036I-016
+Given a successfully purchased Scheduled Pickup Order whose sealed cancellation cutoff is 60
+When Brand Pickup cancellation cutoff later changes to 30
+Then that existing Order remains governed by sealed cutoff 60
+And self-service cancellation eligibility continues to use slot_start − 60
+And the Brand change does not shorten or remove that Order’s cancellation right
+Mandatory in acceptance slice: YES
+```
+
+```text
+AC-036I-062 — Existing Delivery Order sealed against later Brand cutoff change
+Story: US-036I-011 / US-036I-016
+Given a successfully purchased Scheduled Delivery Order whose sealed cancellation cutoff is 60
+When Brand Delivery cancellation cutoff later changes to any other valid value in 0–240
+Then that existing Order remains governed by sealed cutoff 60
+And later Brand Delivery cutoff changes affect future purchases only
+Mandatory in acceptance slice: YES
+```
+
+```text
+AC-036I-063 — New Order after Brand cutoff change uses newly effective value
+Story: US-036I-011 / US-036I-016
+Given Brand Pickup cancellation cutoff changes from 30 to 60 (or Delivery 60 to another valid value)
+When a customer later successfully purchases a new Scheduled Order under that mode
+Then the new Order’s sealed cancellation cutoff is the newly effective Brand/mode value
+And previously purchased Orders retain their previously sealed values
+Mandatory in acceptance slice: YES
+```
+
+```text
+AC-036I-064 — Stale checkout cannot silently bind changed cancellation terms
+Story: US-036I-015
+Given a customer reviewed checkout cancellation terms under cutoff X for the selected mode
+And Brand/mode cutoff later changes to Y before any payment-bound Checkout Snapshot exists
+When the customer proceeds toward payment
+Then the stale checkout must not silently continue under cutoff X
+And updated cancellation terms derived from Y must be shown
+And the customer must reconfirm before a new payment-bound attempt proceeds
+Mandatory in acceptance slice: YES
+```
+
+```text
+AC-036I-065 — Payment-bound attempt retains sealed cutoff despite concurrent Brand change
+Story: US-036I-015
+Given a payment attempt is already bound to a valid Checkout Snapshot with effective cutoff X
+And Brand/mode cutoff later changes to Y while that payment attempt remains active
+When that payment attempt succeeds
+Then the resulting Order inherits sealed cutoff X
+And Y does not apply to that Order
+Mandatory in acceptance slice: YES
+```
+
+```text
+AC-036I-066 — Failed or expired payment attempt re-evaluates current cutoff
+Story: US-036I-015
+Given a payment attempt bound with cutoff X fails, expires, is abandoned, or otherwise requires
+  a new payment attempt
+And Brand/mode cutoff is now Y
+When the customer starts a new payment attempt
+Then current Brand/mode policy must be re-evaluated
+And the customer must see/confirm terms under Y before a new payment-bound attempt proceeds
+And a subsequent successful Order seals Y (not the prior failed attempt’s X)
 Mandatory in acceptance slice: YES
 ```
 
@@ -1493,7 +1616,7 @@ Mandatory in acceptance slice: YES
 | AC-036I-011…017, 026…029 | Empty/switch/revalidation/races | Domain + checkout concurrency | Eligibility + mutation safety | Planned only |
 | AC-036I-018…025, 030, 050, 051 | Confirmation, payment, commercials, FD continuity | Payment + Order + financial | Pay-now; D-365 continuity; no cash | Planned only |
 | AC-036I-031…038, 042…044 | Ops + notifications + timezone | Ops API/UI + notification assertions | Badge/detail/handover/delivery timing | Planned only |
-| AC-036I-039, 045…047, 053…055, 059 | Cancel/no-reschedule/post-pay recovery + cutoff defaults/boundary/zero | E2E + refund continuity | Cutoff + cancel+new Order + notify/refund | Planned only |
+| AC-036I-039, 045…047, 053…055, 059…066 | Cancel/no-reschedule/post-pay recovery + cutoff defaults/boundary/zero/sealing/checkout revalidation | E2E + refund continuity | Sealed cutoff + cancel+new Order + notify/refund + stale-checkout reconfirm | Planned only |
 | AC-036I-048…049 | Privacy + program pause boundary | Negative + governance assertions | Pickup privacy; pause preserved | Planned only |
 | AC-036I-021, 052 | Accessibility + mobile | Component/a11y + real-browser interactive proof | Keyboard/SR/mobile; scan alone insufficient | Planned only |
 | AC-036I-056…058 | Brand cutoff config scope/range/no Outlet override | Domain + admin/config assertions | Independent 0–240; reject invalid; Brand-only V1 | Planned only |
@@ -1524,7 +1647,7 @@ Planned is **not** proven. Evidence populates after Product Definition Gate → 
 | `BR-036I-016` | Online payment only; no cash/COD/pay-at-counter for Scheduled. | FD-036H-03; FD-036I-16 | US-036I-015; AC-036I-020 |
 | `BR-036I-017` | Scheduling does not create a new financial-document type; D-365/366/367 continuity required. | FD-036I-21 | US-036I-015; AC-036I-030/050 |
 | `BR-036I-018` | No self-service reschedule (cancel if permitted + new Order); cancellation eligibility uses BR-036I-019 cutoff policy (no V1 fee); post-pay unhonourable → notify + cancel/refund + allow new Order; no silent substitution. Existing refund authority remains money truth. | FD-036I-08…10 RESOLVED; D-364; BR-036I-019 | US-036I-011/012; AC-036I-039/045…047/053…055/059 |
-| `BR-036I-019` | **BR-SCHEDULED-CANCELLATION-CUTOFF.** V1 binding policy (FD-036I-09 amended): SCHEDULED PICKUP default cutoff **30** minutes before selected slot start; SCHEDULED DELIVERY default **60** minutes before selected slot start. Config scope = **Brand-level**; dimension = **per fulfilment mode** (Pickup cancellation cutoff minutes; Delivery cancellation cutoff minutes — independent). Allowed range **0–240** inclusive. V1 Outlet override = **NO**. No new role; config owned by existing Brand/platform commercial/operations admin context. Cutoff instant = `slot_start − configured minutes`; **outlet local-time** semantics. Self-service cancel allowed **ONLY BEFORE** cutoff (and otherwise eligible); **AT OR AFTER** cutoff denied with support/Outlet recovery guidance. V1 **NO** cancellation/penalty fee. **0 minutes** = cancel allowed before slot start; unavailable at/after slot start. No fuzzy/grace in cancellation cutoff; does **not** change FD-036I-13 early/late Pickup grace. Product evidence examples (not hard-coded system values): Pickup slot 18:00–18:30 → cutoff 17:30 under default; Delivery same slot → cutoff 17:00 under default. Architecture Fit owns storage/admin surface/RBAC/validation/runtime enforcement and **must not** change this business policy. | FD-036I-09 amended 2026-09-24 | US-036I-011/016; AC-036I-039/046/053…059 |
+| `BR-036I-019` | **BR-SCHEDULED-CANCELLATION-CUTOFF.** V1 binding policy (FD-036I-09 amended 2026-09-24): SCHEDULED PICKUP default cutoff **30** minutes before selected slot start; SCHEDULED DELIVERY default **60** minutes before selected slot start. Config scope = **Brand-level**; dimension = **per fulfilment mode** (Pickup / Delivery independently). Allowed range **0–240** inclusive. V1 Outlet override = **NO**. No new role; config owned by existing Brand/platform commercial/operations admin context. Cutoff instant = `slot_start − sealed_cutoff_minutes`; **outlet local-time** semantics. Self-service cancel allowed **ONLY BEFORE** sealed cutoff (and otherwise eligible); **AT OR AFTER** cutoff denied with support/Outlet recovery guidance. V1 **NO** cancellation/penalty fee. **0 minutes** = cancel allowed before slot start; unavailable at/after slot start. No fuzzy/grace in cancellation cutoff; does **not** change FD-036I-13 early/late Pickup grace. **Sealing:** effective cutoff minutes for a purchased Scheduled Order are sealed from the payment-bound Checkout Snapshot (Brand + fulfilment mode policy evaluated for that Snapshot) and become immutable commercial/fulfilment policy truth for that Order. Later Brand configuration changes MUST affect future eligible purchase attempts only and MUST NOT shorten, extend, grant, remove, or otherwise alter the self-service cancellation right of an already-purchased Scheduled Order. **Checkout revalidation:** before a payment attempt becomes bound to a Checkout Snapshot, currently effective cancellation policy must be revalidated; if Brand/mode cutoff changed since the customer last reviewed checkout, stale checkout must not silently continue — updated terms must be shown and reconfirmed. Once payment-bound, that Snapshot’s cutoff is immutable for that attempt; success → Order inherits sealed value; fail/expire/abandon → next payment attempt re-evaluates current Brand/mode policy. **Customer-facing terms:** before purchase, checkout must communicate the applicable cancellation cutoff meaningfully (exact copy/design = UX Fit). Product evidence examples (not hard-coded system values): Pickup slot 18:00–18:30 → cutoff 17:30 under default; Delivery same slot → cutoff 17:00 under default. Architecture Fit owns storage/admin surface/snapshot/CAS/retry/RBAC/validation/runtime enforcement and **must not** change this business outcome. | FD-036I-09 amended 2026-09-24 | US-036I-011/015/016; AC-036I-039/046/053…066 |
 
 ---
 
@@ -1715,7 +1838,7 @@ Registry status is not a test verdict.
 
 | Dependency | Authority / verified state | Required before which story or gate? | Unresolved impact |
 |---|---|---|---|
-| ROADMAP/STATE activation IMP-036I (PD only) + program pause D-377 | GTM-R150 / STATE-R148 expected tip | SATISFIED for drafting this PD | Fit/impl still blocked; Gate ready to be performed |
+| ROADMAP/STATE activation IMP-036I (PD only) + program pause D-377 | GTM-R151 / STATE-R149 expected tip | SATISFIED for drafting this PD | Fit/impl still blocked; Gate ready to be performed |
 | Accepted commerce foundations through IMP-036H | COMPLETE_AND_ACCEPTED through IMP-036H | All stories | NONE for ASAP baselines |
 | Founder resolution of FD-036I-01…15 | RESOLVED 2026-09-24 | Before Product Definition Gate | SATISFIED — Gate ready (NOT_PERFORMED) |
 | Product Definition Gate PASS | NOT_PERFORMED | Before Architecture Fit | Blocked |
@@ -1911,17 +2034,50 @@ Resolution (binding V1 product policy — BR-036I-019):
   Allowed range: 0–240 minutes inclusive.
   V1 Outlet override: NO.
   No new role; config owned by existing Brand/platform commercial/operations admin context.
-  Cutoff instant = slot_start − configured minutes; outlet local-time semantics.
-  Self-service cancel allowed ONLY BEFORE cutoff (and otherwise eligible).
+  Cutoff instant = slot_start − sealed_cutoff_minutes; outlet local-time semantics.
+  Self-service cancel allowed ONLY BEFORE sealed cutoff (and otherwise eligible).
   AT OR AFTER cutoff: deny self-service clearly + support/Outlet recovery guidance.
-  V1: NO cancellation/penalty fee.
+  V1: NO cancellation/penalty fee. NO penalty.
   0 minutes = cancel allowed before slot start; unavailable at/after slot start.
   No fuzzy/grace in cancellation cutoff; does NOT change FD-036I-13 early/late Pickup grace.
+
+  ORDER POLICY SEALING (Founder-approved 2026-09-24):
+    For every successfully purchased Scheduled Order, the cancellation cutoff policy
+    applicable to that Order is SEALED and immutable.
+    The effective cutoff value is the authoritative Brand + fulfilment mode cancellation
+    cutoff evaluated for the payment-bound Checkout Snapshot that produces the successful Order.
+    For the resulting Order, those effective cutoff minutes become immutable
+    commercial/fulfilment policy truth.
+    Later Brand configuration changes MUST affect future eligible purchase attempts only.
+    They MUST NOT retroactively shorten, extend, grant, remove, or otherwise alter the
+    self-service cancellation right of an already-purchased Scheduled Order.
+    Example: Pickup Order A purchased with Pickup cutoff 30; later Brand changes Pickup to 60;
+    Order A remains 30; later Order B purchased after the change uses 60.
+
+  CHECKOUT / PAYMENT RACE (product behaviour):
+    Before a payment attempt becomes bound to a Checkout Snapshot, currently effective
+    cancellation policy must be revalidated.
+    If Brand/mode cutoff changed since the customer last reviewed checkout, the stale
+    checkout must not silently continue — updated terms must be shown and reconfirmed.
+    Once a payment attempt is bound to a valid Checkout Snapshot, that Snapshot’s effective
+    cancellation cutoff is immutable for that payment attempt.
+    Success → Order inherits sealed value.
+    Fail / expire / abandon / otherwise requires a new payment attempt → next payment attempt
+    must re-evaluate current Brand/mode policy.
+
+  CUSTOMER-FACING TERMS:
+    Before purchase, the customer must be able to understand the applicable Scheduled
+    cancellation rule. Checkout must communicate the applicable cancellation cutoff
+    meaningfully (e.g. “Free cancellation until 5:30 PM” or equivalent derived from selected
+    slot + effective cutoff). Exact UI copy/design = implementation/UX Fit.
+    If policy changes before binding, updated terms must be surfaced before reconfirm.
+
   Product evidence examples (not hard-coded system values):
     Pickup slot 18:00–18:30 → cutoff 17:30 under default 30;
     Delivery same slot → cutoff 17:00 under default 60.
-  Architecture Fit owns storage / admin surface / RBAC / validation / runtime enforcement
-  and MUST NOT change this business policy.
+  Architecture Fit owns transaction boundaries / storage field / snapshot representation /
+    CAS/revision / API representation / retry implementation and MUST NOT change this
+    product outcome.
 ```
 
 #### FD-036I-10 — Post-payment unavailable-order recovery
@@ -2042,25 +2198,25 @@ FOUNDER_UAT_STATUS: NOT_PERFORMED
 PRODUCT_DEFINITION_GATE
 
 Capability: IMP-036I — Scheduled Fulfilment
-Product Definition Version: PD-IMP-036I-DRAFT-2
+Product Definition Version: PD-IMP-036I-DRAFT-3
 Business Outcome: Defined (§2)
 Primary Personas: PERSONA-CUSTOMER; PERSONA-WORKFORCE-OPERATOR (Outlet Manager / Kitchen / Delivery Coordinator contexts); PERSONA-PLATFORM-OPERATOR where config needs it (§4)
 Journeys Defined: ASAP protect + Scheduled Pickup/Delivery + switches + Ops (§6)
 Story Map Complete: YES (§7) — US-036I-001…016
-Acceptance Slice Defined: YES (§8) — AC-036I-001…059
+Acceptance Slice Defined: YES (§8) — AC-036I-001…066
 Happy Paths Defined: YES (Scheduled Pickup + Scheduled Delivery)
-Alternate Paths Defined: YES (empty times, switches, pre-pay invalid, post-pay recovery)
+Alternate Paths Defined: YES (empty times, switches, pre-pay invalid, post-pay recovery, sealing)
 Empty / First-Use States Defined: YES (§12–13)
-Error / Recovery Paths Defined: YES (incl. Brand cutoff AT OR AFTER deny + support/Outlet recovery)
+Error / Recovery Paths Defined: YES (incl. Brand cutoff AT OR AFTER deny + support/Outlet recovery; stale checkout reconfirm)
 Authorization Variants Defined: YES (§14; AC-036I-034; Brand cutoff config AC-036I-056…058)
 Cross-Scope Scenarios Defined: YES (Ops scope deny; Delivery fail-closed on Pickup)
-Concurrency Considered: YES (§17)
-Destructive Actions Defined: YES (cancel/refund; no self-service reschedule — cancel + new Order; BR-036I-019)
+Concurrency Considered: YES (§17; payment-bound vs Brand change; failed-attempt re-evaluation)
+Destructive Actions Defined: YES (cancel/refund; no self-service reschedule — cancel + new Order; BR-036I-019 sealing)
 UX State Matrix Complete: YES (§13)
 Accessibility Considered: YES (§18; AC-036I-021/052 mandatory)
 Golden Journeys Identified: YES (§20)
 Explicit Deferrals Recorded: YES (§23–24)
-Unresolved Product Decisions: 0 (FD-036I-01…15 Founder-resolved 2026-09-24 incl. FD-036I-09 amendment; FD-036I-16…22 existing authority)
+Unresolved Product Decisions: 0 (FD-036I-01…15 Founder-resolved 2026-09-24 incl. FD-036I-09 sealing amendment; FD-036I-16…22 existing authority)
 Architecture Conflicts: NONE identified at product layer; Fit questions handed off unanswered
 PRODUCT_DEFINITION_GATE_EXECUTION: NOT_PERFORMED
 Gate Result: NOT_PERFORMED
@@ -2068,13 +2224,14 @@ READY_FOR_PRODUCT_DEFINITION_GATE: YES
 ```
 
 Product Definition Gate is ready to be performed independently against CURRENT
-`PD-IMP-036I-DRAFT-2`. Historical `PD-IMP-036I-DRAFT-1` Gate Result was **STOP**
-(§1.1) — not PASS. Gate PASS on DRAFT-2 would still not perform Architecture Fit,
-lock architecture, authorize implementation, or accept IMP-036I. This draft does
-**not** claim APPROVED or Gate PASS.
+`PD-IMP-036I-DRAFT-3`. Historical `PD-IMP-036I-DRAFT-1` Gate Result was **STOP**
+(review `5305796113`) and historical `PD-IMP-036I-DRAFT-2` Gate Result was **STOP**
+(review `5306341697`) — §1.1 — not PASS. Gate PASS on DRAFT-3 would still not perform
+Architecture Fit, lock architecture, authorize implementation, or accept IMP-036I. This
+draft does **not** claim APPROVED or Gate PASS.
 
 ```text
-CURRENT tip anchors (this draft): GTM-R150 / STATE-R148
+CURRENT tip anchors (this draft): GTM-R151 / STATE-R149
 acceptedThrough = IMP-036H
 currentProductSlice = IMP-036I
 pendingAcceptance = NONE
