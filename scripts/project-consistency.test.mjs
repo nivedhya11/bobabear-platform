@@ -148,6 +148,7 @@ import {
   evaluateImp036iUngatedProductDefinitionDraftCandidate,
   evaluateImp036iUngatedProductDefinitionPreGateDraftCandidate,
   evaluateImp036iProductDefinitionGatePassCheckpoint,
+  evaluateImp036IArchitectureFitCandidateAuthority,
   evaluateImp036iApprovedProductDefinitionCandidate,
   evaluateImp036hProductDefinitionGatePassCheckpoint,
   evaluateImp036hApprovedProductDefinitionCandidate,
@@ -7050,6 +7051,9 @@ describe("canonical authority history compression", () => {
     const messages = findings.filter((f) => f.ok).map((f) => f.message);
     if (tipIsImp036iGatePass || tipIsImp036iDraftReady || tipIsImp036iDraftReadyDraft3Prior || tipIsImp036iDraftReadyDraft2Prior || tipIsImp036iDraftReadyPrior) {
       assert.ok(messages.some((m) => m.includes("IMP-036I Product Definition Gate PASS valid") || m.includes("IMP-036I Product Definition DRAFT_READY valid")));
+      if (tipIsImp036iGatePass) {
+        assert.ok(messages.some((m) => m.includes("IMP-036I Architecture Fit candidate authority valid")));
+      }
     } else if (tipIsImp036iActivation) {
       assert.ok(messages.some((m) => m.includes("IMP-036I Product Definition activation valid")));
     } else if (tipIsImp036hAcceptance) {
@@ -16413,6 +16417,94 @@ describe("IMP-036H acceptance checkpoint (GTM-R147 / STATE-R145)", () => {
     );
     assert.deepEqual(evaluateImp036hAcceptanceArtifact(capabilityText), { ok: true });
     assert.deepEqual(evaluateImp036hAcceptedProductDefinition(productDefinitionText), { ok: true });
+  });
+});
+
+describe("IMP-036I Architecture Fit candidate authority (D-379/D-380 PROPOSED)", () => {
+  const baseDocs = () => ({
+    architectureVersion: "ARCH-R22",
+    decisionRegisterVersion: "DR-20",
+    decisionText: [
+      "## 2. Current Global Decisions",
+      "",
+      "| ID | Title | Scope | Status | Record | Supersedes | Superseded By | Governs |",
+      "|---|---|---|---|---|---|---|---|",
+      "| D-379 | Scheduled Timing | IMP-036I | PROPOSED | ADR-019 | — | — | ARCH-G29 |",
+      "| D-380 | Delivery Finality | Delivery | PROPOSED | ADR-020 | — | — | ARCH-G30 |",
+      "",
+      "## 3. Current Capability / Cross-Capability Decisions",
+    ].join("\n"),
+    capabilityText: [
+      "ARCHITECTURE_FIT_EXECUTION = NOT_PERFORMED",
+      "ARCHITECTURE_FIT_RESULT = NOT_PERFORMED",
+      "IMPLEMENTATION_AUTHORIZED = NO",
+      "D379_STATUS = PROPOSED",
+      "D380_STATUS = PROPOSED",
+      "ADR019_STATUS = Proposed",
+      "ADR020_STATUS = Proposed",
+    ].join("\n"),
+    adr019Text: "Status: Proposed\n\n# ADR-019\n\n**Proposed** (2026-09-25).",
+    adr020Text: "Status: Proposed\n\n# ADR-020\n\n**Proposed** (2026-09-25).",
+  });
+
+  it("accepts PROPOSED D-379/D-380 candidate authority", () => {
+    assert.deepEqual(evaluateImp036IArchitectureFitCandidateAuthority(baseDocs()), { ok: true });
+  });
+
+  it("rejects D-380 CURRENT before Fit lock", () => {
+    const docs = baseDocs();
+    docs.decisionText = docs.decisionText.replace(
+      "| D-380 | Delivery Finality | Delivery | PROPOSED | ADR-020 | — | — | ARCH-G30 |",
+      "| D-380 | Delivery Finality | Delivery | CURRENT | ADR-020 | — | — | ARCH-G30 |",
+    );
+    const result = evaluateImp036IArchitectureFitCandidateAuthority(docs);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036I_D380_PREMATURE_CURRENT");
+  });
+
+  it("rejects ADR-020 Accepted before Fit lock", () => {
+    const docs = baseDocs();
+    docs.adr020Text = "Status: Accepted\n\n# ADR-020\n\n**Accepted**.";
+    const result = evaluateImp036IArchitectureFitCandidateAuthority(docs);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036I_ADR020_PREMATURE_ACCEPTED");
+  });
+
+  it("rejects ARCH-R23 as CURRENT architecture tip", () => {
+    const docs = baseDocs();
+    docs.architectureVersion = "ARCH-R23";
+    const result = evaluateImp036IArchitectureFitCandidateAuthority(docs);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036I_FIT_CANDIDATE_ARCH");
+  });
+
+  it("rejects premature Fit PASS in capability candidate", () => {
+    const docs = baseDocs();
+    docs.capabilityText = docs.capabilityText.replace(
+      "ARCHITECTURE_FIT_RESULT = NOT_PERFORMED",
+      "ARCHITECTURE_FIT_RESULT = PASS",
+    );
+    const result = evaluateImp036IArchitectureFitCandidateAuthority(docs);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036I_FIT_PREMATURE_PASS");
+  });
+
+  it("validates live Fit candidate artifacts", () => {
+    const result = evaluateImp036IArchitectureFitCandidateAuthority({
+      architectureVersion: "ARCH-R22",
+      decisionRegisterVersion: "DR-20",
+      decisionText: readFileSync("docs/platform/decision-register.md", "utf8"),
+      capabilityText: readFileSync("docs/platform/capabilities/IMP-036I-scheduled-fulfilment.md", "utf8"),
+      adr019Text: readFileSync(
+        "docs/platform/decisions/ADR-019-scheduled-fulfilment-timing-and-execution.md",
+        "utf8",
+      ),
+      adr020Text: readFileSync(
+        "docs/platform/decisions/ADR-020-delivery-successful-completion-finality.md",
+        "utf8",
+      ),
+    });
+    assert.deepEqual(result, { ok: true });
   });
 });
 

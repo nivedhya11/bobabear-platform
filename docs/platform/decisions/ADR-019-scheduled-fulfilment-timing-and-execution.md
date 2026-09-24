@@ -19,8 +19,11 @@ are **not** CURRENT until independent Architecture Fit review PASS and authorize
 ```text
 D-379_STATUS: PROPOSED
 ADR019_STATUS: Proposed
+D-380_STATUS: PROPOSED (Delivery successful-completion finality — separate; not merged)
+ADR020_STATUS: Proposed
 ARCH-R23_STATUS: PROPOSED_LOCK_DELTA (not applied to ARCHITECTURE.md meta)
 ARCH-G29_STATUS: PROPOSED
+ARCH-G30_STATUS: PROPOSED (via D-380; shared future ARCH-R23 lock)
 IMP036I_ARCHITECTURE_FIT: NOT_PERFORMED
 IMP036I_ARCHITECTURE_LOCKED: NO
 IMP036I_IMPLEMENTATION_AUTHORIZED: NO
@@ -28,6 +31,7 @@ CURRENT_ARCHITECTURE: ARCH-R22
 CURRENT_D378: CURRENT
 CURRENT_ADR018: Accepted
 CURRENT_ARCH_G28: CURRENT
+HUMAN_ARCHITECTURE_DIRECTION_D380: APPROVED_2026-09-25
 ```
 
 Capability Fit candidate:
@@ -55,12 +59,18 @@ authoritative Delivery execution truth is already `DELIVERED`, independent of no
 Independent Architecture Fit review `5309837751` (PR #263 threads `4097911250` /
 `4097911261`) returned **STOP** on Delivery completion authority: the candidate must not legalize
 normal replacement after `DELIVERED`, must not treat a prior `DELIVERED` fact as irrelevant, and
-must not depend on an unguaranteed unique “lineage tip.” This Proposed ADR is further remediated
-to lock deterministic `EXISTS Delivery.status = DELIVERED` suppression under accepted ADR-011 /
-IMP-031, classify current runtime `createDelivery` acceptance of a `DELIVERED` predecessor as
-`PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT` (not architecture precedent), and record a future
-`DELIVERY_CONFORMANCE_OBLIGATION` without inventing a correction mechanism or new Delivery model.
-Status remains **Proposed**.
+must not depend on an unguaranteed unique “lineage tip.” Independent Architecture Fit review
+`5309972440` (PR #264 finding `4098211380`) returned a further **STOP**: CURRENT locked IMP-031
+“authoritatively inactive” wording, historical/future-intent ADR-011, and accepted runtime
+`createDelivery` acceptance of a `DELIVERED` predecessor were not sufficiently reconciled to let
+IMP-036I silently choose replacement semantics. Human architecture direction **APPROVED
+2026-09-25** for **D-380 / ADR-020** (Delivery Successful-Completion Finality). This Proposed ADR
+is further remediated so Scheduled Delivery reminder completion logic **depends on** the
+human-approved but not-yet-CURRENT **D-380 / ADR-020** candidate: deterministic
+`EXISTS Delivery.status = DELIVERED` suppression; D-379 does **not** redefine Delivery replacement
+semantics; current runtime `createDelivery` acceptance of a `DELIVERED` predecessor remains
+`PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT` relative to approved D-380 (not architecture precedent).
+Status remains **Proposed**. D-379 and D-380 remain separate PROPOSED decisions.
 
 Verified CURRENT tip markers (unchanged by Fit remediation):
 
@@ -172,13 +182,16 @@ Reminder (full Notification semantic contract under ADR-012 / IMP-033 / IMP-034)
     OR not SCHEDULED
     OR (FULFILMENT_MODE = DELIVERY AND EXISTS authoritative Delivery for the exact Order
         with execution status DELIVERED)
-    Delivery.status = DELIVERED is durable authoritative Delivery-domain completion truth
-      (accepted ADR-011 / IMP-031 / IMP-032)
-    A normal replacement MUST NOT follow DELIVERED under accepted Delivery authority;
-      ADR-011 permits replacement only after cancelled / confirmed failed;
-      ADR-011 prohibits normal provider switching after pickup;
-      IMP-031: terminal facts remain durable; post-terminal correction requires a separately
-      authorized mechanism (IMP-036I does NOT invent that mechanism)
+    Delivery.status = DELIVERED is durable successful Delivery execution truth under
+      human-approved D-380 / ADR-020 PROPOSED candidate (not yet CURRENT)
+    After future lock:
+      D-379 governs Scheduled timing/execution boundary
+      D-380 governs Delivery successful-completion finality
+      D-379 does NOT redefine Delivery replacement semantics itself
+    A normal replacement MUST NOT follow DELIVERED under D-380 candidate direction;
+      FAILED / CANCELLED replacement remains only where existing accepted Delivery
+      prerequisites already permit (D-380 does not expand eligibility);
+      post-pickup failure / return / support rules preserved; no new provider-switch path
     Until separately authorized Delivery correction defines how a committed DELIVERED fact
       becomes non-authoritative for customer fulfilment, any authoritative DELIVERED fact
       for the exact Order remains sufficient to suppress the Scheduled Delivery reminder
@@ -192,8 +205,9 @@ Reminder (full Notification semantic contract under ADR-012 / IMP-033 / IMP-034)
     Rank-50 staleness remains valid but is not the sole delivered-state gate;
       no Notification request/attempt row is required before recognizing Delivery completion
     PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT:
-      current createDelivery permits DELIVERED predecessor — runtime drift, NOT architecture
-      precedent; DELIVERY_CONFORMANCE_OBLIGATION before IMP-036I acceptance:
+      current createDelivery permits DELIVERED predecessor — VERIFIED runtime behaviour;
+      nonconformant relative to approved D-380 candidate (not silently rewritten as CURRENT
+      IMP-031 meaning); DELIVERY_CONFORMANCE_OBLIGATION before IMP-036I acceptance:
       at minimum reject normal replacement after DELIVERED (do not implement in this ADR)
     PICKUP: do not create or query Delivery merely for reminder logic (D-378 / ARCH-G28)
     co-stage ordering MUST NOT bypass these gates
@@ -213,7 +227,14 @@ Reminder (full Notification semantic contract under ADR-012 / IMP-033 / IMP-034)
       (DELIVERED never irrelevant);
     K DELIVERED + later FAILED/CANCELLED nonconformant → SUPPRESSED + diagnostic;
     L Pickup FULFILLED suppresses without Delivery lookup;
-    M CANCELLED suppresses; N window start suppresses; O in-window purchase never enqueued
+    M CANCELLED suppresses; N window start suppresses; O in-window purchase never enqueued;
+    P createDelivery / normal replacement with prior DELIVERED → rejected (D-380);
+    Q prior FAILED where existing replacement prerequisites satisfied → preserved;
+    R prior CANCELLED where existing replacement prerequisites satisfied → preserved;
+    S post-pickup FAILED → no unauthorized provider-switch; existing failure/return/support;
+    T committed DELIVERED + failed Order fulfil-coordination → no new normal replacement;
+      reminder suppressed; coordination/support recovery remains separate;
+    U incorrect DELIVERED fact → no silent backward transition; separately authorized correction
 
 Topology: no new deployable service / queue / broker / workflow engine / external provider
 Auth: no new role / permission / auth realm
@@ -246,7 +267,8 @@ fulfilment timing; Scheduled timing is governed by D-379 / ARCH-G29.
 | D-359 / D-360 | Customer `/api/v1/*` |
 | D-372 / D-373 | Operations / Admin transports |
 | D-365…D-367 / D-364 | Financial documents / refunds |
-| ADR-011 / IMP-031 / IMP-032 | Delivery foundation + manual Dehradun mode |
+| ADR-011 / IMP-031 / IMP-032 | Delivery foundation + manual Dehradun mode; IMP-031 remains CURRENT/LOCKED; ADR-011 remains HISTORICAL/future-intent (not rewritten as CURRENT); successful-completion finality clarified by **D-380** PROPOSED |
+| D-380 / ADR-020 | PROPOSED Delivery successful-completion finality; reminder completion depends on this candidate; D-379 does not redefine replacement |
 | ADR-012 / IMP-033 / IMP-034 | Notification platform; reminder extends owned semantic + outbox family only; 24h max-age retained for non-reminder semantics |
 | ADR-005 | Permission reuse; no role-name bypass |
 | D-377 | Program pause / IMP-037/038 hold |
@@ -284,16 +306,21 @@ fulfilment timing; Scheduled timing is governed by D-379 / ARCH-G29.
 - Creating or querying a Delivery aggregate for Pickup reminder eligibility
 - Allowing Notifications to mutate Delivery, fulfil Order, retry fulfil coordination, cancel Order,
   refund Payment, or create a Delivery as part of reminder send-time evaluation
-- Legalizing a normal replacement Delivery after `DELIVERED` (conflicts with accepted ADR-011 /
-  IMP-031; IMP-036I does not authorize that change)
+- Legalizing a normal replacement Delivery after `DELIVERED` (conflicts with approved D-380 /
+  ADR-020 candidate direction; IMP-036I does not authorize that change)
 - Treating a prior authoritative `DELIVERED` fact as irrelevant because a later normal Delivery
   exists
 - Depending on a unique “current lineage tip,” latest-row-wins, `createdAt` ordering authority,
   highest revision across Deliveries, caller-selected current Delivery, or a new
   `current_delivery_id` pointer to decide reminder suppression
 - Using current runtime `createDelivery` acceptance of a `DELIVERED` predecessor as architecture
-  precedent (that behaviour is `PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT` only)
+  precedent (that behaviour is `PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT` relative to D-380)
 - Inventing a Delivery terminal-correction mechanism or schema inside IMP-036I Fit
+- Merging D-379 and D-380 into one decision (D-380 is durable Delivery-domain; D-379 owns Scheduled
+  timing)
+- Expanding FAILED / CANCELLED replacement into a blanket “always replaceable” rule
+- Pretending ADR-011 is CURRENT decision authority merely to force replacement semantics
+- Claiming Architecture Fit PASS or promoting D-379 / D-380 while still Proposed
 
 ## Consequences
 
@@ -310,8 +337,9 @@ fulfilment timing; Scheduled timing is governed by D-379 / ARCH-G29.
   notification catch-up, without mutating Delivery from Notifications and without depending on a
   unique lineage tip; nonconformant post-`DELIVERED` history still suppresses with diagnostic
 - Records `PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT` / `DELIVERY_CONFORMANCE_OBLIGATION` so later
-  implementation restores ADR-011 / IMP-031 conformance (reject normal replacement after
-  `DELIVERED`) without inventing a new Delivery model in Fit
+  implementation restores D-380 conformance (reject normal replacement after `DELIVERED`) without
+  inventing a new Delivery model in Fit; depends on human-approved D-380 / ADR-020 candidate without
+  claiming D-380 CURRENT
 - Reuses Checkout revision, Payment bind, Ops projections, notification outbox, IMP-032 dispatch
 - No new deployable topology or auth surface
 
@@ -338,7 +366,9 @@ This Proposed ADR does **not**:
 - authorize IMP-036I implementation or schema execution
 - lock ARCH-R23 / ARCH-G29 as CURRENT
 - promote D-379 to CURRENT
+- promote D-380 to CURRENT or accept ADR-020
 - amend D-378 while still PROPOSED
+- redefine Delivery replacement semantics (owned by D-380 candidate)
 - activate IMP-039 / IMP-040
 - accept IMP-036I / IMP-037 / IMP-038
 - change approved Product Definition semantics
