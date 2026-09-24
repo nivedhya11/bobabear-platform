@@ -41,16 +41,17 @@ requires Scheduled Fulfilment as an orthogonal timing axis (`ASAP | SCHEDULED`) 
 `DELIVERY` and `PICKUP`, without inventing ScheduledOrder aggregates, new Order lifecycle statuses,
 slot capacity engines, automatic Delivery booking, or new deployable schedulers.
 
-Verified CURRENT tip at Fit candidate authoring:
+Independent Architecture Fit review `5309072645` returned **STOP**. This Proposed ADR was updated
+only as needed to encode Fit remediation for Brand missing-row defaults and the full
+`SCHEDULED_FULFILMENT_REMINDER` notification contract. Status remains **Proposed**.
+
+Verified CURRENT tip markers (unchanged by Fit remediation):
 
 ```text
 ROADMAP = GTM-R153
 STATE = STATE-R151
 ARCHITECTURE = ARCH-R22
 DECISION_REGISTER = DR-20
-MAIN_HEAD = 56047b284ff116c301d8d3eedd55661d26ae3a5e
-MAIN_TREE = a4da41efda0dcc5d92bfde043c37e63af75f01e4
-FINGERPRINT = fa81c272db12cbe8ba606e3e992cb764c8f73c6ddf9ccbe1e22a9304aca07d69
 ```
 
 Evidence constraints from repository inspection (Fit candidate):
@@ -67,6 +68,10 @@ Evidence constraints from repository inspection (Fit candidate):
 - IMP-032 locks `MANUAL_PROVIDER_NEUTRAL_DEHRADUN_DELIVERY` (operator-approved; no auto dispatch).
 - PostgreSQL outbox already has `available_at`; `NotificationOutboxProcessor` owns notification
   event types and marks unknown types published untouched — unsafe as a generic business-action bus.
+- CURRENT notification foundation (`NOTIFICATION_SEMANTIC_ORDER_RANKS`,
+  `createNotificationRequestFromDomainEvent` → `notificationExpiryFor(occurredAt)`) uses a global
+  transactional max age of **24 hours** — incompatible with a tomorrow-evening reminder unless a
+  semantic-specific expiry boundary is defined.
 - Safe existing permissions: `brand.update`; `outlet.operating_schedule.manage` / `.read`.
 
 ## Decision Summary
@@ -80,7 +85,7 @@ Immutable paid truth: Checkout Snapshot seals:
   fulfilment_timing
   scheduled_window_start_at / scheduled_window_end_at (UTC timestamptz)
   scheduled_timezone (IANA identity used for the promise)
-  scheduled_cancellation_cutoff_minutes (0–240; mode-evaluated Brand policy at bind)
+  scheduled_cancellation_cutoff_minutes (0–240; mode-evaluated Brand effective policy at bind)
 
 Order: projects Snapshot timing; no mutable Order timing authority
 No ScheduledOrder / PickupScheduledOrder / DeliveryScheduledOrder
@@ -89,17 +94,51 @@ No Order statuses SCHEDULED | READY | DUE | LATE | OVERDUE (derived cues only)
 NO Slot aggregate / capacity / reservation engine (FD-036I-04)
 Eligibility: server-authoritative composition over hours + minimal future closures + lead times
 Lead times: Outlet scheduling profile (fail closed if absent)
-Cancellation policy: Brand scheduled-fulfilment policy (defaults 30 Pickup / 60 Delivery)
+
+Cancellation policy: Brand scheduled-fulfilment policy table
+  ABSENT ROW = EFFECTIVE PRODUCT DEFAULTS (authoritative server behaviour):
+    effectivePickupCancellationCutoffMinutes   = 30
+    effectiveDeliveryCancellationCutoffMinutes = 60
+    effectivePolicyRevision                    = 0
+    source                                     = PRODUCT_DEFAULT
+  Admin read projection returns effective values even when no row exists
+  First explicit update: expectedRevision = 0 → atomic INSERT → persisted revision = 1
+  Concurrent first updates: unique Brand PK + expectedRevision CAS (one wins; loser stale)
+  Snapshot sealing always consumes resolved effective numeric cutoff
+  Pre-payment stale comparison compares effective business terms (not mere row existence):
+    missing 30/60 → insert same 30/60 does NOT alone require reconfirm
+  Absent row must never mean unknown / null / Scheduled unavailable / 0 / implementation-defined
+  Eager Brand policy backfill not required
+
 Future closures: minimal outlet_operating_date_exceptions (CLOSED_FULL_DAY)
 current temporary PAUSED ≠ future closed forever
 
-Pre-payment: extend prepareCheckoutForPayment; stale cancellation policy blocks bind
+Pre-payment: extend prepareCheckoutForPayment; stale effective cancellation terms block bind
 Purchased cancel: compare now vs sealed cutoff; no fee; later Brand changes do not rewrite history
 
 Execution:
   Pickup: immediate Ops visibility; no prep-release state
   Delivery: preserve IMP-032 manual operator-approved dispatch; no timer auto-book
-  Reminder: one notification-owned outbox intent with available_at; suppress in-window purchases
+
+Reminder (full Notification semantic contract under ADR-012 / IMP-033 / IMP-034):
+  NotificationSemanticType = SCHEDULED_FULFILMENT_REMINDER
+  Purpose                  = ORDER_UPDATES
+  Recommended order rank   = 35
+    (ORDER_RECEIVED=10, PAYMENT_CONFIRMED=20, ORDER_ACCEPTED=30,
+     SCHEDULED_FULFILMENT_REMINDER=35, OUT_FOR_DELIVERY=40, DELIVERED=50,
+     ORDER_CANCELLED=60)
+  Stable domainEventRef    = order:<orderId>:scheduled_fulfilment_reminder
+                             (or repository-native deterministic equivalent)
+  Exactly one logical reminder per Order; no generic Scheduled-business event family
+  Atomic intent with successful Scheduled Order materialization where outbox conventions allow
+  In-window purchase: do not enqueue proactive reminder
+  Future expiry (semantic-specific; do NOT globally raise 24h max age):
+    valid only while reminder_due_at <= now < scheduled_window_start_at
+    expire / suppress once now >= scheduled_window_start_at
+  Send-time eligibility (re-read Order/Snapshot; do not mutate Order; no cancel/refund):
+    suppress if CANCELLED / FULFILLED / window started / missing-inconsistent / not SCHEDULED
+  Content: immutable Checkout Snapshot (mode, window, sealed timezone, Pickup location context)
+  No new notification provider; template registry gains semantic under IMP-033/034
 
 Topology: no new deployable service / queue / broker / workflow engine / external provider
 Auth: no new role / permission / auth realm
@@ -133,7 +172,7 @@ fulfilment timing; Scheduled timing is governed by D-379 / ARCH-G29.
 | D-372 / D-373 | Operations / Admin transports |
 | D-365…D-367 / D-364 | Financial documents / refunds |
 | ADR-011 / IMP-031 / IMP-032 | Delivery foundation + manual Dehradun mode |
-| ADR-012 / IMP-033 | Notification platform; reminder extends owned event family only |
+| ADR-012 / IMP-033 / IMP-034 | Notification platform; reminder extends owned semantic + outbox family only; 24h max-age retained for non-reminder semantics |
 | ADR-005 | Permission reuse; no role-name bypass |
 | D-377 | Program pause / IMP-037/038 hold |
 
@@ -153,13 +192,21 @@ fulfilment timing; Scheduled timing is governed by D-379 / ARCH-G29.
   processor semantics
 - Inventing a new role or permission when `brand.update` /
   `outlet.operating_schedule.manage` suffice
+- Treating absent Brand policy row as unknown / null / Scheduled unavailable / 0 minutes /
+  implementation-defined fallback
+- Globally raising transactional notification max age for all semantics to accommodate reminders
+- Dedicating a standalone Reminder user story (reminder remains AC-036I-044 under
+  US-036I-007 / US-036I-010)
 
 ## Consequences
 
 ### Positive
 
 - Orthogonal timing axis without rewriting D-378 mode architecture
-- Purchased promise sealed on Snapshot (including cancellation cutoff)
+- Purchased promise sealed on Snapshot (including effective cancellation cutoff)
+- Absent Brand policy rows resolve deterministically to product defaults without eager backfill
+- Reminder receives a complete Notification semantic contract (identity, rank, purpose, expiry,
+  send-time eligibility, Snapshot-derived content) without a new provider or generic scheduler
 - Reuses Checkout revision, Payment bind, Ops projections, notification outbox, IMP-032 dispatch
 - No new deployable topology or auth surface
 
@@ -168,7 +215,9 @@ fulfilment timing; Scheduled timing is governed by D-379 / ARCH-G29.
 - Forward-only schema migration required (Checkout, Snapshot, Brand policy, Outlet scheduling
   profile, minimal future-closure table)
 - Scheduled eligibility fail-closed until Outlet lead-time profile configured
-- Notification processor event-family extension required for reminder ownership
+- Notification processor event-family + semantic registry extension required for reminder ownership
+- Semantic-specific future-expiry path required so 24h max-age does not discard valid tomorrow
+  reminders; other semantics retain current max-age policy
 
 ### Deferred
 
@@ -188,3 +237,4 @@ This Proposed ADR does **not**:
 - activate IMP-039 / IMP-040
 - accept IMP-036I / IMP-037 / IMP-038
 - change approved Product Definition semantics
+- claim Architecture Fit PASS (independent re-review required after remediation merge)

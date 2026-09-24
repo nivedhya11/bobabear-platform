@@ -114,14 +114,15 @@ migration execution, merge as lock, deployment, Founder UAT, or IMP acceptance.
 
 ## 1. Authority / status
 
-Verified starting authority for this candidate:
+Verified starting authority for this candidate (original Fit authoring tip; remediation preserves
+governance markers and does not advance ROADMAP/STATE):
 
 ```text
 Repository: /home/ajoshi/repos/boba-bear-platform
 Remote: nivedhya11/bobabear-platform
-origin/main HEAD: 56047b284ff116c301d8d3eedd55661d26ae3a5e
-origin/main tree: a4da41efda0dcc5d92bfde043c37e63af75f01e4
-WORKING_TREE_FINGERPRINT (clean tip): fa81c272db12cbe8ba606e3e992cb764c8f73c6ddf9ccbe1e22a9304aca07d69
+origin/main HEAD (Fit STOP review baseline): 9f5f5e686c9648620b0e4cf60526138db4c1e79a
+origin/main tree: 2913d6f94e8c7c20ecf0f2bc13acc67215122373
+WORKING_TREE_FINGERPRINT (clean tip at STOP baseline): 291af7815f68b5d2148dea55b5de8690833a0578ba418ea1051d503a3c04d48a
 VISION = VISION-1
 ROADMAP = GTM-R153
 STATE = STATE-R151
@@ -133,7 +134,7 @@ PERSONA = PERSONA-1
 GOLDEN JOURNEYS = GJ-1
 Product Definition = docs/platform/product/IMP-036I/product-definition.md (APPROVED)
 Product Definition Gate evidence = independent review 5307761142
-Gate PASS persistence = 5308647021
+Independent Architecture Fit review (STOP): 5309072645
 acceptedThrough = IMP-036H
 currentProductSlice = IMP-036I
 nextProductSlice = IMP-037
@@ -141,6 +142,10 @@ pendingAcceptance = NONE
 PROGRAM_PAUSE = PRE_GTM_PRODUCT_INSERTION_PROVIDER_BLOCKED
 PROGRAM_PAUSE_AUTHORITY = D-377
 ```
+
+This remediation repairs the existing Fit candidate only (Blockers A / B / B1 / B2 / B3 + §28
+traceability). It does **not** claim Architecture Fit PASS, lock architecture, promote D-379,
+accept ADR-019, create ARCH-R23, or authorize implementation.
 
 Canonical ROADMAP/STATE tip markers remain unchanged by this candidate:
 
@@ -486,7 +491,74 @@ app.brand_scheduled_fulfilment_policies
 Authorization: existing **`brand.update`** via `/api/admin/v1/brands/{brandId}` (D-373).
 No Outlet override in V1.
 
-Defaults match Founder-locked product values; Architecture does not invent alternate defaults.
+Column DEFAULT values match Founder-locked product defaults (Pickup **30** / Delivery **60**).
+Those column defaults apply only when a policy row is **inserted**. They do **not** by themselves
+define behaviour for Brands that still have **no row**.
+
+#### Missing-row authority (authoritative server behaviour)
+
+```text
+ABSENT ROW = EFFECTIVE PRODUCT DEFAULTS
+
+For a Brand with no explicit policy row:
+  effectivePickupCancellationCutoffMinutes   = 30
+  effectiveDeliveryCancellationCutoffMinutes = 60
+  effectivePolicyRevision                    = 0
+  source                                     = PRODUCT_DEFAULT
+```
+
+This is **authoritative server behaviour**, not a browser fallback and not an
+implementation-defined convenience.
+
+Admin Brand read projection MUST return these effective values even when no physical policy row
+exists (so operators always see the commercially active terms).
+
+An absent row must **never** mean:
+
+```text
+unknown
+null
+Scheduled unavailable
+0 minutes
+implementation-defined fallback
+```
+
+Eager policy-row creation at Brand create time is **not** required unless a future implementation
+discovers a repository convention that materially makes eagerness safer. Absent-row effective
+defaults are the locked Fit resolution.
+
+#### First explicit update / concurrency
+
+```text
+First explicit update:
+  expectedRevision = 0
+  → atomically INSERT policy row
+  → persisted revision = 1
+
+Concurrent first updates:
+  unique Brand PK + expectedRevision semantics → only one INSERT wins;
+  loser receives the normal stale / concurrency response.
+
+Subsequent updates:
+  normal expectedRevision CAS against the persisted row.
+```
+
+#### Snapshot sealing and pre-payment stale comparison
+
+Snapshot sealing always consumes the **resolved effective numeric** mode-specific cutoff (30/60 when
+absent; otherwise the persisted row values). Do not seal null / unknown / “row missing”.
+
+Pre-payment stale-policy comparison (AF-036I-09 / §13) compares **effective business terms**, not
+mere physical row existence:
+
+```text
+missing row (effective 30/60)
+→ later INSERT of the same 30/60
+does NOT by itself constitute changed customer terms.
+
+If the effective mode-specific cutoff minutes change:
+stale checkout reconfirm remains required.
+```
 
 ### Lead-time operational profile (Outlet-level)
 
@@ -508,9 +580,11 @@ Authorization: existing **`outlet.operating_schedule.manage`** (and read via
 **Choice rationale:** Brand owns commercial cancellation policy (product-locked Brand scope). Lead
 times are Outlet operational facts adjacent to hours/closures (IMP-036E schedule authority). No
 speculative multi-level config hierarchy. Fail closed: if scheduling profile absent/invalid for the
-selected mode, Scheduled eligibility returns no windows / unavailable for that mode.
+selected mode, Scheduled eligibility returns no windows / unavailable for that mode. Brand
+cancellation policy does **not** fail closed on absent row — it resolves to product defaults above.
+Lead-time profile remains fail-closed when absent.
 
-**AF-036I-06: RESOLVED** — NEW_PERMISSION = NO
+**AF-036I-06: RESOLVED** — NEW_PERMISSION = NO; missing-row = EFFECTIVE PRODUCT DEFAULTS
 
 ---
 
@@ -562,10 +636,14 @@ Immediately before payment bind, revalidate:
 7. lead time
 8. horizon
 9. selected window still eligible
-10. **current Brand cancellation policy** (FD-036I-09)
+10. **current Brand cancellation policy effective terms** (FD-036I-09 / §11)
 
-If cancellation policy (or other sealed terms) changed since customer review: stale checkout MUST
-NOT silently bind — return refreshed terms and require customer reconfirmation.
+Compare the effective mode-specific cutoff the customer reviewed against the current effective
+policy (absent row → product defaults 30/60; present row → persisted values). Physical row
+existence alone is not a stale signal: inserting a first row that preserves the same effective
+30/60 does **not** require reconfirm. If the effective cutoff minutes changed since customer
+review: stale checkout MUST NOT silently bind — return refreshed terms and require customer
+reconfirmation.
 
 Once payment is bound to a valid Snapshot: Snapshot timing + cutoff are immutable for that Payment
 attempt. Success → Order projects Snapshot. Failed/expired/abandoned attempt requiring new attempt →
@@ -604,7 +682,7 @@ Do **not** assume Scheduled means a new scheduler service.
 
 | Future behaviour | Classification | Mechanism |
 |---|---|---|
-| A. Customer reminder (~30 min before window) | Genuine timed side effect | Notification-owned outbox intent with `available_at` (§19) |
+| A. Customer reminder (~30 min before window) | Genuine timed side effect | Notification-owned outbox intent with `available_at` + full semantic contract (§19) |
 | B. Pickup readiness / due cue | Derived presentation | Ops projection from Snapshot timing + now |
 | C. Delivery dispatch | Operator-approved manual | Existing IMP-032 path; timing informs priority only |
 
@@ -613,6 +691,10 @@ platform, new generic queue.
 
 **Do not** turn `app.outbox_events` into a generic Scheduled business-action bus (notification
 processor publishes unknown event types untouched — unsafe for non-notification actions).
+
+Reminder future-expiry must use the **semantic-specific** window-start boundary defined in §19
+(Blocker B1). Do **not** globally raise
+`NOTIFICATION_TRANSACTIONAL_MAX_AGE_MS` (24h) for all notification semantics.
 
 **AF-036I-10: RESOLVED**
 
@@ -680,10 +762,35 @@ Reuse accepted authorities:
 | Checkout | revision / stale-write protection |
 | Payment | Payment idempotency + immutable bound Snapshot |
 | Delivery | IMP-031 stable request fingerprint / one-active-booking; IMP-032 `BOOKING_OUTCOME_UNKNOWN` |
-| Notification | outbox lease / retry / dedup |
+| Notification | outbox lease / retry / dedup (`domainEventRef` + dedup UNIQUE) |
 
-No generic “schedule retry” state. No duplicate reminder, Delivery booking, Order, or silent timing
-mutation.
+### Reminder intent atomicity / dedup
+
+Reminder intent creation MUST be atomic with successful Scheduled Order materialization wherever
+existing notification-outbox conventions allow (same commit / same transactional outbox write path
+as other Order-domain notification intents).
+
+A committed Scheduled Order must **not** depend on a later best-effort process merely to remember
+that its reminder exists.
+
+At-least-once recovery converges through:
+
+```text
+stable domainEventRef = order:<orderId>:scheduled_fulfilment_reminder
+  (or repository-native deterministic equivalent under notificationDomainEventRef)
+existing Notification dedup
+existing outbox / idempotency authority
+```
+
+Exactly one logical reminder per Order. No duplicate reminder. No generic “schedule retry” state.
+No duplicate Delivery booking, Order, or silent timing mutation.
+
+If the Order is materialized **within** the reminder window (authoritative purchase /
+Order-materialization timing vs immutable Scheduled window start):
+
+```text
+do not enqueue the proactive upcoming reminder
+```
 
 **AF-036I-13: RESOLVED**
 
@@ -691,28 +798,159 @@ mutation.
 
 ## 19. Proactive reminder (AF-036I-16)
 
-Product: exactly one proactive reminder ≈30 minutes before window start; suppress when Order was
-purchased inside the reminder window.
+Product: exactly one proactive reminder ≈30 minutes before window start (`AC-036I-044`; story
+authority `US-036I-007` / `US-036I-010`). Suppress when Order was purchased inside the reminder
+window. No standalone Reminder story.
 
-Preferred architecture (reuse IMP-033):
+### Notification semantic contract (required)
 
-On successful Scheduled Order materialization:
+Verified CURRENT ranks (`src/shared/notifications/constants.ts`
+`NOTIFICATION_SEMANTIC_ORDER_RANKS`):
 
 ```text
-IF order_created_at < (scheduled_window_start_at − ~30 minutes):
-  enqueue exactly one notification-owned
-    notification.domain.scheduled_fulfilment_reminder
-  available_at = scheduled_window_start_at − ~30 minutes
-  stable dedup identity = order aggregate + event type (+ version)
-ELSE:
-  do not enqueue upcoming reminder
+ORDER_RECEIVED      = 10
+PAYMENT_CONFIRMED   = 20
+ORDER_ACCEPTED      = 30
+OUT_FOR_DELIVERY    = 40
+DELIVERED           = 50
+ORDER_CANCELLED     = 60
 ```
 
-At send time: suppress if Order no longer eligible (cancelled / already fulfilled). Mode-aware
-content derives from immutable Order/Snapshot truth. No new provider.
+Locked IMP-036I addition:
 
-Extend `NOTIFICATION_OUTBOX_EVENT_TYPES` coherently. **Do not** enqueue non-notification Scheduled
-business actions into the generic outbox under current processor semantics.
+```text
+NotificationSemanticType: SCHEDULED_FULFILMENT_REMINDER
+Purpose:                ORDER_UPDATES
+Recommended order rank: 35
+```
+
+Rank reason (repository-aligned): place the reminder **after** `ORDER_ACCEPTED` (30) and
+**before** `OUT_FOR_DELIVERY` (40) / `DELIVERED` (50) / `ORDER_CANCELLED` (60). Later Delivery /
+completion / cancellation progress supersedes a stale reminder; `ORDER_ACCEPTED` alone must
+**not** suppress the planned reminder.
+
+```text
+Purpose = ORDER_UPDATES
+```
+
+(not `DELIVERY_UPDATES`) because the reminder applies to both Scheduled Pickup and Scheduled
+Delivery under one semantic identity.
+
+```text
+Outbox event type (notification-owned family only):
+  notification.domain.scheduled_fulfilment_reminder
+
+Stable domainEventRef:
+  order:<orderId>:scheduled_fulfilment_reminder
+  (or repository-native deterministic equivalent)
+
+Exactly one logical reminder per Order.
+No generic Scheduled-business event family.
+No new notification provider.
+```
+
+Extend `NOTIFICATION_SEMANTIC_TYPES`, `NOTIFICATION_SEMANTIC_ORDER_RANKS`,
+`NOTIFICATION_SEMANTIC_PURPOSES`, `NOTIFICATION_OUTBOX_EVENT_TYPES`, and the template registry
+under existing IMP-033 / IMP-034 authority. Exact customer copy / Meta template identifier remains
+implementation / deployment detail.
+
+### Intent production
+
+On successful Scheduled Order materialization (atomic with Order commit where conventions allow):
+
+```text
+reminder_due_at ≈ scheduled_window_start_at − 30 minutes
+
+IF authoritative order_materialized_at < reminder_due_at:
+  enqueue exactly one notification-owned
+    notification.domain.scheduled_fulfilment_reminder
+  available_at = reminder_due_at
+  domainEventRef = order:<orderId>:scheduled_fulfilment_reminder
+ELSE:
+  do not enqueue the proactive upcoming reminder
+```
+
+### Blocker B1 — semantic-specific future expiry (24h conflict)
+
+CURRENT foundation (`createNotificationRequestFromDomainEvent` → `notificationExpiryFor(occurredAt)`)
+uses global transactional max age = **24 hours** from `payload.occurredAt`
+(`NOTIFICATION_TRANSACTIONAL_MAX_AGE_MS`).
+
+Therefore an Order placed early TODAY with a Scheduled window TOMORROW evening can have
+`reminder_due_at` **> 24h after** Order / domain-event creation. Under the generic rule, the future
+outbox row would become claimable and then be discarded as expired — which is incompatible with the
+approved customer promise.
+
+**Locked resolution (semantic-specific; do not globally raise max age):**
+
+```text
+For SCHEDULED_FULFILMENT_REMINDER:
+  the immutable Scheduled window start is the expiry boundary.
+
+  Reminder is valid only while:
+    reminder_due_at <= now < scheduled_window_start_at
+
+  Must be suppressed / expired once:
+    now >= scheduled_window_start_at
+
+  The generic 24-hour-from-domain-event rule MUST NOT cause a valid scheduled reminder
+  to expire before its intended due time.
+```
+
+Architecture may implement this through a semantic-specific expiry calculation (or equivalent
+repository-native mechanism) when creating / evaluating the notification request. Outcome locked;
+exact code structure may follow existing notification conventions.
+
+```text
+INVARIANT:
+  normal notification semantics retain current 24h max-age policy
+  SCHEDULED_FULFILMENT_REMINDER receives bounded semantic-specific future expiry
+  No reminder after the fulfilment window has begun
+```
+
+### Blocker B2 — send-time eligibility
+
+Immediately before send, re-read authoritative Order / Snapshot truth. Suppress the reminder
+(do **not** mutate Order state; do **not** cancel/refund from Notifications) if any of:
+
+```text
+Order = CANCELLED
+Order = FULFILLED
+now >= scheduled_window_start_at
+Order / Snapshot missing or inconsistent
+event is not for a SCHEDULED Order
+```
+
+Bounded suppression outcome (locked): reminder is not sent because the Order is no longer reminder-
+eligible. Exact enum spelling may be implementation-local (for example
+`ORDER_NO_LONGER_REMINDER_ELIGIBLE`) if existing Notification suppression conventions permit adding
+or mapping to an equivalent reason; the **suppression outcome** is locked.
+
+Existing notification ordering / staleness (`SUPERSEDED_BY_LATER_SEMANTIC`) and consent /
+preference rules remain applicable.
+
+### Blocker B3 — reminder content / template
+
+`AC-036I-044` requires:
+
+```text
+Pickup:   location + window
+Delivery: arrival / fulfilment window
+```
+
+Reminder content is derived from the **immutable Checkout Snapshot**, including:
+
+```text
+fulfilmentMode
+scheduled window (start/end)
+sealed Outlet timezone
+Pickup display / location context where Pickup
+```
+
+No mutable current Outlet profile may rewrite the purchased promise. Do not put customer PII into
+new scheduling persistence. Notification template registry gains the new semantic under existing
+IMP-033 / IMP-034 authority. Exact customer copy / Meta template id = implementation / deployment
+detail. No new notification provider.
 
 **AF-036I-16: RESOLVED**
 
@@ -759,10 +997,16 @@ Compatibility:
 | Existing Checkouts | `fulfilment_timing → ASAP`; scheduled fields NULL |
 | Existing Checkout Snapshots | `fulfilment_timing → ASAP`; scheduled fields NULL |
 | Existing Orders | unchanged (project Snapshot) |
+| Existing Brands | **no eager** `brand_scheduled_fulfilment_policies` backfill required; absent row → effective product defaults 30/60 / revision 0 (§11) |
+| Existing Outlets | lead-time profile absent → Scheduled eligibility fail-closed for that Outlet/mode until configured |
 | Existing Deliveries / Pickup / FDs | unchanged |
 
 Prefer DB CHECK constraints (ASAP ↔ null scheduled fields; SCHEDULED ↔ required sealed facts).
 Do not add Scheduled fields to Order merely for backfill convenience.
+
+Brand policy table introduction must **not** leave missing-row behaviour undefined: effective
+product defaults (§11) are the compatibility contract for AF-036I-17 / AF-036I-18. Column DEFAULT
+on INSERT is not a substitute for absent-row resolution.
 
 Later implementation migration proof requirements:
 
@@ -770,6 +1014,7 @@ Later implementation migration proof requirements:
 - previous schema → latest
 - historical Delivery ASAP fixture preserved
 - historical Pickup ASAP fixture preserved
+- Brand without policy row resolves effective 30/60 for sealing / admin read / stale comparison
 
 **AF-036I-17: RESOLVED** · **AF-036I-18: RESOLVED**
 
@@ -843,19 +1088,19 @@ NEW_EXTERNAL_PROVIDER = NO
 | AF-036I-03 | Timestamp vs slot aggregate? | No slot tables; FD-036I-01/04 | No Slot aggregate; persist UTC window + sealed tz | Product no-capacity | §8 | NO |
 | AF-036I-04 | How are future eligible times computed? | evaluate/prepare patterns | Server composition §9 inputs; browser never authoritative | ARCH-G11 | §9 | NO |
 | AF-036I-05 | How does Store Hours participate? | IMP-036E hours; no holiday table | Reuse hours; minimal `outlet_operating_date_exceptions`; PAUSED ≠ future closed | IMP-036E | §10 | NO |
-| AF-036I-06 | Scheduling config/profile per Outlet? | No lead/cutoff schema; `brand.update` / schedule perms | Brand cancellation policy + Outlet lead-time profile; fail closed | ADR-005 | §11 | NO |
+| AF-036I-06 | Scheduling config/profile per Outlet? | No lead/cutoff schema; `brand.update` / schedule perms | Brand cancellation policy with **ABSENT ROW = EFFECTIVE PRODUCT DEFAULTS** (30/60, revision 0) + admin effective projection + first-update INSERT CAS; Outlet lead-time profile fail-closed | ADR-005 | §11 | NO |
 | AF-036I-07 | Capacity representation? | Product NO capacity | N/A BY PRODUCT DECISION | FD-036I-04 | §12 | NO |
 | AF-036I-08 | Last-slot concurrency? | No inventory | N/A capacity race; ordinary concurrency retained | ARCH-G09 | §12 | NO |
-| AF-036I-09 | Pre-payment revalidation? | `prepareCheckoutForPayment` | Extend prepare path; stale policy blocks bind | Payment bind | §13 | NO |
-| AF-036I-10 | Future action trigger? | Outbox `available_at`; notification processor | Reminder only via notification outbox; no generic scheduler | ADR-012 / ARCH-G14 | §15 | NO |
+| AF-036I-09 | Pre-payment revalidation? | `prepareCheckoutForPayment` | Extend prepare path; stale **effective** policy terms block bind (row existence alone ≠ change) | Payment bind | §13 | NO |
+| AF-036I-10 | Future action trigger? | Outbox `available_at`; notification processor; 24h max-age | Reminder only via notification outbox; semantic-specific window-start expiry (no global 24h raise); no generic scheduler | ADR-012 / ARCH-G14 | §15 / §19 | NO |
 | AF-036I-11 | Scheduled Pickup prep release? | Ops projections; D-357 | Immediate visibility; derived cues; no release state | D-357 | §16 | NO |
 | AF-036I-12 | Scheduled Delivery booking begin? | IMP-032 manual | Operator-approved existing Delivery path; no auto-book | IMP-032 / ADR-011 | §17 | NO |
-| AF-036I-13 | Retries/idempotency? | Checkout/Payment/Delivery/outbox | Reuse accepted authorities; no schedule-retry state | existing | §18 | NO |
+| AF-036I-13 | Retries/idempotency? | Checkout/Payment/Delivery/outbox | Reuse accepted authorities; atomic reminder intent with Order materialization; stable domainEventRef dedup; no schedule-retry state | existing | §18 | NO |
 | AF-036I-14 | Scheduling ↔ Delivery coordination? | IMP-031/032 | Timing informs priority; no second Delivery lifecycle | ADR-011 | §17 | NO |
 | AF-036I-15 | Order/workforce projections? | `projections.ts` | Extend with timing + derived cues; ASAP history clean | D-357 | §20 | NO |
-| AF-036I-16 | Notifications scheduled? | Notification outbox family | One reminder event type + `available_at`; suppress rules | ADR-012 | §19 | NO |
-| AF-036I-17 | Migrations/backfills for ASAP? | Migration 0044 tip | Forward-only; ASAP defaults; CHECK constraints | ARCH-G13 | §22 | NO |
-| AF-036I-18 | Historical ASAP representation? | Existing rows mode-only | Timing ASAP + null scheduled fields; Order unchanged | D-378 | §22 | NO |
+| AF-036I-16 | Notifications scheduled? | Notification semantic ranks/purposes/24h expiry; outbox family | Full `SCHEDULED_FULFILMENT_REMINDER` contract (type/purpose/rank 35/ref/expiry/send-gate/Snapshot content) | ADR-012 | §19 | NO |
+| AF-036I-17 | Migrations/backfills for ASAP? | Migration 0044 tip | Forward-only; ASAP defaults; CHECK constraints; Brand policy absent-row defaults (no eager backfill required) | ARCH-G13 | §22 | NO |
+| AF-036I-18 | Historical ASAP representation? | Existing rows mode-only | Timing ASAP + null scheduled fields; Order unchanged; Brand policy effective defaults when absent | D-378 | §22 | NO |
 | AF-036I-19 | New D/ADR/ARCH? | D-378 ASAP reservation | D-379 PROPOSED + ADR-019 Proposed + ARCH-G29/R23 proposed | D-378 amend-on-lock | §4 | NO |
 
 ```text
@@ -872,24 +1117,59 @@ ARCHITECTURE_FIT = NOT_PERFORMED
 
 ## 28. Traceability (minimum required)
 
-| Theme | Stories | ACs | BRs / FDs |
+Approved Product Definition story meanings (do not invent a standalone Reminder story):
+
+| Story | Meaning |
+|---|---|
+| US-036I-001 | Timing choice / ASAP non-regression |
+| US-036I-002 | Scheduled Pickup |
+| US-036I-003 | Scheduled Delivery |
+| US-036I-004 | No available future times |
+| US-036I-005 | Pre-payment mode/timing switching |
+| US-036I-006 | Pre-payment Scheduled invalidation |
+| US-036I-007 | Customer post-purchase Scheduled clarity |
+| US-036I-008 | Workforce visibility/prioritization |
+| US-036I-009 | Scheduled Pickup handover |
+| US-036I-010 | Scheduled Delivery execution |
+| US-036I-011 | Cancellation / no self-service reschedule |
+| US-036I-012 | Post-payment unavailability recovery |
+| US-036I-013 | Mobile Scheduled ordering |
+| US-036I-014 | Accessible Scheduled selection |
+| US-036I-015 | Commercial sealing + online payment |
+| US-036I-016 | Scheduling configuration / operability |
+
+| Theme | Stories | ACs | BRs / FDs / AF |
 |---|---|---|---|
-| Timing selection | US-036I-001 | AC-036I-003+ | FD-036I-01/02/07; BR-036I timing |
+| Timing choice / ASAP non-regression | US-036I-001 | AC-036I-001 / AC-036I-002 (+ timing choice ACs) | FD-036I-01/02/07; AF-17/18 |
 | Scheduled Pickup | US-036I-002 | AC-036I-004…007,040,048 | FD-036I-13/15/20; D-378 |
 | Scheduled Delivery | US-036I-003 | AC-036I Delivery set | FD-036I-05/14; IMP-032 |
-| No-times / eligibility | US-036I-004 | AC-036I-026,040 | FD-036I-03/04; AF-04/05/06 |
-| Mode/timing switches | US-036I-005 | AC-036I mode-switch | FD-036I-07; AF-01/09 |
-| Pre-pay invalidation | US-036I-006 | AC-036I stale/policy | FD-036I-09; AF-09 |
-| Customer projections | US-036I-007 | AC-036I customer display | AF-15 |
-| Ops projections | US-036I-008 | AC-036I Ops cues | AF-11/15; BR-036I-015 |
-| Pickup handover | US-036I-009 | AC-036I handover | IMP-036H; AF-11 |
-| Delivery manual execution | US-036I-010 | AC-036I Delivery ops | AF-12/14; IMP-032 |
-| Cancellation cutoff | US-036I-011 | AC-036I-058+ | FD-036I-09; BR-036I-019 |
-| Post-pay unavailability | US-036I-012 | AC-036I recovery | FD-036I-10/08 |
-| Payment sealing | US-036I-013 | AC-036I pay-now | FD-036I-06/09; AF-02/09 |
-| Configuration | US-036I-014 | AC-036I config | AF-06; BR-036I-019 |
-| Reminder | US-036I-015 | AC-036I reminder | AF-16; ADR-012 |
-| ASAP non-regression | US-036I-016 | AC-036I-001/002 | AF-17/18 |
+| No available future times | US-036I-004 | AC-036I-026,040 | FD-036I-03/04; AF-04/05/06 |
+| Pre-payment mode/timing switching | US-036I-005 | AC-036I mode-switch | FD-036I-07; AF-01/09 |
+| Pre-payment Scheduled invalidation | US-036I-006 | AC-036I stale/policy | FD-036I-09; AF-09 |
+| Customer post-purchase Scheduled clarity | US-036I-007 | AC-036I customer display; **AC-036I-044** (reminder jointly) | AF-15 / AF-16 |
+| Workforce visibility/prioritization | US-036I-008 | AC-036I Ops cues | AF-11/15; BR-036I-015 |
+| Scheduled Pickup handover | US-036I-009 | AC-036I handover | IMP-036H; AF-11 |
+| Scheduled Delivery execution | US-036I-010 | AC-036I Delivery ops; **AC-036I-044** (reminder jointly) | AF-12/14/16; IMP-032 |
+| Cancellation / no self-service reschedule | US-036I-011 | AC-036I-058+ | FD-036I-09; BR-036I-019 |
+| Post-payment unavailability recovery | US-036I-012 | AC-036I recovery | FD-036I-10/08 |
+| Mobile Scheduled ordering | US-036I-013 | AC-036I mobile | FD-036I-13; customer transport |
+| Accessible Scheduled selection | US-036I-014 | AC-036I a11y | customer transport / selection UX |
+| Commercial sealing + online payment | US-036I-015 | AC-036I pay-now | FD-036I-06/09; AF-02/09 |
+| Scheduling configuration / operability | US-036I-016 | AC-036I config | AF-06; BR-036I-019 |
+
+Reminder cross-cut (not a standalone story):
+
+```text
+AC-036I-044 → story authority = US-036I-007 / US-036I-010
+AF-036I-16 / §19
+```
+
+ASAP regression cross-cut:
+
+```text
+AC-036I-001 / AC-036I-002 → story authority = US-036I-001
+AF-036I-17 / AF-036I-18
+```
 
 Approved Product Definition semantics are **not** modified by this candidate.
 
@@ -901,12 +1181,12 @@ Approved Product Definition semantics are **not** modified by this candidate.
 |---|---|
 | Checkout | `fulfilment_timing`; optional scheduled window start/end |
 | Checkout Snapshot | `fulfilment_timing`; window start/end; `scheduled_timezone`; `scheduled_cancellation_cutoff_minutes` + CHECKs |
-| Brand scheduling policy | `brand_scheduled_fulfilment_policies` (cancellation cutoffs) |
-| Outlet scheduling profile | `outlet_scheduling_profiles` (per-mode min lead) |
+| Brand scheduling policy | `brand_scheduled_fulfilment_policies`; **absent row → effective 30/60 / revision 0** |
+| Outlet scheduling profile | `outlet_scheduling_profiles` (per-mode min lead; fail-closed if absent) |
 | Future closure | `outlet_operating_date_exceptions` (`CLOSED_FULL_DAY`) |
 | Order | no timing authority columns; project Snapshot |
 | Delivery | unchanged aggregate; no auto-timer booking |
-| Notification | extend owned event types; outbox `available_at` for reminder |
+| Notification | extend owned semantic + outbox event types; `available_at` + semantic-specific reminder expiry |
 
 ---
 
@@ -916,7 +1196,7 @@ Approved Product Definition semantics are **not** modified by this candidate.
 |---|---|
 | Pickup release | NONE (immediate visibility + derived cues) |
 | Delivery dispatch | Manual IMP-032 operator-approved |
-| Reminder | Notification outbox intent; one-shot; suppress rules |
+| Reminder | `SCHEDULED_FULFILMENT_REMINDER` semantic contract; atomic intent; window-start expiry; send-time eligibility; Snapshot-derived content |
 
 ---
 
