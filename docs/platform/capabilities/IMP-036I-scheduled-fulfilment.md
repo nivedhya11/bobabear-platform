@@ -137,6 +137,8 @@ Product Definition Gate evidence = independent review 5307761142
 Independent Architecture Fit review (STOP): 5309072645
 Independent Architecture Fit review (STOP #2 reminder ordering): 5309240283
 Independent Architecture Fit review (STOP #3 Delivery completion gate): PR #262 thread 4097747389
+Independent Architecture Fit review (STOP #4 Delivery authority / lineage): 5309837751
+  (PR #263 threads 4097911250 / 4097911261)
 acceptedThrough = IMP-036H
 currentProductSlice = IMP-036I
 nextProductSlice = IMP-037
@@ -147,7 +149,10 @@ PROGRAM_PAUSE_AUTHORITY = D-377
 
 This remediation repairs the existing Fit candidate only (Blockers A / B / B1 / B2 / B3 + §28
 traceability; STOP #2 reminder co-stage ordering with `OUT_FOR_DELIVERY` at rank 40; STOP #3
-authoritative Delivery `DELIVERED` send-time gate independent of notification rank-50 catch-up).
+authoritative Delivery `DELIVERED` send-time gate independent of notification rank-50 catch-up;
+STOP #4 Delivery completion authority — accepted ADR-011 / IMP-031 win over runtime drift; no
+post-`DELIVERED` normal replacement; no unique “lineage tip” dependency; deterministic
+`EXISTS DELIVERED` suppression + pre-existing conformance debt).
 It does **not** claim Architecture Fit PASS, lock architecture, promote D-379, accept ADR-019,
 create ARCH-R23, or authorize implementation.
 
@@ -797,7 +802,10 @@ Order); Delivery progress notifications remain their own semantic identities.
 
 Delivery completion vs notification catch-up (AF-036I-13 / AF-036I-16): reminder send-time
 eligibility for Scheduled Delivery MUST also read authoritative Delivery-domain execution truth.
-`Delivery.status = DELIVERED` is the business fact; the `DELIVERED` notification semantic is
+Under accepted ADR-011 / IMP-031 / IMP-032, `Delivery.status = DELIVERED` is a durable terminal
+Delivery-domain completion fact and cannot be superseded by a normal replacement Delivery.
+Suppression uses deterministic `EXISTS` of an authoritative `DELIVERED` fact for the exact Order
+— **not** selection of a unique “current lineage tip.” The `DELIVERED` notification semantic is
 secondary communication. Rank-50 staleness remains valid protection but is **not** the sole
 delivered-state gate. No Notification request/attempt row is required before suppression can
 recognise actual Delivery completion. See §19 Blocker B2.
@@ -1069,39 +1077,103 @@ DELIVERY:
     create a Delivery
 ```
 
-#### Delivery lookup semantics (no new aggregate)
+#### Delivery completion gate (accepted Delivery authority; no lineage-tip dependency)
 
-Do not lock an unnecessary repository function name. Architecture requirement: server-side reminder
-eligibility must be able to determine whether the exact Order has authoritative Delivery execution
-truth indicating `DELIVERED`, using the existing Delivery persistence/domain boundary or a narrow
+Do not lock an unnecessary repository function name. Architecture requirement: immediately before
+sending `SCHEDULED_FULFILMENT_REMINDER` for `FULFILMENT_MODE = DELIVERY`, the server must determine
+whether the exact Order has an authoritative committed Delivery-domain fact
+`Delivery.status = DELIVERED`, using the existing Delivery persistence/domain boundary or a narrow
 read helper implemented later.
 
 Do **not** trust: browser status, notification status, Ops projection text, or cached UI state.
 
-**Multi-Delivery selection rule (VERIFIED under IMP-031 / IMP-032):**
-
-An Order may legally have a prior terminal Delivery (including `DELIVERED`) followed by a replacement
-Delivery via `priorDeliveryId` after the prior is authoritatively terminal
-(`DELIVERED` | `FAILED` | `CANCELLED`). At most one active Delivery exists per Order
-(`REQUESTED` | `BOOKING_OUTCOME_UNKNOWN` | `BOOKED` | `PICKED_UP`).
+**Accepted Delivery contract (ADR-011 / IMP-031 / IMP-032 — authoritative; not redefined here):**
 
 ```text
-Authoritative selection for the Delivery completion gate:
-  IF an active Delivery exists for the Order:
-    that Delivery is current authoritative
-    active statuses are never DELIVERED
-    → Delivery completion gate does NOT suppress
-      (even if a priorDeliveryId-linked ancestor was DELIVERED)
-  ELSE:
-    the current lineage tip is authoritative
-    (terminal Delivery for the Order with no active successor;
-     repository-native equivalent under IMP-031 one-active + priorDeliveryId lineage)
-    → suppress only if that tip has execution status DELIVERED
+Normal replacement Delivery may exist only after the previous booking / Delivery has been
+cancelled or confirmed failed according to accepted Delivery authority (ADR-011
+“One Active Booking by Default”).
+
+A normal replacement MUST NOT follow DELIVERED.
+
+ADR-011 additionally prohibits normal provider switching after pickup.
+
+IMP-031: terminal facts remain durable; correction after a terminal fact requires a separately
+authorized correction mechanism that preserves history. IMP-036I does NOT invent that mechanism.
+
+Until a separately authorized Delivery correction authority explicitly defines how a committed
+DELIVERED fact becomes non-authoritative for customer fulfilment purposes, a committed
+authoritative DELIVERED fact remains sufficient to suppress an “upcoming fulfilment” reminder.
+Do not speculate about correction schema in this candidate.
 ```
 
-Do not suppress solely because a prior irrelevant terminal `DELIVERED` record exists while a later
-replacement Delivery is active or terminal non-`DELIVERED`. Do not invent a new Delivery aggregate
-or lifecycle.
+**Deterministic reminder completion rule (independent of lineage tip):**
+
+```text
+IF EXISTS authoritative Delivery for the exact Order
+   with execution status DELIVERED
+THEN:
+  suppress Scheduled reminder
+```
+
+This rule is independent of:
+
+```text
+Order fulfil-coordination catch-up
+DELIVERED notification processing
+notification request rows
+notification attempt rows
+current Ops projection
+browser state
+unique Delivery lineage tip
+createdAt / latest-row ordering
+highest revision across Deliveries
+caller-selected current Delivery
+new current_delivery_id pointer
+```
+
+Do **not** invent unique-successor, latest-row-wins, `createdAt` ordering authority, highest
+revision across Deliveries, caller-selected current Delivery, or a new `current_delivery_id`
+pointer merely to solve the reminder gate. Persistence does **not** currently guarantee a unique
+lineage tip; the reminder gate must not depend on that assumption.
+
+**Competing / nonconformant Delivery history (safe reminder behaviour):**
+
+Even if current runtime drift has already produced data inconsistent with accepted authority, the
+reminder path remains **read-only** and MUST NOT repair Delivery history itself.
+
+| Case | Delivery history | Reminder completion gate |
+|---|---|---|
+| A | No Delivery records | Does **not** suppress |
+| B | `BOOKED` / `PICKED_UP` active Delivery and no `DELIVERED` fact | Does **not** suppress |
+| C | `FAILED` and/or `CANCELLED` history only | Does **not** suppress |
+| D | Any authoritative `DELIVERED` fact for exact Order | **Suppresses** |
+| E | `DELIVERED` plus a later active Delivery (nonconformant under accepted authority) | **Suppresses**; emit/support diagnostic for Delivery contract inconsistency; `DELIVERED` is never treated as irrelevant |
+| F | `DELIVERED` plus later `FAILED`/`CANCELLED` (diagnostically inconsistent if created as a normal post-`DELIVERED` replacement) | **Suppresses**; diagnostic as appropriate |
+| G | Multiple `DELIVERED` records | **Suppresses**; diagnostic may surface duplicate/nonconformant history |
+
+**PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT (runtime is not architecture authority):**
+
+Repository inspection of current `src/server/delivery/operations.ts` shows `createDelivery` permits
+`prior.status === DELIVERED` when creating a new Delivery. That behaviour is classified as:
+
+```text
+PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT
+```
+
+It must **not** redefine accepted architecture. Accepted ADR-011 / IMP-031 remain authoritative.
+Do **not** create a new product decision or new global architecture decision for this defect in
+IMP-036I Fit. It is conformance to already accepted Delivery authority.
+
+```text
+DELIVERY_CONFORMANCE_OBLIGATION (future implementation; not Fit / not Founder decision):
+  Current createDelivery behavior permits a DELIVERED predecessor.
+  Before IMP-036I acceptance, authorized implementation must prove accepted Delivery
+  architecture is not violated.
+  At minimum: normal replacement after DELIVERED must be rejected.
+  Do not implement in this Architecture Fit docs task.
+  Architecture Fit does not depend on inventing a new Delivery model.
+```
 
 Bounded suppression outcome (locked): reminder is not sent because the Order is no longer reminder-
 eligible. Exact enum spelling may be implementation-local (for example
@@ -1141,50 +1213,60 @@ No runtime tests are required in this Architecture Fit remediation. Future autho
 implementation MUST prove:
 
 ```text
-A. ORDER_ACCEPTED sent
-   → reminder remains eligible (rank 30 does not suppress rank 40)
+A. Order ACCEPTED
+   no DELIVERED Delivery
+   → reminder may remain eligible
+     (also: ORDER_ACCEPTED rank 30 does not suppress rank 40)
 
-B. OUT_FOR_DELIVERY sent before reminder due
+B. OUT_FOR_DELIVERY notification already sent
+   Delivery not DELIVERED
    → reminder remains eligible (equal rank 40; either-order Example A)
 
-C. Reminder sent before OUT_FOR_DELIVERY
-   → later OUT_FOR_DELIVERY remains eligible (equal rank 40; either-order Example B)
+C. Reminder already sent
+   then OUT_FOR_DELIVERY
+   → OUT_FOR_DELIVERY remains eligible (equal rank 40; either-order Example B)
 
 D. Delivery.status = DELIVERED
    Order.status = ACCEPTED
    DELIVERED notification NOT processed (no attempt row yet)
-   → reminder SUPPRESSED (authoritative Delivery completion gate;
+   → reminder SUPPRESSED (authoritative EXISTS DELIVERED completion gate;
       NOT solely via rank-50 staleness)
 
 E. Delivery.status = DELIVERED
    Order later becomes FULFILLED
    → reminder SUPPRESSED (Delivery completion gate and/or Order = FULFILLED)
 
-F. DELIVERED semantic already dispatched
-   → normal rank-50 staleness also suppresses reminder
+F. DELIVERED notification already dispatched
+   → normal rank-50 staleness independently also suppresses
      (secondary; does not replace proof D)
 
-G. Delivery status = PICKED_UP
-   Order still active
-   window not started
-   → Delivery completion gate alone does NOT suppress reminder
+G. Delivery.status = PICKED_UP only
+   → completion gate alone does NOT suppress
 
-H. Delivery status = BOOKED
-   Order still active
-   → Delivery completion gate does NOT suppress reminder
+H. Delivery.status = BOOKED only
+   → completion gate alone does NOT suppress
 
-I. Pickup Order
-   → no Delivery lookup required
-   FULFILLED Order suppresses reminder
+I. FAILED / CANCELLED Delivery history only
+   → completion gate alone does NOT suppress
 
-J. Order CANCELLED
+J. DELIVERED plus later active Delivery due nonconformant runtime history
+   → reminder SUPPRESSED + diagnostic;
+     delivered fact is never treated as irrelevant
+
+K. DELIVERED plus later FAILED/CANCELLED nonconformant history
+   → reminder SUPPRESSED + diagnostic as appropriate
+
+L. Pickup Order FULFILLED
+   → reminder suppressed without Delivery lookup
+
+M. Order CANCELLED
    → reminder suppressed
 
-K. Window start reached
+N. Window start reached
    → reminder suppressed (send-time / semantic-specific expiry)
 
-L. Order purchased inside reminder window
-   → reminder was never enqueued
+O. Order purchased inside reminder window
+   → reminder never enqueued
 ```
 
 **AF-036I-16: RESOLVED**
@@ -1330,10 +1412,10 @@ NEW_EXTERNAL_PROVIDER = NO
 | AF-036I-10 | Future action trigger? | Outbox `available_at`; notification processor; 24h max-age | Reminder only via notification outbox; semantic-specific window-start expiry (no global 24h raise); no generic scheduler | ADR-012 / ARCH-G14 | §15 / §19 | NO |
 | AF-036I-11 | Scheduled Pickup prep release? | Ops projections; D-357 | Immediate visibility; derived cues; no release state | D-357 | §16 | NO |
 | AF-036I-12 | Scheduled Delivery booking begin? | IMP-032 manual | Operator-approved existing Delivery path; no auto-book | IMP-032 / ADR-011 | §17 | NO |
-| AF-036I-13 | Retries/idempotency? | Checkout/Payment/Delivery/outbox; `confirmDeliveryWithFulfilCoordination` race | Reuse accepted authorities; atomic reminder intent with Order materialization; stable domainEventRef dedup; no schedule-retry state; co-stage rank 40 with OUT_FOR_DELIVERY does not invent retry/suppression of the peer semantic; Delivery `DELIVERED` truth suppresses reminder before fulfil-coordination / notification catch-up (read-only Delivery gate) | existing / IMP-031 | §18 / §19 B2 | NO |
+| AF-036I-13 | Retries/idempotency? | Checkout/Payment/Delivery/outbox; `confirmDeliveryWithFulfilCoordination` race; `createDelivery` permits DELIVERED predecessor (conformance debt) | Reuse accepted authorities; atomic reminder intent with Order materialization; stable domainEventRef dedup; no schedule-retry state; co-stage rank 40 with OUT_FOR_DELIVERY does not invent retry/suppression of the peer semantic; reminder Delivery completion = deterministic EXISTS authoritative DELIVERED fact (accepted ADR-011/IMP-031; not lineage tip; DELIVERED never legal normal-replacement predecessor); read-only gate + diagnostic on nonconformant history; PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT recorded (reject post-DELIVERED replacement before IMP-036I acceptance; not implemented here) | existing / IMP-031 / ADR-011 | §18 / §19 B2 | NO |
 | AF-036I-14 | Scheduling ↔ Delivery coordination? | IMP-031/032 | Timing informs priority; no second Delivery lifecycle | ADR-011 | §17 | NO |
 | AF-036I-15 | Order/workforce projections? | `projections.ts` | Extend with timing + derived cues; ASAP history clean | D-357 | §20 | NO |
-| AF-036I-16 | Notifications scheduled? | Notification semantic ranks/purposes/24h expiry; outbox family; Delivery DELIVERED before Order FULFILLED race | Full `SCHEDULED_FULFILMENT_REMINDER` contract (type/purpose/co-stage rank 40 with OUT_FOR_DELIVERY/ref/expiry/send-gate including authoritative Delivery DELIVERED gate independent of rank-50 catch-up/Snapshot content; either-order + race proof expectations A–L) | ADR-012 / ADR-011 | §19 | NO |
+| AF-036I-16 | Notifications scheduled? | Notification semantic ranks/purposes/24h expiry; outbox family; Delivery DELIVERED before Order FULFILLED race | Full `SCHEDULED_FULFILMENT_REMINDER` contract (type/purpose/co-stage rank 40 with OUT_FOR_DELIVERY/ref/expiry/send-gate = EXISTS DELIVERED fact independent of rank-50 catch-up and independent of unique lineage tip; Snapshot content; either-order + nonconformant-history + proof expectations A–O) | ADR-012 / ADR-011 / IMP-031 | §19 | NO |
 | AF-036I-17 | Migrations/backfills for ASAP? | Migration 0044 tip | Forward-only; ASAP defaults; CHECK constraints; Brand policy absent-row defaults (no eager backfill required) | ARCH-G13 | §22 | NO |
 | AF-036I-18 | Historical ASAP representation? | Existing rows mode-only | Timing ASAP + null scheduled fields; Order unchanged; Brand policy effective defaults when absent | D-378 | §22 | NO |
 | AF-036I-19 | New D/ADR/ARCH? | D-378 ASAP reservation | D-379 PROPOSED + ADR-019 Proposed + ARCH-G29/R23 proposed | D-378 amend-on-lock | §4 | NO |
@@ -1431,7 +1513,7 @@ Approved Product Definition semantics are **not** modified by this candidate.
 |---|---|
 | Pickup release | NONE (immediate visibility + derived cues) |
 | Delivery dispatch | Manual IMP-032 operator-approved |
-| Reminder | `SCHEDULED_FULFILMENT_REMINDER` semantic contract; co-stage rank 40 with `OUT_FOR_DELIVERY`; atomic intent; window-start expiry; send-time eligibility including authoritative Delivery `DELIVERED` gate (Delivery mode; read-only); Snapshot-derived content |
+| Reminder | `SCHEDULED_FULFILMENT_REMINDER` semantic contract; co-stage rank 40 with `OUT_FOR_DELIVERY`; atomic intent; window-start expiry; send-time eligibility including deterministic `EXISTS Delivery.status = DELIVERED` gate (Delivery mode; read-only; no lineage-tip dependency; accepted ADR-011/IMP-031; conformance debt recorded); Snapshot-derived content |
 
 ---
 
