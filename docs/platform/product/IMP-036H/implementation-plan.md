@@ -31,7 +31,7 @@ MIGRATION_ID = 0044_imp036h_fulfilment_mode_pickup
 ```
 
 This plan is the executable implementation inventory for IMP-036H. Implementation has
-**STARTED** (GTM-R145 / STATE-R143). It does **not** claim implementation complete, accept
+**COMPLETE** pending acceptance (GTM-R146 / STATE-R144). It does **not** claim formal acceptance,
 the IMP, or activate IMP-036I.
 
 Locked architecture must not be reopened. Any material need to violate the locked

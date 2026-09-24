@@ -4,9 +4,10 @@
   "authority": "IMPLEMENTATION_EVIDENCE_CANDIDATE",
   "slice": "IMP-036H",
   "tranche": "IMP-036H-F",
-  "claim": "IMPLEMENTATION_COMPLETE_CANDIDATE_PENDING_VERIFICATION",
+  "claim": "IMPLEMENTATION_COMPLETE_CANDIDATE_INDEPENDENT_REVIEW_PASS",
   "accepted": false,
   "implementationCompleteAsCurrentTruth": false,
+  "note": "ROADMAP/STATE tip will record IMP036H_IMPLEMENTATION_COMPLETE=YES / ACCEPTED=NO after governance persistence; this file remains evidence artifact not acceptance authority. Independently tested candidate remains 649b7848… (not the governance persistence commit).",
   "founderUatPass": false,
   "lastReviewed": "2026-09-24"
 }
@@ -15,19 +16,30 @@
 # IMP-036H-F — Implementation evidence candidate
 
 ```text
-CLAIM: IMPLEMENTATION_COMPLETE_CANDIDATE — PENDING VERIFICATION
-NOT: IMPLEMENTATION_COMPLETE
+CLAIM: IMPLEMENTATION_COMPLETE_CANDIDATE — INDEPENDENT REVIEW PASS
 NOT: COMPLETE_AND_ACCEPTED
 NOT: FOUNDER_UAT = PASS
-NOT: IMP036H_IMPLEMENTATION_COMPLETE = YES (ROADMAP/STATE CURRENT truth unchanged)
+NOT: IMP036H_ACCEPTED = YES
+NOTE: ROADMAP/STATE tip records IMP036H_IMPLEMENTATION_COMPLETE = YES with ACCEPTED = NO
+      after GTM-R146 / STATE-R144 governance persistence; this file is evidence, not acceptance authority.
+INDEPENDENTLY_TESTED_CANDIDATE_HEAD = 649b7848f99918f927da4a77e98cd81cdc146e6b
+INDEPENDENTLY_TESTED_CANDIDATE_TREE = b272adf40f89b0011fff07bf4d6b6d0d735df68a
+INDEPENDENTLY_TESTED_CANDIDATE_FINGERPRINT = c2bc6a91ce536329bec0ad4af4d3264a5a39904d035af28442071b4e96e2f56a
+IMP036H_INDEPENDENT_IMPLEMENTATION_REVIEW = PASS
+IMP036H_INDEPENDENT_IMPLEMENTATION_REVIEW_ID = 5302239433
+IMP036H_IMPLEMENTATION_EVIDENCE = PR#246 comment 5810833593
+IMP036H_AUTOMATED_ACCEPTANCE = 42/42 PASS
+FOUNDER_UAT = NOT_PERFORMED
+FORMAL_ACCEPTANCE = NOT_PERFORMED
 NOT: IMP-036I activated
 ```
 
-This artifact records **candidate** automated proof for AC-036H-001…042 after remediation of
-workforce customer verification, FD recipient exemption, notification wording, golden journeys,
-E2E geolocation/keyboard, Operations E2E identity isolation, Delivery golden canonical lifecycle,
-and mobile projects. Independent technical review and Founder UAT remain required before acceptance
-reconciliation.
+This artifact records **implementation-complete candidate** automated proof for AC-036H-001…042
+after remediation (workforce customer verification, FD recipient exemption, notification wording,
+golden journeys, E2E geolocation/keyboard, Operations E2E identity isolation, Delivery golden
+canonical lifecycle, and mobile projects). Independent implementation review = **PASS**
+(`5302239433`). Founder UAT remains `NOT_PERFORMED`. Formal acceptance remains `NOT_PERFORMED`.
+The independently tested candidate is HEAD `649b7848…` — not any later governance-persistence commit.
 
 ## Provenance (exact remediation candidate)
 
@@ -39,14 +51,12 @@ PRIOR_REVIEWED_HEAD = 1e89635dc729f588e2ae6f0f4a18949a7dbd6c85
 INDEPENDENT_REVIEWS = 5300490595, 5301178549
 BASE_MAIN = 9df6b7ae
 
-FINAL_CANDIDATE_SHA:
-recorded in PR exact-candidate provenance comment
-
-FINAL_CANDIDATE_TREE:
-recorded externally
-
-FINAL_CANDIDATE_FINGERPRINT:
-recorded externally
+FINAL_CANDIDATE_SHA: 649b7848f99918f927da4a77e98cd81cdc146e6b
+FINAL_CANDIDATE_TREE: b272adf40f89b0011fff07bf4d6b6d0d735df68a
+FINAL_CANDIDATE_FINGERPRINT: c2bc6a91ce536329bec0ad4af4d3264a5a39904d035af28442071b4e96e2f56a
+PROVENANCE_COMMENT: 5810833593
+INDEPENDENT_IMPLEMENTATION_REVIEW_ID: 5302239433
+AUTOMATED_ACCEPTANCE: 42/42 PASS
 ```
 
 Do not treat HEAD/TREE/fingerprint literals in this file as authoritative after further commits.
@@ -114,14 +124,16 @@ provenance anchor.
 ```text
 total_ac: 42
 candidate_automated_claimed: 42
-verification_pending: see PR exact-candidate provenance comment after final tip proofs
-failed: 0 (among executed targeted suites at final tip — record externally)
+automated_acceptance: 42/42 PASS (independent review 5302239433)
+failed: 0
 uncovered: 0 (owners assigned)
 founder_uat_supplement: YES (required before COMPLETE_AND_ACCEPTED)
-IMPLEMENTATION_COMPLETE_CANDIDATE: PENDING until independent final review
-IMP036H_IMPLEMENTATION_COMPLETE: NO
+IMPLEMENTATION_COMPLETE_CANDIDATE: INDEPENDENT REVIEW PASS
+IMP036H_IMPLEMENTATION_COMPLETE: YES (ROADMAP/STATE tip; this file is evidence only)
 IMP036H_ACCEPTED: NO
 FOUNDER_UAT: NOT_PERFORMED
+FORMAL_ACCEPTANCE: NOT_PERFORMED
+INDEPENDENTLY_TESTED_CANDIDATE: 649b7848… (not governance-persistence commit)
 ```
 
 ## Notes

@@ -8,10 +8,12 @@
   "architectureFit": "PASS",
   "architectureFitResult": "PASS",
   "architectureFitExecution": "PERFORMED",
-  "implementation": "AUTHORIZED / STARTED",
+  "implementation": "AUTHORIZED / STARTED / COMPLETE",
   "implementationAuthorized": true,
   "implementationStarted": true,
+  "implementationComplete": true,
   "impAccepted": false,
+  "founderUat": "NOT_PERFORMED",
   "schemaChangeRequired": true,
   "migrationRequired": true,
   "founderUatRequired": true,
@@ -31,9 +33,14 @@ This document is the **locked capability architecture** for IMP-036H. It records
 PASS against **ARCH-R22 / D-378 / ADR-018 / ARCH-G28** for ASAP Customer Pickup / Takeaway.
 
 Independent Architecture Fit review = **PASS** (PR #239 review `5295149318`). Implementation is
-**AUTHORIZED** and **STARTED**. Implementation start does **not** claim complete/accepted,
-Founder UAT, or IMP-036I activation. Historical authorization tip was GTM-R144 / STATE-R142.
-Historical architecture-lock tip was GTM-R143 / STATE-R141.
+**AUTHORIZED**, **STARTED**, and **COMPLETE** pending acceptance. Independent implementation
+review = **PASS** (`5302239433`) against HEAD `649b7848f99918f927da4a77e98cd81cdc146e6b` / tree
+`b272adf40f89b0011fff07bf4d6b6d0d735df68a` / fingerprint
+`c2bc6a91ce536329bec0ad4af4d3264a5a39904d035af28442071b4e96e2f56a` (evidence PR#246 comment
+`5810833593`; automated acceptance `42/42 PASS`). Completion does **not** claim accepted,
+Founder UAT PASS, or IMP-036I activation. Historical start tip was GTM-R145 / STATE-R143.
+Historical authorization tip was GTM-R144 / STATE-R142. Historical architecture-lock tip was
+GTM-R143 / STATE-R141.
 
 ```text
 ARCHITECTURE_FIT = PASS
@@ -51,10 +58,21 @@ ARCHITECTURE_FIT_EVALUATED_TREE = 93d4e83d4a73c61c9439bcaae2799920fcca46db
 ARCHITECTURE_FIT_EVALUATED_WORKING_TREE_FINGERPRINT = 74b1254f22c9131a6e073522cf9310f264866e442cc074775ad5f4b214f0e51e
 IMPLEMENTATION_AUTHORIZED = YES
 IMPLEMENTATION_STARTED = YES
+IMPLEMENTATION_COMPLETE = YES
 IMP036H_IMPLEMENTATION_AUTHORIZED = YES
 IMP036H_STARTED = YES
 IMP036H_IMPLEMENTATION_STARTED = YES
+IMP036H_IMPLEMENTATION_COMPLETE = YES
 IMP036H_ACCEPTED = NO
+IMP036H_FOUNDER_UAT = NOT_PERFORMED
+IMP036H_FORMAL_ACCEPTANCE = NOT_PERFORMED
+IMP036H_INDEPENDENT_IMPLEMENTATION_REVIEW = PASS
+IMP036H_INDEPENDENT_IMPLEMENTATION_REVIEW_ID = 5302239433
+IMP036H_IMPLEMENTATION_REVIEWED_HEAD = 649b7848f99918f927da4a77e98cd81cdc146e6b
+IMP036H_IMPLEMENTATION_REVIEWED_TREE = b272adf40f89b0011fff07bf4d6b6d0d735df68a
+IMP036H_IMPLEMENTATION_REVIEWED_FINGERPRINT = c2bc6a91ce536329bec0ad4af4d3264a5a39904d035af28442071b4e96e2f56a
+IMP036H_IMPLEMENTATION_EVIDENCE = PR#246 comment 5810833593
+IMP036H_AUTOMATED_ACCEPTANCE = 42/42 PASS
 IMP036I_ACTIVATED = NO
 PRODUCT_DEFINITION = PD-IMP-036H-DRAFT-1 APPROVED
 PRODUCT_DEFINITION_GATE = PASS
@@ -65,21 +83,21 @@ ARCH_R22_CREATED = YES
 ARCH_G28_CREATED = YES
 SCHEMA_CHANGE_REQUIRED = YES
 MIGRATION_REQUIRED = YES
-SCHEMA_MIGRATION_EXECUTION = IN_PROGRESS
+SCHEMA_MIGRATION_EXECUTION = COMPLETE
 OPEN_ARCHITECTURE_QUESTIONS = NONE
 RED_DECISIONS_REQUIRED = NONE
 AF-036H-01 … AF-036H-14 = RESOLVED (AF-036H-12 = corrected Option A)
-CANONICAL_ROADMAP_STATE = GTM-R145 / STATE-R143
+CANONICAL_ROADMAP_STATE = GTM-R146 / STATE-R144
 ```
 
 | Field | Value |
 |---|---|
 | Architecture lock | `ARCHITECTURE_LOCKED` |
-| Formal ROADMAP lifecycle | `IMPLEMENTATION_IN_PROGRESS` (`IMP036H_ACTIVATED: YES`) |
+| Formal ROADMAP lifecycle | `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` (`IMP036H_ACTIVATED: YES`) |
 | Product Definition | `PD-IMP-036H-DRAFT-1` **APPROVED**; Gate **PASS** |
 | Architecture Fit | **PASS** (independent review PR #239 / `5295149318`) |
-| Implementation | **AUTHORIZED** / **STARTED** |
-| Schema change / migration | **YES** (design locked; migration execution **IN_PROGRESS** — 0044 sealed) |
+| Implementation | **AUTHORIZED** / **STARTED** / **COMPLETE** (not accepted; Founder UAT pending) |
+| Schema change / migration | **YES** (design locked; migration execution **COMPLETE** — 0044 sealed) |
 | Binding D-number | **D-378** (`CURRENT`) |
 | Binding ADR | **ADR-018** (`Accepted`) |
 | Global ARCH | **ARCH-R22** / **ARCH-G28** |
@@ -90,14 +108,14 @@ CANONICAL_ROADMAP_STATE = GTM-R145 / STATE-R143
 
 ## 1. Authority / status
 
-Verified implementation-authorization tip target:
+Verified implementation-complete tip target:
 
 ```text
 Repository: /home/ajoshi/repos/boba-bear-platform
 Remote: nivedhya11/bobabear-platform
 VISION = VISION-1
-ROADMAP = GTM-R145
-STATE = STATE-R143
+ROADMAP = GTM-R146
+STATE = STATE-R144
 ARCHITECTURE = ARCH-R22
 DECISION REGISTER = DR-20
 PRODUCT DELIVERY = PD-1
