@@ -7,6 +7,7 @@
 import { and, asc, desc, eq, inArray, isNull, ne } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 
+import { checkoutSnapshotsTable } from "../../platform/database/schema/checkout";
 import {
   deliveriesTable,
   deliveryAssignmentsTable,
@@ -48,6 +49,8 @@ export type OrderLifecycleRow = Readonly<{
   status: string;
   revision: bigint;
   updatedAt: Date;
+  /** Bound Checkout Snapshot id — authority for fulfilmentMode (IMP-036H). */
+  checkoutSnapshotId: string;
 }>;
 
 export function newDeliveryId(): string {
@@ -181,11 +184,33 @@ export async function findOrderLifecycleById(
       status: ordersTable.status,
       revision: ordersTable.revision,
       updatedAt: ordersTable.updatedAt,
+      checkoutSnapshotId: ordersTable.checkoutSnapshotId,
     })
     .from(ordersTable)
     .where(eq(ordersTable.id, orderId))
     .limit(1);
   return rows[0] ?? null;
+}
+
+/**
+ * Read sealed Checkout Snapshot fulfilmentMode for a Delivery create guard
+ * (IMP-036H / ARCH-G28). Must run inside the same transaction as the Order lock.
+ */
+export async function loadSnapshotFulfilmentModeForDelivery(
+  context: PersistenceTransactionContext,
+  checkoutSnapshotId: string,
+): Promise<"DELIVERY" | "PICKUP" | null> {
+  assertTransactionContext(context, "loadSnapshotFulfilmentModeForDelivery");
+  const rows = await context.db
+    .select({
+      fulfilmentMode: checkoutSnapshotsTable.fulfilmentMode,
+    })
+    .from(checkoutSnapshotsTable)
+    .where(eq(checkoutSnapshotsTable.id, checkoutSnapshotId))
+    .limit(1);
+  const mode = rows[0]?.fulfilmentMode;
+  if (mode === "DELIVERY" || mode === "PICKUP") return mode;
+  return null;
 }
 
 export async function findDeliveryById(
@@ -267,6 +292,7 @@ export async function lockOrderForDelivery(
       status: ordersTable.status,
       revision: ordersTable.revision,
       updatedAt: ordersTable.updatedAt,
+      checkoutSnapshotId: ordersTable.checkoutSnapshotId,
     })
     .from(ordersTable)
     .where(eq(ordersTable.id, orderId))

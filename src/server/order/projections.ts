@@ -34,6 +34,7 @@ function moneyFromSnapshot(snapshot: {
 }
 
 function destinationFromSnapshot(snapshot: CheckoutSnapshot) {
+  if (snapshot.fulfilmentMode !== "DELIVERY") return null;
   const dest = snapshot.destination;
   if (dest === null) return null;
   return Object.freeze({
@@ -51,6 +52,7 @@ function destinationFromSnapshot(snapshot: CheckoutSnapshot) {
 }
 
 function pickupLocationFromSnapshot(snapshot: CheckoutSnapshot) {
+  if (snapshot.fulfilmentMode !== "PICKUP") return null;
   const pickup = snapshot.pickupLocation;
   if (pickup === null) return null;
   return Object.freeze({

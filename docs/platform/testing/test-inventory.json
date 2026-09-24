@@ -31,10 +31,10 @@
     "note": "Protected evidence and generated reports are never classified as executable test source."
   },
   "counts": {
-    "trackedPathsConsidered": 2120,
-    "executableTestFiles": 442,
+    "trackedPathsConsidered": 2124,
+    "executableTestFiles": 446,
     "sourceTestFiles": 134,
-    "testsTreeExecutableFiles": 237,
+    "testsTreeExecutableFiles": 241,
     "scriptTestFiles": 71,
     "playwrightSpecs": 12,
     "vitestConfigs": 2,
@@ -296,6 +296,7 @@
     "tests/database/financial-document-issuance.integration.test.ts",
     "tests/database/financial-document-manual-signed-upload.integration.test.ts",
     "tests/database/financial-document-order-tax-invoice-workflow.integration.test.ts",
+    "tests/database/financial-document-pickup.integration.test.ts",
     "tests/database/financial-document-signature-foundation.integration.test.ts",
     "tests/database/financial-document-workflow.integration.test.ts",
     "tests/database/financial-document.integration.test.ts",
@@ -327,6 +328,7 @@
     "tests/database/workforce-auth.integration.test.ts",
     "tests/database/workforce-step-up.integration.test.ts",
     "tests/delivery-application/delivery.application.test.ts",
+    "tests/delivery-application/delivery.pickup-fail-closed.test.ts",
     "tests/delivery-concurrency/delivery.concurrency.test.ts",
     "tests/delivery-manual/delivery.manual.test.ts",
     "tests/e2e/commercial-workspace.spec.ts",
@@ -376,6 +378,7 @@
     "tests/order-crash/order.crash.test.ts",
     "tests/order-security/order.security.test.ts",
     "tests/order/order.domain.test.ts",
+    "tests/order/order.pickup-projections.test.ts",
     "tests/order/order.smoke.test.ts",
     "tests/order/order.transport.test.ts",
     "tests/ordering-catalog/parity.test.ts",
@@ -391,6 +394,7 @@
     "tests/payment-reconciliation/payment.reconciliation.test.ts",
     "tests/payment-security/payment.security.test.ts",
     "tests/payment/payment.domain.test.ts",
+    "tests/payment/payment.pickup.domain.test.ts",
     "tests/pricing-bootstrap/bootstrap.test.ts",
     "tests/pricing-parity/parity.test.ts",
     "tests/pricing-tax/delivery-tariff.test.ts",
@@ -7510,6 +7514,43 @@
       "classificationConfidence": "HEURISTIC"
     },
     {
+      "path": "tests/database/financial-document-pickup.integration.test.ts",
+      "runner": "vitest",
+      "domain": "database/financial-document-pickup",
+      "testType": "integration",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:administration",
+        "test:database:access-control",
+        "test:database:assortment-availability",
+        "test:database:auth-foundation",
+        "test:database:cart",
+        "test:database:catalog",
+        "test:database:checkout",
+        "test:database:customer-addresses",
+        "test:database:customer-phone-auth",
+        "test:database:customer-profiles",
+        "test:database:menu-import",
+        "test:database:notifications",
+        "test:database:order",
+        "test:database:outbox-idempotency",
+        "test:database:payment",
+        "test:database:persistence",
+        "test:database:pricing-tax",
+        "test:database:promotions",
+        "test:database:serviceability",
+        "test:database:workforce-auth"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "4-integration",
+        "5-database-integration"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
       "path": "tests/database/financial-document-signature-foundation.integration.test.ts",
       "runner": "vitest",
       "domain": "database/financial-document-signature-foundation",
@@ -8637,6 +8678,21 @@
       "classificationConfidence": "HEURISTIC"
     },
     {
+      "path": "tests/delivery-application/delivery.pickup-fail-closed.test.ts",
+      "runner": "vitest",
+      "domain": "delivery-application",
+      "testType": "unit-or-domain",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [],
+      "ciInclusion": "NO",
+      "test1Layers": [
+        "1-unit"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
       "path": "tests/delivery-concurrency/delivery.concurrency.test.ts",
       "runner": "vitest",
       "domain": "delivery-concurrency",
@@ -9513,6 +9569,28 @@
       "classificationConfidence": "HEURISTIC"
     },
     {
+      "path": "tests/order/order.pickup-projections.test.ts",
+      "runner": "vitest",
+      "domain": "order",
+      "testType": "unit-or-domain",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:order",
+        "test:order-auth-integration",
+        "test:order-concurrency",
+        "test:order-crash",
+        "test:order-security",
+        "test:ordering-catalog"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
       "path": "tests/order/order.smoke.test.ts",
       "runner": "vitest",
       "domain": "order",
@@ -9768,6 +9846,32 @@
     },
     {
       "path": "tests/payment/payment.domain.test.ts",
+      "runner": "vitest",
+      "domain": "payment",
+      "testType": "unit-or-domain",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:payment",
+        "test:payment-auth-integration",
+        "test:payment-concurrency",
+        "test:payment-idempotency",
+        "test:payment-promotions",
+        "test:payment-provider",
+        "test:payment-razorpay",
+        "test:payment-reconciliation",
+        "test:payment-security"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit",
+        "3-domain-use-case"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/payment/payment.pickup.domain.test.ts",
       "runner": "vitest",
       "domain": "payment",
       "testType": "unit-or-domain",
