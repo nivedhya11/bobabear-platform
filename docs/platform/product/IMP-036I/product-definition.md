@@ -1,6 +1,6 @@
 <!-- governance-meta
 {
-  "status": "PRE_GATE_DRAFT",
+  "status": "DRAFT_READY_FOR_GATE",
   "authority": "PRODUCT_DEFINITION",
   "capability": "IMP-036I",
   "productDefinitionVersion": "PD-IMP-036I-DRAFT-1",
@@ -17,7 +17,7 @@
   "implementationComplete": "NO",
   "impAccepted": "NO",
   "imp036iActivated": "YES",
-  "imp036iProductDefinition": "PRE_GATE_DRAFT",
+  "imp036iProductDefinition": "DRAFT_READY_FOR_GATE",
   "imp036iProductDefinitionGate": "NOT_PERFORMED",
   "imp036iArchitectureFit": "NOT_PERFORMED",
   "imp036iArchitectureLocked": "NO",
@@ -29,24 +29,24 @@
   "founderUatRequired": "YES",
   "founderUatStatus": "NOT_PERFORMED",
   "founderDecisionsTotal": 22,
-  "founderDecisionsOpen": 15,
+  "founderDecisionsOpen": 0,
   "founderDecisionsResolvedByExistingAuthority": 7,
-  "unresolvedProductDecisions": 15,
-  "preGateDraft": "YES",
-  "documentStatus": "PRE_GATE_DRAFT",
-  "readyForProductDefinitionGate": "NO",
+  "unresolvedProductDecisions": 0,
+  "preGateDraft": "NO",
+  "documentStatus": "DRAFT_READY_FOR_GATE",
+  "readyForProductDefinitionGate": "YES",
   "programPause": "D-377"
 }
 -->
 
 # IMP-036I — Scheduled Fulfilment
 
-## Product Definition (PRE-GATE DRAFT — Product Definition Gate NOT_PERFORMED)
+## Product Definition (DRAFT READY FOR GATE — Product Definition Gate NOT_PERFORMED)
 
 ```text
-Document status: PRE-GATE DRAFT
+Document status: DRAFT_READY_FOR_GATE
 PRODUCT_DEFINITION_VERSION: PD-IMP-036I-DRAFT-1
-PRE-GATE DRAFT: YES
+PRE-GATE DRAFT: NO
 CAPABILITY: IMP-036I
 TITLE: Scheduled Fulfilment
 AUTHORITY: PRODUCT_DEFINITION
@@ -55,7 +55,7 @@ VERIFICATION_POLICY: TEST-1
 
 PRODUCT_DEFINITION_GATE_EXECUTION: NOT_PERFORMED
 Gate Result: NOT_PERFORMED
-IMP036I_PRODUCT_DEFINITION: PRE_GATE_DRAFT
+IMP036I_PRODUCT_DEFINITION: DRAFT_READY_FOR_GATE
 IMP036I_PRODUCT_DEFINITION_GATE: NOT_PERFORMED
 IMP036I_ARCHITECTURE_FIT: NOT_PERFORMED
 IMP036I_ARCHITECTURE_LOCKED: NO
@@ -76,28 +76,30 @@ IMPLEMENTATION_STARTED: NO
 
 PRODUCT_DECISIONS / FOUNDER_DECISIONS:
   founder_decisions_total: 22
-  founder_decisions_open: 15
+  founder_decisions_open: 0
   founder_decisions_resolved_by_existing_authority: 7
-  UNRESOLVED_MATERIAL_PRODUCT_DECISIONS: 15
-  OPEN_FOUNDER_DECISIONS: 15 (FD-036I-01 … FD-036I-15)
+  founder_decisions_resolved_by_founder: 15 (FD-036I-01 … FD-036I-15)
+  UNRESOLVED_MATERIAL_PRODUCT_DECISIONS: 0
+  OPEN_FOUNDER_DECISIONS: 0
   RESOLVED_BY_EXISTING_AUTHORITY: 7 (FD-036I-16 … FD-036I-22)
+  FOUNDER_RESOLVED_DATE: 2026-09-24
 
-PRODUCT_DEFINITION_GATE_READY: NO — material Founder decisions remain OPEN;
-  recommendations are not Gate authorization
+PRODUCT_DEFINITION_GATE_READY: YES — Founder FD-036I-01…15 resolved 2026-09-24;
+  Product Definition Gate remains NOT_PERFORMED (not Gate PASS / not APPROVED)
 
 stories: 16
 acceptance_scenarios: 52
 business_rules: 18
 architecture_fit_questions: 19
 
-Canonical tip AFTER this activation (write as CURRENT in this draft —
+Canonical tip AFTER Founder decision resolution / gate-ready tip (write as CURRENT in this draft —
 verify against ROADMAP/STATE; this Product Definition is NOT lifecycle authority):
   acceptedThrough = IMP-036H
   currentProductSlice = IMP-036I
   pendingAcceptance = NONE
   nextProductSlice = IMP-037
   IMP036I_ACTIVATED = YES
-  IMP036I_PRODUCT_DEFINITION = PRE_GATE_DRAFT
+  IMP036I_PRODUCT_DEFINITION = DRAFT_READY_FOR_GATE
   IMP036I_PRODUCT_DEFINITION_GATE = NOT_PERFORMED
   IMP036I_ARCHITECTURE_FIT = NOT_PERFORMED
   IMP036I_ARCHITECTURE_LOCKED = NO
@@ -106,8 +108,8 @@ verify against ROADMAP/STATE; this Product Definition is NOT lifecycle authority
   IMP036I_IMPLEMENTATION_STARTED = NO
   IMP036I_IMPLEMENTATION_COMPLETE = NO
   IMP036I_ACCEPTED = NO
-  ROADMAP = GTM-R148
-  STATE = STATE-R146
+  ROADMAP = GTM-R149
+  STATE = STATE-R147
   ARCHITECTURE = ARCH-R22
   decision-register = DR-20
   PROGRAM_PAUSE = D-377
@@ -115,14 +117,13 @@ verify against ROADMAP/STATE; this Product Definition is NOT lifecycle authority
 Formal lifecycle for IMP-036I: PLANNED (activated for Product Definition only)
 ```
 
-This artifact is the **PRE-GATE DRAFT** Product Definition candidate for
-`PD-IMP-036I-DRAFT-1`. It persists product requirements for Scheduled Fulfilment
-without executing the Product Definition Gate, Architecture Fit, architecture lock,
-implementation authorization, implementation start, or IMP-036I acceptance.
+This artifact is the **DRAFT READY FOR GATE** Product Definition candidate for
+`PD-IMP-036I-DRAFT-1`. Founder decisions FD-036I-01…15 are resolved (2026-09-24).
+It persists product requirements for Scheduled Fulfilment without executing the
+Product Definition Gate, Architecture Fit, architecture lock, implementation
+authorization, implementation start, or IMP-036I acceptance.
 
 ```text
-Founder decision OPEN recommendations
-  !=
 Founder decision RESOLVED
   !=
 Product Definition Gate PASS
@@ -132,17 +133,21 @@ Architecture Fit PASS
 architecture LOCKED
   !=
 implementation AUTHORIZED
+  !=
+APPROVED
 ```
 
 ```text
 IMP036I_ACTIVATED: YES
   (ROADMAP / STATE activation for Product Definition only)
   +
-Product Definition: PRE_GATE_DRAFT
+Product Definition: DRAFT_READY_FOR_GATE
   !=
 Product Definition Gate PASS
   !=
 Architecture Fit PASS
+  !=
+APPROVED
 ```
 
 ```text
@@ -171,7 +176,7 @@ PD1_DID_NOT_ACTIVATE_IMP036F_AT_ADOPTION = YES
 
 ### Program context (CURRENT tip — verify against ROADMAP/STATE)
 
-Lifecycle truth remains ROADMAP/STATE only. CURRENT tip for this PRE-GATE draft
+Lifecycle truth remains ROADMAP/STATE only. CURRENT tip for this DRAFT_READY_FOR_GATE draft
 (this Product Definition is **not** lifecycle authority):
 
 ```text
@@ -182,7 +187,7 @@ nextProductSlice = IMP-037
 
 IMP036H: COMPLETE_AND_ACCEPTED
 IMP036I_ACTIVATED: YES
-IMP036I_PRODUCT_DEFINITION: PRE_GATE_DRAFT (PD-IMP-036I-DRAFT-1)
+IMP036I_PRODUCT_DEFINITION: DRAFT_READY_FOR_GATE (PD-IMP-036I-DRAFT-1)
 IMP036I_PRODUCT_DEFINITION_GATE: NOT_PERFORMED
 IMP036I_ARCHITECTURE_FIT: NOT_PERFORMED
 IMP036I_ARCHITECTURE_LOCKED: NO
@@ -202,8 +207,8 @@ IMP039: NOT_ACTIVATED / HOLD
 IMP040: NOT_ACTIVATED / HOLD
 
 PROGRAM_PAUSE_AUTHORITY = D-377
-ROADMAP = GTM-R148
-STATE = STATE-R146
+ROADMAP = GTM-R149
+STATE = STATE-R147
 ARCHITECTURE = ARCH-R22
 decision-register = DR-20
 ```
@@ -218,12 +223,12 @@ IMP-039/040, close `GAP-EXT-ASSESS-001`, or authorize implementation.
 | Field | Definition |
 |---|---|
 | Capability / title | `IMP-036I — Scheduled Fulfilment` (ROADMAP identity; activated for Product Definition only; formal lifecycle **PLANNED**) |
-| Product Definition version / document status | `PD-IMP-036I-DRAFT-1`; **Document status: PRE-GATE DRAFT**; **PRE-GATE DRAFT: YES** |
-| Product owner / approval evidence | Founder. Activation authorized for Product Definition only (2026-09-24). Material scheduling decisions FD-036I-01…15 remain **OPEN**. Product Definition Gate **NOT_PERFORMED**. |
+| Product Definition version / document status | `PD-IMP-036I-DRAFT-1`; **Document status: DRAFT READY FOR GATE**; **PRE-GATE DRAFT: NO**; **READY_FOR_PRODUCT_DEFINITION_GATE: YES** |
+| Product owner / approval evidence | Founder. Activation authorized for Product Definition only. Founder decisions FD-036I-01…15 **RESOLVED** 2026-09-24. Product Definition Gate **NOT_PERFORMED** (not APPROVED / not Gate PASS). |
 | Process / verification policy | `PD-1` / `TEST-1` |
-| Canonical anchors | VISION-1; ROADMAP GTM-R148; STATE STATE-R146; ARCH-R22; DR-20 (D-377, D-378); PD-1; TEST-1; PERSONA-1; GJ-1; accepted IMP-036H Product Definition `PD-IMP-036H-DRAFT-1` |
+| Canonical anchors | VISION-1; ROADMAP GTM-R149; STATE STATE-R147; ARCH-R22; DR-20 (D-377, D-378); PD-1; TEST-1; PERSONA-1; GJ-1; accepted IMP-036H Product Definition `PD-IMP-036H-DRAFT-1`; Founder FD-036I-01…15 resolution 2026-09-24 |
 | Repository candidate | Canonical path `/home/ajoshi/repos/boba-bear-platform`; exact HEAD/tree recorded at activation/PR time — verify against CURRENT tip |
-| Capability lifecycle / authorization | ROADMAP/STATE: `IMP036I_ACTIVATED: YES`; `currentProductSlice = IMP-036I`; formal lifecycle **PLANNED**; Product Definition **PRE_GATE_DRAFT**; Gate **NOT_PERFORMED**; Architecture Fit **NOT_PERFORMED**; architecture **NOT_LOCKED**; implementation **NOT_AUTHORIZED** / **NOT_STARTED**; `IMP036I_ACCEPTED: NO`; `pendingAcceptance = NONE`; `acceptedThrough = IMP-036H`; `nextProductSlice = IMP-037` |
+| Capability lifecycle / authorization | ROADMAP/STATE: `IMP036I_ACTIVATED: YES`; `currentProductSlice = IMP-036I`; formal lifecycle **PLANNED**; Product Definition **DRAFT_READY_FOR_GATE**; Gate **NOT_PERFORMED**; Architecture Fit **NOT_PERFORMED**; architecture **NOT_LOCKED**; implementation **NOT_AUTHORIZED** / **NOT_STARTED**; `IMP036I_ACCEPTED: NO`; `pendingAcceptance = NONE`; `acceptedThrough = IMP-036H`; `nextProductSlice = IMP-037` |
 | Relevant capability architecture / ADRs | Foundations: ADR-008; ADR-011; ADR-007; ADR-012; ADR-018 / D-378 (fulfilment mode); D-365 / D-366 / D-367 (financial documents); D-357; D-361–D-364 (payment/refund); D-377 (program pause). No IMP-036I capability lock yet. |
 | Founder UAT applicability | `FOUNDER_UAT_REQUIRED = YES`; `FOUNDER_UAT_STATUS = NOT_PERFORMED` — materially changes customer checkout timing and workforce operational timing when implemented |
 
@@ -330,7 +335,7 @@ alternatives.
 | Customer-facing FULFILMENT_TIMING ASAP \| SCHEDULED | `PLANNED_IMP036I` | This Product Definition |
 | Scheduled Pickup / Scheduled Delivery | `PLANNED_IMP036I` | Orthogonal to mode |
 | Recurring / subscriptions / catering | `NOT_SUPPORTED` | §24 |
-| Cash / COD / pay-at-counter / pay-later deposits | `NOT_SUPPORTED` unless Founder changes | FD-036I-06 OPEN (pay-now recommended); cash remains prohibited by FD-036H-03 |
+| Cash / COD / pay-at-counter / pay-later deposits | `NOT_SUPPORTED` | FD-036I-06 PAY NOW; cash/COD remain prohibited by FD-036H-03 / FD-036I-16 |
 
 ---
 
@@ -338,7 +343,7 @@ alternatives.
 
 | Persona ID | Responsibility / goal in this slice | Context / evidence |
 |---|---|---|
-| `PERSONA-CUSTOMER` (primary) | Choose ASAP or Scheduled; select eligible future time; complete authenticated checkout; understand confirmation/history; cancel/reschedule per Founder policy | [personas.md](../personas.md) PERSONA-1; VISION direct-order customer; IMP-036B/C/H |
+| `PERSONA-CUSTOMER` (primary) | Choose ASAP or Scheduled; select eligible future slot; complete authenticated checkout; understand confirmation/history; cancel before cutoff (no self-service reschedule) | [personas.md](../personas.md) PERSONA-1; VISION direct-order customer; IMP-036B/C/H |
 | `PERSONA-WORKFORCE-OPERATOR` (primary Ops) | See Scheduled Orders early; badge mode+timing; prepare/accept/handover Pickup; coordinate Delivery execution relative to promised window | Workforce **contexts** (not new persona IDs): Outlet Manager, Kitchen Operator, Delivery Coordinator. Persona ≠ role ≠ permission |
 | `PERSONA-PLATFORM-OPERATOR` | Where scheduling configuration / operability visibility is required (health, correlation, safe investigation) — not a new RBAC model | PERSONA-1; IMP-036 observability foundations |
 
@@ -362,8 +367,8 @@ No new persona IDs. Authorization authority is §14. Do not invent roles named �
 Central product concept:
 
 > As a customer, I can choose ASAP or Scheduled for Delivery or Pickup before paying; for Scheduled
-> I select a supported future time in the outlet's local timezone, pay online against a sealed
-> commercial result (subject to Founder confirmation), and see clear confirmation and history.
+> I select a supported future slot in the outlet's local timezone, pay online now against a sealed
+> commercial result, and see clear confirmation and history.
 > As Ops, I can see Scheduled Orders early, know when they are due, and fulfil Pickup or Delivery
 > under the existing Order lifecycle without a separate Scheduled Order type.
 
@@ -371,12 +376,12 @@ Central product concept:
 |---|---|---|---|---|
 | `JOURNEY-I-A-ASAP-DELIVERY` (protect) | Auth checkout; Delivery + ASAP | Existing Delivery ASAP path | No Scheduled regression | Existing payment/serviceability recovery |
 | `JOURNEY-I-B-ASAP-PICKUP` (protect) | Auth checkout; Pickup + ASAP | Existing ASAP Pickup path (IMP-036H) | No Scheduled regression | Existing outlet/eligibility recovery |
-| `JOURNEY-I-C-SCHED-PICKUP` | Pickup + Scheduled | Choose Scheduled → browse eligible dates/times → select → review (outlet + timing + commercials, no delivery fee) → pay → confirmation → Ops see due window → handover → FULFILLED | Scheduled Pickup Order without Delivery aggregate | No times; time unavailable; cancel/reschedule per FD; late/early per FD-036I-13 |
-| `JOURNEY-I-D-SCHED-DELIVERY` | Delivery + Scheduled | Choose Scheduled → destination/serviceability → eligible times → select → review (destination + timing + commercials) → pay → confirmation → Ops/Delivery Coordinator act relative to promise → delivery fulfilment | Scheduled Delivery under existing Delivery path | Serviceability fail; no times; provider unavailable near slot; recovery per FD-036I-10 |
+| `JOURNEY-I-C-SCHED-PICKUP` | Pickup + Scheduled | Choose Scheduled → browse eligible TODAY/TOMORROW slots → select → review (outlet + timing + sealed commercials, no delivery fee) → PAY NOW → confirmation → Ops see due window → handover → FULFILLED | Scheduled Pickup Order without Delivery aggregate | No times; time unavailable; cancel before cutoff (no self-service reschedule); late/early per FD-036I-13 |
+| `JOURNEY-I-D-SCHED-DELIVERY` | Delivery + Scheduled | Choose Scheduled → destination/serviceability → eligible TODAY/TOMORROW slots → select → review (destination + arrival/fulfilment window + sealed commercials) → PAY NOW → confirmation → Ops/Delivery Coordinator act relative to arrival promise → delivery fulfilment | Scheduled Delivery under existing Delivery path | Serviceability fail; no times; provider unavailable near slot; recovery per FD-036I-10 (notify + cancel/refund + new Order) |
 | `JOURNEY-I-E-NO-TIMES` | Scheduled chosen; zero eligible times | Attempt continue | Clear unavailable; ASAP may remain if valid; no invented time | Switch to ASAP; change mode; modify cart; exit |
 | `JOURNEY-I-F-TIMING-MODE-SWITCH` | Pre-payment | Switch ASAP↔Scheduled and/or Delivery↔Pickup | Full revalidation + commercial recalculation | Incomplete destination after switch to Delivery; eligibility failures |
 | `JOURNEY-I-G-PREPAY-INVALID` | Selected time becomes invalid before pay | Attempt pay | Block pay; recoverable; no silent substitution of time/outlet/items/mode | Choose another time; ASAP; cancel checkout |
-| `JOURNEY-I-H-POSTPAY-UNAVAILABLE` | Paid Scheduled Order; future becomes unhonourable | System/ops detect unavailability | Customer recovery per FD-036I-10; no silent rewrite of promise | Contact / reschedule / cancel+refund classes |
+| `JOURNEY-I-H-POSTPAY-UNAVAILABLE` | Paid Scheduled Order; future becomes unhonourable | System/ops detect unavailability | Customer recovery per FD-036I-10: notify + cancel/refund + allow new Order; no silent rewrite of promise | No in-place reschedule; Ops may assist cancel/refund + separate replacement |
 | `JOURNEY-I-OPS-LIST` | Authorized Ops | Open Ops list | Every Order badges mode + timing (ASAP vs Scheduled + due window when Scheduled) | Unauthorized deny |
 | `JOURNEY-I-OPS-SCHED-DETAIL` | Scheduled Order | Open detail | Shows mode, timing promise, outlet/destination as applicable; Pickup without rider chrome; Delivery without inventing Pickup fields | Unauthorized deny |
 | `JOURNEY-I-OPS-PICKUP-HANDOVER` | Scheduled Pickup ACCEPTED | Handed to customer / Mark as picked up | → FULFILLED; IMP-036H verification model (no OTP/QR/PIN) | Early/late policy per FD-036I-13 |
@@ -387,19 +392,19 @@ Central product concept:
 | Concern | Product promise (mechanism = Fit) |
 |---|---|
 | How customer chooses Scheduled | Explicit timing choice peer to ASAP during authenticated checkout after (or with) fulfilment mode; clear labels ASAP vs Scheduled |
-| Dates/times presentation | Eligible future dates/times in **outlet local timezone**; understandable date + time (or slot window) labels; not server-TZ raw |
-| What makes a time selectable | Outlet active + known future schedule eligibility + mode eligibility (Pickup enabled / Delivery serviceable) + merchandise fulfilable + min lead + within horizon + capacity if V1 includes it (FD-036I-04) + not closed by known future exception |
+| Dates/times presentation | Eligible discrete fulfilment slots in **outlet local timezone** (e.g. 6:00–6:30 PM); TODAY + TOMORROW horizon; not server-TZ raw; slot representation = Architecture Fit |
+| What makes a time selectable | Outlet active + known future schedule eligibility + mode eligibility (Pickup enabled / Delivery serviceable) + merchandise fulfilable + per-mode min lead + within TODAY/TOMORROW horizon + not closed by known future exception — **NOT** per-slot capacity (FD-036I-04 NO capacity engine in V1) |
 | No times available | Clear empty state; do not invent slots; ASAP and/or other mode may remain if valid |
-| Review | Mode, timing promise, outlet or destination, commercials, packaging, delivery fee only when Delivery |
-| Payment | Online; pay-now vs pay-later = FD-036I-06 (**OPEN**, recommend pay now); no cash/COD |
+| Review | Mode, timing promise (Delivery = arrival/fulfilment window), outlet or destination, sealed commercials, packaging, delivery fee only when Delivery |
+| Payment | Online **PAY NOW** (FD-036I-06); preserve Razorpay, payment before Order materialization, zero-payable where applicable; no cash/COD/pay later/deposit/partial |
 | Confirmation | States Scheduled + mode + timing + location/destination summary |
 | History/detail | Distinguishes ASAP vs Scheduled; shows timing promise; Pickup has no delivery tracking |
-| Cancellation | Existing refund authority continuity; cutoff = FD-036I-09 OPEN |
-| Reschedule | FD-036I-08 OPEN (self-service YES/NO); if NO, define recovery path |
-| Time becomes unavailable | Pre-pay: block + recover; post-pay: FD-036I-10 OPEN |
-| Reminders | Confirmation required; proactive reminder = FD-036I-11 OPEN |
-| Late fulfilment | Customer-visible recovery honesty; Pickup late/early = FD-036I-13; Delivery late uses existing + promise semantics |
-| Pickup vs Delivery differences | Pickup: outlet collect, no destination/fee/Delivery aggregate, IMP-036H handover. Delivery: destination + serviceability, Delivery path, customer-facing promise class = FD-036I-05 |
+| Cancellation | Cutoff before selected fulfilment window (Pickup/Delivery may differ configured values); before cutoff: existing cancel/refund where eligible; after cutoff: deny self-service clearly + support guidance; V1 NO cancellation/penalty fee (FD-036I-09) |
+| Reschedule | **NO** customer self-service rescheduling in V1 (FD-036I-08); another time → cancel (if permitted) + new Order |
+| Time becomes unavailable | Pre-pay: block + recover; post-pay: notify + cancel/refund + allow new Order; no silent substitution (FD-036I-10) |
+| Reminders | Confirmation required; one proactive pre-fulfilment reminder (~30 min before window; skip if ordered inside reminder window); mode-aware wording (FD-036I-11) |
+| Late fulfilment | Grace-oriented (FD-036I-13): EARLY window remains promise / may hand over early if ready + IMP-036H verification; LATE no automatic no-show cancel/fee; Delivery late uses existing + arrival promise honesty |
+| Pickup vs Delivery differences | Pickup: outlet collect, no destination/fee/Delivery aggregate, IMP-036H handover. Delivery: destination + serviceability, Delivery path, customer-facing promise = ARRIVAL/FULFILMENT WINDOW (FD-036I-05) |
 
 ---
 
@@ -417,14 +422,14 @@ Central product concept:
 | Workforce visibility | `PERSONA-WORKFORCE-OPERATOR` | Ops list/detail | Badge, sort/due, detail | `US-036I-008` | `V1_ACCEPTANCE_SLICE` |
 | Scheduled Pickup handover | `PERSONA-WORKFORCE-OPERATOR` (Outlet/Kitchen) | Ops handover | Accept + hand over → FULFILLED | `US-036I-009` | `V1_ACCEPTANCE_SLICE` |
 | Scheduled Delivery execution | `PERSONA-WORKFORCE-OPERATOR` (Delivery Coordinator) | Ops delivery | Execute relative to promise | `US-036I-010` | `V1_ACCEPTANCE_SLICE` |
-| Cancel / reschedule outcome | `PERSONA-CUSTOMER` | H + cancel | Cancel/reschedule per policy | `US-036I-011` | `V1_ACCEPTANCE_SLICE` (policy OPEN) |
-| Post-payment unavailability | `PERSONA-CUSTOMER` + Ops | H | Recovery without silent rewrite | `US-036I-012` | `V1_ACCEPTANCE_SLICE` (policy OPEN) |
+| Cancel / no self-service reschedule | `PERSONA-CUSTOMER` | H + cancel | Cancel before cutoff; no self-service reschedule | `US-036I-011` | `V1_ACCEPTANCE_SLICE` |
+| Post-payment unavailability | `PERSONA-CUSTOMER` + Ops | H | Notify + cancel/refund + new Order; no silent rewrite | `US-036I-012` | `V1_ACCEPTANCE_SLICE` |
 | Mobile scheduled ordering | `PERSONA-CUSTOMER` | C/D | Mobile-usable date/time selection | `US-036I-013` | `V1_ACCEPTANCE_SLICE` |
 | Accessible date/time selection | `PERSONA-CUSTOMER` | C/D | Keyboard/SR/error association | `US-036I-014` | `V1_ACCEPTANCE_SLICE` |
-| Commercial + payment sealing | `PERSONA-CUSTOMER` | C/D | Pay online; sealed commercials (OPEN confirm) | `US-036I-015` | `V1_ACCEPTANCE_SLICE` |
+| Commercial + payment sealing | `PERSONA-CUSTOMER` | C/D | PAY NOW; commercials sealed at purchase | `US-036I-015` | `V1_ACCEPTANCE_SLICE` |
 | Platform/config operability | `PERSONA-PLATFORM-OPERATOR` / workforce config context | Config | Scheduling eligibility inputs visible/operable without inventing RBAC | `US-036I-016` | `V1_ACCEPTANCE_SLICE` (bounded) |
 | Recurring / subscriptions / catering | — | — | — | — | `NOT_SUPPORTED` |
-| Cash/COD / pay-later deposits | — | — | — | — | `NOT_SUPPORTED` / OPEN only for pay-now vs pay-later |
+| Cash/COD / pay-later deposits | — | — | — | — | `NOT_SUPPORTED` (FD-036I-06 PAY NOW) |
 
 ---
 
@@ -432,12 +437,12 @@ Central product concept:
 
 | Slice | Mandatory story IDs | Mandatory AC IDs | Required Golden Journeys | Observable acceptance boundary |
 |---|---|---|---|---|
-| `V1_ACCEPTANCE_SLICE` | `US-036I-001` … `US-036I-016` | `AC-036I-001` … `AC-036I-052` (all mandatory YES unless noted; some outcomes gated on OPEN FDs must be proven once Founder resolves) | `GJ-FIRST-ORDER` ASAP Delivery + ASAP Pickup non-regression; Scheduled Pickup + Scheduled Delivery extensions; `GJ-PAYMENT-RECOVERY`; `GJ-CANCELLATION-REFUND` continuity | Customer completes Scheduled Pickup and Scheduled Delivery with correct mode×timing×commercial/privacy outcomes; Ops fulfils both; ASAP remains green; no Delivery aggregate for Scheduled Pickup |
+| `V1_ACCEPTANCE_SLICE` | `US-036I-001` … `US-036I-016` | `AC-036I-001` … `AC-036I-052` (all mandatory YES; Founder FD-036I-01…15 resolved) | `GJ-FIRST-ORDER` ASAP Delivery + ASAP Pickup non-regression; Scheduled Pickup + Scheduled Delivery extensions; `GJ-PAYMENT-RECOVERY`; `GJ-CANCELLATION-REFUND` continuity | Customer completes Scheduled Pickup and Scheduled Delivery with correct mode×timing×commercial/privacy outcomes; Ops fulfils both; ASAP remains green; no Delivery aggregate for Scheduled Pickup |
 | `FOLLOW_UP` | Capacity advanced models; UX polish beyond mandatory clarity; optional calendar flourishes | As defined later | N/A unless GJ impacted | Not silently required for V1 |
 | `DEFERRED` | Recurring; subscriptions; catering; labour/driver shift scheduling; AI prep prediction | N/A | N/A | Explicit non-goals |
 
 Disposition vocabulary for §§22–25: `SUPPORTED_NOW`, `EXPLICITLY_DEFERRED`,
-`NOT_SUPPORTED_BY_DESIGN`, `UNRESOLVED_DECISION_REQUIRED` (**active unresolved count = 15**).
+`NOT_SUPPORTED_BY_DESIGN`, `UNRESOLVED_DECISION_REQUIRED` (**active unresolved count = 0**).
 
 ---
 
@@ -458,13 +463,13 @@ Business rules: BR-036I-001, BR-036I-002, BR-036I-003
 UX states: Timing choice ready; loading eligibility; Scheduled path; ASAP path
 Permission / resource context: Existing customer checkout identity; no new role
 Error / recovery: If Scheduled unavailable for current mode/cart, clear messaging; ASAP remains where valid
-Dependencies: Accepted IMP-036B/C/H checkout; FD-036I-01…04 OPEN for model details
+Dependencies: Accepted IMP-036B/C/H checkout; FD-036I-01…04 RESOLVED (discrete slots; TODAY+TOMORROW; per-mode lead; no capacity)
 Explicit non-goals: Recurring schedules; inventing ScheduledOrder
 Data implications: Order exposes fulfilment timing (product requirement). Durable placement = Architecture Fit
 Security implications: Preserve authenticated checkout; no anonymous Scheduled
-Architecture fit / applicable invariants: ARCHITECTURE_FIT_REQUIRED — where timing lives in Checkout/Snapshot
-Open material decisions: FD-036I-01, FD-036I-02, FD-036I-03, FD-036I-04
-Readiness: NOT_READY for Product Definition Gate until OPEN FDs resolved; NOT_READY_FOR_IMPLEMENTATION until Gate + Fit/lock + authorization
+Architecture fit / applicable invariants: ARCHITECTURE_FIT_REQUIRED — where timing lives in Checkout/Snapshot; slot representation = Fit
+Open material decisions: NONE
+Readiness: READY for Product Definition Gate (product decisions resolved); NOT_READY_FOR_IMPLEMENTATION until Gate + Fit/lock + authorization
 ```
 
 ### US-036I-002 — Schedule Pickup
@@ -482,13 +487,13 @@ Business rules: BR-036I-004, BR-036I-005, BR-036I-006, BR-036I-012
 UX states: Date/time picker; selected timing review; Pickup location + instructions + timing
 Permission / resource context: Customer checkout; outlet eligibility server-authoritative
 Error / recovery: No times; outlet cannot fulfil; operating/future closure exclusions; no silent outlet/time switch
-Dependencies: IMP-036H Pickup rules; FD-036I-01…05, FD-036I-13, FD-036I-15 OPEN where applicable
+Dependencies: IMP-036H Pickup rules; FD-036I-01…05, FD-036I-13, FD-036I-15 RESOLVED
 Explicit non-goals: OTP/QR/PIN; Delivery aggregate; inventing pickup destination as delivery address
 Data implications: Paid snapshot binds mode=PICKUP + timing + outlet immutably (product requirement)
 Security implications: Privacy minimization — no forced delivery address/GPS/Maps for Scheduled Pickup
 Architecture fit / applicable invariants: Timing bind to snapshot; outlet profile; eligibility computation
-Open material decisions: FD-036I-01, FD-036I-02, FD-036I-03, FD-036I-13, FD-036I-15
-Readiness: Gate-blocked on OPEN FDs; NOT_READY_FOR_IMPLEMENTATION
+Open material decisions: NONE
+Readiness: READY for Product Definition Gate; NOT_READY_FOR_IMPLEMENTATION until Gate + Fit/lock + authorization
 ```
 
 ### US-036I-003 — Schedule Delivery
@@ -503,16 +508,16 @@ Journey / activity: JOURNEY-I-D
 Preconditions: Delivery chosen; Scheduled chosen; valid destination/serviceability path
 Acceptance scenarios: AC-036I-008, AC-036I-009, AC-036I-010, AC-036I-024, AC-036I-025, AC-036I-041, AC-036I-049
 Business rules: BR-036I-004, BR-036I-005, BR-036I-007, BR-036I-013
-UX states: Destination + date/time; review shows promise class wording per FD-036I-05 once resolved
+UX states: Destination + date/time; review shows ARRIVAL/FULFILMENT WINDOW wording (FD-036I-05)
 Permission / resource context: Existing Delivery destination authority
 Error / recovery: Unserviceable; no times; future serviceability deny; recoverable
-Dependencies: ADR-011 / accepted Delivery; FD-036I-05, FD-036I-14 OPEN
+Dependencies: ADR-011 / accepted Delivery; FD-036I-05, FD-036I-14 RESOLVED
 Explicit non-goals: Customer-selected driver; multi-stop; marketplace surge
 Data implications: Paid snapshot binds mode=DELIVERY + timing + destination; Delivery path retained
 Security implications: Existing destination PII rules; no extra scheduling PII
-Architecture fit / applicable invariants: Future serviceability evaluation; dispatch timing mechanism = Fit
-Open material decisions: FD-036I-01, FD-036I-05, FD-036I-14
-Readiness: Gate-blocked on OPEN FDs; NOT_READY_FOR_IMPLEMENTATION
+Architecture fit / applicable invariants: Future serviceability evaluation; dispatch backward from arrival = Fit
+Open material decisions: NONE
+Readiness: READY for Product Definition Gate; NOT_READY_FOR_IMPLEMENTATION until Gate + Fit/lock + authorization
 ```
 
 ### US-036I-004 — No available future times
@@ -530,13 +535,13 @@ Business rules: BR-036I-005, BR-036I-008
 UX states: Empty/unavailable Scheduled; actions toward ASAP / other mode / cart
 Permission / resource context: Customer checkout
 Error / recovery: Switch to ASAP if valid; change mode; modify cart; exit — never invent a time
-Dependencies: FD-036I-02, FD-036I-03, FD-036I-04, FD-036I-15
-Explicit non-goals: Silent fallback to a hidden default slot
+Dependencies: FD-036I-02, FD-036I-03, FD-036I-04, FD-036I-15 RESOLVED
+Explicit non-goals: Silent fallback to a hidden default slot; capacity-based empty reasons in V1
 Data implications: N/A durable Order until payment
 Security implications: Do not leak internal closure reasons beyond customer-safe messaging
-Architecture fit / applicable invariants: Eligibility computation
-Open material decisions: FD-036I-02, FD-036I-03, FD-036I-04, FD-036I-15
-Readiness: Gate-blocked on OPEN FDs; NOT_READY_FOR_IMPLEMENTATION
+Architecture fit / applicable invariants: Eligibility composition = Fit (no V1 capacity engine)
+Open material decisions: NONE
+Readiness: READY for Product Definition Gate; NOT_READY_FOR_IMPLEMENTATION until Gate + Fit/lock + authorization
 ```
 
 ### US-036I-005 — Pre-payment timing and mode switching
@@ -554,13 +559,13 @@ Business rules: BR-036I-002, BR-036I-003, BR-036I-009
 UX states: Recalculating; destination required after switch to Delivery; timing cleared/revalidated after switches
 Permission / resource context: Customer checkout
 Error / recovery: Incomplete Delivery destination blocks pay; Scheduled eligibility failures as US-036I-004
-Dependencies: IMP-036H mode-switch rules; FD-036I-07 commercial sealing context
+Dependencies: IMP-036H mode-switch rules; FD-036I-07 commercials sealed at purchase (pre-pay switches recalculate)
 Explicit non-goals: Post-payment silent mode/timing rewrite
 Data implications: Delivery-only information must not affect Pickup commercial result after switch
 Security implications: Server re-evaluation required
 Architecture fit / applicable invariants: Conditional destination + timing without corrupting history
-Open material decisions: FD-036I-07 (commercial implications of switch before pay)
-Readiness: Gate-blocked where OPEN; NOT_READY_FOR_IMPLEMENTATION
+Open material decisions: NONE
+Readiness: READY for Product Definition Gate; NOT_READY_FOR_IMPLEMENTATION until Gate + Fit/lock + authorization
 ```
 
 ### US-036I-006 — Scheduled time invalid before payment
@@ -578,13 +583,13 @@ Business rules: BR-036I-008, BR-036I-010
 UX states: Revalidation failure; choose another time / ASAP / recover
 Permission / resource context: Customer checkout; server-authoritative eligibility
 Error / recovery: No silent time/outlet/item/mode substitution
-Dependencies: Payment-pending mutation safety foundations; FD-036I-04 if capacity race
-Explicit non-goals: Inventing a new payment recovery model
+Dependencies: Payment-pending mutation safety foundations; FD-036I-04 NO capacity engine (no last-slot capacity races to design)
+Explicit non-goals: Inventing a new payment recovery model; per-slot capacity contention
 Data implications: Revalidate before payment bind
 Security implications: Prevent commercial/timing tampering
-Architecture fit / applicable invariants: Pre-payment revalidation; last-slot concurrency if capacity
-Open material decisions: FD-036I-04
-Readiness: NOT_READY_FOR_IMPLEMENTATION
+Architecture fit / applicable invariants: Pre-payment revalidation (eligibility without capacity gating)
+Open material decisions: NONE
+Readiness: READY for Product Definition Gate; NOT_READY_FOR_IMPLEMENTATION until Gate + Fit/lock + authorization
 ```
 
 ### US-036I-007 — View scheduled order after purchase
@@ -602,13 +607,13 @@ Business rules: BR-036I-011, BR-036I-012, BR-036I-013
 UX states: Confirmation success; history row; detail with timing in outlet local TZ
 Permission / resource context: Customer owns own order projections
 Error / recovery: Missing required display fields is a product defect relative to confirmation requirements
-Dependencies: FD-036I-05 (Delivery promise wording); IMP-036H Pickup display fields
+Dependencies: FD-036I-05 (Delivery ARRIVAL/FULFILMENT WINDOW wording); IMP-036H Pickup display fields
 Explicit non-goals: Rider ETA chrome on Pickup; inventing new Order status labels as lifecycle states
 Data implications: Customer-facing timing promise must be projectable
 Security implications: Do not expose unauthorized Ops internals
 Architecture fit / applicable invariants: Fulfilment-aware + timing-aware projections
-Open material decisions: FD-036I-05 (wording class)
-Readiness: NOT_READY_FOR_IMPLEMENTATION
+Open material decisions: NONE
+Readiness: READY for Product Definition Gate; NOT_READY_FOR_IMPLEMENTATION until Gate + Fit/lock + authorization
 ```
 
 ### US-036I-008 — Workforce sees and prioritizes scheduled orders
@@ -623,16 +628,16 @@ Journey / activity: JOURNEY-I-OPS-LIST / DETAIL
 Preconditions: Authorized Ops session; Scheduled Orders exist
 Acceptance scenarios: AC-036I-032, AC-036I-033, AC-036I-034, AC-036I-042
 Business rules: BR-036I-014, BR-036I-015
-UX states: List badge (mode + Scheduled + due); detail ready; due-soon / overdue presentation (derived, not new status unless FD proves need)
+UX states: List badge (mode + Scheduled + due); detail ready; derived cues Scheduled / Due soon / Overdue (not new Order statuses)
 Permission / resource context: Existing Ops order permissions; no new role by default
 Error / recovery: Unauthorized deny
-Dependencies: FD-036I-12 OPEN (visibility/actionability/release)
-Explicit non-goals: Inventing SCHEDULED/READY/DUE/LATE Order statuses without Founder proof of need
+Dependencies: FD-036I-12 RESOLVED — visible immediately after purchase; may acknowledge/accept before window; lifecycle PLACED→ACCEPTED→FULFILLED|CANCELLED
+Explicit non-goals: Inventing SCHEDULED/READY/DUE/LATE Order statuses
 Data implications: Timing metadata / derived operational presentation (product requirement)
 Security implications: Server-enforced authorization; BOLA/scope deny
-Architecture fit / applicable invariants: Projection extensions; operational release mechanism = Fit
-Open material decisions: FD-036I-12
-Readiness: Gate-blocked on FD-036I-12; NOT_READY_FOR_IMPLEMENTATION
+Architecture fit / applicable invariants: Projection extensions; operational release mechanics = Fit
+Open material decisions: NONE
+Readiness: READY for Product Definition Gate; NOT_READY_FOR_IMPLEMENTATION until Gate + Fit/lock + authorization
 ```
 
 ### US-036I-009 — Workforce fulfils Scheduled Pickup
@@ -650,13 +655,13 @@ Business rules: BR-036I-006, BR-036I-012, BR-036I-016
 UX states: Accept; handover confirm; FULFILLED success; early/late handling per FD-036I-13
 Permission / resource context: Reuse existing order.fulfil if Fit confirms (IMP-036H precedent)
 Error / recovery: Unauthorized cannot fulfil; mismatch → do not fulfil wrong Order
-Dependencies: FD-036H-12/23 inheritance; FD-036I-13 OPEN
-Explicit non-goals: New PickupProof; PREPARING/READY_FOR_PICKUP unless Founder changes lifecycle
+Dependencies: FD-036H-12/23 inheritance; FD-036I-13 RESOLVED (grace-oriented early/late; no V1 no-show fee)
+Explicit non-goals: New PickupProof; PREPARING/READY_FOR_PICKUP; OTP/QR/PIN/gov ID
 Data implications: Handover → existing FULFILLED; audit preserved
 Security implications: Authorization server-enforced
 Architecture fit / applicable invariants: Confirm order.fulfil coverage; prep-release mechanism = Fit
-Open material decisions: FD-036I-12, FD-036I-13
-Readiness: NOT_READY_FOR_IMPLEMENTATION
+Open material decisions: NONE
+Readiness: READY for Product Definition Gate; NOT_READY_FOR_IMPLEMENTATION until Gate + Fit/lock + authorization
 ```
 
 ### US-036I-010 — Delivery Coordinator executes Scheduled Delivery
@@ -674,37 +679,37 @@ Business rules: BR-036I-007, BR-036I-013, BR-036I-017
 UX states: Due window visible; initiate delivery; provider fail recovery
 Permission / resource context: Existing Delivery Ops authority
 Error / recovery: Provider cannot book → customer recovery class per FD-036I-10/14; no silent promise rewrite
-Dependencies: ADR-011; FD-036I-05, FD-036I-14 OPEN
-Explicit non-goals: Driver shift scheduling; customer-selected driver
+Dependencies: ADR-011; FD-036I-05, FD-036I-14 RESOLVED (outcome-first; begin early enough for arrival window)
+Explicit non-goals: Driver shift scheduling; customer-selected driver; PD-prescribed cron/ETA algorithm
 Data implications: Delivery aggregate only for Delivery Orders
 Security implications: Existing provider credential boundaries
-Architecture fit / applicable invariants: When/how delivery booking is triggered = Fit
-Open material decisions: FD-036I-05, FD-036I-14
-Readiness: NOT_READY_FOR_IMPLEMENTATION
+Architecture fit / applicable invariants: Dispatch/booking timing mechanism = Fit; failure → FD-036I-10 recovery
+Open material decisions: NONE
+Readiness: READY for Product Definition Gate; NOT_READY_FOR_IMPLEMENTATION until Gate + Fit/lock + authorization
 ```
 
-### US-036I-011 — Customer cancellation / reschedule outcome
+### US-036I-011 — Customer cancellation (no self-service reschedule)
 
 ```text
 Story ID: US-036I-011
 As a PERSONA-CUSTOMER
-I want clear cancellation (and reschedule if supported) outcomes for Scheduled Orders
+I want clear cancellation outcomes for Scheduled Orders (no self-service reschedule)
 so that I can change plans without hidden fees or silent commercial mutations.
 
-Journey / activity: Cancel / reschedule
-Preconditions: Paid Scheduled Order; within/outside cutoff per policy
+Journey / activity: Cancel (want another time → cancel if permitted + new Order)
+Preconditions: Paid Scheduled Order; within/outside configured cancellation cutoff
 Acceptance scenarios: AC-036I-039, AC-036I-045, AC-036I-046
 Business rules: BR-036I-018
-UX states: Cancel confirm; cutoff denied; reschedule path if YES; refund continuity messaging
+UX states: Cancel confirm; cutoff denied + support guidance; refund continuity messaging
 Permission / resource context: Existing cancellation/refund permissions
-Error / recovery: After cutoff → clear deny + support/ops path; no invented cancellation fee without Founder decision
-Dependencies: FD-036I-08, FD-036I-09 OPEN; FD-036H-18 continuity; D-364 refunds
-Explicit non-goals: Complex modification engine by default; no-show penalties without Founder decision
+Error / recovery: After cutoff → clear deny + support/outlet recovery guidance; V1 NO cancellation/penalty fee
+Dependencies: FD-036I-08 NO self-service reschedule; FD-036I-09 cutoff RESOLVED; FD-036H-18 continuity; D-364 refunds
+Explicit non-goals: In-place change-slot mutation; commercial reprice of paid Order; schedule history engine; no-show penalties
 Data implications: Refund/financial docs remain D-365/366/367
 Security implications: Customer may cancel only own Orders
-Architecture fit / applicable invariants: Align to existing cancel/refund concurrency
-Open material decisions: FD-036I-08, FD-036I-09
-Readiness: Gate-blocked; NOT_READY_FOR_IMPLEMENTATION
+Architecture fit / applicable invariants: Cutoff representation/enforcement = Fit; align to existing cancel/refund
+Open material decisions: NONE
+Readiness: READY for Product Definition Gate; NOT_READY_FOR_IMPLEMENTATION until Gate + Fit/lock + authorization
 ```
 
 ### US-036I-012 — Post-payment future-unavailability recovery
@@ -719,16 +724,16 @@ Journey / activity: JOURNEY-I-H
 Preconditions: Paid Scheduled Order; future eligibility broken (closure, merch, Pickup disabled, Delivery impossible)
 Acceptance scenarios: AC-036I-047, AC-036I-051
 Business rules: BR-036I-008, BR-036I-010, BR-036I-018
-UX states: Notification of problem; recovery options class per FD-036I-10
+UX states: Notification of problem; cancel/refund + new-Order recovery (FD-036I-10)
 Permission / resource context: Customer + authorized Ops recovery actions under existing authorities
-Error / recovery: Contact / reschedule / cancel+refund classes — Founder chooses; no silent substitution
-Dependencies: FD-036I-10 OPEN
-Explicit non-goals: Silent outlet switch; silent item removal; silent mode/time rewrite
-Data implications: Preserve audit of original promise vs recovery outcome
+Error / recovery: Notify + cancel/refund under existing authority + allow NEW Order; no silent substitution; no in-place reschedule
+Dependencies: FD-036I-10 RESOLVED
+Explicit non-goals: Silent outlet/items/mode/time/slot change; in-place reschedule engine
+Data implications: Preserve original promise/audit history; replacement is a separate Order if customer chooses
 Security implications: Do not expose unnecessary internal ops notes to unauthorized parties
 Architecture fit / applicable invariants: Detection + notification + recovery workflows = Fit
-Open material decisions: FD-036I-10
-Readiness: Gate-blocked; NOT_READY_FOR_IMPLEMENTATION
+Open material decisions: NONE
+Readiness: READY for Product Definition Gate; NOT_READY_FOR_IMPLEMENTATION until Gate + Fit/lock + authorization
 ```
 
 ### US-036I-013 — Mobile scheduled ordering
@@ -751,8 +756,8 @@ Explicit non-goals: Native-app-only scheduling
 Data implications: None beyond other stories
 Security implications: Same as checkout
 Architecture fit / applicable invariants: UX mechanism not locked
-Open material decisions: NONE beyond shared OPEN FDs
-Readiness: NOT_READY_FOR_IMPLEMENTATION
+Open material decisions: NONE
+Readiness: READY for Product Definition Gate; NOT_READY_FOR_IMPLEMENTATION until Gate + Fit/lock + authorization
 ```
 
 ### US-036I-014 — Accessible date/time selection
@@ -775,8 +780,8 @@ Explicit non-goals: Locking a specific calendar library/component
 Data implications: N/A
 Security implications: N/A
 Architecture fit / applicable invariants: Component choice = implementation; outcomes = product
-Open material decisions: NONE product-policy; FD-036I-01 affects control shape (slot list vs time picker) but a11y outcomes remain
-Readiness: NOT_READY_FOR_IMPLEMENTATION
+Open material decisions: NONE (FD-036I-01 discrete slots — control shape = Fit; a11y outcomes remain)
+Readiness: READY for Product Definition Gate; NOT_READY_FOR_IMPLEMENTATION until Gate + Fit/lock + authorization
 ```
 
 ### US-036I-015 — Commercial sealing and online payment for Scheduled
@@ -794,13 +799,13 @@ Business rules: BR-036I-009, BR-036I-010, BR-036I-016, BR-036I-017
 UX states: Payment pending; success; failure/retry per GJ-PAYMENT-RECOVERY
 Permission / resource context: Existing payment identity
 Error / recovery: Existing payment failure/retry; never invent cash/COD/deposit/partial
-Dependencies: FD-036H-03 inheritance; FD-036I-06 OPEN (pay now recommended); FD-036I-07 OPEN (sealing recommended)
-Explicit non-goals: Pay later deposits; COD; new payment provider; new financial document type
-Data implications: Single Order; D-365/366/367 continuity; Checkout Snapshot sealing inheritance recommended
+Dependencies: FD-036H-03 inheritance; FD-036I-06 PAY NOW; FD-036I-07 commercials sealed at purchase
+Explicit non-goals: Pay later; COD; pay at pickup; deposit; partial payment; new payment provider; new financial document type
+Data implications: Single Order; D-365/366/367 continuity; Checkout Snapshot commercial authority preserved
 Security implications: Server-authoritative commercials; payment-bound immutability
 Architecture fit / applicable invariants: Snapshot timing fields; financial adapters remain D-365 compliant
-Open material decisions: FD-036I-06, FD-036I-07
-Readiness: Gate-blocked on OPEN pay/seal confirmations; NOT_READY_FOR_IMPLEMENTATION
+Open material decisions: NONE
+Readiness: READY for Product Definition Gate; NOT_READY_FOR_IMPLEMENTATION until Gate + Fit/lock + authorization
 ```
 
 ### US-036I-016 — Scheduling configuration / platform operability boundary
@@ -818,13 +823,13 @@ Business rules: BR-036I-005, BR-036I-015
 UX states: Existing outlet/hours/operating controls remain authoritative inputs to eligibility
 Permission / resource context: Existing outlet/admin permissions; no new role by default
 Error / recovery: Unauthorized deny
-Dependencies: IMP-035 / outlet profile / operating-state foundations; FD-036I-02, FD-036I-15
-Explicit non-goals: New “Scheduler Admin” role; labour scheduling product
-Data implications: Product requires eligibility inputs; storage = Fit
+Dependencies: IMP-035 / outlet profile / operating-state foundations; FD-036I-02, FD-036I-04, FD-036I-15 RESOLVED
+Explicit non-goals: New “Scheduler Admin” role; labour scheduling product; V1 capacity engine
+Data implications: Product requires eligibility inputs; temporary PAUSED ≠ auto-delete future slots; storage = Fit
 Security implications: No client-trusted eligibility
-Architecture fit / applicable invariants: Whether a scheduling profile is required per outlet = Fit
-Open material decisions: FD-036I-02, FD-036I-04, FD-036I-15
-Readiness: NOT_READY_FOR_IMPLEMENTATION
+Architecture fit / applicable invariants: Eligibility composition + whether scheduling profile required = Fit
+Open material decisions: NONE
+Readiness: READY for Product Definition Gate; NOT_READY_FOR_IMPLEMENTATION until Gate + Fit/lock + authorization
 ```
 
 ---
@@ -927,9 +932,9 @@ AC-036I-010 — Scheduled Delivery customer-facing promise class is explicit
 Story: US-036I-003
 Given Delivery + Scheduled with a selected time
 When review/confirmation present the timing
-Then the wording matches the Founder-resolved promise class (arrival vs kitchen-ready vs dispatch) from FD-036I-05
-And the class is not left ambiguous in customer-facing copy
-Mandatory in acceptance slice: YES (blocked until FD-036I-05 resolved)
+Then the wording states ARRIVAL / FULFILMENT WINDOW (customer expects delivery arrival) per FD-036I-05
+And the customer is not shown kitchen-ready, dispatch-start, or rider-assignment as the customer-facing promise
+Mandatory in acceptance slice: YES
 ```
 
 ```text
@@ -1083,19 +1088,19 @@ Mandatory in acceptance slice: YES
 ```text
 AC-036I-026 — Minimum lead time excludes too-soon times
 Story: US-036I-004
-Given Scheduled selection under a minimum lead-time policy (FD-036I-03 once resolved)
+Given Scheduled selection under per-mode minimum lead-time configuration (FD-036I-03; PICKUP vs DELIVERY may differ; values = operational config, not hard-coded in PD)
 When eligible times are listed
-Then times earlier than the minimum lead are not selectable
-Mandatory in acceptance slice: YES (policy detail blocked until FD-036I-03)
+Then times inside the forbidden lead window are not selectable
+Mandatory in acceptance slice: YES
 ```
 
 ```text
 AC-036I-027 — Maximum horizon excludes beyond-horizon dates
 Story: US-036I-005
-Given Scheduled selection under a horizon policy (FD-036I-02 once resolved)
+Given Scheduled selection under TODAY + TOMORROW horizon (outlet local calendar; same for Pickup and Delivery) per FD-036I-02
 When eligible dates are listed
-Then dates beyond the horizon are not selectable
-Mandatory in acceptance slice: YES (policy detail blocked until FD-036I-02)
+Then dates beyond tomorrow are not selectable (no multi-day beyond tomorrow; no arbitrary calendar beyond tomorrow)
+Mandatory in acceptance slice: YES
 ```
 
 ```text
@@ -1179,19 +1184,21 @@ AC-036I-036 — Scheduled Pickup early/late policy is followed
 Story: US-036I-009
 Given a customer arrives early or late relative to the Scheduled Pickup promise
 When Ops handles collection
-Then behaviour matches Founder-resolved FD-036I-13 policy
-And the system does not invent penalties unless Founder authorizes them
-Mandatory in acceptance slice: YES (blocked until FD-036I-13)
+Then EARLY: window remains the promise (no early-readiness guarantee); workforce may hand over early if ready and IMP-036H verification succeeds
+And LATE: no automatic no-show cancel/fee/penalty; Order remains governed by existing fulfil/cancel; customer may be directed to contact outlet
+And handover remains confirmation/order number + authorized customer verification → order.fulfil (no OTP/QR/PIN/gov ID) per FD-036I-13
+Mandatory in acceptance slice: YES
 ```
 
 ```text
 AC-036I-037 — Scheduled Delivery execution aligns to promise
 Story: US-036I-010
-Given a Scheduled Delivery Order approaching its promised window
+Given a Scheduled Delivery Order approaching its ARRIVAL/FULFILMENT WINDOW (FD-036I-05)
 When Delivery Coordinator / Ops initiates delivery execution
-Then initiation is conceptually timed to meet the customer-facing promise class (FD-036I-05/14)
-And customer-visible progress uses Delivery language (not Pickup handover)
-Mandatory in acceptance slice: YES (detail blocked until FD-036I-14)
+Then execution begins early enough to target that arrival/fulfilment window (FD-036I-14 outcome-first)
+And if booking/execution cannot meet the promise, surface Ops/customer recovery per FD-036I-10 without silently moving the Scheduled time or claiming the original promise is still achievable
+And mechanism (cron/queue/worker/ETA algorithm/exact dispatch calc) remains Architecture Fit-owned
+Mandatory in acceptance slice: YES
 ```
 
 ```text
@@ -1199,18 +1206,19 @@ AC-036I-038 — Delivery provider cannot book near Scheduled window
 Story: US-036I-010
 Given Scheduled Delivery where provider booking cannot be completed in time
 When Ops/system detects the failure
-Then customer recovery follows FD-036I-10/14 classes without silently changing the original promise
-Mandatory in acceptance slice: YES (blocked until FD-036I-10/14)
+Then notify + cancel/refund under existing authority + allow NEW Order against currently valid options (FD-036I-10/14)
+And do not silently change outlet/items/mode/time/slot or claim the original promise remains achievable
+Mandatory in acceptance slice: YES
 ```
 
 ```text
 AC-036I-039 — Customer cancellation before cutoff
 Story: US-036I-011
-Given a paid Scheduled Order within the Founder-resolved cancellation cutoff (FD-036I-09)
+Given a paid Scheduled Order before the configured cancellation cutoff relative to the selected fulfilment window (FD-036I-09; Pickup/Delivery may differ configured values)
 When the customer cancels
-Then cancellation/refund proceeds under existing refund authority
-And no cancellation fee is charged unless Founder explicitly authorizes one
-Mandatory in acceptance slice: YES (cutoff detail blocked until FD-036I-09)
+Then cancellation proceeds under existing cancel/refund authority where eligible
+And V1 applies NO cancellation/penalty fee
+Mandatory in acceptance slice: YES
 ```
 
 ```text
@@ -1218,9 +1226,9 @@ AC-036I-040 — Future closure removes future slot eligibility without inventing
 Story: US-036I-002 / US-036I-004
 Given a known future closure/exception for an outlet on date D
 When the customer browses Scheduled times for date D
-Then times covered by that future closure are not selectable
-And a temporary current PAUSED state does not by itself erase unrelated future dates’ eligibility (FD-036I-15)
-Mandatory in acceptance slice: YES (blocked until FD-036I-15)
+Then affected times are not selectable
+And a temporary current PAUSED state does not automatically delete otherwise-valid future slots; future eligibility reflects known future truth (hours, closures, inactive/suspended outlet, mode enablement, lead, horizon, merchandise) — current pause ≠ “unavailable tomorrow” (FD-036I-15)
+Mandatory in acceptance slice: YES
 ```
 
 ```text
@@ -1235,20 +1243,20 @@ Mandatory in acceptance slice: YES
 ```text
 AC-036I-042 — Capacity behaviour matches V1 Founder choice
 Story: US-036I-008 / US-036I-004
-Given FD-036I-04 resolved (no capacity vs per-slot capacity)
-When the last available capacity is exhausted (if capacity exists) or when capacity is not in V1
-Then customer outcomes match the resolved policy (either no capacity gating, or clear full-slot unavailable)
-And last-slot races do not double-sell beyond policy
-Mandatory in acceptance slice: YES (blocked until FD-036I-04)
+Given FD-036I-04 NO explicit per-slot capacity engine in V1
+When customers select Scheduled times
+Then eligibility may use outlet/activity, future hours/closures, mode, merchandise, lead time, and horizon — NOT orders-per-slot, kitchen workload, labour, or predictive capacity
+And there is no slot reservation/contention design and no last-slot capacity races to design for V1; capacity = FOLLOW_UP
+Mandatory in acceptance slice: YES
 ```
 
 ```text
 AC-036I-043 — No new Order status invented without Founder decision
 Story: US-036I-009
-Given Scheduled Pickup/Delivery Orders in Ops
-When lifecycle is displayed/acted
-Then existing PLACED→ACCEPTED→FULFILLED|CANCELLED semantics remain unless a material FD authorizes a new status
-And due/overdue are presentation/derived timing cues, not silently new statuses
+Given a Scheduled Order in Ops or customer surfaces
+When lifecycle state is presented
+Then existing PLACED→ACCEPTED→FULFILLED|CANCELLED semantics remain
+And due/overdue/Scheduled are presentation/derived timing cues only — not SCHEDULED/READY/DUE/LATE Order statuses (FD-036I-12)
 Mandatory in acceptance slice: YES
 ```
 
@@ -1257,28 +1265,31 @@ AC-036I-044 — Notifications are fulfilment-mode and timing aware
 Story: US-036I-007 / US-036I-010
 Given Scheduled Order lifecycle notification events under ADR-012 authority
 When notifications are sent
-Then copy reflects mode (Pickup vs Delivery) and Scheduled timing appropriately
-And Pickup notifications do not claim a rider is arriving
-And proactive reminder presence matches FD-036I-11 once resolved
-Mandatory in acceptance slice: YES (reminder timing blocked until FD-036I-11)
+Then content is mode-aware (Pickup: location+window; Delivery: arrival/fulfilment window) and timing-aware (Scheduled vs ASAP)
+And V1 includes one proactive pre-fulfilment reminder (~30 minutes before window begins) per FD-036I-11
+And if the Order was placed inside the reminder window, do not send a redundant upcoming reminder immediately after confirmation
+And no new messaging provider is introduced (Fit owns scheduling/retry)
+Mandatory in acceptance slice: YES
 ```
 
 ```text
 AC-036I-045 — Reschedule outcome matches Founder policy
 Story: US-036I-011
-Given FD-036I-08 resolved
-When a customer requests a time change
-Then either self-service reschedule works within cutoff/rules, or the product offers the defined non-self-service recovery (e.g. cancel + new order) without inventing a complex modification engine
-Mandatory in acceptance slice: YES (blocked until FD-036I-08)
+Given FD-036I-08 NO customer self-service rescheduling in V1
+When a customer wants a different Scheduled time
+Then there is no in-place reschedule / change-slot mutation / commercial reprice of the paid Order
+And the path is cancel (if permitted) + place a new Order against currently valid options
+Mandatory in acceptance slice: YES
 ```
 
 ```text
 AC-036I-046 — Cancellation after cutoff denied clearly
 Story: US-036I-011
-Given a Scheduled Order past the Founder-resolved cancellation cutoff
+Given a Scheduled Order past the configured cancellation cutoff before the selected fulfilment window (FD-036I-09)
 When the customer attempts self-service cancel
-Then the action is denied with clear messaging and a support/ops path
-Mandatory in acceptance slice: YES (blocked until FD-036I-09)
+Then the attempt is denied with clear messaging plus support/outlet recovery guidance
+And V1 applies NO cancellation/penalty fee
+Mandatory in acceptance slice: YES
 ```
 
 ```text
@@ -1286,9 +1297,10 @@ AC-036I-047 — Post-payment unavailability: no silent substitutions
 Story: US-036I-012
 Given a paid Scheduled Order whose future fulfilment becomes impossible
 When recovery begins
-Then the system does not silently change outlet, remove items, change mode, or change timing
-And customer-visible recovery matches FD-036I-10
-Mandatory in acceptance slice: YES (blocked until FD-036I-10)
+Then notify the customer + cancel/refund under existing authority + allow a NEW Order against currently valid options (FD-036I-10)
+And outlet, items, mode, and Scheduled time/slot are not silently changed; no in-place reschedule
+And original promise/audit history is preserved; Ops may assist but recovery remains cancel/refund original + separate replacement if customer chooses
+Mandatory in acceptance slice: YES
 ```
 
 ```text
@@ -1322,11 +1334,11 @@ Mandatory in acceptance slice: YES
 ```text
 AC-036I-051 — Pay-now vs pay-later matches Founder resolution
 Story: US-036I-015
-Given FD-036I-06 resolved
+Given FD-036I-06 PAY NOW
 When a customer places a Scheduled Order
-Then payment timing matches the resolved policy (recommended: pay now before Order materialization)
-And pay-later/deposit paths remain absent unless explicitly authorized
-Mandatory in acceptance slice: YES (blocked until FD-036I-06)
+Then payment is online now before Order materialization (Razorpay preserved; zero-payable where applicable)
+And pay later / COD / pay at pickup / deposit / partial payment are not offered
+Mandatory in acceptance slice: YES
 ```
 
 ```text
@@ -1349,11 +1361,11 @@ Mandatory in acceptance slice: YES
 | AC-036I-011…017, 026…029 | Empty/switch/revalidation/races | Domain + checkout concurrency | Eligibility + mutation safety | Planned only |
 | AC-036I-018…025, 030, 050, 051 | Confirmation, payment, commercials, FD continuity | Payment + Order + financial | Pay-now; D-365 continuity; no cash | Planned only |
 | AC-036I-031…038, 042…044 | Ops + notifications + timezone | Ops API/UI + notification assertions | Badge/detail/handover/delivery timing | Planned only |
-| AC-036I-039, 045…047 | Cancel/reschedule/post-pay recovery | E2E + refund continuity | After FD resolution | Planned only |
+| AC-036I-039, 045…047 | Cancel/no-reschedule/post-pay recovery | E2E + refund continuity | Cutoff + cancel+new Order + notify/refund | Planned only |
 | AC-036I-048…049 | Privacy + program pause boundary | Negative + governance assertions | Pickup privacy; pause preserved | Planned only |
 | AC-036I-021, 052 | Accessibility + mobile | Component/a11y + real-browser interactive proof | Keyboard/SR/mobile; scan alone insufficient | Planned only |
 
-Planned is **not** proven. Evidence populates after Founder FD resolution → Gate → Fit/lock → authorized implementation under TEST-1 (no silent-retry-as-pass).
+Planned is **not** proven. Evidence populates after Product Definition Gate → Fit/lock → authorized implementation under TEST-1 (no silent-retry-as-pass). Founder FD-036I-01…15 are already resolved.
 
 ---
 
@@ -1365,20 +1377,20 @@ Planned is **not** proven. Evidence populates after Founder FD resolution → Ga
 | `BR-036I-002` | FULFILMENT_MODE and FULFILMENT_TIMING are orthogonal; all four combinations are conceptually valid when eligibility allows. | Product identity | US-036I-001/005; AC-036I-013…015 |
 | `BR-036I-003` | ASAP behaviour must not regress when Scheduled is introduced. | Accepted Delivery + IMP-036H | US-036I-001; AC-036I-001/002 |
 | `BR-036I-004` | Scheduled requires an eligible future fulfilment time before payment. | PLANNED_IMP036I | US-036I-002/003; AC-036I-004/008 |
-| `BR-036I-005` | Selectable times must respect outlet activity, known future schedule eligibility, mode eligibility, merchandise fulfilability, min lead, horizon, and capacity-if-in-V1. | FD-036I-02…04, FD-036I-15 OPEN detail | US-036I-004; AC-036I-011/026/027/040/041 |
+| `BR-036I-005` | Selectable times must respect outlet activity, known future schedule eligibility, mode eligibility, merchandise fulfilability, per-mode min lead, and TODAY+TOMORROW horizon — **not** per-slot capacity in V1. Temporary current PAUSED does not auto-delete otherwise-valid future slots. | FD-036I-02…04, FD-036I-15 RESOLVED | US-036I-004; AC-036I-011/026/027/040/041/042 |
 | `BR-036I-006` | Scheduled Pickup preserves IMP-036H invariants: outlet bind, no destination, no delivery fee, no Delivery aggregate, packaging retained, order.fulfil handover, no OTP/QR/PIN. | FD-036H-04/07/08/13/23; FD-036I-16…20 | US-036I-002/009; AC-036I-005…007/035/048 |
 | `BR-036I-007` | Scheduled Delivery preserves accepted Delivery destination/serviceability and Delivery execution path. | ADR-011 | US-036I-003/010; AC-036I-008/009/037 |
 | `BR-036I-008` | No silent substitution of outlet, items, mode, or Scheduled time. | Product safety principle | US-036I-006/012; AC-036I-016/017/047 |
-| `BR-036I-009` | Existing commercial/payment/order truth remains authoritative; scheduling does not invent a parallel pricing engine. | FD-036H-09; FD-036I-07 OPEN confirm | US-036I-015; AC-036I-007/022/024 |
+| `BR-036I-009` | Commercials sealed at purchase (item pricing, promotions, tax, packaging, delivery charge); future changes do not silently reprice; Checkout Snapshot commercial authority preserved; scheduling does not invent a parallel pricing engine. | FD-036H-09; FD-036I-07 RESOLVED | US-036I-015; AC-036I-007/022/024 |
 | `BR-036I-010` | Payment-bound commercial snapshot (including mode+timing+outlet/destination) is immutable; unsafe mutations fail closed. | Accepted checkout/payment foundations; FD-036I-07 | US-036I-006/015; AC-036I-029 |
 | `BR-036I-011` | Scheduled times are presented in the selected outlet's local timezone. | Product timezone rule | US-036I-007/013/014; AC-036I-031/052 |
 | `BR-036I-012` | Order remains Order — no ScheduledOrder / PickupScheduledOrder / DeliveryScheduledOrder. | Product identity; FD-036I-17 | US-036I-002/007; AC-036I-023 |
-| `BR-036I-013` | Customer-facing Scheduled Delivery timing promise must be explicitly classified (arrival vs kitchen-ready vs dispatch) once FD-036I-05 resolves. | FD-036I-05 OPEN | US-036I-003; AC-036I-010 |
-| `BR-036I-014` | Scheduled Orders are visible to authorized workforce before due, with mode+timing badge. | FD-036I-12 OPEN detail | US-036I-008; AC-036I-032/033 |
-| `BR-036I-015` | Prefer derived timing presentation over inventing new Order statuses unless Founder proves lifecycle need. | Product identity | US-036I-008/009; AC-036I-043 |
+| `BR-036I-013` | Customer-facing Scheduled Delivery timing promise is ARRIVAL / FULFILMENT WINDOW (not kitchen-ready, dispatch-start, or rider-assignment); customer copy must reflect this. | FD-036I-05 RESOLVED | US-036I-003; AC-036I-010 |
+| `BR-036I-014` | Scheduled Orders are visible to authorized workforce immediately after purchase; may acknowledge/accept before window; derived cues Scheduled / Due soon / Overdue — not new Order statuses; lifecycle remains PLACED→ACCEPTED→FULFILLED|CANCELLED. | FD-036I-12 RESOLVED | US-036I-008; AC-036I-032/033/043 |
+| `BR-036I-015` | Use derived timing presentation (Scheduled / Due soon / Overdue); do not invent SCHEDULED/READY/DUE/LATE Order statuses (FD-036I-12). | Product identity; FD-036I-12 | US-036I-008/009; AC-036I-043 |
 | `BR-036I-016` | Online payment only; no cash/COD/pay-at-counter for Scheduled. | FD-036H-03; FD-036I-16 | US-036I-015; AC-036I-020 |
 | `BR-036I-017` | Scheduling does not create a new financial-document type; D-365/366/367 continuity required. | FD-036I-21 | US-036I-015; AC-036I-030/050 |
-| `BR-036I-018` | Cancellation/reschedule/post-pay recovery follow Founder-resolved FD-036I-08/09/10; existing refund authority remains money truth. | FD-036I-08…10 OPEN; D-364 | US-036I-011/012; AC-036I-039/045…047 |
+| `BR-036I-018` | No self-service reschedule (cancel if permitted + new Order); cancellation cutoff before window (per-mode config; no V1 fee); post-pay unhonourable → notify + cancel/refund + allow new Order; no silent substitution. Existing refund authority remains money truth. | FD-036I-08…10 RESOLVED; D-364 | US-036I-011/012; AC-036I-039/045…047 |
 
 ---
 
@@ -1394,13 +1406,13 @@ Applies primarily to `JOURNEY-I-C` / `JOURNEY-I-D` (Scheduled). ASAP journeys in
 | EMPTY / FIRST USE | Zero eligible times → clear empty; ASAP may remain; no invented time | US-036I-004; AC-036I-011/012 |
 | HAPPY PATH | Select time → pay → Ops prepare → Pickup handover or Delivery fulfil → FULFILLED | AC-036I-004/008/035/037 |
 | ALTERNATE VALID PATHS | Mode/timing switches; zero-payable; multi-outlet Pickup | AC-036I-013…015/028 |
-| VALIDATION FAILURE | Lead/horizon/hours/closure/capacity/merch/serviceability failures | AC-036I-016/017/026/027/040/041 |
+| VALIDATION FAILURE | Lead/horizon/hours/closure/merch/serviceability failures (no V1 capacity gating) | AC-036I-016/017/026/027/040/041/042 |
 | AUTHORIZATION | Customer owns checkout; Ops fulfil requires authority; unauthorized deny | AC-036I-034 |
 | NOT FOUND / STALE REFERENCE | Stale time/outlet after change → recoverable; no silent switch | AC-036I-016/029/047 |
 | SERVER / NETWORK ERROR | Existing checkout/payment error/retry patterns | US-036I-015; GJ-PAYMENT-RECOVERY |
-| RECOVERY | Other time / ASAP / mode switch / cancel+refund / FD-036I-10 classes | AC-036I-012/016/039/047 |
-| CONCURRENCY | Payment-pending mutation safety; last-slot capacity races if in V1 | AC-036I-029/042 |
-| DESTRUCTIVE ACTION | Cancellation/refund under existing authority; cutoff per FD-036I-09 | AC-036I-039/046/050 |
+| RECOVERY | Other time / ASAP / mode switch / cancel+refund / notify+cancel+refund+new Order (FD-036I-10); no self-service reschedule | AC-036I-012/016/039/045/047 |
+| CONCURRENCY | Payment-pending mutation safety; no last-slot capacity races in V1 (FD-036I-04) | AC-036I-029/042 |
+| DESTRUCTIVE ACTION | Cancellation/refund under existing authority; configured cutoff per FD-036I-09; no V1 cancel fee | AC-036I-039/046/050 |
 | SUCCESS FEEDBACK | Confirmation + history show Scheduled; Ops badge/detail | AC-036I-018/019/032 |
 | DOWNSTREAM EFFECT | No Delivery aggregate for Pickup; notifications mode+timing aware; FD continuity | AC-036I-006/030/044 |
 | REVISIT / RELOAD | Reload preserves authoritative mode/timing/payment state | US-036I-007/015 |
@@ -1429,7 +1441,7 @@ Workforce journeys share AUTHORIZATION, SUCCESS FEEDBACK, DOWNSTREAM EFFECT via 
 | Ops handover confirm | ACCEPTED Scheduled Pickup | Handed to customer / Mark as picked up | Confirm focusable + feedback | FULFILLED | AC-036I-035 |
 | Ops unauthorized | Missing permission | Deny; no state change | Focus deny | Exit | AC-036I-034 |
 | Cancel / cutoff denied | Past cutoff | Clear deny + support path | Focus message | Stay / contact | AC-036I-046 |
-| Post-pay unavailability | Future broken | Honest recovery options (FD-036I-10) | Focus recovery | Reschedule/cancel/contact classes | AC-036I-047 |
+| Post-pay unavailability | Future broken | Notify + cancel/refund + new Order (FD-036I-10) | Focus recovery | Cancel/refund + separate replacement | AC-036I-047 |
 | Server/network error | Transport fail | Existing retry messaging | Focus retry | Prior ready | Existing patterns |
 | Mode/timing switch recalculating | Pre-pay switch | Temporary recalculating; updated eligibility/commercials | Announce update | Coherent path | AC-036I-013…015 |
 
@@ -1444,7 +1456,7 @@ Workforce journeys share AUTHORIZATION, SUCCESS FEEDBACK, DOWNSTREAM EFFECT via 
 | Ops Pickup handover / fulfil | **ARCHITECTURE CANDIDATE:** reuse `order.fulfil` if Fit confirms (IMP-036H precedent); no new role by default | Order in operator scope | Unauthorized deny | AC-036I-035/034 |
 | Ops Delivery fulfil Scheduled | Existing Delivery Ops authority | Delivery Order in scope | Unauthorized deny | AC-036I-037/034 |
 | Invoke Delivery on Scheduled Pickup | Must fail closed | Pickup Order | Always denied for Pickup | AC-036I-006 |
-| Cancel / refund / reschedule | Existing cancellation/refund permissions; reschedule if FD-036I-08 YES | Existing resource rules | Own-order only; cutoff deny | AC-036I-039/045/046 |
+| Cancel / refund (no self-service reschedule) | Existing cancellation/refund permissions; no self-service reschedule (FD-036I-08) | Existing resource rules | Own-order only; cutoff deny | AC-036I-039/045/046 |
 | Configure hours/closures affecting eligibility | Existing outlet/admin authorities | Outlet resource scope | Unauthorized deny; no new Scheduler Admin role | AC-036I-042/040 |
 
 Do not derive authorization from persona labels. Fit verification of permission reuse is mandatory before implementation claims “no new permission.”
@@ -1459,12 +1471,12 @@ Do not derive authorization from persona labels. Fit verification of permission 
 - Paid commercial snapshot binds selected mode, timing promise, and outlet (Pickup) or destination (Delivery) immutably.
 - Scheduled Pickup must not create/use a Delivery aggregate.
 - Customer-facing timing must be presentable in outlet local timezone.
-- Scheduling eligibility depends on product inputs such as outlet activity, known future schedule/hours/exceptions, mode enablement, merchandise fulfilability, min lead, horizon, and capacity-if-included — **storage/computation = Architecture Fit**.
+- Scheduling eligibility depends on product inputs such as outlet activity, known future schedule/hours/exceptions, mode enablement, merchandise fulfilability, per-mode min lead, and TODAY+TOMORROW horizon — **not** per-slot capacity in V1 — **storage/computation = Architecture Fit**.
 - Historical ASAP Orders remain ASAP; migration/backward-compatibility strategy = Architecture Fit.
 - Do not invent speculative queue/cron/worker schemas in this draft.
 - Conceptual future Fit terms such as `scheduledFor` / `slotId` are **not** Founder decisions and are not locked here.
 
-**ARCHITECTURE CANDIDATES / Fit-owned:** durable storage of timing; slot vs timestamp representation; eligibility engine; capacity representation; snapshot evolution/migration; projection shapes; notification scheduling; operational release triggers. **IMPLEMENTATION DETAIL:** table/column/API/queue/cron names — out of scope here.
+**ARCHITECTURE CANDIDATES / Fit-owned:** durable storage of timing; slot representation; eligibility composition; lead/horizon/cutoff config placement; snapshot evolution/migration; projection shapes; notification scheduling/retry; operational release triggers; dispatch backward from arrival. Capacity representation is FOLLOW_UP (not V1). **IMPLEMENTATION DETAIL:** table/column/API/queue/cron names — out of scope here.
 
 ---
 
@@ -1482,7 +1494,7 @@ Do not derive authorization from persona labels. Fit verification of permission 
 | BOLA / cross-scope fulfil deny | PRODUCT REQUIREMENT | AC-036I-034 |
 | New auth realm / new role by default | NOT_SUPPORTED | Escalate if Fit proves need |
 
-Unresolved security **product** decisions beyond shared OPEN FDs: **NONE**. Mechanism choices remain Fit.
+Unresolved security **product** decisions: **NONE**. Mechanism choices remain Fit.
 
 ---
 
@@ -1493,10 +1505,10 @@ Unresolved security **product** decisions beyond shared OPEN FDs: **NONE**. Mech
 | Pre-payment mode/timing switch | Recalculate; coherent destination/fee/timing requirements | US-036I-005; AC-036I-013…015 |
 | Selected time invalid before pay | Block pay; recoverable; no silent substitution | US-036I-006; AC-036I-016 |
 | Payment pending / bound snapshot | Timing/mode mutation that invalidates snapshot fails safely | AC-036I-029; GJ-PAYMENT-RECOVERY |
-| Last available slot race (if capacity in V1) | No double-sell beyond FD-036I-04 policy | AC-036I-042 |
+| Last available slot capacity race | N/A in V1 — no per-slot capacity engine (FD-036I-04); no reservation/contention design | AC-036I-042 |
 | Duplicate placement retries | Idempotent single Order | AC-036I-023/025 |
 | Outlet/merch/hours change after selection (pre-pay) | Payment blocked; recoverable | AC-036I-017/040/041 |
-| Payment succeeds but scheduling cannot be honoured | Recovery class per FD-036I-10; no false guarantee | US-036I-012 |
+| Payment succeeds but scheduling cannot be honoured | Notify + cancel/refund + allow new Order (FD-036I-10); no false guarantee | US-036I-012 |
 | Post-payment closure / unavailability | No silent rewrite; FD-036I-10 | AC-036I-047 |
 | Ops late / customer early-late Pickup | FD-036I-13 policy | AC-036I-036 |
 | Provider unavailable near Scheduled Delivery | FD-036I-14 / FD-036I-10 | AC-036I-038 |
@@ -1509,7 +1521,7 @@ Do not invent new retry/idempotency semantics; align to accepted payment/order c
 ## 18. Accessibility/responsive expectations
 
 - Supported contexts: existing customer checkout and Ops surfaces on mobile and desktop viewports already targeted by IMP-036B/C/D/H.
-- ASAP/Scheduled timing choice, date/time selection, confirmation summaries, cancel/reschedule controls, and Ops handover/delivery controls must be keyboard reachable with visible focus and accessible names.
+- ASAP/Scheduled timing choice, date/time selection, confirmation summaries, cancel controls (no self-service reschedule), and Ops handover/delivery controls must be keyboard reachable with visible focus and accessible names.
 - Selected date/time state must be communicated programmatically (AC-036I-021/052).
 - Error/recovery messages (no times; time unavailable; cutoff deny; payment-pending mutation denied) must be programmatically associated or announced appropriately and must not rely solely on colour.
 - If a calendar-style UX is used, this Product Definition requires the **user outcomes** above and does **not** lock a specific calendar library or component.
@@ -1537,7 +1549,7 @@ asap_vs_scheduled_mix
 pickup_vs_delivery_mix_within_scheduled
 scheduled_selected_date_or_window_distribution
 scheduled_cancellation_rate
-scheduled_reschedule_rate (if self-service exists)
+scheduled_reschedule_rate (N/A for V1 — no self-service reschedule; FD-036I-08)
 scheduled_fulfilled_on_time_rate
 scheduled_fulfilled_late_rate
 scheduled_time_unavailability_rejection_reasons
@@ -1553,7 +1565,7 @@ Do not invent financial values. Do not introduce tracking PII. Collection/storag
 |---|---|---|---|---|
 | `GJ-FIRST-ORDER` / CURRENT | **Protect** ASAP Delivery; **extend** for Scheduled Delivery; **protect** ASAP Pickup; **extend** for Scheduled Pickup | YES | AC-036I-001/002/004/008 | Real-browser proof after implementation; result NOT_PERFORMED |
 | `GJ-PAYMENT-RECOVERY` / CURRENT | Continuity when payment pending during Scheduled; mutation safety | YES (continuity) | AC-036I-029 | Planned continuity proof |
-| `GJ-CANCELLATION-REFUND` / CURRENT | Continuity for Scheduled Orders; cutoff/reschedule policies once resolved | YES (continuity) | AC-036I-039/050 | Planned continuity proof |
+| `GJ-CANCELLATION-REFUND` / CURRENT | Continuity for Scheduled Orders; cutoff + cancel (no self-service reschedule) | YES (continuity) | AC-036I-039/045/046/050 | Planned continuity proof |
 | `GJ-ADDRESS-SERVICEABILITY` / CURRENT | Delivery path unchanged for ASAP; Scheduled Delivery still requires serviceability; Scheduled Pickup must not force address | YES | AC-036I-009/048 | Planned |
 | `GJ-RETURNING-ORDER` / PARTIAL | May later use Scheduled; no new Order Again semantics in IMP-036I | NO | — | N/A for V1 mandatory |
 | Other GJs | No intentional change | NO unless regression risk found | — | Protect if touched |
@@ -1566,9 +1578,9 @@ Registry status is not a test verdict.
 
 | Dependency | Authority / verified state | Required before which story or gate? | Unresolved impact |
 |---|---|---|---|
-| ROADMAP/STATE activation IMP-036I (PD only) + program pause D-377 | GTM-R148 / STATE-R146 expected tip | SATISFIED for drafting this PD | Gate/Fit/impl still blocked |
+| ROADMAP/STATE activation IMP-036I (PD only) + program pause D-377 | GTM-R149 / STATE-R147 expected tip | SATISFIED for drafting this PD | Fit/impl still blocked; Gate ready to be performed |
 | Accepted commerce foundations through IMP-036H | COMPLETE_AND_ACCEPTED through IMP-036H | All stories | NONE for ASAP baselines |
-| Founder resolution of FD-036I-01…15 | OPEN | Before Product Definition Gate | Gate NOT ready |
+| Founder resolution of FD-036I-01…15 | RESOLVED 2026-09-24 | Before Product Definition Gate | SATISFIED — Gate ready (NOT_PERFORMED) |
 | Product Definition Gate PASS | NOT_PERFORMED | Before Architecture Fit | Blocked |
 | Architecture Fit PASS + locked capability | NOT_PERFORMED | Before implementation authorization | Blocked |
 | Implementation authorization | NO | Before code/schema | Blocked |
@@ -1584,8 +1596,8 @@ All marked **`ARCHITECTURE_FIT_REQUIRED`**. Do **not** answer in Product Definit
 4. How are future eligible times computed? — `ARCHITECTURE_FIT_REQUIRED`
 5. How does Store Hours participate in eligibility? — `ARCHITECTURE_FIT_REQUIRED`
 6. Is a scheduling configuration/profile required per Outlet? — `ARCHITECTURE_FIT_REQUIRED`
-7. How is capacity represented if product includes it? — `ARCHITECTURE_FIT_REQUIRED`
-8. How is concurrency controlled for the last available slot? — `ARCHITECTURE_FIT_REQUIRED`
+7. How is capacity represented if product includes it? — `ARCHITECTURE_FIT_REQUIRED` (product: NO capacity engine in V1 / FOLLOW_UP; Fit records N/A or deferral)
+8. How is concurrency controlled for the last available slot? — `ARCHITECTURE_FIT_REQUIRED` (product: no V1 capacity races to design)
 9. How is pre-payment revalidation performed? — `ARCHITECTURE_FIT_REQUIRED`
 10. How is a future action triggered safely (without locking queues/cron/workers here)? — `ARCHITECTURE_FIT_REQUIRED`
 11. What mechanism releases Scheduled Pickup prep? — `ARCHITECTURE_FIT_REQUIRED`
@@ -1612,7 +1624,7 @@ All marked **`ARCHITECTURE_FIT_REQUIRED`**. Do **not** answer in Product Definit
 | ASAP \| SCHEDULED timing choice | `PLANNED_IMP036I` V1 commitment | US-036I-001…016; AC-036I-003+ |
 | Scheduled Pickup / Scheduled Delivery | `PLANNED_IMP036I` | US-036I-002/003 |
 
-Proposed PLANNED behaviour is not accepted until Founder FDs resolve, gates pass, and IMP acceptance occurs.
+Proposed PLANNED behaviour is not accepted until Product Definition Gate PASS, Architecture Fit/lock, implementation authorization, and IMP acceptance occur. Founder FD-036I-01…15 are resolved.
 
 ---
 
@@ -1620,10 +1632,10 @@ Proposed PLANNED behaviour is not accepted until Founder FDs resolve, gates pass
 
 | `EXPLICITLY_DEFERRED` behaviour | FOLLOW_UP or DEFERRED | Reason / consequence | Revisit dependency / decision owner |
 |---|---|---|---|
-| Advanced workload/capacity forecasting | DEFERRED / FOLLOW_UP | FD-036I-04 may choose no capacity or simple capacity only | Founder |
+| Explicit per-slot capacity engine / workload/capacity forecasting | FOLLOW_UP (FD-036I-04) | V1 has NO capacity engine; eligibility excludes orders-per-slot/kitchen/labour/predictive capacity | Founder / future slice |
 | Kitchen preparation lifecycle statuses (PREPARING, READY_FOR_PICKUP, etc.) | DEFERRED | Prefer derived timing unless Founder proves need | Founder |
 | Pickup OTP/QR proof | DEFERRED / NOT_SUPPORTED for V1 | IMP-036H default remains | Future decision |
-| Customer no-show automatic penalties | DEFERRED | Tied to FD-036I-13 | Founder |
+| Customer no-show automatic cancel/fee/penalties | DEFERRED | Consistent with FD-036I-13 grace-oriented LATE (no automatic no-show cancel/fee in V1) | Founder |
 | External calendar integrations | DEFERRED | Out of V1 | Founder |
 | AI prep-time prediction / dynamic surge | DEFERRED | Non-goals | Founder |
 | Driver shift / kitchen labour scheduling | DEFERRED | Non-goals | Founder |
@@ -1637,7 +1649,7 @@ Proposed PLANNED behaviour is not accepted until Founder FDs resolve, gates pass
 |---|---|---|
 | Recurring orders / subscriptions | Founder out-of-scope | Not offered |
 | Catering / event / bulk-order planning | Founder out-of-scope | Not offered |
-| Cash on delivery / pay at pickup / COD / deposits / partial payment | FD-036H-03; FD-036I-16; FD-036I-06 unless Founder authorizes pay-later | AC-036I-020 |
+| Cash on delivery / pay at pickup / COD / deposits / partial payment / pay later | FD-036H-03; FD-036I-16; FD-036I-06 PAY NOW | AC-036I-020/051 |
 | ScheduledOrder / PickupScheduledOrder / DeliveryScheduledOrder aggregates | Product identity; FD-036I-17 | AC-036I-023 |
 | Delivery aggregate for Scheduled Pickup | FD-036H-13; FD-036I-20 | AC-036I-006 |
 | Calling Scheduled Pickup a form of Delivery | IMP-036H mode peer | AC-036I-005/033 |
@@ -1646,276 +1658,168 @@ Proposed PLANNED behaviour is not accepted until Founder FDs resolve, gates pass
 | Customer-selected delivery driver / multi-stop / cross-outlet split | Non-goals | Not offered |
 | New payment provider / auth realm / loyalty system | Non-goals | Unchanged |
 | New financial-document type for scheduling | D-365/366/367; FD-036I-21 | AC-036I-030 |
-| Silent outlet/item/mode/time substitution | BR-036I-008 | AC-036I-016/047 |
-| Inventing SCHEDULED/READY/DUE/LATE Order statuses without Founder proof | BR-036I-015 | AC-036I-043 |
+| Silent outlet/item/mode/time substitution | BR-036I-008; FD-036I-10 | AC-036I-016/047 |
+| Customer self-service rescheduling / in-place change-slot | FD-036I-08 | AC-036I-045 |
+| Inventing SCHEDULED/READY/DUE/LATE Order statuses | BR-036I-015; FD-036I-12 | AC-036I-043 |
 | Resolving IMP-037/038 or activating IMP-039/040 via this slice | D-377; AC-036I-049 | Program pause preserved |
 
 ---
 
-## 25. Unresolved / FOUNDER DECISIONS REQUIRED
+## 25. Founder decisions register (resolved)
 
 | `UNRESOLVED_DECISION_REQUIRED` item | Material user/business impact | Decision owner / evidence needed | Affected stories / gate |
 |---|---|---|---|
-| FD-036I-01…15 (see cards below) | Scheduling model, horizon, lead, capacity, promise, pay, seal, reschedule, cancel, recovery, reminder, ops release, late/early, dispatch, paused-vs-future | Founder | Product Definition Gate blocked |
+| NONE | — | All FD-036I-01…22 resolved (15 Founder + 7 existing authority) | Product Definition Gate ready (NOT_PERFORMED) |
 
 ```text
-UNRESOLVED_MATERIAL_PRODUCT_DECISIONS: 15
-READY_FOR_PRODUCT_DEFINITION_GATE: NO
+UNRESOLVED_MATERIAL_PRODUCT_DECISIONS: 0
+OPEN_FOUNDER_DECISIONS: 0
+FOUNDER_RESOLVED: 15 (FD-036I-01 … FD-036I-15) — 2026-09-24
+RESOLVED_BY_EXISTING_AUTHORITY: 7 (FD-036I-16 … FD-036I-22)
+READY_FOR_PRODUCT_DEFINITION_GATE: YES
+PRODUCT_DEFINITION_GATE_EXECUTION: NOT_PERFORMED
+Gate Result: NOT_PERFORMED
 ```
 
-Architecture Fit questions (§21) are **mechanism** questions, not unresolved product decisions.
+Architecture Fit questions (§21) are **mechanism** questions, not unresolved product decisions. They remain unanswered (`ARCHITECTURE_FIT_REQUIRED`).
 
-### Founder decisions register — OPEN material decisions
+### Founder decisions register — RESOLVED (Founder, 2026-09-24)
 
 #### FD-036I-01 — Slot vs exact-time vs hybrid
 
 ```text
 ID: FD-036I-01
-Status: OPEN
-question: Should customer-facing Scheduled times be discrete slots, exact customer-selected times, or a hybrid?
-why it matters: Defines the entire selection UX, eligibility density, Ops due presentation, and concurrency semantics.
-options:
-  A) Discrete fulfilment slots (e.g. 6:00–6:30 PM, 6:30–7:00 PM)
-  B) Exact customer-selected fulfilment time (e.g. 6:15 PM)
-  C) Hybrid (e.g. pick a date + choose from slot list; or exact time snapped to slots)
-recommended option: A — discrete slots (simpler capacity, clearer Ops windows, common QSR pattern)
-trade-offs: A is less precise for customer; B is flexible but harder for kitchen/dispatch batches; C adds complexity.
-impact if deferred: Product Definition Gate cannot pass; date/time UX and many ACs remain ambiguous.
-Note: Conceptual Fit terms scheduledFor/slotId are NOT themselves a Founder decision.
+Status: RESOLVED — Founder
+Date: 2026-09-24
+Resolution: Discrete fulfilment slots; V1 30-minute windows (e.g. 6:00–6:30 PM); same for Pickup+Scheduled and Delivery+Scheduled; no exact-minute; no hybrid.
+Slot representation = Architecture Fit.
 ```
 
 #### FD-036I-02 — Scheduling horizon
 
 ```text
 ID: FD-036I-02
-Status: OPEN
-question: How far ahead may customers schedule, and may Pickup/Delivery/outlet differ?
-why it matters: Bounds inventory of selectable dates and outlet planning load.
-options:
-  A) Same day only
-  B) Same day + next day
-  C) Rolling N days (Founder picks N)
-  D) Calendar-based configurable horizon (possibly per outlet / per mode)
-recommended option: B for V1 simplicity, with same horizon for Pickup and Delivery unless outlet config later justified
-trade-offs: A too tight for many customers; C/D more flexible but needs config ownership clarity.
-impact if deferred: AC-036I-027 and eligibility empty-states cannot be finalized.
-Also address: earliest possible scheduled time; latest bookable date; outlet-configurable horizon YES/NO.
+Status: RESOLVED — Founder
+Date: 2026-09-24
+Resolution: Horizon TODAY + TOMORROW (outlet local calendar); same for Pickup and Delivery; no multi-day beyond tomorrow; no arbitrary calendar beyond tomorrow.
+Internal config OK only if it does not expand V1 customer promise without authority.
 ```
 
 #### FD-036I-03 — Minimum lead-time model
 
 ```text
 ID: FD-036I-03
-Status: OPEN
-question: What minimum lead time makes a future time selectable for Pickup vs Delivery?
-why it matters: Prevents impossible “schedule for 5 minutes from now” promises.
-options:
-  A) Single fixed lead time for all Scheduled Orders
-  B) Per-mode lead time (Pickup prep vs Delivery prep+dispatch)
-  C) Per-outlet configuration
-  D) Other simple product rule defined by Founder
-recommended option: B — per-mode lead time (Pickup shorter; Delivery includes dispatch buffer conceptually)
-trade-offs: A simplest but inaccurate; C most flexible but needs admin UX; do not encode implementation formulas here.
-impact if deferred: AC-036I-026 blocked.
+Status: RESOLVED — Founder
+Date: 2026-09-24
+Resolution: Per-mode lead time (PICKUP vs DELIVERY may differ). Do NOT hard-code immutable minute values in PD. Values = operational configuration. Fit owns where/how configured.
 ```
 
 #### FD-036I-04 — Capacity in V1
 
 ```text
 ID: FD-036I-04
-Status: OPEN
-question: Is per-slot/order capacity part of IMP-036I V1?
-why it matters: Determines oversell risk and eligibility empty reasons.
-options:
-  A) No explicit per-slot capacity in V1 (hours/lead/horizon only)
-  B) Configurable order capacity per slot
-  C) Advanced workload/capacity model
-recommended option: A for V1 (avoid premature complexity); revisit before heavy GTM load
-trade-offs: A risks operational overload; B adds config + concurrency; C out of scope.
-impact if deferred: AC-036I-042 and last-slot races undefined.
+Status: RESOLVED — Founder
+Date: 2026-09-24
+Resolution: NO explicit per-slot capacity engine in V1. Eligibility may use outlet/activity, future hours/closures, mode, merchandise, lead time, horizon — NOT orders-per-slot, kitchen workload, labour, predictive capacity. Capacity = FOLLOW_UP. No slot reservation/contention design for V1.
 ```
 
 #### FD-036I-05 — Customer-facing Scheduled Delivery promise class
 
 ```text
 ID: FD-036I-05
-Status: OPEN
-question: What does the displayed Scheduled Delivery time/window mean to the customer?
-why it matters: Ambiguity creates false promises and wrong Ops dispatch behaviour.
-options:
-  A) Expected delivery-arrival / fulfilment window (customer-facing arrival)
-  B) Kitchen-ready time
-  C) Dispatch-start time
-recommended option: A — customer-facing ARRIVAL / FULFILMENT window
-trade-offs: A matches customer language; B/C are ops-centric and confuse customers unless carefully translated.
-impact if deferred: AC-036I-010 blocked; Delivery Coordinator timing ambiguous.
+Status: RESOLVED — Founder
+Date: 2026-09-24
+Resolution: Scheduled Delivery window = ARRIVAL / FULFILMENT WINDOW (customer expects delivery arrival). NOT kitchen-ready, dispatch-start, or rider-assignment. Customer copy must reflect this. Fit owns dispatch backward from arrival.
 ```
 
 #### FD-036I-06 — Pay now vs pay later
 
 ```text
 ID: FD-036I-06
-Status: OPEN
-question: Must Scheduled Orders be paid online now, or may payment occur later?
-why it matters: Changes checkout, Order materialization, no-show economics, and refund patterns.
-options:
-  A) Pay now (online before Order materialization) — preserves accepted checkout/payment
-  B) Pay later (not recommended without explicit new payment model)
-recommended option: A — PAY NOW
-trade-offs: A aligns with FD-036H-03 and Razorpay/snapshot model; B invents deposits/collections risk.
-impact if deferred: AC-036I-051 blocked.
-Note: Cash/COD remain prohibited by existing authority regardless (FD-036I-16).
+Status: RESOLVED — Founder
+Date: 2026-09-24
+Resolution: PAY NOW. Preserve Razorpay, payment before Order materialization, zero-payable where applicable. No pay later / COD / pay at pickup / deposit / partial payment.
 ```
 
 #### FD-036I-07 — Commercial sealing at purchase
 
 ```text
 ID: FD-036I-07
-Status: OPEN
-question: Are item prices, promotions, tax, packaging, and delivery charges sealed at Scheduled purchase?
-why it matters: Customers need certainty; future menu/promo changes must not silently reprice paid Orders.
-options:
-  A) YES — seal at purchase (consistent with accepted Checkout Snapshot immutability)
-  B) NO — allow later reprice (not recommended; breaks payment truth)
-recommended option: A — YES seal at purchase (RECOMMENDED inheritance from Checkout Snapshot; still needs Founder confirmation for scheduled context)
-trade-offs: A may lock promos that later change; B creates disputes and payment mismatch.
-impact if deferred: Commercial ACs and refund baselines remain soft.
-Do not make legal/tax claims beyond D-365/ADR-007 authority.
+Status: RESOLVED — Founder
+Date: 2026-09-24
+Resolution: YES — commercials sealed at purchase (item pricing, promotions, tax, packaging, delivery charge). Future changes do not silently reprice. Preserve Checkout Snapshot commercial authority. No new legal/tax claim.
 ```
 
 #### FD-036I-08 — Self-service rescheduling
 
 ```text
 ID: FD-036I-08
-Status: OPEN
-question: Does V1 include customer self-service rescheduling of Scheduled Orders?
-why it matters: Support load vs product complexity.
-options:
-  A) YES — self-service within cutoff to eligible replacement times (define commercial effects + change limits)
-  B) NO — customer cancels (if allowed) and places a new order; Ops-assisted change only
-recommended option: B for deliberately small V1 (cancel + new order), unless Founder prioritizes convenience
-trade-offs: A better UX, more edge cases; B simpler, more friction.
-impact if deferred: AC-036I-045 blocked.
+Status: RESOLVED — Founder
+Date: 2026-09-24
+Resolution: NO customer self-service rescheduling in V1. NO in-place reschedule engine. Want another time → cancel (if permitted) + new Order. No change-slot mutation, commercial reprice of paid Order, schedule history engine. Rescheduling = future capability.
 ```
 
 #### FD-036I-09 — Cancellation cutoff
 
 ```text
 ID: FD-036I-09
-Status: OPEN
-question: Until when may a customer self-service cancel a Scheduled Order, and does Pickup differ from Delivery?
-why it matters: Kitchen/dispatch waste vs customer flexibility; refund expectations.
-options:
-  A) Cancel anytime until selected time
-  B) Cancel until a fixed cutoff before the promise (possibly per mode)
-  C) Cancel until operational preparation/release begins (FD-036I-12 linkage)
-  D) Other Founder rule (including fees — only if explicit)
-recommended option: B — cutoff before promise, possibly stricter for Delivery than Pickup
-trade-offs: A maximizes flexibility but wastes prep; C couples to ops release semantics.
-impact if deferred: AC-036I-039/046 blocked.
-Existing refund money truth remains D-364; no cancellation fee without explicit Founder authorization.
+Status: RESOLVED — Founder
+Date: 2026-09-24
+Resolution: Cancellation cutoff before selected fulfilment window; Pickup/Delivery may differ configured values. Before cutoff: existing cancel/refund where eligible. After cutoff: deny self-service clearly + support/outlet recovery guidance. V1: NO cancellation/penalty fee. Cutoff values = operational config. Fit owns representation/enforcement.
 ```
 
 #### FD-036I-10 — Post-payment unavailable-order recovery
 
 ```text
 ID: FD-036I-10
-Status: OPEN
-question: If a paid Scheduled Order cannot be honoured later, what customer recovery is allowed?
-why it matters: Trust, refunds, Ops playbooks; forbids silent substitutions.
-options:
-  A) Contact customer + offer reschedule (if supported) or cancel+refund
-  B) Auto-cancel+refund when unhonourable
-  C) Ops-only recovery with mandatory customer notification
-  D) Combination policy defined by Founder
-recommended option: D — notify customer; prefer reschedule if FD-036I-08 allows else cancel+refund; never silent rewrite
-trade-offs: Auto-cancel is blunt; contact-only may be slow without staffing.
-impact if deferred: AC-036I-047/038 blocked.
-Principles: NO silent outlet/item/mode/time substitution.
+Status: RESOLVED — Founder
+Date: 2026-09-24
+Resolution: If paid Scheduled Order cannot be honoured: NOTIFY + CANCEL/REFUND under existing authority + allow NEW Order against currently valid options. Do NOT silently change outlet/items/mode/time/slot. No in-place reschedule. Ops may assist but recovery = cancel/refund original + separate replacement if customer chooses. Preserve original promise/audit history.
 ```
 
 #### FD-036I-11 — Proactive reminder
 
 ```text
 ID: FD-036I-11
-Status: OPEN
-question: Does V1 include a proactive pre-fulfilment reminder notification for Scheduled Orders?
-why it matters: Reduces no-shows; adds notification volume and timing policy.
-options:
-  A) YES — conceptual reminder before the promise (Founder picks lead, e.g. “about 1 hour before”)
-  B) NO — confirmation + lifecycle notifications only
-recommended option: A — YES simple reminder for V1
-trade-offs: A improves show-rate; B simpler. Do not invent a new messaging provider (ADR-012).
-impact if deferred: AC-036I-044 reminder clause blocked.
+Status: RESOLVED — Founder
+Date: 2026-09-24
+Resolution: YES — one proactive pre-fulfilment reminder. Default ~30 minutes before window begins. If Order placed inside reminder window: do not send redundant upcoming reminder immediately after confirmation. Mode-aware wording (Pickup: location+window; Delivery: arrival/fulfilment window). No new messaging provider. Fit owns scheduling/retry.
 ```
 
 #### FD-036I-12 — Operational release / actionability
 
 ```text
 ID: FD-036I-12
-Status: OPEN
-question: When do Scheduled Orders become actionable for workforce, and is there an operational release/prep concept?
-why it matters: Kitchen/Delivery Coordinator workflow; risk of inventing new Order statuses.
-options:
-  A) Visible early; actionable from PLACED/ACCEPTED under existing controls; due-soon is presentation only
-  B) Visible early; becomes actionable only after an operational release relative to the promise
-  C) Requires new lifecycle statuses (SCHEDULED/READY/DUE/LATE) — only if Founder proves need
-recommended option: A or B with derived timing cues; avoid C unless evidence requires it
-trade-offs: A simplest; B clearer prep gates; C expands lifecycle surface area.
-impact if deferred: US-036I-008/009 Ops behaviour blocked.
-Prefer timing metadata / derived operational state at product level.
+Status: RESOLVED — Founder
+Date: 2026-09-24
+Resolution: Visible to authorized workforce immediately after purchase; may acknowledge/accept before window. Derived cues: Scheduled / Due soon / Overdue — NOT new Order statuses. No SCHEDULED/READY/DUE/LATE statuses. Prep/Delivery initiation become due based on Scheduled timing policy. Fit owns release mechanics. Lifecycle remains PLACED→ACCEPTED→FULFILLED|CANCELLED.
 ```
 
 #### FD-036I-13 — Late/early Pickup policy
 
 ```text
 ID: FD-036I-13
-Status: OPEN
-question: What happens if a customer arrives early or late for Scheduled Pickup, and can they collect after the window?
-why it matters: Food quality, Ops fairness, no-show handling.
-options:
-  A) Early OK within reason; late collect allowed until close / fixed grace; then Ops-assisted
-  B) Strict window only; outside window requires Ops exception
-  C) Include no-show cancel/penalty policy (only with explicit Founder authorization)
-recommended option: A — grace-oriented without V1 penalties (aligns with FD-036H-18 no no-show penalties)
-trade-offs: A flexible; B rigid; C needs careful fairness/legal review.
-impact if deferred: AC-036I-036 blocked.
-Handover verification remains IMP-036H model (no OTP/QR/PIN).
+Status: RESOLVED — Founder
+Date: 2026-09-24
+Resolution: Grace-oriented. EARLY: window remains promise; no early-readiness guarantee; workforce may hand over early if ready + IMP-036H verification succeeds. LATE: no automatic no-show cancel/fee/penalty; Order governed by existing fulfil/cancel; may direct customer to contact outlet. Preserve IMP-036H handover (confirmation/order number + authorized customer verification → order.fulfil). No OTP/QR/PIN/gov ID.
 ```
 
 #### FD-036I-14 — Delivery dispatch timing model
 
 ```text
 ID: FD-036I-14
-Status: OPEN
-question: Relative to the customer promise, when should Delivery execution begin, and what if provider cannot book?
-why it matters: Meeting arrival promises; Ops/provider coordination.
-options:
-  A) Fixed product dispatch lead before promise window
-  B) Configurable dispatch lead (outlet/brand)
-  C) Consider provider ETA dynamically (more complex)
-  D) Founder-defined simple rule combining A/B
-recommended option: A or D — initiate sufficiently before arrival window; escalate to FD-036I-10 if provider cannot book
-trade-offs: C is powerful but Fit-heavy; A may over/under buffer.
-impact if deferred: AC-036I-037/038 blocked.
-Mechanism (queue/cron/worker) remains Fit-owned — product states outcome only.
+Status: RESOLVED — Founder
+Date: 2026-09-24
+Resolution: Outcome-first: Delivery execution must begin early enough to target ARRIVAL/FULFILMENT window. PD does NOT prescribe cron/queue/worker/ETA algorithm/exact dispatch calc — Fit owns. If booking/execution cannot meet promise: surface to Ops/customer recovery + follow FD-036I-10. Do NOT silently move Scheduled time or claim original promise still achievable.
 ```
 
 #### FD-036I-15 — Current PAUSED vs future slot eligibility
 
 ```text
 ID: FD-036I-15
-Status: OPEN
-question: How should temporary current operating PAUSED relate to eligibility of future Scheduled times?
-why it matters: A pause now must not incorrectly erase tomorrow’s valid slots; future closures must still remove affected times.
-options:
-  A) Current PAUSED blocks ASAP and near-term only; future dates use known schedule/exceptions independently
-  B) Current PAUSED blocks all Scheduled booking until resumed
-  C) Configurable policy per outlet
-recommended option: A — distinguish current operating state from known future schedule eligibility
-trade-offs: A matches customer expectation; B is safer operationally but over-blocks; C needs admin clarity.
-impact if deferred: AC-036I-040 blocked.
-Do not design storage for exceptions here.
+Status: RESOLVED — Founder
+Date: 2026-09-24
+Resolution: Distinguish temporary PAUSED now from known future slot eligibility. Temporary pause does NOT automatically delete otherwise-valid future slots. Future eligibility reflects known future truth (hours, closures, inactive/suspended outlet, mode enablement, lead, horizon, merchandise). Current pause ≠ "unavailable tomorrow." Fit owns eligibility composition.
 ```
 
 ### Founder decisions register — RESOLVED_BY_EXISTING_AUTHORITY
@@ -1932,7 +1836,7 @@ These are **not** newly invented RESOLVED Founder picks for scheduling; they are
 | FD-036I-21 | No new financial-document type; D-365 / D-366 / D-367 continuity | `RESOLVED_BY_EXISTING_AUTHORITY` | DR-20 financial document authorities |
 | FD-036I-22 | Program pause D-377 remains authoritative; IMP-037/038 holds preserved | `RESOLVED_BY_EXISTING_AUTHORITY` | D-377; ROADMAP/STATE holds |
 
-Pay-now (FD-036I-06) and commercial sealing (FD-036I-07) remain **OPEN** with recommendations despite strong inheritance signals — Founder confirmation required for scheduled context.
+Totals: 15 Founder-resolved + 7 existing authority = 22. No material OPEN Founder decisions remain.
 
 ---
 
@@ -1940,35 +1844,35 @@ Pay-now (FD-036I-06) and commercial sealing (FD-036I-07) remain **OPEN** with re
 
 | Story ID | Applicable fields complete / evidence | Open material decisions | Readiness / blocker |
 |---|---|---|---|
-| US-036I-001 | §9 complete; ACs/BRs linked | FD-036I-01…04 | NOT_READY for Gate |
-| US-036I-002 | §9 complete | FD-036I-01…03, 13, 15 | NOT_READY for Gate |
-| US-036I-003 | §9 complete | FD-036I-01, 05, 14 | NOT_READY for Gate |
-| US-036I-004 | §9 complete | FD-036I-02…04, 15 | NOT_READY for Gate |
-| US-036I-005 | §9 complete | FD-036I-07 (commercial switch implications) | NOT_READY for Gate |
-| US-036I-006 | §9 complete | FD-036I-04 | NOT_READY for Gate |
-| US-036I-007 | §9 complete | FD-036I-05 wording | NOT_READY for Gate |
-| US-036I-008 | §9 complete | FD-036I-12 | NOT_READY for Gate |
-| US-036I-009 | §9 complete | FD-036I-12, 13 | NOT_READY for Gate |
-| US-036I-010 | §9 complete | FD-036I-05, 14 | NOT_READY for Gate |
-| US-036I-011 | §9 complete | FD-036I-08, 09 | NOT_READY for Gate |
-| US-036I-012 | §9 complete | FD-036I-10 | NOT_READY for Gate |
-| US-036I-013 | §9 complete | Shared OPEN FDs only | NOT_READY for Gate (shared) |
-| US-036I-014 | §9 complete | Shared OPEN FDs only | NOT_READY for Gate (shared) |
-| US-036I-015 | §9 complete | FD-036I-06, 07 | NOT_READY for Gate |
-| US-036I-016 | §9 complete | FD-036I-02, 04, 15 | NOT_READY for Gate |
+| US-036I-001 | §9 complete; ACs/BRs linked | NONE | READY for Product Definition Gate; NOT_READY_FOR_IMPLEMENTATION until Gate + Fit/lock + auth |
+| US-036I-002 | §9 complete | NONE | READY for Product Definition Gate; NOT_READY_FOR_IMPLEMENTATION until Gate + Fit/lock + auth |
+| US-036I-003 | §9 complete | NONE | READY for Product Definition Gate; NOT_READY_FOR_IMPLEMENTATION until Gate + Fit/lock + auth |
+| US-036I-004 | §9 complete | NONE | READY for Product Definition Gate; NOT_READY_FOR_IMPLEMENTATION until Gate + Fit/lock + auth |
+| US-036I-005 | §9 complete | NONE | READY for Product Definition Gate; NOT_READY_FOR_IMPLEMENTATION until Gate + Fit/lock + auth |
+| US-036I-006 | §9 complete | NONE | READY for Product Definition Gate; NOT_READY_FOR_IMPLEMENTATION until Gate + Fit/lock + auth |
+| US-036I-007 | §9 complete | NONE | READY for Product Definition Gate; NOT_READY_FOR_IMPLEMENTATION until Gate + Fit/lock + auth |
+| US-036I-008 | §9 complete | NONE | READY for Product Definition Gate; NOT_READY_FOR_IMPLEMENTATION until Gate + Fit/lock + auth |
+| US-036I-009 | §9 complete | NONE | READY for Product Definition Gate; NOT_READY_FOR_IMPLEMENTATION until Gate + Fit/lock + auth |
+| US-036I-010 | §9 complete | NONE | READY for Product Definition Gate; NOT_READY_FOR_IMPLEMENTATION until Gate + Fit/lock + auth |
+| US-036I-011 | §9 complete | NONE | READY for Product Definition Gate; NOT_READY_FOR_IMPLEMENTATION until Gate + Fit/lock + auth |
+| US-036I-012 | §9 complete | NONE | READY for Product Definition Gate; NOT_READY_FOR_IMPLEMENTATION until Gate + Fit/lock + auth |
+| US-036I-013 | §9 complete | NONE | READY for Product Definition Gate; NOT_READY_FOR_IMPLEMENTATION until Gate + Fit/lock + auth |
+| US-036I-014 | §9 complete | NONE | READY for Product Definition Gate; NOT_READY_FOR_IMPLEMENTATION until Gate + Fit/lock + auth |
+| US-036I-015 | §9 complete | NONE | READY for Product Definition Gate; NOT_READY_FOR_IMPLEMENTATION until Gate + Fit/lock + auth |
+| US-036I-016 | §9 complete | NONE | READY for Product Definition Gate; NOT_READY_FOR_IMPLEMENTATION until Gate + Fit/lock + auth |
 
-`STORY_COMPLETE != IMP_ACCEPTED`. Product Definition Gate precedes Architecture Fit/lock; final implementation readiness requires Gate PASS + Fit + authorization. This PRE-GATE draft is **not** Gate-ready while FD-036I-01…15 remain OPEN.
+`STORY_COMPLETE != IMP_ACCEPTED`. Stories are READY for Product Definition Gate (product decisions resolved). Product Definition Gate precedes Architecture Fit/lock; final implementation readiness requires Gate PASS + Fit + authorization. This draft is **DRAFT_READY_FOR_GATE** — Gate remains **NOT_PERFORMED** (not APPROVED / not Gate PASS).
 
 ---
 
 ## 27. Product Definition Gate
 
 ```text
-Document status: PRE-GATE DRAFT
-PRE-GATE DRAFT: YES
+Document status: DRAFT_READY_FOR_GATE
+PRE-GATE DRAFT: NO
 PRODUCT_DEFINITION_GATE_EXECUTION: NOT_PERFORMED
 Gate Result: NOT_PERFORMED
-IMP036I_PRODUCT_DEFINITION: PRE_GATE_DRAFT
+IMP036I_PRODUCT_DEFINITION: DRAFT_READY_FOR_GATE
 IMP036I_PRODUCT_DEFINITION_GATE: NOT_PERFORMED
 IMP036I_ARCHITECTURE_FIT: NOT_PERFORMED
 IMP036I_ARCHITECTURE_LOCKED: NO
@@ -1995,22 +1899,22 @@ Error / Recovery Paths Defined: YES
 Authorization Variants Defined: YES (§14; AC-036I-034)
 Cross-Scope Scenarios Defined: YES (Ops scope deny; Delivery fail-closed on Pickup)
 Concurrency Considered: YES (§17)
-Destructive Actions Defined: YES (cancel/refund; reschedule policy OPEN)
+Destructive Actions Defined: YES (cancel/refund; no self-service reschedule — cancel + new Order)
 UX State Matrix Complete: YES (§13)
 Accessibility Considered: YES (§18; AC-036I-021/052 mandatory)
 Golden Journeys Identified: YES (§20)
 Explicit Deferrals Recorded: YES (§23–24)
-Unresolved Product Decisions: 15 (FD-036I-01…15 OPEN)
+Unresolved Product Decisions: 0 (FD-036I-01…15 Founder-resolved 2026-09-24; FD-036I-16…22 existing authority)
 Architecture Conflicts: NONE identified at product layer; Fit questions handed off unanswered
 PRODUCT_DEFINITION_GATE_EXECUTION: NOT_PERFORMED
 Gate Result: NOT_PERFORMED
-READY_FOR_PRODUCT_DEFINITION_GATE: NO
+READY_FOR_PRODUCT_DEFINITION_GATE: YES
 ```
 
-Product Definition Gate must **not** be executed until Founder resolves FD-036I-01…15 (or explicitly defers specific items out of V1 with recorded consequence). Gate PASS would still not perform Architecture Fit, lock architecture, authorize implementation, or accept IMP-036I.
+Product Definition Gate is ready to be performed independently. Gate PASS would still not perform Architecture Fit, lock architecture, authorize implementation, or accept IMP-036I. This draft does **not** claim APPROVED or Gate PASS.
 
 ```text
-CURRENT tip anchors (this draft): GTM-R148 / STATE-R146
+CURRENT tip anchors (this draft): GTM-R149 / STATE-R147
 acceptedThrough = IMP-036H
 currentProductSlice = IMP-036I
 pendingAcceptance = NONE
@@ -2083,12 +1987,13 @@ Activation of IMP-036I for Product Definition does not accept IMP-037/038, activ
 ## Appendix C — Classification reminder
 
 ```text
-PRODUCT REQUIREMENT     — binding user/business promise in this draft (subject to Gate; OPEN FDs excepted)
+PRODUCT REQUIREMENT     — binding user/business promise in this draft (subject to Gate)
 ARCHITECTURE CANDIDATE  — Fit hypothesis; not locked
 IMPLEMENTATION DETAIL   — forbidden inventiveness in this artifact (schema/API/queues/cron/workers/UI widgets)
 ARCHITECTURE_FIT_REQUIRED — mechanism question handed to Fit; unanswered here
-RESOLVED_BY_EXISTING_AUTHORITY — continuity proven by repository; not a new Founder pick
-OPEN                    — recommendation allowed; Gate blocked until Founder resolves
+RESOLVED — Founder      — Founder FD-036I-01…15 resolved 2026-09-24
+RESOLVED_BY_EXISTING_AUTHORITY — continuity proven by repository; not a new Founder pick (FD-036I-16…22)
+OPEN                    — no longer applies to FD-036I-01…15; reserved vocabulary for any future OPEN items
 ```
 
 ---
