@@ -46,8 +46,13 @@ only as needed to encode Fit remediation for Brand missing-row defaults and the 
 `SCHEDULED_FULFILMENT_REMINDER` notification contract. A subsequent independent Fit review
 `5309240283` returned **STOP** on reminder vs `OUT_FOR_DELIVERY` ordering; this Proposed ADR was
 further remediated so `SCHEDULED_FULFILMENT_REMINDER` co-stages at rank **40** with
-`OUT_FOR_DELIVERY` under the existing strict-greater-than staleness model. Status remains
-**Proposed**.
+`OUT_FOR_DELIVERY` under the existing strict-greater-than staleness model. PR #262 review thread
+`4097747389` returned a further **STOP** finding: rank-50 `DELIVERED` notification staleness alone
+is insufficient because `recordProofAndDeliver` can durably set `Delivery.status = DELIVERED` while
+Order remains `ACCEPTED` and the `DELIVERED` notification is not yet processed. This Proposed ADR
+was further remediated so send-time eligibility suppresses a Scheduled Delivery reminder when
+authoritative Delivery execution truth is already `DELIVERED`, independent of notification catch-up.
+Status remains **Proposed**.
 
 Verified CURRENT tip markers (unchanged by Fit remediation):
 
@@ -137,7 +142,8 @@ Reminder (full Notification semantic contract under ADR-012 / IMP-033 / IMP-034)
     ORDER_ACCEPTED(30) never suppresses reminder(40)
     OUT_FOR_DELIVERY(40) already sent MUST NOT suppress reminder(40)
     Reminder(40) already sent MUST NOT suppress later OUT_FOR_DELIVERY(40)
-    DELIVERED(50) / ORDER_CANCELLED(60) may suppress reminder not yet sent
+    DELIVERED(50) / ORDER_CANCELLED(60) may suppress reminder not yet sent (staleness)
+    DELIVERED rank 50 is NOT the sole delivered-state gate (see send-time Delivery gate)
     Either-order Delivery example (both valid):
       T-45 OUT_FOR_DELIVERY then T-30 reminder; or T-30 reminder then T-20 OUT_FOR_DELIVERY
   Reminder is NOT a Delivery lifecycle transition; tied to immutable Scheduled window promise
@@ -149,16 +155,39 @@ Reminder (full Notification semantic contract under ADR-012 / IMP-033 / IMP-034)
   Future expiry (semantic-specific; do NOT globally raise 24h max age):
     valid only while reminder_due_at <= now < scheduled_window_start_at
     expire / suppress once now >= scheduled_window_start_at
-  Send-time eligibility (re-read Order/Snapshot; do not mutate Order; no cancel/refund):
-    suppress if CANCELLED / FULFILLED / window started / missing-inconsistent / not SCHEDULED
+  Send-time eligibility (re-read Order + Snapshot; DELIVERY mode also reads Delivery truth;
+    do not mutate Order / Delivery; no cancel/refund; Notifications read-only vs Delivery):
+    suppress if CANCELLED
+    OR FULFILLED
+    OR window started
+    OR missing-inconsistent
+    OR not SCHEDULED
+    OR (FULFILMENT_MODE = DELIVERY AND authoritative Delivery for the exact Order
+        has execution status DELIVERED)
+    Authoritative Delivery DELIVERED truth suppresses a Scheduled Delivery reminder even before
+      Order fulfil-coordination or DELIVERED notification processing catches up
+    Delivery.status = DELIVERED is authoritative Delivery-domain execution truth;
+      notification semantic DELIVERED is secondary communication
+    Rank-50 staleness remains valid but is not the sole delivered-state gate;
+      no Notification request/attempt row is required before recognizing Delivery completion
+    PICKUP: do not create or query Delivery merely for reminder logic (D-378 / ARCH-G28)
+    Multi-Delivery selection (IMP-031 one-active + priorDeliveryId replacement lineage):
+      active Delivery (if any) is current authoritative (never DELIVERED → gate does not suppress);
+      else lineage tip is authoritative — suppress only if tip status is DELIVERED;
+      prior irrelevant terminal DELIVERED must not false-suppress a later replacement
     co-stage ordering MUST NOT bypass these gates
   Content: immutable Checkout Snapshot (mode, window, sealed timezone, Pickup location context)
   No new notification provider; template registry gains semantic under IMP-033/034
   Later implementation proof expectations (Fit remediation; not runtime tests here):
     A accepted→reminder eligible; B early OUT_FOR_DELIVERY→reminder eligible;
-    C reminder→later OUT_FOR_DELIVERY eligible; D DELIVERED suppresses;
-    E CANCELLED suppresses; F FULFILLED Pickup suppresses; G window start suppresses;
-    H in-window purchase never enqueued
+    C reminder→later OUT_FOR_DELIVERY eligible;
+    D Delivery DELIVERED + Order still ACCEPTED + DELIVERED notification not processed
+      → reminder SUPPRESSED (authoritative Delivery gate);
+    E Delivery DELIVERED + Order later FULFILLED → suppressed;
+    F DELIVERED semantic dispatched → rank-50 staleness also suppresses;
+    G PICKED_UP alone does NOT suppress; H BOOKED alone does NOT suppress;
+    I Pickup: no Delivery lookup; FULFILLED suppresses;
+    J CANCELLED suppresses; K window start suppresses; L in-window purchase never enqueued
 
 Topology: no new deployable service / queue / broker / workflow engine / external provider
 Auth: no new role / permission / auth realm
@@ -223,6 +252,12 @@ fulfilment timing; Scheduled timing is governed by D-379 / ARCH-G29.
 - Changing Purpose to `DELIVERY_UPDATES` (Pickup requires the same reminder without Delivery events)
 - Inventing reminder-specific browser/UI ordering exceptions or changing global staleness beyond
   the co-stage rank assignment
+- Treating rank-50 `DELIVERED` notification staleness as the sole delivered-state gate for reminder
+  suppression (insufficient when Delivery is already `DELIVERED` but Order fulfil-coordination /
+  notification processing has not caught up)
+- Creating or querying a Delivery aggregate for Pickup reminder eligibility
+- Allowing Notifications to mutate Delivery, fulfil Order, retry fulfil coordination, cancel Order,
+  refund Payment, or create a Delivery as part of reminder send-time evaluation
 
 ## Consequences
 
@@ -232,7 +267,10 @@ fulfilment timing; Scheduled timing is governed by D-379 / ARCH-G29.
 - Purchased promise sealed on Snapshot (including effective cancellation cutoff)
 - Absent Brand policy rows resolve deterministically to product defaults without eager backfill
 - Reminder receives a complete Notification semantic contract (identity, rank, purpose, expiry,
-  send-time eligibility, Snapshot-derived content) without a new provider or generic scheduler
+  send-time eligibility including authoritative Delivery `DELIVERED` gate for Delivery mode,
+  Snapshot-derived content) without a new provider or generic scheduler
+- Reminder send gate recognises durable Delivery completion before Order fulfil-coordination or
+  `DELIVERED` notification catch-up, without mutating Delivery from Notifications
 - Reuses Checkout revision, Payment bind, Ops projections, notification outbox, IMP-032 dispatch
 - No new deployable topology or auth surface
 
