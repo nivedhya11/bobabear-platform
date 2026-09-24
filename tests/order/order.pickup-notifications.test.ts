@@ -13,7 +13,6 @@ import {
   summaryClaimsRiderOrDeliveryProgress,
 } from "../../src/shared/notifications";
 import { acceptOrder, fulfilOrder, getWorkforceOrder } from "../../src/server/order";
-import type { Persistence } from "../../src/server/persistence/types";
 import { closeTrackedPersistenceHandles } from "../database/support/cart-fixtures";
 import {
   orderOpts,
@@ -24,8 +23,12 @@ afterEach(async () => {
   await closeTrackedPersistenceHandles();
 });
 
+type OrderHarnessPersistence = Parameters<
+  Parameters<typeof withCompletedPositivePickupOrderHarness>[0]
+>[0]["persistence"];
+
 async function notificationEventTypesForOrder(
-  persistence: Persistence,
+  persistence: OrderHarnessPersistence,
   orderId: string,
 ): Promise<string[]> {
   return persistence.withContext(async (ctx) => {

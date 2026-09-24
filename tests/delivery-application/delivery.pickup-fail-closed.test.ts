@@ -9,7 +9,6 @@ import {
   createDelivery,
   createFakeDeliveryProvider,
 } from "../../src/server/delivery";
-import type { Persistence } from "../../src/server/persistence/types";
 import { DeliveryError } from "../../src/shared/delivery";
 import { closeTrackedPersistenceHandles } from "../database/support/cart-fixtures";
 import {
@@ -21,8 +20,12 @@ afterEach(async () => {
   await closeTrackedPersistenceHandles();
 });
 
+type OrderHarnessPersistence = Parameters<
+  Parameters<typeof withCompletedPositivePickupOrderHarness>[0]
+>[0]["persistence"];
+
 async function countDeliveriesForOrder(
-  persistence: Persistence,
+  persistence: OrderHarnessPersistence,
   orderId: string,
 ): Promise<number> {
   return persistence.withContext(async (ctx) => {
