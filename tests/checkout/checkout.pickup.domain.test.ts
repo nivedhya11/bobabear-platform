@@ -592,4 +592,342 @@ describe("IMP-036H-B pickup eligibility + commercial core", () => {
       ).rejects.toMatchObject({ code: "CHECKOUT_NOT_FOUND" });
     });
   });
+
+  it("AC-036H-010: Pickup taxes remain positive with packaging; no delivery charge", async () => {
+    await withCheckoutReadyHarness(async ({ persistence, actors, cartId }) => {
+      const opts = checkoutOpts();
+      await attachCharges(persistence, actors.tree.brand.id);
+      await seedEnabledPickupProfile(persistence, actors.tree.outletA.id);
+      await configureAlwaysAcceptingOutlet(
+        persistence,
+        actors.brandAdminActor,
+        actors.tree.outletA.id,
+      );
+
+      let checkout = await startCheckout(
+        persistence,
+        actors.customerA,
+        { cartId },
+        opts,
+      );
+      checkout = await setCheckoutFulfilment(
+        persistence,
+        actors.customerA,
+        {
+          checkoutId: checkout.id,
+          expectedCheckoutRevision: checkout.revision,
+          fulfilmentMode: "PICKUP",
+          pickupOutletId: actors.tree.outletA.id,
+        },
+        opts,
+      );
+      const evaluated = await evaluateCheckout(
+        persistence,
+        actors.customerA,
+        {
+          checkoutId: checkout.id,
+          expectedCheckoutRevision: checkout.revision,
+        },
+        opts,
+      );
+      expect(evaluated.snapshot.fulfilmentMode).toBe("PICKUP");
+      expect(evaluated.snapshot.taxablePaise).toBeGreaterThan(BigInt(0));
+      expect(evaluated.snapshot.taxPaise).toBeGreaterThan(BigInt(0));
+      expect(evaluated.snapshot.taxComponents.length).toBeGreaterThan(0);
+      expect(
+        evaluated.snapshot.charges.every((c) => c.chargeCode !== "delivery"),
+      ).toBe(true);
+      expect(
+        evaluated.snapshot.charges.some((c) => c.chargeCode === "packaging"),
+      ).toBe(true);
+      expect(evaluated.snapshot.grandTotalPaise).toBe(
+        evaluated.snapshot.taxablePaise + evaluated.snapshot.taxPaise,
+      );
+    });
+  });
+
+  it("AC-036H-007: selected outlet cannot fulfil cart merchandise → recoverable error", async () => {
+    const { excludeVariantAtScope } = await import("../../src/server/assortment");
+    const { getActiveCart } = await import("../../src/server/cart");
+    await withCheckoutReadyHarness(async ({ persistence, actors, cartId, catalog }) => {
+      const opts = checkoutOpts();
+      await seedEnabledPickupProfile(persistence, actors.tree.outletA.id);
+      await configureAlwaysAcceptingOutlet(
+        persistence,
+        actors.brandAdminActor,
+        actors.tree.outletA.id,
+      );
+
+      // Exclude the cart variant at the only pickup outlet → not fulfilable.
+      await persistence.transaction((tx) =>
+        excludeVariantAtScope(tx, {
+          actor: actors.brandAdminActor,
+          brandId: actors.tree.brand.id,
+          expectedRuleRevision: null,
+          scopeType: "outlet",
+          outletId: actors.tree.outletA.id,
+          variantId: catalog.variantId,
+        }),
+      );
+
+      const started = await startCheckout(
+        persistence,
+        actors.customerA,
+        { cartId },
+        opts,
+      );
+      const options = await listCheckoutPickupOptions(
+        persistence,
+        actors.customerA,
+        { checkoutId: started.id },
+        opts,
+      );
+      expect(options.selectionPolicy).toBe("UNAVAILABLE");
+      expect(options.outlets).toHaveLength(0);
+
+      // If fulfilment is forced to the excluded outlet, evaluate surfaces merchandise code
+      // (recoverable — no silent line removal / outlet substitution).
+      const checkout = await setCheckoutFulfilment(
+        persistence,
+        actors.customerA,
+        {
+          checkoutId: started.id,
+          expectedCheckoutRevision: started.revision,
+          fulfilmentMode: "PICKUP",
+          pickupOutletId: actors.tree.outletA.id,
+        },
+        opts,
+      );
+      await expect(
+        evaluateCheckout(
+          persistence,
+          actors.customerA,
+          {
+            checkoutId: checkout.id,
+            expectedCheckoutRevision: checkout.revision,
+          },
+          opts,
+        ),
+      ).rejects.toMatchObject({ code: "CHECKOUT_NOT_ASSORTED" });
+      // Cart lines unchanged (no silent remove).
+      const cart = await getActiveCart(persistence, {
+        kind: "customer",
+        actor: actors.customerA,
+        brandId: actors.tree.brand.id,
+      });
+      expect(cart).not.toBeNull();
+      expect(cart!.lines).toHaveLength(1);
+      expect(cart!.lines[0]?.variantId).toBe(catalog.variantId);
+    });
+  });
+
+  it("AC-036H-038: merchandise becomes unavailable before payment → prepare fails recoverably", async () => {
+    const { excludeVariantAtScope } = await import("../../src/server/assortment");
+    await withCheckoutReadyHarness(async ({ persistence, actors, cartId, catalog }) => {
+      const opts = checkoutOpts();
+      await attachCharges(persistence, actors.tree.brand.id);
+      await seedEnabledPickupProfile(persistence, actors.tree.outletA.id);
+      await configureAlwaysAcceptingOutlet(
+        persistence,
+        actors.brandAdminActor,
+        actors.tree.outletA.id,
+      );
+
+      let checkout = await startCheckout(
+        persistence,
+        actors.customerA,
+        { cartId },
+        opts,
+      );
+      checkout = await setCheckoutFulfilment(
+        persistence,
+        actors.customerA,
+        {
+          checkoutId: checkout.id,
+          expectedCheckoutRevision: checkout.revision,
+          fulfilmentMode: "PICKUP",
+          pickupOutletId: actors.tree.outletA.id,
+        },
+        opts,
+      );
+      const ready = await evaluateCheckout(
+        persistence,
+        actors.customerA,
+        {
+          checkoutId: checkout.id,
+          expectedCheckoutRevision: checkout.revision,
+        },
+        opts,
+      );
+      expect(ready.checkout.status).toBe("READY_FOR_PAYMENT");
+
+      await persistence.transaction((tx) =>
+        excludeVariantAtScope(tx, {
+          actor: actors.brandAdminActor,
+          brandId: actors.tree.brand.id,
+          expectedRuleRevision: null,
+          scopeType: "outlet",
+          outletId: actors.tree.outletA.id,
+          variantId: catalog.variantId,
+        }),
+      );
+
+      await expect(
+        prepareCheckoutForPayment(
+          persistence,
+          actors.customerA,
+          {
+            checkoutId: ready.checkout.id,
+            expectedCheckoutRevision: ready.checkout.revision,
+          },
+          opts,
+        ),
+      ).rejects.toMatchObject({ code: "CHECKOUT_REPRICED" });
+    });
+  });
+
+  it("AC-036H-025: Pickup→Delivery before payment requires destination/serviceability", async () => {
+    await withCheckoutReadyHarness(
+      async ({ persistence, actors, cartId, oneTimeDestination }) => {
+        const opts = checkoutOpts();
+        await attachCharges(persistence, actors.tree.brand.id);
+        await seedEnabledPickupProfile(persistence, actors.tree.outletA.id);
+        await configureAlwaysAcceptingOutlet(
+          persistence,
+          actors.brandAdminActor,
+          actors.tree.outletA.id,
+        );
+
+        let checkout = await startCheckout(
+          persistence,
+          actors.customerA,
+          { cartId },
+          opts,
+        );
+        checkout = await setCheckoutFulfilment(
+          persistence,
+          actors.customerA,
+          {
+            checkoutId: checkout.id,
+            expectedCheckoutRevision: checkout.revision,
+            fulfilmentMode: "PICKUP",
+            pickupOutletId: actors.tree.outletA.id,
+          },
+          opts,
+        );
+        const pickupReady = await evaluateCheckout(
+          persistence,
+          actors.customerA,
+          {
+            checkoutId: checkout.id,
+            expectedCheckoutRevision: checkout.revision,
+          },
+          opts,
+        );
+        expect(pickupReady.checkout.status).toBe("READY_FOR_PAYMENT");
+
+        // Switch to Delivery without destination → evaluate requires destination.
+        checkout = await setCheckoutFulfilment(
+          persistence,
+          actors.customerA,
+          {
+            checkoutId: pickupReady.checkout.id,
+            expectedCheckoutRevision: pickupReady.checkout.revision,
+            fulfilmentMode: "DELIVERY",
+          },
+          opts,
+        );
+        expect(checkout.status).toBe("DRAFT");
+        expect(checkout.fulfilmentMode).toBe("DELIVERY");
+        expect(checkout.pickupOutletId).toBeNull();
+
+        await expect(
+          evaluateCheckout(
+            persistence,
+            actors.customerA,
+            {
+              checkoutId: checkout.id,
+              expectedCheckoutRevision: checkout.revision,
+            },
+            opts,
+          ),
+        ).rejects.toMatchObject({ code: "CHECKOUT_DESTINATION_REQUIRED" });
+
+        checkout = await setCheckoutDestination(
+          persistence,
+          actors.customerA,
+          {
+            checkoutId: checkout.id,
+            expectedCheckoutRevision: checkout.revision,
+            destination: oneTimeDestination,
+          },
+          opts,
+        );
+        const deliveryReady = await evaluateCheckout(
+          persistence,
+          actors.customerA,
+          {
+            checkoutId: checkout.id,
+            expectedCheckoutRevision: checkout.revision,
+          },
+          opts,
+        );
+        expect(deliveryReady.snapshot.fulfilmentMode).toBe("DELIVERY");
+        expect(
+          deliveryReady.snapshot.charges.some((c) => c.chargeCode === "delivery"),
+        ).toBe(true);
+      },
+    );
+  });
+
+  it("AC-036H-026: setCheckoutFulfilment under PAYMENT_PENDING → CHECKOUT_STATE_CONFLICT", async () => {
+    const { startPayment } = await import("../../src/server/payment");
+    const {
+      createFakePaymentProvider,
+      newIdempotencyKey,
+      paymentOpts,
+      bringCheckoutToPickupReady,
+      seedPickupEligibleOutlet,
+    } = await import("../database/support/order-fixtures");
+
+    await withCheckoutReadyHarness(async ({ persistence, actors, cartId }) => {
+      const outletId = actors.tree.outletA.id;
+      await seedPickupEligibleOutlet(
+        persistence,
+        actors.brandAdminActor,
+        outletId,
+      );
+      const ready = await bringCheckoutToPickupReady(
+        persistence,
+        actors.customerA,
+        cartId,
+        outletId,
+      );
+      const provider = createFakePaymentProvider({ defaultOutcome: "pending" });
+      await startPayment(
+        persistence,
+        actors.customerA,
+        {
+          checkoutId: ready.checkoutId,
+          expectedCheckoutRevision: ready.revision,
+          paymentMethodIntent: "upi",
+          idempotencyKey: newIdempotencyKey("pickup-pending-fulfil"),
+        },
+        paymentOpts(provider),
+      );
+
+      await expect(
+        setCheckoutFulfilment(
+          persistence,
+          actors.customerA,
+          {
+            checkoutId: ready.checkoutId,
+            expectedCheckoutRevision: ready.revision + BigInt(1),
+            fulfilmentMode: "DELIVERY",
+          },
+          checkoutOpts(),
+        ),
+      ).rejects.toMatchObject({ code: "CHECKOUT_STATE_CONFLICT" });
+    });
+  });
 });

@@ -7,7 +7,8 @@ import {
 import { installRazorpayCheckoutMock } from "./support/razorpay-checkout-mock";
 
 /**
- * IMP-025 / IMP-026B E2E: guest menu → cart → auth → claim → destination → checkout →
+ * IMP-025 / IMP-026B / IMP-036H E2E: guest menu → cart → auth → claim →
+ * fulfilment choice → (Delivery destination | Pickup outlet) → checkout →
  * fake Razorpay Standard Checkout → confirmation → history/detail.
  * Run via `npm run test:e2e:customer-ordering` only.
  *
@@ -24,7 +25,24 @@ const PHONE_NUMBERS = {
   providerFailure: "9876500253",
   retry: "9876500254",
   scriptLoadFailure: "9876500255",
+  pickupSuccess: "9876500256",
 } as const;
+
+async function selectCheckoutFulfilmentDelivery(page: Page): Promise<void> {
+  const checkout = page.locator("#main-content");
+  await expect(checkout.getByTestId("checkout-fulfilment-choice")).toBeVisible({
+    timeout: 20_000,
+  });
+  // AC-036H-041 — Delivery / Pickup are named, pressed-state toggle buttons.
+  const delivery = checkout.getByTestId("checkout-fulfilment-delivery");
+  const pickup = checkout.getByTestId("checkout-fulfilment-pickup");
+  await expect(delivery).toHaveAttribute("aria-pressed", "false");
+  await expect(pickup).toHaveAttribute("aria-pressed", "false");
+  await delivery.focus();
+  await expect(delivery).toBeFocused();
+  await delivery.click();
+  await expect(delivery).toHaveAttribute("aria-pressed", "true");
+}
 
 test.beforeEach(() => {
   test.skip(
@@ -98,6 +116,8 @@ async function reachReadyForPayment(page: Page, phoneNumber: string): Promise<vo
   await page.getByRole("button", { name: /verify code/i }).click();
 
   await expect(page.getByRole("heading", { name: "Checkout" })).toBeVisible({ timeout: 20_000 });
+  // AC-036H-001 / AC-036H-031 — Delivery path must choose Delivery before destination.
+  await selectCheckoutFulfilmentDelivery(page);
   await completeCheckoutDestination(page, phoneNumber);
 
   // Review → payment is an explicit step (checkout-review → Continue to payment → checkout-ready).
@@ -110,6 +130,64 @@ async function reachReadyForPayment(page: Page, phoneNumber: string): Promise<vo
   await expect(page.getByTestId("payment-start")).toBeVisible();
 }
 
+/**
+ * Guest → menu → cart → auth → Pickup fulfilment → review → payment-ready.
+ * Does not install Maps mocks — AC-036H-030 requires no Maps/location APIs.
+ */
+async function reachPickupReadyForPayment(page: Page, phoneNumber: string): Promise<void> {
+  const mapsOrPlacesRequests: string[] = [];
+  page.on("request", (request) => {
+    const url = request.url();
+    if (
+      /maps\.googleapis\.com|places\.googleapis\.com|maps\.gstatic\.com/i.test(url) ||
+      /geolocation|GeolocationPosition/i.test(url)
+    ) {
+      mapsOrPlacesRequests.push(url);
+    }
+  });
+
+  await page.goto("/order/");
+  await expect(page.getByRole("heading", { name: /^the bar$/i, level: 1 })).toBeVisible();
+
+  const addButtons = page.locator("#main-content").getByRole("button", { name: /^add .+/i });
+  await expect(addButtons.first()).toBeVisible();
+  await addButtons.first().click();
+  const headerCartLink = page.locator("header").getByRole("link", { name: /^cart \(1\)$/i });
+  await expect(headerCartLink).toBeVisible({ timeout: 15_000 });
+  await headerCartLink.click();
+  await expect(page.getByRole("heading", { name: /your cart/i })).toBeVisible();
+  await page.getByRole("button", { name: /checkout/i }).click();
+
+  await expect(page.getByRole("heading", { name: "Sign In" })).toBeVisible();
+  await phoneField(page).fill(phoneNumber);
+  await page.getByRole("button", { name: /send code/i }).click();
+  await expect(codeField(page)).toBeVisible();
+  await codeField(page).fill(FIXED_OTP_CODE!);
+  await page.getByRole("button", { name: /verify code/i }).click();
+
+  await expect(page.getByRole("heading", { name: "Checkout" })).toBeVisible({ timeout: 20_000 });
+  const checkout = page.locator("#main-content");
+  await expect(checkout.getByTestId("checkout-fulfilment-choice")).toBeVisible({ timeout: 20_000 });
+  await checkout.getByTestId("checkout-fulfilment-pickup").click();
+
+  await expect(checkout.getByTestId("checkout-pickup-outlet")).toBeVisible({ timeout: 20_000 });
+  // Single eligible outlet → AUTO_SELECT (AC-036H-003).
+  await expect(checkout.getByTestId("checkout-pickup-outlet-auto")).toBeVisible();
+  await expect(checkout.getByTestId("checkout-destination-select")).toHaveCount(0);
+  await expect(checkout.getByTestId("checkout-destination-location")).toHaveCount(0);
+  await checkout.getByTestId("checkout-pickup-continue").click();
+
+  await expect(page.getByTestId("checkout-review")).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByTestId("checkout-review-pickup")).toBeVisible();
+  await expect(page.getByTestId("checkout-review-no-delivery-fee")).toBeVisible();
+  await page.getByRole("button", { name: /Continue to payment/i }).click();
+
+  await expect(page.getByTestId("checkout-ready")).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByTestId("payment-start")).toBeVisible();
+
+  expect(mapsOrPlacesRequests, "Pickup must not call Maps/Places (AC-036H-030)").toEqual([]);
+}
+
 test("guest can complete owned ordering through Razorpay Standard Checkout and order history", async ({
   page,
 }) => {
@@ -120,6 +198,8 @@ test("guest can complete owned ordering through Razorpay Standard Checkout and o
 
   await expect(page.getByTestId("order-confirmation")).toBeVisible({ timeout: 30_000 });
   await expect(page.getByTestId("order-status")).toHaveText(/order received/i);
+  // Delivery confirmation still shows destination facts (AC-036H-001).
+  await expect(page.getByText("E2E Guest", { exact: true })).toBeVisible();
   await page.getByRole("link", { name: /order history/i }).click();
   await expect(page.getByRole("heading", { name: /My Orders/i, level: 1 })).toBeVisible({
     timeout: 15_000,
@@ -241,4 +321,36 @@ test("Razorpay script load failure stays recoverable", async ({ page }) => {
   );
   await expect(page.getByTestId("order-confirmation")).toHaveCount(0);
   await expect(page.getByTestId("payment-reopen-checkout")).toBeVisible();
+});
+
+test("guest can complete ASAP Pickup journey without Maps (AC-036H-002/030/041)", async ({
+  page,
+}) => {
+  test.setTimeout(180_000);
+  await installRazorpayCheckoutMock(page, "succeed");
+  await reachPickupReadyForPayment(page, PHONE_NUMBERS.pickupSuccess);
+
+  // AC-036H-041 — fulfilment controls remain keyboard-reachable with accessible names.
+  // (Choice already passed; assert payment CTA remains named.)
+  await expect(page.getByTestId("payment-start")).toBeVisible();
+  await expect(page.getByTestId("payment-start")).toBeEnabled();
+
+  await page.getByTestId("payment-start").click();
+
+  await expect(page.getByTestId("order-confirmation")).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByTestId("order-fulfilment")).toBeVisible();
+  await expect(page.getByTestId("order-fulfilment-mode")).toContainText(/pickup/i);
+  await expect(page.getByTestId("order-pickup-location")).toBeVisible();
+  await expect(page.getByTestId("order-delivery")).toHaveCount(0);
+  await expect(page.getByTestId("order-delivery-track")).toHaveCount(0);
+
+  await page.getByRole("link", { name: /order history/i }).click();
+  await expect(page.getByRole("heading", { name: /My Orders/i, level: 1 })).toBeVisible({
+    timeout: 15_000,
+  });
+  await page.getByRole("link", { name: /ORD-/i }).first().click();
+  await expect(page.getByTestId("order-detail")).toBeVisible();
+  await expect(page.getByTestId("order-fulfilment-mode")).toContainText(/pickup/i);
+  await expect(page.getByTestId("order-pickup-location")).toBeVisible();
+  await expect(page.getByTestId("order-delivery")).toHaveCount(0);
 });

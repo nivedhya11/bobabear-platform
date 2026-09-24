@@ -120,7 +120,13 @@ async function mutate(
   const responsePromise = page.waitForResponse((response) => response.url().endsWith(`/api/operations/v1/orders/${encodeURIComponent(order.id)}/${key}`) && response.request().method() === "POST");
   await page.getByRole("button", { name: action, exact: true }).click();
   if (key === "cancel") await page.getByLabel("Cancellation reason", { exact: true }).selectOption("CUSTOMER_REQUESTED");
-  await page.getByRole("button", { name: new RegExp(`Confirm ${action.toLowerCase()}`, "i") }).click();
+  // AC-036H-042 — confirm control is named and keyboard-focusable (Delivery Fulfil path;
+  // Pickup uses "Mark as picked up" — covered by OperationsOrderDetailClient component proof).
+  const confirm = page.getByRole("button", { name: new RegExp(`Confirm ${action.toLowerCase()}`, "i") });
+  await expect(confirm).toBeVisible();
+  await confirm.focus();
+  await expect(confirm).toBeFocused();
+  await confirm.click();
   const response = await responsePromise;
   expect(new URL(response.url()).origin).toBe(new URL(page.url()).origin);
   expect(response.ok()).toBeTruthy();

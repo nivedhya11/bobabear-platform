@@ -442,6 +442,11 @@ Founder UAT.
 | 041 | Customer fulfilment a11y | D/F | ACCESSIBILITY |
 | 042 | Workforce handover a11y | E/F | ACCESSIBILITY |
 
+**IMP-036H-F candidate evidence:** see
+[`evidence-candidate.md`](./evidence-candidate.md) (`IMPLEMENTATION_COMPLETE_CANDIDATE` only;
+does not advance ROADMAP/STATE acceptance flags).
+
+
 ```text
 total_ac: 42
 automated_primary: 42 (Founder UAT supplements interactive judgment; does not substitute AC proof)
