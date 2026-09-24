@@ -15920,6 +15920,7 @@ function checkDecisionRegister(decision, roadmap, state) {
       "017-edge-origin-security-privacy-hardening",
       "018-customer-fulfilment-mode-and-pickup-boundary",
       "019-scheduled-fulfilment-timing-and-execution",
+      "020-delivery-successful-completion-finality",
     ];
     const slug = known.find((k) => k.startsWith(`${num}-`));
     const candidate = slug
@@ -35256,6 +35257,158 @@ function checkImp036iProductDefinitionDraftReady(roadmap, state, architecture, d
  * Requires APPROVED PD with gate PERFORMED/PASS; Fit/lock/auth/start/accept remain NOT_PERFORMED / NO.
  * Preserves D-377 program pause and IMP-037/038 hold/freeze markers; IMP-036H COMPLETE_AND_ACCEPTED.
  */
+/**
+ * Validate IMP-036I Architecture Fit candidate authority while Fit remains NOT_PERFORMED.
+ * Enforces D-379/D-380 PROPOSED + ADR-019/ADR-020 Proposed + ARCH-R22 tip; rejects premature CURRENT claims.
+ * @param {{
+ *   decisionText?: string,
+ *   architectureVersion?: string,
+ *   decisionRegisterVersion?: string,
+ *   capabilityText?: string,
+ *   adr019Text?: string,
+ *   adr020Text?: string,
+ * }} docs
+ */
+export function evaluateImp036IArchitectureFitCandidateAuthority(docs) {
+  const decisionText = String(docs?.decisionText ?? "");
+  const capabilityText = String(docs?.capabilityText ?? "");
+  const adr019Text = String(docs?.adr019Text ?? "");
+  const adr020Text = String(docs?.adr020Text ?? "");
+  const architectureVersion = String(docs?.architectureVersion ?? "");
+  const decisionRegisterVersion = String(docs?.decisionRegisterVersion ?? "");
+
+  if (architectureVersion && architectureVersion !== "ARCH-R22") {
+    return {
+      ok: false,
+      code: "IMP036I_FIT_CANDIDATE_ARCH",
+      message: "IMP-036I Fit candidate must keep CURRENT architecture at ARCH-R22 (ARCH-R23 remains proposed lock delta only)",
+    };
+  }
+  if (decisionRegisterVersion && decisionRegisterVersion !== "DR-20") {
+    return {
+      ok: false,
+      code: "IMP036I_FIT_CANDIDATE_DR",
+      message: "IMP-036I Fit candidate must keep decision register at DR-20 while D-379/D-380 remain PROPOSED",
+    };
+  }
+
+  const globalSection = decisionText.split("## 2. Current Global Decisions")[1]?.split("## 3.")[0] || decisionText;
+  const row379 = [...globalSection.split("\n")].find((line) => /^\|\s*D-379\s*\|/.test(line));
+  const row380 = [...globalSection.split("\n")].find((line) => /^\|\s*D-380\s*\|/.test(line));
+  if (row379 && /\|\s*CURRENT\s*\|/.test(row379)) {
+    return {
+      ok: false,
+      code: "IMP036I_D379_PREMATURE_CURRENT",
+      message: "D-379 must not be CURRENT before independent Architecture Fit PASS + lock persistence",
+    };
+  }
+  if (!row379 || !/\|\s*PROPOSED\s*\|/.test(row379)) {
+    return {
+      ok: false,
+      code: "IMP036I_D379_PROPOSED",
+      message: "Decision register must carry D-379 as PROPOSED while IMP-036I Architecture Fit is NOT_PERFORMED",
+    };
+  }
+  if (row380 && /\|\s*CURRENT\s*\|/.test(row380)) {
+    return {
+      ok: false,
+      code: "IMP036I_D380_PREMATURE_CURRENT",
+      message: "D-380 must not be CURRENT before independent Architecture Fit PASS + lock persistence",
+    };
+  }
+  if (!row380 || !/\|\s*PROPOSED\s*\|/.test(row380)) {
+    return {
+      ok: false,
+      code: "IMP036I_D380_PROPOSED",
+      message: "Decision register must carry D-380 as PROPOSED while IMP-036I Architecture Fit is NOT_PERFORMED",
+    };
+  }
+
+  if (adr019Text) {
+    if (/^Status:\s*Accepted\b/m.test(adr019Text) || /\bADR019_STATUS:\s*Accepted\b/.test(adr019Text)) {
+      return {
+        ok: false,
+        code: "IMP036I_ADR019_PREMATURE_ACCEPTED",
+        message: "ADR-019 must not be Accepted before independent Architecture Fit PASS + lock persistence",
+      };
+    }
+    if (!/^Status:\s*Proposed\b/m.test(adr019Text) && !/\*\*Proposed\*\*/.test(adr019Text)) {
+      return {
+        ok: false,
+        code: "IMP036I_ADR019_PROPOSED",
+        message: "ADR-019 must remain Proposed while Architecture Fit is NOT_PERFORMED",
+      };
+    }
+  }
+
+  if (adr020Text) {
+    if (/^Status:\s*Accepted\b/m.test(adr020Text) || /\bADR020_STATUS:\s*Accepted\b/.test(adr020Text)) {
+      return {
+        ok: false,
+        code: "IMP036I_ADR020_PREMATURE_ACCEPTED",
+        message: "ADR-020 must not be Accepted before independent Architecture Fit PASS + lock persistence",
+      };
+    }
+    if (!/^Status:\s*Proposed\b/m.test(adr020Text) && !/\*\*Proposed\*\*/.test(adr020Text)) {
+      return {
+        ok: false,
+        code: "IMP036I_ADR020_PROPOSED",
+        message: "ADR-020 must remain Proposed while Architecture Fit is NOT_PERFORMED",
+      };
+    }
+  } else if (row380) {
+    return {
+      ok: false,
+      code: "IMP036I_ADR020_ABSENT",
+      message: "ADR-020 Proposed artifact must exist when D-380 is registered PROPOSED",
+    };
+  }
+
+  if (capabilityText) {
+    if (!/ARCHITECTURE_FIT(?:_EXECUTION|_RESULT)?\s*=\s*NOT_PERFORMED/.test(capabilityText) &&
+        !/IMP036I_ARCHITECTURE_FIT\s*=\s*NOT_PERFORMED/.test(capabilityText)) {
+      return {
+        ok: false,
+        code: "IMP036I_FIT_CANDIDATE_FIT_MARKER",
+        message: "IMP-036I capability candidate must record Architecture Fit NOT_PERFORMED",
+      };
+    }
+    if (!/IMPLEMENTATION_AUTHORIZED\s*=\s*NO/.test(capabilityText) &&
+        !/IMP036I_IMPLEMENTATION_AUTHORIZED\s*=\s*NO/.test(capabilityText)) {
+      return {
+        ok: false,
+        code: "IMP036I_FIT_CANDIDATE_IMPL_MARKER",
+        message: "IMP-036I capability candidate must record IMPLEMENTATION_AUTHORIZED = NO",
+      };
+    }
+    if (/D380_STATUS\s*=\s*CURRENT/.test(capabilityText)) {
+      return {
+        ok: false,
+        code: "IMP036I_D380_PREMATURE_CURRENT",
+        message: "IMP-036I capability candidate must not claim D-380 CURRENT before Fit lock",
+      };
+    }
+    if (/ARCHITECTURE_FIT(?:_RESULT|_EXECUTION)?\s*=\s*PASS/.test(capabilityText) ||
+        /IMP036I_ARCHITECTURE_FIT\s*=\s*PASS/.test(capabilityText) ||
+        /ARCHITECTURE_FIT_CANDIDATE_RESULT\s*=\s*PASS/.test(capabilityText)) {
+      return {
+        ok: false,
+        code: "IMP036I_FIT_PREMATURE_PASS",
+        message: "IMP-036I capability candidate must not claim Architecture Fit PASS before independent review",
+      };
+    }
+    if (!/D380_STATUS\s*=\s*PROPOSED/.test(capabilityText) && !/\*\*D-380\*\*[^\n]*\*\*PROPOSED\*\*/.test(capabilityText)) {
+      return {
+        ok: false,
+        code: "IMP036I_D380_CANDIDATE_MARKER",
+        message: "IMP-036I capability candidate must record D-380 as PROPOSED",
+      };
+    }
+  }
+
+  return { ok: true };
+}
+
 function checkImp036iProductDefinitionGatePass(roadmap, state, architecture, decision) {
   if (!isImp036iProductDefinitionGatePassCheckpoint(roadmap, state)) return;
 
@@ -35555,6 +35708,24 @@ function checkImp036iProductDefinitionGatePass(roadmap, state, architecture, dec
   else {
     note(
       "IMP-036I Product Definition Gate PASS valid (APPROVED; Gate PASS; Fit NOT_PERFORMED; IMP-036H COMPLETE_AND_ACCEPTED preserved; IMP-037/038 held; D-377 CURRENT; ARCH-R22 / DR-20 unchanged).",
+    );
+  }
+
+  const capabilityAbs = resolveExactRelativeFile("docs/platform/capabilities/IMP-036I-scheduled-fulfilment.md");
+  const adr019Abs = resolveExactRelativeFile("docs/platform/decisions/ADR-019-scheduled-fulfilment-timing-and-execution.md");
+  const adr020Abs = resolveExactRelativeFile("docs/platform/decisions/ADR-020-delivery-successful-completion-finality.md");
+  const fitCandidate = evaluateImp036IArchitectureFitCandidateAuthority({
+    decisionText: decision?.text ?? "",
+    architectureVersion: architecture?.meta?.architectureVersion,
+    decisionRegisterVersion: decision?.meta?.decisionRegisterVersion,
+    capabilityText: capabilityAbs ? readFileSync(capabilityAbs, "utf8") : "",
+    adr019Text: adr019Abs ? readFileSync(adr019Abs, "utf8") : "",
+    adr020Text: adr020Abs ? readFileSync(adr020Abs, "utf8") : "",
+  });
+  if (!fitCandidate.ok) fail(fitCandidate.code, fitCandidate.message);
+  else {
+    note(
+      "IMP-036I Architecture Fit candidate authority valid (D-379/D-380 PROPOSED; ADR-019/ADR-020 Proposed; ARCH-R22; Fit NOT_PERFORMED; implementation NOT_AUTHORIZED).",
     );
   }
 }
