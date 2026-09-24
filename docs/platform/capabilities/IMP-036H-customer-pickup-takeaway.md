@@ -34,14 +34,16 @@ PASS against **ARCH-R22 / D-378 / ADR-018 / ARCH-G28** for ASAP Customer Pickup 
 
 Independent Architecture Fit review = **PASS** (PR #239 review `5295149318`). Implementation is
 **AUTHORIZED**, **STARTED**, and **COMPLETE**, and IMP-036H is **COMPLETE_AND_ACCEPTED** at
-GTM-R147 / STATE-R145 after Founder UAT PASS on 2026-09-24 for runtime candidate
+acceptance provenance GTM-R147 / STATE-R145 after Founder UAT PASS on 2026-09-24 for runtime candidate
 `37bae964f964bddd317e4c290dc146097e4c8f57` / tree `f52cd6279deb22c251062880087a2078fc7bce3b`
-(fingerprint `e49d860c721d2524b248738750530a416f8418d02d10b64e69531f8548fcfb79`). Independent
+(fingerprint `e49d860c721d2524b248738750530a416f8418d02d10b64e69531f8548fcfb79`). CURRENT tip is
+GTM-R148 / STATE-R146 (`IMP036I_ACTIVATED: YES`; `currentProductSlice = IMP-036I`). Independent
 implementation review = **PASS** (`5302239433`) against HEAD `649b7848f99918f927da4a77e98cd81cdc146e6b`
 / tree `b272adf40f89b0011fff07bf4d6b6d0d735df68a` / fingerprint
 `c2bc6a91ce536329bec0ad4af4d3264a5a39904d035af28442071b4e96e2f56a` (evidence PR#246 comment
-`5810833593`; automated acceptance `42/42 PASS`). Acceptance does **not** activate IMP-036I.
-Historical implementation-complete tip was GTM-R146 / STATE-R144. Historical start tip was
+`5810833593`; automated acceptance `42/42 PASS`). Acceptance does **not** itself activate IMP-036I
+(activation is a separate Founder-authorized task recorded at GTM-R148).
+Historical acceptance tip was GTM-R147 / STATE-R145. Historical implementation-complete tip was GTM-R146 / STATE-R144. Historical start tip was
 GTM-R145 / STATE-R143. Historical authorization tip was GTM-R144 / STATE-R142. Historical
 architecture-lock tip was GTM-R143 / STATE-R141.
 
@@ -87,7 +89,7 @@ IMP036H_FOUNDER_UAT_CANDIDATE_FINGERPRINT = e49d860c721d2524b248738750530a416f84
 IMP036H_FOUNDER_UAT_DECISION_DATE = 2026-09-24
 IMP036H_FOUNDER_UAT_ACCEPTANCE_AUTHORITY = Founder
 IMP036H_FOUNDER_UAT_CHECKMARKS = pickup_profile=PASS; customer_pickup=PASS; payment=PASS; operations_handover=PASS; customer_order_history=PASS; mode_switching=PASS; unavailable_state=PASS; mobile=PASS; overall=PASS; findings=NONE_BLOCKING
-IMP036I_ACTIVATED = NO
+IMP036I_ACTIVATED = YES
 AUTHORIZED + STARTED + COMPLETE + ACCEPTED = COMPLETE_AND_ACCEPTED
 IMP-036H: COMPLETE_AND_ACCEPTED
 PRODUCT_DEFINITION = PD-IMP-036H-DRAFT-1 APPROVED
@@ -103,7 +105,8 @@ SCHEMA_MIGRATION_EXECUTION = COMPLETE
 OPEN_ARCHITECTURE_QUESTIONS = NONE
 RED_DECISIONS_REQUIRED = NONE
 AF-036H-01 … AF-036H-14 = RESOLVED (AF-036H-12 = corrected Option A)
-CANONICAL_ROADMAP_STATE = GTM-R147 / STATE-R145
+CANONICAL_ROADMAP_STATE = GTM-R148 / STATE-R146
+ACCEPTANCE_PROVENANCE = GTM-R147 / STATE-R145
 ```
 
 | Field | Value |
@@ -126,14 +129,14 @@ CANONICAL_ROADMAP_STATE = GTM-R147 / STATE-R145
 
 ## 1. Authority / status
 
-Verified acceptance tip target:
+Verified CURRENT tip (lifecycle authority ROADMAP/STATE; acceptance provenance retained):
 
 ```text
 Repository: /home/ajoshi/repos/boba-bear-platform
 Remote: nivedhya11/bobabear-platform
 VISION = VISION-1
-ROADMAP = GTM-R147
-STATE = STATE-R145
+ROADMAP = GTM-R148
+STATE = STATE-R146
 ARCHITECTURE = ARCH-R22
 DECISION REGISTER = DR-20
 PRODUCT DELIVERY = PD-1
@@ -144,6 +147,7 @@ Product Definition = docs/platform/product/IMP-036H/product-definition.md (APPRO
 Product Definition Gate evidence = PR#238 comment 5797812536
 Independent Architecture Fit evidence = PR #239 review 5295149318
 Implementation plan = docs/platform/product/IMP-036H/implementation-plan.md
+ACCEPTANCE_PROVENANCE = GTM-R147 / STATE-R145
 ```
 
 Exact Fit-evaluated candidate (independent PASS; preserved unchanged at authorization):
@@ -156,7 +160,8 @@ FIT_EVALUATED_FINGERPRINT = 74b1254f22c9131a6e073522cf9310f264866e442cc074775ad5
 
 ## Historical tip markers after implementation authorization (pre-acceptance)
 
-Superseded by GTM-R147 / STATE-R145 COMPLETE_AND_ACCEPTED:
+Superseded by GTM-R147 / STATE-R145 COMPLETE_AND_ACCEPTED (acceptance provenance; CURRENT tip is
+GTM-R148 / STATE-R146):
 
 ```text
 IMP036H_ARCHITECTURE_FIT: PASS
@@ -1124,7 +1129,8 @@ IMP036H_ACCEPTED_CANDIDATE = 37bae964f964bddd317e4c290dc146097e4c8f57
 IMP036H_FOUNDER_UAT_CANDIDATE_FINGERPRINT = e49d860c721d2524b248738750530a416f8418d02d10b64e69531f8548fcfb79
 IMP036H_FOUNDER_UAT_DECISION_DATE = 2026-09-24
 IMP036H_FOUNDER_UAT_ACCEPTANCE_AUTHORITY = Founder
-IMP036I_ACTIVATED = NO
-CANONICAL_ROADMAP_STATE = GTM-R147 / STATE-R145
-STOP = Do not activate IMP-036I; ADVANCE is a separate Founder-authorized task
+IMP036I_ACTIVATED = YES
+CANONICAL_ROADMAP_STATE = GTM-R148 / STATE-R146
+ACCEPTANCE_PROVENANCE = GTM-R147 / STATE-R145
+STOP = Gate / Fit / lock / implementation for IMP-036I remain NOT performed; ADVANCE beyond PD activation is a separate Founder-authorized task
 ```
