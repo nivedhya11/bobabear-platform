@@ -399,7 +399,7 @@ export function CheckoutClient(props: { catalog: OrderingCatalog }) {
       setError(commerceErrorCopy(fulfilled.code));
       return;
     }
-    let nextCheckout = fulfilled.data.checkout;
+    const nextCheckout = fulfilled.data.checkout;
     setCheckout(nextCheckout);
     const evaluated = await evaluateCheckout({
       checkoutId: nextCheckout.id,
