@@ -9,17 +9,20 @@ export {
   CHECKOUT_DESTINATION_KINDS,
   CHECKOUT_ERROR_CODES,
   CHECKOUT_EVALUATE_INPUT_FIELDS,
+  CHECKOUT_FULFILMENT_MODE_INPUT_FIELDS,
   CHECKOUT_GET_ACTIVE_INPUT_FIELDS,
   CHECKOUT_ID_REVISION_INPUT_FIELDS,
   CHECKOUT_MERCHANDISE_PROBLEM_CODES,
   CHECKOUT_NON_TERMINAL_STATUSES,
   CHECKOUT_ONE_TIME_ADDRESS_DESTINATION_FIELDS,
+  CHECKOUT_PICKUP_OUTLET_INPUT_FIELDS,
   CHECKOUT_PREPARE_INPUT_FIELDS,
   CHECKOUT_PROMOTION_EFFECT_KINDS,
   CHECKOUT_SAVED_ADDRESS_DESTINATION_FIELDS,
   CHECKOUT_START_INPUT_FIELDS,
   CHECKOUT_STATUSES,
   CHECKOUT_TERMINAL_STATUSES,
+  FULFILMENT_MODES,
   type CheckoutDestinationKind,
   type CheckoutErrorCode,
   type CheckoutMerchandiseProblemCode,
@@ -27,6 +30,7 @@ export {
   type CheckoutPromotionEffectKind,
   type CheckoutStatus,
   type CheckoutTerminalStatus,
+  type FulfilmentMode,
 } from "./constants";
 
 export { CheckoutError, type CheckoutMerchandiseProblem } from "./errors";
@@ -37,6 +41,7 @@ export type {
   CheckoutDestinationCoordinates,
   CheckoutDestinationInput,
   CheckoutEvaluationSuccess,
+  CheckoutPickupLocation,
   CheckoutPolicy,
   CheckoutSnapshot,
   CheckoutSnapshotBundleModifierSelection,
@@ -56,7 +61,9 @@ export {
   destinationsEqual,
   isLogicallyExpired,
   parseExpectedCheckoutRevision,
+  pickupLocationsEqual,
   requireCheckoutTtlMs,
+  snapshotFulfilmentShapesEqual,
 } from "./canonicalize";
 
 export {

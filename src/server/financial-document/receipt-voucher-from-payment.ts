@@ -64,7 +64,9 @@ export type IssueReceiptVoucherForPaymentOptions = IssueFinancialDocumentOptions
   }>;
 
 
-function formatRecipientAddress(destination: CheckoutSnapshot["destination"]): string {
+function formatRecipientAddress(
+  destination: NonNullable<CheckoutSnapshot["destination"]>,
+): string {
   const parts = [
     destination.addressLine1,
     destination.addressLine2,
@@ -298,7 +300,9 @@ export async function issueReceiptVoucherForSucceededPayment(
   // Place of supply must be a GST 2-digit state code. Checkout destination
   // stores ISO subdivision codes (e.g. IN-UT). Restaurant taxation uses
   // outlet performance location — seal from the effective issuer profile.
+  // Pickup snapshots have null destination; fall closed to issuer profile.
   const placeOfSupplyStateCode =
+    destination !== null &&
     typeof destination.stateCode === "string" &&
     /^[0-9]{2}$/.test(destination.stateCode)
       ? destination.stateCode
@@ -322,9 +326,10 @@ export async function issueReceiptVoucherForSucceededPayment(
     orderId: null,
     refundId: null,
     priorFinancialDocumentId: null,
-    recipientDisplayName: destination.recipientName,
-    recipientPhoneE164: destination.recipientPhone,
-    recipientAddress: formatRecipientAddress(destination),
+    recipientDisplayName: destination?.recipientName ?? null,
+    recipientPhoneE164: destination?.recipientPhone ?? null,
+    recipientAddress:
+      destination !== null ? formatRecipientAddress(destination) : null,
   };
 
   try {

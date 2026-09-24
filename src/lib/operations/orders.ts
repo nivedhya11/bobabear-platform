@@ -113,6 +113,34 @@ function parseDestination(value: unknown): OperationsOrderDestination | null {
   };
 }
 
+function parsePickupLocation(
+  value: unknown,
+): NonNullable<OperationsOrderDetail["pickupLocation"]> | null {
+  if (!isPlainObject(value)) return null;
+  if (
+    typeof value.displayName !== "string" ||
+    typeof value.addressLine1 !== "string" ||
+    typeof value.city !== "string" ||
+    typeof value.stateCode !== "string" ||
+    typeof value.postalCode !== "string" ||
+    typeof value.instructions !== "string" ||
+    !isNullableString(value.addressLine2) ||
+    !isNullableString(value.locality)
+  ) {
+    return null;
+  }
+  return {
+    displayName: value.displayName,
+    addressLine1: value.addressLine1,
+    addressLine2: value.addressLine2,
+    locality: value.locality,
+    city: value.city,
+    stateCode: value.stateCode,
+    postalCode: value.postalCode,
+    instructions: value.instructions,
+  };
+}
+
 function parseModifier(
   value: unknown,
 ): Readonly<{ groupName: string; optionName: string; quantity: number }> | null {
@@ -187,8 +215,27 @@ export function parseOperationsOrderDetail(value: unknown): OperationsOrderDetai
 
   const money = parseMoney(value.money);
   const outlet = parseOutlet(value.outlet);
-  const destination = parseDestination(value.destination);
-  if (!money || !outlet || !destination) return null;
+  const destination =
+    value.destination === null || value.destination === undefined
+      ? null
+      : parseDestination(value.destination);
+  if (!money || !outlet) return null;
+  if (value.destination !== null && value.destination !== undefined && !destination) {
+    return null;
+  }
+
+  const pickupLocation =
+    value.pickupLocation === null || value.pickupLocation === undefined
+      ? null
+      : parsePickupLocation(value.pickupLocation);
+  if (value.pickupLocation !== null && value.pickupLocation !== undefined && !pickupLocation) {
+    return null;
+  }
+
+  const fulfilmentMode =
+    value.fulfilmentMode === "DELIVERY" || value.fulfilmentMode === "PICKUP"
+      ? value.fulfilmentMode
+      : undefined;
 
   const lines: OperationsOrderLine[] = [];
   for (const line of value.lines) {
@@ -214,7 +261,9 @@ export function parseOperationsOrderDetail(value: unknown): OperationsOrderDetai
     fulfilledByWorkforceUserId: value.fulfilledByWorkforceUserId,
     cancelledByWorkforceUserId: value.cancelledByWorkforceUserId,
     cancellationReasonCode: value.cancellationReasonCode,
+    fulfilmentMode,
     destination,
+    pickupLocation,
     lines,
   };
 }

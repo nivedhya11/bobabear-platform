@@ -4,7 +4,7 @@
  */
 
 import type { CheckoutSnapshot } from "../../shared/checkout";
-import { destinationsEqual } from "../../shared/checkout";
+import { snapshotFulfilmentShapesEqual } from "../../shared/checkout";
 
 export function checkoutSnapshotsStructurallyEqual(
   a: CheckoutSnapshot,
@@ -15,7 +15,7 @@ export function checkoutSnapshotsStructurallyEqual(
   if (a.currency !== b.currency) return false;
   if (a.manualCouponCode !== b.manualCouponCode) return false;
   if (a.taxInclusionMode !== b.taxInclusionMode) return false;
-  if (!destinationsEqual(a.destination, b.destination)) return false;
+  if (!snapshotFulfilmentShapesEqual(a, b)) return false;
   if (
     a.basePaise !== b.basePaise ||
     a.modifierAdjustmentsPaise !== b.modifierAdjustmentsPaise ||

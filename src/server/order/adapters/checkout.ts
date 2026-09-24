@@ -43,15 +43,16 @@ export type OrderSnapshotProvenance = Readonly<{
   selectedOutletId: string;
   grandTotalPaise: bigint;
   currency: string;
-  recipientName: string;
-  recipientPhone: string;
-  addressLine1: string;
+  /** Null when sealed snapshot is PICKUP (IMP-036H). */
+  recipientName: string | null;
+  recipientPhone: string | null;
+  addressLine1: string | null;
   addressLine2: string | null;
   landmark: string | null;
   locality: string | null;
-  city: string;
-  stateCode: string;
-  postalCode: string;
+  city: string | null;
+  stateCode: string | null;
+  postalCode: string | null;
   label: string | null;
 }>;
 

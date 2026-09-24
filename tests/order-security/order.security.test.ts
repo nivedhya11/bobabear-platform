@@ -194,7 +194,7 @@ describe("IMP-023 order security — customer SEC-C01…SEC-C10", () => {
       });
       expect(detail.orderId).toBe(placed.orderId);
       expect(detail.orderNumber).toBe(placed.orderNumber);
-      expect(detail.destination.recipientName).toBe("Ashutosh Joshi");
+      expect(detail.destination?.recipientName).toBe("Ashutosh Joshi");
       expect(detail).not.toHaveProperty("paymentProvenanceKind");
       expect(detail).not.toHaveProperty("acceptedByWorkforceUserId");
       expect(detail).not.toHaveProperty("paymentId");

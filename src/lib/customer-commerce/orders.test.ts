@@ -88,7 +88,7 @@ describe("order client", () => {
     if (!got.ok) return;
     expect(got.data.order.orderNumber).toBe("ORD-0123456789AB");
     expect(got.data.order.lines).toHaveLength(1);
-    expect(got.data.order.destination.postalCode).toBe("248001");
+    expect(got.data.order.destination?.postalCode).toBe("248001");
   });
 
   it("surfaces D-360 order errors", async () => {

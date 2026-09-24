@@ -157,7 +157,7 @@ describe("IMP-023 customer projection excludes internal PII/provenance", () => {
       expect(detail).not.toHaveProperty("fulfilledByWorkforceUserId");
       expect(detail).not.toHaveProperty("cancelledByWorkforceUserId");
       expect(detail).not.toHaveProperty("checkoutId");
-      expect(detail.destination.recipientPhone).toBeTruthy();
+      expect(detail.destination?.recipientPhone).toBeTruthy();
       expect(typeof detail.revision).toBe("string");
     });
   });

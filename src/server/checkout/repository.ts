@@ -23,6 +23,7 @@ import {
 import type {
   Checkout,
   CheckoutDestination,
+  CheckoutPickupLocation,
   CheckoutSnapshot,
   CheckoutSnapshotBundleSelection,
   CheckoutSnapshotCharge,
@@ -31,6 +32,7 @@ import type {
   CheckoutSnapshotPromotionEffect,
   CheckoutSnapshotTaxComponent,
   CheckoutStatus,
+  FulfilmentMode,
 } from "../../shared/checkout";
 import type {
   PersistenceQueryContext,
@@ -49,10 +51,16 @@ export type SnapshotCommitPayload = Readonly<{
   sourceCartRevision: bigint;
   selectedOutletId: string;
   evaluatedAt: Date;
-  serviceabilityEvaluatedAt: Date;
+  /** IMP-036H — defaults to DELIVERY for existing Delivery callers. */
+  fulfilmentMode: FulfilmentMode;
+  /** Required for DELIVERY; null for PICKUP. */
+  serviceabilityEvaluatedAt: Date | null;
   currency: "INR";
   manualCouponCode: string | null;
-  destination: CheckoutDestination;
+  /** Required for DELIVERY; null for PICKUP. Never write kitchen address here for PICKUP. */
+  destination: CheckoutDestination | null;
+  /** Required for PICKUP; null/absent for DELIVERY. */
+  pickupLocation?: CheckoutPickupLocation | null;
   basePaise: bigint;
   modifierAdjustmentsPaise: bigint;
   bundleAdjustmentsPaise: bigint;
@@ -179,7 +187,20 @@ export function mapDestinationRow(
 
 function mapDestinationFromSnapshot(
   row: CheckoutSnapshotRow,
-): CheckoutDestination {
+): CheckoutDestination | null {
+  const fulfilmentMode = (row.fulfilmentMode ?? "DELIVERY") as FulfilmentMode;
+  if (fulfilmentMode === "PICKUP") return null;
+  if (
+    row.destinationKind === null ||
+    row.recipientName === null ||
+    row.recipientPhone === null ||
+    row.addressLine1 === null ||
+    row.city === null ||
+    row.stateCode === null ||
+    row.postalCode === null
+  ) {
+    return null;
+  }
   return Object.freeze({
     destinationKind: row.destinationKind as CheckoutDestination["destinationKind"],
     sourceSavedAddressId: row.sourceSavedAddressId,
@@ -194,6 +215,34 @@ function mapDestinationFromSnapshot(
     postalCode: row.postalCode,
     coordinates: mapCoordinates(row.latitude, row.longitude),
     label: row.label,
+  });
+}
+
+export function mapPickupLocationFromSnapshot(
+  row: CheckoutSnapshotRow,
+): CheckoutPickupLocation | null {
+  const fulfilmentMode = (row.fulfilmentMode ?? "DELIVERY") as FulfilmentMode;
+  if (fulfilmentMode !== "PICKUP") return null;
+  if (
+    row.pickupDisplayName === null ||
+    row.pickupAddressLine1 === null ||
+    row.pickupCity === null ||
+    row.pickupStateCode === null ||
+    row.pickupPostalCode === null ||
+    row.pickupInstructions === null
+  ) {
+    return null;
+  }
+  return Object.freeze({
+    displayName: row.pickupDisplayName,
+    addressLine1: row.pickupAddressLine1,
+    addressLine2: row.pickupAddressLine2,
+    locality: row.pickupLocality,
+    city: row.pickupCity,
+    stateCode: row.pickupStateCode,
+    postalCode: row.pickupPostalCode,
+    instructions: row.pickupInstructions,
+    coordinates: mapCoordinates(row.pickupLatitude, row.pickupLongitude),
   });
 }
 
@@ -437,7 +486,10 @@ export async function commitReadySnapshot(
   payload: SnapshotCommitPayload,
 ): Promise<CheckoutRow> {
   assertTransactionContext(context, "commitReadySnapshot");
-  const dest = payload.destination;
+  const fulfilmentMode = payload.fulfilmentMode;
+  const dest = fulfilmentMode === "DELIVERY" ? payload.destination : null;
+  const pickup =
+    fulfilmentMode === "PICKUP" ? (payload.pickupLocation ?? null) : null;
 
   await context.db.insert(checkoutSnapshotsTable).values({
     id: payload.snapshotId,
@@ -446,23 +498,35 @@ export async function commitReadySnapshot(
     sourceCartRevision: payload.sourceCartRevision,
     selectedOutletId: payload.selectedOutletId,
     evaluatedAt: payload.evaluatedAt,
-    serviceabilityEvaluatedAt: payload.serviceabilityEvaluatedAt,
+    fulfilmentMode,
+    serviceabilityEvaluatedAt:
+      fulfilmentMode === "DELIVERY" ? payload.serviceabilityEvaluatedAt : null,
     currency: payload.currency,
     manualCouponCode: payload.manualCouponCode,
-    destinationKind: dest.destinationKind,
-    sourceSavedAddressId: dest.sourceSavedAddressId,
-    recipientName: dest.recipientName,
-    recipientPhone: dest.recipientPhone,
-    addressLine1: dest.addressLine1,
-    addressLine2: dest.addressLine2,
-    landmark: dest.landmark,
-    locality: dest.locality,
-    city: dest.city,
-    stateCode: dest.stateCode,
-    postalCode: dest.postalCode,
-    latitude: dest.coordinates?.latitude ?? null,
-    longitude: dest.coordinates?.longitude ?? null,
-    label: dest.label,
+    destinationKind: dest?.destinationKind ?? null,
+    sourceSavedAddressId: dest?.sourceSavedAddressId ?? null,
+    recipientName: dest?.recipientName ?? null,
+    recipientPhone: dest?.recipientPhone ?? null,
+    addressLine1: dest?.addressLine1 ?? null,
+    addressLine2: dest?.addressLine2 ?? null,
+    landmark: dest?.landmark ?? null,
+    locality: dest?.locality ?? null,
+    city: dest?.city ?? null,
+    stateCode: dest?.stateCode ?? null,
+    postalCode: dest?.postalCode ?? null,
+    latitude: dest?.coordinates?.latitude ?? null,
+    longitude: dest?.coordinates?.longitude ?? null,
+    label: dest?.label ?? null,
+    pickupDisplayName: pickup?.displayName ?? null,
+    pickupAddressLine1: pickup?.addressLine1 ?? null,
+    pickupAddressLine2: pickup?.addressLine2 ?? null,
+    pickupLocality: pickup?.locality ?? null,
+    pickupCity: pickup?.city ?? null,
+    pickupStateCode: pickup?.stateCode ?? null,
+    pickupPostalCode: pickup?.postalCode ?? null,
+    pickupInstructions: pickup?.instructions ?? null,
+    pickupLatitude: pickup?.coordinates?.latitude ?? null,
+    pickupLongitude: pickup?.coordinates?.longitude ?? null,
     basePaise: payload.basePaise,
     modifierAdjustmentsPaise: payload.modifierAdjustmentsPaise,
     bundleAdjustmentsPaise: payload.bundleAdjustmentsPaise,
@@ -809,10 +873,12 @@ async function loadSnapshotAggregate(
     sourceCartRevision: snapshotRow.sourceCartRevision,
     selectedOutletId: snapshotRow.selectedOutletId,
     evaluatedAt: snapshotRow.evaluatedAt,
+    fulfilmentMode: (snapshotRow.fulfilmentMode ?? "DELIVERY") as FulfilmentMode,
     serviceabilityEvaluatedAt: snapshotRow.serviceabilityEvaluatedAt,
     currency: "INR",
     manualCouponCode: snapshotRow.manualCouponCode,
     destination: mapDestinationFromSnapshot(snapshotRow),
+    pickupLocation: mapPickupLocationFromSnapshot(snapshotRow),
     basePaise: snapshotRow.basePaise,
     modifierAdjustmentsPaise: snapshotRow.modifierAdjustmentsPaise,
     bundleAdjustmentsPaise: snapshotRow.bundleAdjustmentsPaise,
@@ -867,6 +933,8 @@ export async function loadCheckoutAggregate(
     revision: row.revision,
     status: row.status as CheckoutStatus,
     expiresAt: row.expiresAt,
+    fulfilmentMode: (row.fulfilmentMode ?? "DELIVERY") as FulfilmentMode,
+    pickupOutletId: row.pickupOutletId ?? null,
     activeSnapshotId: row.activeSnapshotId,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,

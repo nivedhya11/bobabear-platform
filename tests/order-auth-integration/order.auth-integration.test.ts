@@ -140,7 +140,7 @@ describe("IMP-023 order auth integration", () => {
         orderId: listed.items[0]!.orderId,
       });
       expect(detail.orderId).toBe(listed.items[0]!.orderId);
-      expect(detail.destination.recipientName).toBe("Ashutosh Joshi");
+      expect(detail.destination?.recipientName).toBe("Ashutosh Joshi");
 
       await context.internalAdapter.deleteSession(session.token);
       await runtime.close();

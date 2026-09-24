@@ -93,11 +93,23 @@ export function OrderConfirmationClient() {
             </ul>
             <OrderMoneySummaryPanel moneySummary={order.moneySummary} title="Payment summary" />
             <div className="font-body text-[14px] text-[var(--text-secondary)]">
-              <p>{order.destination.recipientName}</p>
-              <p>{order.destination.addressLine1}</p>
-              <p>
-                {order.destination.city} {order.destination.postalCode}
-              </p>
+              {order.destination ? (
+                <>
+                  <p>{order.destination.recipientName}</p>
+                  <p>{order.destination.addressLine1}</p>
+                  <p>
+                    {order.destination.city} {order.destination.postalCode}
+                  </p>
+                </>
+              ) : order.pickupLocation ? (
+                <>
+                  <p>{order.pickupLocation.displayName}</p>
+                  <p>{order.pickupLocation.addressLine1}</p>
+                  <p>
+                    {order.pickupLocation.city} {order.pickupLocation.postalCode}
+                  </p>
+                </>
+              ) : null}
             </div>
             <OrderSupportAction orderNumber={order.orderNumber} />
             <Button asChild variant="primary" className="min-h-[44px]">

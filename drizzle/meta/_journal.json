@@ -309,6 +309,13 @@
       "when": 1790098724666,
       "tag": "0043_imp038_auth_abuse_turnstile",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1790221535300,
+      "tag": "0044_imp036h_fulfilment_mode_pickup",
+      "breakpoints": true
     }
   ]
 }

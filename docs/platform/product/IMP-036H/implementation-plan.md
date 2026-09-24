@@ -6,7 +6,7 @@
   "productDefinition": "PD-IMP-036H-DRAFT-1",
   "architectureLock": "ARCHITECTURE_LOCKED",
   "implementationAuthorized": true,
-  "implementationStarted": false,
+  "implementationStarted": true,
   "planVersion": "IMP036H-PLAN-1",
   "lastReviewed": "2026-09-24",
   "bindingDecisions": ["D-378", "ADR-018", "ARCH-G28"],
@@ -23,16 +23,16 @@ PRODUCT_DEFINITION = PD-IMP-036H-DRAFT-1 (APPROVED; Gate PASS)
 ARCHITECTURE = LOCKED (D-378 / ADR-018 / ARCH-R22 / ARCH-G28)
 CAPABILITY_ARCHITECTURE = docs/platform/capabilities/IMP-036H-customer-pickup-takeaway.md
 IMPLEMENTATION_AUTHORIZED = YES
-IMPLEMENTATION_STARTED = NO
+IMPLEMENTATION_STARTED = YES
 IMPLEMENTATION_COMPLETE = NO
 IMP036H_ACCEPTED = NO
 RED_DECISIONS_REQUIRED = NONE
 MIGRATION_ID = 0044_imp036h_fulfilment_mode_pickup
 ```
 
-This plan is the executable implementation inventory for IMP-036H after Founder
-implementation authorization. It does **not** start implementation, create migrations,
-change runtime product semantics, or accept the IMP.
+This plan is the executable implementation inventory for IMP-036H. Implementation has
+**STARTED** (GTM-R145 / STATE-R143). It does **not** claim implementation complete, accept
+the IMP, or activate IMP-036I.
 
 Locked architecture must not be reopened. Any material need to violate the locked
 boundaries below is `RED_DECISION_REQUIRED`.

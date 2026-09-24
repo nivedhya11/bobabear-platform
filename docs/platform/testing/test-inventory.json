@@ -31,10 +31,10 @@
     "note": "Protected evidence and generated reports are never classified as executable test source."
   },
   "counts": {
-    "trackedPathsConsidered": 2111,
-    "executableTestFiles": 439,
+    "trackedPathsConsidered": 2115,
+    "executableTestFiles": 440,
     "sourceTestFiles": 134,
-    "testsTreeExecutableFiles": 234,
+    "testsTreeExecutableFiles": 235,
     "scriptTestFiles": 71,
     "playwrightSpecs": 12,
     "vitestConfigs": 2,
@@ -298,6 +298,7 @@
     "tests/database/financial-document-workflow.integration.test.ts",
     "tests/database/financial-document.integration.test.ts",
     "tests/database/idempotency.integration.test.ts",
+    "tests/database/imp036h-fulfilment-mode-pickup.migration.integration.test.ts",
     "tests/database/isolation.integration.test.ts",
     "tests/database/menu-import.integration.test.ts",
     "tests/database/migration-cli.integration.test.ts",
@@ -7611,6 +7612,43 @@
         "4-integration",
         "5-database-integration",
         "9-recovery-idempotency"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/database/imp036h-fulfilment-mode-pickup.migration.integration.test.ts",
+      "runner": "vitest",
+      "domain": "database/imp036h-fulfilment-mode-pickup.migration",
+      "testType": "integration",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:administration",
+        "test:database:access-control",
+        "test:database:assortment-availability",
+        "test:database:auth-foundation",
+        "test:database:cart",
+        "test:database:catalog",
+        "test:database:checkout",
+        "test:database:customer-addresses",
+        "test:database:customer-phone-auth",
+        "test:database:customer-profiles",
+        "test:database:menu-import",
+        "test:database:notifications",
+        "test:database:order",
+        "test:database:outbox-idempotency",
+        "test:database:payment",
+        "test:database:persistence",
+        "test:database:pricing-tax",
+        "test:database:promotions",
+        "test:database:serviceability",
+        "test:database:workforce-auth"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "4-integration",
+        "5-database-integration"
       ],
       "classificationConfidence": "HEURISTIC"
     },

@@ -221,6 +221,11 @@
       "tag": "0043_imp038_auth_abuse_turnstile",
       "path": "drizzle/0043_imp038_auth_abuse_turnstile.sql",
       "sha256": "db1ea44024b21893fe68fcf461f28190d8be15af03a28775325c01130f6687ac"
+    },
+    {
+      "tag": "0044_imp036h_fulfilment_mode_pickup",
+      "path": "drizzle/0044_imp036h_fulfilment_mode_pickup.sql",
+      "sha256": "56a34728c511b8e31f74b89e07d0ec78d3705d885727b8093219fd75d67f0291"
     }
   ]
 }
