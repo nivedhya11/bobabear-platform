@@ -28,15 +28,18 @@ workforce customer verification, FD recipient exemption, notification wording, g
 E2E geolocation/keyboard, and mobile projects. Independent technical review and Founder UAT remain
 required before acceptance reconciliation.
 
-## Provenance (fill after final commit / CI)
+## Provenance (exact remediation candidate)
 
 ```text
 CANONICAL_REPOSITORY_PATH = /home/ajoshi/repos/boba-bear-platform
 BRANCH = imp036h-f-evidence-candidate
-HEAD = <fill after final commit>
-TREE = <fill after final commit>
-WORKING_TREE_FINGERPRINT = <fill via npm run working-tree:fingerprint after final commit>
-PR = https://github.com/nivedhya11/boba-bear-platform/pull/246
+HEAD = caf58fb204174f8526659194d7572adb2d12473f
+TREE = 3a75a78ed9079484c1feb25ef0fc87a1db20da26
+WORKING_TREE_FINGERPRINT = ac1f7c2938a23f120cac87f8848c4db62c54fab0593d8119508349814803f8b0
+PR = https://github.com/nivedhya11/bobabear-platform/pull/246
+PRIOR_REVIEWED_HEAD = 7cb910b0a3cc36cab05e4e7d0ee0fd59ddf8c607
+PRIOR_INDEPENDENT_REVIEW = 5300490595
+BASE_MAIN = 9df6b7ae
 ```
 
 ## AC coverage matrix (honest candidate status)
