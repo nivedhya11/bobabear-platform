@@ -33156,12 +33156,13 @@ export function evaluateImp036iUngatedProductDefinitionDraftCandidate(text) {
   }
 
   const expectedVersion = "PD-IMP-036I-DRAFT-4";
+  // Capture the full token after := (not only DRAFT-\d+), so DRAFT-X / DRAFT-4-stale cannot pass.
   const visiblePrimaryVersions = [
-    ...currentBody.matchAll(/PRODUCT_DEFINITION_VERSION\s*[:=]\s*(PD-IMP-036I-DRAFT-\d+)/g),
-  ].map((m) => m[1]);
+    ...currentBody.matchAll(/PRODUCT_DEFINITION_VERSION\s*[:=]\s*(\S+)/g),
+  ].map((m) => m[1].replace(/[`'",.]+$/g, ""));
   const visibleAltVersions = [
-    ...currentBody.matchAll(/Product Definition [Vv]ersion\s*[:=]\s*(PD-IMP-036I-DRAFT-\d+)/g),
-  ].map((m) => m[1]);
+    ...currentBody.matchAll(/Product Definition [Vv]ersion\s*[:=]\s*(\S+)/g),
+  ].map((m) => m[1].replace(/[`'",.]+$/g, ""));
   // Every present mandatory current Product Definition version authority must independently
   // equal DRAFT-4. Do NOT collapse with || — one correct marker must not mask another stale one.
   // Collect ALL non-historical occurrences (historical blocks already stripped from currentBody).
@@ -33186,7 +33187,7 @@ export function evaluateImp036iUngatedProductDefinitionDraftCandidate(text) {
       ok: false,
       code: "IMP036I_PD_DRAFT_VERSION",
       message:
-        "Ungated IMP-036I Product Definition every visible PRODUCT_DEFINITION_VERSION must be PD-IMP-036I-DRAFT-4",
+        "Ungated IMP-036I Product Definition every visible PRODUCT_DEFINITION_VERSION must exactly equal PD-IMP-036I-DRAFT-4",
     };
   }
   if (visibleAltVersions.some((v) => v !== expectedVersion)) {
@@ -33194,7 +33195,7 @@ export function evaluateImp036iUngatedProductDefinitionDraftCandidate(text) {
       ok: false,
       code: "IMP036I_PD_DRAFT_VERSION",
       message:
-        "Ungated IMP-036I Product Definition every visible Product Definition Version must be PD-IMP-036I-DRAFT-4 when present",
+        "Ungated IMP-036I Product Definition every visible Product Definition Version must exactly equal PD-IMP-036I-DRAFT-4 when present",
     };
   }
 

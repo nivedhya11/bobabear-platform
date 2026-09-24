@@ -12982,6 +12982,22 @@ CURRENT REQUIREMENTS CONTINUE AFTER HISTORY
     );
   });
 
+  it("P2 fails when a later visible primary token is non-numeric DRAFT-X", () => {
+    const mutated = `${validDraftReady}\nPRODUCT_DEFINITION_VERSION: PD-IMP-036I-DRAFT-X\n`;
+    assert.equal(
+      evaluateImp036iUngatedProductDefinitionDraftCandidate(mutated).code,
+      "IMP036I_PD_DRAFT_VERSION",
+    );
+  });
+
+  it("P2 fails when a later visible primary token is DRAFT-4-stale suffix", () => {
+    const mutated = `${validDraftReady}\nPRODUCT_DEFINITION_VERSION: PD-IMP-036I-DRAFT-4-stale\n`;
+    assert.equal(
+      evaluateImp036iUngatedProductDefinitionDraftCandidate(mutated).code,
+      "IMP036I_PD_DRAFT_VERSION",
+    );
+  });
+
   it("fails DRAFT_READY checkpoint when Product Definition remains PRE_GATE_DRAFT", () => {
     assert.equal(
       evaluateImp036iProductDefinitionDraftReadyCheckpoint({
