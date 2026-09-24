@@ -15919,6 +15919,7 @@ function checkDecisionRegister(decision, roadmap, state) {
       "016-cost-optimized-pilot-infrastructure",
       "017-edge-origin-security-privacy-hardening",
       "018-customer-fulfilment-mode-and-pickup-boundary",
+      "019-scheduled-fulfilment-timing-and-execution",
     ];
     const slug = known.find((k) => k.startsWith(`${num}-`));
     const candidate = slug
