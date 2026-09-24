@@ -23,25 +23,46 @@ export type OperationsLifecycleConfirmationDialogProps = Readonly<{
   onCancellationReasonChange: (value: OperationsCancellationReasonCode | "") => void;
   onConfirm: () => void;
   onDismiss: () => void;
+  /** When FULFIL on a Pickup order, copy reflects customer handover. */
+  fulfilmentMode?: "DELIVERY" | "PICKUP";
 }>;
 
-function dialogTitle(action: OperationsLifecycleAction): string {
+function dialogTitle(
+  action: OperationsLifecycleAction,
+  fulfilmentMode?: "DELIVERY" | "PICKUP",
+): string {
   if (action === "ACCEPT") return "Accept this order?";
-  if (action === "FULFIL") return "Mark this order fulfilled?";
+  if (action === "FULFIL") {
+    return fulfilmentMode === "PICKUP"
+      ? "Handed to customer?"
+      : "Mark this order fulfilled?";
+  }
   return "Cancel this order?";
 }
 
-function confirmLabel(action: OperationsLifecycleAction): string {
+function confirmLabel(
+  action: OperationsLifecycleAction,
+  fulfilmentMode?: "DELIVERY" | "PICKUP",
+): string {
   if (action === "ACCEPT") return "Confirm accept";
-  if (action === "FULFIL") return "Confirm fulfil";
+  if (action === "FULFIL") {
+    return fulfilmentMode === "PICKUP" ? "Confirm handed to customer" : "Confirm fulfil";
+  }
   return "Confirm cancel";
 }
 
-function actionSummary(action: OperationsLifecycleAction, orderNumber: string): string {
+function actionSummary(
+  action: OperationsLifecycleAction,
+  orderNumber: string,
+  fulfilmentMode?: "DELIVERY" | "PICKUP",
+): string {
   if (action === "ACCEPT") {
     return `Accept order ${orderNumber}. This moves the order from Placed to Accepted.`;
   }
   if (action === "FULFIL") {
+    if (fulfilmentMode === "PICKUP") {
+      return `Mark order ${orderNumber} as picked up. Confirm the customer presented matching order confirmation, then hand over. This moves the order from Accepted to Fulfilled.`;
+    }
     return `Fulfil order ${orderNumber}. This moves the order from Accepted to Fulfilled.`;
   }
   return `Cancel order ${orderNumber}. This permanently cancels the order. Choose a cancellation reason.`;
@@ -134,10 +155,10 @@ export function OperationsLifecycleConfirmationDialog(
         data-testid="operations-lifecycle-dialog"
       >
         <h2 id={titleId} className="font-display text-[28px] text-[var(--text-primary)]">
-          {dialogTitle(props.action)}
+          {dialogTitle(props.action, props.fulfilmentMode)}
         </h2>
         <p id={descriptionId} className="font-body text-[15px] text-[var(--text-secondary)]">
-          {actionSummary(props.action, props.orderNumber)}
+          {actionSummary(props.action, props.orderNumber, props.fulfilmentMode)}
         </p>
 
         {reasonRequired ? (
@@ -207,7 +228,7 @@ export function OperationsLifecycleConfirmationDialog(
             data-dialog-primary="true"
             onClick={props.onConfirm}
           >
-            {confirmLabel(props.action)}
+            {confirmLabel(props.action, props.fulfilmentMode)}
           </Button>
         </div>
       </div>

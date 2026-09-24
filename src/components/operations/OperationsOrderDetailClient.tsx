@@ -425,6 +425,11 @@ export function OperationsOrderDetailClient() {
               void runMutation();
             }}
             onDismiss={dismissConfirm}
+            fulfilmentMode={
+              view.order.fulfilmentMode === "PICKUP" || view.order.pickupLocation
+                ? "PICKUP"
+                : view.order.fulfilmentMode
+            }
           />
         ) : null}
       </div>
@@ -566,7 +571,9 @@ function OrderDetail({
         )}
       </section>
 
-      <OperationsDeliveryPanel orderId={order.orderId} />
+      {order.fulfilmentMode !== "PICKUP" && !order.pickupLocation ? (
+        <OperationsDeliveryPanel orderId={order.orderId} />
+      ) : null}
 
       <OperationsRefundPanel orderId={order.orderId} canInitiate={canInitiateRefund} />
 
@@ -653,8 +660,14 @@ function OrderDetail({
               size="md"
               disabled={mutationPending}
               onClick={onFulfil}
+              data-testid="operations-order-fulfil"
+              {...(order.fulfilmentMode === "PICKUP" || order.pickupLocation
+                ? { "aria-label": "Mark as picked up" }
+                : {})}
             >
-              Fulfil
+              {order.fulfilmentMode === "PICKUP" || order.pickupLocation
+                ? "Mark as picked up"
+                : "Fulfil"}
             </Button>
           ) : null}
           {actions.includes("CANCEL") ? (

@@ -31,9 +31,9 @@
     "note": "Protected evidence and generated reports are never classified as executable test source."
   },
   "counts": {
-    "trackedPathsConsidered": 2129,
-    "executableTestFiles": 447,
-    "sourceTestFiles": 135,
+    "trackedPathsConsidered": 2132,
+    "executableTestFiles": 448,
+    "sourceTestFiles": 136,
     "testsTreeExecutableFiles": 241,
     "scriptTestFiles": 71,
     "playwrightSpecs": 12,
@@ -66,6 +66,7 @@
     "src/components/operations/OperationsOrderDetailShell.test.ts",
     "src/components/operations/OperationsOrderListClient.test.tsx",
     "src/components/operations/OperationsRefundPanel.test.tsx",
+    "src/components/operations/store/StorePickupProfileClient.test.tsx",
     "src/components/operations/store/StoreShell.test.tsx",
     "src/components/ordering/CartClient.test.tsx",
     "src/components/ordering/CartLineList.test.tsx",
@@ -2851,6 +2852,24 @@
     },
     {
       "path": "src/components/operations/OperationsRefundPanel.test.tsx",
+      "runner": "vitest",
+      "domain": "components/operations",
+      "testType": "component-or-tsx",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test",
+        "test:coverage"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "2-component"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "src/components/operations/store/StorePickupProfileClient.test.tsx",
       "runner": "vitest",
       "domain": "components/operations",
       "testType": "component-or-tsx",

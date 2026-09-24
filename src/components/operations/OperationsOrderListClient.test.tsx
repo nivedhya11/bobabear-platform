@@ -142,4 +142,24 @@ describe("OperationsOrderListClient", () => {
       expect(link).toHaveAttribute("href", expectedHref);
     }
   });
+
+  it("IMP-036H: renders DELIVERY and PICKUP fulfilment badges", async () => {
+    listWorkforceOrders.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      data: {
+        items: [
+          { ...summary, orderId: "ord-d", fulfilmentMode: "DELIVERY" },
+          { ...summary, orderId: "ord-p", orderNumber: "ORD-PICKUP00001", fulfilmentMode: "PICKUP" },
+        ],
+        nextCursor: null,
+      },
+    });
+    render(<OperationsOrderListClient />);
+    await waitFor(() => expect(screen.getByTestId("operations-table")).toBeInTheDocument());
+    expect(screen.getByTestId("order-fulfilment-ord-d")).toHaveTextContent("DELIVERY");
+    expect(screen.getByTestId("order-fulfilment-ord-d")).toHaveAccessibleName(/fulfilment mode delivery/i);
+    expect(screen.getByTestId("order-fulfilment-ord-p")).toHaveTextContent("PICKUP");
+    expect(screen.getByTestId("order-fulfilment-ord-p")).toHaveAccessibleName(/fulfilment mode pickup/i);
+  });
 });

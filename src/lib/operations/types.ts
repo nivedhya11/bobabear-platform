@@ -36,6 +36,7 @@ export type OperationsOrderSummary = Readonly<{
   cancelledAt: string | null;
   money: OperationsOrderMoney;
   outlet: OperationsOutletSummary;
+  fulfilmentMode?: "DELIVERY" | "PICKUP";
 }>;
 
 export type OperationsOrderDestination = Readonly<{
@@ -70,7 +71,6 @@ export type OperationsOrderDetail = OperationsOrderSummary & Readonly<{
   fulfilledByWorkforceUserId: string | null;
   cancelledByWorkforceUserId: string | null;
   cancellationReasonCode: string | null;
-  fulfilmentMode?: "DELIVERY" | "PICKUP";
   destination: OperationsOrderDestination | null;
   pickupLocation?: Readonly<{
     displayName: string;

@@ -1,6 +1,6 @@
 /**
- * OutletPickupProfile persistence stubs (IMP-036H tranche A).
- * Full Ops API / conflict semantics land in tranche E.
+ * OutletPickupProfile persistence (IMP-036H).
+ * Ops transport + conflict semantics: tranche E.
  */
 
 import { and, eq } from "drizzle-orm";
@@ -14,7 +14,10 @@ import {
   assertApplicationRole,
   assertTransactionContext,
 } from "../organization/assert-role";
-import { OrganizationValidationError } from "../organization/errors";
+import {
+  OrganizationConflictError,
+  OrganizationValidationError,
+} from "../organization/errors";
 
 export type OutletPickupProfileRow =
   typeof outletPickupProfilesTable.$inferSelect;
@@ -142,7 +145,7 @@ export async function upsertOutletPickupProfile(
     input.expectedRevision === undefined ||
     input.expectedRevision !== existing.revision
   ) {
-    throw new OrganizationValidationError({
+    throw new OrganizationConflictError({
       message: "OutletPickupProfile revision conflict.",
     });
   }
@@ -174,7 +177,7 @@ export async function upsertOutletPickupProfile(
 
   const row = updated[0];
   if (!row) {
-    throw new OrganizationValidationError({
+    throw new OrganizationConflictError({
       message: "OutletPickupProfile revision conflict.",
     });
   }

@@ -12,6 +12,7 @@ export type StoreSubnavId =
   | "operating-status"
   | "hours"
   | "serviceability"
+  | "pickup-profile"
   | "team-members"
   | "team-access";
 
@@ -76,6 +77,12 @@ export const STORE_SUBNAV_ITEMS: readonly StoreSubnavItem[] = [
     label: "Serviceability",
     href: "/workforce/operations/store/serviceability/",
     requiredAnyCapability: ["serviceability.read"],
+  },
+  {
+    id: "pickup-profile",
+    label: "Pickup Profile",
+    href: "/workforce/operations/store/pickup-profile/",
+    requiredAnyCapability: ["outlet.read"],
   },
   {
     id: "team-members",
