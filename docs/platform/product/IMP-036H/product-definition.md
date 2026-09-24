@@ -16,11 +16,11 @@
   "implementationAuthorized": "YES",
   "implementationStarted": "YES",
   "implementationComplete": "YES",
-  "impAccepted": "NO",
+  "impAccepted": "YES",
   "imp036hActivated": "YES",
   "imp036iActivated": "NO",
   "founderUatRequired": "YES",
-  "founderUatStatus": "NOT_PERFORMED",
+  "founderUatStatus": "PASS",
   "founderDecisions": 23,
   "unresolvedProductDecisions": 0,
   "readyForProductDefinitionGate": "YES",
@@ -57,16 +57,21 @@ IMP036H_IMPLEMENTATION_AUTHORIZED: YES
 IMP036H_STARTED: YES
 IMP036H_IMPLEMENTATION_STARTED: YES
 IMP036H_IMPLEMENTATION_COMPLETE: YES
-IMP036H_ACCEPTED: NO
-IMP036H_FOUNDER_UAT: NOT_PERFORMED
-IMP036H_FORMAL_ACCEPTANCE: NOT_PERFORMED
+IMP036H_ACCEPTED: YES
+IMP036H_FOUNDER_UAT: PASS
+IMP036H_FORMAL_ACCEPTANCE: ACCEPTED
 IMP036H_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
 IMP036H_INDEPENDENT_IMPLEMENTATION_REVIEW_ID: 5302239433
+IMP036H_INDEPENDENT_TECHNICAL_ACCEPTANCE: PASS
 INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PASS
 INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_HEAD: aab814c238c499367ee921e9f8ffb03ff7b1b373
 INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_TREE: 93d4e83d4a73c61c9439bcaae2799920fcca46db
 INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID: 5295149318
-FOUNDER_UAT_STATUS: NOT_PERFORMED
+FOUNDER_UAT_STATUS: PASS
+IMP036H_ACCEPTED_MAIN_SHA: 37bae964f964bddd317e4c290dc146097e4c8f57
+IMP036H_ACCEPTED_TREE: f52cd6279deb22c251062880087a2078fc7bce3b
+IMP036H_FOUNDER_UAT_CANDIDATE_FINGERPRINT: e49d860c721d2524b248738750530a416f8418d02d10b64e69531f8548fcfb79
+IMP036H_FOUNDER_UAT_DECISION_DATE: 2026-09-24
 
 ARCHITECTURE_FIT_EXECUTION: PERFORMED
 ARCHITECTURE_FIT: PASS
@@ -91,8 +96,8 @@ Binding decisions: D-378 / ADR-018 / ARCH-R22 / ARCH-G28
 Independent Architecture Fit evidence: PR #239 review 5295149318
 
 Canonical anchors (verify against CURRENT ROADMAP/STATE):
-  ROADMAP: GTM-R146
-  STATE: STATE-R142
+  ROADMAP: GTM-R147
+  STATE: STATE-R145
   ARCHITECTURE: ARCH-R22
   decision-register: DR-20
 
@@ -165,12 +170,13 @@ PD1_DID_NOT_ACTIVATE_IMP036F_AT_ADOPTION = YES
 
 ### Program context (CURRENT tip — verify against ROADMAP/STATE)
 
-Lifecycle truth remains ROADMAP/STATE only. CURRENT tip for this implementation-
-authorization tranche (this Product Definition is **not** lifecycle authority):
+Lifecycle truth remains ROADMAP/STATE only. CURRENT tip for this acceptance
+tranche (this Product Definition is **not** lifecycle authority):
 
 ```text
-acceptedThrough = IMP-036G
-currentProductSlice = IMP-036H
+acceptedThrough = IMP-036H
+currentProductSlice = NONE
+pendingAcceptance = NONE
 IMP036H_ACTIVATED: YES
 IMP036H_PRODUCT_DEFINITION: APPROVED (PD-IMP-036H-DRAFT-1)
 IMP036H_PRODUCT_DEFINITION_GATE: PASS
@@ -180,7 +186,9 @@ IMP036H_IMPLEMENTATION_AUTHORIZED: YES
 IMP036H_STARTED: YES
 IMP036H_IMPLEMENTATION_STARTED: YES
 IMP036H_IMPLEMENTATION_COMPLETE: YES
-IMP036H_ACCEPTED: NO
+IMP036H_ACCEPTED: YES
+IMP036H_FOUNDER_UAT: PASS
+IMP036H_FORMAL_ACCEPTANCE: ACCEPTED
 
 IMP036I: PLANNED / NOT_ACTIVATED
 IMP037: HOLD / BLOCKED_PROVIDER_ACCESS (historical progress preserved; not accepted)
@@ -193,7 +201,7 @@ IMP040: NOT_ACTIVATED / HOLD
 
 D-377: program pause / pre-GTM insertion authority
 D-378: Checkout Fulfilment Mode + Pickup Execution Boundary (CURRENT)
-Canonical anchors: VISION-1; ROADMAP GTM-R146; STATE STATE-R144;
+Canonical anchors: VISION-1; ROADMAP GTM-R147; STATE STATE-R145;
 ARCHITECTURE ARCH-R22; decision-register DR-20 (D-378); PD-1; TEST-1; PERSONA-1; GJ-1
 ```
 
@@ -214,11 +222,11 @@ DRAFT_READY_FOR_GATE; Gate NOT_PERFORMED; canonical tip GTM-R141 / STATE-R139
 | Product Definition version / document status | `PD-IMP-036H-DRAFT-1`; **Document status: APPROVED**; **PRE-GATE DRAFT: NO** |
 | Product owner / approval evidence | Founder. FD-036H-01…23 resolved 2026-09-23 (FD-036H-22/23 added in gate remediation). Independent Product Definition Gate **PASS** — PR#238 comment 5797812536. Gate-evaluated HEAD `91d3714a9efba59c309db159d112fdbb6c46dc72` / tree `3f8459cfc88c97f4267528fe5b8c3e8773692245` / fingerprint `81395a83ca492a791ee1faca3fdbf627b985c30adf00d2163693b3ccd6523664`. Independent Architecture Fit **PASS** — PR #239 review `5295149318`; Fit-evaluated HEAD `aab814c238c499367ee921e9f8ffb03ff7b1b373` / tree `93d4e83d4a73c61c9439bcaae2799920fcca46db` / fingerprint `74b1254f22c9131a6e073522cf9310f264866e442cc074775ad5f4b214f0e51e`. |
 | Process / verification policy | `PD-1` / `TEST-1` |
-| Canonical anchors | VISION-1; ROADMAP GTM-R146; STATE STATE-R144; ARCH-R22; DR-20 (D-378); PD-1; TEST-1; PERSONA-1; GJ-1 |
+| Canonical anchors | VISION-1; ROADMAP GTM-R147; STATE STATE-R145; ARCH-R22; DR-20 (D-378); PD-1; TEST-1; PERSONA-1; GJ-1 |
 | Repository candidate | Fit-evaluated candidate HEAD `aab814c238c499367ee921e9f8ffb03ff7b1b373` / tree `93d4e83d4a73c61c9439bcaae2799920fcca46db` / fingerprint `74b1254f22c9131a6e073522cf9310f264866e442cc074775ad5f4b214f0e51e` on branch `architecture/imp036h-fit-candidate`. Lock-persistence commits after this Fit PASS are not the evaluated artifact. Canonical path `/home/ajoshi/repos/boba-bear-platform`. |
-| Capability lifecycle / authorization | ROADMAP/STATE: `IMP036H_ACTIVATED: YES`; `currentProductSlice = IMP-036H`; formal lifecycle **IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE**; Product Definition **APPROVED**; Gate **PASS**; Architecture Fit **PASS**; architecture **LOCKED**; implementation **AUTHORIZED** / **STARTED** / **COMPLETE**; `IMP036H_IMPLEMENTATION_AUTHORIZED: YES`; `IMP036H_STARTED: YES`; `IMP036H_IMPLEMENTATION_COMPLETE: YES`; `IMP036H_ACCEPTED: NO`; `IMP036H_FOUNDER_UAT: NOT_PERFORMED`; `pendingAcceptance = IMP-036H`. Execution plan: [`implementation-plan.md`](./implementation-plan.md). |
+| Capability lifecycle / authorization | ROADMAP/STATE: `IMP036H_ACTIVATED: YES`; `currentProductSlice = NONE`; formal lifecycle **COMPLETE_AND_ACCEPTED**; Product Definition **APPROVED**; Gate **PASS**; Architecture Fit **PASS**; architecture **LOCKED**; implementation **AUTHORIZED** / **STARTED** / **COMPLETE**; `IMP036H_IMPLEMENTATION_AUTHORIZED: YES`; `IMP036H_STARTED: YES`; `IMP036H_IMPLEMENTATION_COMPLETE: YES`; `IMP036H_ACCEPTED: YES`; `IMP036H_FOUNDER_UAT: PASS`; `pendingAcceptance = NONE`; `acceptedThrough = IMP-036H`. Accepted UAT runtime `37bae964f964bddd317e4c290dc146097e4c8f57` / tree `f52cd6279deb22c251062880087a2078fc7bce3b`. Execution plan: [`implementation-plan.md`](./implementation-plan.md). |
 | Relevant capability architecture / ADRs | Locked capability: [`../../capabilities/IMP-036H-customer-pickup-takeaway.md`](../../capabilities/IMP-036H-customer-pickup-takeaway.md) (D-378 / ADR-018 / ARCH-R22 / ARCH-G28). Binding foundations: ADR-008; ADR-011; ADR-007; ADR-012; D-357; D-365; D-372; D-377. |
-| Founder UAT applicability | `FOUNDER_UAT_REQUIRED = YES`; `FOUNDER_UAT_STATUS = NOT_PERFORMED` — materially changes customer checkout/fulfilment and workforce handover (customer-visible Pickup path + Ops fulfilment). |
+| Founder UAT applicability | `FOUNDER_UAT_REQUIRED = YES`; `FOUNDER_UAT_STATUS = PASS` (2026-09-24 Founder authority) — materially changes customer checkout/fulfilment and workforce handover (customer-visible Pickup path + Ops fulfilment). |
 
 Behaviour classification vocabulary:
 
@@ -1398,8 +1406,8 @@ IMP036H_ARCHITECTURE_FIT: PASS
 IMP036H_ARCHITECTURE_LOCKED: YES
 IMP036H_IMPLEMENTATION_AUTHORIZED: YES
 IMP036H_STARTED: YES
-IMP036H_ACCEPTED: NO
-FOUNDER_UAT_STATUS: NOT_PERFORMED
+IMP036H_ACCEPTED: YES
+FOUNDER_UAT_STATUS: PASS
 ```
 
 ```text
@@ -1445,11 +1453,14 @@ FIT_EVALUATED_TREE: 93d4e83d4a73c61c9439bcaae2799920fcca46db
 FIT_EVALUATED_FINGERPRINT: 74b1254f22c9131a6e073522cf9310f264866e442cc074775ad5f4b214f0e51e
 INDEPENDENT_ARCHITECTURE_FIT: PASS
 INDEPENDENT_ARCHITECTURE_FIT_EVIDENCE: PR #239 review 5295149318
-CURRENT tip anchors: GTM-R146 / STATE-R144
+CURRENT tip anchors: GTM-R147 / STATE-R145
+IMPLEMENTATION_COMPLETE_RECORDED_AT = GTM-R146 / STATE-R144
 ```
 
-Next phase: independent technical acceptance → Founder UAT → formal acceptance. Implementation is AUTHORIZED / STARTED / COMPLETE at GTM-R146 /
-STATE-R144; completion is not acceptance; Founder UAT NOT_PERFORMED; IMP-036H not accepted. Execution plan:
+CURRENT (GTM-R147 / STATE-R145): IMP-036H is COMPLETE_AND_ACCEPTED after Founder UAT PASS on
+2026-09-24 for runtime candidate `37bae964f964bddd317e4c290dc146097e4c8f57` / tree `f52cd6279deb22c251062880087a2078fc7bce3b` / fingerprint `e49d860c721d2524b248738750530a416f8418d02d10b64e69531f8548fcfb79`.
+Implementation completion was recorded at GTM-R146 / STATE-R144. Governance reconciliation is not
+a new UAT candidate. IMP036I_ACTIVATED: NO. Execution plan:
 [`implementation-plan.md`](./implementation-plan.md).
 
 ---
@@ -1513,7 +1524,7 @@ new roles by default
 ## Appendix C — Program pause / assessment posture (context only)
 
 ```text
-acceptedThrough: IMP-036G
+acceptedThrough: IMP-036H
 IMP037: HOLD / BLOCKED_PROVIDER_ACCESS
 IMP038: HOLD / IMPLEMENTATION_COMPLETE / NOT_ACCEPTED
 IMP038_EXTERNAL_ASSESSMENT: DEFERRED_UNTIL_PRE_GTM_APPLICATION_SCOPE_STABILIZES

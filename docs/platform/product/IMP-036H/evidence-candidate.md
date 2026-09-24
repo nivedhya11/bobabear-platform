@@ -7,8 +7,8 @@
   "claim": "IMPLEMENTATION_COMPLETE_CANDIDATE_INDEPENDENT_REVIEW_PASS",
   "accepted": false,
   "implementationCompleteAsCurrentTruth": false,
-  "note": "ROADMAP/STATE tip will record IMP036H_IMPLEMENTATION_COMPLETE=YES / ACCEPTED=NO after governance persistence; this file remains evidence artifact not acceptance authority. Independently tested candidate remains 649b7848… (not the governance persistence commit).",
-  "founderUatPass": false,
+  "note": "Evidence artifact only — not acceptance authority. Formal acceptance is recorded at GTM-R147 / STATE-R145. Independently tested implementation candidate remains 649b7848…; Founder UAT runtime candidate is 37bae964… (not the governance persistence commit).",
+  "founderUatPass": true,
   "lastReviewed": "2026-09-24"
 }
 -->
@@ -20,8 +20,9 @@ CLAIM: IMPLEMENTATION_COMPLETE_CANDIDATE — INDEPENDENT REVIEW PASS
 NOT: COMPLETE_AND_ACCEPTED
 NOT: FOUNDER_UAT = PASS
 NOT: IMP036H_ACCEPTED = YES
-NOTE: ROADMAP/STATE tip records IMP036H_IMPLEMENTATION_COMPLETE = YES with ACCEPTED = NO
-      after GTM-R146 / STATE-R144 governance persistence; this file is evidence, not acceptance authority.
+NOTE: Formal acceptance recorded separately at GTM-R147 / STATE-R145 (FOUNDER_UAT PASS).
+      This file remains implementation-evidence only, not acceptance authority.
+      Implementation-complete tip was GTM-R146 / STATE-R144.
 INDEPENDENTLY_TESTED_CANDIDATE_HEAD = 649b7848f99918f927da4a77e98cd81cdc146e6b
 INDEPENDENTLY_TESTED_CANDIDATE_TREE = b272adf40f89b0011fff07bf4d6b6d0d735df68a
 INDEPENDENTLY_TESTED_CANDIDATE_FINGERPRINT = c2bc6a91ce536329bec0ad4af4d3264a5a39904d035af28442071b4e96e2f56a
@@ -29,8 +30,8 @@ IMP036H_INDEPENDENT_IMPLEMENTATION_REVIEW = PASS
 IMP036H_INDEPENDENT_IMPLEMENTATION_REVIEW_ID = 5302239433
 IMP036H_IMPLEMENTATION_EVIDENCE = PR#246 comment 5810833593
 IMP036H_AUTOMATED_ACCEPTANCE = 42/42 PASS
-FOUNDER_UAT = NOT_PERFORMED
-FORMAL_ACCEPTANCE = NOT_PERFORMED
+FOUNDER_UAT = PASS (recorded in ROADMAP/STATE acceptance tip; runtime candidate 37bae964…)
+FORMAL_ACCEPTANCE = ACCEPTED (ROADMAP/STATE authority; this file is not acceptance authority)
 NOT: IMP-036I activated
 ```
 
@@ -38,7 +39,7 @@ This artifact records **implementation-complete candidate** automated proof for 
 after remediation (workforce customer verification, FD recipient exemption, notification wording,
 golden journeys, E2E geolocation/keyboard, Operations E2E identity isolation, Delivery golden
 canonical lifecycle, and mobile projects). Independent implementation review = **PASS**
-(`5302239433`). Founder UAT remains `NOT_PERFORMED`. Formal acceptance remains `NOT_PERFORMED`.
+(`5302239433`). Founder UAT PASS and formal acceptance are recorded in ROADMAP/STATE (GTM-R147 / STATE-R145); this evidence file is not acceptance authority.
 The independently tested candidate is HEAD `649b7848…` — not any later governance-persistence commit.
 
 ## Provenance (exact remediation candidate)
@@ -127,13 +128,14 @@ candidate_automated_claimed: 42
 automated_acceptance: 42/42 PASS (independent review 5302239433)
 failed: 0
 uncovered: 0 (owners assigned)
-founder_uat_supplement: YES (required before COMPLETE_AND_ACCEPTED)
+founder_uat_supplement: RECORDED_IN_ROADMAP_STATE (GTM-R147 / STATE-R145; FOUNDER_UAT PASS)
 IMPLEMENTATION_COMPLETE_CANDIDATE: INDEPENDENT REVIEW PASS
-IMP036H_IMPLEMENTATION_COMPLETE: YES (ROADMAP/STATE tip; this file is evidence only)
-IMP036H_ACCEPTED: NO
-FOUNDER_UAT: NOT_PERFORMED
-FORMAL_ACCEPTANCE: NOT_PERFORMED
+IMP036H_IMPLEMENTATION_COMPLETE: YES (ROADMAP/STATE; this file is evidence only)
+IMP036H_ACCEPTED: YES (ROADMAP/STATE authority only — this file is not acceptance authority)
+FOUNDER_UAT: PASS (ROADMAP/STATE; runtime candidate 37bae964… — not governance merge)
+FORMAL_ACCEPTANCE: ACCEPTED (ROADMAP/STATE authority only)
 INDEPENDENTLY_TESTED_CANDIDATE: 649b7848… (not governance-persistence commit)
+FOUNDER_UAT_RUNTIME_CANDIDATE: 37bae964… / tree f52cd627… / FP e49d860c…
 ```
 
 ## Notes
@@ -143,5 +145,5 @@ INDEPENDENTLY_TESTED_CANDIDATE: 649b7848… (not governance-persistence commit)
   `customerVisibleContent` on prepare-send when `orderId` resolves Snapshot fulfilmentMode.
 - FD Option A: absent recipients allowed only when sealed Snapshot.fulfilmentMode = PICKUP;
   DELIVERY + null recipients → `RECIPIENT_PARTICULARS_REQUIRED`.
-- Founder UAT must exercise the exact merged candidate (HEAD + fingerprint) before acceptance.
-- Do **not** treat this file as ROADMAP/STATE truth for IMP-036H complete.
+- Formal acceptance and Founder UAT PASS are recorded in ROADMAP/STATE (GTM-R147 / STATE-R145).
+- Do **not** treat this file as ROADMAP/STATE acceptance authority; it remains implementation-evidence only.
