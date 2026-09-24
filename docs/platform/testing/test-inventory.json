@@ -31,10 +31,10 @@
     "note": "Protected evidence and generated reports are never classified as executable test source."
   },
   "counts": {
-    "trackedPathsConsidered": 2132,
-    "executableTestFiles": 448,
-    "sourceTestFiles": 136,
-    "testsTreeExecutableFiles": 241,
+    "trackedPathsConsidered": 2143,
+    "executableTestFiles": 456,
+    "sourceTestFiles": 139,
+    "testsTreeExecutableFiles": 246,
     "scriptTestFiles": 71,
     "playwrightSpecs": 12,
     "vitestConfigs": 2,
@@ -72,6 +72,8 @@
     "src/components/ordering/CartLineList.test.tsx",
     "src/components/ordering/CheckoutClient.destination.test.tsx",
     "src/components/ordering/CheckoutFulfilmentChoice.test.tsx",
+    "src/components/ordering/CheckoutPickupOutletStep.test.tsx",
+    "src/components/ordering/CustomerOrderFulfilmentPanel.test.tsx",
     "src/components/ordering/MenuItemCustomizationDialog.test.tsx",
     "src/components/ordering/OrderConfirmationClient.test.tsx",
     "src/components/ordering/OrderDetailClient.test.tsx",
@@ -178,6 +180,7 @@
     "src/shared/financial-document/financial-document.artifact.test.ts",
     "src/shared/financial-document/financial-document.domain.test.ts",
     "src/shared/financial-document/financial-document.render.test.ts",
+    "src/shared/notifications/customer-visible-content.test.ts",
     "src/shared/notifications/notifications.domain.test.ts",
     "src/shared/order/order-smoke.test.ts",
     "src/shared/pricing/delivery-fee-policy.test.ts",
@@ -379,7 +382,12 @@
     "tests/order-concurrency/order.concurrency.test.ts",
     "tests/order-crash/order.crash.test.ts",
     "tests/order-security/order.security.test.ts",
+    "tests/order/order.delivery-golden-journey.integration.test.ts",
     "tests/order/order.domain.test.ts",
+    "tests/order/order.pickup-cancel-refund.test.ts",
+    "tests/order/order.pickup-golden-journey.integration.test.ts",
+    "tests/order/order.pickup-handover-mismatch.test.ts",
+    "tests/order/order.pickup-notifications.test.ts",
     "tests/order/order.pickup-projections.test.ts",
     "tests/order/order.smoke.test.ts",
     "tests/order/order.transport.test.ts",
@@ -2977,6 +2985,42 @@
       "classificationConfidence": "HEURISTIC"
     },
     {
+      "path": "src/components/ordering/CheckoutPickupOutletStep.test.tsx",
+      "runner": "vitest",
+      "domain": "components/ordering",
+      "testType": "component-or-tsx",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test",
+        "test:coverage"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "2-component"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "src/components/ordering/CustomerOrderFulfilmentPanel.test.tsx",
+      "runner": "vitest",
+      "domain": "components/ordering",
+      "testType": "component-or-tsx",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test",
+        "test:coverage"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "2-component"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
       "path": "src/components/ordering/MenuItemCustomizationDialog.test.tsx",
       "runner": "vitest",
       "domain": "components/ordering",
@@ -4929,6 +4973,25 @@
       "path": "src/shared/financial-document/financial-document.render.test.ts",
       "runner": "vitest",
       "domain": "shared/financial-document",
+      "testType": "unit-or-domain",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test",
+        "test:coverage"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit",
+        "3-domain-use-case"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "src/shared/notifications/customer-visible-content.test.ts",
+      "runner": "vitest",
+      "domain": "shared/notifications",
       "testType": "unit-or-domain",
       "dbRequired": "NO",
       "browserRequired": "NO",
@@ -9584,6 +9647,29 @@
       "classificationConfidence": "HEURISTIC"
     },
     {
+      "path": "tests/order/order.delivery-golden-journey.integration.test.ts",
+      "runner": "vitest",
+      "domain": "order",
+      "testType": "integration",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:order",
+        "test:order-auth-integration",
+        "test:order-concurrency",
+        "test:order-crash",
+        "test:order-security",
+        "test:ordering-catalog"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "4-integration",
+        "5-database-integration"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
       "path": "tests/order/order.domain.test.ts",
       "runner": "vitest",
       "domain": "order",
@@ -9603,6 +9689,95 @@
       "test1Layers": [
         "1-unit",
         "3-domain-use-case"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/order/order.pickup-cancel-refund.test.ts",
+      "runner": "vitest",
+      "domain": "order",
+      "testType": "unit-or-domain",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:order",
+        "test:order-auth-integration",
+        "test:order-concurrency",
+        "test:order-crash",
+        "test:order-security",
+        "test:ordering-catalog"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/order/order.pickup-golden-journey.integration.test.ts",
+      "runner": "vitest",
+      "domain": "order",
+      "testType": "integration",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:order",
+        "test:order-auth-integration",
+        "test:order-concurrency",
+        "test:order-crash",
+        "test:order-security",
+        "test:ordering-catalog"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "4-integration",
+        "5-database-integration"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/order/order.pickup-handover-mismatch.test.ts",
+      "runner": "vitest",
+      "domain": "order",
+      "testType": "unit-or-domain",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:order",
+        "test:order-auth-integration",
+        "test:order-concurrency",
+        "test:order-crash",
+        "test:order-security",
+        "test:ordering-catalog"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/order/order.pickup-notifications.test.ts",
+      "runner": "vitest",
+      "domain": "order",
+      "testType": "unit-or-domain",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:order",
+        "test:order-auth-integration",
+        "test:order-concurrency",
+        "test:order-crash",
+        "test:order-security",
+        "test:ordering-catalog"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit"
       ],
       "classificationConfidence": "HEURISTIC"
     },

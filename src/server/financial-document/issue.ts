@@ -44,6 +44,21 @@ import {
   loadFinancialDocument,
 } from "./repository";
 import { resolveUpstreamAuthoritiesForIssuance } from "./upstream";
+import { loadActiveSnapshot } from "../checkout/repository";
+
+/**
+ * IMP-036H Option A — recipient particulars may be absent only when the
+ * authoritative linked Checkout Snapshot proves fulfilmentMode = PICKUP.
+ * Caller hints are never trusted.
+ */
+async function resolveAllowAbsentRecipientParticulars(
+  ctx: PersistenceQueryContext,
+  checkoutSnapshotId: string | null,
+): Promise<boolean> {
+  if (!checkoutSnapshotId) return false;
+  const snapshot = await loadActiveSnapshot(ctx, checkoutSnapshotId);
+  return snapshot?.fulfilmentMode === "PICKUP";
+}
 
 export type IssueFinancialDocumentOptions = Readonly<{
   /**
@@ -381,12 +396,16 @@ export async function issueFinancialDocument(
       documentType,
       reverseChargeApplicable: profile.reverseChargeApplicable,
     });
+    const allowAbsentRecipientParticulars =
+      await resolveAllowAbsentRecipientParticulars(
+        tx,
+        upstream.checkoutSnapshotId,
+      );
     assertRecipientParticularsForIssuance({
       documentType,
       recipientDisplayName: command.recipientDisplayName,
       recipientAddress: command.recipientAddress,
-      allowAbsentRecipientParticulars:
-        command.allowAbsentRecipientParticulars === true,
+      allowAbsentRecipientParticulars,
     });
     assertSupportedPlaceOfSupplyPath({
       documentType,

@@ -103,6 +103,15 @@ export {
   shouldExpire,
 } from "./policy";
 
+export {
+  renderCustomerVisibleNotificationContent,
+  summaryClaimsRiderOrDeliveryProgress,
+} from "./customer-visible-content";
+export type {
+  CustomerVisibleNotificationContent,
+  CustomerVisibleNotificationContentInput,
+} from "./customer-visible-content";
+
 export type {
   NotificationClock,
   NotificationCommunicationPreference,

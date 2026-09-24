@@ -30,6 +30,7 @@ import {
   bootstrapExistingMenuPricing,
   createLegalEntityTaxProfile,
 } from "../../src/server/pricing";
+import { upsertOutletPickupProfile } from "../../src/server/outlet-pickup-profile/repository";
 import {
   setOutletServiceabilityDistancePolicy,
   setOutletServiceabilityRoutingPriority,
@@ -227,6 +228,24 @@ export async function seedCustomerOrderingCommerce(workerConfig: WorkerConfig): 
       priceBookId: pricing.priceBookId ?? BOOTSTRAP_PRICE_BOOK_ID,
       packagingPaise: BigInt(2_000),
       deliveryPaise: BigInt(4_000),
+    });
+
+    // IMP-036H — enable ASAP Pickup for the E2E outlet (AC-002 golden journey).
+    await persistence.transaction(async (tx) => {
+      await upsertOutletPickupProfile(tx, {
+        outletId: tree.outlet.id,
+        enabled: true,
+        displayName: "E2E Pickup Counter",
+        addressLine1: "12 Mall Road",
+        addressLine2: null,
+        locality: "Rajpur",
+        city: "Dehradun",
+        stateCode: "IN-UT",
+        postalCode: "248001",
+        latitude: null,
+        longitude: null,
+        instructions: "Ask at counter for BOBA order.",
+      });
     });
 
     return { brandId: imported.brandId, outletId: tree.outlet.id };

@@ -144,6 +144,17 @@ export type WorkforceOrderSummary = Readonly<{
   fulfilmentMode: "DELIVERY" | "PICKUP";
 }>;
 
+/**
+ * IMP-036H FD-036H-23 / AC-036H-039 — minimum customer identity for Pickup
+ * handover verification. Projected from Checkout.customerAuthUserId →
+ * customer_auth_users (not Snapshot PII, not FD recipients).
+ */
+export type WorkforceOrderCustomerVerification = Readonly<{
+  displayName: string;
+  /** Verified phone from customer auth when phoneNumberVerified; otherwise null. */
+  verifiedPhoneE164: string | null;
+}>;
+
 export type WorkforceOrderDetail = WorkforceOrderSummary &
   Readonly<{
     updatedAt: Date;
@@ -156,6 +167,11 @@ export type WorkforceOrderDetail = WorkforceOrderSummary &
     destination: OrderDestinationProjection | null;
     /** Present when fulfilmentMode is PICKUP; otherwise null/absent. */
     pickupLocation?: OrderPickupLocationProjection | null;
+    /**
+     * Pickup handover verification identity (AC-036H-039). Present when
+     * fulfilmentMode is PICKUP; otherwise null.
+     */
+    customer: WorkforceOrderCustomerVerification | null;
     lines: readonly OrderLineProjection[];
   }>;
 

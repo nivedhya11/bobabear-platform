@@ -31,7 +31,7 @@ MIGRATION_ID = 0044_imp036h_fulfilment_mode_pickup
 ```
 
 This plan is the executable implementation inventory for IMP-036H. Implementation has
-**STARTED** (GTM-R145 / STATE-R143). It does **not** claim implementation complete, accept
+**COMPLETE** pending acceptance (GTM-R146 / STATE-R144). It does **not** claim formal acceptance,
 the IMP, or activate IMP-036I.
 
 Locked architecture must not be reopened. Any material need to violate the locked
@@ -441,6 +441,11 @@ Founder UAT.
 | 040 | Handover mismatch must not fulfil other Order | E/C | HTTP_IT |
 | 041 | Customer fulfilment a11y | D/F | ACCESSIBILITY |
 | 042 | Workforce handover a11y | E/F | ACCESSIBILITY |
+
+**IMP-036H-F candidate evidence:** see
+[`evidence-candidate.md`](./evidence-candidate.md) (`IMPLEMENTATION_COMPLETE_CANDIDATE` only;
+does not advance ROADMAP/STATE acceptance flags).
+
 
 ```text
 total_ac: 42

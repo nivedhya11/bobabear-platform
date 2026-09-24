@@ -18,11 +18,17 @@ import {
   computeNotificationDedupKey,
   notificationExpiryFor,
   purposeForSemanticType,
+  renderCustomerVisibleNotificationContent,
   validateTemplateVariables,
+  type CustomerVisibleNotificationContent,
   type NotificationChannel,
   type NotificationRequest,
+  type NotificationSemanticType,
 } from "../../shared/notifications";
-import type { Persistence } from "../persistence/types";
+import { eq } from "drizzle-orm";
+import { ordersTable } from "../../platform/database/schema/order";
+import { loadActiveSnapshot } from "../checkout/repository";
+import type { Persistence, PersistenceQueryContext } from "../persistence/types";
 import { requireNotificationCapability, requireNotificationWorkforceActor } from "./authorize";
 import { createNonSendingChannelRegistry } from "./channels";
 import { systemNotificationClock, type NotificationClock } from "./clock";
@@ -62,6 +68,37 @@ function clockOf(options: NotificationOperationOptions): NotificationClock {
 
 function channelsOf(options: NotificationOperationOptions): NotificationChannelRegistry {
   return options.channels ?? createNonSendingChannelRegistry();
+}
+
+async function resolveCustomerVisibleContentForRequest(
+  ctx: PersistenceQueryContext,
+  request: Readonly<{
+    orderId: string | null;
+    semanticType: string;
+  }>,
+): Promise<CustomerVisibleNotificationContent | null> {
+  if (!request.orderId) return null;
+  const orderRows = await ctx.db
+    .select({ checkoutSnapshotId: ordersTable.checkoutSnapshotId })
+    .from(ordersTable)
+    .where(eq(ordersTable.id, request.orderId))
+    .limit(1);
+  const snapshotId = orderRows[0]?.checkoutSnapshotId;
+  if (!snapshotId) return null;
+  const snapshot = await loadActiveSnapshot(ctx, snapshotId);
+  if (!snapshot) return null;
+  const semanticType = request.semanticType as NotificationSemanticType;
+  try {
+    return renderCustomerVisibleNotificationContent({
+      semanticType,
+      fulfilmentMode: snapshot.fulfilmentMode,
+      pickupLocationDisplayName: snapshot.pickupLocation?.displayName ?? null,
+    });
+  } catch {
+    // Delivery-progress types on PICKUP (or unsupported) — fail closed by
+    // omitting content rather than inventing Delivery wording.
+    return null;
+  }
 }
 
 /**
@@ -134,6 +171,8 @@ type SendPreparation =
       templateKey: string;
       providerTemplateRef: string | null;
       variables: Readonly<Record<string, string>>;
+      /** IMP-036H — fulfilment-aware customer-visible wording (AC-036H-029). */
+      customerVisibleContent: CustomerVisibleNotificationContent | null;
     }>;
 
 /**
@@ -217,9 +256,13 @@ async function prepareSend(
       return Object.freeze({ kind: "terminal" as const, request: updated });
     }
 
-    // No presentation variables exist in the foundation slice; validation still
-    // runs so the forbidden-material rules gate every send path.
+    // Foundation templates keep empty variable schemas (Meta body deferred).
+    // Customer-visible wording is still produced from fulfilmentMode for AC-029.
     const variables = validateTemplateVariables({}, template.variableSchema);
+    const customerVisibleContent = await resolveCustomerVisibleContentForRequest(
+      tx,
+      locked,
+    );
 
     await insertNotificationAttempt(tx, {
       id: attemptId,
@@ -256,6 +299,7 @@ async function prepareSend(
       templateKey: template.templateKey,
       providerTemplateRef: template.providerTemplateRef,
       variables,
+      customerVisibleContent,
     });
   });
 }

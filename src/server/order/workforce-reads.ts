@@ -17,6 +17,7 @@ import {
   loadFullSnapshotForOrder,
   loadSnapshotRowForOrder,
 } from "./adapters/checkout";
+import { loadWorkforceCustomerVerification } from "./adapters/customer-identity";
 import {
   authorizeOrderOutletAccess,
   requireOrderCapability,
@@ -124,10 +125,15 @@ export async function getWorkforceOrder(
     if (!snapshot || !outlet) {
       throw new OrderError("ORDER_NOT_FOUND", "Order not found.");
     }
+    const customer =
+      snapshot.fulfilmentMode === "PICKUP"
+        ? await loadWorkforceCustomerVerification(ctx, row.checkoutId)
+        : null;
     return toWorkforceOrderDetail(
       mapOrderRow(row),
       outletSummaryFromOutlet(outlet),
       snapshot,
+      customer,
     );
   });
 }

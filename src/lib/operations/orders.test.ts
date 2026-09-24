@@ -385,6 +385,49 @@ describe("parseOperationsOrderDetail", () => {
   it("rejects incomplete summary-like objects", () => {
     expect(parseOperationsOrderDetail(summary)).toBeNull();
   });
+
+  it("accepts Pickup customer verification and null Delivery customer", () => {
+    const pickup = parseOperationsOrderDetail({
+      ...detail,
+      fulfilmentMode: "PICKUP",
+      destination: null,
+      pickupLocation: {
+        displayName: "Pickup Counter",
+        addressLine1: "12 Mall Road",
+        addressLine2: null,
+        locality: null,
+        city: "Dehradun",
+        stateCode: "IN-UT",
+        postalCode: "248001",
+        instructions: "Counter 1",
+      },
+      customer: {
+        displayName: "E2E Guest",
+        verifiedPhoneE164: "+919876500256",
+      },
+    });
+    expect(pickup?.customer).toEqual({
+      displayName: "E2E Guest",
+      verifiedPhoneE164: "+919876500256",
+    });
+
+    const delivery = parseOperationsOrderDetail({
+      ...detail,
+      fulfilmentMode: "DELIVERY",
+      customer: null,
+    });
+    expect(delivery?.customer).toBeNull();
+  });
+
+  it("rejects malformed customer verification on HTTP detail", () => {
+    expect(
+      parseOperationsOrderDetail({
+        ...detail,
+        fulfilmentMode: "PICKUP",
+        customer: { displayName: "" },
+      }),
+    ).toBeNull();
+  });
 });
 
 describe("parseOperationsOrderMutationResult", () => {

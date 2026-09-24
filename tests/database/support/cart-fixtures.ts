@@ -604,8 +604,22 @@ export async function withCartHarness<T>(
 
     const customerAId = `cust-a-${randomUUID().slice(0, 8)}`;
     const customerBId = `cust-b-${randomUUID().slice(0, 8)}`;
-    await seedCustomerAuthUser(database.connectionString, customerAId);
-    await seedCustomerAuthUser(database.connectionString, customerBId);
+    // Unique verified phones so Pickup handover projection (AC-036H-039) can
+    // surface contact identity from customer_auth_users.
+    const phoneA = `+9198${String(Math.floor(Math.random() * 1e8)).padStart(8, "0")}`;
+    const phoneB = `+9198${String(Math.floor(Math.random() * 1e8)).padStart(8, "0")}`;
+    await seedCustomerAuthUser(
+      database.connectionString,
+      customerAId,
+      `${customerAId}@example.test`,
+      phoneA,
+    );
+    await seedCustomerAuthUser(
+      database.connectionString,
+      customerBId,
+      `${customerBId}@example.test`,
+      phoneB === phoneA ? `+9198${String(Math.floor(Math.random() * 1e8)).padStart(8, "0")}` : phoneB,
+    );
 
     const customerA = await customerActorFromAuthenticatedSession(
       database.connectionString,

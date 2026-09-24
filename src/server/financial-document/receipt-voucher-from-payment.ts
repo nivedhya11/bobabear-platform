@@ -334,7 +334,6 @@ export async function issueReceiptVoucherForSucceededPayment(
     recipientPhoneE164: destination?.recipientPhone ?? null,
     recipientAddress:
       destination !== null ? formatRecipientAddress(destination) : null,
-    ...(isPickup ? { allowAbsentRecipientParticulars: true } : {}),
   };
 
   try {

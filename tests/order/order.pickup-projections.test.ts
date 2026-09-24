@@ -41,6 +41,11 @@ describe("IMP-036H-C order projections — fulfilment mode", () => {
       expect(workforce.destination).toBeNull();
       expect(workforce.pickupLocation?.displayName).toBe("Pickup Counter");
       expect(workforce).not.toHaveProperty("delivery");
+      // AC-036H-039 — Pickup handover verification identity from customer auth.
+      expect(workforce.customer).toMatchObject({
+        displayName: "Customer",
+      });
+      expect(workforce.customer?.verifiedPhoneE164).toMatch(/^\+91\d{10}$/);
     });
   });
 
@@ -61,6 +66,7 @@ describe("IMP-036H-C order projections — fulfilment mode", () => {
       expect(workforce.fulfilmentMode).toBe("DELIVERY");
       expect(workforce.destination?.addressLine1).toBeTruthy();
       expect(workforce.pickupLocation ?? null).toBeNull();
+      expect(workforce.customer).toBeNull();
     });
   });
 });

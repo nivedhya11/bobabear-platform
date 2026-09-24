@@ -82,6 +82,11 @@ export type OperationsOrderDetail = OperationsOrderSummary & Readonly<{
     postalCode: string;
     instructions: string;
   }> | null;
+  /** Pickup handover verification (AC-036H-039); null/absent for Delivery. */
+  customer?: Readonly<{
+    displayName: string;
+    verifiedPhoneE164: string | null;
+  }> | null;
   lines: readonly OperationsOrderLine[];
 }>;
 
