@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/Button";
+import { CustomerOrderFulfilmentPanel } from "@/components/ordering/CustomerOrderFulfilmentPanel";
 import { OrderFinancialDocuments } from "@/components/ordering/OrderFinancialDocuments";
 import { OrderMoneySummaryPanel } from "@/components/ordering/OrderMoneySummaryPanel";
 import { buildOrderTimeline, OrderTimelinePanel } from "@/components/ordering/OrderTimelinePanel";
@@ -95,29 +96,7 @@ export function OrderDetailClient() {
               })}
             />
 
-            {order.delivery ? (
-              <section className="rounded-md border border-[var(--border-subtle)] p-4" data-testid="order-delivery">
-                <h2 className="font-body text-[15px] font-semibold">Delivery</h2>
-                <p data-testid="order-delivery-status">{order.delivery.statusLabel}</p>
-                {order.delivery.providerDisplayName ? (
-                  <p className="text-[13px] text-[var(--text-secondary)]">
-                    via {order.delivery.providerDisplayName}
-                  </p>
-                ) : null}
-                {order.delivery.trackingUrl ? (
-                  <p className="mt-2">
-                    <a
-                      href={order.delivery.trackingUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      data-testid="order-delivery-track"
-                    >
-                      Track delivery
-                    </a>
-                  </p>
-                ) : null}
-              </section>
-            ) : null}
+            <CustomerOrderFulfilmentPanel order={order} />
 
             <ul className="flex flex-col gap-3">
               {order.lines.map((line, index) => (
@@ -129,26 +108,6 @@ export function OrderDetailClient() {
             </ul>
 
             <OrderMoneySummaryPanel moneySummary={order.moneySummary} title="Payment summary" />
-
-            <div className="font-body text-[14px] text-[var(--text-secondary)]">
-              {order.destination ? (
-                <>
-                  <p>{order.destination.recipientName}</p>
-                  <p>{order.destination.addressLine1}</p>
-                  <p>
-                    {order.destination.city} {order.destination.postalCode}
-                  </p>
-                </>
-              ) : order.pickupLocation ? (
-                <>
-                  <p>{order.pickupLocation.displayName}</p>
-                  <p>{order.pickupLocation.addressLine1}</p>
-                  <p>
-                    {order.pickupLocation.city} {order.pickupLocation.postalCode}
-                  </p>
-                </>
-              ) : null}
-            </div>
 
             <OrderFinancialDocuments orderId={order.orderId} />
 

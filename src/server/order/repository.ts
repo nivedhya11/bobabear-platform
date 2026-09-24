@@ -188,6 +188,17 @@ export type CustomerOrderListRow = Readonly<{
   selectedOutletId: string;
   grandTotalPaise: bigint;
   currency: string;
+  fulfilmentMode: "DELIVERY" | "PICKUP";
+}>;
+
+export type WorkforceOrderListRow = Readonly<{
+  order: OrderRow;
+  brandId: string;
+  customerAuthUserId: string;
+  selectedOutletId: string;
+  grandTotalPaise: bigint;
+  currency: string;
+  fulfilmentMode: "DELIVERY" | "PICKUP";
 }>;
 
 export async function listOrdersForCustomer(
@@ -223,6 +234,7 @@ export async function listOrdersForCustomer(
       selectedOutletId: checkoutSnapshotsTable.selectedOutletId,
       grandTotalPaise: checkoutSnapshotsTable.grandTotalPaise,
       currency: checkoutSnapshotsTable.currency,
+      fulfilmentMode: checkoutSnapshotsTable.fulfilmentMode,
     })
     .from(ordersTable)
     .innerJoin(checkoutsTable, eq(ordersTable.checkoutId, checkoutsTable.id))
@@ -242,11 +254,11 @@ export async function listOrdersForCustomer(
       selectedOutletId: r.selectedOutletId,
       grandTotalPaise: r.grandTotalPaise,
       currency: r.currency,
+      fulfilmentMode:
+        r.fulfilmentMode === "PICKUP" ? ("PICKUP" as const) : ("DELIVERY" as const),
     }),
   );
 }
-
-export type WorkforceOrderListRow = CustomerOrderListRow;
 
 export async function searchOrdersForWorkforce(
   context: PersistenceQueryContext,
@@ -318,6 +330,7 @@ export async function searchOrdersForWorkforce(
       selectedOutletId: checkoutSnapshotsTable.selectedOutletId,
       grandTotalPaise: checkoutSnapshotsTable.grandTotalPaise,
       currency: checkoutSnapshotsTable.currency,
+      fulfilmentMode: checkoutSnapshotsTable.fulfilmentMode,
     })
     .from(ordersTable)
     .innerJoin(checkoutsTable, eq(ordersTable.checkoutId, checkoutsTable.id))
@@ -337,6 +350,8 @@ export async function searchOrdersForWorkforce(
       selectedOutletId: r.selectedOutletId,
       grandTotalPaise: r.grandTotalPaise,
       currency: r.currency,
+      fulfilmentMode:
+        r.fulfilmentMode === "PICKUP" ? ("PICKUP" as const) : ("DELIVERY" as const),
     }),
   );
 }

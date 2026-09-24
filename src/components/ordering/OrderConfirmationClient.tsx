@@ -4,10 +4,10 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/Button";
+import { CustomerOrderFulfilmentPanel } from "@/components/ordering/CustomerOrderFulfilmentPanel";
 import { OrderMoneySummaryPanel } from "@/components/ordering/OrderMoneySummaryPanel";
 import { OrderSupportAction } from "@/components/ordering/OrderSupportAction";
 import { commerceErrorCopy } from "@/components/ordering/error-copy";
-import { formatPaise } from "@/components/ordering/format-money";
 import { orderStatusLabel } from "@/components/ordering/order-status";
 import { fetchCustomerSession } from "@/lib/customer-auth/client";
 import { loginUrlWithReturn } from "@/lib/customer-auth/return-to";
@@ -92,25 +92,7 @@ export function OrderConfirmationClient() {
               ))}
             </ul>
             <OrderMoneySummaryPanel moneySummary={order.moneySummary} title="Payment summary" />
-            <div className="font-body text-[14px] text-[var(--text-secondary)]">
-              {order.destination ? (
-                <>
-                  <p>{order.destination.recipientName}</p>
-                  <p>{order.destination.addressLine1}</p>
-                  <p>
-                    {order.destination.city} {order.destination.postalCode}
-                  </p>
-                </>
-              ) : order.pickupLocation ? (
-                <>
-                  <p>{order.pickupLocation.displayName}</p>
-                  <p>{order.pickupLocation.addressLine1}</p>
-                  <p>
-                    {order.pickupLocation.city} {order.pickupLocation.postalCode}
-                  </p>
-                </>
-              ) : null}
-            </div>
+            <CustomerOrderFulfilmentPanel order={order} showDeliveryTracking={false} />
             <OrderSupportAction orderNumber={order.orderNumber} />
             <Button asChild variant="primary" className="min-h-[44px]">
               <a href={`/order/orders/detail/?orderId=${encodeURIComponent(order.orderId)}`}>

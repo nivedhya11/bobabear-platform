@@ -94,7 +94,11 @@ function linesFromSnapshot(
 export function toCustomerOrderSummary(
   order: Order,
   outlet: OrderOutletSummary,
-  snapshot: { grandTotalPaise: bigint; currency: string },
+  snapshot: {
+    grandTotalPaise: bigint;
+    currency: string;
+    fulfilmentMode: "DELIVERY" | "PICKUP";
+  },
 ): CustomerOrderSummary {
   return Object.freeze({
     orderId: order.id,
@@ -105,6 +109,7 @@ export function toCustomerOrderSummary(
     money: moneyFromSnapshot(snapshot),
     paymentSatisfaction: paymentSatisfaction(order),
     outlet,
+    fulfilmentMode: snapshot.fulfilmentMode,
   });
 }
 
@@ -121,7 +126,6 @@ export function toCustomerOrderDetail(
     fulfilledAt: order.fulfilledAt,
     cancelledAt: order.cancelledAt,
     cancellationReasonCode: order.cancellationReasonCode,
-    fulfilmentMode: snapshot.fulfilmentMode,
     destination: destinationFromSnapshot(snapshot),
     pickupLocation: pickupLocationFromSnapshot(snapshot),
     lines: linesFromSnapshot(snapshot),
@@ -133,7 +137,11 @@ export function toCustomerOrderDetail(
 export function toWorkforceOrderSummary(
   order: Order,
   outlet: OrderOutletSummary,
-  snapshot: { grandTotalPaise: bigint; currency: string },
+  snapshot: {
+    grandTotalPaise: bigint;
+    currency: string;
+    fulfilmentMode: "DELIVERY" | "PICKUP";
+  },
 ): WorkforceOrderSummary {
   return Object.freeze({
     orderId: order.id,
@@ -146,6 +154,7 @@ export function toWorkforceOrderSummary(
     cancelledAt: order.cancelledAt,
     money: moneyFromSnapshot(snapshot),
     outlet,
+    fulfilmentMode: snapshot.fulfilmentMode,
   });
 }
 
@@ -155,14 +164,17 @@ export function toWorkforceOrderDetail(
   snapshot: CheckoutSnapshot,
 ): WorkforceOrderDetail {
   return Object.freeze({
-    ...toWorkforceOrderSummary(order, outlet, snapshot),
+    ...toWorkforceOrderSummary(order, outlet, {
+      grandTotalPaise: snapshot.grandTotalPaise,
+      currency: snapshot.currency,
+      fulfilmentMode: snapshot.fulfilmentMode,
+    }),
     updatedAt: order.updatedAt,
     paymentProvenanceKind: order.paymentProvenanceKind,
     acceptedByWorkforceUserId: order.acceptedByWorkforceUserId,
     fulfilledByWorkforceUserId: order.fulfilledByWorkforceUserId,
     cancelledByWorkforceUserId: order.cancelledByWorkforceUserId,
     cancellationReasonCode: order.cancellationReasonCode,
-    fulfilmentMode: snapshot.fulfilmentMode,
     destination: destinationFromSnapshot(snapshot),
     pickupLocation: pickupLocationFromSnapshot(snapshot),
     lines: linesFromSnapshot(snapshot),

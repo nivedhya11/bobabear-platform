@@ -104,6 +104,8 @@ export type CustomerOrderSummary = Readonly<{
   money: OrderMoney;
   paymentSatisfaction: OrderCustomerPaymentSatisfaction;
   outlet: OrderOutletSummary;
+  /** IMP-036H — DELIVERY | PICKUP from sealed checkout snapshot. */
+  fulfilmentMode: "DELIVERY" | "PICKUP";
 }>;
 
 export type CustomerOrderDetail = CustomerOrderSummary &
@@ -113,8 +115,6 @@ export type CustomerOrderDetail = CustomerOrderSummary &
     fulfilledAt: Date | null;
     cancelledAt: Date | null;
     cancellationReasonCode: OrderCancellationReasonCode | null;
-    /** IMP-036H — DELIVERY | PICKUP from sealed checkout snapshot. */
-    fulfilmentMode: "DELIVERY" | "PICKUP";
     /** Null when fulfilmentMode is PICKUP. */
     destination: OrderDestinationProjection | null;
     /** Present when fulfilmentMode is PICKUP; otherwise null/absent. */
@@ -140,6 +140,8 @@ export type WorkforceOrderSummary = Readonly<{
   cancelledAt: Date | null;
   money: OrderMoney;
   outlet: OrderOutletSummary;
+  /** IMP-036H — DELIVERY | PICKUP from sealed checkout snapshot. */
+  fulfilmentMode: "DELIVERY" | "PICKUP";
 }>;
 
 export type WorkforceOrderDetail = WorkforceOrderSummary &
@@ -150,8 +152,6 @@ export type WorkforceOrderDetail = WorkforceOrderSummary &
     fulfilledByWorkforceUserId: string | null;
     cancelledByWorkforceUserId: string | null;
     cancellationReasonCode: OrderCancellationReasonCode | null;
-    /** IMP-036H — DELIVERY | PICKUP from sealed checkout snapshot. */
-    fulfilmentMode: "DELIVERY" | "PICKUP";
     /** Null when fulfilmentMode is PICKUP. */
     destination: OrderDestinationProjection | null;
     /** Present when fulfilmentMode is PICKUP; otherwise null/absent. */

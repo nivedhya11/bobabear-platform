@@ -332,6 +332,7 @@ export type CommerceOrderSummary = Readonly<{
   money: CommerceOrderMoney;
   paymentSatisfaction: string;
   outlet: CommerceOrderOutlet;
+  fulfilmentMode: "DELIVERY" | "PICKUP";
 }>;
 
 export type CommerceOrderDestination = Readonly<{
@@ -366,7 +367,6 @@ export type CommerceOrderDetail = CommerceOrderSummary &
     fulfilledAt: string | null;
     cancelledAt: string | null;
     cancellationReasonCode: string | null;
-    fulfilmentMode: "DELIVERY" | "PICKUP";
     destination: CommerceOrderDestination | null;
     pickupLocation?: Readonly<{
       displayName: string;

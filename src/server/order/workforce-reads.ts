@@ -178,6 +178,7 @@ export async function searchWorkforceOrders(
           {
             grandTotalPaise: entry.grandTotalPaise,
             currency: entry.currency,
+            fulfilmentMode: entry.fulfilmentMode,
           },
         ),
       );

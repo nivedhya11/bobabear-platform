@@ -68,6 +68,14 @@ export function OrderHistoryClient() {
         </p>
         <p className="font-body text-[14px]">{formatPaise(order.money.grandTotalMinor)}</p>
         <p data-testid="order-status">{orderStatusLabel(order.status)}</p>
+        <p
+          data-testid="order-fulfilment-mode"
+          className="font-body text-[13px] font-semibold text-[var(--text-secondary)]"
+        >
+          {order.fulfilmentMode === "PICKUP"
+            ? "Pickup · Collect from BOBA Bear"
+            : "Delivery"}
+        </p>
       </li>
     );
   }

@@ -12,12 +12,14 @@ import {
   evaluateCheckout,
   getActiveCart,
   getActiveCheckout,
+  listCheckoutPickupOptions,
   listCustomerOrders,
   listOwnAddresses,
   readGuestCartCredential,
   readPaymentRecovery,
   reconcileGuestCart,
   setCheckoutDestination,
+  setCheckoutFulfilment,
   startCheckout,
   updateOwnAddress,
   type CartReconciliationResolution,
@@ -25,12 +27,21 @@ import {
   type CommerceCart,
   type CommerceCheckout,
   type CommerceCheckoutSnapshot,
+  type CommercePickupOption,
 } from "@/lib/customer-commerce";
 import { ReconcileConflictDialog } from "@/components/ordering/ReconcileConflictDialog";
 import {
   CheckoutDestinationFlow,
   type CheckoutDestinationDraft,
 } from "@/components/ordering/CheckoutDestinationFlow";
+import {
+  CheckoutFulfilmentChoice,
+  type CheckoutFulfilmentChoiceMode,
+} from "@/components/ordering/CheckoutFulfilmentChoice";
+import {
+  CheckoutPickupOutletStep,
+  type PickupSelectionPolicy,
+} from "@/components/ordering/CheckoutPickupOutletStep";
 import {
   CheckoutSnapshotLineList,
   CheckoutStepIndicator,
@@ -41,13 +52,19 @@ import { PaymentPanel } from "@/components/ordering/PaymentPanel";
 import { PreviousPaymentRecoveryView } from "@/components/ordering/PreviousPaymentRecoveryView";
 import { cartChangedRecoveryPresentation } from "@/components/ordering/cart-changed-recovery-presentation";
 import { commerceErrorCopy } from "@/components/ordering/error-copy";
+import {
+  fulfilmentModeLabel,
+  pickupAddressLines,
+} from "@/components/ordering/pickup-location-presentation";
 import type { OrderingCatalog } from "@/shared/ordering-catalog";
 
 type Screen =
   | "loading"
   | "empty"
   | "conflict"
+  | "fulfilment"
   | "destination"
+  | "pickup"
   | "review"
   | "payment"
   | "cart_changed_unresolved"
@@ -71,6 +88,14 @@ function destinationSummary(snapshot: CommerceCheckoutSnapshot | null): string |
     .join(" · ");
 }
 
+function snapshotHasDeliveryFee(snapshot: CommerceCheckoutSnapshot): boolean {
+  return snapshot.charges.some((raw) => {
+    if (typeof raw !== "object" || raw === null) return false;
+    const code = (raw as { chargeCode?: unknown }).chargeCode;
+    return code === "delivery";
+  });
+}
+
 export function CheckoutClient(props: { catalog: OrderingCatalog }) {
   const brandId = props.catalog.brandId;
   const [screen, setScreen] = useState<Screen>("loading");
@@ -84,6 +109,11 @@ export function CheckoutClient(props: { catalog: OrderingCatalog }) {
   const [customerRevision, setCustomerRevision] = useState<string | null>(null);
   const [resumePaymentId, setResumePaymentId] = useState<string | null>(null);
   const [cartChangedWhilePending, setCartChangedWhilePending] = useState(false);
+  const [chosenMode, setChosenMode] = useState<CheckoutFulfilmentChoiceMode | null>(null);
+  const [pickupLoading, setPickupLoading] = useState(false);
+  const [pickupPolicy, setPickupPolicy] = useState<PickupSelectionPolicy | null>(null);
+  const [pickupOutlets, setPickupOutlets] = useState<readonly CommercePickupOption[]>([]);
+  const [selectedPickupOutletId, setSelectedPickupOutletId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -236,11 +266,13 @@ export function CheckoutClient(props: { catalog: OrderingCatalog }) {
       current.sourceCartRevision === ownedCart.revision
     ) {
       setSnapshot(current.activeSnapshot);
+      setChosenMode(current.activeSnapshot.fulfilmentMode);
       setScreen("payment");
       return;
     }
     setSnapshot(current.activeSnapshot);
-    setScreen("destination");
+    setChosenMode(null);
+    setScreen("fulfilment");
   }
 
   async function startFreshCheckoutFromCurrentCart(): Promise<void> {
@@ -295,6 +327,93 @@ export function CheckoutClient(props: { catalog: OrderingCatalog }) {
     clearGuestCartCredential();
     setCart(reconciled.data.cart);
     await continueWithCart(reconciled.data.cart);
+  }
+
+  async function chooseFulfilmentMode(mode: CheckoutFulfilmentChoiceMode): Promise<void> {
+    if (pending || !checkout) return;
+    setPending(true);
+    setError(null);
+    setChosenMode(mode);
+    const fulfilled = await setCheckoutFulfilment({
+      checkoutId: checkout.id,
+      expectedCheckoutRevision: checkout.revision,
+      fulfilmentMode: mode,
+      ...(mode === "DELIVERY" ? { pickupOutletId: null } : {}),
+    });
+    setPending(false);
+    if (!fulfilled.ok) {
+      setError(commerceErrorCopy(fulfilled.code));
+      return;
+    }
+    setCheckout(fulfilled.data.checkout);
+    setSnapshot(fulfilled.data.checkout.activeSnapshot);
+    if (mode === "DELIVERY") {
+      setPickupOutlets([]);
+      setPickupPolicy(null);
+      setSelectedPickupOutletId(null);
+      setScreen("destination");
+      return;
+    }
+    await loadPickupOptions(fulfilled.data.checkout);
+  }
+
+  async function loadPickupOptions(currentCheckout: CommerceCheckout): Promise<void> {
+    setPickupLoading(true);
+    setError(null);
+    setScreen("pickup");
+    const options = await listCheckoutPickupOptions({ checkoutId: currentCheckout.id });
+    setPickupLoading(false);
+    if (!options.ok) {
+      setError(commerceErrorCopy(options.code));
+      setPickupPolicy("UNAVAILABLE");
+      setPickupOutlets([]);
+      setSelectedPickupOutletId(null);
+      return;
+    }
+    setPickupPolicy(options.data.selectionPolicy);
+    setPickupOutlets(options.data.outlets);
+    if (options.data.selectionPolicy === "AUTO_SELECT" && options.data.outlets.length === 1) {
+      setSelectedPickupOutletId(options.data.outlets[0]!.outletId);
+    } else if (
+      currentCheckout.pickupOutletId &&
+      options.data.outlets.some((o) => o.outletId === currentCheckout.pickupOutletId)
+    ) {
+      setSelectedPickupOutletId(currentCheckout.pickupOutletId);
+    } else {
+      setSelectedPickupOutletId(null);
+    }
+  }
+
+  async function continuePickupWithOutlet(): Promise<void> {
+    if (pending || !checkout || !selectedPickupOutletId) return;
+    setPending(true);
+    setError(null);
+    const fulfilled = await setCheckoutFulfilment({
+      checkoutId: checkout.id,
+      expectedCheckoutRevision: checkout.revision,
+      fulfilmentMode: "PICKUP",
+      pickupOutletId: selectedPickupOutletId,
+    });
+    if (!fulfilled.ok) {
+      setPending(false);
+      setError(commerceErrorCopy(fulfilled.code));
+      return;
+    }
+    let nextCheckout = fulfilled.data.checkout;
+    setCheckout(nextCheckout);
+    const evaluated = await evaluateCheckout({
+      checkoutId: nextCheckout.id,
+      expectedCheckoutRevision: nextCheckout.revision,
+    });
+    setPending(false);
+    if (!evaluated.ok) {
+      setError(commerceErrorCopy(evaluated.code));
+      return;
+    }
+    setCheckout(evaluated.data.checkout);
+    setSnapshot(evaluated.data.snapshot);
+    setChosenMode("PICKUP");
+    setScreen("review");
   }
 
   async function applyDestinationDraft(draft: CheckoutDestinationDraft): Promise<void> {
@@ -395,6 +514,7 @@ export function CheckoutClient(props: { catalog: OrderingCatalog }) {
     }
     setCheckout(evaluated.data.checkout);
     setSnapshot(evaluated.data.snapshot);
+    setChosenMode("DELIVERY");
     setScreen("review");
   }
 
@@ -403,11 +523,11 @@ export function CheckoutClient(props: { catalog: OrderingCatalog }) {
   }
 
   /**
-   * Back-nav into Delivery must use authoritative server checkout revision.
+   * Back-nav into fulfilment must use authoritative server checkout revision.
    * Payment start/failure advances revision inside PaymentPanel; parent state
    * must not keep a pre-payment expectedCheckoutRevision.
    */
-  async function returnToDelivery(): Promise<void> {
+  async function returnToFulfilment(): Promise<void> {
     if (pending || !checkout || !cart) return;
     setPending(true);
     setError(null);
@@ -429,11 +549,15 @@ export function CheckoutClient(props: { catalog: OrderingCatalog }) {
     }
     setPending(false);
     if (current.status === "PAYMENT_PENDING") {
-      // Existing domain forbids destination mutation while PAYMENT_PENDING.
+      // Existing domain forbids fulfilment mutation while PAYMENT_PENDING.
       setError(commerceErrorCopy("CHECKOUT_STATE_CONFLICT"));
       return;
     }
-    setScreen("destination");
+    setChosenMode(null);
+    setPickupOutlets([]);
+    setPickupPolicy(null);
+    setSelectedPickupOutletId(null);
+    setScreen("fulfilment");
   }
 
   useEffect(() => {
@@ -491,10 +615,18 @@ export function CheckoutClient(props: { catalog: OrderingCatalog }) {
   }, [screen, cart]);
 
   const recoveryScreens = screen === "cart_changed_unresolved" || screen === "cart_changed_fresh";
+  // Prefer explicit customer choice / sealed snapshot. Do not use Checkout's
+  // historical DELIVERY default to label the first step before selection.
+  const reviewMode = chosenMode ?? snapshot?.fulfilmentMode ?? null;
   const activeStep =
-    screen === "destination" ? "delivery" : screen === "review" ? "review" : "payment";
+    screen === "fulfilment" || screen === "destination" || screen === "pickup"
+      ? "fulfilment"
+      : screen === "review"
+        ? "review"
+        : "payment";
 
   const freshPresentation = cartChangedRecoveryPresentation("fresh_checkout");
+  const pickupLocation = snapshot?.pickupLocation ?? null;
 
   return (
     <main id="main-content" tabIndex={-1} className="bg-[var(--bg-page)] focus:outline-none">
@@ -510,14 +642,20 @@ export function CheckoutClient(props: { catalog: OrderingCatalog }) {
           <h1 className="font-display text-[clamp(36px,8vw,56px)] leading-[0.95] text-[var(--text-primary)]">
             Checkout
           </h1>
-          {!recoveryScreens ? <CheckoutStepIndicator activeStep={activeStep} /> : null}
+          {!recoveryScreens ? (
+            <CheckoutStepIndicator activeStep={activeStep} fulfilmentMode={reviewMode} />
+          ) : null}
         </header>
 
         {screen === "loading" ? (
           <p className="font-body text-[15px] text-[var(--text-secondary)]">Preparing checkout…</p>
         ) : null}
 
-        {error && screen !== "cart_changed_unresolved" && screen !== "cart_changed_fresh" ? (
+        {error &&
+        screen !== "cart_changed_unresolved" &&
+        screen !== "cart_changed_fresh" &&
+        screen !== "fulfilment" &&
+        screen !== "pickup" ? (
           <p role="alert" className="font-body text-[14px] text-[var(--text-secondary)]">
             {error}
           </p>
@@ -594,12 +732,54 @@ export function CheckoutClient(props: { catalog: OrderingCatalog }) {
           </div>
         ) : null}
 
-        {screen === "destination" && checkout ? (
-          <CheckoutDestinationFlow
-            brandId={brandId}
-            addresses={addresses}
+        {screen === "fulfilment" && checkout ? (
+          <CheckoutFulfilmentChoice
             pending={pending}
-            onComplete={(draft) => void applyDestinationDraft(draft)}
+            selectedMode={chosenMode}
+            errorId="checkout-fulfilment-error"
+            errorMessage={error}
+            onSelect={(mode) => void chooseFulfilmentMode(mode)}
+          />
+        ) : null}
+
+        {screen === "destination" && checkout ? (
+          <div className="flex flex-col gap-4" data-testid="checkout-delivery-path">
+            <CheckoutDestinationFlow
+              brandId={brandId}
+              addresses={addresses}
+              pending={pending}
+              onComplete={(draft) => void applyDestinationDraft(draft)}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              className="min-h-[44px]"
+              disabled={pending}
+              data-testid="checkout-back-to-fulfilment"
+              onClick={() => void returnToFulfilment()}
+            >
+              Change fulfilment
+            </Button>
+          </div>
+        ) : null}
+
+        {screen === "pickup" && checkout ? (
+          <CheckoutPickupOutletStep
+            pending={pending}
+            loading={pickupLoading}
+            selectionPolicy={pickupPolicy}
+            outlets={pickupOutlets}
+            selectedOutletId={selectedPickupOutletId}
+            errorId="checkout-pickup-error"
+            errorMessage={error}
+            onSelectOutlet={setSelectedPickupOutletId}
+            onContinue={() => void continuePickupWithOutlet()}
+            onChooseDelivery={() => void chooseFulfilmentMode("DELIVERY")}
+            onBackToMode={() => {
+              setError(null);
+              setChosenMode(null);
+              setScreen("fulfilment");
+            }}
           />
         ) : null}
 
@@ -607,20 +787,47 @@ export function CheckoutClient(props: { catalog: OrderingCatalog }) {
           <div className="flex flex-col gap-4" data-testid="checkout-review">
             <section className="rounded-xl border border-[var(--border-strong)] bg-[var(--bg-section)] p-4">
               <h2 className="mb-2 font-body text-[15px] font-semibold text-[var(--text-primary)]">
-                Delivery destination
+                {snapshot.fulfilmentMode === "PICKUP" ? "Pickup" : "Delivery destination"}
               </h2>
-              <p className="font-body text-[14px] text-[var(--text-secondary)]">
-                {destinationSummary(snapshot) ?? "Delivery destination confirmed"}
-              </p>
+              {snapshot.fulfilmentMode === "PICKUP" && pickupLocation ? (
+                <div data-testid="checkout-review-pickup" className="flex flex-col gap-1">
+                  <p className="font-body text-[14px] font-semibold text-[var(--text-primary)]">
+                    {fulfilmentModeLabel("PICKUP")} · {pickupLocation.displayName}
+                  </p>
+                  {pickupAddressLines(pickupLocation).map((line) => (
+                    <p key={line} className="font-body text-[14px] text-[var(--text-secondary)]">
+                      {line}
+                    </p>
+                  ))}
+                  {pickupLocation.instructions ? (
+                    <p className="mt-1 font-body text-[14px] text-[var(--text-primary)]">
+                      <span className="font-semibold">Instructions: </span>
+                      {pickupLocation.instructions}
+                    </p>
+                  ) : null}
+                  {!snapshotHasDeliveryFee(snapshot) ? (
+                    <p
+                      data-testid="checkout-review-no-delivery-fee"
+                      className="mt-2 font-body text-[13px] text-[var(--text-secondary)]"
+                    >
+                      No delivery fee
+                    </p>
+                  ) : null}
+                </div>
+              ) : (
+                <p className="font-body text-[14px] text-[var(--text-secondary)]">
+                  {destinationSummary(snapshot) ?? "Delivery destination confirmed"}
+                </p>
+              )}
               <Button
                 type="button"
                 variant="outline"
                 className="mt-3 min-h-[44px]"
                 data-testid="checkout-back-to-delivery"
                 disabled={pending}
-                onClick={() => void returnToDelivery()}
+                onClick={() => void returnToFulfilment()}
               >
-                Edit delivery
+                {snapshot.fulfilmentMode === "PICKUP" ? "Change fulfilment" : "Edit delivery"}
               </Button>
             </section>
             <CheckoutSnapshotLineList
