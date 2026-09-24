@@ -40,10 +40,18 @@ export function CheckoutSnapshotLineList(props: {
 }
 
 export function CheckoutStepIndicator(props: {
-  activeStep: "delivery" | "review" | "payment";
+  activeStep: "fulfilment" | "review" | "payment";
+  /** When known, labels the first step Delivery vs Pickup. */
+  fulfilmentMode?: "DELIVERY" | "PICKUP" | null;
 }) {
+  const fulfilmentLabel =
+    props.fulfilmentMode === "PICKUP"
+      ? "Pickup"
+      : props.fulfilmentMode === "DELIVERY"
+        ? "Delivery"
+        : "Fulfilment";
   const steps = [
-    { id: "delivery" as const, label: "Delivery" },
+    { id: "fulfilment" as const, label: fulfilmentLabel },
     { id: "review" as const, label: "Review" },
     { id: "payment" as const, label: "Payment" },
   ];

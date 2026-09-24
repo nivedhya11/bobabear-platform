@@ -12,6 +12,8 @@ const {
   startCheckout,
   listOwnAddresses,
   setCheckoutDestination,
+  setCheckoutFulfilment,
+  listCheckoutPickupOptions,
   evaluateCheckout,
   readGuestCartCredential,
   readPaymentRecovery,
@@ -22,6 +24,8 @@ const {
   startCheckout: vi.fn<(...args: unknown[]) => unknown>(),
   listOwnAddresses: vi.fn<(...args: unknown[]) => unknown>(),
   setCheckoutDestination: vi.fn<(...args: unknown[]) => unknown>(),
+  setCheckoutFulfilment: vi.fn<(...args: unknown[]) => unknown>(),
+  listCheckoutPickupOptions: vi.fn<(...args: unknown[]) => unknown>(),
   evaluateCheckout: vi.fn<(...args: unknown[]) => unknown>(),
   readGuestCartCredential: vi.fn<(...args: unknown[]) => unknown>(() => null),
   readPaymentRecovery: vi.fn<(...args: unknown[]) => unknown>(() => null),
@@ -117,6 +121,8 @@ vi.mock("@/lib/customer-commerce", async () => {
     startCheckout: (...args: unknown[]) => startCheckout(...args),
     listOwnAddresses: (...args: unknown[]) => listOwnAddresses(...args),
     setCheckoutDestination: (...args: unknown[]) => setCheckoutDestination(...args),
+    setCheckoutFulfilment: (...args: unknown[]) => setCheckoutFulfilment(...args),
+    listCheckoutPickupOptions: (...args: unknown[]) => listCheckoutPickupOptions(...args),
     evaluateCheckout: (...args: unknown[]) => evaluateCheckout(...args),
     readGuestCartCredential: (...args: unknown[]) => readGuestCartCredential(...args),
     readPaymentRecovery: (...args: unknown[]) => readPaymentRecovery(...args),
@@ -177,6 +183,8 @@ function snapshot(overrides: Record<string, unknown> = {}) {
     selectedOutletId: "outlet-1",
     evaluatedAt: "2026-09-04T00:00:00.000Z",
     serviceabilityEvaluatedAt: "2026-09-04T00:00:00.000Z",
+    fulfilmentMode: "DELIVERY",
+    pickupLocation: null,
     currency: "INR",
     manualCouponCode: null,
     destination: {
@@ -207,8 +215,8 @@ function snapshot(overrides: Record<string, unknown> = {}) {
     createdAt: "2026-09-04T00:00:00.000Z",
     lines: [],
     charges: [
-      { code: "PACKAGING", amountPaise: "2000" },
-      { code: "DELIVERY", amountPaise: "4000" },
+      { chargeCode: "packaging", amountPaise: "2000", name: "Packaging" },
+      { chargeCode: "delivery", amountPaise: "4000", name: "Delivery" },
     ],
     promotionEffects: [],
     taxComponents: [],
@@ -226,6 +234,8 @@ function checkoutState(overrides: Record<string, unknown> = {}) {
     revision: "1",
     status: "DRAFT",
     expiresAt: "2026-09-04T01:00:00.000Z",
+    fulfilmentMode: "DELIVERY",
+    pickupOutletId: null,
     activeSnapshotId: null,
     createdAt: "2026-09-04T00:00:00.000Z",
     updatedAt: "2026-09-04T00:00:00.000Z",
@@ -266,12 +276,42 @@ beforeEach(() => {
     },
   });
   readPaymentRecovery.mockReturnValue(null);
+  setCheckoutFulfilment.mockImplementation(async (input: unknown) => {
+    const body = input as {
+      expectedCheckoutRevision: string;
+      fulfilmentMode: string;
+    };
+    return {
+      ok: true,
+      status: 200,
+      data: {
+        checkout: checkoutState({
+          revision: body.expectedCheckoutRevision,
+          status: "DRAFT",
+          fulfilmentMode: body.fulfilmentMode,
+          pickupOutletId: null,
+        }),
+      },
+    };
+  });
+  listCheckoutPickupOptions.mockResolvedValue({
+    ok: true,
+    status: 200,
+    data: { outlets: [], selectionPolicy: "UNAVAILABLE" },
+  });
 });
 
+async function chooseDelivery(user: ReturnType<typeof userEvent.setup>): Promise<void> {
+  await waitFor(() => expect(screen.getByTestId("checkout-fulfilment-choice")).toBeInTheDocument());
+  await user.click(screen.getByTestId("checkout-fulfilment-delivery"));
+  await waitFor(() => expect(screen.getByTestId("checkout-destination-select")).toBeInTheDocument());
+}
+
 describe("map-first checkout destination", () => {
-  it("renders the saved-address-first checkout destination flow", async () => {
+  it("renders the saved-address-first checkout destination flow after Delivery", async () => {
+    const user = userEvent.setup();
     render(<CheckoutClient catalog={catalog} />);
-    await waitFor(() => expect(screen.getByTestId("checkout-destination-select")).toBeInTheDocument());
+    await chooseDelivery(user);
     expect(screen.getByText("Choose a delivery address")).toBeInTheDocument();
     expect(screen.queryByLabelText(/PIN code/i)).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/^City$/i)).not.toBeInTheDocument();
@@ -348,10 +388,12 @@ describe("CheckoutClient back-navigation revision reconciliation", () => {
       });
 
     render(<CheckoutClient catalog={catalog} />);
+    await chooseDelivery(user);
     await waitFor(() => expect(screen.getByTestId("pick-address-a")).toBeInTheDocument());
     await user.click(screen.getByTestId("pick-address-a"));
     await waitFor(() => expect(screen.getByTestId("checkout-review")).toBeInTheDocument());
     await user.click(screen.getByTestId("checkout-back-to-delivery"));
+    await chooseDelivery(user);
     await waitFor(() => expect(screen.getByTestId("pick-address-b")).toBeInTheDocument());
     await user.click(screen.getByTestId("pick-address-b"));
     await waitFor(() =>
@@ -421,6 +463,7 @@ describe("CheckoutClient back-navigation revision reconciliation", () => {
       });
 
     render(<CheckoutClient catalog={catalog} />);
+    await chooseDelivery(user);
     await waitFor(() => expect(screen.getByTestId("pick-address-a")).toBeInTheDocument());
     await user.click(screen.getByTestId("pick-address-a"));
     await waitFor(() => expect(screen.getByTestId("checkout-review")).toBeInTheDocument());
@@ -430,6 +473,7 @@ describe("CheckoutClient back-navigation revision reconciliation", () => {
     await user.click(screen.getByTestId("payment-back-to-review"));
     await waitFor(() => expect(screen.getByTestId("checkout-review")).toBeInTheDocument());
     await user.click(screen.getByTestId("checkout-back-to-delivery"));
+    await chooseDelivery(user);
     await waitFor(() => expect(screen.getByTestId("pick-address-b")).toBeInTheDocument());
     await user.click(screen.getByTestId("pick-address-b"));
     await waitFor(() =>
@@ -485,10 +529,12 @@ describe("CheckoutClient back-navigation revision reconciliation", () => {
       });
 
     render(<CheckoutClient catalog={catalog} />);
+    await chooseDelivery(user);
     await waitFor(() => expect(screen.getByTestId("pick-address-a")).toBeInTheDocument());
     await user.click(screen.getByTestId("pick-address-a"));
     await waitFor(() => expect(screen.getByTestId("checkout-review")).toBeInTheDocument());
     await user.click(screen.getByTestId("checkout-back-to-delivery"));
+    await chooseDelivery(user);
     await waitFor(() => expect(screen.getByTestId("pick-address-b")).toBeInTheDocument());
     await user.click(screen.getByTestId("pick-address-b"));
     await waitFor(() =>
@@ -657,7 +703,8 @@ describe("CheckoutClient cart-changed payment recovery", () => {
     });
   });
 
-  it("keeps normal Delivery/Review/Payment stepper when cart matches checkout", async () => {
+  it("keeps normal Fulfilment/Review/Payment stepper when cart matches checkout", async () => {
+    const user = userEvent.setup();
     getActiveCart.mockResolvedValue({
       ok: true,
       status: 200,
@@ -675,7 +722,10 @@ describe("CheckoutClient cart-changed payment recovery", () => {
     });
 
     render(<CheckoutClient catalog={catalog} />);
-    await waitFor(() => expect(screen.getByTestId("checkout-destination-select")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByTestId("checkout-fulfilment-choice")).toBeInTheDocument());
     expect(screen.getByTestId("checkout-steps")).toBeInTheDocument();
+    expect(screen.getByTestId("checkout-steps")).toHaveTextContent("Fulfilment");
+    await chooseDelivery(user);
+    expect(screen.getByTestId("checkout-destination-select")).toBeInTheDocument();
   });
 });

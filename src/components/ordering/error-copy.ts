@@ -52,6 +52,11 @@ const COPY: Readonly<Record<string, string>> = Object.freeze({
   CHECKOUT_DEPENDENCY_INDETERMINATE:
     "We couldn't confirm checkout details right now. Try again shortly.",
   CHECKOUT_INVALID_INPUT: "That checkout update wasn't valid. Try again.",
+  PICKUP_NOT_AVAILABLE:
+    "Pickup isn't available for this order right now. Choose Delivery if your address is serviceable.",
+  PICKUP_OUTLET_NOT_ELIGIBLE:
+    "That pickup location can't take this order right now. Choose another location or Delivery.",
+  PICKUP_OUTLET_REQUIRED: "Choose a pickup location to continue.",
   CUSTOMER_ADDRESS_INPUT_INVALID: "Check the address details and try again.",
   CUSTOMER_ADDRESS_NOT_FOUND: "That address is no longer available.",
   CUSTOMER_ADDRESS_PERSISTENCE_ERROR:

@@ -127,6 +127,7 @@ export async function listCustomerOrders(
           {
             grandTotalPaise: entry.grandTotalPaise,
             currency: entry.currency,
+            fulfilmentMode: entry.fulfilmentMode,
           },
         ),
       );
