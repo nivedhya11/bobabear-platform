@@ -219,6 +219,11 @@ export type ResolveOutletVariantAvailabilityInput = Readonly<{
   variantId: string;
   outletId: string;
   context: ResolveEligibilityContext;
+  /**
+   * Scheduled fulfilment ignores current pause and closed-now. Sold-out,
+   * assortment, catalog, and other operating denials remain fail-closed.
+   */
+  ignoreCurrentScheduleDenial?: boolean;
 }>;
 
 export type ResolveOutletProductAvailabilityInput = Readonly<{
@@ -232,6 +237,8 @@ export type ResolveModifierOptionAvailabilityInput = Readonly<{
   variantId: string;
   outletId: string;
   context: ResolveEligibilityContext;
+  /** See ResolveOutletVariantAvailabilityInput.ignoreCurrentScheduleDenial. */
+  ignoreCurrentScheduleDenial?: boolean;
 }>;
 
 export type EligibilityDecision = Readonly<{

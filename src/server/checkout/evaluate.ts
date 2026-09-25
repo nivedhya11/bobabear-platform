@@ -32,7 +32,10 @@ import {
   validateCheckoutCartMerchandise,
 } from "./adapters/catalog";
 import { buildCheckoutCommercialResult } from "./adapters/pricing";
-import { resolveCheckoutServiceability } from "./adapters/serviceability";
+import {
+  resolveCheckoutServiceability,
+  resolveScheduledDeliveryOutlet,
+} from "./adapters/serviceability";
 import { systemCheckoutClock } from "./clock";
 import { checkoutSnapshotsStructurallyEqual } from "./compare-snapshots";
 import type { CheckoutOperationOptions } from "./operations";
@@ -51,6 +54,11 @@ import {
   newSnapshotId,
 } from "./repository";
 import { buildSnapshotCandidate } from "./snapshot";
+import {
+  assertScheduledPickupProfile,
+  sealEligibleScheduledWindow,
+  type ScheduledSnapshotSeal,
+} from "./scheduled-eligibility";
 
 function primaryMerchandiseCode(
   problems: readonly CheckoutMerchandiseProblem[],
@@ -102,15 +110,6 @@ export async function evaluateCheckout(
         { field: "expectedCheckoutRevision" },
       );
     }
-    // Tranche 2 owns scheduled eligibility and snapshot sealing. Until that
-    // path exists, a SCHEDULED Checkout must not be evaluated into an ASAP Snapshot.
-    if ((row.fulfilmentTiming ?? "ASAP") === "SCHEDULED") {
-      throw new CheckoutError(
-        "CHECKOUT_STATE_CONFLICT",
-        "Cannot evaluate a SCHEDULED Checkout.",
-      );
-    }
-
     const fulfilmentMode = (row.fulfilmentMode ?? "DELIVERY") as FulfilmentMode;
     const pickupOutletId = row.pickupOutletId ?? null;
 
@@ -164,13 +163,23 @@ export async function evaluateCheckout(
   let selectedOutletId: string;
   let serviceabilityEvaluatedAt: Date | null = null;
 
+  const fulfilmentTiming = preload.row.fulfilmentTiming ?? "ASAP";
+
   if (preload.fulfilmentMode === "DELIVERY") {
-    const serviceability = await resolveCheckoutServiceability(
-      persistence,
-      preload.row.brandId,
-      preload.destination!,
-      clock,
-    );
+    const serviceability =
+      fulfilmentTiming === "SCHEDULED"
+        ? await resolveScheduledDeliveryOutlet(
+            persistence,
+            preload.row.brandId,
+            preload.destination!,
+            clock,
+          )
+        : await resolveCheckoutServiceability(
+            persistence,
+            preload.row.brandId,
+            preload.destination!,
+            clock,
+          );
     selectedOutletId = serviceability.selectedOutletId;
     serviceabilityEvaluatedAt = serviceability.evaluatedAt;
   } else {
@@ -183,13 +192,20 @@ export async function evaluateCheckout(
 
   await persistence.withContext(async (ctx) => {
     if (preload.fulfilmentMode === "PICKUP") {
-      const eligible = await assertPickupOutletEligible(ctx, {
-        brandId: preload.row.brandId,
-        outletId: selectedOutletId,
-        cart: preload.cart,
-        now,
-      });
-      void eligible;
+      if (fulfilmentTiming === "SCHEDULED") {
+        await assertScheduledPickupProfile(ctx, {
+          brandId: preload.row.brandId,
+          outletId: selectedOutletId,
+        });
+      } else {
+        const eligible = await assertPickupOutletEligible(ctx, {
+          brandId: preload.row.brandId,
+          outletId: selectedOutletId,
+          cart: preload.cart,
+          now,
+        });
+        void eligible;
+      }
       const profile = await loadOutletPickupProfileByOutletId(
         ctx,
         selectedOutletId,
@@ -217,6 +233,9 @@ export async function evaluateCheckout(
         preload.cart,
         selectedOutletId,
         now,
+        fulfilmentTiming === "SCHEDULED"
+          ? { ignoreCurrentScheduleDenial: true }
+          : {},
       )),
     );
   });
@@ -226,6 +245,20 @@ export async function evaluateCheckout(
       primaryMerchandiseCode(merchandiseProblems),
       "Checkout merchandise validation failed.",
       { problems: Object.freeze(merchandiseProblems) },
+    );
+  }
+
+  let scheduledSeal: ScheduledSnapshotSeal | null = null;
+  if (fulfilmentTiming === "SCHEDULED") {
+    scheduledSeal = await persistence.withContext((ctx) =>
+      sealEligibleScheduledWindow(ctx, {
+        brandId: preload.row.brandId,
+        outletId: selectedOutletId,
+        mode: preload.fulfilmentMode,
+        now,
+        startAt: preload.row.scheduledWindowStartAt ?? null,
+        endAt: preload.row.scheduledWindowEndAt ?? null,
+      }),
     );
   }
 
@@ -266,6 +299,7 @@ export async function evaluateCheckout(
     commercial,
     expiresAt: new Date(now.getTime() + ttlMs),
     updatedAt: now,
+    scheduledSeal,
   });
 
   // Equivalent revalidation: already READY with identical commercial terms.
@@ -340,10 +374,51 @@ export async function evaluateCheckout(
         "Pickup outlet changed during evaluation.",
       );
     }
-    if ((row.fulfilmentTiming ?? "ASAP") === "SCHEDULED") {
+    const commitTiming = row.fulfilmentTiming ?? "ASAP";
+    if (commitTiming !== fulfilmentTiming) {
+      throw new CheckoutError(
+        "CHECKOUT_CONFLICT",
+        "Fulfilment timing changed during evaluation.",
+      );
+    }
+    if (commitTiming === "SCHEDULED") {
+      const commitStart = row.scheduledWindowStartAt ?? null;
+      const commitEnd = row.scheduledWindowEndAt ?? null;
+      if (
+        !scheduledSeal ||
+        commitStart?.getTime() !== scheduledSeal.scheduledWindowStartAt.getTime() ||
+        commitEnd?.getTime() !== scheduledSeal.scheduledWindowEndAt.getTime()
+      ) {
+        throw new CheckoutError(
+          "CHECKOUT_CONFLICT",
+          "Scheduled window changed during evaluation.",
+        );
+      }
+      const resealed = await sealEligibleScheduledWindow(tx, {
+        brandId: row.brandId,
+        outletId: selectedOutletId,
+        mode: commitMode,
+        now: commitNow,
+        startAt: commitStart,
+        endAt: commitEnd,
+      });
+      if (
+        resealed.scheduledCancellationCutoffMinutes !==
+          scheduledSeal.scheduledCancellationCutoffMinutes ||
+        resealed.scheduledTimezone !== scheduledSeal.scheduledTimezone
+      ) {
+        throw new CheckoutError(
+          "CHECKOUT_CONFLICT",
+          "Scheduled terms changed during evaluation.",
+        );
+      }
+    } else if (
+      row.scheduledWindowStartAt !== null ||
+      row.scheduledWindowEndAt !== null
+    ) {
       throw new CheckoutError(
         "CHECKOUT_STATE_CONFLICT",
-        "Cannot evaluate a SCHEDULED Checkout.",
+        "ASAP Checkout cannot carry a scheduled window.",
       );
     }
 

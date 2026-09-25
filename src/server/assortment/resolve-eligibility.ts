@@ -488,7 +488,13 @@ export async function resolveOutletVariantAvailability(
         context: { now },
       }));
     const operatingDenied = operatingCodeToDecision(operating.code);
-    if (operatingDenied) return operatingDenied;
+    if (operatingDenied) {
+      const ignoreSchedule =
+        input.ignoreCurrentScheduleDenial === true &&
+        (operating.code === "OUTLET_PAUSED" ||
+          operating.code === "OUTLET_CLOSED_BY_SCHEDULE");
+      if (!ignoreSchedule) return operatingDenied;
+    }
 
     const avail =
       preload?.variantAvailability?.get(variantId) ??
@@ -621,6 +627,7 @@ export async function resolveModifierOptionAvailability(
       variantId,
       outletId,
       context: { now },
+      ignoreCurrentScheduleDenial: input.ignoreCurrentScheduleDenial === true,
     });
     // Parent may fail on MODIFIER_CONFIGURATION_UNAVAILABLE because *this*
     // option is unavailable — still allow evaluating the option itself for

@@ -2,7 +2,7 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R154",
+  "stateVersion": "STATE-R155",
   "acceptedThrough": "IMP-036H",
   "currentProductSlice": "IMP-036I",
   "nextProductSlice": "IMP-037",
@@ -10,7 +10,7 @@
   "gtmBoundary": "IMP-040",
   "governanceHealth": "ALIGNED",
   "lastReviewed": "2026-09-25",
-  "supersedes": "STATE-R153"
+  "supersedes": "STATE-R154"
 }
 -->
 
@@ -41,8 +41,8 @@ Next Product Slice:             IMP-037 — Backup, Restore & Migration Readines
 Unresolved Predecessor:         IMP-037 — Backup, Restore & Migration Readiness
 Current Governance Activity:    IMP-036I IMPLEMENTATION_IN_PROGRESS
                               (formal lifecycle IMPLEMENTATION_IN_PROGRESS;
-                              GTM-R156 / STATE-R154;
-                              prior tip GTM-R155 / STATE-R153;
+                              GTM-R157 / STATE-R155;
+                              prior tip GTM-R156 / STATE-R154;
                               prior tip GTM-R154 / STATE-R152;
                               IMP036I_ACTIVATED: YES; formal lifecycle IMPLEMENTATION_IN_PROGRESS;
                               IMP036I_PRODUCT_DEFINITION: APPROVED
@@ -81,7 +81,7 @@ Current Governance Activity:    IMP-036I IMPLEMENTATION_IN_PROGRESS
                               IMP036I_IMPLEMENTATION_COMPLETE: NO;
                               IMP036I_ACCEPTED: NO;
                               FOUNDER_UAT: NOT_PERFORMED;
-                              nextGate: IMPLEMENTATION_TRANCHE_1;
+                              nextGate: INDEPENDENT_TRANCHE_2_VERIFICATION;
                               D-379: CURRENT; D-380: CURRENT; D-378: AMENDED;
                               IMP-036H remains COMPLETE_AND_ACCEPTED;
                               prior tip GTM-R153 / STATE-R151 (Product Definition Gate PASS);
@@ -156,7 +156,7 @@ Current Governance Activity:    IMP-036I IMPLEMENTATION_IN_PROGRESS
                               D-377_CREATED: YES; D-378_CREATED: YES; ARCH_R22_CREATED: YES;
                               D-379_CREATED: YES; D-380_CREATED: YES; ARCH_R23_CREATED: YES;
                               Decision register tip DR-21;
-                              nextGate: IMPLEMENTATION_TRANCHE_1
+                              nextGate: INDEPENDENT_TRANCHE_2_VERIFICATION
                               Founder UAT PASS 2026-09-24 on runtime candidate
                               37bae964f964bddd317e4c290dc146097e4c8f57;
                               governance reconciliation is NOT a new UAT candidate;
@@ -868,7 +868,26 @@ Implementation/review provenance for IMP-036F is recorded in
 Agents may propose a STATE delta in their report. Only independent acceptance updates this file's
 accepted position and may promote `governanceHealth` to `ALIGNED`.
 
-## 10. STATE-R154 record
+## 10. STATE-R155 record
+
+```text
+STATE-R155 = IMP036I_TRANCHE_2
+acceptedThrough: IMP-036H
+pendingAcceptance: NONE
+currentProductSlice: IMP-036I
+nextProductSlice: IMP-037
+Current Governance Activity: IMP-036I IMPLEMENTATION_IN_PROGRESS under PROGRAM_PAUSE PRE_GTM_PRODUCT_INSERTION_PROVIDER_BLOCKED (D-377); formal lifecycle IMPLEMENTATION_IN_PROGRESS; PD-IMP-036I-DRAFT-4 APPROVED; Gate PASS; Architecture Fit PASS; independent Tranche 1 verification PASS against main d45c8c586652160bfc8793f5fa16c274d402411a / tree a1cfa5cfe6e82974ef1d5daf9d4d2bc851f5bc67; ARCH-R23; DR-21; D-379 CURRENT; D-380 CURRENT; D-378 AMENDED; implementation AUTHORIZED / STARTED; IMP036I_IMPLEMENTATION_COMPLETE: NO; IMP036I_ACCEPTED: NO; Founder UAT NOT_PERFORMED; nextGate: INDEPENDENT_TRANCHE_2_VERIFICATION
+IMP036I_IMPLEMENTATION_AUTHORIZED: YES
+IMP036I_IMPLEMENTATION_STARTED: YES
+IMP036I_IMPLEMENTATION_COMPLETE: NO
+IMP036I_ACCEPTED: NO
+FOUNDER_UAT: NOT_PERFORMED
+NEXT_ACTION: INDEPENDENT_TRANCHE_2_VERIFICATION
+```
+
+Independent Tranche 1 verification is PASS. Tranche 2 runtime is implemented and is not independently verified, not implementation-complete, and not accepted. Do not start Tranche 3 until independent Tranche 2 verification passes.
+
+## 10. STATE-R154 record (historical prior tip)
 
 ```text
 STATE-R154 = IMP036I_IMPLEMENTATION_START

@@ -24,7 +24,7 @@ import {
   validateCheckoutCartMerchandise,
 } from "./adapters/catalog";
 import { buildCheckoutCommercialResult } from "./adapters/pricing";
-import { resolveCheckoutServiceability } from "./adapters/serviceability";
+import { resolveCheckoutServiceability, resolveScheduledDeliveryOutlet } from "./adapters/serviceability";
 import { systemCheckoutClock } from "./clock";
 import type { CheckoutOperationOptions } from "./operations";
 import {
@@ -42,6 +42,24 @@ import {
 } from "./repository";
 import { buildSnapshotCandidate } from "./snapshot";
 import { checkoutSnapshotsStructurallyEqual } from "./compare-snapshots";
+import {
+  assertScheduledPickupProfile,
+  sealEligibleScheduledWindow,
+  type ScheduledSnapshotSeal,
+} from "./scheduled-eligibility";
+
+async function invalidateReady(
+  persistence: Persistence,
+  checkoutId: string,
+  now: Date,
+): Promise<void> {
+  await persistence.transaction(async (tx) => {
+    const row = await lockCheckoutForUpdate(tx, checkoutId);
+    if (row && row.status === "READY_FOR_PAYMENT") {
+      await invalidateReadyToDraft(tx, row, now);
+    }
+  });
+}
 
 export type PrepareCheckoutForPaymentResult = Readonly<{
   checkoutId: string;
@@ -128,18 +146,24 @@ export async function prepareCheckoutForPayment(
 
   const checkoutTiming = preload.row.fulfilmentTiming ?? "ASAP";
   const snapshotTiming = preload.snapshot.fulfilmentTiming ?? "ASAP";
-  // Tranche 2 scheduled bind is not installed. SCHEDULED Checkout, and any
-  // Checkout whose timing disagrees with the active Snapshot, must not proceed.
-  if (checkoutTiming === "SCHEDULED" || checkoutTiming !== snapshotTiming) {
-    await persistence.transaction(async (tx) => {
-      const row = await lockCheckoutForUpdate(tx, preload.row.id);
-      if (row && row.status === "READY_FOR_PAYMENT") {
-        await invalidateReadyToDraft(tx, row, now);
-      }
-    });
+  if (checkoutTiming !== snapshotTiming) {
+    await invalidateReady(persistence, preload.row.id, now);
     throw new CheckoutError(
       "CHECKOUT_STATE_CONFLICT",
-      "Checkout fulfilment timing cannot be prepared for payment.",
+      "Checkout fulfilment timing does not match the active Snapshot.",
+    );
+  }
+  if (
+    checkoutTiming === "SCHEDULED" &&
+    ((preload.row.scheduledWindowStartAt?.getTime() ?? null) !==
+      (preload.snapshot.scheduledWindowStartAt?.getTime() ?? null) ||
+      (preload.row.scheduledWindowEndAt?.getTime() ?? null) !==
+        (preload.snapshot.scheduledWindowEndAt?.getTime() ?? null))
+  ) {
+    await invalidateReady(persistence, preload.row.id, now);
+    throw new CheckoutError(
+      "CHECKOUT_STATE_CONFLICT",
+      "Scheduled window does not match the active Snapshot.",
     );
   }
 
@@ -161,14 +185,33 @@ export async function prepareCheckoutForPayment(
   let pickupLocation = null as ReturnType<typeof pickupLocationFromProfile> | null;
 
   if (preload.fulfilmentMode === "DELIVERY") {
-    const serviceability = await resolveCheckoutServiceability(
-      persistence,
-      preload.row.brandId,
-      preload.destination!,
-      clock,
-    );
-    selectedOutletId = serviceability.selectedOutletId;
-    serviceabilityEvaluatedAt = serviceability.evaluatedAt;
+    try {
+      const serviceability =
+        checkoutTiming === "SCHEDULED"
+          ? await resolveScheduledDeliveryOutlet(
+              persistence,
+              preload.row.brandId,
+              preload.destination!,
+              clock,
+            )
+          : await resolveCheckoutServiceability(
+              persistence,
+              preload.row.brandId,
+              preload.destination!,
+              clock,
+            );
+      selectedOutletId = serviceability.selectedOutletId;
+      serviceabilityEvaluatedAt = serviceability.evaluatedAt;
+    } catch (error) {
+      if (checkoutTiming === "SCHEDULED" && error instanceof CheckoutError) {
+        await invalidateReady(persistence, preload.row.id, now);
+        throw new CheckoutError(
+          "CHECKOUT_REPRICED",
+          "Delivery serviceability changed; Checkout must be re-evaluated.",
+        );
+      }
+      throw error;
+    }
   } else {
     selectedOutletId = preload.pickupOutletId!;
   }
@@ -176,12 +219,19 @@ export async function prepareCheckoutForPayment(
   try {
     await persistence.withContext(async (ctx) => {
       if (preload.fulfilmentMode === "PICKUP") {
-        await assertPickupOutletEligible(ctx, {
-          brandId: preload.row.brandId,
-          outletId: selectedOutletId,
-          cart: preload.cart,
-          now,
-        });
+        if (checkoutTiming === "SCHEDULED") {
+          await assertScheduledPickupProfile(ctx, {
+            brandId: preload.row.brandId,
+            outletId: selectedOutletId,
+          });
+        } else {
+          await assertPickupOutletEligible(ctx, {
+            brandId: preload.row.brandId,
+            outletId: selectedOutletId,
+            cart: preload.cart,
+            now,
+          });
+        }
         const profile = await loadOutletPickupProfileByOutletId(
           ctx,
           selectedOutletId,
@@ -229,6 +279,9 @@ export async function prepareCheckoutForPayment(
       preload.cart,
       selectedOutletId,
       now,
+      checkoutTiming === "SCHEDULED"
+        ? { ignoreCurrentScheduleDenial: true }
+        : {},
     );
   });
 
@@ -244,6 +297,43 @@ export async function prepareCheckoutForPayment(
       "Merchandise terms changed; Checkout must be re-evaluated.",
       { problems: Object.freeze(problems) },
     );
+  }
+
+  let scheduledSeal: ScheduledSnapshotSeal | null = null;
+  if (checkoutTiming === "SCHEDULED") {
+    try {
+      scheduledSeal = await persistence.withContext((ctx) =>
+        sealEligibleScheduledWindow(ctx, {
+          brandId: preload.row.brandId,
+          outletId: selectedOutletId,
+          mode: preload.fulfilmentMode,
+          now,
+          startAt: preload.snapshot.scheduledWindowStartAt,
+          endAt: preload.snapshot.scheduledWindowEndAt,
+        }),
+      );
+    } catch (error) {
+      if (error instanceof CheckoutError) {
+        await invalidateReady(persistence, preload.row.id, now);
+        throw new CheckoutError(
+          "CHECKOUT_REPRICED",
+          "Scheduled window is no longer eligible; customer must reconfirm.",
+        );
+      }
+      throw error;
+    }
+    if (
+      scheduledSeal.scheduledCancellationCutoffMinutes !==
+        preload.snapshot.scheduledCancellationCutoffMinutes ||
+      scheduledSeal.scheduledTimezone !== preload.snapshot.scheduledTimezone ||
+      selectedOutletId !== preload.snapshot.selectedOutletId
+    ) {
+      await invalidateReady(persistence, preload.row.id, now);
+      throw new CheckoutError(
+        "CHECKOUT_REPRICED",
+        "Scheduled terms changed; customer must reconfirm.",
+      );
+    }
   }
 
   const labels = await persistence.withContext((ctx) =>
@@ -281,6 +371,7 @@ export async function prepareCheckoutForPayment(
     commercial,
     expiresAt: preload.row.expiresAt,
     updatedAt: now,
+    scheduledSeal,
   });
 
   const equivalent = checkoutSnapshotsStructurallyEqual(
