@@ -220,7 +220,7 @@
     "test:cart-concurrency": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/cart-concurrency",
     "test:database:checkout": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/database/checkout.integration.test.ts",
     "test:imp036i:tranche1": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/database/imp036i-scheduled-fulfilment.integration.test.ts tests/delivery-application/delivery.d380-finality.test.ts",
-    "test:imp036i:tranche2": "node scripts/run-vitest.mjs run tests/scheduled-fulfilment/windows.test.ts && node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/checkout/scheduled-fulfilment.domain.test.ts tests/payment/payment.scheduled.domain.test.ts",
+    "test:imp036i:tranche2": "node scripts/run-vitest.mjs run tests/scheduled-fulfilment/windows.test.ts && node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/checkout/scheduled-fulfilment.domain.test.ts tests/payment/payment.scheduled.domain.test.ts tests/payment/payment.scheduled-bind-race.domain.test.ts",
     "test:checkout": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/checkout/",
     "test:checkout-security": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/checkout-security",
     "test:checkout-auth-integration": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/checkout-auth-integration",

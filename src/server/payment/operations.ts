@@ -32,8 +32,10 @@ import {
 import { requireCustomerActor } from "../cart/actor";
 import {
   findCheckoutRowById,
+  invalidateReadyToDraft,
   lockCheckoutForUpdate,
 } from "../checkout/repository";
+import { assertScheduledSnapshotStillBindable } from "../checkout/scheduled-bind";
 import { prepareCheckoutForPayment } from "../checkout/prepare";
 import type { Persistence } from "../persistence/types";
 import { systemPaymentClock, type PaymentClock } from "./clock";
@@ -90,6 +92,18 @@ export type PaymentOperationOptions = Readonly<{
    * Required for start / retry / zero-payable paths that re-validate Checkout.
    */
   checkoutPolicy?: CheckoutPolicy;
+  /**
+   * After Checkout preparation and before the binding transaction opens.
+   * Tests commit a concurrent authority change in that interval.
+   * Must not perform provider I/O.
+   */
+  beforeBindingTransaction?: () => Promise<void>;
+  /**
+   * Inside the binding transaction, after Scheduled authority locks are held
+   * and the active Snapshot still matches those terms. Must not perform
+   * provider I/O. Not called for ASAP.
+   */
+  afterScheduledAuthorityLocked?: () => Promise<void>;
 }>;
 
 function requirePolicy(options: PaymentOperationOptions): void {
@@ -115,6 +129,43 @@ function providerOf(options: PaymentOperationOptions): PaymentProvider {
 
 function clockOf(options: PaymentOperationOptions): PaymentClock {
   return options.clock ?? systemPaymentClock;
+}
+
+async function bindOrInvalidate<T>(
+  persistence: Persistence,
+  checkoutId: string,
+  now: Date,
+  bind: () => Promise<T>,
+): Promise<T> {
+  try {
+    return await bind();
+  } catch (error) {
+    if (isCheckoutError(error) && error.code === "CHECKOUT_REPRICED") {
+      await persistence.transaction(async (tx) => {
+        const row = await lockCheckoutForUpdate(tx, checkoutId);
+        if (row && row.status === "READY_FOR_PAYMENT") {
+          await invalidateReadyToDraft(tx, row, now);
+        }
+      });
+    }
+    throw error;
+  }
+}
+
+async function revalidateScheduledBind(
+  tx: Parameters<typeof assertScheduledSnapshotStillBindable>[0],
+  checkout: NonNullable<Awaited<ReturnType<typeof lockCheckoutForUpdate>>>,
+  snapshot: Awaited<ReturnType<typeof prepareCheckoutForPayment>>["snapshot"],
+  now: Date,
+  options: PaymentOperationOptions,
+): Promise<void> {
+  await assertScheduledSnapshotStillBindable(tx, { checkout, snapshot, now });
+  if (
+    (snapshot.fulfilmentTiming ?? "ASAP") === "SCHEDULED" &&
+    options.afterScheduledAuthorityLocked
+  ) {
+    await options.afterScheduledAuthorityLocked();
+  }
 }
 
 function isCheckoutError(error: unknown): error is CheckoutError {
@@ -358,8 +409,17 @@ export async function startPayment(
     );
   }
 
+  if (options.beforeBindingTransaction) {
+    await options.beforeBindingTransaction();
+  }
+
   const now = clock.now();
-  const freeze = await persistence.transaction(async (tx) => {
+  const freeze = await bindOrInvalidate(
+    persistence,
+    parsed.checkoutId,
+    now,
+    () =>
+      persistence.transaction(async (tx) => {
     const lookup = await lookupInitiationIdempotency(tx, {
       customerAuthUserId: customer.authUserId,
       operationKind: "start_payment",
@@ -419,6 +479,14 @@ export async function startPayment(
         "Checkout active snapshot changed; re-prepare required.",
       );
     }
+
+    await revalidateScheduledBind(
+      tx,
+      checkout,
+      prepared.snapshot,
+      now,
+      options,
+    );
 
     const existingPayment = await findPaymentBySnapshotId(
       tx,
@@ -495,7 +563,8 @@ export async function startPayment(
       checkoutId: updatedCheckout.id,
       checkoutRevision: updatedCheckout.revision,
     });
-  });
+      }),
+  );
 
   if (freeze.replay) {
     return Object.freeze({
@@ -604,8 +673,17 @@ export async function completeZeroPayableCheckout(
     );
   }
 
+  if (options.beforeBindingTransaction) {
+    await options.beforeBindingTransaction();
+  }
+
   const now = clock.now();
-  const zeroResult = await persistence.transaction(async (tx) => {
+  const zeroResult = await bindOrInvalidate(
+    persistence,
+    parsed.checkoutId,
+    now,
+    () =>
+      persistence.transaction(async (tx) => {
     const lookup = await lookupInitiationIdempotency(tx, {
       customerAuthUserId: customer.authUserId,
       operationKind: "complete_zero_payable",
@@ -659,6 +737,14 @@ export async function completeZeroPayableCheckout(
       );
     }
 
+    await revalidateScheduledBind(
+      tx,
+      checkout,
+      prepared.snapshot,
+      now,
+      options,
+    );
+
     await acquireConsumedClaimsForZeroPayable(tx, {
       snapshotId: prepared.snapshot.id,
       customerAuthUserId: customer.authUserId,
@@ -689,7 +775,8 @@ export async function completeZeroPayableCheckout(
       checkoutRevision: updated.revision,
       snapshotId: prepared.snapshot.id,
     });
-  });
+      }),
+  );
 
   await tryMaterializeOrderAfterPaymentCompletion(
     persistence,

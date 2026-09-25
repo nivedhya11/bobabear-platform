@@ -32,6 +32,7 @@ import {
   normalizeOptionalNote,
   normalizeOptionalReasonCode,
 } from "./assert-role";
+import { lockOutletScheduledFulfilmentAuthority } from "../scheduled-fulfilment/foundations";
 import { insertAssortmentAuditEvent } from "./audit";
 import {
   requireOperatingScheduleManage,
@@ -186,6 +187,7 @@ export async function configureOutletOperatingProfile(
       message: "timezone must be a valid IANA timezone identifier.",
     });
   }
+  await lockOutletScheduledFulfilmentAuthority(context, outletId);
 
   const reasonCode = normalizeOptionalReasonCode(input.reasonCode);
   const note = normalizeOptionalNote(input.note);
@@ -248,6 +250,7 @@ export async function replaceOutletOperatingSchedule(
 ): Promise<readonly OutletOperatingInterval[]> {
   assertTransactionContext(context, "replaceOutletOperatingSchedule");
   const outletId = assertUuid(input.outletId, "outletId");
+  await lockOutletScheduledFulfilmentAuthority(context, outletId);
   const outlet = await requireOperatingScheduleManage(context, input.actor, outletId);
   const principal = requireWorkforcePrincipal(input.actor);
 
@@ -312,6 +315,7 @@ async function updateControlState(
 ): Promise<OutletOperatingProfile> {
   assertTransactionContext(context, "updateOutletControlState");
   const outletId = assertUuid(input.outletId, "outletId");
+  await lockOutletScheduledFulfilmentAuthority(context, outletId);
   const outlet =
     next.permission === "pause"
       ? await requireOperatingStatePause(context, input.actor, outletId)
