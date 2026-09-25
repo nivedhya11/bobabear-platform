@@ -9,9 +9,9 @@
   "lastReviewed": "2026-09-24",
   "productDefinitionGateExecution": "PERFORMED",
   "productDefinitionGateResult": "PASS",
-  "architectureFitExecution": "NOT_PERFORMED",
-  "architectureFit": "NOT_PERFORMED",
-  "architectureLocked": "NO",
+  "architectureFitExecution": "PERFORMED",
+  "architectureFit": "PASS",
+  "architectureLocked": "YES",
   "implementationAuthorized": "NO",
   "implementationStarted": "NO",
   "implementationComplete": "NO",
@@ -19,8 +19,8 @@
   "imp036iActivated": "YES",
   "imp036iProductDefinition": "APPROVED",
   "imp036iProductDefinitionGate": "PASS",
-  "imp036iArchitectureFit": "NOT_PERFORMED",
-  "imp036iArchitectureLocked": "NO",
+  "imp036iArchitectureFit": "PASS",
+  "imp036iArchitectureLocked": "YES",
   "imp036iImplementationAuthorized": "NO",
   "imp036iStarted": "NO",
   "imp036iImplementationStarted": "NO",
@@ -58,8 +58,8 @@ PRODUCT_DEFINITION_GATE_RESULT: PASS
 Gate Result: PASS
 IMP036I_PRODUCT_DEFINITION: APPROVED
 IMP036I_PRODUCT_DEFINITION_GATE: PASS
-IMP036I_ARCHITECTURE_FIT: NOT_PERFORMED
-IMP036I_ARCHITECTURE_LOCKED: NO
+IMP036I_ARCHITECTURE_FIT: PASS
+IMP036I_ARCHITECTURE_LOCKED: YES
 IMP036I_IMPLEMENTATION_AUTHORIZED: NO
 IMP036I_STARTED: NO
 IMP036I_IMPLEMENTATION_STARTED: NO
@@ -234,14 +234,14 @@ IMP-039/040, close `GAP-EXT-ASSESS-001`, perform Architecture Fit, or authorize 
 
 | Field | Definition |
 |---|---|
-| Capability / title | `IMP-036I — Scheduled Fulfilment` (ROADMAP identity; activated for Product Definition only; formal lifecycle **PLANNED**; Product Definition **APPROVED**; Gate **PASS**) |
+| Capability / title | `IMP-036I — Scheduled Fulfilment` (ROADMAP identity; formal lifecycle **ARCHITECTURE_LOCKED**; Product Definition **APPROVED**; Gate **PASS**; Architecture Fit **PASS**) |
 | Product Definition version / document status | `PD-IMP-036I-DRAFT-4`; **Document status: APPROVED**; **PRE-GATE DRAFT: NO**; **READY_FOR_PRODUCT_DEFINITION_GATE: NO** |
 | Product owner / approval evidence | Founder. Activation authorized for Product Definition only. Founder decisions FD-036I-01…15 **RESOLVED** 2026-09-24 (including FD-036I-09 sealing amendment). Independent Product Definition Gate **PASS** — review `5307761142`. Gate-evaluated HEAD `1c4be04b6d6b51bdedebfea0485099dede3c7923` / tree `a0774c9b2cb256f8d329fc49cea1c9859a39d1d7` / fingerprint `07720d20f1e285ef46e6bd3be6d710be383baacde4facab7651482547b6dc15d`. Historical DRAFT-1 Gate = **STOP**; historical DRAFT-2 Gate = **STOP**; historical DRAFT-3 Gate = **STOP** (see §1.1). |
 | Process / verification policy | `PD-1` / `TEST-1` |
-| Canonical anchors | VISION-1; ROADMAP GTM-R153; STATE STATE-R151; ARCH-R22; DR-20 (D-377, D-378); PD-1; TEST-1; PERSONA-1; GJ-1; accepted IMP-036H Product Definition `PD-IMP-036H-DRAFT-1`; Founder FD-036I-01…15 resolution 2026-09-24; FD-036I-09 sealing amendment 2026-09-24; Gate PASS evidence review `5307761142` |
+| Canonical anchors | VISION-1; ROADMAP GTM-R154; STATE STATE-R152; ARCH-R23; DR-21 (D-377, D-378 AMENDED, D-379 CURRENT, D-380 CURRENT); PD-1; TEST-1; PERSONA-1; GJ-1; accepted IMP-036H Product Definition `PD-IMP-036H-DRAFT-1`; Founder FD-036I-01…15 resolution 2026-09-24; FD-036I-09 sealing amendment 2026-09-24; Gate PASS evidence review `5307761142`; Architecture Fit PASS review `5312653831` |
 | Repository candidate | Canonical path `/home/ajoshi/repos/boba-bear-platform`; gate-evaluated HEAD `1c4be04b6d6b51bdedebfea0485099dede3c7923` / tree `a0774c9b2cb256f8d329fc49cea1c9859a39d1d7` / fingerprint `07720d20f1e285ef46e6bd3be6d710be383baacde4facab7651482547b6dc15d` |
-| Capability lifecycle / authorization | ROADMAP/STATE: `IMP036I_ACTIVATED: YES`; `currentProductSlice = IMP-036I`; formal lifecycle **PLANNED**; Product Definition **APPROVED** (`PD-IMP-036I-DRAFT-4`); Gate **PASS**; Architecture Fit **NOT_PERFORMED**; architecture **NOT_LOCKED**; implementation **NOT_AUTHORIZED** / **NOT_STARTED**; `IMP036I_ACCEPTED: NO`; `pendingAcceptance = NONE`; `acceptedThrough = IMP-036H`; `nextProductSlice = IMP-037` |
-| Relevant capability architecture / ADRs | Foundations: ADR-008; ADR-011; ADR-007; ADR-012; ADR-018 / D-378 (fulfilment mode); D-365 / D-366 / D-367 (financial documents); D-357; D-361–D-364 (payment/refund); D-377 (program pause). No IMP-036I capability lock yet. |
+| Capability lifecycle / authorization | ROADMAP/STATE: `IMP036I_ACTIVATED: YES`; `currentProductSlice = IMP-036I`; formal lifecycle **ARCHITECTURE_LOCKED**; Product Definition **APPROVED** (`PD-IMP-036I-DRAFT-4`); Gate **PASS**; Architecture Fit **PASS** (review `5312653831`); architecture **LOCKED**; implementation **NOT_AUTHORIZED** / **NOT_STARTED**; `IMP036I_ACCEPTED: NO`; `pendingAcceptance = NONE`; `acceptedThrough = IMP-036H`; `nextProductSlice = IMP-037` |
+| Relevant capability architecture / ADRs | Locked: [`capabilities/IMP-036I-scheduled-fulfilment.md`](../../capabilities/IMP-036I-scheduled-fulfilment.md); D-379 / ADR-019 CURRENT/Accepted; D-380 / ADR-020 CURRENT/Accepted; ARCH-R23 / ARCH-G29 / ARCH-G30. D-378 / ADR-018 AMENDED only for ASAP-only / no-scheduled-schema clauses. Foundations otherwise unchanged. |
 | Founder UAT applicability | `FOUNDER_UAT_REQUIRED = YES`; `FOUNDER_UAT_STATUS = NOT_PERFORMED` — materially changes customer checkout timing and workforce operational timing when implemented |
 
 ### 1.1 Draft history — Product Definition Gate
@@ -1888,13 +1888,13 @@ Registry status is not a test verdict.
 | Accepted commerce foundations through IMP-036H | COMPLETE_AND_ACCEPTED through IMP-036H | All stories | NONE for ASAP baselines |
 | Founder resolution of FD-036I-01…15 | RESOLVED 2026-09-24 | Before Product Definition Gate | SATISFIED |
 | Product Definition Gate PASS | PASS (review 5307761142) | Before Architecture Fit | SATISFIED — next = Architecture Fit |
-| Architecture Fit PASS + locked capability | NOT_PERFORMED | Before implementation authorization | Blocked |
+| Architecture Fit PASS + locked capability | PASS (review 5312653831); LOCKED | Before implementation authorization | SATISFIED — next = implementation authorization |
 | Implementation authorization | NO | Before code/schema | Blocked |
 | IMP-037/038/039/040 | HOLD / NOT_ACTIVATED as program context | Must not be accepted/activated by this Gate PASS | Preserve freeze; D-377 |
 
 ### Architecture Fit handoff questions (explicitly NOT solved here)
 
-All marked **`ARCHITECTURE_FIT_REQUIRED`**. Do **not** answer in Product Definition.
+All 19 questions below were the original Product Definition handoff (`ARCHITECTURE_FIT_REQUIRED`). They are answered by the locked capability architecture. Do **not** treat this Product Definition as the architecture answer.
 
 1. Where does fulfilment timing live in mutable Checkout? — `ARCHITECTURE_FIT_REQUIRED`
 2. What immutable timing truth belongs in Checkout Snapshot? — `ARCHITECTURE_FIT_REQUIRED`
@@ -1989,7 +1989,10 @@ Gate Result: PASS
 INDEPENDENT_PRODUCT_DEFINITION_GATE_REVIEW: 5307761142
 ```
 
-Architecture Fit questions (§21) are **mechanism** questions, not unresolved product decisions. They remain unanswered (`ARCHITECTURE_FIT_REQUIRED`).
+Architecture Fit questions below were the Product Definition handoff. CURRENT resolution:
+all 19 are answered by locked architecture (ARCH-R23; D-379 CURRENT; D-380 CURRENT; ADR-019 Accepted; ADR-020 Accepted). Independent Architecture Fit review `5312653831` = PASS. This notice does not rewrite the approved requirements.
+
+Architecture Fit questions (§21) are **mechanism** questions, not unresolved product decisions.
 
 ### Founder decisions register — RESOLVED (Founder, 2026-09-24)
 

@@ -2,15 +2,15 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R151",
+  "stateVersion": "STATE-R152",
   "acceptedThrough": "IMP-036H",
   "currentProductSlice": "IMP-036I",
   "nextProductSlice": "IMP-037",
   "pendingAcceptance": "NONE",
   "gtmBoundary": "IMP-040",
   "governanceHealth": "ALIGNED",
-  "lastReviewed": "2026-09-24",
-  "supersedes": "STATE-R150"
+  "lastReviewed": "2026-09-25",
+  "supersedes": "STATE-R151"
 }
 -->
 
@@ -39,9 +39,9 @@ Pending Acceptance:             NONE
 Current Product Slice:          IMP-036I — Scheduled Fulfilment
 Next Product Slice:             IMP-037 — Backup, Restore & Migration Readiness
 Unresolved Predecessor:         IMP-037 — Backup, Restore & Migration Readiness
-Current Governance Activity:    IMP-036I PRODUCT_DEFINITION_GATE_PASS (APPROVED / Gate PASS)
-                              (GTM-R153 / STATE-R151;
-                              IMP036I_ACTIVATED: YES; formal lifecycle PLANNED;
+Current Governance Activity:    IMP-036I ARCHITECTURE_LOCKED
+                              (GTM-R154 / STATE-R152;
+                              IMP036I_ACTIVATED: YES; formal lifecycle ARCHITECTURE_LOCKED;
                               IMP036I_PRODUCT_DEFINITION: APPROVED
                               (PD-IMP-036I-DRAFT-4);
                               READY_FOR_PRODUCT_DEFINITION_GATE: NO;
@@ -59,15 +59,25 @@ Current Governance Activity:    IMP-036I PRODUCT_DEFINITION_GATE_PASS (APPROVED 
                               gateEvaluatedTree: a0774c9b2cb256f8d329fc49cea1c9859a39d1d7;
                               gateEvaluatedFingerprint:
                               07720d20f1e285ef46e6bd3be6d710be383baacde4facab7651482547b6dc15d;
-                              IMP036I_ARCHITECTURE_FIT: NOT_PERFORMED;
-                              IMP036I_ARCHITECTURE_LOCKED: NO;
+                              IMP036I_ARCHITECTURE_FIT: PASS;
+                              IMP036I_ARCHITECTURE_LOCKED: YES;
+                              INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PASS;
+                              INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID: 5312653831;
+                              ARCHITECTURE_FIT_EVALUATED_HEAD:
+                              42e854b931e216fadc64b479371cebca4c38d17e;
+                              ARCHITECTURE_FIT_EVALUATED_TREE:
+                              279e0e1b0e8f52c96cfd12fc89b329f73281e38f;
+                              ARCHITECTURE_FIT_EVALUATED_WORKING_TREE_FINGERPRINT:
+                              b65f40b9e568a6d0188f1d031f41db3a072cb3b4683d2d966c2a994283575068;
                               IMP036I_IMPLEMENTATION_AUTHORIZED: NO;
                               IMP036I_STARTED: NO;
                               IMP036I_IMPLEMENTATION_STARTED: NO;
                               IMP036I_IMPLEMENTATION_COMPLETE: NO;
                               IMP036I_ACCEPTED: NO;
-                              nextGate: Architecture Fit (NOT_PERFORMED);
+                              nextGate: IMPLEMENTATION_AUTHORIZATION (not implementation);
+                              D-379: CURRENT; D-380: CURRENT; D-378: AMENDED;
                               IMP-036H remains COMPLETE_AND_ACCEPTED;
+                              prior tip GTM-R153 / STATE-R151 (Product Definition Gate PASS);
                               prior tip GTM-R152 / STATE-R150 (DRAFT-4 DRAFT_READY);
                               prior tip GTM-R151 / STATE-R149 (DRAFT-3 DRAFT_READY; later Gate STOP);
                               prior tip GTM-R150 / STATE-R148 (DRAFT-2 DRAFT_READY; later Gate STOP);
@@ -131,13 +141,15 @@ Current Governance Activity:    IMP-036I PRODUCT_DEFINITION_GATE_PASS (APPROVED 
                               historical IMP-037/038 progression preserved
                               (APPROVED PD; Gate PASS; Fit PASS; architecture LOCKED;
                               implementation AUTHORIZED / STARTED);
-                              Architecture tip ARCH-R22 / D-378 (preserves ARCH-R21 / D-375;
-                              pilot base ARCH-R20 / D-374);
+                              Architecture tip ARCH-R23 / D-379 CURRENT / D-380 CURRENT
+                              (D-378 AMENDED; preserves ARCH-R22 / D-378 mode remainder;
+                              ARCH-R21 / D-375; pilot base ARCH-R20 / D-374);
                               D-374_CREATED: YES; ARCH_R20_CREATED: YES;
                               D-375_CREATED: YES; ARCH_R21_CREATED: YES;
                               D-377_CREATED: YES; D-378_CREATED: YES; ARCH_R22_CREATED: YES;
-                              nextGate: Independent Product Definition Gate (NOT_PERFORMED)
-                              (FD-036I-01…15) before Product Definition Gate (NOT performed here);
+                              D-379_CREATED: YES; D-380_CREATED: YES; ARCH_R23_CREATED: YES;
+                              Decision register tip DR-21;
+                              nextGate: IMPLEMENTATION_AUTHORIZATION
                               Founder UAT PASS 2026-09-24 on runtime candidate
                               37bae964f964bddd317e4c290dc146097e4c8f57;
                               governance reconciliation is NOT a new UAT candidate;
@@ -192,13 +204,13 @@ IMP036H_FOUNDER_UAT_CANDIDATE_FINGERPRINT: e49d860c721d2524b248738750530a416f841
 IMP036H_FOUNDER_UAT_DECISION_DATE: 2026-09-24
 IMP036H_FOUNDER_UAT_ACCEPTANCE_AUTHORITY: Founder
 IMP036H_FOUNDER_UAT_CHECKMARKS: pickup_profile=PASS; customer_pickup=PASS; payment=PASS; operations_handover=PASS; customer_order_history=PASS; mode_switching=PASS; unavailable_state=PASS; mobile=PASS; overall=PASS; findings=NONE_BLOCKING
-IMP-036I:                 PLANNED
+IMP-036I:                 ARCHITECTURE_LOCKED
 IMP036I_ACTIVATED:        YES
 IMP036I_PRODUCT_DEFINITION: APPROVED
 IMP036I_PRODUCT_DEFINITION_VERSION: PD-IMP-036I-DRAFT-4
 IMP036I_PRODUCT_DEFINITION_GATE: PASS
-IMP036I_ARCHITECTURE_FIT: NOT_PERFORMED
-IMP036I_ARCHITECTURE_LOCKED: NO
+IMP036I_ARCHITECTURE_FIT: PASS
+IMP036I_ARCHITECTURE_LOCKED: YES
 IMP036I_IMPLEMENTATION_AUTHORIZED: NO
 IMP036I_STARTED:          NO
 IMP036I_IMPLEMENTATION_STARTED: NO
@@ -288,9 +300,12 @@ ARCH_R21_CREATED:         YES
 D-377_CREATED:            YES
 D-378_CREATED:            YES
 ARCH_R22_CREATED:         YES
+D-379_CREATED:            YES
+D-380_CREATED:            YES
+ARCH_R23_CREATED:         YES
 ```
 
-Active Product Definition (IMP-036I; APPROVED / PD-IMP-036I-DRAFT-4; Gate PASS for CURRENT DRAFT-4 — review 5307761142; historical DRAFT-1, DRAFT-2, and DRAFT-3 Gate STOP; Fit NOT_PERFORMED; architecture NOT locked; implementation NOT authorized):
+Active Product Definition (IMP-036I; APPROVED / PD-IMP-036I-DRAFT-4; Gate PASS for CURRENT DRAFT-4 — review 5307761142; historical DRAFT-1, DRAFT-2, and DRAFT-3 Gate STOP; Architecture Fit PASS review 5312653831; architecture LOCKED; implementation NOT authorized):
 [`product/IMP-036I/product-definition.md`](./product/IMP-036I/product-definition.md).
 Accepted Product Definition (IMP-036H; APPROVED; Gate PASS; Fit PASS; architecture LOCKED; COMPLETE_AND_ACCEPTED):
 [`product/IMP-036H/product-definition.md`](./product/IMP-036H/product-definition.md).
@@ -306,7 +321,7 @@ Prior accepted locked capability architecture:
 [`capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md`](./capabilities/IMP-036F-catalog-menu-pricing-promotions-management.md).
 Earlier accepted locked capability architecture:
 [`capabilities/IMP-036E-store-operations-management.md`](./capabilities/IMP-036E-store-operations-management.md).
-Architecture tip ARCH-R22 / D-378 (`D-378_CREATED: YES`; `ARCH_R22_CREATED: YES`; preserves ARCH-R21 / D-375 and ARCH-R20 / D-374). Decision register tip: DR-20 / D-378.
+Architecture tip ARCH-R23 / D-379 CURRENT / D-380 CURRENT (`D-379_CREATED: YES`; `D-380_CREATED: YES`; `ARCH_R23_CREATED: YES`; D-378 AMENDED; preserves ARCH-R22 mode remainder, ARCH-R21 / D-375, and ARCH-R20 / D-374). Decision register tip: DR-21.
 Detailed accepted-slice marker inventories for IMP-024…IMP-036F remain in the historical STATE
 snapshot and capability/acceptance artifacts.
 
@@ -656,13 +671,13 @@ IMP036H_INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PASS
 IMP036H_INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_HEAD: aab814c238c499367ee921e9f8ffb03ff7b1b373
 IMP036H_INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_TREE: 93d4e83d4a73c61c9439bcaae2799920fcca46db
 IMP036H_INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID: 5295149318
-IMP-036I: PLANNED
+IMP-036I: ARCHITECTURE_LOCKED
 IMP036I_ACTIVATED: YES
 IMP036I_PRODUCT_DEFINITION: APPROVED
 IMP036I_PRODUCT_DEFINITION_VERSION: PD-IMP-036I-DRAFT-4
 IMP036I_PRODUCT_DEFINITION_GATE: PASS
-IMP036I_ARCHITECTURE_FIT: NOT_PERFORMED
-IMP036I_ARCHITECTURE_LOCKED: NO
+IMP036I_ARCHITECTURE_FIT: PASS
+IMP036I_ARCHITECTURE_LOCKED: YES
 IMP036I_IMPLEMENTATION_AUTHORIZED: NO
 IMP036I_STARTED: NO
 IMP036I_IMPLEMENTATION_STARTED: NO
@@ -830,7 +845,7 @@ Implementation/review provenance for IMP-036F is recorded in
 | Why / Non-Goals | [`VISION.md`](./VISION.md) |
 | Durable architecture | [`ARCHITECTURE.md`](./ARCHITECTURE.md) |
 | Binding decision status | [`decision-register.md`](./decision-register.md) |
-| IMP-036I Product Definition (APPROVED; Gate PASS; Fit NOT_PERFORMED; NOT locked; NOT authorized) | [`product/IMP-036I/product-definition.md`](./product/IMP-036I/product-definition.md) |
+| IMP-036I Product Definition (APPROVED; Gate PASS; Fit PASS; architecture LOCKED; implementation NOT authorized) | [`product/IMP-036I/product-definition.md`](./product/IMP-036I/product-definition.md) |
 | IMP-036H Product Definition (APPROVED; Gate PASS; Fit PASS; LOCKED; AUTHORIZED / STARTED / COMPLETE; COMPLETE_AND_ACCEPTED) | [`product/IMP-036H/product-definition.md`](./product/IMP-036H/product-definition.md) |
 | IMP-038 locked capability architecture (Fit PASS; independent Architecture Fit review PASS; IMPLEMENTATION_COMPLETE / NOT_ACCEPTED; `IMP038_HOLD: YES`; external assessment deferred) | [`capabilities/IMP-038-security-privacy-hardening.md`](./capabilities/IMP-038-security-privacy-hardening.md) |
 | IMP-037 locked capability architecture (Fit PASS; independent Architecture Fit review PASS; repository implementation MERGED; external proof NOT_PERFORMED; `IMP037_HOLD: YES`) | [`capabilities/IMP-037-backup-restore-migration-readiness.md`](./capabilities/IMP-037-backup-restore-migration-readiness.md) |
@@ -842,7 +857,25 @@ Implementation/review provenance for IMP-036F is recorded in
 Agents may propose a STATE delta in their report. Only independent acceptance updates this file's
 accepted position and may promote `governanceHealth` to `ALIGNED`.
 
-## 10. STATE-R151 record
+## 10. STATE-R152 record
+
+```text
+STATE-R152 = IMP036I_ARCHITECTURE_LOCKED
+acceptedThrough: IMP-036H
+pendingAcceptance: NONE
+currentProductSlice: IMP-036I
+nextProductSlice: IMP-037
+Current Governance Activity: IMP-036I ARCHITECTURE_LOCKED under PROGRAM_PAUSE PRE_GTM_PRODUCT_INSERTION_PROVIDER_BLOCKED (D-377); PD-IMP-036I-DRAFT-4 APPROVED; Gate PASS; Architecture Fit PASS; independent review 5312653831; ARCH-R23; DR-21; D-379 CURRENT; D-380 CURRENT; D-378 AMENDED; architecture LOCKED; implementation NOT authorized / NOT started; formal lifecycle ARCHITECTURE_LOCKED; IMP036I_ACCEPTED: NO; nextGate: IMPLEMENTATION_AUTHORIZATION
+IMP036I_ARCHITECTURE_FIT: PASS
+IMP036I_ARCHITECTURE_LOCKED: YES
+IMP036I_IMPLEMENTATION_AUTHORIZED: NO
+IMP036I_STARTED: NO
+IMP036I_IMPLEMENTATION_STARTED: NO
+IMP036I_IMPLEMENTATION_COMPLETE: NO
+IMP036I_ACCEPTED: NO
+```
+
+## 11. STATE-R151 record (historical prior tip)
 
 ```text
 STATE-R151 = IMP036I_PRODUCT_DEFINITION_GATE_PASS
