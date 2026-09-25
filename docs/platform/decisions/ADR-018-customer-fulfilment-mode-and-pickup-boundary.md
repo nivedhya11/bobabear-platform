@@ -1,13 +1,30 @@
 ---
 Status: Accepted
 Decision date: 2026-09-23
-Last updated: 2026-09-24
+Last updated: 2026-09-25
 Decision ID: D-378
 Amends: none (layers on ADR-008 serviceability/cart/checkout; ADR-007 pricing; ADR-011 delivery; D-357 order lifecycle; D-365 financial documents; D-372 operations transport)
-Amended by: none
+Amended by: D-379 / ADR-019 (ASAP-only and no-scheduled-schema clauses only)
 ---
 
 # ADR-018: Customer Fulfilment Mode and Pickup Boundary
+
+## Amendment notice (2026-09-25)
+
+**D-378 / ADR-018** is amended by **D-379 / ADR-019** only for the ASAP-only and no-scheduled-schema
+clauses. The remaining Pickup/Delivery mode boundary stays binding: `DELIVERY | PICKUP` mode
+authority, Pickup fail-closed Delivery boundary, selected Pickup Outlet authority, Pickup
+destination/privacy boundary, Pickup delivery-charge boundary, Financial Document Option A, and no
+Delivery aggregate for Pickup. Fulfilment mode is orthogonal to fulfilment timing. This notice does
+not rewrite the accepted Pickup history below as though Scheduled timing had always existed.
+
+```text
+D-378_STATUS: AMENDED
+ADR018_STATUS: AMENDED
+ARCH-G28_STATUS: CURRENT
+AMENDED_BY: D-379 / ADR-019
+AMENDMENT_SCOPE: ASAP-only / no-scheduled-schema clauses only
+```
 
 ## Status
 

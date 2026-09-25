@@ -1,9 +1,9 @@
 ---
-Status: Proposed
+Status: Accepted
 Decision date: 2026-09-25
 Last updated: 2026-09-25
-Decision ID: D-380 (PROPOSED — not CURRENT)
-Amends: IMP-031 replacement interpretation for successful-completion finality only (after future lock)
+Decision ID: D-380 (CURRENT)
+Amends: IMP-031 replacement interpretation for successful-completion finality only
 Amended by: none
 Does not supersede: IMP-031 wholesale; Delivery lifecycle; one-active Delivery rule; stable request identity; booking ambiguity handling; failure/cancellation rules; return progression; IMP-032 manual Dehradun mode; Order lifecycle; D-379 Scheduled timing
 ---
@@ -12,57 +12,56 @@ Does not supersede: IMP-031 wholesale; Delivery lifecycle; one-active Delivery r
 
 ## Status
 
-**Proposed** (2026-09-25). Register identity **[D-380](../decision-register.md)** is **PROPOSED**
-only. Global architecture tip remains **ARCH-R22**. Proposed invariant **ARCH-G30** and shared
-architecture revision **ARCH-R23** (with **ARCH-G29** from D-379) are recorded in this ADR and the
-IMP-036I Architecture Fit candidate; they are **not** CURRENT until independent Architecture Fit
-review PASS and authorized lock persistence.
+**Accepted** (2026-09-25). Register identity **[D-380](../decision-register.md)** is **CURRENT**.
+Invariant **ARCH-G30** is **CURRENT**. Architecture revision **ARCH-R23** is **CURRENT**.
+Independent Architecture Fit review `5312653831` = **PASS**. Human architecture direction
+**APPROVED 2026-09-25**. Implementation remains **NOT_AUTHORIZED**.
 
 ```text
-D-380_STATUS: PROPOSED
-ADR020_STATUS: Proposed
-ARCH-R23_STATUS: PROPOSED_LOCK_DELTA (not applied to ARCHITECTURE.md meta)
-ARCH-G30_STATUS: PROPOSED
-IMP036I_ARCHITECTURE_FIT: NOT_PERFORMED
-IMP036I_ARCHITECTURE_LOCKED: NO
+D-380_STATUS: CURRENT
+ADR020_STATUS: Accepted
+ARCH-R23_STATUS: CURRENT
+ARCH-G30_STATUS: CURRENT
+IMP036I_ARCHITECTURE_FIT: PASS
+IMP036I_ARCHITECTURE_LOCKED: YES
 IMP036I_IMPLEMENTATION_AUTHORIZED: NO
-CURRENT_ARCHITECTURE: ARCH-R22
+CURRENT_ARCHITECTURE: ARCH-R23
 CURRENT_IMP031: ARCHITECTURE_LOCKED (CURRENT)
 CURRENT_ADR011: HISTORICAL / future-binding intent (not CURRENT decision authority)
 HUMAN_ARCHITECTURE_DIRECTION: APPROVED_2026-09-25
+INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID: 5312653831
+PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT: OPEN
 ```
 
-Capability Fit candidate:
+Locked capability architecture:
 
 [`../capabilities/IMP-036I-scheduled-fulfilment.md`](../capabilities/IMP-036I-scheduled-fulfilment.md)
 
-Related Proposed Scheduled timing decision (separate; do not merge):
+Related Accepted Scheduled timing decision (separate; do not merge):
 
 [`ADR-019-scheduled-fulfilment-timing-and-execution.md`](./ADR-019-scheduled-fulfilment-timing-and-execution.md)
-(**D-379** PROPOSED)
+(**D-379** CURRENT)
 
-## A. CURRENT binding authority before future lock
-
-Until independent Fit PASS + lock persistence:
+## A. Binding authority after lock
 
 ```text
 IMP-031 capability architecture = CURRENT / ARCHITECTURE_LOCKED
 ARCH-G24 = CURRENT (provider-neutral Delivery foundation)
-D-380 = PROPOSED (not binding)
-ADR-020 = Proposed (not Accepted)
-ARCH-G30 = PROPOSED LOCK DELTA only
-ARCHITECTURE.md tip = ARCH-R22 (no ARCH-R23 applied)
+D-380 = CURRENT
+ADR-020 = Accepted
+ARCH-G30 = CURRENT
+ARCHITECTURE.md tip = ARCH-R23
 ```
 
-IMP-036I must not silently rewrite CURRENT IMP-031 as though D-380 were already CURRENT.
-Scheduled reminder eligibility may **consume** the human-approved D-380 **candidate** direction
-while Fit remains NOT_PERFORMED; consumption does not make D-380 CURRENT.
+D-380 clarifies IMP-031 successful-completion replacement interpretation only. It does not rewrite
+IMP-031 history wholesale. At the reviewed candidate, current runtime `createDelivery` allowed a
+`DELIVERED` predecessor. That behaviour is now `PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT` against
+CURRENT D-380. This ADR does not pretend the runtime was already conformant.
 
-## B. Approved candidate direction (human architecture approval 2026-09-25)
+## B. Binding decision (human architecture approval 2026-09-25; Fit PASS 5312653831)
 
-Human architecture direction **APPROVED** on **2026-09-25** for **D-380 — Delivery
-Successful-Completion Finality**. Independent architecture review has **not** yet passed; status
-remains **Proposed**.
+Human architecture direction **APPROVED** on **2026-09-25**. Independent Architecture Fit review
+`5312653831` = **PASS**. Status is **Accepted**.
 
 ### Ambiguity being resolved
 
@@ -171,17 +170,15 @@ Scheduled Delivery reminder completion (consumer; owned by D-379 execution bound
   Notification rank 50 = secondary communication staleness only
 ```
 
-### Proposed ARCH-G30 (PROPOSED LOCK DELTA — not CURRENT)
+### ARCH-G30 (CURRENT)
 
 > Delivery.status = DELIVERED is durable successful execution truth. A normal replacement Delivery
 > cannot supersede it. Correction requires separately authorized history-preserving authority.
 > Consumers such as Scheduled reminder eligibility may rely on committed DELIVERED completion truth
 > without waiting for notification or Order coordination catch-up.
 
-Preferred future lock (with D-379): **one** architecture revision **ARCH-R23** containing
-**ARCH-G29** (Scheduled Fulfilment Timing) and **ARCH-G30** (Delivery Successful-Completion
-Finality). Do **not** create ARCH-R24. Do **not** apply this invariant to CURRENT ARCHITECTURE.md
-while this ADR remains Proposed.
+**ARCH-R23** is CURRENT and contains **ARCH-G29** (Scheduled Fulfilment Timing) and
+**ARCH-G30** (Delivery Successful-Completion Finality). Do **not** create ARCH-R24.
 
 ARCH-G24 remains CURRENT for provider-neutral Delivery foundation / one-active booking. ARCH-G30
 clarifies successful-completion finality; it does not replace ARCH-G24 wholesale.
@@ -218,15 +215,13 @@ D-379 does **not** redefine Delivery replacement semantics itself. Do not merge 
 
 ## Non-decisions
 
-This Proposed ADR does **not**:
+This Accepted ADR does **not**:
 
-- make D-380 CURRENT or accept ADR-020
-- lock ARCH-R23 / ARCH-G30 as CURRENT
 - rewrite ADR-011 historical classification to CURRENT
-- amend IMP-031 capability lock text in place (prospective interpretation via D-380)
+- add a current-authority notice to IMP-031 without rewriting its accepted history wholesale
 - change runtime `createDelivery`, schema, migrations, or historical Delivery rows
 - authorize IMP-036I implementation
-- claim Architecture Fit PASS
+- fix the pre-existing Delivery conformance debt in this ADR
 - expand FAILED / CANCELLED replacement eligibility
 - invent a courier-switch path after pickup
 - design the future DELIVERED correction mechanism

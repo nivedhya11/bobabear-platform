@@ -1,14 +1,13 @@
 <!-- governance-meta
 {
-  "status": "ARCHITECTURE_FIT_CANDIDATE",
-  "authority": "CAPABILITY_ARCHITECTURE_CANDIDATE",
+  "status": "CURRENT",
+  "authority": "CAPABILITY_ARCHITECTURE",
   "capability": "IMP-036I",
   "title": "Scheduled Fulfilment",
-  "architectureLock": "NOT_LOCKED",
-  "architectureFitCandidateStatus": "CANDIDATE_READY_FOR_INDEPENDENT_REVIEW",
-  "architectureFitCandidateResult": "NOT_DECLARED",
-  "architectureFitExecution": "NOT_PERFORMED",
-  "architectureFitResult": "NOT_PERFORMED",
+  "architectureLock": "ARCHITECTURE_LOCKED",
+  "architectureFit": "PASS",
+  "architectureFitResult": "PASS",
+  "architectureFitExecution": "PERFORMED",
   "implementation": "NOT_AUTHORIZED / NOT_STARTED",
   "implementationAuthorized": false,
   "implementationStarted": false,
@@ -17,50 +16,57 @@
   "schemaChangeRequired": true,
   "migrationRequired": true,
   "founderUatRequired": true,
+  "founderUat": "NOT_PERFORMED",
   "lastReviewed": "2026-09-25",
   "productDefinition": "PD-IMP-036I-DRAFT-4",
   "productDefinitionGate": "PASS",
-  "proposedBindingDecisions": ["D-379", "ADR-019", "D-380", "ADR-020"],
-  "proposedArchitectureRevision": "ARCH-R23",
-  "proposedInvariant": "ARCH-G29",
-  "proposedDeliveryFinalityInvariant": "ARCH-G30",
-  "amendsOnLock": ["D-378"],
-  "bindingFoundations": ["ADR-005", "ADR-007", "ADR-008", "ADR-011", "ADR-012", "ADR-018", "D-357", "D-359", "D-360", "D-365", "D-372", "D-373", "D-377", "D-378", "ARCH-R22", "ARCH-G28"],
+  "bindingDecisions": ["D-379", "ADR-019", "D-380", "ADR-020"],
+  "architectureRevision": "ARCH-R23",
+  "invariant": "ARCH-G29",
+  "deliveryFinalityInvariant": "ARCH-G30",
+  "amends": ["D-378"],
+  "bindingFoundations": ["ADR-005", "ADR-007", "ADR-008", "ADR-011", "ADR-012", "ADR-018", "D-357", "D-359", "D-360", "D-365", "D-372", "D-373", "D-377", "D-378", "D-379", "D-380", "ARCH-R23", "ARCH-G28", "ARCH-G29", "ARCH-G30"],
   "dependsOn": ["IMP-021", "IMP-023", "IMP-024", "IMP-028", "IMP-029", "IMP-030", "IMP-031", "IMP-032", "IMP-033", "IMP-036B", "IMP-036C", "IMP-036D", "IMP-036E", "IMP-036H"],
-  "architectureBase": "ARCH-R22"
+  "architectureBase": "ARCH-R23",
+  "independentArchitectureFitReview": "PASS",
+  "independentArchitectureFitReviewId": "5312653831"
 }
 -->
 
 # IMP-036I — Scheduled Fulfilment
 
-## Capability Architecture — ARCHITECTURE FIT CANDIDATE / NOT LOCKED
+## Capability Architecture — ARCHITECTURE_LOCKED
 
-This document is an **Architecture Fit review candidate** for IMP-036I against approved
+This document is the **locked capability architecture** for IMP-036I against approved
 **`PD-IMP-036I-DRAFT-4`** (Product Definition Gate **PASS**; independent review `5307761142`).
-It is **not** the canonically locked capability architecture. It does **not** self-declare
-Architecture Fit PASS.
+Independent Architecture Fit review **PASS** (`5312653831`) evaluated candidate HEAD
+`42e854b931e216fadc64b479371cebca4c38d17e` / tree
+`279e0e1b0e8f52c96cfd12fc89b329f73281e38f` / fingerprint
+`b65f40b9e568a6d0188f1d031f41db3a072cb3b4683d2d966c2a994283575068`.
+Human architecture lock approval **2026-09-25**. Implementation remains **NOT_AUTHORIZED**.
 
 ```text
-STATUS = ARCHITECTURE_FIT_CANDIDATE
-AUTHORITY = CAPABILITY_ARCHITECTURE_CANDIDATE
+STATUS = ARCHITECTURE_LOCKED
+AUTHORITY = CAPABILITY_ARCHITECTURE
 PRODUCT_DEFINITION = PD-IMP-036I-DRAFT-4
 PRODUCT_DEFINITION_GATE = PASS
-ARCHITECTURE_FIT_EXECUTION = NOT_PERFORMED
-ARCHITECTURE_FIT_RESULT = NOT_PERFORMED
-ARCHITECTURE_FIT = NOT_PERFORMED
-ARCHITECTURE_LOCK = NOT_LOCKED
+ARCHITECTURE_FIT_EXECUTION = PERFORMED
+ARCHITECTURE_FIT_RESULT = PASS
+ARCHITECTURE_FIT = PASS
+ARCHITECTURE_LOCK = LOCKED
 IMPLEMENTATION_AUTHORIZED = NO
 IMPLEMENTATION_STARTED = NO
 IMPLEMENTATION_COMPLETE = NO
 IMP_ACCEPTED = NO
 
-ARCHITECTURE_FIT_CANDIDATE = YES
-ARCHITECTURE_CANDIDATE_READY_FOR_REVIEW = YES
-ARCHITECTURE_FIT_CANDIDATE_STATUS = CANDIDATE_READY_FOR_INDEPENDENT_REVIEW
-ARCHITECTURE_FIT_CANDIDATE_RESULT = NOT_DECLARED
+INDEPENDENT_ARCHITECTURE_FIT_REVIEW = PASS
+INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID = 5312653831
+ARCHITECTURE_FIT_EVALUATED_HEAD = 42e854b931e216fadc64b479371cebca4c38d17e
+ARCHITECTURE_FIT_EVALUATED_TREE = 279e0e1b0e8f52c96cfd12fc89b329f73281e38f
+ARCHITECTURE_FIT_EVALUATED_WORKING_TREE_FINGERPRINT = b65f40b9e568a6d0188f1d031f41db3a072cb3b4683d2d966c2a994283575068
 
 AF_TOTAL = 19
-AF_RESOLVED_IN_CANDIDATE = 19
+AF_RESOLVED = 19
 AF_OPEN = 0
 OPEN_ARCHITECTURE_QUESTIONS = NONE
 RED_DECISIONS_REQUIRED = NONE
@@ -76,47 +82,47 @@ NEW_AUTH_REALM = NO
 NEW_ROLE = NO
 NEW_PERMISSION = NO
 
-D379_REQUIRED_FOR_LOCK = YES
-D379_STATUS = PROPOSED
-ADR019_STATUS = Proposed
-D380_REQUIRED_FOR_LOCK = YES
-D380_STATUS = PROPOSED
-ADR020_STATUS = Proposed
-ARCH_R23_REQUIRED_FOR_LOCK = YES
-ARCH_G29_REQUIRED_FOR_LOCK = YES
-ARCH_G30_REQUIRED_FOR_LOCK = YES
-CURRENT_ARCHITECTURE = ARCH-R22
-CURRENT_DECISION_REGISTER = DR-20
-CURRENT_D378 = CURRENT (ASAP-only / no-scheduled-schema clauses to be amended by D-379 only after lock)
-CURRENT_ADR018 = Accepted
-CURRENT_ARCH_G28 = CURRENT
-CURRENT_IMP031 = ARCHITECTURE_LOCKED (CURRENT; successful-completion replacement clarified by D-380 candidate)
+D379_STATUS = CURRENT
+ADR019_STATUS = Accepted
+D380_STATUS = CURRENT
+ADR020_STATUS = Accepted
+CURRENT_ARCHITECTURE = ARCH-R23
+CURRENT_DECISION_REGISTER = DR-21
+ARCH_G29_STATUS = CURRENT
+ARCH_G30_STATUS = CURRENT
+CURRENT_D378 = AMENDED (ASAP-only / no-scheduled-schema clauses only; mode remainder binding)
+CURRENT_ADR018 = AMENDED (accepted Pickup/Delivery mode remainder preserved)
+CURRENT_ARCH_G28 = CURRENT (mode axis; timing axis is ARCH-G29 / D-379)
+CURRENT_IMP031 = ARCHITECTURE_LOCKED (CURRENT; successful-completion replacement clarified by D-380 CURRENT)
 HUMAN_ARCHITECTURE_DIRECTION_D380 = APPROVED_2026-09-25
-INDEPENDENT_FIT_STOP_DELIVERY_AUTHORITY = 5309972440
+INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID = 5312653831
+PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT = OPEN
+PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT_RUNTIME_FIXED = NO
 
-RESOLVED_IN_ARCHITECTURE_CANDIDATE != ARCHITECTURE_FIT_PASS
+IMP036I_ARCHITECTURE_FIT = PASS
+IMP036I_ARCHITECTURE_LOCKED = YES
+IMP036I_IMPLEMENTATION_AUTHORIZED = NO
+IMP036I_IMPLEMENTATION_STARTED = NO
 ```
 
-Independent Architecture Fit review is required. Formal Architecture Fit PASS + lock persistence are
-separate authorized governance tasks. This candidate does **not** authorize implementation, schema
-migration execution, merge as lock, deployment, Founder UAT, or IMP acceptance.
+This lock does **not** authorize implementation, schema migration execution, deployment, Founder UAT,
+or IMP acceptance. Historical independent Fit STOP reviews (`5309072645`, `5309240283`,
+`5309972440`) remain historical; they are not current blockers.
 
 | Field | Value |
 |---|---|
-| Architecture lock | `NOT_LOCKED` (candidate only) |
-| Formal ROADMAP lifecycle | `PLANNED` (`IMP036I_ACTIVATED: YES`) |
+| Architecture lock | `LOCKED` / `YES` |
+| Formal ROADMAP lifecycle | `ARCHITECTURE_LOCKED` (`IMP036I_ACTIVATED: YES`) |
 | Product Definition | `PD-IMP-036I-DRAFT-4` **APPROVED**; Gate **PASS** |
-| Canonical Architecture Fit (ROADMAP/STATE/PD) | Still `NOT_PERFORMED` until lock persistence |
-| Candidate readiness | **CANDIDATE_READY_FOR_INDEPENDENT_REVIEW** |
-| Candidate Fit PASS claim | **NOT_DECLARED** |
+| Canonical Architecture Fit | **PASS** (independent review `5312653831`) |
 | Implementation | **NOT_AUTHORIZED** / **NOT_STARTED** |
 | Schema change / migration | **YES** (design only; not authorized to execute) |
-| Proposed D-number (timing) | **D-379** (`PROPOSED`; not CURRENT) |
-| Proposed ADR (timing) | **ADR-019** (`Proposed`) |
-| Proposed D-number (Delivery finality) | **D-380** (`PROPOSED`; not CURRENT; human direction APPROVED 2026-09-25) |
-| Proposed ADR (Delivery finality) | **ADR-020** (`Proposed`) |
-| Proposed global ARCH bump | **ARCH-R23** / **ARCH-G29** + **ARCH-G30** (proposed lock delta; ARCHITECTURE.md tip remains ARCH-R22) |
-| D-378 relationship | Remains CURRENT for mode; **proposed future amendment** by D-379 only for ASAP-only / no-scheduled-schema reservation |
+| Binding D-number (timing) | **D-379** (`CURRENT`) |
+| Binding ADR (timing) | **ADR-019** (`Accepted`) |
+| Binding D-number (Delivery finality) | **D-380** (`CURRENT`; human direction APPROVED 2026-09-25) |
+| Binding ADR (Delivery finality) | **ADR-020** (`Accepted`) |
+| Global architecture | **ARCH-R23** / **ARCH-G29** + **ARCH-G30** (`CURRENT`) |
+| D-378 relationship | **AMENDED** by D-379 only for ASAP-only / no-scheduled-schema reservation; mode remainder binding |
 | Delivery replacement relationship | IMP-031 remains CURRENT/LOCKED; D-380 clarifies successful-completion finality prospectively; does not supersede IMP-031 wholesale |
 | New permission / role / auth / deployable | **NO** |
 | Founder UAT required (future acceptance) | **YES** |
@@ -161,32 +167,31 @@ PROGRAM_PAUSE = PRE_GTM_PRODUCT_INSERTION_PROVIDER_BLOCKED
 PROGRAM_PAUSE_AUTHORITY = D-377
 ```
 
-This remediation repairs the existing Fit candidate only (Blockers A / B / B1 / B2 / B3 + §28
-traceability; STOP #2 reminder co-stage ordering with `OUT_FOR_DELIVERY` at rank 40; STOP #3
-authoritative Delivery `DELIVERED` send-time gate independent of notification rank-50 catch-up;
-STOP #4 / #5 Delivery completion authority — human-approved **D-380 / ADR-020 PROPOSED** resolves
-IMP-031 “authoritatively inactive” ambiguity for successful completion; no post-`DELIVERED` normal
-replacement; no unique “lineage tip” dependency; deterministic `EXISTS DELIVERED` suppression +
-`PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT` for current runtime DELIVERED-predecessor acceptance).
-AF-036I-13 and AF-036I-16 are **RESOLVED_IN_CANDIDATE** against proposed D-380 (not an unresolved
-RED). Architecture Fit execution/result remain **NOT_PERFORMED** because independent review has not
-yet passed.
-It does **not** claim Architecture Fit PASS, lock architecture, promote D-379 or D-380, accept
-ADR-019 or ADR-020, create CURRENT ARCH-R23, or authorize implementation.
+Historical Fit STOP remediation (preserved; not a current open blocker) repaired the candidate for
+Blockers A / B / B1 / B2 / B3 + §28 traceability; STOP #2 reminder co-stage ordering with
+`OUT_FOR_DELIVERY` at rank 40; STOP #3 authoritative Delivery `DELIVERED` send-time gate independent
+of notification rank-50 catch-up; STOP #4 / #5 Delivery completion authority. **D-380 / ADR-020
+CURRENT** resolves IMP-031 “authoritatively inactive” ambiguity for successful completion: no
+post-`DELIVERED` normal replacement; no unique “lineage tip” dependency; deterministic
+`EXISTS DELIVERED` suppression; `PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT` for runtime
+DELIVERED-predecessor acceptance remains an implementation conformance obligation.
+AF-036I-13 and AF-036I-16 are **accepted Architecture Fit authority** against CURRENT D-380.
+Independent Architecture Fit review `5312653831` = **PASS**. This lock does **not** authorize
+implementation.
 
-Canonical ROADMAP/STATE tip markers remain unchanged by this candidate:
+Canonical ROADMAP/STATE tip markers after lock persistence:
 
 ```text
 IMP036I_PRODUCT_DEFINITION: APPROVED
 IMP036I_PRODUCT_DEFINITION_GATE: PASS
-IMP036I_ARCHITECTURE_FIT: NOT_PERFORMED
-IMP036I_ARCHITECTURE_LOCKED: NO
+IMP036I_ARCHITECTURE_FIT: PASS
+IMP036I_ARCHITECTURE_LOCKED: YES
 IMP036I_IMPLEMENTATION_AUTHORIZED: NO
 IMP036I_STARTED: NO
 IMP036I_IMPLEMENTATION_STARTED: NO
 IMP036I_IMPLEMENTATION_COMPLETE: NO
 IMP036I_ACCEPTED: NO
-IMP-036I formal lifecycle: PLANNED
+IMP-036I formal lifecycle: ARCHITECTURE_LOCKED
 PROGRAM_PAUSE_AUTHORITY: D-377
 ```
 
@@ -244,31 +249,31 @@ Satisfy `PD-IMP-036I-DRAFT-4` business outcome:
 
 ---
 
-## 4. Proposed global decision (AF-036I-19)
+## 4. Locked global decision (AF-036I-19)
 
 ### 4.1 Does IMP-036I require a new durable architecture decision?
 
 **YES.**
 
-**Reason (VERIFIED):** ARCH-G28 / D-378 intentionally lock current mode architecture as ASAP-only and
-prohibit speculative scheduled-fulfilment schema under IMP-036H
-(`docs/platform/ARCHITECTURE.md` ARCH-G28; D-378 CURRENT; IMP-036H AF-036H-14). Scheduling therefore
-cannot silently mutate D-378; it requires an orthogonal timing decision.
+**Reason (VERIFIED at Fit):** ARCH-G28 / D-378 locked mode architecture as ASAP-only and reserved
+scheduled-fulfilment schema to IMP-036I. Scheduling therefore could not silently mutate D-378; it
+required an orthogonal timing decision. After this lock, D-379 amends only those clauses. D-378
+remains binding for mode.
 
-### 4.2 Proposed artifacts (NOT CURRENT)
+### 4.2 Locked artifacts
 
-| Artifact | Status in this candidate | Future lock action |
+| Artifact | Status | Lock action |
 |---|---|---|
-| **D-379** — Scheduled Fulfilment Timing + Future Execution Boundary | **PROPOSED** | Promote CURRENT after independent Fit PASS + lock persistence |
-| **ADR-019** — Scheduled Fulfilment Timing and Execution Boundary | **Proposed** | Accept with D-379 |
-| **D-380** — Delivery Successful-Completion Finality + Replacement Boundary | **PROPOSED** (human direction APPROVED 2026-09-25) | Promote CURRENT after independent Fit PASS + lock persistence |
-| **ADR-020** — Delivery Successful-Completion Finality and Replacement Boundary | **Proposed** | Accept with D-380 |
-| **ARCH-G29** | **PROPOSED LOCK DELTA** | Add to ARCHITECTURE.md |
-| **ARCH-G30** | **PROPOSED LOCK DELTA** | Add to ARCHITECTURE.md (Delivery successful-completion finality) |
-| **ARCH-R23** | **PROPOSED future lock** | Advance ARCH-R22 → ARCH-R23 (one revision locking G29 + G30) |
-| **DR-21** | **NOT created now** | Future lock-persistence revision only |
+| **D-379** — Scheduled Fulfilment Timing + Future Execution Boundary | **CURRENT** | Promoted after independent Fit PASS `5312653831` + this lock |
+| **ADR-019** — Scheduled Fulfilment Timing and Execution Boundary | **Accepted** | Accepted with D-379 |
+| **D-380** — Delivery Successful-Completion Finality + Replacement Boundary | **CURRENT** (human direction APPROVED 2026-09-25) | Promoted after independent Fit PASS + this lock |
+| **ADR-020** — Delivery Successful-Completion Finality and Replacement Boundary | **Accepted** | Accepted with D-380 |
+| **ARCH-G29** | **CURRENT** | Recorded in ARCHITECTURE.md |
+| **ARCH-G30** | **CURRENT** | Recorded in ARCHITECTURE.md |
+| **ARCH-R23** | **CURRENT** | Advanced ARCH-R22 → ARCH-R23 |
+| **DR-21** | **CURRENT** | Lock-persistence decision-register revision |
 
-### 4.3 D-378 / IMP-031 amendment relationships (future lock only)
+### 4.3 D-378 / IMP-031 amendment relationships
 
 ```text
 D-378:
@@ -281,7 +286,7 @@ D-378:
     Pickup delivery-charge boundary
 
 D-379:
-  CURRENT only after independent Fit PASS + lock persistence.
+  CURRENT.
   Governs orthogonal timing axis: ASAP | SCHEDULED
   Owns Snapshot timing sealing, eligibility composition boundary, reminder execution boundary,
   future-closure minimal model, lead-time / cancellation-policy persistence split.
@@ -289,18 +294,19 @@ D-379:
   Does NOT redefine Delivery replacement semantics.
 
 D-380:
-  CURRENT only after independent Fit PASS + lock persistence.
+  CURRENT.
   Clarifies/amends IMP-031 “authoritatively inactive” replacement interpretation for
   successful-completion finality only.
   Does NOT supersede IMP-031 wholesale, Delivery lifecycle, one-active rule, stable request
   identity, booking ambiguity, failure/cancellation, return progression, IMP-032, or Order lifecycle.
   Durable Delivery-domain rule applicable beyond Scheduled Fulfilment.
 
-ARCH-G28 future wording (NOT applied now):
+ARCH-G28:
   Fulfilment mode is orthogonal to fulfilment timing;
   Scheduled timing is governed by D-379 / ARCH-G29.
+  PICKUP still creates no Delivery aggregate.
 
-ARCH-G30 future wording (NOT applied now):
+ARCH-G30:
   Delivery.status = DELIVERED is durable successful execution truth.
   A normal replacement Delivery cannot supersede it.
   Correction requires separately authorized history-preserving authority.
@@ -308,7 +314,7 @@ ARCH-G30 future wording (NOT applied now):
   truth without waiting for notification or Order coordination catch-up.
 ```
 
-### 4.4 Authority conflict reconciliation (STOP #5 → D-380 candidate)
+### 4.4 Authority conflict reconciliation (STOP #5 → D-380 CURRENT)
 
 ```text
 CONFLICT (truthfully recorded; not silently rewritten):
@@ -324,7 +330,7 @@ ADR-011 (HISTORICAL / future-binding intent — not CURRENT decision authority):
 Current runtime createDelivery (VERIFIED):
   accepts DELIVERED | FAILED | CANCELLED as terminal predecessors
 
-HUMAN_ARCHITECTURE_DIRECTION APPROVED_2026-09-25 → D-380 / ADR-020 PROPOSED:
+HUMAN_ARCHITECTURE_DIRECTION APPROVED_2026-09-25 → D-380 / ADR-020 CURRENT:
   DELIVERED = successful completion → no normal replacement
   FAILED / CANCELLED replacement = existing accepted prerequisites only (no expansion)
   incorrect DELIVERED = separately authorized history-preserving correction (outside IMP-036I)
@@ -332,13 +338,12 @@ HUMAN_ARCHITECTURE_DIRECTION APPROVED_2026-09-25 → D-380 / ADR-020 PROPOSED:
   createDelivery DELIVERED-predecessor acceptance = PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT
 ```
 
-Independent Fit STOP `5309972440` / finding `4098211380` remains valid as a conflict finding.
-D-380 / ADR-020 make the resolution explicit as a **PROPOSED** candidate pending independent Fit
-re-review. AF-036I-13 / AF-036I-16 are **RESOLVED_IN_CANDIDATE** against that candidate.
-`RED_DECISIONS_REQUIRED = NONE` because the required human architecture direction is approved.
-`ARCHITECTURE_FIT` remains **NOT_PERFORMED**.
+Independent Fit STOP `5309972440` / finding `4098211380` remains historical. D-380 / ADR-020 are
+**CURRENT** / **Accepted** after independent Architecture Fit PASS `5312653831`. AF-036I-13 /
+AF-036I-16 are accepted Architecture Fit authority against CURRENT D-380.
+`RED_DECISIONS_REQUIRED = NONE`. `ARCHITECTURE_FIT = PASS`.
 
-### 4.5 Proposed ARCH-G29 (PROPOSED LOCK DELTA — not CURRENT)
+### 4.5 ARCH-G29 (CURRENT)
 
 > Checkout owns mutable pre-payment fulfilment timing intent. Checkout Snapshot owns immutable
 > purchased fulfilment timing truth. `FULFILMENT_TIMING = ASAP | SCHEDULED`. For SCHEDULED, the
@@ -350,15 +355,14 @@ re-review. AF-036I-13 / AF-036I-16 are **RESOLVED_IN_CANDIDATE** against that ca
 > only). Scheduled timing remains orthogonal to `FULFILMENT_MODE = DELIVERY | PICKUP` (ARCH-G28 /
 > D-378).
 
-### 4.6 Proposed ARCH-G30 (PROPOSED LOCK DELTA — not CURRENT)
+### 4.6 ARCH-G30 (CURRENT)
 
 > Delivery.status = DELIVERED is durable successful execution truth. A normal replacement Delivery
 > cannot supersede it. Correction requires separately authorized history-preserving authority.
 > Consumers such as Scheduled reminder eligibility may rely on committed DELIVERED completion truth
 > without waiting for notification or Order coordination catch-up.
 
-**AF-036I-19: RESOLVED_IN_CANDIDATE** (D-379 / ADR-019 / ARCH-G29 + D-380 / ADR-020 / ARCH-G30 /
-ARCH-R23 proposed; not CURRENT)
+**AF-036I-19: RESOLVED** (D-379 / ADR-019 / ARCH-G29 + D-380 / ADR-020 / ARCH-G30 / ARCH-R23 CURRENT)
 
 ---
 
@@ -878,7 +882,7 @@ Order); Delivery progress notifications remain their own semantic identities.
 
 Delivery completion vs notification catch-up (AF-036I-13 / AF-036I-16): reminder send-time
 eligibility for Scheduled Delivery MUST also read authoritative Delivery-domain execution truth.
-Under human-approved **D-380 / ADR-020 PROPOSED** (successful-completion finality),
+Under CURRENT **D-380 / ADR-020 Accepted** (successful-completion finality),
 `Delivery.status = DELIVERED` is durable successful Delivery execution truth and cannot be
 superseded by a normal replacement Delivery. Suppression uses deterministic `EXISTS` of an
 authoritative `DELIVERED` fact for the exact Order — **not** selection of a unique “current lineage
@@ -894,7 +898,7 @@ Order-materialization timing vs immutable Scheduled window start):
 do not enqueue the proactive upcoming reminder
 ```
 
-**AF-036I-13: RESOLVED_IN_CANDIDATE** (against proposed D-380; Fit still NOT_PERFORMED)
+**AF-036I-13: RESOLVED** (against CURRENT D-380; Architecture Fit PASS)
 
 ---
 
@@ -1110,7 +1114,7 @@ OR for FULFILMENT_MODE = DELIVERY:
 
 ```text
 Delivery.status = DELIVERED
-  = authoritative Delivery-domain successful-completion truth (D-380 PROPOSED candidate;
+  = authoritative Delivery-domain successful-completion truth (D-380 CURRENT / ADR-020 Accepted;
     IMP-031 remains CURRENT foundation; D-380 clarifies successful finality)
 
 Notification semantic DELIVERED
@@ -1155,7 +1159,7 @@ DELIVERY:
     create a Delivery
 ```
 
-#### Delivery completion gate (D-380 PROPOSED successful-completion finality; no lineage-tip dependency)
+#### Delivery completion gate (D-380 CURRENT successful-completion finality; no lineage-tip dependency)
 
 Do not lock an unnecessary repository function name. Architecture requirement: immediately before
 sending `SCHEDULED_FULFILMENT_REMINDER` for `FULFILMENT_MODE = DELIVERY`, the server must determine
@@ -1165,7 +1169,7 @@ read helper implemented later.
 
 Do **not** trust: browser status, notification status, Ops projection text, or cached UI state.
 
-**D-380 candidate Delivery contract (human-approved 2026-09-25; PROPOSED — not CURRENT):**
+**D-380 Delivery contract (CURRENT; human-approved 2026-09-25; ADR-020 Accepted):**
 
 ```text
 DELIVERED = durable successful Delivery execution truth
@@ -1180,7 +1184,7 @@ D-380 does NOT override post-pickup failure / return / support rules.
 D-380 does NOT invent a courier-switch path after pickup.
 
 IMP-031 remains CURRENT / ARCHITECTURE_LOCKED for Delivery foundation.
-D-380 clarifies/amends successful-completion finality only after future lock.
+D-380 CURRENT clarifies/amends successful-completion finality. The amendment is applied by this lock.
 ADR-011 remains HISTORICAL / future-binding intent — not rewritten as CURRENT.
 
 Until a separately authorized Delivery correction authority explicitly defines how a committed
@@ -1250,7 +1254,7 @@ repair Delivery history itself. No repair logic.
 **PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT (runtime is not architecture precedent for D-380):**
 
 Repository inspection of current `src/server/delivery/operations.ts` shows `createDelivery` permits
-`prior.status === DELIVERED` when creating a new Delivery. Under approved D-380 candidate direction
+`prior.status === DELIVERED` when creating a new Delivery. Under CURRENT D-380
 this is **nonconformant**. Classification:
 
 ```text
@@ -1258,7 +1262,7 @@ PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT
 ```
 
 Do **not** pretend current runtime never allowed a `DELIVERED` predecessor. Do **not** fix runtime
-in this Fit candidate task. Do **not** create migration. Do **not** modify existing Delivery data.
+in this architecture-lock persistence. Do **not** create migration. Do **not** modify existing Delivery data.
 Do **not** reinterpret historical rows.
 
 ```text
@@ -1390,7 +1394,7 @@ U. incorrect DELIVERED fact
 No runtime tests are required in this Architecture Fit remediation. Proofs P–U are future
 implementation obligations under D-380; not executed here.
 
-**AF-036I-16: RESOLVED_IN_CANDIDATE** (against proposed D-380; Fit still NOT_PERFORMED)
+**AF-036I-16: RESOLVED** (against CURRENT D-380; Architecture Fit PASS)
 
 ---
 
@@ -1533,22 +1537,22 @@ NEW_EXTERNAL_PROVIDER = NO
 | AF-036I-10 | Future action trigger? | Outbox `available_at`; notification processor; 24h max-age | Reminder only via notification outbox; semantic-specific window-start expiry (no global 24h raise); no generic scheduler | ADR-012 / ARCH-G14 | §15 / §19 | NO |
 | AF-036I-11 | Scheduled Pickup prep release? | Ops projections; D-357 | Immediate visibility; derived cues; no release state | D-357 | §16 | NO |
 | AF-036I-12 | Scheduled Delivery booking begin? | IMP-032 manual | Operator-approved existing Delivery path; no auto-book | IMP-032 / ADR-011 | §17 | NO |
-| AF-036I-13 | Retries/idempotency? | Checkout/Payment/Delivery/outbox; `confirmDeliveryWithFulfilCoordination` race; `createDelivery` permits DELIVERED predecessor (conformance debt vs D-380) | Existing idempotency preserved; atomic reminder intent; stable domainEventRef dedup; no schedule-retry state; co-stage rank 40; reminder Delivery completion = read-only EXISTS DELIVERED gate; **D-380 PROPOSED** defines DELIVERED successful finality; runtime DELIVERED-predecessor acceptance = PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT (reject before IMP-036I acceptance; not implemented here) | existing / IMP-031 CURRENT + D-380 PROPOSED | §18 / §19 B2 | NO |
+| AF-036I-13 | Retries/idempotency? | Checkout/Payment/Delivery/outbox; `confirmDeliveryWithFulfilCoordination` race; `createDelivery` permits DELIVERED predecessor (conformance debt vs D-380) | Existing idempotency preserved; atomic reminder intent; stable domainEventRef dedup; no schedule-retry state; co-stage rank 40; reminder Delivery completion = read-only EXISTS DELIVERED gate; **D-380 CURRENT** defines DELIVERED successful finality; runtime DELIVERED-predecessor acceptance = PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT (reject before IMP-036I acceptance; not implemented here) | existing / IMP-031 CURRENT + D-380 CURRENT | §18 / §19 B2 | NO |
 | AF-036I-14 | Scheduling ↔ Delivery coordination? | IMP-031/032 | Timing informs priority; no second Delivery lifecycle | ADR-011 / IMP-031 | §17 | NO |
 | AF-036I-15 | Order/workforce projections? | `projections.ts` | Extend with timing + derived cues; ASAP history clean | D-357 | §20 | NO |
-| AF-036I-16 | Notifications scheduled? | Notification semantic ranks/purposes/24h expiry; outbox family; Delivery DELIVERED before Order FULFILLED race | Full `SCHEDULED_FULFILMENT_REMINDER` contract; send gate consumes **D-380** Delivery successful-completion truth (`EXISTS DELIVERED`); no lineage-tip; rank-40 co-stage; rank-50 secondary; Snapshot content; either-order + nonconformant-history + proofs A–O + replacement proofs P–U | ADR-012 / D-379 PROPOSED + D-380 PROPOSED | §19 | NO |
+| AF-036I-16 | Notifications scheduled? | Notification semantic ranks/purposes/24h expiry; outbox family; Delivery DELIVERED before Order FULFILLED race | Full `SCHEDULED_FULFILMENT_REMINDER` contract; send gate consumes **D-380** Delivery successful-completion truth (`EXISTS DELIVERED`); no lineage-tip; rank-40 co-stage; rank-50 secondary; Snapshot content; either-order + nonconformant-history + proofs A–O + replacement proofs P–U | ADR-012 / D-379 CURRENT + D-380 CURRENT | §19 | NO |
 | AF-036I-17 | Migrations/backfills for ASAP? | Migration 0044 tip | Forward-only; ASAP defaults; CHECK constraints; Brand policy absent-row defaults (no eager backfill required) | ARCH-G13 | §22 | NO |
 | AF-036I-18 | Historical ASAP representation? | Existing rows mode-only | Timing ASAP + null scheduled fields; Order unchanged; Brand policy effective defaults when absent | D-378 | §22 | NO |
-| AF-036I-19 | New D/ADR/ARCH? | D-378 ASAP reservation; IMP-031 inactive-wording ambiguity | D-379 + ADR-019 + ARCH-G29 **and** D-380 + ADR-020 + ARCH-G30; shared ARCH-R23 proposed | D-378 amend-on-lock; IMP-031 clarify-on-lock via D-380 | §4 | NO |
+| AF-036I-19 | New D/ADR/ARCH? | D-378 ASAP reservation; IMP-031 inactive-wording ambiguity | D-379 + ADR-019 + ARCH-G29 **and** D-380 + ADR-020 + ARCH-G30; shared ARCH-R23 CURRENT | D-378 AMENDED; IMP-031 clarified by D-380 CURRENT | §4 | NO |
 
 ```text
 AF_TOTAL = 19
-AF_RESOLVED_IN_CANDIDATE = 19
+AF_RESOLVED = 19
 AF_OPEN = 0
 OPEN_ARCHITECTURE_QUESTIONS = NONE
 RED_DECISIONS_REQUIRED = NONE
-ARCHITECTURE_CANDIDATE_READY_FOR_REVIEW = YES
-ARCHITECTURE_FIT = NOT_PERFORMED
+ARCHITECTURE_FIT = PASS
+IMP036I_ARCHITECTURE_LOCKED = YES
 ```
 
 ---
@@ -1634,7 +1638,7 @@ Approved Product Definition semantics are **not** modified by this candidate.
 |---|---|
 | Pickup release | NONE (immediate visibility + derived cues) |
 | Delivery dispatch | Manual IMP-032 operator-approved |
-| Reminder | `SCHEDULED_FULFILMENT_REMINDER` semantic contract; co-stage rank 40 with `OUT_FOR_DELIVERY`; atomic intent; window-start expiry; send-time eligibility including deterministic `EXISTS Delivery.status = DELIVERED` gate (Delivery mode; read-only; no lineage-tip; consumes D-380 PROPOSED; conformance debt recorded); Snapshot-derived content |
+| Reminder | `SCHEDULED_FULFILMENT_REMINDER` semantic contract; co-stage rank 40 with `OUT_FOR_DELIVERY`; atomic intent; window-start expiry; send-time eligibility including deterministic `EXISTS Delivery.status = DELIVERED` gate (Delivery mode; read-only; no lineage-tip; consumes D-380 CURRENT; conformance debt recorded); Snapshot-derived content |
 
 ---
 
@@ -1653,36 +1657,34 @@ NEW_EXTERNAL_PROVIDER = NO
 
 ## 32. Explicit non-claims
 
-This candidate does **not**:
+This architecture lock does **not**:
 
-- claim Architecture Fit PASS
-- lock architecture
-- promote D-379 or D-380 to CURRENT
-- accept ADR-019 or ADR-020
-- create CURRENT ARCH-R23 / apply ARCH-G29 or ARCH-G30 to ARCHITECTURE.md
 - authorize implementation or create migrations
 - change runtime Delivery operations / schema / historical Delivery rows
-- advance ROADMAP / STATE lifecycle
+- fix `PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT` in runtime
 - modify approved Product Definition semantics
 - resolve IMP-037/038 or activate IMP-039/040
+- accept IMP-036I or perform Founder UAT
 
 ```text
-IMP036I_ARCHITECTURE_FIT = NOT_PERFORMED
-IMP036I_ARCHITECTURE_LOCKED = NO
+IMP036I_ARCHITECTURE_FIT = PASS
+IMP036I_ARCHITECTURE_LOCKED = YES
 IMP036I_IMPLEMENTATION_AUTHORIZED = NO
-D379_STATUS = PROPOSED
-D380_STATUS = PROPOSED
-ADR019_STATUS = Proposed
-ADR020_STATUS = Proposed
-CURRENT_ARCHITECTURE = ARCH-R22
-PROPOSED_ARCH_REVISION = ARCH-R23
+IMP036I_IMPLEMENTATION_STARTED = NO
+D379_STATUS = CURRENT
+D380_STATUS = CURRENT
+ADR019_STATUS = Accepted
+ADR020_STATUS = Accepted
+CURRENT_ARCHITECTURE = ARCH-R23
+ARCH_G29_STATUS = CURRENT
+ARCH_G30_STATUS = CURRENT
+PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT = OPEN
 ```
 
 ---
 
 ## 33. Recommended next action
 
-Independent Architecture Fit review of the exact merged candidate, including **D-379 + D-380 +
-ADR-019 + ADR-020**. If PASS, persist both architecture decisions and ARCH-R23 lock before
-authorizing implementation.
-Do **not** lock architecture until that review returns PASS.
+Independent verification of this Architecture Fit / lock persistence.
+After verification, request explicit implementation authorization before any IMP-036I
+runtime, schema, or migration work.

@@ -208,6 +208,16 @@ Delivery request with its own stable identity and an explicit link to the prior 
 permitted only after the prior booking is authoritatively inactive, starts again at `REQUESTED`, and
 does not erase the prior request/attempt or bypass the transition rules.
 
+**D-380 current-authority notice (ARCH-G30; does not rewrite this history):** “prior booking is
+authoritatively inactive” must **not** be interpreted to permit a normal replacement after
+`DELIVERED`. Under **D-380 CURRENT**, `DELIVERED` is successful finality and normal replacement
+after `DELIVERED` is prohibited. `FAILED` / `CANCELLED` replacement remains subject to existing
+accepted prerequisites and does not create blanket replacement rights. Post-pickup failure, return,
+and support semantics are unchanged. No new provider-switch path is created. The current runtime
+`createDelivery` acceptance of a `DELIVERED` predecessor is `PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT`
+against CURRENT D-380 and remains an implementation conformance obligation; this notice does not
+modify runtime code or existing Delivery rows.
+
 ### 4.3 Separate return progression
 
 Return is a separate progression linked to a `FAILED` Delivery when a package entered courier custody
