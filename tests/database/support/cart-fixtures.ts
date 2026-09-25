@@ -128,6 +128,13 @@ export function trackPersistenceHandle(handle: { close(): Promise<void> }): void
   openHandles.push(handle);
 }
 
+/** Second application pool for a test database. Callers in approved test trees may use this without importing the persistence module. */
+export function openTrackedApplicationPersistence(connectionString: string): Persistence {
+  const handle = getApplicationPersistence(applicationConfig(connectionString));
+  trackPersistenceHandle(handle);
+  return handle;
+}
+
 export async function closeTrackedPersistenceHandles(): Promise<void> {
   await Promise.all(openHandles.splice(0).map((h) => h.close()));
 }
