@@ -40,14 +40,14 @@
     "vitestConfigs": 2,
     "playwrightConfigs": 7,
     "testSupportScripts": 51,
-    "packageTestCommands": 80,
+    "packageTestCommands": 81,
     "packageAuditCommands": 27,
     "packageE2eCommands": 9,
     "packageCheckCommands": 13,
     "packageCoverageCommands": 1,
     "packageInventoryCommands": 2,
     "ciWorkflowFiles": 4,
-    "ciValidationSteps": 112,
+    "ciValidationSteps": 113,
     "protectedEvidenceTrackedFiles": 3,
     "archiveTrackedFiles": 92
   },
@@ -644,6 +644,7 @@
       "test:database:promotions",
       "test:database:serviceability",
       "test:database:workforce-auth",
+      "test:imp036i:tranche1",
       "test:menu-import",
       "test:menu-parity",
       "test:operations:http",
@@ -839,6 +840,7 @@
     "test:e2e:location-selector-layout": "NEXT_PUBLIC_BOBA_BEAR_GOOGLE_MAPS_BROWSER_KEY=e2e-maps-browser-key-fixture npm run build && npm run customer-auth:build && npm run customer-commerce:build && playwright test --config=playwright.location-selector.config.ts",
     "test:e2e:operations-lifecycle": "node scripts/e2e/run-operations-lifecycle-e2e.mjs",
     "test:e2e:workforce-auth": "npm run build && npm run workforce-auth:build && node scripts/e2e/run-workforce-auth-e2e.mjs",
+    "test:imp036i:tranche1": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/database/imp036i-scheduled-fulfilment.integration.test.ts tests/delivery-application/delivery.d380-finality.test.ts",
     "test:menu-import": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/menu-import",
     "test:menu-parity": "node scripts/run-vitest.mjs run tests/menu-parity",
     "test:operations:http": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/operations/store-http.integration.test.ts tests/operations/refunds-http.integration.test.ts tests/operations/orders-read-http.integration.test.ts tests/operations/orders-mutation-http.integration.test.ts tests/operations/notifications-http.integration.test.ts",
@@ -956,6 +958,10 @@
         {
           "name": "Customer Menu modifier projection integration tests",
           "run": "node scripts/run-vitest.mjs run\n--config vitest.database.config.mts\ntests/database/customer-menu-modifier-projection.integration.test.ts"
+        },
+        {
+          "name": "IMP-036I Tranche 1 proof",
+          "run": "npm run test:imp036i:tranche1"
         },
         {
           "name": "Install dependencies",
@@ -5210,7 +5216,6 @@
       "packageCommands": [
         "test",
         "test:access-control",
-        "test:access-control:cli",
         "test:coverage"
       ],
       "ciInclusion": "YES",
@@ -5230,7 +5235,6 @@
       "packageCommands": [
         "test",
         "test:access-control",
-        "test:access-control:cli",
         "test:coverage"
       ],
       "ciInclusion": "YES",
@@ -5286,7 +5290,6 @@
       "packageCommands": [
         "test",
         "test:access-control",
-        "test:access-control:cli",
         "test:coverage"
       ],
       "ciInclusion": "YES",
@@ -5306,7 +5309,6 @@
       "packageCommands": [
         "test",
         "test:access-control",
-        "test:access-control:cli",
         "test:coverage"
       ],
       "ciInclusion": "YES",
@@ -5326,7 +5328,6 @@
       "packageCommands": [
         "test",
         "test:access-control",
-        "test:access-control:cli",
         "test:coverage"
       ],
       "ciInclusion": "YES",
@@ -5346,8 +5347,7 @@
       "packageCommands": [
         "test",
         "test:administration",
-        "test:coverage",
-        "test:database:administration"
+        "test:coverage"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -5366,8 +5366,7 @@
       "packageCommands": [
         "test",
         "test:administration",
-        "test:coverage",
-        "test:database:administration"
+        "test:coverage"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -5386,8 +5385,7 @@
       "packageCommands": [
         "test",
         "test:administration",
-        "test:coverage",
-        "test:database:administration"
+        "test:coverage"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -5406,8 +5404,7 @@
       "packageCommands": [
         "test",
         "test:administration",
-        "test:coverage",
-        "test:database:administration"
+        "test:coverage"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -5426,8 +5423,7 @@
       "packageCommands": [
         "test",
         "test:administration",
-        "test:coverage",
-        "test:database:administration"
+        "test:coverage"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -5446,8 +5442,7 @@
       "packageCommands": [
         "test",
         "test:administration",
-        "test:coverage",
-        "test:database:administration"
+        "test:coverage"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -5466,8 +5461,7 @@
       "packageCommands": [
         "test",
         "test:administration",
-        "test:coverage",
-        "test:database:administration"
+        "test:coverage"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -5486,8 +5480,7 @@
       "packageCommands": [
         "test",
         "test:administration",
-        "test:coverage",
-        "test:database:administration"
+        "test:coverage"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -5506,8 +5499,7 @@
       "packageCommands": [
         "test",
         "test:administration",
-        "test:coverage",
-        "test:database:administration"
+        "test:coverage"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -5526,8 +5518,7 @@
       "packageCommands": [
         "test",
         "test:administration",
-        "test:coverage",
-        "test:database:administration"
+        "test:coverage"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -5546,8 +5537,7 @@
       "packageCommands": [
         "test",
         "test:administration",
-        "test:coverage",
-        "test:database:administration"
+        "test:coverage"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -5566,8 +5556,7 @@
       "packageCommands": [
         "test",
         "test:administration",
-        "test:coverage",
-        "test:database:administration"
+        "test:coverage"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -5586,8 +5575,7 @@
       "packageCommands": [
         "test",
         "test:administration",
-        "test:coverage",
-        "test:database:administration"
+        "test:coverage"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -5606,8 +5594,7 @@
       "packageCommands": [
         "test",
         "test:administration",
-        "test:coverage",
-        "test:database:administration"
+        "test:coverage"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -5626,8 +5613,7 @@
       "packageCommands": [
         "test",
         "test:administration",
-        "test:coverage",
-        "test:database:administration"
+        "test:coverage"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -5646,8 +5632,7 @@
       "packageCommands": [
         "test",
         "test:administration",
-        "test:coverage",
-        "test:database:administration"
+        "test:coverage"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -5666,8 +5651,7 @@
       "packageCommands": [
         "test",
         "test:administration",
-        "test:coverage",
-        "test:database:administration"
+        "test:coverage"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -5686,8 +5670,7 @@
       "packageCommands": [
         "test",
         "test:administration",
-        "test:coverage",
-        "test:database:administration"
+        "test:coverage"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -5706,8 +5689,7 @@
       "packageCommands": [
         "test",
         "test:administration",
-        "test:coverage",
-        "test:database:administration"
+        "test:coverage"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -5885,8 +5867,7 @@
       "packageCommands": [
         "test",
         "test:administration",
-        "test:coverage",
-        "test:database:administration"
+        "test:coverage"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -5945,8 +5926,7 @@
       "packageCommands": [
         "test",
         "test:administration",
-        "test:coverage",
-        "test:database:administration"
+        "test:coverage"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -5966,8 +5946,7 @@
       "packageCommands": [
         "test",
         "test:administration",
-        "test:coverage",
-        "test:database:administration"
+        "test:coverage"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -5986,8 +5965,7 @@
       "packageCommands": [
         "test",
         "test:administration",
-        "test:coverage",
-        "test:database:administration"
+        "test:coverage"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -6006,8 +5984,7 @@
       "packageCommands": [
         "test",
         "test:administration",
-        "test:coverage",
-        "test:database:administration"
+        "test:coverage"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -6043,8 +6020,7 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:administration",
-        "test:database:administration"
+        "test:administration"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -6250,10 +6226,7 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:cart",
-        "test:cart-auth-integration",
-        "test:cart-concurrency",
-        "test:cart-security"
+        "test:cart"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -6326,9 +6299,7 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:catalog",
-        "test:catalog-imp028c-modifiers",
-        "test:catalog-imp036c-required-topping"
+        "test:catalog"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -6345,9 +6316,7 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:catalog",
-        "test:catalog-imp028c-modifiers",
-        "test:catalog-imp036c-required-topping"
+        "test:catalog"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -6364,9 +6333,7 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:catalog",
-        "test:catalog-imp028c-modifiers",
-        "test:catalog-imp036c-required-topping"
+        "test:catalog"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -6383,9 +6350,7 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:catalog",
-        "test:catalog-imp028c-modifiers",
-        "test:catalog-imp036c-required-topping"
+        "test:catalog"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -6402,9 +6367,7 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:catalog",
-        "test:catalog-imp028c-modifiers",
-        "test:catalog-imp036c-required-topping"
+        "test:catalog"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -6421,9 +6384,7 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:catalog",
-        "test:catalog-imp028c-modifiers",
-        "test:catalog-imp036c-required-topping"
+        "test:catalog"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -6440,9 +6401,7 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:catalog",
-        "test:catalog-imp028c-modifiers",
-        "test:catalog-imp036c-required-topping"
+        "test:catalog"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -6460,9 +6419,7 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:catalog",
-        "test:catalog-imp028c-modifiers",
-        "test:catalog-imp036c-required-topping"
+        "test:catalog"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -6479,9 +6436,7 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:catalog",
-        "test:catalog-imp028c-modifiers",
-        "test:catalog-imp036c-required-topping"
+        "test:catalog"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -6498,9 +6453,7 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:catalog",
-        "test:catalog-imp028c-modifiers",
-        "test:catalog-imp036c-required-topping"
+        "test:catalog"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -6517,9 +6470,7 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:catalog",
-        "test:catalog-imp028c-modifiers",
-        "test:catalog-imp036c-required-topping"
+        "test:catalog"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -6536,9 +6487,7 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:catalog",
-        "test:catalog-imp028c-modifiers",
-        "test:catalog-imp036c-required-topping"
+        "test:catalog"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -6555,9 +6504,7 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:catalog",
-        "test:catalog-imp028c-modifiers",
-        "test:catalog-imp036c-required-topping"
+        "test:catalog"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -6625,10 +6572,7 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:checkout",
-        "test:checkout-auth-integration",
-        "test:checkout-concurrency",
-        "test:checkout-security"
+        "test:checkout"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -6646,10 +6590,7 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:checkout",
-        "test:checkout-auth-integration",
-        "test:checkout-concurrency",
-        "test:checkout-security"
+        "test:checkout"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -6667,10 +6608,7 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:checkout",
-        "test:checkout-auth-integration",
-        "test:checkout-concurrency",
-        "test:checkout-security"
+        "test:checkout"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -6774,10 +6712,8 @@
       "dbRequired": "YES",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [
-        "test:customer-commerce:http"
-      ],
-      "ciInclusion": "YES",
+      "packageCommands": [],
+      "ciInclusion": "NO",
       "test1Layers": [
         "4-integration",
         "5-database-integration",
@@ -6812,10 +6748,8 @@
       "dbRequired": "YES",
       "browserRequired": "NO",
       "externalProviderSubstitute": "YES_OR_LIKELY",
-      "packageCommands": [
-        "test:customer-commerce:http"
-      ],
-      "ciInclusion": "YES",
+      "packageCommands": [],
+      "ciInclusion": "NO",
       "test1Layers": [
         "4-integration",
         "5-database-integration",
@@ -6884,26 +6818,7 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
+        "test:database:access-control"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -6922,28 +6837,9 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
+        "test:database:assortment-availability"
       ],
-      "ciInclusion": "YES",
+      "ciInclusion": "NO",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -6959,26 +6855,7 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
+        "test:database:auth-foundation"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -6995,29 +6872,8 @@
       "dbRequired": "YES",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
-      ],
-      "ciInclusion": "YES",
+      "packageCommands": [],
+      "ciInclusion": "NO",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -7033,26 +6889,7 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
+        "test:database:cart"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -7070,26 +6907,7 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
+        "test:database:catalog"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -7107,26 +6925,7 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
+        "test:database:checkout"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -7143,29 +6942,8 @@
       "dbRequired": "YES",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
-      ],
-      "ciInclusion": "YES",
+      "packageCommands": [],
+      "ciInclusion": "NO",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -7181,28 +6959,9 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
+        "test:database:customer-addresses"
       ],
-      "ciInclusion": "YES",
+      "ciInclusion": "NO",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -7217,29 +6976,8 @@
       "dbRequired": "YES",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
-      ],
-      "ciInclusion": "YES",
+      "packageCommands": [],
+      "ciInclusion": "NO",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -7254,28 +6992,7 @@
       "dbRequired": "YES",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
-      ],
+      "packageCommands": [],
       "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
@@ -7292,28 +7009,9 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
+        "test:database:customer-phone-auth"
       ],
-      "ciInclusion": "YES",
+      "ciInclusion": "NO",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -7329,28 +7027,9 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
+        "test:database:customer-profiles"
       ],
-      "ciInclusion": "YES",
+      "ciInclusion": "NO",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -7365,29 +7044,8 @@
       "dbRequired": "YES",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
-      ],
-      "ciInclusion": "YES",
+      "packageCommands": [],
+      "ciInclusion": "NO",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -7402,29 +7060,8 @@
       "dbRequired": "YES",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
-      ],
-      "ciInclusion": "YES",
+      "packageCommands": [],
+      "ciInclusion": "NO",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -7439,29 +7076,8 @@
       "dbRequired": "YES",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
-      ],
-      "ciInclusion": "YES",
+      "packageCommands": [],
+      "ciInclusion": "NO",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -7476,29 +7092,8 @@
       "dbRequired": "YES",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
-      ],
-      "ciInclusion": "YES",
+      "packageCommands": [],
+      "ciInclusion": "NO",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -7513,29 +7108,8 @@
       "dbRequired": "YES",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
-      ],
-      "ciInclusion": "YES",
+      "packageCommands": [],
+      "ciInclusion": "NO",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -7550,29 +7124,8 @@
       "dbRequired": "YES",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
-      ],
-      "ciInclusion": "YES",
+      "packageCommands": [],
+      "ciInclusion": "NO",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -7587,29 +7140,8 @@
       "dbRequired": "YES",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
-      ],
-      "ciInclusion": "YES",
+      "packageCommands": [],
+      "ciInclusion": "NO",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -7624,29 +7156,8 @@
       "dbRequired": "YES",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
-      ],
-      "ciInclusion": "YES",
+      "packageCommands": [],
+      "ciInclusion": "NO",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -7661,29 +7172,8 @@
       "dbRequired": "YES",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
-      ],
-      "ciInclusion": "YES",
+      "packageCommands": [],
+      "ciInclusion": "NO",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -7698,29 +7188,8 @@
       "dbRequired": "YES",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
-      ],
-      "ciInclusion": "YES",
+      "packageCommands": [],
+      "ciInclusion": "NO",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -7735,29 +7204,8 @@
       "dbRequired": "YES",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
-      ],
-      "ciInclusion": "YES",
+      "packageCommands": [],
+      "ciInclusion": "NO",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -7773,26 +7221,7 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
+        "test:database:outbox-idempotency"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -7810,29 +7239,8 @@
       "dbRequired": "YES",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
-      ],
-      "ciInclusion": "YES",
+      "packageCommands": [],
+      "ciInclusion": "NO",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -7848,26 +7256,7 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
+        "test:imp036i:tranche1"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -7884,29 +7273,8 @@
       "dbRequired": "YES",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
-      ],
-      "ciInclusion": "YES",
+      "packageCommands": [],
+      "ciInclusion": "NO",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -7922,28 +7290,9 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
+        "test:database:menu-import"
       ],
-      "ciInclusion": "YES",
+      "ciInclusion": "NO",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -7958,29 +7307,8 @@
       "dbRequired": "YES",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
-      ],
-      "ciInclusion": "YES",
+      "packageCommands": [],
+      "ciInclusion": "NO",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -7995,29 +7323,8 @@
       "dbRequired": "YES",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
-      ],
-      "ciInclusion": "YES",
+      "packageCommands": [],
+      "ciInclusion": "NO",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -8033,28 +7340,9 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
+        "test:database:notifications"
       ],
-      "ciInclusion": "YES",
+      "ciInclusion": "NO",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -8070,26 +7358,7 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
+        "test:database:order"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -8107,26 +7376,7 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
+        "test:database:outbox-idempotency"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -8145,26 +7395,7 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
+        "test:database:outbox-idempotency"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -8182,26 +7413,7 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
+        "test:database:payment"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -8219,26 +7431,7 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
+        "test:database:persistence"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -8256,28 +7449,9 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
+        "test:database:pricing-tax"
       ],
-      "ciInclusion": "YES",
+      "ciInclusion": "NO",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -8293,28 +7467,9 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
+        "test:database:promotions"
       ],
-      "ciInclusion": "YES",
+      "ciInclusion": "NO",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -8330,28 +7485,9 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
+        "test:database:promotions"
       ],
-      "ciInclusion": "YES",
+      "ciInclusion": "NO",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -8367,28 +7503,9 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
+        "test:database:promotions"
       ],
-      "ciInclusion": "YES",
+      "ciInclusion": "NO",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -8404,28 +7521,9 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
+        "test:database:promotions"
       ],
-      "ciInclusion": "YES",
+      "ciInclusion": "NO",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -8441,28 +7539,9 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
+        "test:database:promotions"
       ],
-      "ciInclusion": "YES",
+      "ciInclusion": "NO",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -8477,29 +7556,8 @@
       "dbRequired": "YES",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
-      ],
-      "ciInclusion": "YES",
+      "packageCommands": [],
+      "ciInclusion": "NO",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -8514,29 +7572,8 @@
       "dbRequired": "YES",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
-      ],
-      "ciInclusion": "YES",
+      "packageCommands": [],
+      "ciInclusion": "NO",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -8551,29 +7588,8 @@
       "dbRequired": "YES",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
-      ],
-      "ciInclusion": "YES",
+      "packageCommands": [],
+      "ciInclusion": "NO",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -8588,29 +7604,8 @@
       "dbRequired": "YES",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
-      ],
-      "ciInclusion": "YES",
+      "packageCommands": [],
+      "ciInclusion": "NO",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -8625,29 +7620,8 @@
       "dbRequired": "YES",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
-      ],
-      "ciInclusion": "YES",
+      "packageCommands": [],
+      "ciInclusion": "NO",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -8662,29 +7636,8 @@
       "dbRequired": "YES",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
-      ],
-      "ciInclusion": "YES",
+      "packageCommands": [],
+      "ciInclusion": "NO",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -8700,26 +7653,7 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
+        "test:database:serviceability"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -8737,28 +7671,9 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
         "test:database:workforce-auth"
       ],
-      "ciInclusion": "YES",
+      "ciInclusion": "NO",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -8773,29 +7688,8 @@
       "dbRequired": "YES",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [
-        "test:administration",
-        "test:database:access-control",
-        "test:database:assortment-availability",
-        "test:database:auth-foundation",
-        "test:database:cart",
-        "test:database:catalog",
-        "test:database:checkout",
-        "test:database:customer-addresses",
-        "test:database:customer-phone-auth",
-        "test:database:customer-profiles",
-        "test:database:menu-import",
-        "test:database:notifications",
-        "test:database:order",
-        "test:database:outbox-idempotency",
-        "test:database:payment",
-        "test:database:persistence",
-        "test:database:pricing-tax",
-        "test:database:promotions",
-        "test:database:serviceability",
-        "test:database:workforce-auth"
-      ],
-      "ciInclusion": "YES",
+      "packageCommands": [],
+      "ciInclusion": "NO",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -8825,8 +7719,10 @@
       "dbRequired": "YES",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [],
-      "ciInclusion": "NO",
+      "packageCommands": [
+        "test:imp036i:tranche1"
+      ],
+      "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
       ],
@@ -9508,10 +8404,8 @@
       "dbRequired": "YES",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [
-        "test:operations:http"
-      ],
-      "ciInclusion": "YES",
+      "packageCommands": [],
+      "ciInclusion": "NO",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -9583,10 +8477,8 @@
       "dbRequired": "YES",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [
-        "test:operations:http"
-      ],
-      "ciInclusion": "YES",
+      "packageCommands": [],
+      "ciInclusion": "NO",
       "test1Layers": [
         "4-integration",
         "5-database-integration"
@@ -9622,8 +8514,7 @@
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
         "test",
-        "test:coverage",
-        "test:operations:http"
+        "test:coverage"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -9709,12 +8600,7 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:order",
-        "test:order-auth-integration",
-        "test:order-concurrency",
-        "test:order-crash",
-        "test:order-security",
-        "test:ordering-catalog"
+        "test:order"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -9732,12 +8618,7 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:order",
-        "test:order-auth-integration",
-        "test:order-concurrency",
-        "test:order-crash",
-        "test:order-security",
-        "test:ordering-catalog"
+        "test:order"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -9755,12 +8636,7 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:order",
-        "test:order-auth-integration",
-        "test:order-concurrency",
-        "test:order-crash",
-        "test:order-security",
-        "test:ordering-catalog"
+        "test:order"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -9777,12 +8653,7 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:order",
-        "test:order-auth-integration",
-        "test:order-concurrency",
-        "test:order-crash",
-        "test:order-security",
-        "test:ordering-catalog"
+        "test:order"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -9800,12 +8671,7 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:order",
-        "test:order-auth-integration",
-        "test:order-concurrency",
-        "test:order-crash",
-        "test:order-security",
-        "test:ordering-catalog"
+        "test:order"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -9822,12 +8688,7 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:order",
-        "test:order-auth-integration",
-        "test:order-concurrency",
-        "test:order-crash",
-        "test:order-security",
-        "test:ordering-catalog"
+        "test:order"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -9844,12 +8705,7 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:order",
-        "test:order-auth-integration",
-        "test:order-concurrency",
-        "test:order-crash",
-        "test:order-security",
-        "test:ordering-catalog"
+        "test:order"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -9866,12 +8722,7 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:order",
-        "test:order-auth-integration",
-        "test:order-concurrency",
-        "test:order-crash",
-        "test:order-security",
-        "test:ordering-catalog"
+        "test:order"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -9888,12 +8739,7 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:order",
-        "test:order-auth-integration",
-        "test:order-concurrency",
-        "test:order-crash",
-        "test:order-security",
-        "test:ordering-catalog"
+        "test:order"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -10120,15 +8966,7 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:payment",
-        "test:payment-auth-integration",
-        "test:payment-concurrency",
-        "test:payment-idempotency",
-        "test:payment-promotions",
-        "test:payment-provider",
-        "test:payment-razorpay",
-        "test:payment-reconciliation",
-        "test:payment-security"
+        "test:payment"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -10146,15 +8984,7 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:payment",
-        "test:payment-auth-integration",
-        "test:payment-concurrency",
-        "test:payment-idempotency",
-        "test:payment-promotions",
-        "test:payment-provider",
-        "test:payment-razorpay",
-        "test:payment-reconciliation",
-        "test:payment-security"
+        "test:payment"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -10558,10 +9388,7 @@
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
-        "test:serviceability",
-        "test:serviceability-auth-integration",
-        "test:serviceability-concurrency",
-        "test:serviceability-security"
+        "test:serviceability"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -10615,10 +9442,8 @@
       "dbRequired": "YES",
       "browserRequired": "NO",
       "externalProviderSubstitute": "UNKNOWN",
-      "packageCommands": [
-        "test:workforce-auth:http"
-      ],
-      "ciInclusion": "YES",
+      "packageCommands": [],
+      "ciInclusion": "NO",
       "test1Layers": [
         "4-integration",
         "5-database-integration"

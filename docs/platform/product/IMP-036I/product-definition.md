@@ -115,7 +115,7 @@ ROADMAP/STATE; this Product Definition is NOT lifecycle authority):
   IMP036I_ARCHITECTURE_FIT = PASS
   IMP036I_ARCHITECTURE_LOCKED = YES
   IMP036I_IMPLEMENTATION_AUTHORIZED = YES
-  IMP036I_STARTED = NO
+  IMP036I_STARTED = YES
   IMP036I_IMPLEMENTATION_STARTED = YES
   IMP036I_IMPLEMENTATION_COMPLETE = NO
   IMP036I_ACCEPTED = NO
@@ -236,7 +236,7 @@ IMP-039/040, close `GAP-EXT-ASSESS-001`, perform Architecture Fit, or authorize 
 
 | Field | Definition |
 |---|---|
-| Capability / title | `IMP-036I — Scheduled Fulfilment` (ROADMAP identity; formal lifecycle **ARCHITECTURE_LOCKED**; Product Definition **APPROVED**; Gate **PASS**; Architecture Fit **PASS**) |
+| Capability / title | `IMP-036I — Scheduled Fulfilment` (ROADMAP identity; formal lifecycle **IMPLEMENTATION_IN_PROGRESS**; Product Definition **APPROVED**; Gate **PASS**; Architecture Fit **PASS**) |
 | Product Definition version / document status | `PD-IMP-036I-DRAFT-4`; **Document status: APPROVED**; **PRE-GATE DRAFT: NO**; **READY_FOR_PRODUCT_DEFINITION_GATE: NO** |
 | Product owner / approval evidence | Founder. Activation authorized for Product Definition only. Founder decisions FD-036I-01…15 **RESOLVED** 2026-09-24 (including FD-036I-09 sealing amendment). Independent Product Definition Gate **PASS** — review `5307761142`. Gate-evaluated HEAD `1c4be04b6d6b51bdedebfea0485099dede3c7923` / tree `a0774c9b2cb256f8d329fc49cea1c9859a39d1d7` / fingerprint `07720d20f1e285ef46e6bd3be6d710be383baacde4facab7651482547b6dc15d`. Historical DRAFT-1 Gate = **STOP**; historical DRAFT-2 Gate = **STOP**; historical DRAFT-3 Gate = **STOP** (see §1.1). |
 | Process / verification policy | `PD-1` / `TEST-1` |
@@ -2241,7 +2241,9 @@ IMP036I_PRODUCT_DEFINITION_GATE: PASS
 IMP036I_ARCHITECTURE_FIT: PASS
 IMP036I_ARCHITECTURE_LOCKED: YES
 IMP036I_IMPLEMENTATION_AUTHORIZED: YES
-IMP036I_STARTED: NO
+IMP036I_STARTED: YES
+IMP036I_IMPLEMENTATION_STARTED: YES
+IMP036I_IMPLEMENTATION_COMPLETE: NO
 IMP036I_ACCEPTED: NO
 FOUNDER_UAT_STATUS: NOT_PERFORMED
 READY_FOR_PRODUCT_DEFINITION_GATE: NO
@@ -2293,9 +2295,9 @@ tree `a0774c9b2cb256f8d329fc49cea1c9859a39d1d7` / fingerprint
 `PD-IMP-036I-DRAFT-3` Gate Result was **STOP** (review `5306868578`) — §1.1 — not PASS.
 The Product Definition Gate itself did **not** perform Architecture Fit. Architecture Fit
 has since **PASS**ed (review `5312653831`) and architecture is **LOCKED**. Explicit human
-implementation authorization is recorded in ROADMAP/STATE (2026-09-25). Next action =
-`IMPLEMENTATION_TRANCHE_1`. This Product Definition does **not** start runtime implementation
-or accept IMP-036I.
+implementation authorization is recorded in ROADMAP/STATE (2026-09-25). Tranche 1 runtime
+has started. Formal lifecycle is **IMPLEMENTATION_IN_PROGRESS** (AUTHORIZED / STARTED /
+NOT_COMPLETE). This Product Definition does **not** accept IMP-036I.
 
 ```text
 CURRENT tip anchors (implementation authorized / started): GTM-R156 / STATE-R154

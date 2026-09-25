@@ -510,6 +510,112 @@ test("npm run test umbrella and coverage-alone semantics for ciInclusion", () =>
   }
 });
 
+test("a specific database command does not mark sibling files verification-included", () => {
+  const dir = mkdtempSync(path.join(tmpdir(), "boba-testing-inventory-sibling-"));
+  try {
+    execFileSync("git", ["init"], { cwd: dir });
+    execFileSync("git", ["config", "user.email", "inventory-test@example.com"], { cwd: dir });
+    execFileSync("git", ["config", "user.name", "inventory-test"], { cwd: dir });
+    mkdirSync(path.join(dir, "tests/database"), { recursive: true });
+    mkdirSync(path.join(dir, "tests/delivery-application"), { recursive: true });
+    mkdirSync(path.join(dir, ".github/workflows"), { recursive: true });
+    writeFileSync(
+      path.join(dir, "package.json"),
+      JSON.stringify({
+        scripts: {
+          "test:database:checkout":
+            "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/database/checkout.integration.test.ts",
+          "test:imp036i:tranche1":
+            "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/database/imp036i-scheduled-fulfilment.integration.test.ts tests/delivery-application/delivery.d380-finality.test.ts",
+        },
+      }),
+    );
+    writeFileSync(path.join(dir, "tests/database/checkout.integration.test.ts"), "test('c', () => {})\n");
+    writeFileSync(
+      path.join(dir, "tests/database/imp036i-scheduled-fulfilment.integration.test.ts"),
+      "test('i', () => {})\n",
+    );
+    writeFileSync(
+      path.join(dir, "tests/delivery-application/delivery.d380-finality.test.ts"),
+      "test('d', () => {})\n",
+    );
+    writeFileSync(
+      path.join(dir, ".github/workflows/ci.yml"),
+      [
+        "name: CI",
+        "on:",
+        "  pull_request:",
+        "  push:",
+        "    branches: [main]",
+        "jobs:",
+        "  proof:",
+        "    runs-on: ubuntu-latest",
+        "    steps:",
+        "      - name: Checkout database",
+        "        run: npm run test:database:checkout",
+        "",
+      ].join("\n"),
+    );
+    execFileSync("git", ["add", "."], { cwd: dir });
+    execFileSync("git", ["commit", "-m", "seed"], { cwd: dir });
+
+    const before = buildTestingInventory(dir);
+    const beforeByPath = Object.fromEntries(before.executableRecords.map((record) => [record.path, record]));
+    assert.equal(beforeByPath["tests/database/checkout.integration.test.ts"].ciInclusion, "YES");
+    assert.deepEqual(beforeByPath["tests/database/checkout.integration.test.ts"].packageCommands, [
+      "test:database:checkout",
+    ]);
+    assert.equal(
+      beforeByPath["tests/database/imp036i-scheduled-fulfilment.integration.test.ts"].ciInclusion,
+      "NO",
+    );
+    assert.deepEqual(
+      beforeByPath["tests/database/imp036i-scheduled-fulfilment.integration.test.ts"].packageCommands,
+      ["test:imp036i:tranche1"],
+    );
+    assert.equal(
+      beforeByPath["tests/delivery-application/delivery.d380-finality.test.ts"].ciInclusion,
+      "NO",
+    );
+
+    writeFileSync(
+      path.join(dir, ".github/workflows/ci.yml"),
+      [
+        "name: CI",
+        "on:",
+        "  pull_request:",
+        "  push:",
+        "    branches: [main]",
+        "jobs:",
+        "  proof:",
+        "    runs-on: ubuntu-latest",
+        "    steps:",
+        "      - name: IMP-036I Tranche 1 proof",
+        "        run: npm run test:imp036i:tranche1",
+        "",
+      ].join("\n"),
+    );
+    execFileSync("git", ["add", ".github/workflows/ci.yml"], { cwd: dir });
+    execFileSync("git", ["commit", "-m", "wire tranche1"], { cwd: dir });
+
+    const after = buildTestingInventory(dir);
+    const afterByPath = Object.fromEntries(after.executableRecords.map((record) => [record.path, record]));
+    assert.equal(
+      afterByPath["tests/database/imp036i-scheduled-fulfilment.integration.test.ts"].ciInclusion,
+      "YES",
+    );
+    assert.equal(afterByPath["tests/delivery-application/delivery.d380-finality.test.ts"].ciInclusion, "YES");
+    assert.equal(afterByPath["tests/database/checkout.integration.test.ts"].ciInclusion, "NO");
+    assert.ok(
+      !afterByPath["tests/database/imp036i-scheduled-fulfilment.integration.test.ts"].packageCommands.includes(
+        "test:database:checkout",
+      ),
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test("nightly workflow maps dedicated E2E and concurrency commands to ciInclusion", () => {
   const dir = mkdtempSync(path.join(tmpdir(), "boba-testing-inventory-nightly-"));
   try {

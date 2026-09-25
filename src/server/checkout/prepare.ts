@@ -126,6 +126,23 @@ export async function prepareCheckoutForPayment(
     });
   });
 
+  const checkoutTiming = preload.row.fulfilmentTiming ?? "ASAP";
+  const snapshotTiming = preload.snapshot.fulfilmentTiming ?? "ASAP";
+  // Tranche 2 scheduled bind is not installed. SCHEDULED Checkout, and any
+  // Checkout whose timing disagrees with the active Snapshot, must not proceed.
+  if (checkoutTiming === "SCHEDULED" || checkoutTiming !== snapshotTiming) {
+    await persistence.transaction(async (tx) => {
+      const row = await lockCheckoutForUpdate(tx, preload.row.id);
+      if (row && row.status === "READY_FOR_PAYMENT") {
+        await invalidateReadyToDraft(tx, row, now);
+      }
+    });
+    throw new CheckoutError(
+      "CHECKOUT_STATE_CONFLICT",
+      "Checkout fulfilment timing cannot be prepared for payment.",
+    );
+  }
+
   if (preload.cart.revision !== preload.row.sourceCartRevision) {
     await persistence.transaction(async (tx) => {
       const row = await lockCheckoutForUpdate(tx, preload.row.id);

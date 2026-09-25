@@ -102,6 +102,14 @@ export async function evaluateCheckout(
         { field: "expectedCheckoutRevision" },
       );
     }
+    // Tranche 2 owns scheduled eligibility and snapshot sealing. Until that
+    // path exists, a SCHEDULED Checkout must not be evaluated into an ASAP Snapshot.
+    if ((row.fulfilmentTiming ?? "ASAP") === "SCHEDULED") {
+      throw new CheckoutError(
+        "CHECKOUT_STATE_CONFLICT",
+        "Cannot evaluate a SCHEDULED Checkout.",
+      );
+    }
 
     const fulfilmentMode = (row.fulfilmentMode ?? "DELIVERY") as FulfilmentMode;
     const pickupOutletId = row.pickupOutletId ?? null;
@@ -330,6 +338,12 @@ export async function evaluateCheckout(
       throw new CheckoutError(
         "CHECKOUT_CONFLICT",
         "Pickup outlet changed during evaluation.",
+      );
+    }
+    if ((row.fulfilmentTiming ?? "ASAP") === "SCHEDULED") {
+      throw new CheckoutError(
+        "CHECKOUT_STATE_CONFLICT",
+        "Cannot evaluate a SCHEDULED Checkout.",
       );
     }
 
