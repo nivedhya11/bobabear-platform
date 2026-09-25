@@ -31,10 +31,10 @@
     "note": "Protected evidence and generated reports are never classified as executable test source."
   },
   "counts": {
-    "trackedPathsConsidered": 2163,
-    "executableTestFiles": 462,
-    "sourceTestFiles": 139,
-    "testsTreeExecutableFiles": 252,
+    "trackedPathsConsidered": 2170,
+    "executableTestFiles": 465,
+    "sourceTestFiles": 140,
+    "testsTreeExecutableFiles": 254,
     "scriptTestFiles": 71,
     "playwrightSpecs": 12,
     "vitestConfigs": 2,
@@ -73,6 +73,7 @@
     "src/components/ordering/CheckoutClient.destination.test.tsx",
     "src/components/ordering/CheckoutFulfilmentChoice.test.tsx",
     "src/components/ordering/CheckoutPickupOutletStep.test.tsx",
+    "src/components/ordering/CheckoutTimingChoice.test.tsx",
     "src/components/ordering/CustomerOrderFulfilmentPanel.test.tsx",
     "src/components/ordering/MenuItemCustomizationDialog.test.tsx",
     "src/components/ordering/OrderConfirmationClient.test.tsx",
@@ -271,6 +272,7 @@
     "tests/checkout/checkout.pickup.domain.test.ts",
     "tests/checkout/parse-fulfilment-input.test.ts",
     "tests/checkout/scheduled-fulfilment.domain.test.ts",
+    "tests/checkout/scheduled-surfaces.tranche3.test.ts",
     "tests/customer-address-auth-integration/auth-integration.test.ts",
     "tests/customer-address-concurrency/concurrency.test.ts",
     "tests/customer-address-security/security.test.ts",
@@ -429,6 +431,7 @@
     "tests/refund-architecture/refund.architecture.test.ts",
     "tests/refund-concurrency/refund.concurrency.test.ts",
     "tests/refund-webhook/refund.webhook.test.ts",
+    "tests/scheduled-fulfilment/operational-cues.test.ts",
     "tests/scheduled-fulfilment/windows.test.ts",
     "tests/serviceability-auth-integration/auth-integration.test.ts",
     "tests/serviceability-concurrency/concurrency.test.ts",
@@ -3019,6 +3022,25 @@
       "packageCommands": [
         "test",
         "test:coverage"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "2-component"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "src/components/ordering/CheckoutTimingChoice.test.tsx",
+      "runner": "vitest",
+      "domain": "components/ordering",
+      "testType": "component-or-tsx",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test",
+        "test:coverage",
+        "test:imp036i:tranche3"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -6653,6 +6675,24 @@
       "classificationConfidence": "HEURISTIC"
     },
     {
+      "path": "tests/checkout/scheduled-surfaces.tranche3.test.ts",
+      "runner": "vitest",
+      "domain": "checkout",
+      "testType": "unit-or-domain",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:checkout",
+        "test:imp036i:tranche3"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
       "path": "tests/customer-address-auth-integration/auth-integration.test.ts",
       "runner": "vitest",
       "domain": "customer-address-auth-integration",
@@ -9401,6 +9441,23 @@
         "9-recovery-idempotency"
       ],
       "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/scheduled-fulfilment/operational-cues.test.ts",
+      "runner": "vitest",
+      "domain": "scheduled-fulfilment",
+      "testType": "unit-or-domain",
+      "dbRequired": "UNKNOWN",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:imp036i:tranche3"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit"
+      ],
+      "classificationConfidence": "LOW"
     },
     {
       "path": "tests/scheduled-fulfilment/windows.test.ts",
