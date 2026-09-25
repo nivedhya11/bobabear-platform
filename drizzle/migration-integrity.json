@@ -226,6 +226,11 @@
       "tag": "0044_imp036h_fulfilment_mode_pickup",
       "path": "drizzle/0044_imp036h_fulfilment_mode_pickup.sql",
       "sha256": "56a34728c511b8e31f74b89e07d0ec78d3705d885727b8093219fd75d67f0291"
+    },
+    {
+      "tag": "0045_imp036i_scheduled_fulfilment_foundations",
+      "path": "drizzle/0045_imp036i_scheduled_fulfilment_foundations.sql",
+      "sha256": "43ae3ed285cbbec1949f021d3ed03561f8660221030aa257de3261e2774af114"
     }
   ]
 }

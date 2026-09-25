@@ -113,3 +113,99 @@ export async function setCheckoutFulfilment(
     return loadCheckoutAggregate(tx, updated);
   });
 }
+
+export type SetCheckoutFulfilmentTimingInput = Readonly<{
+  checkoutId: string;
+  expectedCheckoutRevision: bigint;
+  fulfilmentTiming: "ASAP" | "SCHEDULED";
+  scheduledWindowStartAt?: Date | null;
+  scheduledWindowEndAt?: Date | null;
+}>;
+
+/**
+ * Mutable Checkout timing. Uses the existing revision bump and READY
+ * invalidation. Does not compute eligible windows.
+ */
+export async function setCheckoutFulfilmentTiming(
+  persistence: Persistence,
+  actor: unknown,
+  input: SetCheckoutFulfilmentTimingInput,
+  options: CheckoutOperationOptions = {},
+): Promise<Checkout> {
+  const customer = requireCustomerActor(actor);
+  const clock = options.clock ?? systemCheckoutClock;
+  const now = clock.now();
+  const start = input.scheduledWindowStartAt ?? null;
+  const end = input.scheduledWindowEndAt ?? null;
+
+  if (input.fulfilmentTiming !== "ASAP" && input.fulfilmentTiming !== "SCHEDULED") {
+    throw new CheckoutError(
+      "CHECKOUT_INVALID_INPUT",
+      "fulfilmentTiming must be ASAP or SCHEDULED.",
+      { field: "fulfilmentTiming" },
+    );
+  }
+  if (input.fulfilmentTiming === "ASAP" && (start !== null || end !== null)) {
+    throw new CheckoutError(
+      "CHECKOUT_INVALID_INPUT",
+      "ASAP Checkout timing cannot carry a scheduled window.",
+      { field: "scheduledWindowStartAt" },
+    );
+  }
+  if ((start === null) !== (end === null)) {
+    throw new CheckoutError(
+      "CHECKOUT_INVALID_INPUT",
+      "Scheduled window start and end must both be present or both be absent.",
+      { field: "scheduledWindowEndAt" },
+    );
+  }
+  if (start !== null && end !== null && start.getTime() >= end.getTime()) {
+    throw new CheckoutError(
+      "CHECKOUT_INVALID_INPUT",
+      "Scheduled window start must precede end.",
+      { field: "scheduledWindowStartAt" },
+    );
+  }
+
+  return persistence.transaction(async (tx) => {
+    const row = await lockCheckoutForUpdate(tx, input.checkoutId);
+    if (!row || row.customerAuthUserId !== customer.authUserId) {
+      throw new CheckoutError("CHECKOUT_NOT_FOUND", "Checkout not found.");
+    }
+    assertMutablePrePayment(row.status, row.expiresAt, now);
+    if (row.revision !== input.expectedCheckoutRevision) {
+      throw new CheckoutError(
+        "CHECKOUT_CONFLICT",
+        "Checkout revision does not match expectedCheckoutRevision.",
+        { field: "expectedCheckoutRevision" },
+      );
+    }
+
+    const currentTiming = (row.fulfilmentTiming ?? "ASAP") as "ASAP" | "SCHEDULED";
+    const currentStart = row.scheduledWindowStartAt ?? null;
+    const currentEnd = row.scheduledWindowEndAt ?? null;
+    const sameTiming =
+      currentTiming === input.fulfilmentTiming &&
+      (currentStart?.getTime() ?? null) === (start?.getTime() ?? null) &&
+      (currentEnd?.getTime() ?? null) === (end?.getTime() ?? null);
+    if (sameTiming) {
+      return loadCheckoutAggregate(tx, row);
+    }
+
+    const clearReady = row.status === "READY_FOR_PAYMENT";
+    const updated = await bumpCheckoutRevisionAfterFulfilmentChange(
+      tx,
+      row,
+      now,
+      clearReady,
+      {
+        fulfilmentMode: (row.fulfilmentMode ?? "DELIVERY") as "DELIVERY" | "PICKUP",
+        pickupOutletId: row.pickupOutletId ?? null,
+        fulfilmentTiming: input.fulfilmentTiming,
+        scheduledWindowStartAt: start,
+        scheduledWindowEndAt: end,
+      },
+    );
+    return loadCheckoutAggregate(tx, updated);
+  });
+}

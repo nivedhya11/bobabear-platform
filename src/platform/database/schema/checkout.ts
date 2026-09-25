@@ -129,6 +129,14 @@ export const checkoutsTable = appSchema.table(
     status: text("status").notNull(),
     /** IMP-036H — mutable fulfilment intent; historical default DELIVERY. */
     fulfilmentMode: text("fulfilment_mode").notNull().default("DELIVERY"),
+    /** IMP-036I — mutable pre-payment timing; historical default ASAP. */
+    fulfilmentTiming: text("fulfilment_timing").notNull().default("ASAP"),
+    scheduledWindowStartAt: timestamp("scheduled_window_start_at", {
+      withTimezone: true,
+    }),
+    scheduledWindowEndAt: timestamp("scheduled_window_end_at", {
+      withTimezone: true,
+    }),
     /** IMP-036H — mutable Pickup outlet intent; NULL for DELIVERY; may be NULL on early PICKUP DRAFT. */
     pickupOutletId: uuid("pickup_outlet_id"),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
@@ -191,6 +199,48 @@ export const checkoutsTable = appSchema.table(
     check(
       "checkouts_fulfilment_mode_check",
       sql`${table.fulfilmentMode} in ('DELIVERY', 'PICKUP')`,
+    ),
+    check(
+      "checkouts_fulfilment_timing_check",
+      sql`${table.fulfilmentTiming} in ('ASAP', 'SCHEDULED')`,
+    ),
+    check(
+      "checkouts_scheduled_window_shape_check",
+      sql`(
+        (
+          ${table.fulfilmentTiming} = 'ASAP'
+          and ${table.scheduledWindowStartAt} is null
+          and ${table.scheduledWindowEndAt} is null
+        )
+        or
+        (
+          ${table.fulfilmentTiming} = 'SCHEDULED'
+          and (
+            (
+              ${table.scheduledWindowStartAt} is null
+              and ${table.scheduledWindowEndAt} is null
+            )
+            or
+            (
+              ${table.scheduledWindowStartAt} is not null
+              and ${table.scheduledWindowEndAt} is not null
+              and ${table.scheduledWindowStartAt} < ${table.scheduledWindowEndAt}
+            )
+          )
+        )
+      )`,
+    ),
+    check(
+      "checkouts_scheduled_ready_window_check",
+      sql`(
+        ${table.status} not in ('READY_FOR_PAYMENT', 'PAYMENT_PENDING', 'COMPLETED')
+        or ${table.fulfilmentTiming} <> 'SCHEDULED'
+        or (
+          ${table.scheduledWindowStartAt} is not null
+          and ${table.scheduledWindowEndAt} is not null
+          and ${table.scheduledWindowStartAt} < ${table.scheduledWindowEndAt}
+        )
+      )`,
     ),
     check(
       "checkouts_fulfilment_mode_pickup_outlet_check",
@@ -327,6 +377,18 @@ export const checkoutSnapshotsTable = appSchema.table(
     manualCouponCode: text("manual_coupon_code"),
     /** IMP-036H — immutable purchased fulfilment mode. */
     fulfilmentMode: text("fulfilment_mode").notNull().default("DELIVERY"),
+    /** IMP-036I — immutable purchased timing. Historical default ASAP. */
+    fulfilmentTiming: text("fulfilment_timing").notNull().default("ASAP"),
+    scheduledWindowStartAt: timestamp("scheduled_window_start_at", {
+      withTimezone: true,
+    }),
+    scheduledWindowEndAt: timestamp("scheduled_window_end_at", {
+      withTimezone: true,
+    }),
+    scheduledTimezone: text("scheduled_timezone"),
+    scheduledCancellationCutoffMinutes: integer(
+      "scheduled_cancellation_cutoff_minutes",
+    ),
     /** Delivery destination fields — required under DELIVERY; all NULL under PICKUP. */
     destinationKind: text("destination_kind"),
     sourceSavedAddressId: uuid("source_saved_address_id"),
@@ -401,6 +463,33 @@ export const checkoutSnapshotsTable = appSchema.table(
     check(
       "checkout_snapshots_fulfilment_mode_check",
       sql`${table.fulfilmentMode} in ('DELIVERY', 'PICKUP')`,
+    ),
+    check(
+      "checkout_snapshots_fulfilment_timing_check",
+      sql`${table.fulfilmentTiming} in ('ASAP', 'SCHEDULED')`,
+    ),
+    check(
+      "checkout_snapshots_scheduled_timing_shape_check",
+      sql`(
+        (
+          ${table.fulfilmentTiming} = 'ASAP'
+          and ${table.scheduledWindowStartAt} is null
+          and ${table.scheduledWindowEndAt} is null
+          and ${table.scheduledTimezone} is null
+          and ${table.scheduledCancellationCutoffMinutes} is null
+        )
+        or
+        (
+          ${table.fulfilmentTiming} = 'SCHEDULED'
+          and ${table.scheduledWindowStartAt} is not null
+          and ${table.scheduledWindowEndAt} is not null
+          and ${table.scheduledWindowStartAt} < ${table.scheduledWindowEndAt}
+          and ${table.scheduledTimezone} is not null
+          and length(trim(${table.scheduledTimezone})) > 0
+          and ${table.scheduledCancellationCutoffMinutes} is not null
+          and ${table.scheduledCancellationCutoffMinutes} between 0 and 240
+        )
+      )`,
     ),
     check(
       "checkout_snapshots_destination_kind_check",

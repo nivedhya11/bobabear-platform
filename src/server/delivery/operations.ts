@@ -51,6 +51,7 @@ import {
 import { isUniqueViolation } from "./assert-role";
 import {
   findActiveDeliveryForOrder,
+  findDeliveredDeliveryForOrder,
   findActiveReturnForDelivery,
   findDeliveryById,
   findDeliveryByOrderAndFingerprint,
@@ -204,6 +205,15 @@ export async function createDelivery(
         );
       }
 
+      const delivered = await findDeliveredDeliveryForOrder(tx, parsed.orderId);
+      if (delivered) {
+        throw new DeliveryError(
+          "DELIVERY_STATE_CONFLICT",
+          "A DELIVERED Delivery is successful completion and cannot be replaced.",
+          { field: "orderId" },
+        );
+      }
+
       const priorDeliveryId = parsed.priorDeliveryId ?? null;
       if (priorDeliveryId) {
         const prior = await findDeliveryById(tx, priorDeliveryId);
@@ -214,11 +224,14 @@ export async function createDelivery(
             { field: "priorDeliveryId" },
           );
         }
-        if (
-          prior.status !== "DELIVERED" &&
-          prior.status !== "FAILED" &&
-          prior.status !== "CANCELLED"
-        ) {
+        if (prior.status === "DELIVERED") {
+          throw new DeliveryError(
+            "DELIVERY_STATE_CONFLICT",
+            "A DELIVERED Delivery is successful completion and cannot be replaced.",
+            { field: "priorDeliveryId" },
+          );
+        }
+        if (prior.status !== "FAILED" && prior.status !== "CANCELLED") {
           throw new DeliveryError(
             "DELIVERY_STATE_CONFLICT",
             "Replacement requires the prior Delivery to be terminal.",

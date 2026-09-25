@@ -229,7 +229,7 @@ describe("IMP-036H migration 0044 fulfilment_mode + pickup", () => {
         const historyRows = await client.pool.query<{ count: string }>(
           `SELECT COUNT(*) AS count FROM ${MIGRATIONS_SCHEMA}.${MIGRATIONS_TABLE}`,
         );
-        expect(Number(historyRows.rows[0]?.count)).toBe(45);
+        expect(Number(historyRows.rows[0]?.count)).toBe(46);
 
         const tables = await client.pool.query<{ table_name: string }>(
           `SELECT table_name FROM information_schema.tables

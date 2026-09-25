@@ -6,7 +6,7 @@
   "productDefinition": "PD-IMP-036I-DRAFT-4",
   "architectureLock": "ARCHITECTURE_LOCKED",
   "implementationAuthorized": true,
-  "implementationStarted": false,
+  "implementationStarted": true,
   "planVersion": "IMP036I-PLAN-1",
   "lastReviewed": "2026-09-25",
   "bindingDecisions": ["D-379", "D-380", "ARCH-G29", "ARCH-G30"]
@@ -23,10 +23,10 @@ PRODUCT_DEFINITION = PD-IMP-036I-DRAFT-4 (APPROVED; Gate PASS)
 ARCHITECTURE = LOCKED (ARCH-R23; D-379 CURRENT; D-380 CURRENT; ARCH-G29; ARCH-G30)
 CAPABILITY_ARCHITECTURE = docs/platform/capabilities/IMP-036I-scheduled-fulfilment.md
 IMPLEMENTATION_AUTHORIZED = YES
-IMPLEMENTATION_STARTED = NO
+IMPLEMENTATION_STARTED = YES
 IMPLEMENTATION_COMPLETE = NO
 IMP036I_ACCEPTED = NO
-FORMAL_LIFECYCLE = ARCHITECTURE_LOCKED
+FORMAL_LIFECYCLE = IMPLEMENTATION_IN_PROGRESS
 NEXT_ACTION = IMPLEMENTATION_TRANCHE_1
 TRANCHE_1 = PERSISTENCE_AND_DOMAIN_FOUNDATIONS
 TRANCHE_2 = SCHEDULING_ELIGIBILITY_AND_PAYMENT_BIND
@@ -238,12 +238,12 @@ Required integrated proof includes US-036I-001…016, AC-036I-001…066, BR-036I
 ## 7. Delivery conformance debt
 
 ```text
-PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT = OPEN
+PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT = CLOSED
 CORRECTION_AUTHORIZED = YES
-FIXED_IN_AUTHORIZATION_PERSISTENCE = NO
+FIXED_IN_TRANCHE_1_RUNTIME = YES
 ```
 
-Tranche 1 must reject normal create/replacement after `Delivery.status = DELIVERED`. Do not expand or rewrite FAILED replacement, CANCELLED replacement, post-pickup failure, or return/support behaviour. D-380 controls successful-completion finality only. The debt may be marked CLOSED only when implementation and tests prove the rejection.
+Tranche 1 rejects normal create/replacement after `Delivery.status = DELIVERED`. FAILED and CANCELLED replacement remain only where existing prerequisites already permit them. D-380 controls successful-completion finality only. The debt is CLOSED because the Tranche 1 implementation and tests prove the rejection.
 
 ---
 
@@ -251,4 +251,4 @@ Tranche 1 must reject normal create/replacement after `Delivery.status = DELIVER
 
 Stop and return `DECISION_REQUIRED` if a tranche needs any item in the not-authorized list, or any other material product or architecture choice that canonical authority does not already define.
 
-Do not mark `IMPLEMENTATION_STARTED` until the first runtime implementation tranche actually begins.
+Do not mark `IMPLEMENTATION_COMPLETE` until later tranches and independent proof are complete.

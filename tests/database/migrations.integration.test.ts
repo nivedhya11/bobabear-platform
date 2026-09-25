@@ -41,7 +41,7 @@ describe("clean migration replay", () => {
         );
         expect(migrationTable.rows[0]?.exists).toBe(true);
 
-        const journalCount = 45; // drizzle/meta/_journal.json — kept in lockstep with the committed journal
+        const journalCount = 46; // drizzle/meta/_journal.json — kept in lockstep with the committed journal
         const historyRows = await client.pool.query<{ count: string }>(
           `SELECT COUNT(*) AS count FROM ${MIGRATIONS_SCHEMA}.${MIGRATIONS_TABLE}`,
         );

@@ -13,7 +13,7 @@
   "architectureFit": "PASS",
   "architectureLocked": "YES",
   "implementationAuthorized": "YES",
-  "implementationStarted": "NO",
+  "implementationStarted": "YES",
   "implementationComplete": "NO",
   "impAccepted": "NO",
   "imp036iActivated": "YES",
@@ -22,8 +22,8 @@
   "imp036iArchitectureFit": "PASS",
   "imp036iArchitectureLocked": "YES",
   "imp036iImplementationAuthorized": "YES",
-  "imp036iStarted": "NO",
-  "imp036iImplementationStarted": "NO",
+  "imp036iStarted": "YES",
+  "imp036iImplementationStarted": "YES",
   "imp036iImplementationComplete": "NO",
   "imp036iAccepted": "NO",
   "founderUatRequired": "YES",
@@ -61,8 +61,8 @@ IMP036I_PRODUCT_DEFINITION_GATE: PASS
 IMP036I_ARCHITECTURE_FIT: PASS
 IMP036I_ARCHITECTURE_LOCKED: YES
 IMP036I_IMPLEMENTATION_AUTHORIZED: YES
-IMP036I_STARTED: NO
-IMP036I_IMPLEMENTATION_STARTED: NO
+IMP036I_STARTED: YES
+IMP036I_IMPLEMENTATION_STARTED: YES
 IMP036I_IMPLEMENTATION_COMPLETE: NO
 IMP036I_ACCEPTED: NO
 IMP036I_ACTIVATED: YES
@@ -73,7 +73,7 @@ ARCHITECTURE_FIT_EXECUTION: PERFORMED
 ARCHITECTURE_FIT: PASS
 ARCHITECTURE_LOCKED: YES
 IMPLEMENTATION_AUTHORIZED: YES
-IMPLEMENTATION_STARTED: NO
+IMPLEMENTATION_STARTED: YES
 
 PRODUCT_DECISIONS / FOUNDER_DECISIONS:
   founder_decisions_total: 22
@@ -88,8 +88,8 @@ PRODUCT_DECISIONS / FOUNDER_DECISIONS:
     + per-Order sealing / checkout revalidation (amended 2026-09-24)
 
 READY_FOR_PRODUCT_DEFINITION_GATE: NO — Gate PASS persisted; Architecture Fit PASS
-  (review 5312653831); architecture LOCKED; implementation AUTHORIZED / NOT_STARTED;
-  next gate = IMPLEMENTATION_TRANCHE_1
+  (review 5312653831); architecture LOCKED; implementation AUTHORIZED / STARTED;
+  next gate = IMPLEMENTATION_TRANCHE_1 independent verification
 
 INDEPENDENT_PRODUCT_DEFINITION_GATE: PASS
 INDEPENDENT_PRODUCT_DEFINITION_GATE_REVIEW: 5307761142
@@ -116,16 +116,16 @@ ROADMAP/STATE; this Product Definition is NOT lifecycle authority):
   IMP036I_ARCHITECTURE_LOCKED = YES
   IMP036I_IMPLEMENTATION_AUTHORIZED = YES
   IMP036I_STARTED = NO
-  IMP036I_IMPLEMENTATION_STARTED = NO
+  IMP036I_IMPLEMENTATION_STARTED = YES
   IMP036I_IMPLEMENTATION_COMPLETE = NO
   IMP036I_ACCEPTED = NO
-  ROADMAP = GTM-R155
-  STATE = STATE-R153
+  ROADMAP = GTM-R156
+  STATE = STATE-R154
   ARCHITECTURE = ARCH-R23
   decision-register = DR-21
   PROGRAM_PAUSE = D-377
 
-Formal lifecycle for IMP-036I: ARCHITECTURE_LOCKED (implementation AUTHORIZED / NOT_STARTED)
+Formal lifecycle for IMP-036I: IMPLEMENTATION_IN_PROGRESS (implementation AUTHORIZED / STARTED)
 ```
 
 This artifact is the **APPROVED** Product Definition for `PD-IMP-036I-DRAFT-4` after
@@ -206,11 +206,11 @@ IMP036I_PRODUCT_DEFINITION_GATE: PASS
 IMP036I_ARCHITECTURE_FIT: PASS
 IMP036I_ARCHITECTURE_LOCKED: YES
 IMP036I_IMPLEMENTATION_AUTHORIZED: YES
-IMP036I_STARTED: NO
-IMP036I_IMPLEMENTATION_STARTED: NO
+IMP036I_STARTED: YES
+IMP036I_IMPLEMENTATION_STARTED: YES
 IMP036I_IMPLEMENTATION_COMPLETE: NO
 IMP036I_ACCEPTED: NO
-Formal lifecycle: ARCHITECTURE_LOCKED (implementation AUTHORIZED / NOT_STARTED)
+Formal lifecycle: IMPLEMENTATION_IN_PROGRESS (implementation AUTHORIZED / STARTED)
 
 IMP037: HOLD / BLOCKED_PROVIDER_ACCESS (historical progress preserved; not accepted)
 IMP038: HOLD / IMPLEMENTATION_COMPLETE / NOT_ACCEPTED
@@ -221,8 +221,8 @@ IMP039: NOT_ACTIVATED / HOLD
 IMP040: NOT_ACTIVATED / HOLD
 
 PROGRAM_PAUSE_AUTHORITY = D-377
-ROADMAP = GTM-R155
-STATE = STATE-R153
+ROADMAP = GTM-R156
+STATE = STATE-R154
 ARCHITECTURE = ARCH-R23
 decision-register = DR-21
 ```
@@ -240,9 +240,9 @@ IMP-039/040, close `GAP-EXT-ASSESS-001`, perform Architecture Fit, or authorize 
 | Product Definition version / document status | `PD-IMP-036I-DRAFT-4`; **Document status: APPROVED**; **PRE-GATE DRAFT: NO**; **READY_FOR_PRODUCT_DEFINITION_GATE: NO** |
 | Product owner / approval evidence | Founder. Activation authorized for Product Definition only. Founder decisions FD-036I-01…15 **RESOLVED** 2026-09-24 (including FD-036I-09 sealing amendment). Independent Product Definition Gate **PASS** — review `5307761142`. Gate-evaluated HEAD `1c4be04b6d6b51bdedebfea0485099dede3c7923` / tree `a0774c9b2cb256f8d329fc49cea1c9859a39d1d7` / fingerprint `07720d20f1e285ef46e6bd3be6d710be383baacde4facab7651482547b6dc15d`. Historical DRAFT-1 Gate = **STOP**; historical DRAFT-2 Gate = **STOP**; historical DRAFT-3 Gate = **STOP** (see §1.1). |
 | Process / verification policy | `PD-1` / `TEST-1` |
-| Canonical anchors | VISION-1; ROADMAP GTM-R155; STATE STATE-R153; ARCH-R23; DR-21 (D-377, D-378 AMENDED, D-379 CURRENT, D-380 CURRENT); PD-1; TEST-1; PERSONA-1; GJ-1; accepted IMP-036H Product Definition `PD-IMP-036H-DRAFT-1`; Founder FD-036I-01…15 resolution 2026-09-24; FD-036I-09 sealing amendment 2026-09-24; Gate PASS evidence review `5307761142`; Architecture Fit PASS review `5312653831`; implementation authorization 2026-09-25 (architecture-lock verification `5313026804`); execution plan [`implementation-plan.md`](./implementation-plan.md) |
+| Canonical anchors | VISION-1; ROADMAP GTM-R156; STATE STATE-R154; ARCH-R23; DR-21 (D-377, D-378 AMENDED, D-379 CURRENT, D-380 CURRENT); PD-1; TEST-1; PERSONA-1; GJ-1; accepted IMP-036H Product Definition `PD-IMP-036H-DRAFT-1`; Founder FD-036I-01…15 resolution 2026-09-24; FD-036I-09 sealing amendment 2026-09-24; Gate PASS evidence review `5307761142`; Architecture Fit PASS review `5312653831`; implementation authorization 2026-09-25 (architecture-lock verification `5313026804`); execution plan [`implementation-plan.md`](./implementation-plan.md) |
 | Repository candidate | Canonical path `/home/ajoshi/repos/boba-bear-platform`; gate-evaluated HEAD `1c4be04b6d6b51bdedebfea0485099dede3c7923` / tree `a0774c9b2cb256f8d329fc49cea1c9859a39d1d7` / fingerprint `07720d20f1e285ef46e6bd3be6d710be383baacde4facab7651482547b6dc15d` |
-| Capability lifecycle / authorization | ROADMAP/STATE: `IMP036I_ACTIVATED: YES`; `currentProductSlice = IMP-036I`; formal lifecycle **ARCHITECTURE_LOCKED**; Product Definition **APPROVED** (`PD-IMP-036I-DRAFT-4`); Gate **PASS**; Architecture Fit **PASS** (review `5312653831`); architecture **LOCKED**; implementation **AUTHORIZED** / **NOT_STARTED**; `IMP036I_ACCEPTED: NO`; `pendingAcceptance = NONE`; `acceptedThrough = IMP-036H`; `nextProductSlice = IMP-037` |
+| Capability lifecycle / authorization | ROADMAP/STATE: `IMP036I_ACTIVATED: YES`; `currentProductSlice = IMP-036I`; formal lifecycle **IMPLEMENTATION_IN_PROGRESS**; Product Definition **APPROVED** (`PD-IMP-036I-DRAFT-4`); Gate **PASS**; Architecture Fit **PASS** (review `5312653831`); architecture **LOCKED**; implementation **AUTHORIZED** / **STARTED**; `IMP036I_IMPLEMENTATION_COMPLETE: NO`; `IMP036I_ACCEPTED: NO`; `pendingAcceptance = NONE`; `acceptedThrough = IMP-036H`; `nextProductSlice = IMP-037` |
 | Relevant capability architecture / ADRs | Locked: [`capabilities/IMP-036I-scheduled-fulfilment.md`](../../capabilities/IMP-036I-scheduled-fulfilment.md); D-379 / ADR-019 CURRENT/Accepted; D-380 / ADR-020 CURRENT/Accepted; ARCH-R23 / ARCH-G29 / ARCH-G30. D-378 / ADR-018 AMENDED only for ASAP-only / no-scheduled-schema clauses. Foundations otherwise unchanged. |
 | Founder UAT applicability | `FOUNDER_UAT_REQUIRED = YES`; `FOUNDER_UAT_STATUS = NOT_PERFORMED` — materially changes customer checkout timing and workforce operational timing when implemented |
 
@@ -1886,12 +1886,12 @@ Registry status is not a test verdict.
 
 | Dependency | Authority / verified state | Required before which story or gate? | Unresolved impact |
 |---|---|---|---|
-| ROADMAP/STATE activation IMP-036I (PD only) + program pause D-377 | GTM-R155 / STATE-R153 CURRENT tip (ARCHITECTURE_LOCKED; implementation AUTHORIZED / NOT_STARTED) | SATISFIED | Gate PASS persisted; runtime not started |
+| ROADMAP/STATE activation IMP-036I (PD only) + program pause D-377 | GTM-R156 / STATE-R154 CURRENT tip (IMPLEMENTATION_IN_PROGRESS; implementation AUTHORIZED / STARTED) | SATISFIED | Gate PASS persisted; Tranche 1 runtime started |
 | Accepted commerce foundations through IMP-036H | COMPLETE_AND_ACCEPTED through IMP-036H | All stories | NONE for ASAP baselines |
 | Founder resolution of FD-036I-01…15 | RESOLVED 2026-09-24 | Before Product Definition Gate | SATISFIED |
 | Product Definition Gate PASS | PASS (review 5307761142) | Before Architecture Fit | SATISFIED — next = Architecture Fit |
 | Architecture Fit PASS + locked capability | PASS (review 5312653831); LOCKED | Before implementation authorization | SATISFIED — next = implementation authorization |
-| Implementation authorization | YES (2026-09-25; GTM-R155 / STATE-R153) | Before code/schema | SATISFIED — next = IMPLEMENTATION_TRANCHE_1; runtime not started |
+| Implementation authorization | YES (2026-09-25; GTM-R155 / STATE-R153) | Before code/schema | SATISFIED — Tranche 1 runtime started at GTM-R156 / STATE-R154 |
 | IMP-037/038/039/040 | HOLD / NOT_ACTIVATED as program context | Must not be accepted/activated by this Gate PASS | Preserve freeze; D-377 |
 
 ### Architecture Fit handoff questions (explicitly NOT solved here)
@@ -2225,7 +2225,7 @@ Totals: 15 Founder-resolved + 7 existing authority = 22. No material OPEN Founde
 | US-036I-015 | §9 complete | NONE | READY for Product Definition Gate; NOT_READY_FOR_IMPLEMENTATION until Gate + Fit/lock + auth |
 | US-036I-016 | §9 complete | NONE | READY for Product Definition Gate; NOT_READY_FOR_IMPLEMENTATION until Gate + Fit/lock + auth |
 
-`STORY_COMPLETE != IMP_ACCEPTED`. Stories were READY for Product Definition Gate (product decisions resolved). Product Definition Gate **PASS**, Architecture Fit **PASS**, and architecture **LOCKED** are persisted. Explicit human implementation authorization is **YES** / **NOT_STARTED** (2026-09-25). Execution sequence is [`implementation-plan.md`](./implementation-plan.md). This Product Definition remains **APPROVED** — product semantics are unchanged.
+`STORY_COMPLETE != IMP_ACCEPTED`. Stories were READY for Product Definition Gate (product decisions resolved). Product Definition Gate **PASS**, Architecture Fit **PASS**, and architecture **LOCKED** are persisted. Explicit human implementation authorization is **YES**, and Tranche 1 runtime has **STARTED** (2026-09-25). Execution sequence is [`implementation-plan.md`](./implementation-plan.md). This Product Definition remains **APPROVED** — product semantics are unchanged.
 
 ---
 
@@ -2298,7 +2298,7 @@ implementation authorization is recorded in ROADMAP/STATE (2026-09-25). Next act
 or accept IMP-036I.
 
 ```text
-CURRENT tip anchors (implementation authorized / not started): GTM-R155 / STATE-R153
+CURRENT tip anchors (implementation authorized / started): GTM-R156 / STATE-R154
 acceptedThrough = IMP-036H
 currentProductSlice = IMP-036I
 pendingAcceptance = NONE
