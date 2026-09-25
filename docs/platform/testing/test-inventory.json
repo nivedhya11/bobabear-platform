@@ -31,10 +31,10 @@
     "note": "Protected evidence and generated reports are never classified as executable test source."
   },
   "counts": {
-    "trackedPathsConsidered": 2173,
-    "executableTestFiles": 468,
-    "sourceTestFiles": 140,
-    "testsTreeExecutableFiles": 257,
+    "trackedPathsConsidered": 2181,
+    "executableTestFiles": 470,
+    "sourceTestFiles": 141,
+    "testsTreeExecutableFiles": 258,
     "scriptTestFiles": 71,
     "playwrightSpecs": 12,
     "vitestConfigs": 2,
@@ -191,6 +191,7 @@
     "src/shared/refund-statutory-issuance-allocation/command.test.ts",
     "src/shared/refund-statutory-issuance-allocation/logical-key.test.ts",
     "src/shared/refund/refund.domain.test.ts",
+    "src/shared/scheduled-fulfilment/cancellation.test.ts",
     "src/shared/workforce-auth/email.test.ts"
   ],
   "testsTreeExecutableFiles": [
@@ -399,6 +400,7 @@
     "tests/order/order.pickup-projections.test.ts",
     "tests/order/order.smoke.test.ts",
     "tests/order/order.transport.test.ts",
+    "tests/order/scheduled-cancellation-reminder.tranche4.integration.test.ts",
     "tests/ordering-catalog/parity.test.ts",
     "tests/payment-auth-integration/payment.auth.test.ts",
     "tests/payment-concurrency/payment.concurrency.test.ts",
@@ -5237,6 +5239,26 @@
       "classificationConfidence": "HEURISTIC"
     },
     {
+      "path": "src/shared/scheduled-fulfilment/cancellation.test.ts",
+      "runner": "vitest",
+      "domain": "shared/scheduled-fulfilment",
+      "testType": "unit-or-domain",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test",
+        "test:coverage",
+        "test:imp036i:tranche4"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit",
+        "3-domain-use-case"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
       "path": "src/shared/workforce-auth/email.test.ts",
       "runner": "vitest",
       "domain": "shared/workforce-auth",
@@ -8889,6 +8911,25 @@
       "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/order/scheduled-cancellation-reminder.tranche4.integration.test.ts",
+      "runner": "vitest",
+      "domain": "order",
+      "testType": "integration",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:imp036i:tranche4",
+        "test:order"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "4-integration",
+        "5-database-integration"
       ],
       "classificationConfidence": "HEURISTIC"
     },
