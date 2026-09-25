@@ -17079,5 +17079,86 @@ describe("IMP-036I implementation authorization persistence", () => {
   it("accepts the corrected primary mapping and ignores Tranche 5 re-proof", () => {
     assert.deepEqual(evaluateImp036iImplementationAuthorization(baseDocs()), { ok: true });
   });
+
+  it("rejects a missing execution-plan implementationAuthorized metadata key", () => {
+    const docs = baseDocs();
+    docs.executionPlanText = docs.executionPlanText.replace('"implementationAuthorized": true\n', "");
+    const result = evaluateImp036iImplementationAuthorization(docs);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036I_IMPLEMENTATION_AUTHORIZED_YES");
+  });
+
+  it("rejects a duplicate execution-plan implementationAuthorized metadata key", () => {
+    const docs = baseDocs();
+    docs.executionPlanText = `${docs.executionPlanText}\n"implementationAuthorized": true`;
+    const result = evaluateImp036iImplementationAuthorization(docs);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036I_IMPLEMENTATION_AUTHORIZED_YES");
+  });
+
+  it("rejects execution-plan implementationAuthorized metadata false", () => {
+    const docs = baseDocs();
+    docs.executionPlanText = docs.executionPlanText.replace(
+      '"implementationAuthorized": true',
+      '"implementationAuthorized": false',
+    );
+    const result = evaluateImp036iImplementationAuthorization(docs);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036I_IMPLEMENTATION_AUTHORIZED_YES");
+  });
+
+  it("rejects a missing execution-plan implementationStarted metadata key", () => {
+    const docs = baseDocs();
+    docs.executionPlanText = docs.executionPlanText.replace('"implementationStarted": false\n', "");
+    const result = evaluateImp036iImplementationAuthorization(docs);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036I_PREMATURE_START");
+  });
+
+  it("rejects a duplicate execution-plan implementationStarted metadata key", () => {
+    const docs = baseDocs();
+    docs.executionPlanText = `${docs.executionPlanText}\n"implementationStarted": false`;
+    const result = evaluateImp036iImplementationAuthorization(docs);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036I_PREMATURE_START");
+  });
+
+  it("rejects execution-plan implementationStarted metadata true", () => {
+    const docs = baseDocs();
+    docs.executionPlanText = docs.executionPlanText.replace(
+      '"implementationStarted": false',
+      '"implementationStarted": true',
+    );
+    const result = evaluateImp036iImplementationAuthorization(docs);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036I_PREMATURE_START");
+  });
+
+  it("rejects AC-036I-0010 as a substitute for primary owner AC-036I-001", () => {
+    const docs = baseDocs();
+    docs.executionPlanText = docs.executionPlanText.replace(
+      "TRANCHE_2_PRIMARY_ACS = AC-036I-001, ",
+      "TRANCHE_2_PRIMARY_ACS = AC-036I-0010, ",
+    );
+    const result = evaluateImp036iImplementationAuthorization(docs);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036I_EXECUTION_PLAN_AC_MISSING");
+    assert.match(result.message, /AC-036I-001 /);
+  });
+
+  it("ignores malformed AC-036I-0010 when canonical AC-036I-001 remains", () => {
+    const docs = baseDocs();
+    docs.executionPlanText = docs.executionPlanText.replace(
+      "TRANCHE_2_PRIMARY_ACS = AC-036I-001, ",
+      "TRANCHE_2_PRIMARY_ACS = AC-036I-001, AC-036I-0010, ",
+    );
+    assert.deepEqual(evaluateImp036iImplementationAuthorization(docs), { ok: true });
+  });
+
+  it("accepts the corrected live execution plan", () => {
+    const docs = baseDocs();
+    docs.executionPlanText = readFileSync("docs/platform/product/IMP-036I/implementation-plan.md", "utf8");
+    assert.deepEqual(evaluateImp036iImplementationAuthorization(docs), { ok: true });
+  });
 });
 
