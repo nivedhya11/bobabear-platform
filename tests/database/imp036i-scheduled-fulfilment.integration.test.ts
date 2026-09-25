@@ -6,15 +6,19 @@ import { createHash, randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
+import { sql } from "drizzle-orm";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { MIGRATIONS_SCHEMA, MIGRATIONS_TABLE } from "../../src/platform/database";
 import {
   evaluateCheckout,
+  prepareCheckoutForPayment,
   setCheckoutDestination,
+  setCheckoutFulfilment,
   setCheckoutFulfilmentTiming,
   startCheckout,
 } from "../../src/server/checkout";
+import { upsertOutletPickupProfile } from "../../src/server/outlet-pickup-profile/repository";
 import { getApplicationPersistence } from "../../src/server/persistence";
 import {
   insertOutletOperatingDateException,
@@ -30,7 +34,8 @@ import {
   closeTrackedPersistenceHandles,
   trackPersistenceHandle,
 } from "./support/cart-fixtures";
-import { checkoutOpts, withCheckoutReadyHarness } from "./support/checkout-fixtures";
+import { CHECKOUT_PIN, checkoutOpts, withCheckoutReadyHarness } from "./support/checkout-fixtures";
+import { configureAlwaysAcceptingOutlet } from "./support/serviceability-fixtures";
 import {
   applyMigrations,
   withIsolatedTestDatabase,
@@ -755,6 +760,295 @@ describe("IMP-036I checkout timing mutation", () => {
           opts,
         ),
       ).rejects.toMatchObject({ code: "CHECKOUT_INVALID_INPUT" });
+    });
+  });
+});
+
+async function snapshotCount(
+  persistence: Parameters<typeof evaluateCheckout>[0],
+  checkoutId: string,
+): Promise<number> {
+  const result = await persistence.withContext((ctx) =>
+    ctx.db.execute(sql`
+      select count(*)::int as n
+      from app.checkout_snapshots
+      where checkout_id = ${checkoutId}::uuid
+    `),
+  );
+  return Number(result.rows[0]!.n);
+}
+
+async function checkoutTimingRow(
+  persistence: Parameters<typeof evaluateCheckout>[0],
+  checkoutId: string,
+): Promise<{
+  status: string;
+  fulfilmentTiming: string;
+  activeSnapshotId: string | null;
+  windowStart: Date | null;
+  windowEnd: Date | null;
+  revision: string;
+}> {
+  const result = await persistence.withContext((ctx) =>
+    ctx.db.execute(sql`
+      select status,
+             fulfilment_timing,
+             active_snapshot_id::text as active_snapshot_id,
+             scheduled_window_start_at,
+             scheduled_window_end_at,
+             revision::text as revision
+      from app.checkouts
+      where id = ${checkoutId}::uuid
+    `),
+  );
+  const row = result.rows[0]!;
+  const asDate = (value: unknown): Date | null => {
+    if (value == null) return null;
+    return value instanceof Date ? value : new Date(String(value));
+  };
+  return {
+    status: String(row.status),
+    fulfilmentTiming: String(row.fulfilment_timing),
+    activeSnapshotId: row.active_snapshot_id ? String(row.active_snapshot_id) : null,
+    windowStart: asDate(row.scheduled_window_start_at),
+    windowEnd: asDate(row.scheduled_window_end_at),
+    revision: String(row.revision),
+  };
+}
+
+describe("IMP-036I tranche 1 scheduled evaluation fails closed", () => {
+  it("does not evaluate a SCHEDULED Checkout into an ASAP Snapshot", async () => {
+    await withCheckoutReadyHarness(async ({ persistence, actors, cartId, addressId }) => {
+      const opts = checkoutOpts();
+      const started = await startCheckout(persistence, actors.customerA, { cartId }, opts);
+      const withDest = await setCheckoutDestination(
+        persistence,
+        actors.customerA,
+        {
+          checkoutId: started.id,
+          expectedCheckoutRevision: started.revision,
+          destination: { kind: "SAVED_ADDRESS", savedAddressId: addressId },
+        },
+        opts,
+      );
+      const ready = await evaluateCheckout(
+        persistence,
+        actors.customerA,
+        {
+          checkoutId: withDest.id,
+          expectedCheckoutRevision: withDest.revision,
+        },
+        opts,
+      );
+      expect(ready.checkout.status).toBe("READY_FOR_PAYMENT");
+      expect(ready.checkout.fulfilmentTiming).toBe("ASAP");
+      expect(ready.snapshot.fulfilmentTiming).toBe("ASAP");
+
+      const startAt = new Date("2026-10-02T10:00:00.000Z");
+      const endAt = new Date("2026-10-02T10:30:00.000Z");
+      const scheduled = await setCheckoutFulfilmentTiming(
+        persistence,
+        actors.customerA,
+        {
+          checkoutId: ready.checkout.id,
+          expectedCheckoutRevision: ready.checkout.revision,
+          fulfilmentTiming: "SCHEDULED",
+          scheduledWindowStartAt: startAt,
+          scheduledWindowEndAt: endAt,
+        },
+        opts,
+      );
+      expect(scheduled.status).toBe("DRAFT");
+      expect(scheduled.activeSnapshotId).toBeNull();
+      expect(scheduled.revision).toBe(ready.checkout.revision + BigInt(1));
+      expect(scheduled.fulfilmentTiming).toBe("SCHEDULED");
+      expect(scheduled.scheduledWindowStartAt?.toISOString()).toBe(startAt.toISOString());
+      expect(scheduled.scheduledWindowEndAt?.toISOString()).toBe(endAt.toISOString());
+
+      const before = await snapshotCount(persistence, scheduled.id);
+      await expect(
+        evaluateCheckout(
+          persistence,
+          actors.customerA,
+          {
+            checkoutId: scheduled.id,
+            expectedCheckoutRevision: scheduled.revision,
+          },
+          opts,
+        ),
+      ).rejects.toMatchObject({ code: "CHECKOUT_STATE_CONFLICT" });
+
+      expect(await snapshotCount(persistence, scheduled.id)).toBe(before);
+      const after = await checkoutTimingRow(persistence, scheduled.id);
+      expect(after.status).toBe("DRAFT");
+      expect(after.activeSnapshotId).toBeNull();
+      expect(after.fulfilmentTiming).toBe("SCHEDULED");
+      expect(after.windowStart?.toISOString()).toBe(startAt.toISOString());
+      expect(after.windowEnd?.toISOString()).toBe(endAt.toISOString());
+      expect(after.revision).toBe(scheduled.revision.toString());
+    });
+  });
+
+  it("rejects payment preparation when Checkout is SCHEDULED and the active Snapshot is ASAP", async () => {
+    await withCheckoutReadyHarness(async ({ persistence, actors, cartId, addressId }) => {
+      const opts = checkoutOpts();
+      const started = await startCheckout(persistence, actors.customerA, { cartId }, opts);
+      const withDest = await setCheckoutDestination(
+        persistence,
+        actors.customerA,
+        {
+          checkoutId: started.id,
+          expectedCheckoutRevision: started.revision,
+          destination: { kind: "SAVED_ADDRESS", savedAddressId: addressId },
+        },
+        opts,
+      );
+      const ready = await evaluateCheckout(
+        persistence,
+        actors.customerA,
+        {
+          checkoutId: withDest.id,
+          expectedCheckoutRevision: withDest.revision,
+        },
+        opts,
+      );
+      const startAt = new Date("2026-10-02T11:00:00.000Z");
+      const endAt = new Date("2026-10-02T11:30:00.000Z");
+      await persistence.withContext((ctx) =>
+        ctx.db.execute(sql`
+          update app.checkouts
+          set fulfilment_timing = 'SCHEDULED',
+              scheduled_window_start_at = ${startAt},
+              scheduled_window_end_at = ${endAt}
+          where id = ${ready.checkout.id}::uuid
+        `),
+      );
+      const before = await snapshotCount(persistence, ready.checkout.id);
+
+      await expect(
+        prepareCheckoutForPayment(
+          persistence,
+          actors.customerA,
+          {
+            checkoutId: ready.checkout.id,
+            expectedCheckoutRevision: ready.checkout.revision,
+          },
+          opts,
+        ),
+      ).rejects.toMatchObject({ code: "CHECKOUT_STATE_CONFLICT" });
+
+      expect(await snapshotCount(persistence, ready.checkout.id)).toBe(before);
+      const after = await checkoutTimingRow(persistence, ready.checkout.id);
+      expect(after.status).not.toBe("READY_FOR_PAYMENT");
+      expect(after.fulfilmentTiming).toBe("SCHEDULED");
+      expect(after.activeSnapshotId).toBeNull();
+      expect(after.windowStart?.toISOString()).toBe(startAt.toISOString());
+      expect(after.windowEnd?.toISOString()).toBe(endAt.toISOString());
+    });
+  });
+
+  it("still evaluates DELIVERY and PICKUP ASAP Checkouts to READY", async () => {
+    await withCheckoutReadyHarness(async ({ persistence, actors, cartId, addressId }) => {
+      const opts = checkoutOpts();
+      const started = await startCheckout(persistence, actors.customerA, { cartId }, opts);
+      const withDest = await setCheckoutDestination(
+        persistence,
+        actors.customerA,
+        {
+          checkoutId: started.id,
+          expectedCheckoutRevision: started.revision,
+          destination: { kind: "SAVED_ADDRESS", savedAddressId: addressId },
+        },
+        opts,
+      );
+      const delivery = await evaluateCheckout(
+        persistence,
+        actors.customerA,
+        {
+          checkoutId: withDest.id,
+          expectedCheckoutRevision: withDest.revision,
+        },
+        opts,
+      );
+      expect(delivery.checkout.status).toBe("READY_FOR_PAYMENT");
+      expect(delivery.checkout.fulfilmentMode).toBe("DELIVERY");
+      expect(delivery.snapshot.fulfilmentTiming).toBe("ASAP");
+      expect(delivery.snapshot.scheduledWindowStartAt).toBeNull();
+      expect(delivery.snapshot.scheduledWindowEndAt).toBeNull();
+
+      const prepared = await prepareCheckoutForPayment(
+        persistence,
+        actors.customerA,
+        {
+          checkoutId: delivery.checkout.id,
+          expectedCheckoutRevision: delivery.checkout.revision,
+        },
+        opts,
+      );
+      expect(prepared.snapshot.fulfilmentTiming).toBe("ASAP");
+      expect(prepared.snapshot.id).toBe(delivery.snapshot.id);
+    });
+
+    await withCheckoutReadyHarness(async ({ persistence, actors, cartId }) => {
+      const opts = checkoutOpts();
+      await configureAlwaysAcceptingOutlet(
+        persistence,
+        actors.brandAdminActor,
+        actors.tree.outletA.id,
+      );
+      await persistence.transaction(async (tx) => {
+        await upsertOutletPickupProfile(tx, {
+          outletId: actors.tree.outletA.id,
+          enabled: true,
+          displayName: "Pickup Counter",
+          addressLine1: "12 Mall Road",
+          addressLine2: null,
+          locality: "Rajpur",
+          city: "Dehradun",
+          stateCode: "IN-UT",
+          postalCode: CHECKOUT_PIN,
+          latitude: null,
+          longitude: null,
+          instructions: "Ask at counter for BOBA order.",
+        });
+      });
+      let checkout = await startCheckout(persistence, actors.customerA, { cartId }, opts);
+      checkout = await setCheckoutFulfilment(
+        persistence,
+        actors.customerA,
+        {
+          checkoutId: checkout.id,
+          expectedCheckoutRevision: checkout.revision,
+          fulfilmentMode: "PICKUP",
+          pickupOutletId: actors.tree.outletA.id,
+        },
+        opts,
+      );
+      const pickup = await evaluateCheckout(
+        persistence,
+        actors.customerA,
+        {
+          checkoutId: checkout.id,
+          expectedCheckoutRevision: checkout.revision,
+        },
+        opts,
+      );
+      expect(pickup.checkout.status).toBe("READY_FOR_PAYMENT");
+      expect(pickup.checkout.fulfilmentMode).toBe("PICKUP");
+      expect(pickup.snapshot.fulfilmentTiming).toBe("ASAP");
+      expect(pickup.snapshot.scheduledWindowStartAt).toBeNull();
+
+      const prepared = await prepareCheckoutForPayment(
+        persistence,
+        actors.customerA,
+        {
+          checkoutId: pickup.checkout.id,
+          expectedCheckoutRevision: pickup.checkout.revision,
+        },
+        opts,
+      );
+      expect(prepared.snapshot.fulfilmentTiming).toBe("ASAP");
+      expect(prepared.snapshot.fulfilmentMode).toBe("PICKUP");
     });
   });
 });

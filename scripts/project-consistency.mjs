@@ -36432,7 +36432,82 @@ export function evaluateImp036iImplementationStart(docs) {
     const ownership = evaluateImp036iExecutionPlanPrimaryOwnership(executionPlanText);
     if (!ownership.ok) return ownership;
   }
+  const currentLifecycle = evaluateImp036iCurrentLifecycleSummaries({
+    capabilityText,
+    productDefinitionText,
+  });
+  if (!currentLifecycle.ok) return currentLifecycle;
   return { ok: true };
+}
+
+/**
+ * CURRENT IMP-036I lifecycle summaries must agree with GTM-R156 / STATE-R154.
+ * Historical Gate/Fit evidence blocks are ignored.
+ * @param {{ capabilityText?: string, productDefinitionText?: string }} docs
+ */
+export function evaluateImp036iCurrentLifecycleSummaries(docs) {
+  const sources = [
+    ["capability architecture", String(docs?.capabilityText ?? "")],
+    ["Product Definition", String(docs?.productDefinitionText ?? "")],
+  ];
+  for (const [label, text] of sources) {
+    if (!text) continue;
+    const current = imp036iWithoutHistoricalEvidence(text);
+    if (
+      /IMP036I_STARTED\s*[:=]\s*NO/.test(current) ||
+      /IMP036I_IMPLEMENTATION_STARTED\s*[:=]\s*NO/.test(current)
+    ) {
+      return {
+        ok: false,
+        code: "IMP036I_CURRENT_STARTED_MISMATCH",
+        message: `${label} CURRENT summary must not record IMP036I_STARTED = NO while ROADMAP/STATE are IMPLEMENTATION_IN_PROGRESS`,
+      };
+    }
+    if (
+      /formal\s+(?:ROADMAP\s+)?lifecycle[^\n]{0,180}ARCHITECTURE_LOCKED/i.test(current) ||
+      /\|\s*Implementation\s*\|[^\n]*NOT_STARTED/i.test(current)
+    ) {
+      return {
+        ok: false,
+        code: "IMP036I_CURRENT_LIFECYCLE_MISMATCH",
+        message: `${label} CURRENT summary must record formal lifecycle IMPLEMENTATION_IN_PROGRESS, not ARCHITECTURE_LOCKED or NOT_STARTED`,
+      };
+    }
+    if (!/IMPLEMENTATION_IN_PROGRESS/.test(current)) {
+      return {
+        ok: false,
+        code: "IMP036I_CURRENT_LIFECYCLE_MISMATCH",
+        message: `${label} CURRENT summary must record formal lifecycle IMPLEMENTATION_IN_PROGRESS`,
+      };
+    }
+    if (
+      !/IMP036I_STARTED\s*[:=]\s*YES/.test(current) &&
+      !/"implementationStarted"\s*:\s*true/.test(current)
+    ) {
+      return {
+        ok: false,
+        code: "IMP036I_CURRENT_STARTED_MISMATCH",
+        message: `${label} CURRENT summary must record implementation started`,
+      };
+    }
+    if (
+      /IMP036I_IMPLEMENTATION_COMPLETE\s*[:=]\s*YES/.test(current) ||
+      /IMP036I_ACCEPTED\s*[:=]\s*YES/.test(current)
+    ) {
+      return {
+        ok: false,
+        code: "IMP036I_CURRENT_LIFECYCLE_MISMATCH",
+        message: `${label} CURRENT summary must keep implementation complete and accepted at NO`,
+      };
+    }
+  }
+  return { ok: true };
+}
+
+function imp036iWithoutHistoricalEvidence(text) {
+  return text
+    .replace(/<!--\s*historical-gate-evidence:begin[\s\S]*?historical-gate-evidence:end[^>]*-->/g, "")
+    .replace(/<!--\s*historical-lifecycle-evidence:begin[\s\S]*?historical-lifecycle-evidence:end[^>]*-->/g, "");
 }
 
 export function evaluateImp036iImplementationAuthorization(docs) {

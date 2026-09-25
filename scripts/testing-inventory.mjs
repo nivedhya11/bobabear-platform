@@ -587,6 +587,41 @@ export function inventoryWorkflowValidationSteps(root, tracked) {
 }
 
 /**
+ * @param {string} token
+ * @param {string} pathRel
+ */
+function pathTokenSelectsTestPath(token, pathRel) {
+  const raw = token.replace(/\\/g, "/").replace(/\/+$/, "");
+  if (raw.includes("*") || raw.includes("?")) {
+    let expression = "^";
+    for (const character of raw) {
+      if (character === "*") expression += "[^/]*";
+      else if (character === "?") expression += "[^/]";
+      else if ("\\^$+?.()|{}[]".includes(character)) expression += `\\${character}`;
+      else expression += character;
+    }
+    return new RegExp(`${expression}$`).test(pathRel);
+  }
+  if (raw === pathRel) return true;
+  if (!/\.(?:test|spec)\.(?:ts|tsx|js|mjs|mts)$/.test(raw)) {
+    return pathRel.startsWith(`${raw}/`);
+  }
+  return false;
+}
+
+/**
+ * @param {string} body
+ * @param {string} pathRel
+ */
+function commandBodySelectsTestPath(body, pathRel) {
+  const pattern = /(?:^|[\s"'`=])((?:tests|src)\/[^\s"'`;&|]+)/g;
+  for (const match of body.matchAll(pattern)) {
+    if (pathTokenSelectsTestPath(match[1], pathRel)) return true;
+  }
+  return false;
+}
+
+/**
  * @param {string[]} tracked
  * @param {Record<string, string>} scripts
  * @param {ReturnType<typeof selectPackageVerificationCommands>} commands
@@ -605,16 +640,12 @@ function matchPackageCommandsForPath(pathRel, scripts, commands) {
     const body = scripts[name] || "";
     if (!body) continue;
     // Heuristic: command mentions the path or its parent suite directory.
-    if (body.includes(pathRel)) {
+    // A command selects a file only when it names that file, a parent directory
+    // token, or a glob that matches it. Mentioning tests/database/<other-file>
+    // must not claim every sibling file is verified.
+    if (commandBodySelectsTestPath(body, pathRel)) {
       matched.push(name);
       continue;
-    }
-    if (pathRel.startsWith("tests/")) {
-      const suite = pathRel.split("/")[1];
-      if (suite && (body.includes(`tests/${suite}`) || body.includes(`test:${suite}`))) {
-        matched.push(name);
-        continue;
-      }
     }
     if (pathRel.startsWith("scripts/") && pathRel.endsWith(".test.mjs") && name === "test:scripts") {
       matched.push(name);

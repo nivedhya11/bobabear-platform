@@ -152,6 +152,7 @@ import {
   evaluateImp036iArchitectureLockAuthority,
   evaluateImp036iImplementationAuthorization,
   evaluateImp036iImplementationStart,
+  evaluateImp036iCurrentLifecycleSummaries,
   evaluateImp036iApprovedProductDefinitionCandidate,
   evaluateImp036hProductDefinitionGatePassCheckpoint,
   evaluateImp036hApprovedProductDefinitionCandidate,
@@ -16805,6 +16806,13 @@ function imp036iScenarioRange(start, end) {
   return Array.from({ length: end - start + 1 }, (_, offset) => imp036iScenarioId(start + offset));
 }
 
+function imp036iLiveLifecycleDocs() {
+  return {
+    capabilityText: readFileSync("docs/platform/capabilities/IMP-036I-scheduled-fulfilment.md", "utf8"),
+    productDefinitionText: readFileSync("docs/platform/product/IMP-036I/product-definition.md", "utf8"),
+  };
+}
+
 function imp036iExecutionPlanGovernanceMeta(meta) {
   return `<!-- governance-meta\n${JSON.stringify(meta, null, 2)}\n-->`;
 }
@@ -17380,6 +17388,44 @@ describe("IMP-036I implementation authorization persistence", () => {
     const result = evaluateImp036iImplementationAuthorization(docs);
     assert.equal(result.ok, false);
     assert.equal(result.code, "IMP036I_EXECUTION_PLAN");
+  });
+
+  it("rejects a stale CURRENT IMP036I_STARTED = NO while implementation is in progress", () => {
+    const docs = imp036iLiveLifecycleDocs();
+    docs.productDefinitionText += "\nIMP036I_STARTED = NO\n";
+    const result = evaluateImp036iCurrentLifecycleSummaries(docs);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036I_CURRENT_STARTED_MISMATCH");
+  });
+
+  it("rejects a stale CURRENT formal lifecycle ARCHITECTURE_LOCKED while implementation is in progress", () => {
+    const docs = imp036iLiveLifecycleDocs();
+    docs.capabilityText += "\nIMP-036I formal lifecycle: ARCHITECTURE_LOCKED\n";
+    const result = evaluateImp036iCurrentLifecycleSummaries(docs);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036I_CURRENT_LIFECYCLE_MISMATCH");
+  });
+
+  it("preserves historical STOP and lock lifecycle evidence", () => {
+    const docs = imp036iLiveLifecycleDocs();
+    docs.capabilityText += [
+      "",
+      "<!-- historical-lifecycle-evidence:begin GTM-R155 -->",
+      "IMP036I_STARTED = NO",
+      "IMP-036I formal lifecycle: ARCHITECTURE_LOCKED",
+      "Implementation | NOT_STARTED",
+      "<!-- historical-lifecycle-evidence:end GTM-R155 -->",
+      "",
+    ].join("\n");
+    docs.productDefinitionText += [
+      "",
+      "<!-- historical-lifecycle-evidence:begin authorization -->",
+      "IMP036I_STARTED = NO",
+      "formal lifecycle ARCHITECTURE_LOCKED",
+      "<!-- historical-lifecycle-evidence:end authorization -->",
+      "",
+    ].join("\n");
+    assert.deepEqual(evaluateImp036iCurrentLifecycleSummaries(docs), { ok: true });
   });
 
   it("accepts the live IMP-036I implementation plan governance metadata", () => {

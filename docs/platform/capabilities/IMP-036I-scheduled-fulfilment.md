@@ -108,17 +108,17 @@ IMP036I_IMPLEMENTATION_AUTHORIZED = YES
 IMP036I_IMPLEMENTATION_STARTED = YES
 ```
 
-This lock does **not** create migrations, deploy, perform Founder UAT, or accept IMP-036I.
+Architecture lock itself did **not** create migrations, deploy, perform Founder UAT, or accept IMP-036I. Tranche 1 later persisted migration `0045`. Implementation remains **NOT_COMPLETE** and unaccepted.
 Historical independent Fit STOP reviews (`5309072645`, `5309240283`,
 `5309972440`) remain historical; they are not current blockers.
 
 | Field | Value |
 |---|---|
 | Architecture lock | `LOCKED` / `YES` |
-| Formal ROADMAP lifecycle | `ARCHITECTURE_LOCKED` (`IMP036I_ACTIVATED: YES`) |
+| Formal ROADMAP lifecycle | `IMPLEMENTATION_IN_PROGRESS` (`IMP036I_ACTIVATED: YES`) |
 | Product Definition | `PD-IMP-036I-DRAFT-4` **APPROVED**; Gate **PASS** |
 | Canonical Architecture Fit | **PASS** (independent review `5312653831`) |
-| Implementation | **AUTHORIZED** / **NOT_STARTED** |
+| Implementation | **AUTHORIZED** / **STARTED** / **NOT_COMPLETE** |
 | Schema change / migration | **YES** (authorized for tranche 1; not executed by authorization persistence) |
 | Binding D-number (timing) | **D-379** (`CURRENT`) |
 | Binding ADR (timing) | **ADR-019** (`Accepted`) |
@@ -179,8 +179,9 @@ post-`DELIVERED` normal replacement; no unique “lineage tip” dependency; det
 `EXISTS DELIVERED` suppression; `PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT` for runtime
 DELIVERED-predecessor acceptance remains an implementation conformance obligation.
 AF-036I-13 and AF-036I-16 are **accepted Architecture Fit authority** against CURRENT D-380.
-Independent Architecture Fit review `5312653831` = **PASS**. This lock does **not** authorize
-implementation.
+Independent Architecture Fit review `5312653831` = **PASS**. Architecture remains **LOCKED**.
+Implementation is **AUTHORIZED** / **STARTED** / **NOT_COMPLETE** (`IMPLEMENTATION_IN_PROGRESS`).
+This document does not mark IMP-036I complete or accepted.
 
 Canonical ROADMAP/STATE tip markers after implementation authorization:
 
@@ -194,7 +195,7 @@ IMP036I_STARTED: YES
 IMP036I_IMPLEMENTATION_STARTED: YES
 IMP036I_IMPLEMENTATION_COMPLETE: NO
 IMP036I_ACCEPTED: NO
-IMP-036I formal lifecycle: ARCHITECTURE_LOCKED
+IMP-036I formal lifecycle: IMPLEMENTATION_IN_PROGRESS
 PROGRAM_PAUSE_AUTHORITY: D-377
 ```
 

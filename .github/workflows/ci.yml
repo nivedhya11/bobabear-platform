@@ -139,6 +139,9 @@ jobs:
           --config vitest.database.config.mts
           tests/database/customer-menu-modifier-projection.integration.test.ts
 
+      - name: IMP-036I Tranche 1 proof
+        run: npm run test:imp036i:tranche1
+
   security-smoke:
     name: Security smoke
     runs-on: ubuntu-latest
