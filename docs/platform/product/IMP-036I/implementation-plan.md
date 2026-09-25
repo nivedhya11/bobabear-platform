@@ -125,15 +125,20 @@ Primary story ownership:
 | 4 | US-036I-011, US-036I-012 |
 | 5 | US-036I-001 … US-036I-016 re-proved together |
 
-Primary acceptance-scenario ownership:
+Primary acceptance-scenario ownership. Every mandatory scenario AC-036I-001 through AC-036I-066 has exactly one primary owner in Tranches 2, 3, or 4. Tranche 1 is persistence and domain proof only and has no mandatory customer acceptance-scenario primary ownership. Tranche 5 is integration re-proof of the full set and is not a primary owner.
 
-| Tranche | Primary scenarios |
-|---|---|
-| 1 | Persistence proof for historical ASAP Checkout/Snapshot and D-380 replacement rejection. Scenario behaviour is proved in later tranches |
-| 2 | AC-036I-001, AC-036I-002, AC-036I-004 … AC-036I-017, AC-036I-018 … AC-036I-030, AC-036I-050, AC-036I-051 |
-| 3 | AC-036I-021, AC-036I-031 … AC-036I-038, AC-036I-042 … AC-036I-044, AC-036I-048, AC-036I-049, AC-036I-052, AC-036I-056 … AC-036I-058 |
-| 4 | AC-036I-039, AC-036I-045 … AC-036I-047, AC-036I-053 … AC-036I-055, AC-036I-059 … AC-036I-066 |
-| 5 | AC-036I-001 … AC-036I-066 |
+AC-036I-003 is scheduled timing selection and is primary-owned by Tranche 2. AC-036I-040 is future full-day closure, which is not current PAUSED, and is primary-owned by Tranche 2. AC-036I-041 is operating-hours eligibility and is primary-owned by Tranche 2. AC-036I-021 is the customer accessibility scenario and is primary-owned only by Tranche 3.
+
+```text
+PRIMARY_AC_OWNERSHIP_START
+TRANCHE_1_PRIMARY_ACS = NONE
+TRANCHE_2_PRIMARY_ACS = AC-036I-001, AC-036I-002, AC-036I-003, AC-036I-004, AC-036I-005, AC-036I-006, AC-036I-007, AC-036I-008, AC-036I-009, AC-036I-010, AC-036I-011, AC-036I-012, AC-036I-013, AC-036I-014, AC-036I-015, AC-036I-016, AC-036I-017, AC-036I-018, AC-036I-019, AC-036I-020, AC-036I-022, AC-036I-023, AC-036I-024, AC-036I-025, AC-036I-026, AC-036I-027, AC-036I-028, AC-036I-029, AC-036I-030, AC-036I-040, AC-036I-041, AC-036I-050, AC-036I-051
+TRANCHE_3_PRIMARY_ACS = AC-036I-021, AC-036I-031, AC-036I-032, AC-036I-033, AC-036I-034, AC-036I-035, AC-036I-036, AC-036I-037, AC-036I-038, AC-036I-042, AC-036I-043, AC-036I-044, AC-036I-048, AC-036I-049, AC-036I-052, AC-036I-056, AC-036I-057, AC-036I-058
+TRANCHE_4_PRIMARY_ACS = AC-036I-039, AC-036I-045, AC-036I-046, AC-036I-047, AC-036I-053, AC-036I-054, AC-036I-055, AC-036I-059, AC-036I-060, AC-036I-061, AC-036I-062, AC-036I-063, AC-036I-064, AC-036I-065, AC-036I-066
+TRANCHE_5_PRIMARY_ACS = INTEGRATION_REPROOF, AC-036I-001, AC-036I-002, AC-036I-003, AC-036I-004, AC-036I-005, AC-036I-006, AC-036I-007, AC-036I-008, AC-036I-009, AC-036I-010, AC-036I-011, AC-036I-012, AC-036I-013, AC-036I-014, AC-036I-015, AC-036I-016, AC-036I-017, AC-036I-018, AC-036I-019, AC-036I-020, AC-036I-021, AC-036I-022, AC-036I-023, AC-036I-024, AC-036I-025, AC-036I-026, AC-036I-027, AC-036I-028, AC-036I-029, AC-036I-030, AC-036I-031, AC-036I-032, AC-036I-033, AC-036I-034, AC-036I-035, AC-036I-036, AC-036I-037, AC-036I-038, AC-036I-039, AC-036I-040, AC-036I-041, AC-036I-042, AC-036I-043, AC-036I-044, AC-036I-045, AC-036I-046, AC-036I-047, AC-036I-048, AC-036I-049, AC-036I-050, AC-036I-051, AC-036I-052, AC-036I-053, AC-036I-054, AC-036I-055, AC-036I-056, AC-036I-057, AC-036I-058, AC-036I-059, AC-036I-060, AC-036I-061, AC-036I-062, AC-036I-063, AC-036I-064, AC-036I-065, AC-036I-066
+TRANCHE_5_ROLE = INTEGRATION_REPROOF
+PRIMARY_AC_OWNERSHIP_END
+```
 
 Business rules and founder decisions stay bound to the approved Product Definition. Tranche 5
 must show BR-036I-001 … BR-036I-019 and FD-036I-01 … FD-036I-22 against the integrated

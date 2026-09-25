@@ -36042,6 +36042,63 @@ function checkImp036iArchitectureLock(roadmap, state, architecture, decision) {
  *   executionPlanText?: string,
  * }} docs
  */
+const IMP036I_MANDATORY_ACCEPTANCE_SCENARIO_COUNT = 66;
+
+function imp036iQuotedMarker(text, key, value) {
+  return new RegExp(`"${key}"\\s*:\\s*"${value}"`).test(text);
+}
+
+function imp036iPlanAssignmentValues(text, key) {
+  const expression = new RegExp(`^${key}\\s*=\\s*(\\S+)\\s*$`, "gm");
+  return [...text.matchAll(expression)].map((match) => match[1]);
+}
+
+function imp036iRequirePlanAssignment(text, key, expected, code, message) {
+  const values = imp036iPlanAssignmentValues(text, key);
+  if (values.length === 0 || values.some((value) => value !== expected)) {
+    return { ok: false, code, message };
+  }
+  return null;
+}
+
+function imp036iAcceptanceScenarioId(index) {
+  return `AC-036I-${String(index).padStart(3, "0")}`;
+}
+
+/**
+ * Primary owners are Tranches 2–4 only. Tranche 5 is integration re-proof.
+ * @param {string} executionPlanText
+ */
+function evaluateImp036iExecutionPlanPrimaryOwnership(executionPlanText) {
+  const counts = new Map();
+  const lineExpression = /^TRANCHE_([234])_PRIMARY_ACS\s*=\s*(.*)$/gm;
+  for (const match of executionPlanText.matchAll(lineExpression)) {
+    const ids = match[2].match(/AC-036I-\d{3}/g) ?? [];
+    for (const id of ids) {
+      counts.set(id, (counts.get(id) ?? 0) + 1);
+    }
+  }
+  for (let index = 1; index <= IMP036I_MANDATORY_ACCEPTANCE_SCENARIO_COUNT; index += 1) {
+    const id = imp036iAcceptanceScenarioId(index);
+    const count = counts.get(id) ?? 0;
+    if (count === 0) {
+      return {
+        ok: false,
+        code: "IMP036I_EXECUTION_PLAN_AC_MISSING",
+        message: `${id} must have exactly one primary owner in Tranches 2–4`,
+      };
+    }
+    if (count !== 1) {
+      return {
+        ok: false,
+        code: "IMP036I_EXECUTION_PLAN_AC_DUPLICATE",
+        message: `${id} must have exactly one primary owner in Tranches 2–4`,
+      };
+    }
+  }
+  return { ok: true };
+}
+
 export function evaluateImp036iImplementationAuthorization(docs) {
   const capabilityText = String(docs?.capabilityText ?? "");
   const productDefinitionText = String(docs?.productDefinitionText ?? "");
@@ -36106,18 +36163,50 @@ export function evaluateImp036iImplementationAuthorization(docs) {
     };
   }
   if (productDefinitionText) {
-    if (!/"implementationAuthorized"\s*:\s*"YES"/.test(productDefinitionText)) {
+    if (
+      !imp036iQuotedMarker(productDefinitionText, "implementationAuthorized", "YES") ||
+      imp036iQuotedMarker(productDefinitionText, "implementationAuthorized", "NO")
+    ) {
       return {
         ok: false,
         code: "IMP036I_IMPLEMENTATION_AUTHORIZED_YES",
         message: "IMP-036I Product Definition must record implementationAuthorized YES",
       };
     }
-    if (/"implementationStarted"\s*:\s*"YES"/.test(productDefinitionText) || /"impAccepted"\s*:\s*"YES"/.test(productDefinitionText)) {
+    if (
+      imp036iQuotedMarker(productDefinitionText, "implementationStarted", "YES") ||
+      imp036iQuotedMarker(productDefinitionText, "imp036iImplementationStarted", "YES") ||
+      imp036iQuotedMarker(productDefinitionText, "imp036iStarted", "YES") ||
+      !imp036iQuotedMarker(productDefinitionText, "implementationStarted", "NO")
+    ) {
       return {
         ok: false,
         code: "IMP036I_PREMATURE_START",
-        message: "IMP-036I Product Definition must not record implementation started or accepted",
+        message: "IMP-036I Product Definition must keep implementationStarted NO",
+      };
+    }
+    if (
+      imp036iQuotedMarker(productDefinitionText, "implementationComplete", "YES") ||
+      imp036iQuotedMarker(productDefinitionText, "imp036iImplementationComplete", "YES") ||
+      /IMP036I_IMPLEMENTATION_COMPLETE\s*[:=]\s*YES/.test(productDefinitionText) ||
+      !imp036iQuotedMarker(productDefinitionText, "implementationComplete", "NO") ||
+      !imp036iQuotedMarker(productDefinitionText, "imp036iImplementationComplete", "NO")
+    ) {
+      return {
+        ok: false,
+        code: "IMP036I_PREMATURE_COMPLETE",
+        message: "IMP-036I Product Definition must keep implementation completion NO",
+      };
+    }
+    if (
+      imp036iQuotedMarker(productDefinitionText, "impAccepted", "YES") ||
+      imp036iQuotedMarker(productDefinitionText, "imp036iAccepted", "YES") ||
+      !imp036iQuotedMarker(productDefinitionText, "impAccepted", "NO")
+    ) {
+      return {
+        ok: false,
+        code: "IMP036I_PREMATURE_ACCEPTANCE",
+        message: "IMP-036I Product Definition must keep impAccepted NO",
       };
     }
   }
@@ -36151,6 +36240,79 @@ export function evaluateImp036iImplementationAuthorization(docs) {
         };
       }
     }
+    const lifecycleFailure =
+      imp036iRequirePlanAssignment(
+        executionPlanText,
+        "IMPLEMENTATION_AUTHORIZED",
+        "YES",
+        "IMP036I_IMPLEMENTATION_AUTHORIZED_YES",
+        "IMP-036I execution plan must record IMPLEMENTATION_AUTHORIZED = YES",
+      ) ||
+      imp036iRequirePlanAssignment(
+        executionPlanText,
+        "IMPLEMENTATION_STARTED",
+        "NO",
+        "IMP036I_PREMATURE_START",
+        "IMP-036I execution plan must keep IMPLEMENTATION_STARTED = NO",
+      ) ||
+      imp036iRequirePlanAssignment(
+        executionPlanText,
+        "IMPLEMENTATION_COMPLETE",
+        "NO",
+        "IMP036I_PREMATURE_COMPLETE",
+        "IMP-036I execution plan must keep IMPLEMENTATION_COMPLETE = NO",
+      ) ||
+      imp036iRequirePlanAssignment(
+        executionPlanText,
+        "IMP036I_ACCEPTED",
+        "NO",
+        "IMP036I_PREMATURE_ACCEPTANCE",
+        "IMP-036I execution plan must keep IMP036I_ACCEPTED = NO",
+      ) ||
+      imp036iRequirePlanAssignment(
+        executionPlanText,
+        "FORMAL_LIFECYCLE",
+        "ARCHITECTURE_LOCKED",
+        "IMP036I_LOCK_YES",
+        "IMP-036I execution plan must keep FORMAL_LIFECYCLE = ARCHITECTURE_LOCKED",
+      ) ||
+      imp036iRequirePlanAssignment(
+        executionPlanText,
+        "PRODUCTION_CUTOVER_AUTHORIZED",
+        "NO",
+        "IMP036I_EXECUTION_PLAN",
+        "IMP-036I execution plan must keep PRODUCTION_CUTOVER_AUTHORIZED = NO",
+      ) ||
+      imp036iRequirePlanAssignment(
+        executionPlanText,
+        "FOUNDER_UAT",
+        "NOT_PERFORMED",
+        "IMP036I_EXECUTION_PLAN",
+        "IMP-036I execution plan must keep FOUNDER_UAT = NOT_PERFORMED",
+      );
+    if (lifecycleFailure) return lifecycleFailure;
+    const authorizedMeta = [...executionPlanText.matchAll(/"implementationAuthorized"\s*:\s*(true|false)/g)].map(
+      (match) => match[1],
+    );
+    if (authorizedMeta.some((value) => value !== "true")) {
+      return {
+        ok: false,
+        code: "IMP036I_IMPLEMENTATION_AUTHORIZED_YES",
+        message: "IMP-036I execution plan metadata must keep implementationAuthorized true",
+      };
+    }
+    const startedMeta = [...executionPlanText.matchAll(/"implementationStarted"\s*:\s*(true|false)/g)].map(
+      (match) => match[1],
+    );
+    if (startedMeta.some((value) => value !== "false")) {
+      return {
+        ok: false,
+        code: "IMP036I_PREMATURE_START",
+        message: "IMP-036I execution plan metadata must keep implementationStarted false",
+      };
+    }
+    const ownership = evaluateImp036iExecutionPlanPrimaryOwnership(executionPlanText);
+    if (!ownership.ok) return ownership;
   }
   return { ok: true };
 }
