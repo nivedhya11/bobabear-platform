@@ -15,7 +15,10 @@ Does not supersede: IMP-031 wholesale; Delivery lifecycle; one-active Delivery r
 **Accepted** (2026-09-25). Register identity **[D-380](../decision-register.md)** is **CURRENT**.
 Invariant **ARCH-G30** is **CURRENT**. Architecture revision **ARCH-R23** is **CURRENT**.
 Independent Architecture Fit review `5312653831` = **PASS**. Human architecture direction
-**APPROVED 2026-09-25**. Implementation remains **NOT_AUTHORIZED**.
+**APPROVED 2026-09-25**. IMP-036I implementation is **AUTHORIZED** / **NOT_STARTED**
+(2026-09-25). ADR decision body is unchanged. `PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT` remains
+**OPEN** until implementation proof; correction is authorized and is not done by authorization
+persistence.
 
 ```text
 D-380_STATUS: CURRENT
@@ -24,7 +27,8 @@ ARCH-R23_STATUS: CURRENT
 ARCH-G30_STATUS: CURRENT
 IMP036I_ARCHITECTURE_FIT: PASS
 IMP036I_ARCHITECTURE_LOCKED: YES
-IMP036I_IMPLEMENTATION_AUTHORIZED: NO
+IMP036I_IMPLEMENTATION_AUTHORIZED: YES
+IMP036I_IMPLEMENTATION_STARTED: NO
 CURRENT_ARCHITECTURE: ARCH-R23
 CURRENT_IMP031: ARCHITECTURE_LOCKED (CURRENT)
 CURRENT_ADR011: HISTORICAL / future-binding intent (not CURRENT decision authority)

@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R154",
+  "roadmapVersion": "GTM-R155",
   "acceptedThrough": "IMP-036H",
   "currentProductSlice": "IMP-036I",
   "nextProductSlice": "IMP-037",
   "gtmBoundary": "IMP-040",
   "lastReviewed": "2026-09-25",
-  "supersedes": "GTM-R153"
+  "supersedes": "GTM-R154"
 }
 -->
 
@@ -34,7 +34,7 @@
   change) before the next slice begins: **ACCEPT → RECONCILE → ADVANCE**.
 - The historical IMP-026 → IMP-028 controlled-continuation exception (GTM-R15 onward) is **CLOSED**.
   It does **not** generalize to future slices and is **not** reopened by GTM-R138 / GTM-R139 /
-  GTM-R140 / GTM-R141 / GTM-R142 / GTM-R143 / GTM-R144 / GTM-R145 / GTM-R146 / GTM-R147 / GTM-R148 / GTM-R149 / GTM-R150 / GTM-R151 / GTM-R152 / GTM-R153 / GTM-R154.
+  GTM-R140 / GTM-R141 / GTM-R142 / GTM-R143 / GTM-R144 / GTM-R145 / GTM-R146 / GTM-R147 / GTM-R148 / GTM-R149 / GTM-R150 / GTM-R151 / GTM-R152 / GTM-R153 / GTM-R154 / GTM-R155.
 - **GTM-R138** records a **NEW**, Founder-authorized one-off exception
   `CONTINUATION_EXCEPTION: IMP037_PROVIDER_BLOCKED_TO_IMP038` (authority PR#179/5771367844) so
   IMP-038 may activate for PD-1 Product Definition work while IMP-037 remains an
@@ -139,7 +139,7 @@ PROGRAM_PAUSE_AUTHORITY: D-377
 HISTORICAL_CONTINUATION_EXCEPTION: IMP037_PROVIDER_BLOCKED_TO_IMP038
 CONTINUATION_EXCEPTION: IMP037_PROVIDER_BLOCKED_TO_IMP038
 CONTINUATION_EXCEPTION_AUTHORITY: PR#179/5771367844
-CONTINUATION_EXCEPTION_REASON: IMP-037 qualifying external/provider work blocked by unavailable DigitalOcean/Spaces operator authority after repository implementation and local recovery prequalification were completed. Preserved as historical authorization; CURRENT tip currentProductSlice is IMP-036I under D-377 (Product Definition APPROVED; Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation NOT_AUTHORIZED; nextProductSlice remains IMP-037 held).
+CONTINUATION_EXCEPTION_REASON: IMP-037 qualifying external/provider work blocked by unavailable DigitalOcean/Spaces operator authority after repository implementation and local recovery prequalification were completed. Preserved as historical authorization; CURRENT tip currentProductSlice is IMP-036I under D-377 (Product Definition APPROVED; Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation AUTHORIZED / NOT_STARTED; nextProductSlice remains IMP-037 held).
 HISTORICAL_IMP026_TO_IMP028_CONTINUATION: CLOSED
 UNRESOLVED_PREDECESSOR: IMP-037
 IMP037_PROVIDER_BLOCKED_TO_IMP038: YES
@@ -435,7 +435,9 @@ IMP036I_PRODUCT_DEFINITION_VERSION: PD-IMP-036I-DRAFT-4
 IMP036I_PRODUCT_DEFINITION_GATE: PASS
 IMP036I_ARCHITECTURE_FIT: PASS
 IMP036I_ARCHITECTURE_LOCKED: YES
-IMP036I_IMPLEMENTATION_AUTHORIZED: NO
+IMP036I_IMPLEMENTATION_AUTHORIZED: YES
+IMP036I_IMPLEMENTATION_AUTHORIZATION: APPROVED
+IMP036I_IMPLEMENTATION_AUTHORIZATION_DATE: 2026-09-25
 IMP036I_STARTED: NO
 IMP036I_IMPLEMENTATION_STARTED: NO
 IMP036I_IMPLEMENTATION_COMPLETE: NO
@@ -473,7 +475,24 @@ IMP-036D_ACCEPTED: YES
 IMP-036D_FOUNDER_UAT: PASS
 ```
 
-**GTM-R154** records IMP-036I Architecture Fit **PASS** and architecture lock persistence.
+**GTM-R155** records explicit human IMP-036I implementation authorization after independent
+Architecture Fit PASS (`5312653831`) and architecture-lock persistence verification
+(`5313026804`). Authorization date **2026-09-25**. Formal lifecycle remains
+`ARCHITECTURE_LOCKED` (`IMP036I_IMPLEMENTATION_AUTHORIZED: YES`;
+`IMP036I_IMPLEMENTATION_AUTHORIZATION: APPROVED`; `IMP036I_STARTED: NO`;
+`IMP036I_IMPLEMENTATION_STARTED: NO`; `IMP036I_IMPLEMENTATION_COMPLETE: NO`;
+`IMP036I_ACCEPTED: NO`). Execution plan:
+[`product/IMP-036I/implementation-plan.md`](./product/IMP-036I/implementation-plan.md)
+(`IMPLEMENTATION_EXECUTION_PLAN`; not Product Definition, architecture, or acceptance
+authority). Next action = `IMPLEMENTATION_TRANCHE_1`. Preserves `acceptedThrough = IMP-036H`;
+`currentProductSlice = IMP-036I`; `pendingAcceptance = NONE`; `nextProductSlice = IMP-037`
+(held). Preserves `PROGRAM_PAUSE: PRE_GTM_PRODUCT_INSERTION_PROVIDER_BLOCKED` (**D-377**).
+Preserves **ARCH-R23** / **DR-21** / **D-379** CURRENT / **D-380** CURRENT / **D-378** AMENDED.
+Does **not** start runtime implementation, create migrations, accept IMP-036I, perform Founder
+UAT, or close `PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT`. Semantic checkpoint:
+`IMP036I_IMPLEMENTATION_AUTHORIZED`. Supersedes GTM-R154.
+
+**GTM-R154** (historical prior tip; superseded by GTM-R155) records IMP-036I Architecture Fit **PASS** and architecture lock persistence.
 Independent Architecture Fit review `5312653831` = **PASS** against evaluated HEAD
 `42e854b931e216fadc64b479371cebca4c38d17e` / tree
 `279e0e1b0e8f52c96cfd12fc89b329f73281e38f` / fingerprint
@@ -989,10 +1008,10 @@ IMP-036D remains `COMPLETE_AND_ACCEPTED`. Concise acceptance identity: UAT candi
 
 Under `PROGRAM_PAUSE: PRE_GTM_PRODUCT_INSERTION_PROVIDER_BLOCKED` (**D-377**), the active product
 slice is **IMP-036I — Scheduled Fulfilment** (`currentProductSlice = IMP-036I`;
-`pendingAcceptance = NONE`; formal ROADMAP lifecycle `PLANNED`; `IMP036I_ACTIVATED: YES`;
-Product Definition `PD-IMP-036I-DRAFT-4` = `APPROVED`; Gate **PASS**; Fit / lock / implementation
-authorization **not** performed; historical DRAFT-1 / DRAFT-2 / DRAFT-3 Gate = STOP). Per-IMP
-Product Definition:
+`pendingAcceptance = NONE`; formal ROADMAP lifecycle `ARCHITECTURE_LOCKED`;
+`IMP036I_ACTIVATED: YES`; Product Definition `PD-IMP-036I-DRAFT-4` = `APPROVED`; Gate **PASS**;
+Architecture Fit **PASS**; architecture **LOCKED**; implementation **AUTHORIZED** /
+**NOT_STARTED**; historical DRAFT-1 / DRAFT-2 / DRAFT-3 Gate = STOP). Per-IMP Product Definition:
 [`product/IMP-036I/product-definition.md`](./product/IMP-036I/product-definition.md).
 
 IMP-036H — Customer Pickup / Takeaway remains `COMPLETE_AND_ACCEPTED` with architecture
@@ -1116,7 +1135,7 @@ Historical Food Direct insertion narration remains in
 | IMP-036F | Catalog, Menu, Pricing & Promotions Management | COMPLETE_AND_ACCEPTED |
 | IMP-036G | Administration Console V2 | COMPLETE_AND_ACCEPTED |
 | IMP-036H | Customer Pickup / Takeaway | COMPLETE_AND_ACCEPTED |
-| IMP-036I | Scheduled Fulfilment | ARCHITECTURE_LOCKED (IMP036I_ACTIVATED: YES; APPROVED; Gate PASS; Fit PASS; locked YES; implementation NOT_AUTHORIZED) |
+| IMP-036I | Scheduled Fulfilment | ARCHITECTURE_LOCKED (IMP036I_ACTIVATED: YES; APPROVED; Gate PASS; Fit PASS; locked YES; implementation AUTHORIZED / NOT_STARTED) |
 | IMP-037 | Backup, Restore & Migration Readiness | IMPLEMENTATION_IN_PROGRESS (IMP037_HOLD: YES; BLOCKED_PROVIDER_ACCESS) |
 | IMP-038 | Security & Privacy Hardening | IMPLEMENTATION_IN_PROGRESS (IMP038_HOLD: YES; IMPLEMENTATION_COMPLETE / NOT_ACCEPTED; external assessment deferred) |
 | IMP-039 | Production Infrastructure & Release Pipeline | PLANNED |
@@ -1132,7 +1151,7 @@ IMP-036G → IMP-036H → IMP-036I (current; APPROVED / Gate PASS / Architecture
 ```text
 FIGMA_REQUIRED_FOR_INITIAL_IMPLEMENTATION: NO
 IMP-036A → IMP-036H: COMPLETE_AND_ACCEPTED
-IMP-036I: ARCHITECTURE_LOCKED (IMP036I_ACTIVATED: YES; APPROVED; Gate PASS; Fit PASS; implementation NOT_AUTHORIZED; currentProductSlice)
+IMP-036I: ARCHITECTURE_LOCKED (IMP036I_ACTIVATED: YES; APPROVED; Gate PASS; Fit PASS; implementation AUTHORIZED / NOT_STARTED; currentProductSlice)
 IMP-037: IMPLEMENTATION_IN_PROGRESS (IMP037_HOLD: YES; IMP037_ACTIVATED: YES; provider-blocked)
 IMP-038: IMPLEMENTATION_IN_PROGRESS (IMP038_HOLD: YES; IMP038_ACTIVATED: YES; IMPLEMENTATION_COMPLETE / NOT_ACCEPTED; external assessment deferred)
 IMP-039: PLANNED / NOT_ACTIVATED (IMP039_ACTIVATED: NO)
@@ -1196,6 +1215,16 @@ Current public GTM boundary is **IMP-040**, not IMP-035.
 
 Historical revision evidence for GTM-R1…GTM-R113 is preserved byte-for-byte in
 [`history/ROADMAP-GTM-R113-pre-compression.md`](./history/ROADMAP-GTM-R113-pre-compression.md).
+
+### GTM-R155 — 2026-09-25
+
+- Persist explicit human IMP-036I implementation authorization (2026-09-25) after Architecture
+  Fit PASS review `5312653831` and architecture-lock persistence verification `5313026804`.
+- Formal lifecycle remains `ARCHITECTURE_LOCKED`. `IMP036I_IMPLEMENTATION_AUTHORIZED: YES`;
+  `IMP036I_STARTED: NO`; `IMP036I_IMPLEMENTATION_COMPLETE: NO`; `IMP036I_ACCEPTED: NO`.
+- Execution plan: [`product/IMP-036I/implementation-plan.md`](./product/IMP-036I/implementation-plan.md).
+- Does not start runtime implementation, create migrations, accept IMP-036I, or perform Founder UAT.
+- Next action = IMPLEMENTATION_TRANCHE_1. No new D-number, ADR, or ARCH revision.
 
 ### GTM-R154 — 2026-09-25
 
