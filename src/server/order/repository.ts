@@ -189,6 +189,10 @@ export type CustomerOrderListRow = Readonly<{
   grandTotalPaise: bigint;
   currency: string;
   fulfilmentMode: "DELIVERY" | "PICKUP";
+  fulfilmentTiming: "ASAP" | "SCHEDULED";
+  scheduledWindowStartAt: Date | null;
+  scheduledWindowEndAt: Date | null;
+  scheduledTimezone: string | null;
 }>;
 
 export type WorkforceOrderListRow = Readonly<{
@@ -199,6 +203,10 @@ export type WorkforceOrderListRow = Readonly<{
   grandTotalPaise: bigint;
   currency: string;
   fulfilmentMode: "DELIVERY" | "PICKUP";
+  fulfilmentTiming: "ASAP" | "SCHEDULED";
+  scheduledWindowStartAt: Date | null;
+  scheduledWindowEndAt: Date | null;
+  scheduledTimezone: string | null;
 }>;
 
 export async function listOrdersForCustomer(
@@ -235,6 +243,10 @@ export async function listOrdersForCustomer(
       grandTotalPaise: checkoutSnapshotsTable.grandTotalPaise,
       currency: checkoutSnapshotsTable.currency,
       fulfilmentMode: checkoutSnapshotsTable.fulfilmentMode,
+      fulfilmentTiming: checkoutSnapshotsTable.fulfilmentTiming,
+      scheduledWindowStartAt: checkoutSnapshotsTable.scheduledWindowStartAt,
+      scheduledWindowEndAt: checkoutSnapshotsTable.scheduledWindowEndAt,
+      scheduledTimezone: checkoutSnapshotsTable.scheduledTimezone,
     })
     .from(ordersTable)
     .innerJoin(checkoutsTable, eq(ordersTable.checkoutId, checkoutsTable.id))
@@ -256,6 +268,11 @@ export async function listOrdersForCustomer(
       currency: r.currency,
       fulfilmentMode:
         r.fulfilmentMode === "PICKUP" ? ("PICKUP" as const) : ("DELIVERY" as const),
+      fulfilmentTiming:
+        r.fulfilmentTiming === "SCHEDULED" ? ("SCHEDULED" as const) : ("ASAP" as const),
+      scheduledWindowStartAt: r.scheduledWindowStartAt,
+      scheduledWindowEndAt: r.scheduledWindowEndAt,
+      scheduledTimezone: r.scheduledTimezone,
     }),
   );
 }
@@ -331,6 +348,10 @@ export async function searchOrdersForWorkforce(
       grandTotalPaise: checkoutSnapshotsTable.grandTotalPaise,
       currency: checkoutSnapshotsTable.currency,
       fulfilmentMode: checkoutSnapshotsTable.fulfilmentMode,
+      fulfilmentTiming: checkoutSnapshotsTable.fulfilmentTiming,
+      scheduledWindowStartAt: checkoutSnapshotsTable.scheduledWindowStartAt,
+      scheduledWindowEndAt: checkoutSnapshotsTable.scheduledWindowEndAt,
+      scheduledTimezone: checkoutSnapshotsTable.scheduledTimezone,
     })
     .from(ordersTable)
     .innerJoin(checkoutsTable, eq(ordersTable.checkoutId, checkoutsTable.id))
@@ -352,10 +373,14 @@ export async function searchOrdersForWorkforce(
       currency: r.currency,
       fulfilmentMode:
         r.fulfilmentMode === "PICKUP" ? ("PICKUP" as const) : ("DELIVERY" as const),
+      fulfilmentTiming:
+        r.fulfilmentTiming === "SCHEDULED" ? ("SCHEDULED" as const) : ("ASAP" as const),
+      scheduledWindowStartAt: r.scheduledWindowStartAt,
+      scheduledWindowEndAt: r.scheduledWindowEndAt,
+      scheduledTimezone: r.scheduledTimezone,
     }),
   );
 }
-
 export async function findCompletedCheckoutsMissingOrder(
   context: PersistenceQueryContext,
   input: {

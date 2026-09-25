@@ -48,7 +48,8 @@ const COPY: Readonly<Record<string, string>> = Object.freeze({
   CHECKOUT_PROMOTION_INDETERMINATE:
     "We couldn't confirm promotions right now. Try again shortly.",
   CHECKOUT_TAX_INDETERMINATE: "We couldn't confirm tax for that checkout. Try again shortly.",
-  CHECKOUT_REPRICED: "Checkout details changed. Review and confirm again.",
+  CHECKOUT_REPRICED:
+    "The scheduled time or cancellation terms changed. Review the updated details and confirm again. Your time, outlet, mode, items, and destination were not changed for you.",
   CHECKOUT_DEPENDENCY_INDETERMINATE:
     "We couldn't confirm checkout details right now. Try again shortly.",
   CHECKOUT_INVALID_INPUT: "That checkout update wasn't valid. Try again.",

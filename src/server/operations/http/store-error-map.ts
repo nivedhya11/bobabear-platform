@@ -14,6 +14,7 @@ import {
   OrganizationValidationError,
 } from "../../organization";
 import { ServiceabilityError } from "../../serviceability";
+import { ScheduledFulfilmentError } from "../../scheduled-fulfilment/foundations";
 
 export type StoreOperationsErrorBody = Readonly<{
   ok: false;
@@ -84,6 +85,23 @@ export function mapStoreOperationsError(error: unknown, requestId: string): Mapp
 
   if (error instanceof AssortmentInvalidStateError) {
     return { status: 409, body: { ok: false, code: "STORE_INVALID_STATE", requestId } };
+  }
+
+  if (error instanceof ScheduledFulfilmentError) {
+    const status =
+      error.code === "NOT_FOUND" ? 404 : error.code === "INVALID_INPUT" ? 400 : 409;
+    const code =
+      status === 404 ? "STORE_NOT_FOUND" : status === 400 ? "STORE_REQUEST_INVALID" : "STORE_CONFLICT";
+    return {
+      status,
+      body: {
+        ok: false,
+        code,
+        requestId,
+        message: error.message,
+        ...(error.field ? { field: error.field } : {}),
+      },
+    };
   }
 
   return { status: 500, body: { ok: false, code: "INTERNAL_ERROR", requestId } };

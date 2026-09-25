@@ -24,6 +24,7 @@ import {
   listOutletOperatingIntervals,
   pauseOutlet,
   replaceOutletOperatingSchedule,
+  requireOperatingScheduleManage,
   requireOperatingScheduleRead,
   requireOperatingStateRead,
   resolveOutletOperatingState,
@@ -34,6 +35,13 @@ import {
   unsuspendOutlet,
 } from "../../assortment";
 import { AssortmentNotFoundError, AssortmentValidationError } from "../../assortment/errors";
+import {
+  insertOutletOperatingDateException,
+  listOutletOperatingDateExceptions,
+  loadOutletSchedulingProfile,
+  saveOutletSchedulingProfile,
+  ScheduledFulfilmentError,
+} from "../../scheduled-fulfilment/foundations";
 import type { OperatingIntervalInput } from "../../assortment/types";
 import type { WorkforceAuthRuntime } from "../../auth/workforce";
 import { findOutletById } from "../../organization/outlets";
@@ -75,7 +83,11 @@ export type StoreRouteKind =
   | "serviceability_get"
   | "serviceability_distance_policy"
   | "pickup_profile_get"
-  | "pickup_profile_set";
+  | "pickup_profile_set"
+  | "scheduling_profile_get"
+  | "scheduling_profile_set"
+  | "operating_date_exceptions_get"
+  | "operating_date_exceptions_set";
 
 export type StoreRoute = Readonly<{
   kind: StoreRouteKind;
@@ -127,6 +139,20 @@ const BRAND_CAPABILITY_KEYS = [
   "assortment.manage",
 ] as const satisfies readonly PermissionKey[];
 
+function rejectOutletCancellationCutoff(body: Readonly<Record<string, unknown>>): void {
+  if (
+    "pickupCancellationCutoffMinutes" in body ||
+    "deliveryCancellationCutoffMinutes" in body ||
+    "scheduledCancellationPolicy" in body
+  ) {
+    throw new ScheduledFulfilmentError(
+      "INVALID_INPUT",
+      "Outlet override of Brand cancellation cutoff is not available.",
+      "pickupCancellationCutoffMinutes",
+    );
+  }
+}
+
 function rejectForgedStoreBody(body: Readonly<Record<string, unknown>>): void {
   for (const key of Object.keys(body)) {
     if (FORBIDDEN_BODY_KEYS.has(key)) {
@@ -160,6 +186,17 @@ function parseOptionalDate(value: unknown, field: string): Date | null | undefin
     throw new AssortmentValidationError({ message: `${field} must be a valid date.` });
   }
   return date;
+}
+
+function parseNonNegativeRevision(value: unknown): bigint {
+  if (value === undefined || value === null) return BigInt(0);
+  if (typeof value === "string" && /^\d+$/.test(value)) return BigInt(value);
+  if (typeof value === "number" && Number.isInteger(value) && value >= 0) return BigInt(value);
+  throw new ScheduledFulfilmentError(
+    "INVALID_INPUT",
+    "expectedRevision must be a non-negative integer.",
+    "expectedRevision",
+  );
 }
 
 function parseIntervals(raw: unknown): readonly OperatingIntervalInput[] {
@@ -424,6 +461,12 @@ export function classifyStoreRoute(pathname: string): StoreRoute | null {
   if (rest.length === 1 && rest[0] === "pickup-profile") {
     return { kind: "pickup_profile_get", outletId };
   }
+  if (rest.length === 1 && rest[0] === "scheduling-profile") {
+    return { kind: "scheduling_profile_get", outletId };
+  }
+  if (rest.length === 1 && rest[0] === "operating-date-exceptions") {
+    return { kind: "operating_date_exceptions_get", outletId };
+  }
   return null;
 }
 
@@ -453,6 +496,12 @@ function resolveRouteForMethod(route: StoreRoute, method: string): StoreRoute {
     if (route.kind === "pickup_profile_get") {
       return { kind: "pickup_profile_set", outletId: route.outletId };
     }
+    if (route.kind === "scheduling_profile_get") {
+      return { kind: "scheduling_profile_set", outletId: route.outletId };
+    }
+    if (route.kind === "operating_date_exceptions_get") {
+      return { kind: "operating_date_exceptions_set", outletId: route.outletId };
+    }
   }
   if (method === "PUT" && route.kind === "pickup_profile_get") {
     return { kind: "pickup_profile_set", outletId: route.outletId };
@@ -470,6 +519,8 @@ function allowedMethodsFor(kind: StoreRouteKind): readonly ("GET" | "POST" | "PU
     case "operating_state_unsuspend":
     case "operating_profile_set":
     case "operating_schedule_set":
+    case "scheduling_profile_set":
+    case "operating_date_exceptions_set":
     case "serviceability_distance_policy":
       return ["POST"];
     case "pickup_profile_set":
@@ -525,6 +576,7 @@ export async function handleStoreRoute(
         };
       }
       rejectForgedStoreBody(body.value);
+      rejectOutletCancellationCutoff(body.value);
       const result = await dispatchMutation(deps.persistence, principal, effective, body.value);
       return {
         status: 200,
@@ -687,6 +739,23 @@ async function dispatchRead(
         return { profile: profile ? projectPickupProfile(profile) : null };
       });
 
+    case "scheduling_profile_get":
+      return persistence.withContext(async (context) => {
+        await requireOperatingScheduleRead(context, principal, route.outletId);
+        const profile = await loadOutletSchedulingProfile(context, route.outletId);
+        return {
+          profile: profile ? dateJson(profile) : null,
+          configured: profile !== null,
+        };
+      });
+
+    case "operating_date_exceptions_get":
+      return persistence.withContext(async (context) => {
+        await requireOperatingScheduleRead(context, principal, route.outletId);
+        const exceptions = await listOutletOperatingDateExceptions(context, route.outletId);
+        return { exceptions: dateJson(exceptions) };
+      });
+
     default:
       throw new AssortmentValidationError({ message: "Unsupported store read route." });
   }
@@ -844,6 +913,56 @@ async function dispatchMutation(
         }),
       );
       return { intervals: dateJson(result) };
+    }
+
+    case "scheduling_profile_set": {
+      const pickup = body.pickupMinLeadMinutes;
+      const delivery = body.deliveryMinLeadMinutes;
+      if (typeof pickup !== "number" || typeof delivery !== "number") {
+        throw new ScheduledFulfilmentError(
+          "INVALID_INPUT",
+          "pickupMinLeadMinutes and deliveryMinLeadMinutes must be integers greater than 0.",
+          "pickupMinLeadMinutes",
+        );
+      }
+      const expectedRevision = parseNonNegativeRevision(body.expectedRevision);
+      await persistence.withContext(async (context) => {
+        await requireOperatingScheduleManage(context, principal, route.outletId);
+      });
+      const profile = await saveOutletSchedulingProfile(persistence, {
+        outletId: route.outletId,
+        pickupMinLeadMinutes: pickup,
+        deliveryMinLeadMinutes: delivery,
+        expectedRevision,
+      });
+      return { profile: dateJson(profile), configured: true };
+    }
+
+    case "operating_date_exceptions_set": {
+      if (body.exceptionKind !== undefined && body.exceptionKind !== "CLOSED_FULL_DAY") {
+        throw new ScheduledFulfilmentError(
+          "INVALID_INPUT",
+          "exceptionKind must be CLOSED_FULL_DAY.",
+          "exceptionKind",
+        );
+      }
+      if (typeof body.localDate !== "string") {
+        throw new ScheduledFulfilmentError(
+          "INVALID_INPUT",
+          "localDate must be an Outlet-local calendar date.",
+          "localDate",
+        );
+      }
+      const exception = await persistence.transaction(async (tx) => {
+        await requireOperatingScheduleManage(tx, principal, route.outletId);
+        return insertOutletOperatingDateException(tx, {
+          outletId: route.outletId,
+          localDate: body.localDate as string,
+          exceptionKind: "CLOSED_FULL_DAY",
+          ...(typeof body.note === "string" ? { note: body.note } : {}),
+        });
+      });
+      return { exception: dateJson(exception) };
     }
 
     case "serviceability_distance_policy": {

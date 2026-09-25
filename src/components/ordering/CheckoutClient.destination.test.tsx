@@ -14,6 +14,8 @@ const {
   setCheckoutDestination,
   setCheckoutFulfilment,
   listCheckoutPickupOptions,
+  listCheckoutScheduledWindows,
+  setCheckoutFulfilmentTiming,
   evaluateCheckout,
   readGuestCartCredential,
   readPaymentRecovery,
@@ -26,6 +28,8 @@ const {
   setCheckoutDestination: vi.fn<(...args: unknown[]) => unknown>(),
   setCheckoutFulfilment: vi.fn<(...args: unknown[]) => unknown>(),
   listCheckoutPickupOptions: vi.fn<(...args: unknown[]) => unknown>(),
+  listCheckoutScheduledWindows: vi.fn<(...args: unknown[]) => unknown>(),
+  setCheckoutFulfilmentTiming: vi.fn<(...args: unknown[]) => unknown>(),
   evaluateCheckout: vi.fn<(...args: unknown[]) => unknown>(),
   readGuestCartCredential: vi.fn<(...args: unknown[]) => unknown>(() => null),
   readPaymentRecovery: vi.fn<(...args: unknown[]) => unknown>(() => null),
@@ -123,6 +127,8 @@ vi.mock("@/lib/customer-commerce", async () => {
     setCheckoutDestination: (...args: unknown[]) => setCheckoutDestination(...args),
     setCheckoutFulfilment: (...args: unknown[]) => setCheckoutFulfilment(...args),
     listCheckoutPickupOptions: (...args: unknown[]) => listCheckoutPickupOptions(...args),
+    listCheckoutScheduledWindows: (...args: unknown[]) => listCheckoutScheduledWindows(...args),
+    setCheckoutFulfilmentTiming: (...args: unknown[]) => setCheckoutFulfilmentTiming(...args),
     evaluateCheckout: (...args: unknown[]) => evaluateCheckout(...args),
     readGuestCartCredential: (...args: unknown[]) => readGuestCartCredential(...args),
     readPaymentRecovery: (...args: unknown[]) => readPaymentRecovery(...args),
@@ -275,6 +281,47 @@ beforeEach(() => {
       ],
     },
   });
+  listCheckoutScheduledWindows.mockResolvedValue({
+    ok: true,
+    status: 200,
+    data: {
+      availability: "NO_TIMES",
+      message: "No scheduled times are available right now.",
+      timeZone: "Asia/Kolkata",
+      todayLocalDate: "2026-09-25",
+      tomorrowLocalDate: "2026-09-26",
+      cancellationCutoffMinutes: null,
+      windows: [],
+    },
+  });
+  evaluateCheckout.mockResolvedValue({
+    ok: true,
+    status: 200,
+    data: {
+      checkout: checkoutState({
+        revision: "3",
+        status: "READY_FOR_PAYMENT",
+        activeSnapshotId: "snap-1",
+        activeSnapshot: snapshot({ checkoutRevision: "3" }),
+      }),
+      snapshot: snapshot({ checkoutRevision: "3" }),
+    },
+  });
+  setCheckoutFulfilmentTiming.mockImplementation(async (input: unknown) => {
+    const body = input as { checkoutId: string; expectedCheckoutRevision: string };
+    return {
+      ok: true,
+      status: 200,
+      data: {
+        checkout: checkoutState({
+          id: body.checkoutId,
+          revision: body.expectedCheckoutRevision,
+          status: "DRAFT",
+          fulfilmentTiming: "ASAP",
+        }),
+      },
+    };
+  });
   readPaymentRecovery.mockReturnValue(null);
   setCheckoutFulfilment.mockImplementation(async (input: unknown) => {
     const body = input as {
@@ -391,6 +438,7 @@ describe("CheckoutClient back-navigation revision reconciliation", () => {
     await chooseDelivery(user);
     await waitFor(() => expect(screen.getByTestId("pick-address-a")).toBeInTheDocument());
     await user.click(screen.getByTestId("pick-address-a"));
+    await user.click(await screen.findByTestId("checkout-timing-asap"));
     await waitFor(() => expect(screen.getByTestId("checkout-review")).toBeInTheDocument());
     await user.click(screen.getByTestId("checkout-back-to-delivery"));
     await chooseDelivery(user);
@@ -466,6 +514,7 @@ describe("CheckoutClient back-navigation revision reconciliation", () => {
     await chooseDelivery(user);
     await waitFor(() => expect(screen.getByTestId("pick-address-a")).toBeInTheDocument());
     await user.click(screen.getByTestId("pick-address-a"));
+    await user.click(await screen.findByTestId("checkout-timing-asap"));
     await waitFor(() => expect(screen.getByTestId("checkout-review")).toBeInTheDocument());
     await user.click(screen.getByRole("button", { name: /Continue to payment/i }));
     await waitFor(() => expect(screen.getByTestId("payment-panel-mock")).toBeInTheDocument());
@@ -532,6 +581,7 @@ describe("CheckoutClient back-navigation revision reconciliation", () => {
     await chooseDelivery(user);
     await waitFor(() => expect(screen.getByTestId("pick-address-a")).toBeInTheDocument());
     await user.click(screen.getByTestId("pick-address-a"));
+    await user.click(await screen.findByTestId("checkout-timing-asap"));
     await waitFor(() => expect(screen.getByTestId("checkout-review")).toBeInTheDocument());
     await user.click(screen.getByTestId("checkout-back-to-delivery"));
     await chooseDelivery(user);

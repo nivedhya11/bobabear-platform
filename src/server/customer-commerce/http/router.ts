@@ -31,8 +31,10 @@ import {
   evaluateCheckout,
   getActiveCheckout,
   listCheckoutPickupOptions,
+  listCheckoutScheduledWindows,
   setCheckoutDestination,
   setCheckoutFulfilment,
+  setCustomerCheckoutFulfilmentTiming,
   startCheckout,
 } from "../../checkout";
 import {
@@ -847,6 +849,54 @@ export async function routeCustomerCommerceRequest(
       if (fulfilmentParams) {
         sendMethodNotAllowed(res, ["POST"], requestId);
         return outcome("set_checkout_fulfilment", 405, "METHOD_NOT_ALLOWED");
+      }
+    }
+
+    {
+      const windowParams = matchPath(
+        pathname,
+        "/api/v1/checkouts/{checkoutId}/scheduled-windows",
+      );
+      if (windowParams && method === "GET") {
+        const identity = await requireTrustedIdentity(deps.runtime, req.headers);
+        const actor = toCartCustomerActor(identity);
+        const result = await listCheckoutScheduledWindows(
+          deps.persistence,
+          actor,
+          { checkoutId: windowParams.checkoutId },
+          { policy: CUSTOMER_COMMERCE_CHECKOUT_POLICY },
+        );
+        sendJson(res, { ok: true, ...result }, { status: 200, requestId });
+        return outcome("list_checkout_scheduled_windows", 200, "OK");
+      }
+      if (windowParams) {
+        sendMethodNotAllowed(res, ["GET"], requestId);
+        return outcome("list_checkout_scheduled_windows", 405, "METHOD_NOT_ALLOWED");
+      }
+    }
+
+    {
+      const timingParams = matchPath(
+        pathname,
+        "/api/v1/checkouts/{checkoutId}/fulfilment-timing",
+      );
+      if (timingParams && method === "POST") {
+        const body = await readBody(req, requestId, res);
+        if (!body) return outcome("set_checkout_fulfilment_timing", 400, "INVALID_REQUEST");
+        const identity = await requireTrustedIdentity(deps.runtime, req.headers);
+        const actor = toCartCustomerActor(identity);
+        const checkout = await setCustomerCheckoutFulfilmentTiming(
+          deps.persistence,
+          actor,
+          { ...body, checkoutId: timingParams.checkoutId },
+          { policy: CUSTOMER_COMMERCE_CHECKOUT_POLICY },
+        );
+        sendJson(res, { ok: true, checkout }, { status: 200, requestId });
+        return outcome("set_checkout_fulfilment_timing", 200, "OK");
+      }
+      if (timingParams) {
+        sendMethodNotAllowed(res, ["POST"], requestId);
+        return outcome("set_checkout_fulfilment_timing", 405, "METHOD_NOT_ALLOWED");
       }
     }
 

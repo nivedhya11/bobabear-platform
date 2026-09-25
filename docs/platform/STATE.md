@@ -2,7 +2,7 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R155",
+  "stateVersion": "STATE-R156",
   "acceptedThrough": "IMP-036H",
   "currentProductSlice": "IMP-036I",
   "nextProductSlice": "IMP-037",
@@ -10,7 +10,7 @@
   "gtmBoundary": "IMP-040",
   "governanceHealth": "ALIGNED",
   "lastReviewed": "2026-09-25",
-  "supersedes": "STATE-R154"
+  "supersedes": "STATE-R155"
 }
 -->
 
@@ -41,7 +41,8 @@ Next Product Slice:             IMP-037 — Backup, Restore & Migration Readines
 Unresolved Predecessor:         IMP-037 — Backup, Restore & Migration Readiness
 Current Governance Activity:    IMP-036I IMPLEMENTATION_IN_PROGRESS
                               (formal lifecycle IMPLEMENTATION_IN_PROGRESS;
-                              GTM-R157 / STATE-R155;
+                              GTM-R158 / STATE-R156;
+                              prior tip GTM-R157 / STATE-R155;
                               prior tip GTM-R156 / STATE-R154;
                               prior tip GTM-R154 / STATE-R152;
                               IMP036I_ACTIVATED: YES; formal lifecycle IMPLEMENTATION_IN_PROGRESS;
@@ -81,7 +82,7 @@ Current Governance Activity:    IMP-036I IMPLEMENTATION_IN_PROGRESS
                               IMP036I_IMPLEMENTATION_COMPLETE: NO;
                               IMP036I_ACCEPTED: NO;
                               FOUNDER_UAT: NOT_PERFORMED;
-                              nextGate: INDEPENDENT_TRANCHE_2_VERIFICATION;
+                              nextGate: INDEPENDENT_TRANCHE_3_VERIFICATION;
                               D-379: CURRENT; D-380: CURRENT; D-378: AMENDED;
                               IMP-036H remains COMPLETE_AND_ACCEPTED;
                               prior tip GTM-R153 / STATE-R151 (Product Definition Gate PASS);
@@ -868,7 +869,26 @@ Implementation/review provenance for IMP-036F is recorded in
 Agents may propose a STATE delta in their report. Only independent acceptance updates this file's
 accepted position and may promote `governanceHealth` to `ALIGNED`.
 
-## 10. STATE-R155 record
+## 10. STATE-R156 record
+
+```text
+STATE-R156 = IMP036I_TRANCHE_3
+acceptedThrough: IMP-036H
+pendingAcceptance: NONE
+currentProductSlice: IMP-036I
+nextProductSlice: IMP-037
+Current Governance Activity: IMP-036I IMPLEMENTATION_IN_PROGRESS under PROGRAM_PAUSE PRE_GTM_PRODUCT_INSERTION_PROVIDER_BLOCKED (D-377); formal lifecycle IMPLEMENTATION_IN_PROGRESS; independent Tranche 2 verification PASS against main 557db375545c5f0853ec894919fd1e0d6f696770 / tree 35b19c62c080c9c1b432b0dea8937c717d015b72; ARCH-R23; DR-21; D-379 CURRENT; D-380 CURRENT; D-378 AMENDED; implementation AUTHORIZED / STARTED; IMP036I_IMPLEMENTATION_COMPLETE: NO; IMP036I_ACCEPTED: NO; Founder UAT NOT_PERFORMED; nextGate: INDEPENDENT_TRANCHE_3_VERIFICATION
+IMP036I_IMPLEMENTATION_AUTHORIZED: YES
+IMP036I_IMPLEMENTATION_STARTED: YES
+IMP036I_IMPLEMENTATION_COMPLETE: NO
+IMP036I_ACCEPTED: NO
+FOUNDER_UAT: NOT_PERFORMED
+NEXT_ACTION: INDEPENDENT_TRANCHE_3_VERIFICATION
+```
+
+Independent Tranche 2 verification is PASS. Tranche 3 surfaces are implemented and are not independently verified, not implementation-complete, and not accepted. Proactive reminder runtime remains Tranche 4. Do not start Tranche 4 until independent Tranche 3 verification passes.
+
+## 10. STATE-R155 record (historical prior tip)
 
 ```text
 STATE-R155 = IMP036I_TRANCHE_2

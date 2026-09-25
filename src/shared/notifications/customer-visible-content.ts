@@ -12,6 +12,11 @@ export type CustomerVisibleNotificationContentInput = Readonly<{
   semanticType: NotificationSemanticType;
   fulfilmentMode: "DELIVERY" | "PICKUP";
   pickupLocationDisplayName?: string | null;
+  /** Sealed timing. Absent or ASAP keeps existing wording. */
+  fulfilmentTiming?: "ASAP" | "SCHEDULED";
+  /** Outlet-local window label from the sealed Snapshot. */
+  scheduledWindowLabel?: string | null;
+  scheduledTimeZone?: string | null;
 }>;
 
 export type CustomerVisibleNotificationContent = Readonly<{
@@ -33,6 +38,7 @@ export function renderCustomerVisibleNotificationContent(
   input: CustomerVisibleNotificationContentInput,
 ): CustomerVisibleNotificationContent {
   const { semanticType, fulfilmentMode, pickupLocationDisplayName } = input;
+  const timingSentence = scheduledTimingSentence(input);
 
   if (
     (semanticType === "OUT_FOR_DELIVERY" || semanticType === "DELIVERED") &&
@@ -89,6 +95,10 @@ export function renderCustomerVisibleNotificationContent(
     }
   }
 
+  if (timingSentence && semanticType !== "OUT_FOR_DELIVERY" && semanticType !== "DELIVERED") {
+    summary = `${summary}${timingSentence}`;
+  }
+
   const forbidsRiderOrDeliveryProgressClaims = fulfilmentMode === "PICKUP";
   if (
     forbidsRiderOrDeliveryProgressClaims &&
@@ -103,6 +113,20 @@ export function renderCustomerVisibleNotificationContent(
     summary,
     forbidsRiderOrDeliveryProgressClaims,
   });
+}
+
+function scheduledTimingSentence(
+  input: CustomerVisibleNotificationContentInput,
+): string | null {
+  if (input.fulfilmentTiming !== "SCHEDULED") return null;
+  const label = input.scheduledWindowLabel?.trim();
+  if (!label) return null;
+  const zone = input.scheduledTimeZone?.trim();
+  const zoneSuffix = zone ? ` (${zone})` : "";
+  if (input.fulfilmentMode === "PICKUP") {
+    return ` Scheduled pickup window ${label}${zoneSuffix}.`;
+  }
+  return ` Arrival / fulfilment window ${label}${zoneSuffix}.`;
 }
 
 export function summaryClaimsRiderOrDeliveryProgress(summary: string): boolean {

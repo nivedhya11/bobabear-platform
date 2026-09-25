@@ -173,3 +173,71 @@ export async function setCheckoutFulfilment(input: {
   }
   return { ok: true, status: result.status, data: { checkout: result.data.checkout } };
 }
+
+export type CommerceScheduledWindow = Readonly<{
+  startAt: string;
+  endAt: string;
+  localDate: string;
+  day: "TODAY" | "TOMORROW";
+  timeZone: string;
+  label: string;
+}>;
+
+export type CommerceScheduledWindows = Readonly<{
+  availability: "AVAILABLE" | "NO_TIMES" | "DESTINATION_REQUIRED" | "OUTLET_REQUIRED" | "UNAVAILABLE";
+  message: string | null;
+  timeZone: string | null;
+  todayLocalDate: string | null;
+  tomorrowLocalDate: string | null;
+  cancellationCutoffMinutes: number | null;
+  windows: readonly CommerceScheduledWindow[];
+}>;
+
+export async function listCheckoutScheduledWindows(input: {
+  checkoutId: string;
+}): Promise<CommerceHttpResult<CommerceScheduledWindows>> {
+  const result = await commerceRequest<CommerceScheduledWindows & { ok: true }>(
+    `/api/v1/checkouts/${input.checkoutId}/scheduled-windows`,
+    { method: "GET" },
+  );
+  if (!result.ok) return result;
+  return {
+    ok: true,
+    status: result.status,
+    data: {
+      availability: result.data.availability,
+      message: result.data.message,
+      timeZone: result.data.timeZone,
+      todayLocalDate: result.data.todayLocalDate,
+      tomorrowLocalDate: result.data.tomorrowLocalDate,
+      cancellationCutoffMinutes: result.data.cancellationCutoffMinutes,
+      windows: result.data.windows,
+    },
+  };
+}
+
+export async function setCheckoutFulfilmentTiming(input: {
+  checkoutId: string;
+  expectedCheckoutRevision: string;
+  fulfilmentTiming: "ASAP" | "SCHEDULED";
+  scheduledWindowStartAt?: string | null;
+  scheduledWindowEndAt?: string | null;
+}): Promise<CommerceHttpResult<{ checkout: CommerceCheckout }>> {
+  const body: Record<string, unknown> = {
+    expectedCheckoutRevision: input.expectedCheckoutRevision,
+    fulfilmentTiming: input.fulfilmentTiming,
+  };
+  if (input.fulfilmentTiming === "SCHEDULED") {
+    body.scheduledWindowStartAt = input.scheduledWindowStartAt;
+    body.scheduledWindowEndAt = input.scheduledWindowEndAt;
+  }
+  const result = await commerceRequest<CheckoutEnvelope>(
+    `/api/v1/checkouts/${input.checkoutId}/fulfilment-timing`,
+    { method: "POST", body },
+  );
+  if (!result.ok) return result;
+  if (!result.data.checkout) {
+    return { ok: false, code: "INVALID_RESPONSE", status: result.status };
+  }
+  return { ok: true, status: result.status, data: { checkout: result.data.checkout } };
+}

@@ -571,6 +571,20 @@ function OrderDetail({
         )}
       </section>
 
+      <section data-testid="operations-scheduled-timing" aria-labelledby="operations-scheduled-timing">
+        <h2 id="operations-scheduled-timing" className="font-body text-[18px] font-semibold">
+          {order.fulfilmentMode === "PICKUP" ? "Pickup promise" : "Arrival / fulfilment window"}
+        </h2>
+        <p className="mt-2 font-body text-[14px]">
+          {order.fulfilmentTiming === "SCHEDULED" && order.scheduledWindow
+            ? `${order.scheduledWindow.label} (${order.scheduledWindow.timeZone})`
+            : "As soon as possible"}
+          {order.operationalCue === "DUE_SOON" ? " · Due soon" : ""}
+          {order.operationalCue === "OVERDUE" ? " · Overdue" : ""}
+          {order.operationalCue === "SCHEDULED" ? " · Scheduled" : ""}
+        </p>
+      </section>
+
       {order.fulfilmentMode === "PICKUP" || order.pickupLocation ? (
         <section
           aria-labelledby="operations-pickup-verification"

@@ -13,6 +13,7 @@ import {
   getActiveCart,
   getActiveCheckout,
   listCheckoutPickupOptions,
+  listCheckoutScheduledWindows,
   listCustomerOrders,
   listOwnAddresses,
   readGuestCartCredential,
@@ -20,6 +21,7 @@ import {
   reconcileGuestCart,
   setCheckoutDestination,
   setCheckoutFulfilment,
+  setCheckoutFulfilmentTiming,
   startCheckout,
   updateOwnAddress,
   type CartReconciliationResolution,
@@ -28,6 +30,7 @@ import {
   type CommerceCheckout,
   type CommerceCheckoutSnapshot,
   type CommercePickupOption,
+  type CommerceScheduledWindows,
 } from "@/lib/customer-commerce";
 import { ReconcileConflictDialog } from "@/components/ordering/ReconcileConflictDialog";
 import {
@@ -38,6 +41,8 @@ import {
   CheckoutFulfilmentChoice,
   type CheckoutFulfilmentChoiceMode,
 } from "@/components/ordering/CheckoutFulfilmentChoice";
+import { CheckoutTimingChoice } from "@/components/ordering/CheckoutTimingChoice";
+import { formatOutletLocalWindowLabel } from "@/shared/scheduled-fulfilment/presentation";
 import {
   CheckoutPickupOutletStep,
   type PickupSelectionPolicy,
@@ -65,6 +70,7 @@ type Screen =
   | "fulfilment"
   | "destination"
   | "pickup"
+  | "timing"
   | "review"
   | "payment"
   | "cart_changed_unresolved"
@@ -114,6 +120,9 @@ export function CheckoutClient(props: { catalog: OrderingCatalog }) {
   const [pickupPolicy, setPickupPolicy] = useState<PickupSelectionPolicy | null>(null);
   const [pickupOutlets, setPickupOutlets] = useState<readonly CommercePickupOption[]>([]);
   const [selectedPickupOutletId, setSelectedPickupOutletId] = useState<string | null>(null);
+  const [timingLoading, setTimingLoading] = useState(false);
+  const [scheduledWindows, setScheduledWindows] = useState<CommerceScheduledWindows | null>(null);
+  const [selectedWindowStart, setSelectedWindowStart] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -413,6 +422,65 @@ export function CheckoutClient(props: { catalog: OrderingCatalog }) {
     setCheckout(evaluated.data.checkout);
     setSnapshot(evaluated.data.snapshot);
     setChosenMode("PICKUP");
+    await openTiming(evaluated.data.checkout);
+  }
+
+  async function openTiming(current: CommerceCheckout): Promise<void> {
+    setScreen("timing");
+    setTimingLoading(true);
+    setError(null);
+    const listed = await listCheckoutScheduledWindows({ checkoutId: current.id });
+    setTimingLoading(false);
+    if (!listed.ok) {
+      setScheduledWindows(null);
+      setError(commerceErrorCopy(listed.code));
+      return;
+    }
+    setScheduledWindows(listed.data);
+    setSelectedWindowStart(current.scheduledWindowStartAt ?? null);
+  }
+
+  async function confirmTiming(
+    choice:
+      | Readonly<{ timing: "ASAP" }>
+      | Readonly<{ timing: "SCHEDULED"; startAt: string; endAt: string }>,
+  ): Promise<void> {
+    if (pending || !checkout) return;
+    setPending(true);
+    setError(null);
+    let current = checkout;
+    const saved = await setCheckoutFulfilmentTiming({
+      checkoutId: current.id,
+      expectedCheckoutRevision: current.revision,
+      fulfilmentTiming: choice.timing,
+      ...(choice.timing === "SCHEDULED"
+        ? { scheduledWindowStartAt: choice.startAt, scheduledWindowEndAt: choice.endAt }
+        : {}),
+    });
+    if (!saved.ok) {
+      setPending(false);
+      setError(commerceErrorCopy(saved.code));
+      if (saved.code === "CHECKOUT_STATE_CONFLICT" || saved.code === "CHECKOUT_REPRICED") {
+        await openTiming(current);
+      }
+      return;
+    }
+    current = saved.data.checkout;
+    setCheckout(current);
+    const evaluated = await evaluateCheckout({
+      checkoutId: current.id,
+      expectedCheckoutRevision: current.revision,
+    });
+    setPending(false);
+    if (!evaluated.ok) {
+      setError(commerceErrorCopy(evaluated.code));
+      if (evaluated.code === "CHECKOUT_STATE_CONFLICT" || evaluated.code === "CHECKOUT_REPRICED") {
+        await openTiming(evaluated.ok ? current : current);
+      }
+      return;
+    }
+    setCheckout(evaluated.data.checkout);
+    setSnapshot(evaluated.data.snapshot);
     setScreen("review");
   }
 
@@ -515,7 +583,7 @@ export function CheckoutClient(props: { catalog: OrderingCatalog }) {
     setCheckout(evaluated.data.checkout);
     setSnapshot(evaluated.data.snapshot);
     setChosenMode("DELIVERY");
-    setScreen("review");
+    await openTiming(evaluated.data.checkout);
   }
 
   function adoptCheckoutRevision(revision: string): void {
@@ -619,7 +687,7 @@ export function CheckoutClient(props: { catalog: OrderingCatalog }) {
   // historical DELIVERY default to label the first step before selection.
   const reviewMode = chosenMode ?? snapshot?.fulfilmentMode ?? null;
   const activeStep =
-    screen === "fulfilment" || screen === "destination" || screen === "pickup"
+    screen === "fulfilment" || screen === "destination" || screen === "pickup" || screen === "timing"
       ? "fulfilment"
       : screen === "review"
         ? "review"
@@ -783,12 +851,82 @@ export function CheckoutClient(props: { catalog: OrderingCatalog }) {
           />
         ) : null}
 
+        {screen === "timing" && checkout ? (
+          <div className="flex flex-col gap-4">
+            <CheckoutTimingChoice
+              pending={pending}
+              loading={timingLoading}
+              mode={chosenMode === "PICKUP" ? "PICKUP" : "DELIVERY"}
+              selectedTiming={
+                selectedWindowStart
+                  ? "SCHEDULED"
+                  : checkout.fulfilmentTiming === "SCHEDULED"
+                    ? "SCHEDULED"
+                    : "ASAP"
+              }
+              selectedWindowStart={selectedWindowStart}
+              windows={scheduledWindows?.windows ?? []}
+              availability={scheduledWindows?.availability ?? null}
+              message={scheduledWindows?.message ?? null}
+              timeZone={scheduledWindows?.timeZone ?? null}
+              cancellationCutoffMinutes={
+                selectedWindowStart ? (scheduledWindows?.cancellationCutoffMinutes ?? null) : null
+              }
+              errorId="checkout-timing-error"
+              errorMessage={error}
+              onSelectAsap={() => {
+                setSelectedWindowStart(null);
+                void confirmTiming({ timing: "ASAP" });
+              }}
+              onSelectWindow={(window) => {
+                setSelectedWindowStart(window.startAt);
+                void confirmTiming({
+                  timing: "SCHEDULED",
+                  startAt: window.startAt,
+                  endAt: window.endAt,
+                });
+              }}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              className="min-h-11"
+              disabled={pending}
+              data-testid="checkout-timing-back"
+              onClick={() => {
+                setError(null);
+                setScreen(chosenMode === "PICKUP" ? "pickup" : "destination");
+              }}
+            >
+              Back
+            </Button>
+          </div>
+        ) : null}
+
         {screen === "review" && snapshot && checkout ? (
           <div className="flex flex-col gap-4" data-testid="checkout-review">
             <section className="rounded-xl border border-[var(--border-strong)] bg-[var(--bg-section)] p-4">
               <h2 className="mb-2 font-body text-[15px] font-semibold text-[var(--text-primary)]">
                 {snapshot.fulfilmentMode === "PICKUP" ? "Pickup" : "Delivery destination"}
               </h2>
+              <p data-testid="checkout-review-timing" className="mb-2 font-body text-[14px] text-[var(--text-secondary)]">
+                {snapshot.fulfilmentTiming === "SCHEDULED" &&
+                snapshot.scheduledWindowStartAt &&
+                snapshot.scheduledWindowEndAt &&
+                snapshot.scheduledTimezone
+                  ? snapshot.fulfilmentMode === "DELIVERY"
+                    ? `Arrival / fulfilment window ${formatOutletLocalWindowLabel(
+                        new Date(snapshot.scheduledWindowStartAt),
+                        new Date(snapshot.scheduledWindowEndAt),
+                        snapshot.scheduledTimezone,
+                      )} (${snapshot.scheduledTimezone})`
+                    : `Pickup window ${formatOutletLocalWindowLabel(
+                        new Date(snapshot.scheduledWindowStartAt),
+                        new Date(snapshot.scheduledWindowEndAt),
+                        snapshot.scheduledTimezone,
+                      )} (${snapshot.scheduledTimezone})`
+                  : "As soon as possible"}
+              </p>
               {snapshot.fulfilmentMode === "PICKUP" && pickupLocation ? (
                 <div data-testid="checkout-review-pickup" className="flex flex-col gap-1">
                   <p className="font-body text-[14px] font-semibold text-[var(--text-primary)]">
