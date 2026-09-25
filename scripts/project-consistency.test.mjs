@@ -17279,5 +17279,69 @@ describe("IMP-036I implementation authorization persistence", () => {
     docs.executionPlanText += '\n"implementationAuthorized": true\n"implementationStarted": false\n';
     assert.deepEqual(evaluateImp036iImplementationAuthorization(docs), { ok: true });
   });
+
+  it("rejects a fenced governance-meta example when the leading header is removed", () => {
+    const docs = baseDocs();
+    const header = imp036iExecutionPlanGovernanceMeta(IMP036I_AUTHORIZED_PLAN_META);
+    docs.executionPlanText = docs.executionPlanText.replace(`${header}\n`, "");
+    docs.executionPlanText += `\n\`\`\`text\n${header}\n\`\`\`\n`;
+    const result = evaluateImp036iImplementationAuthorization(docs);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036I_EXECUTION_PLAN");
+  });
+
+  it("rejects a later prose governance-meta comment when the leading header is removed", () => {
+    const docs = baseDocs();
+    const header = imp036iExecutionPlanGovernanceMeta(IMP036I_AUTHORIZED_PLAN_META);
+    docs.executionPlanText = docs.executionPlanText.replace(`${header}\n`, "");
+    docs.executionPlanText += `\nThe following example is explanatory prose and not authority.\n${header}\n`;
+    const result = evaluateImp036iImplementationAuthorization(docs);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036I_EXECUTION_PLAN");
+  });
+
+  it("ignores a fenced governance-meta example when the leading header remains", () => {
+    const docs = baseDocs();
+    const header = imp036iExecutionPlanGovernanceMeta(IMP036I_AUTHORIZED_PLAN_META);
+    docs.executionPlanText += `\n\`\`\`text\n${header}\n\`\`\`\n`;
+    assert.deepEqual(evaluateImp036iImplementationAuthorization(docs), { ok: true });
+  });
+
+  it("rejects a second non-fenced top-level governance-meta authority comment", () => {
+    const docs = baseDocs();
+    docs.executionPlanText += `\n${imp036iExecutionPlanGovernanceMeta(IMP036I_AUTHORIZED_PLAN_META)}\n`;
+    const result = evaluateImp036iImplementationAuthorization(docs);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036I_EXECUTION_PLAN");
+  });
+
+  it("rejects prose before the governance-meta header", () => {
+    const docs = baseDocs();
+    docs.executionPlanText = `Notes about metadata authority.\n\n${docs.executionPlanText}`;
+    const result = evaluateImp036iImplementationAuthorization(docs);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036I_EXECUTION_PLAN");
+  });
+
+  it("accepts an optional BOM and whitespace before the leading governance-meta header", () => {
+    const docs = baseDocs();
+    docs.executionPlanText = `\uFEFF \n\n${docs.executionPlanText}`;
+    assert.deepEqual(evaluateImp036iImplementationAuthorization(docs), { ok: true });
+  });
+
+  it("rejects invalid JSON in the leading governance-meta header", () => {
+    const docs = baseDocs();
+    const header = imp036iExecutionPlanGovernanceMeta(IMP036I_AUTHORIZED_PLAN_META);
+    docs.executionPlanText = docs.executionPlanText.replace(header, "<!-- governance-meta\n{ not json }\n-->");
+    const result = evaluateImp036iImplementationAuthorization(docs);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036I_EXECUTION_PLAN");
+  });
+
+  it("accepts the live IMP-036I implementation plan governance metadata", () => {
+    const docs = baseDocs();
+    docs.executionPlanText = readFileSync("docs/platform/product/IMP-036I/implementation-plan.md", "utf8");
+    assert.deepEqual(evaluateImp036iImplementationAuthorization(docs), { ok: true });
+  });
 });
 

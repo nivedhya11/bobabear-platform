@@ -36062,17 +36062,81 @@ function imp036iRequirePlanAssignment(text, key, expected, code, message) {
 }
 
 /**
- * Authorization booleans are valid only inside the single governance-meta JSON block.
- * A matching literal in prose or a code fence does not satisfy this check.
+ * Inclusive character ranges of repository-native backtick fences.
+ * Tilde fences are not used in platform docs and are not treated as fences.
+ * @param {string} text
+ * @returns {Array<[number, number]>}
+ */
+function imp036iMarkdownFenceRanges(text) {
+  const ranges = [];
+  let index = 0;
+  /** @type {{ length: number, rangeStart: number } | null} */
+  let open = null;
+  while (index <= text.length) {
+    const nextBreak = text.indexOf("\n", index);
+    const lineEnd = nextBreak === -1 ? text.length : nextBreak;
+    let line = text.slice(index, lineEnd);
+    if (line.endsWith("\r")) line = line.slice(0, -1);
+    if (!open) {
+      const match = /^( {0,3})(`{3,})(.*)$/.exec(line);
+      if (match && !match[3].includes("`")) {
+        open = { length: match[2].length, rangeStart: index };
+      }
+    } else {
+      const match = /^( {0,3})(`{3,})[ \t]*$/.exec(line);
+      if (match && match[2].length >= open.length) {
+        ranges.push([open.rangeStart, lineEnd]);
+        open = null;
+      }
+    }
+    if (nextBreak === -1) break;
+    index = nextBreak + 1;
+  }
+  if (open) ranges.push([open.rangeStart, text.length]);
+  return ranges;
+}
+
+/**
+ * Replace fenced characters with spaces so example comments cannot match,
+ * while keeping indexes aligned with the original document.
+ * @param {string} text
+ */
+function imp036iMaskMarkdownFences(text) {
+  const ranges = imp036iMarkdownFenceRanges(text);
+  if (ranges.length === 0) return text;
+  let masked = "";
+  let cursor = 0;
+  for (const [start, end] of ranges) {
+    masked += text.slice(cursor, start);
+    masked += text.slice(start, end).replace(/[^\n\r]/g, " ");
+    cursor = end;
+  }
+  return masked + text.slice(cursor);
+}
+
+/**
+ * Authorization booleans are valid only in the single leading governance-meta JSON header.
+ * Only a UTF-8 BOM and whitespace may precede it. Fenced examples are not authority.
+ * A second non-fenced governance-meta comment is duplicate authority.
  * @param {string} executionPlanText
  */
 function evaluateImp036iExecutionPlanGovernanceMeta(executionPlanText) {
-  const blocks = [...String(executionPlanText).matchAll(/<!--\s*governance-meta\s*([\s\S]*?)-->/g)];
+  const text = String(executionPlanText);
+  const visible = imp036iMaskMarkdownFences(text);
+  const blocks = [...visible.matchAll(/<!--\s*governance-meta\s*([\s\S]*?)-->/g)];
   if (blocks.length !== 1) {
     return {
       ok: false,
       code: "IMP036I_EXECUTION_PLAN",
       message: "IMP-036I execution plan must contain exactly one governance-meta JSON block",
+    };
+  }
+  const prefixLength = /^\uFEFF?\s*/.exec(text)[0].length;
+  if (blocks[0].index !== prefixLength) {
+    return {
+      ok: false,
+      code: "IMP036I_EXECUTION_PLAN",
+      message: "IMP-036I execution plan governance-meta must be the leading metadata header",
     };
   }
   let meta;
