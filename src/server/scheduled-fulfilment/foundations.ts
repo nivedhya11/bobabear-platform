@@ -358,3 +358,20 @@ export async function insertOutletOperatingDateException(
     throw error;
   }
 }
+
+export async function listOutletClosedFullDayDates(
+  context: PersistenceQueryContext,
+  outletId: string,
+): Promise<readonly string[]> {
+  assertApplicationRole(context, "listOutletClosedFullDayDates");
+  const rows = await context.db
+    .select({ localDate: outletOperatingDateExceptionsTable.localDate })
+    .from(outletOperatingDateExceptionsTable)
+    .where(
+      and(
+        eq(outletOperatingDateExceptionsTable.outletId, outletId),
+        eq(outletOperatingDateExceptionsTable.exceptionKind, "CLOSED_FULL_DAY"),
+      ),
+    );
+  return rows.map((row) => row.localDate);
+}

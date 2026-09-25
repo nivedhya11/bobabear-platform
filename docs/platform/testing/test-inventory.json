@@ -31,16 +31,16 @@
     "note": "Protected evidence and generated reports are never classified as executable test source."
   },
   "counts": {
-    "trackedPathsConsidered": 2156,
-    "executableTestFiles": 458,
+    "trackedPathsConsidered": 2161,
+    "executableTestFiles": 461,
     "sourceTestFiles": 139,
-    "testsTreeExecutableFiles": 248,
+    "testsTreeExecutableFiles": 251,
     "scriptTestFiles": 71,
     "playwrightSpecs": 12,
     "vitestConfigs": 2,
     "playwrightConfigs": 7,
     "testSupportScripts": 51,
-    "packageTestCommands": 81,
+    "packageTestCommands": 82,
     "packageAuditCommands": 27,
     "packageE2eCommands": 9,
     "packageCheckCommands": 13,
@@ -270,6 +270,7 @@
     "tests/checkout/checkout.domain.test.ts",
     "tests/checkout/checkout.pickup.domain.test.ts",
     "tests/checkout/parse-fulfilment-input.test.ts",
+    "tests/checkout/scheduled-fulfilment.domain.test.ts",
     "tests/customer-address-auth-integration/auth-integration.test.ts",
     "tests/customer-address-concurrency/concurrency.test.ts",
     "tests/customer-address-security/security.test.ts",
@@ -407,6 +408,7 @@
     "tests/payment-security/payment.security.test.ts",
     "tests/payment/payment.domain.test.ts",
     "tests/payment/payment.pickup.domain.test.ts",
+    "tests/payment/payment.scheduled.domain.test.ts",
     "tests/pricing-bootstrap/bootstrap.test.ts",
     "tests/pricing-parity/parity.test.ts",
     "tests/pricing-tax/delivery-tariff.test.ts",
@@ -426,6 +428,7 @@
     "tests/refund-architecture/refund.architecture.test.ts",
     "tests/refund-concurrency/refund.concurrency.test.ts",
     "tests/refund-webhook/refund.webhook.test.ts",
+    "tests/scheduled-fulfilment/windows.test.ts",
     "tests/serviceability-auth-integration/auth-integration.test.ts",
     "tests/serviceability-concurrency/concurrency.test.ts",
     "tests/serviceability-security/security.test.ts",
@@ -645,6 +648,7 @@
       "test:database:serviceability",
       "test:database:workforce-auth",
       "test:imp036i:tranche1",
+      "test:imp036i:tranche2",
       "test:menu-import",
       "test:menu-parity",
       "test:operations:http",
@@ -841,6 +845,7 @@
     "test:e2e:operations-lifecycle": "node scripts/e2e/run-operations-lifecycle-e2e.mjs",
     "test:e2e:workforce-auth": "npm run build && npm run workforce-auth:build && node scripts/e2e/run-workforce-auth-e2e.mjs",
     "test:imp036i:tranche1": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/database/imp036i-scheduled-fulfilment.integration.test.ts tests/delivery-application/delivery.d380-finality.test.ts",
+    "test:imp036i:tranche2": "node scripts/run-vitest.mjs run tests/scheduled-fulfilment/windows.test.ts && node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/checkout/scheduled-fulfilment.domain.test.ts tests/payment/payment.scheduled.domain.test.ts",
     "test:menu-import": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/menu-import",
     "test:menu-parity": "node scripts/run-vitest.mjs run tests/menu-parity",
     "test:operations:http": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/operations/store-http.integration.test.ts tests/operations/refunds-http.integration.test.ts tests/operations/orders-read-http.integration.test.ts tests/operations/orders-mutation-http.integration.test.ts tests/operations/notifications-http.integration.test.ts",
@@ -6617,6 +6622,25 @@
       "classificationConfidence": "HEURISTIC"
     },
     {
+      "path": "tests/checkout/scheduled-fulfilment.domain.test.ts",
+      "runner": "vitest",
+      "domain": "checkout",
+      "testType": "unit-or-domain",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:checkout",
+        "test:imp036i:tranche2"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit",
+        "3-domain-use-case"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
       "path": "tests/customer-address-auth-integration/auth-integration.test.ts",
       "runner": "vitest",
       "domain": "customer-address-auth-integration",
@@ -8994,6 +9018,25 @@
       "classificationConfidence": "HEURISTIC"
     },
     {
+      "path": "tests/payment/payment.scheduled.domain.test.ts",
+      "runner": "vitest",
+      "domain": "payment",
+      "testType": "unit-or-domain",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:imp036i:tranche2",
+        "test:payment"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit",
+        "3-domain-use-case"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
       "path": "tests/pricing-bootstrap/bootstrap.test.ts",
       "runner": "vitest",
       "domain": "pricing-bootstrap",
@@ -9327,6 +9370,23 @@
         "9-recovery-idempotency"
       ],
       "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/scheduled-fulfilment/windows.test.ts",
+      "runner": "vitest",
+      "domain": "scheduled-fulfilment",
+      "testType": "unit-or-domain",
+      "dbRequired": "UNKNOWN",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:imp036i:tranche2"
+      ],
+      "ciInclusion": "NO",
+      "test1Layers": [
+        "1-unit"
+      ],
+      "classificationConfidence": "LOW"
     },
     {
       "path": "tests/serviceability-auth-integration/auth-integration.test.ts",

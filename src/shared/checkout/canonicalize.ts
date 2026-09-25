@@ -99,6 +99,11 @@ export function snapshotFulfilmentShapesEqual(
   a: Pick<
     CheckoutSnapshot,
     | "fulfilmentMode"
+    | "fulfilmentTiming"
+    | "scheduledWindowStartAt"
+    | "scheduledWindowEndAt"
+    | "scheduledTimezone"
+    | "scheduledCancellationCutoffMinutes"
     | "serviceabilityEvaluatedAt"
     | "destination"
     | "pickupLocation"
@@ -106,12 +111,37 @@ export function snapshotFulfilmentShapesEqual(
   b: Pick<
     CheckoutSnapshot,
     | "fulfilmentMode"
+    | "fulfilmentTiming"
+    | "scheduledWindowStartAt"
+    | "scheduledWindowEndAt"
+    | "scheduledTimezone"
+    | "scheduledCancellationCutoffMinutes"
     | "serviceabilityEvaluatedAt"
     | "destination"
     | "pickupLocation"
   >,
 ): boolean {
   if (a.fulfilmentMode !== b.fulfilmentMode) return false;
+  if (a.fulfilmentTiming !== b.fulfilmentTiming) return false;
+  if (
+    (a.scheduledWindowStartAt?.getTime() ?? null) !==
+    (b.scheduledWindowStartAt?.getTime() ?? null)
+  ) {
+    return false;
+  }
+  if (
+    (a.scheduledWindowEndAt?.getTime() ?? null) !==
+    (b.scheduledWindowEndAt?.getTime() ?? null)
+  ) {
+    return false;
+  }
+  if (a.scheduledTimezone !== b.scheduledTimezone) return false;
+  if (
+    a.scheduledCancellationCutoffMinutes !==
+    b.scheduledCancellationCutoffMinutes
+  ) {
+    return false;
+  }
   if (
     (a.serviceabilityEvaluatedAt?.getTime() ?? null) !==
     (b.serviceabilityEvaluatedAt?.getTime() ?? null)

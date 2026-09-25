@@ -12,6 +12,7 @@ import type {
 } from "../../shared/checkout";
 import type { CheckoutCommercialResult } from "./adapters/pricing";
 import type { SnapshotCommitPayload } from "./repository";
+import type { ScheduledSnapshotSeal } from "./scheduled-eligibility";
 
 export type SnapshotCandidate = Readonly<{
   commercial: CheckoutSnapshot;
@@ -35,6 +36,7 @@ export function buildSnapshotCandidate(input: {
   commercial: CheckoutCommercialResult;
   expiresAt: Date;
   updatedAt: Date;
+  scheduledSeal?: ScheduledSnapshotSeal | null;
 }): SnapshotCandidate {
   const snapshotId = randomUUID();
   const createdAt = input.evaluatedAt;
@@ -98,6 +100,7 @@ export function buildSnapshotCandidate(input: {
   );
 
   const q = input.commercial.quote;
+  const seal = input.scheduledSeal ?? null;
   const commercial: CheckoutSnapshot = Object.freeze({
     id: snapshotId,
     checkoutId: input.checkoutId,
@@ -106,11 +109,12 @@ export function buildSnapshotCandidate(input: {
     selectedOutletId: input.selectedOutletId,
     evaluatedAt: input.evaluatedAt,
     fulfilmentMode,
-    fulfilmentTiming: "ASAP",
-    scheduledWindowStartAt: null,
-    scheduledWindowEndAt: null,
-    scheduledTimezone: null,
-    scheduledCancellationCutoffMinutes: null,
+    fulfilmentTiming: seal ? "SCHEDULED" : "ASAP",
+    scheduledWindowStartAt: seal?.scheduledWindowStartAt ?? null,
+    scheduledWindowEndAt: seal?.scheduledWindowEndAt ?? null,
+    scheduledTimezone: seal?.scheduledTimezone ?? null,
+    scheduledCancellationCutoffMinutes:
+      seal?.scheduledCancellationCutoffMinutes ?? null,
     serviceabilityEvaluatedAt,
     currency: "INR",
     manualCouponCode: input.manualCouponCode,
@@ -140,6 +144,12 @@ export function buildSnapshotCandidate(input: {
     selectedOutletId: input.selectedOutletId,
     evaluatedAt: input.evaluatedAt,
     fulfilmentMode,
+    fulfilmentTiming: seal ? "SCHEDULED" : "ASAP",
+    scheduledWindowStartAt: seal?.scheduledWindowStartAt ?? null,
+    scheduledWindowEndAt: seal?.scheduledWindowEndAt ?? null,
+    scheduledTimezone: seal?.scheduledTimezone ?? null,
+    scheduledCancellationCutoffMinutes:
+      seal?.scheduledCancellationCutoffMinutes ?? null,
     serviceabilityEvaluatedAt,
     currency: "INR",
     manualCouponCode: input.manualCouponCode,

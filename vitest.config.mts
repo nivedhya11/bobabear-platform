@@ -70,6 +70,8 @@ export default defineConfig({
       "tests/imp-036b/**/*.test.{ts,tsx}",
       // IMP-036C: unified map-first customer delivery address flow tests.
       "tests/imp-036c/**/*.test.{ts,tsx}",
+      // IMP-036I: server-derived Scheduled window math (no database).
+      "tests/scheduled-fulfilment/**/*.test.ts",
     ],
     exclude: [
       "**/node_modules/**",

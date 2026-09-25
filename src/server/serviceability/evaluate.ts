@@ -76,11 +76,26 @@ function isGeographicallyEligible(
  * Shared candidate evaluation rules for Brand-wide and Outlet-scoped reads.
  * Does not invent separate sellability rules.
  */
+/**
+ * Scheduled horizon still uses the same geographic candidates.
+ * Current PAUSED and closed-by-schedule do not remove a geographically
+ * serviceable Outlet; future windows are filtered separately.
+ * Inactive, suspended, and missing operating configuration stay unavailable.
+ */
+function isSelectableForScheduledHorizon(code: string): boolean {
+  return (
+    code === "AVAILABLE" ||
+    code === "OUTLET_PAUSED" ||
+    code === "OUTLET_CLOSED_BY_SCHEDULE"
+  );
+}
+
 async function evaluateServiceabilityCandidates(
   ctx: PersistenceQueryContext,
   candidates: readonly ServiceabilityCandidate[],
   coordinates: Readonly<{ latitude: string; longitude: string }>,
   evaluatedAt: Date,
+  horizon: "current" | "scheduled" = "current",
 ): Promise<ServiceabilityDecision> {
   if (candidates.length === 0) {
     return Object.freeze({
@@ -121,7 +136,11 @@ async function evaluateServiceabilityCandidates(
       });
     }
 
-    if (isAuthoritativelyEligible(operating.code)) {
+    const selectable =
+      horizon === "scheduled"
+        ? isSelectableForScheduledHorizon(operating.code)
+        : isAuthoritativelyEligible(operating.code);
+    if (selectable) {
       return Object.freeze({
         status: "SERVICEABLE" as const,
         evaluatedAt,
@@ -207,6 +226,45 @@ export async function evaluateServiceability(
       candidates,
       coordinates,
       evaluatedAt,
+    );
+  });
+}
+
+/**
+ * Geographic Delivery serviceability for a future Scheduled window.
+ * Does not treat current pause or current closed-by-schedule as a refusal.
+ */
+export async function evaluateScheduledHorizonServiceability(
+  persistence: Persistence,
+  input: unknown,
+  options: EvaluateServiceabilityOptions = {},
+): Promise<ServiceabilityDecision> {
+  const parsed = parseEvaluateServiceabilityInput(input);
+  const clock = options.clock ?? systemServiceabilityClock;
+  const evaluatedAt = resolveEvaluatedAt(clock);
+
+  const coordinates = parsed.location.coordinates ?? undefined;
+  if (!coordinates) {
+    return Object.freeze({
+      status: "INDETERMINATE" as const,
+      evaluatedAt,
+      reason: "LOCATION_COORDINATES_REQUIRED" as const,
+    });
+  }
+
+  return persistence.withContext(async (ctx) => {
+    assertApplicationRole(ctx, "evaluateScheduledHorizonServiceability");
+
+    const candidates = await findServiceabilityCandidates(ctx, {
+      brandId: parsed.brandId,
+    });
+
+    return evaluateServiceabilityCandidates(
+      ctx,
+      candidates,
+      coordinates,
+      evaluatedAt,
+      "scheduled",
     );
   });
 }

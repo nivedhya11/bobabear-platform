@@ -53,6 +53,11 @@ export type SnapshotCommitPayload = Readonly<{
   evaluatedAt: Date;
   /** IMP-036H — defaults to DELIVERY for existing Delivery callers. */
   fulfilmentMode: FulfilmentMode;
+  fulfilmentTiming: "ASAP" | "SCHEDULED";
+  scheduledWindowStartAt: Date | null;
+  scheduledWindowEndAt: Date | null;
+  scheduledTimezone: string | null;
+  scheduledCancellationCutoffMinutes: number | null;
   /** Required for DELIVERY; null for PICKUP. */
   serviceabilityEvaluatedAt: Date | null;
   currency: "INR";
@@ -543,11 +548,12 @@ export async function commitReadySnapshot(
     selectedOutletId: payload.selectedOutletId,
     evaluatedAt: payload.evaluatedAt,
     fulfilmentMode,
-    fulfilmentTiming: "ASAP",
-    scheduledWindowStartAt: null,
-    scheduledWindowEndAt: null,
-    scheduledTimezone: null,
-    scheduledCancellationCutoffMinutes: null,
+    fulfilmentTiming: payload.fulfilmentTiming,
+    scheduledWindowStartAt: payload.scheduledWindowStartAt,
+    scheduledWindowEndAt: payload.scheduledWindowEndAt,
+    scheduledTimezone: payload.scheduledTimezone,
+    scheduledCancellationCutoffMinutes:
+      payload.scheduledCancellationCutoffMinutes,
     serviceabilityEvaluatedAt:
       fulfilmentMode === "DELIVERY" ? payload.serviceabilityEvaluatedAt : null,
     currency: payload.currency,
