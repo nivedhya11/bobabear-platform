@@ -24,7 +24,6 @@ import {
 } from "../../src/server/checkout";
 import { completeZeroPayableCheckout, startPayment } from "../../src/server/payment";
 import type { PaymentOperationOptions } from "../../src/server/payment";
-import { getApplicationPersistence, type Persistence } from "../../src/server/persistence";
 import {
   insertOutletOperatingDateException,
   resolveBrandScheduledFulfilmentPolicy,
@@ -32,10 +31,9 @@ import {
   updateBrandScheduledFulfilmentPolicy,
 } from "../../src/server/scheduled-fulfilment/foundations";
 import {
-  applicationConfig,
   closeTrackedPersistenceHandles,
   FIXED_NOW,
-  trackPersistenceHandle,
+  openTrackedApplicationPersistence,
 } from "../database/support/cart-fixtures";
 import { checkoutOpts, withCheckoutReadyHarness } from "../database/support/checkout-fixtures";
 import {
@@ -54,11 +52,10 @@ afterEach(async () => {
 const WINDOW_START = new Date("2026-08-09T12:30:00.000Z");
 const WINDOW_END = new Date("2026-08-09T13:00:00.000Z");
 const SOURCE = readFileSync("src/server/payment/operations.ts", "utf8");
+type PersistenceHandle = Parameters<typeof startCheckout>[0];
 
-function writerHandle(connectionString: string): Persistence {
-  const handle = getApplicationPersistence(applicationConfig(connectionString));
-  trackPersistenceHandle(handle);
-  return handle;
+function writerHandle(connectionString: string): PersistenceHandle {
+  return openTrackedApplicationPersistence(connectionString);
 }
 
 function sqlState(error: unknown): string {
@@ -72,7 +69,7 @@ function sqlState(error: unknown): string {
   return "UNKNOWN";
 }
 
-function withLockTimeout(inner: Persistence): Persistence {
+function withLockTimeout(inner: PersistenceHandle): PersistenceHandle {
   return {
     role: inner.role,
     withContext: (fn) => inner.withContext(fn),
@@ -87,7 +84,7 @@ function withLockTimeout(inner: Persistence): Persistence {
 }
 
 async function paymentCount(
-  persistence: Persistence,
+  persistence: PersistenceHandle,
   snapshotId: string,
 ): Promise<number> {
   const rows = await persistence.withContext((ctx) =>
@@ -100,7 +97,7 @@ async function paymentCount(
 }
 
 async function snapshotCutoff(
-  persistence: Persistence,
+  persistence: PersistenceHandle,
   snapshotId: string,
 ): Promise<number | null | undefined> {
   const rows = await persistence.withContext((ctx) =>
@@ -114,7 +111,7 @@ async function snapshotCutoff(
   return rows[0]?.cutoff;
 }
 
-async function checkoutStatus(persistence: Persistence, checkoutId: string) {
+async function checkoutStatus(persistence: PersistenceHandle, checkoutId: string) {
   const rows = await persistence.withContext((ctx) =>
     ctx.db
       .select({ status: checkoutsTable.status })
@@ -125,7 +122,7 @@ async function checkoutStatus(persistence: Persistence, checkoutId: string) {
 }
 
 async function scheduledDeliveryReady(h: {
-  persistence: Persistence;
+  persistence: PersistenceHandle;
   actors: {
     customerA: Parameters<typeof startCheckout>[1];
     tree: { outletA: { id: string } };
