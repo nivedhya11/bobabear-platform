@@ -882,7 +882,7 @@ Order); Delivery progress notifications remain their own semantic identities.
 
 Delivery completion vs notification catch-up (AF-036I-13 / AF-036I-16): reminder send-time
 eligibility for Scheduled Delivery MUST also read authoritative Delivery-domain execution truth.
-Under human-approved **D-380 / ADR-020 PROPOSED** (successful-completion finality),
+Under CURRENT **D-380 / ADR-020 Accepted** (successful-completion finality),
 `Delivery.status = DELIVERED` is durable successful Delivery execution truth and cannot be
 superseded by a normal replacement Delivery. Suppression uses deterministic `EXISTS` of an
 authoritative `DELIVERED` fact for the exact Order — **not** selection of a unique “current lineage
@@ -1114,7 +1114,7 @@ OR for FULFILMENT_MODE = DELIVERY:
 
 ```text
 Delivery.status = DELIVERED
-  = authoritative Delivery-domain successful-completion truth (D-380 PROPOSED candidate;
+  = authoritative Delivery-domain successful-completion truth (D-380 CURRENT / ADR-020 Accepted;
     IMP-031 remains CURRENT foundation; D-380 clarifies successful finality)
 
 Notification semantic DELIVERED
@@ -1159,7 +1159,7 @@ DELIVERY:
     create a Delivery
 ```
 
-#### Delivery completion gate (D-380 PROPOSED successful-completion finality; no lineage-tip dependency)
+#### Delivery completion gate (D-380 CURRENT successful-completion finality; no lineage-tip dependency)
 
 Do not lock an unnecessary repository function name. Architecture requirement: immediately before
 sending `SCHEDULED_FULFILMENT_REMINDER` for `FULFILMENT_MODE = DELIVERY`, the server must determine
@@ -1169,7 +1169,7 @@ read helper implemented later.
 
 Do **not** trust: browser status, notification status, Ops projection text, or cached UI state.
 
-**D-380 candidate Delivery contract (human-approved 2026-09-25; PROPOSED — not CURRENT):**
+**D-380 Delivery contract (CURRENT; human-approved 2026-09-25; ADR-020 Accepted):**
 
 ```text
 DELIVERED = durable successful Delivery execution truth
@@ -1184,7 +1184,7 @@ D-380 does NOT override post-pickup failure / return / support rules.
 D-380 does NOT invent a courier-switch path after pickup.
 
 IMP-031 remains CURRENT / ARCHITECTURE_LOCKED for Delivery foundation.
-D-380 clarifies/amends successful-completion finality only after future lock.
+D-380 CURRENT clarifies/amends successful-completion finality. The amendment is applied by this lock.
 ADR-011 remains HISTORICAL / future-binding intent — not rewritten as CURRENT.
 
 Until a separately authorized Delivery correction authority explicitly defines how a committed
@@ -1254,7 +1254,7 @@ repair Delivery history itself. No repair logic.
 **PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT (runtime is not architecture precedent for D-380):**
 
 Repository inspection of current `src/server/delivery/operations.ts` shows `createDelivery` permits
-`prior.status === DELIVERED` when creating a new Delivery. Under approved D-380 candidate direction
+`prior.status === DELIVERED` when creating a new Delivery. Under CURRENT D-380
 this is **nonconformant**. Classification:
 
 ```text
@@ -1262,7 +1262,7 @@ PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT
 ```
 
 Do **not** pretend current runtime never allowed a `DELIVERED` predecessor. Do **not** fix runtime
-in this Fit candidate task. Do **not** create migration. Do **not** modify existing Delivery data.
+in this architecture-lock persistence. Do **not** create migration. Do **not** modify existing Delivery data.
 Do **not** reinterpret historical rows.
 
 ```text
@@ -1638,7 +1638,7 @@ Approved Product Definition semantics are **not** modified by this candidate.
 |---|---|
 | Pickup release | NONE (immediate visibility + derived cues) |
 | Delivery dispatch | Manual IMP-032 operator-approved |
-| Reminder | `SCHEDULED_FULFILMENT_REMINDER` semantic contract; co-stage rank 40 with `OUT_FOR_DELIVERY`; atomic intent; window-start expiry; send-time eligibility including deterministic `EXISTS Delivery.status = DELIVERED` gate (Delivery mode; read-only; no lineage-tip; consumes D-380 PROPOSED; conformance debt recorded); Snapshot-derived content |
+| Reminder | `SCHEDULED_FULFILMENT_REMINDER` semantic contract; co-stage rank 40 with `OUT_FOR_DELIVERY`; atomic intent; window-start expiry; send-time eligibility including deterministic `EXISTS Delivery.status = DELIVERED` gate (Delivery mode; read-only; no lineage-tip; consumes D-380 CURRENT; conformance debt recorded); Snapshot-derived content |
 
 ---
 

@@ -177,10 +177,8 @@ Scheduled Delivery reminder completion (consumer; owned by D-379 execution bound
 > Consumers such as Scheduled reminder eligibility may rely on committed DELIVERED completion truth
 > without waiting for notification or Order coordination catch-up.
 
-Preferred future lock (with D-379): **one** architecture revision **ARCH-R23** containing
-**ARCH-G29** (Scheduled Fulfilment Timing) and **ARCH-G30** (Delivery Successful-Completion
-Finality). Do **not** create ARCH-R24. Do **not** apply this invariant to CURRENT ARCHITECTURE.md
-while this ADR remains Proposed.
+**ARCH-R23** is CURRENT and contains **ARCH-G29** (Scheduled Fulfilment Timing) and
+**ARCH-G30** (Delivery Successful-Completion Finality). Do **not** create ARCH-R24.
 
 ARCH-G24 remains CURRENT for provider-neutral Delivery foundation / one-active booking. ARCH-G30
 clarifies successful-completion finality; it does not replace ARCH-G24 wholesale.
@@ -217,15 +215,13 @@ D-379 does **not** redefine Delivery replacement semantics itself. Do not merge 
 
 ## Non-decisions
 
-This Proposed ADR does **not**:
+This Accepted ADR does **not**:
 
-- make D-380 CURRENT or accept ADR-020
-- lock ARCH-R23 / ARCH-G30 as CURRENT
 - rewrite ADR-011 historical classification to CURRENT
-- amend IMP-031 capability lock text in place (prospective interpretation via D-380)
+- add a current-authority notice to IMP-031 without rewriting its accepted history wholesale
 - change runtime `createDelivery`, schema, migrations, or historical Delivery rows
 - authorize IMP-036I implementation
-- claim Architecture Fit PASS
+- fix the pre-existing Delivery conformance debt in this ADR
 - expand FAILED / CANCELLED replacement eligibility
 - invent a courier-switch path after pickup
 - design the future DELIVERED correction mechanism
