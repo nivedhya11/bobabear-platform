@@ -6,6 +6,16 @@ export const FULFILMENT_MODES = ["DELIVERY", "PICKUP"] as const;
 
 export type FulfilmentMode = (typeof FULFILMENT_MODES)[number];
 
+/** Orthogonal to FULFILMENT_MODE. Historical and runtime default is ASAP. */
+export const FULFILMENT_TIMINGS = ["ASAP", "SCHEDULED"] as const;
+
+export type FulfilmentTiming = (typeof FULFILMENT_TIMINGS)[number];
+
+export const SCHEDULED_CANCELLATION_CUTOFF_MIN_MINUTES = 0;
+export const SCHEDULED_CANCELLATION_CUTOFF_MAX_MINUTES = 240;
+export const DEFAULT_PICKUP_CANCELLATION_CUTOFF_MINUTES = 30;
+export const DEFAULT_DELIVERY_CANCELLATION_CUTOFF_MINUTES = 60;
+
 export const CHECKOUT_ERROR_CODES = [
   "CUSTOMER_AUTH_REQUIRED",
   "CHECKOUT_NOT_FOUND",

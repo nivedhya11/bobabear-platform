@@ -8,9 +8,9 @@
   "architectureFit": "PASS",
   "architectureFitResult": "PASS",
   "architectureFitExecution": "PERFORMED",
-  "implementation": "AUTHORIZED / NOT_STARTED",
+  "implementation": "IMPLEMENTATION_IN_PROGRESS",
   "implementationAuthorized": true,
-  "implementationStarted": false,
+  "implementationStarted": true,
   "implementationComplete": false,
   "impAccepted": false,
   "schemaChangeRequired": true,
@@ -44,11 +44,11 @@ Independent Architecture Fit review **PASS** (`5312653831`) evaluated candidate 
 `279e0e1b0e8f52c96cfd12fc89b329f73281e38f` / fingerprint
 `b65f40b9e568a6d0188f1d031f41db3a072cb3b4683d2d966c2a994283575068`.
 Human architecture lock approval **2026-09-25**. Explicit human implementation authorization
-**2026-09-25** (`IMPLEMENTATION_AUTHORIZED` / `NOT_STARTED`). Runtime work has not started.
+**2026-09-25** (`IMPLEMENTATION_AUTHORIZED` / `STARTED`). Tranche 1 runtime foundations have started.
 Execution plan: [`../product/IMP-036I/implementation-plan.md`](../product/IMP-036I/implementation-plan.md).
 
 ```text
-STATUS = ARCHITECTURE_LOCKED
+STATUS = IMPLEMENTATION_IN_PROGRESS
 AUTHORITY = CAPABILITY_ARCHITECTURE
 PRODUCT_DEFINITION = PD-IMP-036I-DRAFT-4
 PRODUCT_DEFINITION_GATE = PASS
@@ -57,7 +57,7 @@ ARCHITECTURE_FIT_RESULT = PASS
 ARCHITECTURE_FIT = PASS
 ARCHITECTURE_LOCK = LOCKED
 IMPLEMENTATION_AUTHORIZED = YES
-IMPLEMENTATION_STARTED = NO
+IMPLEMENTATION_STARTED = YES
 IMPLEMENTATION_COMPLETE = NO
 IMP_ACCEPTED = NO
 
@@ -98,14 +98,14 @@ CURRENT_ARCH_G28 = CURRENT (mode axis; timing axis is ARCH-G29 / D-379)
 CURRENT_IMP031 = ARCHITECTURE_LOCKED (CURRENT; successful-completion replacement clarified by D-380 CURRENT)
 HUMAN_ARCHITECTURE_DIRECTION_D380 = APPROVED_2026-09-25
 INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID = 5312653831
-PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT = OPEN
+PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT = CLOSED
 PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT_CORRECTION_AUTHORIZED = YES
-PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT_RUNTIME_FIXED = NO
+PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT_RUNTIME_FIXED = YES
 
 IMP036I_ARCHITECTURE_FIT = PASS
 IMP036I_ARCHITECTURE_LOCKED = YES
 IMP036I_IMPLEMENTATION_AUTHORIZED = YES
-IMP036I_IMPLEMENTATION_STARTED = NO
+IMP036I_IMPLEMENTATION_STARTED = YES
 ```
 
 This lock does **not** create migrations, deploy, perform Founder UAT, or accept IMP-036I.
@@ -190,8 +190,8 @@ IMP036I_PRODUCT_DEFINITION_GATE: PASS
 IMP036I_ARCHITECTURE_FIT: PASS
 IMP036I_ARCHITECTURE_LOCKED: YES
 IMP036I_IMPLEMENTATION_AUTHORIZED: YES
-IMP036I_STARTED: NO
-IMP036I_IMPLEMENTATION_STARTED: NO
+IMP036I_STARTED: YES
+IMP036I_IMPLEMENTATION_STARTED: YES
 IMP036I_IMPLEMENTATION_COMPLETE: NO
 IMP036I_ACCEPTED: NO
 IMP-036I formal lifecycle: ARCHITECTURE_LOCKED
@@ -1660,22 +1660,23 @@ NEW_EXTERNAL_PROVIDER = NO
 
 ## 32. Explicit non-claims
 
-This architecture lock does **not** change locked semantics. Explicit human implementation
-authorization is recorded separately in ROADMAP GTM-R155 / STATE-R153. This authorization-persistence
-record does **not**:
+Tranche 1 persistence and domain foundations have started. This capability architecture does **not**
+change locked semantics, and this implementation-start record does **not**:
 
-- start runtime implementation or create migrations
-- change runtime Delivery operations / schema / historical Delivery rows
-- fix `PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT` in runtime (correction is authorized; debt remains OPEN)
-- modify approved Product Definition semantics
+- complete IMP-036I implementation
+- change approved Product Definition semantics
 - resolve IMP-037/038 or activate IMP-039/040
 - accept IMP-036I or perform Founder UAT
+- rewrite historical Delivery rows or add a DELIVERED correction workflow
+
+`PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT` is CLOSED by the Tranche 1 runtime correction.
+Incorrect committed `DELIVERED` history remains outside IMP-036I.
 
 ```text
 IMP036I_ARCHITECTURE_FIT = PASS
 IMP036I_ARCHITECTURE_LOCKED = YES
 IMP036I_IMPLEMENTATION_AUTHORIZED = YES
-IMP036I_IMPLEMENTATION_STARTED = NO
+IMP036I_IMPLEMENTATION_STARTED = YES
 D379_STATUS = CURRENT
 D380_STATUS = CURRENT
 ADR019_STATUS = Accepted
@@ -1683,13 +1684,14 @@ ADR020_STATUS = Accepted
 CURRENT_ARCHITECTURE = ARCH-R23
 ARCH_G29_STATUS = CURRENT
 ARCH_G30_STATUS = CURRENT
-PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT = OPEN
+PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT = CLOSED
 ```
 
 ---
 
 ## 33. Recommended next action
 
-Begin IMP-036I Implementation Tranche 1: Persistence + Domain Foundations, using
+Independent verification of IMP-036I Implementation Tranche 1. Do not start Tranche 2 until that
+verification passes. Execution plan:
 [`../product/IMP-036I/implementation-plan.md`](../product/IMP-036I/implementation-plan.md).
 Do not treat this architecture document as implementation or acceptance authority.

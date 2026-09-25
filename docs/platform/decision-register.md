@@ -183,7 +183,7 @@ ADR bodies.
 - Amended **D-378** from CURRENT → **AMENDED** only for ASAP-only / no-scheduled-schema clauses. Binding remainder (mode, Pickup fail-closed Delivery boundary, selected Outlet, destination/privacy, delivery-charge boundary, Financial Document Option A, no Delivery aggregate for Pickup) stays binding. ADR-018 inventory status is **AMENDED**; accepted Pickup semantics are preserved.
 - Architecture lock **ARCH-R23** with **ARCH-G29** and **ARCH-G30** CURRENT.
 - Independent Architecture Fit PASS review `5312653831` (evaluated HEAD `42e854b931e216fadc64b479371cebca4c38d17e`).
-- IMP-036I implementation authorization is recorded in ROADMAP GTM-R155 / STATE-R153 without a new D-number. DR-21 lock persistence itself did not authorize implementation. Current authorization: `IMP036I_IMPLEMENTATION_AUTHORIZED: YES`; `IMP036I_IMPLEMENTATION_STARTED: NO`. Does **not** start implementation, accept IMP-036I, or fix `PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT` in this authorization record.
+- IMP-036I implementation start is recorded in ROADMAP GTM-R156 / STATE-R154 without a new D-number. Prior authorization remains GTM-R155 / STATE-R153. DR-21 did not itself authorize or start implementation. Current: `IMP036I_IMPLEMENTATION_AUTHORIZED: YES`; `IMP036I_IMPLEMENTATION_STARTED: YES`; `IMP036I_IMPLEMENTATION_COMPLETE: NO`. Tranche 1 closed `PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT` in runtime. This record does not accept IMP-036I, perform Founder UAT, or authorize production cutover.
 - Next free decision ID remains **D-381**.
 
 ### DR-20 — 2026-09-24

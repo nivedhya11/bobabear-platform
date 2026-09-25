@@ -31,10 +31,10 @@
     "note": "Protected evidence and generated reports are never classified as executable test source."
   },
   "counts": {
-    "trackedPathsConsidered": 2150,
-    "executableTestFiles": 456,
+    "trackedPathsConsidered": 2156,
+    "executableTestFiles": 458,
     "sourceTestFiles": 139,
-    "testsTreeExecutableFiles": 246,
+    "testsTreeExecutableFiles": 248,
     "scriptTestFiles": 71,
     "playwrightSpecs": 12,
     "vitestConfigs": 2,
@@ -307,6 +307,7 @@
     "tests/database/financial-document.integration.test.ts",
     "tests/database/idempotency.integration.test.ts",
     "tests/database/imp036h-fulfilment-mode-pickup.migration.integration.test.ts",
+    "tests/database/imp036i-scheduled-fulfilment.integration.test.ts",
     "tests/database/isolation.integration.test.ts",
     "tests/database/menu-import.integration.test.ts",
     "tests/database/migration-cli.integration.test.ts",
@@ -333,6 +334,7 @@
     "tests/database/workforce-auth.integration.test.ts",
     "tests/database/workforce-step-up.integration.test.ts",
     "tests/delivery-application/delivery.application.test.ts",
+    "tests/delivery-application/delivery.d380-finality.test.ts",
     "tests/delivery-application/delivery.pickup-fail-closed.test.ts",
     "tests/delivery-concurrency/delivery.concurrency.test.ts",
     "tests/delivery-manual/delivery.manual.test.ts",
@@ -7838,6 +7840,43 @@
       "classificationConfidence": "HEURISTIC"
     },
     {
+      "path": "tests/database/imp036i-scheduled-fulfilment.integration.test.ts",
+      "runner": "vitest",
+      "domain": "database/imp036i-scheduled-fulfilment",
+      "testType": "integration",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:administration",
+        "test:database:access-control",
+        "test:database:assortment-availability",
+        "test:database:auth-foundation",
+        "test:database:cart",
+        "test:database:catalog",
+        "test:database:checkout",
+        "test:database:customer-addresses",
+        "test:database:customer-phone-auth",
+        "test:database:customer-profiles",
+        "test:database:menu-import",
+        "test:database:notifications",
+        "test:database:order",
+        "test:database:outbox-idempotency",
+        "test:database:payment",
+        "test:database:persistence",
+        "test:database:pricing-tax",
+        "test:database:promotions",
+        "test:database:serviceability",
+        "test:database:workforce-auth"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "4-integration",
+        "5-database-integration"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
       "path": "tests/database/isolation.integration.test.ts",
       "runner": "vitest",
       "domain": "database/isolation",
@@ -8765,6 +8804,21 @@
     },
     {
       "path": "tests/delivery-application/delivery.application.test.ts",
+      "runner": "vitest",
+      "domain": "delivery-application",
+      "testType": "unit-or-domain",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [],
+      "ciInclusion": "NO",
+      "test1Layers": [
+        "1-unit"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/delivery-application/delivery.d380-finality.test.ts",
       "runner": "vitest",
       "domain": "delivery-application",
       "testType": "unit-or-domain",

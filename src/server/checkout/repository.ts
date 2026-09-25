@@ -317,6 +317,9 @@ export async function insertDraftCheckout(
       sourceCartRevision: input.sourceCartRevision,
       revision: BigInt(1),
       status: "DRAFT",
+      fulfilmentTiming: "ASAP",
+      scheduledWindowStartAt: null,
+      scheduledWindowEndAt: null,
       expiresAt: input.expiresAt,
       activeSnapshotId: null,
       createdAt: input.now,
@@ -492,6 +495,9 @@ export async function bumpCheckoutRevisionAfterFulfilmentChange(
   fulfilment: Readonly<{
     fulfilmentMode: FulfilmentMode;
     pickupOutletId: string | null;
+    fulfilmentTiming?: "ASAP" | "SCHEDULED";
+    scheduledWindowStartAt?: Date | null;
+    scheduledWindowEndAt?: Date | null;
   }>,
 ): Promise<CheckoutRow> {
   assertTransactionContext(context, "bumpCheckoutRevisionAfterFulfilmentChange");
@@ -502,6 +508,13 @@ export async function bumpCheckoutRevisionAfterFulfilmentChange(
       updatedAt: now,
       fulfilmentMode: fulfilment.fulfilmentMode,
       pickupOutletId: fulfilment.pickupOutletId,
+      ...(fulfilment.fulfilmentTiming === undefined
+        ? {}
+        : {
+            fulfilmentTiming: fulfilment.fulfilmentTiming,
+            scheduledWindowStartAt: fulfilment.scheduledWindowStartAt ?? null,
+            scheduledWindowEndAt: fulfilment.scheduledWindowEndAt ?? null,
+          }),
       ...(clearReady
         ? { status: "DRAFT" as const, activeSnapshotId: null }
         : {}),
@@ -530,6 +543,11 @@ export async function commitReadySnapshot(
     selectedOutletId: payload.selectedOutletId,
     evaluatedAt: payload.evaluatedAt,
     fulfilmentMode,
+    fulfilmentTiming: "ASAP",
+    scheduledWindowStartAt: null,
+    scheduledWindowEndAt: null,
+    scheduledTimezone: null,
+    scheduledCancellationCutoffMinutes: null,
     serviceabilityEvaluatedAt:
       fulfilmentMode === "DELIVERY" ? payload.serviceabilityEvaluatedAt : null,
     currency: payload.currency,
@@ -905,6 +923,14 @@ async function loadSnapshotAggregate(
     selectedOutletId: snapshotRow.selectedOutletId,
     evaluatedAt: snapshotRow.evaluatedAt,
     fulfilmentMode: (snapshotRow.fulfilmentMode ?? "DELIVERY") as FulfilmentMode,
+    fulfilmentTiming: (snapshotRow.fulfilmentTiming ?? "ASAP") as
+      | "ASAP"
+      | "SCHEDULED",
+    scheduledWindowStartAt: snapshotRow.scheduledWindowStartAt ?? null,
+    scheduledWindowEndAt: snapshotRow.scheduledWindowEndAt ?? null,
+    scheduledTimezone: snapshotRow.scheduledTimezone ?? null,
+    scheduledCancellationCutoffMinutes:
+      snapshotRow.scheduledCancellationCutoffMinutes ?? null,
     serviceabilityEvaluatedAt: snapshotRow.serviceabilityEvaluatedAt,
     currency: "INR",
     manualCouponCode: snapshotRow.manualCouponCode,
@@ -965,6 +991,9 @@ export async function loadCheckoutAggregate(
     status: row.status as CheckoutStatus,
     expiresAt: row.expiresAt,
     fulfilmentMode: (row.fulfilmentMode ?? "DELIVERY") as FulfilmentMode,
+    fulfilmentTiming: (row.fulfilmentTiming ?? "ASAP") as "ASAP" | "SCHEDULED",
+    scheduledWindowStartAt: row.scheduledWindowStartAt ?? null,
+    scheduledWindowEndAt: row.scheduledWindowEndAt ?? null,
     pickupOutletId: row.pickupOutletId ?? null,
     activeSnapshotId: row.activeSnapshotId,
     createdAt: row.createdAt,

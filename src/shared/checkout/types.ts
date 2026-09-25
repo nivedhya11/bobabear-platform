@@ -7,6 +7,7 @@ import type {
   CheckoutPromotionEffectKind,
   CheckoutStatus,
   FulfilmentMode,
+  FulfilmentTiming,
 } from "./constants";
 
 export type CheckoutPolicy = Readonly<{
@@ -161,6 +162,12 @@ export type CheckoutSnapshot = Readonly<{
   selectedOutletId: string;
   evaluatedAt: Date;
   fulfilmentMode: FulfilmentMode;
+  /** Immutable purchased timing. ASAP leaves scheduled fields null. */
+  fulfilmentTiming: FulfilmentTiming;
+  scheduledWindowStartAt: Date | null;
+  scheduledWindowEndAt: Date | null;
+  scheduledTimezone: string | null;
+  scheduledCancellationCutoffMinutes: number | null;
   /** Required for DELIVERY; null for PICKUP. */
   serviceabilityEvaluatedAt: Date | null;
   currency: "INR";
@@ -197,6 +204,10 @@ export type Checkout = Readonly<{
   expiresAt: Date;
   /** Mutable fulfilment intent (IMP-036H). */
   fulfilmentMode: FulfilmentMode;
+  /** Mutable pre-payment timing intent. Default ASAP. */
+  fulfilmentTiming: FulfilmentTiming;
+  scheduledWindowStartAt: Date | null;
+  scheduledWindowEndAt: Date | null;
   /** Mutable Pickup outlet intent; null for DELIVERY. */
   pickupOutletId: string | null;
   activeSnapshotId: string | null;

@@ -23,7 +23,12 @@ export {
   CHECKOUT_START_INPUT_FIELDS,
   CHECKOUT_STATUSES,
   CHECKOUT_TERMINAL_STATUSES,
+  DEFAULT_DELIVERY_CANCELLATION_CUTOFF_MINUTES,
+  DEFAULT_PICKUP_CANCELLATION_CUTOFF_MINUTES,
   FULFILMENT_MODES,
+  FULFILMENT_TIMINGS,
+  SCHEDULED_CANCELLATION_CUTOFF_MAX_MINUTES,
+  SCHEDULED_CANCELLATION_CUTOFF_MIN_MINUTES,
   type CheckoutDestinationKind,
   type CheckoutErrorCode,
   type CheckoutMerchandiseProblemCode,
@@ -32,6 +37,7 @@ export {
   type CheckoutStatus,
   type CheckoutTerminalStatus,
   type FulfilmentMode,
+  type FulfilmentTiming,
 } from "./constants";
 
 export { CheckoutError, type CheckoutMerchandiseProblem } from "./errors";

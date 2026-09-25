@@ -40,7 +40,7 @@ export {
   clearCheckoutDestination,
 } from "./destination";
 
-export { setCheckoutFulfilment } from "./fulfilment";
+export { setCheckoutFulfilment, setCheckoutFulfilmentTiming } from "./fulfilment";
 
 export {
   listCheckoutPickupOptions,

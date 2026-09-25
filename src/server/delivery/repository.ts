@@ -268,6 +268,24 @@ export async function findActiveDeliveryForOrder(
   return rows[0] ?? null;
 }
 
+export async function findDeliveredDeliveryForOrder(
+  context: PersistenceQueryContext,
+  orderId: string,
+): Promise<DeliveryRow | null> {
+  assertApplicationRole(context, "findDeliveredDeliveryForOrder");
+  const rows = await context.db
+    .select()
+    .from(deliveriesTable)
+    .where(
+      and(
+        eq(deliveriesTable.orderId, orderId),
+        eq(deliveriesTable.status, "DELIVERED"),
+      ),
+    )
+    .limit(1);
+  return rows[0] ?? null;
+}
+
 export async function lockDeliveryForUpdate(
   context: PersistenceTransactionContext,
   deliveryId: string,

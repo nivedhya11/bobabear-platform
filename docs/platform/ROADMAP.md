@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R155",
+  "roadmapVersion": "GTM-R156",
   "acceptedThrough": "IMP-036H",
   "currentProductSlice": "IMP-036I",
   "nextProductSlice": "IMP-037",
   "gtmBoundary": "IMP-040",
   "lastReviewed": "2026-09-25",
-  "supersedes": "GTM-R154"
+  "supersedes": "GTM-R155"
 }
 -->
 
@@ -34,7 +34,7 @@
   change) before the next slice begins: **ACCEPT → RECONCILE → ADVANCE**.
 - The historical IMP-026 → IMP-028 controlled-continuation exception (GTM-R15 onward) is **CLOSED**.
   It does **not** generalize to future slices and is **not** reopened by GTM-R138 / GTM-R139 /
-  GTM-R140 / GTM-R141 / GTM-R142 / GTM-R143 / GTM-R144 / GTM-R145 / GTM-R146 / GTM-R147 / GTM-R148 / GTM-R149 / GTM-R150 / GTM-R151 / GTM-R152 / GTM-R153 / GTM-R154 / GTM-R155.
+  GTM-R140 / GTM-R141 / GTM-R142 / GTM-R143 / GTM-R144 / GTM-R145 / GTM-R146 / GTM-R147 / GTM-R148 / GTM-R149 / GTM-R150 / GTM-R151 / GTM-R152 / GTM-R153 / GTM-R154 / GTM-R155 / GTM-R156.
 - **GTM-R138** records a **NEW**, Founder-authorized one-off exception
   `CONTINUATION_EXCEPTION: IMP037_PROVIDER_BLOCKED_TO_IMP038` (authority PR#179/5771367844) so
   IMP-038 may activate for PD-1 Product Definition work while IMP-037 remains an
@@ -139,7 +139,7 @@ PROGRAM_PAUSE_AUTHORITY: D-377
 HISTORICAL_CONTINUATION_EXCEPTION: IMP037_PROVIDER_BLOCKED_TO_IMP038
 CONTINUATION_EXCEPTION: IMP037_PROVIDER_BLOCKED_TO_IMP038
 CONTINUATION_EXCEPTION_AUTHORITY: PR#179/5771367844
-CONTINUATION_EXCEPTION_REASON: IMP-037 qualifying external/provider work blocked by unavailable DigitalOcean/Spaces operator authority after repository implementation and local recovery prequalification were completed. Preserved as historical authorization; CURRENT tip currentProductSlice is IMP-036I under D-377 (Product Definition APPROVED; Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation AUTHORIZED / NOT_STARTED; nextProductSlice remains IMP-037 held).
+CONTINUATION_EXCEPTION_REASON: IMP-037 qualifying external/provider work blocked by unavailable DigitalOcean/Spaces operator authority after repository implementation and local recovery prequalification were completed. Preserved as historical authorization; CURRENT tip currentProductSlice is IMP-036I under D-377 (Product Definition APPROVED; Gate PASS; Architecture Fit PASS; architecture LOCKED; implementation AUTHORIZED / STARTED; nextProductSlice remains IMP-037 held).
 HISTORICAL_IMP026_TO_IMP028_CONTINUATION: CLOSED
 UNRESOLVED_PREDECESSOR: IMP-037
 IMP037_PROVIDER_BLOCKED_TO_IMP038: YES
@@ -428,7 +428,7 @@ ARCHITECTURE_FIT_EVALUATED_TREE: 93d4e83d4a73c61c9439bcaae2799920fcca46db
 ARCHITECTURE_FIT_EVALUATED_WORKING_TREE_FINGERPRINT: 74b1254f22c9131a6e073522cf9310f264866e442cc074775ad5f4b214f0e51e
 D-378_CREATED: YES
 ARCH_R22_CREATED: YES
-IMP-036I: ARCHITECTURE_LOCKED
+IMP-036I: IMPLEMENTATION_IN_PROGRESS
 IMP036I_ACTIVATED: YES
 IMP036I_PRODUCT_DEFINITION: APPROVED
 IMP036I_PRODUCT_DEFINITION_VERSION: PD-IMP-036I-DRAFT-4
@@ -438,8 +438,8 @@ IMP036I_ARCHITECTURE_LOCKED: YES
 IMP036I_IMPLEMENTATION_AUTHORIZED: YES
 IMP036I_IMPLEMENTATION_AUTHORIZATION: APPROVED
 IMP036I_IMPLEMENTATION_AUTHORIZATION_DATE: 2026-09-25
-IMP036I_STARTED: NO
-IMP036I_IMPLEMENTATION_STARTED: NO
+IMP036I_STARTED: YES
+IMP036I_IMPLEMENTATION_STARTED: YES
 IMP036I_IMPLEMENTATION_COMPLETE: NO
 IMP036I_ACCEPTED: NO
 INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PASS
@@ -474,6 +474,18 @@ IMP-036D_ARCHITECTURE_LOCKED: YES
 IMP-036D_ACCEPTED: YES
 IMP-036D_FOUNDER_UAT: PASS
 ```
+
+**GTM-R156** records IMP-036I implementation start once Tranche 1 persistence and domain
+foundations exist. Formal lifecycle is `IMPLEMENTATION_IN_PROGRESS`
+(`IMP036I_IMPLEMENTATION_AUTHORIZED: YES`; `IMP036I_STARTED: YES`;
+`IMP036I_IMPLEMENTATION_STARTED: YES`; `IMP036I_IMPLEMENTATION_COMPLETE: NO`;
+`IMP036I_ACCEPTED: NO`; `FOUNDER_UAT: NOT_PERFORMED`). Next action remains
+`IMPLEMENTATION_TRANCHE_1` until independent Tranche 1 verification. This record
+does not complete IMP-036I, accept it, perform Founder UAT, or advance
+`acceptedThrough`. Architecture remains ARCH-R23. Decision register remains DR-21.
+D-379 remains CURRENT. D-380 remains CURRENT. D-378 remains AMENDED.
+`PROGRAM_PAUSE` D-377 and the IMP-037 / IMP-038 holds remain.
+`PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT` is CLOSED by the Tranche 1 runtime correction.
 
 **GTM-R155** records explicit human IMP-036I implementation authorization after independent
 Architecture Fit PASS (`5312653831`) and architecture-lock persistence verification
@@ -1008,10 +1020,10 @@ IMP-036D remains `COMPLETE_AND_ACCEPTED`. Concise acceptance identity: UAT candi
 
 Under `PROGRAM_PAUSE: PRE_GTM_PRODUCT_INSERTION_PROVIDER_BLOCKED` (**D-377**), the active product
 slice is **IMP-036I — Scheduled Fulfilment** (`currentProductSlice = IMP-036I`;
-`pendingAcceptance = NONE`; formal ROADMAP lifecycle `ARCHITECTURE_LOCKED`;
+`pendingAcceptance = NONE`; formal ROADMAP lifecycle `IMPLEMENTATION_IN_PROGRESS`;
 `IMP036I_ACTIVATED: YES`; Product Definition `PD-IMP-036I-DRAFT-4` = `APPROVED`; Gate **PASS**;
 Architecture Fit **PASS**; architecture **LOCKED**; implementation **AUTHORIZED** /
-**NOT_STARTED**; historical DRAFT-1 / DRAFT-2 / DRAFT-3 Gate = STOP). Per-IMP Product Definition:
+**STARTED**; historical DRAFT-1 / DRAFT-2 / DRAFT-3 Gate = STOP). Per-IMP Product Definition:
 [`product/IMP-036I/product-definition.md`](./product/IMP-036I/product-definition.md).
 
 IMP-036H — Customer Pickup / Takeaway remains `COMPLETE_AND_ACCEPTED` with architecture
@@ -1135,7 +1147,7 @@ Historical Food Direct insertion narration remains in
 | IMP-036F | Catalog, Menu, Pricing & Promotions Management | COMPLETE_AND_ACCEPTED |
 | IMP-036G | Administration Console V2 | COMPLETE_AND_ACCEPTED |
 | IMP-036H | Customer Pickup / Takeaway | COMPLETE_AND_ACCEPTED |
-| IMP-036I | Scheduled Fulfilment | ARCHITECTURE_LOCKED (IMP036I_ACTIVATED: YES; APPROVED; Gate PASS; Fit PASS; locked YES; implementation AUTHORIZED / NOT_STARTED) |
+| IMP-036I | Scheduled Fulfilment | IMPLEMENTATION_IN_PROGRESS (IMP036I_ACTIVATED: YES; APPROVED; Gate PASS; Fit PASS; locked YES; implementation AUTHORIZED / STARTED; IMP036I_IMPLEMENTATION_COMPLETE: NO; IMP036I_ACCEPTED: NO) |
 | IMP-037 | Backup, Restore & Migration Readiness | IMPLEMENTATION_IN_PROGRESS (IMP037_HOLD: YES; BLOCKED_PROVIDER_ACCESS) |
 | IMP-038 | Security & Privacy Hardening | IMPLEMENTATION_IN_PROGRESS (IMP038_HOLD: YES; IMPLEMENTATION_COMPLETE / NOT_ACCEPTED; external assessment deferred) |
 | IMP-039 | Production Infrastructure & Release Pipeline | PLANNED |
@@ -1146,12 +1158,12 @@ Historical Food Direct insertion narration remains in
 The [Enterprise Experience Programme](./experience/enterprise-experience/README.md) defines supporting
 UX/workflow contracts (not locked capability architecture). Accepted Enterprise Experience order
 remains IMP-036A → B → C → D → E → F → G. Founder-authorized pre-GTM product insertions continue
-IMP-036G → IMP-036H → IMP-036I (current; APPROVED / Gate PASS / Architecture Fit PASS / ARCHITECTURE_LOCKED) → IMP-037 (held) without reopening accepted EE slices.
+IMP-036G → IMP-036H → IMP-036I (current; APPROVED / Gate PASS / Architecture Fit PASS / IMPLEMENTATION_IN_PROGRESS) → IMP-037 (held) without reopening accepted EE slices.
 
 ```text
 FIGMA_REQUIRED_FOR_INITIAL_IMPLEMENTATION: NO
 IMP-036A → IMP-036H: COMPLETE_AND_ACCEPTED
-IMP-036I: ARCHITECTURE_LOCKED (IMP036I_ACTIVATED: YES; APPROVED; Gate PASS; Fit PASS; implementation AUTHORIZED / NOT_STARTED; currentProductSlice)
+IMP-036I: IMPLEMENTATION_IN_PROGRESS (IMP036I_ACTIVATED: YES; APPROVED; Gate PASS; Fit PASS; implementation AUTHORIZED / STARTED; currentProductSlice)
 IMP-037: IMPLEMENTATION_IN_PROGRESS (IMP037_HOLD: YES; IMP037_ACTIVATED: YES; provider-blocked)
 IMP-038: IMPLEMENTATION_IN_PROGRESS (IMP038_HOLD: YES; IMP038_ACTIVATED: YES; IMPLEMENTATION_COMPLETE / NOT_ACCEPTED; external assessment deferred)
 IMP-039: PLANNED / NOT_ACTIVATED (IMP039_ACTIVATED: NO)
