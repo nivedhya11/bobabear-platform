@@ -16473,6 +16473,24 @@ describe("IMP-036I Architecture Fit candidate authority (D-379/D-380 PROPOSED)",
     assert.equal(result.code, "IMP036I_D379_CANDIDATE_MARKER");
   });
 
+  it("rejects repository-native D-379 CURRENT row while D379_STATUS stays PROPOSED", () => {
+    const docs = baseDocs();
+    docs.capabilityText += "\n| **D-379** — Scheduled Fulfilment Timing | **CURRENT** |";
+    assert.match(docs.capabilityText, /D379_STATUS = PROPOSED/);
+    const result = evaluateImp036IArchitectureFitCandidateAuthority(docs);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036I_D379_PREMATURE_CURRENT");
+  });
+
+  it("rejects repository-native D-380 CURRENT row while D380_STATUS stays PROPOSED", () => {
+    const docs = baseDocs();
+    docs.capabilityText += "\n| **D-380** — Delivery Finality | **CURRENT** |";
+    assert.match(docs.capabilityText, /D380_STATUS = PROPOSED/);
+    const result = evaluateImp036IArchitectureFitCandidateAuthority(docs);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036I_D380_PREMATURE_CURRENT");
+  });
+
   it("rejects D-380 CURRENT before Fit lock", () => {
     const docs = baseDocs();
     docs.decisionText = docs.decisionText.replace(

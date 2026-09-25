@@ -35381,7 +35381,7 @@ export function evaluateImp036IArchitectureFitCandidateAuthority(docs) {
         message: "IMP-036I capability candidate must record IMPLEMENTATION_AUTHORIZED = NO",
       };
     }
-    if (/D379_STATUS\s*=\s*CURRENT/.test(capabilityText)) {
+    if (/D379_STATUS\s*=\s*CURRENT/.test(capabilityText) || /\*\*D-379\*\*[^\n]*\*\*CURRENT\*\*/.test(capabilityText)) {
       return {
         ok: false,
         code: "IMP036I_D379_PREMATURE_CURRENT",
@@ -35389,7 +35389,7 @@ export function evaluateImp036IArchitectureFitCandidateAuthority(docs) {
           "IMP-036I capability candidate must not claim D-379 CURRENT before independent Architecture Fit PASS + lock persistence",
       };
     }
-    if (/D380_STATUS\s*=\s*CURRENT/.test(capabilityText)) {
+    if (/D380_STATUS\s*=\s*CURRENT/.test(capabilityText) || /\*\*D-380\*\*[^\n]*\*\*CURRENT\*\*/.test(capabilityText)) {
       return {
         ok: false,
         code: "IMP036I_D380_PREMATURE_CURRENT",
