@@ -252,21 +252,38 @@ export async function evaluateScheduledHorizonServiceability(
     });
   }
 
-  return persistence.withContext(async (ctx) => {
-    assertApplicationRole(ctx, "evaluateScheduledHorizonServiceability");
-
-    const candidates = await findServiceabilityCandidates(ctx, {
+  return persistence.withContext((ctx) =>
+    evaluateScheduledHorizonServiceabilityInContext(ctx, {
       brandId: parsed.brandId,
-    });
-
-    return evaluateServiceabilityCandidates(
-      ctx,
-      candidates,
       coordinates,
       evaluatedAt,
-      "scheduled",
-    );
+    }),
+  );
+}
+
+/**
+ * Same read as {@link evaluateScheduledHorizonServiceability}, on a caller-
+ * supplied context so a binding transaction can re-read while it holds locks.
+ */
+export async function evaluateScheduledHorizonServiceabilityInContext(
+  context: PersistenceQueryContext,
+  input: Readonly<{
+    brandId: string;
+    coordinates: Readonly<{ latitude: string; longitude: string }>;
+    evaluatedAt: Date;
+  }>,
+): Promise<ServiceabilityDecision> {
+  assertApplicationRole(context, "evaluateScheduledHorizonServiceabilityInContext");
+  const candidates = await findServiceabilityCandidates(context, {
+    brandId: input.brandId,
   });
+  return evaluateServiceabilityCandidates(
+    context,
+    candidates,
+    input.coordinates,
+    input.evaluatedAt,
+    "scheduled",
+  );
 }
 
 export type EvaluateOutletServiceabilityInput = Readonly<{

@@ -16,6 +16,7 @@ import {
 import { requireWorkforcePrincipal } from "../access-control/principal";
 import { findModifierOptionById } from "../catalog/modifiers";
 import { findVariantById } from "../catalog/variants";
+import { lockOutletScheduledFulfilmentAuthority } from "../scheduled-fulfilment/foundations";
 import type { PersistenceQueryContext, PersistenceTransactionContext } from "../persistence/types";
 import {
   assertApplicationRole,
@@ -215,6 +216,7 @@ export async function setVariantAvailability(
   const outletId = assertUuid(input.outletId, "outletId");
   const variantId = assertUuid(input.variantId, "variantId");
   const outlet = await requireAvailabilityManage(context, input.actor, outletId);
+  await lockOutletScheduledFulfilmentAuthority(context, outletId);
   const principal = requireWorkforcePrincipal(input.actor);
 
   const variant = await findVariantById(context, variantId);
@@ -343,6 +345,7 @@ export async function setModifierOptionAvailability(
   const outletId = assertUuid(input.outletId, "outletId");
   const modifierOptionId = assertUuid(input.modifierOptionId, "modifierOptionId");
   const outlet = await requireAvailabilityManage(context, input.actor, outletId);
+  await lockOutletScheduledFulfilmentAuthority(context, outletId);
   const principal = requireWorkforcePrincipal(input.actor);
 
   const option = await findModifierOptionById(context, modifierOptionId);

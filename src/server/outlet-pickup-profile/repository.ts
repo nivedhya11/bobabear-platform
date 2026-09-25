@@ -14,6 +14,7 @@ import {
   assertApplicationRole,
   assertTransactionContext,
 } from "../organization/assert-role";
+import { lockOutletScheduledFulfilmentAuthority } from "../scheduled-fulfilment/foundations";
 import {
   OrganizationConflictError,
   OrganizationValidationError,
@@ -102,6 +103,7 @@ export async function upsertOutletPickupProfile(
   input: OutletPickupProfileUpsertInput,
 ): Promise<OutletPickupProfile> {
   assertTransactionContext(context, "upsertOutletPickupProfile");
+  await lockOutletScheduledFulfilmentAuthority(context, input.outletId);
   const now = input.now ?? new Date();
   const existing = await loadOutletPickupProfileByOutletId(context, input.outletId);
 

@@ -8,8 +8,9 @@ import "server-only";
 
 import { randomUUID } from "node:crypto";
 
-import { and, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 
+import { brandsTable, outletsTable } from "../../platform/database/schema/organizations";
 import {
   brandScheduledFulfilmentPoliciesTable,
   outletOperatingDateExceptionsTable,
@@ -113,6 +114,63 @@ function staleRevision(): never {
   );
 }
 
+/**
+ * Brand-row lock. Serializes explicit policy updates and the first insert
+ * (absent row = product defaults). Insert takes a key-share on Brand; FOR
+ * UPDATE conflicts with that key-share, so a plain policy SELECT does not.
+ */
+export async function lockBrandScheduledFulfilmentAuthority(
+  context: PersistenceTransactionContext,
+  brandId: string,
+): Promise<void> {
+  assertTransactionContext(context, "lockBrandScheduledFulfilmentAuthority");
+  const rows = await context.db
+    .select({ id: brandsTable.id })
+    .from(brandsTable)
+    .where(eq(brandsTable.id, brandId))
+    .for("update")
+    .limit(1);
+  if (!rows[0]) {
+    throw new ScheduledFulfilmentError("NOT_FOUND", "Brand was not found.", "brandId");
+  }
+}
+
+/** Outlet-row lock for scheduling profile, closure, hours, and lead writes. */
+export async function lockOutletScheduledFulfilmentAuthority(
+  context: PersistenceTransactionContext,
+  outletId: string,
+): Promise<void> {
+  assertTransactionContext(context, "lockOutletScheduledFulfilmentAuthority");
+  const rows = await context.db
+    .select({ id: outletsTable.id })
+    .from(outletsTable)
+    .where(eq(outletsTable.id, outletId))
+    .for("update")
+    .limit(1);
+  if (!rows[0]) {
+    throw new ScheduledFulfilmentError(
+      "NOT_FOUND",
+      "Outlet was not found.",
+      "outletId",
+    );
+  }
+}
+
+/** Every Outlet of a Brand, id order, so sibling serviceability writes wait. */
+export async function lockBrandOutletsForScheduledFulfilment(
+  context: PersistenceTransactionContext,
+  brandId: string,
+): Promise<readonly string[]> {
+  assertTransactionContext(context, "lockBrandOutletsForScheduledFulfilment");
+  const rows = await context.db
+    .select({ id: outletsTable.id })
+    .from(outletsTable)
+    .where(eq(outletsTable.brandId, brandId))
+    .orderBy(asc(outletsTable.id))
+    .for("update");
+  return rows.map((row) => row.id);
+}
+
 export async function resolveBrandScheduledFulfilmentPolicy(
   context: PersistenceQueryContext,
   brandId: string,
@@ -161,6 +219,7 @@ export async function updateBrandScheduledFulfilmentPolicy(
   return persistence.transaction(async (tx) => {
     try {
       assertTransactionContext(tx, "updateBrandScheduledFulfilmentPolicy");
+      await lockBrandScheduledFulfilmentAuthority(tx, input.brandId);
       const current = await resolveBrandScheduledFulfilmentPolicy(tx, input.brandId);
       if (current.revision !== input.expectedRevision) {
         staleRevision();
@@ -243,6 +302,7 @@ export async function saveOutletSchedulingProfile(
   return persistence.transaction(async (tx) => {
     try {
       assertTransactionContext(tx, "saveOutletSchedulingProfile");
+      await lockOutletScheduledFulfilmentAuthority(tx, input.outletId);
       const existing = await loadOutletSchedulingProfile(tx, input.outletId);
       if (existing === null) {
         if (expected !== BigInt(0)) staleRevision();
@@ -300,6 +360,7 @@ export async function insertOutletOperatingDateException(
   }>,
 ): Promise<OutletOperatingDateException> {
   assertTransactionContext(context, "insertOutletOperatingDateException");
+  await lockOutletScheduledFulfilmentAuthority(context, input.outletId);
   if (input.exceptionKind !== "CLOSED_FULL_DAY") {
     throw new ScheduledFulfilmentError(
       "INVALID_INPUT",
