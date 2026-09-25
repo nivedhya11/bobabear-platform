@@ -20,6 +20,7 @@ import {
 import { OrderError } from "./errors";
 import type {
   AcceptOrderInput,
+  CancelCustomerScheduledOrderInput,
   CancelOrderInput,
   FulfilOrderInput,
   GetCustomerOrderInput,
@@ -221,6 +222,44 @@ export function parseFulfilOrderDomainInput(input: unknown): FulfilOrderInput {
     expectedOrderRevision: requirePositiveOrderRevision(
       input.expectedOrderRevision,
     ),
+  });
+}
+
+export function parseCancelCustomerScheduledOrderInput(
+  orderId: unknown,
+  body: unknown,
+): CancelCustomerScheduledOrderInput {
+  const id = assertOrderUuid(orderId, "orderId");
+  if (!isPlainObject(body)) {
+    throw new OrderError(
+      "ORDER_REQUEST_INVALID",
+      "cancelCustomerScheduledOrder body must be an object.",
+    );
+  }
+  rejectUnknownKeys(body, ["expectedOrderRevision"], "cancelCustomerScheduledOrder");
+  return Object.freeze({
+    orderId: id,
+    expectedOrderRevision: parseOrderRevisionTransport(body.expectedOrderRevision),
+  });
+}
+
+export function parseCancelCustomerScheduledOrderDomainInput(
+  input: unknown,
+): CancelCustomerScheduledOrderInput {
+  if (!isPlainObject(input)) {
+    throw new OrderError(
+      "ORDER_REQUEST_INVALID",
+      "cancelCustomerScheduledOrder input must be an object.",
+    );
+  }
+  rejectUnknownKeys(
+    input,
+    ["orderId", "expectedOrderRevision"],
+    "cancelCustomerScheduledOrder",
+  );
+  return Object.freeze({
+    orderId: assertOrderUuid(input.orderId, "orderId"),
+    expectedOrderRevision: requirePositiveOrderRevision(input.expectedOrderRevision),
   });
 }
 

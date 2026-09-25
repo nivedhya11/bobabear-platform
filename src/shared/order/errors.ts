@@ -8,6 +8,7 @@ export const ORDER_ERROR_CODES = [
   "ORDER_ACCEPT_NOT_ALLOWED",
   "ORDER_FULFIL_NOT_ALLOWED",
   "ORDER_CANCEL_NOT_ALLOWED",
+  "ORDER_CANCEL_CUTOFF_CLOSED",
   "ORDER_CANCELLATION_REASON_INVALID",
   "ORDER_REQUEST_INVALID",
   "ORDER_CURSOR_INVALID",
@@ -24,11 +25,12 @@ export type OrderErrorCode = (typeof ORDER_ERROR_CODES)[number];
 export class OrderError extends Error {
   readonly code: OrderErrorCode;
   readonly field?: string;
+  readonly resolutionOptions?: readonly string[];
 
   constructor(
     code: OrderErrorCode,
     message: string,
-    options?: { field?: string },
+    options?: { field?: string; resolutionOptions?: readonly string[] },
   ) {
     super(message);
     this.name = "OrderError";
@@ -36,17 +38,24 @@ export class OrderError extends Error {
     if (options?.field !== undefined) {
       this.field = options.field;
     }
+    if (options?.resolutionOptions !== undefined) {
+      this.resolutionOptions = options.resolutionOptions;
+    }
   }
 
   toSafeJSON(): Readonly<{
     code: OrderErrorCode;
     message: string;
     field?: string;
+    resolutionOptions?: readonly string[];
   }> {
     return Object.freeze({
       code: this.code,
       message: this.message,
       ...(this.field !== undefined ? { field: this.field } : {}),
+      ...(this.resolutionOptions !== undefined
+        ? { resolutionOptions: this.resolutionOptions }
+        : {}),
     });
   }
 }

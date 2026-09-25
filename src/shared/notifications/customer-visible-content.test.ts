@@ -82,6 +82,30 @@ describe("renderCustomerVisibleNotificationContent", () => {
     expect(content.summary).not.toMatch(/SCHEDULED_FULFILMENT_REMINDER/);
   });
 
+  it("SCHEDULED_FULFILMENT_REMINDER is mode-aware and includes the sealed window", () => {
+    const pickup = renderCustomerVisibleNotificationContent({
+      semanticType: "SCHEDULED_FULFILMENT_REMINDER",
+      fulfilmentMode: "PICKUP",
+      pickupLocationDisplayName: "Pickup Counter",
+      fulfilmentTiming: "SCHEDULED",
+      scheduledWindowLabel: "18:00–18:30",
+      scheduledTimeZone: "Asia/Kolkata",
+    });
+    expect(pickup.summary).toContain("Pickup from Pickup Counter");
+    expect(pickup.summary).toContain("Scheduled pickup window 18:00–18:30 (Asia/Kolkata)");
+    expect(summaryClaimsRiderOrDeliveryProgress(pickup.summary)).toBe(false);
+
+    const delivery = renderCustomerVisibleNotificationContent({
+      semanticType: "SCHEDULED_FULFILMENT_REMINDER",
+      fulfilmentMode: "DELIVERY",
+      fulfilmentTiming: "SCHEDULED",
+      scheduledWindowLabel: "18:00–18:30",
+      scheduledTimeZone: "Asia/Kolkata",
+    });
+    expect(delivery.summary).toContain("Arrival / fulfilment window 18:00–18:30 (Asia/Kolkata)");
+    expect(delivery.summary).not.toMatch(/pickup/i);
+  });
+
   it("keeps ASAP wording when timing is omitted", () => {
     expect(
       renderCustomerVisibleNotificationContent({

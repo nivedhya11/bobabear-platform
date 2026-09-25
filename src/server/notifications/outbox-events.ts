@@ -23,6 +23,7 @@ export const NOTIFICATION_OUTBOX_EVENT_TYPES = [
   "notification.domain.payment_confirmed",
   "notification.domain.order_accepted",
   "notification.domain.order_cancelled",
+  "notification.domain.scheduled_fulfilment_reminder",
   "notification.domain.out_for_delivery",
   "notification.domain.delivered",
 ] as const;
@@ -37,6 +38,7 @@ const EVENT_TYPE_BY_SEMANTIC_TYPE: Readonly<
   PAYMENT_CONFIRMED: "notification.domain.payment_confirmed",
   ORDER_ACCEPTED: "notification.domain.order_accepted",
   ORDER_CANCELLED: "notification.domain.order_cancelled",
+  SCHEDULED_FULFILMENT_REMINDER: "notification.domain.scheduled_fulfilment_reminder",
   OUT_FOR_DELIVERY: "notification.domain.out_for_delivery",
   DELIVERED: "notification.domain.delivered",
 });
@@ -48,6 +50,7 @@ const SEMANTIC_TYPE_BY_EVENT_TYPE: Readonly<
   "notification.domain.payment_confirmed": "PAYMENT_CONFIRMED",
   "notification.domain.order_accepted": "ORDER_ACCEPTED",
   "notification.domain.order_cancelled": "ORDER_CANCELLED",
+  "notification.domain.scheduled_fulfilment_reminder": "SCHEDULED_FULFILMENT_REMINDER",
   "notification.domain.out_for_delivery": "OUT_FOR_DELIVERY",
   "notification.domain.delivered": "DELIVERED",
 });
@@ -135,4 +138,6 @@ export const notificationDomainEventRef = Object.freeze({
     `order:${orderId}:cancelled:${revision.toString()}`,
   deliveryOutForDelivery: (deliveryId: string) => `delivery:${deliveryId}:picked_up`,
   deliveryDelivered: (deliveryId: string) => `delivery:${deliveryId}:delivered`,
+  scheduledFulfilmentReminder: (orderId: string) =>
+    `order:${orderId}:scheduled_fulfilment_reminder`,
 });

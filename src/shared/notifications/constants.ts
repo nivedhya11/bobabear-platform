@@ -108,6 +108,7 @@ export const NOTIFICATION_SEMANTIC_TYPES = [
   "ORDER_RECEIVED",
   "PAYMENT_CONFIRMED",
   "ORDER_ACCEPTED",
+  "SCHEDULED_FULFILMENT_REMINDER",
   "ORDER_CANCELLED",
   "OUT_FOR_DELIVERY",
   "DELIVERED",
@@ -124,6 +125,9 @@ export type NotificationSemanticType =
  *
  * ORDER_CANCELLED is deliberately ranked above the delivery-progress states:
  * a cancellation is the customer's final commercial truth for that Order.
+ *
+ * SCHEDULED_FULFILMENT_REMINDER shares rank 40 with OUT_FOR_DELIVERY.
+ * Equal rank is not a suppression relation: staleness uses strict greater-than.
  */
 export const NOTIFICATION_SEMANTIC_ORDER_RANKS: Readonly<
   Record<NotificationSemanticType, number>
@@ -131,6 +135,7 @@ export const NOTIFICATION_SEMANTIC_ORDER_RANKS: Readonly<
   ORDER_RECEIVED: 10,
   PAYMENT_CONFIRMED: 20,
   ORDER_ACCEPTED: 30,
+  SCHEDULED_FULFILMENT_REMINDER: 40,
   OUT_FOR_DELIVERY: 40,
   DELIVERED: 50,
   ORDER_CANCELLED: 60,
@@ -143,6 +148,7 @@ export const NOTIFICATION_SEMANTIC_PURPOSES: Readonly<
   ORDER_RECEIVED: "ORDER_UPDATES",
   PAYMENT_CONFIRMED: "ORDER_UPDATES",
   ORDER_ACCEPTED: "ORDER_UPDATES",
+  SCHEDULED_FULFILMENT_REMINDER: "ORDER_UPDATES",
   ORDER_CANCELLED: "ORDER_UPDATES",
   OUT_FOR_DELIVERY: "DELIVERY_UPDATES",
   DELIVERED: "DELIVERY_UPDATES",
@@ -175,6 +181,7 @@ export const NOTIFICATION_SUPPRESSION_REASONS = [
   "CHANNEL_DISABLED",
   "SUPERSEDED_BY_LATER_SEMANTIC",
   "EXPIRED_BEFORE_SEND",
+  "ORDER_NO_LONGER_REMINDER_ELIGIBLE",
 ] as const;
 
 export type NotificationSuppressionReason =

@@ -42,6 +42,7 @@ export type Order = Readonly<{
   fulfilledByWorkforceUserId: string | null;
   cancelledAt: Date | null;
   cancelledByWorkforceUserId: string | null;
+  cancelledByCustomerAuthUserId: string | null;
   cancellationReasonCode: OrderCancellationReasonCode | null;
 }>;
 
@@ -249,6 +250,11 @@ export type CancelOrderInput = Readonly<{
   orderId: string;
   expectedOrderRevision: bigint;
   cancellationReasonCode: OrderCancellationReasonCode;
+}>;
+
+export type CancelCustomerScheduledOrderInput = Readonly<{
+  orderId: string;
+  expectedOrderRevision: bigint;
 }>;
 
 export type GetCustomerOrderInput = Readonly<{

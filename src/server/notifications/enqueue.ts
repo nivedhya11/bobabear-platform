@@ -17,6 +17,11 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 
 import type { NotificationSemanticType } from "../../shared/notifications";
+import {
+  evaluateScheduledReminderEnqueue,
+  scheduledFulfilmentReminderRef,
+} from "../../shared/scheduled-fulfilment/reminder";
+import type { CheckoutSnapshot } from "../../shared/checkout";
 import { enqueueOutboxEvent } from "../persistence/outbox";
 import type { PersistenceTransactionContext } from "../persistence/types";
 import { findCustomerIdForOrder } from "./repository";
@@ -40,7 +45,7 @@ export type EnqueueNotificationIntentInput = Readonly<{
 
 export async function enqueueNotificationIntent(
   context: PersistenceTransactionContext,
-  input: EnqueueNotificationIntentInput,
+  input: EnqueueNotificationIntentInput & Readonly<{ availableAt?: Date }>,
 ): Promise<void> {
   const payload = toOutboxPayloadJson({
     customerId: input.customerId,
@@ -60,7 +65,7 @@ export async function enqueueNotificationIntent(
     aggregateId: input.orderId ?? input.deliveryId ?? input.paymentId ?? null,
     payload,
     occurredAt: input.occurredAt,
-    availableAt: input.occurredAt,
+    availableAt: input.availableAt ?? input.occurredAt,
     createdAt: input.occurredAt,
   });
 }
@@ -120,6 +125,47 @@ export async function enqueueOrderLifecycleNotification(
     orderId: input.orderId,
     occurredAt: input.occurredAt,
   });
+}
+
+/**
+ * Enqueue the single proactive Scheduled reminder inside the caller's
+ * transaction. Returns whether an intent was written. Throws on outbox
+ * failure so the caller transaction rolls back.
+ */
+export async function enqueueScheduledFulfilmentReminder(
+  context: PersistenceTransactionContext,
+  input: Readonly<{
+    customerId: string;
+    orderId: string;
+    occurredAt: Date;
+    snapshot: Pick<
+      CheckoutSnapshot,
+      | "fulfilmentTiming"
+      | "scheduledWindowStartAt"
+      | "scheduledWindowEndAt"
+      | "scheduledTimezone"
+      | "scheduledCancellationCutoffMinutes"
+    >;
+  }>,
+): Promise<"ENQUEUED" | "SKIPPED"> {
+  const decision = evaluateScheduledReminderEnqueue({
+    fulfilmentTiming: input.snapshot.fulfilmentTiming,
+    windowStartAt: input.snapshot.scheduledWindowStartAt,
+    windowEndAt: input.snapshot.scheduledWindowEndAt,
+    timeZone: input.snapshot.scheduledTimezone,
+    cutoffMinutes: input.snapshot.scheduledCancellationCutoffMinutes,
+    materializedAt: input.occurredAt,
+  });
+  if (decision.outcome !== "ENQUEUE") return "SKIPPED";
+  await enqueueNotificationIntent(context, {
+    customerId: input.customerId,
+    semanticType: "SCHEDULED_FULFILMENT_REMINDER",
+    domainEventRef: scheduledFulfilmentReminderRef(input.orderId),
+    orderId: input.orderId,
+    occurredAt: input.occurredAt,
+    availableAt: decision.dueAt,
+  });
+  return "ENQUEUED";
 }
 
 export async function enqueueDeliveryProgressNotification(

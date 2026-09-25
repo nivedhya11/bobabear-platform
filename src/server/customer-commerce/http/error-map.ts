@@ -65,6 +65,8 @@ const STATUS_409 = new Set([
   "PAYMENT_UNRESOLVED_ATTEMPT",
   "PAYMENT_IDEMPOTENCY_CONFLICT",
   "PAYMENT_CHECKOUT_NOT_READY",
+  "ORDER_CONFLICT",
+  "ORDER_CANCEL_CUTOFF_CLOSED",
   "PAYMENT_PROMOTION_CAPACITY_UNAVAILABLE",
   "PAYMENT_ZERO_PAYABLE_INVALID",
   "PAYMENT_NEGATIVE_PAYABLE",
@@ -121,7 +123,11 @@ function extractDomainError(error: unknown): {
     return { code: error.code, field: error.field };
   }
   if (error instanceof OrderError) {
-    return { code: error.code, field: error.field };
+    return {
+      code: error.code,
+      field: error.field,
+      resolutionOptions: error.resolutionOptions,
+    };
   }
   if (error instanceof CustomerProfileError) {
     return { code: error.code, field: error.field };

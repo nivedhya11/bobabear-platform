@@ -83,6 +83,20 @@ export function renderCustomerVisibleNotificationContent(
           ? "Your Pickup order has been cancelled."
           : "Your order has been cancelled.";
       break;
+    case "SCHEDULED_FULFILMENT_REMINDER":
+      if (fulfilmentMode === "PICKUP") {
+        const location =
+          typeof pickupLocationDisplayName === "string" &&
+          pickupLocationDisplayName.trim().length > 0
+            ? pickupLocationDisplayName.trim()
+            : null;
+        summary = location
+          ? `Your scheduled Pickup is coming up. Pickup from ${location}.`
+          : "Your scheduled Pickup is coming up.";
+      } else {
+        summary = "Your scheduled delivery window is coming up.";
+      }
+      break;
     case "OUT_FOR_DELIVERY":
       summary = "Your order is out for delivery.";
       break;

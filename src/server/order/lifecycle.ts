@@ -255,6 +255,7 @@ export async function cancelOrder(
       updatedAt: now,
       cancelledAt: now,
       cancelledByWorkforceUserId: workforce.workforceUserId,
+      cancelledByCustomerAuthUserId: null,
       cancellationReasonCode: parsed.cancellationReasonCode,
       // Preserve acceptance provenance when cancelling after ACCEPTED.
     });

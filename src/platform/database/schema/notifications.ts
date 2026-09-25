@@ -41,6 +41,7 @@ const semanticTypeValues = () => sql`(
   'ORDER_RECEIVED',
   'PAYMENT_CONFIRMED',
   'ORDER_ACCEPTED',
+  'SCHEDULED_FULFILMENT_REMINDER',
   'ORDER_CANCELLED',
   'OUT_FOR_DELIVERY',
   'DELIVERED'
@@ -145,7 +146,8 @@ export const notificationRequestsTable = appSchema.table(
         'CONSENT_MISSING',
         'CHANNEL_DISABLED',
         'SUPERSEDED_BY_LATER_SEMANTIC',
-        'EXPIRED_BEFORE_SEND'
+        'EXPIRED_BEFORE_SEND',
+        'ORDER_NO_LONGER_REMINDER_ELIGIBLE'
       )`,
     ),
     check(

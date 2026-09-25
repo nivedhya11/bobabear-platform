@@ -14,7 +14,8 @@ import {
   type OrderMaterializationResult,
   type OrderPolicy,
 } from "../../shared/order";
-import { enqueueOrderReceivedNotification } from "../notifications/enqueue";
+import { enqueueOrderReceivedNotification, enqueueScheduledFulfilmentReminder } from "../notifications/enqueue";
+import { loadActiveSnapshot } from "../checkout/repository";
 import type { Persistence } from "../persistence/types";
 import {
   finalizeCartForOrder,
@@ -229,6 +230,22 @@ export async function materializeOrderForCompletedCheckout(
         customerId: checkout.customerAuthUserId,
         orderId: inserted.id,
         occurredAt: now,
+      });
+
+      const sealed = await loadActiveSnapshot(tx, snapshot.snapshotId);
+      if (!sealed || sealed.checkoutId !== checkout.checkoutId) {
+        throw new OrderError(
+          "ORDER_MATERIALIZATION_ANOMALY",
+          "Purchased snapshot could not be reloaded for reminder materialization.",
+        );
+      }
+      // Same transaction as the Order. A reminder write failure rolls back
+      // the Order; a skipped reminder is an eligibility decision, not a lost write.
+      await enqueueScheduledFulfilmentReminder(tx, {
+        customerId: checkout.customerAuthUserId,
+        orderId: inserted.id,
+        occurredAt: now,
+        snapshot: sealed,
       });
 
       let cartFinalization: OrderCartFinalizationDisposition =

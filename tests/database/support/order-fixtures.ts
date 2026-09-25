@@ -139,6 +139,7 @@ async function loadOrderForCheckout(
         fulfilled_by_workforce_user_id as "fulfilledByWorkforceUserId",
         cancelled_at as "cancelledAt",
         cancelled_by_workforce_user_id as "cancelledByWorkforceUserId",
+        cancelled_by_customer_auth_user_id as "cancelledByCustomerAuthUserId",
         cancellation_reason_code as "cancellationReasonCode"
       from app.orders
       where checkout_id = ${checkoutId}::uuid
@@ -162,6 +163,7 @@ async function loadOrderForCheckout(
           fulfilledByWorkforceUserId: string | null;
           cancelledAt: Date | null;
           cancelledByWorkforceUserId: string | null;
+          cancelledByCustomerAuthUserId: string | null;
           cancellationReasonCode: string | null;
         }
       | undefined;
@@ -190,6 +192,7 @@ async function loadOrderForCheckout(
     fulfilledByWorkforceUserId: row.fulfilledByWorkforceUserId,
     cancelledAt: asDate(row.cancelledAt),
     cancelledByWorkforceUserId: row.cancelledByWorkforceUserId,
+    cancelledByCustomerAuthUserId: row.cancelledByCustomerAuthUserId,
     cancellationReasonCode:
       row.cancellationReasonCode as Order["cancellationReasonCode"],
   });

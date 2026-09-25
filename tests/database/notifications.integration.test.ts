@@ -164,6 +164,7 @@ describe("notification migration", () => {
         expect(tables.rows.map((r) => r.table_name)).toEqual([
           "notification_communication_preferences",
           "notification_consents",
+          "notification_inbound_messages",
           "notification_message_attempts",
           "notification_provider_events",
           "notification_requests",
@@ -193,11 +194,12 @@ describe("notification migration", () => {
       await persistence.withContext(async (ctx) => {
         const templates = await ctx.db.execute<{
           semantic_type: string;
+          template_key: string;
           status: string;
           channel: string;
           provider_template_ref: string | null;
         }>(sql`
-          select semantic_type, status, channel, provider_template_ref
+          select semantic_type, template_key, status, channel, provider_template_ref
           from app.notification_templates
           order by semantic_type
         `);
@@ -208,12 +210,13 @@ describe("notification migration", () => {
           "ORDER_RECEIVED",
           "OUT_FOR_DELIVERY",
           "PAYMENT_CONFIRMED",
+          "SCHEDULED_FULFILMENT_REMINDER",
         ]);
         for (const row of templates.rows) {
           expect(row.status).toBe("APPROVED");
           expect(row.channel).toBe("WHATSAPP");
-          // No provider adapter exists yet, so no external template is registered.
-          expect(row.provider_template_ref).toBeNull();
+          // IMP-034 maps the internal template key as the provider template name.
+          expect(row.provider_template_ref).toBe(row.template_key);
         }
       });
     });
