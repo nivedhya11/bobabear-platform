@@ -36061,20 +36061,66 @@ function imp036iRequirePlanAssignment(text, key, expected, code, message) {
   return null;
 }
 
-function imp036iBooleanMetaValues(text, key) {
-  const expression = new RegExp(`"${key}"\\s*:\\s*(true|false)`, "g");
-  return [...text.matchAll(expression)].map((match) => match[1]);
-}
-
-function imp036iRequireExactBooleanMeta(text, key, expected, code, message) {
-  const values = imp036iBooleanMetaValues(text, key);
-  if (values.length !== 1) {
-    return { ok: false, code, message };
+/**
+ * Authorization booleans are valid only inside the single governance-meta JSON block.
+ * A matching literal in prose or a code fence does not satisfy this check.
+ * @param {string} executionPlanText
+ */
+function evaluateImp036iExecutionPlanGovernanceMeta(executionPlanText) {
+  const blocks = [...String(executionPlanText).matchAll(/<!--\s*governance-meta\s*([\s\S]*?)-->/g)];
+  if (blocks.length !== 1) {
+    return {
+      ok: false,
+      code: "IMP036I_EXECUTION_PLAN",
+      message: "IMP-036I execution plan must contain exactly one governance-meta JSON block",
+    };
   }
-  if (values[0] !== expected) {
-    return { ok: false, code, message };
+  let meta;
+  try {
+    meta = JSON.parse(blocks[0][1]);
+  } catch {
+    return {
+      ok: false,
+      code: "IMP036I_EXECUTION_PLAN",
+      message: "IMP-036I execution plan governance-meta JSON is invalid",
+    };
   }
-  return null;
+  if (!meta || typeof meta !== "object" || Array.isArray(meta)) {
+    return {
+      ok: false,
+      code: "IMP036I_EXECUTION_PLAN",
+      message: "IMP-036I execution plan governance-meta JSON is invalid",
+    };
+  }
+  if (!("implementationAuthorized" in meta)) {
+    return {
+      ok: false,
+      code: "IMP036I_IMPLEMENTATION_AUTHORIZED_YES",
+      message: "IMP-036I execution plan governance-meta must contain implementationAuthorized",
+    };
+  }
+  if (meta.implementationAuthorized !== true) {
+    return {
+      ok: false,
+      code: "IMP036I_IMPLEMENTATION_AUTHORIZED_YES",
+      message: "IMP-036I execution plan governance-meta implementationAuthorized must be true",
+    };
+  }
+  if (!("implementationStarted" in meta)) {
+    return {
+      ok: false,
+      code: "IMP036I_PREMATURE_START",
+      message: "IMP-036I execution plan governance-meta must contain implementationStarted",
+    };
+  }
+  if (meta.implementationStarted !== false) {
+    return {
+      ok: false,
+      code: "IMP036I_PREMATURE_START",
+      message: "IMP-036I execution plan governance-meta implementationStarted must be false",
+    };
+  }
+  return { ok: true };
 }
 
 function imp036iAcceptanceScenarioId(index) {
@@ -36094,10 +36140,10 @@ function evaluateImp036iExecutionPlanPrimaryOwnership(executionPlanText) {
   const counts = new Map();
   const lineExpression = /^TRANCHE_([234])_PRIMARY_ACS\s*=\s*(.*)$/gm;
   for (const match of executionPlanText.matchAll(lineExpression)) {
-    const ids = match[2].match(/AC-036I-\d{3}(?!\d)/g) ?? [];
-    for (const id of ids) {
-      if (!canonicalIds.has(id)) continue;
-      counts.set(id, (counts.get(id) ?? 0) + 1);
+    for (const rawToken of match[2].split(",")) {
+      const token = rawToken.trim();
+      if (!/^AC-036I-\d{3}$/.test(token) || !canonicalIds.has(token)) continue;
+      counts.set(token, (counts.get(token) ?? 0) + 1);
     }
   }
   for (let index = 1; index <= IMP036I_MANDATORY_ACCEPTANCE_SCENARIO_COUNT; index += 1) {
@@ -36313,22 +36359,8 @@ export function evaluateImp036iImplementationAuthorization(docs) {
         "IMP-036I execution plan must keep FOUNDER_UAT = NOT_PERFORMED",
       );
     if (lifecycleFailure) return lifecycleFailure;
-    const authorizedMetaFailure = imp036iRequireExactBooleanMeta(
-      executionPlanText,
-      "implementationAuthorized",
-      "true",
-      "IMP036I_IMPLEMENTATION_AUTHORIZED_YES",
-      "IMP-036I execution plan metadata must contain implementationAuthorized exactly once with value true",
-    );
-    if (authorizedMetaFailure) return authorizedMetaFailure;
-    const startedMetaFailure = imp036iRequireExactBooleanMeta(
-      executionPlanText,
-      "implementationStarted",
-      "false",
-      "IMP036I_PREMATURE_START",
-      "IMP-036I execution plan metadata must contain implementationStarted exactly once with value false",
-    );
-    if (startedMetaFailure) return startedMetaFailure;
+    const governanceMeta = evaluateImp036iExecutionPlanGovernanceMeta(executionPlanText);
+    if (!governanceMeta.ok) return governanceMeta;
     const ownership = evaluateImp036iExecutionPlanPrimaryOwnership(executionPlanText);
     if (!ownership.ok) return ownership;
   }
