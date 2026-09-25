@@ -114,6 +114,8 @@ export default defineConfig({
       "tests/operations/notifications-http.integration.test.ts",
       // IMP-036E: Store Operations HTTP transport integration.
       "tests/operations/store-http.integration.test.ts",
+      // IMP-036I Tranche 3: Outlet scheduling profile and closure HTTP.
+      "tests/operations/scheduling-http.tranche3.integration.test.ts",
       // IMP-035: Administration API authorization and transport integration.
       "tests/administration/**/*.integration.test.ts",
       // IMP-031: Provider-neutral Delivery foundation (Boundary C).
