@@ -23,6 +23,7 @@ export type AdminErrorBody = Readonly<{
   code: string;
   requestId: string;
   field?: string;
+  message?: string;
 }>;
 
 export type MappedAdminError = Readonly<{
@@ -49,6 +50,10 @@ export function mapAdminError(error: unknown, requestId: string): MappedAdminErr
         code: error.code,
         requestId,
         ...(error.field !== undefined ? { field: error.field } : {}),
+        ...((error.code === "ADMIN_REQUEST_INVALID" || error.code === "ADMIN_CONFLICT") &&
+        error.message
+          ? { message: error.message }
+          : {}),
       },
     };
   }

@@ -12,11 +12,14 @@ import {
   type OrderLineProjection,
   type OrderMutationResult,
   type OrderOutletSummary,
+  type OrderScheduledWindowProjection,
   type WorkforceOrderCustomerVerification,
   type WorkforceOrderDetail,
   type WorkforceOrderSummary,
 } from "../../shared/order";
 import { moneySummaryFromSnapshot } from "../../shared/order/money-summary";
+import { deriveScheduledOperationalCue } from "../../shared/scheduled-fulfilment/operational-cues";
+import { presentScheduledWindow } from "../../shared/scheduled-fulfilment/presentation";
 
 function paymentSatisfaction(order: Order) {
   return order.paymentProvenanceKind === "PAYMENT"
@@ -68,6 +71,30 @@ function pickupLocationFromSnapshot(snapshot: CheckoutSnapshot) {
   });
 }
 
+function scheduledWindowProjection(input: {
+  fulfilmentTiming?: "ASAP" | "SCHEDULED";
+  scheduledWindowStartAt?: Date | null;
+  scheduledWindowEndAt?: Date | null;
+  scheduledTimezone?: string | null;
+}): OrderScheduledWindowProjection | null {
+  if (input.fulfilmentTiming !== "SCHEDULED") return null;
+  if (!input.scheduledWindowStartAt || !input.scheduledWindowEndAt || !input.scheduledTimezone) {
+    return null;
+  }
+  const presented = presentScheduledWindow({
+    startAt: input.scheduledWindowStartAt,
+    endAt: input.scheduledWindowEndAt,
+    timeZone: input.scheduledTimezone,
+  });
+  return Object.freeze({
+    startAt: presented.startAt,
+    endAt: presented.endAt,
+    timeZone: presented.timeZone,
+    localDate: presented.localDate,
+    label: presented.label,
+  });
+}
+
 function linesFromSnapshot(
   snapshot: CheckoutSnapshot,
 ): readonly OrderLineProjection[] {
@@ -99,8 +126,13 @@ export function toCustomerOrderSummary(
     grandTotalPaise: bigint;
     currency: string;
     fulfilmentMode: "DELIVERY" | "PICKUP";
+    fulfilmentTiming?: "ASAP" | "SCHEDULED";
+    scheduledWindowStartAt?: Date | null;
+    scheduledWindowEndAt?: Date | null;
+    scheduledTimezone?: string | null;
   },
 ): CustomerOrderSummary {
+  const fulfilmentTiming = snapshot.fulfilmentTiming === "SCHEDULED" ? "SCHEDULED" : "ASAP";
   return Object.freeze({
     orderId: order.id,
     orderNumber: order.orderNumber,
@@ -111,6 +143,8 @@ export function toCustomerOrderSummary(
     paymentSatisfaction: paymentSatisfaction(order),
     outlet,
     fulfilmentMode: snapshot.fulfilmentMode,
+    fulfilmentTiming,
+    scheduledWindow: scheduledWindowProjection({ ...snapshot, fulfilmentTiming }),
   });
 }
 
@@ -142,8 +176,15 @@ export function toWorkforceOrderSummary(
     grandTotalPaise: bigint;
     currency: string;
     fulfilmentMode: "DELIVERY" | "PICKUP";
+    fulfilmentTiming?: "ASAP" | "SCHEDULED";
+    scheduledWindowStartAt?: Date | null;
+    scheduledWindowEndAt?: Date | null;
+    scheduledTimezone?: string | null;
   },
+  now: Date = new Date(),
 ): WorkforceOrderSummary {
+  const fulfilmentTiming = snapshot.fulfilmentTiming === "SCHEDULED" ? "SCHEDULED" : "ASAP";
+  const scheduledWindow = scheduledWindowProjection({ ...snapshot, fulfilmentTiming });
   return Object.freeze({
     orderId: order.id,
     orderNumber: order.orderNumber,
@@ -156,6 +197,15 @@ export function toWorkforceOrderSummary(
     money: moneyFromSnapshot(snapshot),
     outlet,
     fulfilmentMode: snapshot.fulfilmentMode,
+    fulfilmentTiming,
+    scheduledWindow,
+    operationalCue: deriveScheduledOperationalCue({
+      fulfilmentTiming,
+      windowStartAt: scheduledWindow?.startAt ?? null,
+      windowEndAt: scheduledWindow?.endAt ?? null,
+      now,
+      orderStatus: order.status,
+    }),
   });
 }
 
@@ -167,11 +217,7 @@ export function toWorkforceOrderDetail(
 ): WorkforceOrderDetail {
   const isPickup = snapshot.fulfilmentMode === "PICKUP";
   return Object.freeze({
-    ...toWorkforceOrderSummary(order, outlet, {
-      grandTotalPaise: snapshot.grandTotalPaise,
-      currency: snapshot.currency,
-      fulfilmentMode: snapshot.fulfilmentMode,
-    }),
+    ...toWorkforceOrderSummary(order, outlet, snapshot),
     updatedAt: order.updatedAt,
     paymentProvenanceKind: order.paymentProvenanceKind,
     acceptedByWorkforceUserId: order.acceptedByWorkforceUserId,

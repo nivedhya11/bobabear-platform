@@ -59,10 +59,14 @@ export {
   evaluateCheckout,
   getActiveCheckout,
   listCheckoutPickupOptions,
+  listCheckoutScheduledWindows,
   setCheckoutDestination,
   setCheckoutFulfilment,
+  setCheckoutFulfilmentTiming,
   startCheckout,
   type CommercePickupOption,
+  type CommerceScheduledWindow,
+  type CommerceScheduledWindows,
 } from "./checkout";
 export {
   completeZeroPayableCheckout,

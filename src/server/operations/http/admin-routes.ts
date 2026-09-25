@@ -15,6 +15,7 @@ import {
   adminCreateOutlet,
   adminCreateTerritory,
   adminGetBrand,
+  adminGetBrandScheduledCancellationPolicy,
   adminGetEffectivePermissions,
   adminGetLegalEntity,
   adminGetMembership,
@@ -34,6 +35,7 @@ import {
   adminRevokeRole,
   adminTransitionMembership,
   adminUpdateBrand,
+  adminUpdateBrandScheduledCancellationPolicy,
   adminUpdateLegalEntity,
   adminUpdateOrganization,
   adminUpdateOutlet,
@@ -470,7 +472,25 @@ export async function routeAdminRequest(
                 ? await adminGetLegalEntity(deps.persistence, principal, route.id)
                 : await adminGetOutlet(deps.persistence, principal, route.id),
       );
-      sendJson(res, { ok: true, item }, { status: 200, requestId });
+      const scheduledCancellationPolicy =
+        resource === "brands"
+          ? dateJson(
+              await adminGetBrandScheduledCancellationPolicy(
+                deps.persistence,
+                principal,
+                route.id,
+              ),
+            )
+          : undefined;
+      sendJson(
+        res,
+        {
+          ok: true,
+          item,
+          ...(scheduledCancellationPolicy ? { scheduledCancellationPolicy } : {}),
+        },
+        { status: 200, requestId },
+      );
       return { operation, safeOutcomeCode: "OK", httpStatus: 200 };
     }
     if (route.id && method === "PATCH") {
@@ -479,16 +499,68 @@ export async function routeAdminRequest(
         sendJson(res, { ok: false, code: "ADMIN_REQUEST_INVALID", requestId }, { status: 400, requestId });
         return { operation, safeOutcomeCode: "ADMIN_REQUEST_INVALID", httpStatus: 400 };
       }
+      const policyBody = body.value.scheduledCancellationPolicy;
+      const hasPolicy = policyBody !== undefined;
+      if (hasPolicy && resource !== "brands") {
+        throw new AdministrationError(
+          "ADMIN_REQUEST_INVALID",
+          "Cancellation cutoff is Brand-scoped. Outlet override is not available.",
+          { field: "scheduledCancellationPolicy" },
+        );
+      }
+      if (hasPolicy && (typeof policyBody !== "object" || policyBody === null || Array.isArray(policyBody))) {
+        throw new AdministrationError(
+          "ADMIN_REQUEST_INVALID",
+          "scheduledCancellationPolicy must be an object.",
+          { field: "scheduledCancellationPolicy" },
+        );
+      }
+      if (resource === "brands") {
+        const brandFields = { ...body.value };
+        delete brandFields.scheduledCancellationPolicy;
+        const hasBrandFields = brandFields.name !== undefined || brandFields.status !== undefined;
+        if (!hasBrandFields && !hasPolicy) {
+          throw new AdministrationError(
+            "ADMIN_REQUEST_INVALID",
+            "Brand update requires name, status, and/or scheduledCancellationPolicy.",
+          );
+        }
+        const scheduledCancellationPolicy = hasPolicy
+          ? dateJson(
+              await adminUpdateBrandScheduledCancellationPolicy(
+                deps.persistence,
+                principal,
+                route.id,
+                policyBody as Record<string, unknown>,
+              ),
+            )
+          : dateJson(
+              await adminGetBrandScheduledCancellationPolicy(
+                deps.persistence,
+                principal,
+                route.id,
+              ),
+            );
+        const item = dateJson(
+          hasBrandFields
+            ? await adminUpdateBrand(deps.persistence, principal, route.id, brandFields)
+            : await adminGetBrand(deps.persistence, principal, route.id),
+        );
+        sendJson(
+          res,
+          { ok: true, item, scheduledCancellationPolicy },
+          { status: 200, requestId },
+        );
+        return { operation, safeOutcomeCode: "OK", httpStatus: 200 };
+      }
       const item = dateJson(
-        resource === "brands"
-          ? await adminUpdateBrand(deps.persistence, principal, route.id, body.value)
-          : resource === "organizations"
-            ? await adminUpdateOrganization(deps.persistence, principal, route.id, body.value)
-            : resource === "territories"
-              ? await adminUpdateTerritory(deps.persistence, principal, route.id, body.value)
-              : resource === "legal-entities"
-                ? await adminUpdateLegalEntity(deps.persistence, principal, route.id, body.value)
-                : await adminUpdateOutlet(deps.persistence, principal, route.id, body.value),
+        resource === "organizations"
+          ? await adminUpdateOrganization(deps.persistence, principal, route.id, body.value)
+          : resource === "territories"
+            ? await adminUpdateTerritory(deps.persistence, principal, route.id, body.value)
+            : resource === "legal-entities"
+              ? await adminUpdateLegalEntity(deps.persistence, principal, route.id, body.value)
+              : await adminUpdateOutlet(deps.persistence, principal, route.id, body.value),
       );
       sendJson(res, { ok: true, item }, { status: 200, requestId });
       return { operation, safeOutcomeCode: "OK", httpStatus: 200 };

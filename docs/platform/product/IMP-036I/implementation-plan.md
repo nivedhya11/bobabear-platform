@@ -27,7 +27,7 @@ IMPLEMENTATION_STARTED = YES
 IMPLEMENTATION_COMPLETE = NO
 IMP036I_ACCEPTED = NO
 FORMAL_LIFECYCLE = IMPLEMENTATION_IN_PROGRESS
-NEXT_ACTION = INDEPENDENT_TRANCHE_2_VERIFICATION
+NEXT_ACTION = INDEPENDENT_TRANCHE_3_VERIFICATION
 TRANCHE_1 = PERSISTENCE_AND_DOMAIN_FOUNDATIONS
 TRANCHE_2 = SCHEDULING_ELIGIBILITY_AND_PAYMENT_BIND
 TRANCHE_3 = CUSTOMER_OPERATIONS_AND_CONFIG_SURFACES
@@ -133,8 +133,8 @@ AC-036I-003 is scheduled timing selection and is primary-owned by Tranche 2. AC-
 PRIMARY_AC_OWNERSHIP_START
 TRANCHE_1_PRIMARY_ACS = NONE
 TRANCHE_2_PRIMARY_ACS = AC-036I-001, AC-036I-002, AC-036I-003, AC-036I-004, AC-036I-005, AC-036I-006, AC-036I-007, AC-036I-008, AC-036I-009, AC-036I-010, AC-036I-011, AC-036I-012, AC-036I-013, AC-036I-014, AC-036I-015, AC-036I-016, AC-036I-017, AC-036I-018, AC-036I-019, AC-036I-020, AC-036I-022, AC-036I-023, AC-036I-024, AC-036I-025, AC-036I-026, AC-036I-027, AC-036I-028, AC-036I-029, AC-036I-030, AC-036I-040, AC-036I-041, AC-036I-050, AC-036I-051
-TRANCHE_3_PRIMARY_ACS = AC-036I-021, AC-036I-031, AC-036I-032, AC-036I-033, AC-036I-034, AC-036I-035, AC-036I-036, AC-036I-037, AC-036I-038, AC-036I-042, AC-036I-043, AC-036I-044, AC-036I-048, AC-036I-049, AC-036I-052, AC-036I-056, AC-036I-057, AC-036I-058
-TRANCHE_4_PRIMARY_ACS = AC-036I-039, AC-036I-045, AC-036I-046, AC-036I-047, AC-036I-053, AC-036I-054, AC-036I-055, AC-036I-059, AC-036I-060, AC-036I-061, AC-036I-062, AC-036I-063, AC-036I-064, AC-036I-065, AC-036I-066
+TRANCHE_3_PRIMARY_ACS = AC-036I-021, AC-036I-031, AC-036I-032, AC-036I-033, AC-036I-034, AC-036I-035, AC-036I-036, AC-036I-037, AC-036I-038, AC-036I-042, AC-036I-043, AC-036I-048, AC-036I-049, AC-036I-052, AC-036I-056, AC-036I-057, AC-036I-058
+TRANCHE_4_PRIMARY_ACS = AC-036I-039, AC-036I-044, AC-036I-045, AC-036I-046, AC-036I-047, AC-036I-053, AC-036I-054, AC-036I-055, AC-036I-059, AC-036I-060, AC-036I-061, AC-036I-062, AC-036I-063, AC-036I-064, AC-036I-065, AC-036I-066
 TRANCHE_5_PRIMARY_ACS = INTEGRATION_REPROOF, AC-036I-001, AC-036I-002, AC-036I-003, AC-036I-004, AC-036I-005, AC-036I-006, AC-036I-007, AC-036I-008, AC-036I-009, AC-036I-010, AC-036I-011, AC-036I-012, AC-036I-013, AC-036I-014, AC-036I-015, AC-036I-016, AC-036I-017, AC-036I-018, AC-036I-019, AC-036I-020, AC-036I-021, AC-036I-022, AC-036I-023, AC-036I-024, AC-036I-025, AC-036I-026, AC-036I-027, AC-036I-028, AC-036I-029, AC-036I-030, AC-036I-031, AC-036I-032, AC-036I-033, AC-036I-034, AC-036I-035, AC-036I-036, AC-036I-037, AC-036I-038, AC-036I-039, AC-036I-040, AC-036I-041, AC-036I-042, AC-036I-043, AC-036I-044, AC-036I-045, AC-036I-046, AC-036I-047, AC-036I-048, AC-036I-049, AC-036I-050, AC-036I-051, AC-036I-052, AC-036I-053, AC-036I-054, AC-036I-055, AC-036I-056, AC-036I-057, AC-036I-058, AC-036I-059, AC-036I-060, AC-036I-061, AC-036I-062, AC-036I-063, AC-036I-064, AC-036I-065, AC-036I-066
 TRANCHE_5_ROLE = INTEGRATION_REPROOF
 PRIMARY_AC_OWNERSHIP_END
@@ -201,6 +201,8 @@ Operations: immediate Scheduled Order visibility, mode/timing/window, derived Du
 
 Administration / Operations configuration: Brand cancellation cutoff policy, Outlet lead-time profile, and future date closure authority, using exact existing RBAC permissions and scopes only. No new role or permission.
 
+Primary ownership of AC-036I-044 is Tranche 4. That line is execution-plan bookkeeping so the proactive `SCHEDULED_FULFILMENT_REMINDER` runtime stays with the Tranche 4 boundary already stated in section 5. It does not change Product Definition text, ARCH-R23, D-379, or D-380. Tranche 3 may only make already-existing lifecycle notification wording timing-aware.
+
 ---
 
 ## 5. Tranche 4 — Cancellation + Reminder
@@ -232,6 +234,8 @@ Goal: implementation-complete evidence.
 Required integrated proof includes US-036I-001…016, AC-036I-001…066, BR-036I-001…019, FD-036I-01…22, all four mode/timing combinations, migration compatibility, payment races, cancellation-boundary exact instant, reminder ordering and races, D-380 conformance, Operations manual Delivery preservation, Pickup no-Delivery boundary, financial-document non-regression, mobile, accessibility, authorization/RBAC, privacy, observability, no new topology, the regression suite, CodeQL, and the testing inventory.
 
 `IMPLEMENTATION_COMPLETE` may become YES only after that objective proof. Acceptance stays NO until independent implementation review, Founder UAT, and formal reconciliation.
+
+These broader concurrency topics remain open for Tranche 5 and are not globally closed by Tranche 2 or Tranche 3: assortment-rule mutation concurrency, price/tax/promotion concurrent mutation, new Outlet/serviceability topology concurrency, and Cart mutation/payment ordering. The bounded payment-bind path accepted in Tranche 2 stays as accepted.
 
 ---
 

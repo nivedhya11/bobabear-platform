@@ -69,4 +69,25 @@ describe("renderCustomerVisibleNotificationContent", () => {
       }).summary,
     ).toBe("Your order has been delivered.");
   });
+
+  it("adds sealed arrival wording for scheduled delivery without a reminder semantic", () => {
+    const content = renderCustomerVisibleNotificationContent({
+      semanticType: "ORDER_ACCEPTED",
+      fulfilmentMode: "DELIVERY",
+      fulfilmentTiming: "SCHEDULED",
+      scheduledWindowLabel: "18:00–18:30",
+      scheduledTimeZone: "Asia/Kolkata",
+    });
+    expect(content.summary).toContain("Arrival / fulfilment window 18:00–18:30 (Asia/Kolkata)");
+    expect(content.summary).not.toMatch(/SCHEDULED_FULFILMENT_REMINDER/);
+  });
+
+  it("keeps ASAP wording when timing is omitted", () => {
+    expect(
+      renderCustomerVisibleNotificationContent({
+        semanticType: "ORDER_ACCEPTED",
+        fulfilmentMode: "DELIVERY",
+      }).summary,
+    ).not.toMatch(/Arrival \/ fulfilment window/);
+  });
 });

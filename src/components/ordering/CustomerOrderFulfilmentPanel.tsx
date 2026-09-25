@@ -13,7 +13,12 @@ import type { CommerceOrderDetail } from "@/lib/customer-commerce";
 export function CustomerOrderFulfilmentPanel(props: {
   order: Pick<
     CommerceOrderDetail,
-    "fulfilmentMode" | "destination" | "pickupLocation" | "delivery"
+    | "fulfilmentMode"
+    | "destination"
+    | "pickupLocation"
+    | "delivery"
+    | "fulfilmentTiming"
+    | "scheduledWindow"
   >;
   /** When true, suppress delivery tracking block (Pickup path). */
   showDeliveryTracking?: boolean;
@@ -29,6 +34,13 @@ export function CustomerOrderFulfilmentPanel(props: {
         className="font-body text-[14px] font-semibold text-[var(--text-primary)]"
       >
         {isPickup ? "Pickup · Collect from BOBA Bear" : fulfilmentModeLabel("DELIVERY")}
+      </p>
+      <p data-testid="order-fulfilment-timing" className="font-body text-[14px] text-[var(--text-secondary)]">
+        {order.fulfilmentTiming === "SCHEDULED" && order.scheduledWindow
+          ? isPickup
+            ? `Pickup window ${order.scheduledWindow.label} (${order.scheduledWindow.timeZone})`
+            : `Arrival / fulfilment window ${order.scheduledWindow.label} (${order.scheduledWindow.timeZone})`
+          : "As soon as possible"}
       </p>
 
       {isPickup && order.pickupLocation ? (

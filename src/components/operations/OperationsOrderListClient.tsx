@@ -41,6 +41,20 @@ function fulfilmentModeLabel(mode: string | undefined): string {
   return "Delivery";
 }
 
+function timingCueLabel(cue: OperationsOrderSummary["operationalCue"]): string | null {
+  if (cue === "OVERDUE") return "Overdue";
+  if (cue === "DUE_SOON") return "Due soon";
+  if (cue === "SCHEDULED") return "Scheduled";
+  return null;
+}
+
+function presentationRank(order: OperationsOrderSummary): number {
+  if (order.operationalCue === "OVERDUE") return 0;
+  if (order.operationalCue === "DUE_SOON") return 1;
+  if (order.operationalCue === "SCHEDULED") return 2;
+  return 3;
+}
+
 function FulfilmentBadge({
   mode,
   orderId,
@@ -316,7 +330,15 @@ export function OperationsOrderListClient() {
                   </tr>
                 </thead>
                 <tbody>
-                  {items.map((order) => (
+                  {[...items]
+                    .sort((left, right) => {
+                      const rank = presentationRank(left) - presentationRank(right);
+                      if (rank !== 0) return rank;
+                      return (left.scheduledWindow?.startAt ?? "").localeCompare(
+                        right.scheduledWindow?.startAt ?? "",
+                      );
+                    })
+                    .map((order) => (
                     <tr key={order.orderId} className="border-b border-[var(--border-subtle)]">
                       <td className="py-3 pr-4 text-[var(--text-primary)]">
                         <a
@@ -329,6 +351,18 @@ export function OperationsOrderListClient() {
                       </td>
                       <td className="py-3 pr-4">
                         <FulfilmentBadge mode={order.fulfilmentMode} orderId={order.orderId} />
+                        <span
+                          data-testid={`order-timing-${order.orderId}`}
+                          className="ml-2 inline-block font-mono text-[11px] uppercase tracking-[0.12em]"
+                        >
+                          {order.fulfilmentTiming === "SCHEDULED" ? "Scheduled" : "ASAP"}
+                          {timingCueLabel(order.operationalCue)
+                            ? ` · ${timingCueLabel(order.operationalCue)}`
+                            : ""}
+                          {order.scheduledWindow
+                            ? ` · ${order.scheduledWindow.label} ${order.scheduledWindow.timeZone}`
+                            : ""}
+                        </span>
                       </td>
                       <td className="py-3 pr-4" data-testid={`order-status-${order.orderId}`}>
                         {orderStatusLabel(order.status)}

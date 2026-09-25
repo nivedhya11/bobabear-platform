@@ -163,6 +163,11 @@ export type CommerceCheckoutSnapshot = Readonly<{
   selectedOutletId: string;
   evaluatedAt: string;
   fulfilmentMode: "DELIVERY" | "PICKUP";
+  fulfilmentTiming?: "ASAP" | "SCHEDULED";
+  scheduledWindowStartAt?: string | null;
+  scheduledWindowEndAt?: string | null;
+  scheduledTimezone?: string | null;
+  scheduledCancellationCutoffMinutes?: number | null;
   serviceabilityEvaluatedAt: string | null;
   currency: string;
   basePaise: string;
@@ -191,6 +196,9 @@ export type CommerceCheckout = Readonly<{
   status: string;
   expiresAt: string;
   fulfilmentMode: "DELIVERY" | "PICKUP";
+  fulfilmentTiming?: "ASAP" | "SCHEDULED";
+  scheduledWindowStartAt?: string | null;
+  scheduledWindowEndAt?: string | null;
   pickupOutletId: string | null;
   activeSnapshotId: string | null;
   createdAt: string;
@@ -333,6 +341,14 @@ export type CommerceOrderSummary = Readonly<{
   paymentSatisfaction: string;
   outlet: CommerceOrderOutlet;
   fulfilmentMode: "DELIVERY" | "PICKUP";
+  fulfilmentTiming?: "ASAP" | "SCHEDULED";
+  scheduledWindow?: Readonly<{
+    startAt: string;
+    endAt: string;
+    timeZone: string;
+    localDate: string;
+    label: string;
+  }> | null;
 }>;
 
 export type CommerceOrderDestination = Readonly<{

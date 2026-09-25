@@ -40,14 +40,14 @@
     "vitestConfigs": 2,
     "playwrightConfigs": 7,
     "testSupportScripts": 51,
-    "packageTestCommands": 82,
+    "packageTestCommands": 83,
     "packageAuditCommands": 27,
     "packageE2eCommands": 9,
     "packageCheckCommands": 13,
     "packageCoverageCommands": 1,
     "packageInventoryCommands": 2,
     "ciWorkflowFiles": 4,
-    "ciValidationSteps": 114,
+    "ciValidationSteps": 115,
     "protectedEvidenceTrackedFiles": 3,
     "archiveTrackedFiles": 92
   },
@@ -650,6 +650,7 @@
       "test:database:workforce-auth",
       "test:imp036i:tranche1",
       "test:imp036i:tranche2",
+      "test:imp036i:tranche3",
       "test:menu-import",
       "test:menu-parity",
       "test:operations:http",
@@ -847,6 +848,7 @@
     "test:e2e:workforce-auth": "npm run build && npm run workforce-auth:build && node scripts/e2e/run-workforce-auth-e2e.mjs",
     "test:imp036i:tranche1": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/database/imp036i-scheduled-fulfilment.integration.test.ts tests/delivery-application/delivery.d380-finality.test.ts",
     "test:imp036i:tranche2": "node scripts/run-vitest.mjs run tests/scheduled-fulfilment/windows.test.ts && node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/checkout/scheduled-fulfilment.domain.test.ts tests/payment/payment.scheduled.domain.test.ts tests/payment/payment.scheduled-bind-race.domain.test.ts",
+    "test:imp036i:tranche3": "node scripts/run-vitest.mjs run tests/scheduled-fulfilment/operational-cues.test.ts src/components/ordering/CheckoutTimingChoice.test.tsx src/shared/notifications/customer-visible-content.test.ts && node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/checkout/scheduled-surfaces.tranche3.test.ts",
     "test:menu-import": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/menu-import",
     "test:menu-parity": "node scripts/run-vitest.mjs run tests/menu-parity",
     "test:operations:http": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/operations/store-http.integration.test.ts tests/operations/refunds-http.integration.test.ts tests/operations/orders-read-http.integration.test.ts tests/operations/orders-mutation-http.integration.test.ts tests/operations/notifications-http.integration.test.ts",
@@ -972,6 +974,10 @@
         {
           "name": "IMP-036I Tranche 2 proof",
           "run": "npm run test:imp036i:tranche2"
+        },
+        {
+          "name": "IMP-036I Tranche 3 proof",
+          "run": "npm run test:imp036i:tranche3"
         },
         {
           "name": "Install dependencies",
@@ -5016,7 +5022,8 @@
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
         "test",
-        "test:coverage"
+        "test:coverage",
+        "test:imp036i:tranche3"
       ],
       "ciInclusion": "YES",
       "test1Layers": [

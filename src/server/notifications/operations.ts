@@ -28,6 +28,7 @@ import {
 import { eq } from "drizzle-orm";
 import { ordersTable } from "../../platform/database/schema/order";
 import { loadActiveSnapshot } from "../checkout/repository";
+import { formatOutletLocalWindowLabel } from "../../shared/scheduled-fulfilment/presentation";
 import type { Persistence, PersistenceQueryContext } from "../persistence/types";
 import { requireNotificationCapability, requireNotificationWorkforceActor } from "./authorize";
 import { createNonSendingChannelRegistry } from "./channels";
@@ -89,10 +90,26 @@ async function resolveCustomerVisibleContentForRequest(
   if (!snapshot) return null;
   const semanticType = request.semanticType as NotificationSemanticType;
   try {
+    const scheduled =
+      snapshot.fulfilmentTiming === "SCHEDULED" &&
+      snapshot.scheduledWindowStartAt &&
+      snapshot.scheduledWindowEndAt &&
+      snapshot.scheduledTimezone
+        ? {
+            fulfilmentTiming: "SCHEDULED" as const,
+            scheduledWindowLabel: formatOutletLocalWindowLabel(
+              snapshot.scheduledWindowStartAt,
+              snapshot.scheduledWindowEndAt,
+              snapshot.scheduledTimezone,
+            ),
+            scheduledTimeZone: snapshot.scheduledTimezone,
+          }
+        : { fulfilmentTiming: "ASAP" as const };
     return renderCustomerVisibleNotificationContent({
       semanticType,
       fulfilmentMode: snapshot.fulfilmentMode,
       pickupLocationDisplayName: snapshot.pickupLocation?.displayName ?? null,
+      ...scheduled,
     });
   } catch {
     // Delivery-progress types on PICKUP (or unsupported) — fail closed by

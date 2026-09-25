@@ -206,6 +206,27 @@ function parseLine(value: unknown): OperationsOrderLine | null {
   };
 }
 
+function parseScheduledWindow(value: unknown) {
+  if (value == null) return null;
+  if (!isPlainObject(value)) return null;
+  if (
+    typeof value.startAt !== "string" ||
+    typeof value.endAt !== "string" ||
+    typeof value.timeZone !== "string" ||
+    typeof value.localDate !== "string" ||
+    typeof value.label !== "string"
+  ) {
+    return null;
+  }
+  return {
+    startAt: value.startAt,
+    endAt: value.endAt,
+    timeZone: value.timeZone,
+    localDate: value.localDate,
+    label: value.label,
+  };
+}
+
 /**
  * Runtime guard for the accepted Operations detail projection.
  * Does not invent defaults; returns null when the value is unsafe to render.
@@ -263,6 +284,14 @@ export function parseOperationsOrderDetail(value: unknown): OperationsOrderDetai
     value.fulfilmentMode === "DELIVERY" || value.fulfilmentMode === "PICKUP"
       ? value.fulfilmentMode
       : undefined;
+  const fulfilmentTiming = value.fulfilmentTiming === "SCHEDULED" ? "SCHEDULED" : "ASAP";
+  const scheduledWindow = parseScheduledWindow(value.scheduledWindow);
+  const operationalCue =
+    value.operationalCue === "SCHEDULED" ||
+    value.operationalCue === "DUE_SOON" ||
+    value.operationalCue === "OVERDUE"
+      ? value.operationalCue
+      : null;
 
   const lines: OperationsOrderLine[] = [];
   for (const line of value.lines) {
@@ -289,6 +318,9 @@ export function parseOperationsOrderDetail(value: unknown): OperationsOrderDetai
     cancelledByWorkforceUserId: value.cancelledByWorkforceUserId,
     cancellationReasonCode: value.cancellationReasonCode,
     fulfilmentMode,
+    fulfilmentTiming,
+    scheduledWindow,
+    operationalCue,
     destination,
     pickupLocation,
     customer,

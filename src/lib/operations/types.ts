@@ -37,6 +37,15 @@ export type OperationsOrderSummary = Readonly<{
   money: OperationsOrderMoney;
   outlet: OperationsOutletSummary;
   fulfilmentMode?: "DELIVERY" | "PICKUP";
+  fulfilmentTiming?: "ASAP" | "SCHEDULED";
+  scheduledWindow?: Readonly<{
+    startAt: string;
+    endAt: string;
+    timeZone: string;
+    localDate: string;
+    label: string;
+  }> | null;
+  operationalCue?: "SCHEDULED" | "DUE_SOON" | "OVERDUE" | null;
 }>;
 
 export type OperationsOrderDestination = Readonly<{

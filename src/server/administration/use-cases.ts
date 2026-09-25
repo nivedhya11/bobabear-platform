@@ -104,6 +104,12 @@ import {
   type EligibleScopePlan,
 } from "./eligible-set";
 import { AdministrationError } from "./errors";
+import {
+  resolveBrandScheduledFulfilmentPolicy,
+  ScheduledFulfilmentError,
+  updateBrandScheduledFulfilmentPolicy,
+  type EffectiveBrandScheduledFulfilmentPolicy,
+} from "../scheduled-fulfilment/foundations";
 
 const FORBIDDEN_BODY_KEYS = new Set([
   "actor",
@@ -440,6 +446,119 @@ export async function adminUpdateBrand(
       actorWorkforceUserId: principal.workforceUserId,
     });
   });
+}
+
+function mapScheduledPolicyError(error: unknown): never {
+  if (error instanceof ScheduledFulfilmentError) {
+    if (error.code === "STALE_REVISION" || error.code === "CONFLICT") {
+      throw new AdministrationError("ADMIN_CONFLICT", error.message, {
+        ...(error.field ? { field: error.field } : {}),
+      });
+    }
+    throw new AdministrationError("ADMIN_REQUEST_INVALID", error.message, {
+      ...(error.field ? { field: error.field } : {}),
+    });
+  }
+  throw error;
+}
+
+function parsePolicyRevision(value: unknown): bigint {
+  if (typeof value === "bigint" && value >= BigInt(0)) return value;
+  if (typeof value === "string" && /^\d+$/.test(value)) return BigInt(value);
+  if (typeof value === "number" && Number.isInteger(value) && value >= 0) {
+    return BigInt(value);
+  }
+  throw new AdministrationError(
+    "ADMIN_REQUEST_INVALID",
+    "scheduledCancellationPolicy.expectedRevision must be a non-negative integer.",
+    { field: "expectedRevision" },
+  );
+}
+
+function parseOptionalCutoff(value: unknown, field: string): number | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value !== "number" || !Number.isInteger(value)) {
+    throw new AdministrationError(
+      "ADMIN_REQUEST_INVALID",
+      `${field} must be an integer from 0 through 240.`,
+      { field },
+    );
+  }
+  if (value < 0 || value > 240) {
+    throw new AdministrationError(
+      "ADMIN_REQUEST_INVALID",
+      `${field} must be an integer from 0 through 240.`,
+      { field },
+    );
+  }
+  return value;
+}
+
+export async function adminGetBrandScheduledCancellationPolicy(
+  persistence: Persistence,
+  actor: WorkforcePrincipal | null,
+  brandId: string,
+): Promise<EffectiveBrandScheduledFulfilmentPolicy> {
+  const principal = requirePrincipal(actor);
+  return persistence.withContext(async (context) => {
+    const brand = await findBrandById(context, brandId);
+    if (!brand) throw new AdministrationError("ADMIN_NOT_FOUND", "Brand not found.");
+    await requireAuthorization(context, {
+      actor: principal,
+      permission: "brand.read",
+      resource: { type: "brand", brandId: brand.id },
+    });
+    return resolveBrandScheduledFulfilmentPolicy(context, brand.id);
+  });
+}
+
+export async function adminUpdateBrandScheduledCancellationPolicy(
+  persistence: Persistence,
+  actor: WorkforcePrincipal | null,
+  brandId: string,
+  body: Readonly<Record<string, unknown>>,
+): Promise<EffectiveBrandScheduledFulfilmentPolicy> {
+  const principal = requirePrincipal(actor);
+  const pickup = parseOptionalCutoff(
+    body.pickupCancellationCutoffMinutes,
+    "pickupCancellationCutoffMinutes",
+  );
+  const delivery = parseOptionalCutoff(
+    body.deliveryCancellationCutoffMinutes,
+    "deliveryCancellationCutoffMinutes",
+  );
+  if (pickup === undefined && delivery === undefined) {
+    throw new AdministrationError(
+      "ADMIN_REQUEST_INVALID",
+      "Provide pickupCancellationCutoffMinutes and/or deliveryCancellationCutoffMinutes.",
+    );
+  }
+  const expectedRevision = parsePolicyRevision(body.expectedRevision);
+  const current = await persistence.withContext(async (context) => {
+    const brand = await findBrandById(context, brandId);
+    if (!brand) throw new AdministrationError("ADMIN_NOT_FOUND", "Brand not found.");
+    await requireAuthorization(context, {
+      actor: principal,
+      permission: "brand.update",
+      resource: { type: "brand", brandId: brand.id },
+    });
+    return {
+      brandId: brand.id,
+      policy: await resolveBrandScheduledFulfilmentPolicy(context, brand.id),
+    };
+  });
+  try {
+    return await updateBrandScheduledFulfilmentPolicy(persistence, {
+      brandId: current.brandId,
+      expectedRevision,
+      pickupCancellationCutoffMinutes:
+        pickup ?? current.policy.pickupCancellationCutoffMinutes,
+      deliveryCancellationCutoffMinutes:
+        delivery ?? current.policy.deliveryCancellationCutoffMinutes,
+    });
+  } catch (error) {
+    mapScheduledPolicyError(error);
+  }
 }
 
 function organizationResource(organization: Organization): ProtectedResource {

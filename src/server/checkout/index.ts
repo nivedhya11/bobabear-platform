@@ -43,6 +43,14 @@ export {
 export { setCheckoutFulfilment, setCheckoutFulfilmentTiming } from "./fulfilment";
 
 export {
+  listCheckoutScheduledWindows,
+  setCustomerCheckoutFulfilmentTiming,
+  type CustomerScheduledWindow,
+  type ListCheckoutScheduledWindowsResult,
+  type ScheduledWindowAvailability,
+} from "./scheduled-customer";
+
+export {
   listCheckoutPickupOptions,
   type ListPickupOptionsResult,
 } from "./pickup-options";

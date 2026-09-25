@@ -436,3 +436,27 @@ export async function listOutletClosedFullDayDates(
     );
   return rows.map((row) => row.localDate);
 }
+
+export async function listOutletOperatingDateExceptions(
+  context: PersistenceQueryContext,
+  outletId: string,
+): Promise<readonly OutletOperatingDateException[]> {
+  assertApplicationRole(context, "listOutletOperatingDateExceptions");
+  const rows = await context.db
+    .select()
+    .from(outletOperatingDateExceptionsTable)
+    .where(eq(outletOperatingDateExceptionsTable.outletId, outletId))
+    .orderBy(asc(outletOperatingDateExceptionsTable.localDate));
+  return rows.map((row) =>
+    Object.freeze({
+      id: row.id,
+      outletId: row.outletId,
+      localDate: row.localDate,
+      exceptionKind: "CLOSED_FULL_DAY" as const,
+      note: row.note,
+      revision: row.revision,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    }),
+  );
+}

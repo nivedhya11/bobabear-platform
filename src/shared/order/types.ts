@@ -95,6 +95,18 @@ export type OrderLineProjection = Readonly<{
   }>[];
 }>;
 
+/**
+ * Immutable purchased Scheduled window from the payment-bound Checkout Snapshot.
+ * Never reconstructed from current Brand or Outlet configuration.
+ */
+export type OrderScheduledWindowProjection = Readonly<{
+  startAt: Date;
+  endAt: Date;
+  timeZone: string;
+  localDate: string;
+  label: string;
+}>;
+
 export type CustomerOrderSummary = Readonly<{
   orderId: string;
   orderNumber: string;
@@ -106,6 +118,10 @@ export type CustomerOrderSummary = Readonly<{
   outlet: OrderOutletSummary;
   /** IMP-036H — DELIVERY | PICKUP from sealed checkout snapshot. */
   fulfilmentMode: "DELIVERY" | "PICKUP";
+  /** IMP-036I — ASAP | SCHEDULED from the sealed Checkout Snapshot. */
+  fulfilmentTiming: "ASAP" | "SCHEDULED";
+  /** Null for ASAP. Sealed window for SCHEDULED. */
+  scheduledWindow: OrderScheduledWindowProjection | null;
 }>;
 
 export type CustomerOrderDetail = CustomerOrderSummary &
@@ -142,6 +158,15 @@ export type WorkforceOrderSummary = Readonly<{
   outlet: OrderOutletSummary;
   /** IMP-036H — DELIVERY | PICKUP from sealed checkout snapshot. */
   fulfilmentMode: "DELIVERY" | "PICKUP";
+  /** IMP-036I — ASAP | SCHEDULED from the sealed Checkout Snapshot. */
+  fulfilmentTiming: "ASAP" | "SCHEDULED";
+  /** Null for ASAP. Sealed window for SCHEDULED. */
+  scheduledWindow: OrderScheduledWindowProjection | null;
+  /**
+   * Derived presentation cue only. Not an Order status.
+   * Null for ASAP and for terminal Orders.
+   */
+  operationalCue: "SCHEDULED" | "DUE_SOON" | "OVERDUE" | null;
 }>;
 
 /**
