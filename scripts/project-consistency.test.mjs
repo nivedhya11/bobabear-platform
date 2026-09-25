@@ -16777,6 +16777,71 @@ describe("IMP-036I architecture lock authority (D-379/D-380 CURRENT)", () => {
   });
 });
 
+function imp036iScenarioId(index) {
+  return `AC-036I-${String(index).padStart(3, "0")}`;
+}
+
+function imp036iScenarioRange(start, end) {
+  return Array.from({ length: end - start + 1 }, (_, offset) => imp036iScenarioId(start + offset));
+}
+
+function imp036iAuthorizedExecutionPlan(primary = {}) {
+  const tranche2 = primary.tranche2 ?? [
+    ...imp036iScenarioRange(1, 20),
+    ...imp036iScenarioRange(22, 30),
+    imp036iScenarioId(40),
+    imp036iScenarioId(41),
+    imp036iScenarioId(50),
+    imp036iScenarioId(51),
+  ];
+  const tranche3 = primary.tranche3 ?? [
+    imp036iScenarioId(21),
+    ...imp036iScenarioRange(31, 38),
+    ...imp036iScenarioRange(42, 44),
+    imp036iScenarioId(48),
+    imp036iScenarioId(49),
+    imp036iScenarioId(52),
+    ...imp036iScenarioRange(56, 58),
+  ];
+  const tranche4 = primary.tranche4 ?? [
+    imp036iScenarioId(39),
+    ...imp036iScenarioRange(45, 47),
+    ...imp036iScenarioRange(53, 55),
+    ...imp036iScenarioRange(59, 66),
+  ];
+  return [
+    "IMPLEMENTATION_EXECUTION_PLAN",
+    '"implementationAuthorized": true',
+    '"implementationStarted": false',
+    "IMPLEMENTATION_AUTHORIZED = YES",
+    "IMPLEMENTATION_STARTED = NO",
+    "IMPLEMENTATION_COMPLETE = NO",
+    "IMP036I_ACCEPTED = NO",
+    "FORMAL_LIFECYCLE = ARCHITECTURE_LOCKED",
+    "PRODUCTION_CUTOVER_AUTHORIZED = NO",
+    "FOUNDER_UAT = NOT_PERFORMED",
+    "US-036I-001",
+    "US-036I-016",
+    "BR-036I-001",
+    "BR-036I-019",
+    "FD-036I-01",
+    "FD-036I-22",
+    "D-379",
+    "D-380",
+    "ARCH-G29",
+    "ARCH-G30",
+    "TRANCHE_1",
+    "TRANCHE_2",
+    "TRANCHE_3",
+    "TRANCHE_4",
+    "TRANCHE_5",
+    `TRANCHE_2_PRIMARY_ACS = ${tranche2.join(", ")}`,
+    `TRANCHE_3_PRIMARY_ACS = ${tranche3.join(", ")}`,
+    `TRANCHE_4_PRIMARY_ACS = ${tranche4.join(", ")}`,
+    `TRANCHE_5_PRIMARY_ACS = INTEGRATION_REPROOF, ${imp036iScenarioRange(1, 66).join(", ")}`,
+  ].join("\n");
+}
+
 describe("IMP-036I implementation authorization persistence", () => {
   const baseDocs = () => ({
     architectureVersion: "ARCH-R23",
@@ -16804,27 +16869,14 @@ describe("IMP-036I implementation authorization persistence", () => {
     ].join("\n"),
     adr019Text: "Status: Accepted\n\n# ADR-019\n",
     adr020Text: "Status: Accepted\n\n# ADR-020\n",
-    productDefinitionText: '"implementationAuthorized": "YES"\n"implementationStarted": "NO"\n',
-    executionPlanText: [
-      "IMPLEMENTATION_EXECUTION_PLAN",
-      "US-036I-001",
-      "US-036I-016",
-      "AC-036I-001",
-      "AC-036I-066",
-      "BR-036I-001",
-      "BR-036I-019",
-      "FD-036I-01",
-      "FD-036I-22",
-      "D-379",
-      "D-380",
-      "ARCH-G29",
-      "ARCH-G30",
-      "TRANCHE_1",
-      "TRANCHE_2",
-      "TRANCHE_3",
-      "TRANCHE_4",
-      "TRANCHE_5",
+    productDefinitionText: [
+      '"implementationAuthorized": "YES"',
+      '"implementationStarted": "NO"',
+      '"implementationComplete": "NO"',
+      '"imp036iImplementationComplete": "NO"',
+      '"impAccepted": "NO"',
     ].join("\n"),
+    executionPlanText: imp036iAuthorizedExecutionPlan(),
   });
 
   it("recognizes GTM-R155 / STATE-R153 as authorization, not architecture lock", () => {
@@ -16913,6 +16965,119 @@ describe("IMP-036I implementation authorization persistence", () => {
     const result = evaluateImp036iImplementationAuthorization(docs);
     assert.equal(result.ok, false);
     assert.equal(result.code, "IMP036I_ARCH_R23");
+  });
+
+  it("rejects Product Definition implementationComplete YES", () => {
+    const docs = baseDocs();
+    docs.productDefinitionText = docs.productDefinitionText.replace(
+      '"implementationComplete": "NO"',
+      '"implementationComplete": "YES"',
+    );
+    const result = evaluateImp036iImplementationAuthorization(docs);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036I_PREMATURE_COMPLETE");
+  });
+
+  it("rejects Product Definition imp036iImplementationComplete YES", () => {
+    const docs = baseDocs();
+    docs.productDefinitionText = docs.productDefinitionText.replace(
+      '"imp036iImplementationComplete": "NO"',
+      '"imp036iImplementationComplete": "YES"',
+    );
+    const result = evaluateImp036iImplementationAuthorization(docs);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036I_PREMATURE_COMPLETE");
+  });
+
+  it("rejects execution plan IMPLEMENTATION_AUTHORIZED NO", () => {
+    const docs = baseDocs();
+    docs.executionPlanText = docs.executionPlanText.replace(
+      "IMPLEMENTATION_AUTHORIZED = YES",
+      "IMPLEMENTATION_AUTHORIZED = NO",
+    );
+    const result = evaluateImp036iImplementationAuthorization(docs);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036I_IMPLEMENTATION_AUTHORIZED_YES");
+  });
+
+  it("rejects execution plan IMPLEMENTATION_STARTED YES", () => {
+    const docs = baseDocs();
+    docs.executionPlanText = docs.executionPlanText.replace(
+      "IMPLEMENTATION_STARTED = NO",
+      "IMPLEMENTATION_STARTED = YES",
+    );
+    const result = evaluateImp036iImplementationAuthorization(docs);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036I_PREMATURE_START");
+  });
+
+  it("rejects execution plan IMPLEMENTATION_COMPLETE YES", () => {
+    const docs = baseDocs();
+    docs.executionPlanText = docs.executionPlanText.replace(
+      "IMPLEMENTATION_COMPLETE = NO",
+      "IMPLEMENTATION_COMPLETE = YES",
+    );
+    const result = evaluateImp036iImplementationAuthorization(docs);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036I_PREMATURE_COMPLETE");
+  });
+
+  it("rejects execution plan IMP036I_ACCEPTED YES", () => {
+    const docs = baseDocs();
+    docs.executionPlanText = docs.executionPlanText.replace("IMP036I_ACCEPTED = NO", "IMP036I_ACCEPTED = YES");
+    const result = evaluateImp036iImplementationAuthorization(docs);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036I_PREMATURE_ACCEPTANCE");
+  });
+
+  it("rejects execution plan formal lifecycle other than ARCHITECTURE_LOCKED", () => {
+    const docs = baseDocs();
+    docs.executionPlanText = docs.executionPlanText.replace(
+      "FORMAL_LIFECYCLE = ARCHITECTURE_LOCKED",
+      "FORMAL_LIFECYCLE = IMPLEMENTATION_IN_PROGRESS",
+    );
+    const result = evaluateImp036iImplementationAuthorization(docs);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036I_LOCK_YES");
+  });
+
+  it("rejects a primary-owner set missing AC-036I-003", () => {
+    const docs = baseDocs();
+    docs.executionPlanText = docs.executionPlanText.replace("AC-036I-003, ", "");
+    const result = evaluateImp036iImplementationAuthorization(docs);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036I_EXECUTION_PLAN_AC_MISSING");
+  });
+
+  it("rejects a primary-owner set missing AC-036I-040", () => {
+    const docs = baseDocs();
+    docs.executionPlanText = docs.executionPlanText.replace("AC-036I-040, ", "");
+    const result = evaluateImp036iImplementationAuthorization(docs);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036I_EXECUTION_PLAN_AC_MISSING");
+  });
+
+  it("rejects a primary-owner set missing AC-036I-041", () => {
+    const docs = baseDocs();
+    docs.executionPlanText = docs.executionPlanText.replace("AC-036I-041, ", "");
+    const result = evaluateImp036iImplementationAuthorization(docs);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036I_EXECUTION_PLAN_AC_MISSING");
+  });
+
+  it("rejects AC-036I-021 assigned to both Tranche 2 and Tranche 3", () => {
+    const docs = baseDocs();
+    docs.executionPlanText = docs.executionPlanText.replace(
+      "TRANCHE_2_PRIMARY_ACS = ",
+      "TRANCHE_2_PRIMARY_ACS = AC-036I-021, ",
+    );
+    const result = evaluateImp036iImplementationAuthorization(docs);
+    assert.equal(result.ok, false);
+    assert.equal(result.code, "IMP036I_EXECUTION_PLAN_AC_DUPLICATE");
+  });
+
+  it("accepts the corrected primary mapping and ignores Tranche 5 re-proof", () => {
+    assert.deepEqual(evaluateImp036iImplementationAuthorization(baseDocs()), { ok: true });
   });
 });
 
