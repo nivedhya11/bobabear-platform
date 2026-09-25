@@ -35,6 +35,7 @@ import { createNonSendingChannelRegistry } from "./channels";
 import { systemNotificationClock, type NotificationClock } from "./clock";
 import type { NotificationOutboxPayload } from "./outbox-events";
 import { evaluateNotificationSendPolicy } from "./policy";
+import { evaluateScheduledReminderSendEligibility } from "./reminder-gate";
 import {
   findCustomerPhoneE164,
   findNotificationRequestById,
@@ -118,6 +119,31 @@ async function resolveCustomerVisibleContentForRequest(
   }
 }
 
+async function expiryForDomainEvent(
+  persistence: Persistence,
+  payload: NotificationOutboxPayload,
+  occurredAt: Date,
+  now: Date,
+): Promise<Date> {
+  if (payload.semanticType !== "SCHEDULED_FULFILMENT_REMINDER") {
+    return notificationExpiryFor(occurredAt);
+  }
+  if (!payload.orderId) return new Date(now.getTime() + 1);
+  const windowStart = await persistence.withContext(async (ctx) => {
+    const orderRows = await ctx.db
+      .select({ checkoutSnapshotId: ordersTable.checkoutSnapshotId })
+      .from(ordersTable)
+      .where(eq(ordersTable.id, payload.orderId!))
+      .limit(1);
+    const snapshotId = orderRows[0]?.checkoutSnapshotId;
+    if (!snapshotId) return null;
+    const snapshot = await loadActiveSnapshot(ctx, snapshotId);
+    return snapshot?.scheduledWindowStartAt ?? null;
+  });
+  if (windowStart && windowStart.getTime() > now.getTime()) return windowStart;
+  return new Date(now.getTime() + 1);
+}
+
 /**
  * Create the notification request for one notification-intent outbox event.
  *
@@ -133,8 +159,10 @@ export async function createNotificationRequestFromDomainEvent(
 ): Promise<NotificationRequest | null> {
   const now = clockOf(options).now();
   const occurredAt = new Date(payload.occurredAt);
-  const expiresAt = notificationExpiryFor(occurredAt);
-  if (expiresAt.getTime() <= now.getTime()) return null;
+  const expiresAt = await expiryForDomainEvent(persistence, payload, occurredAt, now);
+  if (payload.semanticType !== "SCHEDULED_FULFILMENT_REMINDER" && expiresAt.getTime() <= now.getTime()) {
+    return null;
+  }
 
   const channel = options.channel ?? NOTIFICATION_DEFAULT_TRANSACTIONAL_CHANNEL;
   const locale = options.locale ?? NOTIFICATION_DEFAULT_LOCALE;
@@ -212,6 +240,22 @@ async function prepareSend(
     }
     if (locked.status !== "PENDING" && locked.status !== "SCHEDULED") {
       return Object.freeze({ kind: "terminal" as const, request: locked });
+    }
+
+    if (locked.semanticType === "SCHEDULED_FULFILMENT_REMINDER") {
+      const reminderGate = await evaluateScheduledReminderSendEligibility(tx, {
+        orderId: locked.orderId,
+        now,
+      });
+      if (reminderGate.suppress && reminderGate.reason) {
+        const suppressed = await updateNotificationRequest(tx, locked.id, {
+          status: "SUPPRESSED",
+          suppressionReason: reminderGate.reason,
+          terminalAt: now,
+          now,
+        });
+        return Object.freeze({ kind: "terminal" as const, request: suppressed });
+      }
     }
 
     const decision = await evaluateNotificationSendPolicy(tx, locked, now);

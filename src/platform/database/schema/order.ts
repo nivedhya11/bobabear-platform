@@ -41,6 +41,11 @@ export const ordersTable = appSchema.table(
     fulfilledByWorkforceUserId: text("fulfilled_by_workforce_user_id"),
     cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
     cancelledByWorkforceUserId: text("cancelled_by_workforce_user_id"),
+    /**
+     * Customer self-service cancellation actor. Mutually exclusive with
+     * cancelledByWorkforceUserId. Null for workforce cancellation.
+     */
+    cancelledByCustomerAuthUserId: text("cancelled_by_customer_auth_user_id"),
     cancellationReasonCode: text("cancellation_reason_code"),
   },
   (table) => [
@@ -127,6 +132,7 @@ export const ordersTable = appSchema.table(
           and ${table.fulfilledByWorkforceUserId} is null
           and ${table.cancelledAt} is null
           and ${table.cancelledByWorkforceUserId} is null
+          and ${table.cancelledByCustomerAuthUserId} is null
           and ${table.cancellationReasonCode} is null
         )
         or
@@ -138,6 +144,7 @@ export const ordersTable = appSchema.table(
           and ${table.fulfilledByWorkforceUserId} is null
           and ${table.cancelledAt} is null
           and ${table.cancelledByWorkforceUserId} is null
+          and ${table.cancelledByCustomerAuthUserId} is null
           and ${table.cancellationReasonCode} is null
         )
         or
@@ -149,14 +156,26 @@ export const ordersTable = appSchema.table(
           and ${table.fulfilledByWorkforceUserId} is not null
           and ${table.cancelledAt} is null
           and ${table.cancelledByWorkforceUserId} is null
+          and ${table.cancelledByCustomerAuthUserId} is null
           and ${table.cancellationReasonCode} is null
         )
         or
         (
           ${table.status} = 'CANCELLED'
           and ${table.cancelledAt} is not null
-          and ${table.cancelledByWorkforceUserId} is not null
           and ${table.cancellationReasonCode} is not null
+          and (
+            (
+              ${table.cancelledByWorkforceUserId} is not null
+              and ${table.cancelledByCustomerAuthUserId} is null
+            )
+            or
+            (
+              ${table.cancelledByWorkforceUserId} is null
+              and ${table.cancelledByCustomerAuthUserId} is not null
+              and ${table.cancellationReasonCode} = 'CUSTOMER_REQUESTED'
+            )
+          )
           and ${table.fulfilledAt} is null
           and ${table.fulfilledByWorkforceUserId} is null
           and (
@@ -184,9 +203,30 @@ export const ordersTable = appSchema.table(
     check(
       "orders_cancelled_triple_check",
       sql`(
-        (${table.cancelledAt} is null)
-        = (${table.cancelledByWorkforceUserId} is null)
-        and (${table.cancelledAt} is null) = (${table.cancellationReasonCode} is null)
+        (
+          ${table.cancelledAt} is null
+          and ${table.cancelledByWorkforceUserId} is null
+          and ${table.cancelledByCustomerAuthUserId} is null
+          and ${table.cancellationReasonCode} is null
+        )
+        or
+        (
+          ${table.cancelledAt} is not null
+          and ${table.cancellationReasonCode} is not null
+          and (
+            (
+              ${table.cancelledByWorkforceUserId} is not null
+              and ${table.cancelledByCustomerAuthUserId} is null
+            )
+            or
+            (
+              ${table.cancelledByWorkforceUserId} is null
+              and ${table.cancelledByCustomerAuthUserId} is not null
+              and char_length(trim(${table.cancelledByCustomerAuthUserId})) between 1 and 255
+              and ${table.cancellationReasonCode} = 'CUSTOMER_REQUESTED'
+            )
+          )
+        )
       )`,
     ),
     check(

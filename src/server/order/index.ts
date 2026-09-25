@@ -61,6 +61,7 @@ export {
 } from "./recovery";
 
 export { acceptOrder, fulfilOrder, cancelOrder } from "./lifecycle";
+export { cancelCustomerScheduledOrder } from "./customer-cancellation";
 
 export { getCustomerOrder, listCustomerOrders } from "./customer-reads";
 

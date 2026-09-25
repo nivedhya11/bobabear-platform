@@ -52,7 +52,9 @@ import {
   getOwnCustomerProfile,
   updateOwnCustomerProfile,
 } from "../../customer-profiles";
+import { parseCancelCustomerScheduledOrderInput } from "../../../shared/order";
 import {
+  cancelCustomerScheduledOrder,
   getCustomerOrder,
   listCustomerOrders,
 } from "../../order";
@@ -1089,6 +1091,24 @@ export async function routeCustomerCommerceRequest(
         { status: 200, requestId },
       );
       return outcome("list_orders", 200, "OK");
+    }
+
+    {
+      const cancelParams = matchPath(pathname, "/api/v1/orders/{orderId}/cancel");
+      if (cancelParams && method === "POST") {
+        const identity = await requireTrustedIdentity(deps.runtime, req.headers);
+        const actor = toCartCustomerActor(identity);
+        const body = await readBody(req, requestId, res, ["expectedOrderRevision"]);
+        if (!body) return outcome("cancel_order", 400, "INVALID_REQUEST");
+        const parsed = parseCancelCustomerScheduledOrderInput(cancelParams.orderId, body);
+        const order = await cancelCustomerScheduledOrder(deps.persistence, actor, parsed);
+        sendJson(res, { ok: true, order }, { status: 200, requestId });
+        return outcome("cancel_order", 200, "OK");
+      }
+      if (cancelParams) {
+        sendMethodNotAllowed(res, ["POST"], requestId);
+        return outcome("cancel_order", 405, "METHOD_NOT_ALLOWED");
+      }
     }
 
     {

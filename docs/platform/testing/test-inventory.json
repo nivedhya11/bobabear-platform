@@ -31,23 +31,23 @@
     "note": "Protected evidence and generated reports are never classified as executable test source."
   },
   "counts": {
-    "trackedPathsConsidered": 2173,
-    "executableTestFiles": 468,
-    "sourceTestFiles": 140,
-    "testsTreeExecutableFiles": 257,
+    "trackedPathsConsidered": 2181,
+    "executableTestFiles": 470,
+    "sourceTestFiles": 141,
+    "testsTreeExecutableFiles": 258,
     "scriptTestFiles": 71,
     "playwrightSpecs": 12,
     "vitestConfigs": 2,
     "playwrightConfigs": 7,
     "testSupportScripts": 51,
-    "packageTestCommands": 83,
+    "packageTestCommands": 84,
     "packageAuditCommands": 27,
     "packageE2eCommands": 9,
     "packageCheckCommands": 13,
     "packageCoverageCommands": 1,
     "packageInventoryCommands": 2,
     "ciWorkflowFiles": 4,
-    "ciValidationSteps": 115,
+    "ciValidationSteps": 116,
     "protectedEvidenceTrackedFiles": 3,
     "archiveTrackedFiles": 92
   },
@@ -191,6 +191,7 @@
     "src/shared/refund-statutory-issuance-allocation/command.test.ts",
     "src/shared/refund-statutory-issuance-allocation/logical-key.test.ts",
     "src/shared/refund/refund.domain.test.ts",
+    "src/shared/scheduled-fulfilment/cancellation.test.ts",
     "src/shared/workforce-auth/email.test.ts"
   ],
   "testsTreeExecutableFiles": [
@@ -399,6 +400,7 @@
     "tests/order/order.pickup-projections.test.ts",
     "tests/order/order.smoke.test.ts",
     "tests/order/order.transport.test.ts",
+    "tests/order/scheduled-cancellation-reminder.tranche4.integration.test.ts",
     "tests/ordering-catalog/parity.test.ts",
     "tests/payment-auth-integration/payment.auth.test.ts",
     "tests/payment-concurrency/payment.concurrency.test.ts",
@@ -657,6 +659,7 @@
       "test:imp036i:tranche1",
       "test:imp036i:tranche2",
       "test:imp036i:tranche3",
+      "test:imp036i:tranche4",
       "test:menu-import",
       "test:menu-parity",
       "test:operations:http",
@@ -855,6 +858,7 @@
     "test:imp036i:tranche1": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/database/imp036i-scheduled-fulfilment.integration.test.ts tests/delivery-application/delivery.d380-finality.test.ts",
     "test:imp036i:tranche2": "node scripts/run-vitest.mjs run tests/scheduled-fulfilment/windows.test.ts && node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/checkout/scheduled-fulfilment.domain.test.ts tests/payment/payment.scheduled.domain.test.ts tests/payment/payment.scheduled-bind-race.domain.test.ts",
     "test:imp036i:tranche3": "node scripts/run-vitest.mjs run tests/scheduled-fulfilment/operational-cues.test.ts src/components/ordering/CheckoutTimingChoice.test.tsx src/shared/notifications/customer-visible-content.test.ts && node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/checkout/scheduled-surfaces.tranche3.test.ts tests/customer-commerce/scheduled-http.tranche3.integration.test.ts tests/administration/admin-brand-policy-http.tranche3.integration.test.ts tests/operations/scheduling-http.tranche3.integration.test.ts",
+    "test:imp036i:tranche4": "node scripts/run-vitest.mjs run src/shared/scheduled-fulfilment/cancellation.test.ts src/shared/notifications/notifications.domain.test.ts src/shared/notifications/customer-visible-content.test.ts && node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/order/scheduled-cancellation-reminder.tranche4.integration.test.ts",
     "test:menu-import": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/menu-import",
     "test:menu-parity": "node scripts/run-vitest.mjs run tests/menu-parity",
     "test:operations:http": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/operations/store-http.integration.test.ts tests/operations/refunds-http.integration.test.ts tests/operations/orders-read-http.integration.test.ts tests/operations/orders-mutation-http.integration.test.ts tests/operations/notifications-http.integration.test.ts tests/operations/scheduling-http.tranche3.integration.test.ts",
@@ -984,6 +988,10 @@
         {
           "name": "IMP-036I Tranche 3 proof",
           "run": "npm run test:imp036i:tranche3"
+        },
+        {
+          "name": "IMP-036I Tranche 4 proof",
+          "run": "npm run test:imp036i:tranche4"
         },
         {
           "name": "Install dependencies",
@@ -5048,7 +5056,8 @@
       "packageCommands": [
         "test",
         "test:coverage",
-        "test:imp036i:tranche3"
+        "test:imp036i:tranche3",
+        "test:imp036i:tranche4"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -5067,7 +5076,8 @@
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
         "test",
-        "test:coverage"
+        "test:coverage",
+        "test:imp036i:tranche4"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -5220,6 +5230,26 @@
       "packageCommands": [
         "test",
         "test:coverage"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit",
+        "3-domain-use-case"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "src/shared/scheduled-fulfilment/cancellation.test.ts",
+      "runner": "vitest",
+      "domain": "shared/scheduled-fulfilment",
+      "testType": "unit-or-domain",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test",
+        "test:coverage",
+        "test:imp036i:tranche4"
       ],
       "ciInclusion": "YES",
       "test1Layers": [
@@ -8881,6 +8911,25 @@
       "ciInclusion": "YES",
       "test1Layers": [
         "1-unit"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/order/scheduled-cancellation-reminder.tranche4.integration.test.ts",
+      "runner": "vitest",
+      "domain": "order",
+      "testType": "integration",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:imp036i:tranche4",
+        "test:order"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "4-integration",
+        "5-database-integration"
       ],
       "classificationConfidence": "HEURISTIC"
     },

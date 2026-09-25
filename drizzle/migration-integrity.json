@@ -231,6 +231,11 @@
       "tag": "0045_imp036i_scheduled_fulfilment_foundations",
       "path": "drizzle/0045_imp036i_scheduled_fulfilment_foundations.sql",
       "sha256": "43ae3ed285cbbec1949f021d3ed03561f8660221030aa257de3261e2774af114"
+    },
+    {
+      "tag": "0046_imp036i_tranche4_cancellation_reminder",
+      "path": "drizzle/0046_imp036i_tranche4_cancellation_reminder.sql",
+      "sha256": "1cdfc614c1e3aa430c947257d253ef9c965d4dcf9942484482e18099d454d76d"
     }
   ]
 }

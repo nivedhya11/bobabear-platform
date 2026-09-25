@@ -240,8 +240,17 @@ describe("notification semantic ordering", () => {
       expect(Number.isFinite(semanticOrderRank(semanticType))).toBe(true);
       expect(purposeForSemanticType(semanticType)).toBeDefined();
     }
-    const ranks = NOTIFICATION_SEMANTIC_TYPES.map((t) => semanticOrderRank(t));
-    expect(new Set(ranks).size).toBe(NOTIFICATION_SEMANTIC_TYPES.length);
+    expect(semanticOrderRank("SCHEDULED_FULFILMENT_REMINDER")).toBe(40);
+    expect(purposeForSemanticType("SCHEDULED_FULFILMENT_REMINDER")).toBe("ORDER_UPDATES");
+    expect(semanticOrderRank("OUT_FOR_DELIVERY")).toBe(40);
+    expect(semanticOrderRank("DELIVERED")).toBe(50);
+    expect(semanticOrderRank("ORDER_CANCELLED")).toBe(60);
+    expect(
+      isStaleSemantic("SCHEDULED_FULFILMENT_REMINDER", ["OUT_FOR_DELIVERY"]),
+    ).toBe(false);
+    expect(
+      isStaleSemantic("OUT_FOR_DELIVERY", ["SCHEDULED_FULFILMENT_REMINDER"]),
+    ).toBe(false);
   });
 
   it("marks a lower-ranked outstanding notification stale once a higher rank went out", () => {

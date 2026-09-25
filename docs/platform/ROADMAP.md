@@ -2,13 +2,13 @@
 {
   "status": "CURRENT",
   "authority": "IMPLEMENTATION_SEQUENCE",
-  "roadmapVersion": "GTM-R158",
+  "roadmapVersion": "GTM-R159",
   "acceptedThrough": "IMP-036H",
   "currentProductSlice": "IMP-036I",
   "nextProductSlice": "IMP-037",
   "gtmBoundary": "IMP-040",
-  "lastReviewed": "2026-09-25",
-  "supersedes": "GTM-R157"
+  "lastReviewed": "2026-09-26",
+  "supersedes": "GTM-R158"
 }
 -->
 
@@ -34,7 +34,7 @@
   change) before the next slice begins: **ACCEPT → RECONCILE → ADVANCE**.
 - The historical IMP-026 → IMP-028 controlled-continuation exception (GTM-R15 onward) is **CLOSED**.
   It does **not** generalize to future slices and is **not** reopened by GTM-R138 / GTM-R139 /
-  GTM-R140 / GTM-R141 / GTM-R142 / GTM-R143 / GTM-R144 / GTM-R145 / GTM-R146 / GTM-R147 / GTM-R148 / GTM-R149 / GTM-R150 / GTM-R151 / GTM-R152 / GTM-R153 / GTM-R154 / GTM-R155 / GTM-R156 / GTM-R157 / GTM-R158.
+  GTM-R140 / GTM-R141 / GTM-R142 / GTM-R143 / GTM-R144 / GTM-R145 / GTM-R146 / GTM-R147 / GTM-R148 / GTM-R149 / GTM-R150 / GTM-R151 / GTM-R152 / GTM-R153 / GTM-R154 / GTM-R155 / GTM-R156 / GTM-R157 / GTM-R158 / GTM-R159.
 - **GTM-R138** records a **NEW**, Founder-authorized one-off exception
   `CONTINUATION_EXCEPTION: IMP037_PROVIDER_BLOCKED_TO_IMP038` (authority PR#179/5771367844) so
   IMP-038 may activate for PD-1 Product Definition work while IMP-037 remains an
@@ -447,7 +447,7 @@ INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID: 5312653831
 ARCHITECTURE_FIT_EVALUATED_HEAD: 42e854b931e216fadc64b479371cebca4c38d17e
 ARCHITECTURE_FIT_EVALUATED_TREE: 279e0e1b0e8f52c96cfd12fc89b329f73281e38f
 ARCHITECTURE_FIT_EVALUATED_WORKING_TREE_FINGERPRINT: b65f40b9e568a6d0188f1d031f41db3a072cb3b4683d2d966c2a994283575068
-nextGate: INDEPENDENT_TRANCHE_3_VERIFICATION
+nextGate: INDEPENDENT_TRANCHE_4_VERIFICATION
 D-379_CREATED: YES
 D-380_CREATED: YES
 ARCH_R23_CREATED: YES
@@ -476,6 +476,20 @@ IMP-036D_ACCEPTED: YES
 IMP-036D_FOUNDER_UAT: PASS
 ```
 
+**GTM-R159** records IMP-036I Tranche 4 purchased cancellation enforcement and the
+scheduled fulfilment reminder after independent Tranche 3 verification PASS against main
+`9b1c73b39f6d709e3e8f9adf7c772564285234e7` / tree
+`adea96bff22f54c6aa57d68721d658cfc24e5d73`. Formal lifecycle remains
+`IMPLEMENTATION_IN_PROGRESS` (`IMP036I_IMPLEMENTATION_AUTHORIZED: YES`;
+`IMP036I_STARTED: YES`; `IMP036I_IMPLEMENTATION_STARTED: YES`;
+`IMP036I_IMPLEMENTATION_COMPLETE: NO`; `IMP036I_ACCEPTED: NO`;
+`FOUNDER_UAT: NOT_PERFORMED`). Next action = `INDEPENDENT_TRANCHE_4_VERIFICATION`.
+This record does not complete IMP-036I, accept it, perform Founder UAT, or advance
+`acceptedThrough`. Architecture remains ARCH-R23. Decision register remains DR-21.
+D-379 remains CURRENT. D-380 remains CURRENT. D-378 remains AMENDED.
+`PROGRAM_PAUSE` D-377 and the IMP-037 / IMP-038 holds remain. Do not start Tranche 5
+until independent Tranche 4 verification passes. Tranche 5 hardening remains open.
+
 **GTM-R158** records IMP-036I Tranche 3 customer, operations, and configuration surfaces after
 independent Tranche 2 verification PASS against main
 `557db375545c5f0853ec894919fd1e0d6f696770` / tree
@@ -489,7 +503,7 @@ This record does not complete IMP-036I, accept it, perform Founder UAT, or advan
 D-379 remains CURRENT. D-380 remains CURRENT. D-378 remains AMENDED.
 `PROGRAM_PAUSE` D-377 and the IMP-037 / IMP-038 holds remain. Do not start Tranche 4
 until independent Tranche 3 verification passes. Proactive scheduled reminder runtime
-remains Tranche 4.
+remains Tranche 4. Independent Tranche 3 verification later passed. GTM-R159 supersedes this record.
 
 **GTM-R157** records IMP-036I Tranche 2 scheduling eligibility and payment bind after independent
 Tranche 1 verification PASS against main `d45c8c586652160bfc8793f5fa16c274d402411a` / tree
@@ -1258,6 +1272,17 @@ Current public GTM boundary is **IMP-040**, not IMP-035.
 
 Historical revision evidence for GTM-R1…GTM-R113 is preserved byte-for-byte in
 [`history/ROADMAP-GTM-R113-pre-compression.md`](./history/ROADMAP-GTM-R113-pre-compression.md).
+
+### GTM-R159 — 2026-09-26
+
+- Record IMP-036I Tranche 4 purchased cancellation enforcement and scheduled fulfilment
+  reminder after independent Tranche 3 verification PASS against main
+  `9b1c73b39f6d709e3e8f9adf7c772564285234e7` / tree
+  `adea96bff22f54c6aa57d68721d658cfc24e5d73`.
+- Formal lifecycle remains `IMPLEMENTATION_IN_PROGRESS`. Implementation remains incomplete
+  and unaccepted. `acceptedThrough` remains IMP-036H. Founder UAT remains NOT_PERFORMED.
+- Next action = INDEPENDENT_TRANCHE_4_VERIFICATION. Do not start Tranche 5 until that
+  verification passes. Tranche 5 hardening remains open. No new D-number, ADR, or ARCH revision.
 
 ### GTM-R158 — 2026-09-25
 

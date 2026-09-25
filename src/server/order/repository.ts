@@ -49,6 +49,7 @@ export function mapOrderRow(row: OrderRow): Order {
     fulfilledByWorkforceUserId: row.fulfilledByWorkforceUserId,
     cancelledAt: row.cancelledAt,
     cancelledByWorkforceUserId: row.cancelledByWorkforceUserId,
+    cancelledByCustomerAuthUserId: row.cancelledByCustomerAuthUserId,
     cancellationReasonCode:
       row.cancellationReasonCode as OrderCancellationReasonCode | null,
   });
@@ -125,6 +126,7 @@ export async function insertPlacedOrder(
       fulfilledByWorkforceUserId: null,
       cancelledAt: null,
       cancelledByWorkforceUserId: null,
+      cancelledByCustomerAuthUserId: null,
       cancellationReasonCode: null,
     })
     .returning();
@@ -144,6 +146,7 @@ export async function updateOrderLifecycle(
     fulfilledByWorkforceUserId?: string | null;
     cancelledAt?: Date | null;
     cancelledByWorkforceUserId?: string | null;
+    cancelledByCustomerAuthUserId?: string | null;
     cancellationReasonCode?: OrderCancellationReasonCode | null;
   },
 ): Promise<OrderRow> {
@@ -171,6 +174,9 @@ export async function updateOrderLifecycle(
         : {}),
       ...(patch.cancelledByWorkforceUserId !== undefined
         ? { cancelledByWorkforceUserId: patch.cancelledByWorkforceUserId }
+        : {}),
+      ...(patch.cancelledByCustomerAuthUserId !== undefined
+        ? { cancelledByCustomerAuthUserId: patch.cancelledByCustomerAuthUserId }
         : {}),
       ...(patch.cancellationReasonCode !== undefined
         ? { cancellationReasonCode: patch.cancellationReasonCode }
