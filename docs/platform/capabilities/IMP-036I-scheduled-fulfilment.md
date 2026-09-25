@@ -8,8 +8,8 @@
   "architectureFit": "PASS",
   "architectureFitResult": "PASS",
   "architectureFitExecution": "PERFORMED",
-  "implementation": "NOT_AUTHORIZED / NOT_STARTED",
-  "implementationAuthorized": false,
+  "implementation": "AUTHORIZED / NOT_STARTED",
+  "implementationAuthorized": true,
   "implementationStarted": false,
   "implementationComplete": false,
   "impAccepted": false,
@@ -43,7 +43,9 @@ Independent Architecture Fit review **PASS** (`5312653831`) evaluated candidate 
 `42e854b931e216fadc64b479371cebca4c38d17e` / tree
 `279e0e1b0e8f52c96cfd12fc89b329f73281e38f` / fingerprint
 `b65f40b9e568a6d0188f1d031f41db3a072cb3b4683d2d966c2a994283575068`.
-Human architecture lock approval **2026-09-25**. Implementation remains **NOT_AUTHORIZED**.
+Human architecture lock approval **2026-09-25**. Explicit human implementation authorization
+**2026-09-25** (`IMPLEMENTATION_AUTHORIZED` / `NOT_STARTED`). Runtime work has not started.
+Execution plan: [`../product/IMP-036I/implementation-plan.md`](../product/IMP-036I/implementation-plan.md).
 
 ```text
 STATUS = ARCHITECTURE_LOCKED
@@ -54,7 +56,7 @@ ARCHITECTURE_FIT_EXECUTION = PERFORMED
 ARCHITECTURE_FIT_RESULT = PASS
 ARCHITECTURE_FIT = PASS
 ARCHITECTURE_LOCK = LOCKED
-IMPLEMENTATION_AUTHORIZED = NO
+IMPLEMENTATION_AUTHORIZED = YES
 IMPLEMENTATION_STARTED = NO
 IMPLEMENTATION_COMPLETE = NO
 IMP_ACCEPTED = NO
@@ -97,16 +99,17 @@ CURRENT_IMP031 = ARCHITECTURE_LOCKED (CURRENT; successful-completion replacement
 HUMAN_ARCHITECTURE_DIRECTION_D380 = APPROVED_2026-09-25
 INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID = 5312653831
 PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT = OPEN
+PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT_CORRECTION_AUTHORIZED = YES
 PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT_RUNTIME_FIXED = NO
 
 IMP036I_ARCHITECTURE_FIT = PASS
 IMP036I_ARCHITECTURE_LOCKED = YES
-IMP036I_IMPLEMENTATION_AUTHORIZED = NO
+IMP036I_IMPLEMENTATION_AUTHORIZED = YES
 IMP036I_IMPLEMENTATION_STARTED = NO
 ```
 
-This lock does **not** authorize implementation, schema migration execution, deployment, Founder UAT,
-or IMP acceptance. Historical independent Fit STOP reviews (`5309072645`, `5309240283`,
+This lock does **not** create migrations, deploy, perform Founder UAT, or accept IMP-036I.
+Historical independent Fit STOP reviews (`5309072645`, `5309240283`,
 `5309972440`) remain historical; they are not current blockers.
 
 | Field | Value |
@@ -115,8 +118,8 @@ or IMP acceptance. Historical independent Fit STOP reviews (`5309072645`, `53092
 | Formal ROADMAP lifecycle | `ARCHITECTURE_LOCKED` (`IMP036I_ACTIVATED: YES`) |
 | Product Definition | `PD-IMP-036I-DRAFT-4` **APPROVED**; Gate **PASS** |
 | Canonical Architecture Fit | **PASS** (independent review `5312653831`) |
-| Implementation | **NOT_AUTHORIZED** / **NOT_STARTED** |
-| Schema change / migration | **YES** (design only; not authorized to execute) |
+| Implementation | **AUTHORIZED** / **NOT_STARTED** |
+| Schema change / migration | **YES** (authorized for tranche 1; not executed by authorization persistence) |
 | Binding D-number (timing) | **D-379** (`CURRENT`) |
 | Binding ADR (timing) | **ADR-019** (`Accepted`) |
 | Binding D-number (Delivery finality) | **D-380** (`CURRENT`; human direction APPROVED 2026-09-25) |
@@ -179,14 +182,14 @@ AF-036I-13 and AF-036I-16 are **accepted Architecture Fit authority** against CU
 Independent Architecture Fit review `5312653831` = **PASS**. This lock does **not** authorize
 implementation.
 
-Canonical ROADMAP/STATE tip markers after lock persistence:
+Canonical ROADMAP/STATE tip markers after implementation authorization:
 
 ```text
 IMP036I_PRODUCT_DEFINITION: APPROVED
 IMP036I_PRODUCT_DEFINITION_GATE: PASS
 IMP036I_ARCHITECTURE_FIT: PASS
 IMP036I_ARCHITECTURE_LOCKED: YES
-IMP036I_IMPLEMENTATION_AUTHORIZED: NO
+IMP036I_IMPLEMENTATION_AUTHORIZED: YES
 IMP036I_STARTED: NO
 IMP036I_IMPLEMENTATION_STARTED: NO
 IMP036I_IMPLEMENTATION_COMPLETE: NO
@@ -1657,11 +1660,13 @@ NEW_EXTERNAL_PROVIDER = NO
 
 ## 32. Explicit non-claims
 
-This architecture lock does **not**:
+This architecture lock does **not** change locked semantics. Explicit human implementation
+authorization is recorded separately in ROADMAP GTM-R155 / STATE-R153. This authorization-persistence
+record does **not**:
 
-- authorize implementation or create migrations
+- start runtime implementation or create migrations
 - change runtime Delivery operations / schema / historical Delivery rows
-- fix `PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT` in runtime
+- fix `PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT` in runtime (correction is authorized; debt remains OPEN)
 - modify approved Product Definition semantics
 - resolve IMP-037/038 or activate IMP-039/040
 - accept IMP-036I or perform Founder UAT
@@ -1669,7 +1674,7 @@ This architecture lock does **not**:
 ```text
 IMP036I_ARCHITECTURE_FIT = PASS
 IMP036I_ARCHITECTURE_LOCKED = YES
-IMP036I_IMPLEMENTATION_AUTHORIZED = NO
+IMP036I_IMPLEMENTATION_AUTHORIZED = YES
 IMP036I_IMPLEMENTATION_STARTED = NO
 D379_STATUS = CURRENT
 D380_STATUS = CURRENT
@@ -1685,6 +1690,6 @@ PRE_EXISTING_DELIVERY_CONFORMANCE_DEBT = OPEN
 
 ## 33. Recommended next action
 
-Independent verification of this Architecture Fit / lock persistence.
-After verification, request explicit implementation authorization before any IMP-036I
-runtime, schema, or migration work.
+Begin IMP-036I Implementation Tranche 1: Persistence + Domain Foundations, using
+[`../product/IMP-036I/implementation-plan.md`](../product/IMP-036I/implementation-plan.md).
+Do not treat this architecture document as implementation or acceptance authority.

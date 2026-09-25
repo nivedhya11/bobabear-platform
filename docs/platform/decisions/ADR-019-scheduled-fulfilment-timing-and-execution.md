@@ -13,7 +13,9 @@ Amended by: none
 
 **Accepted** (2026-09-25). Register identity **[D-379](../decision-register.md)** is **CURRENT**.
 Global architecture tip is **ARCH-R23**. Invariant **ARCH-G29** is **CURRENT**. Independent
-Architecture Fit review `5312653831` = **PASS**. Implementation remains **NOT_AUTHORIZED**.
+Implementation is **AUTHORIZED** / **NOT_STARTED** (explicit human approval 2026-09-25 after
+independent Architecture Fit PASS and architecture-lock persistence verification `5313026804`).
+ADR decision body is unchanged.
 
 ```text
 D-379_STATUS: CURRENT
@@ -25,7 +27,8 @@ ARCH-G29_STATUS: CURRENT
 ARCH-G30_STATUS: CURRENT
 IMP036I_ARCHITECTURE_FIT: PASS
 IMP036I_ARCHITECTURE_LOCKED: YES
-IMP036I_IMPLEMENTATION_AUTHORIZED: NO
+IMP036I_IMPLEMENTATION_AUTHORIZED: YES
+IMP036I_IMPLEMENTATION_STARTED: NO
 INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID: 5312653831
 CURRENT_ARCHITECTURE: ARCH-R23
 CURRENT_D378: AMENDED
@@ -75,8 +78,8 @@ semantics; current runtime `createDelivery` acceptance of a `DELIVERED` predeces
 Verified tip after lock persistence:
 
 ```text
-ROADMAP = GTM-R154
-STATE = STATE-R152
+ROADMAP = GTM-R155
+STATE = STATE-R153
 ARCHITECTURE = ARCH-R23
 DECISION_REGISTER = DR-21
 ```
