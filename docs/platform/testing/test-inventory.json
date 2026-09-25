@@ -31,10 +31,10 @@
     "note": "Protected evidence and generated reports are never classified as executable test source."
   },
   "counts": {
-    "trackedPathsConsidered": 2170,
-    "executableTestFiles": 465,
+    "trackedPathsConsidered": 2173,
+    "executableTestFiles": 468,
     "sourceTestFiles": 140,
-    "testsTreeExecutableFiles": 254,
+    "testsTreeExecutableFiles": 257,
     "scriptTestFiles": 71,
     "playwrightSpecs": 12,
     "vitestConfigs": 2,
@@ -221,6 +221,7 @@
     "tests/administration/SellabilityDiagnosisPanel.test.tsx",
     "tests/administration/admin-api-exhaustive.test.ts",
     "tests/administration/admin-assortment-http.integration.test.ts",
+    "tests/administration/admin-brand-policy-http.tranche3.integration.test.ts",
     "tests/administration/admin-catalog-http-customer-truth.integration.test.ts",
     "tests/administration/admin-catalog-http.integration.test.ts",
     "tests/administration/admin-commercial-http.integration.test.ts",
@@ -281,6 +282,7 @@
     "tests/customer-commerce/financial-document.http.integration.test.ts",
     "tests/customer-commerce/http.integration.test.ts",
     "tests/customer-commerce/razorpay.http.integration.test.ts",
+    "tests/customer-commerce/scheduled-http.tranche3.integration.test.ts",
     "tests/customer-profile-auth-integration/auth-integration.test.ts",
     "tests/customer-profile-security/security.test.ts",
     "tests/customer-profiles/domain.test.ts",
@@ -381,6 +383,7 @@
     "tests/operations/orders-read-http.integration.test.ts",
     "tests/operations/refunds-http.integration.test.ts",
     "tests/operations/runtime-service.integration.test.ts",
+    "tests/operations/scheduling-http.tranche3.integration.test.ts",
     "tests/operations/store-http.integration.test.ts",
     "tests/operations/workforce-principal-adapter.test.ts",
     "tests/order-auth-integration/order.auth-integration.test.ts",
@@ -815,13 +818,13 @@
     "test:customer-address-security": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/customer-address-security",
     "test:customer-addresses": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/customer-addresses",
     "test:customer-auth:http": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/customer-auth/http.integration.test.ts",
-    "test:customer-commerce:http": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/customer-commerce/http.integration.test.ts",
+    "test:customer-commerce:http": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/customer-commerce/http.integration.test.ts tests/customer-commerce/scheduled-http.tranche3.integration.test.ts",
     "test:customer-profile-auth-integration": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/customer-profile-auth-integration",
     "test:customer-profile-security": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/customer-profile-security",
     "test:customer-profiles": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/customer-profiles",
     "test:database": "node scripts/run-vitest.mjs run --config vitest.database.config.mts",
     "test:database:access-control": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/database/access-control.integration.test.ts",
-    "test:database:administration": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/administration/admin-http.integration.test.ts tests/administration/admin-step-up-http.integration.test.ts tests/administration/imp036g-proofs.integration.test.ts tests/administration/admin-catalog-http.integration.test.ts tests/administration/admin-catalog-http-customer-truth.integration.test.ts tests/administration/admin-menu-http.integration.test.ts tests/administration/admin-assortment-http.integration.test.ts tests/administration/admin-pricing-http.integration.test.ts tests/administration/admin-promotions-http.integration.test.ts tests/administration/admin-tariff-http.integration.test.ts tests/administration/admin-commercial-http.integration.test.ts",
+    "test:database:administration": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/administration/admin-http.integration.test.ts tests/administration/admin-step-up-http.integration.test.ts tests/administration/imp036g-proofs.integration.test.ts tests/administration/admin-catalog-http.integration.test.ts tests/administration/admin-catalog-http-customer-truth.integration.test.ts tests/administration/admin-menu-http.integration.test.ts tests/administration/admin-assortment-http.integration.test.ts tests/administration/admin-pricing-http.integration.test.ts tests/administration/admin-promotions-http.integration.test.ts tests/administration/admin-tariff-http.integration.test.ts tests/administration/admin-commercial-http.integration.test.ts tests/administration/admin-brand-policy-http.tranche3.integration.test.ts",
     "test:database:assortment-availability": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/database/assortment-availability.integration.test.ts",
     "test:database:auth-foundation": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/database/auth-foundation.integration.test.ts",
     "test:database:cart": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/database/cart.integration.test.ts",
@@ -851,10 +854,10 @@
     "test:e2e:workforce-auth": "npm run build && npm run workforce-auth:build && node scripts/e2e/run-workforce-auth-e2e.mjs",
     "test:imp036i:tranche1": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/database/imp036i-scheduled-fulfilment.integration.test.ts tests/delivery-application/delivery.d380-finality.test.ts",
     "test:imp036i:tranche2": "node scripts/run-vitest.mjs run tests/scheduled-fulfilment/windows.test.ts && node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/checkout/scheduled-fulfilment.domain.test.ts tests/payment/payment.scheduled.domain.test.ts tests/payment/payment.scheduled-bind-race.domain.test.ts",
-    "test:imp036i:tranche3": "node scripts/run-vitest.mjs run tests/scheduled-fulfilment/operational-cues.test.ts src/components/ordering/CheckoutTimingChoice.test.tsx src/shared/notifications/customer-visible-content.test.ts && node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/checkout/scheduled-surfaces.tranche3.test.ts",
+    "test:imp036i:tranche3": "node scripts/run-vitest.mjs run tests/scheduled-fulfilment/operational-cues.test.ts src/components/ordering/CheckoutTimingChoice.test.tsx src/shared/notifications/customer-visible-content.test.ts && node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/checkout/scheduled-surfaces.tranche3.test.ts tests/customer-commerce/scheduled-http.tranche3.integration.test.ts tests/administration/admin-brand-policy-http.tranche3.integration.test.ts tests/operations/scheduling-http.tranche3.integration.test.ts",
     "test:menu-import": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/menu-import",
     "test:menu-parity": "node scripts/run-vitest.mjs run tests/menu-parity",
-    "test:operations:http": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/operations/store-http.integration.test.ts tests/operations/refunds-http.integration.test.ts tests/operations/orders-read-http.integration.test.ts tests/operations/orders-mutation-http.integration.test.ts tests/operations/notifications-http.integration.test.ts",
+    "test:operations:http": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/operations/store-http.integration.test.ts tests/operations/refunds-http.integration.test.ts tests/operations/orders-read-http.integration.test.ts tests/operations/orders-mutation-http.integration.test.ts tests/operations/notifications-http.integration.test.ts tests/operations/scheduling-http.tranche3.integration.test.ts",
     "test:order": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/order/",
     "test:order-auth-integration": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/order-auth-integration",
     "test:order-concurrency": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/order-concurrency",
@@ -5757,6 +5760,26 @@
       "classificationConfidence": "HEURISTIC"
     },
     {
+      "path": "tests/administration/admin-brand-policy-http.tranche3.integration.test.ts",
+      "runner": "vitest",
+      "domain": "administration",
+      "testType": "integration",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:administration",
+        "test:database:administration",
+        "test:imp036i:tranche3"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "4-integration",
+        "5-database-integration"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
       "path": "tests/administration/admin-catalog-http-customer-truth.integration.test.ts",
       "runner": "vitest",
       "domain": "administration",
@@ -6830,6 +6853,25 @@
         "4-integration",
         "5-database-integration",
         "6-http-api-contract"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/customer-commerce/scheduled-http.tranche3.integration.test.ts",
+      "runner": "vitest",
+      "domain": "customer-commerce",
+      "testType": "integration",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:customer-commerce:http",
+        "test:imp036i:tranche3"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "4-integration",
+        "5-database-integration"
       ],
       "classificationConfidence": "HEURISTIC"
     },
@@ -8555,6 +8597,25 @@
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [],
       "ciInclusion": "NO",
+      "test1Layers": [
+        "4-integration",
+        "5-database-integration"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/operations/scheduling-http.tranche3.integration.test.ts",
+      "runner": "vitest",
+      "domain": "operations",
+      "testType": "integration",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:imp036i:tranche3",
+        "test:operations:http"
+      ],
+      "ciInclusion": "YES",
       "test1Layers": [
         "4-integration",
         "5-database-integration"

@@ -525,6 +525,13 @@ export async function routeAdminRequest(
             "Brand update requires name, status, and/or scheduledCancellationPolicy.",
           );
         }
+        if (hasPolicy && hasBrandFields) {
+          throw new AdministrationError(
+            "ADMIN_REQUEST_INVALID",
+            "Scheduled cancellation policy and ordinary Brand fields must be updated in separate requests.",
+            { field: "scheduledCancellationPolicy" },
+          );
+        }
         const scheduledCancellationPolicy = hasPolicy
           ? dateJson(
               await adminUpdateBrandScheduledCancellationPolicy(
