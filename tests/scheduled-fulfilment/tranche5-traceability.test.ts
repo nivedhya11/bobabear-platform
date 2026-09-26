@@ -51,6 +51,31 @@ describe("IMP-036I tranche 5 traceability", () => {
     expect(executed).toContain("tests/payment/payment.scheduled-bind-race.domain.test.ts");
     expect(executed).toContain("tests/checkout/scheduled-surfaces.tranche3.test.ts");
     expect(executed).toContain("tests/order/scheduled-cancellation-reminder.tranche4.integration.test.ts");
+    expect(executed).toContain(
+      "tests/database/scheduled-financial-document-continuity.integration.test.ts",
+    );
+    expect(plan).toContain("FINANCIAL_DOCUMENT_NON_REGRESSION = OBJECTIVELY_PROVED");
+    const proof = plan.slice(
+      plan.indexOf("FINANCIAL_DOCUMENT_PROOF_START"),
+      plan.indexOf("FINANCIAL_DOCUMENT_PROOF_END"),
+    );
+    expect(proof).toContain(
+      "EXECUTABLE_PROOF = tests/database/scheduled-financial-document-continuity.integration.test.ts",
+    );
+    expect(proof).toContain("AC-036I-030 = EXECUTABLE_PROOF");
+    expect(proof).toContain("AC-036I-050 = EXECUTABLE_PROOF");
+    expect(proof).toContain(
+      "AC-036I-056 = tests/administration/admin-brand-policy-http.tranche3.integration.test.ts",
+    );
+    expect(proof).toContain(
+      "AC-036I-057 = tests/administration/admin-brand-policy-http.tranche3.integration.test.ts",
+    );
+    expect(proof).toContain(
+      "AC-036I-058 = tests/administration/admin-brand-policy-http.tranche3.integration.test.ts",
+    );
+    expect(executed).toContain(
+      "tests/administration/admin-brand-policy-http.tranche3.integration.test.ts",
+    );
     expect(executed).toContain("src/components/ordering/CheckoutTimingChoice.test.tsx");
     expect(executed).toContain("tests/scheduled-fulfilment/windows.test.ts");
     for (const name of trancheScripts) {

@@ -233,6 +233,20 @@ Goal: implementation-complete evidence.
 
 Required integrated proof includes US-036I-001…016, AC-036I-001…066, BR-036I-001…019, FD-036I-01…22, all four mode/timing combinations, migration compatibility, payment races, cancellation-boundary exact instant, reminder ordering and races, D-380 conformance, Operations manual Delivery preservation, Pickup no-Delivery boundary, financial-document non-regression, mobile, accessibility, authorization/RBAC, privacy, observability, no new topology, the regression suite, CodeQL, and the testing inventory.
 
+```text
+FINANCIAL_DOCUMENT_PROOF_START
+FINANCIAL_DOCUMENT_NON_REGRESSION = OBJECTIVELY_PROVED
+EXECUTABLE_PROOF = tests/database/scheduled-financial-document-continuity.integration.test.ts
+T5_COMMAND = test:imp036i:tranche5
+AC-036I-030 = EXECUTABLE_PROOF
+AC-036I-050 = EXECUTABLE_PROOF
+AC-036I-056 = tests/administration/admin-brand-policy-http.tranche3.integration.test.ts
+AC-036I-057 = tests/administration/admin-brand-policy-http.tranche3.integration.test.ts
+AC-036I-058 = tests/administration/admin-brand-policy-http.tranche3.integration.test.ts
+LATER_CONFIG_FINANCIAL_NON_REGRESSION = EXECUTABLE_PROOF
+FINANCIAL_DOCUMENT_PROOF_END
+```
+
 `IMPLEMENTATION_COMPLETE` may become YES only after that objective proof. Acceptance stays NO until independent implementation review, Founder UAT, and formal reconciliation.
 
 These broader concurrency topics remain open for Tranche 5 and are not globally closed by Tranche 2 or Tranche 3: assortment-rule mutation concurrency, price/tax/promotion concurrent mutation, new Outlet/serviceability topology concurrency, and Cart mutation/payment ordering. The bounded payment-bind path accepted in Tranche 2 stays as accepted.
