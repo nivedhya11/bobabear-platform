@@ -31,10 +31,10 @@
     "note": "Protected evidence and generated reports are never classified as executable test source."
   },
   "counts": {
-    "trackedPathsConsidered": 2187,
-    "executableTestFiles": 474,
-    "sourceTestFiles": 141,
-    "testsTreeExecutableFiles": 261,
+    "trackedPathsConsidered": 2190,
+    "executableTestFiles": 476,
+    "sourceTestFiles": 142,
+    "testsTreeExecutableFiles": 262,
     "scriptTestFiles": 72,
     "playwrightSpecs": 12,
     "vitestConfigs": 2,
@@ -67,6 +67,7 @@
     "src/components/operations/OperationsOrderListClient.test.tsx",
     "src/components/operations/OperationsRefundPanel.test.tsx",
     "src/components/operations/store/StorePickupProfileClient.test.tsx",
+    "src/components/operations/store/StoreSchedulingProfileClient.test.tsx",
     "src/components/operations/store/StoreShell.test.tsx",
     "src/components/ordering/CartClient.test.tsx",
     "src/components/ordering/CartLineList.test.tsx",
@@ -386,6 +387,7 @@
     "tests/operations/refunds-http.integration.test.ts",
     "tests/operations/runtime-service.integration.test.ts",
     "tests/operations/scheduling-http.tranche3.integration.test.ts",
+    "tests/operations/scheduling-profile-workforce-journey.integration.test.ts",
     "tests/operations/store-http.integration.test.ts",
     "tests/operations/workforce-principal-adapter.test.ts",
     "tests/order-auth-integration/order.auth-integration.test.ts",
@@ -2943,6 +2945,24 @@
     },
     {
       "path": "src/components/operations/store/StorePickupProfileClient.test.tsx",
+      "runner": "vitest",
+      "domain": "components/operations",
+      "testType": "component-or-tsx",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test",
+        "test:coverage"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "2-component"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "src/components/operations/store/StoreSchedulingProfileClient.test.tsx",
       "runner": "vitest",
       "domain": "components/operations",
       "testType": "component-or-tsx",
@@ -8680,6 +8700,25 @@
     },
     {
       "path": "tests/operations/scheduling-http.tranche3.integration.test.ts",
+      "runner": "vitest",
+      "domain": "operations",
+      "testType": "integration",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:imp036i:tranche3",
+        "test:operations:http"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "4-integration",
+        "5-database-integration"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/operations/scheduling-profile-workforce-journey.integration.test.ts",
       "runner": "vitest",
       "domain": "operations",
       "testType": "integration",
