@@ -12,7 +12,12 @@ IMPLEMENTATION_AUTHORIZED: NO
 
 FOUNDER_DISCOVERY_DIRECTION: APPROVED_FOR_DISCOVERY
 FOUNDER_DISCOVERY_DIRECTION_RECORDED: 2026-09-26
-OPEN_DISCOVERY_QUESTIONS: see §21
+FOUNDER_DISCOVERY_DECISIONS: RRD-01 through RRD-08 — APPROVED / RECORDED
+FOUNDER_DISCOVERY_DECISIONS_RECORDED: 2026-09-26
+RECORDED_AS: FOUNDER_APPROVED_DISCOVERY_DIRECTION
+OPEN_FOUNDER_DISCOVERY_DECISIONS: 0
+OPEN_ARCHITECTURE_QUESTIONS: see §22 — intentionally open
+OPEN_DISCOVERY_QUESTIONS: founder questions resolved in §21; architecture questions remain in §22
 
 WORKING_CAPABILITY_NAME: Revenue Recommendations
 CANDIDATE_WORKING_LABEL: "IMP-036K" — CANDIDATE / WORKING LABEL / NOT GOVERNANCE IDENTITY
@@ -31,6 +36,13 @@ FORMAL_PRODUCT_DEFINITION_APPROVAL
   ≠
 ROADMAP_IDENTITY / ACTIVATION / GATE / FIT / IMPLEMENTATION_AUTHORIZED
 ```
+
+RRD-01 through RRD-08 are recorded as `FOUNDER_APPROVED_DISCOVERY_DIRECTION` only.
+They are not Product Definition approval, Product Definition Gate approval, Architecture Fit,
+an architecture lock, ROADMAP allocation, formal IMP identity, or implementation authorization.
+
+Founder discovery completeness is not Product Definition completeness and is not architecture
+readiness. `OPEN_FOUNDER_DISCOVERY_DECISIONS: 0` does not mean `OPEN_ARCHITECTURE_QUESTIONS: 0`.
 
 `"IMP-036K"` is a **candidate / working label only**. It is not allocated, not activated,
 not ROADMAP identity, and does not reserve sequence authority. Formal promotion may remap it.
@@ -67,6 +79,12 @@ No earlier SHA was assumed, because IMP-036I work was merging in parallel.
 | Active slice | IMP-036I — Scheduled Fulfilment (do not interfere) |
 | Held slices | IMP-037 / IMP-038 holds are unchanged by this discovery |
 | Precedent | `docs/platform/discovery/offers-deals-campaigns.md` (structural precedent only) |
+
+Founder-decision persistence was applied on clean `origin/main`
+`a57aa24a525e39832276e60f439c1417654cdfa4` (tree
+`07679d5ee4b03c8cdd44c54c60baab23c8b5b30c`), the merged PR #282 Revenue Recommendations
+discovery checkpoint. The table above remains the provenance of the original discovery branch.
+This update does not amend ROADMAP or STATE.
 
 Epistemic vocabulary: `VERIFIED` | `INFERRED` | `ASSUMED` | `UNVERIFIED` | `NOT_FOUND` | `CONFLICT`.
 
@@ -114,6 +132,10 @@ supplied by its authoritative capability:
 No duplicated money engine. Threshold-completion copy that implies a discount, free item, or
 free delivery is Offers / Promotions behaviour and is **not** created here.
 
+RRD-01 through RRD-08 do not introduce a dependency or an activation between Revenue
+Recommendations and Offers / Deals / Campaigns. Revenue Recommendations may later consume
+authoritative metadata. It does not become a second Offer or Promotion engine.
+
 ---
 
 ## 2. Primary product outcome
@@ -157,7 +179,7 @@ Do not design schema in this document. Architecture Fit owns persistence represe
 |---|---|
 | `PRODUCT_DETAIL` | Complementary products and truthful variant context while the customer is already configuring intent |
 | `CUSTOMIZATION` | Variant and modifier upsells that reuse existing customization authority |
-| `CART` | **Primary placement.** Complete-your-order and category-gap recommendations against current cart composition |
+| `CART` | **Primary placement.** Complete-your-order and category-gap recommendations against current cart composition. Requires at least one cart line (RRD-06). |
 
 ### FOLLOW_UP / later
 
@@ -166,6 +188,20 @@ Do not design schema in this document. Architecture Fit owns persistence represe
 | `MENU_DISCOVERY` | Browse-ranking can change how customers find the assortment. Keep it out of the first candidate so Menu remains assortment discovery, not a recommendation authority. |
 | `CHECKOUT` | **Not V1 by default.** Payment conversion must be protected. |
 | `POST_PURCHASE` | After the order is sealed. Useful later; not required to prove ordering-journey attach. |
+
+### V1 cardinality and default copy (RRD-02)
+
+Maximum means an upper bound, not a quota. Showing 0, 1, 2, or any count below the maximum is
+valid. Do not pad the set with weak or ineligible recommendations. Recommendations remain
+secondary to the primary commerce journey.
+
+| Placement | Maximum visible | Default heading | Composition |
+|---|---|---|---|
+| `PRODUCT_DETAIL` | 3 candidates | Goes great with this | — |
+| `CUSTOMIZATION` | 3 recommendations total | Make it yours | maximum 1 variant upgrade and maximum 2 valid add-ons |
+| `CART` | 4 candidates | Complete your order | at least one cart line required (RRD-06) |
+
+Canonical record: §21 RRD-02 and RRD-06.
 
 ---
 
@@ -180,7 +216,7 @@ Do not design schema in this document. Architecture Fit owns persistence represe
 | `CART_GAP` | A missing category given what is already in the cart | First-class V1. See §8. |
 | `COMMERCIAL_PRIORITY` | Operator merchandising priority among **already eligible** candidates | Priority never bypasses eligibility |
 | `LIMITED_DROP` | Surface an eligible Limited Drop | Drop metadata comes from its own authority. A Drop is not a discount. |
-| `POPULAR` | Rank using a defined popularity basis | Customer-facing "Popular" **requires that basis first**. No claim without evidence. |
+| `POPULAR` | Conditional V1 strategy. Not a launch dependency. Customer-facing Popular uses the RRD-01 evidence rule only. | If evidence is insufficient, do not display "Popular"; use neutral copy. False Popular claims are NOT_SUPPORTED_BY_DESIGN. |
 
 ### Future / follow-up strategies (not V1)
 
@@ -284,20 +320,25 @@ How a category rule resolves to concrete products is an Architecture Fit questio
 
 ## 9. Cart intelligence
 
-`CART_GAP` is a first-class V1 candidate behaviour. The engine should understand **existing cart
-composition**.
+`CART_GAP` is a first-class V1 candidate behaviour. V1 uses **category presence / absence
+only** (RRD-07). The engine should understand existing cart composition at that level.
 
-Examples:
+V1 candidate examples:
 
-| Cart | Gap |
+| Cart composition | Eligible gap |
 |---|---|
-| Burger + fries | Missing beverage |
-| Boba only | Food attach opportunity |
-| Multiple mains and too few beverages | Possible quantity-aware beverage recommendation |
+| Main + side, no beverage | Beverage recommendation |
+| Beverage-only cart | Food recommendation |
+| Main, no complementary side | Side recommendation |
 
-Basic composition (what categories are present or absent) is the V1 candidate.
-**Advanced quantity inference is FOLLOW_UP** unless a later Product Definition finds it
-necessary. This story map does not make group-size inference mandatory for a first release.
+V1 does not infer number of diners, group size, "too few drinks", quantity balancing,
+per-person beverage need, or family or group composition. Quantity-aware group inference
+remains **FOLLOW_UP**. Story RR-US-043 stays FOLLOW_UP.
+
+V1 Cart recommendation placement requires at least one cart line (RRD-06). An empty cart does
+not render Revenue Recommendations in the Cart placement. Existing empty-cart and
+menu-discovery UX stays. Cart recommendations must not become a replacement Menu discovery
+feed. `MENU_DISCOVERY` remains FOLLOW_UP.
 
 ---
 
@@ -423,19 +464,42 @@ Discovery constraints:
 
 Customer-facing wording must be truthful.
 
-Safe candidate copy (no unsupported data claim):
+Default placement headings (RRD-02):
 
-- Complete your order
-- Goes great with this
+- Product detail: Goes great with this
+- Customization: Make it yours
+- Cart: Complete your order
+
+Other truthful candidate copy, where the underlying fact is true:
+
 - Try the latest Drop
-- You might also like
+- Limited Drop
+- You might also like (neutral copy; not a Popular claim)
+
+When an eligible candidate is both `LIMITED_DROP` and `COMMERCIAL_PRIORITY`, customer-facing
+semantics use `LIMITED_DROP` (RRD-05). Commercial priority stays internal ranking metadata and
+is never a customer-facing reason. Do not show "Commercial Priority", "High Margin",
+"Promoted because we want to sell this", or an equivalent internal merchandising rationale.
+Commercial priority may affect ordering only inside the already-eligible set.
 
 Claims that require actual supporting data or semantics before use:
 
 - Frequently bought together
 - Recommended for you
 - Trending
-- Popular
+- Popular (conditional V1 only under RRD-01; otherwise use neutral copy and do not display "Popular")
+
+### Removal suppression (RRD-03)
+
+When the customer adds an item through a recommendation and later removes that cart line,
+suppress that exact recommendation candidate from recommendation placements for the remainder
+of the active cart or session.
+
+Suppression does not make the item unavailable, does not prevent manual Menu or Product
+discovery, does not prevent a manual add, and does not modify assortment or catalog truth.
+A new cart or session may recommend it again.
+
+Session-storage representation is not defined here. It remains an Architecture Fit question.
 
 ---
 
@@ -502,6 +566,27 @@ A purchased item is recommendation-assisted when all of the following are true:
 **View-through attribution is FOLLOW_UP.** Seeing a recommendation without using the add action
 is not V1 assisted revenue.
 
+### Attribution continuity after edits (RRD-08)
+
+Recommendation-assisted attribution survives:
+
+- quantity changes
+- valid modifier or customization changes
+
+when the same underlying recommended product / cart-line identity remains.
+
+Attribution does not survive:
+
+- the customer removes the recommended line and later manually adds the item
+- replacement with a different product
+- manual recreation that is not initiated from a recommendation action
+
+If the customer later re-adds the product using a recommendation action, that creates a new
+recommendation-assisted lineage.
+
+Do not prescribe an analytics storage schema. Architecture Fit owns technical correlation
+mechanics. Examples in the companion story map follow this continuity rule.
+
 ---
 
 ## 18. Metrics
@@ -533,7 +618,18 @@ is not V1 assisted revenue.
 
 Control / holdout measurement should be DESIGN_READY so incremental contribution is not confused
 with customers who would have bought the item anyway. A large experimentation platform is not a
-V1 requirement. Assignment mechanics are Architecture Fit.
+V1 requirement.
+
+V1 direction (RRD-04): design-ready for a **10% session-level recommendation holdout**.
+Assignment is stable for the active ordering session or cart, approximately 10% holdout, and
+the remaining sessions may receive recommendations. Holdout customers see no recommendation
+modules and receive no special customer-facing message. Holdout changes recommendation
+presentation only. It must not change catalog or menu eligibility, product availability, prices,
+offers, promotions, fulfilment, cart behavior, checkout, payment, or customer entitlements.
+
+The experiment assignment mechanism remains `ARCHITECTURE_FIT_REQUIRED`. RR-US-320 stays
+design-ready with that mechanism unresolved. RR-US-321 records the customer-visible holdout
+direction as `V1_CANDIDATE / FOUNDER_DIRECTION_RESOLVED`.
 
 ---
 
@@ -560,7 +656,10 @@ Approved working direction:
 - mandatory analytics
 - no false personalization, frequently-bought-together, or trending claims
 
-Anything material beyond this list stays an open discovery question (§21).
+The eight founder questions that remained after that direction are recorded in §21 as RRD-01
+through RRD-08 (`FOUNDER_APPROVED_DISCOVERY_DIRECTION`). `OPEN_FOUNDER_DISCOVERY_DECISIONS: 0`.
+Architecture Fit questions in §22 stay open. This completeness is not Product Definition
+completeness and is not architecture readiness.
 
 ---
 
@@ -576,18 +675,194 @@ Anything material beyond this list stays an open discovery question (§21).
 
 ---
 
-## 21. Open discovery questions
+## 21. Founder discovery decisions
 
-These are product questions. They are not answered here.
+```text
+FOUNDER_DISCOVERY_DECISIONS: RRD-01 through RRD-08
+STATUS_OF_DECISIONS: APPROVED / RECORDED
+RECORDED_AS: FOUNDER_APPROVED_DISCOVERY_DIRECTION
+RECORDED: 2026-09-26
+OPEN_FOUNDER_DISCOVERY_DECISIONS: 0
+```
 
-1. What evidence defines `POPULAR`, and what customer copy is allowed before that evidence exists?
-2. How many candidates does each V1 placement show, and which safe copy belongs to each?
-3. After the customer removes a recommended line, is that candidate suppressed for the rest of the session?
-4. What customer-visible holdout policy is acceptable (who may see no recommendations) so incrementality can be measured without harming trust?
-5. When Limited Drop status and commercial priority both apply, which truthful label does the customer see?
-6. On an empty cart, does the cart placement render anything?
-7. Which cart-gap examples are category-absence only in V1, given that quantity-aware group inference is FOLLOW_UP?
-8. Must a recommendation-assisted line stay attributable if the customer later changes quantity or modifiers before purchase?
+Founder approved all eight discovery decisions. They replace the eight open founder/product
+questions previously listed here. They constrain future Architecture Fit. They do not answer
+it. Architecture questions remain in §22.
+
+These decisions are not Product Definition approval, Product Definition Gate approval,
+Architecture Fit, an architecture lock, ROADMAP allocation, formal IMP identity, or
+implementation authorization.
+
+### RRD-01 — POPULAR evidence and claim threshold
+
+`POPULAR` remains a conditional V1 strategy. `POPULAR` is not a launch dependency.
+
+Customer-facing popularity evaluation uses:
+
+- trailing 30 days
+- successfully purchased BOBA Bear direct Orders
+- selected Outlet scope
+
+Minimum evidence: at least 30 purchased Orders in the relevant Outlet scope.
+
+When sufficient evidence exists, only the top 3 eligible products by purchased unit count
+within the relevant category may receive Popular treatment.
+
+If evidence is insufficient:
+
+- do not display "Popular"
+- use neutral recommendation copy instead
+- the recommendation capability may otherwise continue normally
+
+Do not define database query or schema mechanics here. Architecture Fit owns implementation
+mechanics.
+
+Story map: RR-US-302 is `V1_CANDIDATE / FOUNDER_DIRECTION_RESOLVED`. False Popular claims
+remain `NOT_SUPPORTED_BY_DESIGN`.
+
+### RRD-02 — V1 recommendation cardinality and default copy
+
+| Placement | Maximum visible | Default heading | Normal composition |
+|---|---|---|---|
+| `PRODUCT_DETAIL` | 3 candidates | Goes great with this | — |
+| `CUSTOMIZATION` | 3 recommendations total | Make it yours | maximum 1 variant upgrade; maximum 2 valid add-ons |
+| `CART` | 4 candidates | Complete your order | — |
+
+Maximum means an upper bound, not a quota. Showing 0, 1, 2, or fewer than the maximum is
+valid. Do not require padding with weak or ineligible recommendations. Recommendations remain
+secondary to the primary commerce journey.
+
+### RRD-03 — customer removal suppression
+
+When the customer adds an item through a recommendation and subsequently removes that cart
+line, suppress that exact recommendation candidate from recommendation placements for the
+remainder of the active cart or session.
+
+This suppression:
+
+- does not make the item unavailable
+- does not prevent manual Menu or Product discovery
+- does not prevent a manual add
+- does not modify assortment or catalog truth
+
+A new cart or session may recommend it again.
+
+Do not define persistence or session-storage architecture here.
+
+Story map: RR-US-113 is `V1_CANDIDATE / FOUNDER_DIRECTION_RESOLVED`.
+
+### RRD-04 — V1 incrementality measurement direction
+
+V1 must be `DESIGN_READY` for a 10% session-level recommendation holdout.
+
+Assignment direction:
+
+- stable for the active ordering session or cart
+- approximately 10% holdout
+- remaining sessions may receive recommendations
+
+Holdout customers simply see no recommendation modules. They receive no special
+customer-facing message.
+
+Holdout must not change:
+
+- catalog or menu eligibility
+- product availability
+- prices
+- offers
+- promotions
+- fulfilment
+- cart behavior
+- checkout
+- payment
+- customer entitlements
+
+Holdout affects recommendation presentation only.
+
+The experiment assignment mechanism remains `ARCHITECTURE_FIT_REQUIRED`.
+
+Story map: RR-US-321 is `V1_CANDIDATE / FOUNDER_DIRECTION_RESOLVED`. RR-US-320 remains
+design-ready, with its implementation mechanism unresolved for Architecture Fit.
+
+### RRD-05 — customer-visible label collision rule
+
+When an eligible candidate is both `LIMITED_DROP` and `COMMERCIAL_PRIORITY`, customer-facing
+semantics use `LIMITED_DROP`.
+
+Commercial priority:
+
+- remains internal ranking metadata
+- is never shown as a customer-facing reason or copy
+
+Customer-facing candidate copy may use "Limited Drop" or "Try the latest Drop" where truthful.
+
+Do not show:
+
+- "Commercial Priority"
+- "High Margin"
+- "Promoted because we want to sell this"
+- or an equivalent internal merchandising rationale
+
+Commercial priority may affect ordering only inside the already-eligible set.
+
+### RRD-06 — empty-cart behavior
+
+V1 Cart recommendation placement requires at least one cart line.
+
+For an empty cart, do not render Revenue Recommendations in the Cart placement.
+
+Preserve the existing empty-cart and menu-discovery UX.
+
+Revenue Recommendations must not turn V1 Cart recommendations into a replacement Menu
+discovery feed. `MENU_DISCOVERY` remains `FOLLOW_UP`.
+
+### RRD-07 — V1 cart-gap scope
+
+V1 `CART_GAP` uses category presence or absence only.
+
+Candidate examples:
+
+- main + side + no beverage → eligible beverage recommendation
+- beverage-only cart → eligible food recommendation
+- main + no complementary side → eligible side recommendation
+
+V1 explicitly does not infer:
+
+- number of diners
+- group size
+- "too few drinks"
+- quantity balancing
+- per-person beverage need
+- family or group composition
+
+Quantity-aware group inference remains `FOLLOW_UP`. RR-US-043 stays `FOLLOW_UP`.
+
+### RRD-08 — recommendation-assisted attribution continuity
+
+Recommendation-assisted attribution survives quantity changes and valid modifier or
+customization changes when the same underlying recommended product or cart-line identity
+remains.
+
+Attribution does not survive:
+
+- the customer removes the recommended line and later manually adds the item
+- replacement with a different product
+- manual recreation that is not initiated from a recommendation action
+
+If the customer later re-adds the product using a recommendation action, that creates a new
+recommendation-assisted lineage.
+
+Do not prescribe an analytics storage schema. Architecture Fit owns technical correlation
+mechanics. Discovery analytics examples follow this rule.
+
+### What remains open
+
+```text
+OPEN_FOUNDER_DISCOVERY_DECISIONS: 0
+OPEN_ARCHITECTURE_QUESTIONS: NOT ZERO — see §22
+PRODUCT_DEFINITION: NOT_CREATED
+ARCHITECTURE_FIT: NOT_PERFORMED
+```
 
 ---
 
@@ -595,6 +870,9 @@ These are product questions. They are not answered here.
 
 Mark: **ARCHITECTURE_FIT_REQUIRED**. Do not treat any answer below as locked architecture.
 This section enumerates questions only.
+
+Founder decisions RRD-01 through RRD-08 constrain future Architecture Fit. They do not answer
+it. `OPEN_FOUNDER_DISCOVERY_DECISIONS: 0` does not close this section.
 
 1. Do recommendations need a durable Recommendation aggregate?
 2. Are relationships catalog metadata, a separate domain, or merchandising configuration?
@@ -604,13 +882,14 @@ This section enumerates questions only.
 6. What existing permissions can administer recommendations?
 7. How is margin / contribution information safely projected without leaking money authority?
 8. How are impression and attribution events persisted?
-9. How are recommendation experiments assigned?
+9. How are recommendation experiments assigned? The 10% session-level holdout policy is recorded in RRD-04. The assignment mechanism remains open.
 10. How does cart mutation reuse existing APIs?
 11. How does selected Outlet / Delivery / Pickup / Scheduled context feed eligibility?
 12. How would future Campaign or Offer metadata become a ranking signal without coupling domains?
-13. What data threshold is required before `POPULAR`, frequently-bought-together, or personalized claims?
+13. How is the Founder-directed `POPULAR` evidence rule (RRD-01) computed and applied, and what future evidence mechanics apply before frequently-bought-together or personalized claims? The product threshold direction is recorded. Query, storage, and ranking mechanics remain Architecture Fit.
 14. What concurrency and revalidation is required between recommendation display and add?
 15. Does V1 require any new schema at all?
+16. How is customer removal suppression (RRD-03) represented for the active cart or session?
 
 ---
 
@@ -624,6 +903,8 @@ This section enumerates questions only.
 - If repository mechanics require editing another file, stop.
 - If `main` moves under IMP-036I work, incorporate `main` only when the diff remains these two
   new paths. On a governance or path conflict, stop.
+- Founder-decision persistence (RRD-01 through RRD-08) updates only these two existing discovery
+  files. It does not activate the capability and does not change any other path.
 
 ---
 
@@ -631,8 +912,20 @@ This section enumerates questions only.
 
 ```text
 STATUS = DISCOVERY_ONLY
-Continue Revenue Recommendations discovery.
-Prepare a formal Product Definition only when program sequencing permits.
+ROADMAP_IDENTITY = NONE
+ACTIVATED = NO
+PRODUCT_DEFINITION = NOT_CREATED
+PRODUCT_DEFINITION_GATE = NOT_PERFORMED
+ARCHITECTURE_FIT = NOT_PERFORMED
+IMPLEMENTATION_AUTHORIZED = NO
+CANDIDATE_WORKING_LABEL = "IMP-036K" — NOT GOVERNANCE IDENTITY
+
+FOUNDER_DISCOVERY_DECISIONS = RRD-01 through RRD-08 APPROVED / RECORDED
+OPEN_FOUNDER_DISCOVERY_DECISIONS = 0
+OPEN_ARCHITECTURE_QUESTIONS = remain intentionally open (§22)
+
+Revenue Recommendations discovery is Founder-decision complete.
+Keep it parked until formal Product Definition / program sequencing is authorized.
 
 Do NOT assign formal IMP identity.
 Do NOT activate the capability.

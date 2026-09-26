@@ -12,6 +12,11 @@ IMPLEMENTATION_AUTHORIZED: NO
 
 FOUNDER_DISCOVERY_DIRECTION: APPROVED_FOR_DISCOVERY
 FOUNDER_DISCOVERY_DIRECTION_RECORDED: 2026-09-26
+FOUNDER_DISCOVERY_DECISIONS: RRD-01 through RRD-08 — APPROVED / RECORDED
+FOUNDER_DISCOVERY_DECISIONS_RECORDED: 2026-09-26
+RECORDED_AS: FOUNDER_APPROVED_DISCOVERY_DIRECTION
+OPEN_FOUNDER_DISCOVERY_DECISIONS: 0
+OPEN_ARCHITECTURE_QUESTIONS: remain open in companion discovery §22
 
 WORKING_CAPABILITY_NAME: Revenue Recommendations
 CANDIDATE_WORKING_LABEL: "IMP-036K" — CANDIDATE / WORKING LABEL / NOT GOVERNANCE IDENTITY
@@ -32,7 +37,14 @@ Companion discovery: revenue-recommendations.md
 
 ```text
 FOUNDER_APPROVED_DISCOVERY_DIRECTION ≠ FORMAL_PRODUCT_DEFINITION_APPROVAL
+OPEN_FOUNDER_DISCOVERY_DECISIONS = 0
+OPEN_ARCHITECTURE_QUESTIONS ≠ 0
 ```
+
+RRD-01 through RRD-08 are recorded founder discovery direction only. They are not Product
+Definition approval, a Product Definition Gate, Architecture Fit, or implementation
+authorization. `V1_CANDIDATE / FOUNDER_DIRECTION_RESOLVED` means the founder question for that
+story is recorded and the story remains a V1 candidate. It is not formal acceptance.
 
 This story map does not amend VISION, ROADMAP, STATE, ARCHITECTURE, decision-register,
 PRODUCT-DELIVERY, TESTING, accepted Product Definitions, capability architectures, or active
@@ -46,7 +58,7 @@ BUSINESS OUTCOME → PERSONA → JOURNEY → ACTIVITY → CANDIDATE STORY
 
 Classifications:
 
-`V1_CANDIDATE` | `FOLLOW_UP` | `DEFERRED` | `NOT_SUPPORTED_BY_DESIGN` | `UNRESOLVED_DECISION_REQUIRED`
+`V1_CANDIDATE` | `V1_CANDIDATE / FOUNDER_DIRECTION_RESOLVED` | `FOLLOW_UP` | `DEFERRED` | `NOT_SUPPORTED_BY_DESIGN` | `UNRESOLVED_DECISION_REQUIRED`
 
 Personas reused from [`docs/platform/product/personas.md`](../product/personas.md) only:
 
@@ -81,10 +93,12 @@ No recommendation-specific role, permission, or persona is invented. A persona g
 | Activity | Story ID | Story | Class |
 |---|---|---|---|
 | See complements | RR-US-001 | As a customer on a product, I can see eligible complementary products that go with this item. | V1_CANDIDATE |
-| Truthful copy | RR-US-002 | As a customer, complementary copy says something like "Goes great with this" and does not claim frequently-bought-together. | V1_CANDIDATE |
+| Truthful copy | RR-US-002 | As a customer, the product-detail default heading is "Goes great with this" and does not claim frequently-bought-together. | V1_CANDIDATE / FOUNDER_DIRECTION_RESOLVED (RRD-02) |
 | Skip | RR-US-003 | As a customer, I can ignore complements and continue with the current product. | V1_CANDIDATE |
 
-**DISCOVERY_ACCEPTANCE_EXAMPLE (A):** On an eligible product, the customer sees one complementary item that is purchasable for the current outlet, and can leave without adding it.
+**Founder direction (RRD-02):** `PRODUCT_DETAIL` shows at most 3 candidates. Fewer, including zero, is valid. Do not pad with weak or ineligible recommendations. Recommendations stay secondary to the product journey.
+
+**DISCOVERY_ACCEPTANCE_EXAMPLE (A):** On an eligible product, the customer sees one complementary item that is purchasable for the current outlet, under "Goes great with this", and can leave without adding it. A second and third candidate may be absent.
 
 ---
 
@@ -100,6 +114,8 @@ No recommendation-specific role, permission, or persona is invented. A persona g
 
 **Depends on:** existing product / customization authority. No parallel customization engine.
 
+**Founder direction (RRD-02):** `CUSTOMIZATION` shows at most 3 recommendations in total: at most 1 variant upgrade and at most 2 valid add-ons. The default heading is "Make it yours". Fewer than the maximum is valid. Do not pad.
+
 ---
 
 ### Journey C — Modifier upsell
@@ -112,7 +128,7 @@ No recommendation-specific role, permission, or persona is invented. A persona g
 | No paid preselect | RR-US-021 | As a customer, a paid modifier is not preselected by the recommendation. | NOT_SUPPORTED_BY_DESIGN to violate |
 | Reuse flow | RR-US-022 | As a customer, choosing the add-on uses the existing customization interaction. | V1_CANDIDATE |
 
-**DISCOVERY_ACCEPTANCE_EXAMPLE (C):** A paid modifier suggestion is visible and unselected until the customer chooses it. ARCH-G20 remains the customization constraint.
+**DISCOVERY_ACCEPTANCE_EXAMPLE (C):** A paid modifier suggestion is visible and unselected until the customer chooses it, inside a "Make it yours" set of at most 3 recommendations. ARCH-G20 remains the customization constraint.
 
 ---
 
@@ -122,11 +138,13 @@ No recommendation-specific role, permission, or persona is invented. A persona g
 
 | Activity | Story ID | Story | Class |
 |---|---|---|---|
-| See completion set | RR-US-030 | As a customer with items in cart, I can see a "Complete your order" set of eligible suggestions. | V1_CANDIDATE |
+| See completion set | RR-US-030 | As a customer with at least one cart line, I can see a "Complete your order" set of at most 4 eligible suggestions. | V1_CANDIDATE / FOUNDER_DIRECTION_RESOLVED (RRD-02, RRD-06) |
 | Continue without them | RR-US-031 | As a customer, I can proceed toward checkout without accepting any suggestion. | V1_CANDIDATE |
 | Checkout not blocked | RR-US-032 | As a customer, missing or failed suggestions never block checkout. | V1_CANDIDATE |
 
-**DISCOVERY_ACCEPTANCE_EXAMPLE (D):** Cart shows a completion suggestion. Checkout stays available if the customer adds nothing.
+**Founder direction (RRD-02, RRD-06):** Cart maximum is 4 candidates under "Complete your order". Showing fewer is valid. Do not pad. An empty cart does not render Revenue Recommendations. Existing empty-cart and menu-discovery UX stays. Cart recommendations are not a replacement Menu discovery feed. `MENU_DISCOVERY` (RR-US-170) remains FOLLOW_UP.
+
+**DISCOVERY_ACCEPTANCE_EXAMPLE (D):** A cart with items shows up to four completion suggestions, or fewer when fewer are eligible. Checkout stays available if the customer adds nothing. An empty cart shows no recommendation module.
 
 ---
 
@@ -140,8 +158,9 @@ No recommendation-specific role, permission, or persona is invented. A persona g
 | Boba only | RR-US-041 | As a customer with only a drink, I can see an eligible food attach suggestion. | V1_CANDIDATE |
 | Composition-aware | RR-US-042 | As a customer, suggestions account for categories already in the cart and do not push an exact duplicate that adds nothing. | V1_CANDIDATE |
 | Quantity-aware groups | RR-US-043 | As a customer with several mains and too few drinks, the platform infers group quantity and sizes the beverage suggestion. | FOLLOW_UP |
+| Side absent | RR-US-044 | As a customer with a main and no complementary side, I can see an eligible side suggestion based on category absence. | V1_CANDIDATE / FOUNDER_DIRECTION_RESOLVED (RRD-07) |
 
-Advanced quantity inference is not first-release mandatory behaviour.
+**Founder direction (RRD-07):** V1 `CART_GAP` uses category presence or absence only. Eligible examples: main + side + no beverage → beverage; beverage-only → food; main + no complementary side → side. V1 does not infer diner count, group size, "too few drinks", quantity balancing, per-person beverage need, or family or group composition. RR-US-043 remains FOLLOW_UP.
 
 ---
 
@@ -157,6 +176,8 @@ Advanced quantity inference is not first-release mandatory behaviour.
 
 Drop facts, if used, come from the Drop's own authority. Static `/#drops` marketing is not that authority.
 
+**Founder direction (RRD-05):** When a candidate is both `LIMITED_DROP` and `COMMERCIAL_PRIORITY`, customer-facing semantics use `LIMITED_DROP`. Truthful copy may be "Limited Drop" or "Try the latest Drop". Commercial priority stays internal ranking metadata and is never customer-facing reason or copy. Do not show "Commercial Priority", "High Margin", "Promoted because we want to sell this", or an equivalent internal merchandising rationale.
+
 ---
 
 ### Journey G — Commercial-priority recommendation
@@ -167,6 +188,9 @@ Drop facts, if used, come from the Drop's own authority. Static `/#drops` market
 |---|---|---|---|
 | Priority among eligible items | RR-US-060 | As a customer, when several items are eligible, merchandising priority can change their order. | V1_CANDIDATE |
 | No eligibility bypass | RR-US-061 | As a customer, a high-priority item that is inactive, unavailable, or out of assortment is not shown as purchasable. | NOT_SUPPORTED_BY_DESIGN to violate |
+| Internal rationale hidden | RR-US-062 | As a customer, commercial priority can change order inside the eligible set and is never shown as the reason I see the item. | V1_CANDIDATE / FOUNDER_DIRECTION_RESOLVED (RRD-05) |
+
+**Founder direction (RRD-05):** Label collision with Limited Drop uses the Limited Drop customer-facing semantics. Commercial priority may affect ordering only inside the already-eligible set.
 
 ---
 
@@ -233,7 +257,9 @@ Candidate architecture-fit invariant only: recommendation failure must not block
 | Remove line | RR-US-110 | As a customer, I can remove a line I added from a recommendation using ordinary cart removal. | V1_CANDIDATE |
 | Totals follow cart | RR-US-111 | As a customer, removal updates cart through existing cart rules. | V1_CANDIDATE |
 | Removal measured | RR-US-112 | As a customer action, removal can emit `RECOMMENDATION_REMOVED`. | V1_CANDIDATE |
-| Session suppression | RR-US-113 | As a customer, removing an item hides that same recommendation for the rest of the session. | UNRESOLVED_DECISION_REQUIRED |
+| Session suppression | RR-US-113 | As a customer, when I add an item through a recommendation and later remove that cart line, that exact candidate is suppressed from recommendation placements for the rest of the active cart or session. The item stays available for manual Menu or Product discovery and manual add. A new cart or session may recommend it again. | V1_CANDIDATE / FOUNDER_DIRECTION_RESOLVED (RRD-03) |
+
+Suppression does not change assortment or catalog truth. How the active cart or session stores that suppression is `ARCHITECTURE_FIT_REQUIRED`. It is not defined here.
 
 ---
 
@@ -245,11 +271,13 @@ Candidate architecture-fit invariant only: recommendation failure must not block
 |---|---|---|---|
 | Render and impression | RR-US-120 | When a set renders, the platform can record set render and per-item impression with placement, strategy, rank, and correlation ids. | V1_CANDIDATE |
 | Click and add | RR-US-121 | Click, add attempt, and successful add are distinguishable events. | V1_CANDIDATE |
-| Assisted purchase | RR-US-122 | A purchased item counts as recommendation-assisted only when it was presented, added through the recommendation action, and survives onto the purchased Order. | V1_CANDIDATE |
+| Assisted purchase | RR-US-122 | A purchased item counts as recommendation-assisted only when it was presented, added through the recommendation action, and survives onto the purchased Order. Quantity changes and valid modifier changes keep that attribution when the same recommended product or cart-line identity remains. | V1_CANDIDATE / FOUNDER_DIRECTION_RESOLVED (RRD-08) |
 | View-through | RR-US-123 | A purchase counts as assisted merely because the item was seen. | FOLLOW_UP |
 | Persistence design | RR-US-124 | Analytics storage shape is specified as product semantics in discovery. | ARCHITECTURE_FIT_REQUIRED — not a story commitment |
 
-**DISCOVERY_ACCEPTANCE_EXAMPLE (M):** Customer adds from cart recommendations and completes purchase with that line still present. The item is recommendation-assisted. A different item they noticed but added from Menu is not, in V1.
+**Founder direction (RRD-08):** Attribution survives quantity changes and valid modifier or customization changes on the same recommended product or cart-line identity. It does not survive removal followed by a later manual add, replacement with a different product, or manual recreation that did not start from a recommendation action. A later recommendation add starts a new recommendation-assisted lineage. Analytics storage schema is not prescribed (RR-US-124 remains `ARCHITECTURE_FIT_REQUIRED`).
+
+**DISCOVERY_ACCEPTANCE_EXAMPLE (M):** Customer adds from cart recommendations, changes quantity and a valid modifier, and completes purchase with that same line still present. The item is recommendation-assisted. If they remove that line and later add the same product from Menu, V1 does not keep the earlier attribution. A different item they noticed but added from Menu is not recommendation-assisted. Re-adding through a recommendation action starts a new lineage.
 
 ---
 
@@ -354,12 +382,12 @@ No new role.
 |---|---|---|---|
 | Server-authoritative eligibility | RR-US-300 | Eligibility is decided on the server from existing commerce truth, not by the client inventing purchasability. | V1_CANDIDATE |
 | Deterministic ranking | RR-US-301 | V1 ranking is rule-based. | V1_CANDIDATE |
-| Popular only with a basis | RR-US-302 | Customer-facing "Popular" requires a defined popularity basis. | UNRESOLVED_DECISION_REQUIRED until that basis is chosen; false Popular is NOT_SUPPORTED_BY_DESIGN |
+| Popular only with a basis | RR-US-302 | Customer-facing "Popular" uses trailing 30 days of successfully purchased BOBA Bear direct Orders in the selected Outlet scope, at least 30 purchased Orders, and only the top 3 eligible products by purchased unit count in the relevant category. If evidence is insufficient, "Popular" is not displayed and neutral copy is used. Popular is a conditional V1 strategy and not a launch dependency. | V1_CANDIDATE / FOUNDER_DIRECTION_RESOLVED (RRD-01); false Popular remains NOT_SUPPORTED_BY_DESIGN |
 | No silent cart mutation | RR-US-310 | The platform never silently adds a recommended product, changes a variant, or preselects a paid modifier. | NOT_SUPPORTED_BY_DESIGN to violate |
 | No recommendation discount | RR-US-311 | This capability does not create a discount, promotion, offer, or campaign. | NOT_SUPPORTED_BY_DESIGN to violate |
-| Safe copy | RR-US-312 | Default copy stays within truthful phrases (Complete your order, Goes great with this, Try the latest Drop, You might also like). | V1_CANDIDATE |
-| Holdout design | RR-US-320 | Incrementality can be measured with a control or holdout without a large experimentation platform. | DESIGN_READY / V1_CANDIDATE direction; assignment mechanism is ARCHITECTURE_FIT_REQUIRED |
-| Holdout customer policy | RR-US-321 | Which customers may see an empty recommendation set for measurement. | UNRESOLVED_DECISION_REQUIRED |
+| Safe copy | RR-US-312 | Default headings are "Goes great with this" (product detail), "Make it yours" (customization), and "Complete your order" (cart). Truthful candidate copy may also use "Try the latest Drop", "Limited Drop", and neutral "You might also like". Internal merchandising rationale is not customer copy. | V1_CANDIDATE / FOUNDER_DIRECTION_RESOLVED (RRD-02, RRD-05) |
+| Holdout design | RR-US-320 | Incrementality can be measured with a control or holdout without a large experimentation platform. V1 is design-ready for an approximately 10% session-level holdout that is stable for the active ordering session or cart. | DESIGN_READY / V1_CANDIDATE direction; assignment mechanism is ARCHITECTURE_FIT_REQUIRED |
+| Holdout customer policy | RR-US-321 | About 10% of sessions see no recommendation modules and no special message. Holdout does not change catalog or menu eligibility, availability, prices, offers, promotions, fulfilment, cart behavior, checkout, payment, or customer entitlements. | V1_CANDIDATE / FOUNDER_DIRECTION_RESOLVED (RRD-04) |
 | Checkout recommendations | RR-US-322 | Checkout is a V1 placement. | NOT_SUPPORTED_BY_DESIGN as a V1 default (`FOLLOW_UP` only) |
 
 ---
@@ -368,15 +396,17 @@ No new role.
 
 | Class | Stories |
 |---|---|
-| V1_CANDIDATE | RR-US-001, 002, 003, 010, 011, 012, 020, 022, 030, 031, 032, 040, 041, 042, 050, 051, 060, 070, 072, 080, 081, 082, 090, 091, 092, 100, 101, 110, 111, 112, 120, 121, 122, 130, 131, 200, 201, 202, 210, 211, 212, 220, 222, 300, 301, 312 |
+| V1_CANDIDATE | RR-US-001, 002, 003, 010, 011, 012, 020, 022, 030, 031, 032, 040, 041, 042, 044, 050, 051, 060, 062, 070, 072, 080, 081, 082, 090, 091, 092, 100, 101, 110, 111, 112, 113, 120, 121, 122, 130, 131, 200, 201, 202, 210, 211, 212, 220, 222, 300, 301, 302, 312, 321 |
 | FOLLOW_UP | RR-US-043, 123, 140, 150, 151, 152, 160, 170, 171, 172 |
 | DEFERRED | RR-US-153 |
-| UNRESOLVED_DECISION_REQUIRED | RR-US-113, 302, 321 |
-| NOT_SUPPORTED_BY_DESIGN | Violations of RR-US-021, 052, 061, 071, 102, 141, 150/151 false claims, 161, 221, 310, 311; checkout-as-V1-default (RR-US-322) |
-| ARCHITECTURE_FIT_REQUIRED (not product stories) | RR-US-124, 203, 223; experiment assignment inside RR-US-320 |
+| UNRESOLVED_DECISION_REQUIRED | NONE — founder discovery decisions RRD-01 through RRD-08 are recorded |
+| NOT_SUPPORTED_BY_DESIGN | Violations of RR-US-021, 052, 061, 071, 102, 141, 150/151 false claims, false Popular claims on RR-US-302, 161, 221, 310, 311; checkout-as-V1-default (RR-US-322) |
+| ARCHITECTURE_FIT_REQUIRED (not product stories) | RR-US-124, 203, 223; experiment assignment inside RR-US-320; session-suppression representation for RR-US-113; Popular evidence mechanics for RR-US-302; holdout assignment for RR-US-321 |
+
+`V1_CANDIDATE / FOUNDER_DIRECTION_RESOLVED` stories in that V1 list: RR-US-002, 030, 044, 062, 113, 122, 302, 312, 321.
 
 Counts are discovery estimates. Product Definition may remap them.
-`OPEN` product questions also live in the companion discovery §21 (copy per placement, empty-cart behaviour, label collision between Drop and commercial priority, attribution after later edits).
+`OPEN_FOUNDER_DISCOVERY_DECISIONS: 0`. Companion discovery §21 records RRD-01 through RRD-08, including cardinality, placement copy, empty-cart behaviour, Limited Drop / commercial-priority label collision, and attribution after quantity or modifier edits. Architecture questions remain open in companion discovery §22. Founder discovery completeness is not Product Definition completeness and is not architecture readiness.
 
 ---
 
@@ -399,8 +429,20 @@ Counts are discovery estimates. Product Definition may remap them.
 
 ```text
 STATUS = DISCOVERY_ONLY
-Continue Revenue Recommendations discovery / prepare a formal Product Definition
-only when program sequencing permits.
+ROADMAP_IDENTITY = NONE
+ACTIVATED = NO
+PRODUCT_DEFINITION = NOT_CREATED
+PRODUCT_DEFINITION_GATE = NOT_PERFORMED
+ARCHITECTURE_FIT = NOT_PERFORMED
+IMPLEMENTATION_AUTHORIZED = NO
+CANDIDATE_WORKING_LABEL = "IMP-036K" — NOT GOVERNANCE IDENTITY
+
+FOUNDER_DISCOVERY_DECISIONS = RRD-01 through RRD-08 APPROVED / RECORDED
+OPEN_FOUNDER_DISCOVERY_DECISIONS = 0
+OPEN_ARCHITECTURE_QUESTIONS = remain intentionally open
+
+Revenue Recommendations discovery is Founder-decision complete.
+Keep it parked until formal Product Definition / program sequencing is authorized.
 
 Do NOT allocate, activate, or treat "IMP-036K" as governance identity.
 Do NOT change acceptedThrough, IMP-036I, IMP-037/038 holds, or the IMP-040 GTM boundary.
