@@ -3,11 +3,13 @@
  */
 import { randomUUID } from "node:crypto";
 
+import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 
 import {
   priceBookBundleOptionPricesTable,
   priceBookModifierPricesTable,
+  priceBooksTable,
 } from "../../src/platform/database/schema/pricing";
 import { TAX_CATEGORY_RESTAURANT_SERVICE_ID } from "../../src/shared/pricing";
 import {
@@ -41,8 +43,26 @@ import {
   createActiveStandardVariant,
   withAssortmentDomain,
 } from "../assortment-availability/support";
+import type { PersistenceTransactionContext } from "../../src/server/persistence/types";
 
 const AT = new Date("2026-08-08T12:00:00+05:30");
+
+/**
+ * The activation command now rejects this hierarchy. A direct status update
+ * keeps the already-active illegal book the resolver must still fail closed on.
+ */
+async function markPriceBookActive(
+  tx: PersistenceTransactionContext,
+  priceBookId: string,
+): Promise<void> {
+  await tx.db
+    .update(priceBooksTable)
+    .set({
+      lifecycleStatus: "active",
+      activatedAt: new Date(),
+    })
+    .where(eq(priceBooksTable.id, priceBookId));
+}
 
 async function activateBrandBaseline(
   persistence: Parameters<Parameters<typeof withAssortmentDomain>[0]>[0],
@@ -170,13 +190,7 @@ describe("resolveOutletVariantPrice", () => {
 
           expectedPriceBookRevision: outletBook.revision,
         });
-        await activatePriceBook(tx, {
-          actor: brandAdminActor,
-          priceBookId: outletBook.id,
-          brandId: tree.brand.id,
-
-          expectedPriceBookRevision: outletBook.revision + BigInt(1),
-        });
+        await markPriceBookActive(tx, outletBook.id);
       });
 
       await expect(
@@ -284,13 +298,7 @@ describe("resolveOutletVariantPrice", () => {
 
           expectedPriceBookRevision: book.revision,
         });
-        await activatePriceBook(tx, {
-          actor: brandAdminActor,
-          priceBookId: book.id,
-          brandId: tree.brand.id,
-
-          expectedPriceBookRevision: book.revision + BigInt(1),
-        });
+        await markPriceBookActive(tx, book.id);
       });
 
       await expect(
@@ -517,13 +525,7 @@ describe("resolveOutletVariantPrice", () => {
 
           expectedPriceBookRevision: low.revision,
         });
-        await activatePriceBook(tx, {
-          actor: brandAdminActor,
-          priceBookId: low.id,
-          brandId: tree.brand.id,
-
-          expectedPriceBookRevision: low.revision + BigInt(1),
-        });
+        await markPriceBookActive(tx, low.id);
       });
       await expect(
         persistence.withContext((ctx) =>
@@ -572,13 +574,7 @@ describe("resolveOutletVariantPrice", () => {
 
           expectedPriceBookRevision: high.revision,
         });
-        await activatePriceBook(tx, {
-          actor: brandAdminActor,
-          priceBookId: high.id,
-          brandId: tree.brand.id,
-
-          expectedPriceBookRevision: high.revision + BigInt(1),
-        });
+        await markPriceBookActive(tx, high.id);
       });
       await expect(
         persistence.withContext((ctx) =>

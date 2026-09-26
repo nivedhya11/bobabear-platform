@@ -37,9 +37,11 @@ import {
   PricingConflictError,
   PricingInvalidStateError,
   PricingNotFoundError,
+  PricingResolutionError,
   PricingValidationError,
 } from "./errors";
 import { requireOutletPricingManage, requirePricingManage } from "./authorize-pricing";
+import { validatePriceBookActivation } from "./validate-price-book-activation";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -799,6 +801,15 @@ export async function activatePriceBook(
       code: "PRICE_BOOK_OVERLAP",
       message: "Active price books may not overlap at the same scope/channel/currency.",
     });
+  }
+
+  const activationFailures = await validatePriceBookActivation(context, {
+    priceBookId: book.id,
+    at: new Date(),
+  });
+  const activationFailure = activationFailures[0];
+  if (activationFailure) {
+    throw new PricingResolutionError(activationFailure.code, activationFailure.message);
   }
 
   const now = new Date();

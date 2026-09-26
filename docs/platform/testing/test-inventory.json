@@ -31,10 +31,10 @@
     "note": "Protected evidence and generated reports are never classified as executable test source."
   },
   "counts": {
-    "trackedPathsConsidered": 2190,
-    "executableTestFiles": 476,
+    "trackedPathsConsidered": 2192,
+    "executableTestFiles": 477,
     "sourceTestFiles": 142,
-    "testsTreeExecutableFiles": 262,
+    "testsTreeExecutableFiles": 263,
     "scriptTestFiles": 72,
     "playwrightSpecs": 12,
     "vitestConfigs": 2,
@@ -425,6 +425,7 @@
     "tests/pricing-parity/parity.test.ts",
     "tests/pricing-tax/delivery-tariff.test.ts",
     "tests/pricing-tax/money.test.ts",
+    "tests/pricing-tax/price-book-activation-guard.test.ts",
     "tests/pricing-tax/price-book-f4-correction.test.ts",
     "tests/pricing-tax/price-book-revision.test.ts",
     "tests/pricing-tax/resolve.test.ts",
@@ -9377,6 +9378,23 @@
     },
     {
       "path": "tests/pricing-tax/money.test.ts",
+      "runner": "vitest",
+      "domain": "pricing-tax",
+      "testType": "unit-or-domain",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:pricing-tax"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "1-unit"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/pricing-tax/price-book-activation-guard.test.ts",
       "runner": "vitest",
       "domain": "pricing-tax",
       "testType": "unit-or-domain",

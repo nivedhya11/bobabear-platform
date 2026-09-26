@@ -177,8 +177,8 @@ export function previewPriceBookActivation(brandId: string, priceBookId: string)
       }>[];
       customerMonetaryConsequence: string;
       wouldChangeCustomerPricing: boolean;
-      overlapBlockers: readonly string[];
-      referenceBlockers: readonly string[];
+      overlapBlockers: readonly Readonly<{ code: string; message: string }>[];
+      referenceBlockers: readonly Readonly<{ code: string; message: string }>[];
     }>;
   }>(`${brandPricing(brandId)}/price-books/${priceBookId}/consequence-preview`, {
     method: "POST",
