@@ -31,10 +31,10 @@
     "note": "Protected evidence and generated reports are never classified as executable test source."
   },
   "counts": {
-    "trackedPathsConsidered": 2187,
-    "executableTestFiles": 474,
-    "sourceTestFiles": 141,
-    "testsTreeExecutableFiles": 261,
+    "trackedPathsConsidered": 2190,
+    "executableTestFiles": 476,
+    "sourceTestFiles": 142,
+    "testsTreeExecutableFiles": 262,
     "scriptTestFiles": 72,
     "playwrightSpecs": 12,
     "vitestConfigs": 2,
@@ -67,6 +67,7 @@
     "src/components/operations/OperationsOrderListClient.test.tsx",
     "src/components/operations/OperationsRefundPanel.test.tsx",
     "src/components/operations/store/StorePickupProfileClient.test.tsx",
+    "src/components/operations/store/StoreSchedulingProfileClient.test.tsx",
     "src/components/operations/store/StoreShell.test.tsx",
     "src/components/ordering/CartClient.test.tsx",
     "src/components/ordering/CartLineList.test.tsx",
@@ -386,6 +387,7 @@
     "tests/operations/refunds-http.integration.test.ts",
     "tests/operations/runtime-service.integration.test.ts",
     "tests/operations/scheduling-http.tranche3.integration.test.ts",
+    "tests/operations/scheduling-profile-workforce-journey.integration.test.ts",
     "tests/operations/store-http.integration.test.ts",
     "tests/operations/workforce-principal-adapter.test.ts",
     "tests/order-auth-integration/order.auth-integration.test.ts",
@@ -862,12 +864,12 @@
     "test:e2e:workforce-auth": "npm run build && npm run workforce-auth:build && node scripts/e2e/run-workforce-auth-e2e.mjs",
     "test:imp036i:tranche1": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/database/imp036i-scheduled-fulfilment.integration.test.ts tests/delivery-application/delivery.d380-finality.test.ts",
     "test:imp036i:tranche2": "node scripts/run-vitest.mjs run tests/scheduled-fulfilment/windows.test.ts && node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/checkout/scheduled-fulfilment.domain.test.ts tests/payment/payment.scheduled.domain.test.ts tests/payment/payment.scheduled-bind-race.domain.test.ts",
-    "test:imp036i:tranche3": "node scripts/run-vitest.mjs run tests/scheduled-fulfilment/operational-cues.test.ts src/components/ordering/CheckoutTimingChoice.test.tsx src/shared/notifications/customer-visible-content.test.ts && node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/checkout/scheduled-surfaces.tranche3.test.ts tests/customer-commerce/scheduled-http.tranche3.integration.test.ts tests/administration/admin-brand-policy-http.tranche3.integration.test.ts tests/operations/scheduling-http.tranche3.integration.test.ts",
+    "test:imp036i:tranche3": "node scripts/run-vitest.mjs run tests/scheduled-fulfilment/operational-cues.test.ts src/components/ordering/CheckoutTimingChoice.test.tsx src/shared/notifications/customer-visible-content.test.ts && node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/checkout/scheduled-surfaces.tranche3.test.ts tests/customer-commerce/scheduled-http.tranche3.integration.test.ts tests/administration/admin-brand-policy-http.tranche3.integration.test.ts tests/operations/scheduling-http.tranche3.integration.test.ts tests/operations/scheduling-profile-workforce-journey.integration.test.ts",
     "test:imp036i:tranche4": "node scripts/run-vitest.mjs run src/shared/scheduled-fulfilment/cancellation.test.ts src/shared/notifications/notifications.domain.test.ts src/shared/notifications/customer-visible-content.test.ts && node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/order/scheduled-cancellation-reminder.tranche4.integration.test.ts",
     "test:imp036i:tranche5": "node scripts/run-vitest.mjs run tests/scheduled-fulfilment/tranche5-traceability.test.ts && node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/payment/payment.tranche5-hardening.integration.test.ts tests/payment/payment.scheduled-bind-race.domain.test.ts tests/order/scheduled-cancellation-reminder.tranche4.integration.test.ts tests/database/scheduled-financial-document-continuity.integration.test.ts",
     "test:menu-import": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/menu-import",
     "test:menu-parity": "node scripts/run-vitest.mjs run tests/menu-parity",
-    "test:operations:http": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/operations/store-http.integration.test.ts tests/operations/refunds-http.integration.test.ts tests/operations/orders-read-http.integration.test.ts tests/operations/orders-mutation-http.integration.test.ts tests/operations/notifications-http.integration.test.ts tests/operations/scheduling-http.tranche3.integration.test.ts",
+    "test:operations:http": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/operations/store-http.integration.test.ts tests/operations/refunds-http.integration.test.ts tests/operations/orders-read-http.integration.test.ts tests/operations/orders-mutation-http.integration.test.ts tests/operations/notifications-http.integration.test.ts tests/operations/scheduling-http.tranche3.integration.test.ts tests/operations/scheduling-profile-workforce-journey.integration.test.ts",
     "test:order": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/order/",
     "test:order-auth-integration": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/order-auth-integration",
     "test:order-concurrency": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/order-concurrency",
@@ -2943,6 +2945,24 @@
     },
     {
       "path": "src/components/operations/store/StorePickupProfileClient.test.tsx",
+      "runner": "vitest",
+      "domain": "components/operations",
+      "testType": "component-or-tsx",
+      "dbRequired": "NO",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test",
+        "test:coverage"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "2-component"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "src/components/operations/store/StoreSchedulingProfileClient.test.tsx",
       "runner": "vitest",
       "domain": "components/operations",
       "testType": "component-or-tsx",
@@ -8680,6 +8700,25 @@
     },
     {
       "path": "tests/operations/scheduling-http.tranche3.integration.test.ts",
+      "runner": "vitest",
+      "domain": "operations",
+      "testType": "integration",
+      "dbRequired": "YES",
+      "browserRequired": "NO",
+      "externalProviderSubstitute": "UNKNOWN",
+      "packageCommands": [
+        "test:imp036i:tranche3",
+        "test:operations:http"
+      ],
+      "ciInclusion": "YES",
+      "test1Layers": [
+        "4-integration",
+        "5-database-integration"
+      ],
+      "classificationConfidence": "HEURISTIC"
+    },
+    {
+      "path": "tests/operations/scheduling-profile-workforce-journey.integration.test.ts",
       "runner": "vitest",
       "domain": "operations",
       "testType": "integration",

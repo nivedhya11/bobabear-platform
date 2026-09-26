@@ -299,6 +299,45 @@ export async function setStorePickupProfile(
   });
 }
 
+export type StoreSchedulingProfile = Readonly<{
+  outletId: string;
+  pickupMinLeadMinutes: number;
+  deliveryMinLeadMinutes: number;
+  revision: string;
+}>;
+
+export async function getStoreSchedulingProfile(
+  outletId: string,
+): Promise<
+  OperationsHttpResult<{
+    ok: true;
+    configured: boolean;
+    profile: StoreSchedulingProfile | null;
+  }>
+> {
+  return operationsRequest(outletPath(outletId, "/scheduling-profile"));
+}
+
+export async function setStoreSchedulingProfile(
+  outletId: string,
+  body: Readonly<{
+    pickupMinLeadMinutes: number;
+    deliveryMinLeadMinutes: number;
+    expectedRevision: number;
+  }>,
+): Promise<
+  OperationsHttpResult<{
+    ok: true;
+    configured: true;
+    profile: StoreSchedulingProfile;
+  }>
+> {
+  return operationsRequest(outletPath(outletId, "/scheduling-profile"), {
+    method: "POST",
+    body,
+  });
+}
+
 export function availabilityStateLabel(state: string): string {
   if (state === "available") return "Available";
   if (state === "temporarily_unavailable") return "Temporarily unavailable";
