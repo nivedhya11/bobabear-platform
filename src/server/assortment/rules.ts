@@ -21,6 +21,8 @@ import {
   territoriesTable,
 } from "../../platform/database/schema/organizations";
 import { requireWorkforcePrincipal } from "../access-control/principal";
+import { OrganizationNotFoundError } from "../organization/errors";
+import { lockBrandRowForUpdate } from "../organization/brands";
 import type { PersistenceQueryContext, PersistenceTransactionContext } from "../persistence/types";
 import {
   assertApplicationRole,
@@ -46,6 +48,20 @@ import type {
   IncludeBrandVariantInput,
   RetireAssortmentRuleInput,
 } from "./types";
+
+async function lockAssortmentBrand(
+  context: PersistenceTransactionContext,
+  brandId: string,
+): Promise<void> {
+  try {
+    await lockBrandRowForUpdate(context, brandId);
+  } catch (error) {
+    if (error instanceof OrganizationNotFoundError) {
+      throw new AssortmentNotFoundError("brand");
+    }
+    throw error;
+  }
+}
 
 function staleAssortmentRevision(): never {
   throw new AssortmentConflictError({
@@ -347,6 +363,7 @@ export async function includeBrandVariant(
   const brandId = assertUuid(input.brandId, "brandId");
   const variantId = assertUuid(input.variantId, "variantId");
   const expected = parseExpectedRuleRevision(input.expectedRuleRevision);
+  await lockAssortmentBrand(context, brandId);
   await requireAssortmentManage(context, input.actor, brandId);
   const principal = requireWorkforcePrincipal(input.actor);
 
@@ -429,6 +446,7 @@ async function insertExcludeRule(
   assertTransactionContext(context, "excludeAssortmentRule");
   const brandId = assertUuid(input.brandId, "brandId");
   const expected = parseExpectedRuleRevision(input.expectedRuleRevision);
+  await lockAssortmentBrand(context, brandId);
   await requireAssortmentManage(context, input.actor, brandId);
   const principal = requireWorkforcePrincipal(input.actor);
   const scope = await resolveExcludeScope(context, brandId, input);
@@ -551,6 +569,7 @@ export async function retireAssortmentRule(
   assertTransactionContext(context, "retireAssortmentRule");
   const brandId = assertUuid(input.brandId, "brandId");
   const ruleId = assertUuid(input.ruleId, "ruleId");
+  await lockAssortmentBrand(context, brandId);
   const expected = parseExpectedRuleRevision(input.expectedRuleRevision);
   if (expected === null) {
     throw new AssortmentValidationError({

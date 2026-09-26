@@ -17,6 +17,7 @@ import {
   normalizeNonEmptyName,
 } from "./assert-role";
 import { OrganizationConflictError, OrganizationNotFoundError, OrganizationValidationError } from "./errors";
+import { lockBrandRowForUpdate } from "./brands";
 import { findLegalEntityById } from "./legal-entities";
 import { findOrganizationById } from "./organizations";
 import { findTerritoryById } from "./territories";
@@ -64,6 +65,7 @@ export async function createOutlet(
   input: CreateOutletInput,
 ): Promise<Outlet> {
   assertTransactionContext(context, "createOutlet");
+  await lockBrandRowForUpdate(context, input.brandId);
   const code = normalizeNonEmptyCode(input.code, "code");
   const name = normalizeNonEmptyName(input.name, "name");
   const status = input.status ?? "active";

@@ -40,14 +40,14 @@
     "vitestConfigs": 2,
     "playwrightConfigs": 7,
     "testSupportScripts": 51,
-    "packageTestCommands": 84,
+    "packageTestCommands": 85,
     "packageAuditCommands": 27,
     "packageE2eCommands": 9,
     "packageCheckCommands": 13,
     "packageCoverageCommands": 1,
     "packageInventoryCommands": 2,
     "ciWorkflowFiles": 4,
-    "ciValidationSteps": 116,
+    "ciValidationSteps": 117,
     "protectedEvidenceTrackedFiles": 3,
     "archiveTrackedFiles": 92
   },
@@ -660,6 +660,7 @@
       "test:imp036i:tranche2",
       "test:imp036i:tranche3",
       "test:imp036i:tranche4",
+      "test:imp036i:tranche5",
       "test:menu-import",
       "test:menu-parity",
       "test:operations:http",
@@ -859,6 +860,7 @@
     "test:imp036i:tranche2": "node scripts/run-vitest.mjs run tests/scheduled-fulfilment/windows.test.ts && node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/checkout/scheduled-fulfilment.domain.test.ts tests/payment/payment.scheduled.domain.test.ts tests/payment/payment.scheduled-bind-race.domain.test.ts",
     "test:imp036i:tranche3": "node scripts/run-vitest.mjs run tests/scheduled-fulfilment/operational-cues.test.ts src/components/ordering/CheckoutTimingChoice.test.tsx src/shared/notifications/customer-visible-content.test.ts && node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/checkout/scheduled-surfaces.tranche3.test.ts tests/customer-commerce/scheduled-http.tranche3.integration.test.ts tests/administration/admin-brand-policy-http.tranche3.integration.test.ts tests/operations/scheduling-http.tranche3.integration.test.ts",
     "test:imp036i:tranche4": "node scripts/run-vitest.mjs run src/shared/scheduled-fulfilment/cancellation.test.ts src/shared/notifications/notifications.domain.test.ts src/shared/notifications/customer-visible-content.test.ts && node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/order/scheduled-cancellation-reminder.tranche4.integration.test.ts",
+    "test:imp036i:tranche5": "node scripts/run-vitest.mjs run tests/scheduled-fulfilment/tranche5-traceability.test.ts && node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/payment/payment.tranche5-hardening.integration.test.ts tests/payment/payment.scheduled-bind-race.domain.test.ts tests/order/scheduled-cancellation-reminder.tranche4.integration.test.ts",
     "test:menu-import": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/menu-import",
     "test:menu-parity": "node scripts/run-vitest.mjs run tests/menu-parity",
     "test:operations:http": "node scripts/run-vitest.mjs run --config vitest.database.config.mts tests/operations/store-http.integration.test.ts tests/operations/refunds-http.integration.test.ts tests/operations/orders-read-http.integration.test.ts tests/operations/orders-mutation-http.integration.test.ts tests/operations/notifications-http.integration.test.ts tests/operations/scheduling-http.tranche3.integration.test.ts",
@@ -992,6 +994,10 @@
         {
           "name": "IMP-036I Tranche 4 proof",
           "run": "npm run test:imp036i:tranche4"
+        },
+        {
+          "name": "IMP-036I Tranche 5 proof",
+          "run": "npm run test:imp036i:tranche5"
         },
         {
           "name": "Install dependencies",
@@ -8924,6 +8930,7 @@
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
         "test:imp036i:tranche4",
+        "test:imp036i:tranche5",
         "test:order"
       ],
       "ciInclusion": "YES",
@@ -9189,6 +9196,7 @@
       "externalProviderSubstitute": "UNKNOWN",
       "packageCommands": [
         "test:imp036i:tranche2",
+        "test:imp036i:tranche5",
         "test:payment"
       ],
       "ciInclusion": "YES",

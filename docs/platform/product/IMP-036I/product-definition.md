@@ -119,8 +119,8 @@ ROADMAP/STATE; this Product Definition is NOT lifecycle authority):
   IMP036I_IMPLEMENTATION_STARTED = YES
   IMP036I_IMPLEMENTATION_COMPLETE = NO
   IMP036I_ACCEPTED = NO
-  ROADMAP = GTM-R159
-  STATE = STATE-R157
+  ROADMAP = GTM-R160
+  STATE = STATE-R158
   ARCHITECTURE = ARCH-R23
   decision-register = DR-21
   PROGRAM_PAUSE = D-377
@@ -221,8 +221,8 @@ IMP039: NOT_ACTIVATED / HOLD
 IMP040: NOT_ACTIVATED / HOLD
 
 PROGRAM_PAUSE_AUTHORITY = D-377
-ROADMAP = GTM-R159
-STATE = STATE-R157
+ROADMAP = GTM-R160
+STATE = STATE-R158
 ARCHITECTURE = ARCH-R23
 decision-register = DR-21
 ```
@@ -240,7 +240,7 @@ IMP-039/040, close `GAP-EXT-ASSESS-001`, perform Architecture Fit, or authorize 
 | Product Definition version / document status | `PD-IMP-036I-DRAFT-4`; **Document status: APPROVED**; **PRE-GATE DRAFT: NO**; **READY_FOR_PRODUCT_DEFINITION_GATE: NO** |
 | Product owner / approval evidence | Founder. Activation authorized for Product Definition only. Founder decisions FD-036I-01…15 **RESOLVED** 2026-09-24 (including FD-036I-09 sealing amendment). Independent Product Definition Gate **PASS** — review `5307761142`. Gate-evaluated HEAD `1c4be04b6d6b51bdedebfea0485099dede3c7923` / tree `a0774c9b2cb256f8d329fc49cea1c9859a39d1d7` / fingerprint `07720d20f1e285ef46e6bd3be6d710be383baacde4facab7651482547b6dc15d`. Historical DRAFT-1 Gate = **STOP**; historical DRAFT-2 Gate = **STOP**; historical DRAFT-3 Gate = **STOP** (see §1.1). |
 | Process / verification policy | `PD-1` / `TEST-1` |
-| Canonical anchors | VISION-1; ROADMAP GTM-R159; STATE STATE-R157; ARCH-R23; DR-21 (D-377, D-378 AMENDED, D-379 CURRENT, D-380 CURRENT); PD-1; TEST-1; PERSONA-1; GJ-1; accepted IMP-036H Product Definition `PD-IMP-036H-DRAFT-1`; Founder FD-036I-01…15 resolution 2026-09-24; FD-036I-09 sealing amendment 2026-09-24; Gate PASS evidence review `5307761142`; Architecture Fit PASS review `5312653831`; implementation authorization 2026-09-25 (architecture-lock verification `5313026804`); execution plan [`implementation-plan.md`](./implementation-plan.md) |
+| Canonical anchors | VISION-1; ROADMAP GTM-R160; STATE STATE-R158; ARCH-R23; DR-21 (D-377, D-378 AMENDED, D-379 CURRENT, D-380 CURRENT); PD-1; TEST-1; PERSONA-1; GJ-1; accepted IMP-036H Product Definition `PD-IMP-036H-DRAFT-1`; Founder FD-036I-01…15 resolution 2026-09-24; FD-036I-09 sealing amendment 2026-09-24; Gate PASS evidence review `5307761142`; Architecture Fit PASS review `5312653831`; implementation authorization 2026-09-25 (architecture-lock verification `5313026804`); execution plan [`implementation-plan.md`](./implementation-plan.md) |
 | Repository candidate | Canonical path `/home/ajoshi/repos/boba-bear-platform`; gate-evaluated HEAD `1c4be04b6d6b51bdedebfea0485099dede3c7923` / tree `a0774c9b2cb256f8d329fc49cea1c9859a39d1d7` / fingerprint `07720d20f1e285ef46e6bd3be6d710be383baacde4facab7651482547b6dc15d` |
 | Capability lifecycle / authorization | ROADMAP/STATE: `IMP036I_ACTIVATED: YES`; `currentProductSlice = IMP-036I`; formal lifecycle **IMPLEMENTATION_IN_PROGRESS**; Product Definition **APPROVED** (`PD-IMP-036I-DRAFT-4`); Gate **PASS**; Architecture Fit **PASS** (review `5312653831`); architecture **LOCKED**; implementation **AUTHORIZED** / **STARTED**; `IMP036I_IMPLEMENTATION_COMPLETE: NO`; `IMP036I_ACCEPTED: NO`; `pendingAcceptance = NONE`; `acceptedThrough = IMP-036H`; `nextProductSlice = IMP-037` |
 | Relevant capability architecture / ADRs | Locked: [`capabilities/IMP-036I-scheduled-fulfilment.md`](../../capabilities/IMP-036I-scheduled-fulfilment.md); D-379 / ADR-019 CURRENT/Accepted; D-380 / ADR-020 CURRENT/Accepted; ARCH-R23 / ARCH-G29 / ARCH-G30. D-378 / ADR-018 AMENDED only for ASAP-only / no-scheduled-schema clauses. Foundations otherwise unchanged. |
@@ -1886,7 +1886,7 @@ Registry status is not a test verdict.
 
 | Dependency | Authority / verified state | Required before which story or gate? | Unresolved impact |
 |---|---|---|---|
-| ROADMAP/STATE activation IMP-036I (PD only) + program pause D-377 | GTM-R159 / STATE-R157 CURRENT tip (IMPLEMENTATION_IN_PROGRESS; implementation AUTHORIZED / STARTED) | SATISFIED | Gate PASS persisted; Tranche 4 pending independent verification |
+| ROADMAP/STATE activation IMP-036I (PD only) + program pause D-377 | GTM-R160 / STATE-R158 CURRENT tip (IMPLEMENTATION_IN_PROGRESS; implementation AUTHORIZED / STARTED) | SATISFIED | Gate PASS persisted; Tranche 4 independent verification PASS; Tranche 5 candidate pending independent verification |
 | Accepted commerce foundations through IMP-036H | COMPLETE_AND_ACCEPTED through IMP-036H | All stories | NONE for ASAP baselines |
 | Founder resolution of FD-036I-01…15 | RESOLVED 2026-09-24 | Before Product Definition Gate | SATISFIED |
 | Product Definition Gate PASS | PASS (review 5307761142) | Before Architecture Fit | SATISFIED — next = Architecture Fit |
@@ -2301,7 +2301,7 @@ payment bind is implemented and awaits independent verification. Formal lifecycl
 NOT_COMPLETE). This Product Definition does **not** accept IMP-036I.
 
 ```text
-CURRENT tip anchors (implementation authorized / started; Tranche 4 verification pending): GTM-R159 / STATE-R157
+CURRENT tip anchors (implementation authorized / started; Tranche 5 verification pending): GTM-R160 / STATE-R158
 acceptedThrough = IMP-036H
 currentProductSlice = IMP-036I
 pendingAcceptance = NONE

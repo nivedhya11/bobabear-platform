@@ -15,6 +15,7 @@ import {
   taxPolicyComponentsTable,
 } from "../../platform/database/schema/pricing";
 import { outletsTable } from "../../platform/database/schema/organizations";
+import { lockBrandRowForUpdate } from "../organization/brands";
 import {
   INDIA_UNION_TERRITORY_STATE_CODES,
   taxExclusivePaise,
@@ -69,6 +70,7 @@ export async function createLegalEntityTaxProfile(
   },
 ): Promise<{ id: string }> {
   assertTransactionContext(context, "createLegalEntityTaxProfile");
+  await lockBrandRowForUpdate(context, input.brandId);
   const stateCode = input.stateCode.trim();
   if (!/^[0-9]{2}$/.test(stateCode)) {
     throw new PricingValidationError({ message: "stateCode must be a 2-digit GST state code." });
@@ -139,6 +141,7 @@ export async function assignOutletTaxProfile(
     .limit(1);
   const outlet = outletRows[0];
   if (!outlet) throw new PricingNotFoundError("outlet");
+  await lockBrandRowForUpdate(context, outlet.brandId);
 
   const profileRows = await context.db
     .select()

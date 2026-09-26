@@ -142,15 +142,17 @@ function main() {
       findings.push(`Prior migration hash changed: ${prior}`);
     }
   }
-  if (
-    integrity.migrations.length !== 16 &&
-    integrity.migrations.length !== 17 &&
-    integrity.migrations.length !== 18 &&
-    integrity.migrations.length !== 19 &&
-    integrity.migrations.length !== 20
-  ) {
+  const drizzleFiles = readdirSync(path.join(projectRoot, "drizzle")).filter((f) =>
+    /^\d{4}_.*\.sql$/.test(f),
+  );
+  if (integrity.migrations.length !== drizzleFiles.length) {
     findings.push(
-      `Expected 16, 17, 18, 19, or 20 sealed migrations, found ${integrity.migrations.length}`,
+      `Sealed migration count ${integrity.migrations.length} does not match drizzle SQL files ${drizzleFiles.length}`,
+    );
+  }
+  if (integrity.migrations.length < 16) {
+    findings.push(
+      `Sealed migration history regressed below the payment baseline of 16, found ${integrity.migrations.length}`,
     );
   }
   if (
@@ -237,22 +239,16 @@ function main() {
     }
   }
 
-  const drizzleFiles = readdirSync(path.join(projectRoot, "drizzle")).filter((f) =>
-    /^\d{4}_.*\.sql$/.test(f),
-  );
   if (!drizzleFiles.includes("0016_payment.sql")) {
     findings.push("Expected drizzle/0016_payment.sql");
   }
   if (drizzleFiles.some((f) => f.startsWith("0017_") && f !== "0017_order.sql")) {
     findings.push("Unexpected 0017 migration; expected 0017_order.sql only");
   }
-  if (
-    drizzleFiles.length !== 17 &&
-    drizzleFiles.length !== 18 &&
-    drizzleFiles.length !== 19 &&
-    drizzleFiles.length !== 20
-  ) {
-    findings.push(`Expected 17, 18, 19, or 20 drizzle SQL migrations, found ${drizzleFiles.length}`);
+  if (drizzleFiles.length < 17) {
+    findings.push(
+      `Drizzle SQL migration history regressed below the payment baseline of 17, found ${drizzleFiles.length}`,
+    );
   }
   const mig0018 = trackedFiles().filter((f) => /^drizzle\/0018_/.test(f));
   if (
