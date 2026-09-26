@@ -8,16 +8,16 @@
   "architectureFit": "PASS",
   "architectureFitResult": "PASS",
   "architectureFitExecution": "PERFORMED",
-  "implementation": "IMPLEMENTATION_IN_PROGRESS",
+  "implementation": "IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE",
   "implementationAuthorized": true,
   "implementationStarted": true,
-  "implementationComplete": false,
+  "implementationComplete": true,
   "impAccepted": false,
   "schemaChangeRequired": true,
   "migrationRequired": true,
   "founderUatRequired": true,
   "founderUat": "NOT_PERFORMED",
-  "lastReviewed": "2026-09-25",
+  "lastReviewed": "2026-09-26",
   "productDefinition": "PD-IMP-036I-DRAFT-4",
   "productDefinitionGate": "PASS",
   "bindingDecisions": ["D-379", "ADR-019", "D-380", "ADR-020"],
@@ -48,7 +48,7 @@ Human architecture lock approval **2026-09-25**. Explicit human implementation a
 Execution plan: [`../product/IMP-036I/implementation-plan.md`](../product/IMP-036I/implementation-plan.md).
 
 ```text
-STATUS = IMPLEMENTATION_IN_PROGRESS
+STATUS = IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
 AUTHORITY = CAPABILITY_ARCHITECTURE
 PRODUCT_DEFINITION = PD-IMP-036I-DRAFT-4
 PRODUCT_DEFINITION_GATE = PASS
@@ -58,7 +58,7 @@ ARCHITECTURE_FIT = PASS
 ARCHITECTURE_LOCK = LOCKED
 IMPLEMENTATION_AUTHORIZED = YES
 IMPLEMENTATION_STARTED = YES
-IMPLEMENTATION_COMPLETE = NO
+IMPLEMENTATION_COMPLETE = YES
 IMP_ACCEPTED = NO
 
 INDEPENDENT_ARCHITECTURE_FIT_REVIEW = PASS
@@ -108,17 +108,17 @@ IMP036I_IMPLEMENTATION_AUTHORIZED = YES
 IMP036I_IMPLEMENTATION_STARTED = YES
 ```
 
-Architecture lock itself did **not** create migrations, deploy, perform Founder UAT, or accept IMP-036I. Tranche 1 later persisted migration `0045`. Implementation remains **NOT_COMPLETE** and unaccepted.
+Architecture lock itself did **not** create migrations, deploy, perform Founder UAT, or accept IMP-036I. Tranche 1 later persisted migration `0045`. Implementation is **COMPLETE** and pending acceptance (`IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`). Founder UAT is **NOT_PERFORMED**. This document does not accept IMP-036I.
 Historical independent Fit STOP reviews (`5309072645`, `5309240283`,
 `5309972440`) remain historical; they are not current blockers.
 
 | Field | Value |
 |---|---|
 | Architecture lock | `LOCKED` / `YES` |
-| Formal ROADMAP lifecycle | `IMPLEMENTATION_IN_PROGRESS` (`IMP036I_ACTIVATED: YES`) |
+| Formal ROADMAP lifecycle | `IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE` (`IMP036I_ACTIVATED: YES`) |
 | Product Definition | `PD-IMP-036I-DRAFT-4` **APPROVED**; Gate **PASS** |
 | Canonical Architecture Fit | **PASS** (independent review `5312653831`) |
-| Implementation | **AUTHORIZED** / **STARTED** / **NOT_COMPLETE** |
+| Implementation | **AUTHORIZED** / **STARTED** / **COMPLETE** / pending acceptance |
 | Schema change / migration | **YES** (authorized for tranche 1; not executed by authorization persistence) |
 | Binding D-number (timing) | **D-379** (`CURRENT`) |
 | Binding ADR (timing) | **ADR-019** (`Accepted`) |
@@ -180,8 +180,7 @@ post-`DELIVERED` normal replacement; no unique “lineage tip” dependency; det
 DELIVERED-predecessor acceptance remains an implementation conformance obligation.
 AF-036I-13 and AF-036I-16 are **accepted Architecture Fit authority** against CURRENT D-380.
 Independent Architecture Fit review `5312653831` = **PASS**. Architecture remains **LOCKED**.
-Implementation is **AUTHORIZED** / **STARTED** / **NOT_COMPLETE** (`IMPLEMENTATION_IN_PROGRESS`).
-This document does not mark IMP-036I complete or accepted.
+Implementation is **AUTHORIZED** / **STARTED** / **COMPLETE** (`IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE`). Independent implementation review is **PASS** against reviewed main `335e8b55c74b81d745e923b3d078d6af9ec0b5cc` / tree `4b75582d1726e552bdc1e45da15cf667b05de8e0` / fingerprint `5d79b21381f190682d3cb3f0a2f7e99d43919476f5384c3e1d74d3904218409b`. No numeric independent-review ID exists. This document does not accept IMP-036I.
 
 Canonical ROADMAP/STATE tip markers after implementation authorization:
 
@@ -193,9 +192,10 @@ IMP036I_ARCHITECTURE_LOCKED: YES
 IMP036I_IMPLEMENTATION_AUTHORIZED: YES
 IMP036I_STARTED: YES
 IMP036I_IMPLEMENTATION_STARTED: YES
-IMP036I_IMPLEMENTATION_COMPLETE: NO
+IMP036I_IMPLEMENTATION_COMPLETE: YES
 IMP036I_ACCEPTED: NO
-IMP-036I formal lifecycle: IMPLEMENTATION_IN_PROGRESS
+IMP036I_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
+IMP-036I formal lifecycle: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
 PROGRAM_PAUSE_AUTHORITY: D-377
 ```
 
