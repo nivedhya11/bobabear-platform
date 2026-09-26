@@ -15,6 +15,12 @@ import { PricingNotFoundError, PricingResolutionError } from "./errors";
 import { requirePricingManage } from "./authorize-pricing";
 import { findOverlappingActivePriceBooks, loadOutletsInPriceBookScope, rowToBook } from "./price-books";
 import {
+  activationFailureMatchesModifier,
+  activationFailureMatchesVariant,
+  validatePriceBookActivation,
+  type PriceBookActivationResolutionFailure,
+} from "./validate-price-book-activation";
+import {
   resolveBrandVariantPrice,
   resolveModifierDisplayPriceDeltas,
   resolveOutletVariantPrice,
@@ -180,6 +186,21 @@ export async function previewPriceBookConsequence(
     });
   }
 
+  const activationFailures: PriceBookActivationResolutionFailure[] =
+    book.lifecycleStatus === "draft"
+      ? [...(await validatePriceBookActivation(context, { priceBookId: book.id, at }))]
+      : [];
+  const seenActivationBlockers = new Set<string>();
+  for (const failure of activationFailures) {
+    const key = `${failure.code}\0${failure.message}`;
+    if (seenActivationBlockers.has(key)) continue;
+    seenActivationBlockers.add(key);
+    referenceBlockers.push({
+      code: failure.code,
+      message: failure.message,
+    });
+  }
+
   const overlapping = await findOverlappingActivePriceBooks(context, book);
   if (overlapping.length > 0) {
     overlapBlockers.push({
@@ -216,6 +237,13 @@ export async function previewPriceBookConsequence(
             evaluationOverlay: overlay,
           })
         : current;
+      const proposedAmountPaise = activationFailureMatchesVariant(
+        activationFailures,
+        row.variantId,
+        outletId,
+      )
+        ? null
+        : projected.amountPaise;
       currentEffective.push({
         variantId: row.variantId,
         outletId,
@@ -226,9 +254,9 @@ export async function previewPriceBookConsequence(
         variantId: row.variantId,
         outletId,
         currentAmountPaise: current.amountPaise,
-        proposedAmountPaise: projected.amountPaise,
+        proposedAmountPaise,
       });
-      if (current.amountPaise !== projected.amountPaise) wouldChange = true;
+      if (current.amountPaise !== proposedAmountPaise) wouldChange = true;
     }
   }
 
@@ -253,14 +281,22 @@ export async function previewPriceBookConsequence(
             evaluationOverlay: overlay,
           })
         : current;
+      const proposedPriceDeltaPaise = activationFailureMatchesModifier(
+        activationFailures,
+        row.variantModifierGroupId,
+        row.modifierGroupOptionId,
+        outletId,
+      )
+        ? null
+        : projected.deltaPaise;
       modifierPriceChanges.push({
         variantModifierGroupId: row.variantModifierGroupId,
         modifierGroupOptionId: row.modifierGroupOptionId,
         outletId,
         currentPriceDeltaPaise: current.deltaPaise,
-        proposedPriceDeltaPaise: projected.deltaPaise,
+        proposedPriceDeltaPaise,
       });
-      if (current.deltaPaise !== projected.deltaPaise) wouldChange = true;
+      if (current.deltaPaise !== proposedPriceDeltaPaise) wouldChange = true;
     }
   }
 

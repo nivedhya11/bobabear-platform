@@ -302,12 +302,14 @@ export function PricingEditor(props: PricingEditorProps) {
               value: `${formatInrFromPaise(c.proposedAmountPaise)} (variant ${c.variantId.slice(0, 8)}…)`,
             },
           ]),
-          ...[...preview.overlapBlockers, ...preview.referenceBlockers].map((b) => ({
-            label: "Blocker",
-            value: b,
+          ...[...preview.overlapBlockers, ...preview.referenceBlockers].map((blocker, index) => ({
+            label: `Blocker ${index + 1} ${blocker.code}`,
+            value: blocker.message,
           })),
         ],
-        blockers: [...preview.overlapBlockers, ...preview.referenceBlockers],
+        blockers: [...preview.overlapBlockers, ...preview.referenceBlockers].map(
+          (blocker) => `${blocker.code}: ${blocker.message}`,
+        ),
         wouldChange: preview.wouldChangeCustomerPricing,
       });
     } catch {

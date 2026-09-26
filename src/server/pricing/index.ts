@@ -88,6 +88,12 @@ export type {
   PriceBookVariantPriceRow,
 } from "./commercial-reads";
 
+export { validatePriceBookActivation } from "./validate-price-book-activation";
+export type {
+  PriceBookActivationBlockCode,
+  PriceBookActivationResolutionFailure,
+} from "./validate-price-book-activation";
+
 export { previewPriceBookConsequence } from "./consequence-preview";
 export type {
   PriceBookConsequencePreview,
