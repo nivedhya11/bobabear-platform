@@ -116,6 +116,8 @@ export default defineConfig({
       "tests/operations/store-http.integration.test.ts",
       // IMP-036I Tranche 3: Outlet scheduling profile and closure HTTP.
       "tests/operations/scheduling-http.tranche3.integration.test.ts",
+      // IMP-036I pre-UAT: workforce Store Hours scheduling profile journey.
+      "tests/operations/scheduling-profile-workforce-journey.integration.test.ts",
       // IMP-035: Administration API authorization and transport integration.
       "tests/administration/**/*.integration.test.ts",
       // IMP-031: Provider-neutral Delivery foundation (Boundary C).
