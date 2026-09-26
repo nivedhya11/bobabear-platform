@@ -152,6 +152,7 @@ import {
   evaluateImp036iArchitectureLockAuthority,
   evaluateImp036iImplementationAuthorization,
   evaluateImp036iImplementationStart,
+  evaluateCurrentProductDefinitionTipAlignment,
   evaluateImp036iCurrentLifecycleSummaries,
   evaluateImp036iApprovedProductDefinitionCandidate,
   evaluateImp036hProductDefinitionGatePassCheckpoint,
@@ -16985,6 +16986,36 @@ describe("IMP-036I implementation authorization persistence", () => {
       isSupportedImp030GovernanceCheckpoint("GTM-R156", "STATE-R154", "imp036iTranche2"),
       false,
     );
+  });
+
+  it("requires the IMP-036I Program context CURRENT tip to match canonical ROADMAP/STATE", () => {
+    const productDefinitionText = readFileSync(
+      "docs/platform/product/IMP-036I/product-definition.md",
+      "utf8",
+    );
+    const roadmap = readFileSync("docs/platform/ROADMAP.md", "utf8");
+    const state = readFileSync("docs/platform/STATE.md", "utf8");
+    const roadmapVersion = /"roadmapVersion": "(GTM-R\d+)"/.exec(roadmap)?.[1];
+    const stateVersion = /"stateVersion": "(STATE-R\d+)"/.exec(state)?.[1];
+    assert.equal(
+      evaluateCurrentProductDefinitionTipAlignment({
+        productDefinitionText,
+        roadmapVersion,
+        stateVersion,
+      }).ok,
+      true,
+    );
+    const stale = productDefinitionText.replace(
+      /### Program context \(CURRENT tip[\s\S]*?STATE = STATE-R157/,
+      (match) => match.replace("STATE = STATE-R157", "STATE = STATE-R156"),
+    );
+    const mismatch = evaluateCurrentProductDefinitionTipAlignment({
+      productDefinitionText: stale,
+      roadmapVersion,
+      stateVersion,
+    });
+    assert.equal(mismatch.ok, false);
+    assert.equal(mismatch.code, "CURRENT_PRODUCT_DEFINITION_STATE_TIP");
   });
 
   it("recognizes GTM-R159 / STATE-R157 as tranche 4, not tranche 3", () => {

@@ -1381,6 +1381,57 @@ function nullishEqual(a, b) {
   return norm(a) === norm(b);
 }
 
+const CURRENT_PRODUCT_DEFINITION_TIP_RELATIVE =
+  "docs/platform/product/IMP-036I/product-definition.md";
+
+/**
+ * The active Product Definition Program-context CURRENT-tip fence must name
+ * the same ROADMAP/STATE pair as canonical metadata. Historical narration
+ * outside that fence is not current-tip authority.
+ *
+ * @param {{ productDefinitionText: string, roadmapVersion: string, stateVersion: string }} input
+ * @returns {{ ok: true } | { ok: false, code: string, message: string }}
+ */
+export function evaluateCurrentProductDefinitionTipAlignment(input) {
+  const marker = "### Program context (CURRENT tip";
+  const start = input.productDefinitionText.indexOf(marker);
+  if (start < 0) {
+    return {
+      ok: false,
+      code: "CURRENT_PRODUCT_DEFINITION_TIP_MISSING",
+      message: "IMP-036I Product Definition is missing the Program context CURRENT-tip block",
+    };
+  }
+  const fenceStart = input.productDefinitionText.indexOf("```text", start);
+  const fenceEnd =
+    fenceStart < 0 ? -1 : input.productDefinitionText.indexOf("```", fenceStart + "```text".length);
+  if (fenceStart < 0 || fenceEnd < 0) {
+    return {
+      ok: false,
+      code: "CURRENT_PRODUCT_DEFINITION_TIP_FENCE",
+      message: "IMP-036I Program context CURRENT-tip block has no fenced authority",
+    };
+  }
+  const block = input.productDefinitionText.slice(fenceStart, fenceEnd);
+  const roadmap = /^ROADMAP = (GTM-R\d+)$/m.exec(block);
+  const state = /^STATE = (STATE-R\d+)$/m.exec(block);
+  if (!roadmap || roadmap[1] !== input.roadmapVersion) {
+    return {
+      ok: false,
+      code: "CURRENT_PRODUCT_DEFINITION_ROADMAP_TIP",
+      message: `IMP-036I Program context CURRENT tip ROADMAP=${roadmap?.[1] ?? "MISSING"} disagrees with canonical ${input.roadmapVersion}`,
+    };
+  }
+  if (!state || state[1] !== input.stateVersion) {
+    return {
+      ok: false,
+      code: "CURRENT_PRODUCT_DEFINITION_STATE_TIP",
+      message: `IMP-036I Program context CURRENT tip STATE=${state?.[1] ?? "MISSING"} disagrees with canonical ${input.stateVersion}`,
+    };
+  }
+  return { ok: true };
+}
+
 function checkRoadmapState(roadmap, state) {
   if (!roadmap || !state) return;
   const pairs = [
@@ -1393,6 +1444,27 @@ function checkRoadmapState(roadmap, state) {
       fail("ROADMAP_STATE_MISMATCH", `${name}: ROADMAP=${JSON.stringify(a)} STATE=${JSON.stringify(b)}`);
     } else {
       note(`ROADMAP↔STATE ${name} aligned (${JSON.stringify(a)})`);
+    }
+  }
+
+  const tipPath = path.join(projectRoot, CURRENT_PRODUCT_DEFINITION_TIP_RELATIVE);
+  if (!existsSync(tipPath)) {
+    fail(
+      "CURRENT_PRODUCT_DEFINITION_TIP_MISSING",
+      `Missing ${CURRENT_PRODUCT_DEFINITION_TIP_RELATIVE}`,
+    );
+  } else {
+    const tip = evaluateCurrentProductDefinitionTipAlignment({
+      productDefinitionText: readFileSync(tipPath, "utf8"),
+      roadmapVersion: String(roadmap.meta.roadmapVersion ?? ""),
+      stateVersion: String(state.meta.stateVersion ?? ""),
+    });
+    if (!tip.ok) {
+      fail(tip.code, tip.message);
+    } else {
+      note(
+        `IMP-036I Program context CURRENT tip matches ${roadmap.meta.roadmapVersion} / ${state.meta.stateVersion}`,
+      );
     }
   }
 
