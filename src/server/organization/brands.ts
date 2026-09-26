@@ -34,6 +34,25 @@ function staleBrandRevision(): never {
   throw new OrganizationConflictError({ message: "Brand revision is stale." });
 }
 
+/**
+ * Existing Brand-row lock. Payment bind holds this row while it re-reads
+ * purchasable truth. Commercial, assortment, tax, and topology writers take
+ * the same row before their own locks so they cannot commit in that window.
+ */
+export async function lockBrandRowForUpdate(
+  context: PersistenceTransactionContext,
+  brandId: string,
+): Promise<void> {
+  assertTransactionContext(context, "lockBrandRowForUpdate");
+  const rows = await context.db
+    .select({ id: brandsTable.id })
+    .from(brandsTable)
+    .where(eq(brandsTable.id, brandId))
+    .for("update")
+    .limit(1);
+  if (!rows[0]) throw new OrganizationNotFoundError("brand");
+}
+
 export async function findBrandById(
   context: PersistenceQueryContext,
   brandId: string,

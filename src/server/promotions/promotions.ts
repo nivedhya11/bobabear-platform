@@ -14,6 +14,7 @@ import {
   promotionTargetsTable,
 } from "../../platform/database/schema/promotions";
 import { chargeDefinitionsTable } from "../../platform/database/schema/pricing";
+import { lockBrandRowForUpdate } from "../organization/brands";
 import {
   computePromotionConfigurationFingerprint,
   type PromotionBenefitConfig,
@@ -76,6 +77,21 @@ export function parseExpectedPromotionRevision(
     return parsed;
   }
   throw new PromotionValidationError(`${field} must be a positive integer.`);
+}
+
+async function lockPromotionAfterBrand(
+  context: PersistenceTransactionContext,
+  promotionId: string,
+) {
+  const id = assertUuid(promotionId, "promotionId");
+  const peek = await context.db
+    .select({ brandId: promotionsTable.brandId })
+    .from(promotionsTable)
+    .where(eq(promotionsTable.id, id))
+    .limit(1);
+  if (!peek[0]) return null;
+  await lockBrandRowForUpdate(context, peek[0].brandId);
+  return lockPromotionRow(context, id);
 }
 
 async function lockPromotionRow(context: PersistenceTransactionContext, id: string) {
@@ -537,7 +553,7 @@ export async function activatePromotion(
 ): Promise<{ revision: bigint }> {
   assertTransactionContext(context, "activatePromotion");
   const expected = parseExpectedPromotionRevision(input.expectedPromotionRevision);
-  const row = await lockPromotionRow(context, assertUuid(input.promotionId, "promotionId"));
+  const row = await lockPromotionAfterBrand(context, input.promotionId);
   assertPathBrandMatchesPromotion(row, input.brandId);
   await requirePromotionsActivate(context, input.actor, row.brandId);
   // Still require manage scope for lower-scope governance visibility
@@ -704,7 +720,7 @@ export async function retirePromotion(
 ): Promise<{ revision: bigint }> {
   assertTransactionContext(context, "retirePromotion");
   const expected = parseExpectedPromotionRevision(input.expectedPromotionRevision);
-  const row = await lockPromotionRow(context, assertUuid(input.promotionId, "promotionId"));
+  const row = await lockPromotionAfterBrand(context, input.promotionId);
   assertPathBrandMatchesPromotion(row, input.brandId);
   await requirePromotionsActivate(context, input.actor, row.brandId);
   if (row.revision !== expected) stalePromotionRevision();

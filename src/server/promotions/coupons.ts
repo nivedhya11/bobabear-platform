@@ -19,6 +19,7 @@ import {
 } from "../../shared/promotions";
 import { requireWorkforcePrincipal } from "../access-control/principal";
 import type { PersistenceQueryContext, PersistenceTransactionContext } from "../persistence/types";
+import { lockBrandRowForUpdate } from "../organization/brands";
 import { assertTransactionContext, assertUuid, isUniqueViolation } from "./assert-role";
 import { insertPromotionAuditEvent } from "./audit";
 import { requireCouponsManageForPromotionScope } from "./authorize-promotions";
@@ -80,6 +81,24 @@ export function parseExpectedCouponRevision(
     return parsed;
   }
   throw new PromotionAdminError("validation", `${field} must be a positive integer.`);
+}
+
+async function lockCouponAfterBrand(context: PersistenceTransactionContext, couponId: string) {
+  const id = assertUuid(couponId, "couponId");
+  const peek = await context.db
+    .select({ promotionId: promotionCouponsTable.promotionId })
+    .from(promotionCouponsTable)
+    .where(eq(promotionCouponsTable.id, id))
+    .limit(1);
+  if (!peek[0]) return null;
+  const promotion = await context.db
+    .select({ brandId: promotionsTable.brandId })
+    .from(promotionsTable)
+    .where(eq(promotionsTable.id, peek[0].promotionId))
+    .limit(1);
+  if (!promotion[0]) return null;
+  await lockBrandRowForUpdate(context, promotion[0].brandId);
+  return lockCoupon(context, id);
 }
 
 async function lockCoupon(context: PersistenceTransactionContext, id: string) {
@@ -311,7 +330,7 @@ export async function activateCoupon(
 ): Promise<{ revision: bigint }> {
   assertTransactionContext(context, "activateCoupon");
   const expected = parseExpectedCouponRevision(input.expectedCouponRevision);
-  const coupon = await lockCoupon(context, assertUuid(input.couponId, "couponId"));
+  const coupon = await lockCouponAfterBrand(context, input.couponId);
   if (!coupon) throw new PromotionNotFoundError("coupon");
   const promotion = await loadPromotion(context, coupon.promotionId);
   assertPathBrandMatchesPromotion(promotion, input.brandId, "coupon");
@@ -362,7 +381,7 @@ async function transitionCoupon(
 ): Promise<{ revision: bigint }> {
   assertTransactionContext(context, `coupon:${to}`);
   const expected = parseExpectedCouponRevision(input.expectedCouponRevision);
-  const coupon = await lockCoupon(context, assertUuid(input.couponId, "couponId"));
+  const coupon = await lockCouponAfterBrand(context, input.couponId);
   if (!coupon) throw new PromotionNotFoundError("coupon");
   const promotion = await loadPromotion(context, coupon.promotionId);
   assertPathBrandMatchesPromotion(promotion, input.brandId, "coupon");

@@ -30,6 +30,7 @@ import {
   type ZeroPayableResult,
 } from "../../shared/payment";
 import { requireCustomerActor } from "../cart/actor";
+import { lockCartForUpdate } from "../cart/repository";
 import {
   findCheckoutRowById,
   invalidateReadyToDraft,
@@ -456,6 +457,8 @@ export async function startPayment(
       });
     }
 
+    const startPeek = await findCheckoutRowById(tx, parsed.checkoutId);
+    if (startPeek) await lockCartForUpdate(tx, startPeek.cartId);
     const checkout = await lockCheckoutForUpdate(tx, parsed.checkoutId);
     if (!checkout || checkout.customerAuthUserId !== customer.authUserId) {
       throw new PaymentError("PAYMENT_NOT_FOUND", "Payment not found.");
@@ -713,6 +716,8 @@ export async function completeZeroPayableCheckout(
       });
     }
 
+    const zeroPeek = await findCheckoutRowById(tx, parsed.checkoutId);
+    if (zeroPeek) await lockCartForUpdate(tx, zeroPeek.cartId);
     const checkout = await lockCheckoutForUpdate(tx, parsed.checkoutId);
     if (!checkout || checkout.customerAuthUserId !== customer.authUserId) {
       throw new PaymentError("PAYMENT_NOT_FOUND", "Payment not found.");
@@ -928,6 +933,7 @@ export async function retryPayment(
       throw new PaymentError("PAYMENT_NOT_FOUND", "Payment not found.");
     }
 
+    await lockCartForUpdate(tx, linked.checkout.cartId);
     const checkout = await lockCheckoutForUpdate(tx, linked.checkout.id);
     if (!checkout) {
       throw new PaymentError("PAYMENT_NOT_FOUND", "Payment not found.");

@@ -2,7 +2,7 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R157",
+  "stateVersion": "STATE-R158",
   "acceptedThrough": "IMP-036H",
   "currentProductSlice": "IMP-036I",
   "nextProductSlice": "IMP-037",
@@ -10,7 +10,7 @@
   "gtmBoundary": "IMP-040",
   "governanceHealth": "ALIGNED",
   "lastReviewed": "2026-09-26",
-  "supersedes": "STATE-R156"
+  "supersedes": "STATE-R157"
 }
 -->
 
@@ -41,7 +41,8 @@ Next Product Slice:             IMP-037 — Backup, Restore & Migration Readines
 Unresolved Predecessor:         IMP-037 — Backup, Restore & Migration Readiness
 Current Governance Activity:    IMP-036I IMPLEMENTATION_IN_PROGRESS
                               (formal lifecycle IMPLEMENTATION_IN_PROGRESS;
-                              GTM-R159 / STATE-R157;
+                              GTM-R160 / STATE-R158;
+                              prior tip GTM-R159 / STATE-R157;
                               prior tip GTM-R158 / STATE-R156;
                               prior tip GTM-R157 / STATE-R155;
                               prior tip GTM-R156 / STATE-R154;
@@ -83,7 +84,7 @@ Current Governance Activity:    IMP-036I IMPLEMENTATION_IN_PROGRESS
                               IMP036I_IMPLEMENTATION_COMPLETE: NO;
                               IMP036I_ACCEPTED: NO;
                               FOUNDER_UAT: NOT_PERFORMED;
-                              nextGate: INDEPENDENT_TRANCHE_4_VERIFICATION;
+                              nextGate: INDEPENDENT_TRANCHE_5_VERIFICATION;
                               D-379: CURRENT; D-380: CURRENT; D-378: AMENDED;
                               IMP-036H remains COMPLETE_AND_ACCEPTED;
                               prior tip GTM-R153 / STATE-R151 (Product Definition Gate PASS);
@@ -870,7 +871,28 @@ Implementation/review provenance for IMP-036F is recorded in
 Agents may propose a STATE delta in their report. Only independent acceptance updates this file's
 accepted position and may promote `governanceHealth` to `ALIGNED`.
 
-## 10. STATE-R157 record
+## 10. STATE-R158 record
+
+```text
+STATE-R158 = IMP036I_TRANCHE_5
+acceptedThrough: IMP-036H
+pendingAcceptance: NONE
+currentProductSlice: IMP-036I
+nextProductSlice: IMP-037
+Current Governance Activity: IMP-036I IMPLEMENTATION_IN_PROGRESS under PROGRAM_PAUSE PRE_GTM_PRODUCT_INSERTION_PROVIDER_BLOCKED (D-377); formal lifecycle IMPLEMENTATION_IN_PROGRESS; independent Tranche 4 verification PASS against reviewed implementation c71047a17630ccb35afe7d49b18a234ce9fc6039 / tree cd06ddd4f87abfee15df25c07c052c2a5265f5f6; no numeric independent Tranche 4 review ID; ARCH-R23; DR-21; D-379 CURRENT; D-380 CURRENT; D-378 AMENDED; implementation AUTHORIZED / STARTED; IMP036I_IMPLEMENTATION_COMPLETE: NO; IMP036I_ACCEPTED: NO; Founder UAT NOT_PERFORMED; nextGate: INDEPENDENT_TRANCHE_5_VERIFICATION
+IMP036I_IMPLEMENTATION_AUTHORIZED: YES
+IMP036I_IMPLEMENTATION_STARTED: YES
+IMP036I_IMPLEMENTATION_COMPLETE: NO
+IMP036I_ACCEPTED: NO
+FOUNDER_UAT: NOT_PERFORMED
+NEXT_ACTION: INDEPENDENT_TRANCHE_5_VERIFICATION
+TRANCHE_4_INDEPENDENT_VERIFICATION: PASS
+TRANCHE_5_SELF_CLAIMED_INDEPENDENT_PASS: NO
+```
+
+Independent Tranche 4 verification is PASS. Tranche 5 integration proof is implemented as a candidate and is not independently verified, not implementation-complete, and not accepted. Do not mark Tranche 5 independently PASS. Do not set IMP036I_IMPLEMENTATION_COMPLETE to YES until later independent proof.
+
+## 10. STATE-R157 record (historical prior tip)
 
 ```text
 STATE-R157 = IMP036I_TRANCHE_4

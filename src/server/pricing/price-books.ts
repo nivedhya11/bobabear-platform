@@ -838,21 +838,8 @@ export async function retirePriceBook(
   assertTransactionContext(context, "retirePriceBook");
   await requirePricingManage(context, input.actor, input.brandId);
   const principal = requireWorkforcePrincipal(input.actor);
-
-  const bookRows = await context.db
-    .select()
-    .from(priceBooksTable)
-    .where(
-      and(
-        eq(priceBooksTable.id, input.priceBookId),
-        eq(priceBooksTable.brandId, input.brandId),
-      ),
-    )
-    .limit(1);
-  const book = bookRows[0];
-  if (!book) {
-    throw new PricingNotFoundError("price_book");
-  }
+  await lockBrandPricingOverlapAuthority(context, input.brandId);
+  const book = await lockBrandPriceBook(context, input.brandId, input.priceBookId);
   if (book.lifecycleStatus === "retired") {
     throw new PricingInvalidStateError({ message: "Price book is already retired." });
   }

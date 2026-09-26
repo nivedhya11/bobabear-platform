@@ -265,6 +265,31 @@ export async function evaluateScheduledHorizonServiceability(
  * Same read as {@link evaluateScheduledHorizonServiceability}, on a caller-
  * supplied context so a binding transaction can re-read while it holds locks.
  */
+/**
+ * Current (ASAP) geographic serviceability on a caller-supplied context so a
+ * binding transaction can re-read while it holds Outlet locks.
+ */
+export async function evaluateCurrentServiceabilityInContext(
+  context: PersistenceQueryContext,
+  input: Readonly<{
+    brandId: string;
+    coordinates: Readonly<{ latitude: string; longitude: string }>;
+    evaluatedAt: Date;
+  }>,
+): Promise<ServiceabilityDecision> {
+  assertApplicationRole(context, "evaluateCurrentServiceabilityInContext");
+  const candidates = await findServiceabilityCandidates(context, {
+    brandId: input.brandId,
+  });
+  return evaluateServiceabilityCandidates(
+    context,
+    candidates,
+    input.coordinates,
+    input.evaluatedAt,
+    "current",
+  );
+}
+
 export async function evaluateScheduledHorizonServiceabilityInContext(
   context: PersistenceQueryContext,
   input: Readonly<{

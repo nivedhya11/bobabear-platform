@@ -103,12 +103,18 @@ function main() {
       findings.push(`Prior migration hash changed: ${prior}`);
     }
   }
-  if (
-    integrity.migrations.length !== 18 &&
-    integrity.migrations.length !== 19 &&
-    integrity.migrations.length !== 20
-  ) {
-    findings.push(`Expected 18, 19, or 20 sealed migrations, found ${integrity.migrations.length}`);
+  const drizzleFiles = readdirSync(path.join(projectRoot, "drizzle")).filter((f) =>
+    /^\d{4}_.*\.sql$/.test(f),
+  );
+  if (integrity.migrations.length !== drizzleFiles.length) {
+    findings.push(
+      `Sealed migration count ${integrity.migrations.length} does not match drizzle SQL files ${drizzleFiles.length}`,
+    );
+  }
+  if (integrity.migrations.length < 18) {
+    findings.push(
+      `Sealed migration history regressed below the order baseline of 18, found ${integrity.migrations.length}`,
+    );
   }
   if (!sealed[IMP023] || sealed[IMP023] !== sha256File(IMP023)) {
     findings.push(`${IMP023} must be sealed and match integrity`);
@@ -179,18 +185,13 @@ function main() {
     }
   }
 
-  const drizzleFiles = readdirSync(path.join(projectRoot, "drizzle")).filter((f) =>
-    /^\d{4}_.*\.sql$/.test(f),
-  );
   if (!drizzleFiles.includes("0017_order.sql")) {
     findings.push("Expected drizzle/0017_order.sql");
   }
-  if (
-    drizzleFiles.length !== 18 &&
-    drizzleFiles.length !== 19 &&
-    drizzleFiles.length !== 20
-  ) {
-    findings.push(`Expected 18, 19, or 20 drizzle SQL migrations, found ${drizzleFiles.length}`);
+  if (drizzleFiles.length < 18) {
+    findings.push(
+      `Drizzle SQL migration history regressed below the order baseline of 18, found ${drizzleFiles.length}`,
+    );
   }
   const mig0019 = trackedFiles().filter((f) => /^drizzle\/0019_/.test(f));
   if (mig0019.some((f) => f !== "drizzle/0019_refund.sql")) {
