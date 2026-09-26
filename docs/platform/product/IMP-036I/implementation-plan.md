@@ -7,8 +7,9 @@
   "architectureLock": "ARCHITECTURE_LOCKED",
   "implementationAuthorized": true,
   "implementationStarted": true,
+  "implementationComplete": true,
   "planVersion": "IMP036I-PLAN-1",
-  "lastReviewed": "2026-09-25",
+  "lastReviewed": "2026-09-26",
   "bindingDecisions": ["D-379", "D-380", "ARCH-G29", "ARCH-G30"]
 }
 -->
@@ -24,10 +25,18 @@ ARCHITECTURE = LOCKED (ARCH-R23; D-379 CURRENT; D-380 CURRENT; ARCH-G29; ARCH-G3
 CAPABILITY_ARCHITECTURE = docs/platform/capabilities/IMP-036I-scheduled-fulfilment.md
 IMPLEMENTATION_AUTHORIZED = YES
 IMPLEMENTATION_STARTED = YES
-IMPLEMENTATION_COMPLETE = NO
+IMPLEMENTATION_COMPLETE = YES
 IMP036I_ACCEPTED = NO
-FORMAL_LIFECYCLE = IMPLEMENTATION_IN_PROGRESS
-NEXT_ACTION = INDEPENDENT_TRANCHE_5_VERIFICATION
+FORMAL_LIFECYCLE = IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
+NEXT_ACTION = FOUNDER_UAT
+TRANCHE_1_INDEPENDENT_VERIFICATION = PASS
+TRANCHE_2_INDEPENDENT_VERIFICATION = PASS
+TRANCHE_3_INDEPENDENT_VERIFICATION = PASS
+TRANCHE_4_INDEPENDENT_VERIFICATION = PASS
+TRANCHE_5_INDEPENDENT_VERIFICATION = PASS
+IMP036I_TRANCHE5_INDEPENDENT_VERIFICATION = PASS
+IMP036I_INDEPENDENT_IMPLEMENTATION_REVIEW = PASS
+FINANCIAL_DOCUMENT_NON_REGRESSION = PASS
 TRANCHE_1 = PERSISTENCE_AND_DOMAIN_FOUNDATIONS
 TRANCHE_2 = SCHEDULING_ELIGIBILITY_AND_PAYMENT_BIND
 TRANCHE_3 = CUSTOMER_OPERATIONS_AND_CONFIG_SURFACES
@@ -247,7 +256,7 @@ LATER_CONFIG_FINANCIAL_NON_REGRESSION = EXECUTABLE_PROOF
 FINANCIAL_DOCUMENT_PROOF_END
 ```
 
-`IMPLEMENTATION_COMPLETE` may become YES only after that objective proof. Acceptance stays NO until independent implementation review, Founder UAT, and formal reconciliation.
+`IMPLEMENTATION_COMPLETE` is YES after that objective proof and integrated Tranche 5 independent verification PASS. Acceptance stays NO until Founder UAT and formal reconciliation.
 
 These broader concurrency topics remain open for Tranche 5 and are not globally closed by Tranche 2 or Tranche 3: assortment-rule mutation concurrency, price/tax/promotion concurrent mutation, new Outlet/serviceability topology concurrency, and Cart mutation/payment ordering. The bounded payment-bind path accepted in Tranche 2 stays as accepted.
 
@@ -269,4 +278,4 @@ Tranche 1 rejects normal create/replacement after `Delivery.status = DELIVERED`.
 
 Stop and return `DECISION_REQUIRED` if a tranche needs any item in the not-authorized list, or any other material product or architecture choice that canonical authority does not already define.
 
-Do not mark `IMPLEMENTATION_COMPLETE` until later tranches and independent proof are complete.
+Do not set `IMP036I_ACCEPTED` or `FOUNDER_UAT` to PASS until Founder UAT and the later acceptance reconciliation. `IMPLEMENTATION_COMPLETE` is YES because the tranche proof and independent implementation review passed.

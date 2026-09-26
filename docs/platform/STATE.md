@@ -2,15 +2,15 @@
 {
   "status": "CURRENT",
   "authority": "ACCEPTED_STATE",
-  "stateVersion": "STATE-R158",
+  "stateVersion": "STATE-R159",
   "acceptedThrough": "IMP-036H",
   "currentProductSlice": "IMP-036I",
   "nextProductSlice": "IMP-037",
-  "pendingAcceptance": "NONE",
+  "pendingAcceptance": "IMP-036I",
   "gtmBoundary": "IMP-040",
   "governanceHealth": "ALIGNED",
   "lastReviewed": "2026-09-26",
-  "supersedes": "STATE-R157"
+  "supersedes": "STATE-R158"
 }
 -->
 
@@ -35,19 +35,20 @@ Accepted Range:            IMP-001 → IMP-036H (including IMP-005A and IMP-026C
 
 ```text
 Current Product Implementation: IMP-037 (unresolved held predecessor; provider-blocked; not acceptance)
-Pending Acceptance:             NONE
+Pending Acceptance:             IMP-036I
 Current Product Slice:          IMP-036I — Scheduled Fulfilment
 Next Product Slice:             IMP-037 — Backup, Restore & Migration Readiness
 Unresolved Predecessor:         IMP-037 — Backup, Restore & Migration Readiness
-Current Governance Activity:    IMP-036I IMPLEMENTATION_IN_PROGRESS
-                              (formal lifecycle IMPLEMENTATION_IN_PROGRESS;
-                              GTM-R160 / STATE-R158;
+Current Governance Activity:    IMP-036I IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
+                              (formal lifecycle IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE;
+                              GTM-R161 / STATE-R159;
+                              prior tip GTM-R160 / STATE-R158;
                               prior tip GTM-R159 / STATE-R157;
                               prior tip GTM-R158 / STATE-R156;
                               prior tip GTM-R157 / STATE-R155;
                               prior tip GTM-R156 / STATE-R154;
                               prior tip GTM-R154 / STATE-R152;
-                              IMP036I_ACTIVATED: YES; formal lifecycle IMPLEMENTATION_IN_PROGRESS;
+                              IMP036I_ACTIVATED: YES; formal lifecycle IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE;
                               IMP036I_PRODUCT_DEFINITION: APPROVED
                               (PD-IMP-036I-DRAFT-4);
                               READY_FOR_PRODUCT_DEFINITION_GATE: NO;
@@ -81,10 +82,25 @@ Current Governance Activity:    IMP-036I IMPLEMENTATION_IN_PROGRESS
                               IMP036I_IMPLEMENTATION_AUTHORIZATION_DATE: 2026-09-25;
                               IMP036I_STARTED: YES;
                               IMP036I_IMPLEMENTATION_STARTED: YES;
-                              IMP036I_IMPLEMENTATION_COMPLETE: NO;
+                              IMP036I_IMPLEMENTATION_COMPLETE: YES;
                               IMP036I_ACCEPTED: NO;
+                              IMP036I_FOUNDER_UAT_REQUIRED: YES;
                               FOUNDER_UAT: NOT_PERFORMED;
-                              nextGate: INDEPENDENT_TRANCHE_5_VERIFICATION;
+                              IMP036I_TRANCHE5_INDEPENDENT_VERIFICATION: PASS;
+                              TRANCHE_1: PASS;
+                              TRANCHE_2: PASS;
+                              TRANCHE_3: PASS;
+                              TRANCHE_4: PASS;
+                              TRANCHE_5: PASS;
+                              FINANCIAL_DOCUMENT_NON_REGRESSION: PASS;
+                              IMP036I_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS;
+                              IMP036I_IMPLEMENTATION_REVIEWED_HEAD:
+                              335e8b55c74b81d745e923b3d078d6af9ec0b5cc;
+                              IMP036I_IMPLEMENTATION_REVIEWED_TREE:
+                              4b75582d1726e552bdc1e45da15cf667b05de8e0;
+                              IMP036I_IMPLEMENTATION_REVIEWED_FINGERPRINT:
+                              5d79b21381f190682d3cb3f0a2f7e99d43919476f5384c3e1d74d3904218409b;
+                              nextGate: FOUNDER_UAT;
                               D-379: CURRENT; D-380: CURRENT; D-378: AMENDED;
                               IMP-036H remains COMPLETE_AND_ACCEPTED;
                               prior tip GTM-R153 / STATE-R151 (Product Definition Gate PASS);
@@ -159,7 +175,7 @@ Current Governance Activity:    IMP-036I IMPLEMENTATION_IN_PROGRESS
                               D-377_CREATED: YES; D-378_CREATED: YES; ARCH_R22_CREATED: YES;
                               D-379_CREATED: YES; D-380_CREATED: YES; ARCH_R23_CREATED: YES;
                               Decision register tip DR-21;
-                              nextGate: INDEPENDENT_TRANCHE_2_VERIFICATION
+                              nextGate: FOUNDER_UAT
                               Founder UAT PASS 2026-09-24 on runtime candidate
                               37bae964f964bddd317e4c290dc146097e4c8f57;
                               governance reconciliation is NOT a new UAT candidate;
@@ -214,7 +230,7 @@ IMP036H_FOUNDER_UAT_CANDIDATE_FINGERPRINT: e49d860c721d2524b248738750530a416f841
 IMP036H_FOUNDER_UAT_DECISION_DATE: 2026-09-24
 IMP036H_FOUNDER_UAT_ACCEPTANCE_AUTHORITY: Founder
 IMP036H_FOUNDER_UAT_CHECKMARKS: pickup_profile=PASS; customer_pickup=PASS; payment=PASS; operations_handover=PASS; customer_order_history=PASS; mode_switching=PASS; unavailable_state=PASS; mobile=PASS; overall=PASS; findings=NONE_BLOCKING
-IMP-036I:                 IMPLEMENTATION_IN_PROGRESS
+IMP-036I:                 IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
 IMP036I_ACTIVATED:        YES
 IMP036I_PRODUCT_DEFINITION: APPROVED
 IMP036I_PRODUCT_DEFINITION_VERSION: PD-IMP-036I-DRAFT-4
@@ -226,8 +242,13 @@ IMP036I_IMPLEMENTATION_AUTHORIZATION: APPROVED
 IMP036I_IMPLEMENTATION_AUTHORIZATION_DATE: 2026-09-25
 IMP036I_STARTED:          YES
 IMP036I_IMPLEMENTATION_STARTED: YES
-IMP036I_IMPLEMENTATION_COMPLETE: NO
+IMP036I_IMPLEMENTATION_COMPLETE: YES
+IMP-036I_IMPLEMENTATION_COMPLETE: YES
 IMP036I_ACCEPTED:         NO
+IMP036I_FOUNDER_UAT_REQUIRED: YES
+FOUNDER_UAT: NOT_PERFORMED
+IMP036I_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
+nextGate: FOUNDER_UAT
 INDEPENDENT_PRODUCT_DEFINITION_GATE_REVIEW: 5307761142
 IMP-037:                  IMPLEMENTATION_IN_PROGRESS
 IMP037_HOLD:              YES
@@ -467,7 +488,7 @@ Cart → Checkout → Payment → Order
 
 ```text
 acceptedThrough: IMP-036H
-pendingAcceptance: NONE
+pendingAcceptance: IMP-036I
 currentProductSlice: IMP-036I — Scheduled Fulfilment
 nextProductSlice: IMP-037 — Backup, Restore & Migration Readiness
 PROGRAM_PAUSE: PRE_GTM_PRODUCT_INSERTION_PROVIDER_BLOCKED
@@ -683,7 +704,7 @@ IMP036H_INDEPENDENT_ARCHITECTURE_FIT_REVIEW: PASS
 IMP036H_INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_HEAD: aab814c238c499367ee921e9f8ffb03ff7b1b373
 IMP036H_INDEPENDENT_ARCHITECTURE_FIT_REVIEWED_TREE: 93d4e83d4a73c61c9439bcaae2799920fcca46db
 IMP036H_INDEPENDENT_ARCHITECTURE_FIT_REVIEW_ID: 5295149318
-IMP-036I: IMPLEMENTATION_IN_PROGRESS
+IMP-036I: IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
 IMP036I_ACTIVATED: YES
 IMP036I_PRODUCT_DEFINITION: APPROVED
 IMP036I_PRODUCT_DEFINITION_VERSION: PD-IMP-036I-DRAFT-4
@@ -695,8 +716,12 @@ IMP036I_IMPLEMENTATION_AUTHORIZATION: APPROVED
 IMP036I_IMPLEMENTATION_AUTHORIZATION_DATE: 2026-09-25
 IMP036I_STARTED: YES
 IMP036I_IMPLEMENTATION_STARTED: YES
-IMP036I_IMPLEMENTATION_COMPLETE: NO
+IMP036I_IMPLEMENTATION_COMPLETE: YES
 IMP036I_ACCEPTED: NO
+IMP036I_FOUNDER_UAT_REQUIRED: YES
+FOUNDER_UAT: NOT_PERFORMED
+IMP036I_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
+nextGate: FOUNDER_UAT
 INDEPENDENT_PRODUCT_DEFINITION_GATE_REVIEW: 5307761142
 IMP-037: IMPLEMENTATION_IN_PROGRESS
 IMP037_HOLD: YES
@@ -859,7 +884,7 @@ Implementation/review provenance for IMP-036F is recorded in
 | Why / Non-Goals | [`VISION.md`](./VISION.md) |
 | Durable architecture | [`ARCHITECTURE.md`](./ARCHITECTURE.md) |
 | Binding decision status | [`decision-register.md`](./decision-register.md) |
-| IMP-036I Product Definition (APPROVED; Gate PASS; Fit PASS; architecture LOCKED; implementation AUTHORIZED / STARTED / NOT_COMPLETE) | [`product/IMP-036I/product-definition.md`](./product/IMP-036I/product-definition.md) |
+| IMP-036I Product Definition (APPROVED; Gate PASS; Fit PASS; architecture LOCKED; implementation AUTHORIZED / STARTED / COMPLETE; pending acceptance) | [`product/IMP-036I/product-definition.md`](./product/IMP-036I/product-definition.md) |
 | IMP-036H Product Definition (APPROVED; Gate PASS; Fit PASS; LOCKED; AUTHORIZED / STARTED / COMPLETE; COMPLETE_AND_ACCEPTED) | [`product/IMP-036H/product-definition.md`](./product/IMP-036H/product-definition.md) |
 | IMP-038 locked capability architecture (Fit PASS; independent Architecture Fit review PASS; IMPLEMENTATION_COMPLETE / NOT_ACCEPTED; `IMP038_HOLD: YES`; external assessment deferred) | [`capabilities/IMP-038-security-privacy-hardening.md`](./capabilities/IMP-038-security-privacy-hardening.md) |
 | IMP-037 locked capability architecture (Fit PASS; independent Architecture Fit review PASS; repository implementation MERGED; external proof NOT_PERFORMED; `IMP037_HOLD: YES`) | [`capabilities/IMP-037-backup-restore-migration-readiness.md`](./capabilities/IMP-037-backup-restore-migration-readiness.md) |
@@ -871,7 +896,46 @@ Implementation/review provenance for IMP-036F is recorded in
 Agents may propose a STATE delta in their report. Only independent acceptance updates this file's
 accepted position and may promote `governanceHealth` to `ALIGNED`.
 
-## 10. STATE-R158 record
+## 10. STATE-R159 record
+
+```text
+STATE-R159 = IMP036I_IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE
+acceptedThrough: IMP-036H
+pendingAcceptance: IMP-036I
+currentProductSlice: IMP-036I
+nextProductSlice: IMP-037
+Current Governance Activity: IMP-036I IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE under PROGRAM_PAUSE PRE_GTM_PRODUCT_INSERTION_PROVIDER_BLOCKED (D-377); formal lifecycle IMPLEMENTATION_COMPLETE_PENDING_ACCEPTANCE; integrated Tranche 5 independent verification PASS against reviewed main 335e8b55c74b81d745e923b3d078d6af9ec0b5cc / tree 4b75582d1726e552bdc1e45da15cf667b05de8e0 / fingerprint 5d79b21381f190682d3cb3f0a2f7e99d43919476f5384c3e1d74d3904218409b; no numeric independent implementation review ID; ARCH-R23; DR-21; D-379 CURRENT; D-380 CURRENT; D-378 AMENDED; implementation AUTHORIZED / STARTED / COMPLETE; IMP036I_IMPLEMENTATION_COMPLETE: YES; IMP036I_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS; IMP036I_ACCEPTED: NO; FOUNDER_UAT_REQUIRED: YES; Founder UAT NOT_PERFORMED; nextGate: FOUNDER_UAT
+IMP036I_IMPLEMENTATION_AUTHORIZED: YES
+IMP036I_IMPLEMENTATION_STARTED: YES
+IMP036I_IMPLEMENTATION_COMPLETE: YES
+IMP036I_ACCEPTED: NO
+IMP036I_FOUNDER_UAT_REQUIRED: YES
+FOUNDER_UAT: NOT_PERFORMED
+NEXT_ACTION: FOUNDER_UAT
+TRANCHE_1: PASS
+TRANCHE_2: PASS
+TRANCHE_3: PASS
+TRANCHE_4: PASS
+TRANCHE_5: PASS
+IMP036I_TRANCHE5_INDEPENDENT_VERIFICATION: PASS
+FINANCIAL_DOCUMENT_NON_REGRESSION: PASS
+IMP036I_INDEPENDENT_IMPLEMENTATION_REVIEW: PASS
+IMP036I_IMPLEMENTATION_REVIEWED_HEAD: 335e8b55c74b81d745e923b3d078d6af9ec0b5cc
+IMP036I_IMPLEMENTATION_REVIEWED_TREE: 4b75582d1726e552bdc1e45da15cf667b05de8e0
+IMP036I_IMPLEMENTATION_REVIEWED_FINGERPRINT: 5d79b21381f190682d3cb3f0a2f7e99d43919476f5384c3e1d74d3904218409b
+TRANCHE_5_IMPLEMENTATION_MERGE: d50cd50971c39a623f6653d2e98353aae88eade9
+FINANCIAL_DOCUMENT_REMEDIATION_MAIN: 335e8b55c74b81d745e923b3d078d6af9ec0b5cc
+EXACT_HEAD_REMEDIATION_CI: 36238210541 PASS
+EXACT_HEAD_REMEDIATION_CODEQL: 36238210619 PASS
+POST_MERGE_MAIN_CI: 36238620688 PASS
+POST_MERGE_MAIN_CODEQL: 36238620716 PASS
+FINANCIAL_DOCUMENT_PROOF: tests/database/scheduled-financial-document-continuity.integration.test.ts
+T5_COMMAND: npm run test:imp036i:tranche5
+```
+
+Integrated Tranche 5 independent verification is PASS. IMP-036I implementation is complete and pending acceptance. Founder UAT is not performed. IMP-036I is not accepted. `acceptedThrough` remains IMP-036H. Do not set `FOUNDER_UAT` to PASS or `IMP036I_ACCEPTED` to YES in this record.
+
+## 10. STATE-R158 record (historical prior tip)
 
 ```text
 STATE-R158 = IMP036I_TRANCHE_5
