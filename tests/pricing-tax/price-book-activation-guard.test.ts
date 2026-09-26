@@ -11,6 +11,8 @@ import {
   priceBooksTable,
   pricingTaxAuditEventsTable,
 } from "../../src/platform/database/schema/pricing";
+import { requireWorkforcePrincipal } from "../../src/server/access-control/principal";
+import { createTerritory } from "../../src/server/organization";
 import { TAX_CATEGORY_RESTAURANT_SERVICE_ID } from "../../src/shared/pricing";
 import {
   activatePriceBook,
@@ -516,6 +518,216 @@ describe("price book activation hierarchy guard", () => {
       expect(deltas.get(`${catalog.variantModifierGroupId}:${catalog.modifierGroupOptionId}`)).toBe(
         BigInt(500),
       );
+    });
+  });
+
+  it("rejects a future outlet override that the Brand book effective at its start forbids", async () => {
+    await withAssortmentDomain(async (persistence, { tree, brandAdminActor, outletManagerActor }) => {
+      const catalog = await createActiveStandardVariant(
+        persistence,
+        brandAdminActor,
+        tree.brand.id,
+        "future",
+      );
+      const switchAt = new Date("2027-01-01T00:00:00.000Z");
+      await persistence.transaction(async (tx) => {
+        const current = await createDraftPriceBook(tx, {
+          actor: brandAdminActor,
+          brandId: tree.brand.id,
+          scopeType: "brand",
+          code: `brand-now-${randomUUID().slice(0, 8)}`,
+          name: "Current brand",
+          effectiveFrom: FROM,
+          effectiveTo: switchAt,
+        });
+        const currentPrice = await attachDraftVariantPrice(tx, {
+          actor: brandAdminActor,
+          brandId: tree.brand.id,
+          priceBookId: current.id,
+          variantId: catalog.variantId,
+          amountPaise: BigInt(23900),
+          taxCategoryId: TAX_CATEGORY_RESTAURANT_SERVICE_ID,
+          allowOutletOverride: true,
+          floorPaise: BigInt(20000),
+          ceilingPaise: BigInt(30000),
+          expectedPriceBookRevision: current.revision,
+        });
+        await activatePriceBook(tx, {
+          actor: brandAdminActor,
+          brandId: tree.brand.id,
+          priceBookId: current.id,
+          expectedPriceBookRevision: currentPrice.priceBookRevision,
+        });
+
+        const next = await createDraftPriceBook(tx, {
+          actor: brandAdminActor,
+          brandId: tree.brand.id,
+          scopeType: "brand",
+          code: `brand-next-${randomUUID().slice(0, 8)}`,
+          name: "Future brand",
+          effectiveFrom: switchAt,
+        });
+        const nextPrice = await attachDraftVariantPrice(tx, {
+          actor: brandAdminActor,
+          brandId: tree.brand.id,
+          priceBookId: next.id,
+          variantId: catalog.variantId,
+          amountPaise: BigInt(23900),
+          taxCategoryId: TAX_CATEGORY_RESTAURANT_SERVICE_ID,
+          allowOutletOverride: false,
+          expectedPriceBookRevision: next.revision,
+        });
+        await activatePriceBook(tx, {
+          actor: brandAdminActor,
+          brandId: tree.brand.id,
+          priceBookId: next.id,
+          expectedPriceBookRevision: nextPrice.priceBookRevision,
+        });
+      });
+
+      const draft = await persistence.transaction(async (tx) => {
+        const book = await createDraftPriceBook(tx, {
+          actor: outletManagerActor,
+          brandId: tree.brand.id,
+          scopeType: "outlet",
+          territoryId: tree.terrA.id,
+          organizationId: tree.orgA.id,
+          outletId: tree.outletA.id,
+          code: `outlet-${randomUUID().slice(0, 8)}`,
+          name: "Future outlet",
+          effectiveFrom: switchAt,
+        });
+        const attached = await attachDraftVariantPrice(tx, {
+          actor: brandAdminActor,
+          brandId: tree.brand.id,
+          priceBookId: book.id,
+          variantId: catalog.variantId,
+          amountPaise: BigInt(24100),
+          taxCategoryId: TAX_CATEGORY_RESTAURANT_SERVICE_ID,
+          expectedPriceBookRevision: book.revision,
+        });
+        return { id: book.id, revision: attached.priceBookRevision };
+      });
+
+      const preview = await persistence.withContext((ctx) =>
+        previewPriceBookConsequence(ctx, {
+          actor: brandAdminActor,
+          brandId: tree.brand.id,
+          priceBookId: draft.id,
+          at: new Date(),
+        }),
+      );
+      expect(preview.referenceBlockers.map((blocker) => blocker.code)).toContain(
+        "OVERRIDE_NOT_PERMITTED",
+      );
+
+      await expect(
+        persistence.transaction((tx) =>
+          activatePriceBook(tx, {
+            actor: brandAdminActor,
+            brandId: tree.brand.id,
+            priceBookId: draft.id,
+            expectedPriceBookRevision: draft.revision,
+          }),
+        ),
+      ).rejects.toMatchObject({ pricingErrorCode: "OVERRIDE_NOT_PERMITTED" });
+      expect((await bookStatus(persistence, draft.id))?.lifecycleStatus).toBe("draft");
+    });
+  });
+
+  it("rejects a prohibited territory override when that territory has no outlets yet", async () => {
+    await withAssortmentDomain(async (persistence, { tree, brandAdminActor }) => {
+      const catalog = await createActiveStandardVariant(
+        persistence,
+        brandAdminActor,
+        tree.brand.id,
+        "emptyt",
+      );
+      const territory = await persistence.transaction((tx) =>
+        createTerritory(tx, {
+          brandId: tree.brand.id,
+          code: `empty-${randomUUID().slice(0, 8)}`,
+          name: "Empty territory",
+          actorWorkforceUserId: requireWorkforcePrincipal(brandAdminActor).workforceUserId,
+        }),
+      );
+      await persistence.transaction(async (tx) => {
+        const brand = await createDraftPriceBook(tx, {
+          actor: brandAdminActor,
+          brandId: tree.brand.id,
+          scopeType: "brand",
+          code: `brand-${randomUUID().slice(0, 8)}`,
+          name: "Brand baseline",
+          effectiveFrom: FROM,
+        });
+        const attached = await attachDraftVariantPrice(tx, {
+          actor: brandAdminActor,
+          brandId: tree.brand.id,
+          priceBookId: brand.id,
+          variantId: catalog.variantId,
+          amountPaise: BigInt(23900),
+          taxCategoryId: TAX_CATEGORY_RESTAURANT_SERVICE_ID,
+          allowTerritoryOverride: false,
+          expectedPriceBookRevision: brand.revision,
+        });
+        await activatePriceBook(tx, {
+          actor: brandAdminActor,
+          brandId: tree.brand.id,
+          priceBookId: brand.id,
+          expectedPriceBookRevision: attached.priceBookRevision,
+        });
+      });
+
+      const draft = await persistence.transaction(async (tx) => {
+        const book = await createDraftPriceBook(tx, {
+          actor: brandAdminActor,
+          brandId: tree.brand.id,
+          scopeType: "territory",
+          territoryId: territory.id,
+          code: `terr-${randomUUID().slice(0, 8)}`,
+          name: "Empty territory book",
+          effectiveFrom: FROM,
+        });
+        const attached = await attachDraftVariantPrice(tx, {
+          actor: brandAdminActor,
+          brandId: tree.brand.id,
+          priceBookId: book.id,
+          variantId: catalog.variantId,
+          amountPaise: BigInt(24100),
+          taxCategoryId: TAX_CATEGORY_RESTAURANT_SERVICE_ID,
+          expectedPriceBookRevision: book.revision,
+        });
+        return { id: book.id, revision: attached.priceBookRevision };
+      });
+
+      const preview = await persistence.withContext((ctx) =>
+        previewPriceBookConsequence(ctx, {
+          actor: brandAdminActor,
+          brandId: tree.brand.id,
+          priceBookId: draft.id,
+          at: AT,
+        }),
+      );
+      expect(preview.referenceBlockers).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            code: "OVERRIDE_NOT_PERMITTED",
+            message: expect.stringContaining("Territory override is not permitted"),
+          }),
+        ]),
+      );
+
+      await expect(
+        persistence.transaction((tx) =>
+          activatePriceBook(tx, {
+            actor: brandAdminActor,
+            brandId: tree.brand.id,
+            priceBookId: draft.id,
+            expectedPriceBookRevision: draft.revision,
+          }),
+        ),
+      ).rejects.toMatchObject({ pricingErrorCode: "OVERRIDE_NOT_PERMITTED" });
+      expect((await bookStatus(persistence, draft.id))?.lifecycleStatus).toBe("draft");
     });
   });
 });
